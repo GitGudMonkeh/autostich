@@ -247,12 +247,12 @@ describe("Legendäre Perks (#33) — Engine-Integration", () => {
     expect(s.lastTrick.result).toBe("tie");
     expect(s.winStreak).toBe(2);
   });
-  it("L3 Letztes Aufbäumen: +6 Kartenwert bei ≤25 % Leben kippt den Stich, > 25 % nicht", () => {
-    const low = resolveTrick(scenario(4, 8, { perks: ["L3"], life: 500, maxLife: 2000 }), rng);
-    expect(low.lastTrick.pValue).toBe(10); // 4 + 6
+  it("L3 Letztes Aufbäumen: +3 Kartenwert bei ≤25 % Leben kippt den Stich, > 25 % nicht (#71)", () => {
+    const low = resolveTrick(scenario(6, 8, { perks: ["L3"], life: 500, maxLife: 2000 }), rng);
+    expect(low.lastTrick.pValue).toBe(9); // 6 + 3
     expect(low.wins).toBe(1);
-    const high = resolveTrick(scenario(4, 8, { perks: ["L3"], life: 501, maxLife: 2000 }), rng);
-    expect(high.lastTrick.pValue).toBe(4);
+    const high = resolveTrick(scenario(6, 8, { perks: ["L3"], life: 501, maxLife: 2000 }), rng);
+    expect(high.lastTrick.pValue).toBe(6);
     expect(high.losses).toBe(1);
   });
   it("L4 Kritische Masse: Bonus erst NACH einem Crit, gedeckelt bei +30 pp", () => {

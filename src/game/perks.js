@@ -32,6 +32,15 @@ import { shuffle } from "./deck.js";
 const bumpWhere = (deck, pred, delta) =>
   deck.map((c) => (pred(c) ? { ...c, value: c.value + delta } : c));
 
+// #71: die n Karten mit dem höchsten (dir="desc") bzw. niedrigsten (dir="asc") aktuellen Wert
+// um delta anheben. Stabiler Sort (Ties nach ursprünglichem Index) → deterministisch, kein rng.
+const bumpTopN = (deck, n, delta, dir) => {
+  const order = deck.map((_, i) => i).sort((a, b) =>
+    dir === "desc" ? deck[b].value - deck[a].value : deck[a].value - deck[b].value);
+  const pick = new Set(order.slice(0, n));
+  return deck.map((c, i) => (pick.has(i) ? { ...c, value: c.value + delta } : c));
+};
+
 // D2-Kombo: eskalierender Siegesserien-Multiplikator (+D2_STEP je Serienstufe, KEIN Cap, #31).
 // EINE Formel als geteilte Quelle für Score-Berechnung (D2-Hook) UND Anzeige (comboMultFor →
 // Battlefield-Float) → kein Drift, analog zum Muster von scoreMultFor/critChanceFor (#23/#25).
@@ -73,6 +82,26 @@ export const PERK_DEFS = {
           const chosen = new Set(shuffle(idx, rng).slice(0, 4)); // bis zu 4 unterschiedliche Karten
           return d.map((c, i) => (chosen.has(i) ? { ...c, value: c.value + 6 } : c));
         } },
+
+  // ---- Neue Normal-Perks (#71) — Anzeige-Gruppe über `cat` (A Deck / B Stich / C Leben) ----
+  A6: { id: "A6", cat: "A", label: "Mittelklasse",
+        desc: "Alle Karten mit aktuellem Wert 4–7 erhalten dauerhaft +2 Wert.",
+        onPick: (d) => bumpWhere(d, (c) => c.value >= 4 && c.value <= 7, 2) },
+  A7: { id: "A7", cat: "A", label: "Spitzenförderung",
+        desc: "Die vier aktuell höchsten Karten erhalten dauerhaft je +6 Wert.",
+        onPick: (d) => bumpTopN(d, 4, 6, "desc") },
+  A8: { id: "A8", cat: "A", label: "Nachzügler",
+        desc: "Die vier aktuell niedrigsten Karten erhalten dauerhaft je +6 Wert.",
+        onPick: (d) => bumpTopN(d, 4, 6, "asc") },
+  B6: { id: "B6", cat: "B", label: "Knappe Kiste",
+        desc: "Gewinnst du mit exakt 1 Wertpunkt Vorsprung, +100 Score.",
+        scoreFlat: (ctx) => (ctx.margin === 1 ? 100 : 0) },
+  B7: { id: "B7", cat: "B", label: "Durchbruch",
+        desc: "Nach fünf Stichen ohne Sieg erhält die nächste Karte +10 Wert (Sieg setzt zurück, Gleichstand zählt weiter).",
+        cardBonus: (ctx) => ((ctx.sinceWin || 0) >= 5 ? 10 : 0) },
+  C6: { id: "C6", cat: "C", label: "Trotz",
+        desc: "Unter 50 % Leben −1 Schaden bei Niederlagen; bei 25 % oder weniger insgesamt −2.",
+        dmgReduce: ({ life, maxLife }) => (maxLife > 0 && life / maxLife <= 0.25 ? 2 : maxLife > 0 && life / maxLife < 0.5 ? 1 : 0) },
 
   // ---- B: Stich-Effekte (Wert-Bonus auf die aktuelle Karte) ----
   B1: { id: "B1", cat: "B", label: "Gegenangriff",
@@ -156,8 +185,8 @@ export const PERK_DEFS = {
         desc: "Ab 3 Siegen in Folge gewinnst du alle Gleichstände, bis die Serie endet.",
         winTie: ({ winStreak }) => winStreak >= 3 },
   L3: { id: "L3", cat: "C", rarity: "legendary", label: "Letztes Aufbäumen",
-        desc: "Bei 25 % Leben oder weniger erhalten alle Karten +6 Wert für den aktuellen Stich.",
-        cardBonus: ({ life, maxLife }) => (maxLife > 0 && life / maxLife <= 0.25 ? 6 : 0) },
+        desc: "Bei 25 % Leben oder weniger erhalten alle Karten +3 Wert für den aktuellen Stich.",
+        cardBonus: ({ life, maxLife }) => (maxLife > 0 && life / maxLife <= 0.25 ? 3 : 0) }, // #71: +6→+3
   L4: { id: "L4", cat: "D", rarity: "legendary", label: "Kritische Masse",
         desc: "Jeder Crit erhöht deine Crit-Chance dauerhaft um 1 Prozentpunkt (max +30 pp).",
         legendaryCritGain: true }, // Engine führt legendaryCritBonus (Erhöhung NACH dem Crit-Wurf)
@@ -179,8 +208,11 @@ export const isLegendary = (id) => rarityOf(id) === "legendary";
 // Deterministisch über den injizierten rng (ein rng()-Zug je Auswahl). Pool leer → weniger Perks.
 export function buildOffer(owned, rng, count, level = 1) {
   const legendaryOK = level >= C.LEGENDARY_MIN_LEVEL;
-  let pool = PERK_LIST.filter((p) =>
-    !owned.includes(p.id) && (legendaryOK || (p.rarity || "common") !== "legendary"));
+  const rareOK = level >= C.RARE_MIN_LEVEL; // #71: 3-Stufen-Gate — Seltene ab RARE_MIN_LEVEL
+  let pool = PERK_LIST.filter((p) => {
+    const r = p.rarity || "common";
+    return !owned.includes(p.id) && (r !== "legendary" || legendaryOK) && (r !== "rare" || rareOK);
+  });
   const chosen = [];
   let legendaries = 0;
   while (chosen.length < count && pool.length > 0) {
