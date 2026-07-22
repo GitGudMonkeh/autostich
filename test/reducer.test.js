@@ -11,7 +11,7 @@ describe("Reducer", () => {
     expect(s.life).toBe(2000);
     expect(s.level).toBe(1);
     expect(s.perks).toEqual([]);
-    expect(s.deck).toHaveLength(52);
+    expect(s.deck).toHaveLength(40);
   });
 
   it("PICK_PERK wendet eine Deck-Mod an und kehrt in play zurück", () => {

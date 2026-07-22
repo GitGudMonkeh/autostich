@@ -12,12 +12,12 @@ export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Tempo skal
 export const TEMPO_SCORE_FACTOR = 0.005; // je %-Punkt speedPct +0,5 % Stichscore [TUNING]
 export const CRIT_BASE_MULT   = 2;      // Crit verdoppelt den Stichscore [TUNING]
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
-export const TRICKS_PER_CYCLE = 52;     // Karten je Deck-Durchlauf
+// TRICKS_PER_CYCLE wird weiter unten aus der Deckgröße abgeleitet (SUIT_ORDER × RANKS, #34) — kein Drift.
 
 // Score-Perk-Magnituden (Kategorie D) [TUNING]
 export const D1_BONUS_PCT = 15;   // D1  +15 % Score je Sieg
 export const D2_STEP      = 0.10; // D2  Siegesserie: +10 % je Serien-Stufe, eskalierend — KEIN Cap (#31)
-export const D3_HIGH_MIN  = 10;   // D3  „hohe Karte" ab diesem Wert
+export const D3_HIGH_MIN  = 8;    // gemeinsame „hohe Karte"-Schwelle für D3, C2 & D7 (#34: 10→8 auf Skala 1–10)
 export const D3_BONUS     = 60;   // D3  Flat-Bonus
 export const D4_LOW_MAX   = 3;    // D4  „Außenseiter" bis zu diesem Wert
 export const D4_MULT      = 3;    // D4  Score-Faktor
@@ -26,7 +26,7 @@ export const D5_BONUS     = 300;  // D5  jeder 10. Sieg: Flat-Bonus
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
 
-// Werte dürfen unbegrenzt über 12 steigen (Design-Entscheid: Deck-Mods sollen den
+// Werte dürfen unbegrenzt über 10 steigen (Design-Entscheid: Deck-Mods sollen den
 // Gegner-Maximalwert überbieten können) — kein Cap.
 export const VALUE_CAP = null;
 
@@ -50,6 +50,8 @@ export const SUITS = {
   Y: { key: "Y", name: "Gelb", color: "#d4a63a" },
 };
 export const SUIT_ORDER = ["R", "B", "G", "Y"];
-export const RANKS = Array.from({ length: 13 }, (_, i) => i); // 0..12
+export const RANKS = Array.from({ length: 10 }, (_, i) => i + 1); // 1..10 (#34: 40 Karten, keine schwache 0)
+// Stiche je Deck-Durchlauf = Deckgröße (4 Farben × 10 Werte = 40). Abgeleitet → folgt RANKS automatisch (#34).
+export const TRICKS_PER_CYCLE = SUIT_ORDER.length * RANKS.length;
 export const suitName  = (s) => (s ? SUITS[s].name : "—");
 export const suitColor = (s) => (s ? SUITS[s].color : "#888");

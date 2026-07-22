@@ -5,8 +5,8 @@ import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { lossCostFor, lossTierFor } from "../src/game/constants.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
-const constDeck = (v) => Array.from({ length: 52 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
-const identity = () => Array.from({ length: 52 }, (_, i) => i);
+const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
+const identity = () => Array.from({ length: 40 }, (_, i) => i);
 function scenario(pVal, oVal, over = {}) {
   return {
     ...initialState(makeRng(1)),
@@ -97,7 +97,7 @@ describe("resolveTrick — Verteidigungs-Perks", () => {
   });
 
   it("C5: Schild wird bei Durchlauf-Ende auf 50 zurückgesetzt", () => {
-    const s = resolveTrick(scenario(12, 0, { pos: 51, perks: ["C5"], shield: 10, life: 1000 }), rng);
+    const s = resolveTrick(scenario(12, 0, { pos: 39, perks: ["C5"], shield: 10, life: 1000 }), rng);
     expect(s.cycle).toBe(1);
     expect(s.shield).toBe(50);
   });
@@ -256,8 +256,8 @@ describe("resolveTrick — Zyklus & Level-Up", () => {
     expect(s.offer).toHaveLength(3);
   });
 
-  it("Durchlauf-Ende (52 Stiche): cycle++, pos→0, C4 heilt", () => {
-    const s = resolveTrick(scenario(12, 0, { pos: 51, life: 1000, perks: ["C4"] }), rng);
+  it("Durchlauf-Ende (40 Stiche): cycle++, pos→0, C4 heilt", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39, life: 1000, perks: ["C4"] }), rng);
     expect(s.cycle).toBe(1);
     expect(s.pos).toBe(0);
     expect(s.life).toBe(1050);

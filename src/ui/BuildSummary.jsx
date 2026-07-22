@@ -57,7 +57,7 @@ export function DeckHistogram({ deck }) {
     if (n > maxCount) maxCount = n;
     if (c.value > maxV) maxV = c.value;
   }
-  const values = Array.from({ length: maxV + 1 }, (_, v) => v);
+  const values = Array.from({ length: maxV }, (_, v) => v + 1); // Werte 1..maxV (#34: keine leere 0-Spalte)
   return (
     <div>
       <div className="grid gap-1">
@@ -79,12 +79,12 @@ export function DeckHistogram({ deck }) {
           <div className="flex-1 flex gap-[2px]">
             {values.map((v) => (
               <div key={v} className="flex-1 text-center text-[7px] leading-none tabular-nums"
-                style={{ color: v > 12 ? "#8a7de0" : undefined, opacity: v > 12 ? 1 : 0.4 }}>{v}</div>
+                style={{ color: v > 10 ? "#8a7de0" : undefined, opacity: v > 10 ? 1 : 0.4 }}>{v}</div>
             ))}
           </div>
         </div>
       </div>
-      <div className="text-[10px] opacity-35 mt-1.5">Werte über 12 (violett) überbieten jede Gegnerkarte.</div>
+      <div className="text-[10px] opacity-35 mt-1.5">Werte über 10 (violett) überbieten jede Gegnerkarte.</div>
     </div>
   );
 }

@@ -7,25 +7,25 @@ describe("Perks — Deck-Modifikationen (Kat. A)", () => {
   it("A1 Starke Fünfen: alle Wert-5 → +6 (Wert 11)", () => {
     const d = PERK_DEFS.A1.onPick(buildDeck());
     expect(d.filter((c) => c.value === 5)).toHaveLength(0);
-    expect(d.filter((c) => c.value === 11)).toHaveLength(8); // 4 alte 11er + 4 beförderte 5er
+    expect(d.filter((c) => c.value === 11)).toHaveLength(4); // Deck 1–10 hat keine 11 → nur die 4 beförderten 5er
   });
 
   it("A2 Gerade Stärke: gerade Werte +1, ungerade unverändert", () => {
     const d = PERK_DEFS.A2.onPick(buildDeck());
-    const r0 = d.find((c) => c.id === "R0");
+    const r2 = d.find((c) => c.id === "R2");
     const r3 = d.find((c) => c.id === "R3");
-    expect(r0.value).toBe(1);
-    expect(r3.value).toBe(3);
+    expect(r2.value).toBe(3); // gerade → +1
+    expect(r3.value).toBe(3); // ungerade → unverändert
   });
 
-  it("A5 Kleine ganz groß: vier unterschiedliche Karten (Wert 0–3) je +6", () => {
+  it("A5 Kleine ganz groß: vier unterschiedliche Karten (Wert 1–3) je +6", () => {
     const base = buildDeck();
     const d = PERK_DEFS.A5.onPick(base, makeRng(3));
     const changedIdx = base.map((_, i) => i).filter((i) => d[i].value !== base[i].value);
     expect(changedIdx).toHaveLength(4);            // vier Karten
     expect(new Set(changedIdx).size).toBe(4);      // unterschiedlich
     for (const i of changedIdx) {
-      expect(base[i].value).toBeGreaterThanOrEqual(0);
+      expect(base[i].value).toBeGreaterThanOrEqual(1);
       expect(base[i].value).toBeLessThanOrEqual(3);
       expect(d[i].value).toBe(base[i].value + 6);
     }
@@ -89,6 +89,17 @@ describe("critChanceFor (Crit-Perks D6–D8)", () => {
   });
   it("summiert die Chancen mehrerer Crit-Perks", () => {
     expect(critChanceFor(["D6", "D7", "D8"], { winValue: 12, winStreak: 20 })).toBeCloseTo(0.87);
+  });
+});
+
+describe("Hohe-Karte-Schwelle konsolidiert auf 8 — D3/C2/D7 (#34)", () => {
+  it("D3, C2 und D7 lösen ab Kartenwert 8 aus (und nicht bei 7)", () => {
+    expect(PERK_DEFS.D3.scoreFlat({ winValue: 8 })).toBe(60);
+    expect(PERK_DEFS.D3.scoreFlat({ winValue: 7 })).toBe(0);
+    expect(PERK_DEFS.C2.healOnWin({ winValue: 8 })).toBe(6);
+    expect(PERK_DEFS.C2.healOnWin({ winValue: 7 })).toBe(0);
+    expect(critChanceFor(["D7"], { winValue: 8 })).toBeCloseTo(0.35);
+    expect(critChanceFor(["D7"], { winValue: 7 })).toBe(0);
   });
 });
 

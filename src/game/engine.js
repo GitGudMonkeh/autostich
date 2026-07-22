@@ -131,7 +131,7 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     };
   }
 
-  // Nächste Karte / Durchlauf-Ende (§4.3): 52 Stiche → neu mischen, Mods bleiben
+  // Nächste Karte / Durchlauf-Ende (§4.3): TRICKS_PER_CYCLE (40) Stiche → neu mischen, Mods bleiben
   pos += 1;
   if (pos >= C.TRICKS_PER_CYCLE) {
     cycle += 1;

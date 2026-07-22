@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
+import { TRICKS_PER_CYCLE } from "../game/constants.js";
 
 const BANNER = {
   win:     { text: "GEWONNEN",            color: "#5ab87a" },
@@ -45,7 +46,7 @@ function Side({ label, remaining, dealFrom, children }) {
   );
 }
 
-export function Battlefield({ lastTrick, remaining = 52, flipMs = 1000, lossNotice = null }) {
+export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000, lossNotice = null }) {
   const reduced = usePrefersReducedMotion();
   const t = lastTrick;
   const win = t && (t.result === "win" || t.result === "win_tie");

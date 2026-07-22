@@ -121,7 +121,7 @@ export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], r
           )}
           {ownsD4 && <span className="opacity-45">×3 bei Rang ≤3</span>}
           {showCrit && (<>
-            <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span>{ownsD7 && <span className="opacity-45"> (+35% ≥10)</span>}</span>
+            <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span>{ownsD7 && <span className="opacity-45"> (+35% ≥8)</span>}</span>
             <span><span className="opacity-50">Crit </span><span style={{ color: "#e879f9" }}>×{fmtMult(CRIT_BASE_MULT)}</span></span>
             <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
           </>)}

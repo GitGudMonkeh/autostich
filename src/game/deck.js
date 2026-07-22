@@ -1,6 +1,6 @@
 import { SUIT_ORDER, RANKS } from "./constants.js";
 
-/* Deck-Bau: 4 Farben × Werte 0..12 = 52 Karten.
+/* Deck-Bau: 4 Farben × Werte 1..10 = 40 Karten (#34).
    value    = aktueller Kampfwert (durch Perks dauerhaft veränderbar, §4.2)
    baseRank = ursprünglicher Wert (nur Anzeige/Debug). */
 export function buildDeck() {

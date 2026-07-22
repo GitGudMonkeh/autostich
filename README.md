@@ -23,19 +23,19 @@ mehr Stiche gewinnen … bis die Verluste dein Leben auffressen (Game Over).
 
 **Ziel:** möglichst hoher **Score**, bevor der Lauf endet. Der Reiz liegt im *Deckbau während des Laufs* — nicht im taktischen Ausspielen.
 
-**Zentrale Design-Pointe:** Farben sind im Kampf **rein kosmetisch** — es zählt nur der Zahlenwert. Farbe wird erst relevant, weil ein Deck-Perk (A4) gezielt *eine Farbe* verstärkt. Kartenwerte dürfen **über 12 hinaus** wachsen (kein Cap) — genau das ist die Machtkurve: ab Wert 13 überbietet deine Karte **jede** mögliche Gegnerkarte (Gegner-Maximum ist 12).
+**Zentrale Design-Pointe:** Farben sind im Kampf **rein kosmetisch** — es zählt nur der Zahlenwert. Farbe wird erst relevant, weil ein Deck-Perk (A4) gezielt *eine Farbe* verstärkt. Kartenwerte dürfen **über 10 hinaus** wachsen (kein Cap) — genau das ist die Machtkurve: ab Wert 11 überbietet deine Karte **jede** mögliche Gegnerkarte (Gegner-Maximum ist 10).
 
 ---
 
 ## 2. Deck & Karten
 
-- **52 Karten** = 4 Farben × 13 Werte (**0–12**). Beide Seiten (Spieler + Gegner) haben je ein eigenes 52er-Deck.
+- **40 Karten** = 4 Farben × 10 Werte (**1–10**). Beide Seiten (Spieler + Gegner) haben je ein eigenes 40er-Deck.
 - Farben (`SUITS`, `SUIT_ORDER = ["R","B","G","Y"]`): **Rot `#e0605a` · Blau `#5a8ade` · Grün `#5ab87a` · Gelb `#d4a63a`**. Reine Anzeige, kein Kampfeffekt.
 - **Kartenobjekt:** `{ id, suit, baseRank, value }`
   - `value` = **aktueller Kampfwert** (durch Deck-Perks dauerhaft veränderbar).
   - `baseRank` = Ursprungswert (nur Anzeige — der violette „+X"-Boost = `value − baseRank`).
 - **Kein Wert-Cap** (`VALUE_CAP = null`): Deck-Mods sollen den Gegner-Maximalwert bewusst überbieten können.
-- Der **Gegner** ist neutral: sein Deck bleibt unverändert bei Werten 0–12 (jeder Wert kommt 4× vor). Zu Lauf-Beginn sind beide Decks identisch → viele Gleichstände, ~50/50; mit jedem Deck-Perk kippt die Bilanz zu deinen Gunsten.
+- Der **Gegner** ist neutral: sein Deck bleibt unverändert bei Werten 1–10 (jeder Wert kommt 4× vor). Zu Lauf-Beginn sind beide Decks identisch → viele Gleichstände, ~50/50; mit jedem Deck-Perk kippt die Bilanz zu deinen Gunsten.
 
 ---
 
@@ -85,7 +85,7 @@ Pro Stich wird je Seite die **nächste Karte** aus der gemischten Ziehreihenfolg
 
 ## 5. Deck-Durchlauf (Cycle)
 
-- Nach **52 Stichen** (`TRICKS_PER_CYCLE`) ist ein Durchlauf voll: `pos` → 0, `cycle` +1, **beide Ziehreihenfolgen neu gemischt** (`rng`), `healOnCycle` (C4: +50 Leben) greift, Schild (C5) lädt neu.
+- Nach **40 Stichen** (`TRICKS_PER_CYCLE`, aus der Deckgröße abgeleitet) ist ein Durchlauf voll: `pos` → 0, `cycle` +1, **beide Ziehreihenfolgen neu gemischt** (`rng`), `healOnCycle` (C4: +50 Leben) greift, Schild (C5) lädt neu.
 - **Deck-Wertmods bleiben über Durchläufe erhalten** — die A-Perks sind dauerhaft. Die StatusRail zeigt „Deck bis zum Mischen" (Rest-Karten des laufenden Durchlaufs).
 
 ---
@@ -145,7 +145,7 @@ Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist
 |---|---|---|
 | D1 | Punktebonus | Alle Siege: **+20 %** Score (`×1,2`). |
 | D2 | Siegesserie | **Eskalierende Kombo:** je Sieg in Serie `+0,1×` (Serie 1→×1,1, 5→×1,5, 10→×2,0, 20→×3,0), **ohne Obergrenze**; Reset bei Niederlage. Ab **×1,5** floatet der Kombo-Wert im Battlefield. |
-| D3 | Hohe Karten, hohe Belohnung | Sieg mit Kartenwert **≥10**: +3 Score. |
+| D3 | Hohe Karten, hohe Belohnung | Sieg mit Kartenwert **≥8**: +3 Score. |
 | D4 | Außenseitersieg | Sieg mit Kartenwert **≤3**: **doppelter** Score. |
 | D5 | Zehnter Sieg | Jeder **10.** Sieg: +25 Score. |
 
@@ -226,7 +226,7 @@ src/App.jsx          Autostich — useReducer-State, Effekte (Auto-Play-Takt,
 | `XP_PER_WIN` | 10 | XP je Sieg. |
 | `SCORE_PER_WIN` | 1 | Basispunkt je Sieg (D-Perks skalieren darauf). |
 | `PERKS_OFFERED` | 3 | Perks je Level-Up. |
-| `TRICKS_PER_CYCLE` | 52 | Stiche je Deck-Durchlauf. |
+| `TRICKS_PER_CYCLE` | 40 | Stiche je Deck-Durchlauf (= Deckgröße `SUIT_ORDER × RANKS`, abgeleitet). |
 | `BASE_FLIP_MS` | 2000 | ms je Stich bei 0 % Speed. |
 | `VALUE_CAP` | `null` | Kein Kartenwert-Cap (bewusst). |
 | `GHOST_STEP` | 13 | Geist-Score-Stützstelle alle N Stiche. |
@@ -247,8 +247,8 @@ src/App.jsx          Autostich — useReducer-State, Effekte (Auto-Play-Takt,
 Kein Bug-Report, nur was beim Durchlesen auffällt — als Diskussionsgrundlage:
 
 1. **`initiative` ohne Wirkung.** Wird korrekt geführt, aber nirgends ausgewertet. Entweder eine geplante Mechanik (z. B. wer „anspielt") oder streichbar.
-2. **Gegner rein passiv.** Der Gegner ist eine feste 0–12-Verteilung ohne eigene Progression. Die gesamte Spannung kommt aus deiner Deck-/Stich-Kurve gegen eine Konstante. Mögliche spätere Achse: skalierende Gegner je Durchlauf.
-3. **Leben ≈ sehr großer Puffer.** 2000 Leben / 10 Schaden = 200 Netto-Verluste; mit C-Perks (Heilung/Schild) faktisch unbegrenzt. Der Lauf endet, wenn die Verlustrate die Heilung übersteigt — die Balance hängt stark daran, wie oft man verliert (also wie weit das Deck über 12 gehoben ist).
+2. **Gegner rein passiv.** Der Gegner ist eine feste 1–10-Verteilung ohne eigene Progression. Die gesamte Spannung kommt aus deiner Deck-/Stich-Kurve gegen eine Konstante. Mögliche spätere Achse: skalierende Gegner je Durchlauf.
+3. **Leben ≈ sehr großer Puffer.** 2000 Leben / 10 Schaden = 200 Netto-Verluste; mit C-Perks (Heilung/Schild) faktisch unbegrenzt. Der Lauf endet, wenn die Verlustrate die Heilung übersteigt — die Balance hängt stark daran, wie oft man verliert (also wie weit das Deck über 10 gehoben ist). Zusätzlich eskalieren die Niederlagenkosten zeitbasiert (#32).
 4. **E-Perks (Tempo) konkurrieren mit „echten" Perks.** Da jeder Perk pro Lauf nur einmal kommt und Level-Ups begrenzt sind, ist ein Tempo-Perk ein Opportunitätskosten-Pick (schneller, aber nicht stärker) — bewusst so?
 5. **Score-Skalierung ist multiplikativ stapelbar** (D2 × D4 × D1 …). Bei langen Läufen kann Score sehr schnell explodieren — im Playtest beobachten.
 

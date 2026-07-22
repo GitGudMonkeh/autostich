@@ -55,7 +55,7 @@ export const PERK_DEFS = {
           return bumpWhere(d, (c) => c.suit === s, 2);
         } },
   A5: { id: "A5", cat: "A", label: "Kleine ganz groß",
-        desc: "Vier zufällige Karten mit Wert 0–3 erhalten dauerhaft je +6 Wert.",
+        desc: "Vier zufällige Karten mit Wert 1–3 erhalten dauerhaft je +6 Wert.",
         onPick: (d, rng) => {
           const idx = d.map((c, i) => [c, i]).filter(([c]) => c.value >= 0 && c.value <= 3).map(([, i]) => i);
           const chosen = new Set(shuffle(idx, rng).slice(0, 4)); // bis zu 4 unterschiedliche Karten
@@ -84,8 +84,8 @@ export const PERK_DEFS = {
         desc: "Jeder gewonnene Stich heilt 2 Leben.",
         healOnWin: () => 2 },
   C2: { id: "C2", cat: "C", label: "Triumph",
-        desc: "Ein Sieg mit Kartenwert 10 oder höher heilt 6 Leben.",
-        healOnWin: (ctx) => (ctx.winValue >= 10 ? 6 : 0) },
+        desc: "Ein Sieg mit Kartenwert 8 oder höher heilt 6 Leben.",
+        healOnWin: (ctx) => (ctx.winValue >= C.D3_HIGH_MIN ? 6 : 0) },
   C3: { id: "C3", cat: "C", label: "Panzerung",
         desc: "Verlorene Stiche verursachen 2 weniger Schaden.",
         dmgReduce: () => 2 },
@@ -104,7 +104,7 @@ export const PERK_DEFS = {
         desc: "Jeder aufeinanderfolgende Sieg gibt +10 % Score — eskalierende Kombo, ohne Obergrenze.",
         scoreMult: (ctx) => comboMult(ctx.winStreak) },
   D3: { id: "D3", cat: "D", label: "Hohe Karten, hohe Belohnung",
-        desc: "Siege mit Kartenwert 10+ geben +60 Score.",
+        desc: "Siege mit Kartenwert 8+ geben +60 Score.",
         scoreFlat: (ctx) => (ctx.winValue >= C.D3_HIGH_MIN ? C.D3_BONUS : 0) },
   D4: { id: "D4", cat: "D", label: "Außenseitersieg",
         desc: "Siege mit Kartenwert 3 oder niedriger geben dreifachen Score.",
@@ -118,8 +118,8 @@ export const PERK_DEFS = {
         desc: "+12 % Crit-Chance. Ein Crit verdoppelt den Score des Stichs.",
         critChance: () => 0.12 },
   D7: { id: "D7", cat: "D", label: "Geschärfter Blick",
-        desc: "Siege mit Kartenwert 10+ : +35 % Crit-Chance.",
-        critChance: ({ winValue }) => (winValue >= 10 ? 0.35 : 0) },
+        desc: "Siege mit Kartenwert 8+ : +35 % Crit-Chance.",
+        critChance: ({ winValue }) => (winValue >= C.D3_HIGH_MIN ? 0.35 : 0) },
   D8: { id: "D8", cat: "D", label: "Kritisches Momentum",
         desc: "Jede Stufe der aktuellen Siegesserie: +4 % Crit-Chance (max +40 %).",
         critChance: ({ winStreak }) => Math.min(winStreak * 0.04, 0.40) },
