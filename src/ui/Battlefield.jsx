@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE } from "../game/constants.js";
+import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 
 const BANNER = {
   win:     { text: "GEWONNEN",            color: "#5ab87a" },
@@ -98,7 +99,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
             style={{ left: "50%", top: 0, fontSize: 26, color: critColor, textShadow: `0 0 12px ${critColor}aa`,
                      transform: reduced ? "translateX(-50%)" : undefined,
-                     animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900)}ms ease-out`) }}>
+                     animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900)}ms ease-out forwards`) }}>
             {jackpot ? "JACKPOT" : "KRITISCH"}{reduced ? ` ×${critMultStr}` : "!"}
           </div>
         )}
@@ -116,7 +117,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
 
         <Side label="Du" remaining={remaining} dealFrom="left">{playerCard}</Side>
 
-        <div className="text-2xl opacity-30">vs</div>
+        <img src={swordicon} alt="vs" width={46} height={46} draggable="false"
+             className="crt-vs-icon shrink-0 select-none" style={{ imageRendering: "pixelated" }} />
 
         <Side label="Gegner" remaining={remaining} dealFrom="right">{oppCard}</Side>
 
@@ -124,14 +126,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
             direkt den vollen verdoppelten Score (keine zwei Zahlen). */}
         {win && (t.gained > 0 || t.healed > 0) && (
           <div key={`gain${t.trickNo}`} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
-            style={{ left: 2, top: "40%", animation: fx(`as-float ${clamp(flipMs * 0.7, 320, 700)}ms ease-out`) }}>
+            style={{ left: 2, top: "40%", animation: fx(`as-float ${clamp(flipMs * 0.7, 320, 700)}ms ease-out forwards`) }}>
             {t.gained > 0 && <span style={{ color: isCrit ? critColor : "#d4a63a" }}>+{Math.round(t.gained * 10) / 10}</span>}
             {t.healed > 0 && <span style={{ color: "#5ab87a" }}> +{t.healed}♥</span>}
           </div>
         )}
         {lost && t.dmg > 0 && (
           <div key={`dmg${t.trickNo}`} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
-            style={{ right: 2, top: "40%", color: "#e0605a", animation: fx(`as-float ${clamp(flipMs * 0.7, 320, 700)}ms ease-out`) }}>
+            style={{ right: 2, top: "40%", color: "#e0605a", animation: fx(`as-float ${clamp(flipMs * 0.7, 320, 700)}ms ease-out forwards`) }}>
             −{t.dmg}♥
           </div>
         )}
@@ -140,7 +142,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
         {showCombo && (
           <div key={`combo${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
             style={{ left: 2, top: "62%", fontSize: 20, color: "#e0605a", textShadow: "0 0 10px #e0605a88",
-                     animation: fx(`as-combo ${clamp(flipMs * 0.85, 360, 820)}ms ease-out`) }}>
+                     animation: fx(`as-combo ${clamp(flipMs * 0.85, 360, 820)}ms ease-out forwards`) }}>
             KOMBO ×{comboStr}
           </div>
         )}

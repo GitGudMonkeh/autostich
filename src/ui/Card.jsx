@@ -16,7 +16,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
         borderColor: color,
         width: 104, height: 144, background: "#1c1c22",
         opacity: dim ? 0.35 : 1,
-        boxShadow: glow ? `0 0 0 3px ${glow}66, 0 0 22px ${glow}55` : "none",
+        boxShadow: glow ? `0 0 0 3.45px ${glow}66, 0 0 25.3px ${glow}55` : "none", // +15% (#Gewinn-/Verlust-Glow)
       }}
     >
       <div className="absolute top-1.5 left-2 text-[10px] uppercase tracking-wide" style={{ color }}>
