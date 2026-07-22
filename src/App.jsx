@@ -134,7 +134,11 @@ export function Autostich() {
     recorded.current = false;
     runId.current = Date.now();
     timeBase.current = 0;
-    segStart.current = null;
+    // Segment SOFORT starten (nicht nullen): bei „Neustart" aus einem bereits aktiven Lauf
+    // wechselt `active` true→true, der [active]-Timer-Effekt läuft NICHT erneut → segStart bliebe
+    // null → elapsedMs=0 → Timer/Anti-Infinity (#59) fröre ein (#50). Der ==null-Guard im Effekt
+    // verhindert Doppel-Setzen bei echten false→true-Einstiegen (Menü→Play, GameOver→Neu).
+    segStart.current = Date.now();
     lastDrainInterval.current = 0;
     setDrainNotice(null);
     setPaused(false);
