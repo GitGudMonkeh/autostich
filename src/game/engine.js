@@ -43,7 +43,7 @@ export function resolveTrick(state, rng = Math.random) {
   let {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
-    initiative, lastResult, perks, offer, shieldUsedThisCycle, tieArmed,
+    initiative, lastResult, perks, offer, shield, tieArmed,
     crits, critBonusScore, bestTrickScore,
   } = state;
 
@@ -96,7 +96,8 @@ export function resolveTrick(state, rng = Math.random) {
   } else if (lost) {
     losses += 1; winStreak = 0;
     dmg = Math.max(0, C.DMG_PER_LOSS - sumHook(perks, "dmgReduce", {}));
-    if (ownsFlag(perks, "shieldPerCycle") && !shieldUsedThisCycle) { dmg = 0; shieldUsedThisCycle = true; }
+    // Schild (C5) absorbiert NACH der Schadensberechnung, vor dem Leben.
+    if (shield > 0 && dmg > 0) { const absorbed = Math.min(shield, dmg); shield -= absorbed; dmg -= absorbed; }
     life -= dmg;
     initiative = "opp";
     if (ownsFlag(perks, "winTieAfterLoss")) tieArmed = true;
@@ -120,7 +121,7 @@ export function resolveTrick(state, rng = Math.random) {
       ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
       life: 0, xp, level, score, winStreak, bestStreak, wins, losses, ties,
       crits, critBonusScore, bestTrickScore,
-      initiative, lastResult, offer, shieldUsedThisCycle, tieArmed,
+      initiative, lastResult, offer, shield, tieArmed,
       lastTrick, phase: "gameover",
     };
   }
@@ -132,7 +133,7 @@ export function resolveTrick(state, rng = Math.random) {
     pos = 0;
     const ch = sumHook(perks, "healOnCycle", {});
     if (ch > 0) life = Math.min(maxLife, life + ch);
-    shieldUsedThisCycle = false;
+    shield = perks.reduce((m, id) => Math.max(m, PERK_DEFS[id].shieldPerCycle || 0), 0); // C5: Schild je Durchlauf (kein Stapeln)
     playerOrder = shuffledOrder(deck.length, rng);
     oppOrder = shuffledOrder(oppDeck.length, rng);
   }
@@ -151,7 +152,7 @@ export function resolveTrick(state, rng = Math.random) {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     crits, critBonusScore, bestTrickScore,
-    initiative, lastResult, perks, offer: newOffer, shieldUsedThisCycle, tieArmed,
+    initiative, lastResult, perks, offer: newOffer, shield, tieArmed,
     lastTrick, phase,
   };
 }

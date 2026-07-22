@@ -73,28 +73,37 @@ describe("resolveTrick — Grundausgänge", () => {
 });
 
 describe("resolveTrick — Verteidigungs-Perks", () => {
-  it("C3 Panzerung: Schaden 10 → 9", () => {
+  it("C3 Panzerung: Schaden 10 → 8", () => {
     const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C3"] }), rng);
-    expect(s.life).toBe(91);
+    expect(s.life).toBe(92);
   });
 
-  it("C1 Lebensraub heilt bei Sieg, respektiert maxLife", () => {
-    expect(resolveTrick(scenario(12, 0, { life: 100, perks: ["C1"] }), rng).life).toBe(101);
+  it("C1 Lebensraub heilt 2 bei Sieg, respektiert maxLife", () => {
+    expect(resolveTrick(scenario(12, 0, { life: 100, perks: ["C1"] }), rng).life).toBe(102);
     expect(resolveTrick(scenario(12, 0, { life: 2000, perks: ["C1"] }), rng).life).toBe(2000);
   });
 
-  it("C5 Schutzschild: nur der erste Verlust je Durchlauf kostet nichts", () => {
-    let s = scenario(0, 12, { life: 100, perks: ["C5"] });
-    s = resolveTrick(s, rng);
-    expect(s.life).toBe(100);            // erster Verlust abgeschirmt
-    expect(s.shieldUsedThisCycle).toBe(true);
-    s = resolveTrick(s, rng);
-    expect(s.life).toBe(90);             // zweiter Verlust trifft
+  it("C5 Schutzschild: 50 Schildpunkte absorbieren Schaden vor dem Leben", () => {
+    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C5"], shield: 50 }), rng);
+    expect(s.life).toBe(100);   // Verlust 10 → Schild 50→40
+    expect(s.shield).toBe(40);
   });
 
-  it("B5 Initiative: nach Niederlage wird der nächste Gleichstand zum Sieg", () => {
-    // Deck: Karte 0 verliert, Karte 5 würde unentschieden — gegen Gegner [12, 5]
-    const deck = [{ id: "p0", suit: "R", baseRank: 0, value: 0 }, { id: "p1", suit: "R", baseRank: 5, value: 5 }];
+  it("C5 + Panzerung: erst Schaden reduzieren (−2), dann Schild absorbieren", () => {
+    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C5", "C3"], shield: 50 }), rng);
+    expect(s.shield).toBe(42);  // 10 − 2 = 8 abgezogen
+    expect(s.life).toBe(100);
+  });
+
+  it("C5: Schild wird bei Durchlauf-Ende auf 50 zurückgesetzt", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 51, perks: ["C5"], shield: 10, life: 1000 }), rng);
+    expect(s.cycle).toBe(1);
+    expect(s.shield).toBe(50);
+  });
+
+  it("B5 Initiative: nach Niederlage +2 Kartenwert UND nächsten Gleichstand gewinnen", () => {
+    // Karte 0 verliert; Karte 3 → mit B5-Bonus +2 = 5, unentschieden gegen Gegner 5
+    const deck = [{ id: "p0", suit: "R", baseRank: 0, value: 0 }, { id: "p1", suit: "R", baseRank: 3, value: 3 }];
     const opp = [{ id: "o0", suit: "R", baseRank: 12, value: 12 }, { id: "o1", suit: "R", baseRank: 5, value: 5 }];
     let s = {
       ...initialState(makeRng(1)),
@@ -104,19 +113,20 @@ describe("resolveTrick — Verteidigungs-Perks", () => {
     s = resolveTrick(s, rng); // Verlust → tieArmed
     expect(s.lastResult).toBe("loss");
     expect(s.tieArmed).toBe(true);
-    s = resolveTrick(s, rng); // Gleichstand → durch B5 zum Sieg
+    s = resolveTrick(s, rng); // 3+2=5 → Gleichstand → durch B5 zum Sieg
+    expect(s.lastTrick.pValue).toBe(5); // Kartenbonus +2 wirkt
     expect(s.wins).toBe(1);
     expect(s.tieArmed).toBe(false);
   });
 });
 
 describe("resolveTrick — Score-Perks", () => {
-  it("D1 Punktebonus: +20 %", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D1"] }), rng).score).toBeCloseTo(120);
+  it("D1 Punktebonus: +15 %", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["D1"] }), rng).score).toBeCloseTo(115);
   });
 
-  it("D4 Außenseitersieg: Sieg mit Wert ≤3 → doppelter Score", () => {
-    expect(resolveTrick(scenario(2, 0, { perks: ["D4"] }), rng).score).toBe(200);
+  it("D4 Außenseitersieg: Sieg mit Wert ≤3 → dreifacher Score", () => {
+    expect(resolveTrick(scenario(2, 0, { perks: ["D4"] }), rng).score).toBe(300);
     expect(resolveTrick(scenario(12, 0, { perks: ["D4"] }), rng).score).toBe(100);
   });
 
@@ -138,19 +148,19 @@ describe("resolveTrick — Tempo-Score & Crit (#19)", () => {
   });
 
   it("additive Boni (D5) werden NACH Multiplikatoren + Tempo addiert", () => {
-    // 10. Sieg (wins 9→10) mit D1(+20%) und 100% Tempo: 100*1.2*1.5 + 25 = 205
+    // 10. Sieg (wins 9→10) mit D1(+15%) und 100% Tempo: 100*1.15*1.5 + 300 = 472.5
     const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D5"], speedPct: 100, wins: 9 }), rng);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(205);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(472.5);
   });
 
   it("Crit verdoppelt den vollen scoreBeforeCrit (inkl. Tempo + Boni)", () => {
-    // D9 garantiert Crit beim 10. Sieg; D1 + 100% Tempo: scoreBeforeCrit = 180, ×2 = 360
+    // D9 garantiert Crit beim 10. Sieg; D1 + 100% Tempo: scoreBeforeCrit = 172.5, ×2 = 345
     const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D9"], speedPct: 100, wins: 9 }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(180);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(360);
-    expect(s.lastTrick.critBonus).toBeCloseTo(180);
-    expect(s.score).toBeCloseTo(360);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(172.5);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(345);
+    expect(s.lastTrick.critBonus).toBeCloseTo(172.5);
+    expect(s.score).toBeCloseTo(345);
   });
 
   it("Niederlagen und Gleichstände lösen keinen Crit aus", () => {

@@ -23,7 +23,7 @@ export function initialState(rng = Math.random) {
     lastResult: null,
     perks: [], offer: null,
     speedPct: 0,
-    shieldUsedThisCycle: false,
+    shield: 0,
     tieArmed: false,
     lastTrick: null,
   };
@@ -54,7 +54,10 @@ export function reducer(state, action) {
       const deck = def.onPick ? def.onPick(state.deck, rng) : state.deck; // Kat.-A-Mods sofort dauerhaft
       const perks = [...state.perks, perkId];
       const speedPct = perks.reduce((t, id) => t + (PERK_DEFS[id].speedPct || 0), 0);
-      return { ...state, deck, perks, speedPct, phase: "play", offer: null };
+      // C5: Schild sofort gewähren (sonst erst beim nächsten Durchlauf-Start)
+      const shieldGrant = perks.reduce((m, id) => Math.max(m, PERK_DEFS[id].shieldPerCycle || 0), 0);
+      const shield = Math.max(state.shield || 0, shieldGrant);
+      return { ...state, deck, perks, speedPct, shield, phase: "play", offer: null };
     }
 
     default:

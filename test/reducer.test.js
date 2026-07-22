@@ -26,7 +26,12 @@ describe("Reducer", () => {
 
   it("PICK_PERK für Tempo-Perk erhöht speedPct", () => {
     const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["E2", "A1", "C1"] };
-    expect(reducer(s0, { type: "PICK_PERK", perkId: "E2", rng }).speedPct).toBe(20);
+    expect(reducer(s0, { type: "PICK_PERK", perkId: "E2", rng }).speedPct).toBe(30);
+  });
+
+  it("PICK_PERK für C5 gewährt sofort 50 Schildpunkte", () => {
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["C5", "A1", "D1"] };
+    expect(reducer(s0, { type: "PICK_PERK", perkId: "C5", rng }).shield).toBe(50);
   });
 
   it("PICK_PERK ignoriert Perks außerhalb des Angebots", () => {

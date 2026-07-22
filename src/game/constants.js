@@ -11,13 +11,14 @@ export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 export const TRICKS_PER_CYCLE = 52;     // Karten je Deck-Durchlauf
 
 // Score-Perk-Magnituden (Kategorie D) [TUNING]
-export const D1_BONUS_PCT = 20;   // D1  +20 % Score je Sieg
-export const D2_STEP      = 0.1;  // D2  Siegesserie: +0,1× je Serien-Stufe
+export const D1_BONUS_PCT = 15;   // D1  +15 % Score je Sieg
+export const D2_STEP      = 0.05; // D2  Siegesserie: +5 % je Serien-Stufe …
+export const D2_CAP       = 0.50; // D2  … gedeckelt bei +50 %
 export const D3_HIGH_MIN  = 10;   // D3  „hohe Karte" ab diesem Wert
-export const D3_BONUS     = 3;    // D3  Flat-Bonus
+export const D3_BONUS     = 60;   // D3  Flat-Bonus
 export const D4_LOW_MAX   = 3;    // D4  „Außenseiter" bis zu diesem Wert
-export const D4_MULT      = 2;    // D4  Score-Faktor
-export const D5_BONUS     = 25;   // D5  jeder 10. Sieg: Flat-Bonus
+export const D4_MULT      = 3;    // D4  Score-Faktor
+export const D5_BONUS     = 300;  // D5  jeder 10. Sieg: Flat-Bonus
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

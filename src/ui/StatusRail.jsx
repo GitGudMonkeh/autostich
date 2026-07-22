@@ -21,7 +21,7 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, speedPct, ghost }) {
-  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits } = state;
+  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield } = state;
   const need = xpToNext(level);
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
@@ -38,7 +38,7 @@ export function StatusRail({ state, speedPct, ghost }) {
       {/* Leben */}
       <div>
         <div className="flex justify-between text-xs mb-1">
-          <span className="opacity-60">Leben</span>
+          <span className="opacity-60">Leben {shield > 0 && <span style={{ color: "#5a8ade" }}>· 🛡 {shield}</span>}</span>
           <span className="font-bold" style={{ color: "#5ab87a" }}>{life} / {maxLife}</span>
         </div>
         <div className="relative rounded-full">
