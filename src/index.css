@@ -132,3 +132,23 @@ button { font-family: inherit; }
   from { background-position: 0% center, 0% center; }
   to   { background-position: 0% center, 200% center; }
 }
+
+/* Ambient-Partikel unter Skin (#41-Nachzug). Wird nur gerendert, wenn der Skin an
+   ist (App) und keine reduzierte Bewegung gilt (CrtParticles.jsx). pointer-events:none,
+   dezent vor den Panels (z-index 3, unter Overlays/Modals z-30 und Scanlines z-9999). */
+.crt-particles { position: fixed; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; }
+.crt-particles span {
+  position: absolute; bottom: -10px;
+  background: #b3a8ff; border-radius: 1px;
+  box-shadow: 0 0 6px #8a7de0, 0 0 10px rgba(138,125,224,0.4);
+  animation-name: as-particle-rise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+@keyframes as-particle-rise {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { transform: translateY(-101vh) translateX(var(--drift)); opacity: 0; }
+}

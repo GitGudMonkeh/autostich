@@ -13,6 +13,7 @@ import { PredictionSelect } from "./ui/PredictionSelect.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
+import { CrtParticles } from "./ui/CrtParticles.jsx";
 import { DeckHistogram } from "./ui/BuildSummary.jsx";
 
 export function Autostich() {
@@ -177,6 +178,8 @@ export function Autostich() {
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
           sichtbar (CSS), klick-durchlässig. */}
       <div className="crt-overlay" aria-hidden="true" />
+      {/* Ambient-Partikel — nur unter Skin (rein dekorativ, reduced-motion-gated in der Komponente). */}
+      {options.skin === "crt" && <CrtParticles />}
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)} />

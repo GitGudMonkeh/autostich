@@ -45,8 +45,10 @@ export function recordHighscore(entry) {
 }
 
 /* OPTIONEN (#41) — bewusst als erweiterbares Objekt (künftig Sound, Tempo-Default …).
-   Aktuell nur `skin`: "off" (Default, heutiger Look) | "crt" (Retro-CRT-Skin). */
-const DEFAULT_OPTIONS = { skin: "off" };
+   `skin`: "crt" (Retro-CRT-Skin, jetzt Default) | "off" (schlichter Look).
+   Default = "crt": Erstbesuch zeigt den Skin; wer ihn explizit ausschaltet, behält
+   das dank gespeichertem { skin: "off" } auch nach Reload (loadOptions merged über Default). */
+const DEFAULT_OPTIONS = { skin: "crt" };
 export function loadOptions() {
   try {
     const raw = localStorage.getItem("as_options");
