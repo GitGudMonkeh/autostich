@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE } from "../game/constants.js";
+import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 
 const BANNER = {
   win:     { text: "GEWONNEN",            color: "#5ab87a" },
@@ -116,7 +117,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
 
         <Side label="Du" remaining={remaining} dealFrom="left">{playerCard}</Side>
 
-        <div className="text-2xl opacity-30">vs</div>
+        <img src={swordicon} alt="vs" width={46} height={46} draggable="false"
+             className="crt-vs-icon shrink-0 select-none" style={{ imageRendering: "pixelated" }} />
 
         <Side label="Gegner" remaining={remaining} dealFrom="right">{oppCard}</Side>
 

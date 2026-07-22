@@ -133,6 +133,12 @@ button { font-family: inherit; }
   to   { background-position: 0% center, 200% center; }
 }
 
+/* Gekreuzte-Schwerter-Icon zwischen den Karten (#42): im Default schlicht, unter dem
+   CRT-Skin blaues Neon-Glow passend zur Klingenfarbe. */
+[data-skin="crt"] .crt-vs-icon {
+  filter: drop-shadow(0 0 5px #5a8ade) drop-shadow(0 0 11px rgba(90,138,222,0.55));
+}
+
 /* Ambient-Partikel unter Skin (#41-Nachzug). Wird nur gerendert, wenn der Skin an
    ist (App) und keine reduzierte Bewegung gilt (CrtParticles.jsx). pointer-events:none,
    dezent vor den Panels (z-index 3, unter Overlays/Modals z-30 und Scanlines z-9999). */
