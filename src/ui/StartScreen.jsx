@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { AnleitungModal } from "./AnleitungModal.jsx";
 import { CardLogo } from "./CardLogo.jsx";
+import { GlobalLeaderboard } from "./GlobalLeaderboard.jsx";
 
 /* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste. */
-export function StartScreen({ onStart, highscores, best, onOptions }) {
+export function StartScreen({ onStart, highscores, best, onOptions, username = "", onEditName, myEntry = null, pubToken = 0 }) {
   const [showGuide, setShowGuide] = useState(false);
 
   // Beim allerersten Start die Anleitung einmal automatisch zeigen (#12).
@@ -54,9 +55,18 @@ export function StartScreen({ onStart, highscores, best, onOptions }) {
         )}
       </div>
 
+      {/* Lokaler Nickname (#14) — jederzeit editierbar; hängt an globalen Einträgen. */}
+      {onEditName && (
+        <button onClick={onEditName} className="text-xs opacity-60 hover:opacity-100 transition-opacity">
+          {username
+            ? <>Angemeldet als <b style={{ color: "#5ab87a" }}>{username}</b> · Name ändern</>
+            : <>Namen festlegen für den globalen Highscore</>}
+        </button>
+      )}
+
       <div className="w-full max-w-sm rounded-xl p-4 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] uppercase tracking-wide opacity-50">Highscore</span>
+          <span className="text-[11px] uppercase tracking-wide opacity-50">Deine Läufe</span>
           <span className="text-sm font-bold" style={{ color: "#d4a63a" }}>
             Rekord {best.toLocaleString("de-DE")}
           </span>
@@ -75,6 +85,10 @@ export function StartScreen({ onStart, highscores, best, onOptions }) {
           </div>
         )}
       </div>
+
+      {/* Globaler Highscore (#14) — additiv unter dem lokalen Block; blendet sich ohne
+          Config/offline lautlos aus. Der lokale Block oben bleibt immer sichtbar. */}
+      <GlobalLeaderboard framed mine={myEntry} reloadToken={pubToken} />
 
       {showGuide && <AnleitungModal onClose={closeGuide} />}
     </div>

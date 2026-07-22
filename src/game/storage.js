@@ -21,6 +21,14 @@ export function saveGhost(traj, total) {
   try { localStorage.setItem("as_ghost", JSON.stringify({ traj, total, step: GHOST_STEP })); } catch (e) {}
 }
 
+/* Lokaler Nickname (#14) — hängt an globalen Highscore-Einträgen. Leer ⇒ „erster Start". */
+export function loadUsername() {
+  try { return localStorage.getItem("as_username") || ""; } catch (e) { return ""; }
+}
+export function saveUsername(name) {
+  try { localStorage.setItem("as_username", name); } catch (e) {}
+}
+
 /* Lokale Highscore-Liste (Top 5) — getrennt vom Geist.
    Eintrag: { score, level, tricks, cycles, ts }. */
 export function loadHighscores() {
