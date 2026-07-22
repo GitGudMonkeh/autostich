@@ -1,7 +1,7 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
-import { PERK_DEFS } from "./perks.js";
+import { PERK_DEFS, buildOffer } from "./perks.js";
 import { resolveTrick } from "./engine.js";
-import { START_LIFE, PREDICTION_MIN, PREDICTION_MAX } from "./constants.js";
+import { START_LIFE, PREDICTION_MIN, PREDICTION_MAX, PERKS_OFFERED } from "./constants.js";
 
 /* Reiner Reducer — Determinismus-Invariante: kein Math.random / Date hier drin.
    Zufall kommt als Action-Payload (rng), siehe App.jsx. Phasen:
@@ -27,6 +27,7 @@ export function initialState(rng = Math.random) {
     initiative: "player",
     lastResult: null,
     perks: [], offer: null,
+    pendingLevelUps: 0, // #57: noch ausstehende Level-Up-Angebote (Mehrfach-Level-Up-Queue)
     speedPct: 0,
     shield: 0,
     tieArmed: false,
@@ -86,9 +87,18 @@ export function reducer(state, action) {
       // C5: Schild sofort gewähren (sonst erst beim nächsten Durchlauf-Start)
       const shieldGrant = perks.reduce((m, id) => Math.max(m, PERK_DEFS[id].shieldPerCycle || 0), 0);
       const shield = Math.max(state.shield || 0, shieldGrant);
+      // #57: noch ausstehende Level-Ups? → nächstes Angebot mit dem NEUEN Build zeigen (sonst würde
+      // ein Mehrfach-Level-Up bei künftigem Tuning ein Angebot still verschlucken).
+      let pending = state.pendingLevelUps || 0;
+      if (pending > 0) {
+        const off = buildOffer(perks, rng, PERKS_OFFERED, state.level);
+        if (off.length > 0)
+          return { ...state, deck, perks, speedPct, shield, phase: "levelup", offer: off, pendingLevelUps: pending - 1 };
+        // Pool leer → keine weiteren Angebote möglich; restliche Level-Ups verfallen.
+      }
       // Nach der Perk-Wahl: war ein Durchlauf-Ende fällig (#36), weiter in die Ansage-Phase, sonst play.
       const phase = state.predictionDue ? "prediction" : "play";
-      return { ...state, deck, perks, speedPct, shield, phase, offer: null };
+      return { ...state, deck, perks, speedPct, shield, phase, offer: null, pendingLevelUps: 0 };
     }
 
     default:

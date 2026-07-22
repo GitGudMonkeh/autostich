@@ -54,7 +54,7 @@ export function Autostich() {
   const active = state.phase === "play" && !paused && !showOptions;
   // Effektive Flip-Zeit: Basis / (1+Speed) / Turbo (1×/2×/3×). Beschleunigt nur Ablauf + Animation,
   // NICHT den Score (speedPct/tempoScoreMult bleiben unberührt → kein Cheesen).
-  const flipMs = (BASE_FLIP_MS / (1 + state.speedPct / 100)) / speedMult;
+  const flipMs = (BASE_FLIP_MS / (1 + (state.speedPct || 0) / 100)) / speedMult; // #55: speedPct fehlt im Menü → NaN vermeiden
 
   useEffect(() => {
     const g = loadGhost();

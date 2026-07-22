@@ -119,3 +119,21 @@ describe("LIFE_DRAIN — periodischer Zeit-Abzug (#59)", () => {
     expect(reducer(lvl, { type: "LIFE_DRAIN", amount: 20 }).life).toBe(100);
   });
 });
+
+describe("Level-Up-Queue — PICK_PERK (#57)", () => {
+  it("bei pendingLevelUps > 0 folgt ein weiteres Angebot mit dem neuen Build", () => {
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", level: 4, offer: ["A1", "C1", "E2"], pendingLevelUps: 2 };
+    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "A1", rng });
+    expect(s1.perks).toEqual(["A1"]);
+    expect(s1.phase).toBe("levelup");
+    expect(s1.offer.length).toBeGreaterThan(0);
+    expect(s1.pendingLevelUps).toBe(1);
+  });
+  it("letztes Level-Up (pendingLevelUps 0) → zurück in play, offer null", () => {
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", level: 4, offer: ["A1", "C1", "E2"], pendingLevelUps: 0 };
+    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "A1", rng });
+    expect(s1.phase).toBe("play");
+    expect(s1.offer).toBeNull();
+    expect(s1.pendingLevelUps).toBe(0);
+  });
+});
