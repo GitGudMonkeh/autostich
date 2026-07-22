@@ -1,6 +1,6 @@
 import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
 
-export function GameOver({ state, highscores, isRecord, onRestart }) {
+export function GameOver({ state, highscores, isRecord, timeStr, onRestart }) {
   const score = Math.floor(state.score);
   return (
     <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
@@ -8,7 +8,7 @@ export function GameOver({ state, highscores, isRecord, onRestart }) {
         <div className="text-center">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>Lauf beendet</div>
           <div className="text-5xl font-bold mt-2" style={{ color: "#d4a63a" }}>{score.toLocaleString("de-DE")}</div>
-          <div className="text-sm opacity-60 mt-1">Score</div>
+          <div className="text-sm opacity-60 mt-1">Score{timeStr ? ` · ${timeStr}` : ""}</div>
           {isRecord && <div className="mt-2 text-sm font-bold" style={{ color: "#8a7de0" }}>★ Neuer Rekord!</div>}
         </div>
 

@@ -35,3 +35,10 @@ export function shuffledOrder(n, rng = Math.random) {
   return shuffle(Array.from({ length: n }, (_, i) => i), rng);
 }
 export const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+
+// ms → "m:ss" (Run-Timer, #10).
+export function fmtDuration(ms) {
+  if (ms < 0) ms = 0;
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
