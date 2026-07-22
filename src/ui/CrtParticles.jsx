@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
    rein dekorativ (pointer-events:none). Wird nur gerendert, wenn der Skin an ist
    (App entscheidet) UND keine reduzierte Bewegung gewünscht ist. Positionen sind
    index-abgeleitet → kein Math.random, kein Re-Render-Jitter, stabile Keys. */
-const COUNT = 26;
+const COUNT = 42;
 const PARTICLES = Array.from({ length: COUNT }, (_, i) => ({
   i,
   left: (i * 37 + 3) % 100,           // über die Breite verteilt
@@ -12,7 +12,7 @@ const PARTICLES = Array.from({ length: COUNT }, (_, i) => ({
   dur: 10 + (i % 8),                  // 10–17 s Aufstieg
   delay: -((i * 2.3) % 16),           // negativ → schon mitten im Flug (kein Leer-Start)
   drift: (i % 2 ? 1 : -1) * (8 + (i % 4) * 6), // leichte Seitwärts-Drift
-  opacity: 0.22 + (i % 4) * 0.1,      // 0,22–0,52
+  opacity: 0.3 + (i % 4) * 0.12,      // 0,30–0,66 (dahinter durch die Panels gedämpft)
 }));
 
 function usePrefersReducedMotion() {
