@@ -15,6 +15,7 @@ export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
   const [auto, setAuto] = useState(true);
   const [paused, setPaused] = useState(false);
+  const [turbo, setTurbo] = useState(false); // 2×-Ablaufbeschleunigung (#27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
@@ -30,6 +31,9 @@ export function Autostich() {
   const timeBase = useRef(0);
   const segStart = useRef(null);
   const active = state.phase === "play" && !paused;
+  // Effektive Flip-Zeit: Basis / (1+Speed) / Turbo. Turbo (#27) beschleunigt nur Ablauf + Animation,
+  // NICHT den Score (speedPct/tempoScoreMult bleiben unberührt → kein Cheesen).
+  const flipMs = (BASE_FLIP_MS / (1 + state.speedPct / 100)) / (turbo ? 2 : 1);
 
   useEffect(() => {
     const g = loadGhost();
@@ -55,10 +59,9 @@ export function Autostich() {
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
     if (state.phase !== "play" || !auto || paused) return;
-    const interval = BASE_FLIP_MS / (1 + state.speedPct / 100);
-    const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), interval);
+    const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs);
     return () => clearTimeout(id);
-  }, [state.phase, state.trickNo, auto, paused, state.speedPct]);
+  }, [state.phase, state.trickNo, auto, paused, state.speedPct, turbo]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -143,13 +146,13 @@ export function Autostich() {
           <Controls
             auto={auto} onToggleAuto={() => setAuto((a) => !a)}
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
+            turbo={turbo} onToggleTurbo={() => setTurbo((t) => !t)}
             onNext={next} onRestart={startRun} onAbort={toMenu} canNext={state.phase === "play" && !paused}
           />
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
-              <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos}
-                flipMs={BASE_FLIP_MS / (1 + state.speedPct / 100)} />
+              <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} />
               <BuildPanel perks={state.perks} deck={state.deck} />
             </div>
             <StatusRail state={state} speedPct={state.speedPct} ghost={ghost} />
