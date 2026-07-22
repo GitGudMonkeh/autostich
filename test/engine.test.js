@@ -404,3 +404,15 @@ describe("Level-Up-Queue (#57)", () => {
     expect(s.pendingLevelUps).toBe(0);
   });
 });
+
+describe("Seltene Perks — Engine (#71)", () => {
+  it("D11 Kritische Heilung: Crit heilt +5 (via D9-Garantie-Crit beim 10. Sieg)", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9", "D11"], wins: 9, life: 100, maxLife: 2000 }), rng);
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.lastTrick.healed).toBe(5);
+    expect(s.life).toBe(105);
+  });
+  it("E7 Kontrollverlust: +1 Zusatzschaden bei Niederlage", () => {
+    expect(resolveTrick(scenario(0, 12, { perks: ["E7"], life: 100 }), rng).life).toBe(89); // 10+1
+  });
+});

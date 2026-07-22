@@ -103,6 +103,37 @@ export const PERK_DEFS = {
         desc: "Unter 50 % Leben −1 Schaden bei Niederlagen; bei 25 % oder weniger insgesamt −2.",
         dmgReduce: ({ life, maxLife }) => (maxLife > 0 && life / maxLife <= 0.25 ? 2 : maxLife > 0 && life / maxLife < 0.5 ? 1 : 0) },
 
+  // ---- Seltene Perks (#71, Phase 2a) — rarity: "rare"; reine Hooks über bestehende Kontexte ----
+  A9: { id: "A9", cat: "A", rarity: "rare", label: "Farbduell",
+        desc: "Eine zufällige Farbe erhält dauerhaft +3 Wert, eine andere zufällige Farbe −1 Wert.",
+        onPick: (d, rng) => {
+          const s = shuffle(SUIT_ORDER, rng); const up = s[0], down = s[1];
+          return d.map((c) => (c.suit === up ? { ...c, value: c.value + 3 }
+            : c.suit === down ? { ...c, value: Math.max(0, c.value - 1) } : c));
+        } },
+  A10: { id: "A10", cat: "A", rarity: "rare", label: "Verdichtung",
+        desc: "Alle Karten, deren aktueller Wert mehrfach im Deck vorkommt, erhalten dauerhaft +1 Wert.",
+        onPick: (d) => {
+          const cnt = {}; for (const c of d) cnt[c.value] = (cnt[c.value] || 0) + 1;
+          return d.map((c) => (cnt[c.value] > 1 ? { ...c, value: c.value + 1 } : c));
+        } },
+  D10: { id: "D10", cat: "D", rarity: "rare", label: "Übermacht",
+        desc: "Siege mit mindestens 8 Wertpunkten Vorsprung geben ×2 Score.",
+        scoreMult: (ctx) => (ctx.margin >= 8 ? 2 : 1) },
+  D11: { id: "D11", cat: "D", rarity: "rare", label: "Kritische Heilung",
+        desc: "Jeder Crit heilt 5 Leben.",
+        healOnCrit: () => 5 },
+  E6: { id: "E6", cat: "E", rarity: "rare", label: "Drehzahl",
+        desc: "Je 30 % permanentes Tempo +5 % Crit-Chance (150 % → +25 %).",
+        critChance: (ctx) => Math.floor((ctx.speedPct || 0) / 30) * 0.05 },
+  E7: { id: "E7", cat: "E", rarity: "rare", label: "Kontrollverlust",
+        desc: "Ab 100 % Tempo +30 % Score. Niederlagen verursachen +1 Schaden.",
+        scoreMult: (ctx) => ((ctx.speedPct || 0) >= 100 ? 1.3 : 1),
+        extraDamageTaken: () => 1 },
+  E8: { id: "E8", cat: "E", rarity: "rare", label: "Schnellschuss",
+        desc: "Jeder zehnte Stich gibt bei einem Sieg +150 Score.",
+        scoreFlat: (ctx) => (ctx.trickNo % 10 === 0 ? 150 : 0) },
+
   // ---- B: Stich-Effekte (Wert-Bonus auf die aktuelle Karte) ----
   B1: { id: "B1", cat: "B", label: "Gegenangriff",
         desc: "Nach einem verlorenen Stich erhält die nächste Karte +2 Wert.",

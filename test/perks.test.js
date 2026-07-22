@@ -235,3 +235,42 @@ describe("Durchbruch (B7) — sinceWin-Zähler in der Engine (#71)", () => {
     expect(effectivePlayerValue(3, ["B7"], { sinceWin: 4 })).toBe(3);
   });
 });
+
+describe("Seltene Perks (#71, Phase 2a)", () => {
+  const sumV = (d) => d.reduce((s, c) => s + c.value, 0);
+  it("A9 Farbduell: eine Farbe +3, eine −1 → netto +20", () => {
+    expect(sumV(PERK_DEFS.A9.onPick(buildDeck(), makeRng(2))) - sumV(buildDeck())).toBe(20);
+  });
+  it("A10 Verdichtung: im frischen Deck kommt jeder Wert 4× vor → alle +1 (+40)", () => {
+    expect(sumV(PERK_DEFS.A10.onPick(buildDeck())) - sumV(buildDeck())).toBe(40);
+  });
+  it("D10 Übermacht: ×2 ab 8 Wertpunkten Vorsprung, sonst ×1", () => {
+    expect(PERK_DEFS.D10.scoreMult({ margin: 8 })).toBe(2);
+    expect(PERK_DEFS.D10.scoreMult({ margin: 7 })).toBe(1);
+  });
+  it("D11 Kritische Heilung: healOnCrit = 5", () => {
+    expect(PERK_DEFS.D11.healOnCrit()).toBe(5);
+  });
+  it("E6 Drehzahl: +5 % Crit je 30 % permanentes Tempo", () => {
+    expect(PERK_DEFS.E6.critChance({ speedPct: 150 })).toBeCloseTo(0.25);
+    expect(PERK_DEFS.E6.critChance({ speedPct: 90 })).toBeCloseTo(0.15);
+    expect(PERK_DEFS.E6.critChance({ speedPct: 29 })).toBe(0);
+  });
+  it("E7 Kontrollverlust: ×1,3 ab 100 % Tempo + 1 Zusatzschaden", () => {
+    expect(PERK_DEFS.E7.scoreMult({ speedPct: 100 })).toBe(1.3);
+    expect(PERK_DEFS.E7.scoreMult({ speedPct: 90 })).toBe(1);
+    expect(PERK_DEFS.E7.extraDamageTaken()).toBe(1);
+  });
+  it("E8 Schnellschuss: +150 auf jeden 10. Stich", () => {
+    expect(PERK_DEFS.E8.scoreFlat({ trickNo: 10 })).toBe(150);
+    expect(PERK_DEFS.E8.scoreFlat({ trickNo: 11 })).toBe(0);
+  });
+  it("Rares erscheinen erst ab RARE_MIN_LEVEL (2)", () => {
+    const rares = PERK_LIST.filter((p) => p.rarity === "rare").map((p) => p.id);
+    const owned = PERK_LIST.filter((p) => !rares.includes(p.id)).map((p) => p.id); // nur Rares übrig
+    expect(buildOffer(owned, makeRng(3), 3, 1)).toHaveLength(0);           // Level 1 < 2 → keine Rares
+    const off = buildOffer(owned, makeRng(3), 3, 2);                       // ab Level 2 → Rares
+    expect(off.length).toBeGreaterThan(0);
+    expect(off.every((id) => PERK_DEFS[id].rarity === "rare")).toBe(true);
+  });
+});
