@@ -1,6 +1,6 @@
 import { xpToNext } from "../game/leveling.js";
 import { TRICKS_PER_CYCLE, TEMPO_SCORE_FACTOR, CRIT_BASE_MULT } from "../game/constants.js";
-import { critChanceFor, hasCritPerk } from "../game/perks.js";
+import { critChanceFor, hasCritPerk, scoreMultFor } from "../game/perks.js";
 
 function Bar({ value, max, color, height = 8 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
@@ -26,9 +26,13 @@ export function StatusRail({ state, speedPct, ghost }) {
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
-  // Tempo-Score + Crit (#19)
+  // Tempo-Score + Crit (#19) + Gesamt-Score-Multiplikator (#23)
   const tempoScoreMult = 1 + speedPct * TEMPO_SCORE_FACTOR;
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
+  // Basis-Multiplikator = immer aktive Faktoren: D1, D2 (aktuelle Serie) × Tempo.
+  // winValue hoch gesetzt → das bedingte D4 (×3 bei ≤3) bleibt hier ausgeblendet.
+  const baseScoreMult = scoreMultFor(perks, { winStreak: winStreak + 1, winValue: 99, wins: wins + 1, trickNo, posInCycle: pos }) * tempoScoreMult;
+  const ownsD4 = perks.includes("D4");
   const showCrit = hasCritPerk(perks) || (crits || 0) > 0;
   const baseCritPct = Math.round(critChanceFor(perks, { winValue: 0, winStreak: 0, wins: 0, trickNo: 0, posInCycle: 0, speedPct }) * 100);
   // Leben-Balken bei Schaden/Heilung kurz aufblitzen (#15).
@@ -77,12 +81,13 @@ export function StatusRail({ state, speedPct, ghost }) {
         </div>
         <Bar value={remaining} max={TRICKS_PER_CYCLE} color="#5a8ade" height={6} />
       </div>
-      {/* Tempo-Score & Crit (#19) */}
-      {(speedPct > 0 || showCrit) && (
+      {/* Score-Multiplikator, Tempo & Crit (#19/#23) */}
+      {(baseScoreMult > 1.001 || showCrit) && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
-          {speedPct > 0 && (
-            <span><span className="opacity-50">Tempo-Score </span><span style={{ color: "#d4a63a" }}>×{fmtMult(tempoScoreMult)}</span></span>
+          {baseScoreMult > 1.001 && (
+            <span title="D1 + Siegesserie + Tempo (aktuelle Serie)"><span className="opacity-50">Score </span><span style={{ color: "#d4a63a" }}>×{fmtMult(baseScoreMult)}</span></span>
           )}
+          {ownsD4 && <span className="opacity-45">×3 bei Rang ≤3</span>}
           {showCrit && (<>
             <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{baseCritPct}%</span></span>
             <span><span className="opacity-50">Crit </span><span style={{ color: "#e879f9" }}>×{fmtMult(CRIT_BASE_MULT)}</span></span>

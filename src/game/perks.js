@@ -148,3 +148,9 @@ export function critChanceFor(perks, ctx) {
 export function hasCritPerk(perks) {
   return perks.some((id) => PERK_DEFS[id].critChance || PERK_DEFS[id].guaranteedCrit);
 }
+// Produkt der scoreMult-Perks für einen Kontext (für Live-Anzeige des Score-Multiplikators, #23).
+export function scoreMultFor(perks, ctx) {
+  let m = 1;
+  for (const id of perks) { const f = PERK_DEFS[id].scoreMult; if (f) m *= f(ctx); }
+  return m;
+}
