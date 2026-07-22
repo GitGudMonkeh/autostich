@@ -1,3 +1,5 @@
+import { useEscape } from "./useEscape.js";
+
 /* Schnellstart-Anleitung (#12): erklärt den grundsätzlichen Spielablauf.
    Erreichbar über den Startbildschirm; beim allerersten Start einmal automatisch. */
 const ITEMS = [
@@ -7,13 +9,14 @@ const ITEMS = [
   ["✨", "Perks bei Level-Up", "Siege geben XP. Bei jedem Level-Up pausiert das Spiel und du wählst einen Perk — dein Deck wird dauerhaft stärker."],
   ["🔁", "Deck-Durchlauf", "Nach 40 Stichen wird neu gemischt. Deine dauerhaften Kartenwert-Änderungen bleiben erhalten."],
   ["🎯", "Ansage", "Nach dem ersten Deck-Durchlauf schätzt du vor jeder neuen Runde, wie viele der 40 Stiche du gewinnst. Je genauer, desto größer der Score-Bonus — ein exakter Treffer verdreifacht den Rundenscore."],
-  ["⏯️", "Steuerung", "Auto-Play läuft von allein — oder Manuell Stich für Stich. Mit Pause hältst du an; das Tempo steigt über Tempo-Perks."],
+  ["⏯️", "Steuerung", "Auto-Play läuft von allein. Mit Pause hältst du an; das Tempo steigt über Tempo-Perks (und 2×/3× im Ablauf)."],
 ];
 
 export function AnleitungModal({ onClose }) {
+  useEscape(onClose); // #58: Escape schließt (Backdrop unten)
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ background: "#181820", border: "1px solid #33333e" }}>
+    <div onClick={onClose} className="fixed inset-0 z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ background: "#181820", border: "1px solid #33333e" }}>
         <div className="text-center mb-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Anleitung</div>
           <h2 className="text-xl font-bold mt-1">So funktioniert Autostich</h2>

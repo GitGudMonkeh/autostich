@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEscape } from "./useEscape.js";
 
 /* Lokaler Nickname (#14): dient der Ersteinrichtung (beim ersten Start) und dem
    späteren Ändern. Minimal validiert — nur Trim + Länge 1–20; keine Eindeutigkeit,
@@ -9,6 +10,7 @@ export function UsernameModal({ initial = "", firstTime = false, onSave, onClose
   const [name, setName] = useState(initial);
   const trimmed = name.trim();
   const submit = () => { if (trimmed) onSave(trimmed.slice(0, MAX)); };
+  useEscape(onClose); // #58: Escape schließt (Backdrop existiert bereits)
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-40 flex items-center justify-center p-4"

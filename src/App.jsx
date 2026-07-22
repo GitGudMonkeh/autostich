@@ -91,7 +91,9 @@ export function Autostich() {
     if (state.phase !== "play" || paused || showOptions) return;
     const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs);
     return () => clearTimeout(id);
-  }, [state.phase, state.trickNo, paused, showOptions, state.speedPct, speedMult]);
+    // #56: flipMs direkt (statt seiner Einzel-Eingaben speedPct/speedMult) → Deps veralten nicht,
+    // falls flipMs künftig von weiteren Variablen abhängt.
+  }, [state.phase, state.trickNo, paused, showOptions, flipMs]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {

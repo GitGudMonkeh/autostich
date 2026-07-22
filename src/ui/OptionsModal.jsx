@@ -1,3 +1,5 @@
+import { useEscape } from "./useEscape.js";
+
 /* Optionen-Overlay (#41): erreichbar aus dem Menü UND im laufenden Run (dort pausiert
    der Lauf, solange offen). Bewusst erweiterbar — künftig Sound, Tempo-Default etc.
    Erste Option: der CRT-/Pixel-Skin-Toggle. */
@@ -43,9 +45,10 @@ function Row({ title, desc, children }) {
 
 export function OptionsModal({ options, onChange, onClose }) {
   const crtOn = options.skin === "crt";
+  useEscape(onClose); // #58: Escape schließt (Backdrop unten)
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ background: "#181820", border: "1px solid #33333e" }}>
+    <div onClick={onClose} className="fixed inset-0 z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ background: "#181820", border: "1px solid #33333e" }}>
         <div className="text-center mb-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Optionen</div>
           <h2 className="text-xl font-bold mt-1 font-pixel crt-title">Einstellungen</h2>
