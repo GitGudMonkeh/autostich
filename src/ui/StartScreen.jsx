@@ -1,5 +1,19 @@
-/* Startbildschirm (#4): Einstieg mit „Neuer Run" und lokaler Bestenliste. */
+import { useState, useEffect } from "react";
+import { AnleitungModal } from "./AnleitungModal.jsx";
+
+/* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste. */
 export function StartScreen({ onStart, highscores, best }) {
+  const [showGuide, setShowGuide] = useState(false);
+
+  // Beim allerersten Start die Anleitung einmal automatisch zeigen (#12).
+  useEffect(() => {
+    try { if (!localStorage.getItem("as_seen_guide")) setShowGuide(true); } catch (e) {}
+  }, []);
+  const closeGuide = () => {
+    setShowGuide(false);
+    try { localStorage.setItem("as_seen_guide", "1"); } catch (e) {}
+  };
+
   return (
     <div className="grid gap-5 justify-items-center py-10">
       <div className="text-center">
@@ -9,13 +23,22 @@ export function StartScreen({ onStart, highscores, best }) {
         <p className="text-sm opacity-45 mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
       </div>
 
-      <button
-        onClick={onStart}
-        className="px-8 py-3 rounded-xl text-lg font-bold transition-all hover:-translate-y-0.5"
-        style={{ background: "#5ab87a", color: "#141419" }}
-      >
-        ▶ Neuer Run
-      </button>
+      <div className="flex flex-wrap gap-3 justify-center">
+        <button
+          onClick={onStart}
+          className="px-8 py-3 rounded-xl text-lg font-bold transition-all hover:-translate-y-0.5"
+          style={{ background: "#5ab87a", color: "#141419" }}
+        >
+          ▶ Neuer Run
+        </button>
+        <button
+          onClick={() => setShowGuide(true)}
+          className="px-6 py-3 rounded-xl text-lg font-semibold transition-all"
+          style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
+        >
+          Anleitung
+        </button>
+      </div>
 
       <div className="w-full max-w-sm rounded-xl p-4" style={{ background: "#17171c", border: "1px solid #26262e" }}>
         <div className="flex items-center justify-between mb-2">
@@ -38,6 +61,8 @@ export function StartScreen({ onStart, highscores, best }) {
           </div>
         )}
       </div>
+
+      {showGuide && <AnleitungModal onClose={closeGuide} />}
     </div>
   );
 }
