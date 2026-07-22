@@ -185,11 +185,15 @@ export function resolveTrick(state, rng = Math.random) {
   // nach der Perk-Wahl geht PICK_PERK bei predictionDue weiter in die Ansage-Phase (#36).
   let phase = "play";
   let newOffer = offer;
-  let leveled = false;
-  while (xp >= xpToNext(level)) { xp -= xpToNext(level); level += 1; leveled = true; }
-  if (leveled) {
+  // #57: mehrere Level-Ups in einem Stich als Queue — für den ERSTEN ein Angebot bauen, die
+  // restlichen bleiben als pendingLevelUps und werden nach jedem PICK_PERK nachgezogen (sonst
+  // würde bei künftigem Tuning ein übersprungenes Level still verschluckt).
+  let pendingLevelUps = 0;
+  while (xp >= xpToNext(level)) { xp -= xpToNext(level); level += 1; pendingLevelUps += 1; }
+  if (pendingLevelUps > 0) {
     const off = buildOffer(perks, rng, C.PERKS_OFFERED, level); // Level-Gate für Legendaries (#33)
-    if (off.length > 0) { phase = "levelup"; newOffer = off; } // Pool leer → keine Pause
+    if (off.length > 0) { phase = "levelup"; newOffer = off; pendingLevelUps -= 1; } // dieses Angebot zeigen
+    else pendingLevelUps = 0; // Pool leer → keine Pause; restliche Level-Ups verfallen (kein Angebot möglich)
   }
   if (phase === "play" && predictionDue) phase = "prediction"; // kein Level-Up → direkt Ansage
 
@@ -199,7 +203,7 @@ export function resolveTrick(state, rng = Math.random) {
     predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus, predictionDue,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     crits, critBonusScore, bestTrickScore, legendaryCritBonus,
-    initiative, lastResult, perks, offer: newOffer, shield, tieArmed,
+    initiative, lastResult, perks, offer: newOffer, shield, tieArmed, pendingLevelUps,
     lastTrick, phase,
   };
 }

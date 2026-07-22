@@ -387,3 +387,20 @@ describe("resolveTrick — Zyklus & Level-Up", () => {
     expect(run(5)).toBe(run(5));
   });
 });
+
+describe("Level-Up-Queue (#57)", () => {
+  it("mehrere Level-Ups in einem Stich: erstes Angebot + Rest als pendingLevelUps", () => {
+    // xp 500 (+10 Sieg = 510) überspringt L1→L4 (100+120+150). Ein Angebot wird gezeigt, 2 bleiben in der Queue.
+    const s = resolveTrick(scenario(12, 0, { xp: 500, level: 1 }), rng);
+    expect(s.level).toBe(4);
+    expect(s.phase).toBe("levelup");
+    expect(s.offer.length).toBeGreaterThan(0);
+    expect(s.pendingLevelUps).toBe(2);
+  });
+  it("einzelnes Level-Up: pendingLevelUps bleibt 0", () => {
+    const s = resolveTrick(scenario(12, 0, { xp: 95, level: 1 }), rng);
+    expect(s.level).toBe(2);
+    expect(s.phase).toBe("levelup");
+    expect(s.pendingLevelUps).toBe(0);
+  });
+});
