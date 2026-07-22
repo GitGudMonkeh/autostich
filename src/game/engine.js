@@ -45,7 +45,7 @@ export function resolveTrick(state, rng = Math.random) {
   let {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
-    initiative, lastResult, perks, offer, shield, tieArmed,
+    initiative, lastResult, perks, offer, shield, tieArmed, sinceWin = 0,
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
     // Ansage-System (#36)
     cycleWins = 0, cycleBaseScore = 0, prediction = null, lastPrediction = null,
@@ -63,6 +63,7 @@ export function resolveTrick(state, rng = Math.random) {
     lastResult,
     lostLastTrick: lastResult === "loss",
     winStreak,
+    sinceWin, // #71 Durchbruch: Stiche ohne Sieg (Stand VOR diesem Stich)
     life, maxLife, // L3 „Letztes Aufbäumen": cardBonus prüft das Leben-Verhältnis VOR der Auflösung
   };
   const pValue = effectivePlayerValue(pCard.value, perks, ctx);
@@ -82,7 +83,7 @@ export function resolveTrick(state, rng = Math.random) {
     winStreak += 1; wins += 1; cycleWins += 1; // cycleWins: Siege im laufenden Durchlauf (#36)
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
-    const wctx = { winValue: pValue, winStreak, wins, trickNo, posInCycle: pos, speedPct: state.speedPct || 0 };
+    const wctx = { winValue: pValue, margin: pValue - oValue, winStreak, wins, trickNo, posInCycle: pos, speedPct: state.speedPct || 0 };
     // Score: Basis-Serien-Mult (#39, immer) × Perk-Multiplikatoren × Tempo, DANN additive Boni (D3/D5), DANN Crit.
     const tempoScoreMult = tempoScoreMultFor(perks, state.speedPct); // L6 „Raserei": Tempo-Faktor ×2
     scoreBeforeCrit = C.SCORE_PER_WIN * streakBaseMult(winStreak) * prodHook(perks, "scoreMult", wctx) * tempoScoreMult
@@ -105,21 +106,24 @@ export function resolveTrick(state, rng = Math.random) {
     life = Math.min(maxLife, life + healed);
     initiative = "player";
     if (tieConverted) tieArmed = false;
+    sinceWin = 0; // #71 Durchbruch: Sieg setzt den Zähler zurück
     lastResult = "win";
   } else if (lost) {
     losses += 1; winStreak = 0;
     // Flat-Grundschaden (#59: die #32-Zeiteskalation ist raus; Zeit-Pressure läuft jetzt über den
     // periodischen LIFE_DRAIN). Legendär-Zusatzschaden (L1 +3 / L6 +2) addiert; dmgReduce (C3) zieht
     // ab, Schild (C5) absorbiert danach (s. u.).
-    dmg = Math.max(0, C.DMG_PER_LOSS + sumHook(perks, "extraDamageTaken", {}) - sumHook(perks, "dmgReduce", {}));
+    dmg = Math.max(0, C.DMG_PER_LOSS + sumHook(perks, "extraDamageTaken", {}) - sumHook(perks, "dmgReduce", { life, maxLife }));
     // Schild (C5) absorbiert NACH der Schadensberechnung, vor dem Leben.
     if (shield > 0 && dmg > 0) { const absorbed = Math.min(shield, dmg); shield -= absorbed; dmg -= absorbed; }
     life -= dmg;
     initiative = "opp";
     if (ownsFlag(perks, "winTieAfterLoss")) tieArmed = true;
+    sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
     lastResult = "loss";
   } else {
     ties += 1;
+    sinceWin += 1; // #71 Durchbruch: Gleichstand zählt als „kein Sieg" weiter
     lastResult = "tie";
     // Serie & Initiative unverändert
   }
@@ -144,7 +148,7 @@ export function resolveTrick(state, rng = Math.random) {
       crits, critBonusScore, bestTrickScore, legendaryCritBonus,
       cycleWins, cycleBaseScore, prediction, lastPrediction, lastPredictionResult,
       predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus,
-      initiative, lastResult, offer, shield, tieArmed,
+      initiative, lastResult, offer, shield, tieArmed, sinceWin,
       lastTrick, phase: "gameover",
     };
   }
@@ -202,7 +206,7 @@ export function resolveTrick(state, rng = Math.random) {
     predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus, predictionDue,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     crits, critBonusScore, bestTrickScore, legendaryCritBonus,
-    initiative, lastResult, perks, offer: newOffer, shield, tieArmed, pendingLevelUps,
+    initiative, lastResult, perks, offer: newOffer, shield, tieArmed, pendingLevelUps, sinceWin,
     lastTrick, phase,
   };
 }

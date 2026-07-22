@@ -26,6 +26,7 @@ export function initialState(rng = Math.random) {
     nearPredictions: 0, largestPredictionBonus: 0, predictionDue: false,
     initiative: "player",
     lastResult: null,
+    sinceWin: 0, // #71 Durchbruch: aufeinanderfolgende Stiche ohne Sieg
     perks: [], offer: null,
     pendingLevelUps: 0, // #57: noch ausstehende Level-Up-Angebote (Mehrfach-Level-Up-Queue)
     speedPct: 0,

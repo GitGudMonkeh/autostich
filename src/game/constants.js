@@ -27,8 +27,9 @@ export const D4_MULT      = 3;    // D4  Score-Faktor
 export const D5_BONUS     = 300;  // D5  jeder 10. Sieg: Flat-Bonus
 
 // Legendäre Perks & Raritäts-System (#33) [TUNING]
-export const RARITY_WEIGHTS            = { common: 100, legendary: 7 }; // Ziehgewichte je Seltenheit (#38: 8→5→7)
-export const LEGENDARY_MIN_LEVEL       = 2;    // Legendaries erst ab diesem Level im Angebot (#38: 5→2)
+export const RARITY_WEIGHTS            = { common: 100, rare: 25, legendary: 4 }; // 3-Stufen-Rarität (#71); „common" = normal
+export const RARE_MIN_LEVEL            = 2;    // Seltene Perks erst ab diesem Level im Angebot (#71)
+export const LEGENDARY_MIN_LEVEL       = 5;    // Legendaries erst ab diesem Level im Angebot (#71)
 export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendaries je Angebot
 export const L4_CRIT_STEP = 0.01;  // L4 Kritische Masse: +1 pp Crit-Chance je Crit
 export const L4_CRIT_CAP  = 0.30;  // L4  … dauerhaft gedeckelt bei +30 pp

@@ -74,16 +74,16 @@ describe("buildOffer", () => {
     expect(buildOffer(owned, makeRng(1), 3, 9)).toHaveLength(2); // nur A1/A2 übrig (Commons)
   });
 
-  // ---- Legendär / Rarität (#33, Gate ab Level 2 seit #38) ----
-  it("bietet unter Level 2 KEINE Legendaries (Level-Gate)", () => {
+  // ---- Legendär / Rarität (3-Stufen seit #71: Legendaries ab Level 5) ----
+  it("bietet unter Level 5 KEINE Legendaries (Level-Gate)", () => {
     for (let s = 0; s < 20; s++) {
-      expect(buildOffer([], makeRng(s), 3, 1).some(isLegendary)).toBe(false);
+      expect(buildOffer([], makeRng(s), 3, 4).some(isLegendary)).toBe(false);
     }
   });
-  it("ab Level 2 erscheinen Legendaries — höchstens EINER je Angebot", () => {
+  it("ab Level 5 erscheinen Legendaries — höchstens EINER je Angebot", () => {
     // Nur Legendaries übrig → das Angebot enthält genau 1 (max 1 pro Angebot), und der ist legendär.
     const owned = PERK_LIST.filter((p) => !isLegendary(p.id)).map((p) => p.id);
-    const off = buildOffer(owned, makeRng(3), 3, 2);
+    const off = buildOffer(owned, makeRng(3), 3, 5);
     expect(off).toHaveLength(1);
     expect(isLegendary(off[0])).toBe(true);
   });
@@ -134,9 +134,9 @@ describe("Legendäre Perks — reine Hooks (#33)", () => {
     expect(PERK_DEFS.L2.winTie({ winStreak: 3 })).toBe(true);
     expect(PERK_DEFS.L2.winTie({ winStreak: 2 })).toBe(false);
   });
-  it("L3 Letztes Aufbäumen: +6 bei ≤ 25 % Leben (auch exakt 25 %), sonst 0", () => {
-    expect(PERK_DEFS.L3.cardBonus({ life: 500, maxLife: 2000 })).toBe(6); // 25 %
-    expect(PERK_DEFS.L3.cardBonus({ life: 400, maxLife: 2000 })).toBe(6); // < 25 %
+  it("L3 Letztes Aufbäumen: +3 bei ≤ 25 % Leben (auch exakt 25 %), sonst 0 (#71)", () => {
+    expect(PERK_DEFS.L3.cardBonus({ life: 500, maxLife: 2000 })).toBe(3); // 25 %
+    expect(PERK_DEFS.L3.cardBonus({ life: 400, maxLife: 2000 })).toBe(3); // < 25 %
     expect(PERK_DEFS.L3.cardBonus({ life: 501, maxLife: 2000 })).toBe(0); // > 25 %
   });
   it("L6 Raserei: verdoppelt NUR den Tempo-Faktor (via tempoScoreMultFor)", () => {
@@ -195,5 +195,43 @@ describe("comboMultFor (D2-Kombo, geteilte Anzeige-Quelle #31)", () => {
   it("neutral (1) ohne D2 — die Kombo IST der D2-Effekt", () => {
     expect(comboMultFor(["D1", "D4"], 20)).toBe(1);
     expect(comboMultFor([], 20)).toBe(1);
+  });
+});
+
+describe("Neue Normal-Perks (#71)", () => {
+  const sumV = (d) => d.reduce((s, c) => s + c.value, 0);
+  it("A6 Mittelklasse: Werte 4–7 je +2 (Startdeck 16 Karten → +32)", () => {
+    expect(sumV(PERK_DEFS.A6.onPick(buildDeck())) - sumV(buildDeck())).toBe(32);
+  });
+  it("A7 Spitzenförderung: die vier höchsten Karten je +6 (+24; vier 10er → 16)", () => {
+    expect(sumV(PERK_DEFS.A7.onPick(buildDeck())) - sumV(buildDeck())).toBe(24);
+    expect(PERK_DEFS.A7.onPick(buildDeck()).filter((c) => c.value === 16)).toHaveLength(4);
+  });
+  it("A8 Nachzügler: die vier niedrigsten Karten je +6 (+24; vier 1er → 7)", () => {
+    expect(sumV(PERK_DEFS.A8.onPick(buildDeck())) - sumV(buildDeck())).toBe(24);
+    expect(PERK_DEFS.A8.onPick(buildDeck()).filter((c) => c.value === 7 && c.baseRank === 1)).toHaveLength(4);
+  });
+  it("B6 Knappe Kiste: +100 nur bei genau 1 Wertpunkt Vorsprung", () => {
+    expect(PERK_DEFS.B6.scoreFlat({ margin: 1 })).toBe(100);
+    expect(PERK_DEFS.B6.scoreFlat({ margin: 2 })).toBe(0);
+    expect(PERK_DEFS.B6.scoreFlat({ margin: 0 })).toBe(0);
+  });
+  it("B7 Durchbruch: +10 ab 5 Stichen ohne Sieg", () => {
+    expect(PERK_DEFS.B7.cardBonus({ sinceWin: 4 })).toBe(0);
+    expect(PERK_DEFS.B7.cardBonus({ sinceWin: 5 })).toBe(10);
+    expect(PERK_DEFS.B7.cardBonus({ sinceWin: 8 })).toBe(10);
+  });
+  it("C6 Trotz: −1 unter 50 %, −2 bei ≤ 25 % Leben", () => {
+    expect(PERK_DEFS.C6.dmgReduce({ life: 1500, maxLife: 2000 })).toBe(0); // 75 %
+    expect(PERK_DEFS.C6.dmgReduce({ life: 900, maxLife: 2000 })).toBe(1);  // 45 %
+    expect(PERK_DEFS.C6.dmgReduce({ life: 500, maxLife: 2000 })).toBe(2);  // 25 %
+  });
+});
+
+describe("Durchbruch (B7) — sinceWin-Zähler in der Engine (#71)", () => {
+  it("+10 auf die Karte nach 5 Stichen ohne Sieg", () => {
+    // sinceWin=5 im State → Durchbruch-cardBonus greift für DIESEN Stich (Karte 3 → 13).
+    expect(effectivePlayerValue(3, ["B7"], { sinceWin: 5 })).toBe(13);
+    expect(effectivePlayerValue(3, ["B7"], { sinceWin: 4 })).toBe(3);
   });
 });
