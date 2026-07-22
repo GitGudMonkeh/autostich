@@ -30,6 +30,15 @@ export function GameOver({ state, highscores, isRecord, timeStr, onRestart, onMe
           </div>
         )}
 
+        {(state.predictionBonusScore > 0 || state.exactPredictions > 0) && (
+          <div className="grid grid-cols-4 gap-2 text-center mt-3 text-sm">
+            <div><div className="opacity-50 text-xs">Exakt</div><div className="font-bold" style={{ color: "#5ab87a" }}>{state.exactPredictions}</div></div>
+            <div><div className="opacity-50 text-xs">Knapp</div><div className="font-bold" style={{ color: "#d4a63a" }}>{state.nearPredictions}</div></div>
+            <div><div className="opacity-50 text-xs">Ansage-Bonus</div><div className="font-bold" style={{ color: "#8a7de0" }}>{Math.floor(state.predictionBonusScore).toLocaleString("de-DE")}</div></div>
+            <div><div className="opacity-50 text-xs">Größter Bonus</div><div className="font-bold" style={{ color: "#8a7de0" }}>{Math.floor(state.largestPredictionBonus).toLocaleString("de-DE")}</div></div>
+          </div>
+        )}
+
         {state.perks.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
             {state.perks.map((id) => (

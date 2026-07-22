@@ -45,18 +45,19 @@ Ein **reiner Reducer** (`src/game/reducer.js`) treibt `state.phase`:
 
 ```
 menu ──START_RUN──▶ play ──(Level-Up)──▶ levelup ──PICK_PERK──▶ play …
-                     │
+                     │  └──(Durchlauf-Ende)──▶ prediction ──SUBMIT_PREDICTION──▶ play …
                      └──(Leben ≤ 0)──▶ gameover ──Neustart/Menü──▶ …
 ```
 
 | Phase | Bedeutung |
 |---|---|
 | `menu` | Startbildschirm (`StartScreen`): „Neuer Run" + lokale Bestenliste. Kein Lauf aktiv, Timer ruht. |
-| `play` | Der Autobattler läuft: Stich für Stich, auto-getaktet (oder manuell „Nächster Stich"). |
+| `play` | Der Autobattler läuft: Stich für Stich, auto-getaktet. |
 | `levelup` | Level-Up-Overlay (`PerkSelect`): pausiert, bietet 3 Perks. Auswahl → zurück zu `play`. |
+| `prediction` | Ansage-Overlay (`PredictionSelect`, #36): nach jedem Durchlauf-Ende — schätze deine Siege der nächsten 40 Stiche. Pausiert; nach Bestätigung neu mischen → `play`. |
 | `gameover` | Leben aufgebraucht: Endbildschirm (`GameOver`) mit Score, Statistik, Bestenliste. |
 
-**Actions:** `START_RUN` / `RESET` (frischer Lauf), `TO_MENU` (Lauf verlassen), `RESOLVE_TRICK` (einen Stich auflösen), `PICK_PERK` (Perk wählen).
+**Actions:** `START_RUN` / `RESET` (frischer Lauf), `TO_MENU` (Lauf verlassen), `RESOLVE_TRICK` (einen Stich auflösen), `PICK_PERK` (Perk wählen), `SUBMIT_PREDICTION` (Ansage bestätigen → mischen + nächster Durchlauf, #36).
 
 **Determinismus-Invariante** (wie TrickLadder): der `game/`-Layer nutzt **nie** `Math.random`/`Date`. Zufall kommt als **Action-Payload** (`rng`) aus `App.jsx` herein. `makeRng(seed)` (mulberry32) existiert für reproduzierbare Sim/Test-Läufe.
 
@@ -85,7 +86,10 @@ Pro Stich wird je Seite die **nächste Karte** aus der gemischten Ziehreihenfolg
 
 ## 5. Deck-Durchlauf (Cycle)
 
-- Nach **40 Stichen** (`TRICKS_PER_CYCLE`, aus der Deckgröße abgeleitet) ist ein Durchlauf voll: `pos` → 0, `cycle` +1, **beide Ziehreihenfolgen neu gemischt** (`rng`), `healOnCycle` (C4: +50 Leben) greift, Schild (C5) lädt neu.
+- Nach **40 Stichen** (`TRICKS_PER_CYCLE`, aus der Deckgröße abgeleitet) ist ein Durchlauf voll: `cycle` +1, `healOnCycle` (C4: +50 Leben), Schild (C5) lädt neu, **Ansage-Auswertung** (#36) — dann Phase `prediction`. **Neu gemischt** wird **erst bei `SUBMIT_PREDICTION`** (`pos`→0, beide Reihenfolgen neu, `rng`-Payload), nicht mehr direkt am Durchlauf-Ende.
+
+### Ansage-System (#36)
+Ab dem **2. Durchlauf** schätzt der Spieler vor jeder neuen Runde, wie viele der 40 Stiche er gewinnt (`PredictionSelect`-Overlay, Auto-Play pausiert). Auswertung nach dem 40. Stich über die **Abweichung** `|Ansage − cycleWins|`: 0 → **×3**, 1 → **×1,75**, 2 → **×1,25**, ≥3 → **×1** (`PREDICTION_*_MULT`). Der Rundenscore (`cycleBaseScore`, alle Stichscores des Durchlaufs) wird mit dem Multiplikator verrechnet; **nur der Bonus** (`floor(cycleBaseScore × (mult−1))`) wird zusätzlich auf den Score addiert (kein Doppelzählen) und fließt voll in Bestenliste/Geist. Tod vor dem Durchlauf-Ende → kein Bonus (Ansage „nicht abgeschlossen"). Der erste Durchlauf läuft ohne Ansage (Referenz). Live-Anzeige in der StatusRail (Ansage · Siege · offen · „nicht mehr exakt erreichbar"); Game-Over zeigt exakte/knappe Ansagen + Ansage-Bonus.
 - **Deck-Wertmods bleiben über Durchläufe erhalten** — die A-Perks sind dauerhaft. Die StatusRail zeigt „Deck bis zum Mischen" (Rest-Karten des laufenden Durchlaufs).
 
 ---
@@ -199,6 +203,7 @@ Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist
 | `Card` / `CardBack` | Karte mit **effektivem** Kampfwert (groß), violettem Dauerhaft-Boost „+X", rotem Stich-Bonus „⚔ +X", Farb-Label, Sieg/Niederlage-Glow. |
 | `BuildPanel` | Wachsender Build: gewählte Perks je Kategorie (klickbar → Beschreibung) **+ Deck-Wert-Histogramm** (macht A-Mods sichtbar; Werte >12 violett hervorgehoben). |
 | `PerkSelect` | Level-Up-Overlay: 3 Perk-Karten je Kategorie-Farbe (Legendaries gold-violett hervorgehoben), „einmal pro Lauf" + Kern-Stats-Zeile (Leben/Crit/Tempo/Tempo-Score/Score-Mult, #40) + Build-Kontext (Perks + Histogramm, #22). |
+| `PredictionSelect` | Ansage-Overlay (#36): Ergebnis-Banner des letzten Durchlaufs (EXAKT!/SEHR KNAPP!/KNAPP!/VERFEHLT + Bonus) + Eingabe `[−] Zahl [+]`/Slider (0–40) + „Ansage abgeben". |
 | `StatusRail` | Leben-Balken (blitzt bei Schaden/Heilung), XP/Level-Balken, Kennzahlen (Score, Serie + beste Serie, Stiche, Durchlauf), Siege/Verluste/Quote %/Tempo, „Deck bis zum Mischen", Geist-Delta. |
 | `GameOver` | Endbildschirm: großer Score, Zeit, Rekord-Marker, Statistik (Level/Stiche/Durchläufe/beste Serie/Perks), Perk-Liste, **Punkteverlauf-Graph** (Lauf vs. vorheriger Rekord, #35), Bestenliste, Neustart/Menü. |
 | `Sparkline` | Geteilter Score-Verlauf-Graph (#30/#35): Lauf (gold) vs. Rekord (violett), auto-skaliert; kompakt in der StatusRail, größer im GameOver (`height`-Prop). |
@@ -242,6 +247,7 @@ src/App.jsx          Autostich — useReducer-State, Effekte (Auto-Play-Takt,
 | `SCORE_PER_WIN` | 1 | Basispunkt je Sieg (D-Perks skalieren darauf). |
 | `PERKS_OFFERED` | 3 | Perks je Level-Up. |
 | `TRICKS_PER_CYCLE` | 40 | Stiche je Deck-Durchlauf (= Deckgröße `SUIT_ORDER × RANKS`, abgeleitet). |
+| `PREDICTION_MAX` | 40 | Max. Ansage (= `TRICKS_PER_CYCLE`, abgeleitet). Multiplikatoren `PREDICTION_*_MULT`: 3 / 1,75 / 1,25 / 1 (#36). |
 | `BASE_FLIP_MS` | 2000 | ms je Stich bei 0 % Speed. |
 | `VALUE_CAP` | `null` | Kein Kartenwert-Cap (bewusst). |
 | `GHOST_STEP` | 13 | Geist-Score-Stützstelle alle N Stiche. |

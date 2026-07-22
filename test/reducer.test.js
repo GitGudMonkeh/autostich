@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
+import { TRICKS_PER_CYCLE, PREDICTION_MAX } from "../src/game/constants.js";
 
 const rng = makeRng(1);
 
@@ -59,11 +60,50 @@ describe("Reducer", () => {
   });
 
   it("RESOLVE_TRICK reicht action.lossCost an die Engine durch (#32)", () => {
-    const constDeck = (v) => Array.from({ length: 52 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
-    const id52 = Array.from({ length: 52 }, (_, i) => i);
+    const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
+    const id40 = Array.from({ length: 40 }, (_, i) => i);
     // Erzwungene Niederlage (Spieler 0 vs. Gegner 12).
-    const losing = { ...initialState(makeRng(1)), deck: constDeck(0), oppDeck: constDeck(12), playerOrder: id52, oppOrder: id52, life: 100 };
+    const losing = { ...initialState(makeRng(1)), deck: constDeck(0), oppDeck: constDeck(12), playerOrder: id40, oppOrder: id40, life: 100 };
     expect(reducer(losing, { type: "RESOLVE_TRICK", rng, lossCost: 25 }).life).toBe(75);
     expect(reducer(losing, { type: "RESOLVE_TRICK", rng }).life).toBe(90); // ohne Payload → Default 10
+  });
+});
+
+describe("Reducer — Ansage-System (#36)", () => {
+  const predState = () => ({ ...initialState(makeRng(1)), phase: "prediction", predictionDue: true, cycleWins: 22, cycleBaseScore: 500 });
+
+  it("PREDICTION_MAX leitet sich aus TRICKS_PER_CYCLE (40) ab", () => {
+    expect(PREDICTION_MAX).toBe(TRICKS_PER_CYCLE);
+    expect(PREDICTION_MAX).toBe(40);
+  });
+
+  it("SUBMIT_PREDICTION (gültig) → phase play, Ansage gesetzt, Zyklus-Akkus zurückgesetzt", () => {
+    const s = reducer(predState(), { type: "SUBMIT_PREDICTION", prediction: 25, rng });
+    expect(s.phase).toBe("play");
+    expect(s.prediction).toBe(25);
+    expect(s.predictionDue).toBe(false);
+    expect(s.pos).toBe(0);
+    expect(s.cycleWins).toBe(0);
+    expect(s.cycleBaseScore).toBe(0);
+  });
+
+  it("SUBMIT_PREDICTION lehnt < 0, > 40 und nicht-ganzzahlige Werte ab (bleibt in prediction)", () => {
+    for (const bad of [-1, 41, 5.5]) {
+      const s = reducer(predState(), { type: "SUBMIT_PREDICTION", prediction: bad, rng });
+      expect(s.phase).toBe("prediction");
+      expect(s.prediction).toBeNull();
+    }
+    expect(reducer(predState(), { type: "SUBMIT_PREDICTION", prediction: 0, rng }).prediction).toBe(0);   // Rand gültig
+    expect(reducer(predState(), { type: "SUBMIT_PREDICTION", prediction: 40, rng }).prediction).toBe(40); // Rand gültig
+  });
+
+  it("SUBMIT_PREDICTION außerhalb der prediction-Phase wird ignoriert", () => {
+    const play = initialState(makeRng(1));
+    expect(reducer(play, { type: "SUBMIT_PREDICTION", prediction: 10, rng })).toBe(play);
+  });
+
+  it("Ansage bleibt den ganzen Durchlauf unverändert (RESOLVE_TRICK ändert sie nicht)", () => {
+    const play = { ...initialState(makeRng(1)), prediction: 25 };
+    expect(reducer(play, { type: "RESOLVE_TRICK", rng }).prediction).toBe(25);
   });
 });

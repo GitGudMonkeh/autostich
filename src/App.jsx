@@ -9,6 +9,7 @@ import { Battlefield } from "./ui/Battlefield.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
+import { PredictionSelect } from "./ui/PredictionSelect.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { DeckHistogram } from "./ui/BuildSummary.jsx";
@@ -116,6 +117,7 @@ export function Autostich() {
   }
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
   const pick = (id) => dispatch({ type: "PICK_PERK", perkId: id, rng: Math.random });
+  const submitPrediction = (n) => dispatch({ type: "SUBMIT_PREDICTION", prediction: n, rng: Math.random }); // #36
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
@@ -232,6 +234,9 @@ export function Autostich() {
 
       {state.phase === "levelup" && state.offer && (
         <PerkSelect offer={state.offer} level={state.level} onPick={pick} perks={state.perks} deck={state.deck} state={state} />
+      )}
+      {state.phase === "prediction" && (
+        <PredictionSelect state={state} onSubmit={submitPrediction} />
       )}
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}

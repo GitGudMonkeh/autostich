@@ -6,6 +6,7 @@ const ITEMS = [
   ["❤️", "Leben ist dein Timer", "Du startest mit 2000 Leben. Fällt es auf 0, endet der Lauf. Ziel ist ein möglichst hoher Score."],
   ["✨", "Perks bei Level-Up", "Siege geben XP. Bei jedem Level-Up pausiert das Spiel und du wählst einen Perk — dein Deck wird dauerhaft stärker."],
   ["🔁", "Deck-Durchlauf", "Nach 40 Stichen wird neu gemischt. Deine dauerhaften Kartenwert-Änderungen bleiben erhalten."],
+  ["🎯", "Ansage", "Nach dem ersten Deck-Durchlauf schätzt du vor jeder neuen Runde, wie viele der 40 Stiche du gewinnst. Je genauer, desto größer der Score-Bonus — ein exakter Treffer verdreifacht den Rundenscore."],
   ["⏯️", "Steuerung", "Auto-Play läuft von allein — oder Manuell Stich für Stich. Mit Pause hältst du an; das Tempo steigt über Tempo-Perks."],
 ];
 

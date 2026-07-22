@@ -1,7 +1,7 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { PERK_DEFS } from "./perks.js";
 import { resolveTrick } from "./engine.js";
-import { START_LIFE } from "./constants.js";
+import { START_LIFE, PREDICTION_MIN, PREDICTION_MAX } from "./constants.js";
 
 /* Reiner Reducer — Determinismus-Invariante: kein Math.random / Date hier drin.
    Zufall kommt als Action-Payload (rng), siehe App.jsx. Phasen:
@@ -20,6 +20,10 @@ export function initialState(rng = Math.random) {
     winStreak: 0, bestStreak: 0, wins: 0, losses: 0, ties: 0,
     crits: 0, critBonusScore: 0, bestTrickScore: 0,
     legendaryCritBonus: 0, // L4 „Kritische Masse": akkumulierter, dauerhafter Crit-Chance-Bonus (#33)
+    // Ansage-System (#36) — erster Durchlauf ohne Ansage
+    cycleWins: 0, cycleBaseScore: 0, prediction: null, lastPrediction: null,
+    lastPredictionResult: null, predictionBonusScore: 0, exactPredictions: 0,
+    nearPredictions: 0, largestPredictionBonus: 0, predictionDue: false,
     initiative: "player",
     lastResult: null,
     perks: [], offer: null,
@@ -49,6 +53,21 @@ export function reducer(state, action) {
       // Fehlt sie, greift der Engine-Default (DMG_PER_LOSS) → Reducer bleibt rein/deterministisch.
       return resolveTrick(state, action.rng, action.lossCost);
 
+    case "SUBMIT_PREDICTION": {
+      // Ansage bestätigen (#36): erst JETZT neu mischen, pos/Zyklus-Akkus zurücksetzen, nächster Durchlauf.
+      if (state.phase !== "prediction") return state;
+      const p = action.prediction;
+      if (!Number.isInteger(p) || p < PREDICTION_MIN || p > PREDICTION_MAX) return state; // ungültig → nicht übernehmen
+      return {
+        ...state,
+        playerOrder: shuffledOrder(state.deck.length, action.rng),
+        oppOrder: shuffledOrder(state.oppDeck.length, action.rng),
+        pos: 0, cycleWins: 0, cycleBaseScore: 0,
+        prediction: p, predictionDue: false,
+        phase: "play",
+      };
+    }
+
     case "PICK_PERK": {
       if (state.phase !== "levelup") return state;
       const { perkId, rng } = action;
@@ -60,7 +79,9 @@ export function reducer(state, action) {
       // C5: Schild sofort gewähren (sonst erst beim nächsten Durchlauf-Start)
       const shieldGrant = perks.reduce((m, id) => Math.max(m, PERK_DEFS[id].shieldPerCycle || 0), 0);
       const shield = Math.max(state.shield || 0, shieldGrant);
-      return { ...state, deck, perks, speedPct, shield, phase: "play", offer: null };
+      // Nach der Perk-Wahl: war ein Durchlauf-Ende fällig (#36), weiter in die Ansage-Phase, sonst play.
+      const phase = state.predictionDue ? "prediction" : "play";
+      return { ...state, deck, perks, speedPct, shield, phase, offer: null };
     }
 
     default:

@@ -48,6 +48,10 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     initiative, lastResult, perks, offer, shield, tieArmed,
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
+    // Ansage-System (#36)
+    cycleWins = 0, cycleBaseScore = 0, prediction = null, lastPrediction = null,
+    lastPredictionResult = null, predictionBonusScore = 0, exactPredictions = 0,
+    nearPredictions = 0, largestPredictionBonus = 0,
   } = state;
 
   const pCard = deck[playerOrder[pos]];
@@ -76,7 +80,7 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
   let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
 
   if (won) {
-    winStreak += 1; wins += 1;
+    winStreak += 1; wins += 1; cycleWins += 1; // cycleWins: Siege im laufenden Durchlauf (#36)
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
     const wctx = { winValue: pValue, winStreak, wins, trickNo, posInCycle: pos, speedPct: state.speedPct || 0 };
@@ -96,6 +100,7 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
       if (ownsFlag(perks, "legendaryCritGain")) legendaryCritBonus = Math.min(legendaryCritBonus + C.L4_CRIT_STEP, C.L4_CRIT_CAP);
     }
     bestTrickScore = Math.max(bestTrickScore, gained);
+    cycleBaseScore += gained; // Basis-Score des Durchlaufs (#36): OHNE Ansage-Mult; Bonus kommt am Ende
     xp += C.XP_PER_WIN;
     healed = sumHook(perks, "healOnWin", wctx);
     life = Math.min(maxLife, life + healed);
@@ -130,30 +135,53 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     comboMult: comboMultFor(perks, winStreak),
   };
 
-  // Tod? — sofort beenden (kein Weiterziehen / Level-Up)
+  // Tod? — sofort beenden (kein Weiterziehen / Level-Up / KEINE Ansage-Auswertung, #36).
+  // Eine aktive Ansage gilt als „nicht abgeschlossen", nicht als verfehlt → kein Bonus/Malus.
   if (life <= 0) {
     return {
       ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
       life: 0, xp, level, score, winStreak, bestStreak, wins, losses, ties,
       crits, critBonusScore, bestTrickScore, legendaryCritBonus,
+      cycleWins, cycleBaseScore, prediction, lastPrediction, lastPredictionResult,
+      predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus,
       initiative, lastResult, offer, shield, tieArmed,
       lastTrick, phase: "gameover",
     };
   }
 
-  // Nächste Karte / Durchlauf-Ende (§4.3): TRICKS_PER_CYCLE (40) Stiche → neu mischen, Mods bleiben
+  // Durchlauf-Ende (§4.3, #36-Umbau): NICHT mehr hier mischen. Heilung/Schild + Ansage-Auswertung,
+  // dann Phase `prediction` (Mischen/pos-Reset erst bei SUBMIT_PREDICTION). Erster Durchlauf: prediction=null.
   pos += 1;
+  let predictionDue = false;
   if (pos >= C.TRICKS_PER_CYCLE) {
     cycle += 1;
-    pos = 0;
     const ch = sumHook(perks, "healOnCycle", {});
     if (ch > 0) life = Math.min(maxLife, life + ch);
     shield = perks.reduce((m, id) => Math.max(m, PERK_DEFS[id].shieldPerCycle || 0), 0); // C5: Schild je Durchlauf (kein Stapeln)
-    playerOrder = shuffledOrder(deck.length, rng);
-    oppOrder = shuffledOrder(oppDeck.length, rng);
+    if (prediction != null) { // ab dem 2. Durchlauf: Ansage auswerten
+      const difference = Math.abs(prediction - cycleWins);
+      const multiplier = difference === 0 ? C.PREDICTION_EXACT_MULT
+                       : difference === 1 ? C.PREDICTION_NEAR_ONE_MULT
+                       : difference === 2 ? C.PREDICTION_NEAR_TWO_MULT
+                       : C.PREDICTION_MISS_MULT;
+      const tier = difference === 0 ? "exact" : difference <= 2 ? "near" : "miss";
+      const baseCycleScore = Math.floor(cycleBaseScore);
+      const bonusScore = Math.floor(cycleBaseScore * (multiplier - 1)); // nur der Bonus (kein Doppelzählen)
+      score += bonusScore;
+      predictionBonusScore += bonusScore;
+      if (bonusScore > largestPredictionBonus) largestPredictionBonus = bonusScore;
+      if (tier === "exact") exactPredictions += 1;
+      else if (tier === "near") nearPredictions += 1;
+      lastPredictionResult = { prediction, actualWins: cycleWins, difference, tier, multiplier,
+        baseCycleScore, bonusScore, finalCycleScore: baseCycleScore + bonusScore };
+      lastPrediction = prediction;
+    }
+    prediction = null;    // aktive Ansage beendet (SUBMIT_PREDICTION setzt die nächste)
+    predictionDue = true; // Overlay für den nächsten Durchlauf öffnen
   }
 
-  // Level-Up(s): Restschwelle abziehen, XP-Überschuss bleibt (§6.2)
+  // Level-Up(s): Restschwelle abziehen, XP-Überschuss bleibt (§6.2). Level-Up hat Vorrang;
+  // nach der Perk-Wahl geht PICK_PERK bei predictionDue weiter in die Ansage-Phase (#36).
   let phase = "play";
   let newOffer = offer;
   let leveled = false;
@@ -162,9 +190,12 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     const off = buildOffer(perks, rng, C.PERKS_OFFERED, level); // Level-Gate für Legendaries (#33)
     if (off.length > 0) { phase = "levelup"; newOffer = off; } // Pool leer → keine Pause
   }
+  if (phase === "play" && predictionDue) phase = "prediction"; // kein Level-Up → direkt Ansage
 
   return {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
+    cycleWins, cycleBaseScore, prediction, lastPrediction, lastPredictionResult,
+    predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus, predictionDue,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     crits, critBonusScore, bestTrickScore, legendaryCritBonus,
     initiative, lastResult, perks, offer: newOffer, shield, tieArmed,

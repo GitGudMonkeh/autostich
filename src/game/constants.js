@@ -63,5 +63,13 @@ export const SUIT_ORDER = ["R", "B", "G", "Y"];
 export const RANKS = Array.from({ length: 10 }, (_, i) => i + 1); // 1..10 (#34: 40 Karten, keine schwache 0)
 // Stiche je Deck-Durchlauf = Deckgröße (4 Farben × 10 Werte = 40). Abgeleitet → folgt RANKS automatisch (#34).
 export const TRICKS_PER_CYCLE = SUIT_ORDER.length * RANKS.length;
+
+// Ansage-System (#36): vor jedem neuen Durchlauf schätzt der Spieler seine Siege (0..40). [TUNING]
+export const PREDICTION_MIN = 0;
+export const PREDICTION_MAX = TRICKS_PER_CYCLE;   // abgeleitet → kein Doppel-Pflegen bei Deckgröße
+export const PREDICTION_EXACT_MULT    = 3.0;      // Abweichung 0 → Rundenscore ×3
+export const PREDICTION_NEAR_ONE_MULT = 1.75;     // Abweichung 1 → ×1,75
+export const PREDICTION_NEAR_TWO_MULT = 1.25;     // Abweichung 2 → ×1,25
+export const PREDICTION_MISS_MULT     = 1.0;      // Abweichung ≥3 → kein Bonus
 export const suitName  = (s) => (s ? SUITS[s].name : "—");
 export const suitColor = (s) => (s ? SUITS[s].color : "#888");

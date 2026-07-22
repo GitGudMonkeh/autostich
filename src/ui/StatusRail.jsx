@@ -22,7 +22,7 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], recordTraj = [] }) {
-  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield, legendaryCritBonus = 0 } = state;
+  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield, legendaryCritBonus = 0, prediction = null, cycleWins = 0 } = state;
   const need = xpToNext(level);
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
@@ -115,6 +115,26 @@ export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], r
           </>)}
         </div>
       )}
+      {/* Ansage — Live-Anzeige des laufenden Durchlaufs (#36). */}
+      {prediction != null && (() => {
+        const winsNeeded = Math.max(0, prediction - cycleWins);
+        const exactUnreachable = cycleWins > prediction || cycleWins + remaining < prediction;
+        return (
+          <div className="pt-1 border-t" style={{ borderColor: "#26262e" }}>
+            <div className="flex justify-between text-xs">
+              <span className="opacity-60">Ansage <span className="font-bold" style={{ color: "#8a7de0" }}>{prediction}</span></span>
+              <span className="opacity-60">Siege <span className="font-bold" style={{ color: "#5ab87a" }}>{cycleWins}</span> · offen {remaining}</span>
+            </div>
+            {exactUnreachable ? (
+              <div className="text-[10px] mt-0.5" style={{ color: "#e0605a" }}>Ansage {prediction} nicht mehr exakt erreichbar</div>
+            ) : winsNeeded > 0 ? (
+              <div className="text-[10px] mt-0.5 opacity-55">Benötigt: {winsNeeded} weitere Siege</div>
+            ) : (
+              <div className="text-[10px] mt-0.5" style={{ color: "#5ab87a" }}>Ansage genau erreicht — nicht mehr gewinnen!</div>
+            )}
+          </div>
+        );
+      })()}
       {/* Score-Verlauf: aktueller Lauf vs. Rekord/Geist (#30) */}
       <div className="pt-1 border-t" style={{ borderColor: "#26262e" }}>
         <div className="flex items-center justify-between text-[10px] uppercase tracking-wide opacity-50 mb-1">
