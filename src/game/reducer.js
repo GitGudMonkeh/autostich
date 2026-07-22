@@ -49,6 +49,10 @@ export function reducer(state, action) {
     case "TO_MENU":     // laufenden Run verlassen (#5)
       return menuState();
 
+    case "END_RUN":     // Lauf freiwillig beenden → Endscreen (GameOver) statt direkt ins Menü.
+      // Highscore/Geist sichert der gameover-Effekt in App.jsx (saveRun). Menü/Gameover ignorieren.
+      return (state.phase === "menu" || state.phase === "gameover") ? state : { ...state, phase: "gameover" };
+
     case "RESOLVE_TRICK":
       return resolveTrick(state, action.rng);
 

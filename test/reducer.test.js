@@ -137,3 +137,19 @@ describe("Level-Up-Queue — PICK_PERK (#57)", () => {
     expect(s1.pendingLevelUps).toBe(0);
   });
 });
+
+describe("END_RUN — Beenden → Endscreen", () => {
+  it("aus dem laufenden Spiel → gameover (Score/State bleiben für den Endscreen erhalten)", () => {
+    const play = { ...initialState(makeRng(1)), score: 1234, trickNo: 50 };
+    const r = reducer(play, { type: "END_RUN" });
+    expect(r.phase).toBe("gameover");
+    expect(r.score).toBe(1234);
+    expect(r.trickNo).toBe(50);
+  });
+  it("aus Menü/gameover unberührt (kein Effekt)", () => {
+    const menu = menuState();
+    expect(reducer(menu, { type: "END_RUN" })).toBe(menu);
+    const over = { ...initialState(makeRng(1)), phase: "gameover" };
+    expect(reducer(over, { type: "END_RUN" })).toBe(over);
+  });
+});
