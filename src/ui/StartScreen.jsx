@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { AnleitungModal } from "./AnleitungModal.jsx";
+import { CardLogo } from "./CardLogo.jsx";
 
 /* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste. */
 export function StartScreen({ onStart, highscores, best, onOptions }) {
@@ -15,13 +16,16 @@ export function StartScreen({ onStart, highscores, best, onOptions }) {
   };
 
   return (
-    <div className="grid gap-5 justify-items-center py-10">
+    <div className="grid gap-5 justify-items-center content-start py-10">
       <div className="text-center">
         <h1 className="text-4xl font-bold tracking-tight font-pixel crt-title as-wordmark-hero">
           AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
         </h1>
         <p className="text-sm opacity-45 mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
       </div>
+
+      {/* Dekoratives Karten-Logo (#45) — rein optisch, unter dem CRT-Skin mit stärkerem Neon-Glow. */}
+      <CardLogo />
 
       <div className="flex flex-wrap gap-3 justify-center">
         <button
