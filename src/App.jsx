@@ -158,7 +158,7 @@ export function Autostich() {
       </div>
 
       {state.phase === "levelup" && state.offer && (
-        <PerkSelect offer={state.offer} level={state.level} onPick={pick} />
+        <PerkSelect offer={state.offer} level={state.level} onPick={pick} perks={state.perks} deck={state.deck} />
       )}
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)} onRestart={startRun} onMenu={toMenu} />
