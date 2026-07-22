@@ -80,6 +80,11 @@ export function Battlefield({ lastTrick, remaining = 52, flipMs = 1000 }) {
 
   const critMultStr = t ? (Number.isInteger(t.critMultiplier) ? t.critMultiplier : Math.round(t.critMultiplier * 100) / 100) : 2;
 
+  // D2-Kombo (#31): ab ×1,5 (Serie ≥5) bei jedem Sieg den eskalierenden Wert einblenden.
+  // Quelle ist der in der Engine berechnete t.comboMult → identisch zum tatsächlichen D2-Faktor (kein Drift).
+  const showCombo = win && t && t.comboMult >= 1.5;
+  const comboStr = t ? t.comboMult.toFixed(1).replace(".", ",") : "";
+
   return (
     <div className="rounded-xl p-6 overflow-hidden" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       <div className="relative flex items-center justify-center gap-4 sm:gap-8">
@@ -112,6 +117,15 @@ export function Battlefield({ lastTrick, remaining = 52, flipMs = 1000 }) {
           <div key={`dmg${t.trickNo}`} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
             style={{ right: 2, top: "40%", color: "#e0605a", animation: fx(`as-float ${clamp(flipMs * 0.7, 320, 700)}ms ease-out`) }}>
             −{t.dmg}♥
+          </div>
+        )}
+        {/* Eskalierende Kombo-Anzeige (#31): eigene Bahn unten links, kollidiert nicht mit dem
+            Gewinn-Float (40 %). Unter reduzierter Bewegung statisch (kein Float), wie beim Crit. */}
+        {showCombo && (
+          <div key={`combo${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
+            style={{ left: 2, top: "62%", fontSize: 20, color: "#e0605a", textShadow: "0 0 10px #e0605a88",
+                     animation: fx(`as-combo ${clamp(flipMs * 0.85, 360, 820)}ms ease-out`) }}>
+            KOMBO ×{comboStr}
           </div>
         )}
       </div>

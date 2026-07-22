@@ -12,8 +12,7 @@ export const TRICKS_PER_CYCLE = 52;     // Karten je Deck-Durchlauf
 
 // Score-Perk-Magnituden (Kategorie D) [TUNING]
 export const D1_BONUS_PCT = 15;   // D1  +15 % Score je Sieg
-export const D2_STEP      = 0.05; // D2  Siegesserie: +5 % je Serien-Stufe …
-export const D2_CAP       = 0.50; // D2  … gedeckelt bei +50 %
+export const D2_STEP      = 0.10; // D2  Siegesserie: +10 % je Serien-Stufe, eskalierend — KEIN Cap (#31)
 export const D3_HIGH_MIN  = 10;   // D3  „hohe Karte" ab diesem Wert
 export const D3_BONUS     = 60;   // D3  Flat-Bonus
 export const D4_LOW_MAX   = 3;    // D4  „Außenseiter" bis zu diesem Wert

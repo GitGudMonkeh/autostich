@@ -130,12 +130,25 @@ describe("resolveTrick — Score-Perks", () => {
     expect(resolveTrick(scenario(12, 0, { perks: ["D4"] }), rng).score).toBe(100);
   });
 
-  it("D2 Siegesserie: ×1,0 / ×1,1 / ×1,2 …", () => {
+  it("D2 Siegesserie: eskalierend +10 % je Stufe (Serie 1/2/3 → ×1,1 / ×1,2 / ×1,3)", () => {
     let s = scenario(12, 0, { perks: ["D2"] });
-    s = resolveTrick(s, rng); // ×1.0 → 100
-    s = resolveTrick(s, rng); // ×1.1 → 110
-    s = resolveTrick(s, rng); // ×1.2 → 120
-    expect(s.score).toBeCloseTo(330);
+    s = resolveTrick(s, rng); // Serie 1 → ×1,1 → 110
+    s = resolveTrick(s, rng); // Serie 2 → ×1,2 → 120
+    s = resolveTrick(s, rng); // Serie 3 → ×1,3 → 130
+    expect(s.score).toBeCloseTo(360);
+  });
+
+  it("D2 eskaliert ungedeckelt (kein Cap): Serie 20 → ×3,0", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["D2"], winStreak: 19 }), rng);
+    expect(s.winStreak).toBe(20);
+    // 100 × (1 + 20×0,1) = 300; der alte Deckel (max +50 %) hätte hier ×1,5 → 150 ergeben.
+    expect(s.lastTrick.gained).toBeCloseTo(300);
+    expect(s.lastTrick.comboMult).toBeCloseTo(3.0);
+  });
+
+  it("lastTrick.comboMult == D2-Faktor bei Sieg, 1 ohne D2 (Anzeige-Quelle, kein Drift #31)", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["D2"], winStreak: 4 }), rng).lastTrick.comboMult).toBeCloseTo(1.5);
+    expect(resolveTrick(scenario(12, 0, { perks: ["D1"], winStreak: 4 }), rng).lastTrick.comboMult).toBe(1);
   });
 });
 

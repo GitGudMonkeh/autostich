@@ -144,7 +144,7 @@ Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist
 | ID | Name | Effekt |
 |---|---|---|
 | D1 | Punktebonus | Alle Siege: **+20 %** Score (`×1,2`). |
-| D2 | Siegesserie | Je Serienstufe steigend: `×1,0, ×1,1, ×1,2 …` (`+0,1×` je Stufe). |
+| D2 | Siegesserie | **Eskalierende Kombo:** je Sieg in Serie `+0,1×` (Serie 1→×1,1, 5→×1,5, 10→×2,0, 20→×3,0), **ohne Obergrenze**; Reset bei Niederlage. Ab **×1,5** floatet der Kombo-Wert im Battlefield. |
 | D3 | Hohe Karten, hohe Belohnung | Sieg mit Kartenwert **≥10**: +3 Score. |
 | D4 | Außenseitersieg | Sieg mit Kartenwert **≤3**: **doppelter** Score. |
 | D5 | Zehnter Sieg | Jeder **10.** Sieg: +25 Score. |
@@ -188,7 +188,7 @@ Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist
 | `StatusRail` | Leben-Balken (blitzt bei Schaden/Heilung), XP/Level-Balken, Kennzahlen (Score, Serie + beste Serie, Stiche, Durchlauf), Siege/Verluste/Quote %/Tempo, „Deck bis zum Mischen", Geist-Delta. |
 | `GameOver` | Endbildschirm: großer Score, Zeit, Rekord-Marker, Statistik (Level/Stiche/Durchläufe/beste Serie/Perks), Perk-Liste, Bestenliste, Neustart/Menü. |
 
-**Stich-„Juice" / Game-Feel (#15):** Gewinner-Karte poppt (`as-pop`), aufsteigende Score-/Leben-Zahlen (`as-float`), Impact-Flash am Aufprall (`as-impact`), Leben-Balken-Flash bei Schaden/Heilung (`as-flash`). Alle Dauern sind an den Flip-Takt gekoppelt. `@media (prefers-reduced-motion: reduce)` schaltet Animationen praktisch ab (Barrierefreiheit).
+**Stich-„Juice" / Game-Feel (#15):** Gewinner-Karte poppt (`as-pop`), aufsteigende Score-/Leben-Zahlen (`as-float`), Impact-Flash am Aufprall (`as-impact`), Leben-Balken-Flash bei Schaden/Heilung (`as-flash`), floatende Kombo-Anzeige ab ×1,5 (`as-combo`, #31). Alle Dauern sind an den Flip-Takt gekoppelt. `@media (prefers-reduced-motion: reduce)` schaltet Animationen praktisch ab (Barrierefreiheit).
 
 ---
 

@@ -1,6 +1,6 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
-import { PERK_DEFS, buildOffer, critChanceFor } from "./perks.js";
+import { PERK_DEFS, buildOffer, critChanceFor, comboMultFor } from "./perks.js";
 import { xpToNext } from "./leveling.js";
 
 function sumHook(perks, name, ctx) {
@@ -113,6 +113,9 @@ export function resolveTrick(state, rng = Math.random) {
     result: tieConverted ? "win_tie" : won ? "win" : lost ? "loss" : "tie",
     gained, dmg, healed, trickNo,
     isCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
+    // D2-Kombo-Wert der resultierenden Serie (geteilte Quelle → kein Drift zur Score-Berechnung, #31).
+    // 1 ohne D2; bei Niederlage/Gleichstand irrelevant (Anzeige nur bei Sieg ab ×1,5).
+    comboMult: comboMultFor(perks, winStreak),
   };
 
   // Tod? — sofort beenden (kein Weiterziehen / Level-Up)

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildDeck, makeRng } from "../src/game/deck.js";
-import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, comboMultFor } from "../src/game/perks.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 
 describe("Perks — Deck-Modifikationen (Kat. A)", () => {
@@ -89,5 +89,17 @@ describe("critChanceFor (Crit-Perks D6–D8)", () => {
   });
   it("summiert die Chancen mehrerer Crit-Perks", () => {
     expect(critChanceFor(["D6", "D7", "D8"], { winValue: 12, winStreak: 20 })).toBeCloseTo(0.87);
+  });
+});
+
+describe("comboMultFor (D2-Kombo, geteilte Anzeige-Quelle #31)", () => {
+  it("1 + Serie × 0,1 wenn D2 gehalten, eskalierend ohne Cap", () => {
+    expect(comboMultFor(["D2"], 1)).toBeCloseTo(1.1);
+    expect(comboMultFor(["D2"], 5)).toBeCloseTo(1.5);   // Anzeige-Schwelle
+    expect(comboMultFor(["D2"], 20)).toBeCloseTo(3.0);  // kein Cap (alt: max +50 %)
+  });
+  it("neutral (1) ohne D2 — die Kombo IST der D2-Effekt", () => {
+    expect(comboMultFor(["D1", "D4"], 20)).toBe(1);
+    expect(comboMultFor([], 20)).toBe(1);
   });
 });

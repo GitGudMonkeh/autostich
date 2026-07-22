@@ -24,6 +24,11 @@ import { shuffle } from "./deck.js";
 const bumpWhere = (deck, pred, delta) =>
   deck.map((c) => (pred(c) ? { ...c, value: c.value + delta } : c));
 
+// D2-Kombo: eskalierender Siegesserien-Multiplikator (+D2_STEP je Serienstufe, KEIN Cap, #31).
+// EINE Formel als geteilte Quelle für Score-Berechnung (D2-Hook) UND Anzeige (comboMultFor →
+// Battlefield-Float) → kein Drift, analog zum Muster von scoreMultFor/critChanceFor (#23/#25).
+export const comboMult = (winStreak) => 1 + winStreak * C.D2_STEP;
+
 export const CATEGORIES = {
   A: { key: "A", name: "Deck",  desc: "Dauerhafte Kartenwerte",    color: "#8a7de0" },
   B: { key: "B", name: "Stich", desc: "Stich-Effekte",            color: "#e0605a" },
@@ -96,8 +101,8 @@ export const PERK_DEFS = {
         desc: "Alle gewonnenen Stiche geben +15 % Score.",
         scoreMult: () => 1 + C.D1_BONUS_PCT / 100 },
   D2: { id: "D2", cat: "D", label: "Siegesserie",
-        desc: "Jeder aufeinanderfolgende Sieg gibt +5 % Score (max +50 %).",
-        scoreMult: (ctx) => 1 + Math.min(ctx.winStreak * C.D2_STEP, C.D2_CAP) },
+        desc: "Jeder aufeinanderfolgende Sieg gibt +10 % Score — eskalierende Kombo, ohne Obergrenze.",
+        scoreMult: (ctx) => comboMult(ctx.winStreak) },
   D3: { id: "D3", cat: "D", label: "Hohe Karten, hohe Belohnung",
         desc: "Siege mit Kartenwert 10+ geben +60 Score.",
         scoreFlat: (ctx) => (ctx.winValue >= C.D3_HIGH_MIN ? C.D3_BONUS : 0) },
@@ -153,4 +158,9 @@ export function scoreMultFor(perks, ctx) {
   let m = 1;
   for (const id of perks) { const f = PERK_DEFS[id].scoreMult; if (f) m *= f(ctx); }
   return m;
+}
+// Kombo-Wert eines Builds für die Anzeige (#31): nur wenn D2 gehalten wird — die Kombo IST der
+// D2-Effekt. Nutzt dieselbe comboMult-Formel wie der D2-Score-Hook → Anzeige == tatsächlicher Wert.
+export function comboMultFor(perks, winStreak) {
+  return perks.includes("D2") ? comboMult(winStreak) : 1;
 }
