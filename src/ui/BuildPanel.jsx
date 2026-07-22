@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
+import { SUIT_ORDER, suitColor, suitName } from "../game/constants.js";
 
 /* Zeigt den wachsenden Build: gewählte Perks je Kategorie + die aktuelle
    Deck-Wert-Verteilung (macht Kat.-A-Mods sichtbar — Testfrage §8).
@@ -10,12 +11,17 @@ export function BuildPanel({ perks, deck }) {
   for (const id of perks) (byCat[PERK_DEFS[id].cat] ||= []).push(id);
   const open = openPerk && perks.includes(openPerk) ? PERK_DEFS[openPerk] : null;
 
-  // Deck-Wert-Histogramm (Werte können >12 sein)
+  // Deck-Wert-Histogramm, nach Farben (Suits) aufgeschlüsselt (#13): counts[value][suit].
   const counts = {};
   let maxV = 0;
-  for (const c of deck) { counts[c.value] = (counts[c.value] || 0) + 1; maxV = Math.max(maxV, c.value); }
-  const maxCount = Math.max(1, ...Object.values(counts));
+  for (const c of deck) {
+    (counts[c.value] ||= {});
+    counts[c.value][c.suit] = (counts[c.value][c.suit] || 0) + 1;
+    maxV = Math.max(maxV, c.value);
+  }
+  const totalAt = (v) => SUIT_ORDER.reduce((s, su) => s + ((counts[v] && counts[v][su]) || 0), 0);
   const values = Array.from({ length: maxV + 1 }, (_, v) => v);
+  const maxCount = Math.max(1, ...values.map(totalAt));
 
   return (
     <div className="rounded-xl p-4 grid gap-4" style={{ background: "#17171c", border: "1px solid #26262e" }}>
@@ -65,23 +71,35 @@ export function BuildPanel({ perks, deck }) {
       </div>
 
       <div>
-        <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte (52 Karten)</div>
+        <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte nach Farbe (52 Karten)</div>
         <div className="flex items-end gap-[3px]" style={{ height: 60 }}>
           {values.map((v) => {
-            const n = counts[v] || 0;
+            const total = totalAt(v);
             return (
-              <div key={v} className="flex-1 flex flex-col items-center justify-end" title={`Wert ${v}: ${n} Karten`}>
-                <div className="w-full rounded-t" style={{
-                  height: `${(n / maxCount) * 100}%`,
-                  minHeight: n ? 2 : 0,
-                  background: v > 12 ? "#8a7de0" : "#3a5a8a",
-                }} />
-                <div className="text-[8px] opacity-40 mt-0.5">{v}</div>
+              <div key={v} className="flex-1 flex flex-col items-center justify-end">
+                <div className="w-full flex flex-col-reverse rounded-t overflow-hidden"
+                  style={{ height: `${(total / maxCount) * 100}%`, minHeight: total ? 2 : 0 }}>
+                  {SUIT_ORDER.map((su) => {
+                    const n = (counts[v] && counts[v][su]) || 0;
+                    if (!n) return null;
+                    return <div key={su} style={{ height: `${(n / total) * 100}%`, background: suitColor(su) }}
+                      title={`${suitName(su)} ${v}: ${n} Karten`} />;
+                  })}
+                </div>
+                <div className="text-[8px] mt-0.5" style={{ color: v > 12 ? "#8a7de0" : undefined, opacity: v > 12 ? 1 : 0.4 }}>{v}</div>
               </div>
             );
           })}
         </div>
-        <div className="text-[10px] opacity-35 mt-1">Werte über 12 (violett) überbieten jede Gegnerkarte.</div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
+          {SUIT_ORDER.map((su) => (
+            <span key={su} className="inline-flex items-center gap-1 text-[10px] opacity-70">
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: suitColor(su), display: "inline-block" }} />
+              {suitName(su)}
+            </span>
+          ))}
+        </div>
+        <div className="text-[10px] opacity-35 mt-1">Werte über 12 (violett markiert) überbieten jede Gegnerkarte.</div>
       </div>
     </div>
   );
