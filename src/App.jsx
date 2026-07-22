@@ -27,6 +27,7 @@ export function Autostich() {
   const recordTraj  = useRef([]);
   const recordTotal = useRef(0);
   const currentTraj = useRef([]);
+  const runStartRecordTraj = useRef([]); // Rekord gegen den DIESER Lauf antritt — Snapshot vor saveRun (#35)
   const runId       = useRef(Date.now());
   const recorded    = useRef(false);
 
@@ -102,6 +103,7 @@ export function Autostich() {
 
   function startRun() {
     currentTraj.current = [];
+    runStartRecordTraj.current = recordTraj.current.slice(); // Rekord dieses Laufs festhalten, bevor saveRun ihn überschreibt (#35)
     recorded.current = false;
     runId.current = Date.now();
     timeBase.current = 0;
@@ -232,7 +234,8 @@ export function Autostich() {
         <PerkSelect offer={state.offer} level={state.level} onPick={pick} perks={state.perks} deck={state.deck} />
       )}
       {state.phase === "gameover" && (
-        <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)} onRestart={startRun} onMenu={toMenu} />
+        <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
+          currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu} />
       )}
     </div>
   );

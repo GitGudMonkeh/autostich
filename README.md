@@ -199,7 +199,8 @@ Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist
 | `BuildPanel` | Wachsender Build: gewählte Perks je Kategorie (klickbar → Beschreibung) **+ Deck-Wert-Histogramm** (macht A-Mods sichtbar; Werte >12 violett hervorgehoben). |
 | `PerkSelect` | Level-Up-Overlay: 3 Perk-Karten je Kategorie-Farbe, „einmal pro Lauf". |
 | `StatusRail` | Leben-Balken (blitzt bei Schaden/Heilung), XP/Level-Balken, Kennzahlen (Score, Serie + beste Serie, Stiche, Durchlauf), Siege/Verluste/Quote %/Tempo, „Deck bis zum Mischen", Geist-Delta. |
-| `GameOver` | Endbildschirm: großer Score, Zeit, Rekord-Marker, Statistik (Level/Stiche/Durchläufe/beste Serie/Perks), Perk-Liste, Bestenliste, Neustart/Menü. |
+| `GameOver` | Endbildschirm: großer Score, Zeit, Rekord-Marker, Statistik (Level/Stiche/Durchläufe/beste Serie/Perks), Perk-Liste, **Punkteverlauf-Graph** (Lauf vs. vorheriger Rekord, #35), Bestenliste, Neustart/Menü. |
+| `Sparkline` | Geteilter Score-Verlauf-Graph (#30/#35): Lauf (gold) vs. Rekord (violett), auto-skaliert; kompakt in der StatusRail, größer im GameOver (`height`-Prop). |
 
 **Stich-„Juice" / Game-Feel (#15):** Gewinner-Karte poppt (`as-pop`), aufsteigende Score-/Leben-Zahlen (`as-float`), Impact-Flash am Aufprall (`as-impact`), Leben-Balken-Flash bei Schaden/Heilung (`as-flash`), floatende Kombo-Anzeige ab ×1,5 (`as-combo`, #31), Hinweis-Float beim Stufenwechsel der Niederlagenkosten (`as-notice`, #32), Score-Multiplikator-Chip im Header mit Scale-Puls bei Anstieg (`as-multpulse`, #37). Alle Dauern sind an den Flip-Takt gekoppelt. `@media (prefers-reduced-motion: reduce)` schaltet Animationen praktisch ab (Barrierefreiheit).
 

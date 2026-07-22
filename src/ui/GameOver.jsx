@@ -1,6 +1,7 @@
 import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
+import { Sparkline } from "./Sparkline.jsx";
 
-export function GameOver({ state, highscores, isRecord, timeStr, onRestart, onMenu }) {
+export function GameOver({ state, highscores, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [] }) {
   const score = Math.floor(state.score);
   return (
     <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
@@ -37,6 +38,21 @@ export function GameOver({ state, highscores, isRecord, timeStr, onRestart, onMe
                 {PERK_DEFS[id].label}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* Punkteverlauf: aktueller Lauf vs. (vorheriger) Rekord (#35). recordTraj ist der Snapshot
+            VOR dem saveRun-Überschreiben → bei neuem Rekord liegt die Lauf-Linie sichtbar darüber. */}
+        {currentTraj.length >= 2 && (
+          <div className="mt-5">
+            <div className="flex items-center justify-between text-[11px] uppercase tracking-wide opacity-50 mb-2">
+              <span>Punkteverlauf</span>
+              <span className="flex gap-2 normal-case tracking-normal">
+                <span style={{ color: "#d4a63a" }}>Lauf</span>
+                {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>Rekord</span> : <span className="opacity-40">erster Lauf</span>}
+              </span>
+            </div>
+            <Sparkline current={currentTraj} record={recordTraj} height={110} />
           </div>
         )}
 

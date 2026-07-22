@@ -1,6 +1,7 @@
 import { xpToNext } from "../game/leveling.js";
 import { TRICKS_PER_CYCLE } from "../game/constants.js";
 import { critChanceFor, hasCritPerk, baseScoreMultFor, critMultiplierFor } from "../game/perks.js";
+import { Sparkline } from "./Sparkline.jsx";
 
 function Bar({ value, max, color, height = 8 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
@@ -17,26 +18,6 @@ function Stat({ label, value, tone }) {
       <div className="text-[10px] uppercase tracking-wide opacity-50">{label}</div>
       <div className="text-lg font-bold" style={{ color: tone || "#e8e8ea" }}>{value}</div>
     </div>
-  );
-}
-
-/* Kompakter Score-Verlauf-Sparkline (#30): aktueller Lauf (gold) vs. Rekord/Geist (violett).
-   x = Stich-Index (Geist-Stützstellen, Zeit-Proxy), y = kumulativer Score (auto-skaliert). */
-function Sparkline({ current = [], record = [] }) {
-  const W = 300, H = 40, pad = 3;
-  const maxLen = Math.max(current.length, record.length);
-  const maxVal = Math.max(1, ...current, ...record);
-  const x = (i) => pad + (maxLen > 1 ? (i / (maxLen - 1)) * (W - 2 * pad) : W / 2);
-  const y = (v) => H - pad - (v / maxVal) * (H - 2 * pad);
-  const path = (arr) => arr.map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-  if (current.length < 2 && record.length < 2) {
-    return <div className="text-[10px] opacity-35 py-2 text-center">Verlauf erscheint nach den ersten Stichen…</div>;
-  }
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }} preserveAspectRatio="none">
-      {record.length >= 2 && <path d={path(record)} fill="none" stroke="#8a7de0" strokeWidth="1.5" strokeOpacity="0.55" vectorEffect="non-scaling-stroke" />}
-      {current.length >= 2 && <path d={path(current)} fill="none" stroke="#d4a63a" strokeWidth="1.75" vectorEffect="non-scaling-stroke" />}
-    </svg>
   );
 }
 
