@@ -1,6 +1,6 @@
 import { xpToNext } from "../game/leveling.js";
 import { TRICKS_PER_CYCLE } from "../game/constants.js";
-import { critChanceFor, hasCritPerk, scoreMultFor, tempoScoreMultFor, critMultiplierFor } from "../game/perks.js";
+import { critChanceFor, hasCritPerk, baseScoreMultFor, critMultiplierFor } from "../game/perks.js";
 
 function Bar({ value, max, color, height = 8 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
@@ -46,12 +46,9 @@ export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], r
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
-  // Tempo-Score + Crit (#19) + Gesamt-Score-Multiplikator (#23). tempoScoreMultFor erfasst L6 (#33).
-  const tempoScoreMult = tempoScoreMultFor(perks, speedPct);
+  // Gesamt-Score-Multiplikator (#23) — geteilte Quelle mit dem Header-Chip (#37), kein Drift.
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
-  // Basis-Multiplikator = immer aktive Faktoren: D1, D2 (aktuelle Serie) × Tempo.
-  // winValue hoch gesetzt → das bedingte D4 (×3 bei ≤3) bleibt hier ausgeblendet.
-  const baseScoreMult = scoreMultFor(perks, { winStreak: winStreak + 1, winValue: 99, wins: wins + 1, trickNo, posInCycle: pos }) * tempoScoreMult;
+  const baseScoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos, speedPct });
   const ownsD4 = perks.includes("D4");
   const showCrit = hasCritPerk(perks) || (crits || 0) > 0;
   // Live-Crit-Chance des NÄCHSTEN Siegs: D8 nutzt die resultierende Serie (winStreak+1), analog zum

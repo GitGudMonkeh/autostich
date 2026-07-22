@@ -1,6 +1,7 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE, lossCostFor, lossTierFor } from "./game/constants.js";
+import { baseScoreMultFor } from "./game/perks.js";
 import { loadGhost, saveGhost, loadHighscores, recordHighscore } from "./game/storage.js";
 import { fmtDuration } from "./game/deck.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
@@ -20,6 +21,7 @@ export function Autostich() {
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
   const [lossNotice, setLossNotice] = useState(null); // kurzer Float beim Stufenwechsel der Niederlagenkosten (#32)
+  const [multPulse, setMultPulse] = useState(0);      // Zähler: bumpt bei Anstieg des Score-Mults → Puls (#37)
 
   // GEIST — Rekord-Trajektorie (Score je GHOST_STEP Stiche) + laufende Reihe
   const recordTraj  = useRef([]);
@@ -32,6 +34,7 @@ export function Autostich() {
   const timeBase = useRef(0);
   const segStart = useRef(null);
   const lastLossTier = useRef(0); // zuletzt angezeigte Niederlagenkosten-Stufe (#32)
+  const prevMult = useRef(1);     // vorheriger Score-Mult (Puls nur bei Anstieg, #37)
   const active = state.phase === "play" && !paused;
   // Effektive Flip-Zeit: Basis / (1+Speed) / Turbo (1×/2×/3×). Beschleunigt nur Ablauf + Animation,
   // NICHT den Score (speedPct/tempoScoreMult bleiben unberührt → kein Cheesen).
@@ -138,6 +141,19 @@ export function Autostich() {
     return () => clearTimeout(id);
   }, [lossTier, state.phase]);
 
+  // Prominenter Score-Multiplikator-Chip (#37): geteilte Quelle mit der StatusRail (kein Drift).
+  // perks || [] — im Menü (state = { phase:"menu" }) fehlen die Felder; Defaults greifen.
+  const baseScoreMult = baseScoreMultFor(state.perks || [], {
+    winStreak: state.winStreak, wins: state.wins, trickNo: state.trickNo, pos: state.pos, speedPct: state.speedPct,
+  });
+  const multHot = baseScoreMult > 1.001; // >1 → Gold; ×1,00 → gedämpft
+  const fmtMult = (x) => x.toFixed(2).replace(".", ",");
+  // Dezenter Scale-Puls NUR bei Anstieg (v. a. D2-Kombo). Reduced-motion → global via CSS neutralisiert.
+  useEffect(() => {
+    if (baseScoreMult > prevMult.current + 1e-9) setMultPulse((n) => n + 1);
+    prevMult.current = baseScoreMult;
+  }, [baseScoreMult]);
+
   return (
     <div className="min-h-screen w-full flex justify-center px-4 py-6">
       <div className="w-full max-w-5xl grid gap-4">
@@ -167,6 +183,20 @@ export function Autostich() {
                       {ghost.delta >= 0 ? "▲ +" : "▼ "}{ghost.delta.toLocaleString("de-DE")}
                     </span>
                   ) : null)}
+                </div>
+              </div>
+              {/* Score-Multiplikator-Chip (#37): immer sichtbar, ×1,00 gedämpft, ab >1 Gold; Puls bei Anstieg. */}
+              <div className="text-right">
+                <div className="text-[10px] uppercase tracking-wide opacity-50">Mult</div>
+                <div className="text-xl font-bold leading-none pt-0.5">
+                  <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base"
+                    title="Score-Multiplikator: D1 + Siegesserie + Tempo (immer aktive Faktoren)"
+                    style={{ fontVariantNumeric: "tabular-nums",
+                             background: multHot ? "#d4a63a22" : "#ffffff0f",
+                             color: multHot ? "#d4a63a" : "#8a8a92",
+                             animation: multPulse > 0 ? "as-multpulse 420ms ease-out" : undefined }}>
+                    ×{fmtMult(baseScoreMult)}
+                  </span>
                 </div>
               </div>
               <div className="text-right">

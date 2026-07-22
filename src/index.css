@@ -23,6 +23,8 @@ button { font-family: inherit; }
 @keyframes as-combo { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-10px) scale(1); } 100% { opacity:0; transform: translateY(-30px) scale(1); } }
 /* Niederlagenkosten-Stufenwechsel (#32): kurzer Hinweis, einblenden → halten → ausblenden. */
 @keyframes as-notice { 0% { opacity:0; transform: translate(-50%, 6px); } 12% { opacity:1; transform: translate(-50%, 0); } 82% { opacity:1; transform: translate(-50%, 0); } 100% { opacity:0; transform: translate(-50%, -12px); } }
+/* Score-Multiplikator-Chip (#37): dezenter Scale-Puls bei Anstieg. */
+@keyframes as-multpulse { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
 
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {

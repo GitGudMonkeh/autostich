@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildDeck, makeRng } from "../src/game/deck.js";
-import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, comboMultFor, isLegendary, tempoScoreMultFor } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, comboMultFor, isLegendary, tempoScoreMultFor, baseScoreMultFor } from "../src/game/perks.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 
 describe("Perks — Deck-Modifikationen (Kat. A)", () => {
@@ -154,6 +154,18 @@ describe("Hohe-Karte-Schwelle konsolidiert auf 8 — D3/C2/D7 (#34)", () => {
     expect(PERK_DEFS.C2.healOnWin({ winValue: 7 })).toBe(0);
     expect(critChanceFor(["D7"], { winValue: 8 })).toBeCloseTo(0.35);
     expect(critChanceFor(["D7"], { winValue: 7 })).toBe(0);
+  });
+});
+
+describe("baseScoreMultFor (Header-Chip #37 / StatusRail #23 — geteilte Quelle)", () => {
+  it("neutral 1 ohne Perks/Tempo; D1 = ×1,15", () => {
+    expect(baseScoreMultFor([], {})).toBeCloseTo(1);
+    expect(baseScoreMultFor(["D1"], {})).toBeCloseTo(1.15);
+  });
+  it("nutzt die NÄCHSTE Serie (winStreak+1) für D2 und erfasst Tempo/L6", () => {
+    expect(baseScoreMultFor(["D2"], { winStreak: 4 })).toBeCloseTo(1.5);   // (4+1)×0,1
+    expect(baseScoreMultFor(["L6"], { speedPct: 100 })).toBeCloseTo(2.0);  // Tempo-Faktor ×2
+    expect(baseScoreMultFor(["D1", "D2"], { winStreak: 4, speedPct: 100 })).toBeCloseTo(2.5875); // 1,15×1,5×1,5 (Tempo 100 %)
   });
 });
 

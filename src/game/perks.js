@@ -228,6 +228,13 @@ export function tempoScoreMultFor(perks, speedPct) {
   for (const id of perks) { const f = PERK_DEFS[id].tempoScoreFactorMult; if (f) factorMult *= f({}); }
   return 1 + (speedPct || 0) * C.TEMPO_SCORE_FACTOR * factorMult;
 }
+// Anzeige-Score-Multiplikator (#23/#37): immer aktive Faktoren D1 × D2 (NÄCHSTE Serie) × Tempo(L6).
+// winValue hoch → das bedingte D4 (×3 bei ≤3) bleibt ausgeblendet. EINE Quelle für Header-Chip (#37)
+// UND StatusRail-Detail (#23) → kein Drift.
+export function baseScoreMultFor(perks, { winStreak = 0, wins = 0, trickNo = 0, pos = 0, speedPct = 0 } = {}) {
+  const ctx = { winStreak: winStreak + 1, winValue: 99, wins: wins + 1, trickNo, posInCycle: pos };
+  return scoreMultFor(perks, ctx) * tempoScoreMultFor(perks, speedPct);
+}
 // Kombo-Wert eines Builds für die Anzeige (#31): nur wenn D2 gehalten wird — die Kombo IST der
 // D2-Effekt. Nutzt dieselbe comboMult-Formel wie der D2-Score-Hook → Anzeige == tatsächlicher Wert.
 export function comboMultFor(perks, winStreak) {
