@@ -15,21 +15,17 @@ function Btn({ active, onClick, disabled, children, tone = "#5a8ade" }) {
   );
 }
 
-export function Controls({ auto, onToggleAuto, paused, onTogglePause, speedMult, onSpeed, onNext, onRestart, onAbort, canNext }) {
+/* Ablauf-Steuerung. Das Spiel läuft immer automatisch — nur Pause hält an (#29). */
+export function Controls({ paused, onTogglePause, speedMult, onSpeed, onRestart, onAbort }) {
   return (
     <div className="rounded-xl p-3 flex flex-wrap items-center gap-2" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       <Btn active={paused} onClick={onTogglePause} tone="#d4a63a">
         {paused ? "▶ Weiter" : "⏸ Pause"}
       </Btn>
 
-      <Btn active={auto} onClick={onToggleAuto} tone="#5ab87a">
-        {auto ? "Auto" : "Manuell"}
-      </Btn>
-
+      <span className="text-xs opacity-50 ml-1">Tempo</span>
       <Btn active={speedMult === 2} onClick={() => onSpeed(2)} tone="#8a7de0">2×</Btn>
       <Btn active={speedMult === 3} onClick={() => onSpeed(3)} tone="#8a7de0">3×</Btn>
-
-      <Btn onClick={onNext} disabled={!canNext || auto} tone="#d4a63a">Nächster Stich</Btn>
 
       <div className="flex-1" />
       {onAbort && <Btn onClick={onAbort} tone="#8a8a92">Beenden</Btn>}

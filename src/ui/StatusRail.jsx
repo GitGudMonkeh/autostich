@@ -20,7 +20,27 @@ function Stat({ label, value, tone }) {
   );
 }
 
-export function StatusRail({ state, speedPct }) {
+/* Kompakter Score-Verlauf-Sparkline (#30): aktueller Lauf (gold) vs. Rekord/Geist (violett).
+   x = Stich-Index (Geist-Stützstellen, Zeit-Proxy), y = kumulativer Score (auto-skaliert). */
+function Sparkline({ current = [], record = [] }) {
+  const W = 300, H = 40, pad = 3;
+  const maxLen = Math.max(current.length, record.length);
+  const maxVal = Math.max(1, ...current, ...record);
+  const x = (i) => pad + (maxLen > 1 ? (i / (maxLen - 1)) * (W - 2 * pad) : W / 2);
+  const y = (v) => H - pad - (v / maxVal) * (H - 2 * pad);
+  const path = (arr) => arr.map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  if (current.length < 2 && record.length < 2) {
+    return <div className="text-[10px] opacity-35 py-2 text-center">Verlauf erscheint nach den ersten Stichen…</div>;
+  }
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }} preserveAspectRatio="none">
+      {record.length >= 2 && <path d={path(record)} fill="none" stroke="#8a7de0" strokeWidth="1.5" strokeOpacity="0.55" vectorEffect="non-scaling-stroke" />}
+      {current.length >= 2 && <path d={path(current)} fill="none" stroke="#d4a63a" strokeWidth="1.75" vectorEffect="non-scaling-stroke" />}
+    </svg>
+  );
+}
+
+export function StatusRail({ state, speedPct, currentTraj = [], recordTraj = [] }) {
   const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield } = state;
   const need = xpToNext(level);
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
@@ -98,6 +118,17 @@ export function StatusRail({ state, speedPct }) {
           </>)}
         </div>
       )}
+      {/* Score-Verlauf: aktueller Lauf vs. Rekord/Geist (#30) */}
+      <div className="pt-1 border-t" style={{ borderColor: "#26262e" }}>
+        <div className="flex items-center justify-between text-[10px] uppercase tracking-wide opacity-50 mb-1">
+          <span>Score-Verlauf</span>
+          <span className="flex gap-2 normal-case tracking-normal">
+            <span style={{ color: "#d4a63a" }}>Lauf</span>
+            {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>Rekord</span> : <span className="opacity-40">erster Lauf</span>}
+          </span>
+        </div>
+        <Sparkline current={currentTraj} record={recordTraj} />
+      </div>
     </div>
   );
 }

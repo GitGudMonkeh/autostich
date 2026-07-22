@@ -14,7 +14,6 @@ import { DeckHistogram } from "./ui/BuildSummary.jsx";
 
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
-  const [auto, setAuto] = useState(true);
   const [paused, setPaused] = useState(false);
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung 1×/2×/3× (#27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
@@ -59,10 +58,10 @@ export function Autostich() {
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
-    if (state.phase !== "play" || !auto || paused) return;
+    if (state.phase !== "play" || paused) return;
     const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs);
     return () => clearTimeout(id);
-  }, [state.phase, state.trickNo, auto, paused, state.speedPct, speedMult]);
+  }, [state.phase, state.trickNo, paused, state.speedPct, speedMult]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -103,7 +102,6 @@ export function Autostich() {
   }
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
   const pick = (id) => dispatch({ type: "PICK_PERK", perkId: id, rng: Math.random });
-  const next = () => { if (state.phase === "play" && !paused) dispatch({ type: "RESOLVE_TRICK", rng: Math.random }); };
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
@@ -158,10 +156,9 @@ export function Autostich() {
           </header>
 
           <Controls
-            auto={auto} onToggleAuto={() => setAuto((a) => !a)}
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
-            onNext={next} onRestart={startRun} onAbort={toMenu} canNext={state.phase === "play" && !paused}
+            onRestart={startRun} onAbort={toMenu}
           />
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
@@ -169,7 +166,7 @@ export function Autostich() {
               <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} />
               <BuildPanel perks={state.perks} />
             </div>
-            <StatusRail state={state} speedPct={state.speedPct} />
+            <StatusRail state={state} speedPct={state.speedPct} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>
 
           {/* Chronik — Deck-Werte-Histogramm, volle Breite ganz unten (#28) */}
