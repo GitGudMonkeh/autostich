@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildDeck, makeRng } from "../src/game/deck.js";
-import { PERK_DEFS, PERK_LIST, buildOffer } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor } from "../src/game/perks.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 
 describe("Perks — Deck-Modifikationen (Kat. A)", () => {
@@ -64,5 +64,22 @@ describe("buildOffer", () => {
   it("gibt bei fast leerem Pool nur die Restmenge", () => {
     const owned = PERK_LIST.map((p) => p.id).slice(0, PERK_LIST.length - 2);
     expect(buildOffer(owned, makeRng(1), 3)).toHaveLength(2);
+  });
+});
+
+describe("critChanceFor (Crit-Perks D6–D8)", () => {
+  it("D6: konstante +10 %", () => {
+    expect(critChanceFor(["D6"], {})).toBeCloseTo(0.10);
+  });
+  it("D7 nur bei Kartenwert ≥ 10", () => {
+    expect(critChanceFor(["D7"], { winValue: 12 })).toBeCloseTo(0.15);
+    expect(critChanceFor(["D7"], { winValue: 5 })).toBe(0);
+  });
+  it("D8 skaliert mit Serie, gedeckelt bei +30 %", () => {
+    expect(critChanceFor(["D8"], { winStreak: 5 })).toBeCloseTo(0.10);
+    expect(critChanceFor(["D8"], { winStreak: 20 })).toBeCloseTo(0.30); // 20*0.02 = 0.40 → Cap 0.30
+  });
+  it("summiert die Chancen mehrerer Crit-Perks", () => {
+    expect(critChanceFor(["D6", "D7", "D8"], { winValue: 12, winStreak: 20 })).toBeCloseTo(0.55);
   });
 });

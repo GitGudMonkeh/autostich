@@ -1,5 +1,6 @@
 import { xpToNext } from "../game/leveling.js";
-import { TRICKS_PER_CYCLE } from "../game/constants.js";
+import { TRICKS_PER_CYCLE, TEMPO_SCORE_FACTOR, CRIT_BASE_MULT } from "../game/constants.js";
+import { critChanceFor, hasCritPerk } from "../game/perks.js";
 
 function Bar({ value, max, color, height = 8 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
@@ -20,11 +21,16 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, speedPct, ghost }) {
-  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick } = state;
+  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits } = state;
   const need = xpToNext(level);
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
+  // Tempo-Score + Crit (#19)
+  const tempoScoreMult = 1 + speedPct * TEMPO_SCORE_FACTOR;
+  const fmtMult = (x) => x.toFixed(2).replace(".", ",");
+  const showCrit = hasCritPerk(perks) || (crits || 0) > 0;
+  const baseCritPct = Math.round(critChanceFor(perks, { winValue: 0, winStreak: 0, wins: 0, trickNo: 0, posInCycle: 0, speedPct }) * 100);
   // Leben-Balken bei Schaden/Heilung kurz aufblitzen (#15).
   const lifeFlash = lastTrick ? (lastTrick.result === "loss" && lastTrick.dmg > 0 ? "#e0605a" : lastTrick.healed > 0 ? "#5ab87a" : null) : null;
   return (
@@ -71,6 +77,19 @@ export function StatusRail({ state, speedPct, ghost }) {
         </div>
         <Bar value={remaining} max={TRICKS_PER_CYCLE} color="#5a8ade" height={6} />
       </div>
+      {/* Tempo-Score & Crit (#19) */}
+      {(speedPct > 0 || showCrit) && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
+          {speedPct > 0 && (
+            <span><span className="opacity-50">Tempo-Score </span><span style={{ color: "#d4a63a" }}>×{fmtMult(tempoScoreMult)}</span></span>
+          )}
+          {showCrit && (<>
+            <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{baseCritPct}%</span></span>
+            <span><span className="opacity-50">Crit </span><span style={{ color: "#e879f9" }}>×{fmtMult(CRIT_BASE_MULT)}</span></span>
+            <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
+          </>)}
+        </div>
+      )}
       {/* Geist */}
       {ghost.hasGhost && (
         <div className="text-xs pt-1 border-t flex items-center justify-between" style={{ borderColor: "#26262e" }}>

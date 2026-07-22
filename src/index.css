@@ -17,6 +17,9 @@ button { font-family: inherit; }
 @keyframes as-float  { 0% { opacity:0; transform: translateY(8px); } 18% { opacity:1; } 100% { opacity:0; transform: translateY(-40px); } }
 @keyframes as-impact { 0% { opacity:.55; transform: translate(-50%,-50%) scale(.4); } 100% { opacity:0; transform: translate(-50%,-50%) scale(1.8); } }
 @keyframes as-flash  { 0% { box-shadow: 0 0 0 0 transparent; } 30% { box-shadow: 0 0 0 2px var(--flash); } 100% { box-shadow: 0 0 0 0 transparent; } }
+/* Crit (#19): stärkerer Gewinner-Pop + „KRITISCH"-Text. */
+@keyframes as-pop-crit { 0% { transform: scale(1); } 35% { transform: scale(1.30); } 65% { transform: scale(.95); } 100% { transform: scale(1); } }
+@keyframes as-krit { 0% { opacity:0; transform: translateX(-50%) scale(.4); } 25% { opacity:1; transform: translateX(-50%) scale(1.15); } 60% { opacity:1; transform: translateX(-50%) scale(1); } 100% { opacity:0; transform: translateX(-50%) scale(1); } }
 
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {

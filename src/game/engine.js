@@ -1,6 +1,6 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
-import { PERK_DEFS, buildOffer } from "./perks.js";
+import { PERK_DEFS, buildOffer, critChanceFor } from "./perks.js";
 import { xpToNext } from "./leveling.js";
 
 function sumHook(perks, name, ctx) {
@@ -15,6 +15,18 @@ function prodHook(perks, name, ctx) {
 }
 function ownsFlag(perks, flag) {
   return perks.some((id) => PERK_DEFS[id][flag]);
+}
+function ownsGuaranteedCrit(perks, ctx) {
+  return perks.some((id) => { const f = PERK_DEFS[id].guaranteedCrit; return f ? f(ctx) : false; });
+}
+
+// Crit-Wurf (pure, testbar): guaranteed override; sonst rng < gedeckelter Chance.
+// Ruft rng() NUR, wenn wirklich gewürfelt wird → minimaler/deterministischer Verbrauch.
+export function rollCrit(chance, guaranteed, rng = Math.random) {
+  if (guaranteed) return true;
+  const c = Math.min(1, Math.max(0, chance));
+  if (c <= 0) return false;
+  return rng() < c;
 }
 
 // Effektiver Kampfwert der Spielerkarte in DIESEM Stich (Basiswert + Kat.-B-Boni).
@@ -32,6 +44,7 @@ export function resolveTrick(state, rng = Math.random) {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     initiative, lastResult, perks, offer, shieldUsedThisCycle, tieArmed,
+    crits, critBonusScore, bestTrickScore,
   } = state;
 
   const pCard = deck[playerOrder[pos]];
@@ -55,13 +68,25 @@ export function resolveTrick(state, rng = Math.random) {
   // sonst echter Gleichstand: kein Effekt (§4.1)
 
   let gained = 0, dmg = 0, healed = 0;
+  let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
 
   if (won) {
     winStreak += 1; wins += 1;
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
-    const wctx = { winValue: pValue, winStreak, wins };
-    gained = C.SCORE_PER_WIN * prodHook(perks, "scoreMult", wctx) + sumHook(perks, "scoreFlat", wctx);
+    // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
+    const wctx = { winValue: pValue, winStreak, wins, trickNo, posInCycle: pos, speedPct: state.speedPct || 0 };
+    // Score: Multiplikatoren × Tempo-Mult, DANN additive Boni (D3/D5), DANN Crit.
+    const tempoScoreMult = 1 + (state.speedPct || 0) * C.TEMPO_SCORE_FACTOR;
+    scoreBeforeCrit = C.SCORE_PER_WIN * prodHook(perks, "scoreMult", wctx) * tempoScoreMult
+                      + sumHook(perks, "scoreFlat", wctx);
+    critChance = critChanceFor(perks, wctx);
+    critMultiplier = C.CRIT_BASE_MULT + sumHook(perks, "critMultiplier", wctx);
+    isCrit = rollCrit(critChance, ownsGuaranteedCrit(perks, wctx), rng);
+    gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
+    critBonus = gained - scoreBeforeCrit;
     score += gained;
+    if (isCrit) { crits += 1; critBonusScore += critBonus; }
+    bestTrickScore = Math.max(bestTrickScore, gained);
     xp += C.XP_PER_WIN;
     healed = sumHook(perks, "healOnWin", wctx);
     life = Math.min(maxLife, life + healed);
@@ -86,6 +111,7 @@ export function resolveTrick(state, rng = Math.random) {
     pCard, oCard, pValue, oValue,
     result: tieConverted ? "win_tie" : won ? "win" : lost ? "loss" : "tie",
     gained, dmg, healed, trickNo,
+    isCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
   };
 
   // Tod? — sofort beenden (kein Weiterziehen / Level-Up)
@@ -93,6 +119,7 @@ export function resolveTrick(state, rng = Math.random) {
     return {
       ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
       life: 0, xp, level, score, winStreak, bestStreak, wins, losses, ties,
+      crits, critBonusScore, bestTrickScore,
       initiative, lastResult, offer, shieldUsedThisCycle, tieArmed,
       lastTrick, phase: "gameover",
     };
@@ -123,6 +150,7 @@ export function resolveTrick(state, rng = Math.random) {
   return {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
+    crits, critBonusScore, bestTrickScore,
     initiative, lastResult, perks, offer: newOffer, shieldUsedThisCycle, tieArmed,
     lastTrick, phase,
   };

@@ -20,6 +20,15 @@ export function GameOver({ state, highscores, isRecord, timeStr, onRestart, onMe
           <div><div className="opacity-50 text-xs">Perks</div><div className="font-bold">{state.perks.length}</div></div>
         </div>
 
+        {state.bestTrickScore > 0 && (
+          <div className="grid grid-cols-4 gap-2 text-center mt-3 text-sm">
+            <div><div className="opacity-50 text-xs">Crits</div><div className="font-bold" style={{ color: "#e879f9" }}>{state.crits}</div></div>
+            <div><div className="opacity-50 text-xs">Crit-Quote</div><div className="font-bold" style={{ color: "#e879f9" }}>{state.wins > 0 ? Math.round((state.crits / state.wins) * 100) : 0}%</div></div>
+            <div><div className="opacity-50 text-xs">Crit-Bonus</div><div className="font-bold" style={{ color: "#e879f9" }}>{Math.floor(state.critBonusScore).toLocaleString("de-DE")}</div></div>
+            <div><div className="opacity-50 text-xs">Bester Stich</div><div className="font-bold" style={{ color: "#d4a63a" }}>{Math.floor(state.bestTrickScore).toLocaleString("de-DE")}</div></div>
+          </div>
+        )}
+
         {state.perks.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
             {state.perks.map((id) => (

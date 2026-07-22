@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
-import { resolveTrick } from "../src/game/engine.js";
+import { resolveTrick, rollCrit } from "../src/game/engine.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
 const constDeck = (v) => Array.from({ length: 52 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
@@ -21,7 +21,7 @@ describe("resolveTrick — Grundausgänge", () => {
     const s = resolveTrick(scenario(12, 0), rng);
     expect(s.wins).toBe(1);
     expect(s.losses).toBe(0);
-    expect(s.score).toBe(1);
+    expect(s.score).toBe(100);
     expect(s.xp).toBe(10);
     expect(s.winStreak).toBe(1);
     expect(s.lastResult).toBe("win");
@@ -112,20 +112,85 @@ describe("resolveTrick — Verteidigungs-Perks", () => {
 
 describe("resolveTrick — Score-Perks", () => {
   it("D1 Punktebonus: +20 %", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D1"] }), rng).score).toBeCloseTo(1.2, 5);
+    expect(resolveTrick(scenario(12, 0, { perks: ["D1"] }), rng).score).toBeCloseTo(120);
   });
 
   it("D4 Außenseitersieg: Sieg mit Wert ≤3 → doppelter Score", () => {
-    expect(resolveTrick(scenario(2, 0, { perks: ["D4"] }), rng).score).toBe(2);
-    expect(resolveTrick(scenario(12, 0, { perks: ["D4"] }), rng).score).toBe(1);
+    expect(resolveTrick(scenario(2, 0, { perks: ["D4"] }), rng).score).toBe(200);
+    expect(resolveTrick(scenario(12, 0, { perks: ["D4"] }), rng).score).toBe(100);
   });
 
   it("D2 Siegesserie: ×1,0 / ×1,1 / ×1,2 …", () => {
     let s = scenario(12, 0, { perks: ["D2"] });
-    s = resolveTrick(s, rng); // 1.0
-    s = resolveTrick(s, rng); // +1.1
-    s = resolveTrick(s, rng); // +1.2
-    expect(s.score).toBeCloseTo(3.3, 5);
+    s = resolveTrick(s, rng); // ×1.0 → 100
+    s = resolveTrick(s, rng); // ×1.1 → 110
+    s = resolveTrick(s, rng); // ×1.2 → 120
+    expect(s.score).toBeCloseTo(330);
+  });
+});
+
+describe("resolveTrick — Tempo-Score & Crit (#19)", () => {
+  it("Tempo-Score-Multiplikator bei 0 / 10 / 100 / 150 % Speed", () => {
+    expect(resolveTrick(scenario(12, 0, { speedPct: 0 }), rng).score).toBe(100);
+    expect(resolveTrick(scenario(12, 0, { speedPct: 10 }), rng).score).toBeCloseTo(105);
+    expect(resolveTrick(scenario(12, 0, { speedPct: 100 }), rng).score).toBeCloseTo(150);
+    expect(resolveTrick(scenario(12, 0, { speedPct: 150 }), rng).score).toBeCloseTo(175);
+  });
+
+  it("additive Boni (D5) werden NACH Multiplikatoren + Tempo addiert", () => {
+    // 10. Sieg (wins 9→10) mit D1(+20%) und 100% Tempo: 100*1.2*1.5 + 25 = 205
+    const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D5"], speedPct: 100, wins: 9 }), rng);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(205);
+  });
+
+  it("Crit verdoppelt den vollen scoreBeforeCrit (inkl. Tempo + Boni)", () => {
+    // D9 garantiert Crit beim 10. Sieg; D1 + 100% Tempo: scoreBeforeCrit = 180, ×2 = 360
+    const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D9"], speedPct: 100, wins: 9 }), rng);
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(180);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(360);
+    expect(s.lastTrick.critBonus).toBeCloseTo(180);
+    expect(s.score).toBeCloseTo(360);
+  });
+
+  it("Niederlagen und Gleichstände lösen keinen Crit aus", () => {
+    const loss = resolveTrick(scenario(0, 12, { perks: ["D9"], life: 100, wins: 9 }), rng);
+    expect(loss.lastTrick.isCrit).toBe(false);
+    expect(loss.crits).toBe(0);
+    const tie = resolveTrick(scenario(5, 5, { perks: ["D9"], wins: 9 }), rng);
+    expect(tie.lastTrick.isCrit).toBe(false);
+  });
+
+  it("D9 garantiert Crit beim 10./20./30. Sieg, sonst nicht", () => {
+    for (const w of [10, 20, 30]) {
+      expect(resolveTrick(scenario(12, 0, { perks: ["D9"], wins: w - 1 }), rng).lastTrick.isCrit).toBe(true);
+    }
+    expect(resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 4 }), rng).lastTrick.isCrit).toBe(false);
+  });
+
+  it("crits, critBonusScore und bestTrickScore werden geführt", () => {
+    // 10. Sieg, D9 garantiert, 100% Tempo: scoreBeforeCrit = 150, ×2 = 300, Bonus 150
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], speedPct: 100, wins: 9 }), rng);
+    expect(s.crits).toBe(1);
+    expect(s.critBonusScore).toBeCloseTo(150);
+    expect(s.bestTrickScore).toBeCloseTo(300);
+  });
+});
+
+describe("rollCrit", () => {
+  it("0 % (oder ≤0) löst nie aus", () => {
+    expect(rollCrit(0, false, () => 0)).toBe(false);
+  });
+  it("garantiert überschreibt den Wurf", () => {
+    expect(rollCrit(0, true, () => 0.99)).toBe(true);
+  });
+  it("100 % löst immer aus; Chance wird bei 100 % gedeckelt", () => {
+    expect(rollCrit(1, false, () => 0.9999)).toBe(true);
+    expect(rollCrit(1.5, false, () => 0.99)).toBe(true); // >1 → auf 1 gedeckelt
+  });
+  it("würfelt gegen die Chance", () => {
+    expect(rollCrit(0.3, false, () => 0.2)).toBe(true);
+    expect(rollCrit(0.3, false, () => 0.5)).toBe(false);
   });
 });
 

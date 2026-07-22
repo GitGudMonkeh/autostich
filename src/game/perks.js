@@ -108,13 +108,27 @@ export const PERK_DEFS = {
   D5: { id: "D5", cat: "D", label: "Zehnter Sieg",
         desc: "Jeder zehnte gewonnene Stich gibt +25 Score.",
         scoreFlat: (ctx) => (ctx.wins % 10 === 0 ? C.D5_BONUS : 0) },
+  // Crit: kritische Treffer verdoppeln den gesamten Stichscore. ctx = { winValue, winStreak, wins, ... }.
+  // winStreak/wins enthalten bereits den gerade gewonnenen Stich.
+  D6: { id: "D6", cat: "D", label: "Kritische Chance",
+        desc: "+10 % Crit-Chance. Ein Crit verdoppelt den Score des Stichs.",
+        critChance: () => 0.10 },
+  D7: { id: "D7", cat: "D", label: "Geschärfter Blick",
+        desc: "Siege mit Kartenwert 10+ : +15 % Crit-Chance.",
+        critChance: ({ winValue }) => (winValue >= 10 ? 0.15 : 0) },
+  D8: { id: "D8", cat: "D", label: "Kritisches Momentum",
+        desc: "Jede Stufe der aktuellen Siegesserie: +2 % Crit-Chance (max +30 %).",
+        critChance: ({ winStreak }) => Math.min(winStreak * 0.02, 0.30) },
+  D9: { id: "D9", cat: "D", label: "Perfekter Rhythmus",
+        desc: "Jeder zehnte Sieg (10., 20., 30. …) ist garantiert kritisch.",
+        guaranteedCrit: ({ wins }) => wins % 10 === 0 },
 
-  // ---- E: Tempo (nur Geschwindigkeit) ----
-  E1: { id: "E1", cat: "E", label: "Tempo I",   desc: "Flip-Geschwindigkeit +10 %.", speedPct: 10 },
-  E2: { id: "E2", cat: "E", label: "Tempo II",  desc: "Flip-Geschwindigkeit +20 %.", speedPct: 20 },
-  E3: { id: "E3", cat: "E", label: "Tempo III", desc: "Flip-Geschwindigkeit +30 %.", speedPct: 30 },
-  E4: { id: "E4", cat: "E", label: "Tempo IV",  desc: "Flip-Geschwindigkeit +40 %.", speedPct: 40 },
-  E5: { id: "E5", cat: "E", label: "Tempo V",   desc: "Flip-Geschwindigkeit +50 %.", speedPct: 50 },
+  // ---- E: Tempo (Geschwindigkeit — steigert zusätzlich den Score) ----
+  E1: { id: "E1", cat: "E", label: "Tempo I",   desc: "Flip-Geschwindigkeit +10 %. Tempo erhöht auch den Score.", speedPct: 10 },
+  E2: { id: "E2", cat: "E", label: "Tempo II",  desc: "Flip-Geschwindigkeit +20 %. Tempo erhöht auch den Score.", speedPct: 20 },
+  E3: { id: "E3", cat: "E", label: "Tempo III", desc: "Flip-Geschwindigkeit +30 %. Tempo erhöht auch den Score.", speedPct: 30 },
+  E4: { id: "E4", cat: "E", label: "Tempo IV",  desc: "Flip-Geschwindigkeit +40 %. Tempo erhöht auch den Score.", speedPct: 40 },
+  E5: { id: "E5", cat: "E", label: "Tempo V",   desc: "Flip-Geschwindigkeit +50 %. Tempo erhöht auch den Score.", speedPct: 50 },
 };
 
 export const PERK_LIST = Object.values(PERK_DEFS);
@@ -123,4 +137,15 @@ export const PERK_LIST = Object.values(PERK_DEFS);
 export function buildOffer(owned, rng, count) {
   const avail = PERK_LIST.filter((p) => !owned.includes(p.id)).map((p) => p.id);
   return shuffle(avail, rng).slice(0, count);
+}
+
+// Summierte, auf 0..1 gedeckelte Crit-Chance der besessenen Perks für einen Kontext.
+export function critChanceFor(perks, ctx) {
+  let t = 0;
+  for (const id of perks) { const f = PERK_DEFS[id].critChance; if (f) t += f(ctx); }
+  return Math.min(1, Math.max(0, t));
+}
+// Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
+export function hasCritPerk(perks) {
+  return perks.some((id) => PERK_DEFS[id].critChance || PERK_DEFS[id].guaranteedCrit);
 }

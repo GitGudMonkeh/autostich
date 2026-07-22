@@ -4,7 +4,9 @@
 export const START_LIFE       = 2000;   // Leben = Run-Timer [TUNING]
 export const DMG_PER_LOSS     = 10;     // Schaden je verlorenem Stich [TUNING]
 export const XP_PER_WIN       = 10;     // XP je gewonnenem Stich [TUNING]
-export const SCORE_PER_WIN    = 1;      // Basispunkt je Sieg (Perks skalieren darauf) [TUNING]
+export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Tempo skalieren darauf) [TUNING]
+export const TEMPO_SCORE_FACTOR = 0.005; // je %-Punkt speedPct +0,5 % Stichscore [TUNING]
+export const CRIT_BASE_MULT   = 2;      // Crit verdoppelt den Stichscore [TUNING]
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 export const TRICKS_PER_CYCLE = 52;     // Karten je Deck-Durchlauf
 
