@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
-import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE } from "./game/constants.js";
+import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE, lossCostFor, lossTierFor } from "./game/constants.js";
 import { loadGhost, saveGhost, loadHighscores, recordHighscore } from "./game/storage.js";
 import { fmtDuration } from "./game/deck.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
@@ -19,6 +19,7 @@ export function Autostich() {
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
+  const [lossNotice, setLossNotice] = useState(null); // kurzer Float beim Stufenwechsel der Niederlagenkosten (#32)
 
   // GEIST — Rekord-Trajektorie (Score je GHOST_STEP Stiche) + laufende Reihe
   const recordTraj  = useRef([]);
@@ -30,6 +31,7 @@ export function Autostich() {
   // RUN-TIMER (#10) — akkumulierte aktive Zeit; friert bei Pause / außerhalb „play" ein (#9)
   const timeBase = useRef(0);
   const segStart = useRef(null);
+  const lastLossTier = useRef(0); // zuletzt angezeigte Niederlagenkosten-Stufe (#32)
   const active = state.phase === "play" && !paused;
   // Effektive Flip-Zeit: Basis / (1+Speed) / Turbo (1×/2×/3×). Beschleunigt nur Ablauf + Animation,
   // NICHT den Score (speedPct/tempoScoreMult bleiben unberührt → kein Cheesen).
@@ -57,9 +59,14 @@ export function Autostich() {
   }, [active]);
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
+  // Beim Auflösen die zeit-eskalierten Niederlagenkosten (#32) aus der LIVE aktiven Zeit berechnen
+  // und als Payload injizieren (Determinismus: der reine Layer sieht kein Date).
   useEffect(() => {
     if (state.phase !== "play" || paused) return;
-    const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs);
+    const id = setTimeout(() => {
+      const nowElapsed = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
+      dispatch({ type: "RESOLVE_TRICK", rng: Math.random, lossCost: lossCostFor(nowElapsed) });
+    }, flipMs);
     return () => clearTimeout(id);
   }, [state.phase, state.trickNo, paused, state.speedPct, speedMult]);
 
@@ -96,6 +103,8 @@ export function Autostich() {
     runId.current = Date.now();
     timeBase.current = 0;
     segStart.current = null;
+    lastLossTier.current = 0;
+    setLossNotice(null);
     setPaused(false);
     setIsRecord(false);
     dispatch({ type: "START_RUN", rng: Math.random });
@@ -116,6 +125,18 @@ export function Autostich() {
 
   const best = Math.max(recordTotal.current, highscores[0]?.score || 0);
   const elapsedMs = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
+  // Zeit-eskalierte Niederlagenkosten (#32) für die Anzeige (StatusRail-Indikator + Stufenwechsel-Float).
+  const lossCost = lossCostFor(elapsedMs);
+  const lossTier = lossTierFor(elapsedMs);
+  // Stufenwechsel → einmaliger, selbst-verschwindender Hinweis-Float (kein Modal, keine Pause).
+  // lossTier steigt nur mit aktiver Zeit (Pause friert ein) → kein Spam; Reset via startRun.
+  useEffect(() => {
+    if (state.phase !== "play" || lossTier <= lastLossTier.current) return;
+    lastLossTier.current = lossTier;
+    setLossNotice({ tier: lossTier, cost: lossCost });
+    const id = setTimeout(() => setLossNotice(null), 2000);
+    return () => clearTimeout(id);
+  }, [lossTier, state.phase]);
 
   return (
     <div className="min-h-screen w-full flex justify-center px-4 py-6">
@@ -163,10 +184,10 @@ export function Autostich() {
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
-              <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} />
+              <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} lossNotice={lossNotice} />
               <BuildPanel perks={state.perks} />
             </div>
-            <StatusRail state={state} speedPct={state.speedPct} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
+            <StatusRail state={state} speedPct={state.speedPct} lossCost={lossCost} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>
 
           {/* Chronik — Deck-Werte-Histogramm, volle Breite ganz unten (#28) */}

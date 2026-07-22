@@ -40,7 +40,7 @@ function Sparkline({ current = [], record = [] }) {
   );
 }
 
-export function StatusRail({ state, speedPct, currentTraj = [], recordTraj = [] }) {
+export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], recordTraj = [] }) {
   const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield } = state;
   const need = xpToNext(level);
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
@@ -61,6 +61,8 @@ export function StatusRail({ state, speedPct, currentTraj = [], recordTraj = [] 
   const ownsD7 = perks.includes("D7");
   // Leben-Balken bei Schaden/Heilung kurz aufblitzen (#15).
   const lifeFlash = lastTrick ? (lastTrick.result === "loss" && lastTrick.dmg > 0 ? "#e0605a" : lastTrick.healed > 0 ? "#5ab87a" : null) : null;
+  // Passiver Indikator der zeit-eskalierten Niederlagenkosten (#32): grün → gelb → rot je Stufe.
+  const lossColor = lossCost <= 10 ? "#5ab87a" : lossCost <= 20 ? "#d4a63a" : "#e0605a";
   return (
     <div className="rounded-xl p-4 grid gap-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       {/* Leben */}
@@ -73,6 +75,13 @@ export function StatusRail({ state, speedPct, currentTraj = [], recordTraj = [] 
           <Bar value={life} max={maxLife} color="#5ab87a" height={10} />
           {lifeFlash && <div key={trickNo} className="absolute inset-0 rounded-full pointer-events-none"
             style={{ animation: "as-flash 400ms ease-out", "--flash": lifeFlash }} />}
+        </div>
+        {/* Niederlagenkosten — passiver Dauer-Indikator, eskaliert zeitbasiert (#32). */}
+        <div className="flex justify-end mt-1">
+          <span className="text-[10px]" style={{ color: lossColor }}
+            title="Schaden je Niederlage — steigt +5 je 5 Min aktiver Spielzeit">
+            Niederlage −{lossCost}♥
+          </span>
         </div>
       </div>
       {/* XP / Level */}

@@ -37,7 +37,7 @@ export function effectivePlayerValue(baseValue, perks, ctx) {
 /* Einen Stich auflösen → neuer State (pure). rng wird nur bei Durchlauf-Ende
    (Neu-Mischen) und Level-Up (Perk-Angebot) gebraucht — als Abhängigkeit injiziert,
    damit die Schicht deterministisch/seedbar bleibt (kein Math.random hier drin). */
-export function resolveTrick(state, rng = Math.random) {
+export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS) {
   if (state.phase !== "play") return state;
 
   let {
@@ -95,7 +95,9 @@ export function resolveTrick(state, rng = Math.random) {
     lastResult = "win";
   } else if (lost) {
     losses += 1; winStreak = 0;
-    dmg = Math.max(0, C.DMG_PER_LOSS - sumHook(perks, "dmgReduce", {}));
+    // lossCost ist der zeit-eskalierte Grundwert (#32, injiziert); dmgReduce (C3) & Schild (C5)
+    // wirken weiterhin darauf — Schild absorbiert danach (s. u.).
+    dmg = Math.max(0, lossCost - sumHook(perks, "dmgReduce", {}));
     // Schild (C5) absorbiert NACH der Schadensberechnung, vor dem Leben.
     if (shield > 0 && dmg > 0) { const absorbed = Math.min(shield, dmg); shield -= absorbed; dmg -= absorbed; }
     life -= dmg;

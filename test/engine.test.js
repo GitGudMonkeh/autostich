@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
+import { lossCostFor, lossTierFor } from "../src/game/constants.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
 const constDeck = (v) => Array.from({ length: 52 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
@@ -117,6 +118,35 @@ describe("resolveTrick — Verteidigungs-Perks", () => {
     expect(s.lastTrick.pValue).toBe(5); // Kartenbonus +2 wirkt
     expect(s.wins).toBe(1);
     expect(s.tieArmed).toBe(false);
+  });
+});
+
+describe("Anti-Infinity — zeitbasierte Niederlagenkosten (#32)", () => {
+  const MIN = 60 * 1000;
+  it("Rampe: Basis 10, +5 je 5 Min aktiver Zeit, ungedeckelt", () => {
+    expect(lossCostFor(0)).toBe(10);
+    expect(lossCostFor(4.9 * MIN)).toBe(10);   // 0–5 min
+    expect(lossCostFor(5 * MIN)).toBe(15);     // Stufe 1 beginnt bei exakt 5:00
+    expect(lossCostFor(9.9 * MIN)).toBe(15);
+    expect(lossCostFor(10 * MIN)).toBe(20);
+    expect(lossCostFor(15 * MIN)).toBe(25);
+    expect(lossCostFor(60 * MIN)).toBe(70);    // kein Cap: 10 + 5×12
+  });
+  it("lossTierFor zählt die 5-Minuten-Stufe; negative/0 Zeit ist sicher", () => {
+    expect(lossTierFor(0)).toBe(0);
+    expect(lossTierFor(5 * MIN)).toBe(1);
+    expect(lossTierFor(12 * MIN)).toBe(2);
+    expect(lossCostFor(-100)).toBe(10);
+  });
+  it("resolveTrick nutzt die injizierte lossCost statt der Konstante", () => {
+    expect(resolveTrick(scenario(0, 12, { life: 100 }), rng, 15).life).toBe(85);
+    expect(resolveTrick(scenario(0, 12, { life: 100 }), rng).life).toBe(90); // Default = DMG_PER_LOSS
+  });
+  it("dmgReduce (C3) und Schild (C5) wirken auf den eskalierten Wert", () => {
+    expect(resolveTrick(scenario(0, 12, { life: 100, perks: ["C3"] }), rng, 20).life).toBe(82); // 20−2
+    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C5"], shield: 50 }), rng, 20);
+    expect(s.life).toBe(100);   // 20 vom Schild absorbiert
+    expect(s.shield).toBe(30);
   });
 });
 

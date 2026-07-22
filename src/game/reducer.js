@@ -44,7 +44,9 @@ export function reducer(state, action) {
       return menuState();
 
     case "RESOLVE_TRICK":
-      return resolveTrick(state, action.rng);
+      // action.lossCost: zeit-eskalierte Niederlagenkosten (#32), von App.jsx aus elapsedMs injiziert.
+      // Fehlt sie, greift der Engine-Default (DMG_PER_LOSS) → Reducer bleibt rein/deterministisch.
+      return resolveTrick(state, action.rng, action.lossCost);
 
     case "PICK_PERK": {
       if (state.phase !== "levelup") return state;

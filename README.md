@@ -94,7 +94,7 @@ Pro Stich wird je Seite die **nächste Karte** aus der gemischten Ziehreihenfolg
 
 | Größe | Wert / Regel |
 |---|---|
-| **Leben** (`life`, Start `START_LIFE = 2000`) | Fungiert als „Run-Timer". Nur **Verluste** zehren daran (−`DMG_PER_LOSS = 10` je verlorenem Stich, reduzierbar/schildbar). Heilung über C-Perks. `maxLife` = Startwert (Heilung cappt dort). |
+| **Leben** (`life`, Start `START_LIFE = 2000`) | Fungiert als „Run-Timer". Nur **Verluste** zehren daran (Basis −`DMG_PER_LOSS = 10`, **zeitbasiert eskalierend** +5 je 5 Min aktiver Zeit — Anti-Infinity #32; reduzierbar/schildbar). Heilung über C-Perks. `maxLife` = Startwert (Heilung cappt dort). |
 | **XP** (`XP_PER_WIN = 10` je Sieg) | Sammelt bis zur Level-Schwelle. Überschuss bleibt erhalten; mehrere Level-Ups in einem Stich werden nacheinander abgearbeitet. |
 | **XP-Kurve** (`leveling.js`) | `100, 120, 150, 190, 240, 300, 380, 480, 600, 750, 940, 1180, … 7050` (Level 1→20), danach ~×1,25 auf Zehner gerundet. Früh schnell, spät zäh. |
 | **Level-Up** | Öffnet die Perk-Auswahl (`PERKS_OFFERED = 3` Optionen). Ist der Perk-Pool leer (alle 25 gewählt) → **keine Pause**, Spiel läuft weiter. |
@@ -188,7 +188,7 @@ Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist
 | `StatusRail` | Leben-Balken (blitzt bei Schaden/Heilung), XP/Level-Balken, Kennzahlen (Score, Serie + beste Serie, Stiche, Durchlauf), Siege/Verluste/Quote %/Tempo, „Deck bis zum Mischen", Geist-Delta. |
 | `GameOver` | Endbildschirm: großer Score, Zeit, Rekord-Marker, Statistik (Level/Stiche/Durchläufe/beste Serie/Perks), Perk-Liste, Bestenliste, Neustart/Menü. |
 
-**Stich-„Juice" / Game-Feel (#15):** Gewinner-Karte poppt (`as-pop`), aufsteigende Score-/Leben-Zahlen (`as-float`), Impact-Flash am Aufprall (`as-impact`), Leben-Balken-Flash bei Schaden/Heilung (`as-flash`), floatende Kombo-Anzeige ab ×1,5 (`as-combo`, #31). Alle Dauern sind an den Flip-Takt gekoppelt. `@media (prefers-reduced-motion: reduce)` schaltet Animationen praktisch ab (Barrierefreiheit).
+**Stich-„Juice" / Game-Feel (#15):** Gewinner-Karte poppt (`as-pop`), aufsteigende Score-/Leben-Zahlen (`as-float`), Impact-Flash am Aufprall (`as-impact`), Leben-Balken-Flash bei Schaden/Heilung (`as-flash`), floatende Kombo-Anzeige ab ×1,5 (`as-combo`, #31), Hinweis-Float beim Stufenwechsel der Niederlagenkosten (`as-notice`, #32). Alle Dauern sind an den Flip-Takt gekoppelt. `@media (prefers-reduced-motion: reduce)` schaltet Animationen praktisch ab (Barrierefreiheit).
 
 ---
 
@@ -221,7 +221,8 @@ src/App.jsx          Autostich — useReducer-State, Effekte (Auto-Play-Takt,
 | Konstante | Wert | Bedeutung |
 |---|---|---|
 | `START_LIFE` | 2000 | Startleben (= Run-Puffer). |
-| `DMG_PER_LOSS` | 10 | Schaden je verlorenem Stich. |
+| `DMG_PER_LOSS` | 10 | Basis-Schaden je Niederlage (Stufe 0). |
+| `LOSS_COST_STEP` / `LOSS_COST_STEP_MS` | 5 / 5 min | Anti-Infinity (#32): +5 Schaden je 5 Min aktiver Zeit, ungedeckelt (`lossCostFor(elapsedMs)`). |
 | `XP_PER_WIN` | 10 | XP je Sieg. |
 | `SCORE_PER_WIN` | 1 | Basispunkt je Sieg (D-Perks skalieren darauf). |
 | `PERKS_OFFERED` | 3 | Perks je Level-Up. |

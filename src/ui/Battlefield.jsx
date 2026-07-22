@@ -45,7 +45,7 @@ function Side({ label, remaining, dealFrom, children }) {
   );
 }
 
-export function Battlefield({ lastTrick, remaining = 52, flipMs = 1000 }) {
+export function Battlefield({ lastTrick, remaining = 52, flipMs = 1000, lossNotice = null }) {
   const reduced = usePrefersReducedMotion();
   const t = lastTrick;
   const win = t && (t.result === "win" || t.result === "win_tie");
@@ -95,6 +95,17 @@ export function Battlefield({ lastTrick, remaining = 52, flipMs = 1000 }) {
                      transform: reduced ? "translateX(-50%)" : undefined,
                      animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900)}ms ease-out`) }}>
             KRITISCH{reduced ? ` ×${critMultStr}` : "!"}
+          </div>
+        )}
+
+        {/* Anti-Infinity (#32): einmaliger Hinweis beim Stufenwechsel der Niederlagenkosten —
+            non-blocking, selbst-verschwindend; reduced-motion → statisch (App räumt nach 2 s ab). */}
+        {lossNotice && (
+          <div key={`lossnotice-${lossNotice.tier}`} className="pointer-events-none absolute left-1/2 top-0 font-bold whitespace-nowrap z-20"
+            style={{ fontSize: 14, color: "#e0605a", textShadow: "0 0 10px #e0605a99",
+                     transform: reduced ? "translateX(-50%)" : undefined,
+                     animation: fx("as-notice 2000ms ease-out forwards") }}>
+            ⚠ Niederlagen kosten jetzt {lossNotice.cost}♥
           </div>
         )}
 

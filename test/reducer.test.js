@@ -57,4 +57,13 @@ describe("Reducer", () => {
   it("TO_MENU verlässt den Lauf zurück ins Menü", () => {
     expect(reducer(initialState(makeRng(1)), { type: "TO_MENU" }).phase).toBe("menu");
   });
+
+  it("RESOLVE_TRICK reicht action.lossCost an die Engine durch (#32)", () => {
+    const constDeck = (v) => Array.from({ length: 52 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
+    const id52 = Array.from({ length: 52 }, (_, i) => i);
+    // Erzwungene Niederlage (Spieler 0 vs. Gegner 12).
+    const losing = { ...initialState(makeRng(1)), deck: constDeck(0), oppDeck: constDeck(12), playerOrder: id52, oppOrder: id52, life: 100 };
+    expect(reducer(losing, { type: "RESOLVE_TRICK", rng, lossCost: 25 }).life).toBe(75);
+    expect(reducer(losing, { type: "RESOLVE_TRICK", rng }).life).toBe(90); // ohne Payload → Default 10
+  });
 });

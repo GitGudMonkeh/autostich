@@ -21,6 +21,8 @@ button { font-family: inherit; }
 @keyframes as-krit { 0% { opacity:0; transform: translateX(-50%) scale(.4); } 25% { opacity:1; transform: translateX(-50%) scale(1.15); } 60% { opacity:1; transform: translateX(-50%) scale(1); } 100% { opacity:0; transform: translateX(-50%) scale(1); } }
 /* Kombo-Float (#31): eskalierende Siegesserie poppt + steigt (Serie ≥5 → ×1,5). */
 @keyframes as-combo { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-10px) scale(1); } 100% { opacity:0; transform: translateY(-30px) scale(1); } }
+/* Niederlagenkosten-Stufenwechsel (#32): kurzer Hinweis, einblenden → halten → ausblenden. */
+@keyframes as-notice { 0% { opacity:0; transform: translate(-50%, 6px); } 12% { opacity:1; transform: translate(-50%, 0); } 82% { opacity:1; transform: translate(-50%, 0); } 100% { opacity:0; transform: translate(-50%, -12px); } }
 
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {
