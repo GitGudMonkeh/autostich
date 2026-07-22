@@ -148,6 +148,7 @@ export function Autostich() {
     dispatch({ type: "START_RUN", rng: Math.random });
   }
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
+  const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun läuft über den gameover-Effekt
   const pick = (id) => dispatch({ type: "PICK_PERK", perkId: id, rng: Math.random });
   const submitPrediction = (n) => dispatch({ type: "SUBMIT_PREDICTION", prediction: n, rng: Math.random }); // #36
 
@@ -257,7 +258,7 @@ export function Autostich() {
           <Controls
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
-            onRestart={startRun} onAbort={toMenu} onOptions={() => setShowOptions(true)}
+            onRestart={startRun} onAbort={endRun} onOptions={() => setShowOptions(true)}
           />
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
