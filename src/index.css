@@ -12,7 +12,9 @@ button { font-family: inherit; }
 @keyframes as-deal-left  { from { transform: translateX(-150px) translateY(-10px) scale(.9); opacity:0; } to { transform:none; opacity:1; } }
 @keyframes as-deal-right { from { transform: translateX( 150px) translateY(-10px) scale(.9); opacity:0; } to { transform:none; opacity:1; } }
 
-/* Game-Feel / „Juice" beim Stich (#15). Dauer wird inline an den Flip-Takt gekoppelt. */
+/* Game-Feel / „Juice" beim Stich (#15). Dauer wird inline an den Flip-Takt gekoppelt.
+   Hinweis: as-pop / as-pop-crit sind aktuell ungenutzt — der Gewinnerkarten-Pop wurde
+   bewusst rausgenommen (Battlefield.jsx). Keyframes bleiben für ein leichtes Re-Enable. */
 @keyframes as-pop    { 0% { transform: scale(1); } 45% { transform: scale(1.14); } 100% { transform: scale(1); } }
 @keyframes as-float  { 0% { opacity:0; transform: translateY(8px); } 18% { opacity:1; } 100% { opacity:0; transform: translateY(-40px); } }
 @keyframes as-flash  { 0% { box-shadow: 0 0 0 0 transparent; } 30% { box-shadow: 0 0 0 2px var(--flash); } 100% { box-shadow: 0 0 0 0 transparent; } }
@@ -33,4 +35,100 @@ button { font-family: inherit; }
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* ============================================================================
+   CRT-/PIXEL-SKIN (#41) — komplett additiv. Alles unten ist entweder ungenutzt
+   (Default) oder hinter [data-skin="crt"] gated, damit der aktuelle Look
+   unberührt bleibt, solange der Skin aus ist.
+   Pixel-Schriften self-hosted, aus src/ referenziert -> Vite bundlet und hasht
+   den Pfad (funktioniert unter dem Pages-Subpfad /autostich/).
+   ============================================================================ */
+@font-face {
+  font-family: "Press Start 2P";
+  src: url("./assets/fonts/PressStart2P.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "VT323";
+  src: url("./assets/fonts/VT323-Regular.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+
+/* Font-Utilities — nur unter Skin aktiv, sonst No-op (Default-Font bleibt).
+   Selektiv angewandt (Titel/Kartenzahlen/Ueberschriften bzw. dichte Zahlen-Labels). */
+[data-skin="crt"] .font-pixel {
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  letter-spacing: 0;
+  text-shadow: 0 0 6px currentColor, 0 0 14px currentColor; /* Neon-Glow, folgt der Textfarbe */
+}
+[data-skin="crt"] .font-pixel-dense {
+  font-family: "VT323", ui-monospace, monospace;
+  letter-spacing: 0.5px;
+}
+
+/* Gradient-Titel (weiss->violett) + Glow fuer die AUTOSTICH-Wortmarke.
+   Der `*`-Teil zieht auch farbige Inner-Spans (z. B. STICH) in den transparenten
+   Fill, damit der Verlauf durchgehend uebers ganze Wort laeuft. */
+[data-skin="crt"] .crt-title {
+  background: linear-gradient(90deg, #ffffff, #e6e1f7, #8a7de0, #b3a8ff, #8a7de0, #e6e1f7, #ffffff);
+  background-size: 200% auto;
+  -webkit-background-clip: text; background-clip: text;
+  filter: drop-shadow(0 0 8px #8a7de0aa);
+  animation: as-title-sweep 7s linear infinite;
+}
+@keyframes as-title-sweep { from { background-position: 0% center; } to { background-position: 200% center; } }
+[data-skin="crt"] .crt-title,
+[data-skin="crt"] .crt-title * {
+  color: transparent; -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+/* Kartenzahl: Press Start 2P ist breit -> kleiner als das text-5xl-Original. */
+[data-skin="crt"] .card-num {
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  font-size: 1.9rem; line-height: 1;
+  text-shadow: 0 0 8px currentColor;
+}
+
+/* Press Start 2P ist breiter -> Groessen der Wortmarke/des Banners herunterregeln. */
+[data-skin="crt"] .as-wordmark-header { font-size: 1rem; line-height: 1.3; }
+[data-skin="crt"] .as-wordmark-hero   { font-size: 1.9rem; line-height: 1.35; }
+[data-skin="crt"] .as-banner          { font-size: 0.9rem; letter-spacing: 0; }
+
+/* Scanline-/Vignette-Overlay — global ueber allem, aber klick-durchlaessig.
+   Immer im DOM (in App gerendert), nur unter Skin sichtbar. */
+.crt-overlay { display: none; }
+[data-skin="crt"] .crt-overlay {
+  display: block;
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.22) 3px, rgba(0,0,0,0) 4px),
+    radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.5) 100%);
+}
+
+/* Dezentes Neon-Leuchten fuer Karten unter Skin (Default: keine Aenderung). */
+[data-skin="crt"] .as-card {
+  box-shadow: 0 0 0 1px rgba(138,125,224,0.25), 0 0 16px rgba(138,125,224,0.18);
+}
+
+/* Panel-Rahmen unter Skin: heller + animierter Verlauf wie der Titel. Longhands
+   (nicht `background`-Shorthand) mit !important, damit background-position frei fuer
+   die Animation bleibt und der Rahmen nicht statisch wird. */
+[data-skin="crt"] .as-panel {
+  border: 1px solid transparent !important;
+  background-image:
+    linear-gradient(#17171c, #17171c),
+    linear-gradient(90deg, #3a3a48 0%, #8a7de0 25%, #b3a8ff 50%, #8a7de0 75%, #3a3a48 100%) !important;
+  background-origin: padding-box, border-box !important;
+  background-clip: padding-box, border-box !important;
+  background-size: auto, 200% auto !important;
+  animation: as-panel-sweep 7s linear infinite;
+  box-shadow: 0 0 14px rgba(138,125,224,0.12);
+}
+@keyframes as-panel-sweep {
+  from { background-position: 0% center, 0% center; }
+  to   { background-position: 0% center, 200% center; }
 }

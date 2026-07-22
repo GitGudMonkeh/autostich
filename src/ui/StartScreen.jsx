@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { AnleitungModal } from "./AnleitungModal.jsx";
 
 /* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste. */
-export function StartScreen({ onStart, highscores, best }) {
+export function StartScreen({ onStart, highscores, best, onOptions }) {
   const [showGuide, setShowGuide] = useState(false);
 
   // Beim allerersten Start die Anleitung einmal automatisch zeigen (#12).
@@ -17,7 +17,7 @@ export function StartScreen({ onStart, highscores, best }) {
   return (
     <div className="grid gap-5 justify-items-center py-10">
       <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight">
+        <h1 className="text-4xl font-bold tracking-tight font-pixel crt-title as-wordmark-hero">
           AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
         </h1>
         <p className="text-sm opacity-45 mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
@@ -38,9 +38,19 @@ export function StartScreen({ onStart, highscores, best }) {
         >
           Anleitung
         </button>
+        {onOptions && (
+          <button
+            onClick={onOptions}
+            aria-label="Optionen"
+            className="px-6 py-3 rounded-xl text-lg font-semibold transition-all"
+            style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
+          >
+            ⚙ Optionen
+          </button>
+        )}
       </div>
 
-      <div className="w-full max-w-sm rounded-xl p-4" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+      <div className="w-full max-w-sm rounded-xl p-4 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] uppercase tracking-wide opacity-50">Highscore</span>
           <span className="text-sm font-bold" style={{ color: "#d4a63a" }}>
