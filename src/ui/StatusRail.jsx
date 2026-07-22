@@ -1,4 +1,5 @@
 import { xpToNext } from "../game/leveling.js";
+import { TRICKS_PER_CYCLE } from "../game/constants.js";
 
 function Bar({ value, max, color, height = 8 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
@@ -19,8 +20,9 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, speedPct, ghost }) {
-  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak } = state;
+  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos } = state;
   const need = xpToNext(level);
+  const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   return (
     <div className="rounded-xl p-4 grid gap-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       {/* Leben */}
@@ -52,6 +54,14 @@ export function StatusRail({ state, speedPct, ghost }) {
         <div><span className="opacity-50">Verl. </span><span style={{ color: "#e0605a" }}>{losses}</span></div>
         <div><span className="opacity-50">Unent. </span><span className="opacity-80">{ties}</span></div>
         <div><span className="opacity-50">Tempo </span><span style={{ color: "#5a8ade" }}>+{speedPct}%</span></div>
+      </div>
+      {/* Rest-Karten des laufenden Deck-Durchlaufs (#6) */}
+      <div>
+        <div className="flex justify-between text-xs mb-1">
+          <span className="opacity-60">Deck bis zum Mischen</span>
+          <span className="opacity-80">{remaining} / {TRICKS_PER_CYCLE}</span>
+        </div>
+        <Bar value={remaining} max={TRICKS_PER_CYCLE} color="#5a8ade" height={6} />
       </div>
       {/* Geist */}
       {ghost.hasGhost && (
