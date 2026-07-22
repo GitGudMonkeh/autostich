@@ -1,13 +1,13 @@
 import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
 import { Sparkline } from "./Sparkline.jsx";
-import { GlobalLeaderboard } from "./GlobalLeaderboard.jsx";
 
-export function GameOver({ state, highscores, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [],
-  myEntry = null, pubToken = 0, hasUsername = false, onEditName }) {
+// Highscore-Listen (lokal + global) bewusst NICHT hier — sie stehen auf dem Startbildschirm und
+// machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
+export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [] }) {
   const score = Math.floor(state.score);
   return (
     <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-lg rounded-2xl p-6" style={{ background: "#181820", border: "1px solid #33333e" }}>
+      <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ background: "#181820", border: "1px solid #33333e" }}>
         <div className="text-center">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>Lauf beendet</div>
           <div className="text-5xl font-bold mt-2" style={{ color: "#d4a63a" }}>{score.toLocaleString("de-DE")}</div>
@@ -65,31 +65,6 @@ export function GameOver({ state, highscores, isRecord, timeStr, onRestart, onMe
             </div>
             <Sparkline current={currentTraj} record={recordTraj} height={110} />
           </div>
-        )}
-
-        {highscores.length > 0 && (
-          <div className="mt-5">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deine Läufe</div>
-            <div className="grid gap-1">
-              {highscores.map((h, i) => (
-                <div key={i} className="flex justify-between text-sm px-2 py-1 rounded"
-                  style={{ background: h.ts === state.runId ? "#8a7de022" : "#20202a" }}>
-                  <span className="opacity-50">#{i + 1}</span>
-                  <span className="font-bold" style={{ color: "#d4a63a" }}>{h.score.toLocaleString("de-DE")}</span>
-                  <span className="opacity-50 text-xs">Lvl {h.level} · {h.tricks} Stiche</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Globaler Highscore (#14) — nach dem Submit (pubToken) neu geladen, damit der
-            eigene Lauf enthalten und hervorgehoben ist. Ohne Config/offline entfällt er. */}
-        <GlobalLeaderboard mine={myEntry} reloadToken={pubToken} />
-        {!hasUsername && onEditName && (
-          <button onClick={onEditName} className="mt-2 text-xs opacity-60 hover:opacity-100 transition-opacity">
-            Namen festlegen, um im globalen Highscore zu erscheinen
-          </button>
         )}
 
         <div className="flex gap-2 mt-6">
