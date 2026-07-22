@@ -1,6 +1,6 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
-import { PERK_DEFS, buildOffer, critChanceFor, comboMultFor, tempoScoreMultFor, critMultiplierFor } from "./perks.js";
+import { PERK_DEFS, buildOffer, critChanceFor, comboMultFor, tempoScoreMultFor, critMultiplierFor, streakBaseMult } from "./perks.js";
 import { xpToNext } from "./leveling.js";
 
 function sumHook(perks, name, ctx) {
@@ -80,9 +80,9 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
     const wctx = { winValue: pValue, winStreak, wins, trickNo, posInCycle: pos, speedPct: state.speedPct || 0 };
-    // Score: Multiplikatoren × Tempo-Mult, DANN additive Boni (D3/D5), DANN Crit.
+    // Score: Basis-Serien-Mult (#39, immer) × Perk-Multiplikatoren × Tempo, DANN additive Boni (D3/D5), DANN Crit.
     const tempoScoreMult = tempoScoreMultFor(perks, state.speedPct); // L6 „Raserei": Tempo-Faktor ×2
-    scoreBeforeCrit = C.SCORE_PER_WIN * prodHook(perks, "scoreMult", wctx) * tempoScoreMult
+    scoreBeforeCrit = C.SCORE_PER_WIN * streakBaseMult(winStreak) * prodHook(perks, "scoreMult", wctx) * tempoScoreMult
                       + sumHook(perks, "scoreFlat", wctx);
     critChance = critChanceFor(perks, wctx, legendaryCritBonus); // inkl. L4-Bonus & L5-Halbierung
     critMultiplier = critMultiplierFor(perks, wctx);             // L5 „Jackpot": ×4 überschreibt Basis ×2

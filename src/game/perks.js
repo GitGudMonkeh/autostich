@@ -36,6 +36,10 @@ const bumpWhere = (deck, pred, delta) =>
 // EINE Formel als geteilte Quelle für Score-Berechnung (D2-Hook) UND Anzeige (comboMultFor →
 // Battlefield-Float) → kein Drift, analog zum Muster von scoreMultFor/critChanceFor (#23/#25).
 export const comboMult = (winStreak) => 1 + winStreak * C.D2_STEP;
+// Basis-Siegesserie (#39): IMMER aktiver, gedeckelter Serien-Multiplikator (nicht D2-gebunden) —
+// jede Serie hebt den Score-Mult leicht; D2 (comboMult) verstärkt zusätzlich. Geteilte Quelle
+// für Engine-Score UND Anzeige (baseScoreMultFor → Header-Chip #37 / StatusRail #23).
+export const streakBaseMult = (winStreak) => 1 + Math.min(winStreak * C.STREAK_BASE_STEP, C.STREAK_BASE_CAP);
 
 export const CATEGORIES = {
   A: { key: "A", name: "Deck",  desc: "Dauerhafte Kartenwerte",    color: "#8a7de0" },
@@ -232,8 +236,10 @@ export function tempoScoreMultFor(perks, speedPct) {
 // winValue hoch → das bedingte D4 (×3 bei ≤3) bleibt ausgeblendet. EINE Quelle für Header-Chip (#37)
 // UND StatusRail-Detail (#23) → kein Drift.
 export function baseScoreMultFor(perks, { winStreak = 0, wins = 0, trickNo = 0, pos = 0, speedPct = 0 } = {}) {
-  const ctx = { winStreak: winStreak + 1, winValue: 99, wins: wins + 1, trickNo, posInCycle: pos };
-  return scoreMultFor(perks, ctx) * tempoScoreMultFor(perks, speedPct);
+  // AKTUELLE Serie (kein +1): Serie 0 → ×1,00, wächst während die Serie läuft (#39). winValue hoch →
+  // bedingtes D4 (×3 bei ≤3) bleibt ausgeblendet. Reine Anzeige — das Scoring nutzt die resultierende Serie.
+  const ctx = { winStreak, winValue: 99, wins, trickNo, posInCycle: pos };
+  return streakBaseMult(winStreak) * scoreMultFor(perks, ctx) * tempoScoreMultFor(perks, speedPct);
 }
 // Kombo-Wert eines Builds für die Anzeige (#31): nur wenn D2 gehalten wird — die Kombo IST der
 // D2-Effekt. Nutzt dieselbe comboMult-Formel wie der D2-Score-Hook → Anzeige == tatsächlicher Wert.

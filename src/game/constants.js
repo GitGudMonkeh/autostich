@@ -17,6 +17,9 @@ export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 // Score-Perk-Magnituden (Kategorie D) [TUNING]
 export const D1_BONUS_PCT = 15;   // D1  +15 % Score je Sieg
 export const D2_STEP      = 0.10; // D2  Siegesserie: +10 % je Serien-Stufe, eskalierend — KEIN Cap (#31)
+// Basis-Siegesserie (#39): jede Serie hebt den Score-Mult leicht — AUCH ohne D2. D2 verstärkt zusätzlich.
+export const STREAK_BASE_STEP = 0.02; // +2 % je Serienstufe [TUNING]
+export const STREAK_BASE_CAP  = 0.30; // … gedeckelt bei +30 % [TUNING]
 export const D3_HIGH_MIN  = 8;    // gemeinsame „hohe Karte"-Schwelle für D3, C2 & D7 (#34: 10→8 auf Skala 1–10)
 export const D3_BONUS     = 60;   // D3  Flat-Bonus
 export const D4_LOW_MAX   = 3;    // D4  „Außenseiter" bis zu diesem Wert

@@ -192,7 +192,7 @@ export function Autostich() {
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Mult</div>
                 <div className="text-xl font-bold leading-none pt-0.5">
                   <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base"
-                    title="Score-Multiplikator: D1 + Siegesserie + Tempo (immer aktive Faktoren)"
+                    title="Score-Multiplikator: Siegesserie (Basis, immer +2 %/Stufe bis +30 %) × D1 × Tempo — D2 verstärkt die Serie zusätzlich"
                     style={{ fontVariantNumeric: "tabular-nums",
                              background: multHot ? "#d4a63a22" : "#ffffff0f",
                              color: multHot ? "#d4a63a" : "#8a8a92",

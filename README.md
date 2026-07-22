@@ -174,6 +174,7 @@ Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist
 ## 8. Score, Highscore & Geist
 
 - **Score** wächst nur durch **Siege**, skaliert über die D-Perks. Er ist die einzige Ziel-Metrik des Laufs.
+- **Basis-Siegesserie (#39):** jede Siegesserie hebt den Score-Mult **immer** um `STREAK_BASE_STEP = +2 %`/Stufe (gedeckelt `STREAK_BASE_CAP = +30 %`, Cap ab Serie 15) — auch **ohne** Perk D2. **D2** (Kombo, ungedeckelt) **verstärkt** die Serie zusätzlich multiplikativ. Der Header-Chip (#37) zieht damit auch ohne D2 mit der Serie hoch.
 - **Lokale Bestenliste** (`storage.js`, `localStorage["as_highscores"]`, **Top 5**): Eintrag `{ score, level, tricks, cycles, ts }`. Sortierung: Score↓, dann mehr Stiche, dann jünger. Wird beim Game-Over **und** beim vorzeitigen Beenden gesichert (idempotent via Ref).
 - **Geist** (`as_ghost`, getrennt von der Bestenliste): speichert nur den **Rekordlauf** als Score-Trajektorie (`traj[k]` = Score nach `(k+1)·GHOST_STEP` Stichen, `GHOST_STEP = 13`). Die StatusRail zeigt live den **Delta zum Rekord an genau dieser Stelle** („▲ +N vs. Rekord" / „⚑ Rekord-Distanz überholt"). Ein Step-Wechsel invalidiert alte Trajektorien.
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildDeck, makeRng } from "../src/game/deck.js";
-import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, comboMultFor, isLegendary, tempoScoreMultFor, baseScoreMultFor } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, comboMultFor, isLegendary, tempoScoreMultFor, baseScoreMultFor, streakBaseMult } from "../src/game/perks.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 
 describe("Perks — Deck-Modifikationen (Kat. A)", () => {
@@ -157,15 +157,32 @@ describe("Hohe-Karte-Schwelle konsolidiert auf 8 — D3/C2/D7 (#34)", () => {
   });
 });
 
-describe("baseScoreMultFor (Header-Chip #37 / StatusRail #23 — geteilte Quelle)", () => {
-  it("neutral 1 ohne Perks/Tempo; D1 = ×1,15", () => {
-    expect(baseScoreMultFor([], {})).toBeCloseTo(1);
-    expect(baseScoreMultFor(["D1"], {})).toBeCloseTo(1.15);
+describe("streakBaseMult (Basis-Siegesserie #39)", () => {
+  it("+2 %/Stufe, gedeckelt bei +30 % (Cap ab Serie 15)", () => {
+    expect(streakBaseMult(0)).toBeCloseTo(1);
+    expect(streakBaseMult(2)).toBeCloseTo(1.04);
+    expect(streakBaseMult(12)).toBeCloseTo(1.24);
+    expect(streakBaseMult(15)).toBeCloseTo(1.30);  // Cap erreicht
+    expect(streakBaseMult(50)).toBeCloseTo(1.30);  // darüber unverändert
   });
-  it("nutzt die NÄCHSTE Serie (winStreak+1) für D2 und erfasst Tempo/L6", () => {
-    expect(baseScoreMultFor(["D2"], { winStreak: 4 })).toBeCloseTo(1.5);   // (4+1)×0,1
-    expect(baseScoreMultFor(["L6"], { speedPct: 100 })).toBeCloseTo(2.0);  // Tempo-Faktor ×2
-    expect(baseScoreMultFor(["D1", "D2"], { winStreak: 4, speedPct: 100 })).toBeCloseTo(2.5875); // 1,15×1,5×1,5 (Tempo 100 %)
+});
+
+describe("baseScoreMultFor (Header-Chip #37 / StatusRail #23 — geteilte Quelle)", () => {
+  it("Serie 0 → ×1,00 (aktuelle Serie, kein +1); D1 verstärkt streak-unabhängig", () => {
+    expect(baseScoreMultFor([], {})).toBeCloseTo(1);                // Serie 0 → keine Serie, kein Bonus
+    expect(baseScoreMultFor(["D1"], {})).toBeCloseTo(1.15);         // D1 wirkt immer
+  });
+  it("nutzt die AKTUELLE Serie; D2 & Tempo/L6 multiplizieren obendrauf", () => {
+    expect(baseScoreMultFor(["D2"], { winStreak: 4 })).toBeCloseTo(1.512);  // streakBaseMult(4)=1,08 × comboMult(4)=1,4
+    expect(baseScoreMultFor(["L6"], { speedPct: 100 })).toBeCloseTo(2.0);   // 1,00 × Tempo(2,0)
+    expect(baseScoreMultFor(["D1", "D2"], { winStreak: 4, speedPct: 100 })).toBeCloseTo(2.6082); // 1,08×1,15×1,4×1,5
+  });
+  it("Siegesserie hebt den Mult AUCH ohne D2 (#39); D2 verstärkt zusätzlich", () => {
+    const s0 = baseScoreMultFor([], { winStreak: 0 });
+    const s5 = baseScoreMultFor([], { winStreak: 5 });
+    expect(s0).toBeCloseTo(1);                                             // Serie 0 → ×1,00
+    expect(s5).toBeGreaterThan(s0);                                        // ohne D2: Serie hebt den Mult
+    expect(baseScoreMultFor(["D2"], { winStreak: 5 })).toBeGreaterThan(s5); // D2 verstärkt weiter
   });
 });
 

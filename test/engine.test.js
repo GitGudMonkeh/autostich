@@ -22,7 +22,7 @@ describe("resolveTrick — Grundausgänge", () => {
     const s = resolveTrick(scenario(12, 0), rng);
     expect(s.wins).toBe(1);
     expect(s.losses).toBe(0);
-    expect(s.score).toBe(100);
+    expect(s.score).toBe(102); // 100 × streakBaseMult(1)=1,02 (#39)
     expect(s.xp).toBe(10);
     expect(s.winStreak).toBe(1);
     expect(s.lastResult).toBe("win");
@@ -152,28 +152,30 @@ describe("Anti-Infinity — zeitbasierte Niederlagenkosten (#32)", () => {
 
 describe("resolveTrick — Score-Perks", () => {
   it("D1 Punktebonus: +15 %", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D1"] }), rng).score).toBeCloseTo(115);
+    // 100 × streakBaseMult(1)=1,02 × 1,15 = 117,3 (#39)
+    expect(resolveTrick(scenario(12, 0, { perks: ["D1"] }), rng).score).toBeCloseTo(117.3);
   });
 
   it("D4 Außenseitersieg: Sieg mit Wert ≤3 → dreifacher Score", () => {
-    expect(resolveTrick(scenario(2, 0, { perks: ["D4"] }), rng).score).toBe(300);
-    expect(resolveTrick(scenario(12, 0, { perks: ["D4"] }), rng).score).toBe(100);
+    // je × streakBaseMult(1)=1,02 (#39): 100×1,02×3 = 306 bzw. 100×1,02×1 = 102
+    expect(resolveTrick(scenario(2, 0, { perks: ["D4"] }), rng).score).toBeCloseTo(306);
+    expect(resolveTrick(scenario(12, 0, { perks: ["D4"] }), rng).score).toBeCloseTo(102);
   });
 
-  it("D2 Siegesserie: eskalierend +10 % je Stufe (Serie 1/2/3 → ×1,1 / ×1,2 / ×1,3)", () => {
+  it("D2 Siegesserie: Basis-Serie × D2 eskalierend (Serie 1/2/3)", () => {
     let s = scenario(12, 0, { perks: ["D2"] });
-    s = resolveTrick(s, rng); // Serie 1 → ×1,1 → 110
-    s = resolveTrick(s, rng); // Serie 2 → ×1,2 → 120
-    s = resolveTrick(s, rng); // Serie 3 → ×1,3 → 130
-    expect(s.score).toBeCloseTo(360);
+    s = resolveTrick(s, rng); // Serie 1 → 1,02 × 1,1 → 112,2
+    s = resolveTrick(s, rng); // Serie 2 → 1,04 × 1,2 → 124,8
+    s = resolveTrick(s, rng); // Serie 3 → 1,06 × 1,3 → 137,8
+    expect(s.score).toBeCloseTo(374.8);
   });
 
   it("D2 eskaliert ungedeckelt (kein Cap): Serie 20 → ×3,0", () => {
     const s = resolveTrick(scenario(12, 0, { perks: ["D2"], winStreak: 19 }), rng);
     expect(s.winStreak).toBe(20);
-    // 100 × (1 + 20×0,1) = 300; der alte Deckel (max +50 %) hätte hier ×1,5 → 150 ergeben.
-    expect(s.lastTrick.gained).toBeCloseTo(300);
-    expect(s.lastTrick.comboMult).toBeCloseTo(3.0);
+    // 100 × streakBaseMult(20)=1,30 (Cap) × comboMult(20)=3,0 = 390 (#39)
+    expect(s.lastTrick.gained).toBeCloseTo(390);
+    expect(s.lastTrick.comboMult).toBeCloseTo(3.0); // D2-Anteil (nur D2, unverändert)
   });
 
   it("lastTrick.comboMult == D2-Faktor bei Sieg, 1 ohne D2 (Anzeige-Quelle, kein Drift #31)", () => {
@@ -184,26 +186,27 @@ describe("resolveTrick — Score-Perks", () => {
 
 describe("resolveTrick — Tempo-Score & Crit (#19)", () => {
   it("Tempo-Score-Multiplikator bei 0 / 10 / 100 / 150 % Speed", () => {
-    expect(resolveTrick(scenario(12, 0, { speedPct: 0 }), rng).score).toBe(100);
-    expect(resolveTrick(scenario(12, 0, { speedPct: 10 }), rng).score).toBeCloseTo(105);
-    expect(resolveTrick(scenario(12, 0, { speedPct: 100 }), rng).score).toBeCloseTo(150);
-    expect(resolveTrick(scenario(12, 0, { speedPct: 150 }), rng).score).toBeCloseTo(175);
+    // je × streakBaseMult(1)=1,02 (#39): 100×1,02 × (1 + speedPct×0,005)
+    expect(resolveTrick(scenario(12, 0, { speedPct: 0 }), rng).score).toBeCloseTo(102);
+    expect(resolveTrick(scenario(12, 0, { speedPct: 10 }), rng).score).toBeCloseTo(107.1);
+    expect(resolveTrick(scenario(12, 0, { speedPct: 100 }), rng).score).toBeCloseTo(153);
+    expect(resolveTrick(scenario(12, 0, { speedPct: 150 }), rng).score).toBeCloseTo(178.5);
   });
 
   it("additive Boni (D5) werden NACH Multiplikatoren + Tempo addiert", () => {
-    // 10. Sieg (wins 9→10) mit D1(+15%) und 100% Tempo: 100*1.15*1.5 + 300 = 472.5
+    // 10. Sieg mit D1(+15%), 100% Tempo, streakBaseMult(1)=1,02: 100×1,02×1,15×1,5 + 300 = 475,95
     const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D5"], speedPct: 100, wins: 9 }), rng);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(472.5);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(475.95);
   });
 
   it("Crit verdoppelt den vollen scoreBeforeCrit (inkl. Tempo + Boni)", () => {
-    // D9 garantiert Crit beim 10. Sieg; D1 + 100% Tempo: scoreBeforeCrit = 172.5, ×2 = 345
+    // D9 garantiert Crit beim 10. Sieg; D1 + 100% Tempo + streakBaseMult(1): scoreBeforeCrit = 175.95, ×2 = 351.9
     const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D9"], speedPct: 100, wins: 9 }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(172.5);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(345);
-    expect(s.lastTrick.critBonus).toBeCloseTo(172.5);
-    expect(s.score).toBeCloseTo(345);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(175.95);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(351.9);
+    expect(s.lastTrick.critBonus).toBeCloseTo(175.95);
+    expect(s.score).toBeCloseTo(351.9);
   });
 
   it("Niederlagen und Gleichstände lösen keinen Crit aus", () => {
@@ -222,11 +225,11 @@ describe("resolveTrick — Tempo-Score & Crit (#19)", () => {
   });
 
   it("crits, critBonusScore und bestTrickScore werden geführt", () => {
-    // 10. Sieg, D9 garantiert, 100% Tempo: scoreBeforeCrit = 150, ×2 = 300, Bonus 150
+    // 10. Sieg, D9 garantiert, 100% Tempo, streakBaseMult(1)=1,02: scoreBeforeCrit = 153, ×2 = 306, Bonus 153
     const s = resolveTrick(scenario(12, 0, { perks: ["D9"], speedPct: 100, wins: 9 }), rng);
     expect(s.crits).toBe(1);
-    expect(s.critBonusScore).toBeCloseTo(150);
-    expect(s.bestTrickScore).toBeCloseTo(300);
+    expect(s.critBonusScore).toBeCloseTo(153);
+    expect(s.bestTrickScore).toBeCloseTo(306);
   });
 });
 
@@ -273,14 +276,15 @@ describe("Legendäre Perks (#33) — Engine-Integration", () => {
     const s = resolveTrick(scenario(12, 0, { perks: ["D9", "L5"], wins: 9 }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.critMultiplier).toBe(4);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(400); // 100 × 4
+    expect(s.lastTrick.scoreGain).toBeCloseTo(408); // 100 × streakBaseMult(1)=1,02 × 4 (#39)
     expect(s.lastTrick.jackpot).toBe(true);
   });
   it("L5: die zufällige Crit-Chance wird halbiert (lastTrick.critChance)", () => {
     expect(resolveTrick(scenario(12, 0, { perks: ["D6", "L5"] }), rng).lastTrick.critChance).toBeCloseTo(0.06);
   });
   it("L6 Raserei: verdoppelt den Tempo-Score (nur der Tempo-Faktor)", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["L6"], speedPct: 100 }), rng).score).toBeCloseTo(200);
+    // 100 × streakBaseMult(1)=1,02 × Tempo(1+100×0,005×2=2,0) = 204 (#39)
+    expect(resolveTrick(scenario(12, 0, { perks: ["L6"], speedPct: 100 }), rng).score).toBeCloseTo(204);
   });
 });
 
