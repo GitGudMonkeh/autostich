@@ -20,7 +20,7 @@ function Stat({ label, value, tone }) {
   );
 }
 
-export function StatusRail({ state, speedPct, ghost }) {
+export function StatusRail({ state, speedPct }) {
   const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield } = state;
   const need = xpToNext(level);
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
@@ -64,8 +64,7 @@ export function StatusRail({ state, speedPct, ghost }) {
         <Bar value={xp} max={need} color="#8a7de0" />
       </div>
       {/* Kennzahlen */}
-      <div className="grid grid-cols-4 gap-3 pt-1">
-        <Stat label="Score" value={Math.floor(score).toLocaleString("de-DE")} tone="#d4a63a" />
+      <div className="grid grid-cols-3 gap-3 pt-1">
         <Stat label="Serie" tone={winStreak >= 3 ? "#e0605a" : undefined}
           value={<span>{winStreak > 0 ? `${winStreak}×` : "–"}<span className="text-xs opacity-45 ml-1">best {bestStreak}×</span></span>} />
         <Stat label="Stiche" value={trickNo} />
@@ -97,21 +96,6 @@ export function StatusRail({ state, speedPct, ghost }) {
             <span><span className="opacity-50">Crit </span><span style={{ color: "#e879f9" }}>×{fmtMult(CRIT_BASE_MULT)}</span></span>
             <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
           </>)}
-        </div>
-      )}
-      {/* Geist */}
-      {ghost.hasGhost && (
-        <div className="text-xs pt-1 border-t flex items-center justify-between" style={{ borderColor: "#26262e" }}>
-          <span className="opacity-50">Geist (Rekord {ghost.recordTotal.toLocaleString("de-DE")})</span>
-          {ghost.passed ? (
-            <span style={{ color: "#8a7de0" }}>⚑ Rekord-Distanz überholt</span>
-          ) : ghost.delta != null ? (
-            <span style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>
-              {ghost.delta >= 0 ? "▲ +" : "▼ "}{ghost.delta.toLocaleString("de-DE")} vs. Rekord
-            </span>
-          ) : (
-            <span className="opacity-40">…</span>
-          )}
         </div>
       )}
     </div>

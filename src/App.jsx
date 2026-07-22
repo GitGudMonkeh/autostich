@@ -10,6 +10,7 @@ import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
+import { DeckHistogram } from "./ui/BuildSummary.jsx";
 
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
@@ -137,6 +138,19 @@ export function Autostich() {
                 <div className="text-xl font-bold" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
               </div>
               <div className="text-right">
+                <div className="text-[10px] uppercase tracking-wide opacity-50">Score</div>
+                <div className="text-xl font-bold" style={{ color: "#d4a63a" }}>
+                  {Math.floor(state.score).toLocaleString("de-DE")}
+                  {ghost.hasGhost && (ghost.passed ? (
+                    <span className="text-xs font-normal ml-2" style={{ color: "#8a7de0" }}>⚑ Rekord</span>
+                  ) : ghost.delta != null ? (
+                    <span className="text-xs font-normal ml-2" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>
+                      {ghost.delta >= 0 ? "▲ +" : "▼ "}{ghost.delta.toLocaleString("de-DE")}
+                    </span>
+                  ) : null)}
+                </div>
+              </div>
+              <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
                 <div className="text-xl font-bold" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
               </div>
@@ -153,9 +167,15 @@ export function Autostich() {
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
               <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} />
-              <BuildPanel perks={state.perks} deck={state.deck} />
+              <BuildPanel perks={state.perks} />
             </div>
-            <StatusRail state={state} speedPct={state.speedPct} ghost={ghost} />
+            <StatusRail state={state} speedPct={state.speedPct} />
+          </div>
+
+          {/* Chronik — Deck-Werte-Histogramm, volle Breite ganz unten (#28) */}
+          <div className="rounded-xl p-4" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Chronik — Deck-Werte je Farbe</div>
+            <DeckHistogram deck={state.deck} />
           </div>
         </>)}
       </div>
