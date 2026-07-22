@@ -23,6 +23,8 @@ export function StatusRail({ state, speedPct, ghost }) {
   const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos } = state;
   const need = xpToNext(level);
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
+  const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
+  const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
   return (
     <div className="rounded-xl p-4 grid gap-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       {/* Leben */}
@@ -52,7 +54,7 @@ export function StatusRail({ state, speedPct, ghost }) {
       <div className="grid grid-cols-4 gap-3 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
         <div><span className="opacity-50">Siege </span><span style={{ color: "#5ab87a" }}>{wins}</span></div>
         <div><span className="opacity-50">Verl. </span><span style={{ color: "#e0605a" }}>{losses}</span></div>
-        <div><span className="opacity-50">Unent. </span><span className="opacity-80">{ties}</span></div>
+        <div><span className="opacity-50">Quote </span><span style={{ color: winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct}%</span></div>
         <div><span className="opacity-50">Tempo </span><span style={{ color: "#5a8ade" }}>+{speedPct}%</span></div>
       </div>
       {/* Rest-Karten des laufenden Deck-Durchlaufs (#6) */}

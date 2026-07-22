@@ -26,7 +26,7 @@ export const VALUE_CAP = null;
 
 // Tempo — Basis „langsam" ist fest; Beschleunigung nur über die Tempo-Perks (E-Linie,
 // speedPct), kein manueller Regler (#2, Design-Doc §5.3).
-export const BASE_FLIP_MS = 1400;   // ms je Stich bei 0 % Speed [TUNING]
+export const BASE_FLIP_MS = 2000;   // ms je Stich bei 0 % Speed (Basis-Tempo, ruhig) [TUNING]
 
 /* ============================================================
    DECK / FARBEN
