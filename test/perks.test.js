@@ -74,16 +74,16 @@ describe("buildOffer", () => {
     expect(buildOffer(owned, makeRng(1), 3, 9)).toHaveLength(2); // nur A1/A2 übrig (Commons)
   });
 
-  // ---- Legendär / Rarität (#33) ----
-  it("bietet unter Level 5 KEINE Legendaries (Level-Gate)", () => {
+  // ---- Legendär / Rarität (#33, Gate ab Level 2 seit #38) ----
+  it("bietet unter Level 2 KEINE Legendaries (Level-Gate)", () => {
     for (let s = 0; s < 20; s++) {
-      expect(buildOffer([], makeRng(s), 3, 4).some(isLegendary)).toBe(false);
+      expect(buildOffer([], makeRng(s), 3, 1).some(isLegendary)).toBe(false);
     }
   });
-  it("ab Level 5 erscheinen Legendaries — höchstens EINER je Angebot", () => {
+  it("ab Level 2 erscheinen Legendaries — höchstens EINER je Angebot", () => {
     // Nur Legendaries übrig → das Angebot enthält genau 1 (max 1 pro Angebot), und der ist legendär.
     const owned = PERK_LIST.filter((p) => !isLegendary(p.id)).map((p) => p.id);
-    const off = buildOffer(owned, makeRng(3), 3, 5);
+    const off = buildOffer(owned, makeRng(3), 3, 2);
     expect(off).toHaveLength(1);
     expect(isLegendary(off[0])).toBe(true);
   });

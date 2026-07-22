@@ -114,7 +114,7 @@ Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist
 
 `ctx` je Stich: `{ posInCycle, trickNo, lastResult, lostLastTrick, winStreak, life, maxLife }` · je Sieg: `{ winValue, winStreak, wins }`.
 
-**Rarität & Angebot (#33):** Jeder Perk hat `rarity` (`common`/`legendary`, Default common). `buildOffer(owned, rng, count, level)` zieht **gewichtet** (`RARITY_WEIGHTS = { common: 100, legendary: 8 }`), deterministisch über den injizierten `rng`. Legendaries erscheinen **erst ab Level 5** (`LEGENDARY_MIN_LEVEL`) und **höchstens einer je Angebot** (`MAX_LEGENDARIES_PER_OFFER`).
+**Rarität & Angebot (#33, Tuning #38):** Jeder Perk hat `rarity` (`common`/`legendary`, Default common). `buildOffer(owned, rng, count, level)` zieht **gewichtet** (`RARITY_WEIGHTS = { common: 100, legendary: 5 }`), deterministisch über den injizierten `rng`. Legendaries erscheinen **ab Level 2** (`LEGENDARY_MIN_LEVEL`) und **höchstens einer je Angebot** (`MAX_LEGENDARIES_PER_OFFER`) — Drop-Rate ~1 %/Slot bzw. ~3 %/Angebot (frischer Pool), steigend, wenn Commons weggewählt werden.
 
 ### A — Deck (violett): dauerhafte Kartenwerte (einmalig beim Pick)
 | ID | Name | Effekt |
@@ -157,7 +157,7 @@ Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist
 |---|---|---|
 | E1–E5 | Tempo I–V | Flip-Geschwindigkeit **+10 % / +20 % / +30 % / +40 % / +50 %** (kumulativ). |
 
-### ★ Legendär (#33): mächtig, aber mit Nachteil — `rarity: "legendary"`, ab Level 5, gewichtet
+### ★ Legendär (#33): mächtig, aber mit Nachteil — `rarity: "legendary"`, ab Level 2, gewichtet
 | ID | Kat. | Name | Effekt (Vorteil + Nachteil) |
 |---|---|---|---|
 | L1 | Deck | Überladung | Alle Karten dauerhaft **+2** Wert — dafür verlorene Stiche **+3** Schaden. |
