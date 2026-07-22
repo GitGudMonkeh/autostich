@@ -119,10 +119,8 @@ button { font-family: inherit; }
    die Animation bleibt und der Rahmen nicht statisch wird. */
 [data-skin="crt"] .as-panel {
   border: 1px solid transparent !important;
-  /* Innenflaeche leicht durchscheinend, damit die Ambient-Partikel (z-index:-1) dahinter
-     als dezenter Hintergrund durchschimmern; Text bleibt voll deckend darueber lesbar. */
   background-image:
-    linear-gradient(rgba(23,23,28,0.72), rgba(23,23,28,0.72)),
+    linear-gradient(#17171c, #17171c),
     linear-gradient(90deg, #3a3a48 0%, #8a7de0 25%, #b3a8ff 50%, #8a7de0 75%, #3a3a48 100%) !important;
   background-origin: padding-box, border-box !important;
   background-clip: padding-box, border-box !important;
