@@ -11,7 +11,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
   const effective = value + stichBonus;
   return (
     <div
-      className="relative rounded-xl border-2 flex flex-col items-center justify-center select-none transition-all"
+      className="as-card relative rounded-xl border-2 flex flex-col items-center justify-center select-none transition-all"
       style={{
         borderColor: color,
         width: 104, height: 144, background: "#1c1c22",
@@ -29,7 +29,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
           +{permBoost}
         </div>
       )}
-      <div className="text-5xl font-bold" style={{ color }}>{effective}</div>
+      <div className="text-5xl font-bold card-num" style={{ color }}>{effective}</div>
       <div className="absolute bottom-1.5 flex flex-col items-center leading-tight text-[10px]">
         {permBoost > 0 && <span className="opacity-55">Basis {baseRank}</span>}
         {stichBonus > 0 && <span style={{ color: "#e0605a" }}>⚔ +{stichBonus} Stich</span>}

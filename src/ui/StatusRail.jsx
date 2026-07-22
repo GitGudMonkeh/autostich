@@ -45,7 +45,7 @@ export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], r
   // Passiver Indikator der zeit-eskalierten Niederlagenkosten (#32): grün → gelb → rot je Stufe.
   const lossColor = lossCost <= 10 ? "#5ab87a" : lossCost <= 20 ? "#d4a63a" : "#e0605a";
   return (
-    <div className="rounded-xl p-4 grid gap-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+    <div className="rounded-xl p-4 grid gap-3 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       {/* Leben */}
       <div>
         <div className="flex justify-between text-xs mb-1">

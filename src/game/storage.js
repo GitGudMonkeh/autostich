@@ -43,3 +43,18 @@ export function recordHighscore(entry) {
   try { localStorage.setItem("as_highscores", JSON.stringify(top)); } catch (e) {}
   return top;
 }
+
+/* OPTIONEN (#41) — bewusst als erweiterbares Objekt (künftig Sound, Tempo-Default …).
+   Aktuell nur `skin`: "off" (Default, heutiger Look) | "crt" (Retro-CRT-Skin). */
+const DEFAULT_OPTIONS = { skin: "off" };
+export function loadOptions() {
+  try {
+    const raw = localStorage.getItem("as_options");
+    if (raw) { const o = JSON.parse(raw); if (o && typeof o === "object") return { ...DEFAULT_OPTIONS, ...o }; }
+  } catch (e) {}
+  return { ...DEFAULT_OPTIONS };
+}
+export function saveOptions(opts) {
+  try { localStorage.setItem("as_options", JSON.stringify(opts)); } catch (e) {}
+  return opts;
+}

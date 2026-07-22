@@ -2,7 +2,7 @@ import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE, lossCostFor, lossTierFor } from "./game/constants.js";
 import { baseScoreMultFor } from "./game/perks.js";
-import { loadGhost, saveGhost, loadHighscores, recordHighscore } from "./game/storage.js";
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, loadOptions, saveOptions } from "./game/storage.js";
 import { fmtDuration } from "./game/deck.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { Battlefield } from "./ui/Battlefield.jsx";
@@ -12,11 +12,14 @@ import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { PredictionSelect } from "./ui/PredictionSelect.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
+import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { DeckHistogram } from "./ui/BuildSummary.jsx";
 
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
   const [paused, setPaused] = useState(false);
+  const [options, setOptions] = useState(() => loadOptions());   // Optionen (#41): u. a. CRT-Skin
+  const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung 1×/2×/3× (#27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
@@ -37,7 +40,9 @@ export function Autostich() {
   const segStart = useRef(null);
   const lastLossTier = useRef(0); // zuletzt angezeigte Niederlagenkosten-Stufe (#32)
   const prevMult = useRef(1);     // vorheriger Score-Mult (Puls nur bei Anstieg, #37)
-  const active = state.phase === "play" && !paused;
+  // Offenes Optionen-Overlay friert den Lauf ein (wie andere Overlays) — ohne den
+  // Nutzer-Pause-Toggle zu verändern: beim Schließen läuft es im vorherigen Zustand weiter.
+  const active = state.phase === "play" && !paused && !showOptions;
   // Effektive Flip-Zeit: Basis / (1+Speed) / Turbo (1×/2×/3×). Beschleunigt nur Ablauf + Animation,
   // NICHT den Score (speedPct/tempoScoreMult bleiben unberührt → kein Cheesen).
   const flipMs = (BASE_FLIP_MS / (1 + state.speedPct / 100)) / speedMult;
@@ -47,6 +52,15 @@ export function Autostich() {
     recordTraj.current = g.traj;
     recordTotal.current = g.total;
   }, []);
+
+  // CRT-Skin (#41): data-skin am <html> spiegelt die Option → alle skin-gated CSS-Regeln
+  // greifen global (auch das fixed Scanline-Overlay). Default („off") = Attribut entfernt.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (options.skin === "crt") root.setAttribute("data-skin", "crt");
+    else root.removeAttribute("data-skin");
+  }, [options.skin]);
+  const changeOptions = (patch) => setOptions((o) => saveOptions({ ...o, ...patch }));
 
   // Timer-Segmente: bei Wechsel aktiv <-> inaktiv die verstrichene Zeit verbuchen.
   useEffect(() => {
@@ -67,13 +81,13 @@ export function Autostich() {
   // Beim Auflösen die zeit-eskalierten Niederlagenkosten (#32) aus der LIVE aktiven Zeit berechnen
   // und als Payload injizieren (Determinismus: der reine Layer sieht kein Date).
   useEffect(() => {
-    if (state.phase !== "play" || paused) return;
+    if (state.phase !== "play" || paused || showOptions) return;
     const id = setTimeout(() => {
       const nowElapsed = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
       dispatch({ type: "RESOLVE_TRICK", rng: Math.random, lossCost: lossCostFor(nowElapsed) });
     }, flipMs);
     return () => clearTimeout(id);
-  }, [state.phase, state.trickNo, paused, state.speedPct, speedMult]);
+  }, [state.phase, state.trickNo, paused, showOptions, state.speedPct, speedMult]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -160,13 +174,16 @@ export function Autostich() {
 
   return (
     <div className="min-h-screen w-full flex justify-center px-4 py-6">
+      {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
+          sichtbar (CSS), klick-durchlässig. */}
+      <div className="crt-overlay" aria-hidden="true" />
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
-          <StartScreen onStart={startRun} highscores={highscores} best={best} />
+          <StartScreen onStart={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)} />
         ) : (<>
           <header className="flex items-end justify-between flex-wrap gap-2">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">
+              <h1 className="text-2xl font-bold tracking-tight font-pixel crt-title as-wordmark-header">
                 AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
               </h1>
               <p className="text-xs opacity-45">Roguelite-Autobattler-Stechspiel · Prototyp</p>
@@ -174,11 +191,11 @@ export function Autostich() {
             <div className="flex items-end gap-5">
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Zeit{paused ? " ⏸" : ""}</div>
-                <div className="text-xl font-bold" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
+                <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
               </div>
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Score</div>
-                <div className="text-xl font-bold" style={{ color: "#d4a63a" }}>
+                <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>
                   {Math.floor(state.score).toLocaleString("de-DE")}
                   {ghost.hasGhost && (ghost.passed ? (
                     <span className="text-xs font-normal ml-2" style={{ color: "#8a7de0" }}>⚑ Rekord</span>
@@ -193,7 +210,7 @@ export function Autostich() {
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Mult</div>
                 <div className="text-xl font-bold leading-none pt-0.5">
-                  <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base"
+                  <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base font-pixel-dense"
                     title="Score-Multiplikator: Siegesserie (Basis, immer +2 %/Stufe bis +30 %) × D1 × Tempo — D2 verstärkt die Serie zusätzlich"
                     style={{ fontVariantNumeric: "tabular-nums",
                              background: multHot ? "#d4a63a22" : "#ffffff0f",
@@ -205,7 +222,7 @@ export function Autostich() {
               </div>
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
-                <div className="text-xl font-bold" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
+                <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
               </div>
             </div>
           </header>
@@ -213,7 +230,7 @@ export function Autostich() {
           <Controls
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
-            onRestart={startRun} onAbort={toMenu}
+            onRestart={startRun} onAbort={toMenu} onOptions={() => setShowOptions(true)}
           />
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
@@ -225,7 +242,7 @@ export function Autostich() {
           </div>
 
           {/* Chronik — Deck-Werte-Histogramm, volle Breite ganz unten (#28) */}
-          <div className="rounded-xl p-4" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+          <div className="rounded-xl p-4 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Chronik — Deck-Werte je Farbe</div>
             <DeckHistogram deck={state.deck} />
           </div>
@@ -241,6 +258,10 @@ export function Autostich() {
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
           currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu} />
+      )}
+
+      {showOptions && (
+        <OptionsModal options={options} onChange={changeOptions} onClose={() => setShowOptions(false)} />
       )}
     </div>
   );

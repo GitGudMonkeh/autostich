@@ -64,24 +64,21 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   // Effektdauern an den Flip-Takt koppeln; unter reduzierter Bewegung Animationen weglassen
   // (Element bleibt statisch sichtbar statt zu Ende-Opacity 0 zu springen).
   const anim = clamp(flipMs * 0.5, 120, 450);
-  const pop = clamp(flipMs * 0.35, 140, 320);
   const fx = (a) => (reduced ? undefined : a);
 
-  const dealStyle = (dealName, isWinner) => ({
-    animation: isWinner
-      ? `${dealName} ${anim}ms ease-out, ${isCrit ? "as-pop-crit" : "as-pop"} ${pop}ms ease-out ${anim}ms`
-      : `${dealName} ${anim}ms ease-out`,
-  });
+  // Karten „dealen" nur noch rein — der zusätzliche Pop-Bounce der Gewinnerkarte ist
+  // raus (Wunsch: ruhiger). Der Score-/Schaden-Float über der Karte bleibt erhalten.
+  const dealStyle = (dealName) => ({ animation: `${dealName} ${anim}ms ease-out` });
 
   const playerCard = t ? (
-    <div key={`p${t.trickNo}`} className="relative" style={dealStyle("as-deal-left", win)}>
+    <div key={`p${t.trickNo}`} className="relative" style={dealStyle("as-deal-left")}>
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
             stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 
   const oppCard = t ? (
-    <div key={`o${t.trickNo}`} className="relative" style={dealStyle("as-deal-right", lost)}>
+    <div key={`o${t.trickNo}`} className="relative" style={dealStyle("as-deal-right")}>
       <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
@@ -94,7 +91,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const comboStr = t ? t.comboMult.toFixed(1).replace(".", ",") : "";
 
   return (
-    <div className="rounded-xl p-6 overflow-hidden" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+    <div className="rounded-xl p-6 overflow-hidden as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       <div className="relative flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-/JACKPOT-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (
@@ -151,7 +148,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
 
       <div className="h-8 mt-4 flex items-center justify-center">
         {banner ? (
-          <span className="text-lg font-bold tracking-wide" style={{ color: banner.color }}>{banner.text}</span>
+          <span className="text-lg font-bold tracking-wide font-pixel as-banner" style={{ color: banner.color }}>{banner.text}</span>
         ) : (
           <span className="opacity-40 text-sm">Bereit — starte den Autobattler</span>
         )}

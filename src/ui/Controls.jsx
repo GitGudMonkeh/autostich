@@ -16,9 +16,9 @@ function Btn({ active, onClick, disabled, children, tone = "#5a8ade" }) {
 }
 
 /* Ablauf-Steuerung. Das Spiel läuft immer automatisch — nur Pause hält an (#29). */
-export function Controls({ paused, onTogglePause, speedMult, onSpeed, onRestart, onAbort }) {
+export function Controls({ paused, onTogglePause, speedMult, onSpeed, onRestart, onAbort, onOptions }) {
   return (
-    <div className="rounded-xl p-3 flex flex-wrap items-center gap-2" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+    <div className="rounded-xl p-3 flex flex-wrap items-center gap-2 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       <Btn active={paused} onClick={onTogglePause} tone="#d4a63a">
         {paused ? "▶ Weiter" : "⏸ Pause"}
       </Btn>
@@ -28,6 +28,7 @@ export function Controls({ paused, onTogglePause, speedMult, onSpeed, onRestart,
       <Btn active={speedMult === 3} onClick={() => onSpeed(3)} tone="#8a7de0">3×</Btn>
 
       <div className="flex-1" />
+      {onOptions && <Btn onClick={onOptions} tone="#8a7de0" aria-label="Optionen">⚙ Optionen</Btn>}
       {onAbort && <Btn onClick={onAbort} tone="#8a8a92">Beenden</Btn>}
       <Btn onClick={onRestart} tone="#e0605a">Neustart</Btn>
     </div>
