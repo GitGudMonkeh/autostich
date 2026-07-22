@@ -6,3 +6,8 @@ html, body { background:#141419; color:#e8e8ea; font-family: ui-monospace, SFMon
 button { font-family: inherit; }
 ::-webkit-scrollbar { height:8px; width:8px; }
 ::-webkit-scrollbar-thumb { background:#2a2a33; border-radius:4px; }
+
+/* Karten „dealen" aus den seitlichen Decks in die Mitte (#3). Dauer wird per
+   inline animation-duration an den Flip-Takt gekoppelt. */
+@keyframes as-deal-left  { from { transform: translateX(-150px) translateY(-10px) scale(.9); opacity:0; } to { transform:none; opacity:1; } }
+@keyframes as-deal-right { from { transform: translateX( 150px) translateY(-10px) scale(.9); opacity:0; } to { transform:none; opacity:1; } }

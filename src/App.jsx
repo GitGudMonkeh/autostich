@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
-import { BASE_FLIP_MS, GHOST_STEP } from "./game/constants.js";
+import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE } from "./game/constants.js";
 import { loadGhost, saveGhost, loadHighscores, recordHighscore } from "./game/storage.js";
 import { fmtDuration } from "./game/deck.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
@@ -148,7 +148,8 @@ export function Autostich() {
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
-              <Battlefield lastTrick={state.lastTrick} />
+              <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos}
+                flipMs={BASE_FLIP_MS / (1 + state.speedPct / 100)} />
               <BuildPanel perks={state.perks} deck={state.deck} />
             </div>
             <StatusRail state={state} speedPct={state.speedPct} ghost={ghost} />
