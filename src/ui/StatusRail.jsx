@@ -19,7 +19,7 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, speedPct, ghost }) {
-  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak } = state;
+  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak } = state;
   const need = xpToNext(level);
   return (
     <div className="rounded-xl p-4 grid gap-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
@@ -42,7 +42,8 @@ export function StatusRail({ state, speedPct, ghost }) {
       {/* Kennzahlen */}
       <div className="grid grid-cols-4 gap-3 pt-1">
         <Stat label="Score" value={Math.floor(score).toLocaleString("de-DE")} tone="#d4a63a" />
-        <Stat label="Serie" value={winStreak > 0 ? `${winStreak}×` : "–"} tone={winStreak >= 3 ? "#e0605a" : undefined} />
+        <Stat label="Serie" tone={winStreak >= 3 ? "#e0605a" : undefined}
+          value={<span>{winStreak > 0 ? `${winStreak}×` : "–"}<span className="text-xs opacity-45 ml-1">best {bestStreak}×</span></span>} />
         <Stat label="Stiche" value={trickNo} />
         <Stat label="Durchlauf" value={cycle + 1} />
       </div>

@@ -30,7 +30,7 @@ export function resolveTrick(state, rng = Math.random) {
 
   let {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
-    life, maxLife, xp, level, score, winStreak, wins, losses, ties,
+    life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     initiative, lastResult, perks, offer, shieldUsedThisCycle, tieArmed,
   } = state;
 
@@ -58,6 +58,7 @@ export function resolveTrick(state, rng = Math.random) {
 
   if (won) {
     winStreak += 1; wins += 1;
+    if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     const wctx = { winValue: pValue, winStreak, wins };
     gained = C.SCORE_PER_WIN * prodHook(perks, "scoreMult", wctx) + sumHook(perks, "scoreFlat", wctx);
     score += gained;
@@ -91,7 +92,7 @@ export function resolveTrick(state, rng = Math.random) {
   if (life <= 0) {
     return {
       ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
-      life: 0, xp, level, score, winStreak, wins, losses, ties,
+      life: 0, xp, level, score, winStreak, bestStreak, wins, losses, ties,
       initiative, lastResult, offer, shieldUsedThisCycle, tieArmed,
       lastTrick, phase: "gameover",
     };
@@ -121,7 +122,7 @@ export function resolveTrick(state, rng = Math.random) {
 
   return {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
-    life, maxLife, xp, level, score, winStreak, wins, losses, ties,
+    life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     initiative, lastResult, perks, offer: newOffer, shieldUsedThisCycle, tieArmed,
     lastTrick, phase,
   };

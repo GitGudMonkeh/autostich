@@ -60,6 +60,16 @@ describe("resolveTrick — Grundausgänge", () => {
     }
     expect(s.wins + s.losses + s.ties).toBe(s.trickNo);
   });
+
+  it("bestStreak hält die längste Serie, auch nach einem Serienabbruch (#8)", () => {
+    const deck = [12, 12, 12, 0].map((v, i) => ({ id: `p${i}`, suit: "R", baseRank: v, value: v }));
+    const opp  = [0, 0, 0, 12].map((v, i) => ({ id: `o${i}`, suit: "R", baseRank: v, value: v }));
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2, 3], oppOrder: [0, 1, 2, 3], life: 100 };
+    for (let i = 0; i < 4; i++) s = resolveTrick(s, rng); // Sieg, Sieg, Sieg, Niederlage
+    expect(s.wins).toBe(3);
+    expect(s.winStreak).toBe(0);   // letzter Stich verloren
+    expect(s.bestStreak).toBe(3);  // Serie bleibt gemerkt
+  });
 });
 
 describe("resolveTrick — Verteidigungs-Perks", () => {
