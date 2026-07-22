@@ -95,21 +95,7 @@ export function Battlefield({ lastTrick, remaining = 52, flipMs = 1000 }) {
 
         <Side label="Du" remaining={remaining} dealFrom="left">{playerCard}</Side>
 
-        <div className="relative">
-          <div className="text-2xl opacity-30">vs</div>
-          {banner && (
-            <div key={`ring${t.trickNo}`} className="absolute rounded-full pointer-events-none" style={{
-              left: "50%", top: "50%", width: 40, height: 40, borderWidth: 2, borderStyle: "solid", borderColor: banner.color,
-              animation: fx(`as-impact ${clamp(flipMs * 0.45, 160, 420)}ms ease-out`),
-            }} />
-          )}
-          {isCrit && (
-            <div key={`ring2${t.trickNo}`} className="absolute rounded-full pointer-events-none" style={{
-              left: "50%", top: "50%", width: 58, height: 58, borderWidth: 2, borderStyle: "solid", borderColor: CRIT_COLOR,
-              animation: fx(`as-impact ${clamp(flipMs * 0.5, 200, 480)}ms ease-out`),
-            }} />
-          )}
-        </div>
+        <div className="text-2xl opacity-30">vs</div>
 
         <Side label="Gegner" remaining={remaining} dealFrom="right">{oppCard}</Side>
 
