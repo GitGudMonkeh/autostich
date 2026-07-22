@@ -45,37 +45,44 @@ export function PerkList({ perks, empty = "Noch keine Perks." }) {
   );
 }
 
-/* Deck-Werte je Farbe: 4 Spalten, je eigenes Histogramm (Zeilen 0..max, gemeinsame Skala, #17). */
+/* Deck-Werte je Farbe: 4 Zeilen (eine je Farbe), Werte auf der x-Achse, Anzahl als Säulenhöhe.
+   Gemeinsame x-Achse (unter der letzten Zeile) + gemeinsame Höhen-Skala über alle Zeilen (#24). */
+const ROW_H = 22; // px Säulenhöhe je Farb-Zeile
 export function DeckHistogram({ deck }) {
   const counts = {};
-  let maxV = 0, cellMax = 1;
+  let maxV = 0, maxCount = 1;
   for (const c of deck) {
     (counts[c.value] ||= {});
     const n = (counts[c.value][c.suit] = (counts[c.value][c.suit] || 0) + 1);
-    if (n > cellMax) cellMax = n;
+    if (n > maxCount) maxCount = n;
     if (c.value > maxV) maxV = c.value;
   }
   const values = Array.from({ length: maxV + 1 }, (_, v) => v);
   return (
     <div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid gap-1">
         {SUIT_ORDER.map((su) => (
-          <div key={su} className="flex flex-col gap-[2px]">
-            <div className="text-[10px] font-bold text-center leading-none mb-0.5" style={{ color: suitColor(su) }}>{suitName(su)}</div>
-            {values.map((v) => {
-              const n = (counts[v] && counts[v][su]) || 0;
-              return (
-                <div key={v} className="flex items-center gap-1" title={`${suitName(su)} ${v}: ${n} Karten`}>
-                  <span className="text-[7px] w-3 text-right leading-none tabular-nums"
-                    style={{ color: v > 12 ? "#8a7de0" : undefined, opacity: v > 12 ? 1 : 0.4 }}>{v}</span>
-                  <div className="flex-1 rounded-sm overflow-hidden" style={{ height: 6, background: "#20202a" }}>
-                    {n > 0 && <div className="h-full rounded-sm" style={{ width: `${(n / cellMax) * 100}%`, background: suitColor(su) }} />}
-                  </div>
-                </div>
-              );
-            })}
+          <div key={su} className="flex items-end gap-1">
+            <div className="w-8 shrink-0 text-[10px] font-bold leading-none pb-0.5" style={{ color: suitColor(su) }}>{suitName(su)}</div>
+            <div className="flex-1 flex items-end gap-[2px]" style={{ height: ROW_H }}>
+              {values.map((v) => {
+                const n = (counts[v] && counts[v][su]) || 0;
+                return <div key={v} className="flex-1 rounded-t" title={`${suitName(su)} ${v}: ${n} Karten`}
+                  style={{ height: (n / maxCount) * ROW_H, minHeight: n ? 1 : 0, background: suitColor(su) }} />;
+              })}
+            </div>
           </div>
         ))}
+        {/* Gemeinsame x-Achse (Wertebeschriftung), an den Säulen ausgerichtet. */}
+        <div className="flex gap-1">
+          <div className="w-8 shrink-0" />
+          <div className="flex-1 flex gap-[2px]">
+            {values.map((v) => (
+              <div key={v} className="flex-1 text-center text-[7px] leading-none tabular-nums"
+                style={{ color: v > 12 ? "#8a7de0" : undefined, opacity: v > 12 ? 1 : 0.4 }}>{v}</div>
+            ))}
+          </div>
+        </div>
       </div>
       <div className="text-[10px] opacity-35 mt-1.5">Werte über 12 (violett) überbieten jede Gegnerkarte.</div>
     </div>
