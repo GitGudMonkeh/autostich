@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState } from "./game/reducer.js";
-import { BASE_FLIP_MS, TEMPO, GHOST_STEP } from "./game/constants.js";
+import { BASE_FLIP_MS, GHOST_STEP } from "./game/constants.js";
 import { loadGhost, saveGhost, loadHighscores, recordHighscore } from "./game/storage.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { Battlefield } from "./ui/Battlefield.jsx";
@@ -12,7 +12,6 @@ import { GameOver } from "./ui/GameOver.jsx";
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => initialState(Math.random));
   const [auto, setAuto] = useState(true);
-  const [tempo, setTempo] = useState("normal");
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
 
@@ -32,10 +31,10 @@ export function Autostich() {
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen.
   useEffect(() => {
     if (state.phase !== "play" || !auto) return;
-    const interval = BASE_FLIP_MS / (TEMPO[tempo] * (1 + state.speedPct / 100));
+    const interval = BASE_FLIP_MS / (1 + state.speedPct / 100);
     const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), interval);
     return () => clearTimeout(id);
-  }, [state.phase, state.trickNo, auto, tempo, state.speedPct]);
+  }, [state.phase, state.trickNo, auto, state.speedPct]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -100,7 +99,6 @@ export function Autostich() {
 
         <Controls
           auto={auto} onToggleAuto={() => setAuto((a) => !a)}
-          tempo={tempo} onTempo={setTempo}
           onNext={next} onRestart={restart} canNext={state.phase === "play"}
         />
 

@@ -24,9 +24,9 @@ export const GHOST_STEP = 13;
 // Gegner-Maximalwert überbieten können) — kein Cap.
 export const VALUE_CAP = null;
 
-// Tempo / Auto-Play
-export const BASE_FLIP_MS = 700;                        // ms je Stich bei Tempo „Normal", 0 % Speed [TUNING]
-export const TEMPO = { slow: 0.5, normal: 1, fast: 2 }; // Basis-Tempo-Umschalter (UI, kein Perk)
+// Tempo — Basis „langsam" ist fest; Beschleunigung nur über die Tempo-Perks (E-Linie,
+// speedPct), kein manueller Regler (#2, Design-Doc §5.3).
+export const BASE_FLIP_MS = 1400;   // ms je Stich bei 0 % Speed [TUNING]
 
 /* ============================================================
    DECK / FARBEN
