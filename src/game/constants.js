@@ -2,11 +2,11 @@
    TUNING-BLOCK  — hier dreht der Dev im Playtest
    ============================================================ */
 export const START_LIFE       = 2000;   // Leben = Run-Timer [TUNING]
-export const DMG_PER_LOSS     = 10;     // Basis-Schaden je Niederlage (Stufe 0) [TUNING]
-// Anti-Infinity (#32): Niederlagenkosten eskalieren mit der AKTIVEN Laufzeit — Basis 10,
-// +5 je 5 Minuten, ungedeckelt (0–5min→10, 5–10→15, 10–15→20, 15–20→25 …). Beide tunbar.
-export const LOSS_COST_STEP     = 5;               // +Schaden je Stufe [TUNING]
-export const LOSS_COST_STEP_MS  = 5 * 60 * 1000;   // Stufenlänge: 5 Min aktiver Spielzeit [TUNING]
+export const DMG_PER_LOSS     = 10;     // Schaden je Niederlage (flat) [TUNING]
+// Anti-Infinity (#59, ersetzt #32): periodischer, quadratisch eskalierender Leben-Abzug über die
+// AKTIVE Laufzeit — alle 2,5 Min −LIFE_DRAIN_BASE·n² (n = Intervall-Index): −5, −20, −45, −80 … kein Cap.
+export const LIFE_DRAIN_INTERVAL_MS = 2.5 * 60 * 1000; // 2,5 Min aktiver Spielzeit je Abzug [TUNING]
+export const LIFE_DRAIN_BASE        = 5;               // Abzug = LIFE_DRAIN_BASE · n² [TUNING]
 export const XP_PER_WIN       = 10;     // XP je gewonnenem Stich [TUNING]
 export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Tempo skalieren darauf) [TUNING]
 export const TEMPO_SCORE_FACTOR = 0.005; // je %-Punkt speedPct +0,5 % Stichscore [TUNING]
@@ -44,11 +44,10 @@ export const VALUE_CAP = null;
 // speedPct), kein manueller Regler (#2, Design-Doc §5.3).
 export const BASE_FLIP_MS = 1750;   // ms je Stich bei 0 % Speed (Basis-Tempo, etwas flotter; Turbo/Perks oben drauf) [TUNING]
 
-// Anti-Infinity (#32): Stufe & Schaden für eine gegebene AKTIVE Laufzeit. Pure Funktionen im
-// game/-Layer (Determinismus-Invariante: kein Date/Wall-Clock hier — elapsedMs wird injiziert,
-// analog zum rng-Payload). App.jsx reicht lossCostFor(elapsedMs) in die RESOLVE_TRICK-Action.
-export const lossTierFor = (elapsedMs) => Math.floor(Math.max(0, elapsedMs) / LOSS_COST_STEP_MS);
-export const lossCostFor = (elapsedMs) => DMG_PER_LOSS + LOSS_COST_STEP * lossTierFor(elapsedMs);
+// Anti-Infinity (#59): Abzug im n-ten 2,5-Min-Intervall (n≥1) — quadratisch, kein Cap. Rein.
+// App.jsx erkennt aus elapsedMs das Überschreiten einer Intervall-Schwelle und dispatcht LIFE_DRAIN
+// mit lifeDrainAt(n) (Determinismus: der game/-Layer sieht kein Date, nur den Betrag als Payload).
+export const lifeDrainAt = (n) => LIFE_DRAIN_BASE * n * n;
 
 /* ============================================================
    DECK / FARBEN

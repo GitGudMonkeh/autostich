@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
-import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE, lossCostFor, lossTierFor } from "./game/constants.js";
+import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE, LIFE_DRAIN_INTERVAL_MS, lifeDrainAt } from "./game/constants.js";
 import { baseScoreMultFor } from "./game/perks.js";
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, loadOptions, saveOptions, loadUsername, saveUsername } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
@@ -33,7 +33,7 @@ export function Autostich() {
   const [myEntry, setMyEntry] = useState(null);  // zuletzt gewerteter Lauf → Hervorhebung im Global-Board
   const [pubToken, setPubToken] = useState(0);    // bumpt nach erfolgreichem Submit → Board lädt neu
   function onSaveUsername(name) { saveUsername(name); setUsername(name); setShowUsername(false); }
-  const [lossNotice, setLossNotice] = useState(null); // kurzer Float beim Stufenwechsel der Niederlagenkosten (#32)
+  const [drainNotice, setDrainNotice] = useState(null); // kurzer Float beim periodischen Zeit-Abzug (#59)
   const [multPulse, setMultPulse] = useState(0);      // Zähler: bumpt bei Anstieg des Score-Mults → Puls (#37)
 
   // GEIST — Rekord-Trajektorie (Score je GHOST_STEP Stiche) + laufende Reihe
@@ -47,7 +47,7 @@ export function Autostich() {
   // RUN-TIMER (#10) — akkumulierte aktive Zeit; friert bei Pause / außerhalb „play" ein (#9)
   const timeBase = useRef(0);
   const segStart = useRef(null);
-  const lastLossTier = useRef(0); // zuletzt angezeigte Niederlagenkosten-Stufe (#32)
+  const lastDrainInterval = useRef(0); // zuletzt abgezogenes Zeit-Intervall (#59)
   const prevMult = useRef(1);     // vorheriger Score-Mult (Puls nur bei Anstieg, #37)
   // Offenes Optionen-Overlay friert den Lauf ein (wie andere Overlays) — ohne den
   // Nutzer-Pause-Toggle zu verändern: beim Schließen läuft es im vorherigen Zustand weiter.
@@ -87,14 +87,9 @@ export function Autostich() {
   }, [active]);
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
-  // Beim Auflösen die zeit-eskalierten Niederlagenkosten (#32) aus der LIVE aktiven Zeit berechnen
-  // und als Payload injizieren (Determinismus: der reine Layer sieht kein Date).
   useEffect(() => {
     if (state.phase !== "play" || paused || showOptions) return;
-    const id = setTimeout(() => {
-      const nowElapsed = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
-      dispatch({ type: "RESOLVE_TRICK", rng: Math.random, lossCost: lossCostFor(nowElapsed) });
-    }, flipMs);
+    const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs);
     return () => clearTimeout(id);
   }, [state.phase, state.trickNo, paused, showOptions, state.speedPct, speedMult]);
 
@@ -140,8 +135,8 @@ export function Autostich() {
     runId.current = Date.now();
     timeBase.current = 0;
     segStart.current = null;
-    lastLossTier.current = 0;
-    setLossNotice(null);
+    lastDrainInterval.current = 0;
+    setDrainNotice(null);
     setPaused(false);
     setIsRecord(false);
     dispatch({ type: "START_RUN", rng: Math.random });
@@ -163,18 +158,22 @@ export function Autostich() {
 
   const best = Math.max(recordTotal.current, highscores[0]?.score || 0);
   const elapsedMs = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
-  // Zeit-eskalierte Niederlagenkosten (#32) für die Anzeige (StatusRail-Indikator + Stufenwechsel-Float).
-  const lossCost = lossCostFor(elapsedMs);
-  const lossTier = lossTierFor(elapsedMs);
-  // Stufenwechsel → einmaliger, selbst-verschwindender Hinweis-Float (kein Modal, keine Pause).
-  // lossTier steigt nur mit aktiver Zeit (Pause friert ein) → kein Spam; Reset via startRun.
+  // Anti-Infinity (#59): periodischer, quadratisch eskalierender Leben-Abzug über die AKTIVE Zeit.
+  // drainInterval = Zahl der überschrittenen 2,5-Min-Schwellen; nextDrain = Betrag des nächsten Abzugs.
+  const drainInterval = Math.floor(elapsedMs / LIFE_DRAIN_INTERVAL_MS);
+  const nextDrain = lifeDrainAt(drainInterval + 1);
+  // Neue Schwelle(n) → für jede verpasste Stufe LIFE_DRAIN dispatchen (Payload: Betrag; Determinismus,
+  // der Reducer sieht kein Date) + kurzer, selbst-verschwindender Float. Reset via startRun.
   useEffect(() => {
-    if (state.phase !== "play" || lossTier <= lastLossTier.current) return;
-    lastLossTier.current = lossTier;
-    setLossNotice({ tier: lossTier, cost: lossCost });
-    const id = setTimeout(() => setLossNotice(null), 2000);
+    if (state.phase !== "play" || drainInterval <= lastDrainInterval.current) return;
+    for (let n = lastDrainInterval.current + 1; n <= drainInterval; n++) {
+      dispatch({ type: "LIFE_DRAIN", amount: lifeDrainAt(n) });
+    }
+    lastDrainInterval.current = drainInterval;
+    setDrainNotice({ interval: drainInterval, amount: lifeDrainAt(drainInterval) });
+    const id = setTimeout(() => setDrainNotice(null), 2000);
     return () => clearTimeout(id);
-  }, [lossTier, state.phase]);
+  }, [drainInterval, state.phase]);
 
   // Prominenter Score-Multiplikator-Chip (#37): geteilte Quelle mit der StatusRail (kein Drift).
   // perks || [] — im Menü (state = { phase:"menu" }) fehlen die Felder; Defaults greifen.
@@ -257,10 +256,10 @@ export function Autostich() {
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
-              <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} lossNotice={lossNotice} />
+              <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} drainNotice={drainNotice} />
               <BuildPanel perks={state.perks} />
             </div>
-            <StatusRail state={state} speedPct={state.speedPct} lossCost={lossCost} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
+            <StatusRail state={state} speedPct={state.speedPct} nextDrain={nextDrain} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>
 
           {/* Chronik — Deck-Werte-Histogramm, volle Breite ganz unten (#28) */}

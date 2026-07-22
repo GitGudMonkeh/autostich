@@ -49,9 +49,16 @@ export function reducer(state, action) {
       return menuState();
 
     case "RESOLVE_TRICK":
-      // action.lossCost: zeit-eskalierte Niederlagenkosten (#32), von App.jsx aus elapsedMs injiziert.
-      // Fehlt sie, greift der Engine-Default (DMG_PER_LOSS) → Reducer bleibt rein/deterministisch.
-      return resolveTrick(state, action.rng, action.lossCost);
+      return resolveTrick(state, action.rng);
+
+    case "LIFE_DRAIN": {
+      // Anti-Infinity (#59): periodischer, quadratisch eskalierender Leben-Abzug. Betrag kommt als
+      // Payload aus App.jsx (Determinismus: kein Date im Reducer). Nur im Spiel; ≤0 → Game Over.
+      if (state.phase !== "play") return state;
+      const life = state.life - (action.amount || 0);
+      if (life <= 0) return { ...state, life: 0, phase: "gameover" };
+      return { ...state, life };
+    }
 
     case "SUBMIT_PREDICTION": {
       // Ansage bestätigen (#36): erst JETZT neu mischen, pos/Zyklus-Akkus zurücksetzen, nächster Durchlauf.
