@@ -1,5 +1,4 @@
 import * as C from "./constants.js";
-import { shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer, critChanceFor, comboMultFor, tempoScoreMultFor, critMultiplierFor, streakBaseMult } from "./perks.js";
 import { xpToNext } from "./leveling.js";
 
