@@ -230,6 +230,60 @@ describe("resolveTrick — Tempo-Score & Crit (#19)", () => {
   });
 });
 
+describe("Legendäre Perks (#33) — Engine-Integration", () => {
+  it("L1 Überladung: +3 Zusatzschaden je Niederlage (auf lossCost)", () => {
+    expect(resolveTrick(scenario(0, 12, { life: 100, perks: ["L1"] }), rng, 10).life).toBe(87); // 10+3
+  });
+  it("L1+L6: extraDamageTaken summiert korrekt (+5)", () => {
+    expect(resolveTrick(scenario(0, 12, { life: 100, perks: ["L1", "L6"] }), rng, 10).life).toBe(85); // 10+3+2
+  });
+  it("C5 Schild verhindert den ersten Verlust je Durchlauf voll — auch mit L1-Zusatzschaden", () => {
+    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["L1", "C5"], shield: 50 }), rng, 10);
+    expect(s.life).toBe(100);   // 13 Schaden komplett vom Schild absorbiert
+    expect(s.shield).toBe(37);  // 50 − 13
+  });
+  it("L2 Unaufhaltsam: Gleichstand ab Serie ≥3 wird Sieg und erhöht die Serie", () => {
+    const s = resolveTrick(scenario(5, 5, { perks: ["L2"], winStreak: 3 }), rng);
+    expect(s.lastTrick.result).toBe("win_tie");
+    expect(s.wins).toBe(1);
+    expect(s.winStreak).toBe(4);
+  });
+  it("L2: Gleichstand unter Serie 3 bleibt Gleichstand", () => {
+    const s = resolveTrick(scenario(5, 5, { perks: ["L2"], winStreak: 2 }), rng);
+    expect(s.lastTrick.result).toBe("tie");
+    expect(s.winStreak).toBe(2);
+  });
+  it("L3 Letztes Aufbäumen: +6 Kartenwert bei ≤25 % Leben kippt den Stich, > 25 % nicht", () => {
+    const low = resolveTrick(scenario(4, 8, { perks: ["L3"], life: 500, maxLife: 2000 }), rng);
+    expect(low.lastTrick.pValue).toBe(10); // 4 + 6
+    expect(low.wins).toBe(1);
+    const high = resolveTrick(scenario(4, 8, { perks: ["L3"], life: 501, maxLife: 2000 }), rng);
+    expect(high.lastTrick.pValue).toBe(4);
+    expect(high.losses).toBe(1);
+  });
+  it("L4 Kritische Masse: Bonus erst NACH einem Crit, gedeckelt bei +30 pp", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9", "L4"], wins: 9 }), rng); // D9 garantiert Crit
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.legendaryCritBonus).toBeCloseTo(0.01);
+    expect(resolveTrick(scenario(12, 0, { perks: ["L4"] }), rng).legendaryCritBonus).toBe(0); // ohne Crit
+    expect(resolveTrick(scenario(12, 0, { perks: ["D9", "L4"], wins: 9, legendaryCritBonus: 0.30 }), rng)
+      .legendaryCritBonus).toBeCloseTo(0.30); // Deckel
+  });
+  it("L5 Jackpot: Crit ×4 (überschreibt ×2), garantierte Crits unberührt", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9", "L5"], wins: 9 }), rng);
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.lastTrick.critMultiplier).toBe(4);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(400); // 100 × 4
+    expect(s.lastTrick.jackpot).toBe(true);
+  });
+  it("L5: die zufällige Crit-Chance wird halbiert (lastTrick.critChance)", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["D6", "L5"] }), rng).lastTrick.critChance).toBeCloseTo(0.06);
+  });
+  it("L6 Raserei: verdoppelt den Tempo-Score (nur der Tempo-Faktor)", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["L6"], speedPct: 100 }), rng).score).toBeCloseTo(200);
+  });
+});
+
 describe("rollCrit", () => {
   it("0 % (oder ≤0) löst nie aus", () => {
     expect(rollCrit(0, false, () => 0)).toBe(false);

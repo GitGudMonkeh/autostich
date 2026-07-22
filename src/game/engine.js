@@ -1,6 +1,6 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
-import { PERK_DEFS, buildOffer, critChanceFor, comboMultFor } from "./perks.js";
+import { PERK_DEFS, buildOffer, critChanceFor, comboMultFor, tempoScoreMultFor, critMultiplierFor } from "./perks.js";
 import { xpToNext } from "./leveling.js";
 
 function sumHook(perks, name, ctx) {
@@ -15,6 +15,9 @@ function prodHook(perks, name, ctx) {
 }
 function ownsFlag(perks, flag) {
   return perks.some((id) => PERK_DEFS[id][flag]);
+}
+function anyHookTrue(perks, name, ctx) {
+  return perks.some((id) => { const f = PERK_DEFS[id][name]; return f ? !!f(ctx) : false; });
 }
 function ownsGuaranteedCrit(perks, ctx) {
   return perks.some((id) => { const f = PERK_DEFS[id].guaranteedCrit; return f ? f(ctx) : false; });
@@ -44,7 +47,7 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     initiative, lastResult, perks, offer, shield, tieArmed,
-    crits, critBonusScore, bestTrickScore,
+    crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
   } = state;
 
   const pCard = deck[playerOrder[pos]];
@@ -57,6 +60,7 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     lastResult,
     lostLastTrick: lastResult === "loss",
     winStreak,
+    life, maxLife, // L3 „Letztes Aufbäumen": cardBonus prüft das Leben-Verhältnis VOR der Auflösung
   };
   const pValue = effectivePlayerValue(pCard.value, perks, ctx);
   const oValue = oCard.value; // Gegner bleibt neutral/unverändert (§12)
@@ -64,7 +68,8 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
   let won = false, lost = false, tieConverted = false;
   if (pValue > oValue) won = true;
   else if (pValue < oValue) lost = true;
-  else if (tieArmed) { won = true; tieConverted = true; } // B5: Gleichstand → Sieg
+  // Gleichstand → Sieg via B5 (tieArmed) ODER L2 „Unaufhaltsam" (winTie, Serie VOR dem Stich ≥3).
+  else if (tieArmed || anyHookTrue(perks, "winTie", ctx)) { won = true; tieConverted = true; }
   // sonst echter Gleichstand: kein Effekt (§4.1)
 
   let gained = 0, dmg = 0, healed = 0;
@@ -76,16 +81,20 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
     const wctx = { winValue: pValue, winStreak, wins, trickNo, posInCycle: pos, speedPct: state.speedPct || 0 };
     // Score: Multiplikatoren × Tempo-Mult, DANN additive Boni (D3/D5), DANN Crit.
-    const tempoScoreMult = 1 + (state.speedPct || 0) * C.TEMPO_SCORE_FACTOR;
+    const tempoScoreMult = tempoScoreMultFor(perks, state.speedPct); // L6 „Raserei": Tempo-Faktor ×2
     scoreBeforeCrit = C.SCORE_PER_WIN * prodHook(perks, "scoreMult", wctx) * tempoScoreMult
                       + sumHook(perks, "scoreFlat", wctx);
-    critChance = critChanceFor(perks, wctx);
-    critMultiplier = C.CRIT_BASE_MULT + sumHook(perks, "critMultiplier", wctx);
+    critChance = critChanceFor(perks, wctx, legendaryCritBonus); // inkl. L4-Bonus & L5-Halbierung
+    critMultiplier = critMultiplierFor(perks, wctx);             // L5 „Jackpot": ×4 überschreibt Basis ×2
     isCrit = rollCrit(critChance, ownsGuaranteedCrit(perks, wctx), rng);
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     critBonus = gained - scoreBeforeCrit;
     score += gained;
-    if (isCrit) { crits += 1; critBonusScore += critBonus; }
+    if (isCrit) {
+      crits += 1; critBonusScore += critBonus;
+      // L4 „Kritische Masse": Bonus NACH dem Wurf erhöhen (nicht rückwirkend), dauerhaft gedeckelt.
+      if (ownsFlag(perks, "legendaryCritGain")) legendaryCritBonus = Math.min(legendaryCritBonus + C.L4_CRIT_STEP, C.L4_CRIT_CAP);
+    }
     bestTrickScore = Math.max(bestTrickScore, gained);
     xp += C.XP_PER_WIN;
     healed = sumHook(perks, "healOnWin", wctx);
@@ -95,9 +104,9 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     lastResult = "win";
   } else if (lost) {
     losses += 1; winStreak = 0;
-    // lossCost ist der zeit-eskalierte Grundwert (#32, injiziert); dmgReduce (C3) & Schild (C5)
-    // wirken weiterhin darauf — Schild absorbiert danach (s. u.).
-    dmg = Math.max(0, lossCost - sumHook(perks, "dmgReduce", {}));
+    // lossCost = zeit-eskalierter Grundwert (#32). Legendär-Zusatzschaden (L1 +3 / L6 +2, summiert)
+    // addiert darauf; dmgReduce (C3) zieht ab, Schild (C5) absorbiert danach (s. u.).
+    dmg = Math.max(0, lossCost + sumHook(perks, "extraDamageTaken", {}) - sumHook(perks, "dmgReduce", {}));
     // Schild (C5) absorbiert NACH der Schadensberechnung, vor dem Leben.
     if (shield > 0 && dmg > 0) { const absorbed = Math.min(shield, dmg); shield -= absorbed; dmg -= absorbed; }
     life -= dmg;
@@ -115,6 +124,7 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     result: tieConverted ? "win_tie" : won ? "win" : lost ? "loss" : "tie",
     gained, dmg, healed, trickNo,
     isCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
+    jackpot: isCrit && critMultiplier > C.CRIT_BASE_MULT, // L5 „Jackpot": Crit ×4 → verstärkter Float
     // D2-Kombo-Wert der resultierenden Serie (geteilte Quelle → kein Drift zur Score-Berechnung, #31).
     // 1 ohne D2; bei Niederlage/Gleichstand irrelevant (Anzeige nur bei Sieg ab ×1,5).
     comboMult: comboMultFor(perks, winStreak),
@@ -125,7 +135,7 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     return {
       ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
       life: 0, xp, level, score, winStreak, bestStreak, wins, losses, ties,
-      crits, critBonusScore, bestTrickScore,
+      crits, critBonusScore, bestTrickScore, legendaryCritBonus,
       initiative, lastResult, offer, shield, tieArmed,
       lastTrick, phase: "gameover",
     };
@@ -149,14 +159,14 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
   let leveled = false;
   while (xp >= xpToNext(level)) { xp -= xpToNext(level); level += 1; leveled = true; }
   if (leveled) {
-    const off = buildOffer(perks, rng, C.PERKS_OFFERED);
+    const off = buildOffer(perks, rng, C.PERKS_OFFERED, level); // Level-Gate für Legendaries (#33)
     if (off.length > 0) { phase = "levelup"; newOffer = off; } // Pool leer → keine Pause
   }
 
   return {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
-    crits, critBonusScore, bestTrickScore,
+    crits, critBonusScore, bestTrickScore, legendaryCritBonus,
     initiative, lastResult, perks, offer: newOffer, shield, tieArmed,
     lastTrick, phase,
   };

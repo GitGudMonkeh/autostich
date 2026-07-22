@@ -1,6 +1,6 @@
 import { xpToNext } from "../game/leveling.js";
-import { TRICKS_PER_CYCLE, TEMPO_SCORE_FACTOR, CRIT_BASE_MULT } from "../game/constants.js";
-import { critChanceFor, hasCritPerk, scoreMultFor } from "../game/perks.js";
+import { TRICKS_PER_CYCLE } from "../game/constants.js";
+import { critChanceFor, hasCritPerk, scoreMultFor, tempoScoreMultFor, critMultiplierFor } from "../game/perks.js";
 
 function Bar({ value, max, color, height = 8 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
@@ -41,13 +41,13 @@ function Sparkline({ current = [], record = [] }) {
 }
 
 export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], recordTraj = [] }) {
-  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield } = state;
+  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield, legendaryCritBonus = 0 } = state;
   const need = xpToNext(level);
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
-  // Tempo-Score + Crit (#19) + Gesamt-Score-Multiplikator (#23)
-  const tempoScoreMult = 1 + speedPct * TEMPO_SCORE_FACTOR;
+  // Tempo-Score + Crit (#19) + Gesamt-Score-Multiplikator (#23). tempoScoreMultFor erfasst L6 (#33).
+  const tempoScoreMult = tempoScoreMultFor(perks, speedPct);
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   // Basis-Multiplikator = immer aktive Faktoren: D1, D2 (aktuelle Serie) × Tempo.
   // winValue hoch gesetzt → das bedingte D4 (×3 bei ≤3) bleibt hier ausgeblendet.
@@ -56,9 +56,12 @@ export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], r
   const showCrit = hasCritPerk(perks) || (crits || 0) > 0;
   // Live-Crit-Chance des NÄCHSTEN Siegs: D8 nutzt die resultierende Serie (winStreak+1), analog zum
   // echten Wurf (#19). D7 ist kartenabhängig → hier ausgeblendet (winValue 0), separat als Hinweis.
-  // Geteilter Helfer critChanceFor → kein Drift zur echten Berechnung. (#25)
-  const critPct = Math.round(critChanceFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos, speedPct }) * 100);
+  // legendaryCritBonus (L4) & L5-Halbierung fließen über denselben Helfer ein → kein Drift (#25/#33).
+  const critPct = Math.round(critChanceFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos, speedPct }, legendaryCritBonus) * 100);
   const ownsD7 = perks.includes("D7");
+  const l4Pp = Math.round(legendaryCritBonus * 100); // L4-Bonus in Prozentpunkten (Anzeige)
+  // L3 „Letztes Aufbäumen" aktiv? (nur wenn gehalten und Leben ≤ 25 %)
+  const lowLifeRally = perks.includes("L3") && maxLife > 0 && life / maxLife <= 0.25;
   // Leben-Balken bei Schaden/Heilung kurz aufblitzen (#15).
   const lifeFlash = lastTrick ? (lastTrick.result === "loss" && lastTrick.dmg > 0 ? "#e0605a" : lastTrick.healed > 0 ? "#5ab87a" : null) : null;
   // Passiver Indikator der zeit-eskalierten Niederlagenkosten (#32): grün → gelb → rot je Stufe.
@@ -83,6 +86,13 @@ export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], r
             Niederlage −{lossCost}♥
           </span>
         </div>
+        {/* L3 „Letztes Aufbäumen" aktiv (#33): deutlicher, aber statischer Status (kein Blinken). */}
+        {lowLifeRally && (
+          <div className="mt-1.5 rounded px-2 py-1 text-[11px] font-bold text-center"
+            style={{ background: "#d4a63a1f", color: "#d4a63a", border: "1px solid #8a7de088" }}>
+            ★ LETZTES AUFBÄUMEN — Alle Karten +6
+          </div>
+        )}
       </div>
       {/* XP / Level */}
       <div>
@@ -121,8 +131,8 @@ export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], r
           )}
           {ownsD4 && <span className="opacity-45">×3 bei Rang ≤3</span>}
           {showCrit && (<>
-            <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span>{ownsD7 && <span className="opacity-45"> (+35% ≥8)</span>}</span>
-            <span><span className="opacity-50">Crit </span><span style={{ color: "#e879f9" }}>×{fmtMult(CRIT_BASE_MULT)}</span></span>
+            <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span>{ownsD7 && <span className="opacity-45"> (+35% ≥8)</span>}{l4Pp > 0 && <span style={{ color: "#d4a63a" }}> (L4 +{l4Pp}pp)</span>}</span>
+            <span><span className="opacity-50">Crit </span><span style={{ color: perks.includes("L5") ? "#d4a63a" : "#e879f9" }}>×{fmtMult(critMultiplierFor(perks))}</span>{perks.includes("L5") && <span style={{ color: "#d4a63a" }}> Jackpot</span>}</span>
             <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
           </>)}
         </div>

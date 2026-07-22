@@ -1,5 +1,9 @@
-import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
+import { PERK_DEFS, CATEGORIES, isLegendary } from "../game/perks.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
+
+// Legendär-Akzent: gold + violett, deutlich vom Kategorie-Look abgesetzt (#33).
+const LEG_GOLD = "#d4a63a";
+const LEG_VIOLET = "#8a7de0";
 
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm) für gezielte Wahl (#22). */
@@ -16,18 +20,29 @@ export function PerkSelect({ offer, level, onPick, perks = [], deck = [] }) {
           {offer.map((id) => {
             const p = PERK_DEFS[id];
             const cat = CATEGORIES[p.cat];
+            const leg = isLegendary(id);
             return (
               <button
                 key={id}
                 onClick={() => onPick(id)}
                 className="text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5"
-                style={{ background: "#20202a", border: `1px solid ${cat.color}55` }}
+                style={{ background: "#20202a",
+                         border: leg ? `1px solid ${LEG_GOLD}` : `1px solid ${cat.color}55`,
+                         boxShadow: leg ? `0 0 0 1px ${LEG_VIOLET}66, 0 0 16px ${LEG_GOLD}33` : undefined }}
               >
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-bold self-start"
-                  style={{ background: `${cat.color}22`, color: cat.color }}>
-                  {cat.name}
-                </span>
-                <div className="font-bold" style={{ color: cat.color }}>{p.label}</div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
+                    style={{ background: `${cat.color}22`, color: cat.color }}>
+                    {cat.name}
+                  </span>
+                  {leg && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                      style={{ background: `${LEG_GOLD}1f`, color: LEG_GOLD, border: `1px solid ${LEG_VIOLET}88` }}>
+                      ★ LEGENDÄR
+                    </span>
+                  )}
+                </div>
+                <div className="font-bold" style={{ color: leg ? LEG_GOLD : cat.color }}>{p.label}</div>
                 <div className="text-sm opacity-75 leading-snug">{p.desc}</div>
               </button>
             );

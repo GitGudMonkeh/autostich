@@ -12,10 +12,18 @@ import { shuffle } from "./deck.js";
      healOnCycle()     -> Leben nach vollem Deck-Durchlauf
      scoreMult(ctx)    -> multiplikativer Score-Faktor bei Sieg (Kat. D)
      scoreFlat(ctx)    -> additiver Score bei Sieg
+   Legendär-Hooks (#33):
+     winTie(ctx)             -> Gleichstand als Sieg werten (L2, ctx.winStreak = Serie VOR dem Stich)
+     extraDamageTaken(ctx)   -> Zusatzschaden je Niederlage, summiert (L1/L6)
+     critMultiplier(ctx)     -> Crit-Faktor überschreiben statt addieren (L5: 4)
+     critChanceMult(ctx)     -> Faktor auf die Gesamt-Crit-Chance (L5: 0,5)
+     tempoScoreFactorMult()  -> Faktor auf den Tempo-Score-Faktor (L6: 2)
    Flags (Spezialfälle mit Engine-Zustand):
      shieldPerCycle    -> erster verlorener Stich je Durchlauf: 0 Schaden (C5)
      winTieAfterLoss   -> nach Niederlage nächsten Gleichstand gewinnen (B5)
+     legendaryCritGain -> jeder Crit erhöht legendaryCritBonus dauerhaft (L4, Engine-State)
      speedPct          -> Beitrag zur Flip-Geschwindigkeit (Kat. E, nur UI)
+   rarity: "legendary" markiert Legendaries (Default "common") — Gewicht/Level-Gate in buildOffer.
 
    ctx-Felder je Stich: { posInCycle, trickNo, lastResult, lostLastTrick, winStreak }
    ctx-Felder je Sieg (scoreMult/scoreFlat/healOnWin): { winValue, winStreak, wins }
@@ -133,21 +141,75 @@ export const PERK_DEFS = {
   E3: { id: "E3", cat: "E", label: "Tempo III", desc: "Flip-Geschwindigkeit +30 %. Tempo erhöht auch den Score.", speedPct: 30 },
   E4: { id: "E4", cat: "E", label: "Tempo IV",  desc: "Flip-Geschwindigkeit +30 %. Tempo erhöht auch den Score.", speedPct: 30 },
   E5: { id: "E5", cat: "E", label: "Tempo V",   desc: "Flip-Geschwindigkeit +30 %. Tempo erhöht auch den Score.", speedPct: 30 },
+
+  // ---- Legendär (#33): mächtig, aber mit Nachteil. rarity "legendary" → Gewicht 8 & Level-Gate ≥5
+  //      (buildOffer). Nutzen bestehende Kategorien (A–E) plus die neuen Legendär-Hooks oben. ----
+  L1: { id: "L1", cat: "A", rarity: "legendary", label: "Überladung",
+        desc: "Alle Karten dauerhaft +2 Wert — dafür verursachen verlorene Stiche +3 Schaden.",
+        onPick: (d) => d.map((c) => ({ ...c, value: c.value + 2 })),
+        extraDamageTaken: () => 3 },
+  L2: { id: "L2", cat: "B", rarity: "legendary", label: "Unaufhaltsam",
+        desc: "Ab 3 Siegen in Folge gewinnst du alle Gleichstände, bis die Serie endet.",
+        winTie: ({ winStreak }) => winStreak >= 3 },
+  L3: { id: "L3", cat: "C", rarity: "legendary", label: "Letztes Aufbäumen",
+        desc: "Bei 25 % Leben oder weniger erhalten alle Karten +6 Wert für den aktuellen Stich.",
+        cardBonus: ({ life, maxLife }) => (maxLife > 0 && life / maxLife <= 0.25 ? 6 : 0) },
+  L4: { id: "L4", cat: "D", rarity: "legendary", label: "Kritische Masse",
+        desc: "Jeder Crit erhöht deine Crit-Chance dauerhaft um 1 Prozentpunkt (max +30 pp).",
+        legendaryCritGain: true }, // Engine führt legendaryCritBonus (Erhöhung NACH dem Crit-Wurf)
+  L5: { id: "L5", cat: "D", rarity: "legendary", label: "Jackpot",
+        desc: "Crits geben ×4 Score statt ×2 — dafür wird deine zufällige Crit-Chance halbiert.",
+        critMultiplier: () => 4, critChanceMult: () => 0.5 },
+  L6: { id: "L6", cat: "E", rarity: "legendary", label: "Raserei",
+        desc: "Der Tempo-Score-Bonus wirkt doppelt — dafür verursachen verlorene Stiche +2 Schaden.",
+        tempoScoreFactorMult: () => 2, extraDamageTaken: () => 2 },
 };
 
 export const PERK_LIST = Object.values(PERK_DEFS);
 
-// Angebot: `count` zufällige, noch nicht besessene Perks (bereits gewählte sind raus, §10.3).
-export function buildOffer(owned, rng, count) {
-  const avail = PERK_LIST.filter((p) => !owned.includes(p.id)).map((p) => p.id);
-  return shuffle(avail, rng).slice(0, count);
+export const rarityOf    = (id) => PERK_DEFS[id]?.rarity || "common";
+export const isLegendary = (id) => rarityOf(id) === "legendary";
+
+// Angebot: bis zu `count` noch nicht besessene Perks, GEWICHTET nach Seltenheit (#33, §10.3).
+// Legendaries: erst ab LEGENDARY_MIN_LEVEL, höchstens MAX_LEGENDARIES_PER_OFFER je Angebot.
+// Deterministisch über den injizierten rng (ein rng()-Zug je Auswahl). Pool leer → weniger Perks.
+export function buildOffer(owned, rng, count, level = 1) {
+  const legendaryOK = level >= C.LEGENDARY_MIN_LEVEL;
+  let pool = PERK_LIST.filter((p) =>
+    !owned.includes(p.id) && (legendaryOK || (p.rarity || "common") !== "legendary"));
+  const chosen = [];
+  let legendaries = 0;
+  while (chosen.length < count && pool.length > 0) {
+    const weights = pool.map((p) => C.RARITY_WEIGHTS[p.rarity || "common"]);
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = rng() * total, idx = 0;
+    while (idx < pool.length - 1 && r >= weights[idx]) { r -= weights[idx]; idx += 1; }
+    const pick = pool[idx];
+    chosen.push(pick.id);
+    if ((pick.rarity || "common") === "legendary") legendaries += 1;
+    // Gezogenen raus; ist das Legendary-Limit erreicht, alle weiteren Legendaries aus dem Pool nehmen.
+    pool = pool.filter((p) => p.id !== pick.id
+      && !(legendaries >= C.MAX_LEGENDARIES_PER_OFFER && (p.rarity || "common") === "legendary"));
+  }
+  return chosen;
 }
 
-// Summierte, auf 0..1 gedeckelte Crit-Chance der besessenen Perks für einen Kontext.
-export function critChanceFor(perks, ctx) {
-  let t = 0;
-  for (const id of perks) { const f = PERK_DEFS[id].critChance; if (f) t += f(ctx); }
-  return Math.min(1, Math.max(0, t));
+// Gesamt-Crit-Chance (0..1) eines Builds: Σ critChance-Perks + legendaryCritBonus (L4), dann
+// × Π critChanceMult (L5 halbiert), geklemmt. EINE Quelle für Engine-Wurf UND Anzeige (#25, kein Drift).
+export function critChanceFor(perks, ctx, legendaryCritBonus = 0) {
+  let raw = 0;
+  for (const id of perks) { const f = PERK_DEFS[id].critChance; if (f) raw += f(ctx); }
+  raw += legendaryCritBonus || 0;
+  let mult = 1;
+  for (const id of perks) { const f = PERK_DEFS[id].critChanceMult; if (f) mult *= f(ctx); }
+  return Math.min(1, Math.max(0, raw * mult));
+}
+// Crit-Faktor: L5 (Jackpot) ÜBERSCHREIBT die Basis (×4) statt zu addieren → höchster Hook-Wert gewinnt.
+// Geteilte Quelle für Engine-Score UND Anzeige.
+export function critMultiplierFor(perks, ctx = {}) {
+  let m = C.CRIT_BASE_MULT;
+  for (const id of perks) { const f = PERK_DEFS[id].critMultiplier; if (f) m = Math.max(m, f(ctx)); }
+  return m;
 }
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
 export function hasCritPerk(perks) {
@@ -158,6 +220,13 @@ export function scoreMultFor(perks, ctx) {
   let m = 1;
   for (const id of perks) { const f = PERK_DEFS[id].scoreMult; if (f) m *= f(ctx); }
   return m;
+}
+// Tempo-Score-Multiplikator: 1 + speedPct × TEMPO_SCORE_FACTOR × Π tempoScoreFactorMult (L6 ×2).
+// Geteilte Quelle für Engine-Score UND #23-Anzeige → kein Drift.
+export function tempoScoreMultFor(perks, speedPct) {
+  let factorMult = 1;
+  for (const id of perks) { const f = PERK_DEFS[id].tempoScoreFactorMult; if (f) factorMult *= f({}); }
+  return 1 + (speedPct || 0) * C.TEMPO_SCORE_FACTOR * factorMult;
 }
 // Kombo-Wert eines Builds für die Anzeige (#31): nur wenn D2 gehalten wird — die Kombo IST der
 // D2-Effekt. Nutzt dieselbe comboMult-Formel wie der D2-Score-Hook → Anzeige == tatsächlicher Wert.

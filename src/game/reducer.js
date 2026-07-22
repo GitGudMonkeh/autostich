@@ -19,6 +19,7 @@ export function initialState(rng = Math.random) {
     xp: 0, level: 1, score: 0,
     winStreak: 0, bestStreak: 0, wins: 0, losses: 0, ties: 0,
     crits: 0, critBonusScore: 0, bestTrickScore: 0,
+    legendaryCritBonus: 0, // L4 „Kritische Masse": akkumulierter, dauerhafter Crit-Chance-Bonus (#33)
     initiative: "player",
     lastResult: null,
     perks: [], offer: null,

@@ -10,6 +10,7 @@ const BANNER = {
   tie:     { text: "GLEICHSTAND",         color: "#8a8a92" },
 };
 const CRIT_COLOR = "#e879f9";
+const JACKPOT_COLOR = "#d4a63a"; // L5 „Jackpot" (#33): Gold statt Crit-Violett
 
 // Respektiert die OS-Einstellung „reduzierte Bewegung" (#15/#19).
 function usePrefersReducedMotion() {
@@ -52,7 +53,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const win = t && (t.result === "win" || t.result === "win_tie");
   const lost = t && t.result === "loss";
   const isCrit = !!(t && t.isCrit);
-  const banner = t ? (isCrit ? { text: "GEWONNEN · KRITISCH", color: CRIT_COLOR } : BANNER[t.result]) : null;
+  const jackpot = !!(t && t.jackpot); // L5: Crit ×4 (#33)
+  const critColor = jackpot ? JACKPOT_COLOR : CRIT_COLOR;
+  const banner = t
+    ? (jackpot ? { text: "GEWONNEN · JACKPOT ×4", color: JACKPOT_COLOR }
+       : isCrit ? { text: "GEWONNEN · KRITISCH", color: CRIT_COLOR }
+       : BANNER[t.result])
+    : null;
 
   // Effektdauern an den Flip-Takt koppeln; unter reduzierter Bewegung Animationen weglassen
   // (Element bleibt statisch sichtbar statt zu Ende-Opacity 0 zu springen).
@@ -69,7 +76,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const playerCard = t ? (
     <div key={`p${t.trickNo}`} className="relative" style={dealStyle("as-deal-left", win)}>
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
-            stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? CRIT_COLOR : "#5ab87a") : null} />
+            stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 
@@ -89,13 +96,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   return (
     <div className="rounded-xl p-6 overflow-hidden" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       <div className="relative flex items-center justify-center gap-4 sm:gap-8">
-        {/* KRITISCH-Text — bei reduzierter Bewegung statisch „KRITISCH ×2". */}
+        {/* KRITISCH-/JACKPOT-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
-            style={{ left: "50%", top: 0, fontSize: 26, color: CRIT_COLOR, textShadow: `0 0 12px ${CRIT_COLOR}aa`,
+            style={{ left: "50%", top: 0, fontSize: 26, color: critColor, textShadow: `0 0 12px ${critColor}aa`,
                      transform: reduced ? "translateX(-50%)" : undefined,
                      animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900)}ms ease-out`) }}>
-            KRITISCH{reduced ? ` ×${critMultStr}` : "!"}
+            {jackpot ? "JACKPOT" : "KRITISCH"}{reduced ? ` ×${critMultStr}` : "!"}
           </div>
         )}
 
@@ -121,7 +128,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
         {win && (t.gained > 0 || t.healed > 0) && (
           <div key={`gain${t.trickNo}`} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
             style={{ left: 2, top: "40%", animation: fx(`as-float ${clamp(flipMs * 0.7, 320, 700)}ms ease-out`) }}>
-            {t.gained > 0 && <span style={{ color: isCrit ? CRIT_COLOR : "#d4a63a" }}>+{Math.round(t.gained * 10) / 10}</span>}
+            {t.gained > 0 && <span style={{ color: isCrit ? critColor : "#d4a63a" }}>+{Math.round(t.gained * 10) / 10}</span>}
             {t.healed > 0 && <span style={{ color: "#5ab87a" }}> +{t.healed}♥</span>}
           </div>
         )}

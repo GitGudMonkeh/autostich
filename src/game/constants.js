@@ -23,6 +23,13 @@ export const D4_LOW_MAX   = 3;    // D4  „Außenseiter" bis zu diesem Wert
 export const D4_MULT      = 3;    // D4  Score-Faktor
 export const D5_BONUS     = 300;  // D5  jeder 10. Sieg: Flat-Bonus
 
+// Legendäre Perks & Raritäts-System (#33) [TUNING]
+export const RARITY_WEIGHTS            = { common: 100, legendary: 8 }; // Ziehgewichte je Seltenheit
+export const LEGENDARY_MIN_LEVEL       = 5;    // Legendaries erst ab diesem Level im Angebot
+export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendaries je Angebot
+export const L4_CRIT_STEP = 0.01;  // L4 Kritische Masse: +1 pp Crit-Chance je Crit
+export const L4_CRIT_CAP  = 0.30;  // L4  … dauerhaft gedeckelt bei +30 pp
+
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
 

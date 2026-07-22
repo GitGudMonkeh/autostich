@@ -101,7 +101,7 @@ Pro Stich wird je Seite die **nächste Karte** aus der gemischten Ziehreihenfolg
 
 ---
 
-## 7. Perk-System (25 Perks, 5 Kategorien) — `perks.js`
+## 7. Perk-System (35 Perks: 29 verbreitet + 6 legendär, 5 Kategorien) — `perks.js`
 
 Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist **pro Lauf nur einmal** wählbar; bereits gewählte werden nicht mehr angeboten. Effekte laufen über optionale **Hooks**, die die Engine konsultiert:
 
@@ -109,9 +109,12 @@ Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist
 - `cardBonus(ctx)` → Wertbonus auf die Spielerkarte *dieses* Stichs
 - `healOnWin(ctx)` / `dmgReduce()` / `healOnCycle()` → Lebens-Ökonomie
 - `scoreMult(ctx)` (multiplikativ) / `scoreFlat(ctx)` (additiv) → Score
-- **Flags:** `shieldPerCycle`, `winTieAfterLoss`, `speedPct`
+- **Legendär-Hooks (#33):** `winTie` (Gleichstand→Sieg), `extraDamageTaken` (Zusatzschaden), `critMultiplier` (Crit-Faktor überschreiben), `critChanceMult` (Faktor auf Crit-Chance), `tempoScoreFactorMult` (Tempo-Faktor).
+- **Flags:** `shieldPerCycle`, `winTieAfterLoss`, `legendaryCritGain` (L4), `speedPct`
 
-`ctx` je Stich: `{ posInCycle, trickNo, lastResult, lostLastTrick, winStreak }` · je Sieg: `{ winValue, winStreak, wins }`.
+`ctx` je Stich: `{ posInCycle, trickNo, lastResult, lostLastTrick, winStreak, life, maxLife }` · je Sieg: `{ winValue, winStreak, wins }`.
+
+**Rarität & Angebot (#33):** Jeder Perk hat `rarity` (`common`/`legendary`, Default common). `buildOffer(owned, rng, count, level)` zieht **gewichtet** (`RARITY_WEIGHTS = { common: 100, legendary: 8 }`), deterministisch über den injizierten `rng`. Legendaries erscheinen **erst ab Level 5** (`LEGENDARY_MIN_LEVEL`) und **höchstens einer je Angebot** (`MAX_LEGENDARIES_PER_OFFER`).
 
 ### A — Deck (violett): dauerhafte Kartenwerte (einmalig beim Pick)
 | ID | Name | Effekt |
@@ -154,7 +157,17 @@ Datengetriebene Registry (analog zu `clauses.js` in TrickLadder). Jeder Perk ist
 |---|---|---|
 | E1–E5 | Tempo I–V | Flip-Geschwindigkeit **+10 % / +20 % / +30 % / +40 % / +50 %** (kumulativ). |
 
-> Score-Werte sind **fraktional** (D-Perks multiplizieren) und werden zur Anzeige abgerundet. Score-Magnituden liegen als eigene Tuning-Konstanten (`D1_BONUS_PCT`, `D2_STEP`, …) im Tuning-Block.
+### ★ Legendär (#33): mächtig, aber mit Nachteil — `rarity: "legendary"`, ab Level 5, gewichtet
+| ID | Kat. | Name | Effekt (Vorteil + Nachteil) |
+|---|---|---|---|
+| L1 | Deck | Überladung | Alle Karten dauerhaft **+2** Wert — dafür verlorene Stiche **+3** Schaden. |
+| L2 | Stich | Unaufhaltsam | Ab **3 Siegen in Folge** gewinnst du **alle Gleichstände**, bis die Serie endet. |
+| L3 | Leben | Letztes Aufbäumen | Bei **≤ 25 % Leben**: alle Karten **+6** Wert (nur dieser Stich). |
+| L4 | Score | Kritische Masse | Jeder Crit erhöht die Crit-Chance **dauerhaft +1 pp** (max **+30 pp**). |
+| L5 | Score | Jackpot | Crits geben **×4** statt ×2 Score — dafür **zufällige Crit-Chance halbiert** (garantierte Crits unberührt). |
+| L6 | Tempo | Raserei | **Tempo-Score-Bonus doppelt** — dafür verlorene Stiche **+2** Schaden. |
+
+> Score-Werte sind **fraktional** (D-Perks multiplizieren) und werden zur Anzeige abgerundet. Score-Magnituden liegen als eigene Tuning-Konstanten (`D1_BONUS_PCT`, `D2_STEP`, …) im Tuning-Block. Legendär-Zusatzschaden (L1/L6) addiert auf den zeit-eskalierten Grundwert (#32); C3/C5 wirken weiter.
 
 ---
 
