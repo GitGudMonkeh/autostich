@@ -1,5 +1,5 @@
 import { useReducer, useEffect, useRef, useState } from "react";
-import { reducer, initialState } from "./game/reducer.js";
+import { reducer, initialState, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP } from "./game/constants.js";
 import { loadGhost, saveGhost, loadHighscores, recordHighscore } from "./game/storage.js";
 import { fmtDuration } from "./game/deck.js";
@@ -9,9 +9,10 @@ import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
+import { StartScreen } from "./ui/StartScreen.jsx";
 
 export function Autostich() {
-  const [state, dispatch] = useReducer(reducer, null, () => initialState(Math.random));
+  const [state, dispatch] = useReducer(reducer, null, () => menuState());
   const [auto, setAuto] = useState(true);
   const [paused, setPaused] = useState(false);
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
@@ -61,13 +62,14 @@ export function Autostich() {
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
-    if (state.trickNo === 0) return;
+    if (!state.trickNo) return;
     currentTraj.current[Math.floor(state.trickNo / GHOST_STEP)] = Math.floor(state.score);
   }, [state.trickNo]);
 
-  // Laufende — Highscore + Geist sichern.
-  useEffect(() => {
-    if (state.phase !== "gameover" || recorded.current) return;
+  // Aktuellen Lauf werten: Highscore + Geist sichern (idempotent via recorded-Ref).
+  // Genutzt von Game-Over UND vom vorzeitigen Beenden (#5), damit nichts verloren geht.
+  function saveRun() {
+    if (recorded.current || !state.trickNo) return;
     recorded.current = true;
     const finalScore = Math.floor(state.score);
     setHighscores(recordHighscore({
@@ -79,9 +81,13 @@ export function Autostich() {
       saveGhost(recordTraj.current, finalScore);
       setIsRecord(true);
     }
+  }
+  // Bei Game-Over automatisch werten.
+  useEffect(() => {
+    if (state.phase === "gameover") saveRun();
   }, [state.phase]);
 
-  function restart() {
+  function startRun() {
     currentTraj.current = [];
     recorded.current = false;
     runId.current = Date.now();
@@ -89,8 +95,9 @@ export function Autostich() {
     segStart.current = null;
     setPaused(false);
     setIsRecord(false);
-    dispatch({ type: "RESET", rng: Math.random });
+    dispatch({ type: "START_RUN", rng: Math.random });
   }
+  const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
   const pick = (id) => dispatch({ type: "PICK_PERK", perkId: id, rng: Math.random });
   const next = () => { if (state.phase === "play" && !paused) dispatch({ type: "RESOLVE_TRICK", rng: Math.random }); };
 
@@ -111,45 +118,49 @@ export function Autostich() {
   return (
     <div className="min-h-screen w-full flex justify-center px-4 py-6">
       <div className="w-full max-w-5xl grid gap-4">
-        <header className="flex items-end justify-between flex-wrap gap-2">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
-            </h1>
-            <p className="text-xs opacity-45">Roguelite-Autobattler-Stechspiel · Prototyp</p>
-          </div>
-          <div className="flex items-end gap-5">
-            <div className="text-right">
-              <div className="text-[10px] uppercase tracking-wide opacity-50">Zeit{paused ? " ⏸" : ""}</div>
-              <div className="text-xl font-bold" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
+        {state.phase === "menu" ? (
+          <StartScreen onStart={startRun} highscores={highscores} best={best} />
+        ) : (<>
+          <header className="flex items-end justify-between flex-wrap gap-2">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
+              </h1>
+              <p className="text-xs opacity-45">Roguelite-Autobattler-Stechspiel · Prototyp</p>
             </div>
-            <div className="text-right">
-              <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
-              <div className="text-xl font-bold" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
+            <div className="flex items-end gap-5">
+              <div className="text-right">
+                <div className="text-[10px] uppercase tracking-wide opacity-50">Zeit{paused ? " ⏸" : ""}</div>
+                <div className="text-xl font-bold" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
+                <div className="text-xl font-bold" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        <Controls
-          auto={auto} onToggleAuto={() => setAuto((a) => !a)}
-          paused={paused} onTogglePause={() => setPaused((p) => !p)}
-          onNext={next} onRestart={restart} canNext={state.phase === "play" && !paused}
-        />
+          <Controls
+            auto={auto} onToggleAuto={() => setAuto((a) => !a)}
+            paused={paused} onTogglePause={() => setPaused((p) => !p)}
+            onNext={next} onRestart={startRun} onAbort={toMenu} canNext={state.phase === "play" && !paused}
+          />
 
-        <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
-          <div className="grid gap-4">
-            <Battlefield lastTrick={state.lastTrick} />
-            <BuildPanel perks={state.perks} deck={state.deck} />
+          <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
+            <div className="grid gap-4">
+              <Battlefield lastTrick={state.lastTrick} />
+              <BuildPanel perks={state.perks} deck={state.deck} />
+            </div>
+            <StatusRail state={state} speedPct={state.speedPct} ghost={ghost} />
           </div>
-          <StatusRail state={state} speedPct={state.speedPct} ghost={ghost} />
-        </div>
+        </>)}
       </div>
 
       {state.phase === "levelup" && state.offer && (
         <PerkSelect offer={state.offer} level={state.level} onPick={pick} />
       )}
       {state.phase === "gameover" && (
-        <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)} onRestart={restart} />
+        <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)} onRestart={startRun} onMenu={toMenu} />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
-import { reducer, initialState } from "../src/game/reducer.js";
+import { reducer, initialState, menuState } from "../src/game/reducer.js";
 
 const rng = makeRng(1);
 
@@ -40,5 +40,16 @@ describe("Reducer", () => {
     expect(fresh.score).toBe(0);
     expect(fresh.level).toBe(1);
     expect(fresh.perks).toEqual([]);
+  });
+
+  it("START_RUN startet aus dem Menü einen frischen Lauf in play", () => {
+    const s = reducer(menuState(), { type: "START_RUN", rng });
+    expect(s.phase).toBe("play");
+    expect(s.trickNo).toBe(0);
+    expect(s.perks).toEqual([]);
+  });
+
+  it("TO_MENU verlässt den Lauf zurück ins Menü", () => {
+    expect(reducer(initialState(makeRng(1)), { type: "TO_MENU" }).phase).toBe("menu");
   });
 });

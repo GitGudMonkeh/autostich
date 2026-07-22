@@ -28,10 +28,19 @@ export function initialState(rng = Math.random) {
   };
 }
 
+// Menü-/Startbildschirm (#4) — kein laufendes Spiel; App rendert hier nur den StartScreen.
+export function menuState() {
+  return { phase: "menu" };
+}
+
 export function reducer(state, action) {
   switch (action.type) {
+    case "START_RUN":   // frischer Lauf aus dem Menü / Neustart
     case "RESET":
       return initialState(action.rng);
+
+    case "TO_MENU":     // laufenden Run verlassen (#5)
+      return menuState();
 
     case "RESOLVE_TRICK":
       return resolveTrick(state, action.rng);

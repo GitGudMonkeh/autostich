@@ -1,6 +1,6 @@
 import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
 
-export function GameOver({ state, highscores, isRecord, timeStr, onRestart }) {
+export function GameOver({ state, highscores, isRecord, timeStr, onRestart, onMenu }) {
   const score = Math.floor(state.score);
   return (
     <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
@@ -47,13 +47,24 @@ export function GameOver({ state, highscores, isRecord, timeStr, onRestart }) {
           </div>
         )}
 
-        <button
-          onClick={onRestart}
-          className="w-full mt-6 py-2.5 rounded-lg font-bold transition-all"
-          style={{ background: "#5ab87a", color: "#141419" }}
-        >
-          Neuer Lauf
-        </button>
+        <div className="flex gap-2 mt-6">
+          {onMenu && (
+            <button
+              onClick={onMenu}
+              className="py-2.5 px-4 rounded-lg font-bold transition-all"
+              style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
+            >
+              Menü
+            </button>
+          )}
+          <button
+            onClick={onRestart}
+            className="flex-1 py-2.5 rounded-lg font-bold transition-all"
+            style={{ background: "#5ab87a", color: "#141419" }}
+          >
+            Neuer Lauf
+          </button>
+        </div>
       </div>
     </div>
   );

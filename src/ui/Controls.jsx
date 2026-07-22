@@ -15,7 +15,7 @@ function Btn({ active, onClick, disabled, children, tone = "#5a8ade" }) {
   );
 }
 
-export function Controls({ auto, onToggleAuto, paused, onTogglePause, onNext, onRestart, canNext }) {
+export function Controls({ auto, onToggleAuto, paused, onTogglePause, onNext, onRestart, onAbort, canNext }) {
   return (
     <div className="rounded-xl p-3 flex flex-wrap items-center gap-2" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       <Btn active={paused} onClick={onTogglePause} tone="#d4a63a">
@@ -29,6 +29,7 @@ export function Controls({ auto, onToggleAuto, paused, onTogglePause, onNext, on
       <Btn onClick={onNext} disabled={!canNext || auto} tone="#d4a63a">Nächster Stich</Btn>
 
       <div className="flex-1" />
+      {onAbort && <Btn onClick={onAbort} tone="#8a8a92">Beenden</Btn>}
       <Btn onClick={onRestart} tone="#e0605a">Neustart</Btn>
     </div>
   );
