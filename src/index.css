@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* App-Grundstil — nach dem Tailwind-Import, damit diese Regeln gewinnen. */
+html, body { background:#141419; color:#e8e8ea; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+* { box-sizing: border-box; }
+button { font-family: inherit; }
+::-webkit-scrollbar { height:8px; width:8px; }
+::-webkit-scrollbar-thumb { background:#2a2a33; border-radius:4px; }

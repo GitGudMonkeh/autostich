@@ -1,0 +1,25 @@
+{
+  "name": "autostich",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Autostich — Roguelite-Autobattler-Stechspiel (Prototyp, Vite + React)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.3.3",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  }
+}
