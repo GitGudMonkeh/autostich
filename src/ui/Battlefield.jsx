@@ -57,31 +57,36 @@ export function Battlefield({ lastTrick, remaining = 52, flipMs = 1000 }) {
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 
-  const hasDelta = t && (t.gained > 0 || t.healed > 0 || (lost && t.dmg > 0));
-
   return (
     <div className="rounded-xl p-6 overflow-hidden" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       <div className="relative flex items-center justify-center gap-4 sm:gap-8">
         <Side label="Du" remaining={remaining} dealFrom="left">{playerCard}</Side>
-        <div className="text-2xl opacity-30">vs</div>
-        <Side label="Gegner" remaining={remaining} dealFrom="right">{oppCard}</Side>
 
-        {/* Impact-Flash + aufsteigende Zahlen (#15), pro Stich neu montiert. */}
-        {banner && (
-          <div key={`fx${t.trickNo}`} className="pointer-events-none absolute inset-0">
-            <div className="absolute rounded-full" style={{
-              left: "50%", top: "50%", width: 84, height: 84, borderWidth: 3, borderStyle: "solid", borderColor: banner.color,
+        <div className="relative">
+          <div className="text-2xl opacity-30">vs</div>
+          {/* Impact-Ring, exakt auf dem „vs"-Mittelpunkt, pro Stich neu montiert. */}
+          {banner && (
+            <div key={`ring${t.trickNo}`} className="absolute rounded-full pointer-events-none" style={{
+              left: "50%", top: "50%", width: 40, height: 40, borderWidth: 2, borderStyle: "solid", borderColor: banner.color,
               animation: `as-impact ${clamp(flipMs * 0.45, 160, 420)}ms ease-out`,
             }} />
-            {hasDelta && (
-              <div className="absolute text-sm font-bold whitespace-nowrap" style={{
-                left: "50%", top: "30%", animation: `as-float ${clamp(flipMs * 0.7, 320, 700)}ms ease-out`,
-              }}>
-                {t.gained > 0 && <span style={{ color: "#d4a63a" }}>+{Number(t.gained.toFixed(2))} </span>}
-                {t.healed > 0 && <span style={{ color: "#5ab87a" }}>+{t.healed}♥ </span>}
-                {lost && t.dmg > 0 && <span style={{ color: "#e0605a" }}>−{t.dmg}♥</span>}
-              </div>
-            )}
+          )}
+        </div>
+
+        <Side label="Gegner" remaining={remaining} dealFrom="right">{oppCard}</Side>
+
+        {/* Aufsteigende Zahlen: Gewinn links (Spieler-Seite), Schaden rechts (Gegner-Seite). */}
+        {win && (t.gained > 0 || t.healed > 0) && (
+          <div key={`gain${t.trickNo}`} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
+            style={{ left: 2, top: "40%", animation: `as-float ${clamp(flipMs * 0.7, 320, 700)}ms ease-out` }}>
+            {t.gained > 0 && <span style={{ color: "#d4a63a" }}>+{Math.round(t.gained * 10) / 10}</span>}
+            {t.healed > 0 && <span style={{ color: "#5ab87a" }}> +{t.healed}♥</span>}
+          </div>
+        )}
+        {lost && t.dmg > 0 && (
+          <div key={`dmg${t.trickNo}`} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
+            style={{ right: 2, top: "40%", color: "#e0605a", animation: `as-float ${clamp(flipMs * 0.7, 320, 700)}ms ease-out` }}>
+            −{t.dmg}♥
           </div>
         )}
       </div>
