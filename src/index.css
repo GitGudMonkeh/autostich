@@ -11,3 +11,18 @@ button { font-family: inherit; }
    inline animation-duration an den Flip-Takt gekoppelt. */
 @keyframes as-deal-left  { from { transform: translateX(-150px) translateY(-10px) scale(.9); opacity:0; } to { transform:none; opacity:1; } }
 @keyframes as-deal-right { from { transform: translateX( 150px) translateY(-10px) scale(.9); opacity:0; } to { transform:none; opacity:1; } }
+
+/* Game-Feel / „Juice" beim Stich (#15). Dauer wird inline an den Flip-Takt gekoppelt. */
+@keyframes as-pop    { 0% { transform: scale(1); } 45% { transform: scale(1.14); } 100% { transform: scale(1); } }
+@keyframes as-float  { 0% { opacity:0; transform: translate(-50%, 6px); } 18% { opacity:1; } 100% { opacity:0; transform: translate(-50%, -32px); } }
+@keyframes as-impact { 0% { opacity:.5; transform: translate(-50%,-50%) scale(.35); } 100% { opacity:0; transform: translate(-50%,-50%) scale(2.6); } }
+@keyframes as-flash  { 0% { box-shadow: 0 0 0 0 transparent; } 30% { box-shadow: 0 0 0 2px var(--flash); } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+/* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

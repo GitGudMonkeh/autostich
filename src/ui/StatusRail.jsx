@@ -20,11 +20,13 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, speedPct, ghost }) {
-  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos } = state;
+  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick } = state;
   const need = xpToNext(level);
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
+  // Leben-Balken bei Schaden/Heilung kurz aufblitzen (#15).
+  const lifeFlash = lastTrick ? (lastTrick.result === "loss" && lastTrick.dmg > 0 ? "#e0605a" : lastTrick.healed > 0 ? "#5ab87a" : null) : null;
   return (
     <div className="rounded-xl p-4 grid gap-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       {/* Leben */}
@@ -33,7 +35,11 @@ export function StatusRail({ state, speedPct, ghost }) {
           <span className="opacity-60">Leben</span>
           <span className="font-bold" style={{ color: "#5ab87a" }}>{life} / {maxLife}</span>
         </div>
-        <Bar value={life} max={maxLife} color="#5ab87a" height={10} />
+        <div className="relative rounded-full">
+          <Bar value={life} max={maxLife} color="#5ab87a" height={10} />
+          {lifeFlash && <div key={trickNo} className="absolute inset-0 rounded-full pointer-events-none"
+            style={{ animation: "as-flash 400ms ease-out", "--flash": lifeFlash }} />}
+        </div>
       </div>
       {/* XP / Level */}
       <div>
