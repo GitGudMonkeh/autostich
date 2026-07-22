@@ -72,24 +72,21 @@ export function BuildPanel({ perks, deck }) {
 
       <div>
         <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte nach Farbe (52 Karten)</div>
-        <div className="flex items-end gap-[3px]" style={{ height: 60 }}>
-          {values.map((v) => {
-            const total = totalAt(v);
-            return (
-              <div key={v} className="flex-1 flex flex-col items-center justify-end">
-                <div className="w-full flex flex-col-reverse rounded-t overflow-hidden"
-                  style={{ height: `${(total / maxCount) * 100}%`, minHeight: total ? 2 : 0 }}>
-                  {SUIT_ORDER.map((su) => {
-                    const n = (counts[v] && counts[v][su]) || 0;
-                    if (!n) return null;
-                    return <div key={su} style={{ height: `${(n / total) * 100}%`, background: suitColor(su) }}
-                      title={`${suitName(su)} ${v}: ${n} Karten`} />;
-                  })}
-                </div>
-                <div className="text-[8px] mt-0.5" style={{ color: v > 12 ? "#8a7de0" : undefined, opacity: v > 12 ? 1 : 0.4 }}>{v}</div>
+        {/* Segment-Höhen in Pixeln (nicht %), sonst kollabieren verschachtelte Prozenthöhen im Flex auf 0. */}
+        <div className="flex items-end gap-[3px]" style={{ height: 62 }}>
+          {values.map((v) => (
+            <div key={v} className="flex-1 flex flex-col items-center justify-end">
+              <div className="w-full flex flex-col-reverse rounded-t overflow-hidden" style={{ minHeight: totalAt(v) ? 2 : 0 }}>
+                {SUIT_ORDER.map((su) => {
+                  const n = (counts[v] && counts[v][su]) || 0;
+                  if (!n) return null;
+                  return <div key={su} className="shrink-0" style={{ height: (n / maxCount) * 48, background: suitColor(su) }}
+                    title={`${suitName(su)} ${v}: ${n} Karten`} />;
+                })}
               </div>
-            );
-          })}
+              <div className="text-[8px] mt-0.5" style={{ color: v > 12 ? "#8a7de0" : undefined, opacity: v > 12 ? 1 : 0.4 }}>{v}</div>
+            </div>
+          ))}
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
           {SUIT_ORDER.map((su) => (
