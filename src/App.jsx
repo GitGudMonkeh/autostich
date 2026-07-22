@@ -16,7 +16,7 @@ export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
   const [auto, setAuto] = useState(true);
   const [paused, setPaused] = useState(false);
-  const [turbo, setTurbo] = useState(false); // 2×-Ablaufbeschleunigung (#27, kein Score-Effekt)
+  const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung 1×/2×/3× (#27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
@@ -32,9 +32,9 @@ export function Autostich() {
   const timeBase = useRef(0);
   const segStart = useRef(null);
   const active = state.phase === "play" && !paused;
-  // Effektive Flip-Zeit: Basis / (1+Speed) / Turbo. Turbo (#27) beschleunigt nur Ablauf + Animation,
+  // Effektive Flip-Zeit: Basis / (1+Speed) / Turbo (1×/2×/3×). Beschleunigt nur Ablauf + Animation,
   // NICHT den Score (speedPct/tempoScoreMult bleiben unberührt → kein Cheesen).
-  const flipMs = (BASE_FLIP_MS / (1 + state.speedPct / 100)) / (turbo ? 2 : 1);
+  const flipMs = (BASE_FLIP_MS / (1 + state.speedPct / 100)) / speedMult;
 
   useEffect(() => {
     const g = loadGhost();
@@ -62,7 +62,7 @@ export function Autostich() {
     if (state.phase !== "play" || !auto || paused) return;
     const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs);
     return () => clearTimeout(id);
-  }, [state.phase, state.trickNo, auto, paused, state.speedPct, turbo]);
+  }, [state.phase, state.trickNo, auto, paused, state.speedPct, speedMult]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -160,7 +160,7 @@ export function Autostich() {
           <Controls
             auto={auto} onToggleAuto={() => setAuto((a) => !a)}
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
-            turbo={turbo} onToggleTurbo={() => setTurbo((t) => !t)}
+            speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onNext={next} onRestart={startRun} onAbort={toMenu} canNext={state.phase === "play" && !paused}
           />
 

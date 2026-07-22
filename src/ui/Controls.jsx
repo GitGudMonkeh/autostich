@@ -15,7 +15,7 @@ function Btn({ active, onClick, disabled, children, tone = "#5a8ade" }) {
   );
 }
 
-export function Controls({ auto, onToggleAuto, paused, onTogglePause, turbo, onToggleTurbo, onNext, onRestart, onAbort, canNext }) {
+export function Controls({ auto, onToggleAuto, paused, onTogglePause, speedMult, onSpeed, onNext, onRestart, onAbort, canNext }) {
   return (
     <div className="rounded-xl p-3 flex flex-wrap items-center gap-2" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       <Btn active={paused} onClick={onTogglePause} tone="#d4a63a">
@@ -26,7 +26,8 @@ export function Controls({ auto, onToggleAuto, paused, onTogglePause, turbo, onT
         {auto ? "Auto" : "Manuell"}
       </Btn>
 
-      <Btn active={turbo} onClick={onToggleTurbo} tone="#8a7de0">{turbo ? "2×" : "1×"}</Btn>
+      <Btn active={speedMult === 2} onClick={() => onSpeed(2)} tone="#8a7de0">2×</Btn>
+      <Btn active={speedMult === 3} onClick={() => onSpeed(3)} tone="#8a7de0">3×</Btn>
 
       <Btn onClick={onNext} disabled={!canNext || auto} tone="#d4a63a">Nächster Stich</Btn>
 
