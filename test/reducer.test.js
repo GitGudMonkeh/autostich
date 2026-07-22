@@ -58,15 +58,6 @@ describe("Reducer", () => {
   it("TO_MENU verlässt den Lauf zurück ins Menü", () => {
     expect(reducer(initialState(makeRng(1)), { type: "TO_MENU" }).phase).toBe("menu");
   });
-
-  it("RESOLVE_TRICK reicht action.lossCost an die Engine durch (#32)", () => {
-    const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
-    const id40 = Array.from({ length: 40 }, (_, i) => i);
-    // Erzwungene Niederlage (Spieler 0 vs. Gegner 12).
-    const losing = { ...initialState(makeRng(1)), deck: constDeck(0), oppDeck: constDeck(12), playerOrder: id40, oppOrder: id40, life: 100 };
-    expect(reducer(losing, { type: "RESOLVE_TRICK", rng, lossCost: 25 }).life).toBe(75);
-    expect(reducer(losing, { type: "RESOLVE_TRICK", rng }).life).toBe(90); // ohne Payload → Default 10
-  });
 });
 
 describe("Reducer — Ansage-System (#36)", () => {
@@ -105,5 +96,26 @@ describe("Reducer — Ansage-System (#36)", () => {
   it("Ansage bleibt den ganzen Durchlauf unverändert (RESOLVE_TRICK ändert sie nicht)", () => {
     const play = { ...initialState(makeRng(1)), prediction: 25 };
     expect(reducer(play, { type: "RESOLVE_TRICK", rng }).prediction).toBe(25);
+  });
+});
+
+describe("LIFE_DRAIN — periodischer Zeit-Abzug (#59)", () => {
+  it("zieht den Betrag vom Leben ab (bleibt in play)", () => {
+    const s = { ...initialState(makeRng(1)), life: 100 };
+    const r = reducer(s, { type: "LIFE_DRAIN", amount: 20 });
+    expect(r.life).toBe(80);
+    expect(r.phase).toBe("play");
+  });
+  it("life ≤ 0 durch den Abzug → Game Over", () => {
+    const s = { ...initialState(makeRng(1)), life: 15 };
+    const r = reducer(s, { type: "LIFE_DRAIN", amount: 20 });
+    expect(r.life).toBe(0);
+    expect(r.phase).toBe("gameover");
+  });
+  it("greift nur in der play-Phase (Menü/Overlay unberührt)", () => {
+    const menu = menuState();
+    expect(reducer(menu, { type: "LIFE_DRAIN", amount: 20 })).toBe(menu);
+    const lvl = { ...initialState(makeRng(1)), phase: "levelup", life: 100 };
+    expect(reducer(lvl, { type: "LIFE_DRAIN", amount: 20 }).life).toBe(100);
   });
 });

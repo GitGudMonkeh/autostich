@@ -40,7 +40,7 @@ export function effectivePlayerValue(baseValue, perks, ctx) {
 /* Einen Stich auflösen → neuer State (pure). rng wird nur bei Durchlauf-Ende
    (Neu-Mischen) und Level-Up (Perk-Angebot) gebraucht — als Abhängigkeit injiziert,
    damit die Schicht deterministisch/seedbar bleibt (kein Math.random hier drin). */
-export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS) {
+export function resolveTrick(state, rng = Math.random) {
   if (state.phase !== "play") return state;
 
   let {
@@ -109,9 +109,10 @@ export function resolveTrick(state, rng = Math.random, lossCost = C.DMG_PER_LOSS
     lastResult = "win";
   } else if (lost) {
     losses += 1; winStreak = 0;
-    // lossCost = zeit-eskalierter Grundwert (#32). Legendär-Zusatzschaden (L1 +3 / L6 +2, summiert)
-    // addiert darauf; dmgReduce (C3) zieht ab, Schild (C5) absorbiert danach (s. u.).
-    dmg = Math.max(0, lossCost + sumHook(perks, "extraDamageTaken", {}) - sumHook(perks, "dmgReduce", {}));
+    // Flat-Grundschaden (#59: die #32-Zeiteskalation ist raus; Zeit-Pressure läuft jetzt über den
+    // periodischen LIFE_DRAIN). Legendär-Zusatzschaden (L1 +3 / L6 +2) addiert; dmgReduce (C3) zieht
+    // ab, Schild (C5) absorbiert danach (s. u.).
+    dmg = Math.max(0, C.DMG_PER_LOSS + sumHook(perks, "extraDamageTaken", {}) - sumHook(perks, "dmgReduce", {}));
     // Schild (C5) absorbiert NACH der Schadensberechnung, vor dem Leben.
     if (shield > 0 && dmg > 0) { const absorbed = Math.min(shield, dmg); shield -= absorbed; dmg -= absorbed; }
     life -= dmg;
