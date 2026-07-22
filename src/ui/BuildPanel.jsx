@@ -11,17 +11,16 @@ export function BuildPanel({ perks, deck }) {
   for (const id of perks) (byCat[PERK_DEFS[id].cat] ||= []).push(id);
   const open = openPerk && perks.includes(openPerk) ? PERK_DEFS[openPerk] : null;
 
-  // Deck-Wert-Histogramm, nach Farben (Suits) aufgeschlüsselt (#13): counts[value][suit].
+  // Deck-Werte je Farbe (#17): counts[value][suit]; eine Spalte je Farbe, gemeinsame Skala.
   const counts = {};
-  let maxV = 0;
+  let maxV = 0, cellMax = 1;
   for (const c of deck) {
     (counts[c.value] ||= {});
-    counts[c.value][c.suit] = (counts[c.value][c.suit] || 0) + 1;
-    maxV = Math.max(maxV, c.value);
+    const n = (counts[c.value][c.suit] = (counts[c.value][c.suit] || 0) + 1);
+    if (n > cellMax) cellMax = n;
+    if (c.value > maxV) maxV = c.value;
   }
-  const totalAt = (v) => SUIT_ORDER.reduce((s, su) => s + ((counts[v] && counts[v][su]) || 0), 0);
   const values = Array.from({ length: maxV + 1 }, (_, v) => v);
-  const maxCount = Math.max(1, ...values.map(totalAt));
 
   return (
     <div className="rounded-xl p-4 grid gap-4" style={{ background: "#17171c", border: "1px solid #26262e" }}>
@@ -71,32 +70,29 @@ export function BuildPanel({ perks, deck }) {
       </div>
 
       <div>
-        <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte nach Farbe (52 Karten)</div>
-        {/* Segment-Höhen in Pixeln (nicht %), sonst kollabieren verschachtelte Prozenthöhen im Flex auf 0. */}
-        <div className="flex items-end gap-[3px]" style={{ height: 62 }}>
-          {values.map((v) => (
-            <div key={v} className="flex-1 flex flex-col items-center justify-end">
-              <div className="w-full flex flex-col-reverse rounded-t overflow-hidden" style={{ minHeight: totalAt(v) ? 2 : 0 }}>
-                {SUIT_ORDER.map((su) => {
-                  const n = (counts[v] && counts[v][su]) || 0;
-                  if (!n) return null;
-                  return <div key={su} className="shrink-0" style={{ height: (n / maxCount) * 48, background: suitColor(su) }}
-                    title={`${suitName(su)} ${v}: ${n} Karten`} />;
-                })}
-              </div>
-              <div className="text-[8px] mt-0.5" style={{ color: v > 12 ? "#8a7de0" : undefined, opacity: v > 12 ? 1 : 0.4 }}>{v}</div>
+        <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte je Farbe (52 Karten)</div>
+        {/* 4 Spalten (eine je Farbe), jede ein eigenes Histogramm: Zeilen = Werte 0..max,
+            Balkenlänge = Kartenanzahl. Gemeinsame Werte-Achse + gemeinsame Mengen-Skala (#17). */}
+        <div className="grid grid-cols-4 gap-2">
+          {SUIT_ORDER.map((su) => (
+            <div key={su} className="flex flex-col gap-[2px]">
+              <div className="text-[10px] font-bold text-center leading-none mb-0.5" style={{ color: suitColor(su) }}>{suitName(su)}</div>
+              {values.map((v) => {
+                const n = (counts[v] && counts[v][su]) || 0;
+                return (
+                  <div key={v} className="flex items-center gap-1" title={`${suitName(su)} ${v}: ${n} Karten`}>
+                    <span className="text-[7px] w-3 text-right leading-none tabular-nums"
+                      style={{ color: v > 12 ? "#8a7de0" : undefined, opacity: v > 12 ? 1 : 0.4 }}>{v}</span>
+                    <div className="flex-1 rounded-sm overflow-hidden" style={{ height: 6, background: "#20202a" }}>
+                      {n > 0 && <div className="h-full rounded-sm" style={{ width: `${(n / cellMax) * 100}%`, background: suitColor(su) }} />}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
-          {SUIT_ORDER.map((su) => (
-            <span key={su} className="inline-flex items-center gap-1 text-[10px] opacity-70">
-              <span style={{ width: 8, height: 8, borderRadius: 2, background: suitColor(su), display: "inline-block" }} />
-              {suitName(su)}
-            </span>
-          ))}
-        </div>
-        <div className="text-[10px] opacity-35 mt-1">Werte über 12 (violett markiert) überbieten jede Gegnerkarte.</div>
+        <div className="text-[10px] opacity-35 mt-1.5">Werte über 12 (violett) überbieten jede Gegnerkarte.</div>
       </div>
     </div>
   );
