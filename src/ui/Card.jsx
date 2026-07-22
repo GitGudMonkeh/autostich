@@ -1,9 +1,14 @@
 import { suitColor, suitName } from "../game/constants.js";
 
-/* Eine Karte. `value` = effektiver Kampfwert dieses Stichs (kann Boni enthalten);
-   `base` = Kartenwert ohne Stich-Boni (klein eingeblendet, wenn abweichend). */
-export function Card({ suit, value, base, dim = false, glow = null }) {
+/* Eine Karte. Die große Zahl = effektiver Kampfwert dieses Stichs (= value + stichBonus),
+   damit sie immer zum Stich-Ausgang passt.
+     value      = dauerhafter Kartenwert (inkl. Kat.-A-Mods)
+     baseRank   = Ursprungswert → dauerhafter Boost = value − baseRank (violett „+X")
+     stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
+export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null }) {
   const color = suitColor(suit);
+  const permBoost = baseRank != null ? value - baseRank : 0;
+  const effective = value + stichBonus;
   return (
     <div
       className="relative rounded-xl border-2 flex flex-col items-center justify-center select-none transition-all"
@@ -17,12 +22,18 @@ export function Card({ suit, value, base, dim = false, glow = null }) {
       <div className="absolute top-1.5 left-2 text-[10px] uppercase tracking-wide" style={{ color }}>
         {suitName(suit)}
       </div>
-      <div className="text-5xl font-bold" style={{ color }}>{value}</div>
-      {base != null && base !== value && (
-        <div className="absolute bottom-1.5 text-[11px] opacity-55">
-          Basis {base} · <span style={{ color }}>+{value - base}</span>
+      {permBoost > 0 && (
+        <div className="absolute top-1.5 right-2 text-[11px] font-bold px-1 rounded"
+          style={{ color: "#8a7de0", background: "#8a7de022" }}
+          title={`Dauerhaft +${permBoost} (Basis ${baseRank})`}>
+          +{permBoost}
         </div>
       )}
+      <div className="text-5xl font-bold" style={{ color }}>{effective}</div>
+      <div className="absolute bottom-1.5 flex flex-col items-center leading-tight text-[10px]">
+        {permBoost > 0 && <span className="opacity-55">Basis {baseRank}</span>}
+        {stichBonus > 0 && <span style={{ color: "#e0605a" }}>⚔ +{stichBonus} Stich</span>}
+      </div>
     </div>
   );
 }

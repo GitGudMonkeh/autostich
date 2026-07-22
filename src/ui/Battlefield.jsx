@@ -12,15 +12,13 @@ export function Battlefield({ lastTrick }) {
   const banner = t ? BANNER[t.result] : null;
   const win = t && (t.result === "win" || t.result === "win_tie");
 
-  // Wert-Boni dieses Stichs (effektiv vs. Kartenbasis) sichtbar machen.
-  const pBase = t ? t.pCard.value : null;
-
   return (
     <div className="rounded-xl p-6 flex flex-col items-center gap-5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       <div className="flex items-center gap-8">
         <div className="flex flex-col items-center gap-2">
           <div className="text-[11px] uppercase tracking-wide opacity-55">Du</div>
-          {t ? <Card suit={t.pCard.suit} value={t.pValue} base={pBase} glow={win ? "#5ab87a" : null} />
+          {t ? <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
+                     stichBonus={t.pValue - t.pCard.value} glow={win ? "#5ab87a" : null} />
              : <CardBack />}
         </div>
 
@@ -30,7 +28,8 @@ export function Battlefield({ lastTrick }) {
 
         <div className="flex flex-col items-center gap-2">
           <div className="text-[11px] uppercase tracking-wide opacity-55">Gegner</div>
-          {t ? <Card suit={t.oCard.suit} value={t.oValue} glow={t.result === "loss" ? "#e0605a" : null} />
+          {t ? <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank}
+                     glow={t.result === "loss" ? "#e0605a" : null} />
              : <CardBack />}
         </div>
       </div>
