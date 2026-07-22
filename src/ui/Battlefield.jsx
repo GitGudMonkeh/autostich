@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE } from "../game/constants.js";
@@ -91,6 +91,33 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const showCombo = win && t && t.comboMult >= 1.5;
   const comboStr = t ? t.comboMult.toFixed(1).replace(".", ",") : "";
 
+  // #49: aufsteigende Zahlen (Score-Gewinn & Lebensverlust) ~1 s länger + Überlappen erlaubt.
+  // Statt eines je Stich ersetzten Einzel-Elements ein kleiner Pool — jeder Float lebt unabhängig
+  // und entfernt sich nach seiner Dauer selbst, sodass aufeinanderfolgende Floats überlappen.
+  const [floats, setFloats] = useState([]);
+  const seenTrick = useRef(-1);
+  const floatTimers = useRef([]);
+  useEffect(() => () => floatTimers.current.forEach(clearTimeout), []); // Timer bei Unmount aufräumen
+  useEffect(() => {
+    if (!t) { seenTrick.current = -1; setFloats([]); return; }      // Menü/neuer Lauf → Pool leeren
+    if (t.trickNo === seenTrick.current) return;
+    seenTrick.current = t.trickNo;
+    const w = t.result === "win" || t.result === "win_tie";
+    const l = t.result === "loss";
+    const dur = clamp(flipMs * 0.7, 320, 700) + 1000; // ~1 s länger als zuvor (#49)
+    const entries = [];
+    if (w && (t.gained > 0 || t.healed > 0))
+      entries.push({ id: `g${t.trickNo}`, side: "gain", dur, gained: t.gained, healed: t.healed,
+                     color: t.isCrit ? (t.jackpot ? JACKPOT_COLOR : CRIT_COLOR) : "#d4a63a" });
+    if (l && t.dmg > 0)
+      entries.push({ id: `d${t.trickNo}`, side: "loss", dur, dmg: t.dmg });
+    if (!entries.length) return;
+    setFloats((cur) => [...cur, ...entries].slice(-6)); // Pool gedeckelt — kein unbegrenztes Stapeln
+    const ids = entries.map((e) => e.id);
+    const tm = setTimeout(() => setFloats((cur) => cur.filter((f) => !ids.includes(f.id))), dur);
+    floatTimers.current.push(tm);
+  }, [t?.trickNo]);
+
   return (
     <div className="rounded-xl p-6 overflow-hidden as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       <div className="relative flex items-center justify-center gap-4 sm:gap-8">
@@ -122,21 +149,19 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
 
         <Side label="Gegner" remaining={remaining} dealFrom="right">{oppCard}</Side>
 
-        {/* Aufsteigende Zahlen: Gewinn links, Schaden rechts. Bei Crit zeigt der Score-Float
-            direkt den vollen verdoppelten Score (keine zwei Zahlen). */}
-        {win && (t.gained > 0 || t.healed > 0) && (
-          <div key={`gain${t.trickNo}`} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
-            style={{ left: 2, top: "40%", animation: fx(`as-float ${clamp(flipMs * 0.7, 320, 700)}ms ease-out forwards`) }}>
-            {t.gained > 0 && <span style={{ color: isCrit ? critColor : "#d4a63a" }}>+{Math.round(t.gained * 10) / 10}</span>}
-            {t.healed > 0 && <span style={{ color: "#5ab87a" }}> +{t.healed}♥</span>}
+        {/* Aufsteigende Zahlen (#49): Score-Gewinn links, Schaden rechts — als Pool, ~1 s Dauer,
+            Überlappen erlaubt. Bei Crit zeigt der Gewinn-Float direkt den vollen (verdoppelten) Score. */}
+        {floats.map((f) => (
+          <div key={f.id} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
+            style={{ [f.side === "gain" ? "left" : "right"]: 2, top: "40%",
+                     color: f.side === "loss" ? "#e0605a" : undefined,
+                     animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
+            {f.side === "gain" ? (<>
+              {f.gained > 0 && <span style={{ color: f.color }}>+{Math.round(f.gained * 10) / 10}</span>}
+              {f.healed > 0 && <span style={{ color: "#5ab87a" }}> +{f.healed}♥</span>}
+            </>) : (<>−{f.dmg}♥</>)}
           </div>
-        )}
-        {lost && t.dmg > 0 && (
-          <div key={`dmg${t.trickNo}`} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
-            style={{ right: 2, top: "40%", color: "#e0605a", animation: fx(`as-float ${clamp(flipMs * 0.7, 320, 700)}ms ease-out forwards`) }}>
-            −{t.dmg}♥
-          </div>
-        )}
+        ))}
         {/* Eskalierende Kombo-Anzeige (#31): eigene Bahn unten links, kollidiert nicht mit dem
             Gewinn-Float (40 %). Unter reduzierter Bewegung statisch (kein Float), wie beim Crit. */}
         {showCombo && (
