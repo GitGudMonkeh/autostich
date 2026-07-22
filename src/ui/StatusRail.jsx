@@ -34,7 +34,11 @@ export function StatusRail({ state, speedPct, ghost }) {
   const baseScoreMult = scoreMultFor(perks, { winStreak: winStreak + 1, winValue: 99, wins: wins + 1, trickNo, posInCycle: pos }) * tempoScoreMult;
   const ownsD4 = perks.includes("D4");
   const showCrit = hasCritPerk(perks) || (crits || 0) > 0;
-  const baseCritPct = Math.round(critChanceFor(perks, { winValue: 0, winStreak: 0, wins: 0, trickNo: 0, posInCycle: 0, speedPct }) * 100);
+  // Live-Crit-Chance des NÄCHSTEN Siegs: D8 nutzt die resultierende Serie (winStreak+1), analog zum
+  // echten Wurf (#19). D7 ist kartenabhängig → hier ausgeblendet (winValue 0), separat als Hinweis.
+  // Geteilter Helfer critChanceFor → kein Drift zur echten Berechnung. (#25)
+  const critPct = Math.round(critChanceFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos, speedPct }) * 100);
+  const ownsD7 = perks.includes("D7");
   // Leben-Balken bei Schaden/Heilung kurz aufblitzen (#15).
   const lifeFlash = lastTrick ? (lastTrick.result === "loss" && lastTrick.dmg > 0 ? "#e0605a" : lastTrick.healed > 0 ? "#5ab87a" : null) : null;
   return (
@@ -89,7 +93,7 @@ export function StatusRail({ state, speedPct, ghost }) {
           )}
           {ownsD4 && <span className="opacity-45">×3 bei Rang ≤3</span>}
           {showCrit && (<>
-            <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{baseCritPct}%</span></span>
+            <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span>{ownsD7 && <span className="opacity-45"> (+35% ≥10)</span>}</span>
             <span><span className="opacity-50">Crit </span><span style={{ color: "#e879f9" }}>×{fmtMult(CRIT_BASE_MULT)}</span></span>
             <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
           </>)}
