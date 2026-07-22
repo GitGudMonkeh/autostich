@@ -114,6 +114,12 @@ button { font-family: inherit; }
   box-shadow: 0 0 0 1px rgba(138,125,224,0.25), 0 0 16px rgba(138,125,224,0.18);
 }
 
+/* Karten-Logo (#45): unter dem CRT-Skin kraeftigerer Neon-Glow in der jeweiligen Kartenfarbe.
+   --glow-ring / --glow-halo werden je Karte inline gesetzt (CardLogo.jsx). Default bleibt dezent. */
+[data-skin="crt"] .as-logo-card {
+  box-shadow: 0 0 0 2px var(--glow-ring), 0 0 26px var(--glow-halo);
+}
+
 /* Panel-Rahmen unter Skin: heller + animierter Verlauf wie der Titel. Longhands
    (nicht `background`-Shorthand) mit !important, damit background-position frei fuer
    die Animation bleibt und der Rahmen nicht statisch wird. */

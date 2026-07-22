@@ -1,6 +1,6 @@
 import { xpToNext } from "../game/leveling.js";
 import { TRICKS_PER_CYCLE } from "../game/constants.js";
-import { critChanceFor, hasCritPerk, baseScoreMultFor, critMultiplierFor } from "../game/perks.js";
+import { critChanceFor, hasCritPerk, tempoScoreMultFor, critMultiplierFor } from "../game/perks.js";
 import { Sparkline } from "./Sparkline.jsx";
 
 function Bar({ value, max, color, height = 8 }) {
@@ -27,9 +27,10 @@ export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], r
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
-  // Gesamt-Score-Multiplikator (#23) — geteilte Quelle mit dem Header-Chip (#37), kein Drift.
+  // Gesamt-Score-Mult sitzt dauerhaft im Header-Chip (#37) — hier NICHT doppeln (#46).
+  // Nur der Tempo-Score-Anteil (monoton, poppt nicht) bleibt im Panel sichtbar.
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
-  const baseScoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos, speedPct });
+  const tempoScoreMult = tempoScoreMultFor(perks, speedPct);
   const ownsD4 = perks.includes("D4");
   const showCrit = hasCritPerk(perks) || (crits || 0) > 0;
   // Live-Crit-Chance des NÄCHSTEN Siegs: D8 nutzt die resultierende Serie (winStreak+1), analog zum
@@ -101,11 +102,12 @@ export function StatusRail({ state, speedPct, lossCost = 10, currentTraj = [], r
         </div>
         <Bar value={remaining} max={TRICKS_PER_CYCLE} color="#5a8ade" height={6} />
       </div>
-      {/* Score-Multiplikator, Tempo & Crit (#19/#23) */}
-      {(baseScoreMult > 1.001 || showCrit) && (
+      {/* Tempo-Score & Crit (#19/#46). Der Gesamt-Score-Mult steht dauerhaft im Header-Chip (#37);
+          hier bewusst nur der Tempo-Score-Anteil — monoton (folgt den Tempo-Perks), poppt nicht. */}
+      {(tempoScoreMult > 1.001 || ownsD4 || showCrit) && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
-          {baseScoreMult > 1.001 && (
-            <span title="D1 + Siegesserie + Tempo (aktuelle Serie)"><span className="opacity-50">Score </span><span style={{ color: "#d4a63a" }}>×{fmtMult(baseScoreMult)}</span></span>
+          {tempoScoreMult > 1.001 && (
+            <span title="Tempo erhöht den Score (Tempo-Perks; L6 verdoppelt den Anteil)"><span className="opacity-50">Tempo-Score </span><span style={{ color: "#5a8ade" }}>×{fmtMult(tempoScoreMult)}</span></span>
           )}
           {ownsD4 && <span className="opacity-45">×3 bei Rang ≤3</span>}
           {showCrit && (<>
