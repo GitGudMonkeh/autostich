@@ -2,7 +2,8 @@ import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE, lossCostFor, lossTierFor } from "./game/constants.js";
 import { baseScoreMultFor } from "./game/perks.js";
-import { loadGhost, saveGhost, loadHighscores, recordHighscore, loadOptions, saveOptions } from "./game/storage.js";
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, loadOptions, saveOptions, loadUsername, saveUsername } from "./game/storage.js";
+import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { Battlefield } from "./ui/Battlefield.jsx";
@@ -13,6 +14,7 @@ import { PredictionSelect } from "./ui/PredictionSelect.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
+import { UsernameModal } from "./ui/UsernameModal.jsx";
 import { CrtParticles } from "./ui/CrtParticles.jsx";
 import { DeckHistogram } from "./ui/BuildSummary.jsx";
 
@@ -25,6 +27,12 @@ export function Autostich() {
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
+  // Globaler Highscore (#14): lokaler Nickname + Ersteinrichtungs-Modal.
+  const [username, setUsername] = useState(loadUsername);
+  const [showUsername, setShowUsername] = useState(() => !loadUsername());
+  const [myEntry, setMyEntry] = useState(null);  // zuletzt gewerteter Lauf → Hervorhebung im Global-Board
+  const [pubToken, setPubToken] = useState(0);    // bumpt nach erfolgreichem Submit → Board lädt neu
+  function onSaveUsername(name) { saveUsername(name); setUsername(name); setShowUsername(false); }
   const [lossNotice, setLossNotice] = useState(null); // kurzer Float beim Stufenwechsel der Niederlagenkosten (#32)
   const [multPulse, setMultPulse] = useState(0);      // Zähler: bumpt bei Anstieg des Score-Mults → Puls (#37)
 
@@ -105,6 +113,14 @@ export function Autostich() {
     setHighscores(recordHighscore({
       score: finalScore, level: state.level, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
     }));
+    // Globalen Lauf posten (#14) — additiv, fehlertolerant. myEntry hebt ihn im Board hervor;
+    // pubToken lädt das Board nach dem Submit neu (damit der eigene Lauf drin ist).
+    const name = (username || "").trim().slice(0, 20);
+    const gEntry = { name, score: finalScore, level: state.level, tricks: state.trickNo, cycles: state.cycle };
+    setMyEntry(gEntry);
+    if (leaderboardConfigured && name) {
+      publishRun(gEntry).then(() => setPubToken((t) => t + 1)).catch(() => {});
+    }
     if (finalScore > recordTotal.current) {
       recordTraj.current = currentTraj.current.slice();
       recordTotal.current = finalScore;
@@ -184,7 +200,8 @@ export function Autostich() {
       {options.skin === "crt" && state.phase === "menu" && <CrtParticles />}
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
-          <StartScreen onStart={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)} />
+          <StartScreen onStart={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+            username={username} onEditName={() => setShowUsername(true)} myEntry={myEntry} pubToken={pubToken} />
         ) : (<>
           <header className="flex items-end justify-between flex-wrap gap-2">
             <div>
@@ -262,11 +279,17 @@ export function Autostich() {
       )}
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
-          currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu} />
+          currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu}
+          myEntry={myEntry} pubToken={pubToken} hasUsername={!!(username || "").trim()} onEditName={() => setShowUsername(true)} />
       )}
 
       {showOptions && (
         <OptionsModal options={options} onChange={changeOptions} onClose={() => setShowOptions(false)} />
+      )}
+
+      {showUsername && (
+        <UsernameModal initial={username} firstTime={!username}
+          onSave={onSaveUsername} onClose={() => setShowUsername(false)} />
       )}
     </div>
   );
