@@ -102,3 +102,46 @@ describe("Rollen-Eingriffe: Joker (C8) & Bindeglied (C10)", () => {
     expect(computeFormations(idOrder(3), deck, roles)[2].formations.some((x) => x.type === "treppe")).toBe(true);
   });
 });
+
+describe("Formationswerkzeuge (V2 §22.6 E)", () => {
+  const f = (arr, perks) => computeFormations(idOrder(arr.length), arr.map(card), {}, perks);
+  const hasType = (g, pos, t) => g[pos].formations.some((x) => x.type === t);
+
+  it("E7 Kontrollverlust: Position 10/20/30/40 werden Anker (×1,25)", () => {
+    const deck = Array.from({ length: 10 }, (_, i) => [i % 2 ? "B" : "R", i % 2 ? 1 : 3]); // formationsneutral
+    const g = f(deck, ["E7"]);
+    expect(hasType(g, 9, "anker")).toBe(true); // Position 10
+    expect(g[9].mult).toBeCloseTo(1.25);
+    expect(hasType(f(deck, []), 9, "anker")).toBe(false);
+  });
+  it("E8 Schnellschuss: Position 5/15/25/35 werden Anker", () => {
+    const deck = Array.from({ length: 6 }, (_, i) => [i % 2 ? "B" : "R", i % 2 ? 1 : 3]);
+    expect(hasType(f(deck, ["E8"]), 4, "anker")).toBe(true); // Position 5
+  });
+  it("E9 Segmentarbeit: Farbblock läuft über die Segmentgrenze", () => {
+    const deck = [["B", 4], ["G", 1], ["Y", 3], ["R", 5], ["R", 2], ["R", 8], ["R", 3]]; // R-Block Pos 4–7 über Grenze
+    expect(hasType(f(deck, []), 5, "farbblock")).toBe(false);
+    expect(hasType(f(deck, ["E9"]), 5, "farbblock")).toBe(true);
+  });
+  it("E5 Pendelwerk: Wechsel schon ab 2 Karten erkannt", () => {
+    const deck = [["R", 2], ["B", 9]];
+    expect(hasType(f(deck, []), 1, "wechsel")).toBe(false);
+    expect(hasType(f(deck, ["E5"]), 1, "wechsel")).toBe(true);
+  });
+  it("E1 Schrittmacher: Wiederholung mit einer fremden Karte dazwischen (fremde zählt nicht)", () => {
+    const deck = [["R", 5], ["B", 8], ["G", 5]]; // 5,8,5
+    expect(hasType(f(deck, []), 2, "wiederholung")).toBe(false);
+    const g = f(deck, ["E1"]);
+    expect(hasType(g, 2, "wiederholung")).toBe(true);
+    expect(hasType(g, 1, "wiederholung")).toBe(false); // die 8 ist kein Mitglied
+  });
+  it("E3 Sanfter Anstieg: Treppe darf einmal gleich sein", () => {
+    const deck = [["R", 3], ["B", 5], ["G", 5], ["Y", 7]]; // 3,5,5,7
+    expect(hasType(f(deck, []), 3, "treppe")).toBe(false);
+    expect(hasType(f(deck, ["E3"]), 3, "treppe")).toBe(true);
+  });
+  it("E4 Großer Schritt: Treppe darf einmal einen Rückschritt enthalten", () => {
+    const deck = [["R", 3], ["B", 7], ["G", 5], ["Y", 9]]; // 3,7,5,9
+    expect(hasType(f(deck, ["E4"]), 3, "treppe")).toBe(true);
+  });
+});

@@ -246,19 +246,14 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
     expect(PERK_DEFS.D11.scoreFlatOnCrit({ hasFormation: true })).toBe(250);
     expect(PERK_DEFS.D11.scoreFlatOnCrit({ hasFormation: false })).toBe(0);
   });
-  it("E6 Drehzahl: +5 % Crit je 30 % permanentes Tempo", () => {
-    expect(PERK_DEFS.E6.critChance({ speedPct: 150 })).toBeCloseTo(0.25);
-    expect(PERK_DEFS.E6.critChance({ speedPct: 90 })).toBeCloseTo(0.15);
-    expect(PERK_DEFS.E6.critChance({ speedPct: 29 })).toBe(0);
-  });
-  it("E7 Kontrollverlust: ×1,3 ab 100 % Tempo + 1 Zusatzschaden", () => {
-    expect(PERK_DEFS.E7.scoreMult({ speedPct: 100 })).toBe(1.3);
-    expect(PERK_DEFS.E7.scoreMult({ speedPct: 90 })).toBe(1);
-    expect(PERK_DEFS.E7.extraDamageTaken()).toBe(1);
-  });
-  it("E8 Schnellschuss: +150 auf jeden 10. Stich", () => {
-    expect(PERK_DEFS.E8.scoreFlat({ trickNo: 10 })).toBe(150);
-    expect(PERK_DEFS.E8.scoreFlat({ trickNo: 11 })).toBe(0);
+  it("E-Werkzeuge sind reine Marker (Wirkung in computeFormations); E10 hat extraSwap", () => {
+    for (const id of ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"]) {
+      expect(PERK_DEFS[id].cat).toBe("E");
+      expect(PERK_DEFS[id].cardBonus).toBeUndefined();
+      expect(PERK_DEFS[id].scoreFlat).toBeUndefined();
+      expect(PERK_DEFS[id].critChance).toBeUndefined();
+    }
+    expect(PERK_DEFS.E10.extraSwap).toBe(1);
   });
   it("Rares sind ohne Level-Gate sofort im Pool (nur Rares übrig → Angebot ist selten)", () => {
     const rares = PERK_LIST.filter((p) => p.rarity === "rare").map((p) => p.id);

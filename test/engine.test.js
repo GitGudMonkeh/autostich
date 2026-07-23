@@ -613,3 +613,11 @@ describe("Kartenrollen — Engine (V2 §22.6 C)", () => {
     expect(s.lastTrick.pValue).toBe(5);
   });
 });
+
+describe("Formationswerkzeuge — Engine (V2 §22.6 E)", () => {
+  it("E10 Feinjustierung: die Formationsphase startet mit +1 Energie", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1, perks: ["E10"] }), rng); // → cycle 2 (Formation)
+    expect(s.phase).toBe("formation");
+    expect(s.formationEnergy).toBe(FORMATION_ENERGY + 1);
+  });
+});

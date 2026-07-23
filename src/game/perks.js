@@ -125,15 +125,11 @@ export const PERK_DEFS = {
         desc: "Ein Crit mit einer Karte in mindestens einer aktiven Formation gibt +250 Score.",
         scoreFlatOnCrit: (ctx) => (ctx.hasFormation ? 250 : 0) },
   E6: { id: "E6", cat: "E", rarity: "rare", label: "Drehzahl",
-        desc: "Je 30 % permanentes Tempo +5 % Crit-Chance (150 % → +25 %).",
-        critChance: (ctx) => Math.floor((ctx.speedPct || 0) / 30) * 0.05 },
+        desc: "Eine einzelne Karte darf gleichzeitig zu zwei unterschiedlichen Treppen gehören." },
   E7: { id: "E7", cat: "E", rarity: "rare", label: "Kontrollverlust",
-        desc: "Ab 100 % Tempo +30 % Score. Niederlagen verursachen +1 Schaden.",
-        scoreMult: (ctx) => ((ctx.speedPct || 0) >= 100 ? 1.3 : 1),
-        extraDamageTaken: () => 1 },
+        desc: "Die Positionen 10, 20, 30 und 40 sind Anker (siegreicher Anker ×1,25)." },
   E8: { id: "E8", cat: "E", rarity: "rare", label: "Schnellschuss",
-        desc: "Jeder zehnte Stich gibt bei einem Sieg +150 Score.",
-        scoreFlat: (ctx) => (ctx.trickNo % 10 === 0 ? 150 : 0) },
+        desc: "Die Positionen 5, 15, 25 und 35 sind Anker (siegreicher Anker ×1,25)." },
 
   // ---- Seltene Perks (#71, Phase 2b) — Ergebnis-/Wert-Historie (neue State-Felder) ----
   B8: { id: "B8", cat: "B", rarity: "rare", label: "Revanche",
@@ -184,12 +180,10 @@ export const PERK_DEFS = {
   B10: { id: "B10", cat: "B", rarity: "rare", label: "Überzahl",
         desc: "Ist der Dauerwert einer Karte höher als der ihres direkten Vorgängers, erhält sie +3 temporären Wert.",
         cardBonus: (ctx) => (ctx.predValue != null && ctx.pValueBase > ctx.predValue ? 3 : 0) },
-  E9: { id: "E9", cat: "E", rarity: "rare", label: "Hochlauf",
-        desc: "Jeder Sieg gibt +2 % temporäres Tempo (max +40 %); eine Niederlage −10 pp. Zählt für Geschwindigkeit und Tempo-Score.",
-        hochlauf: true }, // Engine führt rampTempo/tempTempo
-  E10: { id: "E10", cat: "E", rarity: "rare", label: "Ruhe vor dem Sturm",
-        desc: "Nach einem Gleichstand laufen die nächsten fünf Stiche 50 % schneller; das temporäre Tempo zählt auch für den Tempo-Score.",
-        ruheVorDemSturm: true }, // Engine führt calmTricks/tempTempo
+  E9: { id: "E9", cat: "E", rarity: "rare", label: "Segmentarbeit",
+        desc: "Formationen dürfen über Segmentgrenzen hinweg fortgesetzt werden." },
+  E10: { id: "E10", cat: "E", rarity: "rare", label: "Feinjustierung", extraSwap: 1,
+        desc: "Jede Formationsphase erhält einen zusätzlichen kostenlosen beliebigen Tausch." },
   D19: { id: "D19", cat: "D", rarity: "rare", label: "Überschusskrit",
         desc: "Ein Crit über 100 % effektiver Crit-Chance gibt +250 Score.",
         scoreFlatOnCrit: (ctx) => ((ctx.rawCrit || 0) > 1 ? 250 : 0) },
@@ -258,12 +252,17 @@ export const PERK_DEFS = {
         desc: "Jeder fünfte gewonnene Stich gibt +300 Score.",
         scoreFlat: (ctx) => (ctx.wins % 5 === 0 ? 300 : 0) },
 
-  // ---- E: Tempo (Geschwindigkeit — steigert zusätzlich den Score) ----
-  E1: { id: "E1", cat: "E", label: "Tempo I",   desc: "Flip-Geschwindigkeit +30 %. Tempo erhöht auch den Score.", speedPct: 30 },
-  E2: { id: "E2", cat: "E", label: "Tempo II",  desc: "Flip-Geschwindigkeit +30 %. Tempo erhöht auch den Score.", speedPct: 30 },
-  E3: { id: "E3", cat: "E", label: "Tempo III", desc: "Flip-Geschwindigkeit +30 %. Tempo erhöht auch den Score.", speedPct: 30 },
-  E4: { id: "E4", cat: "E", label: "Tempo IV",  desc: "Flip-Geschwindigkeit +30 %. Tempo erhöht auch den Score.", speedPct: 30 },
-  E5: { id: "E5", cat: "E", label: "Tempo V",   desc: "Flip-Geschwindigkeit +30 %. Tempo erhöht auch den Score.", speedPct: 30 },
+  // ---- E: Formationswerkzeuge (V2 §22.6) — reine Marker; die Wirkung steckt in computeFormations(perks). ----
+  E1: { id: "E1", cat: "E", label: "Schrittmacher",
+        desc: "Eine Wiederholung darf genau eine fremde Karte zwischen zwei gleichen Werten enthalten." },
+  E2: { id: "E2", cat: "E", label: "Farbbrücke",
+        desc: "Eine einzelne andersfarbige Karte unterbricht einen Farbblock nicht (sie zählt nicht zur Formation)." },
+  E3: { id: "E3", cat: "E", label: "Sanfter Anstieg",
+        desc: "Eine Treppe darf einmal zwei gleiche Werte hintereinander enthalten." },
+  E4: { id: "E4", cat: "E", label: "Großer Schritt",
+        desc: "Eine Treppe darf einmal einen Rückschritt enthalten." },
+  E5: { id: "E5", cat: "E", label: "Pendelwerk",
+        desc: "Ein Wechsel löst bereits ab zwei Karten aus (Differenz weiterhin ≥6)." },
 
   // ---- Legendär (#33): mächtig, aber mit Nachteil. rarity "legendary" → Gewicht 8 & Level-Gate ≥5
   //      (buildOffer). Nutzen bestehende Kategorien (A–E) plus die neuen Legendär-Hooks oben. ----

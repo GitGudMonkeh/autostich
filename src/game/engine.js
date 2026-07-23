@@ -73,7 +73,7 @@ export function resolveTrick(state, rng = Math.random) {
   // Formationen (V2 §22.7): zu Durchlauf-Beginn (pos 0) aus der persistenten Reihenfolge + Dauerwerten
   // berechnet und für den ganzen Durchlauf stabil gehalten. Greifen bei Sieg der jeweiligen Karte.
   let formations = state.formations || [];
-  if (pos === 0) formations = computeFormations(playerOrder, deck, roles);
+  if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks);
   const posForm = formations[pos] || { mult: 1, formations: [] };
   const formationMult = posForm.mult || 1;
   const hasFormation = positionHasFormation(posForm);
@@ -338,11 +338,11 @@ export function resolveTrick(state, rng = Math.random) {
         const off = buildOffer(perks, rng, C.PERKS_OFFERED);
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "formation") {
-        // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie, Formationen für die Vorschau berechnen.
+        // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ E10 Feinjustierung), Vorschau berechnen.
         phase = "formation";
-        newFormationEnergy = C.FORMATION_ENERGY;
+        newFormationEnergy = C.FORMATION_ENERGY + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0);
         newFormationSwaps = [];
-        formations = computeFormations(playerOrder, deck, roles);
+        formations = computeFormations(playerOrder, deck, roles, perks);
       }
     }
   }

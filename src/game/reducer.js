@@ -110,7 +110,7 @@ export function reducer(state, action) {
           : c.id === succId ? { ...c, value: c.value + 5 } : c);
       }
       const roles = { ...(state.roles || {}), [state.targetPerk]: ids };
-      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles), phase: "play", targetPerk: null };
+      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks), phase: "play", targetPerk: null };
     }
 
     // Stat-Auswahl (V2 §22.3): der gewählte Stat addiert seinen Step auf das zugehörige Summenfeld.
@@ -159,7 +159,7 @@ export function reducer(state, action) {
       if (i < 0 || j < 0 || i >= state.playerOrder.length || j >= state.playerOrder.length) return state;
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks),
                formationEnergy: state.formationEnergy - 1,
                formationSwaps: [...(state.formationSwaps || []), { i, j }] };
     }
@@ -170,7 +170,7 @@ export function reducer(state, action) {
       const { i, j } = swaps.pop();
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks),
                formationEnergy: state.formationEnergy + 1, formationSwaps: swaps };
     }
     // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie.
@@ -179,8 +179,8 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       const swaps = state.formationSwaps || [];
       for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles),
-               formationEnergy: C.FORMATION_ENERGY, formationSwaps: [] };
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks),
+               formationEnergy: C.FORMATION_ENERGY + (state.perks || []).reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0), formationSwaps: [] };
     }
     // Bestätigen → die aufgestellte Reihenfolge bleibt persistent; nächster Durchlauf startet.
     case "CONFIRM_FORMATION": {
