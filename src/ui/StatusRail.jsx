@@ -96,18 +96,8 @@ export function StatusRail({ state, speedPct, lossSurcharge = 0, currentTraj = [
           <span className="opacity-60">Deck bis zum Mischen</span>
           <span className="opacity-80">{remaining} / {TRICKS_PER_CYCLE}</span>
         </div>
-        <Bar value={remaining} max={TRICKS_PER_CYCLE} color="#5a8ade" height={6} />
+        <Bar value={remaining} max={TRICKS_PER_CYCLE} color="#8a7de0" height={6} />
       </div>
-      {/* ⚡ Ladung (Blitz-Archetyp) — nur sichtbar, sobald ein Blitz-Skill aktiv ist (docs/blitz-archetyp.md). */}
-      {lightning && lightning.active && (
-        <div className="pt-1 border-t" style={{ borderColor: "#26262e" }}>
-          <div className="flex justify-between text-xs mb-1">
-            <span className="opacity-60">⚡ Ladung{lightning.charge >= lightning.maxCharge && <span style={{ color: "#8a7de0" }}> · VOLL GELADEN</span>}</span>
-            <span className="font-bold" style={{ color: "#8a7de0" }}>{lightning.charge} / {lightning.maxCharge}</span>
-          </div>
-          <Bar value={lightning.charge} max={lightning.maxCharge} color="#8a7de0" height={8} />
-        </div>
-      )}
       {/* Tempo-Score & Crit (#19/#46). Der Gesamt-Score-Mult steht dauerhaft im Header-Chip (#37);
           hier bewusst nur der Tempo-Score-Anteil — monoton (folgt den Tempo-Perks), poppt nicht. */}
       {(tempoScoreMult > 1.001 || ownsD4 || showCrit) && (

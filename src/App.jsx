@@ -11,6 +11,7 @@ import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
+import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
@@ -282,6 +283,7 @@ export function Autostich() {
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
               <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} drainNotice={drainNotice} />
+              <ChargeBar lightning={state.lightning} />
               <BuildPanel perks={state.perks} />
             </div>
             <StatusRail state={state} speedPct={state.speedPct} lossSurcharge={lossSurcharge} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
