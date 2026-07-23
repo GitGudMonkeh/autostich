@@ -156,6 +156,20 @@ export const PERK_DEFS = {
         desc: "Verlierst du mit mindestens 5 Wertpunkten Abstand, erhält der nächste gewonnene Stich +40 % Crit-Chance.",
         critChance: (ctx) => (ctx.weaknessArmed ? 0.40 : 0) },
 
+  // ---- Seltene Perks (#71, Phase 2d) — Per-Durchlauf Leben/Score (Engine-Flags + Zyklus-Hooks) ----
+  C7: { id: "C7", cat: "C", rarity: "rare", label: "Überlebensvorteil",
+        desc: "Nach jedem Durchlauf 4 Leben je eigener Karte mit Wert 13 oder höher (max 60).",
+        healOnCycle: ({ deck }) => Math.min(C.SURVIVAL_CAP, C.SURVIVAL_PER_CARD * (deck || []).filter((c) => c.value >= C.SURVIVAL_MIN_VALUE).length) },
+  C8: { id: "C8", cat: "C", rarity: "rare", label: "Sauberer Durchlauf",
+        desc: "Nach 10 Stichen in Folge ohne echten Lebensverlust +15 Leben (voll vom Schild absorbierter Schaden zählt nicht).",
+        cleanRunHeal: true }, // Engine führt cleanStreak
+  C9: { id: "C9", cat: "C", rarity: "rare", label: "Opfergabe",
+        desc: "Zu Beginn jedes Durchlaufs −30 Leben (kann nicht töten); dafür dauerhaft +20 % Score.",
+        sacrificeCycle: true, scoreMult: () => C.SACRIFICE_SCORE_MULT },
+  C10: { id: "C10", cat: "C", rarity: "rare", label: "Notfallration",
+        desc: "Erstes Mal je Durchlauf bei 25 % Leben oder weniger: sofort +40 Leben.",
+        emergencyHeal: true }, // Engine führt notfallUsed
+
   // ---- B: Stich-Effekte (Wert-Bonus auf die aktuelle Karte) ----
   B1: { id: "B1", cat: "B", label: "Gegenangriff",
         desc: "Nach einem verlorenen Stich erhält die nächste Karte +2 Wert.",
