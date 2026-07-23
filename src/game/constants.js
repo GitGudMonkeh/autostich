@@ -26,6 +26,16 @@ export const D4_LOW_MAX   = 3;    // D4  „Außenseiter" bis zu diesem Wert
 export const D4_MULT      = 3;    // D4  Score-Faktor
 export const D5_BONUS     = 300;  // D5  jeder 10. Sieg: Flat-Bonus
 
+// Seltene Per-Durchlauf-Perks (#71 Phase 2d) [TUNING]
+export const SURVIVAL_PER_CARD  = 4;   // C7 Überlebensvorteil: Heilung je eigener Karte mit hohem Wert …
+export const SURVIVAL_MIN_VALUE = 13;  // …          … ab diesem Kartenwert
+export const SURVIVAL_CAP       = 60;  // …          … gedeckelt je Durchlauf
+export const CLEAN_RUN_HEAL     = 15;  // C8 Sauberer Durchlauf: Heilung nach …
+export const CLEAN_RUN_TRICKS   = 10;  // …          … so vielen Stichen in Folge ohne echten Lebensverlust
+export const SACRIFICE_LIFE     = 30;  // C9 Opfergabe: Leben-Kosten je Durchlauf-Beginn (kann nicht töten)
+export const SACRIFICE_SCORE_MULT = 1.20; // C9 …    … dafür +20 % Score, solange gehalten
+export const EMERGENCY_HEAL     = 40;  // C10 Notfallration: Sofortheilung, 1× je Durchlauf bei ≤25 % Leben
+
 // Legendäre Perks & Raritäts-System (#33) [TUNING]
 export const RARITY_WEIGHTS            = { common: 100, rare: 25, legendary: 4 }; // 3-Stufen-Rarität (#71); „common" = normal
 export const RARE_MIN_LEVEL            = 2;    // Seltene Perks erst ab diesem Level im Angebot (#71)

@@ -48,6 +48,7 @@ export function resolveTrick(state, rng = Math.random) {
     initiative, lastResult, perks, offer, shield, tieArmed, sinceWin = 0,
     lossStreak = 0, lastWinValue = null, altLen = 0, // #71 Rares: Revanche / Präzision / Wechselspiel
     critFollowArmed = false, misfireBonus = 0, weaknessArmed = false, // #71 Crit-Historie: Crit-Folge / Fehlzündung / Schwachstellenanalyse
+    cleanStreak = 0, notfallUsed = false, // #71 Per-Durchlauf: Sauberer Durchlauf (Zähler) / Notfallration (1×/Durchlauf)
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
     // Ansage-System (#36)
     cycleWins = 0, cycleBaseScore = 0, prediction = null, lastPrediction = null,
@@ -147,6 +148,20 @@ export function resolveTrick(state, rng = Math.random) {
     // Serie & Initiative unverändert
   }
 
+  // #71 Sauberer Durchlauf (C8): Stiche in Folge OHNE echten Lebensverlust (voll vom Schild absorbiert
+  // zählt nicht als Verlust). Erreicht der Zähler die Schwelle → heilen und zurücksetzen.
+  const lostLife = dmg > 0;
+  cleanStreak = lostLife ? 0 : cleanStreak + 1;
+  if (ownsFlag(perks, "cleanRunHeal") && cleanStreak >= C.CLEAN_RUN_TRICKS && life > 0) {
+    const add = Math.min(maxLife - life, C.CLEAN_RUN_HEAL);
+    life += add; healed += add; cleanStreak = 0;
+  }
+  // #71 Notfallration (C10): erstes Mal je Durchlauf bei ≤25 % Leben sofort heilen (rettet nicht vor Tod).
+  if (ownsFlag(perks, "emergencyHeal") && !notfallUsed && life > 0 && maxLife > 0 && life / maxLife <= 0.25) {
+    const add = Math.min(maxLife - life, C.EMERGENCY_HEAL);
+    life += add; healed += add; notfallUsed = true;
+  }
+
   const lastTrick = {
     pCard, oCard, pValue, oValue,
     result: tieConverted ? "win_tie" : won ? "win" : lost ? "loss" : "tie",
@@ -168,7 +183,7 @@ export function resolveTrick(state, rng = Math.random) {
       cycleWins, cycleBaseScore, prediction, lastPrediction, lastPredictionResult,
       predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus,
       initiative, lastResult, offer, shield, tieArmed, sinceWin, lossStreak, lastWinValue, altLen,
-      critFollowArmed, misfireBonus, weaknessArmed,
+      critFollowArmed, misfireBonus, weaknessArmed, cleanStreak, notfallUsed,
       lastTrick, phase: "gameover",
     };
   }
@@ -179,8 +194,11 @@ export function resolveTrick(state, rng = Math.random) {
   let predictionDue = false;
   if (pos >= C.TRICKS_PER_CYCLE) {
     cycle += 1;
-    const ch = sumHook(perks, "healOnCycle", {});
+    const ch = sumHook(perks, "healOnCycle", { deck }); // C7 Überlebensvorteil liest das Deck (Karten ≥13)
     if (ch > 0) life = Math.min(maxLife, life + ch);
+    // #71 Opfergabe (C9): zu Beginn jedes Durchlaufs −30 Leben (kann nicht töten → min 1); +20 % Score via scoreMult.
+    if (ownsFlag(perks, "sacrificeCycle")) life = Math.max(1, life - C.SACRIFICE_LIFE);
+    notfallUsed = false; // #71 Notfallration (C10): 1× je Durchlauf → beim Durchlauf-Wechsel zurücksetzen
     shield = perks.reduce((m, id) => Math.max(m, PERK_DEFS[id].shieldPerCycle || 0), 0); // C5: Schild je Durchlauf (kein Stapeln)
     if (prediction != null) { // ab dem 2. Durchlauf: Ansage auswerten
       const difference = Math.abs(prediction - cycleWins);
@@ -227,7 +245,7 @@ export function resolveTrick(state, rng = Math.random) {
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     crits, critBonusScore, bestTrickScore, legendaryCritBonus,
     initiative, lastResult, perks, offer: newOffer, shield, tieArmed, pendingLevelUps, sinceWin, lossStreak, lastWinValue, altLen,
-    critFollowArmed, misfireBonus, weaknessArmed,
+    critFollowArmed, misfireBonus, weaknessArmed, cleanStreak, notfallUsed,
     lastTrick, phase,
   };
 }

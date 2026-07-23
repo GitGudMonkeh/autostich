@@ -462,3 +462,40 @@ describe("Crit-Historie-Rares — Engine (#71 Phase 2c)", () => {
     expect(win.weaknessArmed).toBe(false); // Sieg verbraucht
   });
 });
+
+describe("Per-Durchlauf-Rares — Engine (#71 Phase 2d)", () => {
+  it("C7 Überlebensvorteil: Durchlauf-Ende heilt 4 je Karte ≥13 (Deck 13er → Deckel 60)", () => {
+    const s = resolveTrick(scenario(13, 0, { pos: 39, perks: ["C7"], life: 1000, maxLife: 2000 }), rng);
+    expect(s.cycle).toBe(1);
+    expect(s.life).toBe(1060); // 40 Karten ≥13 → 160, gedeckelt 60
+  });
+
+  it("C8 Sauberer Durchlauf: 10. Stich ohne echten Verlust → +15, Zähler zurück", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["C8"], cleanStreak: 9, life: 1000, maxLife: 2000 }), rng);
+    expect(s.lastTrick.healed).toBe(15);
+    expect(s.life).toBe(1015);
+    expect(s.cleanStreak).toBe(0);
+  });
+  it("C8: echter Lebensverlust setzt den Zähler zurück; Schild-Absorption zählt als sauber", () => {
+    expect(resolveTrick(scenario(0, 12, { perks: ["C8"], cleanStreak: 9, life: 1000 }), rng).cleanStreak).toBe(0); // Verlust
+    const shielded = resolveTrick(scenario(0, 12, { perks: ["C8", "C5"], cleanStreak: 9, shield: 50, life: 1000, maxLife: 2000 }), rng);
+    expect(shielded.life).toBe(1015); // Schaden voll vom Schild → sauber → 10. Stich heilt
+    expect(shielded.shield).toBe(40);
+  });
+
+  it("C9 Opfergabe: +20 % Score dauerhaft; Durchlauf-Beginn −30 Leben (kann nicht töten)", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["C9"] }), rng).score).toBeCloseTo(122.4); // 100×1,02×1,2
+    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["C9"], life: 1000, maxLife: 2000 }), rng).life).toBe(970); // −30
+    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["C9"], life: 20, maxLife: 2000 }), rng).life).toBe(1);     // clamp 1
+  });
+
+  it("C10 Notfallration: 1× je Durchlauf bei ≤25 % Leben +40, dann verbraucht", () => {
+    const hit = resolveTrick(scenario(0, 12, { perks: ["C10"], life: 400, maxLife: 2000 }), rng);
+    expect(hit.life).toBe(430); // 400 −10 Verlust +40 Notfall
+    expect(hit.notfallUsed).toBe(true);
+    expect(resolveTrick(scenario(0, 12, { perks: ["C10"], life: 400, maxLife: 2000, notfallUsed: true }), rng).life).toBe(390); // schon genutzt
+  });
+  it("C10: notfallUsed wird beim Durchlauf-Wechsel zurückgesetzt", () => {
+    expect(resolveTrick(scenario(13, 0, { pos: 39, perks: ["C10"], notfallUsed: true, life: 1000, maxLife: 2000 }), rng).notfallUsed).toBe(false);
+  });
+});

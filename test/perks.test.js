@@ -305,3 +305,15 @@ describe("Seltene Perks (#71, Phase 2c — Crit-Historie-Hooks)", () => {
     expect(PERK_DEFS.D16.critChance({ weaknessArmed: false })).toBe(0);
   });
 });
+
+describe("Seltene Perks (#71, Phase 2d — Per-Durchlauf)", () => {
+  const mkDeck = (vals) => vals.map((v, i) => ({ id: `c${i}`, suit: "R", baseRank: i, value: v }));
+  it("C7 Überlebensvorteil: 4 je Karte ≥13, gedeckelt bei 60", () => {
+    expect(PERK_DEFS.C7.healOnCycle({ deck: mkDeck([13, 14, 5, 12, 20]) })).toBe(12); // 3 Karten ≥13 → 12
+    expect(PERK_DEFS.C7.healOnCycle({ deck: mkDeck(Array(20).fill(13)) })).toBe(60);  // 80 → Deckel 60
+    expect(PERK_DEFS.C7.healOnCycle({ deck: mkDeck([1, 2, 3]) })).toBe(0);
+  });
+  it("C9 Opfergabe: scoreMult +20 %", () => {
+    expect(PERK_DEFS.C9.scoreMult()).toBeCloseTo(1.2);
+  });
+});
