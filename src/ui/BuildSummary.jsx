@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PERK_DEFS, CATEGORIES, isLegendary } from "../game/perks.js";
+import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 import { SUIT_ORDER, suitColor, suitName } from "../game/constants.js";
 
 /* Gemeinsame Build-Kontext-Bausteine (#22): geteilt von BuildPanel und PerkSelect. */
@@ -20,14 +20,16 @@ export function PerkList({ perks, empty = "Noch keine Perks." }) {
               style={{ background: `${CATEGORIES[c].color}22`, color: CATEGORIES[c].color }}>{CATEGORIES[c].name}</span>
             {byCat[c].map((id) => {
               const active = openPerk === id;
-              const leg = isLegendary(id);
+              const rar = rarityOf(id);
+              const rm = RARITY_META[rar];
+              const special = rar !== "common"; // selten/legendär: Raritäts-Farbe + Marke
               return (
                 <button key={id} type="button" onClick={() => setOpenPerk(active ? null : id)}
                   className="text-xs px-2 py-0.5 rounded transition-all"
                   style={{ background: active ? `${CATEGORIES[c].color}33` : "#22222b",
-                           color: leg ? "#d4a63a" : undefined,
-                           outline: active ? `1px solid ${CATEGORIES[c].color}` : (leg ? "1px solid #d4a63a88" : "none") }}>
-                  {leg ? "★ " : ""}{PERK_DEFS[id].label}
+                           color: special ? rm.color : undefined,
+                           outline: active ? `1px solid ${CATEGORIES[c].color}` : (special ? `1px solid ${rm.color}88` : "none") }}>
+                  {rm.mark ? `${rm.mark} ` : ""}{PERK_DEFS[id].label}
                 </button>
               );
             })}

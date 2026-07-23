@@ -1,4 +1,4 @@
-import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
+import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 import { Sparkline } from "./Sparkline.jsx";
 
 // Highscore-Listen (lokal + global) bewusst NICHT hier — sie stehen auf dem Startbildschirm und
@@ -43,12 +43,18 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
         {state.perks.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
-            {state.perks.map((id) => (
-              <span key={id} className="text-[11px] px-2 py-0.5 rounded"
-                style={{ background: `${CATEGORIES[PERK_DEFS[id].cat].color}22`, color: CATEGORIES[PERK_DEFS[id].cat].color }}>
-                {PERK_DEFS[id].label}
-              </span>
-            ))}
+            {state.perks.map((id) => {
+              const cc = CATEGORIES[PERK_DEFS[id].cat].color;
+              const rar = rarityOf(id);
+              const rm = RARITY_META[rar];
+              return (
+                <span key={id} className="text-[11px] px-2 py-0.5 rounded"
+                  style={{ background: `${cc}22`, color: cc,
+                           border: rar !== "common" ? `1px solid ${rm.color}` : undefined }}>
+                  {rm.mark ? `${rm.mark} ` : ""}{PERK_DEFS[id].label}
+                </span>
+              );
+            })}
           </div>
         )}
 

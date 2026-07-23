@@ -316,6 +316,15 @@ export const PERK_LIST = Object.values(PERK_DEFS);
 export const rarityOf    = (id) => PERK_DEFS[id]?.rarity || "common";
 export const isLegendary = (id) => rarityOf(id) === "legendary";
 
+// UI-Metadaten je Seltenheit (#71): grau / grün / gold — geteilte Quelle für PerkSelect,
+// BuildSummary und GameOver (analog zu CATEGORIES.color). `badge` leer = keine Marke (Normal).
+export const RARITY_META = {
+  common:    { key: "common",    label: "Normal",   badge: "",           mark: "",   color: "#8a8a95" }, // grau
+  rare:      { key: "rare",      label: "Selten",   badge: "◆ SELTEN",   mark: "◆",  color: "#4ade80" }, // grün
+  legendary: { key: "legendary", label: "Legendär", badge: "★ LEGENDÄR", mark: "★",  color: "#d4a63a" }, // gold
+};
+export const rarityMeta = (id) => RARITY_META[rarityOf(id)];
+
 // Angebot: bis zu `count` noch nicht besessene Perks, GEWICHTET nach Seltenheit (#33, §10.3).
 // Legendaries: erst ab LEGENDARY_MIN_LEVEL, höchstens MAX_LEGENDARIES_PER_OFFER je Angebot.
 // Deterministisch über den injizierten rng (ein rng()-Zug je Auswahl). Pool leer → weniger Perks.
