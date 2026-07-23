@@ -150,14 +150,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
           </div>
         )}
 
-        {/* Anti-Infinity (#59): einmaliger Hinweis beim periodischen Zeit-Abzug —
+        {/* Anti-Infinity (#85): Hinweis, wenn der Zeit-Aufschlag pro Niederlage steigt —
             non-blocking, selbst-verschwindend; reduced-motion → statisch (App räumt nach 2 s ab). */}
         {drainNotice && (
           <div key={`drainnotice-${drainNotice.interval}`} className="pointer-events-none absolute left-1/2 top-0 font-bold whitespace-nowrap z-20"
             style={{ fontSize: 14, color: "#e0605a", textShadow: "0 0 10px #e0605a99",
                      transform: reduced ? "translateX(-50%)" : undefined,
                      animation: fx("as-notice 2000ms ease-out forwards") }}>
-            ⏳ Zeit-Abzug −{drainNotice.amount}♥
+            ⏳ Niederlagen jetzt +{drainNotice.surcharge}♥
           </div>
         )}
 

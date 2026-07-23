@@ -21,7 +21,7 @@ function Stat({ label, value, tone }) {
   );
 }
 
-export function StatusRail({ state, speedPct, nextDrain = 0, currentTraj = [], recordTraj = [] }) {
+export function StatusRail({ state, speedPct, lossSurcharge = 0, currentTraj = [], recordTraj = [] }) {
   const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield, legendaryCritBonus = 0, prediction = null, cycleWins = 0, tempTempo = 0 } = state;
   const need = xpToNext(level);
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
@@ -46,8 +46,8 @@ export function StatusRail({ state, speedPct, nextDrain = 0, currentTraj = [], r
   const lowLifeRally = perks.includes("L3") && maxLife > 0 && life / maxLife <= 0.25;
   // Leben-Balken bei Schaden/Heilung kurz aufblitzen (#15).
   const lifeFlash = lastTrick ? (lastTrick.result === "loss" && lastTrick.dmg > 0 ? "#e0605a" : lastTrick.healed > 0 ? "#5ab87a" : null) : null;
-  // Passiver Indikator des nächsten periodischen Zeit-Abzugs (#59): grün → gelb → rot je Härte.
-  const drainColor = nextDrain <= 20 ? "#5ab87a" : nextDrain <= 80 ? "#d4a63a" : "#e0605a";
+  // Passiver Indikator des aktuellen Zeit-Aufschlags PRO NIEDERLAGE (#85): grün → gelb → rot je Härte.
+  const drainColor = lossSurcharge <= 20 ? "#5ab87a" : lossSurcharge <= 80 ? "#d4a63a" : "#e0605a";
   return (
     <div className="rounded-xl p-4 grid gap-3 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       {/* Leben */}
@@ -61,11 +61,11 @@ export function StatusRail({ state, speedPct, nextDrain = 0, currentTraj = [], r
           {lifeFlash && <div key={trickNo} className="absolute inset-0 rounded-full pointer-events-none"
             style={{ animation: "as-flash 400ms ease-out", "--flash": lifeFlash }} />}
         </div>
-        {/* Zeit-Abzug — passiver Indikator des NÄCHSTEN periodischen Abzugs (#59). */}
+        {/* Zeit-Aufschlag pro Niederlage — passiver Indikator, eskaliert über die Spielzeit (#85). */}
         <div className="flex justify-end mt-1">
           <span className="text-[10px]" style={{ color: drainColor }}
-            title="Periodischer Zeit-Abzug — alle 2,5 Min, quadratisch eskalierend (5·n²)">
-            Zeit-Abzug (nächster) −{nextDrain}♥
+            title="Zeitdruck — je 2,5 Min steigt der Zusatzschaden pro Niederlage: +5·n² (0, +5, +20, +45, +80 …)">
+            Niederlage-Aufschlag +{lossSurcharge}♥
           </span>
         </div>
         {/* L3 „Letztes Aufbäumen" aktiv (#33): deutlicher, aber statischer Status (kein Blinken). */}

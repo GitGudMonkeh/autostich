@@ -169,19 +169,17 @@ export function Autostich() {
 
   const best = Math.max(recordTotal.current, highscores[0]?.score || 0);
   const elapsedMs = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
-  // Anti-Infinity (#59): periodischer, quadratisch eskalierender Leben-Abzug über die AKTIVE Zeit.
-  // drainInterval = Zahl der überschrittenen 2,5-Min-Schwellen; nextDrain = Betrag des nächsten Abzugs.
+  // Anti-Infinity (#85): quadratisch eskalierender Zusatzschaden PRO NIEDERLAGE über die AKTIVE Zeit.
+  // drainInterval = aktuelles 2,5-Min-Intervall; lossSurcharge = Aufschlag pro Niederlage im laufenden Intervall.
   const drainInterval = Math.floor(elapsedMs / LIFE_DRAIN_INTERVAL_MS);
-  const nextDrain = lifeDrainAt(drainInterval + 1);
-  // Neue Schwelle(n) → für jede verpasste Stufe LIFE_DRAIN dispatchen (Payload: Betrag; Determinismus,
-  // der Reducer sieht kein Date) + kurzer, selbst-verschwindender Float. Reset via startRun.
+  const lossSurcharge = lifeDrainAt(drainInterval);
+  // Neue Schwelle → der Engine das aktuelle Intervall melden (SET_DRAIN_LEVEL; Determinismus, der Reducer
+  // sieht kein Date) + kurzer, selbst-verschwindender Hinweis-Float. Reset via startRun (lastDrainInterval=0).
   useEffect(() => {
     if (state.phase !== "play" || drainInterval <= lastDrainInterval.current) return;
-    for (let n = lastDrainInterval.current + 1; n <= drainInterval; n++) {
-      dispatch({ type: "LIFE_DRAIN", amount: lifeDrainAt(n) });
-    }
+    dispatch({ type: "SET_DRAIN_LEVEL", level: drainInterval });
     lastDrainInterval.current = drainInterval;
-    setDrainNotice({ interval: drainInterval, amount: lifeDrainAt(drainInterval) });
+    setDrainNotice({ interval: drainInterval, surcharge: lifeDrainAt(drainInterval) });
     const id = setTimeout(() => setDrainNotice(null), 2000);
     return () => clearTimeout(id);
   }, [drainInterval, state.phase]);
@@ -271,7 +269,7 @@ export function Autostich() {
               <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} drainNotice={drainNotice} />
               <BuildPanel perks={state.perks} />
             </div>
-            <StatusRail state={state} speedPct={state.speedPct} nextDrain={nextDrain} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
+            <StatusRail state={state} speedPct={state.speedPct} lossSurcharge={lossSurcharge} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>
 
           {/* Chronik — Deck-Werte-Histogramm, volle Breite ganz unten (#28) */}

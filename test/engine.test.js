@@ -128,16 +128,30 @@ describe("resolveTrick — Verteidigungs-Perks", () => {
   });
 });
 
-describe("Anti-Infinity — periodischer Leben-Abzug (#59, ersetzt #32)", () => {
-  it("lifeDrainAt: quadratische Kurve 5·n² (−5, −20, −45, −80, …, 500)", () => {
+describe("Anti-Infinity — Zeit-Eskalation pro Niederlage (#85, ersetzt den #59-Tick)", () => {
+  it("lifeDrainAt: quadratische Kurve 5·n² (0, 5, 20, 45, 80, …, 500)", () => {
+    expect(lifeDrainAt(0)).toBe(0);
     expect(lifeDrainAt(1)).toBe(5);
     expect(lifeDrainAt(2)).toBe(20);
     expect(lifeDrainAt(3)).toBe(45);
     expect(lifeDrainAt(4)).toBe(80);
     expect(lifeDrainAt(10)).toBe(500);
   });
-  it("Niederlagenschaden ist wieder flat (keine Zeit-Eskalation)", () => {
-    expect(resolveTrick(scenario(0, 12, { life: 100 }), rng).life).toBe(90); // DMG_PER_LOSS = 10
+  it("Niederlagenschaden eskaliert mit drainLevel: DMG_PER_LOSS + 5·n²", () => {
+    expect(resolveTrick(scenario(0, 12, { life: 100 }), rng).life).toBe(90);                 // Level 0 → 10
+    expect(resolveTrick(scenario(0, 12, { life: 100, drainLevel: 1 }), rng).life).toBe(85);  // 10 + 5
+    expect(resolveTrick(scenario(0, 12, { life: 200, drainLevel: 3 }), rng).life).toBe(145); // 10 + 45
+  });
+  it("Zeit-Aufschlag stapelt mit Perk-Schaden (L1) und wird von Reduktion (C3) gemindert", () => {
+    // drainLevel 2 (+20): 10 + 20 + L1(+3) = 33
+    expect(resolveTrick(scenario(0, 12, { life: 100, drainLevel: 2, perks: ["L1"] }), rng).life).toBe(67);
+    // drainLevel 2 (+20): 10 + 20 − C3(−2) = 28
+    expect(resolveTrick(scenario(0, 12, { life: 100, drainLevel: 2, perks: ["C3"] }), rng).life).toBe(72);
+  });
+  it("hoher Zeit-Aufschlag kann tödlich sein → Game Over", () => {
+    const s = resolveTrick(scenario(0, 12, { life: 40, drainLevel: 3 }), rng); // 10 + 45 = 55 ≥ 40
+    expect(s.phase).toBe("gameover");
+    expect(s.life).toBe(0);
   });
 });
 
