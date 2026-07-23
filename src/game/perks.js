@@ -170,6 +170,17 @@ export const PERK_DEFS = {
         desc: "Erstes Mal je Durchlauf bei 25 % Leben oder weniger: sofort +40 Leben.",
         emergencyHeal: true }, // Engine führt notfallUsed
 
+  // ---- Seltene Perks (#71, Phase 2f) — Ergebnis-/Wert-Historie (neue State-Felder) ----
+  B9: { id: "B9", cat: "B", rarity: "rare", label: "Perfekte Folge",
+        desc: "Bei streng ansteigenden Kartenwerten je weitere Karte der Folge mehr Wert: 2.→+1, 3.→+2 … max +5. Eine gleiche/niedrigere Karte beginnt neu.",
+        cardBonus: (ctx) => Math.min((ctx.ascChain || 1) - 1, 5) },
+  D17: { id: "D17", cat: "D", rarity: "rare", label: "Farbserie",
+        desc: "Mehrere Siege in Folge mit derselben Farbe: 2.→+75, 3.→+100, je weiterer +25 (max +200). Andere Farbe/Niederlage beendet die Serie.",
+        scoreFlat: (ctx) => (ctx.suitStreak >= 2 ? Math.min(75 + (ctx.suitStreak - 2) * 25, 200) : 0) },
+  D18: { id: "D18", cat: "D", rarity: "rare", label: "Volles Haus",
+        desc: "Enthalten die letzten fünf Stiche (inkl. aktuellem) mindestens 4 Siege, gibt der aktuelle Sieg +250 Score.",
+        scoreFlat: (ctx) => ((ctx.recentWinCount || 0) >= 3 ? 250 : 0) },
+
   // ---- B: Stich-Effekte (Wert-Bonus auf die aktuelle Karte) ----
   B1: { id: "B1", cat: "B", label: "Gegenangriff",
         desc: "Nach einem verlorenen Stich erhält die nächste Karte +2 Wert.",

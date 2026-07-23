@@ -49,6 +49,9 @@ export function resolveTrick(state, rng = Math.random) {
     lossStreak = 0, lastWinValue = null, altLen = 0, // #71 Rares: Revanche / Präzision / Wechselspiel
     critFollowArmed = false, misfireBonus = 0, weaknessArmed = false, // #71 Crit-Historie: Crit-Folge / Fehlzündung / Schwachstellenanalyse
     cleanStreak = 0, notfallUsed = false, // #71 Per-Durchlauf: Sauberer Durchlauf (Zähler) / Notfallration (1×/Durchlauf)
+    ascRun = 0, lastPlayedValue = null, // #71 Perfekte Folge: aufsteigende Wertfolge
+    winSuit = null, winSuitStreak = 0, // #71 Farbserie: gleicher-Farbe-Siegesserie
+    recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
     // Ansage-System (#36)
     cycleWins = 0, cycleBaseScore = 0, prediction = null, lastPrediction = null,
@@ -60,6 +63,13 @@ export function resolveTrick(state, rng = Math.random) {
   const oCard = oppDeck[oppOrder[pos]];
 
   trickNo += 1;
+  // #71 Perfekte Folge: Länge der aktuell streng ansteigenden Wertfolge INKL. dieser Karte (Basiswert).
+  // Gleicher/niedrigerer Wert beginnt die Folge neu. State für den nächsten Stich sofort fortschreiben.
+  const ascChain = (lastPlayedValue != null && pCard.value > lastPlayedValue) ? (ascRun || 0) + 1 : 1;
+  ascRun = ascChain;
+  lastPlayedValue = pCard.value;
+  // #71 Volles Haus: Siege in den (bis zu 4) Stichen VOR diesem — inkl. aktuellem Sieg = Fenster 5.
+  const recentWinCount = recentResults.filter((r) => r === "win").length;
   const ctx = {
     posInCycle: pos,
     trickNo,
@@ -68,6 +78,7 @@ export function resolveTrick(state, rng = Math.random) {
     winStreak,
     sinceWin, // #71 Durchbruch: Stiche ohne Sieg (Stand VOR diesem Stich)
     lossStreak, // #71 Revanche: aufeinanderfolgende Niederlagen (Stand VOR diesem Stich)
+    ascChain, // #71 Perfekte Folge
     life, maxLife, // L3 „Letztes Aufbäumen": cardBonus prüft das Leben-Verhältnis VOR der Auflösung
   };
   const pValue = effectivePlayerValue(pCard.value, perks, ctx);
@@ -92,9 +103,13 @@ export function resolveTrick(state, rng = Math.random) {
     winStreak += 1; wins += 1; cycleWins += 1; // cycleWins: Siege im laufenden Durchlauf (#36)
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
+    // #71 Farbserie: Länge der Serie gewonnener Stiche gleicher Farbe INKL. dieses Siegs.
+    const suitStreak = pCard.suit === winSuit ? winSuitStreak + 1 : 1;
     const wctx = { winValue: pValue, margin: pValue - oValue, winStreak, wins, trickNo, posInCycle: pos, speedPct: state.speedPct || 0,
                    lastWinValue, altLen, // #71: Präzision (Vergleich mit letztem Siegwert) / Wechselspiel
-                   critFollowArmed, misfireBonus, weaknessArmed }; // #71 Crit-Historie: Stand VOR diesem Sieg (feed critChance-Hooks)
+                   critFollowArmed, misfireBonus, weaknessArmed, // #71 Crit-Historie: Stand VOR diesem Sieg (feed critChance-Hooks)
+                   suitStreak, recentWinCount }; // #71 Farbserie / Volles Haus
+    winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
     // Score: Basis-Serien-Mult (#39, immer) × Perk-Multiplikatoren × Tempo, DANN additive Boni (D3/D5), DANN Crit.
     const tempoScoreMult = tempoScoreMultFor(perks, state.speedPct); // L6 „Raserei": Tempo-Faktor ×2
     scoreBeforeCrit = C.SCORE_PER_WIN * streakBaseMult(winStreak) * prodHook(perks, "scoreMult", wctx) * tempoScoreMult
@@ -139,14 +154,19 @@ export function resolveTrick(state, rng = Math.random) {
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
     lossStreak += 1; // #71 Revanche: aufeinanderfolgende Niederlagen
     if (oValue - pValue >= 5) weaknessArmed = true; // #71 Schwachstellenanalyse: klare Niederlage rüstet nächsten Sieg
+    winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie
     lastResult = "loss";
   } else {
     ties += 1;
     sinceWin += 1; // #71 Durchbruch: Gleichstand zählt als „kein Sieg" weiter
     lossStreak = 0; // #71 Revanche: Gleichstand ist keine Niederlage → Serie bricht
+    winSuit = null; winSuitStreak = 0; // #71 Farbserie: Gleichstand ist kein Sieg → Serie bricht
     lastResult = "tie";
     // Serie & Initiative unverändert
   }
+
+  // #71 Volles Haus: Ergebnis-Fenster fortschreiben (letzte 4 Ergebnisse für den nächsten Stich).
+  recentResults = [...recentResults, lastResult].slice(-4);
 
   // #71 Sauberer Durchlauf (C8): Stiche in Folge OHNE echten Lebensverlust (voll vom Schild absorbiert
   // zählt nicht als Verlust). Erreicht der Zähler die Schwelle → heilen und zurücksetzen.
@@ -184,6 +204,7 @@ export function resolveTrick(state, rng = Math.random) {
       predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus,
       initiative, lastResult, offer, shield, tieArmed, sinceWin, lossStreak, lastWinValue, altLen,
       critFollowArmed, misfireBonus, weaknessArmed, cleanStreak, notfallUsed,
+      ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
       lastTrick, phase: "gameover",
     };
   }
@@ -246,6 +267,7 @@ export function resolveTrick(state, rng = Math.random) {
     crits, critBonusScore, bestTrickScore, legendaryCritBonus,
     initiative, lastResult, perks, offer: newOffer, shield, tieArmed, pendingLevelUps, sinceWin, lossStreak, lastWinValue, altLen,
     critFollowArmed, misfireBonus, weaknessArmed, cleanStreak, notfallUsed,
+    ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
     lastTrick, phase,
   };
 }

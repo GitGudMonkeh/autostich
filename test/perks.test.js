@@ -317,3 +317,25 @@ describe("Seltene Perks (#71, Phase 2d — Per-Durchlauf)", () => {
     expect(PERK_DEFS.C9.scoreMult()).toBeCloseTo(1.2);
   });
 });
+
+describe("Seltene Perks (#71, Phase 2f — Historie-Hooks)", () => {
+  it("B9 Perfekte Folge: 0/+1/+2 … gedeckelt bei +5", () => {
+    expect(PERK_DEFS.B9.cardBonus({ ascChain: 1 })).toBe(0);
+    expect(PERK_DEFS.B9.cardBonus({ ascChain: 2 })).toBe(1);
+    expect(PERK_DEFS.B9.cardBonus({ ascChain: 4 })).toBe(3);
+    expect(PERK_DEFS.B9.cardBonus({ ascChain: 6 })).toBe(5); // Deckel
+    expect(PERK_DEFS.B9.cardBonus({ ascChain: 9 })).toBe(5);
+  });
+  it("D17 Farbserie: 75/100/… gedeckelt bei 200, unter Serie 2 nichts", () => {
+    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 1 })).toBe(0);
+    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 2 })).toBe(75);
+    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 3 })).toBe(100);
+    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 7 })).toBe(200); // 75+5×25=200
+    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 9 })).toBe(200); // Deckel
+  });
+  it("D18 Volles Haus: +250 ab 3 Vorsiegen im 4er-Fenster", () => {
+    expect(PERK_DEFS.D18.scoreFlat({ recentWinCount: 3 })).toBe(250);
+    expect(PERK_DEFS.D18.scoreFlat({ recentWinCount: 4 })).toBe(250);
+    expect(PERK_DEFS.D18.scoreFlat({ recentWinCount: 2 })).toBe(0);
+  });
+});
