@@ -288,6 +288,27 @@ export const PERK_DEFS = {
   L6: { id: "L6", cat: "E", rarity: "legendary", label: "Raserei",
         desc: "Der Tempo-Score-Bonus wirkt doppelt — dafür verursachen verlorene Stiche +2 Schaden.",
         tempoScoreFactorMult: () => 2, extraDamageTaken: () => 2 },
+
+  // ---- Neue Legendaries (#71 Phase 3) — regelverändernde Motoren, teils mit eigenem Engine-/Reducer-State ----
+  L7: { id: "L7", cat: "A", rarity: "legendary", label: "Königsmacher",
+        desc: "Erreicht eine Karte durch Aufwertungen erstmals Wert 13 oder höher, erhält sie dauerhaft weitere +2 (je Karte nur einmal).",
+        kingmaker: true }, // Reducer prüft nach jeder Deck-Mod (kingBoosted)
+  L8: { id: "L8", cat: "A", rarity: "legendary", label: "Schicksalsmaschine",
+        desc: "Zu Beginn jedes Durchlaufs wird ein vorhandener Kartenwert zufällig bestimmt; Karten dieses Werts erhalten +8 Wert und geben bei Sieg ×2 Score (diesen Durchlauf).",
+        schicksal: true,
+        cardBonus: (ctx) => (ctx.fateValue != null && ctx.pValueBase === ctx.fateValue ? C.FATE_CARD_BONUS : 0),
+        scoreMult: (ctx) => (ctx.fateValue != null && ctx.baseValue === ctx.fateValue ? C.FATE_SCORE_MULT : 1) },
+  L9: { id: "L9", cat: "C", rarity: "legendary", label: "Blutvertrag",
+        desc: "Zu Beginn jedes Durchlaufs 100 Leben opfern → dauerhaft +20 % Score (max 5×, +100 %). Nur bei über 100 Leben; kann nicht töten.",
+        bloodPact: true, // Engine führt bloodStacks (Opfer im Durchlauf-Ende-Block)
+        scoreMult: (ctx) => 1 + C.BLOOD_SCORE_STEP * (ctx.bloodStacks || 0) },
+  L10: { id: "L10", cat: "D", rarity: "legendary", label: "Kettenreaktion",
+        desc: "Ein Crit kann erneut critten (Chance = halbe finale Crit-Chance); je Stufe verdoppelt sich der Crit-Faktor, max 3 Zusatzstufen (×2→×4→×8→×16).",
+        chainCrit: true }, // Engine würfelt die Kette nach dem Crit
+  L11: { id: "L11", cat: "E", rarity: "legendary", label: "Zeitraffer",
+        desc: "Alle Tempo-Boni wirken doppelt auf die reale Geschwindigkeit (normal auf den Tempo-Score). Nach jedem vollen Durchlauf dauerhaft +10 % Score (max +50 %).",
+        zeitraffer: true, // App verdoppelt die reale Speed; Engine führt zeitrafferStacks
+        scoreMult: (ctx) => 1 + C.ZEITRAFFER_SCORE_STEP * (ctx.zeitrafferStacks || 0) },
 };
 
 export const PERK_LIST = Object.values(PERK_DEFS);

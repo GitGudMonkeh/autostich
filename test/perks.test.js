@@ -125,8 +125,8 @@ describe("critChanceFor (Crit-Perks D6–D8, L4/L5)", () => {
 });
 
 describe("Legendäre Perks — reine Hooks (#33)", () => {
-  it("alle sechs sind als legendary markiert", () => {
-    for (const id of ["L1", "L2", "L3", "L4", "L5", "L6"]) expect(isLegendary(id)).toBe(true);
+  it("alle elf L-Perks sind als legendary markiert (#71: L7–L11 ergänzt)", () => {
+    for (const id of ["L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11"]) expect(isLegendary(id)).toBe(true);
     expect(isLegendary("D1")).toBe(false);
   });
   it("L1 Überladung: onPick +2 deckweit, +3 Zusatzschaden", () => {
@@ -147,6 +147,22 @@ describe("Legendäre Perks — reine Hooks (#33)", () => {
     expect(tempoScoreMultFor([], 150)).toBeCloseTo(1.75);       // 1 + 150×0.005
     expect(tempoScoreMultFor(["L6"], 150)).toBeCloseTo(2.5);    // Faktor ×2
     expect(PERK_DEFS.L6.extraDamageTaken()).toBe(2);
+  });
+  it("L8 Schicksalsmaschine: +8 Wert & ×2 Score nur auf den Schicksalswert (#71)", () => {
+    expect(PERK_DEFS.L8.cardBonus({ pValueBase: 7, fateValue: 7 })).toBe(8);
+    expect(PERK_DEFS.L8.cardBonus({ pValueBase: 6, fateValue: 7 })).toBe(0);
+    expect(PERK_DEFS.L8.cardBonus({ pValueBase: 7, fateValue: null })).toBe(0);
+    expect(PERK_DEFS.L8.scoreMult({ baseValue: 7, fateValue: 7 })).toBe(2);
+    expect(PERK_DEFS.L8.scoreMult({ baseValue: 6, fateValue: 7 })).toBe(1);
+  });
+  it("L9 Blutvertrag: +20 % Score je Stapel (#71)", () => {
+    expect(PERK_DEFS.L9.scoreMult({ bloodStacks: 0 })).toBeCloseTo(1.0);
+    expect(PERK_DEFS.L9.scoreMult({ bloodStacks: 3 })).toBeCloseTo(1.6);
+    expect(PERK_DEFS.L9.scoreMult({ bloodStacks: 5 })).toBeCloseTo(2.0);
+  });
+  it("L11 Zeitraffer: +10 % Score je Stapel (#71)", () => {
+    expect(PERK_DEFS.L11.scoreMult({ zeitrafferStacks: 0 })).toBeCloseTo(1.0);
+    expect(PERK_DEFS.L11.scoreMult({ zeitrafferStacks: 5 })).toBeCloseTo(1.5);
   });
 });
 

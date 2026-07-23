@@ -586,3 +586,35 @@ describe("Serien-/Tempo-/Crit-Rares — Engine (#71 Phase 2e)", () => {
     expect(resolveTrick(scenario(12, 0, { ...build, perks: ["D9", "D6", "D7", "D8", "D16"] }), zero).lastTrick.superCrit).toBe(false); // ohne D19 kein Super-Crit
   });
 });
+
+describe("Neue Legendaries — Engine (#71 Phase 3)", () => {
+  it("L8 Schicksalsmaschine: Schicksalswert bei Durchlauf-Ende gewählt; +8 Wert & ×2 Score für diese Karten", () => {
+    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L8"], life: 1000, maxLife: 2000 }), rng).fateValue).toBe(12); // Deck nur 12er
+    expect(resolveTrick(scenario(5, 10, { perks: ["L8"], fateValue: 5, life: 1000 }), rng).lastTrick.pValue).toBe(13); // 5 +8 → kippt den Stich
+    expect(resolveTrick(scenario(6, 10, { perks: ["L8"], fateValue: 5, life: 1000 }), rng).losses).toBe(1);            // Nicht-Schicksalswert: kein Bonus
+    expect(resolveTrick(scenario(12, 0, { perks: ["L8"], fateValue: 12 }), rng).lastTrick.gained).toBeCloseTo(204);    // 100×1,02 × 2
+    expect(resolveTrick(scenario(12, 0, { perks: ["L8"], fateValue: 5 }), rng).lastTrick.gained).toBeCloseTo(102);     // kein Match → ×1
+  });
+
+  it("L9 Blutvertrag: Durchlauf-Ende opfert 100 Leben → +Stack (nur >100 Leben, max 5), +20 %/Stack Score", () => {
+    const sac = resolveTrick(scenario(12, 0, { pos: 39, perks: ["L9"], life: 1000, maxLife: 2000, bloodStacks: 0 }), rng);
+    expect(sac.life).toBe(900); expect(sac.bloodStacks).toBe(1);
+    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L9"], life: 100, maxLife: 2000, bloodStacks: 0 }), rng).bloodStacks).toBe(0); // ≤100 → kein Opfer
+    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L9"], life: 1000, maxLife: 2000, bloodStacks: 5 }), rng).life).toBe(1000);   // Deckel 5 → kein Opfer
+    expect(resolveTrick(scenario(12, 0, { perks: ["L9"], bloodStacks: 3 }), rng).lastTrick.gained).toBeCloseTo(163.2); // 100×1,02×1,6
+  });
+
+  it("L10 Kettenreaktion: Crit kettet mit halber finaler Chance, je Stufe ×2 (max 3)", () => {
+    const build = { perks: ["L10", "D6", "D9"], wins: 9 }; // D9 garantiert Crit, D6 → 12 % finale Chance → Kette 6 %
+    expect(resolveTrick(scenario(12, 0, build), () => 0).lastTrick.critMultiplier).toBe(16);  // 3 Treffer: ×2→4→8→16
+    expect(resolveTrick(scenario(12, 0, build), () => 0.5).lastTrick.critMultiplier).toBe(2);  // kein Treffer
+    let n = 0; const once = () => (n++ === 0 ? 0 : 0.5);                                        // genau 1 Treffer
+    expect(resolveTrick(scenario(12, 0, build), once).lastTrick.critMultiplier).toBe(4);
+  });
+
+  it("L11 Zeitraffer: je Durchlauf +Stack (max 5), +10 %/Stack Score", () => {
+    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L11"], life: 1000, maxLife: 2000, zeitrafferStacks: 0 }), rng).zeitrafferStacks).toBe(1);
+    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L11"], life: 1000, maxLife: 2000, zeitrafferStacks: 5 }), rng).zeitrafferStacks).toBe(5); // Deckel
+    expect(resolveTrick(scenario(12, 0, { perks: ["L11"], zeitrafferStacks: 3 }), rng).lastTrick.gained).toBeCloseTo(132.6); // 100×1,02×1,3
+  });
+});
