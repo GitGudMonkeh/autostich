@@ -174,8 +174,10 @@ export function resolveTrick(state, rng = Math.random) {
     // Grundschaden + Durchlauf-Aufschlag (#87): DMG_PER_LOSS + lifeDrainAt(cycle) — je Deck-Durchlauf kostet
     // jede Niederlage mehr (round(0,5·cycle²)). Zeitdruck läuft über den Fortschritt, nicht über Echtzeit
     // → Tempo neutral. Legendär-Zusatzschaden (L1/L6/E7) addiert; dmgReduce (C3/C6) zieht ab, Schild (C5) danach.
-    dmg = Math.max(0, C.DMG_PER_LOSS + C.lifeDrainAt(cycle)
-                      + sumHook(perks, "extraDamageTaken", {}) - sumHook(perks, "dmgReduce", { life, maxLife }));
+    // #89: dmgReduce sieht jetzt den eingehenden Gesamtschaden (`incoming`) → prozentuale Reduktion (C3/C6)
+    // skaliert mit der Eskalation, kann aber nie ganz negieren.
+    const grossDmg = C.DMG_PER_LOSS + C.lifeDrainAt(cycle) + sumHook(perks, "extraDamageTaken", {});
+    dmg = Math.max(0, grossDmg - sumHook(perks, "dmgReduce", { life, maxLife, incoming: grossDmg }));
     // Schild (C5) absorbiert NACH der Schadensberechnung, vor dem Leben.
     if (shield > 0 && dmg > 0) { const absorbed = Math.min(shield, dmg); shield -= absorbed; dmg -= absorbed; }
     life -= dmg;

@@ -4,10 +4,10 @@
 export const START_LIFE       = 2000;   // Leben = Run-Timer [TUNING]
 export const DMG_PER_LOSS     = 2;      // Basis-Schaden je Niederlage im 1. Durchlauf — sanfter Auftakt (#87) [TUNING]
 // Anti-Infinity (#87, cycle-basiert, Umbau von #85/#59): der ZUSATZSCHADEN PRO NIEDERLAGE eskaliert je
-// Deck-DURCHLAUF (nicht Echtzeit) → Tempo/Turbo beeinflusst den Score nicht mehr. Aufschlag = round(0,5·n²),
-// n = cycle (0-indiziert): +0, +0, +2, +5, +8, +13, +18 … kein Cap. Ziel: Run-Bogen über ~20 Durchläufe.
+// Deck-DURCHLAUF (nicht Echtzeit) → Tempo/Turbo beeinflusst den Score nicht mehr. Aufschlag = round(0,3·n²),
+// n = cycle (0-indiziert): +0, +0, +1, +3, +5, +8, +11 … kein Cap. Sanftere Kurve (#89) für längeren Bogen.
 // Voll deterministisch — die Engine leitet n aus `cycle` ab (kein Date, kein App-Payload nötig).
-export const LIFE_DRAIN_BASE        = 0.5;             // Aufschlag pro Niederlage = round(LIFE_DRAIN_BASE · cycle²) [TUNING]
+export const LIFE_DRAIN_BASE        = 0.3;             // Aufschlag pro Niederlage = round(LIFE_DRAIN_BASE · cycle²) [TUNING]
 export const XP_PER_WIN       = 10;     // XP je gewonnenem Stich [TUNING]
 export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Tempo skalieren darauf) [TUNING]
 export const TEMPO_SCORE_FACTOR = 0.005; // je %-Punkt speedPct +0,5 % Stichscore [TUNING]
@@ -79,6 +79,14 @@ export const BASE_FLIP_MS = 1750;   // ms je Stich bei 0 % Speed (Basis-Tempo, e
 // Aufschlag pro Niederlage im n-ten Deck-Durchlauf (n = cycle, ≥0) — quadratisch, gerundet, kein Cap. Rein.
 // Die Engine ruft lifeDrainAt(cycle) direkt im Niederlage-Zweig auf; kein Date/Payload nötig (#87).
 export const lifeDrainAt = (n) => Math.round(LIFE_DRAIN_BASE * n * n);
+
+// Prozentuale Schadensreduktion (#89): skaliert mit dem EINGEHENDEN Schaden statt flat → bleibt spät relevant,
+// kann aber nie ganz negieren (Anti-Infinity intakt). Minimum hält sie früh (kleiner Schaden) integer/spürbar. [TUNING]
+export const PANZERUNG_PCT = 0.25;  // C3 Panzerung: Anteil des eingehenden Schadens …
+export const PANZERUNG_MIN = 1;     // …          … mindestens so viel
+export const TROTZ_PCT_MID = 0.15;  // C6 Trotz: unter 50 % Leben …
+export const TROTZ_PCT_LOW = 0.30;  // …          … unter 25 % Leben …
+export const TROTZ_MIN     = 1;     // …          … Minimum
 
 /* ============================================================
    DECK / FARBEN
