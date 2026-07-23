@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
-import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE, LIFE_DRAIN_INTERVAL_MS, lifeDrainAt } from "./game/constants.js";
+import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE, lifeDrainAt } from "./game/constants.js";
 import { baseScoreMultFor } from "./game/perks.js";
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, loadOptions, saveOptions, loadUsername, saveUsername } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
@@ -47,7 +47,7 @@ export function Autostich() {
   // RUN-TIMER (#10) — akkumulierte aktive Zeit; friert bei Pause / außerhalb „play" ein (#9)
   const timeBase = useRef(0);
   const segStart = useRef(null);
-  const lastDrainInterval = useRef(0); // zuletzt abgezogenes Zeit-Intervall (#59)
+  const lastDrainCycle = useRef(0); // zuletzt gemeldeter Durchlauf für den Aufschlag-Hinweis (#87)
   const prevMult = useRef(1);     // vorheriger Score-Mult (Puls nur bei Anstieg, #37)
   // Offenes Optionen-Overlay friert den Lauf ein (wie andere Overlays) — ohne den
   // Nutzer-Pause-Toggle zu verändern: beim Schließen läuft es im vorherigen Zustand weiter.
@@ -145,7 +145,7 @@ export function Autostich() {
     // null → elapsedMs=0 → Timer/Anti-Infinity (#59) fröre ein (#50). Der ==null-Guard im Effekt
     // verhindert Doppel-Setzen bei echten false→true-Einstiegen (Menü→Play, GameOver→Neu).
     segStart.current = Date.now();
-    lastDrainInterval.current = 0;
+    lastDrainCycle.current = 0;
     setDrainNotice(null);
     setPaused(false);
     setIsRecord(false);
@@ -169,20 +169,20 @@ export function Autostich() {
 
   const best = Math.max(recordTotal.current, highscores[0]?.score || 0);
   const elapsedMs = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
-  // Anti-Infinity (#85): quadratisch eskalierender Zusatzschaden PRO NIEDERLAGE über die AKTIVE Zeit.
-  // drainInterval = aktuelles 2,5-Min-Intervall; lossSurcharge = Aufschlag pro Niederlage im laufenden Intervall.
-  const drainInterval = Math.floor(elapsedMs / LIFE_DRAIN_INTERVAL_MS);
-  const lossSurcharge = lifeDrainAt(drainInterval);
-  // Neue Schwelle → der Engine das aktuelle Intervall melden (SET_DRAIN_LEVEL; Determinismus, der Reducer
-  // sieht kein Date) + kurzer, selbst-verschwindender Hinweis-Float. Reset via startRun (lastDrainInterval=0).
+  // Anti-Infinity (#87): der Aufschlag pro Niederlage hängt am Deck-Durchlauf (cycle), NICHT an der Echtzeit
+  // → Tempo/Turbo ändert die Score-Ausbeute nicht mehr. Die Engine rechnet lifeDrainAt(cycle) selbst; hier nur
+  // die Anzeige + ein kurzer Hinweis-Float, wenn der Aufschlag beim Durchlauf-Wechsel steigt.
+  const lossSurcharge = lifeDrainAt(state.cycle || 0);
   useEffect(() => {
-    if (state.phase !== "play" || drainInterval <= lastDrainInterval.current) return;
-    dispatch({ type: "SET_DRAIN_LEVEL", level: drainInterval });
-    lastDrainInterval.current = drainInterval;
-    setDrainNotice({ interval: drainInterval, surcharge: lifeDrainAt(drainInterval) });
-    const id = setTimeout(() => setDrainNotice(null), 2000);
-    return () => clearTimeout(id);
-  }, [drainInterval, state.phase]);
+    const cyc = state.cycle || 0;
+    if (state.phase !== "play" || cyc <= lastDrainCycle.current) return;
+    lastDrainCycle.current = cyc;
+    if (lifeDrainAt(cyc) > lifeDrainAt(cyc - 1)) { // nur melden, wenn der Aufschlag tatsächlich hochgeht
+      setDrainNotice({ cycle: cyc, surcharge: lifeDrainAt(cyc) });
+      const id = setTimeout(() => setDrainNotice(null), 2000);
+      return () => clearTimeout(id);
+    }
+  }, [state.cycle, state.phase]);
 
   // Prominenter Score-Multiplikator-Chip (#37): geteilte Quelle mit der StatusRail (kein Drift).
   // perks || [] — im Menü (state = { phase:"menu" }) fehlen die Felder; Defaults greifen.

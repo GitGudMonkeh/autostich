@@ -64,7 +64,7 @@ export function StatusRail({ state, speedPct, lossSurcharge = 0, currentTraj = [
         {/* Zeit-Aufschlag pro Niederlage — passiver Indikator, eskaliert über die Spielzeit (#85). */}
         <div className="flex justify-end mt-1">
           <span className="text-[10px]" style={{ color: drainColor }}
-            title="Zeitdruck — je 2,5 Min steigt der Zusatzschaden pro Niederlage: +5·n² (0, +5, +20, +45, +80 …)">
+            title="Fortschrittsdruck — je Deck-Durchlauf steigt der Zusatzschaden pro Niederlage: round(0,5·n²) (0, 0, +2, +5, +8, +13 …)">
             Niederlage-Aufschlag +{lossSurcharge}♥
           </span>
         </div>

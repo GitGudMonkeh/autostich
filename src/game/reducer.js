@@ -39,7 +39,6 @@ export function initialState(rng = Math.random) {
     speedPct: 0,
     shield: 0,
     tieArmed: false,
-    drainLevel: 0, // #85 Anti-Infinity: aktuelles 2,5-Min-Intervall → Zusatzschaden pro Niederlage
     lastTrick: null,
   };
 }
@@ -64,13 +63,6 @@ export function reducer(state, action) {
 
     case "RESOLVE_TRICK":
       return resolveTrick(state, action.rng);
-
-    case "SET_DRAIN_LEVEL": {
-      // Anti-Infinity (#85, ersetzt den #59-Tick): App meldet das aktuelle 2,5-Min-Intervall; die Engine
-      // erhöht daraus den Schaden PRO NIEDERLAGE (lifeDrainAt). Kein direkter Leben-Abzug (kein Date im Reducer).
-      if (state.phase !== "play") return state;
-      return { ...state, drainLevel: action.level || 0 };
-    }
 
     case "SUBMIT_PREDICTION": {
       // Ansage bestätigen (#36): erst JETZT neu mischen, pos/Zyklus-Akkus zurücksetzen, nächster Durchlauf.
