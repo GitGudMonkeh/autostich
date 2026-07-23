@@ -290,3 +290,18 @@ describe("Seltene Perks (#71, Phase 2b — Historie-Hooks)", () => {
     expect(PERK_DEFS.D13.scoreFlat({ altLen: 2 })).toBe(0);
   });
 });
+
+describe("Seltene Perks (#71, Phase 2c — Crit-Historie-Hooks)", () => {
+  it("D14 Crit-Folge: +20 % nur wenn gerüstet", () => {
+    expect(PERK_DEFS.D14.critChance({ critFollowArmed: true })).toBe(0.20);
+    expect(PERK_DEFS.D14.critChance({ critFollowArmed: false })).toBe(0);
+  });
+  it("D15 Fehlzündung: gibt den akkumulierten misfireBonus zurück", () => {
+    expect(PERK_DEFS.D15.critChance({ misfireBonus: 0.12 })).toBe(0.12);
+    expect(PERK_DEFS.D15.critChance({})).toBe(0);
+  });
+  it("D16 Schwachstellenanalyse: +40 % nur wenn gerüstet", () => {
+    expect(PERK_DEFS.D16.critChance({ weaknessArmed: true })).toBe(0.40);
+    expect(PERK_DEFS.D16.critChance({ weaknessArmed: false })).toBe(0);
+  });
+});

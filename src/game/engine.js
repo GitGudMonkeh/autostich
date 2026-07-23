@@ -47,6 +47,7 @@ export function resolveTrick(state, rng = Math.random) {
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     initiative, lastResult, perks, offer, shield, tieArmed, sinceWin = 0,
     lossStreak = 0, lastWinValue = null, altLen = 0, // #71 Rares: Revanche / Präzision / Wechselspiel
+    critFollowArmed = false, misfireBonus = 0, weaknessArmed = false, // #71 Crit-Historie: Crit-Folge / Fehlzündung / Schwachstellenanalyse
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
     // Ansage-System (#36)
     cycleWins = 0, cycleBaseScore = 0, prediction = null, lastPrediction = null,
@@ -91,7 +92,8 @@ export function resolveTrick(state, rng = Math.random) {
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
     const wctx = { winValue: pValue, margin: pValue - oValue, winStreak, wins, trickNo, posInCycle: pos, speedPct: state.speedPct || 0,
-                   lastWinValue, altLen }; // #71: Präzision (Vergleich mit letztem Siegwert) / Wechselspiel
+                   lastWinValue, altLen, // #71: Präzision (Vergleich mit letztem Siegwert) / Wechselspiel
+                   critFollowArmed, misfireBonus, weaknessArmed }; // #71 Crit-Historie: Stand VOR diesem Sieg (feed critChance-Hooks)
     // Score: Basis-Serien-Mult (#39, immer) × Perk-Multiplikatoren × Tempo, DANN additive Boni (D3/D5), DANN Crit.
     const tempoScoreMult = tempoScoreMultFor(perks, state.speedPct); // L6 „Raserei": Tempo-Faktor ×2
     scoreBeforeCrit = C.SCORE_PER_WIN * streakBaseMult(winStreak) * prodHook(perks, "scoreMult", wctx) * tempoScoreMult
@@ -99,6 +101,10 @@ export function resolveTrick(state, rng = Math.random) {
     critChance = critChanceFor(perks, wctx, legendaryCritBonus); // inkl. L4-Bonus & L5-Halbierung
     critMultiplier = critMultiplierFor(perks, wctx);             // L5 „Jackpot": ×4 überschreibt Basis ×2
     isCrit = rollCrit(critChance, ownsGuaranteedCrit(perks, wctx), rng);
+    // #71 Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
+    critFollowArmed = isCrit;                                        // Crit-Folge: nur ein Crit rüstet den nächsten Sieg
+    misfireBonus = isCrit ? 0 : Math.min(misfireBonus + 0.03, 0.30); // Fehlzündung: +3 pp je Sieg ohne Crit, Crit setzt zurück
+    weaknessArmed = false;                                           // Schwachstellenanalyse: durch diesen Sieg verbraucht
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     critBonus = gained - scoreBeforeCrit;
     score += gained;
@@ -131,6 +137,7 @@ export function resolveTrick(state, rng = Math.random) {
     if (ownsFlag(perks, "winTieAfterLoss")) tieArmed = true;
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
     lossStreak += 1; // #71 Revanche: aufeinanderfolgende Niederlagen
+    if (oValue - pValue >= 5) weaknessArmed = true; // #71 Schwachstellenanalyse: klare Niederlage rüstet nächsten Sieg
     lastResult = "loss";
   } else {
     ties += 1;
@@ -161,6 +168,7 @@ export function resolveTrick(state, rng = Math.random) {
       cycleWins, cycleBaseScore, prediction, lastPrediction, lastPredictionResult,
       predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus,
       initiative, lastResult, offer, shield, tieArmed, sinceWin, lossStreak, lastWinValue, altLen,
+      critFollowArmed, misfireBonus, weaknessArmed,
       lastTrick, phase: "gameover",
     };
   }
@@ -219,6 +227,7 @@ export function resolveTrick(state, rng = Math.random) {
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     crits, critBonusScore, bestTrickScore, legendaryCritBonus,
     initiative, lastResult, perks, offer: newOffer, shield, tieArmed, pendingLevelUps, sinceWin, lossStreak, lastWinValue, altLen,
+    critFollowArmed, misfireBonus, weaknessArmed,
     lastTrick, phase,
   };
 }

@@ -28,6 +28,7 @@ export function initialState(rng = Math.random) {
     lastResult: null,
     sinceWin: 0, // #71 Durchbruch: aufeinanderfolgende Stiche ohne Sieg
     lossStreak: 0, lastWinValue: null, altLen: 0, // #71 Rares: Revanche / Präzision / Wechselspiel
+    critFollowArmed: false, misfireBonus: 0, weaknessArmed: false, // #71 Crit-Historie: Crit-Folge / Fehlzündung / Schwachstellenanalyse
     perks: [], offer: null,
     pendingLevelUps: 0, // #57: noch ausstehende Level-Up-Angebote (Mehrfach-Level-Up-Queue)
     speedPct: 0,
