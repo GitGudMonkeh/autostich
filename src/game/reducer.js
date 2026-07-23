@@ -28,6 +28,7 @@ export function initialState(rng = Math.random) {
     sinceWin: 0, // #71 Durchbruch: aufeinanderfolgende Stiche ohne Sieg
     lossStreak: 0, lastWinValue: null, altLen: 0, // #71 Rares: Revanche / Präzision / Wechselspiel
     critFollowArmed: false, misfireBonus: 0, weaknessArmed: false, // #71 Crit-Historie: Crit-Folge / Fehlzündung / Schwachstellenanalyse
+    misfireScore: 0, // V2 §22.6 D15: Score-Ladung (Fehlzündung)
     ascRun: 0, lastPlayedValue: null, winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Perfekte Folge / Farbserie / Volles Haus
     overStreak: 0, // #71 Phase 2e: Überzahl
     fateValue: null, zeitrafferStacks: 0, kingBoosted: [], // #71 Phase 3 Legendaries: Schicksalsmaschine / Zeitraffer / Königsmacher

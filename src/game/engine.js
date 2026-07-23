@@ -54,6 +54,7 @@ export function resolveTrick(state, rng = Math.random) {
     initiative, lastResult, perks, offer, tieArmed, sinceWin = 0,
     lossStreak = 0, lastWinValue = null, altLen = 0, // #71 Rares: Revanche / Präzision / Wechselspiel
     critFollowArmed = false, misfireBonus = 0, weaknessArmed = false, // #71 Crit-Historie: Crit-Folge / Fehlzündung / Schwachstellenanalyse
+    misfireScore = 0, // V2 §22.6 D15: Score-Ladung, +30 je Sieg ohne Crit (max 300), Auszahlung bei Crit
     ascRun = 0, lastPlayedValue = null, // #71 Perfekte Folge: aufsteigende Wertfolge
     winSuit = null, winSuitStreak = 0, // #71 Farbserie: gleicher-Farbe-Siegesserie
     recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich
@@ -132,9 +133,10 @@ export function resolveTrick(state, rng = Math.random) {
     const suitStreak = pCard.suit === winSuit ? winSuitStreak + 1 : 1;
     const wctx = { winValue: pValue, margin: pValue - oValue, winStreak: serieStreak, wins, trickNo, posInCycle: pos,
                    lastWinValue, altLen, // #71: Präzision (Vergleich mit letztem Siegwert) / Wechselspiel
-                   critFollowArmed, misfireBonus, weaknessArmed, // #71 Crit-Historie: Stand VOR diesem Sieg (feed critChance-Hooks)
-                   suitStreak, recentWinCount, // #71 Farbserie / Volles Haus
-                   baseValue: pCard.value, fateValue, zeitrafferStacks }; // #71 Legendaries: Schicksalsmaschine / Zeitraffer
+                   critFollowArmed, misfireBonus, weaknessArmed, // Crit-Historie: Stand VOR diesem Sieg
+                   suitStreak, recentWinCount, // Farbserie / Volles Haus
+                   baseValue: pCard.value, fateValue, zeitrafferStacks, // Legendaries: Schicksalsmaschine / Zeitraffer
+                   hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
     // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.
     // Der Crit-Wurf verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift).
@@ -160,8 +162,10 @@ export function resolveTrick(state, rng = Math.random) {
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.
     // Ionisierung: Score der gespielten Karte (Stapel VOR dem Zuwachs). Gewitterfront: +100 für die nächsten Siege.
     const stormScore = (lightning && (lightning.stormScoreWinsRemaining || 0) > 0) ? C.STORM_SCORE : 0;
+    // Crit-Flats (Perks D6/D7/D8/D11/D15/D19 + Blitzableiter) sehen rawCrit (D19 Überschusskrit) → eigener ctx.
+    const critCtx = { ...wctx, rawCrit };
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
-                      + (isCrit ? skillSum(skills, "scoreFlatOnCrit", wctx) : 0)
+                      + (isCrit ? sumHook(perks, "scoreFlatOnCrit", critCtx) + skillSum(skills, "scoreFlatOnCrit", critCtx) : 0)
                       + ionScoreFor(pCard) + stormScore;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Der Positions-/Formations-Mult (§22.7) und der Formations-Stat (§22.3,
@@ -211,7 +215,8 @@ export function resolveTrick(state, rng = Math.random) {
     }
     // #71 Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
     critFollowArmed = isCrit;                                        // Crit-Folge: nur ein Crit rüstet den nächsten Sieg
-    misfireBonus = isCrit ? 0 : Math.min(misfireBonus + 0.03, 0.30); // Fehlzündung: +3 pp je Sieg ohne Crit, Crit setzt zurück
+    misfireBonus = isCrit ? 0 : Math.min(misfireBonus + 0.03, 0.30); // (alt) Crit-Chance-Fehlzündung — inert
+    misfireScore = isCrit ? 0 : Math.min((misfireScore || 0) + 30, 300); // D15: +30 Score-Ladung je Sieg ohne Crit, Crit zahlt aus & setzt zurück
     weaknessArmed = false;                                           // Schwachstellenanalyse: durch diesen Sieg verbraucht
     if (isCrit) {
       crits += 1; critBonusScore += critBonus;
@@ -320,7 +325,7 @@ export function resolveTrick(state, rng = Math.random) {
     score, winStreak, bestStreak, wins, losses, ties,
     crits, critBonusScore, bestTrickScore, legendaryCritBonus,
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue, altLen,
-    critFollowArmed, misfireBonus, weaknessArmed,
+    critFollowArmed, misfireBonus, weaknessArmed, misfireScore,
     ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
     overStreak, fateValue, zeitrafferStacks,
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet

@@ -124,11 +124,11 @@ export const PERK_DEFS = {
           return d.map((c) => (cnt[c.value] > 1 ? { ...c, value: c.value + 1 } : c));
         } },
   D10: { id: "D10", cat: "D", rarity: "rare", label: "Übermacht",
-        desc: "Siege mit mindestens 8 Wertpunkten Vorsprung geben ×2 Score.",
-        scoreMult: (ctx) => (ctx.margin >= 8 ? 2 : 1) },
-  D11: { id: "D11", cat: "D", rarity: "rare", label: "Kritische Heilung",
-        desc: "Jeder Crit heilt 5 Leben.",
-        healOnCrit: () => 5 },
+        desc: "Ein Sieg mit mindestens 8 Wertpunkten Vorsprung gibt +350 Score.",
+        scoreFlat: (ctx) => (ctx.margin >= 8 ? 350 : 0) },
+  D11: { id: "D11", cat: "D", rarity: "rare", label: "Kritische Ernte",
+        desc: "Ein Crit mit einer Karte in mindestens einer aktiven Formation gibt +250 Score.",
+        scoreFlatOnCrit: (ctx) => (ctx.hasFormation ? 250 : 0) },
   E6: { id: "E6", cat: "E", rarity: "rare", label: "Drehzahl",
         desc: "Je 30 % permanentes Tempo +5 % Crit-Chance (150 % → +25 %).",
         critChance: (ctx) => Math.floor((ctx.speedPct || 0) / 30) * 0.05 },
@@ -145,22 +145,22 @@ export const PERK_DEFS = {
         desc: "Nach zwei aufeinanderfolgenden Niederlagen erhält die nächste Karte +7 Wert.",
         cardBonus: (ctx) => ((ctx.lossStreak || 0) >= 2 ? 7 : 0) },
   D12: { id: "D12", cat: "D", rarity: "rare", label: "Präzision",
-        desc: "Gewinnst du mit demselben aktuellen Kartenwert wie beim vorherigen Sieg, ×3 Score.",
-        scoreMult: (ctx) => (ctx.lastWinValue != null && ctx.winValue === ctx.lastWinValue ? 3 : 1) },
+        desc: "Zwei aufeinanderfolgende Siege mit demselben Kartenwert geben dem zweiten +400 Score.",
+        scoreFlat: (ctx) => (ctx.lastWinValue != null && ctx.winValue === ctx.lastWinValue ? 400 : 0) },
   D13: { id: "D13", cat: "D", rarity: "rare", label: "Wechselspiel",
-        desc: "Sobald sich Sieg und Niederlage abwechseln, gibt jeder weitere Sieg im Wechselmuster +100 Score.",
-        scoreFlat: (ctx) => ((ctx.altLen || 0) >= 3 ? 100 : 0) },
+        desc: "Ein Sieg direkt nach einer Niederlage gibt +200 Score.",
+        scoreFlat: (ctx) => (ctx.lastResult === "loss" ? 200 : 0) },
 
   // ---- Seltene Perks (#71, Phase 2c) — Crit-Historie (neue Engine-State-Felder) ----
   D14: { id: "D14", cat: "D", rarity: "rare", label: "Crit-Folge",
-        desc: "Nach einem Crit erhält der nächste gewonnene Stich +20 % Crit-Chance (beim nächsten Sieg verbraucht).",
-        critChance: (ctx) => (ctx.critFollowArmed ? 0.20 : 0) },
+        desc: "Ein Sieg direkt nach einem Crit gibt +200 Score.",
+        scoreFlat: (ctx) => (ctx.critFollowArmed ? 200 : 0) },
   D15: { id: "D15", cat: "D", rarity: "rare", label: "Fehlzündung",
-        desc: "Jeder Sieg ohne Crit gibt +3 % Crit-Chance (max +30 %); ein Crit setzt den Bonus zurück.",
-        critChance: (ctx) => (ctx.misfireBonus || 0) },
+        desc: "Jeder Sieg ohne Crit lädt +30 Score für den nächsten Crit auf (max +300).",
+        scoreFlatOnCrit: (ctx) => (ctx.misfireScore || 0) },
   D16: { id: "D16", cat: "D", rarity: "rare", label: "Schwachstellenanalyse",
-        desc: "Verlierst du mit mindestens 5 Wertpunkten Abstand, erhält der nächste gewonnene Stich +40 % Crit-Chance.",
-        critChance: (ctx) => (ctx.weaknessArmed ? 0.40 : 0) },
+        desc: "Nach einer Niederlage mit mindestens 5 Wertpunkten Abstand gibt der nächste Sieg +300 Score.",
+        scoreFlat: (ctx) => (ctx.weaknessArmed ? 300 : 0) },
 
   // ---- Seltene Perks (#71, Phase 2d) — Per-Durchlauf Leben/Score (Engine-Flags + Zyklus-Hooks) ----
   C7: { id: "C7", cat: "C", rarity: "rare", label: "Überlebensvorteil",
@@ -181,11 +181,12 @@ export const PERK_DEFS = {
         desc: "Karten einer Treppe erhalten je nach Position +1, +2, +3, danach +4 temporären Wert.",
         cardBonus: (ctx) => { const t = ctx.posForm && ctx.posForm.formations.find((f) => f.type === "treppe"); return t ? Math.min(t.ordinal, 4) : 0; } },
   D17: { id: "D17", cat: "D", rarity: "rare", label: "Farbserie",
-        desc: "Mehrere Siege in Folge mit derselben Farbe: 2.→+75, 3.→+100, je weiterer +25 (max +200). Andere Farbe/Niederlage beendet die Serie.",
-        scoreFlat: (ctx) => (ctx.suitStreak >= 2 ? Math.min(75 + (ctx.suitStreak - 2) * 25, 200) : 0) },
+        desc: "Aufeinanderfolgende Siege derselben Farbe geben jeweils +100 mehr Score (2.→+100, 3.→+200 …), maximal +400.",
+        scoreFlat: (ctx) => Math.min(Math.max(0, ((ctx.suitStreak || 0) - 1) * 100), 400) },
   D18: { id: "D18", cat: "D", rarity: "rare", label: "Volles Haus",
-        desc: "Enthalten die letzten fünf Stiche (inkl. aktuellem) mindestens 4 Siege, gibt der aktuelle Sieg +250 Score.",
-        scoreFlat: (ctx) => ((ctx.recentWinCount || 0) >= 3 ? 250 : 0) },
+        desc: "Fünf Siege innerhalb desselben Segments geben dem fünften Sieg +750 Score.",
+        // Position ist die letzte im Segment (posInCycle % 5 == 4) UND die vier davor (recentResults) waren Siege.
+        scoreFlat: (ctx) => (ctx.posInCycle % 5 === 4 && (ctx.recentWinCount || 0) >= 4 ? 750 : 0) },
 
   // ---- Seltene Perks (#71, Phase 2e) — Serien-/Tempo-/Crit-Mechanik (Engine-Flags + State) ----
   B10: { id: "B10", cat: "B", rarity: "rare", label: "Überzahl",
@@ -198,8 +199,8 @@ export const PERK_DEFS = {
         desc: "Nach einem Gleichstand laufen die nächsten fünf Stiche 50 % schneller; das temporäre Tempo zählt auch für den Tempo-Score.",
         ruheVorDemSturm: true }, // Engine führt calmTricks/tempTempo
   D19: { id: "D19", cat: "D", rarity: "rare", label: "Überschusskrit",
-        desc: "Crit-Chance über 100 % kann einen Super-Crit auslösen (z. B. 130 % → +30 % Chance auf ×3 statt ×2; mit Jackpot ×6).",
-        superCrit: true }, // Engine wertet die Überschuss-Chance aus
+        desc: "Ein Crit über 100 % effektiver Crit-Chance gibt +250 Score.",
+        scoreFlatOnCrit: (ctx) => ((ctx.rawCrit || 0) > 1 ? 250 : 0) },
 
   // ---- B: Stich-Effekte (Wert-Bonus auf die aktuelle Karte) ----
   B1: { id: "B1", cat: "B", label: "Gegenangriff",
@@ -235,36 +236,36 @@ export const PERK_DEFS = {
         desc: "Zu Beginn jedes Deck-Durchlaufs erhältst du 50 Schildpunkte, die Schaden vor dem Leben absorbieren.",
         shieldPerCycle: 50 },
 
-  // ---- D: Score ----
+  // ---- D: Flat Score (V2 §22.6 — alle additiv; fließen in die multiplizierte Basis, §15) ----
+  //      Crit-Chance/-Mult kommen NICHT mehr aus den Perks, nur noch aus dem Stat + Blitz.
+  //      `scoreFlatOnCrit` zahlt nur bei einem Crit (Engine addiert es in die multiplizierte Basis).
   D1: { id: "D1", cat: "D", label: "Punktebonus",
-        desc: "Alle gewonnenen Stiche geben +15 % Score.",
-        scoreMult: () => 1 + C.D1_BONUS_PCT / 100 },
+        desc: "Jeder Sieg mit mindestens einer aktiven Formation gibt +75 Score.",
+        scoreFlat: (ctx) => (ctx.hasFormation ? 75 : 0) },
   D2: { id: "D2", cat: "D", label: "Siegesserie",
-        desc: "Jeder aufeinanderfolgende Sieg gibt +10 % Score — eskalierende Kombo, ohne Obergrenze.",
-        scoreMult: (ctx) => comboMult(ctx.winStreak) },
+        desc: "Jeder Sieg gibt +25 Score je aktuellem Serienpunkt, maximal +250.",
+        scoreFlat: (ctx) => Math.min(25 * (ctx.winStreak || 0), 250) },
   D3: { id: "D3", cat: "D", label: "Hohe Karten, hohe Belohnung",
-        desc: "Siege mit Kartenwert 8+ geben +60 Score.",
-        scoreFlat: (ctx) => (ctx.winValue >= C.D3_HIGH_MIN ? C.D3_BONUS : 0) },
+        desc: "Ein Sieg mit Kartenwert 8 oder höher gibt +125 Score.",
+        scoreFlat: (ctx) => (ctx.winValue >= C.D3_HIGH_MIN ? 125 : 0) },
   D4: { id: "D4", cat: "D", label: "Außenseitersieg",
-        desc: "Siege mit Kartenwert 3 oder niedriger geben dreifachen Score.",
-        scoreMult: (ctx) => (ctx.winValue <= C.D4_LOW_MAX ? C.D4_MULT : 1) },
+        desc: "Ein Sieg mit Kartenwert 3 oder niedriger gibt +300 Score.",
+        scoreFlat: (ctx) => (ctx.winValue <= C.D4_LOW_MAX ? 300 : 0) },
   D5: { id: "D5", cat: "D", label: "Zehnter Sieg",
-        desc: "Jeder zehnte gewonnene Stich gibt +300 Score.",
-        scoreFlat: (ctx) => (ctx.wins % 10 === 0 ? C.D5_BONUS : 0) },
-  // Crit: kritische Treffer verdoppeln den gesamten Stichscore. ctx = { winValue, winStreak, wins, ... }.
-  // winStreak/wins enthalten bereits den gerade gewonnenen Stich (resultierende Serie).
+        desc: "Jeder zehnte gewonnene Stich gibt +750 Score.",
+        scoreFlat: (ctx) => (ctx.wins % 10 === 0 ? 750 : 0) },
   D6: { id: "D6", cat: "D", label: "Kritische Chance",
-        desc: "+12 % Crit-Chance. Ein Crit verdoppelt den Score des Stichs.",
-        critChance: () => 0.12 },
+        desc: "Jeder Crit gibt +150 Score.",
+        scoreFlatOnCrit: () => 150 },
   D7: { id: "D7", cat: "D", label: "Geschärfter Blick",
-        desc: "Siege mit Kartenwert 8+ : +35 % Crit-Chance.",
-        critChance: ({ winValue }) => (winValue >= C.D3_HIGH_MIN ? 0.35 : 0) },
+        desc: "Ein Crit mit Kartenwert 8 oder höher gibt +300 Score.",
+        scoreFlatOnCrit: (ctx) => (ctx.winValue >= C.D3_HIGH_MIN ? 300 : 0) },
   D8: { id: "D8", cat: "D", label: "Kritisches Momentum",
-        desc: "Jede Stufe der aktuellen Siegesserie: +4 % Crit-Chance (max +40 %).",
-        critChance: ({ winStreak }) => Math.min(winStreak * 0.04, 0.40) },
+        desc: "Jeder Crit innerhalb einer laufenden Siegesserie (ab Serie 2) gibt +200 Score.",
+        scoreFlatOnCrit: (ctx) => ((ctx.winStreak || 0) >= 2 ? 200 : 0) },
   D9: { id: "D9", cat: "D", label: "Perfekter Rhythmus",
-        desc: "Jeder zehnte Sieg (10., 20., 30. …) ist garantiert kritisch.",
-        guaranteedCrit: ({ wins }) => wins % 10 === 0 },
+        desc: "Jeder fünfte gewonnene Stich gibt +300 Score.",
+        scoreFlat: (ctx) => (ctx.wins % 5 === 0 ? 300 : 0) },
 
   // ---- E: Tempo (Geschwindigkeit — steigert zusätzlich den Score) ----
   E1: { id: "E1", cat: "E", label: "Tempo I",   desc: "Flip-Geschwindigkeit +30 %. Tempo erhöht auch den Score.", speedPct: 30 },
@@ -376,8 +377,9 @@ export function critMultiplierFor(perks, ctx = {}, baseBonus = 0) {
   return m;
 }
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
+// V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit → auch die zählen.
 export function hasCritPerk(perks) {
-  return perks.some((id) => PERK_DEFS[id].critChance || PERK_DEFS[id].guaranteedCrit);
+  return perks.some((id) => PERK_DEFS[id].critChance || PERK_DEFS[id].guaranteedCrit || PERK_DEFS[id].scoreFlatOnCrit);
 }
 // Produkt der scoreMult-Perks für einen Kontext (für Live-Anzeige des Score-Multiplikators, #23).
 export function scoreMultFor(perks, ctx) {
@@ -403,6 +405,6 @@ export function baseScoreMultFor(perks, { winStreak = 0, wins = 0, trickNo = 0, 
 }
 // Kombo-Wert eines Builds für die Anzeige (#31): nur wenn D2 gehalten wird — die Kombo IST der
 // D2-Effekt. Nutzt dieselbe comboMult-Formel wie der D2-Score-Hook → Anzeige == tatsächlicher Wert.
-export function comboMultFor(perks, winStreak) {
-  return perks.includes("D2") ? comboMult(winStreak) : 1;
+export function comboMultFor() {
+  return 1; // V2: D2 ist jetzt Flat-Score — es gibt keinen Kombo-Multiplikator mehr.
 }

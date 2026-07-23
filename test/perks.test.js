@@ -91,32 +91,17 @@ describe("buildOffer", () => {
   });
 });
 
-describe("critChanceFor (Crit-Perks D6–D8, L4/L5)", () => {
-  it("D6: konstante +12 %", () => {
-    expect(critChanceFor(["D6"], {})).toBeCloseTo(0.12);
-  });
-  it("D7 nur bei Kartenwert ≥ 8 (#34)", () => {
-    expect(critChanceFor(["D7"], { winValue: 12 })).toBeCloseTo(0.35);
-    expect(critChanceFor(["D7"], { winValue: 5 })).toBe(0);
-  });
-  it("D8 skaliert mit Serie, gedeckelt bei +40 %", () => {
-    expect(critChanceFor(["D8"], { winStreak: 5 })).toBeCloseTo(0.20);
-    expect(critChanceFor(["D8"], { winStreak: 20 })).toBeCloseTo(0.40); // 20*0.04 = 0.80 → Cap 0.40
-  });
-  it("summiert die Chancen mehrerer Crit-Perks", () => {
-    expect(critChanceFor(["D6", "D7", "D8"], { winValue: 12, winStreak: 20 })).toBeCloseTo(0.87);
-  });
-  it("L4-Bonus (legendaryCritBonus) wird addiert; Gesamt bei 100 % gedeckelt", () => {
-    expect(critChanceFor(["D6"], {}, 0.10)).toBeCloseTo(0.22);
-    expect(critChanceFor(["D6", "D7", "D8"], { winValue: 12, winStreak: 20 }, 0.5)).toBe(1); // 0.87+0.5 → Cap 1
+describe("critChanceFor / critChanceRawFor (V2: Chance aus Stat/Blitz; L4/L5 wirken)", () => {
+  it("addiert den L4-Bonus (legendaryCritBonus); Gesamt bei 100 % gedeckelt", () => {
+    expect(critChanceFor([], {}, 0.10)).toBeCloseTo(0.10);
+    expect(critChanceFor([], {}, 1.5)).toBe(1); // geklemmt
   });
   it("L5 Jackpot halbiert die (zufällige) Crit-Chance — inkl. L4-Bonus", () => {
-    expect(critChanceFor(["D6", "L5"], {})).toBeCloseTo(0.06);          // 0.12 × 0.5
-    expect(critChanceFor(["D6", "L5"], {}, 0.20)).toBeCloseTo(0.16);    // (0.12+0.20) × 0.5
+    expect(critChanceFor(["L5"], {}, 0.20)).toBeCloseTo(0.10); // 0,20 × 0,5
   });
-  it("critChanceRawFor bleibt UNgeklemmt (>1 für Überschusskrit), critChanceFor klemmt (#71)", () => {
-    expect(critChanceRawFor(["D6", "D7", "D8", "D16"], { winValue: 12, winStreak: 30, weaknessArmed: true })).toBeCloseTo(1.27);
-    expect(critChanceFor(["D6", "D7", "D8", "D16"], { winValue: 12, winStreak: 30, weaknessArmed: true })).toBe(1);
+  it("critChanceRawFor bleibt UNgeklemmt (>1 für Überschuss), critChanceFor klemmt", () => {
+    expect(critChanceRawFor([], {}, 1.27)).toBeCloseTo(1.27);
+    expect(critChanceFor([], {}, 1.27)).toBe(1);
   });
 });
 
@@ -162,14 +147,12 @@ describe("Legendäre Perks — reine Hooks (#33)", () => {
   });
 });
 
-describe("Hohe-Karte-Schwelle konsolidiert auf 8 — D3/C2/D7 (#34)", () => {
-  it("D3, C2 und D7 lösen ab Kartenwert 8 aus (und nicht bei 7)", () => {
-    expect(PERK_DEFS.D3.scoreFlat({ winValue: 8 })).toBe(60);
+describe("Hohe-Karte-Schwelle konsolidiert auf 8 — D3/D7 (#34)", () => {
+  it("D3/D7 lösen ab Kartenwert 8 aus (und nicht bei 7)", () => {
+    expect(PERK_DEFS.D3.scoreFlat({ winValue: 8 })).toBe(125);
     expect(PERK_DEFS.D3.scoreFlat({ winValue: 7 })).toBe(0);
-    expect(PERK_DEFS.C2.healOnWin({ winValue: 8 })).toBe(6);
-    expect(PERK_DEFS.C2.healOnWin({ winValue: 7 })).toBe(0);
-    expect(critChanceFor(["D7"], { winValue: 8 })).toBeCloseTo(0.35);
-    expect(critChanceFor(["D7"], { winValue: 7 })).toBe(0);
+    expect(PERK_DEFS.D7.scoreFlatOnCrit({ winValue: 8 })).toBe(300);
+    expect(PERK_DEFS.D7.scoreFlatOnCrit({ winValue: 7 })).toBe(0);
   });
 });
 
@@ -183,33 +166,21 @@ describe("streakBaseMult (Basis-Siegesserie #39)", () => {
   });
 });
 
-describe("baseScoreMultFor (Header-Chip #37 / StatusRail #23 — geteilte Quelle)", () => {
-  it("Serie 0 → ×1,00 (aktuelle Serie, kein +1); D1 verstärkt streak-unabhängig", () => {
-    expect(baseScoreMultFor([], {})).toBeCloseTo(1);                // Serie 0 → keine Serie, kein Bonus
-    expect(baseScoreMultFor(["D1"], {})).toBeCloseTo(1.15);         // D1 wirkt immer
+describe("baseScoreMultFor (Header-Chip #37 — V2: nur noch Basis-Serie #39)", () => {
+  it("Serie 0 → ×1,00; D-Perks multiplizieren nicht mehr (Flat-Score)", () => {
+    expect(baseScoreMultFor([], {})).toBeCloseTo(1);
+    expect(baseScoreMultFor(["D1", "D2"], {})).toBeCloseTo(1); // D flach → kein Multiplikator
   });
-  it("nutzt die AKTUELLE Serie; D2 & Tempo/L6 multiplizieren obendrauf", () => {
-    expect(baseScoreMultFor(["D2"], { winStreak: 4 })).toBeCloseTo(1.512);  // streakBaseMult(4)=1,08 × comboMult(4)=1,4
-    expect(baseScoreMultFor(["L6"], { speedPct: 100 })).toBeCloseTo(2.0);   // 1,00 × Tempo(2,0)
-    expect(baseScoreMultFor(["D1", "D2"], { winStreak: 4, speedPct: 100 })).toBeCloseTo(2.6082); // 1,08×1,15×1,4×1,5
-  });
-  it("Siegesserie hebt den Mult AUCH ohne D2 (#39); D2 verstärkt zusätzlich", () => {
-    const s0 = baseScoreMultFor([], { winStreak: 0 });
-    const s5 = baseScoreMultFor([], { winStreak: 5 });
-    expect(s0).toBeCloseTo(1);                                             // Serie 0 → ×1,00
-    expect(s5).toBeGreaterThan(s0);                                        // ohne D2: Serie hebt den Mult
-    expect(baseScoreMultFor(["D2"], { winStreak: 5 })).toBeGreaterThan(s5); // D2 verstärkt weiter
+  it("Siegesserie hebt den Mult (#39): +2 %/Stufe bis Cap +30 %", () => {
+    expect(baseScoreMultFor([], { winStreak: 0 })).toBeCloseTo(1);
+    expect(baseScoreMultFor([], { winStreak: 5 })).toBeCloseTo(1.10);
+    expect(baseScoreMultFor([], { winStreak: 20 })).toBeCloseTo(1.30); // Cap
   });
 });
 
-describe("comboMultFor (D2-Kombo, geteilte Anzeige-Quelle #31)", () => {
-  it("1 + Serie × 0,1 wenn D2 gehalten, eskalierend ohne Cap", () => {
-    expect(comboMultFor(["D2"], 1)).toBeCloseTo(1.1);
-    expect(comboMultFor(["D2"], 5)).toBeCloseTo(1.5);   // Anzeige-Schwelle
-    expect(comboMultFor(["D2"], 20)).toBeCloseTo(3.0);  // kein Cap (alt: max +50 %)
-  });
-  it("neutral (1) ohne D2 — die Kombo IST der D2-Effekt", () => {
-    expect(comboMultFor(["D1", "D4"], 20)).toBe(1);
+describe("comboMultFor (V2: entfällt — D2 ist flach)", () => {
+  it("gibt immer 1 zurück", () => {
+    expect(comboMultFor(["D2"], 5)).toBe(1);
     expect(comboMultFor([], 20)).toBe(1);
   });
 });
@@ -267,12 +238,13 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
   it("A10 Verdichtung: im frischen Deck kommt jeder Wert 4× vor → alle +1 (+40)", () => {
     expect(sumV(PERK_DEFS.A10.onPick(buildDeck())) - sumV(buildDeck())).toBe(40);
   });
-  it("D10 Übermacht: ×2 ab 8 Wertpunkten Vorsprung, sonst ×1", () => {
-    expect(PERK_DEFS.D10.scoreMult({ margin: 8 })).toBe(2);
-    expect(PERK_DEFS.D10.scoreMult({ margin: 7 })).toBe(1);
+  it("D10 Übermacht: +350 Score ab 8 Wertpunkten Vorsprung, sonst 0", () => {
+    expect(PERK_DEFS.D10.scoreFlat({ margin: 8 })).toBe(350);
+    expect(PERK_DEFS.D10.scoreFlat({ margin: 7 })).toBe(0);
   });
-  it("D11 Kritische Heilung: healOnCrit = 5", () => {
-    expect(PERK_DEFS.D11.healOnCrit()).toBe(5);
+  it("D11 Kritische Ernte: +250 Crit-Flat mit aktiver Formation", () => {
+    expect(PERK_DEFS.D11.scoreFlatOnCrit({ hasFormation: true })).toBe(250);
+    expect(PERK_DEFS.D11.scoreFlatOnCrit({ hasFormation: false })).toBe(0);
   });
   it("E6 Drehzahl: +5 % Crit je 30 % permanentes Tempo", () => {
     expect(PERK_DEFS.E6.critChance({ speedPct: 150 })).toBeCloseTo(0.25);
@@ -302,29 +274,29 @@ describe("Seltene Perks (#71, Phase 2b — Historie-Hooks)", () => {
     expect(PERK_DEFS.B8.cardBonus({ lossStreak: 2 })).toBe(7);
     expect(PERK_DEFS.B8.cardBonus({ lossStreak: 1 })).toBe(0);
   });
-  it("D12 Präzision: ×3 bei gleichem Wert wie letzter Sieg (erster Sieg ×1)", () => {
-    expect(PERK_DEFS.D12.scoreMult({ winValue: 8, lastWinValue: 8 })).toBe(3);
-    expect(PERK_DEFS.D12.scoreMult({ winValue: 8, lastWinValue: 7 })).toBe(1);
-    expect(PERK_DEFS.D12.scoreMult({ winValue: 8, lastWinValue: null })).toBe(1);
+  it("D12 Präzision: +400 bei gleichem Wert wie letzter Sieg (erster Sieg 0)", () => {
+    expect(PERK_DEFS.D12.scoreFlat({ winValue: 8, lastWinValue: 8 })).toBe(400);
+    expect(PERK_DEFS.D12.scoreFlat({ winValue: 8, lastWinValue: 7 })).toBe(0);
+    expect(PERK_DEFS.D12.scoreFlat({ winValue: 8, lastWinValue: null })).toBe(0);
   });
-  it("D13 Wechselspiel: +100 ab Alternations-Länge 3", () => {
-    expect(PERK_DEFS.D13.scoreFlat({ altLen: 3 })).toBe(100);
-    expect(PERK_DEFS.D13.scoreFlat({ altLen: 2 })).toBe(0);
+  it("D13 Wechselspiel: +200 bei Sieg direkt nach einer Niederlage", () => {
+    expect(PERK_DEFS.D13.scoreFlat({ lastResult: "loss" })).toBe(200);
+    expect(PERK_DEFS.D13.scoreFlat({ lastResult: "win" })).toBe(0);
   });
 });
 
 describe("Seltene Perks (#71, Phase 2c — Crit-Historie-Hooks)", () => {
-  it("D14 Crit-Folge: +20 % nur wenn gerüstet", () => {
-    expect(PERK_DEFS.D14.critChance({ critFollowArmed: true })).toBe(0.20);
-    expect(PERK_DEFS.D14.critChance({ critFollowArmed: false })).toBe(0);
+  it("D14 Crit-Folge: +200 bei Sieg direkt nach einem Crit", () => {
+    expect(PERK_DEFS.D14.scoreFlat({ critFollowArmed: true })).toBe(200);
+    expect(PERK_DEFS.D14.scoreFlat({ critFollowArmed: false })).toBe(0);
   });
-  it("D15 Fehlzündung: gibt den akkumulierten misfireBonus zurück", () => {
-    expect(PERK_DEFS.D15.critChance({ misfireBonus: 0.12 })).toBe(0.12);
-    expect(PERK_DEFS.D15.critChance({})).toBe(0);
+  it("D15 Fehlzündung: zahlt die akkumulierte Score-Ladung bei Crit aus", () => {
+    expect(PERK_DEFS.D15.scoreFlatOnCrit({ misfireScore: 120 })).toBe(120);
+    expect(PERK_DEFS.D15.scoreFlatOnCrit({})).toBe(0);
   });
-  it("D16 Schwachstellenanalyse: +40 % nur wenn gerüstet", () => {
-    expect(PERK_DEFS.D16.critChance({ weaknessArmed: true })).toBe(0.40);
-    expect(PERK_DEFS.D16.critChance({ weaknessArmed: false })).toBe(0);
+  it("D16 Schwachstellenanalyse: +300 nach klarer Niederlage (gerüstet)", () => {
+    expect(PERK_DEFS.D16.scoreFlat({ weaknessArmed: true })).toBe(300);
+    expect(PERK_DEFS.D16.scoreFlat({ weaknessArmed: false })).toBe(0);
   });
 });
 
@@ -350,16 +322,17 @@ describe("Seltene Perks (#71, Phase 2f — Historie-Hooks)", () => {
     expect(PERK_DEFS.B9.cardBonus(treppe(5))).toBe(4); // Deckel
     expect(PERK_DEFS.B9.cardBonus({ posForm: { formations: [{ type: "farbblock", ordinal: 3 }] } })).toBe(0);
   });
-  it("D17 Farbserie: 75/100/… gedeckelt bei 200, unter Serie 2 nichts", () => {
+  it("D17 Farbserie: +100 je weiterem Sieg gleicher Farbe, gedeckelt bei 400", () => {
     expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 1 })).toBe(0);
-    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 2 })).toBe(75);
-    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 3 })).toBe(100);
-    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 7 })).toBe(200); // 75+5×25=200
-    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 9 })).toBe(200); // Deckel
+    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 2 })).toBe(100);
+    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 3 })).toBe(200);
+    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 5 })).toBe(400);
+    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 9 })).toBe(400); // Deckel
   });
-  it("D18 Volles Haus: +250 ab 3 Vorsiegen im 4er-Fenster", () => {
-    expect(PERK_DEFS.D18.scoreFlat({ recentWinCount: 3 })).toBe(250);
-    expect(PERK_DEFS.D18.scoreFlat({ recentWinCount: 4 })).toBe(250);
-    expect(PERK_DEFS.D18.scoreFlat({ recentWinCount: 2 })).toBe(0);
+  it("D18 Volles Haus: +750 auf der letzten Segment-Position mit 4 Vorsiegen", () => {
+    expect(PERK_DEFS.D18.scoreFlat({ posInCycle: 4, recentWinCount: 4 })).toBe(750);
+    expect(PERK_DEFS.D18.scoreFlat({ posInCycle: 9, recentWinCount: 4 })).toBe(750);
+    expect(PERK_DEFS.D18.scoreFlat({ posInCycle: 3, recentWinCount: 4 })).toBe(0); // nicht Segment-Ende
+    expect(PERK_DEFS.D18.scoreFlat({ posInCycle: 4, recentWinCount: 3 })).toBe(0); // nur 3 Vorsiege
   });
 });
