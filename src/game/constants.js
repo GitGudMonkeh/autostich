@@ -3,10 +3,11 @@
    ============================================================ */
 export const START_LIFE       = 2000;   // Leben = Run-Timer [TUNING]
 export const DMG_PER_LOSS     = 10;     // Schaden je Niederlage (flat) [TUNING]
-// Anti-Infinity (#59, ersetzt #32): periodischer, quadratisch eskalierender Leben-Abzug über die
-// AKTIVE Laufzeit — alle 2,5 Min −LIFE_DRAIN_BASE·n² (n = Intervall-Index): −5, −20, −45, −80 … kein Cap.
-export const LIFE_DRAIN_INTERVAL_MS = 2.5 * 60 * 1000; // 2,5 Min aktiver Spielzeit je Abzug [TUNING]
-export const LIFE_DRAIN_BASE        = 5;               // Abzug = LIFE_DRAIN_BASE · n² [TUNING]
+// Anti-Infinity (#85, Umbau von #59): quadratisch eskalierender ZUSATZSCHADEN PRO NIEDERLAGE über die
+// aktive Laufzeit — im n-ten 2,5-Min-Intervall kostet jede Niederlage +LIFE_DRAIN_BASE·n² (n=0 im ersten
+// Intervall → +0): +0, +5, +20, +45, +80 … kein Cap. Kein isolierter Zeit-Tick mehr.
+export const LIFE_DRAIN_INTERVAL_MS = 2.5 * 60 * 1000; // 2,5 Min aktiver Spielzeit je Eskalationsstufe [TUNING]
+export const LIFE_DRAIN_BASE        = 5;               // Aufschlag pro Niederlage = LIFE_DRAIN_BASE · n² [TUNING]
 export const XP_PER_WIN       = 10;     // XP je gewonnenem Stich [TUNING]
 export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Tempo skalieren darauf) [TUNING]
 export const TEMPO_SCORE_FACTOR = 0.005; // je %-Punkt speedPct +0,5 % Stichscore [TUNING]
@@ -75,9 +76,9 @@ export const VALUE_CAP = null;
 // speedPct), kein manueller Regler (#2, Design-Doc §5.3).
 export const BASE_FLIP_MS = 1750;   // ms je Stich bei 0 % Speed (Basis-Tempo, etwas flotter; Turbo/Perks oben drauf) [TUNING]
 
-// Anti-Infinity (#59): Abzug im n-ten 2,5-Min-Intervall (n≥1) — quadratisch, kein Cap. Rein.
-// App.jsx erkennt aus elapsedMs das Überschreiten einer Intervall-Schwelle und dispatcht LIFE_DRAIN
-// mit lifeDrainAt(n) (Determinismus: der game/-Layer sieht kein Date, nur den Betrag als Payload).
+// Aufschlag pro Niederlage im n-ten 2,5-Min-Intervall (n≥0) — quadratisch, kein Cap. Rein.
+// App.jsx meldet das aktuelle Intervall via SET_DRAIN_LEVEL an die Engine (Determinismus: der game/-Layer
+// sieht kein Date, nur den Intervall-Index als State); die Engine addiert lifeDrainAt(drainLevel) auf den Niederlagenschaden.
 export const lifeDrainAt = (n) => LIFE_DRAIN_BASE * n * n;
 
 /* ============================================================

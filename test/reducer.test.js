@@ -118,24 +118,19 @@ describe("Reducer — Ansage-System (#36)", () => {
   });
 });
 
-describe("LIFE_DRAIN — periodischer Zeit-Abzug (#59)", () => {
-  it("zieht den Betrag vom Leben ab (bleibt in play)", () => {
+describe("SET_DRAIN_LEVEL — Zeit-Eskalation pro Niederlage (#85, ersetzt den #59-Tick)", () => {
+  it("setzt drainLevel, ohne Leben abzuziehen (bleibt in play)", () => {
     const s = { ...initialState(makeRng(1)), life: 100 };
-    const r = reducer(s, { type: "LIFE_DRAIN", amount: 20 });
-    expect(r.life).toBe(80);
+    const r = reducer(s, { type: "SET_DRAIN_LEVEL", level: 3 });
+    expect(r.drainLevel).toBe(3);
+    expect(r.life).toBe(100);      // kein direkter Abzug mehr
     expect(r.phase).toBe("play");
-  });
-  it("life ≤ 0 durch den Abzug → Game Over", () => {
-    const s = { ...initialState(makeRng(1)), life: 15 };
-    const r = reducer(s, { type: "LIFE_DRAIN", amount: 20 });
-    expect(r.life).toBe(0);
-    expect(r.phase).toBe("gameover");
   });
   it("greift nur in der play-Phase (Menü/Overlay unberührt)", () => {
     const menu = menuState();
-    expect(reducer(menu, { type: "LIFE_DRAIN", amount: 20 })).toBe(menu);
-    const lvl = { ...initialState(makeRng(1)), phase: "levelup", life: 100 };
-    expect(reducer(lvl, { type: "LIFE_DRAIN", amount: 20 }).life).toBe(100);
+    expect(reducer(menu, { type: "SET_DRAIN_LEVEL", level: 2 })).toBe(menu);
+    const lvl = { ...initialState(makeRng(1)), phase: "levelup" };
+    expect(reducer(lvl, { type: "SET_DRAIN_LEVEL", level: 2 }).drainLevel).toBe(0);
   });
 });
 

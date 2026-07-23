@@ -39,6 +39,7 @@ export function initialState(rng = Math.random) {
     speedPct: 0,
     shield: 0,
     tieArmed: false,
+    drainLevel: 0, // #85 Anti-Infinity: aktuelles 2,5-Min-Intervall → Zusatzschaden pro Niederlage
     lastTrick: null,
   };
 }
@@ -64,13 +65,11 @@ export function reducer(state, action) {
     case "RESOLVE_TRICK":
       return resolveTrick(state, action.rng);
 
-    case "LIFE_DRAIN": {
-      // Anti-Infinity (#59): periodischer, quadratisch eskalierender Leben-Abzug. Betrag kommt als
-      // Payload aus App.jsx (Determinismus: kein Date im Reducer). Nur im Spiel; ≤0 → Game Over.
+    case "SET_DRAIN_LEVEL": {
+      // Anti-Infinity (#85, ersetzt den #59-Tick): App meldet das aktuelle 2,5-Min-Intervall; die Engine
+      // erhöht daraus den Schaden PRO NIEDERLAGE (lifeDrainAt). Kein direkter Leben-Abzug (kein Date im Reducer).
       if (state.phase !== "play") return state;
-      const life = state.life - (action.amount || 0);
-      if (life <= 0) return { ...state, life: 0, phase: "gameover" };
-      return { ...state, life };
+      return { ...state, drainLevel: action.level || 0 };
     }
 
     case "SUBMIT_PREDICTION": {

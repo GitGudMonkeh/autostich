@@ -171,10 +171,11 @@ export function resolveTrick(state, rng = Math.random) {
     lastResult = "win";
   } else if (lost) {
     losses += 1; winStreak = 0;
-    // Flat-Grundschaden (#59: die #32-Zeiteskalation ist raus; Zeit-Pressure läuft jetzt über den
-    // periodischen LIFE_DRAIN). Legendär-Zusatzschaden (L1 +3 / L6 +2) addiert; dmgReduce (C3) zieht
-    // ab, Schild (C5) absorbiert danach (s. u.).
-    dmg = Math.max(0, C.DMG_PER_LOSS + sumHook(perks, "extraDamageTaken", {}) - sumHook(perks, "dmgReduce", { life, maxLife }));
+    // Grundschaden + Zeit-Aufschlag (#85): DMG_PER_LOSS + lifeDrainAt(drainLevel) — im n-ten 2,5-Min-Intervall
+    // kostet jede Niederlage +5·n² zusätzlich (Zeitdruck läuft jetzt über teurere Niederlagen statt einen Tick).
+    // Legendär-Zusatzschaden (L1 +3 / L6 +2) addiert; dmgReduce (C3/C6) zieht ab, Schild (C5) absorbiert danach.
+    dmg = Math.max(0, C.DMG_PER_LOSS + C.lifeDrainAt(state.drainLevel || 0)
+                      + sumHook(perks, "extraDamageTaken", {}) - sumHook(perks, "dmgReduce", { life, maxLife }));
     // Schild (C5) absorbiert NACH der Schadensberechnung, vor dem Leben.
     if (shield > 0 && dmg > 0) { const absorbed = Math.min(shield, dmg); shield -= absorbed; dmg -= absorbed; }
     life -= dmg;
