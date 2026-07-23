@@ -536,3 +536,53 @@ describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
     expect(resolveTrick(scenario(12, 0, { recentResults: ["loss", "win", "tie", "win"] }), rng).recentResults).toEqual(["win", "tie", "win", "win"]);
   });
 });
+
+describe("Serien-/Tempo-/Crit-Rares — Engine (#71 Phase 2e)", () => {
+  it("B10 Überzahl: klarer Sieg (Vorsprung ≥5) zählt für Serien-Effekte doppelt, Statistik bleibt 1 Sieg", () => {
+    const big = resolveTrick(scenario(12, 0, { perks: ["B10"] }), rng);
+    expect(big.wins).toBe(1); expect(big.winStreak).toBe(1); // Statistik: 1 Sieg
+    expect(big.overStreak).toBe(2);                          // effektive Serie: 2 Stufen
+    expect(big.lastTrick.gained).toBeCloseTo(104);          // 100 × streakBaseMult(2)=1,04
+    const small = resolveTrick(scenario(5, 3, { perks: ["B10"] }), rng); // Vorsprung 2 <5
+    expect(small.overStreak).toBe(1);
+  });
+  it("B10 + D2: effektive Serie speist Kombo & Anzeige (kein Drift)", () => {
+    let s = scenario(12, 0, { perks: ["B10", "D2"] });
+    s = resolveTrick(s, rng); expect(s.overStreak).toBe(2); expect(s.lastTrick.comboMult).toBeCloseTo(1.2);
+    s = resolveTrick(s, rng); expect(s.overStreak).toBe(4); expect(s.lastTrick.comboMult).toBeCloseTo(1.4);
+    expect(resolveTrick(scenario(0, 12, { perks: ["B10"], overStreak: 3, life: 100 }), rng).overStreak).toBe(0); // Niederlage bricht
+  });
+
+  it("E9 Hochlauf: +2 % Temp-Tempo je Sieg (Deckel 40), −10 pp je Niederlage; zählt für Tempo-Score", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["E9"], rampTempo: 20, tempTempo: 20 }), rng).lastTrick.gained).toBeCloseTo(112.2); // Score nutzt curTempTempo 20 → ×1,10
+    const w = resolveTrick(scenario(12, 0, { perks: ["E9"], rampTempo: 20, tempTempo: 20 }), rng);
+    expect(w.rampTempo).toBe(22); expect(w.tempTempo).toBe(22);
+    expect(resolveTrick(scenario(12, 0, { perks: ["E9"], rampTempo: 39 }), rng).rampTempo).toBe(40); // Deckel
+    expect(resolveTrick(scenario(0, 12, { perks: ["E9"], rampTempo: 30, life: 100 }), rng).rampTempo).toBe(20); // −10
+  });
+
+  it("E10 Ruhe vor dem Sturm: Gleichstand startet 5-Stiche-Burst (50 % schneller, zählt für Tempo-Score)", () => {
+    const tie = resolveTrick(scenario(5, 5, { perks: ["E10"] }), rng);
+    expect(tie.calmTricks).toBe(5); expect(tie.tempTempo).toBe(50);
+    const fast = resolveTrick(scenario(12, 0, { perks: ["E10"], calmTricks: 5, tempTempo: 50 }), rng);
+    expect(fast.lastTrick.gained).toBeCloseTo(127.5); // ×(1+50×0,005)=1,25
+    expect(fast.calmTricks).toBe(4); expect(fast.tempTempo).toBe(50);
+    const last = resolveTrick(scenario(12, 0, { perks: ["E10"], calmTricks: 1, tempTempo: 50 }), rng);
+    expect(last.calmTricks).toBe(0); expect(last.tempTempo).toBe(0); // Burst endet
+  });
+
+  it("D19 Überschusskrit: Roh-Crit über 100 % → Chance auf Super-Crit (×1,5 auf den Faktor)", () => {
+    const build = { perks: ["D19", "D9", "D6", "D7", "D8", "D16"], wins: 9, winStreak: 10, weaknessArmed: true };
+    const zero = () => 0;   // Überschuss-Wurf trifft
+    const half = () => 0.5; // Überschuss-Wurf verfehlt (Überschuss 0,27)
+    const sup = resolveTrick(scenario(12, 0, build), zero);
+    expect(sup.lastTrick.critChance).toBe(1);      // Anzeige geklemmt
+    expect(sup.lastTrick.superCrit).toBe(true);
+    expect(sup.lastTrick.critMultiplier).toBe(3);  // ×2 × 1,5
+    expect(sup.lastTrick.scoreGain).toBeCloseTo(366); // scoreBeforeCrit 122 × 3
+    const noSup = resolveTrick(scenario(12, 0, build), half);
+    expect(noSup.lastTrick.superCrit).toBe(false);
+    expect(noSup.lastTrick.critMultiplier).toBe(2);
+    expect(resolveTrick(scenario(12, 0, { ...build, perks: ["D9", "D6", "D7", "D8", "D16"] }), zero).lastTrick.superCrit).toBe(false); // ohne D19 kein Super-Crit
+  });
+});

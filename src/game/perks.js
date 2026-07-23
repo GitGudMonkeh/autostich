@@ -181,6 +181,20 @@ export const PERK_DEFS = {
         desc: "Enthalten die letzten fünf Stiche (inkl. aktuellem) mindestens 4 Siege, gibt der aktuelle Sieg +250 Score.",
         scoreFlat: (ctx) => ((ctx.recentWinCount || 0) >= 3 ? 250 : 0) },
 
+  // ---- Seltene Perks (#71, Phase 2e) — Serien-/Tempo-/Crit-Mechanik (Engine-Flags + State) ----
+  B10: { id: "B10", cat: "B", rarity: "rare", label: "Überzahl",
+        desc: "Ein Sieg mit mindestens 5 Wertpunkten Vorsprung zählt für Siegesserien-Effekte als zwei Stufen (Statistik/XP/Heilung bleiben ein Sieg).",
+        ueberzahl: true }, // Engine führt overStreak
+  E9: { id: "E9", cat: "E", rarity: "rare", label: "Hochlauf",
+        desc: "Jeder Sieg gibt +2 % temporäres Tempo (max +40 %); eine Niederlage −10 pp. Zählt für Geschwindigkeit und Tempo-Score.",
+        hochlauf: true }, // Engine führt rampTempo/tempTempo
+  E10: { id: "E10", cat: "E", rarity: "rare", label: "Ruhe vor dem Sturm",
+        desc: "Nach einem Gleichstand laufen die nächsten fünf Stiche 50 % schneller; das temporäre Tempo zählt auch für den Tempo-Score.",
+        ruheVorDemSturm: true }, // Engine führt calmTricks/tempTempo
+  D19: { id: "D19", cat: "D", rarity: "rare", label: "Überschusskrit",
+        desc: "Crit-Chance über 100 % kann einen Super-Crit auslösen (z. B. 130 % → +30 % Chance auf ×3 statt ×2; mit Jackpot ×6).",
+        superCrit: true }, // Engine wertet die Überschuss-Chance aus
+
   // ---- B: Stich-Effekte (Wert-Bonus auf die aktuelle Karte) ----
   B1: { id: "B1", cat: "B", label: "Gegenangriff",
         desc: "Nach einem verlorenen Stich erhält die nächste Karte +2 Wert.",
@@ -310,13 +324,17 @@ export function buildOffer(owned, rng, count, level = 1) {
 
 // Gesamt-Crit-Chance (0..1) eines Builds: Σ critChance-Perks + legendaryCritBonus (L4), dann
 // × Π critChanceMult (L5 halbiert), geklemmt. EINE Quelle für Engine-Wurf UND Anzeige (#25, kein Drift).
-export function critChanceFor(perks, ctx, legendaryCritBonus = 0) {
+// UNGEKLEMMTE Roh-Crit-Chance (kann >1 sein) — Basis für Überschusskrit (#71) und für critChanceFor.
+export function critChanceRawFor(perks, ctx, legendaryCritBonus = 0) {
   let raw = 0;
   for (const id of perks) { const f = PERK_DEFS[id].critChance; if (f) raw += f(ctx); }
   raw += legendaryCritBonus || 0;
   let mult = 1;
   for (const id of perks) { const f = PERK_DEFS[id].critChanceMult; if (f) mult *= f(ctx); }
-  return Math.min(1, Math.max(0, raw * mult));
+  return raw * mult;
+}
+export function critChanceFor(perks, ctx, legendaryCritBonus = 0) {
+  return Math.min(1, Math.max(0, critChanceRawFor(perks, ctx, legendaryCritBonus)));
 }
 // Crit-Faktor: L5 (Jackpot) ÜBERSCHREIBT die Basis (×4) statt zu addieren → höchster Hook-Wert gewinnt.
 // Geteilte Quelle für Engine-Score UND Anzeige.

@@ -36,6 +36,14 @@ export const SACRIFICE_LIFE     = 30;  // C9 Opfergabe: Leben-Kosten je Durchlau
 export const SACRIFICE_SCORE_MULT = 1.20; // C9 …    … dafür +20 % Score, solange gehalten
 export const EMERGENCY_HEAL     = 40;  // C10 Notfallration: Sofortheilung, 1× je Durchlauf bei ≤25 % Leben
 
+// Seltene Tempo/Crit-Perks (#71 Phase 2e) [TUNING]
+export const RAMP_TEMPO_STEP = 2;   // E9 Hochlauf: +% temporäres Tempo je Sieg …
+export const RAMP_TEMPO_CAP  = 40;  // …          … gedeckelt
+export const RAMP_TEMPO_LOSS = 10;  // …          … Abzug je Niederlage
+export const CALM_TRICKS     = 5;   // E10 Ruhe vor dem Sturm: so viele Stiche nach einem Gleichstand …
+export const CALM_TEMPO_PCT  = 50;  // …          … um so viel % schneller (zählt auch für Tempo-Score)
+export const SUPERCRIT_MULT_FACTOR = 1.5; // D19 Überschusskrit: Faktor auf den Crit-Multiplikator (×2→×3, ×4→×6)
+
 // Legendäre Perks & Raritäts-System (#33) [TUNING]
 export const RARITY_WEIGHTS            = { common: 100, rare: 25, legendary: 4 }; // 3-Stufen-Rarität (#71); „common" = normal
 export const RARE_MIN_LEVEL            = 2;    // Seltene Perks erst ab diesem Level im Angebot (#71)
