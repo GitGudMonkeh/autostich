@@ -1,7 +1,7 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer, critChanceRawFor, comboMultFor, tempoScoreMultFor, critMultiplierFor, streakBaseMult } from "./perks.js";
-import { skillSum, lightningCritRaw, addCharge, buildSkillOffer } from "./skills.js";
+import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards } from "./skills.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -147,15 +147,30 @@ export function resolveTrick(state, rng = Math.random) {
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult × Tempo, DANN Crit-Faktor.
     // #71 Hochlauf/Ruhe: temporäres Tempo zählt zusätzlich zum permanenten speedPct für den Tempo-Score.
     const tempoScoreMult = tempoScoreMultFor(perks, (state.speedPct || 0) + curTempTempo); // L6 „Raserei": Tempo-Faktor ×2
+    // Ionisierung: Score-Bonus der GESPIELTEN Karte (Stapel VOR dem Zuwachs) fließt ebenfalls in die Basis.
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
-                      + (isCrit ? skillSum(skills, "scoreFlatOnCrit", wctx) : 0);
+                      + (isCrit ? skillSum(skills, "scoreFlatOnCrit", wctx) : 0)
+                      + ionScoreFor(pCard);
     scoreBeforeCrit = scoreBase * streakBaseMult(serieStreak) * prodHook(perks, "scoreMult", wctx) * tempoScoreMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     critBonus = gained - scoreBeforeCrit;
     score += gained;
-    // Blitz: Ladung bei Crit — Basis +1 (solange Archetyp aktiv) plus Skill-Boni (Blitzableiter +1). Gedeckelt (max 10).
+    // Blitz: Ladung bei Crit — Basis +1 (aktiv) + Skill-Boni (Blitzableiter +1; Überspannung +3 bei ionisierter Karte).
+    const ionizedCard = (pCard.ionStacks || 0) > 0;
     if (lightning && lightning.active && isCrit) {
-      lightning = addCharge(lightning, 1 + skillSum(skills, "chargeOnCrit", wctx));
+      const gainedCharge = 1 + skillSum(skills, "chargeOnCrit", wctx)
+                             + (ionizedCard ? skillSum(skills, "chargeOnIonizedCrit", wctx) : 0);
+      lightning = addCharge(lightning, gainedCharge);
+      // Volle Ladung → Verbraucher (Ionisierung): N ungespielte Karten ionisieren, dann Ladung verbrauchen.
+      if (lightning.charge >= lightning.maxCharge && consumesCharge(skills)) {
+        const undrawn = playerOrder.slice(pos + 1); // Deck-Indizes der noch nicht gezogenen Karten
+        deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
+        lightning = consumeCharge(lightning); // → 0 (Stufe C: Reststrom-Boden)
+      }
+    }
+    // Nach einem Sieg mit einer ionisierten Karte: diese Karte +1 Stapel (max); der Bonus wurde oben VORHER gewertet.
+    if (ionizedCard) {
+      deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
     }
     // #71 Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
     critFollowArmed = isCrit;                                        // Crit-Folge: nur ein Crit rüstet den nächsten Sieg

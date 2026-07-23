@@ -85,7 +85,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const playerCard = t ? (
     <div key={`p${t.trickNo}`} className="relative" style={dealStyle("as-deal-left")}>
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
-            stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null} />
+            stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
+            ionStacks={t.pCard.ionStacks || 0} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 

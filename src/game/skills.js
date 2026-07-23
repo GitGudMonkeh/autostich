@@ -21,6 +21,28 @@ export const SKILL_DEFS = {
     chargeOnCrit: () => 1,
     scoreFlatOnCrit: () => 50,
   },
+  SK_LIGHTNING_02: {
+    id: "SK_LIGHTNING_02", name: "Ionisierung", archetype: "lightning",
+    keywords: ["charge", "ionize"],
+    desc: "Bei voller Ladung werden zwei zufällige noch nicht gespielte Karten ionisiert; danach wird die Ladung verbraucht.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    onFullCharge: "ionize",                // Verbraucher: löst bei voller Ladung aus
+    ionizeCount: () => C.ION_BASE_COUNT,   // 2 Karten je Auslösung
+  },
+  SK_LIGHTNING_03: {
+    id: "SK_LIGHTNING_03", name: "Kettenblitz", archetype: "lightning",
+    keywords: ["ionize"],
+    desc: "Wenn Karten ionisiert werden, werden zwei zusätzliche Karten ionisiert.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    ionizeCount: () => C.KETTENBLITZ_COUNT, // +2 (nur wirksam zusammen mit Ionisierung)
+  },
+  SK_LIGHTNING_04: {
+    id: "SK_LIGHTNING_04", name: "Überspannung", archetype: "lightning",
+    keywords: ["charge", "ionize", "crit"],
+    desc: "Crits mit einer ionisierten Karte erzeugen 3 zusätzliche Ladungen.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    chargeOnIonizedCrit: () => C.UEBERSPANNUNG_CHARGE, // +3 Ladung bei Crit mit ionisierter Karte
+  },
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
@@ -62,4 +84,53 @@ export function buildSkillOffer(owned, rng, count) {
     pool = pool.filter((_, i) => i !== idx);
   }
   return chosen;
+}
+
+/* ---- Ionisierung (Stufe B, docs/blitz-archetyp.md Abschnitt 5/6) ---- */
+
+// Score-Bonus einer gespielten Karte: +ION_SCORE_PER_STACK je Stapel (Stand VOR dem Zuwachs).
+export function ionScoreFor(card) {
+  return (card?.ionStacks || 0) * C.ION_SCORE_PER_STACK;
+}
+
+// Hat der Build einen Voll-Ladungs-Verbraucher (Ionisierung)? Nur dann wird Ladung verbraucht.
+export function consumesCharge(skills) {
+  return (skills || []).some((id) => SKILL_DEFS[id]?.onFullCharge === "ionize");
+}
+
+// Anzahl je Auslösung ionisierter Karten: Ionisierung (2) + Kettenblitz (+2), sofern gehalten.
+export function ionizeCountFor(skills) {
+  return skillSum(skills, "ionizeCount", {});
+}
+
+// Ladung verbrauchen → auf den Boden (Stufe C: Reststrom hebt ihn; Default 0).
+export function consumeCharge(lightning, floor = 0) {
+  if (!lightning || !lightning.active) return lightning;
+  return { ...lightning, charge: Math.max(0, floor) };
+}
+
+// `count` Karten ionisieren (immutabel, deterministisch). Gültige Ziele = ungespielte Karten
+// (Deck-Indizes in `undrawn`); je +1 Stapel (max ION_MAX_STACKS). Reichen die ungespielten Karten
+// nicht (Kettenblitz-Fall), gehen die Rest-Stapel an bereits ionisierte Karten (Abschnitt 8.4).
+export function ionizeCards(deck, undrawn, count, rng) {
+  const bumps = {}; // Deck-Index -> zusätzliche Stapel
+  const pool = [...(undrawn || [])];
+  let remaining = count;
+  while (remaining > 0 && pool.length > 0) {
+    const j = Math.floor(rng() * pool.length);
+    const idx = pool.splice(j, 1)[0];
+    bumps[idx] = (bumps[idx] || 0) + 1;
+    remaining -= 1;
+  }
+  if (remaining > 0) {
+    // Fallback: nicht genug ungespielte Karten → Rest auf bereits ionisierte Karten (deckweit).
+    let ionized = deck.map((_, i) => i).filter((i) => (deck[i].ionStacks || 0) > 0 || bumps[i]);
+    while (remaining > 0 && ionized.length > 0) {
+      const j = Math.floor(rng() * ionized.length);
+      const idx = ionized.splice(j, 1)[0];
+      bumps[idx] = (bumps[idx] || 0) + 1;
+      remaining -= 1;
+    }
+  }
+  return deck.map((c, i) => (bumps[i] ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + bumps[i]) } : c));
 }

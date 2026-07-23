@@ -70,6 +70,12 @@ export const SKILL_EVERY_CYCLES = 3;   // jede N-te Runde ist eine Skill-Runde (
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
 export const LIGHTNING_CRIT_PER_SKILL = 0.05; // Blitz: je gehaltenem Blitz-Skill
 export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
+// Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
+export const ION_SCORE_PER_STACK  = 25; // +Score je Ionisierungsstapel bei Sieg mit der Karte
+export const ION_MAX_STACKS       = 4;  // max Stapel je Karte
+export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Verbrauch
+export const KETTENBLITZ_COUNT    = 2;  // Kettenblitz: zusätzlich ionisierte Karten (nur mit Ionisierung)
+export const UEBERSPANNUNG_CHARGE = 3;  // Überspannung: Zusatzladung bei Crit mit ionisierter Karte
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

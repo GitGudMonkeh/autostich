@@ -585,19 +585,55 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
     expect(s.lastTrick.critChance).toBeCloseTo(0); // keine Crit-Basis
   });
 
-  it("Skill-Auswahl jede 3. Runde, sonst Perk; voller Skill-Pool fällt auf Perk zurück", () => {
+  it("Skill-Auswahl jede 3. Runde, sonst Perk; leerer Skill-Pool fällt auf Perk zurück", () => {
+    const ALL = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04"];
     const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, life: 1000 }), rng); // → cycle 3
     expect(skillRound.phase).toBe("levelup");
-    expect(skillRound.skillOffer).toHaveLength(1); // nur Blitzableiter im Pool (Stufe A)
+    expect(skillRound.skillOffer).toHaveLength(3); // 3 aus dem Blitz-Pool
     expect(skillRound.offer).toBeNull();
 
     const perkRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1, life: 1000 }), rng); // → cycle 2
     expect(perkRound.skillOffer).toBeNull();
     expect(perkRound.offer).toHaveLength(3);
 
-    // Skill schon gehalten → Skill-Pool leer → Perk-Angebot (Runde nicht verschwendet).
-    const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, life: 1000, skills: [LR] }), rng);
+    // Alle Skills gehalten → Skill-Pool leer → Perk-Angebot (Runde nicht verschwendet).
+    const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, life: 1000, skills: ALL }), rng);
     expect(owned.skillOffer).toBeNull();
     expect(owned.offer).toHaveLength(3);
+  });
+});
+
+describe("Ionisierung — Engine (Stufe B)", () => {
+  const I = "SK_LIGHTNING_02", U = "SK_LIGHTNING_04";
+  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, ...over });
+  // constDeck mit stabilen ids; die gespielte Karte (pos 0) trägt `stacks` Ionisierungsstapel.
+  const ionDeck = (v, stacks) => constDeck(v).map((c, i) => (i === 0 ? { ...c, id: "P0", ionStacks: stacks } : { ...c, id: `P${i}` }));
+
+  it("ionScore der gespielten Karte fließt in die multiplizierte Basis (+25/Stapel)", () => {
+    // 2 Stapel → +50: (100+50) × streakBaseMult(1)=1,02 = 153 (kein Crit).
+    const s = resolveTrick(scenario(12, 0, { deck: ionDeck(12, 2), playerOrder: identity() }), () => 0.99);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(153);
+  });
+
+  it("Sieg mit ionisierter Karte erhöht deren Stapel (+1, max 4)", () => {
+    expect(resolveTrick(scenario(12, 0, { deck: ionDeck(12, 2), playerOrder: identity() }), () => 0.99)
+      .deck.find((c) => c.id === "P0").ionStacks).toBe(3);
+    expect(resolveTrick(scenario(12, 0, { deck: ionDeck(12, 4), playerOrder: identity() }), () => 0.99)
+      .deck.find((c) => c.id === "P0").ionStacks).toBe(4); // Deckel
+  });
+
+  it("Überspannung: Crit mit ionisierter Karte gibt +3 Zusatzladung (1 Basis + 1 Blitzableiter + 3)", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, deck: ionDeck(12, 1), playerOrder: identity(),
+      skills: ["SK_LIGHTNING_01", U], lightning: lit() }), rng);
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.lightning.charge).toBe(5);
+  });
+
+  it("Volle Ladung + Ionisierung: ungespielte Karten werden ionisiert, Ladung verbraucht", () => {
+    // Crit hebt Ladung 9 → 10 (Clamp) → Ionisierung ionisiert 2 ungespielte Karten, Ladung → 0.
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: ["SK_LIGHTNING_01", I], lightning: lit({ charge: 9 }) }), rng);
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.lightning.charge).toBe(0);
+    expect(s.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(2);
   });
 });
