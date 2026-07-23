@@ -1,9 +1,8 @@
-import { PERK_DEFS, CATEGORIES, isLegendary, critChanceFor, hasCritPerk, tempoScoreMultFor, baseScoreMultFor } from "../game/perks.js";
+import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, critChanceFor, hasCritPerk, tempoScoreMultFor, baseScoreMultFor } from "../game/perks.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
 
-// Legendär-Akzent: gold + violett, deutlich vom Kategorie-Look abgesetzt (#33).
+// Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
-const LEG_VIOLET = "#8a7de0";
 const fmtMult = (x) => x.toFixed(2).replace(".", ",");
 
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
@@ -38,25 +37,29 @@ export function PerkSelect({ offer, level, onPick, perks = [], deck = [], state 
           {offer.map((id) => {
             const p = PERK_DEFS[id];
             const cat = CATEGORIES[p.cat];
-            const leg = isLegendary(id);
+            const rar = rarityOf(id);
+            const rm = RARITY_META[rar];
+            const leg = rar === "legendary";
             return (
               <button
                 key={id}
                 onClick={() => onPick(id)}
                 className="text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5"
                 style={{ background: "#20202a",
-                         border: leg ? `1px solid ${LEG_GOLD}` : `1px solid ${cat.color}55`,
-                         boxShadow: leg ? `0 0 0 1px ${LEG_VIOLET}66, 0 0 16px ${LEG_GOLD}33` : undefined }}
+                         // Rahmen = Seltenheit: grau (normal) / grün (selten) / gold (legendär).
+                         border: `1px solid ${rm.color}${rar === "common" ? "55" : ""}`,
+                         boxShadow: leg ? `0 0 0 1px ${LEG_GOLD}66, 0 0 16px ${LEG_GOLD}33`
+                                  : rar === "rare" ? `0 0 12px ${rm.color}22` : undefined }}
               >
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
                     style={{ background: `${cat.color}22`, color: cat.color }}>
                     {cat.name}
                   </span>
-                  {leg && (
+                  {rm.badge && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
-                      style={{ background: `${LEG_GOLD}1f`, color: LEG_GOLD, border: `1px solid ${LEG_VIOLET}88` }}>
-                      ★ LEGENDÄR
+                      style={{ background: `${rm.color}1f`, color: rm.color, border: `1px solid ${rm.color}88` }}>
+                      {rm.badge}
                     </span>
                   )}
                 </div>
