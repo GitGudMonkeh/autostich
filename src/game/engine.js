@@ -46,6 +46,7 @@ export function resolveTrick(state, rng = Math.random) {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     initiative, lastResult, perks, offer, shield, tieArmed, sinceWin = 0,
+    lossStreak = 0, lastWinValue = null, altLen = 0, // #71 Rares: Revanche / Präzision / Wechselspiel
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
     // Ansage-System (#36)
     cycleWins = 0, cycleBaseScore = 0, prediction = null, lastPrediction = null,
@@ -64,6 +65,7 @@ export function resolveTrick(state, rng = Math.random) {
     lostLastTrick: lastResult === "loss",
     winStreak,
     sinceWin, // #71 Durchbruch: Stiche ohne Sieg (Stand VOR diesem Stich)
+    lossStreak, // #71 Revanche: aufeinanderfolgende Niederlagen (Stand VOR diesem Stich)
     life, maxLife, // L3 „Letztes Aufbäumen": cardBonus prüft das Leben-Verhältnis VOR der Auflösung
   };
   const pValue = effectivePlayerValue(pCard.value, perks, ctx);
@@ -76,6 +78,11 @@ export function resolveTrick(state, rng = Math.random) {
   else if (tieArmed || anyHookTrue(perks, "winTie", ctx)) { won = true; tieConverted = true; }
   // sonst echter Gleichstand: kein Effekt (§4.1)
 
+  // #71 Wechselspiel: Länge der aktuellen strikten Sieg/Niederlage-Alternation (Gleichstand bricht sie).
+  const curRes = won ? "win" : lost ? "loss" : "tie";
+  altLen = curRes === "tie" ? 0
+    : (curRes !== lastResult && (lastResult === "win" || lastResult === "loss")) ? altLen + 1 : 1;
+
   let gained = 0, dmg = 0, healed = 0;
   let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
 
@@ -83,7 +90,8 @@ export function resolveTrick(state, rng = Math.random) {
     winStreak += 1; wins += 1; cycleWins += 1; // cycleWins: Siege im laufenden Durchlauf (#36)
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
-    const wctx = { winValue: pValue, margin: pValue - oValue, winStreak, wins, trickNo, posInCycle: pos, speedPct: state.speedPct || 0 };
+    const wctx = { winValue: pValue, margin: pValue - oValue, winStreak, wins, trickNo, posInCycle: pos, speedPct: state.speedPct || 0,
+                   lastWinValue, altLen }; // #71: Präzision (Vergleich mit letztem Siegwert) / Wechselspiel
     // Score: Basis-Serien-Mult (#39, immer) × Perk-Multiplikatoren × Tempo, DANN additive Boni (D3/D5), DANN Crit.
     const tempoScoreMult = tempoScoreMultFor(perks, state.speedPct); // L6 „Raserei": Tempo-Faktor ×2
     scoreBeforeCrit = C.SCORE_PER_WIN * streakBaseMult(winStreak) * prodHook(perks, "scoreMult", wctx) * tempoScoreMult
@@ -107,6 +115,8 @@ export function resolveTrick(state, rng = Math.random) {
     initiative = "player";
     if (tieConverted) tieArmed = false;
     sinceWin = 0; // #71 Durchbruch: Sieg setzt den Zähler zurück
+    lossStreak = 0; // #71 Revanche: Sieg beendet die Niederlagenserie
+    lastWinValue = pValue; // #71 Präzision: letzten Siegwert merken (NACH dem Vergleich in wctx)
     lastResult = "win";
   } else if (lost) {
     losses += 1; winStreak = 0;
@@ -120,10 +130,12 @@ export function resolveTrick(state, rng = Math.random) {
     initiative = "opp";
     if (ownsFlag(perks, "winTieAfterLoss")) tieArmed = true;
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
+    lossStreak += 1; // #71 Revanche: aufeinanderfolgende Niederlagen
     lastResult = "loss";
   } else {
     ties += 1;
     sinceWin += 1; // #71 Durchbruch: Gleichstand zählt als „kein Sieg" weiter
+    lossStreak = 0; // #71 Revanche: Gleichstand ist keine Niederlage → Serie bricht
     lastResult = "tie";
     // Serie & Initiative unverändert
   }
@@ -148,7 +160,7 @@ export function resolveTrick(state, rng = Math.random) {
       crits, critBonusScore, bestTrickScore, legendaryCritBonus,
       cycleWins, cycleBaseScore, prediction, lastPrediction, lastPredictionResult,
       predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus,
-      initiative, lastResult, offer, shield, tieArmed, sinceWin,
+      initiative, lastResult, offer, shield, tieArmed, sinceWin, lossStreak, lastWinValue, altLen,
       lastTrick, phase: "gameover",
     };
   }
@@ -206,7 +218,7 @@ export function resolveTrick(state, rng = Math.random) {
     predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus, predictionDue,
     life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
     crits, critBonusScore, bestTrickScore, legendaryCritBonus,
-    initiative, lastResult, perks, offer: newOffer, shield, tieArmed, pendingLevelUps, sinceWin,
+    initiative, lastResult, perks, offer: newOffer, shield, tieArmed, pendingLevelUps, sinceWin, lossStreak, lastWinValue, altLen,
     lastTrick, phase,
   };
 }

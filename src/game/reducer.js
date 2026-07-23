@@ -27,6 +27,7 @@ export function initialState(rng = Math.random) {
     initiative: "player",
     lastResult: null,
     sinceWin: 0, // #71 Durchbruch: aufeinanderfolgende Stiche ohne Sieg
+    lossStreak: 0, lastWinValue: null, altLen: 0, // #71 Rares: Revanche / Präzision / Wechselspiel
     perks: [], offer: null,
     pendingLevelUps: 0, // #57: noch ausstehende Level-Up-Angebote (Mehrfach-Level-Up-Queue)
     speedPct: 0,

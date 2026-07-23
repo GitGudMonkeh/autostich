@@ -274,3 +274,19 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
     expect(off.every((id) => PERK_DEFS[id].rarity === "rare")).toBe(true);
   });
 });
+
+describe("Seltene Perks (#71, Phase 2b — Historie-Hooks)", () => {
+  it("B8 Revanche: +7 ab 2 Niederlagen in Folge", () => {
+    expect(PERK_DEFS.B8.cardBonus({ lossStreak: 2 })).toBe(7);
+    expect(PERK_DEFS.B8.cardBonus({ lossStreak: 1 })).toBe(0);
+  });
+  it("D12 Präzision: ×3 bei gleichem Wert wie letzter Sieg (erster Sieg ×1)", () => {
+    expect(PERK_DEFS.D12.scoreMult({ winValue: 8, lastWinValue: 8 })).toBe(3);
+    expect(PERK_DEFS.D12.scoreMult({ winValue: 8, lastWinValue: 7 })).toBe(1);
+    expect(PERK_DEFS.D12.scoreMult({ winValue: 8, lastWinValue: null })).toBe(1);
+  });
+  it("D13 Wechselspiel: +100 ab Alternations-Länge 3", () => {
+    expect(PERK_DEFS.D13.scoreFlat({ altLen: 3 })).toBe(100);
+    expect(PERK_DEFS.D13.scoreFlat({ altLen: 2 })).toBe(0);
+  });
+});

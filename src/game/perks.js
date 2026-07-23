@@ -134,6 +134,17 @@ export const PERK_DEFS = {
         desc: "Jeder zehnte Stich gibt bei einem Sieg +150 Score.",
         scoreFlat: (ctx) => (ctx.trickNo % 10 === 0 ? 150 : 0) },
 
+  // ---- Seltene Perks (#71, Phase 2b) — Ergebnis-/Wert-Historie (neue State-Felder) ----
+  B8: { id: "B8", cat: "B", rarity: "rare", label: "Revanche",
+        desc: "Nach zwei aufeinanderfolgenden Niederlagen erhält die nächste Karte +7 Wert.",
+        cardBonus: (ctx) => ((ctx.lossStreak || 0) >= 2 ? 7 : 0) },
+  D12: { id: "D12", cat: "D", rarity: "rare", label: "Präzision",
+        desc: "Gewinnst du mit demselben aktuellen Kartenwert wie beim vorherigen Sieg, ×3 Score.",
+        scoreMult: (ctx) => (ctx.lastWinValue != null && ctx.winValue === ctx.lastWinValue ? 3 : 1) },
+  D13: { id: "D13", cat: "D", rarity: "rare", label: "Wechselspiel",
+        desc: "Sobald sich Sieg und Niederlage abwechseln, gibt jeder weitere Sieg im Wechselmuster +100 Score.",
+        scoreFlat: (ctx) => ((ctx.altLen || 0) >= 3 ? 100 : 0) },
+
   // ---- B: Stich-Effekte (Wert-Bonus auf die aktuelle Karte) ----
   B1: { id: "B1", cat: "B", label: "Gegenangriff",
         desc: "Nach einem verlorenen Stich erhält die nächste Karte +2 Wert.",
