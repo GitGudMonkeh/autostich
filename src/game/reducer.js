@@ -2,6 +2,7 @@ import { buildDeck, shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer } from "./perks.js";
 import { resolveTrick } from "./engine.js";
 import { START_LIFE, PREDICTION_MIN, PREDICTION_MAX, PERKS_OFFERED } from "./constants.js";
+import * as C from "./constants.js";
 
 /* Reiner Reducer — Determinismus-Invariante: kein Math.random / Date hier drin.
    Zufall kommt als Action-Payload (rng), siehe App.jsx. Phasen:
@@ -32,6 +33,7 @@ export function initialState(rng = Math.random) {
     cleanStreak: 0, notfallUsed: false, // #71 Per-Durchlauf: Sauberer Durchlauf / Notfallration
     ascRun: 0, lastPlayedValue: null, winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Perfekte Folge / Farbserie / Volles Haus
     overStreak: 0, rampTempo: 0, calmTricks: 0, tempTempo: 0, // #71 Phase 2e: Überzahl / Hochlauf / Ruhe vor dem Sturm
+    fateValue: null, bloodStacks: 0, zeitrafferStacks: 0, kingBoosted: [], // #71 Phase 3 Legendaries: Schicksalsmaschine / Blutvertrag / Zeitraffer / Königsmacher
     perks: [], offer: null,
     pendingLevelUps: 0, // #57: noch ausstehende Level-Up-Angebote (Mehrfach-Level-Up-Queue)
     speedPct: 0,
@@ -91,8 +93,19 @@ export function reducer(state, action) {
       const { perkId, rng } = action;
       if (!state.offer || !state.offer.includes(perkId)) return state;
       const def = PERK_DEFS[perkId];
-      const deck = def.onPick ? def.onPick(state.deck, rng) : state.deck; // Kat.-A-Mods sofort dauerhaft
       const perks = [...state.perks, perkId];
+      let deck = def.onPick ? def.onPick(state.deck, rng) : state.deck; // Kat.-A-Mods sofort dauerhaft
+      // #71 Königsmacher (L7): erreicht eine Karte (durch DIESE oder eine frühere Aufwertung) erstmals Wert
+      // ≥13, erhält sie einmalig dauerhaft +2. Nach jeder Deck-Mod prüfen; je Karte nur einmal (kingBoosted).
+      let kingBoosted = state.kingBoosted || [];
+      if (perks.some((id) => PERK_DEFS[id].kingmaker)) {
+        const boosted = new Set(kingBoosted);
+        deck = deck.map((c) => {
+          if (c.value >= C.KINGMAKER_THRESHOLD && !boosted.has(c.id)) { boosted.add(c.id); return { ...c, value: c.value + C.KINGMAKER_BONUS }; }
+          return c;
+        });
+        kingBoosted = [...boosted];
+      }
       const speedPct = perks.reduce((t, id) => t + (PERK_DEFS[id].speedPct || 0), 0);
       // C5: Schild sofort gewähren (sonst erst beim nächsten Durchlauf-Start)
       const shieldGrant = perks.reduce((m, id) => Math.max(m, PERK_DEFS[id].shieldPerCycle || 0), 0);
@@ -103,12 +116,12 @@ export function reducer(state, action) {
       if (pending > 0) {
         const off = buildOffer(perks, rng, PERKS_OFFERED, state.level);
         if (off.length > 0)
-          return { ...state, deck, perks, speedPct, shield, phase: "levelup", offer: off, pendingLevelUps: pending - 1 };
+          return { ...state, deck, kingBoosted, perks, speedPct, shield, phase: "levelup", offer: off, pendingLevelUps: pending - 1 };
         // Pool leer → keine weiteren Angebote möglich; restliche Level-Ups verfallen.
       }
       // Nach der Perk-Wahl: war ein Durchlauf-Ende fällig (#36), weiter in die Ansage-Phase, sonst play.
       const phase = state.predictionDue ? "prediction" : "play";
-      return { ...state, deck, perks, speedPct, shield, phase, offer: null, pendingLevelUps: 0 };
+      return { ...state, deck, kingBoosted, perks, speedPct, shield, phase, offer: null, pendingLevelUps: 0 };
     }
 
     default:

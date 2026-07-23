@@ -52,6 +52,18 @@ export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendarie
 export const L4_CRIT_STEP = 0.01;  // L4 Kritische Masse: +1 pp Crit-Chance je Crit
 export const L4_CRIT_CAP  = 0.30;  // L4  … dauerhaft gedeckelt bei +30 pp
 
+// Neue Legendaries (#71 Phase 3) [TUNING]
+export const KINGMAKER_THRESHOLD = 13; // L7 Königsmacher: ab diesem (permanenten) Wert …
+export const KINGMAKER_BONUS     = 2;  // …          … erhält eine Karte einmalig dauerhaft +2
+export const FATE_CARD_BONUS     = 8;  // L8 Schicksalsmaschine: Wert-Bonus auf Karten des Schicksalswerts (je Durchlauf)
+export const FATE_SCORE_MULT     = 2;  // L8 …          … und ×2 Score bei Sieg mit einer solchen Karte
+export const BLOOD_SACRIFICE     = 100;  // L9 Blutvertrag: Leben-Opfer je Durchlauf (nur bei >100 Leben → kann nicht töten)
+export const BLOOD_SCORE_STEP    = 0.20; // L9 …          … dafür je Stapel +20 % Score …
+export const BLOOD_MAX_STACKS    = 5;    // L9 …          … max 5 Stapel (+100 %)
+export const CHAIN_MAX_STAGES    = 3;    // L10 Kettenreaktion: max Zusatz-Crit-Stufen (Chance = halbe finale Crit-Chance)
+export const ZEITRAFFER_SCORE_STEP = 0.10; // L11 Zeitraffer: je vollem Durchlauf +10 % Score …
+export const ZEITRAFFER_MAX_STACKS = 5;    // L11 …          … max +50 %; Tempo-Boni ×2 auf reale Speed (App)
+
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
 

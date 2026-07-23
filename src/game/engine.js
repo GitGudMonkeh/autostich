@@ -54,6 +54,7 @@ export function resolveTrick(state, rng = Math.random) {
     recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich
     overStreak = 0, // #71 Überzahl: effektive Serie für Serien-Effekte (klare Siege zählen doppelt)
     rampTempo = 0, calmTricks = 0, tempTempo = 0, // #71 Tempo: Hochlauf (Rampe) / Ruhe vor dem Sturm (Burst) / effektives Temp-Tempo
+    fateValue = null, bloodStacks = 0, zeitrafferStacks = 0, // #71 Legendaries: Schicksalsmaschine / Blutvertrag / Zeitraffer
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
     // Ansage-System (#36)
     cycleWins = 0, cycleBaseScore = 0, prediction = null, lastPrediction = null,
@@ -89,6 +90,7 @@ export function resolveTrick(state, rng = Math.random) {
     sinceWin, // #71 Durchbruch: Stiche ohne Sieg (Stand VOR diesem Stich)
     lossStreak, // #71 Revanche: aufeinanderfolgende Niederlagen (Stand VOR diesem Stich)
     ascChain, // #71 Perfekte Folge
+    fateValue, // #71 Schicksalsmaschine: cardBonus vergleicht pValueBase mit dem Schicksalswert
     life, maxLife, // L3 „Letztes Aufbäumen": cardBonus prüft das Leben-Verhältnis VOR der Auflösung
   };
   const pValue = effectivePlayerValue(pCard.value, perks, ctx);
@@ -121,7 +123,8 @@ export function resolveTrick(state, rng = Math.random) {
     const wctx = { winValue: pValue, margin: pValue - oValue, winStreak: serieStreak, wins, trickNo, posInCycle: pos, speedPct: state.speedPct || 0,
                    lastWinValue, altLen, // #71: Präzision (Vergleich mit letztem Siegwert) / Wechselspiel
                    critFollowArmed, misfireBonus, weaknessArmed, // #71 Crit-Historie: Stand VOR diesem Sieg (feed critChance-Hooks)
-                   suitStreak, recentWinCount }; // #71 Farbserie / Volles Haus
+                   suitStreak, recentWinCount, // #71 Farbserie / Volles Haus
+                   baseValue: pCard.value, fateValue, bloodStacks, zeitrafferStacks }; // #71 Legendaries: Schicksalsmaschine / Blutvertrag / Zeitraffer
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
     // Score: Basis-Serien-Mult (#39, immer) × Perk-Multiplikatoren × Tempo, DANN additive Boni (D3/D5), DANN Crit.
     // #71 Hochlauf/Ruhe: temporäres Tempo zählt zusätzlich zum permanenten speedPct für den Tempo-Score.
@@ -136,6 +139,12 @@ export function resolveTrick(state, rng = Math.random) {
     if (isCrit && ownsFlag(perks, "superCrit") && rawCrit > 1) {
       const excess = Math.min(rawCrit - 1, 1);
       if (rng() < excess) { superCrit = true; critMultiplier *= C.SUPERCRIT_MULT_FACTOR; }
+    }
+    // #71 Kettenreaktion (L10): nach einem Crit erneute Würfe mit HALBER finaler Crit-Chance; je Treffer
+    // verdoppelt sich der Crit-Faktor (×2→×4→×8→×16), max 3 Zusatzstufen. Bricht beim ersten Fehlwurf ab.
+    if (isCrit && ownsFlag(perks, "chainCrit")) {
+      const chainChance = critChance / 2;
+      for (let i = 0; i < C.CHAIN_MAX_STAGES; i++) { if (rng() < chainChance) critMultiplier *= 2; else break; }
     }
     // #71 Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
     critFollowArmed = isCrit;                                        // Crit-Folge: nur ein Crit rüstet den nächsten Sieg
@@ -235,6 +244,7 @@ export function resolveTrick(state, rng = Math.random) {
       critFollowArmed, misfireBonus, weaknessArmed, cleanStreak, notfallUsed,
       ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
       overStreak, rampTempo, calmTricks, tempTempo,
+      fateValue, bloodStacks, zeitrafferStacks,
       lastTrick, phase: "gameover",
     };
   }
@@ -249,6 +259,18 @@ export function resolveTrick(state, rng = Math.random) {
     if (ch > 0) life = Math.min(maxLife, life + ch);
     // #71 Opfergabe (C9): zu Beginn jedes Durchlaufs −30 Leben (kann nicht töten → min 1); +20 % Score via scoreMult.
     if (ownsFlag(perks, "sacrificeCycle")) life = Math.max(1, life - C.SACRIFICE_LIFE);
+    // #71 Blutvertrag (L9): je Durchlauf 100 Leben opfern → dauerhaft +20 % Score (max 5×). Nur bei >100 Leben (kann nicht töten).
+    if (ownsFlag(perks, "bloodPact") && life > C.BLOOD_SACRIFICE && bloodStacks < C.BLOOD_MAX_STACKS) {
+      life -= C.BLOOD_SACRIFICE; bloodStacks += 1;
+    }
+    // #71 Zeitraffer (L11): je vollem Durchlauf +10 % Score (max +50 %); reale Speed ×2 läuft in App.jsx.
+    if (ownsFlag(perks, "zeitraffer") && zeitrafferStacks < C.ZEITRAFFER_MAX_STACKS) zeitrafferStacks += 1;
+    // #71 Schicksalsmaschine (L8): einen aktuell vorhandenen Kartenwert zufällig bestimmen (Deck-Werte).
+    // rng-Zug NUR bei gehaltenem Perk → Determinismus/rng-Reihenfolge für andere Builds unberührt.
+    if (ownsFlag(perks, "schicksal")) {
+      const vals = [...new Set(deck.map((c) => c.value))];
+      fateValue = vals.length ? vals[Math.floor(rng() * vals.length)] : null;
+    }
     notfallUsed = false; // #71 Notfallration (C10): 1× je Durchlauf → beim Durchlauf-Wechsel zurücksetzen
     shield = perks.reduce((m, id) => Math.max(m, PERK_DEFS[id].shieldPerCycle || 0), 0); // C5: Schild je Durchlauf (kein Stapeln)
     if (prediction != null) { // ab dem 2. Durchlauf: Ansage auswerten
@@ -299,6 +321,7 @@ export function resolveTrick(state, rng = Math.random) {
     critFollowArmed, misfireBonus, weaknessArmed, cleanStreak, notfallUsed,
     ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
     overStreak, rampTempo, calmTricks, tempTempo,
+    fateValue, bloodStacks, zeitrafferStacks,
     lastTrick, phase,
   };
 }

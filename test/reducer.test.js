@@ -40,6 +40,25 @@ describe("Reducer", () => {
     expect(reducer(s0, { type: "PICK_PERK", perkId: "D5", rng })).toBe(s0);
   });
 
+  it("L7 Königsmacher (#71): Karten ≥13 einmalig +2 — beim Pick und nach späteren Aufwertungen", () => {
+    const deck = [
+      { id: "A", suit: "R", baseRank: 0, value: 13 },
+      { id: "B", suit: "R", baseRank: 1, value: 11 },
+      { id: "C", suit: "R", baseRank: 2, value: 1 },
+    ];
+    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L7"], deck, perks: [], level: 5, pendingLevelUps: 0 };
+    s = reducer(s, { type: "PICK_PERK", perkId: "L7", rng: makeRng(1) });
+    expect(s.deck.find((c) => c.id === "A").value).toBe(15); // 13 → +2
+    expect(s.deck.find((c) => c.id === "B").value).toBe(11); // <13 → unverändert
+    expect(s.kingBoosted).toEqual(["A"]);
+    // Spätere Aufwertung (L1 „Überladung": alle +2) hebt B auf 13 → Königsmacher +2 → 15; A schon geboostet.
+    s = { ...s, phase: "levelup", offer: ["L1"], pendingLevelUps: 0 };
+    s = reducer(s, { type: "PICK_PERK", perkId: "L1", rng: makeRng(1) });
+    expect(s.deck.find((c) => c.id === "B").value).toBe(15); // 11 +2(L1)=13 → +2(König)
+    expect(s.deck.find((c) => c.id === "A").value).toBe(17); // 15 +2(L1)=17, kein Doppel-Boost
+    expect(new Set(s.kingBoosted)).toEqual(new Set(["A", "B"]));
+  });
+
   it("RESET beginnt einen frischen Lauf", () => {
     const dirty = { ...initialState(makeRng(1)), score: 999, level: 8, perks: ["A1", "D1"] };
     const fresh = reducer(dirty, { type: "RESET", rng });
