@@ -104,3 +104,37 @@ describe("END_RUN — Beenden → Endscreen", () => {
     expect(reducer(over, { type: "END_RUN" })).toBe(over);
   });
 });
+
+describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
+  const LR = "SK_LIGHTNING_01";
+  const skillState = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", skillOffer: [LR], ...over });
+
+  it("PICK_SKILL fügt den Skill hinzu, aktiviert den Blitz-Archetyp und kehrt in play zurück", () => {
+    const s = reducer(skillState(), { type: "PICK_SKILL", skillId: LR, rng });
+    expect(s.phase).toBe("play");
+    expect(s.skillOffer).toBeNull();
+    expect(s.skills).toEqual([LR]);
+    expect(s.lightning.active).toBe(true);
+    expect(s.activeArchetypes).toEqual(["lightning"]);
+  });
+
+  it("PICK_SKILL ignoriert Skills außerhalb des Angebots und bereits gehaltene", () => {
+    const s0 = skillState();
+    expect(reducer(s0, { type: "PICK_SKILL", skillId: "SK_UNKNOWN", rng })).toBe(s0);
+    const held = skillState({ skills: [LR], lightning: { active: true, charge: 0, maxCharge: 10 } });
+    expect(reducer(held, { type: "PICK_SKILL", skillId: LR, rng })).toBe(held);
+  });
+
+  it("DECLINE_SKILL tauscht das Skill-Angebot gegen ein Perk-Angebot (Runde nicht verschwendet)", () => {
+    const s = reducer(skillState(), { type: "DECLINE_SKILL", rng });
+    expect(s.phase).toBe("levelup");
+    expect(s.skillOffer).toBeNull();
+    expect(s.offer).toHaveLength(3);
+  });
+
+  it("PICK_SKILL/DECLINE_SKILL sind außerhalb der Skill-Auswahl wirkungslos", () => {
+    const play = initialState(makeRng(1)); // phase play, kein skillOffer
+    expect(reducer(play, { type: "PICK_SKILL", skillId: LR, rng })).toBe(play);
+    expect(reducer(play, { type: "DECLINE_SKILL", rng })).toBe(play);
+  });
+});

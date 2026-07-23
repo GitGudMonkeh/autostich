@@ -10,6 +10,7 @@ import { Battlefield } from "./ui/Battlefield.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
+import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
@@ -155,6 +156,9 @@ export function Autostich() {
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun läuft über den gameover-Effekt
   const pick = (id) => dispatch({ type: "PICK_PERK", perkId: id, rng: Math.random });
+  // Skill-Auswahl (jede 3. Runde): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
+  const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
+  const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
@@ -293,6 +297,9 @@ export function Autostich() {
 
       {state.phase === "levelup" && state.offer && (
         <PerkSelect offer={state.offer} onPick={pick} perks={state.perks} deck={state.deck} state={state} />
+      )}
+      {state.phase === "levelup" && state.skillOffer && (
+        <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} skills={state.skills} state={state} />
       )}
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}

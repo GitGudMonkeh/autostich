@@ -547,3 +547,57 @@ describe("Neue Legendaries — Engine (#71 Phase 3)", () => {
     expect(resolveTrick(scenario(12, 0, { perks: ["L11"], zeitrafferStacks: 3 }), rng).lastTrick.gained).toBeCloseTo(132.6); // 100×1,02×1,3
   });
 });
+
+describe("Blitz-Archetyp — Engine (Stufe A)", () => {
+  const LR = "SK_LIGHTNING_01";
+  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, ...over });
+
+  it("Crit-Basis: aktiver Blitz + 1 Skill → Sockel +5 pp + 5 pp/Skill = 10 % Crit-Chance", () => {
+    const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit() }), rng);
+    expect(s.lastTrick.critChance).toBeCloseTo(0.10);
+  });
+
+  it("Crit mit Blitzableiter: +2 Ladung (Basis 1 + Skill 1) und +50 in der multiplizierten Basis", () => {
+    // D9 garantiert den Crit beim 10. Sieg. scoreBase = (100 + 50) × streakBaseMult(1)=1,02 = 153, ×2 (Crit) = 306.
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR], lightning: lit() }), rng);
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.lightning.charge).toBe(2);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(153);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(306);
+  });
+
+  it("ohne Crit: keine Ladung, kein Crit-Flat", () => {
+    const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit() }), () => 0.99); // Wurf schlägt nie an
+    expect(s.lastTrick.isCrit).toBe(false);
+    expect(s.lightning.charge).toBe(0);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(102); // 100 × 1,02, kein +50
+  });
+
+  it("Ladung deckelt bei maxCharge (10)", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR], lightning: lit({ charge: 9 }) }), rng);
+    expect(s.lightning.charge).toBe(10);
+  });
+
+  it("inaktiver Archetyp: Crit erzeugt keine Ladung und keine Crit-Basis", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9 }), rng); // lightning default inaktiv
+    expect(s.lastTrick.isCrit).toBe(true);         // D9-Garantie greift
+    expect(s.lightning.charge).toBe(0);            // inaktiv → keine Ladung
+    expect(s.lastTrick.critChance).toBeCloseTo(0); // keine Crit-Basis
+  });
+
+  it("Skill-Auswahl jede 3. Runde, sonst Perk; voller Skill-Pool fällt auf Perk zurück", () => {
+    const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, life: 1000 }), rng); // → cycle 3
+    expect(skillRound.phase).toBe("levelup");
+    expect(skillRound.skillOffer).toHaveLength(1); // nur Blitzableiter im Pool (Stufe A)
+    expect(skillRound.offer).toBeNull();
+
+    const perkRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1, life: 1000 }), rng); // → cycle 2
+    expect(perkRound.skillOffer).toBeNull();
+    expect(perkRound.offer).toHaveLength(3);
+
+    // Skill schon gehalten → Skill-Pool leer → Perk-Angebot (Runde nicht verschwendet).
+    const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, life: 1000, skills: [LR] }), rng);
+    expect(owned.skillOffer).toBeNull();
+    expect(owned.offer).toHaveLength(3);
+  });
+});

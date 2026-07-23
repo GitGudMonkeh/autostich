@@ -1,0 +1,73 @@
+import { SKILL_DEFS } from "../game/skills.js";
+import { SKILL_SLOTS } from "../game/constants.js";
+
+// Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
+const LIGHT = "#8a7de0";
+
+/* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint jede 3. Runde STATT eines Perks.
+   Seltene, regelverändernde Motoren. Ablehnen → stattdessen ein Perk (Runde nie verschwendet).
+   Stufe A: nur der Blitz-Pool; Slot-Ersetzung greift erst mit mehr Skills (Datenmodell steht). */
+export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} }) {
+  const held = skills.map((id) => SKILL_DEFS[id]).filter(Boolean);
+  return (
+    <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
+      <div className="w-full max-w-3xl rounded-2xl p-6 max-h-[92vh] overflow-y-auto" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
+        <div className="text-center mb-1">
+          <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Runde {(state.cycle || 0) + 1}</div>
+          <h2 className="text-xl font-bold mt-1">Wähle einen Skill</h2>
+          <p className="text-xs opacity-55 mt-1">
+            Skills sind seltene, regelverändernde Motoren — {skills.length}/{SKILL_SLOTS} Slots belegt.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-3 gap-3 mt-5">
+          {offer.map((id) => {
+            const s = SKILL_DEFS[id];
+            return (
+              <button
+                key={id}
+                onClick={() => onPick(id)}
+                className="text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5"
+                style={{ background: "#20202a", border: `1px solid ${LIGHT}88`, boxShadow: `0 0 14px ${LIGHT}33` }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                    style={{ background: `${LIGHT}22`, color: LIGHT, border: `1px solid ${LIGHT}88` }}>
+                    ⚡ BLITZ
+                  </span>
+                </div>
+                <div className="font-bold" style={{ color: LIGHT }}>{s.name}</div>
+                <div className="text-sm opacity-75 leading-snug">{s.desc}</div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="text-center mt-5">
+          <button
+            onClick={onDecline}
+            className="text-xs px-4 py-2 rounded-lg transition-all hover:opacity-80"
+            style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
+          >
+            Ablehnen → stattdessen ein Perk
+          </button>
+        </div>
+
+        {held.length > 0 && (
+          <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
+              Deine Skills — {held.length}/{SKILL_SLOTS}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {held.map((s) => (
+                <span key={s.id} className="text-xs px-2 py-1 rounded" style={{ background: `${LIGHT}1a`, color: LIGHT, border: `1px solid ${LIGHT}55` }}>
+                  ⚡ {s.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

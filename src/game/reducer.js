@@ -1,5 +1,6 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer } from "./perks.js";
+import { archetypeOf, initLightning } from "./skills.js";
 import { resolveTrick } from "./engine.js";
 import { START_LIFE, PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -31,6 +32,8 @@ export function initialState(rng = Math.random) {
     overStreak: 0, rampTempo: 0, calmTricks: 0, tempTempo: 0, // #71 Phase 2e: Überzahl / Hochlauf / Ruhe vor dem Sturm
     fateValue: null, bloodStacks: 0, zeitrafferStacks: 0, kingBoosted: [], // #71 Phase 3 Legendaries: Schicksalsmaschine / Blutvertrag / Zeitraffer / Königsmacher
     perks: [], offer: null,
+    // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
+    skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
     speedPct: 0,
     shield: 0,
     tieArmed: false,
@@ -87,6 +90,36 @@ export function reducer(state, action) {
       const shield = Math.max(state.shield || 0, shieldGrant);
       // Nach der Wahl geht es direkt weiter — neu gemischt wurde schon beim Durchlauf-Ende (Engine).
       return { ...state, deck, kingBoosted, perks, speedPct, shield, phase: "play", offer: null };
+    }
+
+    // Skill-Auswahl (jede SKILL_EVERY_CYCLES-te Runde). Hinzufügen oder — bei vollen Slots — ersetzen.
+    // Der erste Skill eines Archetyps schaltet dessen System frei (lightning.active).
+    case "PICK_SKILL": {
+      if (state.phase !== "levelup" || !state.skillOffer) return state;
+      const { skillId, replaceId } = action;
+      if (!state.skillOffer.includes(skillId) || state.skills.includes(skillId)) return state;
+      let skills;
+      if (state.skills.length < C.SKILL_SLOTS) {
+        skills = [...state.skills, skillId];                       // freier Slot → hinzufügen
+      } else {
+        if (!replaceId || !state.skills.includes(replaceId)) return state; // volle Slots → gültiges Ersetzungsziel nötig
+        skills = state.skills.map((id) => (id === replaceId ? skillId : id));
+      }
+      const arch = archetypeOf(skillId);
+      let activeArchetypes = state.activeArchetypes || [];
+      let lightning = state.lightning;
+      if (arch === "lightning" && !lightning.active) lightning = { ...lightning, active: true };
+      if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
+      return { ...state, skills, activeArchetypes, lightning, phase: "play", skillOffer: null };
+    }
+
+    // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
+    case "DECLINE_SKILL": {
+      if (state.phase !== "levelup" || !state.skillOffer) return state;
+      const off = buildOffer(state.perks, action.rng, PERKS_OFFERED);
+      return off.length > 0
+        ? { ...state, skillOffer: null, offer: off }        // → Perk-Auswahl
+        : { ...state, skillOffer: null, phase: "play" };    // Perk-Pool leer → weiterspielen
     }
 
     default:

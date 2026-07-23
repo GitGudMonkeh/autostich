@@ -63,6 +63,14 @@ export const CHAIN_MAX_STAGES    = 3;    // L10 Kettenreaktion: max Zusatz-Crit-
 export const ZEITRAFFER_SCORE_STEP = 0.10; // L11 Zeitraffer: je vollem Durchlauf +10 % Score …
 export const ZEITRAFFER_MAX_STACKS = 5;    // L11 …          … max +50 %; Tempo-Boni ×2 auf reale Speed (App)
 
+// Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
+export const SKILL_SLOTS       = 4;    // max gleichzeitig gehaltene Skills
+export const SKILLS_OFFERED     = 3;   // Skills je Skill-Runde-Auswahl
+export const SKILL_EVERY_CYCLES = 3;   // jede N-te Runde ist eine Skill-Runde (3, 6, 9 …), sonst Perk
+export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
+export const LIGHTNING_CRIT_PER_SKILL = 0.05; // Blitz: je gehaltenem Blitz-Skill
+export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
+
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
 

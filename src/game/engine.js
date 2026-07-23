@@ -1,6 +1,7 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer, critChanceRawFor, comboMultFor, tempoScoreMultFor, critMultiplierFor, streakBaseMult } from "./perks.js";
+import { skillSum, lightningCritRaw, addCharge, buildSkillOffer } from "./skills.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -56,6 +57,7 @@ export function resolveTrick(state, rng = Math.random) {
     rampTempo = 0, calmTricks = 0, tempTempo = 0, // #71 Tempo: Hochlauf (Rampe) / Ruhe vor dem Sturm (Burst) / effektives Temp-Tempo
     fateValue = null, bloodStacks = 0, zeitrafferStacks = 0, // #71 Legendaries: Schicksalsmaschine / Blutvertrag / Zeitraffer
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
+    skills = [], skillOffer = null, lightning = null, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
   } = state;
 
   const pCard = deck[playerOrder[pos]];
@@ -122,16 +124,11 @@ export function resolveTrick(state, rng = Math.random) {
                    suitStreak, recentWinCount, // #71 Farbserie / Volles Haus
                    baseValue: pCard.value, fateValue, bloodStacks, zeitrafferStacks }; // #71 Legendaries: Schicksalsmaschine / Blutvertrag / Zeitraffer
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
-    // Score (globale Formel): additive Boni fließen in die BASIS und werden mitmultipliziert —
-    // (SCORE_PER_WIN + Σ scoreFlat) × Basis-Serien-Mult (#39, immer) × Perk-scoreMult × Tempo, DANN Crit.
-    // So profitieren Flats (D3/D5/B6 … und später Blitz-Flats) von Serie/scoreMult/Tempo/Crit statt nur vom Crit —
-    // Voraussetzung für das geplante Aufstellungs-System (Formations-Multiplikatoren tragen auch die Flats).
-    // #71 Hochlauf/Ruhe: temporäres Tempo zählt zusätzlich zum permanenten speedPct für den Tempo-Score.
-    const tempoScoreMult = tempoScoreMultFor(perks, (state.speedPct || 0) + curTempTempo); // L6 „Raserei": Tempo-Faktor ×2
-    const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx);
-    scoreBeforeCrit = scoreBase * streakBaseMult(serieStreak) * prodHook(perks, "scoreMult", wctx) * tempoScoreMult;
-    const rawCrit = critChanceRawFor(perks, wctx, legendaryCritBonus); // ungeklemmt (für Überschusskrit)
-    critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt), inkl. L4/L5
+    // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.
+    // Der Crit-Wurf verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift).
+    // Blitz-Crit-Basis (Abschnitt 2a) wird additiv zugerechnet, unabhängig von L5-critChanceMult.
+    const rawCrit = critChanceRawFor(perks, wctx, legendaryCritBonus) + lightningCritRaw(lightning, skills); // ungeklemmt (Überschusskrit)
+    critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt), inkl. L4/L5 + Blitz-Basis
     critMultiplier = critMultiplierFor(perks, wctx);             // L5 „Jackpot": ×4 überschreibt Basis ×2
     isCrit = rollCrit(critChance, ownsGuaranteedCrit(perks, wctx), rng);
     // #71 Überschusskrit: Crit-Chance über 100 % → Chance (= Überschuss) auf einen Super-Crit (×1,5 auf den Crit-Faktor).
@@ -145,13 +142,25 @@ export function resolveTrick(state, rng = Math.random) {
       const chainChance = critChance / 2;
       for (let i = 0; i < C.CHAIN_MAX_STAGES; i++) { if (rng() < chainChance) critMultiplier *= 2; else break; }
     }
+    // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
+    // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
+    // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult × Tempo, DANN Crit-Faktor.
+    // #71 Hochlauf/Ruhe: temporäres Tempo zählt zusätzlich zum permanenten speedPct für den Tempo-Score.
+    const tempoScoreMult = tempoScoreMultFor(perks, (state.speedPct || 0) + curTempTempo); // L6 „Raserei": Tempo-Faktor ×2
+    const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
+                      + (isCrit ? skillSum(skills, "scoreFlatOnCrit", wctx) : 0);
+    scoreBeforeCrit = scoreBase * streakBaseMult(serieStreak) * prodHook(perks, "scoreMult", wctx) * tempoScoreMult;
+    gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
+    critBonus = gained - scoreBeforeCrit;
+    score += gained;
+    // Blitz: Ladung bei Crit — Basis +1 (solange Archetyp aktiv) plus Skill-Boni (Blitzableiter +1). Gedeckelt (max 10).
+    if (lightning && lightning.active && isCrit) {
+      lightning = addCharge(lightning, 1 + skillSum(skills, "chargeOnCrit", wctx));
+    }
     // #71 Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
     critFollowArmed = isCrit;                                        // Crit-Folge: nur ein Crit rüstet den nächsten Sieg
     misfireBonus = isCrit ? 0 : Math.min(misfireBonus + 0.03, 0.30); // Fehlzündung: +3 pp je Sieg ohne Crit, Crit setzt zurück
     weaknessArmed = false;                                           // Schwachstellenanalyse: durch diesen Sieg verbraucht
-    gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
-    critBonus = gained - scoreBeforeCrit;
-    score += gained;
     if (isCrit) {
       crits += 1; critBonusScore += critBonus;
       // L4 „Kritische Masse": Bonus NACH dem Wurf erhöhen (nicht rückwirkend), dauerhaft gedeckelt.
@@ -252,6 +261,7 @@ export function resolveTrick(state, rng = Math.random) {
   pos += 1;
   let phase = "play";
   let newOffer = offer;
+  let newSkillOffer = skillOffer;
   if (pos >= C.TRICKS_PER_CYCLE) {
     cycle += 1;
     const ch = sumHook(perks, "healOnCycle", { deck }); // C7 Überlebensvorteil liest das Deck (Karten ≥13)
@@ -276,9 +286,16 @@ export function resolveTrick(state, rng = Math.random) {
     playerOrder = shuffledOrder(deck.length, rng);
     oppOrder = shuffledOrder(oppDeck.length, rng);
     pos = 0;
-    // Perk-Auswahl nach jeder Runde (kein Level-Gate — alle Seltenheiten sofort). Pool leer → keine Pause.
-    const off = buildOffer(perks, rng, C.PERKS_OFFERED);
-    if (off.length > 0) { phase = "levelup"; newOffer = off; }
+    // Auswahl nach jeder Runde (kein Level-Gate): jede SKILL_EVERY_CYCLES-te Runde eine Skill-Auswahl,
+    // sonst ein Perk. Leerer Skill-Pool → auf Perk-Angebot zurückfallen (Runde nie „verschwendet"). Pool leer → keine Pause.
+    if (cycle % C.SKILL_EVERY_CYCLES === 0) {
+      const soff = buildSkillOffer(skills, rng, C.SKILLS_OFFERED);
+      if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
+      else { const off = buildOffer(perks, rng, C.PERKS_OFFERED); if (off.length > 0) { phase = "levelup"; newOffer = off; } }
+    } else {
+      const off = buildOffer(perks, rng, C.PERKS_OFFERED);
+      if (off.length > 0) { phase = "levelup"; newOffer = off; }
+    }
   }
 
   return {
@@ -290,6 +307,7 @@ export function resolveTrick(state, rng = Math.random) {
     ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
     overStreak, rampTempo, calmTricks, tempTempo,
     fateValue, bloodStacks, zeitrafferStacks,
+    skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
     lastTrick, phase,
   };
 }

@@ -1,5 +1,6 @@
 import { TRICKS_PER_CYCLE } from "../game/constants.js";
-import { critChanceFor, hasCritPerk, tempoScoreMultFor, critMultiplierFor } from "../game/perks.js";
+import { critChanceRawFor, hasCritPerk, tempoScoreMultFor, critMultiplierFor } from "../game/perks.js";
+import { lightningCritRaw } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
 
 function Bar({ value, max, color, height = 8 }) {
@@ -21,7 +22,7 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, speedPct, lossSurcharge = 0, currentTraj = [], recordTraj = [] }) {
-  const { life, maxLife, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield, legendaryCritBonus = 0, tempTempo = 0 } = state;
+  const { life, maxLife, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield, legendaryCritBonus = 0, tempTempo = 0, lightning, skills = [] } = state;
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
@@ -33,11 +34,13 @@ export function StatusRail({ state, speedPct, lossSurcharge = 0, currentTraj = [
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   const tempoScoreMult = tempoScoreMultFor(perks, effTempo);
   const ownsD4 = perks.includes("D4");
-  const showCrit = hasCritPerk(perks) || (crits || 0) > 0;
+  const showCrit = hasCritPerk(perks) || (crits || 0) > 0 || !!(lightning && lightning.active);
   // Live-Crit-Chance des NÄCHSTEN Siegs: D8 nutzt die resultierende Serie (winStreak+1), analog zum
   // echten Wurf (#19). D7 ist kartenabhängig → hier ausgeblendet (winValue 0), separat als Hinweis.
   // legendaryCritBonus (L4) & L5-Halbierung fließen über denselben Helfer ein → kein Drift (#25/#33).
-  const critPct = Math.round(critChanceFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos, speedPct }, legendaryCritBonus) * 100);
+  // Blitz-Crit-Basis (lightning) fließt additiv ein — dieselbe Rechnung wie die Engine → kein Drift.
+  const critRaw = critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos, speedPct }, legendaryCritBonus) + lightningCritRaw(lightning, skills);
+  const critPct = Math.round(Math.min(1, Math.max(0, critRaw)) * 100);
   const ownsD7 = perks.includes("D7");
   const l4Pp = Math.round(legendaryCritBonus * 100); // L4-Bonus in Prozentpunkten (Anzeige)
   // L3 „Letztes Aufbäumen" aktiv? (nur wenn gehalten und Leben ≤ 25 %)
@@ -95,6 +98,16 @@ export function StatusRail({ state, speedPct, lossSurcharge = 0, currentTraj = [
         </div>
         <Bar value={remaining} max={TRICKS_PER_CYCLE} color="#5a8ade" height={6} />
       </div>
+      {/* ⚡ Ladung (Blitz-Archetyp) — nur sichtbar, sobald ein Blitz-Skill aktiv ist (docs/blitz-archetyp.md). */}
+      {lightning && lightning.active && (
+        <div className="pt-1 border-t" style={{ borderColor: "#26262e" }}>
+          <div className="flex justify-between text-xs mb-1">
+            <span className="opacity-60">⚡ Ladung{lightning.charge >= lightning.maxCharge && <span style={{ color: "#8a7de0" }}> · VOLL GELADEN</span>}</span>
+            <span className="font-bold" style={{ color: "#8a7de0" }}>{lightning.charge} / {lightning.maxCharge}</span>
+          </div>
+          <Bar value={lightning.charge} max={lightning.maxCharge} color="#8a7de0" height={8} />
+        </div>
+      )}
       {/* Tempo-Score & Crit (#19/#46). Der Gesamt-Score-Mult steht dauerhaft im Header-Chip (#37);
           hier bewusst nur der Tempo-Score-Anteil — monoton (folgt den Tempo-Perks), poppt nicht. */}
       {(tempoScoreMult > 1.001 || ownsD4 || showCrit) && (
