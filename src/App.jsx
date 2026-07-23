@@ -203,6 +203,17 @@ export function Autostich() {
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
           sichtbar (CSS), klick-durchlässig. */}
       <div className="crt-overlay" aria-hidden="true" />
+      {/* Preview-Marker — nur im Testbranch-Build (/autostich/test/), damit man die
+          Test-Page nie mit der echten Seite verwechselt. Klick-durchlässig. */}
+      {import.meta.env.VITE_PREVIEW === "1" && (
+        <div
+          className="fixed top-2 left-2 z-50 px-2 py-1 rounded text-[10px] font-bold font-pixel tracking-wide"
+          style={{ background: "#d4a63a", color: "#141419", pointerEvents: "none", boxShadow: "0 0 8px rgba(212,166,58,.6)" }}
+          aria-hidden="true"
+        >
+          TESTBRANCH
+        </div>
+      )}
       {/* Ambient-Partikel — nur unter Skin und nur auf dem Hauptscreen (Menü): dort gibt es
           offene Fläche, sodass sie ohne durchscheinende Panels sichtbar sind. Im Run bleiben
           die Panels deckend. (reduced-motion-gated in der Komponente.) */}
