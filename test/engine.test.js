@@ -191,10 +191,10 @@ describe("resolveTrick — Tempo-Score & Crit (#19)", () => {
     expect(resolveTrick(scenario(12, 0, { speedPct: 150 }), rng).score).toBeCloseTo(178.5);
   });
 
-  it("additive Boni (D5) werden NACH Multiplikatoren + Tempo addiert", () => {
-    // 10. Sieg mit D1(+15%), 100% Tempo, streakBaseMult(1)=1,02: 100×1,02×1,15×1,5 + 300 = 475,95
+  it("additive Boni (D5) fließen in die Basis und werden mitmultipliziert (globale Formel)", () => {
+    // 10. Sieg mit D1(+15%), 100% Tempo, streakBaseMult(1)=1,02: (100+300)×1,02×1,15×1,5 = 703,8
     const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D5"], speedPct: 100, wins: 9 }), rng);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(475.95);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(703.8);
   });
 
   it("Crit verdoppelt den vollen scoreBeforeCrit (inkl. Tempo + Boni)", () => {
@@ -357,7 +357,7 @@ describe("Historie-Rares — Engine (#71 Phase 2b)", () => {
     expect(resolveTrick(scenario(9, 0, { perks: ["D12"] }), rng).lastWinValue).toBe(9);
   });
   it("D13 Wechselspiel: +100, wenn ein Sieg das W/L-Muster fortsetzt (altLen ≥3)", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D13"], lastResult: "loss", altLen: 2 }), rng).lastTrick.gained).toBeCloseTo(202);
+    expect(resolveTrick(scenario(12, 0, { perks: ["D13"], lastResult: "loss", altLen: 2 }), rng).lastTrick.gained).toBeCloseTo(204); // (100+100)×1,02
     expect(resolveTrick(scenario(12, 0, { perks: ["D13"], lastResult: "win", altLen: 5 }), rng).lastTrick.gained).toBeCloseTo(102);
   });
 });
@@ -454,11 +454,11 @@ describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
     let s = scenario(12, 0, { perks: ["D17"] }); // constDeck: alles Farbe R
     s = resolveTrick(s, rng); // Serie 1 → +0
     s = resolveTrick(s, rng); // Serie 2 → +75
-    expect(s.lastTrick.gained).toBeCloseTo(100 * 1.04 + 75); // 179
+    expect(s.lastTrick.gained).toBeCloseTo((100 + 75) * 1.04); // 182 (Flat in der multiplizierten Basis)
   });
 
   it("D18 Volles Haus: ≥4 Siege im 5er-Fenster → +250", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D18"], recentResults: ["win", "win", "win", "loss"] }), rng).lastTrick.gained).toBeCloseTo(352); // 3 Vorsiege + aktueller = 4
+    expect(resolveTrick(scenario(12, 0, { perks: ["D18"], recentResults: ["win", "win", "win", "loss"] }), rng).lastTrick.gained).toBeCloseTo(357); // (100+250)×1,02 — 3 Vorsiege + aktueller = 4
     expect(resolveTrick(scenario(12, 0, { perks: ["D18"], recentResults: ["win", "win", "loss", "loss"] }), rng).lastTrick.gained).toBeCloseTo(102); // nur 3 im Fenster
   });
   it("Volles-Haus-Fenster: recentResults hält die letzten 4 Ergebnisse", () => {

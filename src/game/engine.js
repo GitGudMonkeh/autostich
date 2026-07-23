@@ -122,11 +122,14 @@ export function resolveTrick(state, rng = Math.random) {
                    suitStreak, recentWinCount, // #71 Farbserie / Volles Haus
                    baseValue: pCard.value, fateValue, bloodStacks, zeitrafferStacks }; // #71 Legendaries: Schicksalsmaschine / Blutvertrag / Zeitraffer
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
-    // Score: Basis-Serien-Mult (#39, immer) × Perk-Multiplikatoren × Tempo, DANN additive Boni (D3/D5), DANN Crit.
+    // Score (globale Formel): additive Boni fließen in die BASIS und werden mitmultipliziert —
+    // (SCORE_PER_WIN + Σ scoreFlat) × Basis-Serien-Mult (#39, immer) × Perk-scoreMult × Tempo, DANN Crit.
+    // So profitieren Flats (D3/D5/B6 … und später Blitz-Flats) von Serie/scoreMult/Tempo/Crit statt nur vom Crit —
+    // Voraussetzung für das geplante Aufstellungs-System (Formations-Multiplikatoren tragen auch die Flats).
     // #71 Hochlauf/Ruhe: temporäres Tempo zählt zusätzlich zum permanenten speedPct für den Tempo-Score.
     const tempoScoreMult = tempoScoreMultFor(perks, (state.speedPct || 0) + curTempTempo); // L6 „Raserei": Tempo-Faktor ×2
-    scoreBeforeCrit = C.SCORE_PER_WIN * streakBaseMult(serieStreak) * prodHook(perks, "scoreMult", wctx) * tempoScoreMult
-                      + sumHook(perks, "scoreFlat", wctx);
+    const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx);
+    scoreBeforeCrit = scoreBase * streakBaseMult(serieStreak) * prodHook(perks, "scoreMult", wctx) * tempoScoreMult;
     const rawCrit = critChanceRawFor(perks, wctx, legendaryCritBonus); // ungeklemmt (für Überschusskrit)
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt), inkl. L4/L5
     critMultiplier = critMultiplierFor(perks, wctx);             // L5 „Jackpot": ×4 überschreibt Basis ×2
