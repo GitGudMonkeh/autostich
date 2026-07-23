@@ -499,3 +499,40 @@ describe("Per-Durchlauf-Rares — Engine (#71 Phase 2d)", () => {
     expect(resolveTrick(scenario(13, 0, { pos: 39, perks: ["C10"], notfallUsed: true, life: 1000, maxLife: 2000 }), rng).notfallUsed).toBe(false);
   });
 });
+
+describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
+  const mk = (arr, suit = "R") => arr.map((v, i) => ({ id: `${suit}${i}`, suit, baseRank: v, value: v }));
+
+  it("B9 Perfekte Folge: aufsteigende Werte geben 0/+1/+2, Rückschritt beginnt neu", () => {
+    const deck = mk([3, 5, 7, 4]);
+    const opp = mk([0, 0, 0, 0]);
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2, 3], oppOrder: [0, 1, 2, 3], perks: ["B9"], life: 1000 };
+    const pv = [];
+    for (let i = 0; i < 4; i++) { s = resolveTrick(s, rng); pv.push(s.lastTrick.pValue); }
+    expect(pv).toEqual([3, 6, 9, 4]); // Bonus 0,1,2 dann Reset 0
+  });
+
+  it("D17 Farbserie: gleiche Farbe zählt, Farbwechsel beginnt bei 1, Niederlage bricht", () => {
+    const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }, { id: "c", suit: "B", baseRank: 12, value: 12 }];
+    const opp = mk([0, 0, 0]);
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2], oppOrder: [0, 1, 2], perks: ["D17"], life: 1000 };
+    s = resolveTrick(s, rng); expect(s.winSuitStreak).toBe(1); // R
+    s = resolveTrick(s, rng); expect(s.winSuitStreak).toBe(2); // R
+    s = resolveTrick(s, rng); expect(s.winSuitStreak).toBe(1); expect(s.winSuit).toBe("B"); // Farbwechsel
+    expect(resolveTrick(scenario(0, 12, { perks: ["D17"], winSuit: "R", winSuitStreak: 3, life: 1000 }), rng).winSuitStreak).toBe(0); // Niederlage bricht
+  });
+  it("D17: 2. Sieg gleicher Farbe gibt +75 Flat", () => {
+    let s = scenario(12, 0, { perks: ["D17"] }); // constDeck: alles Farbe R
+    s = resolveTrick(s, rng); // Serie 1 → +0
+    s = resolveTrick(s, rng); // Serie 2 → +75
+    expect(s.lastTrick.gained).toBeCloseTo(100 * 1.04 + 75); // 179
+  });
+
+  it("D18 Volles Haus: ≥4 Siege im 5er-Fenster → +250", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["D18"], recentResults: ["win", "win", "win", "loss"] }), rng).lastTrick.gained).toBeCloseTo(352); // 3 Vorsiege + aktueller = 4
+    expect(resolveTrick(scenario(12, 0, { perks: ["D18"], recentResults: ["win", "win", "loss", "loss"] }), rng).lastTrick.gained).toBeCloseTo(102); // nur 3 im Fenster
+  });
+  it("Volles-Haus-Fenster: recentResults hält die letzten 4 Ergebnisse", () => {
+    expect(resolveTrick(scenario(12, 0, { recentResults: ["loss", "win", "tie", "win"] }), rng).recentResults).toEqual(["win", "tie", "win", "win"]);
+  });
+});
