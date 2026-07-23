@@ -17,6 +17,7 @@ export async function fetchGlobalTop(limit = 10) {
 }
 
 // Lauf veröffentlichen. entry: { name, score, level, tricks, cycles }.
+// Hinweis: `level` = Rundenzahl (= cycles); die Spalte bleibt aus Kompatibilität mit der bestehenden Tabelle befüllt.
 export async function publishRun(entry) {
   const res = await fetch(REST, {
     method: "POST",
