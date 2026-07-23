@@ -59,7 +59,7 @@ function Side({ label, remaining, dealFrom, children }) {
   );
 }
 
-export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000, drainNotice = null }) {
+export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000 }) {
   const reduced = usePrefersReducedMotion();
   const t = lastTrick;
   const win = t && (t.result === "win" || t.result === "win_tie");
@@ -115,20 +115,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     if (t.trickNo === seenTrick.current) return;
     seenTrick.current = t.trickNo;
     const w = t.result === "win" || t.result === "win_tie";
-    const l = t.result === "loss";
     const dur = clamp(flipMs * 0.7, 360, 760) + 1300; // #68: nochmals länger nach oben (aufbauend auf #49)
     const critC = t.isCrit ? (t.jackpot ? JACKPOT_COLOR : CRIT_COLOR) : "#d4a63a";
     const entries = [];
-    // #68: Score, Heilung und Verlust sind eigene Floats in getrennten Zonen (Heilung wandert zu „Leben").
+    // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
     if (w && t.gained > 0)
       entries.push({ id: `s${t.trickNo}`, zone: "score", dur, seed: t.trickNo * 2,
                      text: `+${Math.round(t.gained * 10) / 10}`, color: critC });
-    if (w && t.healed > 0)
-      entries.push({ id: `h${t.trickNo}`, zone: "life", dur, seed: t.trickNo * 2 + 5,
-                     text: `+${t.healed}♥`, color: "#5ab87a" });
-    if (l && t.dmg > 0)
-      entries.push({ id: `d${t.trickNo}`, zone: "life", dur, seed: t.trickNo * 2 + 5,
-                     text: `−${t.dmg}♥`, color: "#e0605a" });
     if (!entries.length) return;
     setFloats((cur) => [...cur, ...entries].slice(-6)); // Pool gedeckelt — kein unbegrenztes Stapeln
     const ids = entries.map((e) => e.id);
@@ -148,17 +141,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
                      transform: reduced ? "translateX(-50%)" : undefined,
                      animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900)}ms ease-out forwards`) }}>
             {jackpot ? "JACKPOT" : "KRITISCH"}{reduced ? ` ×${critMultStr}` : "!"}
-          </div>
-        )}
-
-        {/* Anti-Infinity (#85): Hinweis, wenn der Zeit-Aufschlag pro Niederlage steigt —
-            non-blocking, selbst-verschwindend; reduced-motion → statisch (App räumt nach 2 s ab). */}
-        {drainNotice && (
-          <div key={`drainnotice-${drainNotice.cycle}`} className="pointer-events-none absolute left-1/2 top-0 font-bold whitespace-nowrap z-20"
-            style={{ fontSize: 14, color: "#e0605a", textShadow: "0 0 10px #e0605a99",
-                     transform: reduced ? "translateX(-50%)" : undefined,
-                     animation: fx("as-notice 2000ms ease-out forwards") }}>
-            ⏳ Niederlagen jetzt +{drainNotice.surcharge}♥
           </div>
         )}
 

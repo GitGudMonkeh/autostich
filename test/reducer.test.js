@@ -5,10 +5,10 @@ import { reducer, initialState, menuState } from "../src/game/reducer.js";
 const rng = makeRng(1);
 
 describe("Reducer", () => {
-  it("initialState: play-Phase, volle Leben, leerer Build (Basis-State)", () => {
+  it("initialState: play-Phase, kein Leben mehr (V2), leerer Build (Basis-State)", () => {
     const s = initialState(makeRng(1));
     expect(s.phase).toBe("play");
-    expect(s.life).toBe(2000);
+    expect(s.life).toBeUndefined(); // V2: Leben restlos entfernt
     expect(s.perks).toEqual([]);
     expect(s.deck).toHaveLength(40);
   });
@@ -20,17 +20,7 @@ describe("Reducer", () => {
     expect(s1.phase).toBe("play");
     expect(s1.perks).toEqual(["A1"]);
     expect(s1.offer).toBeNull();
-    expect(s1.deck.filter((c) => c.value === 5)).toHaveLength(0); // A1 hat 5→7 gemacht
-  });
-
-  it("PICK_PERK für Tempo-Perk erhöht speedPct", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["E2", "A1", "C1"] };
-    expect(reducer(s0, { type: "PICK_PERK", perkId: "E2", rng }).speedPct).toBe(30);
-  });
-
-  it("PICK_PERK für C5 gewährt sofort 50 Schildpunkte", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["C5", "A1", "D1"] };
-    expect(reducer(s0, { type: "PICK_PERK", perkId: "C5", rng }).shield).toBe(50);
+    expect(s1.deck.filter((c) => c.value === 5)).toHaveLength(0); // A1 hat die 5er hochgezogen
   });
 
   it("PICK_PERK ignoriert Perks außerhalb des Angebots", () => {

@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
-import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE, lifeDrainAt } from "./game/constants.js";
+import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE } from "./game/constants.js";
 import { baseScoreMultFor } from "./game/perks.js";
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, loadOptions, saveOptions, loadUsername, saveUsername } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
@@ -34,7 +34,6 @@ export function Autostich() {
   const [myEntry, setMyEntry] = useState(null);  // zuletzt gewerteter Lauf → Hervorhebung im Global-Board
   const [pubToken, setPubToken] = useState(0);    // bumpt nach erfolgreichem Submit → Board lädt neu
   function onSaveUsername(name) { saveUsername(name); setUsername(name); setShowUsername(false); }
-  const [drainNotice, setDrainNotice] = useState(null); // kurzer Float beim periodischen Zeit-Abzug (#59)
   const [multPulse, setMultPulse] = useState(0);      // Zähler: bumpt bei Anstieg des Score-Mults → Puls (#37)
 
   // GEIST — Rekord-Trajektorie (Score je GHOST_STEP Stiche) + laufende Reihe
@@ -48,18 +47,13 @@ export function Autostich() {
   // RUN-TIMER (#10) — akkumulierte aktive Zeit; friert bei Pause / außerhalb „play" ein (#9)
   const timeBase = useRef(0);
   const segStart = useRef(null);
-  const lastDrainCycle = useRef(0); // zuletzt gemeldeter Durchlauf für den Aufschlag-Hinweis (#87)
   const prevMult = useRef(1);     // vorheriger Score-Mult (Puls nur bei Anstieg, #37)
   // Offenes Optionen-Overlay friert den Lauf ein (wie andere Overlays) — ohne den
   // Nutzer-Pause-Toggle zu verändern: beim Schließen läuft es im vorherigen Zustand weiter.
   const active = state.phase === "play" && !paused && !showOptions;
-  // Effektive Flip-Zeit: Basis / (1+Speed) / Turbo (1×/2×/3×). Beschleunigt nur Ablauf + Animation,
-  // NICHT den Basis-Score (permanenter speedPct → Tempo-Score bleibt separat). #71: temporäres Tempo
-  // (Hochlauf/Ruhe, state.tempTempo) beschleunigt hier zusätzlich; L11 Zeitraffer verdoppelt die Tempo-Boni
-  // NUR für die reale Geschwindigkeit (der Tempo-Score bleibt einfach — Engine).
-  const zeitraffer = (state.perks || []).includes("L11");
-  const effSpeedPct = ((state.speedPct || 0) + (state.tempTempo || 0)) * (zeitraffer ? 2 : 1);
-  const flipMs = (BASE_FLIP_MS / (1 + effSpeedPct / 100)) / speedMult; // #55: speedPct fehlt im Menü → NaN vermeiden
+  // Effektive Flip-Zeit: Basis / Turbo (1×/2×/3×/4×). V2 (§22.1): Tempo ist score-neutral — der
+  // Regler beschleunigt nur Ablauf + Animation und beeinflusst nie Score/RNG/Regeln.
+  const flipMs = BASE_FLIP_MS / speedMult;
 
   useEffect(() => {
     const g = loadGhost();
@@ -148,8 +142,6 @@ export function Autostich() {
     // null → elapsedMs=0 → Timer/Anti-Infinity (#59) fröre ein (#50). Der ==null-Guard im Effekt
     // verhindert Doppel-Setzen bei echten false→true-Einstiegen (Menü→Play, GameOver→Neu).
     segStart.current = Date.now();
-    lastDrainCycle.current = 0;
-    setDrainNotice(null);
     setPaused(false);
     setIsRecord(false);
     dispatch({ type: "START_RUN", rng: Math.random });
@@ -174,26 +166,11 @@ export function Autostich() {
 
   const best = Math.max(recordTotal.current, highscores[0]?.score || 0);
   const elapsedMs = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
-  // Anti-Infinity (#87): der Aufschlag pro Niederlage hängt am Deck-Durchlauf (cycle), NICHT an der Echtzeit
-  // → Tempo/Turbo ändert die Score-Ausbeute nicht mehr. Die Engine rechnet lifeDrainAt(cycle) selbst; hier nur
-  // die Anzeige + ein kurzer Hinweis-Float, wenn der Aufschlag beim Durchlauf-Wechsel steigt.
-  const lossSurcharge = lifeDrainAt(state.cycle || 0);
-  useEffect(() => {
-    const cyc = state.cycle || 0;
-    if (state.phase !== "play" || cyc <= lastDrainCycle.current) return;
-    lastDrainCycle.current = cyc;
-    if (lifeDrainAt(cyc) > lifeDrainAt(cyc - 1)) { // nur melden, wenn der Aufschlag tatsächlich hochgeht
-      setDrainNotice({ cycle: cyc, surcharge: lifeDrainAt(cyc) });
-      const id = setTimeout(() => setDrainNotice(null), 2000);
-      return () => clearTimeout(id);
-    }
-  }, [state.cycle, state.phase]);
 
   // Prominenter Score-Multiplikator-Chip (#37): geteilte Quelle mit der StatusRail (kein Drift).
   // perks || [] — im Menü (state = { phase:"menu" }) fehlen die Felder; Defaults greifen.
   const baseScoreMult = baseScoreMultFor(state.perks || [], {
     winStreak: state.winStreak, wins: state.wins, trickNo: state.trickNo, pos: state.pos,
-    speedPct: (state.speedPct || 0) + (state.tempTempo || 0), // #83: temporäres Tempo (Hochlauf/Ruhe) mitzählen
   });
   const multHot = baseScoreMult > 1.001; // >1 → Gold; ×1,00 → gedämpft
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
@@ -286,11 +263,11 @@ export function Autostich() {
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
-              <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} drainNotice={drainNotice} />
+              <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} />
               <ChargeBar lightning={state.lightning} />
               <BuildPanel perks={state.perks} skills={state.skills} />
             </div>
-            <StatusRail state={state} speedPct={state.speedPct} lossSurcharge={lossSurcharge} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
+            <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>
 
           {/* Chronik — Deck-Werte-Histogramm, volle Breite ganz unten (#28) */}

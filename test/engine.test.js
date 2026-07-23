@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
-import { lifeDrainAt, TRICKS_PER_CYCLE } from "../src/game/constants.js";
+import { MAX_CYCLES } from "../src/game/constants.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
 const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
@@ -17,7 +17,7 @@ function scenario(pVal, oVal, over = {}) {
 }
 const rng = makeRng(9);
 
-describe("resolveTrick — Grundausgänge", () => {
+describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
   it("Sieg: +Score, +Sieg, Initiative Spieler", () => {
     const s = resolveTrick(scenario(12, 0), rng);
     expect(s.wins).toBe(1);
@@ -28,33 +28,26 @@ describe("resolveTrick — Grundausgänge", () => {
     expect(s.initiative).toBe("player");
   });
 
-  it("Niederlage: -2 Leben (Basis, Durchlauf 0), Serie reißt, Initiative Gegner", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 100, winStreak: 4 }), rng);
+  it("Niederlage: kein Schaden mehr, Serie reißt, Initiative Gegner", () => {
+    const s = resolveTrick(scenario(0, 12, { winStreak: 4 }), rng);
     expect(s.losses).toBe(1);
-    expect(s.life).toBe(98); // DMG_PER_LOSS = 2 (#87)
     expect(s.winStreak).toBe(0);
     expect(s.lastResult).toBe("loss");
     expect(s.initiative).toBe("opp");
+    expect(s.score).toBe(0);
   });
 
-  it("Gleichstand: kein Leben, kein Score, Initiative unverändert", () => {
-    const s = resolveTrick(scenario(5, 5, { life: 100, initiative: "player" }), rng);
+  it("Gleichstand: kein Score, Initiative unverändert", () => {
+    const s = resolveTrick(scenario(5, 5, { initiative: "player" }), rng);
     expect(s.ties).toBe(1);
-    expect(s.life).toBe(100);
     expect(s.score).toBe(0);
     expect(s.initiative).toBe("player");
-  });
-
-  it("Tod bei ≤0 Leben → phase gameover, Leben auf 0 geklemmt", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 2 }), rng); // 2 − DMG_PER_LOSS(2) = 0 ≤ 0
-    expect(s.phase).toBe("gameover");
-    expect(s.life).toBe(0);
   });
 
   it("wins + losses + ties == trickNo (nichts geht verloren)", () => {
     let s = initialState(makeRng(42));
     for (let i = 0; i < 60 && s.phase !== "gameover"; i++) {
-      if (s.phase === "levelup") { s = { ...s, phase: "play", offer: null }; continue; }
+      if (s.phase === "levelup") { s = { ...s, phase: "play", offer: null, skillOffer: null }; continue; }
       s = resolveTrick(s, makeRng(100 + i));
     }
     expect(s.wins + s.losses + s.ties).toBe(s.trickNo);
@@ -63,88 +56,11 @@ describe("resolveTrick — Grundausgänge", () => {
   it("bestStreak hält die längste Serie, auch nach einem Serienabbruch (#8)", () => {
     const deck = [12, 12, 12, 0].map((v, i) => ({ id: `p${i}`, suit: "R", baseRank: v, value: v }));
     const opp  = [0, 0, 0, 12].map((v, i) => ({ id: `o${i}`, suit: "R", baseRank: v, value: v }));
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2, 3], oppOrder: [0, 1, 2, 3], life: 100 };
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2, 3], oppOrder: [0, 1, 2, 3] };
     for (let i = 0; i < 4; i++) s = resolveTrick(s, rng); // Sieg, Sieg, Sieg, Niederlage
     expect(s.wins).toBe(3);
     expect(s.winStreak).toBe(0);   // letzter Stich verloren
     expect(s.bestStreak).toBe(3);  // Serie bleibt gemerkt
-  });
-});
-
-describe("resolveTrick — Verteidigungs-Perks", () => {
-  it("C3 Panzerung: 25 % Reduktion (Durchlauf 10: 32 → 24 Schaden)", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C3"], cycle: 10 }), rng); // gross 2+30=32, −25 %=8 → 24
-    expect(s.life).toBe(76);
-  });
-
-  it("C1 Lebensraub heilt 2 bei Sieg, respektiert maxLife", () => {
-    expect(resolveTrick(scenario(12, 0, { life: 100, perks: ["C1"] }), rng).life).toBe(102);
-    expect(resolveTrick(scenario(12, 0, { life: 2000, perks: ["C1"] }), rng).life).toBe(2000);
-  });
-
-  it("C5 Schutzschild: 50 Schildpunkte absorbieren Schaden vor dem Leben (Durchlauf 5 → 10 Schaden)", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C5"], shield: 50, cycle: 5 }), rng);
-    expect(s.life).toBe(100);   // Verlust 2+8=10 → Schild 50→40
-    expect(s.shield).toBe(40);
-  });
-
-  it("C5 + Panzerung: erst Schaden prozentual reduzieren, dann Schild absorbieren (Durchlauf 5)", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C5", "C3"], shield: 50, cycle: 5 }), rng);
-    expect(s.shield).toBe(43);  // gross 10, C3 25 % → round(2,5)=3 → 7 abgezogen
-    expect(s.life).toBe(100);
-  });
-
-  it("C5: Schild wird bei Durchlauf-Ende auf 50 zurückgesetzt", () => {
-    const s = resolveTrick(scenario(12, 0, { pos: 39, perks: ["C5"], shield: 10, life: 1000 }), rng);
-    expect(s.cycle).toBe(1);
-    expect(s.shield).toBe(50);
-  });
-
-  it("B5 Initiative: nach Niederlage +2 Kartenwert UND nächsten Gleichstand gewinnen", () => {
-    // Karte 0 verliert; Karte 3 → mit B5-Bonus +2 = 5, unentschieden gegen Gegner 5
-    const deck = [{ id: "p0", suit: "R", baseRank: 0, value: 0 }, { id: "p1", suit: "R", baseRank: 3, value: 3 }];
-    const opp = [{ id: "o0", suit: "R", baseRank: 12, value: 12 }, { id: "o1", suit: "R", baseRank: 5, value: 5 }];
-    let s = {
-      ...initialState(makeRng(1)),
-      deck, oppDeck: opp, playerOrder: [0, 1], oppOrder: [0, 1],
-      life: 100, perks: ["B5"],
-    };
-    s = resolveTrick(s, rng); // Verlust → tieArmed
-    expect(s.lastResult).toBe("loss");
-    expect(s.tieArmed).toBe(true);
-    s = resolveTrick(s, rng); // 3+2=5 → Gleichstand → durch B5 zum Sieg
-    expect(s.lastTrick.pValue).toBe(5); // Kartenbonus +2 wirkt
-    expect(s.wins).toBe(1);
-    expect(s.tieArmed).toBe(false);
-  });
-});
-
-describe("Anti-Infinity — Aufschlag pro Niederlage je Deck-Durchlauf (#87, cycle-basiert)", () => {
-  it("lifeDrainAt: gerundetes 0,3·n² (0, 0, 1, 3, 5, 8, …, 30, 120)", () => {
-    expect(lifeDrainAt(0)).toBe(0);
-    expect(lifeDrainAt(1)).toBe(0);   // round(0,3)
-    expect(lifeDrainAt(2)).toBe(1);   // round(1,2)
-    expect(lifeDrainAt(3)).toBe(3);   // round(2,7)
-    expect(lifeDrainAt(4)).toBe(5);   // round(4,8)
-    expect(lifeDrainAt(5)).toBe(8);   // round(7,5)
-    expect(lifeDrainAt(10)).toBe(30);
-    expect(lifeDrainAt(20)).toBe(120);
-  });
-  it("Niederlagenschaden eskaliert mit dem Durchlauf (cycle): DMG_PER_LOSS(2) + round(0,3·cycle²)", () => {
-    expect(resolveTrick(scenario(0, 12, { life: 100 }), rng).life).toBe(98);              // cycle 0 → 2 + 0
-    expect(resolveTrick(scenario(0, 12, { life: 100, cycle: 2 }), rng).life).toBe(97);    // 2 + 1
-    expect(resolveTrick(scenario(0, 12, { life: 200, cycle: 5 }), rng).life).toBe(190);   // 2 + 8
-  });
-  it("Aufschlag stapelt mit Perk-Schaden (L1) und wird von prozentualer Reduktion (C3) gemindert", () => {
-    // cycle 4 (+5): 2 + 5 + L1(+3) = 10
-    expect(resolveTrick(scenario(0, 12, { life: 100, cycle: 4, perks: ["L1"] }), rng).life).toBe(90);
-    // cycle 4: gross 2+5=7, C3 25 % → round(1,75)=2 → nimmt 5
-    expect(resolveTrick(scenario(0, 12, { life: 100, cycle: 4, perks: ["C3"] }), rng).life).toBe(95);
-  });
-  it("hoher Aufschlag in späten Durchläufen kann tödlich sein → Game Over", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 30, cycle: 10 }), rng); // 2 + 30 = 32 ≥ 30
-    expect(s.phase).toBe("gameover");
-    expect(s.life).toBe(0);
   });
 });
 
@@ -155,7 +71,6 @@ describe("resolveTrick — Score-Perks", () => {
   });
 
   it("D4 Außenseitersieg: Sieg mit Wert ≤3 → dreifacher Score", () => {
-    // je × streakBaseMult(1)=1,02 (#39): 100×1,02×3 = 306 bzw. 100×1,02×1 = 102
     expect(resolveTrick(scenario(2, 0, { perks: ["D4"] }), rng).score).toBeCloseTo(306);
     expect(resolveTrick(scenario(12, 0, { perks: ["D4"] }), rng).score).toBeCloseTo(102);
   });
@@ -173,7 +88,7 @@ describe("resolveTrick — Score-Perks", () => {
     expect(s.winStreak).toBe(20);
     // 100 × streakBaseMult(20)=1,30 (Cap) × comboMult(20)=3,0 = 390 (#39)
     expect(s.lastTrick.gained).toBeCloseTo(390);
-    expect(s.lastTrick.comboMult).toBeCloseTo(3.0); // D2-Anteil (nur D2, unverändert)
+    expect(s.lastTrick.comboMult).toBeCloseTo(3.0);
   });
 
   it("lastTrick.comboMult == D2-Faktor bei Sieg, 1 ohne D2 (Anzeige-Quelle, kein Drift #31)", () => {
@@ -182,33 +97,25 @@ describe("resolveTrick — Score-Perks", () => {
   });
 });
 
-describe("resolveTrick — Tempo-Score & Crit (#19)", () => {
-  it("Tempo-Score-Multiplikator bei 0 / 10 / 100 / 150 % Speed", () => {
-    // je × streakBaseMult(1)=1,02 (#39): 100×1,02 × (1 + speedPct×0,005)
-    expect(resolveTrick(scenario(12, 0, { speedPct: 0 }), rng).score).toBeCloseTo(102);
-    expect(resolveTrick(scenario(12, 0, { speedPct: 10 }), rng).score).toBeCloseTo(107.1);
-    expect(resolveTrick(scenario(12, 0, { speedPct: 100 }), rng).score).toBeCloseTo(153);
-    expect(resolveTrick(scenario(12, 0, { speedPct: 150 }), rng).score).toBeCloseTo(178.5);
+describe("resolveTrick — Crit & globale Score-Formel (ohne Tempo)", () => {
+  it("additive Boni (D5) fließen in die Basis und werden mitmultipliziert", () => {
+    // 10. Sieg mit D1(+15%), streakBaseMult(1)=1,02: (100+300)×1,02×1,15 = 469,2
+    const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D5"], wins: 9 }), rng);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(469.2);
   });
 
-  it("additive Boni (D5) fließen in die Basis und werden mitmultipliziert (globale Formel)", () => {
-    // 10. Sieg mit D1(+15%), 100% Tempo, streakBaseMult(1)=1,02: (100+300)×1,02×1,15×1,5 = 703,8
-    const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D5"], speedPct: 100, wins: 9 }), rng);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(703.8);
-  });
-
-  it("Crit verdoppelt den vollen scoreBeforeCrit (inkl. Tempo + Boni)", () => {
-    // D9 garantiert Crit beim 10. Sieg; D1 + 100% Tempo + streakBaseMult(1): scoreBeforeCrit = 175.95, ×2 = 351.9
-    const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D9"], speedPct: 100, wins: 9 }), rng);
+  it("Crit verdoppelt den vollen scoreBeforeCrit (inkl. Boni)", () => {
+    // D9 garantiert Crit beim 10. Sieg; D1, streakBaseMult(1): scoreBeforeCrit = 117,3, ×2 = 234,6
+    const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D9"], wins: 9 }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(175.95);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(351.9);
-    expect(s.lastTrick.critBonus).toBeCloseTo(175.95);
-    expect(s.score).toBeCloseTo(351.9);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(117.3);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(234.6);
+    expect(s.lastTrick.critBonus).toBeCloseTo(117.3);
+    expect(s.score).toBeCloseTo(234.6);
   });
 
   it("Niederlagen und Gleichstände lösen keinen Crit aus", () => {
-    const loss = resolveTrick(scenario(0, 12, { perks: ["D9"], life: 100, wins: 9 }), rng);
+    const loss = resolveTrick(scenario(0, 12, { perks: ["D9"], wins: 9 }), rng);
     expect(loss.lastTrick.isCrit).toBe(false);
     expect(loss.crits).toBe(0);
     const tie = resolveTrick(scenario(5, 5, { perks: ["D9"], wins: 9 }), rng);
@@ -223,26 +130,15 @@ describe("resolveTrick — Tempo-Score & Crit (#19)", () => {
   });
 
   it("crits, critBonusScore und bestTrickScore werden geführt", () => {
-    // 10. Sieg, D9 garantiert, 100% Tempo, streakBaseMult(1)=1,02: scoreBeforeCrit = 153, ×2 = 306, Bonus 153
-    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], speedPct: 100, wins: 9 }), rng);
+    // 10. Sieg, D9 garantiert, streakBaseMult(1)=1,02: scoreBeforeCrit = 102, ×2 = 204, Bonus 102
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9 }), rng);
     expect(s.crits).toBe(1);
-    expect(s.critBonusScore).toBeCloseTo(153);
-    expect(s.bestTrickScore).toBeCloseTo(306);
+    expect(s.critBonusScore).toBeCloseTo(102);
+    expect(s.bestTrickScore).toBeCloseTo(204);
   });
 });
 
-describe("Legendäre Perks (#33) — Engine-Integration", () => {
-  it("L1 Überladung: +3 Zusatzschaden je Niederlage (auf den flat Grundschaden)", () => {
-    expect(resolveTrick(scenario(0, 12, { life: 100, perks: ["L1"] }), rng).life).toBe(95); // 2+3 (#87)
-  });
-  it("L1+L6: extraDamageTaken summiert korrekt (+5)", () => {
-    expect(resolveTrick(scenario(0, 12, { life: 100, perks: ["L1", "L6"] }), rng).life).toBe(93); // 2+3+2 (#87)
-  });
-  it("C5 Schild verhindert den ersten Verlust je Durchlauf voll — auch mit L1-Zusatzschaden (Durchlauf 5)", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["L1", "C5"], shield: 50, cycle: 5 }), rng);
-    expect(s.life).toBe(100);   // 2+8+3 = 13 Schaden komplett vom Schild absorbiert
-    expect(s.shield).toBe(37);  // 50 − 13
-  });
+describe("Legendäre Perks — Engine-Integration", () => {
   it("L2 Unaufhaltsam: Gleichstand ab Serie ≥3 wird Sieg und erhöht die Serie", () => {
     const s = resolveTrick(scenario(5, 5, { perks: ["L2"], winStreak: 3 }), rng);
     expect(s.lastTrick.result).toBe("win_tie");
@@ -254,35 +150,23 @@ describe("Legendäre Perks (#33) — Engine-Integration", () => {
     expect(s.lastTrick.result).toBe("tie");
     expect(s.winStreak).toBe(2);
   });
-  it("L3 Letztes Aufbäumen: +3 Kartenwert bei ≤25 % Leben kippt den Stich, > 25 % nicht (#71)", () => {
-    const low = resolveTrick(scenario(6, 8, { perks: ["L3"], life: 500, maxLife: 2000 }), rng);
-    expect(low.lastTrick.pValue).toBe(9); // 6 + 3
-    expect(low.wins).toBe(1);
-    const high = resolveTrick(scenario(6, 8, { perks: ["L3"], life: 501, maxLife: 2000 }), rng);
-    expect(high.lastTrick.pValue).toBe(6);
-    expect(high.losses).toBe(1);
-  });
   it("L4 Kritische Masse: Bonus erst NACH einem Crit, gedeckelt bei +30 pp", () => {
-    const s = resolveTrick(scenario(12, 0, { perks: ["D9", "L4"], wins: 9 }), rng); // D9 garantiert Crit
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9", "L4"], wins: 9 }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.legendaryCritBonus).toBeCloseTo(0.01);
-    expect(resolveTrick(scenario(12, 0, { perks: ["L4"] }), rng).legendaryCritBonus).toBe(0); // ohne Crit
+    expect(resolveTrick(scenario(12, 0, { perks: ["L4"] }), rng).legendaryCritBonus).toBe(0);
     expect(resolveTrick(scenario(12, 0, { perks: ["D9", "L4"], wins: 9, legendaryCritBonus: 0.30 }), rng)
-      .legendaryCritBonus).toBeCloseTo(0.30); // Deckel
+      .legendaryCritBonus).toBeCloseTo(0.30);
   });
   it("L5 Jackpot: Crit ×4 (überschreibt ×2), garantierte Crits unberührt", () => {
     const s = resolveTrick(scenario(12, 0, { perks: ["D9", "L5"], wins: 9 }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.critMultiplier).toBe(4);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(408); // 100 × streakBaseMult(1)=1,02 × 4 (#39)
+    expect(s.lastTrick.scoreGain).toBeCloseTo(408); // 100 × streakBaseMult(1)=1,02 × 4
     expect(s.lastTrick.jackpot).toBe(true);
   });
   it("L5: die zufällige Crit-Chance wird halbiert (lastTrick.critChance)", () => {
     expect(resolveTrick(scenario(12, 0, { perks: ["D6", "L5"] }), rng).lastTrick.critChance).toBeCloseTo(0.06);
-  });
-  it("L6 Raserei: verdoppelt den Tempo-Score (nur der Tempo-Faktor)", () => {
-    // 100 × streakBaseMult(1)=1,02 × Tempo(1+100×0,005×2=2,0) = 204 (#39)
-    expect(resolveTrick(scenario(12, 0, { perks: ["L6"], speedPct: 100 }), rng).score).toBeCloseTo(204);
   });
 });
 
@@ -303,28 +187,35 @@ describe("rollCrit", () => {
   });
 });
 
-describe("resolveTrick — Durchlauf-Ende & Perk-Auswahl (Neuer Loop)", () => {
-  it("Durchlauf-Ende (40 Stiche): cycle++, C4 heilt, neu gemischt (pos 0), Perk-Angebot → levelup", () => {
-    const s = resolveTrick(scenario(12, 0, { pos: 39, life: 1000, perks: ["C4"] }), rng);
+describe("resolveTrick — Durchlauf-Ende & persistente Reihenfolge (V2)", () => {
+  it("Durchlauf-Ende (40 Stiche): cycle++, pos 0, Perk-Angebot → levelup", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39 }), rng);
     expect(s.cycle).toBe(1);
-    expect(s.life).toBe(1050);        // C4 healOnCycle
-    expect(s.pos).toBe(0);            // neu gemischt + pos zurück (früher bei SUBMIT_PREDICTION)
-    expect(s.phase).toBe("levelup");  // Perk-Auswahl nach jeder Runde
+    expect(s.pos).toBe(0);            // neu gemischt (Gegner) + pos zurück
+    expect(s.phase).toBe("levelup");  // Perk-Auswahl nach der Runde
     expect(s.offer).toHaveLength(3);
   });
 
-  it("Tod am Durchlauf-Ende → gameover, kein Perk-Angebot", () => {
-    const s = resolveTrick(scenario(0, 12, { pos: 39, score: 5000, life: 2 }), rng);
+  it("Spieler-Reihenfolge bleibt persistent; nur das Gegnerdeck wird neu gemischt (§22.1)", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39 }), makeRng(3));
+    expect(s.playerOrder).toEqual(identity());                          // persistent — kein Re-Shuffle
+    expect(s.oppOrder).not.toEqual(identity());                        // Gegner neu gemischt
+    expect([...s.oppOrder].sort((a, b) => a - b)).toEqual(identity()); // … aber eine Permutation
+  });
+
+  it("Run-Ende nach MAX_CYCLES Durchläufen → gameover, kein Angebot (der letzte Sieg zählt noch)", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: MAX_CYCLES - 1, score: 5000 }), rng);
+    expect(s.cycle).toBe(MAX_CYCLES);
     expect(s.phase).toBe("gameover");
-    expect(s.score).toBe(5000);
     expect(s.offer).toBeNull();
+    expect(s.score).toBeCloseTo(5102); // 5000 + 100 × 1,02
   });
 
   it("ist deterministisch bei gleichem Seed", () => {
     const run = (seed) => {
       let s = initialState(makeRng(seed));
       for (let i = 0; i < 40; i++) {
-        if (s.phase === "levelup") { s = { ...s, phase: "play", offer: null }; continue; }
+        if (s.phase === "levelup") { s = { ...s, phase: "play", offer: null, skillOffer: null }; continue; }
         if (s.phase === "gameover") break;
         s = resolveTrick(s, makeRng(seed * 1000 + i));
       }
@@ -334,30 +225,18 @@ describe("resolveTrick — Durchlauf-Ende & Perk-Auswahl (Neuer Loop)", () => {
   });
 });
 
-describe("Seltene Perks — Engine (#71)", () => {
-  it("D11 Kritische Heilung: Crit heilt +5 (via D9-Garantie-Crit beim 10. Sieg)", () => {
-    const s = resolveTrick(scenario(12, 0, { perks: ["D9", "D11"], wins: 9, life: 100, maxLife: 2000 }), rng);
-    expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.healed).toBe(5);
-    expect(s.life).toBe(105);
-  });
-  it("E7 Kontrollverlust: +1 Zusatzschaden bei Niederlage", () => {
-    expect(resolveTrick(scenario(0, 12, { perks: ["E7"], life: 100 }), rng).life).toBe(97); // 2+1 (#87)
-  });
-});
-
 describe("Historie-Rares — Engine (#71 Phase 2b)", () => {
   it("B8 Revanche: nach 2 Niederlagen +7 auf die nächste Karte", () => {
-    expect(resolveTrick(scenario(3, 8, { perks: ["B8"], lossStreak: 2, life: 1000 }), rng).lastTrick.pValue).toBe(10);
-    expect(resolveTrick(scenario(3, 8, { perks: ["B8"], lossStreak: 1, life: 1000 }), rng).lastTrick.pValue).toBe(3);
+    expect(resolveTrick(scenario(3, 8, { perks: ["B8"], lossStreak: 2 }), rng).lastTrick.pValue).toBe(10);
+    expect(resolveTrick(scenario(3, 8, { perks: ["B8"], lossStreak: 1 }), rng).lastTrick.pValue).toBe(3);
   });
   it("D12 Präzision: ×3 bei Übereinstimmung mit dem letzten Siegwert; lastWinValue wird gesetzt", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D12"], lastWinValue: 12 }), rng).score).toBeCloseTo(306); // 100×1,02×3
+    expect(resolveTrick(scenario(12, 0, { perks: ["D12"], lastWinValue: 12 }), rng).score).toBeCloseTo(306);
     expect(resolveTrick(scenario(12, 0, { perks: ["D12"], lastWinValue: 11 }), rng).score).toBeCloseTo(102);
     expect(resolveTrick(scenario(9, 0, { perks: ["D12"] }), rng).lastWinValue).toBe(9);
   });
   it("D13 Wechselspiel: +100, wenn ein Sieg das W/L-Muster fortsetzt (altLen ≥3)", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D13"], lastResult: "loss", altLen: 2 }), rng).lastTrick.gained).toBeCloseTo(204); // (100+100)×1,02
+    expect(resolveTrick(scenario(12, 0, { perks: ["D13"], lastResult: "loss", altLen: 2 }), rng).lastTrick.gained).toBeCloseTo(204);
     expect(resolveTrick(scenario(12, 0, { perks: ["D13"], lastResult: "win", altLen: 5 }), rng).lastTrick.gained).toBeCloseTo(102);
   });
 });
@@ -370,8 +249,8 @@ describe("Crit-Historie-Rares — Engine (#71 Phase 2c)", () => {
     expect(resolveTrick(scenario(12, 0, { perks: ["D14"], critFollowArmed: false }), never).lastTrick.critChance).toBeCloseTo(0);
   });
   it("D14: ein Crit rüstet, ein Sieg ohne Crit entrüstet", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9 }), rng).critFollowArmed).toBe(true);  // D9-Garantie-Crit
-    expect(resolveTrick(scenario(12, 0, { critFollowArmed: true }), never).critFollowArmed).toBe(false); // Sieg ohne Crit
+    expect(resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9 }), rng).critFollowArmed).toBe(true);
+    expect(resolveTrick(scenario(12, 0, { critFollowArmed: true }), never).critFollowArmed).toBe(false);
   });
 
   it("D15 Fehlzündung: misfireBonus speist die Crit-Chance", () => {
@@ -379,53 +258,16 @@ describe("Crit-Historie-Rares — Engine (#71 Phase 2c)", () => {
   });
   it("D15: +3 pp je Sieg ohne Crit, gedeckelt bei +30 pp, Crit setzt zurück", () => {
     expect(resolveTrick(scenario(12, 0, { misfireBonus: 0 }), never).misfireBonus).toBeCloseTo(0.03);
-    expect(resolveTrick(scenario(12, 0, { misfireBonus: 0.29 }), never).misfireBonus).toBeCloseTo(0.30); // Deckel
-    expect(resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, misfireBonus: 0.20 }), rng).misfireBonus).toBe(0); // Crit → reset
+    expect(resolveTrick(scenario(12, 0, { misfireBonus: 0.29 }), never).misfireBonus).toBeCloseTo(0.30);
+    expect(resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, misfireBonus: 0.20 }), rng).misfireBonus).toBe(0);
   });
 
   it("D16 Schwachstellenanalyse: klare Niederlage rüstet, Sieg verbraucht (+40 %)", () => {
-    expect(resolveTrick(scenario(0, 12, { perks: ["D16"], life: 100 }), never).weaknessArmed).toBe(true);   // Abstand 12 ≥5
-    expect(resolveTrick(scenario(10, 12, { perks: ["D16"], life: 100 }), never).weaknessArmed).toBe(false); // Abstand 2 <5
+    expect(resolveTrick(scenario(0, 12, { perks: ["D16"] }), never).weaknessArmed).toBe(true);   // Abstand 12 ≥5
+    expect(resolveTrick(scenario(10, 12, { perks: ["D16"] }), never).weaknessArmed).toBe(false); // Abstand 2 <5
     const win = resolveTrick(scenario(12, 0, { perks: ["D16"], weaknessArmed: true }), never);
     expect(win.lastTrick.critChance).toBeCloseTo(0.40);
     expect(win.weaknessArmed).toBe(false); // Sieg verbraucht
-  });
-});
-
-describe("Per-Durchlauf-Rares — Engine (#71 Phase 2d)", () => {
-  it("C7 Überlebensvorteil: Durchlauf-Ende heilt 4 je Karte ≥13 (Deck 13er → Deckel 60)", () => {
-    const s = resolveTrick(scenario(13, 0, { pos: 39, perks: ["C7"], life: 1000, maxLife: 2000 }), rng);
-    expect(s.cycle).toBe(1);
-    expect(s.life).toBe(1060); // 40 Karten ≥13 → 160, gedeckelt 60
-  });
-
-  it("C8 Sauberer Durchlauf: 10. Stich ohne echten Verlust → +15, Zähler zurück", () => {
-    const s = resolveTrick(scenario(12, 0, { perks: ["C8"], cleanStreak: 9, life: 1000, maxLife: 2000 }), rng);
-    expect(s.lastTrick.healed).toBe(15);
-    expect(s.life).toBe(1015);
-    expect(s.cleanStreak).toBe(0);
-  });
-  it("C8: echter Lebensverlust setzt den Zähler zurück; Schild-Absorption zählt als sauber", () => {
-    expect(resolveTrick(scenario(0, 12, { perks: ["C8"], cleanStreak: 9, life: 1000 }), rng).cleanStreak).toBe(0); // Verlust
-    const shielded = resolveTrick(scenario(0, 12, { perks: ["C8", "C5"], cleanStreak: 9, shield: 50, life: 1000, maxLife: 2000, cycle: 5 }), rng);
-    expect(shielded.life).toBe(1015); // 10 Schaden voll vom Schild → sauber → 10. Stich heilt
-    expect(shielded.shield).toBe(40);
-  });
-
-  it("C9 Opfergabe: +20 % Score dauerhaft; Durchlauf-Beginn −30 Leben (kann nicht töten)", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["C9"] }), rng).score).toBeCloseTo(122.4); // 100×1,02×1,2
-    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["C9"], life: 1000, maxLife: 2000 }), rng).life).toBe(970); // −30
-    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["C9"], life: 20, maxLife: 2000 }), rng).life).toBe(1);     // clamp 1
-  });
-
-  it("C10 Notfallration: 1× je Durchlauf bei ≤25 % Leben +40, dann verbraucht", () => {
-    const hit = resolveTrick(scenario(0, 12, { perks: ["C10"], life: 400, maxLife: 2000 }), rng);
-    expect(hit.life).toBe(438); // 400 −2 Verlust +40 Notfall (#87)
-    expect(hit.notfallUsed).toBe(true);
-    expect(resolveTrick(scenario(0, 12, { perks: ["C10"], life: 400, maxLife: 2000, notfallUsed: true }), rng).life).toBe(398); // schon genutzt
-  });
-  it("C10: notfallUsed wird beim Durchlauf-Wechsel zurückgesetzt", () => {
-    expect(resolveTrick(scenario(13, 0, { pos: 39, perks: ["C10"], notfallUsed: true, life: 1000, maxLife: 2000 }), rng).notfallUsed).toBe(false);
   });
 });
 
@@ -435,7 +277,7 @@ describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
   it("B9 Perfekte Folge: aufsteigende Werte geben 0/+1/+2, Rückschritt beginnt neu", () => {
     const deck = mk([3, 5, 7, 4]);
     const opp = mk([0, 0, 0, 0]);
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2, 3], oppOrder: [0, 1, 2, 3], perks: ["B9"], life: 1000 };
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2, 3], oppOrder: [0, 1, 2, 3], perks: ["B9"] };
     const pv = [];
     for (let i = 0; i < 4; i++) { s = resolveTrick(s, rng); pv.push(s.lastTrick.pValue); }
     expect(pv).toEqual([3, 6, 9, 4]); // Bonus 0,1,2 dann Reset 0
@@ -444,29 +286,29 @@ describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
   it("D17 Farbserie: gleiche Farbe zählt, Farbwechsel beginnt bei 1, Niederlage bricht", () => {
     const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }, { id: "c", suit: "B", baseRank: 12, value: 12 }];
     const opp = mk([0, 0, 0]);
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2], oppOrder: [0, 1, 2], perks: ["D17"], life: 1000 };
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2], oppOrder: [0, 1, 2], perks: ["D17"] };
     s = resolveTrick(s, rng); expect(s.winSuitStreak).toBe(1); // R
     s = resolveTrick(s, rng); expect(s.winSuitStreak).toBe(2); // R
     s = resolveTrick(s, rng); expect(s.winSuitStreak).toBe(1); expect(s.winSuit).toBe("B"); // Farbwechsel
-    expect(resolveTrick(scenario(0, 12, { perks: ["D17"], winSuit: "R", winSuitStreak: 3, life: 1000 }), rng).winSuitStreak).toBe(0); // Niederlage bricht
+    expect(resolveTrick(scenario(0, 12, { perks: ["D17"], winSuit: "R", winSuitStreak: 3 }), rng).winSuitStreak).toBe(0); // Niederlage bricht
   });
   it("D17: 2. Sieg gleicher Farbe gibt +75 Flat", () => {
     let s = scenario(12, 0, { perks: ["D17"] }); // constDeck: alles Farbe R
     s = resolveTrick(s, rng); // Serie 1 → +0
     s = resolveTrick(s, rng); // Serie 2 → +75
-    expect(s.lastTrick.gained).toBeCloseTo((100 + 75) * 1.04); // 182 (Flat in der multiplizierten Basis)
+    expect(s.lastTrick.gained).toBeCloseTo((100 + 75) * 1.04);
   });
 
   it("D18 Volles Haus: ≥4 Siege im 5er-Fenster → +250", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D18"], recentResults: ["win", "win", "win", "loss"] }), rng).lastTrick.gained).toBeCloseTo(357); // (100+250)×1,02 — 3 Vorsiege + aktueller = 4
-    expect(resolveTrick(scenario(12, 0, { perks: ["D18"], recentResults: ["win", "win", "loss", "loss"] }), rng).lastTrick.gained).toBeCloseTo(102); // nur 3 im Fenster
+    expect(resolveTrick(scenario(12, 0, { perks: ["D18"], recentResults: ["win", "win", "win", "loss"] }), rng).lastTrick.gained).toBeCloseTo(357);
+    expect(resolveTrick(scenario(12, 0, { perks: ["D18"], recentResults: ["win", "win", "loss", "loss"] }), rng).lastTrick.gained).toBeCloseTo(102);
   });
   it("Volles-Haus-Fenster: recentResults hält die letzten 4 Ergebnisse", () => {
     expect(resolveTrick(scenario(12, 0, { recentResults: ["loss", "win", "tie", "win"] }), rng).recentResults).toEqual(["win", "tie", "win", "win"]);
   });
 });
 
-describe("Serien-/Tempo-/Crit-Rares — Engine (#71 Phase 2e)", () => {
+describe("Serien-/Crit-Rares — Engine (#71 Phase 2e)", () => {
   it("B10 Überzahl: klarer Sieg (Vorsprung ≥5) zählt für Serien-Effekte doppelt, Statistik bleibt 1 Sieg", () => {
     const big = resolveTrick(scenario(12, 0, { perks: ["B10"] }), rng);
     expect(big.wins).toBe(1); expect(big.winStreak).toBe(1); // Statistik: 1 Sieg
@@ -479,25 +321,7 @@ describe("Serien-/Tempo-/Crit-Rares — Engine (#71 Phase 2e)", () => {
     let s = scenario(12, 0, { perks: ["B10", "D2"] });
     s = resolveTrick(s, rng); expect(s.overStreak).toBe(2); expect(s.lastTrick.comboMult).toBeCloseTo(1.2);
     s = resolveTrick(s, rng); expect(s.overStreak).toBe(4); expect(s.lastTrick.comboMult).toBeCloseTo(1.4);
-    expect(resolveTrick(scenario(0, 12, { perks: ["B10"], overStreak: 3, life: 100 }), rng).overStreak).toBe(0); // Niederlage bricht
-  });
-
-  it("E9 Hochlauf: +2 % Temp-Tempo je Sieg (Deckel 40), −10 pp je Niederlage; zählt für Tempo-Score", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["E9"], rampTempo: 20, tempTempo: 20 }), rng).lastTrick.gained).toBeCloseTo(112.2); // Score nutzt curTempTempo 20 → ×1,10
-    const w = resolveTrick(scenario(12, 0, { perks: ["E9"], rampTempo: 20, tempTempo: 20 }), rng);
-    expect(w.rampTempo).toBe(22); expect(w.tempTempo).toBe(22);
-    expect(resolveTrick(scenario(12, 0, { perks: ["E9"], rampTempo: 39 }), rng).rampTempo).toBe(40); // Deckel
-    expect(resolveTrick(scenario(0, 12, { perks: ["E9"], rampTempo: 30, life: 100 }), rng).rampTempo).toBe(20); // −10
-  });
-
-  it("E10 Ruhe vor dem Sturm: Gleichstand startet 5-Stiche-Burst (50 % schneller, zählt für Tempo-Score)", () => {
-    const tie = resolveTrick(scenario(5, 5, { perks: ["E10"] }), rng);
-    expect(tie.calmTricks).toBe(5); expect(tie.tempTempo).toBe(50);
-    const fast = resolveTrick(scenario(12, 0, { perks: ["E10"], calmTricks: 5, tempTempo: 50 }), rng);
-    expect(fast.lastTrick.gained).toBeCloseTo(127.5); // ×(1+50×0,005)=1,25
-    expect(fast.calmTricks).toBe(4); expect(fast.tempTempo).toBe(50);
-    const last = resolveTrick(scenario(12, 0, { perks: ["E10"], calmTricks: 1, tempTempo: 50 }), rng);
-    expect(last.calmTricks).toBe(0); expect(last.tempTempo).toBe(0); // Burst endet
+    expect(resolveTrick(scenario(0, 12, { perks: ["B10"], overStreak: 3 }), rng).overStreak).toBe(0); // Niederlage bricht
   });
 
   it("D19 Überschusskrit: Roh-Crit über 100 % → Chance auf Super-Crit (×1,5 auf den Faktor)", () => {
@@ -518,19 +342,11 @@ describe("Serien-/Tempo-/Crit-Rares — Engine (#71 Phase 2e)", () => {
 
 describe("Neue Legendaries — Engine (#71 Phase 3)", () => {
   it("L8 Schicksalsmaschine: Schicksalswert bei Durchlauf-Ende gewählt; +8 Wert & ×2 Score für diese Karten", () => {
-    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L8"], life: 1000, maxLife: 2000 }), rng).fateValue).toBe(12); // Deck nur 12er
-    expect(resolveTrick(scenario(5, 10, { perks: ["L8"], fateValue: 5, life: 1000 }), rng).lastTrick.pValue).toBe(13); // 5 +8 → kippt den Stich
-    expect(resolveTrick(scenario(6, 10, { perks: ["L8"], fateValue: 5, life: 1000 }), rng).losses).toBe(1);            // Nicht-Schicksalswert: kein Bonus
+    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L8"] }), rng).fateValue).toBe(12); // Deck nur 12er
+    expect(resolveTrick(scenario(5, 10, { perks: ["L8"], fateValue: 5 }), rng).lastTrick.pValue).toBe(13); // 5 +8 → kippt den Stich
+    expect(resolveTrick(scenario(6, 10, { perks: ["L8"], fateValue: 5 }), rng).losses).toBe(1);            // Nicht-Schicksalswert: kein Bonus
     expect(resolveTrick(scenario(12, 0, { perks: ["L8"], fateValue: 12 }), rng).lastTrick.gained).toBeCloseTo(204);    // 100×1,02 × 2
     expect(resolveTrick(scenario(12, 0, { perks: ["L8"], fateValue: 5 }), rng).lastTrick.gained).toBeCloseTo(102);     // kein Match → ×1
-  });
-
-  it("L9 Blutvertrag: Durchlauf-Ende opfert 100 Leben → +Stack (nur >100 Leben, max 5), +20 %/Stack Score", () => {
-    const sac = resolveTrick(scenario(12, 0, { pos: 39, perks: ["L9"], life: 1000, maxLife: 2000, bloodStacks: 0 }), rng);
-    expect(sac.life).toBe(900); expect(sac.bloodStacks).toBe(1);
-    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L9"], life: 100, maxLife: 2000, bloodStacks: 0 }), rng).bloodStacks).toBe(0); // ≤100 → kein Opfer
-    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L9"], life: 1000, maxLife: 2000, bloodStacks: 5 }), rng).life).toBe(1000);   // Deckel 5 → kein Opfer
-    expect(resolveTrick(scenario(12, 0, { perks: ["L9"], bloodStacks: 3 }), rng).lastTrick.gained).toBeCloseTo(163.2); // 100×1,02×1,6
   });
 
   it("L10 Kettenreaktion: Crit kettet mit halber finaler Chance, je Stufe ×2 (max 3)", () => {
@@ -542,8 +358,8 @@ describe("Neue Legendaries — Engine (#71 Phase 3)", () => {
   });
 
   it("L11 Zeitraffer: je Durchlauf +Stack (max 5), +10 %/Stack Score", () => {
-    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L11"], life: 1000, maxLife: 2000, zeitrafferStacks: 0 }), rng).zeitrafferStacks).toBe(1);
-    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L11"], life: 1000, maxLife: 2000, zeitrafferStacks: 5 }), rng).zeitrafferStacks).toBe(5); // Deckel
+    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L11"], zeitrafferStacks: 0 }), rng).zeitrafferStacks).toBe(1);
+    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L11"], zeitrafferStacks: 5 }), rng).zeitrafferStacks).toBe(5); // Deckel
     expect(resolveTrick(scenario(12, 0, { perks: ["L11"], zeitrafferStacks: 3 }), rng).lastTrick.gained).toBeCloseTo(132.6); // 100×1,02×1,3
   });
 });
@@ -558,7 +374,7 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
   });
 
   it("Crit mit Blitzableiter: +2 Ladung (Basis 1 + Skill 1) und +50 in der multiplizierten Basis", () => {
-    // D9 garantiert den Crit beim 10. Sieg. scoreBase = (100 + 50) × streakBaseMult(1)=1,02 = 153, ×2 (Crit) = 306.
+    // scoreBase = (100 + 50) × streakBaseMult(1)=1,02 = 153, ×2 (Crit) = 306.
     const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR], lightning: lit() }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(2);
@@ -567,7 +383,7 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
   });
 
   it("ohne Crit: keine Ladung, kein Crit-Flat", () => {
-    const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit() }), () => 0.99); // Wurf schlägt nie an
+    const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit() }), () => 0.99);
     expect(s.lastTrick.isCrit).toBe(false);
     expect(s.lightning.charge).toBe(0);
     expect(s.lastTrick.scoreGain).toBeCloseTo(102); // 100 × 1,02, kein +50
@@ -587,17 +403,17 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
 
   it("Skill-Auswahl jede 3. Runde, sonst Perk; leerer Skill-Pool fällt auf Perk zurück", () => {
     const ALL = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06", "SK_LIGHTNING_07"];
-    const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, life: 1000 }), rng); // → cycle 3
+    const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng); // → cycle 3
     expect(skillRound.phase).toBe("levelup");
     expect(skillRound.skillOffer).toHaveLength(3); // 3 aus dem Blitz-Pool
     expect(skillRound.offer).toBeNull();
 
-    const perkRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1, life: 1000 }), rng); // → cycle 2
+    const perkRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1 }), rng); // → cycle 2
     expect(perkRound.skillOffer).toBeNull();
     expect(perkRound.offer).toHaveLength(3);
 
     // Alle Skills gehalten → Skill-Pool leer → Perk-Angebot (Runde nicht verschwendet).
-    const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, life: 1000, skills: ALL }), rng);
+    const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, skills: ALL }), rng);
     expect(owned.skillOffer).toBeNull();
     expect(owned.offer).toHaveLength(3);
   });
@@ -630,7 +446,6 @@ describe("Ionisierung — Engine (Stufe B)", () => {
   });
 
   it("Volle Ladung + Ionisierung: ungespielte Karten werden ionisiert, Ladung verbraucht", () => {
-    // Crit hebt Ladung 9 → 10 (Clamp) → Ionisierung ionisiert 2 ungespielte Karten, Ladung → 0.
     const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: ["SK_LIGHTNING_01", I], lightning: lit({ charge: 9 }) }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(0);
@@ -650,7 +465,6 @@ describe("Reaktoren + Geladene Serie — Engine (Stufe C)", () => {
   it("Gewitterfront: je Verbrauch +2 pp Crit dauerhaft (Cap 20 pp), danach +100 Score für 3 Siege", () => {
     const step = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR, I, G], lightning: lit({ charge: 9 }) }), rng);
     expect(step.lightning.stormCritBonus).toBeCloseTo(0.02);
-    // Am Cap: weiterer Verbrauch schaltet auf Score-Modus (3 Siege je +100).
     const capped = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR, I, G], lightning: lit({ charge: 9, stormCritBonus: 0.20 }) }), rng);
     expect(capped.lightning.stormScoreWinsRemaining).toBe(3);
   });
@@ -668,11 +482,10 @@ describe("Reaktoren + Geladene Serie — Engine (Stufe C)", () => {
   });
 
   it("Geladene Serie: eine Niederlage bei gesetztem Rahmen bewahrt die Serie, bleibt sonst normal", () => {
-    const s = resolveTrick(scenario(0, 12, { skills: [S], lightning: lit({ armed: true }), winStreak: 5, life: 100 }), rng);
+    const s = resolveTrick(scenario(0, 12, { skills: [S], lightning: lit({ armed: true }), winStreak: 5 }), rng);
     expect(s.losses).toBe(1);
     expect(s.winStreak).toBe(5);            // Siegesserie geschützt
     expect(s.lightning.armed).toBe(false);  // Rahmen eingelöst
-    expect(s.life).toBe(98);                // Niederlage bleibt normal (DMG 2, Durchlauf 0)
     expect(s.lastResult).toBe("loss");
   });
 

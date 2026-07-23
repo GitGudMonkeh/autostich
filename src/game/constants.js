@@ -8,6 +8,7 @@ export const DMG_PER_LOSS     = 2;      // Basis-Schaden je Niederlage im 1. Dur
 // n = cycle (0-indiziert): +0, +0, +1, +3, +5, +8, +11 … kein Cap. Sanftere Kurve (#89) für längeren Bogen.
 // Voll deterministisch — die Engine leitet n aus `cycle` ab (kein Date, kein App-Payload nötig).
 export const LIFE_DRAIN_BASE        = 0.3;             // Aufschlag pro Niederlage = round(LIFE_DRAIN_BASE · cycle²) [TUNING]
+export const MAX_CYCLES       = 40;     // V2 (§22.1): fester Run über genau so viele Deck-Durchläufe, danach Ende [TUNING]
 export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Tempo skalieren darauf) [TUNING]
 export const TEMPO_SCORE_FACTOR = 0.005; // je %-Punkt speedPct +0,5 % Stichscore [TUNING]
 export const CRIT_BASE_MULT   = 2;      // Crit verdoppelt den Stichscore [TUNING]
