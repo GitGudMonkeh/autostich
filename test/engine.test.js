@@ -416,3 +416,19 @@ describe("Seltene Perks — Engine (#71)", () => {
     expect(resolveTrick(scenario(0, 12, { perks: ["E7"], life: 100 }), rng).life).toBe(89); // 10+1
   });
 });
+
+describe("Historie-Rares — Engine (#71 Phase 2b)", () => {
+  it("B8 Revanche: nach 2 Niederlagen +7 auf die nächste Karte", () => {
+    expect(resolveTrick(scenario(3, 8, { perks: ["B8"], lossStreak: 2, life: 1000 }), rng).lastTrick.pValue).toBe(10);
+    expect(resolveTrick(scenario(3, 8, { perks: ["B8"], lossStreak: 1, life: 1000 }), rng).lastTrick.pValue).toBe(3);
+  });
+  it("D12 Präzision: ×3 bei Übereinstimmung mit dem letzten Siegwert; lastWinValue wird gesetzt", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["D12"], lastWinValue: 12 }), rng).score).toBeCloseTo(306); // 100×1,02×3
+    expect(resolveTrick(scenario(12, 0, { perks: ["D12"], lastWinValue: 11 }), rng).score).toBeCloseTo(102);
+    expect(resolveTrick(scenario(9, 0, { perks: ["D12"] }), rng).lastWinValue).toBe(9);
+  });
+  it("D13 Wechselspiel: +100, wenn ein Sieg das W/L-Muster fortsetzt (altLen ≥3)", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["D13"], lastResult: "loss", altLen: 2 }), rng).lastTrick.gained).toBeCloseTo(202);
+    expect(resolveTrick(scenario(12, 0, { perks: ["D13"], lastResult: "win", altLen: 5 }), rng).lastTrick.gained).toBeCloseTo(102);
+  });
+});
