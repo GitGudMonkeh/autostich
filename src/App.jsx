@@ -53,8 +53,10 @@ export function Autostich() {
   // Nutzer-Pause-Toggle zu verändern: beim Schließen läuft es im vorherigen Zustand weiter.
   const active = state.phase === "play" && !paused && !showOptions;
   // Effektive Flip-Zeit: Basis / (1+Speed) / Turbo (1×/2×/3×). Beschleunigt nur Ablauf + Animation,
-  // NICHT den Score (speedPct/tempoScoreMult bleiben unberührt → kein Cheesen).
-  const flipMs = (BASE_FLIP_MS / (1 + (state.speedPct || 0) / 100)) / speedMult; // #55: speedPct fehlt im Menü → NaN vermeiden
+  // NICHT den Basis-Score (permanenter speedPct → Tempo-Score bleibt separat). #71: temporäres Tempo
+  // (Hochlauf/Ruhe, state.tempTempo) beschleunigt hier zusätzlich die reale Anzeige.
+  const effSpeedPct = (state.speedPct || 0) + (state.tempTempo || 0);
+  const flipMs = (BASE_FLIP_MS / (1 + effSpeedPct / 100)) / speedMult; // #55: speedPct fehlt im Menü → NaN vermeiden
 
   useEffect(() => {
     const g = loadGhost();

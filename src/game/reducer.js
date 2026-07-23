@@ -31,6 +31,7 @@ export function initialState(rng = Math.random) {
     critFollowArmed: false, misfireBonus: 0, weaknessArmed: false, // #71 Crit-Historie: Crit-Folge / Fehlzündung / Schwachstellenanalyse
     cleanStreak: 0, notfallUsed: false, // #71 Per-Durchlauf: Sauberer Durchlauf / Notfallration
     ascRun: 0, lastPlayedValue: null, winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Perfekte Folge / Farbserie / Volles Haus
+    overStreak: 0, rampTempo: 0, calmTricks: 0, tempTempo: 0, // #71 Phase 2e: Überzahl / Hochlauf / Ruhe vor dem Sturm
     perks: [], offer: null,
     pendingLevelUps: 0, // #57: noch ausstehende Level-Up-Angebote (Mehrfach-Level-Up-Queue)
     speedPct: 0,

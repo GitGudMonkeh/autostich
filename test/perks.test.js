@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildDeck, makeRng } from "../src/game/deck.js";
-import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, comboMultFor, isLegendary, tempoScoreMultFor, baseScoreMultFor, streakBaseMult } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, critChanceRawFor, comboMultFor, isLegendary, tempoScoreMultFor, baseScoreMultFor, streakBaseMult } from "../src/game/perks.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 
 describe("Perks — Deck-Modifikationen (Kat. A)", () => {
@@ -117,6 +117,10 @@ describe("critChanceFor (Crit-Perks D6–D8, L4/L5)", () => {
   it("L5 Jackpot halbiert die (zufällige) Crit-Chance — inkl. L4-Bonus", () => {
     expect(critChanceFor(["D6", "L5"], {})).toBeCloseTo(0.06);          // 0.12 × 0.5
     expect(critChanceFor(["D6", "L5"], {}, 0.20)).toBeCloseTo(0.16);    // (0.12+0.20) × 0.5
+  });
+  it("critChanceRawFor bleibt UNgeklemmt (>1 für Überschusskrit), critChanceFor klemmt (#71)", () => {
+    expect(critChanceRawFor(["D6", "D7", "D8", "D16"], { winValue: 12, winStreak: 30, weaknessArmed: true })).toBeCloseTo(1.27);
+    expect(critChanceFor(["D6", "D7", "D8", "D16"], { winValue: 12, winStreak: 30, weaknessArmed: true })).toBe(1);
   });
 });
 
