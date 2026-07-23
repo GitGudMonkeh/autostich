@@ -9,12 +9,10 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
   const color = suitColor(suit);
   const permBoost = baseRank != null ? value - baseRank : 0;
   const effective = value + stichBonus;
-  // Ionisierung: hellblauer Ring mit zunehmender Intensität je Stapel (kräftiger bei „voll"), wenn
-  // gerade kein Gewinn-/Verlust-Glow aktiv ist.
+  // Ionisierung: BLAUER Rahmen wie der Serien-Schutz (Geladene Serie, #5ec8f0) → sofort erkennbar.
+  // Kräftiger bei „voll". Wird mit einem etwaigen Gewinn-/Verlust-Glow LAYERED (bleibt also immer sichtbar).
   const ionFull = ionStacks >= 4;
-  const ionGlow = ionStacks > 0
-    ? `0 0 0 1.5px #5ec8f0${ionFull ? "aa" : "55"}, 0 0 ${8 + ionStacks * 2}px #5ec8f0${ionFull ? "66" : "33"}`
-    : null;
+  const ionRing = ionStacks > 0 ? `0 0 0 2px #5ec8f0, 0 0 ${ionFull ? 12 : 9}px #5ec8f0${ionFull ? "aa" : "77"}` : null;
   return (
     <div
       className="as-card relative rounded-xl border-2 flex flex-col items-center justify-center select-none transition-all"
@@ -22,7 +20,8 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
         borderColor: color,
         width: 104, height: 144, background: "#1c1c22",
         opacity: dim ? 0.35 : 1,
-        boxShadow: glow ? `0 0 0 3.45px ${glow}66, 0 0 25.3px ${glow}55` : (ionGlow || "none"), // +15% (#Gewinn-/Verlust-Glow)
+        // Ion-Rahmen (blau) zuerst → liegt oben/knapp am Rand; Gewinn-/Verlust-Glow (+15%) radiert darunter.
+        boxShadow: [ionRing, glow ? `0 0 0 3.45px ${glow}66, 0 0 25.3px ${glow}55` : null].filter(Boolean).join(", ") || "none",
       }}
     >
       <div className="absolute top-1.5 left-2 text-[10px] uppercase tracking-wide" style={{ color }}>
