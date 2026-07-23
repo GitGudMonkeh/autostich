@@ -116,7 +116,9 @@ export function Autostich() {
     // Globalen Lauf posten (#14) — additiv, fehlertolerant. myEntry hebt ihn im Board hervor;
     // pubToken lädt das Board nach dem Submit neu (damit der eigene Lauf drin ist).
     const name = (username || "").trim().slice(0, 20);
-    const gEntry = { name, score: finalScore, tricks: state.trickNo, cycles: state.cycle };
+    // `level` bleibt im Payload (= Rundenzahl), damit die bestehende Supabase-Spalte befüllt ist
+    // (falls NOT NULL) — kein Schema-Wechsel nötig. Angezeigt wird ohnehin `cycles`.
+    const gEntry = { name, score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle };
     setMyEntry(gEntry);
     if (leaderboardConfigured && name) {
       publishRun(gEntry).then(() => setPubToken((t) => t + 1)).catch(() => {});
