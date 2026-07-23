@@ -2,12 +2,12 @@
    TUNING-BLOCK  — hier dreht der Dev im Playtest
    ============================================================ */
 export const START_LIFE       = 2000;   // Leben = Run-Timer [TUNING]
-export const DMG_PER_LOSS     = 10;     // Schaden je Niederlage (flat) [TUNING]
-// Anti-Infinity (#85, Umbau von #59): quadratisch eskalierender ZUSATZSCHADEN PRO NIEDERLAGE über die
-// aktive Laufzeit — im n-ten 2,5-Min-Intervall kostet jede Niederlage +LIFE_DRAIN_BASE·n² (n=0 im ersten
-// Intervall → +0): +0, +5, +20, +45, +80 … kein Cap. Kein isolierter Zeit-Tick mehr.
-export const LIFE_DRAIN_INTERVAL_MS = 2.5 * 60 * 1000; // 2,5 Min aktiver Spielzeit je Eskalationsstufe [TUNING]
-export const LIFE_DRAIN_BASE        = 5;               // Aufschlag pro Niederlage = LIFE_DRAIN_BASE · n² [TUNING]
+export const DMG_PER_LOSS     = 2;      // Basis-Schaden je Niederlage im 1. Durchlauf — sanfter Auftakt (#87) [TUNING]
+// Anti-Infinity (#87, cycle-basiert, Umbau von #85/#59): der ZUSATZSCHADEN PRO NIEDERLAGE eskaliert je
+// Deck-DURCHLAUF (nicht Echtzeit) → Tempo/Turbo beeinflusst den Score nicht mehr. Aufschlag = round(0,5·n²),
+// n = cycle (0-indiziert): +0, +0, +2, +5, +8, +13, +18 … kein Cap. Ziel: Run-Bogen über ~20 Durchläufe.
+// Voll deterministisch — die Engine leitet n aus `cycle` ab (kein Date, kein App-Payload nötig).
+export const LIFE_DRAIN_BASE        = 0.5;             // Aufschlag pro Niederlage = round(LIFE_DRAIN_BASE · cycle²) [TUNING]
 export const XP_PER_WIN       = 10;     // XP je gewonnenem Stich [TUNING]
 export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Tempo skalieren darauf) [TUNING]
 export const TEMPO_SCORE_FACTOR = 0.005; // je %-Punkt speedPct +0,5 % Stichscore [TUNING]
@@ -76,10 +76,9 @@ export const VALUE_CAP = null;
 // speedPct), kein manueller Regler (#2, Design-Doc §5.3).
 export const BASE_FLIP_MS = 1750;   // ms je Stich bei 0 % Speed (Basis-Tempo, etwas flotter; Turbo/Perks oben drauf) [TUNING]
 
-// Aufschlag pro Niederlage im n-ten 2,5-Min-Intervall (n≥0) — quadratisch, kein Cap. Rein.
-// App.jsx meldet das aktuelle Intervall via SET_DRAIN_LEVEL an die Engine (Determinismus: der game/-Layer
-// sieht kein Date, nur den Intervall-Index als State); die Engine addiert lifeDrainAt(drainLevel) auf den Niederlagenschaden.
-export const lifeDrainAt = (n) => LIFE_DRAIN_BASE * n * n;
+// Aufschlag pro Niederlage im n-ten Deck-Durchlauf (n = cycle, ≥0) — quadratisch, gerundet, kein Cap. Rein.
+// Die Engine ruft lifeDrainAt(cycle) direkt im Niederlage-Zweig auf; kein Date/Payload nötig (#87).
+export const lifeDrainAt = (n) => Math.round(LIFE_DRAIN_BASE * n * n);
 
 /* ============================================================
    DECK / FARBEN

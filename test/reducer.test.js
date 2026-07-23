@@ -118,22 +118,6 @@ describe("Reducer — Ansage-System (#36)", () => {
   });
 });
 
-describe("SET_DRAIN_LEVEL — Zeit-Eskalation pro Niederlage (#85, ersetzt den #59-Tick)", () => {
-  it("setzt drainLevel, ohne Leben abzuziehen (bleibt in play)", () => {
-    const s = { ...initialState(makeRng(1)), life: 100 };
-    const r = reducer(s, { type: "SET_DRAIN_LEVEL", level: 3 });
-    expect(r.drainLevel).toBe(3);
-    expect(r.life).toBe(100);      // kein direkter Abzug mehr
-    expect(r.phase).toBe("play");
-  });
-  it("greift nur in der play-Phase (Menü/Overlay unberührt)", () => {
-    const menu = menuState();
-    expect(reducer(menu, { type: "SET_DRAIN_LEVEL", level: 2 })).toBe(menu);
-    const lvl = { ...initialState(makeRng(1)), phase: "levelup" };
-    expect(reducer(lvl, { type: "SET_DRAIN_LEVEL", level: 2 }).drainLevel).toBe(0);
-  });
-});
-
 describe("Level-Up-Queue — PICK_PERK (#57)", () => {
   it("bei pendingLevelUps > 0 folgt ein weiteres Angebot mit dem neuen Build", () => {
     const s0 = { ...initialState(makeRng(1)), phase: "levelup", level: 4, offer: ["A1", "C1", "E2"], pendingLevelUps: 2 };
