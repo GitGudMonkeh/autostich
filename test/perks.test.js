@@ -4,10 +4,10 @@ import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, critChanceRawFor, comb
 import { effectivePlayerValue } from "../src/game/engine.js";
 
 describe("Perks — Deck-Modifikationen (Kat. A)", () => {
-  it("A1 Starke Fünfen: alle Wert-5 → +6 (Wert 11)", () => {
+  it("A1 Starke Fünfen: alle Wert-5 → +4 (Wert 9)", () => {
     const d = PERK_DEFS.A1.onPick(buildDeck());
     expect(d.filter((c) => c.value === 5)).toHaveLength(0);
-    expect(d.filter((c) => c.value === 11)).toHaveLength(4); // Deck 1–10 hat keine 11 → nur die 4 beförderten 5er
+    expect(d.filter((c) => c.value === 9 && c.baseRank === 5)).toHaveLength(4); // die 4 beförderten 5er
   });
 
   it("A2 Gerade Stärke: gerade Werte +1, ungerade unverändert", () => {
@@ -18,16 +18,16 @@ describe("Perks — Deck-Modifikationen (Kat. A)", () => {
     expect(r3.value).toBe(3); // ungerade → unverändert
   });
 
-  it("A5 Kleine ganz groß: vier unterschiedliche Karten (Wert 1–3) je +6", () => {
+  it("A5 Kleine ganz groß: vier unterschiedliche Karten (ursprünglich 1–3) je +5", () => {
     const base = buildDeck();
     const d = PERK_DEFS.A5.onPick(base, makeRng(3));
     const changedIdx = base.map((_, i) => i).filter((i) => d[i].value !== base[i].value);
     expect(changedIdx).toHaveLength(4);            // vier Karten
     expect(new Set(changedIdx).size).toBe(4);      // unterschiedlich
     for (const i of changedIdx) {
-      expect(base[i].value).toBeGreaterThanOrEqual(1);
-      expect(base[i].value).toBeLessThanOrEqual(3);
-      expect(d[i].value).toBe(base[i].value + 6);
+      expect(base[i].baseRank).toBeGreaterThanOrEqual(1); // Auswahl über den ursprünglichen Wert
+      expect(base[i].baseRank).toBeLessThanOrEqual(3);
+      expect(d[i].value).toBe(base[i].value + 5);
     }
   });
 
@@ -39,8 +39,8 @@ describe("Perks — Deck-Modifikationen (Kat. A)", () => {
 });
 
 describe("Perks — cardBonus (Kat. B) via effectivePlayerValue", () => {
-  it("B1 Gegenangriff: +2 nur nach einer Niederlage", () => {
-    expect(effectivePlayerValue(5, ["B1"], { lostLastTrick: true })).toBe(7);
+  it("B1 Gegenangriff: +4 nur nach einer Niederlage", () => {
+    expect(effectivePlayerValue(5, ["B1"], { lostLastTrick: true })).toBe(9);
     expect(effectivePlayerValue(5, ["B1"], { lostLastTrick: false })).toBe(5);
   });
 
@@ -50,14 +50,15 @@ describe("Perks — cardBonus (Kat. B) via effectivePlayerValue", () => {
     expect(effectivePlayerValue(4, ["B3"], { posInCycle: 3 })).toBe(4);
   });
 
-  it("B5 gewährt +2 nach einer Niederlage (Kartenbonus)", () => {
-    expect(effectivePlayerValue(3, ["B5"], { lostLastTrick: true })).toBe(5);
-    expect(effectivePlayerValue(3, ["B5"], { lostLastTrick: false })).toBe(3);
+  it("B5 Initiative: kein Kartenbonus mehr — nur winTieAfterLoss-Flag (§22.6)", () => {
+    expect(effectivePlayerValue(3, ["B5"], { lostLastTrick: true })).toBe(3);
+    expect(PERK_DEFS.B5.cardBonus).toBeUndefined();
+    expect(PERK_DEFS.B5.winTieAfterLoss).toBe(true);
   });
 
   it("Boni mehrerer Perks summieren sich", () => {
-    const v = effectivePlayerValue(2, ["B1", "B4"], { lostLastTrick: true, trickNo: 10 });
-    expect(v).toBe(2 + 2 + 8);
+    const v = effectivePlayerValue(2, ["B1", "B4"], { lostLastTrick: true, posInCycle: 9 });
+    expect(v).toBe(2 + 4 + 8); // B1 +4, B4 +8 (Position 10)
   });
 });
 
@@ -215,21 +216,22 @@ describe("comboMultFor (D2-Kombo, geteilte Anzeige-Quelle #31)", () => {
 
 describe("Neue Normal-Perks (#71)", () => {
   const sumV = (d) => d.reduce((s, c) => s + c.value, 0);
-  it("A6 Mittelklasse: Werte 4–7 je +2 (Startdeck 16 Karten → +32)", () => {
-    expect(sumV(PERK_DEFS.A6.onPick(buildDeck())) - sumV(buildDeck())).toBe(32);
+  it("A6 Mittelklasse: Werte 4–7 je +1 (Startdeck 16 Karten → +16)", () => {
+    expect(sumV(PERK_DEFS.A6.onPick(buildDeck())) - sumV(buildDeck())).toBe(16);
   });
-  it("A7 Spitzenförderung: die vier höchsten Karten je +6 (+24; vier 10er → 16)", () => {
-    expect(sumV(PERK_DEFS.A7.onPick(buildDeck())) - sumV(buildDeck())).toBe(24);
-    expect(PERK_DEFS.A7.onPick(buildDeck()).filter((c) => c.value === 16)).toHaveLength(4);
+  it("A7 Spitzenförderung: die vier höchsten Karten je +4 (+16; vier 10er → 14)", () => {
+    expect(sumV(PERK_DEFS.A7.onPick(buildDeck())) - sumV(buildDeck())).toBe(16);
+    expect(PERK_DEFS.A7.onPick(buildDeck()).filter((c) => c.value === 14)).toHaveLength(4);
   });
-  it("A8 Nachzügler: die vier niedrigsten Karten je +6 (+24; vier 1er → 7)", () => {
-    expect(sumV(PERK_DEFS.A8.onPick(buildDeck())) - sumV(buildDeck())).toBe(24);
-    expect(PERK_DEFS.A8.onPick(buildDeck()).filter((c) => c.value === 7 && c.baseRank === 1)).toHaveLength(4);
+  it("A8 Nachzügler: die vier niedrigsten Karten je +5 (+20; vier 1er → 6)", () => {
+    expect(sumV(PERK_DEFS.A8.onPick(buildDeck())) - sumV(buildDeck())).toBe(20);
+    expect(PERK_DEFS.A8.onPick(buildDeck()).filter((c) => c.value === 6 && c.baseRank === 1)).toHaveLength(4);
   });
-  it("B6 Knappe Kiste: +100 nur bei genau 1 Wertpunkt Vorsprung", () => {
-    expect(PERK_DEFS.B6.scoreFlat({ margin: 1 })).toBe(100);
-    expect(PERK_DEFS.B6.scoreFlat({ margin: 2 })).toBe(0);
-    expect(PERK_DEFS.B6.scoreFlat({ margin: 0 })).toBe(0);
+  it("B6 Knappe Kiste: +2 temp Wert, wenn die Karte in einer Wiederholung liegt", () => {
+    const inWied = { posForm: { formations: [{ type: "wiederholung", ordinal: 2, factor: 1.3 }] } };
+    expect(PERK_DEFS.B6.cardBonus(inWied)).toBe(2);
+    expect(PERK_DEFS.B6.cardBonus({ posForm: { formations: [{ type: "treppe", ordinal: 3 }] } })).toBe(0);
+    expect(PERK_DEFS.B6.cardBonus({})).toBe(0);
   });
   it("B7 Durchbruch: +10 ab 5 Stichen ohne Sieg", () => {
     expect(PERK_DEFS.B7.cardBonus({ sinceWin: 4 })).toBe(0);
@@ -339,12 +341,14 @@ describe("Seltene Perks (#71, Phase 2d — Per-Durchlauf)", () => {
 });
 
 describe("Seltene Perks (#71, Phase 2f — Historie-Hooks)", () => {
-  it("B9 Perfekte Folge: 0/+1/+2 … gedeckelt bei +5", () => {
-    expect(PERK_DEFS.B9.cardBonus({ ascChain: 1 })).toBe(0);
-    expect(PERK_DEFS.B9.cardBonus({ ascChain: 2 })).toBe(1);
-    expect(PERK_DEFS.B9.cardBonus({ ascChain: 4 })).toBe(3);
-    expect(PERK_DEFS.B9.cardBonus({ ascChain: 6 })).toBe(5); // Deckel
-    expect(PERK_DEFS.B9.cardBonus({ ascChain: 9 })).toBe(5);
+  it("B9 Perfekte Folge: temp Wert nach Treppen-Position (1→+1 … 4+→+4)", () => {
+    const treppe = (ord) => ({ posForm: { formations: [{ type: "treppe", ordinal: ord, factor: 1.25 }] } });
+    expect(PERK_DEFS.B9.cardBonus(treppe(1))).toBe(1);
+    expect(PERK_DEFS.B9.cardBonus(treppe(2))).toBe(2);
+    expect(PERK_DEFS.B9.cardBonus(treppe(3))).toBe(3);
+    expect(PERK_DEFS.B9.cardBonus(treppe(4))).toBe(4);
+    expect(PERK_DEFS.B9.cardBonus(treppe(5))).toBe(4); // Deckel
+    expect(PERK_DEFS.B9.cardBonus({ posForm: { formations: [{ type: "farbblock", ordinal: 3 }] } })).toBe(0);
   });
   it("D17 Farbserie: 75/100/… gedeckelt bei 200, unter Serie 2 nichts", () => {
     expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 1 })).toBe(0);

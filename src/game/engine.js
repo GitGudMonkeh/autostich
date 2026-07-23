@@ -75,6 +75,8 @@ export function resolveTrick(state, rng = Math.random) {
   const posForm = formations[pos] || { mult: 1, formations: [] };
   const formationMult = posForm.mult || 1;
   const hasFormation = positionHasFormation(posForm);
+  // Dauerwert des direkten Vorgängers in der Reihenfolge (B10 Überzahl); an Position 0 keiner.
+  const predValue = pos > 0 ? deck[playerOrder[pos - 1]].value : null;
 
   trickNo += 1;
   // #71 Perfekte Folge: Länge der aktuell streng ansteigenden Wertfolge INKL. dieser Karte (Basiswert).
@@ -96,8 +98,10 @@ export function resolveTrick(state, rng = Math.random) {
     winStreak: serieStreak, // #71 Überzahl: Serien-Effekte (B2 Momentum) sehen die effektive Serie
     sinceWin, // #71 Durchbruch: Stiche ohne Sieg (Stand VOR diesem Stich)
     lossStreak, // #71 Revanche: aufeinanderfolgende Niederlagen (Stand VOR diesem Stich)
-    ascChain, // #71 Perfekte Folge
+    ascChain, // #71 Perfekte Folge (Alt-Historie; B9 nutzt jetzt posForm)
     fateValue, // #71 Schicksalsmaschine: cardBonus vergleicht pValueBase mit dem Schicksalswert
+    posForm, // V2 §22.6: Formation der gespielten Position (B6 Wiederholung / B9 Treppe)
+    predValue, // V2 §22.6: Dauerwert des direkten Vorgängers (B10 Überzahl)
   };
   const pValue = effectivePlayerValue(pCard.value, perks, ctx);
   const oValue = oCard.value; // Gegner bleibt neutral/unverändert (§12)

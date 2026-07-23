@@ -61,8 +61,8 @@ export const CATEGORIES = {
 export const PERK_DEFS = {
   // ---- A: Deck-Modifikation (einmalig beim Pick) ----
   A1: { id: "A1", cat: "A", label: "Starke Fünfen",
-        desc: "Alle Karten mit Wert 5 erhalten dauerhaft +6 Wert.",
-        onPick: (d) => bumpWhere(d, (c) => c.value === 5, 6) },
+        desc: "Alle Karten mit Wert 5 erhalten dauerhaft +4 Wert.",
+        onPick: (d) => bumpWhere(d, (c) => c.value === 5, 4) },
   A2: { id: "A2", cat: "A", label: "Gerade Stärke",
         desc: "Alle Karten mit geradem Wert erhalten dauerhaft +1 Wert.",
         onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 0, 1) },
@@ -76,26 +76,27 @@ export const PERK_DEFS = {
           return bumpWhere(d, (c) => c.suit === s, 2);
         } },
   A5: { id: "A5", cat: "A", label: "Kleine ganz groß",
-        desc: "Vier zufällige Karten mit Wert 1–3 erhalten dauerhaft je +6 Wert.",
+        desc: "Vier zufällige Karten mit ursprünglichem Wert 1–3 erhalten dauerhaft je +5 Wert.",
         onPick: (d, rng) => {
-          const idx = d.map((c, i) => [c, i]).filter(([c]) => c.value >= 0 && c.value <= 3).map(([, i]) => i);
+          // §22.6: „ursprünglicher Wert" = baseRank (bleibt konstant), nicht der aktuelle Wert.
+          const idx = d.map((c, i) => [c, i]).filter(([c]) => c.baseRank >= 1 && c.baseRank <= 3).map(([, i]) => i);
           const chosen = new Set(shuffle(idx, rng).slice(0, 4)); // bis zu 4 unterschiedliche Karten
-          return d.map((c, i) => (chosen.has(i) ? { ...c, value: c.value + 6 } : c));
+          return d.map((c, i) => (chosen.has(i) ? { ...c, value: c.value + 5 } : c));
         } },
 
   // ---- Neue Normal-Perks (#71) — Anzeige-Gruppe über `cat` (A Deck / B Stich / C Leben) ----
   A6: { id: "A6", cat: "A", label: "Mittelklasse",
-        desc: "Alle Karten mit aktuellem Wert 4–7 erhalten dauerhaft +2 Wert.",
-        onPick: (d) => bumpWhere(d, (c) => c.value >= 4 && c.value <= 7, 2) },
+        desc: "Alle Karten mit aktuellem Wert 4–7 erhalten dauerhaft +1 Wert.",
+        onPick: (d) => bumpWhere(d, (c) => c.value >= 4 && c.value <= 7, 1) },
   A7: { id: "A7", cat: "A", label: "Spitzenförderung",
-        desc: "Die vier aktuell höchsten Karten erhalten dauerhaft je +6 Wert.",
-        onPick: (d) => bumpTopN(d, 4, 6, "desc") },
+        desc: "Die vier aktuell höchsten Karten erhalten dauerhaft je +4 Wert.",
+        onPick: (d) => bumpTopN(d, 4, 4, "desc") },
   A8: { id: "A8", cat: "A", label: "Nachzügler",
-        desc: "Die vier aktuell niedrigsten Karten erhalten dauerhaft je +6 Wert.",
-        onPick: (d) => bumpTopN(d, 4, 6, "asc") },
+        desc: "Die vier aktuell niedrigsten Karten erhalten dauerhaft je +5 Wert.",
+        onPick: (d) => bumpTopN(d, 4, 5, "asc") },
   B6: { id: "B6", cat: "B", label: "Knappe Kiste",
-        desc: "Gewinnst du mit exakt 1 Wertpunkt Vorsprung, +100 Score.",
-        scoreFlat: (ctx) => (ctx.margin === 1 ? 100 : 0) },
+        desc: "Liegt die gespielte Karte in einer Wiederholung, erhält sie +2 temporären Wert.",
+        cardBonus: (ctx) => (ctx.posForm && ctx.posForm.formations.some((f) => f.type === "wiederholung") ? 2 : 0) },
   B7: { id: "B7", cat: "B", label: "Durchbruch",
         desc: "Nach fünf Stichen ohne Sieg erhält die nächste Karte +10 Wert (Sieg setzt zurück, Gleichstand zählt weiter).",
         cardBonus: (ctx) => ((ctx.sinceWin || 0) >= 5 ? 10 : 0) },
@@ -177,8 +178,8 @@ export const PERK_DEFS = {
 
   // ---- Seltene Perks (#71, Phase 2f) — Ergebnis-/Wert-Historie (neue State-Felder) ----
   B9: { id: "B9", cat: "B", rarity: "rare", label: "Perfekte Folge",
-        desc: "Bei streng ansteigenden Kartenwerten je weitere Karte der Folge mehr Wert: 2.→+1, 3.→+2 … max +5. Eine gleiche/niedrigere Karte beginnt neu.",
-        cardBonus: (ctx) => Math.min((ctx.ascChain || 1) - 1, 5) },
+        desc: "Karten einer Treppe erhalten je nach Position +1, +2, +3, danach +4 temporären Wert.",
+        cardBonus: (ctx) => { const t = ctx.posForm && ctx.posForm.formations.find((f) => f.type === "treppe"); return t ? Math.min(t.ordinal, 4) : 0; } },
   D17: { id: "D17", cat: "D", rarity: "rare", label: "Farbserie",
         desc: "Mehrere Siege in Folge mit derselben Farbe: 2.→+75, 3.→+100, je weiterer +25 (max +200). Andere Farbe/Niederlage beendet die Serie.",
         scoreFlat: (ctx) => (ctx.suitStreak >= 2 ? Math.min(75 + (ctx.suitStreak - 2) * 25, 200) : 0) },
@@ -188,8 +189,8 @@ export const PERK_DEFS = {
 
   // ---- Seltene Perks (#71, Phase 2e) — Serien-/Tempo-/Crit-Mechanik (Engine-Flags + State) ----
   B10: { id: "B10", cat: "B", rarity: "rare", label: "Überzahl",
-        desc: "Ein Sieg mit mindestens 5 Wertpunkten Vorsprung zählt für Siegesserien-Effekte als zwei Stufen (Statistik/XP/Heilung bleiben ein Sieg).",
-        ueberzahl: true }, // Engine führt overStreak
+        desc: "Ist der Dauerwert einer Karte höher als der ihres direkten Vorgängers, erhält sie +3 temporären Wert.",
+        cardBonus: (ctx) => (ctx.predValue != null && ctx.pValueBase > ctx.predValue ? 3 : 0) },
   E9: { id: "E9", cat: "E", rarity: "rare", label: "Hochlauf",
         desc: "Jeder Sieg gibt +2 % temporäres Tempo (max +40 %); eine Niederlage −10 pp. Zählt für Geschwindigkeit und Tempo-Score.",
         hochlauf: true }, // Engine führt rampTempo/tempTempo
@@ -202,20 +203,20 @@ export const PERK_DEFS = {
 
   // ---- B: Stich-Effekte (Wert-Bonus auf die aktuelle Karte) ----
   B1: { id: "B1", cat: "B", label: "Gegenangriff",
-        desc: "Nach einem verlorenen Stich erhält die nächste Karte +2 Wert.",
-        cardBonus: (ctx) => (ctx.lostLastTrick ? 2 : 0) },
+        desc: "Nach einem verlorenen Stich erhält die nächste Karte +4 Wert.",
+        cardBonus: (ctx) => (ctx.lostLastTrick ? 4 : 0) },
   B2: { id: "B2", cat: "B", label: "Momentum",
-        desc: "Jeder dritte Sieg der laufenden Serie (3., 6., 9. …) erhält +6 Wert.",
-        cardBonus: (ctx) => ((ctx.winStreak + 1) % 3 === 0 ? 6 : 0) },
+        desc: "Nach genau drei Siegen in Folge erhält die nächste Karte +5 Wert.",
+        cardBonus: (ctx) => (ctx.winStreak === 3 ? 5 : 0) }, // §22.6: einmalig bei Serie 3 (Stand VOR dem Stich)
   B3: { id: "B3", cat: "B", label: "Starker Auftakt",
-        desc: "Die ersten drei Stiche jedes Deck-Durchlaufs erhalten je +4 Wert.",
+        desc: "Die ersten drei Karten jedes Durchlaufs erhalten je +4 Wert.",
         cardBonus: (ctx) => (ctx.posInCycle <= 2 ? 4 : 0) },
   B4: { id: "B4", cat: "B", label: "Zehnter Schlag",
-        desc: "Jeder zehnte Stich erhält +8 Wert.",
-        cardBonus: (ctx) => (ctx.trickNo % 10 === 0 ? 8 : 0) },
+        desc: "Karten auf Position 10, 20, 30 und 40 erhalten +8 Wert.",
+        cardBonus: (ctx) => ((ctx.posInCycle + 1) % 10 === 0 ? 8 : 0) },
   B5: { id: "B5", cat: "B", label: "Initiative",
-        desc: "Nach einer Niederlage erhält die nächste Karte +2 Wert und du gewinnst den nächsten Gleichstand.",
-        cardBonus: (ctx) => (ctx.lostLastTrick ? 2 : 0), winTieAfterLoss: true },
+        desc: "Nach einer Niederlage gewinnst du den nächsten Gleichstand.",
+        winTieAfterLoss: true },
 
   // ---- C: Leben & Verteidigung ----
   C1: { id: "C1", cat: "C", label: "Lebensraub",

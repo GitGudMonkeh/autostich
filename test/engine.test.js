@@ -283,13 +283,13 @@ describe("Crit-Historie-Rares — Engine (#71 Phase 2c)", () => {
 describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
   const mk = (arr, suit = "R") => arr.map((v, i) => ({ id: `${suit}${i}`, suit, baseRank: v, value: v }));
 
-  it("B9 Perfekte Folge: aufsteigende Werte geben 0/+1/+2, Rückschritt beginnt neu", () => {
-    const deck = mk([3, 5, 7, 4]);
+  it("B9 Perfekte Folge: Karten einer Treppe erhalten +1/+2/+3 nach Position", () => {
+    const deck = mk([3, 5, 7, 4]); // 3<5<7 = Treppe (Pos 0–2), die 4 liegt außerhalb
     const opp = mk([0, 0, 0, 0]);
     let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2, 3], oppOrder: [0, 1, 2, 3], perks: ["B9"] };
     const pv = [];
     for (let i = 0; i < 4; i++) { s = resolveTrick(s, rng); pv.push(s.lastTrick.pValue); }
-    expect(pv).toEqual([3, 6, 9, 4]); // Bonus 0,1,2 dann Reset 0
+    expect(pv).toEqual([4, 7, 10, 4]); // Treppen-Ordinal 1,2,3 → +1,+2,+3; Pos 3 keine Treppe → +0
   });
 
   it("D17 Farbserie: gleiche Farbe zählt, Farbwechsel beginnt bei 1, Niederlage bricht", () => {
@@ -318,19 +318,21 @@ describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
 });
 
 describe("Serien-/Crit-Rares — Engine (#71 Phase 2e)", () => {
-  it("B10 Überzahl: klarer Sieg (Vorsprung ≥5) zählt für Serien-Effekte doppelt, Statistik bleibt 1 Sieg", () => {
-    const big = resolveTrick(scenario(12, 0, { perks: ["B10"] }), rng);
-    expect(big.wins).toBe(1); expect(big.winStreak).toBe(1); // Statistik: 1 Sieg
-    expect(big.overStreak).toBe(2);                          // effektive Serie: 2 Stufen
-    expect(big.lastTrick.gained).toBeCloseTo(104);          // 100 × streakBaseMult(2)=1,04
-    const small = resolveTrick(scenario(5, 3, { perks: ["B10"] }), rng); // Vorsprung 2 <5
-    expect(small.overStreak).toBe(1);
-  });
-  it("B10 + D2: effektive Serie speist Kombo & Anzeige (kein Drift)", () => {
-    let s = scenario(12, 0, { perks: ["B10", "D2"], deck: flatDeck() }); // formationsneutral, klare Siege (Marge ≥5)
-    s = resolveTrick(s, rng); expect(s.overStreak).toBe(2); expect(s.lastTrick.comboMult).toBeCloseTo(1.2);
-    s = resolveTrick(s, rng); expect(s.overStreak).toBe(4); expect(s.lastTrick.comboMult).toBeCloseTo(1.4);
-    expect(resolveTrick(scenario(0, 12, { perks: ["B10"], overStreak: 3 }), rng).overStreak).toBe(0); // Niederlage bricht
+  it("B10 Überzahl: +3 temp Wert, wenn der Dauerwert höher als der des direkten Vorgängers ist", () => {
+    const deck = [
+      { id: "a", suit: "R", baseRank: 4, value: 4 },
+      { id: "b", suit: "R", baseRank: 9, value: 9 },
+      { id: "c", suit: "R", baseRank: 2, value: 2 },
+    ];
+    const opp = [
+      { id: "o0", suit: "R", baseRank: 0, value: 0 },
+      { id: "o1", suit: "R", baseRank: 0, value: 0 },
+      { id: "o2", suit: "R", baseRank: 0, value: 0 },
+    ];
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2], oppOrder: [0, 1, 2], perks: ["B10"] };
+    const pv = [];
+    for (let i = 0; i < 3; i++) { s = resolveTrick(s, rng); pv.push(s.lastTrick.pValue); }
+    expect(pv).toEqual([4, 12, 2]); // Pos0 kein Vorgänger; Pos1 (9>4) +3; Pos2 (2<9) +0
   });
 
   it("D19 Überschusskrit: Roh-Crit über 100 % → Chance auf Super-Crit (×1,5 auf den Faktor)", () => {
