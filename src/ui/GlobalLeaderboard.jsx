@@ -30,7 +30,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
   let flagged = false;
   const isMine = (r) => {
     if (flagged || !mine || !mine.name) return false;
-    const hit = r.name === mine.name && r.score === mine.score && r.level === mine.level
+    const hit = r.name === mine.name && r.score === mine.score
       && r.tricks === mine.tricks && r.cycles === mine.cycles;
     if (hit) flagged = true;
     return hit;
@@ -58,7 +58,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                   {r.name || "—"}{mineRow && <span className="opacity-60 text-xs"> · du</span>}
                 </span>
                 <span className="font-bold shrink-0" style={{ color: "#d4a63a" }}>{r.score.toLocaleString("de-DE")}</span>
-                <span className="opacity-40 text-xs shrink-0">Lvl {r.level} · {r.tricks}</span>
+                <span className="opacity-40 text-xs shrink-0">{r.cycles ?? 0} R · {r.tricks}</span>
               </div>
             );
           })}

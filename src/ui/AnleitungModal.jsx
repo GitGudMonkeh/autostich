@@ -4,11 +4,11 @@ import { useEscape } from "./useEscape.js";
    Erreichbar über den Startbildschirm; beim allerersten Start einmal automatisch. */
 const ITEMS = [
   ["🃏", "Automatisches Stechspiel", "Beide Seiten decken je eine Karte auf — die höhere Karte gewinnt den Stich. Du spielst keine Karte selbst."],
-  ["⚔️", "Sieg · Niederlage · Gleichstand", "Sieg → +Score & +XP. Niederlage → −Leben. Gleichstand → nichts passiert."],
+  ["⚔️", "Sieg · Niederlage · Gleichstand", "Sieg → +Score. Niederlage → −Leben. Gleichstand → nichts passiert."],
   ["❤️", "Leben ist dein Timer", "Du startest mit 2000 Leben. Fällt es auf 0, endet der Lauf. Ziel ist ein möglichst hoher Score."],
-  ["✨", "Perks bei Level-Up", "Siege geben XP. Bei jedem Level-Up pausiert das Spiel und du wählst einen Perk — dein Deck wird dauerhaft stärker."],
+  ["✨", "Perk nach jeder Runde", "Schon zu Beginn und nach jedem Deck-Durchlauf pausiert das Spiel und du wählst einen Perk — dein Deck wird dauerhaft stärker."],
   ["🔁", "Deck-Durchlauf", "Nach 40 Stichen wird neu gemischt. Deine dauerhaften Kartenwert-Änderungen bleiben erhalten."],
-  ["🎯", "Ansage", "Nach dem ersten Deck-Durchlauf schätzt du vor jeder neuen Runde, wie viele der 40 Stiche du gewinnst. Je genauer, desto größer der Score-Bonus — ein exakter Treffer verdreifacht den Rundenscore."],
+  ["⏳", "Zeitdruck", "Mit jeder Runde kostet eine Niederlage mehr Leben. Baue so, dass du Niederlagen vermeidest — sonst fressen die steigenden Kosten dein Leben auf."],
   ["⏯️", "Steuerung", "Auto-Play läuft von allein. Mit Pause hältst du an; das Tempo steigt über Tempo-Perks (und 2×/3× im Ablauf)."],
 ];
 

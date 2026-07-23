@@ -331,15 +331,11 @@ export const RARITY_META = {
 export const rarityMeta = (id) => RARITY_META[rarityOf(id)];
 
 // Angebot: bis zu `count` noch nicht besessene Perks, GEWICHTET nach Seltenheit (#33, §10.3).
-// Legendaries: erst ab LEGENDARY_MIN_LEVEL, höchstens MAX_LEGENDARIES_PER_OFFER je Angebot.
+// Perk-Auswahl nach jeder Runde: KEINE Level-Gates mehr — alle Seltenheiten sofort möglich, nur gewichtet;
+// höchstens MAX_LEGENDARIES_PER_OFFER Legendaries je Angebot.
 // Deterministisch über den injizierten rng (ein rng()-Zug je Auswahl). Pool leer → weniger Perks.
-export function buildOffer(owned, rng, count, level = 1) {
-  const legendaryOK = level >= C.LEGENDARY_MIN_LEVEL;
-  const rareOK = level >= C.RARE_MIN_LEVEL; // #71: 3-Stufen-Gate — Seltene ab RARE_MIN_LEVEL
-  let pool = PERK_LIST.filter((p) => {
-    const r = p.rarity || "common";
-    return !owned.includes(p.id) && (r !== "legendary" || legendaryOK) && (r !== "rare" || rareOK);
-  });
+export function buildOffer(owned, rng, count) {
+  let pool = PERK_LIST.filter((p) => !owned.includes(p.id));
   const chosen = [];
   let legendaries = 0;
   while (chosen.length < count && pool.length > 0) {

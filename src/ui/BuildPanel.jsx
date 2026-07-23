@@ -8,7 +8,7 @@ export function BuildPanel({ perks }) {
       <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
         Build — {perks.length} Perk{perks.length === 1 ? "" : "s"}
       </div>
-      <PerkList perks={perks} empty="Noch keine Perks. Sammle XP für dein erstes Level-Up." />
+      <PerkList perks={perks} empty="Noch keine Perks. Nach jeder Runde wählst du einen dazu." />
     </div>
   );
 }

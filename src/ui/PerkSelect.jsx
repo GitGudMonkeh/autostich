@@ -7,7 +7,7 @@ const fmtMult = (x) => x.toFixed(2).replace(".", ",");
 
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
-export function PerkSelect({ offer, level, onPick, perks = [], deck = [], state = {} }) {
+export function PerkSelect({ offer, onPick, perks = [], deck = [], state = {} }) {
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
   const { life, maxLife, shield = 0, winStreak = 0, wins = 0, trickNo = 0, pos = 0, speedPct = 0, tempTempo = 0, legendaryCritBonus = 0, crits = 0 } = state;
   // Effektives Tempo inkl. temporärem Tempo (E9/E10, #83) für Tempo-Score & Score-Mult; Crit bleibt permanent (E6).
@@ -20,7 +20,9 @@ export function PerkSelect({ offer, level, onPick, perks = [], deck = [], state 
     <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl rounded-2xl p-6 max-h-[92vh] overflow-y-auto" style={{ background: "#181820", border: "1px solid #33333e" }}>
         <div className="text-center mb-1">
-          <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Level {level} erreicht</div>
+          <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>
+            {(state.perks || []).length === 0 ? "Start" : `Runde ${(state.cycle || 0) + 1}`}
+          </div>
           <h2 className="text-xl font-bold mt-1">Wähle einen Perk</h2>
         </div>
 

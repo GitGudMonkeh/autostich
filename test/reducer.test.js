@@ -1,16 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
-import { TRICKS_PER_CYCLE, PREDICTION_MAX } from "../src/game/constants.js";
 
 const rng = makeRng(1);
 
 describe("Reducer", () => {
-  it("initialState: play-Phase, volle Leben, Level 1, leerer Build", () => {
+  it("initialState: play-Phase, volle Leben, leerer Build (Basis-State)", () => {
     const s = initialState(makeRng(1));
     expect(s.phase).toBe("play");
     expect(s.life).toBe(2000);
-    expect(s.level).toBe(1);
     expect(s.perks).toEqual([]);
     expect(s.deck).toHaveLength(40);
   });
@@ -59,17 +57,19 @@ describe("Reducer", () => {
     expect(new Set(s.kingBoosted)).toEqual(new Set(["A", "B"]));
   });
 
-  it("RESET beginnt einen frischen Lauf", () => {
-    const dirty = { ...initialState(makeRng(1)), score: 999, level: 8, perks: ["A1", "D1"] };
+  it("RESET beginnt einen frischen Lauf mit Start-Pick (levelup + Angebot)", () => {
+    const dirty = { ...initialState(makeRng(1)), score: 999, perks: ["A1", "D1"] };
     const fresh = reducer(dirty, { type: "RESET", rng });
     expect(fresh.score).toBe(0);
-    expect(fresh.level).toBe(1);
     expect(fresh.perks).toEqual([]);
+    expect(fresh.phase).toBe("levelup"); // Neuer Loop: Perk gleich zu Beginn
+    expect(fresh.offer).toHaveLength(3);
   });
 
-  it("START_RUN startet aus dem Menü einen frischen Lauf in play", () => {
+  it("START_RUN startet aus dem Menü einen frischen Lauf mit Start-Pick (levelup)", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng });
-    expect(s.phase).toBe("play");
+    expect(s.phase).toBe("levelup");
+    expect(s.offer).toHaveLength(3);
     expect(s.trickNo).toBe(0);
     expect(s.perks).toEqual([]);
   });
@@ -79,60 +79,13 @@ describe("Reducer", () => {
   });
 });
 
-describe("Reducer — Ansage-System (#36)", () => {
-  const predState = () => ({ ...initialState(makeRng(1)), phase: "prediction", predictionDue: true, cycleWins: 22, cycleBaseScore: 500 });
-
-  it("PREDICTION_MAX leitet sich aus TRICKS_PER_CYCLE (40) ab", () => {
-    expect(PREDICTION_MAX).toBe(TRICKS_PER_CYCLE);
-    expect(PREDICTION_MAX).toBe(40);
-  });
-
-  it("SUBMIT_PREDICTION (gültig) → phase play, Ansage gesetzt, Zyklus-Akkus zurückgesetzt", () => {
-    const s = reducer(predState(), { type: "SUBMIT_PREDICTION", prediction: 25, rng });
-    expect(s.phase).toBe("play");
-    expect(s.prediction).toBe(25);
-    expect(s.predictionDue).toBe(false);
-    expect(s.pos).toBe(0);
-    expect(s.cycleWins).toBe(0);
-    expect(s.cycleBaseScore).toBe(0);
-  });
-
-  it("SUBMIT_PREDICTION lehnt < 0, > 40 und nicht-ganzzahlige Werte ab (bleibt in prediction)", () => {
-    for (const bad of [-1, 41, 5.5]) {
-      const s = reducer(predState(), { type: "SUBMIT_PREDICTION", prediction: bad, rng });
-      expect(s.phase).toBe("prediction");
-      expect(s.prediction).toBeNull();
-    }
-    expect(reducer(predState(), { type: "SUBMIT_PREDICTION", prediction: 0, rng }).prediction).toBe(0);   // Rand gültig
-    expect(reducer(predState(), { type: "SUBMIT_PREDICTION", prediction: 40, rng }).prediction).toBe(40); // Rand gültig
-  });
-
-  it("SUBMIT_PREDICTION außerhalb der prediction-Phase wird ignoriert", () => {
-    const play = initialState(makeRng(1));
-    expect(reducer(play, { type: "SUBMIT_PREDICTION", prediction: 10, rng })).toBe(play);
-  });
-
-  it("Ansage bleibt den ganzen Durchlauf unverändert (RESOLVE_TRICK ändert sie nicht)", () => {
-    const play = { ...initialState(makeRng(1)), prediction: 25 };
-    expect(reducer(play, { type: "RESOLVE_TRICK", rng }).prediction).toBe(25);
-  });
-});
-
-describe("Level-Up-Queue — PICK_PERK (#57)", () => {
-  it("bei pendingLevelUps > 0 folgt ein weiteres Angebot mit dem neuen Build", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", level: 4, offer: ["A1", "C1", "E2"], pendingLevelUps: 2 };
-    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "A1", rng });
-    expect(s1.perks).toEqual(["A1"]);
-    expect(s1.phase).toBe("levelup");
-    expect(s1.offer.length).toBeGreaterThan(0);
-    expect(s1.pendingLevelUps).toBe(1);
-  });
-  it("letztes Level-Up (pendingLevelUps 0) → zurück in play, offer null", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", level: 4, offer: ["A1", "C1", "E2"], pendingLevelUps: 0 };
-    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "A1", rng });
+describe("PICK_PERK — nach jeder Runde zurück in play (Neuer Loop)", () => {
+  it("Wahl aus dem levelup-Angebot → play, offer null, Perk übernommen", () => {
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["A1", "C1", "E2"] };
+    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "C1", rng });
     expect(s1.phase).toBe("play");
     expect(s1.offer).toBeNull();
-    expect(s1.pendingLevelUps).toBe(0);
+    expect(s1.perks).toEqual(["C1"]);
   });
 });
 

@@ -1,6 +1,6 @@
 import * as C from "./constants.js";
+import { shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer, critChanceRawFor, comboMultFor, tempoScoreMultFor, critMultiplierFor, streakBaseMult } from "./perks.js";
-import { xpToNext } from "./leveling.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -44,7 +44,7 @@ export function resolveTrick(state, rng = Math.random) {
 
   let {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
-    life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
+    life, maxLife, score, winStreak, bestStreak, wins, losses, ties,
     initiative, lastResult, perks, offer, shield, tieArmed, sinceWin = 0,
     lossStreak = 0, lastWinValue = null, altLen = 0, // #71 Rares: Revanche / Präzision / Wechselspiel
     critFollowArmed = false, misfireBonus = 0, weaknessArmed = false, // #71 Crit-Historie: Crit-Folge / Fehlzündung / Schwachstellenanalyse
@@ -56,10 +56,6 @@ export function resolveTrick(state, rng = Math.random) {
     rampTempo = 0, calmTricks = 0, tempTempo = 0, // #71 Tempo: Hochlauf (Rampe) / Ruhe vor dem Sturm (Burst) / effektives Temp-Tempo
     fateValue = null, bloodStacks = 0, zeitrafferStacks = 0, // #71 Legendaries: Schicksalsmaschine / Blutvertrag / Zeitraffer
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
-    // Ansage-System (#36)
-    cycleWins = 0, cycleBaseScore = 0, prediction = null, lastPrediction = null,
-    lastPredictionResult = null, predictionBonusScore = 0, exactPredictions = 0,
-    nearPredictions = 0, largestPredictionBonus = 0,
   } = state;
 
   const pCard = deck[playerOrder[pos]];
@@ -112,7 +108,7 @@ export function resolveTrick(state, rng = Math.random) {
   let isCrit = false, superCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
 
   if (won) {
-    winStreak += 1; wins += 1; cycleWins += 1; // cycleWins: Siege im laufenden Durchlauf (#36)
+    winStreak += 1; wins += 1;
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     // #71 Überzahl: klarer Sieg (Vorsprung ≥5) zählt für Serien-Effekte als zwei Stufen (nicht für wins/XP/Heilung).
     overStreak = (overStreak || 0) + (ownsUeberzahl && pValue - oValue >= 5 ? 2 : 1);
@@ -159,8 +155,6 @@ export function resolveTrick(state, rng = Math.random) {
       if (ownsFlag(perks, "legendaryCritGain")) legendaryCritBonus = Math.min(legendaryCritBonus + C.L4_CRIT_STEP, C.L4_CRIT_CAP);
     }
     bestTrickScore = Math.max(bestTrickScore, gained);
-    cycleBaseScore += gained; // Basis-Score des Durchlaufs (#36): OHNE Ansage-Mult; Bonus kommt am Ende
-    xp += C.XP_PER_WIN;
     healed = sumHook(perks, "healOnWin", wctx) + (isCrit ? sumHook(perks, "healOnCrit", wctx) : 0); // #71 D11: Crit heilt
     life = Math.min(maxLife, life + healed);
     initiative = "player";
@@ -239,10 +233,8 @@ export function resolveTrick(state, rng = Math.random) {
   if (life <= 0) {
     return {
       ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
-      life: 0, xp, level, score, winStreak, bestStreak, wins, losses, ties,
+      life: 0, score, winStreak, bestStreak, wins, losses, ties,
       crits, critBonusScore, bestTrickScore, legendaryCritBonus,
-      cycleWins, cycleBaseScore, prediction, lastPrediction, lastPredictionResult,
-      predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus,
       initiative, lastResult, offer, shield, tieArmed, sinceWin, lossStreak, lastWinValue, altLen,
       critFollowArmed, misfireBonus, weaknessArmed, cleanStreak, notfallUsed,
       ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
@@ -252,10 +244,11 @@ export function resolveTrick(state, rng = Math.random) {
     };
   }
 
-  // Durchlauf-Ende (§4.3, #36-Umbau): NICHT mehr hier mischen. Heilung/Schild + Ansage-Auswertung,
-  // dann Phase `prediction` (Mischen/pos-Reset erst bei SUBMIT_PREDICTION). Erster Durchlauf: prediction=null.
+  // Durchlauf-Ende: Heilung/per-Durchlauf-Effekte + Schild, dann NEU MISCHEN (pos→0) und eine
+  // Perk-Auswahl anbieten (ersetzt XP-Level-Up + Ansage): nach jeder Runde ein Perk (Neuer Loop).
   pos += 1;
-  let predictionDue = false;
+  let phase = "play";
+  let newOffer = offer;
   if (pos >= C.TRICKS_PER_CYCLE) {
     cycle += 1;
     const ch = sumHook(perks, "healOnCycle", { deck }); // C7 Überlebensvorteil liest das Deck (Karten ≥13)
@@ -276,51 +269,20 @@ export function resolveTrick(state, rng = Math.random) {
     }
     notfallUsed = false; // #71 Notfallration (C10): 1× je Durchlauf → beim Durchlauf-Wechsel zurücksetzen
     shield = perks.reduce((m, id) => Math.max(m, PERK_DEFS[id].shieldPerCycle || 0), 0); // C5: Schild je Durchlauf (kein Stapeln)
-    if (prediction != null) { // ab dem 2. Durchlauf: Ansage auswerten
-      const difference = Math.abs(prediction - cycleWins);
-      const multiplier = difference === 0 ? C.PREDICTION_EXACT_MULT
-                       : difference === 1 ? C.PREDICTION_NEAR_ONE_MULT
-                       : difference === 2 ? C.PREDICTION_NEAR_TWO_MULT
-                       : C.PREDICTION_MISS_MULT;
-      const tier = difference === 0 ? "exact" : difference <= 2 ? "near" : "miss";
-      const baseCycleScore = Math.floor(cycleBaseScore);
-      const bonusScore = Math.floor(cycleBaseScore * (multiplier - 1)); // nur der Bonus (kein Doppelzählen)
-      score += bonusScore;
-      predictionBonusScore += bonusScore;
-      if (bonusScore > largestPredictionBonus) largestPredictionBonus = bonusScore;
-      if (tier === "exact") exactPredictions += 1;
-      else if (tier === "near") nearPredictions += 1;
-      lastPredictionResult = { prediction, actualWins: cycleWins, difference, tier, multiplier,
-        baseCycleScore, bonusScore, finalCycleScore: baseCycleScore + bonusScore };
-      lastPrediction = prediction;
-    }
-    prediction = null;    // aktive Ansage beendet (SUBMIT_PREDICTION setzt die nächste)
-    predictionDue = true; // Overlay für den nächsten Durchlauf öffnen
+    // Neuer Durchlauf: neu mischen + pos zurück (früher bei SUBMIT_PREDICTION).
+    playerOrder = shuffledOrder(deck.length, rng);
+    oppOrder = shuffledOrder(oppDeck.length, rng);
+    pos = 0;
+    // Perk-Auswahl nach jeder Runde (kein Level-Gate — alle Seltenheiten sofort). Pool leer → keine Pause.
+    const off = buildOffer(perks, rng, C.PERKS_OFFERED);
+    if (off.length > 0) { phase = "levelup"; newOffer = off; }
   }
-
-  // Level-Up(s): Restschwelle abziehen, XP-Überschuss bleibt (§6.2). Level-Up hat Vorrang;
-  // nach der Perk-Wahl geht PICK_PERK bei predictionDue weiter in die Ansage-Phase (#36).
-  let phase = "play";
-  let newOffer = offer;
-  // #57: mehrere Level-Ups in einem Stich als Queue — für den ERSTEN ein Angebot bauen, die
-  // restlichen bleiben als pendingLevelUps und werden nach jedem PICK_PERK nachgezogen (sonst
-  // würde bei künftigem Tuning ein übersprungenes Level still verschluckt).
-  let pendingLevelUps = 0;
-  while (xp >= xpToNext(level)) { xp -= xpToNext(level); level += 1; pendingLevelUps += 1; }
-  if (pendingLevelUps > 0) {
-    const off = buildOffer(perks, rng, C.PERKS_OFFERED, level); // Level-Gate für Legendaries (#33)
-    if (off.length > 0) { phase = "levelup"; newOffer = off; pendingLevelUps -= 1; } // dieses Angebot zeigen
-    else pendingLevelUps = 0; // Pool leer → keine Pause; restliche Level-Ups verfallen (kein Angebot möglich)
-  }
-  if (phase === "play" && predictionDue) phase = "prediction"; // kein Level-Up → direkt Ansage
 
   return {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
-    cycleWins, cycleBaseScore, prediction, lastPrediction, lastPredictionResult,
-    predictionBonusScore, exactPredictions, nearPredictions, largestPredictionBonus, predictionDue,
-    life, maxLife, xp, level, score, winStreak, bestStreak, wins, losses, ties,
+    life, maxLife, score, winStreak, bestStreak, wins, losses, ties,
     crits, critBonusScore, bestTrickScore, legendaryCritBonus,
-    initiative, lastResult, perks, offer: newOffer, shield, tieArmed, pendingLevelUps, sinceWin, lossStreak, lastWinValue, altLen,
+    initiative, lastResult, perks, offer: newOffer, shield, tieArmed, sinceWin, lossStreak, lastWinValue, altLen,
     critFollowArmed, misfireBonus, weaknessArmed, cleanStreak, notfallUsed,
     ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
     overStreak, rampTempo, calmTricks, tempTempo,

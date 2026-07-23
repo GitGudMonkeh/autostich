@@ -10,7 +10,6 @@ import { Battlefield } from "./ui/Battlefield.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
-import { PredictionSelect } from "./ui/PredictionSelect.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
@@ -112,12 +111,12 @@ export function Autostich() {
     recorded.current = true;
     const finalScore = Math.floor(state.score);
     setHighscores(recordHighscore({
-      score: finalScore, level: state.level, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
+      score: finalScore, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
     }));
     // Globalen Lauf posten (#14) — additiv, fehlertolerant. myEntry hebt ihn im Board hervor;
     // pubToken lädt das Board nach dem Submit neu (damit der eigene Lauf drin ist).
     const name = (username || "").trim().slice(0, 20);
-    const gEntry = { name, score: finalScore, level: state.level, tricks: state.trickNo, cycles: state.cycle };
+    const gEntry = { name, score: finalScore, tricks: state.trickNo, cycles: state.cycle };
     setMyEntry(gEntry);
     if (leaderboardConfigured && name) {
       publishRun(gEntry).then(() => setPubToken((t) => t + 1)).catch(() => {});
@@ -154,7 +153,6 @@ export function Autostich() {
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun läuft über den gameover-Effekt
   const pick = (id) => dispatch({ type: "PICK_PERK", perkId: id, rng: Math.random });
-  const submitPrediction = (n) => dispatch({ type: "SUBMIT_PREDICTION", prediction: n, rng: Math.random }); // #36
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
@@ -281,10 +279,7 @@ export function Autostich() {
       </div>
 
       {state.phase === "levelup" && state.offer && (
-        <PerkSelect offer={state.offer} level={state.level} onPick={pick} perks={state.perks} deck={state.deck} state={state} />
-      )}
-      {state.phase === "prediction" && (
-        <PredictionSelect state={state} onSubmit={submitPrediction} />
+        <PerkSelect offer={state.offer} onPick={pick} perks={state.perks} deck={state.deck} state={state} />
       )}
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
