@@ -75,11 +75,11 @@ describe("Reducer", () => {
 
 describe("PICK_PERK — nach jeder Runde zurück in play (Neuer Loop)", () => {
   it("Wahl aus dem levelup-Angebot → play, offer null, Perk übernommen", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["A1", "C1", "E2"] };
-    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "C1", rng });
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["A1", "B1", "D1"] };
+    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "B1", rng });
     expect(s1.phase).toBe("play");
     expect(s1.offer).toBeNull();
-    expect(s1.perks).toEqual(["C1"]);
+    expect(s1.perks).toEqual(["B1"]);
   });
 });
 
@@ -209,5 +209,38 @@ describe("Formationsphase — SWAP/UNDO/RESET/CONFIRM (V2 §22.8)", () => {
     const play = initialState(makeRng(1));
     expect(reducer(play, { type: "SWAP_CARDS", i: 0, j: 1 })).toBe(play);
     expect(reducer(play, { type: "CONFIRM_FORMATION" })).toBe(play);
+  });
+});
+
+describe("Kartenrollen — Zielauswahl PICK_PERK/CONFIRM_TARGET (V2 §22.6 C)", () => {
+  const lvl = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["C1", "A1", "D1"], ...over });
+
+  it("PICK_PERK eines Ziel-Perks öffnet die Zielauswahl (phase target)", () => {
+    const s = reducer(lvl(), { type: "PICK_PERK", perkId: "C1", rng });
+    expect(s.phase).toBe("target");
+    expect(s.targetPerk).toBe("C1");
+    expect(s.perks).toEqual(["C1"]); // Perk bereits gehalten
+  });
+  it("CONFIRM_TARGET setzt die Rolle und geht in play", () => {
+    let s = reducer(lvl(), { type: "PICK_PERK", perkId: "C1", rng });
+    const ids = s.playerOrder.slice(0, 3).map((di) => s.deck[di].id);
+    s = reducer(s, { type: "CONFIRM_TARGET", cardIds: ids });
+    expect(s.phase).toBe("play");
+    expect(s.targetPerk).toBeNull();
+    expect(s.roles.C1).toEqual(ids);
+  });
+  it("CONFIRM_TARGET verlangt genau needsTarget unterschiedliche Karten", () => {
+    const s = reducer(lvl(), { type: "PICK_PERK", perkId: "C1", rng });
+    const two = s.playerOrder.slice(0, 2).map((di) => s.deck[di].id);
+    expect(reducer(s, { type: "CONFIRM_TARGET", cardIds: two })).toBe(s); // zu wenige → wirkungslos
+  });
+  it("C9 Opfergabe: gewählte Karte −3, direkter Nachfolger +5 (dauerhaft)", () => {
+    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: ["C9", "A1", "D1"] };
+    s = reducer(s, { type: "PICK_PERK", perkId: "C9", rng });
+    const targetDi = s.playerOrder[0], succDi = s.playerOrder[1];
+    const tv = s.deck[targetDi].value, sv = s.deck[succDi].value;
+    s = reducer(s, { type: "CONFIRM_TARGET", cardIds: [s.deck[targetDi].id] });
+    expect(s.deck[targetDi].value).toBe(Math.max(0, tv - 3));
+    expect(s.deck[succDi].value).toBe(sv + 5);
   });
 });

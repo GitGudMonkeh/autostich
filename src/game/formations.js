@@ -68,11 +68,19 @@ function markWechsel(val, n, assign) {
 }
 
 /* Berechnet für jede Position { mult, formations: [{ type, ordinal, factor }] }.
-   `order` = Spieler-Ziehreihenfolge (Deck-Indizes), `deck` = Karten (value/suit/…). */
-export function computeFormations(order, deck) {
+   `order` = Spieler-Ziehreihenfolge (Deck-Indizes), `deck` = Karten (value/suit/…),
+   `roles` = Karten-Rollen (V2 §22.6): C8 Joker (Farbe = Vorgänger), C10 Bindeglied (Treppe ±1). */
+export function computeFormations(order, deck, roles = {}) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
   const val = cards.map((c) => c.value);
+  const jokerIds = new Set(roles.C8 || []);
+  const bridgeIds = new Set(roles.C10 || []);
+  // Joker (C8): effektive Farbe = die des direkten Vorgängers (verkettet über mehrere Joker).
+  const effSuit = cards.map((c) => c.suit);
+  for (let k = 1; k < n; k++) if (jokerIds.has(cards[k].id)) effSuit[k] = effSuit[k - 1];
+  // Bindeglied (C10): darf für die Treppe als 1 höher (Nachfolger) oder 1 niedriger (Vorgänger) gelten.
+  const bind = cards.map((c) => (bridgeIds.has(c.id) ? 1 : 0));
   const out = Array.from({ length: n }, () => ({ mult: 1, formations: [] }));
   const add = (pos, type, ordinal, factor) => {
     if (factor > 1) out[pos].mult *= factor;
@@ -81,9 +89,9 @@ export function computeFormations(order, deck) {
 
   markPairRuns(n, 2, (k) => val[k] === val[k + 1],
     (pos, ord) => add(pos, "wiederholung", ord, wiederholungFactor(ord)));
-  markPairRuns(n, 3, (k) => cards[k].suit === cards[k + 1].suit,
+  markPairRuns(n, 3, (k) => effSuit[k] === effSuit[k + 1],
     (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)));
-  markPairRuns(n, 3, (k) => val[k + 1] > val[k],
+  markPairRuns(n, 3, (k) => (val[k + 1] + bind[k + 1]) > (val[k] - bind[k]),
     (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE)));
   markWechsel(val, n, (pos, ord) => add(pos, "wechsel", ord, escalatingFactor(ord, WECHSEL_BASE)));
 

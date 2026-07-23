@@ -209,16 +209,16 @@ describe("Neue Normal-Perks (#71)", () => {
     expect(PERK_DEFS.B7.cardBonus({ sinceWin: 5 })).toBe(10);
     expect(PERK_DEFS.B7.cardBonus({ sinceWin: 8 })).toBe(10);
   });
-  it("C3 Panzerung: 25 % des eingehenden Schadens, mindestens 1 (#89)", () => {
-    expect(PERK_DEFS.C3.dmgReduce({ incoming: 100 })).toBe(25);
-    expect(PERK_DEFS.C3.dmgReduce({ incoming: 40 })).toBe(10);
-    expect(PERK_DEFS.C3.dmgReduce({ incoming: 2 })).toBe(1); // Minimum greift bei kleinem Schaden
+  it("C3 Leibwache: +5, wenn Rolle und der Vorgänger verlor", () => {
+    expect(PERK_DEFS.C3.cardBonus({ isRole: (id) => id === "C3", lastResult: "loss" })).toBe(5);
+    expect(PERK_DEFS.C3.cardBonus({ isRole: (id) => id === "C3", lastResult: "win" })).toBe(0);
+    expect(PERK_DEFS.C3.cardBonus({ isRole: () => false, lastResult: "loss" })).toBe(0); // keine Rolle
   });
-  it("C6 Trotz: prozentuale Reduktion je Lebensstand (mind. 1), erst ab < 50 % (#89)", () => {
-    expect(PERK_DEFS.C6.dmgReduce({ life: 1500, maxLife: 2000, incoming: 100 })).toBe(0);  // 75 % → keine
-    expect(PERK_DEFS.C6.dmgReduce({ life: 900, maxLife: 2000, incoming: 100 })).toBe(15);  // 45 % → 15 %
-    expect(PERK_DEFS.C6.dmgReduce({ life: 500, maxLife: 2000, incoming: 100 })).toBe(30);  // 25 % → 30 %
-    expect(PERK_DEFS.C6.dmgReduce({ life: 500, maxLife: 2000, incoming: 2 })).toBe(1);     // Minimum greift
+  it("C6 Finisher: +5 auf der letzten Segment-Position, wenn Rolle", () => {
+    expect(PERK_DEFS.C6.cardBonus({ isRole: (id) => id === "C6", posInCycle: 4 })).toBe(5);
+    expect(PERK_DEFS.C6.cardBonus({ isRole: (id) => id === "C6", posInCycle: 9 })).toBe(5);
+    expect(PERK_DEFS.C6.cardBonus({ isRole: (id) => id === "C6", posInCycle: 3 })).toBe(0);
+    expect(PERK_DEFS.C6.cardBonus({ isRole: () => false, posInCycle: 4 })).toBe(0);
   });
 });
 
@@ -300,15 +300,28 @@ describe("Seltene Perks (#71, Phase 2c — Crit-Historie-Hooks)", () => {
   });
 });
 
-describe("Seltene Perks (#71, Phase 2d — Per-Durchlauf)", () => {
-  const mkDeck = (vals) => vals.map((v, i) => ({ id: `c${i}`, suit: "R", baseRank: i, value: v }));
-  it("C7 Überlebensvorteil: 4 je Karte ≥13, gedeckelt bei 60", () => {
-    expect(PERK_DEFS.C7.healOnCycle({ deck: mkDeck([13, 14, 5, 12, 20]) })).toBe(12); // 3 Karten ≥13 → 12
-    expect(PERK_DEFS.C7.healOnCycle({ deck: mkDeck(Array(20).fill(13)) })).toBe(60);  // 80 → Deckel 60
-    expect(PERK_DEFS.C7.healOnCycle({ deck: mkDeck([1, 2, 3]) })).toBe(0);
+describe("Kartenrollen — Hooks (V2 §22.6 C)", () => {
+  it("C1 Vorhut: +3 auf Position 1–5, wenn Rolle", () => {
+    expect(PERK_DEFS.C1.cardBonus({ isRole: (id) => id === "C1", posInCycle: 0 })).toBe(3);
+    expect(PERK_DEFS.C1.cardBonus({ isRole: (id) => id === "C1", posInCycle: 4 })).toBe(3);
+    expect(PERK_DEFS.C1.cardBonus({ isRole: (id) => id === "C1", posInCycle: 5 })).toBe(0);
+    expect(PERK_DEFS.C1.cardBonus({ isRole: () => false, posInCycle: 0 })).toBe(0);
   });
-  it("C9 Opfergabe: scoreMult +20 %", () => {
-    expect(PERK_DEFS.C9.scoreMult()).toBeCloseTo(1.2);
+  it("C2 Triumph: +2 nur wenn armiert (triumphActive)", () => {
+    expect(PERK_DEFS.C2.cardBonus({ triumphActive: true })).toBe(2);
+    expect(PERK_DEFS.C2.cardBonus({ triumphActive: false })).toBe(0);
+  });
+  it("C7 Überlebensvorteil: +3, wenn die Karte Segment-Tiefste ist", () => {
+    expect(PERK_DEFS.C7.cardBonus({ isSegmentLow: true })).toBe(3);
+    expect(PERK_DEFS.C7.cardBonus({ isSegmentLow: false })).toBe(0);
+  });
+  it("Ziel-Perks tragen needsTarget; C4/C5 relay; C9 sacrificeMod", () => {
+    expect(PERK_DEFS.C1.needsTarget).toBe(3);
+    expect(PERK_DEFS.C5.needsTarget).toBe(1);
+    expect(PERK_DEFS.C4.relay).toBe(1);
+    expect(PERK_DEFS.C5.relay).toBe(2);
+    expect(PERK_DEFS.C9.needsTarget).toBe(1);
+    expect(PERK_DEFS.C9.sacrificeMod).toBe(true);
   });
 });
 

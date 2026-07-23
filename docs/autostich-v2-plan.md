@@ -108,12 +108,15 @@ Jede Phase: lauffähiger Build + grüne Tests am Ende. Reihenfolge ist dependenc
 - Tests: 6 neue Reducer-Tests (SWAP/UNDO/RESET/CONFIRM), Zyklus-Test angepasst. **190/190 grün.** Im Browser end-to-end verifiziert.
 - **Offen für Phase 5:** E10 (5. Gratis-Tausch) kommt mit dem Perk-Rewrite. Tooltips/Detailansicht + „starke Formation aufgelöst"-Warnung → Phase 6.
 
-### Phase 5 — Perk-Pool-Rewrite (§22.6) in Wellen
-Reihenfolge: **A → B → D → C-Rollen → E-Werkzeuge → L.** (C/E hängen an Phase 3/4.)
-- IDs bleiben, Semantik nach §22.6-Tabellen. Neue Engine-/Reducer-Hooks für Rollen & Werkzeuge.
-- Perks mit manueller Kartenauswahl: Zielauswahl direkt nach Perk-Wahl, danach fix.
-- Jede Welle mit Tests; §21 verlangt zeilenweisen Abgleich aller 70 Perks.
-- **Ergebnis:** vollständiger neuer Pool, alle 70 IDs migriert.
+### Phase 5 — Perk-Pool-Rewrite (§22.6) in Wellen — LÄUFT
+Reihenfolge: **A → B → D → C-Rollen → E-Werkzeuge → L**, danach Cleanup.
+- ✅ **Welle A (Kartenwerte):** A1 +4, A5 +5/baseRank, A6 +1, A7 +4, A8 +5; Rest schon konform. (Commit 600bd7c)
+- ✅ **Welle B (Reihenfolge):** B1 +4, B2 einmalig@3, B4 Position, B5 nur winTie; B6/B9/B10 an Formation/Vorgänger gekoppelt (ctx: posForm + predValue). (Commit 600bd7c)
+- ✅ **Welle D (Flat-Score):** komplett flach; Crit-Chance/-Mult raus aus Perks (nur Stat+Blitz); D15 Score-Ladung; neuer `scoreFlatOnCrit`-Hook + `misfireScore`-State. (Commit 6421903)
+- ⏳ **Welle C (Kartenrollen):** C1–C10 komplett neu — manuelle Kartenauswahl-UI, Rollen-Marker, Nachbar-/Positions-Boni, Joker/Bindeglied greifen in die Formationserkennung.
+- ⏳ **Welle E (Formationswerkzeuge):** E1–E10 — biegen die Formationserkennung (`unlocks`-Param für `computeFormations`), Anker (E7/E8), Segment-Crossing (E9), Extra-Tausch (E10).
+- ⏳ **Welle L (Legendär):** L1–L11 ohne Leben, Positions-/Rollen-Payoffs.
+- ⏳ **Cleanup:** Raritäts-Abflachung (A–E alle „normal", §22.4); tote Konstanten/State entfernen (misfireBonus, overStreak, superCrit, Tempo/Leben); §21 zeilenweiser Abgleich aller 70.
 
 ### Phase 6 — UI-Feinschliff & Feedback
 - Float-Feedback im Durchlauf (`WIEDERHOLUNG ×1,60`, `FORMATION ×12`, Peak ab ×6/×12).

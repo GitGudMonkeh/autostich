@@ -13,6 +13,7 @@ import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { StatSelect } from "./ui/StatSelect.jsx";
 import { FormationPhase } from "./ui/FormationPhase.jsx";
+import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
@@ -157,6 +158,7 @@ export function Autostich() {
   const undoSwap = () => dispatch({ type: "UNDO_SWAP" });
   const resetFormation = () => dispatch({ type: "RESET_FORMATION" });
   const confirmFormation = () => dispatch({ type: "CONFIRM_FORMATION" });
+  const confirmTarget = (cardIds) => dispatch({ type: "CONFIRM_TARGET", cardIds });
   // Skill-Auswahl (jede 3. Runde): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
@@ -288,6 +290,9 @@ export function Autostich() {
 
       {state.phase === "formation" && (
         <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} />
+      )}
+      {state.phase === "target" && (
+        <TargetSelect state={state} onConfirm={confirmTarget} />
       )}
       {state.phase === "levelup" && state.statOffer && (
         <StatSelect offer={state.statOffer} onPick={pickStat} state={state} />

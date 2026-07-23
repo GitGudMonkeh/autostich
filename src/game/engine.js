@@ -4,7 +4,7 @@ import { PERK_DEFS, buildOffer, critChanceRawFor, comboMultFor, critMultiplierFo
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor } from "./skills.js";
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
-import { computeFormations, positionHasFormation } from "./formations.js";
+import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -62,6 +62,7 @@ export function resolveTrick(state, rng = Math.random) {
     fateValue = null, zeitrafferStacks = 0, // #71 Legendaries: Schicksalsmaschine / Zeitraffer (Score-Stapel)
     statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0, statOffer = null, // Stat-System (V2 §22.3)
     formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
+    roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
     skills = [], skillOffer = null, lightning = null, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
   } = state;
@@ -72,7 +73,7 @@ export function resolveTrick(state, rng = Math.random) {
   // Formationen (V2 §22.7): zu Durchlauf-Beginn (pos 0) aus der persistenten Reihenfolge + Dauerwerten
   // berechnet und für den ganzen Durchlauf stabil gehalten. Greifen bei Sieg der jeweiligen Karte.
   let formations = state.formations || [];
-  if (pos === 0) formations = computeFormations(playerOrder, deck);
+  if (pos === 0) formations = computeFormations(playerOrder, deck, roles);
   const posForm = formations[pos] || { mult: 1, formations: [] };
   const formationMult = posForm.mult || 1;
   const hasFormation = positionHasFormation(posForm);
@@ -91,6 +92,21 @@ export function resolveTrick(state, rng = Math.random) {
   const ownsUeberzahl = ownsFlag(perks, "ueberzahl");
   // #71 Überzahl: effektive Serie für Serien-Effekte (Stand VOR dem Stich). Ohne Perk == winStreak.
   let serieStreak = ownsUeberzahl ? (overStreak || 0) : winStreak;
+  // Kartenrollen (V2 §22.6 C): Rolle der aktuellen Karte, Triumph-Armierung, Segment-Tiefste.
+  const isRole = (perkId) => (roles[perkId] || []).includes(pCard.id);
+  const triumphActive = triumphArmed.includes(pCard.id);
+  let isSegmentLow = false;
+  if (ownsFlag(perks, "segmentLow")) { // C7: niedrigster Wert im Segment dieser Position (erster bei Gleichstand)
+    const segStart = Math.floor(pos / SEGMENT_SIZE) * SEGMENT_SIZE;
+    let minVal = Infinity, minPos = -1;
+    for (let k = segStart; k < segStart + SEGMENT_SIZE && k < playerOrder.length; k++) {
+      const v = deck[playerOrder[k]].value;
+      if (v < minVal) { minVal = v; minPos = k; }
+    }
+    isSegmentLow = pos === minPos;
+  }
+  // C2 Triumph: die Armierung dieser Karte wird durch das Spielen verbraucht (Neu-Armierung nur bei Sieg).
+  if (triumphActive) triumphArmed = triumphArmed.filter((id) => id !== pCard.id);
   const ctx = {
     posInCycle: pos,
     trickNo,
@@ -103,8 +119,12 @@ export function resolveTrick(state, rng = Math.random) {
     fateValue, // #71 Schicksalsmaschine: cardBonus vergleicht pValueBase mit dem Schicksalswert
     posForm, // V2 §22.6: Formation der gespielten Position (B6 Wiederholung / B9 Treppe)
     predValue, // V2 §22.6: Dauerwert des direkten Vorgängers (B10 Überzahl)
+    isRole, triumphActive, isSegmentLow, // V2 §22.6 C: Kartenrollen (C1/C2/C3/C6/C7)
   };
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx);
+  // Nachfolger-Bonus (C4 Staffelläufer / C5 Anführer): der Kopf der Queue gilt für DIESE Karte, dann verbraucht.
+  const relayBonus = successorQueue[0] || 0;
+  successorQueue = successorQueue.slice(1);
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + relayBonus;
   const oValue = oCard.value; // Gegner bleibt neutral/unverändert (§12)
 
   let won = false, lost = false, tieConverted = false;
@@ -229,6 +249,13 @@ export function resolveTrick(state, rng = Math.random) {
     sinceWin = 0; // #71 Durchbruch: Sieg setzt den Zähler zurück
     lossStreak = 0; // #71 Revanche: Sieg beendet die Niederlagenserie
     lastWinValue = pValue; // #71 Präzision: letzten Siegwert merken (NACH dem Vergleich in wctx)
+    // C4/C5: gewinnt eine Relay-Rolle, bekommen die nächsten `relay` Karten +2 (Queue nach dem Verbrauch → Index 0 = nächste Karte).
+    for (const id of perks) {
+      const relay = PERK_DEFS[id].relay;
+      if (relay && isRole(id)) for (let i = 0; i < relay; i++) successorQueue[i] = (successorQueue[i] || 0) + 2;
+    }
+    // C2 Triumph: gewinnt eine Triumph-Rolle, wird sie fürs nächste Auftauchen armiert.
+    if (isRole("C2")) triumphArmed = [...triumphArmed, pCard.id];
     lastResult = "win";
   } else if (lost) {
     losses += 1;
@@ -315,7 +342,7 @@ export function resolveTrick(state, rng = Math.random) {
         phase = "formation";
         newFormationEnergy = C.FORMATION_ENERGY;
         newFormationSwaps = [];
-        formations = computeFormations(playerOrder, deck);
+        formations = computeFormations(playerOrder, deck, roles);
       }
     }
   }
@@ -330,6 +357,8 @@ export function resolveTrick(state, rng = Math.random) {
     overStreak, fateValue, zeitrafferStacks,
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
+    successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
+    roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
     lastTrick, phase,

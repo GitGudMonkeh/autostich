@@ -84,3 +84,21 @@ describe("positionHasFormation (speist den Formations-Stat)", () => {
     expect(positionHasFormation(undefined)).toBe(false);
   });
 });
+
+describe("Rollen-Eingriffe: Joker (C8) & Bindeglied (C10)", () => {
+  it("Joker zählt als Farbe des direkten Vorgängers → bildet einen Farbblock", () => {
+    const deck = [["R", 5], ["R", 2], ["B", 8]].map(card); // B ist Joker → alle „rot"
+    const roles = { C8: [deck[2].id] };
+    const f = computeFormations(idOrder(3), deck, roles);
+    expect(f[2].formations.some((x) => x.type === "farbblock")).toBe(true);
+    expect(+f[2].mult.toFixed(2)).toBe(1.30);
+    // ohne Rolle: kein Farbblock (Farben R,R,B)
+    expect(computeFormations(idOrder(3), deck)[2].formations.some((x) => x.type === "farbblock")).toBe(false);
+  });
+  it("Bindeglied darf für die Treppe als ±1 gelten", () => {
+    const deck = [["R", 3], ["B", 3], ["G", 5]].map(card); // 3,3,5: normal keine Treppe
+    expect(computeFormations(idOrder(3), deck)[2].formations.some((x) => x.type === "treppe")).toBe(false);
+    const roles = { C10: [deck[1].id] }; // mittlere Karte darf als 4 gelten → 3<4<5
+    expect(computeFormations(idOrder(3), deck, roles)[2].formations.some((x) => x.type === "treppe")).toBe(true);
+  });
+});

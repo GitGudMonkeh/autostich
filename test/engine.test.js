@@ -587,3 +587,29 @@ describe("Reaktoren + Geladene Serie — Engine (Stufe C)", () => {
     expect(second.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(2); // Rahmen gesetzt → jetzt ionisieren
   });
 });
+
+describe("Kartenrollen — Engine (V2 §22.6 C)", () => {
+  const mk = (arr, suit = "R") => arr.map((v, i) => ({ id: `${suit}${i}`, suit, baseRank: v, value: v }));
+  const build = (over) => ({ ...initialState(makeRng(1)), oppDeck: mk([0, 0, 0]), oppOrder: [0, 1, 2], ...over });
+
+  it("C1 Vorhut: Rollen-Karte auf Position ≤4 bekommt +3 Wert", () => {
+    const s = build({ deck: mk([5, 5, 5]), playerOrder: [0, 1, 2], perks: ["C1"], roles: { C1: ["R0"] } });
+    const r = resolveTrick(s, rng); // pos0 = R0 (Rolle), posInCycle 0 → +3
+    expect(r.lastTrick.pValue).toBe(8); // 5 + 3
+  });
+
+  it("C4 Staffelläufer: nach dem Sieg einer Rollen-Karte bekommt die nächste +2", () => {
+    let s = build({ deck: mk([5, 5, 5]), playerOrder: [0, 1, 2], perks: ["C4"], roles: { C4: ["R0"] } });
+    s = resolveTrick(s, rng);          // pos0 R0 gewinnt → Nachfolger armiert
+    expect(s.lastTrick.pValue).toBe(5); // R0 selbst ohne Bonus
+    s = resolveTrick(s, rng);          // pos1 → +2
+    expect(s.lastTrick.pValue).toBe(7); // 5 + 2
+  });
+
+  it("C2 Triumph: Sieg armiert die Karte; dieser Stich noch ohne Bonus", () => {
+    let s = build({ deck: mk([5, 5]), oppDeck: mk([0, 0]), oppOrder: [0, 1], playerOrder: [0, 1], perks: ["C2"], roles: { C2: ["R0"] } });
+    s = resolveTrick(s, rng);
+    expect(s.triumphArmed).toContain("R0");
+    expect(s.lastTrick.pValue).toBe(5);
+  });
+});

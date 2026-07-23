@@ -36,6 +36,7 @@ export function initialState(rng = Math.random) {
     statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, statOffer: null,
     formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt
     formationEnergy: 0, formationSwaps: [], // Formationsphase (V2 §22.8): Energie + Undo-Historie der aktuellen Phase
+    roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
     perks: [], offer: null,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
     skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
@@ -86,8 +87,30 @@ export function reducer(state, action) {
         });
         kingBoosted = [...boosted];
       }
-      // Nach der Wahl geht es direkt weiter — neu gemischt wurde schon beim Durchlauf-Ende (Engine).
-      return { ...state, deck, kingBoosted, perks, phase: "play", offer: null };
+      // Perks mit manueller Kartenauswahl (Kat. C) öffnen direkt die Zielauswahl (§22.5); sonst weiter.
+      const goTarget = !!def.needsTarget;
+      return { ...state, deck, kingBoosted, perks, offer: null,
+               phase: goTarget ? "target" : "play",
+               targetPerk: goTarget ? perkId : null };
+    }
+
+    // Zielauswahl bestätigen (V2 §22.6 C): genau needsTarget Karten → Rolle setzen (C9 = dauerhafte Wertmod).
+    case "CONFIRM_TARGET": {
+      if (state.phase !== "target" || !state.targetPerk) return state;
+      const def = PERK_DEFS[state.targetPerk];
+      const need = def.needsTarget || 0;
+      const ids = (action.cardIds || []).slice(0, need);
+      if (ids.length !== need || new Set(ids).size !== need) return state; // genau N unterschiedliche Karten
+      let deck = state.deck;
+      if (def.sacrificeMod) { // C9 Opfergabe: gewählte Karte −3, ihr direkter Nachfolger (aktuelle Reihenfolge) +5 — dauerhaft.
+        const idx = state.playerOrder.findIndex((di) => state.deck[di].id === ids[0]);
+        const succId = idx >= 0 && idx + 1 < state.playerOrder.length ? state.deck[state.playerOrder[idx + 1]].id : null;
+        deck = state.deck.map((c) =>
+          c.id === ids[0] ? { ...c, value: Math.max(0, c.value - 3) }
+          : c.id === succId ? { ...c, value: c.value + 5 } : c);
+      }
+      const roles = { ...(state.roles || {}), [state.targetPerk]: ids };
+      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles), phase: "play", targetPerk: null };
     }
 
     // Stat-Auswahl (V2 §22.3): der gewählte Stat addiert seinen Step auf das zugehörige Summenfeld.
@@ -136,7 +159,7 @@ export function reducer(state, action) {
       if (i < 0 || j < 0 || i >= state.playerOrder.length || j >= state.playerOrder.length) return state;
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles),
                formationEnergy: state.formationEnergy - 1,
                formationSwaps: [...(state.formationSwaps || []), { i, j }] };
     }
@@ -147,7 +170,7 @@ export function reducer(state, action) {
       const { i, j } = swaps.pop();
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles),
                formationEnergy: state.formationEnergy + 1, formationSwaps: swaps };
     }
     // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie.
@@ -156,7 +179,7 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       const swaps = state.formationSwaps || [];
       for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles),
                formationEnergy: C.FORMATION_ENERGY, formationSwaps: [] };
     }
     // Bestätigen → die aufgestellte Reihenfolge bleibt persistent; nächster Durchlauf startet.

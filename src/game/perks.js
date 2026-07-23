@@ -51,11 +51,11 @@ export const comboMult = (winStreak) => 1 + winStreak * C.D2_STEP;
 export const streakBaseMult = (winStreak) => 1 + Math.min(winStreak * C.STREAK_BASE_STEP, C.STREAK_BASE_CAP);
 
 export const CATEGORIES = {
-  A: { key: "A", name: "Deck",  desc: "Dauerhafte Kartenwerte",    color: "#8a7de0" },
-  B: { key: "B", name: "Stich", desc: "Stich-Effekte",            color: "#e0605a" },
-  C: { key: "C", name: "Leben", desc: "Überleben & Verteidigung", color: "#5ab87a" },
-  D: { key: "D", name: "Score", desc: "Punkte",                   color: "#d4a63a" },
-  E: { key: "E", name: "Tempo", desc: "Geschwindigkeit",          color: "#5a8ade" },
+  A: { key: "A", name: "Deck",   desc: "Dauerhafte Kartenwerte",   color: "#8a7de0" },
+  B: { key: "B", name: "Stich",  desc: "Stich-Effekte",            color: "#e0605a" },
+  C: { key: "C", name: "Rolle",  desc: "Kartenrollen",             color: "#5ab87a" },
+  D: { key: "D", name: "Score",  desc: "Punkte",                   color: "#d4a63a" },
+  E: { key: "E", name: "Form",   desc: "Formationswerkzeuge",      color: "#5a8ade" },
 };
 
 export const PERK_DEFS = {
@@ -100,14 +100,9 @@ export const PERK_DEFS = {
   B7: { id: "B7", cat: "B", label: "Durchbruch",
         desc: "Nach fünf Stichen ohne Sieg erhält die nächste Karte +10 Wert (Sieg setzt zurück, Gleichstand zählt weiter).",
         cardBonus: (ctx) => ((ctx.sinceWin || 0) >= 5 ? 10 : 0) },
-  C6: { id: "C6", cat: "C", label: "Trotz",
-        desc: "Unter 50 % Leben −15 % Schaden bei Niederlagen; bei 25 % oder weniger −30 % (jeweils mindestens 1).",
-        dmgReduce: ({ life, maxLife, incoming }) => {
-          if (!(maxLife > 0)) return 0;
-          const r = life / maxLife;
-          const pct = r <= 0.25 ? C.TROTZ_PCT_LOW : r < 0.5 ? C.TROTZ_PCT_MID : 0;
-          return pct > 0 ? Math.max(C.TROTZ_MIN, Math.round(pct * (incoming || 0))) : 0;
-        } },
+  C6: { id: "C6", cat: "C", label: "Finisher", needsTarget: 2,
+        desc: "Wähle zwei Karten. Auf der letzten Position eines Segments erhalten sie +5 Wert.",
+        cardBonus: (ctx) => (ctx.isRole && ctx.isRole("C6") && ctx.posInCycle % 5 === 4 ? 5 : 0) },
 
   // ---- Seltene Perks (#71, Phase 2a) — rarity: "rare"; reine Hooks über bestehende Kontexte ----
   A9: { id: "A9", cat: "A", rarity: "rare", label: "Farbduell",
@@ -162,19 +157,16 @@ export const PERK_DEFS = {
         desc: "Nach einer Niederlage mit mindestens 5 Wertpunkten Abstand gibt der nächste Sieg +300 Score.",
         scoreFlat: (ctx) => (ctx.weaknessArmed ? 300 : 0) },
 
-  // ---- Seltene Perks (#71, Phase 2d) — Per-Durchlauf Leben/Score (Engine-Flags + Zyklus-Hooks) ----
-  C7: { id: "C7", cat: "C", rarity: "rare", label: "Überlebensvorteil",
-        desc: "Nach jedem Durchlauf 4 Leben je eigener Karte mit Wert 13 oder höher (max 60).",
-        healOnCycle: ({ deck }) => Math.min(C.SURVIVAL_CAP, C.SURVIVAL_PER_CARD * (deck || []).filter((c) => c.value >= C.SURVIVAL_MIN_VALUE).length) },
-  C8: { id: "C8", cat: "C", rarity: "rare", label: "Sauberer Durchlauf",
-        desc: "Nach 10 Stichen in Folge ohne echten Lebensverlust +15 Leben (voll vom Schild absorbierter Schaden zählt nicht).",
-        cleanRunHeal: true }, // Engine führt cleanStreak
-  C9: { id: "C9", cat: "C", rarity: "rare", label: "Opfergabe",
-        desc: "Zu Beginn jedes Durchlaufs −30 Leben (kann nicht töten); dafür dauerhaft +20 % Score.",
-        sacrificeCycle: true, scoreMult: () => C.SACRIFICE_SCORE_MULT },
-  C10: { id: "C10", cat: "C", rarity: "rare", label: "Notfallration",
-        desc: "Erstes Mal je Durchlauf bei 25 % Leben oder weniger: sofort +40 Leben.",
-        emergencyHeal: true }, // Engine führt notfallUsed
+  // ---- C-Rollen mit Formations-/Segment-Bezug (V2 §22.6) ----
+  C7: { id: "C7", cat: "C", rarity: "rare", label: "Überlebensvorteil", segmentLow: true,
+        desc: "Die niedrigste Karte jedes Segments erhält +3 Wert.",
+        cardBonus: (ctx) => (ctx.isSegmentLow ? 3 : 0) }, // Engine markiert die Segment-Tiefsten je Durchlauf
+  C8: { id: "C8", cat: "C", rarity: "rare", label: "Joker", needsTarget: 2, jokerRole: true,
+        desc: "Wähle zwei Karten. Für einen Farbblock zählen sie als Farbe ihres direkten Vorgängers." },
+  C9: { id: "C9", cat: "C", rarity: "rare", label: "Opfergabe", needsTarget: 1, sacrificeMod: true,
+        desc: "Wähle eine Karte. Sie verliert dauerhaft 3 Wert; ihr direkter Nachfolger erhält dauerhaft +5 Wert." },
+  C10: { id: "C10", cat: "C", rarity: "rare", label: "Bindeglied", needsTarget: 2, bridgeRole: true,
+        desc: "Wähle zwei Karten. Für eine Treppe dürfen sie als 1 Wert höher oder niedriger gelten." },
 
   // ---- Seltene Perks (#71, Phase 2f) — Ergebnis-/Wert-Historie (neue State-Felder) ----
   B9: { id: "B9", cat: "B", rarity: "rare", label: "Perfekte Folge",
@@ -219,22 +211,21 @@ export const PERK_DEFS = {
         desc: "Nach einer Niederlage gewinnst du den nächsten Gleichstand.",
         winTieAfterLoss: true },
 
-  // ---- C: Leben & Verteidigung ----
-  C1: { id: "C1", cat: "C", label: "Lebensraub",
-        desc: "Jeder gewonnene Stich heilt 2 Leben.",
-        healOnWin: () => 2 },
-  C2: { id: "C2", cat: "C", label: "Triumph",
-        desc: "Ein Sieg mit Kartenwert 8 oder höher heilt 6 Leben.",
-        healOnWin: (ctx) => (ctx.winValue >= C.D3_HIGH_MIN ? 6 : 0) },
-  C3: { id: "C3", cat: "C", label: "Panzerung",
-        desc: "Verlorene Stiche verursachen 25 % weniger Schaden (mindestens 1).",
-        dmgReduce: ({ incoming }) => Math.max(C.PANZERUNG_MIN, Math.round(C.PANZERUNG_PCT * (incoming || 0))) },
-  C4: { id: "C4", cat: "C", label: "Zweite Luft",
-        desc: "Nach jedem vollen Deck-Durchlauf heilst du 50 Leben.",
-        healOnCycle: () => 50 },
-  C5: { id: "C5", cat: "C", label: "Schutzschild",
-        desc: "Zu Beginn jedes Deck-Durchlaufs erhältst du 50 Schildpunkte, die Schaden vor dem Leben absorbieren.",
-        shieldPerCycle: 50 },
+  // ---- C: Kartenrollen (V2 §22.6) — meist mit manueller Kartenauswahl (needsTarget) ----
+  //      Rollen liegen als Karten-ids in state.roles[perkId]; ctx.isRole(perkId) prüft die aktuelle Karte.
+  C1: { id: "C1", cat: "C", label: "Vorhut", needsTarget: 3,
+        desc: "Wähle drei Karten. Auf Position 1–5 erhalten sie +3 Wert.",
+        cardBonus: (ctx) => (ctx.isRole && ctx.isRole("C1") && ctx.posInCycle <= 4 ? 3 : 0) },
+  C2: { id: "C2", cat: "C", label: "Triumph", needsTarget: 3, triumph: true,
+        desc: "Wähle drei Karten. Nach einem Sieg erhalten sie beim nächsten Auftauchen +2 Wert.",
+        cardBonus: (ctx) => (ctx.triumphActive ? 2 : 0) }, // Engine armiert die Karte nach ihrem Sieg
+  C3: { id: "C3", cat: "C", label: "Leibwache", needsTarget: 2,
+        desc: "Wähle zwei Karten. Verliert ihr Vorgänger, erhalten sie +5 Wert.",
+        cardBonus: (ctx) => (ctx.isRole && ctx.isRole("C3") && ctx.lastResult === "loss" ? 5 : 0) },
+  C4: { id: "C4", cat: "C", label: "Staffelläufer", needsTarget: 3, relay: 1,
+        desc: "Wähle drei Karten. Nach ihrem Sieg erhält der direkte Nachfolger +2 Wert." },
+  C5: { id: "C5", cat: "C", label: "Anführer", needsTarget: 1, relay: 2,
+        desc: "Wähle eine Karte. Nach ihrem Sieg erhalten die nächsten zwei Karten +2 Wert." },
 
   // ---- D: Flat Score (V2 §22.6 — alle additiv; fließen in die multiplizierte Basis, §15) ----
   //      Crit-Chance/-Mult kommen NICHT mehr aus den Perks, nur noch aus dem Stat + Blitz.
