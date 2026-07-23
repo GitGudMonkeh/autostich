@@ -1,4 +1,3 @@
-import { xpToNext } from "../game/leveling.js";
 import { TRICKS_PER_CYCLE } from "../game/constants.js";
 import { critChanceFor, hasCritPerk, tempoScoreMultFor, critMultiplierFor } from "../game/perks.js";
 import { Sparkline } from "./Sparkline.jsx";
@@ -22,8 +21,7 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, speedPct, lossSurcharge = 0, currentTraj = [], recordTraj = [] }) {
-  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield, legendaryCritBonus = 0, prediction = null, cycleWins = 0, tempTempo = 0 } = state;
-  const need = xpToNext(level);
+  const { life, maxLife, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield, legendaryCritBonus = 0, tempTempo = 0 } = state;
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
@@ -76,14 +74,6 @@ export function StatusRail({ state, speedPct, lossSurcharge = 0, currentTraj = [
           </div>
         )}
       </div>
-      {/* XP / Level */}
-      <div>
-        <div className="flex justify-between text-xs mb-1">
-          <span className="opacity-60">Level {level}</span>
-          <span className="opacity-60">{xp} / {need} XP</span>
-        </div>
-        <Bar value={xp} max={need} color="#8a7de0" />
-      </div>
       {/* Kennzahlen */}
       <div className="grid grid-cols-3 gap-3 pt-1">
         <Stat label="Serie" tone={winStreak >= 3 ? "#e0605a" : undefined}
@@ -120,26 +110,6 @@ export function StatusRail({ state, speedPct, lossSurcharge = 0, currentTraj = [
           </>)}
         </div>
       )}
-      {/* Ansage — Live-Anzeige des laufenden Durchlaufs (#36). */}
-      {prediction != null && (() => {
-        const winsNeeded = Math.max(0, prediction - cycleWins);
-        const exactUnreachable = cycleWins > prediction || cycleWins + remaining < prediction;
-        return (
-          <div className="pt-1 border-t" style={{ borderColor: "#26262e" }}>
-            <div className="flex justify-between text-xs">
-              <span className="opacity-60">Ansage <span className="font-bold" style={{ color: "#8a7de0" }}>{prediction}</span></span>
-              <span className="opacity-60">Siege <span className="font-bold" style={{ color: "#5ab87a" }}>{cycleWins}</span> · offen {remaining}</span>
-            </div>
-            {exactUnreachable ? (
-              <div className="text-[10px] mt-0.5" style={{ color: "#e0605a" }}>Ansage {prediction} nicht mehr exakt erreichbar</div>
-            ) : winsNeeded > 0 ? (
-              <div className="text-[10px] mt-0.5 opacity-55">Benötigt: {winsNeeded} weitere Siege</div>
-            ) : (
-              <div className="text-[10px] mt-0.5" style={{ color: "#5ab87a" }}>Ansage genau erreicht — nicht mehr gewinnen!</div>
-            )}
-          </div>
-        );
-      })()}
       {/* Score-Verlauf: aktueller Lauf vs. Rekord/Geist (#30) */}
       <div className="pt-1 border-t" style={{ borderColor: "#26262e" }}>
         <div className="flex items-center justify-between text-[10px] uppercase tracking-wide opacity-50 mb-1">

@@ -8,7 +8,6 @@ export const DMG_PER_LOSS     = 2;      // Basis-Schaden je Niederlage im 1. Dur
 // n = cycle (0-indiziert): +0, +0, +1, +3, +5, +8, +11 … kein Cap. Sanftere Kurve (#89) für längeren Bogen.
 // Voll deterministisch — die Engine leitet n aus `cycle` ab (kein Date, kein App-Payload nötig).
 export const LIFE_DRAIN_BASE        = 0.3;             // Aufschlag pro Niederlage = round(LIFE_DRAIN_BASE · cycle²) [TUNING]
-export const XP_PER_WIN       = 10;     // XP je gewonnenem Stich [TUNING]
 export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Tempo skalieren darauf) [TUNING]
 export const TEMPO_SCORE_FACTOR = 0.005; // je %-Punkt speedPct +0,5 % Stichscore [TUNING]
 export const CRIT_BASE_MULT   = 2;      // Crit verdoppelt den Stichscore [TUNING]
@@ -47,8 +46,7 @@ export const SUPERCRIT_MULT_FACTOR = 1.5; // D19 Überschusskrit: Faktor auf den
 
 // Legendäre Perks & Raritäts-System (#33) [TUNING]
 export const RARITY_WEIGHTS            = { common: 100, rare: 25, legendary: 4 }; // 3-Stufen-Rarität (#71); „common" = normal
-export const RARE_MIN_LEVEL            = 2;    // Seltene Perks erst ab diesem Level im Angebot (#71)
-export const LEGENDARY_MIN_LEVEL       = 5;    // Legendaries erst ab diesem Level im Angebot (#71)
+// Perk-Auswahl nach jeder Runde: KEINE Level-Gates mehr — alle Seltenheiten sofort, nur gewichtet.
 export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendaries je Angebot
 export const L4_CRIT_STEP = 0.01;  // L4 Kritische Masse: +1 pp Crit-Chance je Crit
 export const L4_CRIT_CAP  = 0.30;  // L4  … dauerhaft gedeckelt bei +30 pp
@@ -102,12 +100,5 @@ export const RANKS = Array.from({ length: 10 }, (_, i) => i + 1); // 1..10 (#34:
 // Stiche je Deck-Durchlauf = Deckgröße (4 Farben × 10 Werte = 40). Abgeleitet → folgt RANKS automatisch (#34).
 export const TRICKS_PER_CYCLE = SUIT_ORDER.length * RANKS.length;
 
-// Ansage-System (#36): vor jedem neuen Durchlauf schätzt der Spieler seine Siege (0..40). [TUNING]
-export const PREDICTION_MIN = 0;
-export const PREDICTION_MAX = TRICKS_PER_CYCLE;   // abgeleitet → kein Doppel-Pflegen bei Deckgröße
-export const PREDICTION_EXACT_MULT    = 3.0;      // Abweichung 0 → Rundenscore ×3
-export const PREDICTION_NEAR_ONE_MULT = 1.75;     // Abweichung 1 → ×1,75
-export const PREDICTION_NEAR_TWO_MULT = 1.25;     // Abweichung 2 → ×1,25
-export const PREDICTION_MISS_MULT     = 1.0;      // Abweichung ≥3 → kein Bonus
 export const suitName  = (s) => (s ? SUITS[s].name : "—");
 export const suitColor = (s) => (s ? SUITS[s].color : "#888");

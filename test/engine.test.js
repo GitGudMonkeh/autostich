@@ -1,14 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { makeRng, shuffledOrder } from "../src/game/deck.js";
+import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
-import { lifeDrainAt, TRICKS_PER_CYCLE, PREDICTION_MAX } from "../src/game/constants.js";
-
-// Ansage-Phase (#36) im resolveTrick-Direktloop überspringen (mimt SUBMIT_PREDICTION: mischen + Reset).
-const passPrediction = (s, seed) => ({
-  ...s, phase: "play", predictionDue: false, prediction: 20, pos: 0, cycleWins: 0, cycleBaseScore: 0,
-  playerOrder: shuffledOrder(s.deck.length, makeRng(seed)), oppOrder: shuffledOrder(s.oppDeck.length, makeRng(seed)),
-});
+import { lifeDrainAt, TRICKS_PER_CYCLE } from "../src/game/constants.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
 const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
@@ -24,12 +18,11 @@ function scenario(pVal, oVal, over = {}) {
 const rng = makeRng(9);
 
 describe("resolveTrick — Grundausgänge", () => {
-  it("Sieg: +Score, +XP, +Sieg, Initiative Spieler", () => {
+  it("Sieg: +Score, +Sieg, Initiative Spieler", () => {
     const s = resolveTrick(scenario(12, 0), rng);
     expect(s.wins).toBe(1);
     expect(s.losses).toBe(0);
     expect(s.score).toBe(102); // 100 × streakBaseMult(1)=1,02 (#39)
-    expect(s.xp).toBe(10);
     expect(s.winStreak).toBe(1);
     expect(s.lastResult).toBe("win");
     expect(s.initiative).toBe("player");
@@ -44,12 +37,11 @@ describe("resolveTrick — Grundausgänge", () => {
     expect(s.initiative).toBe("opp");
   });
 
-  it("Gleichstand: kein Leben, kein Score, keine XP, Initiative unverändert", () => {
+  it("Gleichstand: kein Leben, kein Score, Initiative unverändert", () => {
     const s = resolveTrick(scenario(5, 5, { life: 100, initiative: "player" }), rng);
     expect(s.ties).toBe(1);
     expect(s.life).toBe(100);
     expect(s.score).toBe(0);
-    expect(s.xp).toBe(0);
     expect(s.initiative).toBe("player");
   });
 
@@ -63,7 +55,6 @@ describe("resolveTrick — Grundausgänge", () => {
     let s = initialState(makeRng(42));
     for (let i = 0; i < 60 && s.phase !== "gameover"; i++) {
       if (s.phase === "levelup") { s = { ...s, phase: "play", offer: null }; continue; }
-      if (s.phase === "prediction") { s = passPrediction(s, 100 + i); continue; }
       s = resolveTrick(s, makeRng(100 + i));
     }
     expect(s.wins + s.losses + s.ties).toBe(s.trickNo);
@@ -312,81 +303,21 @@ describe("rollCrit", () => {
   });
 });
 
-describe("Ansage-System (#36)", () => {
-  it("cycleWins zählt Siege (inkl. gewonnener Gleichstände), nicht Niederlagen/echte Gleichstände", () => {
-    expect(resolveTrick(scenario(12, 0, { cycleWins: 3 }), rng).cycleWins).toBe(4);                       // Sieg
-    expect(resolveTrick(scenario(5, 5, { perks: ["L2"], winStreak: 3, cycleWins: 3 }), rng).cycleWins).toBe(4); // Gleichstand→Sieg (L2)
-    expect(resolveTrick(scenario(5, 5, { cycleWins: 3 }), rng).cycleWins).toBe(3);                        // echter Gleichstand
-    expect(resolveTrick(scenario(0, 12, { cycleWins: 3, life: 100 }), rng).cycleWins).toBe(3);            // Niederlage
-  });
-
-  it("cycleBaseScore enthält Crit/Tempo/normale Boni (= gained des Stichs)", () => {
-    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], speedPct: 100, wins: 9, cycleBaseScore: 0 }), rng);
-    expect(s.lastTrick.gained).toBeCloseTo(306);      // D9-Crit ×2 auf 153
-    expect(s.cycleBaseScore).toBeCloseTo(306);
-  });
-
-  it("erster Durchlauf (prediction=null): kein Bonus, aber Phase prediction öffnet", () => {
-    const s = resolveTrick(scenario(0, 12, { pos: 39, prediction: null, cycleWins: 25, cycleBaseScore: 1000, score: 5000, life: 1000 }), rng);
-    expect(s.phase).toBe("prediction");
-    expect(s.predictionDue).toBe(true);
-    expect(s.score).toBe(5000);            // keine Auswertung
-    expect(s.lastPredictionResult).toBeNull();
-    expect(s.predictionBonusScore).toBe(0);
-  });
-
-  it("Auswertung: exakt ×3 — nur der Bonus wird auf den vorhandenen Score addiert", () => {
-    const s = resolveTrick(scenario(0, 12, { pos: 39, prediction: 20, cycleWins: 20, cycleBaseScore: 1000, score: 5000, life: 1000 }), rng);
-    expect(s.phase).toBe("prediction");
-    expect(s.lastPredictionResult).toMatchObject({ prediction: 20, actualWins: 20, difference: 0, tier: "exact", multiplier: 3, baseCycleScore: 1000, bonusScore: 2000, finalCycleScore: 3000 });
-    expect(s.score).toBe(7000);            // 5000 + 2000 Bonus (cycleBaseScore war bereits im Score)
-    expect(s.predictionBonusScore).toBe(2000);
-    expect(s.largestPredictionBonus).toBe(2000);
-    expect(s.exactPredictions).toBe(1);
-    expect(s.nearPredictions).toBe(0);
-  });
-
-  it("Auswertung: Abweichung 1 → ×1,75, 2 → ×1,25, ≥3 → kein Bonus", () => {
-    const near1 = resolveTrick(scenario(0, 12, { pos: 39, prediction: 20, cycleWins: 19, cycleBaseScore: 1000, score: 5000, life: 1000 }), rng);
-    expect(near1.lastPredictionResult.multiplier).toBe(1.75);
-    expect(near1.score).toBe(5750);        // + floor(1000×0,75)
-    expect(near1.nearPredictions).toBe(1);
-
-    const near2 = resolveTrick(scenario(0, 12, { pos: 39, prediction: 20, cycleWins: 18, cycleBaseScore: 1000, score: 5000, life: 1000 }), rng);
-    expect(near2.lastPredictionResult.multiplier).toBe(1.25);
-    expect(near2.score).toBe(5250);        // + floor(1000×0,25)
-
-    const miss = resolveTrick(scenario(0, 12, { pos: 39, prediction: 20, cycleWins: 15, cycleBaseScore: 1000, score: 5000, life: 1000 }), rng);
-    expect(miss.lastPredictionResult.tier).toBe("miss");
-    expect(miss.score).toBe(5000);         // kein Bonus
-    expect(miss.exactPredictions + miss.nearPredictions).toBe(0);
-  });
-
-  it("Tod vor Durchlauf-Ende → gameover, KEIN Ansage-Bonus (Ansage nicht abgeschlossen)", () => {
-    const s = resolveTrick(scenario(0, 12, { pos: 39, prediction: 20, cycleWins: 20, cycleBaseScore: 1000, score: 5000, life: 2 }), rng);
-    expect(s.phase).toBe("gameover");
-    expect(s.score).toBe(5000);            // kein Bonus
-    expect(s.predictionBonusScore).toBe(0);
-    expect(s.prediction).toBe(20);         // aktive Ansage bleibt „nicht abgeschlossen"
-  });
-});
-
-describe("resolveTrick — Zyklus & Level-Up", () => {
-  it("Level-Up bei Schwellenüberschreitung: phase levelup, Angebot mit 3 Perks, XP-Rest bleibt", () => {
-    const s = resolveTrick(scenario(12, 0, { xp: 95 }), rng); // 95+10=105 ≥ 100
-    expect(s.level).toBe(2);
-    expect(s.xp).toBe(5);
-    expect(s.phase).toBe("levelup");
+describe("resolveTrick — Durchlauf-Ende & Perk-Auswahl (Neuer Loop)", () => {
+  it("Durchlauf-Ende (40 Stiche): cycle++, C4 heilt, neu gemischt (pos 0), Perk-Angebot → levelup", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39, life: 1000, perks: ["C4"] }), rng);
+    expect(s.cycle).toBe(1);
+    expect(s.life).toBe(1050);        // C4 healOnCycle
+    expect(s.pos).toBe(0);            // neu gemischt + pos zurück (früher bei SUBMIT_PREDICTION)
+    expect(s.phase).toBe("levelup");  // Perk-Auswahl nach jeder Runde
     expect(s.offer).toHaveLength(3);
   });
 
-  it("Durchlauf-Ende (40 Stiche): cycle++, C4 heilt, Phase prediction (Mischen erst bei Ansage, #36)", () => {
-    const s = resolveTrick(scenario(12, 0, { pos: 39, life: 1000, perks: ["C4"] }), rng);
-    expect(s.cycle).toBe(1);
-    expect(s.life).toBe(1050);          // C4 healOnCycle
-    expect(s.phase).toBe("prediction"); // Ansage-Overlay öffnet
-    expect(s.predictionDue).toBe(true);
-    expect(s.pos).toBe(40);             // pos NICHT zurückgesetzt — Reshuffle/Reset erst bei SUBMIT_PREDICTION
+  it("Tod am Durchlauf-Ende → gameover, kein Perk-Angebot", () => {
+    const s = resolveTrick(scenario(0, 12, { pos: 39, score: 5000, life: 2 }), rng);
+    expect(s.phase).toBe("gameover");
+    expect(s.score).toBe(5000);
+    expect(s.offer).toBeNull();
   });
 
   it("ist deterministisch bei gleichem Seed", () => {
@@ -394,30 +325,12 @@ describe("resolveTrick — Zyklus & Level-Up", () => {
       let s = initialState(makeRng(seed));
       for (let i = 0; i < 40; i++) {
         if (s.phase === "levelup") { s = { ...s, phase: "play", offer: null }; continue; }
-        if (s.phase === "prediction") { s = passPrediction(s, seed * 1000 + i); continue; }
         if (s.phase === "gameover") break;
         s = resolveTrick(s, makeRng(seed * 1000 + i));
       }
       return s.score;
     };
     expect(run(5)).toBe(run(5));
-  });
-});
-
-describe("Level-Up-Queue (#57)", () => {
-  it("mehrere Level-Ups in einem Stich: erstes Angebot + Rest als pendingLevelUps", () => {
-    // xp 500 (+10 Sieg = 510) überspringt L1→L4 (100+120+150). Ein Angebot wird gezeigt, 2 bleiben in der Queue.
-    const s = resolveTrick(scenario(12, 0, { xp: 500, level: 1 }), rng);
-    expect(s.level).toBe(4);
-    expect(s.phase).toBe("levelup");
-    expect(s.offer.length).toBeGreaterThan(0);
-    expect(s.pendingLevelUps).toBe(2);
-  });
-  it("einzelnes Level-Up: pendingLevelUps bleibt 0", () => {
-    const s = resolveTrick(scenario(12, 0, { xp: 95, level: 1 }), rng);
-    expect(s.level).toBe(2);
-    expect(s.phase).toBe("levelup");
-    expect(s.pendingLevelUps).toBe(0);
   });
 });
 

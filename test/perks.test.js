@@ -74,24 +74,19 @@ describe("buildOffer", () => {
     expect(buildOffer(owned, makeRng(1), 3, 9)).toHaveLength(2); // nur A1/A2 übrig (Commons)
   });
 
-  // ---- Legendär / Rarität (3-Stufen seit #71: Legendaries ab Level 5) ----
-  it("bietet unter Level 5 KEINE Legendaries (Level-Gate)", () => {
-    for (let s = 0; s < 20; s++) {
-      expect(buildOffer([], makeRng(s), 3, 4).some(isLegendary)).toBe(false);
-    }
-  });
-  it("ab Level 5 erscheinen Legendaries — höchstens EINER je Angebot", () => {
+  // ---- Rarität: kein Level-Gate mehr (Perk nach jeder Runde) — nur gewichtet + Legendary-Cap ----
+  it("höchstens EIN Legendary je Angebot", () => {
     // Nur Legendaries übrig → das Angebot enthält genau 1 (max 1 pro Angebot), und der ist legendär.
     const owned = PERK_LIST.filter((p) => !isLegendary(p.id)).map((p) => p.id);
-    const off = buildOffer(owned, makeRng(3), 3, 5);
+    const off = buildOffer(owned, makeRng(3), 3);
     expect(off).toHaveLength(1);
     expect(isLegendary(off[0])).toBe(true);
   });
   it("gewichtete Auswahl ist bei festem Seed deterministisch", () => {
-    expect(buildOffer([], makeRng(7), 3, 5)).toEqual(buildOffer([], makeRng(7), 3, 5));
+    expect(buildOffer([], makeRng(7), 3)).toEqual(buildOffer([], makeRng(7), 3));
   });
   it("bereits gewählte Legendaries werden nicht erneut angeboten", () => {
-    expect(buildOffer(["L1"], makeRng(1), 3, 9)).not.toContain("L1");
+    expect(buildOffer(["L1"], makeRng(1), 3)).not.toContain("L1");
   });
 });
 
@@ -291,11 +286,10 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
     expect(PERK_DEFS.E8.scoreFlat({ trickNo: 10 })).toBe(150);
     expect(PERK_DEFS.E8.scoreFlat({ trickNo: 11 })).toBe(0);
   });
-  it("Rares erscheinen erst ab RARE_MIN_LEVEL (2)", () => {
+  it("Rares sind ohne Level-Gate sofort im Pool (nur Rares übrig → Angebot ist selten)", () => {
     const rares = PERK_LIST.filter((p) => p.rarity === "rare").map((p) => p.id);
     const owned = PERK_LIST.filter((p) => !rares.includes(p.id)).map((p) => p.id); // nur Rares übrig
-    expect(buildOffer(owned, makeRng(3), 3, 1)).toHaveLength(0);           // Level 1 < 2 → keine Rares
-    const off = buildOffer(owned, makeRng(3), 3, 2);                       // ab Level 2 → Rares
+    const off = buildOffer(owned, makeRng(3), 3);
     expect(off.length).toBeGreaterThan(0);
     expect(off.every((id) => PERK_DEFS[id].rarity === "rare")).toBe(true);
   });

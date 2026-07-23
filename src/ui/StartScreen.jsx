@@ -79,7 +79,7 @@ export function StartScreen({ onStart, highscores, best, onOptions, username = "
               <div key={i} className="flex justify-between text-sm px-2 py-1 rounded" style={{ background: "#20202a" }}>
                 <span className="opacity-50">#{i + 1}</span>
                 <span className="font-bold" style={{ color: "#d4a63a" }}>{h.score.toLocaleString("de-DE")}</span>
-                <span className="opacity-50 text-xs">Lvl {h.level} · {h.tricks} Stiche</span>
+                <span className="opacity-50 text-xs">{h.cycles ?? 0} Runden · {h.tricks} Stiche</span>
               </div>
             ))}
           </div>

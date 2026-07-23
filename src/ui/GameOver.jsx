@@ -15,10 +15,9 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           {isRecord && <div className="mt-2 text-sm font-bold" style={{ color: "#8a7de0" }}>★ Neuer Rekord!</div>}
         </div>
 
-        <div className="grid grid-cols-5 gap-2 text-center mt-5 text-sm">
-          <div><div className="opacity-50 text-xs">Level</div><div className="font-bold">{state.level}</div></div>
+        <div className="grid grid-cols-4 gap-2 text-center mt-5 text-sm">
+          <div><div className="opacity-50 text-xs">Runden</div><div className="font-bold">{state.cycle}</div></div>
           <div><div className="opacity-50 text-xs">Stiche</div><div className="font-bold">{state.trickNo}</div></div>
-          <div><div className="opacity-50 text-xs">Durchläufe</div><div className="font-bold">{state.cycle}</div></div>
           <div><div className="opacity-50 text-xs">Beste Serie</div><div className="font-bold">{state.bestStreak}×</div></div>
           <div><div className="opacity-50 text-xs">Perks</div><div className="font-bold">{state.perks.length}</div></div>
         </div>
@@ -29,15 +28,6 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             <div><div className="opacity-50 text-xs">Crit-Quote</div><div className="font-bold" style={{ color: "#e879f9" }}>{state.wins > 0 ? Math.round((state.crits / state.wins) * 100) : 0}%</div></div>
             <div><div className="opacity-50 text-xs">Crit-Bonus</div><div className="font-bold" style={{ color: "#e879f9" }}>{Math.floor(state.critBonusScore).toLocaleString("de-DE")}</div></div>
             <div><div className="opacity-50 text-xs">Bester Stich</div><div className="font-bold" style={{ color: "#d4a63a" }}>{Math.floor(state.bestTrickScore).toLocaleString("de-DE")}</div></div>
-          </div>
-        )}
-
-        {(state.predictionBonusScore > 0 || state.exactPredictions > 0) && (
-          <div className="grid grid-cols-4 gap-2 text-center mt-3 text-sm">
-            <div><div className="opacity-50 text-xs">Exakt</div><div className="font-bold" style={{ color: "#5ab87a" }}>{state.exactPredictions}</div></div>
-            <div><div className="opacity-50 text-xs">Knapp</div><div className="font-bold" style={{ color: "#d4a63a" }}>{state.nearPredictions}</div></div>
-            <div><div className="opacity-50 text-xs">Ansage-Bonus</div><div className="font-bold" style={{ color: "#8a7de0" }}>{Math.floor(state.predictionBonusScore).toLocaleString("de-DE")}</div></div>
-            <div><div className="opacity-50 text-xs">Größter Bonus</div><div className="font-bold" style={{ color: "#8a7de0" }}>{Math.floor(state.largestPredictionBonus).toLocaleString("de-DE")}</div></div>
           </div>
         )}
 
