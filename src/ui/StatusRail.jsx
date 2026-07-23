@@ -22,18 +22,19 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
-  const { wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, perks, crits, legendaryCritBonus = 0, lightning, skills = [] } = state;
+  const { wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, perks, crits, legendaryCritBonus = 0, lightning, skills = [],
+          statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0 } = state;
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   const ownsD4 = perks.includes("D4");
-  const showCrit = hasCritPerk(perks) || (crits || 0) > 0 || !!(lightning && lightning.active);
+  const showCrit = hasCritPerk(perks) || (crits || 0) > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
   // Live-Crit-Chance des NÄCHSTEN Siegs: D8 nutzt die resultierende Serie (winStreak+1), analog zum
   // echten Wurf (#19). D7 ist kartenabhängig → hier ausgeblendet (winValue 0), separat als Hinweis.
   // legendaryCritBonus (L4) & L5-Halbierung fließen über denselben Helfer ein → kein Drift (#25/#33).
-  // Blitz-Crit-Basis (lightning) fließt additiv ein — dieselbe Rechnung wie die Engine → kein Drift.
-  const critRaw = critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos }, legendaryCritBonus) + lightningCritRaw(lightning, skills);
+  // Blitz-Crit-Basis (lightning) + Crit-Chance-Stat fließen additiv ein — dieselbe Rechnung wie die Engine.
+  const critRaw = critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos }, legendaryCritBonus) + lightningCritRaw(lightning, skills) + statCritChance;
   const critPct = Math.round(Math.min(1, Math.max(0, critRaw)) * 100);
   const ownsD7 = perks.includes("D7");
   const l4Pp = Math.round(legendaryCritBonus * 100); // L4-Bonus in Prozentpunkten (Anzeige)
@@ -65,9 +66,16 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
           {ownsD4 && <span className="opacity-45">×3 bei Rang ≤3</span>}
           {showCrit && (<>
             <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span>{ownsD7 && <span className="opacity-45"> (+35% ≥8)</span>}{l4Pp > 0 && <span style={{ color: "#d4a63a" }}> (L4 +{l4Pp}pp)</span>}</span>
-            <span><span className="opacity-50">Crit </span><span style={{ color: perks.includes("L5") ? "#d4a63a" : "#e879f9" }}>×{fmtMult(critMultiplierFor(perks))}</span>{perks.includes("L5") && <span style={{ color: "#d4a63a" }}> Jackpot</span>}</span>
+            <span><span className="opacity-50">Crit </span><span style={{ color: perks.includes("L5") ? "#d4a63a" : "#e879f9" }}>×{fmtMult(critMultiplierFor(perks, {}, statCritMult))}</span>{perks.includes("L5") && <span style={{ color: "#d4a63a" }}> Jackpot</span>}</span>
             <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
           </>)}
+        </div>
+      )}
+      {/* Score-Stats (V2 §22.3): Serien-/Formations-Stat, die nicht bereits über die Crit-Zeile sichtbar sind. */}
+      {(statStreakMult > 0 || statFormMult > 0) && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
+          {statStreakMult > 0 && <span title="Serien-Stat: +0,5 % Score je Pick pro aktuellem Serienpunkt"><span className="opacity-50">Serien-Stat </span><span style={{ color: "#5a8ade" }}>+{(statStreakMult * 100).toFixed(1).replace(".", ",")} %/Serie</span></span>}
+          {statFormMult > 0 && <span title="Formations-Stat: +5 % Score je Pick bei aktiver Formation (ab Phase mit Formationen wirksam)"><span className="opacity-50">Form-Stat </span><span style={{ color: "#5a8ade" }}>+{Math.round(statFormMult * 100)} %</span></span>}
         </div>
       )}
       {/* Score-Verlauf: aktueller Lauf vs. Rekord/Geist (#30) */}

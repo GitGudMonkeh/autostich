@@ -3,6 +3,7 @@ import { shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer, critChanceRawFor, comboMultFor, critMultiplierFor, streakBaseMult } from "./perks.js";
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor } from "./skills.js";
+import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -57,6 +58,7 @@ export function resolveTrick(state, rng = Math.random) {
     recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich
     overStreak = 0, // #71 Überzahl: effektive Serie für Serien-Effekte (klare Siege zählen doppelt)
     fateValue = null, zeitrafferStacks = 0, // #71 Legendaries: Schicksalsmaschine / Zeitraffer (Score-Stapel)
+    statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0, statOffer = null, // Stat-System (V2 §22.3)
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
     skills = [], skillOffer = null, lightning = null, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
   } = state;
@@ -123,9 +125,10 @@ export function resolveTrick(state, rng = Math.random) {
     // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.
     // Der Crit-Wurf verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift).
     // Blitz-Crit-Basis (Abschnitt 2a) wird additiv zugerechnet, unabhängig von L5-critChanceMult.
-    const rawCrit = critChanceRawFor(perks, wctx, legendaryCritBonus) + lightningCritRaw(lightning, skills); // ungeklemmt (Überschusskrit)
+    // Crit-Chance-Stat (V2 §22.3) fließt additiv in die Roh-Chance (mit Perk-/Blitz-Basis); ungeklemmt (Überschusskrit).
+    const rawCrit = critChanceRawFor(perks, wctx, legendaryCritBonus) + lightningCritRaw(lightning, skills) + statCritChance;
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt), inkl. L4/L5 + Blitz-Basis
-    critMultiplier = critMultiplierFor(perks, wctx);             // L5 „Jackpot": ×4 überschreibt Basis
+    critMultiplier = critMultiplierFor(perks, wctx, statCritMult); // Basis 1,5 + Crit-Mult-Stat; L5 „Jackpot": ×4 überschreibt
     isCrit = rollCrit(critChance, ownsGuaranteedCrit(perks, wctx), rng);
     // #71 Überschusskrit: Crit-Chance über 100 % → Chance (= Überschuss) auf einen Super-Crit (×1,5 auf den Crit-Faktor).
     if (isCrit && ownsFlag(perks, "superCrit") && rawCrit > 1) {
@@ -146,7 +149,11 @@ export function resolveTrick(state, rng = Math.random) {
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
                       + (isCrit ? skillSum(skills, "scoreFlatOnCrit", wctx) : 0)
                       + ionScoreFor(pCard) + stormScore;
-    scoreBeforeCrit = scoreBase * streakBaseMult(serieStreak) * prodHook(perks, "scoreMult", wctx);
+    // Stat-Faktoren (V2 §22.3): Serien-Stat (skaliert mit der Serie) und Formations-Stat (nur bei aktiver
+    // Formation, max 1×/Stich — ab Phase 3 wirksam). Multiplikativ neben Basis-Serie (#39) und Perk-scoreMult.
+    const hasFormation = false; // Phase 3: aus der Formations-Engine je Position bestimmt
+    scoreBeforeCrit = scoreBase * streakBaseMult(serieStreak) * prodHook(perks, "scoreMult", wctx)
+                      * statStreakFactor(statStreakMult, serieStreak) * statFormFactor(statFormMult, hasFormation);
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     critBonus = gained - scoreBeforeCrit;
     score += gained;
@@ -235,7 +242,7 @@ export function resolveTrick(state, rng = Math.random) {
     result: tieConverted ? "win_tie" : won ? "win" : lost ? "loss" : "tie",
     gained, trickNo,
     isCrit, superCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
-    jackpot: isCrit && critMultiplier > C.CRIT_BASE_MULT, // L5 „Jackpot" / Super-Crit → verstärkter Float
+    jackpot: isCrit && critMultiplier > C.CRIT_BASE_MULT + statCritMult, // L5 „Jackpot" / Super-Crit über der Stat-Basis → verstärkter Float
     // D2-Kombo-Wert der resultierenden Serie (geteilte Quelle → kein Drift zur Score-Berechnung, #31).
     // Überzahl: die effektive Serie (serieStreak) speist auch die Anzeige → kein Drift zum Score.
     comboMult: comboMultFor(perks, serieStreak),
@@ -247,6 +254,7 @@ export function resolveTrick(state, rng = Math.random) {
   let phase = "play";
   let newOffer = offer;
   let newSkillOffer = skillOffer;
+  let newStatOffer = statOffer;
   if (pos >= C.TRICKS_PER_CYCLE) {
     cycle += 1;
     // #71 Zeitraffer (L11): je vollem Durchlauf +10 % Score (max +50 %).
@@ -265,16 +273,19 @@ export function resolveTrick(state, rng = Math.random) {
       // Neuer Durchlauf: NUR das Gegnerdeck neu mischen; Spieler-Reihenfolge bleibt (persistent). pos zurück.
       oppOrder = shuffledOrder(oppDeck.length, rng);
       pos = 0;
-      // Auswahl nach jeder Runde (kein Level-Gate): jede SKILL_EVERY_CYCLES-te Runde eine Skill-Auswahl,
-      // sonst ein Perk. Leerer Skill-Pool → auf Perk-Angebot zurückfallen (Runde nie „verschwendet").
-      if (cycle % C.SKILL_EVERY_CYCLES === 0) {
+      // Entscheidung VOR dem neuen Durchlauf nach dem festen Zyklus (§22.2): DECISION_CYCLE[cycle % 6].
+      const decision = C.DECISION_CYCLE[cycle % C.DECISION_CYCLE.length];
+      if (decision === "stat") {
+        phase = "levelup"; newStatOffer = STAT_IDS; // immer alle vier Stats
+      } else if (decision === "skill") {
         const soff = buildSkillOffer(skills, rng, C.SKILLS_OFFERED);
         if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
-        else { const off = buildOffer(perks, rng, C.PERKS_OFFERED); if (off.length > 0) { phase = "levelup"; newOffer = off; } }
-      } else {
+        else { const off = buildOffer(perks, rng, C.PERKS_OFFERED); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk
+      } else if (decision === "perk") {
         const off = buildOffer(perks, rng, C.PERKS_OFFERED);
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       }
+      // decision === "formation": die Formations-Phase folgt in Phase 4 — vorerst kein Halt, weiterspielen.
     }
   }
 
@@ -286,6 +297,7 @@ export function resolveTrick(state, rng = Math.random) {
     critFollowArmed, misfireBonus, weaknessArmed,
     ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
     overStreak, fateValue, zeitrafferStacks,
+    statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
     lastTrick, phase,
   };

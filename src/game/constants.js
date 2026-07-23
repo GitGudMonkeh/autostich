@@ -11,8 +11,18 @@ export const LIFE_DRAIN_BASE        = 0.3;             // Aufschlag pro Niederla
 export const MAX_CYCLES       = 40;     // V2 (§22.1): fester Run über genau so viele Deck-Durchläufe, danach Ende [TUNING]
 export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Tempo skalieren darauf) [TUNING]
 export const TEMPO_SCORE_FACTOR = 0.005; // je %-Punkt speedPct +0,5 % Stichscore [TUNING]
-export const CRIT_BASE_MULT   = 2;      // Crit verdoppelt den Stichscore [TUNING]
+export const CRIT_BASE_MULT   = 1.5;    // V2 (§22.3): Basis-Crit-Multiplikator; der Crit-Mult-Stat baut darauf auf [TUNING]
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
+
+// Stat-System (V2 §22.3) — bei jedem Stat-Pick alle vier angeboten, einer gewählt; additiv, keine Caps [TUNING]
+export const STAT_CRIT_CHANCE_STEP = 0.02;  // Crit-Chance: +2 Prozentpunkte je Pick
+export const STAT_CRIT_MULT_STEP   = 0.1;   // Crit-Multiplikator: +0,1× je Pick (auf Basis 1,5)
+export const STAT_FORM_MULT_STEP   = 0.05;  // Formations-Mult: +5 % Score bei aktiver Formation je Pick (max 1×/Stich; ab Phase 3 wirksam)
+export const STAT_STREAK_MULT_STEP = 0.005; // Serien-Mult: +0,5 % Score je aktuellem Serienpunkt je Pick
+
+// Entscheidungszyklus (V2 §22.2): Typ der Entscheidung VOR Durchlauf n = DECISION_CYCLE[n % 6].
+// Über 40 Durchläufe: 14 Stat · 13 Perk · 7 Formation · 6 Skill.
+export const DECISION_CYCLE = ["stat", "perk", "formation", "stat", "perk", "skill"];
 // TRICKS_PER_CYCLE wird weiter unten aus der Deckgröße abgeleitet (SUIT_ORDER × RANKS, #34) — kein Drift.
 
 // Score-Perk-Magnituden (Kategorie D) [TUNING]

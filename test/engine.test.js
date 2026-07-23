@@ -3,6 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { MAX_CYCLES } from "../src/game/constants.js";
+import { STAT_IDS } from "../src/game/stats.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
 const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
@@ -104,14 +105,14 @@ describe("resolveTrick — Crit & globale Score-Formel (ohne Tempo)", () => {
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(469.2);
   });
 
-  it("Crit verdoppelt den vollen scoreBeforeCrit (inkl. Boni)", () => {
-    // D9 garantiert Crit beim 10. Sieg; D1, streakBaseMult(1): scoreBeforeCrit = 117,3, ×2 = 234,6
+  it("Crit multipliziert den vollen scoreBeforeCrit mit der Basis 1,5 (inkl. Boni)", () => {
+    // D9 garantiert Crit beim 10. Sieg; D1, streakBaseMult(1): scoreBeforeCrit = 117,3, ×1,5 = 175,95
     const s = resolveTrick(scenario(12, 0, { perks: ["D1", "D9"], wins: 9 }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(117.3);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(234.6);
-    expect(s.lastTrick.critBonus).toBeCloseTo(117.3);
-    expect(s.score).toBeCloseTo(234.6);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(175.95);
+    expect(s.lastTrick.critBonus).toBeCloseTo(58.65);
+    expect(s.score).toBeCloseTo(175.95);
   });
 
   it("Niederlagen und Gleichstände lösen keinen Crit aus", () => {
@@ -130,11 +131,11 @@ describe("resolveTrick — Crit & globale Score-Formel (ohne Tempo)", () => {
   });
 
   it("crits, critBonusScore und bestTrickScore werden geführt", () => {
-    // 10. Sieg, D9 garantiert, streakBaseMult(1)=1,02: scoreBeforeCrit = 102, ×2 = 204, Bonus 102
+    // 10. Sieg, D9 garantiert, streakBaseMult(1)=1,02: scoreBeforeCrit = 102, ×1,5 = 153, Bonus 51
     const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9 }), rng);
     expect(s.crits).toBe(1);
-    expect(s.critBonusScore).toBeCloseTo(102);
-    expect(s.bestTrickScore).toBeCloseTo(204);
+    expect(s.critBonusScore).toBeCloseTo(51);
+    expect(s.bestTrickScore).toBeCloseTo(153);
   });
 });
 
@@ -329,13 +330,13 @@ describe("Serien-/Crit-Rares — Engine (#71 Phase 2e)", () => {
     const zero = () => 0;   // Überschuss-Wurf trifft
     const half = () => 0.5; // Überschuss-Wurf verfehlt (Überschuss 0,27)
     const sup = resolveTrick(scenario(12, 0, build), zero);
-    expect(sup.lastTrick.critChance).toBe(1);      // Anzeige geklemmt
+    expect(sup.lastTrick.critChance).toBe(1);          // Anzeige geklemmt
     expect(sup.lastTrick.superCrit).toBe(true);
-    expect(sup.lastTrick.critMultiplier).toBe(3);  // ×2 × 1,5
-    expect(sup.lastTrick.scoreGain).toBeCloseTo(366); // scoreBeforeCrit 122 × 3
+    expect(sup.lastTrick.critMultiplier).toBeCloseTo(2.25); // Basis 1,5 × 1,5
+    expect(sup.lastTrick.scoreGain).toBeCloseTo(274.5);     // scoreBeforeCrit 122 × 2,25
     const noSup = resolveTrick(scenario(12, 0, build), half);
     expect(noSup.lastTrick.superCrit).toBe(false);
-    expect(noSup.lastTrick.critMultiplier).toBe(2);
+    expect(noSup.lastTrick.critMultiplier).toBeCloseTo(1.5);
     expect(resolveTrick(scenario(12, 0, { ...build, perks: ["D9", "D6", "D7", "D8", "D16"] }), zero).lastTrick.superCrit).toBe(false); // ohne D19 kein Super-Crit
   });
 });
@@ -351,10 +352,10 @@ describe("Neue Legendaries — Engine (#71 Phase 3)", () => {
 
   it("L10 Kettenreaktion: Crit kettet mit halber finaler Chance, je Stufe ×2 (max 3)", () => {
     const build = { perks: ["L10", "D6", "D9"], wins: 9 }; // D9 garantiert Crit, D6 → 12 % finale Chance → Kette 6 %
-    expect(resolveTrick(scenario(12, 0, build), () => 0).lastTrick.critMultiplier).toBe(16);  // 3 Treffer: ×2→4→8→16
-    expect(resolveTrick(scenario(12, 0, build), () => 0.5).lastTrick.critMultiplier).toBe(2);  // kein Treffer
-    let n = 0; const once = () => (n++ === 0 ? 0 : 0.5);                                        // genau 1 Treffer
-    expect(resolveTrick(scenario(12, 0, build), once).lastTrick.critMultiplier).toBe(4);
+    expect(resolveTrick(scenario(12, 0, build), () => 0).lastTrick.critMultiplier).toBeCloseTo(12);  // Basis 1,5 · 3 Treffer ×2 → 12
+    expect(resolveTrick(scenario(12, 0, build), () => 0.5).lastTrick.critMultiplier).toBeCloseTo(1.5); // kein Treffer → Basis
+    let n = 0; const once = () => (n++ === 0 ? 0 : 0.5);                                              // genau 1 Treffer
+    expect(resolveTrick(scenario(12, 0, build), once).lastTrick.critMultiplier).toBeCloseTo(3);       // 1,5 × 2
   });
 
   it("L11 Zeitraffer: je Durchlauf +Stack (max 5), +10 %/Stack Score", () => {
@@ -374,12 +375,12 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
   });
 
   it("Crit mit Blitzableiter: +2 Ladung (Basis 1 + Skill 1) und +50 in der multiplizierten Basis", () => {
-    // scoreBase = (100 + 50) × streakBaseMult(1)=1,02 = 153, ×2 (Crit) = 306.
+    // scoreBase = (100 + 50) × streakBaseMult(1)=1,02 = 153, ×1,5 (Crit-Basis) = 229,5.
     const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR], lightning: lit() }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(2);
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(153);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(306);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(229.5);
   });
 
   it("ohne Crit: keine Ladung, kein Crit-Flat", () => {
@@ -401,21 +402,68 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
     expect(s.lastTrick.critChance).toBeCloseTo(0); // keine Crit-Basis
   });
 
-  it("Skill-Auswahl jede 3. Runde, sonst Perk; leerer Skill-Pool fällt auf Perk zurück", () => {
+  it("Entscheidungszyklus (§22.2): Perk/Formation/Stat/Skill je nach Durchlauf; leerer Skill-Pool → Perk", () => {
+    // Nach dem Durchlauf mit cycle C ist die Entscheidung DECISION_CYCLE[(C+1) % 6].
     const ALL = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06", "SK_LIGHTNING_07"];
-    const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng); // → cycle 3
-    expect(skillRound.phase).toBe("levelup");
-    expect(skillRound.skillOffer).toHaveLength(3); // 3 aus dem Blitz-Pool
-    expect(skillRound.offer).toBeNull();
 
-    const perkRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1 }), rng); // → cycle 2
-    expect(perkRound.skillOffer).toBeNull();
+    const perkRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 0 }), rng); // → cycle 1 (%6=1 → perk)
+    expect(perkRound.phase).toBe("levelup");
     expect(perkRound.offer).toHaveLength(3);
+    expect(perkRound.skillOffer).toBeNull();
+    expect(perkRound.statOffer).toBeNull();
 
-    // Alle Skills gehalten → Skill-Pool leer → Perk-Angebot (Runde nicht verschwendet).
-    const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, skills: ALL }), rng);
+    const formationRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1 }), rng); // → cycle 2 (formation): kein Halt (Phase 4)
+    expect(formationRound.phase).toBe("play");
+    expect(formationRound.offer).toBeNull();
+    expect(formationRound.skillOffer).toBeNull();
+    expect(formationRound.statOffer).toBeNull();
+
+    const statRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng); // → cycle 3 (stat)
+    expect(statRound.phase).toBe("levelup");
+    expect(statRound.statOffer).toEqual(STAT_IDS);
+    expect(statRound.offer).toBeNull();
+    expect(statRound.skillOffer).toBeNull();
+
+    const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4 }), rng); // → cycle 5 (skill)
+    expect(skillRound.phase).toBe("levelup");
+    expect(skillRound.skillOffer).toHaveLength(3);
+    expect(skillRound.offer).toBeNull();
+    expect(skillRound.statOffer).toBeNull();
+
+    // Skill-Runde mit vollem Skill-Besitz → Fallback auf Perk-Angebot (Runde nicht verschwendet).
+    const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4, skills: ALL }), rng);
     expect(owned.skillOffer).toBeNull();
     expect(owned.offer).toHaveLength(3);
+  });
+});
+
+describe("Stat-System — Engine (V2 §22.3)", () => {
+  it("Crit-Chance-Stat: statCritChance hebt die Crit-Chance additiv", () => {
+    // 3 Picks → +6 pp. Ohne Crit-Perk sonst 0 → 6 %.
+    expect(resolveTrick(scenario(12, 0, { statCritChance: 0.06 }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
+  });
+  it("Crit-Mult-Stat: hebt den Crit-Faktor auf 1,5 + Stat; Jackpot-Schwelle wandert mit", () => {
+    // statCritMult 0,4 → Basis-Crit 1,9. D9 garantiert Crit. Kein Jackpot (== Basis).
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, statCritMult: 0.4 }), rng);
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.lastTrick.critMultiplier).toBeCloseTo(1.9);
+    expect(s.lastTrick.jackpot).toBe(false);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(102 * 1.9); // scoreBeforeCrit 102 × 1,9
+  });
+  it("Crit-Mult-Stat + L5: ×4 überschreibt weiterhin, solange höher", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9", "L5"], wins: 9, statCritMult: 0.4 }), rng);
+    expect(s.lastTrick.critMultiplier).toBe(4); // max(1,9, 4)
+    expect(s.lastTrick.jackpot).toBe(true);
+  });
+  it("Serien-Stat: +0,5 %/Pick pro Serienpunkt multipliziert den Stichscore", () => {
+    // statStreakMult 0,01 (2 Picks) × Serie 1 → Faktor 1,01. 100 × 1,02(#39) × 1,01.
+    expect(resolveTrick(scenario(12, 0, { statStreakMult: 0.01 }), rng).lastTrick.gained).toBeCloseTo(100 * 1.02 * 1.01);
+    // Serie 4 (winStreak 3 → 4): streakBaseMult(4)=1,08 × Faktor (1 + 0,01×4)=1,04.
+    expect(resolveTrick(scenario(12, 0, { statStreakMult: 0.01, winStreak: 3 }), rng).lastTrick.gained)
+      .toBeCloseTo(100 * 1.08 * 1.04);
+  });
+  it("Formations-Stat wirkt in Phase 2 noch nicht (keine Formationen) → kein Score-Effekt", () => {
+    expect(resolveTrick(scenario(12, 0, { statFormMult: 0.15 }), rng).lastTrick.gained).toBeCloseTo(102);
   });
 });
 

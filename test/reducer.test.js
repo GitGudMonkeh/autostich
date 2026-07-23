@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
+import { STAT_IDS } from "../src/game/stats.js";
 
 const rng = makeRng(1);
 
@@ -47,19 +48,21 @@ describe("Reducer", () => {
     expect(new Set(s.kingBoosted)).toEqual(new Set(["A", "B"]));
   });
 
-  it("RESET beginnt einen frischen Lauf mit Start-Pick (levelup + Angebot)", () => {
+  it("RESET beginnt einen frischen Lauf mit Start-Pick = Stat (V2 §22.2)", () => {
     const dirty = { ...initialState(makeRng(1)), score: 999, perks: ["A1", "D1"] };
     const fresh = reducer(dirty, { type: "RESET", rng });
     expect(fresh.score).toBe(0);
     expect(fresh.perks).toEqual([]);
-    expect(fresh.phase).toBe("levelup"); // Neuer Loop: Perk gleich zu Beginn
-    expect(fresh.offer).toHaveLength(3);
+    expect(fresh.phase).toBe("levelup"); // Start-Entscheidung (Durchlauf 0) = Stat
+    expect(fresh.statOffer).toEqual(STAT_IDS);
+    expect(fresh.offer).toBeNull();
   });
 
-  it("START_RUN startet aus dem Menü einen frischen Lauf mit Start-Pick (levelup)", () => {
+  it("START_RUN startet aus dem Menü einen frischen Lauf mit Start-Pick = Stat", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng });
     expect(s.phase).toBe("levelup");
-    expect(s.offer).toHaveLength(3);
+    expect(s.statOffer).toEqual(STAT_IDS);
+    expect(s.offer).toBeNull();
     expect(s.trickNo).toBe(0);
     expect(s.perks).toEqual([]);
   });
@@ -92,6 +95,27 @@ describe("END_RUN — Beenden → Endscreen", () => {
     expect(reducer(menu, { type: "END_RUN" })).toBe(menu);
     const over = { ...initialState(makeRng(1)), phase: "gameover" };
     expect(reducer(over, { type: "END_RUN" })).toBe(over);
+  });
+});
+
+describe("Stat-Auswahl — PICK_STAT (V2 §22.3)", () => {
+  const statState = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", statOffer: STAT_IDS, ...over });
+
+  it("addiert den Step aufs Summenfeld und kehrt in play zurück", () => {
+    const s = reducer(statState(), { type: "PICK_STAT", statId: "critChance", rng });
+    expect(s.phase).toBe("play");
+    expect(s.statOffer).toBeNull();
+    expect(s.statCritChance).toBeCloseTo(0.02);
+  });
+  it("stapelt additiv über mehrere Picks", () => {
+    const s = reducer(statState({ statStreakMult: 0.005 }), { type: "PICK_STAT", statId: "streakMult", rng });
+    expect(s.statStreakMult).toBeCloseTo(0.01);
+  });
+  it("ignoriert unbekannte Stats und Picks außerhalb der Stat-Auswahl", () => {
+    const s0 = statState();
+    expect(reducer(s0, { type: "PICK_STAT", statId: "nope", rng })).toBe(s0);
+    const play = initialState(makeRng(1)); // phase play, kein statOffer
+    expect(reducer(play, { type: "PICK_STAT", statId: "critChance", rng })).toBe(play);
   });
 });
 

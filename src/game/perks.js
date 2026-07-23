@@ -368,9 +368,9 @@ export function critChanceFor(perks, ctx, legendaryCritBonus = 0) {
   return Math.min(1, Math.max(0, critChanceRawFor(perks, ctx, legendaryCritBonus)));
 }
 // Crit-Faktor: L5 (Jackpot) ÜBERSCHREIBT die Basis (×4) statt zu addieren → höchster Hook-Wert gewinnt.
-// Geteilte Quelle für Engine-Score UND Anzeige.
-export function critMultiplierFor(perks, ctx = {}) {
-  let m = C.CRIT_BASE_MULT;
+// baseBonus = Crit-Mult-Stat (V2 §22.3): hebt die Basis 1,5 an (max mit L5). Geteilte Quelle für Engine + Anzeige.
+export function critMultiplierFor(perks, ctx = {}, baseBonus = 0) {
+  let m = C.CRIT_BASE_MULT + (baseBonus || 0);
   for (const id of perks) { const f = PERK_DEFS[id].critMultiplier; if (f) m = Math.max(m, f(ctx)); }
   return m;
 }

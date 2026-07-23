@@ -82,11 +82,13 @@ Jede Phase: lauffähiger Build + grüne Tests am Ende. Reihenfolge ist dependenc
 3. **Offene Kleinigkeit:** Speed-Regler zeigt aktuell nur 2×/3× — 4× (und ggf. höher, weil score-neutral) für Phase 6 UI-Feinschliff vormerken (Q5: großzügig).
 4. **Zwischenstand-Kosmetik:** C-/E-/einige L-Perks sind aktuell inert (ihre Leben/Tempo-Hooks werden nicht mehr aufgerufen) — beabsichtigt, wird in Phase 5 (§22.6) neu geschrieben.
 
-### Phase 2 — Entscheidungszyklus + Stat-System
-- `round % 6`-Fahrplan im Reducer/Engine (ersetzt „jede 3. Runde Skill, sonst Perk").
-- Neue Pick-Phase **Stat**: immer alle 4 Stats angeboten, 1 gewählt.
-- Stat-State + Score-Formel-Anbindung (siehe §5-Detailfragen).
-- **Ergebnis:** Stat-Picks funktionieren, Zyklus fährt den Fahrplan.
+### Phase 2 — Entscheidungszyklus + Stat-System ✅ ERLEDIGT
+- `DECISION_CYCLE = [stat, perk, formation, stat, perk, skill]` (cycle % 6) in `engine.js` (ersetzt „jede 3. Runde Skill"). Start-Pick (Durchlauf 0) = **Stat**.
+- Neue Pick-Phase **Stat** (`statOffer`, `PICK_STAT`): immer alle 4 Stats; neue reine `stats.js` (STAT_DEFS).
+- **Crit-Basis 2 → 1,5**; Score-Formel um Serien-Stat (`statStreakFactor`) erweitert; Crit-Chance-Stat additiv, Crit-Mult-Stat auf die Basis (`critMultiplierFor` baseBonus).
+- **Formations-Runden vorerst No-Op** (Phase 4 füllt sie). **Formations-Stat akkumuliert, wirkt ab Phase 3.**
+- UI: neue `StatSelect.jsx`, in `App.jsx` verdrahtet; StatusRail/PerkSelect zeigen Crit inkl. Stat + Serien-/Form-Stat-Readout.
+- Tests: `170/170` grün (neue Stat-/Zyklus-Tests). Im Browser verifiziert (Start = Stat, Crit ×1,50, Crit-Chance 2 %).
 
 ### Phase 3 — Formations-Engine (pure, ohne UI)
 - Reine Funktion `computeFormations(order, deck, unlocks) → perPosition[{ mult, formations[] }]`.

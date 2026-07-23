@@ -1,6 +1,7 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer } from "./perks.js";
 import { archetypeOf, initLightning } from "./skills.js";
+import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -29,6 +30,8 @@ export function initialState(rng = Math.random) {
     ascRun: 0, lastPlayedValue: null, winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Perfekte Folge / Farbserie / Volles Haus
     overStreak: 0, // #71 Phase 2e: Überzahl
     fateValue: null, zeitrafferStacks: 0, kingBoosted: [], // #71 Phase 3 Legendaries: Schicksalsmaschine / Zeitraffer / Königsmacher
+    // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
+    statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, statOffer: null,
     perks: [], offer: null,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
     skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
@@ -46,10 +49,9 @@ export function reducer(state, action) {
   switch (action.type) {
     case "START_RUN":   // frischer Lauf aus dem Menü / Neustart
     case "RESET": {
-      // Neuer Loop: schon zu Beginn ein Perk wählen (Start-Pick) → nie eine Runde mit leerem Build.
+      // Start-Entscheidung vor Durchlauf 0 = Stat (DECISION_CYCLE[0], §22.2). Immer alle vier Stats.
       const s = initialState(action.rng);
-      const offer = buildOffer([], action.rng, PERKS_OFFERED);
-      return offer.length > 0 ? { ...s, phase: "levelup", offer } : s;
+      return { ...s, phase: "levelup", statOffer: STAT_IDS };
     }
 
     case "TO_MENU":     // laufenden Run verlassen (#5)
@@ -82,6 +84,14 @@ export function reducer(state, action) {
       }
       // Nach der Wahl geht es direkt weiter — neu gemischt wurde schon beim Durchlauf-Ende (Engine).
       return { ...state, deck, kingBoosted, perks, phase: "play", offer: null };
+    }
+
+    // Stat-Auswahl (V2 §22.3): der gewählte Stat addiert seinen Step auf das zugehörige Summenfeld.
+    case "PICK_STAT": {
+      if (state.phase !== "levelup" || !state.statOffer) return state;
+      const def = STAT_DEFS[action.statId];
+      if (!def) return state;
+      return { ...state, [def.field]: (state[def.field] || 0) + def.step, phase: "play", statOffer: null };
     }
 
     // Skill-Auswahl (jede SKILL_EVERY_CYCLES-te Runde). Hinzufügen oder — bei vollen Slots — ersetzen.
