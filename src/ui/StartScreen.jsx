@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AnleitungModal } from "./AnleitungModal.jsx";
 import { CardLogo } from "./CardLogo.jsx";
 import { GlobalLeaderboard } from "./GlobalLeaderboard.jsx";
+import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 
 /* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste. */
 export function StartScreen({ onStart, highscores, best, onOptions, username = "", onEditName, myEntry = null, pubToken = 0 }) {
@@ -9,11 +10,11 @@ export function StartScreen({ onStart, highscores, best, onOptions, username = "
 
   // Beim allerersten Start die Anleitung einmal automatisch zeigen (#12).
   useEffect(() => {
-    try { if (!localStorage.getItem("as_seen_guide")) setShowGuide(true); } catch (e) {}
+    if (!loadSeenGuide()) setShowGuide(true);
   }, []);
   const closeGuide = () => {
     setShowGuide(false);
-    try { localStorage.setItem("as_seen_guide", "1"); } catch (e) {}
+    saveSeenGuide();
   };
 
   return (

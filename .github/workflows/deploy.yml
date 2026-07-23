@@ -5,16 +5,15 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Rechte, die actions/deploy-pages braucht.
+# peaceiris pusht das Build-Ergebnis in den gh-pages-Branch → braucht Schreibrecht.
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
-# Immer nur ein Pages-Deploy gleichzeitig.
+# main- und Testbranch-Deploy teilen sich diese Gruppe, damit nie zwei gleichzeitig
+# in gh-pages pushen (Race). Laufende Deploys werden NICHT abgebrochen, sondern eingereiht.
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: gh-pages-publish
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -27,17 +26,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+      - run: npm run build   # base = /autostich/ (Default in vite.config.js)
+      - uses: peaceiris/actions-gh-pages@v4
         with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          # Root der Pages-Seite. keep_files: den Unterordner test/ (Preview) NICHT mitlöschen.
+          keep_files: true
+          commit_message: "deploy(main): ${{ github.sha }}"

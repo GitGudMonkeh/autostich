@@ -6,8 +6,9 @@ import tailwindcss from "@tailwindcss/vite";
 // Vitest liest den `test`-Block aus dieser Config.
 export default defineConfig(({ command }) => ({
   // Build läuft unter dem GitHub-Pages-Projektpfad /autostich/. Dev-Server bleibt auf "/"
-  // (sonst läuft localhost unter dem Unterpfad).
-  base: command === "build" ? "/autostich/" : "/",
+  // (sonst läuft localhost unter dem Unterpfad). Der Testbranch-Deploy überschreibt die
+  // Base per DEPLOY_BASE (→ /autostich/test/), damit die Preview-Page als Unterpfad läuft.
+  base: command === "build" ? (process.env.DEPLOY_BASE || "/autostich/") : "/",
   plugins: [react(), tailwindcss()],
   test: {
     // Engine/Reducer sind reine Logik → schnelle Node-Umgebung reicht.

@@ -1,0 +1,42 @@
+name: Deploy Testbranch to Pages (/test/)
+
+# Deployt den Testbranch als Unterpfad /autostich/test/ auf DIESELBE Pages-Seite wie main.
+# So lassen sich große Features live prüfen, ohne die Hauptseite anzufassen.
+on:
+  push:
+    branches: [Autostich_Test]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Gleiche Gruppe wie der main-Deploy → serialisiert die gh-pages-Pushes (kein Race).
+concurrency:
+  group: gh-pages-publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+        env:
+          # Assets müssen unter dem Unterpfad aufgelöst werden.
+          DEPLOY_BASE: /autostich/test/
+          # Preview-Build: eigener localStorage-Namespace + kein Schreiben ins echte Leaderboard.
+          VITE_PREVIEW: "1"
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          # Nur in den Unterordner test/ schreiben; Root (main-Seite) unangetastet lassen.
+          destination_dir: test
+          keep_files: true
+          commit_message: "deploy(test): ${{ github.sha }}"
