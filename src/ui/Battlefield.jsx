@@ -13,6 +13,17 @@ const BANNER = {
 const CRIT_COLOR = "#e879f9";
 const JACKPOT_COLOR = "#d4a63a"; // L5 „Jackpot" (#33): Gold statt Crit-Violett
 
+// #68: vier Streuzonen — gleiche Float-Typen dicht beieinander, verschiedene getrennt. Basis-Lage je Zone.
+const FLOAT_ZONES = {
+  score: { left: "7%",  top: "38%" },  // Score-Gewinn (linke Seite, über der Spielerkarte)
+  life:  { right: "7%", top: "38%" },  // Leben: Verlust −X♥ UND Heilung +X♥ (rechte Seite)
+  combo: { left: "4%",  top: "64%" },  // Kombo (unten links)
+  crit:  { left: "50%", top: "2%"  },  // Crit-Text (oben mittig)
+};
+const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflow-hidden, nichts läuft raus
+// Deterministischer Jitter aus einem Integer-Seed (kein Math.random im Render, #68) → [-amp, +amp].
+const fjitter = (seed, amp) => { const s = Math.sin(seed * 127.1 + 311.7) * 43758.5; return +(((s - Math.floor(s)) * 2 - 1) * amp).toFixed(1); };
+
 // Respektiert die OS-Einstellung „reduzierte Bewegung" (#15/#19).
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(() =>
@@ -104,13 +115,19 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     seenTrick.current = t.trickNo;
     const w = t.result === "win" || t.result === "win_tie";
     const l = t.result === "loss";
-    const dur = clamp(flipMs * 0.7, 320, 700) + 1000; // ~1 s länger als zuvor (#49)
+    const dur = clamp(flipMs * 0.7, 360, 760) + 1300; // #68: nochmals länger nach oben (aufbauend auf #49)
+    const critC = t.isCrit ? (t.jackpot ? JACKPOT_COLOR : CRIT_COLOR) : "#d4a63a";
     const entries = [];
-    if (w && (t.gained > 0 || t.healed > 0))
-      entries.push({ id: `g${t.trickNo}`, side: "gain", dur, gained: t.gained, healed: t.healed,
-                     color: t.isCrit ? (t.jackpot ? JACKPOT_COLOR : CRIT_COLOR) : "#d4a63a" });
+    // #68: Score, Heilung und Verlust sind eigene Floats in getrennten Zonen (Heilung wandert zu „Leben").
+    if (w && t.gained > 0)
+      entries.push({ id: `s${t.trickNo}`, zone: "score", dur, seed: t.trickNo * 2,
+                     text: `+${Math.round(t.gained * 10) / 10}`, color: critC });
+    if (w && t.healed > 0)
+      entries.push({ id: `h${t.trickNo}`, zone: "life", dur, seed: t.trickNo * 2 + 5,
+                     text: `+${t.healed}♥`, color: "#5ab87a" });
     if (l && t.dmg > 0)
-      entries.push({ id: `d${t.trickNo}`, side: "loss", dur, dmg: t.dmg });
+      entries.push({ id: `d${t.trickNo}`, zone: "life", dur, seed: t.trickNo * 2 + 5,
+                     text: `−${t.dmg}♥`, color: "#e0605a" });
     if (!entries.length) return;
     setFloats((cur) => [...cur, ...entries].slice(-6)); // Pool gedeckelt — kein unbegrenztes Stapeln
     const ids = entries.map((e) => e.id);
@@ -124,7 +141,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
         {/* KRITISCH-/JACKPOT-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
-            style={{ left: "50%", top: 0, fontSize: 26, color: critColor, textShadow: `0 0 12px ${critColor}aa`,
+            style={{ left: `calc(${FLOAT_ZONES.crit.left} + ${fjitter(t.trickNo * 5 + 2, JITTER_X)}px)`,
+                     top:  `calc(${FLOAT_ZONES.crit.top} + ${fjitter(t.trickNo * 5 + 9, JITTER_Y)}px)`,
+                     fontSize: 26, color: critColor, textShadow: `0 0 12px ${critColor}aa`,
                      transform: reduced ? "translateX(-50%)" : undefined,
                      animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900)}ms ease-out forwards`) }}>
             {jackpot ? "JACKPOT" : "KRITISCH"}{reduced ? ` ×${critMultStr}` : "!"}
@@ -149,24 +168,29 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
 
         <Side label="Gegner" remaining={remaining} dealFrom="right">{oppCard}</Side>
 
-        {/* Aufsteigende Zahlen (#49): Score-Gewinn links, Schaden rechts — als Pool, ~1 s Dauer,
-            Überlappen erlaubt. Bei Crit zeigt der Gewinn-Float direkt den vollen (verdoppelten) Score. */}
-        {floats.map((f) => (
-          <div key={f.id} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
-            style={{ [f.side === "gain" ? "left" : "right"]: 2, top: "40%",
-                     color: f.side === "loss" ? "#e0605a" : undefined,
-                     animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
-            {f.side === "gain" ? (<>
-              {f.gained > 0 && <span style={{ color: f.color }}>+{Math.round(f.gained * 10) / 10}</span>}
-              {f.healed > 0 && <span style={{ color: "#5ab87a" }}> +{f.healed}♥</span>}
-            </>) : (<>−{f.dmg}♥</>)}
-          </div>
-        ))}
+        {/* Aufsteigende Zahlen (#49/#68): je Typ eigene Streuzone (Score links / Leben rechts) mit
+            kleinem, deterministischem Jitter aus trickNo → gleiche Typen dicht, verschiedene getrennt,
+            aufeinanderfolgende überlappen nur leicht statt exakt zu stapeln. Pool gedeckelt. */}
+        {floats.map((f) => {
+          const z = FLOAT_ZONES[f.zone];
+          const dx = fjitter(f.seed, JITTER_X), dy = fjitter(f.seed * 1.7 + 3, JITTER_Y);
+          const pos = { top: `calc(${z.top} + ${dy}px)` };
+          if (z.left != null)  pos.left  = `calc(${z.left} + ${dx}px)`;
+          if (z.right != null) pos.right = `calc(${z.right} + ${dx}px)`;
+          return (
+            <div key={f.id} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
+              style={{ ...pos, color: f.color, animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
+              {f.text}
+            </div>
+          );
+        })}
         {/* Eskalierende Kombo-Anzeige (#31): eigene Bahn unten links, kollidiert nicht mit dem
             Gewinn-Float (40 %). Unter reduzierter Bewegung statisch (kein Float), wie beim Crit. */}
         {showCombo && (
           <div key={`combo${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
-            style={{ left: 2, top: "62%", fontSize: 20, color: "#e0605a", textShadow: "0 0 10px #e0605a88",
+            style={{ left: `calc(${FLOAT_ZONES.combo.left} + ${fjitter(t.trickNo * 3 + 7, JITTER_X)}px)`,
+                     top:  `calc(${FLOAT_ZONES.combo.top} + ${fjitter(t.trickNo * 3 + 13, JITTER_Y)}px)`,
+                     fontSize: 20, color: "#e0605a", textShadow: "0 0 10px #e0605a88",
                      animation: fx(`as-combo ${clamp(flipMs * 0.85, 360, 820)}ms ease-out forwards`) }}>
             KOMBO ×{comboStr}
           </div>
