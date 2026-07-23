@@ -266,46 +266,40 @@ export const PERK_DEFS = {
 
   // ---- Legendär (#33): mächtig, aber mit Nachteil. rarity "legendary" → Gewicht 8 & Level-Gate ≥5
   //      (buildOffer). Nutzen bestehende Kategorien (A–E) plus die neuen Legendär-Hooks oben. ----
-  L1: { id: "L1", cat: "A", rarity: "legendary", label: "Überladung",
-        desc: "Alle Karten dauerhaft +2 Wert — dafür verursachen verlorene Stiche +3 Schaden.",
-        onPick: (d) => d.map((c) => ({ ...c, value: c.value + 2 })),
-        extraDamageTaken: () => 3 },
+  L1: { id: "L1", cat: "A", rarity: "legendary", label: "Überladung", needsTarget: 5,
+        desc: "Wähle fünf Karten. Sie erhalten dauerhaft +6 Wert.",
+        permMod: (deck, order, ids) => deck.map((c) => (ids.includes(c.id) ? { ...c, value: c.value + 6 } : c)) },
   L2: { id: "L2", cat: "B", rarity: "legendary", label: "Unaufhaltsam",
-        desc: "Ab 3 Siegen in Folge gewinnst du alle Gleichstände, bis die Serie endet.",
-        winTie: ({ winStreak }) => winStreak >= 3 },
-  L3: { id: "L3", cat: "C", rarity: "legendary", label: "Letztes Aufbäumen",
-        desc: "Bei 25 % Leben oder weniger erhalten alle Karten +3 Wert für den aktuellen Stich.",
-        cardBonus: ({ life, maxLife }) => (maxLife > 0 && life / maxLife <= 0.25 ? 3 : 0) }, // #71: +6→+3
-  L4: { id: "L4", cat: "D", rarity: "legendary", label: "Kritische Masse",
-        desc: "Jeder Crit erhöht deine Crit-Chance dauerhaft um 1 Prozentpunkt (max +30 pp).",
-        legendaryCritGain: true }, // Engine führt legendaryCritBonus (Erhöhung NACH dem Crit-Wurf)
-  L5: { id: "L5", cat: "D", rarity: "legendary", label: "Jackpot",
-        desc: "Crits geben ×4 Score statt ×2 — dafür wird deine zufällige Crit-Chance halbiert.",
-        critMultiplier: () => 4, critChanceMult: () => 0.5 },
-  L6: { id: "L6", cat: "E", rarity: "legendary", label: "Raserei",
-        desc: "Der Tempo-Score-Bonus wirkt doppelt — dafür verursachen verlorene Stiche +2 Schaden.",
-        tempoScoreFactorMult: () => 2, extraDamageTaken: () => 2 },
-
-  // ---- Neue Legendaries (#71 Phase 3) — regelverändernde Motoren, teils mit eigenem Engine-/Reducer-State ----
-  L7: { id: "L7", cat: "A", rarity: "legendary", label: "Königsmacher",
-        desc: "Erreicht eine Karte durch Aufwertungen erstmals Wert 13 oder höher, erhält sie dauerhaft weitere +2 (je Karte nur einmal).",
-        kingmaker: true }, // Reducer prüft nach jeder Deck-Mod (kingBoosted)
-  L8: { id: "L8", cat: "A", rarity: "legendary", label: "Schicksalsmaschine",
-        desc: "Zu Beginn jedes Durchlaufs wird ein vorhandener Kartenwert zufällig bestimmt; Karten dieses Werts erhalten +8 Wert und geben bei Sieg ×2 Score (diesen Durchlauf).",
-        schicksal: true,
-        cardBonus: (ctx) => (ctx.fateValue != null && ctx.pValueBase === ctx.fateValue ? C.FATE_CARD_BONUS : 0),
-        scoreMult: (ctx) => (ctx.fateValue != null && ctx.baseValue === ctx.fateValue ? C.FATE_SCORE_MULT : 1) },
-  L9: { id: "L9", cat: "C", rarity: "legendary", label: "Blutvertrag",
-        desc: "Zu Beginn jedes Durchlaufs 100 Leben opfern → dauerhaft +20 % Score (max 5×, +100 %). Nur bei über 100 Leben; kann nicht töten.",
-        bloodPact: true, // Engine führt bloodStacks (Opfer im Durchlauf-Ende-Block)
-        scoreMult: (ctx) => 1 + C.BLOOD_SCORE_STEP * (ctx.bloodStacks || 0) },
-  L10: { id: "L10", cat: "D", rarity: "legendary", label: "Kettenreaktion",
-        desc: "Ein Crit kann erneut critten (Chance = halbe finale Crit-Chance); je Stufe verdoppelt sich der Crit-Faktor, max 3 Zusatzstufen (×2→×4→×8→×16).",
-        chainCrit: true }, // Engine würfelt die Kette nach dem Crit
-  L11: { id: "L11", cat: "E", rarity: "legendary", label: "Zeitraffer",
-        desc: "Alle Tempo-Boni wirken doppelt auf die reale Geschwindigkeit (normal auf den Tempo-Score). Nach jedem vollen Durchlauf dauerhaft +10 % Score (max +50 %).",
-        zeitraffer: true, // App verdoppelt die reale Speed; Engine führt zeitrafferStacks
-        scoreMult: (ctx) => 1 + C.ZEITRAFFER_SCORE_STEP * (ctx.zeitrafferStacks || 0) },
+        desc: "Jeder Sieg gibt der nächsten Karte +2 Wert, bis eine Niederlage eintritt.",
+        cardBonus: (ctx) => 2 * (ctx.winStreak || 0) }, // ctx.winStreak = Serie VOR dieser Karte
+  L3: { id: "L3", cat: "A", rarity: "legendary", label: "Letztes Aufbäumen",
+        desc: "Alle Karten auf den Positionen 36–40 erhalten +5 Wert.",
+        cardBonus: (ctx) => (ctx.posInCycle >= 35 ? 5 : 0) },
+  L4: { id: "L4", cat: "D", rarity: "legendary", label: "Kritische Masse", critValueGain: 4,
+        desc: "Jeder Crit gibt der betreffenden Karte dauerhaft +1 Wert (maximal +4)." },
+  L5: { id: "L5", cat: "D", rarity: "legendary", label: "Jackpot", randomTarget: 4, jackpotScore: 1000,
+        desc: "Vier zufällige Karten geben bei ihrem ersten Crit pro Durchlauf +1.000 Score." },
+  L6: { id: "L6", cat: "B", rarity: "legendary", label: "Raserei",
+        desc: "Jeder aufeinanderfolgende Sieg erhöht den Wertbonus der nächsten Karte um +2 (maximal +10).",
+        cardBonus: (ctx) => Math.min(2 * (ctx.winStreak || 0), 10) },
+  L7: { id: "L7", cat: "A", rarity: "legendary", label: "Königsmacher", segmentHigh: true,
+        desc: "Die höchste Karte jedes Segments erhält +5 Wert.",
+        cardBonus: (ctx) => (ctx.isSegmentHigh ? 5 : 0) },
+  L8: { id: "L8", cat: "A", rarity: "legendary", label: "Schicksalsmaschine", swapExtremes: true,
+        desc: "Nach jedem Durchlauf tauschen die erfolgreichste und die erfolgloseste Karte ihre Werte." },
+  L9: { id: "L9", cat: "A", rarity: "legendary", label: "Blutvertrag", needsTarget: 4,
+        desc: "Wähle vier Karten. Sie verlieren dauerhaft 2 Wert; ihre direkten Nachfolger erhalten dauerhaft +6 Wert.",
+        permMod: (deck, order, ids) => {
+          const succ = new Set(ids.map((id) => {
+            const idx = order.findIndex((di) => deck[di].id === id);
+            return idx >= 0 && idx + 1 < order.length ? deck[order[idx + 1]].id : null;
+          }).filter(Boolean));
+          return deck.map((c) => { let v = c.value; if (ids.includes(c.id)) v -= 2; if (succ.has(c.id)) v += 6; return { ...c, value: Math.max(0, v) }; });
+        } },
+  L10: { id: "L10", cat: "D", rarity: "legendary", label: "Kettenreaktion", successorCrit: true,
+        desc: "Nach einem Crit ist der direkte Nachfolger garantiert kritisch, falls er gewinnt." },
+  L11: { id: "L11", cat: "A", rarity: "legendary", label: "Zeitraffer", repeatPos: true,
+        desc: "Position 40 wiederholt die temporären Kartenwert-Effekte, die zuvor auf Position 20 ausgelöst wurden." },
 };
 
 export const PERK_LIST = Object.values(PERK_DEFS);

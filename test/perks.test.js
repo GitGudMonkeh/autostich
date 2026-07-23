@@ -96,8 +96,8 @@ describe("critChanceFor / critChanceRawFor (V2: Chance aus Stat/Blitz; L4/L5 wir
     expect(critChanceFor([], {}, 0.10)).toBeCloseTo(0.10);
     expect(critChanceFor([], {}, 1.5)).toBe(1); // geklemmt
   });
-  it("L5 Jackpot halbiert die (zufällige) Crit-Chance — inkl. L4-Bonus", () => {
-    expect(critChanceFor(["L5"], {}, 0.20)).toBeCloseTo(0.10); // 0,20 × 0,5
+  it("L5 beeinflusst die Crit-Chance nicht mehr (V2: Jackpot ist flach)", () => {
+    expect(critChanceFor(["L5"], {}, 0.20)).toBeCloseTo(0.20);
   });
   it("critChanceRawFor bleibt UNgeklemmt (>1 für Überschuss), critChanceFor klemmt", () => {
     expect(critChanceRawFor([], {}, 1.27)).toBeCloseTo(1.27);
@@ -105,45 +105,48 @@ describe("critChanceFor / critChanceRawFor (V2: Chance aus Stat/Blitz; L4/L5 wir
   });
 });
 
-describe("Legendäre Perks — reine Hooks (#33)", () => {
-  it("alle elf L-Perks sind als legendary markiert (#71: L7–L11 ergänzt)", () => {
+describe("Legendäre Perks — Hooks (V2 §22.6 L)", () => {
+  it("alle elf L-Perks sind als legendary markiert", () => {
     for (const id of ["L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11"]) expect(isLegendary(id)).toBe(true);
     expect(isLegendary("D1")).toBe(false);
   });
-  it("L1 Überladung: onPick +2 deckweit, +3 Zusatzschaden", () => {
-    const d = PERK_DEFS.L1.onPick(buildDeck());
-    expect(d.every((c) => c.value === c.baseRank + 2)).toBe(true);
-    expect(PERK_DEFS.L1.extraDamageTaken()).toBe(3);
+  it("L1 Überladung: permMod +6 auf die gewählten Karten", () => {
+    const deck = buildDeck().slice(0, 3);
+    const out = PERK_DEFS.L1.permMod(deck, [0, 1, 2], [deck[0].id, deck[1].id]);
+    expect(out[0].value).toBe(deck[0].value + 6);
+    expect(out[1].value).toBe(deck[1].value + 6);
+    expect(out[2].value).toBe(deck[2].value); // nicht gewählt
   });
-  it("L2 Unaufhaltsam: winTie erst ab Serie ≥ 3", () => {
-    expect(PERK_DEFS.L2.winTie({ winStreak: 3 })).toBe(true);
-    expect(PERK_DEFS.L2.winTie({ winStreak: 2 })).toBe(false);
+  it("L2 Unaufhaltsam: +2 je Serienpunkt", () => {
+    expect(PERK_DEFS.L2.cardBonus({ winStreak: 0 })).toBe(0);
+    expect(PERK_DEFS.L2.cardBonus({ winStreak: 3 })).toBe(6);
   });
-  it("L3 Letztes Aufbäumen: +3 bei ≤ 25 % Leben (auch exakt 25 %), sonst 0 (#71)", () => {
-    expect(PERK_DEFS.L3.cardBonus({ life: 500, maxLife: 2000 })).toBe(3); // 25 %
-    expect(PERK_DEFS.L3.cardBonus({ life: 400, maxLife: 2000 })).toBe(3); // < 25 %
-    expect(PERK_DEFS.L3.cardBonus({ life: 501, maxLife: 2000 })).toBe(0); // > 25 %
+  it("L3 Letztes Aufbäumen: +5 auf Position 36–40", () => {
+    expect(PERK_DEFS.L3.cardBonus({ posInCycle: 35 })).toBe(5);
+    expect(PERK_DEFS.L3.cardBonus({ posInCycle: 39 })).toBe(5);
+    expect(PERK_DEFS.L3.cardBonus({ posInCycle: 34 })).toBe(0);
   });
-  it("L6 Raserei: verdoppelt NUR den Tempo-Faktor (via tempoScoreMultFor)", () => {
-    expect(tempoScoreMultFor([], 150)).toBeCloseTo(1.75);       // 1 + 150×0.005
-    expect(tempoScoreMultFor(["L6"], 150)).toBeCloseTo(2.5);    // Faktor ×2
-    expect(PERK_DEFS.L6.extraDamageTaken()).toBe(2);
+  it("L6 Raserei: +2 je Serienpunkt, gedeckelt bei +10", () => {
+    expect(PERK_DEFS.L6.cardBonus({ winStreak: 3 })).toBe(6);
+    expect(PERK_DEFS.L6.cardBonus({ winStreak: 9 })).toBe(10); // Deckel
   });
-  it("L8 Schicksalsmaschine: +8 Wert & ×2 Score nur auf den Schicksalswert (#71)", () => {
-    expect(PERK_DEFS.L8.cardBonus({ pValueBase: 7, fateValue: 7 })).toBe(8);
-    expect(PERK_DEFS.L8.cardBonus({ pValueBase: 6, fateValue: 7 })).toBe(0);
-    expect(PERK_DEFS.L8.cardBonus({ pValueBase: 7, fateValue: null })).toBe(0);
-    expect(PERK_DEFS.L8.scoreMult({ baseValue: 7, fateValue: 7 })).toBe(2);
-    expect(PERK_DEFS.L8.scoreMult({ baseValue: 6, fateValue: 7 })).toBe(1);
+  it("L7 Königsmacher: +5, wenn Segment-Höchste", () => {
+    expect(PERK_DEFS.L7.cardBonus({ isSegmentHigh: true })).toBe(5);
+    expect(PERK_DEFS.L7.cardBonus({ isSegmentHigh: false })).toBe(0);
   });
-  it("L9 Blutvertrag: +20 % Score je Stapel (#71)", () => {
-    expect(PERK_DEFS.L9.scoreMult({ bloodStacks: 0 })).toBeCloseTo(1.0);
-    expect(PERK_DEFS.L9.scoreMult({ bloodStacks: 3 })).toBeCloseTo(1.6);
-    expect(PERK_DEFS.L9.scoreMult({ bloodStacks: 5 })).toBeCloseTo(2.0);
+  it("L9 Blutvertrag: permMod −2/gewählt, +6/Nachfolger", () => {
+    const deck = buildDeck().slice(0, 3);
+    const out = PERK_DEFS.L9.permMod(deck, [0, 1, 2], [deck[0].id]);
+    expect(out[0].value).toBe(Math.max(0, deck[0].value - 2));
+    expect(out[1].value).toBe(deck[1].value + 6); // direkter Nachfolger
   });
-  it("L11 Zeitraffer: +10 % Score je Stapel (#71)", () => {
-    expect(PERK_DEFS.L11.scoreMult({ zeitrafferStacks: 0 })).toBeCloseTo(1.0);
-    expect(PERK_DEFS.L11.scoreMult({ zeitrafferStacks: 5 })).toBeCloseTo(1.5);
+  it("Marker-Legendaries: L4 critValueGain, L5 randomTarget/jackpotScore, L8 swapExtremes, L10 successorCrit, L11 repeatPos", () => {
+    expect(PERK_DEFS.L4.critValueGain).toBe(4);
+    expect(PERK_DEFS.L5.randomTarget).toBe(4);
+    expect(PERK_DEFS.L5.jackpotScore).toBe(1000);
+    expect(PERK_DEFS.L8.swapExtremes).toBe(true);
+    expect(PERK_DEFS.L10.successorCrit).toBe(true);
+    expect(PERK_DEFS.L11.repeatPos).toBe(true);
   });
 });
 

@@ -143,36 +143,33 @@ describe("resolveTrick — Crit & globale Score-Formel (ohne Tempo)", () => {
   });
 });
 
-describe("Legendäre Perks — Engine-Integration", () => {
-  it("L2 Unaufhaltsam: Gleichstand ab Serie ≥3 wird Sieg und erhöht die Serie", () => {
-    const s = resolveTrick(scenario(5, 5, { perks: ["L2"], winStreak: 3 }), rng);
-    expect(s.lastTrick.result).toBe("win_tie");
-    expect(s.wins).toBe(1);
-    expect(s.winStreak).toBe(4);
+describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
+  it("L2 Unaufhaltsam: +2 Wert je Serienpunkt (bis Niederlage)", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["L2"], winStreak: 3 }), rng).lastTrick.pValue).toBe(18); // 12 + 2×3
+    expect(resolveTrick(scenario(12, 0, { perks: ["L2"] }), rng).lastTrick.pValue).toBe(12); // Serie 0
   });
-  it("L2: Gleichstand unter Serie 3 bleibt Gleichstand", () => {
-    const s = resolveTrick(scenario(5, 5, { perks: ["L2"], winStreak: 2 }), rng);
-    expect(s.lastTrick.result).toBe("tie");
-    expect(s.winStreak).toBe(2);
+  it("L6 Raserei: +2 je Serienpunkt, gedeckelt bei +10", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["L6"], winStreak: 3 }), rng).lastTrick.pValue).toBe(18); // 12 + 6
+    expect(resolveTrick(scenario(12, 0, { perks: ["L6"], winStreak: 9 }), rng).lastTrick.pValue).toBe(22); // 12 + 10 (Deckel)
   });
-  it("L4 Kritische Masse: Bonus erst NACH einem Crit, gedeckelt bei +30 pp", () => {
-    const s = resolveTrick(scenario(12, 0, { perks: ["L4"], statCritChance: 1 }), rng);
+  it("L4 Kritische Masse: Crit gibt der Karte dauerhaft +1 (max +4)", () => {
+    const deck = [{ id: "a", suit: "R", baseRank: 5, value: 5 }];
+    const opp = [{ id: "o", suit: "R", baseRank: 0, value: 0 }];
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0], oppOrder: [0], perks: ["L4"], statCritChance: 1 };
+    s = resolveTrick(s, rng);
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.legendaryCritBonus).toBeCloseTo(0.01);
-    expect(resolveTrick(scenario(12, 0, { perks: ["L4"] }), rng).legendaryCritBonus).toBe(0); // ohne Crit
-    expect(resolveTrick(scenario(12, 0, { perks: ["L4"], statCritChance: 1, legendaryCritBonus: 0.30 }), rng)
-      .legendaryCritBonus).toBeCloseTo(0.30); // Deckel
+    expect(s.deck[0].value).toBe(6); // 5 +1
+    expect(s.l4Boost.a).toBe(1);
+    // Deckel: schon +4 → kein weiterer Zuwachs.
+    const capped = resolveTrick({ ...s, l4Boost: { a: 4 }, deck: [{ id: "a", suit: "R", baseRank: 9, value: 9 }], playerOrder: [0], pos: 0 }, rng);
+    expect(capped.deck[0].value).toBe(9);
   });
-  it("L5 Jackpot: Crit ×4 (überschreibt die Basis), garantiert via statCritChance", () => {
-    const s = resolveTrick(scenario(12, 0, { perks: ["L5"], statCritChance: 1 }), rng);
+  it("L5 Jackpot: erster Crit einer L5-Zufallskarte je Durchlauf → +1000 Score", () => {
+    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, perks: ["L5"], roles: { L5: ["X0"] } }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.critMultiplier).toBe(4);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(408); // 100 × streakBaseMult(1)=1,02 × 4
-    expect(s.lastTrick.jackpot).toBe(true);
-  });
-  it("L5: halbiert die (Perk-/L4-)Zufalls-Crit-Chance; statCritChance bleibt unberührt", () => {
-    // L4-Bonus 0,20 → ×0,5 = 0,10 (die Perk-/L4-Chance wird halbiert).
-    expect(resolveTrick(scenario(12, 0, { perks: ["L5"], legendaryCritBonus: 0.20 }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.10);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo((100 + 1000) * 1.02); // Jackpot-Flat in der Basis
+    expect(s.l5Used).toContain("X0");
+    // Zweite L5-Karte an pos1 wäre nötig; hier prüfen wir nur, dass die erste verbraucht ist.
   });
 });
 
@@ -344,27 +341,36 @@ describe("Serien-/Crit-Rares — Engine (#71 Phase 2e)", () => {
   });
 });
 
-describe("Neue Legendaries — Engine (#71 Phase 3)", () => {
-  it("L8 Schicksalsmaschine: Schicksalswert bei Durchlauf-Ende gewählt; +8 Wert & ×2 Score für diese Karten", () => {
-    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L8"] }), rng).fateValue).toBe(12); // Deck nur 12er
-    expect(resolveTrick(scenario(5, 10, { perks: ["L8"], fateValue: 5 }), rng).lastTrick.pValue).toBe(13); // 5 +8 → kippt den Stich
-    expect(resolveTrick(scenario(6, 10, { perks: ["L8"], fateValue: 5 }), rng).losses).toBe(1);            // Nicht-Schicksalswert: kein Bonus
-    expect(resolveTrick(scenario(12, 0, { perks: ["L8"], fateValue: 12 }), rng).lastTrick.gained).toBeCloseTo(204);    // 100×1,02 × 2
-    expect(resolveTrick(scenario(12, 0, { perks: ["L8"], fateValue: 5 }), rng).lastTrick.gained).toBeCloseTo(102);     // kein Match → ×1
+describe("Neue Legendaries — Engine (V2 §22.6 L)", () => {
+  const seq40 = Array.from({ length: 40 }, (_, i) => i);
+
+  it("L8 Schicksalsmaschine: am Durchlauf-Ende tauschen erfolgreichste & erfolgloseste Karte die Werte", () => {
+    const deck = Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: 1, value: i === 0 ? 20 : i === 1 ? 3 : 12 }));
+    const opp = Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: 0, value: 0 }));
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: seq40, oppOrder: seq40, pos: 39, perks: ["L8"], l8Wins: { X0: 5 } };
+    s = resolveTrick(s, rng); // letzter Stich → Durchlauf-Ende → Tausch X0 (5 Erfolge) ↔ X1 (0)
+    expect(s.cycle).toBe(1);
+    expect(s.deck.find((c) => c.id === "X0").value).toBe(3);  // bekommt X1s Wert
+    expect(s.deck.find((c) => c.id === "X1").value).toBe(20); // bekommt X0s Wert
   });
 
-  it("L10 Kettenreaktion: Crit kettet mit halber finaler Chance, je Stufe ×2 (max 3)", () => {
-    const build = { perks: ["L10"], statCritChance: 1 }; // critChance 1 → Kette 0,5; der Crit-Wurf verbraucht 1 rng
-    expect(resolveTrick(scenario(12, 0, build), () => 0).lastTrick.critMultiplier).toBeCloseTo(12);   // Crit + 3 Ketten-Treffer
-    expect(resolveTrick(scenario(12, 0, build), () => 0.5).lastTrick.critMultiplier).toBeCloseTo(1.5); // Crit, keine Kette
-    let n = 0; const once = () => [0, 0, 0.5][n++];                                                    // Crit + genau 1 Treffer
-    expect(resolveTrick(scenario(12, 0, build), once).lastTrick.critMultiplier).toBeCloseTo(3);
+  it("L10 Kettenreaktion: chainArmed erzwingt einen Crit beim nächsten Sieg (und armiert erneut)", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["L10"], chainArmed: true }), () => 0.99); // keine Chance, aber armiert
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.chainArmed).toBe(true); // Crit armiert die Kette erneut
+    expect(resolveTrick(scenario(12, 0, { perks: ["L10"] }), () => 0.99).lastTrick.isCrit).toBe(false); // ohne Armierung & Chance
   });
 
-  it("L11 Zeitraffer: je Durchlauf +Stack (max 5), +10 %/Stack Score", () => {
-    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L11"], zeitrafferStacks: 0 }), rng).zeitrafferStacks).toBe(1);
-    expect(resolveTrick(scenario(12, 0, { pos: 39, perks: ["L11"], zeitrafferStacks: 5 }), rng).zeitrafferStacks).toBe(5); // Deckel
-    expect(resolveTrick(scenario(12, 0, { perks: ["L11"], zeitrafferStacks: 3 }), rng).lastTrick.gained).toBeCloseTo(132.6); // 100×1,02×1,3
+  it("L11 Zeitraffer: Position 40 wiederholt den Wertbonus von Position 20", () => {
+    const deck = Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: 5, value: 5 }));
+    const opp = Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: 0, value: 0 }));
+    // B4 gibt Position 20 (pos 19) +8; L11 wiederholt das an Position 40 (pos 39).
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: seq40, oppOrder: seq40, pos: 19, perks: ["B4", "L11"] };
+    s = resolveTrick(s, rng); // pos19: B4 +8 → pValue 13, pos20Bonus = 8
+    expect(s.lastTrick.pValue).toBe(13);
+    expect(s.pos20Bonus).toBe(8);
+    s = resolveTrick({ ...s, pos: 39 }, rng); // pos39: B4 +8 + L11-Wiederholung +8 → 5+8+8 = 21
+    expect(s.lastTrick.pValue).toBe(21);
   });
 });
 
@@ -452,11 +458,6 @@ describe("Stat-System — Engine (V2 §22.3)", () => {
     expect(s.lastTrick.critMultiplier).toBeCloseTo(1.9);
     expect(s.lastTrick.jackpot).toBe(false);
     expect(s.lastTrick.scoreGain).toBeCloseTo(102 * 1.9); // scoreBeforeCrit 102 × 1,9
-  });
-  it("Crit-Mult-Stat + L5: ×4 überschreibt weiterhin, solange höher", () => {
-    const s = resolveTrick(scenario(12, 0, { perks: ["L5"], statCritChance: 1, statCritMult: 0.4 }), rng);
-    expect(s.lastTrick.critMultiplier).toBe(4); // max(1,9, 4)
-    expect(s.lastTrick.jackpot).toBe(true);
   });
   it("Serien-Stat: +0,5 %/Pick pro Serienpunkt multipliziert den Stichscore", () => {
     // statStreakMult 0,01 (2 Picks) × Serie 1 → Faktor 1,01. 100 × 1,02(#39) × 1,01.

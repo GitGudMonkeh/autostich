@@ -1,4 +1,4 @@
-import { buildDeck, shuffledOrder } from "./deck.js";
+import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
 import { PERK_DEFS, buildOffer } from "./perks.js";
 import { archetypeOf, initLightning } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
@@ -37,6 +37,7 @@ export function initialState(rng = Math.random) {
     formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt
     formationEnergy: 0, formationSwaps: [], // Formationsphase (V2 §22.8): Energie + Undo-Historie der aktuellen Phase
     roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
+    l4Boost: {}, l5Used: [], l8Wins: {}, chainArmed: false, pos20Bonus: 0, // Legendaries (V2 §22.6 L)
     perks: [], offer: null,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
     skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
@@ -87,9 +88,12 @@ export function reducer(state, action) {
         });
         kingBoosted = [...boosted];
       }
-      // Perks mit manueller Kartenauswahl (Kat. C) öffnen direkt die Zielauswahl (§22.5); sonst weiter.
+      // L5 Jackpot & Co.: zufällige Kartenrolle sofort setzen (kein manueller Ziel-Schritt).
+      let roles = state.roles;
+      if (def.randomTarget) roles = { ...(state.roles || {}), [perkId]: shuffle(state.deck.map((c) => c.id), rng).slice(0, def.randomTarget) };
+      // Perks mit manueller Kartenauswahl öffnen die Zielauswahl (§22.5); sonst weiter.
       const goTarget = !!def.needsTarget;
-      return { ...state, deck, kingBoosted, perks, offer: null,
+      return { ...state, deck, kingBoosted, perks, roles, offer: null,
                phase: goTarget ? "target" : "play",
                targetPerk: goTarget ? perkId : null };
     }
@@ -108,6 +112,8 @@ export function reducer(state, action) {
         deck = state.deck.map((c) =>
           c.id === ids[0] ? { ...c, value: Math.max(0, c.value - 3) }
           : c.id === succId ? { ...c, value: c.value + 5 } : c);
+      } else if (def.permMod) { // L1 Überladung / L9 Blutvertrag: dauerhafte Wertmods der gewählten Karten.
+        deck = def.permMod(state.deck, state.playerOrder, ids);
       }
       const roles = { ...(state.roles || {}), [state.targetPerk]: ids };
       return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks), phase: "play", targetPerk: null };

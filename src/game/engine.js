@@ -63,6 +63,7 @@ export function resolveTrick(state, rng = Math.random) {
     statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0, statOffer = null, // Stat-System (V2 §22.3)
     formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
+    l4Boost = {}, l5Used = [], l8Wins = {}, chainArmed = false, pos20Bonus = 0, // Legendaries (V2 §22.6 L): L4 Wert-Gewinn / L5 Jackpot-Verbrauch / L8 Erfolge / L10 Kette / L11 Wiederholung
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
     skills = [], skillOffer = null, lightning = null, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
   } = state;
@@ -95,16 +96,21 @@ export function resolveTrick(state, rng = Math.random) {
   // Kartenrollen (V2 §22.6 C): Rolle der aktuellen Karte, Triumph-Armierung, Segment-Tiefste.
   const isRole = (perkId) => (roles[perkId] || []).includes(pCard.id);
   const triumphActive = triumphArmed.includes(pCard.id);
-  let isSegmentLow = false;
-  if (ownsFlag(perks, "segmentLow")) { // C7: niedrigster Wert im Segment dieser Position (erster bei Gleichstand)
+  let isSegmentLow = false, isSegmentHigh = false;
+  if (ownsFlag(perks, "segmentLow") || ownsFlag(perks, "segmentHigh")) { // C7 Tiefste / L7 Höchste im Segment (erste bei Gleichstand)
     const segStart = Math.floor(pos / SEGMENT_SIZE) * SEGMENT_SIZE;
-    let minVal = Infinity, minPos = -1;
+    let minVal = Infinity, minPos = -1, maxVal = -Infinity, maxPos = -1;
     for (let k = segStart; k < segStart + SEGMENT_SIZE && k < playerOrder.length; k++) {
       const v = deck[playerOrder[k]].value;
       if (v < minVal) { minVal = v; minPos = k; }
+      if (v > maxVal) { maxVal = v; maxPos = k; }
     }
-    isSegmentLow = pos === minPos;
+    isSegmentLow = pos === minPos; isSegmentHigh = pos === maxPos;
   }
+  // L10 Kettenreaktion: der direkte Nachfolger eines Crits ist garantiert kritisch (falls er gewinnt).
+  const forceCrit = chainArmed; chainArmed = false;
+  // L11 Zeitraffer: Position 40 wiederholt den temporären Wertbonus von Position 20.
+  const l11Bonus = (pos === 39 && ownsFlag(perks, "repeatPos")) ? (pos20Bonus || 0) : 0;
   // C2 Triumph: die Armierung dieser Karte wird durch das Spielen verbraucht (Neu-Armierung nur bei Sieg).
   if (triumphActive) triumphArmed = triumphArmed.filter((id) => id !== pCard.id);
   const ctx = {
@@ -119,12 +125,15 @@ export function resolveTrick(state, rng = Math.random) {
     fateValue, // #71 Schicksalsmaschine: cardBonus vergleicht pValueBase mit dem Schicksalswert
     posForm, // V2 §22.6: Formation der gespielten Position (B6 Wiederholung / B9 Treppe)
     predValue, // V2 §22.6: Dauerwert des direkten Vorgängers (B10 Überzahl)
-    isRole, triumphActive, isSegmentLow, // V2 §22.6 C: Kartenrollen (C1/C2/C3/C6/C7)
+    isRole, triumphActive, isSegmentLow, isSegmentHigh, // V2 §22.6 C/L: Kartenrollen (C1/C2/C3/C6/C7/L7)
   };
   // Nachfolger-Bonus (C4 Staffelläufer / C5 Anführer): der Kopf der Queue gilt für DIESE Karte, dann verbraucht.
   const relayBonus = successorQueue[0] || 0;
   successorQueue = successorQueue.slice(1);
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + relayBonus;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + relayBonus + l11Bonus;
+  // L11: den temporären Wertbonus dieser Karte an Position 20 für Position 40 merken.
+  let newPos20Bonus = pos20Bonus;
+  if (pos === 19) newPos20Bonus = pValue - pCard.value;
   const oValue = oCard.value; // Gegner bleibt neutral/unverändert (§12)
 
   let won = false, lost = false, tieConverted = false;
@@ -164,8 +173,8 @@ export function resolveTrick(state, rng = Math.random) {
     // Crit-Chance-Stat (V2 §22.3) fließt additiv in die Roh-Chance (mit Perk-/Blitz-Basis); ungeklemmt (Überschusskrit).
     const rawCrit = critChanceRawFor(perks, wctx, legendaryCritBonus) + lightningCritRaw(lightning, skills) + statCritChance;
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt), inkl. L4/L5 + Blitz-Basis
-    critMultiplier = critMultiplierFor(perks, wctx, statCritMult); // Basis 1,5 + Crit-Mult-Stat; L5 „Jackpot": ×4 überschreibt
-    isCrit = rollCrit(critChance, ownsGuaranteedCrit(perks, wctx), rng);
+    critMultiplier = critMultiplierFor(perks, wctx, statCritMult); // Basis 1,5 + Crit-Mult-Stat
+    isCrit = forceCrit || rollCrit(critChance, ownsGuaranteedCrit(perks, wctx), rng); // L10: garantierter Nachfolger-Crit
     // #71 Überschusskrit: Crit-Chance über 100 % → Chance (= Überschuss) auf einen Super-Crit (×1,5 auf den Crit-Faktor).
     if (isCrit && ownsFlag(perks, "superCrit") && rawCrit > 1) {
       const excess = Math.min(rawCrit - 1, 1);
@@ -182,11 +191,15 @@ export function resolveTrick(state, rng = Math.random) {
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.
     // Ionisierung: Score der gespielten Karte (Stapel VOR dem Zuwachs). Gewitterfront: +100 für die nächsten Siege.
     const stormScore = (lightning && (lightning.stormScoreWinsRemaining || 0) > 0) ? C.STORM_SCORE : 0;
+    // L5 Jackpot: erster Crit einer L5-Zufallskarte je Durchlauf → +1000 flach (in die multiplizierte Basis).
+    const l5Hit = isCrit && (roles.L5 || []).includes(pCard.id) && !l5Used.includes(pCard.id);
+    if (l5Hit) l5Used = [...l5Used, pCard.id];
+    const l5Flat = l5Hit ? (PERK_DEFS.L5.jackpotScore || 0) : 0;
     // Crit-Flats (Perks D6/D7/D8/D11/D15/D19 + Blitzableiter) sehen rawCrit (D19 Überschusskrit) → eigener ctx.
     const critCtx = { ...wctx, rawCrit };
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
                       + (isCrit ? sumHook(perks, "scoreFlatOnCrit", critCtx) + skillSum(skills, "scoreFlatOnCrit", critCtx) : 0)
-                      + ionScoreFor(pCard) + stormScore;
+                      + ionScoreFor(pCard) + stormScore + l5Flat;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Der Positions-/Formations-Mult (§22.7) und der Formations-Stat (§22.3,
     // nur bei aktiver Formation) greifen hier — Crit multipliziert das Ergebnis anschließend.
@@ -240,8 +253,14 @@ export function resolveTrick(state, rng = Math.random) {
     weaknessArmed = false;                                           // Schwachstellenanalyse: durch diesen Sieg verbraucht
     if (isCrit) {
       crits += 1; critBonusScore += critBonus;
-      // L4 „Kritische Masse": Bonus NACH dem Wurf erhöhen (nicht rückwirkend), dauerhaft gedeckelt.
-      if (ownsFlag(perks, "legendaryCritGain")) legendaryCritBonus = Math.min(legendaryCritBonus + C.L4_CRIT_STEP, C.L4_CRIT_CAP);
+      if (ownsFlag(perks, "legendaryCritGain")) legendaryCritBonus = Math.min(legendaryCritBonus + C.L4_CRIT_STEP, C.L4_CRIT_CAP); // (alt, inert)
+      // L4 Kritische Masse: die kritisch getroffene Karte dauerhaft +1 (max +4 je Karte).
+      if (ownsFlag(perks, "critValueGain") && (l4Boost[pCard.id] || 0) < 4) {
+        deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: c.value + 1 } : c));
+        l4Boost = { ...l4Boost, [pCard.id]: (l4Boost[pCard.id] || 0) + 1 };
+      }
+      // L10 Kettenreaktion: nach diesem Crit ist der direkte Nachfolger garantiert kritisch (falls er gewinnt).
+      if (ownsFlag(perks, "successorCrit")) chainArmed = true;
     }
     bestTrickScore = Math.max(bestTrickScore, gained);
     initiative = "player";
@@ -256,6 +275,8 @@ export function resolveTrick(state, rng = Math.random) {
     }
     // C2 Triumph: gewinnt eine Triumph-Rolle, wird sie fürs nächste Auftauchen armiert.
     if (isRole("C2")) triumphArmed = [...triumphArmed, pCard.id];
+    // L8 Schicksalsmaschine: Erfolge je Karte diesen Durchlauf (für den Wert-Tausch am Durchlauf-Ende).
+    if (ownsFlag(perks, "swapExtremes")) l8Wins = { ...l8Wins, [pCard.id]: (l8Wins[pCard.id] || 0) + 1 };
     lastResult = "win";
   } else if (lost) {
     losses += 1;
@@ -310,14 +331,16 @@ export function resolveTrick(state, rng = Math.random) {
   let newFormationSwaps = formationSwaps;
   if (pos >= C.TRICKS_PER_CYCLE) {
     cycle += 1;
-    // #71 Zeitraffer (L11): je vollem Durchlauf +10 % Score (max +50 %).
-    if (ownsFlag(perks, "zeitraffer") && zeitrafferStacks < C.ZEITRAFFER_MAX_STACKS) zeitrafferStacks += 1;
-    // #71 Schicksalsmaschine (L8): einen aktuell vorhandenen Kartenwert zufällig bestimmen (Deck-Werte).
-    // rng-Zug NUR bei gehaltenem Perk → Determinismus/rng-Reihenfolge für andere Builds unberührt.
-    if (ownsFlag(perks, "schicksal")) {
-      const vals = [...new Set(deck.map((c) => c.value))];
-      fateValue = vals.length ? vals[Math.floor(rng() * vals.length)] : null;
+    // L8 Schicksalsmaschine: erfolgreichste und erfolgloseste Karte tauschen ihre Dauerwerte.
+    if (ownsFlag(perks, "swapExtremes")) {
+      let bestId = null, worstId = null, bestW = -1, worstW = Infinity;
+      for (const c of deck) { const w = l8Wins[c.id] || 0; if (w > bestW) { bestW = w; bestId = c.id; } if (w < worstW) { worstW = w; worstId = c.id; } }
+      if (bestId && worstId && bestId !== worstId && bestW > worstW) {
+        const bv = deck.find((c) => c.id === bestId).value, wv = deck.find((c) => c.id === worstId).value;
+        deck = deck.map((c) => (c.id === bestId ? { ...c, value: wv } : c.id === worstId ? { ...c, value: bv } : c));
+      }
     }
+    l5Used = []; l8Wins = {}; // Pro-Durchlauf-States zurücksetzen (L5-Jackpot-Verbrauch, L8-Erfolge)
 
     if (cycle >= C.MAX_CYCLES) {
       // Run-Ende nach dem letzten Durchlauf (§22.1): kein Neu-Mischen, keine Auswahl mehr.
@@ -358,6 +381,7 @@ export function resolveTrick(state, rng = Math.random) {
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
+    l4Boost, l5Used, l8Wins, chainArmed, pos20Bonus: newPos20Bonus, // Legendaries (V2 §22.6 L)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
