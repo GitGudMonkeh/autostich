@@ -189,7 +189,8 @@ export function Autostich() {
   // Prominenter Score-Multiplikator-Chip (#37): geteilte Quelle mit der StatusRail (kein Drift).
   // perks || [] — im Menü (state = { phase:"menu" }) fehlen die Felder; Defaults greifen.
   const baseScoreMult = baseScoreMultFor(state.perks || [], {
-    winStreak: state.winStreak, wins: state.wins, trickNo: state.trickNo, pos: state.pos, speedPct: state.speedPct,
+    winStreak: state.winStreak, wins: state.wins, trickNo: state.trickNo, pos: state.pos,
+    speedPct: (state.speedPct || 0) + (state.tempTempo || 0), // #83: temporäres Tempo (Hochlauf/Ruhe) mitzählen
   });
   const multHot = baseScoreMult > 1.001; // >1 → Gold; ×1,00 → gedämpft
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");

@@ -22,15 +22,18 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, speedPct, nextDrain = 0, currentTraj = [], recordTraj = [] }) {
-  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield, legendaryCritBonus = 0, prediction = null, cycleWins = 0 } = state;
+  const { life, maxLife, xp, level, score, wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, lastTrick, perks, crits, shield, legendaryCritBonus = 0, prediction = null, cycleWins = 0, tempTempo = 0 } = state;
   const need = xpToNext(level);
   const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
+  // Effektives Tempo = permanentes speedPct + temporäres tempTempo (E9 Hochlauf / E10 Ruhe, #83).
+  // Speist Anzeige UND — via denselben Helfer — den Tempo-Score, sodass Anzeige == echter Score (kein Drift).
+  const effTempo = (speedPct || 0) + (tempTempo || 0);
   // Gesamt-Score-Mult sitzt dauerhaft im Header-Chip (#37) — hier NICHT doppeln (#46).
   // Nur der Tempo-Score-Anteil (monoton, poppt nicht) bleibt im Panel sichtbar.
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
-  const tempoScoreMult = tempoScoreMultFor(perks, speedPct);
+  const tempoScoreMult = tempoScoreMultFor(perks, effTempo);
   const ownsD4 = perks.includes("D4");
   const showCrit = hasCritPerk(perks) || (crits || 0) > 0;
   // Live-Crit-Chance des NÄCHSTEN Siegs: D8 nutzt die resultierende Serie (winStreak+1), analog zum
@@ -92,7 +95,7 @@ export function StatusRail({ state, speedPct, nextDrain = 0, currentTraj = [], r
         <div><span className="opacity-50">Siege </span><span style={{ color: "#5ab87a" }}>{wins}</span></div>
         <div><span className="opacity-50">Verl. </span><span style={{ color: "#e0605a" }}>{losses}</span></div>
         <div><span className="opacity-50">Quote </span><span style={{ color: winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct}%</span></div>
-        <div><span className="opacity-50">Tempo </span><span style={{ color: "#5a8ade" }}>+{speedPct}%</span></div>
+        <div><span className="opacity-50">Tempo </span><span style={{ color: "#5a8ade" }}>+{effTempo}%</span></div>
       </div>
       {/* Rest-Karten des laufenden Deck-Durchlaufs (#6) */}
       <div>
