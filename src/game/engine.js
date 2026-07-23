@@ -60,6 +60,7 @@ export function resolveTrick(state, rng = Math.random) {
     overStreak = 0, // #71 Überzahl: effektive Serie für Serien-Effekte (klare Siege zählen doppelt)
     fateValue = null, zeitrafferStacks = 0, // #71 Legendaries: Schicksalsmaschine / Zeitraffer (Score-Stapel)
     statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0, statOffer = null, // Stat-System (V2 §22.3)
+    formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
     crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
     skills = [], skillOffer = null, lightning = null, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
   } = state;
@@ -269,6 +270,8 @@ export function resolveTrick(state, rng = Math.random) {
   let newOffer = offer;
   let newSkillOffer = skillOffer;
   let newStatOffer = statOffer;
+  let newFormationEnergy = formationEnergy;
+  let newFormationSwaps = formationSwaps;
   if (pos >= C.TRICKS_PER_CYCLE) {
     cycle += 1;
     // #71 Zeitraffer (L11): je vollem Durchlauf +10 % Score (max +50 %).
@@ -298,8 +301,13 @@ export function resolveTrick(state, rng = Math.random) {
       } else if (decision === "perk") {
         const off = buildOffer(perks, rng, C.PERKS_OFFERED);
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
+      } else if (decision === "formation") {
+        // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie, Formationen für die Vorschau berechnen.
+        phase = "formation";
+        newFormationEnergy = C.FORMATION_ENERGY;
+        newFormationSwaps = [];
+        formations = computeFormations(playerOrder, deck);
       }
-      // decision === "formation": die Formations-Phase folgt in Phase 4 — vorerst kein Halt, weiterspielen.
     }
   }
 
@@ -312,6 +320,7 @@ export function resolveTrick(state, rng = Math.random) {
     ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
     overStreak, fateValue, zeitrafferStacks,
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
+    formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
     lastTrick, phase,

@@ -23,6 +23,9 @@ export const STAT_STREAK_MULT_STEP = 0.005; // Serien-Mult: +0,5 % Score je aktu
 // Entscheidungszyklus (V2 §22.2): Typ der Entscheidung VOR Durchlauf n = DECISION_CYCLE[n % 6].
 // Über 40 Durchläufe: 14 Stat · 13 Perk · 7 Formation · 6 Skill.
 export const DECISION_CYCLE = ["stat", "perk", "formation", "stat", "perk", "skill"];
+
+// Formationsphase (V2 §22.8): Energie je Phase; jeder beliebige Tausch zweier Karten kostet 1. [TUNING]
+export const FORMATION_ENERGY = 4;
 // TRICKS_PER_CYCLE wird weiter unten aus der Deckgröße abgeleitet (SUIT_ORDER × RANKS, #34) — kein Drift.
 
 // Score-Perk-Magnituden (Kategorie D) [TUNING]

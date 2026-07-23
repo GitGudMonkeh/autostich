@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { STAT_IDS } from "../src/game/stats.js";
+import { computeFormations } from "../src/game/formations.js";
 
 const rng = makeRng(1);
 
@@ -150,5 +151,63 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     const play = initialState(makeRng(1)); // phase play, kein skillOffer
     expect(reducer(play, { type: "PICK_SKILL", skillId: LR, rng })).toBe(play);
     expect(reducer(play, { type: "DECLINE_SKILL", rng })).toBe(play);
+  });
+});
+
+describe("Formationsphase — SWAP/UNDO/RESET/CONFIRM (V2 §22.8)", () => {
+  // 5 Karten (ein Segment). Werte 5,8,5,2,3 → ohne Formation; Tausch von Pos 1↔2 baut ein Wiederholungspaar (5,5).
+  const deck = [
+    { id: "a", suit: "R", baseRank: 5, value: 5 },
+    { id: "b", suit: "B", baseRank: 8, value: 8 },
+    { id: "c", suit: "G", baseRank: 5, value: 5 },
+    { id: "d", suit: "Y", baseRank: 2, value: 2 },
+    { id: "e", suit: "R", baseRank: 3, value: 3 },
+  ];
+  const formState = (over = {}) => ({
+    ...initialState(makeRng(1)), phase: "formation", deck,
+    playerOrder: [0, 1, 2, 3, 4], formationEnergy: 4, formationSwaps: [],
+    formations: computeFormations([0, 1, 2, 3, 4], deck), ...over,
+  });
+
+  it("SWAP_CARDS tauscht, kostet 1 Energie, merkt den Tausch, berechnet Formationen neu", () => {
+    const s = reducer(formState(), { type: "SWAP_CARDS", i: 1, j: 2 });
+    expect(s.playerOrder).toEqual([0, 2, 1, 3, 4]);      // Werte jetzt 5,5,8,2,3
+    expect(s.formationEnergy).toBe(3);
+    expect(s.formationSwaps).toEqual([{ i: 1, j: 2 }]);
+    expect(s.formations[1].mult).toBeCloseTo(1.30);      // 2. Karte des neuen Wiederholungspaars
+  });
+  it("SWAP_CARDS ohne Energie oder mit i==j ist wirkungslos", () => {
+    const noE = formState({ formationEnergy: 0 });
+    expect(reducer(noE, { type: "SWAP_CARDS", i: 0, j: 1 })).toBe(noE);
+    const s0 = formState();
+    expect(reducer(s0, { type: "SWAP_CARDS", i: 2, j: 2 })).toBe(s0);
+  });
+  it("UNDO_SWAP macht den letzten Tausch rückgängig und erstattet Energie", () => {
+    let s = reducer(formState(), { type: "SWAP_CARDS", i: 1, j: 2 });
+    s = reducer(s, { type: "UNDO_SWAP" });
+    expect(s.playerOrder).toEqual([0, 1, 2, 3, 4]);
+    expect(s.formationEnergy).toBe(4);
+    expect(s.formationSwaps).toEqual([]);
+  });
+  it("RESET_FORMATION nimmt alle Tausche zurück und stellt die volle Energie her", () => {
+    let s = reducer(formState(), { type: "SWAP_CARDS", i: 0, j: 1 });
+    s = reducer(s, { type: "SWAP_CARDS", i: 2, j: 3 });
+    expect(s.formationEnergy).toBe(2);
+    s = reducer(s, { type: "RESET_FORMATION" });
+    expect(s.playerOrder).toEqual([0, 1, 2, 3, 4]);
+    expect(s.formationEnergy).toBe(4);
+    expect(s.formationSwaps).toEqual([]);
+  });
+  it("CONFIRM_FORMATION geht in play, die aufgestellte Reihenfolge bleibt", () => {
+    let s = reducer(formState(), { type: "SWAP_CARDS", i: 1, j: 2 });
+    s = reducer(s, { type: "CONFIRM_FORMATION" });
+    expect(s.phase).toBe("play");
+    expect(s.playerOrder).toEqual([0, 2, 1, 3, 4]);
+    expect(s.formationEnergy).toBe(0);
+  });
+  it("Aktionen außerhalb der Formationsphase sind wirkungslos", () => {
+    const play = initialState(makeRng(1));
+    expect(reducer(play, { type: "SWAP_CARDS", i: 0, j: 1 })).toBe(play);
+    expect(reducer(play, { type: "CONFIRM_FORMATION" })).toBe(play);
   });
 });

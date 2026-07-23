@@ -2,6 +2,7 @@ import { buildDeck, shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer } from "./perks.js";
 import { archetypeOf, initLightning } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
+import { computeFormations } from "./formations.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -33,6 +34,7 @@ export function initialState(rng = Math.random) {
     // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
     statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, statOffer: null,
     formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt
+    formationEnergy: 0, formationSwaps: [], // Formationsphase (V2 §22.8): Energie + Undo-Historie der aktuellen Phase
     perks: [], offer: null,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
     skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
@@ -123,6 +125,43 @@ export function reducer(state, action) {
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off }        // → Perk-Auswahl
         : { ...state, skillOffer: null, phase: "play" };    // Perk-Pool leer → weiterspielen
+    }
+
+    // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.
+    case "SWAP_CARDS": {
+      if (state.phase !== "formation") return state;
+      const { i, j } = action;
+      if (i === j || (state.formationEnergy || 0) <= 0) return state;
+      if (i < 0 || j < 0 || i >= state.playerOrder.length || j >= state.playerOrder.length) return state;
+      const order = state.playerOrder.slice();
+      [order[i], order[j]] = [order[j], order[i]];
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck),
+               formationEnergy: state.formationEnergy - 1,
+               formationSwaps: [...(state.formationSwaps || []), { i, j }] };
+    }
+    // Letzten Tausch rückgängig machen → Energie erstattet (Tausch ist seine eigene Umkehrung).
+    case "UNDO_SWAP": {
+      if (state.phase !== "formation" || !(state.formationSwaps || []).length) return state;
+      const swaps = state.formationSwaps.slice();
+      const { i, j } = swaps.pop();
+      const order = state.playerOrder.slice();
+      [order[i], order[j]] = [order[j], order[i]];
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck),
+               formationEnergy: state.formationEnergy + 1, formationSwaps: swaps };
+    }
+    // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie.
+    case "RESET_FORMATION": {
+      if (state.phase !== "formation") return state;
+      const order = state.playerOrder.slice();
+      const swaps = state.formationSwaps || [];
+      for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck),
+               formationEnergy: C.FORMATION_ENERGY, formationSwaps: [] };
+    }
+    // Bestätigen → die aufgestellte Reihenfolge bleibt persistent; nächster Durchlauf startet.
+    case "CONFIRM_FORMATION": {
+      if (state.phase !== "formation") return state;
+      return { ...state, phase: "play", formationEnergy: 0, formationSwaps: [] };
     }
 
     default:

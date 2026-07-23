@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
-import { MAX_CYCLES } from "../src/game/constants.js";
+import { MAX_CYCLES, FORMATION_ENERGY } from "../src/game/constants.js";
 import { STAT_IDS } from "../src/game/stats.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
@@ -54,7 +54,8 @@ describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
   it("wins + losses + ties == trickNo (nichts geht verloren)", () => {
     let s = initialState(makeRng(42));
     for (let i = 0; i < 60 && s.phase !== "gameover"; i++) {
-      if (s.phase === "levelup") { s = { ...s, phase: "play", offer: null, skillOffer: null }; continue; }
+      if (s.phase === "levelup") { s = { ...s, phase: "play", offer: null, skillOffer: null, statOffer: null }; continue; }
+      if (s.phase === "formation") { s = { ...s, phase: "play" }; continue; }
       s = resolveTrick(s, makeRng(100 + i));
     }
     expect(s.wins + s.losses + s.ties).toBe(s.trickNo);
@@ -222,7 +223,8 @@ describe("resolveTrick — Durchlauf-Ende & persistente Reihenfolge (V2)", () =>
     const run = (seed) => {
       let s = initialState(makeRng(seed));
       for (let i = 0; i < 40; i++) {
-        if (s.phase === "levelup") { s = { ...s, phase: "play", offer: null, skillOffer: null }; continue; }
+        if (s.phase === "levelup") { s = { ...s, phase: "play", offer: null, skillOffer: null, statOffer: null }; continue; }
+        if (s.phase === "formation") { s = { ...s, phase: "play" }; continue; }
         if (s.phase === "gameover") break;
         s = resolveTrick(s, makeRng(seed * 1000 + i));
       }
@@ -418,8 +420,9 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
     expect(perkRound.skillOffer).toBeNull();
     expect(perkRound.statOffer).toBeNull();
 
-    const formationRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1 }), rng); // → cycle 2 (formation): kein Halt (Phase 4)
-    expect(formationRound.phase).toBe("play");
+    const formationRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1 }), rng); // → cycle 2 (formation)
+    expect(formationRound.phase).toBe("formation");
+    expect(formationRound.formationEnergy).toBe(FORMATION_ENERGY);
     expect(formationRound.offer).toBeNull();
     expect(formationRound.skillOffer).toBeNull();
     expect(formationRound.statOffer).toBeNull();

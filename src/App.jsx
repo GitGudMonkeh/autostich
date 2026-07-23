@@ -12,6 +12,7 @@ import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { StatSelect } from "./ui/StatSelect.jsx";
+import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
@@ -151,6 +152,11 @@ export function Autostich() {
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun läuft über den gameover-Effekt
   const pick = (id) => dispatch({ type: "PICK_PERK", perkId: id, rng: Math.random });
   const pickStat = (id) => dispatch({ type: "PICK_STAT", statId: id, rng: Math.random });
+  // Formationsphase (§22.8): Tausch / Undo / Zurücksetzen / Bestätigen.
+  const swapCards = (i, j) => dispatch({ type: "SWAP_CARDS", i, j });
+  const undoSwap = () => dispatch({ type: "UNDO_SWAP" });
+  const resetFormation = () => dispatch({ type: "RESET_FORMATION" });
+  const confirmFormation = () => dispatch({ type: "CONFIRM_FORMATION" });
   // Skill-Auswahl (jede 3. Runde): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
@@ -280,6 +286,9 @@ export function Autostich() {
         </>)}
       </div>
 
+      {state.phase === "formation" && (
+        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} />
+      )}
       {state.phase === "levelup" && state.statOffer && (
         <StatSelect offer={state.statOffer} onPick={pickStat} state={state} />
       )}

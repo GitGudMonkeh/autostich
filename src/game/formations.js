@@ -92,3 +92,14 @@ export function computeFormations(order, deck) {
 
 // Trägt eine Position eine wirksame Formation (Score-Faktor > 1)? → speist den Formations-Stat (§22.3).
 export const positionHasFormation = (posForm) => !!posForm && posForm.mult > 1;
+
+// Zusammenfassung fürs Aufstellungs-UI (§16): Zahl aktiver Formationen (Läufe) + höchster Einzel-Mult.
+// Jeder Lauf hat genau eine Karte mit ordinal === 1 → das zählt die Läufe.
+export function summarizeFormations(perPosition) {
+  let count = 0, maxMult = 1;
+  for (const p of perPosition || []) {
+    for (const f of p.formations) if (f.ordinal === 1) count += 1;
+    if (p.mult > maxMult) maxMult = p.mult;
+  }
+  return { count, maxMult };
+}

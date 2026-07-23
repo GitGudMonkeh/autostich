@@ -100,11 +100,13 @@ Jede Phase: lauffähiger Build + grüne Tests am Ende. Reihenfolge ist dependenc
 - **Offen für Phase 5:** Anker (E7/E8) und Formations-Werkzeuge (E1–E6/E9) — kommen mit dem Perk-Rewrite.
 - **Design-Notiz:** „aktive Formation" für den Formations-Stat = Karte mit Mult > 1 (die 1./2. Karte eines Farbblocks/Treppe zählt nicht). Bei Bedarf leicht auf „Mitglied eines Laufs" umstellbar.
 
-### Phase 4 — Formationsphase-UI
-- Neuer Screen: 40 Karten in 8 Segmenten, aktuelle Reihenfolge, 4 Energie, beliebiger Tausch = 1 Energie, Undo vor Bestätigung, E10 = 5. Gratis-Tausch.
-- Live-Neuberechnung der Formationen nach jedem Tausch, Marker + Tooltips.
-- Bestätigte Reihenfolge persistiert. Start-Button-Summary (Energie/Formationen/Max-Mult).
-- **Ergebnis:** Spieler baut sein Deck aktiv; Ionisierung wandert korrekt mit.
+### Phase 4 — Formationsphase-UI ✅ ERLEDIGT
+- Neue `FormationPhase.jsx`: 40 Karten in 8 Segmenten, Positionsnummern, Werte, Farbe, Ionisierungs-Marker, **Live-Formationsmarker** (W/F/T/Z + Pro-Karte-Mult).
+- **Antipp-Tausch** (zwei Karten = 1 Energie, `FORMATION_ENERGY = 4`), Undo (schrittweise) + Zurücksetzen (alles), beide erstatten Energie.
+- Reducer-Actions `SWAP_CARDS`/`UNDO_SWAP`/`RESET_FORMATION`/`CONFIRM_FORMATION`; Engine öffnet die Phase bei Formations-Runden (cycle%6==2). Formationen nach jedem Tausch neu berechnet (`state.formations`).
+- Bestätigte Reihenfolge **persistiert**; Start-Button-Summary (Energie · Formationen · max ×Mult) via `summarizeFormations`. Ionisierung wandert mit der Karten-id.
+- Tests: 6 neue Reducer-Tests (SWAP/UNDO/RESET/CONFIRM), Zyklus-Test angepasst. **190/190 grün.** Im Browser end-to-end verifiziert.
+- **Offen für Phase 5:** E10 (5. Gratis-Tausch) kommt mit dem Perk-Rewrite. Tooltips/Detailansicht + „starke Formation aufgelöst"-Warnung → Phase 6.
 
 ### Phase 5 — Perk-Pool-Rewrite (§22.6) in Wellen
 Reihenfolge: **A → B → D → C-Rollen → E-Werkzeuge → L.** (C/E hängen an Phase 3/4.)
