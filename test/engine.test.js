@@ -18,6 +18,12 @@ function scenario(pVal, oVal, over = {}) {
 }
 const rng = makeRng(9);
 
+// Formationsneutrales Spielerdeck (Werte 12/11 abwechselnd, Farbe R/B abwechselnd): gewinnt immer gegen
+// Wert 0, bildet aber über die Positionen KEINE Formation → isoliert Score-Mechaniken in Multi-Stich-Tests.
+const flatDeck = () => Array.from({ length: 40 }, (_, i) => ({ id: `F${i}`, suit: i % 2 ? "B" : "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
+// Gleiche Farbe (R), aber abwechselnde Werte → Farbserie zählt, ohne Wiederholung/Farbblock (bei ≤2 Karten).
+const sameSuitDeck = () => Array.from({ length: 40 }, (_, i) => ({ id: `S${i}`, suit: "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
+
 describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
   it("Sieg: +Score, +Sieg, Initiative Spieler", () => {
     const s = resolveTrick(scenario(12, 0), rng);
@@ -77,7 +83,7 @@ describe("resolveTrick — Score-Perks", () => {
   });
 
   it("D2 Siegesserie: Basis-Serie × D2 eskalierend (Serie 1/2/3)", () => {
-    let s = scenario(12, 0, { perks: ["D2"] });
+    let s = scenario(12, 0, { perks: ["D2"], deck: flatDeck() }); // formationsneutral → isoliert D2
     s = resolveTrick(s, rng); // Serie 1 → 1,02 × 1,1 → 112,2
     s = resolveTrick(s, rng); // Serie 2 → 1,04 × 1,2 → 124,8
     s = resolveTrick(s, rng); // Serie 3 → 1,06 × 1,3 → 137,8
@@ -294,7 +300,7 @@ describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
     expect(resolveTrick(scenario(0, 12, { perks: ["D17"], winSuit: "R", winSuitStreak: 3 }), rng).winSuitStreak).toBe(0); // Niederlage bricht
   });
   it("D17: 2. Sieg gleicher Farbe gibt +75 Flat", () => {
-    let s = scenario(12, 0, { perks: ["D17"] }); // constDeck: alles Farbe R
+    let s = scenario(12, 0, { perks: ["D17"], deck: sameSuitDeck() }); // Farbe R, wechselnde Werte → keine Formation
     s = resolveTrick(s, rng); // Serie 1 → +0
     s = resolveTrick(s, rng); // Serie 2 → +75
     expect(s.lastTrick.gained).toBeCloseTo((100 + 75) * 1.04);
@@ -319,7 +325,7 @@ describe("Serien-/Crit-Rares — Engine (#71 Phase 2e)", () => {
     expect(small.overStreak).toBe(1);
   });
   it("B10 + D2: effektive Serie speist Kombo & Anzeige (kein Drift)", () => {
-    let s = scenario(12, 0, { perks: ["B10", "D2"] });
+    let s = scenario(12, 0, { perks: ["B10", "D2"], deck: flatDeck() }); // formationsneutral, klare Siege (Marge ≥5)
     s = resolveTrick(s, rng); expect(s.overStreak).toBe(2); expect(s.lastTrick.comboMult).toBeCloseTo(1.2);
     s = resolveTrick(s, rng); expect(s.overStreak).toBe(4); expect(s.lastTrick.comboMult).toBeCloseTo(1.4);
     expect(resolveTrick(scenario(0, 12, { perks: ["B10"], overStreak: 3 }), rng).overStreak).toBe(0); // Niederlage bricht
@@ -462,8 +468,46 @@ describe("Stat-System — Engine (V2 §22.3)", () => {
     expect(resolveTrick(scenario(12, 0, { statStreakMult: 0.01, winStreak: 3 }), rng).lastTrick.gained)
       .toBeCloseTo(100 * 1.08 * 1.04);
   });
-  it("Formations-Stat wirkt in Phase 2 noch nicht (keine Formationen) → kein Score-Effekt", () => {
+  it("Formations-Stat: greift nur bei aktiver Formation (§22.3)", () => {
+    // Ohne Formation (erste Karte) kein Effekt …
     expect(resolveTrick(scenario(12, 0, { statFormMult: 0.15 }), rng).lastTrick.gained).toBeCloseTo(102);
+    // … mit Formation (2. Karte eines Wiederholungs-Paars) wirkt +15 % zusätzlich zur Wiederholung ×1,30.
+    const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }];
+    const opp = [{ id: "o0", suit: "R", baseRank: 0, value: 0 }, { id: "o1", suit: "R", baseRank: 0, value: 0 }];
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1], oppOrder: [0, 1], statFormMult: 0.15 };
+    s = resolveTrick(s, rng); // pos0: keine Formation
+    s = resolveTrick(s, rng); // pos1: Wiederholung ×1,30 + Formations-Stat ×1,15
+    expect(s.lastTrick.gained).toBeCloseTo(100 * 1.04 * 1.30 * 1.15);
+  });
+});
+
+describe("Formations-Engine — Integration (V2 §22.7)", () => {
+  const pairDeck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }];
+  const zeroOpp = [{ id: "o0", suit: "R", baseRank: 0, value: 0 }, { id: "o1", suit: "R", baseRank: 0, value: 0 }];
+  const base = (over = {}) => ({ ...initialState(makeRng(1)), deck: pairDeck, oppDeck: zeroOpp, playerOrder: [0, 1], oppOrder: [0, 1], ...over });
+
+  it("Sieg auf einer Formations-Position bekommt den Multiplikator (Wiederholung 2. Karte ×1,30)", () => {
+    let s = base();
+    s = resolveTrick(s, rng); expect(s.lastTrick.formationMult).toBe(1);   // pos0 = 1. Karte, kein Bonus
+    s = resolveTrick(s, rng);
+    expect(s.lastTrick.formationMult).toBeCloseTo(1.30);                    // pos1 = 2. Karte
+    expect(s.lastTrick.gained).toBeCloseTo(100 * 1.04 * 1.30);             // 100 × streakBaseMult(2) × 1,30
+  });
+
+  it("Crit multipliziert NACH dem Formations-Multiplikator (§7.3)", () => {
+    // wins:8 → pos0 = 9. Sieg (kein Crit), pos1 = 10. Sieg (D9-Crit) UND Wiederholung ×1,30.
+    let s = base({ perks: ["D9"], wins: 8 });
+    s = resolveTrick(s, rng); expect(s.lastTrick.isCrit).toBe(false);
+    s = resolveTrick(s, rng);
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(100 * 1.04 * 1.30);    // Formation IN der Basis
+    expect(s.lastTrick.scoreGain).toBeCloseTo(100 * 1.04 * 1.30 * 1.5);    // Crit ×1,5 danach
+  });
+
+  it("Formationen werden persistent im State gehalten (je Durchlauf berechnet)", () => {
+    const s = resolveTrick(base(), rng); // pos0 → berechnet formations für den Durchlauf
+    expect(Array.isArray(s.formations)).toBe(true);
+    expect(s.formations[1].mult).toBeCloseTo(1.30);
   });
 });
 

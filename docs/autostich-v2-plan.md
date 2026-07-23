@@ -90,12 +90,15 @@ Jede Phase: lauffähiger Build + grüne Tests am Ende. Reihenfolge ist dependenc
 - UI: neue `StatSelect.jsx`, in `App.jsx` verdrahtet; StatusRail/PerkSelect zeigen Crit inkl. Stat + Serien-/Form-Stat-Readout.
 - Tests: `170/170` grün (neue Stat-/Zyklus-Tests). Im Browser verifiziert (Start = Stat, Crit ×1,50, Crit-Chance 2 %).
 
-### Phase 3 — Formations-Engine (pure, ohne UI)
-- Reine Funktion `computeFormations(order, deck, unlocks) → perPosition[{ mult, formations[] }]`.
-- Basis-Formationen **innerhalb Segmenten** (Arena): Wiederholung, Farbblock, Treppe, Wechsel.
-- Anker nur via E7/E8; Segment als Container ohne eigenen Mult.
-- Engine wendet Positions-Mult **bei Sieg** an (Reihenfolge nach §22 / §15).
-- **Ergebnis:** Formationen scoren korrekt; volle Testabdeckung der Multiplikator-Tabellen.
+### Phase 3 — Formations-Engine (pure) ✅ ERLEDIGT
+- Neue reine `formations.js`: `computeFormations(order, deck) → perPosition[{ mult, formations[] }]`.
+- Basis-Formationen **segmentgebunden** (Arena, Segmentgröße 5): Wiederholung (≥2), Farbblock (≥3), Treppe (≥3), **Wechsel = Zick-Zack** (≥3, Nachbardifferenz ≥6, alternierende Richtung — Entscheidung (a)).
+- Mehrere Formationen auf einer Karte → **Produkt** der Pro-Karte-Faktoren.
+- Engine: Formationen zu Durchlauf-Beginn (pos 0) berechnet, stabil gehalten (`state.formations`); Positions-Mult greift **bei Sieg**, Crit multipliziert danach (§7.3). Formations-Stat jetzt live (`hasFormation = mult > 1`).
+- Minimaler `FORMATION ×N`-Float in `Battlefield.jsx` (Rest des Feedbacks → Phase 6).
+- Tests: neue `formations.test.js` (11) + Engine-Integration; Multi-Stich-Score-Tests auf formationsneutrales Deck umgestellt. **184/184 grün.** Im Browser fehlerfrei.
+- **Offen für Phase 5:** Anker (E7/E8) und Formations-Werkzeuge (E1–E6/E9) — kommen mit dem Perk-Rewrite.
+- **Design-Notiz:** „aktive Formation" für den Formations-Stat = Karte mit Mult > 1 (die 1./2. Karte eines Farbblocks/Treppe zählt nicht). Bei Bedarf leicht auf „Mitglied eines Laufs" umstellbar.
 
 ### Phase 4 — Formationsphase-UI
 - Neuer Screen: 40 Karten in 8 Segmenten, aktuelle Reihenfolge, 4 Energie, beliebiger Tausch = 1 Energie, Undo vor Bestätigung, E10 = 5. Gratis-Tausch.

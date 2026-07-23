@@ -4,6 +4,7 @@ import { PERK_DEFS, buildOffer, critChanceRawFor, comboMultFor, critMultiplierFo
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor } from "./skills.js";
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
+import { computeFormations, positionHasFormation } from "./formations.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -65,6 +66,14 @@ export function resolveTrick(state, rng = Math.random) {
 
   const pCard = deck[playerOrder[pos]];
   const oCard = oppDeck[oppOrder[pos]];
+
+  // Formationen (V2 §22.7): zu Durchlauf-Beginn (pos 0) aus der persistenten Reihenfolge + Dauerwerten
+  // berechnet und für den ganzen Durchlauf stabil gehalten. Greifen bei Sieg der jeweiligen Karte.
+  let formations = state.formations || [];
+  if (pos === 0) formations = computeFormations(playerOrder, deck);
+  const posForm = formations[pos] || { mult: 1, formations: [] };
+  const formationMult = posForm.mult || 1;
+  const hasFormation = positionHasFormation(posForm);
 
   trickNo += 1;
   // #71 Perfekte Folge: Länge der aktuell streng ansteigenden Wertfolge INKL. dieser Karte (Basiswert).
@@ -149,11 +158,13 @@ export function resolveTrick(state, rng = Math.random) {
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
                       + (isCrit ? skillSum(skills, "scoreFlatOnCrit", wctx) : 0)
                       + ionScoreFor(pCard) + stormScore;
-    // Stat-Faktoren (V2 §22.3): Serien-Stat (skaliert mit der Serie) und Formations-Stat (nur bei aktiver
-    // Formation, max 1×/Stich — ab Phase 3 wirksam). Multiplikativ neben Basis-Serie (#39) und Perk-scoreMult.
-    const hasFormation = false; // Phase 3: aus der Formations-Engine je Position bestimmt
+    // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
+    // × Formations-Stat, DANN Crit. Der Positions-/Formations-Mult (§22.7) und der Formations-Stat (§22.3,
+    // nur bei aktiver Formation) greifen hier — Crit multipliziert das Ergebnis anschließend.
     scoreBeforeCrit = scoreBase * streakBaseMult(serieStreak) * prodHook(perks, "scoreMult", wctx)
-                      * statStreakFactor(statStreakMult, serieStreak) * statFormFactor(statFormMult, hasFormation);
+                      * statStreakFactor(statStreakMult, serieStreak)
+                      * formationMult
+                      * statFormFactor(statFormMult, hasFormation);
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     critBonus = gained - scoreBeforeCrit;
     score += gained;
@@ -243,6 +254,9 @@ export function resolveTrick(state, rng = Math.random) {
     gained, trickNo,
     isCrit, superCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
     jackpot: isCrit && critMultiplier > C.CRIT_BASE_MULT + statCritMult, // L5 „Jackpot" / Super-Crit über der Stat-Basis → verstärkter Float
+    // Formations-Multiplikator dieses Stichs (§22.7) + die beteiligten Formationen der Position (Anzeige/Float).
+    formationMult: won ? formationMult : 1,
+    formations: posForm.formations,
     // D2-Kombo-Wert der resultierenden Serie (geteilte Quelle → kein Drift zur Score-Berechnung, #31).
     // Überzahl: die effektive Serie (serieStreak) speist auch die Anzeige → kein Drift zum Score.
     comboMult: comboMultFor(perks, serieStreak),
@@ -297,6 +311,7 @@ export function resolveTrick(state, rng = Math.random) {
     critFollowArmed, misfireBonus, weaknessArmed,
     ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
     overStreak, fateValue, zeitrafferStacks,
+    formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
     lastTrick, phase,

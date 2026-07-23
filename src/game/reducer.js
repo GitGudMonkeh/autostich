@@ -32,6 +32,7 @@ export function initialState(rng = Math.random) {
     fateValue: null, zeitrafferStacks: 0, kingBoosted: [], // #71 Phase 3 Legendaries: Schicksalsmaschine / Zeitraffer / Königsmacher
     // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
     statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, statOffer: null,
+    formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt
     perks: [], offer: null,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
     skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),

@@ -15,10 +15,11 @@ const JACKPOT_COLOR = "#d4a63a"; // L5 „Jackpot" (#33): Gold statt Crit-Violet
 
 // #68: vier Streuzonen — gleiche Float-Typen dicht beieinander, verschiedene getrennt. Basis-Lage je Zone.
 const FLOAT_ZONES = {
-  score: { left: "7%",  top: "38%" },  // Score-Gewinn (linke Seite, über der Spielerkarte)
-  life:  { right: "7%", top: "38%" },  // Leben: Verlust −X♥ UND Heilung +X♥ (rechte Seite)
-  combo: { left: "4%",  top: "64%" },  // Kombo (unten links)
-  crit:  { left: "50%", top: "2%"  },  // Crit-Text (oben mittig)
+  score:     { left: "7%",  top: "38%" },  // Score-Gewinn (linke Seite, über der Spielerkarte)
+  life:      { right: "7%", top: "38%" },  // (V2: ungenutzt — Leben entfernt)
+  combo:     { left: "4%",  top: "64%" },  // Kombo (unten links)
+  crit:      { left: "50%", top: "2%"  },  // Crit-Text (oben mittig)
+  formation: { right: "6%", top: "62%" },  // Formations-Multiplikator (unten rechts)
 };
 const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflow-hidden, nichts läuft raus
 // Deterministischer Jitter aus einem Integer-Seed (kein Math.random im Render, #68) → [-amp, +amp].
@@ -103,6 +104,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const showCombo = win && t && t.comboMult >= 1.5;
   const comboStr = t ? t.comboMult.toFixed(1).replace(".", ",") : "";
 
+  // Formations-Multiplikator dieses Stichs (§22.7): bei Sieg mit aktiver Formation kurz einblenden (§17).
+  const showFormation = win && t && (t.formationMult || 1) > 1.001;
+  const formationStr = t ? (t.formationMult || 1).toFixed(2).replace(".", ",") : "";
+
   // #49: aufsteigende Zahlen (Score-Gewinn & Lebensverlust) ~1 s länger + Überlappen erlaubt.
   // Statt eines je Stich ersetzten Einzel-Elements ein kleiner Pool — jeder Float lebt unabhängig
   // und entfernt sich nach seiner Dauer selbst, sodass aufeinanderfolgende Floats überlappen.
@@ -176,6 +181,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
                      fontSize: 20, color: "#e0605a", textShadow: "0 0 10px #e0605a88",
                      animation: fx(`as-combo ${clamp(flipMs * 0.85, 360, 820)}ms ease-out forwards`) }}>
             KOMBO ×{comboStr}
+          </div>
+        )}
+        {/* Formations-Multiplikator (§22.7/§17): unten rechts, eigene Bahn. */}
+        {showFormation && (
+          <div key={`form${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
+            style={{ right: `calc(${FLOAT_ZONES.formation.right} + ${fjitter(t.trickNo * 4 + 5, JITTER_X)}px)`,
+                     top:  `calc(${FLOAT_ZONES.formation.top} + ${fjitter(t.trickNo * 4 + 11, JITTER_Y)}px)`,
+                     fontSize: 18, color: "#5ab87a", textShadow: "0 0 10px #5ab87a88",
+                     animation: fx(`as-combo ${clamp(flipMs * 0.85, 360, 820)}ms ease-out forwards`) }}>
+            FORMATION ×{formationStr}
           </div>
         )}
       </div>
