@@ -45,7 +45,7 @@ export const CALM_TEMPO_PCT  = 50;  // …          … um so viel % schneller (
 export const SUPERCRIT_MULT_FACTOR = 1.5; // D19 Überschusskrit: Faktor auf den Crit-Multiplikator (×2→×3, ×4→×6)
 
 // Legendäre Perks & Raritäts-System (#33) [TUNING]
-export const RARITY_WEIGHTS            = { common: 100, rare: 25, legendary: 4 }; // 3-Stufen-Rarität (#71); „common" = normal
+export const RARITY_WEIGHTS            = { common: 100, rare: 25, legendary: 9 }; // 3-Stufen-Rarität (#71); „common" = normal [TUNING: legendär 4→9]
 // Perk-Auswahl nach jeder Runde: KEINE Level-Gates mehr — alle Seltenheiten sofort, nur gewichtet.
 export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendaries je Angebot
 export const L4_CRIT_STEP = 0.01;  // L4 Kritische Masse: +1 pp Crit-Chance je Crit
