@@ -1,5 +1,8 @@
 import { SKILL_DEFS } from "../game/skills.js";
-import { SKILL_SLOTS } from "../game/constants.js";
+import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL } from "../game/constants.js";
+
+const SOCKET_PCT = Math.round(LIGHTNING_CRIT_BASE * 100);         // einmaliger Aktivierungs-Sockel (5 %)
+const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // je Blitz-Skill (5 %)
 
 // Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
 const LIGHT = "#8a7de0";
@@ -18,6 +21,8 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
   const held = skills.map((id) => SKILL_DEFS[id]).filter(Boolean);
   // Schlüsselbegriffe, die in den angebotenen Skills vorkommen (charge/ionize/streak).
   const kws = [...new Set(offer.flatMap((id) => SKILL_DEFS[id]?.keywords || []))].filter((k) => KEYWORD_INFO[k]);
+  // Ist der Blitz-Archetyp noch nicht aktiv, schaltet DIESER Skill ihn frei (Ladung + Crit-Sockel).
+  const firstPick = !(state.lightning && state.lightning.active);
   return (
     <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl rounded-2xl p-6 max-h-[92vh] overflow-y-auto" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
@@ -27,6 +32,20 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
           <p className="text-xs opacity-55 mt-1">
             Skills sind seltene, regelverändernde Motoren — {skills.length}/{SKILL_SLOTS} Slots belegt.
           </p>
+        </div>
+
+        {/* Was ein Blitz-Skill freischaltet: Ladungs-System + Crit-Basis (Sockel + je Skill). */}
+        <div className="mt-3 rounded-lg px-3 py-2 text-xs leading-snug"
+          style={{ background: `${LIGHT}14`, border: `1px solid ${LIGHT}44` }}>
+          {firstPick ? (
+            <>Dein erster Blitz-Skill schaltet den <b style={{ color: LIGHT }}>Blitz-Archetyp</b> frei:{" "}
+              <b style={{ color: "#5ec8f0" }}>Ladung</b> (Crits erzeugen Ladung, max 10) und eine{" "}
+              <b style={{ color: "#e879f9" }}>Crit-Basis von +{SOCKET_PCT + PER_SKILL_PCT} %</b>{" "}
+              (einmaliger Sockel +{SOCKET_PCT} % plus +{PER_SKILL_PCT} % je gehaltenem Blitz-Skill).</>
+          ) : (
+            <>Jeder weitere Blitz-Skill gibt <b style={{ color: "#e879f9" }}>+{PER_SKILL_PCT} % Crit-Chance</b>{" "}
+              (zusätzlich zum einmaligen Aktivierungs-Sockel von +{SOCKET_PCT} %). Ladung/Crit-Basis sind bereits aktiv.</>
+          )}
         </div>
 
         <div className="grid sm:grid-cols-3 gap-3 mt-5">
