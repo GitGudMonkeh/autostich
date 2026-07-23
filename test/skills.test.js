@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer, archetypeOf,
-  ionScoreFor, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards } from "../src/game/skills.js";
+  ionScoreFor, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
+  hasIonize, hasProtect, hasStorm, chargeFloorFor } from "../src/game/skills.js";
 import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE } from "../src/game/constants.js";
 
 const LR = "SK_LIGHTNING_01";
@@ -97,5 +98,28 @@ describe("Ionisierung — Helfer (Stufe B)", () => {
     const out = ionizeCards(deck, [1], 3, makeRng(1));
     const total = out.reduce((s, c) => s + (c.ionStacks || 0), 0);
     expect(total).toBe(2 + 3); // 3 Stapel verteilt, nichts verloren
+  });
+});
+
+describe("Reaktoren + Geladene Serie — Helfer (Stufe C)", () => {
+  const R = "SK_LIGHTNING_05", G = "SK_LIGHTNING_06", S = "SK_LIGHTNING_07", I = "SK_LIGHTNING_02";
+  it("Verbraucher-Prädikate: Ionisierung/Geladene Serie sind Verbraucher, Reststrom nicht", () => {
+    expect(hasIonize([I])).toBe(true);
+    expect(hasProtect([S])).toBe(true);
+    expect(hasProtect([I])).toBe(false);
+    expect(consumesCharge([S])).toBe(true);   // Geladene Serie verbraucht ebenfalls
+    expect(consumesCharge([R])).toBe(false);  // Reststrom ist Reaktor, kein Verbraucher
+  });
+  it("chargeFloorFor: Reststrom setzt Boden 3, sonst 0", () => {
+    expect(chargeFloorFor([R])).toBe(3);
+    expect(chargeFloorFor([])).toBe(0);
+  });
+  it("hasStorm nur mit Gewitterfront", () => {
+    expect(hasStorm([G])).toBe(true);
+    expect(hasStorm([R])).toBe(false);
+  });
+  it("lightningCritRaw addiert den Gewitterfront-Bonus (stormCritBonus)", () => {
+    const l = { active: true, charge: 0, maxCharge: 10, stormCritBonus: 0.08 };
+    expect(lightningCritRaw(l, [G])).toBeCloseTo(0.05 + 0.05 + 0.08); // Sockel + Skill-critChance + Storm
   });
 });

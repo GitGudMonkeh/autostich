@@ -43,6 +43,27 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     chargeOnIonizedCrit: () => C.UEBERSPANNUNG_CHARGE, // +3 Ladung bei Crit mit ionisierter Karte
   },
+  SK_LIGHTNING_05: {
+    id: "SK_LIGHTNING_05", name: "Reststrom", archetype: "lightning",
+    keywords: ["charge"],
+    desc: "Nach jedem Verbrauch voller Ladung bleiben 3 Ladungen erhalten.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    chargeFloor: () => C.REST_CHARGE_FLOOR, // Reaktor: Ladungsboden nach Verbrauch
+  },
+  SK_LIGHTNING_06: {
+    id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning",
+    keywords: ["charge", "crit"],
+    desc: "Jeder Ladungsverbrauch gibt dauerhaft +2 % Crit-Chance (max +20 %); danach +100 Score für die nächsten drei Siege.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    storm: true, // Reaktor: reagiert auf jeden Verbrauch (Engine führt stormCritBonus/stormScoreWinsRemaining)
+  },
+  SK_LIGHTNING_07: {
+    id: "SK_LIGHTNING_07", name: "Geladene Serie", archetype: "lightning",
+    keywords: ["charge", "streak"],
+    desc: "Bei voller Ladung wird deine Siegesserie geschützt (blauer Rahmen); die nächste Niederlage setzt sie nicht zurück. Die Ladung wird sofort verbraucht.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    onFullCharge: "protectStreak", // Verbraucher: setzt den Serien-Rahmen
+  },
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
@@ -56,15 +77,16 @@ export function skillSum(skills, name, ctx) {
 }
 
 // Frischer Blitz-Substate — inaktiv. Wird beim ersten Blitz-Skill aktiviert (Reducer).
+// armed = Serien-Rahmen (Geladene Serie); storm* = Gewitterfront (Stufe C).
 export function initLightning() {
-  return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE };
+  return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, armed: false, stormCritBonus: 0, stormScoreWinsRemaining: 0 };
 }
 
-// Roh-Crit-Beitrag des Blitz-Archetyps (Abschnitt 2a): Aktivierungs-Sockel + Σ Skill-critChance.
-// Fließt additiv in die Gesamt-Crit-Chance (wie ein Crit-Perk). 0, solange nicht aktiv.
+// Roh-Crit-Beitrag des Blitz-Archetyps (Abschnitt 2a): Aktivierungs-Sockel + Σ Skill-critChance
+// + Gewitterfront-Bonus (dauerhaft, Stufe C). Fließt additiv in die Gesamt-Crit-Chance. 0, solange inaktiv.
 export function lightningCritRaw(lightning, skills) {
   if (!lightning || !lightning.active) return 0;
-  return C.LIGHTNING_CRIT_BASE + skillSum(skills, "critChance", {});
+  return C.LIGHTNING_CRIT_BASE + skillSum(skills, "critChance", {}) + (lightning.stormCritBonus || 0);
 }
 
 // Ladung erhöhen (immutabel), gedeckelt auf maxCharge. No-op, solange der Archetyp inaktiv ist.
@@ -93,10 +115,19 @@ export function ionScoreFor(card) {
   return (card?.ionStacks || 0) * C.ION_SCORE_PER_STACK;
 }
 
-// Hat der Build einen Voll-Ladungs-Verbraucher (Ionisierung)? Nur dann wird Ladung verbraucht.
-export function consumesCharge(skills) {
-  return (skills || []).some((id) => SKILL_DEFS[id]?.onFullCharge === "ionize");
+// Voll-Ladungs-Verbraucher (Abschnitt 6): Ionisierung (ionize) und Geladene Serie (protectStreak).
+export function hasIonize(skills)  { return (skills || []).some((id) => SKILL_DEFS[id]?.onFullCharge === "ionize"); }
+export function hasProtect(skills) { return (skills || []).some((id) => SKILL_DEFS[id]?.onFullCharge === "protectStreak"); }
+// Hat der Build überhaupt einen Verbraucher? Nur dann wird Ladung je verbraucht.
+export function consumesCharge(skills) { return hasIonize(skills) || hasProtect(skills); }
+
+// Reaktoren (laufen bei JEDEM Verbrauch): Reststrom (Ladungsboden), Gewitterfront (Crit/Score).
+export function chargeFloorFor(skills) {
+  let floor = 0;
+  for (const id of skills || []) { const f = SKILL_DEFS[id]?.chargeFloor; if (f) floor = Math.max(floor, f()); }
+  return floor;
 }
+export function hasStorm(skills) { return (skills || []).some((id) => SKILL_DEFS[id]?.storm); }
 
 // Anzahl je Auslösung ionisierter Karten: Ionisierung (2) + Kettenblitz (+2), sofern gehalten.
 export function ionizeCountFor(skills) {

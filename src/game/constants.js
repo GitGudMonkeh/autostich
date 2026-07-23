@@ -76,6 +76,12 @@ export const ION_MAX_STACKS       = 4;  // max Stapel je Karte
 export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Verbrauch
 export const KETTENBLITZ_COUNT    = 2;  // Kettenblitz: zusätzlich ionisierte Karten (nur mit Ionisierung)
 export const UEBERSPANNUNG_CHARGE = 3;  // Überspannung: Zusatzladung bei Crit mit ionisierter Karte
+// Reaktoren + Geladene Serie (Stufe C)
+export const REST_CHARGE_FLOOR = 3;    // Reststrom: Ladungsboden nach jedem Verbrauch (statt 0)
+export const STORM_CRIT_STEP   = 0.02; // Gewitterfront: +Crit-Chance je Verbrauch …
+export const STORM_CRIT_CAP    = 0.20; // …          … gedeckelt
+export const STORM_SCORE       = 100;  // Gewitterfront nach Cap: +Score je Sieg …
+export const STORM_SCORE_WINS  = 3;    // …          … für so viele folgende Siege
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

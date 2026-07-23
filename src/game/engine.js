@@ -1,7 +1,8 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer, critChanceRawFor, comboMultFor, tempoScoreMultFor, critMultiplierFor, streakBaseMult } from "./perks.js";
-import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards } from "./skills.js";
+import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
+  hasIonize, hasProtect, hasStorm, chargeFloorFor } from "./skills.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -147,25 +148,45 @@ export function resolveTrick(state, rng = Math.random) {
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult × Tempo, DANN Crit-Faktor.
     // #71 Hochlauf/Ruhe: temporäres Tempo zählt zusätzlich zum permanenten speedPct für den Tempo-Score.
     const tempoScoreMult = tempoScoreMultFor(perks, (state.speedPct || 0) + curTempTempo); // L6 „Raserei": Tempo-Faktor ×2
-    // Ionisierung: Score-Bonus der GESPIELTEN Karte (Stapel VOR dem Zuwachs) fließt ebenfalls in die Basis.
+    // Ionisierung: Score der gespielten Karte (Stapel VOR dem Zuwachs). Gewitterfront: +100 für die nächsten Siege.
+    const stormScore = (lightning && (lightning.stormScoreWinsRemaining || 0) > 0) ? C.STORM_SCORE : 0;
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
                       + (isCrit ? skillSum(skills, "scoreFlatOnCrit", wctx) : 0)
-                      + ionScoreFor(pCard);
+                      + ionScoreFor(pCard) + stormScore;
     scoreBeforeCrit = scoreBase * streakBaseMult(serieStreak) * prodHook(perks, "scoreMult", wctx) * tempoScoreMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     critBonus = gained - scoreBeforeCrit;
     score += gained;
+    // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
+    if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz: Ladung bei Crit — Basis +1 (aktiv) + Skill-Boni (Blitzableiter +1; Überspannung +3 bei ionisierter Karte).
     const ionizedCard = (pCard.ionStacks || 0) > 0;
     if (lightning && lightning.active && isCrit) {
       const gainedCharge = 1 + skillSum(skills, "chargeOnCrit", wctx)
                              + (ionizedCard ? skillSum(skills, "chargeOnIonizedCrit", wctx) : 0);
       lightning = addCharge(lightning, gainedCharge);
-      // Volle Ladung → Verbraucher (Ionisierung): N ungespielte Karten ionisieren, dann Ladung verbrauchen.
-      if (lightning.charge >= lightning.maxCharge && consumesCharge(skills)) {
-        const undrawn = playerOrder.slice(pos + 1); // Deck-Indizes der noch nicht gezogenen Karten
-        deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
-        lightning = consumeCharge(lightning); // → 0 (Stufe C: Reststrom-Boden)
+      // Volle Ladung → Verbraucher-Priorität (Abschnitt 6): Geladene Serie (Rahmen setzen) VOR Ionisierung;
+      // bei bereits gesetztem Rahmen greift Ionisierung; Rahmen gesetzt + keine Ionisierung → Ladung „parkt".
+      // Reaktoren (Reststrom-Boden, Gewitterfront) laufen bei JEDEM tatsächlichen Verbrauch.
+      if (lightning.charge >= lightning.maxCharge) {
+        let consumed = false;
+        if (hasProtect(skills) && !lightning.armed) {
+          lightning = { ...lightning, armed: true };            // Geladene Serie: Serien-Rahmen scharf
+          consumed = true;
+        } else if (hasIonize(skills)) {
+          const undrawn = playerOrder.slice(pos + 1);            // Deck-Indizes der noch nicht gezogenen Karten
+          deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
+          consumed = true;
+        }
+        if (consumed) {
+          lightning = consumeCharge(lightning, chargeFloorFor(skills)); // Reststrom: Boden 3, sonst 0
+          if (hasStorm(skills)) { // Gewitterfront-Reaktor: erst Crit-Chance (Cap), danach Score für die nächsten Siege
+            const cur = lightning.stormCritBonus || 0;
+            lightning = cur < C.STORM_CRIT_CAP
+              ? { ...lightning, stormCritBonus: Math.min(C.STORM_CRIT_CAP, cur + C.STORM_CRIT_STEP) }
+              : { ...lightning, stormScoreWinsRemaining: C.STORM_SCORE_WINS };
+          }
+        }
       }
     }
     // Nach einem Sieg mit einer ionisierten Karte: diese Karte +1 Stapel (max); der Bonus wurde oben VORHER gewertet.
@@ -191,7 +212,12 @@ export function resolveTrick(state, rng = Math.random) {
     lastWinValue = pValue; // #71 Präzision: letzten Siegwert merken (NACH dem Vergleich in wctx)
     lastResult = "win";
   } else if (lost) {
-    losses += 1; winStreak = 0;
+    losses += 1;
+    // Geladene Serie (Stufe C): gesetzter Serien-Rahmen fängt DIESE Niederlage ab — winStreak/overStreak
+    // bleiben erhalten (Serien-Effekte laufen weiter). Sonst bleibt die Niederlage normal (Schaden, losses,
+    // Revanche, Farbserie-Reset). Der Rahmen wird danach eingelöst (entfernt).
+    const rahmenRedeemed = !!(lightning && lightning.armed);
+    winStreak = rahmenRedeemed ? winStreak : 0;
     // Grundschaden + Durchlauf-Aufschlag (#87): DMG_PER_LOSS + lifeDrainAt(cycle) — je Deck-Durchlauf kostet
     // jede Niederlage mehr (round(0,5·cycle²)). Zeitdruck läuft über den Fortschritt, nicht über Echtzeit
     // → Tempo neutral. Legendär-Zusatzschaden (L1/L6/E7) addiert; dmgReduce (C3/C6) zieht ab, Schild (C5) danach.
@@ -207,8 +233,10 @@ export function resolveTrick(state, rng = Math.random) {
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
     lossStreak += 1; // #71 Revanche: aufeinanderfolgende Niederlagen
     if (oValue - pValue >= 5) weaknessArmed = true; // #71 Schwachstellenanalyse: klare Niederlage rüstet nächsten Sieg
-    winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie
-    overStreak = 0; serieStreak = 0; // #71 Überzahl: Niederlage beendet die (effektive) Serie
+    winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie (auch mit Rahmen)
+    if (!rahmenRedeemed) overStreak = 0; // #71 Überzahl: Niederlage beendet die effektive Serie (außer geschützt)
+    serieStreak = 0;
+    if (rahmenRedeemed) lightning = { ...lightning, armed: false }; // Rahmen eingelöst → entfernt
     lastResult = "loss";
   } else {
     ties += 1;

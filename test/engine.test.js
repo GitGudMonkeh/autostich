@@ -586,7 +586,7 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
   });
 
   it("Skill-Auswahl jede 3. Runde, sonst Perk; leerer Skill-Pool fällt auf Perk zurück", () => {
-    const ALL = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04"];
+    const ALL = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06", "SK_LIGHTNING_07"];
     const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, life: 1000 }), rng); // → cycle 3
     expect(skillRound.phase).toBe("levelup");
     expect(skillRound.skillOffer).toHaveLength(3); // 3 aus dem Blitz-Pool
@@ -635,5 +635,53 @@ describe("Ionisierung — Engine (Stufe B)", () => {
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(0);
     expect(s.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(2);
+  });
+});
+
+describe("Reaktoren + Geladene Serie — Engine (Stufe C)", () => {
+  const LR = "SK_LIGHTNING_01", I = "SK_LIGHTNING_02", R = "SK_LIGHTNING_05", G = "SK_LIGHTNING_06", S = "SK_LIGHTNING_07";
+  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, armed: false, stormCritBonus: 0, stormScoreWinsRemaining: 0, ...over });
+
+  it("Reststrom: Verbrauch lässt Ladung auf 3 statt 0 fallen", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR, I, R], lightning: lit({ charge: 9 }) }), rng);
+    expect(s.lightning.charge).toBe(3);
+  });
+
+  it("Gewitterfront: je Verbrauch +2 pp Crit dauerhaft (Cap 20 pp), danach +100 Score für 3 Siege", () => {
+    const step = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR, I, G], lightning: lit({ charge: 9 }) }), rng);
+    expect(step.lightning.stormCritBonus).toBeCloseTo(0.02);
+    // Am Cap: weiterer Verbrauch schaltet auf Score-Modus (3 Siege je +100).
+    const capped = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR, I, G], lightning: lit({ charge: 9, stormCritBonus: 0.20 }) }), rng);
+    expect(capped.lightning.stormScoreWinsRemaining).toBe(3);
+  });
+
+  it("Gewitterfront-Score: aktiver Stack gibt +100 in die Basis und wird je Sieg abgebaut", () => {
+    const s = resolveTrick(scenario(12, 0, { skills: [LR, G], lightning: lit({ stormScoreWinsRemaining: 2 }) }), () => 0.99);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(204); // (100+100) × streakBaseMult(1)=1,02
+    expect(s.lightning.stormScoreWinsRemaining).toBe(1);
+  });
+
+  it("Geladene Serie: volle Ladung setzt den Serien-Rahmen und verbraucht die Ladung", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR, S], lightning: lit({ charge: 9 }) }), rng);
+    expect(s.lightning.armed).toBe(true);
+    expect(s.lightning.charge).toBe(0);
+  });
+
+  it("Geladene Serie: eine Niederlage bei gesetztem Rahmen bewahrt die Serie, bleibt sonst normal", () => {
+    const s = resolveTrick(scenario(0, 12, { skills: [S], lightning: lit({ armed: true }), winStreak: 5, life: 100 }), rng);
+    expect(s.losses).toBe(1);
+    expect(s.winStreak).toBe(5);            // Siegesserie geschützt
+    expect(s.lightning.armed).toBe(false);  // Rahmen eingelöst
+    expect(s.life).toBe(98);                // Niederlage bleibt normal (DMG 2, Durchlauf 0)
+    expect(s.lastResult).toBe("loss");
+  });
+
+  it("Priorität: Geladene Serie setzt den Rahmen VOR Ionisierung; bei gesetztem Rahmen greift Ionisierung", () => {
+    const first = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR, S, I], lightning: lit({ charge: 9 }) }), rng);
+    expect(first.lightning.armed).toBe(true);
+    expect(first.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(0); // Rahmen zuerst, keine Ionisierung
+
+    const second = resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, skills: [LR, S, I], lightning: lit({ charge: 9, armed: true }) }), rng);
+    expect(second.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(2); // Rahmen gesetzt → jetzt ionisieren
   });
 });
