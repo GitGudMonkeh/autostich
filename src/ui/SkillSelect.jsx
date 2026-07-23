@@ -4,11 +4,20 @@ import { SKILL_SLOTS } from "../game/constants.js";
 // Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
 const LIGHT = "#8a7de0";
 
+// Schlüsselbegriffe der Blitz-Skills — unten im Overlay erklärt (nur die im Angebot vorkommenden).
+const KEYWORD_INFO = {
+  charge: { label: "Ladung", text: "Crits erzeugen Ladung (max 10). Bei voller Ladung lösen Blitz-Skills Effekte aus oder verbrauchen sie." },
+  ionize: { label: "Ionisierung", text: "Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +25 Score pro Stapel und erhält danach +1 Stapel (max 4)." },
+  streak: { label: "Serie", text: "Geladene Serie schützt deine Siegesserie — die nächste Niederlage setzt sie nicht zurück." },
+};
+
 /* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint jede 3. Runde STATT eines Perks.
    Seltene, regelverändernde Motoren. Ablehnen → stattdessen ein Perk (Runde nie verschwendet).
    Stufe A: nur der Blitz-Pool; Slot-Ersetzung greift erst mit mehr Skills (Datenmodell steht). */
 export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} }) {
   const held = skills.map((id) => SKILL_DEFS[id]).filter(Boolean);
+  // Schlüsselbegriffe, die in den angebotenen Skills vorkommen (charge/ionize/streak).
+  const kws = [...new Set(offer.flatMap((id) => SKILL_DEFS[id]?.keywords || []))].filter((k) => KEYWORD_INFO[k]);
   return (
     <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl rounded-2xl p-6 max-h-[92vh] overflow-y-auto" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
@@ -63,6 +72,21 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
                 <span key={s.id} className="text-xs px-2 py-1 rounded" style={{ background: `${LIGHT}1a`, color: LIGHT, border: `1px solid ${LIGHT}55` }}>
                   ⚡ {s.name}
                 </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Schlüsselbegriffe (Ladung/Ionisierung/…) unten erklärt — nur die im Angebot vorkommenden. */}
+        {kws.length > 0 && (
+          <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Schlüsselbegriffe</div>
+            <div className="grid gap-1.5">
+              {kws.map((k) => (
+                <div key={k} className="text-xs leading-snug">
+                  <span className="font-bold" style={{ color: LIGHT }}>⚡ {KEYWORD_INFO[k].label}</span>
+                  <span className="opacity-70"> — {KEYWORD_INFO[k].text}</span>
+                </div>
               ))}
             </div>
           </div>

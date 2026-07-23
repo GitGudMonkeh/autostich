@@ -9,8 +9,12 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
   const color = suitColor(suit);
   const permBoost = baseRank != null ? value - baseRank : 0;
   const effective = value + stichBonus;
-  // Ionisierung (Stufe B): dezenter hellblauer Ring, wenn gerade kein Gewinn-/Verlust-Glow aktiv ist.
-  const ionGlow = ionStacks > 0 ? `0 0 0 1.5px #5ec8f055, 0 0 11px #5ec8f033` : null;
+  // Ionisierung: hellblauer Ring mit zunehmender Intensität je Stapel (kräftiger bei „voll"), wenn
+  // gerade kein Gewinn-/Verlust-Glow aktiv ist.
+  const ionFull = ionStacks >= 4;
+  const ionGlow = ionStacks > 0
+    ? `0 0 0 1.5px #5ec8f0${ionFull ? "aa" : "55"}, 0 0 ${8 + ionStacks * 2}px #5ec8f0${ionFull ? "66" : "33"}`
+    : null;
   return (
     <div
       className="as-card relative rounded-xl border-2 flex flex-col items-center justify-center select-none transition-all"
@@ -32,12 +36,13 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
         </div>
       )}
       <div className="text-5xl font-bold card-num" style={{ color }}>{effective}</div>
-      {/* Ionisierung (Stufe B): Blitze in der freien unteren linken Ecke, Anzahl = Stapel (max 4). */}
+      {/* Ionisierung: Blitze in der unteren linken Ecke, vertikal von unten nach oben gestapelt (Anzahl = Stapel, max 4). */}
       {ionStacks > 0 && (
-        <div className="absolute bottom-1 left-1.5 leading-none tracking-tighter text-[9px]"
-          style={{ color: "#5ec8f0", textShadow: "0 0 4px #5ec8f0" }}
-          title={`Ionisiert ${ionStacks}/4 — +${ionStacks * 25} Score bei Sieg`}>
-          {"⚡".repeat(ionStacks)}
+        <div className="absolute bottom-1 left-1 flex flex-col-reverse items-center leading-none"
+          title={`Ionisiert ${ionStacks}/4 — +${ionStacks * 25} Score bei Sieg${ionFull ? " · VOLL IONISIERT" : ""}`}>
+          {Array.from({ length: ionStacks }, (_, i) => (
+            <span key={i} className="text-[11px]" style={{ color: "#5ec8f0", textShadow: "0 0 4px #5ec8f0", marginTop: -1 }}>⚡</span>
+          ))}
         </div>
       )}
       <div className="absolute bottom-1.5 flex flex-col items-center leading-tight text-[10px]">

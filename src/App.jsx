@@ -288,7 +288,7 @@ export function Autostich() {
             <div className="grid gap-4">
               <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} drainNotice={drainNotice} />
               <ChargeBar lightning={state.lightning} />
-              <BuildPanel perks={state.perks} />
+              <BuildPanel perks={state.perks} skills={state.skills} />
             </div>
             <StatusRail state={state} speedPct={state.speedPct} lossSurcharge={lossSurcharge} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>
