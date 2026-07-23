@@ -9,10 +9,12 @@ const fmtMult = (x) => x.toFixed(2).replace(".", ",");
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
 export function PerkSelect({ offer, level, onPick, perks = [], deck = [], state = {} }) {
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
-  const { life, maxLife, shield = 0, winStreak = 0, wins = 0, trickNo = 0, pos = 0, speedPct = 0, legendaryCritBonus = 0, crits = 0 } = state;
+  const { life, maxLife, shield = 0, winStreak = 0, wins = 0, trickNo = 0, pos = 0, speedPct = 0, tempTempo = 0, legendaryCritBonus = 0, crits = 0 } = state;
+  // Effektives Tempo inkl. temporärem Tempo (E9/E10, #83) für Tempo-Score & Score-Mult; Crit bleibt permanent (E6).
+  const effTempo = speedPct + tempTempo;
   const critPct = Math.round(critChanceFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos, speedPct }, legendaryCritBonus) * 100);
-  const tempoScoreMult = tempoScoreMultFor(perks, speedPct);
-  const scoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos, speedPct });
+  const tempoScoreMult = tempoScoreMultFor(perks, effTempo);
+  const scoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos, speedPct: effTempo });
   const showCrit = hasCritPerk(perks) || crits > 0;
   return (
     <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
@@ -27,7 +29,7 @@ export function PerkSelect({ offer, level, onPick, perks = [], deck = [], state 
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs mt-3">
             <span><span className="opacity-50">Leben </span><span style={{ color: "#5ab87a" }}>{life} / {maxLife}</span>{shield > 0 && <span style={{ color: "#5a8ade" }}> · 🛡 {shield}</span>}</span>
             {showCrit && <span><span className="opacity-50">Crit </span><span style={{ color: "#e879f9" }}>{critPct}%</span></span>}
-            <span><span className="opacity-50">Tempo </span><span style={{ color: "#5a8ade" }}>+{speedPct}%</span></span>
+            <span><span className="opacity-50">Tempo </span><span style={{ color: "#5a8ade" }}>+{effTempo}%</span></span>
             <span><span className="opacity-50">Tempo-Score </span><span style={{ color: "#d4a63a" }}>×{fmtMult(tempoScoreMult)}</span></span>
             <span><span className="opacity-50">Score-Mult </span><span style={{ color: "#d4a63a" }}>×{fmtMult(scoreMult)}</span></span>
           </div>
