@@ -81,9 +81,9 @@ describe("resolveTrick — Grundausgänge", () => {
 });
 
 describe("resolveTrick — Verteidigungs-Perks", () => {
-  it("C3 Panzerung reduziert um 2 (Durchlauf 4: Schaden 10 → 8)", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C3"], cycle: 4 }), rng); // 2 + 8 − 2 = 8
-    expect(s.life).toBe(92);
+  it("C3 Panzerung: 25 % Reduktion (Durchlauf 10: 32 → 24 Schaden)", () => {
+    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C3"], cycle: 10 }), rng); // gross 2+30=32, −25 %=8 → 24
+    expect(s.life).toBe(76);
   });
 
   it("C1 Lebensraub heilt 2 bei Sieg, respektiert maxLife", () => {
@@ -91,15 +91,15 @@ describe("resolveTrick — Verteidigungs-Perks", () => {
     expect(resolveTrick(scenario(12, 0, { life: 2000, perks: ["C1"] }), rng).life).toBe(2000);
   });
 
-  it("C5 Schutzschild: 50 Schildpunkte absorbieren Schaden vor dem Leben (Durchlauf 4 → 10 Schaden)", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C5"], shield: 50, cycle: 4 }), rng);
+  it("C5 Schutzschild: 50 Schildpunkte absorbieren Schaden vor dem Leben (Durchlauf 5 → 10 Schaden)", () => {
+    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C5"], shield: 50, cycle: 5 }), rng);
     expect(s.life).toBe(100);   // Verlust 2+8=10 → Schild 50→40
     expect(s.shield).toBe(40);
   });
 
-  it("C5 + Panzerung: erst Schaden reduzieren (−2), dann Schild absorbieren (Durchlauf 4)", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C5", "C3"], shield: 50, cycle: 4 }), rng);
-    expect(s.shield).toBe(42);  // 10 − 2 = 8 abgezogen
+  it("C5 + Panzerung: erst Schaden prozentual reduzieren, dann Schild absorbieren (Durchlauf 5)", () => {
+    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["C5", "C3"], shield: 50, cycle: 5 }), rng);
+    expect(s.shield).toBe(43);  // gross 10, C3 25 % → round(2,5)=3 → 7 abgezogen
     expect(s.life).toBe(100);
   });
 
@@ -129,29 +129,29 @@ describe("resolveTrick — Verteidigungs-Perks", () => {
 });
 
 describe("Anti-Infinity — Aufschlag pro Niederlage je Deck-Durchlauf (#87, cycle-basiert)", () => {
-  it("lifeDrainAt: gerundetes 0,5·n² (0, 1, 2, 5, 8, 13, …, 50, 200)", () => {
+  it("lifeDrainAt: gerundetes 0,3·n² (0, 0, 1, 3, 5, 8, …, 30, 120)", () => {
     expect(lifeDrainAt(0)).toBe(0);
-    expect(lifeDrainAt(1)).toBe(1);   // round(0,5)
-    expect(lifeDrainAt(2)).toBe(2);
-    expect(lifeDrainAt(3)).toBe(5);   // round(4,5)
-    expect(lifeDrainAt(4)).toBe(8);
-    expect(lifeDrainAt(5)).toBe(13);  // round(12,5)
-    expect(lifeDrainAt(10)).toBe(50);
-    expect(lifeDrainAt(20)).toBe(200);
+    expect(lifeDrainAt(1)).toBe(0);   // round(0,3)
+    expect(lifeDrainAt(2)).toBe(1);   // round(1,2)
+    expect(lifeDrainAt(3)).toBe(3);   // round(2,7)
+    expect(lifeDrainAt(4)).toBe(5);   // round(4,8)
+    expect(lifeDrainAt(5)).toBe(8);   // round(7,5)
+    expect(lifeDrainAt(10)).toBe(30);
+    expect(lifeDrainAt(20)).toBe(120);
   });
-  it("Niederlagenschaden eskaliert mit dem Durchlauf (cycle): DMG_PER_LOSS(2) + round(0,5·cycle²)", () => {
+  it("Niederlagenschaden eskaliert mit dem Durchlauf (cycle): DMG_PER_LOSS(2) + round(0,3·cycle²)", () => {
     expect(resolveTrick(scenario(0, 12, { life: 100 }), rng).life).toBe(98);              // cycle 0 → 2 + 0
-    expect(resolveTrick(scenario(0, 12, { life: 100, cycle: 2 }), rng).life).toBe(96);    // 2 + 2
-    expect(resolveTrick(scenario(0, 12, { life: 200, cycle: 5 }), rng).life).toBe(185);   // 2 + 13
+    expect(resolveTrick(scenario(0, 12, { life: 100, cycle: 2 }), rng).life).toBe(97);    // 2 + 1
+    expect(resolveTrick(scenario(0, 12, { life: 200, cycle: 5 }), rng).life).toBe(190);   // 2 + 8
   });
-  it("Aufschlag stapelt mit Perk-Schaden (L1) und wird von Reduktion (C3) gemindert", () => {
-    // cycle 4 (+8): 2 + 8 + L1(+3) = 13
-    expect(resolveTrick(scenario(0, 12, { life: 100, cycle: 4, perks: ["L1"] }), rng).life).toBe(87);
-    // cycle 4 (+8): 2 + 8 − C3(−2) = 8
-    expect(resolveTrick(scenario(0, 12, { life: 100, cycle: 4, perks: ["C3"] }), rng).life).toBe(92);
+  it("Aufschlag stapelt mit Perk-Schaden (L1) und wird von prozentualer Reduktion (C3) gemindert", () => {
+    // cycle 4 (+5): 2 + 5 + L1(+3) = 10
+    expect(resolveTrick(scenario(0, 12, { life: 100, cycle: 4, perks: ["L1"] }), rng).life).toBe(90);
+    // cycle 4: gross 2+5=7, C3 25 % → round(1,75)=2 → nimmt 5
+    expect(resolveTrick(scenario(0, 12, { life: 100, cycle: 4, perks: ["C3"] }), rng).life).toBe(95);
   });
   it("hoher Aufschlag in späten Durchläufen kann tödlich sein → Game Over", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 40, cycle: 10 }), rng); // 2 + 50 = 52 ≥ 40
+    const s = resolveTrick(scenario(0, 12, { life: 30, cycle: 10 }), rng); // 2 + 30 = 32 ≥ 30
     expect(s.phase).toBe("gameover");
     expect(s.life).toBe(0);
   });
@@ -247,8 +247,8 @@ describe("Legendäre Perks (#33) — Engine-Integration", () => {
   it("L1+L6: extraDamageTaken summiert korrekt (+5)", () => {
     expect(resolveTrick(scenario(0, 12, { life: 100, perks: ["L1", "L6"] }), rng).life).toBe(93); // 2+3+2 (#87)
   });
-  it("C5 Schild verhindert den ersten Verlust je Durchlauf voll — auch mit L1-Zusatzschaden (Durchlauf 4)", () => {
-    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["L1", "C5"], shield: 50, cycle: 4 }), rng);
+  it("C5 Schild verhindert den ersten Verlust je Durchlauf voll — auch mit L1-Zusatzschaden (Durchlauf 5)", () => {
+    const s = resolveTrick(scenario(0, 12, { life: 100, perks: ["L1", "C5"], shield: 50, cycle: 5 }), rng);
     expect(s.life).toBe(100);   // 2+8+3 = 13 Schaden komplett vom Schild absorbiert
     expect(s.shield).toBe(37);  // 50 − 13
   });
@@ -494,7 +494,7 @@ describe("Per-Durchlauf-Rares — Engine (#71 Phase 2d)", () => {
   });
   it("C8: echter Lebensverlust setzt den Zähler zurück; Schild-Absorption zählt als sauber", () => {
     expect(resolveTrick(scenario(0, 12, { perks: ["C8"], cleanStreak: 9, life: 1000 }), rng).cleanStreak).toBe(0); // Verlust
-    const shielded = resolveTrick(scenario(0, 12, { perks: ["C8", "C5"], cleanStreak: 9, shield: 50, life: 1000, maxLife: 2000, cycle: 4 }), rng);
+    const shielded = resolveTrick(scenario(0, 12, { perks: ["C8", "C5"], cleanStreak: 9, shield: 50, life: 1000, maxLife: 2000, cycle: 5 }), rng);
     expect(shielded.life).toBe(1015); // 10 Schaden voll vom Schild → sauber → 10. Stich heilt
     expect(shielded.shield).toBe(40);
   });

@@ -241,10 +241,16 @@ describe("Neue Normal-Perks (#71)", () => {
     expect(PERK_DEFS.B7.cardBonus({ sinceWin: 5 })).toBe(10);
     expect(PERK_DEFS.B7.cardBonus({ sinceWin: 8 })).toBe(10);
   });
-  it("C6 Trotz: −1 unter 50 %, −2 bei ≤ 25 % Leben", () => {
-    expect(PERK_DEFS.C6.dmgReduce({ life: 1500, maxLife: 2000 })).toBe(0); // 75 %
-    expect(PERK_DEFS.C6.dmgReduce({ life: 900, maxLife: 2000 })).toBe(1);  // 45 %
-    expect(PERK_DEFS.C6.dmgReduce({ life: 500, maxLife: 2000 })).toBe(2);  // 25 %
+  it("C3 Panzerung: 25 % des eingehenden Schadens, mindestens 1 (#89)", () => {
+    expect(PERK_DEFS.C3.dmgReduce({ incoming: 100 })).toBe(25);
+    expect(PERK_DEFS.C3.dmgReduce({ incoming: 40 })).toBe(10);
+    expect(PERK_DEFS.C3.dmgReduce({ incoming: 2 })).toBe(1); // Minimum greift bei kleinem Schaden
+  });
+  it("C6 Trotz: prozentuale Reduktion je Lebensstand (mind. 1), erst ab < 50 % (#89)", () => {
+    expect(PERK_DEFS.C6.dmgReduce({ life: 1500, maxLife: 2000, incoming: 100 })).toBe(0);  // 75 % → keine
+    expect(PERK_DEFS.C6.dmgReduce({ life: 900, maxLife: 2000, incoming: 100 })).toBe(15);  // 45 % → 15 %
+    expect(PERK_DEFS.C6.dmgReduce({ life: 500, maxLife: 2000, incoming: 100 })).toBe(30);  // 25 % → 30 %
+    expect(PERK_DEFS.C6.dmgReduce({ life: 500, maxLife: 2000, incoming: 2 })).toBe(1);     // Minimum greift
   });
 });
 

@@ -100,8 +100,13 @@ export const PERK_DEFS = {
         desc: "Nach fünf Stichen ohne Sieg erhält die nächste Karte +10 Wert (Sieg setzt zurück, Gleichstand zählt weiter).",
         cardBonus: (ctx) => ((ctx.sinceWin || 0) >= 5 ? 10 : 0) },
   C6: { id: "C6", cat: "C", label: "Trotz",
-        desc: "Unter 50 % Leben −1 Schaden bei Niederlagen; bei 25 % oder weniger insgesamt −2.",
-        dmgReduce: ({ life, maxLife }) => (maxLife > 0 && life / maxLife <= 0.25 ? 2 : maxLife > 0 && life / maxLife < 0.5 ? 1 : 0) },
+        desc: "Unter 50 % Leben −15 % Schaden bei Niederlagen; bei 25 % oder weniger −30 % (jeweils mindestens 1).",
+        dmgReduce: ({ life, maxLife, incoming }) => {
+          if (!(maxLife > 0)) return 0;
+          const r = life / maxLife;
+          const pct = r <= 0.25 ? C.TROTZ_PCT_LOW : r < 0.5 ? C.TROTZ_PCT_MID : 0;
+          return pct > 0 ? Math.max(C.TROTZ_MIN, Math.round(pct * (incoming || 0))) : 0;
+        } },
 
   // ---- Seltene Perks (#71, Phase 2a) — rarity: "rare"; reine Hooks über bestehende Kontexte ----
   A9: { id: "A9", cat: "A", rarity: "rare", label: "Farbduell",
@@ -220,8 +225,8 @@ export const PERK_DEFS = {
         desc: "Ein Sieg mit Kartenwert 8 oder höher heilt 6 Leben.",
         healOnWin: (ctx) => (ctx.winValue >= C.D3_HIGH_MIN ? 6 : 0) },
   C3: { id: "C3", cat: "C", label: "Panzerung",
-        desc: "Verlorene Stiche verursachen 2 weniger Schaden.",
-        dmgReduce: () => 2 },
+        desc: "Verlorene Stiche verursachen 25 % weniger Schaden (mindestens 1).",
+        dmgReduce: ({ incoming }) => Math.max(C.PANZERUNG_MIN, Math.round(C.PANZERUNG_PCT * (incoming || 0))) },
   C4: { id: "C4", cat: "C", label: "Zweite Luft",
         desc: "Nach jedem vollen Deck-Durchlauf heilst du 50 Leben.",
         healOnCycle: () => 50 },
