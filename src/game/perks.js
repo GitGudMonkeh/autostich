@@ -145,6 +145,17 @@ export const PERK_DEFS = {
         desc: "Sobald sich Sieg und Niederlage abwechseln, gibt jeder weitere Sieg im Wechselmuster +100 Score.",
         scoreFlat: (ctx) => ((ctx.altLen || 0) >= 3 ? 100 : 0) },
 
+  // ---- Seltene Perks (#71, Phase 2c) — Crit-Historie (neue Engine-State-Felder) ----
+  D14: { id: "D14", cat: "D", rarity: "rare", label: "Crit-Folge",
+        desc: "Nach einem Crit erhält der nächste gewonnene Stich +20 % Crit-Chance (beim nächsten Sieg verbraucht).",
+        critChance: (ctx) => (ctx.critFollowArmed ? 0.20 : 0) },
+  D15: { id: "D15", cat: "D", rarity: "rare", label: "Fehlzündung",
+        desc: "Jeder Sieg ohne Crit gibt +3 % Crit-Chance (max +30 %); ein Crit setzt den Bonus zurück.",
+        critChance: (ctx) => (ctx.misfireBonus || 0) },
+  D16: { id: "D16", cat: "D", rarity: "rare", label: "Schwachstellenanalyse",
+        desc: "Verlierst du mit mindestens 5 Wertpunkten Abstand, erhält der nächste gewonnene Stich +40 % Crit-Chance.",
+        critChance: (ctx) => (ctx.weaknessArmed ? 0.40 : 0) },
+
   // ---- B: Stich-Effekte (Wert-Bonus auf die aktuelle Karte) ----
   B1: { id: "B1", cat: "B", label: "Gegenangriff",
         desc: "Nach einem verlorenen Stich erhält die nächste Karte +2 Wert.",

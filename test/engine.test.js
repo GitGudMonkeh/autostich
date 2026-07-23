@@ -432,3 +432,33 @@ describe("Historie-Rares — Engine (#71 Phase 2b)", () => {
     expect(resolveTrick(scenario(12, 0, { perks: ["D13"], lastResult: "win", altLen: 5 }), rng).lastTrick.gained).toBeCloseTo(102);
   });
 });
+
+describe("Crit-Historie-Rares — Engine (#71 Phase 2c)", () => {
+  const never = () => 0.99; // Crit-Wurf schlägt nie an → Zustandsübergänge isoliert testbar
+
+  it("D14 Crit-Folge: +20 % Crit-Chance nur wenn gerüstet", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["D14"], critFollowArmed: true }), never).lastTrick.critChance).toBeCloseTo(0.20);
+    expect(resolveTrick(scenario(12, 0, { perks: ["D14"], critFollowArmed: false }), never).lastTrick.critChance).toBeCloseTo(0);
+  });
+  it("D14: ein Crit rüstet, ein Sieg ohne Crit entrüstet", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9 }), rng).critFollowArmed).toBe(true);  // D9-Garantie-Crit
+    expect(resolveTrick(scenario(12, 0, { critFollowArmed: true }), never).critFollowArmed).toBe(false); // Sieg ohne Crit
+  });
+
+  it("D15 Fehlzündung: misfireBonus speist die Crit-Chance", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["D15"], misfireBonus: 0.09 }), never).lastTrick.critChance).toBeCloseTo(0.09);
+  });
+  it("D15: +3 pp je Sieg ohne Crit, gedeckelt bei +30 pp, Crit setzt zurück", () => {
+    expect(resolveTrick(scenario(12, 0, { misfireBonus: 0 }), never).misfireBonus).toBeCloseTo(0.03);
+    expect(resolveTrick(scenario(12, 0, { misfireBonus: 0.29 }), never).misfireBonus).toBeCloseTo(0.30); // Deckel
+    expect(resolveTrick(scenario(12, 0, { perks: ["D9"], wins: 9, misfireBonus: 0.20 }), rng).misfireBonus).toBe(0); // Crit → reset
+  });
+
+  it("D16 Schwachstellenanalyse: klare Niederlage rüstet, Sieg verbraucht (+40 %)", () => {
+    expect(resolveTrick(scenario(0, 12, { perks: ["D16"], life: 100 }), never).weaknessArmed).toBe(true);   // Abstand 12 ≥5
+    expect(resolveTrick(scenario(10, 12, { perks: ["D16"], life: 100 }), never).weaknessArmed).toBe(false); // Abstand 2 <5
+    const win = resolveTrick(scenario(12, 0, { perks: ["D16"], weaknessArmed: true }), never);
+    expect(win.lastTrick.critChance).toBeCloseTo(0.40);
+    expect(win.weaknessArmed).toBe(false); // Sieg verbraucht
+  });
+});
