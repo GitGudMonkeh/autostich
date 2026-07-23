@@ -113,10 +113,13 @@ Reihenfolge: **A → B → D → C-Rollen → E-Werkzeuge → L**, danach Cleanu
 - ✅ **Welle A (Kartenwerte):** A1 +4, A5 +5/baseRank, A6 +1, A7 +4, A8 +5; Rest schon konform. (Commit 600bd7c)
 - ✅ **Welle B (Reihenfolge):** B1 +4, B2 einmalig@3, B4 Position, B5 nur winTie; B6/B9/B10 an Formation/Vorgänger gekoppelt (ctx: posForm + predValue). (Commit 600bd7c)
 - ✅ **Welle D (Flat-Score):** komplett flach; Crit-Chance/-Mult raus aus Perks (nur Stat+Blitz); D15 Score-Ladung; neuer `scoreFlatOnCrit`-Hook + `misfireScore`-State. (Commit 6421903)
-- ⏳ **Welle C (Kartenrollen):** C1–C10 komplett neu — manuelle Kartenauswahl-UI, Rollen-Marker, Nachbar-/Positions-Boni, Joker/Bindeglied greifen in die Formationserkennung.
-- ⏳ **Welle E (Formationswerkzeuge):** E1–E10 — biegen die Formationserkennung (`unlocks`-Param für `computeFormations`), Anker (E7/E8), Segment-Crossing (E9), Extra-Tausch (E10).
-- ⏳ **Welle L (Legendär):** L1–L11 ohne Leben, Positions-/Rollen-Payoffs.
-- ⏳ **Cleanup:** Raritäts-Abflachung (A–E alle „normal", §22.4); tote Konstanten/State entfernen (misfireBonus, overStreak, superCrit, Tempo/Leben); §21 zeilenweiser Abgleich aller 70.
+- ✅ **Welle C (Kartenrollen):** C1–C10 neu; manuelle Zielauswahl (`TargetSelect.jsx`, `CONFIRM_TARGET`, `roles`); Joker/Bindeglied in `computeFormations`. (Commit 91115b9)
+- ✅ **Welle E (Formationswerkzeuge):** E1–E10 als Marker; `computeFormations(…, perks)` mit Anker (E7/E8), Segment-Crossing (E9), Gap-Toleranz (E1/E2), Treppen-Ausnahmen (E3/E4/E6), Wechsel-min-2 (E5), Extra-Energie (E10). (Commit eed91dd)
+- ✅ **Welle L (Legendär):** L1–L11 ohne Leben; neue Engine-States (l4Boost/l5Used/l8Wins/chainArmed/pos20Bonus); L1/L9 permMod, L5 randomTarget. (Commit 202bced)
+- ✅ **Raritäts-Abflachung (§22.4):** alle 25 A–E-Rares → „normal"; nur L legendär. Pool verifiziert: **70 Perks** (A10·B10·C10·D19·E10·L11).
+- ⏳ **Rest-Cleanup (Follow-up, kein Blocker):** tote/inerte Konstanten & State-Felder entfernen (misfireBonus, overStreak, superCrit, fateValue, zeitrafferStacks, kingmaker, Tempo/Leben-Konstanten). Rein kosmetisch — die Felder sind inert.
+
+**Phase 5 damit funktional abgeschlossen** (alle 70 Perks nach §22.6, 198 Tests grün).
 
 ### Phase 6 — UI-Feinschliff & Feedback
 - Float-Feedback im Durchlauf (`WIEDERHOLUNG ×1,60`, `FORMATION ×12`, Peak ab ×6/×12).

@@ -105,86 +105,86 @@ export const PERK_DEFS = {
         cardBonus: (ctx) => (ctx.isRole && ctx.isRole("C6") && ctx.posInCycle % 5 === 4 ? 5 : 0) },
 
   // ---- Seltene Perks (#71, Phase 2a) — rarity: "rare"; reine Hooks über bestehende Kontexte ----
-  A9: { id: "A9", cat: "A", rarity: "rare", label: "Farbduell",
+  A9: { id: "A9", cat: "A", label: "Farbduell",
         desc: "Eine zufällige Farbe erhält dauerhaft +3 Wert, eine andere zufällige Farbe −1 Wert.",
         onPick: (d, rng) => {
           const s = shuffle(SUIT_ORDER, rng); const up = s[0], down = s[1];
           return d.map((c) => (c.suit === up ? { ...c, value: c.value + 3 }
             : c.suit === down ? { ...c, value: Math.max(0, c.value - 1) } : c));
         } },
-  A10: { id: "A10", cat: "A", rarity: "rare", label: "Verdichtung",
+  A10: { id: "A10", cat: "A", label: "Verdichtung",
         desc: "Alle Karten, deren aktueller Wert mehrfach im Deck vorkommt, erhalten dauerhaft +1 Wert.",
         onPick: (d) => {
           const cnt = {}; for (const c of d) cnt[c.value] = (cnt[c.value] || 0) + 1;
           return d.map((c) => (cnt[c.value] > 1 ? { ...c, value: c.value + 1 } : c));
         } },
-  D10: { id: "D10", cat: "D", rarity: "rare", label: "Übermacht",
+  D10: { id: "D10", cat: "D", label: "Übermacht",
         desc: "Ein Sieg mit mindestens 8 Wertpunkten Vorsprung gibt +350 Score.",
         scoreFlat: (ctx) => (ctx.margin >= 8 ? 350 : 0) },
-  D11: { id: "D11", cat: "D", rarity: "rare", label: "Kritische Ernte",
+  D11: { id: "D11", cat: "D", label: "Kritische Ernte",
         desc: "Ein Crit mit einer Karte in mindestens einer aktiven Formation gibt +250 Score.",
         scoreFlatOnCrit: (ctx) => (ctx.hasFormation ? 250 : 0) },
-  E6: { id: "E6", cat: "E", rarity: "rare", label: "Drehzahl",
+  E6: { id: "E6", cat: "E", label: "Drehzahl",
         desc: "Eine einzelne Karte darf gleichzeitig zu zwei unterschiedlichen Treppen gehören." },
-  E7: { id: "E7", cat: "E", rarity: "rare", label: "Kontrollverlust",
+  E7: { id: "E7", cat: "E", label: "Kontrollverlust",
         desc: "Die Positionen 10, 20, 30 und 40 sind Anker (siegreicher Anker ×1,25)." },
-  E8: { id: "E8", cat: "E", rarity: "rare", label: "Schnellschuss",
+  E8: { id: "E8", cat: "E", label: "Schnellschuss",
         desc: "Die Positionen 5, 15, 25 und 35 sind Anker (siegreicher Anker ×1,25)." },
 
   // ---- Seltene Perks (#71, Phase 2b) — Ergebnis-/Wert-Historie (neue State-Felder) ----
-  B8: { id: "B8", cat: "B", rarity: "rare", label: "Revanche",
+  B8: { id: "B8", cat: "B", label: "Revanche",
         desc: "Nach zwei aufeinanderfolgenden Niederlagen erhält die nächste Karte +7 Wert.",
         cardBonus: (ctx) => ((ctx.lossStreak || 0) >= 2 ? 7 : 0) },
-  D12: { id: "D12", cat: "D", rarity: "rare", label: "Präzision",
+  D12: { id: "D12", cat: "D", label: "Präzision",
         desc: "Zwei aufeinanderfolgende Siege mit demselben Kartenwert geben dem zweiten +400 Score.",
         scoreFlat: (ctx) => (ctx.lastWinValue != null && ctx.winValue === ctx.lastWinValue ? 400 : 0) },
-  D13: { id: "D13", cat: "D", rarity: "rare", label: "Wechselspiel",
+  D13: { id: "D13", cat: "D", label: "Wechselspiel",
         desc: "Ein Sieg direkt nach einer Niederlage gibt +200 Score.",
         scoreFlat: (ctx) => (ctx.lastResult === "loss" ? 200 : 0) },
 
   // ---- Seltene Perks (#71, Phase 2c) — Crit-Historie (neue Engine-State-Felder) ----
-  D14: { id: "D14", cat: "D", rarity: "rare", label: "Crit-Folge",
+  D14: { id: "D14", cat: "D", label: "Crit-Folge",
         desc: "Ein Sieg direkt nach einem Crit gibt +200 Score.",
         scoreFlat: (ctx) => (ctx.critFollowArmed ? 200 : 0) },
-  D15: { id: "D15", cat: "D", rarity: "rare", label: "Fehlzündung",
+  D15: { id: "D15", cat: "D", label: "Fehlzündung",
         desc: "Jeder Sieg ohne Crit lädt +30 Score für den nächsten Crit auf (max +300).",
         scoreFlatOnCrit: (ctx) => (ctx.misfireScore || 0) },
-  D16: { id: "D16", cat: "D", rarity: "rare", label: "Schwachstellenanalyse",
+  D16: { id: "D16", cat: "D", label: "Schwachstellenanalyse",
         desc: "Nach einer Niederlage mit mindestens 5 Wertpunkten Abstand gibt der nächste Sieg +300 Score.",
         scoreFlat: (ctx) => (ctx.weaknessArmed ? 300 : 0) },
 
   // ---- C-Rollen mit Formations-/Segment-Bezug (V2 §22.6) ----
-  C7: { id: "C7", cat: "C", rarity: "rare", label: "Überlebensvorteil", segmentLow: true,
+  C7: { id: "C7", cat: "C", label: "Überlebensvorteil", segmentLow: true,
         desc: "Die niedrigste Karte jedes Segments erhält +3 Wert.",
         cardBonus: (ctx) => (ctx.isSegmentLow ? 3 : 0) }, // Engine markiert die Segment-Tiefsten je Durchlauf
-  C8: { id: "C8", cat: "C", rarity: "rare", label: "Joker", needsTarget: 2, jokerRole: true,
+  C8: { id: "C8", cat: "C", label: "Joker", needsTarget: 2, jokerRole: true,
         desc: "Wähle zwei Karten. Für einen Farbblock zählen sie als Farbe ihres direkten Vorgängers." },
-  C9: { id: "C9", cat: "C", rarity: "rare", label: "Opfergabe", needsTarget: 1, sacrificeMod: true,
+  C9: { id: "C9", cat: "C", label: "Opfergabe", needsTarget: 1, sacrificeMod: true,
         desc: "Wähle eine Karte. Sie verliert dauerhaft 3 Wert; ihr direkter Nachfolger erhält dauerhaft +5 Wert." },
-  C10: { id: "C10", cat: "C", rarity: "rare", label: "Bindeglied", needsTarget: 2, bridgeRole: true,
+  C10: { id: "C10", cat: "C", label: "Bindeglied", needsTarget: 2, bridgeRole: true,
         desc: "Wähle zwei Karten. Für eine Treppe dürfen sie als 1 Wert höher oder niedriger gelten." },
 
   // ---- Seltene Perks (#71, Phase 2f) — Ergebnis-/Wert-Historie (neue State-Felder) ----
-  B9: { id: "B9", cat: "B", rarity: "rare", label: "Perfekte Folge",
+  B9: { id: "B9", cat: "B", label: "Perfekte Folge",
         desc: "Karten einer Treppe erhalten je nach Position +1, +2, +3, danach +4 temporären Wert.",
         cardBonus: (ctx) => { const t = ctx.posForm && ctx.posForm.formations.find((f) => f.type === "treppe"); return t ? Math.min(t.ordinal, 4) : 0; } },
-  D17: { id: "D17", cat: "D", rarity: "rare", label: "Farbserie",
+  D17: { id: "D17", cat: "D", label: "Farbserie",
         desc: "Aufeinanderfolgende Siege derselben Farbe geben jeweils +100 mehr Score (2.→+100, 3.→+200 …), maximal +400.",
         scoreFlat: (ctx) => Math.min(Math.max(0, ((ctx.suitStreak || 0) - 1) * 100), 400) },
-  D18: { id: "D18", cat: "D", rarity: "rare", label: "Volles Haus",
+  D18: { id: "D18", cat: "D", label: "Volles Haus",
         desc: "Fünf Siege innerhalb desselben Segments geben dem fünften Sieg +750 Score.",
         // Position ist die letzte im Segment (posInCycle % 5 == 4) UND die vier davor (recentResults) waren Siege.
         scoreFlat: (ctx) => (ctx.posInCycle % 5 === 4 && (ctx.recentWinCount || 0) >= 4 ? 750 : 0) },
 
   // ---- Seltene Perks (#71, Phase 2e) — Serien-/Tempo-/Crit-Mechanik (Engine-Flags + State) ----
-  B10: { id: "B10", cat: "B", rarity: "rare", label: "Überzahl",
+  B10: { id: "B10", cat: "B", label: "Überzahl",
         desc: "Ist der Dauerwert einer Karte höher als der ihres direkten Vorgängers, erhält sie +3 temporären Wert.",
         cardBonus: (ctx) => (ctx.predValue != null && ctx.pValueBase > ctx.predValue ? 3 : 0) },
-  E9: { id: "E9", cat: "E", rarity: "rare", label: "Segmentarbeit",
+  E9: { id: "E9", cat: "E", label: "Segmentarbeit",
         desc: "Formationen dürfen über Segmentgrenzen hinweg fortgesetzt werden." },
-  E10: { id: "E10", cat: "E", rarity: "rare", label: "Feinjustierung", extraSwap: 1,
+  E10: { id: "E10", cat: "E", label: "Feinjustierung", extraSwap: 1,
         desc: "Jede Formationsphase erhält einen zusätzlichen kostenlosen beliebigen Tausch." },
-  D19: { id: "D19", cat: "D", rarity: "rare", label: "Überschusskrit",
+  D19: { id: "D19", cat: "D", label: "Überschusskrit",
         desc: "Ein Crit über 100 % effektiver Crit-Chance gibt +250 Score.",
         scoreFlatOnCrit: (ctx) => ((ctx.rawCrit || 0) > 1 ? 250 : 0) },
 

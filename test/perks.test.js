@@ -258,12 +258,11 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
     }
     expect(PERK_DEFS.E10.extraSwap).toBe(1);
   });
-  it("Rares sind ohne Level-Gate sofort im Pool (nur Rares übrig → Angebot ist selten)", () => {
-    const rares = PERK_LIST.filter((p) => p.rarity === "rare").map((p) => p.id);
-    const owned = PERK_LIST.filter((p) => !rares.includes(p.id)).map((p) => p.id); // nur Rares übrig
-    const off = buildOffer(owned, makeRng(3), 3);
-    expect(off.length).toBeGreaterThan(0);
-    expect(off.every((id) => PERK_DEFS[id].rarity === "rare")).toBe(true);
+  it("V2 §22.4: alle A–E sind normal (keine Rares mehr); nur L ist legendär", () => {
+    for (const p of PERK_LIST) {
+      if (/^L\d/.test(p.id)) expect(p.rarity).toBe("legendary");
+      else expect(p.rarity || "common").toBe("common");
+    }
   });
 });
 
