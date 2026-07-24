@@ -255,4 +255,19 @@ describe("Kartenrollen — Zielauswahl PICK_PERK/CONFIRM_TARGET (V2 §22.6 C)", 
     expect(s.deck[targetDi].value).toBe(Math.max(0, tv - 3));
     expect(s.deck[succDi].value).toBe(sv + 5);
   });
+
+  it("L9 Blutvertrag: 4 gewählte Karten −2, ihre direkten Nachfolger +6 (dauerhaft)", () => {
+    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L9", "A1", "D1"] };
+    s = reducer(s, { type: "PICK_PERK", perkId: "L9", rng: makeRng(1) });
+    expect(s.phase).toBe("target");
+    const order = s.playerOrder;
+    const targetPos = [0, 2, 4, 6];                          // nicht benachbart → Nachfolger disjunkt von den Zielen
+    const ids = targetPos.map((p) => s.deck[order[p]].id);
+    const before = s.deck.map((c) => c.value);
+    s = reducer(s, { type: "CONFIRM_TARGET", cardIds: ids });
+    for (const p of targetPos) {
+      expect(s.deck[order[p]].value).toBe(Math.max(0, before[order[p]] - 2)); // Ziel −2 (Boden 0)
+      expect(s.deck[order[p + 1]].value).toBe(before[order[p + 1]] + 6);      // direkter Nachfolger +6
+    }
+  });
 });

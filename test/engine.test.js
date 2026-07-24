@@ -362,6 +362,21 @@ describe("Serien-/Crit-Rares — Engine (#71 Phase 2e)", () => {
 describe("Neue Legendaries — Engine (V2 §22.6 L)", () => {
   const seq40 = Array.from({ length: 40 }, (_, i) => i);
 
+  it("L3 Letztes Aufbäumen: Karten auf Position 36–40 (posInCycle>=35) bekommen +5", () => {
+    expect(resolveTrick(scenario(5, 0, { pos: 35, perks: ["L3"] }), rng).lastTrick.pValue).toBe(10); // 5 + 5
+    expect(resolveTrick(scenario(5, 0, { pos: 34, perks: ["L3"] }), rng).lastTrick.pValue).toBe(5);   // Position 35 → kein Bonus
+  });
+
+  it("L7 Königsmacher: die höchste Karte des Segments bekommt +5", () => {
+    const mkL = (arr, suit = "R") => arr.map((v, i) => ({ id: `${suit}${i}`, suit, baseRank: v, value: v }));
+    let s = { ...initialState(makeRng(1)), deck: mkL([5, 9, 6, 7, 8]), oppDeck: mkL([0, 0, 0, 0, 0], "B"),
+              playerOrder: [0, 1, 2, 3, 4], oppOrder: [0, 1, 2, 3, 4], perks: ["L7"] };
+    s = resolveTrick(s, rng);             // pos0 val5 (nicht Höchste) → +0
+    expect(s.lastTrick.pValue).toBe(5);
+    s = resolveTrick(s, rng);             // pos1 val9 (Segment-Höchste) → +5
+    expect(s.lastTrick.pValue).toBe(14);
+  });
+
   it("L8 Schicksalsmaschine: am Durchlauf-Ende tauschen erfolgreichste & erfolgloseste Karte die Werte", () => {
     const deck = Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: 1, value: i === 0 ? 20 : i === 1 ? 3 : 12 }));
     const opp = Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: 0, value: 0 }));
@@ -629,6 +644,37 @@ describe("Kartenrollen — Engine (V2 §22.6 C)", () => {
     s = resolveTrick(s, rng);
     expect(s.triumphArmed).toContain("R0");
     expect(s.lastTrick.pValue).toBe(5);
+  });
+
+  it("C3 Leibwache: nach verlorenem Vorgänger bekommt die Rollen-Karte +5", () => {
+    let s = build({ deck: mk([5, 5]), oppDeck: mk([9, 0], "B"), oppOrder: [0, 1], playerOrder: [0, 1], perks: ["C3"], roles: { C3: ["R1"] } });
+    s = resolveTrick(s, rng);             // pos0 R0: 5 vs 9 → Niederlage
+    expect(s.lastResult).toBe("loss");
+    s = resolveTrick(s, rng);             // pos1 R1 (C3): Vorgänger verlor → +5
+    expect(s.lastTrick.pValue).toBe(10);  // 5 + 5
+  });
+
+  it("C5 Anführer: nach dem Sieg der Rollen-Karte bekommen die nächsten zwei Karten +2", () => {
+    let s = build({ deck: mk([5, 5, 5]), playerOrder: [0, 1, 2], perks: ["C5"], roles: { C5: ["R0"] } });
+    s = resolveTrick(s, rng);             // pos0 R0 (Rolle) gewinnt → nächste 2 armiert
+    expect(s.lastTrick.pValue).toBe(5);
+    s = resolveTrick(s, rng);             // pos1 → +2
+    expect(s.lastTrick.pValue).toBe(7);
+    s = resolveTrick(s, rng);             // pos2 → +2
+    expect(s.lastTrick.pValue).toBe(7);
+  });
+
+  it("C6 Finisher: Rollen-Karte auf der letzten Segment-Position (posInCycle%5==4) bekommt +5", () => {
+    expect(resolveTrick(scenario(5, 0, { pos: 4, perks: ["C6"], roles: { C6: ["X4"] } }), rng).lastTrick.pValue).toBe(10); // 5 + 5
+    expect(resolveTrick(scenario(5, 0, { pos: 3, perks: ["C6"], roles: { C6: ["X3"] } }), rng).lastTrick.pValue).toBe(5);  // andere Position → kein Bonus
+  });
+
+  it("C7 Überlebensvorteil: die niedrigste Karte des Segments bekommt +3", () => {
+    let s = build({ deck: mk([5, 4, 6, 7, 8]), oppDeck: mk([0, 0, 0, 0, 0], "B"), oppOrder: [0, 1, 2, 3, 4], playerOrder: [0, 1, 2, 3, 4], perks: ["C7"] });
+    s = resolveTrick(s, rng);             // pos0 val5 (nicht Tiefste) → +0
+    expect(s.lastTrick.pValue).toBe(5);
+    s = resolveTrick(s, rng);             // pos1 val4 (Segment-Tiefste) → +3
+    expect(s.lastTrick.pValue).toBe(7);
   });
 });
 

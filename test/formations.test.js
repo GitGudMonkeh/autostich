@@ -129,10 +129,16 @@ describe("Formationswerkzeuge (V2 §22.6 E)", () => {
     expect(hasType(f(deck, []), 5, "farbblock")).toBe(false);
     expect(hasType(f(deck, ["E9"]), 5, "farbblock")).toBe(true);
   });
-  it("E5 Pendelwerk: Wechsel schon ab 2 Karten erkannt", () => {
+  it("E5 Pendelwerk: Wechsel schon ab 2 Karten erkannt (Marker; ordinal ≤2 → Faktor 1)", () => {
     const deck = [["R", 2], ["B", 9]];
     expect(hasType(f(deck, []), 1, "wechsel")).toBe(false);
-    expect(hasType(f(deck, ["E5"]), 1, "wechsel")).toBe(true);
+    const g = f(deck, ["E5"]);
+    expect(hasType(g, 1, "wechsel")).toBe(true);
+    // #99: ein reiner 2-Karten-Wechsel ist nur ein Marker — Faktor 1, kein Score-Mult, keine „aktive
+    // Formation". Erst ab der 3. Karte zahlt der Wechsel; E5 wirkt sonst nur über Overlap/Verlängerung.
+    expect(g[1].formations.find((x) => x.type === "wechsel").factor).toBe(1);
+    expect(g[1].mult).toBe(1);
+    expect(positionHasFormation(g[1])).toBe(false);
   });
   it("E1 Schrittmacher: Wiederholung mit einer fremden Karte dazwischen (fremde zählt nicht)", () => {
     const deck = [["R", 5], ["B", 8], ["G", 5]]; // 5,8,5
