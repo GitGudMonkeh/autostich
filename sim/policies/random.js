@@ -16,7 +16,7 @@ import { SKILL_SLOTS, MAX_ARCHETYPES } from "../../src/game/constants.js";
 const pick = (arr, rng) => arr[Math.floor(rng() * arr.length)];
 
 // Kann dieser Skill in einen freien Slot? Spiegelt die Free-Slot-Bedingungen von PICK_SKILL.
-function canAddSkill(s, id) {
+export function canAddSkill(s, id) {
   if (s.skills.includes(id)) return false;
   if (s.skills.length >= SKILL_SLOTS) return false;
   const a = archetypeOf(id);

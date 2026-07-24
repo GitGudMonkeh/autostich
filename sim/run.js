@@ -43,7 +43,9 @@ function finalize(s, seed, tel) {
   };
 }
 
-export function runOne(seed, policy) {
+// mem (optional): Cross-Run-Banditengedächtnis (S2). Wird an die Policy durchgereicht (adaptive Wahl)
+// und am Run-Ende mit dem Run-Score belohnt. Ohne mem verhält sich runOne wie in S0/S1 (Eval-Modus).
+export function runOne(seed, policy, mem = null) {
   const rng = makeRng(seed);
   let s = reducer(null, { type: "START_RUN", rng }); // START_RUN ignoriert den (null-)State
   const tel = newTelemetry();
@@ -54,12 +56,13 @@ export function runOne(seed, policy) {
       s = reducer(s, { type: "RESOLVE_TRICK", rng });
       observe(tel, s.lastTrick); // S1: jeden aufgelösten Stich ins Per-Karte-Ledger aufnehmen
     } else {
-      const action = policy.act(s, rng);
+      const action = policy.act(s, rng, mem);
       if (!action) throw new Error(`Policy '${policy.name}' lieferte keine Action für Phase '${s.phase}' (seed ${seed})`);
       const next = reducer(s, action);
       if (next === s) throw new Error(`Policy '${policy.name}' Action '${action.type}' brachte keinen Fortschritt in Phase '${s.phase}' (seed ${seed})`);
       s = next;
     }
   }
+  if (mem) mem.reward(s.score); // S2: Run-Score auf alle in diesem Run gezogenen Arme buchen
   return finalize(s, seed, tel);
 }
