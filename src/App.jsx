@@ -14,6 +14,7 @@ import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { StatSelect } from "./ui/StatSelect.jsx";
 import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
+import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
@@ -27,6 +28,7 @@ export function Autostich() {
   const [paused, setPaused] = useState(false);
   const [options, setOptions] = useState(() => loadOptions());   // Optionen (#41): u. a. CRT-Skin
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
+  const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung 1×/2×/3× (#27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
@@ -281,10 +283,14 @@ export function Autostich() {
           </div>
 
           {/* Chronik — Deck-Werte-Histogramm, volle Breite ganz unten (#28) */}
-          <div className="rounded-xl p-4 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Chronik — Deck-Werte je Farbe</div>
+          <button onClick={() => setShowChronik(true)} className="rounded-xl p-4 as-panel text-left w-full transition-all hover:brightness-110"
+            style={{ background: "#17171c", border: "1px solid #26262e" }}>
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2 flex justify-between">
+              <span>Chronik — Deck-Werte je Farbe</span>
+              <span className="normal-case tracking-normal" style={{ color: "#8a7de0" }}>Kartenübersicht ›</span>
+            </div>
             <DeckHistogram deck={state.deck} />
-          </div>
+          </button>
         </>)}
       </div>
 
@@ -294,6 +300,7 @@ export function Autostich() {
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />
       )}
+      {showChronik && <ChronikOverview state={state} onClose={() => setShowChronik(false)} />}
       {state.phase === "levelup" && state.statOffer && (
         <StatSelect offer={state.statOffer} onPick={pickStat} state={state} />
       )}

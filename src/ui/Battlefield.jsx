@@ -104,9 +104,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const showCombo = win && t && t.comboMult >= 1.5;
   const comboStr = t ? t.comboMult.toFixed(1).replace(".", ",") : "";
 
-  // Formations-Multiplikator dieses Stichs (§22.7): bei Sieg mit aktiver Formation kurz einblenden (§17).
-  const showFormation = win && t && (t.formationMult || 1) > 1.001;
-  const formationStr = t ? (t.formationMult || 1).toFixed(2).replace(".", ",") : "";
+  // Formations-Feedback (§17): benannte Formation + Multiplikator; Peak-Styling ab ×6 / ×12.
+  const FORM_NAME = { wiederholung: "WIEDERHOLUNG", farbblock: "FARBBLOCK", treppe: "TREPPE", wechsel: "WECHSEL", anker: "ANKER" };
+  const formMult = t ? (t.formationMult || 1) : 1;
+  const showFormation = win && t && formMult > 1.001;
+  const activeForms = t ? (t.formations || []).filter((f) => f.factor > 1) : [];
+  const formLabel = activeForms.length === 1 ? FORM_NAME[activeForms[0].type] : "FORMATION";
+  const formationStr = formMult.toFixed(2).replace(".", ",");
+  const formPeak = formMult >= 12 ? 2 : formMult >= 6 ? 1 : 0; // 0 normal · 1 verstärkt · 2 Peak
 
   // #49: aufsteigende Zahlen (Score-Gewinn & Lebensverlust) ~1 s länger + Überlappen erlaubt.
   // Statt eines je Stich ersetzten Einzel-Elements ein kleiner Pool — jeder Float lebt unabhängig
@@ -183,14 +188,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
             KOMBO ×{comboStr}
           </div>
         )}
-        {/* Formations-Multiplikator (§22.7/§17): unten rechts, eigene Bahn. */}
+        {/* Benanntes Formations-Feedback (§17): unten rechts, eigene Bahn; Peak-Styling ab ×6/×12. */}
         {showFormation && (
           <div key={`form${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
             style={{ right: `calc(${FLOAT_ZONES.formation.right} + ${fjitter(t.trickNo * 4 + 5, JITTER_X)}px)`,
                      top:  `calc(${FLOAT_ZONES.formation.top} + ${fjitter(t.trickNo * 4 + 11, JITTER_Y)}px)`,
-                     fontSize: 18, color: "#5ab87a", textShadow: "0 0 10px #5ab87a88",
+                     fontSize: formPeak === 2 ? 26 : formPeak === 1 ? 21 : 17,
+                     color: formPeak ? "#d4a63a" : "#5ab87a",
+                     textShadow: formPeak === 2 ? "0 0 16px #d4a63a" : formPeak === 1 ? "0 0 12px #d4a63aaa" : "0 0 10px #5ab87a88",
                      animation: fx(`as-combo ${clamp(flipMs * 0.85, 360, 820)}ms ease-out forwards`) }}>
-            FORMATION ×{formationStr}
+            {formPeak === 2 && "★ "}{formLabel} ×{formationStr}
           </div>
         )}
       </div>

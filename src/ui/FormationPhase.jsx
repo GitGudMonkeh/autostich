@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { suitColor } from "../game/constants.js";
+import { PERK_DEFS } from "../game/perks.js";
 import { summarizeFormations, SEGMENT_SIZE } from "../game/formations.js";
 
 // Kurzkürzel der Formationstypen für die Karten-Badges.
-const FORM_LABEL = { wiederholung: "W", farbblock: "F", treppe: "T", wechsel: "Z" };
+const FORM_LABEL = { wiederholung: "W", farbblock: "F", treppe: "T", wechsel: "Z", anker: "A" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
 /* Formationsphase (V2 §22.8): pausiert den Run und öffnet die Deck-Aufstellung.
@@ -21,6 +22,9 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   };
 
   const { count, maxMult } = summarizeFormations(formations);
+  // Kartenrollen je Karte (§22.11): Karten-id → Liste der Rollen-Perks.
+  const rolesByCard = {};
+  for (const [pid, ids] of Object.entries(state.roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const cards = playerOrder.map((di) => deck[di]);
   const nSeg = Math.ceil(cards.length / SEGMENT_SIZE);
   const hasSwaps = (formationSwaps || []).length > 0;
@@ -56,6 +60,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
                   const selected = sel === pos;
                   const col = suitColor(c.suit);
                   const labels = [...new Set(pf.formations.map((f) => FORM_LABEL[f.type]))].join("");
+                  const cardRoles = rolesByCard[c.id] || [];
                   return (
                     <button key={pos} onClick={() => clickPos(pos)}
                       className="relative rounded-lg flex flex-col items-center justify-center transition-all"
@@ -67,6 +72,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
                       <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
                       {inForm && <span className="text-[9px] font-bold leading-none" style={{ color: "#5ab87a" }}>×{fmt(pf.mult)}</span>}
                       {labels && <span className="absolute bottom-0.5 right-1 text-[7px] font-bold opacity-70" style={{ color: "#5ab87a" }}>{labels}</span>}
+                      {cardRoles.length > 0 && <span className="absolute bottom-0.5 left-1 text-[8px] leading-none" style={{ color: "#d4a63a" }}
+                        title={cardRoles.map((p) => PERK_DEFS[p].label).join(", ")}>●</span>}
                     </button>
                   );
                 })}
