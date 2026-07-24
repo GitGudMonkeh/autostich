@@ -123,4 +123,10 @@ describe("Blitz-Rework — Reducer-Konsumenten (#93 F2)", () => {
     expect(s.skills).toContain(PROT);
     expect(s.skills).not.toContain(ION);
   });
+  it("gezieltes Ersetzen greift auch bei freiem Slot (Konsumenten-Dialog #93)", () => {
+    // Ionisierung gehalten, freie Slots da; replaceId = Ionisierung → Geladene Serie ERSETZT sie (kein 2. Konsument).
+    const withIon = skillState({ skills: [ION], activeArchetypes: ["lightning"], lightning: activeLight, skillOffer: [PROT] });
+    const s = reducer(withIon, { type: "PICK_SKILL", skillId: PROT, replaceId: ION, rng });
+    expect(s.skills).toEqual([PROT]);
+  });
 });

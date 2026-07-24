@@ -29,6 +29,7 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
   const full = skills.length >= SKILL_SLOTS;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
   const [openSkill, setOpenSkill] = useState(null); // gehaltener Skill, dessen Beschreibung aufgeklappt ist
+  const [pendingConsumer, setPendingConsumer] = useState(null); // #93: Konsumenten-Ersatzdialog { id, replace, type }
   // Schlüsselbegriffe, die in den angebotenen Skills vorkommen (charge/ionize/streak).
   const kws = [...new Set(offer.flatMap((id) => SKILL_DEFS[id]?.keywords || []))].filter((k) => KEYWORD_INFO[k]);
   // Ist der Blitz-Archetyp noch nicht aktiv, schaltet DIESER Skill ihn frei (Ladung + Crit-Sockel).
@@ -43,8 +44,21 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
   const hasIceOffer = offer.some((id) => archetypeOf(id) === "ice");
   const iceFirstPick = !(state.activeArchetypes || []).includes("ice"); // erster Eis-Skill schaltet das Einfrieren frei
 
+  // Konsumenten-Typ eines Skills (#93): Hitze („heat") / Ladung („charge") / kein Konsument (null).
+  const consumerTypeOf = (id) => (SKILL_DEFS[id]?.heatConsumer ? "heat" : SKILL_DEFS[id]?.onFullCharge ? "charge" : null);
+  const CONSUMER_LABEL = { heat: "Hitze", charge: "Ladungs" };
+
   // Freier Slot → direkt wählen. Volle Slots → neuen Skill vormerken, dann Ersetzungsziel antippen.
+  // Zweiter Konsument desselben Typs → Bestätigungsdialog (ersetzt den bestehenden, max 1 je Typ).
   const clickSkill = (id) => {
+    const ctype = consumerTypeOf(id);
+    if (ctype && !skills.includes(id)) {
+      const existing = skills.find((s) => consumerTypeOf(s) === ctype);
+      if (existing && existing !== id) {
+        setPendingConsumer((cur) => (cur && cur.id === id ? null : { id, replace: existing, type: ctype }));
+        return;
+      }
+    }
     if (!full) { onPick(id); return; }
     setPending((cur) => (cur === id ? null : id));
   };
@@ -104,6 +118,24 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
               erweitert deine Formations- und Aufstellungs-Optionen.</>
           )}
         </div>
+        )}
+
+        {/* Konsumenten-Ersatzdialog (#93): zweiter Konsument desselben Typs ersetzt den bestehenden. */}
+        {pendingConsumer && (
+          <div className="mt-3 rounded-lg px-3 py-3 text-xs leading-snug" style={{ background: "#d4a63a1a", border: "1px solid #d4a63a66", color: "#e8dcb8" }}>
+            <div className="mb-2">
+              Du hältst bereits den {CONSUMER_LABEL[pendingConsumer.type]}-Konsumenten{" "}
+              <b style={{ color: ac(pendingConsumer.replace).color }}>{SKILL_DEFS[pendingConsumer.replace]?.name}</b>.{" "}
+              <b style={{ color: ac(pendingConsumer.id).color }}>{SKILL_DEFS[pendingConsumer.id]?.name}</b> ersetzt ihn
+              (höchstens 1 {CONSUMER_LABEL[pendingConsumer.type]}-Konsument). Deine aktuelle Ressource bleibt erhalten.
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { onPick(pendingConsumer.id, pendingConsumer.replace); setPendingConsumer(null); }}
+                className="px-3 py-1.5 rounded font-bold transition-all hover:brightness-110" style={{ background: "#d4a63a", color: "#0c0c10" }}>Ersetzen</button>
+              <button onClick={() => setPendingConsumer(null)}
+                className="px-3 py-1.5 rounded transition-all hover:opacity-80" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#e8e8ea" }}>Abbrechen</button>
+            </div>
+          </div>
         )}
 
         {/* Bei vollen Slots: Hinweis zum Ersetzen. */}

@@ -127,11 +127,13 @@ export function reducer(state, action) {
       const active0 = state.activeArchetypes || [];
       if (arch && !active0.includes(arch) && active0.length >= C.MAX_ARCHETYPES) return state;
       let skills;
-      if (state.skills.length < C.SKILL_SLOTS) {
+      if (replaceId && state.skills.includes(replaceId)) {
+        // Gezieltes Ersetzen (volle Slots ODER Konsumenten-Ersatzdialog #93): tauscht genau diesen Slot.
+        skills = state.skills.map((id) => (id === replaceId ? skillId : id));
+      } else if (state.skills.length < C.SKILL_SLOTS) {
         skills = [...state.skills, skillId];                       // freier Slot → hinzufügen
       } else {
-        if (!replaceId || !state.skills.includes(replaceId)) return state; // volle Slots → gültiges Ersetzungsziel nötig
-        skills = state.skills.map((id) => (id === replaceId ? skillId : id));
+        return state;                                              // volle Slots ohne gültiges Ersetzungsziel
       }
       // Konsumenten-Exklusivität (#93 F1/F2): höchstens EIN Hitze-Konsument UND höchstens EIN Ladungs-Konsument.
       // Ein zweiter desselben Typs ist nur wählbar, wenn er den bestehenden ersetzt (replaceId = der alte Konsument).

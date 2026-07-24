@@ -77,19 +77,33 @@ function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign) {
   }
 }
 
+// Wählt für die nächste Karte einen Kandidatenwert (Kristallform gibt eingefrorenen Karten [v−1,v,v+1]),
+// der die Zick-Zack-Bedingung erfüllt (|diff| ≥ 4, Richtung passt) und die Amplitude maximiert (Peak so hoch,
+// Valley so tief wie möglich → maximaler Spielraum für den nächsten Gegenzug). `need`: 0 frei, sonst ±1.
+function pickWechselValue(cands, cur, need) {
+  let best = null;
+  for (const c of cands) {
+    const diff = c - cur, dir = Math.sign(diff);
+    if (Math.abs(diff) < WECHSEL_MIN_DIFF || dir === 0) continue;
+    if (need !== 0 && dir !== need) continue;
+    if (!best || Math.abs(diff) > Math.abs(best.val - cur)) best = { val: c, dir };
+  }
+  return best;
+}
+
 // Wechsel (Zick-Zack): jede Nachbardifferenz ≥4 UND Richtungswechsel. Mindestlänge minLen (E5: 2 statt 3).
-function markWechsel(val, n, minLen, canExtendSeg, assign) {
+// `valSets[k]` = Kandidatenwerte je Karte (Kristallform: ±1 auf eingefrorenen Karten; sonst Singleton).
+function markWechsel(val, valSets, n, minLen, canExtendSeg, assign) {
   let i = 0;
   while (i < n) {
-    let j = i, prevDir = 0;
+    let curVal = val[i], j = i, prevDir = 0;
     while (j + 1 < n && canExtendSeg(j)) {
-      const diff = val[j + 1] - val[j];
-      const dir = Math.sign(diff);
-      if (Math.abs(diff) >= WECHSEL_MIN_DIFF && dir !== 0 && (prevDir === 0 || dir === -prevDir)) { prevDir = dir; j++; }
-      else break;
+      const pick = pickWechselValue(valSets[j + 1], curVal, prevDir === 0 ? 0 : -prevDir);
+      if (!pick) break;
+      curVal = pick.val; prevDir = pick.dir; j++;
     }
     if (j - i + 1 >= minLen) for (let k = i; k <= j; k++) assign(k, k - i + 1);
-    // Gleichgerichteter großer Schritt → diese Karte kann neu beginnen.
+    // Gleichgerichteter großer Schritt (rohe Werte) → diese Karte kann neu beginnen.
     i = (j < n - 1 && j > i && Math.abs(val[j + 1] - val[j]) >= WECHSEL_MIN_DIFF && canExtendSeg(j)) ? j : j + 1;
   }
 }
@@ -151,7 +165,9 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
 
   markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg,
     (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE)));
-  markWechsel(val, n, has("E5") ? 2 : 3, canExtendSeg,
+  // Wechsel: Kristallform gibt eingefrorenen Karten ±1-Wertoptionen (Permafrost/Eisschritt gelten hier NICHT).
+  const valSetWechsel = cards.map((c, k) => (frozen[k] && wildCrystal ? [val[k] - 1, val[k], val[k] + 1] : [val[k]]));
+  markWechsel(val, valSetWechsel, n, has("E5") ? 2 : 3, canExtendSeg,
     (pos, ord) => add(pos, "wechsel", ord, escalatingFactor(ord, WECHSEL_BASE)));
 
   // Anker (E7: Position 10/20/30/40 · E8: Position 5/15/25/35) — je siegreicher Anker ×1,25, zählt als Formation.
