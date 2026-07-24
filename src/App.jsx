@@ -316,7 +316,7 @@ export function Autostich() {
               <HeatBar heat={state.heat} skills={state.skills} />
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
                 ownCount={frozenCount(state.deck)}
-                enemyCount={(state.frostbitePending || []).length + (state.frostbiteActive || []).length} />
+                enemyCount={(state.frostbiteActive || []).length} />
               <BuildPanel perks={state.perks} skills={state.skills} />
             </div>
             <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />

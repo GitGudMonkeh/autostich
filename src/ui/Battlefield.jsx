@@ -91,7 +91,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
 
   const oppCard = t ? (
     <div key={`o${t.trickNo}`} className="relative" style={dealStyle("as-deal-right")}>
-      <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null} frozen={t.oFrostbitten} />
+      <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null} frostbitten={t.oFrostbitten} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 

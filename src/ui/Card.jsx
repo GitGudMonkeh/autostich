@@ -5,7 +5,7 @@ import { suitColor, suitName } from "../game/constants.js";
      value      = dauerhafter Kartenwert (inkl. Kat.-A-Mods)
      baseRank   = Ursprungswert → dauerhafter Boost = value − baseRank (violett „+X")
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
-export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false }) {
+export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostbitten = false }) {
   const color = suitColor(suit);
   const permBoost = baseRank != null ? value - baseRank : 0;
   const effective = value + stichBonus;
@@ -15,6 +15,8 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
   const ionRing = ionStacks > 0 ? `0 0 0 2px #5ec8f0, 0 0 ${ionFull ? 12 : 9}px #5ec8f0${ionFull ? "aa" : "77"}` : null;
   // Frost (#93 F3): eisiger Innen-Schimmer statt Rahmen → layert konfliktfrei mit Ion-Ring/Glow.
   const frostGlow = frozen ? "inset 0 0 14px #9fdcf066" : null;
+  // Frostbiss (#126): feindlicher −3-Debuff auf einer Gegnerkarte → ROTER Innen-Schimmer (nicht blau wie eigener Frost).
+  const frostbiteGlow = frostbitten ? "inset 0 0 14px #e0605a55" : null;
   return (
     <div
       className="as-card relative rounded-xl border-2 flex flex-col items-center justify-center select-none transition-all"
@@ -23,7 +25,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
         width: 104, height: 144, background: "#1c1c22",
         opacity: dim ? 0.35 : 1,
         // Ion-Rahmen (blau) zuerst → liegt oben/knapp am Rand; Gewinn-/Verlust-Glow (+15%) radiert darunter; Frost-Schimmer innen.
-        boxShadow: [ionRing, glow ? `0 0 0 3.45px ${glow}66, 0 0 25.3px ${glow}55` : null, frostGlow].filter(Boolean).join(", ") || "none",
+        boxShadow: [ionRing, glow ? `0 0 0 3.45px ${glow}66, 0 0 25.3px ${glow}55` : null, frostGlow, frostbiteGlow].filter(Boolean).join(", ") || "none",
       }}
     >
       <div className="absolute top-1.5 left-2 text-[10px] uppercase tracking-wide" style={{ color }}>
@@ -37,9 +39,13 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
         </div>
       )}
       <div className="text-5xl font-bold card-num" style={{ color }}>{effective}</div>
-      {/* Frost (#93 F3): Schneeflocke unten rechts markiert eine eingefrorene Karte (blau, überall sichtbar). */}
+      {/* Frost (#93 F3): Schneeflocke unten rechts markiert eine eingefrorene EIGENE Karte (blau, überall sichtbar). */}
       {frozen && (
         <div className="absolute bottom-1 right-1 text-[13px] leading-none" style={{ color: "#bfe9f7", textShadow: "0 0 5px #7fd4f0" }} title="Eingefroren">❄</div>
+      )}
+      {/* Frostbiss (#126): frostgebissene GEGNERkarte — ROTES ❄, klar als feindlicher −3-Debuff (nicht wie eigener Frost). */}
+      {frostbitten && (
+        <div className="absolute bottom-1 right-1 text-[13px] leading-none" style={{ color: "#f0a09a", textShadow: "0 0 5px #e0605a" }} title="Frostbiss −3">❄</div>
       )}
       {/* Ionisierung: Blitze in der unteren linken Ecke, vertikal von unten nach oben gestapelt (Anzahl = Stapel, max 4). */}
       {ionStacks > 0 && (
