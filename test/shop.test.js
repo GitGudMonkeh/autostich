@@ -866,6 +866,55 @@ describe("Shop-Planungsitems — S5c Legendensuche P5/P6 (Shop-Spec §10)", () =
   });
 });
 
+describe("Shop-Positionsanker — A6 Jokeranker (Shop-Spec §8)", () => {
+  const joker = (pos) => [{ type: "joker", position: pos }];
+  it("vervollständigt eine Wiederholung, indem der Joker den Wert annimmt", () => {
+    const deck = seqDeck([5, 9, 5]); // 5, _, 5 — Joker an Pos 1 füllt die Lücke
+    expect(hasForm(computeFormations(ord(3), deck), 0, "wiederholung")).toBe(false);
+    const w = computeFormations(ord(3), deck, {}, [], [], joker(1));
+    expect(hasForm(w, 0, "wiederholung")).toBe(true);
+    expect(w[2].formations.find((f) => f.type === "wiederholung").ordinal).toBe(3); // 3er-Wiederholung
+  });
+  it("vervollständigt einen Farbblock, indem der Joker die Farbe annimmt", () => {
+    const deck = [{ id: "a", suit: "R", value: 10 }, { id: "b", suit: "B", value: 3 }, { id: "c", suit: "R", value: 8 }];
+    expect(hasForm(computeFormations(ord(3), deck), 0, "farbblock")).toBe(false);
+    expect(hasForm(computeFormations(ord(3), deck, {}, [], [], joker(1)), 0, "farbblock")).toBe(true);
+  });
+  it("füllt eine Treppe nur mit real existierendem Zwischenwert (5,_,8 ja · 5,_,6 nein)", () => {
+    const ok = seqDeck([5, 99, 8]); // 5 < ? < 8 möglich → Treppe
+    expect(hasForm(computeFormations(ord(3), ok), 0, "treppe")).toBe(false);
+    expect(hasForm(computeFormations(ord(3), ok, {}, [], [], joker(1)), 0, "treppe")).toBe(true);
+    const impossible = seqDeck([5, 99, 6]); // 5 < ? < 6 unmöglich → KEINE Treppe (kein bind=99-Trick)
+    expect(hasForm(computeFormations(ord(3), impossible, {}, [], [], joker(1)), 0, "treppe")).toBe(false);
+  });
+  it("erzeugt allein keine Formation (nur Joker, keine reale Karte)", () => {
+    const deck = seqDeck([5, 7]);
+    const out = computeFormations(ord(2), deck, {}, [], [], [{ type: "joker", position: 0 }, { type: "joker", position: 1 }]);
+    expect(out[0].formations.some((f) => f.type === "wiederholung")).toBe(false);
+    expect(out[0].mult).toBe(1);
+  });
+  it("als Lauf-Start absorbiert NICHT die ganze Spanne (keine Über-Erzeugung)", () => {
+    const deck = seqDeck([5, 9, 13, 20]); // Joker an Pos 0 darf höchstens mit Pos 1 paaren, nicht [0..3]
+    const out = computeFormations(ord(4), deck, {}, [], [], joker(0));
+    expect(out[2].formations.some((f) => f.type === "wiederholung")).toBe(false);
+    expect(out[3].formations.some((f) => f.type === "wiederholung")).toBe(false);
+  });
+  it("zählt selbst NICHT als Anker (kein eigener ×1,25-Faktor, anders als A5)", () => {
+    const out = computeFormations(ord(3), seqDeck([5, 20, 40]), {}, [], [], joker(0));
+    expect(out.every((p) => !p.formations.some((f) => f.type === "anker"))).toBe(true);
+  });
+  it("Kauf A6: legt einen joker-Anker an der gewählten Position an (Position-Ziel-Flow)", () => {
+    const offer = { offerId: "o0", itemId: "A6", category: "anchors", tier: "premium", price: 18, legendary: false };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
+    expect(s.phase).toBe("shop-target");
+    s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 10 });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.shop.anchors).toEqual([{ type: "joker", position: 10 }]);
+    expect(r.shop.coins).toBe(0);
+  });
+});
+
 describe("Shop-Politur — S6 activeShopUpgrades (Chronik-Übersicht)", () => {
   it("frischer Shop hat keine aktiven Verbesserungen", () => {
     expect(activeShopUpgrades(initialShop())).toEqual([]);

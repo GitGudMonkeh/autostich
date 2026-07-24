@@ -43,20 +43,26 @@ const FARBBLOCK_BASE = 1.30, TREPPE_BASE = 1.25, WECHSEL_BASE = 1.25, ANKER_FACT
 // Maximale Läufe über eine Paar-Bedingung, mit optional EINER erlaubten fremden Karte dazwischen (E1/E2).
 // `matches(refPos, k)` prüft, ob Position k zur Formation von refPos gehört. Fremde Karten sind keine Mitglieder.
 // `transparent(k)` (Eis-Frostbrücke): Position k unterbricht den Lauf nicht und zählt selbst NICHT als Mitglied.
-function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign, transparent = () => false, onRunEnd = null) {
+// Shop A6 Jokeranker: `isJoker(k)` markiert Positionen, deren Karte bei der Erkennung JEDEN Wert/jede Farbe
+// annehmen darf. Damit ein Joker nicht als Lauf-Referenz „alles absorbiert" (Über-Erzeugung), wird gegen die
+// erste REALE Karte des Laufs verglichen (`anchor`), nie gegen den Joker; ein Lauf zählt nur mit ≥1 realer Karte.
+function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign, transparent = () => false, onRunEnd = null, isJoker = () => false) {
   let i = 0;
   while (i < n) {
     if (transparent(i)) { i++; continue; }        // transparente Karte startet keinen eigenen Lauf
     const members = [i];
     let j = i, gapUsed = false;
+    let anchor = isJoker(i) ? -1 : i;             // Vergleichsanker = erste reale Karte (-1 = bisher nur Joker)
+    const memberMatch = (k) => isJoker(k) || anchor === -1 || matches(anchor, k); // Joker passt immer; ohne Anker passt alles
+    const noteReal = (k) => { if (anchor === -1 && !isJoker(k)) anchor = k; };     // erste reale Karte fixiert den Anker
     while (j + 1 < n && canExtendSeg(j)) {
       if (transparent(j + 1)) { j++; continue; }  // Frostbrücke: überspringen (kein Mitglied, kein Gap-Verbrauch)
-      if (matches(i, j + 1)) { j++; members.push(j); }
-      else if (allowGap && !gapUsed && j + 2 < n && canExtendSeg(j + 1) && !transparent(j + 2) && matches(i, j + 2)) {
-        gapUsed = true; j += 2; members.push(j); // fremde Karte an j+1 überspringen
+      if (memberMatch(j + 1)) { j++; members.push(j); noteReal(j); }
+      else if (allowGap && !gapUsed && j + 2 < n && canExtendSeg(j + 1) && !transparent(j + 2) && memberMatch(j + 2)) {
+        gapUsed = true; j += 2; members.push(j); noteReal(j); // fremde Karte an j+1 überspringen
       } else break;
     }
-    if (members.length >= minMembers) {
+    if (members.length >= minMembers && anchor !== -1) { // Joker erzeugen allein keine Formation
       members.forEach((pos, idx) => assign(pos, idx + 1));
       if (onRunEnd) onRunEnd(members[members.length - 1], members.length); // F6 Nachhall: letztes Mitglied + Ordinal
     }
@@ -67,22 +73,27 @@ function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign, transp
 // Treppe: streng monoton (mit Bindeglied-Flex ±1), kein Min-/Max-Schritt. `dir` = +1 steigend, −1 fallend
 // (Shop F1 „Abstieg" läuft zusätzlich fallend). E3 erlaubt 1× gleich, E4 erlaubt 1× Gegenrichtung,
 // E6 lässt die letzte Karte einen neuen Lauf beginnen.
-function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign, dir = 1, onRunEnd = null) {
+// Joker (A6): nimmt den minimal-gültigen Zwischenwert (Vorgänger ± dir), sodass die strenge Monotonie hält —
+// echte Wert-Suche statt „passt immer" (verhindert unmögliche Brücken wie 5,Joker,6). `prev` = effektiver Wert
+// des letzten Mitglieds (null = bisher nur Joker; die erste reale Karte fixiert die Kette), `pb` = dessen Bind-Flex.
+function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign, dir = 1, onRunEnd = null, isJoker = () => false) {
   let i = 0;
   while (i < n) {
     const members = [i];
     let j = i, softUsed = false;
+    let prev = isJoker(i) ? null : val[i], pb = isJoker(i) ? 0 : bind[i], hasReal = !isJoker(i);
     while (j + 1 < n && canExtendSeg(j)) {
-      const step = dir === 1
-        ? (val[j + 1] + bind[j + 1] > val[j] - bind[j])   // steigend (Bindeglied flext ±1)
-        : (val[j] + bind[j] > val[j + 1] - bind[j + 1]);  // fallend
-      const revBack = dir === 1 ? (val[j + 1] < val[j]) : (val[j + 1] > val[j]); // E4: Schritt gegen die Richtung
-      if (step) { j++; members.push(j); }
-      else if (!softUsed && ((e3 && val[j + 1] === val[j]) || (e4 && revBack))) {
-        softUsed = true; j++; members.push(j);
-      } else break;
+      const jj = j + 1;
+      if (isJoker(jj)) { j = jj; members.push(j); if (prev != null) { prev += dir; pb = 0; } continue; } // Joker adaptiert
+      const v = val[jj], b = bind[jj];
+      const step = prev == null ? true                    // nur Joker bisher → diese reale Karte fixiert die Kette
+        : dir === 1 ? (v + b > prev - pb) : (prev + pb > v - b);
+      const revBack = prev != null && (dir === 1 ? v < prev : v > prev);
+      if (step) { j = jj; members.push(j); prev = v; pb = b; hasReal = true; }
+      else if (!softUsed && ((e3 && v === prev) || (e4 && revBack))) { softUsed = true; j = jj; members.push(j); prev = v; pb = b; hasReal = true; }
+      else break;
     }
-    if (members.length >= 3) {
+    if (members.length >= 3 && hasReal) {                  // Joker allein bilden keine Treppe
       members.forEach((pos, idx) => assign(pos, idx + 1));
       if (onRunEnd) onRunEnd(members[members.length - 1], members.length); // F6 Nachhall
     }
@@ -106,16 +117,21 @@ function pickWechselValue(cands, cur, need, minDiff = WECHSEL_MIN_DIFF) {
 
 // Wechsel (Zick-Zack): jede Nachbardifferenz ≥4 UND Richtungswechsel. Mindestlänge minLen (E5: 2 statt 3).
 // `valSets[k]` = Kandidatenwerte je Karte (Kristallform: ±1 auf eingefrorenen Karten; sonst Singleton).
-function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WECHSEL_MIN_DIFF, onRunEnd = null) {
+function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WECHSEL_MIN_DIFF, onRunEnd = null, isJoker = () => false) {
+  const BIG = 1000; // Joker (A6): Extremwert in benötigter Richtung → maximale Amplitude, erfüllt die Zick-Zack-Bedingung stets.
   let i = 0;
   while (i < n) {
-    let curVal = val[i], j = i, prevDir = 0;
+    let curVal = val[i], j = i, prevDir = 0, reals = isJoker(i) ? 0 : 1;
     while (j + 1 < n && canExtendSeg(j)) {
-      const pick = pickWechselValue(valSets[j + 1], curVal, prevDir === 0 ? 0 : -prevDir, minDiff);
+      const jj = j + 1, need = prevDir === 0 ? 0 : -prevDir;
+      let pick;
+      if (isJoker(jj)) { const d = need === 0 ? 1 : need; pick = { val: curVal + d * BIG, dir: d }; } // adaptiv, immer gültig
+      else pick = pickWechselValue(valSets[jj], curVal, need, minDiff);
       if (!pick) break;
-      curVal = pick.val; prevDir = pick.dir; j++;
+      curVal = pick.val; prevDir = pick.dir; j = jj;
+      if (!isJoker(jj)) reals++;
     }
-    if (j - i + 1 >= minLen) {
+    if (j - i + 1 >= minLen && reals >= 1) { // Joker allein bilden keinen Wechsel
       for (let k = i; k <= j; k++) assign(k, k - i + 1);
       if (onRunEnd) onRunEnd(j, j - i + 1); // F6 Nachhall: letztes Mitglied j + Ordinal
     }
@@ -161,6 +177,10 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const crossSeg = has("E9");
   const openBoundaries = new Set(pe.openSegmentBoundaries || []); // Shop F5: einzeln geöffnete Segmentgrenzen (Position k mit (k+1)%5==0)
   const canExtendSeg = (k) => crossSeg || ((k + 1) % SEGMENT_SIZE !== 0) || openBoundaries.has(k);
+  // Shop A6 Jokeranker (§8): Positionen, deren Karte bei jeder Basisformation den benötigten Wert/die Farbe annehmen darf.
+  // Zählt NICHT als eigener Anker (kein ×1,25) und erzeugt allein keine Formation.
+  const jokerPos = new Set((anchors || []).filter((a) => a.type === "joker" && a.position < n).map((a) => a.position));
+  const isJoker = (k) => jokerPos.has(k);
 
   const out = Array.from({ length: n }, () => ({ mult: 1, baseMult: 1, afterglowFactor: 1, coreFactor: 1, formations: [] }));
   const add = (pos, type, ordinal, factor) => {
@@ -185,24 +205,24 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const matchWied = (a, b) => jokerAll[a] || jokerAll[b] || [...valSetWied[a]].some((v) => valSetWied[b].has(v));
   markRuns(n, 2, matchWied, has("E1"), canExtendSeg,
     (pos, ord) => add(pos, "wiederholung", ord, wiederholungFactor(ord, repBonus)), () => false,
-    (last, ord) => recordEnd(last, "wiederholung", wiederholungFactor(ord, repBonus)));
+    (last, ord) => recordEnd(last, "wiederholung", wiederholungFactor(ord, repBonus)), isJoker);
 
   // Farbblock: Permafrost-Joker matcht jede Farbe; Frostbrücke macht eingefrorene Karten transparent (kein Mitglied).
   const matchSuit = (a, b) => jokerAll[a] || jokerAll[b] || effSuit[a] === effSuit[b];
   const farbSkip = (k) => frozen[k] && wildSkip && !jokerAll[k];
   markRuns(n, 3, matchSuit, has("E2"), canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)), farbSkip,
-    (last, ord) => recordEnd(last, "farbblock", escalatingFactor(ord, FARBBLOCK_BASE)));
+    (last, ord) => recordEnd(last, "farbblock", escalatingFactor(ord, FARBBLOCK_BASE)), isJoker);
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));
-  markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg, treppeAssign, 1, treppeEnd);
-  if (descending) markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg, treppeAssign, -1, treppeEnd); // F1 Abstieg
+  markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg, treppeAssign, 1, treppeEnd, isJoker);
+  if (descending) markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg, treppeAssign, -1, treppeEnd, isJoker); // F1 Abstieg
   // Wechsel: Kristallform gibt eingefrorenen Karten ±1-Wertoptionen (Permafrost/Eisschritt gelten hier NICHT).
   const valSetWechsel = cards.map((c, k) => (frozen[k] && wildCrystal ? [val[k] - 1, val[k], val[k] + 1] : [val[k]]));
   markWechsel(val, valSetWechsel, n, has("E5") ? 2 : 3, canExtendSeg,
     (pos, ord) => add(pos, "wechsel", ord, escalatingFactor(ord, WECHSEL_BASE)), wechselMinDiff,
-    (last, ord) => recordEnd(last, "wechsel", escalatingFactor(ord, WECHSEL_BASE)));
+    (last, ord) => recordEnd(last, "wechsel", escalatingFactor(ord, WECHSEL_BASE)), isJoker);
 
   // Anker (E7: Position 10/20/30/40 · E8: Position 5/15/25/35) — je siegreicher Anker ×1,25, zählt als Formation.
   if (has("E7") || has("E8")) for (let pos = 0; pos < n; pos++) {
