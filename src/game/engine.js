@@ -442,7 +442,7 @@ export function resolveTrick(state, rng = Math.random) {
         // pro Shop) und ein frisches Angebot ziehen (§5, deterministisch über rng).
         phase = "shop";
         shop = { ...shop, coins: (shop.coins || 0) + shopIncomeFor(economyStatLevel),
-                 offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rng), purchasedOfferIds: [] };
+                 offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rng, perks), purchasedOfferIds: [] };
       } else if (decision === "formation") {
         // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ E10 Feinjustierung), Vorschau berechnen.
         phase = "formation";

@@ -1,6 +1,6 @@
 import { suitColor, suitName, SUIT_ORDER } from "../game/constants.js";
 import { SEGMENT_SIZE } from "../game/formations.js";
-import { SHOP_ITEM_DEFS } from "../game/shop.js";
+import { SHOP_ITEM_DEFS, SEGMENT_BOUNDARIES } from "../game/shop.js";
 import { useEscape } from "./useEscape.js";
 
 const GOLD = "#d4a63a";
@@ -8,7 +8,7 @@ const GOLD = "#d4a63a";
 /* Shop-Ziel-Auswahl (Shop-Spec §12.2) — öffnet nach dem Kauf eines Ziel-Items (Kartenitems S2).
    Karten wählen (Limit aus dem Item), optional je Karte eine neue Farbe, oder ein Segment (K-L1).
    Abbrechen lässt Angebot & Münzen unverändert; Bestätigen zieht erst dann den Preis ab (Reducer). */
-export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onConfirm, onCancel }) {
+export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onColorPair, onBoundary, onConfirm, onCancel }) {
   useEscape(onCancel);
   const st = state.shopTarget || {};
   const def = SHOP_ITEM_DEFS[st.itemId] || {};
@@ -22,11 +22,15 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
   const cardById = (id) => deck.find((c) => c.id === id);
 
   const occupied = new Set((state.shop?.anchors || []).map((a) => a.position));
+  const openBoundaries = new Set(state.shop?.permanentEffects?.openSegmentBoundaries || []);
+  const pair = st.colorPair || [];
   const cardsDone = !spec.cards || sel.length === spec.cards;
   const colorsDone = !spec.color || sel.every((id) => colors[id]);
   const segDone = !spec.segment || st.segment != null;
   const posDone = !spec.position || st.position != null;
-  const ready = spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
+  const pairDone = !spec.colorPair || pair.length === 2;
+  const boundaryDone = !spec.boundary || st.boundary != null;
+  const ready = spec.colorPair ? pairDone : spec.boundary ? boundaryDone : spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
@@ -34,12 +38,46 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>Shop · {def.name}</div>
           <h2 className="text-xl font-bold mt-1">
-            {spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
+            {spec.colorPair ? "Wähle zwei Farben" : spec.boundary ? "Wähle eine Segmentgrenze" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
           </h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.description}</p>
         </div>
 
-        {spec.position ? (
+        {spec.colorPair ? (
+          <div className="mt-4">
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Zwei Farben wählen (zählen als eine)</div>
+            <div className="flex gap-2 flex-wrap">
+              {SUIT_ORDER.map((su) => {
+                const on = pair.includes(su);
+                return (
+                  <button key={su} onClick={() => onColorPair(su)}
+                    className="px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                    style={{ background: on ? suitColor(su) : `${suitColor(su)}22`, color: on ? "#141419" : suitColor(su), border: `2px solid ${suitColor(su)}` }}>
+                    {suitName(su)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : spec.boundary ? (
+          <div className="mt-4">
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Segmentgrenze wählen</div>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {SEGMENT_BOUNDARIES.map((b) => {
+                const open = openBoundaries.has(b);
+                const active = st.boundary === b;
+                return (
+                  <button key={b} onClick={() => !open && onBoundary(b)} disabled={open}
+                    className="rounded-xl p-3 text-left transition-all"
+                    style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : open ? "#5ab87a" : "#33333e"}`, opacity: open ? 0.5 : 1, cursor: open ? "not-allowed" : "pointer" }}>
+                    <span className="font-bold">Grenze {b + 1}|{b + 2}</span>
+                    {open && <span className="text-[11px] ml-2" style={{ color: "#5ab87a" }}>bereits offen</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : spec.position ? (
           <div className="grid gap-2 mt-4">
             {Array.from({ length: nSeg }, (_, s) => (
               <div key={s} className="flex items-center gap-2">

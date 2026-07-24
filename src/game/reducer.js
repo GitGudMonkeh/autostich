@@ -4,7 +4,7 @@ import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, ma
   frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, SEGMENT_SIZE } from "./formations.js";
-import { initialShop, SHOP_ITEM_DEFS, positionOccupied } from "./shop.js";
+import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -87,7 +87,7 @@ export function reducer(state, action) {
       if (!def) return state;
       if (def.target) { // Ziel-Auswahl nötig (§12.2): in die shop-target-Phase; Münzen erst nach Bestätigung.
         return { ...state, phase: "shop-target",
-                 shopTarget: { offerId: offer.offerId, itemId: def.id, cards: [], colors: {}, segment: null, position: null } };
+                 shopTarget: { offerId: offer.offerId, itemId: def.id, cards: [], colors: {}, segment: null, position: null, colorPair: [], boundary: null } };
       }
       // Sofort-Items (kein Ziel, z. B. Planung ab S5): Effekt anwenden, danach generische Münz-/Kauf-Buchhaltung.
       const patch = def.apply ? def.apply(state, null, action.rng) : {};
@@ -140,6 +140,24 @@ export function reducer(state, action) {
       if (positionOccupied(state.shop?.anchors, p)) return state; // belegte Position → ablehnen (§8.1)
       return { ...state, shopTarget: { ...state.shopTarget, position: p } };
     }
+    case "SHOP_TARGET_COLOR_PAIR": { // Farballianz (F4): zwei unterschiedliche Farben wählen.
+      if (state.phase !== "shop-target" || !state.shopTarget) return state;
+      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
+      if (!def?.target?.colorPair || !C.SUIT_ORDER.includes(action.color)) return state;
+      let pair = state.shopTarget.colorPair || [];
+      if (pair.includes(action.color)) pair = pair.filter((s) => s !== action.color);
+      else if (pair.length < 2) pair = [...pair, action.color];
+      else return state; // schon zwei gewählt
+      return { ...state, shopTarget: { ...state.shopTarget, colorPair: pair } };
+    }
+    case "SHOP_TARGET_BOUNDARY": { // Offene Grenze (F5): eine noch geschlossene Segmentgrenze wählen.
+      if (state.phase !== "shop-target" || !state.shopTarget) return state;
+      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
+      const b = action.boundary;
+      if (!def?.target?.boundary || !SEGMENT_BOUNDARIES.includes(b)) return state;
+      if ((state.shop?.permanentEffects?.openSegmentBoundaries || []).includes(b)) return state; // schon offen
+      return { ...state, shopTarget: { ...state.shopTarget, boundary: b } };
+    }
     case "SHOP_TARGET_CANCEL": // Abbrechen (§12.2): Angebot & Münzen unverändert → zurück in den Shop.
       return state.phase === "shop-target" ? { ...state, phase: "shop", shopTarget: null } : state;
     case "SHOP_TARGET_CONFIRM": {
@@ -156,7 +174,9 @@ export function reducer(state, action) {
       if (spec.color && st.cards.some((id) => !st.colors[id])) return state;      // je gewählter Karte eine Farbe
       if (spec.segment && st.segment == null) return state;                       // ein Segment
       if (spec.position && (st.position == null || positionOccupied(shop.anchors, st.position))) return state; // freie Position
-      const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, position: st.position };
+      if (spec.colorPair && (st.colorPair || []).length !== 2) return state;      // genau zwei Farben (F4)
+      if (spec.boundary && st.boundary == null) return state;                     // eine Grenze (F5)
+      const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, position: st.position, colorPair: st.colorPair, boundary: st.boundary };
       const patch = def.apply ? def.apply(state, target, action.rng) : {};
       const merged = { ...state, ...patch };
       const deck = patch.deck || state.deck;

@@ -137,6 +137,8 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Joker (C8): effektive Farbe = die des direkten Vorgängers (verkettet).
   const effSuit = cards.map((c) => c.suit);
   for (let k = 1; k < n; k++) if (jokerIds.has(cards[k].id)) effSuit[k] = effSuit[k - 1];
+  // Farballianz (Shop F4): zwei Farben zählen für Farbblöcke als eine (die zweite wird auf die erste gemappt).
+  if ((pe.linkedColors || []).length === 2) { const [la, lb] = pe.linkedColors; for (let k = 0; k < n; k++) if (effSuit[k] === lb) effSuit[k] = la; }
   // Bindeglied (C10, ±1) + Eis: Eisschritt/Kristallform geben ±1, Permafrost-Joker passt überall (großer Flex).
   const bind = cards.map((c, k) => {
     let b = bridgeIds.has(c.id) ? 1 : 0;
@@ -145,7 +147,8 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
     return b;
   });
   const crossSeg = has("E9");
-  const canExtendSeg = (k) => crossSeg || ((k + 1) % SEGMENT_SIZE !== 0);
+  const openBoundaries = new Set(pe.openSegmentBoundaries || []); // Shop F5: einzeln geöffnete Segmentgrenzen (Position k mit (k+1)%5==0)
+  const canExtendSeg = (k) => crossSeg || ((k + 1) % SEGMENT_SIZE !== 0) || openBoundaries.has(k);
 
   const out = Array.from({ length: n }, () => ({ mult: 1, formations: [] }));
   const add = (pos, type, ordinal, factor) => {

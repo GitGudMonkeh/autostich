@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor } from "../src/game/shop.js";
+import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { MAX_CYCLES, DECISION_SCHEDULE, STARTING_COINS, BASE_COINS_PER_CYCLE,
@@ -516,5 +516,58 @@ describe("Shop-Formationsitems — F1/F2/F3 (Shop-Spec §9)", () => {
     expect(r.shop.permanentEffects.switchMinDifference).toBe(3);
     expect(r.shop.boughtNonRepeatableIds).toEqual(["F2"]);
     expect(Array.isArray(r.formations)).toBe(true); // Formationen wurden neu berechnet
+  });
+});
+
+describe("Shop-Formationsitems — F4/F5 (Shop-Spec §9)", () => {
+  it("F4 Farballianz: zwei verlinkte Farben bilden zusammen einen Farbblock", () => {
+    const deck = [{ id: "c0", suit: "R", value: 2 }, { id: "c1", suit: "B", value: 7 }, { id: "c2", suit: "R", value: 3 }];
+    expect(hasForm(computeFormations(ord(3), deck), 0, "farbblock")).toBe(false); // R,B,R → kein Block
+    expect(hasForm(computeFormations(ord(3), deck, {}, [], [], [], { linkedColors: ["R", "B"] }), 0, "farbblock")).toBe(true);
+  });
+  it("F5 Offene Grenze: ein Farbblock überschreitet die Grenze erst, wenn sie geöffnet ist", () => {
+    const deck = [
+      { id: "a", suit: "G", value: 1 }, { id: "b", suit: "Y", value: 2 }, { id: "c", suit: "B", value: 3 },
+      { id: "d", suit: "R", value: 5 }, { id: "e", suit: "R", value: 1 }, { id: "f", suit: "R", value: 5 }, { id: "g", suit: "R", value: 1 },
+    ]; // R-Block auf Positionen 3–6, Grenze bei Position 4 (4|5)
+    expect(hasForm(computeFormations(ord(7), deck), 5, "farbblock")).toBe(false); // Grenze blockt → je Segment nur 2
+    expect(hasForm(computeFormations(ord(7), deck, {}, [], [], [], { openSegmentBoundaries: [4] }), 5, "farbblock")).toBe(true);
+  });
+  it("Kauf F4: zwei Farben wählen → linkedColors gesetzt (Preis erst bei CONFIRM)", () => {
+    const offer = { offerId: "o0", itemId: "F4", category: "formations", tier: "strong", price: 12, legendary: false };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers: [offer] } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
+    expect(s.phase).toBe("shop-target");
+    expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s); // < 2 Farben → unverändert
+    s = reducer(s, { type: "SHOP_TARGET_COLOR_PAIR", color: "R" });
+    s = reducer(s, { type: "SHOP_TARGET_COLOR_PAIR", color: "B" });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.shop.permanentEffects.linkedColors).toEqual(["R", "B"]);
+    expect(r.shop.coins).toBe(0);
+  });
+  it("Kauf F5: eine Grenze öffnen → openSegmentBoundaries; wiederholbar", () => {
+    const offer = { offerId: "o0", itemId: "F5", category: "formations", tier: "premium", price: 18, legendary: false };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
+    s = reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 9 });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.shop.permanentEffects.openSegmentBoundaries).toEqual([9]);
+    expect(r.shop.boughtNonRepeatableIds).toEqual([]); // wiederholbar
+  });
+  it("F5 wird abgelehnt bei bereits offener Grenze; verschiedene Grenzen stapeln", () => {
+    const offer = { offerId: "o0", itemId: "F5", category: "formations", tier: "premium", price: 18, legendary: false };
+    const base = { ...initialState(makeRng(1)), phase: "shop",
+      shop: { ...initialShop(), coins: 18, offers: [offer], permanentEffects: { ...initialShop().permanentEffects, openSegmentBoundaries: [4] } } };
+    let s = reducer(base, { type: "BUY_ITEM", offerId: "o0" });
+    expect(reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 4 })).toBe(s); // schon offen → ignoriert
+    s = reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 9 });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect([...r.shop.permanentEffects.openSegmentBoundaries].sort((a, b) => a - b)).toEqual([4, 9]);
+  });
+  it("F5-Verfügbarkeit (§15): nicht bei E9, nicht wenn alle Grenzen offen", () => {
+    expect(isItemAvailable(SHOP_ITEM_DEFS.F5, initialShop(), [])).toBe(true);
+    expect(isItemAvailable(SHOP_ITEM_DEFS.F5, initialShop(), ["E9"])).toBe(false);
+    const allOpen = { ...initialShop(), permanentEffects: { openSegmentBoundaries: [...SEGMENT_BOUNDARIES] } };
+    expect(isItemAvailable(SHOP_ITEM_DEFS.F5, allOpen, [])).toBe(false);
   });
 });

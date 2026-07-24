@@ -127,6 +127,16 @@ export const SHOP_ITEM_DEFS = {
   F3: { id: "F3", category: "formations", name: "Verstärkte Wiederholung", tier: "strong", repeatable: false,
         description: "Der Faktor der zweiten Karte einer Wiederholung steigt von ×1,30 auf ×1,40.",
         apply: (s) => ({ shop: setPE(s.shop, { repetitionSecondFactorBonus: 0.10 }) }) },
+  F4: { id: "F4", category: "formations", name: "Farballianz", tier: "strong", repeatable: false,
+        targetMode: "two-colors", target: { colorPair: true },
+        description: "Wähle zwei Farben. Für Farbblöcke zählen diese beiden Farben als dieselbe Farbe.",
+        apply: (s, t) => ({ shop: setPE(s.shop, { linkedColors: t.colorPair }) }) },
+  F5: { id: "F5", category: "formations", name: "Offene Grenze", tier: "premium", repeatable: true,
+        targetMode: "boundary", target: { boundary: true },
+        description: "Wähle eine Segmentgrenze. Formationen dürfen diese Grenze überschreiten.",
+        // Nur anbieten, solange E9 nicht alle Grenzen global öffnet UND noch eine Grenze geschlossen ist (§15).
+        available: (shop, perks) => !(perks || []).includes("E9") && ((shop.permanentEffects?.openSegmentBoundaries || []).length < SEGMENT_BOUNDARIES.length),
+        apply: (s, t) => ({ shop: setPE(s.shop, { openSegmentBoundaries: [...(s.shop.permanentEffects?.openSegmentBoundaries || []), t.boundary] }) }) },
 };
 
 /* ---- Zeitsegment (Shop-Spec §8 A-L1) — Spielreihenfolge der Positionen eines Durchlaufs. ---- */
@@ -145,6 +155,10 @@ export const cycleLenFor = (shop) => C.TRICKS_PER_CYCLE + (shop && shop.timeSegm
 
 // Preis einer Stufe (Spec §5.5) — nur vier feste Preise.
 export const priceOf = (tier) => C.SHOP_PRICE[tier] ?? 0;
+
+// Schließbare Segmentgrenzen (Shop F5): Position k, an der ein Segment endet (Grenze zwischen k und k+1),
+// also 4,9,…,34 (= 5|6 … 35|36). Die Deckgrenze bei 39 zählt nicht. Abgeleitet → kein Drift.
+export const SEGMENT_BOUNDARIES = Array.from({ length: C.TRICKS_PER_CYCLE / SEGMENT_SIZE - 1 }, (_, i) => (i + 1) * SEGMENT_SIZE - 1);
 
 // Frischer Shop-Substate bei Run-Beginn. Felder für spätere Phasen sind schon angelegt (Defaults inert),
 // damit das State-Shape stabil bleibt und keine Phase es später umbauen muss.
@@ -186,10 +200,11 @@ export const canAfford = (shop, offer) => !!offer && (shop?.coins || 0) >= offer
 // Pool-Filter (§15): ein Item ist verfügbar, solange ein gekauftes Legendär bzw. ein gekauftes
 // nicht-wiederholbares Item nicht schon aus dem Pool geflogen ist. Weitere Filter (Cap/kein Ziel/
 // Redundanz) kommen mit den jeweiligen Items in S3–S5 dazu.
-export function isItemAvailable(def, shop = {}) {
+export function isItemAvailable(def, shop = {}, perks = []) {
   if (!def) return false;
   if (def.legendary && (shop.boughtLegendaryIds || []).includes(def.id)) return false;
   if (def.repeatable === false && (shop.boughtNonRepeatableIds || []).includes(def.id)) return false;
+  if (def.available && !def.available(shop, perks)) return false; // item-spezifisch (z. B. F5: Grenzen offen / E9 aktiv)
   return true;
 }
 
@@ -206,10 +221,10 @@ function drawDistinct(pool, n, rng) {
    Cheap-Garantie (§5.6) und höchstens EINE legendäre Ersetzung (§5.7). Deterministisch über den
    injizierten rng. Leere/zu kleine Pools → entsprechend weniger Angebote. `itemDefs` wird injiziert
    (Engine: SHOP_ITEM_DEFS; Tests: Fixtures). Rückgabe: Array von Angebots-Instanzen mit stabiler offerId. */
-export function buildShopOffer(itemDefs, shop = {}, rng = Math.random) {
+export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = []) {
   const all = Object.values(itemDefs || {});
   if (all.length === 0) return [];
-  const avail = all.filter((d) => isItemAvailable(d, shop));
+  const avail = all.filter((d) => isItemAvailable(d, shop, perks));
   const byCat = {};
   for (const d of avail) (byCat[d.category] = byCat[d.category] || []).push(d);
 
