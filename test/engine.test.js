@@ -51,6 +51,19 @@ describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
     expect(s.initiative).toBe("player");
   });
 
+  it("lastTrick.breakdown: Basis 100 und die Faktoren multiplizieren exakt auf gained (§17)", () => {
+    const s = resolveTrick(scenario(12, 0, { statCritChance: 1 }), rng); // erzwungener Crit → critMult > 1
+    const b = s.lastTrick.breakdown;
+    expect(b.base).toBe(100);
+    expect(b.critMult).toBeGreaterThan(1);
+    expect((b.base + b.flats) * b.streakMult * b.perkMult * b.formMult * b.critMult).toBeCloseTo(b.total);
+    expect(b.total).toBeCloseTo(s.lastTrick.gained);
+  });
+  it("lastTrick.breakdown ist null bei Niederlage/Gleichstand", () => {
+    expect(resolveTrick(scenario(0, 12), rng).lastTrick.breakdown).toBe(null);
+    expect(resolveTrick(scenario(5, 5), rng).lastTrick.breakdown).toBe(null);
+  });
+
   it("wins + losses + ties == trickNo (nichts geht verloren)", () => {
     let s = initialState(makeRng(42));
     for (let i = 0; i < 60 && s.phase !== "gameover"; i++) {

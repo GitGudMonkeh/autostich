@@ -145,6 +145,7 @@ export function resolveTrick(state, rng = Math.random) {
 
   let gained = 0;
   let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
+  let breakdown = null; // Ergebnis-Aufschlüsselung eines Siegs (§17): exakt die Faktoren der Score-Formel
 
   if (won) {
     winStreak += 1; wins += 1;
@@ -184,15 +185,17 @@ export function resolveTrick(state, rng = Math.random) {
                       + (isCrit ? sumHook(perks, "scoreFlatOnCrit", critCtx) + skillSum(skills, "scoreFlatOnCrit", critCtx) : 0)
                       + ionScoreFor(pCard) + stormScore + l5Flat;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
-    // × Formations-Stat, DANN Crit. Der Positions-/Formations-Mult (§22.7) und der Formations-Stat (§22.3,
-    // nur bei aktiver Formation) greifen hier — Crit multipliziert das Ergebnis anschließend.
-    scoreBeforeCrit = scoreBase * streakBaseMult(serieStreak) * prodHook(perks, "scoreMult", wctx)
-                      * statStreakFactor(statStreakMult, serieStreak)
-                      * formationMult
-                      * statFormFactor(statFormMult, hasFormation);
+    // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
+    // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
+    const flats = scoreBase - C.SCORE_PER_WIN;                                         // additive Boni (Perk-/Crit-Flats, Ion, Storm, L5-Jackpot)
+    const streakMult = streakBaseMult(serieStreak) * statStreakFactor(statStreakMult, serieStreak); // Serie (#39 + Serien-Stat)
+    const perkMult = prodHook(perks, "scoreMult", wctx);                               // globale Perk-Multiplikatoren
+    const formMult = formationMult * statFormFactor(statFormMult, hasFormation);       // Formation (§22.7 + Formations-Stat)
+    scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     critBonus = gained - scoreBeforeCrit;
     score += gained;
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, critMult: isCrit ? critMultiplier : 1, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz: Ladung bei Crit — Basis +1 (aktiv) + Skill-Boni (Blitzableiter +1; Überspannung +3 bei ionisierter Karte).
@@ -295,6 +298,7 @@ export function resolveTrick(state, rng = Math.random) {
     // Formations-Multiplikator dieses Stichs (§22.7) + die beteiligten Formationen der Position (Anzeige/Float).
     formationMult: won ? formationMult : 1,
     formations: posForm.formations,
+    breakdown, // Ergebnis-Aufschlüsselung (§17): { base, flats, streakMult, perkMult, formMult, critMult, total } bei Sieg, sonst null
   };
 
   // Durchlauf-Ende: Score-Effekte am Durchlauf-Ende, dann NUR das Gegnerdeck NEU MISCHEN (Spieler-Reihenfolge

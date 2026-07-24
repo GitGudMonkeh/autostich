@@ -9,7 +9,7 @@ const ITEMS = [
   ["✨", "Perk nach jeder Runde", "Schon zu Beginn und nach jedem Deck-Durchlauf pausiert das Spiel und du wählst einen Perk — dein Deck wird dauerhaft stärker."],
   ["🔁", "Deck-Durchlauf", "Nach 40 Stichen wird neu gemischt. Deine dauerhaften Kartenwert-Änderungen bleiben erhalten."],
   ["⏳", "Zeitdruck", "Mit jeder Runde kostet eine Niederlage mehr Leben. Baue so, dass du Niederlagen vermeidest — sonst fressen die steigenden Kosten dein Leben auf."],
-  ["⏯️", "Steuerung", "Auto-Play läuft von allein. Mit Pause hältst du an; das Tempo steigt über Tempo-Perks (und 2×/3× im Ablauf)."],
+  ["⏯️", "Steuerung", "Auto-Play läuft von allein. Mit Pause hältst du an; das Ablauf-Tempo stellst du mit 2×/3×/4× ein (rein Anzeige, kein Score-Effekt)."],
 ];
 
 export function AnleitungModal({ onClose }) {

@@ -106,6 +106,22 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const formationStr = formMult.toFixed(2).replace(".", ",");
   const formPeak = formMult >= 12 ? 2 : formMult >= 6 ? 1 : 0; // 0 normal · 1 verstärkt · 2 Peak
 
+  // Ergebnis-Aufschlüsselung (§17): kompakte Faktorenkette (Basis → Flats → Serie → Perks → Formation → Crit)
+  // aus der Engine-breakdown — exakt die Faktoren der Score-Formel (kein Drift). Nur bei nennenswerten Treffern.
+  const bd = win && t ? t.breakdown : null;
+  const nq = (x) => x.toFixed(2).replace(".", ",");
+  const chain = [];
+  if (bd) {
+    chain.push({ main: `${bd.base}`, label: "Basis", c: "#c8c8ce" });
+    if (bd.flats > 0.5)        chain.push({ main: `+${Math.round(bd.flats)}`, label: "Flats", c: "#5ab87a" });
+    if (bd.streakMult > 1.001) chain.push({ main: `×${nq(bd.streakMult)}`, label: "Serie", c: "#5a8ade" });
+    if (bd.perkMult > 1.001)   chain.push({ main: `×${nq(bd.perkMult)}`, label: "Perks", c: "#8a7de0" });
+    if (bd.formMult > 1.001)   chain.push({ main: `×${nq(bd.formMult)}`, label: "Form", c: "#5ab87a" });
+    if (bd.critMult > 1.001)   chain.push({ main: `×${nq(bd.critMult)}`, label: jackpot ? "Jackpot" : "Crit", c: critColor });
+  }
+  // Panel nur zeigen, wenn mehr als eine kleine Serie im Spiel ist (Flats/Perks/Formation/Crit oder Serie ≥ +10 %).
+  const showBreakdown = !!bd && (bd.flats > 0.5 || bd.perkMult > 1.001 || bd.formMult > 1.001 || bd.critMult > 1.001 || bd.streakMult >= 1.10);
+
   // #49: aufsteigende Zahlen (Score-Gewinn & Lebensverlust) ~1 s länger + Überlappen erlaubt.
   // Statt eines je Stich ersetzten Einzel-Elements ein kleiner Pool — jeder Float lebt unabhängig
   // und entfernt sich nach seiner Dauer selbst, sodass aufeinanderfolgende Floats überlappen.
@@ -189,6 +205,22 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
           <span className="text-lg font-bold tracking-wide font-pixel as-banner" style={{ color: banner.color }}>{banner.text}</span>
         ) : (
           <span className="opacity-40 text-sm">Bereit — starte den Autobattler</span>
+        )}
+      </div>
+
+      {/* Treffer-Aufschlüsselung (§17): Faktorenkette des letzten nennenswerten Siegs. Feste Höhe → kein Layout-Sprung. */}
+      <div className="h-6 mt-1 flex items-center justify-center gap-2 text-[13px] flex-wrap font-pixel-dense">
+        {showBreakdown && (
+          <>
+            {chain.map((s, i) => (
+              <span key={i} className="whitespace-nowrap" style={{ color: s.c }}>
+                <span className="font-semibold">{s.main}</span>
+                <span className="opacity-45 ml-1">{s.label}</span>
+              </span>
+            ))}
+            <span className="opacity-25">=</span>
+            <span className="font-bold" style={{ color: isCrit ? critColor : "#e8e8ea" }}>{Math.round(bd.total).toLocaleString("de-DE")}</span>
+          </>
         )}
       </div>
     </div>
