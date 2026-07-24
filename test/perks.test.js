@@ -132,18 +132,22 @@ describe("Legendäre Perks — Hooks (V2 §22.6 L)", () => {
     expect(out[1].value).toBe(deck[1].value + 6);
     expect(out[2].value).toBe(deck[2].value); // nicht gewählt
   });
-  it("L2 Unaufhaltsam: +2 je Serienpunkt", () => {
+  it("L2 Unaufhaltsam: flach +4 solange die Serie läuft, 0 ohne Serie (#115)", () => {
     expect(PERK_DEFS.L2.cardBonus({ winStreak: 0 })).toBe(0);
-    expect(PERK_DEFS.L2.cardBonus({ winStreak: 3 })).toBe(6);
+    expect(PERK_DEFS.L2.cardBonus({ winStreak: 3 })).toBe(4);
+    expect(PERK_DEFS.L2.cardBonus({ winStreak: 9 })).toBe(4); // flach, kein Snowball
   });
   it("L3 Letztes Aufbäumen: +5 auf Position 36–40", () => {
     expect(PERK_DEFS.L3.cardBonus({ posInCycle: 35 })).toBe(5);
     expect(PERK_DEFS.L3.cardBonus({ posInCycle: 39 })).toBe(5);
     expect(PERK_DEFS.L3.cardBonus({ posInCycle: 34 })).toBe(0);
   });
-  it("L6 Raserei: +2 je Serienpunkt, gedeckelt bei +10", () => {
-    expect(PERK_DEFS.L6.cardBonus({ winStreak: 3 })).toBe(6);
-    expect(PERK_DEFS.L6.cardBonus({ winStreak: 9 })).toBe(10); // Deckel
+  it("L6 Raserei: +5 % Crit-Chance je Serienpunkt + Überschuss→Crit-Schaden (kein cardBonus mehr) (#115)", () => {
+    expect(PERK_DEFS.L6.cardBonus).toBeUndefined();                       // kein Wertbonus mehr
+    expect(PERK_DEFS.L6.critChance({ winStreak: 5 })).toBeCloseTo(0.25);  // +5 %/Serienpunkt
+    expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 1.5 })).toBeCloseTo(0.5); // Überschuss über 100 %
+    expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 3 })).toBeCloseTo(1);     // Cap +100 %
+    expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 0.8 })).toBe(0);          // unter 100 % → 0
   });
   it("L7 Königsmacher: +5, wenn Segment-Höchste", () => {
     expect(PERK_DEFS.L7.cardBonus({ isSegmentHigh: true })).toBe(5);

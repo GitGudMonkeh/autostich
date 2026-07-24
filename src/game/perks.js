@@ -259,8 +259,8 @@ export const PERK_DEFS = {
         desc: "Wähle fünf Karten. Sie erhalten dauerhaft +6 Wert.",
         permMod: (deck, order, ids) => deck.map((c) => (ids.includes(c.id) ? { ...c, value: c.value + 6 } : c)) },
   L2: { id: "L2", cat: "B", rarity: "legendary", label: "Unaufhaltsam",
-        desc: "Jeder Sieg gibt der nächsten Karte +2 Wert, bis eine Niederlage eintritt.",
-        cardBonus: (ctx) => 2 * (ctx.winStreak || 0) }, // ctx.winStreak = Serie VOR dieser Karte
+        desc: "Solange du siegst, erhält die nächste Karte +4 Wert (bis eine Niederlage eintritt).",
+        cardBonus: (ctx) => (ctx.winStreak > 0 ? 4 : 0) }, // #115: flach & gedeckelt (kein Wert-Snowball mehr)
   L3: { id: "L3", cat: "A", rarity: "legendary", label: "Letztes Aufbäumen",
         desc: "Alle Karten auf den Positionen 36–40 erhalten +5 Wert.",
         cardBonus: (ctx) => (ctx.posInCycle >= 35 ? 5 : 0) },
@@ -268,9 +268,12 @@ export const PERK_DEFS = {
         desc: "Jeder Crit gibt der betreffenden Karte dauerhaft +1 Wert (maximal +4)." },
   L5: { id: "L5", cat: "D", rarity: "legendary", label: "Jackpot", randomTarget: 4, jackpotScore: 1000,
         desc: "Vier zufällige Karten geben bei ihrem ersten Crit pro Durchlauf +1.000 Score." },
-  L6: { id: "L6", cat: "B", rarity: "legendary", label: "Raserei",
-        desc: "Jeder aufeinanderfolgende Sieg erhöht den Wertbonus der nächsten Karte um +2 (maximal +10).",
-        cardBonus: (ctx) => Math.min(2 * (ctx.winStreak || 0), 10) },
+  L6: { id: "L6", cat: "D", rarity: "legendary", label: "Raserei",
+        desc: "Jeder Sieg in Folge gibt +5 % Crit-Chance. Über 100 % Gesamt-Crit wird der Überschuss zu Crit-Schaden (max +100 %).",
+        // #115: neue DNA (Crit statt Wert). critChance fließt in die Gesamt-rawCrit; der Überschuss über 100 %
+        // wird additiv zum Crit-Faktor (harmoniert mit D19 „Überschusskrit"). Kein Wert-Snowball → entsnowballt.
+        critChance: (ctx) => 0.05 * (ctx.winStreak || 0),
+        critMultBonus: (ctx) => Math.min(Math.max(0, (ctx.rawCrit || 0) - 1), 1) },
   L7: { id: "L7", cat: "A", rarity: "legendary", label: "Königsmacher", segmentHigh: true,
         desc: "Die höchste Karte jedes Segments erhält +5 Wert.",
         cardBonus: (ctx) => (ctx.isSegmentHigh ? 5 : 0) },
@@ -365,13 +368,17 @@ export function critChanceFor(perks, ctx) {
 // Crit-Faktor: Basis (CRIT_BASE_MULT 1,5) + Crit-Mult-Stat (V2 §22.3, baseBonus). V2 trägt kein Perk
 // mehr einen Crit-Mult (L5 ist jetzt Flat-Score) → nur Basis + Stat. Signatur (perks, ctx) bleibt für
 // die Aufrufer (Engine/StatusRail) stabil. Geteilte Quelle für Engine + Anzeige (kein Drift).
+// #115: additiver Perk→Crit-Mult-Kanal via `critMultBonus`-Hook (erwartet `rawCrit` im ctx). L6 „Raserei"
+// wandelt Gesamt-Crit-Überschuss über 100 % in Crit-Schaden. Der Aufrufer muss `rawCrit` im ctx mitgeben.
 export function critMultiplierFor(perks, ctx = {}, baseBonus = 0) {
-  return C.CRIT_BASE_MULT + (baseBonus || 0);
+  let bonus = 0;
+  for (const id of perks) { const f = PERK_DEFS[id].critMultBonus; if (f) bonus += f(ctx); }
+  return C.CRIT_BASE_MULT + (baseBonus || 0) + bonus;
 }
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
-// V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit → die zählen.
+// V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit; L6 trägt Crit-Chance → alle zählen.
 export function hasCritPerk(perks) {
-  return perks.some((id) => PERK_DEFS[id].scoreFlatOnCrit);
+  return perks.some((id) => PERK_DEFS[id].scoreFlatOnCrit || PERK_DEFS[id].critChance);
 }
 // Produkt der scoreMult-Perks für einen Kontext (für Live-Anzeige des Score-Multiplikators, #23).
 export function scoreMultFor(perks, ctx) {

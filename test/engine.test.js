@@ -156,13 +156,23 @@ describe("resolveTrick — Crit & globale Score-Formel (ohne Tempo)", () => {
 });
 
 describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
-  it("L2 Unaufhaltsam: +2 Wert je Serienpunkt (bis Niederlage)", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["L2"], winStreak: 3 }), rng).lastTrick.pValue).toBe(18); // 12 + 2×3
-    expect(resolveTrick(scenario(12, 0, { perks: ["L2"] }), rng).lastTrick.pValue).toBe(12); // Serie 0
+  it("L2 Unaufhaltsam: flach +4 solange die Serie läuft (kein Wert-Snowball), 0 ohne Serie (#115)", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["L2"], winStreak: 3 }), rng).lastTrick.pValue).toBe(16); // 12 + 4
+    expect(resolveTrick(scenario(12, 0, { perks: ["L2"], winStreak: 9 }), rng).lastTrick.pValue).toBe(16); // flach — kein +18
+    expect(resolveTrick(scenario(12, 0, { perks: ["L2"], winStreak: 0 }), rng).lastTrick.pValue).toBe(12); // Serie 0 → kein Bonus
   });
-  it("L6 Raserei: +2 je Serienpunkt, gedeckelt bei +10", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["L6"], winStreak: 3 }), rng).lastTrick.pValue).toBe(18); // 12 + 6
-    expect(resolveTrick(scenario(12, 0, { perks: ["L6"], winStreak: 9 }), rng).lastTrick.pValue).toBe(22); // 12 + 10 (Deckel)
+  it("L6 Raserei: +5 % Crit-Chance je Serienpunkt, KEIN Wertbonus mehr (#115)", () => {
+    const t = (ws) => resolveTrick(scenario(12, 0, { perks: ["L6"], winStreak: ws }), rng).lastTrick;
+    expect(t(3).pValue).toBe(12);              // entsnowballt: kein cardBonus mehr
+    expect(t(4).critChance).toBeCloseTo(0.25); // Serie 5 (post-win) → 0,25
+    expect(t(24).critChance).toBeCloseTo(1);   // Serie 25 → 1,25, geklemmt auf 1
+  });
+  it("L6 Raserei: Gesamt-Crit-Überschuss über 100 % wird additiv zu Crit-Schaden (max +100 %, total-aware) (#115)", () => {
+    const cm = (ws, over = {}) => resolveTrick(scenario(12, 0, { perks: ["L6"], winStreak: ws, ...over }), rng).lastTrick.critMultiplier;
+    expect(cm(9)).toBeCloseTo(1.5);                          // Serie 10 → rawCrit 0,5 < 1 → nur Basis 1,5
+    expect(cm(29)).toBeCloseTo(2.0);                         // Serie 30 → rawCrit 1,5 → +0,5 → 2,0
+    expect(cm(49)).toBeCloseTo(2.5);                         // Serie 50 → rawCrit 2,5 → +1,0 (Cap) → 2,5
+    expect(cm(6, { statCritChance: 0.7 })).toBeCloseTo(1.55); // total-aware: Serie 7 → 0,35 + 0,70 = 1,05 → +0,05
   });
   it("L4 Kritische Masse: Crit gibt der Karte dauerhaft +1 (max +4)", () => {
     const deck = [{ id: "a", suit: "R", baseRank: 5, value: 5 }];

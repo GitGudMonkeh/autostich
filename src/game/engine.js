@@ -223,7 +223,9 @@ export function resolveTrick(state, rng = Math.random) {
     const rawCrit = critChanceRawFor(perks, wctx) + lightningCritRaw(lightning, skills) + statCritChance
                     + (anchorType === "crit" ? C.ANCHOR_CRIT_CHANCE : 0); // Kritanker (§8 A3)
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
-    critMultiplier = critMultiplierFor(perks, wctx, statCritMult) + lightningCritMult(skills); // Basis 1,5 + Crit-Mult-Stat + Donnergott (#93 F2)
+    // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
+    const critCtx = { ...wctx, rawCrit };
+    critMultiplier = critMultiplierFor(perks, critCtx, statCritMult) + lightningCritMult(skills); // Basis 1,5 + Crit-Mult-Stat + L6-Überschuss + Donnergott
     isCrit = rollCrit(critChance, forceCrit, rng); // forceCrit = L10-Kettenreaktion (garantierter Nachfolger-Crit)
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
@@ -234,8 +236,7 @@ export function resolveTrick(state, rng = Math.random) {
     const l5Hit = isCrit && (roles.L5 || []).includes(pCard.id) && !l5Used.includes(pCard.id);
     if (l5Hit) l5Used = [...l5Used, pCard.id];
     const l5Flat = l5Hit ? (PERK_DEFS.L5.jackpotScore || 0) : 0;
-    // Crit-Flats (Perks D6/D7/D8/D11/D15/D19 + Blitzableiter) sehen rawCrit (D19 Überschusskrit) → eigener ctx.
-    const critCtx = { ...wctx, rawCrit };
+    // (critCtx mit rawCrit ist oben — vor critMultiplier — gebildet; D6/D7/D8/D11/D15/D19 + Blitzableiter nutzen ihn.)
     // Entladung (#93 F2): war der nächste Crit +500 armiert (aus einem früheren vollen Verbrauch)? Dieser Crit zahlt aus.
     const dischargeArmedBefore = !!(lightning && lightning.dischargeArmed);
     const dischargeFlat = (isCrit && dischargeArmedBefore) ? C.DISCHARGE_SCORE : 0;
