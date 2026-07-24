@@ -18,6 +18,9 @@
    E3 Treppe darf 1× gleich · E4 Treppe darf 1× Rückschritt · E5 Wechsel schon ab 2 Karten ·
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
+import { PERMAFROST_VALUE, EISANKER_FACTOR, CRYSTAL_OFFSET } from "./constants.js";
+import { iceFlag, hasPermafrost, hasIceAnchor } from "./skills.js";
+
 export const SEGMENT_SIZE = 5;
 const WECHSEL_MIN_DIFF = 4;
 
@@ -36,14 +39,17 @@ const FARBBLOCK_BASE = 1.30, TREPPE_BASE = 1.25, WECHSEL_BASE = 1.25, ANKER_FACT
 
 // Maximale Läufe über eine Paar-Bedingung, mit optional EINER erlaubten fremden Karte dazwischen (E1/E2).
 // `matches(refPos, k)` prüft, ob Position k zur Formation von refPos gehört. Fremde Karten sind keine Mitglieder.
-function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign) {
+// `transparent(k)` (Eis-Frostbrücke): Position k unterbricht den Lauf nicht und zählt selbst NICHT als Mitglied.
+function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign, transparent = () => false) {
   let i = 0;
   while (i < n) {
+    if (transparent(i)) { i++; continue; }        // transparente Karte startet keinen eigenen Lauf
     const members = [i];
     let j = i, gapUsed = false;
     while (j + 1 < n && canExtendSeg(j)) {
+      if (transparent(j + 1)) { j++; continue; }  // Frostbrücke: überspringen (kein Mitglied, kein Gap-Verbrauch)
       if (matches(i, j + 1)) { j++; members.push(j); }
-      else if (allowGap && !gapUsed && j + 2 < n && canExtendSeg(j + 1) && matches(i, j + 2)) {
+      else if (allowGap && !gapUsed && j + 2 < n && canExtendSeg(j + 1) && !transparent(j + 2) && matches(i, j + 2)) {
         gapUsed = true; j += 2; members.push(j); // fremde Karte an j+1 überspringen
       } else break;
     }
@@ -91,17 +97,31 @@ function markWechsel(val, n, minLen, canExtendSeg, assign) {
 /* Berechnet für jede Position { mult, formations: [{ type, ordinal, factor }] }.
    `order` = Ziehreihenfolge, `deck` = Karten, `roles` = Kartenrollen (C8/C10),
    `perks` = gehaltene Perks (für die E-Werkzeuge). */
-export function computeFormations(order, deck, roles = {}, perks = []) {
+export function computeFormations(order, deck, roles = {}, perks = [], skills = []) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
-  const val = cards.map((c) => c.value);
   const has = (id) => perks.includes(id);
+  // ---- Eis-Wildcards (#93 F3): nur auf eingefrorenen Karten, wenn der jeweilige Eis-Skill gehalten wird. ----
+  const frozen = cards.map((c) => !!c.frozen);
+  const permafrost = hasPermafrost(skills);
+  const wildCrystal = iceFlag(skills, "wildCrystal");       // Kristallform: ±1 für Wiederholung/Treppe
+  const wildPred = iceFlag(skills, "wildWiederholungPred"); // Kalte Präzision: Wiederholung = Wert des Vorgängers
+  const wildStep = iceFlag(skills, "wildTreppeStep");       // Eisschritt: Treppe ±1
+  const wildSkip = iceFlag(skills, "wildFarbblockSkip");    // Frostbrücke: transparent im Farbblock
+  // Permafrost: +2 Dauerwert auf eingefrorenen Karten (echter Wert; im Kampf gespiegelt in engine.js).
+  const val = cards.map((c, k) => c.value + (permafrost && frozen[k] ? PERMAFROST_VALUE : 0));
   const jokerIds = new Set(roles.C8 || []);
   const bridgeIds = new Set(roles.C10 || []);
   // Joker (C8): effektive Farbe = die des direkten Vorgängers (verkettet).
   const effSuit = cards.map((c) => c.suit);
   for (let k = 1; k < n; k++) if (jokerIds.has(cards[k].id)) effSuit[k] = effSuit[k - 1];
-  const bind = cards.map((c) => (bridgeIds.has(c.id) ? 1 : 0));
+  // Bindeglied (C10, ±1) + Eis: Eisschritt/Kristallform geben ±1, Permafrost-Joker passt überall (großer Flex).
+  const bind = cards.map((c, k) => {
+    let b = bridgeIds.has(c.id) ? 1 : 0;
+    if (frozen[k] && (wildStep || wildCrystal)) b = Math.max(b, CRYSTAL_OFFSET);
+    if (frozen[k] && permafrost) b = Math.max(b, 99); // Joker: fügt sich in jede Treppe
+    return b;
+  });
   const crossSeg = has("E9");
   const canExtendSeg = (k) => crossSeg || ((k + 1) % SEGMENT_SIZE !== 0);
 
@@ -111,10 +131,24 @@ export function computeFormations(order, deck, roles = {}, perks = []) {
     out[pos].formations.push({ type, ordinal, factor });
   };
 
-  markRuns(n, 2, (a, b) => val[a] === val[b], has("E1"), canExtendSeg,
+  // Wiederholung: Wert-Mengen je Karte (Kristallform ±1, Kalte Präzision = Vorgängerwert); Permafrost-Joker matcht alles.
+  const valSetWied = cards.map((c, k) => {
+    const s = new Set([val[k]]);
+    if (frozen[k] && wildCrystal) { s.add(val[k] - 1); s.add(val[k] + 1); }
+    if (frozen[k] && wildPred && k > 0) s.add(val[k - 1]);
+    return s;
+  });
+  const jokerAll = frozen.map((f) => f && permafrost); // Permafrost: Joker für Wiederholung UND Farbblock
+  const matchWied = (a, b) => jokerAll[a] || jokerAll[b] || [...valSetWied[a]].some((v) => valSetWied[b].has(v));
+  markRuns(n, 2, matchWied, has("E1"), canExtendSeg,
     (pos, ord) => add(pos, "wiederholung", ord, wiederholungFactor(ord)));
-  markRuns(n, 3, (a, b) => effSuit[a] === effSuit[b], has("E2"), canExtendSeg,
-    (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)));
+
+  // Farbblock: Permafrost-Joker matcht jede Farbe; Frostbrücke macht eingefrorene Karten transparent (kein Mitglied).
+  const matchSuit = (a, b) => jokerAll[a] || jokerAll[b] || effSuit[a] === effSuit[b];
+  const farbSkip = (k) => frozen[k] && wildSkip && !jokerAll[k];
+  markRuns(n, 3, matchSuit, has("E2"), canExtendSeg,
+    (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)), farbSkip);
+
   markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg,
     (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE)));
   markWechsel(val, n, has("E5") ? 2 : 3, canExtendSeg,
@@ -125,6 +159,8 @@ export function computeFormations(order, deck, roles = {}, perks = []) {
     const p = (pos + 1) % 10;
     if ((has("E7") && p === 0) || (has("E8") && p === 5)) add(pos, "anker", 1, ANKER_FACTOR);
   }
+  // Eisanker (#93 F3): jede eingefrorene Karte zählt auf ihrer Position als Anker ×1,25 (zählt als Formation).
+  if (hasIceAnchor(skills)) for (let pos = 0; pos < n; pos++) if (frozen[pos] && !out[pos].formations.some((f) => f.type === "anker")) add(pos, "anker", 1, EISANKER_FACTOR);
 
   // Überlappungsbonus (#95): steckt eine Karte in mehreren Formationen, multipliziert der
   // Bonus das Faktor-Produkt zusätzlich (2 Formationen ×1,5 · 3 ×2 · 4 ×3). Gezählt werden ALLE

@@ -16,15 +16,24 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const { playerOrder = [], deck = [], formations = [], formationEnergy = 0, formationSwaps = [] } = state;
   const [sel, setSel] = useState(null);
 
+  const cards = playerOrder.map((di) => deck[di]);
+  // Eis (#93 F3): eingefrorene Karten mit noch freiem Frosttausch machen einen Tausch KOSTENLOS (auch bei 0 Energie).
+  const frostSwapsUsed = state.frostSwapsUsed || [];
+  const frozenCards = cards.filter((c) => c.frozen);
+  const freeFrostLeft = frozenCards.filter((c) => !frostSwapsUsed.includes(c.id)).length;
+  const canFree = (a, b) => {
+    const ca = cards[a], cb = cards[b];
+    return (ca?.frozen && !frostSwapsUsed.includes(ca.id)) || (cb?.frozen && !frostSwapsUsed.includes(cb.id));
+  };
+
   const clickPos = (pos) => {
     if (sel === null) { setSel(pos); return; }
     if (sel === pos) { setSel(null); return; }
-    if (formationEnergy > 0) onSwap(sel, pos);
+    if (formationEnergy > 0 || canFree(sel, pos)) onSwap(sel, pos);
     setSel(null);
   };
 
   const { count, maxMult } = summarizeFormations(formations);
-  const cards = playerOrder.map((di) => deck[di]);
   const hasSwaps = (formationSwaps || []).length > 0;
 
   // Reaktives Delta (#95.6): Σ Formations-Stärke jetzt vs. Ausgangszustand der Phase, live nach jedem Tausch.
@@ -49,9 +58,14 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
             <div className="text-2xl font-bold font-pixel-dense" style={{ color: formationEnergy > 0 ? "#d4a63a" : "#8a8a92" }}>{formationEnergy}</div>
           </div>
         </div>
-        <p className="text-xs opacity-55 mb-3">
+        <p className="text-xs opacity-55 mb-2">
           Tippe zwei Karten, um sie zu tauschen (1 Energie). Formationen entstehen nur <b>innerhalb</b> der {SEGMENT_SIZE}er-Segmente.
         </p>
+        {frozenCards.length > 0 && (
+          <p className="text-xs mb-3" style={{ color: "#7fd4f0" }}>
+            ❄ <b>{freeFrostLeft}</b> von {frozenCards.length} eingefrorenen Karten haben noch einen <b>kostenlosen Frosttausch</b> (ohne Energie).
+          </p>
+        )}
 
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}

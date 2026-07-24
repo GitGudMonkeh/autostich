@@ -1,6 +1,7 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
 import { PERK_DEFS, buildOffer } from "./perks.js";
-import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount } from "./skills.js";
+import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
+  frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations } from "./formations.js";
 import { resolveTrick } from "./engine.js";
@@ -39,6 +40,7 @@ export function initialState(rng = Math.random) {
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
     skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
+    iceTemp: {}, frostbitePending: [], frostbiteActive: [], frostSwapsUsed: [], // Eis-Archetyp (#93 F3): temp. Wertboni / Frostbiss-Marken / genutzte Frosttausche
     tieArmed: false,
     lastTrick: null,
   };
@@ -103,7 +105,7 @@ export function reducer(state, action) {
         deck = def.permMod(state.deck, state.playerOrder, ids);
       }
       const roles = { ...(state.roles || {}), [state.targetPerk]: ids };
-      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks), phase: "play", targetPerk: null };
+      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills), phase: "play", targetPerk: null };
     }
 
     // Stat-Auswahl (V2 §22.3): der gewählte Stat addiert seinen Step auf das zugehörige Summenfeld.
@@ -137,10 +139,18 @@ export function reducer(state, action) {
       let activeArchetypes = state.activeArchetypes || [];
       let lightning = state.lightning;
       let heat = state.heat;
+      let deck = state.deck;
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15 (#93 F2)
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
+      // Eis (#93 F3): dieser Pick friert so viele NEUE eigene Karten ein, dass das Ziel (frozenTargetFor) erreicht ist.
+      if (arch === "ice") {
+        const toFreeze = Math.max(0, frozenTargetFor(skills) - frozenCount(deck));
+        if (toFreeze > 0) deck = freezeCards(deck, toFreeze, action.rng);
+      }
       if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
-      return { ...state, skills, activeArchetypes, lightning, heat, phase: "play", skillOffer: null };
+      // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills);
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, formations, phase: "play", skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
@@ -153,40 +163,65 @@ export function reducer(state, action) {
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.
+    // Tausch. Eis (#93 F3): ist eine eingefrorene Karte mit noch freiem Frosttausch beteiligt, ist der Tausch
+    // KOSTENLOS (keine Energie) und verbraucht deren Frosttausch; sonst kostet er wie gehabt 1 Energie.
     case "SWAP_CARDS": {
       if (state.phase !== "formation") return state;
       const { i, j } = action;
-      if (i === j || (state.formationEnergy || 0) <= 0) return state;
+      if (i === j) return state;
       if (i < 0 || j < 0 || i >= state.playerOrder.length || j >= state.playerOrder.length) return state;
+      const cardA = state.deck[state.playerOrder[i]], cardB = state.deck[state.playerOrder[j]];
+      const used = state.frostSwapsUsed || [];
+      let freeFrozenId = null;
+      if (cardA.frozen && !used.includes(cardA.id)) freeFrozenId = cardA.id;
+      else if (cardB.frozen && !used.includes(cardB.id)) freeFrozenId = cardB.id;
+      const isFree = freeFrozenId !== null;
+      if (!isFree && (state.formationEnergy || 0) <= 0) return state; // bezahlter Tausch braucht Energie
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks),
-               formationEnergy: state.formationEnergy - 1,
-               formationSwaps: [...(state.formationSwaps || []), { i, j }] };
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills),
+               formationEnergy: isFree ? state.formationEnergy : state.formationEnergy - 1,
+               formationSwaps: [...(state.formationSwaps || []), { i, j, free: isFree, frozenId: freeFrozenId }],
+               frostSwapsUsed: isFree ? [...used, freeFrozenId] : used };
     }
-    // Letzten Tausch rückgängig machen → Energie erstattet (Tausch ist seine eigene Umkehrung).
+    // Letzten Tausch rückgängig machen → bezahlter Tausch erstattet Energie, freier Frosttausch wird zurückgegeben.
     case "UNDO_SWAP": {
       if (state.phase !== "formation" || !(state.formationSwaps || []).length) return state;
       const swaps = state.formationSwaps.slice();
-      const { i, j } = swaps.pop();
+      const last = swaps.pop();
       const order = state.playerOrder.slice();
-      [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks),
-               formationEnergy: state.formationEnergy + 1, formationSwaps: swaps };
+      [order[last.i], order[last.j]] = [order[last.j], order[last.i]];
+      const frostSwapsUsed = last.free ? (state.frostSwapsUsed || []).filter((id) => id !== last.frozenId) : (state.frostSwapsUsed || []);
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills),
+               formationEnergy: last.free ? state.formationEnergy : state.formationEnergy + 1, formationSwaps: swaps, frostSwapsUsed };
     }
-    // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie.
+    // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie + freie Frosttausche zurück.
     case "RESET_FORMATION": {
       if (state.phase !== "formation") return state;
       const order = state.playerOrder.slice();
       const swaps = state.formationSwaps || [];
       for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks),
-               formationEnergy: C.FORMATION_ENERGY + (state.perks || []).reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0), formationSwaps: [] };
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills),
+               formationEnergy: C.FORMATION_ENERGY + (state.perks || []).reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0),
+               formationSwaps: [], frostSwapsUsed: [] };
     }
-    // Bestätigen → die aufgestellte Reihenfolge bleibt persistent; nächster Durchlauf startet.
+    // Bestätigen → Reihenfolge bleibt persistent. Eis: Kaltfront/Frostspur setzen jetzt (auf der finalen Reihenfolge)
+    // ihre temp. Wertboni für den nächsten Durchlauf, für jede eingefrorene Karte, die ihren Frosttausch genutzt hat.
     case "CONFIRM_FORMATION": {
       if (state.phase !== "formation") return state;
-      return { ...state, phase: "play", formationEnergy: 0, formationSwaps: [] };
+      let iceTemp = state.iceTemp || {};
+      const usedFrost = state.frostSwapsUsed || [];
+      if (usedFrost.length && (hasColdFront(state.skills) || hasFrostTrail(state.skills))) {
+        iceTemp = { ...iceTemp };
+        for (const fid of usedFrost) {
+          const pos = state.playerOrder.findIndex((di) => state.deck[di].id === fid);
+          if (pos < 0) continue;
+          if (hasColdFront(state.skills)) iceTemp[fid] = C.KALTFRONT_VALUE;                       // Kaltfront: getauschte Frostkarte +3
+          if (hasFrostTrail(state.skills) && pos + 1 < state.playerOrder.length)                  // Frostspur: neuer Nachfolger +2
+            iceTemp[state.deck[state.playerOrder[pos + 1]].id] = C.FROSTSPUR_VALUE;
+        }
+      }
+      return { ...state, phase: "play", formationEnergy: 0, formationSwaps: [], frostSwapsUsed: [], iceTemp };
     }
 
     default:

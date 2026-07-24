@@ -23,9 +23,15 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick }) {
     <button onClick={onClick}
       className="as-tile relative rounded-lg flex flex-col items-center justify-center transition-all"
       style={{ background: "#20202a", border: `2px ${borderStyle} ${borderColor}`,
-               boxShadow: selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : undefined }}>
+               boxShadow: [selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null,
+                           card.frozen ? "inset 0 0 8px #9fdcf055" : null].filter(Boolean).join(", ") || undefined }}>
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-      {(card.ionStacks || 0) > 0 && <span className="absolute top-0.5 right-1 text-[8px]" style={{ color: "#5ec8f0" }}>⚡{card.ionStacks}</span>}
+      {((card.ionStacks || 0) > 0 || card.frozen) && (
+        <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">
+          {(card.ionStacks || 0) > 0 && <span style={{ color: "#5ec8f0" }}>⚡{card.ionStacks}</span>}
+          {card.frozen && <span style={{ color: "#bfe9f7", textShadow: "0 0 3px #7fd4f0" }} title="Eingefroren">❄</span>}
+        </span>
+      )}
       <span className="text-lg sm:text-2xl font-bold font-pixel-dense" style={{ color: col }}>{card.value}</span>
       {inForm && <span className="text-[9px] sm:text-xs font-bold leading-none" style={{ color: fb.color || "#5ab87a" }}>×{fmt(pf.mult)}</span>}
       {labels && <span className="absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}

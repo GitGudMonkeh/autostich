@@ -18,6 +18,7 @@ const KEYWORD_INFO = {
   streak: { label: "Serie", icon: "⚡", color: "#8a7de0", text: "Geladene Serie schützt deine Siegesserie — die nächste Niederlage setzt sie nicht zurück." },
   heat: { label: "Hitze", icon: "🔥", color: "#e0714a", text: "Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Flat-Score; klare Niederlagen kühlen sie ab." },
   consume: { label: "Hitze-Konsument", icon: "🔥", color: "#e0714a", text: "Verbraucht angesammelte Hitze für einen starken Effekt. Höchstens ein Konsument gleichzeitig — ein zweiter ersetzt den bestehenden." },
+  freeze: { label: "Eingefroren", icon: "❄️", color: "#5ec8f0", text: "Eis friert eigene Karten dauerhaft ein (blau). Eingefrorene Karten biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden." },
 };
 
 /* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint jede 3. Runde STATT eines Perks.
@@ -39,6 +40,8 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
   const hasBlitzOffer = offer.some((id) => archetypeOf(id) === "lightning");
   const hasFireOffer = offer.some((id) => archetypeOf(id) === "fire");
   const fireFirstPick = !(state.heat && state.heat.active); // erster Feuer-Skill schaltet die Hitzeleiste frei
+  const hasIceOffer = offer.some((id) => archetypeOf(id) === "ice");
+  const iceFirstPick = !(state.activeArchetypes || []).includes("ice"); // erster Eis-Skill schaltet das Einfrieren frei
 
   // Freier Slot → direkt wählen. Volle Slots → neuen Skill vormerken, dann Ersetzungsziel antippen.
   const clickSkill = (id) => {
@@ -84,6 +87,21 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
           ) : (
             <>Jeder weitere Feuer-Skill erhöht den <b style={{ color: "#f0a83a" }}>Feuer-Flat-Score</b> pro Vorsprungspunkt.
               Die Hitzeleiste ist bereits aktiv.</>
+          )}
+        </div>
+        )}
+
+        {/* Was ein Eis-Skill freischaltet: Einfrieren + Aufstellungskontrolle — nur wenn Eis im Angebot ist (#93 F3). */}
+        {hasIceOffer && (
+        <div className="mt-3 rounded-lg px-3 py-2 text-xs leading-snug"
+          style={{ background: "#5ec8f014", border: "1px solid #5ec8f044" }}>
+          {iceFirstPick ? (
+            <>Dein erster Eis-Skill friert <b style={{ color: "#5ec8f0" }}>eigene Karten</b> ein (blau): sie biegen
+              Formationen und dürfen <b style={{ color: "#bfe9f7" }}>1× je Aufstellungsphase kostenlos getauscht</b> werden.
+              Jeder weitere Eis-Skill friert eine weitere Karte ein. Kontrolle & Aufstellung statt Crit.</>
+          ) : (
+            <>Jeder weitere Eis-Skill friert eine <b style={{ color: "#5ec8f0" }}>weitere eigene Karte</b> ein und
+              erweitert deine Formations- und Aufstellungs-Optionen.</>
           )}
         </div>
         )}

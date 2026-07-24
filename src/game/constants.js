@@ -82,6 +82,19 @@ export const MELT_COST         = 10;   // Schmelzpunkt (Konsument): −% Hitze j
 export const MELT_VALUE        = 3;    // …          … dafür eigene Karte +Wert
 export const PHOENIX_VALUE     = 10;   // Phönixfeuer (L): nach Konsumenten-Auslösung nächste Karte +Wert
 
+// Eis-Archetyp (#93 F3) — Kontroll-/Aufstellungs-Archetyp. Kein Konsument, keine verbrauchbare Ressource. [TUNING]
+export const ICE_BASE_FREEZE     = 2;    // erster Eis-Skill friert so viele eigene Karten ein
+export const FROST_GRIP_BONUS    = 2;    // Frostgriff: so viele zusätzliche eingefrorene Karten
+export const KAELTERESERVE_VALUE = 4;    // Kältereserve: +temp Wert beim nächsten Auftauchen einer verlorenen Frostkarte
+export const KALTFRONT_VALUE     = 3;    // Kaltfront: +temp Wert der eingefrorenen Karte im nächsten Durchlauf nach Frosttausch
+export const FROSTSPUR_VALUE      = 2;   // Frostspur: +temp Wert des neuen Nachfolgers im nächsten Durchlauf nach Frosttausch
+export const EISANKER_FACTOR     = 1.25; // Eisanker: eingefrorene Karte als Anker ×1,25 (zählt als Formation)
+export const STILLSTAND_SCORE    = 200;  // Stillstand: +Flat, wenn eine Frostkarte in ≥1 aktiver Formation gewinnt
+export const CRYSTAL_OFFSET      = 1;    // Kristallform/Eisschritt: ±Wert-Flex für Formationen
+export const FROSTBISS_COUNT     = 2;    // Frostbiss: so viele Gegnerkarten des nächsten Durchlaufs betroffen
+export const FROSTBISS_DEBUFF    = 3;    // Frostbiss: −temp Wert je betroffener Gegnerkarte (nie < 0)
+export const PERMAFROST_VALUE    = 2;    // Permafrost: +Dauerwert eingefrorener Karten
+
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
 

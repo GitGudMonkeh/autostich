@@ -127,6 +127,33 @@ export const SKILL_DEFS = {
     desc: "Maximale Hitze steigt auf 150 % — der Überschuss über 100 % bleibt erhalten.", heatMax150: true },
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
     desc: "Nachdem ein Hitze-Konsument ausgelöst hat, erhält die nächste eigene Karte +10 temporären Wert (stapelt nicht).", phoenix: true },
+
+  // ---- Eis-Archetyp (#93 F3) — Kontrolle/Aufstellung mit eingefrorenen Karten. Kein Konsument, keine Ressource. ----
+  // Grundmechanik (erster Eis-Skill): friert eigene Karten ein (blau, an card.id). Formations-Flags in formations.js gelesen.
+  SK_ICE_01: { id: "SK_ICE_01", name: "Frostgriff", archetype: "ice", keywords: ["freeze"],
+    desc: "Friere 2 zusätzliche zufällige eigene Karten ein.", frostGrip: true },
+  SK_ICE_02: { id: "SK_ICE_02", name: "Kalte Präzision", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Eingefrorene Karten dürfen für Wiederholung als Wert ihres direkten Vorgängers zählen (echter Wert unverändert).", wildWiederholungPred: true },
+  SK_ICE_03: { id: "SK_ICE_03", name: "Eisschritt", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Eingefrorene Karten dürfen für Treppen als 1 höher oder niedriger zählen.", wildTreppeStep: true },
+  SK_ICE_04: { id: "SK_ICE_04", name: "Frostbrücke", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Eine eingefrorene Karte unterbricht keinen Farbblock (zählt selbst nicht dazu).", wildFarbblockSkip: true },
+  SK_ICE_05: { id: "SK_ICE_05", name: "Kältereserve", archetype: "ice", keywords: ["freeze"],
+    desc: "Verlierst du mit einer eingefrorenen Karte, erhält sie beim nächsten Auftauchen +4 temporären Wert.", frostReserve: true },
+  SK_ICE_06: { id: "SK_ICE_06", name: "Kaltfront", archetype: "ice", keywords: ["freeze"],
+    desc: "Nach einem kostenlosen Frosttausch: die eingefrorene Karte erhält im nächsten Durchlauf +3 temporären Wert (stapelt nicht).", coldFront: true },
+  SK_ICE_07: { id: "SK_ICE_07", name: "Eisanker", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Eingefrorene Karten zählen auf ihrer Position als Anker → bei Sieg ×1,25 Score (zählt als Formation).", iceAnchor: true },
+  SK_ICE_08: { id: "SK_ICE_08", name: "Frostspur", archetype: "ice", keywords: ["freeze"],
+    desc: "Nach einem kostenlosen Frosttausch: der neue direkte Nachfolger erhält im nächsten Durchlauf +2 temporären Wert.", frostTrail: true },
+  SK_ICE_09: { id: "SK_ICE_09", name: "Stillstand", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Gewinnt eine eingefrorene Karte als Teil von mindestens einer aktiven Formation → +200 Score.", standstill: true },
+  SK_ICE_10: { id: "SK_ICE_10", name: "Kristallform", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Eingefrorene Karten dürfen für Wiederholung/Treppe/Wechsel als Wert −1, unverändert oder +1 zählen (günstigste Variante; echter Wert unverändert).", wildCrystal: true },
+  SK_ICE_L01: { id: "SK_ICE_L01", name: "Frostbiss", archetype: "ice", legendary: true, keywords: ["freeze"],
+    desc: "Gewinnt eine eingefrorene Karte, erhalten 2 zufällige Gegnerkarten des nächsten Durchlaufs −3 temporären Wert (nur nächster Durchlauf; erst im Kampf sichtbar).", frostbite: true },
+  SK_ICE_L02: { id: "SK_ICE_L02", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
+    desc: "Eingefrorene Karten erhalten +2 Dauerwert und zählen gleichzeitig als Joker für Wiederholung/Treppe/Farbblock.", permafrost: true },
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
@@ -218,6 +245,41 @@ export function fireScoreFor(margin, skills) {
   if (n === 0 || margin < C.HEAT_MIN_MARGIN) return 0;
   const per = C.FIRE_SCORE_BASE + C.FIRE_SCORE_PER_SKILL * (n - 1) + (fireFlag(skills, "burnBonus") ? C.BURN_BONUS : 0);
   return (margin - 2) * per;
+}
+
+/* ---- Eis-Archetyp (#93 F3) — eingefrorene Karten (blau, an card.id) + reine Helfer ---- */
+
+export const isFrozen = (card) => !!card?.frozen;
+export const frozenCount = (deck) => (deck || []).filter((c) => c.frozen).length;
+// Ein Eis-Flag/Prädikat + Anzahl gehaltener Eis-Skills (Grundmechanik zählt nicht).
+export const iceFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
+export const iceSkillCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "ice").length;
+// Formations-Wildcard-Prädikate (in formations.js gelesen) + Engine-Prädikate.
+export const hasFrostGrip     = (skills) => iceFlag(skills, "frostGrip");
+export const hasIceAnchor     = (skills) => iceFlag(skills, "iceAnchor");
+export const hasStandstill    = (skills) => iceFlag(skills, "standstill");
+export const hasFrostReserve  = (skills) => iceFlag(skills, "frostReserve");
+export const hasColdFront     = (skills) => iceFlag(skills, "coldFront");
+export const hasFrostTrail    = (skills) => iceFlag(skills, "frostTrail");
+export const hasFrostbite     = (skills) => iceFlag(skills, "frostbite");
+export const hasPermafrost    = (skills) => iceFlag(skills, "permafrost");
+// Zielanzahl eingefrorener Karten: erster Eis-Skill = ICE_BASE_FREEZE, je weiterer +1, Frostgriff +2. 0 ohne Eis-Skill.
+export function frozenTargetFor(skills) {
+  const n = iceSkillCount(skills);
+  if (n === 0) return 0;
+  return C.ICE_BASE_FREEZE + (n - 1) + (hasFrostGrip(skills) ? C.FROST_GRIP_BONUS : 0);
+}
+// `count` noch nicht eingefrorene eigene Karten einfrieren (immutabel, deterministisch über rng).
+export function freezeCards(deck, count, rng) {
+  const pool = (deck || []).map((_, i) => i).filter((i) => !deck[i].frozen);
+  const chosen = new Set();
+  let remaining = count;
+  while (remaining > 0 && pool.length > 0) {
+    const j = Math.floor(rng() * pool.length);
+    chosen.add(pool.splice(j, 1)[0]);
+    remaining -= 1;
+  }
+  return (deck || []).map((c, i) => (chosen.has(i) ? { ...c, frozen: true } : c));
 }
 
 // Roh-Crit-Beitrag des Blitz-Archetyps (Abschnitt 2a): Aktivierungs-Sockel + Σ Skill-critChance

@@ -17,6 +17,8 @@ import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
+import { CrystalBar } from "./ui/CrystalBar.jsx";
+import { frozenCount } from "./game/skills.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
@@ -287,6 +289,9 @@ export function Autostich() {
               <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} />
               <ChargeBar lightning={state.lightning} skills={state.skills} />
               <HeatBar heat={state.heat} skills={state.skills} />
+              <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
+                ownCount={frozenCount(state.deck)}
+                enemyCount={(state.frostbitePending || []).length + (state.frostbiteActive || []).length} />
               <BuildPanel perks={state.perks} skills={state.skills} />
             </div>
             <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />

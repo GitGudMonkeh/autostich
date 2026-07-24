@@ -85,13 +85,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     <div key={`p${t.trickNo}`} className="relative" style={dealStyle("as-deal-left")}>
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
             stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-            ionStacks={t.pCard.ionStacks || 0} />
+            ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 
   const oppCard = t ? (
     <div key={`o${t.trickNo}`} className="relative" style={dealStyle("as-deal-right")}>
-      <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null} />
+      <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null} frozen={t.oFrostbitten} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 

@@ -4,7 +4,8 @@ import { PERK_DEFS, buildOffer, critChanceRawFor, critMultiplierFor, streakBaseM
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasConductivity, hasEndlessStorm, hasDischarge, // Blitz-Rework (#93 F2)
-  fireFlag, heatMaxFor, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor } from "./skills.js"; // Feuer (#93 F1)
+  fireFlag, heatMaxFor, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer (#93 F1)
+  hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
 
@@ -59,6 +60,7 @@ export function resolveTrick(state, rng = Math.random) {
     l4Boost = {}, l5Used = [], l8Wins = {}, chainArmed = false, pos20Bonus = 0, // Legendaries (V2 §22.6 L): L4 Wert-Gewinn / L5 Jackpot-Verbrauch / L8 Erfolge / L10 Kette / L11 Wiederholung
     crits, critBonusScore, bestTrickScore,
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
+    iceTemp = {}, frostbitePending = [], frostbiteActive = [], // Eis (#93 F3): temp. Wertboni je card.id / Frostbiss-Markierungen
   } = state;
 
   const pCard = deck[playerOrder[pos]];
@@ -67,7 +69,7 @@ export function resolveTrick(state, rng = Math.random) {
   // Formationen (V2 §22.7): zu Durchlauf-Beginn (pos 0) aus der persistenten Reihenfolge + Dauerwerten
   // berechnet und für den ganzen Durchlauf stabil gehalten. Greifen bei Sieg der jeweiligen Karte.
   let formations = state.formations || [];
-  if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks);
+  if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks, skills);
   const posForm = formations[pos] || { mult: 1, formations: [] };
   const formationMult = posForm.mult || 1;
   const hasFormation = positionHasFormation(posForm);
@@ -131,11 +133,19 @@ export function resolveTrick(state, rng = Math.random) {
     if (fireFlag(skills, "glowingBlade") && heat.value >= C.GLOWING_THRESHOLD) fireValueBonus += C.GLOWING_VALUE;
     if (fireFlag(skills, "fireRoll")) fireValueBonus += Math.min(heat.fireRoll || 0, C.FIREROLL_MAX);
   }
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + relayBonus + l11Bonus + fireValueBonus;
+  // ---- Eis (#93 F3): temp. Wertbonus (Kältereserve/Kaltfront/Frostspur, an card.id) + Permafrost +2 (Dauerwert eingefroren).
+  const iceValueBonus = (iceTemp[pCard.id] || 0) + (hasPermafrost(skills) && pCard.frozen ? C.PERMAFROST_VALUE : 0);
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + relayBonus + l11Bonus + fireValueBonus + iceValueBonus;
   // L11: den temporären Wertbonus dieser Karte an Position 20 für Position 40 merken.
   let newPos20Bonus = pos20Bonus;
   if (pos === 19) newPos20Bonus = pValue - pCard.value;
-  const oValue = oCard.value; // Gegner bleibt neutral/unverändert (§12)
+  // Frostbiss (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −3 Wert (nie < 0); sonst neutral (§12).
+  const oValue = Math.max(0, oCard.value - (frostbiteActive.includes(oCard.id) ? C.FROSTBISS_DEBUFF : 0));
+  // Eis: der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht.
+  let newIceTemp = { ...iceTemp };
+  delete newIceTemp[pCard.id];
+  let newFrostbitePending = [...frostbitePending]; // im laufenden Durchlauf markierte Gegnerkarten (für den nächsten)
+  let newFrostbiteActive = frostbiteActive;        // in diesem Durchlauf aktive Marken (am Durchlauf-Ende ausgetauscht)
 
   let won = false, lost = false, tieConverted = false;
   if (pValue > oValue) won = true;
@@ -177,6 +187,18 @@ export function resolveTrick(state, rng = Math.random) {
       if (fireFlag(skills, "afterglow")) heat = { ...heat, afterglowArmed: true }; // Nachglut: nächste Niederlage 0 Verlust
       if (fireFlag(skills, "fireRoll")) heat = { ...heat, fireRoll: Math.min((heat.fireRoll || 0) + 1, C.FIREROLL_MAX) }; // Feuerwalze-Stapel
     }
+    // ---- Eis (#93 F3): Stillstand-Flat + Frostbiss-Markierung (Sieg mit einer eingefrorenen Karte).
+    let iceFlat = 0;
+    if (pCard.frozen) {
+      // Stillstand: eingefrorene Karte gewinnt als Teil ≥1 aktiver Formation → +200 Flat.
+      if (hasStandstill(skills) && positionHasFormation(posForm)) iceFlat += C.STILLSTAND_SCORE;
+      // Frostbiss: 2 zufällige, noch nicht markierte Gegnerkarten für den NÄCHSTEN Durchlauf −3 (je Karte max 1×).
+      if (hasFrostbite(skills)) {
+        const marked = new Set(newFrostbitePending);
+        const pool = oppDeck.map((c) => c.id).filter((id) => !marked.has(id));
+        for (let k = 0; k < C.FROSTBISS_COUNT && pool.length; k++) newFrostbitePending.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+      }
+    }
     // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.
     // Der Crit-Wurf verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift).
     // Blitz-Crit-Basis (Abschnitt 2a) wird additiv zugerechnet, unabhängig von L5-critChanceMult.
@@ -202,7 +224,7 @@ export function resolveTrick(state, rng = Math.random) {
     const dischargeFlat = (isCrit && dischargeArmedBefore) ? C.DISCHARGE_SCORE : 0;
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
                       + (isCrit ? sumHook(perks, "scoreFlatOnCrit", critCtx) + skillSum(skills, "scoreFlatOnCrit", critCtx) : 0)
-                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat + dischargeFlat;
+                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat + dischargeFlat + iceFlat;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
     // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
@@ -316,6 +338,8 @@ export function resolveTrick(state, rng = Math.random) {
       const loss = heatLossFor(oValue - pValue, skills, heat.afterglowArmed);
       heat = { ...heat, value: Math.max(0, heat.value - loss), afterglowArmed: false, fireRoll: 0 };
     }
+    // Eis (#93 F3): Kältereserve — Niederlage mit eingefrorener Karte → +4 temp Wert beim nächsten Auftauchen.
+    if (hasFrostReserve(skills) && pCard.frozen) newIceTemp[pCard.id] = C.KAELTERESERVE_VALUE;
     lastResult = "loss";
   } else {
     ties += 1;
@@ -337,6 +361,8 @@ export function resolveTrick(state, rng = Math.random) {
     // Formations-Multiplikator dieses Stichs (§22.7) + die beteiligten Formationen der Position (Anzeige/Float).
     formationMult: won ? formationMult : 1,
     formations: posForm.formations,
+    oFrostbitten: frostbiteActive.includes(oCard.id), // Eis (#93 F3): erst JETZT (im Kampf) sichtbar
+    pFrozen: !!pCard.frozen,
     breakdown, // Ergebnis-Aufschlüsselung (§17): { base, flats, streakMult, perkMult, formMult, critMult, total } bei Sieg, sonst null
   };
 
@@ -372,6 +398,9 @@ export function resolveTrick(state, rng = Math.random) {
       // Neuer Durchlauf: NUR das Gegnerdeck neu mischen; Spieler-Reihenfolge bleibt (persistent). pos zurück.
       oppOrder = shuffledOrder(oppDeck.length, rng);
       pos = 0;
+      // Frostbiss (#93 F3): die im gerade beendeten Durchlauf gesetzten Marken werden für den neuen Durchlauf aktiv.
+      newFrostbiteActive = newFrostbitePending;
+      newFrostbitePending = [];
       // Entscheidung VOR dem neuen Durchlauf nach dem festen Zyklus (§22.2): DECISION_CYCLE[cycle % 6].
       const decision = C.DECISION_CYCLE[cycle % C.DECISION_CYCLE.length];
       if (decision === "stat") {
@@ -388,7 +417,7 @@ export function resolveTrick(state, rng = Math.random) {
         phase = "formation";
         newFormationEnergy = C.FORMATION_ENERGY + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0);
         newFormationSwaps = [];
-        formations = computeFormations(playerOrder, deck, roles, perks);
+        formations = computeFormations(playerOrder, deck, roles, perks, skills);
       }
     }
   }
@@ -408,6 +437,7 @@ export function resolveTrick(state, rng = Math.random) {
     statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
+    iceTemp: newIceTemp, frostbitePending: newFrostbitePending, frostbiteActive: newFrostbiteActive, // Eis (#93 F3)
     lastTrick, phase,
   };
 }
