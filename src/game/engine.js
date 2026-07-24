@@ -8,7 +8,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
-import { coinsPerCycle, buildShopOffer, SHOP_ITEM_DEFS, anchorTypeAt, playSequence } from "./shop.js";
+import { coinsPerCycle, shopIncomeFor, buildShopOffer, SHOP_ITEM_DEFS, anchorTypeAt, playSequence } from "./shop.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -398,9 +398,9 @@ export function resolveTrick(state, rng = Math.random) {
   let newFormationSwaps = formationSwaps;
   if (pos >= cycleLen) { // Zeitsegment (§8 A-L1): Durchlauf endet nach cycleLen Stichen (40, mit Zeitsegment 45)
     cycle += 1;
-    // Shop-Münzökonomie (Shop-Spec §3.2): jeder vollständig abgeschlossene Durchlauf zahlt Basis + Einkommen-Level.
-    // Auch nach dem letzten Durchlauf (→ gameover) noch vergeben, für den Endscreen (§3.5).
-    shop = { ...(shop || {}), coins: ((shop && shop.coins) || 0) + coinsPerCycle(economyStatLevel) };
+    // Shop-Münzökonomie (Shop-Spec §3.2): jeder vollständig abgeschlossene Durchlauf zahlt die konstante Basis
+    // (das Einkommen wirkt am Shop, siehe unten). Auch nach dem letzten Durchlauf (→ gameover) vergeben (§3.5).
+    shop = { ...(shop || {}), coins: ((shop && shop.coins) || 0) + coinsPerCycle() };
     // L8 Schicksalsmaschine: erfolgreichste und erfolgloseste Karte tauschen ihre Dauerwerte.
     if (ownsFlag(perks, "swapExtremes")) {
       let bestId = null, worstId = null, bestW = -1, worstW = Infinity;
@@ -438,10 +438,11 @@ export function resolveTrick(state, rng = Math.random) {
         const off = buildOffer(perks, rng, C.PERKS_OFFERED);
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "shop") {
-        // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen und ein frisches Angebot ziehen (§5, deterministisch
-        // über rng). Ein leeres SHOP_ITEM_DEFS (vor S2) ergibt ein leeres Angebot → Platzhalter-Shop.
+        // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen, Einkommensbonus gutschreiben (+3 je Einkommen-Level,
+        // pro Shop) und ein frisches Angebot ziehen (§5, deterministisch über rng).
         phase = "shop";
-        shop = { ...shop, offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rng), purchasedOfferIds: [] };
+        shop = { ...shop, coins: (shop.coins || 0) + shopIncomeFor(economyStatLevel),
+                 offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rng), purchasedOfferIds: [] };
       } else if (decision === "formation") {
         // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ E10 Feinjustierung), Vorschau berechnen.
         phase = "formation";

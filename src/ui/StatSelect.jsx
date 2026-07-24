@@ -1,5 +1,5 @@
 import { STAT_DEFS, STAT_IDS } from "../game/stats.js";
-import { CRIT_BASE_MULT } from "../game/constants.js";
+import { CRIT_BASE_MULT, SHOP_INCOME_PER_LEVEL } from "../game/constants.js";
 
 const ACCENT = "#5a8ade"; // Stat-Akzent (blau) — abgesetzt von Perk (violett) / Skill (blitzblau)
 
@@ -11,7 +11,7 @@ function currentLabel(id, state) {
     case "critMult":   return `×${(CRIT_BASE_MULT + v).toFixed(2).replace(".", ",")} Crit-Faktor`;
     case "formMult":   return `+${Math.round(v * 100)} % bei aktiver Formation`;
     case "streakMult": return `+${(v * 100).toFixed(1).replace(".", ",")} % je Serienpunkt`;
-    case "economy":    return `+${v} Münze${v === 1 ? "" : "n"} je Durchlauf`;
+    case "economy":    return `+${v * SHOP_INCOME_PER_LEVEL} Münzen pro Shop`;
     default: return "";
   }
 }

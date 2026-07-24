@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { initialShop, coinsPerCycle, buildShopOffer, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor } from "../src/game/shop.js";
+import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor } from "../src/game/shop.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { MAX_CYCLES, DECISION_SCHEDULE, STARTING_COINS, BASE_COINS_PER_CYCLE,
@@ -44,21 +44,24 @@ describe("Münzökonomie (Shop-Spec §3)", () => {
     expect(initialShop().coins).toBe(2);
     expect(initialState(makeRng(1)).shop.coins).toBe(2);
   });
-  it("coinsPerCycle: Basis + Einkommen-Level, additiv, nie negativ", () => {
+  it("coinsPerCycle ist konstant die Basis; Einkommen wirkt jetzt am Shop (+3 je Pick)", () => {
     expect(BASE_COINS_PER_CYCLE).toBe(2);
-    expect(coinsPerCycle(0)).toBe(2);
-    expect(coinsPerCycle(1)).toBe(3);
-    expect(coinsPerCycle(3)).toBe(5);
-    expect(coinsPerCycle(-5)).toBe(2); // defensiv: negatives Level zählt als 0
+    expect(coinsPerCycle()).toBe(2);
+    expect(shopIncomeFor(0)).toBe(0);
+    expect(shopIncomeFor(1)).toBe(3);
+    expect(shopIncomeFor(2)).toBe(6);
+    expect(shopIncomeFor(-5)).toBe(0); // defensiv: negatives Level zählt als 0
   });
-  it("+2 Münzen nach abgeschlossenem Durchlauf bei Einkommen 0", () => {
-    const s = resolveTrick(atCycleEnd({ cycle: 0 }), rng);
-    expect(s.cycle).toBe(1);
-    expect(s.shop.coins).toBe(STARTING_COINS + 2); // 2 Start + 2
+  it("+2 Münzen je abgeschlossenem Durchlauf — einkommensunabhängig", () => {
+    expect(resolveTrick(atCycleEnd({ cycle: 0 }), rng).shop.coins).toBe(STARTING_COINS + 2);
+    expect(resolveTrick(atCycleEnd({ cycle: 0, economyStatLevel: 3 }), rng).shop.coins).toBe(STARTING_COINS + 2); // cycle 0→1 = Perk, kein Shop
   });
-  it("+3 Münzen bei Einkommen 1 (stackbar/additiv)", () => {
-    const s = resolveTrick(atCycleEnd({ cycle: 0, economyStatLevel: 1 }), rng);
-    expect(s.shop.coins).toBe(STARTING_COINS + 3); // 2 Start + 3
+  it("Einkommensbonus wird beim Öffnen des Shops gutgeschrieben (+3 je Pick, pro Shop)", () => {
+    // cycle 3 → nächste Entscheidung ist der Shop (§2.2).
+    const base = resolveTrick(atCycleEnd({ cycle: 3, economyStatLevel: 0 }), rng);
+    const boosted = resolveTrick(atCycleEnd({ cycle: 3, economyStatLevel: 2 }), rng);
+    expect(base.phase).toBe("shop");
+    expect(boosted.shop.coins - base.shop.coins).toBe(6); // +3 × 2 Picks
   });
   it("Münzen werden auch nach dem letzten Durchlauf noch vergeben (§3.5) und der Run endet", () => {
     const s = resolveTrick(atCycleEnd({ cycle: MAX_CYCLES - 1 }), rng);

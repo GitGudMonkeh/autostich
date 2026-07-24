@@ -11,7 +11,7 @@ export const STAT_CRIT_CHANCE_STEP = 0.05;  // Crit-Chance: +5 Prozentpunkte je 
 export const STAT_CRIT_MULT_STEP   = 0.2;   // Crit-Multiplikator: +0,2× je Pick (auf Basis 1,5) (#94)
 export const STAT_FORM_MULT_STEP   = 0.05;  // Formations-Mult: +5 % Score bei aktiver Formation je Pick (max 1×/Stich)
 export const STAT_STREAK_MULT_STEP = 0.02;  // Serien-Mult: +2 % Score je aktuellem Serienpunkt je Pick (#94)
-export const STAT_ECONOMY_STEP     = 1;     // Einkommen (Shop-Spec §4): +1 Münze je abgeschlossenem Durchlauf je Pick
+export const STAT_ECONOMY_STEP     = 1;     // Einkommen: je Pick +1 Level (Bonus = Level × SHOP_INCOME_PER_LEVEL Münzen/Shop)
 
 // Entscheidungsplan (Shop-Spec §2.2): Typ der Entscheidung VOR Durchlauf n (1-indexiert) = DECISION_SCHEDULE[n-1].
 // Fester 44-Einträge-Plan (ersetzt den alten zyklischen DECISION_CYCLE). Engine liest DECISION_SCHEDULE[cycle]
@@ -28,7 +28,10 @@ export const DECISION_SCHEDULE = [
 
 // Shop-Münzökonomie (Shop-Spec §3) [TUNING]
 export const STARTING_COINS       = 2;   // Startmünzen bei Run-Beginn
-export const BASE_COINS_PER_CYCLE = 2;   // Münzen je vollständig abgeschlossenem Durchlauf (+ Einkommen-Level)
+export const BASE_COINS_PER_CYCLE = 2;   // Münzen je vollständig abgeschlossenem Durchlauf (KONSTANT, ohne Einkommen)
+// Einkommens-Stat (überarbeitet): der Bonus wird PRO SHOP-BESUCH gutgeschrieben, nicht je Durchlauf —
+// +3 Münzen je Einkommen-Pick, gilt für jeden Shop nach der Wahl (auch den direkt bevorstehenden). [TUNING]
+export const SHOP_INCOME_PER_LEVEL = 3;
 
 // Shop-Angebot (Shop-Spec §5) [TUNING]
 export const SHOP_CATEGORIES         = ["cards", "anchors", "formations", "planning"]; // Reihenfolge = Anzeige-Reihenfolge

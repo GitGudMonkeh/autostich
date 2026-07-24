@@ -173,10 +173,12 @@ export function initialShop() {
   };
 }
 
-// Münzen je vollständig abgeschlossenem Durchlauf (Spec §3.2): Basis + Einkommen-Level. Nie negativ.
-export function coinsPerCycle(economyStatLevel = 0) {
-  return C.BASE_COINS_PER_CYCLE + Math.max(0, economyStatLevel || 0);
+// Münzen je vollständig abgeschlossenem Durchlauf: konstante Basis (das Einkommen wirkt jetzt am Shop, nicht je Durchlauf).
+export function coinsPerCycle() {
+  return C.BASE_COINS_PER_CYCLE;
 }
+// Einkommensbonus, der beim Öffnen EINES Shops gutgeschrieben wird: +SHOP_INCOME_PER_LEVEL je Einkommen-Level. Nie negativ.
+export const shopIncomeFor = (economyStatLevel = 0) => Math.max(0, economyStatLevel || 0) * C.SHOP_INCOME_PER_LEVEL;
 
 // Kann der Spieler dieses Angebot bezahlen?
 export const canAfford = (shop, offer) => !!offer && (shop?.coins || 0) >= offer.price;

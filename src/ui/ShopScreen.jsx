@@ -1,4 +1,4 @@
-import { coinsPerCycle, canAfford, SHOP_ITEM_DEFS } from "../game/shop.js";
+import { shopIncomeFor, canAfford, SHOP_ITEM_DEFS } from "../game/shop.js";
 import { SHOP_CATEGORIES, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { useEscape } from "./useEscape.js";
 
@@ -12,6 +12,9 @@ const TIER = {
   legendary: { label: "Legendär", color: GOLD },
 };
 
+// Kategorie-Akzentfarben — farbige Rahmen je Kategorie um die Angebote.
+const CATEGORY_COLOR = { cards: "#8a7de0", anchors: "#5a8ade", formations: "#5ab87a", planning: "#e0714a" };
+
 /* Shop-Screen (Shop-Spec §12.1). S1: Angebote (2 je Kategorie) werden deterministisch gezogen und hier
    gruppiert dargestellt — Münzstand prominent, Preis/Stufe/Beschreibung je Item, Kauf-Button (deaktiviert,
    wenn zu teuer, schon gekauft oder Ziel-Auswahl nötig — Target-Flow folgt in S2). Solange SHOP_ITEM_DEFS
@@ -20,7 +23,7 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
   useEscape(onLeave);
   const shop = state.shop || {};
   const coins = shop.coins ?? 0;
-  const income = coinsPerCycle(state.economyStatLevel);
+  const income = shopIncomeFor(state.economyStatLevel);
   const round = (state.cycle || 0) + 1;
   const offers = shop.offers || [];
   const purchased = new Set(shop.purchasedOfferIds || []);
@@ -38,7 +41,7 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
           <div className="text-right">
             <div className="text-[10px] uppercase tracking-wide opacity-50">Münzen</div>
             <div className="text-2xl font-bold font-pixel-dense" style={{ color: GOLD }}>🪙 {coins}</div>
-            <div className="text-[11px] opacity-50">Einkommen: +{income} / Durchlauf</div>
+            <div className="text-[11px] opacity-50">Einkommen: +{income} / Shop</div>
           </div>
         </div>
 
@@ -46,11 +49,11 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
         <div className="grid sm:grid-cols-2 gap-4">
           {SHOP_CATEGORIES.map((cat) => (
             <div key={cat}>
-              <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{SHOP_CATEGORY_LABELS[cat]}</div>
+              <div className="text-[11px] uppercase tracking-wide font-bold mb-2" style={{ color: CATEGORY_COLOR[cat] }}>{SHOP_CATEGORY_LABELS[cat]}</div>
               <div className="grid gap-2">
                 {byCat[cat].length === 0 && (
-                  <div className="rounded-xl p-3 text-xs opacity-40 italic" style={{ background: "#20202a", border: "1px solid #33333e" }}>
-                    Angebot folgt (Phase S2)
+                  <div className="rounded-xl p-3 text-xs opacity-40 italic" style={{ background: "#20202a", border: `1px dashed ${CATEGORY_COLOR[cat]}44` }}>
+                    Angebot folgt
                   </div>
                 )}
                 {byCat[cat].map((offer) => {
@@ -61,8 +64,8 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
                   const disabled = sold || !affordable; // Ziel-Items öffnen beim Kauf die Ziel-Auswahl (§12.2)
                   return (
                     <div key={offer.offerId} className="rounded-xl p-3"
-                      style={{ background: "#20202a", border: `1px solid ${offer.legendary ? GOLD + "88" : "#33333e"}`,
-                               boxShadow: offer.legendary ? `0 0 10px ${GOLD}33` : undefined, opacity: sold ? 0.5 : 1 }}>
+                      style={{ background: "#20202a", border: `1px solid ${offer.legendary ? GOLD + "88" : CATEGORY_COLOR[cat] + "66"}`,
+                               boxShadow: offer.legendary ? `0 0 10px ${GOLD}33` : `0 0 6px ${CATEGORY_COLOR[cat]}22`, opacity: sold ? 0.5 : 1 }}>
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-bold text-sm">{def.name || offer.itemId}</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap"
