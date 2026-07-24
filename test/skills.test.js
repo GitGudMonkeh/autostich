@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer, archetypeOf,
+  offerArchetypes, archetypesWithSkills,
   ionScoreFor, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor } from "../src/game/skills.js";
 import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE } from "../src/game/constants.js";
@@ -50,17 +51,39 @@ describe("addCharge — gedeckelt & immutabel", () => {
   });
 });
 
-describe("buildSkillOffer", () => {
+describe("archetypesWithSkills / offerArchetypes (#93 F0: max 2 Archetypen)", () => {
+  it("F0: nur lightning hat Skills; alle Blitz owned → keiner", () => {
+    expect(archetypesWithSkills([])).toEqual(["lightning"]);
+    expect(archetypesWithSkills(ALL)).toEqual([]);
+  });
+  it("0 aktiv → bis zu 2 verfügbare Archetypen (Erstangebot)", () => {
+    expect(offerArchetypes([], ["lightning"], makeRng(3))).toEqual(["lightning"]); // nur 1 verfügbar
+    expect(offerArchetypes([], ["lightning", "fire", "ice"], makeRng(3))).toHaveLength(2); // 2 von 3
+  });
+  it("1 aktiv → aktiver + 1 nicht-aktiver verfügbarer", () => {
+    const r = offerArchetypes(["lightning"], ["lightning", "fire", "ice"], makeRng(3));
+    expect(r).toContain("lightning");
+    expect(r).toHaveLength(2);
+    expect(["fire", "ice"]).toContain(r.find((a) => a !== "lightning"));
+    expect(offerArchetypes(["lightning"], ["lightning"], makeRng(3))).toEqual(["lightning"]); // nur aktiver verfügbar
+  });
+  it("2 aktiv → nur die beiden aktiven (kein dritter)", () => {
+    expect(offerArchetypes(["lightning", "fire"], ["lightning", "fire", "ice"], makeRng(3))).toEqual(["lightning", "fire"]);
+  });
+});
+
+describe("buildSkillOffer (#93 F0: archetyp-gruppiert)", () => {
   it("liefert count distinkte, nicht-gehaltene Skills, deterministisch bei festem Seed", () => {
-    const off = buildSkillOffer([], makeRng(1), 3);
-    expect(off).toEqual(buildSkillOffer([], makeRng(1), 3));
-    expect(off).toHaveLength(3);
-    expect(new Set(off).size).toBe(3);
+    const off = buildSkillOffer([], [], makeRng(1), 4);
+    expect(off).toEqual(buildSkillOffer([], [], makeRng(1), 4));
+    expect(off).toHaveLength(4);
+    expect(new Set(off).size).toBe(4);
     expect(off.every((id) => SKILL_DEFS[id])).toBe(true);
+    expect(off.every((id) => archetypeOf(id) === "lightning")).toBe(true); // F0: nur Blitz
   });
   it("bereits gehaltene werden nicht erneut angeboten; leerer Pool → []", () => {
-    expect(buildSkillOffer([LR], makeRng(1), 3)).not.toContain(LR);
-    expect(buildSkillOffer(ALL, makeRng(1), 3)).toEqual([]);
+    expect(buildSkillOffer([LR], [], makeRng(1), 4)).not.toContain(LR);
+    expect(buildSkillOffer(ALL, [], makeRng(1), 4)).toEqual([]);
   });
 });
 

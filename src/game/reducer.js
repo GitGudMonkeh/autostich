@@ -119,6 +119,10 @@ export function reducer(state, action) {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
       const { skillId, replaceId } = action;
       if (!state.skillOffer.includes(skillId) || state.skills.includes(skillId)) return state;
+      // Max-2-Archetypen (#93 F0): ein Skill eines dritten (noch nicht aktiven) Archetyps ist nicht wählbar.
+      const arch = archetypeOf(skillId);
+      const active0 = state.activeArchetypes || [];
+      if (arch && !active0.includes(arch) && active0.length >= C.MAX_ARCHETYPES) return state;
       let skills;
       if (state.skills.length < C.SKILL_SLOTS) {
         skills = [...state.skills, skillId];                       // freier Slot → hinzufügen
@@ -126,7 +130,6 @@ export function reducer(state, action) {
         if (!replaceId || !state.skills.includes(replaceId)) return state; // volle Slots → gültiges Ersetzungsziel nötig
         skills = state.skills.map((id) => (id === replaceId ? skillId : id));
       }
-      const arch = archetypeOf(skillId);
       let activeArchetypes = state.activeArchetypes || [];
       let lightning = state.lightning;
       if (arch === "lightning" && !lightning.active) lightning = { ...lightning, active: true };

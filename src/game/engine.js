@@ -56,7 +56,7 @@ export function resolveTrick(state, rng = Math.random) {
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, l5Used = [], l8Wins = {}, chainArmed = false, pos20Bonus = 0, // Legendaries (V2 §22.6 L): L4 Wert-Gewinn / L5 Jackpot-Verbrauch / L8 Erfolge / L10 Kette / L11 Wiederholung
     crits, critBonusScore, bestTrickScore,
-    skills = [], skillOffer = null, lightning = null, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
+    skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
   } = state;
 
   const pCard = deck[playerOrder[pos]];
@@ -319,7 +319,7 @@ export function resolveTrick(state, rng = Math.random) {
       if (decision === "stat") {
         phase = "levelup"; newStatOffer = STAT_IDS; // immer alle vier Stats
       } else if (decision === "skill") {
-        const soff = buildSkillOffer(skills, rng, C.SKILLS_OFFERED);
+        const soff = buildSkillOffer(skills, activeArchetypes, rng, C.SKILLS_OFFERED);
         if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
         else { const off = buildOffer(perks, rng, C.PERKS_OFFERED); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk
       } else if (decision === "perk") {

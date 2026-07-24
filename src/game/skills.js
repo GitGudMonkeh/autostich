@@ -1,4 +1,5 @@
 import * as C from "./constants.js";
+import { shuffle } from "./deck.js";
 
 /* ============================================================
    SKILL-REGISTRY — seltene, regelverändernde Build-Motoren NEBEN den Perks
@@ -69,6 +70,35 @@ export const SKILL_DEFS = {
 export const SKILL_LIST = Object.values(SKILL_DEFS);
 export const archetypeOf = (id) => SKILL_DEFS[id]?.archetype || null;
 
+/* Skill-Archetypen (#93). Metadaten (Theming/Label) — geteilte Quelle für SkillSelect & HUD.
+   F0: nur „lightning" hat Skills; fire/ice folgen in F1/F3, die Metadaten stehen bereit. */
+export const ARCHETYPE_META = {
+  lightning: { key: "lightning", label: "Blitz",  icon: "⚡", color: "#8a7de0" }, // violett/elektrisch
+  fire:      { key: "fire",      label: "Feuer",  icon: "🔥", color: "#e0714a" }, // warm/orange-rot
+  ice:       { key: "ice",       label: "Eis",    icon: "❄️", color: "#5ec8f0" }, // eis-blau
+};
+export const ARCHETYPE_ORDER = ["lightning", "fire", "ice"];
+
+// Archetypen, die aktuell noch anbietbare (nicht gehaltene) Skills haben.
+export function archetypesWithSkills(owned = []) {
+  const have = new Set();
+  for (const s of SKILL_LIST) if (!(owned || []).includes(s.id)) have.add(s.archetype);
+  return ARCHETYPE_ORDER.filter((a) => have.has(a));
+}
+
+/* Aus welchen Archetypen wird das nächste Skill-Angebot gezogen (max C.MAX_ARCHETYPES)? Rein & testbar.
+   - 0 aktiv → bis zu 2 zufällige verfügbare Archetypen (Erstangebot).
+   - 1 aktiv → der aktive + 1 zufälliger noch nicht aktiver verfügbarer.
+   - 2 aktiv → nur die beiden aktiven. */
+export function offerArchetypes(activeArchetypes = [], available = [], rng = Math.random) {
+  const active = (activeArchetypes || []).filter((a) => available.includes(a));
+  if (active.length >= C.MAX_ARCHETYPES) return active.slice(0, C.MAX_ARCHETYPES);
+  const picks = [...active];
+  const pool = shuffle(available.filter((a) => !active.includes(a)), rng);
+  while (picks.length < C.MAX_ARCHETYPES && pool.length) picks.push(pool.shift());
+  return picks;
+}
+
 // Summe eines Skill-Hooks über die gehaltenen Skills (gleiche Shape wie Perk-Hooks).
 export function skillSum(skills, name, ctx) {
   let t = 0;
@@ -95,17 +125,24 @@ export function addCharge(lightning, gained) {
   return { ...lightning, charge: Math.min(lightning.maxCharge, lightning.charge + gained) };
 }
 
-// Angebot: bis zu `count` noch nicht gehaltene Skills, deterministisch über den injizierten rng.
-// Stufe A: einheitlicher Pool (nur Blitz). Leerer Pool → [] (Reducer/Engine fällt auf Perk-Angebot zurück).
-export function buildSkillOffer(owned, rng, count) {
-  let pool = SKILL_LIST.filter((s) => !(owned || []).includes(s.id));
-  const chosen = [];
-  while (chosen.length < count && pool.length > 0) {
-    const idx = Math.floor(rng() * pool.length);
-    chosen.push(pool[idx].id);
-    pool = pool.filter((_, i) => i !== idx);
+// Angebot (#93 F0): bis zu `count` noch nicht gehaltene Skills, nach Archetyp gruppiert (2+2),
+// aus max C.MAX_ARCHETYPES Archetypen (offerArchetypes). Deterministisch über den injizierten rng.
+// Leerer Pool → [] (Reducer/Engine fällt auf Perk-Angebot zurück). F0: nur Blitz → 4 Blitz-Skills.
+export function buildSkillOffer(owned, activeArchetypes, rng, count) {
+  const available = archetypesWithSkills(owned);
+  const chosen = offerArchetypes(activeArchetypes || [], available, rng);
+  if (!chosen.length) return [];
+  const perArch = Math.max(1, Math.floor(count / chosen.length)); // 2 bei 2 Archetypen, count bei 1
+  const offer = [];
+  const rest = [];
+  for (const arch of chosen) {
+    const pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)).map((s) => s.id), rng);
+    for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
+    rest.push(...pool); // Reste des Archetyps für die Auffüllung
   }
-  return chosen;
+  const fill = shuffle(rest, rng); // auffüllen bis count, falls ein Archetyp zu wenige Skills hatte
+  while (offer.length < count && fill.length) offer.push(fill.shift());
+  return offer;
 }
 
 /* ---- Ionisierung (Stufe B, docs/blitz-archetyp.md Abschnitt 5/6) ---- */
