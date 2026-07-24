@@ -51,37 +51,36 @@ describe("addCharge — gedeckelt & immutabel", () => {
   });
 });
 
-describe("archetypesWithSkills / offerArchetypes (#93 F0: max 2 Archetypen)", () => {
+describe("archetypesWithSkills / offerArchetypes (Prototyp: alle 3 Archetypen)", () => {
   it("F3: lightning, fire & ice haben Skills; alles owned → keiner", () => {
     expect(archetypesWithSkills([])).toEqual(["lightning", "fire", "ice"]); // Reihenfolge = ARCHETYPE_ORDER
     expect(archetypesWithSkills(ALL)).toEqual([]);
   });
-  it("0 aktiv → bis zu 2 verfügbare Archetypen (Erstangebot)", () => {
-    expect(offerArchetypes([], ["lightning"], makeRng(3))).toEqual(["lightning"]); // nur 1 verfügbar
-    expect(offerArchetypes([], ["lightning", "fire", "ice"], makeRng(3))).toHaveLength(2); // 2 von 3
+  it("0 aktiv → ALLE verfügbaren Archetypen (Prototyp: Cap 3)", () => {
+    expect(offerArchetypes([], ["lightning"], makeRng(3))).toEqual(["lightning"]);           // nur 1 verfügbar
+    expect(offerArchetypes([], ["lightning", "fire", "ice"], makeRng(3))).toHaveLength(3);   // alle 3
   });
-  it("1 aktiv → aktiver + 1 nicht-aktiver verfügbarer", () => {
+  it("1 aktiv → aktiver + alle übrigen verfügbaren", () => {
     const r = offerArchetypes(["lightning"], ["lightning", "fire", "ice"], makeRng(3));
     expect(r).toContain("lightning");
-    expect(r).toHaveLength(2);
-    expect(["fire", "ice"]).toContain(r.find((a) => a !== "lightning"));
-    expect(offerArchetypes(["lightning"], ["lightning"], makeRng(3))).toEqual(["lightning"]); // nur aktiver verfügbar
+    expect(r).toHaveLength(3);
+    expect(new Set(r)).toEqual(new Set(["lightning", "fire", "ice"]));
   });
-  it("2 aktiv → nur die beiden aktiven (kein dritter)", () => {
-    expect(offerArchetypes(["lightning", "fire"], ["lightning", "fire", "ice"], makeRng(3))).toEqual(["lightning", "fire"]);
+  it("2 aktiv → beide aktiven + der dritte (kein Cap mehr bei 2)", () => {
+    expect(new Set(offerArchetypes(["lightning", "fire"], ["lightning", "fire", "ice"], makeRng(3))))
+      .toEqual(new Set(["lightning", "fire", "ice"]));
   });
 });
 
-describe("buildSkillOffer (#93 F0: archetyp-gruppiert)", () => {
+describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
   it("liefert count distinkte, nicht-gehaltene Skills, deterministisch bei festem Seed", () => {
-    const off = buildSkillOffer([], [], makeRng(1), 4);
-    expect(off).toEqual(buildSkillOffer([], [], makeRng(1), 4));
-    expect(off).toHaveLength(4);
-    expect(new Set(off).size).toBe(4);
+    const off = buildSkillOffer([], [], makeRng(1), 6);
+    expect(off).toEqual(buildSkillOffer([], [], makeRng(1), 6));
+    expect(off).toHaveLength(6);
+    expect(new Set(off).size).toBe(6);
     expect(off.every((id) => SKILL_DEFS[id])).toBe(true);
     const archs = new Set(off.map(archetypeOf));
-    expect(archs.size).toBeLessThanOrEqual(2); // #93: höchstens 2 Archetypen im Angebot (2+2)
-    expect([...archs].every((a) => ["lightning", "fire", "ice"].includes(a))).toBe(true);
+    expect(archs).toEqual(new Set(["lightning", "fire", "ice"])); // alle 3 vertreten (2 je Archetyp)
   });
   it("bereits gehaltene werden nicht erneut angeboten; leerer Pool → []", () => {
     expect(buildSkillOffer([LR], [], makeRng(1), 4)).not.toContain(LR);

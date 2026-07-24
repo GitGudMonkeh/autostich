@@ -152,13 +152,12 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     expect(s.phase).toBe("play");
   });
 
-  it("PICK_SKILL blockt einen dritten Archetyp (Max 2, #93 F0)", () => {
-    // Zwei Archetypen schon aktiv (Mock-Werte) → ein Blitz-Skill wäre der dritte, also nicht wählbar.
+  it("PICK_SKILL erlaubt einen dritten Archetyp (Prototyp: Cap 3 aufgehoben)", () => {
+    // Zwei Archetypen schon aktiv → ein Blitz-Skill ist der dritte und jetzt WÄHLBAR (kein Cap bei 2 mehr).
     const twoActive = skillState({ activeArchetypes: ["fire", "ice"], skillOffer: [LR] });
-    expect(reducer(twoActive, { type: "PICK_SKILL", skillId: LR, rng })).toBe(twoActive);
-    // ein bereits aktiver Archetyp bleibt wählbar
-    const withLightning = skillState({ activeArchetypes: ["lightning"], lightning: { active: true, charge: 0, maxCharge: 10 }, skillOffer: [LR] });
-    expect(reducer(withLightning, { type: "PICK_SKILL", skillId: LR, rng }).skills).toContain(LR);
+    const s = reducer(twoActive, { type: "PICK_SKILL", skillId: LR, rng });
+    expect(s.skills).toContain(LR);
+    expect(s.activeArchetypes).toEqual(["fire", "ice", "lightning"]);
   });
 
   it("DECLINE_SKILL tauscht das Skill-Angebot gegen ein Perk-Angebot (Runde nicht verschwendet)", () => {

@@ -34,8 +34,8 @@ export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendarie
 
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
 export const SKILL_SLOTS       = 4;    // max gleichzeitig gehaltene Skills
-export const SKILLS_OFFERED     = 4;   // Skills je Skill-Runde-Auswahl (#93 F0: 2+2 nach Archetyp)
-export const MAX_ARCHETYPES     = 2;   // #93: max gleichzeitig aktive Skill-Archetypen pro Run
+export const SKILLS_OFFERED     = 6;   // Skills je Skill-Runde (Prototyp: 2+2+2 — alle 3 Archetypen immer im Angebot)
+export const MAX_ARCHETYPES     = 3;   // Prototyp: alle 3 Archetypen gleichzeitig aktivierbar (Cap aufgehoben)
 export const SKILL_EVERY_CYCLES = 3;   // jede N-te Runde ist eine Skill-Runde (3, 6, 9 …), sonst Perk
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
 export const LIGHTNING_CRIT_PER_SKILL = 0.05; // Blitz: je gehaltenem Blitz-Skill
