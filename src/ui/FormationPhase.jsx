@@ -114,8 +114,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-xs sm:text-[13px] leading-snug font-medium" style={{ color: "#6fc48f" }}>
           <div><b style={{ color: "#8be0a8" }}>W</b> Wiederholung — ≥2 gleiche Werte (×1,30 / ×1,60 / ×2,00, dann +0,50 je weitere)</div>
           <div><b style={{ color: "#8be0a8" }}>F</b> Farbblock — ≥3 gleiche Farbe (ab ×1,30, +0,20 je weitere)</div>
-          <div><b style={{ color: "#8be0a8" }}>T</b> Treppe — ≥3 steigend, Schritt ≥4 (ab ×1,25, +0,20 je weitere)</div>
-          <div><b style={{ color: "#8be0a8" }}>Z</b> Wechsel — ≥3 Zick-Zack, Diff ≥6 (ab ×1,25, +0,20 je weitere)</div>
+          <div><b style={{ color: "#8be0a8" }}>T</b> Treppe — ≥3 streng steigend (ab ×1,25, +0,20 je weitere)</div>
+          <div><b style={{ color: "#8be0a8" }}>Z</b> Wechsel — ≥3 Zick-Zack, Diff ≥4 (ab ×1,25, +0,20 je weitere)</div>
           <div><b style={{ color: "#8be0a8" }}>A</b> Anker — Einzelposition ×1,25</div>
           <div style={{ color: "#d4a63a" }}>⧉ Überlappung — mehr Formationen = mehr Multi: 2 ×1,5 · 3 ×2 · 4 ×3</div>
         </div>

@@ -24,28 +24,23 @@ describe("Wiederholung (≥2 gleiche Werte)", () => {
 
 describe("Farbblock (≥3 gleiche Farbe)", () => {
   it("ab der 3. Karte ×1,30, je weitere +0,20; <3 kein Bonus", () => {
-    // Werte 5,2,8,3: kein Treppe/Wechsel/Wiederholung → isolierter Farbblock.
-    expect(mults([["R", 5], ["R", 2], ["R", 8], ["R", 3]])).toEqual([1, 1, 1.3, 1.5]);
+    // Werte 5,7,6,8: enge Schritte (<4) → kein Wechsel; keine 3er-Steigung → keine Treppe → isolierter Farbblock.
+    expect(mults([["R", 5], ["R", 7], ["R", 6], ["R", 8]])).toEqual([1, 1, 1.3, 1.5]);
     expect(mults([["R", 5], ["R", 2]])).toEqual([1, 1]); // len 2 → nichts
   });
 });
 
-describe("Treppe (≥3 steigend, Mindestschritt 4)", () => {
-  it("ab der 3. Karte ×1,25, je weitere +0,20 (Schritte ≥4)", () => {
-    // Schritte je +4 (≥4) → Treppe; unterschiedliche Farben → kein Farbblock; +4<6 → kein Wechsel.
-    expect(mults([["R", 1], ["B", 5], ["G", 9], ["Y", 13]])).toEqual([1, 1, 1.25, 1.45]);
-  });
-  it("Schritte kleiner als 4 bilden keine Treppe (#95)", () => {
-    // 1,3,5,7 (Schritte +2) — früher eine Treppe, jetzt zu klein.
-    expect(mults([["R", 1], ["B", 3], ["G", 5], ["Y", 7]])).toEqual([1, 1, 1, 1]);
+describe("Treppe (≥3 streng steigend)", () => {
+  it("ab der 3. Karte ×1,25, je weitere +0,20", () => {
+    // Unterschiedliche Farben → kein Farbblock; Schritte +2 (<4) → kein Wechsel.
+    expect(mults([["R", 1], ["B", 3], ["G", 5], ["Y", 7]])).toEqual([1, 1, 1.25, 1.45]);
   });
   it("ein Rückschritt beendet die Treppe", () => {
-    // 1,5,9 (Treppe), dann 9→4 Rückschritt; 4→8 startet neu, aber nur 2 lang.
-    expect(mults([["R", 1], ["B", 5], ["G", 9], ["Y", 4], ["R", 8]])).toEqual([1, 1, 1.25, 1, 1]);
+    expect(mults([["R", 1], ["B", 3], ["G", 2], ["Y", 4], ["R", 6]])).toEqual([1, 1, 1, 1, 1.25]);
   });
 });
 
-describe("Wechsel (Zick-Zack: Nachbardifferenz ≥6, alternierende Richtung)", () => {
+describe("Wechsel (Zick-Zack: Nachbardifferenz ≥4, alternierende Richtung)", () => {
   it("alternierende große Sprünge ab der 3. Karte ×1,25, je weitere +0,20", () => {
     expect(mults([["R", 2], ["B", 9], ["G", 1], ["Y", 8]])).toEqual([1, 1, 1.25, 1.45]);
   });
@@ -70,16 +65,17 @@ describe("Segment = Arena (Formationen enden an Segmentgrenzen)", () => {
   it(`Segmentgröße ${SEGMENT_SIZE}; ein Farbblock über die Grenze zählt nicht`, () => {
     expect(SEGMENT_SIZE).toBe(5);
     // Vier R-Karten ganz in Segment 0 → Farbblock.
-    expect(mults([["R", 5], ["R", 2], ["R", 8], ["R", 3]])).toEqual([1, 1, 1.3, 1.5]);
-    // Dieselben vier R-Karten über die Grenze 4|5 gelegt (Pos 3–6) → in zwei Hälften à 2 → kein Farbblock.
-    const straddle = [["R", 10], ["B", 1], ["G", 6], ["R", 5], ["R", 2], ["R", 8], ["R", 3]];
+    expect(mults([["R", 5], ["R", 7], ["R", 6], ["R", 8]])).toEqual([1, 1, 1.3, 1.5]);
+    // Vier R-Karten über die Grenze 4|5 gelegt (Pos 3–6) → in zwei Hälften à 2 → kein Farbblock.
+    // Enge Werte (Diff <4, keine 3er-Steigung) → auch kein Wechsel/keine Treppe.
+    const straddle = [["R", 6], ["B", 5], ["G", 7], ["R", 6], ["R", 8], ["R", 5], ["R", 7]];
     expect(mults(straddle)).toEqual([1, 1, 1, 1, 1, 1, 1]);
   });
 });
 
 describe("Stapelung mehrerer Formationen (Produkt × Überlappungsbonus)", () => {
-  it("gleichfarbig + steigend (Schritt ≥4) → Farbblock × Treppe × Überlappung auf der 3. Karte", () => {
-    const deck = [["R", 1], ["R", 5], ["R", 9]]; // alle R (Farbblock) + Schritte +4 (Treppe)
+  it("gleichfarbig + streng steigend → Farbblock × Treppe × Überlappung auf der 3. Karte", () => {
+    const deck = [["R", 1], ["R", 3], ["R", 5]]; // alle R (Farbblock) + streng steigend (Treppe)
     expect(typesAt(deck, 2)).toEqual(["farbblock", "treppe"]);
     // pos2: Farbblock ×1,30 · Treppe ×1,25 · Überlappung (2 Formationen) ×1,5 = 2,4375.
     expect(+forms(deck)[2].mult.toFixed(4)).toBeCloseTo(1.3 * 1.25 * 1.5);
@@ -105,10 +101,10 @@ describe("Rollen-Eingriffe: Joker (C8) & Bindeglied (C10)", () => {
     // ohne Rolle: kein Farbblock (Farben R,R,B)
     expect(computeFormations(idOrder(3), deck)[2].formations.some((x) => x.type === "farbblock")).toBe(false);
   });
-  it("Bindeglied darf für die Treppe als ±1 gelten (überbrückt den Mindestschritt 4)", () => {
-    const deck = [["R", 1], ["B", 4], ["G", 9]].map(card); // 1,4,9: Schritt 1→4 nur +3 → keine Treppe
+  it("Bindeglied darf für die Treppe als ±1 gelten", () => {
+    const deck = [["R", 3], ["B", 3], ["G", 5]].map(card); // 3,3,5: normal keine Treppe (3→3 nicht steigend)
     expect(computeFormations(idOrder(3), deck)[2].formations.some((x) => x.type === "treppe")).toBe(false);
-    const roles = { C10: [deck[1].id] }; // mittlere Karte ±1 → als 5 für 1→5 (+4) und als 3 für 3→9
+    const roles = { C10: [deck[1].id] }; // mittlere Karte darf als 4 gelten → 3<4<5
     expect(computeFormations(idOrder(3), deck, roles)[2].formations.some((x) => x.type === "treppe")).toBe(true);
   });
 });
@@ -146,7 +142,7 @@ describe("Formationswerkzeuge (V2 §22.6 E)", () => {
     expect(hasType(g, 1, "wiederholung")).toBe(false); // die 8 ist kein Mitglied
   });
   it("E3 Sanfter Anstieg: Treppe darf einmal gleich sein", () => {
-    const deck = [["R", 3], ["B", 7], ["G", 7], ["Y", 11]]; // 3,7,7,11 (Schritte +4, einmal gleich)
+    const deck = [["R", 3], ["B", 5], ["G", 5], ["Y", 7]]; // 3,5,5,7 (einmal gleich)
     expect(hasType(f(deck, []), 3, "treppe")).toBe(false);
     expect(hasType(f(deck, ["E3"]), 3, "treppe")).toBe(true);
   });

@@ -7,8 +7,8 @@
    Basis-Formationen (Faktoren §22.7, Balancing-Rework #95):
    - Wiederholung: ≥2 gleiche Werte.        2.→×1,30, 3.→×1,60, 4.→×2,00, danach je +0,50 (KEIN Cap).
    - Farbblock:    ≥3 gleiche Farbe.         ab 3. ×1,30, je weitere +0,20.
-   - Treppe:       ≥3 steigend, Schritt ≥4. ab 3. ×1,25, je weitere +0,20.
-   - Wechsel:      ≥3 Zick-Zack (Diff ≥6).   ab 3. ×1,25, je weitere +0,20.
+   - Treppe:       ≥3 streng steigend.       ab 3. ×1,25, je weitere +0,20.
+   - Wechsel:      ≥3 Zick-Zack (Diff ≥4).   ab 3. ×1,25, je weitere +0,20.
    - Anker (E7/E8): einzelne Position ×1,25 (zählt als Formation).
    - Überlappung: steckt eine Karte in mehreren Formationen, wird ihr Faktor-Produkt zusätzlich
      mit dem Überlappungsbonus multipliziert: 2 Formationen ×1,5 · 3 ×2 · 4 ×3.
@@ -19,7 +19,7 @@
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
 export const SEGMENT_SIZE = 5;
-const WECHSEL_MIN_DIFF = 6;
+const WECHSEL_MIN_DIFF = 4;
 
 function wiederholungFactor(ordinal) {
   if (ordinal <= 1) return 1;
@@ -52,7 +52,7 @@ function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign) {
   }
 }
 
-// Treppe: steigend mit MINDESTSCHRITT 4 (#95) zwischen Nachbarn (mit Bindeglied-Flex ±1),
+// Treppe: streng steigend (mit Bindeglied-Flex ±1), kein Min-/Max-Schritt.
 // E3 erlaubt 1× gleich, E4 erlaubt 1× Rückschritt, E6 lässt die letzte Karte einen neuen Lauf beginnen.
 function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign) {
   let i = 0;
@@ -61,7 +61,7 @@ function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign) {
     let j = i, softUsed = false;
     while (j + 1 < n && canExtendSeg(j)) {
       const hi = val[j + 1] + bind[j + 1], lo = val[j] - bind[j];
-      if (hi - lo >= 4) { j++; members.push(j); } // Mindestschritt 4 (Bindeglied kann bis +2 überbrücken)
+      if (hi > lo) { j++; members.push(j); } // streng steigend (Bindeglied flext ±1)
       else if (!softUsed && ((e3 && val[j + 1] === val[j]) || (e4 && val[j + 1] < val[j]))) {
         softUsed = true; j++; members.push(j);
       } else break;
