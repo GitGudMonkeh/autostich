@@ -22,6 +22,7 @@ import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { UsernameModal } from "./ui/UsernameModal.jsx";
 import { CrtParticles } from "./ui/CrtParticles.jsx";
 import { DeckHistogram } from "./ui/BuildSummary.jsx";
+import { multTierColor } from "./ui/multTier.js";
 
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
@@ -190,7 +191,8 @@ export function Autostich() {
   const baseScoreMult = baseScoreMultFor(state.perks || [], {
     winStreak: state.winStreak, wins: state.wins, trickNo: state.trickNo, pos: state.pos,
   });
-  const multHot = baseScoreMult > 1.001; // >1 → Gold; ×1,00 → gedämpft
+  const multHot = baseScoreMult > 1.001; // >1 → farbiges Tier; ×1,00 → gedämpft
+  const multColor = multTierColor(baseScoreMult); // #100: grau/grün/blau/lila/gold nach Höhe
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   // Dezenter Scale-Puls NUR bei Anstieg (v. a. D2-Kombo). Reduced-motion → global via CSS neutralisiert.
   useEffect(() => {
@@ -255,10 +257,10 @@ export function Autostich() {
                   <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base font-pixel-dense"
                     title={state.lightning?.armed
                       ? "Serie geschützt (Geladene Serie): Die nächste Niederlage setzt die Siegesserie nicht zurück."
-                      : "Score-Multiplikator: Siegesserie (Basis, immer +2 %/Stufe bis +30 %) × D1 × Tempo — D2 verstärkt die Serie zusätzlich"}
+                      : "Score-Multiplikator: Siegesserie (Basis, +2 %/Stufe bis +150 %) × Perk-Mult — Farbe steigt mit der Höhe (grau/grün/blau/lila/gold)"}
                     style={{ fontVariantNumeric: "tabular-nums",
-                             background: multHot ? "#d4a63a22" : "#ffffff0f",
-                             color: multHot ? "#d4a63a" : "#8a8a92",
+                             background: multHot ? `${multColor}22` : "#ffffff0f",
+                             color: multHot ? multColor : "#8a8a92",
                              // Geladene Serie (Stufe C): blauer Rahmen zeigt den Serien-Schutz an.
                              boxShadow: state.lightning?.armed ? "0 0 0 2px #5ec8f0, 0 0 9px #5ec8f077" : undefined,
                              animation: multPulse > 0 ? "as-multpulse 420ms ease-out" : undefined }}>

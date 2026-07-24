@@ -22,7 +22,7 @@ export const FORMATION_ENERGY = 4;
 
 // Basis-Siegesserie (#39): jede Serie hebt den Score-Mult leicht. [TUNING]
 export const STREAK_BASE_STEP = 0.02; // +2 % je Serienstufe [TUNING]
-export const STREAK_BASE_CAP  = 0.30; // … gedeckelt bei +30 % [TUNING]
+export const STREAK_BASE_CAP  = 1.50; // … gedeckelt bei +150 % (Cap ab Serie 75, #100) [TUNING]
 // Gemeinsame Schwellen für Score-Perks (Kategorie D) [TUNING]
 export const D3_HIGH_MIN  = 8;    // „hohe Karte"-Schwelle für D3/D5 (#34: Skala 1–10)
 export const D4_LOW_MAX   = 3;    // „Außenseiter" bis zu diesem Wert

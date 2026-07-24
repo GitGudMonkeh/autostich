@@ -156,12 +156,13 @@ describe("Hohe-Karte-Schwelle konsolidiert auf 8 — D3/D7 (#34)", () => {
 });
 
 describe("streakBaseMult (Basis-Siegesserie #39)", () => {
-  it("+2 %/Stufe, gedeckelt bei +30 % (Cap ab Serie 15)", () => {
+  it("+2 %/Stufe, gedeckelt bei +150 % (Cap ab Serie 75, #100)", () => {
     expect(streakBaseMult(0)).toBeCloseTo(1);
     expect(streakBaseMult(2)).toBeCloseTo(1.04);
-    expect(streakBaseMult(12)).toBeCloseTo(1.24);
-    expect(streakBaseMult(15)).toBeCloseTo(1.30);  // Cap erreicht
-    expect(streakBaseMult(50)).toBeCloseTo(1.30);  // darüber unverändert
+    expect(streakBaseMult(15)).toBeCloseTo(1.30);  // +30 % (nicht mehr Cap)
+    expect(streakBaseMult(50)).toBeCloseTo(2.00);  // +100 %
+    expect(streakBaseMult(75)).toBeCloseTo(2.50);  // Cap +150 % erreicht
+    expect(streakBaseMult(100)).toBeCloseTo(2.50); // darüber unverändert
   });
 });
 
@@ -170,10 +171,11 @@ describe("baseScoreMultFor (Header-Chip #37 — V2: nur noch Basis-Serie #39)", 
     expect(baseScoreMultFor([], {})).toBeCloseTo(1);
     expect(baseScoreMultFor(["D1", "D2"], {})).toBeCloseTo(1); // D flach → kein Multiplikator
   });
-  it("Siegesserie hebt den Mult (#39): +2 %/Stufe bis Cap +30 %", () => {
+  it("Siegesserie hebt den Mult (#39): +2 %/Stufe bis Cap +150 % (#100)", () => {
     expect(baseScoreMultFor([], { winStreak: 0 })).toBeCloseTo(1);
     expect(baseScoreMultFor([], { winStreak: 5 })).toBeCloseTo(1.10);
-    expect(baseScoreMultFor([], { winStreak: 20 })).toBeCloseTo(1.30); // Cap
+    expect(baseScoreMultFor([], { winStreak: 20 })).toBeCloseTo(1.40); // nicht mehr gedeckelt
+    expect(baseScoreMultFor([], { winStreak: 80 })).toBeCloseTo(2.50); // Cap +150 %
   });
 });
 

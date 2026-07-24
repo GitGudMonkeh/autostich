@@ -113,7 +113,7 @@ describe("resolveTrick — Score-Perks (V2: Flat)", () => {
   it("D2 Siegesserie: gedeckelt bei +250 (Serie ≥10)", () => {
     const s = resolveTrick(scenario(12, 0, { perks: ["D2"], winStreak: 19 }), rng);
     expect(s.winStreak).toBe(20);
-    expect(s.lastTrick.gained).toBeCloseTo(455); // (100+250)×streakBaseMult(20)=1,30
+    expect(s.lastTrick.gained).toBeCloseTo(490); // (100+250)×streakBaseMult(20)=1,40 (#100: Cap jetzt +150 %)
   });
 });
 
