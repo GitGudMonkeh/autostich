@@ -4,12 +4,14 @@
    ein Formations-Multiplikator berechnet. Basis-Formationen sind SEGMENTGEBUNDEN (Arena, §22.7/Q3):
    ein Lauf endet an jeder Segmentgrenze. Rollen (Kat. C) und Werkzeuge (Kat. E) biegen die Erkennung.
 
-   Basis-Formationen (Faktoren §22.7):
-   - Wiederholung: ≥2 gleiche Werte.        2.→×1,30, 3.→×1,60, 4.+→×2,00.
-   - Farbblock:    ≥3 gleiche Farbe.         ab 3. ×1,30, je weitere +0,15.
-   - Treppe:       ≥3 streng steigend.       ab 3. ×1,25, je weitere +0,15.
-   - Wechsel:      ≥3 Zick-Zack (Diff ≥6).   ab 3. ×1,25, je weitere +0,15.
+   Basis-Formationen (Faktoren §22.7, Balancing-Rework #95):
+   - Wiederholung: ≥2 gleiche Werte.        2.→×1,30, 3.→×1,60, 4.→×2,00, danach je +0,50 (KEIN Cap).
+   - Farbblock:    ≥3 gleiche Farbe.         ab 3. ×1,30, je weitere +0,20.
+   - Treppe:       ≥3 steigend, Schritt ≥4. ab 3. ×1,25, je weitere +0,20.
+   - Wechsel:      ≥3 Zick-Zack (Diff ≥6).   ab 3. ×1,25, je weitere +0,20.
    - Anker (E7/E8): einzelne Position ×1,25 (zählt als Formation).
+   - Überlappung: steckt eine Karte in mehreren Formationen, wird ihr Faktor-Produkt zusätzlich
+     mit dem Überlappungsbonus multipliziert: 2 Formationen ×1,5 · 3 ×2 · 4 ×3.
 
    Rollen (§22.6 C): C8 Joker (Farbe = Vorgänger), C10 Bindeglied (Treppe ±1).
    Werkzeuge (§22.6 E): E1 Wiederholung +1 fremde Karte · E2 Farbblock +1 andersfarbig ·
@@ -23,11 +25,13 @@ function wiederholungFactor(ordinal) {
   if (ordinal <= 1) return 1;
   if (ordinal === 2) return 1.30;
   if (ordinal === 3) return 1.60;
-  return 2.00;
+  return 2.00 + (ordinal - 4) * 0.50; // ab der 4.: 2,00 / 2,50 / 3,00 … kein Cap (#95)
 }
 function escalatingFactor(ordinal, base) {
-  return ordinal <= 2 ? 1 : base + (ordinal - 3) * 0.15;
+  return ordinal <= 2 ? 1 : base + (ordinal - 3) * 0.20; // je weitere Karte +0,20 (#95)
 }
+// Überlappungsbonus je Anzahl Formationen auf einer Karte (#95): 2→×1,5, 3→×2, 4→×3.
+const OVERLAP_BONUS = { 2: 1.5, 3: 2, 4: 3 };
 const FARBBLOCK_BASE = 1.30, TREPPE_BASE = 1.25, WECHSEL_BASE = 1.25, ANKER_FACTOR = 1.25;
 
 // Maximale Läufe über eine Paar-Bedingung, mit optional EINER erlaubten fremden Karte dazwischen (E1/E2).
@@ -48,8 +52,8 @@ function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign) {
   }
 }
 
-// Treppe: streng steigend (mit Bindeglied-Flex), E3 erlaubt 1× gleich, E4 erlaubt 1× Rückschritt,
-// E6 lässt die letzte Karte einen neuen Lauf beginnen (Überlappung um 1).
+// Treppe: steigend mit MINDESTSCHRITT 4 (#95) zwischen Nachbarn (mit Bindeglied-Flex ±1),
+// E3 erlaubt 1× gleich, E4 erlaubt 1× Rückschritt, E6 lässt die letzte Karte einen neuen Lauf beginnen.
 function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign) {
   let i = 0;
   while (i < n) {
@@ -57,7 +61,7 @@ function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign) {
     let j = i, softUsed = false;
     while (j + 1 < n && canExtendSeg(j)) {
       const hi = val[j + 1] + bind[j + 1], lo = val[j] - bind[j];
-      if (hi > lo) { j++; members.push(j); }
+      if (hi - lo >= 4) { j++; members.push(j); } // Mindestschritt 4 (Bindeglied kann bis +2 überbrücken)
       else if (!softUsed && ((e3 && val[j + 1] === val[j]) || (e4 && val[j + 1] < val[j]))) {
         softUsed = true; j++; members.push(j);
       } else break;
@@ -120,6 +124,14 @@ export function computeFormations(order, deck, roles = {}, perks = []) {
   if (has("E7") || has("E8")) for (let pos = 0; pos < n; pos++) {
     const p = (pos + 1) % 10;
     if ((has("E7") && p === 0) || (has("E8") && p === 5)) add(pos, "anker", 1, ANKER_FACTOR);
+  }
+
+  // Überlappungsbonus (#95): steckt eine Karte in mehreren Formationen, multipliziert der
+  // Bonus das Faktor-Produkt zusätzlich (2 Formationen ×1,5 · 3 ×2 · 4 ×3). Gezählt werden ALLE
+  // Mitgliedschaften (auch Faktor-1-Läufe) → deckt sich mit der Rahmen-Anzahl im UI.
+  for (const p of out) {
+    const c = Math.min(p.formations.length, 4);
+    if (c >= 2) p.mult *= OVERLAP_BONUS[c];
   }
 
   return out;

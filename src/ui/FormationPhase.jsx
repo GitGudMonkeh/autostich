@@ -111,13 +111,16 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         </div>
 
         {/* Kurz-Erklärung der Formationen mit Kürzel (#95.7) — grün & gut lesbar */}
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] leading-snug font-medium" style={{ color: "#6fc48f" }}>
-          <div><b style={{ color: "#8be0a8" }}>W</b> Wiederholung — ≥2 gleiche Werte (×1,30 → ×2,00)</div>
-          <div><b style={{ color: "#8be0a8" }}>F</b> Farbblock — ≥3 gleiche Farbe (ab ×1,30)</div>
-          <div><b style={{ color: "#8be0a8" }}>T</b> Treppe — ≥3 streng steigend (ab ×1,25)</div>
-          <div><b style={{ color: "#8be0a8" }}>Z</b> Wechsel — ≥3 Zick-Zack, Diff ≥6 (ab ×1,25)</div>
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-xs sm:text-[13px] leading-snug font-medium" style={{ color: "#6fc48f" }}>
+          <div><b style={{ color: "#8be0a8" }}>W</b> Wiederholung — ≥2 gleiche Werte (×1,30 / ×1,60 / ×2,00, dann +0,50 je weitere)</div>
+          <div><b style={{ color: "#8be0a8" }}>F</b> Farbblock — ≥3 gleiche Farbe (ab ×1,30, +0,20 je weitere)</div>
+          <div><b style={{ color: "#8be0a8" }}>T</b> Treppe — ≥3 steigend, Schritt ≥4 (ab ×1,25, +0,20 je weitere)</div>
+          <div><b style={{ color: "#8be0a8" }}>Z</b> Wechsel — ≥3 Zick-Zack, Diff ≥6 (ab ×1,25, +0,20 je weitere)</div>
           <div><b style={{ color: "#8be0a8" }}>A</b> Anker — Einzelposition ×1,25</div>
-          <div style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<span style={{ color: "#5ab87a" }}>1</span>·<span style={{ color: "#5a8ade" }}>2</span>·<span style={{ color: "#8a7de0" }}>3</span>·<span style={{ color: "#d4a63a" }}>4</span>) · gestrichelt = ohne Multiplikator</div>
+          <div style={{ color: "#d4a63a" }}>⧉ Überlappung — mehr Formationen = mehr Multi: 2 ×1,5 · 3 ×2 · 4 ×3</div>
+        </div>
+        <div className="mt-1 text-[11px] sm:text-xs" style={{ color: "#9a9aa4" }}>
+          Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr Rahmen = mehr Multi · gestrichelt = ohne Multiplikator
         </div>
 
         {/* Fußzeile */}
@@ -129,10 +132,13 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
               style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
           </div>
           <div className="flex items-center gap-3">
-            {/* Reaktives Formations-Delta (#95.6) */}
-            <div className="text-xs text-right leading-tight">
-              <div className="opacity-45 text-[10px] uppercase tracking-wide">Formations-Stärke</div>
-              <div className="font-pixel-dense">Σ {fmt(curStrength)} <span style={{ color: deltaColor }}>({deltaStr})</span></div>
+            {/* Reaktives Formations-Delta (#95.6) — größer & fetter für bessere Lesbarkeit */}
+            <div className="text-right leading-tight">
+              <div className="opacity-55 text-[10px] uppercase tracking-wide">Formations-Stärke</div>
+              <div className="font-pixel-dense text-lg">
+                <span className="opacity-85">Σ {fmt(curStrength)}</span>
+                <span className="font-bold ml-1.5" style={{ color: deltaColor }}>{deltaStr}</span>
+              </div>
             </div>
             <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
               style={{ background: "#5ab87a", color: "#0c0c10" }}>

@@ -86,7 +86,7 @@ export function ChronikOverview({ state, onClose }) {
           <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>Z</b> Wechsel</span>
           <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>A</b> Anker</span>
           <span style={{ color: "#d4a63a" }}>● Rolle</span>
-          <span style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<span style={{ color: "#5ab87a" }}>1</span>·<span style={{ color: "#5a8ade" }}>2</span>·<span style={{ color: "#8a7de0" }}>3</span>·<span style={{ color: "#d4a63a" }}>4</span>) · gestrichelt = ohne ×</span>
+          <span style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr = mehr Multi (Überlappung ×1,5/×2/×3) · gestrichelt = ohne ×</span>
         </div>
       </div>
     </div>

@@ -6,7 +6,9 @@ import { MAX_CYCLES, FORMATION_ENERGY } from "../src/game/constants.js";
 import { STAT_IDS } from "../src/game/stats.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
-const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: v, value: v }));
+// Farben zyklisch (R/B/G/Y) → gleicher Wert bildet nur eine Wiederholung (1 Formation), KEINEN Farbblock,
+// damit der Überlappungsbonus (#95) die wertbasierten Score-Tests nicht verfälscht.
+const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
 const identity = () => Array.from({ length: 40 }, (_, i) => i);
 function scenario(pVal, oVal, over = {}) {
   return {
@@ -288,12 +290,12 @@ describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
   const mk = (arr, suit = "R") => arr.map((v, i) => ({ id: `${suit}${i}`, suit, baseRank: v, value: v }));
 
   it("B9 Perfekte Folge: Karten einer Treppe erhalten +1/+2/+3 nach Position", () => {
-    const deck = mk([3, 5, 7, 4]); // 3<5<7 = Treppe (Pos 0–2), die 4 liegt außerhalb
+    const deck = mk([1, 5, 9, 4]); // 1<5<9 = Treppe (Schritte +4, Pos 0–2), die 4 liegt außerhalb
     const opp = mk([0, 0, 0, 0]);
     let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2, 3], oppOrder: [0, 1, 2, 3], perks: ["B9"] };
     const pv = [];
     for (let i = 0; i < 4; i++) { s = resolveTrick(s, rng); pv.push(s.lastTrick.pValue); }
-    expect(pv).toEqual([4, 7, 10, 4]); // Treppen-Ordinal 1,2,3 → +1,+2,+3; Pos 3 keine Treppe → +0
+    expect(pv).toEqual([2, 7, 12, 4]); // Treppen-Ordinal 1,2,3 → +1,+2,+3; Pos 3 keine Treppe → +0
   });
 
   it("D17 Farbserie: gleiche Farbe zählt, Farbwechsel beginnt bei 1, Niederlage bricht", () => {
