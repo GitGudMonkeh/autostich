@@ -11,12 +11,13 @@ function currentLabel(id, state) {
     case "critMult":   return `×${(CRIT_BASE_MULT + v).toFixed(2).replace(".", ",")} Crit-Faktor`;
     case "formMult":   return `+${Math.round(v * 100)} % bei aktiver Formation`;
     case "streakMult": return `+${(v * 100).toFixed(1).replace(".", ",")} % je Serienpunkt`;
+    case "economy":    return `+${v} Münze${v === 1 ? "" : "n"} je Durchlauf`;
     default: return "";
   }
 }
 
-/* Stat-Auswahl (V2 §22.2/§22.3): pausiert den Run, bietet IMMER alle vier Stats; genau einer wird gewählt.
-   Additiv, stapelbar, ohne Obergrenze. */
+/* Stat-Auswahl (V2 §22.2/§22.3): pausiert den Run, bietet IMMER alle Stats (Shop-Spec §4.3: fünf inkl.
+   Einkommen); genau einer wird gewählt. Additiv, stapelbar, ohne Obergrenze. */
 export function StatSelect({ offer = STAT_IDS, onPick, state = {} }) {
   const isStart = (state.trickNo || 0) === 0;
   return (

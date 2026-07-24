@@ -445,29 +445,35 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
   });
 
   it("Entscheidungszyklus (§22.2): Perk/Formation/Stat/Skill je nach Durchlauf; leerer Skill-Pool → Perk", () => {
-    // Nach dem Durchlauf mit cycle C ist die Entscheidung DECISION_CYCLE[(C+1) % 6].
+    // Nach dem Durchlauf mit cycle C ist die Entscheidung DECISION_SCHEDULE[C+1] (Shop-Spec §2.2, fester 44-Plan).
     const ALL = Object.keys(SKILL_DEFS); // alle Skills (Blitz + Feuer …) → leerer Pool erzwingt den Perk-Fallback
 
-    const perkRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 0 }), rng); // → cycle 1 (%6=1 → perk)
+    const perkRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 0 }), rng); // → cycle 1 = perk
     expect(perkRound.phase).toBe("levelup");
     expect(perkRound.offer).toHaveLength(3);
     expect(perkRound.skillOffer).toBeNull();
     expect(perkRound.statOffer).toBeNull();
 
-    const formationRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1 }), rng); // → cycle 2 (formation)
+    const formationRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1 }), rng); // → cycle 2 = formation
     expect(formationRound.phase).toBe("formation");
     expect(formationRound.formationEnergy).toBe(FORMATION_ENERGY);
     expect(formationRound.offer).toBeNull();
     expect(formationRound.skillOffer).toBeNull();
     expect(formationRound.statOffer).toBeNull();
 
-    const statRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng); // → cycle 3 (stat)
+    const statRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng); // → cycle 3 = stat
     expect(statRound.phase).toBe("levelup");
     expect(statRound.statOffer).toEqual(STAT_IDS);
     expect(statRound.offer).toBeNull();
     expect(statRound.skillOffer).toBeNull();
 
-    const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4 }), rng); // → cycle 5 (skill)
+    const shopRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 3 }), rng); // → cycle 4 = shop (Shop-Spec §2.2)
+    expect(shopRound.phase).toBe("shop");
+    expect(shopRound.offer).toBeNull();
+    expect(shopRound.statOffer).toBeNull();
+    expect(shopRound.skillOffer).toBeNull();
+
+    const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4 }), rng); // → cycle 5 = skill
     expect(skillRound.phase).toBe("levelup");
     expect(skillRound.skillOffer).toHaveLength(6); // Prototyp: SKILLS_OFFERED 6 (2+2+2, alle 3 Archetypen)
     expect(skillRound.offer).toBeNull();

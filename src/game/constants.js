@@ -1,7 +1,7 @@
 /* ============================================================
    TUNING-BLOCK  — hier dreht der Dev im Playtest
    ============================================================ */
-export const MAX_CYCLES       = 40;     // V2 (§22.1): fester Run über genau so viele Deck-Durchläufe, danach Ende [TUNING]
+export const MAX_CYCLES       = 44;     // Shop-Spec (§2.1): fester Run über genau so viele Deck-Durchläufe, danach Ende [TUNING]
 export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING]
 export const CRIT_BASE_MULT   = 1.5;    // V2 (§22.3): Basis-Crit-Multiplikator; der Crit-Mult-Stat baut darauf auf [TUNING]
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
@@ -11,10 +11,24 @@ export const STAT_CRIT_CHANCE_STEP = 0.05;  // Crit-Chance: +5 Prozentpunkte je 
 export const STAT_CRIT_MULT_STEP   = 0.2;   // Crit-Multiplikator: +0,2× je Pick (auf Basis 1,5) (#94)
 export const STAT_FORM_MULT_STEP   = 0.05;  // Formations-Mult: +5 % Score bei aktiver Formation je Pick (max 1×/Stich)
 export const STAT_STREAK_MULT_STEP = 0.02;  // Serien-Mult: +2 % Score je aktuellem Serienpunkt je Pick (#94)
+export const STAT_ECONOMY_STEP     = 1;     // Einkommen (Shop-Spec §4): +1 Münze je abgeschlossenem Durchlauf je Pick
 
-// Entscheidungszyklus (V2 §22.2): Typ der Entscheidung VOR Durchlauf n = DECISION_CYCLE[n % 6].
-// Über 40 Durchläufe: 14 Stat · 13 Perk · 7 Formation · 6 Skill.
-export const DECISION_CYCLE = ["stat", "perk", "formation", "stat", "perk", "skill"];
+// Entscheidungsplan (Shop-Spec §2.2): Typ der Entscheidung VOR Durchlauf n (1-indexiert) = DECISION_SCHEDULE[n-1].
+// Fester 44-Einträge-Plan (ersetzt den alten zyklischen DECISION_CYCLE). Engine liest DECISION_SCHEDULE[cycle]
+// (nach cycle += 1); der Start-Entscheid (Index 0 = "stat") läuft über START_RUN.
+// Verteilung: 11 Stat · 11 Perk · 8 Formation · 8 Shop · 6 Skill.
+// Shop-Zeitpunkte (Durchlauf): 5, 11, 16, 22, 27, 33, 38, 42 · Skill-Zeitpunkte: 6, 12, 19, 28, 34, 41.
+export const DECISION_SCHEDULE = [
+  "stat", "perk", "formation", "stat", "shop", "skill", "perk", "formation", "stat", "perk",   //  1–10
+  "shop", "skill", "formation", "stat", "perk", "shop", "formation", "stat", "skill", "perk",  // 11–20
+  "stat", "shop", "perk", "stat", "formation", "perk", "shop", "skill", "stat", "formation",   // 21–30
+  "perk", "stat", "shop", "skill", "formation", "perk", "stat", "shop", "formation", "perk",   // 31–40
+  "skill", "shop", "stat", "perk",                                                             // 41–44
+];
+
+// Shop-Münzökonomie (Shop-Spec §3) [TUNING]
+export const STARTING_COINS       = 2;   // Startmünzen bei Run-Beginn
+export const BASE_COINS_PER_CYCLE = 2;   // Münzen je vollständig abgeschlossenem Durchlauf (+ Einkommen-Level)
 
 // Formationsphase (V2 §22.8): Energie je Phase; jeder beliebige Tausch zweier Karten kostet 1. [TUNING]
 export const FORMATION_ENERGY = 4;

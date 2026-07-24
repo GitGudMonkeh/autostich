@@ -13,10 +13,12 @@ export const STAT_DEFS = {
   critMult:   { id: "critMult",   label: "Crit-Multiplikator",    field: "statCritMult",   step: C.STAT_CRIT_MULT_STEP,   blurb: "+0,2×",     desc: "+0,2× Crit-Multiplikator (auf Basis 1,5×)." },
   formMult:   { id: "formMult",   label: "Formations-Multiplikator", field: "statFormMult", step: C.STAT_FORM_MULT_STEP, blurb: "+5 %",       desc: "+5 % Score auf einen Sieg mit mindestens einer aktiven Formation (höchstens 1× pro Stich)." },
   streakMult: { id: "streakMult", label: "Serien-Multiplikator",  field: "statStreakMult", step: C.STAT_STREAK_MULT_STEP, blurb: "+2 %/Serie", desc: "+2 % Score pro aktuellem Serienpunkt." },
+  // Einkommen (Shop-Spec §4) — additiv, stapelbar, kein Cap; erhöht die Münzvergabe je abgeschlossenem Durchlauf.
+  economy:    { id: "economy",    label: "Einkommen",             field: "economyStatLevel", step: C.STAT_ECONOMY_STEP,   blurb: "+1 Münze",   desc: "+1 Münze nach jedem abgeschlossenen Durchlauf." },
 };
 
-// Reihenfolge des Angebots (immer alle vier).
-export const STAT_IDS = ["critChance", "critMult", "formMult", "streakMult"];
+// Reihenfolge des Angebots (immer alle Stats). Shop-Spec §4.3: fünf Stats inkl. Einkommen.
+export const STAT_IDS = ["critChance", "critMult", "formMult", "streakMult", "economy"];
 
 // Serien-Stat-Faktor auf den Stichscore: 1 + Σ(+2 %/Pick) × aktueller Serienpunkt.
 export const statStreakFactor = (statStreakMult, serieStreak) => 1 + (statStreakMult || 0) * (serieStreak || 0);

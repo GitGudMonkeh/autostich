@@ -8,6 +8,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
+import { coinsPerCycle } from "./shop.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -61,6 +62,7 @@ export function resolveTrick(state, rng = Math.random) {
     crits, critBonusScore, bestTrickScore,
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
     iceTemp = {}, frostbitePending = [], frostbiteActive = [], // Eis (#93 F3): temp. Wertboni je card.id / Frostbiss-Markierungen
+    shop = null, economyStatLevel = 0, // Shop-System (Shop-Spec §3): Münzstand + Einkommen-Level
   } = state;
 
   const pCard = deck[playerOrder[pos]];
@@ -377,6 +379,9 @@ export function resolveTrick(state, rng = Math.random) {
   let newFormationSwaps = formationSwaps;
   if (pos >= C.TRICKS_PER_CYCLE) {
     cycle += 1;
+    // Shop-Münzökonomie (Shop-Spec §3.2): jeder vollständig abgeschlossene Durchlauf zahlt Basis + Einkommen-Level.
+    // Auch nach dem letzten Durchlauf (→ gameover) noch vergeben, für den Endscreen (§3.5).
+    shop = { ...(shop || {}), coins: ((shop && shop.coins) || 0) + coinsPerCycle(economyStatLevel) };
     // L8 Schicksalsmaschine: erfolgreichste und erfolgloseste Karte tauschen ihre Dauerwerte.
     if (ownsFlag(perks, "swapExtremes")) {
       let bestId = null, worstId = null, bestW = -1, worstW = Infinity;
@@ -401,10 +406,11 @@ export function resolveTrick(state, rng = Math.random) {
       // Frostbiss (#93 F3): die im gerade beendeten Durchlauf gesetzten Marken werden für den neuen Durchlauf aktiv.
       newFrostbiteActive = newFrostbitePending;
       newFrostbitePending = [];
-      // Entscheidung VOR dem neuen Durchlauf nach dem festen Zyklus (§22.2): DECISION_CYCLE[cycle % 6].
-      const decision = C.DECISION_CYCLE[cycle % C.DECISION_CYCLE.length];
+      // Entscheidung VOR dem neuen Durchlauf nach dem festen Plan (Shop-Spec §2.2): DECISION_SCHEDULE[cycle]
+      // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
+      const decision = C.DECISION_SCHEDULE[cycle];
       if (decision === "stat") {
-        phase = "levelup"; newStatOffer = STAT_IDS; // immer alle vier Stats
+        phase = "levelup"; newStatOffer = STAT_IDS; // immer alle Stats (Shop-Spec §4.3: fünf inkl. Einkommen)
       } else if (decision === "skill") {
         const soff = buildSkillOffer(skills, activeArchetypes, rng, C.SKILLS_OFFERED);
         if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
@@ -412,6 +418,9 @@ export function resolveTrick(state, rng = Math.random) {
       } else if (decision === "perk") {
         const off = buildOffer(perks, rng, C.PERKS_OFFERED);
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
+      } else if (decision === "shop") {
+        // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen. S0: leeres Angebot (offers null) — Ziehung folgt in S1.
+        phase = "shop";
       } else if (decision === "formation") {
         // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ E10 Feinjustierung), Vorschau berechnen.
         phase = "formation";
@@ -438,6 +447,7 @@ export function resolveTrick(state, rng = Math.random) {
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
     iceTemp: newIceTemp, frostbitePending: newFrostbitePending, frostbiteActive: newFrostbiteActive, // Eis (#93 F3)
+    shop, // Shop-System (Shop-Spec §3): aktualisierter Münzstand (economyStatLevel läuft unverändert über ...state)
     lastTrick, phase,
   };
 }

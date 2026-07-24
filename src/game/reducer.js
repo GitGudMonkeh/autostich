@@ -4,6 +4,7 @@ import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, ma
   frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations } from "./formations.js";
+import { initialShop } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -31,7 +32,7 @@ export function initialState(rng = Math.random) {
     misfireScore: 0, // V2 §22.6 D15: Score-Ladung (Fehlzündung)
     winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Farbserie / Volles Haus
     // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
-    statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, statOffer: null,
+    statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, economyStatLevel: 0, statOffer: null,
     formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt
     formationEnergy: 0, formationSwaps: [], // Formationsphase (V2 §22.8): Energie + Undo-Historie der aktuellen Phase
     roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
@@ -42,6 +43,7 @@ export function initialState(rng = Math.random) {
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     iceTemp: {}, frostbitePending: [], frostbiteActive: [], frostSwapsUsed: [], // Eis-Archetyp (#93 F3): temp. Wertboni / Frostbiss-Marken / genutzte Frosttausche
     tieArmed: false,
+    shop: initialShop(), // Shop-System (Shop-Spec): Münzen + (später) Angebot/Anker/Regeländerungen
     lastTrick: null,
   };
 }
@@ -66,6 +68,9 @@ export function reducer(state, action) {
     case "END_RUN":     // Lauf freiwillig beenden → Endscreen (GameOver) statt direkt ins Menü.
       // Highscore/Geist sichert der gameover-Effekt in App.jsx (saveRun). Menü/Gameover ignorieren.
       return (state.phase === "menu" || state.phase === "gameover") ? state : { ...state, phase: "gameover" };
+
+    case "LEAVE_SHOP":  // Shop-Runde bestätigen/verlassen (Shop-Spec §2.6) → zugehöriger Durchlauf startet.
+      return state.phase === "shop" ? { ...state, phase: "play" } : state;
 
     case "RESOLVE_TRICK":
       return resolveTrick(state, action.rng);

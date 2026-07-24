@@ -13,6 +13,7 @@ import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { StatSelect } from "./ui/StatSelect.jsx";
 import { FormationPhase } from "./ui/FormationPhase.jsx";
+import { ShopScreen } from "./ui/ShopScreen.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
@@ -174,6 +175,8 @@ export function Autostich() {
   // Skill-Auswahl (jede 3. Runde): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
+  // Shop-Runde (Shop-Spec §2.6): verlassen/bestätigen → zugehöriger Durchlauf startet.
+  const leaveShop = () => dispatch({ type: "LEAVE_SHOP" });
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
@@ -271,6 +274,11 @@ export function Autostich() {
                   </span>
                 </div>
               </div>
+              {/* Münzen (Shop-Spec §3) — Run-Ressource für den Shop */}
+              <div className="text-right">
+                <div className="text-[10px] uppercase tracking-wide opacity-50">Münzen</div>
+                <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>🪙 {state.shop?.coins ?? 0}</div>
+              </div>
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
                 <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
@@ -311,6 +319,9 @@ export function Autostich() {
 
       {state.phase === "formation" && (
         <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} />
+      )}
+      {state.phase === "shop" && (
+        <ShopScreen state={state} onLeave={leaveShop} />
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />
