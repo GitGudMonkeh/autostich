@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { initialShop, coinsPerCycle, buildShopOffer, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS } from "../src/game/shop.js";
+import { initialShop, coinsPerCycle, buildShopOffer, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor } from "../src/game/shop.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { MAX_CYCLES, DECISION_SCHEDULE, STARTING_COINS, BASE_COINS_PER_CYCLE,
@@ -417,5 +417,65 @@ describe("Shop-Anker — Kauf & Platzierung (Shop-Spec §8)", () => {
     s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 8 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.shop.anchors.map((a) => a.position).sort((a, b) => a - b)).toEqual([7, 8]);
+  });
+});
+
+// Einen kompletten Durchlauf abspielen und die Stichzahl zählen (bis der Durchlauf endet / cycle steigt).
+const runCycle = (state) => {
+  let s = state, tricks = 0;
+  while (s.cycle === state.cycle && s.phase === "play" && tricks < 60) { s = resolveTrick(s, makeRng(tricks + 1)); tricks++; }
+  return { s, tricks };
+};
+
+describe("Zeitsegment — A-L1 (Shop-Spec §8)", () => {
+  it("playSequence: ohne → 40; mit Segment 1 werden Positionen 5–9 direkt wiederholt (→ 45)", () => {
+    expect(playSequence(null)).toHaveLength(40);
+    const seq = playSequence(1);
+    expect(seq).toHaveLength(45);
+    expect(seq.slice(0, 15)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 5, 6, 7, 8, 9]);
+  });
+  it("cycleLenFor: 40 ohne, 45 mit Zeitsegment", () => {
+    expect(cycleLenFor({ timeSegmentIndex: null })).toBe(40);
+    expect(cycleLenFor({ timeSegmentIndex: 2 })).toBe(45);
+    expect(cycleLenFor(null)).toBe(40);
+  });
+  it("ein Durchlauf hat 45 Stiche mit Zeitsegment, sonst 40", () => {
+    expect(runCycle(initialState(makeRng(1))).tricks).toBe(40);
+    const withSeg = { ...initialState(makeRng(1)), shop: { ...initialShop(), timeSegmentIndex: 1 } };
+    const { s, tricks } = runCycle(withSeg);
+    expect(tricks).toBe(45);
+    expect(s.cycle).toBe(1);
+  });
+  it("das wiederholte Segment spielt dieselben Spieler- und Gegnerkarten; Stich ist als Wiederholung markiert", () => {
+    let s = { ...initialState(makeRng(1)), shop: { ...initialShop(), timeSegmentIndex: 1 } }; // Segment 1 = Positionen 5–9
+    const t = [];
+    for (let i = 0; i < 15; i++) { s = resolveTrick(s, makeRng(i + 1)); t.push(s.lastTrick); }
+    expect(t[4].isRepeatedSegmentTrick).toBe(false);       // Position 4 (vor dem Segment)
+    expect(t[10].isRepeatedSegmentTrick).toBe(true);       // Stich-Index 10 = Wiederholung von Position 5
+    expect(t[10].originalPosition).toBe(5);
+    expect(t[10].segmentIndex).toBe(1);
+    expect(t[10].pCard.id).toBe(t[5].pCard.id);
+    expect(t[10].oCard.id).toBe(t[5].oCard.id);
+  });
+  it("positionsgebundene Effekte lösen im wiederholten Segment erneut aus (Anker auf Position 6)", () => {
+    let s = { ...initialState(makeRng(1)), deck: constDeck(5), oppDeck: constDeck(6), playerOrder: identity(), oppOrder: identity(),
+      shop: { ...initialShop(), timeSegmentIndex: 1, anchors: [{ type: "power", position: 6 }] } };
+    const t = [];
+    for (let i = 0; i < 12; i++) { s = resolveTrick(s, makeRng(i + 1)); t.push(s.lastTrick); }
+    expect(t[6].pValue).toBe(7);   // Position 6 (5+2 Kraftanker)
+    expect(t[11].pValue).toBe(7);  // Wiederholung von Position 6 → wieder +2
+    expect(t[11].originalPosition).toBe(6);
+  });
+  it("Kauf von A-L1 setzt timeSegmentIndex (einmalig, legendär + nicht wiederholbar)", () => {
+    const offer = { offerId: "o0", itemId: "A-L1", category: "anchors", tier: "legendary", price: 30, legendary: true };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
+    expect(s.phase).toBe("shop-target");
+    s = reducer(s, { type: "SHOP_TARGET_SEGMENT", segment: 3 });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.shop.timeSegmentIndex).toBe(3);
+    expect(r.shop.coins).toBe(0);
+    expect(r.shop.boughtLegendaryIds).toEqual(["A-L1"]);
+    expect(r.shop.boughtNonRepeatableIds).toEqual(["A-L1"]);
   });
 });

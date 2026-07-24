@@ -1,4 +1,5 @@
-import { TRICKS_PER_CYCLE, MAX_CYCLES } from "../game/constants.js";
+import { MAX_CYCLES } from "../game/constants.js";
+import { cycleLenFor } from "../game/shop.js";
 import { critChanceRawFor, hasCritPerk, critMultiplierFor } from "../game/perks.js";
 import { lightningCritRaw } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
@@ -24,7 +25,8 @@ function Stat({ label, value, tone }) {
 export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
   const { wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, perks, crits, lightning, skills = [],
           statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0 } = state;
-  const remaining = TRICKS_PER_CYCLE - pos; // Karten bis zum nächsten Mischen (#6)
+  const cycleLen = cycleLenFor(state.shop);  // 40, mit Zeitsegment 45 (§8 A-L1)
+  const remaining = cycleLen - pos;          // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
@@ -54,9 +56,9 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
       <div>
         <div className="flex justify-between text-xs mb-1">
           <span className="opacity-60">Deck bis zum Mischen</span>
-          <span className="opacity-80">{remaining} / {TRICKS_PER_CYCLE}</span>
+          <span className="opacity-80">{remaining} / {cycleLen}</span>
         </div>
-        <Bar value={remaining} max={TRICKS_PER_CYCLE} color="#8a7de0" height={6} />
+        <Bar value={remaining} max={cycleLen} color="#8a7de0" height={6} />
       </div>
       {/* Crit (#19/#46). Der Gesamt-Score-Mult steht dauerhaft im Header-Chip (#37). */}
       {(ownsD4 || showCrit) && (

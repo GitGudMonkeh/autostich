@@ -110,7 +110,25 @@ export const SHOP_ITEM_DEFS = {
         targetMode: "position", target: { position: true },
         description: "Wähle eine Position. Sie zählt als aktive Formation und gibt bei Sieg ×1,25 (stapelt nicht mit E7/E8).",
         apply: (s, t) => ({ shop: addAnchor(s.shop, "formation", t.position) }) },
+  "A-L1": { id: "A-L1", category: "anchors", name: "Zeitsegment", tier: "legendary", legendary: true, repeatable: false,
+        targetMode: "segment", target: { segment: true },
+        description: "Wähle ein Segment. Nachdem seine fünf Karten gespielt wurden, wird das Segment sofort ein zweites Mal gespielt (Durchlauf = 45 Stiche).",
+        apply: (s, t) => ({ shop: { ...s.shop, timeSegmentIndex: t.segment } }) },
 };
+
+/* ---- Zeitsegment (Shop-Spec §8 A-L1) — Spielreihenfolge der Positionen eines Durchlaufs. ---- */
+// Ohne Zeitsegment: 0..tricks-1. Mit Zeitsegment wird das gewählte Segment (5 Positionen) DIREKT nach seinem
+// ersten Spielen ein zweites Mal eingefügt → tricks+5 Stiche. Positionsgebundene Effekte nutzen die zurückgegebene
+// Deckposition (Wiederholung „zählt erneut", Spec §8). Rein & deterministisch.
+export function playSequence(timeSegIdx, tricks = C.TRICKS_PER_CYCLE, segSize = SEGMENT_SIZE) {
+  const seq = Array.from({ length: tricks }, (_, p) => p);
+  if (timeSegIdx == null) return seq;
+  const start = timeSegIdx * segSize, end = Math.min(start + segSize, tricks);
+  seq.splice(end, 0, ...Array.from({ length: end - start }, (_, k) => start + k)); // Wiederholung nach der letzten Segmentposition
+  return seq;
+}
+// Stichzahl eines Durchlaufs je Build: 40, mit Zeitsegment 45.
+export const cycleLenFor = (shop) => C.TRICKS_PER_CYCLE + (shop && shop.timeSegmentIndex != null ? SEGMENT_SIZE : 0);
 
 // Preis einer Stufe (Spec §5.5) — nur vier feste Preise.
 export const priceOf = (tier) => C.SHOP_PRICE[tier] ?? 0;

@@ -8,7 +8,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
-import { coinsPerCycle, buildShopOffer, SHOP_ITEM_DEFS, anchorTypeAt } from "./shop.js";
+import { coinsPerCycle, buildShopOffer, SHOP_ITEM_DEFS, anchorTypeAt, playSequence } from "./shop.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -65,21 +65,30 @@ export function resolveTrick(state, rng = Math.random) {
     shop = null, economyStatLevel = 0, // Shop-System (Shop-Spec §3): Münzstand + Einkommen-Level
   } = state;
 
-  const pCard = deck[playerOrder[pos]];
-  const oCard = oppDeck[oppOrder[pos]];
+  // Zeitsegment (Shop §8 A-L1): `pos` ist der Stich-Index dieses Durchlaufs, `actualPos` die zugehörige
+  // Deckposition. Ohne Zeitsegment sind beide gleich; mit Zeitsegment wird das gewählte Segment direkt nach
+  // seinem ersten Spielen wiederholt (45 Stiche) — positionsgebundene Effekte nutzen actualPos („zählt erneut").
+  const timeSeg = shop && shop.timeSegmentIndex != null ? shop.timeSegmentIndex : null;
+  const seq = playSequence(timeSeg);
+  const cycleLen = seq.length;
+  const actualPos = seq[pos];
+  const isRepeat = timeSeg != null && pos >= timeSeg * SEGMENT_SIZE + SEGMENT_SIZE && pos < timeSeg * SEGMENT_SIZE + 2 * SEGMENT_SIZE;
+  const pCard = deck[playerOrder[actualPos]];
+  const oCard = oppDeck[oppOrder[actualPos]];
 
   // Formationen (V2 §22.7): zu Durchlauf-Beginn (pos 0) aus der persistenten Reihenfolge + Dauerwerten
   // berechnet und für den ganzen Durchlauf stabil gehalten. Greifen bei Sieg der jeweiligen Karte.
   let formations = state.formations || [];
   const anchors = (shop && shop.anchors) || []; // Shop-Positionsanker (§8) — an der Deckposition
   if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors);
-  const posForm = formations[pos] || { mult: 1, formations: [] };
+  const posForm = formations[actualPos] || { mult: 1, formations: [] };
   const formationMult = posForm.mult || 1;
   const hasFormation = positionHasFormation(posForm);
   // Anker-Typ auf DIESER Position (max 1 je Position) → A1 Kraft / A2 Punkte / A3 Krit / A4 Serie.
-  const anchorType = anchorTypeAt(anchors, pos);
-  // Dauerwert des direkten Vorgängers in der Reihenfolge (B10 Überzahl); an Position 0 keiner.
-  const predValue = pos > 0 ? deck[playerOrder[pos - 1]].value : null;
+  const anchorType = anchorTypeAt(anchors, actualPos);
+  // Dauerwert des zuletzt gespielten Vorgängers (B10 Überzahl); im ersten Stich keiner. Bei Zeitsegment-Wiederholung
+  // ist der Vorgänger die zuletzt gespielte Karte (seq[pos-1]), nicht actualPos-1.
+  const predValue = pos > 0 ? deck[playerOrder[seq[pos - 1]]].value : null;
 
   trickNo += 1;
   // #71 Volles Haus: Siege in den (bis zu 4) Stichen VOR diesem — inkl. aktuellem Sieg = Fenster 5.
@@ -91,23 +100,23 @@ export function resolveTrick(state, rng = Math.random) {
   const triumphActive = triumphArmed.includes(pCard.id);
   let isSegmentLow = false, isSegmentHigh = false;
   if (ownsFlag(perks, "segmentLow") || ownsFlag(perks, "segmentHigh")) { // C7 Tiefste / L7 Höchste im Segment (erste bei Gleichstand)
-    const segStart = Math.floor(pos / SEGMENT_SIZE) * SEGMENT_SIZE;
+    const segStart = Math.floor(actualPos / SEGMENT_SIZE) * SEGMENT_SIZE;
     let minVal = Infinity, minPos = -1, maxVal = -Infinity, maxPos = -1;
     for (let k = segStart; k < segStart + SEGMENT_SIZE && k < playerOrder.length; k++) {
       const v = deck[playerOrder[k]].value;
       if (v < minVal) { minVal = v; minPos = k; }
       if (v > maxVal) { maxVal = v; maxPos = k; }
     }
-    isSegmentLow = pos === minPos; isSegmentHigh = pos === maxPos;
+    isSegmentLow = actualPos === minPos; isSegmentHigh = actualPos === maxPos;
   }
   // L10 Kettenreaktion: der direkte Nachfolger eines Crits ist garantiert kritisch (falls er gewinnt).
   const forceCrit = chainArmed; chainArmed = false;
   // L11 Zeitraffer: Position 40 wiederholt den temporären Wertbonus von Position 20.
-  const l11Bonus = (pos === 39 && ownsFlag(perks, "repeatPos")) ? (pos20Bonus || 0) : 0;
+  const l11Bonus = (actualPos === 39 && ownsFlag(perks, "repeatPos")) ? (pos20Bonus || 0) : 0;
   // C2 Triumph: die Armierung dieser Karte wird durch das Spielen verbraucht (Neu-Armierung nur bei Sieg).
   if (triumphActive) triumphArmed = triumphArmed.filter((id) => id !== pCard.id);
   const ctx = {
-    posInCycle: pos,
+    posInCycle: actualPos,
     trickNo,
     lastResult,
     lostLastTrick: lastResult === "loss",
@@ -144,7 +153,7 @@ export function resolveTrick(state, rng = Math.random) {
   const pValue = effectivePlayerValue(pCard.value, perks, ctx) + relayBonus + l11Bonus + fireValueBonus + iceValueBonus + anchorPowerBonus;
   // L11: den temporären Wertbonus dieser Karte an Position 20 für Position 40 merken.
   let newPos20Bonus = pos20Bonus;
-  if (pos === 19) newPos20Bonus = pValue - pCard.value;
+  if (actualPos === 19) newPos20Bonus = pValue - pCard.value;
   // Frostbiss (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −3 Wert (nie < 0); sonst neutral (§12).
   const oValue = Math.max(0, oCard.value - (frostbiteActive.includes(oCard.id) ? C.FROSTBISS_DEBUFF : 0));
   // Eis: der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht.
@@ -373,6 +382,7 @@ export function resolveTrick(state, rng = Math.random) {
     formations: posForm.formations,
     oFrostbitten: frostbiteActive.includes(oCard.id), // Eis (#93 F3): erst JETZT (im Kampf) sichtbar
     pFrozen: !!pCard.frozen,
+    isRepeatedSegmentTrick: isRepeat, originalPosition: actualPos, segmentIndex: timeSeg, // Zeitsegment (§8 A-L1 / §13)
     breakdown, // Ergebnis-Aufschlüsselung (§17): { base, flats, streakMult, perkMult, formMult, critMult, total } bei Sieg, sonst null
   };
 
@@ -385,7 +395,7 @@ export function resolveTrick(state, rng = Math.random) {
   let newStatOffer = statOffer;
   let newFormationEnergy = formationEnergy;
   let newFormationSwaps = formationSwaps;
-  if (pos >= C.TRICKS_PER_CYCLE) {
+  if (pos >= cycleLen) { // Zeitsegment (§8 A-L1): Durchlauf endet nach cycleLen Stichen (40, mit Zeitsegment 45)
     cycle += 1;
     // Shop-Münzökonomie (Shop-Spec §3.2): jeder vollständig abgeschlossene Durchlauf zahlt Basis + Einkommen-Level.
     // Auch nach dem letzten Durchlauf (→ gameover) noch vergeben, für den Endscreen (§3.5).

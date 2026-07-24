@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
-import { BASE_FLIP_MS, GHOST_STEP, TRICKS_PER_CYCLE } from "./game/constants.js";
+import { BASE_FLIP_MS, GHOST_STEP } from "./game/constants.js";
 import { baseScoreMultFor } from "./game/perks.js";
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, loadOptions, saveOptions, loadUsername, saveUsername } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
@@ -21,6 +21,7 @@ import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
 import { CrystalBar } from "./ui/CrystalBar.jsx";
 import { frozenCount } from "./game/skills.js";
+import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
@@ -303,7 +304,7 @@ export function Autostich() {
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
-              <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} />
+              <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} flipMs={flipMs} />
               <ChargeBar lightning={state.lightning} skills={state.skills} />
               <HeatBar heat={state.heat} skills={state.skills} />
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
