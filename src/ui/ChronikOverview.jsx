@@ -4,6 +4,7 @@ import { PERK_DEFS } from "../game/perks.js";
 import { SEGMENT_SIZE } from "../game/formations.js";
 import { formationBorder } from "./formationStyle.js";
 import { CardDetail } from "./CardDetail.jsx";
+import { LayoutPerks } from "./LayoutPerks.jsx";
 
 const FORM_LABEL = { wiederholung: "W", farbblock: "F", treppe: "T", wechsel: "Z", anker: "A" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
@@ -71,6 +72,11 @@ export function ChronikOverview({ state, onClose }) {
         {/* Detailanzeige der angeklickten Karte (#95.5) */}
         <div className="mt-3">
           <CardDetail card={selPos != null ? cards[selPos] : null} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} />
+        </div>
+
+        {/* Positions- & Formations-Perks (#95) */}
+        <div className="mt-3">
+          <LayoutPerks perks={state.perks} />
         </div>
 
         <div className="text-[10px] opacity-45 mt-2 flex flex-wrap gap-x-3">

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildDeck, makeRng } from "../src/game/deck.js";
-import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks } from "../src/game/perks.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 
 describe("Perks — Deck-Modifikationen (Kat. A)", () => {
@@ -174,6 +174,20 @@ describe("baseScoreMultFor (Header-Chip #37 — V2: nur noch Basis-Serie #39)", 
     expect(baseScoreMultFor([], { winStreak: 0 })).toBeCloseTo(1);
     expect(baseScoreMultFor([], { winStreak: 5 })).toBeCloseTo(1.10);
     expect(baseScoreMultFor([], { winStreak: 20 })).toBeCloseTo(1.30); // Cap
+  });
+});
+
+describe("Layout-Perks (#95): Positions-/Formations-relevante Perks", () => {
+  it("alle E-Werkzeuge zählen als Layout-Perk", () => {
+    PERK_LIST.filter((p) => p.cat === "E").forEach((p) => expect(isLayoutPerk(p.id)).toBe(true));
+  });
+  it("kuratierte B/C/D/L sind enthalten, layout-fremde Perks nicht", () => {
+    ["B4", "B6", "B9", "C1", "C8", "D1", "L3", "L7", "L11"].forEach((id) => expect(isLayoutPerk(id)).toBe(true));
+    ["A1", "B1", "B2", "C2", "D2", "D6", "L5"].forEach((id) => expect(isLayoutPerk(id)).toBe(false));
+  });
+  it("layoutPerks filtert die gehaltenen Perks in Reihenfolge", () => {
+    expect(layoutPerks(["A1", "E1", "D2", "C8", "L7"])).toEqual(["E1", "C8", "L7"]);
+    expect(layoutPerks([])).toEqual([]);
   });
 });
 

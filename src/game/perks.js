@@ -308,6 +308,18 @@ export const RARITY_META = {
 };
 export const rarityMeta = (id) => RARITY_META[rarityOf(id)];
 
+// Perks, deren Wirkung von Position/Reihenfolge oder Formations-Zugehörigkeit abhängt — für die
+// Aufstellungshilfe in Formationsphase & Kartenübersicht (Issue #95). Alle E-Werkzeuge (Kat. E)
+// plus kuratierte B/C/D/L, deren Effekt an Position, direkter Nachbarschaft oder Formation hängt.
+const LAYOUT_EXTRA = new Set([
+  "B3", "B4", "B6", "B9", "B10",          // Auftakt-/Zehner-Positionen · Wiederholung · Treppe · Überzahl (Vorgänger)
+  "C1", "C3", "C4", "C5", "C6", "C7", "C8", "C10", // Positions-/Nachbarschafts-/Segment-Rollen · Joker/Bindeglied (Formation)
+  "D1", "D11",                            // Formations-Sieg / Crit in Formation
+  "L3", "L7", "L11",                      // Positionen 36–40 · Segment-Höchste · Position 20→40
+]);
+export function isLayoutPerk(id) { return PERK_DEFS[id]?.cat === "E" || LAYOUT_EXTRA.has(id); }
+export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); }
+
 // Angebot: bis zu `count` noch nicht besessene Perks, GEWICHTET nach Seltenheit (#33, §10.3).
 // Perk-Auswahl nach jeder Runde: KEINE Level-Gates mehr — alle Seltenheiten sofort möglich, nur gewichtet;
 // höchstens MAX_LEGENDARIES_PER_OFFER Legendaries je Angebot.

@@ -162,7 +162,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
                      top:  `calc(${FLOAT_ZONES.crit.top} + ${fjitter(t.trickNo * 5 + 9, JITTER_Y)}px)`,
                      fontSize: 26, color: critColor, textShadow: `0 0 12px ${critColor}aa`,
                      transform: reduced ? "translateX(-50%)" : undefined,
-                     animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900)}ms ease-out forwards`) }}>
+                     animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900) + 1000}ms ease-out forwards`) }}>
             {jackpot ? "JACKPOT" : "KRITISCH"}{reduced ? ` ×${critMultStr}` : "!"}
           </div>
         )}
@@ -199,7 +199,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
                      fontSize: formPeak === 2 ? 26 : formPeak === 1 ? 21 : 17,
                      color: formPeak ? "#d4a63a" : "#5ab87a",
                      textShadow: formPeak === 2 ? "0 0 16px #d4a63a" : formPeak === 1 ? "0 0 12px #d4a63aaa" : "0 0 10px #5ab87a88",
-                     animation: fx(`as-combo ${floatDur}ms ease-out forwards`) }}>
+                     animation: fx(`as-combo ${floatDur + 1000}ms ease-out forwards`) }}>
             {formPeak === 2 && "★ "}{formLabel} ×{formationStr}
           </div>
         )}

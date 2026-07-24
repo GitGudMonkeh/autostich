@@ -4,6 +4,7 @@ import { PERK_DEFS } from "../game/perks.js";
 import { summarizeFormations, SEGMENT_SIZE } from "../game/formations.js";
 import { formationBorder } from "./formationStyle.js";
 import { CardDetail } from "./CardDetail.jsx";
+import { LayoutPerks } from "./LayoutPerks.jsx";
 
 // Kurzkürzel der Formationstypen für die Karten-Badges.
 const FORM_LABEL = { wiederholung: "W", farbblock: "F", treppe: "T", wechsel: "Z", anker: "A" };
@@ -102,6 +103,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         {/* Detailanzeige der angetippten Karte (#95.5) */}
         <div className="mt-3">
           <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} />
+        </div>
+
+        {/* Positions- & Formations-Perks (#95): worauf es beim Aufstellen ankommt */}
+        <div className="mt-3">
+          <LayoutPerks perks={state.perks} />
         </div>
 
         {/* Kurz-Erklärung der Formationen mit Kürzel (#95.7) */}
