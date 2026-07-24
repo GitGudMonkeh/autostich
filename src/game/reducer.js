@@ -3,7 +3,7 @@ import { PERK_DEFS, buildOffer } from "./perks.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
-import { computeFormations } from "./formations.js";
+import { computeFormations, SEGMENT_SIZE } from "./formations.js";
 import { initialShop, SHOP_ITEM_DEFS } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
@@ -43,7 +43,8 @@ export function initialState(rng = Math.random) {
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     iceTemp: {}, frostbitePending: [], frostbiteActive: [], frostSwapsUsed: [], // Eis-Archetyp (#93 F3): temp. Wertboni / Frostbiss-Marken / genutzte Frosttausche
     tieArmed: false,
-    shop: initialShop(), // Shop-System (Shop-Spec): Münzen + (später) Angebot/Anker/Regeländerungen
+    shop: initialShop(), // Shop-System (Shop-Spec): Münzen + Angebot (+ später Anker/Regeländerungen)
+    shopTarget: null,    // Shop-Ziel-Auswahl (Shop-Spec §12.2): aktive Karten-/Farb-/Segment-Auswahl beim Kauf
     lastTrick: null,
   };
 }
@@ -84,8 +85,11 @@ export function reducer(state, action) {
       if ((shop.coins || 0) < offer.price) return state;                        // nicht bezahlbar
       const def = SHOP_ITEM_DEFS[offer.itemId];
       if (!def) return state;
-      if (def.targetMode) return state; // Ziel-Auswahl nötig → Target-Flow (S2); Münzen erst nach Bestätigung
-      // Effekt anwenden (S2+ Items liefern apply → Patch), danach generische Münz-/Kauf-Buchhaltung.
+      if (def.target) { // Ziel-Auswahl nötig (§12.2): in die shop-target-Phase; Münzen erst nach Bestätigung.
+        return { ...state, phase: "shop-target",
+                 shopTarget: { offerId: offer.offerId, itemId: def.id, cards: [], colors: {}, segment: null } };
+      }
+      // Sofort-Items (kein Ziel, z. B. Planung ab S5): Effekt anwenden, danach generische Münz-/Kauf-Buchhaltung.
       const patch = def.apply ? def.apply(state, null, action.rng) : {};
       const merged = { ...state, ...patch };
       const newShop = { ...(merged.shop || shop) };
@@ -94,6 +98,61 @@ export function reducer(state, action) {
       if (def.legendary) newShop.boughtLegendaryIds = [...(shop.boughtLegendaryIds || []), def.id]; // §5.7 nie wieder
       if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
       return { ...merged, shop: newShop };
+    }
+
+    // ---- Shop-Ziel-Auswahl (Shop-Spec §12.2) — Karten/Farben/Segment wählen; Münzen erst bei CONFIRM. ----
+    case "SHOP_TARGET_CARD": {
+      if (state.phase !== "shop-target" || !state.shopTarget) return state;
+      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
+      const need = def?.target?.cards || 0;
+      if (!need || !state.deck.some((c) => c.id === action.cardId)) return state;
+      let cards = state.shopTarget.cards.slice();
+      const colors = { ...state.shopTarget.colors };
+      if (cards.includes(action.cardId)) { cards = cards.filter((id) => id !== action.cardId); delete colors[action.cardId]; }
+      else if (cards.length < need) cards.push(action.cardId);
+      else if (need === 1) { delete colors[cards[0]]; cards = [action.cardId]; } // Einzelziel: umschalten
+      else return state;                                                          // Limit erreicht → ignorieren
+      return { ...state, shopTarget: { ...state.shopTarget, cards, colors } };
+    }
+    case "SHOP_TARGET_COLOR": {
+      if (state.phase !== "shop-target" || !state.shopTarget) return state;
+      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
+      if (!def?.target?.color || !state.shopTarget.cards.includes(action.cardId)) return state;
+      const card = state.deck.find((c) => c.id === action.cardId);
+      if (!card || action.color === card.suit || !C.SUIT_ORDER.includes(action.color)) return state; // andere gültige Farbe
+      return { ...state, shopTarget: { ...state.shopTarget, colors: { ...state.shopTarget.colors, [action.cardId]: action.color } } };
+    }
+    case "SHOP_TARGET_SEGMENT": {
+      if (state.phase !== "shop-target" || !state.shopTarget) return state;
+      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
+      const nSeg = Math.ceil(state.playerOrder.length / SEGMENT_SIZE);
+      if (!def?.target?.segment || !(action.segment >= 0 && action.segment < nSeg)) return state;
+      return { ...state, shopTarget: { ...state.shopTarget, segment: action.segment } };
+    }
+    case "SHOP_TARGET_CANCEL": // Abbrechen (§12.2): Angebot & Münzen unverändert → zurück in den Shop.
+      return state.phase === "shop-target" ? { ...state, phase: "shop", shopTarget: null } : state;
+    case "SHOP_TARGET_CONFIRM": {
+      if (state.phase !== "shop-target" || !state.shopTarget) return state;
+      const st = state.shopTarget;
+      const def = SHOP_ITEM_DEFS[st.itemId];
+      const shop = state.shop || {};
+      const offer = (shop.offers || []).find((o) => o.offerId === st.offerId);
+      if (!def || !offer) return state;
+      if ((shop.purchasedOfferIds || []).includes(offer.offerId)) return state;   // schon gekauft
+      if ((shop.coins || 0) < offer.price) return state;                          // nicht bezahlbar
+      const spec = def.target || {};
+      if (spec.cards && st.cards.length !== spec.cards) return state;             // genau N Karten
+      if (spec.color && st.cards.some((id) => !st.colors[id])) return state;      // je gewählter Karte eine Farbe
+      if (spec.segment && st.segment == null) return state;                       // ein Segment
+      const target = { cardIds: st.cards, colors: st.colors, segment: st.segment };
+      const patch = def.apply ? def.apply(state, target, action.rng) : {};
+      const deck = patch.deck || state.deck;
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills);
+      const newShop = { ...shop, coins: (shop.coins || 0) - offer.price,        // Preis erst jetzt abziehen (§12.2)
+        purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId] };
+      if (def.legendary) newShop.boughtLegendaryIds = [...(shop.boughtLegendaryIds || []), def.id];
+      if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
+      return { ...state, ...patch, deck, formations, phase: "shop", shopTarget: null, shop: newShop };
     }
 
     case "RESOLVE_TRICK":

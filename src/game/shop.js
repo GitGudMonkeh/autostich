@@ -1,4 +1,5 @@
 import * as C from "./constants.js";
+import { SEGMENT_SIZE } from "./formations.js";
 
 /* ============================================================
    SHOP-SYSTEM (Shop-Spec) — reine Logik, kein Math.random / Date.
@@ -15,8 +16,72 @@ import * as C from "./constants.js";
    der Reducer generisch (BUY_ITEM). Ziel-Items (targetMode) laufen über den Target-Flow (ab S2).
    ============================================================ */
 
-// Konkrete Shop-Items — ab S2 gefüllt (Karten K1–K10/K-L1, Anker, Formationen, Planung).
-export const SHOP_ITEM_DEFS = {};
+/* ---- Deck-Helfer für Kartenitems (S2) — immutabel, alle Marker bleiben an card.id. ---- */
+const bumpCards = (deck, ids, delta) => deck.map((c) => (ids.includes(c.id) ? { ...c, value: c.value + delta } : c));
+const recolor   = (deck, colors) => deck.map((c) => (colors[c.id] ? { ...c, suit: colors[c.id] } : c));
+function swapPair(deck, ids, key) { // Werte- bzw. Farb-Tausch zweier Karten (K3/K4)
+  const [a, b] = ids;
+  const ca = deck.find((c) => c.id === a), cb = deck.find((c) => c.id === b);
+  if (!ca || !cb || a === b) return deck;
+  return deck.map((c) => (c.id === a ? { ...c, [key]: cb[key] } : c.id === b ? { ...c, [key]: ca[key] } : c));
+}
+// Segmentveredelung (K-L1): Karten auf den Positionen des Segments (aktuelle Reihenfolge) +delta — an card.id,
+// wandert also bei späterer Umordnung mit der Karte mit (Spec §7 K-L1).
+function segmentBump(deck, order, segIndex, delta) {
+  const start = segIndex * SEGMENT_SIZE, ids = new Set();
+  for (let k = start; k < start + SEGMENT_SIZE && k < order.length; k++) ids.add(deck[order[k]].id);
+  return deck.map((c) => (ids.has(c.id) ? { ...c, value: c.value + delta } : c));
+}
+
+/* Konkrete Shop-Items (Shop-Spec §7 Kartenitems; Anker/Formationen/Planung folgen S3–S5).
+   `target` = Ziel-Bedarf für den Target-Flow: { cards?: N, color?: bool (Farbe je gewählter Karte), segment?: bool }.
+   apply(state, target, rng) -> Patch (hier stets { deck }); target = { cardIds, colors: { id: suit }, segment }. */
+export const SHOP_ITEM_DEFS = {
+  K1:  { id: "K1", category: "cards", name: "Feinschliff", tier: "cheap", repeatable: true,
+         targetMode: "single-card", target: { cards: 1 },
+         description: "Wähle eine Karte. Sie erhält dauerhaft +1 Wert.",
+         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 1) }) },
+  K2:  { id: "K2", category: "cards", name: "Umlackierung", tier: "cheap", repeatable: true,
+         targetMode: "card-and-new-color", target: { cards: 1, color: true },
+         description: "Wähle eine Karte und eine der drei anderen Farben. Die Karte erhält dauerhaft diese Farbe.",
+         apply: (s, t) => ({ deck: recolor(s.deck, t.colors) }) },
+  K3:  { id: "K3", category: "cards", name: "Werttausch", tier: "cheap", repeatable: true,
+         targetMode: "two-distinct-cards", target: { cards: 2 },
+         description: "Wähle zwei Karten. Sie tauschen ihre aktuellen Dauerwerte.",
+         apply: (s, t) => ({ deck: swapPair(s.deck, t.cardIds, "value") }) },
+  K4:  { id: "K4", category: "cards", name: "Farbtausch", tier: "cheap", repeatable: true,
+         targetMode: "two-distinct-cards", target: { cards: 2 },
+         description: "Wähle zwei Karten. Sie tauschen ihre Farben.",
+         apply: (s, t) => ({ deck: swapPair(s.deck, t.cardIds, "suit") }) },
+  K5:  { id: "K5", category: "cards", name: "Verstärkung", tier: "strong", repeatable: true,
+         targetMode: "single-card", target: { cards: 1 },
+         description: "Wähle eine Karte. Sie erhält dauerhaft +2 Wert.",
+         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 2) }) },
+  K6:  { id: "K6", category: "cards", name: "Doppelter Feinschliff", tier: "strong", repeatable: true,
+         targetMode: "two-distinct-cards", target: { cards: 2 },
+         description: "Wähle zwei Karten. Beide erhalten dauerhaft +1 Wert.",
+         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 1) }) },
+  K7:  { id: "K7", category: "cards", name: "Farbduo", tier: "strong", repeatable: true,
+         targetMode: "two-cards-and-colors", target: { cards: 2, color: true },
+         description: "Wähle zwei Karten und lege für jede eine neue Farbe fest (dieselbe erlaubt).",
+         apply: (s, t) => ({ deck: recolor(s.deck, t.colors) }) },
+  K8:  { id: "K8", category: "cards", name: "Meisterstück", tier: "premium", repeatable: true,
+         targetMode: "single-card", target: { cards: 1 },
+         description: "Wähle eine Karte. Sie erhält dauerhaft +3 Wert.",
+         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 3) }) },
+  K9:  { id: "K9", category: "cards", name: "Dreifacher Feinschliff", tier: "premium", repeatable: true,
+         targetMode: "three-distinct-cards", target: { cards: 3 },
+         description: "Wähle drei Karten. Alle erhalten dauerhaft +1 Wert.",
+         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 1) }) },
+  K10: { id: "K10", category: "cards", name: "Farbtrio", tier: "premium", repeatable: true,
+         targetMode: "three-cards-and-colors", target: { cards: 3, color: true },
+         description: "Wähle drei Karten und lege für jede eine neue Farbe fest.",
+         apply: (s, t) => ({ deck: recolor(s.deck, t.colors) }) },
+  "K-L1": { id: "K-L1", category: "cards", name: "Segmentveredelung", tier: "legendary", legendary: true, repeatable: false,
+         targetMode: "segment", target: { segment: true },
+         description: "Wähle eines der acht Segmente. Alle fünf Karten dieses Segments erhalten dauerhaft +1 Wert (bleibt an den Karten).",
+         apply: (s, t) => ({ deck: segmentBump(s.deck, s.playerOrder, t.segment, 1) }) },
+};
 
 // Preis einer Stufe (Spec §5.5) — nur vier feste Preise.
 export const priceOf = (tier) => C.SHOP_PRICE[tier] ?? 0;
@@ -88,18 +153,9 @@ export function buildShopOffer(itemDefs, shop = {}, rng = Math.random) {
   }
   if (offers.length === 0) return offers;
 
-  // Cheap-Garantie (§5.6): fehlt ein günstiges Item, ein normales Angebot deterministisch durch ein
-  // zufällig gezogenes günstiges ersetzen.
-  if (!offers.some((o) => o.tier === "cheap")) {
-    const cheapPool = avail.filter((d) => !d.legendary && d.tier === "cheap");
-    if (cheapPool.length) {
-      const repl = cheapPool[Math.floor(rng() * cheapPool.length)];
-      offers[Math.floor(rng() * offers.length)] = mk(repl);
-    }
-  }
-
-  // Legendäre Ersetzung (§5.7): einmal je Shop würfeln; bei Erfolg eine Kategorie mit verfügbarem
-  // Legendär wählen und eines ihrer Angebote ersetzen. Höchstens EIN Legendär pro Shop.
+  // Legendäre Ersetzung (§5.7) ZUERST (max 1): einmal je Shop würfeln; bei Erfolg eine Kategorie mit
+  // verfügbarem Legendär wählen und eines ihrer Angebote ersetzen. Vor der Cheap-Garantie, damit diese
+  // danach nicht wieder überschrieben werden kann (sonst könnte ein Shop ohne günstiges Item enden).
   if (rng() < C.SHOP_LEGENDARY_CHANCE) {
     const legByCat = {};
     for (const d of avail) if (d.legendary) (legByCat[d.category] = legByCat[d.category] || []).push(d);
@@ -109,6 +165,17 @@ export function buildShopOffer(itemDefs, shop = {}, rng = Math.random) {
       const leg = legByCat[cat][Math.floor(rng() * legByCat[cat].length)];
       const slots = offers.map((o, i) => (o.category === cat ? i : -1)).filter((i) => i >= 0);
       offers[slots[Math.floor(rng() * slots.length)]] = mk(leg);
+    }
+  }
+
+  // Cheap-Garantie (§5.6) ZULETZT: fehlt ein günstiges Item, ein NICHT-legendäres Angebot deterministisch
+  // durch ein zufällig gezogenes günstiges ersetzen (das gesetzte Legendär bleibt so erhalten).
+  if (!offers.some((o) => o.tier === "cheap")) {
+    const cheapPool = avail.filter((d) => !d.legendary && d.tier === "cheap");
+    const slots = offers.map((o, i) => (o.legendary ? -1 : i)).filter((i) => i >= 0);
+    if (cheapPool.length && slots.length) {
+      const repl = cheapPool[Math.floor(rng() * cheapPool.length)];
+      offers[slots[Math.floor(rng() * slots.length)]] = mk(repl);
     }
   }
   return offers;

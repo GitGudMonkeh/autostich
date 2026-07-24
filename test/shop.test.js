@@ -167,6 +167,20 @@ describe("Shop-Angebot — Ziehung (Shop-Spec §5)", () => {
   it("gleicher Seed → identisches Angebot (deterministisch, §5.3)", () => {
     expect(buildShopOffer(fxLeg(), initialShop(), makeRng(7))).toEqual(buildShopOffer(fxLeg(), initialShop(), makeRng(7)));
   });
+  it("Cheap-Garantie überlebt die Legendär-Ersetzung (§5.6 + §5.7, auch bei nur einer Kategorie)", () => {
+    // Wie live in S2: nur 'cards' bestückt, mit günstig/stark/premium/legendär. Beide Garantien müssen gelten.
+    const fx = {
+      c: { id: "c", category: "cards", tier: "cheap", repeatable: true },
+      s: { id: "s", category: "cards", tier: "strong", repeatable: true },
+      p: { id: "p", category: "cards", tier: "premium", repeatable: true },
+      L: { id: "L", category: "cards", tier: "legendary", legendary: true, repeatable: false },
+    };
+    for (let seed = 1; seed <= 200; seed++) {
+      const off = buildShopOffer(fx, initialShop(), makeRng(seed));
+      expect(off.some((o) => o.tier === "cheap")).toBe(true);
+      expect(legCount(off)).toBeLessThanOrEqual(1);
+    }
+  });
   it("isItemAvailable filtert gekaufte Legendäre und gekaufte nicht-wiederholbare Items (§15)", () => {
     expect(isItemAvailable({ id: "X_L", legendary: true, repeatable: false }, { boughtLegendaryIds: ["X_L"] })).toBe(false);
     expect(isItemAvailable({ id: "F1", repeatable: false }, { boughtNonRepeatableIds: ["F1"] })).toBe(false);
@@ -175,10 +189,11 @@ describe("Shop-Angebot — Ziehung (Shop-Spec §5)", () => {
 });
 
 describe("Shop-Kauf — BUY_ITEM (Shop-Spec §5.4)", () => {
-  it("Engine zieht bei Shop-Eintritt ein Angebot (Array; leer solange keine Items registriert)", () => {
+  it("Engine zieht bei Shop-Eintritt ein Angebot (S2: nur 'cards' bestückt → 2 Angebote)", () => {
     const s = resolveTrick(atCycleEnd({ cycle: 3 }), rng); // → Shop-Runde
     expect(s.phase).toBe("shop");
-    expect(Array.isArray(s.shop.offers)).toBe(true);
+    expect(s.shop.offers).toHaveLength(2); // Karten-Kategorie hat Items; Anker/Formationen/Planung folgen S3–S5
+    expect(s.shop.offers.every((o) => o.category === "cards")).toBe(true);
     expect(s.shop.purchasedOfferIds).toEqual([]);
   });
   it("LEAVE_SHOP leert das Angebot (nicht gekaufte Items verworfen, §5.4)", () => {
@@ -217,5 +232,121 @@ describe("Shop-Kauf — BUY_ITEM (Shop-Spec §5.4)", () => {
   it("canAfford: Münzen ≥ Preis", () => {
     expect(canAfford({ coins: 8 }, { price: 8 })).toBe(true);
     expect(canAfford({ coins: 7 }, { price: 8 })).toBe(false);
+  });
+});
+
+describe("Shop-Kartenitems — Effekte (Shop-Spec §7)", () => {
+  const base = () => initialState(makeRng(1));
+  const val = (deck, id) => deck.find((c) => c.id === id).value;
+  const suit = (deck, id) => deck.find((c) => c.id === id).suit;
+
+  it("K1/K5/K8 Wertbonus +1/+2/+3 auf die gewählte Karte", () => {
+    const s = base(), v = val(s.deck, "R5");
+    expect(val(SHOP_ITEM_DEFS.K1.apply(s, { cardIds: ["R5"] }).deck, "R5")).toBe(v + 1);
+    expect(val(SHOP_ITEM_DEFS.K5.apply(s, { cardIds: ["R5"] }).deck, "R5")).toBe(v + 2);
+    expect(val(SHOP_ITEM_DEFS.K8.apply(s, { cardIds: ["R5"] }).deck, "R5")).toBe(v + 3);
+  });
+  it("K6/K9 mehrere Karten je +1", () => {
+    const s = base();
+    const d6 = SHOP_ITEM_DEFS.K6.apply(s, { cardIds: ["R1", "B2"] }).deck;
+    expect(val(d6, "R1")).toBe(2); expect(val(d6, "B2")).toBe(3);
+    const d9 = SHOP_ITEM_DEFS.K9.apply(s, { cardIds: ["R1", "B2", "G3"] }).deck;
+    expect([val(d9, "R1"), val(d9, "B2"), val(d9, "G3")]).toEqual([2, 3, 4]);
+  });
+  it("K3 tauscht Dauerwerte, K4 tauscht Farben", () => {
+    const s = base();
+    const d3 = SHOP_ITEM_DEFS.K3.apply(s, { cardIds: ["R1", "R10"] }).deck; // Werte 1 <-> 10
+    expect([val(d3, "R1"), val(d3, "R10")]).toEqual([10, 1]);
+    const d4 = SHOP_ITEM_DEFS.K4.apply(s, { cardIds: ["R1", "B1"] }).deck;  // Farben R <-> B
+    expect([suit(d4, "R1"), suit(d4, "B1")]).toEqual(["B", "R"]);
+  });
+  it("K2/K7/K10 färben die gewählten Karten um", () => {
+    const s = base();
+    expect(suit(SHOP_ITEM_DEFS.K2.apply(s, { colors: { R5: "G" } }).deck, "R5")).toBe("G");
+    const d7 = SHOP_ITEM_DEFS.K7.apply(s, { colors: { R5: "G", B6: "Y" } }).deck;
+    expect([suit(d7, "R5"), suit(d7, "B6")]).toEqual(["G", "Y"]);
+  });
+  it("K-L1 verstärkt die fünf Karten des Segments um +1 (an card.id)", () => {
+    const s = base(), seg = 2; // Positionen 11–15
+    const ids = s.playerOrder.slice(seg * 5, seg * 5 + 5).map((di) => s.deck[di].id);
+    const d = SHOP_ITEM_DEFS["K-L1"].apply(s, { segment: seg }).deck;
+    for (const id of ids) expect(val(d, id)).toBe(val(s.deck, id) + 1);
+    const outside = s.deck.find((c) => !ids.includes(c.id));
+    expect(val(d, outside.id)).toBe(val(s.deck, outside.id));
+  });
+  it("Marker (Ionisierung/Frost) bleiben bei Farbänderung an der Karte", () => {
+    const s = base();
+    s.deck = s.deck.map((c) => (c.id === "R5" ? { ...c, ionStacks: 2, frozen: true } : c));
+    const c = SHOP_ITEM_DEFS.K2.apply(s, { colors: { R5: "G" } }).deck.find((x) => x.id === "R5");
+    expect([c.suit, c.ionStacks, c.frozen]).toEqual(["G", 2, true]);
+  });
+});
+
+describe("Shop-Ziel-Flow — Kauf mit Zielauswahl (Shop-Spec §12.2)", () => {
+  const shopWith = (itemId, price, tier = "cheap") => {
+    const offer = { offerId: "o0", itemId, category: "cards", tier, price, legendary: tier === "legendary" };
+    return { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+  };
+  it("BUY_ITEM eines Ziel-Items öffnet die shop-target-Phase ohne Münzabzug", () => {
+    const r = reducer(shopWith("K1", 8), { type: "BUY_ITEM", offerId: "o0" });
+    expect(r.phase).toBe("shop-target");
+    expect(r.shopTarget).toMatchObject({ offerId: "o0", itemId: "K1", cards: [] });
+    expect(r.shop.coins).toBe(30);
+    expect(r.shop.purchasedOfferIds).toEqual([]);
+  });
+  it("SHOP_TARGET_CARD: Einzelziel schaltet um / wählt ab", () => {
+    let s = reducer(shopWith("K1", 8), { type: "BUY_ITEM", offerId: "o0" });
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R1" }); expect(s.shopTarget.cards).toEqual(["R1"]);
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R2" }); expect(s.shopTarget.cards).toEqual(["R2"]);
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R2" }); expect(s.shopTarget.cards).toEqual([]);
+  });
+  it("Zwei-Karten-Limit: dritte Auswahl wird ignoriert", () => {
+    let s = reducer(shopWith("K6", 12, "strong"), { type: "BUY_ITEM", offerId: "o0" });
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R1" });
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R2" });
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R3" });
+    expect(s.shopTarget.cards).toEqual(["R1", "R2"]);
+  });
+  it("CONFIRM unvollständig → unverändert; vollständig → kauft, zieht Preis ab, verkauft markiert, wendet an", () => {
+    let s = reducer(shopWith("K5", 12, "strong"), { type: "BUY_ITEM", offerId: "o0" });
+    expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s); // 0 Karten → unverändert
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R5" });
+    const before = s.deck.find((c) => c.id === "R5").value;
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.phase).toBe("shop");
+    expect(r.shop.coins).toBe(18); // 30 - 12
+    expect(r.shop.purchasedOfferIds).toEqual(["o0"]);
+    expect(r.shopTarget).toBe(null);
+    expect(r.deck.find((c) => c.id === "R5").value).toBe(before + 2);
+  });
+  it("CANCEL → zurück in den Shop, Münzen & Angebot unverändert", () => {
+    let s = reducer(shopWith("K1", 8), { type: "BUY_ITEM", offerId: "o0" });
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R1" });
+    const r = reducer(s, { type: "SHOP_TARGET_CANCEL" });
+    expect(r.phase).toBe("shop");
+    expect(r.shopTarget).toBe(null);
+    expect(r.shop.coins).toBe(30);
+    expect(r.shop.purchasedOfferIds).toEqual([]);
+  });
+  it("Farb-Item: CONFIRM erst mit gültiger (anderer) Farbe je Karte", () => {
+    let s = reducer(shopWith("K2", 8), { type: "BUY_ITEM", offerId: "o0" });
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R5" });
+    expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s);          // Farbe fehlt
+    expect(reducer(s, { type: "SHOP_TARGET_COLOR", cardId: "R5", color: "R" })).toBe(s);   // gleiche Farbe → abgelehnt
+    s = reducer(s, { type: "SHOP_TARGET_COLOR", cardId: "R5", color: "G" });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.phase).toBe("shop");
+    expect(r.deck.find((c) => c.id === "R5").suit).toBe("G");
+  });
+  it("Segment-Legendär K-L1: verstärkt das Segment, fliegt aus dem Pool (legendär + nicht wiederholbar)", () => {
+    let s = reducer(shopWith("K-L1", 30, "legendary"), { type: "BUY_ITEM", offerId: "o0" });
+    expect(s.phase).toBe("shop-target");
+    s = reducer(s, { type: "SHOP_TARGET_SEGMENT", segment: 1 });
+    const ids = s.playerOrder.slice(5, 10).map((di) => s.deck[di].id);
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.shop.coins).toBe(0);
+    expect(r.shop.boughtLegendaryIds).toEqual(["K-L1"]);
+    expect(r.shop.boughtNonRepeatableIds).toEqual(["K-L1"]);
+    for (const id of ids) expect(r.deck.find((c) => c.id === id).value).toBe(s.deck.find((c) => c.id === id).value + 1);
   });
 });

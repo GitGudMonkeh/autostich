@@ -14,6 +14,7 @@ import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { StatSelect } from "./ui/StatSelect.jsx";
 import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { ShopScreen } from "./ui/ShopScreen.jsx";
+import { ShopTargetSelect } from "./ui/ShopTargetSelect.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
@@ -178,6 +179,12 @@ export function Autostich() {
   // Shop-Runde (Shop-Spec §2.6): kaufen (§5.4) bzw. verlassen/bestätigen → zugehöriger Durchlauf startet.
   const buyItem = (offerId) => dispatch({ type: "BUY_ITEM", offerId, rng: Math.random });
   const leaveShop = () => dispatch({ type: "LEAVE_SHOP" });
+  // Shop-Ziel-Auswahl (Shop-Spec §12.2): Karten/Farben/Segment wählen, bestätigen oder abbrechen.
+  const shopTargetCard = (cardId) => dispatch({ type: "SHOP_TARGET_CARD", cardId });
+  const shopTargetColor = (cardId, color) => dispatch({ type: "SHOP_TARGET_COLOR", cardId, color });
+  const shopTargetSegment = (segment) => dispatch({ type: "SHOP_TARGET_SEGMENT", segment });
+  const shopTargetConfirm = () => dispatch({ type: "SHOP_TARGET_CONFIRM", rng: Math.random });
+  const shopTargetCancel = () => dispatch({ type: "SHOP_TARGET_CANCEL" });
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
@@ -323,6 +330,10 @@ export function Autostich() {
       )}
       {state.phase === "shop" && (
         <ShopScreen state={state} onLeave={leaveShop} onBuy={buyItem} />
+      )}
+      {state.phase === "shop-target" && (
+        <ShopTargetSelect state={state} onCard={shopTargetCard} onColor={shopTargetColor}
+          onSegment={shopTargetSegment} onConfirm={shopTargetConfirm} onCancel={shopTargetCancel} />
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />

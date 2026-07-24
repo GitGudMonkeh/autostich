@@ -58,8 +58,7 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
                   const tier = TIER[offer.tier] || TIER.cheap;
                   const sold = purchased.has(offer.offerId);
                   const affordable = canAfford(shop, offer);
-                  const needsTarget = !!def.targetMode; // Target-Flow ab S2
-                  const disabled = sold || !affordable || needsTarget;
+                  const disabled = sold || !affordable; // Ziel-Items öffnen beim Kauf die Ziel-Auswahl (§12.2)
                   return (
                     <div key={offer.offerId} className="rounded-xl p-3"
                       style={{ background: "#20202a", border: `1px solid ${offer.legendary ? GOLD + "88" : "#33333e"}`,
@@ -80,7 +79,7 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
                             ? { background: "#2a2a33", color: "#6a6a75", cursor: "not-allowed" }
                             : { background: GOLD, color: "#141419" }}
                         >
-                          {sold ? "Gekauft" : needsTarget ? "Ziel (S2)" : "Kaufen"}
+                          {sold ? "Gekauft" : "Kaufen"}
                         </button>
                       </div>
                     </div>
