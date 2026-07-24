@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
+import { activeShopUpgrades } from "../game/shop.js";
 
 /* Chronik-Kartenübersicht (§22.11): alle 40 Karten in aktueller Reihenfolge — nur Anzeige,
    mit Formations- und Rollen-Markern. Klick auf eine Karte zeigt Rolle & Modifikatoren (#95.5).
@@ -13,6 +14,7 @@ export function ChronikOverview({ state, onClose }) {
   const [selPos, setSelPos] = useState(null);
   const cards = playerOrder.map((di) => deck[di]);
   const anchors = [...(state.shop?.anchors || [])].sort((a, b) => a.position - b.position); // Shop-Positionsanker (§8)
+  const upgrades = activeShopUpgrades(state.shop || {}); // aktive dauerhafte Shop-Verbesserungen (§9/§10)
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
@@ -44,6 +46,16 @@ export function ChronikOverview({ state, onClose }) {
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   {anchors.map((a, i) => (
                     <span key={i} style={{ color: "#5a8ade" }}>⚓ Pos {a.position + 1} · {ANCHOR_LABEL[a.type] || a.type}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {upgrades.length > 0 && (
+              <div className="text-[11px] rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+                <div className="uppercase tracking-wide opacity-50 mb-1">Shop-Verbesserungen</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {upgrades.map((u, i) => (
+                    <span key={i} className="px-1.5 py-0.5 rounded" style={{ background: "#d4a63a1a", color: "#d4a63a", border: "1px solid #d4a63a44" }}>{u}</span>
                   ))}
                 </div>
               </div>

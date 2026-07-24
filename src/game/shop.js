@@ -1,5 +1,5 @@
 import * as C from "./constants.js";
-import { SEGMENT_SIZE } from "./formations.js";
+import { SEGMENT_SIZE, FORMATION_TYPE_LABELS } from "./formations.js";
 
 /* ============================================================
    SHOP-SYSTEM (Shop-Spec) — reine Logik, kein Math.random / Date.
@@ -182,6 +182,26 @@ export const SHOP_ITEM_DEFS = {
 // in buildOffer/buildSkillOffer. Ohne P5/P6-Käufe = reine Basis.
 export const perkLegendaryChance  = (shop = {}) => C.PERK_LEGENDARY_BASE  + Math.min(shop.perkLegendaryBonus  || 0, C.MAX_LEGENDARY_CHANCE_BONUS);
 export const skillLegendaryChance = (shop = {}) => C.SKILL_LEGENDARY_BASE + Math.min(shop.skillLegendaryBonus || 0, C.MAX_LEGENDARY_CHANCE_BONUS);
+
+// Aktive dauerhafte Shop-Verbesserungen als Label-Liste (Chronik-Übersicht, §S6 Politur). Rein & anzeige-orientiert:
+// leitet die aktiven permanenten Regeländerungen (§9) + Anker-Legendäre + Planungs-Boni aus dem Shop-State ab.
+export function activeShopUpgrades(shop = {}) {
+  const pe = shop.permanentEffects || {};
+  const pp = (x) => `+${Math.round(x * 100)} pp`;
+  const out = [];
+  if (pe.descendingStraights) out.push("Abstieg");                                                       // F1
+  if (pe.switchMinDifference != null && pe.switchMinDifference < 4) out.push("Enger Wechsel");            // F2
+  if (pe.repetitionSecondFactorBonus > 0) out.push("Verstärkte Wiederholung");                            // F3
+  if ((pe.linkedColors || []).length === 2) out.push(`Farballianz ${pe.linkedColors.join("+")}`);         // F4
+  if ((pe.openSegmentBoundaries || []).length) out.push(`Offene Grenze ×${pe.openSegmentBoundaries.length}`); // F5
+  if (pe.formationAfterglow) out.push("Nachhall");                                                        // F6
+  if (pe.formationCoreType) out.push(`Formationskern: ${FORMATION_TYPE_LABELS[pe.formationCoreType] || pe.formationCoreType}`); // F-L1
+  if (shop.timeSegmentIndex != null) out.push(`Zeitsegment ${shop.timeSegmentIndex + 1}`);                // A-L1
+  if (shop.fateControl) out.push("Schicksalskontrolle");                                                  // P-L1
+  if (shop.perkLegendaryBonus > 0) out.push(`Perk-Legendär ${pp(shop.perkLegendaryBonus)}`);              // P5
+  if (shop.skillLegendaryBonus > 0) out.push(`Skill-Legendär ${pp(shop.skillLegendaryBonus)}`);           // P6
+  return out;
+}
 
 /* ---- Zeitsegment (Shop-Spec §8 A-L1) — Spielreihenfolge der Positionen eines Durchlaufs. ---- */
 // Ohne Zeitsegment: 0..tricks-1. Mit Zeitsegment wird das gewählte Segment (5 Positionen) DIREKT nach seinem

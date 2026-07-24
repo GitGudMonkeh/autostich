@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, rerollCategory, withReservedOffer, perkLegendaryChance, skillLegendaryChance, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
+import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, rerollCategory, withReservedOffer, perkLegendaryChance, skillLegendaryChance, activeShopUpgrades, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { MAX_CYCLES, DECISION_SCHEDULE, STARTING_COINS, BASE_COINS_PER_CYCLE,
@@ -863,5 +863,25 @@ describe("Shop-Planungsitems — S5c Legendensuche P5/P6 (Shop-Spec §10)", () =
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
     expect(r.shop.coins).toBe(0);
     expect(r.shop.perkLegendaryBonus).toBeCloseTo(0.05);
+  });
+});
+
+describe("Shop-Politur — S6 activeShopUpgrades (Chronik-Übersicht)", () => {
+  it("frischer Shop hat keine aktiven Verbesserungen", () => {
+    expect(activeShopUpgrades(initialShop())).toEqual([]);
+  });
+  it("leitet aktive dauerhafte Verbesserungen aus dem Shop-State ab", () => {
+    const base = initialShop();
+    const shop = { ...base,
+      permanentEffects: { ...base.permanentEffects, descendingStraights: true, switchMinDifference: 3, formationAfterglow: true, formationCoreType: "treppe" },
+      timeSegmentIndex: 2, fateControl: true, perkLegendaryBonus: 0.10 };
+    const up = activeShopUpgrades(shop);
+    expect(up).toContain("Abstieg");
+    expect(up).toContain("Enger Wechsel");
+    expect(up).toContain("Nachhall");
+    expect(up.some((u) => u.startsWith("Formationskern"))).toBe(true);
+    expect(up).toContain("Zeitsegment 3");
+    expect(up).toContain("Schicksalskontrolle");
+    expect(up.some((u) => u.startsWith("Perk-Legendär"))).toBe(true);
   });
 });

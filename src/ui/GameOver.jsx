@@ -12,6 +12,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           <div className="text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>Lauf beendet</div>
           <div className="text-5xl font-bold mt-2" style={{ color: "#d4a63a" }}>{score.toLocaleString("de-DE")}</div>
           <div className="text-sm opacity-60 mt-1">Score{timeStr ? ` · ${timeStr}` : ""}</div>
+          {state.shop && <div className="mt-1 text-xs font-bold" style={{ color: "#d4a63a" }}>🪙 {state.shop.coins ?? 0} Münzen übrig</div>}
           {isRecord && <div className="mt-2 text-sm font-bold" style={{ color: "#8a7de0" }}>★ Neuer Rekord!</div>}
         </div>
 
