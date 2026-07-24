@@ -22,6 +22,7 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
   const held = skills.map((id) => SKILL_DEFS[id]).filter(Boolean);
   const full = skills.length >= SKILL_SLOTS;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
+  const [openSkill, setOpenSkill] = useState(null); // gehaltener Skill, dessen Beschreibung aufgeklappt ist
   // Schlüsselbegriffe, die in den angebotenen Skills vorkommen (charge/ionize/streak).
   const kws = [...new Set(offer.flatMap((id) => SKILL_DEFS[id]?.keywords || []))].filter((k) => KEYWORD_INFO[k]);
   // Ist der Blitz-Archetyp noch nicht aktiv, schaltet DIESER Skill ihn frei (Ladung + Crit-Sockel).
@@ -107,23 +108,31 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
         {held.length > 0 && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              {pending ? "Welchen Skill ersetzen?" : `Deine Skills — ${held.length}/${SKILL_SLOTS}`}
+              {pending ? "Welchen Skill ersetzen?" : `Deine Skills — ${held.length}/${SKILL_SLOTS} · antippen für Beschreibung`}
             </div>
             <div className="flex flex-wrap gap-2">
               {held.map((s) => (
                 pending ? (
-                  <button key={s.id} onClick={() => onPick(pending, s.id)}
+                  <button key={s.id} onClick={() => onPick(pending, s.id)} title={s.desc}
                     className="text-xs px-2 py-1 rounded transition-all hover:brightness-125"
                     style={{ background: "#e0605a1f", color: "#e0605a", border: "1px solid #e0605a88" }}>
                     ⚡ {s.name} <span className="opacity-70">↔ ersetzen</span>
                   </button>
                 ) : (
-                  <span key={s.id} className="text-xs px-2 py-1 rounded" style={{ background: `${LIGHT}1a`, color: LIGHT, border: `1px solid ${LIGHT}55` }}>
-                    ⚡ {s.name}
-                  </span>
+                  <button key={s.id} onClick={() => setOpenSkill(openSkill === s.id ? null : s.id)} title={s.desc}
+                    className="text-xs px-2 py-1 rounded transition-all"
+                    style={{ background: openSkill === s.id ? `${LIGHT}33` : `${LIGHT}1a`, color: LIGHT,
+                             border: `1px solid ${openSkill === s.id ? LIGHT : LIGHT + "55"}` }}>
+                    ⚡ {s.name} <span className="opacity-60">{openSkill === s.id ? "▾" : "▸"}</span>
+                  </button>
                 )
               ))}
             </div>
+            {!pending && openSkill && SKILL_DEFS[openSkill] && (
+              <div className="text-[11px] mt-2 px-2 py-1 rounded leading-snug" style={{ background: `${LIGHT}14`, color: "#d8d0f0" }}>
+                {SKILL_DEFS[openSkill].desc}
+              </div>
+            )}
             {pending && (
               <button onClick={() => setPending(null)} className="text-[11px] mt-2 opacity-60 hover:opacity-90 underline">
                 Abbrechen
