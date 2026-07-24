@@ -321,10 +321,21 @@ export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); 
 // Perk-Auswahl nach jeder Runde: KEINE Level-Gates mehr — alle Seltenheiten sofort möglich, nur gewichtet;
 // höchstens MAX_LEGENDARIES_PER_OFFER Legendaries je Angebot.
 // Deterministisch über den injizierten rng (ein rng()-Zug je Auswahl). Pool leer → weniger Perks.
-export function buildOffer(owned, rng, count) {
+export function buildOffer(owned, rng, count, legendaryChance = 0) {
   let pool = PERK_LIST.filter((p) => !owned.includes(p.id));
   const chosen = [];
   let legendaries = 0;
+  // Expliziter Legendär-Roll (Shop-Spec §10 P5): NUR wenn eine Legendär-Chance übergeben ist. Legendäre werden
+  // dann aus dem gewichteten Zug ausgeschlossen und erscheinen ausschließlich über diesen Wurf (bei Erfolg genau
+  // eines). Ohne Chance (0) bleibt das alte Gewichtsmodell exakt erhalten (kein rng-Drift für Bestandstests).
+  if (legendaryChance > 0) {
+    const legs = pool.filter((p) => p.rarity === "legendary");
+    pool = pool.filter((p) => p.rarity !== "legendary");
+    if (legs.length && count > 0 && rng() < legendaryChance) {
+      chosen.push(legs[Math.floor(rng() * legs.length)].id);
+      legendaries = 1;
+    }
+  }
   while (chosen.length < count && pool.length > 0) {
     const weights = pool.map((p) => C.RARITY_WEIGHTS[p.rarity || "common"]);
     const total = weights.reduce((a, b) => a + b, 0);

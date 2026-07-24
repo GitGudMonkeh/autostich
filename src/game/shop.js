@@ -165,10 +165,23 @@ export const SHOP_ITEM_DEFS = {
           if (!off) return {};
           return { shop: { ...s.shop, reservedItem: { itemId: off.itemId, category: off.category, tier: off.tier, price: off.price, legendary: !!off.legendary } } };
         } },
+  P5: { id: "P5", category: "planning", name: "Legendensuche: Perks", tier: "premium", repeatable: true,
+        available: (shop) => (shop.perkLegendaryBonus || 0) < C.MAX_LEGENDARY_CHANCE_BONUS, // bis Cap (§10)
+        description: "Die Legendär-Chance zukünftiger Perk-Angebote steigt dauerhaft um 5 Prozentpunkte.",
+        apply: (s) => ({ shop: { ...s.shop, perkLegendaryBonus: Math.min((s.shop.perkLegendaryBonus || 0) + 0.05, C.MAX_LEGENDARY_CHANCE_BONUS) } }) },
+  P6: { id: "P6", category: "planning", name: "Legendensuche: Skills", tier: "premium", repeatable: true,
+        available: (shop) => (shop.skillLegendaryBonus || 0) < C.MAX_LEGENDARY_CHANCE_BONUS,
+        description: "Die Legendär-Chance zukünftiger Skill-Angebote steigt dauerhaft um 5 Prozentpunkte.",
+        apply: (s) => ({ shop: { ...s.shop, skillLegendaryBonus: Math.min((s.shop.skillLegendaryBonus || 0) + 0.05, C.MAX_LEGENDARY_CHANCE_BONUS) } }) },
   "P-L1": { id: "P-L1", category: "planning", name: "Schicksalskontrolle", tier: "legendary", legendary: true, repeatable: false,
         description: "Bei jeder zukünftigen Perk- und Skill-Auswahl darf das Angebot einmal kostenlos neu gewürfelt werden.",
         apply: (s) => ({ shop: { ...s.shop, fateControl: true } }) },
 };
+
+// Legendär-Chance (Shop-Spec §10 P5/P6): Basis + additiver Bonus (bis Cap), für den expliziten Legendär-Roll
+// in buildOffer/buildSkillOffer. Ohne P5/P6-Käufe = reine Basis.
+export const perkLegendaryChance  = (shop = {}) => C.PERK_LEGENDARY_BASE  + Math.min(shop.perkLegendaryBonus  || 0, C.MAX_LEGENDARY_CHANCE_BONUS);
+export const skillLegendaryChance = (shop = {}) => C.SKILL_LEGENDARY_BASE + Math.min(shop.skillLegendaryBonus || 0, C.MAX_LEGENDARY_CHANCE_BONUS);
 
 /* ---- Zeitsegment (Shop-Spec §8 A-L1) — Spielreihenfolge der Positionen eines Durchlaufs. ---- */
 // Ohne Zeitsegment: 0..tricks-1. Mit Zeitsegment wird das gewählte Segment (5 Positionen) DIREKT nach seinem

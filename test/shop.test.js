@@ -2,11 +2,12 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, rerollCategory, withReservedOffer, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
+import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, rerollCategory, withReservedOffer, perkLegendaryChance, skillLegendaryChance, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { MAX_CYCLES, DECISION_SCHEDULE, STARTING_COINS, BASE_COINS_PER_CYCLE,
-  SHOP_CATEGORIES, SHOP_ITEMS_PER_CATEGORY, SHOP_ITEMS_OFFERED, SHOP_PRICE, SHOP_LEGENDARY_CHANCE } from "../src/game/constants.js";
+  SHOP_CATEGORIES, SHOP_ITEMS_PER_CATEGORY, SHOP_ITEMS_OFFERED, SHOP_PRICE, SHOP_LEGENDARY_CHANCE,
+  PERK_LEGENDARY_BASE, SKILL_LEGENDARY_BASE, MAX_LEGENDARY_CHANCE_BONUS } from "../src/game/constants.js";
 
 const rng = makeRng(9);
 // Zustand am Durchlauf-Ende (pos 39 = letzter Stich) — der Stich schließt den Durchlauf ab und vergibt Münzen.
@@ -835,5 +836,32 @@ describe("Shop-Planungsitem — S5b P4 Reservierung (Shop-Spec §10)", () => {
     expect(s.shop.reservedItem).toBe(null);
     expect(s.shop.offers).toHaveLength(SHOP_ITEMS_OFFERED + 1);           // 8 regulär + 1 reserviert
     expect(s.shop.offers.find((o) => o.reserved)).toMatchObject({ itemId: "K8", price: 18 });
+  });
+});
+
+describe("Shop-Planungsitems — S5c Legendensuche P5/P6 (Shop-Spec §10)", () => {
+  it("P5/P6 apply erhöhen den Legendär-Bonus um +5 pp bis zum Cap", () => {
+    const s = initialShop();
+    expect(SHOP_ITEM_DEFS.P5.apply({ shop: s }).shop.perkLegendaryBonus).toBeCloseTo(0.05);
+    expect(SHOP_ITEM_DEFS.P6.apply({ shop: s }).shop.skillLegendaryBonus).toBeCloseTo(0.05);
+    expect(SHOP_ITEM_DEFS.P5.apply({ shop: { ...s, perkLegendaryBonus: 0.14 } }).shop.perkLegendaryBonus).toBeCloseTo(MAX_LEGENDARY_CHANCE_BONUS); // Cap
+  });
+  it("P5/P6-Verfügbarkeit: am Cap (+15 pp) nicht mehr anbieten (§10)", () => {
+    expect(isItemAvailable(SHOP_ITEM_DEFS.P5, initialShop(), [])).toBe(true);
+    expect(isItemAvailable(SHOP_ITEM_DEFS.P5, { ...initialShop(), perkLegendaryBonus: MAX_LEGENDARY_CHANCE_BONUS }, [])).toBe(false);
+    expect(isItemAvailable(SHOP_ITEM_DEFS.P6, { ...initialShop(), skillLegendaryBonus: MAX_LEGENDARY_CHANCE_BONUS }, [])).toBe(false);
+  });
+  it("perkLegendaryChance/skillLegendaryChance = Basis + Bonus (Bonus gedeckelt)", () => {
+    expect(perkLegendaryChance(initialShop())).toBeCloseTo(PERK_LEGENDARY_BASE);
+    expect(perkLegendaryChance({ perkLegendaryBonus: 0.10 })).toBeCloseTo(PERK_LEGENDARY_BASE + 0.10);
+    expect(perkLegendaryChance({ perkLegendaryBonus: 0.99 })).toBeCloseTo(PERK_LEGENDARY_BASE + MAX_LEGENDARY_CHANCE_BONUS);
+    expect(skillLegendaryChance({ skillLegendaryBonus: 0.05 })).toBeCloseTo(SKILL_LEGENDARY_BASE + 0.05);
+  });
+  it("Kauf P5 (kein Ziel): +5 pp Perk-Legendär-Bonus, Preis abgezogen", () => {
+    const offer = { offerId: "o0", itemId: "P5", category: "planning", tier: "premium", price: 18, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
+    const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
+    expect(r.shop.coins).toBe(0);
+    expect(r.shop.perkLegendaryBonus).toBeCloseTo(0.05);
   });
 });

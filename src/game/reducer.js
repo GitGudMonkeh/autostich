@@ -4,7 +4,7 @@ import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, ma
   frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
-import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES } from "./shop.js";
+import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -311,7 +311,7 @@ export function reducer(state, action) {
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
-      const off = buildOffer(state.perks, action.rng, PERKS_OFFERED);
+      const off = buildOffer(state.perks, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
       const fate = !!(state.shop && state.shop.fateControl);         // P-L1: gratis Reroll gilt fürs neue Perk-Angebot
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off, freePerkReroll: fate, freeSkillReroll: false } // → Perk-Auswahl
@@ -325,7 +325,7 @@ export function reducer(state, action) {
       const free = !!state.freePerkReroll;
       const tokens = (state.shop && state.shop.perkRerolls) || 0;
       if (!free && tokens <= 0) return state;                        // keine Ressource → wirkungslos
-      const offer = buildOffer(state.perks, action.rng, PERKS_OFFERED);
+      const offer = buildOffer(state.perks, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
       const shop = free ? state.shop : { ...state.shop, perkRerolls: tokens - 1 };
       return { ...state, offer, shop, freePerkReroll: free ? false : state.freePerkReroll };
     }
@@ -337,7 +337,7 @@ export function reducer(state, action) {
       const free = !!state.freeSkillReroll;
       const tokens = (state.shop && state.shop.skillRerolls) || 0;
       if (!free && tokens <= 0) return state;
-      const offer = buildSkillOffer(state.skills, state.activeArchetypes, action.rng, C.SKILLS_OFFERED);
+      const offer = buildSkillOffer(state.skills, state.activeArchetypes, action.rng, C.SKILLS_OFFERED, skillLegendaryChance(state.shop));
       if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
       const shop = free ? state.shop : { ...state.shop, skillRerolls: tokens - 1 };
       return { ...state, skillOffer: offer, shop, freeSkillReroll: free ? false : state.freeSkillReroll };

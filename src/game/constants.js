@@ -68,6 +68,12 @@ export const RARITY_WEIGHTS            = { common: 100, rare: 25, legendary: 9 }
 // Perk-Auswahl nach jeder Runde: KEINE Level-Gates — alle Seltenheiten sofort, nur gewichtet.
 export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendaries je Angebot
 
+// Legendär-Roll (Shop-Spec §10 P5/P6): expliziter Wurf vor jedem Perk-/Skill-Angebot. Bei Erfolg wird genau
+// EIN Legendäres erzwungen, sonst enthält das Angebot keins. Chance = Basis + Bonus (P5/P6, je +5 pp), Bonus-Cap. [TUNING]
+export const PERK_LEGENDARY_BASE       = 0.08; // Basis-Legendär-Chance Perk-Angebot
+export const SKILL_LEGENDARY_BASE      = 0.08; // Basis-Legendär-Chance Skill-Angebot
+export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P6): max +15 pp
+
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
 export const SKILL_SLOTS       = 4;    // max gleichzeitig gehaltene Skills
 export const SKILLS_OFFERED     = 6;   // Skills je Skill-Runde (Prototyp: 2+2+2 — alle 3 Archetypen immer im Angebot)

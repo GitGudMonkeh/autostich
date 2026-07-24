@@ -89,6 +89,25 @@ describe("buildOffer", () => {
   it("bereits gewählte Legendaries werden nicht erneut angeboten", () => {
     expect(buildOffer(["L1"], makeRng(1), 3)).not.toContain("L1");
   });
+
+  // ---- Expliziter Legendär-Roll (Shop #107 S5c): Chance>0 → Legendäre nur über den Wurf, genau 0 oder 1 ----
+  it("legendaryChance=1 erzwingt genau EIN Legendary im Angebot", () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const off = buildOffer([], makeRng(seed), 3, 1);
+      expect(off).toHaveLength(3);
+      expect(off.filter((id) => isLegendary(id))).toHaveLength(1);
+    }
+  });
+  it("bei aktivem Roll (Chance>0) erscheinen NIE zwei Legendäre", () => {
+    for (let seed = 1; seed <= 60; seed++)
+      expect(buildOffer([], makeRng(seed), 3, 0.5).filter((id) => isLegendary(id)).length).toBeLessThanOrEqual(1);
+  });
+  it("ein aktiver Roll kann auch ohne Legendary ausgehen (Miss)", () => {
+    let anyWithout = false;
+    for (let seed = 1; seed <= 40 && !anyWithout; seed++)
+      if (!buildOffer([], makeRng(seed), 3, 0.2).some((id) => isLegendary(id))) anyWithout = true;
+    expect(anyWithout).toBe(true);
+  });
 });
 
 describe("critChanceFor / critChanceRawFor (V2: kein Perk trägt Crit-Chance — Stat/Blitz in der Engine)", () => {

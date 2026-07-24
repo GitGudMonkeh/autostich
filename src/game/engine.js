@@ -8,7 +8,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
-import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, SHOP_ITEM_DEFS, anchorTypeAt, playSequence } from "./shop.js";
+import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, SHOP_ITEM_DEFS, anchorTypeAt, playSequence } from "./shop.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -439,11 +439,11 @@ export function resolveTrick(state, rng = Math.random) {
       if (decision === "stat") {
         phase = "levelup"; newStatOffer = STAT_IDS; // immer alle Stats (Shop-Spec §4.3: fünf inkl. Einkommen)
       } else if (decision === "skill") {
-        const soff = buildSkillOffer(skills, activeArchetypes, rng, C.SKILLS_OFFERED);
+        const soff = buildSkillOffer(skills, activeArchetypes, rng, C.SKILLS_OFFERED, skillLegendaryChance(shop));
         if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = fate; }
-        else { const off = buildOffer(perks, rng, C.PERKS_OFFERED); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = fate; } } // leerer Skill-Pool → Perk
+        else { const off = buildOffer(perks, rng, C.PERKS_OFFERED, perkLegendaryChance(shop)); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = fate; } } // leerer Skill-Pool → Perk
       } else if (decision === "perk") {
-        const off = buildOffer(perks, rng, C.PERKS_OFFERED);
+        const off = buildOffer(perks, rng, C.PERKS_OFFERED, perkLegendaryChance(shop));
         if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = fate; }
       } else if (decision === "shop") {
         // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen, Einkommensbonus gutschreiben (+3 je Einkommen-Level,

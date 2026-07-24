@@ -86,6 +86,20 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
     expect(buildSkillOffer([LR], [], makeRng(1), 4)).not.toContain(LR);
     expect(buildSkillOffer(ALL, [], makeRng(1), 4)).toEqual([]);
   });
+
+  // ---- Expliziter Legendär-Roll (Shop #107 S5c) ----
+  it("ohne Legendär-Chance (0) bleibt das Verhalten unverändert (kein rng-Drift)", () => {
+    expect(buildSkillOffer([], [], makeRng(1), 6, 0)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
+  });
+  it("legendaryChance=1 erzwingt genau EINEN legendären Skill, Chance>0 nie zwei", () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const off = buildSkillOffer([], [], makeRng(seed), 6, 1);
+      expect(off).toHaveLength(6);
+      expect(off.filter((id) => SKILL_DEFS[id].legendary)).toHaveLength(1);
+    }
+    for (let seed = 1; seed <= 40; seed++)
+      expect(buildSkillOffer([], [], makeRng(seed), 6, 0.5).filter((id) => SKILL_DEFS[id].legendary).length).toBeLessThanOrEqual(1);
+  });
 });
 
 describe("Ionisierung — Helfer (Stufe B)", () => {

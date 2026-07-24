@@ -298,20 +298,33 @@ export function addCharge(lightning, gained) {
 // Angebot (#93 F0): bis zu `count` noch nicht gehaltene Skills, nach Archetyp gruppiert (2+2),
 // aus max C.MAX_ARCHETYPES Archetypen (offerArchetypes). Deterministisch über den injizierten rng.
 // Leerer Pool → [] (Reducer/Engine fällt auf Perk-Angebot zurück). F0: nur Blitz → 4 Blitz-Skills.
-export function buildSkillOffer(owned, activeArchetypes, rng, count) {
+export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0) {
   const available = archetypesWithSkills(owned);
   const chosen = offerArchetypes(activeArchetypes || [], available, rng);
   if (!chosen.length) return [];
+  // Expliziter Legendär-Roll (Shop-Spec §10 P6): NUR wenn eine Legendär-Chance übergeben ist. Legendäre Skills
+  // werden dann aus dem normalen Zug ausgeschlossen und kommen ausschließlich über diesen Wurf (bei Erfolg genau
+  // einer). Ohne Chance (0) bleibt das alte Verhalten exakt erhalten (kein rng-Drift für Bestandstests).
+  const legHit = legendaryChance > 0 && rng() < legendaryChance;
+  const gateLeg = legendaryChance > 0;
+  const isLeg = (id) => !!SKILL_DEFS[id]?.legendary;
   const perArch = Math.max(1, Math.floor(count / chosen.length)); // 2 bei 2 Archetypen, count bei 1
   const offer = [];
   const rest = [];
+  const legPool = [];
   for (const arch of chosen) {
-    const pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)).map((s) => s.id), rng);
+    let pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)).map((s) => s.id), rng);
+    if (gateLeg) { legPool.push(...pool.filter(isLeg)); pool = pool.filter((id) => !isLeg(id)); } // Legendäre nur über den Roll
     for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
     rest.push(...pool); // Reste des Archetyps für die Auffüllung
   }
   const fill = shuffle(rest, rng); // auffüllen bis count, falls ein Archetyp zu wenige Skills hatte
   while (offer.length < count && fill.length) offer.push(fill.shift());
+  // Bei erfolgreichem Roll genau einen legendären Skill einsetzen (ersetzt den letzten Slot bzw. füllt auf).
+  if (legHit && legPool.length) {
+    const leg = shuffle(legPool, rng)[0];
+    if (!offer.includes(leg)) { if (offer.length >= count) offer[offer.length - 1] = leg; else offer.push(leg); }
+  }
   return offer;
 }
 
