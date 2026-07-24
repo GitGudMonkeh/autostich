@@ -111,7 +111,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           <div><b className="opacity-100">T</b> Treppe — ≥3 streng steigend (ab ×1,25)</div>
           <div><b className="opacity-100">Z</b> Wechsel — ≥3 Zick-Zack, Diff ≥6 (ab ×1,25)</div>
           <div><b className="opacity-100">A</b> Anker — Einzelposition ×1,25</div>
-          <div><span style={{ color: "#5ab87a" }}>▢</span> gestrichelt = Formation ohne Multiplikator · Rahmen 1 grün·2 blau·3 lila·4 gold</div>
+          <div>Rahmenfarbe = Anzahl Formationen (<span style={{ color: "#5ab87a" }}>1</span>·<span style={{ color: "#5a8ade" }}>2</span>·<span style={{ color: "#8a7de0" }}>3</span>·<span style={{ color: "#d4a63a" }}>4</span>) · gestrichelt = ohne Multiplikator</div>
         </div>
 
         {/* Fußzeile */}
