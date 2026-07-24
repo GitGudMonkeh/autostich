@@ -7,10 +7,10 @@ export const CRIT_BASE_MULT   = 1.5;    // V2 (§22.3): Basis-Crit-Multiplikator
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 
 // Stat-System (V2 §22.3) — bei jedem Stat-Pick alle vier angeboten, einer gewählt; additiv, keine Caps [TUNING]
-export const STAT_CRIT_CHANCE_STEP = 0.02;  // Crit-Chance: +2 Prozentpunkte je Pick
-export const STAT_CRIT_MULT_STEP   = 0.1;   // Crit-Multiplikator: +0,1× je Pick (auf Basis 1,5)
+export const STAT_CRIT_CHANCE_STEP = 0.05;  // Crit-Chance: +5 Prozentpunkte je Pick (#94)
+export const STAT_CRIT_MULT_STEP   = 0.2;   // Crit-Multiplikator: +0,2× je Pick (auf Basis 1,5) (#94)
 export const STAT_FORM_MULT_STEP   = 0.05;  // Formations-Mult: +5 % Score bei aktiver Formation je Pick (max 1×/Stich)
-export const STAT_STREAK_MULT_STEP = 0.005; // Serien-Mult: +0,5 % Score je aktuellem Serienpunkt je Pick
+export const STAT_STREAK_MULT_STEP = 0.02;  // Serien-Mult: +2 % Score je aktuellem Serienpunkt je Pick (#94)
 
 // Entscheidungszyklus (V2 §22.2): Typ der Entscheidung VOR Durchlauf n = DECISION_CYCLE[n % 6].
 // Über 40 Durchläufe: 14 Stat · 13 Perk · 7 Formation · 6 Skill.

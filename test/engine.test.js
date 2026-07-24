@@ -468,8 +468,8 @@ describe("Stat-System — Engine (V2 §22.3)", () => {
     expect(s.lastTrick.jackpot).toBe(false);
     expect(s.lastTrick.scoreGain).toBeCloseTo(102 * 1.9); // scoreBeforeCrit 102 × 1,9
   });
-  it("Serien-Stat: +0,5 %/Pick pro Serienpunkt multipliziert den Stichscore", () => {
-    // statStreakMult 0,01 (2 Picks) × Serie 1 → Faktor 1,01. 100 × 1,02(#39) × 1,01.
+  it("Serien-Stat: statStreakMult pro Serienpunkt multipliziert den Stichscore", () => {
+    // statStreakMult 0,01 × Serie 1 → Faktor 1,01. 100 × 1,02(#39) × 1,01.
     expect(resolveTrick(scenario(12, 0, { statStreakMult: 0.01 }), rng).lastTrick.gained).toBeCloseTo(100 * 1.02 * 1.01);
     // Serie 4 (winStreak 3 → 4): streakBaseMult(4)=1,08 × Faktor (1 + 0,01×4)=1,04.
     expect(resolveTrick(scenario(12, 0, { statStreakMult: 0.01, winStreak: 3 }), rng).lastTrick.gained)
