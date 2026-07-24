@@ -126,8 +126,8 @@ Reihenfolge: **A → B → D → C-Rollen → E-Werkzeuge → L**, danach Cleanu
 - ✅ Goldene Rollen-Badges auf Karten in der Formationsphase (`FormationPhase.jsx`).
 - ✅ Chronik-Kartenübersicht (`ChronikOverview.jsx`, neu): Klick auf die Chronik öffnet die 40-Karten-Übersicht mit Formations- & Rollen-Markern und Tooltips (§22.11).
 - ⏳ **Offen (kein Blocker, kosmetisch):** ausführliche Ergebnis-Aufschlüsselung großer Treffer (Basis → Flats → Serie/global → Formation → Crit); Speed-Stufen-Regler auf 4×; „starke Formation aufgelöst"-Warnung (§16).
-- ⏳ **Rest-Cleanup:** tote/inerte Konstanten & State-Felder — bewusst zurückgestellt, weil die Namen (comboMult, tempo…) noch verzahnt in Battlefield/perks/engine leben; inert, kein Risiko.
-- **Ergebnis:** Prototyp funktional vollständig gemäß §22; Restpunkte sind reine Politur.
+- ✅ **Rest-Cleanup (Commit 3f5192e):** tote/inerte Legacy-Mechaniken restlos entfernt — Überzahl/overStreak, superCrit/Überschusskrit, chainCrit-Stufen, Königsmacher/kingBoosted, legendaryCritBonus (inert), fateValue, zeitrafferStacks, misfireBonus, comboMult/D2_STEP, tempoScoreMultFor + alle Leben-/Tempo-/Alt-Perk-Konstanten. Behalten: alle live-Mechaniken (D14/D15/D16, B5, L4/L8/L10/L11, Skill-/Blitz-/Ion-System). Netto −151 Zeilen, 195 Tests grün, Browser-Durchlauf fehlerfrei.
+- **Ergebnis:** Prototyp funktional vollständig gemäß §22; Codebase von V1-Altlasten bereinigt. Restpunkte (Treffer-Aufschlüsselung, Speed 4×, §16-Warnung) sind reine Politur.
 
 ---
 
