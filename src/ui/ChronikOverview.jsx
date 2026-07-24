@@ -57,9 +57,9 @@ export function ChronikOverview({ state, onClose }) {
                       title={[`Wert ${c.value} (ursprünglich ${c.baseRank})`, cardRoles.length ? "Rollen: " + cardRoles.map((p) => PERK_DEFS[p].label).join(", ") : null, inForm ? `Formation ×${fmt(pf.mult)}` : null].filter(Boolean).join(" · ")}>
                       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
                       {(c.ionStacks || 0) > 0 && <span className="absolute top-0.5 right-1 text-[8px]" style={{ color: "#5ec8f0" }}>⚡{c.ionStacks}</span>}
-                      <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
-                      {inForm && <span className="text-[9px] font-bold leading-none" style={{ color: "#5ab87a" }}>×{fmt(pf.mult)}</span>}
-                      {labels && <span className="absolute bottom-0.5 right-1 text-[7px] font-bold opacity-70" style={{ color: "#5ab87a" }}>{labels}</span>}
+                      <span className="text-lg sm:text-3xl font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
+                      {inForm && <span className="text-[9px] sm:text-sm font-bold leading-none" style={{ color: fb.color || "#5ab87a" }}>×{fmt(pf.mult)}</span>}
+                      {labels && <span className="absolute bottom-0.5 right-1 text-[8px] sm:text-xs font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
                       {cardRoles.length > 0 && <span className="absolute bottom-0.5 left-1 text-[8px] leading-none" style={{ color: "#d4a63a" }}>●</span>}
                     </button>
                   );
