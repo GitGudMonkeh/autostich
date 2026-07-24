@@ -24,8 +24,12 @@ const KEYWORD_INFO = {
 /* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint jede 3. Runde STATT eines Perks.
    Seltene, regelverändernde Motoren. Ablehnen → stattdessen ein Perk (Runde nie verschwendet).
    Bei vollen Slots: neuen Skill wählen → dann den zu ersetzenden Skill antippen (übergibt replaceId). */
-export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} }) {
+export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {} }) {
   const held = skills.map((id) => SKILL_DEFS[id]).filter(Boolean);
+  // Neuwurf (Shop-Spec §10 P2/P-L1): gratis Reroll (Schicksalskontrolle) zuerst, sonst gespeicherte Token.
+  const freeReroll = !!state.freeSkillReroll;
+  const rerollTokens = (state.shop && state.shop.skillRerolls) || 0;
+  const canReroll = !!onReroll && (freeReroll || rerollTokens > 0);
   const full = skills.length >= SKILL_SLOTS;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
   const [openSkill, setOpenSkill] = useState(null); // gehaltener Skill, dessen Beschreibung aufgeklappt ist
@@ -197,7 +201,14 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
           ))}
         </div>
 
-        <div className="text-center mt-5">
+        <div className="text-center mt-5 flex flex-wrap items-center justify-center gap-2">
+          {canReroll && (
+            <button onClick={onReroll}
+              className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
+              style={{ background: "#20202a", color: "#d4a63a", border: "1px solid #d4a63a66" }}>
+              🎲 Angebot neu würfeln {freeReroll ? "· gratis" : `· ${rerollTokens} übrig`}
+            </button>
+          )}
           <button
             onClick={onDecline}
             className="text-xs px-4 py-2 rounded-lg transition-all hover:opacity-80"

@@ -8,7 +8,11 @@ const fmtMult = (x) => x.toFixed(2).replace(".", ",");
 
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
-export function PerkSelect({ offer, onPick, perks = [], deck = [], state = {} }) {
+export function PerkSelect({ offer, onPick, onReroll, perks = [], deck = [], state = {} }) {
+  // Neuwurf (Shop-Spec §10 P1/P-L1): gratis Reroll (Schicksalskontrolle) zuerst, sonst gespeicherte Token.
+  const freeReroll = !!state.freePerkReroll;
+  const rerollTokens = (state.shop && state.shop.perkRerolls) || 0;
+  const canReroll = !!onReroll && (freeReroll || rerollTokens > 0);
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
   const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning, skills = [], statCritChance = 0, statCritMult = 0 } = state;
   // Crit inkl. Blitz-Basis (lightning) + Crit-Chance-Stat — dieselbe Rechnung wie Engine/StatusRail (kein Drift).
@@ -72,6 +76,16 @@ export function PerkSelect({ offer, onPick, perks = [], deck = [], state = {} })
         <div className="text-center text-xs opacity-40 mt-3">
           Jeder Perk ist pro Lauf nur einmal wählbar.
         </div>
+
+        {canReroll && (
+          <div className="text-center mt-3">
+            <button onClick={onReroll}
+              className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
+              style={{ background: "#20202a", color: LEG_GOLD, border: `1px solid ${LEG_GOLD}66` }}>
+              🎲 Angebot neu würfeln {freeReroll ? "· gratis" : `· ${rerollTokens} übrig`}
+            </button>
+          </div>
+        )}
 
         {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). */}
         <div className="mt-5 pt-4 border-t grid sm:grid-cols-2 gap-4" style={{ borderColor: "#2a2a33" }}>

@@ -402,6 +402,7 @@ export function resolveTrick(state, rng = Math.random) {
   let newStatOffer = statOffer;
   let newFormationEnergy = formationEnergy;
   let newFormationSwaps = formationSwaps;
+  let newFreePerkReroll = false, newFreeSkillReroll = false; // P-L1: gratis Reroll gilt nur fürs frisch erzeugte Angebot
   if (pos >= cycleLen) { // Zeitsegment (§8 A-L1): Durchlauf endet nach cycleLen Stichen (40, mit Zeitsegment 45)
     cycle += 1;
     // Shop-Münzökonomie (Shop-Spec §3.2): jeder vollständig abgeschlossene Durchlauf zahlt die konstante Basis
@@ -434,15 +435,16 @@ export function resolveTrick(state, rng = Math.random) {
       // Entscheidung VOR dem neuen Durchlauf nach dem festen Plan (Shop-Spec §2.2): DECISION_SCHEDULE[cycle]
       // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
       const decision = C.DECISION_SCHEDULE[cycle];
+      const fate = !!(shop && shop.fateControl); // P-L1 Schicksalskontrolle: gratis Reroll je Perk-/Skill-Auswahl
       if (decision === "stat") {
         phase = "levelup"; newStatOffer = STAT_IDS; // immer alle Stats (Shop-Spec §4.3: fünf inkl. Einkommen)
       } else if (decision === "skill") {
         const soff = buildSkillOffer(skills, activeArchetypes, rng, C.SKILLS_OFFERED);
-        if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
-        else { const off = buildOffer(perks, rng, C.PERKS_OFFERED); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk
+        if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = fate; }
+        else { const off = buildOffer(perks, rng, C.PERKS_OFFERED); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = fate; } } // leerer Skill-Pool → Perk
       } else if (decision === "perk") {
         const off = buildOffer(perks, rng, C.PERKS_OFFERED);
-        if (off.length > 0) { phase = "levelup"; newOffer = off; }
+        if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = fate; }
       } else if (decision === "shop") {
         // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen, Einkommensbonus gutschreiben (+3 je Einkommen-Level,
         // pro Shop) und ein frisches Angebot ziehen (§5, deterministisch über rng).
@@ -464,6 +466,7 @@ export function resolveTrick(state, rng = Math.random) {
     score, winStreak, bestStreak, wins, losses, ties,
     crits, critBonusScore, bestTrickScore,
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
+    freePerkReroll: newFreePerkReroll, freeSkillReroll: newFreeSkillReroll, // Planung (§10 P-L1)
     critFollowArmed, weaknessArmed, misfireScore,
     winSuit, winSuitStreak, recentResults,
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet

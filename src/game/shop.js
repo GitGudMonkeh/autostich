@@ -144,6 +144,17 @@ export const SHOP_ITEM_DEFS = {
         targetMode: "formation-type", target: { formationType: true },
         description: "Wähle einen Formationstyp. Jede aktive Formation dieses Typs (inkl. Nachhall) erhält zusätzlich ×1,50.",
         apply: (s, t) => ({ shop: setPE(s.shop, { formationCoreType: t.formationType }) }) },
+
+  // ---- Planung (Shop-Spec §10) — Neuwürfe/Reservierung; kein Score-Effekt, wirkt auf Angebote/Auswahlen. ----
+  P1: { id: "P1", category: "planning", name: "Perk-Neuwurf", tier: "cheap", repeatable: true,
+        description: "Erhalte einen gespeicherten Neuwurf für eine zukünftige Perk-Auswahl.",
+        apply: (s) => ({ shop: { ...s.shop, perkRerolls: (s.shop.perkRerolls || 0) + 1 } }) },
+  P2: { id: "P2", category: "planning", name: "Skill-Neuwurf", tier: "cheap", repeatable: true,
+        description: "Erhalte einen gespeicherten Neuwurf für eine zukünftige Skill-Auswahl.",
+        apply: (s) => ({ shop: { ...s.shop, skillRerolls: (s.shop.skillRerolls || 0) + 1 } }) },
+  "P-L1": { id: "P-L1", category: "planning", name: "Schicksalskontrolle", tier: "legendary", legendary: true, repeatable: false,
+        description: "Bei jeder zukünftigen Perk- und Skill-Auswahl darf das Angebot einmal kostenlos neu gewürfelt werden.",
+        apply: (s) => ({ shop: { ...s.shop, fateControl: true } }) },
 };
 
 /* ---- Zeitsegment (Shop-Spec §8 A-L1) — Spielreihenfolge der Positionen eines Durchlaufs. ---- */

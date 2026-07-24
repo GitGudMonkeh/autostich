@@ -193,11 +193,11 @@ describe("Shop-Angebot — Ziehung (Shop-Spec §5)", () => {
 });
 
 describe("Shop-Kauf — BUY_ITEM (Shop-Spec §5.4)", () => {
-  it("Engine zieht bei Shop-Eintritt ein Angebot (S4a: 'cards'+'anchors'+'formations' → 6 Angebote)", () => {
+  it("Engine zieht bei Shop-Eintritt ein volles Angebot (S5: alle 4 Kategorien → 8 Angebote)", () => {
     const s = resolveTrick(atCycleEnd({ cycle: 3 }), rng); // → Shop-Runde
     expect(s.phase).toBe("shop");
-    expect(s.shop.offers).toHaveLength(6); // Karten/Anker/Formationen je 2; Planung folgt S5
-    expect(s.shop.offers.every((o) => ["cards", "anchors", "formations"].includes(o.category))).toBe(true);
+    expect(s.shop.offers).toHaveLength(SHOP_ITEMS_OFFERED); // Karten/Anker/Formationen/Planung je 2
+    expect(s.shop.offers.every((o) => SHOP_CATEGORIES.includes(o.category))).toBe(true);
     expect(s.shop.purchasedOfferIds).toEqual([]);
   });
   it("LEAVE_SHOP leert das Angebot (nicht gekaufte Items verworfen, §5.4)", () => {
@@ -655,5 +655,80 @@ describe("Shop-Formationsitem — F-L1 Formationskern (Shop-Spec §9)", () => {
     expect(r.shop.coins).toBe(0);
     expect(r.shop.boughtLegendaryIds).toEqual(["F-L1"]);
     expect(r.shop.boughtNonRepeatableIds).toEqual(["F-L1"]);
+  });
+});
+
+describe("Shop-Planungsitems — S5a Rerolls (Shop-Spec §10)", () => {
+  it("P1/P2/P-L1 apply setzen Rerolls bzw. fateControl", () => {
+    const s = initialState(makeRng(1));
+    expect(SHOP_ITEM_DEFS.P1.apply(s).shop.perkRerolls).toBe(1);
+    expect(SHOP_ITEM_DEFS.P2.apply(s).shop.skillRerolls).toBe(1);
+    expect(SHOP_ITEM_DEFS["P-L1"].apply(s).shop.fateControl).toBe(true);
+  });
+  it("Kauf P1 (kein Ziel): +1 Perk-Neuwurf-Token, Preis abgezogen", () => {
+    const offer = { offerId: "o0", itemId: "P1", category: "planning", tier: "cheap", price: 8, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers: [offer] } };
+    const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
+    expect(r.phase).toBe("shop");
+    expect(r.shop.coins).toBe(0);
+    expect(r.shop.perkRerolls).toBe(1);
+  });
+  it("Kauf P-L1 Schicksalskontrolle: fateControl (legendär + nicht wiederholbar)", () => {
+    const offer = { offerId: "o0", itemId: "P-L1", category: "planning", tier: "legendary", price: 30, legendary: true };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+    const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
+    expect(r.shop.fateControl).toBe(true);
+    expect(r.shop.boughtLegendaryIds).toEqual(["P-L1"]);
+    expect(r.shop.boughtNonRepeatableIds).toEqual(["P-L1"]);
+  });
+
+  const levelupPerk = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["A1", "A2", "A3"], ...over });
+
+  it("REROLL_PERK verbraucht einen Token und baut ein neues Angebot", () => {
+    const s = levelupPerk({ shop: { ...initialShop(), perkRerolls: 2 } });
+    const r = reducer(s, { type: "REROLL_PERK", rng: makeRng(5) });
+    expect(r.shop.perkRerolls).toBe(1);
+    expect(Array.isArray(r.offer)).toBe(true);
+    expect(r.offer.length).toBeGreaterThan(0);
+  });
+  it("REROLL_PERK nutzt den gratis Reroll (fateControl) ZUERST, Token bleibt unangetastet", () => {
+    const s = levelupPerk({ freePerkReroll: true, shop: { ...initialShop(), perkRerolls: 2 } });
+    const r = reducer(s, { type: "REROLL_PERK", rng: makeRng(5) });
+    expect(r.freePerkReroll).toBe(false); // gratis verbraucht
+    expect(r.shop.perkRerolls).toBe(2);   // Token unangetastet
+  });
+  it("REROLL_PERK ohne Ressource ist wirkungslos", () => {
+    const s = levelupPerk({ shop: initialShop() }); // 0 Token, kein gratis
+    expect(reducer(s, { type: "REROLL_PERK", rng: makeRng(5) })).toBe(s);
+  });
+  it("REROLL_SKILL verbraucht einen Token und baut ein neues Skill-Angebot", () => {
+    const s = { ...initialState(makeRng(1)), phase: "levelup", skillOffer: ["SK_LIGHTNING_01"],
+      activeArchetypes: ["lightning"], skills: [], shop: { ...initialShop(), skillRerolls: 1 } };
+    const r = reducer(s, { type: "REROLL_SKILL", rng: makeRng(3) });
+    expect(r.shop.skillRerolls).toBe(0);
+    expect(r.skillOffer.length).toBeGreaterThan(0);
+  });
+  it("REROLL_SKILL nutzt den gratis Reroll zuerst (Token unangetastet)", () => {
+    const s = { ...initialState(makeRng(1)), phase: "levelup", skillOffer: ["SK_LIGHTNING_01"],
+      activeArchetypes: ["lightning"], skills: [], freeSkillReroll: true, shop: { ...initialShop(), skillRerolls: 1 } };
+    const r = reducer(s, { type: "REROLL_SKILL", rng: makeRng(3) });
+    expect(r.freeSkillReroll).toBe(false);
+    expect(r.shop.skillRerolls).toBe(1);
+  });
+
+  it("Engine setzt freePerkReroll beim Perk-Angebot nur mit aktiver Schicksalskontrolle", () => {
+    const withFate = resolveTrick(atCycleEnd({ cycle: 0, shop: { ...initialShop(), fateControl: true } }), rng); // cycle 0→1 = Perk
+    expect(withFate.phase).toBe("levelup");
+    expect(withFate.offer).toBeTruthy();
+    expect(withFate.freePerkReroll).toBe(true);
+    const without = resolveTrick(atCycleEnd({ cycle: 0 }), rng);
+    expect(without.freePerkReroll).toBe(false);
+  });
+  it("Engine setzt freeSkillReroll beim Skill-Angebot mit aktiver Schicksalskontrolle", () => {
+    const s = resolveTrick(atCycleEnd({ cycle: 4, activeArchetypes: ["lightning"], // cycle 4→5 = Skill
+      shop: { ...initialShop(), fateControl: true } }), rng);
+    expect(s.phase).toBe("levelup");
+    expect(s.skillOffer).toBeTruthy();
+    expect(s.freeSkillReroll).toBe(true);
   });
 });

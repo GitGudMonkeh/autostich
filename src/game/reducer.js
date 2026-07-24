@@ -1,7 +1,7 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
 import { PERK_DEFS, buildOffer } from "./perks.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
-  frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail } from "./skills.js";
+  frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES } from "./shop.js";
@@ -38,6 +38,9 @@ export function initialState(rng = Math.random) {
     roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
     l4Boost: {}, l5Used: [], l8Wins: {}, chainArmed: false, pos20Bonus: 0, // Legendaries (V2 §22.6 L)
     perks: [], offer: null,
+    // Planung (Shop-Spec §10): gratis Neuwurf je Auswahl aus P-L1 Schicksalskontrolle — beim Anbieten
+    // eines Perk-/Skill-Angebots gesetzt (wenn fateControl aktiv), beim Neuwurf zuerst verbraucht (vor Tokens).
+    freePerkReroll: false, freeSkillReroll: false,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
     skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
@@ -289,9 +292,35 @@ export function reducer(state, action) {
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
       const off = buildOffer(state.perks, action.rng, PERKS_OFFERED);
+      const fate = !!(state.shop && state.shop.fateControl);         // P-L1: gratis Reroll gilt fürs neue Perk-Angebot
       return off.length > 0
-        ? { ...state, skillOffer: null, offer: off }        // → Perk-Auswahl
-        : { ...state, skillOffer: null, phase: "play" };    // Perk-Pool leer → weiterspielen
+        ? { ...state, skillOffer: null, offer: off, freePerkReroll: fate, freeSkillReroll: false } // → Perk-Auswahl
+        : { ...state, skillOffer: null, freeSkillReroll: false, phase: "play" };                   // Perk-Pool leer → weiterspielen
+    }
+
+    // Perk-Angebot neu würfeln (Shop-Spec §10 P1/P-L1): gratis Reroll (Schicksalskontrolle) zuerst, sonst
+    // einen gespeicherten Token verbrauchen. Komplett neues Angebot (Seltenheitsregeln in buildOffer), rng deterministisch.
+    case "REROLL_PERK": {
+      if (state.phase !== "levelup" || !state.offer) return state;
+      const free = !!state.freePerkReroll;
+      const tokens = (state.shop && state.shop.perkRerolls) || 0;
+      if (!free && tokens <= 0) return state;                        // keine Ressource → wirkungslos
+      const offer = buildOffer(state.perks, action.rng, PERKS_OFFERED);
+      const shop = free ? state.shop : { ...state.shop, perkRerolls: tokens - 1 };
+      return { ...state, offer, shop, freePerkReroll: free ? false : state.freePerkReroll };
+    }
+
+    // Skill-Angebot neu würfeln (Shop-Spec §10 P2/P-L1): analog; erfüllt weiterhin Archetyp-/Konsumentenregeln
+    // (buildSkillOffer). Leeres neues Angebot (keine Archetypen verfügbar) → Ressource nicht verbrauchen.
+    case "REROLL_SKILL": {
+      if (state.phase !== "levelup" || !state.skillOffer) return state;
+      const free = !!state.freeSkillReroll;
+      const tokens = (state.shop && state.shop.skillRerolls) || 0;
+      if (!free && tokens <= 0) return state;
+      const offer = buildSkillOffer(state.skills, state.activeArchetypes, action.rng, C.SKILLS_OFFERED);
+      if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
+      const shop = free ? state.shop : { ...state.shop, skillRerolls: tokens - 1 };
+      return { ...state, skillOffer: offer, shop, freeSkillReroll: free ? false : state.freeSkillReroll };
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.

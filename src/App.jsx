@@ -177,6 +177,8 @@ export function Autostich() {
   // Skill-Auswahl (jede 3. Runde): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
+  const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
+  const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
   // Shop-Runde (Shop-Spec §2.6): kaufen (§5.4) bzw. verlassen/bestätigen → zugehöriger Durchlauf startet.
   const buyItem = (offerId) => dispatch({ type: "BUY_ITEM", offerId, rng: Math.random });
   const leaveShop = () => dispatch({ type: "LEAVE_SHOP" });
@@ -349,10 +351,10 @@ export function Autostich() {
         <StatSelect offer={state.statOffer} onPick={pickStat} state={state} />
       )}
       {state.phase === "levelup" && state.offer && (
-        <PerkSelect offer={state.offer} onPick={pick} perks={state.perks} deck={state.deck} state={state} />
+        <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} perks={state.perks} deck={state.deck} state={state} />
       )}
       {state.phase === "levelup" && state.skillOffer && (
-        <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} skills={state.skills} state={state} />
+        <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} />
       )}
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
