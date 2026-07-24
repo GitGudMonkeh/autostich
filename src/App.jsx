@@ -29,7 +29,7 @@ export function Autostich() {
   const [options, setOptions] = useState(() => loadOptions());   // Optionen (#41): u. a. CRT-Skin
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
-  const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung 1×/2×/3× (#27, kein Score-Effekt)
+  const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung 1×/2×/4×/6× (#27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);

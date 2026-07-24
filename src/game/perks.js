@@ -4,25 +4,22 @@ import { shuffle } from "./deck.js";
 
 /* ============================================================
    PERK-REGISTRY  — datengetrieben (wie clauses.js in TrickLadder).
-   Hooks (alle optional), ausgewertet in engine.js:
-     onPick(deck, rng) -> neues Deck   einmalige Kartenmod beim Pick (Kat. A)
-     cardBonus(ctx)    -> Wert-Bonus auf die Spielerkarte DIESES Stichs (Kat. B)
-     healOnWin(ctx)    -> Leben je gewonnenem Stich (Kat. C)
-     dmgReduce(ctx)    -> Schadensreduktion je verlorenem Stich
-     healOnCycle()     -> Leben nach vollem Deck-Durchlauf
-     scoreMult(ctx)    -> multiplikativer Score-Faktor bei Sieg (Kat. D)
-     scoreFlat(ctx)    -> additiver Score bei Sieg
-   Legendär-Hooks (#33):
-     winTie(ctx)             -> Gleichstand als Sieg werten (L2, ctx.winStreak = Serie VOR dem Stich)
-     extraDamageTaken(ctx)   -> Zusatzschaden je Niederlage, summiert (L1/L6)
-     critMultiplier(ctx)     -> Crit-Faktor überschreiben statt addieren
-     critChanceMult(ctx)     -> Faktor auf die Gesamt-Crit-Chance
-   Flags (Spezialfälle mit Engine-Zustand):
-     winTieAfterLoss   -> nach Niederlage nächsten Gleichstand gewinnen (B5)
+   Score-/Wert-Hooks (alle optional), ausgewertet in engine.js:
+     onPick(deck, rng)    -> neues Deck   einmalige Kartenmod beim Pick (Kat. A)
+     cardBonus(ctx)       -> Wert-Bonus auf die Spielerkarte DIESES Stichs (Kat. B/C/L)
+     scoreFlat(ctx)       -> additiver Score bei Sieg (Kat. D — fließt in die multiplizierte Basis)
+     scoreFlatOnCrit(ctx) -> additiver Score NUR bei Crit (Kat. D)
+     scoreMult(ctx)       -> multiplikativer Score-Faktor bei Sieg
+   Kat.-C/E/L-Sonderfälle laufen über Marker/Flags am Perk (needsTarget, relay, triumph, permMod,
+   sacrificeMod, jokerRole/bridgeRole, segmentLow/segmentHigh, critValueGain, successorCrit,
+   swapExtremes, repeatPos, randomTarget, extraSwap, winTieAfterLoss) — je an ihrer Definition erklärt.
+   Crit-Chance/-Mult kommen NICHT aus den Perks, sondern aus Stat + Blitz-Skills (Engine).
    rarity: "legendary" markiert Legendaries (Default "common") — Gewicht in buildOffer.
 
-   ctx-Felder je Stich: { posInCycle, trickNo, lastResult, lostLastTrick, winStreak }
-   ctx-Felder je Sieg (scoreMult/scoreFlat/healOnWin): { winValue, winStreak, wins }
+   ctx-Felder je Stich: { posInCycle, trickNo, lastResult, lostLastTrick, winStreak, sinceWin,
+     lossStreak, posForm, predValue, pValueBase, isRole, triumphActive, isSegmentLow, isSegmentHigh }
+   ctx-Felder je Sieg: { winValue, margin, winStreak, wins, baseValue, hasFormation, lastResult,
+     suitStreak, recentWinCount, lastWinValue, critFollowArmed, weaknessArmed, misfireScore, rawCrit }
    ============================================================ */
 
 const bumpWhere = (deck, pred, delta) =>
@@ -343,15 +340,13 @@ export function buildOffer(owned, rng, count) {
   return chosen;
 }
 
-// Gesamt-Crit-Chance eines Builds: Σ critChance-Perks × Π critChanceMult. EINE Quelle für
-// Engine-Wurf UND Anzeige (#25, kein Drift). UNGEKLEMMTE Roh-Crit-Chance (kann >1 sein) —
-// die D-Crit-Flats (critCtx.rawCrit) und critChanceFor bauen darauf auf.
+// Perk-Beitrag zur Roh-Crit-Chance (Σ critChance-Perks). V2: kein Perk trägt Crit-Chance → aktuell
+// stets 0; Crit-Chance kommt aus Stat + Blitz (in der Engine addiert). Bleibt als Aggregations-/
+// Anzeige-Quelle (#25): Engine (rawCrit) und PerkSelect/StatusRail summieren darauf. UNGEKLEMMT (>1 möglich).
 export function critChanceRawFor(perks, ctx) {
   let raw = 0;
   for (const id of perks) { const f = PERK_DEFS[id].critChance; if (f) raw += f(ctx); }
-  let mult = 1;
-  for (const id of perks) { const f = PERK_DEFS[id].critChanceMult; if (f) mult *= f(ctx); }
-  return raw * mult;
+  return raw;
 }
 export function critChanceFor(perks, ctx) {
   return Math.min(1, Math.max(0, critChanceRawFor(perks, ctx)));
@@ -364,9 +359,9 @@ export function critMultiplierFor(perks, ctx = {}, baseBonus = 0) {
   return m;
 }
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
-// V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit → auch die zählen.
+// V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit → die zählen.
 export function hasCritPerk(perks) {
-  return perks.some((id) => PERK_DEFS[id].critChance || PERK_DEFS[id].guaranteedCrit || PERK_DEFS[id].scoreFlatOnCrit);
+  return perks.some((id) => PERK_DEFS[id].scoreFlatOnCrit);
 }
 // Produkt der scoreMult-Perks für einen Kontext (für Live-Anzeige des Score-Multiplikators, #23).
 export function scoreMultFor(perks, ctx) {

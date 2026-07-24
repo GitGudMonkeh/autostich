@@ -19,12 +19,6 @@ function prodHook(perks, name, ctx) {
 function ownsFlag(perks, flag) {
   return perks.some((id) => PERK_DEFS[id][flag]);
 }
-function anyHookTrue(perks, name, ctx) {
-  return perks.some((id) => { const f = PERK_DEFS[id][name]; return f ? !!f(ctx) : false; });
-}
-function ownsGuaranteedCrit(perks, ctx) {
-  return perks.some((id) => { const f = PERK_DEFS[id].guaranteedCrit; return f ? f(ctx) : false; });
-}
 
 // Crit-Wurf (pure, testbar): guaranteed override; sonst rng < gedeckelter Chance.
 // Ruft rng() NUR, wenn wirklich gewürfelt wird → minimaler/deterministischer Verbrauch.
@@ -52,10 +46,9 @@ export function resolveTrick(state, rng = Math.random) {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     score, winStreak, bestStreak, wins, losses, ties,
     initiative, lastResult, perks, offer, tieArmed, sinceWin = 0,
-    lossStreak = 0, lastWinValue = null, altLen = 0, // #71 Rares: Revanche / Präzision / Wechselspiel
+    lossStreak = 0, lastWinValue = null, // #71 Rares: Revanche / Präzision
     critFollowArmed = false, weaknessArmed = false, // #71 Crit-Historie: Crit-Folge (D14) / Schwachstellenanalyse (D16)
     misfireScore = 0, // V2 §22.6 D15: Score-Ladung, +30 je Sieg ohne Crit (max 300), Auszahlung bei Crit
-    ascRun = 0, lastPlayedValue = null, // #71 Perfekte Folge: aufsteigende Wertfolge
     winSuit = null, winSuitStreak = 0, // #71 Farbserie: gleicher-Farbe-Siegesserie
     recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich
     statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0, statOffer = null, // Stat-System (V2 §22.3)
@@ -80,11 +73,6 @@ export function resolveTrick(state, rng = Math.random) {
   const predValue = pos > 0 ? deck[playerOrder[pos - 1]].value : null;
 
   trickNo += 1;
-  // #71 Perfekte Folge: Länge der aktuell streng ansteigenden Wertfolge INKL. dieser Karte (Basiswert).
-  // Gleicher/niedrigerer Wert beginnt die Folge neu. State für den nächsten Stich sofort fortschreiben.
-  const ascChain = (lastPlayedValue != null && pCard.value > lastPlayedValue) ? (ascRun || 0) + 1 : 1;
-  ascRun = ascChain;
-  lastPlayedValue = pCard.value;
   // #71 Volles Haus: Siege in den (bis zu 4) Stichen VOR diesem — inkl. aktuellem Sieg = Fenster 5.
   const recentWinCount = recentResults.filter((r) => r === "win").length;
   // Effektive Serie für Serien-Effekte (Stand VOR dem Stich).
@@ -117,7 +105,6 @@ export function resolveTrick(state, rng = Math.random) {
     winStreak: serieStreak, // Serien-Effekte (B2 Momentum) sehen die effektive Serie
     sinceWin, // #71 Durchbruch: Stiche ohne Sieg (Stand VOR diesem Stich)
     lossStreak, // #71 Revanche: aufeinanderfolgende Niederlagen (Stand VOR diesem Stich)
-    ascChain, // #71 Perfekte Folge (Alt-Historie; B9 nutzt jetzt posForm)
     posForm, // V2 §22.6: Formation der gespielten Position (B6 Wiederholung / B9 Treppe)
     predValue, // V2 §22.6: Dauerwert des direkten Vorgängers (B10 Überzahl)
     isRole, triumphActive, isSegmentLow, isSegmentHigh, // V2 §22.6 C/L: Kartenrollen (C1/C2/C3/C6/C7/L7)
@@ -134,14 +121,9 @@ export function resolveTrick(state, rng = Math.random) {
   let won = false, lost = false, tieConverted = false;
   if (pValue > oValue) won = true;
   else if (pValue < oValue) lost = true;
-  // Gleichstand → Sieg via B5 (tieArmed) ODER L2 „Unaufhaltsam" (winTie, Serie VOR dem Stich ≥3).
-  else if (tieArmed || anyHookTrue(perks, "winTie", ctx)) { won = true; tieConverted = true; }
+  // Gleichstand → Sieg nur via B5 „Initiative" (tieArmed).
+  else if (tieArmed) { won = true; tieConverted = true; }
   // sonst echter Gleichstand: kein Effekt (§4.1)
-
-  // #71 Wechselspiel: Länge der aktuellen strikten Sieg/Niederlage-Alternation (Gleichstand bricht sie).
-  const curRes = won ? "win" : lost ? "loss" : "tie";
-  altLen = curRes === "tie" ? 0
-    : (curRes !== lastResult && (lastResult === "win" || lastResult === "loss")) ? altLen + 1 : 1;
 
   let gained = 0;
   let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
@@ -155,7 +137,7 @@ export function resolveTrick(state, rng = Math.random) {
     // #71 Farbserie: Länge der Serie gewonnener Stiche gleicher Farbe INKL. dieses Siegs.
     const suitStreak = pCard.suit === winSuit ? winSuitStreak + 1 : 1;
     const wctx = { winValue: pValue, margin: pValue - oValue, winStreak: serieStreak, wins, trickNo, posInCycle: pos,
-                   lastWinValue, altLen, // #71: Präzision (Vergleich mit letztem Siegwert) / Wechselspiel
+                   lastWinValue, // #71: Präzision (Vergleich mit letztem Siegwert)
                    critFollowArmed, weaknessArmed, // Crit-Historie: Stand VOR diesem Sieg (D14/D16)
                    suitStreak, recentWinCount, // Farbserie / Volles Haus
                    baseValue: pCard.value, // Basiswert der gespielten Karte
@@ -169,7 +151,7 @@ export function resolveTrick(state, rng = Math.random) {
     const rawCrit = critChanceRawFor(perks, wctx) + lightningCritRaw(lightning, skills) + statCritChance;
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     critMultiplier = critMultiplierFor(perks, wctx, statCritMult); // Basis 1,5 + Crit-Mult-Stat
-    isCrit = forceCrit || rollCrit(critChance, ownsGuaranteedCrit(perks, wctx), rng); // L10: garantierter Nachfolger-Crit
+    isCrit = rollCrit(critChance, forceCrit, rng); // forceCrit = L10-Kettenreaktion (garantierter Nachfolger-Crit)
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.
@@ -355,9 +337,9 @@ export function resolveTrick(state, rng = Math.random) {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     score, winStreak, bestStreak, wins, losses, ties,
     crits, critBonusScore, bestTrickScore,
-    initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue, altLen,
+    initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     critFollowArmed, weaknessArmed, misfireScore,
-    ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
+    winSuit, winSuitStreak, recentResults,
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung

@@ -118,7 +118,7 @@ export function ionScoreFor(card) {
 // Voll-Ladungs-Verbraucher (Abschnitt 6): Ionisierung (ionize) und Geladene Serie (protectStreak).
 export function hasIonize(skills)  { return (skills || []).some((id) => SKILL_DEFS[id]?.onFullCharge === "ionize"); }
 export function hasProtect(skills) { return (skills || []).some((id) => SKILL_DEFS[id]?.onFullCharge === "protectStreak"); }
-// Hat der Build überhaupt einen Verbraucher? Nur dann wird Ladung je verbraucht.
+// Prädikat „hat der Build einen Verbraucher?" — Test-/Anzeige-API; die Engine prüft hasIonize/hasProtect direkt.
 export function consumesCharge(skills) { return hasIonize(skills) || hasProtect(skills); }
 
 // Reaktoren (laufen bei JEDEM Verbrauch): Reststrom (Ladungsboden), Gewitterfront (Crit/Score).
