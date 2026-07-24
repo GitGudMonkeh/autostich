@@ -121,12 +121,13 @@ Reihenfolge: **A → B → D → C-Rollen → E-Werkzeuge → L**, danach Cleanu
 
 **Phase 5 damit funktional abgeschlossen** (alle 70 Perks nach §22.6, 198 Tests grün).
 
-### Phase 6 — UI-Feinschliff & Feedback
-- Float-Feedback im Durchlauf (`WIEDERHOLUNG ×1,60`, `FORMATION ×12`, Peak ab ×6/×12).
-- Rollen-Labels auf Karten; Chronik-Kartenübersicht mit Rollen-/Marker-Detailansicht.
-- Ergebnisanzeige großer Treffer (Basis → Flats → Serien-/global → Formation → Crit).
-- Letzte Leben-UI-Reste raus, Speed-Stufen-Regler.
-- **Ergebnis:** Prototyp vollständig gemäß §22.
+### Phase 6 — UI-Feinschliff & Feedback ✅ (Commit 8508766)
+- ✅ Benanntes Float-Feedback im Durchlauf (`WIEDERHOLUNG ×1,60`, `FORMATION ×12`, Peak-Stufen ab ×6/×12) in `Battlefield.jsx`.
+- ✅ Goldene Rollen-Badges auf Karten in der Formationsphase (`FormationPhase.jsx`).
+- ✅ Chronik-Kartenübersicht (`ChronikOverview.jsx`, neu): Klick auf die Chronik öffnet die 40-Karten-Übersicht mit Formations- & Rollen-Markern und Tooltips (§22.11).
+- ⏳ **Offen (kein Blocker, kosmetisch):** ausführliche Ergebnis-Aufschlüsselung großer Treffer (Basis → Flats → Serie/global → Formation → Crit); Speed-Stufen-Regler auf 4×; „starke Formation aufgelöst"-Warnung (§16).
+- ⏳ **Rest-Cleanup:** tote/inerte Konstanten & State-Felder — bewusst zurückgestellt, weil die Namen (comboMult, tempo…) noch verzahnt in Battlefield/perks/engine leben; inert, kein Risiko.
+- **Ergebnis:** Prototyp funktional vollständig gemäß §22; Restpunkte sind reine Politur.
 
 ---
 
