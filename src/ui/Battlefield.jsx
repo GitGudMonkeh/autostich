@@ -199,7 +199,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
                      fontSize: formPeak === 2 ? 26 : formPeak === 1 ? 21 : 17,
                      color: formPeak ? "#d4a63a" : "#5ab87a",
                      textShadow: formPeak === 2 ? "0 0 16px #d4a63a" : formPeak === 1 ? "0 0 12px #d4a63aaa" : "0 0 10px #5ab87a88",
-                     animation: fx(`as-combo ${floatDur + 1000}ms ease-out forwards`) }}>
+                     animation: fx(`as-combo ${floatDur + 2000}ms ease-out forwards`) }}>
             {formPeak === 2 && "★ "}{formLabel} ×{formationStr}
           </div>
         )}
