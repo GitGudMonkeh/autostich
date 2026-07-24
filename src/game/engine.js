@@ -1,6 +1,6 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
-import { PERK_DEFS, buildOffer, critChanceRawFor, comboMultFor, critMultiplierFor, streakBaseMult } from "./perks.js";
+import { PERK_DEFS, buildOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor } from "./skills.js";
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
@@ -53,18 +53,16 @@ export function resolveTrick(state, rng = Math.random) {
     score, winStreak, bestStreak, wins, losses, ties,
     initiative, lastResult, perks, offer, tieArmed, sinceWin = 0,
     lossStreak = 0, lastWinValue = null, altLen = 0, // #71 Rares: Revanche / Präzision / Wechselspiel
-    critFollowArmed = false, misfireBonus = 0, weaknessArmed = false, // #71 Crit-Historie: Crit-Folge / Fehlzündung / Schwachstellenanalyse
+    critFollowArmed = false, weaknessArmed = false, // #71 Crit-Historie: Crit-Folge (D14) / Schwachstellenanalyse (D16)
     misfireScore = 0, // V2 §22.6 D15: Score-Ladung, +30 je Sieg ohne Crit (max 300), Auszahlung bei Crit
     ascRun = 0, lastPlayedValue = null, // #71 Perfekte Folge: aufsteigende Wertfolge
     winSuit = null, winSuitStreak = 0, // #71 Farbserie: gleicher-Farbe-Siegesserie
     recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich
-    overStreak = 0, // #71 Überzahl: effektive Serie für Serien-Effekte (klare Siege zählen doppelt)
-    fateValue = null, zeitrafferStacks = 0, // #71 Legendaries: Schicksalsmaschine / Zeitraffer (Score-Stapel)
     statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0, statOffer = null, // Stat-System (V2 §22.3)
     formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, l5Used = [], l8Wins = {}, chainArmed = false, pos20Bonus = 0, // Legendaries (V2 §22.6 L): L4 Wert-Gewinn / L5 Jackpot-Verbrauch / L8 Erfolge / L10 Kette / L11 Wiederholung
-    crits, critBonusScore, bestTrickScore, legendaryCritBonus = 0,
+    crits, critBonusScore, bestTrickScore,
     skills = [], skillOffer = null, lightning = null, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
   } = state;
 
@@ -89,10 +87,8 @@ export function resolveTrick(state, rng = Math.random) {
   lastPlayedValue = pCard.value;
   // #71 Volles Haus: Siege in den (bis zu 4) Stichen VOR diesem — inkl. aktuellem Sieg = Fenster 5.
   const recentWinCount = recentResults.filter((r) => r === "win").length;
-  // #71 Überzahl einmal auflösen.
-  const ownsUeberzahl = ownsFlag(perks, "ueberzahl");
-  // #71 Überzahl: effektive Serie für Serien-Effekte (Stand VOR dem Stich). Ohne Perk == winStreak.
-  let serieStreak = ownsUeberzahl ? (overStreak || 0) : winStreak;
+  // Effektive Serie für Serien-Effekte (Stand VOR dem Stich).
+  let serieStreak = winStreak;
   // Kartenrollen (V2 §22.6 C): Rolle der aktuellen Karte, Triumph-Armierung, Segment-Tiefste.
   const isRole = (perkId) => (roles[perkId] || []).includes(pCard.id);
   const triumphActive = triumphArmed.includes(pCard.id);
@@ -118,11 +114,10 @@ export function resolveTrick(state, rng = Math.random) {
     trickNo,
     lastResult,
     lostLastTrick: lastResult === "loss",
-    winStreak: serieStreak, // #71 Überzahl: Serien-Effekte (B2 Momentum) sehen die effektive Serie
+    winStreak: serieStreak, // Serien-Effekte (B2 Momentum) sehen die effektive Serie
     sinceWin, // #71 Durchbruch: Stiche ohne Sieg (Stand VOR diesem Stich)
     lossStreak, // #71 Revanche: aufeinanderfolgende Niederlagen (Stand VOR diesem Stich)
     ascChain, // #71 Perfekte Folge (Alt-Historie; B9 nutzt jetzt posForm)
-    fateValue, // #71 Schicksalsmaschine: cardBonus vergleicht pValueBase mit dem Schicksalswert
     posForm, // V2 §22.6: Formation der gespielten Position (B6 Wiederholung / B9 Treppe)
     predValue, // V2 §22.6: Dauerwert des direkten Vorgängers (B10 Überzahl)
     isRole, triumphActive, isSegmentLow, isSegmentHigh, // V2 §22.6 C/L: Kartenrollen (C1/C2/C3/C6/C7/L7)
@@ -149,43 +144,31 @@ export function resolveTrick(state, rng = Math.random) {
     : (curRes !== lastResult && (lastResult === "win" || lastResult === "loss")) ? altLen + 1 : 1;
 
   let gained = 0;
-  let isCrit = false, superCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
+  let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
 
   if (won) {
     winStreak += 1; wins += 1;
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
-    // #71 Überzahl: klarer Sieg (Vorsprung ≥5) zählt für Serien-Effekte als zwei Stufen (nicht für wins).
-    overStreak = (overStreak || 0) + (ownsUeberzahl && pValue - oValue >= 5 ? 2 : 1);
-    serieStreak = ownsUeberzahl ? overStreak : winStreak; // effektive Serie NACH diesem Sieg
+    serieStreak = winStreak; // effektive Serie NACH diesem Sieg
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
     // #71 Farbserie: Länge der Serie gewonnener Stiche gleicher Farbe INKL. dieses Siegs.
     const suitStreak = pCard.suit === winSuit ? winSuitStreak + 1 : 1;
     const wctx = { winValue: pValue, margin: pValue - oValue, winStreak: serieStreak, wins, trickNo, posInCycle: pos,
                    lastWinValue, altLen, // #71: Präzision (Vergleich mit letztem Siegwert) / Wechselspiel
-                   critFollowArmed, misfireBonus, weaknessArmed, // Crit-Historie: Stand VOR diesem Sieg
+                   critFollowArmed, weaknessArmed, // Crit-Historie: Stand VOR diesem Sieg (D14/D16)
                    suitStreak, recentWinCount, // Farbserie / Volles Haus
-                   baseValue: pCard.value, fateValue, zeitrafferStacks, // Legendaries: Schicksalsmaschine / Zeitraffer
-                   hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung
+                   baseValue: pCard.value, // Basiswert der gespielten Karte
+                   hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung (D15)
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
     // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.
     // Der Crit-Wurf verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift).
     // Blitz-Crit-Basis (Abschnitt 2a) wird additiv zugerechnet, unabhängig von L5-critChanceMult.
     // Crit-Chance-Stat (V2 §22.3) fließt additiv in die Roh-Chance (mit Perk-/Blitz-Basis); ungeklemmt (Überschusskrit).
-    const rawCrit = critChanceRawFor(perks, wctx, legendaryCritBonus) + lightningCritRaw(lightning, skills) + statCritChance;
-    critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt), inkl. L4/L5 + Blitz-Basis
+    // Roh-Crit-Chance (ungeklemmt): Perk-/Blitz-Basis + Crit-Chance-Stat. D-Crit-Flats sehen rawCrit (critCtx).
+    const rawCrit = critChanceRawFor(perks, wctx) + lightningCritRaw(lightning, skills) + statCritChance;
+    critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     critMultiplier = critMultiplierFor(perks, wctx, statCritMult); // Basis 1,5 + Crit-Mult-Stat
     isCrit = forceCrit || rollCrit(critChance, ownsGuaranteedCrit(perks, wctx), rng); // L10: garantierter Nachfolger-Crit
-    // #71 Überschusskrit: Crit-Chance über 100 % → Chance (= Überschuss) auf einen Super-Crit (×1,5 auf den Crit-Faktor).
-    if (isCrit && ownsFlag(perks, "superCrit") && rawCrit > 1) {
-      const excess = Math.min(rawCrit - 1, 1);
-      if (rng() < excess) { superCrit = true; critMultiplier *= C.SUPERCRIT_MULT_FACTOR; }
-    }
-    // #71 Kettenreaktion (L10): nach einem Crit erneute Würfe mit HALBER finaler Crit-Chance; je Treffer
-    // verdoppelt sich der Crit-Faktor, max 3 Zusatzstufen. Bricht beim ersten Fehlwurf ab.
-    if (isCrit && ownsFlag(perks, "chainCrit")) {
-      const chainChance = critChance / 2;
-      for (let i = 0; i < C.CHAIN_MAX_STAGES; i++) { if (rng() < chainChance) critMultiplier *= 2; else break; }
-    }
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.
@@ -246,14 +229,12 @@ export function resolveTrick(state, rng = Math.random) {
     if (ionizedCard) {
       deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
     }
-    // #71 Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
-    critFollowArmed = isCrit;                                        // Crit-Folge: nur ein Crit rüstet den nächsten Sieg
-    misfireBonus = isCrit ? 0 : Math.min(misfireBonus + 0.03, 0.30); // (alt) Crit-Chance-Fehlzündung — inert
+    // Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
+    critFollowArmed = isCrit;                                        // D14 Crit-Folge: nur ein Crit rüstet den nächsten Sieg
     misfireScore = isCrit ? 0 : Math.min((misfireScore || 0) + 30, 300); // D15: +30 Score-Ladung je Sieg ohne Crit, Crit zahlt aus & setzt zurück
-    weaknessArmed = false;                                           // Schwachstellenanalyse: durch diesen Sieg verbraucht
+    weaknessArmed = false;                                           // D16 Schwachstellenanalyse: durch diesen Sieg verbraucht
     if (isCrit) {
       crits += 1; critBonusScore += critBonus;
-      if (ownsFlag(perks, "legendaryCritGain")) legendaryCritBonus = Math.min(legendaryCritBonus + C.L4_CRIT_STEP, C.L4_CRIT_CAP); // (alt, inert)
       // L4 Kritische Masse: die kritisch getroffene Karte dauerhaft +1 (max +4 je Karte).
       if (ownsFlag(perks, "critValueGain") && (l4Boost[pCard.id] || 0) < 4) {
         deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: c.value + 1 } : c));
@@ -280,17 +261,16 @@ export function resolveTrick(state, rng = Math.random) {
     lastResult = "win";
   } else if (lost) {
     losses += 1;
-    // Geladene Serie (Stufe C): gesetzter Serien-Rahmen fängt DIESE Niederlage ab — winStreak/overStreak
-    // bleiben erhalten (Serien-Effekte laufen weiter). Sonst bricht die Serie. Der Rahmen wird danach eingelöst.
+    // Geladene Serie (Stufe C): gesetzter Serien-Rahmen fängt DIESE Niederlage ab — winStreak
+    // bleibt erhalten (Serien-Effekte laufen weiter). Sonst bricht die Serie. Der Rahmen wird danach eingelöst.
     const rahmenRedeemed = !!(lightning && lightning.armed);
     winStreak = rahmenRedeemed ? winStreak : 0;
     initiative = "opp";
-    if (ownsFlag(perks, "winTieAfterLoss")) tieArmed = true;
+    if (ownsFlag(perks, "winTieAfterLoss")) tieArmed = true; // B5: nach Niederlage nächsten Gleichstand gewinnen
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
     lossStreak += 1; // #71 Revanche: aufeinanderfolgende Niederlagen
-    if (oValue - pValue >= 5) weaknessArmed = true; // #71 Schwachstellenanalyse: klare Niederlage rüstet nächsten Sieg
+    if (oValue - pValue >= 5) weaknessArmed = true; // D16 Schwachstellenanalyse: klare Niederlage rüstet nächsten Sieg
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie (auch mit Rahmen)
-    if (!rahmenRedeemed) overStreak = 0; // #71 Überzahl: Niederlage beendet die effektive Serie (außer geschützt)
     serieStreak = 0;
     if (rahmenRedeemed) lightning = { ...lightning, armed: false }; // Rahmen eingelöst → entfernt
     lastResult = "loss";
@@ -310,14 +290,11 @@ export function resolveTrick(state, rng = Math.random) {
     pCard, oCard, pValue, oValue,
     result: tieConverted ? "win_tie" : won ? "win" : lost ? "loss" : "tie",
     gained, trickNo,
-    isCrit, superCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
-    jackpot: isCrit && critMultiplier > C.CRIT_BASE_MULT + statCritMult, // L5 „Jackpot" / Super-Crit über der Stat-Basis → verstärkter Float
+    isCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
+    jackpot: isCrit && critMultiplier > C.CRIT_BASE_MULT + statCritMult, // Crit-Faktor über der Stat-Basis → verstärkter Float
     // Formations-Multiplikator dieses Stichs (§22.7) + die beteiligten Formationen der Position (Anzeige/Float).
     formationMult: won ? formationMult : 1,
     formations: posForm.formations,
-    // D2-Kombo-Wert der resultierenden Serie (geteilte Quelle → kein Drift zur Score-Berechnung, #31).
-    // Überzahl: die effektive Serie (serieStreak) speist auch die Anzeige → kein Drift zum Score.
-    comboMult: comboMultFor(perks, serieStreak),
   };
 
   // Durchlauf-Ende: Score-Effekte am Durchlauf-Ende, dann NUR das Gegnerdeck NEU MISCHEN (Spieler-Reihenfolge
@@ -373,11 +350,10 @@ export function resolveTrick(state, rng = Math.random) {
   return {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     score, winStreak, bestStreak, wins, losses, ties,
-    crits, critBonusScore, bestTrickScore, legendaryCritBonus,
+    crits, critBonusScore, bestTrickScore,
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue, altLen,
-    critFollowArmed, misfireBonus, weaknessArmed, misfireScore,
+    critFollowArmed, weaknessArmed, misfireScore,
     ascRun, lastPlayedValue, winSuit, winSuitStreak, recentResults,
-    overStreak, fateValue, zeitrafferStacks,
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung

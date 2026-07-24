@@ -10,9 +10,9 @@ const fmtMult = (x) => x.toFixed(2).replace(".", ",");
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
 export function PerkSelect({ offer, onPick, perks = [], deck = [], state = {} }) {
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
-  const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, legendaryCritBonus = 0, crits = 0, lightning, skills = [], statCritChance = 0, statCritMult = 0 } = state;
+  const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning, skills = [], statCritChance = 0, statCritMult = 0 } = state;
   // Crit inkl. Blitz-Basis (lightning) + Crit-Chance-Stat — dieselbe Rechnung wie Engine/StatusRail (kein Drift).
-  const critRaw = critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos }, legendaryCritBonus) + lightningCritRaw(lightning, skills) + statCritChance;
+  const critRaw = critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos }) + lightningCritRaw(lightning, skills) + statCritChance;
   const critPct = Math.round(Math.min(1, Math.max(0, critRaw)) * 100);
   const scoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos });
   const showCrit = hasCritPerk(perks) || crits > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;

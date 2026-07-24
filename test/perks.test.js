@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildDeck, makeRng } from "../src/game/deck.js";
-import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, critChanceRawFor, comboMultFor, isLegendary, tempoScoreMultFor, baseScoreMultFor, streakBaseMult } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult } from "../src/game/perks.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 
 describe("Perks — Deck-Modifikationen (Kat. A)", () => {
@@ -91,17 +91,13 @@ describe("buildOffer", () => {
   });
 });
 
-describe("critChanceFor / critChanceRawFor (V2: Chance aus Stat/Blitz; L4/L5 wirken)", () => {
-  it("addiert den L4-Bonus (legendaryCritBonus); Gesamt bei 100 % gedeckelt", () => {
-    expect(critChanceFor([], {}, 0.10)).toBeCloseTo(0.10);
-    expect(critChanceFor([], {}, 1.5)).toBe(1); // geklemmt
+describe("critChanceFor / critChanceRawFor (V2: kein Perk trägt Crit-Chance — Stat/Blitz in der Engine)", () => {
+  it("kein Perk-Beitrag → Roh-Chance 0 (Stat/Blitz addiert die Engine obendrauf)", () => {
+    expect(critChanceRawFor(["L4", "L5", "D14"], {})).toBe(0);
+    expect(critChanceFor(["L4", "L5", "D14"], {})).toBe(0);
   });
-  it("L5 beeinflusst die Crit-Chance nicht mehr (V2: Jackpot ist flach)", () => {
-    expect(critChanceFor(["L5"], {}, 0.20)).toBeCloseTo(0.20);
-  });
-  it("critChanceRawFor bleibt UNgeklemmt (>1 für Überschuss), critChanceFor klemmt", () => {
-    expect(critChanceRawFor([], {}, 1.27)).toBeCloseTo(1.27);
-    expect(critChanceFor([], {}, 1.27)).toBe(1);
+  it("critChanceFor klemmt auf [0,1]", () => {
+    expect(critChanceFor([], {})).toBe(0);
   });
 });
 
@@ -178,13 +174,6 @@ describe("baseScoreMultFor (Header-Chip #37 — V2: nur noch Basis-Serie #39)", 
     expect(baseScoreMultFor([], { winStreak: 0 })).toBeCloseTo(1);
     expect(baseScoreMultFor([], { winStreak: 5 })).toBeCloseTo(1.10);
     expect(baseScoreMultFor([], { winStreak: 20 })).toBeCloseTo(1.30); // Cap
-  });
-});
-
-describe("comboMultFor (V2: entfällt — D2 ist flach)", () => {
-  it("gibt immer 1 zurück", () => {
-    expect(comboMultFor(["D2"], 5)).toBe(1);
-    expect(comboMultFor([], 20)).toBe(1);
   });
 });
 

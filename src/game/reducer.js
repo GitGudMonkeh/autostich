@@ -22,16 +22,13 @@ export function initialState(rng = Math.random) {
     score: 0,
     winStreak: 0, bestStreak: 0, wins: 0, losses: 0, ties: 0,
     crits: 0, critBonusScore: 0, bestTrickScore: 0,
-    legendaryCritBonus: 0, // L4 „Kritische Masse": akkumulierter, dauerhafter Crit-Chance-Bonus (#33)
     initiative: "player",
     lastResult: null,
     sinceWin: 0, // #71 Durchbruch: aufeinanderfolgende Stiche ohne Sieg
     lossStreak: 0, lastWinValue: null, altLen: 0, // #71 Rares: Revanche / Präzision / Wechselspiel
-    critFollowArmed: false, misfireBonus: 0, weaknessArmed: false, // #71 Crit-Historie: Crit-Folge / Fehlzündung / Schwachstellenanalyse
+    critFollowArmed: false, weaknessArmed: false, // #71 Crit-Historie: Crit-Folge (D14) / Schwachstellenanalyse (D16)
     misfireScore: 0, // V2 §22.6 D15: Score-Ladung (Fehlzündung)
     ascRun: 0, lastPlayedValue: null, winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Perfekte Folge / Farbserie / Volles Haus
-    overStreak: 0, // #71 Phase 2e: Überzahl
-    fateValue: null, zeitrafferStacks: 0, kingBoosted: [], // #71 Phase 3 Legendaries: Schicksalsmaschine / Zeitraffer / Königsmacher
     // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
     statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, statOffer: null,
     formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt
@@ -77,23 +74,12 @@ export function reducer(state, action) {
       const def = PERK_DEFS[perkId];
       const perks = [...state.perks, perkId];
       let deck = def.onPick ? def.onPick(state.deck, rng) : state.deck; // Kat.-A-Mods sofort dauerhaft
-      // #71 Königsmacher (L7): erreicht eine Karte (durch DIESE oder eine frühere Aufwertung) erstmals Wert
-      // ≥13, erhält sie einmalig dauerhaft +2. Nach jeder Deck-Mod prüfen; je Karte nur einmal (kingBoosted).
-      let kingBoosted = state.kingBoosted || [];
-      if (perks.some((id) => PERK_DEFS[id].kingmaker)) {
-        const boosted = new Set(kingBoosted);
-        deck = deck.map((c) => {
-          if (c.value >= C.KINGMAKER_THRESHOLD && !boosted.has(c.id)) { boosted.add(c.id); return { ...c, value: c.value + C.KINGMAKER_BONUS }; }
-          return c;
-        });
-        kingBoosted = [...boosted];
-      }
       // L5 Jackpot & Co.: zufällige Kartenrolle sofort setzen (kein manueller Ziel-Schritt).
       let roles = state.roles;
       if (def.randomTarget) roles = { ...(state.roles || {}), [perkId]: shuffle(state.deck.map((c) => c.id), rng).slice(0, def.randomTarget) };
       // Perks mit manueller Kartenauswahl öffnen die Zielauswahl (§22.5); sonst weiter.
       const goTarget = !!def.needsTarget;
-      return { ...state, deck, kingBoosted, perks, roles, offer: null,
+      return { ...state, deck, perks, roles, offer: null,
                phase: goTarget ? "target" : "play",
                targetPerk: goTarget ? perkId : null };
     }

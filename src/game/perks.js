@@ -15,15 +15,11 @@ import { shuffle } from "./deck.js";
    Legendär-Hooks (#33):
      winTie(ctx)             -> Gleichstand als Sieg werten (L2, ctx.winStreak = Serie VOR dem Stich)
      extraDamageTaken(ctx)   -> Zusatzschaden je Niederlage, summiert (L1/L6)
-     critMultiplier(ctx)     -> Crit-Faktor überschreiben statt addieren (L5: 4)
-     critChanceMult(ctx)     -> Faktor auf die Gesamt-Crit-Chance (L5: 0,5)
-     tempoScoreFactorMult()  -> Faktor auf den Tempo-Score-Faktor (L6: 2)
+     critMultiplier(ctx)     -> Crit-Faktor überschreiben statt addieren
+     critChanceMult(ctx)     -> Faktor auf die Gesamt-Crit-Chance
    Flags (Spezialfälle mit Engine-Zustand):
-     shieldPerCycle    -> erster verlorener Stich je Durchlauf: 0 Schaden (C5)
      winTieAfterLoss   -> nach Niederlage nächsten Gleichstand gewinnen (B5)
-     legendaryCritGain -> jeder Crit erhöht legendaryCritBonus dauerhaft (L4, Engine-State)
-     speedPct          -> Beitrag zur Flip-Geschwindigkeit (Kat. E, nur UI)
-   rarity: "legendary" markiert Legendaries (Default "common") — Gewicht/Level-Gate in buildOffer.
+   rarity: "legendary" markiert Legendaries (Default "common") — Gewicht in buildOffer.
 
    ctx-Felder je Stich: { posInCycle, trickNo, lastResult, lostLastTrick, winStreak }
    ctx-Felder je Sieg (scoreMult/scoreFlat/healOnWin): { winValue, winStreak, wins }
@@ -41,13 +37,9 @@ const bumpTopN = (deck, n, delta, dir) => {
   return deck.map((c, i) => (pick.has(i) ? { ...c, value: c.value + delta } : c));
 };
 
-// D2-Kombo: eskalierender Siegesserien-Multiplikator (+D2_STEP je Serienstufe, KEIN Cap, #31).
-// EINE Formel als geteilte Quelle für Score-Berechnung (D2-Hook) UND Anzeige (comboMultFor →
-// Battlefield-Float) → kein Drift, analog zum Muster von scoreMultFor/critChanceFor (#23/#25).
-export const comboMult = (winStreak) => 1 + winStreak * C.D2_STEP;
-// Basis-Siegesserie (#39): IMMER aktiver, gedeckelter Serien-Multiplikator (nicht D2-gebunden) —
-// jede Serie hebt den Score-Mult leicht; D2 (comboMult) verstärkt zusätzlich. Geteilte Quelle
-// für Engine-Score UND Anzeige (baseScoreMultFor → Header-Chip #37 / StatusRail #23).
+// Basis-Siegesserie (#39): IMMER aktiver, gedeckelter Serien-Multiplikator — jede Serie hebt den
+// Score-Mult leicht. Geteilte Quelle für Engine-Score UND Anzeige (baseScoreMultFor → Header-Chip
+// #37 / StatusRail #23) → kein Drift, analog zum Muster von scoreMultFor/critChanceFor (#23/#25).
 export const streakBaseMult = (winStreak) => 1 + Math.min(winStreak * C.STREAK_BASE_STEP, C.STREAK_BASE_CAP);
 
 export const CATEGORIES = {
@@ -339,19 +331,18 @@ export function buildOffer(owned, rng, count) {
   return chosen;
 }
 
-// Gesamt-Crit-Chance (0..1) eines Builds: Σ critChance-Perks + legendaryCritBonus (L4), dann
-// × Π critChanceMult (L5 halbiert), geklemmt. EINE Quelle für Engine-Wurf UND Anzeige (#25, kein Drift).
-// UNGEKLEMMTE Roh-Crit-Chance (kann >1 sein) — Basis für Überschusskrit (#71) und für critChanceFor.
-export function critChanceRawFor(perks, ctx, legendaryCritBonus = 0) {
+// Gesamt-Crit-Chance eines Builds: Σ critChance-Perks × Π critChanceMult. EINE Quelle für
+// Engine-Wurf UND Anzeige (#25, kein Drift). UNGEKLEMMTE Roh-Crit-Chance (kann >1 sein) —
+// die D-Crit-Flats (critCtx.rawCrit) und critChanceFor bauen darauf auf.
+export function critChanceRawFor(perks, ctx) {
   let raw = 0;
   for (const id of perks) { const f = PERK_DEFS[id].critChance; if (f) raw += f(ctx); }
-  raw += legendaryCritBonus || 0;
   let mult = 1;
   for (const id of perks) { const f = PERK_DEFS[id].critChanceMult; if (f) mult *= f(ctx); }
   return raw * mult;
 }
-export function critChanceFor(perks, ctx, legendaryCritBonus = 0) {
-  return Math.min(1, Math.max(0, critChanceRawFor(perks, ctx, legendaryCritBonus)));
+export function critChanceFor(perks, ctx) {
+  return Math.min(1, Math.max(0, critChanceRawFor(perks, ctx)));
 }
 // Crit-Faktor: L5 (Jackpot) ÜBERSCHREIBT die Basis (×4) statt zu addieren → höchster Hook-Wert gewinnt.
 // baseBonus = Crit-Mult-Stat (V2 §22.3): hebt die Basis 1,5 an (max mit L5). Geteilte Quelle für Engine + Anzeige.
@@ -371,24 +362,12 @@ export function scoreMultFor(perks, ctx) {
   for (const id of perks) { const f = PERK_DEFS[id].scoreMult; if (f) m *= f(ctx); }
   return m;
 }
-// Tempo-Score-Multiplikator: 1 + speedPct × TEMPO_SCORE_FACTOR × Π tempoScoreFactorMult (L6 ×2).
-// Geteilte Quelle für Engine-Score UND #23-Anzeige → kein Drift.
-export function tempoScoreMultFor(perks, speedPct) {
-  let factorMult = 1;
-  for (const id of perks) { const f = PERK_DEFS[id].tempoScoreFactorMult; if (f) factorMult *= f({}); }
-  return 1 + (speedPct || 0) * C.TEMPO_SCORE_FACTOR * factorMult;
-}
-// Anzeige-Score-Multiplikator (#23/#37): immer aktive Faktoren D1 × D2 (NÄCHSTE Serie) × Tempo(L6).
+// Anzeige-Score-Multiplikator (#23/#37): immer aktive Faktoren — Basis-Serie (#39) × Perk-scoreMult.
 // winValue hoch → das bedingte D4 (×3 bei ≤3) bleibt ausgeblendet. EINE Quelle für Header-Chip (#37)
 // UND StatusRail-Detail (#23) → kein Drift.
-export function baseScoreMultFor(perks, { winStreak = 0, wins = 0, trickNo = 0, pos = 0, speedPct = 0 } = {}) {
+export function baseScoreMultFor(perks, { winStreak = 0, wins = 0, trickNo = 0, pos = 0 } = {}) {
   // AKTUELLE Serie (kein +1): Serie 0 → ×1,00, wächst während die Serie läuft (#39). winValue hoch →
   // bedingtes D4 (×3 bei ≤3) bleibt ausgeblendet. Reine Anzeige — das Scoring nutzt die resultierende Serie.
   const ctx = { winStreak, winValue: 99, wins, trickNo, posInCycle: pos };
-  return streakBaseMult(winStreak) * scoreMultFor(perks, ctx) * tempoScoreMultFor(perks, speedPct);
-}
-// Kombo-Wert eines Builds für die Anzeige (#31): nur wenn D2 gehalten wird — die Kombo IST der
-// D2-Effekt. Nutzt dieselbe comboMult-Formel wie der D2-Score-Hook → Anzeige == tatsächlicher Wert.
-export function comboMultFor() {
-  return 1; // V2: D2 ist jetzt Flat-Score — es gibt keinen Kombo-Multiplikator mehr.
+  return streakBaseMult(winStreak) * scoreMultFor(perks, ctx);
 }

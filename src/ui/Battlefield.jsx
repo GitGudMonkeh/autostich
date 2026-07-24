@@ -16,8 +16,6 @@ const JACKPOT_COLOR = "#d4a63a"; // L5 „Jackpot" (#33): Gold statt Crit-Violet
 // #68: vier Streuzonen — gleiche Float-Typen dicht beieinander, verschiedene getrennt. Basis-Lage je Zone.
 const FLOAT_ZONES = {
   score:     { left: "7%",  top: "38%" },  // Score-Gewinn (linke Seite, über der Spielerkarte)
-  life:      { right: "7%", top: "38%" },  // (V2: ungenutzt — Leben entfernt)
-  combo:     { left: "4%",  top: "64%" },  // Kombo (unten links)
   crit:      { left: "50%", top: "2%"  },  // Crit-Text (oben mittig)
   formation: { right: "6%", top: "62%" },  // Formations-Multiplikator (unten rechts)
 };
@@ -99,11 +97,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
 
   const critMultStr = t ? (Number.isInteger(t.critMultiplier) ? t.critMultiplier : Math.round(t.critMultiplier * 100) / 100) : 2;
 
-  // D2-Kombo (#31): ab ×1,5 (Serie ≥5) bei jedem Sieg den eskalierenden Wert einblenden.
-  // Quelle ist der in der Engine berechnete t.comboMult → identisch zum tatsächlichen D2-Faktor (kein Drift).
-  const showCombo = win && t && t.comboMult >= 1.5;
-  const comboStr = t ? t.comboMult.toFixed(1).replace(".", ",") : "";
-
   // Formations-Feedback (§17): benannte Formation + Multiplikator; Peak-Styling ab ×6 / ×12.
   const FORM_NAME = { wiederholung: "WIEDERHOLUNG", farbblock: "FARBBLOCK", treppe: "TREPPE", wechsel: "WECHSEL", anker: "ANKER" };
   const formMult = t ? (t.formationMult || 1) : 1;
@@ -177,17 +170,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
             </div>
           );
         })}
-        {/* Eskalierende Kombo-Anzeige (#31): eigene Bahn unten links, kollidiert nicht mit dem
-            Gewinn-Float (40 %). Unter reduzierter Bewegung statisch (kein Float), wie beim Crit. */}
-        {showCombo && (
-          <div key={`combo${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
-            style={{ left: `calc(${FLOAT_ZONES.combo.left} + ${fjitter(t.trickNo * 3 + 7, JITTER_X)}px)`,
-                     top:  `calc(${FLOAT_ZONES.combo.top} + ${fjitter(t.trickNo * 3 + 13, JITTER_Y)}px)`,
-                     fontSize: 20, color: "#e0605a", textShadow: "0 0 10px #e0605a88",
-                     animation: fx(`as-combo ${clamp(flipMs * 0.85, 360, 820)}ms ease-out forwards`) }}>
-            KOMBO ×{comboStr}
-          </div>
-        )}
         {/* Benanntes Formations-Feedback (§17): unten rechts, eigene Bahn; Peak-Styling ab ×6/×12. */}
         {showFormation && (
           <div key={`form${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"

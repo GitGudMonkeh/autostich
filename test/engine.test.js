@@ -100,10 +100,6 @@ describe("resolveTrick — Score-Perks (V2: Flat)", () => {
     expect(s.winStreak).toBe(20);
     expect(s.lastTrick.gained).toBeCloseTo(455); // (100+250)×streakBaseMult(20)=1,30
   });
-
-  it("lastTrick.comboMult ist immer 1 (V2: kein Kombo-Multiplikator)", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D2"], winStreak: 4 }), rng).lastTrick.comboMult).toBe(1);
-  });
 });
 
 describe("resolveTrick — Crit & globale Score-Formel (ohne Tempo)", () => {
