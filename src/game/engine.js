@@ -8,7 +8,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
-import { coinsPerCycle } from "./shop.js";
+import { coinsPerCycle, buildShopOffer, SHOP_ITEM_DEFS } from "./shop.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -419,8 +419,10 @@ export function resolveTrick(state, rng = Math.random) {
         const off = buildOffer(perks, rng, C.PERKS_OFFERED);
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "shop") {
-        // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen. S0: leeres Angebot (offers null) — Ziehung folgt in S1.
+        // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen und ein frisches Angebot ziehen (§5, deterministisch
+        // über rng). Ein leeres SHOP_ITEM_DEFS (vor S2) ergibt ein leeres Angebot → Platzhalter-Shop.
         phase = "shop";
+        shop = { ...shop, offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rng), purchasedOfferIds: [] };
       } else if (decision === "formation") {
         // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ E10 Feinjustierung), Vorschau berechnen.
         phase = "formation";

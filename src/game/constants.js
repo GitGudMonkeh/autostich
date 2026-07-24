@@ -30,6 +30,16 @@ export const DECISION_SCHEDULE = [
 export const STARTING_COINS       = 2;   // Startmünzen bei Run-Beginn
 export const BASE_COINS_PER_CYCLE = 2;   // Münzen je vollständig abgeschlossenem Durchlauf (+ Einkommen-Level)
 
+// Shop-Angebot (Shop-Spec §5) [TUNING]
+export const SHOP_CATEGORIES         = ["cards", "anchors", "formations", "planning"]; // Reihenfolge = Anzeige-Reihenfolge
+export const SHOP_ITEMS_PER_CATEGORY = 2;    // je Kategorie werden genau so viele Items angeboten
+export const SHOP_ITEMS_OFFERED      = 8;    // = SHOP_CATEGORIES.length × SHOP_ITEMS_PER_CATEGORY
+export const SHOP_LEGENDARY_CHANCE   = 0.10; // Chance je Shop auf EIN legendäres Angebot (ersetzt ein normales)
+// Vier feste Preisstufen (Spec §5.5) — keine Zwischenpreise.
+export const SHOP_PRICE = { cheap: 8, strong: 12, premium: 18, legendary: 30 };
+// Anzeige-Labels der Kategorien (UI) — geteilte Quelle für ShopScreen/Tests.
+export const SHOP_CATEGORY_LABELS = { cards: "Karten", anchors: "Anker", formations: "Formationen", planning: "Planung" };
+
 // Formationsphase (V2 §22.8): Energie je Phase; jeder beliebige Tausch zweier Karten kostet 1. [TUNING]
 export const FORMATION_ENERGY = 4;
 // TRICKS_PER_CYCLE wird weiter unten aus der Deckgröße abgeleitet (SUIT_ORDER × RANKS, #34) — kein Drift.

@@ -175,7 +175,8 @@ export function Autostich() {
   // Skill-Auswahl (jede 3. Runde): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
-  // Shop-Runde (Shop-Spec §2.6): verlassen/bestätigen → zugehöriger Durchlauf startet.
+  // Shop-Runde (Shop-Spec §2.6): kaufen (§5.4) bzw. verlassen/bestätigen → zugehöriger Durchlauf startet.
+  const buyItem = (offerId) => dispatch({ type: "BUY_ITEM", offerId, rng: Math.random });
   const leaveShop = () => dispatch({ type: "LEAVE_SHOP" });
 
   // Geist-Vergleich „hier"
@@ -321,7 +322,7 @@ export function Autostich() {
         <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} />
       )}
       {state.phase === "shop" && (
-        <ShopScreen state={state} onLeave={leaveShop} />
+        <ShopScreen state={state} onLeave={leaveShop} onBuy={buyItem} />
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />

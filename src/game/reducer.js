@@ -4,7 +4,7 @@ import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, ma
   frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations } from "./formations.js";
-import { initialShop } from "./shop.js";
+import { initialShop, SHOP_ITEM_DEFS } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -70,7 +70,31 @@ export function reducer(state, action) {
       return (state.phase === "menu" || state.phase === "gameover") ? state : { ...state, phase: "gameover" };
 
     case "LEAVE_SHOP":  // Shop-Runde bestätigen/verlassen (Shop-Spec §2.6) → zugehöriger Durchlauf startet.
-      return state.phase === "shop" ? { ...state, phase: "play" } : state;
+      // Nicht gekaufte normale Items werden verworfen (§5.4): Angebot leeren. Reservierung (P4) bleibt (S5).
+      return state.phase === "shop"
+        ? { ...state, phase: "play", shop: { ...state.shop, offers: null, purchasedOfferIds: [] } }
+        : state;
+
+    case "BUY_ITEM": {  // Kauf im Shop (Shop-Spec §5.4). Ziel-Items (targetMode) laufen über den Target-Flow (ab S2).
+      if (state.phase !== "shop") return state;
+      const shop = state.shop || {};
+      const offer = (shop.offers || []).find((o) => o.offerId === action.offerId);
+      if (!offer) return state;
+      if ((shop.purchasedOfferIds || []).includes(offer.offerId)) return state; // dasselbe Angebot nicht zweimal
+      if ((shop.coins || 0) < offer.price) return state;                        // nicht bezahlbar
+      const def = SHOP_ITEM_DEFS[offer.itemId];
+      if (!def) return state;
+      if (def.targetMode) return state; // Ziel-Auswahl nötig → Target-Flow (S2); Münzen erst nach Bestätigung
+      // Effekt anwenden (S2+ Items liefern apply → Patch), danach generische Münz-/Kauf-Buchhaltung.
+      const patch = def.apply ? def.apply(state, null, action.rng) : {};
+      const merged = { ...state, ...patch };
+      const newShop = { ...(merged.shop || shop) };
+      newShop.coins = (shop.coins || 0) - offer.price;                          // Preis sofort abziehen
+      newShop.purchasedOfferIds = [...(shop.purchasedOfferIds || []), offer.offerId];
+      if (def.legendary) newShop.boughtLegendaryIds = [...(shop.boughtLegendaryIds || []), def.id]; // §5.7 nie wieder
+      if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
+      return { ...merged, shop: newShop };
+    }
 
     case "RESOLVE_TRICK":
       return resolveTrick(state, action.rng);
