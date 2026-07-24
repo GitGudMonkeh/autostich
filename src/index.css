@@ -7,6 +7,11 @@ button { font-family: inherit; }
 ::-webkit-scrollbar { height:8px; width:8px; }
 ::-webkit-scrollbar-thumb { background:#2a2a33; border-radius:4px; }
 
+/* Karten-Kachel (#101): mobil hochkant (3/4), auf Desktop kompakt-quadratisch → weniger Scrollen.
+   Desktop-Override mit doppelter Klassen-Spezifität, damit er unabhängig von der Regel-Reihenfolge gewinnt. */
+.as-tile { aspect-ratio: 3 / 4; }
+@media (min-width: 640px) { .as-tile.as-tile { aspect-ratio: 1 / 1; } }
+
 /* Karten „dealen" aus den seitlichen Decks in die Mitte (#3). Dauer wird per
    inline animation-duration an den Flip-Takt gekoppelt. */
 @keyframes as-deal-left  { from { transform: translateX(-150px) translateY(-10px) scale(.9); opacity:0; } to { transform:none; opacity:1; } }
