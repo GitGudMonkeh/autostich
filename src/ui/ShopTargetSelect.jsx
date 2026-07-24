@@ -1,4 +1,4 @@
-import { suitColor, suitName, SUIT_ORDER } from "../game/constants.js";
+import { suitColor, suitName, SUIT_ORDER, SHOP_CATEGORIES, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { SEGMENT_SIZE, FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
 import { SHOP_ITEM_DEFS, SEGMENT_BOUNDARIES } from "../game/shop.js";
 import { useEscape } from "./useEscape.js";
@@ -8,7 +8,7 @@ const GOLD = "#d4a63a";
 /* Shop-Ziel-Auswahl (Shop-Spec §12.2) — öffnet nach dem Kauf eines Ziel-Items (Kartenitems S2).
    Karten wählen (Limit aus dem Item), optional je Karte eine neue Farbe, oder ein Segment (K-L1).
    Abbrechen lässt Angebot & Münzen unverändert; Bestätigen zieht erst dann den Preis ab (Reducer). */
-export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onColorPair, onBoundary, onFormationType, onConfirm, onCancel }) {
+export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onColorPair, onBoundary, onFormationType, onCategory, onOffer, onConfirm, onCancel }) {
   useEscape(onCancel);
   const st = state.shopTarget || {};
   const def = SHOP_ITEM_DEFS[st.itemId] || {};
@@ -31,7 +31,13 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
   const pairDone = !spec.colorPair || pair.length === 2;
   const boundaryDone = !spec.boundary || st.boundary != null;
   const ftDone = !spec.formationType || st.formationType != null;
-  const ready = spec.colorPair ? pairDone : spec.boundary ? boundaryDone : spec.formationType ? ftDone : spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
+  const catDone = !spec.category || st.category != null;
+  const offerDone = !spec.offer || st.targetOfferId != null;
+  const ready = spec.colorPair ? pairDone : spec.boundary ? boundaryDone : spec.formationType ? ftDone
+    : spec.category ? catDone : spec.offer ? offerDone : spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
+  // Reservierung (P4): reservierbare Angebote = alle außer dem gerade gekauften P4 und bereits gekauften.
+  const purchased = new Set(state.shop?.purchasedOfferIds || []);
+  const reservable = (state.shop?.offers || []).filter((o) => o.offerId !== st.offerId && !purchased.has(o.offerId));
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
@@ -39,7 +45,7 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>Shop · {def.name}</div>
           <h2 className="text-xl font-bold mt-1">
-            {spec.colorPair ? "Wähle zwei Farben" : spec.boundary ? "Wähle eine Segmentgrenze" : spec.formationType ? "Wähle einen Formationstyp" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
+            {spec.colorPair ? "Wähle zwei Farben" : spec.boundary ? "Wähle eine Segmentgrenze" : spec.formationType ? "Wähle einen Formationstyp" : spec.category ? "Wähle eine Kategorie" : spec.offer ? "Wähle ein Item zum Reservieren" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
           </h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.description}</p>
         </div>
@@ -93,6 +99,45 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
                   </button>
                 );
               })}
+            </div>
+          </div>
+        ) : spec.category ? (
+          <div className="mt-4">
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Kategorie neu würfeln (nicht gekaufte Angebote werden ersetzt)</div>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {SHOP_CATEGORIES.map((c) => {
+                const active = st.category === c;
+                return (
+                  <button key={c} onClick={() => onCategory(c)}
+                    className="rounded-xl p-3 text-left transition-all font-bold"
+                    style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : "#33333e"}` }}>
+                    {SHOP_CATEGORY_LABELS[c]}
+                    {active && <span className="text-[11px] ml-2" style={{ color: GOLD }}>✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : spec.offer ? (
+          <div className="mt-4">
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Item fürs nächste Shop-Angebot vormerken</div>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {reservable.map((o) => {
+                const d = SHOP_ITEM_DEFS[o.itemId] || {};
+                const active = st.targetOfferId === o.offerId;
+                return (
+                  <button key={o.offerId} onClick={() => onOffer(o.offerId)}
+                    className="rounded-xl p-3 text-left transition-all"
+                    style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : o.legendary ? GOLD + "88" : "#33333e"}` }}>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-sm">{d.name || o.itemId}</span>
+                      <span className="text-sm font-bold" style={{ color: GOLD }}>🪙 {o.price}</span>
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wide opacity-50 mt-0.5">{SHOP_CATEGORY_LABELS[o.category]}{o.legendary ? " · ★" : ""}</div>
+                  </button>
+                );
+              })}
+              {reservable.length === 0 && <div className="text-xs opacity-40 italic">Kein reservierbares Item.</div>}
             </div>
           </div>
         ) : spec.position ? (

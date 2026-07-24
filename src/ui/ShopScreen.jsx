@@ -67,7 +67,10 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
                       style={{ background: "#20202a", border: `1px solid ${offer.legendary ? GOLD + "88" : CATEGORY_COLOR[cat] + "66"}`,
                                boxShadow: offer.legendary ? `0 0 10px ${GOLD}33` : `0 0 6px ${CATEGORY_COLOR[cat]}22`, opacity: sold ? 0.5 : 1 }}>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-sm">{def.name || offer.itemId}</span>
+                        <span className="font-bold text-sm">
+                          {def.name || offer.itemId}
+                          {offer.reserved && <span className="text-[9px] ml-1.5 px-1 py-0.5 rounded font-bold align-middle" style={{ background: `${GOLD}22`, color: GOLD }}>RESERVIERT</span>}
+                        </span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap"
                           style={{ background: `${tier.color}22`, color: tier.color }}>{tier.label}</span>
                       </div>

@@ -8,7 +8,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
-import { coinsPerCycle, shopIncomeFor, buildShopOffer, SHOP_ITEM_DEFS, anchorTypeAt, playSequence } from "./shop.js";
+import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, SHOP_ITEM_DEFS, anchorTypeAt, playSequence } from "./shop.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -447,10 +447,12 @@ export function resolveTrick(state, rng = Math.random) {
         if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = fate; }
       } else if (decision === "shop") {
         // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen, Einkommensbonus gutschreiben (+3 je Einkommen-Level,
-        // pro Shop) und ein frisches Angebot ziehen (§5, deterministisch über rng).
+        // pro Shop) und ein frisches Angebot ziehen (§5, deterministisch über rng). Danach ein evtl. im letzten
+        // Shop reserviertes Item (§10 P4) als zusätzliches Angebot anhängen (Reservierung verfällt damit).
         phase = "shop";
         shop = { ...shop, coins: (shop.coins || 0) + shopIncomeFor(economyStatLevel),
                  offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rng, perks), purchasedOfferIds: [] };
+        shop = withReservedOffer(shop, SHOP_ITEM_DEFS, perks);
       } else if (decision === "formation") {
         // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ E10 Feinjustierung), Vorschau berechnen.
         phase = "formation";

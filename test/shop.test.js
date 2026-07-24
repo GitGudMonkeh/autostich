@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
+import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, rerollCategory, withReservedOffer, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { MAX_CYCLES, DECISION_SCHEDULE, STARTING_COINS, BASE_COINS_PER_CYCLE,
@@ -730,5 +730,110 @@ describe("Shop-Planungsitems — S5a Rerolls (Shop-Spec §10)", () => {
     expect(s.phase).toBe("levelup");
     expect(s.skillOffer).toBeTruthy();
     expect(s.freeSkillReroll).toBe(true);
+  });
+});
+
+describe("Shop-Planungsitem — S5b P3 Warenwechsel (Shop-Spec §10)", () => {
+  const catOffers = () => [
+    { offerId: "o0", itemId: "K1", category: "cards", tier: "cheap", price: 8, legendary: false },
+    { offerId: "o1", itemId: "K2", category: "cards", tier: "cheap", price: 8, legendary: false },
+    { offerId: "o2", itemId: "A1", category: "anchors", tier: "cheap", price: 8, legendary: false },
+    { offerId: "o3", itemId: "A2", category: "anchors", tier: "cheap", price: 8, legendary: false },
+  ];
+  it("ersetzt die nicht gekauften Angebote einer Kategorie, andere Kategorien bleiben", () => {
+    const shop = { ...initialShop(), offers: catOffers(), purchasedOfferIds: [] };
+    const r = rerollCategory(shop, "cards", SHOP_ITEM_DEFS, makeRng(3), []);
+    expect(r.offers.filter((o) => o.category === "anchors").map((o) => o.itemId)).toEqual(["A1", "A2"]); // Anker unverändert
+    expect(r.offers.filter((o) => o.category === "cards")).toHaveLength(2);        // wieder 2 Kartenangebote
+    expect(new Set(r.offers.map((o) => o.offerId)).size).toBe(r.offers.length);    // offerIds eindeutig
+  });
+  it("behält bereits gekaufte Angebote der neu gewürfelten Kategorie", () => {
+    const shop = { ...initialShop(), offers: catOffers(), purchasedOfferIds: ["o0"] };
+    const r = rerollCategory(shop, "cards", SHOP_ITEM_DEFS, makeRng(3), []);
+    expect(r.offers.some((o) => o.offerId === "o0")).toBe(true);                   // gekauftes bleibt
+    expect(r.offers.filter((o) => o.category === "cards")).toHaveLength(2);        // 1 gekauft + 1 neu
+  });
+  it("zieht kein zweites Legendär, wenn eins in anderer Kategorie liegt (§5.7)", () => {
+    const offers = [
+      { offerId: "o0", itemId: "K1", category: "cards", tier: "cheap", price: 8, legendary: false },
+      { offerId: "o1", itemId: "K2", category: "cards", tier: "cheap", price: 8, legendary: false },
+      { offerId: "o2", itemId: "A-L1", category: "anchors", tier: "legendary", price: 30, legendary: true },
+      { offerId: "o3", itemId: "A1", category: "anchors", tier: "cheap", price: 8, legendary: false },
+    ];
+    const shop = { ...initialShop(), offers };
+    for (let seed = 1; seed <= 40; seed++)
+      expect(rerollCategory(shop, "cards", SHOP_ITEM_DEFS, makeRng(seed), []).offers.filter((o) => o.legendary).length).toBe(1);
+  });
+  it("Kauf P3: Kategorie neu würfeln (Karten), P3 bleibt gekauft, Preis abgezogen", () => {
+    const offers = [
+      { offerId: "o0", itemId: "P3", category: "planning", tier: "cheap", price: 8, legendary: false },
+      { offerId: "o1", itemId: "P1", category: "planning", tier: "cheap", price: 8, legendary: false },
+      { offerId: "o2", itemId: "K1", category: "cards", tier: "cheap", price: 8, legendary: false },
+      { offerId: "o3", itemId: "K2", category: "cards", tier: "cheap", price: 8, legendary: false },
+    ];
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
+    expect(s.phase).toBe("shop-target");
+    expect(reducer(s, { type: "SHOP_TARGET_CATEGORY", category: "bogus" })).toBe(s); // ungültig → ignoriert
+    s = reducer(s, { type: "SHOP_TARGET_CATEGORY", category: "cards" });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(2) });
+    expect(r.phase).toBe("shop");
+    expect(r.shop.coins).toBe(0);
+    expect(r.shop.purchasedOfferIds).toContain("o0");                          // P3 gekauft
+    expect(r.shop.offers.filter((o) => o.category === "cards")).toHaveLength(2);
+  });
+  it("Neuwurf der Planungs-Kategorie: das gerade gekaufte P3 bleibt und wird nicht erneut gezogen", () => {
+    const offers = [
+      { offerId: "o0", itemId: "P3", category: "planning", tier: "cheap", price: 8, legendary: false },
+      { offerId: "o1", itemId: "P1", category: "planning", tier: "cheap", price: 8, legendary: false },
+    ];
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
+    s = reducer(s, { type: "SHOP_TARGET_CATEGORY", category: "planning" });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(2) });
+    const pl = r.shop.offers.filter((o) => o.category === "planning");
+    expect(pl.some((o) => o.offerId === "o0" && o.itemId === "P3")).toBe(true); // P3 bleibt (als gekauft)
+    expect(pl.filter((o) => o.itemId === "P3")).toHaveLength(1);                // nicht doppelt gezogen
+    expect(pl).toHaveLength(2);                                                 // P3 + 1 neu
+  });
+});
+
+describe("Shop-Planungsitem — S5b P4 Reservierung (Shop-Spec §10)", () => {
+  it("withReservedOffer hängt das reservierte Item an und leert die Reservierung", () => {
+    const shop = { ...initialShop(),
+      offers: [{ offerId: "o0", itemId: "K1", category: "cards", tier: "cheap", price: 8, legendary: false }],
+      reservedItem: { itemId: "K5", category: "cards", tier: "strong", price: 12, legendary: false } };
+    const r = withReservedOffer(shop, SHOP_ITEM_DEFS, []);
+    expect(r.reservedItem).toBe(null);
+    expect(r.offers).toHaveLength(2);
+    expect(r.offers.find((o) => o.reserved)).toMatchObject({ itemId: "K5", price: 12, category: "cards" });
+  });
+  it("P4-Verfügbarkeit (§10): nicht anbieten, wenn bereits ein Item reserviert ist", () => {
+    expect(isItemAvailable(SHOP_ITEM_DEFS.P4, initialShop(), [])).toBe(true);
+    expect(isItemAvailable(SHOP_ITEM_DEFS.P4, { ...initialShop(), reservedItem: { itemId: "K1" } }, [])).toBe(false);
+  });
+  it("Kauf P4: reserviert das gewählte Angebot (nicht P4 selbst, nur nicht gekaufte)", () => {
+    const offers = [
+      { offerId: "o0", itemId: "P4", category: "planning", tier: "strong", price: 12, legendary: false },
+      { offerId: "o1", itemId: "K8", category: "cards", tier: "premium", price: 18, legendary: false },
+    ];
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
+    expect(s.phase).toBe("shop-target");
+    expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s); // ohne Ziel → unverändert
+    expect(reducer(s, { type: "SHOP_TARGET_OFFER", offerId: "o0" })).toBe(s);     // P4 selbst → ignoriert
+    s = reducer(s, { type: "SHOP_TARGET_OFFER", offerId: "o1" });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.phase).toBe("shop");
+    expect(r.shop.coins).toBe(0);
+    expect(r.shop.reservedItem).toMatchObject({ itemId: "K8", price: 18 });
+  });
+  it("Engine: reserviertes Item erscheint beim nächsten Shop als 9. Angebot und verfällt danach", () => {
+    const s = resolveTrick(atCycleEnd({ cycle: 3, // cycle 3→4 = Shop
+      shop: { ...initialShop(), reservedItem: { itemId: "K8", category: "cards", tier: "premium", price: 18, legendary: false } } }), rng);
+    expect(s.phase).toBe("shop");
+    expect(s.shop.reservedItem).toBe(null);
+    expect(s.shop.offers).toHaveLength(SHOP_ITEMS_OFFERED + 1);           // 8 regulär + 1 reserviert
+    expect(s.shop.offers.find((o) => o.reserved)).toMatchObject({ itemId: "K8", price: 18 });
   });
 });

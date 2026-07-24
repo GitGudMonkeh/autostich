@@ -152,6 +152,19 @@ export const SHOP_ITEM_DEFS = {
   P2: { id: "P2", category: "planning", name: "Skill-Neuwurf", tier: "cheap", repeatable: true,
         description: "Erhalte einen gespeicherten Neuwurf für eine zukünftige Skill-Auswahl.",
         apply: (s) => ({ shop: { ...s.shop, skillRerolls: (s.shop.skillRerolls || 0) + 1 } }) },
+  P3: { id: "P3", category: "planning", name: "Warenwechsel", tier: "cheap", repeatable: true,
+        targetMode: "category", target: { category: true },
+        description: "Würfle eine Kategorie des aktuellen Shops einmal neu (nicht gekaufte Angebote werden ersetzt).",
+        apply: (s, t, rng) => ({ shop: rerollCategory(s.shop, t.category, SHOP_ITEM_DEFS, rng, s.perks, "P3") }) },
+  P4: { id: "P4", category: "planning", name: "Reservierung", tier: "strong", repeatable: true,
+        targetMode: "offer", target: { offer: true },
+        description: "Wähle ein anderes, noch nicht gekauftes Shop-Item. Es wird im nächsten Shop zusätzlich angeboten.",
+        available: (shop) => !shop.reservedItem, // §10 P4: höchstens ein Item gleichzeitig reserviert
+        apply: (s, t) => {
+          const off = (s.shop.offers || []).find((o) => o.offerId === t.offerId);
+          if (!off) return {};
+          return { shop: { ...s.shop, reservedItem: { itemId: off.itemId, category: off.category, tier: off.tier, price: off.price, legendary: !!off.legendary } } };
+        } },
   "P-L1": { id: "P-L1", category: "planning", name: "Schicksalskontrolle", tier: "legendary", legendary: true, repeatable: false,
         description: "Bei jeder zukünftigen Perk- und Skill-Auswahl darf das Angebot einmal kostenlos neu gewürfelt werden.",
         apply: (s) => ({ shop: { ...s.shop, fateControl: true } }) },
@@ -282,4 +295,52 @@ export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = [
     }
   }
   return offers;
+}
+
+/* Warenwechsel (Shop-Spec §10 P3): eine Kategorie des aktuellen Angebots neu würfeln. Behalten bleiben alle
+   Angebote AUSSERHALB der Kategorie sowie in der Kategorie gekaufte Angebote (und `excludeItemId` = das gerade
+   gekaufte Warenwechsel-Item selbst, das im Angebot als „gekauft" stehen bleibt und nicht erneut gezogen wird).
+   Die restlichen Slots der Kategorie werden mit neuen gültigen Items aufgefüllt. Legendär-Regeln (§5.7): höchstens
+   EIN Legendär im Shop — liegt bereits eines woanders, erscheint hier keins; die Cheap-Garantie wird NICHT erneut
+   global erzwungen. Deterministisch über den injizierten rng. */
+export function rerollCategory(shop = {}, category, itemDefs = {}, rng = Math.random, perks = [], excludeItemId = null) {
+  const offers = shop.offers || [];
+  const purchased = new Set(shop.purchasedOfferIds || []);
+  const kept = offers.filter((o) => o.category !== category || purchased.has(o.offerId) || o.itemId === excludeItemId);
+  const keptInCat = kept.filter((o) => o.category === category).length;
+  const need = C.SHOP_ITEMS_PER_CATEGORY - keptInCat;
+  if (need <= 0) return shop;                                // in dieser Kategorie ist nichts zu würfeln
+  const presentIds = new Set(kept.map((o) => o.itemId));
+  const legElsewhere = kept.some((o) => o.legendary);        // ein Legendär bleibt woanders → hier keins (§5.7)
+  const pool = Object.values(itemDefs).filter((d) => d.category === category && d.id !== excludeItemId
+    && !presentIds.has(d.id) && isItemAvailable(d, shop, perks));
+  const normals = pool.filter((d) => !d.legendary);
+  const used = new Set(offers.map((o) => o.offerId));        // neue offerIds kollidieren nicht mit bestehenden
+  let n = 0;
+  const nextId = () => { let id; do { id = `o${n++}`; } while (used.has(id)); used.add(id); return id; };
+  const mk = (d) => ({ offerId: nextId(), itemId: d.id, category: d.category, tier: d.tier, price: priceOf(d.tier), legendary: !!d.legendary });
+  const drawn = drawDistinct(normals, need, rng).map(mk);
+  // Legendär-Ersetzung (§5.7) nur wenn erlaubt: einmal würfeln, einen neu gezogenen Normal-Slot ersetzen.
+  if (!legElsewhere && drawn.length && rng() < C.SHOP_LEGENDARY_CHANCE) {
+    const legs = pool.filter((d) => d.legendary);
+    if (legs.length) drawn[Math.floor(rng() * drawn.length)] = mk(legs[Math.floor(rng() * legs.length)]);
+  }
+  return { ...shop, offers: [...kept, ...drawn] };
+}
+
+/* Reservierung einlösen (Shop-Spec §10 P4): hängt beim Öffnen eines Shops das im letzten Shop reservierte Item
+   als zusätzliches Angebot in seiner Kategorie an (behält Preis & Identität) und LÖSCHT die Reservierung — sie
+   verfällt mit diesem Shop, unabhängig davon, ob gekauft wird. Nur anhängen, wenn das Item generell noch verfügbar
+   ist (z. B. nicht inzwischen als Legendär/nicht-wiederholbar vergriffen). */
+export function withReservedOffer(shop = {}, itemDefs = {}, perks = []) {
+  const reserved = shop.reservedItem;
+  if (!reserved) return shop;
+  const offers = shop.offers || [];
+  const used = new Set(offers.map((o) => o.offerId));
+  let id = "oRes", k = 0; while (used.has(id)) id = `oRes${k++}`;
+  const def = itemDefs[reserved.itemId];
+  const extra = def && isItemAvailable(def, shop, perks)
+    ? [{ offerId: id, itemId: reserved.itemId, category: reserved.category, tier: reserved.tier, price: reserved.price, legendary: !!reserved.legendary, reserved: true }]
+    : [];
+  return { ...shop, offers: [...offers, ...extra], reservedItem: null };
 }

@@ -90,7 +90,7 @@ export function reducer(state, action) {
       if (!def) return state;
       if (def.target) { // Ziel-Auswahl nötig (§12.2): in die shop-target-Phase; Münzen erst nach Bestätigung.
         return { ...state, phase: "shop-target",
-                 shopTarget: { offerId: offer.offerId, itemId: def.id, cards: [], colors: {}, segment: null, position: null, colorPair: [], boundary: null, formationType: null } };
+                 shopTarget: { offerId: offer.offerId, itemId: def.id, cards: [], colors: {}, segment: null, position: null, colorPair: [], boundary: null, formationType: null, category: null, targetOfferId: null } };
       }
       // Sofort-Items (kein Ziel, z. B. Planung ab S5): Effekt anwenden, danach generische Münz-/Kauf-Buchhaltung.
       const patch = def.apply ? def.apply(state, null, action.rng) : {};
@@ -167,6 +167,22 @@ export function reducer(state, action) {
       if (!def?.target?.formationType || !FORMATION_TYPES.includes(action.formationType)) return state;
       return { ...state, shopTarget: { ...state.shopTarget, formationType: action.formationType } };
     }
+    case "SHOP_TARGET_CATEGORY": { // Warenwechsel (P3): eine der vier Shop-Kategorien wählen.
+      if (state.phase !== "shop-target" || !state.shopTarget) return state;
+      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
+      if (!def?.target?.category || !C.SHOP_CATEGORIES.includes(action.category)) return state;
+      return { ...state, shopTarget: { ...state.shopTarget, category: action.category } };
+    }
+    case "SHOP_TARGET_OFFER": { // Reservierung (P4): ein anderes, noch nicht gekauftes Angebot wählen (nicht P4 selbst).
+      if (state.phase !== "shop-target" || !state.shopTarget) return state;
+      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
+      if (!def?.target?.offer) return state;
+      const target = (state.shop?.offers || []).find((o) => o.offerId === action.offerId);
+      if (!target || action.offerId === state.shopTarget.offerId) return state;      // muss existieren & darf nicht P4 selbst sein
+      if ((state.shop?.purchasedOfferIds || []).includes(action.offerId)) return state; // nur nicht gekaufte Items
+      const cur = state.shopTarget.targetOfferId === action.offerId ? null : action.offerId; // Antippen schaltet um/ab
+      return { ...state, shopTarget: { ...state.shopTarget, targetOfferId: cur } };
+    }
     case "SHOP_TARGET_CANCEL": // Abbrechen (§12.2): Angebot & Münzen unverändert → zurück in den Shop.
       return state.phase === "shop-target" ? { ...state, phase: "shop", shopTarget: null } : state;
     case "SHOP_TARGET_CONFIRM": {
@@ -186,7 +202,11 @@ export function reducer(state, action) {
       if (spec.colorPair && (st.colorPair || []).length !== 2) return state;      // genau zwei Farben (F4)
       if (spec.boundary && st.boundary == null) return state;                     // eine Grenze (F5)
       if (spec.formationType && st.formationType == null) return state;           // ein Formationstyp (F-L1)
-      const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, position: st.position, colorPair: st.colorPair, boundary: st.boundary, formationType: st.formationType };
+      if (spec.category && st.category == null) return state;                      // eine Kategorie (P3)
+      if (spec.offer && (st.targetOfferId == null                                 // ein reservierbares Angebot (P4)
+        || !(shop.offers || []).some((o) => o.offerId === st.targetOfferId)
+        || (shop.purchasedOfferIds || []).includes(st.targetOfferId))) return state;
+      const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, position: st.position, colorPair: st.colorPair, boundary: st.boundary, formationType: st.formationType, category: st.category, offerId: st.targetOfferId };
       const patch = def.apply ? def.apply(state, target, action.rng) : {};
       const merged = { ...state, ...patch };
       const deck = patch.deck || state.deck;
