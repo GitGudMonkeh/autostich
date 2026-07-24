@@ -53,6 +53,29 @@ export const STORM_CRIT_CAP    = 0.20; // …          … gedeckelt
 export const STORM_SCORE       = 100;  // Gewitterfront nach Cap: +Score je Sieg …
 export const STORM_SCORE_WINS  = 3;    // …          … für so viele folgende Siege
 
+// Feuer-Archetyp (#93 F1) — Hitzeleiste 0–100 (Sonnenkern 150). Belohnt totale Überlegenheit. [TUNING]
+export const HEAT_MAX          = 100;  // Standard-Hitzemaximum
+export const HEAT_MAX_SUN      = 150;  // Maximum mit Sonnenkern (L, Überschuss über 100 bleibt)
+export const HEAT_MIN_MARGIN   = 3;    // Mindest-Wertvorsprung für Hitzegewinn & Feuer-Score
+export const HEAT_PER_POINT    = 2;    // % Hitze je relevantem Differenzpunkt (Vorsprung−2)
+export const HEAT_LOSS_MAX     = 10;   // max Hitzeverlust je Niederlage (%)
+export const FIRE_SCORE_BASE   = 25;   // Feuer-Flat-Score je Punkt (erster Feuer-Skill)
+export const FIRE_SCORE_PER_SKILL = 5; // +Feuer-Flat je Punkt je weiterem Feuer-Skill
+export const BURN_BONUS        = 10;   // Verbrennung: +Feuer-Flat je Punkt
+export const EMBER_MULT        = 1.5;  // Glut: Hitzegewinn ×1,5 (kaufmännisch gerundet)
+export const FUEL_BONUS        = 5;    // Brennstoff: +% Hitze bei Sieg mit Dauerwert ≥ FUEL_MIN_VALUE
+export const FUEL_MIN_VALUE    = 8;
+export const ACCEL_BONUS       = 15;   // Brandbeschleuniger: +% Hitze bei Vorsprung ≥ ACCEL_MIN_MARGIN
+export const ACCEL_MIN_MARGIN  = 10;
+export const GLOWING_THRESHOLD = 50;   // Glühende Klinge: ab dieser Hitze alle Karten +GLOWING_VALUE
+export const GLOWING_VALUE     = 2;
+export const FIREROLL_MAX      = 5;    // Feuerwalze: nächste Karte +1 je Siegsserie, bis +5
+export const CONFLAGRATION_SCORE = 1000; // Flächenbrand (Konsument): +Flat bei Sieg mit voller Hitze …
+export const CONFLAGRATION_COST  = 100;  // …          … verbraucht exakt 100 Hitze
+export const MELT_COST         = 10;   // Schmelzpunkt (Konsument): −% Hitze je Stich …
+export const MELT_VALUE        = 3;    // …          … dafür eigene Karte +Wert
+export const PHOENIX_VALUE     = 10;   // Phönixfeuer (L): nach Konsumenten-Auslösung nächste Karte +Wert
+
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
 

@@ -65,6 +65,32 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     onFullCharge: "protectStreak", // Verbraucher: setzt den Serien-Rahmen
   },
+
+  // ---- Feuer-Archetyp (#93 F1) — Hitze belohnt totale Überlegenheit. Flags werden in engine.js gelesen. ----
+  SK_FIRE_01: { id: "SK_FIRE_01", name: "Glut", archetype: "fire", keywords: ["heat"],
+    desc: "Siege erzeugen +50 % Hitze (Hitzegewinn ×1,5).", emberBoost: true },
+  SK_FIRE_02: { id: "SK_FIRE_02", name: "Brennstoff", archetype: "fire", keywords: ["heat"],
+    desc: "Gewinnt eine Karte mit Dauerwert ≥8, gibt es +5 % Hitze zusätzlich.", heatFuel: true },
+  SK_FIRE_03: { id: "SK_FIRE_03", name: "Brandbeschleuniger", archetype: "fire", keywords: ["heat"],
+    desc: "Ein Sieg mit ≥10 Wertvorsprung gibt +15 % Hitze zusätzlich.", heatAccel: true },
+  SK_FIRE_04: { id: "SK_FIRE_04", name: "Hitzeschild", archetype: "fire", keywords: ["heat"],
+    desc: "Niederlagen halbieren den Hitzeverlust (zugunsten des Spielers abgerundet).", heatShield: true },
+  SK_FIRE_05: { id: "SK_FIRE_05", name: "Nachglut", archetype: "fire", keywords: ["heat"],
+    desc: "Nach einem Sieg verursacht die nächste Niederlage 0 % Hitzeverlust (Siege erneuern, stapeln nicht).", afterglow: true },
+  SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"],
+    desc: "Bei ≥50 % Hitze erhalten alle eigenen Karten +2 temporären Wert (endet sofort unter 50 %).", glowingBlade: true },
+  SK_FIRE_07: { id: "SK_FIRE_07", name: "Verbrennung", archetype: "fire", keywords: ["heat"],
+    desc: "Feuer-Flat-Score pro Punkt +10 (erhöht die Hitzegewinnrate nicht).", burnBonus: true },
+  SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat"],
+    desc: "Jeder Sieg gibt der nächsten Karte +1 temporären Wert, steigend bis +5; eine Niederlage setzt zurück.", fireRoll: true },
+  SK_FIRE_09: { id: "SK_FIRE_09", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"],
+    desc: "Hitze-Konsument: bei voller Hitze gibt der nächste Sieg +1.000 Score; danach werden 100 Hitze verbraucht.", heatConsumer: "conflagration" },
+  SK_FIRE_10: { id: "SK_FIRE_10", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"],
+    desc: "Hitze-Konsument: vor jedem Stich −10 % Hitze, dafür eigene Karte +3 temporären Wert (nur ab 10 % Hitze).", heatConsumer: "melt" },
+  SK_FIRE_11: { id: "SK_FIRE_11", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat"],
+    desc: "Maximale Hitze steigt auf 150 % — der Überschuss über 100 % bleibt erhalten.", heatMax150: true },
+  SK_FIRE_12: { id: "SK_FIRE_12", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
+    desc: "Nachdem ein Hitze-Konsument ausgelöst hat, erhält die nächste eigene Karte +10 temporären Wert (stapelt nicht).", phoenix: true },
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
@@ -110,6 +136,51 @@ export function skillSum(skills, name, ctx) {
 // armed = Serien-Rahmen (Geladene Serie); storm* = Gewitterfront (Stufe C).
 export function initLightning() {
   return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, armed: false, stormCritBonus: 0, stormScoreWinsRemaining: 0 };
+}
+
+/* ---- Feuer-Archetyp (#93 F1) — Hitze-Substate + reine Helfer (testbar; Engine-Nutzung in resolveTrick) ---- */
+
+// Frischer Hitze-Substate — inaktiv. Wird beim ersten Feuer-Skill aktiviert (Reducer).
+// afterglowArmed = Nachglut · fireRoll = Feuerwalze-Stapel · phoenixArmed = Phönixfeuer · conflagArmed = Flächenbrand.
+export function initHeat() {
+  return { active: false, value: 0, max: C.HEAT_MAX, afterglowArmed: false, fireRoll: 0, phoenixArmed: false, conflagArmed: false };
+}
+
+// Anzahl gehaltener Feuer-Skills (Grundmechanik zählt nicht) & ob ein Feuer-Flag gehalten wird.
+export const activeFireCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "fire").length;
+export const fireFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
+// Hitze-Maximum je Build (Sonnenkern → 150).
+export const heatMaxFor = (skills) => (fireFlag(skills, "heatMax150") ? C.HEAT_MAX_SUN : C.HEAT_MAX);
+// Gehaltener Hitze-Konsument („conflagration"/„melt") oder null (max 1, im Reducer erzwungen).
+export function heatConsumerOf(skills) {
+  for (const id of skills || []) { const c = SKILL_DEFS[id]?.heatConsumer; if (c) return c; }
+  return null;
+}
+// Anzahl gehaltener Hitze-Konsumenten (der Reducer blockt > 1).
+export const heatConsumerCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.heatConsumer).length;
+
+// Hitzegewinn bei Sieg (%): Basis (Vorsprung−2)×2, Glut ×1,5 (kaufm. gerundet), +Brennstoff/+Brandbeschleuniger.
+export function heatGainFor(margin, skills, cardValue) {
+  if (margin < C.HEAT_MIN_MARGIN) return 0;
+  let g = (margin - 2) * C.HEAT_PER_POINT;
+  if (fireFlag(skills, "emberBoost")) g = Math.round(g * C.EMBER_MULT);
+  if (fireFlag(skills, "heatFuel") && cardValue >= C.FUEL_MIN_VALUE) g += C.FUEL_BONUS;
+  if (fireFlag(skills, "heatAccel") && margin >= C.ACCEL_MIN_MARGIN) g += C.ACCEL_BONUS;
+  return g;
+}
+// Hitzeverlust bei Niederlage (%): min(Rückstand,10); Nachglut → 0; Hitzeschild → halbiert (abgerundet).
+export function heatLossFor(deficit, skills, afterglowArmed) {
+  if (afterglowArmed) return 0;
+  let l = Math.min(deficit, C.HEAT_LOSS_MAX);
+  if (fireFlag(skills, "heatShield")) l = Math.floor(l / 2);
+  return l;
+}
+// Feuer-Flat-Score bei Sieg: (Vorsprung−2) × (25 + 5×(FeuerSkills−1) + Verbrennung?10:0). 0 ohne Feuer-Skill.
+export function fireScoreFor(margin, skills) {
+  const n = activeFireCount(skills);
+  if (n === 0 || margin < C.HEAT_MIN_MARGIN) return 0;
+  const per = C.FIRE_SCORE_BASE + C.FIRE_SCORE_PER_SKILL * (n - 1) + (fireFlag(skills, "burnBonus") ? C.BURN_BONUS : 0);
+  return (margin - 2) * per;
 }
 
 // Roh-Crit-Beitrag des Blitz-Archetyps (Abschnitt 2a): Aktivierungs-Sockel + Σ Skill-critChance

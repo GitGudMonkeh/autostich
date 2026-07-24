@@ -1,6 +1,6 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
 import { PERK_DEFS, buildOffer } from "./perks.js";
-import { archetypeOf, initLightning } from "./skills.js";
+import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations } from "./formations.js";
 import { resolveTrick } from "./engine.js";
@@ -38,6 +38,7 @@ export function initialState(rng = Math.random) {
     perks: [], offer: null,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
     skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
+    heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     tieArmed: false,
     lastTrick: null,
   };
@@ -130,11 +131,16 @@ export function reducer(state, action) {
         if (!replaceId || !state.skills.includes(replaceId)) return state; // volle Slots → gültiges Ersetzungsziel nötig
         skills = state.skills.map((id) => (id === replaceId ? skillId : id));
       }
+      // Feuer (#93 F1): höchstens EIN Hitze-Konsument (Flächenbrand/Schmelzpunkt schließen sich aus).
+      // Ein zweiter Konsument ist nur wählbar, wenn er den bestehenden ersetzt (replaceId = der alte Konsument).
+      if (heatConsumerCount(skills) > 1) return state;
       let activeArchetypes = state.activeArchetypes || [];
       let lightning = state.lightning;
+      let heat = state.heat;
       if (arch === "lightning" && !lightning.active) lightning = { ...lightning, active: true };
+      if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
       if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
-      return { ...state, skills, activeArchetypes, lightning, phase: "play", skillOffer: null };
+      return { ...state, skills, activeArchetypes, lightning, heat, phase: "play", skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").

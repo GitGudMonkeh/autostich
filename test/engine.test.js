@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
+import { SKILL_DEFS } from "../src/game/skills.js";
 import { MAX_CYCLES, FORMATION_ENERGY } from "../src/game/constants.js";
 import { STAT_IDS } from "../src/game/stats.js";
 
@@ -445,7 +446,7 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
 
   it("Entscheidungszyklus (§22.2): Perk/Formation/Stat/Skill je nach Durchlauf; leerer Skill-Pool → Perk", () => {
     // Nach dem Durchlauf mit cycle C ist die Entscheidung DECISION_CYCLE[(C+1) % 6].
-    const ALL = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06", "SK_LIGHTNING_07"];
+    const ALL = Object.keys(SKILL_DEFS); // alle Skills (Blitz + Feuer …) → leerer Pool erzwingt den Perk-Fallback
 
     const perkRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 0 }), rng); // → cycle 1 (%6=1 → perk)
     expect(perkRound.phase).toBe("levelup");

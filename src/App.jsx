@@ -16,6 +16,7 @@ import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
+import { HeatBar } from "./ui/HeatBar.jsx";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
@@ -285,6 +286,7 @@ export function Autostich() {
             <div className="grid gap-4">
               <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} />
               <ChargeBar lightning={state.lightning} />
+              <HeatBar heat={state.heat} skills={state.skills} />
               <BuildPanel perks={state.perks} skills={state.skills} />
             </div>
             <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />

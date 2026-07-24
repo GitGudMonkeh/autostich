@@ -2,7 +2,8 @@ import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
-  hasIonize, hasProtect, hasStorm, chargeFloorFor } from "./skills.js";
+  hasIonize, hasProtect, hasStorm, chargeFloorFor,
+  fireFlag, heatMaxFor, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor } from "./skills.js"; // Feuer (#93 F1)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
 
@@ -112,7 +113,24 @@ export function resolveTrick(state, rng = Math.random) {
   // Nachfolger-Bonus (C4 Staffelläufer / C5 Anführer): der Kopf der Queue gilt für DIESE Karte, dann verbraucht.
   const relayBonus = successorQueue[0] || 0;
   successorQueue = successorQueue.slice(1);
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + relayBonus + l11Bonus;
+  // ---- Feuer (#93 F1): Vor-Stich-Effekte, die den Kampfwert DIESES Stichs anheben (Schmelzpunkt/Glühende Klinge/Feuerwalze/Phönixfeuer).
+  let heat = state.heat || null;
+  let fireValueBonus = 0;
+  if (heat && heat.active) {
+    heat = { ...heat, max: heatMaxFor(skills) }; // Sonnenkern kann das Maximum angehoben haben
+    // Phönixfeuer: im VORIGEN Stich armiert → diese Karte +10 (einmalig).
+    if (fireFlag(skills, "phoenix") && heat.phoenixArmed) { fireValueBonus += C.PHOENIX_VALUE; heat = { ...heat, phoenixArmed: false }; }
+    // Schmelzpunkt (Konsument): vor jedem Stich −10 % Hitze, +3 Wert (nur ab 10 %); armiert Phönix für den NÄCHSTEN Stich.
+    if (heatConsumerOf(skills) === "melt" && heat.value >= C.MELT_COST) {
+      heat = { ...heat, value: heat.value - C.MELT_COST };
+      fireValueBonus += C.MELT_VALUE;
+      if (fireFlag(skills, "phoenix")) heat = { ...heat, phoenixArmed: true };
+    }
+    // Glühende Klinge: ab 50 % Hitze alle Karten +2. Feuerwalze: aktueller Stapel (von Vorsiegen).
+    if (fireFlag(skills, "glowingBlade") && heat.value >= C.GLOWING_THRESHOLD) fireValueBonus += C.GLOWING_VALUE;
+    if (fireFlag(skills, "fireRoll")) fireValueBonus += Math.min(heat.fireRoll || 0, C.FIREROLL_MAX);
+  }
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + relayBonus + l11Bonus + fireValueBonus;
   // L11: den temporären Wertbonus dieser Karte an Position 20 für Position 40 merken.
   let newPos20Bonus = pos20Bonus;
   if (pos === 19) newPos20Bonus = pValue - pCard.value;
@@ -143,6 +161,21 @@ export function resolveTrick(state, rng = Math.random) {
                    baseValue: pCard.value, // Basiswert der gespielten Karte
                    hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung (D15)
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
+    // ---- Feuer (#93 F1): Hitzegewinn, Feuer-Flat-Score, Flächenbrand-Konsument, Nachglut, Feuerwalze.
+    let fireFlat = 0;
+    if (heat && heat.active) {
+      const fmargin = pValue - oValue;
+      heat = { ...heat, value: Math.min(heat.max, heat.value + heatGainFor(fmargin, skills, pCard.value)) };
+      fireFlat += fireScoreFor(fmargin, skills); // Feuer-Flat-Score (in die multiplizierte Basis)
+      // Flächenbrand: Sieg bei voller Hitze (≥100) → +1000 flach, verbraucht exakt 100 (Sonnenkern: Überschuss bleibt); armiert Phönix.
+      if (heatConsumerOf(skills) === "conflagration" && heat.value >= C.HEAT_MAX) {
+        fireFlat += C.CONFLAGRATION_SCORE;
+        heat = { ...heat, value: heat.value - C.CONFLAGRATION_COST };
+        if (fireFlag(skills, "phoenix")) heat = { ...heat, phoenixArmed: true };
+      }
+      if (fireFlag(skills, "afterglow")) heat = { ...heat, afterglowArmed: true }; // Nachglut: nächste Niederlage 0 Verlust
+      if (fireFlag(skills, "fireRoll")) heat = { ...heat, fireRoll: Math.min((heat.fireRoll || 0) + 1, C.FIREROLL_MAX) }; // Feuerwalze-Stapel
+    }
     // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.
     // Der Crit-Wurf verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift).
     // Blitz-Crit-Basis (Abschnitt 2a) wird additiv zugerechnet, unabhängig von L5-critChanceMult.
@@ -165,7 +198,7 @@ export function resolveTrick(state, rng = Math.random) {
     const critCtx = { ...wctx, rawCrit };
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
                       + (isCrit ? sumHook(perks, "scoreFlatOnCrit", critCtx) + skillSum(skills, "scoreFlatOnCrit", critCtx) : 0)
-                      + ionScoreFor(pCard) + stormScore + l5Flat;
+                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
     // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
@@ -258,6 +291,11 @@ export function resolveTrick(state, rng = Math.random) {
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie (auch mit Rahmen)
     serieStreak = 0;
     if (rahmenRedeemed) lightning = { ...lightning, armed: false }; // Rahmen eingelöst → entfernt
+    // ---- Feuer (#93 F1): Hitzeverlust (Nachglut fängt ihn ab), danach Nachglut verbraucht & Feuerwalze zurückgesetzt.
+    if (heat && heat.active) {
+      const loss = heatLossFor(oValue - pValue, skills, heat.afterglowArmed);
+      heat = { ...heat, value: Math.max(0, heat.value - loss), afterglowArmed: false, fireRoll: 0 };
+    }
     lastResult = "loss";
   } else {
     ties += 1;
@@ -349,6 +387,7 @@ export function resolveTrick(state, rng = Math.random) {
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
+    heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
     lastTrick, phase,
   };
 }

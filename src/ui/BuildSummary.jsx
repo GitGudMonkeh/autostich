@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
-import { SKILL_DEFS } from "../game/skills.js";
+import { SKILL_DEFS, ARCHETYPE_META, archetypeOf } from "../game/skills.js";
 import { SUIT_ORDER, suitColor, suitName } from "../game/constants.js";
 
-// Blitz-/Skill-Akzent (wie im Skill-Auswahl-Overlay).
-const SKILL_ACCENT = "#8a7de0";
+// Archetyp-Meta eines Skills (Icon/Farbe/Label) — Fallback neutral (#93 F1: Feuer & Blitz gemischt).
+const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "•", color: "#8a8a95" };
 
 /* Gemeinsame Build-Kontext-Bausteine (#22): geteilt von BuildPanel und PerkSelect. */
 
@@ -54,11 +54,12 @@ export function PerkList({ perks, empty = "Noch keine Perks." }) {
   );
 }
 
-/* Aktive Skills (Blitz-Archetyp), anklickbar → Beschreibung. Analog zu PerkList (#1). */
+/* Aktive Skills (Archetypen: Blitz/Feuer/…), anklickbar → Beschreibung. Icon/Farbe je Archetyp (#93 F1). */
 export function SkillList({ skills = [], empty = "Noch keine Skills." }) {
   const [openSkill, setOpenSkill] = useState(null);
   const open = openSkill && skills.includes(openSkill) ? SKILL_DEFS[openSkill] : null;
   if (skills.length === 0) return <div className="text-sm opacity-40">{empty}</div>;
+  const om = open ? ac(open.id) : null; // Archetyp-Meta des aufgeklappten Skills
   return (
     <div>
       <div className="flex flex-wrap items-center gap-1.5">
@@ -66,21 +67,22 @@ export function SkillList({ skills = [], empty = "Noch keine Skills." }) {
           const s = SKILL_DEFS[id];
           if (!s) return null;
           const active = openSkill === id;
+          const c = ac(id).color;
           return (
             <button key={id} type="button" onClick={() => setOpenSkill(active ? null : id)}
               className="text-xs px-2 py-0.5 rounded transition-all"
-              style={{ background: active ? `${SKILL_ACCENT}33` : "#22222b", color: SKILL_ACCENT,
-                       outline: active ? `1px solid ${SKILL_ACCENT}` : `1px solid ${SKILL_ACCENT}66` }}>
-              ⚡ {s.name}
+              style={{ background: active ? `${c}33` : "#22222b", color: c,
+                       outline: active ? `1px solid ${c}` : `1px solid ${c}66` }}>
+              {ac(id).icon} {s.name}
             </button>
           );
         })}
       </div>
       {open && (
-        <div className="mt-2 rounded-lg p-3 text-sm" style={{ background: "#1e1e26", border: `1px solid ${SKILL_ACCENT}55` }}>
+        <div className="mt-2 rounded-lg p-3 text-sm" style={{ background: "#1e1e26", border: `1px solid ${om.color}55` }}>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${SKILL_ACCENT}22`, color: SKILL_ACCENT }}>⚡ BLITZ</span>
-            <span className="font-bold" style={{ color: SKILL_ACCENT }}>{open.name}</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${om.color}22`, color: om.color }}>{om.icon} {om.label.toUpperCase()}</span>
+            <span className="font-bold" style={{ color: om.color }}>{open.name}</span>
           </div>
           <div className="opacity-80 leading-snug">{open.desc}</div>
         </div>

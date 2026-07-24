@@ -52,8 +52,8 @@ describe("addCharge — gedeckelt & immutabel", () => {
 });
 
 describe("archetypesWithSkills / offerArchetypes (#93 F0: max 2 Archetypen)", () => {
-  it("F0: nur lightning hat Skills; alle Blitz owned → keiner", () => {
-    expect(archetypesWithSkills([])).toEqual(["lightning"]);
+  it("F1: lightning & fire haben Skills; alles owned → keiner", () => {
+    expect(archetypesWithSkills([])).toEqual(["lightning", "fire"]); // Reihenfolge = ARCHETYPE_ORDER
     expect(archetypesWithSkills(ALL)).toEqual([]);
   });
   it("0 aktiv → bis zu 2 verfügbare Archetypen (Erstangebot)", () => {
@@ -79,7 +79,9 @@ describe("buildSkillOffer (#93 F0: archetyp-gruppiert)", () => {
     expect(off).toHaveLength(4);
     expect(new Set(off).size).toBe(4);
     expect(off.every((id) => SKILL_DEFS[id])).toBe(true);
-    expect(off.every((id) => archetypeOf(id) === "lightning")).toBe(true); // F0: nur Blitz
+    const archs = new Set(off.map(archetypeOf));
+    expect(archs.size).toBeLessThanOrEqual(2); // #93 F1: höchstens 2 Archetypen im Angebot (2+2)
+    expect([...archs].every((a) => ["lightning", "fire"].includes(a))).toBe(true);
   });
   it("bereits gehaltene werden nicht erneut angeboten; leerer Pool → []", () => {
     expect(buildSkillOffer([LR], [], makeRng(1), 4)).not.toContain(LR);

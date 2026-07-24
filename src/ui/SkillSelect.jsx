@@ -11,11 +11,13 @@ const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // je Blitz-Sk
 // Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
 const LIGHT = "#8a7de0";
 
-// Schlüsselbegriffe der Blitz-Skills — unten im Overlay erklärt (nur die im Angebot vorkommenden).
+// Schlüsselbegriffe der Skills — unten im Overlay erklärt (nur die im Angebot vorkommenden). Icon/Farbe je Archetyp.
 const KEYWORD_INFO = {
-  charge: { label: "Ladung", text: "Crits erzeugen Ladung (max 10). Bei voller Ladung lösen Blitz-Skills Effekte aus oder verbrauchen sie." },
-  ionize: { label: "Ionisierung", text: "Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +25 Score pro Stapel und erhält danach +1 Stapel (max 4)." },
-  streak: { label: "Serie", text: "Geladene Serie schützt deine Siegesserie — die nächste Niederlage setzt sie nicht zurück." },
+  charge: { label: "Ladung", icon: "⚡", color: "#8a7de0", text: "Crits erzeugen Ladung (max 10). Bei voller Ladung lösen Blitz-Skills Effekte aus oder verbrauchen sie." },
+  ionize: { label: "Ionisierung", icon: "⚡", color: "#8a7de0", text: "Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +25 Score pro Stapel und erhält danach +1 Stapel (max 4)." },
+  streak: { label: "Serie", icon: "⚡", color: "#8a7de0", text: "Geladene Serie schützt deine Siegesserie — die nächste Niederlage setzt sie nicht zurück." },
+  heat: { label: "Hitze", icon: "🔥", color: "#e0714a", text: "Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Flat-Score; klare Niederlagen kühlen sie ab." },
+  consume: { label: "Hitze-Konsument", icon: "🔥", color: "#e0714a", text: "Verbraucht angesammelte Hitze für einen starken Effekt. Höchstens ein Konsument gleichzeitig — ein zweiter ersetzt den bestehenden." },
 };
 
 /* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint jede 3. Runde STATT eines Perks.
@@ -35,6 +37,8 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
     .map((arch) => ({ arch, meta: ARCHETYPE_META[arch], ids: offer.filter((id) => archetypeOf(id) === arch) }))
     .filter((g) => g.ids.length);
   const hasBlitzOffer = offer.some((id) => archetypeOf(id) === "lightning");
+  const hasFireOffer = offer.some((id) => archetypeOf(id) === "fire");
+  const fireFirstPick = !(state.heat && state.heat.active); // erster Feuer-Skill schaltet die Hitzeleiste frei
 
   // Freier Slot → direkt wählen. Volle Slots → neuen Skill vormerken, dann Ersetzungsziel antippen.
   const clickSkill = (id) => {
@@ -65,6 +69,21 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
           ) : (
             <>Jeder weitere Blitz-Skill gibt <b style={{ color: "#e879f9" }}>+{PER_SKILL_PCT} % Crit-Chance</b>{" "}
               (zusätzlich zum einmaligen Aktivierungs-Sockel von +{SOCKET_PCT} %). Ladung/Crit-Basis sind bereits aktiv.</>
+          )}
+        </div>
+        )}
+
+        {/* Was ein Feuer-Skill freischaltet: Hitzeleiste — nur wenn Feuer im Angebot ist (#93 F1). */}
+        {hasFireOffer && (
+        <div className="mt-3 rounded-lg px-3 py-2 text-xs leading-snug"
+          style={{ background: "#e0714a14", border: "1px solid #e0714a44" }}>
+          {fireFirstPick ? (
+            <>Dein erster Feuer-Skill schaltet die <b style={{ color: "#e0714a" }}>Hitzeleiste</b> frei (0–100 %):{" "}
+              Siege mit klarem <b style={{ color: "#f0a83a" }}>Wertvorsprung</b> heizen auf und geben Feuer-Flat-Score,
+              klare Niederlagen kühlen ab. Belohnt totale Überlegenheit statt knapper Siege.</>
+          ) : (
+            <>Jeder weitere Feuer-Skill erhöht den <b style={{ color: "#f0a83a" }}>Feuer-Flat-Score</b> pro Vorsprungspunkt.
+              Die Hitzeleiste ist bereits aktiv.</>
           )}
         </div>
         )}
@@ -170,7 +189,7 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
             <div className="grid gap-1.5">
               {kws.map((k) => (
                 <div key={k} className="text-xs leading-snug">
-                  <span className="font-bold" style={{ color: LIGHT }}>⚡ {KEYWORD_INFO[k].label}</span>
+                  <span className="font-bold" style={{ color: KEYWORD_INFO[k].color }}>{KEYWORD_INFO[k].icon} {KEYWORD_INFO[k].label}</span>
                   <span className="opacity-70"> — {KEYWORD_INFO[k].text}</span>
                 </div>
               ))}
