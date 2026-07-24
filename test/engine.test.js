@@ -217,6 +217,13 @@ describe("resolveTrick — Durchlauf-Ende & persistente Reihenfolge (V2)", () =>
     expect([...s.oppOrder].sort((a, b) => a - b)).toEqual(identity()); // … aber eine Permutation
   });
 
+  it("#98: temporäre Positions-Boni (Relay-Queue / L11-Pos20) bluten nicht in den nächsten Durchlauf", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39, successorQueue: [2, 2], pos20Bonus: 7 }), rng);
+    expect(s.cycle).toBe(1);
+    expect(s.successorQueue).toEqual([]); // am Durchlauf-Ende geleert → Position 1 des Folgedurchlaufs erbt nichts
+    expect(s.pos20Bonus).toBe(0);
+  });
+
   it("Run-Ende nach MAX_CYCLES Durchläufen → gameover, kein Angebot (der letzte Sieg zählt noch)", () => {
     const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: MAX_CYCLES - 1, score: 5000 }), rng);
     expect(s.cycle).toBe(MAX_CYCLES);

@@ -303,6 +303,9 @@ export function resolveTrick(state, rng = Math.random) {
       }
     }
     l5Used = []; l8Wins = {}; // Pro-Durchlauf-States zurücksetzen (L5-Jackpot-Verbrauch, L8-Erfolge)
+    // #98: temporäre Positions-Boni enden mit dem Durchlauf — sonst würde ein an Position 40 armierter
+    // Relay (C4/C5) bzw. der L11-Pos20-Merker auf Position 1 des nächsten (persistenten) Durchlaufs durchsickern.
+    successorQueue = []; newPos20Bonus = 0;
 
     if (cycle >= C.MAX_CYCLES) {
       // Run-Ende nach dem letzten Durchlauf (§22.1): kein Neu-Mischen, keine Auswahl mehr.
