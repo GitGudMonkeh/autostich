@@ -6,10 +6,13 @@ import { LayoutPerks } from "./LayoutPerks.jsx";
 /* Chronik-Kartenübersicht (§22.11): alle 40 Karten in aktueller Reihenfolge — nur Anzeige,
    mit Formations- und Rollen-Markern. Klick auf eine Karte zeigt Rolle & Modifikatoren (#95.5).
    Desktop (#101): zweispaltig — Karten-Grid links, Info-Panel rechts; Mobil gestapelt. */
+const ANCHOR_LABEL = { power: "Kraft", score: "Punkte", crit: "Krit", streak: "Serie", formation: "Formation" };
+
 export function ChronikOverview({ state, onClose }) {
   const { deck = [], playerOrder = [], formations = [] } = state;
   const [selPos, setSelPos] = useState(null);
   const cards = playerOrder.map((di) => deck[di]);
+  const anchors = [...(state.shop?.anchors || [])].sort((a, b) => a.position - b.position); // Shop-Positionsanker (§8)
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
@@ -35,6 +38,16 @@ export function ChronikOverview({ state, onClose }) {
           <div className="md:flex-1 md:min-w-0 mt-3 md:mt-0 grid gap-3 content-start">
             <CardDetail card={selPos != null ? cards[selPos] : null} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} />
             <LayoutPerks perks={state.perks} />
+            {anchors.length > 0 && (
+              <div className="text-[11px] rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+                <div className="uppercase tracking-wide opacity-50 mb-1">Anker</div>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                  {anchors.map((a, i) => (
+                    <span key={i} style={{ color: "#5a8ade" }}>⚓ Pos {a.position + 1} · {ANCHOR_LABEL[a.type] || a.type}</span>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="text-[11px] flex flex-wrap gap-x-3 gap-y-0.5 font-medium">
               <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>W</b> Wiederholung</span>
               <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>F</b> Farbblock</span>

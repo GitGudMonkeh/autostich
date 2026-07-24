@@ -183,6 +183,7 @@ export function Autostich() {
   const shopTargetCard = (cardId) => dispatch({ type: "SHOP_TARGET_CARD", cardId });
   const shopTargetColor = (cardId, color) => dispatch({ type: "SHOP_TARGET_COLOR", cardId, color });
   const shopTargetSegment = (segment) => dispatch({ type: "SHOP_TARGET_SEGMENT", segment });
+  const shopTargetPosition = (position) => dispatch({ type: "SHOP_TARGET_POSITION", position });
   const shopTargetConfirm = () => dispatch({ type: "SHOP_TARGET_CONFIRM", rng: Math.random });
   const shopTargetCancel = () => dispatch({ type: "SHOP_TARGET_CANCEL" });
 
@@ -333,7 +334,7 @@ export function Autostich() {
       )}
       {state.phase === "shop-target" && (
         <ShopTargetSelect state={state} onCard={shopTargetCard} onColor={shopTargetColor}
-          onSegment={shopTargetSegment} onConfirm={shopTargetConfirm} onCancel={shopTargetCancel} />
+          onSegment={shopTargetSegment} onPosition={shopTargetPosition} onConfirm={shopTargetConfirm} onCancel={shopTargetCancel} />
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />

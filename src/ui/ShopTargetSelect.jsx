@@ -8,7 +8,7 @@ const GOLD = "#d4a63a";
 /* Shop-Ziel-Auswahl (Shop-Spec §12.2) — öffnet nach dem Kauf eines Ziel-Items (Kartenitems S2).
    Karten wählen (Limit aus dem Item), optional je Karte eine neue Farbe, oder ein Segment (K-L1).
    Abbrechen lässt Angebot & Münzen unverändert; Bestätigen zieht erst dann den Preis ab (Reducer). */
-export function ShopTargetSelect({ state, onCard, onColor, onSegment, onConfirm, onCancel }) {
+export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onConfirm, onCancel }) {
   useEscape(onCancel);
   const st = state.shopTarget || {};
   const def = SHOP_ITEM_DEFS[st.itemId] || {};
@@ -21,10 +21,12 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onConfirm,
   const colors = st.colors || {};
   const cardById = (id) => deck.find((c) => c.id === id);
 
+  const occupied = new Set((state.shop?.anchors || []).map((a) => a.position));
   const cardsDone = !spec.cards || sel.length === spec.cards;
   const colorsDone = !spec.color || sel.every((id) => colors[id]);
   const segDone = !spec.segment || st.segment != null;
-  const ready = spec.segment ? segDone : cardsDone && colorsDone;
+  const posDone = !spec.position || st.position != null;
+  const ready = spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
@@ -32,12 +34,40 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onConfirm,
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>Shop · {def.name}</div>
           <h2 className="text-xl font-bold mt-1">
-            {spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
+            {spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
           </h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.description}</p>
         </div>
 
-        {spec.segment ? (
+        {spec.position ? (
+          <div className="grid gap-2 mt-4">
+            {Array.from({ length: nSeg }, (_, s) => (
+              <div key={s} className="flex items-center gap-2">
+                <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
+                <div className="grid grid-cols-5 gap-1.5 flex-1">
+                  {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
+                    const pos = s * SEGMENT_SIZE + k;
+                    const occ = occupied.has(pos);
+                    const active = st.position === pos;
+                    const col = suitColor(c.suit);
+                    return (
+                      <button key={pos} onClick={() => !occ && onPosition(pos)} disabled={occ}
+                        className="relative rounded-lg flex flex-col items-center justify-center transition-all"
+                        style={{ aspectRatio: "3 / 4", background: active ? `${GOLD}22` : "#20202a",
+                                 border: `2px solid ${active ? GOLD : occ ? "#5a8ade" : col + "55"}`, opacity: occ ? 0.55 : 1,
+                                 cursor: occ ? "not-allowed" : "pointer", boxShadow: active ? `0 0 10px ${GOLD}66` : undefined }}>
+                        <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
+                        <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
+                        {occ && <span className="absolute bottom-0.5 right-1 text-[10px]" style={{ color: "#5a8ade" }} title="Bereits ein Anker">⚓</span>}
+                        {active && <span className="text-[10px] font-bold leading-none" style={{ color: GOLD }}>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : spec.segment ? (
           <div className="grid sm:grid-cols-2 gap-2 mt-4">
             {Array.from({ length: nSeg }, (_, seg) => {
               const segCards = cards.slice(seg * SEGMENT_SIZE, seg * SEGMENT_SIZE + SEGMENT_SIZE);

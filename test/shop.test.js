@@ -3,6 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialShop, coinsPerCycle, buildShopOffer, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS } from "../src/game/shop.js";
+import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { MAX_CYCLES, DECISION_SCHEDULE, STARTING_COINS, BASE_COINS_PER_CYCLE,
   SHOP_CATEGORIES, SHOP_ITEMS_PER_CATEGORY, SHOP_ITEMS_OFFERED, SHOP_PRICE, SHOP_LEGENDARY_CHANCE } from "../src/game/constants.js";
@@ -189,11 +190,11 @@ describe("Shop-Angebot — Ziehung (Shop-Spec §5)", () => {
 });
 
 describe("Shop-Kauf — BUY_ITEM (Shop-Spec §5.4)", () => {
-  it("Engine zieht bei Shop-Eintritt ein Angebot (S2: nur 'cards' bestückt → 2 Angebote)", () => {
+  it("Engine zieht bei Shop-Eintritt ein Angebot (S3a: 'cards' + 'anchors' bestückt → 4 Angebote)", () => {
     const s = resolveTrick(atCycleEnd({ cycle: 3 }), rng); // → Shop-Runde
     expect(s.phase).toBe("shop");
-    expect(s.shop.offers).toHaveLength(2); // Karten-Kategorie hat Items; Anker/Formationen/Planung folgen S3–S5
-    expect(s.shop.offers.every((o) => o.category === "cards")).toBe(true);
+    expect(s.shop.offers).toHaveLength(4); // Karten + Anker je 2; Formationen/Planung folgen S4–S5
+    expect(s.shop.offers.every((o) => ["cards", "anchors"].includes(o.category))).toBe(true);
     expect(s.shop.purchasedOfferIds).toEqual([]);
   });
   it("LEAVE_SHOP leert das Angebot (nicht gekaufte Items verworfen, §5.4)", () => {
@@ -348,5 +349,73 @@ describe("Shop-Ziel-Flow — Kauf mit Zielauswahl (Shop-Spec §12.2)", () => {
     expect(r.shop.boughtLegendaryIds).toEqual(["K-L1"]);
     expect(r.shop.boughtNonRepeatableIds).toEqual(["K-L1"]);
     for (const id of ids) expect(r.deck.find((c) => c.id === id).value).toBe(s.deck.find((c) => c.id === id).value + 1);
+  });
+});
+
+// --- S3a Positionsanker-Helfer ---
+const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
+const identity = () => Array.from({ length: 40 }, (_, i) => i);
+const never = () => 0.99; // Crit-Wurf schlägt nie an
+// Zustand mit einem Anker auf `pos`, Stich läuft auf `pos` (Anker greift), Standard-Deck 5 vs 6.
+const withAnchor = (type, pos, over = {}) => ({
+  ...initialState(makeRng(1)),
+  deck: constDeck(5), oppDeck: constDeck(6), playerOrder: identity(), oppOrder: identity(),
+  pos, shop: { ...initialShop(), anchors: [{ type, position: pos }] }, ...over,
+});
+
+describe("Shop-Positionsanker — Wirkung (Shop-Spec §8)", () => {
+  it("A1 Kraftanker: +2 Wert auf der Position (macht aus 5 vs 6 einen Sieg)", () => {
+    const s = resolveTrick(withAnchor("power", 3), rng);
+    expect(s.lastTrick.pValue).toBe(7);
+    expect(s.wins).toBe(1);
+    expect(resolveTrick({ ...withAnchor("power", 3), shop: initialShop() }, rng).losses).toBe(1); // ohne Anker: Niederlage
+  });
+  it("A1 wirkt NUR auf der Ankerposition", () => {
+    expect(resolveTrick({ ...withAnchor("power", 3), pos: 0 }, rng).lastTrick.pValue).toBe(5);
+  });
+  it("A2 Punkteanker: +150 Flat-Score bei Sieg auf der Position", () => {
+    const s = resolveTrick(withAnchor("score", 2, { deck: constDeck(12), oppDeck: constDeck(0) }), never);
+    expect(s.lastTrick.breakdown.flats).toBe(150);
+  });
+  it("A3 Kritanker: +15 pp Crit-Chance auf der Position", () => {
+    const s = resolveTrick(withAnchor("crit", 2, { deck: constDeck(12), oppDeck: constDeck(0) }), never);
+    expect(s.lastTrick.critChance).toBeCloseTo(0.15);
+  });
+  it("A4 Serienanker: Sieg auf der Position gibt +1 zusätzlichen Serienpunkt", () => {
+    const win = { deck: constDeck(12), oppDeck: constDeck(0) };
+    expect(resolveTrick(withAnchor("streak", 2, win), never).winStreak).toBe(2); // 1 Sieg + 1 Anker
+    expect(resolveTrick({ ...withAnchor("streak", 2, win), shop: initialShop() }, never).winStreak).toBe(1);
+  });
+  it("A5 Formationsanker: Position zählt als Anker ×1,25 (nicht auf anderen Positionen)", () => {
+    const deck = initialState(makeRng(1)).deck;
+    const out = computeFormations(identity(), deck, {}, [], [], [{ type: "formation", position: 5 }]);
+    const anker = out[5].formations.find((f) => f.type === "anker");
+    expect(anker && anker.factor).toBe(1.25);
+    expect(out[6].formations.some((f) => f.type === "anker")).toBe(false);
+  });
+});
+
+describe("Shop-Anker — Kauf & Platzierung (Shop-Spec §8)", () => {
+  const anchorShop = (itemId, anchors = []) => ({
+    ...initialState(makeRng(1)), phase: "shop",
+    shop: { ...initialShop(), coins: 10, offers: [{ offerId: "o0", itemId, category: "anchors", tier: "cheap", price: 8, legendary: false }], anchors },
+  });
+  it("Kauf öffnet Positions-Auswahl; CONFIRM legt den Anker an und zieht den Preis ab", () => {
+    let s = reducer(anchorShop("A1"), { type: "BUY_ITEM", offerId: "o0" });
+    expect(s.phase).toBe("shop-target");
+    expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s); // ohne Position → unverändert
+    s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 12 });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.phase).toBe("shop");
+    expect(r.shop.coins).toBe(2);
+    expect(r.shop.anchors).toEqual([{ type: "power", position: 12 }]);
+    expect(r.shop.purchasedOfferIds).toEqual(["o0"]);
+  });
+  it("belegte Position wird abgelehnt (max 1 Anker je Position, §8.1)", () => {
+    let s = reducer(anchorShop("A2", [{ type: "power", position: 7 }]), { type: "BUY_ITEM", offerId: "o0" });
+    expect(reducer(s, { type: "SHOP_TARGET_POSITION", position: 7 })).toBe(s); // belegt → ignoriert
+    s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 8 });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.shop.anchors.map((a) => a.position).sort((a, b) => a - b)).toEqual([7, 8]);
   });
 });

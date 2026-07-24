@@ -33,6 +33,13 @@ function segmentBump(deck, order, segIndex, delta) {
   return deck.map((c) => (ids.has(c.id) ? { ...c, value: c.value + delta } : c));
 }
 
+/* ---- Shop-Positionsanker (Shop-Spec §8) — an der Deckposition (0–39), nicht an card.id. ---- */
+// Anker-Typ auf einer Position (max 1 Anker je Position) bzw. ob die Position belegt ist.
+export const anchorTypeAt   = (anchors, pos) => (anchors || []).find((a) => a.position === pos)?.type || null;
+export const positionOccupied = (anchors, pos) => (anchors || []).some((a) => a.position === pos);
+// Einen Anker anlegen (immutabel) — der Reducer stellt sicher, dass die Position frei ist.
+const addAnchor = (shop, type, position) => ({ ...shop, anchors: [...(shop.anchors || []), { type, position }] });
+
 /* Konkrete Shop-Items (Shop-Spec §7 Kartenitems; Anker/Formationen/Planung folgen S3–S5).
    `target` = Ziel-Bedarf für den Target-Flow: { cards?: N, color?: bool (Farbe je gewählter Karte), segment?: bool }.
    apply(state, target, rng) -> Patch (hier stets { deck }); target = { cardIds, colors: { id: suit }, segment }. */
@@ -81,6 +88,28 @@ export const SHOP_ITEM_DEFS = {
          targetMode: "segment", target: { segment: true },
          description: "Wähle eines der acht Segmente. Alle fünf Karten dieses Segments erhalten dauerhaft +1 Wert (bleibt an den Karten).",
          apply: (s, t) => ({ deck: segmentBump(s.deck, s.playerOrder, t.segment, 1) }) },
+
+  // ---- Anker (Shop-Spec §8) — Positionsanker; apply legt {type,position} in shop.anchors an. targetMode "position". ----
+  A1: { id: "A1", category: "anchors", name: "Kraftanker", tier: "cheap", repeatable: true, anchorType: "power",
+        targetMode: "position", target: { position: true },
+        description: "Wähle eine Position. Die Karte auf dieser Position erhält im Stich +2 temporären Wert.",
+        apply: (s, t) => ({ shop: addAnchor(s.shop, "power", t.position) }) },
+  A2: { id: "A2", category: "anchors", name: "Punkteanker", tier: "cheap", repeatable: true, anchorType: "score",
+        targetMode: "position", target: { position: true },
+        description: "Wähle eine Position. Ein Sieg auf dieser Position gibt +150 Flat-Score.",
+        apply: (s, t) => ({ shop: addAnchor(s.shop, "score", t.position) }) },
+  A3: { id: "A3", category: "anchors", name: "Kritanker", tier: "strong", repeatable: true, anchorType: "crit",
+        targetMode: "position", target: { position: true },
+        description: "Wähle eine Position. Die Karte auf dieser Position erhält +15 Prozentpunkte Crit-Chance (nur dieser Stich).",
+        apply: (s, t) => ({ shop: addAnchor(s.shop, "crit", t.position) }) },
+  A4: { id: "A4", category: "anchors", name: "Serienanker", tier: "strong", repeatable: true, anchorType: "streak",
+        targetMode: "position", target: { position: true },
+        description: "Wähle eine Position. Ein Sieg auf dieser Position erhöht die Siegesserie um einen zusätzlichen Punkt.",
+        apply: (s, t) => ({ shop: addAnchor(s.shop, "streak", t.position) }) },
+  A5: { id: "A5", category: "anchors", name: "Formationsanker", tier: "premium", repeatable: true, anchorType: "formation",
+        targetMode: "position", target: { position: true },
+        description: "Wähle eine Position. Sie zählt als aktive Formation und gibt bei Sieg ×1,25 (stapelt nicht mit E7/E8).",
+        apply: (s, t) => ({ shop: addAnchor(s.shop, "formation", t.position) }) },
 };
 
 // Preis einer Stufe (Spec §5.5) — nur vier feste Preise.

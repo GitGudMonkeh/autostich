@@ -4,7 +4,7 @@ import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, ma
   frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, SEGMENT_SIZE } from "./formations.js";
-import { initialShop, SHOP_ITEM_DEFS } from "./shop.js";
+import { initialShop, SHOP_ITEM_DEFS, positionOccupied } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -87,7 +87,7 @@ export function reducer(state, action) {
       if (!def) return state;
       if (def.target) { // Ziel-Auswahl nötig (§12.2): in die shop-target-Phase; Münzen erst nach Bestätigung.
         return { ...state, phase: "shop-target",
-                 shopTarget: { offerId: offer.offerId, itemId: def.id, cards: [], colors: {}, segment: null } };
+                 shopTarget: { offerId: offer.offerId, itemId: def.id, cards: [], colors: {}, segment: null, position: null } };
       }
       // Sofort-Items (kein Ziel, z. B. Planung ab S5): Effekt anwenden, danach generische Münz-/Kauf-Buchhaltung.
       const patch = def.apply ? def.apply(state, null, action.rng) : {};
@@ -129,6 +129,14 @@ export function reducer(state, action) {
       if (!def?.target?.segment || !(action.segment >= 0 && action.segment < nSeg)) return state;
       return { ...state, shopTarget: { ...state.shopTarget, segment: action.segment } };
     }
+    case "SHOP_TARGET_POSITION": { // Anker-Position wählen (§8): 0..39, nur freie Positionen (max 1 Anker/Position).
+      if (state.phase !== "shop-target" || !state.shopTarget) return state;
+      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
+      const p = action.position;
+      if (!def?.target?.position || !(p >= 0 && p < state.playerOrder.length)) return state;
+      if (positionOccupied(state.shop?.anchors, p)) return state; // belegte Position → ablehnen (§8.1)
+      return { ...state, shopTarget: { ...state.shopTarget, position: p } };
+    }
     case "SHOP_TARGET_CANCEL": // Abbrechen (§12.2): Angebot & Münzen unverändert → zurück in den Shop.
       return state.phase === "shop-target" ? { ...state, phase: "shop", shopTarget: null } : state;
     case "SHOP_TARGET_CONFIRM": {
@@ -144,15 +152,19 @@ export function reducer(state, action) {
       if (spec.cards && st.cards.length !== spec.cards) return state;             // genau N Karten
       if (spec.color && st.cards.some((id) => !st.colors[id])) return state;      // je gewählter Karte eine Farbe
       if (spec.segment && st.segment == null) return state;                       // ein Segment
-      const target = { cardIds: st.cards, colors: st.colors, segment: st.segment };
+      if (spec.position && (st.position == null || positionOccupied(shop.anchors, st.position))) return state; // freie Position
+      const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, position: st.position };
       const patch = def.apply ? def.apply(state, target, action.rng) : {};
+      const merged = { ...state, ...patch };
       const deck = patch.deck || state.deck;
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills);
-      const newShop = { ...shop, coins: (shop.coins || 0) - offer.price,        // Preis erst jetzt abziehen (§12.2)
+      // Buchhaltung auf dem (evtl. durch apply veränderten) Shop — z. B. Anker-Items legen shop.anchors an.
+      const newShop = { ...(merged.shop || shop), coins: (shop.coins || 0) - offer.price, // Preis erst jetzt abziehen (§12.2)
         purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId] };
       if (def.legendary) newShop.boughtLegendaryIds = [...(shop.boughtLegendaryIds || []), def.id];
       if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
-      return { ...state, ...patch, deck, formations, phase: "shop", shopTarget: null, shop: newShop };
+      // Formationen mit den (evtl. neuen) Ankern neu berechnen — A5 Formationsanker wirkt sofort.
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills, newShop.anchors);
+      return { ...merged, deck, formations, phase: "shop", shopTarget: null, shop: newShop };
     }
 
     case "RESOLVE_TRICK":
@@ -193,7 +205,7 @@ export function reducer(state, action) {
         deck = def.permMod(state.deck, state.playerOrder, ids);
       }
       const roles = { ...(state.roles || {}), [state.targetPerk]: ids };
-      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills), phase: "play", targetPerk: null };
+      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || []), phase: "play", targetPerk: null };
     }
 
     // Stat-Auswahl (V2 §22.3): der gewählte Stat addiert seinen Step auf das zugehörige Summenfeld.
@@ -239,7 +251,7 @@ export function reducer(state, action) {
       }
       if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills);
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || []);
       return { ...state, skills, activeArchetypes, lightning, heat, deck, formations, phase: "play", skillOffer: null };
     }
 
@@ -269,7 +281,7 @@ export function reducer(state, action) {
       if (!isFree && (state.formationEnergy || 0) <= 0) return state; // bezahlter Tausch braucht Energie
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || []),
                formationEnergy: isFree ? state.formationEnergy : state.formationEnergy - 1,
                formationSwaps: [...(state.formationSwaps || []), { i, j, free: isFree, frozenId: freeFrozenId }],
                frostSwapsUsed: isFree ? [...used, freeFrozenId] : used };
@@ -282,7 +294,7 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       [order[last.i], order[last.j]] = [order[last.j], order[last.i]];
       const frostSwapsUsed = last.free ? (state.frostSwapsUsed || []).filter((id) => id !== last.frozenId) : (state.frostSwapsUsed || []);
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || []),
                formationEnergy: last.free ? state.formationEnergy : state.formationEnergy + 1, formationSwaps: swaps, frostSwapsUsed };
     }
     // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie + freie Frosttausche zurück.
@@ -291,7 +303,7 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       const swaps = state.formationSwaps || [];
       for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || []),
                formationEnergy: C.FORMATION_ENERGY + (state.perks || []).reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0),
                formationSwaps: [], frostSwapsUsed: [] };
     }

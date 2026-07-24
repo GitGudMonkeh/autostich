@@ -8,7 +8,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
-import { coinsPerCycle, buildShopOffer, SHOP_ITEM_DEFS } from "./shop.js";
+import { coinsPerCycle, buildShopOffer, SHOP_ITEM_DEFS, anchorTypeAt } from "./shop.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -71,10 +71,13 @@ export function resolveTrick(state, rng = Math.random) {
   // Formationen (V2 §22.7): zu Durchlauf-Beginn (pos 0) aus der persistenten Reihenfolge + Dauerwerten
   // berechnet und für den ganzen Durchlauf stabil gehalten. Greifen bei Sieg der jeweiligen Karte.
   let formations = state.formations || [];
-  if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks, skills);
+  const anchors = (shop && shop.anchors) || []; // Shop-Positionsanker (§8) — an der Deckposition
+  if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors);
   const posForm = formations[pos] || { mult: 1, formations: [] };
   const formationMult = posForm.mult || 1;
   const hasFormation = positionHasFormation(posForm);
+  // Anker-Typ auf DIESER Position (max 1 je Position) → A1 Kraft / A2 Punkte / A3 Krit / A4 Serie.
+  const anchorType = anchorTypeAt(anchors, pos);
   // Dauerwert des direkten Vorgängers in der Reihenfolge (B10 Überzahl); an Position 0 keiner.
   const predValue = pos > 0 ? deck[playerOrder[pos - 1]].value : null;
 
@@ -137,7 +140,8 @@ export function resolveTrick(state, rng = Math.random) {
   }
   // ---- Eis (#93 F3): temp. Wertbonus (Kältereserve/Kaltfront/Frostspur, an card.id) + Permafrost +2 (Dauerwert eingefroren).
   const iceValueBonus = (iceTemp[pCard.id] || 0) + (hasPermafrost(skills) && pCard.frozen ? C.PERMAFROST_VALUE : 0);
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + relayBonus + l11Bonus + fireValueBonus + iceValueBonus;
+  const anchorPowerBonus = anchorType === "power" ? C.ANCHOR_POWER_VALUE : 0; // Kraftanker (§8 A1)
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + relayBonus + l11Bonus + fireValueBonus + iceValueBonus + anchorPowerBonus;
   // L11: den temporären Wertbonus dieser Karte an Position 20 für Position 40 merken.
   let newPos20Bonus = pos20Bonus;
   if (pos === 19) newPos20Bonus = pValue - pCard.value;
@@ -206,7 +210,8 @@ export function resolveTrick(state, rng = Math.random) {
     // Blitz-Crit-Basis (Abschnitt 2a) wird additiv zugerechnet, unabhängig von L5-critChanceMult.
     // Crit-Chance-Stat (V2 §22.3) fließt additiv in die Roh-Chance (mit Perk-/Blitz-Basis); ungeklemmt (Überschusskrit).
     // Roh-Crit-Chance (ungeklemmt): Perk-/Blitz-Basis + Crit-Chance-Stat. D-Crit-Flats sehen rawCrit (critCtx).
-    const rawCrit = critChanceRawFor(perks, wctx) + lightningCritRaw(lightning, skills) + statCritChance;
+    const rawCrit = critChanceRawFor(perks, wctx) + lightningCritRaw(lightning, skills) + statCritChance
+                    + (anchorType === "crit" ? C.ANCHOR_CRIT_CHANCE : 0); // Kritanker (§8 A3)
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     critMultiplier = critMultiplierFor(perks, wctx, statCritMult) + lightningCritMult(skills); // Basis 1,5 + Crit-Mult-Stat + Donnergott (#93 F2)
     isCrit = rollCrit(critChance, forceCrit, rng); // forceCrit = L10-Kettenreaktion (garantierter Nachfolger-Crit)
@@ -226,7 +231,8 @@ export function resolveTrick(state, rng = Math.random) {
     const dischargeFlat = (isCrit && dischargeArmedBefore) ? C.DISCHARGE_SCORE : 0;
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
                       + (isCrit ? sumHook(perks, "scoreFlatOnCrit", critCtx) + skillSum(skills, "scoreFlatOnCrit", critCtx) : 0)
-                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat + dischargeFlat + iceFlat;
+                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat + dischargeFlat + iceFlat
+                      + (anchorType === "score" ? C.ANCHOR_SCORE : 0); // Punkteanker (§8 A2)
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
     // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
@@ -320,6 +326,8 @@ export function resolveTrick(state, rng = Math.random) {
     if (isRole("C2")) triumphArmed = [...triumphArmed, pCard.id];
     // L8 Schicksalsmaschine: Erfolge je Karte diesen Durchlauf (für den Wert-Tausch am Durchlauf-Ende).
     if (ownsFlag(perks, "swapExtremes")) l8Wins = { ...l8Wins, [pCard.id]: (l8Wins[pCard.id] || 0) + 1 };
+    // Serienanker (§8 A4): Sieg auf einer Serienanker-Position gibt +1 Serienpunkt — NACH der Wertung dieses Siegs.
+    if (anchorType === "streak") { winStreak += 1; if (winStreak > bestStreak) bestStreak = winStreak; }
     lastResult = "win";
   } else if (lost) {
     losses += 1;
