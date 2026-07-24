@@ -71,7 +71,7 @@ function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign) {
   }
 }
 
-// Wechsel (Zick-Zack): jede Nachbardifferenz ≥6 UND Richtungswechsel. Mindestlänge minLen (E5: 2 statt 3).
+// Wechsel (Zick-Zack): jede Nachbardifferenz ≥4 UND Richtungswechsel. Mindestlänge minLen (E5: 2 statt 3).
 function markWechsel(val, n, minLen, canExtendSeg, assign) {
   let i = 0;
   while (i < n) {

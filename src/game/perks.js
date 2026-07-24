@@ -254,7 +254,7 @@ export const PERK_DEFS = {
   E4: { id: "E4", cat: "E", label: "Großer Schritt",
         desc: "Eine Treppe darf einmal einen Rückschritt enthalten." },
   E5: { id: "E5", cat: "E", label: "Pendelwerk",
-        desc: "Ein Wechsel löst bereits ab zwei Karten aus (Differenz weiterhin ≥6)." },
+        desc: "Ein Wechsel löst bereits ab zwei Karten aus (Differenz weiterhin ≥4)." },
 
   // ---- Legendär (#33): mächtig, aber mit Nachteil. rarity "legendary" → Gewicht 8 & Level-Gate ≥5
   //      (buildOffer). Nutzen bestehende Kategorien (A–E) plus die neuen Legendär-Hooks oben. ----
