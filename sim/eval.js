@@ -31,7 +31,8 @@ function meanStd(xs) {
 }
 
 // Rein: liefert Priority-Build + Full-Score-Verteilung + Marginalwerte. Deterministisch (Seed-Sequenz).
-export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, topK = 6, c = 1.4 } = {}) {
+// env = { solveFormations, buyShop } geht identisch in full UND ablatierte Policy (faire gepaarte Umgebung).
+export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, topK = 6, c = 1.4, env = {} } = {}) {
   // 1) EXPLORE → Priority-Build (bestes mean je id über die Buckets, nur ausreichend gesampelt).
   const mem = newMemory();
   const explorePol = ucbPolicy({ c });
@@ -49,12 +50,12 @@ export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, top
 
   // 2) EVAL auf frischen, disjunkten Seeds. full einmal, dann je Top-K-Option gepaart ablatieren.
   const evalSeed0 = seed0 + exploreRuns;
-  const full = fixedPolicy(priority);
+  const full = fixedPolicy(priority, { ...env });
   const fullScores = [];
   for (let i = 0; i < evalRuns; i++) fullScores.push(runOne(evalSeed0 + i, full).score);
 
   const marginals = ranked.slice(0, topK).map((t) => {
-    const abl = fixedPolicy(priority, { drop: t.id });
+    const abl = fixedPolicy(priority, { ...env, drop: t.id });
     const deltas = [];
     for (let i = 0; i < evalRuns; i++) deltas.push(fullScores[i] - runOne(evalSeed0 + i, abl).score);
     return { id: t.id, kind: t.kind, exploreMean: t.mean, exploreN: t.n, marginal: meanStd(deltas) };
@@ -72,6 +73,7 @@ export function runEval({ arg, seed0, c, f, write }) {
     evalRuns: Number(arg("--runs", 300)),
     topK: Number(arg("--ablate", 6)),
     c,
+    env: { solveFormations: arg("--formations", "0") === "1", buyShop: arg("--shop", "0") === "1" },
   });
   console.log(`sim 'eval': explore ${res.exploreRuns} (seeds ${seed0}..${seed0 + res.exploreRuns - 1}), eval ${res.evalRuns} (seeds ${res.evalSeed0}..${res.evalSeed0 + res.evalRuns - 1}), c=${c}`);
   console.log(`  fixed(priority) full-score: median ${f(res.fullScore.p50)}  mean ${f(res.fullScore.mean)}  p90 ${f(res.fullScore.p90)}`);

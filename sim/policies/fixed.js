@@ -5,9 +5,15 @@
 // Deterministisch: bei fehlender Priorität greift ein fester Fallback (erste zulässige Option), damit
 // zwei Läufe mit demselben Seed nur an der ablatierten Stelle divergieren.
 import { randomPolicy, canAddSkill } from "./random.js";
+import { greedyFormationStep } from "../formation.js";
+import { shopStep, shopTargetStep } from "../shop-policy.js";
 
-export function fixedPolicy(priority, { drop = null } = {}) {
-  const base = randomPolicy(); // target/formation/shop/shop-target unverändert
+// solveFormations/buyShop: realistischeres Starkspiel (Formations-Solver + Shop-Käufe). Default AUS:
+// der Formations-Solver ist O(n²)·computeFormations je Formationsphase und für Massenläufe zu teuer
+// (~0,3 s/Run statt ~ms). Opt-in via Batch-Flags (--formations/--shop) für fokussierte, kleinere Läufe.
+// Bei Ablation MÜSSEN full und dropped dieselben Opts nutzen (faire, gepaarte Umgebung).
+export function fixedPolicy(priority, { drop = null, solveFormations = false, buyShop = false } = {}) {
+  const base = randomPolicy();
   const rank = new Map(priority.map((id, i) => [id, i]));
   const bestOf = (ids) => {
     let best = null, bestR = Infinity;
@@ -38,6 +44,12 @@ export function fixedPolicy(priority, { drop = null } = {}) {
           }
           return { type: "RESOLVE_TRICK", rng };
         }
+        case "formation":
+          return solveFormations ? greedyFormationStep(s) : base.act(s, rng);
+        case "shop":
+          return buyShop ? shopStep(s, rng) : base.act(s, rng);
+        case "shop-target":
+          return buyShop ? shopTargetStep(s) : base.act(s, rng);
         default:
           return base.act(s, rng);
       }

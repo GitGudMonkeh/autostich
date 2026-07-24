@@ -1,6 +1,6 @@
 # Autostich — Simulations-Harness (Balancing) · Empfehlung / Entwurf
 
-**Status:** **S0 umgesetzt** auf Branch `test/sim` (Skelett + Random-Baseline + Determinismus-Test, `npm run sim`). S1+ noch offen; ein Issue wird daraus geschnitten. Ursprünglich vor dem Shop-System (#107) verfasst — §2/§3/§5/§8/§10 sind auf den aktuellen Build (44 Durchläufe, Shop-Phase, Münzökonomie) nachgezogen.
+**Status:** **S0–S4 + Balance-Guard umgesetzt** auf Branch `test/sim` (eigenes Worktree `../autostich-sim`, auf die aktuelle Balance `Autostich_Test`@3d00602 rebased). `npm run sim -- --mode baseline|explore|eval`. Offen: S5-Ressourcen-Metriken, Shop-Items in die UCB-Rangliste, CSV/HTML-Report. Ursprünglich vor dem Shop-System (#107) verfasst — durchgehend auf den aktuellen Build (44 Durchläufe, Shop-Phase, Münzökonomie) nachgezogen.
 **Zweck:** Grundlage, aus der ein Issue auf `Autostich_Test` geschnitten wird; zugleich Referenz für den bereits laufenden S0-Harness.
 **Autor-Hinweis:** Dies ist eine *opinionierte Empfehlung* (bewusste Vorentscheidungen), keine Optionssammlung. Offene Punkte stehen gesammelt am Ende (§11).
 
@@ -36,18 +36,22 @@ Eine headless Simulation, die den aktuellen (und künftigen) Build tausendfach d
 
 ```
 sim/
-  run.js          # ✅ runOne(seed, policy) → telemetry  (headless Treiber + finalize)
+  run.js          # ✅ runOne(seed, policy, mem?) → telemetry  (headless Treiber + finalize)
   policies/
-    random.js     # ✅ Baseline (navigiert ALLE Phasen inkl. shop)
-    ucb.js        # ⬜ Coverage+Stärke-Wähler   → Explore-Modus            (S2)
-    fixed.js      # ⬜ committeter Build         → Eval-Modus              (S3)
-  memory.js       # ⬜ Cross-Run-Banditenstatistik (arms: n, sum)         (S2)
-  metrics.js      # ✅ Per-Karte/-Effekt-Ledger aus dem lastTrick-Strom   (S1)
-  batch.js        # ✅ N Runs → Aggregat (Median/p90) + JSON; später Explore/Eval-Phasen
+    random.js     # ✅ Baseline (navigiert ALLE Phasen inkl. shop)             (S0)
+    ucb.js        # ✅ UCB1-Explore-Wähler (Archetyp-Bucket)                   (S2)
+    fixed.js      # ✅ prioritätsgetriebener Build + {drop}-Ablation           (S3)
+  memory.js       # ✅ Cross-Run-Bandit (arms n/sum, peek, log1p-Reward)       (S2)
+  metrics.js      # ✅ Per-Karte-Ledger aus dem lastTrick-Strom                (S1)
+  eval.js         # ✅ computeEval: Explore → Priority → gepaarte Ablation     (S3)
+  formation.js    # ✅ greedy Formations-Solver (Reducer-Orakel, rng-frei)     (S4, opt-in)
+  shop-policy.js  # ✅ Shop-Käufe inkl. Ziel-Items (canComplete-Guard)         (S4, opt-in)
+  batch.js        # ✅ --mode baseline|explore|eval → Report + JSON
   out/            # generierte JSON-Reports (gitignored)
+test/sim-*.test.js # ✅ Determinismus, Ledger-Invarianten, Explore/Eval, Solver/Shop, Balance-Guard
 ```
 
-**Umgesetzt (S0):** `sim/`-Ordner im Repo, importiert direkt aus `src/game/` (keine Kopie), läuft über `npm run sim -- --runs N --seed S --out …`. `runOne` ist bewusst schlank: `reducer(null, {type:"START_RUN", rng})`, dann in `play` `RESOLVE_TRICK`, sonst `policy.act(...)` — und bricht hart ab, falls eine Policy-Action keinen Fortschritt bringt (`next === state`), statt endlos zu drehen. Noch offen: der **Vitest-Balance-Guard** als Regressionsschutz (S-Guard).
+**Umgesetzt (S0):** `sim/`-Ordner im Repo, importiert direkt aus `src/game/` (keine Kopie), läuft über `npm run sim -- --runs N --seed S --out …`. `runOne` ist bewusst schlank: `reducer(null, {type:"START_RUN", rng})`, dann in `play` `RESOLVE_TRICK`, sonst `policy.act(...)` — und bricht hart ab, falls eine Policy-Action keinen Fortschritt bringt (`next === state`), statt endlos zu drehen. Ab S2 nimmt `runOne` ein optionales `mem` (Bandit) entgegen und bucht am Run-Ende den Score.
 
 ---
 
@@ -191,13 +195,13 @@ Alles aus `lastTrick`/`state`: Score · wins/losses/ties · crits · bestStreak 
 
 - [x] **S0 — Skelett:** `runOne` + Random-Policy (navigiert alle Phasen inkl. `shop`) + JSON-Output (`npm run sim`) gegen den aktuellen Build. Determinismus-Test grün (gleicher Seed → identische Telemetrie), Aggregat Median/p90. ✅ auf `test/sim`.
 - [x] **S1 — Telemetrie:** Per-Karte-Ledger aus dem `lastTrick`-Strom (`sim/metrics.js`), Cross-Run-Aggregation (`cardAgg`), `formationWinRate`, Build-Fingerprint als Bucket-Key. Ledger-Invarianten getestet (Σ Auftritte = Stiche, Σ wins/score = Run-Aggregate). ✅ auf `test/sim`. Effekt-Ledger (Perk-/Skill-Trigger, Ressourcen-Uptime) noch dünn — vertieft sich mit S5.
-- [ ] **S2 — Explore:** UCB-Policy + `memory` + Kontext-Buckets → Coverage-Report (untergesampelte Arme, Mean-Ranking).
-- [ ] **S3 — Eval:** Fixed-Policies + paarweise Ablation → Marginalwerte/CIs; Explore/Eval sauber getrennt. **Enthält jetzt die Shop-/Kaufpolitik** als eigene Build-Dimension (#107).
-- [ ] **S4 — Formations-Solver:** greedy vertiefen (der Teil, der mit Eis am kniffligsten wird).
-- [ ] **S5 — Mit #93 mitwachsen:** Feuer/Blitz-Rework/Eis-Policies + Ressourcen-Metriken, sobald die Archetypen stehen.
-- [ ] **Balance-Guard** als Vitest-Regressionsschutz.
+- [x] **S2 — Explore:** UCB1-Policy (`sim/policies/ucb.js`) + `memory` (`sim/memory.js`) + Archetyp-Bucket → `--mode explore`: Coverage + Mean-Ranking je stat/perk/skill (untergesampelte Arme n<5 markiert). Determinismus getestet. ✅ auf `test/sim`.
+- [x] **S3 — Eval:** `fixedPolicy` (`sim/policies/fixed.js`, prioritätsgetrieben + `{drop}`) + `computeEval` (`sim/eval.js`): Explore leitet Priority-Build ab, `--mode eval` urteilt per **gepaarter Ablation auf disjunkten Seeds** → Marginal ± 95%-CI. Getestet. ✅ Klarer Befund: `SK_FIRE_08` Δ ≈ +1 Mio (hochsignifikant), während der explore-Top-Arm `L2` marginal *n.s.* ist — Korrelation ≠ Beitrag, exakt wie §7.
+- [x] **S4 — Formations-Solver + Shop-Kaufpolitik:** greedy `SWAP_CARDS`-Solver (`sim/formation.js`, Reducer-Orakel, rng-frei) + Shop-Käufe inkl. Ziel-Items (`sim/shop-policy.js`, `canComplete`-Guard gegen Kauf→Abbruch-Schleifen). **Opt-in** in `fixedPolicy` (`--formations`/`--shop`), Default AUS wegen O(n²)-Kosten. Getestet (strikt verbessernder Tausch je Phase; voller Run terminiert). ✅
+- [~] **S5 — Mit #93 mitwachsen:** Feuer/Eis-Archetypen sind über die Archetyp-Buckets bereits abgedeckt (S2/S3 sehen sie); dedizierte Ressourcen-Metriken (Hitze/Ladungs-Uptime) + eigene Archetyp-Policies stehen noch aus.
+- [x] **Balance-Guard** (`test/sim-balance-guard.test.js`): Random-Policy, 40 feste Seeds → **Median UND Mean** im Band (Median gegen Heavy Tails robust, Mean fängt Tail-Runaway). ✅
 
-**Reihenfolge-Empfehlung:** S0 steht; S1–S3 lohnen sich **jetzt** gegen den bestehenden Build (Wert sofort, Harness reift). Die Shop-Kaufpolitik ist der größte neue Brocken gegenüber dem Ur-Entwurf (kam mit #107 dazu). S5 wächst mit #93 mit.
+**Reihenfolge-Empfehlung:** S0–S4 + Guard stehen auf `test/sim` (Worktree `../autostich-sim`, auf aktuelle Balance rebased). Offen: S5-Ressourcen-Metriken, Shop-Items in die UCB-Rangliste aufnehmen (aktuell nur stat/perk/skill), CSV/HTML-Report.
 
 ---
 
@@ -205,7 +209,7 @@ Alles aus `lastTrick`/`state`: Score · wins/losses/ties · crits · bestStreak 
 
 1. ~~**Ort/Form:** eigener `sim/`-Ordner + `npm run sim`.~~ ✅ **entschieden & umgesetzt in S0.**
 2. **Ausgabeformat:** S0 schreibt JSON. CSV / kleiner HTML-Markdown-Report noch offen — reicht JSON fürs erste?
-3. **Vitest-Balance-Guard:** ja/nein und wie strikt das Band. (S0 hat nur einen Determinismus-Test, keinen Score-Band-Guard.)
+3. ~~**Vitest-Balance-Guard:**~~ ✅ umgesetzt: Median- UND Mean-Band über 40 feste Seeds (`test/sim-balance-guard.test.js`). Bei absichtlicher Balance-Änderung neu zentrieren.
 4. **`normalize()`:** `log1p` (Empfehlung) vs. laufende Skala. (Erst ab S2 relevant.)
 5. **UCB-`c` & Explore-Seed-Zahl:** Startwerte (`c≈1.4`, z. B. 5–20k Seeds) — im Betrieb justieren.
 6. **Sim-only Offer-Injection** (Ceiling-Modus): jetzt einbauen oder später? (Empfehlung: später, erst wenn Coverage über Volumen nicht reicht.)
