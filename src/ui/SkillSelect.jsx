@@ -39,8 +39,9 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   // Ist der Blitz-Archetyp noch nicht aktiv, schaltet DIESER Skill ihn frei (Ladung + Crit-Sockel).
   const firstPick = !(state.lightning && state.lightning.active);
   // Angebot nach Archetyp gruppieren (feste Reihenfolge) — #93 F0: 2+2, aktuell nur Blitz.
+  // #118: defensiver Guard — ein bereits gehaltener Skill erscheint NIE als Angebots-Karte (selbst bei inkonsistentem State).
   const groups = ARCHETYPE_ORDER
-    .map((arch) => ({ arch, meta: ARCHETYPE_META[arch], ids: offer.filter((id) => archetypeOf(id) === arch) }))
+    .map((arch) => ({ arch, meta: ARCHETYPE_META[arch], ids: offer.filter((id) => archetypeOf(id) === arch && !skills.includes(id)) }))
     .filter((g) => g.ids.length);
   const hasBlitzOffer = offer.some((id) => archetypeOf(id) === "lightning");
   const hasFireOffer = offer.some((id) => archetypeOf(id) === "fire");
@@ -221,12 +222,13 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {held.length > 0 && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              {pending ? "Welchen Skill ersetzen?" : `Deine Skills — ${held.length}/${SKILL_SLOTS} · antippen für Beschreibung`}
+              {pending ? "Welchen Skill ersetzen?" : `Deine Skills — ${held.length}/${SKILL_SLOTS} · bereits gehalten · antippen für Beschreibung`}
             </div>
             <div className="flex flex-wrap gap-2">
-              {held.map((s) => {
-                const c = ac(s.id).color;
-                return pending ? (
+              {/* #118: gehaltene Skills NEUTRAL (grau) statt in Archetyp-Akzentfarbe — sonst wirken sie wie ein wählbares
+                  Angebot. Akzent-/Aktionsfarbe nur im „ersetzen"-Modus (pending). */}
+              {held.map((s) => (
+                pending ? (
                   <button key={s.id} onClick={() => onPick(pending, s.id)} title={s.desc}
                     className="text-xs px-2 py-1 rounded transition-all hover:brightness-125"
                     style={{ background: "#e0605a1f", color: "#e0605a", border: "1px solid #e0605a88" }}>
@@ -235,12 +237,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 ) : (
                   <button key={s.id} onClick={() => setOpenSkill(openSkill === s.id ? null : s.id)} title={s.desc}
                     className="text-xs px-2 py-1 rounded transition-all"
-                    style={{ background: openSkill === s.id ? `${c}33` : `${c}1a`, color: c,
-                             border: `1px solid ${openSkill === s.id ? c : c + "55"}` }}>
-                    {ac(s.id).icon} {s.name} <span className="opacity-60">{openSkill === s.id ? "▾" : "▸"}</span>
+                    style={{ background: openSkill === s.id ? "#2a2a33" : "#1c1c22", color: "#9a9aa4",
+                             border: `1px solid ${openSkill === s.id ? "#4a4a55" : "#33333e"}` }}>
+                    {ac(s.id).icon} {s.name} <span className="opacity-55">✓ gehalten</span> <span className="opacity-40">{openSkill === s.id ? "▾" : "▸"}</span>
                   </button>
-                );
-              })}
+                )
+              ))}
             </div>
             {!pending && openSkill && SKILL_DEFS[openSkill] && (
               <div className="text-[11px] mt-2 px-2 py-1 rounded leading-snug" style={{ background: `${ac(openSkill).color}14`, color: "#d8d0f0" }}>

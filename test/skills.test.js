@@ -100,6 +100,15 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
     for (let seed = 1; seed <= 40; seed++)
       expect(buildSkillOffer([], [], makeRng(seed), 6, 0.5).filter((id) => SKILL_DEFS[id].legendary).length).toBeLessThanOrEqual(1);
   });
+  it("bietet NIE einen gehaltenen Skill an und nie ein Duplikat (Invariante, #118)", () => {
+    for (const owned of [[], [LR], ALL.slice(0, 5), ALL.slice(0, 20)]) {
+      for (let seed = 1; seed <= 30; seed++) {
+        const off = buildSkillOffer(owned, ["lightning", "fire"], makeRng(seed), 6, 0.5);
+        expect(off.some((id) => owned.includes(id))).toBe(false); // nie ein gehaltener Skill
+        expect(new Set(off).size).toBe(off.length);               // nie ein Duplikat
+      }
+    }
+  });
 });
 
 describe("Ionisierung — Helfer (Stufe B)", () => {
