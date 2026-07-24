@@ -49,6 +49,9 @@ export const ANCHOR_SCORE       = 150;  // Punkteanker (A2): +Flat-Score bei Sie
 export const ANCHOR_CRIT_CHANCE = 0.15; // Kritanker (A3): +Crit-Chance (Prozentpunkte) für den Stich auf der Position
 export const ANCHOR_FORM_FACTOR = 1.25; // Formationsanker (A5): Position zählt als Anker ×1,25 (stapelt nicht mit E7/E8)
 
+// Shop-Formationsitems (Shop-Spec §9). [TUNING]
+export const FORMATION_CORE_FACTOR = 1.50; // Formationskern (F-L1): jede aktive Formation des gewählten Typs zusätzlich ×1,50
+
 // Formationsphase (V2 §22.8): Energie je Phase; jeder beliebige Tausch zweier Karten kostet 1. [TUNING]
 export const FORMATION_ENERGY = 4;
 // TRICKS_PER_CYCLE wird weiter unten aus der Deckgröße abgeleitet (SUIT_ORDER × RANKS, #34) — kein Drift.

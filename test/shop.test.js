@@ -571,3 +571,89 @@ describe("Shop-Formationsitems — F4/F5 (Shop-Spec §9)", () => {
     expect(isItemAvailable(SHOP_ITEM_DEFS.F5, allOpen, [])).toBe(false);
   });
 });
+
+describe("Shop-Formationsitem — F6 Nachhall (Shop-Spec §9)", () => {
+  it("die direkt folgende Karte erbt den Endfaktor als eigene Formation (bare Karte trägt sie)", () => {
+    const deck = seqDeck([20, 20, 19, 18, 17]); // Wiederholung [20,20] endet auf Pos 1, Rest fällt (keine weitere Formation)
+    const off = computeFormations(ord(5), deck);
+    expect(off[2].formations.some((f) => f.type === "nachhall")).toBe(false); // ohne F6 kein Nachhall
+    const on = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true });
+    const nh = on[2].formations.find((f) => f.type === "nachhall");
+    expect(nh).toBeTruthy();
+    expect(nh.factor).toBeCloseTo(1.30);       // wiederholungFactor(2)
+    expect(nh.sourceType).toBe("wiederholung"); // trägt Ursprungstyp mit (für F-L1)
+    expect(on[2].mult).toBeCloseTo(1.30);
+    expect(on[2].afterglowFactor).toBeCloseTo(1.30);
+    expect(on[3].formations.some((f) => f.type === "nachhall")).toBe(false); // kein Kaskadieren: Empfänger sendet nicht weiter
+  });
+  it("nimmt den höchsten Einzel-Endfaktor (Farbblock 1,30 vor Treppe 1,25)", () => {
+    const deck = [
+      { id: "a", suit: "R", value: 1 }, { id: "b", suit: "R", value: 2 }, { id: "c", suit: "R", value: 3 },
+      { id: "d", suit: "B", value: 20 }, { id: "e", suit: "G", value: 9 },
+    ]; // Pos 0–2: Farbblock UND Treppe, beide enden auf Pos 2
+    const on = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true });
+    const nh = on[3].formations.find((f) => f.type === "nachhall");
+    expect(nh.factor).toBeCloseTo(1.30);
+    expect(nh.sourceType).toBe("farbblock");
+  });
+  it("überschreitet Segmentgrenzen — Empfänger im nächsten Segment", () => {
+    const deck = seqDeck([30, 29, 28, 22, 22, 21, 20]); // Wiederholung [22,22] endet auf Pos 4 (Grenze 4|5)
+    const on = computeFormations(ord(7), deck, {}, [], [], [], { formationAfterglow: true });
+    const nh = on[5].formations.find((f) => f.type === "nachhall"); // Pos 5 = erstes Feld des Folgesegments
+    expect(nh && nh.factor).toBeCloseTo(1.30);
+  });
+  it("endet die Formation auf der letzten Position, gibt es keinen Empfänger", () => {
+    const deck = seqDeck([30, 29, 28, 27, 22, 22]); // Wiederholung [22,22] endet auf Pos 5 (= letzte Position)
+    const on = computeFormations(ord(6), deck, {}, [], [], [], { formationAfterglow: true });
+    expect(on.every((p) => !p.formations.some((f) => f.type === "nachhall"))).toBe(true);
+  });
+  it("Kauf F6 (kein Ziel): setzt formationAfterglow, ist nicht wiederholbar", () => {
+    const offer = { offerId: "o0", itemId: "F6", category: "formations", tier: "premium", price: 18, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
+    const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
+    expect(r.phase).toBe("shop");
+    expect(r.shop.coins).toBe(0);
+    expect(r.shop.permanentEffects.formationAfterglow).toBe(true);
+    expect(r.shop.boughtNonRepeatableIds).toEqual(["F6"]);
+  });
+});
+
+describe("Shop-Formationsitem — F-L1 Formationskern (Shop-Spec §9)", () => {
+  it("jede Position des gewählten Typs erhält zusätzlich ×1,50 als eigener Faktor", () => {
+    const deck = [
+      { id: "a", suit: "R", value: 30 }, { id: "b", suit: "R", value: 20 }, { id: "c", suit: "R", value: 10 }, { id: "d", suit: "B", value: 5 },
+    ]; // Farbblock [0,1,2] (fallende Werte → keine Treppe/Wechsel), Pos 3 andersfarbig
+    const off = computeFormations(ord(4), deck);
+    expect(off[2].coreFactor).toBe(1);
+    const on = computeFormations(ord(4), deck, {}, [], [], [], { formationCoreType: "farbblock" });
+    expect(on[0].coreFactor).toBeCloseTo(1.50); // Ordinal-1-Mitglied zählt auch als „Teil des Typs"
+    expect(on[2].coreFactor).toBeCloseTo(1.50);
+    expect(on[2].mult).toBeCloseTo(1.30 * 1.50);
+    expect(on[0].formations.some((f) => f.type === "formationskern")).toBe(true);
+    expect(on[3].coreFactor).toBe(1); // Pos 3 ist kein Farbblock → kein Kern
+  });
+  it("wird auch durch Nachhall des Ursprungstyps ausgelöst (nicht bei anderem Kern-Typ)", () => {
+    const deck = seqDeck([20, 20, 19, 18, 17]); // Nachhall auf Pos 2 trägt sourceType 'wiederholung'
+    const same = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true, formationCoreType: "wiederholung" });
+    expect(same[2].afterglowFactor).toBeCloseTo(1.30);
+    expect(same[2].coreFactor).toBeCloseTo(1.50);          // Nachhall(wiederholung) triggert Kern(wiederholung)
+    expect(same[2].mult).toBeCloseTo(1.30 * 1.50);
+    const other = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true, formationCoreType: "treppe" });
+    expect(other[2].coreFactor).toBe(1);                   // Nachhall ist wiederholung, Kern ist treppe → kein Trigger
+  });
+  it("Kauf F-L1: Formationstyp wählen → formationCoreType gesetzt (legendär + nicht wiederholbar)", () => {
+    const offer = { offerId: "o0", itemId: "F-L1", category: "formations", tier: "legendary", price: 30, legendary: true };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
+    expect(s.phase).toBe("shop-target");
+    expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s);                 // ohne Typ → unverändert
+    expect(reducer(s, { type: "SHOP_TARGET_FORMATION_TYPE", formationType: "bogus" })).toBe(s);   // ungültiger Typ → ignoriert
+    s = reducer(s, { type: "SHOP_TARGET_FORMATION_TYPE", formationType: "treppe" });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.phase).toBe("shop");
+    expect(r.shop.permanentEffects.formationCoreType).toBe("treppe");
+    expect(r.shop.coins).toBe(0);
+    expect(r.shop.boughtLegendaryIds).toEqual(["F-L1"]);
+    expect(r.shop.boughtNonRepeatableIds).toEqual(["F-L1"]);
+  });
+});

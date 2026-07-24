@@ -1,5 +1,5 @@
 import { suitColor, suitName, SUIT_ORDER } from "../game/constants.js";
-import { SEGMENT_SIZE } from "../game/formations.js";
+import { SEGMENT_SIZE, FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
 import { SHOP_ITEM_DEFS, SEGMENT_BOUNDARIES } from "../game/shop.js";
 import { useEscape } from "./useEscape.js";
 
@@ -8,7 +8,7 @@ const GOLD = "#d4a63a";
 /* Shop-Ziel-Auswahl (Shop-Spec §12.2) — öffnet nach dem Kauf eines Ziel-Items (Kartenitems S2).
    Karten wählen (Limit aus dem Item), optional je Karte eine neue Farbe, oder ein Segment (K-L1).
    Abbrechen lässt Angebot & Münzen unverändert; Bestätigen zieht erst dann den Preis ab (Reducer). */
-export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onColorPair, onBoundary, onConfirm, onCancel }) {
+export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onColorPair, onBoundary, onFormationType, onConfirm, onCancel }) {
   useEscape(onCancel);
   const st = state.shopTarget || {};
   const def = SHOP_ITEM_DEFS[st.itemId] || {};
@@ -30,7 +30,8 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
   const posDone = !spec.position || st.position != null;
   const pairDone = !spec.colorPair || pair.length === 2;
   const boundaryDone = !spec.boundary || st.boundary != null;
-  const ready = spec.colorPair ? pairDone : spec.boundary ? boundaryDone : spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
+  const ftDone = !spec.formationType || st.formationType != null;
+  const ready = spec.colorPair ? pairDone : spec.boundary ? boundaryDone : spec.formationType ? ftDone : spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
@@ -38,7 +39,7 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>Shop · {def.name}</div>
           <h2 className="text-xl font-bold mt-1">
-            {spec.colorPair ? "Wähle zwei Farben" : spec.boundary ? "Wähle eine Segmentgrenze" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
+            {spec.colorPair ? "Wähle zwei Farben" : spec.boundary ? "Wähle eine Segmentgrenze" : spec.formationType ? "Wähle einen Formationstyp" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
           </h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.description}</p>
         </div>
@@ -72,6 +73,23 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
                     style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : open ? "#5ab87a" : "#33333e"}`, opacity: open ? 0.5 : 1, cursor: open ? "not-allowed" : "pointer" }}>
                     <span className="font-bold">Grenze {b + 1}|{b + 2}</span>
                     {open && <span className="text-[11px] ml-2" style={{ color: "#5ab87a" }}>bereits offen</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : spec.formationType ? (
+          <div className="mt-4">
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Formationstyp wählen (jede Formation dieses Typs ×1,50)</div>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {FORMATION_TYPES.map((ft) => {
+                const active = st.formationType === ft;
+                return (
+                  <button key={ft} onClick={() => onFormationType(ft)}
+                    className="rounded-xl p-3 text-left transition-all font-bold"
+                    style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : "#33333e"}` }}>
+                    {FORMATION_TYPE_LABELS[ft]}
+                    {active && <span className="text-[11px] ml-2" style={{ color: GOLD }}>✓</span>}
                   </button>
                 );
               })}

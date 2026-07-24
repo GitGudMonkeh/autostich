@@ -3,7 +3,7 @@ import { PERK_DEFS, buildOffer } from "./perks.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
-import { computeFormations, SEGMENT_SIZE } from "./formations.js";
+import { computeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
@@ -87,7 +87,7 @@ export function reducer(state, action) {
       if (!def) return state;
       if (def.target) { // Ziel-Auswahl nötig (§12.2): in die shop-target-Phase; Münzen erst nach Bestätigung.
         return { ...state, phase: "shop-target",
-                 shopTarget: { offerId: offer.offerId, itemId: def.id, cards: [], colors: {}, segment: null, position: null, colorPair: [], boundary: null } };
+                 shopTarget: { offerId: offer.offerId, itemId: def.id, cards: [], colors: {}, segment: null, position: null, colorPair: [], boundary: null, formationType: null } };
       }
       // Sofort-Items (kein Ziel, z. B. Planung ab S5): Effekt anwenden, danach generische Münz-/Kauf-Buchhaltung.
       const patch = def.apply ? def.apply(state, null, action.rng) : {};
@@ -158,6 +158,12 @@ export function reducer(state, action) {
       if ((state.shop?.permanentEffects?.openSegmentBoundaries || []).includes(b)) return state; // schon offen
       return { ...state, shopTarget: { ...state.shopTarget, boundary: b } };
     }
+    case "SHOP_TARGET_FORMATION_TYPE": { // Formationskern (F-L1): einen der vier Basistypen wählen.
+      if (state.phase !== "shop-target" || !state.shopTarget) return state;
+      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
+      if (!def?.target?.formationType || !FORMATION_TYPES.includes(action.formationType)) return state;
+      return { ...state, shopTarget: { ...state.shopTarget, formationType: action.formationType } };
+    }
     case "SHOP_TARGET_CANCEL": // Abbrechen (§12.2): Angebot & Münzen unverändert → zurück in den Shop.
       return state.phase === "shop-target" ? { ...state, phase: "shop", shopTarget: null } : state;
     case "SHOP_TARGET_CONFIRM": {
@@ -176,7 +182,8 @@ export function reducer(state, action) {
       if (spec.position && (st.position == null || positionOccupied(shop.anchors, st.position))) return state; // freie Position
       if (spec.colorPair && (st.colorPair || []).length !== 2) return state;      // genau zwei Farben (F4)
       if (spec.boundary && st.boundary == null) return state;                     // eine Grenze (F5)
-      const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, position: st.position, colorPair: st.colorPair, boundary: st.boundary };
+      if (spec.formationType && st.formationType == null) return state;           // ein Formationstyp (F-L1)
+      const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, position: st.position, colorPair: st.colorPair, boundary: st.boundary, formationType: st.formationType };
       const patch = def.apply ? def.apply(state, target, action.rng) : {};
       const merged = { ...state, ...patch };
       const deck = patch.deck || state.deck;

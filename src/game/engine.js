@@ -249,12 +249,18 @@ export function resolveTrick(state, rng = Math.random) {
     const flats = scoreBase - C.SCORE_PER_WIN;                                         // additive Boni (Perk-/Crit-Flats, Ion, Storm, L5-Jackpot)
     const streakMult = streakBaseMult(serieStreak) * statStreakFactor(statStreakMult, serieStreak); // Serie (#39 + Serien-Stat)
     const perkMult = prodHook(perks, "scoreMult", wctx);                               // globale Perk-Multiplikatoren
-    const formMult = formationMult * statFormFactor(statFormMult, hasFormation);       // Formation (§22.7 + Formations-Stat)
-    scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult;
+    // Formation (§22.7) in drei benannte Faktoren (§13): Basis-Formationen×Formations-Stat, dann die Shop-Meta-Faktoren
+    // Nachhall (F6) und Formationskern (F-L1) je eigen. Produkt = formationMult × Stat (unverändert; Aufspaltung ist rein
+    // für die Ergebnis-Aufschlüsselung — Multiplikation ist kommutativ).
+    const afterglowMult = posForm.afterglowFactor || 1;                                // F6 Nachhall
+    const coreMult = posForm.coreFactor || 1;                                          // F-L1 Formationskern
+    const formBaseMult = (posForm.baseMult != null ? posForm.baseMult : formationMult); // echte Formationen (inkl. Überlappung)
+    const formMult = formBaseMult * statFormFactor(statFormMult, hasFormation);        // Formation (§22.7 + Formations-Stat)
+    scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult * afterglowMult * coreMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     critBonus = gained - scoreBeforeCrit;
     score += gained;
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, critMult: isCrit ? critMultiplier : 1, total: gained };
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz: Ladungsgewinn — bei Crit Basis +1 (aktiv) + Skill-Boni; bei Sieg OHNE Crit +1 via Statische Aufladung (#93 F2).

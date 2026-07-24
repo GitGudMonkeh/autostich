@@ -18,11 +18,14 @@
    E3 Treppe darf 1× gleich · E4 Treppe darf 1× Rückschritt · E5 Wechsel schon ab 2 Karten ·
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
-import { PERMAFROST_VALUE, EISANKER_FACTOR, CRYSTAL_OFFSET, ANCHOR_FORM_FACTOR } from "./constants.js";
+import { PERMAFROST_VALUE, EISANKER_FACTOR, CRYSTAL_OFFSET, ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR } from "./constants.js";
 import { iceFlag, hasPermafrost, hasIceAnchor } from "./skills.js";
 
 export const SEGMENT_SIZE = 5;
 const WECHSEL_MIN_DIFF = 4;
+// Die vier Basis-Formationstypen (ohne Anker) — Zielauswahl F-L1 Formationskern + Anzeige-Labels.
+export const FORMATION_TYPES = ["wiederholung", "farbblock", "treppe", "wechsel"];
+export const FORMATION_TYPE_LABELS = { wiederholung: "Wiederholung", farbblock: "Farbblock", treppe: "Treppe", wechsel: "Wechsel" };
 
 function wiederholungFactor(ordinal, secondBonus = 0) {
   if (ordinal <= 1) return 1;
@@ -40,7 +43,7 @@ const FARBBLOCK_BASE = 1.30, TREPPE_BASE = 1.25, WECHSEL_BASE = 1.25, ANKER_FACT
 // Maximale Läufe über eine Paar-Bedingung, mit optional EINER erlaubten fremden Karte dazwischen (E1/E2).
 // `matches(refPos, k)` prüft, ob Position k zur Formation von refPos gehört. Fremde Karten sind keine Mitglieder.
 // `transparent(k)` (Eis-Frostbrücke): Position k unterbricht den Lauf nicht und zählt selbst NICHT als Mitglied.
-function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign, transparent = () => false) {
+function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign, transparent = () => false, onRunEnd = null) {
   let i = 0;
   while (i < n) {
     if (transparent(i)) { i++; continue; }        // transparente Karte startet keinen eigenen Lauf
@@ -53,7 +56,10 @@ function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign, transp
         gapUsed = true; j += 2; members.push(j); // fremde Karte an j+1 überspringen
       } else break;
     }
-    if (members.length >= minMembers) members.forEach((pos, idx) => assign(pos, idx + 1));
+    if (members.length >= minMembers) {
+      members.forEach((pos, idx) => assign(pos, idx + 1));
+      if (onRunEnd) onRunEnd(members[members.length - 1], members.length); // F6 Nachhall: letztes Mitglied + Ordinal
+    }
     i = j + 1;
   }
 }
@@ -61,7 +67,7 @@ function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign, transp
 // Treppe: streng monoton (mit Bindeglied-Flex ±1), kein Min-/Max-Schritt. `dir` = +1 steigend, −1 fallend
 // (Shop F1 „Abstieg" läuft zusätzlich fallend). E3 erlaubt 1× gleich, E4 erlaubt 1× Gegenrichtung,
 // E6 lässt die letzte Karte einen neuen Lauf beginnen.
-function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign, dir = 1) {
+function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign, dir = 1, onRunEnd = null) {
   let i = 0;
   while (i < n) {
     const members = [i];
@@ -76,7 +82,10 @@ function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign, dir = 1) {
         softUsed = true; j++; members.push(j);
       } else break;
     }
-    if (members.length >= 3) members.forEach((pos, idx) => assign(pos, idx + 1));
+    if (members.length >= 3) {
+      members.forEach((pos, idx) => assign(pos, idx + 1));
+      if (onRunEnd) onRunEnd(members[members.length - 1], members.length); // F6 Nachhall
+    }
     i = (e6 && j > i) ? j : j + 1;
   }
 }
@@ -97,7 +106,7 @@ function pickWechselValue(cands, cur, need, minDiff = WECHSEL_MIN_DIFF) {
 
 // Wechsel (Zick-Zack): jede Nachbardifferenz ≥4 UND Richtungswechsel. Mindestlänge minLen (E5: 2 statt 3).
 // `valSets[k]` = Kandidatenwerte je Karte (Kristallform: ±1 auf eingefrorenen Karten; sonst Singleton).
-function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WECHSEL_MIN_DIFF) {
+function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WECHSEL_MIN_DIFF, onRunEnd = null) {
   let i = 0;
   while (i < n) {
     let curVal = val[i], j = i, prevDir = 0;
@@ -106,7 +115,10 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
       if (!pick) break;
       curVal = pick.val; prevDir = pick.dir; j++;
     }
-    if (j - i + 1 >= minLen) for (let k = i; k <= j; k++) assign(k, k - i + 1);
+    if (j - i + 1 >= minLen) {
+      for (let k = i; k <= j; k++) assign(k, k - i + 1);
+      if (onRunEnd) onRunEnd(j, j - i + 1); // F6 Nachhall: letztes Mitglied j + Ordinal
+    }
     // Gleichgerichteter großer Schritt (rohe Werte) → diese Karte kann neu beginnen.
     i = (j < n - 1 && j > i && Math.abs(val[j + 1] - val[j]) >= minDiff && canExtendSeg(j)) ? j : j + 1;
   }
@@ -150,10 +162,16 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const openBoundaries = new Set(pe.openSegmentBoundaries || []); // Shop F5: einzeln geöffnete Segmentgrenzen (Position k mit (k+1)%5==0)
   const canExtendSeg = (k) => crossSeg || ((k + 1) % SEGMENT_SIZE !== 0) || openBoundaries.has(k);
 
-  const out = Array.from({ length: n }, () => ({ mult: 1, formations: [] }));
+  const out = Array.from({ length: n }, () => ({ mult: 1, baseMult: 1, afterglowFactor: 1, coreFactor: 1, formations: [] }));
   const add = (pos, type, ordinal, factor) => {
     if (factor > 1) out[pos].mult *= factor;
     out[pos].formations.push({ type, ordinal, factor });
+  };
+  // F6 Nachhall: bester (höchster) Endfaktor je Endposition eines Basislaufs (Wiederholung/Farbblock/Treppe/Wechsel).
+  // Der Empfänger ist die direkt folgende Karte; Anker zählen NICHT als Ursprung.
+  const endBest = {}; // pos(letztes Mitglied) → { factor, type }
+  const recordEnd = (pos, type, factor) => {
+    if (factor > 1 && (!endBest[pos] || factor > endBest[pos].factor)) endBest[pos] = { factor, type };
   };
 
   // Wiederholung: Wert-Mengen je Karte (Kristallform ±1, Kalte Präzision = Vorgängerwert); Permafrost-Joker matcht alles.
@@ -166,21 +184,25 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const jokerAll = frozen.map((f) => f && permafrost); // Permafrost: Joker für Wiederholung UND Farbblock
   const matchWied = (a, b) => jokerAll[a] || jokerAll[b] || [...valSetWied[a]].some((v) => valSetWied[b].has(v));
   markRuns(n, 2, matchWied, has("E1"), canExtendSeg,
-    (pos, ord) => add(pos, "wiederholung", ord, wiederholungFactor(ord, repBonus)));
+    (pos, ord) => add(pos, "wiederholung", ord, wiederholungFactor(ord, repBonus)), () => false,
+    (last, ord) => recordEnd(last, "wiederholung", wiederholungFactor(ord, repBonus)));
 
   // Farbblock: Permafrost-Joker matcht jede Farbe; Frostbrücke macht eingefrorene Karten transparent (kein Mitglied).
   const matchSuit = (a, b) => jokerAll[a] || jokerAll[b] || effSuit[a] === effSuit[b];
   const farbSkip = (k) => frozen[k] && wildSkip && !jokerAll[k];
   markRuns(n, 3, matchSuit, has("E2"), canExtendSeg,
-    (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)), farbSkip);
+    (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)), farbSkip,
+    (last, ord) => recordEnd(last, "farbblock", escalatingFactor(ord, FARBBLOCK_BASE)));
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
-  markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg, treppeAssign, 1);
-  if (descending) markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg, treppeAssign, -1); // F1 Abstieg
+  const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));
+  markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg, treppeAssign, 1, treppeEnd);
+  if (descending) markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg, treppeAssign, -1, treppeEnd); // F1 Abstieg
   // Wechsel: Kristallform gibt eingefrorenen Karten ±1-Wertoptionen (Permafrost/Eisschritt gelten hier NICHT).
   const valSetWechsel = cards.map((c, k) => (frozen[k] && wildCrystal ? [val[k] - 1, val[k], val[k] + 1] : [val[k]]));
   markWechsel(val, valSetWechsel, n, has("E5") ? 2 : 3, canExtendSeg,
-    (pos, ord) => add(pos, "wechsel", ord, escalatingFactor(ord, WECHSEL_BASE)), wechselMinDiff);
+    (pos, ord) => add(pos, "wechsel", ord, escalatingFactor(ord, WECHSEL_BASE)), wechselMinDiff,
+    (last, ord) => recordEnd(last, "wechsel", escalatingFactor(ord, WECHSEL_BASE)));
 
   // Anker (E7: Position 10/20/30/40 · E8: Position 5/15/25/35) — je siegreicher Anker ×1,25, zählt als Formation.
   if (has("E7") || has("E8")) for (let pos = 0; pos < n; pos++) {
@@ -198,6 +220,40 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   for (const p of out) {
     const c = Math.min(p.formations.length, 4);
     if (c >= 2) p.mult *= OVERLAP_BONUS[c];
+  }
+
+  // baseMult = Beitrag der „echten" Formationen (inkl. Überlappung), OHNE die Meta-Faktoren
+  // Nachhall/Kern — die werden gleich als eigene Faktoren (§13) obendrauf gelegt und zählen NICHT
+  // in die Überlappung (kein Doppel-Dip).
+  for (const p of out) p.baseMult = p.mult;
+
+  // F6 Nachhall (Shop §9): endet ein Basislauf auf Position p, bekommt die DIREKT folgende Karte (p+1)
+  // dessen stärksten Einzel-Endfaktor als eigene Formation. Segmentgrenzen blocken NICHT (kein canExtendSeg-
+  // Check); endet der Lauf auf der letzten Position (p+1 existiert nicht), passiert nichts. Kein Kaskadieren:
+  // Nachhall entsteht nur aus Basisläufen (endBest), nie aus einem anderen Nachhall/Kern. Trägt den Ursprungstyp
+  // mit (sourceType) — F-L1 kann daran andocken.
+  if (pe.formationAfterglow) {
+    for (const key in endBest) {
+      const p = Number(key), r = p + 1;
+      if (r >= n) continue;                 // Formation endet auf der letzten Position → kein Empfänger
+      const { factor, type } = endBest[p];
+      out[r].afterglowFactor *= factor;
+      out[r].mult *= factor;
+      out[r].formations.push({ type: "nachhall", ordinal: 1, factor, sourceType: type });
+    }
+  }
+
+  // F-L1 Formationskern (Shop §9): jede Position, die Teil einer aktiven Formation des gewählten Typs ist
+  // (eigener Basislauf des Typs ODER ein Nachhall dieses Ursprungstyps), bekommt zusätzlich ×FORMATION_CORE_FACTOR
+  // als eigenen Faktor (§13). Als Meta-Faktor NACH der Überlappung, zählt nicht in deren Anzahl.
+  const coreType = pe.formationCoreType || null;
+  if (coreType) for (const p of out) {
+    const partOfType = p.formations.some((f) => f.type === coreType || (f.type === "nachhall" && f.sourceType === coreType));
+    if (partOfType) {
+      p.coreFactor *= FORMATION_CORE_FACTOR;
+      p.mult *= FORMATION_CORE_FACTOR;
+      p.formations.push({ type: "formationskern", ordinal: 1, factor: FORMATION_CORE_FACTOR });
+    }
   }
 
   return out;

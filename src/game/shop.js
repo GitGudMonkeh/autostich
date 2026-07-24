@@ -137,6 +137,13 @@ export const SHOP_ITEM_DEFS = {
         // Nur anbieten, solange E9 nicht alle Grenzen global öffnet UND noch eine Grenze geschlossen ist (§15).
         available: (shop, perks) => !(perks || []).includes("E9") && ((shop.permanentEffects?.openSegmentBoundaries || []).length < SEGMENT_BOUNDARIES.length),
         apply: (s, t) => ({ shop: setPE(s.shop, { openSegmentBoundaries: [...(s.shop.permanentEffects?.openSegmentBoundaries || []), t.boundary] }) }) },
+  F6: { id: "F6", category: "formations", name: "Nachhall", tier: "premium", repeatable: false,
+        description: "Endet eine Formation, erhält die direkt folgende Karte deren stärksten Einzelfaktor als eigene Formation (überschreitet Segmentgrenzen).",
+        apply: (s) => ({ shop: setPE(s.shop, { formationAfterglow: true }) }) },
+  "F-L1": { id: "F-L1", category: "formations", name: "Formationskern", tier: "legendary", legendary: true, repeatable: false,
+        targetMode: "formation-type", target: { formationType: true },
+        description: "Wähle einen Formationstyp. Jede aktive Formation dieses Typs (inkl. Nachhall) erhält zusätzlich ×1,50.",
+        apply: (s, t) => ({ shop: setPE(s.shop, { formationCoreType: t.formationType }) }) },
 };
 
 /* ---- Zeitsegment (Shop-Spec §8 A-L1) — Spielreihenfolge der Positionen eines Durchlaufs. ---- */

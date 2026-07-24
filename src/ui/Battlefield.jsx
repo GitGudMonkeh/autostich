@@ -98,7 +98,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const critMultStr = t ? (Number.isInteger(t.critMultiplier) ? t.critMultiplier : Math.round(t.critMultiplier * 100) / 100) : 2;
 
   // Formations-Feedback (§17): benannte Formation + Multiplikator; Peak-Styling ab ×6 / ×12.
-  const FORM_NAME = { wiederholung: "WIEDERHOLUNG", farbblock: "FARBBLOCK", treppe: "TREPPE", wechsel: "WECHSEL", anker: "ANKER" };
+  const FORM_NAME = { wiederholung: "WIEDERHOLUNG", farbblock: "FARBBLOCK", treppe: "TREPPE", wechsel: "WECHSEL", anker: "ANKER", nachhall: "NACHHALL", formationskern: "KERN" };
   const formMult = t ? (t.formationMult || 1) : 1;
   const showFormation = win && t && formMult > 1.001;
   const activeForms = t ? (t.formations || []).filter((f) => f.factor > 1) : [];
@@ -117,10 +117,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     if (bd.streakMult > 1.001) chain.push({ main: `×${nq(bd.streakMult)}`, label: "Serie", c: "#5a8ade" });
     if (bd.perkMult > 1.001)   chain.push({ main: `×${nq(bd.perkMult)}`, label: "Perks", c: "#8a7de0" });
     if (bd.formMult > 1.001)   chain.push({ main: `×${nq(bd.formMult)}`, label: "Form", c: "#5ab87a" });
+    if ((bd.afterglowMult || 1) > 1.001) chain.push({ main: `×${nq(bd.afterglowMult)}`, label: "Nachhall", c: "#5ab87a" });
+    if ((bd.coreMult || 1) > 1.001)      chain.push({ main: `×${nq(bd.coreMult)}`, label: "Kern", c: "#d4a63a" });
     if (bd.critMult > 1.001)   chain.push({ main: `×${nq(bd.critMult)}`, label: "Crit", c: critColor });
   }
   // Panel nur zeigen, wenn mehr als eine kleine Serie im Spiel ist (Flats/Perks/Formation/Crit oder Serie ≥ +10 %).
-  const showBreakdown = !!bd && (bd.flats > 0.5 || bd.perkMult > 1.001 || bd.formMult > 1.001 || bd.critMult > 1.001 || bd.streakMult >= 1.10);
+  const showBreakdown = !!bd && (bd.flats > 0.5 || bd.perkMult > 1.001 || bd.formMult > 1.001 || (bd.afterglowMult || 1) > 1.001 || (bd.coreMult || 1) > 1.001 || bd.critMult > 1.001 || bd.streakMult >= 1.10);
 
   // #49: aufsteigende Zahlen (Score-Gewinn & Lebensverlust) ~1 s länger + Überlappen erlaubt.
   // Statt eines je Stich ersetzten Einzel-Elements ein kleiner Pool — jeder Float lebt unabhängig
