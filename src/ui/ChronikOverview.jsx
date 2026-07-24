@@ -79,9 +79,14 @@ export function ChronikOverview({ state, onClose }) {
           <LayoutPerks perks={state.perks} />
         </div>
 
-        <div className="text-[10px] opacity-45 mt-2 flex flex-wrap gap-x-3">
-          <span>W Wiederholung</span><span>F Farbblock</span><span>T Treppe</span><span>Z Wechsel</span><span>A Anker</span><span style={{ color: "#d4a63a" }}>● Rolle</span>
-          <span>Rahmenfarbe = Anzahl Formationen (<span style={{ color: "#5ab87a" }}>1</span>·<span style={{ color: "#5a8ade" }}>2</span>·<span style={{ color: "#8a7de0" }}>3</span>·<span style={{ color: "#d4a63a" }}>4</span>) · gestrichelt = ohne ×</span>
+        <div className="text-[11px] mt-2 flex flex-wrap gap-x-3 gap-y-0.5 font-medium">
+          <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>W</b> Wiederholung</span>
+          <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>F</b> Farbblock</span>
+          <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>T</b> Treppe</span>
+          <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>Z</b> Wechsel</span>
+          <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>A</b> Anker</span>
+          <span style={{ color: "#d4a63a" }}>● Rolle</span>
+          <span style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<span style={{ color: "#5ab87a" }}>1</span>·<span style={{ color: "#5a8ade" }}>2</span>·<span style={{ color: "#8a7de0" }}>3</span>·<span style={{ color: "#d4a63a" }}>4</span>) · gestrichelt = ohne ×</span>
         </div>
       </div>
     </div>

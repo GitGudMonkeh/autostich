@@ -110,14 +110,14 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           <LayoutPerks perks={state.perks} />
         </div>
 
-        {/* Kurz-Erklärung der Formationen mit Kürzel (#95.7) */}
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-[10px] opacity-60">
-          <div><b className="opacity-100">W</b> Wiederholung — ≥2 gleiche Werte (×1,30 → ×2,00)</div>
-          <div><b className="opacity-100">F</b> Farbblock — ≥3 gleiche Farbe (ab ×1,30)</div>
-          <div><b className="opacity-100">T</b> Treppe — ≥3 streng steigend (ab ×1,25)</div>
-          <div><b className="opacity-100">Z</b> Wechsel — ≥3 Zick-Zack, Diff ≥6 (ab ×1,25)</div>
-          <div><b className="opacity-100">A</b> Anker — Einzelposition ×1,25</div>
-          <div>Rahmenfarbe = Anzahl Formationen (<span style={{ color: "#5ab87a" }}>1</span>·<span style={{ color: "#5a8ade" }}>2</span>·<span style={{ color: "#8a7de0" }}>3</span>·<span style={{ color: "#d4a63a" }}>4</span>) · gestrichelt = ohne Multiplikator</div>
+        {/* Kurz-Erklärung der Formationen mit Kürzel (#95.7) — grün & gut lesbar */}
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] leading-snug font-medium" style={{ color: "#6fc48f" }}>
+          <div><b style={{ color: "#8be0a8" }}>W</b> Wiederholung — ≥2 gleiche Werte (×1,30 → ×2,00)</div>
+          <div><b style={{ color: "#8be0a8" }}>F</b> Farbblock — ≥3 gleiche Farbe (ab ×1,30)</div>
+          <div><b style={{ color: "#8be0a8" }}>T</b> Treppe — ≥3 streng steigend (ab ×1,25)</div>
+          <div><b style={{ color: "#8be0a8" }}>Z</b> Wechsel — ≥3 Zick-Zack, Diff ≥6 (ab ×1,25)</div>
+          <div><b style={{ color: "#8be0a8" }}>A</b> Anker — Einzelposition ×1,25</div>
+          <div style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<span style={{ color: "#5ab87a" }}>1</span>·<span style={{ color: "#5a8ade" }}>2</span>·<span style={{ color: "#8a7de0" }}>3</span>·<span style={{ color: "#d4a63a" }}>4</span>) · gestrichelt = ohne Multiplikator</div>
         </div>
 
         {/* Fußzeile */}
