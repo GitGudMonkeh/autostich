@@ -4,12 +4,12 @@ import { useEscape } from "./useEscape.js";
    Erreichbar über den Startbildschirm; beim allerersten Start einmal automatisch. */
 const ITEMS = [
   ["🃏", "Automatisches Stechspiel", "Beide Seiten decken je eine Karte auf — die höhere Karte gewinnt den Stich. Du spielst keine Karte selbst."],
-  ["⚔️", "Sieg · Niederlage · Gleichstand", "Sieg → +Score. Niederlage → −Leben. Gleichstand → nichts passiert."],
-  ["❤️", "Leben ist dein Timer", "Du startest mit 2000 Leben. Fällt es auf 0, endet der Lauf. Ziel ist ein möglichst hoher Score."],
-  ["✨", "Perk nach jeder Runde", "Schon zu Beginn und nach jedem Deck-Durchlauf pausiert das Spiel und du wählst einen Perk — dein Deck wird dauerhaft stärker."],
-  ["🔁", "Deck-Durchlauf", "Nach 40 Stichen wird neu gemischt. Deine dauerhaften Kartenwert-Änderungen bleiben erhalten."],
-  ["⏳", "Zeitdruck", "Mit jeder Runde kostet eine Niederlage mehr Leben. Baue so, dass du Niederlagen vermeidest — sonst fressen die steigenden Kosten dein Leben auf."],
-  ["⏯️", "Steuerung", "Auto-Play läuft von allein. Mit Pause hältst du an; das Ablauf-Tempo stellst du mit 2×/3×/4× ein (rein Anzeige, kein Score-Effekt)."],
+  ["🏆", "Ziel: maximaler Score", "Ein Lauf geht über genau 40 Deck-Durchläufe. Sammle so viel Score wie möglich; Bestscore und Geist laufen über den Score."],
+  ["⚔️", "Sieg · Niederlage · Gleichstand", "Sieg → +Score (× deine Multiplikatoren). Niederlage → kein Score, und die Siegesserie reißt. Gleichstand → nichts passiert."],
+  ["✨", "Entscheidung vor jedem Durchlauf", "Reihum wählst du einen Stat, einen Perk, die Deck-Aufstellung oder einen Skill — dein Build wird dauerhaft stärker."],
+  ["🧩", "Formationen & Aufstellung", "In der Formationsphase ordnest du dein Deck an: benachbarte Karten bilden Formationen (Wiederholung/Farbblock/Treppe/Wechsel) und geben bei Sieg Score-Multiplikatoren."],
+  ["🔁", "Deck-Durchlauf", "Ein Durchlauf = alle 40 Karten. Danach mischt nur der Gegner neu — deine Reihenfolge und deine dauerhaften Kartenwerte bleiben erhalten."],
+  ["⏯️", "Steuerung", "Auto-Play läuft von allein. Mit Pause hältst du an; das Ablauf-Tempo stellst du mit 2×/4×/6× ein (rein Anzeige, kein Score-Effekt)."],
 ];
 
 export function AnleitungModal({ onClose }) {
@@ -35,7 +35,7 @@ export function AnleitungModal({ onClose }) {
         </div>
 
         <div className="rounded-lg p-3 mt-3 text-sm text-center leading-snug" style={{ background: "#8a7de022", color: "#c9c0f0" }}>
-          Kernidee: Aus einem neutralen Karten-Autobattler baust du mit vielen kleinen Perk-Entscheidungen eine immer stärkere Maschine.
+          Kernidee: Aus einem neutralen Karten-Autobattler baust du mit vielen kleinen Entscheidungen (Stats, Perks, Aufstellung, Skills) eine immer stärkere Score-Maschine.
         </div>
 
         <button onClick={onClose} className="w-full mt-5 py-2.5 rounded-lg font-bold transition-all" style={{ background: "#5ab87a", color: "#141419" }}>
