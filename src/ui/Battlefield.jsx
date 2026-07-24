@@ -76,6 +76,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   // (Element bleibt statisch sichtbar statt zu Ende-Opacity 0 zu springen).
   const anim = clamp(flipMs * 0.5, 120, 450);
   const fx = (a) => (reduced ? undefined : a);
+  // #95: einheitliche Float-Dauer für Score- UND Formations-Float (letzterer war zuvor kürzer).
+  const floatDur = clamp(flipMs * 0.7, 360, 760) + 1300;
+  // #95: Float-Größe skaliert mit dem Gewinn — klein bleibt lesbar (20 px), groß gedeckelt (52 px).
+  const floatSize = (v) => Math.round(clamp(20 + 9 * Math.log10(Math.max(1, v) / 40), 20, 52));
 
   // Karten „dealen" nur noch rein — der zusätzliche Pop-Bounce der Gewinnerkarte ist
   // raus (Wunsch: ruhiger). Der Score-/Schaden-Float über der Karte bleibt erhalten.
@@ -134,12 +138,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     if (t.trickNo === seenTrick.current) return;
     seenTrick.current = t.trickNo;
     const w = t.result === "win" || t.result === "win_tie";
-    const dur = clamp(flipMs * 0.7, 360, 760) + 1300; // #68: nochmals länger nach oben (aufbauend auf #49)
+    const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
     const critC = t.isCrit ? (t.jackpot ? JACKPOT_COLOR : CRIT_COLOR) : "#d4a63a";
     const entries = [];
     // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
     if (w && t.gained > 0)
-      entries.push({ id: `s${t.trickNo}`, zone: "score", dur, seed: t.trickNo * 2,
+      entries.push({ id: `s${t.trickNo}`, zone: "score", dur, seed: t.trickNo * 2, value: t.gained,
                      text: `+${Math.round(t.gained * 10) / 10}`, color: critC });
     if (!entries.length) return;
     setFloats((cur) => [...cur, ...entries].slice(-6)); // Pool gedeckelt — kein unbegrenztes Stapeln
@@ -180,8 +184,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
           if (z.left != null)  pos.left  = `calc(${z.left} + ${dx}px)`;
           if (z.right != null) pos.right = `calc(${z.right} + ${dx}px)`;
           return (
-            <div key={f.id} className="pointer-events-none absolute text-3xl font-bold whitespace-nowrap"
-              style={{ ...pos, color: f.color, animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
+            <div key={f.id} className="pointer-events-none absolute font-bold whitespace-nowrap"
+              style={{ ...pos, color: f.color, fontSize: floatSize(f.value || 0), lineHeight: 1,
+                       animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
               {f.text}
             </div>
           );
@@ -194,7 +199,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
                      fontSize: formPeak === 2 ? 26 : formPeak === 1 ? 21 : 17,
                      color: formPeak ? "#d4a63a" : "#5ab87a",
                      textShadow: formPeak === 2 ? "0 0 16px #d4a63a" : formPeak === 1 ? "0 0 12px #d4a63aaa" : "0 0 10px #5ab87a88",
-                     animation: fx(`as-combo ${clamp(flipMs * 0.85, 360, 820)}ms ease-out forwards`) }}>
+                     animation: fx(`as-combo ${floatDur}ms ease-out forwards`) }}>
             {formPeak === 2 && "★ "}{formLabel} ×{formationStr}
           </div>
         )}

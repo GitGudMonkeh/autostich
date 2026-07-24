@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { suitColor } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { summarizeFormations, SEGMENT_SIZE } from "../game/formations.js";
+import { formationBorder } from "./formationStyle.js";
+import { CardDetail } from "./CardDetail.jsx";
 
 // Kurzkürzel der Formationstypen für die Karten-Badges.
 const FORM_LABEL = { wiederholung: "W", farbblock: "F", treppe: "T", wechsel: "Z", anker: "A" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
+// Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
+const strengthOf = (fs) => (fs || []).reduce((s, pf) => s + ((pf.mult || 1) - 1), 0);
 
 /* Formationsphase (V2 §22.8): pausiert den Run und öffnet die Deck-Aufstellung.
    Zwei Karten antippen = Tausch (1 Energie). Formationen werden nach jedem Tausch live neu berechnet
@@ -28,6 +32,14 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const cards = playerOrder.map((di) => deck[di]);
   const nSeg = Math.ceil(cards.length / SEGMENT_SIZE);
   const hasSwaps = (formationSwaps || []).length > 0;
+
+  // Reaktives Delta (#95.6): Σ Formations-Stärke jetzt vs. Ausgangszustand der Phase, live nach jedem Tausch.
+  const curStrength = strengthOf(formations);
+  const baseStrength = useRef(null);
+  if (baseStrength.current === null && formations.length) baseStrength.current = curStrength;
+  const delta = baseStrength.current === null ? 0 : curStrength - baseStrength.current;
+  const deltaColor = delta > 0.001 ? "#5ab87a" : delta < -0.001 ? "#e0605a" : "#8a8a92";
+  const deltaStr = `${delta >= 0 ? "+" : "−"}${fmt(Math.abs(delta))}`;
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
@@ -61,12 +73,17 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
                   const col = suitColor(c.suit);
                   const labels = [...new Set(pf.formations.map((f) => FORM_LABEL[f.type]))].join("");
                   const cardRoles = rolesByCard[c.id] || [];
+                  // #95.4/8: Rahmenfarbe nach Anzahl Formationen (1 grün·2 blau·3 lila·4 gold),
+                  // gestrichelt-grün = Mitglied ohne Multiplikator.
+                  const fb = formationBorder(pf);
+                  const borderColor = selected ? "#ffffff" : fb.color || col + "55";
+                  const borderStyle = fb.dashed && !selected ? "dashed" : "solid";
                   return (
                     <button key={pos} onClick={() => clickPos(pos)}
                       className="relative rounded-lg flex flex-col items-center justify-center transition-all"
                       style={{ aspectRatio: "3 / 4", background: "#20202a",
-                               border: `2px solid ${selected ? "#ffffff" : inForm ? "#5ab87a" : col + "55"}`,
-                               boxShadow: selected ? "0 0 10px #ffffff66" : inForm ? "0 0 8px #5ab87a55" : undefined }}>
+                               border: `2px ${borderStyle} ${borderColor}`,
+                               boxShadow: selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : undefined }}>
                       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
                       {(c.ionStacks || 0) > 0 && <span className="absolute top-0.5 right-1 text-[8px]" style={{ color: "#5ec8f0" }}>⚡{c.ionStacks}</span>}
                       <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
@@ -82,9 +99,19 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           ))}
         </div>
 
-        {/* Legende */}
-        <div className="text-[10px] opacity-45 mt-2 flex flex-wrap gap-x-3">
-          <span>W = Wiederholung</span><span>F = Farbblock</span><span>T = Treppe</span><span>Z = Wechsel</span>
+        {/* Detailanzeige der angetippten Karte (#95.5) */}
+        <div className="mt-3">
+          <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} />
+        </div>
+
+        {/* Kurz-Erklärung der Formationen mit Kürzel (#95.7) */}
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-[10px] opacity-60">
+          <div><b className="opacity-100">W</b> Wiederholung — ≥2 gleiche Werte (×1,30 → ×2,00)</div>
+          <div><b className="opacity-100">F</b> Farbblock — ≥3 gleiche Farbe (ab ×1,30)</div>
+          <div><b className="opacity-100">T</b> Treppe — ≥3 streng steigend (ab ×1,25)</div>
+          <div><b className="opacity-100">Z</b> Wechsel — ≥3 Zick-Zack, Diff ≥6 (ab ×1,25)</div>
+          <div><b className="opacity-100">A</b> Anker — Einzelposition ×1,25</div>
+          <div><span style={{ color: "#5ab87a" }}>▢</span> gestrichelt = Formation ohne Multiplikator · Rahmen 1 grün·2 blau·3 lila·4 gold</div>
         </div>
 
         {/* Fußzeile */}
@@ -95,11 +122,18 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
             <button onClick={onReset} disabled={!hasSwaps} className="px-3 py-2 rounded-lg text-sm"
               style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
           </div>
-          <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
-            style={{ background: "#5ab87a", color: "#0c0c10" }}>
-            Durchlauf starten
-            <span className="ml-2 font-normal opacity-80">· {formationEnergy} Energie · {count} Formationen · max ×{fmt(maxMult)}</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Reaktives Formations-Delta (#95.6) */}
+            <div className="text-xs text-right leading-tight">
+              <div className="opacity-45 text-[10px] uppercase tracking-wide">Formations-Stärke</div>
+              <div className="font-pixel-dense">Σ {fmt(curStrength)} <span style={{ color: deltaColor }}>({deltaStr})</span></div>
+            </div>
+            <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
+              style={{ background: "#5ab87a", color: "#0c0c10" }}>
+              Durchlauf starten
+              <span className="ml-2 font-normal opacity-80">· {count} Formationen · max ×{fmt(maxMult)}</span>
+            </button>
+          </div>
         </div>
         {formationEnergy > 0 && <div className="text-[10px] mt-1.5 text-right" style={{ color: "#d4a63a99" }}>Du hast noch {formationEnergy} Energie übrig.</div>}
       </div>

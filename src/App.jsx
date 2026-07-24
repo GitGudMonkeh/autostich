@@ -56,9 +56,15 @@ export function Autostich() {
   // Offenes Optionen-Overlay friert den Lauf ein (wie andere Overlays) — ohne den
   // Nutzer-Pause-Toggle zu verändern: beim Schließen läuft es im vorherigen Zustand weiter.
   const active = state.phase === "play" && !paused && !showOptions;
-  // Effektive Flip-Zeit: Basis / Turbo (1×/2×/3×/4×). V2 (§22.1): Tempo ist score-neutral — der
-  // Regler beschleunigt nur Ablauf + Animation und beeinflusst nie Score/RNG/Regeln.
-  const flipMs = BASE_FLIP_MS / speedMult;
+  // Dynamische Rundengeschwindigkeit (#95): jeder Durchlauf startet bei +0 % und beschleunigt
+  // +2 % je in DIESEM Durchlauf gewonnenem Stich → sichtbare Eskalation zum Rundenende, Reset je Durchlauf.
+  // Rein Anzeige/Ablauf (score-neutral wie der Turbo). cycleWins = Siege seit Durchlauf-Beginn.
+  const cycleStartWins = useRef(0);
+  useEffect(() => { cycleStartWins.current = state.wins || 0; }, [state.cycle]);
+  const cycleWins = Math.max(0, (state.wins || 0) - cycleStartWins.current);
+  const dynamicSpeed = 1 + 0.02 * cycleWins;
+  // Effektive Flip-Zeit: Basis / (Turbo 1×/2×/4×/6× × dynamische Rundengeschwindigkeit).
+  const flipMs = BASE_FLIP_MS / (speedMult * dynamicSpeed);
 
   useEffect(() => {
     const g = loadGhost();
