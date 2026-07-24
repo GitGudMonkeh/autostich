@@ -276,7 +276,6 @@ export function resolveTrick(state, rng = Math.random) {
     result: tieConverted ? "win_tie" : won ? "win" : lost ? "loss" : "tie",
     gained, trickNo,
     isCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
-    jackpot: isCrit && critMultiplier > C.CRIT_BASE_MULT + statCritMult, // Crit-Faktor über der Stat-Basis → verstärkter Float
     // Formations-Multiplikator dieses Stichs (§22.7) + die beteiligten Formationen der Position (Anzeige/Float).
     formationMult: won ? formationMult : 1,
     formations: posForm.formations,

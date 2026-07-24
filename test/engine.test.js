@@ -462,12 +462,11 @@ describe("Stat-System — Engine (V2 §22.3)", () => {
     // 3 Picks → +6 pp. Ohne Crit-Perk sonst 0 → 6 %.
     expect(resolveTrick(scenario(12, 0, { statCritChance: 0.06 }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
   });
-  it("Crit-Mult-Stat: hebt den Crit-Faktor auf 1,5 + Stat; Jackpot-Schwelle wandert mit", () => {
-    // statCritMult 0,4 → Basis-Crit 1,9; statCritChance 1 garantiert den Crit. Kein Jackpot (== Basis).
+  it("Crit-Mult-Stat: hebt den Crit-Faktor auf 1,5 + Stat", () => {
+    // statCritMult 0,4 → Basis-Crit 1,9; statCritChance 1 garantiert den Crit.
     const s = resolveTrick(scenario(12, 0, { statCritChance: 1, statCritMult: 0.4 }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.critMultiplier).toBeCloseTo(1.9);
-    expect(s.lastTrick.jackpot).toBe(false);
     expect(s.lastTrick.scoreGain).toBeCloseTo(102 * 1.9); // scoreBeforeCrit 102 × 1,9
   });
   it("Serien-Stat: statStreakMult pro Serienpunkt multipliziert den Stichscore", () => {

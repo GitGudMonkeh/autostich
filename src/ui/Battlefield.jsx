@@ -11,7 +11,6 @@ const BANNER = {
   tie:     { text: "GLEICHSTAND",         color: "#8a8a92" },
 };
 const CRIT_COLOR = "#e879f9";
-const JACKPOT_COLOR = "#d4a63a"; // L5 „Jackpot" (#33): Gold statt Crit-Violett
 
 // #68: vier Streuzonen — gleiche Float-Typen dicht beieinander, verschiedene getrennt. Basis-Lage je Zone.
 const FLOAT_ZONES = {
@@ -64,12 +63,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const win = t && (t.result === "win" || t.result === "win_tie");
   const lost = t && t.result === "loss";
   const isCrit = !!(t && t.isCrit);
-  const jackpot = !!(t && t.jackpot); // L5: Crit ×4 (#33)
-  const critColor = jackpot ? JACKPOT_COLOR : CRIT_COLOR;
+  const critColor = CRIT_COLOR;
   const banner = t
-    ? (jackpot ? { text: "GEWONNEN · JACKPOT ×4", color: JACKPOT_COLOR }
-       : isCrit ? { text: "GEWONNEN · KRITISCH", color: CRIT_COLOR }
-       : BANNER[t.result])
+    ? (isCrit ? { text: "GEWONNEN · KRITISCH", color: CRIT_COLOR } : BANNER[t.result])
     : null;
 
   // Effektdauern an den Flip-Takt koppeln; unter reduzierter Bewegung Animationen weglassen
@@ -121,7 +117,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     if (bd.streakMult > 1.001) chain.push({ main: `×${nq(bd.streakMult)}`, label: "Serie", c: "#5a8ade" });
     if (bd.perkMult > 1.001)   chain.push({ main: `×${nq(bd.perkMult)}`, label: "Perks", c: "#8a7de0" });
     if (bd.formMult > 1.001)   chain.push({ main: `×${nq(bd.formMult)}`, label: "Form", c: "#5ab87a" });
-    if (bd.critMult > 1.001)   chain.push({ main: `×${nq(bd.critMult)}`, label: jackpot ? "Jackpot" : "Crit", c: critColor });
+    if (bd.critMult > 1.001)   chain.push({ main: `×${nq(bd.critMult)}`, label: "Crit", c: critColor });
   }
   // Panel nur zeigen, wenn mehr als eine kleine Serie im Spiel ist (Flats/Perks/Formation/Crit oder Serie ≥ +10 %).
   const showBreakdown = !!bd && (bd.flats > 0.5 || bd.perkMult > 1.001 || bd.formMult > 1.001 || bd.critMult > 1.001 || bd.streakMult >= 1.10);
@@ -139,7 +135,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     seenTrick.current = t.trickNo;
     const w = t.result === "win" || t.result === "win_tie";
     const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
-    const critC = t.isCrit ? (t.jackpot ? JACKPOT_COLOR : CRIT_COLOR) : "#d4a63a";
+    const critC = t.isCrit ? CRIT_COLOR : "#d4a63a";
     const entries = [];
     // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
     if (w && t.gained > 0)
@@ -155,7 +151,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   return (
     <div className="rounded-xl p-6 overflow-hidden as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       <div className="relative flex items-center justify-center gap-4 sm:gap-8">
-        {/* KRITISCH-/JACKPOT-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
+        {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
             style={{ left: `calc(${FLOAT_ZONES.crit.left} + ${fjitter(t.trickNo * 5 + 2, JITTER_X)}px)`,
@@ -163,7 +159,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
                      fontSize: 26, color: critColor, textShadow: `0 0 12px ${critColor}aa`,
                      transform: reduced ? "translateX(-50%)" : undefined,
                      animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900) + 1000}ms ease-out forwards`) }}>
-            {jackpot ? "JACKPOT" : "KRITISCH"}{reduced ? ` ×${critMultStr}` : "!"}
+            KRITISCH{reduced ? ` ×${critMultStr}` : "!"}
           </div>
         )}
 

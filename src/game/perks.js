@@ -351,12 +351,11 @@ export function critChanceRawFor(perks, ctx) {
 export function critChanceFor(perks, ctx) {
   return Math.min(1, Math.max(0, critChanceRawFor(perks, ctx)));
 }
-// Crit-Faktor: L5 (Jackpot) ÜBERSCHREIBT die Basis (×4) statt zu addieren → höchster Hook-Wert gewinnt.
-// baseBonus = Crit-Mult-Stat (V2 §22.3): hebt die Basis 1,5 an (max mit L5). Geteilte Quelle für Engine + Anzeige.
+// Crit-Faktor: Basis (CRIT_BASE_MULT 1,5) + Crit-Mult-Stat (V2 §22.3, baseBonus). V2 trägt kein Perk
+// mehr einen Crit-Mult (L5 ist jetzt Flat-Score) → nur Basis + Stat. Signatur (perks, ctx) bleibt für
+// die Aufrufer (Engine/StatusRail) stabil. Geteilte Quelle für Engine + Anzeige (kein Drift).
 export function critMultiplierFor(perks, ctx = {}, baseBonus = 0) {
-  let m = C.CRIT_BASE_MULT + (baseBonus || 0);
-  for (const id of perks) { const f = PERK_DEFS[id].critMultiplier; if (f) m = Math.max(m, f(ctx)); }
-  return m;
+  return C.CRIT_BASE_MULT + (baseBonus || 0);
 }
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
 // V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit → die zählen.
