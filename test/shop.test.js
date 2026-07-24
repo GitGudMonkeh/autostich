@@ -190,11 +190,11 @@ describe("Shop-Angebot — Ziehung (Shop-Spec §5)", () => {
 });
 
 describe("Shop-Kauf — BUY_ITEM (Shop-Spec §5.4)", () => {
-  it("Engine zieht bei Shop-Eintritt ein Angebot (S3a: 'cards' + 'anchors' bestückt → 4 Angebote)", () => {
+  it("Engine zieht bei Shop-Eintritt ein Angebot (S4a: 'cards'+'anchors'+'formations' → 6 Angebote)", () => {
     const s = resolveTrick(atCycleEnd({ cycle: 3 }), rng); // → Shop-Runde
     expect(s.phase).toBe("shop");
-    expect(s.shop.offers).toHaveLength(4); // Karten + Anker je 2; Formationen/Planung folgen S4–S5
-    expect(s.shop.offers.every((o) => ["cards", "anchors"].includes(o.category))).toBe(true);
+    expect(s.shop.offers).toHaveLength(6); // Karten/Anker/Formationen je 2; Planung folgt S5
+    expect(s.shop.offers.every((o) => ["cards", "anchors", "formations"].includes(o.category))).toBe(true);
     expect(s.shop.purchasedOfferIds).toEqual([]);
   });
   it("LEAVE_SHOP leert das Angebot (nicht gekaufte Items verworfen, §5.4)", () => {
@@ -477,5 +477,41 @@ describe("Zeitsegment — A-L1 (Shop-Spec §8)", () => {
     expect(r.shop.coins).toBe(0);
     expect(r.shop.boughtLegendaryIds).toEqual(["A-L1"]);
     expect(r.shop.boughtNonRepeatableIds).toEqual(["A-L1"]);
+  });
+});
+
+// Deck mit vorgegebenen Werten (distinkte Farben → kein ungewollter Farbblock).
+const seqDeck = (vals) => vals.map((v, i) => ({ id: `Z${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
+const ord = (n) => Array.from({ length: n }, (_, i) => i);
+const hasForm = (out, pos, type) => out[pos].formations.some((f) => f.type === type);
+
+describe("Shop-Formationsitems — F1/F2/F3 (Shop-Spec §9)", () => {
+  it("F1 Abstieg: fallende Werte bilden erst mit descendingStraights eine Treppe", () => {
+    const deck = seqDeck([10, 7, 4, 2, 9]); // 10>7>4>2 fallend
+    expect(hasForm(computeFormations(ord(5), deck), 0, "treppe")).toBe(false);
+    expect(hasForm(computeFormations(ord(5), deck, {}, [], [], [], { descendingStraights: true }), 0, "treppe")).toBe(true);
+  });
+  it("F2 Enger Wechsel: Nachbardifferenz 3 zählt erst mit switchMinDifference 3", () => {
+    const deck = seqDeck([5, 8, 5, 8, 5]); // Zick-Zack mit |Diff| 3
+    expect(hasForm(computeFormations(ord(5), deck), 0, "wechsel")).toBe(false);
+    expect(hasForm(computeFormations(ord(5), deck, {}, [], [], [], { switchMinDifference: 3 }), 0, "wechsel")).toBe(true);
+  });
+  it("F3 Verstärkte Wiederholung: zweite Karte ×1,30 → ×1,40 (dritte bleibt ×1,60)", () => {
+    const deck = seqDeck([5, 5, 1, 1, 1]);
+    const base = computeFormations(ord(5), deck);
+    expect(base[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.30);
+    const buffed = computeFormations(ord(5), deck, {}, [], [], [], { repetitionSecondFactorBonus: 0.10 });
+    expect(buffed[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.40);
+    expect(buffed[4].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.60); // 3. Karte (Ordinal 3) unverändert
+  });
+  it("Kauf eines F-Items (kein Ziel): setzt permanentEffects, zieht Preis ab, ist nicht wiederholbar", () => {
+    const offer = { offerId: "o0", itemId: "F2", category: "formations", tier: "cheap", price: 8, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 10, offers: [offer] } };
+    const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
+    expect(r.phase).toBe("shop");
+    expect(r.shop.coins).toBe(2);
+    expect(r.shop.permanentEffects.switchMinDifference).toBe(3);
+    expect(r.shop.boughtNonRepeatableIds).toEqual(["F2"]);
+    expect(Array.isArray(r.formations)).toBe(true); // Formationen wurden neu berechnet
   });
 });

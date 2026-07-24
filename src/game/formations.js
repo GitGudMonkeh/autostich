@@ -24,9 +24,9 @@ import { iceFlag, hasPermafrost, hasIceAnchor } from "./skills.js";
 export const SEGMENT_SIZE = 5;
 const WECHSEL_MIN_DIFF = 4;
 
-function wiederholungFactor(ordinal) {
+function wiederholungFactor(ordinal, secondBonus = 0) {
   if (ordinal <= 1) return 1;
-  if (ordinal === 2) return 1.30;
+  if (ordinal === 2) return 1.30 + secondBonus; // Shop F3 „Verstärkte Wiederholung": +0,10 → ×1,40
   if (ordinal === 3) return 1.60;
   return 2.00 + (ordinal - 4) * 0.50; // ab der 4.: 2,00 / 2,50 / 3,00 … kein Cap (#95)
 }
@@ -58,17 +58,21 @@ function markRuns(n, minMembers, matches, allowGap, canExtendSeg, assign, transp
   }
 }
 
-// Treppe: streng steigend (mit Bindeglied-Flex ±1), kein Min-/Max-Schritt.
-// E3 erlaubt 1× gleich, E4 erlaubt 1× Rückschritt, E6 lässt die letzte Karte einen neuen Lauf beginnen.
-function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign) {
+// Treppe: streng monoton (mit Bindeglied-Flex ±1), kein Min-/Max-Schritt. `dir` = +1 steigend, −1 fallend
+// (Shop F1 „Abstieg" läuft zusätzlich fallend). E3 erlaubt 1× gleich, E4 erlaubt 1× Gegenrichtung,
+// E6 lässt die letzte Karte einen neuen Lauf beginnen.
+function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign, dir = 1) {
   let i = 0;
   while (i < n) {
     const members = [i];
     let j = i, softUsed = false;
     while (j + 1 < n && canExtendSeg(j)) {
-      const hi = val[j + 1] + bind[j + 1], lo = val[j] - bind[j];
-      if (hi > lo) { j++; members.push(j); } // streng steigend (Bindeglied flext ±1)
-      else if (!softUsed && ((e3 && val[j + 1] === val[j]) || (e4 && val[j + 1] < val[j]))) {
+      const step = dir === 1
+        ? (val[j + 1] + bind[j + 1] > val[j] - bind[j])   // steigend (Bindeglied flext ±1)
+        : (val[j] + bind[j] > val[j + 1] - bind[j + 1]);  // fallend
+      const revBack = dir === 1 ? (val[j + 1] < val[j]) : (val[j + 1] > val[j]); // E4: Schritt gegen die Richtung
+      if (step) { j++; members.push(j); }
+      else if (!softUsed && ((e3 && val[j + 1] === val[j]) || (e4 && revBack))) {
         softUsed = true; j++; members.push(j);
       } else break;
     }
@@ -80,11 +84,11 @@ function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign) {
 // Wählt für die nächste Karte einen Kandidatenwert (Kristallform gibt eingefrorenen Karten [v−1,v,v+1]),
 // der die Zick-Zack-Bedingung erfüllt (|diff| ≥ 4, Richtung passt) und die Amplitude maximiert (Peak so hoch,
 // Valley so tief wie möglich → maximaler Spielraum für den nächsten Gegenzug). `need`: 0 frei, sonst ±1.
-function pickWechselValue(cands, cur, need) {
+function pickWechselValue(cands, cur, need, minDiff = WECHSEL_MIN_DIFF) {
   let best = null;
   for (const c of cands) {
     const diff = c - cur, dir = Math.sign(diff);
-    if (Math.abs(diff) < WECHSEL_MIN_DIFF || dir === 0) continue;
+    if (Math.abs(diff) < minDiff || dir === 0) continue;
     if (need !== 0 && dir !== need) continue;
     if (!best || Math.abs(diff) > Math.abs(best.val - cur)) best = { val: c, dir };
   }
@@ -93,28 +97,32 @@ function pickWechselValue(cands, cur, need) {
 
 // Wechsel (Zick-Zack): jede Nachbardifferenz ≥4 UND Richtungswechsel. Mindestlänge minLen (E5: 2 statt 3).
 // `valSets[k]` = Kandidatenwerte je Karte (Kristallform: ±1 auf eingefrorenen Karten; sonst Singleton).
-function markWechsel(val, valSets, n, minLen, canExtendSeg, assign) {
+function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WECHSEL_MIN_DIFF) {
   let i = 0;
   while (i < n) {
     let curVal = val[i], j = i, prevDir = 0;
     while (j + 1 < n && canExtendSeg(j)) {
-      const pick = pickWechselValue(valSets[j + 1], curVal, prevDir === 0 ? 0 : -prevDir);
+      const pick = pickWechselValue(valSets[j + 1], curVal, prevDir === 0 ? 0 : -prevDir, minDiff);
       if (!pick) break;
       curVal = pick.val; prevDir = pick.dir; j++;
     }
     if (j - i + 1 >= minLen) for (let k = i; k <= j; k++) assign(k, k - i + 1);
     // Gleichgerichteter großer Schritt (rohe Werte) → diese Karte kann neu beginnen.
-    i = (j < n - 1 && j > i && Math.abs(val[j + 1] - val[j]) >= WECHSEL_MIN_DIFF && canExtendSeg(j)) ? j : j + 1;
+    i = (j < n - 1 && j > i && Math.abs(val[j + 1] - val[j]) >= minDiff && canExtendSeg(j)) ? j : j + 1;
   }
 }
 
 /* Berechnet für jede Position { mult, formations: [{ type, ordinal, factor }] }.
    `order` = Ziehreihenfolge, `deck` = Karten, `roles` = Kartenrollen (C8/C10),
    `perks` = gehaltene Perks (für die E-Werkzeuge). */
-export function computeFormations(order, deck, roles = {}, perks = [], skills = [], anchors = []) {
+export function computeFormations(order, deck, roles = {}, perks = [], skills = [], anchors = [], pe = {}) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
   const has = (id) => perks.includes(id);
+  // ---- Shop-Formationsitems (§9, permanente Regeländerungen) ----
+  const wechselMinDiff = pe.switchMinDifference || WECHSEL_MIN_DIFF; // F2 Enger Wechsel: 4 → 3
+  const repBonus = pe.repetitionSecondFactorBonus || 0;              // F3 Verstärkte Wiederholung: 2. Karte +0,10
+  const descending = !!pe.descendingStraights;                       // F1 Abstieg: Treppen auch fallend
   // ---- Eis-Wildcards (#93 F3): nur auf eingefrorenen Karten, wenn der jeweilige Eis-Skill gehalten wird. ----
   const frozen = cards.map((c) => !!c.frozen);
   const permafrost = hasPermafrost(skills);
@@ -155,7 +163,7 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const jokerAll = frozen.map((f) => f && permafrost); // Permafrost: Joker für Wiederholung UND Farbblock
   const matchWied = (a, b) => jokerAll[a] || jokerAll[b] || [...valSetWied[a]].some((v) => valSetWied[b].has(v));
   markRuns(n, 2, matchWied, has("E1"), canExtendSeg,
-    (pos, ord) => add(pos, "wiederholung", ord, wiederholungFactor(ord)));
+    (pos, ord) => add(pos, "wiederholung", ord, wiederholungFactor(ord, repBonus)));
 
   // Farbblock: Permafrost-Joker matcht jede Farbe; Frostbrücke macht eingefrorene Karten transparent (kein Mitglied).
   const matchSuit = (a, b) => jokerAll[a] || jokerAll[b] || effSuit[a] === effSuit[b];
@@ -163,12 +171,13 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   markRuns(n, 3, matchSuit, has("E2"), canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)), farbSkip);
 
-  markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg,
-    (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE)));
+  const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
+  markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg, treppeAssign, 1);
+  if (descending) markTreppe(n, val, bind, has("E3"), has("E4"), has("E6"), canExtendSeg, treppeAssign, -1); // F1 Abstieg
   // Wechsel: Kristallform gibt eingefrorenen Karten ±1-Wertoptionen (Permafrost/Eisschritt gelten hier NICHT).
   const valSetWechsel = cards.map((c, k) => (frozen[k] && wildCrystal ? [val[k] - 1, val[k], val[k] + 1] : [val[k]]));
   markWechsel(val, valSetWechsel, n, has("E5") ? 2 : 3, canExtendSeg,
-    (pos, ord) => add(pos, "wechsel", ord, escalatingFactor(ord, WECHSEL_BASE)));
+    (pos, ord) => add(pos, "wechsel", ord, escalatingFactor(ord, WECHSEL_BASE)), wechselMinDiff);
 
   // Anker (E7: Position 10/20/30/40 · E8: Position 5/15/25/35) — je siegreicher Anker ×1,25, zählt als Formation.
   if (has("E7") || has("E8")) for (let pos = 0; pos < n; pos++) {

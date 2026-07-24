@@ -39,6 +39,8 @@ export const anchorTypeAt   = (anchors, pos) => (anchors || []).find((a) => a.po
 export const positionOccupied = (anchors, pos) => (anchors || []).some((a) => a.position === pos);
 // Einen Anker anlegen (immutabel) — der Reducer stellt sicher, dass die Position frei ist.
 const addAnchor = (shop, type, position) => ({ ...shop, anchors: [...(shop.anchors || []), { type, position }] });
+// Permanente Formations-Regeländerung setzen (Shop §9 F-Items).
+const setPE = (shop, patch) => ({ ...shop, permanentEffects: { ...(shop.permanentEffects || {}), ...patch } });
 
 /* Konkrete Shop-Items (Shop-Spec §7 Kartenitems; Anker/Formationen/Planung folgen S3–S5).
    `target` = Ziel-Bedarf für den Target-Flow: { cards?: N, color?: bool (Farbe je gewählter Karte), segment?: bool }.
@@ -114,6 +116,17 @@ export const SHOP_ITEM_DEFS = {
         targetMode: "segment", target: { segment: true },
         description: "Wähle ein Segment. Nachdem seine fünf Karten gespielt wurden, wird das Segment sofort ein zweites Mal gespielt (Durchlauf = 45 Stiche).",
         apply: (s, t) => ({ shop: { ...s.shop, timeSegmentIndex: t.segment } }) },
+
+  // ---- Formationen (Shop-Spec §9) — permanente Regeländerungen (kein Ziel, nicht wiederholbar). ----
+  F1: { id: "F1", category: "formations", name: "Abstieg", tier: "cheap", repeatable: false,
+        description: "Treppen dürfen streng steigend oder streng fallend verlaufen (innerhalb einer Formation ohne Richtungswechsel).",
+        apply: (s) => ({ shop: setPE(s.shop, { descendingStraights: true }) }) },
+  F2: { id: "F2", category: "formations", name: "Enger Wechsel", tier: "cheap", repeatable: false,
+        description: "Die benötigte Nachbardifferenz für Wechsel sinkt von 4 auf 3.",
+        apply: (s) => ({ shop: setPE(s.shop, { switchMinDifference: 3 }) }) },
+  F3: { id: "F3", category: "formations", name: "Verstärkte Wiederholung", tier: "strong", repeatable: false,
+        description: "Der Faktor der zweiten Karte einer Wiederholung steigt von ×1,30 auf ×1,40.",
+        apply: (s) => ({ shop: setPE(s.shop, { repetitionSecondFactorBonus: 0.10 }) }) },
 };
 
 /* ---- Zeitsegment (Shop-Spec §8 A-L1) — Spielreihenfolge der Positionen eines Durchlaufs. ---- */
@@ -146,7 +159,15 @@ export function initialShop() {
     perkRerolls: 0, skillRerolls: 0, // P1/P2: gespeicherte Neuwürfe
     fateControl: false,             // P-L1: je Perk-/Skill-Auswahl ein kostenloser Neuwurf
     perkLegendaryBonus: 0, skillLegendaryBonus: 0, // P5/P6: additive Legendär-Chance (Cap in S5)
-    permanentEffects: {},           // S4: F-Items (Regeländerungen der Formationserkennung)
+    permanentEffects: {             // §9 F-Items: permanente Regeländerungen der Formationserkennung
+      descendingStraights: false,       // F1: Treppen auch fallend
+      switchMinDifference: 4,           // F2: Wechsel-Mindestdifferenz (→ 3)
+      repetitionSecondFactorBonus: 0,   // F3: 2. Wiederholungskarte +0,10
+      linkedColors: [],                 // F4: zwei Farben zählen als eine (Farbblock)
+      openSegmentBoundaries: [],        // F5: geöffnete Segmentgrenzen
+      formationAfterglow: false,        // F6: Nachhall
+      formationCoreType: null,          // F-L1: Formationskern-Typ
+    },
     anchors: [],                    // S3: Positionsanker (an Position, nicht card.id)
     timeSegmentIndex: null,         // A-L1: gewähltes Zeitsegment
   };
