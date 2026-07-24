@@ -15,17 +15,21 @@ const F1 = "SK_FIRE_01", F2 = "SK_FIRE_02", F3 = "SK_FIRE_03", F4 = "SK_FIRE_04"
   F9 = "SK_FIRE_09", F10 = "SK_FIRE_10", F11 = "SK_FIRE_11", F12 = "SK_FIRE_12";
 
 describe("Feuer — reine Helfer (#93 F1)", () => {
-  it("heatGainFor: Basis (Vorsprung−2)×2, Mindestvorsprung 3, sonst 0", () => {
+  it("heatGainFor: Basis (min(Vorsprung,8)−2)×1, Mindestvorsprung 3, sonst 0 (#121)", () => {
     expect(heatGainFor(2, [F4], 5)).toBe(0);    // Vorsprung < 3
-    expect(heatGainFor(3, [F4], 5)).toBe(2);    // (3−2)×2
-    expect(heatGainFor(12, [F4], 5)).toBe(20);  // (12−2)×2
+    expect(heatGainFor(3, [F4], 5)).toBe(1);    // (3−2)×1
+    expect(heatGainFor(8, [F4], 5)).toBe(6);    // (8−2)×1
   });
-  it("heatGainFor: Glut ×1,5, Brennstoff +5 (Wert≥8), Brandbeschleuniger +15 (Vorsprung≥10)", () => {
-    expect(heatGainFor(12, [F1], 5)).toBe(30);  // 20 ×1,5
-    expect(heatGainFor(12, [F2], 8)).toBe(25);  // 20 + 5 (Wert 8 ≥ 8)
-    expect(heatGainFor(12, [F2], 7)).toBe(20);  // Wert < 8 → kein Bonus
-    expect(heatGainFor(12, [F3], 5)).toBe(35);  // 20 + 15 (Vorsprung 12 ≥ 10)
-    expect(heatGainFor(9, [F3], 5)).toBe(14);   // (9−2)×2, Vorsprung < 10 → kein Bonus
+  it("heatGainFor: effektiver Vorsprung ist bei 8 gedeckelt (#121 Late-Game-Runaway)", () => {
+    expect(heatGainFor(20, [F4], 5)).toBe(6);   // min(20,8)=8 → wie Vorsprung 8, kein Runaway
+    expect(heatGainFor(20, [F1], 5)).toBe(9);   // 6 ×1,5 → nur ~9 % statt früher ~54 %
+  });
+  it("heatGainFor: Glut ×1,5, Brennstoff +5 (Wert≥8), Brandbeschleuniger +10 (Vorsprung≥10) (#121)", () => {
+    expect(heatGainFor(12, [F1], 5)).toBe(9);   // (8−2)×1 = 6, ×1,5 → 9
+    expect(heatGainFor(12, [F2], 8)).toBe(11);  // 6 + 5 (Wert 8 ≥ 8)
+    expect(heatGainFor(12, [F2], 7)).toBe(6);   // Wert < 8 → kein Bonus
+    expect(heatGainFor(12, [F3], 5)).toBe(16);  // 6 + 10 (Vorsprung 12 ≥ 10, gedeckelte Basis)
+    expect(heatGainFor(9, [F3], 5)).toBe(6);    // (min(9,8)−2)×1 = 6, Vorsprung < 10 → kein Accel
   });
   it("heatLossFor: min(Rückstand,10); Nachglut→0; Hitzeschild halbiert (abgerundet)", () => {
     expect(heatLossFor(5, [], false)).toBe(5);
@@ -72,9 +76,9 @@ describe("Feuer — Engine-Integration (#93 F1)", () => {
   it("ohne Feuer bleibt heat null (inert)", () => {
     expect(resolveTrick(scen(12, 0, { skills: [] }), rng).heat).toBeNull();
   });
-  it("Sieg: Hitzegewinn (Vorsprung−2)×2 und Feuer-Flat-Score in der multiplizierten Basis", () => {
+  it("Sieg: Hitzegewinn (min(Vorsprung,8)−2)×1 und Feuer-Flat-Score in der multiplizierten Basis (#121)", () => {
     const s = resolveTrick(scen(12, 0, { skills: [F4], heat: heat() }), rng);
-    expect(s.heat.value).toBe(20);                       // (12−2)×2
+    expect(s.heat.value).toBe(6);                        // (min(12,8)−2)×1 — Feuer-Flat-Score bleibt unverändert
     expect(s.lastTrick.breakdown.flats).toBe(250);        // Feuer-Flat 10×25
     expect(s.lastTrick.gained).toBeCloseTo(350 * 1.02);   // (100 + 250) × streakBaseMult(1)
   });
@@ -91,7 +95,7 @@ describe("Feuer — Engine-Integration (#93 F1)", () => {
   });
   it("Flächenbrand: Sieg bei voller Hitze → +1000 Score, verbraucht exakt 100", () => {
     const s = resolveTrick(scen(12, 0, { skills: [F9], heat: heat({ value: 100 }) }), rng);
-    expect(s.heat.value).toBe(0);                         // 100 (+20 Gewinn, gedeckelt 100) − 100 verbraucht
+    expect(s.heat.value).toBe(0);                         // 100 (+6 Gewinn, gedeckelt 100) − 100 verbraucht
     expect(s.lastTrick.breakdown.flats).toBe(1250);       // Feuer-Flat 250 + Flächenbrand 1000
   });
   it("Glühende Klinge: ab 50 % Hitze +2 Kartenwert (kippt eine knappe Niederlage zum Sieg)", () => {
@@ -119,10 +123,10 @@ describe("Feuer — Engine-Integration (#93 F1)", () => {
   it("Feuerwalze: Stapel bei +5 gedeckelt", () => {
     expect(resolveTrick(scen(12, 0, { skills: [F8], heat: heat({ fireRoll: 5 }) }), rng).heat.fireRoll).toBe(5);
   });
-  it("Sonnenkern: Hitze darf über 100 bis 150 steigen (Rest bleibt)", () => {
-    const s = resolveTrick(scen(52, 0, { skills: [F11], heat: heat({ value: 100, max: 150 }) }), rng);
+  it("Sonnenkern: Hitze darf über 100 bis 150 steigen (Rest bleibt, Cap 150)", () => {
+    const s = resolveTrick(scen(52, 0, { skills: [F11], heat: heat({ value: 148, max: 150 }) }), rng);
     expect(s.heat.max).toBe(150);
-    expect(s.heat.value).toBe(150);                       // 100 + Gewinn 100 → 200, gedeckelt 150
+    expect(s.heat.value).toBe(150);                       // 148 + Gewinn 6 → 154, gedeckelt 150 (Überschuss über 100 bleibt)
   });
   it("Phönixfeuer: Schmelzpunkt armiert Phönix; nächster Stich +10, dann entschärft", () => {
     const a = resolveTrick(scen(12, 0, { skills: [F10, F12], heat: heat({ value: 30 }) }), rng);

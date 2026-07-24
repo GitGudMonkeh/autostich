@@ -108,7 +108,7 @@ export const SKILL_DEFS = {
   SK_FIRE_02: { id: "SK_FIRE_02", name: "Brennstoff", archetype: "fire", keywords: ["heat"],
     desc: "Gewinnt eine Karte mit Dauerwert ≥8, gibt es +5 % Hitze zusätzlich.", heatFuel: true },
   SK_FIRE_03: { id: "SK_FIRE_03", name: "Brandbeschleuniger", archetype: "fire", keywords: ["heat"],
-    desc: "Ein Sieg mit ≥10 Wertvorsprung gibt +15 % Hitze zusätzlich.", heatAccel: true },
+    desc: "Ein Sieg mit ≥10 Wertvorsprung gibt +10 % Hitze zusätzlich.", heatAccel: true },
   SK_FIRE_04: { id: "SK_FIRE_04", name: "Hitzeschild", archetype: "fire", keywords: ["heat"],
     desc: "Niederlagen halbieren den Hitzeverlust (zugunsten des Spielers abgerundet).", heatShield: true },
   SK_FIRE_05: { id: "SK_FIRE_05", name: "Nachglut", archetype: "fire", keywords: ["heat"],
@@ -223,10 +223,11 @@ export function heatConsumerOf(skills) {
 // Anzahl gehaltener Hitze-Konsumenten (der Reducer blockt > 1).
 export const heatConsumerCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.heatConsumer).length;
 
-// Hitzegewinn bei Sieg (%): Basis (Vorsprung−2)×2, Glut ×1,5 (kaufm. gerundet), +Brennstoff/+Brandbeschleuniger.
+// Hitzegewinn bei Sieg (%): Basis (min(Vorsprung, HEAT_MARGIN_CAP)−2)×HEAT_PER_POINT, Glut ×1,5 (kaufm. gerundet),
+// +Brennstoff/+Brandbeschleuniger. #121: effektiver Vorsprung gedeckelt (Late-Game-Runaway raus), Rate 2→1.
 export function heatGainFor(margin, skills, cardValue) {
   if (margin < C.HEAT_MIN_MARGIN) return 0;
-  let g = (margin - 2) * C.HEAT_PER_POINT;
+  let g = (Math.min(margin, C.HEAT_MARGIN_CAP) - 2) * C.HEAT_PER_POINT;
   if (fireFlag(skills, "emberBoost")) g = Math.round(g * C.EMBER_MULT);
   if (fireFlag(skills, "heatFuel") && cardValue >= C.FUEL_MIN_VALUE) g += C.FUEL_BONUS;
   if (fireFlag(skills, "heatAccel") && margin >= C.ACCEL_MIN_MARGIN) g += C.ACCEL_BONUS;
