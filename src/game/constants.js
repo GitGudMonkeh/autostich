@@ -52,6 +52,12 @@ export const STORM_CRIT_STEP   = 0.02; // Gewitterfront: +Crit-Chance je Verbrau
 export const STORM_CRIT_CAP    = 0.20; // …          … gedeckelt
 export const STORM_SCORE       = 100;  // Gewitterfront nach Cap: +Score je Sieg …
 export const STORM_SCORE_WINS  = 3;    // …          … für so viele folgende Siege
+// Blitz-Rework (#93 F2) — exklusiver Ladungs-Konsument + neue Skills/Legendäre [TUNING]
+export const LIGHTNING_MAX_CHARGE_THUNDER = 15;  // Donnergott (L): hebt das Ladungsmaximum 10 → 15
+export const THUNDER_CRIT_MULT = 1.0;  // Donnergott (L): dauerhafter +Crit-Multiplikator
+export const STATIC_CHARGE     = 1;    // Statische Aufladung: Ladung je Sieg OHNE Crit
+export const CONDUCT_CHARGE    = 2;    // Leitfähigkeit: Zusatzladung bei Crit neben ionisierter Karte
+export const DISCHARGE_SCORE   = 500;  // Entladung: +Flat beim nächsten Crit nach vollem Verbrauch
 
 // Feuer-Archetyp (#93 F1) — Hitzeleiste 0–100 (Sonnenkern 150). Belohnt totale Überlegenheit. [TUNING]
 export const HEAT_MAX          = 100;  // Standard-Hitzemaximum

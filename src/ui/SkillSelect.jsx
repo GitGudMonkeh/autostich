@@ -118,11 +118,23 @@ export function SkillSelect({ offer, onPick, onDecline, skills = [], state = {} 
                       style={{ background: sel ? "#2a2740" : "#20202a",
                                border: `1px solid ${sel ? col : col + "88"}`,
                                boxShadow: sel ? `0 0 16px ${col}88` : `0 0 14px ${col}33` }}>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
                           {g.meta.icon} {g.meta.label.toUpperCase()}
                         </span>
+                        {(s.heatConsumer || s.onFullCharge) && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                            style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
+                            KONSUMENT
+                          </span>
+                        )}
+                        {s.legendary && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                            style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>
+                            ★ LEGENDÄR
+                          </span>
+                        )}
                         {sel && <span className="text-[10px] font-bold" style={{ color: col }}>✓ ausgewählt</span>}
                       </div>
                       <div className="font-bold" style={{ color: col }}>{s.name}</div>

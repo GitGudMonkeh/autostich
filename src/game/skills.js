@@ -65,6 +65,42 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     onFullCharge: "protectStreak", // Verbraucher: setzt den Serien-Rahmen
   },
+  // ---- Blitz-Rework (#93 F2): neue normale Skills (08–10) + Legendäre (L01/L02). Flags in engine.js gelesen. ----
+  SK_LIGHTNING_08: {
+    id: "SK_LIGHTNING_08", name: "Statische Aufladung", archetype: "lightning",
+    keywords: ["charge"],
+    desc: "Jeder Sieg ohne Crit erzeugt 1 Ladung.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    staticCharge: true,
+  },
+  SK_LIGHTNING_09: {
+    id: "SK_LIGHTNING_09", name: "Leitfähigkeit", archetype: "lightning",
+    keywords: ["charge", "ionize", "crit"],
+    desc: "Ein Crit mit einer Karte direkt neben einer ionisierten Karte erzeugt 2 zusätzliche Ladungen.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    conductivity: true,
+  },
+  SK_LIGHTNING_10: {
+    id: "SK_LIGHTNING_10", name: "Entladung", archetype: "lightning",
+    keywords: ["charge", "crit"],
+    desc: "Nach einem vollständigen Ladungsverbrauch gibt der nächste Crit +500 Score.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    discharge: true,
+  },
+  SK_LIGHTNING_L01: {
+    id: "SK_LIGHTNING_L01", name: "Donnergott", archetype: "lightning", legendary: true,
+    keywords: ["charge", "crit"],
+    desc: "Maximale Ladung 10 → 15, dafür dauerhaft +1,0× Crit-Multiplikator. Konsumenten lösen erst bei 15 aus.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    thunderGod: true,
+  },
+  SK_LIGHTNING_L02: {
+    id: "SK_LIGHTNING_L02", name: "Endloser Sturm", archetype: "lightning", legendary: true,
+    keywords: ["charge"],
+    desc: "Nach vollständigem Verbrauch springt die Ladung sofort auf 50 % des Maximums (mit Reststrom gilt der höhere Wert).",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    endlessStorm: true,
+  },
 
   // ---- Feuer-Archetyp (#93 F1) — Hitze belohnt totale Überlegenheit. Flags werden in engine.js gelesen. ----
   SK_FIRE_01: { id: "SK_FIRE_01", name: "Glut", archetype: "fire", keywords: ["heat"],
@@ -135,7 +171,8 @@ export function skillSum(skills, name, ctx) {
 // Frischer Blitz-Substate — inaktiv. Wird beim ersten Blitz-Skill aktiviert (Reducer).
 // armed = Serien-Rahmen (Geladene Serie); storm* = Gewitterfront (Stufe C).
 export function initLightning() {
-  return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, armed: false, stormCritBonus: 0, stormScoreWinsRemaining: 0 };
+  return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, armed: false, stormCritBonus: 0, stormScoreWinsRemaining: 0,
+    dischargeArmed: false }; // #93 F2 Entladung: nächster Crit +500 nach vollem Verbrauch
 }
 
 /* ---- Feuer-Archetyp (#93 F1) — Hitze-Substate + reine Helfer (testbar; Engine-Nutzung in resolveTrick) ---- */
@@ -236,6 +273,24 @@ export function chargeFloorFor(skills) {
   return floor;
 }
 export function hasStorm(skills) { return (skills || []).some((id) => SKILL_DEFS[id]?.storm); }
+
+// ---- Blitz-Rework (#93 F2): Flag-Prädikate + abgeleitete Werte ----
+const lightFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
+export const hasThunderGod   = (skills) => lightFlag(skills, "thunderGod");
+export const hasStaticCharge = (skills) => lightFlag(skills, "staticCharge");
+export const hasConductivity = (skills) => lightFlag(skills, "conductivity");
+export const hasEndlessStorm = (skills) => lightFlag(skills, "endlessStorm");
+export const hasDischarge    = (skills) => lightFlag(skills, "discharge");
+// Ladungsmaximum je Build (Donnergott → 15) & dessen dauerhafter Crit-Multiplikator-Bonus.
+export const maxChargeFor      = (skills) => (hasThunderGod(skills) ? C.LIGHTNING_MAX_CHARGE_THUNDER : C.LIGHTNING_MAX_CHARGE);
+export const lightningCritMult = (skills) => (hasThunderGod(skills) ? C.THUNDER_CRIT_MULT : 0);
+// Anzahl gehaltener Ladungs-Konsumenten (Ionisierung/Geladene Serie); der Reducer blockt > 1.
+export const chargeConsumerCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.onFullCharge).length;
+// Aktiver Ladungs-Konsument (für HUD/Badge): "ionize" | "protectStreak" | null.
+export const chargeConsumerOf = (skills) => {
+  for (const id of skills || []) { const c = SKILL_DEFS[id]?.onFullCharge; if (c) return c; }
+  return null;
+};
 
 // Anzahl je Auslösung ionisierter Karten: Ionisierung (2) + Kettenblitz (+2), sofern gehalten.
 export function ionizeCountFor(skills) {

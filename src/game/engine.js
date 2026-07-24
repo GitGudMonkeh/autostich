@@ -3,6 +3,7 @@ import { shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor,
+  lightningCritMult, hasStaticCharge, hasConductivity, hasEndlessStorm, hasDischarge, // Blitz-Rework (#93 F2)
   fireFlag, heatMaxFor, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor } from "./skills.js"; // Feuer (#93 F1)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
@@ -183,7 +184,7 @@ export function resolveTrick(state, rng = Math.random) {
     // Roh-Crit-Chance (ungeklemmt): Perk-/Blitz-Basis + Crit-Chance-Stat. D-Crit-Flats sehen rawCrit (critCtx).
     const rawCrit = critChanceRawFor(perks, wctx) + lightningCritRaw(lightning, skills) + statCritChance;
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
-    critMultiplier = critMultiplierFor(perks, wctx, statCritMult); // Basis 1,5 + Crit-Mult-Stat
+    critMultiplier = critMultiplierFor(perks, wctx, statCritMult) + lightningCritMult(skills); // Basis 1,5 + Crit-Mult-Stat + Donnergott (#93 F2)
     isCrit = rollCrit(critChance, forceCrit, rng); // forceCrit = L10-Kettenreaktion (garantierter Nachfolger-Crit)
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
@@ -196,9 +197,12 @@ export function resolveTrick(state, rng = Math.random) {
     const l5Flat = l5Hit ? (PERK_DEFS.L5.jackpotScore || 0) : 0;
     // Crit-Flats (Perks D6/D7/D8/D11/D15/D19 + Blitzableiter) sehen rawCrit (D19 Überschusskrit) → eigener ctx.
     const critCtx = { ...wctx, rawCrit };
+    // Entladung (#93 F2): war der nächste Crit +500 armiert (aus einem früheren vollen Verbrauch)? Dieser Crit zahlt aus.
+    const dischargeArmedBefore = !!(lightning && lightning.dischargeArmed);
+    const dischargeFlat = (isCrit && dischargeArmedBefore) ? C.DISCHARGE_SCORE : 0;
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
                       + (isCrit ? sumHook(perks, "scoreFlatOnCrit", critCtx) + skillSum(skills, "scoreFlatOnCrit", critCtx) : 0)
-                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat;
+                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat + dischargeFlat;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
     // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
@@ -213,32 +217,48 @@ export function resolveTrick(state, rng = Math.random) {
     breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, critMult: isCrit ? critMultiplier : 1, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
-    // Blitz: Ladung bei Crit — Basis +1 (aktiv) + Skill-Boni (Blitzableiter +1; Überspannung +3 bei ionisierter Karte).
+    // Blitz: Ladungsgewinn — bei Crit Basis +1 (aktiv) + Skill-Boni; bei Sieg OHNE Crit +1 via Statische Aufladung (#93 F2).
     const ionizedCard = (pCard.ionStacks || 0) > 0;
-    if (lightning && lightning.active && isCrit) {
-      const gainedCharge = 1 + skillSum(skills, "chargeOnCrit", wctx)
-                             + (ionizedCard ? skillSum(skills, "chargeOnIonizedCrit", wctx) : 0);
-      lightning = addCharge(lightning, gainedCharge);
-      // Volle Ladung → Verbraucher-Priorität (Abschnitt 6): Geladene Serie (Rahmen setzen) VOR Ionisierung;
-      // bei bereits gesetztem Rahmen greift Ionisierung; Rahmen gesetzt + keine Ionisierung → Ladung „parkt".
-      // Reaktoren (Reststrom-Boden, Gewitterfront) laufen bei JEDEM tatsächlichen Verbrauch.
-      if (lightning.charge >= lightning.maxCharge) {
-        let consumed = false;
-        if (hasProtect(skills) && !lightning.armed) {
-          lightning = { ...lightning, armed: true };            // Geladene Serie: Serien-Rahmen scharf
-          consumed = true;
-        } else if (hasIonize(skills)) {
-          const undrawn = playerOrder.slice(pos + 1);            // Deck-Indizes der noch nicht gezogenen Karten
-          deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
-          consumed = true;
-        }
-        if (consumed) {
-          lightning = consumeCharge(lightning, chargeFloorFor(skills)); // Reststrom: Boden 3, sonst 0
-          if (hasStorm(skills)) { // Gewitterfront-Reaktor: erst Crit-Chance (Cap), danach Score für die nächsten Siege
-            const cur = lightning.stormCritBonus || 0;
-            lightning = cur < C.STORM_CRIT_CAP
-              ? { ...lightning, stormCritBonus: Math.min(C.STORM_CRIT_CAP, cur + C.STORM_CRIT_STEP) }
-              : { ...lightning, stormScoreWinsRemaining: C.STORM_SCORE_WINS };
+    if (lightning && lightning.active) {
+      // Entladung (#93 F2): der oben ausgezahlte +500-Crit löst seine Armierung; ein neuer voller Verbrauch re-armiert weiter unten.
+      if (isCrit && dischargeArmedBefore) lightning = { ...lightning, dischargeArmed: false };
+      let gainedCharge = 0;
+      if (isCrit) {
+        gainedCharge = 1 + skillSum(skills, "chargeOnCrit", wctx)
+                         + (ionizedCard ? skillSum(skills, "chargeOnIonizedCrit", wctx) : 0);
+        // Leitfähigkeit (#93 F2): Crit mit einer Karte direkt neben ≥1 ionisierten Karte → +2 (einmalig).
+        const nbIon = (pos > 0 && (deck[playerOrder[pos - 1]]?.ionStacks || 0) > 0)
+                   || (pos < playerOrder.length - 1 && (deck[playerOrder[pos + 1]]?.ionStacks || 0) > 0);
+        if (hasConductivity(skills) && nbIon) gainedCharge += C.CONDUCT_CHARGE;
+      } else if (hasStaticCharge(skills)) {
+        gainedCharge = C.STATIC_CHARGE; // Statische Aufladung: Sieg ohne Crit → 1 Ladung
+      }
+      if (gainedCharge > 0) {
+        lightning = addCharge(lightning, gainedCharge);
+        // Volle Ladung → Konsument (max 1, im Reducer erzwungen) auslösen; Reaktoren laufen bei JEDEM Verbrauch.
+        // Geladene Serie setzt den Rahmen (nur wenn nicht schon gesetzt), sonst „parkt" die Ladung; Ionisierung ionisiert.
+        if (lightning.charge >= lightning.maxCharge) {
+          let consumed = false;
+          if (hasProtect(skills) && !lightning.armed) {
+            lightning = { ...lightning, armed: true };            // Geladene Serie: Serien-Rahmen scharf
+            consumed = true;
+          } else if (hasIonize(skills)) {
+            const undrawn = playerOrder.slice(pos + 1);            // Deck-Indizes der noch nicht gezogenen Karten
+            deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
+            consumed = true;
+          }
+          if (consumed) {
+            // Ladungsboden: Reststrom (3) ODER Endloser Sturm (50 % des Max, aufgerundet) — der HÖHERE gilt (nicht additiv).
+            let floor = chargeFloorFor(skills);
+            if (hasEndlessStorm(skills)) floor = Math.max(floor, Math.ceil(lightning.maxCharge / 2));
+            lightning = consumeCharge(lightning, floor);
+            if (hasDischarge(skills)) lightning = { ...lightning, dischargeArmed: true }; // Entladung: nächsten Crit armieren
+            if (hasStorm(skills)) { // Gewitterfront-Reaktor: erst Crit-Chance (Cap), danach Score für die nächsten Siege
+              const cur = lightning.stormCritBonus || 0;
+              lightning = cur < C.STORM_CRIT_CAP
+                ? { ...lightning, stormCritBonus: Math.min(C.STORM_CRIT_CAP, cur + C.STORM_CRIT_STEP) }
+                : { ...lightning, stormScoreWinsRemaining: C.STORM_SCORE_WINS };
+            }
           }
         }
       }

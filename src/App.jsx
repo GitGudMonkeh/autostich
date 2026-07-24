@@ -285,7 +285,7 @@ export function Autostich() {
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
               <Battlefield lastTrick={state.lastTrick} remaining={TRICKS_PER_CYCLE - state.pos} flipMs={flipMs} />
-              <ChargeBar lightning={state.lightning} />
+              <ChargeBar lightning={state.lightning} skills={state.skills} />
               <HeatBar heat={state.heat} skills={state.skills} />
               <BuildPanel perks={state.perks} skills={state.skills} />
             </div>
