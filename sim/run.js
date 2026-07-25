@@ -6,7 +6,7 @@
 // Die game/-Schicht bleibt pure; jegliche Adaptivität lebt in der Policy, nicht hier.
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { newTelemetry, observe, summarizeCards, fingerprint } from "./metrics.js";
+import { newTelemetry, observe, summarizeCards, summarizeFormations, fingerprint } from "./metrics.js";
 
 const GUARD_MAX = 1_000_000; // Endlos-Schleifen-Backstop (ein realer Run macht ~1.8k Stiche)
 
@@ -40,6 +40,7 @@ function finalize(s, seed, tel) {
       },
     },
     cards: summarizeCards(tel), // Per-Karte-Ledger (S1): Auftritte/Winrate/Crits/Score-Anteil
+    formations: summarizeFormations(tel), // Formations-Häufigkeit je Typ (Präsenz-Rate)
   };
 }
 

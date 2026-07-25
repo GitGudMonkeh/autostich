@@ -74,7 +74,18 @@ function runBaseline() {
   cardAgg.slice(0, 5).forEach((cd) => console.log(line(cd)));
   console.log(`  Karten — schwächste 3 nach Winrate:`);
   [...cardAgg].sort((a, b) => a.winrate - b.winrate).slice(0, 3).forEach((cd) => console.log(line(cd)));
-  write({ policy: "random", runs: N, seedFrom: seed0, seedTo: seed0 + N - 1, agg, cardAgg, samples });
+  // Formations-Häufigkeit (naives Spiel = natürliche Auftrittsrate je Typ → „wie leicht per Zufall").
+  const ftypes = {};
+  let anyRate = 0;
+  for (const r of runs) {
+    anyRate += r.formations.anyRate;
+    for (const [t, v] of Object.entries(r.formations.types)) ftypes[t] = (ftypes[t] || 0) + v;
+  }
+  anyRate /= N;
+  const freq = Object.entries(ftypes).map(([type, sum]) => ({ type, rate: sum / N })).sort((a, b) => b.rate - a.rate);
+  console.log(`  Formations-Häufigkeit (naiv, Anteil gespielter Positionen mit Typ) — ${pct(anyRate)} irgendeine:`);
+  freq.forEach((f) => console.log(`    ${f.type.padEnd(16)} ${pct(f.rate).padStart(6)}`));
+  write({ policy: "random", runs: N, seedFrom: seed0, seedTo: seed0 + N - 1, agg, cardAgg, formationFreq: { anyRate, types: freq }, samples });
 }
 
 // ---- Explore (S2): UCB + geteiltes memory → Coverage + Rangliste je Option ----

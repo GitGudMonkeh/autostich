@@ -14,11 +14,21 @@ export function newTelemetry() {
     cards: new Map(), // cardId → { id, suit, appearances, wins, losses, ties, crits, score }
     wins: 0,
     formationWins: 0, // Siege auf einer Position mit ≥1 aktiver Formation
+    tricks: 0, // beobachtete Stiche gesamt (Nenner für Häufigkeiten)
+    formationTricks: 0, // Stiche, in denen ≥1 Formation aktiv war
+    formationTypes: new Map(), // Formationstyp → Zahl Stiche, in denen der Typ präsent war (je Stich einmal)
   };
 }
 
 export function observe(tel, t) {
   if (!t || !t.pCard) return;
+  tel.tricks += 1;
+  // Formations-Typen dieser Position zählen — PRÄSENZ (unabhängig von Sieg/Niederlage), für die Häufigkeitsanalyse.
+  if (t.formations && t.formations.length) {
+    tel.formationTricks += 1;
+    const seen = new Set();
+    for (const f of t.formations) if (!seen.has(f.type)) { seen.add(f.type); tel.formationTypes.set(f.type, (tel.formationTypes.get(f.type) || 0) + 1); }
+  }
   const id = t.pCard.id;
   let c = tel.cards.get(id);
   if (!c) {
@@ -51,6 +61,15 @@ export function summarizeCards(tel) {
       scoreShare: c.score / totalScore,
     }))
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+// Formations-Häufigkeit: Anteil gespielter Positionen mit Formation X (Präsenz). Naives Spiel (kein Solver)
+// → natürliche Auftrittsrate = „wie leicht per Zufall". Optimiertes Spiel → „wie oft mit gutem Aufbau baubar".
+export function summarizeFormations(tel) {
+  const tricks = tel.tricks || 1;
+  const types = {};
+  for (const [type, n] of tel.formationTypes) types[type] = n / tricks;
+  return { anyRate: tel.formationTricks / tricks, types };
 }
 
 // Build-Fingerprint als Bucket-Key (docs/sim-harness-plan.md §8): sortierte Perks/Skills/Archetypen + Stat-Vektor.
