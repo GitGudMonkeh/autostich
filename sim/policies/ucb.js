@@ -9,9 +9,11 @@
 // Nicht-Angebots-Phasen (target/formation/shop/shop-target) delegiert die Policy an die Baseline —
 // so bleibt S2 auf die Auswahl-Arme fokussiert; der Formations-/Shop-Ausbau kommt in S4.
 import { randomPolicy, canAddSkill } from "./random.js";
+import { buyableOffers, shopTargetStep } from "../shop-policy.js";
 import { armKey } from "../memory.js";
 
 const DECLINE = "__decline__"; // Skill-Ablehnung als eigener Arm (auch „nichts nehmen" ist eine Entscheidung)
+const SHOP_LEAVE = "__leave__"; // Shop verlassen als eigener Arm (Nicht-Kauf ist auch eine Entscheidung)
 export const byArchetype = (s) => [...(s.activeArchetypes || [])].sort().join(",") || "none";
 
 export function ucbPolicy({ c = 1.4, bucket = byArchetype } = {}) {
@@ -47,8 +49,19 @@ export function ucbPolicy({ c = 1.4, bucket = byArchetype } = {}) {
           if (s.offer) return { type: "PICK_PERK", perkId: ucbPick("perk", s.offer, s, mem), rng };
           return { type: "RESOLVE_TRICK", rng };
         }
+        case "shop": {
+          // UCB über {jetzt kaufbare Item-ids} + „verlassen". So bekommt jedes Shop-Item einen eigenen Arm.
+          const buyable = buyableOffers(s);
+          if (!buyable.length) return { type: "LEAVE_SHOP" };
+          const cands = [...new Set(buyable.map((o) => o.itemId)), SHOP_LEAVE];
+          const choice = ucbPick("shopitem", cands, s, mem);
+          if (choice === SHOP_LEAVE) return { type: "LEAVE_SHOP" };
+          return { type: "BUY_ITEM", offerId: buyable.find((o) => o.itemId === choice).offerId, rng };
+        }
+        case "shop-target":
+          return shopTargetStep(s); // Ziel-Fluss deterministisch füllen (S4)
         default:
-          return base.act(s, rng); // target/formation/shop/shop-target: Baseline-Verhalten
+          return base.act(s, rng); // target/formation: Baseline-Verhalten
       }
     },
   };

@@ -24,9 +24,11 @@ describe("sim memory (S2)", () => {
       const mem = newMemory();
       const pol = ucbPolicy();
       for (let i = 0; i < 12; i++) runOne(1 + i, pol, mem);
-      return { stat: mem.ranking("stat"), perk: mem.ranking("perk"), skill: mem.ranking("skill") };
+      return { stat: mem.ranking("stat"), perk: mem.ranking("perk"), skill: mem.ranking("skill"), shopitem: mem.ranking("shopitem") };
     };
-    expect(run()).toEqual(run());
+    const a = run();
+    expect(run()).toEqual(a);
+    expect(a.shopitem.length).toBeGreaterThan(0); // Shop-Items werden als Arme erfasst (S5)
   });
 });
 

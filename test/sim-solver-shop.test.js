@@ -3,7 +3,8 @@ import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { runOne } from "../sim/run.js";
 import { randomPolicy } from "../sim/policies/random.js";
-import { fixedPolicy } from "../sim/policies/fixed.js";
+import { ucbPolicy } from "../sim/policies/ucb.js";
+import { newMemory } from "../sim/memory.js";
 import { greedyFormationStep } from "../sim/formation.js";
 import { MAX_CYCLES, TRICKS_PER_CYCLE } from "../src/game/constants.js";
 
@@ -36,17 +37,16 @@ describe("sim formation solver (S4)", () => {
 });
 
 describe("sim shop buying policy (S4)", () => {
-  it("kauft Ziel-Items und schließt den Run ohne Endlosschleife ab", () => {
-    // fixedPolicy mit buyShop+solveFormations: betritt shop-target UND die Formationsphase — der
-    // canComplete-Guard verhindert Kauf→Abbruch-Schleifen. Voller Run bis gameover beweist Terminierung.
-    const r = runOne(5, fixedPolicy([], { solveFormations: true, buyShop: true }));
+  it("UCB kauft Shop-Items (inkl. Ziel-Items) und schließt ohne Endlosschleife ab", () => {
+    // ucbPolicy wählt im Shop UCB-basiert Items (bzw. verlassen) → betritt shop-target; der canComplete-
+    // Guard verhindert Kauf→Abbruch-Schleifen. Voller Run bis gameover beweist Terminierung.
+    const r = runOne(5, ucbPolicy(), newMemory());
     expect(r.cycles).toBe(MAX_CYCLES);
     expect(r.tricks).toBeGreaterThanOrEqual(MAX_CYCLES * TRICKS_PER_CYCLE); // ≥, da ein Zeitsegment-Kauf verlängert
     expect(r.wins + r.losses + r.ties).toBe(r.tricks);
   });
 
-  it("ist deterministisch (gleicher Seed → gleiche Telemetrie)", () => {
-    const p = () => fixedPolicy(["L4"], { solveFormations: true, buyShop: true });
-    expect(runOne(5, p())).toEqual(runOne(5, p()));
+  it("ist deterministisch (gleicher Seed + frisches memory → gleiche Telemetrie)", () => {
+    expect(runOne(5, ucbPolicy(), newMemory())).toEqual(runOne(5, ucbPolicy(), newMemory()));
   });
 });

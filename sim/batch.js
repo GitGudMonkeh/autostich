@@ -84,12 +84,12 @@ function runExplore() {
   const policy = ucbPolicy({ c });
   const scores = [];
   for (let i = 0; i < N; i++) scores.push(runOne(seed0 + i, policy, mem).score);
-  const rankings = { stat: mem.ranking("stat"), perk: mem.ranking("perk"), skill: mem.ranking("skill") };
+  const rankings = { stat: mem.ranking("stat"), perk: mem.ranking("perk"), skill: mem.ranking("skill"), shopitem: mem.ranking("shopitem") };
   const scoreAgg = stats(scores);
   console.log(`sim 'ucb' explore: ${N} runs (seeds ${seed0}..${seed0 + N - 1}), c=${c}`);
   console.log(`  score   median ${f(scoreAgg.p50)}  p90 ${f(scoreAgg.p90)}  mean ${f(scoreAgg.mean)}`);
   const row = (r) => `    ${r.id.padEnd(16)} ${String(r.bucket).padEnd(14)} n=${String(r.n).padStart(4)}  mean ${r.mean.toFixed(3)}`;
-  for (const kind of ["stat", "perk", "skill"]) {
+  for (const kind of ["stat", "perk", "skill", "shopitem"]) {
     const rows = rankings[kind];
     const confident = rows.filter((r) => r.n >= MIN_N); // nur ausreichend gesampelte Arme sind aussagekräftig
     const under = rows.length - confident.length;

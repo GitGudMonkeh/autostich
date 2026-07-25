@@ -14,7 +14,7 @@ import { newMemory } from "./memory.js";
 import { fixedPolicy } from "./policies/fixed.js";
 
 const MIN_N = 5;
-const DECLINE = "__decline__";
+const SENTINELS = new Set(["__decline__", "__leave__"]); // Nicht-Wahl-Arme gehören nicht in den Priority-Build
 
 function quantile(xs, q) {
   const s = [...xs].sort((a, b) => a - b);
@@ -64,9 +64,9 @@ export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, top
   const explorePol = ucbPolicy({ c });
   for (let i = 0; i < exploreRuns; i++) runOne(seed0 + i, explorePol, mem);
   const bestById = new Map();
-  for (const kind of ["stat", "perk", "skill"]) {
+  for (const kind of ["stat", "perk", "skill", "shopitem"]) {
     for (const r of mem.ranking(kind)) {
-      if (r.n < MIN_N || r.id === DECLINE) continue;
+      if (r.n < MIN_N || SENTINELS.has(r.id)) continue;
       const cur = bestById.get(r.id);
       if (!cur || r.mean > cur.mean) bestById.set(r.id, { id: r.id, kind, mean: r.mean, n: r.n });
     }
@@ -103,7 +103,9 @@ export function runEval({ arg, seed0, c, f, write }) {
     evalRuns: Number(arg("--runs", 300)),
     topK: Number(arg("--ablate", 6)),
     c,
-    env: { solveFormations: arg("--formations", "0") === "1", buyShop: arg("--shop", "0") === "1" },
+    // buyShop default AN (Shop-Items sind jetzt Teil des Build & werden ablatiert); --shop 0 schaltet ab.
+    // solveFormations default AUS (O(n²)-Solver, --formations 1 aktiviert).
+    env: { solveFormations: arg("--formations", "0") === "1", buyShop: arg("--shop", "1") !== "0" },
   });
   console.log(`sim 'eval': explore ${res.exploreRuns} (seeds ${seed0}..${seed0 + res.exploreRuns - 1}), eval ${res.evalRuns} (seeds ${res.evalSeed0}..${res.evalSeed0 + res.evalRuns - 1}), c=${c}`);
   console.log(`  fixed(priority) full-score: median ${f(res.fullScore.p50)}  mean ${f(res.fullScore.mean)}  p90 ${f(res.fullScore.p90)}`);

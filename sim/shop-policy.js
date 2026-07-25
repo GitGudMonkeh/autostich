@@ -54,7 +54,7 @@ export function shopTargetStep(s) {
 }
 
 // Kann dieses Ziel-Item vollständig gefüllt werden? Simuliert BUY_ITEM → shopTargetStep… bis CONFIRM/CANCEL.
-function canComplete(s, offer) {
+export function canComplete(s, offer) {
   let t = reducer(s, { type: "BUY_ITEM", offerId: offer.offerId }); // Ziel-Item: rng-frei, geht in shop-target
   if (t.phase !== "shop-target") return false;
   for (let guard = 0; guard < 200; guard++) {
@@ -68,16 +68,21 @@ function canComplete(s, offer) {
   return false;
 }
 
-// Shop-Phase: erstes bezahlbares, abschließbares Angebot kaufen (Sofort- ODER Ziel-Item), sonst verlassen.
-export function shopStep(s, rng) {
+// Jetzt kaufbare Angebote: unbezahlt, bezahlbar UND (Sofort-Item ODER abschließbares Ziel-Item).
+// Geteilte Basis für alle Kaufpolitiken (baseline greedy / UCB / fixed-priority) — jede wählt daraus anders.
+export function buyableOffers(s) {
   const shop = s.shop || {};
   const purchased = new Set(shop.purchasedOfferIds || []);
   const coins = shop.coins || 0;
-  for (const o of shop.offers || []) {
-    if (purchased.has(o.offerId) || coins < o.price) continue;
+  return (shop.offers || []).filter((o) => {
+    if (purchased.has(o.offerId) || coins < o.price) return false;
     const def = SHOP_ITEM_DEFS[o.itemId];
-    if (!def?.target) return { type: "BUY_ITEM", offerId: o.offerId, rng }; // Sofort-Item
-    if (canComplete(s, o)) return { type: "BUY_ITEM", offerId: o.offerId, rng }; // abschließbares Ziel-Item
-  }
-  return { type: "LEAVE_SHOP" };
+    return !def?.target || canComplete(s, o);
+  });
+}
+
+// Baseline-Shop: erstes kaufbares Angebot nehmen, sonst verlassen.
+export function shopStep(s, rng) {
+  const b = buyableOffers(s);
+  return b.length ? { type: "BUY_ITEM", offerId: b[0].offerId, rng } : { type: "LEAVE_SHOP" };
 }

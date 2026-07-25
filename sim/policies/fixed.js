@@ -6,7 +6,7 @@
 // zwei Läufe mit demselben Seed nur an der ablatierten Stelle divergieren.
 import { randomPolicy, canAddSkill } from "./random.js";
 import { greedyFormationStep } from "../formation.js";
-import { shopStep, shopTargetStep } from "../shop-policy.js";
+import { buyableOffers, shopTargetStep } from "../shop-policy.js";
 
 // solveFormations/buyShop: realistischeres Starkspiel (Formations-Solver + Shop-Käufe). Default AUS:
 // der Formations-Solver ist O(n²)·computeFormations je Formationsphase und für Massenläufe zu teuer
@@ -46,8 +46,14 @@ export function fixedPolicy(priority, { drop = null, solveFormations = false, bu
         }
         case "formation":
           return solveFormations ? greedyFormationStep(s) : base.act(s, rng);
-        case "shop":
-          return buyShop ? shopStep(s, rng) : base.act(s, rng);
+        case "shop": {
+          if (!buyShop) return base.act(s, rng);
+          const buyable = buyableOffers(s).filter((o) => o.itemId !== drop);
+          const pick = bestOf(buyable.map((o) => o.itemId)); // höchstpriorisiertes kaufbares Shop-Item
+          return pick
+            ? { type: "BUY_ITEM", offerId: buyable.find((o) => o.itemId === pick).offerId, rng }
+            : { type: "LEAVE_SHOP" }; // nichts aus dem Build kaufbar → verlassen (Build-fokussiert)
+        }
         case "shop-target":
           return buyShop ? shopTargetStep(s) : base.act(s, rng);
         default:
