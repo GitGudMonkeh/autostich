@@ -1,7 +1,7 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
 import { PERK_DEFS, buildOffer } from "./perks.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
-  frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
+  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance, purchaseLogEntry } from "./shop.js";
@@ -317,6 +317,9 @@ export function reducer(state, action) {
       let lightning = state.lightning;
       let heat = state.heat;
       let deck = state.deck;
+      // Eis-Zustand (wird beim Deaktivieren des Eis-Archetyps zurückgesetzt, #140).
+      let iceTemp = state.iceTemp, frostSwapsUsed = state.frostSwapsUsed;
+      let frostbitePending = state.frostbitePending, frostbiteActive = state.frostbiteActive;
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15 (#93 F2)
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
       // Eis (#93 F3): dieser Pick friert so viele NEUE eigene Karten ein, dass das Ziel (frozenTargetFor) erreicht ist.
@@ -325,9 +328,20 @@ export function reducer(state, action) {
         if (toFreeze > 0) deck = freezeCards(deck, toFreeze, action.rng);
       }
       if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
+      // #140: Verliert man durch Ersetzen den LETZTEN Skill eines Archetyps (0 Skills übrig), wird er deaktiviert
+      // und seine Ressourcen/Marker verschwinden — sonst bleiben „Geister"-Leisten/eingefrorene Karten ohne Skill.
+      const stillActive = new Set(skills.map(archetypeOf).filter(Boolean));
+      activeArchetypes = activeArchetypes.filter((a) => stillActive.has(a));
+      if (!stillActive.has("lightning")) lightning = initLightning();               // Ladungsleiste weg
+      if (!stillActive.has("fire"))      heat = null;                                // Hitzeleiste weg
+      if (!stillActive.has("ice")) {                                                 // eigene Frostkarten auftauen + Gegner-Frostbiss löschen
+        deck = unfreezeAll(deck);
+        iceTemp = {}; frostSwapsUsed = [];
+        frostbitePending = []; frostbiteActive = [];
+      }
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.shop?.permanentEffects || {});
-      return { ...state, skills, activeArchetypes, lightning, heat, deck, formations, phase: "play", skillOffer: null };
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, formations, phase: "play", skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").

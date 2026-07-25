@@ -295,6 +295,11 @@ export function freezeCards(deck, count, rng) {
   }
   return (deck || []).map((c, i) => (chosen.has(i) ? { ...c, frozen: true } : c));
 }
+// Alle eigenen Karten auftauen (immutabel) — Gegenstück zu freezeCards. Genutzt, wenn der Eis-Archetyp
+// deaktiviert wird (letzter Eis-Skill ersetzt, #140): das frozen-Flag verschwindet von allen Karten.
+export function unfreezeAll(deck) {
+  return (deck || []).map((c) => (c.frozen ? { ...c, frozen: false } : c));
+}
 
 // Roh-Crit-Beitrag des Blitz-Archetyps (Abschnitt 2a): Aktivierungs-Sockel + Σ Skill-critChance
 // + Gewitterfront-Bonus (dauerhaft, Stufe C). Fließt additiv in die Gesamt-Crit-Chance. 0, solange inaktiv.
