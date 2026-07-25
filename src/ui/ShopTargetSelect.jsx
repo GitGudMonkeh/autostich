@@ -1,6 +1,7 @@
 import { suitColor, suitName, SUIT_ORDER, SHOP_CATEGORIES, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { SEGMENT_SIZE, FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
 import { SHOP_ITEM_DEFS, SEGMENT_BOUNDARIES } from "../game/shop.js";
+import { CardGrid } from "./CardGrid.jsx";
 import { useEscape } from "./useEscape.js";
 
 const GOLD = "#d4a63a";
@@ -167,32 +168,11 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
             </div>
           </div>
         ) : spec.position ? (
-          <div className="grid gap-2 mt-4">
-            {Array.from({ length: nSeg }, (_, s) => (
-              <div key={s} className="flex items-center gap-2">
-                <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
-                <div className="grid grid-cols-5 gap-1.5 flex-1">
-                  {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
-                    const pos = s * SEGMENT_SIZE + k;
-                    const occ = occupied.has(pos);
-                    const active = st.position === pos;
-                    const col = suitColor(c.suit);
-                    return (
-                      <button key={pos} onClick={() => !occ && onPosition(pos)} disabled={occ}
-                        className="relative rounded-lg flex flex-col items-center justify-center transition-all"
-                        style={{ aspectRatio: "3 / 4", background: active ? `${GOLD}22` : "#20202a",
-                                 border: `2px solid ${active ? GOLD : occ ? "#5a8ade" : col + "55"}`, opacity: occ ? 0.55 : 1,
-                                 cursor: occ ? "not-allowed" : "pointer", boxShadow: active ? `0 0 10px ${GOLD}66` : undefined }}>
-                        <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-                        <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
-                        {occ && <span className="absolute bottom-0.5 right-1 text-[10px]" style={{ color: "#5a8ade" }} title="Bereits ein Anker">⚓</span>}
-                        {active && <span className="text-[10px] font-bold leading-none" style={{ color: GOLD }}>✓</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+          // #112: Positions-Anker im geteilten CardGrid — mit Formations-/Rollen-Kontext; belegte Positionen ausgegraut (Silberring).
+          <div className="mt-4">
+            <CardGrid cards={cards} formations={state.formations} roles={state.roles}
+              anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}}
+              pickedPos={st.position} disabledPos={[...occupied]} onTilePick={(pos) => onPosition(pos)} />
           </div>
         ) : spec.segment ? (
           // #124: Segment im VOLLEN Board wählen — markierbarer 5er-Block im durchgehenden Deck statt isolierter Kachel.
@@ -225,32 +205,11 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
           </div>
         ) : (
           <>
-            <div className="grid gap-2 mt-4">
-              {Array.from({ length: nSeg }, (_, s) => (
-                <div key={s} className="flex items-center gap-2">
-                  <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
-                  <div className="grid grid-cols-5 gap-1.5 flex-1">
-                    {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
-                      const pos = s * SEGMENT_SIZE + k;
-                      const selected = sel.includes(c.id);
-                      const col = suitColor(c.suit);
-                      return (
-                        <button key={pos} onClick={() => onCard(c.id)}
-                          className="relative rounded-lg flex flex-col items-center justify-center transition-all"
-                          style={{ aspectRatio: "3 / 4", background: selected ? `${GOLD}22` : "#20202a",
-                                   border: `2px solid ${selected ? GOLD : col + "55"}`, boxShadow: selected ? `0 0 10px ${GOLD}66` : undefined }}>
-                          <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-                          <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
-                          {selected && spec.color && colors[c.id] && (
-                            <span className="text-[9px] font-bold leading-none" style={{ color: suitColor(colors[c.id]) }}>→{colors[c.id]}</span>
-                          )}
-                          {selected && !spec.color && <span className="text-[10px] font-bold leading-none" style={{ color: GOLD }}>✓</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+            {/* #112: Karten im geteilten CardGrid — Formations-/Rollen-Kontext sichtbar (formationsbewusst wählen). */}
+            <div className="mt-4">
+              <CardGrid cards={cards} formations={state.formations} roles={state.roles}
+                anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}}
+                pickedIds={sel} arrows={colors} onTilePick={(pos, c) => onCard(c.id)} />
             </div>
 
             {spec.color && sel.length > 0 && (
