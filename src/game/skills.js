@@ -123,8 +123,8 @@ export const SKILL_DEFS = {
     desc: "Hitze-Konsument: bei voller Hitze gibt der nächste Sieg +1.000 Score; danach werden 100 Hitze verbraucht.", heatConsumer: "conflagration" },
   SK_FIRE_10: { id: "SK_FIRE_10", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"],
     desc: "Hitze-Konsument: vor jedem Stich −10 % Hitze, dafür eigene Karte +3 temporären Wert (nur ab 10 % Hitze).", heatConsumer: "melt" },
-  SK_FIRE_11: { id: "SK_FIRE_11", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: "Maximale Hitze steigt auf 150 % — der Überschuss über 100 % bleibt erhalten.", heatMax150: true },
+  SK_FIRE_11: { id: "SK_FIRE_11", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat", "consume"],
+    desc: "Nachbrand: jede Auslösung deines Hitze-Konsumenten gibt zusätzlich +Score in Höhe des 5-fachen der verbrauchten Hitze (Flächenbrand +500, Schmelzpunkt +50). Ohne Konsument wirkungslos.", suncore: true },
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
     desc: "Nachdem ein Hitze-Konsument ausgelöst hat, erhält die nächste eigene Karte +10 temporären Wert (stapelt nicht).", phoenix: true },
 
@@ -213,8 +213,8 @@ export function initHeat() {
 // Anzahl gehaltener Feuer-Skills (Grundmechanik zählt nicht) & ob ein Feuer-Flag gehalten wird.
 export const activeFireCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "fire").length;
 export const fireFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
-// Hitze-Maximum je Build (Sonnenkern → 150).
-export const heatMaxFor = (skills) => (fireFlag(skills, "heatMax150") ? C.HEAT_MAX_SUN : C.HEAT_MAX);
+// Hitze-Maximum (fix 100; #Pass5: Sonnenkern hebt es nicht mehr an — wurde zum „Nachbrand"-Konsumbonus).
+export const heatMaxFor = () => C.HEAT_MAX;
 // Gehaltener Hitze-Konsument („conflagration"/„melt") oder null (max 1, im Reducer erzwungen).
 export function heatConsumerOf(skills) {
   for (const id of skills || []) { const c = SKILL_DEFS[id]?.heatConsumer; if (c) return c; }

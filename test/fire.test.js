@@ -47,7 +47,7 @@ describe("Feuer — reine Helfer (#93 F1)", () => {
   });
   it("heatMaxFor / heatConsumerOf / heatConsumerCount / activeFireCount / fireFlag", () => {
     expect(heatMaxFor([F4])).toBe(100);
-    expect(heatMaxFor([F11])).toBe(150);           // Sonnenkern
+    expect(heatMaxFor([F11])).toBe(100);           // Sonnenkern hebt das Maximum nicht mehr an (#Pass5)
     expect(heatConsumerOf([F4])).toBe(null);
     expect(heatConsumerOf([F9])).toBe("conflagration");
     expect(heatConsumerOf([F10])).toBe("melt");
@@ -123,10 +123,21 @@ describe("Feuer — Engine-Integration (#93 F1)", () => {
   it("Feuerwalze: Stapel bei +3 gedeckelt (#Pass2: 5→3)", () => {
     expect(resolveTrick(scen(12, 0, { skills: [F8], heat: heat({ fireRoll: 3 }) }), rng).heat.fireRoll).toBe(3);
   });
-  it("Sonnenkern: Hitze darf über 100 bis 150 steigen (Rest bleibt, Cap 150)", () => {
-    const s = resolveTrick(scen(52, 0, { skills: [F11], heat: heat({ value: 148, max: 150 }) }), rng);
-    expect(s.heat.max).toBe(150);
-    expect(s.heat.value).toBe(150);                       // 148 + Gewinn 6 → 154, gedeckelt 150 (Überschuss über 100 bleibt)
+  it("Sonnenkern-Nachbrand: mit Flächenbrand +500 zusätzlich (K×100 verbrauchte Hitze)", () => {
+    const s = resolveTrick(scen(12, 0, { skills: [F9, F11], heat: heat({ value: 100 }) }), rng);
+    expect(s.lastTrick.breakdown.flats).toBe(1800);       // Feuer-Flat 300 (2 Skills) + Flächenbrand 1000 + Nachbrand 500
+    expect(s.heat.value).toBe(0);                         // 100 (+6, gedeckelt 100) − 100 verbraucht
+  });
+  it("Sonnenkern-Nachbrand: mit Schmelzpunkt +50 im Sieg (K×10 verbrauchte Hitze)", () => {
+    const s = resolveTrick(scen(12, 0, { skills: [F10, F11], heat: heat({ value: 50 }) }), rng);
+    expect(s.lastTrick.pValue).toBe(15);                  // 12 + Schmelzpunkt 3
+    expect(s.lastTrick.breakdown.flats).toBe(440);        // Feuer-Flat 390 (2 Skills, Vorsprung 15) + Nachbrand 50
+  });
+  it("Sonnenkern: ohne Konsument wirkungslos — kein Nachbrand, Deckel bleibt 100 (nicht mehr 150)", () => {
+    const s = resolveTrick(scen(52, 0, { skills: [F11], heat: heat({ value: 98 }) }), rng);
+    expect(s.heat.max).toBe(100);
+    expect(s.heat.value).toBe(100);                       // 98 + 6 = 104, bei 100 gedeckelt (kein 150-Band mehr)
+    expect(s.lastTrick.breakdown.flats).toBe(1250);       // nur Feuer-Flat (50×25), kein Nachbrand
   });
   it("Phönixfeuer: Schmelzpunkt armiert Phönix; nächster Stich +10, dann entschärft", () => {
     const a = resolveTrick(scen(12, 0, { skills: [F10, F12], heat: heat({ value: 30 }) }), rng);
@@ -147,9 +158,9 @@ describe("Feuer — Reducer-Aktivierung (#93 F1)", () => {
     expect(s.heat).toMatchObject({ active: true, value: 0, max: 100 });
     expect(s.phase).toBe("play");
   });
-  it("Sonnenkern hebt das Hitzemaximum bei Aktivierung auf 150", () => {
+  it("Sonnenkern hebt das Hitzemaximum NICHT mehr an (bleibt 100; #Pass5 Nachbrand)", () => {
     const s = reducer(skillState({ skillOffer: [F11] }), { type: "PICK_SKILL", skillId: F11, rng });
-    expect(s.heat.max).toBe(150);
+    expect(s.heat.max).toBe(100);
   });
   it("blockt einen zweiten Hitze-Konsument, erlaubt aber das Ersetzen des bestehenden", () => {
     // Flächenbrand gehalten, freier Slot → Schmelzpunkt wäre der 2. Konsument → no-op.

@@ -4,7 +4,7 @@ import { PERK_DEFS, buildOffer, critChanceRawFor, critMultiplierFor, streakBaseM
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasConductivity, hasEndlessStorm, hasDischarge, // Blitz-Rework (#93 F2)
-  fireFlag, heatMaxFor, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer (#93 F1)
+  fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer (#93 F1)
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
@@ -134,13 +134,15 @@ export function resolveTrick(state, rng = Math.random) {
   // ---- Feuer (#93 F1): Vor-Stich-Effekte, die den Kampfwert DIESES Stichs anheben (Schmelzpunkt/Glühende Klinge/Feuerwalze/Phönixfeuer).
   let heat = state.heat || null;
   let fireValueBonus = 0;
+  const suncore = fireFlag(skills, "suncore"); // Sonnenkern „Nachbrand" (#Pass5): +Score je Konsum-Auslösung
+  let meltConsumed = 0; // in diesem Stich vom Schmelzpunkt verbrauchte Hitze (Vehikel für den Nachbrand-Bonus)
   if (heat && heat.active) {
-    heat = { ...heat, max: heatMaxFor(skills) }; // Sonnenkern kann das Maximum angehoben haben
     // Phönixfeuer: im VORIGEN Stich armiert → diese Karte +10 (einmalig).
     if (fireFlag(skills, "phoenix") && heat.phoenixArmed) { fireValueBonus += C.PHOENIX_VALUE; heat = { ...heat, phoenixArmed: false }; }
     // Schmelzpunkt (Konsument): vor jedem Stich −10 % Hitze, +3 Wert (nur ab 10 %); armiert Phönix für den NÄCHSTEN Stich.
     if (heatConsumerOf(skills) === "melt" && heat.value >= C.MELT_COST) {
       heat = { ...heat, value: heat.value - C.MELT_COST };
+      meltConsumed = C.MELT_COST; // Sonnenkern-Nachbrand liest das im Sieg-Block (zahlt sich nur bei Sieg aus)
       fireValueBonus += C.MELT_VALUE;
       if (fireFlag(skills, "phoenix")) heat = { ...heat, phoenixArmed: true };
     }
@@ -194,9 +196,12 @@ export function resolveTrick(state, rng = Math.random) {
       const fmargin = pValue - oValue;
       heat = { ...heat, value: Math.min(heat.max, heat.value + heatGainFor(fmargin, skills, pCard.value)) };
       fireFlat += fireScoreFor(fmargin, skills); // Feuer-Flat-Score (in die multiplizierte Basis)
-      // Flächenbrand: Sieg bei voller Hitze (≥100) → +1000 flach, verbraucht exakt 100 (Sonnenkern: Überschuss bleibt); armiert Phönix.
+      // Sonnenkern-Nachbrand (Schmelzpunkt): die vor dem Stich verbrauchte Hitze zahlt sich im Sieg als Flat aus.
+      if (suncore && meltConsumed) fireFlat += C.SUNCORE_BURN_PER_HEAT * meltConsumed;
+      // Flächenbrand: Sieg bei voller Hitze (≥100) → +1000 flach, verbraucht exakt 100; armiert Phönix.
       if (heatConsumerOf(skills) === "conflagration" && heat.value >= C.HEAT_MAX) {
         fireFlat += C.CONFLAGRATION_SCORE;
+        if (suncore) fireFlat += C.SUNCORE_BURN_PER_HEAT * C.CONFLAGRATION_COST; // Nachbrand: +K × verbrauchte 100 Hitze
         heat = { ...heat, value: heat.value - C.CONFLAGRATION_COST };
         if (fireFlag(skills, "phoenix")) heat = { ...heat, phoenixArmed: true };
       }
