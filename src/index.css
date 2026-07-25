@@ -31,7 +31,7 @@ button { font-family: inherit; }
 /* Wie as-combo, aber HÄLT am Ende bei voller Opacity (forwards) — für den Formations-Multi-Float, damit er
    sichtbar bleibt, solange der Stich angezeigt wird (wie Banner/Aufschlüsselung), statt zu früh wegzufaden. */
 @keyframes as-combo-hold { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-6px) scale(1); } 100% { opacity:1; transform: translateY(-8px) scale(1); } }
-/* Ausklang des Formations-Floats: nachdem er ~1 s länger stehen geblieben ist, sanft von Opacity 1 → 0 (leichtes Weitersteigen). */
+/* Ausklang des Formations-Floats: nachdem er ~1,5 s länger stehen geblieben ist, sanft von Opacity 1 → 0 (leichtes Weitersteigen). */
 @keyframes as-combo-out { from { opacity:1; transform: translateY(-8px) scale(1); } to { opacity:0; transform: translateY(-18px) scale(1); } }
 /* Niederlagenkosten-Stufenwechsel (#32): kurzer Hinweis, einblenden → halten → ausblenden. */
 @keyframes as-notice { 0% { opacity:0; transform: translate(-50%, 6px); } 12% { opacity:1; transform: translate(-50%, 0); } 82% { opacity:1; transform: translate(-50%, 0); } 100% { opacity:0; transform: translate(-50%, -12px); } }
