@@ -262,6 +262,78 @@ export function Autostich() {
     prevMult.current = baseScoreMult;
   }, [baseScoreMult]);
 
+  // Die sechs Kopf-Stat-Zellen einmal definiert, damit sie ohne Logik-Duplikat an zwei Stellen gerendert
+  // werden können: Desktop im Header-Row (rechts neben der Wortmarke), Mobil als eigenes gerahmtes Panel
+  // NACH der Controls-Leiste (#UI). text-right ist auf Mobil (justify-items-center → inhaltsbreite Zellen) egal.
+  const statCells = (
+    <>
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Zeit{paused ? " ⏸" : ""}</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
+      </div>
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Score</div>
+        <div className="text-xl font-bold font-pixel-dense leading-none" style={{ color: "#d4a63a" }}>
+          {Math.floor(state.score).toLocaleString("de-DE")}
+        </div>
+        {/* #113: zweite Zeile IMMER reserviert (feste Höhe) → Geist-Delta/Rekord ändert die Zellenhöhe nie. */}
+        <div className="text-xs font-normal leading-tight h-4 mt-0.5 whitespace-nowrap">
+          {ghost.hasGhost && (ghost.passed ? (
+            <span style={{ color: "#8a7de0" }}>⚑ Rekord</span>
+          ) : ghost.delta != null ? (
+            <span style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>
+              {ghost.delta >= 0 ? "▲ +" : "▼ "}{ghost.delta.toLocaleString("de-DE")}
+            </span>
+          ) : null)}
+        </div>
+      </div>
+      {/* Score-Multiplikator-Chip (#37): immer sichtbar, ×1,00 gedämpft, ab >1 Gold; Puls bei Anstieg. */}
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Mult</div>
+        <div className="text-xl font-bold leading-none pt-0.5">
+          <span className={multShakeClass}>
+          <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base font-pixel-dense"
+            title={state.lightning?.armed
+              ? "Serie geschützt (Geladene Serie): Die nächste Niederlage setzt die Siegesserie nicht zurück."
+              : "Score-Multiplikator: Siegesserie (Basis, +2 %/Stufe bis +150 %) × Perk-Mult — Farbe steigt mit der Höhe (grau/grün/blau/lila/gold)"}
+            style={{ fontVariantNumeric: "tabular-nums",
+                     background: multHot ? `${multColor}22` : "#ffffff0f",
+                     color: multHot ? multColor : "#8a8a92",
+                     // Geladene Serie (Stufe C): blauer Rahmen zeigt den Serien-Schutz an.
+                     boxShadow: state.lightning?.armed ? "0 0 0 2px #5ec8f0, 0 0 9px #5ec8f077" : undefined,
+                     animation: multPulse > 0 ? "as-multpulse 420ms ease-out" : undefined }}>
+            ×{fmtMult(baseScoreMult)}
+          </span>
+          </span>
+        </div>
+      </div>
+      {/* Münzen (Shop-Spec §3) — Run-Ressource für den Shop */}
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Münzen</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>🪙 {state.shop?.coins ?? 0}</div>
+      </div>
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
+      </div>
+      {/* #133/#111: „Nächster Track" im Kopf (freie Zelle); die untere Musik-Leiste zeigt nur den Titel. */}
+      {state.phase !== "gameover" && (
+        <div className="text-right">
+          <div className="text-[10px] uppercase tracking-wide opacity-50">Musik</div>
+          {/* Nur-Icon-Button, in Box-Höhe/Rhythmus an den MULT-Chip angeglichen (pt-0.5 + text-base). */}
+          <div className="leading-none pt-0.5">
+            <button onClick={() => music.next()} aria-label="Nächster Track"
+              title={musicTitle ? `Läuft: ${musicTitle} — nächster Track` : "Nächster Track"}
+              className="inline-block rounded px-2 py-0.5 text-base leading-none transition-all hover:brightness-110"
+              style={{ background: "#20202a", border: "1px solid #3a3a46" }}>
+              ⏭
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="min-h-screen w-full flex justify-center px-4 py-6">
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
@@ -295,76 +367,9 @@ export function Autostich() {
               </h1>
               <p className="text-xs opacity-45">Roguelite-Autobattler-Stechspiel · Prototyp</p>
             </div>
-            {/* #113: Mobil festes 3-Spalten-Grid (Reihe 1 Zeit/Score/Mult · Reihe 2 Münzen/Bester) → kein
-                Umbruch je nach Ziffernzahl; Desktop wie bisher eine Zeile. Werte oben ausgerichtet (items-start),
-                damit die reservierte Geist-Delta-Zeile die Zahlen nicht vertikal verschiebt. */}
-            <div className="grid grid-cols-3 gap-x-3 gap-y-2 w-full justify-items-center sm:flex sm:w-auto sm:justify-normal sm:items-start sm:gap-5">
-              <div className="text-right">
-                <div className="text-[10px] uppercase tracking-wide opacity-50">Zeit{paused ? " ⏸" : ""}</div>
-                <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] uppercase tracking-wide opacity-50">Score</div>
-                <div className="text-xl font-bold font-pixel-dense leading-none" style={{ color: "#d4a63a" }}>
-                  {Math.floor(state.score).toLocaleString("de-DE")}
-                </div>
-                {/* #113: zweite Zeile IMMER reserviert (feste Höhe) → Geist-Delta/Rekord ändert die Zellenhöhe nie. */}
-                <div className="text-xs font-normal leading-tight h-4 mt-0.5 whitespace-nowrap">
-                  {ghost.hasGhost && (ghost.passed ? (
-                    <span style={{ color: "#8a7de0" }}>⚑ Rekord</span>
-                  ) : ghost.delta != null ? (
-                    <span style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>
-                      {ghost.delta >= 0 ? "▲ +" : "▼ "}{ghost.delta.toLocaleString("de-DE")}
-                    </span>
-                  ) : null)}
-                </div>
-              </div>
-              {/* Score-Multiplikator-Chip (#37): immer sichtbar, ×1,00 gedämpft, ab >1 Gold; Puls bei Anstieg. */}
-              <div className="text-right">
-                <div className="text-[10px] uppercase tracking-wide opacity-50">Mult</div>
-                <div className="text-xl font-bold leading-none pt-0.5">
-                  <span className={multShakeClass}>
-                  <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base font-pixel-dense"
-                    title={state.lightning?.armed
-                      ? "Serie geschützt (Geladene Serie): Die nächste Niederlage setzt die Siegesserie nicht zurück."
-                      : "Score-Multiplikator: Siegesserie (Basis, +2 %/Stufe bis +150 %) × Perk-Mult — Farbe steigt mit der Höhe (grau/grün/blau/lila/gold)"}
-                    style={{ fontVariantNumeric: "tabular-nums",
-                             background: multHot ? `${multColor}22` : "#ffffff0f",
-                             color: multHot ? multColor : "#8a8a92",
-                             // Geladene Serie (Stufe C): blauer Rahmen zeigt den Serien-Schutz an.
-                             boxShadow: state.lightning?.armed ? "0 0 0 2px #5ec8f0, 0 0 9px #5ec8f077" : undefined,
-                             animation: multPulse > 0 ? "as-multpulse 420ms ease-out" : undefined }}>
-                    ×{fmtMult(baseScoreMult)}
-                  </span>
-                  </span>
-                </div>
-              </div>
-              {/* Münzen (Shop-Spec §3) — Run-Ressource für den Shop */}
-              <div className="text-right">
-                <div className="text-[10px] uppercase tracking-wide opacity-50">Münzen</div>
-                <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>🪙 {state.shop?.coins ?? 0}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
-                <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
-              </div>
-              {/* #133/#111: „Nächster Track" in den Header gezogen (freie Zelle oben rechts); die untere
-                  Musik-Leiste zeigt dadurch nur noch den Titel. Auf Gameover ausgeblendet wie die MusicBar. */}
-              {state.phase !== "gameover" && (
-                <div className="text-right">
-                  <div className="text-[10px] uppercase tracking-wide opacity-50">Musik</div>
-                  {/* Nur-Icon-Button, in Box-Höhe/Rhythmus an den MULT-Chip angeglichen (pt-0.5 + text-base). */}
-                  <div className="leading-none pt-0.5">
-                    <button onClick={() => music.next()} aria-label="Nächster Track"
-                      title={musicTitle ? `Läuft: ${musicTitle} — nächster Track` : "Nächster Track"}
-                      className="inline-block rounded px-2 py-0.5 text-base leading-none transition-all hover:brightness-110"
-                      style={{ background: "#20202a", border: "1px solid #3a3a46" }}>
-                      ⏭
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Desktop: Kopf-Stats rechts neben der Wortmarke (eine Zeile). Auf Mobil stehen dieselben Zellen
+                als eigenes gerahmtes Panel NACH der Controls-Leiste (s. u.) → hier nur ab sm sichtbar. */}
+            <div className="hidden sm:flex sm:items-start sm:gap-5">{statCells}</div>
           </header>
 
           <Controls
@@ -373,6 +378,13 @@ export function Autostich() {
             onRestart={startRun} onAbort={endRun} onOptions={() => setShowOptions(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
+
+          {/* Mobil: dieselben Kopf-Stats als eigenes gerahmtes Panel an ZWEITER Stelle (direkt nach der
+              Controls-Leiste). Auf Desktop ausgeblendet (dort stehen sie im Header). */}
+          <div className="sm:hidden grid grid-cols-3 gap-x-3 gap-y-2 justify-items-center rounded-xl p-3 as-panel"
+            style={{ background: "#17171c", border: "1px solid #26262e" }}>
+            {statCells}
+          </div>
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
