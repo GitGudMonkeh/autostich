@@ -36,7 +36,7 @@ export function Autostich() {
   const [options, setOptions] = useState(() => loadOptions());   // Optionen (#41): u. a. CRT-Skin
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
-  const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung 1×/2×/4×/6× (#27, kein Score-Effekt)
+  const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/6× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
@@ -70,7 +70,7 @@ export function Autostich() {
   useEffect(() => { cycleStartWins.current = state.wins || 0; }, [state.cycle]);
   const cycleWins = Math.max(0, (state.wins || 0) - cycleStartWins.current);
   const dynamicSpeed = 1 + 0.02 * cycleWins;
-  // Effektive Flip-Zeit: Basis / (Turbo 1×/2×/4×/6× × dynamische Rundengeschwindigkeit).
+  // Effektive Flip-Zeit: Basis / (Turbo intern 1×/2×/4×/6× — Buttons X2/X4/MAX — × dynamische Rundengeschwindigkeit).
   const flipMs = BASE_FLIP_MS / (speedMult * dynamicSpeed);
 
   useEffect(() => {
@@ -258,19 +258,25 @@ export function Autostich() {
               </h1>
               <p className="text-xs opacity-45">Roguelite-Autobattler-Stechspiel · Prototyp</p>
             </div>
-            <div className="flex items-end gap-5">
+            {/* #113: Mobil festes 3-Spalten-Grid (Reihe 1 Zeit/Score/Mult · Reihe 2 Münzen/Bester) → kein
+                Umbruch je nach Ziffernzahl; Desktop wie bisher eine Zeile. Werte oben ausgerichtet (items-start),
+                damit die reservierte Geist-Delta-Zeile die Zahlen nicht vertikal verschiebt. */}
+            <div className="grid grid-cols-3 gap-x-3 gap-y-2 sm:flex sm:items-start sm:gap-5">
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Zeit{paused ? " ⏸" : ""}</div>
                 <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
               </div>
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Score</div>
-                <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>
+                <div className="text-xl font-bold font-pixel-dense leading-none" style={{ color: "#d4a63a" }}>
                   {Math.floor(state.score).toLocaleString("de-DE")}
+                </div>
+                {/* #113: zweite Zeile IMMER reserviert (feste Höhe) → Geist-Delta/Rekord ändert die Zellenhöhe nie. */}
+                <div className="text-xs font-normal leading-tight h-4 mt-0.5 whitespace-nowrap">
                   {ghost.hasGhost && (ghost.passed ? (
-                    <span className="text-xs font-normal ml-2" style={{ color: "#8a7de0" }}>⚑ Rekord</span>
+                    <span style={{ color: "#8a7de0" }}>⚑ Rekord</span>
                   ) : ghost.delta != null ? (
-                    <span className="text-xs font-normal ml-2" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>
+                    <span style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>
                       {ghost.delta >= 0 ? "▲ +" : "▼ "}{ghost.delta.toLocaleString("de-DE")}
                     </span>
                   ) : null)}
