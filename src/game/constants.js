@@ -105,9 +105,8 @@ export const STATIC_CHARGE     = 1;    // Statische Aufladung: Ladung je Sieg OH
 export const CONDUCT_CHARGE    = 2;    // Leitfähigkeit: Zusatzladung bei Crit neben ionisierter Karte
 export const DISCHARGE_SCORE   = 500;  // Entladung: +Flat beim nächsten Crit nach vollem Verbrauch
 
-// Feuer-Archetyp (#93 F1) — Hitzeleiste 0–100 (Sonnenkern 150). Belohnt totale Überlegenheit. [TUNING]
-export const HEAT_MAX          = 100;  // Standard-Hitzemaximum
-export const HEAT_MAX_SUN      = 150;  // Maximum mit Sonnenkern (L, Überschuss über 100 bleibt)
+// Feuer-Archetyp (#93 F1) — Hitzeleiste 0–100. Belohnt totale Überlegenheit. [TUNING]
+export const HEAT_MAX          = 100;  // Hitzemaximum (fix; #Pass5: Sonnenkern hebt es nicht mehr, wurde „Nachbrand")
 export const HEAT_MIN_MARGIN   = 3;    // Mindest-Wertvorsprung für Hitzegewinn & Feuer-Score
 export const HEAT_PER_POINT    = 1;    // % Hitze je relevantem Differenzpunkt (Vorsprung−2) [#121: 2→1]
 export const HEAT_MARGIN_CAP   = 8;    // Deckel des effektiven Vorsprungs im Hitzegewinn (Late-Game-Runaway) [#121]
@@ -128,6 +127,7 @@ export const CONFLAGRATION_COST  = 100;  // …          … verbraucht exakt 10
 export const MELT_COST         = 10;   // Schmelzpunkt (Konsument): −% Hitze je Stich …
 export const MELT_VALUE        = 3;    // …          … dafür eigene Karte +Wert
 export const PHOENIX_VALUE     = 10;   // Phönixfeuer (L): nach Konsumenten-Auslösung nächste Karte +Wert
+export const SUNCORE_BURN_PER_HEAT = 5;  // Sonnenkern „Nachbrand" (L): +Score = K × je Konsum verbrauchter Hitze (Flächenbrand 100→+500, Schmelzpunkt 10→+50) [#Pass5, sim-getunt]
 
 // Eis-Archetyp (#93 F3) — Kontroll-/Aufstellungs-Archetyp. Kein Konsument, keine verbrauchbare Ressource. [TUNING]
 export const ICE_BASE_FREEZE     = 2;    // erster Eis-Skill friert so viele eigene Karten ein
