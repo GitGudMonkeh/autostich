@@ -94,9 +94,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const fx = (a) => (reduced ? undefined : a);
   // #95: einheitliche Float-Dauer für Score- UND Formations-Float (letzterer war zuvor kürzer).
   const floatDur = clamp(flipMs * 0.7, 360, 760) + 1300;
-  // Score-Float: nur die kurze Einblend-/Aufstiegsdauer — danach HÄLT er (forwards), bis der nächste Stich
-  // ihn ersetzt, damit er genauso lange sichtbar bleibt wie Banner/Aufschlüsselung (auch in Pause/Entscheidung).
-  const floatInMs = clamp(flipMs * 0.5, 240, 600);
   // #95: Float-Größe skaliert mit dem Gewinn — klein bleibt lesbar (20 px), groß gedeckelt (52 px).
   const floatSize = (v) => Math.round(clamp(20 + 9 * Math.log10(Math.max(1, v) / 40), 20, 52));
 
@@ -151,16 +148,33 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   // Panel nur zeigen, wenn mehr als eine kleine Serie im Spiel ist (Flats/Perks/Formation/Crit oder Serie ≥ +10 %).
   const showBreakdown = !!bd && (bd.flats > 0.5 || bd.perkMult > 1.001 || bd.formMult > 1.001 || (bd.afterglowMult || 1) > 1.001 || (bd.coreMult || 1) > 1.001 || bd.critMult > 1.001 || bd.streakMult >= 1.10);
 
-  // #110: Karten-Aufdeck-Sound je Stich — genau einmal je neuem Stich (Ergebnis steht bei RESOLVE_TRICK
-  // bereits fest → kein Nachhinken). Rate steigt dezent mit dem Turbo (kürzerer flipMs → höhere Rate, gedeckelt).
-  // Der Score-Float selbst wird nicht mehr über einen Selbst-Ablauf-Pool gesteuert, sondern direkt aus
-  // lastTrick gerendert (unten) → er bleibt sichtbar, solange der Stich angezeigt wird (wie Banner/Total).
+  // #49: aufsteigende Zahlen (Score-Gewinn & Lebensverlust) ~1 s länger + Überlappen erlaubt.
+  // Statt eines je Stich ersetzten Einzel-Elements ein kleiner Pool — jeder Float lebt unabhängig
+  // und entfernt sich nach seiner Dauer selbst, sodass aufeinanderfolgende Floats überlappen.
+  const [floats, setFloats] = useState([]);
   const seenTrick = useRef(-1);
+  const floatTimers = useRef([]);
+  useEffect(() => () => floatTimers.current.forEach(clearTimeout), []); // Timer bei Unmount aufräumen
   useEffect(() => {
-    if (!t) { seenTrick.current = -1; return; }
+    if (!t) { seenTrick.current = -1; setFloats([]); return; }      // Menü/neuer Lauf → Pool leeren
     if (t.trickNo === seenTrick.current) return;
     seenTrick.current = t.trickNo;
+    // #110: Karten-Aufdeck-Sound je Stich — startet zeitgleich mit der Flip-Animation (Ergebnis steht bei RESOLVE_TRICK
+    // bereits fest → kein Nachhinken). Rate steigt dezent mit dem Turbo (kürzerer flipMs → höhere Rate, gedeckelt).
     audio.play("cardflip", { rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)), gain: CARDFLIP_GAIN[t.result] ?? 1 });
+    const w = t.result === "win" || t.result === "win_tie";
+    const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
+    const critC = t.isCrit ? CRIT_COLOR : "#d4a63a";
+    const entries = [];
+    // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
+    if (w && t.gained > 0)
+      entries.push({ id: `s${t.trickNo}`, zone: "score", dur, seed: t.trickNo * 2, value: t.gained,
+                     text: `+${Math.round(t.gained * 10) / 10}`, color: critC });
+    if (!entries.length) return;
+    setFloats((cur) => [...cur, ...entries].slice(-6)); // Pool gedeckelt — kein unbegrenztes Stapeln
+    const ids = entries.map((e) => e.id);
+    const tm = setTimeout(() => setFloats((cur) => cur.filter((f) => !ids.includes(f.id))), dur);
+    floatTimers.current.push(tm);
   }, [t?.trickNo]);
 
   return (
@@ -185,19 +199,23 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
 
         <Side label="Gegner" remaining={remaining} dealFrom="right">{oppCard}</Side>
 
-        {/* Score-Float (#49/#68-Nachzug): +Gewinn über der Spielerkarte, direkt aus lastTrick gerendert.
-            Steigt kurz auf und BLEIBT dann sichtbar (as-float-hold, forwards), bis der nächste Stich ihn
-            ersetzt — also genauso lange wie Banner/Aufschlüsselung, auch in Pause/Entscheidungsscreens.
-            Deterministischer Jitter aus trickNo, damit die Lage je Stich leicht variiert. */}
-        {win && t.gained > 0 && (
-          <div key={`score${t.trickNo}`} className="pointer-events-none absolute font-bold whitespace-nowrap"
-            style={{ left:  `calc(${FLOAT_ZONES.score.left} + ${fjitter(t.trickNo * 2, JITTER_X)}px)`,
-                     top:   `calc(${FLOAT_ZONES.score.top} + ${fjitter(t.trickNo * 2 * 1.7 + 3, JITTER_Y)}px)`,
-                     color: t.isCrit ? CRIT_COLOR : "#d4a63a", fontSize: floatSize(t.gained), lineHeight: 1,
-                     animation: fx(`as-float-hold ${floatInMs}ms ease-out forwards`) }}>
-            +{Math.round(t.gained * 10) / 10}
-          </div>
-        )}
+        {/* Aufsteigende Zahlen (#49/#68): je Typ eigene Streuzone (Score links / Leben rechts) mit
+            kleinem, deterministischem Jitter aus trickNo → gleiche Typen dicht, verschiedene getrennt,
+            aufeinanderfolgende überlappen nur leicht statt exakt zu stapeln. Pool gedeckelt. */}
+        {floats.map((f) => {
+          const z = FLOAT_ZONES[f.zone];
+          const dx = fjitter(f.seed, JITTER_X), dy = fjitter(f.seed * 1.7 + 3, JITTER_Y);
+          const pos = { top: `calc(${z.top} + ${dy}px)` };
+          if (z.left != null)  pos.left  = `calc(${z.left} + ${dx}px)`;
+          if (z.right != null) pos.right = `calc(${z.right} + ${dx}px)`;
+          return (
+            <div key={f.id} className="pointer-events-none absolute font-bold whitespace-nowrap"
+              style={{ ...pos, color: f.color, fontSize: floatSize(f.value || 0), lineHeight: 1,
+                       animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
+              {f.text}
+            </div>
+          );
+        })}
         {/* Benanntes Formations-Feedback (§17): unten rechts, eigene Bahn; Peak-Styling ab ×6/×12. */}
         {showFormation && (
           <div key={`form${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
@@ -206,7 +224,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
                      fontSize: formPeak === 2 ? 26 : formPeak === 1 ? 21 : 17,
                      color: formColor,
                      textShadow: `0 0 ${formPeak === 2 ? 16 : formPeak === 1 ? 12 : 10}px ${formColor}${formPeak ? "cc" : "88"}`,
-                     animation: fx(`as-combo ${floatDur}ms ease-out forwards`) }}>
+                     animation: fx(`as-combo-hold ${floatDur}ms ease-out forwards`) }}>
             {formPeak === 2 && "★ "}{formLabel} ×{formationStr}
           </div>
         )}

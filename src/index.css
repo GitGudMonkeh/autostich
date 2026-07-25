@@ -21,15 +21,16 @@ button { font-family: inherit; }
    Hinweis: as-pop / as-pop-crit sind aktuell ungenutzt — der Gewinnerkarten-Pop wurde
    bewusst rausgenommen (Battlefield.jsx). Keyframes bleiben für ein leichtes Re-Enable. */
 @keyframes as-pop    { 0% { transform: scale(1); } 45% { transform: scale(1.14); } 100% { transform: scale(1); } }
-/* Score-Float: kurz einblenden + leicht aufsteigen, dann bei voller Opacity HALTEN (forwards) — bleibt
-   sichtbar, solange der Stich angezeigt wird (an lastTrick gekoppelt), statt sich selbst wegzublenden. */
-@keyframes as-float-hold { 0% { opacity:0; transform: translateY(10px); } 35% { opacity:1; transform: translateY(0); } 100% { opacity:1; transform: translateY(-6px); } }
+@keyframes as-float  { 0% { opacity:0; transform: translateY(8px); } 16% { opacity:1; } 72% { opacity:1; } 100% { opacity:0; transform: translateY(-80px); } }
 @keyframes as-flash  { 0% { box-shadow: 0 0 0 0 transparent; } 30% { box-shadow: 0 0 0 2px var(--flash); } 100% { box-shadow: 0 0 0 0 transparent; } }
 /* Crit (#19): stärkerer Gewinner-Pop + „KRITISCH"-Text. */
 @keyframes as-pop-crit { 0% { transform: scale(1); } 35% { transform: scale(1.30); } 65% { transform: scale(.95); } 100% { transform: scale(1); } }
 @keyframes as-krit { 0% { opacity:0; transform: translateX(-50%) scale(.4); } 25% { opacity:1; transform: translateX(-50%) scale(1.15); } 60% { opacity:1; transform: translateX(-50%) scale(1); } 100% { opacity:0; transform: translateX(-50%) scale(1); } }
 /* Kombo-Float (#31): eskalierende Siegesserie poppt + steigt (Serie ≥5 → ×1,5). */
 @keyframes as-combo { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-10px) scale(1); } 100% { opacity:0; transform: translateY(-30px) scale(1); } }
+/* Wie as-combo, aber HÄLT am Ende bei voller Opacity (forwards) — für den Formations-Multi-Float, damit er
+   sichtbar bleibt, solange der Stich angezeigt wird (wie Banner/Aufschlüsselung), statt zu früh wegzufaden. */
+@keyframes as-combo-hold { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-6px) scale(1); } 100% { opacity:1; transform: translateY(-8px) scale(1); } }
 /* Niederlagenkosten-Stufenwechsel (#32): kurzer Hinweis, einblenden → halten → ausblenden. */
 @keyframes as-notice { 0% { opacity:0; transform: translate(-50%, 6px); } 12% { opacity:1; transform: translate(-50%, 0); } 82% { opacity:1; transform: translate(-50%, 0); } 100% { opacity:0; transform: translate(-50%, -12px); } }
 /* Score-Multiplikator-Chip (#37): dezenter Scale-Puls bei Anstieg. */
