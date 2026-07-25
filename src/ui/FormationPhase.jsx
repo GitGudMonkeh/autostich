@@ -70,7 +70,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} selectedPos={sel} onTilePick={clickPos} />
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}} selectedPos={sel} onTilePick={clickPos} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}

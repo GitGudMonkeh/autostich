@@ -37,6 +37,15 @@ function segmentBump(deck, order, segIndex, delta) {
 // Anker-Typ auf einer Position (max 1 Anker je Position) bzw. ob die Position belegt ist.
 export const anchorTypeAt   = (anchors, pos) => (anchors || []).find((a) => a.position === pos)?.type || null;
 export const positionOccupied = (anchors, pos) => (anchors || []).some((a) => a.position === pos);
+// F4 Farballianz (#125): Partner-Farbe (Suit-Key) einer Farbe, wenn eine Allianz aktiv ist — sonst null.
+// Rein für die UI (diagonaler Zweifarben-Split); ändert keine Regel.
+export const linkedPartnerOf = (pe, suit) => {
+  const lc = (pe && pe.linkedColors) || [];
+  if (lc.length !== 2) return null;
+  if (suit === lc[0]) return lc[1];
+  if (suit === lc[1]) return lc[0];
+  return null;
+};
 // Einen Anker anlegen (immutabel) — der Reducer stellt sicher, dass die Position frei ist.
 const addAnchor = (shop, type, position) => ({ ...shop, anchors: [...(shop.anchors || []), { type, position }] });
 // Permanente Formations-Regeländerung setzen (Shop §9 F-Items).

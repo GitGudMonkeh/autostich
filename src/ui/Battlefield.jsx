@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
-import { TRICKS_PER_CYCLE } from "../game/constants.js";
+import { TRICKS_PER_CYCLE, suitColor } from "../game/constants.js";
+import { linkedPartnerOf } from "../game/shop.js";
 import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 
 const BANNER = {
@@ -57,9 +58,11 @@ function Side({ label, remaining, dealFrom, children }) {
   );
 }
 
-export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000 }) {
+export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000, pe = {} }) {
   const reduced = usePrefersReducedMotion();
   const t = lastTrick;
+  // F4 Farballianz (#125): Partnerfarbe einer Kartenfarbe → diagonaler Split auf der Karte (rein kosmetisch).
+  const allyColorFor = (suit) => { const a = linkedPartnerOf(pe, suit); return a ? suitColor(a) : null; };
   const win = t && (t.result === "win" || t.result === "win_tie");
   const lost = t && t.result === "loss";
   const isCrit = !!(t && t.isCrit);
@@ -85,13 +88,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     <div key={`p${t.trickNo}`} className="relative" style={dealStyle("as-deal-left")}>
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
             stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-            ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} />
+            ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} allyColor={allyColorFor(t.pCard.suit)} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 
   const oppCard = t ? (
     <div key={`o${t.trickNo}`} className="relative" style={dealStyle("as-deal-right")}>
-      <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null} frostbitten={t.oFrostbitten} />
+      <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null} frostbitten={t.oFrostbitten} allyColor={allyColorFor(t.oCard.suit)} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 

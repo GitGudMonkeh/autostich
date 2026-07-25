@@ -311,7 +311,7 @@ export function Autostich() {
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
-              <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} flipMs={flipMs} />
+              <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} flipMs={flipMs} pe={state.shop?.permanentEffects || {}} />
               <ChargeBar lightning={state.lightning} skills={state.skills} />
               <HeatBar heat={state.heat} skills={state.skills} />
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}

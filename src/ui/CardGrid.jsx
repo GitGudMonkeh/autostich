@@ -1,7 +1,7 @@
 import { suitColor } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { SEGMENT_SIZE } from "../game/formations.js";
-import { anchorTypeAt } from "../game/shop.js";
+import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 
 // Kurzkürzel der Formationstypen für die Karten-Badges.
@@ -13,7 +13,7 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
 /* Eine Kachel der 40-Karten-Übersicht (geteilt von Formationsphase & Chronik, Issue #101).
    Kompakt auf Desktop: flachere Ratio (sm:aspect-square) + kleinere Zahl, damit weniger gescrollt wird.
    Auf Mobil unverändert (aspect-[3/4], text-lg). Zeigt Rahmen-Tier, ×mult, Formations-Kürzel, Rolle-●, Ionisierung. */
-function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null }) {
+function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -26,10 +26,14 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
   // inneren Auswahl-/Formationsrahmen und dessen Glow, damit beide gleichzeitig lesbar bleiben. Silber
   // (#cdd6e0) trägt keine Formations-Tier-Bedeutung und kollidiert nicht mit dem weißen Auswahlrahmen.
   const anchorRing = anchorType ? { outline: "2.5px solid #cdd6e0", outlineOffset: "2px" } : null;
+  // F4 Farballianz (#125): diagonaler Zweifarben-Split auch in der Grid-Kachel (obere Hälfte Eigen-, untere Partnerfarbe).
+  const tileBg = allyColor
+    ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColor}30 51%, ${allyColor}30 100%), #20202a`
+    : "#20202a";
   return (
     <button onClick={onClick} title={anchorType ? `⚓ Anker · ${ANCHOR_LABEL[anchorType] || anchorType}` : undefined}
       className="as-tile relative rounded-lg flex flex-col items-center justify-center transition-all"
-      style={{ background: "#20202a", border: `2px ${borderStyle} ${borderColor}`,
+      style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
                ...(anchorRing || {}),
                boxShadow: [selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null,
                            card.frozen ? "inset 0 0 8px #9fdcf055" : null].filter(Boolean).join(", ") || undefined }}>
@@ -50,7 +54,7 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
 
 /* Segment-Grid: je Segment eine Zeile [Bereichs-Label][5 Kacheln]. `roles` = state.roles.
    onTilePick(pos) meldet Klicks; `selectedPos` hebt die aktive Kachel hervor (weißer Rahmen). */
-export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], selectedPos, onTilePick }) {
+export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {}, selectedPos, onTilePick }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const nSeg = Math.ceil(cards.length / SEGMENT_SIZE);
@@ -62,8 +66,10 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
           <div className="grid grid-cols-5 gap-1.5 flex-1">
             {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
               const pos = s * SEGMENT_SIZE + k;
+              const ally = linkedPartnerOf(pe, c.suit);
               return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || []}
-                anchorType={anchorTypeAt(anchors, pos)} selected={selectedPos === pos} onClick={() => onTilePick(pos)} />;
+                anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
+                selected={selectedPos === pos} onClick={() => onTilePick(pos)} />;
             })}
           </div>
         </div>

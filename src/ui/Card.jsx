@@ -5,8 +5,13 @@ import { suitColor, suitName } from "../game/constants.js";
      value      = dauerhafter Kartenwert (inkl. Kat.-A-Mods)
      baseRank   = Ursprungswert → dauerhafter Boost = value − baseRank (violett „+X")
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
-export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostbitten = false }) {
+export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostbitten = false, allyColor = null }) {
   const color = suitColor(suit);
+  // F4 Farballianz (#125): ist eine Partnerfarbe gesetzt, wird die Karte diagonal „quergeschnitten" —
+  // obere Hälfte Eigenfarbe, untere Partnerfarbe. Rein kosmetisch (Score/Logik unberührt).
+  const bg = allyColor
+    ? `linear-gradient(135deg, ${color}26 0%, ${color}26 49%, ${allyColor}26 51%, ${allyColor}26 100%), #1c1c22`
+    : "#1c1c22";
   const permBoost = baseRank != null ? value - baseRank : 0;
   const effective = value + stichBonus;
   // Ionisierung: BLAUER Rahmen wie der Serien-Schutz (Geladene Serie, #5ec8f0) → sofort erkennbar.
@@ -22,7 +27,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
       className="as-card relative rounded-xl border-2 flex flex-col items-center justify-center select-none transition-all"
       style={{
         borderColor: color,
-        width: 104, height: 144, background: "#1c1c22",
+        width: 104, height: 144, background: bg,
         opacity: dim ? 0.35 : 1,
         // Ion-Rahmen (blau) zuerst → liegt oben/knapp am Rand; Gewinn-/Verlust-Glow (+15%) radiert darunter; Frost-Schimmer innen.
         boxShadow: [ionRing, glow ? `0 0 0 3.45px ${glow}66, 0 0 25.3px ${glow}55` : null, frostGlow, frostbiteGlow].filter(Boolean).join(", ") || "none",
