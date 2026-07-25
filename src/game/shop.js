@@ -127,7 +127,7 @@ export const SHOP_ITEM_DEFS = {
         apply: (s, t) => ({ shop: addAnchor(s.shop, "joker", t.position) }) },
   "A-L1": { id: "A-L1", category: "anchors", name: "Zeitsegment", tier: "legendary", legendary: true, repeatable: false,
         targetMode: "segment", target: { segment: true },
-        description: "Wähle ein Segment. Nachdem seine fünf Karten gespielt wurden, wird das Segment sofort ein zweites Mal gespielt (Durchlauf = 45 Stiche).",
+        description: "Wähle ein Segment. Nachdem seine fünf Karten gespielt wurden, wird das Segment sofort ein zweites Mal gespielt — inklusive aller positionsgebundenen Effekte dieser fünf Positionen (Anker, Positionsboni, Segment-Rollen zählen erneut). Durchlauf = 45 Stiche.",
         apply: (s, t) => ({ shop: { ...s.shop, timeSegmentIndex: t.segment } }) },
 
   // ---- Formationen (Shop-Spec §9) — permanente Regeländerungen (kein Ziel, nicht wiederholbar). ----
