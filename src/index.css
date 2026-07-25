@@ -32,6 +32,13 @@ button { font-family: inherit; }
 @keyframes as-notice { 0% { opacity:0; transform: translate(-50%, 6px); } 12% { opacity:1; transform: translate(-50%, 0); } 82% { opacity:1; transform: translate(-50%, 0); } 100% { opacity:0; transform: translate(-50%, -12px); } }
 /* Score-Multiplikator-Chip (#37): dezenter Scale-Puls bei Anstieg. */
 @keyframes as-multpulse { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+/* #106: kontinuierliches Idle-Zittern des Mult-Chips ab Blau-Tier, staerker (Amplitude + Frequenz) je hoeher.
+   Auf einem WRAPPER, damit der Puls (as-multpulse) am inneren Span unberuehrt bleibt. reduced-motion wird
+   global neutralisiert (animation-duration 0.001ms) -> dann kein Zittern. */
+@keyframes as-multshake { 0%, 100% { transform: translateX(0) rotate(0deg); } 25% { transform: translateX(calc(var(--amp) * -1)) rotate(calc(var(--rot) * -1)); } 75% { transform: translateX(var(--amp)) rotate(var(--rot)); } }
+.as-shake-1 { display: inline-block; --amp: 0.6px; --rot: 0.4deg; animation: as-multshake 640ms ease-in-out infinite; }
+.as-shake-2 { display: inline-block; --amp: 1.0px; --rot: 0.7deg; animation: as-multshake 460ms ease-in-out infinite; }
+.as-shake-3 { display: inline-block; --amp: 1.5px; --rot: 1.1deg; animation: as-multshake 320ms ease-in-out infinite; }
 
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {

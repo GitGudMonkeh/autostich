@@ -28,7 +28,7 @@ import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { UsernameModal } from "./ui/UsernameModal.jsx";
 import { CrtParticles } from "./ui/CrtParticles.jsx";
 import { DeckHistogram } from "./ui/BuildSummary.jsx";
-import { multTierColor } from "./ui/multTier.js";
+import { multTierColor, multTierLevel } from "./ui/multTier.js";
 
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
@@ -216,6 +216,9 @@ export function Autostich() {
   });
   const multHot = baseScoreMult > 1.001; // >1 → farbiges Tier; ×1,00 → gedämpft
   const multColor = multTierColor(baseScoreMult); // #100: grau/grün/blau/lila/gold nach Höhe
+  // #106: Idle-Zittern des Chips ab Blau-Tier (Level 2), stärker je höher. grau/grün → kein Zittern.
+  const multShakeLevel = Math.max(0, multTierLevel(baseScoreMult) - 1); // 0 | 1 leicht | 2 mittel | 3 stark
+  const multShakeClass = multShakeLevel > 0 ? `as-shake-${multShakeLevel}` : "";
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   // Dezenter Scale-Puls NUR bei Anstieg (v. a. D2-Kombo). Reduced-motion → global via CSS neutralisiert.
   useEffect(() => {
@@ -277,6 +280,7 @@ export function Autostich() {
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Mult</div>
                 <div className="text-xl font-bold leading-none pt-0.5">
+                  <span className={multShakeClass}>
                   <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base font-pixel-dense"
                     title={state.lightning?.armed
                       ? "Serie geschützt (Geladene Serie): Die nächste Niederlage setzt die Siegesserie nicht zurück."
@@ -288,6 +292,7 @@ export function Autostich() {
                              boxShadow: state.lightning?.armed ? "0 0 0 2px #5ec8f0, 0 0 9px #5ec8f077" : undefined,
                              animation: multPulse > 0 ? "as-multpulse 420ms ease-out" : undefined }}>
                     ×{fmtMult(baseScoreMult)}
+                  </span>
                   </span>
                 </div>
               </div>
