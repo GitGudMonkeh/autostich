@@ -8,7 +8,7 @@ export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 
 // Stat-System (V2 §22.3) — bei jedem Stat-Pick alle vier angeboten, einer gewählt; additiv, keine Caps [TUNING]
 export const STAT_CRIT_CHANCE_STEP = 0.05;  // Crit-Chance: +5 Prozentpunkte je Pick (#94)
-export const STAT_CRIT_MULT_STEP   = 0.2;   // Crit-Multiplikator: +0,2× je Pick (auf Basis 1,5) (#94)
+export const STAT_CRIT_MULT_STEP   = 0.25;  // Crit-Multiplikator: +0,25× je Pick (auf Basis 1,5) [#Pass3: 0,2→0,25 Crit-Buff]
 export const STAT_FORM_MULT_STEP   = 0.05;  // Formations-Mult: +5 % Score bei aktiver Formation je Pick (max 1×/Stich)
 export const STAT_STREAK_MULT_STEP = 0.02;  // Serien-Mult: +2 % Score je aktuellem Serienpunkt je Pick (#94)
 export const STAT_ECONOMY_STEP     = 1;     // Einkommen: je Pick +1 Level (Bonus = Level × SHOP_INCOME_PER_LEVEL Münzen/Shop)
@@ -122,7 +122,7 @@ export const ACCEL_BONUS       = 10;   // Brandbeschleuniger: +% Hitze bei Vorsp
 export const ACCEL_MIN_MARGIN  = 10;
 export const GLOWING_THRESHOLD = 50;   // Glühende Klinge: ab dieser Hitze alle Karten +GLOWING_VALUE
 export const GLOWING_VALUE     = 2;
-export const FIREROLL_MAX      = 5;    // Feuerwalze: nächste Karte +1 je Siegsserie, bis +5
+export const FIREROLL_MAX      = 3;    // Feuerwalze: nächste Karte +1 je Siegsserie, bis +3 [#Pass2: 5→3, flacherer Snowball]
 export const CONFLAGRATION_SCORE = 1000; // Flächenbrand (Konsument): +Flat bei Sieg mit voller Hitze …
 export const CONFLAGRATION_COST  = 100;  // …          … verbraucht exakt 100 Hitze
 export const MELT_COST         = 10;   // Schmelzpunkt (Konsument): −% Hitze je Stich …
