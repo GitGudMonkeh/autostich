@@ -32,7 +32,7 @@ export function ChronikOverview({ state, onClose }) {
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
-            <CardGrid cards={cards} formations={formations} roles={state.roles}
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={anchors}
               selectedPos={selPos} onTilePick={(pos) => setSelPos(selPos === pos ? null : pos)} />
           </div>
 

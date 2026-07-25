@@ -1,16 +1,19 @@
 import { suitColor } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { SEGMENT_SIZE } from "../game/formations.js";
+import { anchorTypeAt } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 
 // Kurzkürzel der Formationstypen für die Karten-Badges.
 const FORM_LABEL = { wiederholung: "W", farbblock: "F", treppe: "T", wechsel: "Z", anker: "A" };
+// Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
+const ANCHOR_LABEL = { power: "Kraft", score: "Punkte", crit: "Krit", streak: "Serie", formation: "Formation", joker: "Joker" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
 /* Eine Kachel der 40-Karten-Übersicht (geteilt von Formationsphase & Chronik, Issue #101).
    Kompakt auf Desktop: flachere Ratio (sm:aspect-square) + kleinere Zahl, damit weniger gescrollt wird.
    Auf Mobil unverändert (aspect-[3/4], text-lg). Zeigt Rahmen-Tier, ×mult, Formations-Kürzel, Rolle-●, Ionisierung. */
-function CardTile({ card, pos, posForm, roleIds = [], selected, onClick }) {
+function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -19,10 +22,15 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick }) {
   const borderColor = selected ? "#ffffff" : fb.color || col + "55";
   const borderStyle = fb.dashed && !selected ? "dashed" : "solid";
   const roleTitle = roleIds.length ? roleIds.map((p) => PERK_DEFS[p]?.label || p).join(", ") : undefined;
+  // #119: belegte Position (Shop-Anker) → dicker silberner AUSSENring via Outline+Offset — separat vom
+  // inneren Auswahl-/Formationsrahmen und dessen Glow, damit beide gleichzeitig lesbar bleiben. Silber
+  // (#cdd6e0) trägt keine Formations-Tier-Bedeutung und kollidiert nicht mit dem weißen Auswahlrahmen.
+  const anchorRing = anchorType ? { outline: "2.5px solid #cdd6e0", outlineOffset: "2px" } : null;
   return (
-    <button onClick={onClick}
+    <button onClick={onClick} title={anchorType ? `⚓ Anker · ${ANCHOR_LABEL[anchorType] || anchorType}` : undefined}
       className="as-tile relative rounded-lg flex flex-col items-center justify-center transition-all"
       style={{ background: "#20202a", border: `2px ${borderStyle} ${borderColor}`,
+               ...(anchorRing || {}),
                boxShadow: [selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null,
                            card.frozen ? "inset 0 0 8px #9fdcf055" : null].filter(Boolean).join(", ") || undefined }}>
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
@@ -42,7 +50,7 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick }) {
 
 /* Segment-Grid: je Segment eine Zeile [Bereichs-Label][5 Kacheln]. `roles` = state.roles.
    onTilePick(pos) meldet Klicks; `selectedPos` hebt die aktive Kachel hervor (weißer Rahmen). */
-export function CardGrid({ cards = [], formations = [], roles = {}, selectedPos, onTilePick }) {
+export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], selectedPos, onTilePick }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const nSeg = Math.ceil(cards.length / SEGMENT_SIZE);
@@ -55,7 +63,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, selectedPos,
             {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
               const pos = s * SEGMENT_SIZE + k;
               return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || []}
-                selected={selectedPos === pos} onClick={() => onTilePick(pos)} />;
+                anchorType={anchorTypeAt(anchors, pos)} selected={selectedPos === pos} onClick={() => onTilePick(pos)} />;
             })}
           </div>
         </div>
