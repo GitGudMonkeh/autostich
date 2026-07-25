@@ -16,7 +16,7 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
    Auswahl-Zustände (#112): `selected` = weiß (Tausch/Detail) · `picked` = gold ✓ (Mehrfach-/Positionsauswahl) ·
    `arrow` = Farbpfeil „→X" (Shop-Farbwechsel) · `disabled` = ausgegraut, nicht klickbar (z. B. belegte Anker). */
 function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
-                   picked = false, disabled = false, arrow = null }) {
+                   picked = false, disabled = false, arrow = null, quiet = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -34,7 +34,7 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
     ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColor}30 51%, ${allyColor}30 100%), #20202a`
     : "#20202a";
   return (
-    <button onClick={onClick} disabled={disabled}
+    <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined}
       title={anchorType ? `⚓ Anker · ${ANCHOR_LABEL[anchorType] || anchorType}` : undefined}
       className="as-tile relative rounded-lg flex flex-col items-center justify-center transition-all"
       style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
@@ -70,8 +70,11 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
    - `pickedPos`     — eine Position gold ✓ (Shop-Positionsanker)
    - `disabledPos`   — nicht klickbare Positionen (belegte Anker)
    - `arrows`        — { cardId: suit } → „→X"-Badge (Shop-Farbwechsel) */
+// `quietTiles` (#132): unterdrückt den generischen Button-Klick-Sound der Kacheln (data-sfx="none"), damit die
+// aufrufende Ansicht einen eigenen Kachel-Sound spielen kann (Formationsphase → cardflip beim Tausch). Scoped:
+// die geteilten Nutzungen (Chronik/Shop-/Perk-Zielauswahl) lassen den Klick-Sound per Default unangetastet.
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
-                          selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick }) {
+                          selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const pickedSet = new Set(pickedIds || []);
@@ -90,7 +93,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
               return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || []}
                 anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
                 selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
-                disabled={disabled} arrow={arrows[c.id] || null}
+                disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
                 onClick={disabled ? undefined : () => onTilePick(pos, c)} />;
             })}
           </div>

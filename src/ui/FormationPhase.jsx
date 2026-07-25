@@ -29,9 +29,10 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   };
 
   const clickPos = (pos) => {
-    if (sel === null) { setSel(pos); return; }
-    if (sel === pos) { setSel(null); return; }
-    if (formationEnergy > 0 || canFree(sel, pos)) onSwap(sel, pos);
+    if (sel === null) { setSel(pos); return; }  // erste Karte wählen — still (kein Menü-Klick, #132)
+    if (sel === pos) { setSel(null); return; }  // Abwählen — still
+    // #132: erfolgreicher Tausch klingt wie ein Kartendreh (cardflip), nicht wie ein Button-Klick.
+    if (formationEnergy > 0 || canFree(sel, pos)) { onSwap(sel, pos); audio.play("cardflip", { gain: 0.9 }); }
     else audio.play("denied"); // #110: Tausch ohne Energie (und kein Frost-Freitausch) → verwehrt-Sound
     setSel(null);
   };
@@ -74,7 +75,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}} selectedPos={sel} onTilePick={clickPos} />
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}} selectedPos={sel} onTilePick={clickPos} quietTiles />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
