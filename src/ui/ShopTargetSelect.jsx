@@ -67,22 +67,48 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
             </div>
           </div>
         ) : spec.boundary ? (
-          <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Segmentgrenze wählen</div>
-            <div className="grid sm:grid-cols-2 gap-2">
-              {SEGMENT_BOUNDARIES.map((b) => {
-                const open = openBoundaries.has(b);
-                const active = st.boundary === b;
-                return (
-                  <button key={b} onClick={() => !open && onBoundary(b)} disabled={open}
-                    className="rounded-xl p-3 text-left transition-all"
-                    style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : open ? "#5ab87a" : "#33333e"}`, opacity: open ? 0.5 : 1, cursor: open ? "not-allowed" : "pointer" }}>
-                    <span className="font-bold">Grenze {b + 1}|{b + 2}</span>
-                    {open && <span className="text-[11px] ml-2" style={{ color: "#5ab87a" }}>bereits offen</span>}
-                  </button>
-                );
-              })}
-            </div>
+          // #124: Grenze im VOLLEN Board wählen — anklickbare Trennlinie zwischen den Segmenten, im Kontext der Kartenreihenfolge.
+          <div className="grid gap-0.5 mt-4">
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-1">Grenze im Board wählen (verbindet die zwei angrenzenden Segmente)</div>
+            {Array.from({ length: nSeg }, (_, seg) => {
+              const start = seg * SEGMENT_SIZE;
+              const segCards = cards.slice(start, start + SEGMENT_SIZE);
+              const b = SEGMENT_BOUNDARIES[seg]; // Grenze NACH diesem Segment (undefined beim letzten)
+              const open = b != null && openBoundaries.has(b);
+              const active = b != null && st.boundary === b;
+              return (
+                <div key={seg}>
+                  <div className="flex items-center gap-2">
+                    <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{start + 1}–{start + segCards.length}</div>
+                    <div className="grid grid-cols-5 gap-1.5 flex-1">
+                      {segCards.map((c, k) => {
+                        const pos = start + k; const col = suitColor(c.suit);
+                        return (
+                          <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px solid ${col}55` }}>
+                            <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
+                            <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {b != null && (
+                    <div className="flex items-center gap-2 my-0.5">
+                      <div className="w-9 shrink-0" />
+                      <button onClick={() => !open && onBoundary(b)} disabled={open}
+                        className="flex-1 flex items-center justify-center rounded transition-all"
+                        style={{ height: 22, background: active ? `${GOLD}22` : open ? "#5ab87a1a" : "#1c1c22",
+                                 border: `1px ${active || open ? "solid" : "dashed"} ${active ? GOLD : open ? "#5ab87a" : "#3a3a46"}`,
+                                 cursor: open ? "not-allowed" : "pointer", opacity: open ? 0.75 : 1 }}>
+                        <span className="text-[10px] font-bold tracking-wide" style={{ color: active ? GOLD : open ? "#5ab87a" : "#9a9aa4" }}>
+                          ⟷ Grenze {b + 1}|{b + 2}{open ? " · bereits offen" : active ? " · ✓" : ""}
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : spec.formationType ? (
           <div className="mt-4">
@@ -169,19 +195,30 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
             ))}
           </div>
         ) : spec.segment ? (
-          <div className="grid sm:grid-cols-2 gap-2 mt-4">
+          // #124: Segment im VOLLEN Board wählen — markierbarer 5er-Block im durchgehenden Deck statt isolierter Kachel.
+          <div className="grid gap-1 mt-4">
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-1">Segment im Board wählen</div>
             {Array.from({ length: nSeg }, (_, seg) => {
-              const segCards = cards.slice(seg * SEGMENT_SIZE, seg * SEGMENT_SIZE + SEGMENT_SIZE);
+              const start = seg * SEGMENT_SIZE;
+              const segCards = cards.slice(start, start + SEGMENT_SIZE);
               const active = st.segment === seg;
               return (
-                <button key={seg} onClick={() => onSegment(seg)} className="rounded-xl p-3 text-left transition-all"
-                  style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : "#33333e"}` }}>
-                  <div className="text-[11px] opacity-60 mb-1">Segment {seg + 1} · Pos {seg * SEGMENT_SIZE + 1}–{seg * SEGMENT_SIZE + segCards.length}</div>
-                  <div className="flex gap-2">
-                    {segCards.map((c) => (
-                      <span key={c.id} className="text-lg font-bold font-pixel-dense" style={{ color: suitColor(c.suit) }}>{c.value}</span>
-                    ))}
+                <button key={seg} onClick={() => onSegment(seg)}
+                  className="flex items-center gap-2 rounded-lg p-1 text-left transition-all"
+                  style={{ background: active ? `${GOLD}18` : "transparent", border: `2px solid ${active ? GOLD : "transparent"}` }}>
+                  <div className="text-[10px] opacity-50 w-9 shrink-0 text-right tabular-nums">{start + 1}–{start + segCards.length}</div>
+                  <div className="grid grid-cols-5 gap-1.5 flex-1">
+                    {segCards.map((c, k) => {
+                      const pos = start + k; const col = suitColor(c.suit);
+                      return (
+                        <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px solid ${active ? GOLD : col + "55"}` }}>
+                          <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
+                          <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
+                        </div>
+                      );
+                    })}
                   </div>
+                  <span className="text-[10px] font-bold shrink-0 pr-1 w-12 text-right" style={{ color: active ? GOLD : "#8a8a95" }}>{active ? "✓ " : ""}Seg {seg + 1}</span>
                 </button>
               );
             })}
