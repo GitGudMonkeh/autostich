@@ -92,6 +92,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   // Effektdauern an den Flip-Takt koppeln; unter reduzierter Bewegung Animationen weglassen
   // (Element bleibt statisch sichtbar statt zu Ende-Opacity 0 zu springen).
   const anim = clamp(flipMs * 0.5, 120, 450);
+  // #135: Ergebnis-Puls-Dauer an den Flip-Takt gekoppelt (wie die übrigen „Juice"-Animationen).
+  const pulseDur = clamp(flipMs * 0.7, 300, 700);
   const fx = (a) => (reduced ? undefined : a);
   // #95: einheitliche Float-Dauer für Score- UND Formations-Float (letzterer war zuvor kürzer).
   const floatDur = clamp(flipMs * 0.7, 360, 760) + 1300;
@@ -101,17 +103,26 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   // Karten „dealen" nur noch rein — der zusätzliche Pop-Bounce der Gewinnerkarte ist
   // raus (Wunsch: ruhiger). Der Score-/Schaden-Float über der Karte bleibt erhalten.
   const dealStyle = (dealName) => ({ animation: `${dealName} ${anim}ms ease-out` });
+  // #135: nach außen wegpulsende Ergebnis-Welle HINTER der Karte (Sieg grün / Niederlage rot / Crit lila &
+  // kräftiger). Separates Element → die statischen Karten-Glows (Ion/Frost/Wert) bleiben unberührt. Kein Puls
+  // bei reduzierter Bewegung. Liegt als erstes (absolutes) Kind hinter der Karte, die (position:relative) darüber malt.
+  const resultPulse = (color, crit) => (!reduced && color) ? (
+    <div className="as-result-pulse absolute inset-0" aria-hidden="true"
+      style={{ "--pulse-color": color, "--pulse-dur": `${pulseDur}ms`, ...(crit ? { "--pulse-scale": 1.55 } : null) }} />
+  ) : null;
 
   const playerCard = t ? (
     <div key={`p${t.trickNo}`} className="relative" style={dealStyle("as-deal-left")}>
+      {resultPulse(win ? (isCrit ? critColor : "#5ab87a") : null, isCrit)}
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
             stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-            ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} allyColor={allyColorFor(t.pCard.suit)} />
+            ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} frostAnimated allyColor={allyColorFor(t.pCard.suit)} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 
   const oppCard = t ? (
     <div key={`o${t.trickNo}`} className="relative" style={dealStyle("as-deal-right")}>
+      {resultPulse(lost ? "#e0605a" : null, false)}
       <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null} frostbitten={t.oFrostbitten} allyColor={allyColorFor(t.oCard.suit)} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;

@@ -3,6 +3,7 @@ import { PERK_DEFS } from "../game/perks.js";
 import { SEGMENT_SIZE } from "../game/formations.js";
 import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
+import { FrostOverlay } from "./FrostOverlay.jsx";
 
 // Kurzkürzel der Formationstypen für die Karten-Badges.
 const FORM_LABEL = { wiederholung: "W", farbblock: "F", treppe: "T", wechsel: "Z", anker: "A" };
@@ -40,8 +41,9 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
       style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
                opacity: disabled ? 0.45 : 1, cursor: disabled ? "not-allowed" : "pointer",
                ...(anchorRing || {}),
-               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null,
-                           card.frozen ? "inset 0 0 8px #9fdcf055" : null].filter(Boolean).join(", ") || undefined }}>
+               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null].filter(Boolean).join(", ") || undefined }}>
+      {/* #136 Frostglas: ruhiger Eis-Layer (Tint + Körnung, KEIN Sweep) für eingefrorene Board-Karten. */}
+      {card.frozen && <FrostOverlay animated={false} radius="0.5rem" />}
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
       {((card.ionStacks || 0) > 0 || card.frozen) && (
         <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">

@@ -1,11 +1,12 @@
 import { suitColor, suitName } from "../game/constants.js";
+import { FrostOverlay } from "./FrostOverlay.jsx";
 
 /* Eine Karte. Die große Zahl = effektiver Kampfwert dieses Stichs (= value + stichBonus),
    damit sie immer zum Stich-Ausgang passt.
      value      = dauerhafter Kartenwert (inkl. Kat.-A-Mods)
      baseRank   = Ursprungswert → dauerhafter Boost = value − baseRank (violett „+X")
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
-export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostbitten = false, allyColor = null }) {
+export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, allyColor = null }) {
   const color = suitColor(suit);
   // F4 Farballianz (#125): ist eine Partnerfarbe gesetzt, wird die Karte diagonal „quergeschnitten" —
   // obere Hälfte Eigenfarbe, untere Partnerfarbe. Rein kosmetisch (Score/Logik unberührt).
@@ -18,8 +19,8 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
   // Kräftiger bei „voll". Wird mit einem etwaigen Gewinn-/Verlust-Glow LAYERED (bleibt also immer sichtbar).
   const ionFull = ionStacks >= 4;
   const ionRing = ionStacks > 0 ? `0 0 0 2px #5ec8f0, 0 0 ${ionFull ? 12 : 9}px #5ec8f0${ionFull ? "aa" : "77"}` : null;
-  // Frost (#93 F3): eisiger Innen-Schimmer statt Rahmen → layert konfliktfrei mit Ion-Ring/Glow.
-  const frostGlow = frozen ? "inset 0 0 14px #9fdcf066" : null;
+  // Frost (#93 F3 / #136): der eisige Look kommt jetzt aus dem FrostOverlay-Layer (Tint + Körnung + optional
+  // Sweep), nicht mehr aus einem box-shadow → mehr „eisig" und weiterhin konfliktfrei mit Ion-Ring/Glow.
   // Frostbiss (#126): feindlicher −3-Debuff auf einer Gegnerkarte → ROTER Innen-Schimmer (nicht blau wie eigener Frost).
   const frostbiteGlow = frostbitten ? "inset 0 0 14px #e0605a55" : null;
   return (
@@ -29,10 +30,12 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
         borderColor: color,
         width: 104, height: 144, background: bg,
         opacity: dim ? 0.35 : 1,
-        // Ion-Rahmen (blau) zuerst → liegt oben/knapp am Rand; Gewinn-/Verlust-Glow (+15%) radiert darunter; Frost-Schimmer innen.
-        boxShadow: [ionRing, glow ? `0 0 0 3.45px ${glow}66, 0 0 25.3px ${glow}55` : null, frostGlow, frostbiteGlow].filter(Boolean).join(", ") || "none",
+        // Ion-Rahmen (blau) zuerst → liegt oben/knapp am Rand; Gewinn-/Verlust-Glow darunter (#135: größer). Frost = eigener Layer.
+        boxShadow: [ionRing, glow ? `0 0 0 3.9px ${glow}77, 0 0 34px ${glow}66` : null, frostbiteGlow].filter(Boolean).join(", ") || "none",
       }}
     >
+      {/* #136 Eis-Schimmer: Frost-Layer (Tint + Körnung + optional Sweep) über der eingefrorenen Karte — hinter Text/Markern. */}
+      {frozen && <FrostOverlay animated={frostAnimated} radius="0.75rem" />}
       <div className="absolute top-1.5 left-2 text-[10px] uppercase tracking-wide" style={{ color }}>
         {suitName(suit)}
       </div>
