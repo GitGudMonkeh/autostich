@@ -3,7 +3,7 @@ import { PERK_DEFS, buildOffer } from "./perks.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
-import { computeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
+import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance, purchaseLogEntry } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
@@ -12,13 +12,29 @@ import * as C from "./constants.js";
 /* Reiner Reducer — Determinismus-Invariante: kein Math.random / Date hier drin.
    Zufall kommt als Action-Payload (rng), siehe App.jsx. Phasen:
    play → levelup → play … → gameover. */
+// Start-playerOrder mit Formations-Potential im Ziel-Band (#Pass6): neu mischen, bis Σ(mult−1) in
+// [FORMATION_START_MIN, MAX] liegt, sonst nach TRIES die potential-nächste Anordnung (Fallback → terminiert
+// immer). Rein deterministisch (rng injiziert); begrenzt die Start-Varianz des Formations-Potentials.
+function startOrderInBand(deck, rng) {
+  const distToBand = (p) => (p < C.FORMATION_START_MIN ? C.FORMATION_START_MIN - p
+                           : p > C.FORMATION_START_MAX ? p - C.FORMATION_START_MAX : 0);
+  let best = shuffledOrder(deck.length, rng);
+  let bestD = distToBand(formationPotential(best, deck));
+  for (let t = 1; t < C.FORMATION_START_TRIES && bestD > 0; t++) {
+    const order = shuffledOrder(deck.length, rng);
+    const d = distToBand(formationPotential(order, deck));
+    if (d < bestD) { best = order; bestD = d; }
+  }
+  return best;
+}
+
 export function initialState(rng = Math.random) {
   const deck = buildDeck();
   const oppDeck = buildDeck();
   return {
     phase: "play",
     deck, oppDeck,                                    // deck = Spieler (perk-modifizierbar)
-    playerOrder: shuffledOrder(deck.length, rng),     // Ziehreihenfolge dieses Durchlaufs
+    playerOrder: startOrderInBand(deck, rng),         // Ziehreihenfolge, Formations-Potential im Band (#Pass6)
     oppOrder: shuffledOrder(oppDeck.length, rng),
     pos: 0, cycle: 0, trickNo: 0,
     score: 0,

@@ -54,6 +54,12 @@ export const FORMATION_CORE_FACTOR = 1.50; // Formationskern (F-L1): jede aktive
 
 // Formationsphase (V2 §22.8): Energie je Phase; jeder beliebige Tausch zweier Karten kostet 1. [TUNING]
 export const FORMATION_ENERGY = 4;
+// Startdeck-Formations-Band (#Pass6): die Start-playerOrder wird neu gemischt, bis die Summe der Formations-
+// Boni Σ(mult−1) der (unmodifizierten) Anordnung im Band [MIN,MAX] liegt → begrenzt die Start-Varianz des
+// Formations-Potentials (Median zufälliger Starts ≈ 5,6; enges Band = gleichmäßigere Runs). [TUNING]
+export const FORMATION_START_MIN   = 4.5;
+export const FORMATION_START_MAX   = 6.5;
+export const FORMATION_START_TRIES = 200;   // max Neumischungen; danach potential-nächste Anordnung (Fallback)
 // TRICKS_PER_CYCLE wird weiter unten aus der Deckgröße abgeleitet (SUIT_ORDER × RANKS, #34) — kein Drift.
 
 // Basis-Siegesserie (#39): jede Serie hebt den Score-Mult leicht. [TUNING]
