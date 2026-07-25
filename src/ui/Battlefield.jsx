@@ -34,7 +34,9 @@ const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflo
 // #110: Karten-Aufdeck-Sound — DEZENTE Turbo-Kopplung der Abspielrate (leicht justierbar). Rate>1 = kürzer/schneller.
 const CARDFLIP_RATE_REF = 700;  // ms-Referenz: unter diesem Stich-Takt wird der Sound schneller (bei ~1× bleibt Rate 1)
 const CARDFLIP_RATE_CAP = 1.6;  // Deckel bewusst niedrig → bei MAX-Turbo bleibt ein leichtes Überlappen („MG"), wie gewünscht
-const CARDFLIP_GAIN = 1.5;      // Stich-Flip lauter als die übrigen SFX (bei Default-SFX 0,4 → ~0,6 effektiv), damit der Stich klar erkennbar bleibt
+// Ergebnisabhängige Flip-Lautstärke (tunable): Sieg laut & erkennbar, Niederlage deutlich leiser → klarer
+// hörbarer Kontrast Sieg↔Niederlage. Effektiv = Gain × SFX-Lautstärke (Default 0,4 → Sieg 0,6 · Niederlage 0,08).
+const CARDFLIP_GAIN = { win: 1.5, win_tie: 1.5, tie: 0.6, loss: 0.2 };
 // Deterministischer Jitter aus einem Integer-Seed (kein Math.random im Render, #68) → [-amp, +amp].
 const fjitter = (seed, amp) => { const s = Math.sin(seed * 127.1 + 311.7) * 43758.5; return +(((s - Math.floor(s)) * 2 - 1) * amp).toFixed(1); };
 
@@ -159,7 +161,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     seenTrick.current = t.trickNo;
     // #110: Karten-Aufdeck-Sound je Stich — startet zeitgleich mit der Flip-Animation (Ergebnis steht bei RESOLVE_TRICK
     // bereits fest → kein Nachhinken). Rate steigt dezent mit dem Turbo (kürzerer flipMs → höhere Rate, gedeckelt).
-    audio.play("cardflip", { rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)), gain: CARDFLIP_GAIN });
+    audio.play("cardflip", { rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)), gain: CARDFLIP_GAIN[t.result] ?? 1 });
     const w = t.result === "win" || t.result === "win_tie";
     const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
     const critC = t.isCrit ? CRIT_COLOR : "#d4a63a";
