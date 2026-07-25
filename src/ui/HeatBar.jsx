@@ -17,7 +17,12 @@ export function HeatBar({ heat, skills = [] }) {
 
   const badges = [];
   if (heat.afterglowArmed) badges.push({ k: "ng", t: "Nachglut bereit", c: "#f0c05a" });
-  if ((heat.fireRoll || 0) > 0) badges.push({ k: "fw", t: `Feuerwalze +${heat.fireRoll}`, c: HOT });
+  // Feuerwalze DAUERHAFT anzeigen, sobald der Skill gehalten wird (nicht mehr bei jedem Stich ein-/ausblenden);
+  // die +N nur zeigen, wenn die Walze wirklich aktiv ist (>0) — sonst gedämpft ohne Zahl.
+  if (fireFlag(skills, "fireRoll")) {
+    const fr = heat.fireRoll || 0;
+    badges.push({ k: "fw", t: fr > 0 ? `Feuerwalze +${fr}` : "Feuerwalze", c: HOT, dim: fr === 0 });
+  }
   if (heat.phoenixArmed) badges.push({ k: "px", t: "Phönix +10", c: "#f07a5a" });
 
   return (
@@ -39,7 +44,8 @@ export function HeatBar({ heat, skills = [] }) {
         <div className="flex flex-wrap gap-1.5 mt-2">
           {badges.map((b) => (
             <span key={b.k} className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
-              style={{ background: `${b.c}22`, color: b.c, border: `1px solid ${b.c}66` }}>{b.t}</span>
+              style={{ background: `${b.c}${b.dim ? "14" : "22"}`, color: b.c,
+                       border: `1px solid ${b.c}${b.dim ? "3a" : "66"}`, opacity: b.dim ? 0.55 : 1 }}>{b.t}</span>
           ))}
         </div>
       )}

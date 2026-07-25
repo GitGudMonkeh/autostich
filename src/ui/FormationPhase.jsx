@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { summarizeFormations, SEGMENT_SIZE } from "../game/formations.js";
+import { SKILL_DEFS } from "../game/skills.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
@@ -19,6 +20,12 @@ const strengthOf = (fs) => (fs || []).reduce((s, pf) => s + ((pf.mult || 1) - 1)
 export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const { playerOrder = [], deck = [], formations = [], formationEnergy = 0, formationSwaps = [] } = state;
   const [sel, setSel] = useState(null);
+  // Gehaltene Eis-Skills, die die Formationserkennung beeinflussen (Keyword „formation") → im Formationsfenster
+  // sichtbar machen. Reuse der bestehenden desc-Texte aus SKILL_DEFS (kein Desc↔Code-Drift).
+  const iceFormSkills = (state.skills || []).filter((id) => {
+    const d = SKILL_DEFS[id];
+    return d && d.archetype === "ice" && (d.keywords || []).includes("formation");
+  });
 
   const cards = playerOrder.map((di) => deck[di]);
   // Eis (#93 F3): eingefrorene Karten mit noch freiem Frosttausch machen einen Tausch KOSTENLOS (auch bei 0 Energie).
@@ -111,6 +118,18 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
               <div style={{ color: "#d4a63a" }}>⧉ Überlappung — mehr Formationen = mehr Multi: 2 ×1,5 · 3 ×2 · 4 ×3</div>
               <div style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr Rahmen = mehr Multi · gestrichelt = ohne Multiplikator</div>
             </div>
+            {/* Gehaltene Eis-Effekte auf die Formationserkennung — nur wenn welche gehalten werden (desc aus SKILL_DEFS). */}
+            {iceFormSkills.length > 0 && (
+              <div className="grid gap-0.5 text-xs sm:text-[13px] leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
+                <div className="font-bold" style={{ color: "#7fd4f0" }}>❄ Eis-Effekte auf Formationen</div>
+                {iceFormSkills.map((id) => (
+                  <div key={id}>
+                    <b style={{ color: "#8be0f8" }}>{SKILL_DEFS[id].name}</b>
+                    <span> — {SKILL_DEFS[id].desc}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
