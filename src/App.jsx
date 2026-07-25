@@ -348,6 +348,19 @@ export function Autostich() {
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
                 <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
               </div>
+              {/* #133/#111: „Nächster Track" in den Header gezogen (freie Zelle oben rechts); die untere
+                  Musik-Leiste zeigt dadurch nur noch den Titel. Auf Gameover ausgeblendet wie die MusicBar. */}
+              {state.phase !== "gameover" && (
+                <div className="text-right">
+                  <div className="text-[10px] uppercase tracking-wide opacity-50">Musik</div>
+                  <button onClick={() => music.next()} aria-label="Nächster Track"
+                    title={musicTitle ? `Läuft: ${musicTitle} — nächster Track` : "Nächster Track"}
+                    className="mt-0.5 px-2 py-1 rounded-lg text-sm font-bold transition-all hover:brightness-110 whitespace-nowrap"
+                    style={{ background: "#20202a", border: "1px solid #3a3a46" }}>
+                    ⏭ Nächster
+                  </button>
+                </div>
+              )}
             </div>
           </header>
 
@@ -381,7 +394,7 @@ export function Autostich() {
             <DeckHistogram deck={state.deck} />
           </button>
           {/* Musik-Panel (#111): aktueller Track + „nächster Track" — ganz unten im Run. */}
-          {state.phase !== "gameover" && <MusicBar title={musicTitle} onNext={() => music.next()} />}
+          {state.phase !== "gameover" && <MusicBar title={musicTitle} />}
         </>)}
       </div>
 
