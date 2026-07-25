@@ -239,9 +239,15 @@ export const SEGMENT_BOUNDARIES = Array.from({ length: C.TRICKS_PER_CYCLE / SEGM
 
 // Frischer Shop-Substate bei Run-Beginn. Felder für spätere Phasen sind schon angelegt (Defaults inert),
 // damit das State-Shape stabil bleibt und keine Phase es später umbauen muss.
+// Kauf-Log-Eintrag (#127) — reine Anzeige-Daten, append-only. target=null bei Sofort-Items, sonst der
+// aufgelöste Ziel-Deskriptor (Position/Segment/Farbpaar/Grenze/Formationstyp/Kategorie/Karten). Pur.
+export const purchaseLogEntry = (def, price, cycle, target = null) =>
+  ({ itemId: def.id, category: def.category, tier: def.tier, price, cycle, target });
+
 export function initialShop() {
   return {
     coins: C.STARTING_COINS,        // §3: globaler Run-State, kein Cap, nie negativ
+    purchaseLog: [],                // #127: run-langes Kauf-Protokoll (append-only, reine Anzeige)
     offers: null,                   // aktuelles Shop-Angebot (Array von Angebots-Instanzen) oder null außerhalb des Shops
     purchasedOfferIds: [],          // in DIESEM Shop gekaufte Angebots-Instanzen (offerId)
     boughtLegendaryIds: [],         // §5.7: pro Run einmalig gekaufte Legendäre (nie wieder)

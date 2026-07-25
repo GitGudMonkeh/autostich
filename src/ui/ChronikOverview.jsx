@@ -2,12 +2,29 @@ import { useState } from "react";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
-import { activeShopUpgrades } from "../game/shop.js";
+import { activeShopUpgrades, SHOP_ITEM_DEFS } from "../game/shop.js";
+import { suitName, SHOP_CATEGORY_LABELS } from "../game/constants.js";
+import { FORMATION_TYPE_LABELS } from "../game/formations.js";
 
 /* Chronik-Kartenübersicht (§22.11): alle 40 Karten in aktueller Reihenfolge — nur Anzeige,
    mit Formations- und Rollen-Markern. Klick auf eine Karte zeigt Rolle & Modifikatoren (#95.5).
    Desktop (#101): zweispaltig — Karten-Grid links, Info-Panel rechts; Mobil gestapelt. */
 const ANCHOR_LABEL = { power: "Kraft", score: "Punkte", crit: "Krit", streak: "Serie", formation: "Formation", joker: "Joker" };
+// #127: Preisstufen-Label/Farbe (wie ShopScreen) für die Kauf-Übersicht.
+const TIER_LABEL = { cheap: { l: "Günstig", c: "#8a8a95" }, strong: { l: "Stark", c: "#5a8ade" }, premium: { l: "Premium", c: "#8a7de0" }, legendary: { l: "Legendär", c: "#d4a63a" } };
+// #127: kompakte Ziel-Beschriftung eines Kauf-Log-Eintrags (Position/Segment/Farbpaar/Grenze/Typ/Kategorie/Karten).
+function targetLabel(t, deck) {
+  if (!t) return null;
+  if (t.position != null) return `Pos ${t.position + 1}`;
+  if (t.segment != null) return `Segment ${t.segment + 1}`;
+  if ((t.colorPair || []).length === 2) return t.colorPair.map(suitName).join(" + ");
+  if (t.boundary != null) return `Grenze ${t.boundary + 1}|${t.boundary + 2}`;
+  if (t.formationType) return FORMATION_TYPE_LABELS[t.formationType] || t.formationType;
+  if (t.category) return SHOP_CATEGORY_LABELS[t.category] || t.category;
+  if ((t.cardIds || []).length) return t.cardIds.map((id) => { const c = (deck || []).find((x) => x.id === id); if (!c) return "?"; const nc = t.colors?.[id]; return `${c.value}${c.suit}${nc ? `→${nc}` : ""}`; }).join(", ");
+  if (t.offerId) return "reserviert";
+  return null;
+}
 
 export function ChronikOverview({ state, onClose }) {
   const { deck = [], playerOrder = [], formations = [] } = state;
@@ -15,6 +32,7 @@ export function ChronikOverview({ state, onClose }) {
   const cards = playerOrder.map((di) => deck[di]);
   const anchors = [...(state.shop?.anchors || [])].sort((a, b) => a.position - b.position); // Shop-Positionsanker (§8)
   const upgrades = activeShopUpgrades(state.shop || {}); // aktive dauerhafte Shop-Verbesserungen (§9/§10)
+  const purchaseLog = state.shop?.purchaseLog || []; // #127: alle Käufe des Runs (chronologisch)
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
@@ -57,6 +75,31 @@ export function ChronikOverview({ state, onClose }) {
                   {upgrades.map((u, i) => (
                     <span key={i} className="px-1.5 py-0.5 rounded" style={{ background: "#d4a63a1a", color: "#d4a63a", border: "1px solid #d4a63a44" }}>{u}</span>
                   ))}
+                </div>
+              </div>
+            )}
+            {/* #127: Kauf-Übersicht — welche Items im Run gekauft wurden + statische Wirkung (Beschreibung + Ziel). */}
+            {purchaseLog.length > 0 && (
+              <div className="text-[11px] rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+                <div className="uppercase tracking-wide opacity-50 mb-1.5">Käufe · {purchaseLog.length}</div>
+                <div className="grid gap-1.5 max-h-56 overflow-y-auto pr-1">
+                  {purchaseLog.map((e, i) => {
+                    const d = SHOP_ITEM_DEFS[e.itemId] || {};
+                    const tl = TIER_LABEL[e.tier] || { l: e.tier, c: "#8a8a95" };
+                    const tgt = targetLabel(e.target, deck);
+                    return (
+                      <div key={i} className="leading-snug">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-bold">{d.name || e.itemId}{tgt && <span className="opacity-70 font-normal"> → {tgt}</span>}</span>
+                          <span className="shrink-0 flex items-center gap-2 whitespace-nowrap">
+                            <span style={{ color: tl.c }}>{tl.l}</span>
+                            <span style={{ color: "#d4a63a" }}>🪙 {e.price}</span>
+                          </span>
+                        </div>
+                        {d.description && <div className="opacity-55">{d.description}</div>}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

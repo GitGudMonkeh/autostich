@@ -4,7 +4,7 @@ import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, ma
   frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
-import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
+import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance, purchaseLogEntry } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -100,6 +100,7 @@ export function reducer(state, action) {
       newShop.purchasedOfferIds = [...(shop.purchasedOfferIds || []), offer.offerId];
       if (def.legendary) newShop.boughtLegendaryIds = [...(shop.boughtLegendaryIds || []), def.id]; // §5.7 nie wieder
       if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
+      newShop.purchaseLog = [...(shop.purchaseLog || []), purchaseLogEntry(def, offer.price, state.cycle)]; // #127
       // Formationen neu berechnen — F-Items (§9) ändern die Erkennung permanent.
       const deck2 = patch.deck || state.deck;
       const formations2 = computeFormations(state.playerOrder, deck2, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects);
@@ -215,6 +216,7 @@ export function reducer(state, action) {
         purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId] };
       if (def.legendary) newShop.boughtLegendaryIds = [...(shop.boughtLegendaryIds || []), def.id];
       if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
+      newShop.purchaseLog = [...(shop.purchaseLog || []), purchaseLogEntry(def, offer.price, state.cycle, target)]; // #127
       // Formationen mit den (evtl. neuen) Ankern neu berechnen — A5 Formationsanker wirkt sofort.
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects);
       return { ...merged, deck, formations, phase: "shop", shopTarget: null, shop: newShop };
