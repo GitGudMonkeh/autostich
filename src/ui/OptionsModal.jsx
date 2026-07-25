@@ -63,7 +63,7 @@ export function OptionsModal({ options, onChange, onClose }) {
             <Toggle on={!!options.muted} onClick={() => onChange({ muted: !options.muted })} />
           </Row>
           <Row title="Lautstärke" desc="Lautstärke der Sound-Effekte.">
-            <input type="range" min="0" max="1" step="0.05" value={options.sfxVol ?? 0.6}
+            <input type="range" min="0" max="1" step="0.05" value={options.sfxVol ?? 0.4}
               disabled={!!options.muted}
               onChange={(e) => onChange({ sfxVol: Number(e.target.value) })}
               aria-label="SFX-Lautstärke"

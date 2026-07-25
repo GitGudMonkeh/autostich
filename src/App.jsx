@@ -102,7 +102,7 @@ export function Autostich() {
     return () => document.removeEventListener("click", onClick, true);
   }, []);
   // Optionen → Audio-Manager spiegeln (Mute/Lautstärke).
-  useEffect(() => { audio.setMuted(!!options.muted); audio.setVolume(options.sfxVol ?? 0.6); }, [options.muted, options.sfxVol]);
+  useEffect(() => { audio.setMuted(!!options.muted); audio.setVolume(options.sfxVol ?? 0.4); }, [options.muted, options.sfxVol]);
   // Kauf-Sound (#110): am Wachstum des Kauf-Logs (#127) → exakt 1× je ABGESCHLOSSENEM Kauf (immediate & Ziel-Items),
   // nie premature (Ziel-Flow öffnen) und nie bei no-op. Deshalb Cashout-Buttons via data-sfx="none" stummgeschaltet.
   const prevBuys = useRef(0);
