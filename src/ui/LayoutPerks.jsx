@@ -7,8 +7,9 @@ export function LayoutPerks({ perks }) {
   const ids = layoutPerks(perks);
   if (!ids.length) return null;
   return (
-    <div className="rounded-lg px-3 py-2" style={{ background: "#1b1b22", border: "1px solid #2c2c36" }}>
-      <div className="text-[10px] uppercase tracking-wide opacity-50 mb-1">Positions- &amp; Formations-Perks</div>
+    <div className="rounded-lg px-3 py-2" style={{ background: "#1b1b22", border: "1px solid #5ab87a55" }}>
+      {/* #104: Panel als aktiv/informativ kennzeichnen — grüner Akzent (Aufstellungs-Kontext) statt grau-in-grau. */}
+      <div className="text-[10px] uppercase tracking-wide mb-1 font-semibold" style={{ color: "#5ab87a" }}>Positions- &amp; Formations-Perks</div>
       <div className="grid gap-0.5">
         {ids.map((id) => (
           <div key={id} className="text-[11px] leading-snug">
