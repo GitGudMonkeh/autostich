@@ -59,6 +59,10 @@ export const FORMATION_ENERGY = 4;
 // Basis-Siegesserie (#39): jede Serie hebt den Score-Mult leicht. [TUNING]
 export const STREAK_BASE_STEP = 0.02; // +2 % je Serienstufe [TUNING]
 export const STREAK_BASE_CAP  = 1.50; // … gedeckelt bei +150 % (Cap ab Serie 75, #100) [TUNING]
+// Serien-STAT (statStreakMult): war ungedeckelt → mit langen Serien Runaway-Treiber (Sim-Befund).
+// Deckel des Stat-Beitrags analog zum Basis-Cap; bewusst großzügig, damit starke Serien-Builds stark
+// bleiben, aber nicht unbegrenzt eskalieren. [TUNING · Balance-Pass 1]
+export const STREAK_STAT_CAP  = 3.00; // Stat-Serien-Faktor höchstens +300 %
 // Gemeinsame Schwellen für Score-Perks (Kategorie D) [TUNING]
 export const D3_HIGH_MIN  = 8;    // „hohe Karte"-Schwelle für D3/D5 (#34: Skala 1–10)
 export const D4_LOW_MAX   = 3;    // „Außenseiter" bis zu diesem Wert
