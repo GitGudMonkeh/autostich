@@ -120,8 +120,8 @@ describe("Feuer — Engine-Integration (#93 F1)", () => {
     const lose = resolveTrick(scen(0, 12, { skills: [F8], heat: heat({ fireRoll: 4 }) }), rng);
     expect(lose.heat.fireRoll).toBe(0);                   // Niederlage → zurück
   });
-  it("Feuerwalze: Stapel bei +5 gedeckelt", () => {
-    expect(resolveTrick(scen(12, 0, { skills: [F8], heat: heat({ fireRoll: 5 }) }), rng).heat.fireRoll).toBe(5);
+  it("Feuerwalze: Stapel bei +3 gedeckelt (#Pass2: 5→3)", () => {
+    expect(resolveTrick(scen(12, 0, { skills: [F8], heat: heat({ fireRoll: 3 }) }), rng).heat.fireRoll).toBe(3);
   });
   it("Sonnenkern: Hitze darf über 100 bis 150 steigen (Rest bleibt, Cap 150)", () => {
     const s = resolveTrick(scen(52, 0, { skills: [F11], heat: heat({ value: 148, max: 150 }) }), rng);
