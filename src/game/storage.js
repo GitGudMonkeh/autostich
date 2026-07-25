@@ -62,7 +62,7 @@ export function recordHighscore(entry) {
    `skin`: "crt" (Retro-CRT-Skin, jetzt Default) | "off" (schlichter Look).
    Default = "crt": Erstbesuch zeigt den Skin; wer ihn explizit ausschaltet, behält
    das dank gespeichertem { skin: "off" } auch nach Reload (loadOptions merged über Default). */
-const DEFAULT_OPTIONS = { skin: "crt" };
+const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.6 }; // #110 Sound: Mute + SFX-Lautstärke (moderat)
 export function loadOptions() {
   try {
     const raw = localStorage.getItem(k("as_options"));

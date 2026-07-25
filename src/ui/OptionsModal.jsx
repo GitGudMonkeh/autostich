@@ -58,10 +58,21 @@ export function OptionsModal({ options, onChange, onClose }) {
           <Row title="Retro-Skin (CRT)" desc="Pixel-Schrift, Scanlines, Neon-Glow. Rein optisch — Layout & Spiel bleiben gleich.">
             <Toggle on={crtOn} onClick={() => onChange({ skin: crtOn ? "off" : "crt" })} />
           </Row>
+          {/* #110 Sound: Mute-Toggle + Lautstärke-Slider (persistiert über die Optionen). */}
+          <Row title="Ton stumm" desc="Schaltet alle Klick- und Spiel-Sounds ab.">
+            <Toggle on={!!options.muted} onClick={() => onChange({ muted: !options.muted })} />
+          </Row>
+          <Row title="Lautstärke" desc="Lautstärke der Sound-Effekte.">
+            <input type="range" min="0" max="1" step="0.05" value={options.sfxVol ?? 0.6}
+              disabled={!!options.muted}
+              onChange={(e) => onChange({ sfxVol: Number(e.target.value) })}
+              aria-label="SFX-Lautstärke"
+              style={{ width: 120, accentColor: "#5ab87a", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
+          </Row>
         </div>
 
         <div className="rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "#8a7de022", color: "#c9c0f0" }}>
-          Weitere Optionen (Sound, Tempo-Default …) folgen hier.
+          Weitere Optionen (Tempo-Default …) folgen hier.
         </div>
 
         <button onClick={onClose} className="w-full mt-5 py-2.5 rounded-lg font-bold transition-all" style={{ background: "#5ab87a", color: "#141419" }}>

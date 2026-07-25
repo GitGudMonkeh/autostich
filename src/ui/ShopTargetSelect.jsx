@@ -242,7 +242,7 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
 
         <div className="flex items-center justify-between mt-5">
           <button onClick={onCancel} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: "#2a2a33", color: "#c4c4cc" }}>Abbrechen</button>
-          <button onClick={() => ready && onConfirm()} disabled={!ready}
+          <button onClick={() => ready && onConfirm()} disabled={!ready} data-sfx="none"
             className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
             style={{ background: ready ? GOLD : "#2a2a33", color: ready ? "#141419" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
             Bestätigen

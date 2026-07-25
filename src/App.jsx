@@ -25,6 +25,7 @@ import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
+import { audio } from "./ui/audio.js";
 import { UsernameModal } from "./ui/UsernameModal.jsx";
 import { CrtParticles } from "./ui/CrtParticles.jsx";
 import { DeckHistogram } from "./ui/BuildSummary.jsx";
@@ -86,6 +87,30 @@ export function Autostich() {
     if (options.skin === "crt") root.setAttribute("data-skin", "crt");
     else root.removeAttribute("data-skin");
   }, [options.skin]);
+  // Sound (#110): SFX-Manager initialisieren + DELEGIERTER Klick-Sound (ein Listener deckt alle <button>
+  // ab). data-sfx="none" schließt einzelne Buttons aus (z. B. Kauf-Abschluss → eigener Cashout-Sound).
+  // Jeder Klick ist zugleich die User-Geste, die den AudioContext entsperrt (Autoplay-Gate).
+  useEffect(() => {
+    audio.init();
+    const onClick = (e) => {
+      audio.unlock();
+      const btn = e.target.closest && e.target.closest("button");
+      if (!btn || btn.dataset.sfx === "none") return;
+      audio.play("button");
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
+  // Optionen → Audio-Manager spiegeln (Mute/Lautstärke).
+  useEffect(() => { audio.setMuted(!!options.muted); audio.setVolume(options.sfxVol ?? 0.6); }, [options.muted, options.sfxVol]);
+  // Kauf-Sound (#110): am Wachstum des Kauf-Logs (#127) → exakt 1× je ABGESCHLOSSENEM Kauf (immediate & Ziel-Items),
+  // nie premature (Ziel-Flow öffnen) und nie bei no-op. Deshalb Cashout-Buttons via data-sfx="none" stummgeschaltet.
+  const prevBuys = useRef(0);
+  useEffect(() => {
+    const n = state.shop?.purchaseLog?.length || 0;
+    if (n > prevBuys.current) audio.play("buy");
+    prevBuys.current = n;
+  }, [state.shop?.purchaseLog?.length]);
   const changeOptions = (patch) => setOptions((o) => saveOptions({ ...o, ...patch }));
 
   // Timer-Segmente: bei Wechsel aktiv <-> inaktiv die verstrichene Zeit verbuchen.

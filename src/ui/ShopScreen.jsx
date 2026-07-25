@@ -80,6 +80,7 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
                         <button
                           onClick={() => !disabled && onBuy?.(offer.offerId)}
                           disabled={disabled}
+                          data-sfx={SHOP_ITEM_DEFS[offer.itemId]?.target ? undefined : "none"}
                           className="rounded-lg px-3 py-1 text-xs font-bold transition-all"
                           style={disabled
                             ? { background: "#2a2a33", color: "#6a6a75", cursor: "not-allowed" }

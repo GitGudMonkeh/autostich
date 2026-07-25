@@ -3,6 +3,7 @@ import { summarizeFormations, SEGMENT_SIZE } from "../game/formations.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
+import { audio } from "./audio.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
@@ -30,6 +31,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
     if (sel === null) { setSel(pos); return; }
     if (sel === pos) { setSel(null); return; }
     if (formationEnergy > 0 || canFree(sel, pos)) onSwap(sel, pos);
+    else audio.play("denied"); // #110: Tausch ohne Energie (und kein Frost-Freitausch) → verwehrt-Sound
     setSel(null);
   };
 

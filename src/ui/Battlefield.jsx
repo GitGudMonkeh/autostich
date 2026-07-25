@@ -4,6 +4,7 @@ import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
+import { audio } from "./audio.js";
 import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 
 const BANNER = {
@@ -30,6 +31,9 @@ const BIG_SCORE_TIERS = [
 ];
 const bigScoreLabel = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s.text; return null; };
 const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflow-hidden, nichts läuft raus
+// #110: Karten-Aufdeck-Sound — DEZENTE Turbo-Kopplung der Abspielrate (leicht justierbar). Rate>1 = kürzer/schneller.
+const CARDFLIP_RATE_REF = 700;  // ms-Referenz: unter diesem Stich-Takt wird der Sound schneller (bei ~1× bleibt Rate 1)
+const CARDFLIP_RATE_CAP = 1.6;  // Deckel bewusst niedrig → bei MAX-Turbo bleibt ein leichtes Überlappen („MG"), wie gewünscht
 // Deterministischer Jitter aus einem Integer-Seed (kein Math.random im Render, #68) → [-amp, +amp].
 const fjitter = (seed, amp) => { const s = Math.sin(seed * 127.1 + 311.7) * 43758.5; return +(((s - Math.floor(s)) * 2 - 1) * amp).toFixed(1); };
 
@@ -152,6 +156,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     if (!t) { seenTrick.current = -1; setFloats([]); return; }      // Menü/neuer Lauf → Pool leeren
     if (t.trickNo === seenTrick.current) return;
     seenTrick.current = t.trickNo;
+    // #110: Karten-Aufdeck-Sound je Stich — startet zeitgleich mit der Flip-Animation (Ergebnis steht bei RESOLVE_TRICK
+    // bereits fest → kein Nachhinken). Rate steigt dezent mit dem Turbo (kürzerer flipMs → höhere Rate, gedeckelt).
+    audio.play("cardflip", { rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)) });
     const w = t.result === "win" || t.result === "win_tie";
     const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
     const critC = t.isCrit ? CRIT_COLOR : "#d4a63a";
