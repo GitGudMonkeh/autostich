@@ -73,6 +73,10 @@ export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, top
   }
   const ranked = [...bestById.values()].sort((a, b) => b.mean - a.mean);
   const priority = ranked.map((x) => x.id);
+  // Ablations-Ziele: Top-K nach explore-mean PLUS ALLE gesehenen Stats (sie werden jede Stat-Runde gewählt,
+  // ranken aber unter den Feuer-Skills → würden sonst nie ablatiert; ihr Beitrag ist trotzdem wichtig).
+  const topSet = new Set(ranked.slice(0, topK).map((x) => x.id));
+  const statExtras = ranked.filter((x) => x.kind === "stat" && !topSet.has(x.id));
 
   // 2) EVAL auf frischen, disjunkten Seeds. full einmal, dann je Top-K-Option gepaart ablatieren.
   const evalSeed0 = seed0 + exploreRuns;
@@ -80,7 +84,7 @@ export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, top
   const fullScores = [];
   for (let i = 0; i < evalRuns; i++) fullScores.push(runOne(evalSeed0 + i, full).score);
 
-  const marginals = ranked.slice(0, topK).map((t) => {
+  const marginals = [...ranked.slice(0, topK), ...statExtras].map((t) => {
     const abl = fixedPolicy(priority, { ...env, drop: t.id });
     const deltas = [], ratios = [];
     for (let i = 0; i < evalRuns; i++) {

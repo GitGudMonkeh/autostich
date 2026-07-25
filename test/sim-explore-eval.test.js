@@ -50,7 +50,7 @@ describe("sim eval / ablation (S3)", () => {
     const b = computeEval(opts);
     expect(b).toEqual(a); // reproduzierbar
     expect(a.priority.length).toBeGreaterThan(0);
-    expect(a.marginals.length).toBe(3);
+    expect(a.marginals.length).toBeGreaterThanOrEqual(3); // Top-K plus immer-ablatierte Stats
     for (const m of a.marginals) {
       expect(Number.isFinite(m.marginal.median)).toBe(true); // robuster Zentralwert
       expect(m.marginal.winRate).toBeGreaterThanOrEqual(0);
