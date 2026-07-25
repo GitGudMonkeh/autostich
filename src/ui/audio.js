@@ -13,6 +13,9 @@ let ctx = null;
 const buffers = {};
 let muted = false;
 let volume = 0.6;
+// Nicht-Stich-Sounds (Klick/Kauf/Verwehrt) etwas anheben → effektiv ~0,5 beim Default-Slider (0,4).
+// Der Stich-Sound (cardflip) übergibt stets seinen eigenen Gain und bleibt davon unberührt.
+const SFX_GAIN = 1.25;
 
 function ensureCtx() {
   if (ctx || typeof window === "undefined") return ctx;
@@ -34,7 +37,7 @@ export const audio = {
   setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); },
   /* Einen SFX abspielen. `rate` = playbackRate (Turbo-Kopplung Stich-Sound), `gain` = zusätzlicher Faktor.
      Je Aufruf eine neue BufferSource → Überlappen erlaubt (dezenter „Maschinengewehr"-Effekt bei hohem Turbo). */
-  play(name, { rate = 1, gain = 1 } = {}) {
+  play(name, { rate = 1, gain = SFX_GAIN } = {}) {
     if (muted || volume <= 0) return;
     const c = ctx;
     if (!c || !buffers[name]) return;

@@ -40,6 +40,15 @@ button { font-family: inherit; }
 .as-shake-2 { display: inline-block; --amp: 1.0px; --rot: 0.7deg; animation: as-multshake 460ms ease-in-out infinite; }
 .as-shake-3 { display: inline-block; --amp: 1.5px; --rot: 1.1deg; animation: as-multshake 320ms ease-in-out infinite; }
 
+/* Musiktitel-Marquee (#111-Nachzug): passt der Track-Titel nicht in den Rahmen, läuft er
+   durch — Pause am Anfang → zum Ende scrollen → Pause → zurück (gut lesbar). --marquee-dist
+   = negativer Überlauf in px, inline gesetzt (MusicBar.jsx). Passt der Titel, ist er statisch. */
+@keyframes as-marquee {
+  0%, 15%  { transform: translateX(0); }
+  50%, 65% { transform: translateX(var(--marquee-dist, 0)); }
+  100%     { transform: translateX(0); }
+}
+
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
