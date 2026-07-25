@@ -25,13 +25,12 @@ export function Controls({ paused, onTogglePause, speedMult, onSpeed, onRestart,
         {paused ? "▶ Weiter" : "⏸ Pause"}
       </Btn>
 
-      <span className="text-xs opacity-50 ml-1">Tempo</span>
       <Btn active={speedMult === 2} onClick={() => onSpeed(2)} tone="#8a7de0">X2</Btn>
       <Btn active={speedMult === 4} onClick={() => onSpeed(4)} tone="#8a7de0">X4</Btn>
       <Btn active={speedMult === 6} onClick={() => onSpeed(6)} tone="#8a7de0">MAX</Btn>
+      {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} />}
 
       <div className="flex-1" />
-      {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} />}
       {onOptions && <Btn onClick={onOptions} tone="#8a7de0" aria-label="Optionen">⚙ Optionen</Btn>}
       {onAbort && <Btn onClick={onAbort} tone="#8a8a92">Beenden</Btn>}
       <Btn onClick={onRestart} tone="#e0605a">Neustart</Btn>
