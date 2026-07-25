@@ -129,7 +129,7 @@ export const SHOP_ITEM_DEFS = {
         description: "Die benötigte Nachbardifferenz für Wechsel sinkt von 4 auf 3.",
         apply: (s) => ({ shop: setPE(s.shop, { switchMinDifference: 3 }) }) },
   F3: { id: "F3", category: "formations", name: "Verstärkte Wiederholung", tier: "strong", repeatable: false,
-        description: "Der Faktor der zweiten Karte einer Wiederholung steigt von ×1,30 auf ×1,40.",
+        description: "Der Faktor der zweiten Karte einer Wiederholung steigt von ×1,25 auf ×1,35.",
         apply: (s) => ({ shop: setPE(s.shop, { repetitionSecondFactorBonus: 0.10 }) }) },
   F4: { id: "F4", category: "formations", name: "Farballianz", tier: "strong", repeatable: false,
         targetMode: "two-colors", target: { colorPair: true },

@@ -80,8 +80,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
             {/* Kurz-Erklärung der Formationen mit Kürzel (#95.7). #103: nur Kürzel + Name grün,
                 Beschreibung (nach dem „—") in Standard-Textfarbe → bessere Lesbarkeit. */}
             <div className="grid grid-cols-1 gap-y-0.5 text-xs sm:text-[13px] leading-snug font-medium">
-              <div><b style={{ color: "#8be0a8" }}>W</b> <span style={{ color: "#6fc48f" }}>Wiederholung</span> — ≥2 gleiche Werte (×1,30 / ×1,60 / ×2,00, dann +0,50 je weitere)</div>
-              <div><b style={{ color: "#8be0a8" }}>F</b> <span style={{ color: "#6fc48f" }}>Farbblock</span> — ≥3 gleiche Farbe (ab ×1,30, +0,20 je weitere)</div>
+              <div><b style={{ color: "#8be0a8" }}>W</b> <span style={{ color: "#6fc48f" }}>Wiederholung</span> — ≥2 gleiche Werte (×1,25 / ×1,50 / ×1,80, dann +0,40 je weitere)</div>
+              <div><b style={{ color: "#8be0a8" }}>F</b> <span style={{ color: "#6fc48f" }}>Farbblock</span> — ≥3 gleiche Farbe (ab ×1,35, +0,20 je weitere)</div>
               <div><b style={{ color: "#8be0a8" }}>T</b> <span style={{ color: "#6fc48f" }}>Treppe</span> — ≥3 streng steigend (ab ×1,25, +0,20 je weitere)</div>
               <div><b style={{ color: "#8be0a8" }}>Z</b> <span style={{ color: "#6fc48f" }}>Wechsel</span> — ≥3 Zick-Zack, Diff ≥4 (ab ×1,25, +0,20 je weitere)</div>
               <div><b style={{ color: "#8be0a8" }}>A</b> <span style={{ color: "#6fc48f" }}>Anker</span> — Einzelposition ×1,25</div>
