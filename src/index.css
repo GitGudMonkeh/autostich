@@ -59,14 +59,16 @@ button { font-family: inherit; }
    Karten-Glows (Ion-Ring, Frost, Wert-Glow) bleiben unberührt. --pulse-color/--pulse-scale/--pulse-dur
    werden je Ausgang inline gesetzt (Battlefield.jsx). reduced-motion greift global (unten). */
 @keyframes as-result-pulse {
-  0%   { opacity: .85; transform: scale(1); }
-  70%  { opacity: .30; }
-  100% { opacity: 0;   transform: scale(var(--pulse-scale, 1.4)); }
+  0%   { opacity: .7;  transform: scale(1); }
+  65%  { opacity: .26; }
+  100% { opacity: 0;   transform: scale(var(--pulse-scale, 1.45)); }
 }
+/* Weicher, randloser Glow-Ring (kein solider border → keine harte Kante). Zwei überlagerte, blur-lastige
+   Schatten ohne nennenswerten spread → weicher Innen- UND Außenrand; wächst nach außen und fadet aus. */
 .as-result-pulse {
-  border-radius: 0.75rem;
-  border: 2.5px solid var(--pulse-color, #5ab87a);
-  box-shadow: 0 0 26px 8px var(--pulse-color, #5ab87a);
+  border-radius: 0.85rem;
+  box-shadow: 0 0 16px 0 var(--pulse-color, #5ab87a),
+              0 0 40px 6px var(--pulse-color, #5ab87a);
   animation: as-result-pulse var(--pulse-dur, 600ms) cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   will-change: transform, opacity;
 }
