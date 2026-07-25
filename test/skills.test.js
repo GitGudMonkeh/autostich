@@ -100,6 +100,16 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
     for (let seed = 1; seed <= 40; seed++)
       expect(buildSkillOffer([], [], makeRng(seed), 6, 0.5).filter((id) => SKILL_DEFS[id].legendary).length).toBeLessThanOrEqual(1);
   });
+  it("Legendär-Roll erhält die 2+2+2-Archetyp-Balance (#129)", () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const off = buildSkillOffer([], [], makeRng(seed), 6, 1); // erzwungener Legendär (Chance 1)
+      expect(off).toHaveLength(6);
+      const byArch = { lightning: 0, fire: 0, ice: 0 };
+      for (const id of off) byArch[archetypeOf(id)]++;
+      // Jeder Archetyp genau 2 (einer davon legendär) — der Legendär ersetzt einen normalen Skill SEINES Archetyps.
+      expect(byArch).toEqual({ lightning: 2, fire: 2, ice: 2 });
+    }
+  });
   it("bietet NIE einen gehaltenen Skill an und nie ein Duplikat (Invariante, #118)", () => {
     for (const owned of [[], [LR], ALL.slice(0, 5), ALL.slice(0, 20)]) {
       for (let seed = 1; seed <= 30; seed++) {

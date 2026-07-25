@@ -321,10 +321,19 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   }
   const fill = shuffle(rest, rng); // auffüllen bis count, falls ein Archetyp zu wenige Skills hatte
   while (offer.length < count && fill.length) offer.push(fill.shift());
-  // Bei erfolgreichem Roll genau einen legendären Skill einsetzen (ersetzt den letzten Slot bzw. füllt auf).
+  // Bei erfolgreichem Roll genau einen legendären Skill einsetzen. Balance (2+2+2) wahren: einen normalen Skill
+  // DESSELBEN Archetyps ersetzen — NICHT blind den letzten Slot, sonst verliert ein anderer Archetyp einen Platz
+  // und der Legendär-Archetyp bekommt einen zu viel (#129). Fallback: letzter Slot bzw. auffüllen.
   if (legHit && legPool.length) {
     const leg = shuffle(legPool, rng)[0];
-    if (!offer.includes(leg)) { if (offer.length >= count) offer[offer.length - 1] = leg; else offer.push(leg); }
+    if (!offer.includes(leg)) {
+      if (offer.length >= count) {
+        const legArch = archetypeOf(leg);
+        let idx = -1;
+        for (let i = offer.length - 1; i >= 0; i--) if (archetypeOf(offer[i]) === legArch) { idx = i; break; }
+        offer[idx >= 0 ? idx : offer.length - 1] = leg;
+      } else offer.push(leg);
+    }
   }
   return offer;
 }
