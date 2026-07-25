@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { STAT_IDS } from "../src/game/stats.js";
-import { computeFormations } from "../src/game/formations.js";
+import { computeFormations, formationPotential } from "../src/game/formations.js";
+import { FORMATION_START_MIN, FORMATION_START_MAX } from "../src/game/constants.js";
 
 const rng = makeRng(1);
 
@@ -13,6 +14,17 @@ describe("Reducer", () => {
     expect(s.life).toBeUndefined(); // V2: Leben restlos entfernt
     expect(s.perks).toEqual([]);
     expect(s.deck).toHaveLength(40);
+  });
+
+  it("Startdeck-Formations-Band (#Pass6): playerOrder-Potential liegt im Band, deterministisch", () => {
+    for (const seed of [1, 2, 3, 7, 42, 123, 777]) {
+      const s = initialState(makeRng(seed));
+      const pot = formationPotential(s.playerOrder, s.deck);
+      expect(pot).toBeGreaterThanOrEqual(FORMATION_START_MIN);
+      expect(pot).toBeLessThanOrEqual(FORMATION_START_MAX);
+    }
+    // gleicher Seed → identische Anordnung (Rejection-Sampling bleibt deterministisch)
+    expect(initialState(makeRng(5)).playerOrder).toEqual(initialState(makeRng(5)).playerOrder);
   });
 
   it("PICK_PERK wendet eine Deck-Mod an und kehrt in play zurück", () => {

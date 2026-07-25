@@ -282,6 +282,14 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
 // Trägt eine Position eine wirksame Formation (Score-Faktor > 1)? → speist den Formations-Stat (§22.3).
 export const positionHasFormation = (posForm) => !!posForm && posForm.mult > 1;
 
+// Formations-Potential einer Anordnung (#Pass6): Σ(mult−1) über alle Positionen der unmodifizierten
+// Formationen (keine Rollen/Perks/Skills/Anker). Maß fürs freie Start-Potential → speist das Startdeck-Band.
+export function formationPotential(order, deck) {
+  let sum = 0;
+  for (const p of computeFormations(order, deck)) sum += (p.mult || 1) - 1;
+  return sum;
+}
+
 // Zusammenfassung fürs Aufstellungs-UI (§16): Zahl aktiver Formationen (Läufe) + höchster Einzel-Mult.
 export function summarizeFormations(perPosition) {
   let count = 0, maxMult = 1;

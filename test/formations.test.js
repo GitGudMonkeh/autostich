@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "../src/game/formations.js";
+import { computeFormations, positionHasFormation, formationPotential, SEGMENT_SIZE } from "../src/game/formations.js";
 
 // Karten aus [suit, value]-Paaren; identity-Reihenfolge → Position i = deck[i].
 const card = ([s, v], i) => ({ id: `${s}${v}_${i}`, suit: s, baseRank: v, value: v });
@@ -88,6 +88,19 @@ describe("positionHasFormation (speist den Formations-Stat)", () => {
     expect(positionHasFormation(f[0])).toBe(false);
     expect(positionHasFormation(f[1])).toBe(true);
     expect(positionHasFormation(undefined)).toBe(false);
+  });
+});
+
+describe("formationPotential (Startdeck-Band, #Pass6)", () => {
+  it("= Σ(mult−1) über alle Positionen der Anordnung", () => {
+    // Vier gleiche Werte → Wiederholung mults [1, 1.25, 1.5, 1.8] → Σ(mult−1) = 0,25+0,5+0,8 = 1,55.
+    const deck = [["R", 5], ["B", 5], ["G", 5], ["Y", 5]].map(card);
+    expect(+formationPotential(idOrder(4), deck).toFixed(4)).toBeCloseTo(1.55);
+  });
+  it("= 0 für eine formationsfreie Anordnung", () => {
+    // 1,2,1: die beiden 1er sind nicht benachbart (kein Paar), Diffs <4 (kein Wechsel), keine Treppe, Farben verschieden.
+    const deck = [["R", 1], ["B", 2], ["G", 1]].map(card);
+    expect(formationPotential(idOrder(3), deck)).toBe(0);
   });
 });
 
