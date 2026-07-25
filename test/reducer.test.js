@@ -3,7 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { computeFormations, formationPotential } from "../src/game/formations.js";
-import { FORMATION_START_MIN, FORMATION_START_MAX } from "../src/game/constants.js";
+import { FORMATION_START_MIN, FORMATION_START_MAX, PERK_DECLINE_COINS } from "../src/game/constants.js";
 
 const rng = makeRng(1);
 
@@ -183,6 +183,31 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     const play = initialState(makeRng(1)); // phase play, kein skillOffer
     expect(reducer(play, { type: "PICK_SKILL", skillId: LR, rng })).toBe(play);
     expect(reducer(play, { type: "DECLINE_SKILL", rng })).toBe(play);
+  });
+});
+
+describe("DECLINE_PERK — Perk-Angebot ablehnen → +Münze (#138)", () => {
+  const perkLevelup = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["A1", "C1", "E2"], ...over });
+
+  it("schreibt PERK_DECLINE_COINS gut, verwirft das Angebot und kehrt in play zurück", () => {
+    const s0 = perkLevelup({ shop: { ...initialState(makeRng(1)).shop, coins: 3 } });
+    const s = reducer(s0, { type: "DECLINE_PERK" });
+    expect(s.phase).toBe("play");
+    expect(s.offer).toBeNull();
+    expect(s.shop.coins).toBe(3 + PERK_DECLINE_COINS);
+  });
+
+  it("ist außerhalb der Perk-Auswahl wirkungslos (falsche Phase oder kein Angebot)", () => {
+    const play = { ...initialState(makeRng(1)), phase: "play", offer: null };
+    expect(reducer(play, { type: "DECLINE_PERK" })).toBe(play);
+    const noOffer = { ...initialState(makeRng(1)), phase: "levelup", offer: null };
+    expect(reducer(noOffer, { type: "DECLINE_PERK" })).toBe(noOffer);
+  });
+
+  it("funktioniert auch ohne shop-State (coins startet bei 0)", () => {
+    const s = reducer(perkLevelup({ shop: undefined }), { type: "DECLINE_PERK" });
+    expect(s.shop.coins).toBe(PERK_DECLINE_COINS);
+    expect(s.phase).toBe("play");
   });
 });
 

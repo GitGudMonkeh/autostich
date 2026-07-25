@@ -1,5 +1,6 @@
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, critChanceRawFor, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
 import { lightningCritRaw } from "../game/skills.js";
+import { PERK_DECLINE_COINS } from "../game/constants.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { PanelMascot } from "./PanelMascot.jsx";
@@ -11,7 +12,7 @@ const fmtMult = (x) => x.toFixed(2).replace(".", ",");
 
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
-export function PerkSelect({ offer, onPick, onReroll, perks = [], deck = [], state = {} }) {
+export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], deck = [], state = {} }) {
   // Neuwurf (Shop-Spec §10 P1/P-L1): gratis Reroll (Schicksalskontrolle) zuerst, sonst gespeicherte Token.
   const freeReroll = !!state.freePerkReroll;
   const rerollTokens = (state.shop && state.shop.perkRerolls) || 0;
@@ -88,15 +89,23 @@ export function PerkSelect({ offer, onPick, onReroll, perks = [], deck = [], sta
           Jeder Perk ist pro Lauf nur einmal wählbar.
         </div>
 
-        {canReroll && (
-          <div className="text-center mt-3">
+        {/* #138: Neu würfeln (falls verfügbar) + „Alle ablehnen (+🪙 N)" — eine Perk-Runde ist nie „verschwendet". */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+          {canReroll && (
             <button onClick={onReroll}
               className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
               style={{ background: "#20202a", color: LEG_GOLD, border: `1px solid ${LEG_GOLD}66` }}>
               🎲 Angebot neu würfeln {freeReroll ? "· gratis" : `· ${rerollTokens} übrig`}
             </button>
-          </div>
-        )}
+          )}
+          {onDecline && (
+            <button onClick={onDecline}
+              className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
+              style={{ background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }}>
+              Alle ablehnen · +🪙 {PERK_DECLINE_COINS}
+            </button>
+          )}
+        </div>
 
         {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). */}
         <div className="mt-5 pt-4 border-t grid sm:grid-cols-2 gap-4" style={{ borderColor: "#2a2a33" }}>
