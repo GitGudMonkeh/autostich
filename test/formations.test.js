@@ -9,23 +9,23 @@ const mults = (arr) => forms(arr).map((f) => +f.mult.toFixed(3));
 const typesAt = (arr, pos) => forms(arr)[pos].formations.map((f) => f.type).sort();
 
 describe("Wiederholung (≥2 gleiche Werte)", () => {
-  it("Paar → 2. Karte ×1,30; Rest 1", () => {
+  it("Paar → 2. Karte ×1,25; Rest 1 [#Pass4]", () => {
     // Vier gleiche Werte, unterschiedliche Farben → isolierte Wiederholung (kein Farbblock/Treppe/Wechsel).
-    expect(mults([["R", 5], ["B", 5], ["G", 5], ["Y", 5]])).toEqual([1, 1.3, 1.6, 2.0]);
+    expect(mults([["R", 5], ["B", 5], ["G", 5], ["Y", 5]])).toEqual([1, 1.25, 1.5, 1.8]);
   });
   it("Länge 2 → nur die 2. Karte bekommt Bonus", () => {
-    expect(mults([["R", 7], ["B", 7]])).toEqual([1, 1.3]);
+    expect(mults([["R", 7], ["B", 7]])).toEqual([1, 1.25]);
   });
-  it("kein Cap — ab der 4. je +0,50 (#95)", () => {
+  it("kein Cap — ab der 4. je +0,40 (#Pass4)", () => {
     // Fünf gleiche Werte (Farben R/B/G/Y/R, nicht 3 gleiche nebeneinander → kein Farbblock).
-    expect(mults([["R", 5], ["B", 5], ["G", 5], ["Y", 5], ["R", 5]])).toEqual([1, 1.3, 1.6, 2.0, 2.5]);
+    expect(mults([["R", 5], ["B", 5], ["G", 5], ["Y", 5], ["R", 5]])).toEqual([1, 1.25, 1.5, 1.8, 2.2]);
   });
 });
 
 describe("Farbblock (≥3 gleiche Farbe)", () => {
-  it("ab der 3. Karte ×1,30, je weitere +0,20; <3 kein Bonus", () => {
+  it("ab der 3. Karte ×1,35, je weitere +0,20; <3 kein Bonus [#Pass4]", () => {
     // Werte 5,7,6,8: enge Schritte (<4) → kein Wechsel; keine 3er-Steigung → keine Treppe → isolierter Farbblock.
-    expect(mults([["R", 5], ["R", 7], ["R", 6], ["R", 8]])).toEqual([1, 1, 1.3, 1.5]);
+    expect(mults([["R", 5], ["R", 7], ["R", 6], ["R", 8]])).toEqual([1, 1, 1.35, 1.55]);
     expect(mults([["R", 5], ["R", 2]])).toEqual([1, 1]); // len 2 → nichts
   });
 });
@@ -65,7 +65,7 @@ describe("Segment = Arena (Formationen enden an Segmentgrenzen)", () => {
   it(`Segmentgröße ${SEGMENT_SIZE}; ein Farbblock über die Grenze zählt nicht`, () => {
     expect(SEGMENT_SIZE).toBe(5);
     // Vier R-Karten ganz in Segment 0 → Farbblock.
-    expect(mults([["R", 5], ["R", 7], ["R", 6], ["R", 8]])).toEqual([1, 1, 1.3, 1.5]);
+    expect(mults([["R", 5], ["R", 7], ["R", 6], ["R", 8]])).toEqual([1, 1, 1.35, 1.55]);
     // Vier R-Karten über die Grenze 4|5 gelegt (Pos 3–6) → in zwei Hälften à 2 → kein Farbblock.
     // Enge Werte (Diff <4, keine 3er-Steigung) → auch kein Wechsel/keine Treppe.
     const straddle = [["R", 6], ["B", 5], ["G", 7], ["R", 6], ["R", 8], ["R", 5], ["R", 7]];
@@ -77,14 +77,14 @@ describe("Stapelung mehrerer Formationen (Produkt × Überlappungsbonus)", () =>
   it("gleichfarbig + streng steigend → Farbblock × Treppe × Überlappung auf der 3. Karte", () => {
     const deck = [["R", 1], ["R", 3], ["R", 5]]; // alle R (Farbblock) + streng steigend (Treppe)
     expect(typesAt(deck, 2)).toEqual(["farbblock", "treppe"]);
-    // pos2: Farbblock ×1,30 · Treppe ×1,25 · Überlappung (2 Formationen) ×1,5 = 2,4375.
-    expect(+forms(deck)[2].mult.toFixed(4)).toBeCloseTo(1.3 * 1.25 * 1.5);
+    // pos2: Farbblock ×1,35 · Treppe ×1,25 · Überlappung (2 Formationen) ×1,5 = 2,53125. [#Pass4]
+    expect(+forms(deck)[2].mult.toFixed(4)).toBeCloseTo(1.35 * 1.25 * 1.5);
   });
 });
 
 describe("positionHasFormation (speist den Formations-Stat)", () => {
   it("true nur bei wirksamem Multiplikator (>1)", () => {
-    const f = forms([["R", 5], ["B", 5], ["G", 5]]); // Wiederholung: pos0 mult 1, pos1 1,30, pos2 1,60
+    const f = forms([["R", 5], ["B", 5], ["G", 5]]); // Wiederholung: pos0 mult 1, pos1 1,25, pos2 1,50
     expect(positionHasFormation(f[0])).toBe(false);
     expect(positionHasFormation(f[1])).toBe(true);
     expect(positionHasFormation(undefined)).toBe(false);
@@ -97,7 +97,7 @@ describe("Rollen-Eingriffe: Joker (C8) & Bindeglied (C10)", () => {
     const roles = { C8: [deck[2].id] };
     const f = computeFormations(idOrder(3), deck, roles);
     expect(f[2].formations.some((x) => x.type === "farbblock")).toBe(true);
-    expect(+f[2].mult.toFixed(2)).toBe(1.30);
+    expect(+f[2].mult.toFixed(2)).toBe(1.35);
     // ohne Rolle: kein Farbblock (Farben R,R,B)
     expect(computeFormations(idOrder(3), deck)[2].formations.some((x) => x.type === "farbblock")).toBe(false);
   });

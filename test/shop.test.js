@@ -500,13 +500,13 @@ describe("Shop-Formationsitems — F1/F2/F3 (Shop-Spec §9)", () => {
     expect(hasForm(computeFormations(ord(5), deck), 0, "wechsel")).toBe(false);
     expect(hasForm(computeFormations(ord(5), deck, {}, [], [], [], { switchMinDifference: 3 }), 0, "wechsel")).toBe(true);
   });
-  it("F3 Verstärkte Wiederholung: zweite Karte ×1,30 → ×1,40 (dritte bleibt ×1,60)", () => {
+  it("F3 Verstärkte Wiederholung: zweite Karte ×1,25 → ×1,35 (dritte bleibt ×1,50)", () => {
     const deck = seqDeck([5, 5, 1, 1, 1]);
     const base = computeFormations(ord(5), deck);
-    expect(base[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.30);
+    expect(base[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.25);
     const buffed = computeFormations(ord(5), deck, {}, [], [], [], { repetitionSecondFactorBonus: 0.10 });
-    expect(buffed[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.40);
-    expect(buffed[4].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.60); // 3. Karte (Ordinal 3) unverändert
+    expect(buffed[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.35);
+    expect(buffed[4].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.50); // 3. Karte (Ordinal 3) unverändert
   });
   it("Kauf eines F-Items (kein Ziel): setzt permanentEffects, zieht Preis ab, ist nicht wiederholbar", () => {
     const offer = { offerId: "o0", itemId: "F2", category: "formations", tier: "cheap", price: 8, legendary: false };
@@ -581,27 +581,27 @@ describe("Shop-Formationsitem — F6 Nachhall (Shop-Spec §9)", () => {
     const on = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true });
     const nh = on[2].formations.find((f) => f.type === "nachhall");
     expect(nh).toBeTruthy();
-    expect(nh.factor).toBeCloseTo(1.30);       // wiederholungFactor(2)
+    expect(nh.factor).toBeCloseTo(1.25);       // wiederholungFactor(2)
     expect(nh.sourceType).toBe("wiederholung"); // trägt Ursprungstyp mit (für F-L1)
-    expect(on[2].mult).toBeCloseTo(1.30);
-    expect(on[2].afterglowFactor).toBeCloseTo(1.30);
+    expect(on[2].mult).toBeCloseTo(1.25);
+    expect(on[2].afterglowFactor).toBeCloseTo(1.25);
     expect(on[3].formations.some((f) => f.type === "nachhall")).toBe(false); // kein Kaskadieren: Empfänger sendet nicht weiter
   });
-  it("nimmt den höchsten Einzel-Endfaktor (Farbblock 1,30 vor Treppe 1,25)", () => {
+  it("nimmt den höchsten Einzel-Endfaktor (Farbblock 1,35 vor Treppe 1,25)", () => {
     const deck = [
       { id: "a", suit: "R", value: 1 }, { id: "b", suit: "R", value: 2 }, { id: "c", suit: "R", value: 3 },
       { id: "d", suit: "B", value: 20 }, { id: "e", suit: "G", value: 9 },
     ]; // Pos 0–2: Farbblock UND Treppe, beide enden auf Pos 2
     const on = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true });
     const nh = on[3].formations.find((f) => f.type === "nachhall");
-    expect(nh.factor).toBeCloseTo(1.30);
+    expect(nh.factor).toBeCloseTo(1.35);
     expect(nh.sourceType).toBe("farbblock");
   });
   it("überschreitet Segmentgrenzen — Empfänger im nächsten Segment", () => {
     const deck = seqDeck([30, 29, 28, 22, 22, 21, 20]); // Wiederholung [22,22] endet auf Pos 4 (Grenze 4|5)
     const on = computeFormations(ord(7), deck, {}, [], [], [], { formationAfterglow: true });
     const nh = on[5].formations.find((f) => f.type === "nachhall"); // Pos 5 = erstes Feld des Folgesegments
-    expect(nh && nh.factor).toBeCloseTo(1.30);
+    expect(nh && nh.factor).toBeCloseTo(1.25);
   });
   it("endet die Formation auf der letzten Position, gibt es keinen Empfänger", () => {
     const deck = seqDeck([30, 29, 28, 27, 22, 22]); // Wiederholung [22,22] endet auf Pos 5 (= letzte Position)
@@ -629,16 +629,16 @@ describe("Shop-Formationsitem — F-L1 Formationskern (Shop-Spec §9)", () => {
     const on = computeFormations(ord(4), deck, {}, [], [], [], { formationCoreType: "farbblock" });
     expect(on[0].coreFactor).toBeCloseTo(1.50); // Ordinal-1-Mitglied zählt auch als „Teil des Typs"
     expect(on[2].coreFactor).toBeCloseTo(1.50);
-    expect(on[2].mult).toBeCloseTo(1.30 * 1.50);
+    expect(on[2].mult).toBeCloseTo(1.35 * 1.50);
     expect(on[0].formations.some((f) => f.type === "formationskern")).toBe(true);
     expect(on[3].coreFactor).toBe(1); // Pos 3 ist kein Farbblock → kein Kern
   });
   it("wird auch durch Nachhall des Ursprungstyps ausgelöst (nicht bei anderem Kern-Typ)", () => {
     const deck = seqDeck([20, 20, 19, 18, 17]); // Nachhall auf Pos 2 trägt sourceType 'wiederholung'
     const same = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true, formationCoreType: "wiederholung" });
-    expect(same[2].afterglowFactor).toBeCloseTo(1.30);
+    expect(same[2].afterglowFactor).toBeCloseTo(1.25);
     expect(same[2].coreFactor).toBeCloseTo(1.50);          // Nachhall(wiederholung) triggert Kern(wiederholung)
-    expect(same[2].mult).toBeCloseTo(1.30 * 1.50);
+    expect(same[2].mult).toBeCloseTo(1.25 * 1.50);
     const other = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true, formationCoreType: "treppe" });
     expect(other[2].coreFactor).toBe(1);                   // Nachhall ist wiederholung, Kern ist treppe → kein Trigger
   });

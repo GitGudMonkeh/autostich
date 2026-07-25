@@ -94,8 +94,8 @@ describe("resolveTrick — Score-Perks (V2: Flat)", () => {
     const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }];
     const opp = [{ id: "o0", suit: "R", baseRank: 0, value: 0 }, { id: "o1", suit: "R", baseRank: 0, value: 0 }];
     let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1], oppOrder: [0, 1], perks: ["D1"] };
-    s = resolveTrick(s, rng); s = resolveTrick(s, rng); // pos1 = Wiederholung (Formation ×1,30)
-    expect(s.lastTrick.gained).toBeCloseTo((100 + 75) * 1.04 * 1.30);
+    s = resolveTrick(s, rng); s = resolveTrick(s, rng); // pos1 = Wiederholung (Formation ×1,25)
+    expect(s.lastTrick.gained).toBeCloseTo((100 + 75) * 1.04 * 1.25);
   });
 
   it("D4 Außenseitersieg: +300 Score bei Wert ≤3", () => {
@@ -523,8 +523,8 @@ describe("Stat-System — Engine (V2 §22.3)", () => {
     const opp = [{ id: "o0", suit: "R", baseRank: 0, value: 0 }, { id: "o1", suit: "R", baseRank: 0, value: 0 }];
     let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1], oppOrder: [0, 1], statFormMult: 0.15 };
     s = resolveTrick(s, rng); // pos0: keine Formation
-    s = resolveTrick(s, rng); // pos1: Wiederholung ×1,30 + Formations-Stat ×1,15
-    expect(s.lastTrick.gained).toBeCloseTo(100 * 1.04 * 1.30 * 1.15);
+    s = resolveTrick(s, rng); // pos1: Wiederholung ×1,25 + Formations-Stat ×1,15
+    expect(s.lastTrick.gained).toBeCloseTo(100 * 1.04 * 1.25 * 1.15);
   });
 });
 
@@ -537,8 +537,8 @@ describe("Formations-Engine — Integration (V2 §22.7)", () => {
     let s = base();
     s = resolveTrick(s, rng); expect(s.lastTrick.formationMult).toBe(1);   // pos0 = 1. Karte, kein Bonus
     s = resolveTrick(s, rng);
-    expect(s.lastTrick.formationMult).toBeCloseTo(1.30);                    // pos1 = 2. Karte
-    expect(s.lastTrick.gained).toBeCloseTo(100 * 1.04 * 1.30);             // 100 × streakBaseMult(2) × 1,30
+    expect(s.lastTrick.formationMult).toBeCloseTo(1.25);                    // pos1 = 2. Karte
+    expect(s.lastTrick.gained).toBeCloseTo(100 * 1.04 * 1.25);             // 100 × streakBaseMult(2) × 1,25
   });
 
   it("Crit multipliziert NACH dem Formations-Multiplikator (§7.3)", () => {
@@ -547,14 +547,14 @@ describe("Formations-Engine — Integration (V2 §22.7)", () => {
     s = resolveTrick(s, rng); // pos0
     s = resolveTrick(s, rng); // pos1: Formation ×1,30, dann Crit ×1,5
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(100 * 1.04 * 1.30);    // Formation IN der Basis
-    expect(s.lastTrick.scoreGain).toBeCloseTo(100 * 1.04 * 1.30 * 1.5);    // Crit ×1,5 danach
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(100 * 1.04 * 1.25);    // Formation IN der Basis
+    expect(s.lastTrick.scoreGain).toBeCloseTo(100 * 1.04 * 1.25 * 1.5);    // Crit ×1,5 danach
   });
 
   it("Formationen werden persistent im State gehalten (je Durchlauf berechnet)", () => {
     const s = resolveTrick(base(), rng); // pos0 → berechnet formations für den Durchlauf
     expect(Array.isArray(s.formations)).toBe(true);
-    expect(s.formations[1].mult).toBeCloseTo(1.30);
+    expect(s.formations[1].mult).toBeCloseTo(1.25);
   });
 });
 
