@@ -1,6 +1,8 @@
 import { shopIncomeFor, canAfford, SHOP_ITEM_DEFS } from "../game/shop.js";
 import { SHOP_CATEGORIES, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { PanelMascot } from "./PanelMascot.jsx";
+import shopMascot from "../assets/mascots/shop.gif";
 import { useEscape } from "./useEscape.js";
 
 const GOLD = "#d4a63a"; // Shop-/Münz-Akzent (wie der Score-Gold-Ton)
@@ -31,13 +33,20 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
   const byCat = Object.fromEntries(SHOP_CATEGORIES.map((c) => [c, offers.filter((o) => o.category === c)]));
 
   return (
-    <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-4xl rounded-2xl p-6 max-h-[92vh] overflow-y-auto" style={{ background: "#181820", border: `1px solid ${GOLD}55` }}>
+    <div className="fixed inset-0 z-20 flex items-center sm:items-start justify-center p-4 sm:pt-28" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
+      {/* #130: nicht scrollender Wrapper → TV-Kopf-Maskottchen schaut oben über die Karte hervor (Desktop-Peek);
+          Panel oben angedockt (sm:items-start + sm:pt-28) + sm:max-h, damit der Peek nie vom Viewport geklippt wird. */}
+      <div className="relative w-full max-w-4xl">
+        <PanelMascot src={shopMascot} accent={GOLD} peekMaxH={120} overlap={28} />
+        <div className="relative z-10 w-full rounded-2xl p-6 max-h-[92vh] sm:max-h-[calc(100vh-8rem)] overflow-y-auto" style={{ background: "#181820", border: `1px solid ${GOLD}55` }}>
         {/* Kopf: Runde + Münzstand prominent */}
         <div className="flex items-start justify-between gap-4 mb-4">
-          <div>
-            <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>Runde {round}</div>
-            <h2 className="text-xl font-bold mt-1">Shop</h2>
+          <div className="flex items-center gap-2 min-w-0">
+            <PanelMascot src={shopMascot} accent={GOLD} variant="avatar" avatarObjectPosition="center top" />
+            <div>
+              <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>Runde {round}</div>
+              <h2 className="text-xl font-bold mt-1">Shop</h2>
+            </div>
           </div>
           <div className="text-right">
             <div className="text-[10px] uppercase tracking-wide opacity-50">Münzen</div>
@@ -107,6 +116,7 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
           >
             Shop verlassen
           </button>
+        </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,8 @@ import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../gam
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
          FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, BURN_BONUS, ICE_BASE_FREEZE, FROST_GRIP_BONUS } from "../game/constants.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { PanelMascot } from "./PanelMascot.jsx";
+import skillMascot from "../assets/mascots/skill.gif";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "•", color: "#8a8a95" };
@@ -73,11 +75,19 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   };
 
   return (
-    <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-3xl rounded-2xl p-6 max-h-[92vh] overflow-y-auto" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
+    <div className="fixed inset-0 z-20 flex items-center sm:items-start justify-center p-4 sm:pt-28" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
+      {/* #130: nicht scrollender Wrapper → Magier-Maskottchen schaut oben hervor (etwas höher = kleiner overlap,
+          damit die Feuer-/Eis-/Blitz-Karten frei liegen). Panel oben angedockt (sm:items-start + sm:pt-28) +
+          sm:max-h, damit der Peek nie vom Viewport geklippt wird. */}
+      <div className="relative w-full max-w-3xl">
+        <PanelMascot src={skillMascot} accent={LIGHT} peekMaxH={124} overlap={16} />
+        <div className="relative z-10 w-full rounded-2xl p-6 max-h-[92vh] sm:max-h-[calc(100vh-8rem)] overflow-y-auto" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Runde {(state.cycle || 0) + 1}</div>
-          <h2 className="text-xl font-bold mt-1">Wähle einen Skill</h2>
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <PanelMascot src={skillMascot} accent={LIGHT} variant="avatar" avatarObjectPosition="center top" />
+            <h2 className="text-xl font-bold">Wähle einen Skill</h2>
+          </div>
           <p className="text-xs opacity-55 mt-1">
             Skills sind seltene, regelverändernde Motoren — {skills.length}/{SKILL_SLOTS} Slots belegt.
           </p>
@@ -276,6 +286,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
