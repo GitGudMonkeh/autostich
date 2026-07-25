@@ -7,6 +7,23 @@ button { font-family: inherit; }
 ::-webkit-scrollbar { height:8px; width:8px; }
 ::-webkit-scrollbar-thumb { background:#2a2a33; border-radius:4px; }
 
+/* Overlay-Panels auf iOS (#141): Auswahl-/Modal-Panels müssen im REAL sichtbaren Bereich
+   bleiben. Auf iOS Safari bezieht `vh`/`inset-0` die dynamische Adressleiste nicht ein →
+   der untere Rand (Bestätigen-Button) rutscht hinter die Browser-Toolbar/den Home-Indicator.
+   Unlayered (nach @import tailwindcss) → gewinnt gegen Tailwinds inset-0/p-4 (wie der Grundstil oben).
+   - `overlay-root` (äußerer fixed-Container): Höhe folgt der dynamischen Viewport-Höhe (dvh)
+     statt der Layout-Höhe, und die untere Safe-Area wird eingerechnet (mind. die Normal-Polsterung).
+   - `overlay-card` (innere scrollbare Karte): iOS-Momentum-Scroll + kein Scroll-Ketten aufs Body. */
+.overlay-root {
+  height: 100dvh;
+  bottom: auto;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.overlay-card {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
 /* Karten-Kachel (#101): mobil hochkant (3/4), auf Desktop kompakt-quadratisch → weniger Scrollen.
    Desktop-Override mit doppelter Klassen-Spezifität, damit er unabhängig von der Regel-Reihenfolge gewinnt. */
 .as-tile { aspect-ratio: 3 / 4; }

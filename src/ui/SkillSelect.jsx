@@ -75,13 +75,13 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   };
 
   return (
-    <div className="fixed inset-0 z-20 flex items-center sm:items-start justify-center p-4 sm:pt-28" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
+    <div className="fixed inset-0 overlay-root z-20 flex items-center sm:items-start justify-center p-4 sm:pt-28" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       {/* #130: nicht scrollender Wrapper → Magier-Maskottchen schaut oben hervor (etwas höher = kleiner overlap,
           damit die Feuer-/Eis-/Blitz-Karten frei liegen). Panel oben angedockt (sm:items-start + sm:pt-28) +
           sm:max-h, damit der Peek nie vom Viewport geklippt wird. */}
       <div className="relative w-full max-w-3xl">
         <PanelMascot src={skillMascot} accent={LIGHT} peekMaxH={124} overlap={16} />
-        <div className="relative z-10 w-full rounded-2xl p-6 max-h-[92vh] sm:max-h-[calc(100vh-8rem)] overflow-y-auto" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
+        <div className="relative z-10 w-full rounded-2xl p-6 max-h-[92dvh] sm:max-h-[calc(100dvh-8rem)] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Runde {(state.cycle || 0) + 1}</div>
           <div className="flex items-center justify-center gap-2 mt-1">

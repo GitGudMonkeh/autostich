@@ -25,13 +25,13 @@ function currentLabel(id, state) {
 export function StatSelect({ offer = STAT_IDS, onPick, state = {} }) {
   const isStart = (state.trickNo || 0) === 0;
   return (
-    <div className="fixed inset-0 z-20 flex items-center sm:items-start justify-center p-4 sm:pt-28" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
+    <div className="fixed inset-0 overlay-root z-20 flex items-center sm:items-start justify-center p-4 sm:pt-28" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       {/* #130: nicht scrollender Wrapper → das Maskottchen schaut oben über die Karte hervor (Desktop-Peek). Panel
           ist auf Desktop oben angedockt (sm:items-start + sm:pt-28), damit der Peek nie vom Viewport geklippt wird;
           die Karte bekommt entsprechend sm:max-h, sodass sie inkl. Peek-Kopfraum in den Viewport passt. */}
       <div className="relative w-full max-w-3xl">
         <PanelMascot src={statMascot} accent={ACCENT} peekMaxH={120} overlap={28} />
-        <div className="relative z-10 w-full rounded-2xl p-6 max-h-[92vh] sm:max-h-[calc(100vh-8rem)] overflow-y-auto" style={{ background: "#181820", border: "1px solid #33333e" }}>
+        <div className="relative z-10 w-full rounded-2xl p-6 max-h-[92dvh] sm:max-h-[calc(100dvh-8rem)] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
           <div className="text-center mb-1">
             <div className="text-xs uppercase tracking-widest" style={{ color: ACCENT }}>
               {isStart ? "Start" : `Runde ${(state.cycle || 0) + 1}`}

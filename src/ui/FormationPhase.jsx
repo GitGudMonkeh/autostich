@@ -58,12 +58,12 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const deltaStr = `${delta >= 0 ? "+" : "−"}${fmt(Math.abs(delta))}`;
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center sm:items-start justify-center p-3 sm:pt-28" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
+    <div className="fixed inset-0 overlay-root z-30 flex items-center sm:items-start justify-center p-3 sm:pt-28" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       {/* #130: nicht scrollender Wrapper → Alien-Admiral-Maskottchen schaut oben über die Karte hervor (Desktop-Peek);
           Panel oben angedockt (sm:items-start + sm:pt-28) + sm:max-h, damit der Peek nie vom Viewport geklippt wird. */}
       <div className="relative w-full max-w-4xl">
         <PanelMascot src={formationMascot} accent="#5ab87a" peekMaxH={120} overlap={28} />
-        <div className="relative z-10 w-full rounded-2xl p-5 max-h-[95vh] sm:max-h-[calc(100vh-8rem)] overflow-y-auto" style={{ background: "#15151b", border: "1px solid #33333e" }}>
+        <div className="relative z-10 w-full rounded-2xl p-5 max-h-[95dvh] sm:max-h-[calc(100dvh-8rem)] overflow-y-auto overlay-card" style={{ background: "#15151b", border: "1px solid #33333e" }}>
         {/* Kopf */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 min-w-0">
