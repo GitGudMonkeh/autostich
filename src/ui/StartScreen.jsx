@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { AnleitungModal } from "./AnleitungModal.jsx";
 import { CardLogo } from "./CardLogo.jsx";
 import { GlobalLeaderboard } from "./GlobalLeaderboard.jsx";
+import { MuteButton } from "./MuteButton.jsx";
 import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 
 /* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste. */
-export function StartScreen({ onStart, highscores, best, onOptions, username = "", onEditName, myEntry = null, pubToken = 0 }) {
+export function StartScreen({ onStart, highscores, best, onOptions, muted, onToggleMute, username = "", onEditName, myEntry = null, pubToken = 0 }) {
   const [showGuide, setShowGuide] = useState(false);
 
   // Beim allerersten Start die Anleitung einmal automatisch zeigen (#12).
@@ -18,7 +19,9 @@ export function StartScreen({ onStart, highscores, best, onOptions, username = "
   };
 
   return (
-    <div className="grid gap-5 justify-items-center content-start py-10">
+    <div className="relative grid gap-5 justify-items-center content-start py-10">
+      {/* #133: Schnell-Mute jederzeit sichtbar oben rechts — togglet dasselbe options.muted wie die Optionen. */}
+      {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-0 right-0" />}
       <div className="text-center">
         <h1 className="text-4xl font-bold tracking-tight font-pixel crt-title as-wordmark-hero">
           AUTO<span style={{ color: "#8a7de0" }}>STICH</span>

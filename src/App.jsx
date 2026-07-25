@@ -285,6 +285,7 @@ export function Autostich() {
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+            muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} myEntry={myEntry} pubToken={pubToken} />
         ) : (<>
           <header className="flex items-end justify-between flex-wrap gap-2">
@@ -354,6 +355,7 @@ export function Autostich() {
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onRestart={startRun} onAbort={endRun} onOptions={() => setShowOptions(true)}
+            muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
