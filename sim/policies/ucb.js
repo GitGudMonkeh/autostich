@@ -10,14 +10,18 @@
 // so bleibt S2 auf die Auswahl-Arme fokussiert; der Formations-/Shop-Ausbau kommt in S4.
 import { randomPolicy, canAddSkill } from "./random.js";
 import { buyableOffers, shopTargetStep } from "../shop-policy.js";
+import { greedyFormationStep } from "../formation.js";
 import { armKey } from "../memory.js";
 
 const DECLINE = "__decline__"; // Skill-Ablehnung als eigener Arm (auch „nichts nehmen" ist eine Entscheidung)
 const SHOP_LEAVE = "__leave__"; // Shop verlassen als eigener Arm (Nicht-Kauf ist auch eine Entscheidung)
 export const byArchetype = (s) => [...(s.activeArchetypes || [])].sort().join(",") || "none";
 
-export function ucbPolicy({ c = 1.4, bucket = byArchetype } = {}) {
-  const base = randomPolicy(); // Fallback für target/formation/shop/shop-target
+// solveFormations: optimiert auch im Explore die Aufstellung (Greedy-Solver). Wichtig für eine faire
+// Bewertung formationszentrierter Archetypen (Eis: gratis Frosttausche + Joker-Formationen) — sonst wird
+// Eis strukturell unterbewertet, weil der Explore ohne Formationsspiel nie einen guten Eis-Build sieht.
+export function ucbPolicy({ c = 1.4, bucket = byArchetype, solveFormations = false } = {}) {
+  const base = randomPolicy(); // Fallback für target/shop/shop-target
 
   function ucbPick(kind, ids, s, mem) {
     const N = mem.totalPicks(kind) + 1;
@@ -60,8 +64,10 @@ export function ucbPolicy({ c = 1.4, bucket = byArchetype } = {}) {
         }
         case "shop-target":
           return shopTargetStep(s); // Ziel-Fluss deterministisch füllen (S4)
+        case "formation":
+          return solveFormations ? greedyFormationStep(s) : base.act(s, rng);
         default:
-          return base.act(s, rng); // target/formation: Baseline-Verhalten
+          return base.act(s, rng); // target: Baseline-Verhalten
       }
     },
   };

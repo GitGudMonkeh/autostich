@@ -61,7 +61,8 @@ function robustDelta(deltas, ratios) {
 export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, topK = 6, c = 1.4, env = {} } = {}) {
   // 1) EXPLORE → Priority-Build (bestes mean je id über die Buckets, nur ausreichend gesampelt).
   const mem = newMemory();
-  const explorePol = ucbPolicy({ c });
+  // Explore optimiert die Aufstellung mit, wenn env.solveFormations (faire Bewertung von Eis & Co.).
+  const explorePol = ucbPolicy({ c, solveFormations: !!env.solveFormations });
   for (let i = 0; i < exploreRuns; i++) runOne(seed0 + i, explorePol, mem);
   const bestById = new Map();
   for (const kind of ["stat", "perk", "skill", "shopitem"]) {
