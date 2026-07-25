@@ -105,6 +105,17 @@ button { font-family: inherit; }
   background-size: 90px 90px;
 }
 
+/* Archetyp-Ambiente am Battlefield (#142 Feuer / #143 Blitz / #144 Eis): sanfte Pulse an der jeweiligen
+   Ober-/Untergrenze (nahe voller Hitze / voller Ladung / 5 Eis-Karten). Die Keyframes RUHEN bei 0%/100%
+   auf dem hellen Basiszustand → unter reduced-motion (global unten auf ~0ms gesetzt) bleibt der Glow
+   einfach statisch hell (kein Puls), genau wie in den Issues gewünscht. */
+@keyframes as-heat-pulse   { 0%, 100% { opacity: 1; } 50% { opacity: .82; } }
+@keyframes as-charge-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6;  } }
+@keyframes as-frost-pulse  { 0%, 100% { opacity: 1; } 50% { opacity: .78; } }
+.as-heat-pulse   { animation: as-heat-pulse   2.4s ease-in-out infinite; }
+.as-charge-pulse { animation: as-charge-pulse 1.1s ease-in-out infinite; }
+.as-frost-pulse  { animation: as-frost-pulse  2.8s ease-in-out infinite; }
+
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -76,7 +76,7 @@ function Side({ label, remaining, dealFrom, children }) {
   );
 }
 
-export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000, pe = {} }) {
+export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, frozen = 0 }) {
   const reduced = usePrefersReducedMotion();
   const t = lastTrick;
   // F4 Farballianz (#125): Partnerfarbe einer Kartenfarbe → diagonaler Split auf der Karte (rein kosmetisch).
@@ -207,9 +207,78 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     if (formLeaving) formOutTimer.current = setTimeout(() => setFormFloat(null), FORM_LINGER_MS); // nach dem Ausklang entfernen
   }, [formLeaving, formFloat?.key]);
 
+  // --- Archetyp-Ambiente hinter den Karten (#142 Feuer / #143 Blitz / #144 Eis), rein kosmetisch ---
+  // Werte kommen aus dem State; ohne aktiven Archetyp bleibt alles unsichtbar (0 → kein Effekt).
+  const heatRatio  = heat?.active ? clamp((heat.value || 0) / (heat.max || 100), 0, 1) : 0;
+  const charge     = lightning?.active ? (lightning.charge || 0) : 0;
+  const maxCharge  = lightning?.maxCharge || 10;
+  const chargeR    = clamp(charge / maxCharge, 0, 1);
+  const lightOn    = !!lightning?.active && charge >= 2;   // Blitz-Rahmen erst ab Ladung 2 (#143)
+  const chargeFull = lightOn && charge >= maxCharge;
+  const frostN     = clamp(Math.round(frozen || 0), 0, 5);
+  const frostOn    = frostN >= 2;                          // Eis-Rahmen ab 2 Karten, Maximum bei 5 (#144)
+  const frostF     = frostOn ? (frostN - 1) / 4 : 0;       // Stufen-Meter: 2→0,25 · 3→0,5 · 4→0,75 · 5→1,0
+  // Panel-Rand: bei aktivem Blitz elektrisch blau (voll: violett), sonst Standard.
+  const panelBorder = chargeFull ? "1px solid rgba(138,125,224,0.75)"
+    : lightOn ? `1px solid rgba(94,200,240,${(0.35 + 0.5 * chargeR).toFixed(2)})`
+    : "1px solid #26262e";
+  // Äußerer Bloom als panel-eigenes box-shadow (NICHT vom overflow-hidden geklippt): Feuer bei hoher Hitze,
+  // Blitz ab Ladung 2 (+ violetter Bloom bei voll). Leer → CRT-Skin-Glow bleibt unangetastet.
+  const outerParts = [];
+  if (heatRatio >= 0.55) outerParts.push(`0 0 ${Math.round(18 * heatRatio)}px ${Math.round(4 * heatRatio)}px rgba(224,113,74,${(0.22 * heatRatio).toFixed(2)})`);
+  if (lightOn)           outerParts.push(`0 0 ${Math.round(12 + 24 * chargeR)}px ${Math.round(chargeR * 4)}px rgba(94,200,240,${(0.14 + 0.34 * chargeR).toFixed(2)})`);
+  if (chargeFull)        outerParts.push("0 0 44px 8px rgba(138,125,224,0.32)");
+  const outerGlow = outerParts.length ? outerParts.join(", ") : undefined;
+
   return (
-    <div className="rounded-xl p-6 overflow-hidden as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-      <div className="relative flex items-center justify-center gap-4 sm:gap-8">
+    <div className="rounded-xl p-6 overflow-hidden as-panel relative" style={{ background: "#17171c", border: panelBorder, boxShadow: outerGlow }}>
+      {/* Feuer-Glut (#142): warmer Radial-Verlauf von unten + innerer Glow, Deckkraft = Hitze-Verhältnis.
+          Puls ab ~90 %. Liegt zuunterst (z-0), hinter Eis und Karten. */}
+      {heatRatio > 0.001 && (
+        <div aria-hidden="true"
+          className={`absolute inset-0 rounded-xl pointer-events-none${heatRatio >= 0.9 && !reduced ? " as-heat-pulse" : ""}`}
+          style={{ zIndex: 0, opacity: heatRatio,
+                   background: "radial-gradient(135% 95% at 50% 122%, #f0a83a55 0%, #e0714a44 34%, transparent 68%)",
+                   boxShadow: "inset 0 -28px 66px -10px #e0714a99, inset 0 0 54px #e0714a2e" }} />
+      )}
+      {/* Eis-Frost (#144): weicher Frost-Rand (Inset-Glow als Stufen-Meter) + super-soft geblurrte Ecken.
+          Über der Feuer-Glut (z-1), unter den Karten. Schimmer bei 5. */}
+      {frostOn && (
+        <div aria-hidden="true"
+          className={`absolute inset-0 rounded-xl pointer-events-none${frostN >= 5 && !reduced ? " as-frost-pulse" : ""}`}
+          style={{ zIndex: 1, boxShadow: `inset 0 0 ${Math.round(6 + 26 * frostF)}px ${Math.round(1 + 7 * frostF)}px rgba(191,233,247,${(0.2 + 0.55 * frostF).toFixed(2)})` }}>
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 120" preserveAspectRatio="none"
+            style={{ opacity: 0.35 + 0.55 * frostF }}>
+            <defs><filter id="as-frostblur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5.5" /></filter></defs>
+            <g fill="#dff3fb" filter="url(#as-frostblur)">
+              <polygon points="0,0 48,0 30,11 41,21 22,27 11,41 0,31" />
+              <polygon points="200,0 152,0 171,10 159,21 181,26 191,41 200,32" />
+              <polygon points="0,120 45,120 28,109 43,99 21,94 9,81 0,90" />
+              <polygon points="200,120 155,120 173,110 157,99 183,95 192,82 200,91" />
+            </g>
+          </svg>
+        </div>
+      )}
+      {/* Blitz-Rahmen (#143): innerer blauer Glow, Intensität = Ladung (ab 2). Voll → violetter Akzent + Puls. */}
+      {lightOn && (
+        <div aria-hidden="true"
+          className={`absolute inset-0 rounded-xl pointer-events-none${chargeFull && !reduced ? " as-charge-pulse" : ""}`}
+          style={{ zIndex: 2, boxShadow: `inset 0 0 ${Math.round(8 + 22 * chargeR)}px ${Math.round(1 + 5 * chargeR)}px rgba(94,200,240,${(0.16 + 0.5 * chargeR).toFixed(2)})${chargeFull ? ", inset 0 0 40px 6px rgba(138,125,224,0.42)" : ""}` }} />
+      )}
+      {/* Ein Blitz ⚡ oben mittig am Rahmen (#143), Glow steigt mit der Ladung; voll → Puls + „VOLL GELADEN". */}
+      {lightOn && (
+        <div aria-hidden="true"
+          className={`absolute pointer-events-none${chargeFull && !reduced ? " as-charge-pulse" : ""}`}
+          style={{ left: "50%", top: 3, transform: "translateX(-50%)", zIndex: 3, fontSize: 20, lineHeight: 1,
+                   opacity: 0.5 + 0.5 * chargeR,
+                   filter: `drop-shadow(0 0 ${Math.round(4 + 8 * chargeR)}px #5ec8f0)${chargeFull ? " drop-shadow(0 0 10px #8a7de0)" : ""}` }}>
+          ⚡
+          {chargeFull && (
+            <div className="font-pixel-dense" style={{ position: "absolute", top: 21, left: "50%", transform: "translateX(-50%)", fontSize: 8, letterSpacing: 1, whiteSpace: "nowrap", color: "#bfe9f7" }}>VOLL GELADEN</div>
+          )}
+        </div>
+      )}
+      <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
@@ -273,7 +342,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
         )}
       </div>
 
-      <div className="h-8 mt-4 flex items-center justify-center">
+      <div className="relative z-10 h-8 mt-4 flex items-center justify-center">
         {banner ? (
           <span className="text-lg font-bold tracking-wide font-pixel as-banner" style={{ color: banner.color }}>{banner.text}</span>
         ) : (
@@ -282,7 +351,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
       </div>
 
       {/* Treffer-Aufschlüsselung (§17): Faktorenkette des letzten nennenswerten Siegs. Feste Höhe → kein Layout-Sprung. */}
-      <div className="h-6 mt-1 flex items-center justify-center gap-2 text-[13px] flex-wrap font-pixel-dense">
+      <div className="relative z-10 h-6 mt-1 flex items-center justify-center gap-2 text-[13px] flex-wrap font-pixel-dense">
         {showBreakdown && (
           <>
             {chain.map((s, i) => (
