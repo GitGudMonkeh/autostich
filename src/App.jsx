@@ -120,6 +120,8 @@ export function Autostich() {
   const musicHome = state.phase === "menu" || state.phase === "gameover";
   useEffect(() => { if (musicHome) music.menu(); else music.enterRun(); }, [musicHome]);
   useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
+  // Pause-Knopf hält auch die Musik an — nur im laufenden Stichspiel; in Menü/Gameover spielt sie normal weiter.
+  useEffect(() => { music.setPaused(paused && state.phase === "play"); }, [paused, state.phase]);
   const changeOptions = (patch) => setOptions((o) => saveOptions({ ...o, ...patch }));
 
   // Timer-Segmente: bei Wechsel aktiv <-> inaktiv die verstrichene Zeit verbuchen.

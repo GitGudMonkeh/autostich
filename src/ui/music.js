@@ -34,6 +34,7 @@ const POOL = [
 let el = null;
 let volume = 0.2;
 let muted = false;
+let userPaused = false; // Pause-Knopf (#…) hält die Musik an — getrennt von „Ton stumm"
 let current = null;   // aktueller Track { title, url }
 let mode = null;      // "menu" | "run"
 let listeners = [];   // Titel-Abonnenten (UI)
@@ -52,11 +53,11 @@ function notify() { const t = current ? current.title : null; listeners.forEach(
 function playTrack(track) {
   const a = ensureEl();
   if (!a || !track) return;
-  if (current && current.url === track.url) { if (a.paused) a.play().catch(() => {}); return; } // läuft schon
+  if (current && current.url === track.url) { if (a.paused && !userPaused) a.play().catch(() => {}); return; } // läuft schon
   current = track;
   a.src = track.url;
   applyVol();
-  a.play().catch(() => {}); // Autoplay-Gate → startet erst nach der ersten User-Geste (unlock)
+  if (!userPaused) a.play().catch(() => {}); // Autoplay-Gate → startet erst nach der ersten User-Geste (unlock); nicht während Pause
   notify();
 }
 
@@ -73,6 +74,12 @@ export const music = {
   next() { if (mode === "run") playTrack(randomPoolTrack()); }, // „Nächster Track"
   setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); applyVol(); },
   setMuted(m) { muted = !!m; applyVol(); },
-  unlock() { const a = ensureEl(); if (a && a.paused && current) a.play().catch(() => {}); }, // erste Geste
+  setPaused(p) { // Spiel-Pause spiegeln: anhalten bzw. fortsetzen
+    userPaused = !!p;
+    if (!el) return;
+    if (userPaused) el.pause();
+    else if (current) el.play().catch(() => {});
+  },
+  unlock() { const a = ensureEl(); if (a && a.paused && current && !userPaused) a.play().catch(() => {}); }, // erste Geste (nicht während Pause)
   subscribe(fn) { listeners.push(fn); fn(current ? current.title : null); return () => { listeners = listeners.filter((x) => x !== fn); }; },
 };
