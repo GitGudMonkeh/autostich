@@ -3,6 +3,7 @@ import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
+import { formationBorder } from "./formationStyle.js";
 import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 
 const BANNER = {
@@ -117,6 +118,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const formLabel = activeForms.length === 1 ? FORM_NAME[activeForms[0].type] : "FORMATION";
   const formationStr = formMult.toFixed(2).replace(".", ",");
   const formPeak = formMult >= 12 ? 2 : formMult >= 6 ? 1 : 0; // 0 normal · 1 verstärkt · 2 Peak
+  // #128: Float-Farbe = Rahmenfarbe der Übersicht — Tier nach Formations-Anzahl (formationBorder, kein Drift).
+  const formColor = formationBorder({ mult: formMult, formations: (t && t.formations) || [] }).color || "#5ab87a";
   // #105: großes „Wow"-Wort mittig ab hohem Einzelstich-Score (nur bei Sieg). Höchste erfüllte Stufe.
   const bigScore = win && t && t.gained > 0 ? bigScoreLabel(t.gained) : null;
 
@@ -209,8 +212,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
             style={{ right: `calc(${FLOAT_ZONES.formation.right} + ${fjitter(t.trickNo * 4 + 5, JITTER_X)}px)`,
                      top:  `calc(${FLOAT_ZONES.formation.top} + ${fjitter(t.trickNo * 4 + 11, JITTER_Y)}px)`,
                      fontSize: formPeak === 2 ? 26 : formPeak === 1 ? 21 : 17,
-                     color: formPeak ? "#d4a63a" : "#5ab87a",
-                     textShadow: formPeak === 2 ? "0 0 16px #d4a63a" : formPeak === 1 ? "0 0 12px #d4a63aaa" : "0 0 10px #5ab87a88",
+                     color: formColor,
+                     textShadow: `0 0 ${formPeak === 2 ? 16 : formPeak === 1 ? 12 : 10}px ${formColor}${formPeak ? "cc" : "88"}`,
                      animation: fx(`as-combo ${floatDur}ms ease-out forwards`) }}>
             {formPeak === 2 && "★ "}{formLabel} ×{formationStr}
           </div>
