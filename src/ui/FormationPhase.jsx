@@ -66,9 +66,18 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
               <h2 className="text-xl font-bold">Deck aufstellen</h2>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-[10px] uppercase tracking-wide opacity-50">Energie</div>
-            <div className="text-2xl font-bold font-pixel-dense" style={{ color: formationEnergy > 0 ? "#d4a63a" : "#8a8a92" }}>{formationEnergy}</div>
+            <div className="text-2xl font-bold font-pixel-dense leading-none" style={{ color: formationEnergy > 0 ? "#d4a63a" : "#8a8a92" }}>{formationEnergy}</div>
+            {/* #95.6: Formations-Stärke Σ + reaktives Delta direkt unter der Energie → der Einfluss jedes Tauschs
+                ist sofort oben sichtbar (vorher nur unten in der Fußzeile). */}
+            <div className="mt-1.5 leading-tight">
+              <div className="text-[10px] uppercase tracking-wide opacity-50">Formations-Stärke</div>
+              <div className="font-pixel-dense text-base">
+                <span className="opacity-85">Σ {fmt(curStrength)}</span>
+                <span className="font-bold ml-1.5" style={{ color: deltaColor }}>{deltaStr}</span>
+              </div>
+            </div>
           </div>
         </div>
         {state.lastCycleScore != null && <div className="mb-2"><RoundScoreBadge state={state} /></div>}
@@ -114,14 +123,6 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
               style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
           </div>
           <div className="flex items-center gap-3">
-            {/* Reaktives Formations-Delta (#95.6) — größer & fetter für bessere Lesbarkeit */}
-            <div className="text-right leading-tight">
-              <div className="opacity-55 text-[10px] uppercase tracking-wide">Formations-Stärke</div>
-              <div className="font-pixel-dense text-lg">
-                <span className="opacity-85">Σ {fmt(curStrength)}</span>
-                <span className="font-bold ml-1.5" style={{ color: deltaColor }}>{deltaStr}</span>
-              </div>
-            </div>
             <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
               style={{ background: "#5ab87a", color: "#0c0c10" }}>
               Durchlauf starten
