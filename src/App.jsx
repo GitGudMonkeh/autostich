@@ -298,7 +298,7 @@ export function Autostich() {
             {/* #113: Mobil festes 3-Spalten-Grid (Reihe 1 Zeit/Score/Mult · Reihe 2 Münzen/Bester) → kein
                 Umbruch je nach Ziffernzahl; Desktop wie bisher eine Zeile. Werte oben ausgerichtet (items-start),
                 damit die reservierte Geist-Delta-Zeile die Zahlen nicht vertikal verschiebt. */}
-            <div className="grid grid-cols-3 gap-x-3 gap-y-2 sm:flex sm:items-start sm:gap-5">
+            <div className="grid grid-cols-3 gap-x-3 gap-y-2 w-full justify-items-center sm:flex sm:w-auto sm:justify-normal sm:items-start sm:gap-5">
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wide opacity-50">Zeit{paused ? " ⏸" : ""}</div>
                 <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
