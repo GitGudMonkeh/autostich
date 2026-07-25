@@ -20,8 +20,9 @@ export const STAT_DEFS = {
 // Reihenfolge des Angebots (immer alle Stats). Shop-Spec §4.3: fünf Stats inkl. Einkommen.
 export const STAT_IDS = ["critChance", "critMult", "formMult", "streakMult", "economy"];
 
-// Serien-Stat-Faktor auf den Stichscore: 1 + Σ(+2 %/Pick) × aktueller Serienpunkt.
-export const statStreakFactor = (statStreakMult, serieStreak) => 1 + (statStreakMult || 0) * (serieStreak || 0);
+// Serien-Stat-Faktor auf den Stichscore: 1 + Σ(+2 %/Pick) × aktueller Serienpunkt, gedeckelt bei
+// STREAK_STAT_CAP (Balance-Pass 1: war ungedeckelt → Runaway-Treiber bei langen Serien).
+export const statStreakFactor = (statStreakMult, serieStreak) => 1 + Math.min((statStreakMult || 0) * (serieStreak || 0), C.STREAK_STAT_CAP);
 
 // Formations-Stat-Faktor: 1 + Σ(+5 %/Pick), nur wenn der Stich eine aktive Formation trägt (ab Phase 3).
 export const statFormFactor = (statFormMult, hasFormation) => (hasFormation ? 1 + (statFormMult || 0) : 1);
