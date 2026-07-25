@@ -1,5 +1,6 @@
 import { MAX_CYCLES } from "../game/constants.js";
 import { cycleLenFor } from "../game/shop.js";
+import { summarizeFormations } from "../game/formations.js";
 import { critChanceRawFor, hasCritPerk, critMultiplierFor } from "../game/perks.js";
 import { lightningCritRaw } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
@@ -38,6 +39,10 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
   const critRaw = critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos }) + lightningCritRaw(lightning, skills) + statCritChance;
   const critPct = Math.round(Math.min(1, Math.max(0, critRaw)) * 100);
   const ownsD7 = perks.includes("D7");
+  // #123: Formations-Faktor der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
+  // Formationsphase → kein Drift). „jetzt" = Faktor der nächsten zu spielenden Position.
+  const { count: formCount, maxMult: formMaxMult } = summarizeFormations(state.formations || []);
+  const nowFormMult = (state.formations || [])[pos]?.mult || 1;
   return (
     <div className="rounded-xl p-4 grid gap-3 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       {/* Kennzahlen */}
@@ -60,6 +65,13 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
         </div>
         <Bar value={remaining} max={cycleLen} color="#8a7de0" height={6} />
       </div>
+      {/* Formations-Faktor der aktuellen Aufstellung (#123) — dauerhaft sichtbar, nicht nur transient im Battlefield. */}
+      {formCount > 0 && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
+          <span><span className="opacity-50">Formation </span><span style={{ color: "#5ab87a" }}>{formCount} · max ×{fmtMult(formMaxMult)}</span></span>
+          {nowFormMult > 1.001 && <span><span className="opacity-50">jetzt </span><span style={{ color: "#5ab87a" }}>×{fmtMult(nowFormMult)}</span></span>}
+        </div>
+      )}
       {/* Crit (#19/#46). Der Gesamt-Score-Mult steht dauerhaft im Header-Chip (#37). */}
       {(ownsD4 || showCrit) && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
