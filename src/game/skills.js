@@ -131,7 +131,7 @@ export const SKILL_DEFS = {
   // ---- Eis-Archetyp (#93 F3) — Kontrolle/Aufstellung mit eingefrorenen Karten. Kein Konsument, keine Ressource. ----
   // Grundmechanik (erster Eis-Skill): friert eigene Karten ein (blau, an card.id). Formations-Flags in formations.js gelesen.
   SK_ICE_01: { id: "SK_ICE_01", name: "Frostgriff", archetype: "ice", keywords: ["freeze"],
-    desc: "Friere 2 zusätzliche zufällige eigene Karten ein.", frostGrip: true },
+    desc: "Friere 2 zusätzliche zufällige eigene Karten ein (oben auf die Eis-Grundzahl).", frostGrip: true },
   SK_ICE_02: { id: "SK_ICE_02", name: "Kalte Präzision", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Eingefrorene Karten dürfen für Wiederholung als Wert ihres direkten Vorgängers zählen (echter Wert unverändert).", wildWiederholungPred: true },
   SK_ICE_03: { id: "SK_ICE_03", name: "Eisschritt", archetype: "ice", keywords: ["freeze", "formation"],

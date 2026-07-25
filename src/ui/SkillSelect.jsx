@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../game/skills.js";
-import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL } from "../game/constants.js";
+import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
+         FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, BURN_BONUS, ICE_BASE_FREEZE, FROST_GRIP_BONUS } from "../game/constants.js";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "•", color: "#8a8a95" };
@@ -16,9 +17,11 @@ const KEYWORD_INFO = {
   charge: { label: "Ladung", icon: "⚡", color: "#8a7de0", text: "Crits erzeugen Ladung (max 10). Bei voller Ladung lösen Blitz-Skills Effekte aus oder verbrauchen sie." },
   ionize: { label: "Ionisierung", icon: "⚡", color: "#8a7de0", text: "Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +25 Score pro Stapel und erhält danach +1 Stapel (max 4)." },
   streak: { label: "Serie", icon: "⚡", color: "#8a7de0", text: "Geladene Serie schützt deine Siegesserie — die nächste Niederlage setzt sie nicht zurück." },
-  heat: { label: "Hitze", icon: "🔥", color: "#e0714a", text: "Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Flat-Score; klare Niederlagen kühlen sie ab." },
+  // #116: Feuer-Flat-Score-Grundmechanik quantifiziert (Zahlen aus constants.js → kein Text↔Code-Drift).
+  heat: { label: "Hitze", icon: "🔥", color: "#e0714a", text: `Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Flat-Score = (Vorsprung − 2) × ${FIRE_SCORE_BASE} (+${FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill; Verbrennung +${BURN_BONUS}/Punkt); klare Niederlagen kühlen sie ab.` },
   consume: { label: "Hitze-Konsument", icon: "🔥", color: "#e0714a", text: "Verbraucht angesammelte Hitze für einen starken Effekt. Höchstens ein Konsument gleichzeitig — ein zweiter ersetzt den bestehenden." },
-  freeze: { label: "Eingefroren", icon: "❄️", color: "#5ec8f0", text: "Eis friert eigene Karten dauerhaft ein (blau). Eingefrorene Karten biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden." },
+  // #122: Einfrier-Grundzahl genannt (aus constants.js) — sonst ist „wie viele Karten?" nirgends ersichtlich.
+  freeze: { label: "Eingefroren", icon: "❄️", color: "#5ec8f0", text: `Eis friert eigene Karten dauerhaft ein (blau): ${ICE_BASE_FREEZE} beim ersten Eis-Skill, +1 je weiterem (Frostgriff: +${FROST_GRIP_BONUS}). Eingefrorene Karten biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden.` },
 };
 
 /* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint jede 3. Runde STATT eines Perks.

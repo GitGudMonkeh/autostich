@@ -29,10 +29,13 @@ export function CrystalBar({ active, ownCount = 0, enemyCount = 0 }) {
       <div className="flex flex-col gap-1.5 text-xs">
         <div className="flex items-center gap-2">
           <span className="opacity-55 w-14 shrink-0">Eigene</span>
+          {/* #122: explizite Zahl der aktuell eingefrorenen eigenen Karten (nicht nur Kristalle abzählen). */}
+          <span className="tabular-nums font-bold w-4 shrink-0" style={{ color: ICE }}>{ownCount}</span>
           <Crystals n={ownCount} color={ICE} />
         </div>
         <div className="flex items-center gap-2">
           <span className="opacity-55 w-14 shrink-0">Gegner</span>
+          <span className="tabular-nums font-bold w-4 shrink-0" style={{ color: FOE }}>{enemyCount}</span>
           <Crystals n={enemyCount} color={FOE} />
         </div>
       </div>
