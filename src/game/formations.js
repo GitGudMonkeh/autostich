@@ -29,16 +29,16 @@ export const FORMATION_TYPE_LABELS = { wiederholung: "Wiederholung", farbblock: 
 
 function wiederholungFactor(ordinal, secondBonus = 0) {
   if (ordinal <= 1) return 1;
-  if (ordinal === 2) return 1.30 + secondBonus; // Shop F3 „Verstärkte Wiederholung": +0,10 → ×1,40
-  if (ordinal === 3) return 1.60;
-  return 2.00 + (ordinal - 4) * 0.50; // ab der 4.: 2,00 / 2,50 / 3,00 … kein Cap (#95)
+  if (ordinal === 2) return 1.25 + secondBonus; // [#Pass4: 1,30→1,25] Shop F3 „Verstärkte Wiederholung": +0,10
+  if (ordinal === 3) return 1.50;               // [#Pass4: 1,60→1,50]
+  return 1.80 + (ordinal - 4) * 0.40;           // [#Pass4: 2,00→1,80, Eskalation 0,50→0,40; kein Cap]
 }
 function escalatingFactor(ordinal, base) {
   return ordinal <= 2 ? 1 : base + (ordinal - 3) * 0.20; // je weitere Karte +0,20 (#95)
 }
 // Überlappungsbonus je Anzahl Formationen auf einer Karte (#95): 2→×1,5, 3→×2, 4→×3.
 const OVERLAP_BONUS = { 2: 1.5, 3: 2, 4: 3 };
-const FARBBLOCK_BASE = 1.30, TREPPE_BASE = 1.25, WECHSEL_BASE = 1.25, ANKER_FACTOR = 1.25;
+const FARBBLOCK_BASE = 1.35, TREPPE_BASE = 1.25, WECHSEL_BASE = 1.25, ANKER_FACTOR = 1.25; // [#Pass4: Farbblock 1,30→1,35 — war unterbelohnt; 1,45 lt. Sim zu heiß (Solver+Eis-Synergie)]
 
 // Maximale Läufe über eine Paar-Bedingung, mit optional EINER erlaubten fremden Karte dazwischen (E1/E2).
 // `matches(refPos, k)` prüft, ob Position k zur Formation von refPos gehört. Fremde Karten sind keine Mitglieder.

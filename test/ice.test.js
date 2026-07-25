@@ -36,7 +36,7 @@ describe("Eis — Formations-Wildcards (#93 F3)", () => {
   it("Kalte Präzision: eingefrorene Karte zählt für Wiederholung als Vorgängerwert", () => {
     const deck = [card("a", "R", 5), card("b", "B", 6, true)];
     expect(computeFormations([0, 1], deck, {}, [], [])[1].mult).toBeCloseTo(1);       // ohne Eis kein Paar
-    expect(computeFormations([0, 1], deck, {}, [], [I02])[1].mult).toBeCloseTo(1.30); // 6→5 → Wiederholung
+    expect(computeFormations([0, 1], deck, {}, [], [I02])[1].mult).toBeCloseTo(1.25); // 6→5 → Wiederholung
   });
   it("Eisschritt: eingefrorene Karte zählt für Treppen als ±1", () => {
     const deck = [card("a", "R", 3), card("b", "B", 5), card("c", "G", 5, true)];
@@ -52,7 +52,7 @@ describe("Eis — Formations-Wildcards (#93 F3)", () => {
   });
   it("Kristallform: eingefrorene Karte zählt für Wiederholung als ±1", () => {
     const deck = [card("a", "R", 5), card("b", "B", 6, true)];
-    expect(computeFormations([0, 1], deck, {}, [], [I10])[1].mult).toBeCloseTo(1.30); // 6→5
+    expect(computeFormations([0, 1], deck, {}, [], [I10])[1].mult).toBeCloseTo(1.25); // 6→5
   });
   it("Kristallform: eingefrorene Karte ermöglicht einen Wechsel via ±1", () => {
     const deck = [card("a", "R", 10), card("b", "B", 5), card("c", "G", 8, true)]; // 5→8 = +3 (kein Wechsel)
