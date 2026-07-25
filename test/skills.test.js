@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer, archetypeOf,
-  offerArchetypes, archetypesWithSkills,
+  offerArchetypes, archetypesWithSkills, decodeArchetypes,
   ionScoreFor, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor } from "../src/game/skills.js";
 import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE } from "../src/game/constants.js";
@@ -178,5 +178,27 @@ describe("Reaktoren + Geladene Serie — Helfer (Stufe C)", () => {
   it("lightningCritRaw addiert den Gewitterfront-Bonus (stormCritBonus)", () => {
     const l = { active: true, charge: 0, maxCharge: 10, stormCritBonus: 0.08 };
     expect(lightningCritRaw(l, [G])).toBeCloseTo(0.05 + 0.05 + 0.08); // Sockel + Skill-critChance + Storm
+  });
+});
+
+describe("decodeArchetypes — Board-Icons (#139)", () => {
+  it("leerer/undefinierter Wert → []", () => {
+    expect(decodeArchetypes("")).toEqual([]);
+    expect(decodeArchetypes(null)).toEqual([]);
+    expect(decodeArchetypes(undefined)).toEqual([]);
+  });
+  it("bekannte Keys immer in fester Reihenfolge Blitz→Feuer→Eis (unabhängig vom Input)", () => {
+    expect(decodeArchetypes("ice,fire")).toEqual(["fire", "ice"]);
+    expect(decodeArchetypes("fire,lightning")).toEqual(["lightning", "fire"]);
+    expect(decodeArchetypes("lightning")).toEqual(["lightning"]);
+  });
+  it("ein Eintrag pro Skill → Wiederholung bleibt erhalten (ein Icon je Skill)", () => {
+    expect(decodeArchetypes("fire,fire,fire,fire")).toEqual(["fire", "fire", "fire", "fire"]); // 4 Feuer
+    expect(decodeArchetypes("fire,ice,fire,ice")).toEqual(["fire", "fire", "ice", "ice"]);     // 2 Feuer + 2 Eis, gruppiert
+    expect(decodeArchetypes("ice,lightning,fire")).toEqual(["lightning", "fire", "ice"]);       // je 1, feste Reihenfolge
+  });
+  it("unbekannte Tokens werden ignoriert (Zählung bleibt korrekt)", () => {
+    expect(decodeArchetypes("fire,water,fire,ice")).toEqual(["fire", "fire", "ice"]);
+    expect(decodeArchetypes("bogus")).toEqual([]);
   });
 });

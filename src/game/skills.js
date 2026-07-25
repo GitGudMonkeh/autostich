@@ -168,6 +168,19 @@ export const ARCHETYPE_META = {
 };
 export const ARCHETYPE_ORDER = ["lightning", "fire", "ice"];
 
+// Archetyp-Kodierung EINES Eintrags pro gehaltenem Skill ("fire,fire,ice", Reihenfolge egal) →
+// bekannte Keys MIT Wiederholung (ein Icon je Skill, #139) in fester Anzeige-Reihenfolge
+// Blitz→Feuer→Eis. So ergeben 4 Feuer-Skills 4× 🔥, 2 Feuer + 2 Eis → 🔥🔥❄️❄️.
+// Leerer/unbekannter Input → []. Rein & testbar; die UI mappt die Keys über ARCHETYPE_META auf Icons.
+export function decodeArchetypes(value) {
+  if (!value) return [];
+  const counts = {};
+  for (const tok of String(value).split(",")) {
+    if (ARCHETYPE_ORDER.includes(tok)) counts[tok] = (counts[tok] || 0) + 1;
+  }
+  return ARCHETYPE_ORDER.flatMap((a) => Array(counts[a] || 0).fill(a));
+}
+
 // Archetypen, die aktuell noch anbietbare (nicht gehaltene) Skills haben.
 export function archetypesWithSkills(owned = []) {
   const have = new Set();
