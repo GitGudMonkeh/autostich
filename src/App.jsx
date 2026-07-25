@@ -353,12 +353,15 @@ export function Autostich() {
               {state.phase !== "gameover" && (
                 <div className="text-right">
                   <div className="text-[10px] uppercase tracking-wide opacity-50">Musik</div>
-                  <button onClick={() => music.next()} aria-label="Nächster Track"
-                    title={musicTitle ? `Läuft: ${musicTitle} — nächster Track` : "Nächster Track"}
-                    className="mt-0.5 px-2 py-1 rounded-lg text-sm font-bold transition-all hover:brightness-110 whitespace-nowrap"
-                    style={{ background: "#20202a", border: "1px solid #3a3a46" }}>
-                    ⏭ Nächster
-                  </button>
+                  {/* Nur-Icon-Button, in Box-Höhe/Rhythmus an den MULT-Chip angeglichen (pt-0.5 + text-base). */}
+                  <div className="leading-none pt-0.5">
+                    <button onClick={() => music.next()} aria-label="Nächster Track"
+                      title={musicTitle ? `Läuft: ${musicTitle} — nächster Track` : "Nächster Track"}
+                      className="inline-block rounded px-2 py-0.5 text-base leading-none transition-all hover:brightness-110"
+                      style={{ background: "#20202a", border: "1px solid #3a3a46" }}>
+                      ⏭
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
