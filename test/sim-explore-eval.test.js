@@ -50,8 +50,16 @@ describe("sim eval / ablation (S3)", () => {
     expect(a.priority.length).toBeGreaterThan(0);
     expect(a.marginals.length).toBe(3);
     for (const m of a.marginals) {
-      expect(Number.isFinite(m.marginal.mean)).toBe(true);
-      expect(m.marginal.ci95).toBeGreaterThanOrEqual(0);
+      expect(Number.isFinite(m.marginal.median)).toBe(true); // robuster Zentralwert
+      expect(m.marginal.winRate).toBeGreaterThanOrEqual(0);
+      expect(m.marginal.winRate).toBeLessThanOrEqual(1);
+      expect(m.marginal.applicableRate).toBeGreaterThanOrEqual(0);
+      expect(m.marginal.applicableRate).toBeLessThanOrEqual(1);
+      expect(Number.isFinite(m.marginal.pctEffect)).toBe(true);
+    }
+    // Marginals sind nach Median-Δ absteigend sortiert.
+    for (let i = 1; i < a.marginals.length; i++) {
+      expect(a.marginals[i - 1].marginal.median).toBeGreaterThanOrEqual(a.marginals[i].marginal.median);
     }
   });
 });

@@ -22,12 +22,38 @@ function quantile(xs, q) {
   const pos = (s.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
   return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
 }
+function mean(xs) { return xs.length ? xs.reduce((t, v) => t + v, 0) / xs.length : 0; }
 function meanStd(xs) {
-  const n = xs.length;
-  const mean = n ? xs.reduce((t, v) => t + v, 0) / n : 0;
-  const varr = n > 1 ? xs.reduce((t, v) => t + (v - mean) ** 2, 0) / (n - 1) : 0;
-  const std = Math.sqrt(varr);
-  return { n, mean, std, ci95: n ? 1.96 * (std / Math.sqrt(n)) : 0 };
+  const n = xs.length, m = mean(xs);
+  const varr = n > 1 ? xs.reduce((t, v) => t + (v - m) ** 2, 0) / (n - 1) : 0;
+  return { n, mean: m, ci95: n ? 1.96 * (Math.sqrt(varr) / Math.sqrt(n)) : 0 };
+}
+
+// Heavy-tail-robuste Marginal-Statistik aus gepaarten Läufen (full vs. dropped je Seed).
+// TIE-BEWUSST: delta==0 heißt bit-identischer Run → die Option kam gar nicht ins Spiel (nicht angeboten/
+// nicht gewählt). Solche No-op-Seeds würden Median/win% verwässern, daher werden Kennzahlen BEDINGT auf die
+// „applicable" Läufe (delta≠0) berechnet — der Effekt, WENN die Option im Spiel ist.
+//  - applicableRate: Anteil Läufe, in denen das Weglassen etwas geändert hat (Kontext-Häufigkeit)
+//  - winRate: unter den applicable Läufen der Anteil full>dropped (Vorzeichen-Test, magnitude-immun)
+//  - median: Median-Δ unter den applicable Läufen (robuster Effekt, wenn im Spiel)
+//  - pctEffect: exp(median(log(full/dropped))) − 1 über applicable = typischer MULTIPLIKATIVER Effekt
+//  - mean/ci95: über ALLE Läufe, nur zum Vergleich (das rausch-anfällige alte Maß)
+function robustDelta(deltas, ratios) {
+  const n = deltas.length;
+  const wins = deltas.filter((d) => d > 0).length;
+  const losses = deltas.filter((d) => d < 0).length;
+  const applicable = wins + losses;
+  const nzDeltas = deltas.filter((d) => d !== 0);
+  const nzRatios = ratios.filter((_, i) => deltas[i] !== 0);
+  return {
+    n,
+    applicableRate: n ? applicable / n : 0,
+    winRate: applicable ? wins / applicable : 0, // bedingt auf applicable
+    median: quantile(nzDeltas.length ? nzDeltas : [0], 0.5),
+    pctEffect: Math.exp(quantile(nzRatios.length ? nzRatios : [0], 0.5)) - 1,
+    mean: mean(deltas),
+    ci95: meanStd(deltas).ci95,
+  };
 }
 
 // Rein: liefert Priority-Build + Full-Score-Verteilung + Marginalwerte. Deterministisch (Seed-Sequenz).
@@ -56,13 +82,17 @@ export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, top
 
   const marginals = ranked.slice(0, topK).map((t) => {
     const abl = fixedPolicy(priority, { ...env, drop: t.id });
-    const deltas = [];
-    for (let i = 0; i < evalRuns; i++) deltas.push(fullScores[i] - runOne(evalSeed0 + i, abl).score);
-    return { id: t.id, kind: t.kind, exploreMean: t.mean, exploreN: t.n, marginal: meanStd(deltas) };
+    const deltas = [], ratios = [];
+    for (let i = 0; i < evalRuns; i++) {
+      const dScore = runOne(evalSeed0 + i, abl).score;
+      deltas.push(fullScores[i] - dScore);
+      ratios.push(Math.log(Math.max(1, fullScores[i]) / Math.max(1, dScore))); // Log-Verhältnis (clamp gegen 0)
+    }
+    return { id: t.id, kind: t.kind, exploreMean: t.mean, exploreN: t.n, marginal: robustDelta(deltas, ratios) };
   });
-  marginals.sort((a, b) => b.marginal.mean - a.marginal.mean);
+  marginals.sort((a, b) => b.marginal.median - a.marginal.median); // nach ROBUSTEM Zentralwert
 
-  const fullScore = { n: fullScores.length, mean: meanStd(fullScores).mean, p50: quantile(fullScores, 0.5), p90: quantile(fullScores, 0.9) };
+  const fullScore = { n: fullScores.length, mean: mean(fullScores), p50: quantile(fullScores, 0.5), p90: quantile(fullScores, 0.9) };
   return { exploreRuns, evalRuns, c, evalSeed0, priority, fullScore, marginals };
 }
 
@@ -78,10 +108,12 @@ export function runEval({ arg, seed0, c, f, write }) {
   console.log(`sim 'eval': explore ${res.exploreRuns} (seeds ${seed0}..${seed0 + res.exploreRuns - 1}), eval ${res.evalRuns} (seeds ${res.evalSeed0}..${res.evalSeed0 + res.evalRuns - 1}), c=${c}`);
   console.log(`  fixed(priority) full-score: median ${f(res.fullScore.p50)}  mean ${f(res.fullScore.mean)}  p90 ${f(res.fullScore.p90)}`);
   console.log(`  Priority-Build (Top 10 nach explore-mean): ${res.priority.slice(0, 10).join(", ")}`);
-  console.log(`  Marginalbeitrag (full − ohne Option, gepaart; ± 95%-CI):`);
+  console.log(`  Marginalbeitrag, ROBUST & bedingt auf „im Spiel" (gepaart je Seed) — sortiert nach Median-Δ:`);
+  console.log(`    ${"id".padEnd(16)} ${"kind".padEnd(6)}  ${"Median-Δ".padStart(12)}  ${"win%".padStart(5)}  ${"typ.%".padStart(6)}  ${"anwendb.".padStart(8)}   ${"[mean-Δ]".padStart(12)}`);
   for (const m of res.marginals) {
-    const sig = Math.abs(m.marginal.mean) > m.marginal.ci95 ? "" : "  (n.s.)";
-    console.log(`    ${m.id.padEnd(16)} ${m.kind.padEnd(6)}  Δ ${f(m.marginal.mean).padStart(12)} ± ${f(m.marginal.ci95).padStart(10)}${sig}`);
+    const mg = m.marginal;
+    const tag = mg.applicableRate < 0.05 ? "  (selten)" : mg.winRate >= 0.6 ? "" : mg.winRate <= 0.4 ? " (schadet)" : "  (neutral)";
+    console.log(`    ${m.id.padEnd(16)} ${m.kind.padEnd(6)}  ${f(mg.median).padStart(12)}  ${(mg.winRate * 100).toFixed(0).padStart(4)}%  ${(mg.pctEffect * 100).toFixed(0).padStart(5)}%  ${(mg.applicableRate * 100).toFixed(0).padStart(7)}%   ${f(mg.mean).padStart(12)}${tag}`);
   }
   write(res);
 }
