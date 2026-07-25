@@ -3,7 +3,8 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
-import { MAX_CYCLES, FORMATION_ENERGY } from "../src/game/constants.js";
+import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE } from "../src/game/constants.js";
+import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
@@ -255,6 +256,21 @@ describe("resolveTrick — Durchlauf-Ende & persistente Reihenfolge (V2)", () =>
       return s.score;
     };
     expect(run(5)).toBe(run(5));
+  });
+
+  it("#137: Formationsphasen-Eintritt rechnet mit shop.permanentEffects + anchors (nicht erst nach dem ersten Tausch)", () => {
+    // constDeck(5): Wert 5 überall → in jedem Segment eine Wiederholung. Formationsanker (A5) auf Pos 0 +
+    // Formationskern (regeländernder Shop-Effekt). Vor dem Fix wurden beide beim Eintritt ignoriert (Default []/{}).
+    expect(DECISION_SCHEDULE[2]).toBe("formation"); // Sanity: cycle 1 → 2 löst die Formationsphase aus
+    const anchors = [{ type: "formation", position: 0 }];
+    const pe = { formationCoreType: "wiederholung" };
+    const shop = { coins: 0, anchors, permanentEffects: pe };
+    const s = resolveTrick(scenario(5, 0, { cycle: 1, pos: TRICKS_PER_CYCLE - 1, shop }), makeRng(2));
+    expect(s.phase).toBe("formation");
+    // Beim Eintritt gerenderte Formationen == vollständige Berechnung (mit anchors + pe), NICHT die argument-lose.
+    expect(s.formations).toEqual(computeFormations(s.playerOrder, s.deck, s.roles, s.perks, s.skills, anchors, pe));
+    // Konkret: der Formationsanker auf Pos 0 ist SOFORT da (regressierte vorher bis zum ersten Tausch).
+    expect(s.formations[0].formations.some((f) => f.type === "anker")).toBe(true);
   });
 });
 

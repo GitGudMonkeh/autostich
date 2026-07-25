@@ -470,7 +470,9 @@ export function resolveTrick(state, rng = Math.random) {
         phase = "formation";
         newFormationEnergy = C.FORMATION_ENERGY + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0);
         newFormationSwaps = [];
-        formations = computeFormations(playerOrder, deck, roles, perks, skills);
+        // #137: anchors + permEffects mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
+        // Eintritt einen veralteten Stand (ohne regeländernde Shop-Effekte) — erst der erste Tausch korrigierte.
+        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, permEffects);
       }
     }
   }
