@@ -26,6 +26,8 @@ import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
+import { music } from "./ui/music.js";
+import { MusicBar } from "./ui/MusicBar.jsx";
 import { UsernameModal } from "./ui/UsernameModal.jsx";
 import { CrtParticles } from "./ui/CrtParticles.jsx";
 import { DeckHistogram } from "./ui/BuildSummary.jsx";
@@ -93,7 +95,7 @@ export function Autostich() {
   useEffect(() => {
     audio.init();
     const onClick = (e) => {
-      audio.unlock();
+      audio.unlock(); music.unlock(); // erste User-Geste entsperrt SFX UND Musik
       const btn = e.target.closest && e.target.closest("button");
       if (!btn || btn.dataset.sfx === "none") return;
       audio.play("button");
@@ -111,6 +113,13 @@ export function Autostich() {
     if (n > prevBuys.current) audio.play("buy");
     prevBuys.current = n;
   }, [state.shop?.purchaseLog?.length]);
+  // Musik (#111): Titel-Abo für die Anzeige + phasengesteuerte Wiedergabe. musicHome = Menü ODER Gameover
+  // → „Morning Deck"; sonst (im Run) ein zufälliger Track aus dem harmonisierten Pool. Lautstärke/Mute spiegeln.
+  const [musicTitle, setMusicTitle] = useState(null);
+  useEffect(() => music.subscribe(setMusicTitle), []);
+  const musicHome = state.phase === "menu" || state.phase === "gameover";
+  useEffect(() => { if (musicHome) music.menu(); else music.enterRun(); }, [musicHome]);
+  useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
   const changeOptions = (patch) => setOptions((o) => saveOptions({ ...o, ...patch }));
 
   // Timer-Segmente: bei Wechsel aktiv <-> inaktiv die verstrichene Zeit verbuchen.
@@ -367,6 +376,8 @@ export function Autostich() {
             </div>
             <DeckHistogram deck={state.deck} />
           </button>
+          {/* Musik-Panel (#111): aktueller Track + „nächster Track" — ganz unten im Run. */}
+          {state.phase !== "gameover" && <MusicBar title={musicTitle} onNext={() => music.next()} />}
         </>)}
       </div>
 

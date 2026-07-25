@@ -62,12 +62,20 @@ export function OptionsModal({ options, onChange, onClose }) {
           <Row title="Ton stumm" desc="Schaltet alle Klick- und Spiel-Sounds ab.">
             <Toggle on={!!options.muted} onClick={() => onChange({ muted: !options.muted })} />
           </Row>
-          <Row title="Lautstärke" desc="Lautstärke der Sound-Effekte.">
+          <Row title="Effekt-Lautstärke" desc="Lautstärke der Klick-/Spiel-Sounds (SFX).">
             <input type="range" min="0" max="1" step="0.05" value={options.sfxVol ?? 0.4}
               disabled={!!options.muted}
               onChange={(e) => onChange({ sfxVol: Number(e.target.value) })}
               aria-label="SFX-Lautstärke"
               style={{ width: 120, accentColor: "#5ab87a", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
+          </Row>
+          {/* #111 Musik: eigener Lautstärke-Slider (Default 0,2). */}
+          <Row title="Musik-Lautstärke" desc="Lautstärke der Hintergrundmusik.">
+            <input type="range" min="0" max="1" step="0.05" value={options.musicVol ?? 0.2}
+              disabled={!!options.muted}
+              onChange={(e) => onChange({ musicVol: Number(e.target.value) })}
+              aria-label="Musik-Lautstärke"
+              style={{ width: 120, accentColor: "#8a7de0", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
           </Row>
         </div>
 
