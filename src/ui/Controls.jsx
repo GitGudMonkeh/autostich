@@ -24,9 +24,9 @@ export function Controls({ paused, onTogglePause, speedMult, onSpeed, onRestart,
       </Btn>
 
       <span className="text-xs opacity-50 ml-1">Tempo</span>
-      <Btn active={speedMult === 2} onClick={() => onSpeed(2)} tone="#8a7de0">2×</Btn>
-      <Btn active={speedMult === 4} onClick={() => onSpeed(4)} tone="#8a7de0">4×</Btn>
-      <Btn active={speedMult === 6} onClick={() => onSpeed(6)} tone="#8a7de0">6×</Btn>
+      <Btn active={speedMult === 2} onClick={() => onSpeed(2)} tone="#8a7de0">X2</Btn>
+      <Btn active={speedMult === 4} onClick={() => onSpeed(4)} tone="#8a7de0">X4</Btn>
+      <Btn active={speedMult === 6} onClick={() => onSpeed(6)} tone="#8a7de0">MAX</Btn>
 
       <div className="flex-1" />
       {onOptions && <Btn onClick={onOptions} tone="#8a7de0" aria-label="Optionen">⚙ Optionen</Btn>}
