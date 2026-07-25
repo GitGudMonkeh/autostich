@@ -38,6 +38,10 @@ export function initialState(rng = Math.random) {
     oppOrder: shuffledOrder(oppDeck.length, rng),
     pos: 0, cycle: 0, trickNo: 0,
     score: 0,
+    // #131 Rundenscore: Score-Zuwachs je Durchlauf + die letzten zwei abgeschlossenen Rundenscores, damit die
+    // Entscheidungs-Panels „Rundenscore" und die %-Differenz zur Vorrunde zeigen können (reines State-Tracking,
+    // kein Math.random/Date → Determinismus bleibt). null = noch kein (Vor-)Rundenscore vorhanden.
+    scoreAtCycleStart: 0, lastCycleScore: null, prevCycleScore: null,
     winStreak: 0, bestStreak: 0, wins: 0, losses: 0, ties: 0,
     crits: 0, critBonusScore: 0, bestTrickScore: 0,
     initiative: "player",

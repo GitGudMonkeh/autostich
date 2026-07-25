@@ -1,5 +1,6 @@
 import { shopIncomeFor, canAfford, SHOP_ITEM_DEFS } from "../game/shop.js";
 import { SHOP_CATEGORIES, SHOP_CATEGORY_LABELS } from "../game/constants.js";
+import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { useEscape } from "./useEscape.js";
 
 const GOLD = "#d4a63a"; // Shop-/Münz-Akzent (wie der Score-Gold-Ton)
@@ -44,6 +45,7 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
             <div className="text-[11px] opacity-50">Einkommen: +{income} / Shop</div>
           </div>
         </div>
+        {state.lastCycleScore != null && <div className="mb-4 -mt-1"><RoundScoreBadge state={state} /></div>}
 
         {/* Kategorien mit je zwei Angeboten */}
         <div className="grid sm:grid-cols-2 gap-4">

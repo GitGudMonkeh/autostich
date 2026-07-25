@@ -2,6 +2,7 @@ import { useState } from "react";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../game/skills.js";
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
          FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, BURN_BONUS, ICE_BASE_FREEZE, FROST_GRIP_BONUS } from "../game/constants.js";
+import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "•", color: "#8a8a95" };
@@ -80,6 +81,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           <p className="text-xs opacity-55 mt-1">
             Skills sind seltene, regelverändernde Motoren — {skills.length}/{SKILL_SLOTS} Slots belegt.
           </p>
+          {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
 
         {/* Was ein Blitz-Skill freischaltet: Ladungs-System + Crit-Basis — nur wenn Blitz im Angebot ist (#93 F0). */}

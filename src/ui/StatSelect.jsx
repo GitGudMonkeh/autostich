@@ -1,5 +1,6 @@
 import { STAT_DEFS, STAT_IDS } from "../game/stats.js";
 import { CRIT_BASE_MULT, SHOP_INCOME_PER_LEVEL } from "../game/constants.js";
+import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 
 const ACCENT = "#5a8ade"; // Stat-Akzent (blau) — abgesetzt von Perk (violett) / Skill (blitzblau)
 
@@ -29,6 +30,7 @@ export function StatSelect({ offer = STAT_IDS, onPick, state = {} }) {
           </div>
           <h2 className="text-xl font-bold mt-1">Wähle einen Stat</h2>
           <p className="text-xs opacity-45 mt-1">Dauerhaft · stapelbar · ohne Obergrenze</p>
+          {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
 
         <div className="grid sm:grid-cols-2 gap-3 mt-5">

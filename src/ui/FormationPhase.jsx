@@ -3,6 +3,7 @@ import { summarizeFormations, SEGMENT_SIZE } from "../game/formations.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
+import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { audio } from "./audio.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
@@ -60,6 +61,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
             <div className="text-2xl font-bold font-pixel-dense" style={{ color: formationEnergy > 0 ? "#d4a63a" : "#8a8a92" }}>{formationEnergy}</div>
           </div>
         </div>
+        {state.lastCycleScore != null && <div className="mb-2"><RoundScoreBadge state={state} /></div>}
         <p className="text-xs opacity-55 mb-2">
           Tippe zwei Karten, um sie zu tauschen (1 Energie). Formationen entstehen nur <b>innerhalb</b> der {SEGMENT_SIZE}er-Segmente.
         </p>

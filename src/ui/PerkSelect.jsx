@@ -1,6 +1,7 @@
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, critChanceRawFor, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
 import { lightningCritRaw } from "../game/skills.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
+import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
@@ -28,6 +29,7 @@ export function PerkSelect({ offer, onPick, onReroll, perks = [], deck = [], sta
             {(state.perks || []).length === 0 ? "Start" : `Runde ${(state.cycle || 0) + 1}`}
           </div>
           <h2 className="text-xl font-bold mt-1">Wähle einen Perk</h2>
+          {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
 
         {/* Kern-Stats (#40): dezent, damit die Perk-Auswahl die primäre Aktion bleibt. */}
