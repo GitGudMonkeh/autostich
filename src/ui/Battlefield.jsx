@@ -19,6 +19,15 @@ const FLOAT_ZONES = {
   crit:      { left: "50%", top: "2%"  },  // Crit-Text (oben mittig)
   formation: { right: "6%", top: "62%" },  // Formations-Multiplikator (unten rechts)
 };
+// #105: gestufter Groß-Score-Float — Arcade-Leiter (GREAT→BRUTAL→INSANE→GODLIKE) auf den gewonnenen
+// Einzelstich-Score. Höchste erfüllte Stufe gewinnt; oberste bewusst hoch (500k) → „GOTTGLEICH" bleibt selten.
+const BIG_SCORE_TIERS = [
+  { min: 500000, text: "GOTTGLEICH" },
+  { min: 150000, text: "IRRE" },
+  { min: 50000,  text: "BRUTAL" },
+  { min: 10000,  text: "STARK" },
+];
+const bigScoreLabel = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s.text; return null; };
 const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflow-hidden, nichts läuft raus
 // Deterministischer Jitter aus einem Integer-Seed (kein Math.random im Render, #68) → [-amp, +amp].
 const fjitter = (seed, amp) => { const s = Math.sin(seed * 127.1 + 311.7) * 43758.5; return +(((s - Math.floor(s)) * 2 - 1) * amp).toFixed(1); };
@@ -108,6 +117,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const formLabel = activeForms.length === 1 ? FORM_NAME[activeForms[0].type] : "FORMATION";
   const formationStr = formMult.toFixed(2).replace(".", ",");
   const formPeak = formMult >= 12 ? 2 : formMult >= 6 ? 1 : 0; // 0 normal · 1 verstärkt · 2 Peak
+  // #105: großes „Wow"-Wort mittig ab hohem Einzelstich-Score (nur bei Sieg). Höchste erfüllte Stufe.
+  const bigScore = win && t && t.gained > 0 ? bigScoreLabel(t.gained) : null;
 
   // Ergebnis-Aufschlüsselung (§17): kompakte Faktorenkette (Basis → Flats → Serie → Perks → Formation → Crit)
   // aus der Engine-breakdown — exakt die Faktoren der Score-Formel (kein Drift). Nur bei nennenswerten Treffern.
@@ -202,6 +213,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
                      textShadow: formPeak === 2 ? "0 0 16px #d4a63a" : formPeak === 1 ? "0 0 12px #d4a63aaa" : "0 0 10px #5ab87a88",
                      animation: fx(`as-combo ${floatDur}ms ease-out forwards`) }}>
             {formPeak === 2 && "★ "}{formLabel} ×{formationStr}
+          </div>
+        )}
+        {/* Gestufter Groß-Score-Float (#105): großes Wort mittig, Legendär-Gold, etwas kürzer als die Floats. */}
+        {bigScore && (
+          <div key={`big${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
+            style={{ left: "50%", top: "28%", fontSize: 42, color: "#d4a63a", textShadow: "0 0 18px #d4a63aaa",
+                     transform: reduced ? "translateX(-50%)" : undefined,
+                     animation: fx(`as-krit ${Math.max(700, floatDur - 600)}ms ease-out forwards`) }}>
+            {bigScore}
           </div>
         )}
       </div>
