@@ -118,7 +118,7 @@ export const SKILL_DEFS = {
   SK_FIRE_07: { id: "SK_FIRE_07", name: "Verbrennung", archetype: "fire", keywords: ["heat"],
     desc: "Feuer-Flat-Score pro Punkt +10 (erhöht die Hitzegewinnrate nicht).", burnBonus: true },
   SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat"],
-    desc: "Jeder Sieg gibt der nächsten Karte +1 temporären Wert, steigend bis +5; eine Niederlage setzt zurück.", fireRoll: true },
+    desc: "Jeder Sieg gibt der nächsten Karte +1 temporären Wert, steigend bis +3; eine Niederlage setzt zurück.", fireRoll: true },
   SK_FIRE_09: { id: "SK_FIRE_09", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"],
     desc: "Hitze-Konsument: bei voller Hitze gibt der nächste Sieg +1.000 Score; danach werden 100 Hitze verbraucht.", heatConsumer: "conflagration" },
   SK_FIRE_10: { id: "SK_FIRE_10", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"],

@@ -1,7 +1,7 @@
 import { fireFlag, heatConsumerOf } from "../game/skills.js";
 
 // 🔥 Hitze (Feuer-Archetyp, #93 F1) — eigener Block zwischen Battlefield und Build-Panel, analog zur ⚡ Ladung.
-// Kontinuierliche Leiste 0–100 (Sonnenkern 150). Nur sichtbar, sobald ein Feuer-Skill aktiv ist.
+// Kontinuierliche Leiste 0–100. Nur sichtbar, sobald ein Feuer-Skill aktiv ist.
 const FIRE = "#e0714a";
 const HOT = "#f0a83a"; // heißes Ende des Verlaufs (ab ~50 %)
 
@@ -12,8 +12,6 @@ export function HeatBar({ heat, skills = [] }) {
   const hot = value >= 50;                         // Glühende-Klinge-Schwelle
   const consumer = heatConsumerOf(skills);         // "conflagration" | "melt" | null
   const conflagReady = consumer === "conflagration" && value >= 100;
-  // 100er-Marke nur bei Sonnenkern (max 150) sinnvoll — zeigt, wo die volle Standard-Hitze liegt.
-  const hundredMark = max > 100 ? (100 / max) * 100 : null;
   // Schwellenmarke bei 50 % nur, wenn Glühende Klinge gehalten wird.
   const glowMark = fireFlag(skills, "glowingBlade") ? (50 / max) * 100 : null;
 
@@ -35,9 +33,6 @@ export function HeatBar({ heat, skills = [] }) {
                    boxShadow: conflagReady ? `0 0 8px ${HOT}` : hot ? `0 0 6px ${FIRE}88` : undefined }} />
         {glowMark != null && (
           <div className="absolute inset-y-0" style={{ left: `${glowMark}%`, width: 2, background: "#ffffff55" }} title="Glühende Klinge ab 50 %" />
-        )}
-        {hundredMark != null && (
-          <div className="absolute inset-y-0" style={{ left: `${hundredMark}%`, width: 2, background: "#ffffff88" }} title="100 % (Standard-Maximum)" />
         )}
       </div>
       {badges.length > 0 && (
