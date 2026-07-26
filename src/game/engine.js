@@ -104,7 +104,7 @@ export function resolveTrick(state, rng = Math.random) {
   let formations = state.formations || [];
   const anchors = (shop && shop.anchors) || []; // Shop-Positionsanker (§8) — an der Deckposition
   const permEffects = (shop && shop.permanentEffects) || {}; // Shop-Formationsitems (§9) — permanente Regeländerungen
-  if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, permEffects);
+  if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, permEffects, familyTiers);
   // #161 FB-2: Peak gleichzeitig aktiver Formationen über den Run — zu Durchlaufbeginn, sobald das Layout feststeht.
   if (pos === 0) maxFormations = Math.max(maxFormations || 0, summarizeFormations(formations).count);
   const posForm = formations[actualPos] || { mult: 1, formations: [] };
@@ -540,7 +540,7 @@ export function resolveTrick(state, rng = Math.random) {
         newFormationSwaps = [];
         // #137: anchors + permEffects mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Shop-Effekte) — erst der erste Tausch korrigierte.
-        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, permEffects);
+        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, permEffects, familyTiers);
       }
     }
   }

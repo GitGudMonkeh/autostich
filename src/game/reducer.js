@@ -135,7 +135,7 @@ export function reducer(state, action) {
       newShop.purchaseLog = [...(shop.purchaseLog || []), purchaseLogEntry(def, offer.price, state.cycle)]; // #127
       // Formationen neu berechnen — F-Items (§9) ändern die Erkennung permanent.
       const deck2 = patch.deck || state.deck;
-      const formations2 = computeFormations(state.playerOrder, deck2, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects);
+      const formations2 = computeFormations(state.playerOrder, deck2, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects, state.familyTiers);
       return { ...merged, deck: deck2, formations: formations2, shop: newShop };
     }
 
@@ -250,7 +250,7 @@ export function reducer(state, action) {
       if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
       newShop.purchaseLog = [...(shop.purchaseLog || []), purchaseLogEntry(def, offer.price, state.cycle, target)]; // #127
       // Formationen mit den (evtl. neuen) Ankern neu berechnen — A5 Formationsanker wirkt sofort.
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects);
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects, state.familyTiers);
       return { ...merged, deck, formations, phase: "shop", shopTarget: null, shop: newShop };
     }
 
@@ -337,7 +337,7 @@ export function reducer(state, action) {
       const { familyTiers, deck, roles } = applyFamilyPick(
         ft.familyId, ft.tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, action.rng);
       // Rollen/Deck können die Formationserkennung ändern (C_JOKER/C_BRIDGE, C_SACRIFICE-Deckmod) → neu berechnen (wie CONFIRM_TARGET).
-      const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {});
+      const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, familyTiers);
       return { ...state, familyTiers, deck, roles, formations, phase: "play", familyTarget: null };
     }
 
@@ -359,7 +359,7 @@ export function reducer(state, action) {
         deck = def.permMod(state.deck, state.playerOrder, ids);
       }
       const roles = { ...(state.roles || {}), [state.targetPerk]: ids };
-      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}), phase: "play", targetPerk: null };
+      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, state.familyTiers), phase: "play", targetPerk: null };
     }
 
     // Stat-Auswahl (V2 §22.3): der gewählte Stat addiert seinen Step auf das zugehörige Summenfeld.
@@ -419,7 +419,7 @@ export function reducer(state, action) {
         frostbitePending = []; frostbiteActive = [];
       }
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.shop?.permanentEffects || {});
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, state.familyTiers);
       return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, formations, phase: "play", skillOffer: null };
     }
 
@@ -483,7 +483,7 @@ export function reducer(state, action) {
       if (!isFree && (state.formationEnergy || 0) <= 0) return state; // bezahlter Tausch braucht Energie
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, state.familyTiers),
                formationEnergy: isFree ? state.formationEnergy : state.formationEnergy - 1,
                formationSwaps: [...(state.formationSwaps || []), { i, j, free: isFree, frozenId: freeFrozenId }],
                frostSwapsUsed: isFree ? [...used, freeFrozenId] : used };
@@ -496,7 +496,7 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       [order[last.i], order[last.j]] = [order[last.j], order[last.i]];
       const frostSwapsUsed = last.free ? (state.frostSwapsUsed || []).filter((id) => id !== last.frozenId) : (state.frostSwapsUsed || []);
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, state.familyTiers),
                formationEnergy: last.free ? state.formationEnergy : state.formationEnergy + 1, formationSwaps: swaps, frostSwapsUsed };
     }
     // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie + freie Frosttausche zurück.
@@ -505,7 +505,7 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       const swaps = state.formationSwaps || [];
       for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, state.familyTiers),
                formationEnergy: C.FORMATION_ENERGY + (state.perks || []).reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0),
                formationSwaps: [], frostSwapsUsed: [] };
     }

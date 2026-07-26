@@ -1,5 +1,6 @@
 import { suitColor } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
+import { familyDef } from "../game/families.js";
 import { SEGMENT_SIZE } from "../game/formations.js";
 import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
@@ -26,7 +27,8 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
   // #112: „picked" (gold) hat Vorrang vor „selected" (weiß) vor Formations-/Farbrand.
   const borderColor = picked ? "#d4a63a" : selected ? "#ffffff" : fb.color || col + "55";
   const borderStyle = fb.dashed && !selected && !picked ? "dashed" : "solid";
-  const roleTitle = roleIds.length ? roleIds.map((p) => PERK_DEFS[p]?.label || p).join(", ") : undefined;
+  // Rollen-Label: flacher Perk (PERK_DEFS) ODER Familie (FAMILY_DEFS, Rarität #167 Kat. C) → sonst die rohe id.
+  const roleTitle = roleIds.length ? roleIds.map((p) => PERK_DEFS[p]?.label || familyDef(p)?.name || p).join(", ") : undefined;
   // #119: belegte Position (Shop-Anker) → dicker silberner AUSSENring via Outline+Offset — separat vom
   // inneren Auswahl-/Formationsrahmen und dessen Glow, damit beide gleichzeitig lesbar bleiben.
   const anchorRing = anchorType ? { outline: "2.5px solid #cdd6e0", outlineOffset: "2px" } : null;

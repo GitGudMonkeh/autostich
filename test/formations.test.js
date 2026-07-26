@@ -124,6 +124,25 @@ describe("Rollen-Eingriffe: Joker (C8) & Bindeglied (C10)", () => {
   });
 });
 
+describe("Rollen-Familien (Rarität #167): C_JOKER & C_BRIDGE über familyTiers", () => {
+  const withFam = (deck, roles, familyTiers) => computeFormations(idOrder(deck.length), deck, roles, [], [], [], {}, familyTiers);
+  it("C_JOKER I (pred): zählt als Vorgängerfarbe (wie flach C8)", () => {
+    const deck = [["R", 5], ["R", 2], ["B", 8]].map(card); // B als R → Farbblock R,R,R
+    expect(withFam(deck, { C_JOKER: [deck[2].id] }, { C_JOKER: 1 })[2].formations.some((x) => x.type === "farbblock")).toBe(true);
+  });
+  it("C_JOKER IV (free): zählt als beliebige Farbe — auch mitten im Block", () => {
+    const deck = [["R", 5], ["B", 2], ["R", 8]].map(card); // R,B,R: normal kein Farbblock
+    expect(computeFormations(idOrder(3), deck)[2].formations.some((x) => x.type === "farbblock")).toBe(false);
+    // B (Mitte) als freier Joker → R,(R),R = Farbblock
+    expect(withFam(deck, { C_JOKER: [deck[1].id] }, { C_JOKER: 4 })[2].formations.some((x) => x.type === "farbblock")).toBe(true);
+  });
+  it("C_BRIDGE: Span je Stufe (I ±1 reicht nicht, III ±2 erlaubt die steilere Treppe)", () => {
+    const deck = [["R", 3], ["B", 8], ["G", 9]].map(card); // 3→8 zu steil (Schritt 5 > 3); Bindeglied auf der 8
+    expect(withFam(deck, { C_BRIDGE: [deck[1].id] }, { C_BRIDGE: 1 })[2].formations.some((x) => x.type === "treppe")).toBe(false); // ±1
+    expect(withFam(deck, { C_BRIDGE: [deck[1].id] }, { C_BRIDGE: 3 })[2].formations.some((x) => x.type === "treppe")).toBe(true);  // ±2 → 8 zählt als 6 → 3,6,9
+  });
+});
+
 describe("Formationswerkzeuge (V2 §22.6 E)", () => {
   const f = (arr, perks) => computeFormations(idOrder(arr.length), arr.map(card), {}, perks);
   const hasType = (g, pos, t) => g[pos].formations.some((x) => x.type === t);

@@ -20,6 +20,7 @@
    ============================================================ */
 import { PERMAFROST_VALUE, EISANKER_FACTOR, CRYSTAL_OFFSET, ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR } from "./constants.js";
 import { iceFlag, hasPermafrost, hasIceAnchor } from "./skills.js";
+import { activeFamilyEntries } from "./families.js";
 
 export const SEGMENT_SIZE = 5;
 const WECHSEL_MIN_DIFF = 5;   // [#161 FB-5: 4→5 — Wechsel schwerer, größerer Nachbarabstand nötig]
@@ -145,9 +146,9 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
 }
 
 /* Berechnet für jede Position { mult, formations: [{ type, ordinal, factor }] }.
-   `order` = Ziehreihenfolge, `deck` = Karten, `roles` = Kartenrollen (C8/C10),
-   `perks` = gehaltene Perks (für die E-Werkzeuge). */
-export function computeFormations(order, deck, roles = {}, perks = [], skills = [], anchors = [], pe = {}) {
+   `order` = Ziehreihenfolge, `deck` = Karten, `roles` = Kartenrollen (flach C8/C10 UND Familien C_JOKER/C_BRIDGE),
+   `perks` = gehaltene Perks (für die E-Werkzeuge), `familyTiers` = Familienrang je Familie (Rarität #167). */
+export function computeFormations(order, deck, roles = {}, perks = [], skills = [], anchors = [], pe = {}, familyTiers = {}) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
   const has = (id) => perks.includes(id);
@@ -164,9 +165,19 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const wildSkip = iceFlag(skills, "wildFarbblockSkip");    // Frostbrücke: transparent im Farbblock
   // Permafrost: +2 Dauerwert auf eingefrorenen Karten (echter Wert; im Kampf gespiegelt in engine.js).
   const val = cards.map((c, k) => c.value + (permafrost && frozen[k] ? PERMAFROST_VALUE : 0));
-  const jokerIds = new Set(roles.C8 || []);
-  const bridgeIds = new Set(roles.C10 || []);
-  // Joker (C8): effektive Farbe = die des direkten Vorgängers (verkettet).
+  // Familien-Rollen (Rarität #167 Kat. C): Joker (C_JOKER) + Bindeglied (C_BRIDGE) aus den gehaltenen Familien-Stufen.
+  // §10-Näherung Joker: jokerMode "pred" (I/II) = Vorgängerfarbe wie flach C8; "predOrSucc"/"free" (III/IV) = Farbblock-
+  // Wildcard (der paarweise Scanner kann die Vorgänger-oder-Nachfolger-Regel nicht abbilden, ohne verschiedenfarbige Blöcke
+  // falsch zu verschmelzen; nach oben genähert). Bindeglied-Span: 1 (I/II) / 2 (III) / 99 (frei, IV).
+  const famJokerPred = new Set(), famJokerFree = new Set(), famBridgeSpan = {};
+  for (const { familyId, def } of activeFamilyEntries(familyTiers)) {
+    const ids = roles[familyId] || [];
+    if (def.jokerRole) for (const id of ids) (def.jokerMode === "pred" ? famJokerPred : famJokerFree).add(id);
+    if (def.bridgeRole) for (const id of ids) famBridgeSpan[id] = Math.max(famBridgeSpan[id] || 0, def.bridgeSpan || 1);
+  }
+  const jokerIds = new Set([...(roles.C8 || []), ...famJokerPred]); // Vorgängerfarbe-Joker (flach C8 + Familie C_JOKER I/II)
+  const bridgeIds = new Set(roles.C10 || []);                       // flache C10 (Span 1); Familien-Span über famBridgeSpan
+  // Joker: effektive Farbe = die des direkten Vorgängers (verkettet).
   const effSuit = cards.map((c) => c.suit);
   for (let k = 1; k < n; k++) if (jokerIds.has(cards[k].id)) effSuit[k] = effSuit[k - 1];
   // Farballianz (Shop F4): zwei Farben zählen für Farbblöcke als eine (die zweite wird auf die erste gemappt).
@@ -174,6 +185,7 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Bindeglied (C10, ±1) + Eis: Eisschritt/Kristallform geben ±1, Permafrost-Joker passt überall (großer Flex).
   const bind = cards.map((c, k) => {
     let b = bridgeIds.has(c.id) ? 1 : 0;
+    if (famBridgeSpan[c.id]) b = Math.max(b, famBridgeSpan[c.id]); // Familie C_BRIDGE: Span je Stufe (1/2/99)
     if (frozen[k] && (wildStep || wildCrystal)) b = Math.max(b, CRYSTAL_OFFSET);
     if (frozen[k] && permafrost) b = Math.max(b, 99); // Joker: fügt sich in jede Treppe
     return b;
@@ -211,8 +223,9 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
     (pos, ord) => add(pos, "wiederholung", ord, wiederholungFactor(ord, repBonus)), () => false,
     (last, ord) => recordEnd(last, "wiederholung", wiederholungFactor(ord, repBonus)), isJoker);
 
-  // Farbblock: Permafrost-Joker matcht jede Farbe; Frostbrücke macht eingefrorene Karten transparent (kein Mitglied).
-  const matchSuit = (a, b) => jokerAll[a] || jokerAll[b] || effSuit[a] === effSuit[b];
+  // Farbblock: Permafrost-Joker + freie Familien-Joker (C_JOKER III/IV) matchen jede Farbe; Frostbrücke macht
+  // eingefrorene Karten transparent (kein Mitglied).
+  const matchSuit = (a, b) => jokerAll[a] || jokerAll[b] || famJokerFree.has(cards[a].id) || famJokerFree.has(cards[b].id) || effSuit[a] === effSuit[b];
   const farbSkip = (k) => frozen[k] && wildSkip && !jokerAll[k];
   markRuns(n, 3, matchSuit, has("E2"), canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)), farbSkip,
