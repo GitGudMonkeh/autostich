@@ -249,6 +249,15 @@ export function reducer(state, action) {
         const spec = tierDef.pickTarget || {};
         // ---- Anker-Familie (#164): EIN Anker je Typ, Stärke = Stufe; Position (neu) gewählt, fremde Anker blockieren. ----
         if (fam.cat === "anchors") {
+          // Zeitsegment (SF_A_TIME): Segment + Stufe (Wiederholungstiefe) setzen — kein Positions-Anker.
+          if (fam.anchorType === "time") {
+            if (spec.segment && st.segment == null) return state;
+            const newShop = { ...shop, timeSegmentIndex: st.segment, timeSegmentTier: st.famTier, coins: (shop.coins || 0) - offer.price,
+              purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
+              familyTiers: { ...(shop.familyTiers || {}), [fam.id]: st.famTier },
+              purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, st.famTier, offer.price, state.cycle, { segment: st.segment })] };
+            return { ...state, phase: "shop", shopTarget: null, shop: newShop };
+          }
           if (spec.position && (st.position == null || (shop.anchors || []).some((a) => a.position === st.position && a.type !== fam.anchorType))) return state;
           // Stufen-Parameter (power/score/crit/streak/factor/jokerTypes/…) auf den Anker-Eintrag legen → Engine/formations
           // lesen sie direkt (kein Registry-Lookup je Stich, kein Import-Zyklus formations↔shopFamilies).

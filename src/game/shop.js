@@ -1,7 +1,7 @@
 import * as C from "./constants.js";
 import { SEGMENT_SIZE, FORMATION_TYPE_LABELS } from "./formations.js";
 import { TIERS, TIER_WEIGHTS, priceOfTier } from "./rarity.js";
-import { SHOP_FAMILY_DEFS } from "./shopFamilies.js";
+import { SHOP_FAMILY_DEFS, timeSegmentDepth } from "./shopFamilies.js";
 
 /* ============================================================
    SHOP-SYSTEM (Shop-Spec) — reine Logik, kein Math.random / Date.
@@ -40,13 +40,9 @@ const setPE = (shop, patch) => ({ ...shop, permanentEffects: { ...(shop.permanen
    die flachen K-Items sind entfernt, siehe src/game/shopFamilies.js SHOP_FAMILY_DEFS).
    `target` = Ziel-Bedarf für den Target-Flow. apply(state, target, rng) -> Patch. */
 export const SHOP_ITEM_DEFS = {
-  // ---- Anker (Shop-Spec §8) — Kategorie zu Shop-FAMILIEN migriert (#164): die Positions-Anker A1–A6 sind
-  //      entfernt (shopFamilies.js SHOP_ANCHOR_FAMILIES). A-L1 Zeitsegment folgt später. Der Anker-Eintrag in
-  //      shop.anchors trägt jetzt zusätzlich `tier` (Stärke) + `familyId`. ----
-  "A-L1": { id: "A-L1", category: "anchors", name: "Zeitsegment", tier: "legendary", legendary: true, repeatable: false,
-        targetMode: "segment", target: { segment: true },
-        description: "Wähle ein Segment. Nachdem seine fünf Karten gespielt wurden, wird das Segment sofort ein zweites Mal gespielt — inklusive aller positionsgebundenen Effekte dieser fünf Positionen (Anker, Positionsboni, Segment-Rollen zählen erneut). Durchlauf = 45 Stiche.",
-        apply: (s, t) => ({ shop: { ...s.shop, timeSegmentIndex: t.segment } }) },
+  // ---- Anker (Shop-Spec §8) — Kategorie KOMPLETT zu Shop-FAMILIEN migriert (#164): die Positions-Anker A1–A6 und
+  //      das Zeitsegment A-L1 sind entfernt (shopFamilies.js SHOP_ANCHOR_FAMILIES). Der Anker-Eintrag in shop.anchors
+  //      trägt jetzt zusätzlich `tier` (Stärke) + `familyId`; das Zeitsegment setzt shop.timeSegmentIndex + …Tier. ----
 
   // ---- Formationen (Shop-Spec §9) — permanente Regeländerungen (kein Ziel, nicht wiederholbar). ----
   F1: { id: "F1", category: "formations", name: "Abstieg", tier: "cheap", repeatable: false,
@@ -142,15 +138,16 @@ export function activeShopUpgrades(shop = {}) {
 // Ohne Zeitsegment: 0..tricks-1. Mit Zeitsegment wird das gewählte Segment (5 Positionen) DIREKT nach seinem
 // ersten Spielen ein zweites Mal eingefügt → tricks+5 Stiche. Positionsgebundene Effekte nutzen die zurückgegebene
 // Deckposition (Wiederholung „zählt erneut", Spec §8). Rein & deterministisch.
-export function playSequence(timeSegIdx, tricks = C.TRICKS_PER_CYCLE, segSize = SEGMENT_SIZE) {
+export function playSequence(timeSegIdx, tricks = C.TRICKS_PER_CYCLE, segSize = SEGMENT_SIZE, depth = segSize) {
   const seq = Array.from({ length: tricks }, (_, p) => p);
   if (timeSegIdx == null) return seq;
   const start = timeSegIdx * segSize, end = Math.min(start + segSize, tricks);
-  seq.splice(end, 0, ...Array.from({ length: end - start }, (_, k) => start + k)); // Wiederholung nach der letzten Segmentposition
+  const d = Math.min(depth, end - start); // #164: nur die LETZTEN `depth` Segmentkarten wiederholen (Stufe I=1 … III/IV=5)
+  seq.splice(end, 0, ...Array.from({ length: d }, (_, k) => end - d + k)); // Wiederholung nach der letzten Segmentposition
   return seq;
 }
-// Stichzahl eines Durchlaufs je Build: 40, mit Zeitsegment 45.
-export const cycleLenFor = (shop) => C.TRICKS_PER_CYCLE + (shop && shop.timeSegmentIndex != null ? SEGMENT_SIZE : 0);
+// Stichzahl eines Durchlaufs je Build: 40, mit Zeitsegment +Wiederholungstiefe (Stufe I=+1 … III/IV=+5).
+export const cycleLenFor = (shop) => C.TRICKS_PER_CYCLE + (shop && shop.timeSegmentIndex != null ? timeSegmentDepth(shop.timeSegmentTier) : 0);
 
 // Preis einer Stufe (Spec §5.5) — nur vier feste Preise.
 export const priceOf = (tier) => C.SHOP_PRICE[tier] ?? 0;
@@ -193,7 +190,8 @@ export function initialShop() {
       formationCoreType: null,          // F-L1: Formationskern-Typ
     },
     anchors: [],                    // S3: Positionsanker (an Position, nicht card.id)
-    timeSegmentIndex: null,         // A-L1: gewähltes Zeitsegment
+    timeSegmentIndex: null,         // Zeitsegment (#164): gewähltes Segment
+    timeSegmentTier: null,          // Zeitsegment-Stufe (Wiederholungstiefe/-tiefe der Effekte)
   };
 }
 

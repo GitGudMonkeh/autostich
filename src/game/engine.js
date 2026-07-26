@@ -10,7 +10,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, summarizeFormations, SEGMENT_SIZE } from "./formations.js";
 import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
-import { SHOP_FAMILY_DEFS } from "./shopFamilies.js";
+import { SHOP_FAMILY_DEFS, timeSegmentDepth, timeSegmentReduced } from "./shopFamilies.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -93,10 +93,16 @@ export function resolveTrick(state, rng = Math.random) {
   // Deckposition. Ohne Zeitsegment sind beide gleich; mit Zeitsegment wird das gewählte Segment direkt nach
   // seinem ersten Spielen wiederholt (45 Stiche) — positionsgebundene Effekte nutzen actualPos („zählt erneut").
   const timeSeg = shop && shop.timeSegmentIndex != null ? shop.timeSegmentIndex : null;
-  const seq = playSequence(timeSeg);
+  // Zeitsegment-Stufe (#164): Wiederholungstiefe + Effekt-Tiefe. Ohne Stufe (Altzustand) = volle Wiederholung (Default).
+  const timeSegTier = timeSeg != null ? (shop.timeSegmentTier || 4) : 0;
+  const timeDepth = timeSeg != null ? timeSegmentDepth(timeSegTier) : 0;
+  const seq = playSequence(timeSeg, C.TRICKS_PER_CYCLE, SEGMENT_SIZE, timeDepth);
   const cycleLen = seq.length;
   const actualPos = seq[pos];
-  const isRepeat = timeSeg != null && pos >= timeSeg * SEGMENT_SIZE + SEGMENT_SIZE && pos < timeSeg * SEGMENT_SIZE + 2 * SEGMENT_SIZE;
+  const segEnd = timeSeg != null ? timeSeg * SEGMENT_SIZE + SEGMENT_SIZE : 0;
+  const isRepeat = timeSeg != null && pos >= segEnd && pos < segEnd + timeDepth;
+  // §10-Näherung Stufe III: die Wiederholung würfelt keine Crits (nur Score/Serie zählen). IV = vollständig.
+  const reducedRepeat = isRepeat && timeSegmentReduced(timeSegTier);
   const pCard = deck[playerOrder[actualPos]];
   const oCard = oppDeck[oppOrder[actualPos]];
 
@@ -279,7 +285,7 @@ export function resolveTrick(state, rng = Math.random) {
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
     const critCtx = { ...wctx, rawCrit };
     critMultiplier = critMultiplierFor(perks, critCtx, statCritMult) + lightningCritMult(skills); // Basis 1,5 + Crit-Mult-Stat + L6-Überschuss + Donnergott
-    isCrit = rollCrit(critChance, forceCrit, rng); // forceCrit = L10-Kettenreaktion (garantierter Nachfolger-Crit)
+    isCrit = rollCrit(critChance, forceCrit, rng) && !reducedRepeat; // forceCrit = L10; reducedRepeat = Zeitsegment III (§10: kein Crit in der Wiederholung)
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.

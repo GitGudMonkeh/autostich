@@ -166,14 +166,15 @@ describe("Karten-Shop-Familien — Deck-Effekte (Spec §4.2 Kartenfamilien)", ()
 });
 
 describe("Anker-Shop-Familien (Spec §4.2 Ankerfamilien)", () => {
-  it("sechs Anker-Familien, REPLACEMENT, repeatable:false, mit anchorType + Positions-Ziel", () => {
+  it("sieben Anker-Familien, REPLACEMENT, repeatable:false, mit anchorType + Ziel (Position bzw. Segment beim Zeitsegment)", () => {
     const anchors = SHOP_FAMILY_LIST.filter((f) => f.cat === "anchors");
-    expect(anchors).toHaveLength(6);
+    expect(anchors).toHaveLength(7); // 6 Positions-Anker + Zeitsegment
     for (const fam of anchors) {
       expect(fam.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
       expect(fam.repeatable).toBe(false); // Nutzer-Entscheid #164: Anker schließen bei IV ab
       expect(typeof fam.anchorType).toBe("string");
-      for (const t of TIERS) expect(fam.tiers[t].pickTarget).toEqual({ position: true });
+      const expected = fam.anchorType === "time" ? { segment: true } : { position: true };
+      for (const t of TIERS) expect(fam.tiers[t].pickTarget).toEqual(expected);
     }
   });
   it("ANCHOR_FAMILY_BY_TYPE + anchorTierParam lösen die Stufen-Stärke auf", () => {

@@ -449,17 +449,28 @@ describe("Zeitsegment — A-L1 (Shop-Spec §8)", () => {
     expect(t[11].pValue).toBe(7);  // Wiederholung von Position 6 → wieder +2
     expect(t[11].originalPosition).toBe(6);
   });
-  it("Kauf von A-L1 setzt timeSegmentIndex (einmalig, legendär + nicht wiederholbar)", () => {
-    const offer = { offerId: "o0", itemId: "A-L1", category: "anchors", tier: "legendary", price: 30, legendary: true };
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+  it("Kauf Zeitsegment-Familie: setzt timeSegmentIndex + Stufe (Segment-Ziel, schließt bei IV ab)", () => {
+    const offer = { offerId: "o0", category: "anchors", familyId: "SF_A_TIME", famTier: 3, price: 18, family: true, legendary: false };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     s = reducer(s, { type: "SHOP_TARGET_SEGMENT", segment: 3 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.shop.timeSegmentIndex).toBe(3);
+    expect(r.shop.timeSegmentTier).toBe(3);
+    expect(r.shop.familyTiers.SF_A_TIME).toBe(3);
     expect(r.shop.coins).toBe(0);
-    expect(r.shop.boughtLegendaryIds).toEqual(["A-L1"]);
-    expect(r.shop.boughtNonRepeatableIds).toEqual(["A-L1"]);
+  });
+  it("playSequence-Tiefe je Stufe: I wiederholt 1 Karte, II 2, III/IV alle 5", () => {
+    expect(playSequence(1, 40, 5, 1).slice(9, 12)).toEqual([9, 9, 10]);        // nach Pos 9 die letzte (9) wiederholt
+    expect(playSequence(1, 40, 5, 2).slice(10, 13)).toEqual([8, 9, 10]);        // die letzten zwei (8,9) wiederholt
+    expect(playSequence(1, 40, 5, 5).slice(10, 15)).toEqual([5, 6, 7, 8, 9]);   // alle fünf wiederholt
+    expect(playSequence(1, 40, 5, 1)).toHaveLength(41);
+    expect(playSequence(1, 40, 5, 5)).toHaveLength(45);
+  });
+  it("cycleLenFor: Zeitsegment-Stufe bestimmt die Wiederholungstiefe (I=+1, III=+5)", () => {
+    expect(cycleLenFor({ timeSegmentIndex: 1, timeSegmentTier: 1 })).toBe(41);
+    expect(cycleLenFor({ timeSegmentIndex: 1, timeSegmentTier: 3 })).toBe(45);
   });
 });
 

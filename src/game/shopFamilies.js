@@ -239,6 +239,19 @@ const SHOP_ANCHOR_FAMILIES = {
       4: { desc: "Wähle 1 Position: Joker für alle Basisformationen.", pickTarget: { position: true }, jokerTypes: ["wiederholung", "treppe", "farbblock", "wechsel"] },
     },
   },
+  // Zeitsegment (§4.2, ehem. legendär A-L1): SEGMENT-Ziel, kein Positions-Anker. Stufe = Wiederholungstiefe (letzte
+  // `depth` Segmentkarten) + Effekt-Tiefe. §10-Näherung III: „nur Score/Serien-Effekte" ≈ die Wiederholung würfelt
+  // KEINE Crits (Score & Serie zählen; Crit-/Skill-Boni entfallen). IV = vollständige Wiederholung.
+  SF_A_TIME: {
+    id: "SF_A_TIME", cat: "anchors", name: "Zeitsegment", upgradeType: REPLACEMENT, repeatable: false,
+    anchorType: "time", legacyIds: ["A-L1"],
+    tiers: {
+      1: { desc: "Wähle 1 Segment: seine letzte Karte wird einmal wiederholt.", pickTarget: { segment: true }, depth: 1 },
+      2: { desc: "Wähle 1 Segment: seine letzten zwei Karten werden wiederholt.", pickTarget: { segment: true }, depth: 2 },
+      3: { desc: "Wähle 1 Segment: alle fünf Karten werden wiederholt (nur Score- und Serien-Effekte zählen).", pickTarget: { segment: true }, depth: 5, reduced: true },
+      4: { desc: "Wähle 1 Segment: alle fünf Karten werden vollständig wiederholt (Score, Serie, Crits, Skills, Positionseffekte).", pickTarget: { segment: true }, depth: 5 },
+    },
+  },
 };
 
 export const SHOP_FAMILY_DEFS = {
@@ -252,6 +265,10 @@ export const ANCHOR_FAMILY_BY_TYPE = Object.fromEntries(
 // Stufen-Def eines Ankers (Typ + gehaltene/gesetzte Stufe) — Engine/formations lesen daraus die Stärke-Parameter.
 export const anchorTierDef = (anchorType, tier) => ANCHOR_FAMILY_BY_TYPE[anchorType]?.tiers?.[tier] || null;
 export const anchorTierParam = (anchorType, tier, key) => { const d = anchorTierDef(anchorType, tier); return d ? d[key] : undefined; };
+// Zeitsegment (SF_A_TIME): Wiederholungstiefe (letzte `depth` Segmentkarten) + ob die Wiederholung „reduziert" ist
+// (Stufe III §10: keine Crits). Default (kein/unbekannter Rang) = volle Segment-Wiederholung wie das frühere A-L1.
+export const timeSegmentDepth = (tier) => anchorTierParam("time", tier, "depth") ?? SEGMENT_SIZE;
+export const timeSegmentReduced = (tier) => !!anchorTierParam("time", tier, "reduced");
 
 export const SHOP_FAMILY_LIST = Object.values(SHOP_FAMILY_DEFS);
 export const shopFamilyDef = (id) => SHOP_FAMILY_DEFS[id] || null;
