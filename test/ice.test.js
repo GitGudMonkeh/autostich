@@ -50,14 +50,14 @@ describe("Eis — Formations-Wildcards (#93 F3)", () => {
     expect(withIce.filter((p) => p.formations.some((f) => f.type === "farbblock")).length).toBe(3); // a,b,d
     expect(withIce[2].formations.some((f) => f.type === "farbblock")).toBe(false);                   // c (frozen) kein Mitglied
   });
-  it("Kristallform: eingefrorene Karte zählt für Wiederholung als ±1", () => {
-    const deck = [card("a", "R", 5), card("b", "B", 6, true)];
-    expect(computeFormations([0, 1], deck, {}, [], [I10])[1].mult).toBeCloseTo(1.25); // 6→5
+  it("Kristallform: eingefrorene Karte zählt für Wiederholung als ±2 (#165) + Formationsbonus", () => {
+    const deck = [card("a", "R", 5), card("b", "B", 7, true)]; // 7 → 5 via ±2
+    expect(computeFormations([0, 1], deck, {}, [], [I10])[1].mult).toBeCloseTo(1.25 * 1.15); // Wiederholung ×1,25, Kristallform-Bonus ×1,15
   });
-  it("Kristallform: eingefrorene Karte ermöglicht einen Wechsel via ±1", () => {
+  it("Kristallform: eingefrorene Karte ermöglicht einen Wechsel via ±2 (#165)", () => {
     const deck = [card("a", "R", 10), card("b", "B", 4), card("c", "G", 8, true)]; // 4→8 = +4 (<5, kein Wechsel)
     expect(computeFormations(ord(3), deck, {}, [], [])[0].formations.some((f) => f.type === "wechsel")).toBe(false);
-    expect(computeFormations(ord(3), deck, {}, [], [I10])[0].formations.some((f) => f.type === "wechsel")).toBe(true); // Kristallform 8→9 → +5 ≥5
+    expect(computeFormations(ord(3), deck, {}, [], [I10])[0].formations.some((f) => f.type === "wechsel")).toBe(true); // Kristallform 8→10 → +6 ≥5
   });
   it("Permafrost: eingefrorene Karte ist Joker für Wiederholung", () => {
     const deck = [card("a", "R", 5), card("b", "B", 9, true)];
