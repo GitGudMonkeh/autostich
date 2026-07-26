@@ -171,7 +171,9 @@ export const PERK_DEFS = {
         cardBonus: (ctx) => (ctx.predValue != null && ctx.pValueBase > ctx.predValue ? 3 : 0) },
   E9: { id: "E9", cat: "E", label: "Segmentarbeit",
         desc: "Formationen dürfen über Segmentgrenzen hinweg fortgesetzt werden." },
-  E10: { id: "E10", cat: "E", label: "Feinjustierung", extraSwap: 1,
+  // Rarität-Umbau (#162, Spec §3.3): E10 ist als Perk DEAKTIVIERT (offerable:false → nie angeboten) und wandert
+  // als Shop-Familie „Feinjustierung" (#164). Definition bleibt vorerst für die extraSwap-Engine/Bestands-Builds.
+  E10: { id: "E10", cat: "E", label: "Feinjustierung", extraSwap: 1, offerable: false,
         desc: "Jede Formationsphase erhält einen zusätzlichen kostenlosen beliebigen Tausch." },
   D19: { id: "D19", cat: "D", label: "Überschusskrit",
         desc: "Ein Crit über 100 % effektiver Crit-Chance gibt +250 Score.",
@@ -274,9 +276,7 @@ export const PERK_DEFS = {
         // wird additiv zum Crit-Faktor (harmoniert mit D19 „Überschusskrit"). Kein Wert-Snowball → entsnowballt.
         critChance: (ctx) => 0.05 * (ctx.winStreak || 0),
         critMultBonus: (ctx) => Math.min(Math.max(0, (ctx.rawCrit || 0) - 1), 1) },
-  L7: { id: "L7", cat: "A", rarity: "legendary", label: "Königsmacher", segmentHigh: true,
-        desc: "Die höchste Karte jedes Segments erhält +5 Wert.",
-        cardBonus: (ctx) => (ctx.isSegmentHigh ? 5 : 0) },
+  // L7 „Königsmacher" ersatzlos entfernt (Rarität-Umbau #162, Spec §3.3/§7/§9 — nicht mehr im Pool/Angebot).
   L8: { id: "L8", cat: "A", rarity: "legendary", label: "Schicksalsmaschine", swapExtremes: true,
         desc: "Nach jedem Durchlauf tauschen die erfolgreichste und die erfolgloseste Karte ihre Werte." },
   L9: { id: "L9", cat: "A", rarity: "legendary", label: "Blutvertrag", needsTarget: 4,
@@ -315,7 +315,7 @@ const LAYOUT_EXTRA = new Set([
   "B3", "B4", "B6", "B9", "B10",          // Auftakt-/Zehner-Positionen · Wiederholung · Treppe · Überzahl (Vorgänger)
   "C1", "C3", "C4", "C5", "C6", "C7", "C8", "C10", // Positions-/Nachbarschafts-/Segment-Rollen · Joker/Bindeglied (Formation)
   "D1", "D11",                            // Formations-Sieg / Crit in Formation
-  "L3", "L7", "L11",                      // Positionen 36–40 · Segment-Höchste · Position 20→40
+  "L3", "L11",                            // Positionen 36–40 · Position 20→40 (L7 „Königsmacher" entfernt, #162)
 ]);
 export function isLayoutPerk(id) { return PERK_DEFS[id]?.cat === "E" || LAYOUT_EXTRA.has(id); }
 export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); }
@@ -325,7 +325,7 @@ export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); 
 // höchstens MAX_LEGENDARIES_PER_OFFER Legendaries je Angebot.
 // Deterministisch über den injizierten rng (ein rng()-Zug je Auswahl). Pool leer → weniger Perks.
 export function buildOffer(owned, rng, count, legendaryChance = 0) {
-  let pool = PERK_LIST.filter((p) => !owned.includes(p.id));
+  let pool = PERK_LIST.filter((p) => !owned.includes(p.id) && p.offerable !== false); // offerable:false = aus dem Pool (E10, #162)
   const chosen = [];
   let legendaries = 0;
   // Expliziter Legendär-Roll (Shop-Spec §10 P5): NUR wenn eine Legendär-Chance übergeben ist. Legendäre werden

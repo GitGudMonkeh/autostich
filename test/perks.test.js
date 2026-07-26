@@ -121,8 +121,9 @@ describe("critChanceFor / critChanceRawFor (V2: kein Perk trägt Crit-Chance —
 });
 
 describe("Legendäre Perks — Hooks (V2 §22.6 L)", () => {
-  it("alle elf L-Perks sind als legendary markiert", () => {
-    for (const id of ["L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11"]) expect(isLegendary(id)).toBe(true);
+  it("die zehn verbliebenen L-Perks sind als legendary markiert (L7 entfernt, #162)", () => {
+    for (const id of ["L1", "L2", "L3", "L4", "L5", "L6", "L8", "L9", "L10", "L11"]) expect(isLegendary(id)).toBe(true);
+    expect(PERK_DEFS.L7).toBeUndefined(); // Königsmacher ersatzlos entfernt (Spec §9)
     expect(isLegendary("D1")).toBe(false);
   });
   it("L1 Überladung: permMod +6 auf die gewählten Karten", () => {
@@ -148,10 +149,6 @@ describe("Legendäre Perks — Hooks (V2 §22.6 L)", () => {
     expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 1.5 })).toBeCloseTo(0.5); // Überschuss über 100 %
     expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 3 })).toBeCloseTo(1);     // Cap +100 %
     expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 0.8 })).toBe(0);          // unter 100 % → 0
-  });
-  it("L7 Königsmacher: +5, wenn Segment-Höchste", () => {
-    expect(PERK_DEFS.L7.cardBonus({ isSegmentHigh: true })).toBe(5);
-    expect(PERK_DEFS.L7.cardBonus({ isSegmentHigh: false })).toBe(0);
   });
   it("L9 Blutvertrag: permMod −2/gewählt, +6/Nachfolger", () => {
     const deck = buildDeck().slice(0, 3);
@@ -207,11 +204,11 @@ describe("Layout-Perks (#95): Positions-/Formations-relevante Perks", () => {
     PERK_LIST.filter((p) => p.cat === "E").forEach((p) => expect(isLayoutPerk(p.id)).toBe(true));
   });
   it("kuratierte B/C/D/L sind enthalten, layout-fremde Perks nicht", () => {
-    ["B4", "B6", "B9", "C1", "C8", "D1", "L3", "L7", "L11"].forEach((id) => expect(isLayoutPerk(id)).toBe(true));
+    ["B4", "B6", "B9", "C1", "C8", "D1", "L3", "L11"].forEach((id) => expect(isLayoutPerk(id)).toBe(true));
     ["A1", "B1", "B2", "C2", "D2", "D6", "L5"].forEach((id) => expect(isLayoutPerk(id)).toBe(false));
   });
   it("layoutPerks filtert die gehaltenen Perks in Reihenfolge", () => {
-    expect(layoutPerks(["A1", "E1", "D2", "C8", "L7"])).toEqual(["E1", "C8", "L7"]);
+    expect(layoutPerks(["A1", "E1", "D2", "C8"])).toEqual(["E1", "C8"]);
     expect(layoutPerks([])).toEqual([]);
   });
 });
@@ -277,7 +274,7 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
     expect(PERK_DEFS.D11.scoreFlatOnCrit({ hasFormation: true })).toBe(250);
     expect(PERK_DEFS.D11.scoreFlatOnCrit({ hasFormation: false })).toBe(0);
   });
-  it("E-Werkzeuge sind reine Marker (Wirkung in computeFormations); E10 hat extraSwap", () => {
+  it("E-Werkzeuge sind reine Marker; E10 hat extraSwap, ist aber als Perk deaktiviert (#162)", () => {
     for (const id of ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"]) {
       expect(PERK_DEFS[id].cat).toBe("E");
       expect(PERK_DEFS[id].cardBonus).toBeUndefined();
@@ -285,6 +282,7 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
       expect(PERK_DEFS[id].critChance).toBeUndefined();
     }
     expect(PERK_DEFS.E10.extraSwap).toBe(1);
+    expect(PERK_DEFS.E10.offerable).toBe(false); // #162: aus dem Perk-Pool genommen → wird Shop-Familie
   });
   it("V2 §22.4: alle A–E sind normal (keine Rares mehr); nur L ist legendär", () => {
     for (const p of PERK_LIST) {

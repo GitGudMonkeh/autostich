@@ -394,15 +394,7 @@ describe("Neue Legendaries — Engine (V2 §22.6 L)", () => {
     expect(resolveTrick(scenario(5, 0, { pos: 34, perks: ["L3"] }), rng).lastTrick.pValue).toBe(5);   // Position 35 → kein Bonus
   });
 
-  it("L7 Königsmacher: die höchste Karte des Segments bekommt +5", () => {
-    const mkL = (arr, suit = "R") => arr.map((v, i) => ({ id: `${suit}${i}`, suit, baseRank: v, value: v }));
-    let s = { ...initialState(makeRng(1)), deck: mkL([5, 9, 6, 7, 8]), oppDeck: mkL([0, 0, 0, 0, 0], "B"),
-              playerOrder: [0, 1, 2, 3, 4], oppOrder: [0, 1, 2, 3, 4], perks: ["L7"] };
-    s = resolveTrick(s, rng);             // pos0 val5 (nicht Höchste) → +0
-    expect(s.lastTrick.pValue).toBe(5);
-    s = resolveTrick(s, rng);             // pos1 val9 (Segment-Höchste) → +5
-    expect(s.lastTrick.pValue).toBe(14);
-  });
+  // L7 „Königsmacher" entfernt (#162, Spec §9) — Test ersatzlos gestrichen; C7 „Überlebensvorteil" deckt segmentLow ab.
 
   it("L8 Schicksalsmaschine: am Durchlauf-Ende tauschen erfolgreichste & erfolgloseste Karte die Werte", () => {
     const deck = Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: 1, value: i === 0 ? 20 : i === 1 ? 3 : 12 }));
