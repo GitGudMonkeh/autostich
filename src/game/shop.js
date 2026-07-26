@@ -45,25 +45,9 @@ export const SHOP_ITEM_DEFS = {
   // ---- Formationen (Shop-Spec §9) — KOMPLETT zu Shop-FAMILIEN migriert (#164, shopFamilies.js
   //      SHOP_FORMATION_FAMILIES; sie setzen tier-abhängige permEffects bzw. lösen Ziele dorthin auf). ----
 
-  // ---- Planung (Shop-Spec §10) — Neuwürfe/Reservierung; kein Score-Effekt, wirkt auf Angebote/Auswahlen.
-  //      P1/P2/P5/P6/P-L1 zu Shop-FAMILIEN migriert (#164, shopFamilies.js SHOP_PLANNING_FAMILIES). P3/P4 folgen. ----
-  P3: { id: "P3", category: "planning", name: "Warenwechsel", tier: "cheap", repeatable: true,
-        targetMode: "category", target: { category: true },
-        description: "Würfle eine Kategorie des aktuellen Shops einmal neu (nicht gekaufte Angebote werden ersetzt).",
-        apply: (s, t, rng) => ({ shop: rerollCategory(s.shop, t.category, SHOP_ITEM_DEFS, rng, s.perks, "P3", SHOP_FAMILY_DEFS) }) },
-  P4: { id: "P4", category: "planning", name: "Reservierung", tier: "strong", repeatable: true,
-        targetMode: "offer", target: { offer: true },
-        description: "Wähle ein anderes, noch nicht gekauftes Shop-Item. Es wird im nächsten Shop zusätzlich angeboten.",
-        available: (shop) => !shop.reservedItem, // §10 P4: höchstens ein Item gleichzeitig reserviert
-        apply: (s, t) => {
-          const off = (s.shop.offers || []).find((o) => o.offerId === t.offerId);
-          if (!off) return {};
-          // #164: Familien-Angebot familienbewusst reservieren (familyId/famTier statt itemId).
-          const reservedItem = off.family
-            ? { family: true, familyId: off.familyId, famTier: off.famTier, category: off.category, price: off.price }
-            : { itemId: off.itemId, category: off.category, tier: off.tier, price: off.price, legendary: !!off.legendary };
-          return { shop: { ...s.shop, reservedItem } };
-        } },
+  // ---- Planung (Shop-Spec §10) — KOMPLETT zu Shop-FAMILIEN migriert (#164, shopFamilies.js SHOP_PLANNING_FAMILIES:
+  //      Perk-/Skill-Neuwurf, Legendensuche, Schicksalskontrolle, Warenwechsel, Reservierung). ----
+  // ⇒ SHOP_ITEM_DEFS ist damit LEER: alle vier Shop-Kategorien werden aus SHOP_FAMILY_DEFS bespielt.
 };
 
 // Legendär-Chance (Shop-Spec §10 P5/P6): Basis + additiver Bonus (bis Cap), für den expliziten Legendär-Roll
@@ -89,7 +73,9 @@ export function activeShopUpgrades(shop = {}) {
   if (pe.formationAfterglow) out.push("Nachhall");                                                        // F6
   if (pe.formationCoreType) out.push(`Formationskern: ${FORMATION_TYPE_LABELS[pe.formationCoreType] || pe.formationCoreType}`); // F-L1
   if (shop.timeSegmentIndex != null) out.push(`Zeitsegment ${shop.timeSegmentIndex + 1}`);                // A-L1
-  if (shop.fateControl) out.push("Schicksalskontrolle");                                                  // P-L1
+  if (shop.fateControl) out.push("Schicksalskontrolle");                                                  // Schicksalskontrolle IV
+  if (shop.perkFreeReroll && !shop.fateControl) out.push("Perk-Gratis-Neuwurf");                          // #164 Perk-Neuwurf IV / Schicksalskontrolle III
+  if (shop.skillFreeReroll && !shop.fateControl) out.push("Skill-Gratis-Neuwurf");                        // #164 Skill-Neuwurf IV
   if (shop.perkLegendaryBonus > 0) out.push(`Perk-Legendär ${pp(shop.perkLegendaryBonus)}`);              // P5
   if (shop.skillLegendaryBonus > 0) out.push(`Skill-Legendär ${pp(shop.skillLegendaryBonus)}`);           // P6
   return out;
@@ -331,5 +317,9 @@ export function withReservedOffer(shop = {}, itemDefs = {}, perks = [], familyDe
     if (def && isItemAvailable(def, shop, perks))
       extra = [{ offerId: id, itemId: reserved.itemId, category: reserved.category, tier: reserved.tier, price: reserved.price, legendary: !!reserved.legendary, reserved: true }];
   }
-  return { ...shop, offers: [...offers, ...extra], reservedItem: null };
+  // #164 Reservierung: `shopsLeft` = für wie viele weitere Shops die Reservierung bestehen bleibt (Stufe I–IV = 1–4).
+  // Nach dem Anhängen herunterzählen; bei >1 bleibt sie für den nächsten Shop erhalten, sonst verfällt sie.
+  const left = (reserved.shopsLeft || 1) - 1;
+  const nextReserved = extra.length && left > 0 ? { ...reserved, shopsLeft: left } : null;
+  return { ...shop, offers: [...offers, ...extra], reservedItem: nextReserved };
 }

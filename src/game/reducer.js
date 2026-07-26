@@ -7,7 +7,7 @@ import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, ma
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
-import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance, perkFateReroll, purchaseLogEntry, familyPurchaseLogEntry } from "./shop.js";
+import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance, perkFateReroll, purchaseLogEntry, familyPurchaseLogEntry, rerollCategory } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -225,16 +225,14 @@ export function reducer(state, action) {
       if (!shopTargetSpec(state.shopTarget).formationType || !FORMATION_TYPES.includes(action.formationType)) return state;
       return { ...state, shopTarget: { ...state.shopTarget, formationType: action.formationType } };
     }
-    case "SHOP_TARGET_CATEGORY": { // Warenwechsel (P3): eine der vier Shop-Kategorien wählen.
+    case "SHOP_TARGET_CATEGORY": { // Warenwechsel (#164): eine der vier Shop-Kategorien wählen.
       if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
-      if (!def?.target?.category || !C.SHOP_CATEGORIES.includes(action.category)) return state;
+      if (!shopTargetSpec(state.shopTarget).category || !C.SHOP_CATEGORIES.includes(action.category)) return state;
       return { ...state, shopTarget: { ...state.shopTarget, category: action.category } };
     }
-    case "SHOP_TARGET_OFFER": { // Reservierung (P4): ein anderes, noch nicht gekauftes Angebot wählen (nicht P4 selbst).
+    case "SHOP_TARGET_OFFER": { // Reservierung (#164): ein anderes, noch nicht gekauftes Angebot wählen (nicht die Reservierung selbst).
       if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
-      if (!def?.target?.offer) return state;
+      if (!shopTargetSpec(state.shopTarget).offer) return state;
       const target = (state.shop?.offers || []).find((o) => o.offerId === action.offerId);
       if (!target || action.offerId === state.shopTarget.offerId) return state;      // muss existieren & darf nicht P4 selbst sein
       if ((state.shop?.purchasedOfferIds || []).includes(action.offerId)) return state; // nur nicht gekaufte Items
@@ -295,6 +293,30 @@ export function reducer(state, action) {
             purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, st.famTier, offer.price, state.cycle, { colorPair: st.colorPair, boundary: st.boundary, formationType: st.formationType })] };
           const formations = computeFormations(state.playerOrder, state.deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects, state.familyTiers);
           return { ...state, formations, phase: "shop", shopTarget: null, shop: newShop };
+        }
+        // ---- Ziel-Planungs-Familie (#164): Warenwechsel (Sofort-Reroll) / Reservierung (Angebot vormerken). ----
+        if (fam.cat === "planning") {
+          const base = { ...shop, coins: (shop.coins || 0) - offer.price,
+            purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
+            familyTiers: { ...(shop.familyTiers || {}), [fam.id]: st.famTier },
+            purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, st.famTier, offer.price, state.cycle, { category: st.category, offerId: st.targetOfferId })] };
+          if (fam.id === "SF_P_RESTOCK") { // Warenwechsel: `restockScope` Kategorien ab der gewählten neu würfeln (das gekaufte Angebot bleibt).
+            if (st.category == null) return state;
+            const scope = tierDef.restockScope || 1;
+            const i0 = C.SHOP_CATEGORIES.indexOf(st.category);
+            const cats = scope === Infinity ? C.SHOP_CATEGORIES
+              : Array.from({ length: Math.min(scope, C.SHOP_CATEGORIES.length) }, (_, k) => C.SHOP_CATEGORIES[(i0 + k) % C.SHOP_CATEGORIES.length]);
+            let sh = base;
+            for (const cat of cats) sh = rerollCategory(sh, cat, SHOP_ITEM_DEFS, action.rng, state.perks, null, SHOP_FAMILY_DEFS);
+            return { ...state, phase: "shop", shopTarget: null, shop: sh };
+          }
+          // Reservierung: gewähltes Angebot merken; `reserveShops` = Persistenz (Anzahl folgender Shops).
+          if (st.targetOfferId == null || !(shop.offers || []).some((o) => o.offerId === st.targetOfferId)
+            || (shop.purchasedOfferIds || []).includes(st.targetOfferId)) return state;
+          const off = (shop.offers || []).find((o) => o.offerId === st.targetOfferId);
+          const reservedItem = { ...(off.family ? { family: true, familyId: off.familyId, famTier: off.famTier } : { itemId: off.itemId, tier: off.tier, legendary: !!off.legendary }),
+            category: off.category, price: off.price, shopsLeft: tierDef.reserveShops || 1 };
+          return { ...state, phase: "shop", shopTarget: null, shop: { ...base, reservedItem } };
         }
         if (spec.cards && st.cards.length !== spec.cards) return state;             // genau N Karten
         if (spec.color && st.cards.some((id) => !st.colors[id])) return state;      // je Karte eine Farbe

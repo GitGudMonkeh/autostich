@@ -389,6 +389,28 @@ const SHOP_PLANNING_FAMILIES = {
       4: { desc: "Rar- und Legendär-Chance zukünftiger Skill-Angebote +15 Prozentpunkte.", onBuy: () => ({ skillLegendaryBonus: 0.15 }) },
     },
   },
+  // Warenwechsel (§4.2): sofortiger Shop-Neuwurf. `restockScope` = wie viele Kategorien ab der gewählten neu
+  // gewürfelt werden (Infinity = ganzer Shop). §10: I≈II (je 1 Kategorie); Einzel-Angebot (I) als Kategorie genähert.
+  SF_P_RESTOCK: {
+    id: "SF_P_RESTOCK", cat: "planning", name: "Warenwechsel", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["P3"],
+    tiers: {
+      1: { desc: "Würfle eine gewählte Kategorie des Shops neu.", pickTarget: { category: true }, restockScope: 1 },
+      2: { desc: "Würfle eine gewählte Kategorie des Shops neu.", pickTarget: { category: true }, restockScope: 1 },
+      3: { desc: "Würfle die gewählte und die nächste Kategorie neu (zwei Kategorien).", pickTarget: { category: true }, restockScope: 2 },
+      4: { desc: "Würfle den gesamten Shop neu.", pickTarget: { category: true }, restockScope: Infinity },
+    },
+  },
+  // Reservierung (§4.2): ein gewähltes Angebot erscheint im nächsten Shop erneut. `reserveShops` = für wie viele
+  // Shops es bestehen bleibt (Persistenz). §10: „bis gekauft"/„bis zu 2 Items"/„Familie-Garantie" ⇒ Persistenz-Stufen.
+  SF_P_RESERVE: {
+    id: "SF_P_RESERVE", cat: "planning", name: "Reservierung", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["P4"],
+    tiers: {
+      1: { desc: "Reserviere 1 Angebot: es erscheint im nächsten Shop erneut.", pickTarget: { offer: true }, reserveShops: 1 },
+      2: { desc: "Reserviere 1 Angebot: es erscheint in den nächsten 2 Shops erneut.", pickTarget: { offer: true }, reserveShops: 2 },
+      3: { desc: "Reserviere 1 Angebot: es erscheint in den nächsten 3 Shops erneut.", pickTarget: { offer: true }, reserveShops: 3 },
+      4: { desc: "Reserviere 1 Angebot: es erscheint in den nächsten 4 Shops erneut.", pickTarget: { offer: true }, reserveShops: 4 },
+    },
+  },
   // Schicksalskontrolle (ehem. legendär P-L1): kostenlose Neuwürfe. §10: I/II als Vorrat, III/IV als dauerhafte Regel.
   SF_P_FATE: {
     id: "SF_P_FATE", cat: "planning", name: "Schicksalskontrolle", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["P-L1"],

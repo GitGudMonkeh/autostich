@@ -774,14 +774,13 @@ describe("Shop-Planungsitem — S5b P3 Warenwechsel (Shop-Spec §10)", () => {
     for (let seed = 1; seed <= 40; seed++)
       expect(rerollCategory(shop, "cards", SHOP_ITEM_DEFS, makeRng(seed), [], null, SHOP_FAMILY_DEFS).offers.filter((o) => o.legendary).length).toBe(1);
   });
-  it("Kauf P3: Kategorie neu würfeln (Karten), P3 bleibt gekauft, Preis abgezogen", () => {
+  it("Kauf Warenwechsel II: gewählte Kategorie neu würfeln, Familie bleibt gekauft", () => {
     const offers = [
-      { offerId: "o0", itemId: "P3", category: "planning", tier: "cheap", price: 8, legendary: false },
-      { offerId: "o1", itemId: "P1", category: "planning", tier: "cheap", price: 8, legendary: false },
-      { offerId: "o2", itemId: "K1", category: "cards", tier: "cheap", price: 8, legendary: false },
-      { offerId: "o3", itemId: "K2", category: "cards", tier: "cheap", price: 8, legendary: false },
+      { offerId: "o0", category: "planning", familyId: "SF_P_RESTOCK", famTier: 2, price: 12, family: true, legendary: false },
+      { offerId: "o1", category: "cards", familyId: "SF_REFINE", famTier: 1, price: 8, family: true, legendary: false },
+      { offerId: "o2", category: "cards", familyId: "SF_RECOLOR", famTier: 1, price: 8, family: true, legendary: false },
     ];
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers } };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     expect(reducer(s, { type: "SHOP_TARGET_CATEGORY", category: "bogus" })).toBe(s); // ungültig → ignoriert
@@ -789,22 +788,22 @@ describe("Shop-Planungsitem — S5b P3 Warenwechsel (Shop-Spec §10)", () => {
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(2) });
     expect(r.phase).toBe("shop");
     expect(r.shop.coins).toBe(0);
-    expect(r.shop.purchasedOfferIds).toContain("o0");                          // P3 gekauft
+    expect(r.shop.purchasedOfferIds).toContain("o0");                          // Warenwechsel gekauft
+    expect(r.shop.familyTiers.SF_P_RESTOCK).toBe(2);
     expect(r.shop.offers.filter((o) => o.category === "cards")).toHaveLength(2);
   });
-  it("Neuwurf der Planungs-Kategorie: das gerade gekaufte P3 bleibt und wird nicht erneut gezogen", () => {
+  it("Warenwechsel auf die eigene Kategorie: das gekaufte Angebot bleibt und wird nicht erneut gezogen", () => {
     const offers = [
-      { offerId: "o0", itemId: "P3", category: "planning", tier: "cheap", price: 8, legendary: false },
-      { offerId: "o1", itemId: "P1", category: "planning", tier: "cheap", price: 8, legendary: false },
+      { offerId: "o0", category: "planning", familyId: "SF_P_RESTOCK", famTier: 1, price: 8, family: true, legendary: false },
+      { offerId: "o1", category: "planning", familyId: "SF_P_PERK_REROLL", famTier: 1, price: 8, family: true, legendary: false },
     ];
     let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     s = reducer(s, { type: "SHOP_TARGET_CATEGORY", category: "planning" });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(2) });
     const pl = r.shop.offers.filter((o) => o.category === "planning");
-    expect(pl.some((o) => o.offerId === "o0" && o.itemId === "P3")).toBe(true); // P3 bleibt (als gekauft)
-    expect(pl.filter((o) => o.itemId === "P3")).toHaveLength(1);                // nicht doppelt gezogen
-    expect(pl).toHaveLength(2);                                                 // P3 + 1 neu
+    expect(pl.some((o) => o.offerId === "o0" && o.familyId === "SF_P_RESTOCK")).toBe(true); // gekauft bleibt
+    expect(pl).toHaveLength(2);                                                             // gekauft + 1 neu
   });
 });
 
@@ -818,25 +817,32 @@ describe("Shop-Planungsitem — S5b P4 Reservierung (Shop-Spec §10)", () => {
     expect(r.offers).toHaveLength(2);
     expect(r.offers.find((o) => o.reserved)).toMatchObject({ familyId: "SF_REFINE", famTier: 2, price: 12, category: "cards" });
   });
-  it("P4-Verfügbarkeit (§10): nicht anbieten, wenn bereits ein Item reserviert ist", () => {
-    expect(isItemAvailable(SHOP_ITEM_DEFS.P4, initialShop(), [])).toBe(true);
-    expect(isItemAvailable(SHOP_ITEM_DEFS.P4, { ...initialShop(), reservedItem: { itemId: "K1" } }, [])).toBe(false);
+  it("Reservierung-Persistenz: reserveShops bestimmt, für wie viele Shops die Reservierung bleibt", () => {
+    const shop = { ...initialShop(),
+      offers: [{ offerId: "o0", category: "cards", familyId: "SF_REFINE", famTier: 1, price: 8, family: true, legendary: false }],
+      reservedItem: { family: true, familyId: "SF_REFINE", famTier: 2, category: "cards", price: 12, shopsLeft: 2 } };
+    const r1 = withReservedOffer(shop, SHOP_ITEM_DEFS, [], SHOP_FAMILY_DEFS);
+    expect(r1.offers.find((o) => o.reserved)).toBeTruthy();
+    expect(r1.reservedItem).toMatchObject({ shopsLeft: 1 });                       // bleibt für den nächsten Shop
+    const r2 = withReservedOffer({ ...r1, offers: [] }, SHOP_ITEM_DEFS, [], SHOP_FAMILY_DEFS);
+    expect(r2.reservedItem).toBe(null);                                           // shopsLeft 1 → verfällt danach
   });
-  it("Kauf P4: reserviert das gewählte Angebot (nicht P4 selbst, nur nicht gekaufte)", () => {
+  it("Kauf Reservierung III: reserviert das gewählte Angebot (nicht die Reservierung selbst)", () => {
     const offers = [
-      { offerId: "o0", itemId: "P4", category: "planning", tier: "strong", price: 12, legendary: false },
-      { offerId: "o1", itemId: "K8", category: "cards", tier: "premium", price: 18, legendary: false },
+      { offerId: "o0", category: "planning", familyId: "SF_P_RESERVE", famTier: 3, price: 18, family: true, legendary: false },
+      { offerId: "o1", category: "cards", familyId: "SF_REFINE", famTier: 3, price: 18, family: true, legendary: false },
     ];
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers } };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s); // ohne Ziel → unverändert
-    expect(reducer(s, { type: "SHOP_TARGET_OFFER", offerId: "o0" })).toBe(s);     // P4 selbst → ignoriert
+    expect(reducer(s, { type: "SHOP_TARGET_OFFER", offerId: "o0" })).toBe(s);     // Reservierung selbst → ignoriert
     s = reducer(s, { type: "SHOP_TARGET_OFFER", offerId: "o1" });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
     expect(r.shop.coins).toBe(0);
-    expect(r.shop.reservedItem).toMatchObject({ itemId: "K8", price: 18 });
+    expect(r.shop.reservedItem).toMatchObject({ familyId: "SF_REFINE", famTier: 3, shopsLeft: 3 });
+    expect(r.shop.familyTiers.SF_P_RESERVE).toBe(3);
   });
   it("Engine: reserviertes Item erscheint beim nächsten Shop als 9. Angebot und verfällt danach", () => {
     const s = resolveTrick(atCycleEnd({ cycle: 3, // cycle 3→4 = Shop
