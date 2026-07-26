@@ -14,7 +14,7 @@ import { TIERS, TIER_WEIGHTS, canOfferFamilyTier, familyTierOf } from "./rarity.
      scoreMult(ctx)       -> multiplikativer Score-Faktor bei Sieg
    Kat.-C/E/L-Sonderfälle laufen über Marker/Flags am Perk (needsTarget, relay, triumph, permMod,
    sacrificeMod, jokerRole/bridgeRole, segmentLow/segmentHigh, critValueGain, successorCrit,
-   swapExtremes, repeatPos, randomTarget, extraSwap, winTieAfterLoss) — je an ihrer Definition erklärt.
+   swapExtremes, repeatPos, randomTarget, extraSwap) — je an ihrer Definition erklärt.
    Crit-Chance/-Mult kommen NICHT aus den Perks, sondern aus Stat + Blitz-Skills (Engine).
    rarity: "legendary" markiert Legendaries (Default "common") — Gewicht in buildOffer.
 
@@ -85,12 +85,6 @@ export const PERK_DEFS = {
   A8: { id: "A8", cat: "A", label: "Nachzügler",
         desc: "Die vier aktuell niedrigsten Karten erhalten dauerhaft je +5 Wert.",
         onPick: (d) => bumpTopN(d, 4, 5, "asc") },
-  B6: { id: "B6", cat: "B", label: "Knappe Kiste",
-        desc: "Liegt die gespielte Karte in einer Wiederholung, erhält sie +2 temporären Wert.",
-        cardBonus: (ctx) => (ctx.posForm && ctx.posForm.formations.some((f) => f.type === "wiederholung") ? 2 : 0) },
-  B7: { id: "B7", cat: "B", label: "Durchbruch",
-        desc: "Nach fünf Stichen ohne Sieg erhält die nächste Karte +10 Wert (Sieg setzt zurück, Gleichstand zählt weiter).",
-        cardBonus: (ctx) => ((ctx.sinceWin || 0) >= 5 ? 10 : 0) },
   C6: { id: "C6", cat: "C", label: "Finisher", needsTarget: 2,
         desc: "Wähle zwei Karten. Auf der letzten Position eines Segments erhalten sie +5 Wert.",
         cardBonus: (ctx) => (ctx.isRole && ctx.isRole("C6") && ctx.posInCycle % 5 === 4 ? 5 : 0) },
@@ -116,11 +110,6 @@ export const PERK_DEFS = {
   E8: { id: "E8", cat: "E", label: "Schnellschuss",
         desc: "Die Positionen 5, 15, 25 und 35 sind Anker (siegreicher Anker ×1,25)." },
 
-  // ---- Seltene Perks (#71, Phase 2b) — Ergebnis-/Wert-Historie (neue State-Felder) ----
-  B8: { id: "B8", cat: "B", label: "Revanche",
-        desc: "Nach zwei aufeinanderfolgenden Niederlagen erhält die nächste Karte +7 Wert.",
-        cardBonus: (ctx) => ((ctx.lossStreak || 0) >= 2 ? 7 : 0) },
-
   // ---- C-Rollen mit Formations-/Segment-Bezug (V2 §22.6) ----
   C7: { id: "C7", cat: "C", label: "Überlebensvorteil", segmentLow: true,
         desc: "Die niedrigste Karte jedes Segments erhält +3 Wert.",
@@ -132,15 +121,7 @@ export const PERK_DEFS = {
   C10: { id: "C10", cat: "C", label: "Bindeglied", needsTarget: 2, bridgeRole: true,
         desc: "Wähle zwei Karten. Für eine Treppe dürfen sie als 1 Wert höher oder niedriger gelten." },
 
-  // ---- Seltene Perks (#71, Phase 2f) — Ergebnis-/Wert-Historie (neue State-Felder) ----
-  B9: { id: "B9", cat: "B", label: "Perfekte Folge",
-        desc: "Karten einer Treppe erhalten je nach Position +1, +2, +3, danach +4 temporären Wert.",
-        cardBonus: (ctx) => { const t = ctx.posForm && ctx.posForm.formations.find((f) => f.type === "treppe"); return t ? Math.min(t.ordinal, 4) : 0; } },
-
   // ---- Seltene Perks (#71, Phase 2e) — Serien-/Tempo-/Crit-Mechanik (Engine-Flags + State) ----
-  B10: { id: "B10", cat: "B", label: "Überzahl",
-        desc: "Ist der Dauerwert einer Karte höher als der ihres direkten Vorgängers, erhält sie +3 temporären Wert.",
-        cardBonus: (ctx) => (ctx.predValue != null && ctx.pValueBase > ctx.predValue ? 3 : 0) },
   E9: { id: "E9", cat: "E", label: "Segmentarbeit",
         desc: "Formationen dürfen über Segmentgrenzen hinweg fortgesetzt werden." },
   // Rarität-Umbau (#162, Spec §3.3): E10 ist als Perk DEAKTIVIERT (offerable:false → nie angeboten) und wandert
@@ -148,22 +129,8 @@ export const PERK_DEFS = {
   E10: { id: "E10", cat: "E", label: "Feinjustierung", extraSwap: 1, offerable: false,
         desc: "Jede Formationsphase erhält einen zusätzlichen kostenlosen beliebigen Tausch." },
 
-  // ---- B: Stich-Effekte (Wert-Bonus auf die aktuelle Karte) ----
-  B1: { id: "B1", cat: "B", label: "Gegenangriff",
-        desc: "Nach einem verlorenen Stich erhält die nächste Karte +4 Wert.",
-        cardBonus: (ctx) => (ctx.lostLastTrick ? 4 : 0) },
-  B2: { id: "B2", cat: "B", label: "Momentum",
-        desc: "Nach genau drei Siegen in Folge erhält die nächste Karte +5 Wert.",
-        cardBonus: (ctx) => (ctx.winStreak === 3 ? 5 : 0) }, // §22.6: einmalig bei Serie 3 (Stand VOR dem Stich)
-  B3: { id: "B3", cat: "B", label: "Starker Auftakt",
-        desc: "Die ersten drei Karten jedes Durchlaufs erhalten je +4 Wert.",
-        cardBonus: (ctx) => (ctx.posInCycle <= 2 ? 4 : 0) },
-  B4: { id: "B4", cat: "B", label: "Zehnter Schlag",
-        desc: "Karten auf Position 10, 20, 30 und 40 erhalten +8 Wert.",
-        cardBonus: (ctx) => ((ctx.posInCycle + 1) % 10 === 0 ? 8 : 0) },
-  B5: { id: "B5", cat: "B", label: "Initiative",
-        desc: "Nach einer Niederlage gewinnst du den nächsten Gleichstand.",
-        winTieAfterLoss: true },
+  // ---- B: Stich — vollständig zu Familien migriert (#167, families.js Kategorie B). Die früheren flachen
+  //      B1–B10 sind entfernt; das Angebot bietet B nur noch als aufwertbare Familien (buildPerkOffer). ----
 
   // ---- C: Kartenrollen (V2 §22.6) — meist mit manueller Kartenauswahl (needsTarget) ----
   //      Rollen liegen als Karten-ids in state.roles[perkId]; ctx.isRole(perkId) prüft die aktuelle Karte.
@@ -253,7 +220,7 @@ export const rarityMeta = (id) => RARITY_META[rarityOf(id)];
 // Aufstellungshilfe in Formationsphase & Kartenübersicht (Issue #95). Alle E-Werkzeuge (Kat. E)
 // plus kuratierte B/C/D/L, deren Effekt an Position, direkter Nachbarschaft oder Formation hängt.
 const LAYOUT_EXTRA = new Set([
-  "B3", "B4", "B6", "B9", "B10",          // Auftakt-/Zehner-Positionen · Wiederholung · Treppe · Überzahl (Vorgänger)
+  // B-Stich ist zu Familien migriert (#167) — die positions-/formationsbezogenen B-Familien folgen in der Layout-Hilfe mit #166.
   "C1", "C3", "C4", "C5", "C6", "C7", "C8", "C10", // Positions-/Nachbarschafts-/Segment-Rollen · Joker/Bindeglied (Formation)
   // D-Score ist zu Familien migriert (#167) — die formationsbezogenen D-Familien (Punktebonus/Kritische Ernte)
   // sind noch nicht in der Layout-Hilfe berücksichtigt (folgt mit #166 UI).
@@ -266,7 +233,7 @@ export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); 
 
 // Migrierte Kategorien: ihre REGULÄREN (nicht legendären) Perks sind jetzt Familien und kommen über FAMILY_DEFS
 // ins Angebot statt über PERK_DEFS. Wächst mit jeder migrierten Kategorie (aktuell nur D; später +A/B/C/E).
-export const MIGRATED_CATS = new Set(["D"]);
+export const MIGRATED_CATS = new Set(["D", "B"]);
 
 // Ist dieser flache Perk durch eine Familie ersetzt? Nur reguläre Perks migrierter Kategorien — die legendären
 // D-Perks (L4/L5/L6/L10) bleiben flach im Legendär-Pool (Spec §3.1).

@@ -85,11 +85,11 @@ describe("Reducer", () => {
 
 describe("PICK_PERK — nach jeder Runde zurück in play (Neuer Loop)", () => {
   it("Wahl aus dem levelup-Angebot → play, offer null, Perk übernommen", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["A1", "B1", "D1"] };
-    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "B1", rng });
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["A1", "C1", "E2"] };
+    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "E2", rng });
     expect(s1.phase).toBe("play");
     expect(s1.offer).toBeNull();
-    expect(s1.perks).toEqual(["B1"]);
+    expect(s1.perks).toEqual(["E2"]);
   });
 });
 

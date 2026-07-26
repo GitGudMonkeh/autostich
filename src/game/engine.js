@@ -402,7 +402,6 @@ export function resolveTrick(state, rng = Math.random) {
     const rahmenRedeemed = !!(lightning && lightning.armed);
     winStreak = rahmenRedeemed ? winStreak : 0;
     initiative = "opp";
-    if (ownsFlag(perks, "winTieAfterLoss")) tieArmed = true; // B5 (flach): nach Niederlage nächsten Gleichstand gewinnen
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
     lossStreak += 1; // #71 Revanche: aufeinanderfolgende Niederlagen
     // B5 Initiative (Familie): Gleichstands-Sieg armieren, sobald die Niederlagenserie die Stufen-Schwelle erreicht.

@@ -38,27 +38,12 @@ describe("Perks — Deck-Modifikationen (Kat. A)", () => {
   });
 });
 
-describe("Perks — cardBonus (Kat. B) via effectivePlayerValue", () => {
-  it("B1 Gegenangriff: +4 nur nach einer Niederlage", () => {
-    expect(effectivePlayerValue(5, ["B1"], { lostLastTrick: true })).toBe(9);
-    expect(effectivePlayerValue(5, ["B1"], { lostLastTrick: false })).toBe(5);
-  });
-
-  it("B3 Starker Auftakt: +4 in den ersten drei Stichen des Durchlaufs", () => {
-    expect(effectivePlayerValue(4, ["B3"], { posInCycle: 0 })).toBe(8);
-    expect(effectivePlayerValue(4, ["B3"], { posInCycle: 2 })).toBe(8);
-    expect(effectivePlayerValue(4, ["B3"], { posInCycle: 3 })).toBe(4);
-  });
-
-  it("B5 Initiative: kein Kartenbonus mehr — nur winTieAfterLoss-Flag (§22.6)", () => {
-    expect(effectivePlayerValue(3, ["B5"], { lostLastTrick: true })).toBe(3);
-    expect(PERK_DEFS.B5.cardBonus).toBeUndefined();
-    expect(PERK_DEFS.B5.winTieAfterLoss).toBe(true);
-  });
-
-  it("Boni mehrerer Perks summieren sich", () => {
-    const v = effectivePlayerValue(2, ["B1", "B4"], { lostLastTrick: true, posInCycle: 9 });
-    expect(v).toBe(2 + 4 + 8); // B1 +4, B4 +8 (Position 10)
+describe("effectivePlayerValue — cardBonus-Summation", () => {
+  // Kat.-B-Wertboni sind zu Familien migriert (#167) — Engine-Integration in families-engine.test.js.
+  // Hier bleibt die generische Summation der flachen cardBonus-Hooks (C-Rollen) geprüft.
+  it("summiert die cardBonus-Hooks der gehaltenen Perks auf den Basiswert", () => {
+    expect(effectivePlayerValue(5, ["C7"], { isSegmentLow: true })).toBe(8);  // C7 +3
+    expect(effectivePlayerValue(5, ["C7"], { isSegmentLow: false })).toBe(5); // Bedingung nicht erfüllt
   });
 });
 
@@ -137,7 +122,7 @@ describe("streakBaseMult (Basis-Siegesserie #39)", () => {
 describe("baseScoreMultFor (Header-Chip #37 — V2: nur noch Basis-Serie #39)", () => {
   it("Serie 0 → ×1,00; D-Perks multiplizieren nicht mehr (Flat-Score)", () => {
     expect(baseScoreMultFor([], {})).toBeCloseTo(1);
-    expect(baseScoreMultFor(["A1", "B1"], {})).toBeCloseTo(1); // flache Perks tragen keinen Score-Multiplikator
+    expect(baseScoreMultFor(["A1", "A2"], {})).toBeCloseTo(1); // flache Perks tragen keinen Score-Multiplikator
   });
   it("Siegesserie hebt den Mult (#39): +2 %/Stufe bis Cap +150 % (#100)", () => {
     expect(baseScoreMultFor([], { winStreak: 0 })).toBeCloseTo(1);
@@ -151,10 +136,10 @@ describe("Layout-Perks (#95): Positions-/Formations-relevante Perks", () => {
   it("alle E-Werkzeuge zählen als Layout-Perk", () => {
     PERK_LIST.filter((p) => p.cat === "E").forEach((p) => expect(isLayoutPerk(p.id)).toBe(true));
   });
-  it("kuratierte B/C/L sind enthalten, layout-fremde Perks nicht", () => {
-    // D-Score ist zu Familien migriert (#167); die formationsbezogenen D-Familien folgen in der Layout-Hilfe mit #166.
-    ["B4", "B6", "B9", "C1", "C8", "L3", "L11"].forEach((id) => expect(isLayoutPerk(id)).toBe(true));
-    ["A1", "B1", "B2", "C2", "L5"].forEach((id) => expect(isLayoutPerk(id)).toBe(false));
+  it("kuratierte C/L sind enthalten, layout-fremde Perks nicht", () => {
+    // B-Stich und D-Score sind zu Familien migriert (#167); ihre layout-relevanten Familien folgen mit #166.
+    ["C1", "C8", "L3", "L11"].forEach((id) => expect(isLayoutPerk(id)).toBe(true));
+    ["A1", "C2", "L5"].forEach((id) => expect(isLayoutPerk(id)).toBe(false));
   });
   it("layoutPerks filtert die gehaltenen Perks in Reihenfolge", () => {
     expect(layoutPerks(["A1", "E1", "C8"])).toEqual(["E1", "C8"]);
@@ -175,17 +160,6 @@ describe("Neue Normal-Perks (#71)", () => {
     expect(sumV(PERK_DEFS.A8.onPick(buildDeck())) - sumV(buildDeck())).toBe(20);
     expect(PERK_DEFS.A8.onPick(buildDeck()).filter((c) => c.value === 6 && c.baseRank === 1)).toHaveLength(4);
   });
-  it("B6 Knappe Kiste: +2 temp Wert, wenn die Karte in einer Wiederholung liegt", () => {
-    const inWied = { posForm: { formations: [{ type: "wiederholung", ordinal: 2, factor: 1.3 }] } };
-    expect(PERK_DEFS.B6.cardBonus(inWied)).toBe(2);
-    expect(PERK_DEFS.B6.cardBonus({ posForm: { formations: [{ type: "treppe", ordinal: 3 }] } })).toBe(0);
-    expect(PERK_DEFS.B6.cardBonus({})).toBe(0);
-  });
-  it("B7 Durchbruch: +10 ab 5 Stichen ohne Sieg", () => {
-    expect(PERK_DEFS.B7.cardBonus({ sinceWin: 4 })).toBe(0);
-    expect(PERK_DEFS.B7.cardBonus({ sinceWin: 5 })).toBe(10);
-    expect(PERK_DEFS.B7.cardBonus({ sinceWin: 8 })).toBe(10);
-  });
   it("C3 Leibwache: +5, wenn Rolle und der Vorgänger verlor", () => {
     expect(PERK_DEFS.C3.cardBonus({ isRole: (id) => id === "C3", lastResult: "loss" })).toBe(5);
     expect(PERK_DEFS.C3.cardBonus({ isRole: (id) => id === "C3", lastResult: "win" })).toBe(0);
@@ -196,14 +170,6 @@ describe("Neue Normal-Perks (#71)", () => {
     expect(PERK_DEFS.C6.cardBonus({ isRole: (id) => id === "C6", posInCycle: 9 })).toBe(5);
     expect(PERK_DEFS.C6.cardBonus({ isRole: (id) => id === "C6", posInCycle: 3 })).toBe(0);
     expect(PERK_DEFS.C6.cardBonus({ isRole: () => false, posInCycle: 4 })).toBe(0);
-  });
-});
-
-describe("Durchbruch (B7) — sinceWin-Zähler in der Engine (#71)", () => {
-  it("+10 auf die Karte nach 5 Stichen ohne Sieg", () => {
-    // sinceWin=5 im State → Durchbruch-cardBonus greift für DIESEN Stich (Karte 3 → 13).
-    expect(effectivePlayerValue(3, ["B7"], { sinceWin: 5 })).toBe(13);
-    expect(effectivePlayerValue(3, ["B7"], { sinceWin: 4 })).toBe(3);
   });
 });
 
@@ -233,13 +199,6 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
   });
 });
 
-describe("Seltene Perks (#71, Phase 2b — Historie-Hooks)", () => {
-  it("B8 Revanche: +7 ab 2 Niederlagen in Folge", () => {
-    expect(PERK_DEFS.B8.cardBonus({ lossStreak: 2 })).toBe(7);
-    expect(PERK_DEFS.B8.cardBonus({ lossStreak: 1 })).toBe(0);
-  });
-});
-
 describe("Kartenrollen — Hooks (V2 §22.6 C)", () => {
   it("C1 Vorhut: +3 auf Position 1–5, wenn Rolle", () => {
     expect(PERK_DEFS.C1.cardBonus({ isRole: (id) => id === "C1", posInCycle: 0 })).toBe(3);
@@ -265,14 +224,4 @@ describe("Kartenrollen — Hooks (V2 §22.6 C)", () => {
   });
 });
 
-describe("Seltene Perks (#71, Phase 2f — Historie-Hooks)", () => {
-  it("B9 Perfekte Folge: temp Wert nach Treppen-Position (1→+1 … 4+→+4)", () => {
-    const treppe = (ord) => ({ posForm: { formations: [{ type: "treppe", ordinal: ord, factor: 1.25 }] } });
-    expect(PERK_DEFS.B9.cardBonus(treppe(1))).toBe(1);
-    expect(PERK_DEFS.B9.cardBonus(treppe(2))).toBe(2);
-    expect(PERK_DEFS.B9.cardBonus(treppe(3))).toBe(3);
-    expect(PERK_DEFS.B9.cardBonus(treppe(4))).toBe(4);
-    expect(PERK_DEFS.B9.cardBonus(treppe(5))).toBe(4); // Deckel
-    expect(PERK_DEFS.B9.cardBonus({ posForm: { formations: [{ type: "farbblock", ordinal: 3 }] } })).toBe(0);
-  });
-});
+// B9 Perfekte Folge ist zu Familie B_PERFECT migriert (#167) — Treppen-Ordinal-Tests in families.test.js.

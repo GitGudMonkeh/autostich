@@ -248,10 +248,7 @@ describe("resolveTrick — Durchlauf-Ende & persistente Reihenfolge (V2)", () =>
 });
 
 describe("Historie-Rares — Engine (#71 Phase 2b)", () => {
-  it("B8 Revanche: nach 2 Niederlagen +7 auf die nächste Karte", () => {
-    expect(resolveTrick(scenario(3, 8, { perks: ["B8"], lossStreak: 2 }), rng).lastTrick.pValue).toBe(10);
-    expect(resolveTrick(scenario(3, 8, { perks: ["B8"], lossStreak: 1 }), rng).lastTrick.pValue).toBe(3);
-  });
+  // B8 Revanche als Familie B_REVENGE (inkl. III Zwei-Karten-Queue) — Tests in families-engine.test.js.
   it("lastWinValue wird nach einem Sieg auf den Siegwert gesetzt (Basis für Familie D_PRECISION)", () => {
     expect(resolveTrick(scenario(9, 0), rng).lastWinValue).toBe(9);
   });
@@ -272,15 +269,7 @@ describe("Crit-Historie-Rares — Engine (#71 Phase 2c)", () => {
 describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
   const mk = (arr, suit = "R") => arr.map((v, i) => ({ id: `${suit}${i}`, suit, baseRank: v, value: v }));
 
-  it("B9 Perfekte Folge: Karten einer Treppe erhalten +1/+2/+3 nach Position", () => {
-    const deck = mk([3, 5, 7, 4]); // 3<5<7 = Treppe (Pos 0–2), die 4 liegt außerhalb
-    const opp = mk([0, 0, 0, 0]);
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2, 3], oppOrder: [0, 1, 2, 3], perks: ["B9"] };
-    const pv = [];
-    for (let i = 0; i < 4; i++) { s = resolveTrick(s, rng); pv.push(s.lastTrick.pValue); }
-    expect(pv).toEqual([4, 7, 10, 4]); // Treppen-Ordinal 1,2,3 → +1,+2,+3; Pos 3 keine Treppe → +0
-  });
-
+  // B9 Perfekte Folge als Familie B_PERFECT (Treppen-Ordinal) — Tests in families.test.js/families-engine.test.js.
   it("Farbserie-Zähler (Engine): gleiche Farbe zählt hoch, Farbwechsel beginnt bei 1, Niederlage bricht", () => {
     // winSuit/winSuitStreak sind Engine-Zustand (Basis für Familie D_SUIT_STREAK), unabhängig von einem Perk.
     const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }, { id: "c", suit: "B", baseRank: 12, value: 12 }];
@@ -298,23 +287,7 @@ describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
 });
 
 describe("Serien-/Crit-Rares — Engine (#71 Phase 2e)", () => {
-  it("B10 Überzahl: +3 temp Wert, wenn der Dauerwert höher als der des direkten Vorgängers ist", () => {
-    const deck = [
-      { id: "a", suit: "R", baseRank: 4, value: 4 },
-      { id: "b", suit: "R", baseRank: 9, value: 9 },
-      { id: "c", suit: "R", baseRank: 2, value: 2 },
-    ];
-    const opp = [
-      { id: "o0", suit: "R", baseRank: 0, value: 0 },
-      { id: "o1", suit: "R", baseRank: 0, value: 0 },
-      { id: "o2", suit: "R", baseRank: 0, value: 0 },
-    ];
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2], oppOrder: [0, 1, 2], perks: ["B10"] };
-    const pv = [];
-    for (let i = 0; i < 3; i++) { s = resolveTrick(s, rng); pv.push(s.lastTrick.pValue); }
-    expect(pv).toEqual([4, 12, 2]); // Pos0 kein Vorgänger; Pos1 (9>4) +3; Pos2 (2<9) +0
-  });
-
+  // B10 Überzahl als Familie B_SUPERIOR (Vergleich Dauerwert vs. Vorgänger) — Tests in families.test.js.
   it("Familie D_OVERCRIT: +Crit-Flat, wenn die Roh-Crit-Chance über 100 % liegt (rawCrit im critCtx)", () => {
     // D_OVERCRIT III: jeder Überschuss-Crit (rawCrit > 1) gibt +500. statCritChance 1,5 → rawCrit 1,5, Crit garantiert.
     const s = resolveTrick(scenario(12, 0, { familyTiers: { D_OVERCRIT: 3 }, statCritChance: 1.5 }), rng);
@@ -355,13 +328,13 @@ describe("Neue Legendaries — Engine (V2 §22.6 L)", () => {
   it("L11 Zeitraffer: Position 40 wiederholt den Wertbonus von Position 20", () => {
     const deck = Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: 5, value: 5 }));
     const opp = Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: 0, value: 0 }));
-    // B4 gibt Position 20 (pos 19) +8; L11 wiederholt das an Position 40 (pos 39).
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: seq40, oppOrder: seq40, pos: 19, perks: ["B4", "L11"] };
-    s = resolveTrick(s, rng); // pos19: B4 +8 → pValue 13, pos20Bonus = 8
-    expect(s.lastTrick.pValue).toBe(13);
-    expect(s.pos20Bonus).toBe(8);
-    s = resolveTrick({ ...s, pos: 39 }, rng); // pos39: B4 +8 + L11-Wiederholung +8 → 5+8+8 = 21
-    expect(s.lastTrick.pValue).toBe(21);
+    // Familie B_TENTH_STRIKE I gibt Position 20 (pos 19) +6; L11 wiederholt das an Position 40 (pos 39).
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: seq40, oppOrder: seq40, pos: 19, perks: ["L11"], familyTiers: { B_TENTH_STRIKE: 1 } };
+    s = resolveTrick(s, rng); // pos19: B_TENTH_STRIKE +6 → pValue 11, pos20Bonus = 6
+    expect(s.lastTrick.pValue).toBe(11);
+    expect(s.pos20Bonus).toBe(6);
+    s = resolveTrick({ ...s, pos: 39 }, rng); // pos39: B_TENTH_STRIKE +6 + L11-Wiederholung +6 → 5+6+6 = 17
+    expect(s.lastTrick.pValue).toBe(17);
   });
 });
 
