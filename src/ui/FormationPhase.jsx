@@ -87,6 +87,21 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
             </div>
           </div>
         </div>
+        {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig. */}
+        <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mb-3 flex items-center justify-between gap-2 flex-wrap"
+             style={{ background: "#15151b", borderBottom: "1px solid #2a2a34" }}>
+          <div className="flex gap-2">
+            <button onClick={onUndo} disabled={!hasSwaps} className="px-3 py-2 rounded-lg text-sm font-bold"
+              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>↶ Rückgängig</button>
+            <button onClick={onReset} disabled={!hasSwaps} className="px-3 py-2 rounded-lg text-sm"
+              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
+          </div>
+          <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
+            style={{ background: "#5ab87a", color: "#0c0c10" }}>
+            Durchlauf starten
+            <span className="ml-2 font-normal opacity-80">· {count} Formationen · max ×{fmt(maxMult)}</span>
+          </button>
+        </div>
         {state.lastCycleScore != null && <div className="mb-2"><RoundScoreBadge state={state} /></div>}
         <p className="text-xs opacity-55 mb-2">
           Tippe zwei Karten, um sie zu tauschen (1 Energie). Formationen entstehen nur <b>innerhalb</b> der {SEGMENT_SIZE}er-Segmente.
@@ -133,23 +148,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           </div>
         </div>
 
-        {/* Fußzeile */}
-        <div className="flex items-center justify-between mt-4 gap-2 flex-wrap">
-          <div className="flex gap-2">
-            <button onClick={onUndo} disabled={!hasSwaps} className="px-3 py-2 rounded-lg text-sm font-bold"
-              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>↶ Rückgängig</button>
-            <button onClick={onReset} disabled={!hasSwaps} className="px-3 py-2 rounded-lg text-sm"
-              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
-              style={{ background: "#5ab87a", color: "#0c0c10" }}>
-              Durchlauf starten
-              <span className="ml-2 font-normal opacity-80">· {count} Formationen · max ×{fmt(maxMult)}</span>
-            </button>
-          </div>
-        </div>
-        {formationEnergy > 0 && <div className="text-[10px] mt-1.5 text-right" style={{ color: "#d4a63a99" }}>Du hast noch {formationEnergy} Energie übrig.</div>}
+        {/* Aktionen liegen jetzt in der Sticky-Leiste oben (#161 FB-4). */}
         </div>
       </div>
     </div>
