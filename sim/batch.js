@@ -2,6 +2,7 @@
 //   npm run sim -- --mode baseline --runs 500 --seed 1     Random-Baseline: Score-Aggregat + Per-Karte-Ledger
 //   npm run sim -- --mode explore  --runs 2000 --seed 1    UCB-Explore: Coverage + Stärke-Rangliste je Option
 //   npm run sim -- --mode eval     --runs 300 --explore 1500  Fixed-Policy + paarweise Ablation → Marginalwerte
+//   npm run sim -- --mode pacing   --runs 400                 Score-Verteilung über die 44 Cycles (Early/Mid/Late-Balance)
 //
 // Bewusst OHNE Zeitstempel im Output → gleicher Seed-Satz erzeugt byte-gleiches JSON (Reproduzierbarkeit, §9).
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -116,4 +117,7 @@ else if (mode === "explore") runExplore();
 else if (mode === "eval") {
   const { runEval } = await import("./eval.js"); // S3: lazy, damit baseline/explore ohne eval.js laufen
   runEval({ arg, seed0, c, f, write });
-} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval)`); process.exit(1); }
+} else if (mode === "pacing") {
+  const { runPacing } = await import("./pacing.js"); // S6: lazy, wie eval
+  runPacing({ arg, seed0, c, f, write });
+} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing)`); process.exit(1); }

@@ -46,7 +46,9 @@ function finalize(s, seed, tel) {
 
 // mem (optional): Cross-Run-Banditengedächtnis (S2). Wird an die Policy durchgereicht (adaptive Wahl)
 // und am Run-Ende mit dem Run-Score belohnt. Ohne mem verhält sich runOne wie in S0/S1 (Eval-Modus).
-export function runOne(seed, policy, mem = null) {
+// hooks (optional): { onTrick(state) } — nach jedem aufgelösten Stich aufgerufen (Pro-Cycle-Sampling,
+// Pacing-Analyse). Rein beobachtend; ändert weder rng noch State → Determinismus-Invariante bleibt.
+export function runOne(seed, policy, mem = null, hooks = null) {
   const rng = makeRng(seed);
   let s = reducer(null, { type: "START_RUN", rng }); // START_RUN ignoriert den (null-)State
   const tel = newTelemetry();
@@ -56,6 +58,7 @@ export function runOne(seed, policy, mem = null) {
     if (s.phase === "play") {
       s = reducer(s, { type: "RESOLVE_TRICK", rng });
       observe(tel, s.lastTrick); // S1: jeden aufgelösten Stich ins Per-Karte-Ledger aufnehmen
+      if (hooks && hooks.onTrick) hooks.onTrick(s); // S6: Pro-Stich-Beobachter (Pacing-Kurve)
     } else {
       const action = policy.act(s, rng, mem);
       if (!action) throw new Error(`Policy '${policy.name}' lieferte keine Action für Phase '${s.phase}' (seed ${seed})`);
