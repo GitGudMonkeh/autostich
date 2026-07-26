@@ -24,40 +24,42 @@ describe("Wiederholung (≥2 gleiche Werte)", () => {
 
 describe("Farbblock (≥3 gleiche Farbe)", () => {
   it("ab der 3. Karte ×1,35, je weitere +0,20; <3 kein Bonus [#Pass4]", () => {
-    // Werte 5,7,6,8: enge Schritte (<4) → kein Wechsel; keine 3er-Steigung → keine Treppe → isolierter Farbblock.
+    // Werte 5,7,6,8: enge Schritte (<5) → kein Wechsel; keine 3er-Steigung → keine Treppe → isolierter Farbblock.
     expect(mults([["R", 5], ["R", 7], ["R", 6], ["R", 8]])).toEqual([1, 1, 1.35, 1.55]);
     expect(mults([["R", 5], ["R", 2]])).toEqual([1, 1]); // len 2 → nichts
   });
 });
 
-describe("Treppe (≥3 streng steigend)", () => {
-  it("ab der 3. Karte ×1,25, je weitere +0,20", () => {
-    // Unterschiedliche Farben → kein Farbblock; Schritte +2 (<4) → kein Wechsel.
-    expect(mults([["R", 1], ["B", 3], ["G", 5], ["Y", 7]])).toEqual([1, 1, 1.25, 1.45]);
+describe("Treppe (≥3 streng steigend, Schritt ≤3 [#161 FB-5])", () => {
+  it("ab der 3. Karte ×1,35, je weitere +0,20", () => {
+    // Unterschiedliche Farben → kein Farbblock; Schritte +2 (≤3 gültige Treppe, <5 → kein Wechsel).
+    expect(mults([["R", 1], ["B", 3], ["G", 5], ["Y", 7]])).toEqual([1, 1, 1.35, 1.55]);
   });
   it("ein Rückschritt beendet die Treppe", () => {
-    expect(mults([["R", 1], ["B", 3], ["G", 2], ["Y", 4], ["R", 6]])).toEqual([1, 1, 1, 1, 1.25]);
+    expect(mults([["R", 1], ["B", 3], ["G", 2], ["Y", 4], ["R", 6]])).toEqual([1, 1, 1, 1, 1.35]);
+  });
+  it("ein Schritt größer als 3 beendet die Treppe [#161 FB-5]", () => {
+    // 1→5 = +4 > 3 → keine Treppe über Pos 0; 5,7,9 (Schritte +2) bilden ab Pos 1 eine.
+    expect(mults([["R", 1], ["B", 5], ["G", 7], ["Y", 9]])).toEqual([1, 1, 1, 1.35]);
   });
 });
 
-describe("Wechsel (Zick-Zack: Nachbardifferenz ≥4, alternierende Richtung)", () => {
-  it("alternierende große Sprünge ab der 3. Karte ×1,25, je weitere +0,20", () => {
-    expect(mults([["R", 2], ["B", 9], ["G", 1], ["Y", 8]])).toEqual([1, 1, 1.25, 1.45]);
+describe("Wechsel (Zick-Zack: Nachbardifferenz ≥5, alternierende Richtung [#161 FB-5])", () => {
+  it("alternierende große Sprünge ab der 3. Karte ×1,40, je weitere +0,20", () => {
+    expect(mults([["R", 2], ["B", 9], ["G", 1], ["Y", 8]])).toEqual([1, 1, 1.4, 1.6]);
   });
-  it("große Sprünge OHNE Richtungswechsel sind KEIN Wechsel (nur Treppe)", () => {
-    // 1,7,13: streng steigend (Treppe) + Schritte je +6 — aber gleiche Richtung → kein Wechsel.
-    const f = forms([["R", 1], ["B", 7], ["G", 13]]);
-    expect(typesAt([["R", 1], ["B", 7], ["G", 13]], 2)).toEqual(["treppe"]);
-    expect(+f[2].mult.toFixed(3)).toBe(1.25);
+  it("große gleichgerichtete Sprünge sind weder Wechsel (keine Richtungsänderung) noch Treppe (Schritt >3)", () => {
+    // 1,7,13: streng steigend, aber Schritte je +6 → keine Treppe (>3) und ohne Richtungswechsel kein Wechsel.
+    expect(typesAt([["R", 1], ["B", 7], ["G", 13]], 2)).toEqual([]);
+    expect(mults([["R", 1], ["B", 7], ["G", 13]])).toEqual([1, 1, 1]);
   });
-  it("findet auch einen Zick-Zack, der erst nach einem gleichgerichteten Sprung beginnt", () => {
-    // 2,9,15,8: 2→9(+7) 9→15(+6, gleiche Richtung → Wechsel-Bruch), aber 9,15,8 ist ein gültiger Zick-Zack.
-    // Zusätzlich ist 2,9,15 eine Treppe (Schritte +7/+6 ≥4). Karten in 2 Formationen → Überlappung ×1,5.
+  it("findet einen Zick-Zack, der erst nach einem gleichgerichteten Sprung beginnt", () => {
+    // 2,9,15,8: 2→9(+7) 9→15(+6, gleiche Richtung → Wechsel-Bruch); der Neustart 9,15,8 ist ein gültiger Zick-Zack.
+    // Keine Treppe (Schritte +7/+6 > 3). Nur der Wechsel 9,15,8 zahlt auf seiner 3. Karte (×1,40).
     const deck = [["R", 2], ["B", 9], ["G", 15], ["Y", 8]];
-    // pos0 Treppe(1) · pos1 Treppe(1)+Wechsel(1)→×1,5 · pos2 Treppe(1,25)+Wechsel(1)→×1,875 · pos3 Wechsel(1,25).
-    expect(mults(deck)).toEqual([1, 1.5, 1.875, 1.25]);
-    expect(typesAt(deck, 2)).toEqual(["treppe", "wechsel"]);
-    expect(typesAt(deck, 3)).toEqual(["wechsel"]);      // 9,15,8 Zick-Zack via Restart, 3. Karte → 1,25
+    expect(mults(deck)).toEqual([1, 1, 1, 1.4]);
+    expect(typesAt(deck, 2)).toEqual(["wechsel"]);
+    expect(typesAt(deck, 3)).toEqual(["wechsel"]);
   });
 });
 
@@ -67,7 +69,7 @@ describe("Segment = Arena (Formationen enden an Segmentgrenzen)", () => {
     // Vier R-Karten ganz in Segment 0 → Farbblock.
     expect(mults([["R", 5], ["R", 7], ["R", 6], ["R", 8]])).toEqual([1, 1, 1.35, 1.55]);
     // Vier R-Karten über die Grenze 4|5 gelegt (Pos 3–6) → in zwei Hälften à 2 → kein Farbblock.
-    // Enge Werte (Diff <4, keine 3er-Steigung) → auch kein Wechsel/keine Treppe.
+    // Enge Werte (Diff <5, keine 3er-Steigung) → auch kein Wechsel/keine Treppe.
     const straddle = [["R", 6], ["B", 5], ["G", 7], ["R", 6], ["R", 8], ["R", 5], ["R", 7]];
     expect(mults(straddle)).toEqual([1, 1, 1, 1, 1, 1, 1]);
   });
@@ -75,10 +77,10 @@ describe("Segment = Arena (Formationen enden an Segmentgrenzen)", () => {
 
 describe("Stapelung mehrerer Formationen (Produkt × Überlappungsbonus)", () => {
   it("gleichfarbig + streng steigend → Farbblock × Treppe × Überlappung auf der 3. Karte", () => {
-    const deck = [["R", 1], ["R", 3], ["R", 5]]; // alle R (Farbblock) + streng steigend (Treppe)
+    const deck = [["R", 1], ["R", 3], ["R", 5]]; // alle R (Farbblock) + streng steigend, Schritte +2 (Treppe)
     expect(typesAt(deck, 2)).toEqual(["farbblock", "treppe"]);
-    // pos2: Farbblock ×1,35 · Treppe ×1,25 · Überlappung (2 Formationen) ×1,5 = 2,53125. [#Pass4]
-    expect(+forms(deck)[2].mult.toFixed(4)).toBeCloseTo(1.35 * 1.25 * 1.5);
+    // pos2: Farbblock ×1,35 · Treppe ×1,35 · Überlappung (2 Formationen) ×1,5. [#161 FB-5: Treppe 1,25→1,35]
+    expect(+forms(deck)[2].mult.toFixed(4)).toBeCloseTo(1.35 * 1.35 * 1.5);
   });
 });
 
@@ -98,7 +100,7 @@ describe("formationPotential (Startdeck-Band, #Pass6)", () => {
     expect(+formationPotential(idOrder(4), deck).toFixed(4)).toBeCloseTo(1.55);
   });
   it("= 0 für eine formationsfreie Anordnung", () => {
-    // 1,2,1: die beiden 1er sind nicht benachbart (kein Paar), Diffs <4 (kein Wechsel), keine Treppe, Farben verschieden.
+    // 1,2,1: die beiden 1er sind nicht benachbart (kein Paar), Diffs <5 (kein Wechsel), keine Treppe, Farben verschieden.
     const deck = [["R", 1], ["B", 2], ["G", 1]].map(card);
     expect(formationPotential(idOrder(3), deck)).toBe(0);
   });
@@ -166,7 +168,8 @@ describe("Formationswerkzeuge (V2 §22.6 E)", () => {
     expect(hasType(f(deck, ["E3"]), 3, "treppe")).toBe(true);
   });
   it("E4 Großer Schritt: Treppe darf einmal einen Rückschritt enthalten", () => {
-    const deck = [["R", 3], ["B", 7], ["G", 5], ["Y", 9]]; // 3,7,5,9
+    const deck = [["R", 3], ["B", 5], ["G", 4], ["Y", 6]]; // 3,5,4,6: Schritte ≤3, ein Rückschritt (5→4)
+    expect(hasType(f(deck, []), 3, "treppe")).toBe(false);
     expect(hasType(f(deck, ["E4"]), 3, "treppe")).toBe(true);
   });
 });

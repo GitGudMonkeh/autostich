@@ -2,6 +2,7 @@ import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, critChanceRawFor, hasCrit
 import { lightningCritRaw } from "../game/skills.js";
 import { PERK_DECLINE_COINS } from "../game/constants.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
+import { FormationPanel } from "./FormationPanel.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { PanelMascot } from "./PanelMascot.jsx";
 import perkMascot from "../assets/mascots/perk.gif";
@@ -119,6 +120,11 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte je Farbe</div>
             <DeckHistogram deck={deck} />
           </div>
+        </div>
+
+        {/* #161 FB-1: aktive Formationen des Layouts als Kontext (v. a. für A-Deck-/Formations-Perks). */}
+        <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
+          <FormationPanel state={state} />
         </div>
         </div>
       </div>

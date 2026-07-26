@@ -2,6 +2,8 @@ import { suitColor, suitName, SUIT_ORDER, SHOP_CATEGORIES, SHOP_CATEGORY_LABELS 
 import { SEGMENT_SIZE, FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
 import { SHOP_ITEM_DEFS, SEGMENT_BOUNDARIES } from "../game/shop.js";
 import { CardGrid } from "./CardGrid.jsx";
+import { FormationPanel } from "./FormationPanel.jsx";
+import { formationBorder } from "./formationStyle.js";
 import { useEscape } from "./useEscape.js";
 
 const GOLD = "#d4a63a";
@@ -66,6 +68,8 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
                 );
               })}
             </div>
+            {/* #161 FB-1: aktive Formationen als Kontext — Farballianz verbindet Farben für Farbblöcke. */}
+            <FormationPanel state={state} className="mt-4" />
           </div>
         ) : spec.boundary ? (
           // #124: Grenze im VOLLEN Board wählen — anklickbare Trennlinie zwischen den Segmenten, im Kontext der Kartenreihenfolge.
@@ -84,8 +88,9 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
                     <div className="grid grid-cols-5 gap-1.5 flex-1">
                       {segCards.map((c, k) => {
                         const pos = start + k; const col = suitColor(c.suit);
+                        const fb = formationBorder((state.formations || [])[pos]); // #161 FB-1: Formationsrand sichtbar machen
                         return (
-                          <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px solid ${col}55` }}>
+                          <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px ${fb.dashed ? "dashed" : "solid"} ${fb.color || col + "55"}` }}>
                             <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
                             <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
                           </div>
@@ -127,6 +132,8 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
                 );
               })}
             </div>
+            {/* #161 FB-1: aktive Formationen als Kontext — welcher Typ ist im Layout vertreten? */}
+            <FormationPanel state={state} className="mt-4" />
           </div>
         ) : spec.category ? (
           <div className="mt-4">
@@ -190,8 +197,10 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
                   <div className="grid grid-cols-5 gap-1.5 flex-1">
                     {segCards.map((c, k) => {
                       const pos = start + k; const col = suitColor(c.suit);
+                      const fb = formationBorder((state.formations || [])[pos]); // #161 FB-1: Formationsrand sichtbar machen
+                      const bcol = active ? GOLD : fb.color || col + "55";
                       return (
-                        <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px solid ${active ? GOLD : col + "55"}` }}>
+                        <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px ${!active && fb.dashed ? "dashed" : "solid"} ${bcol}` }}>
                           <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
                           <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
                         </div>

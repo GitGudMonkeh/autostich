@@ -9,7 +9,7 @@ import * as C from "./constants.js";
    Jeder Pick addiert `step` auf das State-Feld `field`; die Engine liest die Summen.
    ============================================================ */
 export const STAT_DEFS = {
-  critChance: { id: "critChance", label: "Crit-Chance",           field: "statCritChance", step: C.STAT_CRIT_CHANCE_STEP, blurb: "+5 pp",      desc: "+5 Prozentpunkte Crit-Chance." },
+  critChance: { id: "critChance", label: "Crit-Chance",           field: "statCritChance", step: C.STAT_CRIT_CHANCE_STEP, blurb: "+7 pp",      desc: "+7 Prozentpunkte Crit-Chance." },
   critMult:   { id: "critMult",   label: "Crit-Multiplikator",    field: "statCritMult",   step: C.STAT_CRIT_MULT_STEP,   blurb: "+0,25×",    desc: "+0,25× Crit-Multiplikator (auf Basis 1,5×)." },
   formMult:   { id: "formMult",   label: "Formations-Multiplikator", field: "statFormMult", step: C.STAT_FORM_MULT_STEP, blurb: "+5 %",       desc: "+5 % Score auf einen Sieg mit mindestens einer aktiven Formation (höchstens 1× pro Stich)." },
   streakMult: { id: "streakMult", label: "Serien-Multiplikator",  field: "statStreakMult", step: C.STAT_STREAK_MULT_STEP, blurb: "+2 %/Serie", desc: "+2 % Score pro aktuellem Serienpunkt." },

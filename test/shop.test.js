@@ -514,7 +514,7 @@ describe("Shop-Formationsitems — F1/F2/F3 (Shop-Spec §9)", () => {
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
     expect(r.shop.coins).toBe(2);
-    expect(r.shop.permanentEffects.switchMinDifference).toBe(3);
+    expect(r.shop.permanentEffects.switchMinDifference).toBe(4); // #161 FB-5: F2 senkt 5 → 4
     expect(r.shop.boughtNonRepeatableIds).toEqual(["F2"]);
     expect(Array.isArray(r.formations)).toBe(true); // Formationen wurden neu berechnet
   });
@@ -587,7 +587,7 @@ describe("Shop-Formationsitem — F6 Nachhall (Shop-Spec §9)", () => {
     expect(on[2].afterglowFactor).toBeCloseTo(1.25);
     expect(on[3].formations.some((f) => f.type === "nachhall")).toBe(false); // kein Kaskadieren: Empfänger sendet nicht weiter
   });
-  it("nimmt den höchsten Einzel-Endfaktor (Farbblock 1,35 vor Treppe 1,25)", () => {
+  it("nimmt den höchsten Einzel-Endfaktor (Farbblock und Treppe je 1,35 → zuerst erfasster gewinnt)", () => {
     const deck = [
       { id: "a", suit: "R", value: 1 }, { id: "b", suit: "R", value: 2 }, { id: "c", suit: "R", value: 3 },
       { id: "d", suit: "B", value: 20 }, { id: "e", suit: "G", value: 9 },

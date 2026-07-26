@@ -7,7 +7,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer (#93 F1)
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
-import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
+import { computeFormations, positionHasFormation, summarizeFormations, SEGMENT_SIZE } from "./formations.js";
 import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, SHOP_ITEM_DEFS, anchorTypeAt, playSequence } from "./shop.js";
 
 function sumHook(perks, name, ctx) {
@@ -61,6 +61,7 @@ export function resolveTrick(state, rng = Math.random) {
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, l5Used = [], l8Wins = {}, chainArmed = false, pos20Bonus = 0, // Legendaries (V2 §22.6 L): L4 Wert-Gewinn / L5 Jackpot-Verbrauch / L8 Erfolge / L10 Kette / L11 Wiederholung
     crits, critBonusScore, bestTrickScore,
+    maxFormations = 0, formationScore = 0, // #161 FB-2: Run-Rückblick — Peak gleichzeitig aktiver Formationen + Score-Anteil aus Formationen
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
     iceTemp = {}, frostbitePending = [], frostbiteActive = [], // Eis (#93 F3): temp. Wertboni je card.id / Frostbiss-Markierungen
     shop = null, economyStatLevel = 0, // Shop-System (Shop-Spec §3): Münzstand + Einkommen-Level
@@ -83,6 +84,8 @@ export function resolveTrick(state, rng = Math.random) {
   const anchors = (shop && shop.anchors) || []; // Shop-Positionsanker (§8) — an der Deckposition
   const permEffects = (shop && shop.permanentEffects) || {}; // Shop-Formationsitems (§9) — permanente Regeländerungen
   if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, permEffects);
+  // #161 FB-2: Peak gleichzeitig aktiver Formationen über den Run — zu Durchlaufbeginn, sobald das Layout feststeht.
+  if (pos === 0) maxFormations = Math.max(maxFormations || 0, summarizeFormations(formations).count);
   const posForm = formations[actualPos] || { mult: 1, formations: [] };
   const formationMult = posForm.mult || 1;
   const hasFormation = positionHasFormation(posForm);
@@ -268,6 +271,9 @@ export function resolveTrick(state, rng = Math.random) {
     critBonus = gained - scoreBeforeCrit;
     score += gained;
     breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, total: gained };
+    // #161 FB-2: additiver Score-Anteil der Formations-Faktoren (echte Formationen + Formations-Stat + Nachhall + Kern).
+    const formFactorTotal = formMult * afterglowMult * coreMult;
+    if (formFactorTotal > 1) formationScore += gained * (1 - 1 / formFactorTotal);
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz: Ladungsgewinn — bei Crit Basis +1 (aktiv) + Skill-Boni; bei Sieg OHNE Crit +1 via Statische Aufladung (#93 F2).
@@ -482,7 +488,7 @@ export function resolveTrick(state, rng = Math.random) {
     score, winStreak, bestStreak, wins, losses, ties,
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 
-    crits, critBonusScore, bestTrickScore,
+    crits, critBonusScore, bestTrickScore, maxFormations, formationScore, // #161 FB-2: Run-Rückblick
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     freePerkReroll: newFreePerkReroll, freeSkillReroll: newFreeSkillReroll, // Planung (§10 P-L1)
     critFollowArmed, weaknessArmed, misfireScore,
