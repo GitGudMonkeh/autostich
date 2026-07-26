@@ -139,6 +139,12 @@ describe("Karten-Shop-Familien — Deck-Effekte (Spec §4.2 Kartenfamilien)", ()
     expect(countBumped(SHOP_FAMILY_DEFS.SF_SEGMENT_REFINE.tiers[1].onPick(deck, makeRng(3), { segment: seg, order }))).toBe(2);
     expect(countBumped(SHOP_FAMILY_DEFS.SF_SEGMENT_REFINE.tiers[2].onPick(deck, makeRng(3), { segment: seg, order }))).toBe(3);
   });
+  it("SF_RECOLOR erhält Karten-Marker (Ionisierung/Frost) bei Farbänderung", () => {
+    const deck = mkDeck().map((c) => (c.id === "c0" ? { ...c, ionStacks: 2, frozen: true } : c));
+    const after = SHOP_FAMILY_DEFS.SF_RECOLOR.tiers[1].onPick(deck, makeRng(1), { cardIds: ["c0"], colors: { c0: "G" } });
+    const c = after.find((x) => x.id === "c0");
+    expect([c.suit, c.ionStacks, c.frozen]).toEqual(["G", 2, true]);
+  });
   it("Karten-Effekte sind immutabel (Original-Deck unverändert)", () => {
     const deck = mkDeck();
     const snapshot = JSON.stringify(deck);

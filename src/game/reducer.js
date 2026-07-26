@@ -1,12 +1,13 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick } from "./families.js";
+import { SHOP_FAMILY_DEFS, refineDelta } from "./shopFamilies.js";
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
-import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance, purchaseLogEntry } from "./shop.js";
+import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance, purchaseLogEntry, familyPurchaseLogEntry } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -89,6 +90,14 @@ export function menuState() {
   return { phase: "menu" };
 }
 
+// Ziel-Bedarf eines Shop-Kaufs (flaches Item ODER Shop-Familie #164) — liefert den Ziel-Deskriptor
+// { cards?, color?, segment?, position?, ... }. Familien tragen ihn als `pickTarget` der Zielstufe.
+function shopTargetSpec(st) {
+  if (!st) return {};
+  if (st.familyId) return SHOP_FAMILY_DEFS[st.familyId]?.tiers?.[st.famTier]?.pickTarget || {};
+  return SHOP_ITEM_DEFS[st.itemId]?.target || {};
+}
+
 export function reducer(state, action) {
   switch (action.type) {
     case "START_RUN":   // frischer Lauf aus dem Menü / Neustart
@@ -118,6 +127,13 @@ export function reducer(state, action) {
       if (!offer) return state;
       if ((shop.purchasedOfferIds || []).includes(offer.offerId)) return state; // dasselbe Angebot nicht zweimal
       if ((shop.coins || 0) < offer.price) return state;                        // nicht bezahlbar
+      // Shop-Familie (#164): Karten-Familien haben stets ein Ziel (pickTarget) → in die shop-target-Phase.
+      if (offer.family) {
+        const fam = SHOP_FAMILY_DEFS[offer.familyId];
+        if (!fam || !fam.tiers[offer.famTier]) return state;
+        return { ...state, phase: "shop-target",
+                 shopTarget: { offerId: offer.offerId, familyId: offer.familyId, famTier: offer.famTier, cards: [], colors: {}, segment: null, position: null, colorPair: [], boundary: null, formationType: null, category: null, targetOfferId: null } };
+      }
       const def = SHOP_ITEM_DEFS[offer.itemId];
       if (!def) return state;
       if (def.target) { // Ziel-Auswahl nötig (§12.2): in die shop-target-Phase; Münzen erst nach Bestätigung.
@@ -142,8 +158,7 @@ export function reducer(state, action) {
     // ---- Shop-Ziel-Auswahl (Shop-Spec §12.2) — Karten/Farben/Segment wählen; Münzen erst bei CONFIRM. ----
     case "SHOP_TARGET_CARD": {
       if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
-      const need = def?.target?.cards || 0;
+      const need = shopTargetSpec(state.shopTarget).cards || 0;
       if (!need || !state.deck.some((c) => c.id === action.cardId)) return state;
       let cards = state.shopTarget.cards.slice();
       const colors = { ...state.shopTarget.colors };
@@ -155,17 +170,15 @@ export function reducer(state, action) {
     }
     case "SHOP_TARGET_COLOR": {
       if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
-      if (!def?.target?.color || !state.shopTarget.cards.includes(action.cardId)) return state;
+      if (!shopTargetSpec(state.shopTarget).color || !state.shopTarget.cards.includes(action.cardId)) return state;
       const card = state.deck.find((c) => c.id === action.cardId);
       if (!card || action.color === card.suit || !C.SUIT_ORDER.includes(action.color)) return state; // andere gültige Farbe
       return { ...state, shopTarget: { ...state.shopTarget, colors: { ...state.shopTarget.colors, [action.cardId]: action.color } } };
     }
     case "SHOP_TARGET_SEGMENT": {
       if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
       const nSeg = Math.ceil(state.playerOrder.length / SEGMENT_SIZE);
-      if (!def?.target?.segment || !(action.segment >= 0 && action.segment < nSeg)) return state;
+      if (!shopTargetSpec(state.shopTarget).segment || !(action.segment >= 0 && action.segment < nSeg)) return state;
       return { ...state, shopTarget: { ...state.shopTarget, segment: action.segment } };
     }
     case "SHOP_TARGET_POSITION": { // Anker-Position wählen (§8): 0..39, nur freie Positionen (max 1 Anker/Position).
@@ -221,12 +234,35 @@ export function reducer(state, action) {
     case "SHOP_TARGET_CONFIRM": {
       if (state.phase !== "shop-target" || !state.shopTarget) return state;
       const st = state.shopTarget;
-      const def = SHOP_ITEM_DEFS[st.itemId];
       const shop = state.shop || {};
       const offer = (shop.offers || []).find((o) => o.offerId === st.offerId);
-      if (!def || !offer) return state;
-      if ((shop.purchasedOfferIds || []).includes(offer.offerId)) return state;   // schon gekauft
-      if ((shop.coins || 0) < offer.price) return state;                          // nicht bezahlbar
+      if (!offer) return state;
+      if ((shop.purchasedOfferIds || []).includes(offer.offerId)) return state;     // schon gekauft
+      if ((shop.coins || 0) < offer.price) return state;                            // nicht bezahlbar
+      // ---- Shop-Familie (#164): kumulatives Kartenpaket via applyFamilyPick; Rang in shop.familyTiers. ----
+      if (st.familyId) {
+        const fam = SHOP_FAMILY_DEFS[st.familyId];
+        const tierDef = fam && fam.tiers[st.famTier];
+        if (!fam || !tierDef) return state;
+        const spec = tierDef.pickTarget || {};
+        if (spec.cards && st.cards.length !== spec.cards) return state;             // genau N Karten
+        if (spec.color && st.cards.some((id) => !st.colors[id])) return state;      // je Karte eine Farbe
+        if (spec.segment && st.segment == null) return state;                        // ein Segment
+        const prev = (shop.familyTiers || {})[st.familyId] || 0;                     // Feinschliff-Differenz aus dem gehaltenen Rang
+        const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, order: state.playerOrder,
+          refineDelta: fam.refineDiff ? refineDelta(prev, st.famTier) : undefined };
+        const { deck } = applyFamilyPick(st.familyId, st.famTier,
+          { familyTiers: {}, deck: state.deck, roles: state.roles, target }, action.rng, SHOP_FAMILY_DEFS);
+        const newDeck = deck || state.deck;
+        const newShop = { ...shop, coins: (shop.coins || 0) - offer.price,          // Preis erst jetzt abziehen (§12.2)
+          purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
+          familyTiers: { ...(shop.familyTiers || {}), [st.familyId]: st.famTier },
+          purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(st.familyId, offer.category, st.famTier, offer.price, state.cycle, target)] };
+        const formations = computeFormations(state.playerOrder, newDeck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects, state.familyTiers);
+        return { ...state, deck: newDeck, formations, phase: "shop", shopTarget: null, shop: newShop };
+      }
+      const def = SHOP_ITEM_DEFS[st.itemId];
+      if (!def) return state;
       const spec = def.target || {};
       if (spec.cards && st.cards.length !== spec.cards) return state;             // genau N Karten
       if (spec.color && st.cards.some((id) => !st.colors[id])) return state;      // je gewählter Karte eine Farbe

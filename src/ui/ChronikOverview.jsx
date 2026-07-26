@@ -3,6 +3,8 @@ import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { activeShopUpgrades, SHOP_ITEM_DEFS } from "../game/shop.js";
+import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
+import { TIER_META, romanOf } from "../game/rarity.js";
 import { suitName, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { FORMATION_TYPE_LABELS } from "../game/formations.js";
 
@@ -84,8 +86,10 @@ export function ChronikOverview({ state, onClose }) {
                 <div className="uppercase tracking-wide opacity-50 mb-1.5">Käufe · {purchaseLog.length}</div>
                 <div className="grid gap-1.5 max-h-56 overflow-y-auto pr-1">
                   {purchaseLog.map((e, i) => {
-                    const d = SHOP_ITEM_DEFS[e.itemId] || {};
-                    const tl = TIER_LABEL[e.tier] || { l: e.tier, c: "#8a8a95" };
+                    // Shop-Familie (#164): Name „Familie III" + Stufenfarbe/-label aus TIER_META; sonst flaches Item.
+                    const fam = e.family ? SHOP_FAMILY_DEFS[e.itemId] : null;
+                    const d = fam ? { name: `${fam.name} ${romanOf(e.tier)}`, description: fam.tiers[e.tier]?.desc } : (SHOP_ITEM_DEFS[e.itemId] || {});
+                    const tl = fam ? { l: TIER_META[e.tier]?.label || "", c: TIER_META[e.tier]?.color || "#8a8a95" } : (TIER_LABEL[e.tier] || { l: e.tier, c: "#8a8a95" });
                     const tgt = targetLabel(e.target, deck);
                     return (
                       <div key={i} className="leading-snug">

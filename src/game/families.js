@@ -783,10 +783,12 @@ export function layoutFamilies(familyTiers) {
    - CUMULATIVE (Kat. A / Shop-Karten, #163/#164): jede gewählte Stufe führt ihr Paket EINMALIG aus
      (tierDef.onPick auf dem Deck); frühere Deckänderungen bleiben. Deterministisch über injizierten rng.
    - ROLE (Kat. C-Rollen, #163): Rollenziele/-regel steigen; der Ziel-Flow folgt mit den C-Familien.
-   Der aufrufende Reducer bleibt frei von Registry-Wissen. */
-export function applyFamilyPick(familyId, targetTier, ctx = {}, rng = Math.random) {
+   Der aufrufende Reducer bleibt frei von Registry-Wissen.
+   `defs` erlaubt die Wiederverwendung durch die Shop-Familien (#164, SHOP_FAMILY_DEFS): dieselbe CUMULATIVE-
+   onPick-/ROLE-Logik, nur ein anderer Familien-Katalog. Default = die Perk-Familien (FAMILY_DEFS). */
+export function applyFamilyPick(familyId, targetTier, ctx = {}, rng = Math.random, defs = FAMILY_DEFS) {
   const { familyTiers = {}, deck = null, roles = null, target = null } = ctx;
-  const fam = FAMILY_DEFS[familyId];
+  const fam = defs[familyId];
   if (!fam || !targetTier) return { familyTiers, deck, roles }; // ungültige Familie/Stufe → No-Op
   const tierDef = fam.tiers[targetTier] || null;
   let nextDeck = deck, nextRoles = roles;

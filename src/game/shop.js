@@ -1,5 +1,7 @@
 import * as C from "./constants.js";
 import { SEGMENT_SIZE, FORMATION_TYPE_LABELS } from "./formations.js";
+import { TIERS, TIER_WEIGHTS, priceOfTier } from "./rarity.js";
+import { SHOP_FAMILY_DEFS } from "./shopFamilies.js";
 
 /* ============================================================
    SHOP-SYSTEM (Shop-Spec) — reine Logik, kein Math.random / Date.
@@ -15,23 +17,6 @@ import { SEGMENT_SIZE, FORMATION_TYPE_LABELS } from "./formations.js";
    apply() gibt ein State-Patch zurück (z. B. { deck }, { shop:{…} }); die Münz-/Kauf-Buchhaltung macht
    der Reducer generisch (BUY_ITEM). Ziel-Items (targetMode) laufen über den Target-Flow (ab S2).
    ============================================================ */
-
-/* ---- Deck-Helfer für Kartenitems (S2) — immutabel, alle Marker bleiben an card.id. ---- */
-const bumpCards = (deck, ids, delta) => deck.map((c) => (ids.includes(c.id) ? { ...c, value: c.value + delta } : c));
-const recolor   = (deck, colors) => deck.map((c) => (colors[c.id] ? { ...c, suit: colors[c.id] } : c));
-function swapPair(deck, ids, key) { // Werte- bzw. Farb-Tausch zweier Karten (K3/K4)
-  const [a, b] = ids;
-  const ca = deck.find((c) => c.id === a), cb = deck.find((c) => c.id === b);
-  if (!ca || !cb || a === b) return deck;
-  return deck.map((c) => (c.id === a ? { ...c, [key]: cb[key] } : c.id === b ? { ...c, [key]: ca[key] } : c));
-}
-// Segmentveredelung (K-L1): Karten auf den Positionen des Segments (aktuelle Reihenfolge) +delta — an card.id,
-// wandert also bei späterer Umordnung mit der Karte mit (Spec §7 K-L1).
-function segmentBump(deck, order, segIndex, delta) {
-  const start = segIndex * SEGMENT_SIZE, ids = new Set();
-  for (let k = start; k < start + SEGMENT_SIZE && k < order.length; k++) ids.add(deck[order[k]].id);
-  return deck.map((c) => (ids.has(c.id) ? { ...c, value: c.value + delta } : c));
-}
 
 /* ---- Shop-Positionsanker (Shop-Spec §8) — an der Deckposition (0–39), nicht an card.id. ---- */
 // Anker-Typ auf einer Position (max 1 Anker je Position) bzw. ob die Position belegt ist.
@@ -51,55 +36,10 @@ const addAnchor = (shop, type, position) => ({ ...shop, anchors: [...(shop.ancho
 // Permanente Formations-Regeländerung setzen (Shop §9 F-Items).
 const setPE = (shop, patch) => ({ ...shop, permanentEffects: { ...(shop.permanentEffects || {}), ...patch } });
 
-/* Konkrete Shop-Items (Shop-Spec §7 Kartenitems; Anker/Formationen/Planung folgen S3–S5).
-   `target` = Ziel-Bedarf für den Target-Flow: { cards?: N, color?: bool (Farbe je gewählter Karte), segment?: bool }.
-   apply(state, target, rng) -> Patch (hier stets { deck }); target = { cardIds, colors: { id: suit }, segment }. */
+/* Konkrete Shop-Items (Anker/Formationen/Planung — Kategorie `cards` ist zu Shop-FAMILIEN migriert, #164;
+   die flachen K-Items sind entfernt, siehe src/game/shopFamilies.js SHOP_FAMILY_DEFS).
+   `target` = Ziel-Bedarf für den Target-Flow. apply(state, target, rng) -> Patch. */
 export const SHOP_ITEM_DEFS = {
-  K1:  { id: "K1", category: "cards", name: "Feinschliff", tier: "cheap", repeatable: true,
-         targetMode: "single-card", target: { cards: 1 },
-         description: "Wähle eine Karte. Sie erhält dauerhaft +1 Wert.",
-         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 1) }) },
-  K2:  { id: "K2", category: "cards", name: "Umlackierung", tier: "cheap", repeatable: true,
-         targetMode: "card-and-new-color", target: { cards: 1, color: true },
-         description: "Wähle eine Karte und eine der drei anderen Farben. Die Karte erhält dauerhaft diese Farbe.",
-         apply: (s, t) => ({ deck: recolor(s.deck, t.colors) }) },
-  K3:  { id: "K3", category: "cards", name: "Werttausch", tier: "cheap", repeatable: true,
-         targetMode: "two-distinct-cards", target: { cards: 2 },
-         description: "Wähle zwei Karten. Sie tauschen ihre aktuellen Dauerwerte.",
-         apply: (s, t) => ({ deck: swapPair(s.deck, t.cardIds, "value") }) },
-  K4:  { id: "K4", category: "cards", name: "Farbtausch", tier: "cheap", repeatable: true,
-         targetMode: "two-distinct-cards", target: { cards: 2 },
-         description: "Wähle zwei Karten. Sie tauschen ihre Farben.",
-         apply: (s, t) => ({ deck: swapPair(s.deck, t.cardIds, "suit") }) },
-  K5:  { id: "K5", category: "cards", name: "Verstärkung", tier: "strong", repeatable: true,
-         targetMode: "single-card", target: { cards: 1 },
-         description: "Wähle eine Karte. Sie erhält dauerhaft +2 Wert.",
-         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 2) }) },
-  K6:  { id: "K6", category: "cards", name: "Doppelter Feinschliff", tier: "strong", repeatable: true,
-         targetMode: "two-distinct-cards", target: { cards: 2 },
-         description: "Wähle zwei Karten. Beide erhalten dauerhaft +1 Wert.",
-         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 1) }) },
-  K7:  { id: "K7", category: "cards", name: "Farbduo", tier: "strong", repeatable: true,
-         targetMode: "two-cards-and-colors", target: { cards: 2, color: true },
-         description: "Wähle zwei Karten und lege für jede eine neue Farbe fest (dieselbe erlaubt).",
-         apply: (s, t) => ({ deck: recolor(s.deck, t.colors) }) },
-  K8:  { id: "K8", category: "cards", name: "Meisterstück", tier: "premium", repeatable: true,
-         targetMode: "single-card", target: { cards: 1 },
-         description: "Wähle eine Karte. Sie erhält dauerhaft +3 Wert.",
-         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 3) }) },
-  K9:  { id: "K9", category: "cards", name: "Dreifacher Feinschliff", tier: "premium", repeatable: true,
-         targetMode: "three-distinct-cards", target: { cards: 3 },
-         description: "Wähle drei Karten. Alle erhalten dauerhaft +1 Wert.",
-         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 1) }) },
-  K10: { id: "K10", category: "cards", name: "Farbtrio", tier: "premium", repeatable: true,
-         targetMode: "three-cards-and-colors", target: { cards: 3, color: true },
-         description: "Wähle drei Karten und lege für jede eine neue Farbe fest.",
-         apply: (s, t) => ({ deck: recolor(s.deck, t.colors) }) },
-  "K-L1": { id: "K-L1", category: "cards", name: "Segmentveredelung", tier: "legendary", legendary: true, repeatable: false,
-         targetMode: "segment", target: { segment: true },
-         description: "Wähle eines der acht Segmente. Alle fünf Karten dieses Segments erhalten dauerhaft +1 Wert (bleibt an den Karten).",
-         apply: (s, t) => ({ deck: segmentBump(s.deck, s.playerOrder, t.segment, 1) }) },
-
   // ---- Anker (Shop-Spec §8) — Positionsanker; apply legt {type,position} in shop.anchors an. targetMode "position". ----
   A1: { id: "A1", category: "anchors", name: "Kraftanker", tier: "cheap", repeatable: true, anchorType: "power",
         targetMode: "position", target: { position: true },
@@ -168,7 +108,7 @@ export const SHOP_ITEM_DEFS = {
   P3: { id: "P3", category: "planning", name: "Warenwechsel", tier: "cheap", repeatable: true,
         targetMode: "category", target: { category: true },
         description: "Würfle eine Kategorie des aktuellen Shops einmal neu (nicht gekaufte Angebote werden ersetzt).",
-        apply: (s, t, rng) => ({ shop: rerollCategory(s.shop, t.category, SHOP_ITEM_DEFS, rng, s.perks, "P3") }) },
+        apply: (s, t, rng) => ({ shop: rerollCategory(s.shop, t.category, SHOP_ITEM_DEFS, rng, s.perks, "P3", SHOP_FAMILY_DEFS) }) },
   P4: { id: "P4", category: "planning", name: "Reservierung", tier: "strong", repeatable: true,
         targetMode: "offer", target: { offer: true },
         description: "Wähle ein anderes, noch nicht gekauftes Shop-Item. Es wird im nächsten Shop zusätzlich angeboten.",
@@ -176,7 +116,11 @@ export const SHOP_ITEM_DEFS = {
         apply: (s, t) => {
           const off = (s.shop.offers || []).find((o) => o.offerId === t.offerId);
           if (!off) return {};
-          return { shop: { ...s.shop, reservedItem: { itemId: off.itemId, category: off.category, tier: off.tier, price: off.price, legendary: !!off.legendary } } };
+          // #164: Familien-Angebot familienbewusst reservieren (familyId/famTier statt itemId).
+          const reservedItem = off.family
+            ? { family: true, familyId: off.familyId, famTier: off.famTier, category: off.category, price: off.price }
+            : { itemId: off.itemId, category: off.category, tier: off.tier, price: off.price, legendary: !!off.legendary };
+          return { shop: { ...s.shop, reservedItem } };
         } },
   P5: { id: "P5", category: "planning", name: "Legendensuche: Perks", tier: "premium", repeatable: true,
         available: (shop) => (shop.perkLegendaryBonus || 0) < C.MAX_LEGENDARY_CHANCE_BONUS, // bis Cap (§10)
@@ -243,10 +187,15 @@ export const SEGMENT_BOUNDARIES = Array.from({ length: C.TRICKS_PER_CYCLE / SEGM
 // aufgelöste Ziel-Deskriptor (Position/Segment/Farbpaar/Grenze/Formationstyp/Kategorie/Karten). Pur.
 export const purchaseLogEntry = (def, price, cycle, target = null) =>
   ({ itemId: def.id, category: def.category, tier: def.tier, price, cycle, target });
+// #164: Kauf-Log-Eintrag einer Shop-Familie — `tier` ist die numerische Zielstufe (1–4), `family` markiert ihn
+// für die familienbewusste Anzeige (ChronikOverview). itemId = familyId (Name-Auflösung über SHOP_FAMILY_DEFS).
+export const familyPurchaseLogEntry = (familyId, category, tier, price, cycle, target = null) =>
+  ({ itemId: familyId, category, tier, price, cycle, target, family: true });
 
 export function initialShop() {
   return {
     coins: C.STARTING_COINS,        // §3: globaler Run-State, kein Cap, nie negativ
+    familyTiers: {},                // #164: Rang je Shop-Familie { [familyId]: 1|2|3|4 } (Angebotsfilter; getrennt von den Perk-Familien)
     purchaseLog: [],                // #127: run-langes Kauf-Protokoll (append-only, reine Anzeige)
     offers: null,                   // aktuelles Shop-Angebot (Array von Angebots-Instanzen) oder null außerhalb des Shops
     purchasedOfferIds: [],          // in DIESEM Shop gekaufte Angebots-Instanzen (offerId)
@@ -300,30 +249,66 @@ function drawDistinct(pool, n, rng) {
   return out;
 }
 
+/* ---- Shop-Familien (Shop-Spec §4.1, #164) — Angebots-/Reroll-Ziehung analog zu den flachen Items, aber als
+        {familyId, famTier}-Angebote (Preis/Farbe richten sich nach der Zielstufe). Eine Kategorie ist
+        „familiengetrieben", sobald `familyDefs` Familien mit dieser Kategorie enthält (Default {} → rein flach
+        wie bisher, damit bestehende Aufrufe/Fixtures unverändert bleiben). ---- */
+const familyCatsOf = (familyDefs) => new Set(Object.values(familyDefs || {}).map((f) => f.cat));
+// Anbietbare Stufen einer Shop-Familie beim Rang `cur`: alle echt darüber (§4.1). Ist die Familie abgeschlossen
+// (IV erreicht) UND wiederholbar (nur Karten-Familien, Nutzer-Entscheid #164), bleibt IV im Pool (Nachkauf).
+function offerableFamilyTiers(fam, cur) {
+  const base = TIERS.filter((t) => t > (cur || 0));
+  return base.length ? base : (fam && fam.repeatable ? [4] : []);
+}
+// `n` verschiedene Familien einer Kategorie ziehen (gewichtet nach TIER_WEIGHTS[tier]; eine Familie höchstens
+// einmal je Angebot, §2.1). `exclude` = bereits präsente Familien-IDs (Reroll). `mk(familyId, tier)` baut das Angebot.
+function drawFamilyOffers(cat, familyDefs, familyTiers, rng, n, mk, exclude) {
+  const skip = exclude || new Set();
+  let pool = [];
+  for (const fam of Object.values(familyDefs || {})) {
+    if (fam.cat !== cat || skip.has(fam.id)) continue;
+    for (const t of offerableFamilyTiers(fam, (familyTiers || {})[fam.id] || 0))
+      pool.push({ id: fam.id, tier: t, weight: TIER_WEIGHTS[t] || 0 });
+  }
+  const out = [];
+  while (out.length < n && pool.length) {
+    const total = pool.reduce((a, x) => a + x.weight, 0);
+    if (total <= 0) break;
+    let r = rng() * total, i = 0;
+    while (i < pool.length - 1 && r >= pool[i].weight) { r -= pool[i].weight; i += 1; }
+    const pick = pool[i];
+    out.push(mk(pick.id, pick.tier));
+    pool = pool.filter((x) => x.id !== pick.id); // eine Familie höchstens einmal je Angebot
+  }
+  return out;
+}
+
 /* Ein Shop-Angebot ziehen (Spec §5): pro Kategorie SHOP_ITEMS_PER_CATEGORY normale Items, dann
    Cheap-Garantie (§5.6) und höchstens EINE legendäre Ersetzung (§5.7). Deterministisch über den
    injizierten rng. Leere/zu kleine Pools → entsprechend weniger Angebote. `itemDefs` wird injiziert
    (Engine: SHOP_ITEM_DEFS; Tests: Fixtures). Rückgabe: Array von Angebots-Instanzen mit stabiler offerId. */
-export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = []) {
+export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = [], familyDefs = {}) {
+  const famCats = familyCatsOf(familyDefs);
   const all = Object.values(itemDefs || {});
-  if (all.length === 0) return [];
   const avail = all.filter((d) => isItemAvailable(d, shop, perks));
   const byCat = {};
-  for (const d of avail) (byCat[d.category] = byCat[d.category] || []).push(d);
+  for (const d of avail) if (!famCats.has(d.category)) (byCat[d.category] = byCat[d.category] || []).push(d); // familiengetriebene Kategorien nicht aus flachen Items
 
   let counter = 0;
   const mk = (d) => ({ offerId: `o${counter++}`, itemId: d.id, category: d.category, tier: d.tier, price: priceOf(d.tier), legendary: !!d.legendary });
+  const mkFam = (cat) => (familyId, famTier) => ({ offerId: `o${counter++}`, category: cat, familyId, famTier, price: priceOfTier(famTier), family: true, legendary: false });
 
   const offers = [];
   for (const cat of C.SHOP_CATEGORIES) {
-    const normals = (byCat[cat] || []).filter((d) => !d.legendary);
-    for (const d of drawDistinct(normals, C.SHOP_ITEMS_PER_CATEGORY, rng)) offers.push(mk(d));
+    if (famCats.has(cat)) offers.push(...drawFamilyOffers(cat, familyDefs, shop.familyTiers, rng, C.SHOP_ITEMS_PER_CATEGORY, mkFam(cat)));
+    else { const normals = (byCat[cat] || []).filter((d) => !d.legendary); for (const d of drawDistinct(normals, C.SHOP_ITEMS_PER_CATEGORY, rng)) offers.push(mk(d)); }
   }
   if (offers.length === 0) return offers;
 
   // Legendäre Ersetzung (§5.7) ZUERST (max 1): einmal je Shop würfeln; bei Erfolg eine Kategorie mit
   // verfügbarem Legendär wählen und eines ihrer Angebote ersetzen. Vor der Cheap-Garantie, damit diese
   // danach nicht wieder überschrieben werden kann (sonst könnte ein Shop ohne günstiges Item enden).
+  // Familien-Kategorien haben keine Legendäre (Legendäre sind dort in Stufe IV aufgegangen) → nur flache Kategorien.
   if (rng() < C.SHOP_LEGENDARY_CHANCE) {
     const legByCat = {};
     for (const d of avail) if (d.legendary) (legByCat[d.category] = legByCat[d.category] || []).push(d);
@@ -336,11 +321,12 @@ export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = [
     }
   }
 
-  // Cheap-Garantie (§5.6) ZULETZT: fehlt ein günstiges Item, ein NICHT-legendäres Angebot deterministisch
-  // durch ein zufällig gezogenes günstiges ersetzen (das gesetzte Legendär bleibt so erhalten).
-  if (!offers.some((o) => o.tier === "cheap")) {
-    const cheapPool = avail.filter((d) => !d.legendary && d.tier === "cheap");
-    const slots = offers.map((o, i) => (o.legendary ? -1 : i)).filter((i) => i >= 0);
+  // Cheap-Garantie (§5.6) ZULETZT: fehlt ein günstiges Angebot (Preis 8 — flache Stufe „cheap" ODER Familien-Stufe I),
+  // ein NICHT-legendäres, NICHT-Familien-Angebot deterministisch durch ein günstiges FLACHES Item ersetzen (das
+  // gesetzte Legendär und die Familien-Karten bleiben so erhalten).
+  if (!offers.some((o) => o.price === C.SHOP_PRICE.cheap)) {
+    const cheapPool = avail.filter((d) => !d.legendary && d.tier === "cheap" && !famCats.has(d.category));
+    const slots = offers.map((o, i) => (o.legendary || o.family ? -1 : i)).filter((i) => i >= 0);
     if (cheapPool.length && slots.length) {
       const repl = cheapPool[Math.floor(rng() * cheapPool.length)];
       offers[slots[Math.floor(rng() * slots.length)]] = mk(repl);
@@ -355,21 +341,28 @@ export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = [
    Die restlichen Slots der Kategorie werden mit neuen gültigen Items aufgefüllt. Legendär-Regeln (§5.7): höchstens
    EIN Legendär im Shop — liegt bereits eines woanders, erscheint hier keins; die Cheap-Garantie wird NICHT erneut
    global erzwungen. Deterministisch über den injizierten rng. */
-export function rerollCategory(shop = {}, category, itemDefs = {}, rng = Math.random, perks = [], excludeItemId = null) {
+export function rerollCategory(shop = {}, category, itemDefs = {}, rng = Math.random, perks = [], excludeItemId = null, familyDefs = {}) {
   const offers = shop.offers || [];
   const purchased = new Set(shop.purchasedOfferIds || []);
   const kept = offers.filter((o) => o.category !== category || purchased.has(o.offerId) || o.itemId === excludeItemId);
   const keptInCat = kept.filter((o) => o.category === category).length;
   const need = C.SHOP_ITEMS_PER_CATEGORY - keptInCat;
   if (need <= 0) return shop;                                // in dieser Kategorie ist nichts zu würfeln
+  const used = new Set(offers.map((o) => o.offerId));        // neue offerIds kollidieren nicht mit bestehenden
+  let n = 0;
+  const nextId = () => { let id; do { id = `o${n++}`; } while (used.has(id)); used.add(id); return id; };
+  // Familiengetriebene Kategorie (#164): Familien-Angebote neu ziehen, bereits präsente Familien ausschließen.
+  if (familyCatsOf(familyDefs).has(category)) {
+    const present = new Set(kept.filter((o) => o.category === category && o.family).map((o) => o.familyId));
+    const drawn = drawFamilyOffers(category, familyDefs, shop.familyTiers, rng, need,
+      (familyId, famTier) => ({ offerId: nextId(), category, familyId, famTier, price: priceOfTier(famTier), family: true, legendary: false }), present);
+    return { ...shop, offers: [...kept, ...drawn] };
+  }
   const presentIds = new Set(kept.map((o) => o.itemId));
   const legElsewhere = kept.some((o) => o.legendary);        // ein Legendär bleibt woanders → hier keins (§5.7)
   const pool = Object.values(itemDefs).filter((d) => d.category === category && d.id !== excludeItemId
     && !presentIds.has(d.id) && isItemAvailable(d, shop, perks));
   const normals = pool.filter((d) => !d.legendary);
-  const used = new Set(offers.map((o) => o.offerId));        // neue offerIds kollidieren nicht mit bestehenden
-  let n = 0;
-  const nextId = () => { let id; do { id = `o${n++}`; } while (used.has(id)); used.add(id); return id; };
   const mk = (d) => ({ offerId: nextId(), itemId: d.id, category: d.category, tier: d.tier, price: priceOf(d.tier), legendary: !!d.legendary });
   const drawn = drawDistinct(normals, need, rng).map(mk);
   // Legendär-Ersetzung (§5.7) nur wenn erlaubt: einmal würfeln, einen neu gezogenen Normal-Slot ersetzen.
@@ -384,15 +377,21 @@ export function rerollCategory(shop = {}, category, itemDefs = {}, rng = Math.ra
    als zusätzliches Angebot in seiner Kategorie an (behält Preis & Identität) und LÖSCHT die Reservierung — sie
    verfällt mit diesem Shop, unabhängig davon, ob gekauft wird. Nur anhängen, wenn das Item generell noch verfügbar
    ist (z. B. nicht inzwischen als Legendär/nicht-wiederholbar vergriffen). */
-export function withReservedOffer(shop = {}, itemDefs = {}, perks = []) {
+export function withReservedOffer(shop = {}, itemDefs = {}, perks = [], familyDefs = {}) {
   const reserved = shop.reservedItem;
   if (!reserved) return shop;
   const offers = shop.offers || [];
   const used = new Set(offers.map((o) => o.offerId));
   let id = "oRes", k = 0; while (used.has(id)) id = `oRes${k++}`;
-  const def = itemDefs[reserved.itemId];
-  const extra = def && isItemAvailable(def, shop, perks)
-    ? [{ offerId: id, itemId: reserved.itemId, category: reserved.category, tier: reserved.tier, price: reserved.price, legendary: !!reserved.legendary, reserved: true }]
-    : [];
+  let extra = [];
+  if (reserved.family) { // #164: reservierte Shop-Familie — nur anhängen, solange die Zielstufe noch anbietbar ist.
+    const fam = familyDefs[reserved.familyId];
+    if (fam && offerableFamilyTiers(fam, (shop.familyTiers || {})[reserved.familyId] || 0).includes(reserved.famTier))
+      extra = [{ offerId: id, category: reserved.category, familyId: reserved.familyId, famTier: reserved.famTier, price: reserved.price, family: true, legendary: false, reserved: true }];
+  } else {
+    const def = itemDefs[reserved.itemId];
+    if (def && isItemAvailable(def, shop, perks))
+      extra = [{ offerId: id, itemId: reserved.itemId, category: reserved.category, tier: reserved.tier, price: reserved.price, legendary: !!reserved.legendary, reserved: true }];
+  }
   return { ...shop, offers: [...offers, ...extra], reservedItem: null };
 }
