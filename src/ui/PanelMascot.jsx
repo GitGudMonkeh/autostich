@@ -22,7 +22,9 @@ export function PanelMascot({
   offsetX = 0,      // horizontaler Versatz gegenüber der Mitte
   shadow = true,    // dezenter Drop-Shadow für Tiefe
   // Avatar-Feintuning (Mobil):
-  avatarSize = 46,
+  avatarSize = 64,   // #170 (FB-9): max. Größe, die auf den kleinsten Breiten (320px) in ALLEN Panels sauber
+                     //   passt (Formation-Textblock ~88px, Shop-Header 80px, zentrierte Panels wachsen nur mittig)
+                     //   — mit Sicherheitsabstand; spürbar größer als der alte 46px-Avatar.
   avatarObjectPosition = "center top",
 }) {
   if (!src) return null;
