@@ -1,6 +1,7 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick } from "./families.js";
+import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
@@ -284,39 +285,60 @@ export function reducer(state, action) {
       if (!fam || !tier) return state;
       // Angebotsvalidierung (Spec §2.4): die Familie+Zielstufe muss im aktuellen Angebot stehen (analog PICK_PERK).
       if (!state.offer || !state.offer.some((e) => e && e.familyId === familyId && e.tier === tier)) return state;
-      // Ziel-Stufe (pickTarget, z. B. A_SUIT_BOOST III/IV): erst Farb-/Ziel-Auswahl öffnen; die eigentliche
-      // Anwendung (applyFamilyPick mit target) folgt bei FAMILY_TARGET_CONFIRM. Angebot ist damit verbraucht.
-      if (fam.tiers[tier] && fam.tiers[tier].pickTarget) {
-        return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, suits: [] } };
-      }
-      const { familyTiers, deck, roles } = applyFamilyPick(
-        familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rng);
-      return { ...state, familyTiers, deck, roles, offer: null, phase: "play" };
+      const applyNow = () => {
+        const { familyTiers, deck, roles } = applyFamilyPick(
+          familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rng);
+        return { ...state, familyTiers, deck, roles, offer: null, phase: "play" };
+      };
+      const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
+      if (!pt) return applyNow();                                                          // kein Ziel → direkt anwenden
+      // Farb-Ziel (A_SUIT_BOOST/A_SUIT_DUEL): immer die volle Anzahl frisch wählen.
+      if (pt.suits) return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [] } };
+      // Karten-Ziel: ROLE wählt nur die ZUSÄTZLICHEN Ziele (Stufe-Ziel − bereits gehaltene, Spec §2.3);
+      // CUMULATIVE (C_SACRIFICE) wählt die volle Anzahl. need 0 (Upgrade ohne neue Ziele) → direkt anwenden.
+      const held = fam.upgradeType === UPGRADE_TYPES.ROLE ? ((state.roles || {})[familyId] || []).length : 0;
+      const need = Math.max(0, pt.cards - held);
+      if (need === 0) return applyNow();
+      return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "cards", need, suits: [], cards: [] } };
     }
 
-    // ---- Familien-Ziel-Auswahl (Rarität #167, Spec §2.3/§2.4) — Farb-/Ziel-Auswahl für pickTarget-Stufen.
-    //      Generisch gehalten, damit Kategorie C denselben Fluss für Karten-Ziele (Rollen) mitnutzt. ----
+    // ---- Familien-Ziel-Auswahl (Rarität #167, Spec §2.3/§2.4) — Farb- ODER Karten-Ziel für pickTarget-Stufen.
+    //      `familyTarget = { familyId, tier, kind:"suits"|"cards", need, suits, cards }`. Kategorie C nutzt den
+    //      Karten-Modus für Rollen-Ziele; A den Farb-Modus. ----
     case "FAMILY_TARGET_SUIT": {
-      if (state.phase !== "family-target" || !state.familyTarget) return state;
+      if (state.phase !== "family-target" || !state.familyTarget || state.familyTarget.kind !== "suits") return state;
       const ft = state.familyTarget;
-      const need = familyDef(ft.familyId)?.tiers?.[ft.tier]?.pickTarget?.suits || 0;
-      if (!need || !C.SUIT_ORDER.includes(action.suit)) return state;
+      if (!C.SUIT_ORDER.includes(action.suit)) return state;
       let suits = ft.suits.slice();
       if (suits.includes(action.suit)) suits = suits.filter((s) => s !== action.suit);   // abwählen
-      else if (suits.length < need) suits.push(action.suit);                              // hinzufügen (Reihenfolge = Gewinner→Verlierer)
-      else if (need === 1) suits = [action.suit];                                         // Einzelwahl: umschalten
+      else if (suits.length < ft.need) suits.push(action.suit);                           // hinzufügen (Reihenfolge = Gewinner→Verlierer)
+      else if (ft.need === 1) suits = [action.suit];                                      // Einzelwahl: umschalten
       else return state;                                                                  // Limit erreicht → ignorieren
       return { ...state, familyTarget: { ...ft, suits } };
+    }
+    case "FAMILY_TARGET_CARD": {
+      if (state.phase !== "family-target" || !state.familyTarget || state.familyTarget.kind !== "cards") return state;
+      const ft = state.familyTarget;
+      if (!state.deck.some((c) => c.id === action.cardId)) return state;                  // Karte muss existieren
+      // Bereits als Rolle DIESER Familie gehaltene Karten sind kein gültiges Zusatz-Ziel (Rollen-Upgrade).
+      if (((state.roles || {})[ft.familyId] || []).includes(action.cardId)) return state;
+      let cards = ft.cards.slice();
+      if (cards.includes(action.cardId)) cards = cards.filter((id) => id !== action.cardId); // abwählen
+      else if (cards.length < ft.need) cards.push(action.cardId);                            // hinzufügen
+      else return state;                                                                     // Limit erreicht
+      return { ...state, familyTarget: { ...ft, cards } };
     }
     case "FAMILY_TARGET_CONFIRM": {
       if (state.phase !== "family-target" || !state.familyTarget) return state;
       const ft = state.familyTarget;
-      const spec = familyDef(ft.familyId)?.tiers?.[ft.tier]?.pickTarget || {};
-      if (spec.suits && ft.suits.length !== spec.suits) return state;                     // genau N Farben nötig
-      const target = { suits: ft.suits };
+      const sel = ft.kind === "cards" ? ft.cards : ft.suits;
+      if (sel.length !== ft.need) return state;                                            // genau `need` Ziele nötig
+      const target = { suits: ft.suits, cards: ft.cards, order: state.playerOrder };
       const { familyTiers, deck, roles } = applyFamilyPick(
         ft.familyId, ft.tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, action.rng);
-      return { ...state, familyTiers, deck, roles, phase: "play", familyTarget: null };
+      // Rollen/Deck können die Formationserkennung ändern (C_JOKER/C_BRIDGE, C_SACRIFICE-Deckmod) → neu berechnen (wie CONFIRM_TARGET).
+      const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {});
+      return { ...state, familyTiers, deck, roles, formations, phase: "play", familyTarget: null };
     }
 
     // Zielauswahl bestätigen (V2 §22.6 C): genau needsTarget Karten → Rolle setzen (C9 = dauerhafte Wertmod).

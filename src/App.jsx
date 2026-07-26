@@ -218,8 +218,9 @@ export function Autostich() {
   const resetFormation = () => dispatch({ type: "RESET_FORMATION" });
   const confirmFormation = () => dispatch({ type: "CONFIRM_FORMATION" });
   const confirmTarget = (cardIds) => dispatch({ type: "CONFIRM_TARGET", cardIds });
-  // Familien-Ziel-Auswahl (Rarität #167, Kat. A): Farbe(n) für pickTarget-Stufen wählen und bestätigen.
+  // Familien-Ziel-Auswahl (Rarität #167): Farbe(n) (Kat. A) bzw. Karten (Kat. C Rollen) für pickTarget-Stufen wählen.
   const familyTargetSuit = (suit) => dispatch({ type: "FAMILY_TARGET_SUIT", suit });
+  const familyTargetCard = (cardId) => dispatch({ type: "FAMILY_TARGET_CARD", cardId });
   const familyTargetConfirm = () => dispatch({ type: "FAMILY_TARGET_CONFIRM", rng: Math.random });
   // Skill-Auswahl (jede 3. Runde): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
@@ -442,7 +443,7 @@ export function Autostich() {
         <TargetSelect state={state} onConfirm={confirmTarget} />
       )}
       {state.phase === "family-target" && (
-        <FamilyTargetSelect state={state} onSuit={familyTargetSuit} onConfirm={familyTargetConfirm} />
+        <FamilyTargetSelect state={state} onSuit={familyTargetSuit} onCard={familyTargetCard} onConfirm={familyTargetConfirm} />
       )}
       {showChronik && <ChronikOverview state={state} onClose={() => setShowChronik(false)} />}
       {state.phase === "levelup" && state.statOffer && (

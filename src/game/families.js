@@ -653,10 +653,18 @@ export function applyFamilyPick(familyId, targetTier, ctx = {}, rng = Math.rando
   const tierDef = fam.tiers[targetTier] || null;
   let nextDeck = deck, nextRoles = roles;
   if (fam.upgradeType === UPGRADE_TYPES.CUMULATIVE && tierDef && tierDef.onPick && deck) {
-    // Stufen-Paket einmalig aufs Deck (A-/Shop-Karten-Familien). `target` trägt die Spieler-Auswahl
-    // (z. B. Farbe(n)) der Stufen mit `pickTarget`; ohne Ziel-Flow ist es null → diese Stufen sind No-Ops.
+    // Stufen-Paket einmalig aufs Deck (A-/Shop-Karten-Familien, C_SACRIFICE). `target` trägt die Spieler-Auswahl
+    // (Farbe(n) bzw. Karten + order=playerOrder); ohne Ziel-Flow ist es null → diese Stufen sind No-Ops.
     nextDeck = tierDef.onPick(deck, rng, target);
+  } else if (fam.upgradeType === UPGRADE_TYPES.ROLE) {
+    // Rolle (Kat. C): gewählte Ziel-Karten in roles[familyId]. Upgrade BEHÄLT bestehende Ziele, nur die
+    // zusätzlich gewählten kommen dazu (Spec §2.3 Rollen-Upgrade); die aktive Regel/Werte löst die Engine
+    // live über die gehaltene Stufe auf. Ohne target (Upgrade ohne neue Ziele) bleiben die Rollen unverändert.
+    const chosen = (target && target.cards) || [];
+    const prev = (roles && roles[familyId]) || [];
+    const merged = prev.slice();
+    for (const id of chosen) if (!merged.includes(id)) merged.push(id);
+    nextRoles = { ...(roles || {}), [familyId]: merged };
   }
-  // ROLE-Zielauswahl folgt mit Kategorie C (#163) — hier noch reine Rangaktualisierung.
   return { familyTiers: withFamilyTier(familyTiers, familyId, targetTier), deck: nextDeck, roles: nextRoles };
 }

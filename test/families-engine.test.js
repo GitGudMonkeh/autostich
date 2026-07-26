@@ -164,7 +164,7 @@ describe("Familien-Ziel-Fluss — pickTarget-Stufen (Rarität #167, Kat. A)", ()
     const s0 = base({ familyId: "A_SUIT_BOOST", tier: 3 });
     const s1 = reducer(s0, { type: "PICK_FAMILY", familyId: "A_SUIT_BOOST", tier: 3, rng });
     expect(s1.phase).toBe("family-target");
-    expect(s1.familyTarget).toEqual({ familyId: "A_SUIT_BOOST", tier: 3, suits: [] });
+    expect(s1.familyTarget).toEqual({ familyId: "A_SUIT_BOOST", tier: 3, kind: "suits", need: 1, suits: [], cards: [] });
     expect(s1.offer).toBeNull();
     expect(s1.deck).toBe(s0.deck);       // noch keine Deckmod
     expect(s1.familyTiers).toEqual({});  // Rang erst bei CONFIRM
@@ -227,6 +227,67 @@ describe("Familien-Ziel-Fluss — pickTarget-Stufen (Rarität #167, Kat. A)", ()
 
   it("initialState trägt familyTarget = null", () => {
     expect(initialState(makeRng(1)).familyTarget).toBeNull();
+  });
+});
+
+describe("Familien-Ziel-Fluss — Karten-Modus (Kat. C Rollen + C_SACRIFICE)", () => {
+  const lvl = (offerEntry, over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: [offerEntry], ...over });
+
+  it("ROLE (C_VANGUARD I): PICK_FAMILY öffnet Karten-Ziel (need 1), CONFIRM setzt roles[familyId]", () => {
+    let s = reducer(lvl({ familyId: "C_VANGUARD", tier: 1 }), { type: "PICK_FAMILY", familyId: "C_VANGUARD", tier: 1, rng });
+    expect(s.phase).toBe("family-target");
+    expect(s.familyTarget).toMatchObject({ familyId: "C_VANGUARD", tier: 1, kind: "cards", need: 1, cards: [] });
+    s = reducer(s, { type: "FAMILY_TARGET_CARD", cardId: "R5" });
+    expect(s.familyTarget.cards).toEqual(["R5"]);
+    s = reducer(s, { type: "FAMILY_TARGET_CONFIRM", rng });
+    expect(s.phase).toBe("play");
+    expect(s.familyTiers).toEqual({ C_VANGUARD: 1 });
+    expect(s.roles.C_VANGUARD).toEqual(["R5"]);
+    expect(s.familyTarget).toBeNull();
+  });
+
+  it("ROLE-Upgrade wählt nur ZUSÄTZLICHE Ziele; bestehende bleiben (Spec §2.3)", () => {
+    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "C_VANGUARD", tier: 3 }],
+              familyTiers: { C_VANGUARD: 1 }, roles: { C_VANGUARD: ["R5"] } };
+    s = reducer(s, { type: "PICK_FAMILY", familyId: "C_VANGUARD", tier: 3, rng });
+    expect(s.familyTarget.need).toBe(2); // 3 Ziele − 1 bereits gehalten
+    s = reducer(s, { type: "FAMILY_TARGET_CARD", cardId: "R6" });
+    s = reducer(s, { type: "FAMILY_TARGET_CARD", cardId: "R7" });
+    s = reducer(s, { type: "FAMILY_TARGET_CONFIRM", rng });
+    expect(s.familyTiers.C_VANGUARD).toBe(3);
+    expect(s.roles.C_VANGUARD).toEqual(["R5", "R6", "R7"]); // Bestand + zwei neue
+  });
+
+  it("ROLE-Upgrade ohne neue Ziele (need 0) wendet direkt an (C_LEADER I→II, je 1 Ziel)", () => {
+    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "C_LEADER", tier: 2 }],
+              familyTiers: { C_LEADER: 1 }, roles: { C_LEADER: ["R5"] } };
+    s = reducer(s, { type: "PICK_FAMILY", familyId: "C_LEADER", tier: 2, rng });
+    expect(s.phase).toBe("play");             // keine Ziel-Phase
+    expect(s.familyTiers.C_LEADER).toBe(2);
+    expect(s.roles.C_LEADER).toEqual(["R5"]); // Rolle unverändert
+  });
+
+  it("FAMILY_TARGET_CARD: gehaltene Rollenkarte, unbekannte Karte und Limit werden ignoriert", () => {
+    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "C_VANGUARD", tier: 3 }],
+              familyTiers: { C_VANGUARD: 1 }, roles: { C_VANGUARD: ["R5"] } };
+    s = reducer(s, { type: "PICK_FAMILY", familyId: "C_VANGUARD", tier: 3, rng }); // need 2
+    expect(reducer(s, { type: "FAMILY_TARGET_CARD", cardId: "R5" }).familyTarget.cards).toEqual([]);   // bereits Rolle
+    expect(reducer(s, { type: "FAMILY_TARGET_CARD", cardId: "ZZ9" }).familyTarget.cards).toEqual([]);  // existiert nicht
+    s = reducer(s, { type: "FAMILY_TARGET_CARD", cardId: "R6" });
+    s = reducer(s, { type: "FAMILY_TARGET_CARD", cardId: "R7" });
+    expect(reducer(s, { type: "FAMILY_TARGET_CARD", cardId: "R8" }).familyTarget.cards).toEqual(["R6", "R7"]); // Limit 2
+  });
+
+  it("CUMULATIVE (C_SACRIFICE I): Karten-Ziel opfert die Karte (−2) & bufft Nachfolger (+3), keine Rolle", () => {
+    const deck = ["a", "b", "c"].map((id) => ({ id, suit: "R", baseRank: 5, value: 5 }));
+    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "C_SACRIFICE", tier: 1 }], deck, playerOrder: [0, 1, 2] };
+    s = reducer(s, { type: "PICK_FAMILY", familyId: "C_SACRIFICE", tier: 1, rng });
+    expect(s.familyTarget).toMatchObject({ kind: "cards", need: 1 });
+    s = reducer(s, { type: "FAMILY_TARGET_CARD", cardId: "a" });
+    s = reducer(s, { type: "FAMILY_TARGET_CONFIRM", rng });
+    expect(s.familyTiers).toEqual({ C_SACRIFICE: 1 });
+    expect(s.deck.map((c) => c.value)).toEqual([3, 8, 5]); // a −2, direkter Nachfolger b +3
+    expect(s.roles.C_SACRIFICE).toBeUndefined();           // Deck-Mod, keine Rolle
   });
 });
 
