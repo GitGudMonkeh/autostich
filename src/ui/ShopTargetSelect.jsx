@@ -1,6 +1,8 @@
 import { suitColor, suitName, SUIT_ORDER, SHOP_CATEGORIES, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { SEGMENT_SIZE, FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
 import { SHOP_ITEM_DEFS, SEGMENT_BOUNDARIES } from "../game/shop.js";
+import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
+import { romanOf } from "../game/rarity.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { formationBorder } from "./formationStyle.js";
@@ -14,8 +16,12 @@ const GOLD = "#d4a63a";
 export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onColorPair, onBoundary, onFormationType, onCategory, onOffer, onConfirm, onCancel }) {
   useEscape(onCancel);
   const st = state.shopTarget || {};
-  const def = SHOP_ITEM_DEFS[st.itemId] || {};
-  const spec = def.target || {};
+  // Shop-Familie (#164): Name/Beschreibung/Ziel-Bedarf aus der Zielstufe; sonst flaches Item.
+  const fam = st.familyId ? SHOP_FAMILY_DEFS[st.familyId] : null;
+  const tierDef = fam ? (fam.tiers[st.famTier] || {}) : null;
+  const def = fam ? { name: `${fam.name} ${romanOf(st.famTier)}`, description: tierDef.desc } : (SHOP_ITEM_DEFS[st.itemId] || {});
+  const spec = fam ? (tierDef.pickTarget || {}) : (def.target || {});
+  const offerName = (o) => o.family ? `${SHOP_FAMILY_DEFS[o.familyId]?.name || o.familyId} ${romanOf(o.famTier)}` : (SHOP_ITEM_DEFS[o.itemId]?.name || o.itemId);
   const deck = state.deck || [];
   const order = state.playerOrder || [];
   const cards = order.map((di) => deck[di]);
@@ -24,19 +30,21 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
   const colors = st.colors || {};
   const cardById = (id) => deck.find((c) => c.id === id);
 
-  const occupied = new Set((state.shop?.anchors || []).map((a) => a.position));
+  // Belegte Anker-Positionen; beim Anker-Upgrade ist die EIGENE (zu ersetzende) Position wählbar (#164).
+  const occupied = new Set((state.shop?.anchors || []).filter((a) => a.type !== fam?.anchorType).map((a) => a.position));
   const openBoundaries = new Set(state.shop?.permanentEffects?.openSegmentBoundaries || []);
   const pair = st.colorPair || [];
+  const colorsNeed = spec.colors || 0; // Farballianz (#164): 2/2/3/4 Farben je Stufe (früher spec.colorPair = 2)
   const cardsDone = !spec.cards || sel.length === spec.cards;
   const colorsDone = !spec.color || sel.every((id) => colors[id]);
   const segDone = !spec.segment || st.segment != null;
   const posDone = !spec.position || st.position != null;
-  const pairDone = !spec.colorPair || pair.length === 2;
+  const pairDone = !colorsNeed || pair.length === colorsNeed;
   const boundaryDone = !spec.boundary || st.boundary != null;
   const ftDone = !spec.formationType || st.formationType != null;
   const catDone = !spec.category || st.category != null;
   const offerDone = !spec.offer || st.targetOfferId != null;
-  const ready = spec.colorPair ? pairDone : spec.boundary ? boundaryDone : spec.formationType ? ftDone
+  const ready = colorsNeed ? pairDone : spec.boundary ? boundaryDone : spec.formationType ? ftDone
     : spec.category ? catDone : spec.offer ? offerDone : spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
   // Reservierung (P4): reservierbare Angebote = alle außer dem gerade gekauften P4 und bereits gekauften.
   const purchased = new Set(state.shop?.purchasedOfferIds || []);
@@ -48,14 +56,14 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>Shop · {def.name}</div>
           <h2 className="text-xl font-bold mt-1">
-            {spec.colorPair ? "Wähle zwei Farben" : spec.boundary ? "Wähle eine Segmentgrenze" : spec.formationType ? "Wähle einen Formationstyp" : spec.category ? "Wähle eine Kategorie" : spec.offer ? "Wähle ein Item zum Reservieren" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
+            {colorsNeed ? `Wähle ${colorsNeed} Farben` : spec.boundary ? "Wähle eine Segmentgrenze" : spec.formationType ? "Wähle einen Formationstyp" : spec.category ? "Wähle eine Kategorie" : spec.offer ? "Wähle ein Item zum Reservieren" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
           </h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.description}</p>
         </div>
 
-        {spec.colorPair ? (
+        {colorsNeed ? (
           <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Zwei Farben wählen (zählen als eine)</div>
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{colorsNeed} Farben wählen (zählen für Farbblöcke als eine{colorsNeed === 4 ? "; je zwei bilden eine Allianz" : ""})</div>
             <div className="flex gap-2 flex-wrap">
               {SUIT_ORDER.map((su) => {
                 const on = pair.includes(su);
@@ -157,14 +165,13 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Item fürs nächste Shop-Angebot vormerken</div>
             <div className="grid sm:grid-cols-2 gap-2">
               {reservable.map((o) => {
-                const d = SHOP_ITEM_DEFS[o.itemId] || {};
                 const active = st.targetOfferId === o.offerId;
                 return (
                   <button key={o.offerId} onClick={() => onOffer(o.offerId)}
                     className="rounded-xl p-3 text-left transition-all"
                     style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : o.legendary ? GOLD + "88" : "#33333e"}` }}>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-sm">{d.name || o.itemId}</span>
+                      <span className="font-bold text-sm">{offerName(o)}</span>
                       <span className="text-sm font-bold" style={{ color: GOLD }}>🪙 {o.price}</span>
                     </div>
                     <div className="text-[10px] uppercase tracking-wide opacity-50 mt-0.5">{SHOP_CATEGORY_LABELS[o.category]}{o.legendary ? " · ★" : ""}</div>
