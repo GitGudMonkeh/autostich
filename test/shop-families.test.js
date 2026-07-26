@@ -5,9 +5,10 @@ import {
   REFINE_TOTAL, refineDelta, offerableShopTiers, shopFamilyTierLabel, shopFamilyTierPrice, shopFamilyTierDesc,
   ANCHOR_FAMILY_BY_TYPE, anchorTierDef, anchorTierParam,
 } from "../src/game/shopFamilies.js";
+import { formationEnergyBonus } from "../src/game/shopFamilies.js";
 import { UPGRADE_TYPES, TIERS } from "../src/game/rarity.js";
 import { SUIT_ORDER } from "../src/game/constants.js";
-import { SEGMENT_SIZE } from "../src/game/formations.js";
+import { SEGMENT_SIZE, computeFormations } from "../src/game/formations.js";
 
 const UPGRADE_SET = new Set(Object.values(UPGRADE_TYPES));
 // Kleines, deterministisches Test-Deck: 8 Karten mit bekannten Werten/Farben/IDs.
@@ -201,5 +202,63 @@ describe("Anker-Shop-Familien (Spec §4.2 Ankerfamilien)", () => {
   it("Anker-Familien schließen bei IV ab (kein Nachkauf)", () => {
     expect(offerableShopTiers("SF_A_POWER", 4)).toEqual([]); // repeatable:false → IV schließt ab
     expect(offerableShopTiers("SF_A_POWER", 2)).toEqual([3, 4]);
+  });
+});
+
+describe("Formations-Shop-Familien (Spec §4.2 Formationsfamilien + §4.3)", () => {
+  const seqDeck = (vals) => vals.map((v, i) => ({ id: "Z" + i, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
+  const ord = (n) => Array.from({ length: n }, (_, i) => i);
+  const pe = (id, tier) => SHOP_FAMILY_DEFS[id].tiers[tier].pe;
+  const cf = (deck, permEffects) => computeFormations(ord(deck.length), deck, {}, [], [], [], permEffects);
+
+  it("Formations-Familien: REPLACEMENT, repeatable:false, Stufen-pe bzw. Feinjustierung-Energie", () => {
+    const forms = SHOP_FAMILY_LIST.filter((f) => f.cat === "formations");
+    for (const fam of forms) {
+      expect(fam.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
+      expect(fam.repeatable).toBe(false);
+      for (const t of TIERS) {
+        const td = fam.tiers[t];
+        expect(td.pe || td.energyBonus != null).toBeTruthy(); // permEffects-Patch ODER Energie
+      }
+    }
+  });
+  it("Verstärkte Wiederholung III/IV: 3. Karte +0,10 bzw. alle Faktoren ×1,20", () => {
+    const deck = seqDeck([5, 5, 5, 1, 9]); // 3er-Wiederholung auf Pos 0–2
+    const base = cf(deck, {});
+    expect(base[2].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.50);
+    const iii = cf(deck, pe("SF_F_STRONG_REP", 3));
+    expect(iii[2].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.60); // 1,50 + 0,10
+    expect(iii[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.35); // 2. Karte 1,25+0,10
+    const iv = cf(deck, pe("SF_F_STRONG_REP", 4));
+    expect(iv[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.35 * 1.20); // ×1,20 auf alle
+  });
+  it("Enger Wechsel: Mindestdifferenz je Stufe (I=4, III=2)", () => {
+    const d3 = seqDeck([5, 8, 5, 8, 5]); // |Diff| 3
+    expect(cf(d3, {})[0].formations.some((f) => f.type === "wechsel")).toBe(false);         // Basis 5 → nein
+    expect(cf(d3, pe("SF_F_TIGHT_SWITCH", 1))[0].formations.some((f) => f.type === "wechsel")).toBe(false); // I=4 → nein
+    expect(cf(d3, pe("SF_F_TIGHT_SWITCH", 3))[0].formations.some((f) => f.type === "wechsel")).toBe(true);  // III=2 → ja
+  });
+  it("Nachhall I: Cap ×1,20 + nur Wiederholungen (Farbblock-Nachhall unterdrückt)", () => {
+    const rep = seqDeck([30, 29, 28, 22, 22, 20]); // Wiederholung [22,22] endet Pos 4 → Nachhall auf Pos 5
+    const on = cf(rep, pe("SF_F_AFTERGLOW", 1));
+    const nh = on[5].formations.find((f) => f.type === "nachhall");
+    expect(nh && nh.factor).toBeCloseTo(1.20); // gekappt (Wiederholung-Endfaktor 1,25 → 1,20)
+    // Farbblock-Nachhall bei Stufe I unterdrückt (repsOnly)
+    const fb = [{ id: "a", suit: "R", value: 1 }, { id: "b", suit: "R", value: 20 }, { id: "c", suit: "R", value: 9 }, { id: "d", suit: "B", value: 3 }];
+    expect(cf(fb, pe("SF_F_AFTERGLOW", 1))[3].formations.some((f) => f.type === "nachhall")).toBe(false);
+  });
+  it("Nachhall IV: hält für die nächsten zwei Karten (hold 2)", () => {
+    const rep = seqDeck([30, 29, 28, 22, 22, 20, 19]); // Wiederholung endet Pos 4 → Nachhall auf Pos 5 UND Pos 6
+    const on = cf(rep, pe("SF_F_AFTERGLOW", 4));
+    expect(on[5].formations.some((f) => f.type === "nachhall")).toBe(true);
+    expect(on[6].formations.some((f) => f.type === "nachhall")).toBe(true);
+  });
+  it("Feinjustierung: Energiebonus je Stufe (I §10 nur gerade Durchläufe)", () => {
+    expect(formationEnergyBonus({ SF_F_TUNING: 2 }, 0)).toBe(1);
+    expect(formationEnergyBonus({ SF_F_TUNING: 3 }, 0)).toBe(2);
+    expect(formationEnergyBonus({ SF_F_TUNING: 4 }, 0)).toBe(3);
+    expect(formationEnergyBonus({ SF_F_TUNING: 1 }, 0)).toBe(1); // gerader Durchlauf → +1
+    expect(formationEnergyBonus({ SF_F_TUNING: 1 }, 1)).toBe(0); // ungerader → 0 (jede zweite Phase)
+    expect(formationEnergyBonus({}, 0)).toBe(0);
   });
 });

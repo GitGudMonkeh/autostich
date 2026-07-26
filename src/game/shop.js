@@ -44,16 +44,8 @@ export const SHOP_ITEM_DEFS = {
   //      das Zeitsegment A-L1 sind entfernt (shopFamilies.js SHOP_ANCHOR_FAMILIES). Der Anker-Eintrag in shop.anchors
   //      trägt jetzt zusätzlich `tier` (Stärke) + `familyId`; das Zeitsegment setzt shop.timeSegmentIndex + …Tier. ----
 
-  // ---- Formationen (Shop-Spec §9) — permanente Regeländerungen (kein Ziel, nicht wiederholbar). ----
-  F1: { id: "F1", category: "formations", name: "Abstieg", tier: "cheap", repeatable: false,
-        description: "Treppen dürfen streng steigend oder streng fallend verlaufen (innerhalb einer Formation ohne Richtungswechsel).",
-        apply: (s) => ({ shop: setPE(s.shop, { descendingStraights: true }) }) },
-  F2: { id: "F2", category: "formations", name: "Enger Wechsel", tier: "cheap", repeatable: false,
-        description: "Die benötigte Nachbardifferenz für Wechsel sinkt von 5 auf 4.",
-        apply: (s) => ({ shop: setPE(s.shop, { switchMinDifference: 4 }) }) },
-  F3: { id: "F3", category: "formations", name: "Verstärkte Wiederholung", tier: "strong", repeatable: false,
-        description: "Der Faktor der zweiten Karte einer Wiederholung steigt von ×1,25 auf ×1,35.",
-        apply: (s) => ({ shop: setPE(s.shop, { repetitionSecondFactorBonus: 0.10 }) }) },
+  // ---- Formationen (Shop-Spec §9) — permanente Regeländerungen. F1/F2/F3/F6 zu Shop-FAMILIEN migriert (#164,
+  //      shopFamilies.js SHOP_FORMATION_FAMILIES; sie setzen tier-abhängige permEffects). F4/F5/F-L1 folgen. ----
   F4: { id: "F4", category: "formations", name: "Farballianz", tier: "strong", repeatable: false,
         targetMode: "two-colors", target: { colorPair: true },
         description: "Wähle zwei Farben. Für Farbblöcke zählen diese beiden Farben als dieselbe Farbe.",
@@ -64,9 +56,6 @@ export const SHOP_ITEM_DEFS = {
         // Nur anbieten, solange E9 nicht alle Grenzen global öffnet UND noch eine Grenze geschlossen ist (§15).
         available: (shop, perks) => !(perks || []).includes("E9") && ((shop.permanentEffects?.openSegmentBoundaries || []).length < SEGMENT_BOUNDARIES.length),
         apply: (s, t) => ({ shop: setPE(s.shop, { openSegmentBoundaries: [...(s.shop.permanentEffects?.openSegmentBoundaries || []), t.boundary] }) }) },
-  F6: { id: "F6", category: "formations", name: "Nachhall", tier: "premium", repeatable: false,
-        description: "Endet eine Formation, erhält die direkt folgende Karte deren stärksten Einzelfaktor als eigene Formation (überschreitet Segmentgrenzen).",
-        apply: (s) => ({ shop: setPE(s.shop, { formationAfterglow: true }) }) },
   "F-L1": { id: "F-L1", category: "formations", name: "Formationskern", tier: "legendary", legendary: true, repeatable: false,
         targetMode: "formation-type", target: { formationType: true },
         description: "Wähle einen Formationstyp. Jede aktive Formation dieses Typs (inkl. Nachhall) erhält zusätzlich ×1,50.",

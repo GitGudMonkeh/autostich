@@ -10,7 +10,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, summarizeFormations, SEGMENT_SIZE } from "./formations.js";
 import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
-import { SHOP_FAMILY_DEFS, timeSegmentDepth, timeSegmentReduced } from "./shopFamilies.js";
+import { SHOP_FAMILY_DEFS, timeSegmentDepth, timeSegmentReduced, formationEnergyBonus } from "./shopFamilies.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -550,9 +550,11 @@ export function resolveTrick(state, rng = Math.random) {
                  offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rng, perks, SHOP_FAMILY_DEFS), purchasedOfferIds: [] };
         shop = withReservedOffer(shop, SHOP_ITEM_DEFS, perks, SHOP_FAMILY_DEFS);
       } else if (decision === "formation") {
-        // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ E10 Feinjustierung), Vorschau berechnen.
+        // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ Shop-Feinjustierung), Vorschau berechnen.
         phase = "formation";
-        newFormationEnergy = C.FORMATION_ENERGY + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0);
+        newFormationEnergy = C.FORMATION_ENERGY + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
+          + formationEnergyBonus(shop.familyTiers, cycle); // #164 Feinjustierung (E10→Shop): +Energie je Stufe
+        newFormationSwaps = [];
         newFormationSwaps = [];
         // #137: anchors + permEffects mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Shop-Effekte) — erst der erste Tausch korrigierte.

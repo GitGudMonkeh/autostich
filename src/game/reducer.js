@@ -1,7 +1,7 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick } from "./families.js";
-import { SHOP_FAMILY_DEFS, refineDelta } from "./shopFamilies.js";
+import { SHOP_FAMILY_DEFS, refineDelta, formationEnergyBonus } from "./shopFamilies.js";
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
@@ -127,10 +127,21 @@ export function reducer(state, action) {
       if (!offer) return state;
       if ((shop.purchasedOfferIds || []).includes(offer.offerId)) return state; // dasselbe Angebot nicht zweimal
       if ((shop.coins || 0) < offer.price) return state;                        // nicht bezahlbar
-      // Shop-Familie (#164): Karten-Familien haben stets ein Ziel (pickTarget) → in die shop-target-Phase.
+      // Shop-Familie (#164): Ziel-Familien (Karten/Anker/…) öffnen die shop-target-Phase; ziel-lose Formations-
+      // Familien (F1/F2/F3/F6 + Feinjustierung) wenden ihren Effekt sofort an (kein Ziel-Schritt).
       if (offer.family) {
         const fam = SHOP_FAMILY_DEFS[offer.familyId];
-        if (!fam || !fam.tiers[offer.famTier]) return state;
+        const tierDef = fam && fam.tiers[offer.famTier];
+        if (!fam || !tierDef) return state;
+        if (!tierDef.pickTarget) {
+          const newShop = { ...shop, coins: (shop.coins || 0) - offer.price,
+            purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
+            familyTiers: { ...(shop.familyTiers || {}), [fam.id]: offer.famTier },
+            purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, offer.famTier, offer.price, state.cycle, null)] };
+          if (tierDef.pe) newShop.permanentEffects = { ...(shop.permanentEffects || {}), ...tierDef.pe }; // REPLACEMENT: Stufen-Patch überschreibt vollständig
+          const formations = computeFormations(state.playerOrder, state.deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects, state.familyTiers);
+          return { ...state, formations, phase: "shop", shop: newShop };
+        }
         return { ...state, phase: "shop-target",
                  shopTarget: { offerId: offer.offerId, familyId: offer.familyId, famTier: offer.famTier, cards: [], colors: {}, segment: null, position: null, colorPair: [], boundary: null, formationType: null, category: null, targetOfferId: null } };
       }
@@ -562,7 +573,8 @@ export function reducer(state, action) {
       const swaps = state.formationSwaps || [];
       for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
       return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, state.familyTiers),
-               formationEnergy: C.FORMATION_ENERGY + (state.perks || []).reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0),
+               formationEnergy: C.FORMATION_ENERGY + (state.perks || []).reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
+                 + formationEnergyBonus(state.shop?.familyTiers, state.cycle), // #164 Feinjustierung
                formationSwaps: [], frostSwapsUsed: [] };
     }
     // Bestätigen → Reihenfolge bleibt persistent. Eis: Kaltfront/Frostspur setzen jetzt (auf der finalen Reihenfolge)

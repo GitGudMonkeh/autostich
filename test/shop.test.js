@@ -498,15 +498,15 @@ describe("Shop-Formationsitems — F1/F2/F3 (Shop-Spec §9)", () => {
     expect(buffed[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.35);
     expect(buffed[4].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.50); // 3. Karte (Ordinal 3) unverändert
   });
-  it("Kauf eines F-Items (kein Ziel): setzt permanentEffects, zieht Preis ab, ist nicht wiederholbar", () => {
-    const offer = { offerId: "o0", itemId: "F2", category: "formations", tier: "cheap", price: 8, legendary: false };
-    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 10, offers: [offer] } };
+  it("Kauf einer ziel-losen Formations-Familie (Enger Wechsel II): setzt permanentEffects sofort, kein Ziel-Schritt", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_TIGHT_SWITCH", famTier: 2, price: 12, family: true, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 20, offers: [offer] } };
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
-    expect(r.phase).toBe("shop");
-    expect(r.shop.coins).toBe(2);
-    expect(r.shop.permanentEffects.switchMinDifference).toBe(4); // #161 FB-5: F2 senkt 5 → 4
-    expect(r.shop.boughtNonRepeatableIds).toEqual(["F2"]);
-    expect(Array.isArray(r.formations)).toBe(true); // Formationen wurden neu berechnet
+    expect(r.phase).toBe("shop");                                 // ziel-los → sofort, keine shop-target-Phase
+    expect(r.shop.coins).toBe(8);                                 // 20 - 12
+    expect(r.shop.permanentEffects.switchMinDifference).toBe(3);  // Stufe II
+    expect(r.shop.familyTiers.SF_F_TIGHT_SWITCH).toBe(2);
+    expect(Array.isArray(r.formations)).toBe(true);
   });
 });
 
@@ -598,14 +598,15 @@ describe("Shop-Formationsitem — F6 Nachhall (Shop-Spec §9)", () => {
     const on = computeFormations(ord(6), deck, {}, [], [], [], { formationAfterglow: true });
     expect(on.every((p) => !p.formations.some((f) => f.type === "nachhall"))).toBe(true);
   });
-  it("Kauf F6 (kein Ziel): setzt formationAfterglow, ist nicht wiederholbar", () => {
-    const offer = { offerId: "o0", itemId: "F6", category: "formations", tier: "premium", price: 18, legendary: false };
+  it("Kauf Nachhall-Familie III (kein Ziel): setzt Nachhall-Parameter sofort", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_AFTERGLOW", famTier: 3, price: 18, family: true, legendary: false };
     const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
     expect(r.shop.coins).toBe(0);
     expect(r.shop.permanentEffects.formationAfterglow).toBe(true);
-    expect(r.shop.boughtNonRepeatableIds).toEqual(["F6"]);
+    expect(r.shop.permanentEffects.afterglowMaxFactor).toBe(null); // III: kein Cap
+    expect(r.shop.familyTiers.SF_F_AFTERGLOW).toBe(3);
   });
 });
 

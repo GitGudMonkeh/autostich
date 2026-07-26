@@ -254,10 +254,81 @@ const SHOP_ANCHOR_FAMILIES = {
   },
 };
 
+/* ---- Formations-Familien (Shop-Spec §4.2 Formationsfamilien + §4.3 Feinjustierung, #164) — REGELERSETZUNG.
+        Jede Stufe setzt einen `pe`-Patch in shop.permanentEffects (den computeFormations bereits liest); nur die
+        HÖCHSTE gekaufte Stufe ist aktiv, daher setzt jeder Stufen-Patch ALLE Felder der Familie vollständig
+        (inkl. neutraler Defaults), damit ein Upgrade die niedrigere Stufe sauber ersetzt. Nutzer-Entscheid #164:
+        repeatable:false → Abschluss bei IV. Feinjustierung (E10→Shop) wirkt NICHT über permEffects, sondern über
+        die Formationsenergie (engine liest den Rang → formationEnergyBonus).
+        §10-Näherungen (Scanner kann einige IV-Sonderregeln nicht exakt abbilden): Abstieg I≈II (voll fallend, „1
+        Segment/Durchlauf"-Drossel entfällt) · III/IV Berg/Tal ≈ Treppen-Rückschritt-Budget (descendingRev, reuse
+        E_BIGSTEP-Mechanik) · Enger Wechsel I=Mindestdifferenz 4 (statt 3, damit I<II strikt bleibt) · Feinjustierung
+        I „jede zweite Phase" ≈ über die Durchlauf-Parität. ---- */
+const INF_CAP = null; // afterglowMaxFactor = kein Cap (Nachhall III/IV)
+const SHOP_FORMATION_FAMILIES = {
+  SF_F_DESCENT: {
+    id: "SF_F_DESCENT", cat: "formations", name: "Abstieg", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F1"],
+    tiers: {
+      1: { desc: "Treppen dürfen streng steigend oder streng fallend verlaufen.", pe: { descendingStraights: true, descendingRev: 0 } },
+      2: { desc: "Treppen dürfen überall steigend oder fallend verlaufen.", pe: { descendingStraights: true, descendingRev: 0 } },
+      3: { desc: "Treppen dürfen einmal die Richtung wechseln (Berg/Tal).", pe: { descendingStraights: true, descendingRev: 1 } },
+      4: { desc: "Treppen dürfen mehrfach die Richtung wechseln (Berg/Tal).", pe: { descendingStraights: true, descendingRev: 2 } },
+    },
+  },
+  SF_F_TIGHT_SWITCH: {
+    id: "SF_F_TIGHT_SWITCH", cat: "formations", name: "Enger Wechsel", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F2"],
+    tiers: {
+      1: { desc: "Wechsel benötigen nur noch Nachbardifferenz 4 (statt 5).", pe: { switchMinDifference: 4, wechselCardBonus: 0 } },
+      2: { desc: "Wechsel benötigen nur noch Nachbardifferenz 3.", pe: { switchMinDifference: 3, wechselCardBonus: 0 } },
+      3: { desc: "Wechsel benötigen nur noch Nachbardifferenz 2.", pe: { switchMinDifference: 2, wechselCardBonus: 0 } },
+      4: { desc: "Wechsel benötigen Nachbardifferenz 2; ab der vierten Karte +0,10 Faktor je Karte.", pe: { switchMinDifference: 2, wechselCardBonus: 0.10 } },
+    },
+  },
+  SF_F_STRONG_REP: {
+    id: "SF_F_STRONG_REP", cat: "formations", name: "Verstärkte Wiederholung", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F3"],
+    tiers: {
+      1: { desc: "Die zweite Karte einer Wiederholung erhält ×1,30 (statt ×1,25).", pe: { repetitionSecondFactorBonus: 0.05, repThirdBonus: 0, repAllMult: 1 } },
+      2: { desc: "Die zweite Karte einer Wiederholung erhält ×1,35.", pe: { repetitionSecondFactorBonus: 0.10, repThirdBonus: 0, repAllMult: 1 } },
+      3: { desc: "Zweite und dritte Wiederholungskarte erhalten je +0,10 Faktor.", pe: { repetitionSecondFactorBonus: 0.10, repThirdBonus: 0.10, repAllMult: 1 } },
+      4: { desc: "Alle Wiederholungsfaktoren erhalten zusätzlich ×1,20.", pe: { repetitionSecondFactorBonus: 0.10, repThirdBonus: 0.10, repAllMult: 1.20 } },
+    },
+  },
+  SF_F_AFTERGLOW: {
+    id: "SF_F_AFTERGLOW", cat: "formations", name: "Nachhall", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F6"],
+    tiers: {
+      1: { desc: "Nachhall nur bei Wiederholungen; Faktor höchstens ×1,20.", pe: { formationAfterglow: true, afterglowMaxFactor: 1.20, afterglowRepsOnly: true, afterglowHold: 1 } },
+      2: { desc: "Nachhall bei allen Formationen; Faktor höchstens ×1,25.", pe: { formationAfterglow: true, afterglowMaxFactor: 1.25, afterglowRepsOnly: false, afterglowHold: 1 } },
+      3: { desc: "Nachhall übernimmt den stärksten Einzelfaktor vollständig.", pe: { formationAfterglow: true, afterglowMaxFactor: INF_CAP, afterglowRepsOnly: false, afterglowHold: 1 } },
+      4: { desc: "Nachhall übernimmt den stärksten Einzelfaktor und hält für die nächsten zwei Karten.", pe: { formationAfterglow: true, afterglowMaxFactor: INF_CAP, afterglowRepsOnly: false, afterglowHold: 2 } },
+    },
+  },
+  // Feinjustierung (E10→Shop, §4.3): Formationsenergie statt Tausch. KEIN permEffects-Patch — engine liest den Rang.
+  SF_F_TUNING: {
+    id: "SF_F_TUNING", cat: "formations", name: "Feinjustierung", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["E10"],
+    tiers: {
+      1: { desc: "Jede zweite Formationsphase: +1 Energie.", energyBonus: 1, everySecond: true },
+      2: { desc: "Jede Formationsphase: +1 Energie.", energyBonus: 1 },
+      3: { desc: "Jede Formationsphase: +2 Energie.", energyBonus: 2 },
+      4: { desc: "Jede Formationsphase: +3 Energie.", energyBonus: 3 },
+    },
+  },
+};
+
 export const SHOP_FAMILY_DEFS = {
   ...SHOP_CARD_FAMILIES,
   ...SHOP_ANCHOR_FAMILIES,
+  ...SHOP_FORMATION_FAMILIES,
 };
+
+// Feinjustierung (§4.3): Formationsenergie-Bonus aus dem gehaltenen Rang. `everySecond` (Stufe I §10) nur jede
+// zweite Formationsphase — über die Durchlauf-Parität genähert (kein separater Phasenzähler). cycle = state.cycle.
+export function formationEnergyBonus(shopFamilyTiers = {}, cycle = 0) {
+  const tier = shopFamilyTiers.SF_F_TUNING || 0;
+  const def = tier ? SHOP_FORMATION_FAMILIES.SF_F_TUNING.tiers[tier] : null;
+  if (!def) return 0;
+  if (def.everySecond && (cycle % 2 !== 0)) return 0; // §10: „jede zweite Phase" ≈ gerade Durchläufe
+  return def.energyBonus || 0;
+}
 
 // Anker-Familie zu einem Engine-Anker-Typ (power/score/crit/streak/formation/joker) — für die Stufen-Auflösung.
 export const ANCHOR_FAMILY_BY_TYPE = Object.fromEntries(

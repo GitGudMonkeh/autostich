@@ -29,11 +29,15 @@ const MAX_TREPPE_STEP  = 3;   // [#161 FB-5: Treppe zusätzlich zur strengen Mon
 export const FORMATION_TYPES = ["wiederholung", "farbblock", "treppe", "wechsel"];
 export const FORMATION_TYPE_LABELS = { wiederholung: "Wiederholung", farbblock: "Farbblock", treppe: "Treppe", wechsel: "Wechsel" };
 
-function wiederholungFactor(ordinal, secondBonus = 0) {
-  if (ordinal <= 1) return 1;
-  if (ordinal === 2) return 1.25 + secondBonus; // [#Pass4: 1,30→1,25] Shop F3 „Verstärkte Wiederholung": +0,10
-  if (ordinal === 3) return 1.50;               // [#Pass4: 1,60→1,50]
-  return 1.80 + (ordinal - 4) * 0.40;           // [#Pass4: 2,00→1,80, Eskalation 0,50→0,40; kein Cap]
+// Shop „Verstärkte Wiederholung" (#164): secondBonus = 2. Karte, thirdBonus = 3. Karte, allMult = Faktor auf ALLE
+// Wiederholungsfaktoren (Stufe IV ×1,20; nur auf echte Faktoren > 1, nie auf die Einzelkarte).
+function wiederholungFactor(ordinal, secondBonus = 0, thirdBonus = 0, allMult = 1) {
+  let f;
+  if (ordinal <= 1) f = 1;
+  else if (ordinal === 2) f = 1.25 + secondBonus; // [#Pass4: 1,30→1,25]
+  else if (ordinal === 3) f = 1.50 + thirdBonus;  // [#Pass4: 1,60→1,50]
+  else f = 1.80 + (ordinal - 4) * 0.40;           // [#Pass4: 2,00→1,80, Eskalation 0,50→0,40; kein Cap]
+  return f > 1 ? f * allMult : f;
 }
 function escalatingFactor(ordinal, base) {
   return ordinal <= 2 ? 1 : base + (ordinal - 3) * 0.20; // je weitere Karte +0,20 (#95)
@@ -170,9 +174,13 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const n = order.length;
   const cards = order.map((di) => deck[di]);
   // ---- Shop-Formationsitems (§9, permanente Regeländerungen) ----
-  const wechselMinDiff = pe.switchMinDifference || WECHSEL_MIN_DIFF; // F2 Enger Wechsel: 5 → 4
-  const repBonus = pe.repetitionSecondFactorBonus || 0;              // F3 Verstärkte Wiederholung: 2. Karte +0,10
-  const descending = !!pe.descendingStraights;                       // F1 Abstieg: Treppen auch fallend
+  const wechselMinDiff = pe.switchMinDifference || WECHSEL_MIN_DIFF; // Enger Wechsel: Mindestdifferenz je Stufe (5 → 4/3/2)
+  const wCardBonus = pe.wechselCardBonus || 0;                        // Enger Wechsel IV: ab 4. Karte +0,10 Faktor je Karte
+  const repBonus = pe.repetitionSecondFactorBonus || 0;              // Verstärkte Wiederholung: 2. Karte
+  const repThird = pe.repThirdBonus || 0;                            // …III: 3. Karte +0,10
+  const repMult = pe.repAllMult || 1;                                // …IV: alle Wiederholungsfaktoren ×1,20
+  const descending = !!pe.descendingStraights;                       // Abstieg: Treppen auch fallend
+  const descRev = pe.descendingRev || 0;                             // Abstieg III/IV: Berg/Tal ≈ Treppen-Rückschritt-Budget (§10)
   // ---- Eis-Wildcards (#93 F3): nur auf eingefrorenen Karten, wenn der jeweilige Eis-Skill gehalten wird. ----
   const frozen = cards.map((c) => !!c.frozen);
   const permafrost = hasPermafrost(skills);
@@ -211,7 +219,8 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const wiedGap = { run: eP("E_PACE", "gapRun", 0), seg: eP("E_PACE", "gapSeg", 0) };                       // E_PACE: Wiederholung-Gaps
   const suitGap = { run: eP("E_COLORBRIDGE", "suitGapRun", 0), seg: eP("E_COLORBRIDGE", "suitGapSeg", 0) }; // E_COLORBRIDGE: Farbblock-Gaps
   const treppeE = { eqRun: eP("E_GENTLE", "eqRun", 0), eqSeg: eP("E_GENTLE", "eqSeg", 0),                   // E_GENTLE: Gleichstände
-                    revRun: eP("E_BIGSTEP", "revRun", 0), revSeg: eP("E_BIGSTEP", "revSeg", 0),             // E_BIGSTEP: Rückschritte
+                    // E_BIGSTEP-Rückschritte + Shop „Abstieg" III/IV Berg/Tal (descRev, §10-Näherung über dasselbe Budget).
+                    revRun: Math.max(eP("E_BIGSTEP", "revRun", 0), descRev), revSeg: Math.max(eP("E_BIGSTEP", "revSeg", 0), descRev),
                     drehSeg: eP("E_RPM", "drehSeg", 0) };                                                   // E_RPM: Doppel-Treppe
   const wMinLen = eP("E_PENDULUM", "wMinLen", 3);                                                           // E_PENDULUM: Wechsel-Mindestlänge
   const wMinDiff = Math.min(wechselMinDiff, eP("E_PENDULUM", "wMinDiff", WECHSEL_MIN_DIFF));                // Shop F2 + E_PENDULUM (kleiner = leichter)
@@ -250,9 +259,10 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   });
   const jokerAll = frozen.map((f) => f && permafrost); // Permafrost: Joker für Wiederholung UND Farbblock
   const matchWied = (a, b) => jokerAll[a] || jokerAll[b] || [...valSetWied[a]].some((v) => valSetWied[b].has(v));
+  const wiedFactor = (ord) => wiederholungFactor(ord, repBonus, repThird, repMult);
   markRuns(n, 2, matchWied, wiedGap, canExtendSeg,
-    (pos, ord) => add(pos, "wiederholung", ord, wiederholungFactor(ord, repBonus)), () => false,
-    (last, ord) => recordEnd(last, "wiederholung", wiederholungFactor(ord, repBonus)), isJW);
+    (pos, ord) => add(pos, "wiederholung", ord, wiedFactor(ord)), () => false,
+    (last, ord) => recordEnd(last, "wiederholung", wiedFactor(ord)), isJW);
 
   // Farbblock: Permafrost-Joker + freie Familien-Joker (C_JOKER III/IV) matchen jede Farbe; Frostbrücke macht
   // eingefrorene Karten transparent (kein Mitglied).
@@ -269,7 +279,8 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Wechsel: Kristallform gibt eingefrorenen Karten ±1-Wertoptionen (Permafrost/Eisschritt gelten hier NICHT).
   // E_PENDULUM IV: wFactorStart hebt den Wechsel-Faktor bereits ab Länge 2 auf ×1,35 (sonst erst ab der 3. Karte).
   const valSetWechsel = cards.map((c, k) => (frozen[k] && wildCrystal ? [val[k] - 1, val[k], val[k] + 1] : [val[k]]));
-  const wechselFactor = (ord) => Math.max(escalatingFactor(ord, WECHSEL_BASE), ord >= 2 && wFactorStart ? wFactorStart : 1);
+  // Enger Wechsel IV (#164): ab der 4. Karte +wCardBonus je Karte, zusätzlich zum Eskalationsfaktor.
+  const wechselFactor = (ord) => Math.max(escalatingFactor(ord, WECHSEL_BASE), ord >= 2 && wFactorStart ? wFactorStart : 1) + (ord >= 4 ? wCardBonus * (ord - 3) : 0);
   markWechsel(val, valSetWechsel, n, wMinLen, canExtendSeg,
     (pos, ord) => add(pos, "wechsel", ord, wechselFactor(ord)), wMinDiff,
     (last, ord) => recordEnd(last, "wechsel", wechselFactor(ord)), isJX);
@@ -303,14 +314,25 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Check); endet der Lauf auf der letzten Position (p+1 existiert nicht), passiert nichts. Kein Kaskadieren:
   // Nachhall entsteht nur aus Basisläufen (endBest), nie aus einem anderen Nachhall/Kern. Trägt den Ursprungstyp
   // mit (sourceType) — F-L1 kann daran andocken.
+  // #164 Stufen: afterglowMaxFactor kappt den Faktor (I ×1,20 · II ×1,25 · III/IV kein Cap = null); afterglowRepsOnly
+  // (I) nur bei Wiederholungen; afterglowHold (IV = 2) trägt den Nachhall auf die nächsten zwei Karten.
   if (pe.formationAfterglow) {
+    const agCap = pe.afterglowMaxFactor;            // null/undefined = kein Cap
+    const agRepsOnly = !!pe.afterglowRepsOnly;
+    const agHold = pe.afterglowHold || 1;
     for (const key in endBest) {
-      const p = Number(key), r = p + 1;
-      if (r >= n) continue;                 // Formation endet auf der letzten Position → kein Empfänger
-      const { factor, type } = endBest[p];
-      out[r].afterglowFactor *= factor;
-      out[r].mult *= factor;
-      out[r].formations.push({ type: "nachhall", ordinal: 1, factor, sourceType: type });
+      const p = Number(key);
+      const { factor: rawF, type } = endBest[p];
+      if (agRepsOnly && type !== "wiederholung") continue;        // I: nur Wiederholungen
+      const factor = agCap != null ? Math.min(rawF, agCap) : rawF;
+      if (factor <= 1) continue;
+      for (let h = 1; h <= agHold; h++) {                         // IV: hält für agHold Karten
+        const r = p + h;
+        if (r >= n) break;
+        out[r].afterglowFactor *= factor;
+        out[r].mult *= factor;
+        out[r].formations.push({ type: "nachhall", ordinal: 1, factor, sourceType: type });
+      }
     }
   }
 
