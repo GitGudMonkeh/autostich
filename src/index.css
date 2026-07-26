@@ -110,8 +110,11 @@ button { font-family: inherit; }
   0%, 12% { transform: translate(0, 0) rotate(0deg); opacity: .92; }
   100%    { transform: translate(46px, 60px) rotate(20deg); opacity: 0; }
 }
+/* Start bei opacity 0 (+ schneller Einblend), damit die Funken bei einem animation-delay (Ghost: erst floaten,
+   dann schneiden) während der Wartezeit unsichtbar bleiben — animation-fill-mode: both zeigt sonst den 0%-Zustand. */
 @keyframes as-spark {
-  0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  0%   { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+  10%  { opacity: 1; }
   100% { transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) scale(0); opacity: 0; }
 }
 /* Siegerkarte: kurzes triumphierendes Ankippen + zurück (kein harter Screen-Shake — bewusst „elegant"). */
@@ -119,6 +122,13 @@ button { font-family: inherit; }
   0%   { transform: rotate(0deg)  scale(1); }
   30%  { transform: rotate(-6deg) scale(1.06); }
   100% { transform: rotate(0deg)  scale(1); }
+}
+/* Niederlage-Ghost: die Verliererkarte floatet erst kurz nach oben/zur Seite (Drift), bevor der Slice einsetzt
+   (der Slice läuft per animation-delay im SliceFx an). Der Ghost ist vom Stich-Takt entkoppelt (eigener Pool),
+   daher überlappt er bei hohem Turbo/vielen Siegen mit der Karte des nächsten Stichs. */
+@keyframes as-loss-drift {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(-10px, -52px) rotate(-6deg); }
 }
 
 /* #136 Eis-Schimmer: wandernder Glanzstreif („Sweep-Shine") über eingefrorenen Karten. Nur auf der aktiven

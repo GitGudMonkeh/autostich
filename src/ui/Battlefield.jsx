@@ -56,8 +56,10 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-/* Eine Seite: gespielte Karte MIT Nachziehstapel dahinter (ragt nur nach außen). */
-function Side({ label, remaining, dealFrom, children }) {
+/* Eine Seite: gespielte Karte MIT Nachziehstapel dahinter (ragt nur nach außen).
+   `overlay` = entkoppelter Layer im Karten-Slot (z. B. Niederlage-Ghosts), der NICHT pro Stich remountet
+   (steht nach `children`, also im selben `relative`-Slot, aber außerhalb des trickNo-gekeyten Karten-Wrappers). */
+function Side({ label, remaining, dealFrom, children, overlay = null }) {
   const dir = dealFrom === "left" ? -1 : 1;
   const behind = Math.min(3, Math.max(0, remaining - 1));
   return (
@@ -70,6 +72,7 @@ function Side({ label, remaining, dealFrom, children }) {
           </div>
         ))}
         {children}
+        {overlay}
       </div>
       <div className="text-[11px] opacity-55">Deck: {remaining}</div>
     </div>
@@ -81,7 +84,7 @@ function Side({ label, remaining, dealFrom, children }) {
    (≈40 % weiß / 60 % Suit-Farbe, ein paar „Konfetti"-Rechtecke). Deterministisch aus `seed` (kein Math.random
    im Render, #68). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen in den nächsten Stich.
    Elemente entfernen sich mit dem Karten-Remount des nächsten Stichs (key nach trickNo) → kein Stapeln. */
-function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed }) {
+function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0 }) {
   const N = 18;
   const sparks = Array.from({ length: N }, (_, i) => {
     const ang = (i / N) * Math.PI * 2 + fjitter(seed * 3 + i * 7, 0.55); // gleichmäßiger Kranz + leichter Jitter
@@ -95,17 +98,19 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed }) {
     };
   });
   const ease = "cubic-bezier(0.3, 0.7, 0.3, 1)";
+  // `delay` (ms) + fill-mode `both`: der Ghost floatet erst (Drift), dann setzt der Schnitt ein — während der
+  // Wartezeit zeigen die Hälften den 0 %-Zustand (Karte ganz), Schnittlinie/Funken bleiben unsichtbar.
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
       {/* Zwei Hälften — Klone der Verliererkarte, entlang der −24°-Schnittkante geteilt (die Polygone tilen die Karte). */}
       <div className="absolute inset-0" style={{ clipPath: "polygon(0 0, 100% 0, 100% 34%, 0 66%)",
-        animation: `as-slice-top ${halvesDur}ms ${ease} forwards`, willChange: "transform, opacity" }}>{cardEl}</div>
+        animation: `as-slice-top ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
       <div className="absolute inset-0" style={{ clipPath: "polygon(0 66%, 100% 34%, 100% 100%, 0 100%)",
-        animation: `as-slice-bottom ${halvesDur}ms ${ease} forwards`, willChange: "transform, opacity" }}>{cardEl}</div>
+        animation: `as-slice-bottom ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
       {/* Schnittlinie: wächst per scaleX aus der Mitte, Länge ≈ Kartenbreite + 16 px, Glow (2×). */}
       <div style={{ position: "absolute", left: "50%", top: "50%", width: 120, height: 3, marginLeft: -60, marginTop: -1.5,
         background: color, borderRadius: 2, transformOrigin: "center", boxShadow: `0 0 6px ${color}, 0 0 14px ${color}aa`,
-        animation: `as-cut-line ${cutDur}ms ease-out forwards` }} />
+        animation: `as-cut-line ${cutDur}ms ease-out ${delay}ms both` }} />
       {/* Funken aus dem Schnittzentrum. */}
       {sparks.map((s) => (
         <div key={s.i} style={{
@@ -113,10 +118,30 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed }) {
           width: s.confetti ? 6 : 4, height: s.confetti ? 3 : 4, borderRadius: s.confetti ? 1 : "50%",
           background: s.white ? "#ffffff" : color, boxShadow: `0 0 5px ${s.white ? "#ffffff" : color}`,
           "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
-          animation: `as-spark ${sparkDur}ms ease-out forwards`, willChange: "transform, opacity",
+          animation: `as-spark ${sparkDur}ms ease-out ${delay}ms both`, willChange: "transform, opacity",
         }} />
       ))}
     </div>
+  );
+}
+
+/* #177+: Niederlage-Ghost-Pool. Bei einer Niederlage wird die Spielerkarte in-place ausgeblendet und stattdessen
+   ein entkoppelter Klon in diesem Layer (im Spieler-Kartenslot, absolute inset-0) gerendert: erst kurz nach oben
+   floaten (as-loss-drift), dann per SliceFx-`delay` schneiden. Weil der Pool NICHT pro Stich remountet, überlappt
+   der Ghost bei hohem Turbo/vielen Siegen mit der Karte des nächsten Stichs. Ghosts entfernen sich nach ihrer
+   Lebensdauer selbst (gedeckelter Pool). */
+function LossGhostLayer({ ghosts }) {
+  return (
+    <>
+      {ghosts.map((g) => (
+        <div key={g.id} className="absolute inset-0 pointer-events-none" aria-hidden="true"
+          style={{ animation: `as-loss-drift ${g.drift + g.halves}ms cubic-bezier(0.2, 0.6, 0.3, 1) forwards`, willChange: "transform" }}>
+          <SliceFx delay={g.drift} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed}
+            cardEl={<Card suit={g.suit} value={g.value} baseRank={g.baseRank} stichBonus={g.stichBonus}
+              ionStacks={g.ionStacks} frozen={g.frozen} frostAnimated allyColor={g.allyColor} />} />
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -163,10 +188,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const sCut     = clamp(flipMs * 0.13, 55, 130);    // Schnittlinie wächst (~120 ms) & fadet
   const sSpark   = clamp(flipMs * 0.5, 150, 520);    // Funken (~500 ms)
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
+  const sDrift   = clamp(flipMs * 0.3, 90, 260);     // Niederlage-Ghost floatet erst kurz (~260 ms @1×), dann Schnitt
   // Suit-Farbe der GESCHNITTENEN (Verlierer-)Karte → Schnittlinie + Funken. Sieg: Gegnerkarte · Niederlage: Spielerkarte.
   const loserColor = sliceOn ? suitColor(win ? t.oCard.suit : t.pCard.suit) : null;
-  const playerSliced = sliceOn && lost;   // Spielerkarte verliert → wird geschnitten
-  const oppSliced    = sliceOn && win;    // Gegnerkarte verliert → wird geschnitten
+  // Sieg: Gegnerkarte wird in-place geschnitten, Spielerkarte kippt an. Niederlage: Spielerkarte wird NICHT in-place
+  // geschnitten, sondern als entkoppelter Ghost (floaten → schneiden, überlappt bei Turbo, s. lossGhosts unten) —
+  // in-place bleibt sie nur unsichtbarer Platzhalter; Gegnerkarte (Sieger) kippt an.
+  const lossGhost    = sliceOn && lost;   // Spielerkarte verliert → entkoppelter Drift-+-Slice-Ghost
+  const oppSliced    = sliceOn && win;    // Gegnerkarte verliert → in-place geschnitten
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
@@ -184,13 +213,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   );
 
   const playerCard = t ? (
-    <div key={`p${t.trickNo}`} className="relative" style={playerSliced ? undefined : dealStyle("as-deal-left")}>
+    <div key={`p${t.trickNo}`} className="relative" style={lossGhost ? undefined : dealStyle("as-deal-left")}>
       {resultPulse(win ? (isCrit ? critColor : "#5ab87a") : null, isCrit)}
-      {playerSliced ? (
-        <>
-          <div style={{ opacity: 0 }} aria-hidden="true">{pCardEl}</div>{/* hält die 104×144-Box */}
-          <SliceFx cardEl={pCardEl} color={loserColor} halvesDur={sHalves} cutDur={sCut} sparkDur={sSpark} seed={t.trickNo * 2 + 7} />
-        </>
+      {lossGhost ? (
+        <div style={{ opacity: 0 }} aria-hidden="true">{pCardEl}</div>   /* in-place unsichtbar — der entkoppelte Ghost (Side-overlay) floatet + schneidet */
       ) : playerWinner ? (
         <div style={winnerTilt(sWinner)}>{pCardEl}</div>   /* Sieger kippt an */
       ) : pCardEl}
@@ -271,6 +297,26 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     const ids = entries.map((e) => e.id);
     const tm = setTimeout(() => setFloats((cur) => cur.filter((f) => !ids.includes(f.id))), dur);
     floatTimers.current.push(tm);
+  }, [t?.trickNo]);
+
+  // #177+: Niederlage-Ghost-Pool — entkoppelt vom Stich-Takt (wie der Score-Float-Pool), damit die geschnittene
+  // Spielerkarte erst hochfloatet, dann zerschneidet und bei hohem Turbo/vielen Siegen mit dem nächsten Stich
+  // überlappt. Jeder Ghost hält die Timings/Kartendaten SEINES Stichs fest und entfernt sich nach seiner Dauer.
+  const [lossGhosts, setLossGhosts] = useState([]);
+  const ghostTimers = useRef([]);
+  useEffect(() => () => ghostTimers.current.forEach(clearTimeout), []);
+  useEffect(() => {
+    if (!t) { setLossGhosts([]); return; }        // Menü/neuer Lauf → Pool leeren
+    if (!(sliceOn && lost)) return;                // nur bei einer echten (animierten) Niederlage spawnen
+    const ghost = {
+      id: `g${t.trickNo}`, color: suitColor(t.pCard.suit), seed: t.trickNo * 2 + 7,
+      drift: sDrift, halves: sHalves, cut: sCut, spark: sSpark,
+      suit: t.pCard.suit, value: t.pCard.value, baseRank: t.pCard.baseRank, stichBonus: t.pValue - t.pCard.value,
+      ionStacks: t.pCard.ionStacks || 0, frozen: t.pFrozen, allyColor: allyColorFor(t.pCard.suit),
+    };
+    setLossGhosts((cur) => [...cur, ghost].slice(-4)); // Pool gedeckelt
+    const tm = setTimeout(() => setLossGhosts((cur) => cur.filter((g) => g.id !== ghost.id)), sDrift + sHalves + 80);
+    ghostTimers.current.push(tm);
   }, [t?.trickNo]);
 
   // Formations-Float: soll ~1,5 s LÄNGER stehen bleiben als sein Stich, dann sanft ausklingen. Deshalb vom aktuellen
@@ -375,7 +421,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
           </div>
         )}
 
-        <Side label="Du" remaining={remaining} dealFrom="left">{playerCard}</Side>
+        <Side label="Du" remaining={remaining} dealFrom="left"
+              overlay={lossGhosts.length ? <LossGhostLayer ghosts={lossGhosts} /> : null}>{playerCard}</Side>
 
         <img src={swordicon} alt="vs" width={46} height={46} draggable="false"
              className="crt-vs-icon shrink-0 select-none" style={{ imageRendering: "pixelated" }} />
