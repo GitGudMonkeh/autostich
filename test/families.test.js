@@ -395,12 +395,20 @@ describe("Kategorie D — Stufeneffekte (Spec §3.2 D)", () => {
     expect(f[1].scoreFlat({ margin: 9 })).toBe(0);
     expect(f[4].scoreFlat({ margin: 4 })).toBe(750);
   });
-  it("Präzision: I/II exakt gleich, III/IV auch ±1", () => {
+  it("Präzision: I/II exakt gleich, III/IV auch ±1 (nur bei aufeinanderfolgenden Siegen)", () => {
     const f = FAMILY_DEFS.D_PRECISION.tiers;
-    expect(f[1].scoreFlat({ winValue: 5, lastWinValue: 5 })).toBe(250);
-    expect(f[1].scoreFlat({ winValue: 5, lastWinValue: 6 })).toBe(0);   // ±1 zählt noch nicht
-    expect(f[3].scoreFlat({ winValue: 5, lastWinValue: 6 })).toBe(550); // ±1 zählt
-    expect(f[4].scoreFlat({ winValue: 5, lastWinValue: 7 })).toBe(0);   // ±2 nicht
+    const w = (extra) => ({ lastResult: "win", ...extra }); // Vorgänger war ein Sieg → „aufeinanderfolgend"
+    expect(f[1].scoreFlat(w({ winValue: 5, lastWinValue: 5 }))).toBe(250);
+    expect(f[1].scoreFlat(w({ winValue: 5, lastWinValue: 6 }))).toBe(0);   // ±1 zählt noch nicht
+    expect(f[3].scoreFlat(w({ winValue: 5, lastWinValue: 6 }))).toBe(550); // ±1 zählt
+    expect(f[4].scoreFlat(w({ winValue: 5, lastWinValue: 7 }))).toBe(0);   // ±2 nicht
+  });
+  it("Präzision: #146 — zahlt NICHT über eine Niederlage/Gleichstand hinweg (nicht aufeinanderfolgend)", () => {
+    const f = FAMILY_DEFS.D_PRECISION.tiers;
+    // gleicher Wert wie der letzte Sieg, aber der direkt vorige Stich war KEIN Sieg → kein Bonus.
+    expect(f[1].scoreFlat({ lastResult: "loss", winValue: 7, lastWinValue: 7 })).toBe(0);
+    expect(f[1].scoreFlat({ lastResult: "tie",  winValue: 7, lastWinValue: 7 })).toBe(0);
+    expect(f[4].scoreFlat({ lastResult: "loss", winValue: 7, lastWinValue: 7 })).toBe(0);
   });
   it("Zehnter Sieg: Zähler-Intervall sinkt 12→5", () => {
     const f = FAMILY_DEFS.D_TENTH_WIN.tiers;

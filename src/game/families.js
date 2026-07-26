@@ -132,11 +132,14 @@ const D_FAMILIES = {
   D_PRECISION: {
     id: "D_PRECISION", cat: "D", name: "Präzision", upgradeType: REPLACEMENT,
     // I/II: exakt gleicher Wert wie der letzte Sieg. III/IV: gleicher oder ±1 Wert. (IV-Kette: Engine-Extra.)
+    // #146: „aufeinanderfolgend" heißt: der VORIGE Stich war auch ein Sieg (lastResult === "win", inkl. Gleichstand-
+    // Sieg → in der Engine ebenfalls "win"). Sonst würde ein alter lastWinValue Niederlagen/Gleichstände überdauern
+    // und z. B. Sieg(7) → Niederlage → Sieg(7) fälschlich zahlen. lastWinValue selbst wird nur bei Sieg gesetzt.
     tiers: {
-      1: { desc: "Zwei aufeinanderfolgende Siege mit demselben Kartenwert geben dem zweiten +250 Score.",        scoreFlat: (c) => (c.lastWinValue != null && c.winValue === c.lastWinValue ? 250 : 0) },
-      2: { desc: "Zwei aufeinanderfolgende Siege mit demselben Kartenwert geben dem zweiten +450 Score.",        scoreFlat: (c) => (c.lastWinValue != null && c.winValue === c.lastWinValue ? 450 : 0) },
-      3: { desc: "Zwei aufeinanderfolgende Siege mit gleichem oder um 1 abweichendem Wert geben +550 Score.",    scoreFlat: (c) => (c.lastWinValue != null && Math.abs(c.winValue - c.lastWinValue) <= 1 ? 550 : 0) },
-      4: { desc: "Zwei aufeinanderfolgende Siege mit gleichem oder um 1 abweichendem Wert geben +800 Score; die Kette kann weiterlaufen.", scoreFlat: (c) => (c.lastWinValue != null && Math.abs(c.winValue - c.lastWinValue) <= 1 ? 800 : 0), chain: true },
+      1: { desc: "Zwei aufeinanderfolgende Siege mit demselben Kartenwert geben dem zweiten +250 Score.",        scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && c.winValue === c.lastWinValue ? 250 : 0) },
+      2: { desc: "Zwei aufeinanderfolgende Siege mit demselben Kartenwert geben dem zweiten +450 Score.",        scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && c.winValue === c.lastWinValue ? 450 : 0) },
+      3: { desc: "Zwei aufeinanderfolgende Siege mit gleichem oder um 1 abweichendem Wert geben +550 Score.",    scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && Math.abs(c.winValue - c.lastWinValue) <= 1 ? 550 : 0) },
+      4: { desc: "Zwei aufeinanderfolgende Siege mit gleichem oder um 1 abweichendem Wert geben +800 Score; die Kette kann weiterlaufen.", scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && Math.abs(c.winValue - c.lastWinValue) <= 1 ? 800 : 0), chain: true },
     },
   },
   D_INTERPLAY: {
