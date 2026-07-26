@@ -346,10 +346,66 @@ const SHOP_FORMATION_FAMILIES = {
   },
 };
 
+/* ---- Planungs-Familien (Shop-Spec §4.2 Planungsfamilien, #164) — kein Score-Effekt; wirken auf Angebote/Auswahlen.
+        Ziel-lose Familien (3e) setzen beim Kauf Shop-Felder über `onBuy(shop) → Patch` (perkRerolls, Legendär-Boni,
+        fateControl/…). Nutzer-Entscheid #164: repeatable:false. Legendensuche = REGELERSETZUNG (Stufe SETZT den
+        Gesamt-Bonus, nicht additiv, §4.2). §10-Näherungen: „ungenutzter Neuwurf bleibt" (P1/P2 III) entfällt
+        (Vorräte bleiben ohnehin bis zur Nutzung erhalten); Legendensuche IV „mind. 1 ungewöhnlicher" deferiert. ---- */
+const SHOP_PLANNING_FAMILIES = {
+  SF_P_PERK_REROLL: {
+    id: "SF_P_PERK_REROLL", cat: "planning", name: "Perk-Neuwurf", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["P1"],
+    tiers: {
+      1: { desc: "Erhalte 1 gespeicherten Perk-Neuwurf.",  onBuy: (s) => ({ perkRerolls: (s.perkRerolls || 0) + 1 }) },
+      2: { desc: "Erhalte 2 gespeicherte Perk-Neuwürfe.",  onBuy: (s) => ({ perkRerolls: (s.perkRerolls || 0) + 2 }) },
+      3: { desc: "Erhalte 3 gespeicherte Perk-Neuwürfe.",  onBuy: (s) => ({ perkRerolls: (s.perkRerolls || 0) + 3 }) },
+      4: { desc: "Bei jeder zukünftigen Perk-Auswahl ein kostenloser Neuwurf.", onBuy: () => ({ perkFreeReroll: true }) },
+    },
+  },
+  SF_P_SKILL_REROLL: {
+    id: "SF_P_SKILL_REROLL", cat: "planning", name: "Skill-Neuwurf", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["P2"],
+    tiers: {
+      1: { desc: "Erhalte 1 gespeicherten Skill-Neuwurf.",  onBuy: (s) => ({ skillRerolls: (s.skillRerolls || 0) + 1 }) },
+      2: { desc: "Erhalte 2 gespeicherte Skill-Neuwürfe.",  onBuy: (s) => ({ skillRerolls: (s.skillRerolls || 0) + 2 }) },
+      3: { desc: "Erhalte 3 gespeicherte Skill-Neuwürfe.",  onBuy: (s) => ({ skillRerolls: (s.skillRerolls || 0) + 3 }) },
+      4: { desc: "Bei jeder zukünftigen Skill-Auswahl ein kostenloser Neuwurf.", onBuy: () => ({ skillFreeReroll: true }) },
+    },
+  },
+  SF_P_LEGEND_PERK: {
+    id: "SF_P_LEGEND_PERK", cat: "planning", name: "Legendensuche: Perks", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["P5"],
+    // Regelersetzung: die Stufe SETZT den Legendär-/Rar-Chancen-Bonus (nicht additiv, §4.2).
+    tiers: {
+      1: { desc: "Rar- und Legendär-Chance zukünftiger Perk-Angebote +3 Prozentpunkte.",  onBuy: () => ({ perkLegendaryBonus: 0.03 }) },
+      2: { desc: "Rar- und Legendär-Chance zukünftiger Perk-Angebote +5 Prozentpunkte.",  onBuy: () => ({ perkLegendaryBonus: 0.05 }) },
+      3: { desc: "Rar- und Legendär-Chance zukünftiger Perk-Angebote +10 Prozentpunkte.", onBuy: () => ({ perkLegendaryBonus: 0.10 }) },
+      4: { desc: "Rar- und Legendär-Chance zukünftiger Perk-Angebote +15 Prozentpunkte.", onBuy: () => ({ perkLegendaryBonus: 0.15 }) },
+    },
+  },
+  SF_P_LEGEND_SKILL: {
+    id: "SF_P_LEGEND_SKILL", cat: "planning", name: "Legendensuche: Skills", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["P6"],
+    tiers: {
+      1: { desc: "Rar- und Legendär-Chance zukünftiger Skill-Angebote +3 Prozentpunkte.",  onBuy: () => ({ skillLegendaryBonus: 0.03 }) },
+      2: { desc: "Rar- und Legendär-Chance zukünftiger Skill-Angebote +5 Prozentpunkte.",  onBuy: () => ({ skillLegendaryBonus: 0.05 }) },
+      3: { desc: "Rar- und Legendär-Chance zukünftiger Skill-Angebote +10 Prozentpunkte.", onBuy: () => ({ skillLegendaryBonus: 0.10 }) },
+      4: { desc: "Rar- und Legendär-Chance zukünftiger Skill-Angebote +15 Prozentpunkte.", onBuy: () => ({ skillLegendaryBonus: 0.15 }) },
+    },
+  },
+  // Schicksalskontrolle (ehem. legendär P-L1): kostenlose Neuwürfe. §10: I/II als Vorrat, III/IV als dauerhafte Regel.
+  SF_P_FATE: {
+    id: "SF_P_FATE", cat: "planning", name: "Schicksalskontrolle", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["P-L1"],
+    tiers: {
+      1: { desc: "Erhalte je 1 gespeicherten Perk- und Skill-Neuwurf.",  onBuy: (s) => ({ perkRerolls: (s.perkRerolls || 0) + 1, skillRerolls: (s.skillRerolls || 0) + 1 }) },
+      2: { desc: "Erhalte je 3 gespeicherte Perk- und Skill-Neuwürfe.",  onBuy: (s) => ({ perkRerolls: (s.perkRerolls || 0) + 3, skillRerolls: (s.skillRerolls || 0) + 3 }) },
+      3: { desc: "Bei jeder Perk-Auswahl ein kostenloser Neuwurf; zusätzlich 3 gespeicherte Skill-Neuwürfe.", onBuy: (s) => ({ perkFreeReroll: true, skillRerolls: (s.skillRerolls || 0) + 3 }) },
+      4: { desc: "Bei jeder Perk- UND Skill-Auswahl ein kostenloser Neuwurf.", onBuy: () => ({ fateControl: true }) },
+    },
+  },
+};
+
 export const SHOP_FAMILY_DEFS = {
   ...SHOP_CARD_FAMILIES,
   ...SHOP_ANCHOR_FAMILIES,
   ...SHOP_FORMATION_FAMILIES,
+  ...SHOP_PLANNING_FAMILIES,
 };
 
 // Feinjustierung (§4.3): Formationsenergie-Bonus aus dem gehaltenen Rang. `everySecond` (Stufe I §10) nur jede

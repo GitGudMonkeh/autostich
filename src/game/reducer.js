@@ -7,7 +7,7 @@ import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, ma
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
-import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance, purchaseLogEntry, familyPurchaseLogEntry } from "./shop.js";
+import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance, perkFateReroll, purchaseLogEntry, familyPurchaseLogEntry } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -138,7 +138,8 @@ export function reducer(state, action) {
             purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
             familyTiers: { ...(shop.familyTiers || {}), [fam.id]: offer.famTier },
             purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, offer.famTier, offer.price, state.cycle, null)] };
-          if (tierDef.pe) newShop.permanentEffects = { ...(shop.permanentEffects || {}), ...tierDef.pe }; // REPLACEMENT: Stufen-Patch überschreibt vollständig
+          if (tierDef.pe) newShop.permanentEffects = { ...(shop.permanentEffects || {}), ...tierDef.pe }; // Formations-Familien: REPLACEMENT-Patch
+          if (tierDef.onBuy) Object.assign(newShop, tierDef.onBuy(shop));                                 // Planungs-Familien: Shop-Felder setzen
           const formations = computeFormations(state.playerOrder, state.deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects, state.familyTiers);
           return { ...state, formations, phase: "shop", shop: newShop };
         }
@@ -508,7 +509,7 @@ export function reducer(state, action) {
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
       const off = buildPerkOffer(state.perks, state.familyTiers, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
-      const fate = !!(state.shop && state.shop.fateControl);         // P-L1: gratis Reroll gilt fürs neue Perk-Angebot
+      const fate = perkFateReroll(state.shop);                       // #164: gratis Perk-Reroll gilt fürs neue Perk-Angebot
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off, freePerkReroll: fate, freeSkillReroll: false } // → Perk-Auswahl
         : { ...state, skillOffer: null, freeSkillReroll: false, phase: "play" };                   // Perk-Pool leer → weiterspielen

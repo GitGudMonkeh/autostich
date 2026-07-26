@@ -9,7 +9,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, summarizeFormations, SEGMENT_SIZE } from "./formations.js";
-import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
+import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, perkFateReroll, skillFateReroll, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
 import { SHOP_FAMILY_DEFS, timeSegmentDepth, timeSegmentReduced, formationEnergyBonus } from "./shopFamilies.js";
 
 function sumHook(perks, name, ctx) {
@@ -531,16 +531,16 @@ export function resolveTrick(state, rng = Math.random) {
       // Entscheidung VOR dem neuen Durchlauf nach dem festen Plan (Shop-Spec §2.2): DECISION_SCHEDULE[cycle]
       // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
       const decision = C.DECISION_SCHEDULE[cycle];
-      const fate = !!(shop && shop.fateControl); // P-L1 Schicksalskontrolle: gratis Reroll je Perk-/Skill-Auswahl
+      const perkFate = perkFateReroll(shop), skillFate = skillFateReroll(shop); // #164 Schicksalskontrolle/Neuwurf IV: gratis Reroll je Auswahl
       if (decision === "stat") {
         phase = "levelup"; newStatOffer = STAT_IDS; // immer alle Stats (Shop-Spec §4.3: fünf inkl. Einkommen)
       } else if (decision === "skill") {
         const soff = buildSkillOffer(skills, activeArchetypes, rng, C.SKILLS_OFFERED, skillLegendaryChance(shop));
-        if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = fate; }
-        else { const off = buildPerkOffer(perks, familyTiers, rng, C.PERKS_OFFERED, perkLegendaryChance(shop)); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = fate; } } // leerer Skill-Pool → Perk
+        if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = skillFate; }
+        else { const off = buildPerkOffer(perks, familyTiers, rng, C.PERKS_OFFERED, perkLegendaryChance(shop)); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; } } // leerer Skill-Pool → Perk
       } else if (decision === "perk") {
         const off = buildPerkOffer(perks, familyTiers, rng, C.PERKS_OFFERED, perkLegendaryChance(shop));
-        if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = fate; }
+        if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; }
       } else if (decision === "shop") {
         // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen, Einkommensbonus gutschreiben (+3 je Einkommen-Level,
         // pro Shop) und ein frisches Angebot ziehen (§5, deterministisch über rng). Danach ein evtl. im letzten

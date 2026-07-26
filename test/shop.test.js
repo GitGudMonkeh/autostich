@@ -661,27 +661,33 @@ describe("Shop-Formationsitem — F-L1 Formationskern (Shop-Spec §9)", () => {
 });
 
 describe("Shop-Planungsitems — S5a Rerolls (Shop-Spec §10)", () => {
-  it("P1/P2/P-L1 apply setzen Rerolls bzw. fateControl", () => {
-    const s = initialState(makeRng(1));
-    expect(SHOP_ITEM_DEFS.P1.apply(s).shop.perkRerolls).toBe(1);
-    expect(SHOP_ITEM_DEFS.P2.apply(s).shop.skillRerolls).toBe(1);
-    expect(SHOP_ITEM_DEFS["P-L1"].apply(s).shop.fateControl).toBe(true);
+  it("Neuwurf-/Schicksals-Familien onBuy: Vorrat je Stufe, IV = dauerhafte Regel", () => {
+    const s = { perkRerolls: 0, skillRerolls: 0 };
+    expect(SHOP_FAMILY_DEFS.SF_P_PERK_REROLL.tiers[3].onBuy(s)).toEqual({ perkRerolls: 3 });
+    expect(SHOP_FAMILY_DEFS.SF_P_SKILL_REROLL.tiers[2].onBuy(s)).toEqual({ skillRerolls: 2 });
+    expect(SHOP_FAMILY_DEFS.SF_P_PERK_REROLL.tiers[4].onBuy(s)).toEqual({ perkFreeReroll: true });
+    expect(SHOP_FAMILY_DEFS.SF_P_FATE.tiers[4].onBuy(s)).toEqual({ fateControl: true });
   });
-  it("Kauf P1 (kein Ziel): +1 Perk-Neuwurf-Token, Preis abgezogen", () => {
-    const offer = { offerId: "o0", itemId: "P1", category: "planning", tier: "cheap", price: 8, legendary: false };
-    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers: [offer] } };
+  it("Kauf Perk-Neuwurf II (kein Ziel): +2 Perk-Token sofort, Preis abgezogen", () => {
+    const offer = { offerId: "o0", category: "planning", familyId: "SF_P_PERK_REROLL", famTier: 2, price: 12, family: true, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers: [offer] } };
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
     expect(r.shop.coins).toBe(0);
-    expect(r.shop.perkRerolls).toBe(1);
+    expect(r.shop.perkRerolls).toBe(2);
+    expect(r.shop.familyTiers.SF_P_PERK_REROLL).toBe(2);
   });
-  it("Kauf P-L1 Schicksalskontrolle: fateControl (legendär + nicht wiederholbar)", () => {
-    const offer = { offerId: "o0", itemId: "P-L1", category: "planning", tier: "legendary", price: 30, legendary: true };
+  it("Kauf Schicksalskontrolle IV: fateControl (beide Auswahlen gratis)", () => {
+    const offer = { offerId: "o0", category: "planning", familyId: "SF_P_FATE", famTier: 4, price: 30, family: true, legendary: false };
     const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
     expect(r.shop.fateControl).toBe(true);
-    expect(r.shop.boughtLegendaryIds).toEqual(["P-L1"]);
-    expect(r.shop.boughtNonRepeatableIds).toEqual(["P-L1"]);
+    expect(r.shop.familyTiers.SF_P_FATE).toBe(4);
+  });
+  it("Perk-Neuwurf IV (perkFreeReroll) → Engine gibt beim Perk-Angebot gratis Reroll (Skill nicht)", () => {
+    const s = resolveTrick(atCycleEnd({ cycle: 0, shop: { ...initialShop(), perkFreeReroll: true } }), rng); // cycle 0→1 = Perk
+    expect(s.phase).toBe("levelup");
+    expect(s.freePerkReroll).toBe(true);
   });
 
   const levelupPerk = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["A1", "A2", "A3"], ...over });
@@ -843,16 +849,10 @@ describe("Shop-Planungsitem — S5b P4 Reservierung (Shop-Spec §10)", () => {
 });
 
 describe("Shop-Planungsitems — S5c Legendensuche P5/P6 (Shop-Spec §10)", () => {
-  it("P5/P6 apply erhöhen den Legendär-Bonus um +5 pp bis zum Cap", () => {
-    const s = initialShop();
-    expect(SHOP_ITEM_DEFS.P5.apply({ shop: s }).shop.perkLegendaryBonus).toBeCloseTo(0.05);
-    expect(SHOP_ITEM_DEFS.P6.apply({ shop: s }).shop.skillLegendaryBonus).toBeCloseTo(0.05);
-    expect(SHOP_ITEM_DEFS.P5.apply({ shop: { ...s, perkLegendaryBonus: 0.14 } }).shop.perkLegendaryBonus).toBeCloseTo(MAX_LEGENDARY_CHANCE_BONUS); // Cap
-  });
-  it("P5/P6-Verfügbarkeit: am Cap (+15 pp) nicht mehr anbieten (§10)", () => {
-    expect(isItemAvailable(SHOP_ITEM_DEFS.P5, initialShop(), [])).toBe(true);
-    expect(isItemAvailable(SHOP_ITEM_DEFS.P5, { ...initialShop(), perkLegendaryBonus: MAX_LEGENDARY_CHANCE_BONUS }, [])).toBe(false);
-    expect(isItemAvailable(SHOP_ITEM_DEFS.P6, { ...initialShop(), skillLegendaryBonus: MAX_LEGENDARY_CHANCE_BONUS }, [])).toBe(false);
+  it("Legendensuche-Familien SETZEN den Legendär-Bonus je Stufe (Regelersetzung, nicht additiv)", () => {
+    expect([1, 2, 3, 4].map((t) => SHOP_FAMILY_DEFS.SF_P_LEGEND_PERK.tiers[t].onBuy().perkLegendaryBonus)).toEqual([0.03, 0.05, 0.10, 0.15]);
+    expect([1, 2, 3, 4].map((t) => SHOP_FAMILY_DEFS.SF_P_LEGEND_SKILL.tiers[t].onBuy().skillLegendaryBonus)).toEqual([0.03, 0.05, 0.10, 0.15]);
+    expect(SHOP_FAMILY_DEFS.SF_P_LEGEND_PERK.tiers[4].onBuy().perkLegendaryBonus).toBeCloseTo(MAX_LEGENDARY_CHANCE_BONUS); // IV = Cap
   });
   it("perkLegendaryChance/skillLegendaryChance = Basis + Bonus (Bonus gedeckelt)", () => {
     expect(perkLegendaryChance(initialShop())).toBeCloseTo(PERK_LEGENDARY_BASE);
@@ -860,12 +860,13 @@ describe("Shop-Planungsitems — S5c Legendensuche P5/P6 (Shop-Spec §10)", () =
     expect(perkLegendaryChance({ perkLegendaryBonus: 0.99 })).toBeCloseTo(PERK_LEGENDARY_BASE + MAX_LEGENDARY_CHANCE_BONUS);
     expect(skillLegendaryChance({ skillLegendaryBonus: 0.05 })).toBeCloseTo(SKILL_LEGENDARY_BASE + 0.05);
   });
-  it("Kauf P5 (kein Ziel): +5 pp Perk-Legendär-Bonus, Preis abgezogen", () => {
-    const offer = { offerId: "o0", itemId: "P5", category: "planning", tier: "premium", price: 18, legendary: false };
-    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
+  it("Kauf Legendensuche: Perks II (kein Ziel): setzt Perk-Legendär-Bonus 0,05, Preis abgezogen", () => {
+    const offer = { offerId: "o0", category: "planning", familyId: "SF_P_LEGEND_PERK", famTier: 2, price: 12, family: true, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers: [offer] } };
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
     expect(r.shop.coins).toBe(0);
     expect(r.shop.perkLegendaryBonus).toBeCloseTo(0.05);
+    expect(r.shop.familyTiers.SF_P_LEGEND_PERK).toBe(2);
   });
 });
 

@@ -45,13 +45,8 @@ export const SHOP_ITEM_DEFS = {
   // ---- Formationen (Shop-Spec §9) — KOMPLETT zu Shop-FAMILIEN migriert (#164, shopFamilies.js
   //      SHOP_FORMATION_FAMILIES; sie setzen tier-abhängige permEffects bzw. lösen Ziele dorthin auf). ----
 
-  // ---- Planung (Shop-Spec §10) — Neuwürfe/Reservierung; kein Score-Effekt, wirkt auf Angebote/Auswahlen. ----
-  P1: { id: "P1", category: "planning", name: "Perk-Neuwurf", tier: "cheap", repeatable: true,
-        description: "Erhalte einen gespeicherten Neuwurf für eine zukünftige Perk-Auswahl.",
-        apply: (s) => ({ shop: { ...s.shop, perkRerolls: (s.shop.perkRerolls || 0) + 1 } }) },
-  P2: { id: "P2", category: "planning", name: "Skill-Neuwurf", tier: "cheap", repeatable: true,
-        description: "Erhalte einen gespeicherten Neuwurf für eine zukünftige Skill-Auswahl.",
-        apply: (s) => ({ shop: { ...s.shop, skillRerolls: (s.shop.skillRerolls || 0) + 1 } }) },
+  // ---- Planung (Shop-Spec §10) — Neuwürfe/Reservierung; kein Score-Effekt, wirkt auf Angebote/Auswahlen.
+  //      P1/P2/P5/P6/P-L1 zu Shop-FAMILIEN migriert (#164, shopFamilies.js SHOP_PLANNING_FAMILIES). P3/P4 folgen. ----
   P3: { id: "P3", category: "planning", name: "Warenwechsel", tier: "cheap", repeatable: true,
         targetMode: "category", target: { category: true },
         description: "Würfle eine Kategorie des aktuellen Shops einmal neu (nicht gekaufte Angebote werden ersetzt).",
@@ -69,23 +64,16 @@ export const SHOP_ITEM_DEFS = {
             : { itemId: off.itemId, category: off.category, tier: off.tier, price: off.price, legendary: !!off.legendary };
           return { shop: { ...s.shop, reservedItem } };
         } },
-  P5: { id: "P5", category: "planning", name: "Legendensuche: Perks", tier: "premium", repeatable: true,
-        available: (shop) => (shop.perkLegendaryBonus || 0) < C.MAX_LEGENDARY_CHANCE_BONUS, // bis Cap (§10)
-        description: "Die Legendär-Chance zukünftiger Perk-Angebote steigt dauerhaft um 5 Prozentpunkte.",
-        apply: (s) => ({ shop: { ...s.shop, perkLegendaryBonus: Math.min((s.shop.perkLegendaryBonus || 0) + 0.05, C.MAX_LEGENDARY_CHANCE_BONUS) } }) },
-  P6: { id: "P6", category: "planning", name: "Legendensuche: Skills", tier: "premium", repeatable: true,
-        available: (shop) => (shop.skillLegendaryBonus || 0) < C.MAX_LEGENDARY_CHANCE_BONUS,
-        description: "Die Legendär-Chance zukünftiger Skill-Angebote steigt dauerhaft um 5 Prozentpunkte.",
-        apply: (s) => ({ shop: { ...s.shop, skillLegendaryBonus: Math.min((s.shop.skillLegendaryBonus || 0) + 0.05, C.MAX_LEGENDARY_CHANCE_BONUS) } }) },
-  "P-L1": { id: "P-L1", category: "planning", name: "Schicksalskontrolle", tier: "legendary", legendary: true, repeatable: false,
-        description: "Bei jeder zukünftigen Perk- und Skill-Auswahl darf das Angebot einmal kostenlos neu gewürfelt werden.",
-        apply: (s) => ({ shop: { ...s.shop, fateControl: true } }) },
 };
 
 // Legendär-Chance (Shop-Spec §10 P5/P6): Basis + additiver Bonus (bis Cap), für den expliziten Legendär-Roll
 // in buildOffer/buildSkillOffer. Ohne P5/P6-Käufe = reine Basis.
 export const perkLegendaryChance  = (shop = {}) => C.PERK_LEGENDARY_BASE  + Math.min(shop.perkLegendaryBonus  || 0, C.MAX_LEGENDARY_CHANCE_BONUS);
 export const skillLegendaryChance = (shop = {}) => C.SKILL_LEGENDARY_BASE + Math.min(shop.skillLegendaryBonus || 0, C.MAX_LEGENDARY_CHANCE_BONUS);
+// Kostenloser Neuwurf je Perk-/Skill-Auswahl (#164): Schicksalskontrolle IV (fateControl, beide) ODER die
+// typ-spezifische Regel (perkFreeReroll aus Perk-Neuwurf IV / Schicksalskontrolle III; skillFreeReroll aus Skill-Neuwurf IV).
+export const perkFateReroll  = (shop = {}) => !!(shop.fateControl || shop.perkFreeReroll);
+export const skillFateReroll = (shop = {}) => !!(shop.fateControl || shop.skillFreeReroll);
 
 // Aktive dauerhafte Shop-Verbesserungen als Label-Liste (Chronik-Übersicht, §S6 Politur). Rein & anzeige-orientiert:
 // leitet die aktiven permanenten Regeländerungen (§9) + Anker-Legendäre + Planungs-Boni aus dem Shop-State ab.
@@ -151,7 +139,8 @@ export function initialShop() {
     boughtNonRepeatableIds: [],     // §15: gekaufte nicht-wiederholbare Items (nie wieder angeboten)
     reservedItem: null,             // P4: reserviertes Item fürs nächste Angebot
     perkRerolls: 0, skillRerolls: 0, // P1/P2: gespeicherte Neuwürfe
-    fateControl: false,             // P-L1: je Perk-/Skill-Auswahl ein kostenloser Neuwurf
+    fateControl: false,             // Schicksalskontrolle IV: je Perk-/Skill-Auswahl ein kostenloser Neuwurf
+    perkFreeReroll: false, skillFreeReroll: false, // #164: typ-spezifischer Gratis-Neuwurf (Perk-/Skill-Neuwurf IV, Schicksalskontrolle III)
     perkLegendaryBonus: 0, skillLegendaryBonus: 0, // P5/P6: additive Legendär-Chance (Cap in S5)
     permanentEffects: {             // §9 F-Items: permanente Regeländerungen der Formationserkennung
       descendingStraights: false,       // F1: Treppen auch fallend

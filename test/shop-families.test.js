@@ -280,3 +280,23 @@ describe("Formations-Shop-Familien (Spec §4.2 Formationsfamilien + §4.3)", () 
     expect(formationEnergyBonus({}, 0)).toBe(0);
   });
 });
+
+describe("Planungs-Shop-Familien (Spec §4.2 Planungsfamilien)", () => {
+  it("REPLACEMENT, repeatable:false; ziel-lose Familien tragen onBuy je Stufe", () => {
+    const plan = SHOP_FAMILY_LIST.filter((f) => f.cat === "planning");
+    for (const fam of plan) {
+      expect(fam.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
+      expect(fam.repeatable).toBe(false);
+      for (const t of TIERS) {
+        const td = fam.tiers[t];
+        expect(typeof td.onBuy === "function" || td.pickTarget).toBeTruthy();
+      }
+    }
+  });
+  it("Neuwurf-Vorrat je Stufe + IV dauerhafte Regel", () => {
+    const base = { perkRerolls: 5, skillRerolls: 2 };
+    expect(SHOP_FAMILY_DEFS.SF_P_PERK_REROLL.tiers[1].onBuy(base)).toEqual({ perkRerolls: 6 });
+    expect(SHOP_FAMILY_DEFS.SF_P_SKILL_REROLL.tiers[3].onBuy(base)).toEqual({ skillRerolls: 5 });
+    expect(SHOP_FAMILY_DEFS.SF_P_FATE.tiers[3].onBuy(base)).toEqual({ perkFreeReroll: true, skillRerolls: 5 });
+  });
+});
