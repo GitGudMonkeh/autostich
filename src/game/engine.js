@@ -6,9 +6,9 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   lightningCritMult, hasStaticCharge, hasConductivity, hasEndlessStorm, hasDischarge, // Blitz-Rework (#93 F2)
   hasBlitzcatcher, hasVoltageArc, // #165 Skills (§5.2): Blitzfänger / Spannungsbogen
   fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer (#93 F1)
-  hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
+  hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost, hasIceBloom } from "./skills.js"; // Eis (#93 F3 / #165 Eisblüte)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
-import { computeFormations, positionHasFormation, summarizeFormations, SEGMENT_SIZE } from "./formations.js";
+import { computeFormations, positionHasFormation, summarizeFormations, baseFormationCount, SEGMENT_SIZE } from "./formations.js";
 import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, SHOP_ITEM_DEFS, anchorTypeAt, playSequence } from "./shop.js";
 
 function sumHook(perks, name, ctx) {
@@ -232,6 +232,15 @@ export function resolveTrick(state, rng = Math.random) {
         const marked = new Set(newFrostbitePending);
         const pool = oppDeck.map((c) => c.id).filter((id) => !marked.has(id));
         for (let k = 0; k < C.FROSTBISS_COUNT && pool.length; k++) newFrostbitePending.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+      }
+      // #165 Eisblüte (§5.4): siegt die Frostkarte in ≥2 aktiven Nicht-Anker-Formationen → beide direkten Deck-Nachbarn
+      // +3 temp Wert fürs nächste Auftauchen (renew, kein Stapeln; die Siegkarte selbst erhält nichts; Ränder = nur ein Nachbar).
+      if (hasIceBloom(skills) && baseFormationCount(posForm) >= 2) {
+        for (const nb of [actualPos - 1, actualPos + 1]) {
+          if (nb < 0 || nb >= playerOrder.length) continue;
+          const nid = deck[playerOrder[nb]].id;
+          newIceTemp[nid] = Math.max(newIceTemp[nid] || 0, C.EISBLUETE_VALUE);
+        }
       }
     }
     // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.

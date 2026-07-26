@@ -1,9 +1,9 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
 import { PERK_DEFS, buildOffer } from "./perks.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
-  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
+  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, hasGlacierPush, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
-import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
+import { computeFormations, formationPotential, segmentGainedFormation, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance, purchaseLogEntry } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
@@ -436,15 +436,40 @@ export function reducer(state, action) {
     case "CONFIRM_FORMATION": {
       if (state.phase !== "formation") return state;
       let iceTemp = state.iceTemp || {};
-      const usedFrost = state.frostSwapsUsed || [];
-      if (usedFrost.length && (hasColdFront(state.skills) || hasFrostTrail(state.skills))) {
+      const skills = state.skills, usedFrost = state.frostSwapsUsed || [];
+      if (usedFrost.length && (hasColdFront(skills) || hasFrostTrail(skills) || hasGlacierPush(skills))) {
         iceTemp = { ...iceTemp };
         for (const fid of usedFrost) {
           const pos = state.playerOrder.findIndex((di) => state.deck[di].id === fid);
           if (pos < 0) continue;
-          if (hasColdFront(state.skills)) iceTemp[fid] = C.KALTFRONT_VALUE;                       // Kaltfront: getauschte Frostkarte +3
-          if (hasFrostTrail(state.skills) && pos + 1 < state.playerOrder.length)                  // Frostspur: neuer Nachfolger +2
+          if (hasColdFront(skills)) iceTemp[fid] = C.KALTFRONT_VALUE;                       // Kaltfront: getauschte Frostkarte +3
+          if (hasFrostTrail(skills) && pos + 1 < state.playerOrder.length)                  // Frostspur: neuer Nachfolger +2
             iceTemp[state.deck[state.playerOrder[pos + 1]].id] = C.FROSTSPUR_VALUE;
+        }
+        // #165 Gletscherschub (§5.4): schafft ein Frosttausch im Zielsegment eine NEUE Formation (Vergleich Ausgangs-
+        // reihenfolge dieser Phase ↔ finale), erhalten alle 5 Segmentkarten +2 (Math.max = renew, kein Stapeln/Downgrade).
+        if (hasGlacierPush(skills)) {
+          const anchors = state.shop?.anchors || [], pe = state.shop?.permanentEffects || {};
+          const finalForms = state.formations || computeFormations(state.playerOrder, state.deck, state.roles, state.perks, skills, anchors, pe);
+          const origOrder = state.playerOrder.slice(); // Ausgangsreihenfolge = finale ohne alle Tausche dieser Phase
+          const swaps = state.formationSwaps || [];
+          for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [origOrder[i], origOrder[j]] = [origOrder[j], origOrder[i]]; }
+          const baseForms = computeFormations(origOrder, state.deck, state.roles, state.perks, skills, anchors, pe);
+          const boosted = new Set();
+          for (const fid of usedFrost) {
+            const pos = state.playerOrder.findIndex((di) => state.deck[di].id === fid);
+            if (pos < 0) continue;
+            const seg = Math.floor(pos / SEGMENT_SIZE);
+            if (boosted.has(seg)) continue;
+            const segStart = seg * SEGMENT_SIZE;
+            if (segmentGainedFormation(baseForms, finalForms, segStart)) {
+              boosted.add(seg);
+              for (let p = segStart; p < segStart + SEGMENT_SIZE && p < state.playerOrder.length; p++) {
+                const cid = state.deck[state.playerOrder[p]].id;
+                iceTemp[cid] = Math.max(iceTemp[cid] || 0, C.GLACIER_VALUE);
+              }
+            }
+          }
         }
       }
       return { ...state, phase: "play", formationEnergy: 0, formationSwaps: [], frostSwapsUsed: [], iceTemp };

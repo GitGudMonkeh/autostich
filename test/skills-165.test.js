@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
-import { initialState } from "../src/game/reducer.js";
+import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { ionizeCards, ionizeCardsWithCatch, hasBlitzcatcher, hasVoltageArc, initHeat, heatLossFor, fireScoreFor } from "../src/game/skills.js";
+import { ionizeCards, ionizeCardsWithCatch, hasBlitzcatcher, hasVoltageArc, initHeat, heatLossFor, fireScoreFor,
+  hasGlacierPush, hasIceBloom } from "../src/game/skills.js";
+import { computeFormations, baseFormationCount } from "../src/game/formations.js";
 import { ION_MAX_STACKS } from "../src/game/constants.js";
 
 /* ============================================================
@@ -152,5 +154,118 @@ describe("#165 Feuer — Funkenflug (SK_FIRE_14)", () => {
     const s = resolveTrick(scen(0, 12, { skills: [F14], heat: heat({ value: 50, sparkStore: 100 }) }), noCrit);
     expect(s.lastTrick.result).toBe("loss");
     expect(s.heat.sparkStore).toBe(100);
+  });
+});
+
+// ============================================================ EIS (§5.4)
+const ICE_CRYSTAL = "SK_ICE_10", ICE_STEP = "SK_ICE_03", ICE_GLACIER = "SK_ICE_11", ICE_BLOOM = "SK_ICE_12";
+// Fünf-Karten-Segment (order 0..4) für computeFormations; Suits so gewählt, dass sie keine Farbblöcke erzwingen.
+const seg5 = (vals, suits, frozenIdx = []) =>
+  vals.map((v, i) => ({ id: `C${i}`, suit: suits[i], value: v, frozen: frozenIdx.includes(i) }));
+const order5 = [0, 1, 2, 3, 4];
+
+describe("#165 Eis — Kristallform (SK_ICE_10, ±2 + Formationsbonus)", () => {
+  it("±2 lässt eine Frostkarte einer Wiederholung beitreten (±1 würde nicht reichen)", () => {
+    // [5,5,7,..]; pos2 (Wert 7) frozen → mit ±2 zählt 7 als 5 → dreier-Wiederholung.
+    const deck = seg5([5, 5, 7, 3, 30], ["R", "B", "G", "Y", "R"], [2]);
+    const withoutIce = computeFormations(order5, deck, {}, [], []);
+    const withCrystal = computeFormations(order5, deck, {}, [], [ICE_CRYSTAL]);
+    expect(withoutIce[2].formations.some((f) => f.type === "wiederholung")).toBe(false);
+    expect(withCrystal[2].formations.some((f) => f.type === "wiederholung")).toBe(true);
+    // Formationsbonus (×1,15) oben auf wiederholungFactor(3)=1,50.
+    expect(withCrystal[2].mult).toBeCloseTo(1.5 * 1.15);
+  });
+  it("Eisschritt bleibt ±1 (nur Kristallform schafft die ±2-Treppe)", () => {
+    // Treppe 2,4,? — pos2 (Wert 9) frozen: als Stufe nach 4 nötig ≤7; ±1→[8,10] reicht nicht, ±2→[7,11] schafft 7.
+    const deck = seg5([2, 4, 9, 20, 30], ["R", "B", "G", "Y", "R"], [2]);
+    const withStep = computeFormations(order5, deck, {}, [], [ICE_STEP]);
+    const withCrystal = computeFormations(order5, deck, {}, [], [ICE_CRYSTAL]);
+    expect(withStep[2].formations.some((f) => f.type === "treppe")).toBe(false);   // Eisschritt ±1 reicht nicht
+    expect(withCrystal[2].formations.some((f) => f.type === "treppe")).toBe(true);  // Kristallform ±2 schafft die Treppe
+  });
+  it("Formationsbonus greift NICHT bei reinem Farbblock", () => {
+    // pos0-2 alle Farbe R (Farbblock), Werte so, dass keine Wied./Treppe/Wechsel entsteht; pos2 frozen.
+    const deck = seg5([3, 7, 11, 20, 25], ["R", "R", "R", "B", "G"], [2]);
+    const withCrystal = computeFormations(order5, deck, {}, [], [ICE_CRYSTAL]);
+    expect(withCrystal[2].formations.some((f) => f.type === "farbblock")).toBe(true);
+    expect(withCrystal[2].formations.some((f) => ["wiederholung", "treppe", "wechsel"].includes(f.type))).toBe(false);
+    expect(withCrystal[2].mult).toBeCloseTo(1.35); // reiner Farbblock-Faktor, KEIN ×1,15
+  });
+});
+
+describe("#165 Eis — Eisblüte (SK_ICE_12)", () => {
+  const formAt = (posIdx, forms, mult = 2) => {
+    const arr = Array.from({ length: 40 }, () => ({ mult: 1, baseMult: 1, afterglowFactor: 1, coreFactor: 1, formations: [] }));
+    arr[posIdx] = { mult, baseMult: mult, afterglowFactor: 1, coreFactor: 1, formations: forms };
+    return arr;
+  };
+  const twoForms = [{ type: "wiederholung", ordinal: 2, factor: 1.25 }, { type: "treppe", ordinal: 3, factor: 1.35 }];
+  const frozenDeck = () => constDeck(12).map((c, i) => (i === 5 ? { ...c, frozen: true } : c));
+
+  it("Flag-Prädikat & baseFormationCount (Anker zählen nicht)", () => {
+    expect(hasIceBloom([ICE_BLOOM])).toBe(true);
+    expect(baseFormationCount({ formations: twoForms })).toBe(2);
+    expect(baseFormationCount({ formations: [{ type: "wiederholung", ordinal: 2 }, { type: "anker", ordinal: 1 }] })).toBe(1);
+  });
+  it("Frostkarte siegt in ≥2 Formationen → beide direkten Nachbarn +3 (Siegkarte selbst nichts)", () => {
+    const s = resolveTrick(scen(12, 0, { skills: [ICE_BLOOM], deck: frozenDeck(), formations: formAt(5, twoForms), pos: 5 }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.iceTemp.X4).toBe(3);
+    expect(s.iceTemp.X6).toBe(3);
+    expect(s.iceTemp.X5 || 0).toBe(0);
+  });
+  it("nur 1 Formation → kein Bonus", () => {
+    const one = [{ type: "wiederholung", ordinal: 2, factor: 1.25 }];
+    const s = resolveTrick(scen(12, 0, { skills: [ICE_BLOOM], deck: frozenDeck(), formations: formAt(5, one), pos: 5 }), noCrit);
+    expect(s.iceTemp.X4 || 0).toBe(0);
+    expect(s.iceTemp.X6 || 0).toBe(0);
+  });
+  it("Anker allein reicht nicht als zweite Formation", () => {
+    const withAnchor = [{ type: "wiederholung", ordinal: 2, factor: 1.25 }, { type: "anker", ordinal: 1, factor: 1.25 }];
+    const s = resolveTrick(scen(12, 0, { skills: [ICE_BLOOM], deck: frozenDeck(), formations: formAt(5, withAnchor), pos: 5 }), noCrit);
+    expect(s.iceTemp.X4 || 0).toBe(0);
+  });
+  it("nicht eingefrorene Siegkarte löst NICHT aus", () => {
+    const s = resolveTrick(scen(12, 0, { skills: [ICE_BLOOM], formations: formAt(5, twoForms), pos: 5 }), noCrit);
+    expect(s.iceTemp.X4 || 0).toBe(0);
+  });
+});
+
+describe("#165 Eis — Gletscherschub (SK_ICE_11)", () => {
+  const identity40 = () => Array.from({ length: 40 }, (_, i) => i);
+  // Segment 0 (Positionen 0-4) ohne Formation; Frostkarte C10 (Wert 5) passt zu C0 (Wert 5).
+  const gDeck = (frozenVal = 5) => {
+    const d = Array.from({ length: 40 }, (_, i) => ({ id: `C${i}`, suit: ["R", "B", "G", "Y"][i % 4], value: 50 + i, frozen: false }));
+    d[0] = { id: "C0", suit: "R", value: 5, frozen: false };
+    d[1] = { id: "C1", suit: "B", value: 8, frozen: false };
+    d[2] = { id: "C2", suit: "G", value: 2, frozen: false };
+    d[3] = { id: "C3", suit: "Y", value: 9, frozen: false };
+    d[4] = { id: "C4", suit: "R", value: 3, frozen: false };
+    d[10] = { id: "C10", suit: "G", value: frozenVal, frozen: true };
+    return d;
+  };
+  const baseState = (over = {}) => ({
+    phase: "formation", deck: gDeck(), playerOrder: identity40(), roles: {}, perks: [], skills: [ICE_GLACIER],
+    formationEnergy: 5, formationSwaps: [], frostSwapsUsed: [], iceTemp: {}, shop: null, ...over,
+  });
+
+  it("Flag-Prädikat", () => {
+    expect(hasGlacierPush([ICE_GLACIER])).toBe(true);
+    expect(hasGlacierPush([ICE_BLOOM])).toBe(false);
+  });
+  it("Frosttausch schafft neue Formation im Segment → alle 5 Segmentkarten +2", () => {
+    let st = baseState();
+    st = { ...st, formations: computeFormations(st.playerOrder, st.deck, st.roles, st.perks, st.skills, [], {}) };
+    st = reducer(st, { type: "SWAP_CARDS", i: 1, j: 10 }); // Frostkarte C10 → Segment 0, kostenlos
+    expect(st.frostSwapsUsed).toEqual(["C10"]);
+    st = reducer(st, { type: "CONFIRM_FORMATION" });
+    for (const id of ["C0", "C10", "C2", "C3", "C4"]) expect(st.iceTemp[id]).toBe(2);
+  });
+  it("Frosttausch ohne neue Formation → kein Bonus", () => {
+    let st = baseState({ deck: gDeck(6) }); // C10 = Wert 6 → keine Wiederholung mit C0 (5)
+    st = { ...st, formations: computeFormations(st.playerOrder, st.deck, st.roles, st.perks, st.skills, [], {}) };
+    st = reducer(st, { type: "SWAP_CARDS", i: 1, j: 10 });
+    st = reducer(st, { type: "CONFIRM_FORMATION" });
+    expect(st.iceTemp.C0 || 0).toBe(0);
   });
 });

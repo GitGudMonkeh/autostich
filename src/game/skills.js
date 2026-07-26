@@ -169,7 +169,12 @@ export const SKILL_DEFS = {
   SK_ICE_09: { id: "SK_ICE_09", name: "Stillstand", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Gewinnt eine eingefrorene Karte als Teil von mindestens einer aktiven Formation → +200 Score.", standstill: true },
   SK_ICE_10: { id: "SK_ICE_10", name: "Kristallform", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eingefrorene Karten dürfen für Wiederholung/Treppe/Wechsel als Wert −1, unverändert oder +1 zählen (günstigste Variante; echter Wert unverändert).", wildCrystal: true },
+    desc: "Eingefrorene Karten dürfen für Wiederholung/Treppe/Wechsel als Wert −2, unverändert oder +2 zählen (günstigste Variante; echter Wert unverändert). Wird die Karte dadurch Teil ≥1 dieser Formationen, erhält sie zusätzlich einen Formationsbonus.", wildCrystal: true },
+  // ---- #165 Skills (Spec §5.4): zwei neue normale Eis-Skills. Flags in formations.js/engine.js/reducer.js gelesen. ----
+  SK_ICE_11: { id: "SK_ICE_11", name: "Gletscherschub", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Entsteht durch einen kostenlosen Frosttausch am neuen Platz mindestens eine neue Formation, erhalten alle fünf Karten des betroffenen Segments im nächsten Durchlauf +2 temporären Wert.", glacierPush: true },
+  SK_ICE_12: { id: "SK_ICE_12", name: "Eisblüte", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Gewinnt eine eingefrorene Karte, die gleichzeitig Teil von mindestens zwei aktiven Formationen (keine Anker) ist, erhalten ihre direkten Deck-Nachbarn im nächsten Durchlauf je +3 temporären Wert.", iceBloom: true },
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Frostbiss", archetype: "ice", legendary: true, keywords: ["freeze"],
     desc: "Gewinnt eine eingefrorene Karte, erhalten 2 zufällige Gegnerkarten des nächsten Durchlaufs −3 temporären Wert (nur nächster Durchlauf; erst im Kampf sichtbar).", frostbite: true },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
@@ -304,6 +309,9 @@ export const hasColdFront     = (skills) => iceFlag(skills, "coldFront");
 export const hasFrostTrail    = (skills) => iceFlag(skills, "frostTrail");
 export const hasFrostbite     = (skills) => iceFlag(skills, "frostbite");
 export const hasPermafrost    = (skills) => iceFlag(skills, "permafrost");
+// #165 Skills (§5.4): Gletscherschub (Frosttausch schafft Formation → Segment +2) / Eisblüte (Frostkarte in ≥2 Formationen → Nachbarn +3).
+export const hasGlacierPush   = (skills) => iceFlag(skills, "glacierPush");
+export const hasIceBloom      = (skills) => iceFlag(skills, "iceBloom");
 // Zielanzahl eingefrorener Karten: erster Eis-Skill = ICE_BASE_FREEZE, je weiterer +1, Frostgriff +2. 0 ohne Eis-Skill.
 export function frozenTargetFor(skills) {
   const n = iceSkillCount(skills);
