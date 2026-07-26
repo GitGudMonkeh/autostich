@@ -1,13 +1,14 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
-import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
+import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
   hasIonize, hasProtect, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasConductivity, hasEndlessStorm, hasDischarge, // Blitz-Rework (#93 F2)
+  hasBlitzcatcher, hasVoltageArc, // #165 Skills (§5.2): Blitzfänger / Spannungsbogen
   fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer (#93 F1)
-  hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
+  hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost, hasIceBloom } from "./skills.js"; // Eis (#93 F3 / #165 Eisblüte)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
-import { computeFormations, positionHasFormation, summarizeFormations, SEGMENT_SIZE } from "./formations.js";
+import { computeFormations, positionHasFormation, summarizeFormations, baseFormationCount, SEGMENT_SIZE } from "./formations.js";
 import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, SHOP_ITEM_DEFS, anchorTypeAt, playSequence } from "./shop.js";
 
 function sumHook(perks, name, ctx) {
@@ -150,8 +151,9 @@ export function resolveTrick(state, rng = Math.random) {
       fireValueBonus += C.MELT_VALUE;
       if (fireFlag(skills, "phoenix")) heat = { ...heat, phoenixArmed: true };
     }
-    // Glühende Klinge: ab 50 % Hitze alle Karten +2. Feuerwalze: aktueller Stapel (von Vorsiegen).
+    // Glühende Klinge: ab 50 % Hitze alle Karten +1 (#165). Überhitzt: ab 80 % zusätzlich +2 (zusammen +3). Feuerwalze: aktueller Stapel.
     if (fireFlag(skills, "glowingBlade") && heat.value >= C.GLOWING_THRESHOLD) fireValueBonus += C.GLOWING_VALUE;
+    if (fireFlag(skills, "overheated")   && heat.value >= C.OVERHEAT_THRESHOLD) fireValueBonus += C.OVERHEAT_VALUE;
     if (fireFlag(skills, "fireRoll")) fireValueBonus += Math.min(heat.fireRoll || 0, C.FIREROLL_MAX);
   }
   // ---- Eis (#93 F3): temp. Wertbonus (Kältereserve/Kaltfront/Frostspur, an card.id) + Permafrost +2 (Dauerwert eingefroren).
@@ -199,7 +201,8 @@ export function resolveTrick(state, rng = Math.random) {
     if (heat && heat.active) {
       const fmargin = pValue - oValue;
       heat = { ...heat, value: Math.min(heat.max, heat.value + heatGainFor(fmargin, skills, pCard.value)) };
-      fireFlat += fireScoreFor(fmargin, skills); // Feuer-Flat-Score (in die multiplizierte Basis)
+      const fireBaseFlat = fireScoreFor(fmargin, skills); // Feuer-Flat-Score dieses Stichs (Basis für Funkenflug)
+      fireFlat += fireBaseFlat; // in die multiplizierte Basis
       // Sonnenkern-Nachbrand (Schmelzpunkt): die vor dem Stich verbrauchte Hitze zahlt sich im Sieg als Flat aus.
       if (suncore && meltConsumed) fireFlat += C.SUNCORE_BURN_PER_HEAT * meltConsumed;
       // Flächenbrand: Sieg bei voller Hitze (≥100) → +1000 flach, verbraucht exakt 100; armiert Phönix.
@@ -211,6 +214,13 @@ export function resolveTrick(state, rng = Math.random) {
       }
       if (fireFlag(skills, "afterglow")) heat = { ...heat, afterglowArmed: true }; // Nachglut: nächste Niederlage 0 Verlust
       if (fireFlag(skills, "fireRoll")) heat = { ...heat, fireRoll: Math.min((heat.fireRoll || 0) + 1, C.FIREROLL_MAX) }; // Feuerwalze-Stapel
+      // #165 Funkenflug: gespeicherten Betrag auszahlen (jeder Sieg) ODER neu speichern (Sieg ≥8 Vorsprung, nur wenn leer).
+      // Der auszahlende Sieg erzeugt keinen neuen Speicher; maßgeblich ist ausschließlich der Feuer-Flat-Score.
+      if (fireFlag(skills, "sparkflight")) {
+        const stored = heat.sparkStore || 0;
+        if (stored > 0) { fireFlat += stored; heat = { ...heat, sparkStore: 0 }; }
+        else if (fmargin >= C.SPARKFLIGHT_MIN_MARGIN) heat = { ...heat, sparkStore: Math.floor(fireBaseFlat * C.SPARKFLIGHT_RATE) };
+      }
     }
     // ---- Eis (#93 F3): Stillstand-Flat + Frostbiss-Markierung (Sieg mit einer eingefrorenen Karte).
     let iceFlat = 0;
@@ -222,6 +232,15 @@ export function resolveTrick(state, rng = Math.random) {
         const marked = new Set(newFrostbitePending);
         const pool = oppDeck.map((c) => c.id).filter((id) => !marked.has(id));
         for (let k = 0; k < C.FROSTBISS_COUNT && pool.length; k++) newFrostbitePending.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+      }
+      // #165 Eisblüte (§5.4): siegt die Frostkarte in ≥2 aktiven Nicht-Anker-Formationen → beide direkten Deck-Nachbarn
+      // +3 temp Wert fürs nächste Auftauchen (renew, kein Stapeln; die Siegkarte selbst erhält nichts; Ränder = nur ein Nachbar).
+      if (hasIceBloom(skills) && baseFormationCount(posForm) >= 2) {
+        for (const nb of [actualPos - 1, actualPos + 1]) {
+          if (nb < 0 || nb >= playerOrder.length) continue;
+          const nid = deck[playerOrder[nb]].id;
+          newIceTemp[nid] = Math.max(newIceTemp[nid] || 0, C.EISBLUETE_VALUE);
+        }
       }
     }
     // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.
@@ -298,12 +317,21 @@ export function resolveTrick(state, rng = Math.random) {
         // Geladene Serie setzt den Rahmen (nur wenn nicht schon gesetzt), sonst „parkt" die Ladung; Ionisierung ionisiert.
         if (lightning.charge >= lightning.maxCharge) {
           let consumed = false;
+          let blitzCatches = 0; // #165 Blitzfänger: Anzahl voller Karten, die statt ionisiert +Ladung erzeugen
           if (hasProtect(skills) && !lightning.armed) {
             lightning = { ...lightning, armed: true };            // Geladene Serie: Serien-Rahmen scharf
             consumed = true;
           } else if (hasIonize(skills)) {
             const undrawn = playerOrder.slice(pos + 1);            // Deck-Indizes der noch nicht gezogenen Karten
-            deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
+            if (hasBlitzcatcher(skills)) {
+              // #165 Blitzfänger: volle Karten (5 Stapel) werden nicht ionisiert → je +2 temp Wert (nächstes Auftauchen) & +1 Ladung.
+              const res = ionizeCardsWithCatch(deck, undrawn, ionizeCountFor(skills), rng);
+              deck = res.deck;
+              for (const cid of res.catchIds) newIceTemp[cid] = Math.max(newIceTemp[cid] || 0, C.BLITZFAENGER_VALUE);
+              blitzCatches = res.catchIds.length;
+            } else {
+              deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
+            }
             consumed = true;
           }
           if (consumed) {
@@ -311,6 +339,8 @@ export function resolveTrick(state, rng = Math.random) {
             let floor = chargeFloorFor(skills);
             if (hasEndlessStorm(skills)) floor = Math.max(floor, Math.ceil(lightning.maxCharge / 2));
             lightning = consumeCharge(lightning, floor);
+            // #165 Blitzfänger: die Fang-Ladungen entstehen NACH dem Verbrauch (sonst würde consumeCharge sie wieder auf den Boden setzen).
+            if (blitzCatches > 0) lightning = addCharge(lightning, blitzCatches);
             if (hasDischarge(skills)) lightning = { ...lightning, dischargeArmed: true }; // Entladung: nächsten Crit armieren
             if (hasStorm(skills)) { // Gewitterfront-Reaktor: erst Crit-Chance (Cap), danach Score für die nächsten Siege
               const cur = lightning.stormCritBonus || 0;
@@ -325,6 +355,17 @@ export function resolveTrick(state, rng = Math.random) {
     // Nach einem Sieg mit einer ionisierten Karte: diese Karte +1 Stapel (max); der Bonus wurde oben VORHER gewertet.
     if (ionizedCard) {
       deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
+    }
+    // #165 Spannungsbogen (§5.2): Sieg mit einer ionisierten Karte → der erste ungespielte, noch nicht volle Nachfolger
+    // in Deckreihenfolge (ab actualPos+1 vorwärts, KEIN Wrap) erhält +1 Ionisierungsstapel. Höchstens eine Karte je Trigger.
+    if (ionizedCard && hasVoltageArc(skills)) {
+      const played = new Set(seq.slice(0, pos + 1)); // in diesem Durchlauf bereits gespielte Deckpositionen (Zeitsegment-tauglich)
+      for (let k = actualPos + 1; k < playerOrder.length; k++) {
+        const di = playerOrder[k];
+        if (played.has(k) || (deck[di].ionStacks || 0) >= C.ION_MAX_STACKS) continue; // gespielt oder voll → überspringen
+        deck = deck.map((c, i) => (i === di ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
+        break;
+      }
     }
     // Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
     critFollowArmed = isCrit;                                        // D14 Crit-Folge: nur ein Crit rüstet den nächsten Sieg
@@ -374,7 +415,8 @@ export function resolveTrick(state, rng = Math.random) {
     if (rahmenRedeemed) lightning = { ...lightning, armed: false }; // Rahmen eingelöst → entfernt
     // ---- Feuer (#93 F1): Hitzeverlust (Nachglut fängt ihn ab), danach Nachglut verbraucht & Feuerwalze zurückgesetzt.
     if (heat && heat.active) {
-      const loss = heatLossFor(oValue - pValue, skills, heat.afterglowArmed);
+      // #165: heat.value = Hitze VOR dem Verlust → speist die 50/80-Schwellen von Glühende Klinge/Überhitzt.
+      const loss = heatLossFor(oValue - pValue, skills, heat.afterglowArmed, heat.value);
       heat = { ...heat, value: Math.max(0, heat.value - loss), afterglowArmed: false, fireRoll: 0 };
     }
     // Eis (#93 F3): Kältereserve — Niederlage mit eingefrorener Karte → +4 temp Wert beim nächsten Auftauchen.
