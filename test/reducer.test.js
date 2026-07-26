@@ -116,7 +116,7 @@ describe("Stat-Auswahl — PICK_STAT (V2 §22.3)", () => {
     const s = reducer(statState(), { type: "PICK_STAT", statId: "critChance", rng });
     expect(s.phase).toBe("play");
     expect(s.statOffer).toBeNull();
-    expect(s.statCritChance).toBeCloseTo(0.05); // #94: +5 pp je Pick
+    expect(s.statCritChance).toBeCloseTo(0.07); // #94/#161 FB-6: +7 pp je Pick
   });
   it("stapelt additiv über mehrere Picks", () => {
     const s = reducer(statState({ statStreakMult: 0.02 }), { type: "PICK_STAT", statId: "streakMult", rng });

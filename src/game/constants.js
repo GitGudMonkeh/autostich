@@ -7,7 +7,7 @@ export const CRIT_BASE_MULT   = 1.5;    // V2 (§22.3): Basis-Crit-Multiplikator
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 
 // Stat-System (V2 §22.3) — bei jedem Stat-Pick alle vier angeboten, einer gewählt; additiv, keine Caps [TUNING]
-export const STAT_CRIT_CHANCE_STEP = 0.05;  // Crit-Chance: +5 Prozentpunkte je Pick (#94)
+export const STAT_CRIT_CHANCE_STEP = 0.07;  // Crit-Chance: +7 Prozentpunkte je Pick (#94; #161 FB-6: 0,05→0,07)
 export const STAT_CRIT_MULT_STEP   = 0.25;  // Crit-Multiplikator: +0,25× je Pick (auf Basis 1,5) [#Pass3: 0,2→0,25 Crit-Buff]
 export const STAT_FORM_MULT_STEP   = 0.05;  // Formations-Mult: +5 % Score bei aktiver Formation je Pick (max 1×/Stich)
 export const STAT_STREAK_MULT_STEP = 0.02;  // Serien-Mult: +2 % Score je aktuellem Serienpunkt je Pick (#94)
