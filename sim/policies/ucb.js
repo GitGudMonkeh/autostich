@@ -12,6 +12,7 @@ import { randomPolicy, canAddSkill } from "./random.js";
 import { buyableOffers, shopTargetStep } from "../shop-policy.js";
 import { greedyFormationStep } from "../formation.js";
 import { armKey } from "../memory.js";
+import { perkOptionId, perkActionFor, shopOptionId } from "../families-policy.js";
 
 const DECLINE = "__decline__"; // Skill-Ablehnung als eigener Arm (auch „nichts nehmen" ist eine Entscheidung)
 const SHOP_LEAVE = "__leave__"; // Shop verlassen als eigener Arm (Nicht-Kauf ist auch eine Entscheidung)
@@ -50,20 +51,25 @@ export function ucbPolicy({ c = 1.4, bucket = byArchetype, solveFormations = fal
             const choice = ucbPick("skill", cands, s, mem);
             return choice === DECLINE ? { type: "DECLINE_SKILL", rng } : { type: "PICK_SKILL", skillId: choice, rng };
           }
-          if (s.offer) return { type: "PICK_PERK", perkId: ucbPick("perk", s.offer, s, mem), rng };
+          // Perk-Angebot gemischt (#167): über Options-IDs banditen, dann zurück auf Eintrag → PICK_PERK/PICK_FAMILY.
+          if (s.offer) {
+            const ids = s.offer.map(perkOptionId);
+            const choice = ucbPick("perk", ids, s, mem);
+            return perkActionFor(s.offer[ids.indexOf(choice)], rng);
+          }
           return { type: "RESOLVE_TRICK", rng };
         }
         case "shop": {
-          // UCB über {jetzt kaufbare Item-ids} + „verlassen". So bekommt jedes Shop-Item einen eigenen Arm.
+          // UCB über {jetzt kaufbare Options-ids} + „verlassen". Flache Items UND Shop-Familien (je Familie+Stufe).
           const buyable = buyableOffers(s);
           if (!buyable.length) return { type: "LEAVE_SHOP" };
-          const cands = [...new Set(buyable.map((o) => o.itemId)), SHOP_LEAVE];
+          const cands = [...new Set(buyable.map(shopOptionId)), SHOP_LEAVE];
           const choice = ucbPick("shopitem", cands, s, mem);
           if (choice === SHOP_LEAVE) return { type: "LEAVE_SHOP" };
-          return { type: "BUY_ITEM", offerId: buyable.find((o) => o.itemId === choice).offerId, rng };
+          return { type: "BUY_ITEM", offerId: buyable.find((o) => shopOptionId(o) === choice).offerId, rng };
         }
         case "shop-target":
-          return shopTargetStep(s); // Ziel-Fluss deterministisch füllen (S4)
+          return shopTargetStep(s, rng); // Ziel-Fluss deterministisch füllen (S4)
         case "formation":
           return solveFormations ? greedyFormationStep(s) : base.act(s, rng);
         default:

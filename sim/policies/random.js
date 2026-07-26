@@ -11,7 +11,9 @@
 import { PERK_DEFS } from "../../src/game/perks.js";
 import { archetypeOf, heatConsumerCount, chargeConsumerCount } from "../../src/game/skills.js";
 import { SHOP_ITEM_DEFS, canAfford } from "../../src/game/shop.js";
+import { SHOP_FAMILY_DEFS } from "../../src/game/shopFamilies.js";
 import { SKILL_SLOTS, MAX_ARCHETYPES } from "../../src/game/constants.js";
+import { perkActionFor, familyTargetStep } from "../families-policy.js";
 
 const pick = (arr, rng) => arr[Math.floor(rng() * arr.length)];
 
@@ -39,7 +41,8 @@ export function randomPolicy() {
               ? { type: "PICK_SKILL", skillId: pick(addable, rng), rng }
               : { type: "DECLINE_SKILL", rng }; // immer akzeptiert → Perk-Angebot oder weiterspielen
           }
-          if (s.offer) return { type: "PICK_PERK", perkId: pick(s.offer, rng), rng };
+          // Perk-Angebot ist gemischt (#167): flacher Legendär-String → PICK_PERK, {familyId,tier} → PICK_FAMILY.
+          if (s.offer) return perkActionFor(pick(s.offer, rng), rng);
           return { type: "RESOLVE_TRICK", rng }; // sollte nicht vorkommen; harmloser Fallback
         }
 
@@ -49,15 +52,23 @@ export function randomPolicy() {
           return { type: "CONFIRM_TARGET", cardIds };
         }
 
+        // Familien-Ziel-Fluss (#167, Kat. A/C): Farb-/Karten-Ziele deterministisch füllen, dann bestätigen.
+        case "family-target":
+          return familyTargetStep(s, rng);
+
         case "formation":
           return { type: "CONFIRM_FORMATION" }; // Baseline: Reihenfolge unangetastet lassen
 
         case "shop": {
+          // S0-Baseline: nur SOFORT-Angebote kaufen (kein Ziel-Fluss) — flache Nicht-Ziel-Items UND ziel-lose
+          // Shop-Familien; Ziel-Items/-Familien bleiben in S0 außen vor (der Solver in S4 kauft auch die).
           const shop = s.shop || {};
           const purchased = new Set(shop.purchasedOfferIds || []);
-          const buyable = (shop.offers || []).filter(
-            (o) => !purchased.has(o.offerId) && canAfford(shop, o) && !SHOP_ITEM_DEFS[o.itemId]?.target,
-          );
+          const buyable = (shop.offers || []).filter((o) => {
+            if (purchased.has(o.offerId) || !canAfford(shop, o)) return false;
+            if (o.family) return !SHOP_FAMILY_DEFS[o.familyId]?.tiers?.[o.famTier]?.pickTarget;
+            return !SHOP_ITEM_DEFS[o.itemId]?.target;
+          });
           return buyable.length ? { type: "BUY_ITEM", offerId: buyable[0].offerId, rng } : { type: "LEAVE_SHOP" };
         }
 

@@ -7,14 +7,19 @@
 // Kauf→Abbruch→Kauf-Schleife bei unerfüllbaren Zielen (z. B. keine freie Position mehr).
 import { reducer } from "../src/game/reducer.js";
 import { SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
+import { SHOP_FAMILY_DEFS } from "../src/game/shopFamilies.js";
 import { FORMATION_TYPES } from "../src/game/formations.js";
 import { SUIT_ORDER, SHOP_CATEGORIES } from "../src/game/constants.js";
 
 // Nächster Ziel-Füllschritt für die shop-target-Phase (feste Reihenfolge). Gibt eine SHOP_TARGET_*-Action,
-// SHOP_TARGET_CONFIRM (alles gefüllt) oder SHOP_TARGET_CANCEL (unerfüllbar) zurück.
-export function shopTargetStep(s) {
+// SHOP_TARGET_CONFIRM (alles gefüllt) oder SHOP_TARGET_CANCEL (unerfüllbar) zurück. Deckt flache Ziel-Items
+// UND Shop-Familien (#164) ab — beide nutzen dieselben shopTarget-Felder; die Spec kommt aus target bzw.
+// tiers[famTier].pickTarget (analog Reducer). rng geht in den CONFIRM (Familien-Pick kann rng nutzen).
+export function shopTargetStep(s, rng) {
   const st = s.shopTarget;
-  const spec = SHOP_ITEM_DEFS[st.itemId]?.target || {};
+  const spec = st.familyId
+    ? (SHOP_FAMILY_DEFS[st.familyId]?.tiers?.[st.famTier]?.pickTarget || {})
+    : (SHOP_ITEM_DEFS[st.itemId]?.target || {});
 
   if (spec.cards && st.cards.length < spec.cards) {
     const chosen = new Set(st.cards);
@@ -34,7 +39,9 @@ export function shopTargetStep(s) {
     for (let k = 0; k < s.playerOrder.length; k++) if (!positionOccupied(s.shop?.anchors, k)) { p = k; break; }
     return p < 0 ? { type: "SHOP_TARGET_CANCEL" } : { type: "SHOP_TARGET_POSITION", position: p };
   }
-  if (spec.colorPair && (st.colorPair || []).length < 2) {
+  // Farballianz: Shop-Familie nutzt spec.colors (Anzahl 2/3/4); altes flaches Item spec.colorPair (=2). Distinkte Farben füllen.
+  const wantColors = spec.colors || (spec.colorPair ? 2 : 0);
+  if (wantColors && (st.colorPair || []).length < wantColors) {
     const pair = st.colorPair || [];
     return { type: "SHOP_TARGET_COLOR_PAIR", color: SUIT_ORDER.find((su) => !pair.includes(su)) };
   }
@@ -50,7 +57,7 @@ export function shopTargetStep(s) {
     const other = (s.shop?.offers || []).find((o) => o.offerId !== st.offerId && !purchased.has(o.offerId));
     return other ? { type: "SHOP_TARGET_OFFER", offerId: other.offerId } : { type: "SHOP_TARGET_CANCEL" };
   }
-  return { type: "SHOP_TARGET_CONFIRM" };
+  return { type: "SHOP_TARGET_CONFIRM", rng };
 }
 
 // Kann dieses Ziel-Item vollständig gefüllt werden? Simuliert BUY_ITEM → shopTargetStep… bis CONFIRM/CANCEL.
@@ -76,6 +83,10 @@ export function buyableOffers(s) {
   const coins = shop.coins || 0;
   return (shop.offers || []).filter((o) => {
     if (purchased.has(o.offerId) || coins < o.price) return false;
+    if (o.family) { // Shop-Familie (#164): ziel-lose Stufe sofort kaufbar, Ziel-Stufe nur wenn abschließbar
+      const tierDef = SHOP_FAMILY_DEFS[o.familyId]?.tiers?.[o.famTier];
+      return !tierDef?.pickTarget || canComplete(s, o);
+    }
     const def = SHOP_ITEM_DEFS[o.itemId];
     return !def?.target || canComplete(s, o);
   });
