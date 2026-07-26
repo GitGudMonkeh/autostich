@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { ionizeCards, ionizeCardsWithCatch, hasBlitzcatcher, hasVoltageArc } from "../src/game/skills.js";
+import { ionizeCards, ionizeCardsWithCatch, hasBlitzcatcher, hasVoltageArc, initHeat, heatLossFor, fireScoreFor } from "../src/game/skills.js";
 import { ION_MAX_STACKS } from "../src/game/constants.js";
 
 /* ============================================================
@@ -92,5 +92,65 @@ describe("#165 Blitz — Spannungsbogen (SK_LIGHTNING_12)", () => {
   it("Nicht-ionisierte Siegkarte löst Spannungsbogen NICHT aus", () => {
     const s = resolveTrick(scen(12, 0, { skills: [ARC], lightning: light() }), noCrit);
     expect(s.deck[1].ionStacks || 0).toBe(0);
+  });
+});
+
+// ============================================================ FEUER (§5.3)
+const heat = (over = {}) => ({ ...initHeat(), active: true, ...over });
+const F4 = "SK_FIRE_04", F6 = "SK_FIRE_06", F13 = "SK_FIRE_13", F14 = "SK_FIRE_14";
+
+describe("#165 Feuer — Glühende Klinge (SK_FIRE_06, geändert)", () => {
+  it("Wertbonus ab 50 % Hitze nur noch +1", () => {
+    const s = resolveTrick(scen(10, 0, { skills: [F6], heat: heat({ value: 50 }) }), noCrit);
+    expect(s.lastTrick.pValue).toBe(11);
+  });
+  it("unter 50 % kein Wertbonus", () => {
+    const s = resolveTrick(scen(10, 0, { skills: [F6], heat: heat({ value: 49 }) }), noCrit);
+    expect(s.lastTrick.pValue).toBe(10);
+  });
+  it("Niederlagen verursachen +10 % Hitzeverlust, solange aktiv (Hitze ≥ 50)", () => {
+    expect(heatLossFor(10, [F6], false, 50)).toBe(11);  // 10 × 1,10
+    expect(heatLossFor(10, [F6], false, 49)).toBe(10);  // Hitze < 50 → kein Modifikator
+    expect(heatLossFor(10, [F6, F4], false, 50)).toBe(5); // × 1,10 = 11, dann Hitzeschild × 0,5 → floor 5
+  });
+});
+
+describe("#165 Feuer — Überhitzt (SK_FIRE_13)", () => {
+  it("Wertbonus: ab 80 % zusätzlich +2 (mit Glühender Klinge insgesamt +3)", () => {
+    expect(resolveTrick(scen(10, 0, { skills: [F6, F13], heat: heat({ value: 80 }) }), noCrit).lastTrick.pValue).toBe(13); // +1 +2
+    expect(resolveTrick(scen(10, 0, { skills: [F13], heat: heat({ value: 80 }) }), noCrit).lastTrick.pValue).toBe(12);     // nur +2
+    expect(resolveTrick(scen(10, 0, { skills: [F6, F13], heat: heat({ value: 79 }) }), noCrit).lastTrick.pValue).toBe(11); // Ü < 80 inaktiv, GK +1
+  });
+  it("Hitzeverlust-Modifikatoren ADDIEREN vor Hitzeschild (§5.6-6)", () => {
+    expect(heatLossFor(10, [F6], false, 80)).toBe(11);        // nur GK × 1,10
+    expect(heatLossFor(10, [F13], false, 80)).toBe(15);       // nur Ü × 1,50
+    expect(heatLossFor(10, [F6, F13], false, 80)).toBe(16);   // beide × 1,60
+    expect(heatLossFor(10, [F6, F13, F4], false, 80)).toBe(8); // × 1,60 = 16, dann Hitzeschild × 0,5 → 8
+    expect(heatLossFor(10, [F6, F13], false, 79)).toBe(11);   // Ü inaktiv (< 80), nur GK
+    expect(heatLossFor(10, [F6, F13], false, 49)).toBe(10);   // beide inaktiv
+  });
+});
+
+describe("#165 Feuer — Funkenflug (SK_FIRE_14)", () => {
+  it("Sieg mit ≥8 Vorsprung speichert 25 % des Feuer-Flat-Scores (bei leerem Speicher)", () => {
+    // constDeck(12) vs 0 → Vorsprung 12; Feuer-Flat = fireScoreFor(12,[F14]) = 250; Speicher = floor(250×0,25) = 62.
+    const s = resolveTrick(scen(12, 0, { skills: [F14], heat: heat({ value: 50 }) }), noCrit);
+    expect(fireScoreFor(12, [F14])).toBe(250);
+    expect(s.heat.sparkStore).toBe(62);
+  });
+  it("Vorsprung < 8 speichert nicht", () => {
+    const s = resolveTrick(scen(5, 0, { skills: [F14], heat: heat({ value: 50 }) }), noCrit); // Vorsprung 5 < 8
+    expect(s.heat.sparkStore).toBe(0);
+  });
+  it("nächster Sieg zahlt den Speicher als Flat aus und erzeugt keinen neuen", () => {
+    // Speicher 100 → scoreBase = 100 + Feuer-Flat 250 + Auszahlung 100 = 450; × streakBaseMult(1)=1,02.
+    const s = resolveTrick(scen(12, 0, { skills: [F14], heat: heat({ value: 50, sparkStore: 100 }) }), noCrit);
+    expect(s.lastTrick.gained).toBeCloseTo(450 * 1.02);
+    expect(s.heat.sparkStore).toBe(0); // ausgezahlt, kein neuer Speicher trotz Vorsprung ≥ 8
+  });
+  it("Niederlage löscht den Speicher nicht", () => {
+    const s = resolveTrick(scen(0, 12, { skills: [F14], heat: heat({ value: 50, sparkStore: 100 }) }), noCrit);
+    expect(s.lastTrick.result).toBe("loss");
+    expect(s.heat.sparkStore).toBe(100);
   });
 });

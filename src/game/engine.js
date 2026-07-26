@@ -151,8 +151,9 @@ export function resolveTrick(state, rng = Math.random) {
       fireValueBonus += C.MELT_VALUE;
       if (fireFlag(skills, "phoenix")) heat = { ...heat, phoenixArmed: true };
     }
-    // Glühende Klinge: ab 50 % Hitze alle Karten +2. Feuerwalze: aktueller Stapel (von Vorsiegen).
+    // Glühende Klinge: ab 50 % Hitze alle Karten +1 (#165). Überhitzt: ab 80 % zusätzlich +2 (zusammen +3). Feuerwalze: aktueller Stapel.
     if (fireFlag(skills, "glowingBlade") && heat.value >= C.GLOWING_THRESHOLD) fireValueBonus += C.GLOWING_VALUE;
+    if (fireFlag(skills, "overheated")   && heat.value >= C.OVERHEAT_THRESHOLD) fireValueBonus += C.OVERHEAT_VALUE;
     if (fireFlag(skills, "fireRoll")) fireValueBonus += Math.min(heat.fireRoll || 0, C.FIREROLL_MAX);
   }
   // ---- Eis (#93 F3): temp. Wertbonus (Kältereserve/Kaltfront/Frostspur, an card.id) + Permafrost +2 (Dauerwert eingefroren).
@@ -200,7 +201,8 @@ export function resolveTrick(state, rng = Math.random) {
     if (heat && heat.active) {
       const fmargin = pValue - oValue;
       heat = { ...heat, value: Math.min(heat.max, heat.value + heatGainFor(fmargin, skills, pCard.value)) };
-      fireFlat += fireScoreFor(fmargin, skills); // Feuer-Flat-Score (in die multiplizierte Basis)
+      const fireBaseFlat = fireScoreFor(fmargin, skills); // Feuer-Flat-Score dieses Stichs (Basis für Funkenflug)
+      fireFlat += fireBaseFlat; // in die multiplizierte Basis
       // Sonnenkern-Nachbrand (Schmelzpunkt): die vor dem Stich verbrauchte Hitze zahlt sich im Sieg als Flat aus.
       if (suncore && meltConsumed) fireFlat += C.SUNCORE_BURN_PER_HEAT * meltConsumed;
       // Flächenbrand: Sieg bei voller Hitze (≥100) → +1000 flach, verbraucht exakt 100; armiert Phönix.
@@ -212,6 +214,13 @@ export function resolveTrick(state, rng = Math.random) {
       }
       if (fireFlag(skills, "afterglow")) heat = { ...heat, afterglowArmed: true }; // Nachglut: nächste Niederlage 0 Verlust
       if (fireFlag(skills, "fireRoll")) heat = { ...heat, fireRoll: Math.min((heat.fireRoll || 0) + 1, C.FIREROLL_MAX) }; // Feuerwalze-Stapel
+      // #165 Funkenflug: gespeicherten Betrag auszahlen (jeder Sieg) ODER neu speichern (Sieg ≥8 Vorsprung, nur wenn leer).
+      // Der auszahlende Sieg erzeugt keinen neuen Speicher; maßgeblich ist ausschließlich der Feuer-Flat-Score.
+      if (fireFlag(skills, "sparkflight")) {
+        const stored = heat.sparkStore || 0;
+        if (stored > 0) { fireFlat += stored; heat = { ...heat, sparkStore: 0 }; }
+        else if (fmargin >= C.SPARKFLIGHT_MIN_MARGIN) heat = { ...heat, sparkStore: Math.floor(fireBaseFlat * C.SPARKFLIGHT_RATE) };
+      }
     }
     // ---- Eis (#93 F3): Stillstand-Flat + Frostbiss-Markierung (Sieg mit einer eingefrorenen Karte).
     let iceFlat = 0;
@@ -397,7 +406,8 @@ export function resolveTrick(state, rng = Math.random) {
     if (rahmenRedeemed) lightning = { ...lightning, armed: false }; // Rahmen eingelöst → entfernt
     // ---- Feuer (#93 F1): Hitzeverlust (Nachglut fängt ihn ab), danach Nachglut verbraucht & Feuerwalze zurückgesetzt.
     if (heat && heat.active) {
-      const loss = heatLossFor(oValue - pValue, skills, heat.afterglowArmed);
+      // #165: heat.value = Hitze VOR dem Verlust → speist die 50/80-Schwellen von Glühende Klinge/Überhitzt.
+      const loss = heatLossFor(oValue - pValue, skills, heat.afterglowArmed, heat.value);
       heat = { ...heat, value: Math.max(0, heat.value - loss), afterglowArmed: false, fireRoll: 0 };
     }
     // Eis (#93 F3): Kältereserve — Niederlage mit eingefrorener Karte → +4 temp Wert beim nächsten Auftauchen.

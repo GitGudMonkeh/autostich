@@ -129,7 +129,7 @@ export const SKILL_DEFS = {
   SK_FIRE_05: { id: "SK_FIRE_05", name: "Nachglut", archetype: "fire", keywords: ["heat"],
     desc: "Nach einem Sieg verursacht die nächste Niederlage 0 % Hitzeverlust (Siege erneuern, stapeln nicht).", afterglow: true },
   SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"],
-    desc: "Bei ≥50 % Hitze erhalten alle eigenen Karten +2 temporären Wert (endet sofort unter 50 %).", glowingBlade: true },
+    desc: "Bei ≥50 % Hitze erhalten alle eigenen Karten +1 temporären Wert (endet sofort unter 50 %). Solange aktiv, verursachen Niederlagen 10 % mehr Hitzeverlust.", glowingBlade: true },
   SK_FIRE_07: { id: "SK_FIRE_07", name: "Verbrennung", archetype: "fire", keywords: ["heat"],
     desc: "Feuer-Flat-Score pro Punkt +10 (erhöht die Hitzegewinnrate nicht).", burnBonus: true },
   SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat"],
@@ -142,6 +142,11 @@ export const SKILL_DEFS = {
     desc: "Nachbrand: jede Auslösung deines Hitze-Konsumenten gibt zusätzlich +Score in Höhe des 5-fachen der verbrauchten Hitze (Flächenbrand +500, Schmelzpunkt +50). Ohne Konsument wirkungslos.", suncore: true },
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
     desc: "Nachdem ein Hitze-Konsument ausgelöst hat, erhält die nächste eigene Karte +10 temporären Wert (stapelt nicht).", phoenix: true },
+  // ---- #165 Skills (Spec §5.3): zwei neue normale Feuer-Skills. Flags in engine.js/heatLossFor gelesen. ----
+  SK_FIRE_13: { id: "SK_FIRE_13", name: "Überhitzt", archetype: "fire", keywords: ["heat"],
+    desc: "Bei ≥80 % Hitze erhalten alle eigenen Karten zusätzlich +2 temporären Wert. Solange aktiv, verursachen Niederlagen 50 % mehr Hitzeverlust (mit Glühende Klinge additiv).", overheated: true },
+  SK_FIRE_14: { id: "SK_FIRE_14", name: "Funkenflug", archetype: "fire", keywords: ["heat"],
+    desc: "Ein Sieg mit ≥8 Wertvorsprung speichert 25 % seines Feuer-Flat-Scores. Der nächste Sieg zahlt den Speicher als zusätzlichen Flat-Score aus (ein Speicher gleichzeitig; Niederlage löscht ihn nicht).", sparkflight: true },
 
   // ---- Eis-Archetyp (#93 F3) — Kontrolle/Aufstellung mit eingefrorenen Karten. Kein Konsument, keine Ressource. ----
   // Grundmechanik (erster Eis-Skill): friert eigene Karten ein (blau, an card.id). Formations-Flags in formations.js gelesen.
@@ -235,7 +240,8 @@ export function initLightning() {
 // Frischer Hitze-Substate — inaktiv. Wird beim ersten Feuer-Skill aktiviert (Reducer).
 // afterglowArmed = Nachglut · fireRoll = Feuerwalze-Stapel · phoenixArmed = Phönixfeuer · conflagArmed = Flächenbrand.
 export function initHeat() {
-  return { active: false, value: 0, max: C.HEAT_MAX, afterglowArmed: false, fireRoll: 0, phoenixArmed: false, conflagArmed: false };
+  return { active: false, value: 0, max: C.HEAT_MAX, afterglowArmed: false, fireRoll: 0, phoenixArmed: false, conflagArmed: false,
+    sparkStore: 0 }; // #165 Funkenflug: gebankter Feuer-Flat-Score (überlebt Durchlauf-Ende & Niederlagen)
 }
 
 // Anzahl gehaltener Feuer-Skills (Grundmechanik zählt nicht) & ob ein Feuer-Flag gehalten wird.
@@ -261,12 +267,18 @@ export function heatGainFor(margin, skills, cardValue) {
   if (fireFlag(skills, "heatAccel") && margin >= C.ACCEL_MIN_MARGIN) g += C.ACCEL_BONUS;
   return g;
 }
-// Hitzeverlust bei Niederlage (%): min(Rückstand,10); Nachglut → 0; Hitzeschild → halbiert (abgerundet).
-export function heatLossFor(deficit, skills, afterglowArmed) {
+// Hitzeverlust bei Niederlage (%): Basis min(Rückstand,10); Nachglut → 0. #165 §5.3: Glühende Klinge (+10 %,
+// ab 50 Hitze) und Überhitzt (+50 %, ab 80 Hitze) ADDIEREN ihre Verlust-Erhöhung, DANN Hitzeschild ×0,5,
+// zuletzt zugunsten des Spielers abgerundet. `heatValue` = Hitze VOR dem Verlust (für die 50/80-Schwellen).
+export function heatLossFor(deficit, skills, afterglowArmed, heatValue = 0) {
   if (afterglowArmed) return 0;
   let l = Math.min(deficit, C.HEAT_LOSS_MAX);
-  if (fireFlag(skills, "heatShield")) l = Math.floor(l / 2);
-  return l;
+  let inc = 0;
+  if (fireFlag(skills, "glowingBlade") && heatValue >= C.GLOWING_THRESHOLD) inc += C.GLOWING_LOSS_INCREASE; // +10 %
+  if (fireFlag(skills, "overheated")   && heatValue >= C.OVERHEAT_THRESHOLD) inc += C.OVERHEAT_LOSS_INCREASE; // +50 %
+  if (inc > 0) l *= 1 + inc;
+  if (fireFlag(skills, "heatShield")) l *= 0.5;
+  return Math.floor(l);
 }
 // Feuer-Flat-Score bei Sieg: (Vorsprung−2) × (25 + 5×(FeuerSkills−1) + Verbrennung?10:0). 0 ohne Feuer-Skill.
 export function fireScoreFor(margin, skills) {
