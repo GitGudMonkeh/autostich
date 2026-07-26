@@ -751,6 +751,12 @@ export function familyProdHook(familyTiers, name, ctx) {
   return m;
 }
 
+// Belohnt eine gehaltene Familie Crits? (steuert die UI-Sichtbarkeit der Crit-Anzeigen, analog perks.hasCritPerk — #166).
+// Die crit-belohnenden D-Familien (D_CRIT_SCORE/D_SHARP_EYE/…) tragen scoreFlatOnCrit auf ihrer aktiven Stufe.
+export function hasCritFamily(familyTiers) {
+  return activeTierDefs(familyTiers).some((def) => !!def.scoreFlatOnCrit);
+}
+
 /* Familien-Pick anwenden (Spec §2.4 applyFamilyPick). Reine Funktion: nimmt den relevanten Run-State-
    Ausschnitt und liefert das Patch { familyTiers, deck, roles }.
    - REPLACEMENT (Kat. B/C-Regel/D/E): NUR der Familienrang ändert sich; die aktive Regel löst die Engine

@@ -2,6 +2,7 @@ import { MAX_CYCLES } from "../game/constants.js";
 import { cycleLenFor } from "../game/shop.js";
 import { summarizeFormations } from "../game/formations.js";
 import { critChanceRawFor, hasCritPerk, critMultiplierFor } from "../game/perks.js";
+import { hasCritFamily } from "../game/families.js";
 import { lightningCritRaw } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
 
@@ -25,13 +26,13 @@ function Stat({ label, value, tone }) {
 
 export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
   const { wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, perks, crits, lightning, skills = [],
-          statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0 } = state;
+          familyTiers = {}, statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0 } = state;
   const cycleLen = cycleLenFor(state.shop);  // 40, mit Zeitsegment 45 (§8 A-L1)
   const remaining = cycleLen - pos;          // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
-  const showCrit = hasCritPerk(perks) || (crits || 0) > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
+  const showCrit = hasCritPerk(perks) || hasCritFamily(familyTiers) || (crits || 0) > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
   // Live-Crit-Chance des NÄCHSTEN Siegs: analog zum echten Wurf (#19). V2: Perks tragen keine Crit-Chance
   // mehr bei — die Blitz-Crit-Basis (lightning) + der Crit-Chance-Stat fließen additiv ein, dieselbe Rechnung
   // wie die Engine (kein Drift).

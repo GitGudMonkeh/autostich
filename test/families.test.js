@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   FAMILY_DEFS, FAMILY_LIST, familyDef, familyCategory,
-  activeTierDef, activeTierDefs, familySumHook, familyProdHook,
+  activeTierDef, activeTierDefs, familySumHook, familyProdHook, hasCritFamily,
 } from "../src/game/families.js";
 import { UPGRADE_TYPES } from "../src/game/rarity.js";
 import { buildDeck, makeRng } from "../src/game/deck.js";
@@ -433,5 +433,12 @@ describe("Resolver — Regelersetzung (nur höchste Stufe aktiv)", () => {
   });
   it("familyProdHook default 1 ohne scoreMult-Familien", () => {
     expect(familyProdHook({ D_HIGH: 2 }, "scoreMult", {})).toBe(1);
+  });
+  it("hasCritFamily: nur mit crit-belohnender Familie (scoreFlatOnCrit) true — #166 UI-Sichtbarkeit", () => {
+    expect(hasCritFamily({ D_CRIT_SCORE: 2 })).toBe(true);          // scoreFlatOnCrit
+    expect(hasCritFamily({ D_OVERCRIT: 1 })).toBe(true);
+    expect(hasCritFamily({ D_HIGH: 4 })).toBe(false);              // nur scoreFlat
+    expect(hasCritFamily({ D_HIGH: 4, D_SHARP_EYE: 3 })).toBe(true); // eine reicht
+    expect(hasCritFamily({})).toBe(false);
   });
 });

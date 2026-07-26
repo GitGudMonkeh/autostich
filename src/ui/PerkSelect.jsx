@@ -1,5 +1,5 @@
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, critChanceRawFor, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
-import { familyDef } from "../game/families.js";
+import { familyDef, hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
 import { lightningCritRaw } from "../game/skills.js";
 import { PERK_DECLINE_COINS } from "../game/constants.js";
@@ -49,7 +49,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
   const critRaw = critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos }) + lightningCritRaw(lightning, skills) + statCritChance;
   const critPct = Math.round(Math.min(1, Math.max(0, critRaw)) * 100);
   const scoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos });
-  const showCrit = hasCritPerk(perks) || crits > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
+  const showCrit = hasCritPerk(perks) || hasCritFamily(state.familyTiers) || crits > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center sm:items-start justify-center p-4 sm:pt-28" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       {/* #130: nicht scrollender Wrapper → Roboter-Maskottchen schaut oben über die Karte hervor (Desktop-Peek);
