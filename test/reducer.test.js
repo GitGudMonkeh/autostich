@@ -30,8 +30,8 @@ describe("Reducer", () => {
   // Deck-Mods beim Pick (früher flache Kat.-A-Perks) sind zu KUMULATIVEN Familien migriert (#167) — der
   // Familien-Pick + Ziel-Fluss ist in test/families-engine.test.js geprüft; PICK_PERK verändert das Deck nicht mehr.
   it("PICK_PERK ignoriert Perks außerhalb des Angebots", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["E1", "C1", "E2"] };
-    expect(reducer(s0, { type: "PICK_PERK", perkId: "C3", rng })).toBe(s0);
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["E1", "L3", "E2"] };
+    expect(reducer(s0, { type: "PICK_PERK", perkId: "L5", rng })).toBe(s0); // nicht im Angebot → No-Op
   });
 
   it("L1 Überladung (Ziel-Perk): CONFIRM_TARGET gibt 5 gewählten Karten +6", () => {
@@ -52,7 +52,7 @@ describe("Reducer", () => {
   });
 
   it("RESET beginnt einen frischen Lauf mit Start-Pick = Stat (V2 §22.2)", () => {
-    const dirty = { ...initialState(makeRng(1)), score: 999, perks: ["E1", "C1"] };
+    const dirty = { ...initialState(makeRng(1)), score: 999, perks: ["E1", "L3"] };
     const fresh = reducer(dirty, { type: "RESET", rng });
     expect(fresh.score).toBe(0);
     expect(fresh.perks).toEqual([]);
@@ -77,7 +77,7 @@ describe("Reducer", () => {
 
 describe("PICK_PERK — nach jeder Runde zurück in play (Neuer Loop)", () => {
   it("Wahl aus dem levelup-Angebot → play, offer null, Perk übernommen", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["E1", "C1", "E2"] };
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["E1", "L3", "E2"] };
     const s1 = reducer(s0, { type: "PICK_PERK", perkId: "E2", rng });
     expect(s1.phase).toBe("play");
     expect(s1.offer).toBeNull();
@@ -235,7 +235,7 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
 });
 
 describe("DECLINE_PERK — Perk-Angebot ablehnen → +Münze (#138)", () => {
-  const perkLevelup = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["E1", "C1", "E2"], ...over });
+  const perkLevelup = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["E1", "L3", "E2"], ...over });
 
   it("schreibt PERK_DECLINE_COINS gut, verwirft das Angebot und kehrt in play zurück", () => {
     const s0 = perkLevelup({ shop: { ...initialState(makeRng(1)).shop, coins: 3 } });
@@ -317,38 +317,10 @@ describe("Formationsphase — SWAP/UNDO/RESET/CONFIRM (V2 §22.8)", () => {
   });
 });
 
-describe("Kartenrollen — Zielauswahl PICK_PERK/CONFIRM_TARGET (V2 §22.6 C)", () => {
-  const lvl = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["C1", "E1", "E2"], ...over });
-
-  it("PICK_PERK eines Ziel-Perks öffnet die Zielauswahl (phase target)", () => {
-    const s = reducer(lvl(), { type: "PICK_PERK", perkId: "C1", rng });
-    expect(s.phase).toBe("target");
-    expect(s.targetPerk).toBe("C1");
-    expect(s.perks).toEqual(["C1"]); // Perk bereits gehalten
-  });
-  it("CONFIRM_TARGET setzt die Rolle und geht in play", () => {
-    let s = reducer(lvl(), { type: "PICK_PERK", perkId: "C1", rng });
-    const ids = s.playerOrder.slice(0, 3).map((di) => s.deck[di].id);
-    s = reducer(s, { type: "CONFIRM_TARGET", cardIds: ids });
-    expect(s.phase).toBe("play");
-    expect(s.targetPerk).toBeNull();
-    expect(s.roles.C1).toEqual(ids);
-  });
-  it("CONFIRM_TARGET verlangt genau needsTarget unterschiedliche Karten", () => {
-    const s = reducer(lvl(), { type: "PICK_PERK", perkId: "C1", rng });
-    const two = s.playerOrder.slice(0, 2).map((di) => s.deck[di].id);
-    expect(reducer(s, { type: "CONFIRM_TARGET", cardIds: two })).toBe(s); // zu wenige → wirkungslos
-  });
-  it("C9 Opfergabe: gewählte Karte −3, direkter Nachfolger +5 (dauerhaft)", () => {
-    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: ["C9", "E1", "E2"] };
-    s = reducer(s, { type: "PICK_PERK", perkId: "C9", rng });
-    const targetDi = s.playerOrder[0], succDi = s.playerOrder[1];
-    const tv = s.deck[targetDi].value, sv = s.deck[succDi].value;
-    s = reducer(s, { type: "CONFIRM_TARGET", cardIds: [s.deck[targetDi].id] });
-    expect(s.deck[targetDi].value).toBe(Math.max(0, tv - 3));
-    expect(s.deck[succDi].value).toBe(sv + 5);
-  });
-
+// Kat.-C-Rollen (inkl. C9 Opfergabe) sind zu Familien migriert (#167) → laufen über den Familien-Ziel-Fluss
+// (FAMILY_TARGET_*, geprüft in families-engine.test.js). Das flache CONFIRM_TARGET dient nur noch den Ziel-Legendären
+// (L1/L9 permMod); die Ziel-Phasen-Öffnung/Validierung deckt der L1-Test oben ab.
+describe("Ziel-Legendäre — CONFIRM_TARGET permMod (V2 §22.6)", () => {
   it("L9 Blutvertrag: 4 gewählte Karten −2, ihre direkten Nachfolger +6 (dauerhaft)", () => {
     let s = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L9", "E1", "E2"] };
     s = reducer(s, { type: "PICK_PERK", perkId: "L9", rng: makeRng(1) });

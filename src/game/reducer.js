@@ -341,7 +341,8 @@ export function reducer(state, action) {
       return { ...state, familyTiers, deck, roles, formations, phase: "play", familyTarget: null };
     }
 
-    // Zielauswahl bestätigen (V2 §22.6 C): genau needsTarget Karten → Rolle setzen (C9 = dauerhafte Wertmod).
+    // Zielauswahl bestätigen (V2 §22.6): genau needsTarget Karten → Rolle setzen bzw. dauerhafte Wertmod (L1/L9).
+    // C-Rollen (inkl. C9 Opfergabe) sind zu Familien migriert (#167) → laufen über den Familien-Ziel-Fluss, nicht hier.
     case "CONFIRM_TARGET": {
       if (state.phase !== "target" || !state.targetPerk) return state;
       const def = PERK_DEFS[state.targetPerk];
@@ -349,13 +350,7 @@ export function reducer(state, action) {
       const ids = (action.cardIds || []).slice(0, need);
       if (ids.length !== need || new Set(ids).size !== need) return state; // genau N unterschiedliche Karten
       let deck = state.deck;
-      if (def.sacrificeMod) { // C9 Opfergabe: gewählte Karte −3, ihr direkter Nachfolger (aktuelle Reihenfolge) +5 — dauerhaft.
-        const idx = state.playerOrder.findIndex((di) => state.deck[di].id === ids[0]);
-        const succId = idx >= 0 && idx + 1 < state.playerOrder.length ? state.deck[state.playerOrder[idx + 1]].id : null;
-        deck = state.deck.map((c) =>
-          c.id === ids[0] ? { ...c, value: Math.max(0, c.value - 3) }
-          : c.id === succId ? { ...c, value: c.value + 5 } : c);
-      } else if (def.permMod) { // L1 Überladung / L9 Blutvertrag: dauerhafte Wertmods der gewählten Karten.
+      if (def.permMod) { // L1 Überladung / L9 Blutvertrag: dauerhafte Wertmods der gewählten Karten.
         deck = def.permMod(state.deck, state.playerOrder, ids);
       }
       const roles = { ...(state.roles || {}), [state.targetPerk]: ids };

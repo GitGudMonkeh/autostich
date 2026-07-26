@@ -125,10 +125,9 @@ export function resolveTrick(state, rng = Math.random) {
   const isRole = (perkId) => (roles[perkId] || []).includes(pCard.id);
   const triumphActive = triumphArmed.includes(pCard.id);
   let isSegmentLow = false, isSegmentHigh = false, segmentLowRank = -1, segmentIndex = -1;
-  // Gate: flache C7 (segmentLow) ODER eine gehaltene segmentLow-Familie (C_SURVIVOR). segmentLowRank/segmentIndex
-  // liefern C_SURVIVOR den Rang der Karte im Segment (0=tiefste, 1=zweittiefste), ohne isSegmentLow/High zu ändern.
-  if (ownsFlag(perks, "segmentLow") || ownsFlag(perks, "segmentHigh")
-      || activeFamilyEntries(familyTiers).some((e) => e.def.segmentLow)) {
+  // Gate: eine gehaltene segmentLow-Familie (C_SURVIVOR; flache C7 ist zu Familie migriert #167). segmentLowRank/
+  // segmentIndex liefern den Rang der Karte im Segment (0=tiefste, 1=zweittiefste); isSegmentLow/High bleiben für ggf. spätere Nutzung.
+  if (activeFamilyEntries(familyTiers).some((e) => e.def.segmentLow)) {
     const segStart = Math.floor(actualPos / SEGMENT_SIZE) * SEGMENT_SIZE;
     segmentIndex = Math.floor(actualPos / SEGMENT_SIZE);
     let minVal = Infinity, minPos = -1, maxVal = -Infinity, maxPos = -1;
@@ -395,17 +394,13 @@ export function resolveTrick(state, rng = Math.random) {
     sinceWin = 0; // #71 Durchbruch: Sieg setzt den Zähler zurück
     lossStreak = 0; // #71 Revanche: Sieg beendet die Niederlagenserie
     lastWinValue = pValue; // #71 Präzision: letzten Siegwert merken (NACH dem Vergleich in wctx)
-    // C4/C5: gewinnt eine Relay-Rolle, bekommen die nächsten `relay` Karten +2 (Queue nach dem Verbrauch → Index 0 = nächste Karte).
-    for (const id of perks) {
-      const relay = PERK_DEFS[id].relay;
-      if (relay && isRole(id)) for (let i = 0; i < relay; i++) successorQueue[i] = (successorQueue[i] || 0) + 2;
-    }
-    // C_RELAY/C_LEADER (Familien): relay-Anzahl + relayBonus aus der gehaltenen Stufe; nur wenn die gewinnende Karte Rolle ist.
+    // C_RELAY/C_LEADER (Familien, Kat. C zu #167 migriert): gewinnt eine Relay-Rolle, bekommen die nächsten `relay`
+    // Karten je +relayBonus (Queue nach dem Verbrauch → Index 0 = nächste Karte). relay/relayBonus aus der gehaltenen Stufe.
     for (const { familyId, def } of activeFamilyEntries(familyTiers)) {
       if (def.relay && isRole(familyId)) for (let i = 0; i < def.relay; i++) successorQueue[i] = (successorQueue[i] || 0) + (def.relayBonus || 0);
     }
-    // C2 / C_TRIUMPH: gewinnt eine Triumph-Rolle, wird sie fürs nächste Auftauchen armiert (flach ODER Familie).
-    if (isRole("C2") || activeFamilyEntries(familyTiers).some((e) => e.def.triumph && isRole(e.familyId)))
+    // C_TRIUMPH: gewinnt eine Triumph-Rolle, wird sie fürs nächste Auftauchen armiert.
+    if (activeFamilyEntries(familyTiers).some((e) => e.def.triumph && isRole(e.familyId)))
       triumphArmed = [...triumphArmed, pCard.id];
     // L8 Schicksalsmaschine: Erfolge je Karte diesen Durchlauf (für den Wert-Tausch am Durchlauf-Ende).
     if (ownsFlag(perks, "swapExtremes")) l8Wins = { ...l8Wins, [pCard.id]: (l8Wins[pCard.id] || 0) + 1 };

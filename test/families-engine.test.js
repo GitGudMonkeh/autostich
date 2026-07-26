@@ -417,18 +417,17 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
     }
   });
 
-  it("reguläre D- und A-Perks sind vollständig zu Familien migriert — kein flacher regulärer D-/A-Perk mehr", () => {
-    // Nach der Entfernung existiert kein regulärer (nicht-legendärer) cat-D- oder cat-A-Perk mehr im flachen Pool;
+  it("reguläre D-/A-/C-Perks sind vollständig zu Familien migriert — kein flacher regulärer D-/A-/C-Perk mehr", () => {
+    // Nach der Entfernung existiert kein regulärer (nicht-legendärer) cat-D-/A-/C-Perk mehr im flachen Pool;
     // die Legendäre bleiben flach (D: L4/L5/L6/L10; A: L1/L3/L8/L9/L11) → isMigratedPerk = false.
-    expect(PERK_LIST.some((p) => p.cat === "D" && !isLegendary(p.id))).toBe(false);
-    expect(PERK_LIST.some((p) => p.cat === "A" && !isLegendary(p.id))).toBe(false);
-    expect(isMigratedPerk(PERK_DEFS.C1)).toBe(false); // Kat. C noch nicht migriert
+    for (const cat of ["D", "A", "C"]) expect(PERK_LIST.some((p) => p.cat === cat && !isLegendary(p.id))).toBe(false);
+    expect(isMigratedPerk(PERK_DEFS.E1)).toBe(false); // Kat. E noch nicht migriert
     expect(isMigratedPerk(PERK_DEFS.L5)).toBe(false); // Legendär bleibt flach
     expect(isMigratedPerk(PERK_DEFS.L1)).toBe(false); // cat A, aber legendär → bleibt flach
-    // Über viele Seeds: das Angebot enthält nie einen flachen regulären D-/A-Perk — D/A erscheinen nur als Familie.
+    // Über viele Seeds: das Angebot enthält nie einen flachen regulären D-/A-/C-Perk — sie erscheinen nur als Familie.
     for (let seed = 0; seed < 40; seed++) {
       for (const e of buildPerkOffer([], {}, rngS(seed), 3)) {
-        if (!isFam(e)) expect(["D", "A"].includes(PERK_DEFS[e].cat) && !isLegendary(e)).toBe(false);
+        if (!isFam(e)) expect(["D", "A", "C"].includes(PERK_DEFS[e].cat) && !isLegendary(e)).toBe(false);
       }
     }
   });
@@ -456,9 +455,9 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
 
   it("besessene flache Perks werden nicht erneut angeboten", () => {
     for (let seed = 0; seed < 30; seed++) {
-      const off = buildPerkOffer(["C1", "E1"], {}, rngS(seed), 3);
-      expect(off).not.toContain("C1");
+      const off = buildPerkOffer(["E1", "E2"], {}, rngS(seed), 3);
       expect(off).not.toContain("E1");
+      expect(off).not.toContain("E2");
     }
   });
 

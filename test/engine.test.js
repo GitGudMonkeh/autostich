@@ -568,62 +568,8 @@ describe("Reaktoren + Geladene Serie — Engine (Stufe C)", () => {
   });
 });
 
-describe("Kartenrollen — Engine (V2 §22.6 C)", () => {
-  const mk = (arr, suit = "R") => arr.map((v, i) => ({ id: `${suit}${i}`, suit, baseRank: v, value: v }));
-  const build = (over) => ({ ...initialState(makeRng(1)), oppDeck: mk([0, 0, 0]), oppOrder: [0, 1, 2], ...over });
-
-  it("C1 Vorhut: Rollen-Karte auf Position ≤4 bekommt +3 Wert", () => {
-    const s = build({ deck: mk([5, 5, 5]), playerOrder: [0, 1, 2], perks: ["C1"], roles: { C1: ["R0"] } });
-    const r = resolveTrick(s, rng); // pos0 = R0 (Rolle), posInCycle 0 → +3
-    expect(r.lastTrick.pValue).toBe(8); // 5 + 3
-  });
-
-  it("C4 Staffelläufer: nach dem Sieg einer Rollen-Karte bekommt die nächste +2", () => {
-    let s = build({ deck: mk([5, 5, 5]), playerOrder: [0, 1, 2], perks: ["C4"], roles: { C4: ["R0"] } });
-    s = resolveTrick(s, rng);          // pos0 R0 gewinnt → Nachfolger armiert
-    expect(s.lastTrick.pValue).toBe(5); // R0 selbst ohne Bonus
-    s = resolveTrick(s, rng);          // pos1 → +2
-    expect(s.lastTrick.pValue).toBe(7); // 5 + 2
-  });
-
-  it("C2 Triumph: Sieg armiert die Karte; dieser Stich noch ohne Bonus", () => {
-    let s = build({ deck: mk([5, 5]), oppDeck: mk([0, 0]), oppOrder: [0, 1], playerOrder: [0, 1], perks: ["C2"], roles: { C2: ["R0"] } });
-    s = resolveTrick(s, rng);
-    expect(s.triumphArmed).toContain("R0");
-    expect(s.lastTrick.pValue).toBe(5);
-  });
-
-  it("C3 Leibwache: nach verlorenem Vorgänger bekommt die Rollen-Karte +5", () => {
-    let s = build({ deck: mk([5, 5]), oppDeck: mk([9, 0], "B"), oppOrder: [0, 1], playerOrder: [0, 1], perks: ["C3"], roles: { C3: ["R1"] } });
-    s = resolveTrick(s, rng);             // pos0 R0: 5 vs 9 → Niederlage
-    expect(s.lastResult).toBe("loss");
-    s = resolveTrick(s, rng);             // pos1 R1 (C3): Vorgänger verlor → +5
-    expect(s.lastTrick.pValue).toBe(10);  // 5 + 5
-  });
-
-  it("C5 Anführer: nach dem Sieg der Rollen-Karte bekommen die nächsten zwei Karten +2", () => {
-    let s = build({ deck: mk([5, 5, 5]), playerOrder: [0, 1, 2], perks: ["C5"], roles: { C5: ["R0"] } });
-    s = resolveTrick(s, rng);             // pos0 R0 (Rolle) gewinnt → nächste 2 armiert
-    expect(s.lastTrick.pValue).toBe(5);
-    s = resolveTrick(s, rng);             // pos1 → +2
-    expect(s.lastTrick.pValue).toBe(7);
-    s = resolveTrick(s, rng);             // pos2 → +2
-    expect(s.lastTrick.pValue).toBe(7);
-  });
-
-  it("C6 Finisher: Rollen-Karte auf der letzten Segment-Position (posInCycle%5==4) bekommt +5", () => {
-    expect(resolveTrick(scenario(5, 0, { pos: 4, perks: ["C6"], roles: { C6: ["X4"] } }), rng).lastTrick.pValue).toBe(10); // 5 + 5
-    expect(resolveTrick(scenario(5, 0, { pos: 3, perks: ["C6"], roles: { C6: ["X3"] } }), rng).lastTrick.pValue).toBe(5);  // andere Position → kein Bonus
-  });
-
-  it("C7 Überlebensvorteil: die niedrigste Karte des Segments bekommt +3", () => {
-    let s = build({ deck: mk([5, 4, 6, 7, 8]), oppDeck: mk([0, 0, 0, 0, 0], "B"), oppOrder: [0, 1, 2, 3, 4], playerOrder: [0, 1, 2, 3, 4], perks: ["C7"] });
-    s = resolveTrick(s, rng);             // pos0 val5 (nicht Tiefste) → +0
-    expect(s.lastTrick.pValue).toBe(5);
-    s = resolveTrick(s, rng);             // pos1 val4 (Segment-Tiefste) → +3
-    expect(s.lastTrick.pValue).toBe(7);
-  });
-});
+// Kartenrollen (Kat. C: Vorhut/Staffelläufer/Triumph/Leibwache/Anführer/Finisher/Überlebensvorteil) sind zu
+// Familien migriert (#167) — die Engine-Verdrahtung ist in test/families-engine.test.js („Kategorie C") geprüft.
 
 describe("Formationswerkzeuge — Engine (V2 §22.6 E)", () => {
   it("E10 Feinjustierung: die Formationsphase startet mit +1 Energie", () => {

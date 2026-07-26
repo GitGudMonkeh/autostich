@@ -13,7 +13,7 @@
    - Überlappung: steckt eine Karte in mehreren Formationen, wird ihr Faktor-Produkt zusätzlich
      mit dem Überlappungsbonus multipliziert: 2 Formationen ×1,5 · 3 ×2 · 4 ×3.
 
-   Rollen (§22.6 C): C8 Joker (Farbe = Vorgänger), C10 Bindeglied (Treppe ±1).
+   Rollen-Familien (Rarität #167 Kat. C): C_JOKER (Farbblock-Joker je Stufe), C_BRIDGE (Treppen-Flex je Stufe).
    Werkzeuge (§22.6 E): E1 Wiederholung +1 fremde Karte · E2 Farbblock +1 andersfarbig ·
    E3 Treppe darf 1× gleich · E4 Treppe darf 1× Rückschritt · E5 Wechsel schon ab 2 Karten ·
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
@@ -146,8 +146,8 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
 }
 
 /* Berechnet für jede Position { mult, formations: [{ type, ordinal, factor }] }.
-   `order` = Ziehreihenfolge, `deck` = Karten, `roles` = Kartenrollen (flach C8/C10 UND Familien C_JOKER/C_BRIDGE),
-   `perks` = gehaltene Perks (für die E-Werkzeuge), `familyTiers` = Familienrang je Familie (Rarität #167). */
+   `order` = Ziehreihenfolge, `deck` = Karten, `roles` = Kartenrollen (Familien C_JOKER/C_BRIDGE unter familyId,
+   plus L-Rollen), `perks` = gehaltene Perks (für die E-Werkzeuge), `familyTiers` = Familienrang je Familie (#167). */
 export function computeFormations(order, deck, roles = {}, perks = [], skills = [], anchors = [], pe = {}, familyTiers = {}) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
@@ -175,8 +175,7 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
     if (def.jokerRole) for (const id of ids) (def.jokerMode === "pred" ? famJokerPred : famJokerFree).add(id);
     if (def.bridgeRole) for (const id of ids) famBridgeSpan[id] = Math.max(famBridgeSpan[id] || 0, def.bridgeSpan || 1);
   }
-  const jokerIds = new Set([...(roles.C8 || []), ...famJokerPred]); // Vorgängerfarbe-Joker (flach C8 + Familie C_JOKER I/II)
-  const bridgeIds = new Set(roles.C10 || []);                       // flache C10 (Span 1); Familien-Span über famBridgeSpan
+  const jokerIds = famJokerPred; // Vorgängerfarbe-Joker (Familie C_JOKER I/II; flache C8 ist zu #167 migriert)
   // Joker: effektive Farbe = die des direkten Vorgängers (verkettet).
   const effSuit = cards.map((c) => c.suit);
   for (let k = 1; k < n; k++) if (jokerIds.has(cards[k].id)) effSuit[k] = effSuit[k - 1];
@@ -184,8 +183,7 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   if ((pe.linkedColors || []).length === 2) { const [la, lb] = pe.linkedColors; for (let k = 0; k < n; k++) if (effSuit[k] === lb) effSuit[k] = la; }
   // Bindeglied (C10, ±1) + Eis: Eisschritt/Kristallform geben ±1, Permafrost-Joker passt überall (großer Flex).
   const bind = cards.map((c, k) => {
-    let b = bridgeIds.has(c.id) ? 1 : 0;
-    if (famBridgeSpan[c.id]) b = Math.max(b, famBridgeSpan[c.id]); // Familie C_BRIDGE: Span je Stufe (1/2/99)
+    let b = famBridgeSpan[c.id] || 0; // Familie C_BRIDGE: Span je Stufe (1/2/99); flache C10 ist zu #167 migriert
     if (frozen[k] && (wildStep || wildCrystal)) b = Math.max(b, CRYSTAL_OFFSET);
     if (frozen[k] && permafrost) b = Math.max(b, 99); // Joker: fügt sich in jede Treppe
     return b;

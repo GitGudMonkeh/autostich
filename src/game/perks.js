@@ -35,11 +35,8 @@ export const CATEGORIES = {
 };
 
 export const PERK_DEFS = {
-  // ---- A: Deck — vollständig zu Familien migriert (#167, families.js Kategorie A, KUMULATIV). Die früheren
-  //      flachen A1–A10 sind entfernt; das Angebot bietet A nur noch als aufwertbare Familien (buildPerkOffer). ----
-  C6: { id: "C6", cat: "C", label: "Finisher", needsTarget: 2,
-        desc: "Wähle zwei Karten. Auf der letzten Position eines Segments erhalten sie +5 Wert.",
-        cardBonus: (ctx) => (ctx.isRole && ctx.isRole("C6") && ctx.posInCycle % 5 === 4 ? 5 : 0) },
+  // ---- A: Deck & C: Rollen — vollständig zu Familien migriert (#167, families.js Kategorien A/C). Die früheren
+  //      flachen A1–A10 bzw. C1–C10 sind entfernt; das Angebot bietet A/C nur noch als Familien (buildPerkOffer). ----
 
   // ---- E-Formationsmarker (V2 §22.6) — reine Marker; Wirkung in computeFormations(perks). ----
   E6: { id: "E6", cat: "E", label: "Drehzahl",
@@ -48,17 +45,6 @@ export const PERK_DEFS = {
         desc: "Die Positionen 10, 20, 30 und 40 sind Anker (siegreicher Anker ×1,25)." },
   E8: { id: "E8", cat: "E", label: "Schnellschuss",
         desc: "Die Positionen 5, 15, 25 und 35 sind Anker (siegreicher Anker ×1,25)." },
-
-  // ---- C-Rollen mit Formations-/Segment-Bezug (V2 §22.6) ----
-  C7: { id: "C7", cat: "C", label: "Überlebensvorteil", segmentLow: true,
-        desc: "Die niedrigste Karte jedes Segments erhält +3 Wert.",
-        cardBonus: (ctx) => (ctx.isSegmentLow ? 3 : 0) }, // Engine markiert die Segment-Tiefsten je Durchlauf
-  C8: { id: "C8", cat: "C", label: "Joker", needsTarget: 2, jokerRole: true,
-        desc: "Wähle zwei Karten. Für einen Farbblock zählen sie als Farbe ihres direkten Vorgängers." },
-  C9: { id: "C9", cat: "C", label: "Opfergabe", needsTarget: 1, sacrificeMod: true,
-        desc: "Wähle eine Karte. Sie verliert dauerhaft 3 Wert; ihr direkter Nachfolger erhält dauerhaft +5 Wert." },
-  C10: { id: "C10", cat: "C", label: "Bindeglied", needsTarget: 2, bridgeRole: true,
-        desc: "Wähle zwei Karten. Für eine Treppe dürfen sie als 1 Wert höher oder niedriger gelten." },
 
   // ---- Seltene Perks (#71, Phase 2e) — Serien-/Tempo-/Crit-Mechanik (Engine-Flags + State) ----
   E9: { id: "E9", cat: "E", label: "Segmentarbeit",
@@ -71,21 +57,9 @@ export const PERK_DEFS = {
   // ---- B: Stich — vollständig zu Familien migriert (#167, families.js Kategorie B). Die früheren flachen
   //      B1–B10 sind entfernt; das Angebot bietet B nur noch als aufwertbare Familien (buildPerkOffer). ----
 
-  // ---- C: Kartenrollen (V2 §22.6) — meist mit manueller Kartenauswahl (needsTarget) ----
-  //      Rollen liegen als Karten-ids in state.roles[perkId]; ctx.isRole(perkId) prüft die aktuelle Karte.
-  C1: { id: "C1", cat: "C", label: "Vorhut", needsTarget: 3,
-        desc: "Wähle drei Karten. Auf Position 1–5 erhalten sie +3 Wert.",
-        cardBonus: (ctx) => (ctx.isRole && ctx.isRole("C1") && ctx.posInCycle <= 4 ? 3 : 0) },
-  C2: { id: "C2", cat: "C", label: "Triumph", needsTarget: 3, triumph: true,
-        desc: "Wähle drei Karten. Nach einem Sieg erhalten sie beim nächsten Auftauchen +2 Wert.",
-        cardBonus: (ctx) => (ctx.triumphActive ? 2 : 0) }, // Engine armiert die Karte nach ihrem Sieg
-  C3: { id: "C3", cat: "C", label: "Leibwache", needsTarget: 2,
-        desc: "Wähle zwei Karten. Verliert ihr Vorgänger, erhalten sie +5 Wert.",
-        cardBonus: (ctx) => (ctx.isRole && ctx.isRole("C3") && ctx.lastResult === "loss" ? 5 : 0) },
-  C4: { id: "C4", cat: "C", label: "Staffelläufer", needsTarget: 3, relay: 1,
-        desc: "Wähle drei Karten. Nach ihrem Sieg erhält der direkte Nachfolger +2 Wert." },
-  C5: { id: "C5", cat: "C", label: "Anführer", needsTarget: 1, relay: 2,
-        desc: "Wähle eine Karte. Nach ihrem Sieg erhalten die nächsten zwei Karten +2 Wert." },
+  // ---- C: Kartenrollen — vollständig zu Familien migriert (#167, families.js Kategorie C, gemischte Upgrade-Typen
+  //      ROLE/REPLACEMENT/CUMULATIVE). Die früheren flachen C1–C10 sind entfernt; das Angebot bietet C nur noch als
+  //      Familien (buildPerkOffer). Rollen liegen jetzt unter state.roles[familyId]; ctx.isRole(familyId) prüft sie. ----
 
   // ---- D: Score — vollständig zu Familien migriert (#167, siehe families.js Kategorie D). Die früheren
   //      flachen D1–D19 sind entfernt; das Angebot bietet D nur noch als aufwertbare Familien (buildPerkOffer). ----
@@ -159,10 +133,9 @@ export const rarityMeta = (id) => RARITY_META[rarityOf(id)];
 // Aufstellungshilfe in Formationsphase & Kartenübersicht (Issue #95). Alle E-Werkzeuge (Kat. E)
 // plus kuratierte B/C/D/L, deren Effekt an Position, direkter Nachbarschaft oder Formation hängt.
 const LAYOUT_EXTRA = new Set([
-  // B-Stich ist zu Familien migriert (#167) — die positions-/formationsbezogenen B-Familien folgen in der Layout-Hilfe mit #166.
-  "C1", "C3", "C4", "C5", "C6", "C7", "C8", "C10", // Positions-/Nachbarschafts-/Segment-Rollen · Joker/Bindeglied (Formation)
-  // D-Score ist zu Familien migriert (#167) — die formationsbezogenen D-Familien (Punktebonus/Kritische Ernte)
-  // sind noch nicht in der Layout-Hilfe berücksichtigt (folgt mit #166 UI).
+  // B-Stich, D-Score UND C-Rollen sind zu Familien migriert (#167) — ihre positions-/formations-/segmentbezogenen
+  // Familien (u. a. Vorhut/Finisher/Joker/Bindeglied/Überlebensvorteil, Punktebonus/Kritische Ernte) sind in der
+  // Aufstellungshilfe noch NICHT berücksichtigt (folgt mit #166 UI, da layoutPerks nur flache `perks` kennt).
   "L3", "L11",                            // Positionen 36–40 · Position 20→40 (L7 „Königsmacher" entfernt, #162)
 ]);
 export function isLayoutPerk(id) { return PERK_DEFS[id]?.cat === "E" || LAYOUT_EXTRA.has(id); }
@@ -171,8 +144,8 @@ export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); 
 /* ---- Familien-Umbau (Rarität #167 §2) ---- */
 
 // Migrierte Kategorien: ihre REGULÄREN (nicht legendären) Perks sind jetzt Familien und kommen über FAMILY_DEFS
-// ins Angebot statt über PERK_DEFS. Wächst mit jeder migrierten Kategorie (D, B, A; später +C/E).
-export const MIGRATED_CATS = new Set(["D", "B", "A"]);
+// ins Angebot statt über PERK_DEFS. Wächst mit jeder migrierten Kategorie (D, B, A, C; später +E).
+export const MIGRATED_CATS = new Set(["D", "B", "A", "C"]);
 
 // Ist dieser flache Perk durch eine Familie ersetzt? Nur reguläre Perks migrierter Kategorien — die legendären
 // D-Perks (L4/L5/L6/L10) bleiben flach im Legendär-Pool (Spec §3.1).
