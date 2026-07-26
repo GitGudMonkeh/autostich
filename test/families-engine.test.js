@@ -230,6 +230,18 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
       expect(off.filter((e) => !isFam(e) && isLegendary(e))).toHaveLength(1);
     }
   });
+
+  it("bei aktivem Roll (Chance>0) erscheinen NIE zwei Legendäre", () => {
+    for (let seed = 1; seed <= 60; seed++)
+      expect(buildPerkOffer([], {}, rngS(seed), 3, 0.5).filter((e) => !isFam(e) && isLegendary(e)).length).toBeLessThanOrEqual(1);
+  });
+
+  it("ein aktiver Roll kann auch ohne Legendäres ausgehen (Miss)", () => {
+    let anyWithout = false;
+    for (let seed = 1; seed <= 40 && !anyWithout; seed++)
+      if (!buildPerkOffer([], {}, rngS(seed), 3, 0.2).some((e) => !isFam(e) && isLegendary(e))) anyWithout = true;
+    expect(anyWithout).toBe(true);
+  });
 });
 
 describe("applyFamilyPick — reines Patch (Spec §2.4)", () => {

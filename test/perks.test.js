@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildDeck, makeRng } from "../src/game/deck.js";
-import { PERK_DEFS, PERK_LIST, buildOffer, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks } from "../src/game/perks.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 
 describe("Perks — Deck-Modifikationen (Kat. A)", () => {
@@ -62,53 +62,8 @@ describe("Perks — cardBonus (Kat. B) via effectivePlayerValue", () => {
   });
 });
 
-describe("buildOffer", () => {
-  it("liefert count Perks, ohne bereits besessene, ohne Duplikate", () => {
-    const offer = buildOffer(["A1", "A2"], makeRng(1), 3);
-    expect(offer).toHaveLength(3);
-    expect(offer).not.toContain("A1");
-    expect(new Set(offer).size).toBe(3);
-  });
-
-  it("gibt bei fast leerem Pool nur die Restmenge", () => {
-    const owned = PERK_LIST.filter((p) => p.id !== "A1" && p.id !== "A2").map((p) => p.id);
-    expect(buildOffer(owned, makeRng(1), 3, 9)).toHaveLength(2); // nur A1/A2 übrig (Commons)
-  });
-
-  // ---- Rarität: kein Level-Gate mehr (Perk nach jeder Runde) — nur gewichtet + Legendary-Cap ----
-  it("höchstens EIN Legendary je Angebot", () => {
-    // Nur Legendaries übrig → das Angebot enthält genau 1 (max 1 pro Angebot), und der ist legendär.
-    const owned = PERK_LIST.filter((p) => !isLegendary(p.id)).map((p) => p.id);
-    const off = buildOffer(owned, makeRng(3), 3);
-    expect(off).toHaveLength(1);
-    expect(isLegendary(off[0])).toBe(true);
-  });
-  it("gewichtete Auswahl ist bei festem Seed deterministisch", () => {
-    expect(buildOffer([], makeRng(7), 3)).toEqual(buildOffer([], makeRng(7), 3));
-  });
-  it("bereits gewählte Legendaries werden nicht erneut angeboten", () => {
-    expect(buildOffer(["L1"], makeRng(1), 3)).not.toContain("L1");
-  });
-
-  // ---- Expliziter Legendär-Roll (Shop #107 S5c): Chance>0 → Legendäre nur über den Wurf, genau 0 oder 1 ----
-  it("legendaryChance=1 erzwingt genau EIN Legendary im Angebot", () => {
-    for (let seed = 1; seed <= 20; seed++) {
-      const off = buildOffer([], makeRng(seed), 3, 1);
-      expect(off).toHaveLength(3);
-      expect(off.filter((id) => isLegendary(id))).toHaveLength(1);
-    }
-  });
-  it("bei aktivem Roll (Chance>0) erscheinen NIE zwei Legendäre", () => {
-    for (let seed = 1; seed <= 60; seed++)
-      expect(buildOffer([], makeRng(seed), 3, 0.5).filter((id) => isLegendary(id)).length).toBeLessThanOrEqual(1);
-  });
-  it("ein aktiver Roll kann auch ohne Legendary ausgehen (Miss)", () => {
-    let anyWithout = false;
-    for (let seed = 1; seed <= 40 && !anyWithout; seed++)
-      if (!buildOffer([], makeRng(seed), 3, 0.2).some((id) => isLegendary(id))) anyWithout = true;
-    expect(anyWithout).toBe(true);
-  });
-});
+// Das Angebot läuft jetzt über buildPerkOffer (gemischt Familien + flache Perks) — Tests dort in
+// test/families-engine.test.js (inkl. Legendär-Wurf). Das alte flache buildOffer wurde entfernt (#167 Schritt 4).
 
 describe("critChanceFor / critChanceRawFor (V2: kein Perk trägt Crit-Chance — Stat/Blitz in der Engine)", () => {
   it("kein Perk-Beitrag → Roh-Chance 0 (Stat/Blitz addiert die Engine obendrauf)", () => {

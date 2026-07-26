@@ -322,40 +322,6 @@ const LAYOUT_EXTRA = new Set([
 export function isLayoutPerk(id) { return PERK_DEFS[id]?.cat === "E" || LAYOUT_EXTRA.has(id); }
 export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); }
 
-// Angebot: bis zu `count` noch nicht besessene Perks, GEWICHTET nach Seltenheit (#33, §10.3).
-// Perk-Auswahl nach jeder Runde: KEINE Level-Gates mehr — alle Seltenheiten sofort möglich, nur gewichtet;
-// höchstens MAX_LEGENDARIES_PER_OFFER Legendaries je Angebot.
-// Deterministisch über den injizierten rng (ein rng()-Zug je Auswahl). Pool leer → weniger Perks.
-export function buildOffer(owned, rng, count, legendaryChance = 0) {
-  let pool = PERK_LIST.filter((p) => !owned.includes(p.id) && p.offerable !== false); // offerable:false = aus dem Pool (E10, #162)
-  const chosen = [];
-  let legendaries = 0;
-  // Expliziter Legendär-Roll (Shop-Spec §10 P5): NUR wenn eine Legendär-Chance übergeben ist. Legendäre werden
-  // dann aus dem gewichteten Zug ausgeschlossen und erscheinen ausschließlich über diesen Wurf (bei Erfolg genau
-  // eines). Ohne Chance (0) bleibt das alte Gewichtsmodell exakt erhalten (kein rng-Drift für Bestandstests).
-  if (legendaryChance > 0) {
-    const legs = pool.filter((p) => p.rarity === "legendary");
-    pool = pool.filter((p) => p.rarity !== "legendary");
-    if (legs.length && count > 0 && rng() < legendaryChance) {
-      chosen.push(legs[Math.floor(rng() * legs.length)].id);
-      legendaries = 1;
-    }
-  }
-  while (chosen.length < count && pool.length > 0) {
-    const weights = pool.map((p) => C.RARITY_WEIGHTS[p.rarity || "common"]);
-    const total = weights.reduce((a, b) => a + b, 0);
-    let r = rng() * total, idx = 0;
-    while (idx < pool.length - 1 && r >= weights[idx]) { r -= weights[idx]; idx += 1; }
-    const pick = pool[idx];
-    chosen.push(pick.id);
-    if ((pick.rarity || "common") === "legendary") legendaries += 1;
-    // Gezogenen raus; ist das Legendary-Limit erreicht, alle weiteren Legendaries aus dem Pool nehmen.
-    pool = pool.filter((p) => p.id !== pick.id
-      && !(legendaries >= C.MAX_LEGENDARIES_PER_OFFER && (p.rarity || "common") === "legendary"));
-  }
-  return chosen;
-}
-
 /* ---- Familien-Umbau (Rarität #167 §2) ---- */
 
 // Migrierte Kategorien: ihre REGULÄREN (nicht legendären) Perks sind jetzt Familien und kommen über FAMILY_DEFS
