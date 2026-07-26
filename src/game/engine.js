@@ -189,10 +189,14 @@ export function resolveTrick(state, rng = Math.random) {
   // ---- Eis (#93 F3): temp. Wertbonus (Kältereserve/Kaltfront/Frostspur, an card.id) + Permafrost +2 (Dauerwert eingefroren).
   const iceValueBonus = (iceTemp[pCard.id] || 0) + (hasPermafrost(skills) && pCard.frozen ? C.PERMAFROST_VALUE : 0);
   const anchorPowerBonus = anchorType === "power" ? C.ANCHOR_POWER_VALUE : 0; // Kraftanker (§8 A1)
+  // E_QUICKSHOT IV (Rarität #167 Kat. E, Spec §3.2 E8 IV): jede Anker-Position (jede fünfte) erhält zusätzlich +2 Wert.
+  // Der Anker-FAKTOR selbst läuft über computeFormations; hier nur der Stufe-IV-Wertbonus (anchor.value auf Anker-Positionen).
+  const eqAnchor = familyTierParam(familyTiers, "E_QUICKSHOT", "anchor");
+  const eQuickshotValue = eqAnchor && eqAnchor.value && eqAnchor.at(actualPos) ? eqAnchor.value : 0;
   // Familien-Wertboni (Kategorie B, Rarität #167) laufen ADDITIV neben den flachen Perk-cardBonus-Hooks —
   // gleicher Kontext (inkl. pValueBase = Dauerwert der Karte), nur die aktive Familien-Stufe zählt.
   const familyValueBonus = familySumHook(familyTiers, "cardBonus", { ...ctx, pValueBase: pCard.value });
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + l11Bonus + fireValueBonus + iceValueBonus + anchorPowerBonus;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + l11Bonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue;
   // L11: den temporären Wertbonus dieser Karte an Position 20 für Position 40 merken.
   let newPos20Bonus = pos20Bonus;
   if (actualPos === 19) newPos20Bonus = pValue - pCard.value;

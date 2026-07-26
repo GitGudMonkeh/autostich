@@ -150,6 +150,14 @@ describe("Familien-Engine — Kategorie C (Rollen über resolveTrick, Schritt 2b
   });
 });
 
+describe("Familien-Engine — Kategorie E (E_QUICKSHOT IV Anker-Wert über resolveTrick)", () => {
+  it("E_QUICKSHOT IV: jede fünfte Position (Anker) erhält +2 Wert; andere Positionen/Stufen nicht", () => {
+    expect(resolveTrick(scenario(5, 0, { familyTiers: { E_QUICKSHOT: 4 }, pos: 4 }), rng).lastTrick.pValue).toBe(7); // Pos 5 → +2
+    expect(resolveTrick(scenario(5, 0, { familyTiers: { E_QUICKSHOT: 4 }, pos: 3 }), rng).lastTrick.pValue).toBe(5); // Pos 4 → kein Anker
+    expect(resolveTrick(scenario(5, 0, { familyTiers: { E_QUICKSHOT: 3 }, pos: 4 }), rng).lastTrick.pValue).toBe(5); // III: anchor.value 0 → kein Wertbonus
+  });
+});
+
 describe("Reducer PICK_FAMILY (Schritt 1 + Angebotsvalidierung Schritt 3)", () => {
   it("setzt familyTiers[id] auf die Zielstufe und kehrt ins Spiel zurück", () => {
     const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "D_HIGH", tier: 3 }] };

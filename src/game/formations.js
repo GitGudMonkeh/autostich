@@ -274,7 +274,7 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
     (last, ord) => recordEnd(last, "wechsel", wechselFactor(ord)), isJoker);
 
   // Anker (E_LOSS/E_QUICKSHOT, Rarität #167 Kat. E): Positionen + Faktor der gehaltenen Stufe — je siegreicher Anker,
-  // zählt als Formation. §10: E_QUICKSHOT IV „+2 Wert" (anchor.value) folgt mit der Engine/UI (#166); hier greift der Faktor.
+  // zählt als Formation. E_QUICKSHOT IV „+2 Wert" (anchor.value) wird in der Engine auf die Anker-Positionen addiert.
   for (const { def } of activeFamilyEntries(familyTiers)) if (def.anchor)
     for (let pos = 0; pos < n; pos++)
       if (def.anchor.at(pos, n) && !out[pos].formations.some((f) => f.type === "anker")) add(pos, "anker", 1, def.anchor.factor);
