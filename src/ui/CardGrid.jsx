@@ -4,10 +4,9 @@ import { familyDef } from "../game/families.js";
 import { SEGMENT_SIZE } from "../game/formations.js";
 import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
+import { formationAbbr } from "./formationLabels.js";
 import { FrostOverlay } from "./FrostOverlay.jsx";
 
-// Kurzkürzel der Formationstypen für die Karten-Badges.
-const FORM_LABEL = { wiederholung: "W", farbblock: "F", treppe: "T", wechsel: "Z", anker: "A" };
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
 const ANCHOR_LABEL = { power: "Kraft", score: "Punkte", crit: "Krit", streak: "Serie", formation: "Formation", joker: "Joker" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
@@ -22,7 +21,7 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
-  const labels = [...new Set((pf.formations || []).map((f) => FORM_LABEL[f.type]))].join("");
+  const labels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
   const fb = formationBorder(pf);
   // #112: „picked" (gold) hat Vorrang vor „selected" (weiß) vor Formations-/Farbrand.
   const borderColor = picked ? "#d4a63a" : selected ? "#ffffff" : fb.color || col + "55";

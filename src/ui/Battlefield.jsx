@@ -4,6 +4,7 @@ import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
+import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 
@@ -240,11 +241,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const critMultStr = t ? (Number.isInteger(t.critMultiplier) ? t.critMultiplier : Math.round(t.critMultiplier * 100) / 100) : 2;
 
   // Formations-Feedback (§17): benannte Formation + Multiplikator; Peak-Styling ab ×6 / ×12.
-  const FORM_NAME = { wiederholung: "WIEDERHOLUNG", farbblock: "FARBBLOCK", treppe: "TREPPE", wechsel: "WECHSEL", anker: "ANKER", nachhall: "NACHHALL", formationskern: "KERN" };
   const formMult = t ? (t.formationMult || 1) : 1;
   const showFormation = win && t && formMult > 1.001;
   const activeForms = t ? (t.formations || []).filter((f) => f.factor > 1) : [];
-  const formLabel = activeForms.length === 1 ? FORM_NAME[activeForms[0].type] : "FORMATION";
+  const formLabel = activeForms.length === 1 ? formationLabel(activeForms[0].type).toUpperCase() : "FORMATION";
   const formationStr = formMult.toFixed(2).replace(".", ",");
   const formPeak = formMult >= 12 ? 2 : formMult >= 6 ? 1 : 0; // 0 normal · 1 verstärkt · 2 Peak
   // #128: Float-Farbe = Rahmenfarbe der Übersicht — Tier nach Formations-Anzahl (formationBorder, kein Drift).
