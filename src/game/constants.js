@@ -93,8 +93,9 @@ export const LIGHTNING_CRIT_PER_SKILL = 0.05; // Blitz: je gehaltenem Blitz-Skil
 export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
 // Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
 export const ION_SCORE_PER_STACK  = 25; // +Score je Ionisierungsstapel bei Sieg mit der Karte
-export const ION_MAX_STACKS       = 4;  // max Stapel je Karte
+export const ION_MAX_STACKS       = 5;  // max Stapel je Karte [#165 Skills-Spec §5.1: 4→5]
 export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Verbrauch
+export const BLITZFAENGER_VALUE   = 2;  // Blitzfänger (#165): eine bereits volle Karte (5 Stapel) statt zu ionisieren +temp Wert (+ 1 Ladung)
 export const KETTENBLITZ_COUNT    = 2;  // Kettenblitz: zusätzlich ionisierte Karten (nur mit Ionisierung)
 export const UEBERSPANNUNG_CHARGE = 3;  // Überspannung: Zusatzladung bei Crit mit ionisierter Karte
 // Reaktoren + Geladene Serie (Stufe C)
@@ -125,7 +126,15 @@ export const FUEL_MIN_VALUE    = 8;
 export const ACCEL_BONUS       = 10;   // Brandbeschleuniger: +% Hitze bei Vorsprung ≥ ACCEL_MIN_MARGIN [#121: 15→10]
 export const ACCEL_MIN_MARGIN  = 10;
 export const GLOWING_THRESHOLD = 50;   // Glühende Klinge: ab dieser Hitze alle Karten +GLOWING_VALUE
-export const GLOWING_VALUE     = 2;
+export const GLOWING_VALUE     = 1;    // [#165 Skills §5.3: 2→1]
+export const GLOWING_LOSS_INCREASE  = 0.10; // Glühende Klinge (#165): +10 % Hitzeverlust bei Niederlage, solange aktiv (Hitze ≥ 50)
+// Überhitzt (#165 §5.3) — zusätzlicher Feuer-Skill ab hoher Hitze; Verlust-Modifikatoren ADDIEREN vor Hitzeschild.
+export const OVERHEAT_THRESHOLD     = 80;   // ab dieser Hitze wirkt Überhitzt
+export const OVERHEAT_VALUE         = 2;    // Überhitzt: zusätzlich +2 temp Wert (zusammen mit Glühende Klinge +3)
+export const OVERHEAT_LOSS_INCREASE = 0.50; // Überhitzt: +50 % Hitzeverlust (mit Glühende Klinge additiv → +60 %)
+// Funkenflug (#165 §5.3) — bankt einen Anteil des Feuer-Flat-Scores, zahlt ihn beim nächsten Sieg als Flat aus.
+export const SPARKFLIGHT_MIN_MARGIN = 8;    // Mindest-Wertvorsprung, um zu speichern
+export const SPARKFLIGHT_RATE       = 0.25; // gespeichert wird floor(FeuerFlat × 0,25)
 export const FIREROLL_MAX      = 3;    // Feuerwalze: nächste Karte +1 je Siegsserie, bis +3 [#Pass2: 5→3, flacherer Snowball]
 export const CONFLAGRATION_SCORE = 1000; // Flächenbrand (Konsument): +Flat bei Sieg mit voller Hitze …
 export const CONFLAGRATION_COST  = 100;  // …          … verbraucht exakt 100 Hitze
@@ -142,7 +151,11 @@ export const KALTFRONT_VALUE     = 3;    // Kaltfront: +temp Wert der eingefrore
 export const FROSTSPUR_VALUE      = 2;   // Frostspur: +temp Wert des neuen Nachfolgers im nächsten Durchlauf nach Frosttausch
 export const EISANKER_FACTOR     = 1.25; // Eisanker: eingefrorene Karte als Anker ×1,25 (zählt als Formation)
 export const STILLSTAND_SCORE    = 200;  // Stillstand: +Flat, wenn eine Frostkarte in ≥1 aktiver Formation gewinnt
-export const CRYSTAL_OFFSET      = 1;    // Kristallform/Eisschritt: ±Wert-Flex für Formationen
+export const ICE_STEP_OFFSET     = 1;    // Eisschritt: ±1 Wert-Flex für Treppen (bleibt ±1, Spec §5.4 Abgrenzung)
+export const CRYSTAL_OFFSET      = 2;    // Kristallform (#165 §5.4): ±2 Wert-Flex für Wiederholung/Treppe/Wechsel [1→2]
+export const CRYSTAL_FORM_BONUS  = 1.15; // Kristallform (#165): zusätzlicher Formationsbonus, wenn eine Frostkarte dadurch Teil ≥1 Wied./Treppe/Wechsel ist. OFFENER BALANCEWERT (crystalFormBonusMultiplier) — tunebar.
+export const GLACIER_VALUE       = 2;    // Gletscherschub (#165 §5.4): +temp Wert je Karte des Zielsegments, wenn ein Frosttausch dort eine neue Formation schafft
+export const EISBLUETE_VALUE     = 3;    // Eisblüte (#165 §5.4): +temp Wert je direktem Nachbarn einer eingefrorenen Siegkarte in ≥2 Formationen
 export const FROSTBISS_COUNT     = 2;    // Frostbiss: so viele Gegnerkarten des nächsten Durchlaufs betroffen
 export const FROSTBISS_DEBUFF    = 3;    // Frostbiss: −temp Wert je betroffener Gegnerkarte (nie < 0)
 export const PERMAFROST_VALUE    = 2;    // Permafrost: +Dauerwert eingefrorener Karten
