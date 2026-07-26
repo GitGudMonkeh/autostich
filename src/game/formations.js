@@ -22,7 +22,8 @@ import { PERMAFROST_VALUE, EISANKER_FACTOR, CRYSTAL_OFFSET, ANCHOR_FORM_FACTOR, 
 import { iceFlag, hasPermafrost, hasIceAnchor } from "./skills.js";
 
 export const SEGMENT_SIZE = 5;
-const WECHSEL_MIN_DIFF = 4;
+const WECHSEL_MIN_DIFF = 5;   // [#161 FB-5: 4→5 — Wechsel schwerer, größerer Nachbarabstand nötig]
+const MAX_TREPPE_STEP  = 3;   // [#161 FB-5: Treppe zusätzlich zur strengen Monotonie max. 3 Schritt je Nachbarpaar]
 // Die vier Basis-Formationstypen (ohne Anker) — Zielauswahl F-L1 Formationskern + Anzeige-Labels.
 export const FORMATION_TYPES = ["wiederholung", "farbblock", "treppe", "wechsel"];
 export const FORMATION_TYPE_LABELS = { wiederholung: "Wiederholung", farbblock: "Farbblock", treppe: "Treppe", wechsel: "Wechsel" };
@@ -38,7 +39,7 @@ function escalatingFactor(ordinal, base) {
 }
 // Überlappungsbonus je Anzahl Formationen auf einer Karte (#95): 2→×1,5, 3→×2, 4→×3.
 const OVERLAP_BONUS = { 2: 1.5, 3: 2, 4: 3 };
-const FARBBLOCK_BASE = 1.35, TREPPE_BASE = 1.25, WECHSEL_BASE = 1.25, ANKER_FACTOR = 1.25; // [#Pass4: Farbblock 1,30→1,35 — war unterbelohnt; 1,45 lt. Sim zu heiß (Solver+Eis-Synergie)]
+const FARBBLOCK_BASE = 1.35, TREPPE_BASE = 1.35, WECHSEL_BASE = 1.40, ANKER_FACTOR = 1.25; // [#Pass4: Farbblock 1,30→1,35] [#161 FB-5: Treppe/Wechsel 1,25→1,35/1,40 — schwerer zu bauen, daher stärker belohnt (≥ Farbblock)]
 
 // Maximale Läufe über eine Paar-Bedingung, mit optional EINER erlaubten fremden Karte dazwischen (E1/E2).
 // `matches(refPos, k)` prüft, ob Position k zur Formation von refPos gehört. Fremde Karten sind keine Mitglieder.
@@ -86,8 +87,11 @@ function markTreppe(n, val, bind, e3, e4, e6, canExtendSeg, assign, dir = 1, onR
       const jj = j + 1;
       if (isJoker(jj)) { j = jj; members.push(j); if (prev != null) { prev += dir; pb = 0; } continue; } // Joker adaptiert
       const v = val[jj], b = bind[jj];
+      // #161 FB-5: streng monoton (Abstand ≥1) UND Schritt ≤ MAX_TREPPE_STEP. `span` = kombinierte ±Flex beider
+      // Karten (C10 Bindeglied, Eisschritt/Kristallform je ±1, Permafrost-Joker ±99) → günstigste Interpretation.
+      const span = b + pb, rawGap = dir === 1 ? v - prev : prev - v;
       const step = prev == null ? true                    // nur Joker bisher → diese reale Karte fixiert die Kette
-        : dir === 1 ? (v + b > prev - pb) : (prev + pb > v - b);
+        : (rawGap + span >= 1 && rawGap - span <= MAX_TREPPE_STEP);
       const revBack = prev != null && (dir === 1 ? v < prev : v > prev);
       if (step) { j = jj; members.push(j); prev = v; pb = b; hasReal = true; }
       else if (!softUsed && ((e3 && v === prev) || (e4 && revBack))) { softUsed = true; j = jj; members.push(j); prev = v; pb = b; hasReal = true; }
@@ -148,7 +152,7 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const cards = order.map((di) => deck[di]);
   const has = (id) => perks.includes(id);
   // ---- Shop-Formationsitems (§9, permanente Regeländerungen) ----
-  const wechselMinDiff = pe.switchMinDifference || WECHSEL_MIN_DIFF; // F2 Enger Wechsel: 4 → 3
+  const wechselMinDiff = pe.switchMinDifference || WECHSEL_MIN_DIFF; // F2 Enger Wechsel: 5 → 4
   const repBonus = pe.repetitionSecondFactorBonus || 0;              // F3 Verstärkte Wiederholung: 2. Karte +0,10
   const descending = !!pe.descendingStraights;                       // F1 Abstieg: Treppen auch fallend
   // ---- Eis-Wildcards (#93 F3): nur auf eingefrorenen Karten, wenn der jeweilige Eis-Skill gehalten wird. ----
