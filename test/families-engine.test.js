@@ -417,17 +417,17 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
     }
   });
 
-  it("reguläre D-/A-/C-Perks sind vollständig zu Familien migriert — kein flacher regulärer D-/A-/C-Perk mehr", () => {
-    // Nach der Entfernung existiert kein regulärer (nicht-legendärer) cat-D-/A-/C-Perk mehr im flachen Pool;
-    // die Legendäre bleiben flach (D: L4/L5/L6/L10; A: L1/L3/L8/L9/L11) → isMigratedPerk = false.
+  it("reguläre D-/A-/C-/E-Perks sind vollständig zu Familien migriert — kein flacher regulärer Perk dieser Kat. mehr", () => {
+    // Nach der Entfernung existiert kein regulärer (nicht-legendärer) cat-D-/A-/C-/E-Perk mehr im flachen Pool
+    // (Ausnahme: E10, cat E, aber offerable:false → nie im Angebot). Legendäre bleiben flach → isMigratedPerk = false.
     for (const cat of ["D", "A", "C"]) expect(PERK_LIST.some((p) => p.cat === cat && !isLegendary(p.id))).toBe(false);
-    expect(isMigratedPerk(PERK_DEFS.E1)).toBe(false); // Kat. E noch nicht migriert
-    expect(isMigratedPerk(PERK_DEFS.L5)).toBe(false); // Legendär bleibt flach
+    expect(PERK_LIST.some((p) => p.cat === "E" && !isLegendary(p.id) && p.offerable !== false)).toBe(false); // nur E10 (offerable:false)
+    expect(isMigratedPerk(PERK_DEFS.L2)).toBe(false); // Legendär bleibt flach
     expect(isMigratedPerk(PERK_DEFS.L1)).toBe(false); // cat A, aber legendär → bleibt flach
-    // Über viele Seeds: das Angebot enthält nie einen flachen regulären D-/A-/C-Perk — sie erscheinen nur als Familie.
+    // Über viele Seeds: das Angebot enthält nie einen flachen regulären D-/A-/C-/E-Perk — sie erscheinen nur als Familie.
     for (let seed = 0; seed < 40; seed++) {
       for (const e of buildPerkOffer([], {}, rngS(seed), 3)) {
-        if (!isFam(e)) expect(["D", "A", "C"].includes(PERK_DEFS[e].cat) && !isLegendary(e)).toBe(false);
+        if (!isFam(e)) expect(["D", "A", "C", "E"].includes(PERK_DEFS[e].cat) && !isLegendary(e)).toBe(false);
       }
     }
   });
@@ -453,11 +453,11 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
     expect(buildPerkOffer(ownedFlat, allIV, rngS(1), 3)).toEqual([]);
   });
 
-  it("besessene flache Perks werden nicht erneut angeboten", () => {
+  it("besessene flache Perks werden nicht erneut angeboten (Legendäre — alle regulären Perks sind Familien)", () => {
     for (let seed = 0; seed < 30; seed++) {
-      const off = buildPerkOffer(["E1", "E2"], {}, rngS(seed), 3);
-      expect(off).not.toContain("E1");
-      expect(off).not.toContain("E2");
+      const off = buildPerkOffer(["L1", "L2"], {}, rngS(seed), 3, 1); // Legendär-Wurf aktiv, aber L1/L2 besessen
+      expect(off).not.toContain("L1");
+      expect(off).not.toContain("L2");
     }
   });
 

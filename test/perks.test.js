@@ -91,7 +91,7 @@ describe("streakBaseMult (Basis-Siegesserie #39)", () => {
 describe("baseScoreMultFor (Header-Chip #37 — V2: nur noch Basis-Serie #39)", () => {
   it("Serie 0 → ×1,00; D-Perks multiplizieren nicht mehr (Flat-Score)", () => {
     expect(baseScoreMultFor([], {})).toBeCloseTo(1);
-    expect(baseScoreMultFor(["E1", "E2"], {})).toBeCloseTo(1); // flache Perks tragen keinen Score-Multiplikator
+    expect(baseScoreMultFor(["L2", "L3"], {})).toBeCloseTo(1); // flache Perks tragen keinen Score-Multiplikator
   });
   it("Siegesserie hebt den Mult (#39): +2 %/Stufe bis Cap +150 % (#100)", () => {
     expect(baseScoreMultFor([], { winStreak: 0 })).toBeCloseTo(1);
@@ -102,17 +102,17 @@ describe("baseScoreMultFor (Header-Chip #37 — V2: nur noch Basis-Serie #39)", 
 });
 
 describe("Layout-Perks (#95): Positions-/Formations-relevante Perks", () => {
-  it("alle E-Werkzeuge zählen als Layout-Perk", () => {
+  it("verbliebene cat-E-Perks (nur E10) zählen als Layout-Perk", () => {
     PERK_LIST.filter((p) => p.cat === "E").forEach((p) => expect(isLayoutPerk(p.id)).toBe(true));
   });
   it("kuratierte L sind enthalten, layout-fremde Perks nicht", () => {
-    // B-Stich, D-Score UND C-Rollen sind zu Familien migriert (#167); ihre layout-relevanten Familien folgen mit #166
-    // (layoutPerks kennt nur flache `perks`). Übrig als flache Layout-Perks: E-Werkzeuge + L3/L11.
+    // B/C/D/E sind zu Familien migriert (#167); ihre layout-relevanten Familien folgen mit #166 (layoutPerks kennt
+    // nur flache `perks`). Übrig als flache Layout-Perks: L3/L11 (+ das nie angebotene E10 cat E).
     ["L3", "L11"].forEach((id) => expect(isLayoutPerk(id)).toBe(true));
     ["L1", "L5"].forEach((id) => expect(isLayoutPerk(id)).toBe(false));
   });
   it("layoutPerks filtert die gehaltenen Perks in Reihenfolge", () => {
-    expect(layoutPerks(["L1", "E1", "L3"])).toEqual(["E1", "L3"]);
+    expect(layoutPerks(["L1", "L11", "L3"])).toEqual(["L11", "L3"]);
     expect(layoutPerks([])).toEqual([]);
   });
 });
@@ -121,15 +121,10 @@ describe("Layout-Perks (#95): Positions-/Formations-relevante Perks", () => {
 
 describe("Seltene Perks (#71, Phase 2a)", () => {
   // A9 Farbduell / A10 Verdichtung sind zu Familien A_SUIT_DUEL/A_CONDENSE migriert (#167) — Tests in families.test.js.
-  it("E-Werkzeuge sind reine Marker; E10 hat extraSwap, ist aber als Perk deaktiviert (#162)", () => {
-    for (const id of ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"]) {
-      expect(PERK_DEFS[id].cat).toBe("E");
-      expect(PERK_DEFS[id].cardBonus).toBeUndefined();
-      expect(PERK_DEFS[id].scoreFlat).toBeUndefined();
-      expect(PERK_DEFS[id].critChance).toBeUndefined();
-    }
+  it("E1–E9 sind zu Familien migriert (#167); E10 bleibt als deaktivierter extraSwap-Perk", () => {
+    for (const id of ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"]) expect(PERK_DEFS[id]).toBeUndefined();
     expect(PERK_DEFS.E10.extraSwap).toBe(1);
-    expect(PERK_DEFS.E10.offerable).toBe(false); // #162: aus dem Perk-Pool genommen → wird Shop-Familie
+    expect(PERK_DEFS.E10.offerable).toBe(false); // #162: aus dem Perk-Pool genommen → wird Shop-Familie (#164)
   });
   it("V2 §22.4: alle A–E sind normal (keine Rares mehr); nur L ist legendär", () => {
     for (const p of PERK_LIST) {

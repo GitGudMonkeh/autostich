@@ -38,19 +38,10 @@ export const PERK_DEFS = {
   // ---- A: Deck & C: Rollen — vollständig zu Familien migriert (#167, families.js Kategorien A/C). Die früheren
   //      flachen A1–A10 bzw. C1–C10 sind entfernt; das Angebot bietet A/C nur noch als Familien (buildPerkOffer). ----
 
-  // ---- E-Formationsmarker (V2 §22.6) — reine Marker; Wirkung in computeFormations(perks). ----
-  E6: { id: "E6", cat: "E", label: "Drehzahl",
-        desc: "Eine einzelne Karte darf gleichzeitig zu zwei unterschiedlichen Treppen gehören." },
-  E7: { id: "E7", cat: "E", label: "Kontrollverlust",
-        desc: "Die Positionen 10, 20, 30 und 40 sind Anker (siegreicher Anker ×1,25)." },
-  E8: { id: "E8", cat: "E", label: "Schnellschuss",
-        desc: "Die Positionen 5, 15, 25 und 35 sind Anker (siegreicher Anker ×1,25)." },
-
-  // ---- Seltene Perks (#71, Phase 2e) — Serien-/Tempo-/Crit-Mechanik (Engine-Flags + State) ----
-  E9: { id: "E9", cat: "E", label: "Segmentarbeit",
-        desc: "Formationen dürfen über Segmentgrenzen hinweg fortgesetzt werden." },
-  // Rarität-Umbau (#162, Spec §3.3): E10 ist als Perk DEAKTIVIERT (offerable:false → nie angeboten) und wandert
-  // als Shop-Familie „Feinjustierung" (#164). Definition bleibt vorerst für die extraSwap-Engine/Bestands-Builds.
+  // ---- E: Formationswerkzeuge — E1–E9 vollständig zu Familien migriert (#167, families.js Kategorie E). Ihre
+  //      Wirkung steckt jetzt in computeFormations (familyTiers-bewusst). E10 „Feinjustierung" bleibt als Perk
+  //      DEAKTIVIERT (offerable:false → nie angeboten) und wandert als Shop-Familie (#164); Def bleibt für die
+  //      extraSwap-Engine/Bestands-Builds. ----
   E10: { id: "E10", cat: "E", label: "Feinjustierung", extraSwap: 1, offerable: false,
         desc: "Jede Formationsphase erhält einen zusätzlichen kostenlosen beliebigen Tausch." },
 
@@ -63,18 +54,6 @@ export const PERK_DEFS = {
 
   // ---- D: Score — vollständig zu Familien migriert (#167, siehe families.js Kategorie D). Die früheren
   //      flachen D1–D19 sind entfernt; das Angebot bietet D nur noch als aufwertbare Familien (buildPerkOffer). ----
-
-  // ---- E: Formationswerkzeuge (V2 §22.6) — reine Marker; die Wirkung steckt in computeFormations(perks). ----
-  E1: { id: "E1", cat: "E", label: "Schrittmacher",
-        desc: "Eine Wiederholung darf genau eine fremde Karte zwischen zwei gleichen Werten enthalten." },
-  E2: { id: "E2", cat: "E", label: "Farbbrücke",
-        desc: "Eine einzelne andersfarbige Karte unterbricht einen Farbblock nicht (sie zählt nicht zur Formation)." },
-  E3: { id: "E3", cat: "E", label: "Sanfter Anstieg",
-        desc: "Eine Treppe darf einmal zwei gleiche Werte hintereinander enthalten." },
-  E4: { id: "E4", cat: "E", label: "Großer Schritt",
-        desc: "Eine Treppe darf einmal einen Rückschritt enthalten." },
-  E5: { id: "E5", cat: "E", label: "Pendelwerk",
-        desc: "Ein Wechsel löst bereits ab zwei Karten aus (Differenz weiterhin ≥4)." },
 
   // ---- Legendär (#33): mächtig, aber mit Nachteil. rarity "legendary" → Gewicht 8 & Level-Gate ≥5
   //      (buildOffer). Nutzen bestehende Kategorien (A–E) plus die neuen Legendär-Hooks oben. ----
@@ -145,7 +124,7 @@ export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); 
 
 // Migrierte Kategorien: ihre REGULÄREN (nicht legendären) Perks sind jetzt Familien und kommen über FAMILY_DEFS
 // ins Angebot statt über PERK_DEFS. Wächst mit jeder migrierten Kategorie (D, B, A, C; später +E).
-export const MIGRATED_CATS = new Set(["D", "B", "A", "C"]);
+export const MIGRATED_CATS = new Set(["D", "B", "A", "C", "E"]);
 
 // Ist dieser flache Perk durch eine Familie ersetzt? Nur reguläre Perks migrierter Kategorien — die legendären
 // D-Perks (L4/L5/L6/L10) bleiben flach im Legendär-Pool (Spec §3.1).

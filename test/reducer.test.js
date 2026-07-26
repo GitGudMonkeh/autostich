@@ -30,7 +30,7 @@ describe("Reducer", () => {
   // Deck-Mods beim Pick (früher flache Kat.-A-Perks) sind zu KUMULATIVEN Familien migriert (#167) — der
   // Familien-Pick + Ziel-Fluss ist in test/families-engine.test.js geprüft; PICK_PERK verändert das Deck nicht mehr.
   it("PICK_PERK ignoriert Perks außerhalb des Angebots", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["E1", "L3", "E2"] };
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L1", "L2", "L3"] };
     expect(reducer(s0, { type: "PICK_PERK", perkId: "L5", rng })).toBe(s0); // nicht im Angebot → No-Op
   });
 
@@ -52,7 +52,7 @@ describe("Reducer", () => {
   });
 
   it("RESET beginnt einen frischen Lauf mit Start-Pick = Stat (V2 §22.2)", () => {
-    const dirty = { ...initialState(makeRng(1)), score: 999, perks: ["E1", "L3"] };
+    const dirty = { ...initialState(makeRng(1)), score: 999, perks: ["L1", "L3"] };
     const fresh = reducer(dirty, { type: "RESET", rng });
     expect(fresh.score).toBe(0);
     expect(fresh.perks).toEqual([]);
@@ -77,11 +77,11 @@ describe("Reducer", () => {
 
 describe("PICK_PERK — nach jeder Runde zurück in play (Neuer Loop)", () => {
   it("Wahl aus dem levelup-Angebot → play, offer null, Perk übernommen", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["E1", "L3", "E2"] };
-    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "E2", rng });
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L1", "L2", "L3"] };
+    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "L2", rng }); // L2: cardBonus, kein needsTarget → direkt play
     expect(s1.phase).toBe("play");
     expect(s1.offer).toBeNull();
-    expect(s1.perks).toEqual(["E2"]);
+    expect(s1.perks).toEqual(["L2"]);
   });
 });
 
@@ -235,7 +235,7 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
 });
 
 describe("DECLINE_PERK — Perk-Angebot ablehnen → +Münze (#138)", () => {
-  const perkLevelup = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["E1", "L3", "E2"], ...over });
+  const perkLevelup = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["L1", "L2", "L3"], ...over });
 
   it("schreibt PERK_DECLINE_COINS gut, verwirft das Angebot und kehrt in play zurück", () => {
     const s0 = perkLevelup({ shop: { ...initialState(makeRng(1)).shop, coins: 3 } });
@@ -322,7 +322,7 @@ describe("Formationsphase — SWAP/UNDO/RESET/CONFIRM (V2 §22.8)", () => {
 // (L1/L9 permMod); die Ziel-Phasen-Öffnung/Validierung deckt der L1-Test oben ab.
 describe("Ziel-Legendäre — CONFIRM_TARGET permMod (V2 §22.6)", () => {
   it("L9 Blutvertrag: 4 gewählte Karten −2, ihre direkten Nachfolger +6 (dauerhaft)", () => {
-    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L9", "E1", "E2"] };
+    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L9", "L1", "L2"] };
     s = reducer(s, { type: "PICK_PERK", perkId: "L9", rng: makeRng(1) });
     expect(s.phase).toBe("target");
     const order = s.playerOrder;
