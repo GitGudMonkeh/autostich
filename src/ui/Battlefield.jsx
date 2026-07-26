@@ -76,6 +76,50 @@ function Side({ label, remaining, dealFrom, children }) {
   );
 }
 
+/* #177 Klingenschnitt: Overlay über der Verliererkarte (fixe 104×144-Box). Rendert zwei clip-path-Klone der
+   Karte (Ober-/Unterteil entlang −24°), eine aus der Mitte wachsende Schnittlinie in Suit-Farbe und ~18 Funken
+   (≈40 % weiß / 60 % Suit-Farbe, ein paar „Konfetti"-Rechtecke). Deterministisch aus `seed` (kein Math.random
+   im Render, #68). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen in den nächsten Stich.
+   Elemente entfernen sich mit dem Karten-Remount des nächsten Stichs (key nach trickNo) → kein Stapeln. */
+function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed }) {
+  const N = 18;
+  const sparks = Array.from({ length: N }, (_, i) => {
+    const ang = (i / N) * Math.PI * 2 + fjitter(seed * 3 + i * 7, 0.55); // gleichmäßiger Kranz + leichter Jitter
+    const rad = 46 + Math.abs(fjitter(seed * 5 + i * 13, 70));           // 46..116 px (nach außen gewichtet)
+    return {
+      i,
+      dx: (Math.cos(ang) * rad).toFixed(1),
+      dy: (Math.sin(ang) * rad).toFixed(1),
+      white: i % 5 < 2,        // ~40 % weiß, Rest Suit-Farbe
+      confetti: i % 6 === 0,   // ~3 kleine Konfetti-Rechtecke in Suit-Farbe
+    };
+  });
+  const ease = "cubic-bezier(0.3, 0.7, 0.3, 1)";
+  return (
+    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* Zwei Hälften — Klone der Verliererkarte, entlang der −24°-Schnittkante geteilt (die Polygone tilen die Karte). */}
+      <div className="absolute inset-0" style={{ clipPath: "polygon(0 0, 100% 0, 100% 34%, 0 66%)",
+        animation: `as-slice-top ${halvesDur}ms ${ease} forwards`, willChange: "transform, opacity" }}>{cardEl}</div>
+      <div className="absolute inset-0" style={{ clipPath: "polygon(0 66%, 100% 34%, 100% 100%, 0 100%)",
+        animation: `as-slice-bottom ${halvesDur}ms ${ease} forwards`, willChange: "transform, opacity" }}>{cardEl}</div>
+      {/* Schnittlinie: wächst per scaleX aus der Mitte, Länge ≈ Kartenbreite + 16 px, Glow (2×). */}
+      <div style={{ position: "absolute", left: "50%", top: "50%", width: 120, height: 3, marginLeft: -60, marginTop: -1.5,
+        background: color, borderRadius: 2, transformOrigin: "center", boxShadow: `0 0 6px ${color}, 0 0 14px ${color}aa`,
+        animation: `as-cut-line ${cutDur}ms ease-out forwards` }} />
+      {/* Funken aus dem Schnittzentrum. */}
+      {sparks.map((s) => (
+        <div key={s.i} style={{
+          position: "absolute", left: "50%", top: "50%",
+          width: s.confetti ? 6 : 4, height: s.confetti ? 3 : 4, borderRadius: s.confetti ? 1 : "50%",
+          background: s.white ? "#ffffff" : color, boxShadow: `0 0 5px ${s.white ? "#ffffff" : color}`,
+          "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
+          animation: `as-spark ${sparkDur}ms ease-out forwards`, willChange: "transform, opacity",
+        }} />
+      ))}
+    </div>
+  );
+}
+
 export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, frozen = 0 }) {
   const reduced = usePrefersReducedMotion();
   const t = lastTrick;
@@ -111,19 +155,59 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
       style={{ "--pulse-color": color, "--pulse-dur": `${pulseDur}ms`, ...(crit ? { "--pulse-scale": 1.55 } : null) }} />
   ) : null;
 
+  // #177 Klingenschnitt-Timings — an den Flip-Takt gekoppelt (wie das übrige Juice), gedeckelt, damit der Effekt
+  // den nächsten Stich nicht verzögert/überläuft. Bei sehr hohem Turbo (winziger flipMs) oder reduzierter Bewegung
+  // wird der Slice gar nicht gerendert → Fallback aufs bestehende Ergebnis-Juice (Puls/Glow/Banner).
+  const sliceOn  = !reduced && !!t && (win || lost) && flipMs > 170;
+  const sHalves  = clamp(flipMs * 0.55, 150, 600);   // Hälften gleiten/rotieren/fallen/faden (~600 ms @1×)
+  const sCut     = clamp(flipMs * 0.13, 55, 130);    // Schnittlinie wächst (~120 ms) & fadet
+  const sSpark   = clamp(flipMs * 0.5, 150, 520);    // Funken (~500 ms)
+  const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
+  // Suit-Farbe der GESCHNITTENEN (Verlierer-)Karte → Schnittlinie + Funken. Sieg: Gegnerkarte · Niederlage: Spielerkarte.
+  const loserColor = sliceOn ? suitColor(win ? t.oCard.suit : t.pCard.suit) : null;
+  const playerSliced = sliceOn && lost;   // Spielerkarte verliert → wird geschnitten
+  const oppSliced    = sliceOn && win;    // Gegnerkarte verliert → wird geschnitten
+  const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
+  const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
+  const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
+
+  // Kartenelemente einmal bauen — als sichtbare Karte, als (unsichtbarer) Größen-Platzhalter unter dem Slice und
+  // als Klon-Quelle in SliceFx wiederverwendbar (Elemente sind unveränderliche Beschreibungen → mehrfach nutzbar).
+  const pCardEl = t && (
+    <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
+          stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
+          ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} frostAnimated allyColor={allyColorFor(t.pCard.suit)} />
+  );
+  const oCardEl = t && (
+    <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
+          frostbitten={t.oFrostbitten} allyColor={allyColorFor(t.oCard.suit)} />
+  );
+
   const playerCard = t ? (
-    <div key={`p${t.trickNo}`} className="relative" style={dealStyle("as-deal-left")}>
+    <div key={`p${t.trickNo}`} className="relative" style={playerSliced ? undefined : dealStyle("as-deal-left")}>
       {resultPulse(win ? (isCrit ? critColor : "#5ab87a") : null, isCrit)}
-      <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
-            stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-            ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} frostAnimated allyColor={allyColorFor(t.pCard.suit)} />
+      {playerSliced ? (
+        <>
+          <div style={{ opacity: 0 }} aria-hidden="true">{pCardEl}</div>{/* hält die 104×144-Box */}
+          <SliceFx cardEl={pCardEl} color={loserColor} halvesDur={sHalves} cutDur={sCut} sparkDur={sSpark} seed={t.trickNo * 2 + 7} />
+        </>
+      ) : playerWinner ? (
+        <div style={winnerTilt(sWinner)}>{pCardEl}</div>   /* Sieger kippt an */
+      ) : pCardEl}
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 
   const oppCard = t ? (
-    <div key={`o${t.trickNo}`} className="relative" style={dealStyle("as-deal-right")}>
+    <div key={`o${t.trickNo}`} className="relative" style={oppSliced ? undefined : dealStyle("as-deal-right")}>
       {resultPulse(lost ? "#e0605a" : null, false)}
-      <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null} frostbitten={t.oFrostbitten} allyColor={allyColorFor(t.oCard.suit)} />
+      {oppSliced ? (
+        <>
+          <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>{/* hält die 104×144-Box */}
+          <SliceFx cardEl={oCardEl} color={loserColor} halvesDur={sHalves} cutDur={sCut} sparkDur={sSpark} seed={t.trickNo * 3 + 1} />
+        </>
+      ) : oppWinner ? (
+        <div style={winnerTilt(sWinner)}>{oCardEl}</div>   /* Sieger kippt an */
+      ) : oCardEl}
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 
