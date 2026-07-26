@@ -65,6 +65,10 @@ export function initialState(rng = Math.random) {
     // Raritätssystem (Epic #167, Spec §2.1): Familienrang je Familie { [familyId]: 1|2|3|4 }. Läuft ADDITIV
     // neben `perks` (flache Legendäre) — die Engine löst aktive Familien-Stufen über activeTierDefs auf.
     familyTiers: {},
+    // Familien-Ziel-Auswahl (Rarität #167, Kat. A ab #163): aktive Farb-/Ziel-Auswahl beim Pick einer Stufe mit
+    // `pickTarget` (z. B. A_SUIT_BOOST III/IV, A_SUIT_DUEL III/IV). null = keine offene Auswahl. Kategorie C nutzt
+    // denselben Fluss später für Karten-Ziele (Rollen).
+    familyTarget: null,
     // Planung (Shop-Spec §10): gratis Neuwurf je Auswahl aus P-L1 Schicksalskontrolle — beim Anbieten
     // eines Perk-/Skill-Angebots gesetzt (wenn fateControl aktiv), beim Neuwurf zuerst verbraucht (vor Tokens).
     freePerkReroll: false, freeSkillReroll: false,
@@ -276,12 +280,43 @@ export function reducer(state, action) {
     case "PICK_FAMILY": {
       if (state.phase !== "levelup") return state;
       const { familyId, tier, rng } = action;
-      if (!familyDef(familyId) || !tier) return state;
+      const fam = familyDef(familyId);
+      if (!fam || !tier) return state;
       // Angebotsvalidierung (Spec §2.4): die Familie+Zielstufe muss im aktuellen Angebot stehen (analog PICK_PERK).
       if (!state.offer || !state.offer.some((e) => e && e.familyId === familyId && e.tier === tier)) return state;
+      // Ziel-Stufe (pickTarget, z. B. A_SUIT_BOOST III/IV): erst Farb-/Ziel-Auswahl öffnen; die eigentliche
+      // Anwendung (applyFamilyPick mit target) folgt bei FAMILY_TARGET_CONFIRM. Angebot ist damit verbraucht.
+      if (fam.tiers[tier] && fam.tiers[tier].pickTarget) {
+        return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, suits: [] } };
+      }
       const { familyTiers, deck, roles } = applyFamilyPick(
         familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rng);
       return { ...state, familyTiers, deck, roles, offer: null, phase: "play" };
+    }
+
+    // ---- Familien-Ziel-Auswahl (Rarität #167, Spec §2.3/§2.4) — Farb-/Ziel-Auswahl für pickTarget-Stufen.
+    //      Generisch gehalten, damit Kategorie C denselben Fluss für Karten-Ziele (Rollen) mitnutzt. ----
+    case "FAMILY_TARGET_SUIT": {
+      if (state.phase !== "family-target" || !state.familyTarget) return state;
+      const ft = state.familyTarget;
+      const need = familyDef(ft.familyId)?.tiers?.[ft.tier]?.pickTarget?.suits || 0;
+      if (!need || !C.SUIT_ORDER.includes(action.suit)) return state;
+      let suits = ft.suits.slice();
+      if (suits.includes(action.suit)) suits = suits.filter((s) => s !== action.suit);   // abwählen
+      else if (suits.length < need) suits.push(action.suit);                              // hinzufügen (Reihenfolge = Gewinner→Verlierer)
+      else if (need === 1) suits = [action.suit];                                         // Einzelwahl: umschalten
+      else return state;                                                                  // Limit erreicht → ignorieren
+      return { ...state, familyTarget: { ...ft, suits } };
+    }
+    case "FAMILY_TARGET_CONFIRM": {
+      if (state.phase !== "family-target" || !state.familyTarget) return state;
+      const ft = state.familyTarget;
+      const spec = familyDef(ft.familyId)?.tiers?.[ft.tier]?.pickTarget || {};
+      if (spec.suits && ft.suits.length !== spec.suits) return state;                     // genau N Farben nötig
+      const target = { suits: ft.suits };
+      const { familyTiers, deck, roles } = applyFamilyPick(
+        ft.familyId, ft.tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, action.rng);
+      return { ...state, familyTiers, deck, roles, phase: "play", familyTarget: null };
     }
 
     // Zielauswahl bestätigen (V2 §22.6 C): genau needsTarget Karten → Rolle setzen (C9 = dauerhafte Wertmod).

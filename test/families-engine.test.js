@@ -157,6 +157,79 @@ describe("Reducer PICK_FAMILY — Kategorie A (kumulativ, Deck-Patch stapelt)", 
   });
 });
 
+describe("Familien-Ziel-Fluss — pickTarget-Stufen (Rarität #167, Kat. A)", () => {
+  const base = (offerEntry) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: [offerEntry] });
+
+  it("PICK_FAMILY auf eine pickTarget-Stufe öffnet die Ziel-Phase, wendet noch nichts an", () => {
+    const s0 = base({ familyId: "A_SUIT_BOOST", tier: 3 });
+    const s1 = reducer(s0, { type: "PICK_FAMILY", familyId: "A_SUIT_BOOST", tier: 3, rng });
+    expect(s1.phase).toBe("family-target");
+    expect(s1.familyTarget).toEqual({ familyId: "A_SUIT_BOOST", tier: 3, suits: [] });
+    expect(s1.offer).toBeNull();
+    expect(s1.deck).toBe(s0.deck);       // noch keine Deckmod
+    expect(s1.familyTiers).toEqual({});  // Rang erst bei CONFIRM
+  });
+
+  it("FAMILY_TARGET_SUIT: Einzelwahl (need 1) schaltet um, ungültige Farbe wird ignoriert", () => {
+    let s = reducer(base({ familyId: "A_SUIT_BOOST", tier: 3 }), { type: "PICK_FAMILY", familyId: "A_SUIT_BOOST", tier: 3, rng });
+    s = reducer(s, { type: "FAMILY_TARGET_SUIT", suit: "R" });
+    expect(s.familyTarget.suits).toEqual(["R"]);
+    s = reducer(s, { type: "FAMILY_TARGET_SUIT", suit: "B" }); // Einzelwahl → ersetzt
+    expect(s.familyTarget.suits).toEqual(["B"]);
+    s = reducer(s, { type: "FAMILY_TARGET_SUIT", suit: "B" }); // erneut → abwählen
+    expect(s.familyTarget.suits).toEqual([]);
+    expect(reducer(s, { type: "FAMILY_TARGET_SUIT", suit: "Z" }).familyTarget.suits).toEqual([]); // ungültig
+  });
+
+  it("FAMILY_TARGET_CONFIRM (A_SUIT_BOOST IV): gewählte Farbe +2, Rang gesetzt, zurück ins Spiel", () => {
+    let s = reducer(base({ familyId: "A_SUIT_BOOST", tier: 4 }), { type: "PICK_FAMILY", familyId: "A_SUIT_BOOST", tier: 4, rng });
+    s = reducer(s, { type: "FAMILY_TARGET_SUIT", suit: "G" });
+    s = reducer(s, { type: "FAMILY_TARGET_CONFIRM", rng });
+    expect(s.phase).toBe("play");
+    expect(s.familyTarget).toBeNull();
+    expect(s.familyTiers).toEqual({ A_SUIT_BOOST: 4 });
+    expect(s.deck.filter((c) => c.suit === "G").every((c) => c.value === c.baseRank + 2)).toBe(true);
+    expect(s.deck.filter((c) => c.suit !== "G").every((c) => c.value === c.baseRank)).toBe(true);
+  });
+
+  it("FAMILY_TARGET_CONFIRM verlangt genau N Farben (unvollständig → No-Op)", () => {
+    let s = reducer(base({ familyId: "A_SUIT_DUEL", tier: 4 }), { type: "PICK_FAMILY", familyId: "A_SUIT_DUEL", tier: 4, rng });
+    s = reducer(s, { type: "FAMILY_TARGET_SUIT", suit: "R" }); // erst 1 von 2
+    const s2 = reducer(s, { type: "FAMILY_TARGET_CONFIRM", rng });
+    expect(s2).toBe(s);                    // unverändert
+    expect(s2.phase).toBe("family-target");
+  });
+
+  it("A_SUIT_DUEL IV: Reihenfolge Gewinner→Verlierer (R +4 / G −1)", () => {
+    let s = reducer(base({ familyId: "A_SUIT_DUEL", tier: 4 }), { type: "PICK_FAMILY", familyId: "A_SUIT_DUEL", tier: 4, rng });
+    s = reducer(s, { type: "FAMILY_TARGET_SUIT", suit: "R" }); // Gewinner
+    s = reducer(s, { type: "FAMILY_TARGET_SUIT", suit: "G" }); // Verlierer
+    expect(s.familyTarget.suits).toEqual(["R", "G"]);
+    s = reducer(s, { type: "FAMILY_TARGET_CONFIRM", rng });
+    expect(s.familyTiers).toEqual({ A_SUIT_DUEL: 4 });
+    expect(s.deck.filter((c) => c.suit === "R").every((c) => c.value === c.baseRank + 4)).toBe(true);
+    expect(s.deck.filter((c) => c.suit === "G").every((c) => c.value === Math.max(0, c.baseRank - 1))).toBe(true);
+    expect(s.deck.filter((c) => c.suit === "B" || c.suit === "Y").every((c) => c.value === c.baseRank)).toBe(true);
+  });
+
+  it("zielfreie A-Stufe und REPLACEMENT-Familie (D) gehen direkt ins Spiel (keine Ziel-Phase)", () => {
+    const a = reducer(base({ familyId: "A_SUIT_BOOST", tier: 1 }), { type: "PICK_FAMILY", familyId: "A_SUIT_BOOST", tier: 1, rng });
+    expect(a.phase).toBe("play"); // I = zufällige Farbe, kein pickTarget
+    const d = reducer({ ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "D_HIGH", tier: 3 }] }, { type: "PICK_FAMILY", familyId: "D_HIGH", tier: 3, rng });
+    expect(d.phase).toBe("play");
+  });
+
+  it("Ziel-Actions in falscher Phase sind No-Ops", () => {
+    const play = { ...initialState(makeRng(1)), phase: "play" };
+    expect(reducer(play, { type: "FAMILY_TARGET_SUIT", suit: "R" })).toBe(play);
+    expect(reducer(play, { type: "FAMILY_TARGET_CONFIRM", rng })).toBe(play);
+  });
+
+  it("initialState trägt familyTarget = null", () => {
+    expect(initialState(makeRng(1)).familyTarget).toBeNull();
+  });
+});
+
 describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien", () => {
   it("D_MISFIRE: Stufen-Schritt/Cap laden die Ladung (I: +20/200)", () => {
     expect(resolveTrick(scenario(12, 0, { familyTiers: { D_MISFIRE: 1 }, misfireScore: 0 }), never).misfireScore).toBe(20);
