@@ -223,10 +223,11 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   if (!crossSeg && eSegOpen > 0) for (let k = 0, opened = 0; k < n && opened < eSegOpen; k++)
     if ((k + 1) % SEGMENT_SIZE === 0) { openBoundaries.add(k); opened++; }
   const canExtendSeg = (k) => crossSeg || ((k + 1) % SEGMENT_SIZE !== 0) || openBoundaries.has(k);
-  // Shop A6 Jokeranker (§8): Positionen, deren Karte bei jeder Basisformation den benötigten Wert/die Farbe annehmen darf.
-  // Zählt NICHT als eigener Anker (kein ×1,25) und erzeugt allein keine Formation.
-  const jokerPos = new Set((anchors || []).filter((a) => a.type === "joker" && a.position < n).map((a) => a.position));
-  const isJoker = (k) => jokerPos.has(k);
+  // Shop Jokeranker (§4.2, #164): je STUFE für bestimmte Basisformationen Wildcard (a.jokerTypes). Zählt NICHT als
+  // eigener Anker (kein Faktor) und erzeugt allein keine Formation. Position → Menge erlaubter Formationstypen.
+  const jokerFor = (type) => { const s = new Set(); for (const a of anchors || []) if (a.type === "joker" && a.position < n && (a.jokerTypes || []).includes(type)) s.add(a.position); return s; };
+  const jokerWied = jokerFor("wiederholung"), jokerTreppe = jokerFor("treppe"), jokerFarbblock = jokerFor("farbblock"), jokerWechsel = jokerFor("wechsel");
+  const isJW = (k) => jokerWied.has(k), isJT = (k) => jokerTreppe.has(k), isJF = (k) => jokerFarbblock.has(k), isJX = (k) => jokerWechsel.has(k);
 
   const out = Array.from({ length: n }, () => ({ mult: 1, baseMult: 1, afterglowFactor: 1, coreFactor: 1, formations: [] }));
   const add = (pos, type, ordinal, factor) => {
@@ -251,7 +252,7 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const matchWied = (a, b) => jokerAll[a] || jokerAll[b] || [...valSetWied[a]].some((v) => valSetWied[b].has(v));
   markRuns(n, 2, matchWied, wiedGap, canExtendSeg,
     (pos, ord) => add(pos, "wiederholung", ord, wiederholungFactor(ord, repBonus)), () => false,
-    (last, ord) => recordEnd(last, "wiederholung", wiederholungFactor(ord, repBonus)), isJoker);
+    (last, ord) => recordEnd(last, "wiederholung", wiederholungFactor(ord, repBonus)), isJW);
 
   // Farbblock: Permafrost-Joker + freie Familien-Joker (C_JOKER III/IV) matchen jede Farbe; Frostbrücke macht
   // eingefrorene Karten transparent (kein Mitglied).
@@ -259,19 +260,19 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const farbSkip = (k) => frozen[k] && wildSkip && !jokerAll[k];
   markRuns(n, 3, matchSuit, suitGap, canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)), farbSkip,
-    (last, ord) => recordEnd(last, "farbblock", escalatingFactor(ord, FARBBLOCK_BASE)), isJoker);
+    (last, ord) => recordEnd(last, "farbblock", escalatingFactor(ord, FARBBLOCK_BASE)), isJF);
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));
-  markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, 1, treppeEnd, isJoker);
-  if (descending) markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, -1, treppeEnd, isJoker); // F1 Abstieg
+  markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, 1, treppeEnd, isJT);
+  if (descending) markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, -1, treppeEnd, isJT); // F1 Abstieg
   // Wechsel: Kristallform gibt eingefrorenen Karten ±1-Wertoptionen (Permafrost/Eisschritt gelten hier NICHT).
   // E_PENDULUM IV: wFactorStart hebt den Wechsel-Faktor bereits ab Länge 2 auf ×1,35 (sonst erst ab der 3. Karte).
   const valSetWechsel = cards.map((c, k) => (frozen[k] && wildCrystal ? [val[k] - 1, val[k], val[k] + 1] : [val[k]]));
   const wechselFactor = (ord) => Math.max(escalatingFactor(ord, WECHSEL_BASE), ord >= 2 && wFactorStart ? wFactorStart : 1);
   markWechsel(val, valSetWechsel, n, wMinLen, canExtendSeg,
     (pos, ord) => add(pos, "wechsel", ord, wechselFactor(ord)), wMinDiff,
-    (last, ord) => recordEnd(last, "wechsel", wechselFactor(ord)), isJoker);
+    (last, ord) => recordEnd(last, "wechsel", wechselFactor(ord)), isJX);
 
   // Anker (E_LOSS/E_QUICKSHOT, Rarität #167 Kat. E): Positionen + Faktor der gehaltenen Stufe — je siegreicher Anker,
   // zählt als Formation. E_QUICKSHOT IV „+2 Wert" (anchor.value) wird in der Engine auf die Anker-Positionen addiert.
@@ -280,8 +281,9 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
       if (def.anchor.at(pos, n) && !out[pos].formations.some((f) => f.type === "anker")) add(pos, "anker", 1, def.anchor.factor);
   // Eisanker (#93 F3): jede eingefrorene Karte zählt auf ihrer Position als Anker ×1,25 (zählt als Formation).
   if (hasIceAnchor(skills)) for (let pos = 0; pos < n; pos++) if (frozen[pos] && !out[pos].formations.some((f) => f.type === "anker")) add(pos, "anker", 1, EISANKER_FACTOR);
-  // Formationsanker (Shop §8 A5): jede Anker-Position zählt als Anker ×1,25, falls dort noch kein Anker liegt (E7/E8/Eisanker).
-  for (const a of anchors) if (a.type === "formation" && a.position < n && !out[a.position].formations.some((f) => f.type === "anker")) add(a.position, "anker", 1, ANCHOR_FORM_FACTOR);
+  // Formationsanker (Shop §4.2, #164): jede Anker-Position zählt als Anker mit dem Stufen-Faktor (a.factor, 1,15…1,60),
+  // falls dort noch kein Anker liegt (E7/E8/Eisanker). IV (×1,60) überlappt mit natürlichen Formationen (multipliziert dazu).
+  for (const a of anchors) if (a.type === "formation" && a.position < n && !out[a.position].formations.some((f) => f.type === "anker")) add(a.position, "anker", 1, a.factor || ANCHOR_FORM_FACTOR);
 
   // Überlappungsbonus (#95): steckt eine Karte in mehreren Formationen, multipliziert der
   // Bonus das Faktor-Produkt zusätzlich (2 Formationen ×1,5 · 3 ×2 · 4 ×3). Gezählt werden ALLE

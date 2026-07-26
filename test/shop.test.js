@@ -3,7 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, rerollCategory, withReservedOffer, perkLegendaryChance, skillLegendaryChance, activeShopUpgrades, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
-import { SHOP_FAMILY_DEFS } from "../src/game/shopFamilies.js";
+import { SHOP_FAMILY_DEFS, anchorTierDef } from "../src/game/shopFamilies.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { MAX_CYCLES, DECISION_SCHEDULE, STARTING_COINS, BASE_COINS_PER_CYCLE,
@@ -327,11 +327,13 @@ describe("Shop-Ziel-Flow — Kauf einer Karten-Familie (Shop-Spec §4/§12.2)", 
 const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
 const identity = () => Array.from({ length: 40 }, (_, i) => i);
 const never = () => 0.99; // Crit-Wurf schlägt nie an
-// Zustand mit einem Anker auf `pos`, Stich läuft auf `pos` (Anker greift), Standard-Deck 5 vs 6.
-const withAnchor = (type, pos, over = {}) => ({
+// Anker-Eintrag einer Familien-Stufe (#164): Stufen-Parameter (power/score/crit/…) liegen auf dem Eintrag.
+const mkAnchor = (type, position, tier) => { const { desc, pickTarget, ...p } = anchorTierDef(type, tier); return { type, position, tier, ...p }; };
+// Zustand mit einem Anker (Stufe `tier`) auf `pos`, Stich läuft auf `pos` (Anker greift), Standard-Deck 5 vs 6.
+const withAnchor = (type, pos, over = {}, tier = 2) => ({
   ...initialState(makeRng(1)),
   deck: constDeck(5), oppDeck: constDeck(6), playerOrder: identity(), oppOrder: identity(),
-  pos, shop: { ...initialShop(), anchors: [{ type, position: pos }] }, ...over,
+  pos, shop: { ...initialShop(), anchors: [mkAnchor(type, pos, tier)] }, ...over,
 });
 
 describe("Shop-Positionsanker — Wirkung (Shop-Spec §8)", () => {
@@ -344,9 +346,9 @@ describe("Shop-Positionsanker — Wirkung (Shop-Spec §8)", () => {
   it("A1 wirkt NUR auf der Ankerposition", () => {
     expect(resolveTrick({ ...withAnchor("power", 3), pos: 0 }, rng).lastTrick.pValue).toBe(5);
   });
-  it("A2 Punkteanker: +150 Flat-Score bei Sieg auf der Position", () => {
+  it("Punkteanker II: +200 Flat-Score bei Sieg auf der Position", () => {
     const s = resolveTrick(withAnchor("score", 2, { deck: constDeck(12), oppDeck: constDeck(0) }), never);
-    expect(s.lastTrick.breakdown.flats).toBe(150);
+    expect(s.lastTrick.breakdown.flats).toBe(200);
   });
   it("A3 Kritanker: +15 pp Crit-Chance auf der Position", () => {
     const s = resolveTrick(withAnchor("crit", 2, { deck: constDeck(12), oppDeck: constDeck(0) }), never);
@@ -366,28 +368,38 @@ describe("Shop-Positionsanker — Wirkung (Shop-Spec §8)", () => {
   });
 });
 
-describe("Shop-Anker — Kauf & Platzierung (Shop-Spec §8)", () => {
-  const anchorShop = (itemId, anchors = []) => ({
+describe("Shop-Anker-Familien — Kauf & Platzierung (Shop-Spec §4.2)", () => {
+  const famAnchorShop = (familyId, famTier, anchors = []) => ({
     ...initialState(makeRng(1)), phase: "shop",
-    shop: { ...initialShop(), coins: 10, offers: [{ offerId: "o0", itemId, category: "anchors", tier: "cheap", price: 8, legendary: false }], anchors },
+    shop: { ...initialShop(), coins: 30, anchors,
+      offers: [{ offerId: "o0", category: "anchors", familyId, famTier, price: [8, 12, 18, 30][famTier - 1], family: true, legendary: false }] },
   });
-  it("Kauf öffnet Positions-Auswahl; CONFIRM legt den Anker an und zieht den Preis ab", () => {
-    let s = reducer(anchorShop("A1"), { type: "BUY_ITEM", offerId: "o0" });
+  it("Kauf öffnet Positions-Auswahl; CONFIRM legt den Anker (mit Stufe) an und zieht den Preis ab", () => {
+    let s = reducer(famAnchorShop("SF_A_POWER", 1), { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s); // ohne Position → unverändert
     s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 12 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
-    expect(r.shop.coins).toBe(2);
-    expect(r.shop.anchors).toEqual([{ type: "power", position: 12 }]);
+    expect(r.shop.coins).toBe(22); // 30 - 8
+    expect(r.shop.anchors).toEqual([{ type: "power", position: 12, tier: 1, familyId: "SF_A_POWER", power: 1 }]);
+    expect(r.shop.familyTiers.SF_A_POWER).toBe(1);
     expect(r.shop.purchasedOfferIds).toEqual(["o0"]);
   });
-  it("belegte Position wird abgelehnt (max 1 Anker je Position, §8.1)", () => {
-    let s = reducer(anchorShop("A2", [{ type: "power", position: 7 }]), { type: "BUY_ITEM", offerId: "o0" });
-    expect(reducer(s, { type: "SHOP_TARGET_POSITION", position: 7 })).toBe(s); // belegt → ignoriert
+  it("belegte Position (FREMDER Anker) wird abgelehnt (max 1 Anker je Position, §8.1)", () => {
+    let s = reducer(famAnchorShop("SF_A_SCORE", 1, [mkAnchor("power", 7, 2)]), { type: "BUY_ITEM", offerId: "o0" });
+    expect(reducer(s, { type: "SHOP_TARGET_POSITION", position: 7 })).toBe(s); // fremder Anker belegt → ignoriert
     s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 8 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.shop.anchors.map((a) => a.position).sort((a, b) => a - b)).toEqual([7, 8]);
+  });
+  it("Upgrade ERSETZT den Anker desselben Typs (eine Instanz je Typ, Position neu wählbar)", () => {
+    let s = reducer(famAnchorShop("SF_A_POWER", 3, [mkAnchor("power", 5, 1)]), { type: "BUY_ITEM", offerId: "o0" });
+    s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 5 }); // eigene Anker-Position ist erlaubt (wird ersetzt)
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.shop.anchors.filter((a) => a.type === "power")).toHaveLength(1);
+    expect(r.shop.anchors.find((a) => a.type === "power")).toMatchObject({ position: 5, tier: 3, power: 4 });
+    expect(r.shop.coins).toBe(12); // 30 - 18
   });
 });
 
@@ -430,7 +442,7 @@ describe("Zeitsegment — A-L1 (Shop-Spec §8)", () => {
   });
   it("positionsgebundene Effekte lösen im wiederholten Segment erneut aus (Anker auf Position 6)", () => {
     let s = { ...initialState(makeRng(1)), deck: constDeck(5), oppDeck: constDeck(6), playerOrder: identity(), oppOrder: identity(),
-      shop: { ...initialShop(), timeSegmentIndex: 1, anchors: [{ type: "power", position: 6 }] } };
+      shop: { ...initialShop(), timeSegmentIndex: 1, anchors: [mkAnchor("power", 6, 2)] } };
     const t = [];
     for (let i = 0; i < 12; i++) { s = resolveTrick(s, makeRng(i + 1)); t.push(s.lastTrick); }
     expect(t[6].pValue).toBe(7);   // Position 6 (5+2 Kraftanker)
@@ -835,8 +847,9 @@ describe("Shop-Planungsitems — S5c Legendensuche P5/P6 (Shop-Spec §10)", () =
   });
 });
 
-describe("Shop-Positionsanker — A6 Jokeranker (Shop-Spec §8)", () => {
-  const joker = (pos) => [{ type: "joker", position: pos }];
+describe("Shop-Jokeranker-Familie (Shop-Spec §4.2)", () => {
+  // Stufe IV = Joker für alle Basisformationen (wie der frühere flache A6).
+  const joker = (pos) => [{ type: "joker", position: pos, tier: 4, jokerTypes: ["wiederholung", "treppe", "farbblock", "wechsel"] }];
   it("vervollständigt eine Wiederholung, indem der Joker den Wert annimmt", () => {
     const deck = seqDeck([5, 9, 5]); // 5, _, 5 — Joker an Pos 1 füllt die Lücke
     expect(hasForm(computeFormations(ord(3), deck), 0, "wiederholung")).toBe(false);
@@ -858,7 +871,7 @@ describe("Shop-Positionsanker — A6 Jokeranker (Shop-Spec §8)", () => {
   });
   it("erzeugt allein keine Formation (nur Joker, keine reale Karte)", () => {
     const deck = seqDeck([5, 7]);
-    const out = computeFormations(ord(2), deck, {}, [], [], [{ type: "joker", position: 0 }, { type: "joker", position: 1 }]);
+    const out = computeFormations(ord(2), deck, {}, [], [], [...joker(0), ...joker(1)]);
     expect(out[0].formations.some((f) => f.type === "wiederholung")).toBe(false);
     expect(out[0].mult).toBe(1);
   });
@@ -872,14 +885,15 @@ describe("Shop-Positionsanker — A6 Jokeranker (Shop-Spec §8)", () => {
     const out = computeFormations(ord(3), seqDeck([5, 20, 40]), {}, [], [], joker(0));
     expect(out.every((p) => !p.formations.some((f) => f.type === "anker"))).toBe(true);
   });
-  it("Kauf A6: legt einen joker-Anker an der gewählten Position an (Position-Ziel-Flow)", () => {
-    const offer = { offerId: "o0", itemId: "A6", category: "anchors", tier: "premium", price: 18, legendary: false };
+  it("Kauf Jokeranker-Familie: legt einen joker-Anker (mit Stufe) an der gewählten Position an", () => {
+    const offer = { offerId: "o0", category: "anchors", familyId: "SF_A_JOKER", famTier: 3, price: 18, family: true, legendary: false };
     let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 10 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
-    expect(r.shop.anchors).toEqual([{ type: "joker", position: 10 }]);
+    expect(r.shop.anchors).toEqual([{ type: "joker", position: 10, tier: 3, familyId: "SF_A_JOKER", jokerTypes: ["wiederholung", "treppe", "farbblock"] }]);
+    expect(r.shop.familyTiers.SF_A_JOKER).toBe(3);
     expect(r.shop.coins).toBe(0);
   });
 });

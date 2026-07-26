@@ -3,6 +3,7 @@ import { makeRng, buildDeck } from "../src/game/deck.js";
 import {
   SHOP_FAMILY_DEFS, SHOP_FAMILY_LIST, shopFamilyDef, shopFamilyCategory,
   REFINE_TOTAL, refineDelta, offerableShopTiers, shopFamilyTierLabel, shopFamilyTierPrice, shopFamilyTierDesc,
+  ANCHOR_FAMILY_BY_TYPE, anchorTierDef, anchorTierParam,
 } from "../src/game/shopFamilies.js";
 import { UPGRADE_TYPES, TIERS } from "../src/game/rarity.js";
 import { SUIT_ORDER } from "../src/game/constants.js";
@@ -161,5 +162,43 @@ describe("Karten-Shop-Familien — Deck-Effekte (Spec §4.2 Kartenfamilien)", ()
     for (const fam of SHOP_FAMILY_LIST.filter((f) => f.cat === "cards")) {
       expect(fam.upgradeType).toBe(UPGRADE_TYPES.CUMULATIVE);
     }
+  });
+});
+
+describe("Anker-Shop-Familien (Spec §4.2 Ankerfamilien)", () => {
+  it("sechs Anker-Familien, REPLACEMENT, repeatable:false, mit anchorType + Positions-Ziel", () => {
+    const anchors = SHOP_FAMILY_LIST.filter((f) => f.cat === "anchors");
+    expect(anchors).toHaveLength(6);
+    for (const fam of anchors) {
+      expect(fam.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
+      expect(fam.repeatable).toBe(false); // Nutzer-Entscheid #164: Anker schließen bei IV ab
+      expect(typeof fam.anchorType).toBe("string");
+      for (const t of TIERS) expect(fam.tiers[t].pickTarget).toEqual({ position: true });
+    }
+  });
+  it("ANCHOR_FAMILY_BY_TYPE + anchorTierParam lösen die Stufen-Stärke auf", () => {
+    expect(ANCHOR_FAMILY_BY_TYPE.power.id).toBe("SF_A_POWER");
+    expect([1, 2, 3, 4].map((t) => anchorTierParam("power", t, "power"))).toEqual([1, 2, 4, 6]);
+    expect([1, 2, 3, 4].map((t) => anchorTierParam("score", t, "score"))).toEqual([100, 200, 350, 600]);
+    expect([1, 2, 3, 4].map((t) => anchorTierParam("crit", t, "crit"))).toEqual([0.10, 0.15, 0.25, 0.40]);
+    expect([1, 2, 3, 4].map((t) => anchorTierParam("streak", t, "streak"))).toEqual([1, 1, 2, 2]);
+    expect([1, 2, 3, 4].map((t) => anchorTierParam("formation", t, "factor"))).toEqual([1.15, 1.25, 1.40, 1.60]);
+    expect(anchorTierDef("does-not-exist", 1)).toBe(null);
+  });
+  it("IV-Boni + Serien-Nuancen liegen auf der Stufe", () => {
+    expect(anchorTierParam("power", 4, "winScore")).toBe(100);   // Kraftanker IV: Sieg +100 Score
+    expect(anchorTierParam("crit", 4, "critScore")).toBe(250);   // Kritanker IV: Crit +250 Score
+    expect(anchorTierParam("streak", 1, "everySecond")).toBe(true); // §10: jeder zweite Sieg
+    expect(anchorTierParam("streak", 4, "noReset")).toBe(true);  // IV: Niederlage setzt Serie nicht zurück
+  });
+  it("Jokeranker: erlaubte Formationstypen wachsen je Stufe", () => {
+    expect(anchorTierParam("joker", 1, "jokerTypes")).toEqual(["wiederholung"]);
+    expect(anchorTierParam("joker", 2, "jokerTypes")).toEqual(["wiederholung", "treppe"]);
+    expect(anchorTierParam("joker", 3, "jokerTypes")).toEqual(["wiederholung", "treppe", "farbblock"]);
+    expect(anchorTierParam("joker", 4, "jokerTypes")).toEqual(["wiederholung", "treppe", "farbblock", "wechsel"]);
+  });
+  it("Anker-Familien schließen bei IV ab (kein Nachkauf)", () => {
+    expect(offerableShopTiers("SF_A_POWER", 4)).toEqual([]); // repeatable:false → IV schließt ab
+    expect(offerableShopTiers("SF_A_POWER", 2)).toEqual([3, 4]);
   });
 });

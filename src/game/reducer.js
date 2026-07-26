@@ -183,11 +183,13 @@ export function reducer(state, action) {
     }
     case "SHOP_TARGET_POSITION": { // Anker-Position wählen (§8): 0..39, nur freie Positionen (max 1 Anker/Position).
       if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
+      const st = state.shopTarget;
       const p = action.position;
-      if (!def?.target?.position || !(p >= 0 && p < state.playerOrder.length)) return state;
-      if (positionOccupied(state.shop?.anchors, p)) return state; // belegte Position → ablehnen (§8.1)
-      return { ...state, shopTarget: { ...state.shopTarget, position: p } };
+      if (!shopTargetSpec(st).position || !(p >= 0 && p < state.playerOrder.length)) return state;
+      // #164 Anker-Familie: die eigene (zu ersetzende) Anker-Position ist erlaubt; nur FREMDE Anker blockieren (§8.1).
+      const ownType = st.familyId ? SHOP_FAMILY_DEFS[st.familyId]?.anchorType : null;
+      if ((state.shop?.anchors || []).some((a) => a.position === p && a.type !== ownType)) return state;
+      return { ...state, shopTarget: { ...st, position: p } };
     }
     case "SHOP_TARGET_COLOR_PAIR": { // Farballianz (F4): zwei unterschiedliche Farben wählen.
       if (state.phase !== "shop-target" || !state.shopTarget) return state;
@@ -245,6 +247,20 @@ export function reducer(state, action) {
         const tierDef = fam && fam.tiers[st.famTier];
         if (!fam || !tierDef) return state;
         const spec = tierDef.pickTarget || {};
+        // ---- Anker-Familie (#164): EIN Anker je Typ, Stärke = Stufe; Position (neu) gewählt, fremde Anker blockieren. ----
+        if (fam.cat === "anchors") {
+          if (spec.position && (st.position == null || (shop.anchors || []).some((a) => a.position === st.position && a.type !== fam.anchorType))) return state;
+          // Stufen-Parameter (power/score/crit/streak/factor/jokerTypes/…) auf den Anker-Eintrag legen → Engine/formations
+          // lesen sie direkt (kein Registry-Lookup je Stich, kein Import-Zyklus formations↔shopFamilies).
+          const { desc, pickTarget, ...params } = tierDef;
+          const anchors = [...(shop.anchors || []).filter((a) => a.type !== fam.anchorType), { type: fam.anchorType, position: st.position, tier: st.famTier, familyId: fam.id, ...params }];
+          const newShop = { ...shop, anchors, coins: (shop.coins || 0) - offer.price,
+            purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
+            familyTiers: { ...(shop.familyTiers || {}), [fam.id]: st.famTier },
+            purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, st.famTier, offer.price, state.cycle, { position: st.position })] };
+          const formations = computeFormations(state.playerOrder, state.deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects, state.familyTiers);
+          return { ...state, formations, phase: "shop", shopTarget: null, shop: newShop };
+        }
         if (spec.cards && st.cards.length !== spec.cards) return state;             // genau N Karten
         if (spec.color && st.cards.some((id) => !st.colors[id])) return state;      // je Karte eine Farbe
         if (spec.segment && st.segment == null) return state;                        // ein Segment

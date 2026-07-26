@@ -21,6 +21,8 @@ import { SHOP_FAMILY_DEFS } from "./shopFamilies.js";
 /* ---- Shop-Positionsanker (Shop-Spec §8) — an der Deckposition (0–39), nicht an card.id. ---- */
 // Anker-Typ auf einer Position (max 1 Anker je Position) bzw. ob die Position belegt ist.
 export const anchorTypeAt   = (anchors, pos) => (anchors || []).find((a) => a.position === pos)?.type || null;
+// Ganzer Anker-Eintrag auf einer Position ({ type, position, tier, familyId }) — Engine/formations lesen die Stufe (#164).
+export const anchorAt       = (anchors, pos) => (anchors || []).find((a) => a.position === pos) || null;
 export const positionOccupied = (anchors, pos) => (anchors || []).some((a) => a.position === pos);
 // F4 Farballianz (#125): Partner-Farbe (Suit-Key) einer Farbe, wenn eine Allianz aktiv ist — sonst null.
 // Rein für die UI (diagonaler Zweifarben-Split); ändert keine Regel.
@@ -31,8 +33,6 @@ export const linkedPartnerOf = (pe, suit) => {
   if (suit === lc[1]) return lc[0];
   return null;
 };
-// Einen Anker anlegen (immutabel) — der Reducer stellt sicher, dass die Position frei ist.
-const addAnchor = (shop, type, position) => ({ ...shop, anchors: [...(shop.anchors || []), { type, position }] });
 // Permanente Formations-Regeländerung setzen (Shop §9 F-Items).
 const setPE = (shop, patch) => ({ ...shop, permanentEffects: { ...(shop.permanentEffects || {}), ...patch } });
 
@@ -40,31 +40,9 @@ const setPE = (shop, patch) => ({ ...shop, permanentEffects: { ...(shop.permanen
    die flachen K-Items sind entfernt, siehe src/game/shopFamilies.js SHOP_FAMILY_DEFS).
    `target` = Ziel-Bedarf für den Target-Flow. apply(state, target, rng) -> Patch. */
 export const SHOP_ITEM_DEFS = {
-  // ---- Anker (Shop-Spec §8) — Positionsanker; apply legt {type,position} in shop.anchors an. targetMode "position". ----
-  A1: { id: "A1", category: "anchors", name: "Kraftanker", tier: "cheap", repeatable: true, anchorType: "power",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Die Karte auf dieser Position erhält im Stich +2 temporären Wert.",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "power", t.position) }) },
-  A2: { id: "A2", category: "anchors", name: "Punkteanker", tier: "cheap", repeatable: true, anchorType: "score",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Ein Sieg auf dieser Position gibt +150 Flat-Score.",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "score", t.position) }) },
-  A3: { id: "A3", category: "anchors", name: "Kritanker", tier: "strong", repeatable: true, anchorType: "crit",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Die Karte auf dieser Position erhält +15 Prozentpunkte Crit-Chance (nur dieser Stich).",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "crit", t.position) }) },
-  A4: { id: "A4", category: "anchors", name: "Serienanker", tier: "strong", repeatable: true, anchorType: "streak",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Ein Sieg auf dieser Position erhöht die Siegesserie um einen zusätzlichen Punkt.",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "streak", t.position) }) },
-  A5: { id: "A5", category: "anchors", name: "Formationsanker", tier: "premium", repeatable: true, anchorType: "formation",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Sie zählt als aktive Formation und gibt bei Sieg ×1,25 (stapelt nicht mit E7/E8).",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "formation", t.position) }) },
-  A6: { id: "A6", category: "anchors", name: "Jokeranker", tier: "premium", repeatable: true, anchorType: "joker",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Die Karte darf bei jeder Basisformation den benötigten Wert oder die Farbe annehmen (bildet allein keine Formation, kein eigener Faktor).",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "joker", t.position) }) },
+  // ---- Anker (Shop-Spec §8) — Kategorie zu Shop-FAMILIEN migriert (#164): die Positions-Anker A1–A6 sind
+  //      entfernt (shopFamilies.js SHOP_ANCHOR_FAMILIES). A-L1 Zeitsegment folgt später. Der Anker-Eintrag in
+  //      shop.anchors trägt jetzt zusätzlich `tier` (Stärke) + `familyId`. ----
   "A-L1": { id: "A-L1", category: "anchors", name: "Zeitsegment", tier: "legendary", legendary: true, repeatable: false,
         targetMode: "segment", target: { segment: true },
         description: "Wähle ein Segment. Nachdem seine fünf Karten gespielt wurden, wird das Segment sofort ein zweites Mal gespielt — inklusive aller positionsgebundenen Effekte dieser fünf Positionen (Anker, Positionsboni, Segment-Rollen zählen erneut). Durchlauf = 45 Stiche.",

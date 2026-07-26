@@ -30,7 +30,8 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
   const colors = st.colors || {};
   const cardById = (id) => deck.find((c) => c.id === id);
 
-  const occupied = new Set((state.shop?.anchors || []).map((a) => a.position));
+  // Belegte Anker-Positionen; beim Anker-Upgrade ist die EIGENE (zu ersetzende) Position wählbar (#164).
+  const occupied = new Set((state.shop?.anchors || []).filter((a) => a.type !== fam?.anchorType).map((a) => a.position));
   const openBoundaries = new Set(state.shop?.permanentEffects?.openSegmentBoundaries || []);
   const pair = st.colorPair || [];
   const cardsDone = !spec.cards || sel.length === spec.cards;

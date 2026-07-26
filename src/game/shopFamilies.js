@@ -34,7 +34,7 @@ import { SEGMENT_SIZE } from "./formations.js";
        braucht ein Zuordnungs-UI → deferiert).
    ============================================================ */
 
-const { CUMULATIVE } = UPGRADE_TYPES;
+const { CUMULATIVE, REPLACEMENT } = UPGRADE_TYPES;
 
 /* ---- Immutable Deck-Helfer (rein, kein rng außer wo injiziert) — an card.id, damit Boni bei späterer
         Umordnung mitwandern (Spec §7 K-Items). Bewusst lokal (keine Kopplung an shop.js-Interna). ---- */
@@ -167,9 +167,91 @@ const SHOP_CARD_FAMILIES = {
   },
 };
 
+/* ---- Anker-Familien (Shop-Spec §4.2 Ankerfamilien, #164) — REGELERSETZUNG, positionsgebunden. Je Familie EIN
+        Anker eines Typs, dessen Stärke = Stufe; die Position wird beim Kauf/Upgrade (neu) gewählt (Spec: „Position
+        bleibt; darf beim Kauf neu gewählt werden"). `anchorType` = der bestehende Engine-Anker-Typ. Nutzer-Entscheid
+        #164: repeatable:false → jede Anker-Familie schließt bei IV ab (kein Nachkauf). Der Anker im `shop.anchors`
+        trägt `{ type, position, tier, familyId }`; Engine/formations lesen die Stufen-Stärke über `anchorTierDef`.
+        Alle pickTarget = { position: true } (Positions-Ziel-Flow, bestehende SHOP_TARGET_POSITION).
+        §10-Näherung: Serienanker I „jeder zweite Sieg" ≈ gedrosselt über die globale Siegzahl-Parität (kein
+        per-Position-Zähler nötig). ---- */
+const SHOP_ANCHOR_FAMILIES = {
+  SF_A_POWER: {
+    id: "SF_A_POWER", cat: "anchors", name: "Kraftanker", upgradeType: REPLACEMENT, repeatable: false,
+    anchorType: "power", legacyIds: ["A1"],
+    tiers: {
+      1: { desc: "Wähle 1 Position: +1 temporärer Wert im Stich.", pickTarget: { position: true }, power: 1 },
+      2: { desc: "Wähle 1 Position: +2 temporärer Wert im Stich.", pickTarget: { position: true }, power: 2 },
+      3: { desc: "Wähle 1 Position: +4 temporärer Wert im Stich.", pickTarget: { position: true }, power: 4 },
+      4: { desc: "Wähle 1 Position: +6 temporärer Wert; bei Sieg zusätzlich +100 Score.", pickTarget: { position: true }, power: 6, winScore: 100 },
+    },
+  },
+  SF_A_SCORE: {
+    id: "SF_A_SCORE", cat: "anchors", name: "Punkteanker", upgradeType: REPLACEMENT, repeatable: false,
+    anchorType: "score", legacyIds: ["A2"],
+    tiers: {
+      1: { desc: "Wähle 1 Position: ein Sieg dort gibt +100 Flat-Score.", pickTarget: { position: true }, score: 100 },
+      2: { desc: "Wähle 1 Position: ein Sieg dort gibt +200 Flat-Score.", pickTarget: { position: true }, score: 200 },
+      3: { desc: "Wähle 1 Position: ein Sieg dort gibt +350 Flat-Score.", pickTarget: { position: true }, score: 350 },
+      4: { desc: "Wähle 1 Position: ein Sieg dort gibt +600 Flat-Score.", pickTarget: { position: true }, score: 600 },
+    },
+  },
+  SF_A_CRIT: {
+    id: "SF_A_CRIT", cat: "anchors", name: "Kritanker", upgradeType: REPLACEMENT, repeatable: false,
+    anchorType: "crit", legacyIds: ["A3"],
+    tiers: {
+      1: { desc: "Wähle 1 Position: +10 Prozentpunkte Crit-Chance (nur dieser Stich).", pickTarget: { position: true }, crit: 0.10 },
+      2: { desc: "Wähle 1 Position: +15 Prozentpunkte Crit-Chance.", pickTarget: { position: true }, crit: 0.15 },
+      3: { desc: "Wähle 1 Position: +25 Prozentpunkte Crit-Chance.", pickTarget: { position: true }, crit: 0.25 },
+      4: { desc: "Wähle 1 Position: +40 Prozentpunkte Crit-Chance; ein Crit dort gibt zusätzlich +250 Score.", pickTarget: { position: true }, crit: 0.40, critScore: 250 },
+    },
+  },
+  SF_A_STREAK: {
+    id: "SF_A_STREAK", cat: "anchors", name: "Serienanker", upgradeType: REPLACEMENT, repeatable: false,
+    anchorType: "streak", legacyIds: ["A4"],
+    // streak = Serienpunkte je Sieg dort. everySecond (§10): nur bei gerader globaler Siegzahl (≈ „jeder zweite Sieg").
+    // noReset (IV): eine Niederlage auf dieser Position setzt die Serie nicht zurück.
+    tiers: {
+      1: { desc: "Wähle 1 Position: jeder zweite Sieg dort gibt +1 Serienpunkt.", pickTarget: { position: true }, streak: 1, everySecond: true },
+      2: { desc: "Wähle 1 Position: jeder Sieg dort gibt +1 Serienpunkt.", pickTarget: { position: true }, streak: 1 },
+      3: { desc: "Wähle 1 Position: ein Sieg dort gibt +2 Serienpunkte.", pickTarget: { position: true }, streak: 2 },
+      4: { desc: "Wähle 1 Position: ein Sieg dort gibt +2 Serienpunkte; eine Niederlage dort setzt die Serie nicht zurück.", pickTarget: { position: true }, streak: 2, noReset: true },
+    },
+  },
+  SF_A_FORMATION: {
+    id: "SF_A_FORMATION", cat: "anchors", name: "Formationsanker", upgradeType: REPLACEMENT, repeatable: false,
+    anchorType: "formation", legacyIds: ["A5"],
+    tiers: {
+      1: { desc: "Wähle 1 Position: zählt als aktive Formation, bei Sieg ×1,15.", pickTarget: { position: true }, factor: 1.15 },
+      2: { desc: "Wähle 1 Position: zählt als aktive Formation, bei Sieg ×1,25.", pickTarget: { position: true }, factor: 1.25 },
+      3: { desc: "Wähle 1 Position: zählt als aktive Formation, bei Sieg ×1,40.", pickTarget: { position: true }, factor: 1.40 },
+      4: { desc: "Wähle 1 Position: zählt als aktive Formation, bei Sieg ×1,60 (überlappt mit natürlichen Formationen).", pickTarget: { position: true }, factor: 1.60 },
+    },
+  },
+  SF_A_JOKER: {
+    id: "SF_A_JOKER", cat: "anchors", name: "Jokeranker", upgradeType: REPLACEMENT, repeatable: false,
+    anchorType: "joker", legacyIds: ["A6"],
+    // jokerTypes = Basisformationen, für die die Karte den benötigten Wert/die Farbe annehmen darf (bildet allein keine Formation).
+    tiers: {
+      1: { desc: "Wähle 1 Position: Joker nur für Wiederholungen.", pickTarget: { position: true }, jokerTypes: ["wiederholung"] },
+      2: { desc: "Wähle 1 Position: Joker für Wiederholung oder Treppe.", pickTarget: { position: true }, jokerTypes: ["wiederholung", "treppe"] },
+      3: { desc: "Wähle 1 Position: Joker für Wiederholung, Treppe und Farbblock.", pickTarget: { position: true }, jokerTypes: ["wiederholung", "treppe", "farbblock"] },
+      4: { desc: "Wähle 1 Position: Joker für alle Basisformationen.", pickTarget: { position: true }, jokerTypes: ["wiederholung", "treppe", "farbblock", "wechsel"] },
+    },
+  },
+};
+
 export const SHOP_FAMILY_DEFS = {
   ...SHOP_CARD_FAMILIES,
+  ...SHOP_ANCHOR_FAMILIES,
 };
+
+// Anker-Familie zu einem Engine-Anker-Typ (power/score/crit/streak/formation/joker) — für die Stufen-Auflösung.
+export const ANCHOR_FAMILY_BY_TYPE = Object.fromEntries(
+  Object.values(SHOP_ANCHOR_FAMILIES).map((f) => [f.anchorType, f]));
+// Stufen-Def eines Ankers (Typ + gehaltene/gesetzte Stufe) — Engine/formations lesen daraus die Stärke-Parameter.
+export const anchorTierDef = (anchorType, tier) => ANCHOR_FAMILY_BY_TYPE[anchorType]?.tiers?.[tier] || null;
+export const anchorTierParam = (anchorType, tier, key) => { const d = anchorTierDef(anchorType, tier); return d ? d[key] : undefined; };
 
 export const SHOP_FAMILY_LIST = Object.values(SHOP_FAMILY_DEFS);
 export const shopFamilyDef = (id) => SHOP_FAMILY_DEFS[id] || null;
