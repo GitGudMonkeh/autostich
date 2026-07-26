@@ -98,10 +98,10 @@ export const SKILLS_OFFERED     = 6;   // Skills je Skill-Runde (Prototyp: 2+2+2
 export const MAX_ARCHETYPES     = 3;   // Prototyp: alle 3 Archetypen gleichzeitig aktivierbar (Cap aufgehoben)
 export const SKILL_EVERY_CYCLES = 3;   // jede N-te Runde ist eine Skill-Runde (3, 6, 9 …), sonst Perk
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
-export const LIGHTNING_CRIT_PER_SKILL = 0.05; // Blitz: je gehaltenem Blitz-Skill
+export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.05); // Blitz: je gehaltenem Blitz-Skill [SIM-Tuning]
 export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
 // Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
-export const ION_SCORE_PER_STACK  = 25; // +Score je Ionisierungsstapel bei Sieg mit der Karte
+export const ION_SCORE_PER_STACK  = envNum("SIM_ION_SCORE_PER_STACK", 25); // +Score je Ionisierungsstapel bei Sieg mit der Karte [SIM-Tuning]
 export const ION_MAX_STACKS       = 5;  // max Stapel je Karte [#165 Skills-Spec §5.1: 4→5]
 export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Verbrauch
 export const BLITZFAENGER_VALUE   = 2;  // Blitzfänger (#165): eine bereits volle Karte (5 Stapel) statt zu ionisieren +temp Wert (+ 1 Ladung)
@@ -111,14 +111,14 @@ export const UEBERSPANNUNG_CHARGE = 3;  // Überspannung: Zusatzladung bei Crit 
 export const REST_CHARGE_FLOOR = 3;    // Reststrom: Ladungsboden nach jedem Verbrauch (statt 0)
 export const STORM_CRIT_STEP   = 0.02; // Gewitterfront: +Crit-Chance je Verbrauch …
 export const STORM_CRIT_CAP    = 0.20; // …          … gedeckelt
-export const STORM_SCORE       = 100;  // Gewitterfront nach Cap: +Score je Sieg …
+export const STORM_SCORE       = envNum("SIM_STORM_SCORE", 100);  // Gewitterfront nach Cap: +Score je Sieg … [SIM-Tuning]
 export const STORM_SCORE_WINS  = 3;    // …          … für so viele folgende Siege
 // Blitz-Rework (#93 F2) — exklusiver Ladungs-Konsument + neue Skills/Legendäre [TUNING]
 export const LIGHTNING_MAX_CHARGE_THUNDER = 15;  // Donnergott (L): hebt das Ladungsmaximum 10 → 15
 export const THUNDER_CRIT_MULT = 1.0;  // Donnergott (L): dauerhafter +Crit-Multiplikator
-export const STATIC_CHARGE     = 1;    // Statische Aufladung: Ladung je Sieg OHNE Crit
-export const CONDUCT_CHARGE    = 2;    // Leitfähigkeit: Zusatzladung bei Crit neben ionisierter Karte
-export const DISCHARGE_SCORE   = 500;  // Entladung: +Flat beim nächsten Crit nach vollem Verbrauch
+export const STATIC_CHARGE     = envNum("SIM_STATIC_CHARGE", 1);    // Statische Aufladung: Ladung je Sieg OHNE Crit [SIM-Tuning]
+export const CONDUCT_CHARGE    = envNum("SIM_CONDUCT_CHARGE", 2);   // Leitfähigkeit: Zusatzladung bei Crit neben ionisierter Karte [SIM-Tuning]
+export const DISCHARGE_SCORE   = envNum("SIM_DISCHARGE_SCORE", 500);  // Entladung: +Flat beim nächsten Crit nach vollem Verbrauch [SIM-Tuning]
 
 // Feuer-Archetyp (#93 F1) — Hitzeleiste 0–100. Belohnt totale Überlegenheit. [TUNING]
 export const HEAT_MAX          = 100;  // Hitzemaximum (fix; #Pass5: Sonnenkern hebt es nicht mehr, wurde „Nachbrand")
