@@ -3,6 +3,7 @@ import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../gam
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
          FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, BURN_BONUS, ICE_BASE_FREEZE, FROST_GRIP_BONUS } from "../game/constants.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { FormationPanel } from "./FormationPanel.jsx";
 import { PanelMascot } from "./PanelMascot.jsx";
 import skillMascot from "../assets/mascots/skill.gif";
 
@@ -54,6 +55,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const fireFirstPick = !(state.heat && state.heat.active); // erster Feuer-Skill schaltet die Hitzeleiste frei
   const hasIceOffer = offer.some((id) => archetypeOf(id) === "ice");
   const iceFirstPick = !(state.activeArchetypes || []).includes("ice"); // erster Eis-Skill schaltet das Einfrieren frei
+  const showFormations = hasIceOffer || (skills || []).some((id) => archetypeOf(id) === "ice"); // #161 FB-1: Formations-Panel bei Eis-Relevanz
 
   // Konsumenten-Typ eines Skills (#93): Hitze („heat") / Ladung („charge") / kein Konsument (null).
   const consumerTypeOf = (id) => (SKILL_DEFS[id]?.heatConsumer ? "heat" : SKILL_DEFS[id]?.onFullCharge ? "charge" : null);
@@ -269,6 +271,13 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 Abbrechen
               </button>
             )}
+          </div>
+        )}
+
+        {/* #161 FB-1: bei Eis-Relevanz die aktiven Formationen zeigen — Einfrieren biegt die Formationserkennung. */}
+        {showFormations && (
+          <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
+            <FormationPanel state={state} title="Deine aktiven Formationen (Eis biegt die Erkennung)" />
           </div>
         )}
 
