@@ -33,8 +33,6 @@ export const linkedPartnerOf = (pe, suit) => {
   if (suit === lc[1]) return lc[0];
   return null;
 };
-// Permanente Formations-Regeländerung setzen (Shop §9 F-Items).
-const setPE = (shop, patch) => ({ ...shop, permanentEffects: { ...(shop.permanentEffects || {}), ...patch } });
 
 /* Konkrete Shop-Items (Anker/Formationen/Planung — Kategorie `cards` ist zu Shop-FAMILIEN migriert, #164;
    die flachen K-Items sind entfernt, siehe src/game/shopFamilies.js SHOP_FAMILY_DEFS).
@@ -44,22 +42,8 @@ export const SHOP_ITEM_DEFS = {
   //      das Zeitsegment A-L1 sind entfernt (shopFamilies.js SHOP_ANCHOR_FAMILIES). Der Anker-Eintrag in shop.anchors
   //      trägt jetzt zusätzlich `tier` (Stärke) + `familyId`; das Zeitsegment setzt shop.timeSegmentIndex + …Tier. ----
 
-  // ---- Formationen (Shop-Spec §9) — permanente Regeländerungen. F1/F2/F3/F6 zu Shop-FAMILIEN migriert (#164,
-  //      shopFamilies.js SHOP_FORMATION_FAMILIES; sie setzen tier-abhängige permEffects). F4/F5/F-L1 folgen. ----
-  F4: { id: "F4", category: "formations", name: "Farballianz", tier: "strong", repeatable: false,
-        targetMode: "two-colors", target: { colorPair: true },
-        description: "Wähle zwei Farben. Für Farbblöcke zählen diese beiden Farben als dieselbe Farbe.",
-        apply: (s, t) => ({ shop: setPE(s.shop, { linkedColors: t.colorPair }) }) },
-  F5: { id: "F5", category: "formations", name: "Offene Grenze", tier: "premium", repeatable: true,
-        targetMode: "boundary", target: { boundary: true },
-        description: "Wähle eine Segmentgrenze. Formationen dürfen diese Grenze überschreiten.",
-        // Nur anbieten, solange E9 nicht alle Grenzen global öffnet UND noch eine Grenze geschlossen ist (§15).
-        available: (shop, perks) => !(perks || []).includes("E9") && ((shop.permanentEffects?.openSegmentBoundaries || []).length < SEGMENT_BOUNDARIES.length),
-        apply: (s, t) => ({ shop: setPE(s.shop, { openSegmentBoundaries: [...(s.shop.permanentEffects?.openSegmentBoundaries || []), t.boundary] }) }) },
-  "F-L1": { id: "F-L1", category: "formations", name: "Formationskern", tier: "legendary", legendary: true, repeatable: false,
-        targetMode: "formation-type", target: { formationType: true },
-        description: "Wähle einen Formationstyp. Jede aktive Formation dieses Typs (inkl. Nachhall) erhält zusätzlich ×1,50.",
-        apply: (s, t) => ({ shop: setPE(s.shop, { formationCoreType: t.formationType }) }) },
+  // ---- Formationen (Shop-Spec §9) — KOMPLETT zu Shop-FAMILIEN migriert (#164, shopFamilies.js
+  //      SHOP_FORMATION_FAMILIES; sie setzen tier-abhängige permEffects bzw. lösen Ziele dorthin auf). ----
 
   // ---- Planung (Shop-Spec §10) — Neuwürfe/Reservierung; kein Score-Effekt, wirkt auf Angebote/Auswahlen. ----
   P1: { id: "P1", category: "planning", name: "Perk-Neuwurf", tier: "cheap", repeatable: true,

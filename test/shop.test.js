@@ -524,8 +524,8 @@ describe("Shop-Formationsitems — F4/F5 (Shop-Spec §9)", () => {
     expect(hasForm(computeFormations(ord(7), deck), 5, "farbblock")).toBe(false); // Grenze blockt → je Segment nur 2
     expect(hasForm(computeFormations(ord(7), deck, {}, [], [], [], { openSegmentBoundaries: [4] }), 5, "farbblock")).toBe(true);
   });
-  it("Kauf F4: zwei Farben wählen → linkedColors gesetzt (Preis erst bei CONFIRM)", () => {
-    const offer = { offerId: "o0", itemId: "F4", category: "formations", tier: "strong", price: 12, legendary: false };
+  it("Kauf Farballianz II: zwei Farben wählen → linkedGroups gesetzt (Preis erst bei CONFIRM)", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_COLOR_ALLIANCE", famTier: 2, price: 12, family: true, legendary: false };
     let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers: [offer] } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
@@ -533,33 +533,43 @@ describe("Shop-Formationsitems — F4/F5 (Shop-Spec §9)", () => {
     s = reducer(s, { type: "SHOP_TARGET_COLOR_PAIR", color: "R" });
     s = reducer(s, { type: "SHOP_TARGET_COLOR_PAIR", color: "B" });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
-    expect(r.shop.permanentEffects.linkedColors).toEqual(["R", "B"]);
+    expect(r.shop.permanentEffects.linkedGroups).toEqual([["R", "B"]]);
+    expect(r.shop.familyTiers.SF_F_COLOR_ALLIANCE).toBe(2);
     expect(r.shop.coins).toBe(0);
   });
-  it("Kauf F5: eine Grenze öffnen → openSegmentBoundaries; wiederholbar", () => {
-    const offer = { offerId: "o0", itemId: "F5", category: "formations", tier: "premium", price: 18, legendary: false };
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
+  it("Farballianz IV: vier Farben → zwei Allianzen (zwei Paare)", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_COLOR_ALLIANCE", famTier: 4, price: 30, family: true, legendary: false };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
+    for (const c of ["R", "B", "G", "Y"]) s = reducer(s, { type: "SHOP_TARGET_COLOR_PAIR", color: c });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.shop.permanentEffects.linkedGroups).toEqual([["R", "B"], ["G", "Y"]]);
+  });
+  it("Kauf Offene Grenze I: eine Grenze öffnen → openSegmentBoundaries", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_OPEN_BOUNDARY", famTier: 1, price: 8, family: true, legendary: false };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers: [offer] } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     s = reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 9 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.shop.permanentEffects.openSegmentBoundaries).toEqual([9]);
-    expect(r.shop.boughtNonRepeatableIds).toEqual([]); // wiederholbar
+    expect(r.shop.familyTiers.SF_F_OPEN_BOUNDARY).toBe(1);
   });
-  it("F5 wird abgelehnt bei bereits offener Grenze; verschiedene Grenzen stapeln", () => {
-    const offer = { offerId: "o0", itemId: "F5", category: "formations", tier: "premium", price: 18, legendary: false };
+  it("Offene Grenze: bereits offene Grenze wird abgelehnt; verschiedene Grenzen stapeln", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_OPEN_BOUNDARY", famTier: 1, price: 8, family: true, legendary: false };
     const base = { ...initialState(makeRng(1)), phase: "shop",
-      shop: { ...initialShop(), coins: 18, offers: [offer], permanentEffects: { ...initialShop().permanentEffects, openSegmentBoundaries: [4] } } };
+      shop: { ...initialShop(), coins: 8, offers: [offer], permanentEffects: { ...initialShop().permanentEffects, openSegmentBoundaries: [4] } } };
     let s = reducer(base, { type: "BUY_ITEM", offerId: "o0" });
     expect(reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 4 })).toBe(s); // schon offen → ignoriert
     s = reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 9 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect([...r.shop.permanentEffects.openSegmentBoundaries].sort((a, b) => a - b)).toEqual([4, 9]);
   });
-  it("F5-Verfügbarkeit (§15): nicht bei E9, nicht wenn alle Grenzen offen", () => {
-    expect(isItemAvailable(SHOP_ITEM_DEFS.F5, initialShop(), [])).toBe(true);
-    expect(isItemAvailable(SHOP_ITEM_DEFS.F5, initialShop(), ["E9"])).toBe(false);
-    const allOpen = { ...initialShop(), permanentEffects: { openSegmentBoundaries: [...SEGMENT_BOUNDARIES] } };
-    expect(isItemAvailable(SHOP_ITEM_DEFS.F5, allOpen, [])).toBe(false);
+  it("Offene Grenze IV (ziel-los): öffnet alle Grenzen sofort", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_OPEN_BOUNDARY", famTier: 4, price: 30, family: true, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+    const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
+    expect(r.phase).toBe("shop"); // ziel-los → sofort
+    expect(r.shop.permanentEffects.openBoundaryCount).toBe(Infinity);
   });
 });
 
@@ -633,9 +643,9 @@ describe("Shop-Formationsitem — F-L1 Formationskern (Shop-Spec §9)", () => {
     const other = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true, formationCoreType: "treppe" });
     expect(other[2].coreFactor).toBe(1);                   // Nachhall ist wiederholung, Kern ist treppe → kein Trigger
   });
-  it("Kauf F-L1: Formationstyp wählen → formationCoreType gesetzt (legendär + nicht wiederholbar)", () => {
-    const offer = { offerId: "o0", itemId: "F-L1", category: "formations", tier: "legendary", price: 30, legendary: true };
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+  it("Kauf Formationskern III: Formationstyp wählen → formationCoreType + Stufen-Faktor gesetzt", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_CORE", famTier: 3, price: 18, family: true, legendary: false };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s);                 // ohne Typ → unverändert
@@ -644,9 +654,9 @@ describe("Shop-Formationsitem — F-L1 Formationskern (Shop-Spec §9)", () => {
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
     expect(r.shop.permanentEffects.formationCoreType).toBe("treppe");
+    expect(r.shop.permanentEffects.formationCoreFactor).toBe(1.40); // Stufe III
+    expect(r.shop.familyTiers.SF_F_CORE).toBe(3);
     expect(r.shop.coins).toBe(0);
-    expect(r.shop.boughtLegendaryIds).toEqual(["F-L1"]);
-    expect(r.shop.boughtNonRepeatableIds).toEqual(["F-L1"]);
   });
 });
 

@@ -204,8 +204,10 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Joker: effektive Farbe = die des direkten Vorgängers (verkettet).
   const effSuit = cards.map((c) => c.suit);
   for (let k = 1; k < n; k++) if (jokerIds.has(cards[k].id)) effSuit[k] = effSuit[k - 1];
-  // Farballianz (Shop F4): zwei Farben zählen für Farbblöcke als eine (die zweite wird auf die erste gemappt).
-  if ((pe.linkedColors || []).length === 2) { const [la, lb] = pe.linkedColors; for (let k = 0; k < n; k++) if (effSuit[k] === lb) effSuit[k] = la; }
+  // Farballianz (Shop, #164): Farbgruppen zählen für Farbblöcke als eine Farbe (jede Gruppe auf ihre erste Farbe gemappt).
+  // linkedGroups = [[a,b],…] (Stufe III = eine 3er-Gruppe, IV = zwei Paare); altes 2er-Feld linkedColors bleibt kompatibel.
+  const linkedGroups = pe.linkedGroups || ((pe.linkedColors || []).length === 2 ? [pe.linkedColors] : []);
+  for (const g of linkedGroups) { const ref = g[0]; for (const su of g) if (su !== ref) for (let k = 0; k < n; k++) if (effSuit[k] === su) effSuit[k] = ref; }
   // Bindeglied (C10, ±1) + Eis: Eisschritt/Kristallform geben ±1, Permafrost-Joker passt überall (großer Flex).
   const bind = cards.map((c, k) => {
     let b = famBridgeSpan[c.id] || 0; // Familie C_BRIDGE: Span je Stufe (1/2/99); flache C10 ist zu #167 migriert
@@ -225,11 +227,12 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const wMinLen = eP("E_PENDULUM", "wMinLen", 3);                                                           // E_PENDULUM: Wechsel-Mindestlänge
   const wMinDiff = Math.min(wechselMinDiff, eP("E_PENDULUM", "wMinDiff", WECHSEL_MIN_DIFF));                // Shop F2 + E_PENDULUM (kleiner = leichter)
   const wFactorStart = eP("E_PENDULUM", "wFactorStart", 0);                                                // IV: Wechsel-Faktor bereits ab Länge 2
-  // E_SEGMENT: die ersten `eSegOpen` internen Segmentgrenzen öffnen (Infinity = alle → crossSeg). Ergänzt Shop F5.
-  const eSegOpen = eP("E_SEGMENT", "openBoundaries", 0);
-  const crossSeg = eSegOpen === Infinity;
-  const openBoundaries = new Set(pe.openSegmentBoundaries || []); // Shop F5: einzeln geöffnete Segmentgrenzen (Position k mit (k+1)%5==0)
-  if (!crossSeg && eSegOpen > 0) for (let k = 0, opened = 0; k < n && opened < eSegOpen; k++)
+  // Erste `openCount` interne Segmentgrenzen öffnen (Infinity = alle → crossSeg): E_SEGMENT ODER Shop „Offene Grenze"
+  // III/IV (pe.openBoundaryCount, #164). Ergänzt die einzeln gewählten Grenzen (openSegmentBoundaries, Offene Grenze I/II).
+  const openCount = Math.max(eP("E_SEGMENT", "openBoundaries", 0), pe.openBoundaryCount || 0);
+  const crossSeg = openCount === Infinity;
+  const openBoundaries = new Set(pe.openSegmentBoundaries || []); // einzeln geöffnete Segmentgrenzen (Position k mit (k+1)%5==0)
+  if (!crossSeg && openCount > 0) for (let k = 0, opened = 0; k < n && opened < openCount; k++)
     if ((k + 1) % SEGMENT_SIZE === 0) { openBoundaries.add(k); opened++; }
   const canExtendSeg = (k) => crossSeg || ((k + 1) % SEGMENT_SIZE !== 0) || openBoundaries.has(k);
   // Shop Jokeranker (§4.2, #164): je STUFE für bestimmte Basisformationen Wildcard (a.jokerTypes). Zählt NICHT als
@@ -340,12 +343,13 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // (eigener Basislauf des Typs ODER ein Nachhall dieses Ursprungstyps), bekommt zusätzlich ×FORMATION_CORE_FACTOR
   // als eigenen Faktor (§13). Als Meta-Faktor NACH der Überlappung, zählt nicht in deren Anzahl.
   const coreType = pe.formationCoreType || null;
+  const coreFactor = pe.formationCoreFactor || FORMATION_CORE_FACTOR; // #164 Formationskern: Faktor je Stufe (1,15…1,50)
   if (coreType) for (const p of out) {
     const partOfType = p.formations.some((f) => f.type === coreType || (f.type === "nachhall" && f.sourceType === coreType));
     if (partOfType) {
-      p.coreFactor *= FORMATION_CORE_FACTOR;
-      p.mult *= FORMATION_CORE_FACTOR;
-      p.formations.push({ type: "formationskern", ordinal: 1, factor: FORMATION_CORE_FACTOR });
+      p.coreFactor *= coreFactor;
+      p.mult *= coreFactor;
+      p.formations.push({ type: "formationskern", ordinal: 1, factor: coreFactor });
     }
   }
 

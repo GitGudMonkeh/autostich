@@ -302,6 +302,38 @@ const SHOP_FORMATION_FAMILIES = {
       4: { desc: "Nachhall übernimmt den stärksten Einzelfaktor und hält für die nächsten zwei Karten.", pe: { formationAfterglow: true, afterglowMaxFactor: INF_CAP, afterglowRepsOnly: false, afterglowHold: 2 } },
     },
   },
+  // Farballianz (§4.2): Farbgruppen zählen für Farbblöcke als eine Farbe. Ziel = `colors` Farben; die gewählten
+  // Farben werden im Reducer zu `permEffects.linkedGroups` aufgelöst (IV = zwei Paare). §10: I „1/Segment" entfällt (I≈II).
+  SF_F_COLOR_ALLIANCE: {
+    id: "SF_F_COLOR_ALLIANCE", cat: "formations", name: "Farballianz", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F4"],
+    tiers: {
+      1: { desc: "Wähle 2 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { colors: 2 } },
+      2: { desc: "Wähle 2 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { colors: 2 } },
+      3: { desc: "Wähle 3 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { colors: 3 } },
+      4: { desc: "Wähle 4 Farben: sie bilden zwei Allianzen (je zwei Farben zählen als eine).", pickTarget: { colors: 4 }, pairs: true },
+    },
+  },
+  // Offene Grenze (§4.2): Segmentgrenzen werden durchlässig. I/II wählen 1 Grenze; III/IV öffnen ziel-los die
+  // ersten zwei bzw. alle Grenzen (§10-deterministisch wie E_SEGMENT). §10: I „nur Wiederholungen" entfällt (I≈II).
+  SF_F_OPEN_BOUNDARY: {
+    id: "SF_F_OPEN_BOUNDARY", cat: "formations", name: "Offene Grenze", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F5"],
+    tiers: {
+      1: { desc: "Wähle 1 Segmentgrenze: Formationen dürfen sie überschreiten.", pickTarget: { boundary: true } },
+      2: { desc: "Wähle 1 Segmentgrenze: Formationen dürfen sie überschreiten.", pickTarget: { boundary: true } },
+      3: { desc: "Die ersten zwei Segmentgrenzen sind offen.", pe: { openBoundaryCount: 2 } },
+      4: { desc: "Alle Segmentgrenzen sind offen.", pe: { openBoundaryCount: Infinity } },
+    },
+  },
+  // Formationskern (§4.2, ehem. legendär F-L1): gewählter Formationstyp erhält zusätzlich den Stufen-Faktor (inkl. Nachhall).
+  SF_F_CORE: {
+    id: "SF_F_CORE", cat: "formations", name: "Formationskern", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F-L1"],
+    tiers: {
+      1: { desc: "Wähle 1 Formationstyp: seine aktiven Formationen erhalten zusätzlich ×1,15.", pickTarget: { formationType: true }, pe: { formationCoreFactor: 1.15 } },
+      2: { desc: "Wähle 1 Formationstyp: zusätzlich ×1,25.", pickTarget: { formationType: true }, pe: { formationCoreFactor: 1.25 } },
+      3: { desc: "Wähle 1 Formationstyp: zusätzlich ×1,40.", pickTarget: { formationType: true }, pe: { formationCoreFactor: 1.40 } },
+      4: { desc: "Wähle 1 Formationstyp: zusätzlich ×1,50 (inklusive Nachhall).", pickTarget: { formationType: true }, pe: { formationCoreFactor: 1.50 } },
+    },
+  },
   // Feinjustierung (E10→Shop, §4.3): Formationsenergie statt Tausch. KEIN permEffects-Patch — engine liest den Rang.
   SF_F_TUNING: {
     id: "SF_F_TUNING", cat: "formations", name: "Feinjustierung", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["E10"],

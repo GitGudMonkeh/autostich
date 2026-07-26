@@ -202,28 +202,26 @@ export function reducer(state, action) {
       if ((state.shop?.anchors || []).some((a) => a.position === p && a.type !== ownType)) return state;
       return { ...state, shopTarget: { ...st, position: p } };
     }
-    case "SHOP_TARGET_COLOR_PAIR": { // Farballianz (F4): zwei unterschiedliche Farben wählen.
+    case "SHOP_TARGET_COLOR_PAIR": { // Farballianz (#164): `colors` unterschiedliche Farben wählen (2/2/3/4 je Stufe).
       if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
-      if (!def?.target?.colorPair || !C.SUIT_ORDER.includes(action.color)) return state;
+      const need = shopTargetSpec(state.shopTarget).colors || 0;
+      if (!need || !C.SUIT_ORDER.includes(action.color)) return state;
       let pair = state.shopTarget.colorPair || [];
       if (pair.includes(action.color)) pair = pair.filter((s) => s !== action.color);
-      else if (pair.length < 2) pair = [...pair, action.color];
-      else return state; // schon zwei gewählt
+      else if (pair.length < need) pair = [...pair, action.color];
+      else return state; // Anzahl erreicht
       return { ...state, shopTarget: { ...state.shopTarget, colorPair: pair } };
     }
-    case "SHOP_TARGET_BOUNDARY": { // Offene Grenze (F5): eine noch geschlossene Segmentgrenze wählen.
+    case "SHOP_TARGET_BOUNDARY": { // Offene Grenze (#164): eine noch geschlossene Segmentgrenze wählen.
       if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
       const b = action.boundary;
-      if (!def?.target?.boundary || !SEGMENT_BOUNDARIES.includes(b)) return state;
+      if (!shopTargetSpec(state.shopTarget).boundary || !SEGMENT_BOUNDARIES.includes(b)) return state;
       if ((state.shop?.permanentEffects?.openSegmentBoundaries || []).includes(b)) return state; // schon offen
       return { ...state, shopTarget: { ...state.shopTarget, boundary: b } };
     }
-    case "SHOP_TARGET_FORMATION_TYPE": { // Formationskern (F-L1): einen der vier Basistypen wählen.
+    case "SHOP_TARGET_FORMATION_TYPE": { // Formationskern (#164): einen der vier Basistypen wählen.
       if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const def = SHOP_ITEM_DEFS[state.shopTarget.itemId];
-      if (!def?.target?.formationType || !FORMATION_TYPES.includes(action.formationType)) return state;
+      if (!shopTargetSpec(state.shopTarget).formationType || !FORMATION_TYPES.includes(action.formationType)) return state;
       return { ...state, shopTarget: { ...state.shopTarget, formationType: action.formationType } };
     }
     case "SHOP_TARGET_CATEGORY": { // Warenwechsel (P3): eine der vier Shop-Kategorien wählen.
@@ -278,6 +276,22 @@ export function reducer(state, action) {
             purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
             familyTiers: { ...(shop.familyTiers || {}), [fam.id]: st.famTier },
             purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, st.famTier, offer.price, state.cycle, { position: st.position })] };
+          const formations = computeFormations(state.playerOrder, state.deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects, state.familyTiers);
+          return { ...state, formations, phase: "shop", shopTarget: null, shop: newShop };
+        }
+        // ---- Ziel-Formations-Familie (#164): Farballianz/Offene Grenze/Formationskern → permEffects aus Ziel + Stufe. ----
+        if (fam.cat === "formations") {
+          if (spec.colors && (st.colorPair || []).length !== spec.colors) return state;   // genau N Farben (Farballianz)
+          if (spec.boundary && st.boundary == null) return state;                          // eine Grenze (Offene Grenze I/II)
+          if (spec.formationType && st.formationType == null) return state;                // ein Formationstyp (Kern)
+          const patch = { ...(tierDef.pe || {}) };
+          if (fam.id === "SF_F_COLOR_ALLIANCE") { const c = st.colorPair || []; patch.linkedGroups = tierDef.pairs ? [[c[0], c[1]], [c[2], c[3]]] : [c.slice()]; }
+          else if (fam.id === "SF_F_OPEN_BOUNDARY") patch.openSegmentBoundaries = [...(shop.permanentEffects?.openSegmentBoundaries || []), st.boundary]; // gewählte Grenzen bleiben offen (§4.2)
+          else if (fam.id === "SF_F_CORE") patch.formationCoreType = st.formationType;
+          const newShop = { ...shop, permanentEffects: { ...(shop.permanentEffects || {}), ...patch }, coins: (shop.coins || 0) - offer.price,
+            purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
+            familyTiers: { ...(shop.familyTiers || {}), [fam.id]: st.famTier },
+            purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, st.famTier, offer.price, state.cycle, { colorPair: st.colorPair, boundary: st.boundary, formationType: st.formationType })] };
           const formations = computeFormations(state.playerOrder, state.deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects, state.familyTiers);
           return { ...state, formations, phase: "shop", shopTarget: null, shop: newShop };
         }

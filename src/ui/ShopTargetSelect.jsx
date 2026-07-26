@@ -34,16 +34,17 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
   const occupied = new Set((state.shop?.anchors || []).filter((a) => a.type !== fam?.anchorType).map((a) => a.position));
   const openBoundaries = new Set(state.shop?.permanentEffects?.openSegmentBoundaries || []);
   const pair = st.colorPair || [];
+  const colorsNeed = spec.colors || 0; // Farballianz (#164): 2/2/3/4 Farben je Stufe (früher spec.colorPair = 2)
   const cardsDone = !spec.cards || sel.length === spec.cards;
   const colorsDone = !spec.color || sel.every((id) => colors[id]);
   const segDone = !spec.segment || st.segment != null;
   const posDone = !spec.position || st.position != null;
-  const pairDone = !spec.colorPair || pair.length === 2;
+  const pairDone = !colorsNeed || pair.length === colorsNeed;
   const boundaryDone = !spec.boundary || st.boundary != null;
   const ftDone = !spec.formationType || st.formationType != null;
   const catDone = !spec.category || st.category != null;
   const offerDone = !spec.offer || st.targetOfferId != null;
-  const ready = spec.colorPair ? pairDone : spec.boundary ? boundaryDone : spec.formationType ? ftDone
+  const ready = colorsNeed ? pairDone : spec.boundary ? boundaryDone : spec.formationType ? ftDone
     : spec.category ? catDone : spec.offer ? offerDone : spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
   // Reservierung (P4): reservierbare Angebote = alle außer dem gerade gekauften P4 und bereits gekauften.
   const purchased = new Set(state.shop?.purchasedOfferIds || []);
@@ -55,14 +56,14 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>Shop · {def.name}</div>
           <h2 className="text-xl font-bold mt-1">
-            {spec.colorPair ? "Wähle zwei Farben" : spec.boundary ? "Wähle eine Segmentgrenze" : spec.formationType ? "Wähle einen Formationstyp" : spec.category ? "Wähle eine Kategorie" : spec.offer ? "Wähle ein Item zum Reservieren" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
+            {colorsNeed ? `Wähle ${colorsNeed} Farben` : spec.boundary ? "Wähle eine Segmentgrenze" : spec.formationType ? "Wähle einen Formationstyp" : spec.category ? "Wähle eine Kategorie" : spec.offer ? "Wähle ein Item zum Reservieren" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
           </h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.description}</p>
         </div>
 
-        {spec.colorPair ? (
+        {colorsNeed ? (
           <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Zwei Farben wählen (zählen als eine)</div>
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{colorsNeed} Farben wählen (zählen für Farbblöcke als eine{colorsNeed === 4 ? "; je zwei bilden eine Allianz" : ""})</div>
             <div className="flex gap-2 flex-wrap">
               {SUIT_ORDER.map((su) => {
                 const on = pair.includes(su);

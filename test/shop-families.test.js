@@ -218,7 +218,7 @@ describe("Formations-Shop-Familien (Spec §4.2 Formationsfamilien + §4.3)", () 
       expect(fam.repeatable).toBe(false);
       for (const t of TIERS) {
         const td = fam.tiers[t];
-        expect(td.pe || td.energyBonus != null).toBeTruthy(); // permEffects-Patch ODER Energie
+        expect(td.pe || td.energyBonus != null || td.pickTarget).toBeTruthy(); // permEffects-Patch, Energie ODER Ziel
       }
     }
   });
@@ -252,6 +252,24 @@ describe("Formations-Shop-Familien (Spec §4.2 Formationsfamilien + §4.3)", () 
     const on = cf(rep, pe("SF_F_AFTERGLOW", 4));
     expect(on[5].formations.some((f) => f.type === "nachhall")).toBe(true);
     expect(on[6].formations.some((f) => f.type === "nachhall")).toBe(true);
+  });
+  it("Farballianz linkedGroups: drei Farben zählen für Farbblöcke als eine", () => {
+    const deck = [{ id: "a", suit: "R", value: 1 }, { id: "b", suit: "B", value: 2 }, { id: "c", suit: "G", value: 3 }, { id: "d", suit: "Y", value: 4 }];
+    expect(cf(deck, {})[0].formations.some((f) => f.type === "farbblock")).toBe(false);
+    expect(cf(deck, { linkedGroups: [["R", "B", "G"]] })[0].formations.some((f) => f.type === "farbblock")).toBe(true); // R,B,G als eine → 3er-Block
+  });
+  it("Formationskern-Faktor je Stufe (1,15 … 1,50)", () => {
+    const deck = [{ id: "a", suit: "R", value: 30 }, { id: "b", suit: "R", value: 20 }, { id: "c", suit: "R", value: 10 }];
+    expect(cf(deck, { formationCoreType: "farbblock", formationCoreFactor: 1.15 })[0].coreFactor).toBeCloseTo(1.15);
+    expect(cf(deck, { formationCoreType: "farbblock", formationCoreFactor: 1.50 })[0].coreFactor).toBeCloseTo(1.50);
+  });
+  it("Offene Grenze III: openBoundaryCount öffnet die erste Segmentgrenze (Farbblock überschreitet sie)", () => {
+    const deck = [
+      { id: "p", suit: "G", value: 1 }, { id: "q", suit: "Y", value: 2 }, { id: "r", suit: "B", value: 3 },
+      { id: "d", suit: "R", value: 5 }, { id: "e", suit: "R", value: 1 }, { id: "f", suit: "R", value: 5 }, { id: "g", suit: "R", value: 1 },
+    ]; // R-Block auf Positionen 3–6, Grenze bei Position 4 (4|5)
+    expect(cf(deck, {})[5].formations.some((f) => f.type === "farbblock")).toBe(false);          // Grenze blockt
+    expect(cf(deck, { openBoundaryCount: 2 })[5].formations.some((f) => f.type === "farbblock")).toBe(true); // erste Grenzen offen
   });
   it("Feinjustierung: Energiebonus je Stufe (I §10 nur gerade Durchläufe)", () => {
     expect(formationEnergyBonus({ SF_F_TUNING: 2 }, 0)).toBe(1);
