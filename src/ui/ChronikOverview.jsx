@@ -57,7 +57,7 @@ export function ChronikOverview({ state, onClose }) {
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
           <div className="md:flex-1 md:min-w-0 mt-3 md:mt-0 grid gap-3 content-start">
             <CardDetail card={selPos != null ? cards[selPos] : null} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} />
-            <LayoutPerks perks={state.perks} />
+            <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
             {anchors.length > 0 && (
               <div className="text-[11px] rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
                 <div className="uppercase tracking-wide opacity-50 mb-1">Anker</div>

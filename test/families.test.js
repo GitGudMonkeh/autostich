@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   FAMILY_DEFS, FAMILY_LIST, familyDef, familyCategory,
   activeTierDef, activeTierDefs, familySumHook, familyProdHook, hasCritFamily,
+  isLayoutFamily, layoutFamilies,
 } from "../src/game/families.js";
 import { UPGRADE_TYPES } from "../src/game/rarity.js";
 import { buildDeck, makeRng } from "../src/game/deck.js";
@@ -440,5 +441,14 @@ describe("Resolver — Regelersetzung (nur höchste Stufe aktiv)", () => {
     expect(hasCritFamily({ D_HIGH: 4 })).toBe(false);              // nur scoreFlat
     expect(hasCritFamily({ D_HIGH: 4, D_SHARP_EYE: 3 })).toBe(true); // eine reicht
     expect(hasCritFamily({})).toBe(false);
+  });
+  it("isLayoutFamily / layoutFamilies: Aufstellungshilfe (#166) — alle E + kuratierte C/B/D", () => {
+    for (const id of ["E_PACE", "E_SEGMENT", "C_JOKER", "C_FINISHER", "D_FULL_HOUSE", "B_TIGHT"]) expect(isLayoutFamily(id)).toBe(true);
+    for (const id of ["C_TRIUMPH", "C_SACRIFICE", "B_COUNTER", "D_HIGH", "D_STREAK"]) expect(isLayoutFamily(id)).toBe(false);
+    const held = { C_VANGUARD: 2, C_TRIUMPH: 3, E_LOSS: 1, B_OPENING: 4, B_COUNTER: 2, D_FORMATION_BONUS: 1, D_HIGH: 4 };
+    expect(layoutFamilies(held).map((f) => f.id).sort()).toEqual(["B_OPENING", "C_VANGUARD", "D_FORMATION_BONUS", "E_LOSS"]);
+    const v = layoutFamilies({ C_VANGUARD: 2 })[0];
+    expect(v).toMatchObject({ id: "C_VANGUARD", name: "Vorhut", tier: 2 });
+    expect(v.desc.length).toBeGreaterThan(0);
   });
 });

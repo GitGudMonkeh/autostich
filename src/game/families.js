@@ -757,6 +757,25 @@ export function hasCritFamily(familyTiers) {
   return activeTierDefs(familyTiers).some((def) => !!def.scoreFlatOnCrit);
 }
 
+// Familien, deren Wirkung von Position/Reihenfolge/Nachbarschaft/Formation abhängt — für die Aufstellungshilfe (#166,
+// analog perks.LAYOUT_EXTRA). Kuratiert: die positions-/nachbarschafts-/segment-/formationsbezogenen C-/B-/D-Familien;
+// ALLE E-Formationswerkzeuge kommen über cat==="E" dazu.
+export const LAYOUT_FAMILY_IDS = new Set([
+  "C_VANGUARD", "C_GUARD", "C_RELAY", "C_LEADER", "C_FINISHER", "C_SURVIVOR", "C_JOKER", "C_BRIDGE", // Rollen an Position/Nachbar/Segment/Formation
+  "B_OPENING", "B_TENTH_STRIKE", "B_TIGHT", "B_PERFECT", "B_SUPERIOR",                                // positions-/formationsbezogene Stich-Familien
+  "D_FORMATION_BONUS", "D_CRIT_HARVEST", "D_FULL_HOUSE",                                              // formations-/segmentbezogene Score-Familien
+]);
+export const isLayoutFamily = (id) => LAYOUT_FAMILY_IDS.has(id) || FAMILY_DEFS[id]?.cat === "E";
+// Gehaltene Layout-Familien mit Anzeige-Daten (Name + römische Stufe + Beschreibung der aktiven Stufe).
+export function layoutFamilies(familyTiers) {
+  const out = [];
+  for (const [id, tier] of Object.entries(familyTiers || {})) {
+    const fam = FAMILY_DEFS[id];
+    if (fam && tier && isLayoutFamily(id)) out.push({ id, name: fam.name, tier, desc: (fam.tiers[tier] || {}).desc || "" });
+  }
+  return out;
+}
+
 /* Familien-Pick anwenden (Spec §2.4 applyFamilyPick). Reine Funktion: nimmt den relevanten Run-State-
    Ausschnitt und liefert das Patch { familyTiers, deck, roles }.
    - REPLACEMENT (Kat. B/C-Regel/D/E): NUR der Familienrang ändert sich; die aktive Regel löst die Engine

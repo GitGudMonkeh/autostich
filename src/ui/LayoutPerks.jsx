@@ -1,16 +1,25 @@
 import { PERK_DEFS, layoutPerks, rarityMeta } from "../game/perks.js";
+import { layoutFamilies } from "../game/families.js";
+import { tierColor, romanOf } from "../game/rarity.js";
 
-/* Aufstellungshilfe (Issue #95): listet die gehaltenen Perks, deren Wirkung von Position/Reihenfolge
-   oder Formations-Zugehörigkeit abhängt — damit man beim Aufstellen weiß, worauf es ankommt.
-   Genutzt in Formationsphase UND Chronik-Kartenübersicht. */
-export function LayoutPerks({ perks }) {
+/* Aufstellungshilfe (Issue #95 / #166): listet die gehaltenen Perks UND Familien, deren Wirkung von Position/
+   Reihenfolge/Nachbarschaft oder Formations-Zugehörigkeit abhängt — damit man beim Aufstellen weiß, worauf es
+   ankommt. Genutzt in Formationsphase UND Chronik-Kartenübersicht. */
+export function LayoutPerks({ perks, familyTiers = {} }) {
   const ids = layoutPerks(perks);
-  if (!ids.length) return null;
+  const fams = layoutFamilies(familyTiers); // Rarität #167: position-/formationsbezogene Familien (C/E + kuratierte B/D)
+  if (!ids.length && !fams.length) return null;
   return (
     <div className="rounded-lg px-3 py-2" style={{ background: "#1b1b22", border: "1px solid #5ab87a55" }}>
       {/* #104: Panel als aktiv/informativ kennzeichnen — grüner Akzent (Aufstellungs-Kontext) statt grau-in-grau. */}
       <div className="text-[10px] uppercase tracking-wide mb-1 font-semibold" style={{ color: "#5ab87a" }}>Positions- &amp; Formations-Perks</div>
       <div className="grid gap-0.5">
+        {fams.map((f) => (
+          <div key={f.id} className="text-[11px] leading-snug">
+            <span className="font-bold" style={{ color: tierColor(f.tier) }}>{f.name} {romanOf(f.tier)}</span>
+            <span className="opacity-55"> — {f.desc}</span>
+          </div>
+        ))}
         {ids.map((id) => (
           <div key={id} className="text-[11px] leading-snug">
             <span className="font-bold" style={{ color: rarityMeta(id).color }}>{PERK_DEFS[id].label}</span>
