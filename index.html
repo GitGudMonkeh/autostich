@@ -3,11 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Autostich — Prototyp</title>
-  <script type="module" crossorigin src="/autostich/assets/index-P5upBlGu.js"></script>
-  <link rel="stylesheet" crossorigin href="/autostich/assets/index-ZB-yftt9.css">
+  <meta name="robots" content="noindex" />
+  <title>Autostich — kurz offline</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      min-height: 100dvh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 2rem;
+      background: radial-gradient(1200px 600px at 50% -10%, #23202e 0%, #17171c 55%, #141419 100%);
+      color: #e8e6f0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+    }
+    .card {
+      max-width: 30rem; width: 100%;
+      background: #1c1c22;
+      border: 1px solid #26262e;
+      border-radius: 1rem;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+    .logo {
+      font-weight: 800; letter-spacing: .04em;
+      font-size: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .logo b { color: #8a7de0; }
+    .dot {
+      display: inline-block; width: .55rem; height: .55rem; border-radius: 50%;
+      background: #d4a63a; margin-right: .5rem; vertical-align: middle;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
+    h1 { font-size: 1.35rem; margin: 0 0 .75rem; }
+    p { color: #a6a2b8; line-height: 1.6; margin: 0 0 .5rem; }
+    .hint { margin-top: 1.75rem; font-size: .85rem; color: #6f6b82; }
+    @media (prefers-reduced-motion: reduce) { .dot { animation: none; opacity: .8; } }
+  </style>
 </head>
 <body>
-  <div id="root" class="min-h-screen"></div>
+  <main class="card">
+    <div class="logo">AUTO<b>STICH</b></div>
+    <h1><span class="dot"></span>Kurz offline</h1>
+    <p>Wir sind gerade an der Karten-Aufstellung.</p>
+    <p>Das Spiel ist in Kürze wieder da — schau gleich noch mal vorbei.</p>
+    <p class="hint">Wartungsmodus · bald zurück</p>
+  </main>
 </body>
 </html>
