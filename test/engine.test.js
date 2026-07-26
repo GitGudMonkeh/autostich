@@ -3,7 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
-import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, STREAK_STAT_CAP, SCORE_PER_WIN } from "../src/game/constants.js";
+import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, STREAK_STAT_CAP, SCORE_PER_WIN, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS, statStreakFactor } from "../src/game/stats.js";
 import { streakBaseMult } from "../src/game/perks.js";
@@ -350,9 +350,9 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
   const LR = "SK_LIGHTNING_01";
   const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, ...over });
 
-  it("Crit-Basis: aktiver Blitz + 1 Skill → Sockel +5 pp + 5 pp/Skill = 10 % Crit-Chance", () => {
+  it("Crit-Basis: aktiver Blitz + 1 Skill → Sockel + 1× pro-Skill-Crit", () => {
     const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit() }), rng);
-    expect(s.lastTrick.critChance).toBeCloseTo(0.10);
+    expect(s.lastTrick.critChance).toBeCloseTo(LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL);
   });
 
   it("Crit mit Blitzableiter: +2 Ladung (Basis 1 + Skill 1) und +50 in der multiplizierten Basis", () => {

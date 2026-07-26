@@ -31,7 +31,7 @@ describe("lightningCritRaw — Crit-Basis (Abschnitt 2a)", () => {
   });
   it("Sockel + je Skill, wenn aktiv", () => {
     expect(lightningCritRaw(active(), [])).toBeCloseTo(LIGHTNING_CRIT_BASE);                              // nur Sockel
-    expect(lightningCritRaw(active(), [LR])).toBeCloseTo(LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL); // → 0,10
+    expect(lightningCritRaw(active(), [LR])).toBeCloseTo(LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL); // Sockel + 1× pro-Skill
   });
 });
 
@@ -180,7 +180,7 @@ describe("Reaktoren + Geladene Serie — Helfer (Stufe C)", () => {
   });
   it("lightningCritRaw addiert den Gewitterfront-Bonus (stormCritBonus)", () => {
     const l = { active: true, charge: 0, maxCharge: 10, stormCritBonus: 0.08 };
-    expect(lightningCritRaw(l, [G])).toBeCloseTo(0.05 + 0.05 + 0.08); // Sockel + Skill-critChance + Storm
+    expect(lightningCritRaw(l, [G])).toBeCloseTo(LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL + 0.08); // Sockel + Skill-critChance + Storm(0,08)
   });
 });
 

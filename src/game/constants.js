@@ -89,7 +89,7 @@ export const SKILLS_OFFERED     = 6;   // Skills je Skill-Runde (Prototyp: 2+2+2
 export const MAX_ARCHETYPES     = 3;   // Prototyp: alle 3 Archetypen gleichzeitig aktivierbar (Cap aufgehoben)
 export const SKILL_EVERY_CYCLES = 3;   // jede N-te Runde ist eine Skill-Runde (3, 6, 9 …), sonst Perk
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
-export const LIGHTNING_CRIT_PER_SKILL = 0.05; // Blitz: je gehaltenem Blitz-Skill
+export const LIGHTNING_CRIT_PER_SKILL = 0.08; // Blitz: je gehaltenem Blitz-Skill [Balance/Pacing: 0,05→0,08 — kleiner Blitz-Buff, Sim-validiert: hebt Blitz von 0,81× auf 0,89× des besten Archetyps bei SPW=400]
 export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
 // Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
 export const ION_SCORE_PER_STACK  = 25; // +Score je Ionisierungsstapel bei Sieg mit der Karte
