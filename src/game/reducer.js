@@ -1,10 +1,10 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
 import { PERK_DEFS, buildOffer } from "./perks.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
-  frozenTargetFor, frozenCount, freezeCards, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
+  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
-import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
+import { initialShop, SHOP_ITEM_DEFS, positionOccupied, SEGMENT_BOUNDARIES, perkLegendaryChance, skillLegendaryChance, purchaseLogEntry } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -38,6 +38,10 @@ export function initialState(rng = Math.random) {
     oppOrder: shuffledOrder(oppDeck.length, rng),
     pos: 0, cycle: 0, trickNo: 0,
     score: 0,
+    // #131 Rundenscore: Score-Zuwachs je Durchlauf + die letzten zwei abgeschlossenen Rundenscores, damit die
+    // Entscheidungs-Panels „Rundenscore" und die %-Differenz zur Vorrunde zeigen können (reines State-Tracking,
+    // kein Math.random/Date → Determinismus bleibt). null = noch kein (Vor-)Rundenscore vorhanden.
+    scoreAtCycleStart: 0, lastCycleScore: null, prevCycleScore: null,
     winStreak: 0, bestStreak: 0, wins: 0, losses: 0, ties: 0,
     crits: 0, critBonusScore: 0, bestTrickScore: 0,
     initiative: "player",
@@ -116,6 +120,7 @@ export function reducer(state, action) {
       newShop.purchasedOfferIds = [...(shop.purchasedOfferIds || []), offer.offerId];
       if (def.legendary) newShop.boughtLegendaryIds = [...(shop.boughtLegendaryIds || []), def.id]; // §5.7 nie wieder
       if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
+      newShop.purchaseLog = [...(shop.purchaseLog || []), purchaseLogEntry(def, offer.price, state.cycle)]; // #127
       // Formationen neu berechnen — F-Items (§9) ändern die Erkennung permanent.
       const deck2 = patch.deck || state.deck;
       const formations2 = computeFormations(state.playerOrder, deck2, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects);
@@ -231,6 +236,7 @@ export function reducer(state, action) {
         purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId] };
       if (def.legendary) newShop.boughtLegendaryIds = [...(shop.boughtLegendaryIds || []), def.id];
       if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
+      newShop.purchaseLog = [...(shop.purchaseLog || []), purchaseLogEntry(def, offer.price, state.cycle, target)]; // #127
       // Formationen mit den (evtl. neuen) Ankern neu berechnen — A5 Formationsanker wirkt sofort.
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects);
       return { ...merged, deck, formations, phase: "shop", shopTarget: null, shop: newShop };
@@ -311,6 +317,9 @@ export function reducer(state, action) {
       let lightning = state.lightning;
       let heat = state.heat;
       let deck = state.deck;
+      // Eis-Zustand (wird beim Deaktivieren des Eis-Archetyps zurückgesetzt, #140).
+      let iceTemp = state.iceTemp, frostSwapsUsed = state.frostSwapsUsed;
+      let frostbitePending = state.frostbitePending, frostbiteActive = state.frostbiteActive;
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15 (#93 F2)
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
       // Eis (#93 F3): dieser Pick friert so viele NEUE eigene Karten ein, dass das Ziel (frozenTargetFor) erreicht ist.
@@ -319,9 +328,20 @@ export function reducer(state, action) {
         if (toFreeze > 0) deck = freezeCards(deck, toFreeze, action.rng);
       }
       if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
+      // #140: Verliert man durch Ersetzen den LETZTEN Skill eines Archetyps (0 Skills übrig), wird er deaktiviert
+      // und seine Ressourcen/Marker verschwinden — sonst bleiben „Geister"-Leisten/eingefrorene Karten ohne Skill.
+      const stillActive = new Set(skills.map(archetypeOf).filter(Boolean));
+      activeArchetypes = activeArchetypes.filter((a) => stillActive.has(a));
+      if (!stillActive.has("lightning")) lightning = initLightning();               // Ladungsleiste weg
+      if (!stillActive.has("fire"))      heat = null;                                // Hitzeleiste weg
+      if (!stillActive.has("ice")) {                                                 // eigene Frostkarten auftauen + Gegner-Frostbiss löschen
+        deck = unfreezeAll(deck);
+        iceTemp = {}; frostSwapsUsed = [];
+        frostbitePending = []; frostbiteActive = [];
+      }
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.shop?.permanentEffects || {});
-      return { ...state, skills, activeArchetypes, lightning, heat, deck, formations, phase: "play", skillOffer: null };
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, formations, phase: "play", skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
@@ -332,6 +352,14 @@ export function reducer(state, action) {
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off, freePerkReroll: fate, freeSkillReroll: false } // → Perk-Auswahl
         : { ...state, skillOffer: null, freeSkillReroll: false, phase: "play" };                   // Perk-Pool leer → weiterspielen
+    }
+
+    // Perk-Angebot komplett ablehnen (#138): +PERK_DECLINE_COINS Münze, Angebot verworfen, weiter im Spiel — so ist
+    // eine Perk-Runde nie „verschwendet". Feste Münze (der Einkommen-Stat wirkt nur pro Shop-Besuch, hier nicht).
+    case "DECLINE_PERK": {
+      if (state.phase !== "levelup" || !state.offer) return state;
+      const shop = { ...(state.shop || {}), coins: ((state.shop && state.shop.coins) || 0) + C.PERK_DECLINE_COINS };
+      return { ...state, offer: null, shop, freePerkReroll: false, phase: "play" };
     }
 
     // Perk-Angebot neu würfeln (Shop-Spec §10 P1/P-L1): gratis Reroll (Schicksalskontrolle) zuerst, sonst

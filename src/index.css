@@ -7,6 +7,23 @@ button { font-family: inherit; }
 ::-webkit-scrollbar { height:8px; width:8px; }
 ::-webkit-scrollbar-thumb { background:#2a2a33; border-radius:4px; }
 
+/* Overlay-Panels auf iOS (#141): Auswahl-/Modal-Panels müssen im REAL sichtbaren Bereich
+   bleiben. Auf iOS Safari bezieht `vh`/`inset-0` die dynamische Adressleiste nicht ein →
+   der untere Rand (Bestätigen-Button) rutscht hinter die Browser-Toolbar/den Home-Indicator.
+   Unlayered (nach @import tailwindcss) → gewinnt gegen Tailwinds inset-0/p-4 (wie der Grundstil oben).
+   - `overlay-root` (äußerer fixed-Container): Höhe folgt der dynamischen Viewport-Höhe (dvh)
+     statt der Layout-Höhe, und die untere Safe-Area wird eingerechnet (mind. die Normal-Polsterung).
+   - `overlay-card` (innere scrollbare Karte): iOS-Momentum-Scroll + kein Scroll-Ketten aufs Body. */
+.overlay-root {
+  height: 100dvh;
+  bottom: auto;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.overlay-card {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
 /* Karten-Kachel (#101): mobil hochkant (3/4), auf Desktop kompakt-quadratisch → weniger Scrollen.
    Desktop-Override mit doppelter Klassen-Spezifität, damit er unabhängig von der Regel-Reihenfolge gewinnt. */
 .as-tile { aspect-ratio: 3 / 4; }
@@ -28,10 +45,76 @@ button { font-family: inherit; }
 @keyframes as-krit { 0% { opacity:0; transform: translateX(-50%) scale(.4); } 25% { opacity:1; transform: translateX(-50%) scale(1.15); } 60% { opacity:1; transform: translateX(-50%) scale(1); } 100% { opacity:0; transform: translateX(-50%) scale(1); } }
 /* Kombo-Float (#31): eskalierende Siegesserie poppt + steigt (Serie ≥5 → ×1,5). */
 @keyframes as-combo { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-10px) scale(1); } 100% { opacity:0; transform: translateY(-30px) scale(1); } }
+/* Wie as-combo, aber HÄLT am Ende bei voller Opacity (forwards) — für den Formations-Multi-Float, damit er
+   sichtbar bleibt, solange der Stich angezeigt wird (wie Banner/Aufschlüsselung), statt zu früh wegzufaden. */
+@keyframes as-combo-hold { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-6px) scale(1); } 100% { opacity:1; transform: translateY(-8px) scale(1); } }
+/* Ausklang des Formations-Floats: nachdem er ~1,5 s länger stehen geblieben ist, sanft von Opacity 1 → 0 (leichtes Weitersteigen). */
+@keyframes as-combo-out { from { opacity:1; transform: translateY(-8px) scale(1); } to { opacity:0; transform: translateY(-18px) scale(1); } }
 /* Niederlagenkosten-Stufenwechsel (#32): kurzer Hinweis, einblenden → halten → ausblenden. */
 @keyframes as-notice { 0% { opacity:0; transform: translate(-50%, 6px); } 12% { opacity:1; transform: translate(-50%, 0); } 82% { opacity:1; transform: translate(-50%, 0); } 100% { opacity:0; transform: translate(-50%, -12px); } }
 /* Score-Multiplikator-Chip (#37): dezenter Scale-Puls bei Anstieg. */
 @keyframes as-multpulse { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+/* #106: kontinuierliches Idle-Zittern des Mult-Chips ab Blau-Tier, staerker (Amplitude + Frequenz) je hoeher.
+   Auf einem WRAPPER, damit der Puls (as-multpulse) am inneren Span unberuehrt bleibt. reduced-motion wird
+   global neutralisiert (animation-duration 0.001ms) -> dann kein Zittern. */
+@keyframes as-multshake { 0%, 100% { transform: translateX(0) rotate(0deg); } 25% { transform: translateX(calc(var(--amp) * -1)) rotate(calc(var(--rot) * -1)); } 75% { transform: translateX(var(--amp)) rotate(var(--rot)); } }
+.as-shake-1 { display: inline-block; --amp: 0.6px; --rot: 0.4deg; animation: as-multshake 640ms ease-in-out infinite; }
+.as-shake-2 { display: inline-block; --amp: 1.0px; --rot: 0.7deg; animation: as-multshake 460ms ease-in-out infinite; }
+.as-shake-3 { display: inline-block; --amp: 1.5px; --rot: 1.1deg; animation: as-multshake 320ms ease-in-out infinite; }
+
+/* Musiktitel-Marquee (#111-Nachzug): passt der Track-Titel nicht in den Rahmen, läuft er
+   durch — Pause am Anfang → zum Ende scrollen → Pause → zurück (gut lesbar). --marquee-dist
+   = negativer Überlauf in px, inline gesetzt (MusicBar.jsx). Passt der Titel, ist er statisch. */
+@keyframes as-marquee {
+  0%, 15%  { transform: translateX(0); }
+  50%, 65% { transform: translateX(var(--marquee-dist, 0)); }
+  100%     { transform: translateX(0); }
+}
+
+/* #135 Stich-Ergebnis-Puls: eine vom Kartenrand nach außen wachsende, ausfadende Welle (Sieg grün /
+   Niederlage rot / Crit lila). Sitzt auf einem SEPARATEN Element HINTER der Karte → die statischen
+   Karten-Glows (Ion-Ring, Frost, Wert-Glow) bleiben unberührt. --pulse-color/--pulse-scale/--pulse-dur
+   werden je Ausgang inline gesetzt (Battlefield.jsx). reduced-motion greift global (unten). */
+@keyframes as-result-pulse {
+  0%   { opacity: .7;  transform: scale(1); }
+  65%  { opacity: .26; }
+  100% { opacity: 0;   transform: scale(var(--pulse-scale, 1.45)); }
+}
+/* Weicher, randloser Glow-Ring (kein solider border → keine harte Kante). Zwei überlagerte, blur-lastige
+   Schatten ohne nennenswerten spread → weicher Innen- UND Außenrand; wächst nach außen und fadet aus. */
+.as-result-pulse {
+  border-radius: 0.85rem;
+  box-shadow: 0 0 16px 0 var(--pulse-color, #5ab87a),
+              0 0 40px 6px var(--pulse-color, #5ab87a);
+  animation: as-result-pulse var(--pulse-dur, 600ms) cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* #136 Eis-Schimmer: wandernder Glanzstreif („Sweep-Shine") über eingefrorenen Karten. Nur auf der aktiven
+   Battlefield-Karte (Board bleibt ruhig = Frostglas ohne Sweep). screen-Blend. reduced-motion global unten. */
+@keyframes as-frost-sweep { 0% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
+.as-frost-sweep {
+  background: linear-gradient(105deg, transparent 38%, rgba(224,247,255,0.55) 50%, transparent 62%);
+  background-size: 260% 100%;
+  animation: as-frost-sweep 3.4s ease-in-out infinite;
+  will-change: background-position;
+}
+/* Raureif-Körnung: feine eisfarbene Turbulenz, sehr dezent (screen-geblendet in FrostOverlay). */
+.as-frost-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  background-size: 90px 90px;
+}
+
+/* Archetyp-Ambiente am Battlefield (#142 Feuer / #143 Blitz / #144 Eis): sanfte Pulse an der jeweiligen
+   Ober-/Untergrenze (nahe voller Hitze / voller Ladung / 5 Eis-Karten). Die Keyframes RUHEN bei 0%/100%
+   auf dem hellen Basiszustand → unter reduced-motion (global unten auf ~0ms gesetzt) bleibt der Glow
+   einfach statisch hell (kein Puls), genau wie in den Issues gewünscht. */
+@keyframes as-heat-pulse   { 0%, 100% { opacity: 1; } 50% { opacity: .82; } }
+@keyframes as-charge-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6;  } }
+@keyframes as-frost-pulse  { 0%, 100% { opacity: 1; } 50% { opacity: .78; } }
+.as-heat-pulse   { animation: as-heat-pulse   2.4s ease-in-out infinite; }
+.as-charge-pulse { animation: as-charge-pulse 1.1s ease-in-out infinite; }
+.as-frost-pulse  { animation: as-frost-pulse  2.8s ease-in-out infinite; }
 
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {

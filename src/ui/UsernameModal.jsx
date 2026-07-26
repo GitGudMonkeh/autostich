@@ -13,7 +13,7 @@ export function UsernameModal({ initial = "", firstTime = false, onSave, onClose
   useEscape(onClose); // #58: Escape schließt (Backdrop existiert bereits)
 
   return (
-    <div onClick={onClose} className="fixed inset-0 z-40 flex items-center justify-center p-4"
+    <div onClick={onClose} className="fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs rounded-2xl p-6"
         style={{ background: "#181820", border: "1px solid #33333e" }}>

@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
-import { TRICKS_PER_CYCLE } from "../game/constants.js";
+import { TRICKS_PER_CYCLE, suitColor } from "../game/constants.js";
+import { linkedPartnerOf } from "../game/shop.js";
+import { formationBorder } from "./formationStyle.js";
+import { audio } from "./audio.js";
 import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 
 const BANNER = {
@@ -18,7 +21,23 @@ const FLOAT_ZONES = {
   crit:      { left: "50%", top: "2%"  },  // Crit-Text (oben mittig)
   formation: { right: "6%", top: "62%" },  // Formations-Multiplikator (unten rechts)
 };
+// #105: gestufter Groß-Score-Float — Arcade-Leiter (GREAT→BRUTAL→INSANE→GODLIKE) auf den gewonnenen
+// Einzelstich-Score. Höchste erfüllte Stufe gewinnt; oberste bewusst hoch (500k) → „GOTTGLEICH" bleibt selten.
+const BIG_SCORE_TIERS = [
+  { min: 500000, text: "GOTTGLEICH" },
+  { min: 150000, text: "IRRE" },
+  { min: 50000,  text: "BRUTAL" },
+  { min: 10000,  text: "STARK" },
+];
+const bigScoreLabel = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s.text; return null; };
 const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflow-hidden, nichts läuft raus
+const FORM_LINGER_MS = 1500; // Formations-Float bleibt ~1,5 s länger stehen (über den nächsten Stich hinaus) und klingt dann aus
+// #110: Karten-Aufdeck-Sound — DEZENTE Turbo-Kopplung der Abspielrate (leicht justierbar). Rate>1 = kürzer/schneller.
+const CARDFLIP_RATE_REF = 700;  // ms-Referenz: unter diesem Stich-Takt wird der Sound schneller (bei ~1× bleibt Rate 1)
+const CARDFLIP_RATE_CAP = 1.6;  // Deckel bewusst niedrig → bei MAX-Turbo bleibt ein leichtes Überlappen („MG"), wie gewünscht
+// Ergebnisabhängige Flip-Lautstärke (tunable): Sieg laut & erkennbar, Niederlage deutlich leiser → klarer
+// hörbarer Kontrast Sieg↔Niederlage. Effektiv = Gain × SFX-Lautstärke (Default 0,4 → Sieg 0,6 · Niederlage 0,08).
+const CARDFLIP_GAIN = { win: 1.5, win_tie: 1.5, tie: 0.6, loss: 0.2 };
 // Deterministischer Jitter aus einem Integer-Seed (kein Math.random im Render, #68) → [-amp, +amp].
 const fjitter = (seed, amp) => { const s = Math.sin(seed * 127.1 + 311.7) * 43758.5; return +(((s - Math.floor(s)) * 2 - 1) * amp).toFixed(1); };
 
@@ -57,9 +76,11 @@ function Side({ label, remaining, dealFrom, children }) {
   );
 }
 
-export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000 }) {
+export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, frozen = 0 }) {
   const reduced = usePrefersReducedMotion();
   const t = lastTrick;
+  // F4 Farballianz (#125): Partnerfarbe einer Kartenfarbe → diagonaler Split auf der Karte (rein kosmetisch).
+  const allyColorFor = (suit) => { const a = linkedPartnerOf(pe, suit); return a ? suitColor(a) : null; };
   const win = t && (t.result === "win" || t.result === "win_tie");
   const lost = t && t.result === "loss";
   const isCrit = !!(t && t.isCrit);
@@ -71,6 +92,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   // Effektdauern an den Flip-Takt koppeln; unter reduzierter Bewegung Animationen weglassen
   // (Element bleibt statisch sichtbar statt zu Ende-Opacity 0 zu springen).
   const anim = clamp(flipMs * 0.5, 120, 450);
+  // #135: Ergebnis-Puls-Dauer an den Flip-Takt gekoppelt (wie die übrigen „Juice"-Animationen).
+  const pulseDur = clamp(flipMs * 0.7, 300, 700);
   const fx = (a) => (reduced ? undefined : a);
   // #95: einheitliche Float-Dauer für Score- UND Formations-Float (letzterer war zuvor kürzer).
   const floatDur = clamp(flipMs * 0.7, 360, 760) + 1300;
@@ -80,18 +103,27 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   // Karten „dealen" nur noch rein — der zusätzliche Pop-Bounce der Gewinnerkarte ist
   // raus (Wunsch: ruhiger). Der Score-/Schaden-Float über der Karte bleibt erhalten.
   const dealStyle = (dealName) => ({ animation: `${dealName} ${anim}ms ease-out` });
+  // #135: nach außen wegpulsende Ergebnis-Welle HINTER der Karte (Sieg grün / Niederlage rot / Crit lila &
+  // kräftiger). Separates Element → die statischen Karten-Glows (Ion/Frost/Wert) bleiben unberührt. Kein Puls
+  // bei reduzierter Bewegung. Liegt als erstes (absolutes) Kind hinter der Karte, die (position:relative) darüber malt.
+  const resultPulse = (color, crit) => (!reduced && color) ? (
+    <div className="as-result-pulse absolute inset-0" aria-hidden="true"
+      style={{ "--pulse-color": color, "--pulse-dur": `${pulseDur}ms`, ...(crit ? { "--pulse-scale": 1.55 } : null) }} />
+  ) : null;
 
   const playerCard = t ? (
     <div key={`p${t.trickNo}`} className="relative" style={dealStyle("as-deal-left")}>
+      {resultPulse(win ? (isCrit ? critColor : "#5ab87a") : null, isCrit)}
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
             stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-            ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} />
+            ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} frostAnimated allyColor={allyColorFor(t.pCard.suit)} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 
   const oppCard = t ? (
     <div key={`o${t.trickNo}`} className="relative" style={dealStyle("as-deal-right")}>
-      <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null} frostbitten={t.oFrostbitten} />
+      {resultPulse(lost ? "#e0605a" : null, false)}
+      <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null} frostbitten={t.oFrostbitten} allyColor={allyColorFor(t.oCard.suit)} />
     </div>
   ) : <div className="relative"><CardBack label="" /></div>;
 
@@ -105,6 +137,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const formLabel = activeForms.length === 1 ? FORM_NAME[activeForms[0].type] : "FORMATION";
   const formationStr = formMult.toFixed(2).replace(".", ",");
   const formPeak = formMult >= 12 ? 2 : formMult >= 6 ? 1 : 0; // 0 normal · 1 verstärkt · 2 Peak
+  // #128: Float-Farbe = Rahmenfarbe der Übersicht — Tier nach Formations-Anzahl (formationBorder, kein Drift).
+  const formColor = formationBorder({ mult: formMult, formations: (t && t.formations) || [] }).color || "#5ab87a";
+  // #105: großes „Wow"-Wort mittig ab hohem Einzelstich-Score (nur bei Sieg). Höchste erfüllte Stufe.
+  const bigScore = win && t && t.gained > 0 ? bigScoreLabel(t.gained) : null;
 
   // Ergebnis-Aufschlüsselung (§17): kompakte Faktorenkette (Basis → Flats → Serie → Perks → Formation → Crit)
   // aus der Engine-breakdown — exakt die Faktoren der Score-Formel (kein Drift). Nur bei nennenswerten Treffern.
@@ -135,6 +171,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     if (!t) { seenTrick.current = -1; setFloats([]); return; }      // Menü/neuer Lauf → Pool leeren
     if (t.trickNo === seenTrick.current) return;
     seenTrick.current = t.trickNo;
+    // #110: Karten-Aufdeck-Sound je Stich — startet zeitgleich mit der Flip-Animation (Ergebnis steht bei RESOLVE_TRICK
+    // bereits fest → kein Nachhinken). Rate steigt dezent mit dem Turbo (kürzerer flipMs → höhere Rate, gedeckelt).
+    audio.play("cardflip", { rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)), gain: CARDFLIP_GAIN[t.result] ?? 1 });
     const w = t.result === "win" || t.result === "win_tie";
     const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
     const critC = t.isCrit ? CRIT_COLOR : "#d4a63a";
@@ -150,9 +189,96 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     floatTimers.current.push(tm);
   }, [t?.trickNo]);
 
+  // Formations-Float: soll ~1,5 s LÄNGER stehen bleiben als sein Stich, dann sanft ausklingen. Deshalb vom aktuellen
+  // Stich entkoppelt in eigenem State. Ein Formations-Sieg setzt ihn (Phase „aktiv" = hält bei Opacity 1); sobald ein
+  // Folgestich ihn nicht mehr zeigt, klingt er über FORM_LINGER_MS aus und wird entfernt. In Pause (kein Folgestich)
+  // bleibt er stehen. `key` = Stich-Nr. → derselbe Float bleibt beim Ausklang erhalten (kein Remount/Neustart).
+  const [formFloat, setFormFloat] = useState(null);
+  const formOutTimer = useRef(null);
+  useEffect(() => () => clearTimeout(formOutTimer.current), []);
+  useEffect(() => {
+    if (!t) { setFormFloat(null); return; }
+    if (showFormation) setFormFloat({ key: t.trickNo, label: formLabel, mult: formationStr, color: formColor, peak: formPeak });
+  }, [t?.trickNo, showFormation, formLabel, formationStr, formColor, formPeak]);
+  // „Verlässt gerade": der Float gehört zu einem früheren Stich als dem aktuell gezeigten Formations-Sieg.
+  const formLeaving = !!formFloat && formFloat.key !== (t ? t.trickNo : null);
+  useEffect(() => {
+    clearTimeout(formOutTimer.current);
+    if (formLeaving) formOutTimer.current = setTimeout(() => setFormFloat(null), FORM_LINGER_MS); // nach dem Ausklang entfernen
+  }, [formLeaving, formFloat?.key]);
+
+  // --- Archetyp-Ambiente hinter den Karten (#142 Feuer / #143 Blitz / #144 Eis), rein kosmetisch ---
+  // Werte kommen aus dem State; ohne aktiven Archetyp bleibt alles unsichtbar (0 → kein Effekt).
+  const heatRatio  = heat?.active ? clamp((heat.value || 0) / (heat.max || 100), 0, 1) : 0;
+  const charge     = lightning?.active ? (lightning.charge || 0) : 0;
+  const maxCharge  = lightning?.maxCharge || 10;
+  const chargeR    = clamp(charge / maxCharge, 0, 1);
+  const lightOn    = !!lightning?.active && charge >= 2;   // Blitz-Rahmen erst ab Ladung 2 (#143)
+  const chargeFull = lightOn && charge >= maxCharge;
+  const frostN     = clamp(Math.round(frozen || 0), 0, 5);
+  const frostOn    = frostN >= 2;                          // Eis-Rahmen ab 2 Karten, Maximum bei 5 (#144)
+  const frostF     = frostOn ? (frostN - 1) / 4 : 0;       // Stufen-Meter: 2→0,25 · 3→0,5 · 4→0,75 · 5→1,0
+  // Panel-Rand: bei aktivem Blitz elektrisch blau (voll: violett), sonst Standard.
+  const panelBorder = chargeFull ? "1px solid rgba(138,125,224,0.75)"
+    : lightOn ? `1px solid rgba(94,200,240,${(0.35 + 0.5 * chargeR).toFixed(2)})`
+    : "1px solid #26262e";
+  // Äußerer Bloom als panel-eigenes box-shadow (NICHT vom overflow-hidden geklippt): Feuer bei hoher Hitze,
+  // Blitz ab Ladung 2 (+ violetter Bloom bei voll). Leer → CRT-Skin-Glow bleibt unangetastet.
+  const outerParts = [];
+  if (heatRatio >= 0.55) outerParts.push(`0 0 ${Math.round(18 * heatRatio)}px ${Math.round(4 * heatRatio)}px rgba(224,113,74,${(0.22 * heatRatio).toFixed(2)})`);
+  if (lightOn)           outerParts.push(`0 0 ${Math.round(12 + 24 * chargeR)}px ${Math.round(chargeR * 4)}px rgba(94,200,240,${(0.14 + 0.34 * chargeR).toFixed(2)})`);
+  if (chargeFull)        outerParts.push("0 0 44px 8px rgba(138,125,224,0.32)");
+  const outerGlow = outerParts.length ? outerParts.join(", ") : undefined;
+
   return (
-    <div className="rounded-xl p-6 overflow-hidden as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-      <div className="relative flex items-center justify-center gap-4 sm:gap-8">
+    <div className="rounded-xl p-6 overflow-hidden as-panel relative" style={{ background: "#17171c", border: panelBorder, boxShadow: outerGlow }}>
+      {/* Feuer-Glut (#142): warmer Radial-Verlauf von unten + innerer Glow, Deckkraft = Hitze-Verhältnis.
+          Puls ab ~90 %. Liegt zuunterst (z-0), hinter Eis und Karten. */}
+      {heatRatio > 0.001 && (
+        <div aria-hidden="true"
+          className={`absolute inset-0 rounded-xl pointer-events-none${heatRatio >= 0.9 && !reduced ? " as-heat-pulse" : ""}`}
+          style={{ zIndex: 0, opacity: heatRatio,
+                   background: "radial-gradient(135% 95% at 50% 122%, #f0a83a55 0%, #e0714a44 34%, transparent 68%)",
+                   boxShadow: "inset 0 -28px 66px -10px #e0714a99, inset 0 0 54px #e0714a2e" }} />
+      )}
+      {/* Eis-Frost (#144): weicher Frost-Rand (Inset-Glow als Stufen-Meter) + super-soft geblurrte Ecken.
+          Über der Feuer-Glut (z-1), unter den Karten. Schimmer bei 5. */}
+      {frostOn && (
+        <div aria-hidden="true"
+          className={`absolute inset-0 rounded-xl pointer-events-none${frostN >= 5 && !reduced ? " as-frost-pulse" : ""}`}
+          style={{ zIndex: 1, boxShadow: `inset 0 0 ${Math.round(6 + 26 * frostF)}px ${Math.round(1 + 7 * frostF)}px rgba(191,233,247,${(0.2 + 0.55 * frostF).toFixed(2)})` }}>
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 120" preserveAspectRatio="none"
+            style={{ opacity: 0.35 + 0.55 * frostF }}>
+            <defs><filter id="as-frostblur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5.5" /></filter></defs>
+            <g fill="#dff3fb" filter="url(#as-frostblur)">
+              <polygon points="0,0 48,0 30,11 41,21 22,27 11,41 0,31" />
+              <polygon points="200,0 152,0 171,10 159,21 181,26 191,41 200,32" />
+              <polygon points="0,120 45,120 28,109 43,99 21,94 9,81 0,90" />
+              <polygon points="200,120 155,120 173,110 157,99 183,95 192,82 200,91" />
+            </g>
+          </svg>
+        </div>
+      )}
+      {/* Blitz-Rahmen (#143): innerer blauer Glow, Intensität = Ladung (ab 2). Voll → violetter Akzent + Puls. */}
+      {lightOn && (
+        <div aria-hidden="true"
+          className={`absolute inset-0 rounded-xl pointer-events-none${chargeFull && !reduced ? " as-charge-pulse" : ""}`}
+          style={{ zIndex: 2, boxShadow: `inset 0 0 ${Math.round(8 + 22 * chargeR)}px ${Math.round(1 + 5 * chargeR)}px rgba(94,200,240,${(0.16 + 0.5 * chargeR).toFixed(2)})${chargeFull ? ", inset 0 0 40px 6px rgba(138,125,224,0.42)" : ""}` }} />
+      )}
+      {/* Ein Blitz ⚡ oben mittig am Rahmen (#143), Glow steigt mit der Ladung; voll → Puls + „VOLL GELADEN". */}
+      {lightOn && (
+        <div aria-hidden="true"
+          className={`absolute pointer-events-none${chargeFull && !reduced ? " as-charge-pulse" : ""}`}
+          style={{ left: "50%", top: 3, transform: "translateX(-50%)", zIndex: 3, fontSize: 20, lineHeight: 1,
+                   opacity: 0.5 + 0.5 * chargeR,
+                   filter: `drop-shadow(0 0 ${Math.round(4 + 8 * chargeR)}px #5ec8f0)${chargeFull ? " drop-shadow(0 0 10px #8a7de0)" : ""}` }}>
+          ⚡
+          {chargeFull && (
+            <div className="font-pixel-dense" style={{ position: "absolute", top: 21, left: "50%", transform: "translateX(-50%)", fontSize: 8, letterSpacing: 1, whiteSpace: "nowrap", color: "#bfe9f7" }}>VOLL GELADEN</div>
+          )}
+        </div>
+      )}
+      <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
@@ -189,21 +315,34 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
             </div>
           );
         })}
-        {/* Benanntes Formations-Feedback (§17): unten rechts, eigene Bahn; Peak-Styling ab ×6/×12. */}
-        {showFormation && (
-          <div key={`form${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
-            style={{ right: `calc(${FLOAT_ZONES.formation.right} + ${fjitter(t.trickNo * 4 + 5, JITTER_X)}px)`,
-                     top:  `calc(${FLOAT_ZONES.formation.top} + ${fjitter(t.trickNo * 4 + 11, JITTER_Y)}px)`,
-                     fontSize: formPeak === 2 ? 26 : formPeak === 1 ? 21 : 17,
-                     color: formPeak ? "#d4a63a" : "#5ab87a",
-                     textShadow: formPeak === 2 ? "0 0 16px #d4a63a" : formPeak === 1 ? "0 0 12px #d4a63aaa" : "0 0 10px #5ab87a88",
-                     animation: fx(`as-combo ${floatDur + 2000}ms ease-out forwards`) }}>
-            {formPeak === 2 && "★ "}{formLabel} ×{formationStr}
+        {/* Benanntes Formations-Feedback (§17): unten rechts, eigene Bahn; Peak-Styling ab ×6/×12.
+            Aus formFloat (stich-entkoppelt): aktiv → as-combo-hold (hält); beim Verlassen → as-combo-out
+            (klingt über FORM_LINGER_MS aus) → bleibt so ~1,5 s länger stehen als sein Stich. */}
+        {formFloat && (
+          <div key={`form${formFloat.key}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
+            style={{ right: `calc(${FLOAT_ZONES.formation.right} + ${fjitter(formFloat.key * 4 + 5, JITTER_X)}px)`,
+                     top:  `calc(${FLOAT_ZONES.formation.top} + ${fjitter(formFloat.key * 4 + 11, JITTER_Y)}px)`,
+                     fontSize: formFloat.peak === 2 ? 26 : formFloat.peak === 1 ? 21 : 17,
+                     color: formFloat.color,
+                     textShadow: `0 0 ${formFloat.peak === 2 ? 16 : formFloat.peak === 1 ? 12 : 10}px ${formFloat.color}${formFloat.peak ? "cc" : "88"}`,
+                     animation: fx(formLeaving
+                       ? `as-combo-out ${FORM_LINGER_MS}ms ease-out forwards`
+                       : `as-combo-hold ${floatDur}ms ease-out forwards`) }}>
+            {formFloat.peak === 2 && "★ "}{formFloat.label} ×{formFloat.mult}
+          </div>
+        )}
+        {/* Gestufter Groß-Score-Float (#105): großes Wort mittig, Legendär-Gold, etwas kürzer als die Floats. */}
+        {bigScore && (
+          <div key={`big${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
+            style={{ left: "50%", top: "28%", fontSize: 42, color: "#d4a63a", textShadow: "0 0 18px #d4a63aaa",
+                     transform: reduced ? "translateX(-50%)" : undefined,
+                     animation: fx(`as-krit ${Math.max(700, floatDur - 600)}ms ease-out forwards`) }}>
+            {bigScore}
           </div>
         )}
       </div>
 
-      <div className="h-8 mt-4 flex items-center justify-center">
+      <div className="relative z-10 h-8 mt-4 flex items-center justify-center">
         {banner ? (
           <span className="text-lg font-bold tracking-wide font-pixel as-banner" style={{ color: banner.color }}>{banner.text}</span>
         ) : (
@@ -212,7 +351,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
       </div>
 
       {/* Treffer-Aufschlüsselung (§17): Faktorenkette des letzten nennenswerten Siegs. Feste Höhe → kein Layout-Sprung. */}
-      <div className="h-6 mt-1 flex items-center justify-center gap-2 text-[13px] flex-wrap font-pixel-dense">
+      <div className="relative z-10 h-6 mt-1 flex items-center justify-center gap-2 text-[13px] flex-wrap font-pixel-dense">
         {showBreakdown && (
           <>
             {chain.map((s, i) => (

@@ -47,8 +47,8 @@ export function OptionsModal({ options, onChange, onClose }) {
   const crtOn = options.skin === "crt";
   useEscape(onClose); // #58: Escape schließt (Backdrop unten)
   return (
-    <div onClick={onClose} className="fixed inset-0 z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ background: "#181820", border: "1px solid #33333e" }}>
+    <div onClick={onClose} className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
         <div className="text-center mb-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Optionen</div>
           <h2 className="text-xl font-bold mt-1 font-pixel crt-title">Einstellungen</h2>
@@ -58,10 +58,29 @@ export function OptionsModal({ options, onChange, onClose }) {
           <Row title="Retro-Skin (CRT)" desc="Pixel-Schrift, Scanlines, Neon-Glow. Rein optisch — Layout & Spiel bleiben gleich.">
             <Toggle on={crtOn} onClick={() => onChange({ skin: crtOn ? "off" : "crt" })} />
           </Row>
+          {/* #110 Sound: Mute-Toggle + Lautstärke-Slider (persistiert über die Optionen). */}
+          <Row title="Ton stumm" desc="Schaltet alle Klick- und Spiel-Sounds ab.">
+            <Toggle on={!!options.muted} onClick={() => onChange({ muted: !options.muted })} />
+          </Row>
+          <Row title="Effekt-Lautstärke" desc="Lautstärke der Klick-/Spiel-Sounds (SFX).">
+            <input type="range" min="0" max="1" step="0.05" value={options.sfxVol ?? 0.4}
+              disabled={!!options.muted}
+              onChange={(e) => onChange({ sfxVol: Number(e.target.value) })}
+              aria-label="SFX-Lautstärke"
+              style={{ width: 120, accentColor: "#5ab87a", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
+          </Row>
+          {/* #111 Musik: eigener Lautstärke-Slider (Default 0,2). */}
+          <Row title="Musik-Lautstärke" desc="Lautstärke der Hintergrundmusik.">
+            <input type="range" min="0" max="1" step="0.05" value={options.musicVol ?? 0.2}
+              disabled={!!options.muted}
+              onChange={(e) => onChange({ musicVol: Number(e.target.value) })}
+              aria-label="Musik-Lautstärke"
+              style={{ width: 120, accentColor: "#8a7de0", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
+          </Row>
         </div>
 
         <div className="rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "#8a7de022", color: "#c9c0f0" }}>
-          Weitere Optionen (Sound, Tempo-Default …) folgen hier.
+          Weitere Optionen (Tempo-Default …) folgen hier.
         </div>
 
         <button onClick={onClose} className="w-full mt-5 py-2.5 rounded-lg font-bold transition-all" style={{ background: "#5ab87a", color: "#141419" }}>

@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../game/skills.js";
-import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL } from "../game/constants.js";
+import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
+         FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, BURN_BONUS, ICE_BASE_FREEZE, FROST_GRIP_BONUS } from "../game/constants.js";
+import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { PanelMascot } from "./PanelMascot.jsx";
+import skillMascot from "../assets/mascots/skill.gif";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "•", color: "#8a8a95" };
@@ -16,9 +20,11 @@ const KEYWORD_INFO = {
   charge: { label: "Ladung", icon: "⚡", color: "#8a7de0", text: "Crits erzeugen Ladung (max 10). Bei voller Ladung lösen Blitz-Skills Effekte aus oder verbrauchen sie." },
   ionize: { label: "Ionisierung", icon: "⚡", color: "#8a7de0", text: "Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +25 Score pro Stapel und erhält danach +1 Stapel (max 4)." },
   streak: { label: "Serie", icon: "⚡", color: "#8a7de0", text: "Geladene Serie schützt deine Siegesserie — die nächste Niederlage setzt sie nicht zurück." },
-  heat: { label: "Hitze", icon: "🔥", color: "#e0714a", text: "Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Flat-Score; klare Niederlagen kühlen sie ab." },
+  // #116: Feuer-Flat-Score-Grundmechanik quantifiziert (Zahlen aus constants.js → kein Text↔Code-Drift).
+  heat: { label: "Hitze", icon: "🔥", color: "#e0714a", text: `Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Flat-Score = (Vorsprung − 2) × ${FIRE_SCORE_BASE} (+${FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill; Verbrennung +${BURN_BONUS}/Punkt); klare Niederlagen kühlen sie ab.` },
   consume: { label: "Hitze-Konsument", icon: "🔥", color: "#e0714a", text: "Verbraucht angesammelte Hitze für einen starken Effekt. Höchstens ein Konsument gleichzeitig — ein zweiter ersetzt den bestehenden." },
-  freeze: { label: "Eingefroren", icon: "❄️", color: "#5ec8f0", text: "Eis friert eigene Karten dauerhaft ein (blau). Eingefrorene Karten biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden." },
+  // #122: Einfrier-Grundzahl genannt (aus constants.js) — sonst ist „wie viele Karten?" nirgends ersichtlich.
+  freeze: { label: "Eingefroren", icon: "❄️", color: "#5ec8f0", text: `Eis friert eigene Karten dauerhaft ein (blau): ${ICE_BASE_FREEZE} beim ersten Eis-Skill, +1 je weiterem (Frostgriff: +${FROST_GRIP_BONUS}). Eingefrorene Karten biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden.` },
 };
 
 /* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint jede 3. Runde STATT eines Perks.
@@ -69,14 +75,23 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   };
 
   return (
-    <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-3xl rounded-2xl p-6 max-h-[92vh] overflow-y-auto" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
+    <div className="fixed inset-0 overlay-root z-20 flex items-center sm:items-start justify-center p-4 sm:pt-28" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
+      {/* #130: nicht scrollender Wrapper → Magier-Maskottchen schaut oben hervor (etwas höher = kleiner overlap,
+          damit die Feuer-/Eis-/Blitz-Karten frei liegen). Panel oben angedockt (sm:items-start + sm:pt-28) +
+          sm:max-h, damit der Peek nie vom Viewport geklippt wird. */}
+      <div className="relative w-full max-w-3xl">
+        <PanelMascot src={skillMascot} accent={LIGHT} peekMaxH={124} overlap={16} />
+        <div className="relative z-10 w-full rounded-2xl p-6 max-h-[92dvh] sm:max-h-[calc(100dvh-8rem)] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Runde {(state.cycle || 0) + 1}</div>
-          <h2 className="text-xl font-bold mt-1">Wähle einen Skill</h2>
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <PanelMascot src={skillMascot} accent={LIGHT} variant="avatar" avatarObjectPosition="center top" />
+            <h2 className="text-xl font-bold">Wähle einen Skill</h2>
+          </div>
           <p className="text-xs opacity-55 mt-1">
             Skills sind seltene, regelverändernde Motoren — {skills.length}/{SKILL_SLOTS} Slots belegt.
           </p>
+          {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
 
         {/* Was ein Blitz-Skill freischaltet: Ladungs-System + Crit-Basis — nur wenn Blitz im Angebot ist (#93 F0). */}
@@ -271,6 +286,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

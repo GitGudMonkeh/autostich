@@ -20,15 +20,18 @@ import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
 import { CrystalBar } from "./ui/CrystalBar.jsx";
-import { frozenCount } from "./game/skills.js";
+import { frozenCount, archetypeOf } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
+import { audio } from "./ui/audio.js";
+import { music } from "./ui/music.js";
+import { MusicBar } from "./ui/MusicBar.jsx";
 import { UsernameModal } from "./ui/UsernameModal.jsx";
 import { CrtParticles } from "./ui/CrtParticles.jsx";
 import { DeckHistogram } from "./ui/BuildSummary.jsx";
-import { multTierColor } from "./ui/multTier.js";
+import { multTierColor, multTierLevel } from "./ui/multTier.js";
 
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
@@ -36,7 +39,7 @@ export function Autostich() {
   const [options, setOptions] = useState(() => loadOptions());   // Optionen (#41): u. a. CRT-Skin
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
-  const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung 1×/2×/4×/6× (#27, kein Score-Effekt)
+  const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/6× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
@@ -70,7 +73,7 @@ export function Autostich() {
   useEffect(() => { cycleStartWins.current = state.wins || 0; }, [state.cycle]);
   const cycleWins = Math.max(0, (state.wins || 0) - cycleStartWins.current);
   const dynamicSpeed = 1 + 0.02 * cycleWins;
-  // Effektive Flip-Zeit: Basis / (Turbo 1×/2×/4×/6× × dynamische Rundengeschwindigkeit).
+  // Effektive Flip-Zeit: Basis / (Turbo intern 1×/2×/4×/6× — Buttons X2/X4/MAX — × dynamische Rundengeschwindigkeit).
   const flipMs = BASE_FLIP_MS / (speedMult * dynamicSpeed);
 
   useEffect(() => {
@@ -86,6 +89,39 @@ export function Autostich() {
     if (options.skin === "crt") root.setAttribute("data-skin", "crt");
     else root.removeAttribute("data-skin");
   }, [options.skin]);
+  // Sound (#110): SFX-Manager initialisieren + DELEGIERTER Klick-Sound (ein Listener deckt alle <button>
+  // ab). data-sfx="none" schließt einzelne Buttons aus (z. B. Kauf-Abschluss → eigener Cashout-Sound).
+  // Jeder Klick ist zugleich die User-Geste, die den AudioContext entsperrt (Autoplay-Gate).
+  useEffect(() => {
+    audio.init();
+    const onClick = (e) => {
+      audio.unlock(); music.unlock(); // erste User-Geste entsperrt SFX UND Musik
+      const btn = e.target.closest && e.target.closest("button");
+      if (!btn || btn.dataset.sfx === "none") return;
+      audio.play("button");
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
+  // Optionen → Audio-Manager spiegeln (Mute/Lautstärke).
+  useEffect(() => { audio.setMuted(!!options.muted); audio.setVolume(options.sfxVol ?? 0.4); }, [options.muted, options.sfxVol]);
+  // Kauf-Sound (#110): am Wachstum des Kauf-Logs (#127) → exakt 1× je ABGESCHLOSSENEM Kauf (immediate & Ziel-Items),
+  // nie premature (Ziel-Flow öffnen) und nie bei no-op. Deshalb Cashout-Buttons via data-sfx="none" stummgeschaltet.
+  const prevBuys = useRef(0);
+  useEffect(() => {
+    const n = state.shop?.purchaseLog?.length || 0;
+    if (n > prevBuys.current) audio.play("buy");
+    prevBuys.current = n;
+  }, [state.shop?.purchaseLog?.length]);
+  // Musik (#111): Titel-Abo für die Anzeige + phasengesteuerte Wiedergabe. musicHome = Menü ODER Gameover
+  // → „Morning Deck"; sonst (im Run) ein zufälliger Track aus dem harmonisierten Pool. Lautstärke/Mute spiegeln.
+  const [musicTitle, setMusicTitle] = useState(null);
+  useEffect(() => music.subscribe(setMusicTitle), []);
+  const musicHome = state.phase === "menu" || state.phase === "gameover";
+  useEffect(() => { if (musicHome) music.menu(); else music.enterRun(); }, [musicHome]);
+  useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
+  // Pause-Knopf hält auch die Musik an — nur im laufenden Stichspiel; in Menü/Gameover spielt sie normal weiter.
+  useEffect(() => { music.setPaused(paused && state.phase === "play"); }, [paused, state.phase]);
   const changeOptions = (patch) => setOptions((o) => saveOptions({ ...o, ...patch }));
 
   // Timer-Segmente: bei Wechsel aktiv <-> inaktiv die verstrichene Zeit verbuchen.
@@ -130,9 +166,13 @@ export function Autostich() {
     // Globalen Lauf posten (#14) — additiv, fehlertolerant. myEntry hebt ihn im Board hervor;
     // pubToken lädt das Board nach dem Submit neu (damit der eigene Lauf drin ist).
     const name = (username || "").trim().slice(0, 20);
+    // Archetyp je gehaltenem Skill am Laufende (#139): ein Eintrag pro Skill (z. B. "fire,fire,ice"),
+    // damit das Board ein Icon PRO Skill zeigt (4 Feuer → 4× 🔥). Leer, wenn keine Skills gehalten wurden.
+    // Reihenfolge egal — decodeArchetypes gruppiert/zählt beim Rendern.
+    const archetypes = (state.skills || []).map(archetypeOf).filter(Boolean).join(",");
     // `level` bleibt im Payload (= Rundenzahl), damit die bestehende Supabase-Spalte befüllt ist
     // (falls NOT NULL) — kein Schema-Wechsel nötig. Angezeigt wird ohnehin `cycles`.
-    const gEntry = { name, score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle };
+    const gEntry = { name, score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, archetypes };
     setMyEntry(gEntry);
     if (leaderboardConfigured && name) {
       publishRun(gEntry).then(() => setPubToken((t) => t + 1)).catch(() => {});
@@ -178,6 +218,7 @@ export function Autostich() {
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
   const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
+  const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138: Perk-Angebot ablehnen → +Münze
   const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
   // Shop-Runde (Shop-Spec §2.6): kaufen (§5.4) bzw. verlassen/bestätigen → zugehöriger Durchlauf startet.
   const buyItem = (offerId) => dispatch({ type: "BUY_ITEM", offerId, rng: Math.random });
@@ -216,12 +257,87 @@ export function Autostich() {
   });
   const multHot = baseScoreMult > 1.001; // >1 → farbiges Tier; ×1,00 → gedämpft
   const multColor = multTierColor(baseScoreMult); // #100: grau/grün/blau/lila/gold nach Höhe
+  // #106: Idle-Zittern des Chips ab Blau-Tier (Level 2), stärker je höher. grau/grün → kein Zittern.
+  const multShakeLevel = Math.max(0, multTierLevel(baseScoreMult) - 1); // 0 | 1 leicht | 2 mittel | 3 stark
+  const multShakeClass = multShakeLevel > 0 ? `as-shake-${multShakeLevel}` : "";
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   // Dezenter Scale-Puls NUR bei Anstieg (v. a. D2-Kombo). Reduced-motion → global via CSS neutralisiert.
   useEffect(() => {
     if (baseScoreMult > prevMult.current + 1e-9) setMultPulse((n) => n + 1);
     prevMult.current = baseScoreMult;
   }, [baseScoreMult]);
+
+  // Die sechs Kopf-Stat-Zellen einmal definiert, damit sie ohne Logik-Duplikat an zwei Stellen gerendert
+  // werden können: Desktop im Header-Row (rechts neben der Wortmarke), Mobil als eigenes gerahmtes Panel
+  // NACH der Controls-Leiste (#UI). text-right ist auf Mobil (justify-items-center → inhaltsbreite Zellen) egal.
+  const statCells = (
+    <>
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Zeit{paused ? " ⏸" : ""}</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
+      </div>
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Score</div>
+        <div className="text-xl font-bold font-pixel-dense leading-none" style={{ color: "#d4a63a" }}>
+          {Math.floor(state.score).toLocaleString("de-DE")}
+        </div>
+        {/* #113: zweite Zeile IMMER reserviert (feste Höhe) → Geist-Delta/Rekord ändert die Zellenhöhe nie. */}
+        <div className="text-xs font-normal leading-tight h-4 mt-0.5 whitespace-nowrap">
+          {ghost.hasGhost && (ghost.passed ? (
+            <span style={{ color: "#8a7de0" }}>⚑ Rekord</span>
+          ) : ghost.delta != null ? (
+            <span style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>
+              {ghost.delta >= 0 ? "▲ +" : "▼ "}{ghost.delta.toLocaleString("de-DE")}
+            </span>
+          ) : null)}
+        </div>
+      </div>
+      {/* Score-Multiplikator-Chip (#37): immer sichtbar, ×1,00 gedämpft, ab >1 Gold; Puls bei Anstieg. */}
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Mult</div>
+        <div className="text-xl font-bold leading-none pt-0.5">
+          <span className={multShakeClass}>
+          <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base font-pixel-dense"
+            title={state.lightning?.armed
+              ? "Serie geschützt (Geladene Serie): Die nächste Niederlage setzt die Siegesserie nicht zurück."
+              : "Score-Multiplikator: Siegesserie (Basis, +2 %/Stufe bis +150 %) × Perk-Mult — Farbe steigt mit der Höhe (grau/grün/blau/lila/gold)"}
+            style={{ fontVariantNumeric: "tabular-nums",
+                     background: multHot ? `${multColor}22` : "#ffffff0f",
+                     color: multHot ? multColor : "#8a8a92",
+                     // Geladene Serie (Stufe C): blauer Rahmen zeigt den Serien-Schutz an.
+                     boxShadow: state.lightning?.armed ? "0 0 0 2px #5ec8f0, 0 0 9px #5ec8f077" : undefined,
+                     animation: multPulse > 0 ? "as-multpulse 420ms ease-out" : undefined }}>
+            ×{fmtMult(baseScoreMult)}
+          </span>
+          </span>
+        </div>
+      </div>
+      {/* Münzen (Shop-Spec §3) — Run-Ressource für den Shop */}
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Münzen</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>🪙 {state.shop?.coins ?? 0}</div>
+      </div>
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
+      </div>
+      {/* #133/#111: „Nächster Track" im Kopf (freie Zelle); die untere Musik-Leiste zeigt nur den Titel. */}
+      {state.phase !== "gameover" && (
+        <div className="text-right">
+          <div className="text-[10px] uppercase tracking-wide opacity-50">Musik</div>
+          {/* Nur-Icon-Button, in Box-Höhe/Rhythmus an den MULT-Chip angeglichen (pt-0.5 + text-base). */}
+          <div className="leading-none pt-0.5">
+            <button onClick={() => music.next()} aria-label="Nächster Track"
+              title={musicTitle ? `Läuft: ${musicTitle} — nächster Track` : "Nächster Track"}
+              className="inline-block rounded px-2 py-0.5 text-base leading-none transition-all hover:brightness-110"
+              style={{ background: "#20202a", border: "1px solid #3a3a46" }}>
+              ⏭
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <div className="min-h-screen w-full flex justify-center px-4 py-6">
@@ -246,6 +362,7 @@ export function Autostich() {
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+            muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} myEntry={myEntry} pubToken={pubToken} />
         ) : (<>
           <header className="flex items-end justify-between flex-wrap gap-2">
@@ -255,63 +372,29 @@ export function Autostich() {
               </h1>
               <p className="text-xs opacity-45">Roguelite-Autobattler-Stechspiel · Prototyp</p>
             </div>
-            <div className="flex items-end gap-5">
-              <div className="text-right">
-                <div className="text-[10px] uppercase tracking-wide opacity-50">Zeit{paused ? " ⏸" : ""}</div>
-                <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] uppercase tracking-wide opacity-50">Score</div>
-                <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>
-                  {Math.floor(state.score).toLocaleString("de-DE")}
-                  {ghost.hasGhost && (ghost.passed ? (
-                    <span className="text-xs font-normal ml-2" style={{ color: "#8a7de0" }}>⚑ Rekord</span>
-                  ) : ghost.delta != null ? (
-                    <span className="text-xs font-normal ml-2" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>
-                      {ghost.delta >= 0 ? "▲ +" : "▼ "}{ghost.delta.toLocaleString("de-DE")}
-                    </span>
-                  ) : null)}
-                </div>
-              </div>
-              {/* Score-Multiplikator-Chip (#37): immer sichtbar, ×1,00 gedämpft, ab >1 Gold; Puls bei Anstieg. */}
-              <div className="text-right">
-                <div className="text-[10px] uppercase tracking-wide opacity-50">Mult</div>
-                <div className="text-xl font-bold leading-none pt-0.5">
-                  <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base font-pixel-dense"
-                    title={state.lightning?.armed
-                      ? "Serie geschützt (Geladene Serie): Die nächste Niederlage setzt die Siegesserie nicht zurück."
-                      : "Score-Multiplikator: Siegesserie (Basis, +2 %/Stufe bis +150 %) × Perk-Mult — Farbe steigt mit der Höhe (grau/grün/blau/lila/gold)"}
-                    style={{ fontVariantNumeric: "tabular-nums",
-                             background: multHot ? `${multColor}22` : "#ffffff0f",
-                             color: multHot ? multColor : "#8a8a92",
-                             // Geladene Serie (Stufe C): blauer Rahmen zeigt den Serien-Schutz an.
-                             boxShadow: state.lightning?.armed ? "0 0 0 2px #5ec8f0, 0 0 9px #5ec8f077" : undefined,
-                             animation: multPulse > 0 ? "as-multpulse 420ms ease-out" : undefined }}>
-                    ×{fmtMult(baseScoreMult)}
-                  </span>
-                </div>
-              </div>
-              {/* Münzen (Shop-Spec §3) — Run-Ressource für den Shop */}
-              <div className="text-right">
-                <div className="text-[10px] uppercase tracking-wide opacity-50">Münzen</div>
-                <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>🪙 {state.shop?.coins ?? 0}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
-                <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
-              </div>
-            </div>
+            {/* Desktop: Kopf-Stats rechts neben der Wortmarke (eine Zeile). Auf Mobil stehen dieselben Zellen
+                als eigenes gerahmtes Panel NACH der Controls-Leiste (s. u.) → hier nur ab sm sichtbar. */}
+            <div className="hidden sm:flex sm:items-start sm:gap-5">{statCells}</div>
           </header>
 
           <Controls
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onRestart={startRun} onAbort={endRun} onOptions={() => setShowOptions(true)}
+            muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
+
+          {/* Mobil: dieselben Kopf-Stats als eigenes gerahmtes Panel an ZWEITER Stelle (direkt nach der
+              Controls-Leiste). Auf Desktop ausgeblendet (dort stehen sie im Header). */}
+          <div className="sm:hidden grid grid-cols-3 gap-x-3 gap-y-2 justify-items-center rounded-xl p-3 as-panel"
+            style={{ background: "#17171c", border: "1px solid #26262e" }}>
+            {statCells}
+          </div>
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
-              <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} flipMs={flipMs} />
+              <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} flipMs={flipMs} pe={state.shop?.permanentEffects || {}}
+                heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)} />
               <ChargeBar lightning={state.lightning} skills={state.skills} />
               <HeatBar heat={state.heat} skills={state.skills} />
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
@@ -331,6 +414,8 @@ export function Autostich() {
             </div>
             <DeckHistogram deck={state.deck} />
           </button>
+          {/* Musik-Panel (#111): aktueller Track + „nächster Track" — ganz unten im Run. */}
+          {state.phase !== "gameover" && <MusicBar title={musicTitle} />}
         </>)}
       </div>
 
@@ -354,7 +439,7 @@ export function Autostich() {
         <StatSelect offer={state.statOffer} onPick={pickStat} state={state} />
       )}
       {state.phase === "levelup" && state.offer && (
-        <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} perks={state.perks} deck={state.deck} state={state} />
+        <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} perks={state.perks} deck={state.deck} state={state} />
       )}
       {state.phase === "levelup" && state.skillOffer && (
         <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} />

@@ -3,7 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { computeFormations, formationPotential } from "../src/game/formations.js";
-import { FORMATION_START_MIN, FORMATION_START_MAX } from "../src/game/constants.js";
+import { FORMATION_START_MIN, FORMATION_START_MAX, PERK_DECLINE_COINS } from "../src/game/constants.js";
 
 const rng = makeRng(1);
 
@@ -165,11 +165,67 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
   });
 
   it("PICK_SKILL erlaubt einen dritten Archetyp (Prototyp: Cap 3 aufgehoben)", () => {
-    // Zwei Archetypen schon aktiv → ein Blitz-Skill ist der dritte und jetzt WÄHLBAR (kein Cap bei 2 mehr).
-    const twoActive = skillState({ activeArchetypes: ["fire", "ice"], skillOffer: [LR] });
+    // Zwei Archetypen schon aktiv (mit gehaltenen Skills) → ein Blitz-Skill ist der dritte und jetzt WÄHLBAR.
+    const twoActive = skillState({ skills: ["SK_FIRE_01", "SK_ICE_01"], activeArchetypes: ["fire", "ice"], skillOffer: [LR] });
     const s = reducer(twoActive, { type: "PICK_SKILL", skillId: LR, rng });
     expect(s.skills).toContain(LR);
     expect(s.activeArchetypes).toEqual(["fire", "ice", "lightning"]);
+  });
+
+  it("#140 letzter Feuer-Skill ersetzt → Hitzeleiste weg, Feuer deaktiviert (Blitz bleibt)", () => {
+    const st = skillState({
+      skills: ["SK_FIRE_01", "SK_LIGHTNING_01", "SK_LIGHTNING_03", "SK_LIGHTNING_04"],
+      skillOffer: ["SK_LIGHTNING_05"], activeArchetypes: ["fire", "lightning"],
+      heat: { active: true, value: 60, max: 100 }, lightning: { active: true, charge: 4, maxCharge: 10 },
+    });
+    const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_05", replaceId: "SK_FIRE_01", rng });
+    expect(s.skills).not.toContain("SK_FIRE_01");
+    expect(s.heat).toBeNull();
+    expect(s.activeArchetypes).toEqual(["lightning"]);
+    expect(s.lightning.active).toBe(true);
+  });
+
+  it("#140 letzter Eis-Skill ersetzt → eigene Karten auftauen, Gegner-Frostbiss + Frost-Marker weg", () => {
+    const base = initialState(makeRng(1));
+    const deck = base.deck.map((c, i) => (i < 3 ? { ...c, frozen: true } : c));
+    const st = { ...base, phase: "levelup",
+      skills: ["SK_ICE_01", "SK_LIGHTNING_01", "SK_LIGHTNING_03", "SK_LIGHTNING_04"],
+      skillOffer: ["SK_LIGHTNING_05"], activeArchetypes: ["ice", "lightning"],
+      lightning: { active: true, charge: 2, maxCharge: 10 },
+      deck, iceTemp: { x: 3 }, frostSwapsUsed: ["a"], frostbitePending: ["oX"], frostbiteActive: ["oY"] };
+    const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_05", replaceId: "SK_ICE_01", rng });
+    expect(s.skills).not.toContain("SK_ICE_01");
+    expect(s.deck.some((c) => c.frozen)).toBe(false);
+    expect(s.frostbitePending).toEqual([]);
+    expect(s.frostbiteActive).toEqual([]);
+    expect(s.iceTemp).toEqual({});
+    expect(s.frostSwapsUsed).toEqual([]);
+    expect(s.activeArchetypes).toEqual(["lightning"]);
+  });
+
+  it("#140 letzter Blitz-Skill ersetzt → Ladungsleiste zurückgesetzt/inaktiv", () => {
+    const st = skillState({
+      skills: ["SK_LIGHTNING_01", "SK_ICE_01", "SK_ICE_03", "SK_ICE_04"],
+      skillOffer: ["SK_ICE_05"], activeArchetypes: ["lightning", "ice"],
+      lightning: { active: true, charge: 8, maxCharge: 10 },
+    });
+    const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_ICE_05", replaceId: "SK_LIGHTNING_01", rng });
+    expect(s.skills).not.toContain("SK_LIGHTNING_01");
+    expect(s.lightning.active).toBe(false);
+    expect(s.lightning.charge).toBe(0);
+    expect(s.activeArchetypes).toEqual(["ice"]);
+  });
+
+  it("#140 gleicher Archetyp ersetzt (nicht der letzte) → Leiste bleibt erhalten", () => {
+    const st = skillState({
+      skills: ["SK_LIGHTNING_01", "SK_LIGHTNING_03", "SK_ICE_01", "SK_ICE_03"],
+      skillOffer: ["SK_LIGHTNING_04"], activeArchetypes: ["lightning", "ice"],
+      lightning: { active: true, charge: 6, maxCharge: 10 },
+    });
+    const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_04", replaceId: "SK_LIGHTNING_03", rng });
+    expect(s.lightning.active).toBe(true);
+    expect(s.lightning.charge).toBe(6);
+    expect(new Set(s.activeArchetypes)).toEqual(new Set(["lightning", "ice"]));
   });
 
   it("DECLINE_SKILL tauscht das Skill-Angebot gegen ein Perk-Angebot (Runde nicht verschwendet)", () => {
@@ -183,6 +239,31 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     const play = initialState(makeRng(1)); // phase play, kein skillOffer
     expect(reducer(play, { type: "PICK_SKILL", skillId: LR, rng })).toBe(play);
     expect(reducer(play, { type: "DECLINE_SKILL", rng })).toBe(play);
+  });
+});
+
+describe("DECLINE_PERK — Perk-Angebot ablehnen → +Münze (#138)", () => {
+  const perkLevelup = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["A1", "C1", "E2"], ...over });
+
+  it("schreibt PERK_DECLINE_COINS gut, verwirft das Angebot und kehrt in play zurück", () => {
+    const s0 = perkLevelup({ shop: { ...initialState(makeRng(1)).shop, coins: 3 } });
+    const s = reducer(s0, { type: "DECLINE_PERK" });
+    expect(s.phase).toBe("play");
+    expect(s.offer).toBeNull();
+    expect(s.shop.coins).toBe(3 + PERK_DECLINE_COINS);
+  });
+
+  it("ist außerhalb der Perk-Auswahl wirkungslos (falsche Phase oder kein Angebot)", () => {
+    const play = { ...initialState(makeRng(1)), phase: "play", offer: null };
+    expect(reducer(play, { type: "DECLINE_PERK" })).toBe(play);
+    const noOffer = { ...initialState(makeRng(1)), phase: "levelup", offer: null };
+    expect(reducer(noOffer, { type: "DECLINE_PERK" })).toBe(noOffer);
+  });
+
+  it("funktioniert auch ohne shop-State (coins startet bei 0)", () => {
+    const s = reducer(perkLevelup({ shop: undefined }), { type: "DECLINE_PERK" });
+    expect(s.shop.coins).toBe(PERK_DECLINE_COINS);
+    expect(s.phase).toBe("play");
   });
 });
 

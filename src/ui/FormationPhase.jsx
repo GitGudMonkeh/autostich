@@ -1,8 +1,13 @@
 import { useState, useRef } from "react";
 import { summarizeFormations, SEGMENT_SIZE } from "../game/formations.js";
+import { SKILL_DEFS } from "../game/skills.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
+import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { PanelMascot } from "./PanelMascot.jsx";
+import formationMascot from "../assets/mascots/formation.gif";
+import { audio } from "./audio.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
@@ -15,6 +20,12 @@ const strengthOf = (fs) => (fs || []).reduce((s, pf) => s + ((pf.mult || 1) - 1)
 export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const { playerOrder = [], deck = [], formations = [], formationEnergy = 0, formationSwaps = [] } = state;
   const [sel, setSel] = useState(null);
+  // Gehaltene Eis-Skills, die die Formationserkennung beeinflussen (Keyword „formation") → im Formationsfenster
+  // sichtbar machen. Reuse der bestehenden desc-Texte aus SKILL_DEFS (kein Desc↔Code-Drift).
+  const iceFormSkills = (state.skills || []).filter((id) => {
+    const d = SKILL_DEFS[id];
+    return d && d.archetype === "ice" && (d.keywords || []).includes("formation");
+  });
 
   const cards = playerOrder.map((di) => deck[di]);
   // Eis (#93 F3): eingefrorene Karten mit noch freiem Frosttausch machen einen Tausch KOSTENLOS (auch bei 0 Energie).
@@ -27,9 +38,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   };
 
   const clickPos = (pos) => {
-    if (sel === null) { setSel(pos); return; }
-    if (sel === pos) { setSel(null); return; }
-    if (formationEnergy > 0 || canFree(sel, pos)) onSwap(sel, pos);
+    if (sel === null) { setSel(pos); return; }  // erste Karte wählen — still (kein Menü-Klick, #132)
+    if (sel === pos) { setSel(null); return; }  // Abwählen — still
+    // #132: erfolgreicher Tausch klingt wie ein Kartendreh (cardflip), nicht wie ein Button-Klick.
+    if (formationEnergy > 0 || canFree(sel, pos)) { onSwap(sel, pos); audio.play("cardflip", { gain: 0.9 }); }
+    else audio.play("denied"); // #110: Tausch ohne Energie (und kein Frost-Freitausch) → verwehrt-Sound
     setSel(null);
   };
 
@@ -45,19 +58,36 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const deltaStr = `${delta >= 0 ? "+" : "−"}${fmt(Math.abs(delta))}`;
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
-      <div className="w-full max-w-4xl rounded-2xl p-5 max-h-[95vh] overflow-y-auto" style={{ background: "#15151b", border: "1px solid #33333e" }}>
+    <div className="fixed inset-0 overlay-root z-30 flex items-center sm:items-start justify-center p-3 sm:pt-28" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
+      {/* #130: nicht scrollender Wrapper → Alien-Admiral-Maskottchen schaut oben über die Karte hervor (Desktop-Peek);
+          Panel oben angedockt (sm:items-start + sm:pt-28) + sm:max-h, damit der Peek nie vom Viewport geklippt wird. */}
+      <div className="relative w-full max-w-4xl">
+        <PanelMascot src={formationMascot} accent="#5ab87a" peekMaxH={120} overlap={28} />
+        <div className="relative z-10 w-full rounded-2xl p-5 max-h-[95dvh] sm:max-h-[calc(100dvh-8rem)] overflow-y-auto overlay-card" style={{ background: "#15151b", border: "1px solid #33333e" }}>
         {/* Kopf */}
         <div className="flex items-center justify-between mb-2">
-          <div>
-            <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>Aufstellung · Runde {(state.cycle || 0) + 1}</div>
-            <h2 className="text-xl font-bold">Deck aufstellen</h2>
+          <div className="flex items-center gap-2 min-w-0">
+            <PanelMascot src={formationMascot} accent="#5ab87a" variant="avatar" avatarObjectPosition="center top" />
+            <div>
+              <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>Aufstellung · Runde {(state.cycle || 0) + 1}</div>
+              <h2 className="text-xl font-bold">Deck aufstellen</h2>
+            </div>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-[10px] uppercase tracking-wide opacity-50">Energie</div>
-            <div className="text-2xl font-bold font-pixel-dense" style={{ color: formationEnergy > 0 ? "#d4a63a" : "#8a8a92" }}>{formationEnergy}</div>
+            <div className="text-2xl font-bold font-pixel-dense leading-none" style={{ color: formationEnergy > 0 ? "#d4a63a" : "#8a8a92" }}>{formationEnergy}</div>
+            {/* #95.6: Formations-Stärke Σ + reaktives Delta direkt unter der Energie → der Einfluss jedes Tauschs
+                ist sofort oben sichtbar (vorher nur unten in der Fußzeile). */}
+            <div className="mt-1.5 leading-tight">
+              <div className="text-[10px] uppercase tracking-wide opacity-50">Formations-Stärke</div>
+              <div className="font-pixel-dense text-base">
+                <span className="opacity-85">Σ {fmt(curStrength)}</span>
+                <span className="font-bold ml-1.5" style={{ color: deltaColor }}>{deltaStr}</span>
+              </div>
+            </div>
           </div>
         </div>
+        {state.lastCycleScore != null && <div className="mb-2"><RoundScoreBadge state={state} /></div>}
         <p className="text-xs opacity-55 mb-2">
           Tippe zwei Karten, um sie zu tauschen (1 Energie). Formationen entstehen nur <b>innerhalb</b> der {SEGMENT_SIZE}er-Segmente.
         </p>
@@ -70,7 +100,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
-            <CardGrid cards={cards} formations={formations} roles={state.roles} selectedPos={sel} onTilePick={clickPos} />
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}} selectedPos={sel} onTilePick={clickPos} quietTiles />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
@@ -88,6 +118,18 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
               <div style={{ color: "#d4a63a" }}>⧉ Überlappung — mehr Formationen = mehr Multi: 2 ×1,5 · 3 ×2 · 4 ×3</div>
               <div style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr Rahmen = mehr Multi · gestrichelt = ohne Multiplikator</div>
             </div>
+            {/* Gehaltene Eis-Effekte auf die Formationserkennung — nur wenn welche gehalten werden (desc aus SKILL_DEFS). */}
+            {iceFormSkills.length > 0 && (
+              <div className="grid gap-0.5 text-xs sm:text-[13px] leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
+                <div className="font-bold" style={{ color: "#7fd4f0" }}>❄ Eis-Effekte auf Formationen</div>
+                {iceFormSkills.map((id) => (
+                  <div key={id}>
+                    <b style={{ color: "#8be0f8" }}>{SKILL_DEFS[id].name}</b>
+                    <span> — {SKILL_DEFS[id].desc}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -100,14 +142,6 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
               style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
           </div>
           <div className="flex items-center gap-3">
-            {/* Reaktives Formations-Delta (#95.6) — größer & fetter für bessere Lesbarkeit */}
-            <div className="text-right leading-tight">
-              <div className="opacity-55 text-[10px] uppercase tracking-wide">Formations-Stärke</div>
-              <div className="font-pixel-dense text-lg">
-                <span className="opacity-85">Σ {fmt(curStrength)}</span>
-                <span className="font-bold ml-1.5" style={{ color: deltaColor }}>{deltaStr}</span>
-              </div>
-            </div>
             <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
               style={{ background: "#5ab87a", color: "#0c0c10" }}>
               Durchlauf starten
@@ -116,6 +150,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           </div>
         </div>
         {formationEnergy > 0 && <div className="text-[10px] mt-1.5 text-right" style={{ color: "#d4a63a99" }}>Du hast noch {formationEnergy} Energie übrig.</div>}
+        </div>
       </div>
     </div>
   );

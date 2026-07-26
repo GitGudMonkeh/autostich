@@ -131,7 +131,7 @@ export const SKILL_DEFS = {
   // ---- Eis-Archetyp (#93 F3) — Kontrolle/Aufstellung mit eingefrorenen Karten. Kein Konsument, keine Ressource. ----
   // Grundmechanik (erster Eis-Skill): friert eigene Karten ein (blau, an card.id). Formations-Flags in formations.js gelesen.
   SK_ICE_01: { id: "SK_ICE_01", name: "Frostgriff", archetype: "ice", keywords: ["freeze"],
-    desc: "Friere 2 zusätzliche zufällige eigene Karten ein.", frostGrip: true },
+    desc: "Friere 2 zusätzliche zufällige eigene Karten ein (oben auf die Eis-Grundzahl).", frostGrip: true },
   SK_ICE_02: { id: "SK_ICE_02", name: "Kalte Präzision", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Eingefrorene Karten dürfen für Wiederholung als Wert ihres direkten Vorgängers zählen (echter Wert unverändert).", wildWiederholungPred: true },
   SK_ICE_03: { id: "SK_ICE_03", name: "Eisschritt", archetype: "ice", keywords: ["freeze", "formation"],
@@ -167,6 +167,19 @@ export const ARCHETYPE_META = {
   ice:       { key: "ice",       label: "Eis",    icon: "❄️", color: "#5ec8f0" }, // eis-blau
 };
 export const ARCHETYPE_ORDER = ["lightning", "fire", "ice"];
+
+// Archetyp-Kodierung EINES Eintrags pro gehaltenem Skill ("fire,fire,ice", Reihenfolge egal) →
+// bekannte Keys MIT Wiederholung (ein Icon je Skill, #139) in fester Anzeige-Reihenfolge
+// Blitz→Feuer→Eis. So ergeben 4 Feuer-Skills 4× 🔥, 2 Feuer + 2 Eis → 🔥🔥❄️❄️.
+// Leerer/unbekannter Input → []. Rein & testbar; die UI mappt die Keys über ARCHETYPE_META auf Icons.
+export function decodeArchetypes(value) {
+  if (!value) return [];
+  const counts = {};
+  for (const tok of String(value).split(",")) {
+    if (ARCHETYPE_ORDER.includes(tok)) counts[tok] = (counts[tok] || 0) + 1;
+  }
+  return ARCHETYPE_ORDER.flatMap((a) => Array(counts[a] || 0).fill(a));
+}
 
 // Archetypen, die aktuell noch anbietbare (nicht gehaltene) Skills haben.
 export function archetypesWithSkills(owned = []) {
@@ -282,6 +295,11 @@ export function freezeCards(deck, count, rng) {
   }
   return (deck || []).map((c, i) => (chosen.has(i) ? { ...c, frozen: true } : c));
 }
+// Alle eigenen Karten auftauen (immutabel) — Gegenstück zu freezeCards. Genutzt, wenn der Eis-Archetyp
+// deaktiviert wird (letzter Eis-Skill ersetzt, #140): das frozen-Flag verschwindet von allen Karten.
+export function unfreezeAll(deck) {
+  return (deck || []).map((c) => (c.frozen ? { ...c, frozen: false } : c));
+}
 
 // Roh-Crit-Beitrag des Blitz-Archetyps (Abschnitt 2a): Aktivierungs-Sockel + Σ Skill-critChance
 // + Gewitterfront-Bonus (dauerhaft, Stufe C). Fließt additiv in die Gesamt-Crit-Chance. 0, solange inaktiv.
@@ -321,10 +339,19 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   }
   const fill = shuffle(rest, rng); // auffüllen bis count, falls ein Archetyp zu wenige Skills hatte
   while (offer.length < count && fill.length) offer.push(fill.shift());
-  // Bei erfolgreichem Roll genau einen legendären Skill einsetzen (ersetzt den letzten Slot bzw. füllt auf).
+  // Bei erfolgreichem Roll genau einen legendären Skill einsetzen. Balance (2+2+2) wahren: einen normalen Skill
+  // DESSELBEN Archetyps ersetzen — NICHT blind den letzten Slot, sonst verliert ein anderer Archetyp einen Platz
+  // und der Legendär-Archetyp bekommt einen zu viel (#129). Fallback: letzter Slot bzw. auffüllen.
   if (legHit && legPool.length) {
     const leg = shuffle(legPool, rng)[0];
-    if (!offer.includes(leg)) { if (offer.length >= count) offer[offer.length - 1] = leg; else offer.push(leg); }
+    if (!offer.includes(leg)) {
+      if (offer.length >= count) {
+        const legArch = archetypeOf(leg);
+        let idx = -1;
+        for (let i = offer.length - 1; i >= 0; i--) if (archetypeOf(offer[i]) === legArch) { idx = i; break; }
+        offer[idx >= 0 ? idx : offer.length - 1] = leg;
+      } else offer.push(leg);
+    }
   }
   return offer;
 }

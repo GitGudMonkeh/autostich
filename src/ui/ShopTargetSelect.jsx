@@ -1,6 +1,7 @@
 import { suitColor, suitName, SUIT_ORDER, SHOP_CATEGORIES, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { SEGMENT_SIZE, FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
 import { SHOP_ITEM_DEFS, SEGMENT_BOUNDARIES } from "../game/shop.js";
+import { CardGrid } from "./CardGrid.jsx";
 import { useEscape } from "./useEscape.js";
 
 const GOLD = "#d4a63a";
@@ -40,8 +41,8 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
   const reservable = (state.shop?.offers || []).filter((o) => o.offerId !== st.offerId && !purchased.has(o.offerId));
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
-      <div className="w-full max-w-4xl rounded-2xl p-5 max-h-[95vh] overflow-y-auto" style={{ background: "#15151b", border: `1px solid ${GOLD}55` }}>
+    <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
+      <div className="w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={{ background: "#15151b", border: `1px solid ${GOLD}55` }}>
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>Shop · {def.name}</div>
           <h2 className="text-xl font-bold mt-1">
@@ -67,22 +68,48 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
             </div>
           </div>
         ) : spec.boundary ? (
-          <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Segmentgrenze wählen</div>
-            <div className="grid sm:grid-cols-2 gap-2">
-              {SEGMENT_BOUNDARIES.map((b) => {
-                const open = openBoundaries.has(b);
-                const active = st.boundary === b;
-                return (
-                  <button key={b} onClick={() => !open && onBoundary(b)} disabled={open}
-                    className="rounded-xl p-3 text-left transition-all"
-                    style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : open ? "#5ab87a" : "#33333e"}`, opacity: open ? 0.5 : 1, cursor: open ? "not-allowed" : "pointer" }}>
-                    <span className="font-bold">Grenze {b + 1}|{b + 2}</span>
-                    {open && <span className="text-[11px] ml-2" style={{ color: "#5ab87a" }}>bereits offen</span>}
-                  </button>
-                );
-              })}
-            </div>
+          // #124: Grenze im VOLLEN Board wählen — anklickbare Trennlinie zwischen den Segmenten, im Kontext der Kartenreihenfolge.
+          <div className="grid gap-0.5 mt-4">
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-1">Grenze im Board wählen (verbindet die zwei angrenzenden Segmente)</div>
+            {Array.from({ length: nSeg }, (_, seg) => {
+              const start = seg * SEGMENT_SIZE;
+              const segCards = cards.slice(start, start + SEGMENT_SIZE);
+              const b = SEGMENT_BOUNDARIES[seg]; // Grenze NACH diesem Segment (undefined beim letzten)
+              const open = b != null && openBoundaries.has(b);
+              const active = b != null && st.boundary === b;
+              return (
+                <div key={seg}>
+                  <div className="flex items-center gap-2">
+                    <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{start + 1}–{start + segCards.length}</div>
+                    <div className="grid grid-cols-5 gap-1.5 flex-1">
+                      {segCards.map((c, k) => {
+                        const pos = start + k; const col = suitColor(c.suit);
+                        return (
+                          <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px solid ${col}55` }}>
+                            <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
+                            <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {b != null && (
+                    <div className="flex items-center gap-2 my-0.5">
+                      <div className="w-9 shrink-0" />
+                      <button onClick={() => !open && onBoundary(b)} disabled={open}
+                        className="flex-1 flex items-center justify-center rounded transition-all"
+                        style={{ height: 22, background: active ? `${GOLD}22` : open ? "#5ab87a1a" : "#1c1c22",
+                                 border: `1px ${active || open ? "solid" : "dashed"} ${active ? GOLD : open ? "#5ab87a" : "#3a3a46"}`,
+                                 cursor: open ? "not-allowed" : "pointer", opacity: open ? 0.75 : 1 }}>
+                        <span className="text-[10px] font-bold tracking-wide" style={{ color: active ? GOLD : open ? "#5ab87a" : "#9a9aa4" }}>
+                          ⟷ Grenze {b + 1}|{b + 2}{open ? " · bereits offen" : active ? " · ✓" : ""}
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : spec.formationType ? (
           <div className="mt-4">
@@ -141,79 +168,48 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
             </div>
           </div>
         ) : spec.position ? (
-          <div className="grid gap-2 mt-4">
-            {Array.from({ length: nSeg }, (_, s) => (
-              <div key={s} className="flex items-center gap-2">
-                <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
-                <div className="grid grid-cols-5 gap-1.5 flex-1">
-                  {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
-                    const pos = s * SEGMENT_SIZE + k;
-                    const occ = occupied.has(pos);
-                    const active = st.position === pos;
-                    const col = suitColor(c.suit);
-                    return (
-                      <button key={pos} onClick={() => !occ && onPosition(pos)} disabled={occ}
-                        className="relative rounded-lg flex flex-col items-center justify-center transition-all"
-                        style={{ aspectRatio: "3 / 4", background: active ? `${GOLD}22` : "#20202a",
-                                 border: `2px solid ${active ? GOLD : occ ? "#5a8ade" : col + "55"}`, opacity: occ ? 0.55 : 1,
-                                 cursor: occ ? "not-allowed" : "pointer", boxShadow: active ? `0 0 10px ${GOLD}66` : undefined }}>
-                        <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-                        <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
-                        {occ && <span className="absolute bottom-0.5 right-1 text-[10px]" style={{ color: "#5a8ade" }} title="Bereits ein Anker">⚓</span>}
-                        {active && <span className="text-[10px] font-bold leading-none" style={{ color: GOLD }}>✓</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+          // #112: Positions-Anker im geteilten CardGrid — mit Formations-/Rollen-Kontext; belegte Positionen ausgegraut (Silberring).
+          <div className="mt-4">
+            <CardGrid cards={cards} formations={state.formations} roles={state.roles}
+              anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}}
+              pickedPos={st.position} disabledPos={[...occupied]} onTilePick={(pos) => onPosition(pos)} />
           </div>
         ) : spec.segment ? (
-          <div className="grid sm:grid-cols-2 gap-2 mt-4">
+          // #124: Segment im VOLLEN Board wählen — markierbarer 5er-Block im durchgehenden Deck statt isolierter Kachel.
+          <div className="grid gap-1 mt-4">
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-1">Segment im Board wählen</div>
             {Array.from({ length: nSeg }, (_, seg) => {
-              const segCards = cards.slice(seg * SEGMENT_SIZE, seg * SEGMENT_SIZE + SEGMENT_SIZE);
+              const start = seg * SEGMENT_SIZE;
+              const segCards = cards.slice(start, start + SEGMENT_SIZE);
               const active = st.segment === seg;
               return (
-                <button key={seg} onClick={() => onSegment(seg)} className="rounded-xl p-3 text-left transition-all"
-                  style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : "#33333e"}` }}>
-                  <div className="text-[11px] opacity-60 mb-1">Segment {seg + 1} · Pos {seg * SEGMENT_SIZE + 1}–{seg * SEGMENT_SIZE + segCards.length}</div>
-                  <div className="flex gap-2">
-                    {segCards.map((c) => (
-                      <span key={c.id} className="text-lg font-bold font-pixel-dense" style={{ color: suitColor(c.suit) }}>{c.value}</span>
-                    ))}
+                <button key={seg} onClick={() => onSegment(seg)}
+                  className="flex items-center gap-2 rounded-lg p-1 text-left transition-all"
+                  style={{ background: active ? `${GOLD}18` : "transparent", border: `2px solid ${active ? GOLD : "transparent"}` }}>
+                  <div className="text-[10px] opacity-50 w-9 shrink-0 text-right tabular-nums">{start + 1}–{start + segCards.length}</div>
+                  <div className="grid grid-cols-5 gap-1.5 flex-1">
+                    {segCards.map((c, k) => {
+                      const pos = start + k; const col = suitColor(c.suit);
+                      return (
+                        <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px solid ${active ? GOLD : col + "55"}` }}>
+                          <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
+                          <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
+                        </div>
+                      );
+                    })}
                   </div>
+                  <span className="text-[10px] font-bold shrink-0 pr-1 w-12 text-right" style={{ color: active ? GOLD : "#8a8a95" }}>{active ? "✓ " : ""}Seg {seg + 1}</span>
                 </button>
               );
             })}
           </div>
         ) : (
           <>
-            <div className="grid gap-2 mt-4">
-              {Array.from({ length: nSeg }, (_, s) => (
-                <div key={s} className="flex items-center gap-2">
-                  <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
-                  <div className="grid grid-cols-5 gap-1.5 flex-1">
-                    {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
-                      const pos = s * SEGMENT_SIZE + k;
-                      const selected = sel.includes(c.id);
-                      const col = suitColor(c.suit);
-                      return (
-                        <button key={pos} onClick={() => onCard(c.id)}
-                          className="relative rounded-lg flex flex-col items-center justify-center transition-all"
-                          style={{ aspectRatio: "3 / 4", background: selected ? `${GOLD}22` : "#20202a",
-                                   border: `2px solid ${selected ? GOLD : col + "55"}`, boxShadow: selected ? `0 0 10px ${GOLD}66` : undefined }}>
-                          <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-                          <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
-                          {selected && spec.color && colors[c.id] && (
-                            <span className="text-[9px] font-bold leading-none" style={{ color: suitColor(colors[c.id]) }}>→{colors[c.id]}</span>
-                          )}
-                          {selected && !spec.color && <span className="text-[10px] font-bold leading-none" style={{ color: GOLD }}>✓</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+            {/* #112: Karten im geteilten CardGrid — Formations-/Rollen-Kontext sichtbar (formationsbewusst wählen). */}
+            <div className="mt-4">
+              <CardGrid cards={cards} formations={state.formations} roles={state.roles}
+                anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}}
+                pickedIds={sel} arrows={colors} onTilePick={(pos, c) => onCard(c.id)} />
             </div>
 
             {spec.color && sel.length > 0 && (
@@ -246,7 +242,7 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
 
         <div className="flex items-center justify-between mt-5">
           <button onClick={onCancel} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: "#2a2a33", color: "#c4c4cc" }}>Abbrechen</button>
-          <button onClick={() => ready && onConfirm()} disabled={!ready}
+          <button onClick={() => ready && onConfirm()} disabled={!ready} data-sfx="none"
             className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
             style={{ background: ready ? GOLD : "#2a2a33", color: ready ? "#141419" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
             Bestätigen

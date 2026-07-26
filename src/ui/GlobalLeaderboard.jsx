@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 import { leaderboardConfigured, fetchGlobalTop } from "../game/leaderboard.js";
+import { ARCHETYPE_META, decodeArchetypes } from "../game/skills.js";
+
+// Gespeicherte Archetyp-Kodierung ("fire,ice") → Icon-Meta in fester Reihenfolge Blitz→Feuer→Eis (#139).
+// Alt-Einträge ohne Wert ergeben einfach keine Icons.
+const archetypeIcons = (value) => decodeArchetypes(value).map((a) => ARCHETYPE_META[a]);
 
 /* Globaler Highscore (#14): additiv UNTER dem lokalen Block. Holt Top-N selbst und
    degradiert lautlos — fehlende Config blendet den Block ganz aus, offline/Fehler zeigt
@@ -49,6 +54,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
         <div className="grid gap-1">
           {rows.map((r, i) => {
             const mineRow = isMine(r);
+            const icons = archetypeIcons(r.archetypes); // #139: ein Icon je Skill (leer bei Alt-Einträgen)
             return (
               <div key={i} className="flex items-center gap-2 text-sm px-2 py-1 rounded"
                 style={{ background: mineRow ? "#5ab87a22" : "#20202a",
@@ -57,6 +63,11 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                 <span className="flex-1 truncate" style={{ color: mineRow ? "#5ab87a" : "#e8e8ea" }}>
                   {r.name || "—"}{mineRow && <span className="opacity-60 text-xs"> · du</span>}
                 </span>
+                {icons.length > 0 && (
+                  <span className="flex items-center gap-0.5 shrink-0 text-xs leading-none">
+                    {icons.map((m, k) => <span key={k} title={m.label}>{m.icon}</span>)}
+                  </span>
+                )}
                 <span className="font-bold shrink-0" style={{ color: "#d4a63a" }}>{r.score.toLocaleString("de-DE")}</span>
                 <span className="opacity-40 text-xs shrink-0">{r.cycles ?? 0} R · {r.tricks}</span>
               </div>

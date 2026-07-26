@@ -1,6 +1,10 @@
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, critChanceRawFor, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
 import { lightningCritRaw } from "../game/skills.js";
+import { PERK_DECLINE_COINS } from "../game/constants.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
+import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { PanelMascot } from "./PanelMascot.jsx";
+import perkMascot from "../assets/mascots/perk.gif";
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
@@ -8,7 +12,7 @@ const fmtMult = (x) => x.toFixed(2).replace(".", ",");
 
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
-export function PerkSelect({ offer, onPick, onReroll, perks = [], deck = [], state = {} }) {
+export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], deck = [], state = {} }) {
   // Neuwurf (Shop-Spec §10 P1/P-L1): gratis Reroll (Schicksalskontrolle) zuerst, sonst gespeicherte Token.
   const freeReroll = !!state.freePerkReroll;
   const rerollTokens = (state.shop && state.shop.perkRerolls) || 0;
@@ -21,13 +25,21 @@ export function PerkSelect({ offer, onPick, onReroll, perks = [], deck = [], sta
   const scoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos });
   const showCrit = hasCritPerk(perks) || crits > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
   return (
-    <div className="fixed inset-0 z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-3xl rounded-2xl p-6 max-h-[92vh] overflow-y-auto" style={{ background: "#181820", border: "1px solid #33333e" }}>
+    <div className="fixed inset-0 overlay-root z-20 flex items-center sm:items-start justify-center p-4 sm:pt-28" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
+      {/* #130: nicht scrollender Wrapper → Roboter-Maskottchen schaut oben über die Karte hervor (Desktop-Peek);
+          Panel oben angedockt (sm:items-start + sm:pt-28) + sm:max-h, damit der Peek nie vom Viewport geklippt wird. */}
+      <div className="relative w-full max-w-3xl">
+        <PanelMascot src={perkMascot} accent="#8a7de0" peekMaxH={120} overlap={28} />
+        <div className="relative z-10 w-full rounded-2xl p-6 max-h-[92dvh] sm:max-h-[calc(100dvh-8rem)] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>
             {(state.perks || []).length === 0 ? "Start" : `Runde ${(state.cycle || 0) + 1}`}
           </div>
-          <h2 className="text-xl font-bold mt-1">Wähle einen Perk</h2>
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <PanelMascot src={perkMascot} accent="#8a7de0" variant="avatar" avatarObjectPosition="center top" />
+            <h2 className="text-xl font-bold">Wähle einen Perk</h2>
+          </div>
+          {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
 
         {/* Kern-Stats (#40): dezent, damit die Perk-Auswahl die primäre Aktion bleibt. */}
@@ -77,15 +89,23 @@ export function PerkSelect({ offer, onPick, onReroll, perks = [], deck = [], sta
           Jeder Perk ist pro Lauf nur einmal wählbar.
         </div>
 
-        {canReroll && (
-          <div className="text-center mt-3">
+        {/* #138: Neu würfeln (falls verfügbar) + „Alle ablehnen (+🪙 N)" — eine Perk-Runde ist nie „verschwendet". */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+          {canReroll && (
             <button onClick={onReroll}
               className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
               style={{ background: "#20202a", color: LEG_GOLD, border: `1px solid ${LEG_GOLD}66` }}>
               🎲 Angebot neu würfeln {freeReroll ? "· gratis" : `· ${rerollTokens} übrig`}
             </button>
-          </div>
-        )}
+          )}
+          {onDecline && (
+            <button onClick={onDecline}
+              className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
+              style={{ background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }}>
+              Alle ablehnen · +🪙 {PERK_DECLINE_COINS}
+            </button>
+          )}
+        </div>
 
         {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). */}
         <div className="mt-5 pt-4 border-t grid sm:grid-cols-2 gap-4" style={{ borderColor: "#2a2a33" }}>
@@ -99,6 +119,7 @@ export function PerkSelect({ offer, onPick, onReroll, perks = [], deck = [], sta
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte je Farbe</div>
             <DeckHistogram deck={deck} />
           </div>
+        </div>
         </div>
       </div>
     </div>

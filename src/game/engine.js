@@ -49,6 +49,7 @@ export function resolveTrick(state, rng = Math.random) {
   let {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     score, winStreak, bestStreak, wins, losses, ties,
+    scoreAtCycleStart = 0, lastCycleScore = null, prevCycleScore = null, // #131 Rundenscore-Tracking (Zuwachs je Durchlauf + Rollover)
     initiative, lastResult, perks, offer, tieArmed, sinceWin = 0,
     lossStreak = 0, lastWinValue = null, // #71 Rares: Revanche / Präzision
     critFollowArmed = false, weaknessArmed = false, // #71 Crit-Historie: Crit-Folge (D14) / Schwachstellenanalyse (D16)
@@ -411,6 +412,11 @@ export function resolveTrick(state, rng = Math.random) {
   let newFreePerkReroll = false, newFreeSkillReroll = false; // P-L1: gratis Reroll gilt nur fürs frisch erzeugte Angebot
   if (pos >= cycleLen) { // Zeitsegment (§8 A-L1): Durchlauf endet nach cycleLen Stichen (40, mit Zeitsegment 45)
     cycle += 1;
+    // #131 Rundenscore: Zuwachs dieses gerade beendeten Durchlaufs (score enthält bereits den letzten Stich)
+    // + Rollover, damit das nächste Entscheidungs-Panel Rundenscore und %-Differenz zur Vorrunde zeigen kann.
+    prevCycleScore = lastCycleScore;
+    lastCycleScore = score - scoreAtCycleStart;
+    scoreAtCycleStart = score;
     // Shop-Münzökonomie (Shop-Spec §3.2): jeder vollständig abgeschlossene Durchlauf zahlt die konstante Basis
     // (das Einkommen wirkt am Shop, siehe unten). Auch nach dem letzten Durchlauf (→ gameover) vergeben (§3.5).
     shop = { ...(shop || {}), coins: ((shop && shop.coins) || 0) + coinsPerCycle() };
@@ -464,7 +470,9 @@ export function resolveTrick(state, rng = Math.random) {
         phase = "formation";
         newFormationEnergy = C.FORMATION_ENERGY + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0);
         newFormationSwaps = [];
-        formations = computeFormations(playerOrder, deck, roles, perks, skills);
+        // #137: anchors + permEffects mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
+        // Eintritt einen veralteten Stand (ohne regeländernde Shop-Effekte) — erst der erste Tausch korrigierte.
+        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, permEffects);
       }
     }
   }
@@ -472,6 +480,8 @@ export function resolveTrick(state, rng = Math.random) {
   return {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     score, winStreak, bestStreak, wins, losses, ties,
+    scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
+
     crits, critBonusScore, bestTrickScore,
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     freePerkReroll: newFreePerkReroll, freeSkillReroll: newFreeSkillReroll, // Planung (§10 P-L1)

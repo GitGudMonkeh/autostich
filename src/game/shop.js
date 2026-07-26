@@ -37,6 +37,15 @@ function segmentBump(deck, order, segIndex, delta) {
 // Anker-Typ auf einer Position (max 1 Anker je Position) bzw. ob die Position belegt ist.
 export const anchorTypeAt   = (anchors, pos) => (anchors || []).find((a) => a.position === pos)?.type || null;
 export const positionOccupied = (anchors, pos) => (anchors || []).some((a) => a.position === pos);
+// F4 Farballianz (#125): Partner-Farbe (Suit-Key) einer Farbe, wenn eine Allianz aktiv ist — sonst null.
+// Rein für die UI (diagonaler Zweifarben-Split); ändert keine Regel.
+export const linkedPartnerOf = (pe, suit) => {
+  const lc = (pe && pe.linkedColors) || [];
+  if (lc.length !== 2) return null;
+  if (suit === lc[0]) return lc[1];
+  if (suit === lc[1]) return lc[0];
+  return null;
+};
 // Einen Anker anlegen (immutabel) — der Reducer stellt sicher, dass die Position frei ist.
 const addAnchor = (shop, type, position) => ({ ...shop, anchors: [...(shop.anchors || []), { type, position }] });
 // Permanente Formations-Regeländerung setzen (Shop §9 F-Items).
@@ -118,7 +127,7 @@ export const SHOP_ITEM_DEFS = {
         apply: (s, t) => ({ shop: addAnchor(s.shop, "joker", t.position) }) },
   "A-L1": { id: "A-L1", category: "anchors", name: "Zeitsegment", tier: "legendary", legendary: true, repeatable: false,
         targetMode: "segment", target: { segment: true },
-        description: "Wähle ein Segment. Nachdem seine fünf Karten gespielt wurden, wird das Segment sofort ein zweites Mal gespielt (Durchlauf = 45 Stiche).",
+        description: "Wähle ein Segment. Nachdem seine fünf Karten gespielt wurden, wird das Segment sofort ein zweites Mal gespielt — inklusive aller positionsgebundenen Effekte dieser fünf Positionen (Anker, Positionsboni, Segment-Rollen zählen erneut). Durchlauf = 45 Stiche.",
         apply: (s, t) => ({ shop: { ...s.shop, timeSegmentIndex: t.segment } }) },
 
   // ---- Formationen (Shop-Spec §9) — permanente Regeländerungen (kein Ziel, nicht wiederholbar). ----
@@ -230,9 +239,15 @@ export const SEGMENT_BOUNDARIES = Array.from({ length: C.TRICKS_PER_CYCLE / SEGM
 
 // Frischer Shop-Substate bei Run-Beginn. Felder für spätere Phasen sind schon angelegt (Defaults inert),
 // damit das State-Shape stabil bleibt und keine Phase es später umbauen muss.
+// Kauf-Log-Eintrag (#127) — reine Anzeige-Daten, append-only. target=null bei Sofort-Items, sonst der
+// aufgelöste Ziel-Deskriptor (Position/Segment/Farbpaar/Grenze/Formationstyp/Kategorie/Karten). Pur.
+export const purchaseLogEntry = (def, price, cycle, target = null) =>
+  ({ itemId: def.id, category: def.category, tier: def.tier, price, cycle, target });
+
 export function initialShop() {
   return {
     coins: C.STARTING_COINS,        // §3: globaler Run-State, kein Cap, nie negativ
+    purchaseLog: [],                // #127: run-langes Kauf-Protokoll (append-only, reine Anzeige)
     offers: null,                   // aktuelles Shop-Angebot (Array von Angebots-Instanzen) oder null außerhalb des Shops
     purchasedOfferIds: [],          // in DIESEM Shop gekaufte Angebots-Instanzen (offerId)
     boughtLegendaryIds: [],         // §5.7: pro Run einmalig gekaufte Legendäre (nie wieder)
