@@ -98,9 +98,9 @@ describe("Feuer — Engine-Integration (#93 F1)", () => {
     expect(s.heat.value).toBe(0);                         // 100 (+6 Gewinn, gedeckelt 100) − 100 verbraucht
     expect(s.lastTrick.breakdown.flats).toBe(1250);       // Feuer-Flat 250 + Flächenbrand 1000
   });
-  it("Glühende Klinge: ab 50 % Hitze +2 Kartenwert (kippt eine knappe Niederlage zum Sieg)", () => {
-    const s = resolveTrick(scen(12, 13, { skills: [F6], heat: heat({ value: 50 }) }), rng);
-    expect(s.lastTrick.pValue).toBe(14);
+  it("Glühende Klinge: ab 50 % Hitze +1 Kartenwert (#165 §5.3; kippt einen knappen Gleichstand zum Sieg)", () => {
+    const s = resolveTrick(scen(12, 12, { skills: [F6], heat: heat({ value: 50 }) }), rng);
+    expect(s.lastTrick.pValue).toBe(13);
     expect(s.lastTrick.result).toBe("win");
   });
   it("Glühende Klinge: unter 50 % Hitze kein Bonus", () => {

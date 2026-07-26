@@ -87,6 +87,21 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     discharge: true,
   },
+  // ---- #165 Skills (Spec §5.2): zwei neue normale Blitz-Skills. Flags in engine.js/ionizeCardsWithCatch gelesen. ----
+  SK_LIGHTNING_11: {
+    id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning",
+    keywords: ["ionize", "charge"],
+    desc: "Würde eine Karte mit bereits 5 Ionisierungsstapeln ionisiert, erhält sie stattdessen +2 temporären Wert und erzeugt 1 Ladung.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    blitzcatcher: true,
+  },
+  SK_LIGHTNING_12: {
+    id: "SK_LIGHTNING_12", name: "Spannungsbogen", archetype: "lightning",
+    keywords: ["ionize"],
+    desc: "Gewinnt eine ionisierte Karte, wird ihr direkter Nachfolger um 1 Stapel ionisiert; volle (5) oder gespielte Karten werden in Deckreihenfolge vorwärts übersprungen.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    voltageArc: true,
+  },
   SK_LIGHTNING_L01: {
     id: "SK_LIGHTNING_L01", name: "Donnergott", archetype: "lightning", legendary: true,
     keywords: ["charge", "crit"],
@@ -114,7 +129,7 @@ export const SKILL_DEFS = {
   SK_FIRE_05: { id: "SK_FIRE_05", name: "Nachglut", archetype: "fire", keywords: ["heat"],
     desc: "Nach einem Sieg verursacht die nächste Niederlage 0 % Hitzeverlust (Siege erneuern, stapeln nicht).", afterglow: true },
   SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"],
-    desc: "Bei ≥50 % Hitze erhalten alle eigenen Karten +2 temporären Wert (endet sofort unter 50 %).", glowingBlade: true },
+    desc: "Bei ≥50 % Hitze erhalten alle eigenen Karten +1 temporären Wert (endet sofort unter 50 %). Solange aktiv, verursachen Niederlagen 10 % mehr Hitzeverlust.", glowingBlade: true },
   SK_FIRE_07: { id: "SK_FIRE_07", name: "Verbrennung", archetype: "fire", keywords: ["heat"],
     desc: "Feuer-Flat-Score pro Punkt +10 (erhöht die Hitzegewinnrate nicht).", burnBonus: true },
   SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat"],
@@ -127,6 +142,11 @@ export const SKILL_DEFS = {
     desc: "Nachbrand: jede Auslösung deines Hitze-Konsumenten gibt zusätzlich +Score in Höhe des 5-fachen der verbrauchten Hitze (Flächenbrand +500, Schmelzpunkt +50). Ohne Konsument wirkungslos.", suncore: true },
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
     desc: "Nachdem ein Hitze-Konsument ausgelöst hat, erhält die nächste eigene Karte +10 temporären Wert (stapelt nicht).", phoenix: true },
+  // ---- #165 Skills (Spec §5.3): zwei neue normale Feuer-Skills. Flags in engine.js/heatLossFor gelesen. ----
+  SK_FIRE_13: { id: "SK_FIRE_13", name: "Überhitzt", archetype: "fire", keywords: ["heat"],
+    desc: "Bei ≥80 % Hitze erhalten alle eigenen Karten zusätzlich +2 temporären Wert. Solange aktiv, verursachen Niederlagen 50 % mehr Hitzeverlust (mit Glühende Klinge additiv).", overheated: true },
+  SK_FIRE_14: { id: "SK_FIRE_14", name: "Funkenflug", archetype: "fire", keywords: ["heat"],
+    desc: "Ein Sieg mit ≥8 Wertvorsprung speichert 25 % seines Feuer-Flat-Scores. Der nächste Sieg zahlt den Speicher als zusätzlichen Flat-Score aus (ein Speicher gleichzeitig; Niederlage löscht ihn nicht).", sparkflight: true },
 
   // ---- Eis-Archetyp (#93 F3) — Kontrolle/Aufstellung mit eingefrorenen Karten. Kein Konsument, keine Ressource. ----
   // Grundmechanik (erster Eis-Skill): friert eigene Karten ein (blau, an card.id). Formations-Flags in formations.js gelesen.
@@ -149,7 +169,12 @@ export const SKILL_DEFS = {
   SK_ICE_09: { id: "SK_ICE_09", name: "Stillstand", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Gewinnt eine eingefrorene Karte als Teil von mindestens einer aktiven Formation → +200 Score.", standstill: true },
   SK_ICE_10: { id: "SK_ICE_10", name: "Kristallform", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eingefrorene Karten dürfen für Wiederholung/Treppe/Wechsel als Wert −1, unverändert oder +1 zählen (günstigste Variante; echter Wert unverändert).", wildCrystal: true },
+    desc: "Eingefrorene Karten dürfen für Wiederholung/Treppe/Wechsel als Wert −2, unverändert oder +2 zählen (günstigste Variante; echter Wert unverändert). Wird die Karte dadurch Teil ≥1 dieser Formationen, erhält sie zusätzlich einen Formationsbonus.", wildCrystal: true },
+  // ---- #165 Skills (Spec §5.4): zwei neue normale Eis-Skills. Flags in formations.js/engine.js/reducer.js gelesen. ----
+  SK_ICE_11: { id: "SK_ICE_11", name: "Gletscherschub", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Entsteht durch einen kostenlosen Frosttausch am neuen Platz mindestens eine neue Formation, erhalten alle fünf Karten des betroffenen Segments im nächsten Durchlauf +2 temporären Wert.", glacierPush: true },
+  SK_ICE_12: { id: "SK_ICE_12", name: "Eisblüte", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Gewinnt eine eingefrorene Karte, die gleichzeitig Teil von mindestens zwei aktiven Formationen (keine Anker) ist, erhalten ihre direkten Deck-Nachbarn im nächsten Durchlauf je +3 temporären Wert.", iceBloom: true },
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Frostbiss", archetype: "ice", legendary: true, keywords: ["freeze"],
     desc: "Gewinnt eine eingefrorene Karte, erhalten 2 zufällige Gegnerkarten des nächsten Durchlaufs −3 temporären Wert (nur nächster Durchlauf; erst im Kampf sichtbar).", frostbite: true },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
@@ -220,7 +245,8 @@ export function initLightning() {
 // Frischer Hitze-Substate — inaktiv. Wird beim ersten Feuer-Skill aktiviert (Reducer).
 // afterglowArmed = Nachglut · fireRoll = Feuerwalze-Stapel · phoenixArmed = Phönixfeuer · conflagArmed = Flächenbrand.
 export function initHeat() {
-  return { active: false, value: 0, max: C.HEAT_MAX, afterglowArmed: false, fireRoll: 0, phoenixArmed: false, conflagArmed: false };
+  return { active: false, value: 0, max: C.HEAT_MAX, afterglowArmed: false, fireRoll: 0, phoenixArmed: false, conflagArmed: false,
+    sparkStore: 0 }; // #165 Funkenflug: gebankter Feuer-Flat-Score (überlebt Durchlauf-Ende & Niederlagen)
 }
 
 // Anzahl gehaltener Feuer-Skills (Grundmechanik zählt nicht) & ob ein Feuer-Flag gehalten wird.
@@ -246,12 +272,18 @@ export function heatGainFor(margin, skills, cardValue) {
   if (fireFlag(skills, "heatAccel") && margin >= C.ACCEL_MIN_MARGIN) g += C.ACCEL_BONUS;
   return g;
 }
-// Hitzeverlust bei Niederlage (%): min(Rückstand,10); Nachglut → 0; Hitzeschild → halbiert (abgerundet).
-export function heatLossFor(deficit, skills, afterglowArmed) {
+// Hitzeverlust bei Niederlage (%): Basis min(Rückstand,10); Nachglut → 0. #165 §5.3: Glühende Klinge (+10 %,
+// ab 50 Hitze) und Überhitzt (+50 %, ab 80 Hitze) ADDIEREN ihre Verlust-Erhöhung, DANN Hitzeschild ×0,5,
+// zuletzt zugunsten des Spielers abgerundet. `heatValue` = Hitze VOR dem Verlust (für die 50/80-Schwellen).
+export function heatLossFor(deficit, skills, afterglowArmed, heatValue = 0) {
   if (afterglowArmed) return 0;
   let l = Math.min(deficit, C.HEAT_LOSS_MAX);
-  if (fireFlag(skills, "heatShield")) l = Math.floor(l / 2);
-  return l;
+  let inc = 0;
+  if (fireFlag(skills, "glowingBlade") && heatValue >= C.GLOWING_THRESHOLD) inc += C.GLOWING_LOSS_INCREASE; // +10 %
+  if (fireFlag(skills, "overheated")   && heatValue >= C.OVERHEAT_THRESHOLD) inc += C.OVERHEAT_LOSS_INCREASE; // +50 %
+  if (inc > 0) l *= 1 + inc;
+  if (fireFlag(skills, "heatShield")) l *= 0.5;
+  return Math.floor(l);
 }
 // Feuer-Flat-Score bei Sieg: (Vorsprung−2) × (25 + 5×(FeuerSkills−1) + Verbrennung?10:0). 0 ohne Feuer-Skill.
 export function fireScoreFor(margin, skills) {
@@ -277,6 +309,9 @@ export const hasColdFront     = (skills) => iceFlag(skills, "coldFront");
 export const hasFrostTrail    = (skills) => iceFlag(skills, "frostTrail");
 export const hasFrostbite     = (skills) => iceFlag(skills, "frostbite");
 export const hasPermafrost    = (skills) => iceFlag(skills, "permafrost");
+// #165 Skills (§5.4): Gletscherschub (Frosttausch schafft Formation → Segment +2) / Eisblüte (Frostkarte in ≥2 Formationen → Nachbarn +3).
+export const hasGlacierPush   = (skills) => iceFlag(skills, "glacierPush");
+export const hasIceBloom      = (skills) => iceFlag(skills, "iceBloom");
 // Zielanzahl eingefrorener Karten: erster Eis-Skill = ICE_BASE_FREEZE, je weiterer +1, Frostgriff +2. 0 ohne Eis-Skill.
 export function frozenTargetFor(skills) {
   const n = iceSkillCount(skills);
@@ -384,6 +419,9 @@ export const hasStaticCharge = (skills) => lightFlag(skills, "staticCharge");
 export const hasConductivity = (skills) => lightFlag(skills, "conductivity");
 export const hasEndlessStorm = (skills) => lightFlag(skills, "endlessStorm");
 export const hasDischarge    = (skills) => lightFlag(skills, "discharge");
+// #165 Skills (§5.2): Blitzfänger (volle Karte statt ionisiert → +temp Wert & Ladung) / Spannungsbogen (Sieg-Ionisierung des Nachfolgers).
+export const hasBlitzcatcher = (skills) => lightFlag(skills, "blitzcatcher");
+export const hasVoltageArc   = (skills) => lightFlag(skills, "voltageArc");
 // Ladungsmaximum je Build (Donnergott → 15) & dessen dauerhafter Crit-Multiplikator-Bonus.
 export const maxChargeFor      = (skills) => (hasThunderGod(skills) ? C.LIGHTNING_MAX_CHARGE_THUNDER : C.LIGHTNING_MAX_CHARGE);
 export const lightningCritMult = (skills) => (hasThunderGod(skills) ? C.THUNDER_CRIT_MULT : 0);
@@ -409,18 +447,23 @@ export function consumeCharge(lightning, floor = 0) {
 // `count` Karten ionisieren (immutabel, deterministisch). Gültige Ziele = ungespielte Karten
 // (Deck-Indizes in `undrawn`); je +1 Stapel (max ION_MAX_STACKS). Reichen die ungespielten Karten
 // nicht (Kettenblitz-Fall), gehen die Rest-Stapel an bereits ionisierte Karten (Abschnitt 8.4).
-export function ionizeCards(deck, undrawn, count, rng) {
+// Blitzfänger (#165): trifft ein Versuch im HAUPTZUG eine bereits volle Karte (ION_MAX_STACKS),
+// wird sie NICHT ionisiert; ihre card.id wird als „catch" zurückgegeben (Engine gibt +temp Wert & Ladung).
+function ionizeCore(deck, undrawn, count, rng, blitzcatcher) {
   const bumps = {}; // Deck-Index -> zusätzliche Stapel
+  const catchIds = []; // Blitzfänger-Treffer (volle Karten) im Hauptzug
   const pool = [...(undrawn || [])];
   let remaining = count;
   while (remaining > 0 && pool.length > 0) {
     const j = Math.floor(rng() * pool.length);
     const idx = pool.splice(j, 1)[0];
-    bumps[idx] = (bumps[idx] || 0) + 1;
+    if (blitzcatcher && (deck[idx].ionStacks || 0) >= C.ION_MAX_STACKS) catchIds.push(deck[idx].id); // volle Karte → Fang statt Ionisierung
+    else bumps[idx] = (bumps[idx] || 0) + 1;
     remaining -= 1;
   }
   if (remaining > 0) {
     // Fallback: nicht genug ungespielte Karten → Rest auf bereits ionisierte Karten (deckweit).
+    // (Blitzfänger greift bewusst NUR im Hauptzug — der Fallback trifft evtl. schon gespielte Karten.)
     let ionized = deck.map((_, i) => i).filter((i) => (deck[i].ionStacks || 0) > 0 || bumps[i]);
     while (remaining > 0 && ionized.length > 0) {
       const j = Math.floor(rng() * ionized.length);
@@ -429,5 +472,13 @@ export function ionizeCards(deck, undrawn, count, rng) {
       remaining -= 1;
     }
   }
-  return deck.map((c, i) => (bumps[i] ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + bumps[i]) } : c));
+  const newDeck = deck.map((c, i) => (bumps[i] ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + bumps[i]) } : c));
+  return { deck: newDeck, catchIds };
+}
+export function ionizeCards(deck, undrawn, count, rng) {
+  return ionizeCore(deck, undrawn, count, rng, false).deck;
+}
+// Blitzfänger-Variante (#165): liefert { deck, catchIds } — catchIds = card.id je vollem Fang im Hauptzug.
+export function ionizeCardsWithCatch(deck, undrawn, count, rng) {
+  return ionizeCore(deck, undrawn, count, rng, true);
 }

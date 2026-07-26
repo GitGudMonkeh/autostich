@@ -1,4 +1,6 @@
 import { shopIncomeFor, canAfford, SHOP_ITEM_DEFS } from "../game/shop.js";
+import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
+import { TIER_META, romanOf } from "../game/rarity.js";
 import { SHOP_CATEGORIES, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { PanelMascot } from "./PanelMascot.jsx";
@@ -68,8 +70,14 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
                   </div>
                 )}
                 {byCat[cat].map((offer) => {
-                  const def = SHOP_ITEM_DEFS[offer.itemId] || {};
-                  const tier = TIER[offer.tier] || TIER.cheap;
+                  // Shop-Familie (#164): Name „Familie III", Stufenfarbe/-label aus TIER_META, Upgrade-Badge bei gehaltenem Rang.
+                  const fam = offer.family ? SHOP_FAMILY_DEFS[offer.familyId] : null;
+                  const flat = fam ? {} : (SHOP_ITEM_DEFS[offer.itemId] || {});
+                  const name = fam ? `${fam.name} ${romanOf(offer.famTier)}` : (flat.name || offer.itemId);
+                  const description = fam ? (fam.tiers[offer.famTier]?.desc || "") : flat.description;
+                  const tier = fam ? { label: TIER_META[offer.famTier]?.label || "", color: TIER_META[offer.famTier]?.color || GOLD } : (TIER[offer.tier] || TIER.cheap);
+                  const held = fam ? (shop.familyTiers?.[offer.familyId] || 0) : 0;
+                  const hasTarget = fam ? true : !!flat.target;
                   const sold = purchased.has(offer.offerId);
                   const affordable = canAfford(shop, offer);
                   const disabled = sold || !affordable; // Ziel-Items öffnen beim Kauf die Ziel-Auswahl (§12.2)
@@ -79,25 +87,26 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
                                boxShadow: offer.legendary ? `0 0 10px ${GOLD}33` : `0 0 6px ${CATEGORY_COLOR[cat]}22`, opacity: sold ? 0.5 : 1 }}>
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-bold text-sm">
-                          {def.name || offer.itemId}
+                          {name}
+                          {held > 0 && <span className="text-[9px] ml-1.5 px-1 py-0.5 rounded font-bold align-middle" style={{ background: `${tier.color}22`, color: tier.color }}>⬆ {romanOf(held)}→{romanOf(offer.famTier)}</span>}
                           {offer.reserved && <span className="text-[9px] ml-1.5 px-1 py-0.5 rounded font-bold align-middle" style={{ background: `${GOLD}22`, color: GOLD }}>RESERVIERT</span>}
                         </span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap"
                           style={{ background: `${tier.color}22`, color: tier.color }}>{tier.label}</span>
                       </div>
-                      {def.description && <p className="text-[11px] opacity-65 leading-snug mt-1">{def.description}</p>}
+                      {description && <p className="text-[11px] opacity-65 leading-snug mt-1">{description}</p>}
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-sm font-bold" style={{ color: affordable || sold ? GOLD : "#e0605a" }}>🪙 {offer.price}</span>
                         <button
                           onClick={() => !disabled && onBuy?.(offer.offerId)}
                           disabled={disabled}
-                          data-sfx={SHOP_ITEM_DEFS[offer.itemId]?.target ? undefined : "none"}
+                          data-sfx={hasTarget ? undefined : "none"}
                           className="rounded-lg px-3 py-1 text-xs font-bold transition-all"
                           style={disabled
                             ? { background: "#2a2a33", color: "#6a6a75", cursor: "not-allowed" }
                             : { background: GOLD, color: "#141419" }}
                         >
-                          {sold ? "Gekauft" : "Kaufen"}
+                          {sold ? "Gekauft" : held > 0 ? "Upgraden" : "Kaufen"}
                         </button>
                       </div>
                     </div>

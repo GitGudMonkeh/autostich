@@ -3,6 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, rerollCategory, withReservedOffer, perkLegendaryChance, skillLegendaryChance, activeShopUpgrades, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
+import { SHOP_FAMILY_DEFS, anchorTierDef } from "../src/game/shopFamilies.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { MAX_CYCLES, DECISION_SCHEDULE, STARTING_COINS, BASE_COINS_PER_CYCLE,
@@ -240,92 +241,58 @@ describe("Shop-Kauf — BUY_ITEM (Shop-Spec §5.4)", () => {
   });
 });
 
-describe("Shop-Kartenitems — Effekte (Shop-Spec §7)", () => {
-  const base = () => initialState(makeRng(1));
+describe("Shop-Ziel-Flow — Kauf einer Karten-Familie (Shop-Spec §4/§12.2)", () => {
+  // Kartenitems sind zu Shop-Familien migriert (#164) — die Deck-Effekte selbst deckt test/shop-families.test.js ab.
   const val = (deck, id) => deck.find((c) => c.id === id).value;
-  const suit = (deck, id) => deck.find((c) => c.id === id).suit;
-
-  it("K1/K5/K8 Wertbonus +1/+2/+3 auf die gewählte Karte", () => {
-    const s = base(), v = val(s.deck, "R5");
-    expect(val(SHOP_ITEM_DEFS.K1.apply(s, { cardIds: ["R5"] }).deck, "R5")).toBe(v + 1);
-    expect(val(SHOP_ITEM_DEFS.K5.apply(s, { cardIds: ["R5"] }).deck, "R5")).toBe(v + 2);
-    expect(val(SHOP_ITEM_DEFS.K8.apply(s, { cardIds: ["R5"] }).deck, "R5")).toBe(v + 3);
-  });
-  it("K6/K9 mehrere Karten je +1", () => {
-    const s = base();
-    const d6 = SHOP_ITEM_DEFS.K6.apply(s, { cardIds: ["R1", "B2"] }).deck;
-    expect(val(d6, "R1")).toBe(2); expect(val(d6, "B2")).toBe(3);
-    const d9 = SHOP_ITEM_DEFS.K9.apply(s, { cardIds: ["R1", "B2", "G3"] }).deck;
-    expect([val(d9, "R1"), val(d9, "B2"), val(d9, "G3")]).toEqual([2, 3, 4]);
-  });
-  it("K3 tauscht Dauerwerte, K4 tauscht Farben", () => {
-    const s = base();
-    const d3 = SHOP_ITEM_DEFS.K3.apply(s, { cardIds: ["R1", "R10"] }).deck; // Werte 1 <-> 10
-    expect([val(d3, "R1"), val(d3, "R10")]).toEqual([10, 1]);
-    const d4 = SHOP_ITEM_DEFS.K4.apply(s, { cardIds: ["R1", "B1"] }).deck;  // Farben R <-> B
-    expect([suit(d4, "R1"), suit(d4, "B1")]).toEqual(["B", "R"]);
-  });
-  it("K2/K7/K10 färben die gewählten Karten um", () => {
-    const s = base();
-    expect(suit(SHOP_ITEM_DEFS.K2.apply(s, { colors: { R5: "G" } }).deck, "R5")).toBe("G");
-    const d7 = SHOP_ITEM_DEFS.K7.apply(s, { colors: { R5: "G", B6: "Y" } }).deck;
-    expect([suit(d7, "R5"), suit(d7, "B6")]).toEqual(["G", "Y"]);
-  });
-  it("K-L1 verstärkt die fünf Karten des Segments um +1 (an card.id)", () => {
-    const s = base(), seg = 2; // Positionen 11–15
-    const ids = s.playerOrder.slice(seg * 5, seg * 5 + 5).map((di) => s.deck[di].id);
-    const d = SHOP_ITEM_DEFS["K-L1"].apply(s, { segment: seg }).deck;
-    for (const id of ids) expect(val(d, id)).toBe(val(s.deck, id) + 1);
-    const outside = s.deck.find((c) => !ids.includes(c.id));
-    expect(val(d, outside.id)).toBe(val(s.deck, outside.id));
-  });
-  it("Marker (Ionisierung/Frost) bleiben bei Farbänderung an der Karte", () => {
-    const s = base();
-    s.deck = s.deck.map((c) => (c.id === "R5" ? { ...c, ionStacks: 2, frozen: true } : c));
-    const c = SHOP_ITEM_DEFS.K2.apply(s, { colors: { R5: "G" } }).deck.find((x) => x.id === "R5");
-    expect([c.suit, c.ionStacks, c.frozen]).toEqual(["G", 2, true]);
-  });
-});
-
-describe("Shop-Ziel-Flow — Kauf mit Zielauswahl (Shop-Spec §12.2)", () => {
-  const shopWith = (itemId, price, tier = "cheap") => {
-    const offer = { offerId: "o0", itemId, category: "cards", tier, price, legendary: tier === "legendary" };
-    return { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+  const famShop = (familyId, famTier, held = 0) => {
+    const price = [8, 12, 18, 30][famTier - 1];
+    const offer = { offerId: "o0", category: "cards", familyId, famTier, price, family: true, legendary: false };
+    return { ...initialState(makeRng(1)), phase: "shop",
+      shop: { ...initialShop(), coins: 30, offers: [offer], familyTiers: held ? { [familyId]: held } : {} } };
   };
-  it("BUY_ITEM eines Ziel-Items öffnet die shop-target-Phase ohne Münzabzug", () => {
-    const r = reducer(shopWith("K1", 8), { type: "BUY_ITEM", offerId: "o0" });
+  it("BUY_ITEM einer Familie öffnet die shop-target-Phase ohne Münzabzug", () => {
+    const r = reducer(famShop("SF_REFINE", 1), { type: "BUY_ITEM", offerId: "o0" });
     expect(r.phase).toBe("shop-target");
-    expect(r.shopTarget).toMatchObject({ offerId: "o0", itemId: "K1", cards: [] });
+    expect(r.shopTarget).toMatchObject({ offerId: "o0", familyId: "SF_REFINE", famTier: 1, cards: [] });
     expect(r.shop.coins).toBe(30);
     expect(r.shop.purchasedOfferIds).toEqual([]);
   });
   it("SHOP_TARGET_CARD: Einzelziel schaltet um / wählt ab", () => {
-    let s = reducer(shopWith("K1", 8), { type: "BUY_ITEM", offerId: "o0" });
+    let s = reducer(famShop("SF_REFINE", 1), { type: "BUY_ITEM", offerId: "o0" });
     s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R1" }); expect(s.shopTarget.cards).toEqual(["R1"]);
     s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R2" }); expect(s.shopTarget.cards).toEqual(["R2"]);
     s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R2" }); expect(s.shopTarget.cards).toEqual([]);
   });
-  it("Zwei-Karten-Limit: dritte Auswahl wird ignoriert", () => {
-    let s = reducer(shopWith("K6", 12, "strong"), { type: "BUY_ITEM", offerId: "o0" });
+  it("Mehrkarten-Limit: dritte Auswahl wird ignoriert (Mehrfacher Feinschliff II)", () => {
+    let s = reducer(famShop("SF_MULTI_REFINE", 2), { type: "BUY_ITEM", offerId: "o0" });
     s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R1" });
     s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R2" });
     s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R3" });
     expect(s.shopTarget.cards).toEqual(["R1", "R2"]);
   });
-  it("CONFIRM unvollständig → unverändert; vollständig → kauft, zieht Preis ab, verkauft markiert, wendet an", () => {
-    let s = reducer(shopWith("K5", 12, "strong"), { type: "BUY_ITEM", offerId: "o0" });
+  it("CONFIRM unvollständig → unverändert; vollständig → kauft, zieht Preis ab, setzt Familienrang, wendet an", () => {
+    let s = reducer(famShop("SF_REFINE", 2), { type: "BUY_ITEM", offerId: "o0" });
     expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s); // 0 Karten → unverändert
     s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R5" });
-    const before = s.deck.find((c) => c.id === "R5").value;
+    const before = val(s.deck, "R5");
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
     expect(r.shop.coins).toBe(18); // 30 - 12
     expect(r.shop.purchasedOfferIds).toEqual(["o0"]);
+    expect(r.shop.familyTiers.SF_REFINE).toBe(2);
     expect(r.shopTarget).toBe(null);
-    expect(r.deck.find((c) => c.id === "R5").value).toBe(before + 2);
+    expect(val(r.deck, "R5")).toBe(before + 2); // direkter Drop II = +2
+  });
+  it("Feinschliff-Differenz: Upgrade von gehaltenem Rang wendet nur die Differenz an", () => {
+    let s = reducer(famShop("SF_REFINE", 3, 1), { type: "BUY_ITEM", offerId: "o0" }); // Rang I gehalten, Kauf III
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R5" });
+    const before = val(s.deck, "R5");
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.shop.familyTiers.SF_REFINE).toBe(3);
+    expect(val(r.deck, "R5")).toBe(before + 2); // +(3−1) = +2
   });
   it("CANCEL → zurück in den Shop, Münzen & Angebot unverändert", () => {
-    let s = reducer(shopWith("K1", 8), { type: "BUY_ITEM", offerId: "o0" });
+    let s = reducer(famShop("SF_REFINE", 1), { type: "BUY_ITEM", offerId: "o0" });
     s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R1" });
     const r = reducer(s, { type: "SHOP_TARGET_CANCEL" });
     expect(r.phase).toBe("shop");
@@ -333,8 +300,8 @@ describe("Shop-Ziel-Flow — Kauf mit Zielauswahl (Shop-Spec §12.2)", () => {
     expect(r.shop.coins).toBe(30);
     expect(r.shop.purchasedOfferIds).toEqual([]);
   });
-  it("Farb-Item: CONFIRM erst mit gültiger (anderer) Farbe je Karte", () => {
-    let s = reducer(shopWith("K2", 8), { type: "BUY_ITEM", offerId: "o0" });
+  it("Umlackierung: CONFIRM erst mit gültiger (anderer) Farbe je Karte", () => {
+    let s = reducer(famShop("SF_RECOLOR", 1), { type: "BUY_ITEM", offerId: "o0" });
     s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R5" });
     expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s);          // Farbe fehlt
     expect(reducer(s, { type: "SHOP_TARGET_COLOR", cardId: "R5", color: "R" })).toBe(s);   // gleiche Farbe → abgelehnt
@@ -342,16 +309,16 @@ describe("Shop-Ziel-Flow — Kauf mit Zielauswahl (Shop-Spec §12.2)", () => {
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
     expect(r.deck.find((c) => c.id === "R5").suit).toBe("G");
+    expect(r.shop.familyTiers.SF_RECOLOR).toBe(1);
   });
-  it("Segment-Legendär K-L1: verstärkt das Segment, fliegt aus dem Pool (legendär + nicht wiederholbar)", () => {
-    let s = reducer(shopWith("K-L1", 30, "legendary"), { type: "BUY_ITEM", offerId: "o0" });
+  it("Segmentveredelung: verstärkt das Segment, setzt den Familienrang (nicht wiederholbar)", () => {
+    let s = reducer(famShop("SF_SEGMENT_REFINE", 3), { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     s = reducer(s, { type: "SHOP_TARGET_SEGMENT", segment: 1 });
     const ids = s.playerOrder.slice(5, 10).map((di) => s.deck[di].id);
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
-    expect(r.shop.coins).toBe(0);
-    expect(r.shop.boughtLegendaryIds).toEqual(["K-L1"]);
-    expect(r.shop.boughtNonRepeatableIds).toEqual(["K-L1"]);
+    expect(r.shop.coins).toBe(12); // 30 - 18
+    expect(r.shop.familyTiers.SF_SEGMENT_REFINE).toBe(3);
     for (const id of ids) expect(r.deck.find((c) => c.id === id).value).toBe(s.deck.find((c) => c.id === id).value + 1);
   });
 });
@@ -360,11 +327,13 @@ describe("Shop-Ziel-Flow — Kauf mit Zielauswahl (Shop-Spec §12.2)", () => {
 const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
 const identity = () => Array.from({ length: 40 }, (_, i) => i);
 const never = () => 0.99; // Crit-Wurf schlägt nie an
-// Zustand mit einem Anker auf `pos`, Stich läuft auf `pos` (Anker greift), Standard-Deck 5 vs 6.
-const withAnchor = (type, pos, over = {}) => ({
+// Anker-Eintrag einer Familien-Stufe (#164): Stufen-Parameter (power/score/crit/…) liegen auf dem Eintrag.
+const mkAnchor = (type, position, tier) => { const { desc, pickTarget, ...p } = anchorTierDef(type, tier); return { type, position, tier, ...p }; };
+// Zustand mit einem Anker (Stufe `tier`) auf `pos`, Stich läuft auf `pos` (Anker greift), Standard-Deck 5 vs 6.
+const withAnchor = (type, pos, over = {}, tier = 2) => ({
   ...initialState(makeRng(1)),
   deck: constDeck(5), oppDeck: constDeck(6), playerOrder: identity(), oppOrder: identity(),
-  pos, shop: { ...initialShop(), anchors: [{ type, position: pos }] }, ...over,
+  pos, shop: { ...initialShop(), anchors: [mkAnchor(type, pos, tier)] }, ...over,
 });
 
 describe("Shop-Positionsanker — Wirkung (Shop-Spec §8)", () => {
@@ -377,9 +346,9 @@ describe("Shop-Positionsanker — Wirkung (Shop-Spec §8)", () => {
   it("A1 wirkt NUR auf der Ankerposition", () => {
     expect(resolveTrick({ ...withAnchor("power", 3), pos: 0 }, rng).lastTrick.pValue).toBe(5);
   });
-  it("A2 Punkteanker: +150 Flat-Score bei Sieg auf der Position", () => {
+  it("Punkteanker II: +200 Flat-Score bei Sieg auf der Position", () => {
     const s = resolveTrick(withAnchor("score", 2, { deck: constDeck(12), oppDeck: constDeck(0) }), never);
-    expect(s.lastTrick.breakdown.flats).toBe(150);
+    expect(s.lastTrick.breakdown.flats).toBe(200);
   });
   it("A3 Kritanker: +15 pp Crit-Chance auf der Position", () => {
     const s = resolveTrick(withAnchor("crit", 2, { deck: constDeck(12), oppDeck: constDeck(0) }), never);
@@ -399,28 +368,38 @@ describe("Shop-Positionsanker — Wirkung (Shop-Spec §8)", () => {
   });
 });
 
-describe("Shop-Anker — Kauf & Platzierung (Shop-Spec §8)", () => {
-  const anchorShop = (itemId, anchors = []) => ({
+describe("Shop-Anker-Familien — Kauf & Platzierung (Shop-Spec §4.2)", () => {
+  const famAnchorShop = (familyId, famTier, anchors = []) => ({
     ...initialState(makeRng(1)), phase: "shop",
-    shop: { ...initialShop(), coins: 10, offers: [{ offerId: "o0", itemId, category: "anchors", tier: "cheap", price: 8, legendary: false }], anchors },
+    shop: { ...initialShop(), coins: 30, anchors,
+      offers: [{ offerId: "o0", category: "anchors", familyId, famTier, price: [8, 12, 18, 30][famTier - 1], family: true, legendary: false }] },
   });
-  it("Kauf öffnet Positions-Auswahl; CONFIRM legt den Anker an und zieht den Preis ab", () => {
-    let s = reducer(anchorShop("A1"), { type: "BUY_ITEM", offerId: "o0" });
+  it("Kauf öffnet Positions-Auswahl; CONFIRM legt den Anker (mit Stufe) an und zieht den Preis ab", () => {
+    let s = reducer(famAnchorShop("SF_A_POWER", 1), { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s); // ohne Position → unverändert
     s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 12 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
-    expect(r.shop.coins).toBe(2);
-    expect(r.shop.anchors).toEqual([{ type: "power", position: 12 }]);
+    expect(r.shop.coins).toBe(22); // 30 - 8
+    expect(r.shop.anchors).toEqual([{ type: "power", position: 12, tier: 1, familyId: "SF_A_POWER", power: 1 }]);
+    expect(r.shop.familyTiers.SF_A_POWER).toBe(1);
     expect(r.shop.purchasedOfferIds).toEqual(["o0"]);
   });
-  it("belegte Position wird abgelehnt (max 1 Anker je Position, §8.1)", () => {
-    let s = reducer(anchorShop("A2", [{ type: "power", position: 7 }]), { type: "BUY_ITEM", offerId: "o0" });
-    expect(reducer(s, { type: "SHOP_TARGET_POSITION", position: 7 })).toBe(s); // belegt → ignoriert
+  it("belegte Position (FREMDER Anker) wird abgelehnt (max 1 Anker je Position, §8.1)", () => {
+    let s = reducer(famAnchorShop("SF_A_SCORE", 1, [mkAnchor("power", 7, 2)]), { type: "BUY_ITEM", offerId: "o0" });
+    expect(reducer(s, { type: "SHOP_TARGET_POSITION", position: 7 })).toBe(s); // fremder Anker belegt → ignoriert
     s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 8 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.shop.anchors.map((a) => a.position).sort((a, b) => a - b)).toEqual([7, 8]);
+  });
+  it("Upgrade ERSETZT den Anker desselben Typs (eine Instanz je Typ, Position neu wählbar)", () => {
+    let s = reducer(famAnchorShop("SF_A_POWER", 3, [mkAnchor("power", 5, 1)]), { type: "BUY_ITEM", offerId: "o0" });
+    s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 5 }); // eigene Anker-Position ist erlaubt (wird ersetzt)
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.shop.anchors.filter((a) => a.type === "power")).toHaveLength(1);
+    expect(r.shop.anchors.find((a) => a.type === "power")).toMatchObject({ position: 5, tier: 3, power: 4 });
+    expect(r.shop.coins).toBe(12); // 30 - 18
   });
 });
 
@@ -463,24 +442,35 @@ describe("Zeitsegment — A-L1 (Shop-Spec §8)", () => {
   });
   it("positionsgebundene Effekte lösen im wiederholten Segment erneut aus (Anker auf Position 6)", () => {
     let s = { ...initialState(makeRng(1)), deck: constDeck(5), oppDeck: constDeck(6), playerOrder: identity(), oppOrder: identity(),
-      shop: { ...initialShop(), timeSegmentIndex: 1, anchors: [{ type: "power", position: 6 }] } };
+      shop: { ...initialShop(), timeSegmentIndex: 1, anchors: [mkAnchor("power", 6, 2)] } };
     const t = [];
     for (let i = 0; i < 12; i++) { s = resolveTrick(s, makeRng(i + 1)); t.push(s.lastTrick); }
     expect(t[6].pValue).toBe(7);   // Position 6 (5+2 Kraftanker)
     expect(t[11].pValue).toBe(7);  // Wiederholung von Position 6 → wieder +2
     expect(t[11].originalPosition).toBe(6);
   });
-  it("Kauf von A-L1 setzt timeSegmentIndex (einmalig, legendär + nicht wiederholbar)", () => {
-    const offer = { offerId: "o0", itemId: "A-L1", category: "anchors", tier: "legendary", price: 30, legendary: true };
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+  it("Kauf Zeitsegment-Familie: setzt timeSegmentIndex + Stufe (Segment-Ziel, schließt bei IV ab)", () => {
+    const offer = { offerId: "o0", category: "anchors", familyId: "SF_A_TIME", famTier: 3, price: 18, family: true, legendary: false };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     s = reducer(s, { type: "SHOP_TARGET_SEGMENT", segment: 3 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.shop.timeSegmentIndex).toBe(3);
+    expect(r.shop.timeSegmentTier).toBe(3);
+    expect(r.shop.familyTiers.SF_A_TIME).toBe(3);
     expect(r.shop.coins).toBe(0);
-    expect(r.shop.boughtLegendaryIds).toEqual(["A-L1"]);
-    expect(r.shop.boughtNonRepeatableIds).toEqual(["A-L1"]);
+  });
+  it("playSequence-Tiefe je Stufe: I wiederholt 1 Karte, II 2, III/IV alle 5", () => {
+    expect(playSequence(1, 40, 5, 1).slice(9, 12)).toEqual([9, 9, 10]);        // nach Pos 9 die letzte (9) wiederholt
+    expect(playSequence(1, 40, 5, 2).slice(10, 13)).toEqual([8, 9, 10]);        // die letzten zwei (8,9) wiederholt
+    expect(playSequence(1, 40, 5, 5).slice(10, 15)).toEqual([5, 6, 7, 8, 9]);   // alle fünf wiederholt
+    expect(playSequence(1, 40, 5, 1)).toHaveLength(41);
+    expect(playSequence(1, 40, 5, 5)).toHaveLength(45);
+  });
+  it("cycleLenFor: Zeitsegment-Stufe bestimmt die Wiederholungstiefe (I=+1, III=+5)", () => {
+    expect(cycleLenFor({ timeSegmentIndex: 1, timeSegmentTier: 1 })).toBe(41);
+    expect(cycleLenFor({ timeSegmentIndex: 1, timeSegmentTier: 3 })).toBe(45);
   });
 });
 
@@ -508,15 +498,15 @@ describe("Shop-Formationsitems — F1/F2/F3 (Shop-Spec §9)", () => {
     expect(buffed[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.35);
     expect(buffed[4].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.50); // 3. Karte (Ordinal 3) unverändert
   });
-  it("Kauf eines F-Items (kein Ziel): setzt permanentEffects, zieht Preis ab, ist nicht wiederholbar", () => {
-    const offer = { offerId: "o0", itemId: "F2", category: "formations", tier: "cheap", price: 8, legendary: false };
-    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 10, offers: [offer] } };
+  it("Kauf einer ziel-losen Formations-Familie (Enger Wechsel II): setzt permanentEffects sofort, kein Ziel-Schritt", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_TIGHT_SWITCH", famTier: 2, price: 12, family: true, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 20, offers: [offer] } };
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
-    expect(r.phase).toBe("shop");
-    expect(r.shop.coins).toBe(2);
-    expect(r.shop.permanentEffects.switchMinDifference).toBe(3);
-    expect(r.shop.boughtNonRepeatableIds).toEqual(["F2"]);
-    expect(Array.isArray(r.formations)).toBe(true); // Formationen wurden neu berechnet
+    expect(r.phase).toBe("shop");                                 // ziel-los → sofort, keine shop-target-Phase
+    expect(r.shop.coins).toBe(8);                                 // 20 - 12
+    expect(r.shop.permanentEffects.switchMinDifference).toBe(3);  // Stufe II
+    expect(r.shop.familyTiers.SF_F_TIGHT_SWITCH).toBe(2);
+    expect(Array.isArray(r.formations)).toBe(true);
   });
 });
 
@@ -534,8 +524,8 @@ describe("Shop-Formationsitems — F4/F5 (Shop-Spec §9)", () => {
     expect(hasForm(computeFormations(ord(7), deck), 5, "farbblock")).toBe(false); // Grenze blockt → je Segment nur 2
     expect(hasForm(computeFormations(ord(7), deck, {}, [], [], [], { openSegmentBoundaries: [4] }), 5, "farbblock")).toBe(true);
   });
-  it("Kauf F4: zwei Farben wählen → linkedColors gesetzt (Preis erst bei CONFIRM)", () => {
-    const offer = { offerId: "o0", itemId: "F4", category: "formations", tier: "strong", price: 12, legendary: false };
+  it("Kauf Farballianz II: zwei Farben wählen → linkedGroups gesetzt (Preis erst bei CONFIRM)", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_COLOR_ALLIANCE", famTier: 2, price: 12, family: true, legendary: false };
     let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers: [offer] } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
@@ -543,33 +533,43 @@ describe("Shop-Formationsitems — F4/F5 (Shop-Spec §9)", () => {
     s = reducer(s, { type: "SHOP_TARGET_COLOR_PAIR", color: "R" });
     s = reducer(s, { type: "SHOP_TARGET_COLOR_PAIR", color: "B" });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
-    expect(r.shop.permanentEffects.linkedColors).toEqual(["R", "B"]);
+    expect(r.shop.permanentEffects.linkedGroups).toEqual([["R", "B"]]);
+    expect(r.shop.familyTiers.SF_F_COLOR_ALLIANCE).toBe(2);
     expect(r.shop.coins).toBe(0);
   });
-  it("Kauf F5: eine Grenze öffnen → openSegmentBoundaries; wiederholbar", () => {
-    const offer = { offerId: "o0", itemId: "F5", category: "formations", tier: "premium", price: 18, legendary: false };
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
+  it("Farballianz IV: vier Farben → zwei Allianzen (zwei Paare)", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_COLOR_ALLIANCE", famTier: 4, price: 30, family: true, legendary: false };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
+    for (const c of ["R", "B", "G", "Y"]) s = reducer(s, { type: "SHOP_TARGET_COLOR_PAIR", color: c });
+    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(r.shop.permanentEffects.linkedGroups).toEqual([["R", "B"], ["G", "Y"]]);
+  });
+  it("Kauf Offene Grenze I: eine Grenze öffnen → openSegmentBoundaries", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_OPEN_BOUNDARY", famTier: 1, price: 8, family: true, legendary: false };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers: [offer] } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     s = reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 9 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.shop.permanentEffects.openSegmentBoundaries).toEqual([9]);
-    expect(r.shop.boughtNonRepeatableIds).toEqual([]); // wiederholbar
+    expect(r.shop.familyTiers.SF_F_OPEN_BOUNDARY).toBe(1);
   });
-  it("F5 wird abgelehnt bei bereits offener Grenze; verschiedene Grenzen stapeln", () => {
-    const offer = { offerId: "o0", itemId: "F5", category: "formations", tier: "premium", price: 18, legendary: false };
+  it("Offene Grenze: bereits offene Grenze wird abgelehnt; verschiedene Grenzen stapeln", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_OPEN_BOUNDARY", famTier: 1, price: 8, family: true, legendary: false };
     const base = { ...initialState(makeRng(1)), phase: "shop",
-      shop: { ...initialShop(), coins: 18, offers: [offer], permanentEffects: { ...initialShop().permanentEffects, openSegmentBoundaries: [4] } } };
+      shop: { ...initialShop(), coins: 8, offers: [offer], permanentEffects: { ...initialShop().permanentEffects, openSegmentBoundaries: [4] } } };
     let s = reducer(base, { type: "BUY_ITEM", offerId: "o0" });
     expect(reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 4 })).toBe(s); // schon offen → ignoriert
     s = reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 9 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect([...r.shop.permanentEffects.openSegmentBoundaries].sort((a, b) => a - b)).toEqual([4, 9]);
   });
-  it("F5-Verfügbarkeit (§15): nicht bei E9, nicht wenn alle Grenzen offen", () => {
-    expect(isItemAvailable(SHOP_ITEM_DEFS.F5, initialShop(), [])).toBe(true);
-    expect(isItemAvailable(SHOP_ITEM_DEFS.F5, initialShop(), ["E9"])).toBe(false);
-    const allOpen = { ...initialShop(), permanentEffects: { openSegmentBoundaries: [...SEGMENT_BOUNDARIES] } };
-    expect(isItemAvailable(SHOP_ITEM_DEFS.F5, allOpen, [])).toBe(false);
+  it("Offene Grenze IV (ziel-los): öffnet alle Grenzen sofort", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_OPEN_BOUNDARY", famTier: 4, price: 30, family: true, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+    const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
+    expect(r.phase).toBe("shop"); // ziel-los → sofort
+    expect(r.shop.permanentEffects.openBoundaryCount).toBe(Infinity);
   });
 });
 
@@ -587,7 +587,7 @@ describe("Shop-Formationsitem — F6 Nachhall (Shop-Spec §9)", () => {
     expect(on[2].afterglowFactor).toBeCloseTo(1.25);
     expect(on[3].formations.some((f) => f.type === "nachhall")).toBe(false); // kein Kaskadieren: Empfänger sendet nicht weiter
   });
-  it("nimmt den höchsten Einzel-Endfaktor (Farbblock 1,35 vor Treppe 1,25)", () => {
+  it("nimmt den höchsten Einzel-Endfaktor (Farbblock und Treppe je 1,35 → zuerst erfasster gewinnt)", () => {
     const deck = [
       { id: "a", suit: "R", value: 1 }, { id: "b", suit: "R", value: 2 }, { id: "c", suit: "R", value: 3 },
       { id: "d", suit: "B", value: 20 }, { id: "e", suit: "G", value: 9 },
@@ -608,14 +608,15 @@ describe("Shop-Formationsitem — F6 Nachhall (Shop-Spec §9)", () => {
     const on = computeFormations(ord(6), deck, {}, [], [], [], { formationAfterglow: true });
     expect(on.every((p) => !p.formations.some((f) => f.type === "nachhall"))).toBe(true);
   });
-  it("Kauf F6 (kein Ziel): setzt formationAfterglow, ist nicht wiederholbar", () => {
-    const offer = { offerId: "o0", itemId: "F6", category: "formations", tier: "premium", price: 18, legendary: false };
+  it("Kauf Nachhall-Familie III (kein Ziel): setzt Nachhall-Parameter sofort", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_AFTERGLOW", famTier: 3, price: 18, family: true, legendary: false };
     const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
     expect(r.shop.coins).toBe(0);
     expect(r.shop.permanentEffects.formationAfterglow).toBe(true);
-    expect(r.shop.boughtNonRepeatableIds).toEqual(["F6"]);
+    expect(r.shop.permanentEffects.afterglowMaxFactor).toBe(null); // III: kein Cap
+    expect(r.shop.familyTiers.SF_F_AFTERGLOW).toBe(3);
   });
 });
 
@@ -642,9 +643,9 @@ describe("Shop-Formationsitem — F-L1 Formationskern (Shop-Spec §9)", () => {
     const other = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true, formationCoreType: "treppe" });
     expect(other[2].coreFactor).toBe(1);                   // Nachhall ist wiederholung, Kern ist treppe → kein Trigger
   });
-  it("Kauf F-L1: Formationstyp wählen → formationCoreType gesetzt (legendär + nicht wiederholbar)", () => {
-    const offer = { offerId: "o0", itemId: "F-L1", category: "formations", tier: "legendary", price: 30, legendary: true };
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
+  it("Kauf Formationskern III: Formationstyp wählen → formationCoreType + Stufen-Faktor gesetzt", () => {
+    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_CORE", famTier: 3, price: 18, family: true, legendary: false };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s);                 // ohne Typ → unverändert
@@ -653,34 +654,40 @@ describe("Shop-Formationsitem — F-L1 Formationskern (Shop-Spec §9)", () => {
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
     expect(r.shop.permanentEffects.formationCoreType).toBe("treppe");
+    expect(r.shop.permanentEffects.formationCoreFactor).toBe(1.40); // Stufe III
+    expect(r.shop.familyTiers.SF_F_CORE).toBe(3);
     expect(r.shop.coins).toBe(0);
-    expect(r.shop.boughtLegendaryIds).toEqual(["F-L1"]);
-    expect(r.shop.boughtNonRepeatableIds).toEqual(["F-L1"]);
   });
 });
 
 describe("Shop-Planungsitems — S5a Rerolls (Shop-Spec §10)", () => {
-  it("P1/P2/P-L1 apply setzen Rerolls bzw. fateControl", () => {
-    const s = initialState(makeRng(1));
-    expect(SHOP_ITEM_DEFS.P1.apply(s).shop.perkRerolls).toBe(1);
-    expect(SHOP_ITEM_DEFS.P2.apply(s).shop.skillRerolls).toBe(1);
-    expect(SHOP_ITEM_DEFS["P-L1"].apply(s).shop.fateControl).toBe(true);
+  it("Neuwurf-/Schicksals-Familien onBuy: Vorrat je Stufe, IV = dauerhafte Regel", () => {
+    const s = { perkRerolls: 0, skillRerolls: 0 };
+    expect(SHOP_FAMILY_DEFS.SF_P_PERK_REROLL.tiers[3].onBuy(s)).toEqual({ perkRerolls: 3 });
+    expect(SHOP_FAMILY_DEFS.SF_P_SKILL_REROLL.tiers[2].onBuy(s)).toEqual({ skillRerolls: 2 });
+    expect(SHOP_FAMILY_DEFS.SF_P_PERK_REROLL.tiers[4].onBuy(s)).toEqual({ perkFreeReroll: true });
+    expect(SHOP_FAMILY_DEFS.SF_P_FATE.tiers[4].onBuy(s)).toEqual({ fateControl: true });
   });
-  it("Kauf P1 (kein Ziel): +1 Perk-Neuwurf-Token, Preis abgezogen", () => {
-    const offer = { offerId: "o0", itemId: "P1", category: "planning", tier: "cheap", price: 8, legendary: false };
-    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers: [offer] } };
+  it("Kauf Perk-Neuwurf II (kein Ziel): +2 Perk-Token sofort, Preis abgezogen", () => {
+    const offer = { offerId: "o0", category: "planning", familyId: "SF_P_PERK_REROLL", famTier: 2, price: 12, family: true, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers: [offer] } };
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
     expect(r.shop.coins).toBe(0);
-    expect(r.shop.perkRerolls).toBe(1);
+    expect(r.shop.perkRerolls).toBe(2);
+    expect(r.shop.familyTiers.SF_P_PERK_REROLL).toBe(2);
   });
-  it("Kauf P-L1 Schicksalskontrolle: fateControl (legendär + nicht wiederholbar)", () => {
-    const offer = { offerId: "o0", itemId: "P-L1", category: "planning", tier: "legendary", price: 30, legendary: true };
+  it("Kauf Schicksalskontrolle IV: fateControl (beide Auswahlen gratis)", () => {
+    const offer = { offerId: "o0", category: "planning", familyId: "SF_P_FATE", famTier: 4, price: 30, family: true, legendary: false };
     const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
     expect(r.shop.fateControl).toBe(true);
-    expect(r.shop.boughtLegendaryIds).toEqual(["P-L1"]);
-    expect(r.shop.boughtNonRepeatableIds).toEqual(["P-L1"]);
+    expect(r.shop.familyTiers.SF_P_FATE).toBe(4);
+  });
+  it("Perk-Neuwurf IV (perkFreeReroll) → Engine gibt beim Perk-Angebot gratis Reroll (Skill nicht)", () => {
+    const s = resolveTrick(atCycleEnd({ cycle: 0, shop: { ...initialShop(), perkFreeReroll: true } }), rng); // cycle 0→1 = Perk
+    expect(s.phase).toBe("levelup");
+    expect(s.freePerkReroll).toBe(true);
   });
 
   const levelupPerk = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["A1", "A2", "A3"], ...over });
@@ -735,44 +742,45 @@ describe("Shop-Planungsitems — S5a Rerolls (Shop-Spec §10)", () => {
 });
 
 describe("Shop-Planungsitem — S5b P3 Warenwechsel (Shop-Spec §10)", () => {
+  // cards ist familiengetrieben (#164) → Karten-Angebote sind {familyId,famTier}; Anker bleiben flach.
   const catOffers = () => [
-    { offerId: "o0", itemId: "K1", category: "cards", tier: "cheap", price: 8, legendary: false },
-    { offerId: "o1", itemId: "K2", category: "cards", tier: "cheap", price: 8, legendary: false },
+    { offerId: "o0", category: "cards", familyId: "SF_REFINE", famTier: 1, price: 8, family: true, legendary: false },
+    { offerId: "o1", category: "cards", familyId: "SF_RECOLOR", famTier: 1, price: 8, family: true, legendary: false },
     { offerId: "o2", itemId: "A1", category: "anchors", tier: "cheap", price: 8, legendary: false },
     { offerId: "o3", itemId: "A2", category: "anchors", tier: "cheap", price: 8, legendary: false },
   ];
   it("ersetzt die nicht gekauften Angebote einer Kategorie, andere Kategorien bleiben", () => {
     const shop = { ...initialShop(), offers: catOffers(), purchasedOfferIds: [] };
-    const r = rerollCategory(shop, "cards", SHOP_ITEM_DEFS, makeRng(3), []);
+    const r = rerollCategory(shop, "cards", SHOP_ITEM_DEFS, makeRng(3), [], null, SHOP_FAMILY_DEFS);
     expect(r.offers.filter((o) => o.category === "anchors").map((o) => o.itemId)).toEqual(["A1", "A2"]); // Anker unverändert
     expect(r.offers.filter((o) => o.category === "cards")).toHaveLength(2);        // wieder 2 Kartenangebote
+    expect(r.offers.filter((o) => o.category === "cards").every((o) => o.family)).toBe(true); // als Familien
     expect(new Set(r.offers.map((o) => o.offerId)).size).toBe(r.offers.length);    // offerIds eindeutig
   });
   it("behält bereits gekaufte Angebote der neu gewürfelten Kategorie", () => {
     const shop = { ...initialShop(), offers: catOffers(), purchasedOfferIds: ["o0"] };
-    const r = rerollCategory(shop, "cards", SHOP_ITEM_DEFS, makeRng(3), []);
+    const r = rerollCategory(shop, "cards", SHOP_ITEM_DEFS, makeRng(3), [], null, SHOP_FAMILY_DEFS);
     expect(r.offers.some((o) => o.offerId === "o0")).toBe(true);                   // gekauftes bleibt
     expect(r.offers.filter((o) => o.category === "cards")).toHaveLength(2);        // 1 gekauft + 1 neu
   });
   it("zieht kein zweites Legendär, wenn eins in anderer Kategorie liegt (§5.7)", () => {
     const offers = [
-      { offerId: "o0", itemId: "K1", category: "cards", tier: "cheap", price: 8, legendary: false },
-      { offerId: "o1", itemId: "K2", category: "cards", tier: "cheap", price: 8, legendary: false },
+      { offerId: "o0", category: "cards", familyId: "SF_REFINE", famTier: 1, price: 8, family: true, legendary: false },
+      { offerId: "o1", category: "cards", familyId: "SF_RECOLOR", famTier: 1, price: 8, family: true, legendary: false },
       { offerId: "o2", itemId: "A-L1", category: "anchors", tier: "legendary", price: 30, legendary: true },
       { offerId: "o3", itemId: "A1", category: "anchors", tier: "cheap", price: 8, legendary: false },
     ];
     const shop = { ...initialShop(), offers };
     for (let seed = 1; seed <= 40; seed++)
-      expect(rerollCategory(shop, "cards", SHOP_ITEM_DEFS, makeRng(seed), []).offers.filter((o) => o.legendary).length).toBe(1);
+      expect(rerollCategory(shop, "cards", SHOP_ITEM_DEFS, makeRng(seed), [], null, SHOP_FAMILY_DEFS).offers.filter((o) => o.legendary).length).toBe(1);
   });
-  it("Kauf P3: Kategorie neu würfeln (Karten), P3 bleibt gekauft, Preis abgezogen", () => {
+  it("Kauf Warenwechsel II: gewählte Kategorie neu würfeln, Familie bleibt gekauft", () => {
     const offers = [
-      { offerId: "o0", itemId: "P3", category: "planning", tier: "cheap", price: 8, legendary: false },
-      { offerId: "o1", itemId: "P1", category: "planning", tier: "cheap", price: 8, legendary: false },
-      { offerId: "o2", itemId: "K1", category: "cards", tier: "cheap", price: 8, legendary: false },
-      { offerId: "o3", itemId: "K2", category: "cards", tier: "cheap", price: 8, legendary: false },
+      { offerId: "o0", category: "planning", familyId: "SF_P_RESTOCK", famTier: 2, price: 12, family: true, legendary: false },
+      { offerId: "o1", category: "cards", familyId: "SF_REFINE", famTier: 1, price: 8, family: true, legendary: false },
+      { offerId: "o2", category: "cards", familyId: "SF_RECOLOR", famTier: 1, price: 8, family: true, legendary: false },
     ];
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers } };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     expect(reducer(s, { type: "SHOP_TARGET_CATEGORY", category: "bogus" })).toBe(s); // ungültig → ignoriert
@@ -780,76 +788,77 @@ describe("Shop-Planungsitem — S5b P3 Warenwechsel (Shop-Spec §10)", () => {
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(2) });
     expect(r.phase).toBe("shop");
     expect(r.shop.coins).toBe(0);
-    expect(r.shop.purchasedOfferIds).toContain("o0");                          // P3 gekauft
+    expect(r.shop.purchasedOfferIds).toContain("o0");                          // Warenwechsel gekauft
+    expect(r.shop.familyTiers.SF_P_RESTOCK).toBe(2);
     expect(r.shop.offers.filter((o) => o.category === "cards")).toHaveLength(2);
   });
-  it("Neuwurf der Planungs-Kategorie: das gerade gekaufte P3 bleibt und wird nicht erneut gezogen", () => {
+  it("Warenwechsel auf die eigene Kategorie: das gekaufte Angebot bleibt und wird nicht erneut gezogen", () => {
     const offers = [
-      { offerId: "o0", itemId: "P3", category: "planning", tier: "cheap", price: 8, legendary: false },
-      { offerId: "o1", itemId: "P1", category: "planning", tier: "cheap", price: 8, legendary: false },
+      { offerId: "o0", category: "planning", familyId: "SF_P_RESTOCK", famTier: 1, price: 8, family: true, legendary: false },
+      { offerId: "o1", category: "planning", familyId: "SF_P_PERK_REROLL", famTier: 1, price: 8, family: true, legendary: false },
     ];
     let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     s = reducer(s, { type: "SHOP_TARGET_CATEGORY", category: "planning" });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(2) });
     const pl = r.shop.offers.filter((o) => o.category === "planning");
-    expect(pl.some((o) => o.offerId === "o0" && o.itemId === "P3")).toBe(true); // P3 bleibt (als gekauft)
-    expect(pl.filter((o) => o.itemId === "P3")).toHaveLength(1);                // nicht doppelt gezogen
-    expect(pl).toHaveLength(2);                                                 // P3 + 1 neu
+    expect(pl.some((o) => o.offerId === "o0" && o.familyId === "SF_P_RESTOCK")).toBe(true); // gekauft bleibt
+    expect(pl).toHaveLength(2);                                                             // gekauft + 1 neu
   });
 });
 
 describe("Shop-Planungsitem — S5b P4 Reservierung (Shop-Spec §10)", () => {
   it("withReservedOffer hängt das reservierte Item an und leert die Reservierung", () => {
     const shop = { ...initialShop(),
-      offers: [{ offerId: "o0", itemId: "K1", category: "cards", tier: "cheap", price: 8, legendary: false }],
-      reservedItem: { itemId: "K5", category: "cards", tier: "strong", price: 12, legendary: false } };
-    const r = withReservedOffer(shop, SHOP_ITEM_DEFS, []);
+      offers: [{ offerId: "o0", itemId: "A1", category: "anchors", tier: "cheap", price: 8, legendary: false }],
+      reservedItem: { family: true, familyId: "SF_REFINE", famTier: 2, category: "cards", price: 12 } };
+    const r = withReservedOffer(shop, SHOP_ITEM_DEFS, [], SHOP_FAMILY_DEFS);
     expect(r.reservedItem).toBe(null);
     expect(r.offers).toHaveLength(2);
-    expect(r.offers.find((o) => o.reserved)).toMatchObject({ itemId: "K5", price: 12, category: "cards" });
+    expect(r.offers.find((o) => o.reserved)).toMatchObject({ familyId: "SF_REFINE", famTier: 2, price: 12, category: "cards" });
   });
-  it("P4-Verfügbarkeit (§10): nicht anbieten, wenn bereits ein Item reserviert ist", () => {
-    expect(isItemAvailable(SHOP_ITEM_DEFS.P4, initialShop(), [])).toBe(true);
-    expect(isItemAvailable(SHOP_ITEM_DEFS.P4, { ...initialShop(), reservedItem: { itemId: "K1" } }, [])).toBe(false);
+  it("Reservierung-Persistenz: reserveShops bestimmt, für wie viele Shops die Reservierung bleibt", () => {
+    const shop = { ...initialShop(),
+      offers: [{ offerId: "o0", category: "cards", familyId: "SF_REFINE", famTier: 1, price: 8, family: true, legendary: false }],
+      reservedItem: { family: true, familyId: "SF_REFINE", famTier: 2, category: "cards", price: 12, shopsLeft: 2 } };
+    const r1 = withReservedOffer(shop, SHOP_ITEM_DEFS, [], SHOP_FAMILY_DEFS);
+    expect(r1.offers.find((o) => o.reserved)).toBeTruthy();
+    expect(r1.reservedItem).toMatchObject({ shopsLeft: 1 });                       // bleibt für den nächsten Shop
+    const r2 = withReservedOffer({ ...r1, offers: [] }, SHOP_ITEM_DEFS, [], SHOP_FAMILY_DEFS);
+    expect(r2.reservedItem).toBe(null);                                           // shopsLeft 1 → verfällt danach
   });
-  it("Kauf P4: reserviert das gewählte Angebot (nicht P4 selbst, nur nicht gekaufte)", () => {
+  it("Kauf Reservierung III: reserviert das gewählte Angebot (nicht die Reservierung selbst)", () => {
     const offers = [
-      { offerId: "o0", itemId: "P4", category: "planning", tier: "strong", price: 12, legendary: false },
-      { offerId: "o1", itemId: "K8", category: "cards", tier: "premium", price: 18, legendary: false },
+      { offerId: "o0", category: "planning", familyId: "SF_P_RESERVE", famTier: 3, price: 18, family: true, legendary: false },
+      { offerId: "o1", category: "cards", familyId: "SF_REFINE", famTier: 3, price: 18, family: true, legendary: false },
     ];
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers } };
+    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s); // ohne Ziel → unverändert
-    expect(reducer(s, { type: "SHOP_TARGET_OFFER", offerId: "o0" })).toBe(s);     // P4 selbst → ignoriert
+    expect(reducer(s, { type: "SHOP_TARGET_OFFER", offerId: "o0" })).toBe(s);     // Reservierung selbst → ignoriert
     s = reducer(s, { type: "SHOP_TARGET_OFFER", offerId: "o1" });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.phase).toBe("shop");
     expect(r.shop.coins).toBe(0);
-    expect(r.shop.reservedItem).toMatchObject({ itemId: "K8", price: 18 });
+    expect(r.shop.reservedItem).toMatchObject({ familyId: "SF_REFINE", famTier: 3, shopsLeft: 3 });
+    expect(r.shop.familyTiers.SF_P_RESERVE).toBe(3);
   });
   it("Engine: reserviertes Item erscheint beim nächsten Shop als 9. Angebot und verfällt danach", () => {
     const s = resolveTrick(atCycleEnd({ cycle: 3, // cycle 3→4 = Shop
-      shop: { ...initialShop(), reservedItem: { itemId: "K8", category: "cards", tier: "premium", price: 18, legendary: false } } }), rng);
+      shop: { ...initialShop(), reservedItem: { family: true, familyId: "SF_REFINE", famTier: 3, category: "cards", price: 18 } } }), rng);
     expect(s.phase).toBe("shop");
     expect(s.shop.reservedItem).toBe(null);
     expect(s.shop.offers).toHaveLength(SHOP_ITEMS_OFFERED + 1);           // 8 regulär + 1 reserviert
-    expect(s.shop.offers.find((o) => o.reserved)).toMatchObject({ itemId: "K8", price: 18 });
+    expect(s.shop.offers.find((o) => o.reserved)).toMatchObject({ familyId: "SF_REFINE", famTier: 3, price: 18 });
   });
 });
 
 describe("Shop-Planungsitems — S5c Legendensuche P5/P6 (Shop-Spec §10)", () => {
-  it("P5/P6 apply erhöhen den Legendär-Bonus um +5 pp bis zum Cap", () => {
-    const s = initialShop();
-    expect(SHOP_ITEM_DEFS.P5.apply({ shop: s }).shop.perkLegendaryBonus).toBeCloseTo(0.05);
-    expect(SHOP_ITEM_DEFS.P6.apply({ shop: s }).shop.skillLegendaryBonus).toBeCloseTo(0.05);
-    expect(SHOP_ITEM_DEFS.P5.apply({ shop: { ...s, perkLegendaryBonus: 0.14 } }).shop.perkLegendaryBonus).toBeCloseTo(MAX_LEGENDARY_CHANCE_BONUS); // Cap
-  });
-  it("P5/P6-Verfügbarkeit: am Cap (+15 pp) nicht mehr anbieten (§10)", () => {
-    expect(isItemAvailable(SHOP_ITEM_DEFS.P5, initialShop(), [])).toBe(true);
-    expect(isItemAvailable(SHOP_ITEM_DEFS.P5, { ...initialShop(), perkLegendaryBonus: MAX_LEGENDARY_CHANCE_BONUS }, [])).toBe(false);
-    expect(isItemAvailable(SHOP_ITEM_DEFS.P6, { ...initialShop(), skillLegendaryBonus: MAX_LEGENDARY_CHANCE_BONUS }, [])).toBe(false);
+  it("Legendensuche-Familien SETZEN den Legendär-Bonus je Stufe (Regelersetzung, nicht additiv)", () => {
+    expect([1, 2, 3, 4].map((t) => SHOP_FAMILY_DEFS.SF_P_LEGEND_PERK.tiers[t].onBuy().perkLegendaryBonus)).toEqual([0.03, 0.05, 0.10, 0.15]);
+    expect([1, 2, 3, 4].map((t) => SHOP_FAMILY_DEFS.SF_P_LEGEND_SKILL.tiers[t].onBuy().skillLegendaryBonus)).toEqual([0.03, 0.05, 0.10, 0.15]);
+    expect(SHOP_FAMILY_DEFS.SF_P_LEGEND_PERK.tiers[4].onBuy().perkLegendaryBonus).toBeCloseTo(MAX_LEGENDARY_CHANCE_BONUS); // IV = Cap
   });
   it("perkLegendaryChance/skillLegendaryChance = Basis + Bonus (Bonus gedeckelt)", () => {
     expect(perkLegendaryChance(initialShop())).toBeCloseTo(PERK_LEGENDARY_BASE);
@@ -857,17 +866,19 @@ describe("Shop-Planungsitems — S5c Legendensuche P5/P6 (Shop-Spec §10)", () =
     expect(perkLegendaryChance({ perkLegendaryBonus: 0.99 })).toBeCloseTo(PERK_LEGENDARY_BASE + MAX_LEGENDARY_CHANCE_BONUS);
     expect(skillLegendaryChance({ skillLegendaryBonus: 0.05 })).toBeCloseTo(SKILL_LEGENDARY_BASE + 0.05);
   });
-  it("Kauf P5 (kein Ziel): +5 pp Perk-Legendär-Bonus, Preis abgezogen", () => {
-    const offer = { offerId: "o0", itemId: "P5", category: "planning", tier: "premium", price: 18, legendary: false };
-    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
+  it("Kauf Legendensuche: Perks II (kein Ziel): setzt Perk-Legendär-Bonus 0,05, Preis abgezogen", () => {
+    const offer = { offerId: "o0", category: "planning", familyId: "SF_P_LEGEND_PERK", famTier: 2, price: 12, family: true, legendary: false };
+    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers: [offer] } };
     const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
     expect(r.shop.coins).toBe(0);
     expect(r.shop.perkLegendaryBonus).toBeCloseTo(0.05);
+    expect(r.shop.familyTiers.SF_P_LEGEND_PERK).toBe(2);
   });
 });
 
-describe("Shop-Positionsanker — A6 Jokeranker (Shop-Spec §8)", () => {
-  const joker = (pos) => [{ type: "joker", position: pos }];
+describe("Shop-Jokeranker-Familie (Shop-Spec §4.2)", () => {
+  // Stufe IV = Joker für alle Basisformationen (wie der frühere flache A6).
+  const joker = (pos) => [{ type: "joker", position: pos, tier: 4, jokerTypes: ["wiederholung", "treppe", "farbblock", "wechsel"] }];
   it("vervollständigt eine Wiederholung, indem der Joker den Wert annimmt", () => {
     const deck = seqDeck([5, 9, 5]); // 5, _, 5 — Joker an Pos 1 füllt die Lücke
     expect(hasForm(computeFormations(ord(3), deck), 0, "wiederholung")).toBe(false);
@@ -889,7 +900,7 @@ describe("Shop-Positionsanker — A6 Jokeranker (Shop-Spec §8)", () => {
   });
   it("erzeugt allein keine Formation (nur Joker, keine reale Karte)", () => {
     const deck = seqDeck([5, 7]);
-    const out = computeFormations(ord(2), deck, {}, [], [], [{ type: "joker", position: 0 }, { type: "joker", position: 1 }]);
+    const out = computeFormations(ord(2), deck, {}, [], [], [...joker(0), ...joker(1)]);
     expect(out[0].formations.some((f) => f.type === "wiederholung")).toBe(false);
     expect(out[0].mult).toBe(1);
   });
@@ -903,14 +914,15 @@ describe("Shop-Positionsanker — A6 Jokeranker (Shop-Spec §8)", () => {
     const out = computeFormations(ord(3), seqDeck([5, 20, 40]), {}, [], [], joker(0));
     expect(out.every((p) => !p.formations.some((f) => f.type === "anker"))).toBe(true);
   });
-  it("Kauf A6: legt einen joker-Anker an der gewählten Position an (Position-Ziel-Flow)", () => {
-    const offer = { offerId: "o0", itemId: "A6", category: "anchors", tier: "premium", price: 18, legendary: false };
+  it("Kauf Jokeranker-Familie: legt einen joker-Anker (mit Stufe) an der gewählten Position an", () => {
+    const offer = { offerId: "o0", category: "anchors", familyId: "SF_A_JOKER", famTier: 3, price: 18, family: true, legendary: false };
     let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
     s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
     expect(s.phase).toBe("shop-target");
     s = reducer(s, { type: "SHOP_TARGET_POSITION", position: 10 });
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
-    expect(r.shop.anchors).toEqual([{ type: "joker", position: 10 }]);
+    expect(r.shop.anchors).toEqual([{ type: "joker", position: 10, tier: 3, familyId: "SF_A_JOKER", jokerTypes: ["wiederholung", "treppe", "farbblock"] }]);
+    expect(r.shop.familyTiers.SF_A_JOKER).toBe(3);
     expect(r.shop.coins).toBe(0);
   });
 });

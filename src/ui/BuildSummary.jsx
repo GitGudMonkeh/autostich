@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
+import { familyDef } from "../game/families.js";
+import { tierMeta, romanOf } from "../game/rarity.js";
 import { SKILL_DEFS, ARCHETYPE_META, archetypeOf } from "../game/skills.js";
 import { SUIT_ORDER, suitColor, suitName } from "../game/constants.js";
 
@@ -8,13 +10,31 @@ const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "�
 
 /* Gemeinsame Build-Kontext-Bausteine (#22): geteilt von BuildPanel und PerkSelect. */
 
-/* Aktive Perks je Kategorie, anklickbar → Beschreibung (#1). Klick löst keine Auswahl aus. */
-export function PerkList({ perks, empty = "Noch keine Perks." }) {
-  const [openPerk, setOpenPerk] = useState(null);
+/* Aktive Perks & Familien je Kategorie, anklickbar → Beschreibung (#1). Klick löst keine Auswahl aus.
+   Rarität #167: `familyTiers` mischt gehaltene Familien (Name + römische Stufe, Stufenfarbe) unter die flachen Perks. */
+export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks." }) {
+  const [open, setOpen] = useState(null); // { kind: "perk"|"family", id }
+  const isOpen = (kind, id) => open && open.kind === kind && open.id === id;
+  const toggle = (kind, id) => setOpen(isOpen(kind, id) ? null : { kind, id });
+  // Kombinierte Einträge je Kategorie: flache Perks + gehaltene Familien (Rang > 0).
+  const heldFams = Object.entries(familyTiers).filter(([, t]) => t > 0);
   const byCat = {};
-  for (const id of perks) (byCat[PERK_DEFS[id].cat] ||= []).push(id);
-  const open = openPerk && perks.includes(openPerk) ? PERK_DEFS[openPerk] : null;
-  if (perks.length === 0) return <div className="text-sm opacity-40">{empty}</div>;
+  for (const id of perks) (byCat[PERK_DEFS[id].cat] ||= []).push({ kind: "perk", id });
+  for (const [fid, tier] of heldFams) { const f = familyDef(fid); if (f) (byCat[f.cat] ||= []).push({ kind: "family", id: fid, tier }); }
+  const total = perks.length + heldFams.length;
+  if (total === 0) return <div className="text-sm opacity-40">{empty}</div>;
+
+  // Detail-Panel des aufgeklappten Eintrags (Perk oder Familien-Stufe).
+  let detail = null;
+  if (open && open.kind === "perk" && perks.includes(open.id)) {
+    const p = PERK_DEFS[open.id]; const c = CATEGORIES[p.cat].color;
+    detail = { c, cat: CATEGORIES[p.cat].name, name: p.label, desc: p.desc };
+  } else if (open && open.kind === "family") {
+    const f = familyDef(open.id); const tier = familyTiers[open.id];
+    if (f && tier) { const c = (tierMeta(tier) || {}).color || CATEGORIES[f.cat].color;
+      detail = { c, cat: CATEGORIES[f.cat].name, name: `${f.name} ${romanOf(tier)}`, desc: (f.tiers[tier] || {}).desc || "" }; }
+  }
+
   return (
     <div>
       <div className="grid gap-2">
@@ -22,32 +42,44 @@ export function PerkList({ perks, empty = "Noch keine Perks." }) {
           <div key={c} className="flex flex-wrap items-center gap-1.5">
             <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
               style={{ background: `${CATEGORIES[c].color}22`, color: CATEGORIES[c].color }}>{CATEGORIES[c].name}</span>
-            {byCat[c].map((id) => {
-              const active = openPerk === id;
-              const rar = rarityOf(id);
+            {byCat[c].map((it) => {
+              const active = isOpen(it.kind, it.id);
+              if (it.kind === "family") {
+                // Familie: Stufenfarbe (grau/grün/blau/lila) + „Name II".
+                const f = familyDef(it.id); const col = (tierMeta(it.tier) || {}).color || CATEGORIES[c].color;
+                return (
+                  <button key={`fam:${it.id}`} type="button" onClick={() => toggle("family", it.id)}
+                    className="text-xs px-2 py-0.5 rounded transition-all"
+                    style={{ background: active ? `${col}33` : "#22222b", color: col,
+                             outline: active ? `1px solid ${col}` : `1px solid ${col}88` }}>
+                    {f.name} {romanOf(it.tier)}
+                  </button>
+                );
+              }
+              const rar = rarityOf(it.id);
               const rm = RARITY_META[rar];
               const special = rar !== "common"; // selten/legendär: Raritäts-Farbe + Marke
               return (
-                <button key={id} type="button" onClick={() => setOpenPerk(active ? null : id)}
+                <button key={`perk:${it.id}`} type="button" onClick={() => toggle("perk", it.id)}
                   className="text-xs px-2 py-0.5 rounded transition-all"
                   style={{ background: active ? `${CATEGORIES[c].color}33` : "#22222b",
                            color: special ? rm.color : undefined,
                            outline: active ? `1px solid ${CATEGORIES[c].color}` : (special ? `1px solid ${rm.color}88` : "none") }}>
-                  {rm.mark ? `${rm.mark} ` : ""}{PERK_DEFS[id].label}
+                  {rm.mark ? `${rm.mark} ` : ""}{PERK_DEFS[it.id].label}
                 </button>
               );
             })}
           </div>
         ))}
       </div>
-      {open && (
-        <div className="mt-2 rounded-lg p-3 text-sm" style={{ background: "#1e1e26", border: `1px solid ${CATEGORIES[open.cat].color}55` }}>
+      {detail && (
+        <div className="mt-2 rounded-lg p-3 text-sm" style={{ background: "#1e1e26", border: `1px solid ${detail.c}55` }}>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
-              style={{ background: `${CATEGORIES[open.cat].color}22`, color: CATEGORIES[open.cat].color }}>{CATEGORIES[open.cat].name}</span>
-            <span className="font-bold" style={{ color: CATEGORIES[open.cat].color }}>{open.label}</span>
+              style={{ background: `${detail.c}22`, color: detail.c }}>{detail.cat}</span>
+            <span className="font-bold" style={{ color: detail.c }}>{detail.name}</span>
           </div>
-          <div className="opacity-80 leading-snug">{open.desc}</div>
+          <div className="opacity-80 leading-snug">{detail.desc}</div>
         </div>
       )}
     </div>
