@@ -80,6 +80,34 @@ describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schrit
   });
 });
 
+describe("Familien-Engine — Kategorie B (Wertboni über resolveTrick)", () => {
+  it("B_COUNTER: Familien-cardBonus hebt den Kampfwert der nächsten Karte nach einer Niederlage", () => {
+    const s = resolveTrick(scenario(3, 8, { familyTiers: { B_COUNTER: 4 }, lastResult: "loss" }), rng);
+    expect(s.lastTrick.pValue).toBe(13); // 3 + 10
+    expect(s.wins).toBe(1);              // 13 > 8 → aus der Niederlage wird ein Sieg
+  });
+  it("B_OPENING: die ersten Karten je Durchlauf erhalten den Wertbonus (Stufe I: Pos 1–2 +2)", () => {
+    const s = resolveTrick(scenario(5, 6, { familyTiers: { B_OPENING: 1 } }), rng);
+    expect(s.lastTrick.pValue).toBe(7);  // Pos 0 → +2 → 7 > 6 → Sieg
+    expect(s.wins).toBe(1);
+  });
+  it("B_INITIATIVE: tieArmLosses armiert den Gleichstand-Sieg je Stufe", () => {
+    expect(resolveTrick(scenario(3, 8, { familyTiers: { B_INITIATIVE: 1 } }), rng).tieArmed).toBe(false); // 1 Niederlage < Schwelle 2
+    expect(resolveTrick(scenario(3, 8, { familyTiers: { B_INITIATIVE: 1 }, lossStreak: 1 }), rng).tieArmed).toBe(true); // 2. Niederlage
+    expect(resolveTrick(scenario(3, 8, { familyTiers: { B_INITIATIVE: 2 } }), rng).tieArmed).toBe(true); // Stufe II: schon ab 1
+    const win = resolveTrick(scenario(5, 5, { familyTiers: { B_INITIATIVE: 2 }, tieArmed: true }), rng);
+    expect(win.wins).toBe(1);
+    expect(win.lastTrick.result).toBe("win_tie");
+  });
+  it("B_REVENGE III: bei GENAU 2 Niederlagen +6 auf die nächsten zwei Karten (successorQueue)", () => {
+    const s = resolveTrick(scenario(3, 8, { familyTiers: { B_REVENGE: 3 }, lossStreak: 1 }), rng); // 2. Niederlage armiert
+    expect(s.successorQueue).toEqual([6, 6]);
+    const next = resolveTrick({ ...s, deck: constDeck(4), oppDeck: constDeck(8), playerOrder: identity(), oppOrder: identity(), pos: 0 }, rng);
+    expect(next.lastTrick.pValue).toBe(10);   // 4 + 6 (Kopf der Queue)
+    expect(next.successorQueue).toEqual([6]); // eine verbraucht
+  });
+});
+
 describe("Reducer PICK_FAMILY (Schritt 1 + Angebotsvalidierung Schritt 3)", () => {
   it("setzt familyTiers[id] auf die Zielstufe und kehrt ins Spiel zurück", () => {
     const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "D_HIGH", tier: 3 }] };
@@ -221,19 +249,13 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
   });
 
   it("bietet nur Stufen ECHT über dem gehaltenen Rang an; IV schließt die Familie ab", () => {
-    // D_HIGH auf Rang 3 → nur noch Stufe IV anbietbar.
-    let sawIV = false;
-    for (let seed = 0; seed < 60; seed++) {
-      for (const e of buildPerkOffer([], { D_HIGH: 3 }, rngS(seed), 3)) {
-        if (isFam(e) && e.familyId === "D_HIGH") { expect(e.tier).toBe(4); sawIV = true; }
-      }
-    }
-    expect(sawIV).toBe(true);
-    // Alle D-Familien auf IV → keine D-Familie mehr im Angebot (nur noch flache Perks).
+    const ownedFlat = PERK_LIST.map((p) => p.id); // alle flachen Perks besessen → Angebotspool = nur Familien
+    // Alle Familien außer D_HIGH auf IV (abgeschlossen), D_HIGH auf Rang III → einzige anbietbare Stufe ist IV.
+    const others = Object.fromEntries(Object.keys(FAMILY_DEFS).filter((id) => id !== "D_HIGH").map((id) => [id, 4]));
+    expect(buildPerkOffer(ownedFlat, { ...others, D_HIGH: 3 }, rngS(1), 3)).toEqual([{ familyId: "D_HIGH", tier: 4 }]);
+    // Alle Familien auf IV + alle flachen Perks besessen → gar kein Angebot mehr.
     const allIV = Object.fromEntries(Object.keys(FAMILY_DEFS).map((id) => [id, 4]));
-    for (let seed = 0; seed < 20; seed++) {
-      for (const e of buildPerkOffer([], allIV, rngS(seed), 3)) expect(isFam(e)).toBe(false);
-    }
+    expect(buildPerkOffer(ownedFlat, allIV, rngS(1), 3)).toEqual([]);
   });
 
   it("besessene flache Perks werden nicht erneut angeboten", () => {

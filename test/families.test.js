@@ -24,6 +24,90 @@ describe("Familien-Registry — Struktur", () => {
     expect(d).toHaveLength(19);
     for (const f of d) expect(f.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
   });
+  it("Kategorie B vollständig (10 Familien, alle Regelersetzung)", () => {
+    const b = FAMILY_LIST.filter((f) => f.cat === "B");
+    expect(b).toHaveLength(10);
+    for (const f of b) expect(f.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
+  });
+});
+
+describe("Kategorie B — Stufeneffekte (Spec §3.2 B)", () => {
+  it("Gegenangriff: nach Niederlage +3/+5/+7/+10", () => {
+    const f = FAMILY_DEFS.B_COUNTER.tiers;
+    expect([1, 2, 3, 4].map((t) => f[t].cardBonus({ lostLastTrick: true }))).toEqual([3, 5, 7, 10]);
+    expect(f[4].cardBonus({ lostLastTrick: false })).toBe(0);
+  });
+  it("Momentum: nur direkt nächste Karte; I braucht Serie 4, II–IV genau 3 (Spec §3.3)", () => {
+    const f = FAMILY_DEFS.B_MOMENTUM.tiers;
+    expect(f[1].cardBonus({ winStreak: 4 })).toBe(4);
+    expect(f[1].cardBonus({ winStreak: 3 })).toBe(0);
+    expect(f[2].cardBonus({ winStreak: 3 })).toBe(5);
+    expect(f[2].cardBonus({ winStreak: 2 })).toBe(0); // kein Trigger nach nur 2 Siegen
+    expect(f[4].cardBonus({ winStreak: 4 })).toBe(0); // genau 3, nicht mehr
+  });
+  it("Starker Auftakt: erste n Karten je +n", () => {
+    const f = FAMILY_DEFS.B_OPENING.tiers;
+    expect(f[1].cardBonus({ posInCycle: 1 })).toBe(2);
+    expect(f[1].cardBonus({ posInCycle: 2 })).toBe(0);
+    expect(f[4].cardBonus({ posInCycle: 4 })).toBe(5);
+    expect(f[4].cardBonus({ posInCycle: 5 })).toBe(0);
+  });
+  it("Zehnter Schlag: Positionsraster verdichtet sich (20/40 → jede 5.)", () => {
+    const f = FAMILY_DEFS.B_TENTH_STRIKE.tiers;
+    expect(f[1].cardBonus({ posInCycle: 19 })).toBe(6); // Pos 20
+    expect(f[1].cardBonus({ posInCycle: 9 })).toBe(0);  // Pos 10 (noch nicht)
+    expect(f[2].cardBonus({ posInCycle: 9 })).toBe(6);  // Pos 10
+    expect(f[3].cardBonus({ posInCycle: 4 })).toBe(6);  // Pos 5
+    expect(f[4].cardBonus({ posInCycle: 4 })).toBe(8);  // Pos 5, +8
+  });
+  it("Knappe Kiste: I/II nur Wiederholung, III/IV jede Formation", () => {
+    const f = FAMILY_DEFS.B_TIGHT.tiers;
+    const rep = { posForm: { mult: 1.3, formations: [{ type: "wiederholung" }] } };
+    const treppe = { posForm: { mult: 1.35, formations: [{ type: "treppe" }] } };
+    expect(f[2].cardBonus(rep)).toBe(2);
+    expect(f[2].cardBonus(treppe)).toBe(0);           // nur Wiederholung
+    expect(f[3].cardBonus(treppe)).toBe(2);           // jede Formation (mult > 1)
+    expect(f[4].cardBonus({ posForm: { mult: 1, formations: [] } })).toBe(0);
+  });
+  it("Durchbruch: sinceWin-Schwelle sinkt 6→3, Bonus steigt", () => {
+    const f = FAMILY_DEFS.B_BREAKTHROUGH.tiers;
+    expect(f[1].cardBonus({ sinceWin: 6 })).toBe(7);
+    expect(f[1].cardBonus({ sinceWin: 5 })).toBe(0);
+    expect(f[4].cardBonus({ sinceWin: 3 })).toBe(15);
+  });
+  it("Revanche: I/II/IV cardBonus, III markiert revengeTwoCard (kein cardBonus)", () => {
+    const f = FAMILY_DEFS.B_REVENGE.tiers;
+    expect(f[2].cardBonus({ lossStreak: 2 })).toBe(7);
+    expect(f[4].cardBonus({ lossStreak: 1 })).toBe(8);
+    expect(f[3].cardBonus).toBeUndefined();
+    expect(f[3].revengeTwoCard).toEqual({ losses: 2, bonus: 6, count: 2 });
+  });
+  it("Perfekte Folge: Treppen-Ordinal → Bonus je Stufe", () => {
+    const f = FAMILY_DEFS.B_PERFECT.tiers;
+    const stair = (ord) => ({ posForm: { formations: [{ type: "treppe", ordinal: ord }] } });
+    expect([1, 2, 3].map((o) => f[2].cardBonus(stair(o)))).toEqual([1, 2, 3]);
+    expect(f[2].cardBonus(stair(5))).toBe(4);   // ab der 4. Karte konstant der Cap
+    expect(f[1].cardBonus(stair(2))).toBe(0);   // I: erst ab der 3. Karte
+    expect(f[1].cardBonus(stair(3))).toBe(1);
+    expect(f[4].cardBonus(stair(1))).toBe(3);
+    expect(f[4].cardBonus({ posForm: { formations: [{ type: "wiederholung", ordinal: 2 }] } })).toBe(0); // keine Treppe
+  });
+  it("Überzahl: Vergleich Dauerwert (pValueBase) vs. Vorgänger je Stufe", () => {
+    const f = FAMILY_DEFS.B_SUPERIOR.tiers;
+    expect(f[1].cardBonus({ predValue: 5, pValueBase: 7 })).toBe(2); // ≥2 höher
+    expect(f[1].cardBonus({ predValue: 5, pValueBase: 6 })).toBe(0); // nur 1 höher
+    expect(f[2].cardBonus({ predValue: 5, pValueBase: 6 })).toBe(3); // höher
+    expect(f[3].cardBonus({ predValue: 5, pValueBase: 5 })).toBe(3); // nicht niedriger
+    expect(f[4].cardBonus({ predValue: 5, pValueBase: 8 })).toBe(5); // höher → +5
+    expect(f[4].cardBonus({ predValue: 5, pValueBase: 5 })).toBe(2); // gleich → +2
+    expect(f[2].cardBonus({ predValue: null, pValueBase: 9 })).toBe(0); // kein Vorgänger
+  });
+  it("Initiative: tieArmLosses je Stufe; IV zusätzlich +2 nach Niederlage", () => {
+    const f = FAMILY_DEFS.B_INITIATIVE.tiers;
+    expect([1, 2, 3, 4].map((t) => f[t].tieArmLosses)).toEqual([2, 1, 1, 1]);
+    expect(f[4].cardBonus({ lostLastTrick: true })).toBe(2);
+    expect(f[1].cardBonus).toBeUndefined();
+  });
 });
 
 describe("Kategorie D — Stufeneffekte (Spec §3.2 D)", () => {

@@ -208,8 +208,121 @@ const D_FAMILIES = {
   },
 };
 
+// ---- B · Stich (Spec §3.2 B) — temporäre Wertboni auf die gespielte Karte, allesamt Regelersetzung. ----
+// Kontextfelder (aus effectivePlayerValue): lostLastTrick, winStreak (effektive Serie), posInCycle, sinceWin,
+// lossStreak, posForm (Formationen + `mult` der Position), predValue (Dauerwert des Vorgängers), pValueBase.
+const inRepeat = (c) => !!(c.posForm && c.posForm.formations && c.posForm.formations.some((f) => f.type === "wiederholung"));
+const inAnyFormation = (c) => !!(c.posForm && c.posForm.mult > 1); // = positionHasFormation (mult > 1)
+// Treppen-Ordinal (1,2,3,…) → Bonus: die ersten drei Stufen aus `firstThree`, ab der vierten konstant `cap`.
+const stairBonus = (c, firstThree, cap) => {
+  const t = c.posForm && c.posForm.formations && c.posForm.formations.find((f) => f.type === "treppe");
+  if (!t) return 0;
+  return t.ordinal <= 3 ? firstThree[t.ordinal - 1] : cap;
+};
+
+const B_FAMILIES = {
+  B_COUNTER: {
+    id: "B_COUNTER", cat: "B", name: "Gegenangriff", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Nach einer Niederlage erhält die nächste Karte +3 Wert.",  cardBonus: (c) => (c.lostLastTrick ? 3 : 0) },
+      2: { desc: "Nach einer Niederlage erhält die nächste Karte +5 Wert.",  cardBonus: (c) => (c.lostLastTrick ? 5 : 0) },
+      3: { desc: "Nach einer Niederlage erhält die nächste Karte +7 Wert.",  cardBonus: (c) => (c.lostLastTrick ? 7 : 0) },
+      4: { desc: "Nach einer Niederlage erhält die nächste Karte +10 Wert.", cardBonus: (c) => (c.lostLastTrick ? 10 : 0) },
+    },
+  },
+  B_MOMENTUM: {
+    id: "B_MOMENTUM", cat: "B", name: "Momentum", upgradeType: REPLACEMENT,
+    // Spec §3.3: verstärkt IMMER nur die direkt nächste Karte; kein Trigger nach nur 2 Siegen (I braucht 4, sonst 3).
+    tiers: {
+      1: { desc: "Nach genau 4 Siegen in Folge erhält die nächste Karte +4 Wert.", cardBonus: (c) => (c.winStreak === 4 ? 4 : 0) },
+      2: { desc: "Nach genau 3 Siegen in Folge erhält die nächste Karte +5 Wert.", cardBonus: (c) => (c.winStreak === 3 ? 5 : 0) },
+      3: { desc: "Nach genau 3 Siegen in Folge erhält die nächste Karte +7 Wert.", cardBonus: (c) => (c.winStreak === 3 ? 7 : 0) },
+      4: { desc: "Nach genau 3 Siegen in Folge erhält die nächste Karte +10 Wert.", cardBonus: (c) => (c.winStreak === 3 ? 10 : 0) },
+    },
+  },
+  B_OPENING: {
+    id: "B_OPENING", cat: "B", name: "Starker Auftakt", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Die ersten 2 Karten jedes Durchlaufs erhalten je +2 Wert.", cardBonus: (c) => (c.posInCycle <= 1 ? 2 : 0) },
+      2: { desc: "Die ersten 3 Karten jedes Durchlaufs erhalten je +3 Wert.", cardBonus: (c) => (c.posInCycle <= 2 ? 3 : 0) },
+      3: { desc: "Die ersten 4 Karten jedes Durchlaufs erhalten je +4 Wert.", cardBonus: (c) => (c.posInCycle <= 3 ? 4 : 0) },
+      4: { desc: "Die ersten 5 Karten jedes Durchlaufs erhalten je +5 Wert.", cardBonus: (c) => (c.posInCycle <= 4 ? 5 : 0) },
+    },
+  },
+  B_TENTH_STRIKE: {
+    id: "B_TENTH_STRIKE", cat: "B", name: "Zehnter Schlag", upgradeType: REPLACEMENT,
+    // posInCycle ist 0-basiert → Position n = posInCycle n-1; „(pos+1) % k === 0" trifft jede k-te Position.
+    tiers: {
+      1: { desc: "Karten auf Position 20 und 40 erhalten +6 Wert.",               cardBonus: (c) => ((c.posInCycle + 1) % 20 === 0 ? 6 : 0) },
+      2: { desc: "Karten auf Position 10, 20, 30 und 40 erhalten +6 Wert.",       cardBonus: (c) => ((c.posInCycle + 1) % 10 === 0 ? 6 : 0) },
+      3: { desc: "Jede fünfte Position (5, 10, … 40) erhält +6 Wert.",            cardBonus: (c) => ((c.posInCycle + 1) % 5 === 0 ? 6 : 0) },
+      4: { desc: "Jede fünfte Position erhält +8 Wert.",                          cardBonus: (c) => ((c.posInCycle + 1) % 5 === 0 ? 8 : 0) },
+    },
+  },
+  B_INITIATIVE: {
+    id: "B_INITIATIVE", cat: "B", name: "Initiative", upgradeType: REPLACEMENT,
+    // Engine armiert den Gleichstands-Sieg über tieArmLosses (Niederlagen bis zur Armierung). IV gibt zusätzlich
+    // der nächsten Karte +2 Wert (cardBonus über lostLastTrick). III „+1 bei Gleichstand" = ebenfalls Gleichstand-Sieg.
+    tiers: {
+      1: { desc: "Nach zwei Niederlagen gewinnst du den nächsten Gleichstand.", tieArmLosses: 2 },
+      2: { desc: "Nach einer Niederlage gewinnst du den nächsten Gleichstand.", tieArmLosses: 1 },
+      3: { desc: "Nach einer Niederlage gewinnst du den nächsten Gleichstand (die nächste Karte zählt bei Gleichstand als +1).", tieArmLosses: 1 },
+      4: { desc: "Nach einer Niederlage erhält die nächste Karte +2 Wert und gewinnt den nächsten Gleichstand.", tieArmLosses: 1, cardBonus: (c) => (c.lostLastTrick ? 2 : 0) },
+    },
+  },
+  B_TIGHT: {
+    id: "B_TIGHT", cat: "B", name: "Knappe Kiste", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Liegt die Karte in einer Wiederholung, erhält sie +1 temporären Wert.",          cardBonus: (c) => (inRepeat(c) ? 1 : 0) },
+      2: { desc: "Liegt die Karte in einer Wiederholung, erhält sie +2 temporären Wert.",          cardBonus: (c) => (inRepeat(c) ? 2 : 0) },
+      3: { desc: "Liegt die Karte in mindestens einer Formation, erhält sie +2 temporären Wert.",  cardBonus: (c) => (inAnyFormation(c) ? 2 : 0) },
+      4: { desc: "Liegt die Karte in mindestens einer Formation, erhält sie +3 temporären Wert.",  cardBonus: (c) => (inAnyFormation(c) ? 3 : 0) },
+    },
+  },
+  B_BREAKTHROUGH: {
+    id: "B_BREAKTHROUGH", cat: "B", name: "Durchbruch", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Nach 6 Stichen ohne Sieg erhält die nächste Karte +7 Wert.",  cardBonus: (c) => ((c.sinceWin || 0) >= 6 ? 7 : 0) },
+      2: { desc: "Nach 5 Stichen ohne Sieg erhält die nächste Karte +10 Wert.", cardBonus: (c) => ((c.sinceWin || 0) >= 5 ? 10 : 0) },
+      3: { desc: "Nach 4 Stichen ohne Sieg erhält die nächste Karte +12 Wert.", cardBonus: (c) => ((c.sinceWin || 0) >= 4 ? 12 : 0) },
+      4: { desc: "Nach 3 Stichen ohne Sieg erhält die nächste Karte +15 Wert.", cardBonus: (c) => ((c.sinceWin || 0) >= 3 ? 15 : 0) },
+    },
+  },
+  B_REVENGE: {
+    id: "B_REVENGE", cat: "B", name: "Revanche", upgradeType: REPLACEMENT,
+    // I/II/IV: einfacher cardBonus über lossStreak. III: die nächsten ZWEI Karten je +6 (Engine armiert die
+    // successorQueue, wenn lossStreak GENAU die Schwelle erreicht — revengeTwoCard {losses, bonus, count}).
+    tiers: {
+      1: { desc: "Nach drei Niederlagen in Folge erhält die nächste Karte +6 Wert.", cardBonus: (c) => ((c.lossStreak || 0) >= 3 ? 6 : 0) },
+      2: { desc: "Nach zwei Niederlagen in Folge erhält die nächste Karte +7 Wert.", cardBonus: (c) => ((c.lossStreak || 0) >= 2 ? 7 : 0) },
+      3: { desc: "Nach zwei Niederlagen in Folge erhalten die nächsten zwei Karten je +6 Wert.", revengeTwoCard: { losses: 2, bonus: 6, count: 2 } },
+      4: { desc: "Nach jeder Niederlage erhält die nächste Karte +8 Wert.", cardBonus: (c) => ((c.lossStreak || 0) >= 1 ? 8 : 0) },
+    },
+  },
+  B_PERFECT: {
+    id: "B_PERFECT", cat: "B", name: "Perfekte Folge", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Treppenkarten erhalten ab der dritten Karte +1, danach +2 temporären Wert.", cardBonus: (c) => stairBonus(c, [0, 0, 1], 2) },
+      2: { desc: "Treppenkarten erhalten +1/+2/+3, danach +4 temporären Wert.",                cardBonus: (c) => stairBonus(c, [1, 2, 3], 4) },
+      3: { desc: "Treppenkarten erhalten +2/+3/+4, danach +5 temporären Wert.",                cardBonus: (c) => stairBonus(c, [2, 3, 4], 5) },
+      4: { desc: "Treppenkarten erhalten +3/+4/+5, danach +6 temporären Wert.",                cardBonus: (c) => stairBonus(c, [3, 4, 5], 6) },
+    },
+  },
+  B_SUPERIOR: {
+    id: "B_SUPERIOR", cat: "B", name: "Überzahl", upgradeType: REPLACEMENT,
+    // Vergleich des DAUERWERTS (pValueBase) mit dem des direkten Vorgängers (predValue). Pos 0 (kein Vorgänger) → 0.
+    tiers: {
+      1: { desc: "Ist der Dauerwert mindestens 2 höher als der des Vorgängers, +2 temporärer Wert.", cardBonus: (c) => (c.predValue != null && c.pValueBase - c.predValue >= 2 ? 2 : 0) },
+      2: { desc: "Ist der Dauerwert höher als der des Vorgängers, +3 temporärer Wert.",              cardBonus: (c) => (c.predValue != null && c.pValueBase > c.predValue ? 3 : 0) },
+      3: { desc: "Ist der Dauerwert nicht niedriger als der des Vorgängers, +3 temporärer Wert.",    cardBonus: (c) => (c.predValue != null && c.pValueBase >= c.predValue ? 3 : 0) },
+      4: { desc: "Höher als der Vorgänger: +5; genau gleich: +2 temporärer Wert.",                   cardBonus: (c) => (c.predValue == null ? 0 : c.pValueBase > c.predValue ? 5 : c.pValueBase === c.predValue ? 2 : 0) },
+    },
+  },
+};
+
 export const FAMILY_DEFS = {
   ...D_FAMILIES,
+  ...B_FAMILIES,
 };
 
 export const FAMILY_LIST = Object.values(FAMILY_DEFS);
