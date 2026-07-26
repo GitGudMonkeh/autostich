@@ -206,7 +206,10 @@ export function Autostich() {
   }
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun läuft über den gameover-Effekt
-  const pick = (id) => dispatch({ type: "PICK_PERK", perkId: id, rng: Math.random });
+  // Perk-Auswahl: ein Angebotseintrag ist entweder eine Familie {familyId,tier} (Rarität #167) oder ein flacher perkId-String.
+  const pick = (entry) => (entry && typeof entry === "object" && entry.familyId)
+    ? dispatch({ type: "PICK_FAMILY", familyId: entry.familyId, tier: entry.tier, rng: Math.random })
+    : dispatch({ type: "PICK_PERK", perkId: entry, rng: Math.random });
   const pickStat = (id) => dispatch({ type: "PICK_STAT", statId: id, rng: Math.random });
   // Formationsphase (§22.8): Tausch / Undo / Zurücksetzen / Bestätigen.
   const swapCards = (i, j) => dispatch({ type: "SWAP_CARDS", i, j });
@@ -400,7 +403,7 @@ export function Autostich() {
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
                 ownCount={frozenCount(state.deck)}
                 enemyCount={(state.frostbiteActive || []).length} />
-              <BuildPanel perks={state.perks} skills={state.skills} />
+              <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} />
             </div>
             <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>

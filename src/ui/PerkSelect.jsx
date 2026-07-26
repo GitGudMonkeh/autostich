@@ -1,4 +1,6 @@
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, critChanceRawFor, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
+import { familyDef } from "../game/families.js";
+import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
 import { lightningCritRaw } from "../game/skills.js";
 import { PERK_DECLINE_COINS } from "../game/constants.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
@@ -10,6 +12,29 @@ import perkMascot from "../assets/mascots/perk.gif";
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
 const fmtMult = (x) => x.toFixed(2).replace(".", ",");
+
+/* Ein Angebotseintrag → einheitliches Anzeige-Modell (Rarität #167 §8). Familie {familyId,tier} zeigt den
+   Familiennamen mit römischer Stufe, die Stufenfarbe (grau/grün/blau/lila) und — bei bereits gehaltener
+   niedrigerer Stufe — ein Upgrade-Badge mit „gehaltener Rang → Zielrang". Flacher Perk-String bleibt wie #71. */
+function offerView(entry, familyTiers = {}) {
+  if (entry && typeof entry === "object" && entry.familyId) {
+    const fam = familyDef(entry.familyId);
+    const t = entry.tier;
+    const tm = tierMeta(t) || { color: "#8a8a95", label: "" };
+    const held = familyTierOf(familyTiers, entry.familyId); // 0 = neu, sonst gehaltener Rang
+    return {
+      key: `${entry.familyId}:${t}`, entry, isFamily: true, cat: CATEGORIES[fam.cat],
+      accent: tm.color, tierLabel: tm.label, tier: t, held, upgrade: held > 0,
+      name: `${fam.name} ${romanOf(t)}`, desc: (fam.tiers[t] || {}).desc || "",
+      glow: t >= 3, // Selten/Rar erhalten einen dezenten Farbschein
+    };
+  }
+  const p = PERK_DEFS[entry];
+  const rar = rarityOf(entry);
+  const rm = RARITY_META[rar];
+  return { key: entry, entry, isFamily: false, cat: CATEGORIES[p.cat], accent: rm.color, rar, rm,
+           leg: rar === "legendary", name: p.label, desc: p.desc };
+}
 
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
@@ -50,37 +75,50 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         </div>
 
         <div className="grid sm:grid-cols-3 gap-3 mt-5">
-          {offer.map((id) => {
-            const p = PERK_DEFS[id];
-            const cat = CATEGORIES[p.cat];
-            const rar = rarityOf(id);
-            const rm = RARITY_META[rar];
-            const leg = rar === "legendary";
+          {offer.map((entry) => {
+            const v = offerView(entry, state.familyTiers);
+            const cat = v.cat;
             return (
               <button
-                key={id}
-                onClick={() => onPick(id)}
+                key={v.key}
+                onClick={() => onPick(v.entry)}
                 className="text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5"
                 style={{ background: "#20202a",
-                         // Rahmen = Seltenheit: grau (normal) / grün (selten) / gold (legendär).
-                         border: `1px solid ${rm.color}${rar === "common" ? "55" : ""}`,
-                         boxShadow: leg ? `0 0 0 1px ${LEG_GOLD}66, 0 0 16px ${LEG_GOLD}33`
-                                  : rar === "rare" ? `0 0 12px ${rm.color}22` : undefined }}
+                         // Familie: Rahmen = Stufenfarbe (grau/grün/blau/lila). Flach: Seltenheit (grau/grün/gold).
+                         border: `1px solid ${v.accent}${(v.isFamily ? v.tier === 1 : v.rar === "common") ? "55" : ""}`,
+                         boxShadow: (!v.isFamily && v.leg) ? `0 0 0 1px ${LEG_GOLD}66, 0 0 16px ${LEG_GOLD}33`
+                                  : (v.isFamily ? v.glow : v.rar === "rare") ? `0 0 12px ${v.accent}22` : undefined }}
               >
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
                     style={{ background: `${cat.color}22`, color: cat.color }}>
                     {cat.name}
                   </span>
-                  {rm.badge && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
-                      style={{ background: `${rm.color}1f`, color: rm.color, border: `1px solid ${rm.color}88` }}>
-                      {rm.badge}
-                    </span>
+                  {v.isFamily ? (
+                    <>
+                      {/* Stufen-Badge (Seltenheit der Zielstufe) in der Stufenfarbe. */}
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                        style={{ background: `${v.accent}1f`, color: v.accent, border: `1px solid ${v.accent}88` }}>
+                        {v.tierLabel}
+                      </span>
+                      {v.upgrade && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                          style={{ background: `${v.accent}14`, color: v.accent, border: `1px dashed ${v.accent}88` }}>
+                          ⬆ UPGRADE · {romanOf(v.held)}→{romanOf(v.tier)}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    v.rm.badge && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                        style={{ background: `${v.rm.color}1f`, color: v.rm.color, border: `1px solid ${v.rm.color}88` }}>
+                        {v.rm.badge}
+                      </span>
+                    )
                   )}
                 </div>
-                <div className="font-bold" style={{ color: leg ? LEG_GOLD : cat.color }}>{p.label}</div>
-                <div className="text-sm opacity-75 leading-snug">{p.desc}</div>
+                <div className="font-bold" style={{ color: (!v.isFamily && v.leg) ? LEG_GOLD : v.isFamily ? v.accent : cat.color }}>{v.name}</div>
+                <div className="text-sm opacity-75 leading-snug">{v.desc}</div>
               </button>
             );
           })}
@@ -112,9 +150,10 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         <div className="mt-5 pt-4 border-t grid sm:grid-cols-2 gap-4" style={{ borderColor: "#2a2a33" }}>
           <div>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              Dein Build — {perks.length} Perk{perks.length === 1 ? "" : "s"}
+              {(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((t) => t > 0).length;
+                return `Dein Build — ${n} Perk${n === 1 ? "" : "s"}`; })()}
             </div>
-            <PerkList perks={perks} empty="Noch keine Perks gewählt." />
+            <PerkList perks={perks} familyTiers={state.familyTiers} empty="Noch keine Perks gewählt." />
           </div>
           <div>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte je Farbe</div>

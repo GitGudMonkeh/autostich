@@ -1,6 +1,8 @@
 import * as C from "./constants.js";
 import { SUIT_ORDER } from "./constants.js";
 import { shuffle } from "./deck.js";
+import { FAMILY_LIST } from "./families.js";
+import { TIERS, TIER_WEIGHTS, canOfferFamilyTier, familyTierOf } from "./rarity.js";
 
 /* ============================================================
    PERK-REGISTRY  — datengetrieben (wie clauses.js in TrickLadder).
@@ -350,6 +352,69 @@ export function buildOffer(owned, rng, count, legendaryChance = 0) {
     // Gezogenen raus; ist das Legendary-Limit erreicht, alle weiteren Legendaries aus dem Pool nehmen.
     pool = pool.filter((p) => p.id !== pick.id
       && !(legendaries >= C.MAX_LEGENDARIES_PER_OFFER && (p.rarity || "common") === "legendary"));
+  }
+  return chosen;
+}
+
+/* ---- Familien-Umbau (Rarität #167 §2) ---- */
+
+// Migrierte Kategorien: ihre REGULÄREN (nicht legendären) Perks sind jetzt Familien und kommen über FAMILY_DEFS
+// ins Angebot statt über PERK_DEFS. Wächst mit jeder migrierten Kategorie (aktuell nur D; später +A/B/C/E).
+export const MIGRATED_CATS = new Set(["D"]);
+
+// Ist dieser flache Perk durch eine Familie ersetzt? Nur reguläre Perks migrierter Kategorien — die legendären
+// D-Perks (L4/L5/L6/L10) bleiben flach im Legendär-Pool (Spec §3.1).
+export function isMigratedPerk(p) {
+  return !!p && MIGRATED_CATS.has(p.cat) && (p.rarity || "common") !== "legendary";
+}
+
+/* Vereinheitlichtes Perk-Angebot (Spec §2): mischt die noch flachen Perks (A/B/C/E + Legendäre) mit den FAMILIEN
+   der migrierten Kategorien (D). Ein Angebotseintrag ist ENTWEDER ein perkId-String (flach) ODER `{ familyId, tier }`
+   (Familie auf einer anbietbaren Zielstufe). Familien-Stufen sind nach TIER_WEIGHTS gewichtet, flache Perks nach
+   RARITY_WEIGHTS; der explizite Legendär-Wurf (P5) bleibt wie in buildOffer. Deterministisch über den injizierten
+   rng. `owned` = flache Perk-ids; `familyTiers` = aktueller Rang je Familie. */
+export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0) {
+  // Flacher Legacy-Pool: nicht besessen, offerable, NICHT migriert (reguläre D-Perks raus; Legendäre bleiben).
+  let flat = PERK_LIST.filter((p) => !owned.includes(p.id) && p.offerable !== false && !isMigratedPerk(p));
+  const chosen = [];
+  let legendaries = 0;
+  // Expliziter Legendär-Wurf (Shop-Spec §10 P5) — identisch zu buildOffer: nur bei übergebener Chance, dann genau
+  // eines aus dem gewichteten Zug ausgeschlossen. Ohne Chance bleibt das Gewichtsmodell (Legendäre gewichtet im Pool).
+  if (legendaryChance > 0) {
+    const legs = flat.filter((p) => p.rarity === "legendary");
+    flat = flat.filter((p) => p.rarity !== "legendary");
+    if (legs.length && count > 0 && rng() < legendaryChance) {
+      chosen.push(legs[Math.floor(rng() * legs.length)].id);
+      legendaries = 1;
+    }
+  }
+  // Kandidatenpool: flache Perks (Gewicht = RARITY_WEIGHTS) + Familien-Stufen (Gewicht = TIER_WEIGHTS[tier]).
+  let pool = flat.map((p) => ({ perk: p.id, weight: C.RARITY_WEIGHTS[p.rarity || "common"], leg: (p.rarity || "common") === "legendary" }));
+  for (const fam of FAMILY_LIST) {
+    if (fam.enabled === false) continue;
+    const cur = familyTierOf(familyTiers, fam.id);
+    // FAMILY_DEFS führt `tiers` als OBJEKT {1:def,…} → anbietbare Stufen direkt über TIERS filtern
+    // (nicht offerableTiers aus rarity.js, das ein Array erwartet).
+    for (const t of TIERS) {
+      if (fam.tiers[t] && canOfferFamilyTier(cur, t)) pool.push({ familyId: fam.id, tier: t, weight: TIER_WEIGHTS[t] || 0 });
+    }
+  }
+  // count VERSCHIEDENE Einheiten ziehen (eine Familie bzw. ein Perk höchstens einmal je Angebot, Spec §15).
+  while (chosen.length < count && pool.length > 0) {
+    const total = pool.reduce((a, x) => a + x.weight, 0);
+    if (total <= 0) break;
+    let r = rng() * total, i = 0;
+    while (i < pool.length - 1 && r >= pool[i].weight) { r -= pool[i].weight; i += 1; }
+    const pick = pool[i];
+    if (pick.familyId) {
+      chosen.push({ familyId: pick.familyId, tier: pick.tier });
+      pool = pool.filter((x) => x.familyId !== pick.familyId); // alle Stufen dieser Familie raus
+    } else {
+      chosen.push(pick.perk);
+      if (pick.leg) legendaries += 1;
+      pool = pool.filter((x) => x.perk !== pick.perk
+        && !(legendaries >= C.MAX_LEGENDARIES_PER_OFFER && x.leg)); // Legendär-Limit je Angebot
+    }
   }
   return chosen;
 }

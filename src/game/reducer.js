@@ -1,5 +1,5 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
-import { PERK_DEFS, buildOffer } from "./perks.js";
+import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick } from "./families.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, buildSkillOffer } from "./skills.js";
@@ -277,6 +277,8 @@ export function reducer(state, action) {
       if (state.phase !== "levelup") return state;
       const { familyId, tier, rng } = action;
       if (!familyDef(familyId) || !tier) return state;
+      // Angebotsvalidierung (Spec §2.4): die Familie+Zielstufe muss im aktuellen Angebot stehen (analog PICK_PERK).
+      if (!state.offer || !state.offer.some((e) => e && e.familyId === familyId && e.tier === tier)) return state;
       const { familyTiers, deck, roles } = applyFamilyPick(
         familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rng);
       return { ...state, familyTiers, deck, roles, offer: null, phase: "play" };
@@ -367,7 +369,7 @@ export function reducer(state, action) {
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
-      const off = buildOffer(state.perks, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
+      const off = buildPerkOffer(state.perks, state.familyTiers, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
       const fate = !!(state.shop && state.shop.fateControl);         // P-L1: gratis Reroll gilt fürs neue Perk-Angebot
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off, freePerkReroll: fate, freeSkillReroll: false } // → Perk-Auswahl
@@ -389,7 +391,7 @@ export function reducer(state, action) {
       const free = !!state.freePerkReroll;
       const tokens = (state.shop && state.shop.perkRerolls) || 0;
       if (!free && tokens <= 0) return state;                        // keine Ressource → wirkungslos
-      const offer = buildOffer(state.perks, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
+      const offer = buildPerkOffer(state.perks, state.familyTiers, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
       const shop = free ? state.shop : { ...state.shop, perkRerolls: tokens - 1 };
       return { ...state, offer, shop, freePerkReroll: free ? false : state.freePerkReroll };
     }

@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { applyFamilyPick } from "../src/game/families.js";
+import { applyFamilyPick, FAMILY_DEFS } from "../src/game/families.js";
+import { buildPerkOffer, isMigratedPerk, PERK_DEFS, isLegendary } from "../src/game/perks.js";
 
 /* Engine-Verdrahtung des Raritätssystems (Epic #167, Schritt 1): der End-to-End-Nachweis, dass eine
    gehaltene Familien-Stufe (state.familyTiers) über resolveTrick genauso in die multiplizierte Score-Basis
@@ -61,27 +62,30 @@ describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schrit
   });
 });
 
-describe("Reducer PICK_FAMILY (Schritt 1)", () => {
+describe("Reducer PICK_FAMILY (Schritt 1 + Angebotsvalidierung Schritt 3)", () => {
   it("setzt familyTiers[id] auf die Zielstufe und kehrt ins Spiel zurück", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup" };
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "D_HIGH", tier: 3 }] };
     const s1 = reducer(s0, { type: "PICK_FAMILY", familyId: "D_HIGH", tier: 3, rng });
     expect(s1.familyTiers.D_HIGH).toBe(3);
     expect(s1.phase).toBe("play");
+    expect(s1.offer).toBeNull();
   });
 
   it("Upgrade ersetzt die gehaltene Stufe (nur höchste aktiv)", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", familyTiers: { D_HIGH: 1 } };
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", familyTiers: { D_HIGH: 1 }, offer: [{ familyId: "D_HIGH", tier: 3 }] };
     const s1 = reducer(s0, { type: "PICK_FAMILY", familyId: "D_HIGH", tier: 3, rng });
     expect(s1.familyTiers.D_HIGH).toBe(3);
     expect(Object.keys(s1.familyTiers)).toEqual(["D_HIGH"]); // kein zweiter Rang derselben Familie
   });
 
-  it("ignoriert unbekannte Familie, Stufe 0 und die falsche Phase", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup" };
-    expect(reducer(s0, { type: "PICK_FAMILY", familyId: "NOPE", tier: 2, rng })).toBe(s0);
-    expect(reducer(s0, { type: "PICK_FAMILY", familyId: "D_HIGH", tier: 0, rng })).toBe(s0);
-    const play = { ...initialState(makeRng(1)), phase: "play" };
-    expect(reducer(play, { type: "PICK_FAMILY", familyId: "D_HIGH", tier: 2, rng })).toBe(play);
+  it("ignoriert Familie/Stufe außerhalb des Angebots, Stufe 0 und die falsche Phase", () => {
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "D_HIGH", tier: 3 }] };
+    expect(reducer(s0, { type: "PICK_FAMILY", familyId: "NOPE", tier: 2, rng })).toBe(s0);       // unbekannte Familie
+    expect(reducer(s0, { type: "PICK_FAMILY", familyId: "D_HIGH", tier: 2, rng })).toBe(s0);     // Stufe nicht im Angebot
+    expect(reducer(s0, { type: "PICK_FAMILY", familyId: "D_STREAK", tier: 3, rng })).toBe(s0);   // Familie nicht im Angebot
+    expect(reducer(s0, { type: "PICK_FAMILY", familyId: "D_HIGH", tier: 0, rng })).toBe(s0);     // Stufe 0
+    const play = { ...initialState(makeRng(1)), phase: "play", offer: [{ familyId: "D_HIGH", tier: 3 }] };
+    expect(reducer(play, { type: "PICK_FAMILY", familyId: "D_HIGH", tier: 3, rng })).toBe(play); // falsche Phase
   });
 
   it("initialState trägt ein leeres familyTiers", () => {
@@ -157,6 +161,74 @@ describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien
     let s = scenario(0, 0, { familyTiers: { D_FULL_HOUSE: 1 }, deck: flatDeck(), oppDeck: constDeck(0) });
     for (let i = 0; i < 5; i++) s = resolveTrick(s, never); // fünf Siege in Folge, fünfter auf Segmentposition 4
     expect(s.lastTrick.breakdown.flats).toBeCloseTo(500); // isolierter Flat-Anteil der Familie
+  });
+});
+
+describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt 3)", () => {
+  const isFam = (e) => e && typeof e === "object" && e.familyId != null;
+  const rngS = (seed) => makeRng(seed);
+
+  it("liefert count Einträge; jeder ist ein flacher Perk-String ODER {familyId,tier}", () => {
+    const off = buildPerkOffer([], {}, rngS(3), 3);
+    expect(off).toHaveLength(3);
+    for (const e of off) {
+      if (isFam(e)) { expect(FAMILY_DEFS[e.familyId]).toBeTruthy(); expect([1, 2, 3, 4]).toContain(e.tier); }
+      else { expect(typeof e).toBe("string"); expect(PERK_DEFS[e]).toBeTruthy(); }
+    }
+  });
+
+  it("reguläre D-Perks (D1–D19) sind migriert und tauchen NICHT mehr als flache Perks auf", () => {
+    expect(isMigratedPerk(PERK_DEFS.D3)).toBe(true);
+    expect(isMigratedPerk(PERK_DEFS.A1)).toBe(false);
+    expect(isMigratedPerk(PERK_DEFS.L5)).toBe(false); // legendärer D-Perk bleibt flach
+    // Über viele Seeds: kein flacher D-Perk im Angebot; D erscheint nur als Familie.
+    for (let seed = 0; seed < 40; seed++) {
+      for (const e of buildPerkOffer([], {}, rngS(seed), 3)) {
+        if (!isFam(e)) expect(PERK_DEFS[e].cat === "D" && !isLegendary(e)).toBe(false);
+      }
+    }
+  });
+
+  it("deterministisch über den rng (gleicher Seed → gleiches Angebot)", () => {
+    expect(buildPerkOffer([], {}, rngS(7), 3)).toEqual(buildPerkOffer([], {}, rngS(7), 3));
+  });
+
+  it("eine Familie erscheint höchstens einmal je Angebot (keine zwei Stufen derselben Familie)", () => {
+    for (let seed = 0; seed < 40; seed++) {
+      const fams = buildPerkOffer([], {}, rngS(seed), 3).filter(isFam).map((e) => e.familyId);
+      expect(new Set(fams).size).toBe(fams.length);
+    }
+  });
+
+  it("bietet nur Stufen ECHT über dem gehaltenen Rang an; IV schließt die Familie ab", () => {
+    // D_HIGH auf Rang 3 → nur noch Stufe IV anbietbar.
+    let sawIV = false;
+    for (let seed = 0; seed < 60; seed++) {
+      for (const e of buildPerkOffer([], { D_HIGH: 3 }, rngS(seed), 3)) {
+        if (isFam(e) && e.familyId === "D_HIGH") { expect(e.tier).toBe(4); sawIV = true; }
+      }
+    }
+    expect(sawIV).toBe(true);
+    // Alle D-Familien auf IV → keine D-Familie mehr im Angebot (nur noch flache Perks).
+    const allIV = Object.fromEntries(Object.keys(FAMILY_DEFS).map((id) => [id, 4]));
+    for (let seed = 0; seed < 20; seed++) {
+      for (const e of buildPerkOffer([], allIV, rngS(seed), 3)) expect(isFam(e)).toBe(false);
+    }
+  });
+
+  it("besessene flache Perks werden nicht erneut angeboten", () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const off = buildPerkOffer(["A1", "A2"], {}, rngS(seed), 3);
+      expect(off).not.toContain("A1");
+      expect(off).not.toContain("A2");
+    }
+  });
+
+  it("Legendär-Wurf: mit Chance 1 enthält das Angebot genau ein Legendäres (flach)", () => {
+    for (let seed = 0; seed < 10; seed++) {
+      const off = buildPerkOffer([], {}, rngS(seed), 3, 1);
+      expect(off.filter((e) => !isFam(e) && isLegendary(e))).toHaveLength(1);
+    }
   });
 });
 
