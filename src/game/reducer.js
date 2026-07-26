@@ -262,13 +262,13 @@ export function reducer(state, action) {
       if (!state.offer || !state.offer.includes(perkId)) return state;
       const def = PERK_DEFS[perkId];
       const perks = [...state.perks, perkId];
-      let deck = def.onPick ? def.onPick(state.deck, rng) : state.deck; // Kat.-A-Mods sofort dauerhaft
+      // Kat. A (Deck-Mods beim Pick) ist zu Familien migriert (#167) → flache Perks verändern das Deck nicht mehr.
       // L5 Jackpot & Co.: zufällige Kartenrolle sofort setzen (kein manueller Ziel-Schritt).
       let roles = state.roles;
       if (def.randomTarget) roles = { ...(state.roles || {}), [perkId]: shuffle(state.deck.map((c) => c.id), rng).slice(0, def.randomTarget) };
       // Perks mit manueller Kartenauswahl öffnen die Zielauswahl (§22.5); sonst weiter.
       const goTarget = !!def.needsTarget;
-      return { ...state, deck, perks, roles, offer: null,
+      return { ...state, perks, roles, offer: null,
                phase: goTarget ? "target" : "play",
                targetPerk: goTarget ? perkId : null };
     }

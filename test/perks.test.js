@@ -1,42 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { buildDeck, makeRng } from "../src/game/deck.js";
+import { buildDeck } from "../src/game/deck.js";
 import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks } from "../src/game/perks.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 
-describe("Perks — Deck-Modifikationen (Kat. A)", () => {
-  it("A1 Starke Fünfen: alle Wert-5 → +4 (Wert 9)", () => {
-    const d = PERK_DEFS.A1.onPick(buildDeck());
-    expect(d.filter((c) => c.value === 5)).toHaveLength(0);
-    expect(d.filter((c) => c.value === 9 && c.baseRank === 5)).toHaveLength(4); // die 4 beförderten 5er
-  });
-
-  it("A2 Gerade Stärke: gerade Werte +1, ungerade unverändert", () => {
-    const d = PERK_DEFS.A2.onPick(buildDeck());
-    const r2 = d.find((c) => c.id === "R2");
-    const r3 = d.find((c) => c.id === "R3");
-    expect(r2.value).toBe(3); // gerade → +1
-    expect(r3.value).toBe(3); // ungerade → unverändert
-  });
-
-  it("A5 Kleine ganz groß: vier unterschiedliche Karten (ursprünglich 1–3) je +5", () => {
-    const base = buildDeck();
-    const d = PERK_DEFS.A5.onPick(base, makeRng(3));
-    const changedIdx = base.map((_, i) => i).filter((i) => d[i].value !== base[i].value);
-    expect(changedIdx).toHaveLength(4);            // vier Karten
-    expect(new Set(changedIdx).size).toBe(4);      // unterschiedlich
-    for (const i of changedIdx) {
-      expect(base[i].baseRank).toBeGreaterThanOrEqual(1); // Auswahl über den ursprünglichen Wert
-      expect(base[i].baseRank).toBeLessThanOrEqual(3);
-      expect(d[i].value).toBe(base[i].value + 5);
-    }
-  });
-
-  it("Deck-Mods sind immutabel (Original-Deck unverändert)", () => {
-    const base = buildDeck();
-    PERK_DEFS.A1.onPick(base);
-    expect(base.filter((c) => c.value === 5)).toHaveLength(4);
-  });
-});
+// Kat.-A-Deck-Mods (früher A1–A10 onPick) sind zu KUMULATIVEN Familien migriert (#167) — die
+// Deck-Effekte je Stufe sind in test/families.test.js geprüft (onPick direkt), der Reducer-Pick +
+// Ziel-Fluss in test/families-engine.test.js.
 
 describe("effectivePlayerValue — cardBonus-Summation", () => {
   // Kat.-B-Wertboni sind zu Familien migriert (#167) — Engine-Integration in families-engine.test.js.
@@ -64,7 +33,7 @@ describe("Legendäre Perks — Hooks (V2 §22.6 L)", () => {
   it("die zehn verbliebenen L-Perks sind als legendary markiert (L7 entfernt, #162)", () => {
     for (const id of ["L1", "L2", "L3", "L4", "L5", "L6", "L8", "L9", "L10", "L11"]) expect(isLegendary(id)).toBe(true);
     expect(PERK_DEFS.L7).toBeUndefined(); // Königsmacher ersatzlos entfernt (Spec §9)
-    expect(isLegendary("A1")).toBe(false);
+    expect(isLegendary("C1")).toBe(false);
   });
   it("L1 Überladung: permMod +6 auf die gewählten Karten", () => {
     const deck = buildDeck().slice(0, 3);
@@ -122,7 +91,7 @@ describe("streakBaseMult (Basis-Siegesserie #39)", () => {
 describe("baseScoreMultFor (Header-Chip #37 — V2: nur noch Basis-Serie #39)", () => {
   it("Serie 0 → ×1,00; D-Perks multiplizieren nicht mehr (Flat-Score)", () => {
     expect(baseScoreMultFor([], {})).toBeCloseTo(1);
-    expect(baseScoreMultFor(["A1", "A2"], {})).toBeCloseTo(1); // flache Perks tragen keinen Score-Multiplikator
+    expect(baseScoreMultFor(["C1", "E1"], {})).toBeCloseTo(1); // flache Perks tragen keinen Score-Multiplikator
   });
   it("Siegesserie hebt den Mult (#39): +2 %/Stufe bis Cap +150 % (#100)", () => {
     expect(baseScoreMultFor([], { winStreak: 0 })).toBeCloseTo(1);
@@ -139,27 +108,16 @@ describe("Layout-Perks (#95): Positions-/Formations-relevante Perks", () => {
   it("kuratierte C/L sind enthalten, layout-fremde Perks nicht", () => {
     // B-Stich und D-Score sind zu Familien migriert (#167); ihre layout-relevanten Familien folgen mit #166.
     ["C1", "C8", "L3", "L11"].forEach((id) => expect(isLayoutPerk(id)).toBe(true));
-    ["A1", "C2", "L5"].forEach((id) => expect(isLayoutPerk(id)).toBe(false));
+    ["C9", "C2", "L5"].forEach((id) => expect(isLayoutPerk(id)).toBe(false));
   });
   it("layoutPerks filtert die gehaltenen Perks in Reihenfolge", () => {
-    expect(layoutPerks(["A1", "E1", "C8"])).toEqual(["E1", "C8"]);
+    expect(layoutPerks(["C9", "E1", "C8"])).toEqual(["E1", "C8"]);
     expect(layoutPerks([])).toEqual([]);
   });
 });
 
 describe("Neue Normal-Perks (#71)", () => {
-  const sumV = (d) => d.reduce((s, c) => s + c.value, 0);
-  it("A6 Mittelklasse: Werte 4–7 je +1 (Startdeck 16 Karten → +16)", () => {
-    expect(sumV(PERK_DEFS.A6.onPick(buildDeck())) - sumV(buildDeck())).toBe(16);
-  });
-  it("A7 Spitzenförderung: die vier höchsten Karten je +4 (+16; vier 10er → 14)", () => {
-    expect(sumV(PERK_DEFS.A7.onPick(buildDeck())) - sumV(buildDeck())).toBe(16);
-    expect(PERK_DEFS.A7.onPick(buildDeck()).filter((c) => c.value === 14)).toHaveLength(4);
-  });
-  it("A8 Nachzügler: die vier niedrigsten Karten je +5 (+20; vier 1er → 6)", () => {
-    expect(sumV(PERK_DEFS.A8.onPick(buildDeck())) - sumV(buildDeck())).toBe(20);
-    expect(PERK_DEFS.A8.onPick(buildDeck()).filter((c) => c.value === 6 && c.baseRank === 1)).toHaveLength(4);
-  });
+  // A6/A7/A8 (Deck-Mods) sind zu Familien A_MIDRANGE/A_TOP/A_BOTTOM migriert (#167) — Tests in families.test.js.
   it("C3 Leibwache: +5, wenn Rolle und der Vorgänger verlor", () => {
     expect(PERK_DEFS.C3.cardBonus({ isRole: (id) => id === "C3", lastResult: "loss" })).toBe(5);
     expect(PERK_DEFS.C3.cardBonus({ isRole: (id) => id === "C3", lastResult: "win" })).toBe(0);
@@ -174,13 +132,7 @@ describe("Neue Normal-Perks (#71)", () => {
 });
 
 describe("Seltene Perks (#71, Phase 2a)", () => {
-  const sumV = (d) => d.reduce((s, c) => s + c.value, 0);
-  it("A9 Farbduell: eine Farbe +3, eine −1 → netto +20", () => {
-    expect(sumV(PERK_DEFS.A9.onPick(buildDeck(), makeRng(2))) - sumV(buildDeck())).toBe(20);
-  });
-  it("A10 Verdichtung: im frischen Deck kommt jeder Wert 4× vor → alle +1 (+40)", () => {
-    expect(sumV(PERK_DEFS.A10.onPick(buildDeck())) - sumV(buildDeck())).toBe(40);
-  });
+  // A9 Farbduell / A10 Verdichtung sind zu Familien A_SUIT_DUEL/A_CONDENSE migriert (#167) — Tests in families.test.js.
   it("E-Werkzeuge sind reine Marker; E10 hat extraSwap, ist aber als Perk deaktiviert (#162)", () => {
     for (const id of ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"]) {
       expect(PERK_DEFS[id].cat).toBe("E");

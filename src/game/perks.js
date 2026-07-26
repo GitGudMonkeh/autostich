@@ -1,13 +1,10 @@
 import * as C from "./constants.js";
-import { SUIT_ORDER } from "./constants.js";
-import { shuffle } from "./deck.js";
 import { FAMILY_LIST } from "./families.js";
 import { TIERS, TIER_WEIGHTS, canOfferFamilyTier, familyTierOf } from "./rarity.js";
 
 /* ============================================================
    PERK-REGISTRY  — datengetrieben (wie clauses.js in TrickLadder).
    Score-/Wert-Hooks (alle optional), ausgewertet in engine.js:
-     onPick(deck, rng)    -> neues Deck   einmalige Kartenmod beim Pick (Kat. A)
      cardBonus(ctx)       -> Wert-Bonus auf die Spielerkarte DIESES Stichs (Kat. B/C/L)
      scoreFlat(ctx)       -> additiver Score bei Sieg (Kat. D — fließt in die multiplizierte Basis)
      scoreFlatOnCrit(ctx) -> additiver Score NUR bei Crit (Kat. D)
@@ -24,18 +21,6 @@ import { TIERS, TIER_WEIGHTS, canOfferFamilyTier, familyTierOf } from "./rarity.
      suitStreak, recentWinCount, lastWinValue, critFollowArmed, weaknessArmed, misfireScore, rawCrit }
    ============================================================ */
 
-const bumpWhere = (deck, pred, delta) =>
-  deck.map((c) => (pred(c) ? { ...c, value: c.value + delta } : c));
-
-// #71: die n Karten mit dem höchsten (dir="desc") bzw. niedrigsten (dir="asc") aktuellen Wert
-// um delta anheben. Stabiler Sort (Ties nach ursprünglichem Index) → deterministisch, kein rng.
-const bumpTopN = (deck, n, delta, dir) => {
-  const order = deck.map((_, i) => i).sort((a, b) =>
-    dir === "desc" ? deck[b].value - deck[a].value : deck[a].value - deck[b].value);
-  const pick = new Set(order.slice(0, n));
-  return deck.map((c, i) => (pick.has(i) ? { ...c, value: c.value + delta } : c));
-};
-
 // Basis-Siegesserie (#39): IMMER aktiver, gedeckelter Serien-Multiplikator — jede Serie hebt den
 // Score-Mult leicht. Geteilte Quelle für Engine-Score UND Anzeige (baseScoreMultFor → Header-Chip
 // #37 / StatusRail #23) → kein Drift, analog zum Muster von scoreMultFor/critChanceFor (#23/#25).
@@ -50,59 +35,13 @@ export const CATEGORIES = {
 };
 
 export const PERK_DEFS = {
-  // ---- A: Deck-Modifikation (einmalig beim Pick) ----
-  A1: { id: "A1", cat: "A", label: "Starke Fünfen",
-        desc: "Alle Karten mit Wert 5 erhalten dauerhaft +4 Wert.",
-        onPick: (d) => bumpWhere(d, (c) => c.value === 5, 4) },
-  A2: { id: "A2", cat: "A", label: "Gerade Stärke",
-        desc: "Alle Karten mit geradem Wert erhalten dauerhaft +1 Wert.",
-        onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 0, 1) },
-  A3: { id: "A3", cat: "A", label: "Ungerade Stärke",
-        desc: "Alle Karten mit ungeradem Wert erhalten dauerhaft +1 Wert.",
-        onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 1, 1) },
-  A4: { id: "A4", cat: "A", label: "Farbverstärkung",
-        desc: "Alle Karten einer zufälligen Farbe erhalten dauerhaft +2 Wert.",
-        onPick: (d, rng) => {
-          const s = SUIT_ORDER[Math.floor(rng() * SUIT_ORDER.length)];
-          return bumpWhere(d, (c) => c.suit === s, 2);
-        } },
-  A5: { id: "A5", cat: "A", label: "Kleine ganz groß",
-        desc: "Vier zufällige Karten mit ursprünglichem Wert 1–3 erhalten dauerhaft je +5 Wert.",
-        onPick: (d, rng) => {
-          // §22.6: „ursprünglicher Wert" = baseRank (bleibt konstant), nicht der aktuelle Wert.
-          const idx = d.map((c, i) => [c, i]).filter(([c]) => c.baseRank >= 1 && c.baseRank <= 3).map(([, i]) => i);
-          const chosen = new Set(shuffle(idx, rng).slice(0, 4)); // bis zu 4 unterschiedliche Karten
-          return d.map((c, i) => (chosen.has(i) ? { ...c, value: c.value + 5 } : c));
-        } },
-
-  // ---- Neue Normal-Perks (#71) — Anzeige-Gruppe über `cat` (A Deck / B Stich / C Leben) ----
-  A6: { id: "A6", cat: "A", label: "Mittelklasse",
-        desc: "Alle Karten mit aktuellem Wert 4–7 erhalten dauerhaft +1 Wert.",
-        onPick: (d) => bumpWhere(d, (c) => c.value >= 4 && c.value <= 7, 1) },
-  A7: { id: "A7", cat: "A", label: "Spitzenförderung",
-        desc: "Die vier aktuell höchsten Karten erhalten dauerhaft je +4 Wert.",
-        onPick: (d) => bumpTopN(d, 4, 4, "desc") },
-  A8: { id: "A8", cat: "A", label: "Nachzügler",
-        desc: "Die vier aktuell niedrigsten Karten erhalten dauerhaft je +5 Wert.",
-        onPick: (d) => bumpTopN(d, 4, 5, "asc") },
+  // ---- A: Deck — vollständig zu Familien migriert (#167, families.js Kategorie A, KUMULATIV). Die früheren
+  //      flachen A1–A10 sind entfernt; das Angebot bietet A nur noch als aufwertbare Familien (buildPerkOffer). ----
   C6: { id: "C6", cat: "C", label: "Finisher", needsTarget: 2,
         desc: "Wähle zwei Karten. Auf der letzten Position eines Segments erhalten sie +5 Wert.",
         cardBonus: (ctx) => (ctx.isRole && ctx.isRole("C6") && ctx.posInCycle % 5 === 4 ? 5 : 0) },
 
-  // ---- Seltene Perks (#71, Phase 2a) — rarity: "rare"; reine Hooks über bestehende Kontexte ----
-  A9: { id: "A9", cat: "A", label: "Farbduell",
-        desc: "Eine zufällige Farbe erhält dauerhaft +3 Wert, eine andere zufällige Farbe −1 Wert.",
-        onPick: (d, rng) => {
-          const s = shuffle(SUIT_ORDER, rng); const up = s[0], down = s[1];
-          return d.map((c) => (c.suit === up ? { ...c, value: c.value + 3 }
-            : c.suit === down ? { ...c, value: Math.max(0, c.value - 1) } : c));
-        } },
-  A10: { id: "A10", cat: "A", label: "Verdichtung",
-        desc: "Alle Karten, deren aktueller Wert mehrfach im Deck vorkommt, erhalten dauerhaft +1 Wert.",
-        onPick: (d) => {
-          const cnt = {}; for (const c of d) cnt[c.value] = (cnt[c.value] || 0) + 1;
-          return d.map((c) => (cnt[c.value] > 1 ? { ...c, value: c.value + 1 } : c));
-        } },
+  // ---- E-Formationsmarker (V2 §22.6) — reine Marker; Wirkung in computeFormations(perks). ----
   E6: { id: "E6", cat: "E", label: "Drehzahl",
         desc: "Eine einzelne Karte darf gleichzeitig zu zwei unterschiedlichen Treppen gehören." },
   E7: { id: "E7", cat: "E", label: "Kontrollverlust",
@@ -232,8 +171,8 @@ export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); 
 /* ---- Familien-Umbau (Rarität #167 §2) ---- */
 
 // Migrierte Kategorien: ihre REGULÄREN (nicht legendären) Perks sind jetzt Familien und kommen über FAMILY_DEFS
-// ins Angebot statt über PERK_DEFS. Wächst mit jeder migrierten Kategorie (aktuell nur D; später +A/B/C/E).
-export const MIGRATED_CATS = new Set(["D", "B"]);
+// ins Angebot statt über PERK_DEFS. Wächst mit jeder migrierten Kategorie (D, B, A; später +C/E).
+export const MIGRATED_CATS = new Set(["D", "B", "A"]);
 
 // Ist dieser flache Perk durch eine Familie ersetzt? Nur reguläre Perks migrierter Kategorien — die legendären
 // D-Perks (L4/L5/L6/L10) bleiben flach im Legendär-Pool (Spec §3.1).
