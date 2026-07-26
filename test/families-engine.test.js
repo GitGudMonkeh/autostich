@@ -4,6 +4,8 @@ import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { applyFamilyPick, FAMILY_DEFS } from "../src/game/families.js";
 import { buildPerkOffer, isMigratedPerk, PERK_DEFS, PERK_LIST, isLegendary } from "../src/game/perks.js";
+import { SCORE_PER_WIN } from "../src/game/constants.js";
+const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Sieg-Basis (Pacing-Pass 100→400)
 
 /* Engine-Verdrahtung des Raritätssystems (Epic #167, Schritt 1): der End-to-End-Nachweis, dass eine
    gehaltene Familien-Stufe (state.familyTiers) über resolveTrick genauso in die multiplizierte Score-Basis
@@ -29,26 +31,26 @@ const never = () => 0.999999;
 
 describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schritt 1)", () => {
   it("D_HIGH IV: Stufe zahlt scoreFlat in die multiplizierte Basis (Wert ≥6)", () => {
-    // Wert 6 ≥ Schwelle 6 → +350; (100+350)×streakBaseMult(1)=1,02
-    expect(resolveTrick(scenario(6, 0, { familyTiers: { D_HIGH: 4 } }), rng).score).toBeCloseTo(459);
+    // Wert 6 ≥ Schwelle 6 → +350; (Basis+350)×streakBaseMult(1)=1,02
+    expect(resolveTrick(scenario(6, 0, { familyTiers: { D_HIGH: 4 } }), rng).score).toBeCloseTo((B + 350) * 1.02);
     // Wert 5 < 6 → nur Basis
-    expect(resolveTrick(scenario(5, 0, { familyTiers: { D_HIGH: 4 } }), rng).score).toBeCloseTo(102);
+    expect(resolveTrick(scenario(5, 0, { familyTiers: { D_HIGH: 4 } }), rng).score).toBeCloseTo(B * 1.02);
   });
 
   it("nur die gehaltene Stufe zählt — kein Doppel-Trigger über Stufen (Spec §2.3/§9)", () => {
     // D_HIGH auf Rang 2: Schwelle ≥8/+150. Rang 1 (≥9/+100) darf NICHT zusätzlich zählen.
-    expect(resolveTrick(scenario(8, 0, { familyTiers: { D_HIGH: 2 } }), rng).score).toBeCloseTo(255); // (100+150)×1,02
-    expect(resolveTrick(scenario(7, 0, { familyTiers: { D_HIGH: 2 } }), rng).score).toBeCloseTo(102);
+    expect(resolveTrick(scenario(8, 0, { familyTiers: { D_HIGH: 2 } }), rng).score).toBeCloseTo((B + 150) * 1.02); // (Basis+150)×1,02
+    expect(resolveTrick(scenario(7, 0, { familyTiers: { D_HIGH: 2 } }), rng).score).toBeCloseTo(B * 1.02);
   });
 
   it("D_FORMATION_BONUS: Familien-Flat stapelt mit dem Formations-Multiplikator (Wiederholung ×1,25)", () => {
     // Ohne Formation → nur Basis. Mit Formation (Pos 1 = Wiederholung) fließt der Flat in die multiplizierte Basis.
-    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_FORMATION_BONUS: 1 } }), rng).lastTrick.gained).toBeCloseTo(102);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_FORMATION_BONUS: 1 } }), rng).lastTrick.gained).toBeCloseTo(B * 1.02);
     const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }];
     const opp = [{ id: "o0", suit: "R", baseRank: 0, value: 0 }, { id: "o1", suit: "R", baseRank: 0, value: 0 }];
     let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1], oppOrder: [0, 1], familyTiers: { D_FORMATION_BONUS: 1 } };
     s = resolveTrick(s, rng); s = resolveTrick(s, rng); // Pos 1 = Wiederholung (×1,25)
-    expect(s.lastTrick.gained).toBeCloseTo((100 + 50) * 1.04 * 1.25); // Stufe I: +50
+    expect(s.lastTrick.gained).toBeCloseTo((B +50) * 1.04 * 1.25); // Stufe I: +50
   });
 
   it("D_STREAK: Familien-Flat wächst über mehrere Stiche mit der Serie (Stufe I: +15/Serienpunkt)", () => {
@@ -56,27 +58,27 @@ describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schrit
     s = resolveTrick(s, rng); // (100+15)×1,02
     s = resolveTrick(s, rng); // (100+30)×1,04
     s = resolveTrick(s, rng); // (100+45)×1,06
-    expect(s.score).toBeCloseTo((100 + 15) * 1.02 + (100 + 30) * 1.04 + (100 + 45) * 1.06);
+    expect(s.score).toBeCloseTo((B +15) * 1.02 + (B +30) * 1.04 + (B +45) * 1.06);
   });
 
   it("scoreFlatOnCrit-Familie (D_CRIT_SCORE) zahlt nur bei einem Crit", () => {
     // erzwungener Crit via statCritChance:1 → Rang 2 gibt +175 in die Basis, dann Crit-Faktor.
     const s = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_SCORE: 2 }, statCritChance: 1 }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.gained).toBeCloseTo((100 + 175) * 1.02 * s.lastTrick.critMultiplier);
+    expect(s.lastTrick.gained).toBeCloseTo((B +175) * 1.02 * s.lastTrick.critMultiplier);
     // Ohne Crit (keine Crit-Chance) trägt die Familie nichts bei → nur Basis.
-    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_SCORE: 2 } }), rng).score).toBeCloseTo(102);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_SCORE: 2 } }), rng).score).toBeCloseTo(B * 1.02);
   });
 
   it("Zwei Familien gleichzeitig — additiv, kein gegenseitiges Überschreiben", () => {
     // D_HIGH IV (Wert ≥6 → +350) + D_OVERPOWER II (Vorsprung ≥8 → +400) auf einem Sieg mit Wert 8 / Vorsprung 8.
     const s = resolveTrick(scenario(8, 0, { familyTiers: { D_HIGH: 4, D_OVERPOWER: 2 } }), rng);
-    expect(s.score).toBeCloseTo((100 + 350 + 400) * 1.02);
+    expect(s.score).toBeCloseTo((B +350 + 400) * 1.02);
   });
 
   it("leere familyTiers verändern den Score nicht (reine Additivität)", () => {
-    expect(resolveTrick(scenario(12, 0, { familyTiers: {} }), rng).score).toBeCloseTo(102);
-    expect(resolveTrick(scenario(12, 0), rng).score).toBeCloseTo(102); // Feld ganz weggelassen
+    expect(resolveTrick(scenario(12, 0, { familyTiers: {} }), rng).score).toBeCloseTo(B * 1.02);
+    expect(resolveTrick(scenario(12, 0), rng).score).toBeCloseTo(B * 1.02); // Feld ganz weggelassen
   });
 });
 
@@ -351,7 +353,7 @@ describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien
     const paid = resolveTrick(scenario(12, 0, { familyTiers: { D_MISFIRE: 4 }, statCritChance: 1, misfireScore: 400 }), never);
     expect(paid.lastTrick.isCrit).toBe(true);
     expect(paid.misfireScore).toBe(100); // round(400 × 0,25)
-    expect(paid.lastTrick.gained).toBeCloseTo((100 + 400) * 1.02 * paid.lastTrick.critMultiplier); // volle 400 in die Basis
+    expect(paid.lastTrick.gained).toBeCloseTo((B +400) * 1.02 * paid.lastTrick.critMultiplier); // volle 400 in die Basis
   });
 
   it("D_WEAKNESS: Stufen-Schwelle rüstet (I: ≥7)", () => {
@@ -365,8 +367,8 @@ describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien
     const big = resolveTrick(scenario(5, 12, { familyTiers: { D_WEAKNESS: 4 } }), never); // Abstand 7 ≥5
     expect(big.weaknessBig).toBe(true);
     // Auszahlung am nächsten Sieg: big → +900, sonst +600.
-    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_WEAKNESS: 4 }, weaknessArmed: true, weaknessBig: true }), never).score).toBeCloseTo((100 + 900) * 1.02);
-    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_WEAKNESS: 4 }, weaknessArmed: true, weaknessBig: false }), never).score).toBeCloseTo((100 + 600) * 1.02);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_WEAKNESS: 4 }, weaknessArmed: true, weaknessBig: true }), never).score).toBeCloseTo((B +900) * 1.02);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_WEAKNESS: 4 }, weaknessArmed: true, weaknessBig: false }), never).score).toBeCloseTo((B +600) * 1.02);
     expect(resolveTrick(scenario(12, 0, { familyTiers: { D_WEAKNESS: 4 }, weaknessArmed: true, weaknessBig: true }), never).weaknessBig).toBe(false); // Sieg verbraucht
   });
 
@@ -391,18 +393,18 @@ describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien
     expect(resolveTrick(scenario(0, 12, { familyTiers: { D_INTERPLAY: 3 } }), never).interplayStored).toBe(0);
     // Nächster Sieg nach Niederlage: 700 (Wechselspiel-Basis) + 200 (gespeichert) in die multiplizierte Basis; danach verbraucht.
     const win = resolveTrick(scenario(12, 0, { familyTiers: { D_INTERPLAY: 4 }, interplayStored: 200, lastResult: "loss" }), never);
-    expect(win.score).toBeCloseTo((100 + 700 + 200) * 1.02);
+    expect(win.score).toBeCloseTo((B +700 + 200) * 1.02);
     expect(win.interplayStored).toBe(0);
   });
 
   it("D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist, gibt zusätzlich +300", () => {
     const cf = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_FOLLOW: 4 }, critFollowArmed: true, statCritChance: 1 }), never);
     expect(cf.lastTrick.isCrit).toBe(true);
-    expect(cf.lastTrick.gained).toBeCloseTo((100 + 700 + 300) * 1.02 * cf.lastTrick.critMultiplier); // 700 (Folge) + 300 (Crit-Bonus)
+    expect(cf.lastTrick.gained).toBeCloseTo((B +700 + 300) * 1.02 * cf.lastTrick.critMultiplier); // 700 (Folge) + 300 (Crit-Bonus)
     // Folgesieg ohne Crit → nur die 700 (kein +300).
     const noCrit = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_FOLLOW: 4 }, critFollowArmed: true } ), never);
     expect(noCrit.lastTrick.isCrit).toBe(false);
-    expect(noCrit.score).toBeCloseTo((100 + 700) * 1.02);
+    expect(noCrit.score).toBeCloseTo((B +700) * 1.02);
   });
 
   it("D_FULL_HOUSE: löst über den generischen Hook auf (fünfter Segment-Sieg → +500, Stufe I)", () => {

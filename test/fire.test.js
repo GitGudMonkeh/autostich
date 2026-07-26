@@ -6,6 +6,8 @@ import {
   initHeat, heatMaxFor, heatConsumerOf, heatConsumerCount, activeFireCount, fireFlag,
   heatGainFor, heatLossFor, fireScoreFor,
 } from "../src/game/skills.js";
+import { SCORE_PER_WIN } from "../src/game/constants.js";
+const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Sieg-Basis (Pacing-Pass 100→400)
 
 // Feuer-Skill-IDs (Flags siehe skills.js): F1 Glut · F2 Brennstoff · F3 Brandbeschleuniger · F4 Hitzeschild
 // F5 Nachglut · F6 Glühende Klinge · F7 Verbrennung · F8 Feuerwalze · F9 Flächenbrand · F10 Schmelzpunkt
@@ -80,7 +82,7 @@ describe("Feuer — Engine-Integration (#93 F1)", () => {
     const s = resolveTrick(scen(12, 0, { skills: [F4], heat: heat() }), rng);
     expect(s.heat.value).toBe(6);                        // (min(12,8)−2)×1 — Feuer-Flat-Score bleibt unverändert
     expect(s.lastTrick.breakdown.flats).toBe(250);        // Feuer-Flat 10×25
-    expect(s.lastTrick.gained).toBeCloseTo(350 * 1.02);   // (100 + 250) × streakBaseMult(1)
+    expect(s.lastTrick.gained).toBeCloseTo((B + 250) * 1.02);   // (Basis + 250) × streakBaseMult(1)
   });
   it("Niederlage: Hitzeverlust = min(Rückstand,10)", () => {
     expect(resolveTrick(scen(0, 12, { skills: [F7], heat: heat({ value: 50 }) }), rng).heat.value).toBe(40);

@@ -2,7 +2,7 @@
    TUNING-BLOCK  — hier dreht der Dev im Playtest
    ============================================================ */
 export const MAX_CYCLES       = 44;     // Shop-Spec (§2.1): fester Run über genau so viele Deck-Durchläufe, danach Ende [TUNING]
-export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING]
+export const SCORE_PER_WIN    = 400;    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Pacing-Pass: 100→400, flacht die Score-Kurve über den Run ab — flache Boni akkumulieren spät, höhere Basis hebt früh relativ stärker; Sim-validiert, siehe docs/sim-harness-plan]
 export const CRIT_BASE_MULT   = 1.5;    // V2 (§22.3): Basis-Crit-Multiplikator; der Crit-Mult-Stat baut darauf auf [TUNING]
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 

@@ -5,7 +5,8 @@ import { resolveTrick } from "../src/game/engine.js";
 import { ionizeCards, ionizeCardsWithCatch, hasBlitzcatcher, hasVoltageArc, initHeat, heatLossFor, fireScoreFor,
   hasGlacierPush, hasIceBloom } from "../src/game/skills.js";
 import { computeFormations, baseFormationCount } from "../src/game/formations.js";
-import { ION_MAX_STACKS } from "../src/game/constants.js";
+import { ION_MAX_STACKS, SCORE_PER_WIN } from "../src/game/constants.js";
+const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Sieg-Basis (Pacing-Pass 100→400)
 
 /* ============================================================
    #165 Skills (Spec §5) — je Archetyp +2 neue Skills + Balance-Änderungen.
@@ -145,9 +146,9 @@ describe("#165 Feuer — Funkenflug (SK_FIRE_14)", () => {
     expect(s.heat.sparkStore).toBe(0);
   });
   it("nächster Sieg zahlt den Speicher als Flat aus und erzeugt keinen neuen", () => {
-    // Speicher 100 → scoreBase = 100 + Feuer-Flat 250 + Auszahlung 100 = 450; × streakBaseMult(1)=1,02.
+    // Speicher 100 → scoreBase = Basis + Feuer-Flat 250 + Auszahlung 100; × streakBaseMult(1)=1,02.
     const s = resolveTrick(scen(12, 0, { skills: [F14], heat: heat({ value: 50, sparkStore: 100 }) }), noCrit);
-    expect(s.lastTrick.gained).toBeCloseTo(450 * 1.02);
+    expect(s.lastTrick.gained).toBeCloseTo((B + 250 + 100) * 1.02);
     expect(s.heat.sparkStore).toBe(0); // ausgezahlt, kein neuer Speicher trotz Vorsprung ≥ 8
   });
   it("Niederlage löscht den Speicher nicht", () => {
