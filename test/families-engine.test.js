@@ -132,9 +132,15 @@ describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien
     expect(resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_MOMENTUM: 3 }, statCritChance: 1 }), never).winStreak).toBe(1);
   });
 
-  it("D_INTERPLAY IV: eine Niederlage bankt +200 Score (Stufe III nicht)", () => {
-    expect(resolveTrick(scenario(0, 12, { familyTiers: { D_INTERPLAY: 4 } }), never).score).toBe(200);
-    expect(resolveTrick(scenario(0, 12, { familyTiers: { D_INTERPLAY: 3 } }), never).score).toBe(0);
+  it("D_INTERPLAY IV: Niederlage speichert +200, der nächste Sieg zahlt sie als Flat aus (Stufe III speichert nicht)", () => {
+    const afterLoss = resolveTrick(scenario(0, 12, { familyTiers: { D_INTERPLAY: 4 } }), never);
+    expect(afterLoss.score).toBe(0);              // Niederlage zahlt nicht sofort aus
+    expect(afterLoss.interplayStored).toBe(200);  // sondern bankt
+    expect(resolveTrick(scenario(0, 12, { familyTiers: { D_INTERPLAY: 3 } }), never).interplayStored).toBe(0);
+    // Nächster Sieg nach Niederlage: 700 (Wechselspiel-Basis) + 200 (gespeichert) in die multiplizierte Basis; danach verbraucht.
+    const win = resolveTrick(scenario(12, 0, { familyTiers: { D_INTERPLAY: 4 }, interplayStored: 200, lastResult: "loss" }), never);
+    expect(win.score).toBeCloseTo((100 + 700 + 200) * 1.02);
+    expect(win.interplayStored).toBe(0);
   });
 
   it("D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist, gibt zusätzlich +300", () => {
