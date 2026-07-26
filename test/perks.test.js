@@ -67,8 +67,8 @@ describe("Perks — cardBonus (Kat. B) via effectivePlayerValue", () => {
 
 describe("critChanceFor / critChanceRawFor (V2: kein Perk trägt Crit-Chance — Stat/Blitz in der Engine)", () => {
   it("kein Perk-Beitrag → Roh-Chance 0 (Stat/Blitz addiert die Engine obendrauf)", () => {
-    expect(critChanceRawFor(["L4", "L5", "D14"], {})).toBe(0);
-    expect(critChanceFor(["L4", "L5", "D14"], {})).toBe(0);
+    expect(critChanceRawFor(["L4", "L5"], {})).toBe(0);
+    expect(critChanceFor(["L4", "L5"], {})).toBe(0);
   });
   it("critChanceFor klemmt auf [0,1]", () => {
     expect(critChanceFor([], {})).toBe(0);
@@ -79,7 +79,7 @@ describe("Legendäre Perks — Hooks (V2 §22.6 L)", () => {
   it("die zehn verbliebenen L-Perks sind als legendary markiert (L7 entfernt, #162)", () => {
     for (const id of ["L1", "L2", "L3", "L4", "L5", "L6", "L8", "L9", "L10", "L11"]) expect(isLegendary(id)).toBe(true);
     expect(PERK_DEFS.L7).toBeUndefined(); // Königsmacher ersatzlos entfernt (Spec §9)
-    expect(isLegendary("D1")).toBe(false);
+    expect(isLegendary("A1")).toBe(false);
   });
   it("L1 Überladung: permMod +6 auf die gewählten Karten", () => {
     const deck = buildDeck().slice(0, 3);
@@ -121,14 +121,7 @@ describe("Legendäre Perks — Hooks (V2 §22.6 L)", () => {
   });
 });
 
-describe("Hohe-Karte-Schwelle konsolidiert auf 8 — D3/D7 (#34)", () => {
-  it("D3/D7 lösen ab Kartenwert 8 aus (und nicht bei 7)", () => {
-    expect(PERK_DEFS.D3.scoreFlat({ winValue: 8 })).toBe(125);
-    expect(PERK_DEFS.D3.scoreFlat({ winValue: 7 })).toBe(0);
-    expect(PERK_DEFS.D7.scoreFlatOnCrit({ winValue: 8 })).toBe(300);
-    expect(PERK_DEFS.D7.scoreFlatOnCrit({ winValue: 7 })).toBe(0);
-  });
-});
+// D-Score-Schwellen (früher D3/D7) sind zu den Familien D_HIGH/D_SHARP_EYE migriert — Tests in families.test.js.
 
 describe("streakBaseMult (Basis-Siegesserie #39)", () => {
   it("+2 %/Stufe, gedeckelt bei +150 % (Cap ab Serie 75, #100)", () => {
@@ -144,7 +137,7 @@ describe("streakBaseMult (Basis-Siegesserie #39)", () => {
 describe("baseScoreMultFor (Header-Chip #37 — V2: nur noch Basis-Serie #39)", () => {
   it("Serie 0 → ×1,00; D-Perks multiplizieren nicht mehr (Flat-Score)", () => {
     expect(baseScoreMultFor([], {})).toBeCloseTo(1);
-    expect(baseScoreMultFor(["D1", "D2"], {})).toBeCloseTo(1); // D flach → kein Multiplikator
+    expect(baseScoreMultFor(["A1", "B1"], {})).toBeCloseTo(1); // flache Perks tragen keinen Score-Multiplikator
   });
   it("Siegesserie hebt den Mult (#39): +2 %/Stufe bis Cap +150 % (#100)", () => {
     expect(baseScoreMultFor([], { winStreak: 0 })).toBeCloseTo(1);
@@ -158,12 +151,13 @@ describe("Layout-Perks (#95): Positions-/Formations-relevante Perks", () => {
   it("alle E-Werkzeuge zählen als Layout-Perk", () => {
     PERK_LIST.filter((p) => p.cat === "E").forEach((p) => expect(isLayoutPerk(p.id)).toBe(true));
   });
-  it("kuratierte B/C/D/L sind enthalten, layout-fremde Perks nicht", () => {
-    ["B4", "B6", "B9", "C1", "C8", "D1", "L3", "L11"].forEach((id) => expect(isLayoutPerk(id)).toBe(true));
-    ["A1", "B1", "B2", "C2", "D2", "D6", "L5"].forEach((id) => expect(isLayoutPerk(id)).toBe(false));
+  it("kuratierte B/C/L sind enthalten, layout-fremde Perks nicht", () => {
+    // D-Score ist zu Familien migriert (#167); die formationsbezogenen D-Familien folgen in der Layout-Hilfe mit #166.
+    ["B4", "B6", "B9", "C1", "C8", "L3", "L11"].forEach((id) => expect(isLayoutPerk(id)).toBe(true));
+    ["A1", "B1", "B2", "C2", "L5"].forEach((id) => expect(isLayoutPerk(id)).toBe(false));
   });
   it("layoutPerks filtert die gehaltenen Perks in Reihenfolge", () => {
-    expect(layoutPerks(["A1", "E1", "D2", "C8"])).toEqual(["E1", "C8"]);
+    expect(layoutPerks(["A1", "E1", "C8"])).toEqual(["E1", "C8"]);
     expect(layoutPerks([])).toEqual([]);
   });
 });
@@ -221,14 +215,6 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
   it("A10 Verdichtung: im frischen Deck kommt jeder Wert 4× vor → alle +1 (+40)", () => {
     expect(sumV(PERK_DEFS.A10.onPick(buildDeck())) - sumV(buildDeck())).toBe(40);
   });
-  it("D10 Übermacht: +350 Score ab 8 Wertpunkten Vorsprung, sonst 0", () => {
-    expect(PERK_DEFS.D10.scoreFlat({ margin: 8 })).toBe(350);
-    expect(PERK_DEFS.D10.scoreFlat({ margin: 7 })).toBe(0);
-  });
-  it("D11 Kritische Ernte: +250 Crit-Flat mit aktiver Formation", () => {
-    expect(PERK_DEFS.D11.scoreFlatOnCrit({ hasFormation: true })).toBe(250);
-    expect(PERK_DEFS.D11.scoreFlatOnCrit({ hasFormation: false })).toBe(0);
-  });
   it("E-Werkzeuge sind reine Marker; E10 hat extraSwap, ist aber als Perk deaktiviert (#162)", () => {
     for (const id of ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"]) {
       expect(PERK_DEFS[id].cat).toBe("E");
@@ -251,30 +237,6 @@ describe("Seltene Perks (#71, Phase 2b — Historie-Hooks)", () => {
   it("B8 Revanche: +7 ab 2 Niederlagen in Folge", () => {
     expect(PERK_DEFS.B8.cardBonus({ lossStreak: 2 })).toBe(7);
     expect(PERK_DEFS.B8.cardBonus({ lossStreak: 1 })).toBe(0);
-  });
-  it("D12 Präzision: +400 bei gleichem Wert wie letzter Sieg (erster Sieg 0)", () => {
-    expect(PERK_DEFS.D12.scoreFlat({ winValue: 8, lastWinValue: 8 })).toBe(400);
-    expect(PERK_DEFS.D12.scoreFlat({ winValue: 8, lastWinValue: 7 })).toBe(0);
-    expect(PERK_DEFS.D12.scoreFlat({ winValue: 8, lastWinValue: null })).toBe(0);
-  });
-  it("D13 Wechselspiel: +200 bei Sieg direkt nach einer Niederlage", () => {
-    expect(PERK_DEFS.D13.scoreFlat({ lastResult: "loss" })).toBe(200);
-    expect(PERK_DEFS.D13.scoreFlat({ lastResult: "win" })).toBe(0);
-  });
-});
-
-describe("Seltene Perks (#71, Phase 2c — Crit-Historie-Hooks)", () => {
-  it("D14 Crit-Folge: +200 bei Sieg direkt nach einem Crit", () => {
-    expect(PERK_DEFS.D14.scoreFlat({ critFollowArmed: true })).toBe(200);
-    expect(PERK_DEFS.D14.scoreFlat({ critFollowArmed: false })).toBe(0);
-  });
-  it("D15 Fehlzündung: zahlt die akkumulierte Score-Ladung bei Crit aus", () => {
-    expect(PERK_DEFS.D15.scoreFlatOnCrit({ misfireScore: 120 })).toBe(120);
-    expect(PERK_DEFS.D15.scoreFlatOnCrit({})).toBe(0);
-  });
-  it("D16 Schwachstellenanalyse: +300 nach klarer Niederlage (gerüstet)", () => {
-    expect(PERK_DEFS.D16.scoreFlat({ weaknessArmed: true })).toBe(300);
-    expect(PERK_DEFS.D16.scoreFlat({ weaknessArmed: false })).toBe(0);
   });
 });
 
@@ -312,18 +274,5 @@ describe("Seltene Perks (#71, Phase 2f — Historie-Hooks)", () => {
     expect(PERK_DEFS.B9.cardBonus(treppe(4))).toBe(4);
     expect(PERK_DEFS.B9.cardBonus(treppe(5))).toBe(4); // Deckel
     expect(PERK_DEFS.B9.cardBonus({ posForm: { formations: [{ type: "farbblock", ordinal: 3 }] } })).toBe(0);
-  });
-  it("D17 Farbserie: +100 je weiterem Sieg gleicher Farbe, gedeckelt bei 400", () => {
-    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 1 })).toBe(0);
-    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 2 })).toBe(100);
-    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 3 })).toBe(200);
-    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 5 })).toBe(400);
-    expect(PERK_DEFS.D17.scoreFlat({ suitStreak: 9 })).toBe(400); // Deckel
-  });
-  it("D18 Volles Haus: +750 auf der letzten Segment-Position mit 4 Vorsiegen", () => {
-    expect(PERK_DEFS.D18.scoreFlat({ posInCycle: 4, recentWinCount: 4 })).toBe(750);
-    expect(PERK_DEFS.D18.scoreFlat({ posInCycle: 9, recentWinCount: 4 })).toBe(750);
-    expect(PERK_DEFS.D18.scoreFlat({ posInCycle: 3, recentWinCount: 4 })).toBe(0); // nicht Segment-Ende
-    expect(PERK_DEFS.D18.scoreFlat({ posInCycle: 4, recentWinCount: 3 })).toBe(0); // nur 3 Vorsiege
   });
 });

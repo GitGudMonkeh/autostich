@@ -3,7 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { applyFamilyPick, FAMILY_DEFS } from "../src/game/families.js";
-import { buildPerkOffer, isMigratedPerk, PERK_DEFS, isLegendary } from "../src/game/perks.js";
+import { buildPerkOffer, isMigratedPerk, PERK_DEFS, PERK_LIST, isLegendary } from "../src/game/perks.js";
 
 /* Engine-Verdrahtung des Raritätssystems (Epic #167, Schritt 1): der End-to-End-Nachweis, dass eine
    gehaltene Familien-Stufe (state.familyTiers) über resolveTrick genauso in die multiplizierte Score-Basis
@@ -41,6 +41,24 @@ describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schrit
     expect(resolveTrick(scenario(7, 0, { familyTiers: { D_HIGH: 2 } }), rng).score).toBeCloseTo(102);
   });
 
+  it("D_FORMATION_BONUS: Familien-Flat stapelt mit dem Formations-Multiplikator (Wiederholung ×1,25)", () => {
+    // Ohne Formation → nur Basis. Mit Formation (Pos 1 = Wiederholung) fließt der Flat in die multiplizierte Basis.
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_FORMATION_BONUS: 1 } }), rng).lastTrick.gained).toBeCloseTo(102);
+    const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }];
+    const opp = [{ id: "o0", suit: "R", baseRank: 0, value: 0 }, { id: "o1", suit: "R", baseRank: 0, value: 0 }];
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1], oppOrder: [0, 1], familyTiers: { D_FORMATION_BONUS: 1 } };
+    s = resolveTrick(s, rng); s = resolveTrick(s, rng); // Pos 1 = Wiederholung (×1,25)
+    expect(s.lastTrick.gained).toBeCloseTo((100 + 50) * 1.04 * 1.25); // Stufe I: +50
+  });
+
+  it("D_STREAK: Familien-Flat wächst über mehrere Stiche mit der Serie (Stufe I: +15/Serienpunkt)", () => {
+    let s = scenario(12, 0, { familyTiers: { D_STREAK: 1 }, deck: flatDeck() }); // formationsneutral
+    s = resolveTrick(s, rng); // (100+15)×1,02
+    s = resolveTrick(s, rng); // (100+30)×1,04
+    s = resolveTrick(s, rng); // (100+45)×1,06
+    expect(s.score).toBeCloseTo((100 + 15) * 1.02 + (100 + 30) * 1.04 + (100 + 45) * 1.06);
+  });
+
   it("scoreFlatOnCrit-Familie (D_CRIT_SCORE) zahlt nur bei einem Crit", () => {
     // erzwungener Crit via statCritChance:1 → Rang 2 gibt +175 in die Basis, dann Crit-Faktor.
     const s = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_SCORE: 2 }, statCritChance: 1 }), rng);
@@ -50,10 +68,10 @@ describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schrit
     expect(resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_SCORE: 2 } }), rng).score).toBeCloseTo(102);
   });
 
-  it("Familie UND flacher Perk gleichzeitig — additiv, kein gegenseitiges Überschreiben", () => {
-    // Flacher D3 (Wert ≥8 → +125) + Familie D_HIGH IV (Wert ≥6 → +350) auf einem Sieg mit Wert 8.
-    const s = resolveTrick(scenario(8, 0, { perks: ["D3"], familyTiers: { D_HIGH: 4 } }), rng);
-    expect(s.score).toBeCloseTo((100 + 125 + 350) * 1.02);
+  it("Zwei Familien gleichzeitig — additiv, kein gegenseitiges Überschreiben", () => {
+    // D_HIGH IV (Wert ≥6 → +350) + D_OVERPOWER II (Vorsprung ≥8 → +400) auf einem Sieg mit Wert 8 / Vorsprung 8.
+    const s = resolveTrick(scenario(8, 0, { familyTiers: { D_HIGH: 4, D_OVERPOWER: 2 } }), rng);
+    expect(s.score).toBeCloseTo((100 + 350 + 400) * 1.02);
   });
 
   it("leere familyTiers verändern den Score nicht (reine Additivität)", () => {
@@ -177,11 +195,13 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
     }
   });
 
-  it("reguläre D-Perks (D1–D19) sind migriert und tauchen NICHT mehr als flache Perks auf", () => {
-    expect(isMigratedPerk(PERK_DEFS.D3)).toBe(true);
+  it("reguläre D-Perks (D1–D19) sind vollständig zu Familien migriert — kein flacher D-Score-Perk mehr", () => {
+    // Nach der Entfernung existiert kein regulärer (nicht-legendärer) cat-D-Perk mehr im flachen Pool;
+    // die D-Legendäre (L4/L5/L6/L10) bleiben flach (isMigratedPerk = false).
+    expect(PERK_LIST.some((p) => p.cat === "D" && !isLegendary(p.id))).toBe(false);
     expect(isMigratedPerk(PERK_DEFS.A1)).toBe(false);
-    expect(isMigratedPerk(PERK_DEFS.L5)).toBe(false); // legendärer D-Perk bleibt flach
-    // Über viele Seeds: kein flacher D-Perk im Angebot; D erscheint nur als Familie.
+    expect(isMigratedPerk(PERK_DEFS.L5)).toBe(false);
+    // Über viele Seeds: das Angebot enthält nie einen flachen regulären D-Perk — D erscheint nur als Familie.
     for (let seed = 0; seed < 40; seed++) {
       for (const e of buildPerkOffer([], {}, rngS(seed), 3)) {
         if (!isFam(e)) expect(PERK_DEFS[e].cat === "D" && !isLegendary(e)).toBe(false);

@@ -31,14 +31,12 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
-  const ownsD4 = perks.includes("D4");
   const showCrit = hasCritPerk(perks) || (crits || 0) > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
   // Live-Crit-Chance des NÄCHSTEN Siegs: analog zum echten Wurf (#19). V2: Perks tragen keine Crit-Chance
   // mehr bei — die Blitz-Crit-Basis (lightning) + der Crit-Chance-Stat fließen additiv ein, dieselbe Rechnung
   // wie die Engine (kein Drift).
   const critRaw = critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos }) + lightningCritRaw(lightning, skills) + statCritChance;
   const critPct = Math.round(Math.min(1, Math.max(0, critRaw)) * 100);
-  const ownsD7 = perks.includes("D7");
   // #123: Formations-Faktor der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
   // Formationsphase → kein Drift). „jetzt" = Faktor der nächsten zu spielenden Position.
   const { count: formCount, maxMult: formMaxMult } = summarizeFormations(state.formations || []);
@@ -72,15 +70,14 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
           {nowFormMult > 1.001 && <span><span className="opacity-50">jetzt </span><span style={{ color: "#5ab87a" }}>×{fmtMult(nowFormMult)}</span></span>}
         </div>
       )}
-      {/* Crit (#19/#46). Der Gesamt-Score-Mult steht dauerhaft im Header-Chip (#37). */}
-      {(ownsD4 || showCrit) && (
+      {/* Crit (#19/#46). Der Gesamt-Score-Mult steht dauerhaft im Header-Chip (#37).
+          Frühere D4/D7-Hinweise sind mit der Score-Familien-Migration (#167) entfernt; familienspezifische
+          Crit-/Score-Hinweise folgen mit #166 UI. */}
+      {showCrit && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
-          {ownsD4 && <span className="opacity-45">×3 bei Rang ≤3</span>}
-          {showCrit && (<>
-            <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span>{ownsD7 && <span className="opacity-45"> (+35% ≥8)</span>}</span>
-            <span><span className="opacity-50">Crit </span><span style={{ color: perks.includes("L5") ? "#d4a63a" : "#e879f9" }}>×{fmtMult(critMultiplierFor(perks, { rawCrit: critRaw }, statCritMult))}</span>{perks.includes("L5") && <span style={{ color: "#d4a63a" }}> Jackpot</span>}</span>
-            <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
-          </>)}
+          <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span></span>
+          <span><span className="opacity-50">Crit </span><span style={{ color: perks.includes("L5") ? "#d4a63a" : "#e879f9" }}>×{fmtMult(critMultiplierFor(perks, { rawCrit: critRaw }, statCritMult))}</span>{perks.includes("L5") && <span style={{ color: "#d4a63a" }}> Jackpot</span>}</span>
+          <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
         </div>
       )}
       {/* Score-Stats (V2 §22.3): Serien-/Formations-Stat, die nicht bereits über die Crit-Zeile sichtbar sind. */}

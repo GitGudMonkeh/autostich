@@ -109,12 +109,6 @@ export const PERK_DEFS = {
           const cnt = {}; for (const c of d) cnt[c.value] = (cnt[c.value] || 0) + 1;
           return d.map((c) => (cnt[c.value] > 1 ? { ...c, value: c.value + 1 } : c));
         } },
-  D10: { id: "D10", cat: "D", label: "Übermacht",
-        desc: "Ein Sieg mit mindestens 8 Wertpunkten Vorsprung gibt +350 Score.",
-        scoreFlat: (ctx) => (ctx.margin >= 8 ? 350 : 0) },
-  D11: { id: "D11", cat: "D", label: "Kritische Ernte",
-        desc: "Ein Crit mit einer Karte in mindestens einer aktiven Formation gibt +250 Score.",
-        scoreFlatOnCrit: (ctx) => (ctx.hasFormation ? 250 : 0) },
   E6: { id: "E6", cat: "E", label: "Drehzahl",
         desc: "Eine einzelne Karte darf gleichzeitig zu zwei unterschiedlichen Treppen gehören." },
   E7: { id: "E7", cat: "E", label: "Kontrollverlust",
@@ -126,23 +120,6 @@ export const PERK_DEFS = {
   B8: { id: "B8", cat: "B", label: "Revanche",
         desc: "Nach zwei aufeinanderfolgenden Niederlagen erhält die nächste Karte +7 Wert.",
         cardBonus: (ctx) => ((ctx.lossStreak || 0) >= 2 ? 7 : 0) },
-  D12: { id: "D12", cat: "D", label: "Präzision",
-        desc: "Zwei aufeinanderfolgende Siege mit demselben Kartenwert geben dem zweiten +400 Score.",
-        scoreFlat: (ctx) => (ctx.lastWinValue != null && ctx.winValue === ctx.lastWinValue ? 400 : 0) },
-  D13: { id: "D13", cat: "D", label: "Wechselspiel",
-        desc: "Ein Sieg direkt nach einer Niederlage gibt +200 Score.",
-        scoreFlat: (ctx) => (ctx.lastResult === "loss" ? 200 : 0) },
-
-  // ---- Seltene Perks (#71, Phase 2c) — Crit-Historie (neue Engine-State-Felder) ----
-  D14: { id: "D14", cat: "D", label: "Crit-Folge",
-        desc: "Ein Sieg direkt nach einem Crit gibt +200 Score.",
-        scoreFlat: (ctx) => (ctx.critFollowArmed ? 200 : 0) },
-  D15: { id: "D15", cat: "D", label: "Fehlzündung",
-        desc: "Jeder Sieg ohne Crit lädt +30 Score für den nächsten Crit auf (max +300).",
-        scoreFlatOnCrit: (ctx) => (ctx.misfireScore || 0) },
-  D16: { id: "D16", cat: "D", label: "Schwachstellenanalyse",
-        desc: "Nach einer Niederlage mit mindestens 5 Wertpunkten Abstand gibt der nächste Sieg +300 Score.",
-        scoreFlat: (ctx) => (ctx.weaknessArmed ? 300 : 0) },
 
   // ---- C-Rollen mit Formations-/Segment-Bezug (V2 §22.6) ----
   C7: { id: "C7", cat: "C", label: "Überlebensvorteil", segmentLow: true,
@@ -159,13 +136,6 @@ export const PERK_DEFS = {
   B9: { id: "B9", cat: "B", label: "Perfekte Folge",
         desc: "Karten einer Treppe erhalten je nach Position +1, +2, +3, danach +4 temporären Wert.",
         cardBonus: (ctx) => { const t = ctx.posForm && ctx.posForm.formations.find((f) => f.type === "treppe"); return t ? Math.min(t.ordinal, 4) : 0; } },
-  D17: { id: "D17", cat: "D", label: "Farbserie",
-        desc: "Aufeinanderfolgende Siege derselben Farbe geben jeweils +100 mehr Score (2.→+100, 3.→+200 …), maximal +400.",
-        scoreFlat: (ctx) => Math.min(Math.max(0, ((ctx.suitStreak || 0) - 1) * 100), 400) },
-  D18: { id: "D18", cat: "D", label: "Volles Haus",
-        desc: "Fünf Siege innerhalb desselben Segments geben dem fünften Sieg +750 Score.",
-        // Position ist die letzte im Segment (posInCycle % 5 == 4) UND die vier davor (recentResults) waren Siege.
-        scoreFlat: (ctx) => (ctx.posInCycle % 5 === 4 && (ctx.recentWinCount || 0) >= 4 ? 750 : 0) },
 
   // ---- Seltene Perks (#71, Phase 2e) — Serien-/Tempo-/Crit-Mechanik (Engine-Flags + State) ----
   B10: { id: "B10", cat: "B", label: "Überzahl",
@@ -177,9 +147,6 @@ export const PERK_DEFS = {
   // als Shop-Familie „Feinjustierung" (#164). Definition bleibt vorerst für die extraSwap-Engine/Bestands-Builds.
   E10: { id: "E10", cat: "E", label: "Feinjustierung", extraSwap: 1, offerable: false,
         desc: "Jede Formationsphase erhält einen zusätzlichen kostenlosen beliebigen Tausch." },
-  D19: { id: "D19", cat: "D", label: "Überschusskrit",
-        desc: "Ein Crit über 100 % effektiver Crit-Chance gibt +250 Score.",
-        scoreFlatOnCrit: (ctx) => ((ctx.rawCrit || 0) > 1 ? 250 : 0) },
 
   // ---- B: Stich-Effekte (Wert-Bonus auf die aktuelle Karte) ----
   B1: { id: "B1", cat: "B", label: "Gegenangriff",
@@ -214,36 +181,8 @@ export const PERK_DEFS = {
   C5: { id: "C5", cat: "C", label: "Anführer", needsTarget: 1, relay: 2,
         desc: "Wähle eine Karte. Nach ihrem Sieg erhalten die nächsten zwei Karten +2 Wert." },
 
-  // ---- D: Flat Score (V2 §22.6 — alle additiv; fließen in die multiplizierte Basis, §15) ----
-  //      Crit-Chance/-Mult kommen NICHT mehr aus den Perks, nur noch aus dem Stat + Blitz.
-  //      `scoreFlatOnCrit` zahlt nur bei einem Crit (Engine addiert es in die multiplizierte Basis).
-  D1: { id: "D1", cat: "D", label: "Punktebonus",
-        desc: "Jeder Sieg mit mindestens einer aktiven Formation gibt +75 Score.",
-        scoreFlat: (ctx) => (ctx.hasFormation ? 75 : 0) },
-  D2: { id: "D2", cat: "D", label: "Siegesserie",
-        desc: "Jeder Sieg gibt +25 Score je aktuellem Serienpunkt, maximal +250.",
-        scoreFlat: (ctx) => Math.min(25 * (ctx.winStreak || 0), 250) },
-  D3: { id: "D3", cat: "D", label: "Hohe Karten, hohe Belohnung",
-        desc: "Ein Sieg mit Kartenwert 8 oder höher gibt +125 Score.",
-        scoreFlat: (ctx) => (ctx.winValue >= C.D3_HIGH_MIN ? 125 : 0) },
-  D4: { id: "D4", cat: "D", label: "Außenseitersieg",
-        desc: "Ein Sieg mit Kartenwert 3 oder niedriger gibt +300 Score.",
-        scoreFlat: (ctx) => (ctx.winValue <= C.D4_LOW_MAX ? 300 : 0) },
-  D5: { id: "D5", cat: "D", label: "Zehnter Sieg",
-        desc: "Jeder zehnte gewonnene Stich gibt +750 Score.",
-        scoreFlat: (ctx) => (ctx.wins % 10 === 0 ? 750 : 0) },
-  D6: { id: "D6", cat: "D", label: "Kritische Chance",
-        desc: "Jeder Crit gibt +150 Score.",
-        scoreFlatOnCrit: () => 150 },
-  D7: { id: "D7", cat: "D", label: "Geschärfter Blick",
-        desc: "Ein Crit mit Kartenwert 8 oder höher gibt +300 Score.",
-        scoreFlatOnCrit: (ctx) => (ctx.winValue >= C.D3_HIGH_MIN ? 300 : 0) },
-  D8: { id: "D8", cat: "D", label: "Kritisches Momentum",
-        desc: "Jeder Crit innerhalb einer laufenden Siegesserie (ab Serie 2) gibt +200 Score.",
-        scoreFlatOnCrit: (ctx) => ((ctx.winStreak || 0) >= 2 ? 200 : 0) },
-  D9: { id: "D9", cat: "D", label: "Perfekter Rhythmus",
-        desc: "Jeder fünfte gewonnene Stich gibt +300 Score.",
-        scoreFlat: (ctx) => (ctx.wins % 5 === 0 ? 300 : 0) },
+  // ---- D: Score — vollständig zu Familien migriert (#167, siehe families.js Kategorie D). Die früheren
+  //      flachen D1–D19 sind entfernt; das Angebot bietet D nur noch als aufwertbare Familien (buildPerkOffer). ----
 
   // ---- E: Formationswerkzeuge (V2 §22.6) — reine Marker; die Wirkung steckt in computeFormations(perks). ----
   E1: { id: "E1", cat: "E", label: "Schrittmacher",
@@ -316,7 +255,8 @@ export const rarityMeta = (id) => RARITY_META[rarityOf(id)];
 const LAYOUT_EXTRA = new Set([
   "B3", "B4", "B6", "B9", "B10",          // Auftakt-/Zehner-Positionen · Wiederholung · Treppe · Überzahl (Vorgänger)
   "C1", "C3", "C4", "C5", "C6", "C7", "C8", "C10", // Positions-/Nachbarschafts-/Segment-Rollen · Joker/Bindeglied (Formation)
-  "D1", "D11",                            // Formations-Sieg / Crit in Formation
+  // D-Score ist zu Familien migriert (#167) — die formationsbezogenen D-Familien (Punktebonus/Kritische Ernte)
+  // sind noch nicht in der Layout-Hilfe berücksichtigt (folgt mit #166 UI).
   "L3", "L11",                            // Positionen 36–40 · Position 20→40 (L7 „Königsmacher" entfernt, #162)
 ]);
 export function isLayoutPerk(id) { return PERK_DEFS[id]?.cat === "E" || LAYOUT_EXTRA.has(id); }
