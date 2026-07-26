@@ -1,9 +1,10 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
-import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
+import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
   hasIonize, hasProtect, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasConductivity, hasEndlessStorm, hasDischarge, // Blitz-Rework (#93 F2)
+  hasBlitzcatcher, hasVoltageArc, // #165 Skills (§5.2): Blitzfänger / Spannungsbogen
   fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer (#93 F1)
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
@@ -298,12 +299,21 @@ export function resolveTrick(state, rng = Math.random) {
         // Geladene Serie setzt den Rahmen (nur wenn nicht schon gesetzt), sonst „parkt" die Ladung; Ionisierung ionisiert.
         if (lightning.charge >= lightning.maxCharge) {
           let consumed = false;
+          let blitzCatches = 0; // #165 Blitzfänger: Anzahl voller Karten, die statt ionisiert +Ladung erzeugen
           if (hasProtect(skills) && !lightning.armed) {
             lightning = { ...lightning, armed: true };            // Geladene Serie: Serien-Rahmen scharf
             consumed = true;
           } else if (hasIonize(skills)) {
             const undrawn = playerOrder.slice(pos + 1);            // Deck-Indizes der noch nicht gezogenen Karten
-            deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
+            if (hasBlitzcatcher(skills)) {
+              // #165 Blitzfänger: volle Karten (5 Stapel) werden nicht ionisiert → je +2 temp Wert (nächstes Auftauchen) & +1 Ladung.
+              const res = ionizeCardsWithCatch(deck, undrawn, ionizeCountFor(skills), rng);
+              deck = res.deck;
+              for (const cid of res.catchIds) newIceTemp[cid] = Math.max(newIceTemp[cid] || 0, C.BLITZFAENGER_VALUE);
+              blitzCatches = res.catchIds.length;
+            } else {
+              deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
+            }
             consumed = true;
           }
           if (consumed) {
@@ -311,6 +321,8 @@ export function resolveTrick(state, rng = Math.random) {
             let floor = chargeFloorFor(skills);
             if (hasEndlessStorm(skills)) floor = Math.max(floor, Math.ceil(lightning.maxCharge / 2));
             lightning = consumeCharge(lightning, floor);
+            // #165 Blitzfänger: die Fang-Ladungen entstehen NACH dem Verbrauch (sonst würde consumeCharge sie wieder auf den Boden setzen).
+            if (blitzCatches > 0) lightning = addCharge(lightning, blitzCatches);
             if (hasDischarge(skills)) lightning = { ...lightning, dischargeArmed: true }; // Entladung: nächsten Crit armieren
             if (hasStorm(skills)) { // Gewitterfront-Reaktor: erst Crit-Chance (Cap), danach Score für die nächsten Siege
               const cur = lightning.stormCritBonus || 0;
@@ -325,6 +337,17 @@ export function resolveTrick(state, rng = Math.random) {
     // Nach einem Sieg mit einer ionisierten Karte: diese Karte +1 Stapel (max); der Bonus wurde oben VORHER gewertet.
     if (ionizedCard) {
       deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
+    }
+    // #165 Spannungsbogen (§5.2): Sieg mit einer ionisierten Karte → der erste ungespielte, noch nicht volle Nachfolger
+    // in Deckreihenfolge (ab actualPos+1 vorwärts, KEIN Wrap) erhält +1 Ionisierungsstapel. Höchstens eine Karte je Trigger.
+    if (ionizedCard && hasVoltageArc(skills)) {
+      const played = new Set(seq.slice(0, pos + 1)); // in diesem Durchlauf bereits gespielte Deckpositionen (Zeitsegment-tauglich)
+      for (let k = actualPos + 1; k < playerOrder.length; k++) {
+        const di = playerOrder[k];
+        if (played.has(k) || (deck[di].ionStacks || 0) >= C.ION_MAX_STACKS) continue; // gespielt oder voll → überspringen
+        deck = deck.map((c, i) => (i === di ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
+        break;
+      }
     }
     // Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
     critFollowArmed = isCrit;                                        // D14 Crit-Folge: nur ein Crit rüstet den nächsten Sieg

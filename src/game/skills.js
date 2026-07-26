@@ -87,6 +87,21 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     discharge: true,
   },
+  // ---- #165 Skills (Spec §5.2): zwei neue normale Blitz-Skills. Flags in engine.js/ionizeCardsWithCatch gelesen. ----
+  SK_LIGHTNING_11: {
+    id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning",
+    keywords: ["ionize", "charge"],
+    desc: "Würde eine Karte mit bereits 5 Ionisierungsstapeln ionisiert, erhält sie stattdessen +2 temporären Wert und erzeugt 1 Ladung.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    blitzcatcher: true,
+  },
+  SK_LIGHTNING_12: {
+    id: "SK_LIGHTNING_12", name: "Spannungsbogen", archetype: "lightning",
+    keywords: ["ionize"],
+    desc: "Gewinnt eine ionisierte Karte, wird ihr direkter Nachfolger um 1 Stapel ionisiert; volle (5) oder gespielte Karten werden in Deckreihenfolge vorwärts übersprungen.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
+    voltageArc: true,
+  },
   SK_LIGHTNING_L01: {
     id: "SK_LIGHTNING_L01", name: "Donnergott", archetype: "lightning", legendary: true,
     keywords: ["charge", "crit"],
@@ -384,6 +399,9 @@ export const hasStaticCharge = (skills) => lightFlag(skills, "staticCharge");
 export const hasConductivity = (skills) => lightFlag(skills, "conductivity");
 export const hasEndlessStorm = (skills) => lightFlag(skills, "endlessStorm");
 export const hasDischarge    = (skills) => lightFlag(skills, "discharge");
+// #165 Skills (§5.2): Blitzfänger (volle Karte statt ionisiert → +temp Wert & Ladung) / Spannungsbogen (Sieg-Ionisierung des Nachfolgers).
+export const hasBlitzcatcher = (skills) => lightFlag(skills, "blitzcatcher");
+export const hasVoltageArc   = (skills) => lightFlag(skills, "voltageArc");
 // Ladungsmaximum je Build (Donnergott → 15) & dessen dauerhafter Crit-Multiplikator-Bonus.
 export const maxChargeFor      = (skills) => (hasThunderGod(skills) ? C.LIGHTNING_MAX_CHARGE_THUNDER : C.LIGHTNING_MAX_CHARGE);
 export const lightningCritMult = (skills) => (hasThunderGod(skills) ? C.THUNDER_CRIT_MULT : 0);
@@ -409,18 +427,23 @@ export function consumeCharge(lightning, floor = 0) {
 // `count` Karten ionisieren (immutabel, deterministisch). Gültige Ziele = ungespielte Karten
 // (Deck-Indizes in `undrawn`); je +1 Stapel (max ION_MAX_STACKS). Reichen die ungespielten Karten
 // nicht (Kettenblitz-Fall), gehen die Rest-Stapel an bereits ionisierte Karten (Abschnitt 8.4).
-export function ionizeCards(deck, undrawn, count, rng) {
+// Blitzfänger (#165): trifft ein Versuch im HAUPTZUG eine bereits volle Karte (ION_MAX_STACKS),
+// wird sie NICHT ionisiert; ihre card.id wird als „catch" zurückgegeben (Engine gibt +temp Wert & Ladung).
+function ionizeCore(deck, undrawn, count, rng, blitzcatcher) {
   const bumps = {}; // Deck-Index -> zusätzliche Stapel
+  const catchIds = []; // Blitzfänger-Treffer (volle Karten) im Hauptzug
   const pool = [...(undrawn || [])];
   let remaining = count;
   while (remaining > 0 && pool.length > 0) {
     const j = Math.floor(rng() * pool.length);
     const idx = pool.splice(j, 1)[0];
-    bumps[idx] = (bumps[idx] || 0) + 1;
+    if (blitzcatcher && (deck[idx].ionStacks || 0) >= C.ION_MAX_STACKS) catchIds.push(deck[idx].id); // volle Karte → Fang statt Ionisierung
+    else bumps[idx] = (bumps[idx] || 0) + 1;
     remaining -= 1;
   }
   if (remaining > 0) {
     // Fallback: nicht genug ungespielte Karten → Rest auf bereits ionisierte Karten (deckweit).
+    // (Blitzfänger greift bewusst NUR im Hauptzug — der Fallback trifft evtl. schon gespielte Karten.)
     let ionized = deck.map((_, i) => i).filter((i) => (deck[i].ionStacks || 0) > 0 || bumps[i]);
     while (remaining > 0 && ionized.length > 0) {
       const j = Math.floor(rng() * ionized.length);
@@ -429,5 +452,13 @@ export function ionizeCards(deck, undrawn, count, rng) {
       remaining -= 1;
     }
   }
-  return deck.map((c, i) => (bumps[i] ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + bumps[i]) } : c));
+  const newDeck = deck.map((c, i) => (bumps[i] ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + bumps[i]) } : c));
+  return { deck: newDeck, catchIds };
+}
+export function ionizeCards(deck, undrawn, count, rng) {
+  return ionizeCore(deck, undrawn, count, rng, false).deck;
+}
+// Blitzfänger-Variante (#165): liefert { deck, catchIds } — catchIds = card.id je vollem Fang im Hauptzug.
+export function ionizeCardsWithCatch(deck, undrawn, count, rng) {
+  return ionizeCore(deck, undrawn, count, rng, true);
 }

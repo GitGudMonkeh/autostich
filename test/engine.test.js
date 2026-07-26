@@ -596,11 +596,11 @@ describe("Ionisierung — Engine (Stufe B)", () => {
     expect(s.lastTrick.scoreGain).toBeCloseTo(153);
   });
 
-  it("Sieg mit ionisierter Karte erhöht deren Stapel (+1, max 4)", () => {
+  it("Sieg mit ionisierter Karte erhöht deren Stapel (+1, max 5 — #165 Skills-Spec §5.1)", () => {
     expect(resolveTrick(scenario(12, 0, { deck: ionDeck(12, 2), playerOrder: identity() }), () => 0.99)
       .deck.find((c) => c.id === "P0").ionStacks).toBe(3);
-    expect(resolveTrick(scenario(12, 0, { deck: ionDeck(12, 4), playerOrder: identity() }), () => 0.99)
-      .deck.find((c) => c.id === "P0").ionStacks).toBe(4); // Deckel
+    expect(resolveTrick(scenario(12, 0, { deck: ionDeck(12, 5), playerOrder: identity() }), () => 0.99)
+      .deck.find((c) => c.id === "P0").ionStacks).toBe(5); // Deckel jetzt bei 5
   });
 
   it("Überspannung: Crit mit ionisierter Karte gibt +3 Zusatzladung (1 Basis + 1 Blitzableiter + 3)", () => {
