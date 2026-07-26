@@ -69,7 +69,6 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                   </span>
                 )}
                 <span className="font-bold shrink-0" style={{ color: "#d4a63a" }}>{r.score.toLocaleString("de-DE")}</span>
-                <span className="opacity-40 text-xs shrink-0">{r.cycles ?? 0} R · {r.tricks}</span>
               </div>
             );
           })}

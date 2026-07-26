@@ -16,9 +16,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           {isRecord && <div className="mt-2 text-sm font-bold" style={{ color: "#8a7de0" }}>★ Neuer Rekord!</div>}
         </div>
 
-        <div className="grid grid-cols-4 gap-2 text-center mt-5 text-sm">
-          <div><div className="opacity-50 text-xs">Runden</div><div className="font-bold">{state.cycle}</div></div>
-          <div><div className="opacity-50 text-xs">Stiche</div><div className="font-bold">{state.trickNo}</div></div>
+        <div className="grid grid-cols-2 gap-2 text-center mt-5 text-sm">
           <div><div className="opacity-50 text-xs">Beste Serie</div><div className="font-bold">{state.bestStreak}×</div></div>
           <div><div className="opacity-50 text-xs">Perks</div><div className="font-bold">{state.perks.length}</div></div>
         </div>
