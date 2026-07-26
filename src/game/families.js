@@ -585,11 +585,113 @@ const C_FAMILIES = {
   },
 };
 
+// ---- E · Form (Spec §3.2 E) — Formationswerkzeuge, allesamt REGELERSETZUNG (nur die höchste Stufe aktiv).
+//      Reine Erkennungsregeln: kein per-Stich/-Sieg-Hook, sondern PARAMETER, die computeFormations je gehaltener
+//      E-Familie ausliest (familyTiers-bewusst, Schritt 2 — analog jokerRole/bridgeRole). Marker je Stufe:
+//        gapRun/gapSeg  → erlaubte fremde Karten je Lauf / je Segment (E_PACE Wiederholung, E_COLORBRIDGE Farbblock)
+//        eqRun/eqSeg    → erlaubte Gleichstände in Treppen (E_GENTLE); revRun/revSeg → Rückschritte (E_BIGSTEP)
+//        wMinLen/wMinDiff/wFactorStart → Wechsel-Schwellen/-Faktor (E_PENDULUM)
+//        drehSeg        → Karten, die je Segment zu zwei Treppen zählen dürfen (E_RPM)
+//        anchor {at(pos,n),factor,value} → Anker-Positionen/-Faktor/+Wert (E_LOSS, E_QUICKSHOT)
+//        openBoundaries → Anzahl offener Segmentgrenzen (E_SEGMENT; Infinity = alle)
+//      §10-Näherungen (der paarweise/laufbasierte Scanner kann einige IV-Sonderregeln nicht exakt abbilden):
+//        E_GENTLE IV „gleich = +1 Schritt" ≈ unbegrenzte Gleichstände; E_BIGSTEP IV „Richtung einmal wechseln"
+//        ≈ unbegrenzte Rückschritte; E_RPM I/II per-Segment-Budget 1 (mechanisch gleich); E_SEGMENT I/II öffnen
+//        die ersten 1/2 Grenzen deterministisch (statt Auswahl → kein zusätzlicher Ziel-Fluss), III/IV alle.
+const INF = Infinity;
+const ANKER = 1.25; // Standard-Anker-Faktor (= ANCHOR_FORM_FACTOR/ANKER_FACTOR in constants/formations); IV hebt auf 1,35.
+const E_FAMILIES = {
+  E_PACE: {
+    id: "E_PACE", cat: "E", name: "Schrittmacher", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Einmal pro Segment darf eine Wiederholung eine fremde Karte überbrücken.", gapRun: 1, gapSeg: 1 },
+      2: { desc: "Jede Wiederholung darf eine fremde Karte überbrücken.",                      gapRun: 1, gapSeg: INF },
+      3: { desc: "Jede Wiederholung darf bis zu zwei fremde Karten überbrücken.",              gapRun: 2, gapSeg: INF },
+      4: { desc: "Fremde Karten unterbrechen Wiederholungen nicht (zählen aber nicht mit).",   gapRun: INF, gapSeg: INF },
+    },
+  },
+  E_COLORBRIDGE: {
+    id: "E_COLORBRIDGE", cat: "E", name: "Farbbrücke", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Einmal pro Segment darf ein Farbblock eine Fremdfarbe überbrücken.", suitGapRun: 1, suitGapSeg: 1 },
+      2: { desc: "Jeder Farbblock darf eine Fremdfarbe enthalten.",                    suitGapRun: 1, suitGapSeg: INF },
+      3: { desc: "Jeder Farbblock darf zwei Fremdfarben enthalten.",                   suitGapRun: 2, suitGapSeg: INF },
+      4: { desc: "Fremdfarben unterbrechen Farbblöcke nicht (zählen aber nicht mit).", suitGapRun: INF, suitGapSeg: INF },
+    },
+  },
+  E_GENTLE: {
+    id: "E_GENTLE", cat: "E", name: "Sanfter Anstieg", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Einmal pro Segment darf eine Treppe einen Gleichstand enthalten.", eqRun: 1, eqSeg: 1 },
+      2: { desc: "Jede Treppe darf einen Gleichstand enthalten.",                     eqRun: 1, eqSeg: INF },
+      3: { desc: "Jede Treppe darf zwei Gleichstände enthalten.",                     eqRun: 2, eqSeg: INF },
+      4: { desc: "Gleiche Werte gelten in Treppen als ein Schritt, wenn nötig.",      eqRun: INF, eqSeg: INF },
+    },
+  },
+  E_BIGSTEP: {
+    id: "E_BIGSTEP", cat: "E", name: "Großer Schritt", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Einmal pro Segment darf eine Treppe einen Rückschritt enthalten.", revRun: 1, revSeg: 1 },
+      2: { desc: "Jede Treppe darf einen Rückschritt enthalten.",                     revRun: 1, revSeg: INF },
+      3: { desc: "Jede Treppe darf zwei Rückschritte enthalten.",                     revRun: 2, revSeg: INF },
+      4: { desc: "Treppen dürfen die Richtung wechseln.",                             revRun: INF, revSeg: INF },
+    },
+  },
+  E_PENDULUM: {
+    id: "E_PENDULUM", cat: "E", name: "Pendelwerk", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Wechsel bilden sich ab 3 Karten (Mindestdifferenz 3).",                       wMinLen: 3, wMinDiff: 3 },
+      2: { desc: "Wechsel bilden sich ab 2 Karten (Mindestdifferenz 4).",                        wMinLen: 2, wMinDiff: 4 },
+      3: { desc: "Wechsel bilden sich ab 2 Karten (Mindestdifferenz 3).",                        wMinLen: 2, wMinDiff: 3 },
+      4: { desc: "Wechsel bilden sich ab 2 Karten (Mindestdifferenz 2); der Faktor startet bei ×1,35.", wMinLen: 2, wMinDiff: 2, wFactorStart: 1.35 },
+    },
+  },
+  E_RPM: {
+    id: "E_RPM", cat: "E", name: "Drehzahl", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Einmal pro Segment darf eine Karte zu zwei Treppen gehören.", drehSeg: 1 },
+      2: { desc: "Je Treppe darf eine Karte zu einer weiteren Treppe gehören.",  drehSeg: 1 },
+      3: { desc: "Bis zu zwei Karten pro Segment dürfen zu zwei Treppen gehören.", drehSeg: 2 },
+      4: { desc: "Jede Karte darf gleichzeitig zu zwei Treppen gehören.",         drehSeg: INF },
+    },
+  },
+  E_LOSS: {
+    id: "E_LOSS", cat: "E", name: "Kontrollverlust", upgradeType: REPLACEMENT,
+    // Anker auf „geraden" Positionen (10er-Raster). III/IV: jede Segment-Endposition; IV zusätzlich ×1,35.
+    tiers: {
+      1: { desc: "Die Positionen 20 und 40 sind Anker (siegreicher Anker ×1,25).",       anchor: { at: (p) => (p + 1) % 20 === 0, factor: ANKER, value: 0 } },
+      2: { desc: "Die Positionen 10, 20, 30 und 40 sind Anker.",                          anchor: { at: (p) => (p + 1) % 10 === 0, factor: ANKER, value: 0 } },
+      3: { desc: "Jede Segment-Endposition ist ein Anker.",                               anchor: { at: (p) => (p + 1) % 5 === 0, factor: ANKER, value: 0 } },
+      4: { desc: "Jede Segment-Endposition ist ein ×1,35-Anker.",                         anchor: { at: (p) => (p + 1) % 5 === 0, factor: 1.35, value: 0 } },
+    },
+  },
+  E_QUICKSHOT: {
+    id: "E_QUICKSHOT", cat: "E", name: "Schnellschuss", upgradeType: REPLACEMENT,
+    // Anker auf „ungeraden" Positionen (5er-Versatz). IV: jede fünfte Position ×1,35 und +2 Wert.
+    tiers: {
+      1: { desc: "Die Positionen 5 und 25 sind Anker (siegreicher Anker ×1,25).", anchor: { at: (p) => (p - 4) % 20 === 0, factor: ANKER, value: 0 } },
+      2: { desc: "Die Positionen 5, 15, 25 und 35 sind Anker.",                    anchor: { at: (p) => (p - 4) % 10 === 0, factor: ANKER, value: 0 } },
+      3: { desc: "Jede fünfte Position (5, 10, … 40) ist ein Anker.",              anchor: { at: (p) => (p + 1) % 5 === 0, factor: ANKER, value: 0 } },
+      4: { desc: "Jede fünfte Position ist ein ×1,35-Anker und erhält +2 Wert.",   anchor: { at: (p) => (p + 1) % 5 === 0, factor: 1.35, value: 2 } },
+    },
+  },
+  E_SEGMENT: {
+    id: "E_SEGMENT", cat: "E", name: "Segmentarbeit", upgradeType: REPLACEMENT,
+    tiers: {
+      1: { desc: "Eine Segmentgrenze ist offen; Formationen dürfen sie überschreiten.", openBoundaries: 1 },
+      2: { desc: "Zwei Segmentgrenzen sind offen.",                                      openBoundaries: 2 },
+      3: { desc: "Alle Segmentgrenzen sind offen.",                                      openBoundaries: INF },
+      4: { desc: "Alle Segmentgrenzen sind offen; Formationen laufen ohne Einschränkung weiter.", openBoundaries: INF },
+    },
+  },
+};
+
 export const FAMILY_DEFS = {
   ...D_FAMILIES,
   ...B_FAMILIES,
   ...A_FAMILIES,
   ...C_FAMILIES,
+  ...E_FAMILIES,
 };
 
 export const FAMILY_LIST = Object.values(FAMILY_DEFS);

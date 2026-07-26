@@ -51,6 +51,14 @@ describe("Familien-Registry — Struktur", () => {
       else expect(f.tiers[t].pickTarget.cards).toBeGreaterThanOrEqual(1);
     }
   });
+  it("Kategorie E vollständig (9 Familien, alle Regelersetzung, ohne Ziel)", () => {
+    const e = FAMILY_LIST.filter((f) => f.cat === "E");
+    expect(e).toHaveLength(9);
+    for (const f of e) {
+      expect(f.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
+      for (const t of [1, 2, 3, 4]) expect(f.tiers[t].pickTarget).toBeUndefined();
+    }
+  });
 });
 
 describe("Kategorie A — Kumulative Deck-Stufen (Spec §3.2 A)", () => {
@@ -245,6 +253,40 @@ describe("Kategorie C — Rollen/Stufeneffekte (Spec §3.2 C)", () => {
     // IV: zwei Karten je −3, ihr Nachfolger je +7. a→b (+7); c letzte → kein Nachfolger.
     expect(f[4].onPick(deck, null, { cards: ["a", "c"], order: [0, 1, 2] }).map((c) => c.value)).toEqual([2, 12, 2]);
     expect(f[1].onPick(deck, null, { cards: ["a"] })).toBe(deck); // ohne order → No-Op
+  });
+});
+
+describe("Kategorie E — Formations-Parameter je Stufe (Spec §3.2 E)", () => {
+  it("E_PACE / E_COLORBRIDGE: Gap-Budget je Lauf/Segment (1/1 → 1/∞ → 2/∞ → ∞/∞)", () => {
+    const p = FAMILY_DEFS.E_PACE.tiers, c = FAMILY_DEFS.E_COLORBRIDGE.tiers;
+    expect([1, 2, 3, 4].map((t) => [p[t].gapRun, p[t].gapSeg])).toEqual([[1, 1], [1, Infinity], [2, Infinity], [Infinity, Infinity]]);
+    expect([1, 2, 3, 4].map((t) => [c[t].suitGapRun, c[t].suitGapSeg])).toEqual([[1, 1], [1, Infinity], [2, Infinity], [Infinity, Infinity]]);
+  });
+  it("E_GENTLE / E_BIGSTEP: Gleichstand-/Rückschritt-Budget (I/II 1, III 2, IV ∞)", () => {
+    expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_GENTLE.tiers[t].eqRun)).toEqual([1, 1, 2, Infinity]);
+    expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_BIGSTEP.tiers[t].revRun)).toEqual([1, 1, 2, Infinity]);
+  });
+  it("E_PENDULUM: Wechsel-Schwellen je Stufe; IV Faktorstart 1,35", () => {
+    const p = FAMILY_DEFS.E_PENDULUM.tiers;
+    expect([1, 2, 3, 4].map((t) => [p[t].wMinLen, p[t].wMinDiff])).toEqual([[3, 3], [2, 4], [2, 3], [2, 2]]);
+    expect(p[4].wFactorStart).toBe(1.35);
+  });
+  it("E_RPM: Doppel-Treppe-Budget je Segment (I/II 1, III 2, IV ∞)", () => {
+    expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_RPM.tiers[t].drehSeg)).toEqual([1, 1, 2, Infinity]);
+  });
+  it("E_LOSS / E_QUICKSHOT: Anker-Prädikate + Faktor/Wert je Stufe (0-basierte Positionen)", () => {
+    const l = FAMILY_DEFS.E_LOSS.tiers, q = FAMILY_DEFS.E_QUICKSHOT.tiers;
+    expect([19, 39].every((p) => l[1].anchor.at(p))).toBe(true); // Pos 20/40
+    expect(l[1].anchor.at(9)).toBe(false);                       // Pos 10 nicht bei I
+    expect(l[2].anchor.at(9)).toBe(true);                        // Pos 10 bei II
+    expect(l[3].anchor.at(4)).toBe(true);                        // Pos 5 (Segmentende) bei III
+    expect(l[4].anchor.factor).toBe(1.35);
+    expect([4, 24].every((p) => q[1].anchor.at(p))).toBe(true);  // Pos 5/25
+    expect(q[1].anchor.at(14)).toBe(false);                      // Pos 15 nicht bei I
+    expect(q[4].anchor.value).toBe(2);                           // IV +2 Wert
+  });
+  it("E_SEGMENT: offene Grenzen je Stufe (1/2/∞/∞)", () => {
+    expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_SEGMENT.tiers[t].openBoundaries)).toEqual([1, 2, Infinity, Infinity]);
   });
 });
 
