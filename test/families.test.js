@@ -38,6 +38,19 @@ describe("Familien-Registry — Struktur", () => {
       for (const t of [1, 2, 3, 4]) expect(typeof f.tiers[t].onPick).toBe("function");
     }
   });
+  it("Kategorie C vollständig (10 Familien: 8 ROLE, 1 REPLACEMENT, 1 CUMULATIVE)", () => {
+    const c = FAMILY_LIST.filter((f) => f.cat === "C");
+    expect(c).toHaveLength(10);
+    const byType = (t) => c.filter((f) => f.upgradeType === t).map((f) => f.id);
+    expect(byType(UPGRADE_TYPES.ROLE)).toHaveLength(8);
+    expect(byType(UPGRADE_TYPES.REPLACEMENT)).toEqual(["C_SURVIVOR"]);
+    expect(byType(UPGRADE_TYPES.CUMULATIVE)).toEqual(["C_SACRIFICE"]);
+    // ROLE/CUMULATIVE-Stufen tragen pickTarget.cards; REPLACEMENT (C_SURVIVOR) trägt kein Ziel.
+    for (const f of c) for (const t of [1, 2, 3, 4]) {
+      if (f.upgradeType === UPGRADE_TYPES.REPLACEMENT) expect(f.tiers[t].pickTarget).toBeUndefined();
+      else expect(f.tiers[t].pickTarget.cards).toBeGreaterThanOrEqual(1);
+    }
+  });
 });
 
 describe("Kategorie A — Kumulative Deck-Stufen (Spec §3.2 A)", () => {
@@ -155,6 +168,83 @@ describe("Kategorie A — Kumulative Deck-Stufen (Spec §3.2 A)", () => {
     const i = t[1].onPick(d, makeRng(7));
     expect(nChanged(d, i)).toBe(2);
     expect(deltas(d, i)[5]).toBe(0); // Wert3 (einzeln) nie betroffen
+  });
+});
+
+describe("Kategorie C — Rollen/Stufeneffekte (Spec §3.2 C)", () => {
+  it("C_VANGUARD: isRole & Position 1–5 (IV 1–10), Bonus 2/3/4/4, Ziele 1/2/3/4", () => {
+    const f = FAMILY_DEFS.C_VANGUARD.tiers;
+    const ctx = (pos) => ({ isRole: (id) => id === "C_VANGUARD", posInCycle: pos });
+    expect([1, 2, 3, 4].map((t) => f[t].cardBonus(ctx(4)))).toEqual([2, 3, 4, 4]);
+    expect(f[1].cardBonus(ctx(5))).toBe(0);   // Position 6 → außerhalb 1–5
+    expect(f[4].cardBonus(ctx(9))).toBe(4);   // IV bis Position 10
+    expect(f[4].cardBonus(ctx(10))).toBe(0);
+    expect(f[1].cardBonus({ isRole: () => false, posInCycle: 0 })).toBe(0); // keine Rolle
+    expect([1, 2, 3, 4].map((t) => f[t].pickTarget.cards)).toEqual([1, 2, 3, 4]);
+  });
+  it("C_TRIUMPH: triumphActive → 2/2/3/4; triumph-Marker je Stufe", () => {
+    const f = FAMILY_DEFS.C_TRIUMPH.tiers;
+    expect([1, 2, 3, 4].map((t) => f[t].cardBonus({ triumphActive: true }))).toEqual([2, 2, 3, 4]);
+    expect(f[4].cardBonus({ triumphActive: false })).toBe(0);
+    expect([1, 2, 3, 4].every((t) => f[t].triumph === true)).toBe(true);
+    expect([1, 2, 3, 4].map((t) => f[t].pickTarget.cards)).toEqual([1, 2, 3, 4]);
+  });
+  it("C_GUARD: Vorgänger-Niederlage → 3/4/5; IV auch zweiter Vorgänger → 6", () => {
+    const f = FAMILY_DEFS.C_GUARD.tiers;
+    const r = (over) => ({ isRole: (id) => id === "C_GUARD", ...over });
+    expect([1, 2, 3].map((t) => f[t].cardBonus(r({ lastResult: "loss" })))).toEqual([3, 4, 5]);
+    expect(f[1].cardBonus(r({ lastResult: "win" }))).toBe(0);
+    expect(f[4].cardBonus(r({ lastResult: "win", secondLastResult: "loss" }))).toBe(6); // einer der zwei
+    expect(f[4].cardBonus(r({ lastResult: "win", secondLastResult: "win" }))).toBe(0);
+  });
+  it("C_RELAY / C_LEADER: relay/relayBonus + Ziele je Stufe", () => {
+    const r = FAMILY_DEFS.C_RELAY.tiers, l = FAMILY_DEFS.C_LEADER.tiers;
+    expect([1, 2, 3, 4].map((t) => [r[t].relay, r[t].relayBonus])).toEqual([[1, 2], [1, 2], [1, 3], [2, 3]]);
+    expect([1, 2, 3, 4].map((t) => r[t].pickTarget.cards)).toEqual([1, 2, 3, 4]);
+    expect(r[1].cardBonus).toBeUndefined(); // reiner relay, kein cardBonus
+    expect([1, 2, 3, 4].map((t) => [l[t].relay, l[t].relayBonus])).toEqual([[1, 2], [2, 2], [2, 3], [3, 4]]);
+    expect([1, 2, 3, 4].map((t) => l[t].pickTarget.cards)).toEqual([1, 1, 2, 2]);
+  });
+  it("C_FINISHER: letzte Segmentposition (IV letzte zwei), Bonus 3/4/5/5", () => {
+    const f = FAMILY_DEFS.C_FINISHER.tiers;
+    const r = (pos) => ({ isRole: (id) => id === "C_FINISHER", posInCycle: pos });
+    expect(f[1].cardBonus(r(4))).toBe(3);   // pos 5 → %5===4
+    expect(f[1].cardBonus(r(3))).toBe(0);
+    expect(f[3].cardBonus(r(9))).toBe(5);   // pos 10 → %5===4
+    expect(f[4].cardBonus(r(3))).toBe(5);   // letzte zwei: %5===3
+    expect(f[4].cardBonus(r(4))).toBe(5);
+    expect(f[4].cardBonus(r(2))).toBe(0);
+  });
+  it("C_SURVIVOR: REPLACEMENT, segmentLowRank/segmentIndex (I erste 4 Segmente, III/IV zwei Tiefste)", () => {
+    expect(FAMILY_DEFS.C_SURVIVOR.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
+    const f = FAMILY_DEFS.C_SURVIVOR.tiers;
+    expect(f[1].pickTarget).toBeUndefined();
+    expect(f[1].cardBonus({ segmentIndex: 3, segmentLowRank: 0 })).toBe(2); // Segment <4, tiefste
+    expect(f[1].cardBonus({ segmentIndex: 4, segmentLowRank: 0 })).toBe(0); // Segment >=4
+    expect(f[2].cardBonus({ segmentIndex: 7, segmentLowRank: 0 })).toBe(2); // jedes Segment
+    expect(f[2].cardBonus({ segmentLowRank: 1 })).toBe(0);                  // nur tiefste
+    expect(f[3].cardBonus({ segmentLowRank: 1 })).toBe(3);                  // zwei tiefste
+    expect(f[4].cardBonus({ segmentLowRank: 1 })).toBe(5);
+    expect(f[4].cardBonus({ segmentLowRank: 2 })).toBe(0);
+    expect([1, 2, 3, 4].every((t) => f[t].segmentLow === true)).toBe(true);
+  });
+  it("C_JOKER / C_BRIDGE: Formations-Marker + Modus/Span je Stufe", () => {
+    const j = FAMILY_DEFS.C_JOKER.tiers, b = FAMILY_DEFS.C_BRIDGE.tiers;
+    expect([1, 2, 3, 4].map((t) => j[t].jokerMode)).toEqual(["pred", "pred", "predOrSucc", "free"]);
+    expect([1, 2, 3, 4].every((t) => j[t].jokerRole === true)).toBe(true);
+    expect([1, 2, 3, 4].map((t) => b[t].bridgeSpan)).toEqual([1, 1, 2, 99]);
+    expect([1, 2, 3, 4].every((t) => b[t].bridgeRole === true)).toBe(true);
+    expect([1, 2, 3, 4].map((t) => j[t].pickTarget.cards)).toEqual([1, 2, 3, 4]);
+  });
+  it("C_SACRIFICE: CUMULATIVE, onPick opfert Karte(n) & bufft Nachfolger (order = playerOrder)", () => {
+    expect(FAMILY_DEFS.C_SACRIFICE.upgradeType).toBe(UPGRADE_TYPES.CUMULATIVE);
+    const f = FAMILY_DEFS.C_SACRIFICE.tiers;
+    const deck = ["a", "b", "c"].map((id) => ({ id, suit: "R", baseRank: 5, value: 5 }));
+    // I: Opfer a (−2), direkter Nachfolger b (+3); c unberührt.
+    expect(f[1].onPick(deck, null, { cards: ["a"], order: [0, 1, 2] }).map((c) => c.value)).toEqual([3, 8, 5]);
+    // IV: zwei Karten je −3, ihr Nachfolger je +7. a→b (+7); c letzte → kein Nachfolger.
+    expect(f[4].onPick(deck, null, { cards: ["a", "c"], order: [0, 1, 2] }).map((c) => c.value)).toEqual([2, 12, 2]);
+    expect(f[1].onPick(deck, null, { cards: ["a"] })).toBe(deck); // ohne order → No-Op
   });
 });
 

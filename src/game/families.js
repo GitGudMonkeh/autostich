@@ -23,7 +23,7 @@ import { SUIT_ORDER } from "./constants.js";
    (Resolver unten). Reine Logik — kein Math.random / Date.
    ============================================================ */
 
-const { REPLACEMENT, CUMULATIVE } = UPGRADE_TYPES;
+const { REPLACEMENT, CUMULATIVE, ROLE } = UPGRADE_TYPES;
 
 // ---- D · Score (Spec §3.2 D) — allesamt Regelersetzung (nur die höchste Stufe ist aktiv). ----
 // Kontextfelder je Sieg (aus der Engine): winValue, margin, winStreak, wins, hasFormation, lastResult,
@@ -452,10 +452,144 @@ const A_FAMILIES = {
   },
 };
 
+// ---- C · Rolle (Spec §3.2 C) — GEMISCHTE Upgrade-Typen: ROLE (Kartenrollen mit Ziel-Auswahl),
+//      REPLACEMENT (C_SURVIVOR, kein Ziel) und CUMULATIVE (C_SACRIFICE, dauerhafte Deck-Mod).
+//      Rollen speichern ihre Ziel-Karten in state.roles[familyId]; die cardBonus-Hooks lesen ctx.isRole(familyId).
+//      Engine-gekoppelte Marker (relay/relayBonus, triumph, segmentLow, jokerRole/jokerMode, bridgeRole/bridgeSpan)
+//      werden in Engine/formations familyTiers-bewusst ausgewertet (Kategorie-C-Wiring, Schritt 2). Ziel-Anzahl je
+//      Stufe über pickTarget.cards; Upgrade behält bestehende Ziele, nur zusätzliche werden neu gewählt (§2.3).
+//      Zusätzliche ctx-Felder (Schritt 2 in der Engine): secondLastResult (C_GUARD IV), segmentLowRank/segmentIndex
+//      (C_SURVIVOR). Reine Daten/Hooks — additiv, bis Kategorie C in MIGRATED_CATS wandert.
+
+// C_SACRIFICE: jede gewählte Karte −loss, ihr direkter Nachfolger (aus target.order = playerOrder) +gain, dauerhaft (>=0).
+const sacrifice = (deck, target, loss, gain) => {
+  const cards = (target && target.cards) || [];
+  const order = target && target.order;
+  if (!cards.length || !order) return deck;
+  const succIds = new Set();
+  for (const id of cards) {
+    const idx = order.findIndex((di) => deck[di] && deck[di].id === id);
+    if (idx >= 0 && idx + 1 < order.length) succIds.add(deck[order[idx + 1]].id);
+  }
+  return deck.map((c) => {
+    let v = c.value;
+    if (cards.includes(c.id)) v -= loss;
+    if (succIds.has(c.id)) v += gain;
+    return { ...c, value: Math.max(0, v) };
+  });
+};
+
+const C_FAMILIES = {
+  C_VANGUARD: {
+    id: "C_VANGUARD", cat: "C", name: "Vorhut", upgradeType: ROLE,
+    tiers: {
+      1: { desc: "Wähle 1 Karte: auf Position 1–5 erhält sie +2 Wert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_VANGUARD") && c.posInCycle <= 4 ? 2 : 0) },
+      2: { desc: "Wähle 2 Karten: auf Position 1–5 erhalten sie +3 Wert.", pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_VANGUARD") && c.posInCycle <= 4 ? 3 : 0) },
+      3: { desc: "Wähle 3 Karten: auf Position 1–5 erhalten sie +4 Wert.", pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_VANGUARD") && c.posInCycle <= 4 ? 4 : 0) },
+      4: { desc: "Wähle 4 Karten: auf Position 1–10 erhalten sie +4 Wert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_VANGUARD") && c.posInCycle <= 9 ? 4 : 0) },
+    },
+  },
+  C_TRIUMPH: {
+    id: "C_TRIUMPH", cat: "C", name: "Triumph", upgradeType: ROLE,
+    // triumph: nach einem Sieg der Rollenkarte wird sie armiert; beim nächsten Auftauchen +Bonus (ctx.triumphActive).
+    tiers: {
+      1: { desc: "Wähle 1 Karte: nach einem Sieg erhält sie beim nächsten Auftauchen +2 Wert.",  pickTarget: { cards: 1 }, triumph: true, cardBonus: (c) => (c.triumphActive ? 2 : 0) },
+      2: { desc: "Wähle 2 Karten: nach einem Sieg erhalten sie beim nächsten Auftauchen +2 Wert.", pickTarget: { cards: 2 }, triumph: true, cardBonus: (c) => (c.triumphActive ? 2 : 0) },
+      3: { desc: "Wähle 3 Karten: nach einem Sieg erhalten sie beim nächsten Auftauchen +3 Wert.", pickTarget: { cards: 3 }, triumph: true, cardBonus: (c) => (c.triumphActive ? 3 : 0) },
+      4: { desc: "Wähle 4 Karten: nach einem Sieg erhalten sie beim nächsten Auftauchen +4 Wert.", pickTarget: { cards: 4 }, triumph: true, cardBonus: (c) => (c.triumphActive ? 4 : 0) },
+    },
+  },
+  C_GUARD: {
+    id: "C_GUARD", cat: "C", name: "Leibwache", upgradeType: ROLE,
+    // I–III: verliert der direkte Vorgänger (lastResult="loss"). IV: verliert einer der ZWEI Vorgänger (secondLastResult).
+    tiers: {
+      1: { desc: "Wähle 1 Karte: verliert ihr Vorgänger, erhält sie +3 Wert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && c.lastResult === "loss" ? 3 : 0) },
+      2: { desc: "Wähle 2 Karten: verliert ihr Vorgänger, erhalten sie +4 Wert.", pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && c.lastResult === "loss" ? 4 : 0) },
+      3: { desc: "Wähle 3 Karten: verliert ihr Vorgänger, erhalten sie +5 Wert.", pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && c.lastResult === "loss" ? 5 : 0) },
+      4: { desc: "Wähle 4 Karten: verliert einer ihrer zwei Vorgänger, erhalten sie +6 Wert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && (c.lastResult === "loss" || c.secondLastResult === "loss") ? 6 : 0) },
+    },
+  },
+  C_RELAY: {
+    id: "C_RELAY", cat: "C", name: "Staffelläufer", upgradeType: ROLE,
+    // relay: nach einem Sieg der Rollenkarte erhalten die nächsten `relay` Karten je +relayBonus Wert (successorQueue).
+    tiers: {
+      1: { desc: "Wähle 1 Karte: nach ihrem Sieg erhält der direkte Nachfolger +2 Wert.",  pickTarget: { cards: 1 }, relay: 1, relayBonus: 2 },
+      2: { desc: "Wähle 2 Karten: nach ihrem Sieg erhält der direkte Nachfolger +2 Wert.", pickTarget: { cards: 2 }, relay: 1, relayBonus: 2 },
+      3: { desc: "Wähle 3 Karten: nach ihrem Sieg erhält der direkte Nachfolger +3 Wert.", pickTarget: { cards: 3 }, relay: 1, relayBonus: 3 },
+      4: { desc: "Wähle 4 Karten: nach ihrem Sieg erhalten die nächsten zwei Karten je +3 Wert.", pickTarget: { cards: 4 }, relay: 2, relayBonus: 3 },
+    },
+  },
+  C_LEADER: {
+    id: "C_LEADER", cat: "C", name: "Anführer", upgradeType: ROLE,
+    tiers: {
+      1: { desc: "Wähle 1 Karte: nach ihrem Sieg erhält die nächste Karte +2 Wert.",  pickTarget: { cards: 1 }, relay: 1, relayBonus: 2 },
+      2: { desc: "Wähle 1 Karte: nach ihrem Sieg erhalten die nächsten zwei Karten je +2 Wert.", pickTarget: { cards: 1 }, relay: 2, relayBonus: 2 },
+      3: { desc: "Wähle 2 Karten: nach ihrem Sieg erhalten die nächsten zwei Karten je +3 Wert.", pickTarget: { cards: 2 }, relay: 2, relayBonus: 3 },
+      4: { desc: "Wähle 2 Karten: nach ihrem Sieg erhalten die nächsten drei Karten je +4 Wert.", pickTarget: { cards: 2 }, relay: 3, relayBonus: 4 },
+    },
+  },
+  C_FINISHER: {
+    id: "C_FINISHER", cat: "C", name: "Finisher", upgradeType: ROLE,
+    tiers: {
+      1: { desc: "Wähle 1 Karte: auf der letzten Segmentposition erhält sie +3 Wert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && c.posInCycle % 5 === 4 ? 3 : 0) },
+      2: { desc: "Wähle 2 Karten: auf der letzten Segmentposition erhalten sie +4 Wert.", pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && c.posInCycle % 5 === 4 ? 4 : 0) },
+      3: { desc: "Wähle 3 Karten: auf der letzten Segmentposition erhalten sie +5 Wert.", pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && c.posInCycle % 5 === 4 ? 5 : 0) },
+      4: { desc: "Wähle 4 Karten: auf den letzten zwei Segmentpositionen erhalten sie +5 Wert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && (c.posInCycle % 5 === 4 || c.posInCycle % 5 === 3) ? 5 : 0) },
+    },
+  },
+  C_SURVIVOR: {
+    id: "C_SURVIVOR", cat: "C", name: "Überlebensvorteil", upgradeType: REPLACEMENT,
+    // Kein Ziel. Engine liefert je Karte segmentLowRank (0=tiefste, 1=zweittiefste im Segment) + segmentIndex.
+    // §10-Default: „vier zufällige Segmente" (I) → deterministisch die ersten vier Segmente (Pos 1–20), damit kein
+    // per-Run-Zufallszustand nötig ist; II+ deckt alle Segmente ab. `segmentLow`-Marker triggert das Engine-Gate.
+    tiers: {
+      1: { desc: "Die niedrigste Karte der ersten vier Segmente erhält +2 Wert.", segmentLow: true, cardBonus: (c) => (c.segmentIndex < 4 && c.segmentLowRank === 0 ? 2 : 0) },
+      2: { desc: "Die niedrigste Karte jedes Segments erhält +2 Wert.",           segmentLow: true, cardBonus: (c) => (c.segmentLowRank === 0 ? 2 : 0) },
+      3: { desc: "Die zwei niedrigsten Karten jedes Segments erhalten +3 Wert.",  segmentLow: true, cardBonus: (c) => (c.segmentLowRank <= 1 ? 3 : 0) },
+      4: { desc: "Die zwei niedrigsten Karten jedes Segments erhalten +5 Wert.",  segmentLow: true, cardBonus: (c) => (c.segmentLowRank <= 1 ? 5 : 0) },
+    },
+  },
+  C_JOKER: {
+    id: "C_JOKER", cat: "C", name: "Joker", upgradeType: ROLE,
+    // jokerRole: die Rollenkarte darf für einen Farbblock eine andere Farbe annehmen. jokerMode je Stufe:
+    // "pred" = Vorgängerfarbe (I/II), "predOrSucc" = Vorgänger- ODER Nachfolgerfarbe (III), "free" = beliebig (IV).
+    // Auswertung in computeFormations (familyTiers-bewusst, Schritt 2).
+    tiers: {
+      1: { desc: "Wähle 1 Karte: sie zählt für einen Farbblock als Farbe ihres Vorgängers.",  pickTarget: { cards: 1 }, jokerRole: true, jokerMode: "pred" },
+      2: { desc: "Wähle 2 Karten: sie zählen für einen Farbblock als Farbe ihres Vorgängers.", pickTarget: { cards: 2 }, jokerRole: true, jokerMode: "pred" },
+      3: { desc: "Wähle 3 Karten: sie zählen für einen Farbblock als Vorgänger- oder Nachfolgerfarbe.", pickTarget: { cards: 3 }, jokerRole: true, jokerMode: "predOrSucc" },
+      4: { desc: "Wähle 4 Karten: sie zählen für einen Farbblock als beliebige Farbe.", pickTarget: { cards: 4 }, jokerRole: true, jokerMode: "free" },
+    },
+  },
+  C_SACRIFICE: {
+    id: "C_SACRIFICE", cat: "C", name: "Opfergabe", upgradeType: CUMULATIVE,
+    // Kumulativer Pick-Effekt: je gewählter Karte −loss Wert, ihr direkter Nachfolger (in playerOrder) +gain — dauerhaft.
+    // onPick(deck, rng, target) mit target={cards, order} (order = playerOrder, aus dem Reducer). Frühere Opfer bleiben.
+    tiers: {
+      1: { desc: "Wähle 1 Karte: sie verliert dauerhaft 2 Wert, ihr direkter Nachfolger erhält +3 Wert.", pickTarget: { cards: 1 }, onPick: (d, _rng, t) => sacrifice(d, t, 2, 3) },
+      2: { desc: "Wähle 1 Karte: sie verliert dauerhaft 2 Wert, ihr direkter Nachfolger erhält +4 Wert.", pickTarget: { cards: 1 }, onPick: (d, _rng, t) => sacrifice(d, t, 2, 4) },
+      3: { desc: "Wähle 1 Karte: sie verliert dauerhaft 3 Wert, ihr direkter Nachfolger erhält +6 Wert.", pickTarget: { cards: 1 }, onPick: (d, _rng, t) => sacrifice(d, t, 3, 6) },
+      4: { desc: "Wähle 2 Karten: jede verliert dauerhaft 3 Wert, ihr direkter Nachfolger erhält je +7 Wert.", pickTarget: { cards: 2 }, onPick: (d, _rng, t) => sacrifice(d, t, 3, 7) },
+    },
+  },
+  C_BRIDGE: {
+    id: "C_BRIDGE", cat: "C", name: "Bindeglied", upgradeType: ROLE,
+    // bridgeRole: die Rollenkarte darf für eine Treppe abweichen. bridgeSpan je Stufe: 1 (±1, I/II), 2 (±2, III),
+    // 99 (frei zwischen den Nachbarn, IV). Auswertung in computeFormations (familyTiers-bewusst, Schritt 2).
+    tiers: {
+      1: { desc: "Wähle 1 Karte: für eine Treppe darf sie als 1 Wert höher oder niedriger gelten.",  pickTarget: { cards: 1 }, bridgeRole: true, bridgeSpan: 1 },
+      2: { desc: "Wähle 2 Karten: für eine Treppe dürfen sie als 1 Wert höher oder niedriger gelten.", pickTarget: { cards: 2 }, bridgeRole: true, bridgeSpan: 1 },
+      3: { desc: "Wähle 3 Karten: für eine Treppe dürfen sie um 1 oder 2 Werte abweichen.",           pickTarget: { cards: 3 }, bridgeRole: true, bridgeSpan: 2 },
+      4: { desc: "Wähle 4 Karten: für eine Treppe dürfen sie jeden Wert zwischen ihren Nachbarn annehmen.", pickTarget: { cards: 4 }, bridgeRole: true, bridgeSpan: 99 },
+    },
+  },
+};
+
 export const FAMILY_DEFS = {
   ...D_FAMILIES,
   ...B_FAMILIES,
   ...A_FAMILIES,
+  ...C_FAMILIES,
 };
 
 export const FAMILY_LIST = Object.values(FAMILY_DEFS);
