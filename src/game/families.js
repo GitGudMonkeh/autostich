@@ -1,4 +1,4 @@
-import { UPGRADE_TYPES } from "./rarity.js";
+import { UPGRADE_TYPES, withFamilyTier } from "./rarity.js";
 
 /* ============================================================
    FAMILIEN-REGISTRY (Rarität-Umbau #163, Spec docs/rarity-system.md §3.2).
@@ -248,4 +248,25 @@ export function familyProdHook(familyTiers, name, ctx) {
   let m = 1;
   for (const def of activeTierDefs(familyTiers)) { const f = def[name]; if (f) m *= f(ctx); }
   return m;
+}
+
+/* Familien-Pick anwenden (Spec §2.4 applyFamilyPick). Reine Funktion: nimmt den relevanten Run-State-
+   Ausschnitt und liefert das Patch { familyTiers, deck, roles }.
+   - REPLACEMENT (Kat. B/C-Regel/D/E): NUR der Familienrang ändert sich; die aktive Regel löst die Engine
+     live über activeTierDefs auf — kein separates „install/removeRuntimeRule" nötig (Spec §2.3).
+   - CUMULATIVE (Kat. A / Shop-Karten, #163/#164): jede gewählte Stufe führt ihr Paket EINMALIG aus
+     (tierDef.onPick auf dem Deck); frühere Deckänderungen bleiben. Deterministisch über injizierten rng.
+   - ROLE (Kat. C-Rollen, #163): Rollenziele/-regel steigen; der Ziel-Flow folgt mit den C-Familien.
+   Der aufrufende Reducer bleibt frei von Registry-Wissen. */
+export function applyFamilyPick(familyId, targetTier, ctx = {}, rng = Math.random) {
+  const { familyTiers = {}, deck = null, roles = null } = ctx;
+  const fam = FAMILY_DEFS[familyId];
+  if (!fam || !targetTier) return { familyTiers, deck, roles }; // ungültige Familie/Stufe → No-Op
+  const tierDef = fam.tiers[targetTier] || null;
+  let nextDeck = deck, nextRoles = roles;
+  if (fam.upgradeType === UPGRADE_TYPES.CUMULATIVE && tierDef && tierDef.onPick && deck) {
+    nextDeck = tierDef.onPick(deck, rng); // Stufen-Paket einmalig aufs Deck (A-/Shop-Karten-Familien)
+  }
+  // ROLE-Zielauswahl folgt mit Kategorie C (#163) — hier noch reine Rangaktualisierung.
+  return { familyTiers: withFamilyTier(familyTiers, familyId, targetTier), deck: nextDeck, roles: nextRoles };
 }
