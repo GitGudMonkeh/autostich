@@ -108,6 +108,48 @@ describe("Familien-Engine — Kategorie B (Wertboni über resolveTrick)", () => 
   });
 });
 
+describe("Familien-Engine — Kategorie C (Rollen über resolveTrick, Schritt 2b)", () => {
+  it("C_VANGUARD: Rollenkarte auf Position 1–5 erhält den Wertbonus (nur mit Rolle)", () => {
+    const s = resolveTrick(scenario(5, 6, { familyTiers: { C_VANGUARD: 1 }, roles: { C_VANGUARD: ["X0"] } }), rng);
+    expect(s.lastTrick.pValue).toBe(7); // 5 + 2
+    expect(s.wins).toBe(1);
+    expect(resolveTrick(scenario(5, 6, { familyTiers: { C_VANGUARD: 1 }, roles: {} }), rng).wins).toBe(0); // keine Rolle → 0
+  });
+  it("C_FINISHER: Rollenkarte auf der letzten Segmentposition erhält den Bonus", () => {
+    const s = resolveTrick(scenario(5, 6, { familyTiers: { C_FINISHER: 1 }, roles: { C_FINISHER: ["X4"] }, pos: 4 }), rng);
+    expect(s.lastTrick.pValue).toBe(8); // Pos 5 (%5===4) → 5 + 3
+  });
+  it("C_TRIUMPH: Rollen-Sieg armiert die Karte; beim nächsten Auftauchen +Bonus (Stufe III: +3)", () => {
+    let s = resolveTrick(scenario(8, 0, { familyTiers: { C_TRIUMPH: 3 }, roles: { C_TRIUMPH: ["X0"] } }), rng);
+    expect(s.triumphArmed).toContain("X0");
+    const s2 = resolveTrick({ ...s, deck: constDeck(8), oppDeck: constDeck(0), playerOrder: identity(), oppOrder: identity(), pos: 0 }, rng);
+    expect(s2.lastTrick.pValue).toBe(11); // 8 + 3
+  });
+  it("C_RELAY III: Rollen-Sieg gibt der nächsten Karte +3 (successorQueue)", () => {
+    const s = resolveTrick(scenario(8, 0, { familyTiers: { C_RELAY: 3 }, roles: { C_RELAY: ["X0"] } }), rng); // X0 gewinnt
+    expect(s.successorQueue[0]).toBe(3);
+    expect(resolveTrick(s, rng).lastTrick.pValue).toBe(11); // nächste Karte 8 + 3
+  });
+  it("C_LEADER IV: Rollen-Sieg armiert die nächsten DREI Karten je +4", () => {
+    const s = resolveTrick(scenario(8, 0, { familyTiers: { C_LEADER: 4 }, roles: { C_LEADER: ["X0"] } }), rng);
+    expect(s.successorQueue.slice(0, 3)).toEqual([4, 4, 4]);
+  });
+  it("C_GUARD IV: einer der zwei Vorgänger verlor → +6 (secondLastResult)", () => {
+    const armed = scenario(3, 8, { familyTiers: { C_GUARD: 4 }, roles: { C_GUARD: ["X0"] }, lastResult: "win", recentResults: ["loss", "win"] });
+    expect(resolveTrick(armed, rng).lastTrick.pValue).toBe(9); // 3 + 6 (zweiter Vorgänger verlor)
+    const both = scenario(3, 8, { familyTiers: { C_GUARD: 4 }, roles: { C_GUARD: ["X0"] }, lastResult: "win", recentResults: ["win", "win"] });
+    expect(resolveTrick(both, rng).lastTrick.pValue).toBe(3); // beide gewonnen → kein Bonus
+  });
+  it("C_SURVIVOR: Segment-Rang (I nur erste 4 Segmente, II nur Tiefste, III zwei Tiefste)", () => {
+    // Segment 0 (Pos 0–4) Werte [1,5,2,9,7] → Pos 0 tiefste (Rang 0), Pos 2 zweittiefste (Rang 1).
+    const deck = [1, 5, 2, 9, 7, ...Array(35).fill(9)].map((v, i) => ({ id: `Y${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
+    const base = (fam, over) => ({ ...initialState(makeRng(1)), deck, oppDeck: constDeck(0), playerOrder: identity(), oppOrder: identity(), familyTiers: fam, ...over });
+    expect(resolveTrick(base({ C_SURVIVOR: 1 }), rng).lastTrick.pValue).toBe(3);              // Pos 0 tiefste, Segment 0 <4 → +2
+    expect(resolveTrick(base({ C_SURVIVOR: 3 }, { pos: 2 }), rng).lastTrick.pValue).toBe(5);  // Pos 2 Rang 1 → +3
+    expect(resolveTrick(base({ C_SURVIVOR: 2 }, { pos: 2 }), rng).lastTrick.pValue).toBe(2);  // II nur Tiefste → Rang 1 kein Bonus
+  });
+});
+
 describe("Reducer PICK_FAMILY (Schritt 1 + Angebotsvalidierung Schritt 3)", () => {
   it("setzt familyTiers[id] auf die Zielstufe und kehrt ins Spiel zurück", () => {
     const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "D_HIGH", tier: 3 }] };

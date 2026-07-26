@@ -1,7 +1,7 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
-import { familySumHook, familyProdHook, familyTierParam } from "./families.js";
+import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries } from "./families.js";
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasConductivity, hasEndlessStorm, hasDischarge, // Blitz-Rework (#93 F2)
@@ -124,16 +124,25 @@ export function resolveTrick(state, rng = Math.random) {
   // Kartenrollen (V2 §22.6 C): Rolle der aktuellen Karte, Triumph-Armierung, Segment-Tiefste.
   const isRole = (perkId) => (roles[perkId] || []).includes(pCard.id);
   const triumphActive = triumphArmed.includes(pCard.id);
-  let isSegmentLow = false, isSegmentHigh = false;
-  if (ownsFlag(perks, "segmentLow") || ownsFlag(perks, "segmentHigh")) { // C7 Tiefste / L7 Höchste im Segment (erste bei Gleichstand)
+  let isSegmentLow = false, isSegmentHigh = false, segmentLowRank = -1, segmentIndex = -1;
+  // Gate: flache C7 (segmentLow) ODER eine gehaltene segmentLow-Familie (C_SURVIVOR). segmentLowRank/segmentIndex
+  // liefern C_SURVIVOR den Rang der Karte im Segment (0=tiefste, 1=zweittiefste), ohne isSegmentLow/High zu ändern.
+  if (ownsFlag(perks, "segmentLow") || ownsFlag(perks, "segmentHigh")
+      || activeFamilyEntries(familyTiers).some((e) => e.def.segmentLow)) {
     const segStart = Math.floor(actualPos / SEGMENT_SIZE) * SEGMENT_SIZE;
+    segmentIndex = Math.floor(actualPos / SEGMENT_SIZE);
     let minVal = Infinity, minPos = -1, maxVal = -Infinity, maxPos = -1;
+    const segPositions = [];
     for (let k = segStart; k < segStart + SEGMENT_SIZE && k < playerOrder.length; k++) {
       const v = deck[playerOrder[k]].value;
+      segPositions.push(k);
       if (v < minVal) { minVal = v; minPos = k; }
       if (v > maxVal) { maxVal = v; maxPos = k; }
     }
     isSegmentLow = actualPos === minPos; isSegmentHigh = actualPos === maxPos;
+    // Rang nach aktuellem Wert aufsteigend, stabil nach Position bei Gleichwert (Rang 0 = minPos → deckungsgleich mit isSegmentLow).
+    const sorted = segPositions.slice().sort((a, b) => deck[playerOrder[a]].value - deck[playerOrder[b]].value || a - b);
+    segmentLowRank = sorted.indexOf(actualPos);
   }
   // L10 Kettenreaktion: der direkte Nachfolger eines Crits ist garantiert kritisch (falls er gewinnt).
   const forceCrit = chainArmed; chainArmed = false;
@@ -152,6 +161,9 @@ export function resolveTrick(state, rng = Math.random) {
     posForm, // V2 §22.6: Formation der gespielten Position (B6 Wiederholung / B9 Treppe)
     predValue, // V2 §22.6: Dauerwert des direkten Vorgängers (B10 Überzahl)
     isRole, triumphActive, isSegmentLow, isSegmentHigh, // V2 §22.6 C/L: Kartenrollen (C1/C2/C3/C6/C7/L7)
+    // Rarität #167 Kat. C: Ergebnis des ZWEITEN Vorgängers (C_GUARD IV), Segment-Rang/-Index (C_SURVIVOR).
+    secondLastResult: recentResults.length >= 2 ? recentResults[recentResults.length - 2] : null,
+    segmentLowRank, segmentIndex,
   };
   // Nachfolger-Bonus (C4 Staffelläufer / C5 Anführer): der Kopf der Queue gilt für DIESE Karte, dann verbraucht.
   const relayBonus = successorQueue[0] || 0;
@@ -388,8 +400,13 @@ export function resolveTrick(state, rng = Math.random) {
       const relay = PERK_DEFS[id].relay;
       if (relay && isRole(id)) for (let i = 0; i < relay; i++) successorQueue[i] = (successorQueue[i] || 0) + 2;
     }
-    // C2 Triumph: gewinnt eine Triumph-Rolle, wird sie fürs nächste Auftauchen armiert.
-    if (isRole("C2")) triumphArmed = [...triumphArmed, pCard.id];
+    // C_RELAY/C_LEADER (Familien): relay-Anzahl + relayBonus aus der gehaltenen Stufe; nur wenn die gewinnende Karte Rolle ist.
+    for (const { familyId, def } of activeFamilyEntries(familyTiers)) {
+      if (def.relay && isRole(familyId)) for (let i = 0; i < def.relay; i++) successorQueue[i] = (successorQueue[i] || 0) + (def.relayBonus || 0);
+    }
+    // C2 / C_TRIUMPH: gewinnt eine Triumph-Rolle, wird sie fürs nächste Auftauchen armiert (flach ODER Familie).
+    if (isRole("C2") || activeFamilyEntries(familyTiers).some((e) => e.def.triumph && isRole(e.familyId)))
+      triumphArmed = [...triumphArmed, pCard.id];
     // L8 Schicksalsmaschine: Erfolge je Karte diesen Durchlauf (für den Wert-Tausch am Durchlauf-Ende).
     if (ownsFlag(perks, "swapExtremes")) l8Wins = { ...l8Wins, [pCard.id]: (l8Wins[pCard.id] || 0) + 1 };
     // Serienanker (§8 A4): Sieg auf einer Serienanker-Position gibt +1 Serienpunkt — NACH der Wertung dieses Siegs.

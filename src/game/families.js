@@ -616,6 +616,17 @@ export function activeTierDefs(familyTiers = {}) {
   return out;
 }
 
+// Wie activeTierDefs, aber mit familyId je Eintrag — für engine-/formationsseitige Marker, die die Familie
+// KENNEN müssen (relay/triumph über isRole(familyId), segmentLow-Gate, jokerRole/bridgeRole in computeFormations).
+export function activeFamilyEntries(familyTiers = {}) {
+  const out = [];
+  for (const [id, tier] of Object.entries(familyTiers || {})) {
+    const def = activeTierDef(id, tier);
+    if (def) out.push({ familyId: id, def });
+  }
+  return out;
+}
+
 // Engine-Parameter der aktiven Stufe einer Familie (z. B. misfireStep/weaknessDeficit/suitHalveOnSwitch).
 // undefined, wenn die Familie nicht gehalten wird oder die Stufe den Parameter nicht führt → der Aufrufer
 // (Engine) fällt dann auf seinen Default zurück (Rückwärtskompatibilität zu den flachen D-Perks).
