@@ -362,8 +362,10 @@ export function resolveTrick(state, rng = Math.random) {
         gainedCharge = 1 + skillSum(skills, "chargeOnCrit", wctx)
                          + (ionizedCard ? skillSum(skills, "chargeOnIonizedCrit", wctx) : 0);
         // Leitfähigkeit (#93 F2): Crit mit einer Karte direkt neben ≥1 ionisierten Karte → +2 (einmalig).
-        const nbIon = (pos > 0 && (deck[playerOrder[pos - 1]]?.ionStacks || 0) > 0)
-                   || (pos < playerOrder.length - 1 && (deck[playerOrder[pos + 1]]?.ionStacks || 0) > 0);
+        // #145: Deck-Nachbarn über actualPos (0–39), nicht über den Stich-Zähler pos (0–44 unter Zeitsegment) —
+        // sonst liest pos≥40 undefined und der Bonus fällt im wiederholten Segment stumm aus.
+        const nbIon = (actualPos > 0 && (deck[playerOrder[actualPos - 1]]?.ionStacks || 0) > 0)
+                   || (actualPos < playerOrder.length - 1 && (deck[playerOrder[actualPos + 1]]?.ionStacks || 0) > 0);
         if (hasConductivity(skills) && nbIon) gainedCharge += C.CONDUCT_CHARGE;
       } else if (hasStaticCharge(skills)) {
         gainedCharge = C.STATIC_CHARGE; // Statische Aufladung: Sieg ohne Crit → 1 Ladung
@@ -379,7 +381,10 @@ export function resolveTrick(state, rng = Math.random) {
             lightning = { ...lightning, armed: true };            // Geladene Serie: Serien-Rahmen scharf
             consumed = true;
           } else if (hasIonize(skills)) {
-            const undrawn = playerOrder.slice(pos + 1);            // Deck-Indizes der noch nicht gezogenen Karten
+            // #145: unter Zeitsegment ist `pos` der Stich-Zähler (0–44), nicht die Deck-Position — die noch
+            // kommenden Karten sind die seq-gemappten Restpositionen (dedupliziert, da ein wiederholtes Segment
+            // Deck-Indizes doppelt nennt). Ohne Zeitsegment ist seq die Identität → identisch zu playerOrder.slice.
+            const undrawn = [...new Set(seq.slice(pos + 1).map((p) => playerOrder[p]))]; // Deck-Indizes der noch kommenden Karten
             if (hasBlitzcatcher(skills)) {
               // #165 Blitzfänger: volle Karten (5 Stapel) werden nicht ionisiert → je +2 temp Wert (nächstes Auftauchen) & +1 Ladung.
               const res = ionizeCardsWithCatch(deck, undrawn, ionizeCountFor(skills), rng);
