@@ -236,6 +236,14 @@ export function activeTierDefs(familyTiers = {}) {
   return out;
 }
 
+// Engine-Parameter der aktiven Stufe einer Familie (z. B. misfireStep/weaknessDeficit/suitHalveOnSwitch).
+// undefined, wenn die Familie nicht gehalten wird oder die Stufe den Parameter nicht führt → der Aufrufer
+// (Engine) fällt dann auf seinen Default zurück (Rückwärtskompatibilität zu den flachen D-Perks).
+export function familyTierParam(familyTiers, familyId, key) {
+  const def = activeTierDef(familyId, (familyTiers || {})[familyId]);
+  return def ? def[key] : undefined;
+}
+
 // Summe eines additiven Hooks (cardBonus/scoreFlat/scoreFlatOnCrit) über die aktiven Stufen-Defs.
 export function familySumHook(familyTiers, name, ctx) {
   let t = 0;

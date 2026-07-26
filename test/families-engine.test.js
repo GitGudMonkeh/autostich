@@ -11,6 +11,8 @@ import { applyFamilyPick } from "../src/game/families.js";
 // Konstantes Deck: gleicher Wert bildet nur eine Wiederholung, KEINEN Farbblock; Pos 0 hat keinen
 // Formations-Mult (wie in engine.test.js verankert) → isoliert die Score-Flats.
 const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
+// Formationsneutral (Werte 12/11, Farbe R/B abwechselnd): gewinnt gegen 0, bildet KEINE Formation → isoliert Score-Flats.
+const flatDeck = () => Array.from({ length: 40 }, (_, i) => ({ id: `F${i}`, suit: i % 2 ? "B" : "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
 const identity = () => Array.from({ length: 40 }, (_, i) => i);
 function scenario(pVal, oVal, over = {}) {
   return {
@@ -21,6 +23,8 @@ function scenario(pVal, oVal, over = {}) {
   };
 }
 const rng = makeRng(9);
+// Kritwurf ist rng()<chance: 0,999… crittet nie bei realer Chance, aber immer bei erzwungener Chance 1 (statCritChance:1).
+const never = () => 0.999999;
 
 describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schritt 1)", () => {
   it("D_HIGH IV: Stufe zahlt scoreFlat in die multiplizierte Basis (Wert ≥6)", () => {
@@ -82,6 +86,71 @@ describe("Reducer PICK_FAMILY (Schritt 1)", () => {
 
   it("initialState trägt ein leeres familyTiers", () => {
     expect(initialState(makeRng(1)).familyTiers).toEqual({});
+  });
+});
+
+describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien", () => {
+  it("D_MISFIRE: Stufen-Schritt/Cap laden die Ladung (I: +20/200)", () => {
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_MISFIRE: 1 }, misfireScore: 0 }), never).misfireScore).toBe(20);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_MISFIRE: 1 }, misfireScore: 190 }), never).misfireScore).toBe(200); // Cap
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_MISFIRE: 4 }, misfireScore: 0 }), never).misfireScore).toBe(75); // IV-Schritt
+  });
+  it("D_MISFIRE IV: Crit zahlt die volle Ladung aus und behält 25 %", () => {
+    const paid = resolveTrick(scenario(12, 0, { familyTiers: { D_MISFIRE: 4 }, statCritChance: 1, misfireScore: 400 }), never);
+    expect(paid.lastTrick.isCrit).toBe(true);
+    expect(paid.misfireScore).toBe(100); // round(400 × 0,25)
+    expect(paid.lastTrick.gained).toBeCloseTo((100 + 400) * 1.02 * paid.lastTrick.critMultiplier); // volle 400 in die Basis
+  });
+
+  it("D_WEAKNESS: Stufen-Schwelle rüstet (I: ≥7)", () => {
+    expect(resolveTrick(scenario(0, 12, { familyTiers: { D_WEAKNESS: 1 } }), never).weaknessArmed).toBe(true);  // Abstand 12 ≥7
+    expect(resolveTrick(scenario(6, 12, { familyTiers: { D_WEAKNESS: 1 } }), never).weaknessArmed).toBe(false); // Abstand 6 <7
+  });
+  it("D_WEAKNESS IV: jede Niederlage rüstet, großer Abstand markiert weaknessBig (+900 statt +600)", () => {
+    const small = resolveTrick(scenario(11, 12, { familyTiers: { D_WEAKNESS: 4 } }), never); // Abstand 1
+    expect(small.weaknessArmed).toBe(true);
+    expect(small.weaknessBig).toBe(false);
+    const big = resolveTrick(scenario(5, 12, { familyTiers: { D_WEAKNESS: 4 } }), never); // Abstand 7 ≥5
+    expect(big.weaknessBig).toBe(true);
+    // Auszahlung am nächsten Sieg: big → +900, sonst +600.
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_WEAKNESS: 4 }, weaknessArmed: true, weaknessBig: true }), never).score).toBeCloseTo((100 + 900) * 1.02);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_WEAKNESS: 4 }, weaknessArmed: true, weaknessBig: false }), never).score).toBeCloseTo((100 + 600) * 1.02);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_WEAKNESS: 4 }, weaknessArmed: true, weaknessBig: true }), never).weaknessBig).toBe(false); // Sieg verbraucht
+  });
+
+  it("D_SUIT_STREAK IV: Farbwechsel halbiert die Länge (statt Reset auf 1)", () => {
+    // Pos 0 ist Farbe R; state-Farbe B → Wechsel. IV: floor(6/2)=3; I: Reset auf 1.
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_SUIT_STREAK: 4 }, winSuit: "B", winSuitStreak: 6 }), never).winSuitStreak).toBe(3);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_SUIT_STREAK: 1 }, winSuit: "B", winSuitStreak: 6 }), never).winSuitStreak).toBe(1);
+  });
+
+  it("D_CRIT_MOMENTUM IV: ein Crit erhöht die Siegesserie zusätzlich um 1", () => {
+    const iv = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_MOMENTUM: 4 }, statCritChance: 1 }), never);
+    expect(iv.lastTrick.isCrit).toBe(true);
+    expect(iv.winStreak).toBe(2); // +1 Sieg, +1 Crit-Bonus
+    // Stufe III ohne streakGainOnCrit → nur der Sieg zählt.
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_MOMENTUM: 3 }, statCritChance: 1 }), never).winStreak).toBe(1);
+  });
+
+  it("D_INTERPLAY IV: eine Niederlage bankt +200 Score (Stufe III nicht)", () => {
+    expect(resolveTrick(scenario(0, 12, { familyTiers: { D_INTERPLAY: 4 } }), never).score).toBe(200);
+    expect(resolveTrick(scenario(0, 12, { familyTiers: { D_INTERPLAY: 3 } }), never).score).toBe(0);
+  });
+
+  it("D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist, gibt zusätzlich +300", () => {
+    const cf = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_FOLLOW: 4 }, critFollowArmed: true, statCritChance: 1 }), never);
+    expect(cf.lastTrick.isCrit).toBe(true);
+    expect(cf.lastTrick.gained).toBeCloseTo((100 + 700 + 300) * 1.02 * cf.lastTrick.critMultiplier); // 700 (Folge) + 300 (Crit-Bonus)
+    // Folgesieg ohne Crit → nur die 700 (kein +300).
+    const noCrit = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_FOLLOW: 4 }, critFollowArmed: true } ), never);
+    expect(noCrit.lastTrick.isCrit).toBe(false);
+    expect(noCrit.score).toBeCloseTo((100 + 700) * 1.02);
+  });
+
+  it("D_FULL_HOUSE: löst über den generischen Hook auf (fünfter Segment-Sieg → +500, Stufe I)", () => {
+    let s = scenario(0, 0, { familyTiers: { D_FULL_HOUSE: 1 }, deck: flatDeck(), oppDeck: constDeck(0) });
+    for (let i = 0; i < 5; i++) s = resolveTrick(s, never); // fünf Siege in Folge, fünfter auf Segmentposition 4
+    expect(s.lastTrick.breakdown.flats).toBeCloseTo(500); // isolierter Flat-Anteil der Familie
   });
 });
 

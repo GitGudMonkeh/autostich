@@ -51,6 +51,7 @@ export function initialState(rng = Math.random) {
     sinceWin: 0, // #71 Durchbruch: aufeinanderfolgende Stiche ohne Sieg
     lossStreak: 0, lastWinValue: null, // #71 Rares: Revanche / Präzision
     critFollowArmed: false, weaknessArmed: false, // #71 Crit-Historie: Crit-Folge (D14) / Schwachstellenanalyse (D16)
+    weaknessBig: false, // Rarität #167: D_WEAKNESS IV — rüstende Niederlage mit großem Abstand (→ +900 statt +600)
     misfireScore: 0, // V2 §22.6 D15: Score-Ladung (Fehlzündung)
     winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Farbserie / Volles Haus
     // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
