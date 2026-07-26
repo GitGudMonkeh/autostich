@@ -572,6 +572,16 @@ describe("Formations-Engine — Integration (V2 §22.7)", () => {
     expect(Array.isArray(s.formations)).toBe(true);
     expect(s.formations[1].mult).toBeCloseTo(1.25);
   });
+
+  it("#161 FB-2: verfolgt Peak-Formationen und Score-Anteil aus Formationen", () => {
+    let s = base();
+    s = resolveTrick(s, rng); // pos0: Layout steht → maxFormations gesampelt; kein Formations-Mult
+    expect(s.maxFormations).toBe(1);          // eine aktive Formation (Wiederholung) im Layout
+    expect(s.formationScore).toBeCloseTo(0);
+    s = resolveTrick(s, rng); // pos1: Sieg mit Wiederholung ×1,25 (gained = 100 × 1,04 × 1,25 = 130)
+    // Anteil aus Formationen = gained × (1 − 1/1,25) = 130 × 0,2 = 26.
+    expect(s.formationScore).toBeCloseTo(26);
+  });
 });
 
 describe("Ionisierung — Engine (Stufe B)", () => {

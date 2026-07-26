@@ -44,6 +44,7 @@ export function initialState(rng = Math.random) {
     scoreAtCycleStart: 0, lastCycleScore: null, prevCycleScore: null,
     winStreak: 0, bestStreak: 0, wins: 0, losses: 0, ties: 0,
     crits: 0, critBonusScore: 0, bestTrickScore: 0,
+    maxFormations: 0, formationScore: 0, // #161 FB-2: Run-Rückblick — Peak aktiver Formationen + Score-Anteil aus Formationen
     initiative: "player",
     lastResult: null,
     sinceWin: 0, // #71 Durchbruch: aufeinanderfolgende Stiche ohne Sieg

@@ -1,10 +1,20 @@
+import { useState } from "react";
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
+import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
 
 // Highscore-Listen (lokal + global) bewusst NICHT hier — sie stehen auf dem Startbildschirm und
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
 export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [] }) {
   const score = Math.floor(state.score);
+  const skills = state.skills || [];
+  // #161 FB-2: Klick auf einen Perk/Skill zeigt dessen Beschreibung. sel = { kind, id } | null.
+  const [sel, setSel] = useState(null);
+  const toggle = (kind, id) => setSel((s) => (s && s.kind === kind && s.id === id ? null : { kind, id }));
+  const selDetail = !sel ? null
+    : sel.kind === "perk"
+      ? { title: PERK_DEFS[sel.id].label, desc: PERK_DEFS[sel.id].desc, color: RARITY_META[rarityOf(sel.id)].color }
+      : { title: SKILL_DEFS[sel.id]?.name, desc: SKILL_DEFS[sel.id]?.desc, color: (ARCHETYPE_META[SKILL_DEFS[sel.id]?.archetype] || {}).color || "#8a8a95" };
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
@@ -16,9 +26,11 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           {isRecord && <div className="mt-2 text-sm font-bold" style={{ color: "#8a7de0" }}>★ Neuer Rekord!</div>}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-center mt-5 text-sm">
+        <div className="grid grid-cols-4 gap-2 text-center mt-5 text-sm">
           <div><div className="opacity-50 text-xs">Beste Serie</div><div className="font-bold">{state.bestStreak}×</div></div>
           <div><div className="opacity-50 text-xs">Perks</div><div className="font-bold">{state.perks.length}</div></div>
+          <div title="Maximal gleichzeitig aktive Formationen im Run"><div className="opacity-50 text-xs">Formationen</div><div className="font-bold" style={{ color: "#5ab87a" }}>{state.maxFormations ?? 0}</div></div>
+          <div title="Score-Anteil aus Formations-Multiplikatoren"><div className="opacity-50 text-xs">Form.-Score</div><div className="font-bold" style={{ color: "#5ab87a" }}>{Math.floor(state.formationScore || 0).toLocaleString("de-DE")}</div></div>
         </div>
 
         {state.bestTrickScore > 0 && (
@@ -30,20 +42,51 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           </div>
         )}
 
-        {state.perks.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
-            {state.perks.map((id) => {
-              const cc = CATEGORIES[PERK_DEFS[id].cat].color;
-              const rar = rarityOf(id);
-              const rm = RARITY_META[rar];
-              return (
-                <span key={id} className="text-[11px] px-2 py-0.5 rounded"
-                  style={{ background: `${cc}22`, color: cc,
-                           border: rar !== "common" ? `1px solid ${rm.color}` : undefined }}>
-                  {rm.mark ? `${rm.mark} ` : ""}{PERK_DEFS[id].label}
-                </span>
-              );
-            })}
+        {(state.perks.length > 0 || skills.length > 0) && (
+          <div className="mt-4">
+            {state.perks.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                {state.perks.map((id) => {
+                  const cc = CATEGORIES[PERK_DEFS[id].cat].color;
+                  const rar = rarityOf(id);
+                  const rm = RARITY_META[rar];
+                  const on = sel && sel.kind === "perk" && sel.id === id;
+                  return (
+                    <button key={id} onClick={() => toggle("perk", id)} title="Beschreibung anzeigen"
+                      className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
+                      style={{ background: `${cc}22`, color: cc,
+                               border: `1px solid ${on ? cc : rar !== "common" ? rm.color : "transparent"}` }}>
+                      {rm.mark ? `${rm.mark} ` : ""}{PERK_DEFS[id].label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {skills.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 justify-center mt-1.5">
+                {skills.map((id) => {
+                  const d = SKILL_DEFS[id];
+                  if (!d) return null;
+                  const am = ARCHETYPE_META[d.archetype] || { color: "#8a8a95", icon: "" };
+                  const on = sel && sel.kind === "skill" && sel.id === id;
+                  return (
+                    <button key={id} onClick={() => toggle("skill", id)} title="Beschreibung anzeigen"
+                      className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
+                      style={{ background: `${am.color}22`, color: am.color,
+                               border: `1px solid ${on ? am.color : d.legendary ? "#d4a63a" : "transparent"}` }}>
+                      {am.icon} {d.legendary ? "★ " : ""}{d.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {selDetail && (
+              <div className="mt-2 rounded-lg px-3 py-2 text-xs leading-snug"
+                   style={{ background: "#0e0e13", border: `1px solid ${selDetail.color}55` }}>
+                <span className="font-bold" style={{ color: selDetail.color }}>{selDetail.title}</span>
+                <span className="opacity-80"> — {selDetail.desc}</span>
+              </div>
+            )}
           </div>
         )}
 
