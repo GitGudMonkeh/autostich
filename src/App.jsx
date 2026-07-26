@@ -16,6 +16,7 @@ import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { ShopScreen } from "./ui/ShopScreen.jsx";
 import { ShopTargetSelect } from "./ui/ShopTargetSelect.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
+import { FamilyTargetSelect } from "./ui/FamilyTargetSelect.jsx";
 import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
@@ -206,7 +207,10 @@ export function Autostich() {
   }
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun läuft über den gameover-Effekt
-  const pick = (id) => dispatch({ type: "PICK_PERK", perkId: id, rng: Math.random });
+  // Perk-Auswahl: ein Angebotseintrag ist entweder eine Familie {familyId,tier} (Rarität #167) oder ein flacher perkId-String.
+  const pick = (entry) => (entry && typeof entry === "object" && entry.familyId)
+    ? dispatch({ type: "PICK_FAMILY", familyId: entry.familyId, tier: entry.tier, rng: Math.random })
+    : dispatch({ type: "PICK_PERK", perkId: entry, rng: Math.random });
   const pickStat = (id) => dispatch({ type: "PICK_STAT", statId: id, rng: Math.random });
   // Formationsphase (§22.8): Tausch / Undo / Zurücksetzen / Bestätigen.
   const swapCards = (i, j) => dispatch({ type: "SWAP_CARDS", i, j });
@@ -214,6 +218,10 @@ export function Autostich() {
   const resetFormation = () => dispatch({ type: "RESET_FORMATION" });
   const confirmFormation = () => dispatch({ type: "CONFIRM_FORMATION" });
   const confirmTarget = (cardIds) => dispatch({ type: "CONFIRM_TARGET", cardIds });
+  // Familien-Ziel-Auswahl (Rarität #167): Farbe(n) (Kat. A) bzw. Karten (Kat. C Rollen) für pickTarget-Stufen wählen.
+  const familyTargetSuit = (suit) => dispatch({ type: "FAMILY_TARGET_SUIT", suit });
+  const familyTargetCard = (cardId) => dispatch({ type: "FAMILY_TARGET_CARD", cardId });
+  const familyTargetConfirm = () => dispatch({ type: "FAMILY_TARGET_CONFIRM", rng: Math.random });
   // Skill-Auswahl (jede 3. Runde): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
@@ -400,7 +408,7 @@ export function Autostich() {
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
                 ownCount={frozenCount(state.deck)}
                 enemyCount={(state.frostbiteActive || []).length} />
-              <BuildPanel perks={state.perks} skills={state.skills} />
+              <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} />
             </div>
             <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>
@@ -433,6 +441,9 @@ export function Autostich() {
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />
+      )}
+      {state.phase === "family-target" && (
+        <FamilyTargetSelect state={state} onSuit={familyTargetSuit} onCard={familyTargetCard} onConfirm={familyTargetConfirm} />
       )}
       {showChronik && <ChronikOverview state={state} onClose={() => setShowChronik(false)} />}
       {state.phase === "levelup" && state.statOffer && (

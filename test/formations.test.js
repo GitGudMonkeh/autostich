@@ -106,70 +106,78 @@ describe("formationPotential (Startdeck-Band, #Pass6)", () => {
   });
 });
 
-describe("Rollen-Eingriffe: Joker (C8) & Bindeglied (C10)", () => {
-  it("Joker zählt als Farbe des direkten Vorgängers → bildet einen Farbblock", () => {
-    const deck = [["R", 5], ["R", 2], ["B", 8]].map(card); // B ist Joker → alle „rot"
-    const roles = { C8: [deck[2].id] };
-    const f = computeFormations(idOrder(3), deck, roles);
-    expect(f[2].formations.some((x) => x.type === "farbblock")).toBe(true);
-    expect(+f[2].mult.toFixed(2)).toBe(1.35);
-    // ohne Rolle: kein Farbblock (Farben R,R,B)
-    expect(computeFormations(idOrder(3), deck)[2].formations.some((x) => x.type === "farbblock")).toBe(false);
+// Joker (C8) & Bindeglied (C10) sind zu den Familien C_JOKER/C_BRIDGE migriert (#167) — Tests direkt darunter.
+
+describe("Rollen-Familien (Rarität #167): C_JOKER & C_BRIDGE über familyTiers", () => {
+  const withFam = (deck, roles, familyTiers) => computeFormations(idOrder(deck.length), deck, roles, [], [], [], {}, familyTiers);
+  it("C_JOKER I (pred): zählt als Vorgängerfarbe (wie flach C8)", () => {
+    const deck = [["R", 5], ["R", 2], ["B", 8]].map(card); // B als R → Farbblock R,R,R
+    expect(withFam(deck, { C_JOKER: [deck[2].id] }, { C_JOKER: 1 })[2].formations.some((x) => x.type === "farbblock")).toBe(true);
   });
-  it("Bindeglied darf für die Treppe als ±1 gelten", () => {
-    const deck = [["R", 3], ["B", 3], ["G", 5]].map(card); // 3,3,5: normal keine Treppe (3→3 nicht steigend)
-    expect(computeFormations(idOrder(3), deck)[2].formations.some((x) => x.type === "treppe")).toBe(false);
-    const roles = { C10: [deck[1].id] }; // mittlere Karte darf als 4 gelten → 3<4<5
-    expect(computeFormations(idOrder(3), deck, roles)[2].formations.some((x) => x.type === "treppe")).toBe(true);
+  it("C_JOKER IV (free): zählt als beliebige Farbe — auch mitten im Block", () => {
+    const deck = [["R", 5], ["B", 2], ["R", 8]].map(card); // R,B,R: normal kein Farbblock
+    expect(computeFormations(idOrder(3), deck)[2].formations.some((x) => x.type === "farbblock")).toBe(false);
+    // B (Mitte) als freier Joker → R,(R),R = Farbblock
+    expect(withFam(deck, { C_JOKER: [deck[1].id] }, { C_JOKER: 4 })[2].formations.some((x) => x.type === "farbblock")).toBe(true);
+  });
+  it("C_BRIDGE: Span je Stufe (I ±1 reicht nicht, III ±2 erlaubt die steilere Treppe)", () => {
+    const deck = [["R", 3], ["B", 8], ["G", 9]].map(card); // 3→8 zu steil (Schritt 5 > 3); Bindeglied auf der 8
+    expect(withFam(deck, { C_BRIDGE: [deck[1].id] }, { C_BRIDGE: 1 })[2].formations.some((x) => x.type === "treppe")).toBe(false); // ±1
+    expect(withFam(deck, { C_BRIDGE: [deck[1].id] }, { C_BRIDGE: 3 })[2].formations.some((x) => x.type === "treppe")).toBe(true);  // ±2 → 8 zählt als 6 → 3,6,9
   });
 });
 
-describe("Formationswerkzeuge (V2 §22.6 E)", () => {
-  const f = (arr, perks) => computeFormations(idOrder(arr.length), arr.map(card), {}, perks);
+describe("Formationsfamilien (Rarität #167 Kat. E über familyTiers)", () => {
+  // E1–E9 sind zu Familien migriert (#167); computeFormations liest sie über familyTiers (8. Param). Stufe II ≈ das
+  // frühere flache Verhalten.
+  const withE = (arr, familyTiers) => computeFormations(idOrder(arr.length), arr.map(card), {}, [], [], [], {}, familyTiers);
   const hasType = (g, pos, t) => g[pos].formations.some((x) => x.type === t);
 
-  it("E7 Kontrollverlust: Position 10/20/30/40 werden Anker (×1,25)", () => {
+  it("E_LOSS: Segment-Anker (II: Position 10/20/30/40 ×1,25; IV ×1,35)", () => {
     const deck = Array.from({ length: 10 }, (_, i) => [i % 2 ? "B" : "R", i % 2 ? 1 : 3]); // formationsneutral
-    const g = f(deck, ["E7"]);
-    expect(hasType(g, 9, "anker")).toBe(true); // Position 10
-    expect(g[9].mult).toBeCloseTo(1.25);
-    expect(hasType(f(deck, []), 9, "anker")).toBe(false);
+    expect(hasType(withE(deck, { E_LOSS: 2 }), 9, "anker")).toBe(true); // Position 10
+    expect(withE(deck, { E_LOSS: 2 })[9].mult).toBeCloseTo(1.25);
+    expect(hasType(withE(deck, {}), 9, "anker")).toBe(false);
+    expect(withE(deck, { E_LOSS: 4 })[9].mult).toBeCloseTo(1.35); // IV ×1,35
   });
-  it("E8 Schnellschuss: Position 5/15/25/35 werden Anker", () => {
+  it("E_QUICKSHOT: Anker (II: Position 5/15/25/35)", () => {
     const deck = Array.from({ length: 6 }, (_, i) => [i % 2 ? "B" : "R", i % 2 ? 1 : 3]);
-    expect(hasType(f(deck, ["E8"]), 4, "anker")).toBe(true); // Position 5
+    expect(hasType(withE(deck, { E_QUICKSHOT: 2 }), 4, "anker")).toBe(true); // Position 5
+    expect(hasType(withE(deck, { E_QUICKSHOT: 1 }), 4, "anker")).toBe(true); // Position 5 auch bei I
   });
-  it("E9 Segmentarbeit: Farbblock läuft über die Segmentgrenze", () => {
+  it("E_SEGMENT: Farbblock läuft über die geöffnete Segmentgrenze (III: alle offen)", () => {
     const deck = [["B", 4], ["G", 1], ["Y", 3], ["R", 5], ["R", 2], ["R", 8], ["R", 3]]; // R-Block Pos 4–7 über Grenze
-    expect(hasType(f(deck, []), 5, "farbblock")).toBe(false);
-    expect(hasType(f(deck, ["E9"]), 5, "farbblock")).toBe(true);
+    expect(hasType(withE(deck, {}), 5, "farbblock")).toBe(false);
+    expect(hasType(withE(deck, { E_SEGMENT: 3 }), 5, "farbblock")).toBe(true);
   });
-  it("E5 Pendelwerk: Wechsel schon ab 2 Karten erkannt (Marker; ordinal ≤2 → Faktor 1)", () => {
+  it("E_PENDULUM: Wechsel ab 2 Karten (II Marker/Faktor 1); IV Faktor bereits ab Länge 2 (×1,35)", () => {
     const deck = [["R", 2], ["B", 9]];
-    expect(hasType(f(deck, []), 1, "wechsel")).toBe(false);
-    const g = f(deck, ["E5"]);
-    expect(hasType(g, 1, "wechsel")).toBe(true);
-    // #99: ein reiner 2-Karten-Wechsel ist nur ein Marker — Faktor 1, kein Score-Mult, keine „aktive
-    // Formation". Erst ab der 3. Karte zahlt der Wechsel; E5 wirkt sonst nur über Overlap/Verlängerung.
-    expect(g[1].formations.find((x) => x.type === "wechsel").factor).toBe(1);
-    expect(g[1].mult).toBe(1);
-    expect(positionHasFormation(g[1])).toBe(false);
+    expect(hasType(withE(deck, {}), 1, "wechsel")).toBe(false);
+    const g2 = withE(deck, { E_PENDULUM: 2 });
+    expect(hasType(g2, 1, "wechsel")).toBe(true);
+    expect(g2[1].formations.find((x) => x.type === "wechsel").factor).toBe(1); // #99: 2-Karten-Wechsel nur Marker
+    expect(positionHasFormation(g2[1])).toBe(false);
+    expect(withE(deck, { E_PENDULUM: 4 })[1].mult).toBeCloseTo(1.35);           // IV: aktive Formation ab Länge 2
   });
-  it("E1 Schrittmacher: Wiederholung mit einer fremden Karte dazwischen (fremde zählt nicht)", () => {
+  it("E_PACE: Wiederholung mit fremder Karte; Gap-Budget je Stufe (I 1, III 2)", () => {
     const deck = [["R", 5], ["B", 8], ["G", 5]]; // 5,8,5
-    expect(hasType(f(deck, []), 2, "wiederholung")).toBe(false);
-    const g = f(deck, ["E1"]);
+    expect(hasType(withE(deck, {}), 2, "wiederholung")).toBe(false);
+    const g = withE(deck, { E_PACE: 2 });
     expect(hasType(g, 2, "wiederholung")).toBe(true);
     expect(hasType(g, 1, "wiederholung")).toBe(false); // die 8 ist kein Mitglied
+    // 5,8,5,9,5: I erlaubt nur EINEN Gap (Lauf endet nach dem 2. Fünfer), III erlaubt zwei (alle drei Fünfer).
+    const d2 = [["R", 5], ["B", 8], ["G", 5], ["Y", 9], ["R", 5]];
+    expect(hasType(withE(d2, { E_PACE: 1 }), 4, "wiederholung")).toBe(false);
+    expect(hasType(withE(d2, { E_PACE: 3 }), 4, "wiederholung")).toBe(true);
   });
-  it("E3 Sanfter Anstieg: Treppe darf einmal gleich sein", () => {
-    const deck = [["R", 3], ["B", 5], ["G", 5], ["Y", 7]]; // 3,5,5,7 (einmal gleich)
-    expect(hasType(f(deck, []), 3, "treppe")).toBe(false);
-    expect(hasType(f(deck, ["E3"]), 3, "treppe")).toBe(true);
+  it("E_GENTLE: Treppe darf einen Gleichstand enthalten", () => {
+    const deck = [["R", 3], ["B", 5], ["G", 5], ["Y", 7]]; // 3,5,5,7
+    expect(hasType(withE(deck, {}), 3, "treppe")).toBe(false);
+    expect(hasType(withE(deck, { E_GENTLE: 2 }), 3, "treppe")).toBe(true);
   });
-  it("E4 Großer Schritt: Treppe darf einmal einen Rückschritt enthalten", () => {
-    const deck = [["R", 3], ["B", 5], ["G", 4], ["Y", 6]]; // 3,5,4,6: Schritte ≤3, ein Rückschritt (5→4)
-    expect(hasType(f(deck, []), 3, "treppe")).toBe(false);
-    expect(hasType(f(deck, ["E4"]), 3, "treppe")).toBe(true);
+  it("E_BIGSTEP: Treppe darf einen Rückschritt enthalten", () => {
+    const deck = [["R", 3], ["B", 5], ["G", 4], ["Y", 6]]; // 3,5,4,6: ein Rückschritt (5→4)
+    expect(hasType(withE(deck, {}), 3, "treppe")).toBe(false);
+    expect(hasType(withE(deck, { E_BIGSTEP: 2 }), 3, "treppe")).toBe(true);
   });
 });

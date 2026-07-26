@@ -89,41 +89,14 @@ describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
   });
 });
 
-describe("resolveTrick — Score-Perks (V2: Flat)", () => {
-  it("D1 Punktebonus: +75 nur bei aktiver Formation", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D1"] }), rng).lastTrick.gained).toBeCloseTo(102); // keine Formation → 0
-    const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }];
-    const opp = [{ id: "o0", suit: "R", baseRank: 0, value: 0 }, { id: "o1", suit: "R", baseRank: 0, value: 0 }];
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1], oppOrder: [0, 1], perks: ["D1"] };
-    s = resolveTrick(s, rng); s = resolveTrick(s, rng); // pos1 = Wiederholung (Formation ×1,25)
-    expect(s.lastTrick.gained).toBeCloseTo((100 + 75) * 1.04 * 1.25);
-  });
-
-  it("D4 Außenseitersieg: +300 Score bei Wert ≤3", () => {
-    expect(resolveTrick(scenario(2, 0, { perks: ["D4"] }), rng).score).toBeCloseTo(408); // (100+300)×1,02
-    expect(resolveTrick(scenario(12, 0, { perks: ["D4"] }), rng).score).toBeCloseTo(102);
-  });
-
-  it("D2 Siegesserie: +25 Flat je Serienpunkt (Serie 1/2/3)", () => {
-    let s = scenario(12, 0, { perks: ["D2"], deck: flatDeck() }); // formationsneutral → isoliert D2
-    s = resolveTrick(s, rng); // (100+25)×1,02 = 127,5
-    s = resolveTrick(s, rng); // (100+50)×1,04 = 156
-    s = resolveTrick(s, rng); // (100+75)×1,06 = 185,5
-    expect(s.score).toBeCloseTo(469);
-  });
-
-  it("D2 Siegesserie: gedeckelt bei +250 (Serie ≥10)", () => {
-    const s = resolveTrick(scenario(12, 0, { perks: ["D2"], winStreak: 19 }), rng);
-    expect(s.winStreak).toBe(20);
-    expect(s.lastTrick.gained).toBeCloseTo(490); // (100+250)×streakBaseMult(20)=1,40 (#100: Cap jetzt +150 %)
-  });
-});
+// D-Score-Perks sind zu Familien migriert (#167) — die Engine-Integration testet test/families-engine.test.js
+// (u. a. D_FORMATION_BONUS mit Formations-Mult und D_STREAK über mehrere Stiche).
 
 describe("resolveTrick — Crit & globale Score-Formel (ohne Tempo)", () => {
-  it("additive Boni (D5) fließen in die Basis und werden mitmultipliziert", () => {
-    // 10. Sieg → D5 +750: (100+750)×streakBaseMult(1)=1,02 = 867
-    const s = resolveTrick(scenario(12, 0, { perks: ["D5"], wins: 9 }), rng);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(867);
+  it("additive Boni (Familie D_TENTH_WIN) fließen in die Basis und werden mitmultipliziert", () => {
+    // 10. Sieg → D_TENTH_WIN II +800: (100+800)×streakBaseMult(1)=1,02 = 918
+    const s = resolveTrick(scenario(12, 0, { familyTiers: { D_TENTH_WIN: 2 }, wins: 9 }), rng);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(918);
   });
 
   it("Crit multipliziert den vollen scoreBeforeCrit mit der Basis 1,5", () => {
@@ -275,114 +248,53 @@ describe("resolveTrick — Durchlauf-Ende & persistente Reihenfolge (V2)", () =>
 });
 
 describe("Historie-Rares — Engine (#71 Phase 2b)", () => {
-  it("B8 Revanche: nach 2 Niederlagen +7 auf die nächste Karte", () => {
-    expect(resolveTrick(scenario(3, 8, { perks: ["B8"], lossStreak: 2 }), rng).lastTrick.pValue).toBe(10);
-    expect(resolveTrick(scenario(3, 8, { perks: ["B8"], lossStreak: 1 }), rng).lastTrick.pValue).toBe(3);
+  // B8 Revanche als Familie B_REVENGE (inkl. III Zwei-Karten-Queue) — Tests in families-engine.test.js.
+  it("lastWinValue wird nach einem Sieg auf den Siegwert gesetzt (Basis für Familie D_PRECISION)", () => {
+    expect(resolveTrick(scenario(9, 0), rng).lastWinValue).toBe(9);
   });
-  it("D12 Präzision: +400 bei Übereinstimmung mit dem letzten Siegwert; lastWinValue wird gesetzt", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D12"], lastWinValue: 12 }), rng).score).toBeCloseTo(510); // (100+400)×1,02
-    expect(resolveTrick(scenario(12, 0, { perks: ["D12"], lastWinValue: 11 }), rng).score).toBeCloseTo(102);
-    expect(resolveTrick(scenario(9, 0, { perks: ["D12"] }), rng).lastWinValue).toBe(9);
-  });
-  it("D13 Wechselspiel: +200 bei Sieg direkt nach einer Niederlage", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D13"], lastResult: "loss" }), rng).lastTrick.gained).toBeCloseTo(306); // (100+200)×1,02
-    expect(resolveTrick(scenario(12, 0, { perks: ["D13"], lastResult: "win" }), rng).lastTrick.gained).toBeCloseTo(102);
-  });
+  // D12 Präzision / D13 Wechselspiel als Familien (D_PRECISION / D_INTERPLAY) — Tests in families-engine.test.js.
 });
 
 describe("Crit-Historie-Rares — Engine (#71 Phase 2c)", () => {
   const never = () => 0.99; // Crit-Wurf schlägt nie an → Zustandsübergänge isoliert testbar
 
-  it("D14 Crit-Folge: +200 Score bei Sieg mit gesetztem critFollowArmed", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["D14"], critFollowArmed: true }), never).lastTrick.gained).toBeCloseTo(306); // (100+200)×1,02
-    expect(resolveTrick(scenario(12, 0, { perks: ["D14"], critFollowArmed: false }), never).lastTrick.gained).toBeCloseTo(102);
-  });
   it("critFollowArmed: ein Crit rüstet, ein Sieg ohne Crit entrüstet", () => {
     expect(resolveTrick(scenario(12, 0, { statCritChance: 1 }), rng).critFollowArmed).toBe(true);
     expect(resolveTrick(scenario(12, 0, { critFollowArmed: true }), never).critFollowArmed).toBe(false);
   });
-
-  it("D15 Fehlzündung: lädt +30/Sieg-ohne-Crit (max 300); Crit zahlt & setzt zurück", () => {
-    expect(resolveTrick(scenario(12, 0, { misfireScore: 0 }), never).misfireScore).toBe(30);
-    expect(resolveTrick(scenario(12, 0, { misfireScore: 290 }), never).misfireScore).toBe(300); // Deckel
-    const paid = resolveTrick(scenario(12, 0, { perks: ["D15"], statCritChance: 1, misfireScore: 120 }), rng);
-    expect(paid.lastTrick.isCrit).toBe(true);
-    expect(paid.lastTrick.scoreBeforeCrit).toBeCloseTo((100 + 120) * 1.02); // Ladung in der multiplizierten Basis
-    expect(paid.misfireScore).toBe(0); // Crit setzt zurück
-  });
-
-  it("D16 Schwachstellenanalyse: klare Niederlage rüstet, Sieg gibt +300", () => {
-    expect(resolveTrick(scenario(0, 12, { perks: ["D16"] }), never).weaknessArmed).toBe(true);   // Abstand 12 ≥5
-    expect(resolveTrick(scenario(10, 12, { perks: ["D16"] }), never).weaknessArmed).toBe(false); // Abstand 2 <5
-    const win = resolveTrick(scenario(12, 0, { perks: ["D16"], weaknessArmed: true }), never);
-    expect(win.lastTrick.gained).toBeCloseTo(408); // (100+300)×1,02
-    expect(win.weaknessArmed).toBe(false); // Sieg verbraucht
-  });
+  // D14 Crit-Folge / D15 Fehlzündung / D16 Schwachstellenanalyse als Familien (D_CRIT_FOLLOW / D_MISFIRE /
+  // D_WEAKNESS) inkl. Stufen-Parameter — Tests in families-engine.test.js.
 });
 
 describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
   const mk = (arr, suit = "R") => arr.map((v, i) => ({ id: `${suit}${i}`, suit, baseRank: v, value: v }));
 
-  it("B9 Perfekte Folge: Karten einer Treppe erhalten +1/+2/+3 nach Position", () => {
-    const deck = mk([3, 5, 7, 4]); // 3<5<7 = Treppe (Pos 0–2), die 4 liegt außerhalb
-    const opp = mk([0, 0, 0, 0]);
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2, 3], oppOrder: [0, 1, 2, 3], perks: ["B9"] };
-    const pv = [];
-    for (let i = 0; i < 4; i++) { s = resolveTrick(s, rng); pv.push(s.lastTrick.pValue); }
-    expect(pv).toEqual([4, 7, 10, 4]); // Treppen-Ordinal 1,2,3 → +1,+2,+3; Pos 3 keine Treppe → +0
-  });
-
-  it("D17 Farbserie: gleiche Farbe zählt, Farbwechsel beginnt bei 1, Niederlage bricht", () => {
+  // B9 Perfekte Folge als Familie B_PERFECT (Treppen-Ordinal) — Tests in families.test.js/families-engine.test.js.
+  it("Farbserie-Zähler (Engine): gleiche Farbe zählt hoch, Farbwechsel beginnt bei 1, Niederlage bricht", () => {
+    // winSuit/winSuitStreak sind Engine-Zustand (Basis für Familie D_SUIT_STREAK), unabhängig von einem Perk.
     const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }, { id: "c", suit: "B", baseRank: 12, value: 12 }];
     const opp = mk([0, 0, 0]);
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2], oppOrder: [0, 1, 2], perks: ["D17"] };
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2], oppOrder: [0, 1, 2] };
     s = resolveTrick(s, rng); expect(s.winSuitStreak).toBe(1); // R
     s = resolveTrick(s, rng); expect(s.winSuitStreak).toBe(2); // R
     s = resolveTrick(s, rng); expect(s.winSuitStreak).toBe(1); expect(s.winSuit).toBe("B"); // Farbwechsel
-    expect(resolveTrick(scenario(0, 12, { perks: ["D17"], winSuit: "R", winSuitStreak: 3 }), rng).winSuitStreak).toBe(0); // Niederlage bricht
+    expect(resolveTrick(scenario(0, 12, { winSuit: "R", winSuitStreak: 3 }), rng).winSuitStreak).toBe(0); // Niederlage bricht
   });
-  it("D17: 2. Sieg gleicher Farbe gibt +100 Flat", () => {
-    let s = scenario(12, 0, { perks: ["D17"], deck: sameSuitDeck() }); // Farbe R, wechselnde Werte → keine Formation
-    s = resolveTrick(s, rng); // Serie 1 → +0
-    s = resolveTrick(s, rng); // Serie 2 → +100
-    expect(s.lastTrick.gained).toBeCloseTo((100 + 100) * 1.04);
-  });
-
-  it("D18 Volles Haus: 5. Segment-Position mit 4 Vorsiegen → +750", () => {
-    // pos 4 = letzte Position im Segment 0; recentResults 4× win → 5 Siege im Segment.
-    expect(resolveTrick(scenario(12, 0, { perks: ["D18"], pos: 4, recentResults: ["win", "win", "win", "win"] }), rng).lastTrick.gained).toBeCloseTo((100 + 750) * 1.02);
-    expect(resolveTrick(scenario(12, 0, { perks: ["D18"], pos: 3, recentResults: ["win", "win", "win", "win"] }), rng).lastTrick.gained).toBeCloseTo(102); // nicht Segment-Ende
-  });
+  // D17 Farbserie / D18 Volles Haus als Familien (D_SUIT_STREAK / D_FULL_HOUSE) — Score-Tests in families-engine.test.js.
   it("Volles-Haus-Fenster: recentResults hält die letzten 4 Ergebnisse", () => {
     expect(resolveTrick(scenario(12, 0, { recentResults: ["loss", "win", "tie", "win"] }), rng).recentResults).toEqual(["win", "tie", "win", "win"]);
   });
 });
 
 describe("Serien-/Crit-Rares — Engine (#71 Phase 2e)", () => {
-  it("B10 Überzahl: +3 temp Wert, wenn der Dauerwert höher als der des direkten Vorgängers ist", () => {
-    const deck = [
-      { id: "a", suit: "R", baseRank: 4, value: 4 },
-      { id: "b", suit: "R", baseRank: 9, value: 9 },
-      { id: "c", suit: "R", baseRank: 2, value: 2 },
-    ];
-    const opp = [
-      { id: "o0", suit: "R", baseRank: 0, value: 0 },
-      { id: "o1", suit: "R", baseRank: 0, value: 0 },
-      { id: "o2", suit: "R", baseRank: 0, value: 0 },
-    ];
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1, 2], oppOrder: [0, 1, 2], perks: ["B10"] };
-    const pv = [];
-    for (let i = 0; i < 3; i++) { s = resolveTrick(s, rng); pv.push(s.lastTrick.pValue); }
-    expect(pv).toEqual([4, 12, 2]); // Pos0 kein Vorgänger; Pos1 (9>4) +3; Pos2 (2<9) +0
-  });
-
-  it("D19 Überschusskrit: +250 Crit-Flat, wenn die Roh-Crit-Chance über 100 % liegt", () => {
-    // statCritChance 1,5 → rawCrit 1,5 (>1), Crit garantiert. scoreBase = 100 + 250.
-    const s = resolveTrick(scenario(12, 0, { perks: ["D19"], statCritChance: 1.5 }), rng);
+  // B10 Überzahl als Familie B_SUPERIOR (Vergleich Dauerwert vs. Vorgänger) — Tests in families.test.js.
+  it("Familie D_OVERCRIT: +Crit-Flat, wenn die Roh-Crit-Chance über 100 % liegt (rawCrit im critCtx)", () => {
+    // D_OVERCRIT III: jeder Überschuss-Crit (rawCrit > 1) gibt +500. statCritChance 1,5 → rawCrit 1,5, Crit garantiert.
+    const s = resolveTrick(scenario(12, 0, { familyTiers: { D_OVERCRIT: 3 }, statCritChance: 1.5 }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo((100 + 250) * 1.02);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo((100 + 500) * 1.02);
     // rawCrit genau 1 (nicht >1) → kein Bonus.
-    expect(resolveTrick(scenario(12, 0, { perks: ["D19"], statCritChance: 1 }), rng).lastTrick.scoreBeforeCrit).toBeCloseTo(102);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_OVERCRIT: 3 }, statCritChance: 1 }), rng).lastTrick.scoreBeforeCrit).toBeCloseTo(102);
   });
 });
 
@@ -394,15 +306,7 @@ describe("Neue Legendaries — Engine (V2 §22.6 L)", () => {
     expect(resolveTrick(scenario(5, 0, { pos: 34, perks: ["L3"] }), rng).lastTrick.pValue).toBe(5);   // Position 35 → kein Bonus
   });
 
-  it("L7 Königsmacher: die höchste Karte des Segments bekommt +5", () => {
-    const mkL = (arr, suit = "R") => arr.map((v, i) => ({ id: `${suit}${i}`, suit, baseRank: v, value: v }));
-    let s = { ...initialState(makeRng(1)), deck: mkL([5, 9, 6, 7, 8]), oppDeck: mkL([0, 0, 0, 0, 0], "B"),
-              playerOrder: [0, 1, 2, 3, 4], oppOrder: [0, 1, 2, 3, 4], perks: ["L7"] };
-    s = resolveTrick(s, rng);             // pos0 val5 (nicht Höchste) → +0
-    expect(s.lastTrick.pValue).toBe(5);
-    s = resolveTrick(s, rng);             // pos1 val9 (Segment-Höchste) → +5
-    expect(s.lastTrick.pValue).toBe(14);
-  });
+  // L7 „Königsmacher" entfernt (#162, Spec §9) — Test ersatzlos gestrichen; C7 „Überlebensvorteil" deckt segmentLow ab.
 
   it("L8 Schicksalsmaschine: am Durchlauf-Ende tauschen erfolgreichste & erfolgloseste Karte die Werte", () => {
     const deck = Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: 1, value: i === 0 ? 20 : i === 1 ? 3 : 12 }));
@@ -424,13 +328,13 @@ describe("Neue Legendaries — Engine (V2 §22.6 L)", () => {
   it("L11 Zeitraffer: Position 40 wiederholt den Wertbonus von Position 20", () => {
     const deck = Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: 5, value: 5 }));
     const opp = Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: 0, value: 0 }));
-    // B4 gibt Position 20 (pos 19) +8; L11 wiederholt das an Position 40 (pos 39).
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: seq40, oppOrder: seq40, pos: 19, perks: ["B4", "L11"] };
-    s = resolveTrick(s, rng); // pos19: B4 +8 → pValue 13, pos20Bonus = 8
-    expect(s.lastTrick.pValue).toBe(13);
-    expect(s.pos20Bonus).toBe(8);
-    s = resolveTrick({ ...s, pos: 39 }, rng); // pos39: B4 +8 + L11-Wiederholung +8 → 5+8+8 = 21
-    expect(s.lastTrick.pValue).toBe(21);
+    // Familie B_TENTH_STRIKE I gibt Position 20 (pos 19) +6; L11 wiederholt das an Position 40 (pos 39).
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: seq40, oppOrder: seq40, pos: 19, perks: ["L11"], familyTiers: { B_TENTH_STRIKE: 1 } };
+    s = resolveTrick(s, rng); // pos19: B_TENTH_STRIKE +6 → pValue 11, pos20Bonus = 6
+    expect(s.lastTrick.pValue).toBe(11);
+    expect(s.pos20Bonus).toBe(6);
+    s = resolveTrick({ ...s, pos: 39 }, rng); // pos39: B_TENTH_STRIKE +6 + L11-Wiederholung +6 → 5+6+6 = 17
+    expect(s.lastTrick.pValue).toBe(17);
   });
 });
 
@@ -664,62 +568,8 @@ describe("Reaktoren + Geladene Serie — Engine (Stufe C)", () => {
   });
 });
 
-describe("Kartenrollen — Engine (V2 §22.6 C)", () => {
-  const mk = (arr, suit = "R") => arr.map((v, i) => ({ id: `${suit}${i}`, suit, baseRank: v, value: v }));
-  const build = (over) => ({ ...initialState(makeRng(1)), oppDeck: mk([0, 0, 0]), oppOrder: [0, 1, 2], ...over });
-
-  it("C1 Vorhut: Rollen-Karte auf Position ≤4 bekommt +3 Wert", () => {
-    const s = build({ deck: mk([5, 5, 5]), playerOrder: [0, 1, 2], perks: ["C1"], roles: { C1: ["R0"] } });
-    const r = resolveTrick(s, rng); // pos0 = R0 (Rolle), posInCycle 0 → +3
-    expect(r.lastTrick.pValue).toBe(8); // 5 + 3
-  });
-
-  it("C4 Staffelläufer: nach dem Sieg einer Rollen-Karte bekommt die nächste +2", () => {
-    let s = build({ deck: mk([5, 5, 5]), playerOrder: [0, 1, 2], perks: ["C4"], roles: { C4: ["R0"] } });
-    s = resolveTrick(s, rng);          // pos0 R0 gewinnt → Nachfolger armiert
-    expect(s.lastTrick.pValue).toBe(5); // R0 selbst ohne Bonus
-    s = resolveTrick(s, rng);          // pos1 → +2
-    expect(s.lastTrick.pValue).toBe(7); // 5 + 2
-  });
-
-  it("C2 Triumph: Sieg armiert die Karte; dieser Stich noch ohne Bonus", () => {
-    let s = build({ deck: mk([5, 5]), oppDeck: mk([0, 0]), oppOrder: [0, 1], playerOrder: [0, 1], perks: ["C2"], roles: { C2: ["R0"] } });
-    s = resolveTrick(s, rng);
-    expect(s.triumphArmed).toContain("R0");
-    expect(s.lastTrick.pValue).toBe(5);
-  });
-
-  it("C3 Leibwache: nach verlorenem Vorgänger bekommt die Rollen-Karte +5", () => {
-    let s = build({ deck: mk([5, 5]), oppDeck: mk([9, 0], "B"), oppOrder: [0, 1], playerOrder: [0, 1], perks: ["C3"], roles: { C3: ["R1"] } });
-    s = resolveTrick(s, rng);             // pos0 R0: 5 vs 9 → Niederlage
-    expect(s.lastResult).toBe("loss");
-    s = resolveTrick(s, rng);             // pos1 R1 (C3): Vorgänger verlor → +5
-    expect(s.lastTrick.pValue).toBe(10);  // 5 + 5
-  });
-
-  it("C5 Anführer: nach dem Sieg der Rollen-Karte bekommen die nächsten zwei Karten +2", () => {
-    let s = build({ deck: mk([5, 5, 5]), playerOrder: [0, 1, 2], perks: ["C5"], roles: { C5: ["R0"] } });
-    s = resolveTrick(s, rng);             // pos0 R0 (Rolle) gewinnt → nächste 2 armiert
-    expect(s.lastTrick.pValue).toBe(5);
-    s = resolveTrick(s, rng);             // pos1 → +2
-    expect(s.lastTrick.pValue).toBe(7);
-    s = resolveTrick(s, rng);             // pos2 → +2
-    expect(s.lastTrick.pValue).toBe(7);
-  });
-
-  it("C6 Finisher: Rollen-Karte auf der letzten Segment-Position (posInCycle%5==4) bekommt +5", () => {
-    expect(resolveTrick(scenario(5, 0, { pos: 4, perks: ["C6"], roles: { C6: ["X4"] } }), rng).lastTrick.pValue).toBe(10); // 5 + 5
-    expect(resolveTrick(scenario(5, 0, { pos: 3, perks: ["C6"], roles: { C6: ["X3"] } }), rng).lastTrick.pValue).toBe(5);  // andere Position → kein Bonus
-  });
-
-  it("C7 Überlebensvorteil: die niedrigste Karte des Segments bekommt +3", () => {
-    let s = build({ deck: mk([5, 4, 6, 7, 8]), oppDeck: mk([0, 0, 0, 0, 0], "B"), oppOrder: [0, 1, 2, 3, 4], playerOrder: [0, 1, 2, 3, 4], perks: ["C7"] });
-    s = resolveTrick(s, rng);             // pos0 val5 (nicht Tiefste) → +0
-    expect(s.lastTrick.pValue).toBe(5);
-    s = resolveTrick(s, rng);             // pos1 val4 (Segment-Tiefste) → +3
-    expect(s.lastTrick.pValue).toBe(7);
-  });
-});
+// Kartenrollen (Kat. C: Vorhut/Staffelläufer/Triumph/Leibwache/Anführer/Finisher/Überlebensvorteil) sind zu
+// Familien migriert (#167) — die Engine-Verdrahtung ist in test/families-engine.test.js („Kategorie C") geprüft.
 
 describe("Formationswerkzeuge — Engine (V2 §22.6 E)", () => {
   it("E10 Feinjustierung: die Formationsphase startet mit +1 Energie", () => {

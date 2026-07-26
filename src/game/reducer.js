@@ -1,5 +1,7 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
-import { PERK_DEFS, buildOffer } from "./perks.js";
+import { PERK_DEFS, buildPerkOffer } from "./perks.js";
+import { familyDef, applyFamilyPick } from "./families.js";
+import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, hasGlacierPush, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
@@ -50,6 +52,8 @@ export function initialState(rng = Math.random) {
     sinceWin: 0, // #71 Durchbruch: aufeinanderfolgende Stiche ohne Sieg
     lossStreak: 0, lastWinValue: null, // #71 Rares: Revanche / Präzision
     critFollowArmed: false, weaknessArmed: false, // #71 Crit-Historie: Crit-Folge (D14) / Schwachstellenanalyse (D16)
+    weaknessBig: false, // Rarität #167: D_WEAKNESS IV — rüstende Niederlage mit großem Abstand (→ +900 statt +600)
+    interplayStored: 0, // Rarität #167: D_INTERPLAY IV — in Niederlagen gebankter Score, beim nächsten Sieg als Flat ausgezahlt
     misfireScore: 0, // V2 §22.6 D15: Score-Ladung (Fehlzündung)
     winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Farbserie / Volles Haus
     // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
@@ -59,6 +63,13 @@ export function initialState(rng = Math.random) {
     roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
     l4Boost: {}, l5Used: [], l8Wins: {}, chainArmed: false, pos20Bonus: 0, // Legendaries (V2 §22.6 L)
     perks: [], offer: null,
+    // Raritätssystem (Epic #167, Spec §2.1): Familienrang je Familie { [familyId]: 1|2|3|4 }. Läuft ADDITIV
+    // neben `perks` (flache Legendäre) — die Engine löst aktive Familien-Stufen über activeTierDefs auf.
+    familyTiers: {},
+    // Familien-Ziel-Auswahl (Rarität #167, Kat. A ab #163): aktive Farb-/Ziel-Auswahl beim Pick einer Stufe mit
+    // `pickTarget` (z. B. A_SUIT_BOOST III/IV, A_SUIT_DUEL III/IV). null = keine offene Auswahl. Kategorie C nutzt
+    // denselben Fluss später für Karten-Ziele (Rollen).
+    familyTarget: null,
     // Planung (Shop-Spec §10): gratis Neuwurf je Auswahl aus P-L1 Schicksalskontrolle — beim Anbieten
     // eines Perk-/Skill-Angebots gesetzt (wenn fateControl aktiv), beim Neuwurf zuerst verbraucht (vor Tokens).
     freePerkReroll: false, freeSkillReroll: false,
@@ -124,7 +135,7 @@ export function reducer(state, action) {
       newShop.purchaseLog = [...(shop.purchaseLog || []), purchaseLogEntry(def, offer.price, state.cycle)]; // #127
       // Formationen neu berechnen — F-Items (§9) ändern die Erkennung permanent.
       const deck2 = patch.deck || state.deck;
-      const formations2 = computeFormations(state.playerOrder, deck2, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects);
+      const formations2 = computeFormations(state.playerOrder, deck2, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects, state.familyTiers);
       return { ...merged, deck: deck2, formations: formations2, shop: newShop };
     }
 
@@ -239,7 +250,7 @@ export function reducer(state, action) {
       if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
       newShop.purchaseLog = [...(shop.purchaseLog || []), purchaseLogEntry(def, offer.price, state.cycle, target)]; // #127
       // Formationen mit den (evtl. neuen) Ankern neu berechnen — A5 Formationsanker wirkt sofort.
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects);
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills, newShop.anchors, newShop.permanentEffects, state.familyTiers);
       return { ...merged, deck, formations, phase: "shop", shopTarget: null, shop: newShop };
     }
 
@@ -252,18 +263,86 @@ export function reducer(state, action) {
       if (!state.offer || !state.offer.includes(perkId)) return state;
       const def = PERK_DEFS[perkId];
       const perks = [...state.perks, perkId];
-      let deck = def.onPick ? def.onPick(state.deck, rng) : state.deck; // Kat.-A-Mods sofort dauerhaft
+      // Kat. A (Deck-Mods beim Pick) ist zu Familien migriert (#167) → flache Perks verändern das Deck nicht mehr.
       // L5 Jackpot & Co.: zufällige Kartenrolle sofort setzen (kein manueller Ziel-Schritt).
       let roles = state.roles;
       if (def.randomTarget) roles = { ...(state.roles || {}), [perkId]: shuffle(state.deck.map((c) => c.id), rng).slice(0, def.randomTarget) };
       // Perks mit manueller Kartenauswahl öffnen die Zielauswahl (§22.5); sonst weiter.
       const goTarget = !!def.needsTarget;
-      return { ...state, deck, perks, roles, offer: null,
+      return { ...state, perks, roles, offer: null,
                phase: goTarget ? "target" : "play",
                targetPerk: goTarget ? perkId : null };
     }
 
-    // Zielauswahl bestätigen (V2 §22.6 C): genau needsTarget Karten → Rolle setzen (C9 = dauerhafte Wertmod).
+    // Familien-Pick (Rarität-Umbau #167, Spec §2.4): eine Familie auf eine Zielstufe (I–IV) heben/erwerben.
+    // Läuft ADDITIV neben PICK_PERK; applyFamilyPick liefert das Patch (familyTiers, deck, roles) — bei
+    // REPLACEMENT (Kat. D) nur der Rang, CUMULATIVE führt ihr Deck-Paket aus. Die Angebotsvalidierung
+    // (Familie+Stufe im Angebot, Ziel-Flow bei ROLE) folgt mit buildFamilyOffer (#163 Schritt 3).
+    case "PICK_FAMILY": {
+      if (state.phase !== "levelup") return state;
+      const { familyId, tier, rng } = action;
+      const fam = familyDef(familyId);
+      if (!fam || !tier) return state;
+      // Angebotsvalidierung (Spec §2.4): die Familie+Zielstufe muss im aktuellen Angebot stehen (analog PICK_PERK).
+      if (!state.offer || !state.offer.some((e) => e && e.familyId === familyId && e.tier === tier)) return state;
+      const applyNow = () => {
+        const { familyTiers, deck, roles } = applyFamilyPick(
+          familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rng);
+        return { ...state, familyTiers, deck, roles, offer: null, phase: "play" };
+      };
+      const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
+      if (!pt) return applyNow();                                                          // kein Ziel → direkt anwenden
+      // Farb-Ziel (A_SUIT_BOOST/A_SUIT_DUEL): immer die volle Anzahl frisch wählen.
+      if (pt.suits) return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [] } };
+      // Karten-Ziel: ROLE wählt nur die ZUSÄTZLICHEN Ziele (Stufe-Ziel − bereits gehaltene, Spec §2.3);
+      // CUMULATIVE (C_SACRIFICE) wählt die volle Anzahl. need 0 (Upgrade ohne neue Ziele) → direkt anwenden.
+      const held = fam.upgradeType === UPGRADE_TYPES.ROLE ? ((state.roles || {})[familyId] || []).length : 0;
+      const need = Math.max(0, pt.cards - held);
+      if (need === 0) return applyNow();
+      return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "cards", need, suits: [], cards: [] } };
+    }
+
+    // ---- Familien-Ziel-Auswahl (Rarität #167, Spec §2.3/§2.4) — Farb- ODER Karten-Ziel für pickTarget-Stufen.
+    //      `familyTarget = { familyId, tier, kind:"suits"|"cards", need, suits, cards }`. Kategorie C nutzt den
+    //      Karten-Modus für Rollen-Ziele; A den Farb-Modus. ----
+    case "FAMILY_TARGET_SUIT": {
+      if (state.phase !== "family-target" || !state.familyTarget || state.familyTarget.kind !== "suits") return state;
+      const ft = state.familyTarget;
+      if (!C.SUIT_ORDER.includes(action.suit)) return state;
+      let suits = ft.suits.slice();
+      if (suits.includes(action.suit)) suits = suits.filter((s) => s !== action.suit);   // abwählen
+      else if (suits.length < ft.need) suits.push(action.suit);                           // hinzufügen (Reihenfolge = Gewinner→Verlierer)
+      else if (ft.need === 1) suits = [action.suit];                                      // Einzelwahl: umschalten
+      else return state;                                                                  // Limit erreicht → ignorieren
+      return { ...state, familyTarget: { ...ft, suits } };
+    }
+    case "FAMILY_TARGET_CARD": {
+      if (state.phase !== "family-target" || !state.familyTarget || state.familyTarget.kind !== "cards") return state;
+      const ft = state.familyTarget;
+      if (!state.deck.some((c) => c.id === action.cardId)) return state;                  // Karte muss existieren
+      // Bereits als Rolle DIESER Familie gehaltene Karten sind kein gültiges Zusatz-Ziel (Rollen-Upgrade).
+      if (((state.roles || {})[ft.familyId] || []).includes(action.cardId)) return state;
+      let cards = ft.cards.slice();
+      if (cards.includes(action.cardId)) cards = cards.filter((id) => id !== action.cardId); // abwählen
+      else if (cards.length < ft.need) cards.push(action.cardId);                            // hinzufügen
+      else return state;                                                                     // Limit erreicht
+      return { ...state, familyTarget: { ...ft, cards } };
+    }
+    case "FAMILY_TARGET_CONFIRM": {
+      if (state.phase !== "family-target" || !state.familyTarget) return state;
+      const ft = state.familyTarget;
+      const sel = ft.kind === "cards" ? ft.cards : ft.suits;
+      if (sel.length !== ft.need) return state;                                            // genau `need` Ziele nötig
+      const target = { suits: ft.suits, cards: ft.cards, order: state.playerOrder };
+      const { familyTiers, deck, roles } = applyFamilyPick(
+        ft.familyId, ft.tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, action.rng);
+      // Rollen/Deck können die Formationserkennung ändern (C_JOKER/C_BRIDGE, C_SACRIFICE-Deckmod) → neu berechnen (wie CONFIRM_TARGET).
+      const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, familyTiers);
+      return { ...state, familyTiers, deck, roles, formations, phase: "play", familyTarget: null };
+    }
+
+    // Zielauswahl bestätigen (V2 §22.6): genau needsTarget Karten → Rolle setzen bzw. dauerhafte Wertmod (L1/L9).
+    // C-Rollen (inkl. C9 Opfergabe) sind zu Familien migriert (#167) → laufen über den Familien-Ziel-Fluss, nicht hier.
     case "CONFIRM_TARGET": {
       if (state.phase !== "target" || !state.targetPerk) return state;
       const def = PERK_DEFS[state.targetPerk];
@@ -271,17 +350,11 @@ export function reducer(state, action) {
       const ids = (action.cardIds || []).slice(0, need);
       if (ids.length !== need || new Set(ids).size !== need) return state; // genau N unterschiedliche Karten
       let deck = state.deck;
-      if (def.sacrificeMod) { // C9 Opfergabe: gewählte Karte −3, ihr direkter Nachfolger (aktuelle Reihenfolge) +5 — dauerhaft.
-        const idx = state.playerOrder.findIndex((di) => state.deck[di].id === ids[0]);
-        const succId = idx >= 0 && idx + 1 < state.playerOrder.length ? state.deck[state.playerOrder[idx + 1]].id : null;
-        deck = state.deck.map((c) =>
-          c.id === ids[0] ? { ...c, value: Math.max(0, c.value - 3) }
-          : c.id === succId ? { ...c, value: c.value + 5 } : c);
-      } else if (def.permMod) { // L1 Überladung / L9 Blutvertrag: dauerhafte Wertmods der gewählten Karten.
+      if (def.permMod) { // L1 Überladung / L9 Blutvertrag: dauerhafte Wertmods der gewählten Karten.
         deck = def.permMod(state.deck, state.playerOrder, ids);
       }
       const roles = { ...(state.roles || {}), [state.targetPerk]: ids };
-      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}), phase: "play", targetPerk: null };
+      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, state.familyTiers), phase: "play", targetPerk: null };
     }
 
     // Stat-Auswahl (V2 §22.3): der gewählte Stat addiert seinen Step auf das zugehörige Summenfeld.
@@ -341,14 +414,14 @@ export function reducer(state, action) {
         frostbitePending = []; frostbiteActive = [];
       }
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.shop?.permanentEffects || {});
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, state.familyTiers);
       return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, formations, phase: "play", skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
-      const off = buildOffer(state.perks, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
+      const off = buildPerkOffer(state.perks, state.familyTiers, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
       const fate = !!(state.shop && state.shop.fateControl);         // P-L1: gratis Reroll gilt fürs neue Perk-Angebot
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off, freePerkReroll: fate, freeSkillReroll: false } // → Perk-Auswahl
@@ -370,7 +443,7 @@ export function reducer(state, action) {
       const free = !!state.freePerkReroll;
       const tokens = (state.shop && state.shop.perkRerolls) || 0;
       if (!free && tokens <= 0) return state;                        // keine Ressource → wirkungslos
-      const offer = buildOffer(state.perks, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
+      const offer = buildPerkOffer(state.perks, state.familyTiers, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
       const shop = free ? state.shop : { ...state.shop, perkRerolls: tokens - 1 };
       return { ...state, offer, shop, freePerkReroll: free ? false : state.freePerkReroll };
     }
@@ -405,7 +478,7 @@ export function reducer(state, action) {
       if (!isFree && (state.formationEnergy || 0) <= 0) return state; // bezahlter Tausch braucht Energie
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, state.familyTiers),
                formationEnergy: isFree ? state.formationEnergy : state.formationEnergy - 1,
                formationSwaps: [...(state.formationSwaps || []), { i, j, free: isFree, frozenId: freeFrozenId }],
                frostSwapsUsed: isFree ? [...used, freeFrozenId] : used };
@@ -418,7 +491,7 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       [order[last.i], order[last.j]] = [order[last.j], order[last.i]];
       const frostSwapsUsed = last.free ? (state.frostSwapsUsed || []).filter((id) => id !== last.frozenId) : (state.frostSwapsUsed || []);
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, state.familyTiers),
                formationEnergy: last.free ? state.formationEnergy : state.formationEnergy + 1, formationSwaps: swaps, frostSwapsUsed };
     }
     // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie + freie Frosttausche zurück.
@@ -427,7 +500,7 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       const swaps = state.formationSwaps || [];
       for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.shop?.permanentEffects || {}, state.familyTiers),
                formationEnergy: C.FORMATION_ENERGY + (state.perks || []).reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0),
                formationSwaps: [], frostSwapsUsed: [] };
     }
@@ -450,11 +523,11 @@ export function reducer(state, action) {
         // reihenfolge dieser Phase ↔ finale), erhalten alle 5 Segmentkarten +2 (Math.max = renew, kein Stapeln/Downgrade).
         if (hasGlacierPush(skills)) {
           const anchors = state.shop?.anchors || [], pe = state.shop?.permanentEffects || {};
-          const finalForms = state.formations || computeFormations(state.playerOrder, state.deck, state.roles, state.perks, skills, anchors, pe);
+          const finalForms = state.formations || computeFormations(state.playerOrder, state.deck, state.roles, state.perks, skills, anchors, pe, state.familyTiers);
           const origOrder = state.playerOrder.slice(); // Ausgangsreihenfolge = finale ohne alle Tausche dieser Phase
           const swaps = state.formationSwaps || [];
           for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [origOrder[i], origOrder[j]] = [origOrder[j], origOrder[i]]; }
-          const baseForms = computeFormations(origOrder, state.deck, state.roles, state.perks, skills, anchors, pe);
+          const baseForms = computeFormations(origOrder, state.deck, state.roles, state.perks, skills, anchors, pe, state.familyTiers);
           const boosted = new Set();
           for (const fid of usedFrost) {
             const pos = state.playerOrder.findIndex((di) => state.deck[di].id === fid);

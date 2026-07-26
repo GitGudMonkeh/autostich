@@ -121,7 +121,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
           <div className="md:flex-1 md:min-w-0 mt-3 md:mt-0 grid gap-3 content-start">
             <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} />
-            <LayoutPerks perks={state.perks} />
+            <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
             {/* Kurz-Erklärung der Formationen mit Kürzel (#95.7). #103: nur Kürzel + Name grün,
                 Beschreibung (nach dem „—") in Standard-Textfarbe → bessere Lesbarkeit. */}
             <div className="grid grid-cols-1 gap-y-0.5 text-xs sm:text-[13px] leading-snug font-medium">

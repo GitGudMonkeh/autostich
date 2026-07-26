@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { suitName, suitColor } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
+import { familyDef } from "../game/families.js";
 
 // Anzeigenamen der Formationstypen (lang) für die Detailzeile.
 const FORM_NAME = { wiederholung: "Wiederholung", farbblock: "Farbblock", treppe: "Treppe", wechsel: "Wechsel", anker: "Anker" };
@@ -20,9 +21,10 @@ export function CardDetail({ card, pos, posForm, roles }) {
   const permBoost = card.baseRank != null ? card.value - card.baseRank : 0;
   const forms = (posForm && posForm.formations) || [];
   const ion = card.ionStacks || 0;
+  // Rollen-Chips: flacher Perk (PERK_DEFS) ODER Familie (FAMILY_DEFS, Kat. C) → Name als Label.
   const roleEntries = Object.entries(roles || {})
     .filter(([, ids]) => (ids || []).includes(card.id))
-    .map(([pid]) => ({ pid, label: PERK_DEFS[pid]?.label || pid, desc: PERK_DEFS[pid]?.desc || "" }));
+    .map(([pid]) => ({ pid, label: PERK_DEFS[pid]?.label || familyDef(pid)?.name || pid, desc: PERK_DEFS[pid]?.desc || "" }));
 
   const Chip = ({ children, c }) => (
     <span className="px-1.5 py-0.5 rounded text-[11px]" style={{ background: (c || "#8a8a92") + "22", color: c || "#c8c8ce" }}>{children}</span>
