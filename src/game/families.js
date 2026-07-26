@@ -1,4 +1,6 @@
 import { UPGRADE_TYPES, withFamilyTier } from "./rarity.js";
+import { shuffle } from "./deck.js";
+import { SUIT_ORDER } from "./constants.js";
 
 /* ============================================================
    FAMILIEN-REGISTRY (Rarität-Umbau #163, Spec docs/rarity-system.md §3.2).
@@ -21,7 +23,7 @@ import { UPGRADE_TYPES, withFamilyTier } from "./rarity.js";
    (Resolver unten). Reine Logik — kein Math.random / Date.
    ============================================================ */
 
-const { REPLACEMENT } = UPGRADE_TYPES;
+const { REPLACEMENT, CUMULATIVE } = UPGRADE_TYPES;
 
 // ---- D · Score (Spec §3.2 D) — allesamt Regelersetzung (nur die höchste Stufe ist aktiv). ----
 // Kontextfelder je Sieg (aus der Engine): winValue, margin, winStreak, wins, hasFormation, lastResult,
@@ -320,9 +322,140 @@ const B_FAMILIES = {
   },
 };
 
+// ---- A · Deck (Spec §3.2 A) — KUMULATIVER Pick-Effekt: jede gewählte Stufe führt EINMALIG ihr Deck-Paket
+//      aus (tierDef.onPick, angewandt in applyFamilyPick), frühere Boni bleiben; im Build wird nur der höchste
+//      Rang angezeigt. Reine Deck-Mods (kein per-Stich-Hook) — Werte werden dauerhaft angehoben/gesenkt.
+//      onPick(deck, rng, target) → neues Deck. `pickTarget` markiert Stufen mit Spieler-Auswahl (Farbe(n));
+//      der Familien-Ziel-Flow (PICK_FAMILY → Ziel-Phase → CONFIRM) folgt mit Kategorie C. Ohne `target`
+//      lassen diese Stufen das Deck unverändert (defensiv — solange der Flow noch nicht existiert).
+const bumpWhere = (deck, pred, delta) =>
+  deck.map((c) => (pred(c) ? { ...c, value: Math.max(0, c.value + delta) } : c));
+// #71-Muster: die n Karten mit höchstem (dir="desc") bzw. niedrigstem (dir="asc") AKTUELLEN Wert je +delta.
+// Stabiler Sort (Ties nach Index) → deterministisch, kein rng.
+const bumpTopN = (deck, n, delta, dir) => {
+  const order = deck.map((_, i) => i).sort((a, b) =>
+    dir === "desc" ? deck[b].value - deck[a].value : deck[a].value - deck[b].value);
+  const pick = new Set(order.slice(0, n));
+  return deck.map((c, i) => (pick.has(i) ? { ...c, value: c.value + delta } : c));
+};
+// n zufällige Karten, die pred erfüllen, je +delta (deterministisch über injizierten rng).
+const bumpRandomWhere = (deck, pred, n, delta, rng) => {
+  const idx = deck.map((c, i) => [c, i]).filter(([c]) => pred(c)).map(([, i]) => i);
+  const chosen = new Set(shuffle(idx, rng).slice(0, n));
+  return deck.map((c, i) => (chosen.has(i) ? { ...c, value: Math.max(0, c.value + delta) } : c));
+};
+// Häufigkeit je AKTUELLEM Wert (A_CONDENSE — mehrfach vorkommende Wertgruppen).
+const valueCounts = (deck) => { const cnt = {}; for (const c of deck) cnt[c.value] = (cnt[c.value] || 0) + 1; return cnt; };
+// Farbduell: Gewinnerfarbe +up, Verliererfarbe +down (down negativ), alles auf >= 0 geklemmt.
+const suitDuel = (deck, up, down, upDelta, downDelta) =>
+  deck.map((c) => (c.suit === up ? { ...c, value: Math.max(0, c.value + upDelta) }
+    : c.suit === down ? { ...c, value: Math.max(0, c.value + downDelta) } : c));
+const randomSuit = (rng) => SUIT_ORDER[Math.floor(rng() * SUIT_ORDER.length)];
+
+const A_FAMILIES = {
+  A_WEAK_STRONG: {
+    id: "A_WEAK_STRONG", cat: "A", name: "Schwache Karten sind stark", upgradeType: CUMULATIVE,
+    // Stufen gehen vom ursprünglichen Wert 5 abwärts; je schwächer die Karten, desto höher der Bonus (Spec §3.3).
+    tiers: {
+      1: { desc: "Alle ursprünglichen 5er erhalten dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 5, 1) },
+      2: { desc: "Alle ursprünglichen 4er erhalten dauerhaft +2 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 4, 2) },
+      3: { desc: "Alle ursprünglichen 3er erhalten dauerhaft +3 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 3, 3) },
+      4: { desc: "Alle ursprünglichen 1er und 2er erhalten dauerhaft +4 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank <= 2, 4) },
+    },
+  },
+  A_EVEN: {
+    id: "A_EVEN", cat: "A", name: "Gerade Stärke", upgradeType: CUMULATIVE,
+    tiers: {
+      1: { desc: "Vier zufällige gerade Karten erhalten dauerhaft +1 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value % 2 === 0, 4, 1, rng) },
+      2: { desc: "Alle ursprünglichen 2er und 8er erhalten dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 2 || c.baseRank === 8, 1) },
+      3: { desc: "Alle ursprünglichen 4er und 6er erhalten dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 4 || c.baseRank === 6, 1) },
+      4: { desc: "Alle geraden Karten erhalten zusätzlich +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 0, 1) },
+    },
+  },
+  A_ODD: {
+    id: "A_ODD", cat: "A", name: "Ungerade Stärke", upgradeType: CUMULATIVE,
+    tiers: {
+      1: { desc: "Vier zufällige ungerade Karten erhalten dauerhaft +1 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value % 2 === 1, 4, 1, rng) },
+      2: { desc: "Alle ursprünglichen 3er und 7er erhalten dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 3 || c.baseRank === 7, 1) },
+      3: { desc: "Alle ursprünglichen 1er und 9er erhalten dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 1 || c.baseRank === 9, 1) },
+      4: { desc: "Alle ungeraden Karten erhalten zusätzlich +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 1, 1) },
+    },
+  },
+  A_SUIT_BOOST: {
+    id: "A_SUIT_BOOST", cat: "A", name: "Farbverstärkung", upgradeType: CUMULATIVE,
+    // III/IV: Spieler wählt die Farbe (pickTarget). I/II: zufällige Farbe.
+    tiers: {
+      1: { desc: "Eine zufällige Farbe: vier zufällige Karten erhalten dauerhaft +1 Wert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpRandomWhere(d, (c) => c.suit === s, 4, 1, rng); } },
+      2: { desc: "Eine zufällige Farbe: alle Karten erhalten dauerhaft +1 Wert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpWhere(d, (c) => c.suit === s, 1); } },
+      3: { desc: "Wähle eine Farbe: alle Karten dieser Farbe erhalten dauerhaft +1 Wert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => c.suit === target.suits[0], 1) : d) },
+      4: { desc: "Wähle eine Farbe: alle Karten dieser Farbe erhalten dauerhaft +2 Wert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => c.suit === target.suits[0], 2) : d) },
+    },
+  },
+  A_SMALL_BIG: {
+    id: "A_SMALL_BIG", cat: "A", name: "Kleine ganz groß", upgradeType: CUMULATIVE,
+    // „1–3er" = ursprünglicher Wert (baseRank), bleibt über spätere Boni hinweg konstant.
+    tiers: {
+      1: { desc: "Zwei zufällige ursprüngliche 1–3er erhalten dauerhaft je +3 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 2, 3, rng) },
+      2: { desc: "Drei zufällige ursprüngliche 1–3er erhalten dauerhaft je +4 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 3, 4, rng) },
+      3: { desc: "Vier zufällige ursprüngliche 1–3er erhalten dauerhaft je +5 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 4, 5, rng) },
+      4: { desc: "Alle ursprünglichen 1–3er erhalten dauerhaft +3 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 3) },
+    },
+  },
+  A_MIDRANGE: {
+    id: "A_MIDRANGE", cat: "A", name: "Mittelklasse", upgradeType: CUMULATIVE,
+    // Prüfung des AKTUELLEN Werts erfolgt jeweils beim Pick.
+    tiers: {
+      1: { desc: "Drei zufällige Karten mit aktuellem Wert 4–7 erhalten dauerhaft +1 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value >= 4 && c.value <= 7, 3, 1, rng) },
+      2: { desc: "Fünf zufällige Karten mit aktuellem Wert 4–7 erhalten dauerhaft +1 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value >= 4 && c.value <= 7, 5, 1, rng) },
+      3: { desc: "Alle Karten mit aktuellem Wert 4–7 erhalten dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.value >= 4 && c.value <= 7, 1) },
+      4: { desc: "Alle Karten mit aktuellem Wert 3–8 erhalten dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.value >= 3 && c.value <= 8, 1) },
+    },
+  },
+  A_TOP: {
+    id: "A_TOP", cat: "A", name: "Spitzenförderung", upgradeType: CUMULATIVE,
+    // Rangliste wird bei jedem Pick neu über den aktuellen Wert bestimmt.
+    tiers: {
+      1: { desc: "Die zwei aktuell höchsten Karten erhalten dauerhaft je +2 Wert.", onPick: (d) => bumpTopN(d, 2, 2, "desc") },
+      2: { desc: "Die drei aktuell höchsten Karten erhalten dauerhaft je +3 Wert.", onPick: (d) => bumpTopN(d, 3, 3, "desc") },
+      3: { desc: "Die vier aktuell höchsten Karten erhalten dauerhaft je +4 Wert.", onPick: (d) => bumpTopN(d, 4, 4, "desc") },
+      4: { desc: "Die fünf aktuell höchsten Karten erhalten dauerhaft je +5 Wert.", onPick: (d) => bumpTopN(d, 5, 5, "desc") },
+    },
+  },
+  A_BOTTOM: {
+    id: "A_BOTTOM", cat: "A", name: "Nachzügler", upgradeType: CUMULATIVE,
+    tiers: {
+      1: { desc: "Die zwei aktuell niedrigsten Karten erhalten dauerhaft je +3 Wert.", onPick: (d) => bumpTopN(d, 2, 3, "asc") },
+      2: { desc: "Die drei aktuell niedrigsten Karten erhalten dauerhaft je +4 Wert.", onPick: (d) => bumpTopN(d, 3, 4, "asc") },
+      3: { desc: "Die vier aktuell niedrigsten Karten erhalten dauerhaft je +5 Wert.", onPick: (d) => bumpTopN(d, 4, 5, "asc") },
+      4: { desc: "Die fünf aktuell niedrigsten Karten erhalten dauerhaft je +6 Wert.", onPick: (d) => bumpTopN(d, 5, 6, "asc") },
+    },
+  },
+  A_SUIT_DUEL: {
+    id: "A_SUIT_DUEL", cat: "A", name: "Farbduell", upgradeType: CUMULATIVE,
+    // Jede Stufe führt ihren Tausch dauerhaft aus (Gewinnerfarbe hoch, Verliererfarbe −1). III/IV: Spieler wählt.
+    tiers: {
+      1: { desc: "Eine zufällige Farbe erhält dauerhaft +1 Wert, eine andere zufällige Farbe −1 Wert.", onPick: (d, rng) => { const s = shuffle(SUIT_ORDER, rng); return suitDuel(d, s[0], s[1], 1, -1); } },
+      2: { desc: "Eine zufällige Farbe erhält dauerhaft +2 Wert, eine andere zufällige Farbe −1 Wert.", onPick: (d, rng) => { const s = shuffle(SUIT_ORDER, rng); return suitDuel(d, s[0], s[1], 2, -1); } },
+      3: { desc: "Wähle die Gewinnerfarbe (+3 Wert); eine andere Farbe verliert zufällig −1 Wert.", pickTarget: { suits: 1 }, onPick: (d, rng, target) => { const up = target?.suits?.[0]; if (!up) return d; const down = shuffle(SUIT_ORDER.filter((s) => s !== up), rng)[0]; return suitDuel(d, up, down, 3, -1); } },
+      4: { desc: "Wähle Gewinner- und Verliererfarbe: +4 Wert / −1 Wert.", pickTarget: { suits: 2 }, onPick: (d, _rng, target) => { const [up, down] = target?.suits || []; return up && down ? suitDuel(d, up, down, 4, -1) : d; } },
+    },
+  },
+  A_CONDENSE: {
+    id: "A_CONDENSE", cat: "A", name: "Verdichtung", upgradeType: CUMULATIVE,
+    // Deckzustand (Häufigkeit je aktuellem Wert) wird beim Pick geprüft.
+    tiers: {
+      1: { desc: "Zwei zufällige Karten aus mehrfach vorkommenden Wertgruppen erhalten dauerhaft +1 Wert.", onPick: (d, rng) => { const cnt = valueCounts(d); return bumpRandomWhere(d, (c) => cnt[c.value] > 1, 2, 1, rng); } },
+      2: { desc: "Vier zufällige Karten aus mehrfach vorkommenden Wertgruppen erhalten dauerhaft +1 Wert.", onPick: (d, rng) => { const cnt = valueCounts(d); return bumpRandomWhere(d, (c) => cnt[c.value] > 1, 4, 1, rng); } },
+      3: { desc: "Alle Karten aus Wertgruppen mit mindestens 3 Vorkommen erhalten dauerhaft +1 Wert.", onPick: (d) => { const cnt = valueCounts(d); return bumpWhere(d, (c) => cnt[c.value] >= 3, 1); } },
+      4: { desc: "Alle Karten aus mehrfach vorkommenden Wertgruppen erhalten dauerhaft +1 Wert.", onPick: (d) => { const cnt = valueCounts(d); return bumpWhere(d, (c) => cnt[c.value] >= 2, 1); } },
+    },
+  },
+};
+
 export const FAMILY_DEFS = {
   ...D_FAMILIES,
   ...B_FAMILIES,
+  ...A_FAMILIES,
 };
 
 export const FAMILY_LIST = Object.values(FAMILY_DEFS);
@@ -380,13 +513,15 @@ export function familyProdHook(familyTiers, name, ctx) {
    - ROLE (Kat. C-Rollen, #163): Rollenziele/-regel steigen; der Ziel-Flow folgt mit den C-Familien.
    Der aufrufende Reducer bleibt frei von Registry-Wissen. */
 export function applyFamilyPick(familyId, targetTier, ctx = {}, rng = Math.random) {
-  const { familyTiers = {}, deck = null, roles = null } = ctx;
+  const { familyTiers = {}, deck = null, roles = null, target = null } = ctx;
   const fam = FAMILY_DEFS[familyId];
   if (!fam || !targetTier) return { familyTiers, deck, roles }; // ungültige Familie/Stufe → No-Op
   const tierDef = fam.tiers[targetTier] || null;
   let nextDeck = deck, nextRoles = roles;
   if (fam.upgradeType === UPGRADE_TYPES.CUMULATIVE && tierDef && tierDef.onPick && deck) {
-    nextDeck = tierDef.onPick(deck, rng); // Stufen-Paket einmalig aufs Deck (A-/Shop-Karten-Familien)
+    // Stufen-Paket einmalig aufs Deck (A-/Shop-Karten-Familien). `target` trägt die Spieler-Auswahl
+    // (z. B. Farbe(n)) der Stufen mit `pickTarget`; ohne Ziel-Flow ist es null → diese Stufen sind No-Ops.
+    nextDeck = tierDef.onPick(deck, rng, target);
   }
   // ROLE-Zielauswahl folgt mit Kategorie C (#163) — hier noch reine Rangaktualisierung.
   return { familyTiers: withFamilyTier(familyTiers, familyId, targetTier), deck: nextDeck, roles: nextRoles };

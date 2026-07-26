@@ -4,6 +4,7 @@ import {
   activeTierDef, activeTierDefs, familySumHook, familyProdHook,
 } from "../src/game/families.js";
 import { UPGRADE_TYPES } from "../src/game/rarity.js";
+import { buildDeck, makeRng } from "../src/game/deck.js";
 
 describe("Familien-Registry — Struktur", () => {
   it("jede Familie hat id/cat/name/upgradeType und vier Stufen mit Beschreibung", () => {
@@ -28,6 +29,132 @@ describe("Familien-Registry — Struktur", () => {
     const b = FAMILY_LIST.filter((f) => f.cat === "B");
     expect(b).toHaveLength(10);
     for (const f of b) expect(f.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
+  });
+  it("Kategorie A vollständig (10 Familien, alle Kumulativ, jede Stufe mit onPick)", () => {
+    const a = FAMILY_LIST.filter((f) => f.cat === "A");
+    expect(a).toHaveLength(10);
+    for (const f of a) {
+      expect(f.upgradeType).toBe(UPGRADE_TYPES.CUMULATIVE);
+      for (const t of [1, 2, 3, 4]) expect(typeof f.tiers[t].onPick).toBe("function");
+    }
+  });
+});
+
+describe("Kategorie A — Kumulative Deck-Stufen (Spec §3.2 A)", () => {
+  // Frisches Deck: 40 Karten, value === baseRank (1..10 × R/B/G/Y). deltas = Wertänderung je Position.
+  const deltas = (before, after) => after.map((c, i) => c.value - before[i].value);
+  const nChanged = (before, after) => deltas(before, after).filter((d) => d !== 0).length;
+
+  it("A_WEAK_STRONG: ursprüngliche Wertgruppen abwärts (5→+1, 4→+2, 3→+3, 1&2→+4)", () => {
+    const t = FAMILY_DEFS.A_WEAK_STRONG.tiers;
+    const grp = (tier, base) => t[tier].onPick(buildDeck()).filter((c) => c.baseRank === base).map((c) => c.value);
+    expect(grp(1, 5)).toEqual([6, 6, 6, 6]); // 5 → +1
+    expect(grp(2, 4)).toEqual([6, 6, 6, 6]); // 4 → +2
+    expect(grp(3, 3)).toEqual([6, 6, 6, 6]); // 3 → +3
+    expect(grp(4, 1)).toEqual([5, 5, 5, 5]); // 1 → +4
+    expect(grp(4, 2)).toEqual([6, 6, 6, 6]); // 2 → +4
+    // Nachbargruppen bleiben unberührt (Stufe I fasst nur die 5er an).
+    expect(t[1].onPick(buildDeck()).filter((c) => c.baseRank !== 5).every((c) => c.value === c.baseRank)).toBe(true);
+  });
+
+  it("A_EVEN: I vier zufällige Gerade; II 2er&8er; III 4er&6er; IV alle Geraden je +1", () => {
+    const t = FAMILY_DEFS.A_EVEN.tiers; const d = buildDeck();
+    const i = t[1].onPick(d, makeRng(3));
+    expect(nChanged(d, i)).toBe(4);
+    expect(deltas(d, i).every((x) => x === 0 || x === 1)).toBe(true);
+    expect(i.every((c, k) => deltas(d, i)[k] === 0 || c.baseRank % 2 === 0)).toBe(true); // nur gerade betroffen
+    expect(t[2].onPick(d).filter((c) => c.baseRank === 2 || c.baseRank === 8).every((c) => c.value === c.baseRank + 1)).toBe(true);
+    expect(t[2].onPick(d).filter((c) => c.baseRank !== 2 && c.baseRank !== 8).every((c) => c.value === c.baseRank)).toBe(true);
+    expect(t[3].onPick(d).filter((c) => c.baseRank === 4 || c.baseRank === 6).every((c) => c.value === c.baseRank + 1)).toBe(true);
+    expect(t[4].onPick(d).filter((c) => c.baseRank % 2 === 0).every((c) => c.value === c.baseRank + 1)).toBe(true);
+    expect(t[4].onPick(d).filter((c) => c.baseRank % 2 === 1).every((c) => c.value === c.baseRank)).toBe(true);
+  });
+
+  it("A_ODD: I vier zufällige Ungerade; II 3er&7er; III 1er&9er; IV alle Ungeraden je +1", () => {
+    const t = FAMILY_DEFS.A_ODD.tiers; const d = buildDeck();
+    const i = t[1].onPick(d, makeRng(3));
+    expect(nChanged(d, i)).toBe(4);
+    expect(i.every((c, k) => deltas(d, i)[k] === 0 || c.baseRank % 2 === 1)).toBe(true);
+    expect(t[2].onPick(d).filter((c) => c.baseRank === 3 || c.baseRank === 7).every((c) => c.value === c.baseRank + 1)).toBe(true);
+    expect(t[3].onPick(d).filter((c) => c.baseRank === 1 || c.baseRank === 9).every((c) => c.value === c.baseRank + 1)).toBe(true);
+    expect(t[4].onPick(d).filter((c) => c.baseRank % 2 === 1).every((c) => c.value === c.baseRank + 1)).toBe(true);
+  });
+
+  it("A_SUIT_BOOST: I zufällige Farbe 4 Karten; II zufällige Farbe alle; III/IV gewählte Farbe", () => {
+    const t = FAMILY_DEFS.A_SUIT_BOOST.tiers; const d = buildDeck();
+    const i = t[1].onPick(d, makeRng(2));
+    expect(nChanged(d, i)).toBe(4);
+    expect(new Set(i.filter((c, k) => deltas(d, i)[k] !== 0).map((c) => c.suit)).size).toBe(1); // dieselbe Farbe
+    expect(nChanged(d, t[2].onPick(d, makeRng(2)))).toBe(10); // alle 10 einer Farbe
+    const iii = t[3].onPick(d, makeRng(0), { suits: ["R"] });
+    expect(iii.filter((c) => c.suit === "R").every((c) => c.value === c.baseRank + 1)).toBe(true);
+    expect(iii.filter((c) => c.suit !== "R").every((c) => c.value === c.baseRank)).toBe(true);
+    expect(t[4].onPick(d, makeRng(0), { suits: ["B"] }).filter((c) => c.suit === "B").every((c) => c.value === c.baseRank + 2)).toBe(true);
+    expect(t[3].onPick(d, makeRng(0), null)).toBe(d); // ohne Ziel-Flow → No-Op (identische Referenz)
+  });
+
+  it("A_SMALL_BIG: zufällige ursprüngliche 1–3er (2/3/4 Karten), IV alle zwölf", () => {
+    const t = FAMILY_DEFS.A_SMALL_BIG.tiers; const d = buildDeck();
+    expect(nChanged(d, t[1].onPick(d, makeRng(4)))).toBe(2);
+    expect(nChanged(d, t[2].onPick(d, makeRng(4)))).toBe(3);
+    expect(nChanged(d, t[3].onPick(d, makeRng(4)))).toBe(4);
+    const i = t[1].onPick(d, makeRng(4));
+    expect(i.every((c, k) => deltas(d, i)[k] === 0 || (c.baseRank >= 1 && c.baseRank <= 3))).toBe(true); // nur 1–3er
+    expect(deltas(d, i).every((x) => x === 0 || x === 3)).toBe(true);                                    // +3
+    const iv = t[4].onPick(d);
+    expect(iv.filter((c) => c.baseRank <= 3)).toHaveLength(12);
+    expect(iv.filter((c) => c.baseRank <= 3).every((c) => c.value === c.baseRank + 3)).toBe(true);
+  });
+
+  it("A_MIDRANGE: zufällige aktuelle 4–7er (3/5), III alle 4–7, IV alle 3–8", () => {
+    const t = FAMILY_DEFS.A_MIDRANGE.tiers; const d = buildDeck();
+    expect(nChanged(d, t[1].onPick(d, makeRng(1)))).toBe(3);
+    expect(nChanged(d, t[2].onPick(d, makeRng(1)))).toBe(5);
+    expect(nChanged(d, t[3].onPick(d))).toBe(16); // baseRank 4..7 → 4 Werte × 4 Farben
+    expect(t[3].onPick(d).filter((c) => c.value !== c.baseRank).every((c) => c.baseRank >= 4 && c.baseRank <= 7)).toBe(true);
+    expect(nChanged(d, t[4].onPick(d))).toBe(24); // baseRank 3..8 → 6 Werte × 4 Farben
+  });
+
+  it("A_TOP / A_BOTTOM: N höchste bzw. niedrigste je +delta (Rangliste über aktuellen Wert)", () => {
+    const d = buildDeck();
+    const top = FAMILY_DEFS.A_TOP.tiers, bot = FAMILY_DEFS.A_BOTTOM.tiers;
+    const t1 = top[1].onPick(d);
+    expect(nChanged(d, t1)).toBe(2);
+    expect(deltas(d, t1).filter((x) => x !== 0).every((x) => x === 2)).toBe(true);
+    expect(t1.filter((c, k) => deltas(d, t1)[k] !== 0).every((c) => c.baseRank === 10)).toBe(true); // Höchste
+    expect(nChanged(d, top[4].onPick(d))).toBe(5);
+    const b1 = bot[1].onPick(d);
+    expect(nChanged(d, b1)).toBe(2);
+    expect(deltas(d, b1).filter((x) => x !== 0).every((x) => x === 3)).toBe(true);
+    expect(b1.filter((c, k) => deltas(d, b1)[k] !== 0).every((c) => c.baseRank === 1)).toBe(true); // Niedrigste
+    expect(nChanged(d, bot[4].onPick(d))).toBe(5);
+  });
+
+  it("A_SUIT_DUEL: Gewinnerfarbe hoch / Verliererfarbe −1; III/IV gewählt", () => {
+    const t = FAMILY_DEFS.A_SUIT_DUEL.tiers; const d = buildDeck();
+    const i = t[1].onPick(d, makeRng(2));
+    const up = new Set(i.filter((c, k) => deltas(d, i)[k] === 1).map((c) => c.suit));
+    const down = new Set(i.filter((c, k) => deltas(d, i)[k] === -1).map((c) => c.suit));
+    expect(up.size).toBe(1); expect(down.size).toBe(1);
+    expect([...up][0]).not.toBe([...down][0]); // zwei verschiedene Farben
+    const iii = t[3].onPick(d, makeRng(1), { suits: ["R"] });
+    expect(iii.filter((c) => c.suit === "R").every((c) => c.value === c.baseRank + 3)).toBe(true);
+    const dl = new Set(iii.filter((c) => c.value - c.baseRank === -1).map((c) => c.suit));
+    expect(dl.size).toBe(1); expect(dl.has("R")).toBe(false); // Verlierer ≠ Gewinner
+    const iv = t[4].onPick(d, makeRng(0), { suits: ["R", "G"] });
+    expect(iv.filter((c) => c.suit === "R").every((c) => c.value === c.baseRank + 4)).toBe(true);
+    expect(iv.filter((c) => c.suit === "G").every((c) => c.value === Math.max(0, c.baseRank - 1))).toBe(true);
+    expect(t[4].onPick(d, makeRng(0), null)).toBe(d); // ohne Ziel-Flow → No-Op
+  });
+
+  it("A_CONDENSE: Schwellen über Häufigkeit je aktuellem Wert (III ≥3, IV ≥2)", () => {
+    const t = FAMILY_DEFS.A_CONDENSE.tiers;
+    const d = [1, 1, 2, 2, 2, 3].map((v, i) => ({ id: `c${i}`, suit: "R", baseRank: v, value: v })); // Wert1×2, Wert2×3, Wert3×1
+    expect(deltas(d, t[3].onPick(d))).toEqual([0, 0, 1, 1, 1, 0]); // nur Wert2 (≥3)
+    expect(deltas(d, t[4].onPick(d))).toEqual([1, 1, 1, 1, 1, 0]); // Wert1 & Wert2 (≥2)
+    const i = t[1].onPick(d, makeRng(7));
+    expect(nChanged(d, i)).toBe(2);
+    expect(deltas(d, i)[5]).toBe(0); // Wert3 (einzeln) nie betroffen
   });
 });
 

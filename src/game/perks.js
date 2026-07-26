@@ -265,6 +265,9 @@ export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, 
   let pool = flat.map((p) => ({ perk: p.id, weight: C.RARITY_WEIGHTS[p.rarity || "common"], leg: (p.rarity || "common") === "legendary" }));
   for (const fam of FAMILY_LIST) {
     if (fam.enabled === false) continue;
+    // Nur Familien MIGRIERTER Kategorien anbieten. Eine neu angelegte, aber noch nicht migrierte Familie
+    // (z. B. Kategorie A) läuft sonst PARALLEL zu ihrem noch existierenden flachen Perk ins Angebot (Doppelung).
+    if (!MIGRATED_CATS.has(fam.cat)) continue;
     const cur = familyTierOf(familyTiers, fam.id);
     // FAMILY_DEFS führt `tiers` als OBJEKT {1:def,…} → anbietbare Stufen direkt über TIERS filtern
     // (nicht offerableTiers aus rarity.js, das ein Array erwartet).

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { makeRng } from "../src/game/deck.js";
+import { makeRng, buildDeck } from "../src/game/deck.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { applyFamilyPick, FAMILY_DEFS } from "../src/game/families.js";
@@ -136,6 +136,24 @@ describe("Reducer PICK_FAMILY (Schritt 1 + Angebotsvalidierung Schritt 3)", () =
 
   it("initialState trägt ein leeres familyTiers", () => {
     expect(initialState(makeRng(1)).familyTiers).toEqual({});
+  });
+});
+
+describe("Reducer PICK_FAMILY — Kategorie A (kumulativ, Deck-Patch stapelt)", () => {
+  const val = (deck, base) => deck.filter((c) => c.baseRank === base).map((c) => c.value);
+  it("wendet das Stufen-Deckpaket an und stapelt über Stufen (nur höchster Rang angezeigt)", () => {
+    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "A_WEAK_STRONG", tier: 1 }] };
+    s = reducer(s, { type: "PICK_FAMILY", familyId: "A_WEAK_STRONG", tier: 1, rng });
+    expect(s.familyTiers.A_WEAK_STRONG).toBe(1);
+    expect(s.phase).toBe("play");
+    expect(val(s.deck, 5)).toEqual([6, 6, 6, 6]); // ursprüngliche 5er +1
+    // Upgrade auf II: 4er +2 (neues Paket), 5er-Bonus aus I bleibt erhalten (kumulativ).
+    s = { ...s, phase: "levelup", offer: [{ familyId: "A_WEAK_STRONG", tier: 2 }] };
+    s = reducer(s, { type: "PICK_FAMILY", familyId: "A_WEAK_STRONG", tier: 2, rng });
+    expect(s.familyTiers.A_WEAK_STRONG).toBe(2);             // nur der höchste Rang
+    expect(Object.keys(s.familyTiers)).toEqual(["A_WEAK_STRONG"]);
+    expect(val(s.deck, 5)).toEqual([6, 6, 6, 6]);            // I-Bonus bleibt
+    expect(val(s.deck, 4)).toEqual([6, 6, 6, 6]);            // II wendet sein Paket an
   });
 });
 
@@ -299,5 +317,21 @@ describe("applyFamilyPick — reines Patch (Spec §2.4)", () => {
   it("No-Op bei unbekannter Familie / Stufe 0", () => {
     expect(applyFamilyPick("NOPE", 2, { familyTiers: { D_HIGH: 1 } }, rng).familyTiers).toEqual({ D_HIGH: 1 });
     expect(applyFamilyPick("D_HIGH", 0, { familyTiers: { D_HIGH: 1 } }, rng).familyTiers).toEqual({ D_HIGH: 1 });
+  });
+
+  it("CUMULATIVE (Kat. A): onPick liefert ein NEUES Deck, familyTiers steigt, Original unberührt", () => {
+    const deck = buildDeck();
+    const out = applyFamilyPick("A_WEAK_STRONG", 1, { familyTiers: {}, deck, roles: null }, rng);
+    expect(out.familyTiers).toEqual({ A_WEAK_STRONG: 1 });
+    expect(out.deck).not.toBe(deck); // immutabel: neues Deck
+    expect(out.deck.filter((c) => c.baseRank === 5).every((c) => c.value === 6)).toBe(true);
+    expect(deck.filter((c) => c.baseRank === 5).every((c) => c.value === 5)).toBe(true); // Original unverändert
+  });
+
+  it("CUMULATIVE mit pickTarget aber ohne target → Deck unverändert (Ziel-Flow folgt)", () => {
+    const deck = buildDeck();
+    const out = applyFamilyPick("A_SUIT_BOOST", 3, { familyTiers: {}, deck, roles: null }, rng); // A_SUIT_BOOST III braucht Farbwahl
+    expect(out.familyTiers).toEqual({ A_SUIT_BOOST: 3 });
+    expect(out.deck).toBe(deck); // No-Op ohne target
   });
 });
