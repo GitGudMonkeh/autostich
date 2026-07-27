@@ -139,6 +139,12 @@ button { font-family: inherit; }
   0%   { transform: translate(0, 0) rotate(0deg); }
   100% { transform: translate(-10px, -52px) rotate(-6deg); }
 }
+/* #186: gespiegelte Drift für die GEGNERseite (rechts) — der geschnittene/berstende Gegner-Ghost floatet
+   nach oben-RECHTS (nach außen, weg von der Mitte), damit er sich wie der Spieler-Ghost anfühlt (nur seitenverkehrt). */
+@keyframes as-loss-drift-r {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(10px, -52px) rotate(6deg); }
+}
 
 /* Krit-Explosion (statt Klingenschnitt bei einem kritischen Sieg): die Gegnerkarte berstet. `as-boom-card`
    lässt die Karte kurz aufskalieren + überstrahlen (brightness), dann skaliert sie weg und fadet; `as-boom-flash`
@@ -156,7 +162,8 @@ button { font-family: inherit; }
   100% { transform: scale(6);   opacity: 0; }
 }
 @keyframes as-boom-ring {
-  0%   { transform: scale(0.3); opacity: 0.9; }
+  0%   { transform: scale(0.3); opacity: 0; }
+  8%   { opacity: 0.9; }
   100% { transform: scale(5);   opacity: 0; }
 }
 

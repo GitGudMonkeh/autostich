@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
-import { BASE_FLIP_MS, GHOST_STEP } from "./game/constants.js";
+import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE } from "./game/constants.js";
 import { baseScoreMultFor } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, loadOptions, saveOptions, loadUsername, saveUsername } from "./game/storage.js";
@@ -405,7 +405,8 @@ export function Autostich() {
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
-                heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)} />
+                heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)}
+                oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "stat"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} />
               <HeatBar heat={state.heat} skills={state.skills} />
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
