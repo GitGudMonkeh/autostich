@@ -201,8 +201,8 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
 
 /* #177+/#186: Schnitt-/Explosions-Ghost-Pool für BEIDE Seiten. Verliert eine Karte (Spieler bei Niederlage,
    Gegner bei Sieg), wird sie in-place ausgeblendet und stattdessen ein entkoppelter Klon in diesem Layer
-   (im jeweiligen Karten-Slot, absolute inset-0) gerendert: erst kurz wegfloaten (as-loss-drift, gespiegelt je
-   Seite), dann per `delay` schneiden bzw. bersten. Weil der Pool NICHT pro Stich remountet, floatet der Ghost
+   (im jeweiligen Karten-Slot, absolute inset-0) gerendert: erst kurz wegfloaten (as-loss-drift-rand, #187:
+   zufällige Richtung rundum, deterministisch aus seed), dann per `delay` schneiden bzw. bersten. Weil der Pool NICHT pro Stich remountet, floatet der Ghost
    in voller Länge aus und überlappt bei hohem Turbo/vielen Siegen mit dem nächsten Stich — Spieler- UND
    Gegnerkarte fühlen sich damit gleich lang an (#186). Ghosts entfernen sich nach ihrer Lebensdauer selbst. */
 function SlashGhostLayer({ ghosts }) {
@@ -214,10 +214,16 @@ function SlashGhostLayer({ ghosts }) {
             ionStacks={g.ionStacks} frozen={g.frozen} frostbitten={g.frostbitten} frostAnimated
             allyColor={g.allyColor} frontImage={g.frontImage} />
         );
-        const driftAnim = g.side === "opp" ? "as-loss-drift-r" : "as-loss-drift";
+        // #187: Drift in eine ZUFÄLLIGE Richtung (rundum, volle 360°) statt fix nach oben — deterministisch aus
+        // g.seed via fjitter, damit ein Re-Render nicht neu würfelt. Gilt für BEIDE Seiten und BEIDE fx (Slice +
+        // Explosion), da beide erst driften. Richtung/Weite/Rotation als CSS-Vars an das richtungsneutrale Keyframe.
+        const dang = fjitter(g.seed * 3 + 2, Math.PI);           // −π..π → volle 360° rundum
+        const drad = 40 + Math.abs(fjitter(g.seed * 5 + 3, 26)); // 40..66 px Driftweite (dezent gedeckelt, überlappt kaum)
+        const drot = fjitter(g.seed * 7 + 5, 8);                 // −8..8° leichte Rotation
         return (
           <div key={g.id} className="absolute inset-0 pointer-events-none" aria-hidden="true"
-            style={{ animation: `${driftAnim} ${g.drift + g.halves}ms cubic-bezier(0.2, 0.6, 0.3, 1) forwards`, willChange: "transform" }}>
+            style={{ animation: `as-loss-drift-rand ${g.drift + g.halves}ms cubic-bezier(0.2, 0.6, 0.3, 1) forwards`, willChange: "transform",
+                     "--drx": `${(Math.cos(dang) * drad).toFixed(1)}px`, "--dry": `${(Math.sin(dang) * drad).toFixed(1)}px`, "--drot": `${drot}deg` }}>
             {g.fx === "explode"
               ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.drift} />
               : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.drift} />}

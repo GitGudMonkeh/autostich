@@ -132,18 +132,14 @@ button { font-family: inherit; }
   30%  { transform: rotate(-6deg) scale(1.06); }
   100% { transform: rotate(0deg)  scale(1); }
 }
-/* Niederlage-Ghost: die Verliererkarte floatet erst kurz nach oben/zur Seite (Drift), bevor der Slice einsetzt
-   (der Slice läuft per animation-delay im SliceFx an). Der Ghost ist vom Stich-Takt entkoppelt (eigener Pool),
-   daher überlappt er bei hohem Turbo/vielen Siegen mit der Karte des nächsten Stichs. */
-@keyframes as-loss-drift {
+/* #187: Verliererkarte floatet erst kurz in eine ZUFÄLLIGE Richtung (rundum, deterministisch pro Ghost aus seed
+   → --drx/--dry/--drot, gesetzt als Inline-Style in Battlefield.jsx), bevor der Slice/die Explosion einsetzt
+   (per animation-delay im SliceFx/ExplosionFx). Ein richtungsneutrales Keyframe für BEIDE Seiten (ersetzt die
+   früheren fixen as-loss-drift/-r nach oben, #186). Vom Stich-Takt entkoppelt (eigener Pool) → überlappt bei
+   hohem Turbo/vielen Siegen mit der Karte des nächsten Stichs. Fallbacks halten die alte Nach-oben-Drift bei. */
+@keyframes as-loss-drift-rand {
   0%   { transform: translate(0, 0) rotate(0deg); }
-  100% { transform: translate(-10px, -52px) rotate(-6deg); }
-}
-/* #186: gespiegelte Drift für die GEGNERseite (rechts) — der geschnittene/berstende Gegner-Ghost floatet
-   nach oben-RECHTS (nach außen, weg von der Mitte), damit er sich wie der Spieler-Ghost anfühlt (nur seitenverkehrt). */
-@keyframes as-loss-drift-r {
-  0%   { transform: translate(0, 0) rotate(0deg); }
-  100% { transform: translate(10px, -52px) rotate(6deg); }
+  100% { transform: translate(var(--drx, -10px), var(--dry, -52px)) rotate(var(--drot, -6deg)); }
 }
 
 /* Krit-Explosion (statt Klingenschnitt bei einem kritischen Sieg): die Gegnerkarte berstet. `as-boom-card`
