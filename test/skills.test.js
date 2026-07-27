@@ -151,8 +151,25 @@ describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", (
     ).some((off) => !off.some(isChargeConsumer));
     expect(anyClean).toBe(true);
   });
-  it("inaktiver Archetyp (nicht in activeArchetypes) erzwingt nichts — kein rng-Drift", () => {
+  it("Erst-Angebot (leeres activeArchetypes) bleibt deterministisch — kein rng-Drift", () => {
     expect(buildSkillOffer([], [], makeRng(1), 6)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
+  });
+  // #191: schon beim ERSTEN Skill-Angebot (noch kein Archetyp aktiv) mind. EINEN Konsumenten insgesamt.
+  it("#191 Erst-Angebot ohne aktiven Archetyp → garantiert mind. EIN Konsument (Feuer ODER Blitz)", () => {
+    const isConsumer = (id) => isFireConsumer(id) || isChargeConsumer(id);
+    for (let seed = 1; seed <= 40; seed++)
+      expect(buildSkillOffer([], [], makeRng(seed), 6).some(isConsumer)).toBe(true);
+  });
+  it("#191 Erst-Angebot: Konsument-Garantie hält auch bei erzwungenem Legendär-Roll + 2+2+2-Balance", () => {
+    const isConsumer = (id) => isFireConsumer(id) || isChargeConsumer(id);
+    for (let seed = 1; seed <= 40; seed++) {
+      const off = buildSkillOffer([], [], makeRng(seed), 6, 1); // Legendär erzwungen
+      expect(off.some(isConsumer)).toBe(true);
+      expect(off).toHaveLength(6);
+      const byArch = { lightning: 0, fire: 0, ice: 0 };
+      for (const id of off) byArch[archetypeOf(id)]++;
+      expect(byArch).toEqual({ lightning: 2, fire: 2, ice: 2 });
+    }
   });
 });
 

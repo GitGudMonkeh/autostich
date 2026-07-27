@@ -375,22 +375,29 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   const isLeg = (id) => !!SKILL_DEFS[id]?.legendary;
   // Konsument-Garantie: ein AKTIVER Feuer-/Blitz-Build ohne gehaltenen Konsumenten bekommt garantiert (mind.) einen
   // seines Typs angeboten, solange einer verfügbar ist — sonst kann der Build nie „zünden" (frustrierend). Greift nur
-  // für in activeArchetypes stehende Archetypen; bei leerem activeArchetypes ist es ein No-op (kein rng-Drift).
+  // für in activeArchetypes stehende Archetypen.
   const needsConsumer = (arch) => (activeArchetypes || []).includes(arch) && !ownsConsumerFor(arch, owned);
+  // #191: SCHON beim ERSTEN Skill-Angebot (noch kein Archetyp aktiv) garantiert mind. EINEN Konsumenten INSGESAMT —
+  // am ersten angebotenen Archetyp, der überhaupt einen hat (Feuer/Blitz; Eis hat keinen). So ist die Konsumenten-
+  // Richtung von Anfang an sichtbar, nicht erst nach der Archetyp-Festlegung. Leeres activeArchetypes = erstes Angebot.
+  const guaranteeAny = (activeArchetypes || []).length === 0;
   const perArch = Math.max(1, Math.floor(count / chosen.length)); // 2 bei 3 Archetypen (count 6), count bei 1 Archetyp
   const offer = [];
   const rest = [];
   const legPool = [];
   const guaranteed = new Set(); // garantierte Konsumenten-Slots — vor dem Legendär-Ersatz geschützt
+  let anyConsumerGuaranteed = false; // #191: schon EIN Konsument fürs Erst-Angebot fixiert? (nur einer insgesamt)
   for (const arch of chosen) {
     let pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)).map((s) => s.id), rng);
     if (gateLeg) { legPool.push(...pool.filter(isLeg)); pool = pool.filter((id) => !isLeg(id)); } // Legendäre nur über den Roll
-    // Braucht dieser Archetyp einen garantierten Konsumenten, einen im Pool nach vorne ziehen (deterministisch, kein
-    // zusätzlicher rng-Zug: die Pool-Reihenfolge stammt schon aus dem Shuffle). perArch ≥ 1 → der Slot 0 wird gewählt.
-    if (needsConsumer(arch)) {
+    // Garantierten Konsumenten dieses Archetyps nach vorne ziehen (deterministisch, kein zusätzlicher rng-Zug: die
+    // Pool-Reihenfolge stammt schon aus dem Shuffle; perArch ≥ 1 → Slot 0 wird gewählt). Zwei Auslöser:
+    //  · needsConsumer(arch): aktiver Archetyp ohne gehaltenen Konsumenten (Pro-Archetyp-Garantie).
+    //  · guaranteeAny (#191): erstes Angebot ohne aktiven Archetyp → EINEN insgesamt, am ersten Archetyp mit Konsument.
+    if (needsConsumer(arch) || (guaranteeAny && !anyConsumerGuaranteed)) {
       const ci = pool.findIndex(isConsumerSkill);
       if (ci > 0) pool.unshift(pool.splice(ci, 1)[0]);
-      if (ci >= 0) guaranteed.add(pool[0]);
+      if (ci >= 0) { guaranteed.add(pool[0]); if (guaranteeAny) anyConsumerGuaranteed = true; }
     }
     for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
     rest.push(...pool); // Reste des Archetyps für die Auffüllung
