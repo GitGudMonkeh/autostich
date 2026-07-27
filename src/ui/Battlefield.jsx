@@ -738,7 +738,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
             style={{ left: "50%", top: "50%", zIndex: 30,
                      fontSize: `clamp(32px, 9vw, ${bigScore.size}px)`, color: "#d4a63a", textShadow: "0 0 26px #d4a63acc, 0 0 8px #d4a63a",
                      transform: reduced ? "translate(-50%, -50%)" : undefined,
-                     animation: fx(`as-bigscore ${Math.max(700, floatDur - 600)}ms ease-out forwards`) }}>
+                     animation: fx(`as-bigscore ${Math.max(900, floatDur - 200)}ms ease-out forwards`) }}>
             {bigScore.text}
           </div>
         )}
