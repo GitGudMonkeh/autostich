@@ -49,13 +49,15 @@ const FLOAT_ZONES = {
 };
 // #105: gestufter Groß-Score-Float — Arcade-Leiter (GREAT→BRUTAL→INSANE→GODLIKE) auf den gewonnenen
 // Einzelstich-Score. Höchste erfüllte Stufe gewinnt; oberste bewusst hoch (500k) → „GOTTGLEICH" bleibt selten.
+// #169 FB-7: `size` = Peak-Zielgröße (px) je Stufe — höhere Stufe dominiert stärker. Der Render deckelt sie per
+// clamp() gegen die Viewport-Breite (mobil kein Überlauf) und zentriert echt (H+V) auf oberster Ebene.
 const BIG_SCORE_TIERS = [
-  { min: 500000, text: "GOTTGLEICH" },
-  { min: 150000, text: "IRRE" },
-  { min: 50000,  text: "BRUTAL" },
-  { min: 10000,  text: "STARK" },
+  { min: 500000, text: "GOTTGLEICH", size: 84 },
+  { min: 150000, text: "IRRE",       size: 72 },
+  { min: 50000,  text: "BRUTAL",     size: 64 },
+  { min: 10000,  text: "STARK",      size: 56 },
 ];
-const bigScoreLabel = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s.text; return null; };
+const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
 const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflow-hidden, nichts läuft raus
 const FORM_LINGER_MS = 1500; // Formations-Float bleibt ~1,5 s länger stehen (über den nächsten Stich hinaus) und klingt dann aus
 // #110: Karten-Aufdeck-Sound — DEZENTE Turbo-Kopplung der Abspielrate (leicht justierbar). Rate>1 = kürzer/schneller.
@@ -389,7 +391,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   // #128: Float-Farbe = Rahmenfarbe der Übersicht — Tier nach Formations-Anzahl (formationBorder, kein Drift).
   const formColor = formationBorder({ mult: formMult, formations: (t && t.formations) || [] }).color || "#5ab87a";
   // #105: großes „Wow"-Wort mittig ab hohem Einzelstich-Score (nur bei Sieg). Höchste erfüllte Stufe.
-  const bigScore = win && t && t.gained > 0 ? bigScoreLabel(t.gained) : null;
+  const bigScore = win && t && t.gained > 0 ? bigScoreTier(t.gained) : null;
 
   // Ergebnis-Aufschlüsselung (§17): kompakte Faktorenkette (Basis → Flats → Serie → Perks → Formation → Crit)
   // aus der Engine-breakdown — exakt die Faktoren der Score-Formel (kein Drift). Nur bei nennenswerten Treffern.
@@ -623,13 +625,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
             {formFloat.peak === 2 && "★ "}{formFloat.label} ×{formFloat.mult}
           </div>
         )}
-        {/* Gestufter Groß-Score-Float (#105): großes Wort mittig, Legendär-Gold, etwas kürzer als die Floats. */}
+        {/* #105/#169 FB-7: Gestufte Groß-Score-Ansage — dominiert Peak-Momente: oberste Ebene (z-30, über allen
+            Floats), echt zentriert (H+V), Größe je Stufe (clamp deckelt mobil gegen Überlauf), Legendär-Gold. */}
         {bigScore && (
-          <div key={`big${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
-            style={{ left: "50%", top: "28%", fontSize: 42, color: "#d4a63a", textShadow: "0 0 18px #d4a63aaa",
-                     transform: reduced ? "translateX(-50%)" : undefined,
-                     animation: fx(`as-krit ${Math.max(700, floatDur - 600)}ms ease-out forwards`) }}>
-            {bigScore}
+          <div key={`big${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap"
+            style={{ left: "50%", top: "50%", zIndex: 30,
+                     fontSize: `clamp(32px, 9vw, ${bigScore.size}px)`, color: "#d4a63a", textShadow: "0 0 26px #d4a63acc, 0 0 8px #d4a63a",
+                     transform: reduced ? "translate(-50%, -50%)" : undefined,
+                     animation: fx(`as-bigscore ${Math.max(700, floatDur - 600)}ms ease-out forwards`) }}>
+            {bigScore.text}
           </div>
         )}
       </div>
