@@ -8,6 +8,8 @@ import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js";
 import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
+import cardBackImg  from "../assets/cards/card-back.png";  // (#180) Spieler-Deck: Schwerter-Rücken
+import cardFrontImg from "../assets/cards/card-front.png"; // (#180) Spieler-Deck: Rahmen-Front (Zahl/Effekte darüber)
 
 const BANNER = {
   win:     { text: "GEWONNEN",            color: "#5ab87a" },
@@ -46,7 +48,7 @@ const fjitter = (seed, amp) => { const s = Math.sin(seed * 127.1 + 311.7) * 4375
 /* Eine Seite: gespielte Karte MIT Nachziehstapel dahinter (ragt nur nach außen).
    `overlay` = entkoppelter Layer im Karten-Slot (z. B. Niederlage-Ghosts), der NICHT pro Stich remountet
    (steht nach `children`, also im selben `relative`-Slot, aber außerhalb des trickNo-gekeyten Karten-Wrappers). */
-function Side({ label, remaining, dealFrom, children, overlay = null }) {
+function Side({ label, remaining, dealFrom, children, overlay = null, backImage = null }) {
   const dir = dealFrom === "left" ? -1 : 1;
   const behind = Math.min(3, Math.max(0, remaining - 1));
   return (
@@ -55,13 +57,28 @@ function Side({ label, remaining, dealFrom, children, overlay = null }) {
       <div className="relative" style={{ width: 104, height: 144 }}>
         {Array.from({ length: behind }, (_, i) => (
           <div key={i} className="absolute top-0" style={{ left: dir * (i + 1) * 3 }}>
-            <CardBack label="" />
+            <CardBack label="" image={backImage} />
           </div>
         ))}
         {children}
         {overlay}
       </div>
       <div className="text-[11px] opacity-55">Deck: {remaining}</div>
+    </div>
+  );
+}
+
+/* #180 Flip-Reveal: die aufgedeckte Spielerkarte dreht sich aus dem Deck-Rücken (Schwerter) in die Front
+   (`front` = fertige Karte mit Zahl/Effekten). 3D-rotateY, Dauer an den Flip-Takt gekoppelt. Zwei Faces mit
+   `backface-visibility: hidden`: erst die Rückseite, ab der Mitte die Front. Position:relative → malt (wie die
+   Karte sonst) über die Ergebnis-Welle. Nur für die Spielerseite; bei reduzierter Bewegung nicht gerendert. */
+function FlipReveal({ front, backImage, dur }) {
+  return (
+    <div className="as-flip3d" style={{ width: 104, height: 144 }}>
+      <div className="as-flip3d-inner" style={{ animation: `as-flip-reveal ${dur}ms ease-out both`, willChange: "transform" }}>
+        <div className="as-flip3d-face as-flip3d-back"><CardBack label="" image={backImage} /></div>
+        <div className="as-flip3d-face as-flip3d-front">{front}</div>
+      </div>
     </div>
   );
 }
@@ -172,7 +189,7 @@ function LossGhostLayer({ ghosts }) {
           style={{ animation: `as-loss-drift ${g.drift + g.halves}ms cubic-bezier(0.2, 0.6, 0.3, 1) forwards`, willChange: "transform" }}>
           <SliceFx delay={g.drift} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed}
             cardEl={<Card suit={g.suit} value={g.value} baseRank={g.baseRank} stichBonus={g.stichBonus}
-              ionStacks={g.ionStacks} frozen={g.frozen} frostAnimated allyColor={g.allyColor} />} />
+              ionStacks={g.ionStacks} frozen={g.frozen} frostAnimated allyColor={g.allyColor} frontImage={cardFrontImg} />} />
         </div>
       ))}
     </>
@@ -218,9 +235,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   // den nächsten Stich nicht verzögert/überläuft. Bei sehr hohem Turbo (winziger flipMs) oder reduzierter Bewegung
   // wird der Slice gar nicht gerendert → Fallback aufs bestehende Ergebnis-Juice (Puls/Glow/Banner).
   const sliceOn  = !reduced && !!t && (win || lost) && flipMs > 170;
-  const sHalves  = clamp(flipMs * 0.55, 150, 600);   // Hälften gleiten/rotieren/fallen/faden (~600 ms @1×)
+  const sHalves  = clamp(flipMs * 0.55, 150, 600) + 1000;   // Hälften/Krit-Karte gleiten/faden — +1 s länger floaten (Wunsch)
   const sCut     = clamp(flipMs * 0.13, 55, 130);    // Schnittlinie wächst (~120 ms) & fadet
-  const sSpark   = clamp(flipMs * 0.5, 150, 520);    // Funken (~500 ms)
+  const sSpark   = clamp(flipMs * 0.5, 150, 520) + 1000;    // Funken/Krit-Partikel — +1 s länger floaten (Wunsch)
   const sBoom    = clamp(flipMs * 0.22, 90, 230);    // Krit-Zentral-Flash (kurz & hell)
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
   const sDrift   = clamp(flipMs * 0.3, 90, 260);     // Niederlage-Ghost floatet erst kurz (~260 ms @1×), dann Schnitt
@@ -235,29 +252,37 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
+  // #180 Flip-Reveal der Spielerkarte: nur bei normaler Bewegung, echtem Stich, nicht bei der Niederlage
+  // (dort übernimmt der entkoppelte Slice-Ghost) und nicht bei sehr hohem Turbo. Dauer an den Flip-Takt gekoppelt.
+  const flipOn = !reduced && !!t && !lossGhost && flipMs > 170;
+  const flipDur = clamp(flipMs * 0.55, 220, 460);
 
   // Kartenelemente einmal bauen — als sichtbare Karte, als (unsichtbarer) Größen-Platzhalter unter dem Slice und
   // als Klon-Quelle in SliceFx wiederverwendbar (Elemente sind unveränderliche Beschreibungen → mehrfach nutzbar).
+  // #180: die Spielerkarte trägt den Skin-Front-Rahmen (Zahl/Effekte kommen darüber).
   const pCardEl = t && (
     <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
           stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-          ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} frostAnimated allyColor={allyColorFor(t.pCard.suit)} />
+          ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} frostAnimated allyColor={allyColorFor(t.pCard.suit)}
+          frontImage={cardFrontImg} />
   );
   const oCardEl = t && (
     <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
           frostbitten={t.oFrostbitten} allyColor={allyColorFor(t.oCard.suit)} />
   );
 
+  // Sieger kippt an (as-slice-winner); im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
+  const playerFront = playerWinner ? <div style={winnerTilt(sWinner)}>{pCardEl}</div> : pCardEl;
   const playerCard = t ? (
-    <div key={`p${t.trickNo}`} className="relative" style={lossGhost ? undefined : dealStyle("as-deal-left")}>
+    <div key={`p${t.trickNo}`} className="relative" style={(lossGhost || flipOn) ? undefined : dealStyle("as-deal-left")}>
       {resultPulse(win ? (isCrit ? critColor : "#5ab87a") : null, isCrit)}
       {lossGhost ? (
         <div style={{ opacity: 0 }} aria-hidden="true">{pCardEl}</div>   /* in-place unsichtbar — der entkoppelte Ghost (Side-overlay) floatet + schneidet */
-      ) : playerWinner ? (
-        <div style={winnerTilt(sWinner)}>{pCardEl}</div>   /* Sieger kippt an */
-      ) : pCardEl}
+      ) : flipOn ? (
+        <FlipReveal front={playerFront} backImage={cardBackImg} dur={flipDur} />   /* #180: Rücken → Front */
+      ) : playerFront}
     </div>
-  ) : <div className="relative"><CardBack label="" /></div>;
+  ) : <div className="relative"><CardBack label="" image={cardBackImg} /></div>;
 
   const oppCard = t ? (
     <div key={`o${t.trickNo}`} className="relative" style={(oppSliced || critBoom) ? undefined : dealStyle("as-deal-right")}>
@@ -467,7 +492,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
           </div>
         )}
 
-        <Side label="Du" remaining={remaining} dealFrom="left"
+        <Side label="Du" remaining={remaining} dealFrom="left" backImage={cardBackImg}
               overlay={lossGhosts.length ? <LossGhostLayer ghosts={lossGhosts} /> : null}>{playerCard}</Side>
 
         <img src={swordicon} alt="vs" width={46} height={46} draggable="false"

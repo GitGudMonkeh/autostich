@@ -34,6 +34,15 @@ button { font-family: inherit; }
 @keyframes as-deal-left  { from { transform: translateX(-150px) translateY(-10px) scale(.9); opacity:0; } to { transform:none; opacity:1; } }
 @keyframes as-deal-right { from { transform: translateX( 150px) translateY(-10px) scale(.9); opacity:0; } to { transform:none; opacity:1; } }
 
+/* Flip-Reveal (#180): das Spieler-Deck deckt beim Aufdecken die oberste Karte auf — die Rückseite (Schwerter)
+   dreht per rotateY in die Front (Rahmen + Zahl/Effekte). Dauer inline an den Flip-Takt gekoppelt. */
+.as-flip3d { position: relative; perspective: 700px; }
+.as-flip3d-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+.as-flip3d-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.as-flip3d-back  { transform: rotateY(180deg); }
+.as-flip3d-front { transform: rotateY(0deg); }
+@keyframes as-flip-reveal { from { transform: rotateY(180deg); } to { transform: rotateY(0deg); } }
+
 /* Game-Feel / „Juice" beim Stich (#15). Dauer wird inline an den Flip-Takt gekoppelt.
    Hinweis: as-pop / as-pop-crit sind aktuell ungenutzt — der Gewinnerkarten-Pop wurde
    bewusst rausgenommen (Battlefield.jsx). Keyframes bleiben für ein leichtes Re-Enable. */

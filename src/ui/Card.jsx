@@ -6,13 +6,30 @@ import { FrostOverlay } from "./FrostOverlay.jsx";
      value      = dauerhafter Kartenwert (inkl. Kat.-A-Mods)
      baseRank   = Ursprungswert → dauerhafter Boost = value − baseRank (violett „+X")
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
-export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, allyColor = null }) {
+export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, allyColor = null, frontImage = null }) {
   const color = suitColor(suit);
-  // F4 Farballianz (#125): ist eine Partnerfarbe gesetzt, wird die Karte diagonal „quergeschnitten" —
-  // obere Hälfte Eigenfarbe, untere Partnerfarbe. Rein kosmetisch (Score/Logik unberührt).
-  const bg = allyColor
-    ? `linear-gradient(135deg, ${color}26 0%, ${color}26 49%, ${allyColor}26 51%, ${allyColor}26 100%), #1c1c22`
-    : "#1c1c22";
+  // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
+  // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
+  // Skin-Front (#180): liegt ein `frontImage` (Pixel-Art-Rahmen) an, ersetzt es die Holo-Gradienten als
+  // Karten-Hintergrund; Zahl & alle Marker bleiben darüber, der Rahmen liefert die Kante (kein Holo-Saum).
+  const HOLO_BASE = "#131318";
+  const skinned = !!frontImage;
+  const layers = [];
+  // F4 Farballianz (#125): Partnerfarbe als diagonaler Zweitfarben-Hauch in der unteren Hälfte (rein kosmetisch).
+  if (allyColor) layers.push({ img: `linear-gradient(135deg, transparent 50%, ${allyColor}24 52%, ${allyColor}24 100%)`, size: "cover", repeat: "no-repeat" });
+  if (skinned) {
+    layers.push({ img: `url(${frontImage})`, size: "100% 100%", repeat: "no-repeat" }); // Pixel-Art-Rahmen füllt die Karte
+  } else {
+    layers.push({ img: `linear-gradient(122deg, transparent 41%, ${color}00 46%, ${color}55 50%, ${color}00 54%, transparent 59%)`, size: "cover", repeat: "no-repeat" }); // Energiestrahl
+    layers.push({ img: `radial-gradient(${color}26 1px, transparent 1.7px)`, size: "7px 7px", repeat: "repeat" }); // Punktraster
+    layers.push({ img: `radial-gradient(ellipse 130% 95% at 50% 34%, ${color}22 0%, transparent 66%)`, size: "cover", repeat: "no-repeat" }); // Kern-Schein
+  }
+  const bgImage  = layers.map((l) => l.img).join(", ");
+  const bgSize   = layers.map((l) => l.size).join(", ");
+  const bgRepeat = layers.map((l) => l.repeat).join(", ");
+  // Weicher Neon-Saum statt Rahmen: hauchdünne 1px-Kante (Karte hebt sich vom dunklen BG ab) + Halo.
+  // Beim Skin entfällt der Saum — der Rahmen im Bild ist die Kante.
+  const ambientEdge = skinned ? null : `inset 0 0 0 1px ${color}3a, inset 0 0 13px ${color}12, 0 0 10px ${color}2e`;
   const permBoost = baseRank != null ? value - baseRank : 0;
   const effective = value + stichBonus;
   // Ionisierung: BLAUER Rahmen wie der Serien-Schutz (Geladene Serie, #5ec8f0) → sofort erkennbar.
@@ -25,13 +42,13 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
   const frostbiteGlow = frostbitten ? "inset 0 0 14px #e0605a55" : null;
   return (
     <div
-      className="as-card relative rounded-xl border-2 flex flex-col items-center justify-center select-none transition-all"
+      className="as-card as-card-holo relative rounded-xl overflow-hidden flex flex-col items-center justify-center select-none transition-all"
       style={{
-        borderColor: color,
-        width: 104, height: 144, background: bg,
+        width: 104, height: 144,
+        backgroundColor: HOLO_BASE, backgroundImage: bgImage, backgroundSize: bgSize, backgroundRepeat: bgRepeat,
         opacity: dim ? 0.35 : 1,
-        // Ion-Rahmen (blau) zuerst → liegt oben/knapp am Rand; Gewinn-/Verlust-Glow darunter (#135: größer). Frost = eigener Layer.
-        boxShadow: [ionRing, glow ? `0 0 0 3.9px ${glow}77, 0 0 34px ${glow}66` : null, frostbiteGlow].filter(Boolean).join(", ") || "none",
+        // Ion-Rahmen (blau) zuerst → liegt oben; Gewinn-/Verlust-Glow (#135) & Frostbiss darunter; Holo-Saum zuletzt. Frost = eigener Layer.
+        boxShadow: [ionRing, glow ? `0 0 0 3.9px ${glow}77, 0 0 34px ${glow}66` : null, frostbiteGlow, ambientEdge].filter(Boolean).join(", "),
       }}
     >
       {/* #136 Eis-Schimmer: Frost-Layer (Tint + Körnung + optional Sweep) über der eingefrorenen Karte — hinter Text/Markern. */}
@@ -46,7 +63,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
           +{permBoost}
         </div>
       )}
-      <div className="text-5xl font-bold card-num" style={{ color }}>{effective}</div>
+      <div className="text-5xl font-bold card-num" style={{ color, textShadow: `0 0 12px ${color}77, 0 1px 3px #000c` }}>{effective}</div>
       {/* Frost (#93 F3): Schneeflocke unten rechts markiert eine eingefrorene EIGENE Karte (blau, überall sichtbar). */}
       {frozen && (
         <div className="absolute bottom-1 right-1 text-[13px] leading-none" style={{ color: "#bfe9f7", textShadow: "0 0 5px #7fd4f0" }} title="Eingefroren">❄</div>
@@ -72,7 +89,18 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
   );
 }
 
-export function CardBack({ label = "?" }) {
+export function CardBack({ label = "?", image = null }) {
+  // Skin-Rücken (#180): liegt ein `image` an, zeigt der Stapel den Pixel-Art-Kartenrücken statt des
+  // gestrichelten Platzhalters (gleiche 104×144-Box). Ohne Bild bleibt der neutrale Platzhalter.
+  if (image) {
+    return (
+      <div
+        className="rounded-xl overflow-hidden select-none"
+        style={{ width: 104, height: 144, backgroundColor: "#0a0a0f", backgroundImage: `url(${image})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }}
+        aria-hidden="true"
+      />
+    );
+  }
   return (
     <div
       className="rounded-xl border-2 border-dashed flex items-center justify-center text-2xl opacity-40"
