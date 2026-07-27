@@ -557,7 +557,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (!bigScore) return;                   // nur bei einem großen Sieg-Stich
     const lane = BIG_LANES[bigSeq.current % BIG_LANES.length];
     bigSeq.current += 1;
-    const entry = { id: `b${t.trickNo}`, tier: bigScore, seed: t.trickNo, lane };
+    // #Fix: id global eindeutig über den monotonen bigSeq (nicht nur trickNo) → keine duplicate-key-Kollision.
+    const entry = { id: `b${t.trickNo}-${bigSeq.current}`, tier: bigScore, seed: t.trickNo, lane };
     setBigFloats((cur) => [...cur, entry].slice(-3)); // max 3 gleichzeitig (jede auf eigener Spur)
     const tm = setTimeout(() => {
       setBigFloats((cur) => cur.filter((f) => f.id !== entry.id));
@@ -572,6 +573,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // identischen Timings → beide „laden gleich lang aus". Jeder Ghost hält die Daten SEINES Stichs fest.
   const [slashGhosts, setSlashGhosts] = useState([]);
   const ghostTimers = useRef([]);
+  // Fix (Turbo-Duplikat-Keys): monotoner Spawn-Zähler → jede Ghost-id ist GLOBAL eindeutig. `og${trickNo}`/`pg${trickNo}`
+  // allein kollidierte, wenn derselbe Stich zweimal einen Ghost spawnte (Turbo-Überlappung/Remount) → React „duplicate key".
+  const ghostSeq = useRef(0);
   useEffect(() => () => ghostTimers.current.forEach(clearTimeout), []);
   useEffect(() => {
     if (!t) { setSlashGhosts([]); return; }        // Menü/neuer Lauf → Pool leeren
@@ -581,14 +585,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, fxP, fxTier };
     const spawned = [];
     if (lost) {  // Spielerkarte verliert → Schnitt-Ghost auf der Spielerseite
-      spawned.push({ ...base, id: `pg${t.trickNo}`, side: "player", fx: "slice",
+      spawned.push({ ...base, id: `pg${t.trickNo}-${ghostSeq.current++}`, side: "player", fx: "slice",
         color: suitColor(t.pCard.suit), seed: t.trickNo * 2 + 7,
         suit: t.pCard.suit, value: t.pCard.value, baseRank: t.pCard.baseRank, stichBonus: t.pValue - t.pCard.value,
         ionStacks: t.pCard.ionStacks || 0, frozen: t.pFrozen, frostbitten: false,
         allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
     }
     if (win) {   // Gegnerkarte verliert → Schnitt- (normal) bzw. Explosions-Ghost (Krit) auf der Gegnerseite
-      spawned.push({ ...base, id: `og${t.trickNo}`, side: "opp", fx: isCrit ? "explode" : "slice",
+      spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp", fx: isCrit ? "explode" : "slice",
         color: isCrit ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, frozen: false, frostbitten: t.oFrostbitten,
