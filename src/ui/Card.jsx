@@ -48,7 +48,8 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
         backgroundColor: HOLO_BASE, backgroundImage: bgImage, backgroundSize: bgSize, backgroundRepeat: bgRepeat,
         opacity: dim ? 0.35 : 1,
         // Ion-Rahmen (blau) zuerst → liegt oben; Gewinn-/Verlust-Glow (#135) & Frostbiss darunter; Holo-Saum zuletzt. Frost = eigener Layer.
-        boxShadow: [ionRing, glow ? `0 0 0 3.9px ${glow}77, 0 0 34px ${glow}66` : null, frostbiteGlow, ambientEdge].filter(Boolean).join(", "),
+        // Glow REIN blur-basiert (kein 0-Blur-Ring mehr) → weicher, kantenloser Rand statt harter Kontur am Kartenrand.
+        boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, frostbiteGlow, ambientEdge].filter(Boolean).join(", "),
       }}
     >
       {/* #136 Eis-Schimmer: Frost-Layer (Tint + Körnung + optional Sweep) über der eingefrorenen Karte — hinter Text/Markern. */}
