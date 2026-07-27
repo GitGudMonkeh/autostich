@@ -3,6 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, rerollCategory, withReservedOffer, perkLegendaryChance, skillLegendaryChance, activeShopUpgrades, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
+import { WECHSEL_MIN_DIFF } from "../src/game/formations.js";
 import { SHOP_FAMILY_DEFS, anchorTierDef } from "../src/game/shopFamilies.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
@@ -933,6 +934,14 @@ describe("Shop-Jokeranker-Familie (Shop-Spec §4.2)", () => {
 describe("Shop-Politur — S6 activeShopUpgrades (Chronik-Übersicht)", () => {
   it("frischer Shop hat keine aktiven Verbesserungen", () => {
     expect(activeShopUpgrades(initialShop())).toEqual([]);
+  });
+  it("Enger Wechsel: frischer Default = WECHSEL_MIN_DIFF (5); Stufe I (4) zählt als getightet", () => {
+    // Regressionswächter: der natürliche Wechsel-Mindestabstand ist 5 (nicht der alte, veraltete 4) — sonst
+    // spielte die Engine leichter als von #161 FB-5 gewollt und „Enger Wechsel" I wäre nicht unterscheidbar.
+    expect(initialShop().permanentEffects.switchMinDifference).toBe(WECHSEL_MIN_DIFF);
+    const base = initialShop();
+    expect(activeShopUpgrades({ ...base, permanentEffects: { ...base.permanentEffects, switchMinDifference: 4 } })).toContain("Enger Wechsel");
+    expect(activeShopUpgrades(base)).not.toContain("Enger Wechsel");
   });
   it("leitet aktive dauerhafte Verbesserungen aus dem Shop-State ab", () => {
     const base = initialShop();

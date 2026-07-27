@@ -23,7 +23,7 @@ import { iceFlag, hasPermafrost, hasIceAnchor } from "./skills.js";
 import { activeFamilyEntries, familyTierParam } from "./families.js";
 
 export const SEGMENT_SIZE = 5;
-const WECHSEL_MIN_DIFF = 5;   // [#161 FB-5: 4→5 — Wechsel schwerer, größerer Nachbarabstand nötig]
+export const WECHSEL_MIN_DIFF = 5;   // [#161 FB-5: 4→5 — Wechsel schwerer, größerer Nachbarabstand nötig] — natürlicher Default (Shop „Enger Wechsel" senkt ihn)
 const MAX_TREPPE_STEP  = 3;   // [#161 FB-5: Treppe zusätzlich zur strengen Monotonie max. 3 Schritt je Nachbarpaar]
 // Die vier Basis-Formationstypen (ohne Anker) — Zielauswahl F-L1 Formationskern + Anzeige-Labels.
 export const FORMATION_TYPES = ["wiederholung", "farbblock", "treppe", "wechsel"];

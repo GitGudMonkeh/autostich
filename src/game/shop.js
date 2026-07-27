@@ -1,5 +1,5 @@
 import * as C from "./constants.js";
-import { SEGMENT_SIZE, FORMATION_TYPE_LABELS } from "./formations.js";
+import { SEGMENT_SIZE, FORMATION_TYPE_LABELS, WECHSEL_MIN_DIFF } from "./formations.js";
 import { TIERS, TIER_WEIGHTS, priceOfTier } from "./rarity.js";
 import { SHOP_FAMILY_DEFS, timeSegmentDepth } from "./shopFamilies.js";
 
@@ -66,7 +66,7 @@ export function activeShopUpgrades(shop = {}) {
   const pp = (x) => `+${Math.round(x * 100)} pp`;
   const out = [];
   if (pe.descendingStraights) out.push("Abstieg");                                                       // F1
-  if (pe.switchMinDifference != null && pe.switchMinDifference < 4) out.push("Enger Wechsel");            // F2
+  if (pe.switchMinDifference != null && pe.switchMinDifference < WECHSEL_MIN_DIFF) out.push("Enger Wechsel"); // F2 (< natürlichem Default = getightet)
   if (pe.repetitionSecondFactorBonus > 0) out.push("Verstärkte Wiederholung");                            // F3
   if ((pe.linkedColors || []).length === 2) out.push(`Farballianz ${pe.linkedColors.join("+")}`);         // F4
   if ((pe.openSegmentBoundaries || []).length) out.push(`Offene Grenze ×${pe.openSegmentBoundaries.length}`); // F5
@@ -130,7 +130,7 @@ export function initialShop() {
     perkLegendaryBonus: 0, skillLegendaryBonus: 0, // P5/P6: additive Legendär-Chance (Cap in S5)
     permanentEffects: {             // §9 F-Items: permanente Regeländerungen der Formationserkennung
       descendingStraights: false,       // F1: Treppen auch fallend
-      switchMinDifference: 4,           // F2: Wechsel-Mindestdifferenz (→ 3)
+      switchMinDifference: WECHSEL_MIN_DIFF, // F2: natürliche Wechsel-Mindestdifferenz (5); „Enger Wechsel" senkt sie (4/3/2)
       repetitionSecondFactorBonus: 0,   // F3: 2. Wiederholungskarte +0,10
       linkedColors: [],                 // F4: zwei Farben zählen als eine (Farbblock)
       openSegmentBoundaries: [],        // F5: geöffnete Segmentgrenzen
