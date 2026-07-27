@@ -17,7 +17,7 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
    Auswahl-Zustände (#112): `selected` = weiß (Tausch/Detail) · `picked` = gold ✓ (Mehrfach-/Positionsauswahl) ·
    `arrow` = Farbpfeil „→X" (Shop-Farbwechsel) · `disabled` = ausgegraut, nicht klickbar (z. B. belegte Anker). */
 function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
-                   picked = false, disabled = false, arrow = null, quiet = false }) {
+                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -30,14 +30,15 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
   const roleTitle = roleIds.length ? roleIds.map((p) => PERK_DEFS[p]?.label || familyDef(p)?.name || p).join(", ") : undefined;
   // #119: belegte Position (Shop-Anker) → dicker silberner AUSSENring via Outline+Offset — separat vom
   // inneren Auswahl-/Formationsrahmen und dessen Glow, damit beide gleichzeitig lesbar bleiben.
-  const anchorRing = anchorType ? { outline: "2.5px solid #cdd6e0", outlineOffset: "2px" } : null;
+  // #182: `ring` markiert Positionen ohne Anker mit demselben Silberring (z. B. die von Zeitraffer/L11 gekoppelten 20 & 40).
+  const anchorRing = (anchorType || ring) ? { outline: "2.5px solid #cdd6e0", outlineOffset: "2px" } : null;
   // F4 Farballianz (#125): diagonaler Zweifarben-Split auch in der Grid-Kachel (obere Hälfte Eigen-, untere Partnerfarbe).
   const tileBg = allyColor
     ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColor}30 51%, ${allyColor}30 100%), #20202a`
     : "#20202a";
   return (
     <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined}
-      title={anchorType ? `⚓ Anker · ${ANCHOR_LABEL[anchorType] || anchorType}` : undefined}
+      title={anchorType ? `⚓ Anker · ${ANCHOR_LABEL[anchorType] || anchorType}` : ring ? (ringTitle || undefined) : undefined}
       className="as-tile relative rounded-lg flex flex-col items-center justify-center transition-all"
       style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
                opacity: disabled ? 0.45 : 1, cursor: disabled ? "not-allowed" : "pointer",
@@ -77,11 +78,13 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
 // aufrufende Ansicht einen eigenen Kachel-Sound spielen kann (Formationsphase → cardflip beim Tausch). Scoped:
 // die geteilten Nutzungen (Chronik/Shop-/Perk-Zielauswahl) lassen den Klick-Sound per Default unangetastet.
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
-                          selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false }) {
+                          selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
+                          highlightPos = [], highlightTitle = null }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const pickedSet = new Set(pickedIds || []);
   const disabledSet = new Set(disabledPos || []);
+  const highlightSet = new Set(highlightPos || []); // #182: Positionen mit Silberring ohne Anker (z. B. Zeitraffer 20 & 40)
   const nSeg = Math.ceil(cards.length / SEGMENT_SIZE);
   return (
     <div className="grid gap-1.5">
@@ -97,6 +100,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                 anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
                 selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
                 disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
+                ring={highlightSet.has(pos)} ringTitle={highlightTitle}
                 onClick={disabled ? undefined : () => onTilePick(pos, c)} />;
             })}
           </div>
