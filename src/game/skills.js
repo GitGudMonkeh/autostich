@@ -349,6 +349,17 @@ export function addCharge(lightning, gained) {
   return { ...lightning, charge: Math.min(lightning.maxCharge, lightning.charge + gained) };
 }
 
+// Ein Skill ist ein „Konsument", wenn er eine verbrauchbare Ressource auslöst: Feuer-Hitze-Konsument
+// (heatConsumer: Flächenbrand/Schmelzpunkt) oder Blitz-Ladungs-Konsument (onFullCharge: Ionisierung/Geladene Serie).
+export const isConsumerSkill = (id) => { const d = SKILL_DEFS[id]; return !!(d && (d.heatConsumer || d.onFullCharge)); };
+// Hält der Build für diesen Archetyp bereits einen Konsumenten? Eis kennt keine → gilt als „hat einen" (nie erzwingen).
+// (heatConsumerCount/chargeConsumerCount stehen weiter unten im Modul — zur Laufzeit längst initialisiert.)
+export function ownsConsumerFor(arch, skills) {
+  if (arch === "fire") return heatConsumerCount(skills) > 0;
+  if (arch === "lightning") return chargeConsumerCount(skills) > 0;
+  return true;
+}
+
 // Angebot (#93 F0): bis zu `count` noch nicht gehaltene Skills, nach Archetyp gruppiert (2+2+2),
 // aus max C.MAX_ARCHETYPES Archetypen (offerArchetypes). Deterministisch über den injizierten rng.
 // Leerer Pool → [] (Reducer/Engine fällt auf Perk-Angebot zurück). F0: nur Blitz → 4 Blitz-Skills.
@@ -362,13 +373,25 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   const legHit = legendaryChance > 0 && rng() < legendaryChance;
   const gateLeg = legendaryChance > 0;
   const isLeg = (id) => !!SKILL_DEFS[id]?.legendary;
+  // Konsument-Garantie: ein AKTIVER Feuer-/Blitz-Build ohne gehaltenen Konsumenten bekommt garantiert (mind.) einen
+  // seines Typs angeboten, solange einer verfügbar ist — sonst kann der Build nie „zünden" (frustrierend). Greift nur
+  // für in activeArchetypes stehende Archetypen; bei leerem activeArchetypes ist es ein No-op (kein rng-Drift).
+  const needsConsumer = (arch) => (activeArchetypes || []).includes(arch) && !ownsConsumerFor(arch, owned);
   const perArch = Math.max(1, Math.floor(count / chosen.length)); // 2 bei 3 Archetypen (count 6), count bei 1 Archetyp
   const offer = [];
   const rest = [];
   const legPool = [];
+  const guaranteed = new Set(); // garantierte Konsumenten-Slots — vor dem Legendär-Ersatz geschützt
   for (const arch of chosen) {
     let pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)).map((s) => s.id), rng);
     if (gateLeg) { legPool.push(...pool.filter(isLeg)); pool = pool.filter((id) => !isLeg(id)); } // Legendäre nur über den Roll
+    // Braucht dieser Archetyp einen garantierten Konsumenten, einen im Pool nach vorne ziehen (deterministisch, kein
+    // zusätzlicher rng-Zug: die Pool-Reihenfolge stammt schon aus dem Shuffle). perArch ≥ 1 → der Slot 0 wird gewählt.
+    if (needsConsumer(arch)) {
+      const ci = pool.findIndex(isConsumerSkill);
+      if (ci > 0) pool.unshift(pool.splice(ci, 1)[0]);
+      if (ci >= 0) guaranteed.add(pool[0]);
+    }
     for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
     rest.push(...pool); // Reste des Archetyps für die Auffüllung
   }
@@ -376,14 +399,15 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   while (offer.length < count && fill.length) offer.push(fill.shift());
   // Bei erfolgreichem Roll genau einen legendären Skill einsetzen. Balance (2+2+2) wahren: einen normalen Skill
   // DESSELBEN Archetyps ersetzen — NICHT blind den letzten Slot, sonst verliert ein anderer Archetyp einen Platz
-  // und der Legendär-Archetyp bekommt einen zu viel (#129). Fallback: letzter Slot bzw. auffüllen.
+  // und der Legendär-Archetyp bekommt einen zu viel (#129). Garantierte Konsumenten dabei überspringen.
+  // Fallback: letzter Slot bzw. auffüllen.
   if (legHit && legPool.length) {
     const leg = shuffle(legPool, rng)[0];
     if (!offer.includes(leg)) {
       if (offer.length >= count) {
         const legArch = archetypeOf(leg);
         let idx = -1;
-        for (let i = offer.length - 1; i >= 0; i--) if (archetypeOf(offer[i]) === legArch) { idx = i; break; }
+        for (let i = offer.length - 1; i >= 0; i--) if (archetypeOf(offer[i]) === legArch && !guaranteed.has(offer[i])) { idx = i; break; }
         offer[idx >= 0 ? idx : offer.length - 1] = leg;
       } else offer.push(leg);
     }

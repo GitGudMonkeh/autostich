@@ -124,6 +124,38 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
   });
 });
 
+// Konsument-Garantie: aktive Feuer-/Blitz-Builds ohne gehaltenen Konsumenten bekommen garantiert einen angeboten,
+// solange man keinen aktiv hat — sonst kann der Build nie „zünden" (Nutzer-Wunsch: sonst frustrierend).
+describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", () => {
+  const isFireConsumer   = (id) => !!SKILL_DEFS[id]?.heatConsumer;  // Flächenbrand/Schmelzpunkt
+  const isChargeConsumer = (id) => !!SKILL_DEFS[id]?.onFullCharge;  // Ionisierung/Geladene Serie
+  it("aktiver Feuer-Build ohne Hitze-Konsument → garantiert ein Hitze-Konsument im Angebot", () => {
+    for (let seed = 1; seed <= 40; seed++)
+      expect(buildSkillOffer(["SK_FIRE_01"], ["fire"], makeRng(seed), 6).some(isFireConsumer)).toBe(true);
+  });
+  it("aktiver Blitz-Build ohne Ladungs-Konsument → garantiert ein Ladungs-Konsument im Angebot", () => {
+    for (let seed = 1; seed <= 40; seed++)
+      expect(buildSkillOffer(["SK_LIGHTNING_01"], ["lightning"], makeRng(seed), 6).some(isChargeConsumer)).toBe(true);
+  });
+  it("beide aktiv & ohne Konsument → beide Typen garantiert, auch bei erzwungenem Legendär-Roll", () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const off = buildSkillOffer(["SK_FIRE_01", "SK_LIGHTNING_01"], ["fire", "lightning"], makeRng(seed), 6, 1);
+      expect(off.some(isFireConsumer)).toBe(true);
+      expect(off.some(isChargeConsumer)).toBe(true);
+    }
+  });
+  it("hält man bereits einen Konsumenten, wird KEINER erzwungen (Angebot kann konsumentenfrei sein)", () => {
+    // Ionisierung (Ladungs-Konsument) gehalten → über viele Seeds gibt es mind. ein Angebot ganz OHNE Konsument.
+    const anyClean = Array.from({ length: 30 }, (_, s) =>
+      buildSkillOffer(["SK_LIGHTNING_02"], ["lightning"], makeRng(s + 1), 6)
+    ).some((off) => !off.some(isChargeConsumer));
+    expect(anyClean).toBe(true);
+  });
+  it("inaktiver Archetyp (nicht in activeArchetypes) erzwingt nichts — kein rng-Drift", () => {
+    expect(buildSkillOffer([], [], makeRng(1), 6)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
+  });
+});
+
 describe("Ionisierung — Helfer (Stufe B)", () => {
   const I = "SK_LIGHTNING_02", K = "SK_LIGHTNING_03";
   const mkDeck = (stacks) => stacks.map((s, i) => ({ id: `c${i}`, suit: "R", baseRank: 1, value: 1, ...(s ? { ionStacks: s } : {}) }));
