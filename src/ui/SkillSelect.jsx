@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../game/skills.js";
-import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
+import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE,
+         ION_MAX_STACKS, ION_SCORE_PER_STACK,
          FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, BURN_BONUS, ICE_BASE_FREEZE, FROST_GRIP_BONUS } from "../game/constants.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { FormationPanel } from "./FormationPanel.jsx";
 import { PanelMascot } from "./PanelMascot.jsx";
 import skillMascot from "../assets/mascots/skill.gif";
 
@@ -17,8 +19,8 @@ const LIGHT = "#8a7de0";
 
 // Schlüsselbegriffe der Skills — unten im Overlay erklärt (nur die im Angebot vorkommenden). Icon/Farbe je Archetyp.
 const KEYWORD_INFO = {
-  charge: { label: "Ladung", icon: "⚡", color: "#8a7de0", text: "Crits erzeugen Ladung (max 10). Bei voller Ladung lösen Blitz-Skills Effekte aus oder verbrauchen sie." },
-  ionize: { label: "Ionisierung", icon: "⚡", color: "#8a7de0", text: "Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +25 Score pro Stapel und erhält danach +1 Stapel (max 4)." },
+  charge: { label: "Ladung", icon: "⚡", color: "#8a7de0", text: `Crits erzeugen Ladung (max ${LIGHTNING_MAX_CHARGE}). Bei voller Ladung lösen Blitz-Skills Effekte aus oder verbrauchen sie.` },
+  ionize: { label: "Ionisierung", icon: "⚡", color: "#8a7de0", text: `Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +${ION_SCORE_PER_STACK} Score pro Stapel und erhält danach +1 Stapel (max ${ION_MAX_STACKS}).` },
   streak: { label: "Serie", icon: "⚡", color: "#8a7de0", text: "Geladene Serie schützt deine Siegesserie — die nächste Niederlage setzt sie nicht zurück." },
   // #116: Feuer-Flat-Score-Grundmechanik quantifiziert (Zahlen aus constants.js → kein Text↔Code-Drift).
   heat: { label: "Hitze", icon: "🔥", color: "#e0714a", text: `Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Flat-Score = (Vorsprung − 2) × ${FIRE_SCORE_BASE} (+${FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill; Verbrennung +${BURN_BONUS}/Punkt); klare Niederlagen kühlen sie ab.` },
@@ -54,6 +56,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const fireFirstPick = !(state.heat && state.heat.active); // erster Feuer-Skill schaltet die Hitzeleiste frei
   const hasIceOffer = offer.some((id) => archetypeOf(id) === "ice");
   const iceFirstPick = !(state.activeArchetypes || []).includes("ice"); // erster Eis-Skill schaltet das Einfrieren frei
+  const showFormations = hasIceOffer || (skills || []).some((id) => archetypeOf(id) === "ice"); // #161 FB-1: Formations-Panel bei Eis-Relevanz
 
   // Konsumenten-Typ eines Skills (#93): Hitze („heat") / Ladung („charge") / kein Konsument (null).
   const consumerTypeOf = (id) => (SKILL_DEFS[id]?.heatConsumer ? "heat" : SKILL_DEFS[id]?.onFullCharge ? "charge" : null);
@@ -100,7 +103,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           style={{ background: `${LIGHT}14`, border: `1px solid ${LIGHT}44` }}>
           {firstPick ? (
             <>Dein erster Blitz-Skill schaltet den <b style={{ color: LIGHT }}>Blitz-Archetyp</b> frei:{" "}
-              <b style={{ color: "#5ec8f0" }}>Ladung</b> (Crits erzeugen Ladung, max 10) und eine{" "}
+              <b style={{ color: "#5ec8f0" }}>Ladung</b> (Crits erzeugen Ladung, max {LIGHTNING_MAX_CHARGE}) und eine{" "}
               <b style={{ color: "#e879f9" }}>Crit-Basis von +{SOCKET_PCT + PER_SKILL_PCT} %</b>{" "}
               (einmaliger Sockel +{SOCKET_PCT} % plus +{PER_SKILL_PCT} % je gehaltenem Blitz-Skill).</>
           ) : (
@@ -269,6 +272,13 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 Abbrechen
               </button>
             )}
+          </div>
+        )}
+
+        {/* #161 FB-1: bei Eis-Relevanz die aktiven Formationen zeigen — Einfrieren biegt die Formationserkennung. */}
+        {showFormations && (
+          <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
+            <FormationPanel state={state} title="Deine aktiven Formationen (Eis biegt die Erkennung)" />
           </div>
         )}
 

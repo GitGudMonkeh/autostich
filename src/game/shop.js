@@ -1,5 +1,7 @@
 import * as C from "./constants.js";
-import { SEGMENT_SIZE, FORMATION_TYPE_LABELS } from "./formations.js";
+import { SEGMENT_SIZE } from "./formations.js";
+import { TIERS, TIER_WEIGHTS, priceOfTier } from "./rarity.js";
+import { SHOP_FAMILY_DEFS, timeSegmentDepth } from "./shopFamilies.js";
 
 /* ============================================================
    SHOP-SYSTEM (Shop-Spec) — reine Logik, kein Math.random / Date.
@@ -16,201 +18,57 @@ import { SEGMENT_SIZE, FORMATION_TYPE_LABELS } from "./formations.js";
    der Reducer generisch (BUY_ITEM). Ziel-Items (targetMode) laufen über den Target-Flow (ab S2).
    ============================================================ */
 
-/* ---- Deck-Helfer für Kartenitems (S2) — immutabel, alle Marker bleiben an card.id. ---- */
-const bumpCards = (deck, ids, delta) => deck.map((c) => (ids.includes(c.id) ? { ...c, value: c.value + delta } : c));
-const recolor   = (deck, colors) => deck.map((c) => (colors[c.id] ? { ...c, suit: colors[c.id] } : c));
-function swapPair(deck, ids, key) { // Werte- bzw. Farb-Tausch zweier Karten (K3/K4)
-  const [a, b] = ids;
-  const ca = deck.find((c) => c.id === a), cb = deck.find((c) => c.id === b);
-  if (!ca || !cb || a === b) return deck;
-  return deck.map((c) => (c.id === a ? { ...c, [key]: cb[key] } : c.id === b ? { ...c, [key]: ca[key] } : c));
-}
-// Segmentveredelung (K-L1): Karten auf den Positionen des Segments (aktuelle Reihenfolge) +delta — an card.id,
-// wandert also bei späterer Umordnung mit der Karte mit (Spec §7 K-L1).
-function segmentBump(deck, order, segIndex, delta) {
-  const start = segIndex * SEGMENT_SIZE, ids = new Set();
-  for (let k = start; k < start + SEGMENT_SIZE && k < order.length; k++) ids.add(deck[order[k]].id);
-  return deck.map((c) => (ids.has(c.id) ? { ...c, value: c.value + delta } : c));
-}
-
 /* ---- Shop-Positionsanker (Shop-Spec §8) — an der Deckposition (0–39), nicht an card.id. ---- */
 // Anker-Typ auf einer Position (max 1 Anker je Position) bzw. ob die Position belegt ist.
 export const anchorTypeAt   = (anchors, pos) => (anchors || []).find((a) => a.position === pos)?.type || null;
+// Ganzer Anker-Eintrag auf einer Position ({ type, position, tier, familyId }) — Engine/formations lesen die Stufe (#164).
+export const anchorAt       = (anchors, pos) => (anchors || []).find((a) => a.position === pos) || null;
 export const positionOccupied = (anchors, pos) => (anchors || []).some((a) => a.position === pos);
-// F4 Farballianz (#125): Partner-Farbe (Suit-Key) einer Farbe, wenn eine Allianz aktiv ist — sonst null.
-// Rein für die UI (diagonaler Zweifarben-Split); ändert keine Regel.
-export const linkedPartnerOf = (pe, suit) => {
-  const lc = (pe && pe.linkedColors) || [];
-  if (lc.length !== 2) return null;
-  if (suit === lc[0]) return lc[1];
-  if (suit === lc[1]) return lc[0];
+// Farballianz (#179): Partner-Farbe (Suit-Key) einer Farbe innerhalb ihrer Allianz-Gruppe — sonst null.
+// Rein für die UI (diagonaler Zweifarben-Split); ändert keine Regel. `view` trägt `linkedGroups` (allianceGroups aus
+// families.js); Altfeld `linkedColors` (2er) bleibt kompatibel. Bei >2-Gruppen wird die erste andere Farbe gezeigt.
+export const linkedPartnerOf = (view, suit) => {
+  const groups = (view && view.linkedGroups) || ((view && (view.linkedColors || []).length === 2) ? [view.linkedColors] : []);
+  for (const g of groups) { if (g.includes(suit)) return g.find((s) => s !== suit) || null; }
   return null;
 };
-// Einen Anker anlegen (immutabel) — der Reducer stellt sicher, dass die Position frei ist.
-const addAnchor = (shop, type, position) => ({ ...shop, anchors: [...(shop.anchors || []), { type, position }] });
-// Permanente Formations-Regeländerung setzen (Shop §9 F-Items).
-const setPE = (shop, patch) => ({ ...shop, permanentEffects: { ...(shop.permanentEffects || {}), ...patch } });
 
-/* Konkrete Shop-Items (Shop-Spec §7 Kartenitems; Anker/Formationen/Planung folgen S3–S5).
-   `target` = Ziel-Bedarf für den Target-Flow: { cards?: N, color?: bool (Farbe je gewählter Karte), segment?: bool }.
-   apply(state, target, rng) -> Patch (hier stets { deck }); target = { cardIds, colors: { id: suit }, segment }. */
+/* Konkrete Shop-Items (Anker/Formationen/Planung — Kategorie `cards` ist zu Shop-FAMILIEN migriert, #164;
+   die flachen K-Items sind entfernt, siehe src/game/shopFamilies.js SHOP_FAMILY_DEFS).
+   `target` = Ziel-Bedarf für den Target-Flow. apply(state, target, rng) -> Patch. */
 export const SHOP_ITEM_DEFS = {
-  K1:  { id: "K1", category: "cards", name: "Feinschliff", tier: "cheap", repeatable: true,
-         targetMode: "single-card", target: { cards: 1 },
-         description: "Wähle eine Karte. Sie erhält dauerhaft +1 Wert.",
-         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 1) }) },
-  K2:  { id: "K2", category: "cards", name: "Umlackierung", tier: "cheap", repeatable: true,
-         targetMode: "card-and-new-color", target: { cards: 1, color: true },
-         description: "Wähle eine Karte und eine der drei anderen Farben. Die Karte erhält dauerhaft diese Farbe.",
-         apply: (s, t) => ({ deck: recolor(s.deck, t.colors) }) },
-  K3:  { id: "K3", category: "cards", name: "Werttausch", tier: "cheap", repeatable: true,
-         targetMode: "two-distinct-cards", target: { cards: 2 },
-         description: "Wähle zwei Karten. Sie tauschen ihre aktuellen Dauerwerte.",
-         apply: (s, t) => ({ deck: swapPair(s.deck, t.cardIds, "value") }) },
-  K4:  { id: "K4", category: "cards", name: "Farbtausch", tier: "cheap", repeatable: true,
-         targetMode: "two-distinct-cards", target: { cards: 2 },
-         description: "Wähle zwei Karten. Sie tauschen ihre Farben.",
-         apply: (s, t) => ({ deck: swapPair(s.deck, t.cardIds, "suit") }) },
-  K5:  { id: "K5", category: "cards", name: "Verstärkung", tier: "strong", repeatable: true,
-         targetMode: "single-card", target: { cards: 1 },
-         description: "Wähle eine Karte. Sie erhält dauerhaft +2 Wert.",
-         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 2) }) },
-  K6:  { id: "K6", category: "cards", name: "Doppelter Feinschliff", tier: "strong", repeatable: true,
-         targetMode: "two-distinct-cards", target: { cards: 2 },
-         description: "Wähle zwei Karten. Beide erhalten dauerhaft +1 Wert.",
-         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 1) }) },
-  K7:  { id: "K7", category: "cards", name: "Farbduo", tier: "strong", repeatable: true,
-         targetMode: "two-cards-and-colors", target: { cards: 2, color: true },
-         description: "Wähle zwei Karten und lege für jede eine neue Farbe fest (dieselbe erlaubt).",
-         apply: (s, t) => ({ deck: recolor(s.deck, t.colors) }) },
-  K8:  { id: "K8", category: "cards", name: "Meisterstück", tier: "premium", repeatable: true,
-         targetMode: "single-card", target: { cards: 1 },
-         description: "Wähle eine Karte. Sie erhält dauerhaft +3 Wert.",
-         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 3) }) },
-  K9:  { id: "K9", category: "cards", name: "Dreifacher Feinschliff", tier: "premium", repeatable: true,
-         targetMode: "three-distinct-cards", target: { cards: 3 },
-         description: "Wähle drei Karten. Alle erhalten dauerhaft +1 Wert.",
-         apply: (s, t) => ({ deck: bumpCards(s.deck, t.cardIds, 1) }) },
-  K10: { id: "K10", category: "cards", name: "Farbtrio", tier: "premium", repeatable: true,
-         targetMode: "three-cards-and-colors", target: { cards: 3, color: true },
-         description: "Wähle drei Karten und lege für jede eine neue Farbe fest.",
-         apply: (s, t) => ({ deck: recolor(s.deck, t.colors) }) },
-  "K-L1": { id: "K-L1", category: "cards", name: "Segmentveredelung", tier: "legendary", legendary: true, repeatable: false,
-         targetMode: "segment", target: { segment: true },
-         description: "Wähle eines der acht Segmente. Alle fünf Karten dieses Segments erhalten dauerhaft +1 Wert (bleibt an den Karten).",
-         apply: (s, t) => ({ deck: segmentBump(s.deck, s.playerOrder, t.segment, 1) }) },
+  // ---- Anker (Shop-Spec §8) — Kategorie KOMPLETT zu Shop-FAMILIEN migriert (#164): die Positions-Anker A1–A6 und
+  //      das Zeitsegment A-L1 sind entfernt (shopFamilies.js SHOP_ANCHOR_FAMILIES). Der Anker-Eintrag in shop.anchors
+  //      trägt jetzt zusätzlich `tier` (Stärke) + `familyId`; das Zeitsegment setzt shop.timeSegmentIndex + …Tier. ----
 
-  // ---- Anker (Shop-Spec §8) — Positionsanker; apply legt {type,position} in shop.anchors an. targetMode "position". ----
-  A1: { id: "A1", category: "anchors", name: "Kraftanker", tier: "cheap", repeatable: true, anchorType: "power",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Die Karte auf dieser Position erhält im Stich +2 temporären Wert.",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "power", t.position) }) },
-  A2: { id: "A2", category: "anchors", name: "Punkteanker", tier: "cheap", repeatable: true, anchorType: "score",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Ein Sieg auf dieser Position gibt +150 Flat-Score.",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "score", t.position) }) },
-  A3: { id: "A3", category: "anchors", name: "Kritanker", tier: "strong", repeatable: true, anchorType: "crit",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Die Karte auf dieser Position erhält +15 Prozentpunkte Crit-Chance (nur dieser Stich).",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "crit", t.position) }) },
-  A4: { id: "A4", category: "anchors", name: "Serienanker", tier: "strong", repeatable: true, anchorType: "streak",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Ein Sieg auf dieser Position erhöht die Siegesserie um einen zusätzlichen Punkt.",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "streak", t.position) }) },
-  A5: { id: "A5", category: "anchors", name: "Formationsanker", tier: "premium", repeatable: true, anchorType: "formation",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Sie zählt als aktive Formation und gibt bei Sieg ×1,25 (stapelt nicht mit E7/E8).",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "formation", t.position) }) },
-  A6: { id: "A6", category: "anchors", name: "Jokeranker", tier: "premium", repeatable: true, anchorType: "joker",
-        targetMode: "position", target: { position: true },
-        description: "Wähle eine Position. Die Karte darf bei jeder Basisformation den benötigten Wert oder die Farbe annehmen (bildet allein keine Formation, kein eigener Faktor).",
-        apply: (s, t) => ({ shop: addAnchor(s.shop, "joker", t.position) }) },
-  "A-L1": { id: "A-L1", category: "anchors", name: "Zeitsegment", tier: "legendary", legendary: true, repeatable: false,
-        targetMode: "segment", target: { segment: true },
-        description: "Wähle ein Segment. Nachdem seine fünf Karten gespielt wurden, wird das Segment sofort ein zweites Mal gespielt — inklusive aller positionsgebundenen Effekte dieser fünf Positionen (Anker, Positionsboni, Segment-Rollen zählen erneut). Durchlauf = 45 Stiche.",
-        apply: (s, t) => ({ shop: { ...s.shop, timeSegmentIndex: t.segment } }) },
+  // ---- Formationen (Shop-Spec §9) — KOMPLETT zu Shop-FAMILIEN migriert (#164, shopFamilies.js
+  //      SHOP_FORMATION_FAMILIES; sie setzen tier-abhängige permEffects bzw. lösen Ziele dorthin auf). ----
 
-  // ---- Formationen (Shop-Spec §9) — permanente Regeländerungen (kein Ziel, nicht wiederholbar). ----
-  F1: { id: "F1", category: "formations", name: "Abstieg", tier: "cheap", repeatable: false,
-        description: "Treppen dürfen streng steigend oder streng fallend verlaufen (innerhalb einer Formation ohne Richtungswechsel).",
-        apply: (s) => ({ shop: setPE(s.shop, { descendingStraights: true }) }) },
-  F2: { id: "F2", category: "formations", name: "Enger Wechsel", tier: "cheap", repeatable: false,
-        description: "Die benötigte Nachbardifferenz für Wechsel sinkt von 4 auf 3.",
-        apply: (s) => ({ shop: setPE(s.shop, { switchMinDifference: 3 }) }) },
-  F3: { id: "F3", category: "formations", name: "Verstärkte Wiederholung", tier: "strong", repeatable: false,
-        description: "Der Faktor der zweiten Karte einer Wiederholung steigt von ×1,25 auf ×1,35.",
-        apply: (s) => ({ shop: setPE(s.shop, { repetitionSecondFactorBonus: 0.10 }) }) },
-  F4: { id: "F4", category: "formations", name: "Farballianz", tier: "strong", repeatable: false,
-        targetMode: "two-colors", target: { colorPair: true },
-        description: "Wähle zwei Farben. Für Farbblöcke zählen diese beiden Farben als dieselbe Farbe.",
-        apply: (s, t) => ({ shop: setPE(s.shop, { linkedColors: t.colorPair }) }) },
-  F5: { id: "F5", category: "formations", name: "Offene Grenze", tier: "premium", repeatable: true,
-        targetMode: "boundary", target: { boundary: true },
-        description: "Wähle eine Segmentgrenze. Formationen dürfen diese Grenze überschreiten.",
-        // Nur anbieten, solange E9 nicht alle Grenzen global öffnet UND noch eine Grenze geschlossen ist (§15).
-        available: (shop, perks) => !(perks || []).includes("E9") && ((shop.permanentEffects?.openSegmentBoundaries || []).length < SEGMENT_BOUNDARIES.length),
-        apply: (s, t) => ({ shop: setPE(s.shop, { openSegmentBoundaries: [...(s.shop.permanentEffects?.openSegmentBoundaries || []), t.boundary] }) }) },
-  F6: { id: "F6", category: "formations", name: "Nachhall", tier: "premium", repeatable: false,
-        description: "Endet eine Formation, erhält die direkt folgende Karte deren stärksten Einzelfaktor als eigene Formation (überschreitet Segmentgrenzen).",
-        apply: (s) => ({ shop: setPE(s.shop, { formationAfterglow: true }) }) },
-  "F-L1": { id: "F-L1", category: "formations", name: "Formationskern", tier: "legendary", legendary: true, repeatable: false,
-        targetMode: "formation-type", target: { formationType: true },
-        description: "Wähle einen Formationstyp. Jede aktive Formation dieses Typs (inkl. Nachhall) erhält zusätzlich ×1,50.",
-        apply: (s, t) => ({ shop: setPE(s.shop, { formationCoreType: t.formationType }) }) },
-
-  // ---- Planung (Shop-Spec §10) — Neuwürfe/Reservierung; kein Score-Effekt, wirkt auf Angebote/Auswahlen. ----
-  P1: { id: "P1", category: "planning", name: "Perk-Neuwurf", tier: "cheap", repeatable: true,
-        description: "Erhalte einen gespeicherten Neuwurf für eine zukünftige Perk-Auswahl.",
-        apply: (s) => ({ shop: { ...s.shop, perkRerolls: (s.shop.perkRerolls || 0) + 1 } }) },
-  P2: { id: "P2", category: "planning", name: "Skill-Neuwurf", tier: "cheap", repeatable: true,
-        description: "Erhalte einen gespeicherten Neuwurf für eine zukünftige Skill-Auswahl.",
-        apply: (s) => ({ shop: { ...s.shop, skillRerolls: (s.shop.skillRerolls || 0) + 1 } }) },
-  P3: { id: "P3", category: "planning", name: "Warenwechsel", tier: "cheap", repeatable: true,
-        targetMode: "category", target: { category: true },
-        description: "Würfle eine Kategorie des aktuellen Shops einmal neu (nicht gekaufte Angebote werden ersetzt).",
-        apply: (s, t, rng) => ({ shop: rerollCategory(s.shop, t.category, SHOP_ITEM_DEFS, rng, s.perks, "P3") }) },
-  P4: { id: "P4", category: "planning", name: "Reservierung", tier: "strong", repeatable: true,
-        targetMode: "offer", target: { offer: true },
-        description: "Wähle ein anderes, noch nicht gekauftes Shop-Item. Es wird im nächsten Shop zusätzlich angeboten.",
-        available: (shop) => !shop.reservedItem, // §10 P4: höchstens ein Item gleichzeitig reserviert
-        apply: (s, t) => {
-          const off = (s.shop.offers || []).find((o) => o.offerId === t.offerId);
-          if (!off) return {};
-          return { shop: { ...s.shop, reservedItem: { itemId: off.itemId, category: off.category, tier: off.tier, price: off.price, legendary: !!off.legendary } } };
-        } },
-  P5: { id: "P5", category: "planning", name: "Legendensuche: Perks", tier: "premium", repeatable: true,
-        available: (shop) => (shop.perkLegendaryBonus || 0) < C.MAX_LEGENDARY_CHANCE_BONUS, // bis Cap (§10)
-        description: "Die Legendär-Chance zukünftiger Perk-Angebote steigt dauerhaft um 5 Prozentpunkte.",
-        apply: (s) => ({ shop: { ...s.shop, perkLegendaryBonus: Math.min((s.shop.perkLegendaryBonus || 0) + 0.05, C.MAX_LEGENDARY_CHANCE_BONUS) } }) },
-  P6: { id: "P6", category: "planning", name: "Legendensuche: Skills", tier: "premium", repeatable: true,
-        available: (shop) => (shop.skillLegendaryBonus || 0) < C.MAX_LEGENDARY_CHANCE_BONUS,
-        description: "Die Legendär-Chance zukünftiger Skill-Angebote steigt dauerhaft um 5 Prozentpunkte.",
-        apply: (s) => ({ shop: { ...s.shop, skillLegendaryBonus: Math.min((s.shop.skillLegendaryBonus || 0) + 0.05, C.MAX_LEGENDARY_CHANCE_BONUS) } }) },
-  "P-L1": { id: "P-L1", category: "planning", name: "Schicksalskontrolle", tier: "legendary", legendary: true, repeatable: false,
-        description: "Bei jeder zukünftigen Perk- und Skill-Auswahl darf das Angebot einmal kostenlos neu gewürfelt werden.",
-        apply: (s) => ({ shop: { ...s.shop, fateControl: true } }) },
+  // ---- Planung (Shop-Spec §10) — KOMPLETT zu Shop-FAMILIEN migriert (#164, shopFamilies.js SHOP_PLANNING_FAMILIES:
+  //      Perk-/Skill-Neuwurf, Legendensuche, Schicksalskontrolle, Warenwechsel, Reservierung). ----
+  // ⇒ SHOP_ITEM_DEFS ist damit LEER: alle vier Shop-Kategorien werden aus SHOP_FAMILY_DEFS bespielt.
 };
 
 // Legendär-Chance (Shop-Spec §10 P5/P6): Basis + additiver Bonus (bis Cap), für den expliziten Legendär-Roll
 // in buildOffer/buildSkillOffer. Ohne P5/P6-Käufe = reine Basis.
 export const perkLegendaryChance  = (shop = {}) => C.PERK_LEGENDARY_BASE  + Math.min(shop.perkLegendaryBonus  || 0, C.MAX_LEGENDARY_CHANCE_BONUS);
 export const skillLegendaryChance = (shop = {}) => C.SKILL_LEGENDARY_BASE + Math.min(shop.skillLegendaryBonus || 0, C.MAX_LEGENDARY_CHANCE_BONUS);
+// Kostenloser Neuwurf je Perk-/Skill-Auswahl (#164): Schicksalskontrolle IV (fateControl, beide) ODER die
+// typ-spezifische Regel (perkFreeReroll aus Perk-Neuwurf IV / Schicksalskontrolle III; skillFreeReroll aus Skill-Neuwurf IV).
+export const perkFateReroll  = (shop = {}) => !!(shop.fateControl || shop.perkFreeReroll);
+export const skillFateReroll = (shop = {}) => !!(shop.fateControl || shop.skillFreeReroll);
 
 // Aktive dauerhafte Shop-Verbesserungen als Label-Liste (Chronik-Übersicht, §S6 Politur). Rein & anzeige-orientiert:
 // leitet die aktiven permanenten Regeländerungen (§9) + Anker-Legendäre + Planungs-Boni aus dem Shop-State ab.
 export function activeShopUpgrades(shop = {}) {
-  const pe = shop.permanentEffects || {};
   const pp = (x) => `+${Math.round(x * 100)} pp`;
   const out = [];
-  if (pe.descendingStraights) out.push("Abstieg");                                                       // F1
-  if (pe.switchMinDifference != null && pe.switchMinDifference < 4) out.push("Enger Wechsel");            // F2
-  if (pe.repetitionSecondFactorBonus > 0) out.push("Verstärkte Wiederholung");                            // F3
-  if ((pe.linkedColors || []).length === 2) out.push(`Farballianz ${pe.linkedColors.join("+")}`);         // F4
-  if ((pe.openSegmentBoundaries || []).length) out.push(`Offene Grenze ×${pe.openSegmentBoundaries.length}`); // F5
-  if (pe.formationAfterglow) out.push("Nachhall");                                                        // F6
-  if (pe.formationCoreType) out.push(`Formationskern: ${FORMATION_TYPE_LABELS[pe.formationCoreType] || pe.formationCoreType}`); // F-L1
+  // (Formations-Regeländerungen F1–F6/Formationskern sind #179 zu Perk-Kat.-E migriert — nicht mehr im Shop-State;
+  //  die Perk-Seite zeigt sie über layoutFamilies/BuildSummary.)
   if (shop.timeSegmentIndex != null) out.push(`Zeitsegment ${shop.timeSegmentIndex + 1}`);                // A-L1
-  if (shop.fateControl) out.push("Schicksalskontrolle");                                                  // P-L1
+  if (shop.fateControl) out.push("Schicksalskontrolle");                                                  // Schicksalskontrolle IV
+  if (shop.perkFreeReroll && !shop.fateControl) out.push("Perk-Gratis-Neuwurf");                          // #164 Perk-Neuwurf IV / Schicksalskontrolle III
+  if (shop.skillFreeReroll && !shop.fateControl) out.push("Skill-Gratis-Neuwurf");                        // #164 Skill-Neuwurf IV
   if (shop.perkLegendaryBonus > 0) out.push(`Perk-Legendär ${pp(shop.perkLegendaryBonus)}`);              // P5
   if (shop.skillLegendaryBonus > 0) out.push(`Skill-Legendär ${pp(shop.skillLegendaryBonus)}`);           // P6
   return out;
@@ -220,15 +78,16 @@ export function activeShopUpgrades(shop = {}) {
 // Ohne Zeitsegment: 0..tricks-1. Mit Zeitsegment wird das gewählte Segment (5 Positionen) DIREKT nach seinem
 // ersten Spielen ein zweites Mal eingefügt → tricks+5 Stiche. Positionsgebundene Effekte nutzen die zurückgegebene
 // Deckposition (Wiederholung „zählt erneut", Spec §8). Rein & deterministisch.
-export function playSequence(timeSegIdx, tricks = C.TRICKS_PER_CYCLE, segSize = SEGMENT_SIZE) {
+export function playSequence(timeSegIdx, tricks = C.TRICKS_PER_CYCLE, segSize = SEGMENT_SIZE, depth = segSize) {
   const seq = Array.from({ length: tricks }, (_, p) => p);
   if (timeSegIdx == null) return seq;
   const start = timeSegIdx * segSize, end = Math.min(start + segSize, tricks);
-  seq.splice(end, 0, ...Array.from({ length: end - start }, (_, k) => start + k)); // Wiederholung nach der letzten Segmentposition
+  const d = Math.min(depth, end - start); // #164: nur die LETZTEN `depth` Segmentkarten wiederholen (Stufe I=1 … III/IV=5)
+  seq.splice(end, 0, ...Array.from({ length: d }, (_, k) => end - d + k)); // Wiederholung nach der letzten Segmentposition
   return seq;
 }
-// Stichzahl eines Durchlaufs je Build: 40, mit Zeitsegment 45.
-export const cycleLenFor = (shop) => C.TRICKS_PER_CYCLE + (shop && shop.timeSegmentIndex != null ? SEGMENT_SIZE : 0);
+// Stichzahl eines Durchlaufs je Build: 40, mit Zeitsegment +Wiederholungstiefe (Stufe I=+1 … III/IV=+5).
+export const cycleLenFor = (shop) => C.TRICKS_PER_CYCLE + (shop && shop.timeSegmentIndex != null ? timeSegmentDepth(shop.timeSegmentTier) : 0);
 
 // Preis einer Stufe (Spec §5.5) — nur vier feste Preise.
 export const priceOf = (tier) => C.SHOP_PRICE[tier] ?? 0;
@@ -243,10 +102,15 @@ export const SEGMENT_BOUNDARIES = Array.from({ length: C.TRICKS_PER_CYCLE / SEGM
 // aufgelöste Ziel-Deskriptor (Position/Segment/Farbpaar/Grenze/Formationstyp/Kategorie/Karten). Pur.
 export const purchaseLogEntry = (def, price, cycle, target = null) =>
   ({ itemId: def.id, category: def.category, tier: def.tier, price, cycle, target });
+// #164: Kauf-Log-Eintrag einer Shop-Familie — `tier` ist die numerische Zielstufe (1–4), `family` markiert ihn
+// für die familienbewusste Anzeige (ChronikOverview). itemId = familyId (Name-Auflösung über SHOP_FAMILY_DEFS).
+export const familyPurchaseLogEntry = (familyId, category, tier, price, cycle, target = null) =>
+  ({ itemId: familyId, category, tier, price, cycle, target, family: true });
 
 export function initialShop() {
   return {
     coins: C.STARTING_COINS,        // §3: globaler Run-State, kein Cap, nie negativ
+    familyTiers: {},                // #164: Rang je Shop-Familie { [familyId]: 1|2|3|4 } (Angebotsfilter; getrennt von den Perk-Familien)
     purchaseLog: [],                // #127: run-langes Kauf-Protokoll (append-only, reine Anzeige)
     offers: null,                   // aktuelles Shop-Angebot (Array von Angebots-Instanzen) oder null außerhalb des Shops
     purchasedOfferIds: [],          // in DIESEM Shop gekaufte Angebots-Instanzen (offerId)
@@ -254,19 +118,13 @@ export function initialShop() {
     boughtNonRepeatableIds: [],     // §15: gekaufte nicht-wiederholbare Items (nie wieder angeboten)
     reservedItem: null,             // P4: reserviertes Item fürs nächste Angebot
     perkRerolls: 0, skillRerolls: 0, // P1/P2: gespeicherte Neuwürfe
-    fateControl: false,             // P-L1: je Perk-/Skill-Auswahl ein kostenloser Neuwurf
+    fateControl: false,             // Schicksalskontrolle IV: je Perk-/Skill-Auswahl ein kostenloser Neuwurf
+    perkFreeReroll: false, skillFreeReroll: false, // #164: typ-spezifischer Gratis-Neuwurf (Perk-/Skill-Neuwurf IV, Schicksalskontrolle III)
     perkLegendaryBonus: 0, skillLegendaryBonus: 0, // P5/P6: additive Legendär-Chance (Cap in S5)
-    permanentEffects: {             // §9 F-Items: permanente Regeländerungen der Formationserkennung
-      descendingStraights: false,       // F1: Treppen auch fallend
-      switchMinDifference: 4,           // F2: Wechsel-Mindestdifferenz (→ 3)
-      repetitionSecondFactorBonus: 0,   // F3: 2. Wiederholungskarte +0,10
-      linkedColors: [],                 // F4: zwei Farben zählen als eine (Farbblock)
-      openSegmentBoundaries: [],        // F5: geöffnete Segmentgrenzen
-      formationAfterglow: false,        // F6: Nachhall
-      formationCoreType: null,          // F-L1: Formationskern-Typ
-    },
+    // (permanentEffects — Shop-Formations-Regeländerungen — entfielen #179: Formationen sind Perk-Kat.-E-Familien.)
     anchors: [],                    // S3: Positionsanker (an Position, nicht card.id)
-    timeSegmentIndex: null,         // A-L1: gewähltes Zeitsegment
+    timeSegmentIndex: null,         // Zeitsegment (#164): gewähltes Segment
+    timeSegmentTier: null,          // Zeitsegment-Stufe (Wiederholungstiefe/-tiefe der Effekte)
   };
 }
 
@@ -300,30 +158,66 @@ function drawDistinct(pool, n, rng) {
   return out;
 }
 
+/* ---- Shop-Familien (Shop-Spec §4.1, #164) — Angebots-/Reroll-Ziehung analog zu den flachen Items, aber als
+        {familyId, famTier}-Angebote (Preis/Farbe richten sich nach der Zielstufe). Eine Kategorie ist
+        „familiengetrieben", sobald `familyDefs` Familien mit dieser Kategorie enthält (Default {} → rein flach
+        wie bisher, damit bestehende Aufrufe/Fixtures unverändert bleiben). ---- */
+const familyCatsOf = (familyDefs) => new Set(Object.values(familyDefs || {}).map((f) => f.cat));
+// Anbietbare Stufen einer Shop-Familie beim Rang `cur`: alle echt darüber (§4.1). Ist die Familie abgeschlossen
+// (IV erreicht) UND wiederholbar (nur Karten-Familien, Nutzer-Entscheid #164), bleibt IV im Pool (Nachkauf).
+function offerableFamilyTiers(fam, cur) {
+  const base = TIERS.filter((t) => t > (cur || 0));
+  return base.length ? base : (fam && fam.repeatable ? [4] : []);
+}
+// `n` verschiedene Familien einer Kategorie ziehen (gewichtet nach TIER_WEIGHTS[tier]; eine Familie höchstens
+// einmal je Angebot, §2.1). `exclude` = bereits präsente Familien-IDs (Reroll). `mk(familyId, tier)` baut das Angebot.
+function drawFamilyOffers(cat, familyDefs, familyTiers, rng, n, mk, exclude) {
+  const skip = exclude || new Set();
+  let pool = [];
+  for (const fam of Object.values(familyDefs || {})) {
+    if (fam.cat !== cat || skip.has(fam.id)) continue;
+    for (const t of offerableFamilyTiers(fam, (familyTiers || {})[fam.id] || 0))
+      pool.push({ id: fam.id, tier: t, weight: TIER_WEIGHTS[t] || 0 });
+  }
+  const out = [];
+  while (out.length < n && pool.length) {
+    const total = pool.reduce((a, x) => a + x.weight, 0);
+    if (total <= 0) break;
+    let r = rng() * total, i = 0;
+    while (i < pool.length - 1 && r >= pool[i].weight) { r -= pool[i].weight; i += 1; }
+    const pick = pool[i];
+    out.push(mk(pick.id, pick.tier));
+    pool = pool.filter((x) => x.id !== pick.id); // eine Familie höchstens einmal je Angebot
+  }
+  return out;
+}
+
 /* Ein Shop-Angebot ziehen (Spec §5): pro Kategorie SHOP_ITEMS_PER_CATEGORY normale Items, dann
    Cheap-Garantie (§5.6) und höchstens EINE legendäre Ersetzung (§5.7). Deterministisch über den
    injizierten rng. Leere/zu kleine Pools → entsprechend weniger Angebote. `itemDefs` wird injiziert
    (Engine: SHOP_ITEM_DEFS; Tests: Fixtures). Rückgabe: Array von Angebots-Instanzen mit stabiler offerId. */
-export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = []) {
+export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = [], familyDefs = {}) {
+  const famCats = familyCatsOf(familyDefs);
   const all = Object.values(itemDefs || {});
-  if (all.length === 0) return [];
   const avail = all.filter((d) => isItemAvailable(d, shop, perks));
   const byCat = {};
-  for (const d of avail) (byCat[d.category] = byCat[d.category] || []).push(d);
+  for (const d of avail) if (!famCats.has(d.category)) (byCat[d.category] = byCat[d.category] || []).push(d); // familiengetriebene Kategorien nicht aus flachen Items
 
   let counter = 0;
   const mk = (d) => ({ offerId: `o${counter++}`, itemId: d.id, category: d.category, tier: d.tier, price: priceOf(d.tier), legendary: !!d.legendary });
+  const mkFam = (cat) => (familyId, famTier) => ({ offerId: `o${counter++}`, category: cat, familyId, famTier, price: priceOfTier(famTier), family: true, legendary: false });
 
   const offers = [];
   for (const cat of C.SHOP_CATEGORIES) {
-    const normals = (byCat[cat] || []).filter((d) => !d.legendary);
-    for (const d of drawDistinct(normals, C.SHOP_ITEMS_PER_CATEGORY, rng)) offers.push(mk(d));
+    if (famCats.has(cat)) offers.push(...drawFamilyOffers(cat, familyDefs, shop.familyTiers, rng, C.SHOP_ITEMS_PER_CATEGORY, mkFam(cat)));
+    else { const normals = (byCat[cat] || []).filter((d) => !d.legendary); for (const d of drawDistinct(normals, C.SHOP_ITEMS_PER_CATEGORY, rng)) offers.push(mk(d)); }
   }
   if (offers.length === 0) return offers;
 
   // Legendäre Ersetzung (§5.7) ZUERST (max 1): einmal je Shop würfeln; bei Erfolg eine Kategorie mit
   // verfügbarem Legendär wählen und eines ihrer Angebote ersetzen. Vor der Cheap-Garantie, damit diese
   // danach nicht wieder überschrieben werden kann (sonst könnte ein Shop ohne günstiges Item enden).
+  // Familien-Kategorien haben keine Legendäre (Legendäre sind dort in Stufe IV aufgegangen) → nur flache Kategorien.
   if (rng() < C.SHOP_LEGENDARY_CHANCE) {
     const legByCat = {};
     for (const d of avail) if (d.legendary) (legByCat[d.category] = legByCat[d.category] || []).push(d);
@@ -336,14 +230,25 @@ export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = [
     }
   }
 
-  // Cheap-Garantie (§5.6) ZULETZT: fehlt ein günstiges Item, ein NICHT-legendäres Angebot deterministisch
-  // durch ein zufällig gezogenes günstiges ersetzen (das gesetzte Legendär bleibt so erhalten).
-  if (!offers.some((o) => o.tier === "cheap")) {
-    const cheapPool = avail.filter((d) => !d.legendary && d.tier === "cheap");
-    const slots = offers.map((o, i) => (o.legendary ? -1 : i)).filter((i) => i >= 0);
-    if (cheapPool.length && slots.length) {
-      const repl = cheapPool[Math.floor(rng() * cheapPool.length)];
-      offers[slots[Math.floor(rng() * slots.length)]] = mk(repl);
+  // Cheap-Garantie (§5.6) ZULETZT: fehlt ein günstiges Angebot (Preis 8 — flache Stufe „cheap" ODER Familien-Stufe I),
+  // eines deterministisch erzwingen. #195: Alle Kategorien sind familiengetrieben (SHOP_ITEM_DEFS leer) → der alte
+  // cheapPool aus flachen Items war IMMER leer und die Garantie feuerte nie (das günstigste Angebot konnte heimlich
+  // 12 sein → mit 8–11 Münzen nichts kaufbar). Jetzt familien-bewusst: das erste NICHT gekaufte, NICHT legendäre
+  // Angebot einer noch ungekauften Familie (Rang 0 → Stufe I echt offerierbar) auf Stufe I (Preis 8) herunterstufen;
+  // sonst der flache cheap-Pool (Fallback, falls je wieder flache Items existieren).
+  if (!offers.some((o) => o.price === C.SHOP_PRICE.cheap)) {
+    const held = shop.familyTiers || {};
+    const purchased = new Set(shop.purchasedOfferIds || []);
+    const famSlot = offers.findIndex((o) => o.family && !o.legendary && !purchased.has(o.offerId) && (held[o.familyId] || 0) === 0);
+    if (famSlot >= 0) {
+      offers[famSlot] = { ...offers[famSlot], famTier: 1, price: priceOfTier(1) };
+    } else {
+      const cheapPool = avail.filter((d) => !d.legendary && d.tier === "cheap" && !famCats.has(d.category));
+      const slots = offers.map((o, i) => (o.legendary || o.family ? -1 : i)).filter((i) => i >= 0);
+      if (cheapPool.length && slots.length) {
+        const repl = cheapPool[Math.floor(rng() * cheapPool.length)];
+        offers[slots[Math.floor(rng() * slots.length)]] = mk(repl);
+      }
     }
   }
   return offers;
@@ -355,21 +260,28 @@ export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = [
    Die restlichen Slots der Kategorie werden mit neuen gültigen Items aufgefüllt. Legendär-Regeln (§5.7): höchstens
    EIN Legendär im Shop — liegt bereits eines woanders, erscheint hier keins; die Cheap-Garantie wird NICHT erneut
    global erzwungen. Deterministisch über den injizierten rng. */
-export function rerollCategory(shop = {}, category, itemDefs = {}, rng = Math.random, perks = [], excludeItemId = null) {
+export function rerollCategory(shop = {}, category, itemDefs = {}, rng = Math.random, perks = [], excludeItemId = null, familyDefs = {}) {
   const offers = shop.offers || [];
   const purchased = new Set(shop.purchasedOfferIds || []);
   const kept = offers.filter((o) => o.category !== category || purchased.has(o.offerId) || o.itemId === excludeItemId);
   const keptInCat = kept.filter((o) => o.category === category).length;
   const need = C.SHOP_ITEMS_PER_CATEGORY - keptInCat;
   if (need <= 0) return shop;                                // in dieser Kategorie ist nichts zu würfeln
+  const used = new Set(offers.map((o) => o.offerId));        // neue offerIds kollidieren nicht mit bestehenden
+  let n = 0;
+  const nextId = () => { let id; do { id = `o${n++}`; } while (used.has(id)); used.add(id); return id; };
+  // Familiengetriebene Kategorie (#164): Familien-Angebote neu ziehen, bereits präsente Familien ausschließen.
+  if (familyCatsOf(familyDefs).has(category)) {
+    const present = new Set(kept.filter((o) => o.category === category && o.family).map((o) => o.familyId));
+    const drawn = drawFamilyOffers(category, familyDefs, shop.familyTiers, rng, need,
+      (familyId, famTier) => ({ offerId: nextId(), category, familyId, famTier, price: priceOfTier(famTier), family: true, legendary: false }), present);
+    return { ...shop, offers: [...kept, ...drawn] };
+  }
   const presentIds = new Set(kept.map((o) => o.itemId));
   const legElsewhere = kept.some((o) => o.legendary);        // ein Legendär bleibt woanders → hier keins (§5.7)
   const pool = Object.values(itemDefs).filter((d) => d.category === category && d.id !== excludeItemId
     && !presentIds.has(d.id) && isItemAvailable(d, shop, perks));
   const normals = pool.filter((d) => !d.legendary);
-  const used = new Set(offers.map((o) => o.offerId));        // neue offerIds kollidieren nicht mit bestehenden
-  let n = 0;
-  const nextId = () => { let id; do { id = `o${n++}`; } while (used.has(id)); used.add(id); return id; };
   const mk = (d) => ({ offerId: nextId(), itemId: d.id, category: d.category, tier: d.tier, price: priceOf(d.tier), legendary: !!d.legendary });
   const drawn = drawDistinct(normals, need, rng).map(mk);
   // Legendär-Ersetzung (§5.7) nur wenn erlaubt: einmal würfeln, einen neu gezogenen Normal-Slot ersetzen.
@@ -384,15 +296,25 @@ export function rerollCategory(shop = {}, category, itemDefs = {}, rng = Math.ra
    als zusätzliches Angebot in seiner Kategorie an (behält Preis & Identität) und LÖSCHT die Reservierung — sie
    verfällt mit diesem Shop, unabhängig davon, ob gekauft wird. Nur anhängen, wenn das Item generell noch verfügbar
    ist (z. B. nicht inzwischen als Legendär/nicht-wiederholbar vergriffen). */
-export function withReservedOffer(shop = {}, itemDefs = {}, perks = []) {
+export function withReservedOffer(shop = {}, itemDefs = {}, perks = [], familyDefs = {}) {
   const reserved = shop.reservedItem;
   if (!reserved) return shop;
   const offers = shop.offers || [];
   const used = new Set(offers.map((o) => o.offerId));
   let id = "oRes", k = 0; while (used.has(id)) id = `oRes${k++}`;
-  const def = itemDefs[reserved.itemId];
-  const extra = def && isItemAvailable(def, shop, perks)
-    ? [{ offerId: id, itemId: reserved.itemId, category: reserved.category, tier: reserved.tier, price: reserved.price, legendary: !!reserved.legendary, reserved: true }]
-    : [];
-  return { ...shop, offers: [...offers, ...extra], reservedItem: null };
+  let extra = [];
+  if (reserved.family) { // #164: reservierte Shop-Familie — nur anhängen, solange die Zielstufe noch anbietbar ist.
+    const fam = familyDefs[reserved.familyId];
+    if (fam && offerableFamilyTiers(fam, (shop.familyTiers || {})[reserved.familyId] || 0).includes(reserved.famTier))
+      extra = [{ offerId: id, category: reserved.category, familyId: reserved.familyId, famTier: reserved.famTier, price: reserved.price, family: true, legendary: false, reserved: true }];
+  } else {
+    const def = itemDefs[reserved.itemId];
+    if (def && isItemAvailable(def, shop, perks))
+      extra = [{ offerId: id, itemId: reserved.itemId, category: reserved.category, tier: reserved.tier, price: reserved.price, legendary: !!reserved.legendary, reserved: true }];
+  }
+  // #164 Reservierung: `shopsLeft` = für wie viele weitere Shops die Reservierung bestehen bleibt (Stufe I–IV = 1–4).
+  // Nach dem Anhängen herunterzählen; bei >1 bleibt sie für den nächsten Shop erhalten, sonst verfällt sie.
+  const left = (reserved.shopsLeft || 1) - 1;
+  const nextReserved = extra.length && left > 0 ? { ...reserved, shopsLeft: left } : null;
+  return { ...shop, offers: [...offers, ...extra], reservedItem: nextReserved };
 }

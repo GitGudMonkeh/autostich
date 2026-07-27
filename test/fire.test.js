@@ -6,6 +6,8 @@ import {
   initHeat, heatMaxFor, heatConsumerOf, heatConsumerCount, activeFireCount, fireFlag,
   heatGainFor, heatLossFor, fireScoreFor,
 } from "../src/game/skills.js";
+import { SCORE_PER_WIN } from "../src/game/constants.js";
+const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Sieg-Basis (Pacing-Pass 100→400)
 
 // Feuer-Skill-IDs (Flags siehe skills.js): F1 Glut · F2 Brennstoff · F3 Brandbeschleuniger · F4 Hitzeschild
 // F5 Nachglut · F6 Glühende Klinge · F7 Verbrennung · F8 Feuerwalze · F9 Flächenbrand · F10 Schmelzpunkt
@@ -80,7 +82,7 @@ describe("Feuer — Engine-Integration (#93 F1)", () => {
     const s = resolveTrick(scen(12, 0, { skills: [F4], heat: heat() }), rng);
     expect(s.heat.value).toBe(6);                        // (min(12,8)−2)×1 — Feuer-Flat-Score bleibt unverändert
     expect(s.lastTrick.breakdown.flats).toBe(250);        // Feuer-Flat 10×25
-    expect(s.lastTrick.gained).toBeCloseTo(350 * 1.02);   // (100 + 250) × streakBaseMult(1)
+    expect(s.lastTrick.gained).toBeCloseTo((B + 250) * 1.02);   // (Basis + 250) × streakBaseMult(1)
   });
   it("Niederlage: Hitzeverlust = min(Rückstand,10)", () => {
     expect(resolveTrick(scen(0, 12, { skills: [F7], heat: heat({ value: 50 }) }), rng).heat.value).toBe(40);
@@ -98,9 +100,9 @@ describe("Feuer — Engine-Integration (#93 F1)", () => {
     expect(s.heat.value).toBe(0);                         // 100 (+6 Gewinn, gedeckelt 100) − 100 verbraucht
     expect(s.lastTrick.breakdown.flats).toBe(1250);       // Feuer-Flat 250 + Flächenbrand 1000
   });
-  it("Glühende Klinge: ab 50 % Hitze +2 Kartenwert (kippt eine knappe Niederlage zum Sieg)", () => {
-    const s = resolveTrick(scen(12, 13, { skills: [F6], heat: heat({ value: 50 }) }), rng);
-    expect(s.lastTrick.pValue).toBe(14);
+  it("Glühende Klinge: ab 50 % Hitze +1 Kartenwert (#165 §5.3; kippt einen knappen Gleichstand zum Sieg)", () => {
+    const s = resolveTrick(scen(12, 12, { skills: [F6], heat: heat({ value: 50 }) }), rng);
+    expect(s.lastTrick.pValue).toBe(13);
     expect(s.lastTrick.result).toBe("win");
   });
   it("Glühende Klinge: unter 50 % Hitze kein Bonus", () => {

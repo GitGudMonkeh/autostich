@@ -1,14 +1,17 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
-import { PERK_DEFS, buildOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
-import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards,
+import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
+import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus } from "./families.js";
+import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
   hasIonize, hasProtect, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasConductivity, hasEndlessStorm, hasDischarge, // Blitz-Rework (#93 F2)
+  hasBlitzcatcher, hasVoltageArc, // #165 Skills (§5.2): Blitzfänger / Spannungsbogen
   fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer (#93 F1)
-  hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost } from "./skills.js"; // Eis (#93 F3)
+  hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost, hasIceBloom } from "./skills.js"; // Eis (#93 F3 / #165 Eisblüte)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
-import { computeFormations, positionHasFormation, SEGMENT_SIZE } from "./formations.js";
-import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, SHOP_ITEM_DEFS, anchorTypeAt, playSequence } from "./shop.js";
+import { computeFormations, positionHasFormation, summarizeFormations, baseFormationCount, SEGMENT_SIZE } from "./formations.js";
+import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, perkFateReroll, skillFateReroll, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
+import { SHOP_FAMILY_DEFS, timeSegmentDepth, timeSegmentReduced } from "./shopFamilies.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -53,27 +56,59 @@ export function resolveTrick(state, rng = Math.random) {
     initiative, lastResult, perks, offer, tieArmed, sinceWin = 0,
     lossStreak = 0, lastWinValue = null, // #71 Rares: Revanche / Präzision
     critFollowArmed = false, weaknessArmed = false, // #71 Crit-Historie: Crit-Folge (D14) / Schwachstellenanalyse (D16)
+    weaknessBig = false, // Rarität #167: D_WEAKNESS IV — die rüstende Niederlage hatte großen Abstand (→ +900 statt +600)
+    interplayStored = 0, // Rarität #167: D_INTERPLAY IV — in Niederlagen gebankter Score, beim nächsten Sieg als Flat ausgezahlt
     misfireScore = 0, // V2 §22.6 D15: Score-Ladung, +30 je Sieg ohne Crit (max 300), Auszahlung bei Crit
     winSuit = null, winSuitStreak = 0, // #71 Farbserie: gleicher-Farbe-Siegesserie
-    recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich
+    recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich (für secondLastResult, C_GUARD IV)
+    segmentWins = 0, // #189 Volles Haus: Siege im AKTUELLEN Segment vor diesem Stich (segment-genau, ersetzt das rollende Fenster)
     statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0, statOffer = null, // Stat-System (V2 §22.3)
     formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, l5Used = [], l8Wins = {}, chainArmed = false, pos20Bonus = 0, // Legendaries (V2 §22.6 L): L4 Wert-Gewinn / L5 Jackpot-Verbrauch / L8 Erfolge / L10 Kette / L11 Wiederholung
     crits, critBonusScore, bestTrickScore,
+    maxFormations = 0, formationScore = 0, // #161 FB-2: Run-Rückblick — Peak gleichzeitig aktiver Formationen + Score-Anteil aus Formationen
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
     iceTemp = {}, frostbitePending = [], frostbiteActive = [], // Eis (#93 F3): temp. Wertboni je card.id / Frostbiss-Markierungen
     shop = null, economyStatLevel = 0, // Shop-System (Shop-Spec §3): Münzstand + Einkommen-Level
+    familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
   } = state;
+
+  // Rarität-Umbau #167 (Schritt 2): engine-gekoppelte D-Stufen liefern ihre Parameter über die GEHALTENE
+  // Familien-Stufe (familyTierParam). Ohne Familie greifen die alten flachen D15/D16/D17-Konstanten →
+  // Bestandsverhalten unverändert (der Accumulator lädt weiterhin, wird aber nur von einem Hook gelesen).
+  const misfireStep   = familyTierParam(familyTiers, "D_MISFIRE", "misfireStep")   ?? 30;   // D15/D_MISFIRE: Ladung je Sieg ohne Crit
+  const misfireCap    = familyTierParam(familyTiers, "D_MISFIRE", "misfireCap")    ?? 300;
+  const misfireRetain = familyTierParam(familyTiers, "D_MISFIRE", "misfireRetain") ?? 0;     // IV: 25 % der Ladung bleiben nach einem Crit
+  const weaknessDeficit    = familyTierParam(familyTiers, "D_WEAKNESS", "weaknessDeficit")    ?? 5; // D16/D_WEAKNESS: Abstand-Schwelle zum Rüsten
+  const weaknessBigDeficit = familyTierParam(familyTiers, "D_WEAKNESS", "weaknessBigDeficit");      // nur IV gesetzt → großer Abstand
+  const suitHalveOnSwitch  = !!familyTierParam(familyTiers, "D_SUIT_STREAK", "suitHalveOnSwitch");  // IV: Farbwechsel halbiert statt Reset
+  const streakGainOnCrit   = familyTierParam(familyTiers, "D_CRIT_MOMENTUM", "streakGainOnCrit") || 0; // IV: Crit erhöht die Serie um 1
+  const interplayStoreOnLoss = familyTierParam(familyTiers, "D_INTERPLAY", "storeOnLoss") || 0;     // IV: Niederlage bankt Score
+  const critFollowCritBonus  = familyTierParam(familyTiers, "D_CRIT_FOLLOW", "critFollowCritBonus") || 0; // IV: Crit-Folgesieg, der selbst Crit ist
+  // #189 Fund B: D_PRECISION-Kette. precisionTol = Toleranz der gehaltenen Stufe (I/II 0, III/IV 1; undefined = nicht
+  // gehalten). Nur IV (chain) kettet — I–III verbrauchen nach einer Auszahlung die Referenz (siehe Sieg-Zweig unten).
+  const precisionTol    = familyTierParam(familyTiers, "D_PRECISION", "precisionTol");
+  const precisionChains = !!familyTierParam(familyTiers, "D_PRECISION", "chain");
+  // Kategorie B (Stich): B5 Initiative armiert den Gleichstands-Sieg über tieArmLosses; B8 III armiert die
+  // successorQueue der nächsten Karten (revengeTwoCard {losses, bonus, count}). Beide werden im Niederlage-Zweig gelesen.
+  const tieArmLosses  = familyTierParam(familyTiers, "B_INITIATIVE", "tieArmLosses");
+  const revengeTwoCard = familyTierParam(familyTiers, "B_REVENGE", "revengeTwoCard");
 
   // Zeitsegment (Shop §8 A-L1): `pos` ist der Stich-Index dieses Durchlaufs, `actualPos` die zugehörige
   // Deckposition. Ohne Zeitsegment sind beide gleich; mit Zeitsegment wird das gewählte Segment direkt nach
   // seinem ersten Spielen wiederholt (45 Stiche) — positionsgebundene Effekte nutzen actualPos („zählt erneut").
   const timeSeg = shop && shop.timeSegmentIndex != null ? shop.timeSegmentIndex : null;
-  const seq = playSequence(timeSeg);
+  // Zeitsegment-Stufe (#164): Wiederholungstiefe + Effekt-Tiefe. Ohne Stufe (Altzustand) = volle Wiederholung (Default).
+  const timeSegTier = timeSeg != null ? (shop.timeSegmentTier || 4) : 0;
+  const timeDepth = timeSeg != null ? timeSegmentDepth(timeSegTier) : 0;
+  const seq = playSequence(timeSeg, C.TRICKS_PER_CYCLE, SEGMENT_SIZE, timeDepth);
   const cycleLen = seq.length;
   const actualPos = seq[pos];
-  const isRepeat = timeSeg != null && pos >= timeSeg * SEGMENT_SIZE + SEGMENT_SIZE && pos < timeSeg * SEGMENT_SIZE + 2 * SEGMENT_SIZE;
+  const segEnd = timeSeg != null ? timeSeg * SEGMENT_SIZE + SEGMENT_SIZE : 0;
+  const isRepeat = timeSeg != null && pos >= segEnd && pos < segEnd + timeDepth;
+  // §10-Näherung Stufe III: die Wiederholung würfelt keine Crits (nur Score/Serie zählen). IV = vollständig.
+  const reducedRepeat = isRepeat && timeSegmentReduced(timeSegTier);
   const pCard = deck[playerOrder[actualPos]];
   const oCard = oppDeck[oppOrder[actualPos]];
 
@@ -81,35 +116,49 @@ export function resolveTrick(state, rng = Math.random) {
   // berechnet und für den ganzen Durchlauf stabil gehalten. Greifen bei Sieg der jeweiligen Karte.
   let formations = state.formations || [];
   const anchors = (shop && shop.anchors) || []; // Shop-Positionsanker (§8) — an der Deckposition
-  const permEffects = (shop && shop.permanentEffects) || {}; // Shop-Formationsitems (§9) — permanente Regeländerungen
-  if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, permEffects);
+  if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers);
+  // #161 FB-2: Peak gleichzeitig aktiver Formationen über den Run — zu Durchlaufbeginn, sobald das Layout feststeht.
+  if (pos === 0) maxFormations = Math.max(maxFormations || 0, summarizeFormations(formations).count);
   const posForm = formations[actualPos] || { mult: 1, formations: [] };
   const formationMult = posForm.mult || 1;
   const hasFormation = positionHasFormation(posForm);
-  // Anker-Typ auf DIESER Position (max 1 je Position) → A1 Kraft / A2 Punkte / A3 Krit / A4 Serie.
-  const anchorType = anchorTypeAt(anchors, actualPos);
+  // Shop-Anker-Familie auf DIESER Position (#164, max 1 je Position) → Kraft/Punkte/Krit/Serie. Stärke = Stufe.
+  const anchor = anchorAt(anchors, actualPos);
+  const anchorType = anchor ? anchor.type : null;
+  const aParam = (key) => (anchor ? anchor[key] : undefined); // Stufen-Parameter liegen auf dem Anker-Eintrag (#164)
   // Dauerwert des zuletzt gespielten Vorgängers (B10 Überzahl); im ersten Stich keiner. Bei Zeitsegment-Wiederholung
   // ist der Vorgänger die zuletzt gespielte Karte (seq[pos-1]), nicht actualPos-1.
   const predValue = pos > 0 ? deck[playerOrder[seq[pos - 1]]].value : null;
 
   trickNo += 1;
-  // #71 Volles Haus: Siege in den (bis zu 4) Stichen VOR diesem — inkl. aktuellem Sieg = Fenster 5.
-  const recentWinCount = recentResults.filter((r) => r === "win").length;
+  // #189 Volles Haus: SEGMENT-genaue Sieg-Zählung. Beim ersten Stich eines Segments (actualPos % SEGMENT_SIZE === 0)
+  // zurücksetzen; recentWinCount = Siege DIESES Segments VOR diesem Stich. Ersetzt das alte rollende 4er-Fenster
+  // (recentResults), das Segment-/Durchlaufgrenzen ignorierte → „X Siege in einem Segment" ist jetzt exakt.
+  if (actualPos % SEGMENT_SIZE === 0) segmentWins = 0;
+  const recentWinCount = segmentWins;
   // Effektive Serie für Serien-Effekte (Stand VOR dem Stich).
   let serieStreak = winStreak;
   // Kartenrollen (V2 §22.6 C): Rolle der aktuellen Karte, Triumph-Armierung, Segment-Tiefste.
   const isRole = (perkId) => (roles[perkId] || []).includes(pCard.id);
   const triumphActive = triumphArmed.includes(pCard.id);
-  let isSegmentLow = false, isSegmentHigh = false;
-  if (ownsFlag(perks, "segmentLow") || ownsFlag(perks, "segmentHigh")) { // C7 Tiefste / L7 Höchste im Segment (erste bei Gleichstand)
+  let isSegmentLow = false, isSegmentHigh = false, segmentLowRank = -1, segmentIndex = -1;
+  // Gate: eine gehaltene segmentLow-Familie (C_SURVIVOR; flache C7 ist zu Familie migriert #167). segmentLowRank/
+  // segmentIndex liefern den Rang der Karte im Segment (0=tiefste, 1=zweittiefste); isSegmentLow/High bleiben für ggf. spätere Nutzung.
+  if (activeFamilyEntries(familyTiers).some((e) => e.def.segmentLow)) {
     const segStart = Math.floor(actualPos / SEGMENT_SIZE) * SEGMENT_SIZE;
+    segmentIndex = Math.floor(actualPos / SEGMENT_SIZE);
     let minVal = Infinity, minPos = -1, maxVal = -Infinity, maxPos = -1;
+    const segPositions = [];
     for (let k = segStart; k < segStart + SEGMENT_SIZE && k < playerOrder.length; k++) {
       const v = deck[playerOrder[k]].value;
+      segPositions.push(k);
       if (v < minVal) { minVal = v; minPos = k; }
       if (v > maxVal) { maxVal = v; maxPos = k; }
     }
     isSegmentLow = actualPos === minPos; isSegmentHigh = actualPos === maxPos;
+    // Rang nach aktuellem Wert aufsteigend, stabil nach Position bei Gleichwert (Rang 0 = minPos → deckungsgleich mit isSegmentLow).
+    const sorted = segPositions.slice().sort((a, b) => deck[playerOrder[a]].value - deck[playerOrder[b]].value || a - b);
+    segmentLowRank = sorted.indexOf(actualPos);
   }
   // L10 Kettenreaktion: der direkte Nachfolger eines Crits ist garantiert kritisch (falls er gewinnt).
   const forceCrit = chainArmed; chainArmed = false;
@@ -128,6 +177,9 @@ export function resolveTrick(state, rng = Math.random) {
     posForm, // V2 §22.6: Formation der gespielten Position (B6 Wiederholung / B9 Treppe)
     predValue, // V2 §22.6: Dauerwert des direkten Vorgängers (B10 Überzahl)
     isRole, triumphActive, isSegmentLow, isSegmentHigh, // V2 §22.6 C/L: Kartenrollen (C1/C2/C3/C6/C7/L7)
+    // Rarität #167 Kat. C: Ergebnis des ZWEITEN Vorgängers (C_GUARD IV), Segment-Rang/-Index (C_SURVIVOR).
+    secondLastResult: recentResults.length >= 2 ? recentResults[recentResults.length - 2] : null,
+    segmentLowRank, segmentIndex,
   };
   // Nachfolger-Bonus (C4 Staffelläufer / C5 Anführer): der Kopf der Queue gilt für DIESE Karte, dann verbraucht.
   const relayBonus = successorQueue[0] || 0;
@@ -147,14 +199,22 @@ export function resolveTrick(state, rng = Math.random) {
       fireValueBonus += C.MELT_VALUE;
       if (fireFlag(skills, "phoenix")) heat = { ...heat, phoenixArmed: true };
     }
-    // Glühende Klinge: ab 50 % Hitze alle Karten +2. Feuerwalze: aktueller Stapel (von Vorsiegen).
+    // Glühende Klinge: ab 50 % Hitze alle Karten +1 (#165). Überhitzt: ab 80 % zusätzlich +2 (zusammen +3). Feuerwalze: aktueller Stapel.
     if (fireFlag(skills, "glowingBlade") && heat.value >= C.GLOWING_THRESHOLD) fireValueBonus += C.GLOWING_VALUE;
+    if (fireFlag(skills, "overheated")   && heat.value >= C.OVERHEAT_THRESHOLD) fireValueBonus += C.OVERHEAT_VALUE;
     if (fireFlag(skills, "fireRoll")) fireValueBonus += Math.min(heat.fireRoll || 0, C.FIREROLL_MAX);
   }
   // ---- Eis (#93 F3): temp. Wertbonus (Kältereserve/Kaltfront/Frostspur, an card.id) + Permafrost +2 (Dauerwert eingefroren).
   const iceValueBonus = (iceTemp[pCard.id] || 0) + (hasPermafrost(skills) && pCard.frozen ? C.PERMAFROST_VALUE : 0);
-  const anchorPowerBonus = anchorType === "power" ? C.ANCHOR_POWER_VALUE : 0; // Kraftanker (§8 A1)
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + relayBonus + l11Bonus + fireValueBonus + iceValueBonus + anchorPowerBonus;
+  const anchorPowerBonus = anchorType === "power" ? (aParam("power") || 0) : 0; // Kraftanker (§4.2, Stärke = Stufe)
+  // E_QUICKSHOT IV (Rarität #167 Kat. E, Spec §3.2 E8 IV): jede Anker-Position (jede fünfte) erhält zusätzlich +2 Wert.
+  // Der Anker-FAKTOR selbst läuft über computeFormations; hier nur der Stufe-IV-Wertbonus (anchor.value auf Anker-Positionen).
+  const eqAnchor = familyTierParam(familyTiers, "E_QUICKSHOT", "anchor");
+  const eQuickshotValue = eqAnchor && eqAnchor.value && eqAnchor.at(actualPos) ? eqAnchor.value : 0;
+  // Familien-Wertboni (Kategorie B, Rarität #167) laufen ADDITIV neben den flachen Perk-cardBonus-Hooks —
+  // gleicher Kontext (inkl. pValueBase = Dauerwert der Karte), nur die aktive Familien-Stufe zählt.
+  const familyValueBonus = familySumHook(familyTiers, "cardBonus", { ...ctx, pValueBase: pCard.value });
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + l11Bonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue;
   // L11: den temporären Wertbonus dieser Karte an Position 20 für Position 40 merken.
   let newPos20Bonus = pos20Bonus;
   if (actualPos === 19) newPos20Bonus = pValue - pCard.value;
@@ -179,14 +239,20 @@ export function resolveTrick(state, rng = Math.random) {
 
   if (won) {
     winStreak += 1; wins += 1;
+    segmentWins += 1; // #189 Volles Haus: Sieg im aktuellen Segment (recentWinCount trug oben den Stand DAVOR)
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     serieStreak = winStreak; // effektive Serie NACH diesem Sieg
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
-    // #71 Farbserie: Länge der Serie gewonnener Stiche gleicher Farbe INKL. dieses Siegs.
-    const suitStreak = pCard.suit === winSuit ? winSuitStreak + 1 : 1;
-    const wctx = { winValue: pValue, margin: pValue - oValue, winStreak: serieStreak, wins, trickNo, posInCycle: pos,
+    // #71 Farbserie: Länge der Serie gewonnener Stiche gleicher Farbe INKL. dieses Siegs. D_SUIT_STREAK IV:
+    // ein Farbwechsel HALBIERT die laufende Länge (min 1) statt sie auf 1 zurückzusetzen (suitHalveOnSwitch).
+    const suitStreak = pCard.suit === winSuit ? winSuitStreak + 1
+                     : (suitHalveOnSwitch ? Math.max(1, Math.floor(winSuitStreak / 2)) : 1);
+    // #195: posInCycle = actualPos (Deckposition), NICHT pos (Stich-Index) — muss zum segmentWins-Reset oben
+    // (actualPos % SEGMENT_SIZE) passen. Sonst divergieren bei partieller Zeitsegment-Wiederholung Gate (D_FULL_HOUSE
+    // liest posInCycle % 5) und Zähler → Volles Haus zahlt am falschen Stich. Einziger scoreFlat-Leser: D_FULL_HOUSE.
+    const wctx = { winValue: pValue, margin: pValue - oValue, winStreak: serieStreak, wins, trickNo, posInCycle: actualPos,
                    lastWinValue, // #71: Präzision (Vergleich mit letztem Siegwert)
-                   critFollowArmed, weaknessArmed, // Crit-Historie: Stand VOR diesem Sieg (D14/D16)
+                   critFollowArmed, weaknessArmed, weaknessBig, // Crit-Historie: Stand VOR diesem Sieg (D14/D16/D_WEAKNESS IV)
                    suitStreak, recentWinCount, // Farbserie / Volles Haus
                    baseValue: pCard.value, // Basiswert der gespielten Karte
                    hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung (D15)
@@ -196,7 +262,8 @@ export function resolveTrick(state, rng = Math.random) {
     if (heat && heat.active) {
       const fmargin = pValue - oValue;
       heat = { ...heat, value: Math.min(heat.max, heat.value + heatGainFor(fmargin, skills, pCard.value)) };
-      fireFlat += fireScoreFor(fmargin, skills); // Feuer-Flat-Score (in die multiplizierte Basis)
+      const fireBaseFlat = fireScoreFor(fmargin, skills); // Feuer-Flat-Score dieses Stichs (Basis für Funkenflug)
+      fireFlat += fireBaseFlat; // in die multiplizierte Basis
       // Sonnenkern-Nachbrand (Schmelzpunkt): die vor dem Stich verbrauchte Hitze zahlt sich im Sieg als Flat aus.
       if (suncore && meltConsumed) fireFlat += C.SUNCORE_BURN_PER_HEAT * meltConsumed;
       // Flächenbrand: Sieg bei voller Hitze (≥100) → +1000 flach, verbraucht exakt 100; armiert Phönix.
@@ -208,6 +275,13 @@ export function resolveTrick(state, rng = Math.random) {
       }
       if (fireFlag(skills, "afterglow")) heat = { ...heat, afterglowArmed: true }; // Nachglut: nächste Niederlage 0 Verlust
       if (fireFlag(skills, "fireRoll")) heat = { ...heat, fireRoll: Math.min((heat.fireRoll || 0) + 1, C.FIREROLL_MAX) }; // Feuerwalze-Stapel
+      // #165 Funkenflug: gespeicherten Betrag auszahlen (jeder Sieg) ODER neu speichern (Sieg ≥8 Vorsprung, nur wenn leer).
+      // Der auszahlende Sieg erzeugt keinen neuen Speicher; maßgeblich ist ausschließlich der Feuer-Flat-Score.
+      if (fireFlag(skills, "sparkflight")) {
+        const stored = heat.sparkStore || 0;
+        if (stored > 0) { fireFlat += stored; heat = { ...heat, sparkStore: 0 }; }
+        else if (fmargin >= C.SPARKFLIGHT_MIN_MARGIN) heat = { ...heat, sparkStore: Math.floor(fireBaseFlat * C.SPARKFLIGHT_RATE) };
+      }
     }
     // ---- Eis (#93 F3): Stillstand-Flat + Frostbiss-Markierung (Sieg mit einer eingefrorenen Karte).
     let iceFlat = 0;
@@ -220,6 +294,15 @@ export function resolveTrick(state, rng = Math.random) {
         const pool = oppDeck.map((c) => c.id).filter((id) => !marked.has(id));
         for (let k = 0; k < C.FROSTBISS_COUNT && pool.length; k++) newFrostbitePending.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
       }
+      // #165 Eisblüte (§5.4): siegt die Frostkarte in ≥2 aktiven Nicht-Anker-Formationen → beide direkten Deck-Nachbarn
+      // +3 temp Wert fürs nächste Auftauchen (renew, kein Stapeln; die Siegkarte selbst erhält nichts; Ränder = nur ein Nachbar).
+      if (hasIceBloom(skills) && baseFormationCount(posForm) >= 2) {
+        for (const nb of [actualPos - 1, actualPos + 1]) {
+          if (nb < 0 || nb >= playerOrder.length) continue;
+          const nid = deck[playerOrder[nb]].id;
+          newIceTemp[nid] = Math.max(newIceTemp[nid] || 0, C.EISBLUETE_VALUE);
+        }
+      }
     }
     // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.
     // Der Crit-Wurf verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift).
@@ -227,12 +310,12 @@ export function resolveTrick(state, rng = Math.random) {
     // Crit-Chance-Stat (V2 §22.3) fließt additiv in die Roh-Chance (mit Perk-/Blitz-Basis); ungeklemmt (Überschusskrit).
     // Roh-Crit-Chance (ungeklemmt): Perk-/Blitz-Basis + Crit-Chance-Stat. D-Crit-Flats sehen rawCrit (critCtx).
     const rawCrit = critChanceRawFor(perks, wctx) + lightningCritRaw(lightning, skills) + statCritChance
-                    + (anchorType === "crit" ? C.ANCHOR_CRIT_CHANCE : 0); // Kritanker (§8 A3)
+                    + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
     const critCtx = { ...wctx, rawCrit };
     critMultiplier = critMultiplierFor(perks, critCtx, statCritMult) + lightningCritMult(skills); // Basis 1,5 + Crit-Mult-Stat + L6-Überschuss + Donnergott
-    isCrit = rollCrit(critChance, forceCrit, rng); // forceCrit = L10-Kettenreaktion (garantierter Nachfolger-Crit)
+    isCrit = rollCrit(critChance, forceCrit, rng) && !reducedRepeat; // forceCrit = L10; reducedRepeat = Zeitsegment III (§10: kein Crit in der Wiederholung)
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.
@@ -246,16 +329,23 @@ export function resolveTrick(state, rng = Math.random) {
     // Entladung (#93 F2): war der nächste Crit +500 armiert (aus einem früheren vollen Verbrauch)? Dieser Crit zahlt aus.
     const dischargeArmedBefore = !!(lightning && lightning.dischargeArmed);
     const dischargeFlat = (isCrit && dischargeArmedBefore) ? C.DISCHARGE_SCORE : 0;
-    const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx)
-                      + (isCrit ? sumHook(perks, "scoreFlatOnCrit", critCtx) + skillSum(skills, "scoreFlatOnCrit", critCtx) : 0)
+    // Familien-Score-Flats (Rarität-Umbau #167, Kat. D) laufen ADDITIV neben den flachen Perk-Flats: nur die
+    // gehaltene Familien-Stufe zählt (activeTierDefs) → kein Doppel-Trigger über Stufen (Spec §2.3/§9).
+    const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx) + familySumHook(familyTiers, "scoreFlat", wctx)
+                      + (isCrit ? sumHook(perks, "scoreFlatOnCrit", critCtx) + skillSum(skills, "scoreFlatOnCrit", critCtx)
+                                  + familySumHook(familyTiers, "scoreFlatOnCrit", critCtx)
+                                  + (critFollowArmed ? critFollowCritBonus : 0) // D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist
+                                  + (anchorType === "crit" ? (aParam("critScore") || 0) : 0) : 0) // Kritanker IV: Crit dort +250 Score
                       + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat + dischargeFlat + iceFlat
-                      + (anchorType === "score" ? C.ANCHOR_SCORE : 0); // Punkteanker (§8 A2)
+                      + (anchorType === "score" ? (aParam("score") || 0) : 0) // Punkteanker (§4.2, Stärke = Stufe)
+                      + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
+                      + interplayStored; // D_INTERPLAY IV: der in Niederlagen gebankte Score wird mit diesem Sieg als Flat ausgezahlt
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
     // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
     const flats = scoreBase - C.SCORE_PER_WIN;                                         // additive Boni (Perk-/Crit-Flats, Ion, Storm, L5-Jackpot)
     const streakMult = streakBaseMult(serieStreak) * statStreakFactor(statStreakMult, serieStreak); // Serie (#39 + Serien-Stat)
-    const perkMult = prodHook(perks, "scoreMult", wctx);                               // globale Perk-Multiplikatoren
+    const perkMult = prodHook(perks, "scoreMult", wctx) * familyProdHook(familyTiers, "scoreMult", wctx); // globale Perk-/Familien-Multiplikatoren
     // Formation (§22.7) in drei benannte Faktoren (§13): Basis-Formationen×Formations-Stat, dann die Shop-Meta-Faktoren
     // Nachhall (F6) und Formationskern (F-L1) je eigen. Produkt = formationMult × Stat (unverändert; Aufspaltung ist rein
     // für die Ergebnis-Aufschlüsselung — Multiplikation ist kommutativ).
@@ -268,6 +358,9 @@ export function resolveTrick(state, rng = Math.random) {
     critBonus = gained - scoreBeforeCrit;
     score += gained;
     breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, total: gained };
+    // #161 FB-2: additiver Score-Anteil der Formations-Faktoren (echte Formationen + Formations-Stat + Nachhall + Kern).
+    const formFactorTotal = formMult * afterglowMult * coreMult;
+    if (formFactorTotal > 1) formationScore += gained * (1 - 1 / formFactorTotal);
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz: Ladungsgewinn — bei Crit Basis +1 (aktiv) + Skill-Boni; bei Sieg OHNE Crit +1 via Statische Aufladung (#93 F2).
@@ -280,8 +373,10 @@ export function resolveTrick(state, rng = Math.random) {
         gainedCharge = 1 + skillSum(skills, "chargeOnCrit", wctx)
                          + (ionizedCard ? skillSum(skills, "chargeOnIonizedCrit", wctx) : 0);
         // Leitfähigkeit (#93 F2): Crit mit einer Karte direkt neben ≥1 ionisierten Karte → +2 (einmalig).
-        const nbIon = (pos > 0 && (deck[playerOrder[pos - 1]]?.ionStacks || 0) > 0)
-                   || (pos < playerOrder.length - 1 && (deck[playerOrder[pos + 1]]?.ionStacks || 0) > 0);
+        // #145: Deck-Nachbarn über actualPos (0–39), nicht über den Stich-Zähler pos (0–44 unter Zeitsegment) —
+        // sonst liest pos≥40 undefined und der Bonus fällt im wiederholten Segment stumm aus.
+        const nbIon = (actualPos > 0 && (deck[playerOrder[actualPos - 1]]?.ionStacks || 0) > 0)
+                   || (actualPos < playerOrder.length - 1 && (deck[playerOrder[actualPos + 1]]?.ionStacks || 0) > 0);
         if (hasConductivity(skills) && nbIon) gainedCharge += C.CONDUCT_CHARGE;
       } else if (hasStaticCharge(skills)) {
         gainedCharge = C.STATIC_CHARGE; // Statische Aufladung: Sieg ohne Crit → 1 Ladung
@@ -292,12 +387,24 @@ export function resolveTrick(state, rng = Math.random) {
         // Geladene Serie setzt den Rahmen (nur wenn nicht schon gesetzt), sonst „parkt" die Ladung; Ionisierung ionisiert.
         if (lightning.charge >= lightning.maxCharge) {
           let consumed = false;
+          let blitzCatches = 0; // #165 Blitzfänger: Anzahl voller Karten, die statt ionisiert +Ladung erzeugen
           if (hasProtect(skills) && !lightning.armed) {
             lightning = { ...lightning, armed: true };            // Geladene Serie: Serien-Rahmen scharf
             consumed = true;
           } else if (hasIonize(skills)) {
-            const undrawn = playerOrder.slice(pos + 1);            // Deck-Indizes der noch nicht gezogenen Karten
-            deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
+            // #145: unter Zeitsegment ist `pos` der Stich-Zähler (0–44), nicht die Deck-Position — die noch
+            // kommenden Karten sind die seq-gemappten Restpositionen (dedupliziert, da ein wiederholtes Segment
+            // Deck-Indizes doppelt nennt). Ohne Zeitsegment ist seq die Identität → identisch zu playerOrder.slice.
+            const undrawn = [...new Set(seq.slice(pos + 1).map((p) => playerOrder[p]))]; // Deck-Indizes der noch kommenden Karten
+            if (hasBlitzcatcher(skills)) {
+              // #165 Blitzfänger: volle Karten (5 Stapel) werden nicht ionisiert → je +2 temp Wert (nächstes Auftauchen) & +1 Ladung.
+              const res = ionizeCardsWithCatch(deck, undrawn, ionizeCountFor(skills), rng);
+              deck = res.deck;
+              for (const cid of res.catchIds) newIceTemp[cid] = Math.max(newIceTemp[cid] || 0, C.BLITZFAENGER_VALUE);
+              blitzCatches = res.catchIds.length;
+            } else {
+              deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
+            }
             consumed = true;
           }
           if (consumed) {
@@ -305,6 +412,8 @@ export function resolveTrick(state, rng = Math.random) {
             let floor = chargeFloorFor(skills);
             if (hasEndlessStorm(skills)) floor = Math.max(floor, Math.ceil(lightning.maxCharge / 2));
             lightning = consumeCharge(lightning, floor);
+            // #165 Blitzfänger: die Fang-Ladungen entstehen NACH dem Verbrauch (sonst würde consumeCharge sie wieder auf den Boden setzen).
+            if (blitzCatches > 0) lightning = addCharge(lightning, blitzCatches);
             if (hasDischarge(skills)) lightning = { ...lightning, dischargeArmed: true }; // Entladung: nächsten Crit armieren
             if (hasStorm(skills)) { // Gewitterfront-Reaktor: erst Crit-Chance (Cap), danach Score für die nächsten Siege
               const cur = lightning.stormCritBonus || 0;
@@ -320,12 +429,29 @@ export function resolveTrick(state, rng = Math.random) {
     if (ionizedCard) {
       deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
     }
+    // #165 Spannungsbogen (§5.2): Sieg mit einer ionisierten Karte → der erste ungespielte, noch nicht volle Nachfolger
+    // in Deckreihenfolge (ab actualPos+1 vorwärts, KEIN Wrap) erhält +1 Ionisierungsstapel. Höchstens eine Karte je Trigger.
+    if (ionizedCard && hasVoltageArc(skills)) {
+      const played = new Set(seq.slice(0, pos + 1)); // in diesem Durchlauf bereits gespielte Deckpositionen (Zeitsegment-tauglich)
+      for (let k = actualPos + 1; k < playerOrder.length; k++) {
+        const di = playerOrder[k];
+        if (played.has(k) || (deck[di].ionStacks || 0) >= C.ION_MAX_STACKS) continue; // gespielt oder voll → überspringen
+        deck = deck.map((c, i) => (i === di ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
+        break;
+      }
+    }
     // Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
     critFollowArmed = isCrit;                                        // D14 Crit-Folge: nur ein Crit rüstet den nächsten Sieg
-    misfireScore = isCrit ? 0 : Math.min((misfireScore || 0) + 30, 300); // D15: +30 Score-Ladung je Sieg ohne Crit, Crit zahlt aus & setzt zurück
-    weaknessArmed = false;                                           // D16 Schwachstellenanalyse: durch diesen Sieg verbraucht
+    // D15/D_MISFIRE: Ladung je Sieg ohne Crit (Stufen-Schritt/Cap); ein Crit zahlt oben die volle Ladung aus und
+    // behält danach misfireRetain-Anteil (IV: 25 %, sonst 0 → Reset). Default 30/300/0 = flaches D15.
+    misfireScore = isCrit ? Math.round((misfireScore || 0) * misfireRetain)
+                          : Math.min((misfireScore || 0) + misfireStep, misfireCap);
+    weaknessArmed = false; weaknessBig = false;                      // D16/D_WEAKNESS: durch diesen Sieg verbraucht
+    interplayStored = 0;                                            // D_INTERPLAY IV: der gebankte Score ist mit diesem Sieg ausgezahlt
     if (isCrit) {
       crits += 1; critBonusScore += critBonus;
+      // D_CRIT_MOMENTUM IV: ein Crit erhöht die Siegesserie zusätzlich (wirkt ab dem nächsten Stich, wie der Serienanker).
+      if (streakGainOnCrit) { winStreak += streakGainOnCrit; if (winStreak > bestStreak) bestStreak = winStreak; }
       // L4 Kritische Masse: die kritisch getroffene Karte dauerhaft +1 (max +4 je Karte).
       if (ownsFlag(perks, "critValueGain") && (l4Boost[pCard.id] || 0) < 4) {
         deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: c.value + 1 } : c));
@@ -339,36 +465,57 @@ export function resolveTrick(state, rng = Math.random) {
     if (tieConverted) tieArmed = false;
     sinceWin = 0; // #71 Durchbruch: Sieg setzt den Zähler zurück
     lossStreak = 0; // #71 Revanche: Sieg beendet die Niederlagenserie
-    lastWinValue = pValue; // #71 Präzision: letzten Siegwert merken (NACH dem Vergleich in wctx)
-    // C4/C5: gewinnt eine Relay-Rolle, bekommen die nächsten `relay` Karten +2 (Queue nach dem Verbrauch → Index 0 = nächste Karte).
-    for (const id of perks) {
-      const relay = PERK_DEFS[id].relay;
-      if (relay && isRole(id)) for (let i = 0; i < relay; i++) successorQueue[i] = (successorQueue[i] || 0) + 2;
+    // #71/#189 Präzision: Siegwert merken (NACH dem Vergleich in wctx). #189 Fund B: hat D_PRECISION mit diesem Sieg
+    // ausgezahlt (Toleranz der Stufe + Vorstich war Sieg — dieselbe Bedingung, die der scoreFlat-Hook oben sah), wird
+    // die Referenz bei I–III VERBRAUCHT (null) → der nächste Sieg beginnt ein frisches Paar. Nur IV (chain) läuft weiter.
+    const precisionPaid = precisionTol != null && lastResult === "win" && lastWinValue != null
+                          && Math.abs(pValue - lastWinValue) <= precisionTol;
+    lastWinValue = (precisionPaid && !precisionChains) ? null : pValue;
+    // C_RELAY/C_LEADER (Familien, Kat. C zu #167 migriert): gewinnt eine Relay-Rolle, bekommen die nächsten `relay`
+    // Karten je +relayBonus (Queue nach dem Verbrauch → Index 0 = nächste Karte). relay/relayBonus aus der gehaltenen Stufe.
+    for (const { familyId, def } of activeFamilyEntries(familyTiers)) {
+      if (def.relay && isRole(familyId)) for (let i = 0; i < def.relay; i++) successorQueue[i] = (successorQueue[i] || 0) + (def.relayBonus || 0);
     }
-    // C2 Triumph: gewinnt eine Triumph-Rolle, wird sie fürs nächste Auftauchen armiert.
-    if (isRole("C2")) triumphArmed = [...triumphArmed, pCard.id];
+    // C_TRIUMPH: gewinnt eine Triumph-Rolle, wird sie fürs nächste Auftauchen armiert.
+    if (activeFamilyEntries(familyTiers).some((e) => e.def.triumph && isRole(e.familyId)))
+      triumphArmed = [...triumphArmed, pCard.id];
     // L8 Schicksalsmaschine: Erfolge je Karte diesen Durchlauf (für den Wert-Tausch am Durchlauf-Ende).
     if (ownsFlag(perks, "swapExtremes")) l8Wins = { ...l8Wins, [pCard.id]: (l8Wins[pCard.id] || 0) + 1 };
     // Serienanker (§8 A4): Sieg auf einer Serienanker-Position gibt +1 Serienpunkt — NACH der Wertung dieses Siegs.
-    if (anchorType === "streak") { winStreak += 1; if (winStreak > bestStreak) bestStreak = winStreak; }
+    // Serienanker (§4.2): Sieg dort gibt `streak` ZUSÄTZLICHE Serienpunkte; Stufe I nur bei gerader Siegzahl
+    // (§10-Näherung „jeder zweite Sieg" über die globale Siegzahl-Parität — `wins` ist für diesen Sieg schon erhöht).
+    if (anchorType === "streak" && !(aParam("everySecond") && wins % 2 !== 0)) {
+      winStreak += aParam("streak") || 0; if (winStreak > bestStreak) bestStreak = winStreak;
+    }
     lastResult = "win";
   } else if (lost) {
     losses += 1;
     // Geladene Serie (Stufe C): gesetzter Serien-Rahmen fängt DIESE Niederlage ab — winStreak
     // bleibt erhalten (Serien-Effekte laufen weiter). Sonst bricht die Serie. Der Rahmen wird danach eingelöst.
     const rahmenRedeemed = !!(lightning && lightning.armed);
-    winStreak = rahmenRedeemed ? winStreak : 0;
+    // Serienanker IV (§4.2): eine Niederlage auf dieser Position setzt die Serie NICHT zurück.
+    const streakNoReset = anchorType === "streak" && !!aParam("noReset");
+    winStreak = (rahmenRedeemed || streakNoReset) ? winStreak : 0;
     initiative = "opp";
-    if (ownsFlag(perks, "winTieAfterLoss")) tieArmed = true; // B5: nach Niederlage nächsten Gleichstand gewinnen
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
     lossStreak += 1; // #71 Revanche: aufeinanderfolgende Niederlagen
-    if (oValue - pValue >= 5) weaknessArmed = true; // D16 Schwachstellenanalyse: klare Niederlage rüstet nächsten Sieg
+    // B5 Initiative (Familie): Gleichstands-Sieg armieren, sobald die Niederlagenserie die Stufen-Schwelle erreicht.
+    if (tieArmLosses != null && lossStreak >= tieArmLosses) tieArmed = true;
+    // B8 Revanche III (Familie): erreicht die Serie GENAU die Schwelle, die nächsten `count` Karten je +bonus (successorQueue).
+    if (revengeTwoCard && lossStreak === revengeTwoCard.losses)
+      for (let i = 0; i < revengeTwoCard.count; i++) successorQueue[i] = (successorQueue[i] || 0) + revengeTwoCard.bonus;
+    // D16/D_WEAKNESS: Niederlage ab der Stufen-Schwelle rüstet den nächsten Sieg (Default 5 = flaches D16; IV: 0 = jede
+    // Niederlage). D_WEAKNESS IV markiert zusätzlich einen großen Abstand (≥ weaknessBigDeficit → nächster Sieg +900).
+    if (oValue - pValue >= weaknessDeficit) weaknessArmed = true;
+    weaknessBig = weaknessBigDeficit != null && (oValue - pValue) >= weaknessBigDeficit;
+    if (interplayStoreOnLoss) interplayStored += interplayStoreOnLoss; // D_INTERPLAY IV: Niederlage bankt Score für den nächsten Sieg
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie (auch mit Rahmen)
     serieStreak = 0;
     if (rahmenRedeemed) lightning = { ...lightning, armed: false }; // Rahmen eingelöst → entfernt
     // ---- Feuer (#93 F1): Hitzeverlust (Nachglut fängt ihn ab), danach Nachglut verbraucht & Feuerwalze zurückgesetzt.
     if (heat && heat.active) {
-      const loss = heatLossFor(oValue - pValue, skills, heat.afterglowArmed);
+      // #165: heat.value = Hitze VOR dem Verlust → speist die 50/80-Schwellen von Glühende Klinge/Überhitzt.
+      const loss = heatLossFor(oValue - pValue, skills, heat.afterglowArmed, heat.value);
       heat = { ...heat, value: Math.max(0, heat.value - loss), afterglowArmed: false, fireRoll: 0 };
     }
     // Eis (#93 F3): Kältereserve — Niederlage mit eingefrorener Karte → +4 temp Wert beim nächsten Auftauchen.
@@ -447,32 +594,33 @@ export function resolveTrick(state, rng = Math.random) {
       // Entscheidung VOR dem neuen Durchlauf nach dem festen Plan (Shop-Spec §2.2): DECISION_SCHEDULE[cycle]
       // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
       const decision = C.DECISION_SCHEDULE[cycle];
-      const fate = !!(shop && shop.fateControl); // P-L1 Schicksalskontrolle: gratis Reroll je Perk-/Skill-Auswahl
+      const perkFate = perkFateReroll(shop), skillFate = skillFateReroll(shop); // #164 Schicksalskontrolle/Neuwurf IV: gratis Reroll je Auswahl
       if (decision === "stat") {
         phase = "levelup"; newStatOffer = STAT_IDS; // immer alle Stats (Shop-Spec §4.3: fünf inkl. Einkommen)
       } else if (decision === "skill") {
         const soff = buildSkillOffer(skills, activeArchetypes, rng, C.SKILLS_OFFERED, skillLegendaryChance(shop));
-        if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = fate; }
-        else { const off = buildOffer(perks, rng, C.PERKS_OFFERED, perkLegendaryChance(shop)); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = fate; } } // leerer Skill-Pool → Perk
+        if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = skillFate; }
+        else { const off = buildPerkOffer(perks, familyTiers, rng, C.PERKS_OFFERED, perkLegendaryChance(shop)); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; } } // leerer Skill-Pool → Perk
       } else if (decision === "perk") {
-        const off = buildOffer(perks, rng, C.PERKS_OFFERED, perkLegendaryChance(shop));
-        if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = fate; }
+        const off = buildPerkOffer(perks, familyTiers, rng, C.PERKS_OFFERED, perkLegendaryChance(shop));
+        if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; }
       } else if (decision === "shop") {
         // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen, Einkommensbonus gutschreiben (+3 je Einkommen-Level,
         // pro Shop) und ein frisches Angebot ziehen (§5, deterministisch über rng). Danach ein evtl. im letzten
         // Shop reserviertes Item (§10 P4) als zusätzliches Angebot anhängen (Reservierung verfällt damit).
         phase = "shop";
         shop = { ...shop, coins: (shop.coins || 0) + shopIncomeFor(economyStatLevel),
-                 offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rng, perks), purchasedOfferIds: [] };
-        shop = withReservedOffer(shop, SHOP_ITEM_DEFS, perks);
+                 offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rng, perks, SHOP_FAMILY_DEFS), purchasedOfferIds: [] };
+        shop = withReservedOffer(shop, SHOP_ITEM_DEFS, perks, SHOP_FAMILY_DEFS);
       } else if (decision === "formation") {
-        // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ E10 Feinjustierung), Vorschau berechnen.
+        // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ Shop-Feinjustierung), Vorschau berechnen.
         phase = "formation";
-        newFormationEnergy = C.FORMATION_ENERGY + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0);
+        newFormationEnergy = C.FORMATION_ENERGY + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
+          + formationEnergyBonus(familyTiers, cycle); // #179 Feinjustierung (jetzt Perk-Familie E_TUNING): +Energie je Stufe
         newFormationSwaps = [];
-        // #137: anchors + permEffects mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
-        // Eintritt einen veralteten Stand (ohne regeländernde Shop-Effekte) — erst der erste Tausch korrigierte.
-        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, permEffects);
+        // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
+        // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
+        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers);
       }
     }
   }
@@ -482,11 +630,11 @@ export function resolveTrick(state, rng = Math.random) {
     score, winStreak, bestStreak, wins, losses, ties,
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 
-    crits, critBonusScore, bestTrickScore,
+    crits, critBonusScore, bestTrickScore, maxFormations, formationScore, // #161 FB-2: Run-Rückblick
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     freePerkReroll: newFreePerkReroll, freeSkillReroll: newFreeSkillReroll, // Planung (§10 P-L1)
-    critFollowArmed, weaknessArmed, misfireScore,
-    winSuit, winSuitStreak, recentResults,
+    critFollowArmed, weaknessArmed, weaknessBig, interplayStored, misfireScore,
+    winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung

@@ -31,7 +31,7 @@ describe("lightningCritRaw — Crit-Basis (Abschnitt 2a)", () => {
   });
   it("Sockel + je Skill, wenn aktiv", () => {
     expect(lightningCritRaw(active(), [])).toBeCloseTo(LIGHTNING_CRIT_BASE);                              // nur Sockel
-    expect(lightningCritRaw(active(), [LR])).toBeCloseTo(LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL); // → 0,10
+    expect(lightningCritRaw(active(), [LR])).toBeCloseTo(LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL); // Sockel + 1× pro-Skill
   });
 });
 
@@ -81,6 +81,9 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
     expect(off.every((id) => SKILL_DEFS[id])).toBe(true);
     const archs = new Set(off.map(archetypeOf));
     expect(archs).toEqual(new Set(["lightning", "fire", "ice"])); // alle 3 vertreten (2 je Archetyp)
+    // #156: verschiedene Seeds → (meist) verschiedenes Angebot — der Seed treibt die Auswahl wirklich.
+    const offers = Array.from({ length: 8 }, (_, s) => buildSkillOffer([], [], makeRng(s + 1), 6).join(","));
+    expect(new Set(offers).size).toBeGreaterThan(1);
   });
   it("bereits gehaltene werden nicht erneut angeboten; leerer Pool → []", () => {
     expect(buildSkillOffer([LR], [], makeRng(1), 4)).not.toContain(LR);
@@ -117,6 +120,55 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
         expect(off.some((id) => owned.includes(id))).toBe(false); // nie ein gehaltener Skill
         expect(new Set(off).size).toBe(off.length);               // nie ein Duplikat
       }
+    }
+  });
+});
+
+// Konsument-Garantie: aktive Feuer-/Blitz-Builds ohne gehaltenen Konsumenten bekommen garantiert einen angeboten,
+// solange man keinen aktiv hat — sonst kann der Build nie „zünden" (Nutzer-Wunsch: sonst frustrierend).
+describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", () => {
+  const isFireConsumer   = (id) => !!SKILL_DEFS[id]?.heatConsumer;  // Flächenbrand/Schmelzpunkt
+  const isChargeConsumer = (id) => !!SKILL_DEFS[id]?.onFullCharge;  // Ionisierung/Geladene Serie
+  it("aktiver Feuer-Build ohne Hitze-Konsument → garantiert ein Hitze-Konsument im Angebot", () => {
+    for (let seed = 1; seed <= 40; seed++)
+      expect(buildSkillOffer(["SK_FIRE_01"], ["fire"], makeRng(seed), 6).some(isFireConsumer)).toBe(true);
+  });
+  it("aktiver Blitz-Build ohne Ladungs-Konsument → garantiert ein Ladungs-Konsument im Angebot", () => {
+    for (let seed = 1; seed <= 40; seed++)
+      expect(buildSkillOffer(["SK_LIGHTNING_01"], ["lightning"], makeRng(seed), 6).some(isChargeConsumer)).toBe(true);
+  });
+  it("beide aktiv & ohne Konsument → beide Typen garantiert, auch bei erzwungenem Legendär-Roll", () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const off = buildSkillOffer(["SK_FIRE_01", "SK_LIGHTNING_01"], ["fire", "lightning"], makeRng(seed), 6, 1);
+      expect(off.some(isFireConsumer)).toBe(true);
+      expect(off.some(isChargeConsumer)).toBe(true);
+    }
+  });
+  it("hält man bereits einen Konsumenten, wird KEINER erzwungen (Angebot kann konsumentenfrei sein)", () => {
+    // Ionisierung (Ladungs-Konsument) gehalten → über viele Seeds gibt es mind. ein Angebot ganz OHNE Konsument.
+    const anyClean = Array.from({ length: 30 }, (_, s) =>
+      buildSkillOffer(["SK_LIGHTNING_02"], ["lightning"], makeRng(s + 1), 6)
+    ).some((off) => !off.some(isChargeConsumer));
+    expect(anyClean).toBe(true);
+  });
+  it("Erst-Angebot (leeres activeArchetypes) bleibt deterministisch — kein rng-Drift", () => {
+    expect(buildSkillOffer([], [], makeRng(1), 6)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
+  });
+  // #191: schon beim ERSTEN Skill-Angebot (noch kein Archetyp aktiv) mind. EINEN Konsumenten insgesamt.
+  it("#191 Erst-Angebot ohne aktiven Archetyp → garantiert mind. EIN Konsument (Feuer ODER Blitz)", () => {
+    const isConsumer = (id) => isFireConsumer(id) || isChargeConsumer(id);
+    for (let seed = 1; seed <= 40; seed++)
+      expect(buildSkillOffer([], [], makeRng(seed), 6).some(isConsumer)).toBe(true);
+  });
+  it("#191 Erst-Angebot: Konsument-Garantie hält auch bei erzwungenem Legendär-Roll + 2+2+2-Balance", () => {
+    const isConsumer = (id) => isFireConsumer(id) || isChargeConsumer(id);
+    for (let seed = 1; seed <= 40; seed++) {
+      const off = buildSkillOffer([], [], makeRng(seed), 6, 1); // Legendär erzwungen
+      expect(off.some(isConsumer)).toBe(true);
+      expect(off).toHaveLength(6);
+      const byArch = { lightning: 0, fire: 0, ice: 0 };
+      for (const id of off) byArch[archetypeOf(id)]++;
+      expect(byArch).toEqual({ lightning: 2, fire: 2, ice: 2 });
     }
   });
 });
@@ -177,7 +229,7 @@ describe("Reaktoren + Geladene Serie — Helfer (Stufe C)", () => {
   });
   it("lightningCritRaw addiert den Gewitterfront-Bonus (stormCritBonus)", () => {
     const l = { active: true, charge: 0, maxCharge: 10, stormCritBonus: 0.08 };
-    expect(lightningCritRaw(l, [G])).toBeCloseTo(0.05 + 0.05 + 0.08); // Sockel + Skill-critChance + Storm
+    expect(lightningCritRaw(l, [G])).toBeCloseTo(LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL + 0.08); // Sockel + Skill-critChance + Storm(0,08)
   });
 });
 

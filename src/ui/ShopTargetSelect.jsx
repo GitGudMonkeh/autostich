@@ -1,7 +1,11 @@
 import { suitColor, suitName, SUIT_ORDER, SHOP_CATEGORIES, SHOP_CATEGORY_LABELS } from "../game/constants.js";
-import { SEGMENT_SIZE, FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
-import { SHOP_ITEM_DEFS, SEGMENT_BOUNDARIES } from "../game/shop.js";
+import { SEGMENT_SIZE } from "../game/formations.js";
+import { SHOP_ITEM_DEFS } from "../game/shop.js";
+import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
+import { allianceGroups } from "../game/families.js";
+import { romanOf } from "../game/rarity.js";
 import { CardGrid } from "./CardGrid.jsx";
+import { formationBorder } from "./formationStyle.js";
 import { useEscape } from "./useEscape.js";
 
 const GOLD = "#d4a63a";
@@ -9,11 +13,15 @@ const GOLD = "#d4a63a";
 /* Shop-Ziel-Auswahl (Shop-Spec §12.2) — öffnet nach dem Kauf eines Ziel-Items (Kartenitems S2).
    Karten wählen (Limit aus dem Item), optional je Karte eine neue Farbe, oder ein Segment (K-L1).
    Abbrechen lässt Angebot & Münzen unverändert; Bestätigen zieht erst dann den Preis ab (Reducer). */
-export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onColorPair, onBoundary, onFormationType, onCategory, onOffer, onConfirm, onCancel }) {
+export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onCategory, onOffer, onConfirm, onCancel }) {
   useEscape(onCancel);
   const st = state.shopTarget || {};
-  const def = SHOP_ITEM_DEFS[st.itemId] || {};
-  const spec = def.target || {};
+  // Shop-Familie (#164): Name/Beschreibung/Ziel-Bedarf aus der Zielstufe; sonst flaches Item.
+  const fam = st.familyId ? SHOP_FAMILY_DEFS[st.familyId] : null;
+  const tierDef = fam ? (fam.tiers[st.famTier] || {}) : null;
+  const def = fam ? { name: `${fam.name} ${romanOf(st.famTier)}`, description: tierDef.desc } : (SHOP_ITEM_DEFS[st.itemId] || {});
+  const spec = fam ? (tierDef.pickTarget || {}) : (def.target || {});
+  const offerName = (o) => o.family ? `${SHOP_FAMILY_DEFS[o.familyId]?.name || o.familyId} ${romanOf(o.famTier)}` : (SHOP_ITEM_DEFS[o.itemId]?.name || o.itemId);
   const deck = state.deck || [];
   const order = state.playerOrder || [];
   const cards = order.map((di) => deck[di]);
@@ -22,20 +30,15 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
   const colors = st.colors || {};
   const cardById = (id) => deck.find((c) => c.id === id);
 
-  const occupied = new Set((state.shop?.anchors || []).map((a) => a.position));
-  const openBoundaries = new Set(state.shop?.permanentEffects?.openSegmentBoundaries || []);
-  const pair = st.colorPair || [];
+  // Belegte Anker-Positionen; beim Anker-Upgrade ist die EIGENE (zu ersetzende) Position wählbar (#164).
+  const occupied = new Set((state.shop?.anchors || []).filter((a) => a.type !== fam?.anchorType).map((a) => a.position));
   const cardsDone = !spec.cards || sel.length === spec.cards;
   const colorsDone = !spec.color || sel.every((id) => colors[id]);
   const segDone = !spec.segment || st.segment != null;
   const posDone = !spec.position || st.position != null;
-  const pairDone = !spec.colorPair || pair.length === 2;
-  const boundaryDone = !spec.boundary || st.boundary != null;
-  const ftDone = !spec.formationType || st.formationType != null;
   const catDone = !spec.category || st.category != null;
   const offerDone = !spec.offer || st.targetOfferId != null;
-  const ready = spec.colorPair ? pairDone : spec.boundary ? boundaryDone : spec.formationType ? ftDone
-    : spec.category ? catDone : spec.offer ? offerDone : spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
+  const ready = spec.category ? catDone : spec.offer ? offerDone : spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
   // Reservierung (P4): reservierbare Angebote = alle außer dem gerade gekauften P4 und bereits gekauften.
   const purchased = new Set(state.shop?.purchasedOfferIds || []);
   const reservable = (state.shop?.offers || []).filter((o) => o.offerId !== st.offerId && !purchased.has(o.offerId));
@@ -46,89 +49,12 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>Shop · {def.name}</div>
           <h2 className="text-xl font-bold mt-1">
-            {spec.colorPair ? "Wähle zwei Farben" : spec.boundary ? "Wähle eine Segmentgrenze" : spec.formationType ? "Wähle einen Formationstyp" : spec.category ? "Wähle eine Kategorie" : spec.offer ? "Wähle ein Item zum Reservieren" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
+            {spec.category ? "Wähle eine Kategorie" : spec.offer ? "Wähle ein Item zum Reservieren" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
           </h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.description}</p>
         </div>
 
-        {spec.colorPair ? (
-          <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Zwei Farben wählen (zählen als eine)</div>
-            <div className="flex gap-2 flex-wrap">
-              {SUIT_ORDER.map((su) => {
-                const on = pair.includes(su);
-                return (
-                  <button key={su} onClick={() => onColorPair(su)}
-                    className="px-4 py-2 rounded-lg text-sm font-bold transition-all"
-                    style={{ background: on ? suitColor(su) : `${suitColor(su)}22`, color: on ? "#141419" : suitColor(su), border: `2px solid ${suitColor(su)}` }}>
-                    {suitName(su)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : spec.boundary ? (
-          // #124: Grenze im VOLLEN Board wählen — anklickbare Trennlinie zwischen den Segmenten, im Kontext der Kartenreihenfolge.
-          <div className="grid gap-0.5 mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-1">Grenze im Board wählen (verbindet die zwei angrenzenden Segmente)</div>
-            {Array.from({ length: nSeg }, (_, seg) => {
-              const start = seg * SEGMENT_SIZE;
-              const segCards = cards.slice(start, start + SEGMENT_SIZE);
-              const b = SEGMENT_BOUNDARIES[seg]; // Grenze NACH diesem Segment (undefined beim letzten)
-              const open = b != null && openBoundaries.has(b);
-              const active = b != null && st.boundary === b;
-              return (
-                <div key={seg}>
-                  <div className="flex items-center gap-2">
-                    <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{start + 1}–{start + segCards.length}</div>
-                    <div className="grid grid-cols-5 gap-1.5 flex-1">
-                      {segCards.map((c, k) => {
-                        const pos = start + k; const col = suitColor(c.suit);
-                        return (
-                          <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px solid ${col}55` }}>
-                            <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-                            <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {b != null && (
-                    <div className="flex items-center gap-2 my-0.5">
-                      <div className="w-9 shrink-0" />
-                      <button onClick={() => !open && onBoundary(b)} disabled={open}
-                        className="flex-1 flex items-center justify-center rounded transition-all"
-                        style={{ height: 22, background: active ? `${GOLD}22` : open ? "#5ab87a1a" : "#1c1c22",
-                                 border: `1px ${active || open ? "solid" : "dashed"} ${active ? GOLD : open ? "#5ab87a" : "#3a3a46"}`,
-                                 cursor: open ? "not-allowed" : "pointer", opacity: open ? 0.75 : 1 }}>
-                        <span className="text-[10px] font-bold tracking-wide" style={{ color: active ? GOLD : open ? "#5ab87a" : "#9a9aa4" }}>
-                          ⟷ Grenze {b + 1}|{b + 2}{open ? " · bereits offen" : active ? " · ✓" : ""}
-                        </span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : spec.formationType ? (
-          <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Formationstyp wählen (jede Formation dieses Typs ×1,50)</div>
-            <div className="grid sm:grid-cols-2 gap-2">
-              {FORMATION_TYPES.map((ft) => {
-                const active = st.formationType === ft;
-                return (
-                  <button key={ft} onClick={() => onFormationType(ft)}
-                    className="rounded-xl p-3 text-left transition-all font-bold"
-                    style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : "#33333e"}` }}>
-                    {FORMATION_TYPE_LABELS[ft]}
-                    {active && <span className="text-[11px] ml-2" style={{ color: GOLD }}>✓</span>}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : spec.category ? (
+        {spec.category ? (
           <div className="mt-4">
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Kategorie neu würfeln (nicht gekaufte Angebote werden ersetzt)</div>
             <div className="grid sm:grid-cols-2 gap-2">
@@ -150,14 +76,13 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Item fürs nächste Shop-Angebot vormerken</div>
             <div className="grid sm:grid-cols-2 gap-2">
               {reservable.map((o) => {
-                const d = SHOP_ITEM_DEFS[o.itemId] || {};
                 const active = st.targetOfferId === o.offerId;
                 return (
                   <button key={o.offerId} onClick={() => onOffer(o.offerId)}
                     className="rounded-xl p-3 text-left transition-all"
                     style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : o.legendary ? GOLD + "88" : "#33333e"}` }}>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-sm">{d.name || o.itemId}</span>
+                      <span className="font-bold text-sm">{offerName(o)}</span>
                       <span className="text-sm font-bold" style={{ color: GOLD }}>🪙 {o.price}</span>
                     </div>
                     <div className="text-[10px] uppercase tracking-wide opacity-50 mt-0.5">{SHOP_CATEGORY_LABELS[o.category]}{o.legendary ? " · ★" : ""}</div>
@@ -171,7 +96,7 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
           // #112: Positions-Anker im geteilten CardGrid — mit Formations-/Rollen-Kontext; belegte Positionen ausgegraut (Silberring).
           <div className="mt-4">
             <CardGrid cards={cards} formations={state.formations} roles={state.roles}
-              anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}}
+              anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               pickedPos={st.position} disabledPos={[...occupied]} onTilePick={(pos) => onPosition(pos)} />
           </div>
         ) : spec.segment ? (
@@ -190,10 +115,12 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
                   <div className="grid grid-cols-5 gap-1.5 flex-1">
                     {segCards.map((c, k) => {
                       const pos = start + k; const col = suitColor(c.suit);
+                      const fb = formationBorder((state.formations || [])[pos]); // #161 FB-1: Formationsrand sichtbar machen
+                      const bcol = active ? GOLD : fb.color || col + "55";
                       return (
-                        <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px solid ${active ? GOLD : col + "55"}` }}>
+                        <div key={pos} className="as-tile relative rounded-lg flex items-center justify-center" style={{ background: "#20202a", border: `2px ${!active && fb.dashed ? "dashed" : "solid"} ${bcol}` }}>
                           <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-                          <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
+                          <span className="text-lg sm:text-2xl font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
                         </div>
                       );
                     })}
@@ -208,7 +135,7 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
             {/* #112: Karten im geteilten CardGrid — Formations-/Rollen-Kontext sichtbar (formationsbewusst wählen). */}
             <div className="mt-4">
               <CardGrid cards={cards} formations={state.formations} roles={state.roles}
-                anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}}
+                anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 pickedIds={sel} arrows={colors} onTilePick={(pos, c) => onCard(c.id)} />
             </div>
 

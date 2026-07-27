@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
-import { suitName, suitColor } from "../game/constants.js";
+import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
+import { familyDef } from "../game/families.js";
+import { formationLabel } from "./formationLabels.js";
 
-// Anzeigenamen der Formationstypen (lang) für die Detailzeile.
-const FORM_NAME = { wiederholung: "Wiederholung", farbblock: "Farbblock", treppe: "Treppe", wechsel: "Wechsel", anker: "Anker" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
 /* Detailanzeige einer angetippten Karte (Issue #95, Punkt 5): Rolle(n) und alle aktiven
    Modifikatoren. Wird unter der Kachelfläche in Chronik-Übersicht UND Formationsphase genutzt.
    Rollen-Chips sind anklickbar → klappen die Perk-Beschreibung auf (touch-tauglich, plus Hover-Titel). */
-export function CardDetail({ card, pos, posForm, roles }) {
+export function CardDetail({ card, pos, posForm, roles, familyTiers = {} }) {
   const [openRole, setOpenRole] = useState(null); // aktuell aufgeklappte Rolle (perkId)
   useEffect(() => { setOpenRole(null); }, [card?.id]); // Karte gewechselt → Beschreibung schließen
 
@@ -20,9 +20,15 @@ export function CardDetail({ card, pos, posForm, roles }) {
   const permBoost = card.baseRank != null ? card.value - card.baseRank : 0;
   const forms = (posForm && posForm.formations) || [];
   const ion = card.ionStacks || 0;
+  // Rollen-Chips: flacher Perk (PERK_DEFS) ODER Familie (FAMILY_DEFS, Kat. C) → Name + Beschreibung.
+  // Familien-Beschreibung kommt aus der aktuell GEHALTENEN Stufe (familyTiers), sonst blieb der Text leer (#Leibwache-Bug).
   const roleEntries = Object.entries(roles || {})
     .filter(([, ids]) => (ids || []).includes(card.id))
-    .map(([pid]) => ({ pid, label: PERK_DEFS[pid]?.label || pid, desc: PERK_DEFS[pid]?.desc || "" }));
+    .map(([pid]) => {
+      const fam = familyDef(pid);
+      const famDesc = fam ? (fam.tiers[familyTiers[pid] || 1]?.desc || "") : "";
+      return { pid, label: PERK_DEFS[pid]?.label || fam?.name || pid, desc: PERK_DEFS[pid]?.desc || famDesc };
+    });
 
   const Chip = ({ children, c }) => (
     <span className="px-1.5 py-0.5 rounded text-[11px]" style={{ background: (c || "#8a8a92") + "22", color: c || "#c8c8ce" }}>{children}</span>
@@ -51,17 +57,20 @@ export function CardDetail({ card, pos, posForm, roles }) {
             })
           : <span className="opacity-40">keine</span>}
       </div>
-      {openRole && (
-        <div className="text-[11px] mt-1 px-2 py-1 rounded leading-snug" style={{ background: "#d4a63a12", color: "#e8e0c8" }}>
-          {PERK_DEFS[openRole]?.desc}
-        </div>
-      )}
+      {openRole && (() => {
+        const desc = roleEntries.find((r) => r.pid === openRole)?.desc;
+        return desc ? (
+          <div className="text-[11px] mt-1 px-2 py-1 rounded leading-snug" style={{ background: "#d4a63a12", color: "#e8e0c8" }}>
+            {desc}
+          </div>
+        ) : null;
+      })()}
       <div className="flex flex-wrap gap-1.5 items-center mt-1">
         <span className="opacity-45">Formationen:</span>
         {forms.length
           ? forms.map((f, i) => (
               <Chip key={i} c={f.factor > 1 ? "#5ab87a" : "#8a8a92"}>
-                {FORM_NAME[f.type] || f.type}{f.factor > 1 ? ` ×${fmt(f.factor)}` : " (Mitglied)"}
+                {formationLabel(f.type)}{f.factor > 1 ? ` ×${fmt(f.factor)}` : " (Mitglied)"}
               </Chip>
             ))
           : <span className="opacity-40">keine</span>}
@@ -69,7 +78,7 @@ export function CardDetail({ card, pos, posForm, roles }) {
       {ion > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
           <span className="opacity-45">Ionisierung:</span>
-          <Chip c="#5ec8f0">⚡ {ion}/4 · +{ion * 25} Score</Chip>
+          <Chip c="#5ec8f0">⚡ {ion}/{ION_MAX_STACKS} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
         </div>
       )}
     </div>

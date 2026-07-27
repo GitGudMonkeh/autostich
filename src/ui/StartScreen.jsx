@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import { AnleitungModal } from "./AnleitungModal.jsx";
 import { GlobalLeaderboard } from "./GlobalLeaderboard.jsx";
+import { RunDetail } from "./RunDetail.jsx";
 import logoGroup from "../assets/mascots/logo-group.png";
 import { MuteButton } from "./MuteButton.jsx";
 import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
+import { fmtScore } from "./format.js";
 
 /* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste. */
-export function StartScreen({ onStart, highscores, best, onOptions, muted, onToggleMute, username = "", onEditName, myEntry = null, pubToken = 0 }) {
+export function StartScreen({ onStart, highscores, best, onOptions, onStats, onCustomize, muted, onToggleMute, username = "", onEditName, myEntry = null, pubToken = 0 }) {
   const [showGuide, setShowGuide] = useState(false);
+  const [detail, setDetail] = useState(null); // #169 FB-8: gewählter lokaler Lauf → RunDetail-Overlay
 
   // Beim allerersten Start die Anleitung einmal automatisch zeigen (#12).
   useEffect(() => {
@@ -50,6 +53,24 @@ export function StartScreen({ onStart, highscores, best, onOptions, muted, onTog
         >
           Anleitung
         </button>
+        {onStats && (
+          <button
+            onClick={onStats}
+            className="px-6 py-3 rounded-xl text-lg font-semibold transition-all"
+            style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
+          >
+            Statistiken
+          </button>
+        )}
+        {onCustomize && (
+          <button
+            onClick={onCustomize}
+            className="px-6 py-3 rounded-xl text-lg font-semibold transition-all"
+            style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
+          >
+            Deck
+          </button>
+        )}
         {onOptions && (
           <button
             onClick={onOptions}
@@ -57,7 +78,7 @@ export function StartScreen({ onStart, highscores, best, onOptions, muted, onTog
             className="px-6 py-3 rounded-xl text-lg font-semibold transition-all"
             style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
           >
-            ⚙ Optionen
+            Optionen
           </button>
         )}
       </div>
@@ -75,7 +96,7 @@ export function StartScreen({ onStart, highscores, best, onOptions, muted, onTog
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] uppercase tracking-wide opacity-50">Deine Läufe</span>
           <span className="text-sm font-bold" style={{ color: "#d4a63a" }}>
-            Rekord {best.toLocaleString("de-DE")}
+            Rekord {fmtScore(best)}
           </span>
         </div>
         {highscores.length === 0 ? (
@@ -83,11 +104,13 @@ export function StartScreen({ onStart, highscores, best, onOptions, muted, onTog
         ) : (
           <div className="grid gap-1">
             {highscores.map((h, i) => (
-              <div key={i} className="flex justify-between text-sm px-2 py-1 rounded" style={{ background: "#20202a" }}>
+              // #169 FB-8: Zeile klickbar → Detailansicht mit dem vollen Run-Rückblick (RunStats).
+              <button key={i} onClick={() => setDetail({ entry: h, rank: i + 1 })} title="Details anzeigen"
+                className="flex justify-between items-center text-sm px-2 py-1 rounded text-left transition-all hover:brightness-125"
+                style={{ background: "#20202a" }}>
                 <span className="opacity-50">#{i + 1}</span>
-                <span className="font-bold" style={{ color: "#d4a63a" }}>{h.score.toLocaleString("de-DE")}</span>
-                <span className="opacity-50 text-xs">{h.cycles ?? 0} Runden · {h.tricks} Stiche</span>
-              </div>
+                <span className="font-bold" style={{ color: "#d4a63a" }}>{fmtScore(h.score)}</span>
+              </button>
             ))}
           </div>
         )}
@@ -98,6 +121,7 @@ export function StartScreen({ onStart, highscores, best, onOptions, muted, onTog
       <GlobalLeaderboard framed mine={myEntry} reloadToken={pubToken} />
 
       {showGuide && <AnleitungModal onClose={closeGuide} />}
+      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} />}
     </div>
   );
 }

@@ -3,8 +3,12 @@ import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { activeShopUpgrades, SHOP_ITEM_DEFS } from "../game/shop.js";
+import { allianceGroups } from "../game/families.js";
+import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
+import { TIER_META, romanOf } from "../game/rarity.js";
 import { suitName, SHOP_CATEGORY_LABELS } from "../game/constants.js";
-import { FORMATION_TYPE_LABELS } from "../game/formations.js";
+import { FORMATION_TYPE_LABELS, openSegmentInfo } from "../game/formations.js";
+import { useEscape } from "./useEscape.js";
 
 /* Chronik-Kartenübersicht (§22.11): alle 40 Karten in aktueller Reihenfolge — nur Anzeige,
    mit Formations- und Rollen-Markern. Klick auf eine Karte zeigt Rolle & Modifikatoren (#95.5).
@@ -31,8 +35,11 @@ export function ChronikOverview({ state, onClose }) {
   const [selPos, setSelPos] = useState(null);
   const cards = playerOrder.map((di) => deck[di]);
   const anchors = [...(state.shop?.anchors || [])].sort((a, b) => a.position - b.position); // Shop-Positionsanker (§8)
+  // #182: Zeitraffer (L11) koppelt Position 20 & 40 — dort denselben Silberring wie ein Anker zeigen (reine Anzeige).
+  const highlightPos = (state.perks || []).includes("L11") ? [19, 39].filter((p) => p < cards.length) : [];
   const upgrades = activeShopUpgrades(state.shop || {}); // aktive dauerhafte Shop-Verbesserungen (§9/§10)
   const purchaseLog = state.shop?.purchaseLog || []; // #127: alle Käufe des Runs (chronologisch)
+  useEscape(onClose); // #159: Escape schließt die (rein lesende) Übersicht — wie die übrigen abweisbaren Overlays (#58)
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
@@ -50,14 +57,16 @@ export function ChronikOverview({ state, onClose }) {
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={anchors} pe={state.shop?.permanentEffects || {}}
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+              highlightPos={highlightPos} highlightTitle="⏱ Zeitraffer · gekoppelte Position (20 & 40)"
+              openSegments={openSegmentInfo(state.familyTiers)}
               selectedPos={selPos} onTilePick={(pos) => setSelPos(selPos === pos ? null : pos)} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
           <div className="md:flex-1 md:min-w-0 mt-3 md:mt-0 grid gap-3 content-start">
-            <CardDetail card={selPos != null ? cards[selPos] : null} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} />
-            <LayoutPerks perks={state.perks} />
+            <CardDetail card={selPos != null ? cards[selPos] : null} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} familyTiers={state.familyTiers} />
+            <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
             {anchors.length > 0 && (
               <div className="text-[11px] rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
                 <div className="uppercase tracking-wide opacity-50 mb-1">Anker</div>
@@ -84,8 +93,10 @@ export function ChronikOverview({ state, onClose }) {
                 <div className="uppercase tracking-wide opacity-50 mb-1.5">Käufe · {purchaseLog.length}</div>
                 <div className="grid gap-1.5 max-h-56 overflow-y-auto pr-1">
                   {purchaseLog.map((e, i) => {
-                    const d = SHOP_ITEM_DEFS[e.itemId] || {};
-                    const tl = TIER_LABEL[e.tier] || { l: e.tier, c: "#8a8a95" };
+                    // Shop-Familie (#164): Name „Familie III" + Stufenfarbe/-label aus TIER_META; sonst flaches Item.
+                    const fam = e.family ? SHOP_FAMILY_DEFS[e.itemId] : null;
+                    const d = fam ? { name: `${fam.name} ${romanOf(e.tier)}`, description: fam.tiers[e.tier]?.desc } : (SHOP_ITEM_DEFS[e.itemId] || {});
+                    const tl = fam ? { l: TIER_META[e.tier]?.label || "", c: TIER_META[e.tier]?.color || "#8a8a95" } : (TIER_LABEL[e.tier] || { l: e.tier, c: "#8a8a95" });
                     const tgt = targetLabel(e.target, deck);
                     return (
                       <div key={i} className="leading-snug">

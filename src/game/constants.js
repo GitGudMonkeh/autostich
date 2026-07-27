@@ -2,12 +2,12 @@
    TUNING-BLOCK  — hier dreht der Dev im Playtest
    ============================================================ */
 export const MAX_CYCLES       = 44;     // Shop-Spec (§2.1): fester Run über genau so viele Deck-Durchläufe, danach Ende [TUNING]
-export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING]
+export const SCORE_PER_WIN    = 400;    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Pacing-Pass: 100→400, flacht die Score-Kurve über den Run ab — flache Boni akkumulieren spät, höhere Basis hebt früh relativ stärker; Sim-validiert, siehe docs/sim-harness-plan]
 export const CRIT_BASE_MULT   = 1.5;    // V2 (§22.3): Basis-Crit-Multiplikator; der Crit-Mult-Stat baut darauf auf [TUNING]
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 
 // Stat-System (V2 §22.3) — bei jedem Stat-Pick alle vier angeboten, einer gewählt; additiv, keine Caps [TUNING]
-export const STAT_CRIT_CHANCE_STEP = 0.05;  // Crit-Chance: +5 Prozentpunkte je Pick (#94)
+export const STAT_CRIT_CHANCE_STEP = 0.07;  // Crit-Chance: +7 Prozentpunkte je Pick (#94; #161 FB-6: 0,05→0,07)
 export const STAT_CRIT_MULT_STEP   = 0.25;  // Crit-Multiplikator: +0,25× je Pick (auf Basis 1,5) [#Pass3: 0,2→0,25 Crit-Buff]
 export const STAT_FORM_MULT_STEP   = 0.05;  // Formations-Mult: +5 % Score bei aktiver Formation je Pick (max 1×/Stich)
 export const STAT_STREAK_MULT_STEP = 0.02;  // Serien-Mult: +2 % Score je aktuellem Serienpunkt je Pick (#94)
@@ -29,25 +29,24 @@ export const DECISION_SCHEDULE = [
 // Shop-Münzökonomie (Shop-Spec §3) [TUNING]
 export const STARTING_COINS       = 2;   // Startmünzen bei Run-Beginn
 export const BASE_COINS_PER_CYCLE = 2;   // Münzen je vollständig abgeschlossenem Durchlauf (KONSTANT, ohne Einkommen)
-export const PERK_DECLINE_COINS   = 1;   // #138: Perk-Angebot komplett ablehnen → feste Münze (Runde nie „verschwendet")
+export const PERK_DECLINE_COINS   = 2;   // #138/#183: Perk-Angebot komplett ablehnen → feste Münzen (Runde nie „verschwendet")
 // Einkommens-Stat (überarbeitet): der Bonus wird PRO SHOP-BESUCH gutgeschrieben, nicht je Durchlauf —
 // +3 Münzen je Einkommen-Pick, gilt für jeden Shop nach der Wahl (auch den direkt bevorstehenden). [TUNING]
 export const SHOP_INCOME_PER_LEVEL = 3;
 
 // Shop-Angebot (Shop-Spec §5) [TUNING]
-export const SHOP_CATEGORIES         = ["cards", "anchors", "formations", "planning"]; // Reihenfolge = Anzeige-Reihenfolge
+export const SHOP_CATEGORIES         = ["cards", "anchors", "planning"]; // Reihenfolge = Anzeige-Reihenfolge (#179: „formations" zu Perks migriert)
 export const SHOP_ITEMS_PER_CATEGORY = 2;    // je Kategorie werden genau so viele Items angeboten
-export const SHOP_ITEMS_OFFERED      = 8;    // = SHOP_CATEGORIES.length × SHOP_ITEMS_PER_CATEGORY
+export const SHOP_ITEMS_OFFERED      = SHOP_CATEGORIES.length * SHOP_ITEMS_PER_CATEGORY; // = 6 (#179: 3 Kategorien × 2)
 export const SHOP_LEGENDARY_CHANCE   = 0.15; // Chance je Shop auf EIN legendäres Angebot (ersetzt ein normales) [#Pass4: 0,10→0,15 — Legendaries zugänglicher]
 // Vier feste Preisstufen (Spec §5.5) — keine Zwischenpreise.
 export const SHOP_PRICE = { cheap: 8, strong: 12, premium: 18, legendary: 30 };
 // Anzeige-Labels der Kategorien (UI) — geteilte Quelle für ShopScreen/Tests.
-export const SHOP_CATEGORY_LABELS = { cards: "Karten", anchors: "Anker", formations: "Formationen", planning: "Planung" };
+export const SHOP_CATEGORY_LABELS = { cards: "Karten", anchors: "Anker", planning: "Planung" }; // #195: „formations" entfernt (#179 zu Perks migriert)
 
 // Shop-Positionsanker (Shop-Spec §8) — hängen an der Deckposition (0–39), nicht an card.id. [TUNING]
-export const ANCHOR_POWER_VALUE = 2;    // Kraftanker (A1): +temp Wert der Karte auf der Position
-export const ANCHOR_SCORE       = 150;  // Punkteanker (A2): +Flat-Score bei Sieg auf der Position
-export const ANCHOR_CRIT_CHANCE = 0.15; // Kritanker (A3): +Crit-Chance (Prozentpunkte) für den Stich auf der Position
+// (#189: ANCHOR_POWER_VALUE/ANCHOR_SCORE/ANCHOR_CRIT_CHANCE entfernt — die Anker-FAMILIEN in shopFamilies.js
+//  tragen ihre Stärke je Stufe selbst; nur der Formationsanker-Fallback bleibt.)
 export const ANCHOR_FORM_FACTOR = 1.25; // Formationsanker (A5): Position zählt als Anker ×1,25 (stapelt nicht mit E7/E8)
 
 // Shop-Formationsitems (Shop-Spec §9). [TUNING]
@@ -70,9 +69,7 @@ export const STREAK_BASE_CAP  = 1.50; // … gedeckelt bei +150 % (Cap ab Serie 
 // Deckel des Stat-Beitrags analog zum Basis-Cap; bewusst großzügig, damit starke Serien-Builds stark
 // bleiben, aber nicht unbegrenzt eskalieren. [TUNING · Balance-Pass 1]
 export const STREAK_STAT_CAP  = 3.00; // Stat-Serien-Faktor höchstens +300 %
-// Gemeinsame Schwellen für Score-Perks (Kategorie D) [TUNING]
-export const D3_HIGH_MIN  = 8;    // „hohe Karte"-Schwelle für D3/D5 (#34: Skala 1–10)
-export const D4_LOW_MAX   = 3;    // „Außenseiter" bis zu diesem Wert
+// (D3_HIGH_MIN/D4_LOW_MAX entfernt — die Score-Perks sind zu Familien migriert, #167; Schwellen jetzt je Stufe in families.js.)
 
 // Raritäts-System (#33) [TUNING]
 export const RARITY_WEIGHTS            = { common: 100, rare: 25, legendary: 9 }; // 3-Stufen-Rarität; „common" = normal [TUNING]
@@ -91,12 +88,13 @@ export const SKILLS_OFFERED     = 6;   // Skills je Skill-Runde (Prototyp: 2+2+2
 export const MAX_ARCHETYPES     = 3;   // Prototyp: alle 3 Archetypen gleichzeitig aktivierbar (Cap aufgehoben)
 export const SKILL_EVERY_CYCLES = 3;   // jede N-te Runde ist eine Skill-Runde (3, 6, 9 …), sonst Perk
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
-export const LIGHTNING_CRIT_PER_SKILL = 0.05; // Blitz: je gehaltenem Blitz-Skill
+export const LIGHTNING_CRIT_PER_SKILL = 0.08; // Blitz: je gehaltenem Blitz-Skill [Balance/Pacing: 0,05→0,08 — kleiner Blitz-Buff, Sim-validiert: hebt Blitz von 0,81× auf 0,89× des besten Archetyps bei SPW=400]
 export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
 // Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
 export const ION_SCORE_PER_STACK  = 25; // +Score je Ionisierungsstapel bei Sieg mit der Karte
-export const ION_MAX_STACKS       = 4;  // max Stapel je Karte
+export const ION_MAX_STACKS       = 5;  // max Stapel je Karte [#165 Skills-Spec §5.1: 4→5]
 export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Verbrauch
+export const BLITZFAENGER_VALUE   = 2;  // Blitzfänger (#165): eine bereits volle Karte (5 Stapel) statt zu ionisieren +temp Wert (+ 1 Ladung)
 export const KETTENBLITZ_COUNT    = 2;  // Kettenblitz: zusätzlich ionisierte Karten (nur mit Ionisierung)
 export const UEBERSPANNUNG_CHARGE = 3;  // Überspannung: Zusatzladung bei Crit mit ionisierter Karte
 // Reaktoren + Geladene Serie (Stufe C)
@@ -127,7 +125,15 @@ export const FUEL_MIN_VALUE    = 8;
 export const ACCEL_BONUS       = 10;   // Brandbeschleuniger: +% Hitze bei Vorsprung ≥ ACCEL_MIN_MARGIN [#121: 15→10]
 export const ACCEL_MIN_MARGIN  = 10;
 export const GLOWING_THRESHOLD = 50;   // Glühende Klinge: ab dieser Hitze alle Karten +GLOWING_VALUE
-export const GLOWING_VALUE     = 2;
+export const GLOWING_VALUE     = 1;    // [#165 Skills §5.3: 2→1]
+export const GLOWING_LOSS_INCREASE  = 0.10; // Glühende Klinge (#165): +10 % Hitzeverlust bei Niederlage, solange aktiv (Hitze ≥ 50)
+// Überhitzt (#165 §5.3) — zusätzlicher Feuer-Skill ab hoher Hitze; Verlust-Modifikatoren ADDIEREN vor Hitzeschild.
+export const OVERHEAT_THRESHOLD     = 80;   // ab dieser Hitze wirkt Überhitzt
+export const OVERHEAT_VALUE         = 2;    // Überhitzt: zusätzlich +2 temp Wert (zusammen mit Glühende Klinge +3)
+export const OVERHEAT_LOSS_INCREASE = 0.50; // Überhitzt: +50 % Hitzeverlust (mit Glühende Klinge additiv → +60 %)
+// Funkenflug (#165 §5.3) — bankt einen Anteil des Feuer-Flat-Scores, zahlt ihn beim nächsten Sieg als Flat aus.
+export const SPARKFLIGHT_MIN_MARGIN = 8;    // Mindest-Wertvorsprung, um zu speichern
+export const SPARKFLIGHT_RATE       = 0.25; // gespeichert wird floor(FeuerFlat × 0,25)
 export const FIREROLL_MAX      = 3;    // Feuerwalze: nächste Karte +1 je Siegsserie, bis +3 [#Pass2: 5→3, flacherer Snowball]
 export const CONFLAGRATION_SCORE = 1000; // Flächenbrand (Konsument): +Flat bei Sieg mit voller Hitze …
 export const CONFLAGRATION_COST  = 100;  // …          … verbraucht exakt 100 Hitze
@@ -144,7 +150,11 @@ export const KALTFRONT_VALUE     = 3;    // Kaltfront: +temp Wert der eingefrore
 export const FROSTSPUR_VALUE      = 2;   // Frostspur: +temp Wert des neuen Nachfolgers im nächsten Durchlauf nach Frosttausch
 export const EISANKER_FACTOR     = 1.25; // Eisanker: eingefrorene Karte als Anker ×1,25 (zählt als Formation)
 export const STILLSTAND_SCORE    = 200;  // Stillstand: +Flat, wenn eine Frostkarte in ≥1 aktiver Formation gewinnt
-export const CRYSTAL_OFFSET      = 1;    // Kristallform/Eisschritt: ±Wert-Flex für Formationen
+export const ICE_STEP_OFFSET     = 1;    // Eisschritt: ±1 Wert-Flex für Treppen (bleibt ±1, Spec §5.4 Abgrenzung)
+export const CRYSTAL_OFFSET      = 2;    // Kristallform (#165 §5.4): ±2 Wert-Flex für Wiederholung/Treppe/Wechsel [1→2]
+export const CRYSTAL_FORM_BONUS  = 1.15; // Kristallform (#165): zusätzlicher Formationsbonus, wenn eine Frostkarte dadurch Teil ≥1 Wied./Treppe/Wechsel ist. OFFENER BALANCEWERT (crystalFormBonusMultiplier) — tunebar.
+export const GLACIER_VALUE       = 2;    // Gletscherschub (#165 §5.4): +temp Wert je Karte des Zielsegments, wenn ein Frosttausch dort eine neue Formation schafft
+export const EISBLUETE_VALUE     = 3;    // Eisblüte (#165 §5.4): +temp Wert je direktem Nachbarn einer eingefrorenen Siegkarte in ≥2 Formationen
 export const FROSTBISS_COUNT     = 2;    // Frostbiss: so viele Gegnerkarten des nächsten Durchlaufs betroffen
 export const FROSTBISS_DEBUFF    = 3;    // Frostbiss: −temp Wert je betroffener Gegnerkarte (nie < 0)
 export const PERMAFROST_VALUE    = 2;    // Permafrost: +Dauerwert eingefrorener Karten

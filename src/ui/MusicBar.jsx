@@ -23,15 +23,20 @@ function MarqueeText({ text, className = "" }) {
   const [dist, setDist] = useState(0); // >0 → Überlauf in px; aktiviert das Durchlaufen
 
   useEffect(() => {
+    let alive = true;
     const measure = () => {
       const c = clip.current, i = inner.current;
-      if (!c || !i) return;
+      if (!c || !i || !alive) return;
       setDist(Math.max(0, Math.ceil(i.scrollWidth - c.clientWidth)));
     };
     measure();
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
-    if (ro && clip.current) ro.observe(clip.current);
-    return () => { if (ro) ro.disconnect(); };
+    // #159: Clip UND Inneres beobachten — ein spät geladener Pixel-Font ändert nur die Textbreite (nicht die
+    // Clip-Breite), sonst bliebe die Überlauf-Entscheidung mit der Fallback-Metrik hängen.
+    if (ro) { if (clip.current) ro.observe(clip.current); if (inner.current) ro.observe(inner.current); }
+    // Zusätzlich einmal nachmessen, sobald der (spät ladende) Pixel-Font bereit ist.
+    if (typeof document !== "undefined" && document.fonts?.ready) document.fonts.ready.then(measure);
+    return () => { alive = false; if (ro) ro.disconnect(); };
   }, [text]);
 
   const rolling = dist > 0;
