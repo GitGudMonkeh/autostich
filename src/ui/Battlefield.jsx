@@ -124,8 +124,9 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0 }
     };
   });
   const ease = "cubic-bezier(0.3, 0.7, 0.3, 1)";
-  // `delay` (ms) + fill-mode `both`: der Ghost floatet erst (Drift), dann setzt der Schnitt ein — während der
-  // Wartezeit zeigen die Hälften den 0 %-Zustand (Karte ganz), Schnittlinie/Funken bleiben unsichtbar.
+  // `delay` (ms = Ruhe-Beat) + fill-mode `both`: die Karte liegt erst still, dann setzt der Schnitt ein — während der
+  // Wartezeit zeigen die Hälften den 0 %-Zustand (Karte ganz), Schnittlinie/Funken bleiben unsichtbar. Das Wegfloaten
+  // übernimmt der Wrapper (as-loss-drift-rand) mit eigenem, späterem Delay (erst NACH dem Schnitt).
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
       {/* Zwei Hälften — Klone der Verliererkarte, entlang der −24°-Schnittkante geteilt (die Polygone tilen die Karte). */}
@@ -157,7 +158,28 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0 }
    überstrahlt und zerstiebt, während ~28 Partikel radial nach außen schießen. Farbe = Crit-Lila (passt zum
    KRITISCH-Text & Crit-Puls). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen. */
 function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay = 0 }) {
-  const N = 28;
+  // Die Krit-Karte zerbirst in ein Raster kleiner PIXEL-SHARDS (clip-path-Klone der Karte): jedes Fragment fliegt
+  // radial nach außen, tumbelt (rotate) & fadet — die Karte „zerplatzt in Pixel". Deterministisch aus `seed` (kein
+  // Math.random, #68). Bis 0%/9% halten die Shards (fill-mode both + delay) den Ganz-Zustand → Karte liegt erst.
+  const ROWS = 7, COLS = 5; // 35 Fragmente → „kleine Pixel"
+  const shards = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const i = r * COLS + c;
+      const dirX = (c + 0.5) / COLS - 0.5; // −0.5..0.5: Zellmitte relativ zur Kartenmitte (Ecken fliegen weiter)
+      const dirY = (r + 0.5) / ROWS - 0.5;
+      const spread = 150 + Math.abs(fjitter(seed * 5 + i * 13, 70)); // Streuweite
+      shards.push({
+        i,
+        // clip-path inset(top right bottom left) blendet die Karte auf DIESE Rasterzelle aus (Klon zeigt nur sein Stück).
+        clip: `inset(${(r / ROWS * 100).toFixed(2)}% ${((COLS - 1 - c) / COLS * 100).toFixed(2)}% ${((ROWS - 1 - r) / ROWS * 100).toFixed(2)}% ${(c / COLS * 100).toFixed(2)}%)`,
+        sx: (dirX * spread + fjitter(seed * 3 + i * 7, 24)).toFixed(1),
+        sy: (dirY * spread + fjitter(seed * 2 + i * 11, 24) + 22).toFixed(1), // + leichte Schwerkraft nach unten
+        sr: fjitter(seed * 7 + i * 5, 70).toFixed(1),
+      });
+    }
+  }
+  const N = 20;
   const parts = Array.from({ length: N }, (_, i) => {
     const ang = (i / N) * Math.PI * 2 + fjitter(seed * 3 + i * 7, 0.45);  // gleichmäßiger Kranz + Jitter
     const rad = 62 + Math.abs(fjitter(seed * 5 + i * 13, 92));            // 62..154 px (weiter als der Slice)
@@ -167,15 +189,20 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
       dy: (Math.sin(ang) * rad).toFixed(1),
       sz: (3 + Math.abs(fjitter(seed * 7 + i * 5, 4))).toFixed(1),        // 3..7 px, gemischte Größen
       white: i % 5 < 2,         // ~40 % weiß, Rest Crit-Farbe
-      confetti: i % 5 === 0,    // ~5 kleine Konfetti-Rechtecke
+      confetti: i % 5 === 0,    // ~4 kleine Konfetti-Rechtecke
     };
   });
   const ease = "cubic-bezier(0.2, 0.7, 0.2, 1)";
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      {/* Karte berstet: kurz aufskalieren + überstrahlen, dann zerstieben/faden. `delay` (Ghost: erst floaten,
-          dann bersten) hält per fill-mode `both` den 0 %-Zustand (Karte ganz, Flash/Ring/Partikel unsichtbar). */}
-      <div className="absolute inset-0" style={{ animation: `as-boom-card ${cardDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity, filter" }}>{cardEl}</div>
+      {/* Pixel-Shards: 35 clip-path-Fragmente der Karte, die nach dem Ruhe-Beat (delay) nach außen bersten. */}
+      {shards.map((s) => (
+        <div key={`sh${s.i}`} className="absolute inset-0" style={{
+          clipPath: s.clip,
+          "--sx": `${s.sx}px`, "--sy": `${s.sy}px`, "--sr": `${s.sr}deg`,
+          animation: `as-boom-shard ${cardDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity",
+        }}>{cardEl}</div>
+      ))}
       {/* Zentral-Flash: heller Kern (weiß → Farbe), dehnt sich und fadet. */}
       <div style={{ position: "absolute", left: "50%", top: "50%", width: 26, height: 26, marginLeft: -13, marginTop: -13,
         borderRadius: "50%", background: `radial-gradient(circle, #ffffff 0%, ${color} 46%, transparent 72%)`,
@@ -184,9 +211,9 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
       <div style={{ position: "absolute", left: "50%", top: "50%", width: 30, height: 30, marginLeft: -15, marginTop: -15,
         borderRadius: "50%", border: `2px solid ${color}`, boxShadow: `0 0 10px ${color}, 0 0 4px #fff inset`,
         animation: `as-boom-ring ${burstDur}ms ease-out ${delay}ms both`, willChange: "transform, opacity" }} />
-      {/* Partikel aus dem Zentrum. */}
+      {/* Lose Partikel aus dem Zentrum (zusätzlich zu den Karten-Shards). */}
       {parts.map((s) => (
-        <div key={s.i} style={{
+        <div key={`pt${s.i}`} style={{
           position: "absolute", left: "50%", top: "50%",
           width: s.confetti ? +(s.sz) + 2 : +s.sz, height: s.confetti ? (+s.sz + 2) / 2 : +s.sz,
           borderRadius: s.confetti ? 1 : "50%",
@@ -201,10 +228,12 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
 
 /* #177+/#186: Schnitt-/Explosions-Ghost-Pool für BEIDE Seiten. Verliert eine Karte (Spieler bei Niederlage,
    Gegner bei Sieg), wird sie in-place ausgeblendet und stattdessen ein entkoppelter Klon in diesem Layer
-   (im jeweiligen Karten-Slot, absolute inset-0) gerendert: erst kurz wegfloaten (as-loss-drift-rand, #187:
-   zufällige Richtung rundum, deterministisch aus seed), dann per `delay` schneiden bzw. bersten. Weil der Pool NICHT pro Stich remountet, floatet der Ghost
-   in voller Länge aus und überlappt bei hohem Turbo/vielen Siegen mit dem nächsten Stich — Spieler- UND
-   Gegnerkarte fühlen sich damit gleich lang an (#186). Ghosts entfernen sich nach ihrer Lebensdauer selbst. */
+   (im jeweiligen Karten-Slot, absolute inset-0) gerendert: die Karte liegt erst kurz (rest), dann setzt der Schnitt
+   bzw. die Pixel-Explosion IN PLACE ein, und DANACH floatet der Ghost weg (as-loss-drift-rand, #187: zufällige
+   Richtung rundum, deterministisch aus seed; nur beim Slice — die Explosion zerbirst an Ort und Stelle). Weil der
+   Pool NICHT pro Stich remountet, floatet der Ghost in voller Länge aus und überlappt bei hohem Turbo/vielen Siegen
+   mit dem nächsten Stich — Spieler- UND Gegnerkarte fühlen sich damit gleich lang an (#186). Ghosts entfernen sich
+   nach ihrer Lebensdauer selbst. */
 function SlashGhostLayer({ ghosts }) {
   return (
     <>
@@ -214,19 +243,22 @@ function SlashGhostLayer({ ghosts }) {
             ionStacks={g.ionStacks} frozen={g.frozen} frostbitten={g.frostbitten} frostAnimated
             allyColor={g.allyColor} frontImage={g.frontImage} />
         );
-        // #187: Drift in eine ZUFÄLLIGE Richtung (rundum, volle 360°) statt fix nach oben — deterministisch aus
-        // g.seed via fjitter, damit ein Re-Render nicht neu würfelt. Gilt für BEIDE Seiten und BEIDE fx (Slice +
-        // Explosion), da beide erst driften. Richtung/Weite/Rotation als CSS-Vars an das richtungsneutrale Keyframe.
-        const dang = fjitter(g.seed * 3 + 2, Math.PI);           // −π..π → volle 360° rundum
-        const drad = 40 + Math.abs(fjitter(g.seed * 5 + 3, 26)); // 40..66 px Driftweite (dezent gedeckelt, überlappt kaum)
-        const drot = fjitter(g.seed * 7 + 5, 8);                 // −8..8° leichte Rotation
+        // Reihenfolge (Wunsch): Karte liegt (rest) → Slice/Explosion IN PLACE (delay = g.rest) → DANACH floatet der
+        // Ghost weg. #187: Slice driftet nach dem SCHNITT (driftDelay = rest + cut) in eine ZUFÄLLIGE Richtung
+        // (rundum, deterministisch aus g.seed via fjitter, kein Neu-Würfeln bei Re-Render). Die Krit-Explosion
+        // zerbirst an Ort und Stelle in Pixel-Shards (die Shards fliegen selbst nach außen) → kein Wrapper-Drift.
+        const isBoom = g.fx === "explode";
+        const dang = fjitter(g.seed * 3 + 2, Math.PI);                        // −π..π → volle 360° rundum
+        const drad = isBoom ? 0 : 40 + Math.abs(fjitter(g.seed * 5 + 3, 26)); // Slice: 40..66 px Driftweite; Explosion: kein Drift
+        const drot = isBoom ? 0 : fjitter(g.seed * 7 + 5, 8);                 // −8..8° leichte Rotation (nur Slice)
+        const driftDelay = g.rest + (isBoom ? 0 : g.cut);                     // Float-Away startet NACH dem Schnitt
         return (
           <div key={g.id} className="absolute inset-0 pointer-events-none" aria-hidden="true"
-            style={{ animation: `as-loss-drift-rand ${g.drift + g.halves}ms cubic-bezier(0.2, 0.6, 0.3, 1) forwards`, willChange: "transform",
+            style={{ animation: `as-loss-drift-rand ${g.float}ms cubic-bezier(0.2, 0.6, 0.3, 1) ${driftDelay}ms forwards`, willChange: "transform",
                      "--drx": `${(Math.cos(dang) * drad).toFixed(1)}px`, "--dry": `${(Math.sin(dang) * drad).toFixed(1)}px`, "--drot": `${drot}deg` }}>
-            {g.fx === "explode"
-              ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.drift} />
-              : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.drift} />}
+            {isBoom
+              ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} />
+              : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} />}
           </div>
         );
       })}
@@ -276,12 +308,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   // den nächsten Stich nicht verzögert/überläuft. Bei sehr hohem Turbo (winziger flipMs) oder reduzierter Bewegung
   // wird der Slice gar nicht gerendert → Fallback aufs bestehende Ergebnis-Juice (Puls/Glow/Banner).
   const sliceOn  = !reduced && !!t && (win || lost) && flipMs > 170;
-  const sHalves  = clamp(flipMs * 0.55, 150, 600) + 1000;   // Hälften/Krit-Karte gleiten/faden — +1 s länger floaten (Wunsch)
+  // Reihenfolge (Wunsch): Karte liegt kurz still (sRest) → Slice/Explosion setzt IN PLACE ein → DANACH floatet der
+  // geschnittene Ghost weg (sFloat, nur beim Slice; die Krit-Explosion zerbirst an Ort und Stelle in Pixel-Shards).
+  const sRest    = clamp(flipMs * 0.16, 70, 190);    // Ruhe-Beat: Karte liegt, BEVOR Slice/Explosion startet
+  const sHalves  = clamp(flipMs * 0.55, 150, 600) + 800;   // Hälften/Pixel-Shards gleiten auseinander & faden
   const sCut     = clamp(flipMs * 0.13, 55, 130);    // Schnittlinie wächst (~120 ms) & fadet
-  const sSpark   = clamp(flipMs * 0.5, 150, 520) + 1000;    // Funken/Krit-Partikel — +1 s länger floaten (Wunsch)
+  const sSpark   = clamp(flipMs * 0.5, 150, 520) + 800;    // Funken/Krit-Partikel
   const sBoom    = clamp(flipMs * 0.22, 90, 230);    // Krit-Zentral-Flash (kurz & hell)
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
-  const sDrift   = clamp(flipMs * 0.3, 90, 260);     // Niederlage-Ghost floatet erst kurz (~260 ms @1×), dann Schnitt
+  const sFloat   = clamp(flipMs * 0.55, 220, 820);   // Float-Away NACH dem Slice: Ghost driftet in Zufallsrichtung (#187)
   // Suit-Farbe der GESCHNITTENEN (Verlierer-)Karte → Schnittlinie + Funken. Sieg: Gegnerkarte · Niederlage: Spielerkarte.
   const loserColor = sliceOn ? suitColor(win ? t.oCard.suit : t.pCard.suit) : null;
   // Sieg: Gegnerkarte wird in-place geschnitten, Spielerkarte kippt an. Niederlage: Spielerkarte wird NICHT in-place
@@ -416,7 +451,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   useEffect(() => {
     if (!t) { setSlashGhosts([]); return; }        // Menü/neuer Lauf → Pool leeren
     if (!sliceOn) return;                           // nur bei einem echten (animierten) Sieg/Niederlage-Stich
-    const base = { drift: sDrift, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom };
+    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat };
     const spawned = [];
     if (lost) {  // Spielerkarte verliert → Schnitt-Ghost auf der Spielerseite
       spawned.push({ ...base, id: `pg${t.trickNo}`, side: "player", fx: "slice",
@@ -438,7 +473,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     const tm = setTimeout(() => {
       setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
-    }, sDrift + sHalves + 80);
+    }, sRest + Math.max(sHalves, sSpark) + 100); // Lebensdauer: Ruhe + längster FX-Teil (Hälften/Shards bzw. Funken)
     ghostTimers.current.push(tm);
   }, [t?.trickNo]);
   const playerGhosts = slashGhosts.filter((g) => g.side === "player");
