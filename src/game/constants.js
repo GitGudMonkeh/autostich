@@ -38,7 +38,7 @@ export const SHOP_INCOME_PER_LEVEL = 3;
 export const SHOP_CATEGORIES         = ["cards", "anchors", "planning"]; // Reihenfolge = Anzeige-Reihenfolge (#179: „formations" zu Perks migriert)
 export const SHOP_ITEMS_PER_CATEGORY = 2;    // je Kategorie werden genau so viele Items angeboten
 export const SHOP_ITEMS_OFFERED      = SHOP_CATEGORIES.length * SHOP_ITEMS_PER_CATEGORY; // = 6 (#179: 3 Kategorien × 2)
-export const SHOP_LEGENDARY_CHANCE   = 0.15; // Chance je Shop auf EIN legendäres Angebot (ersetzt ein normales) [#Pass4: 0,10→0,15 — Legendaries zugänglicher]
+export const SHOP_LEGENDARY_CHANCE   = 0.03; // Chance je Shop auf EIN legendäres Angebot (ersetzt ein normales) [0,15→0,03 — Legendaries seltener]
 // Vier feste Preisstufen (Spec §5.5) — keine Zwischenpreise.
 export const SHOP_PRICE = { cheap: 8, strong: 12, premium: 18, legendary: 30 };
 // Anzeige-Labels der Kategorien (UI) — geteilte Quelle für ShopScreen/Tests.
@@ -78,8 +78,8 @@ export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendarie
 
 // Legendär-Roll (Shop-Spec §10 P5/P6): expliziter Wurf vor jedem Perk-/Skill-Angebot. Bei Erfolg wird genau
 // EIN Legendäres erzwungen, sonst enthält das Angebot keins. Chance = Basis + Bonus (P5/P6, je +5 pp), Bonus-Cap. [TUNING]
-export const PERK_LEGENDARY_BASE       = 0.08; // Basis-Legendär-Chance Perk-Angebot
-export const SKILL_LEGENDARY_BASE      = 0.08; // Basis-Legendär-Chance Skill-Angebot
+export const PERK_LEGENDARY_BASE       = 0.03; // Basis-Legendär-Chance Perk-Angebot [0,08→0,03]
+export const SKILL_LEGENDARY_BASE      = 0.03; // Basis-Legendär-Chance Skill-Angebot [0,08→0,03]
 export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P6): max +15 pp
 
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
