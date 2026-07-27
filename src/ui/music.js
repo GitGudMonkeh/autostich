@@ -14,21 +14,35 @@ import shuffle_pulse from "../assets/music/shuffle_pulse.mp3";
 import stacked_multipliers from "../assets/music/stacked_multipliers.mp3";
 import table_dust from "../assets/music/table_dust.mp3";
 import table_dust_2 from "../assets/music/table_dust_2.mp3";
+// #171: sechs neu normalisierte Tracks (EBU R128, −14 LUFS — wie der Bestand) zusätzlich in den Run-Pool.
+// Morning Deck (Menü/Victory) wurde nur als Asset durch die normalisierte Version ersetzt, bleibt aus dem Pool.
+import asymmetric_loop from "../assets/music/asymmetric_loop.mp3";
+import card_momentum_remastered from "../assets/music/card_momentum_remastered.mp3";
+import formation_shuffle from "../assets/music/formation_shuffle.mp3";
+import mutation_funk_drive from "../assets/music/mutation_funk_drive.mp3";
+import neon_static from "../assets/music/neon_static.mp3";
+import neon_static_remaster from "../assets/music/neon_static_remaster.mp3";
 
 const MENU_TRACK = { title: "Morning Deck", url: morning_deck };
-// Run-Zufallspool (11 harmonisierte Tracks). Titel = Anzeige im Musik-Panel.
+// Run-Zufallspool (17 harmonisierte Tracks). Titel = Anzeige im Musik-Panel.
 const POOL = [
   { title: "Card Momentum", url: card_momentum },
+  { title: "Card Momentum (Remastered)", url: card_momentum_remastered }, // #171
   { title: "Deck Alignment", url: deck_alignment },
   { title: "Glass Sequence", url: glass_sequence },
   { title: "Neon Card Rush", url: neon_card_rush },
   { title: "Neon Card Rush 2", url: neon_card_rush_2 },
+  { title: "Neon Static", url: neon_static },                             // #171
+  { title: "Neon Static (Remaster)", url: neon_static_remaster },         // #171
   { title: "Pulsing Cards", url: pulsing_cards },
   { title: "Relay of Multipliers", url: relay_of_multipliers },
   { title: "Shuffle Pulse", url: shuffle_pulse },
   { title: "Stacked Multipliers", url: stacked_multipliers },
   { title: "Table Dust", url: table_dust },
   { title: "Table Dust 2", url: table_dust_2 },
+  { title: "Asymmetric Loop", url: asymmetric_loop },                     // #171
+  { title: "Formation Shuffle", url: formation_shuffle },                 // #171
+  { title: "Mutation Funk Drive", url: mutation_funk_drive },             // #171
 ];
 
 let el = null;
