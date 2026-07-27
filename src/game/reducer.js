@@ -56,7 +56,8 @@ export function initialState(rng = Math.random) {
     weaknessBig: false, // Rarität #167: D_WEAKNESS IV — rüstende Niederlage mit großem Abstand (→ +900 statt +600)
     interplayStored: 0, // Rarität #167: D_INTERPLAY IV — in Niederlagen gebankter Score, beim nächsten Sieg als Flat ausgezahlt
     misfireScore: 0, // V2 §22.6 D15: Score-Ladung (Fehlzündung)
-    winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Farbserie / Volles Haus
+    winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Farbserie / Volles Haus (recentResults → secondLastResult)
+    segmentWins: 0, // #189 Volles Haus: segment-genauer Sieg-Zähler (ersetzt das rollende Fenster)
     // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
     statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, economyStatLevel: 0, statOffer: null,
     formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt

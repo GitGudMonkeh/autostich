@@ -275,8 +275,8 @@ describe("Kategorie E — Formations-Parameter je Stufe (Spec §3.2 E)", () => {
     expect([1, 2, 3, 4].map((t) => [p[t].wMinLen, p[t].wMinDiff])).toEqual([[3, 3], [2, 4], [2, 3], [2, 2]]);
     expect(p[4].wFactorStart).toBe(1.35);
   });
-  it("E_RPM: Doppel-Treppe-Budget je Segment (I/II 1, III 2, IV ∞)", () => {
-    expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_RPM.tiers[t].drehSeg)).toEqual([1, 1, 2, Infinity]);
+  it("E_RPM: Doppel-Treppe-Budget je Segment monoton 1/2/3/∞ (#189)", () => {
+    expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_RPM.tiers[t].drehSeg)).toEqual([1, 2, 3, Infinity]);
   });
   it("E_LOSS / E_QUICKSHOT: Anker-Prädikate + Faktor/Wert je Stufe (0-basierte Positionen)", () => {
     const l = FAMILY_DEFS.E_LOSS.tiers, q = FAMILY_DEFS.E_QUICKSHOT.tiers;

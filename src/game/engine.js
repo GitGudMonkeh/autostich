@@ -60,7 +60,8 @@ export function resolveTrick(state, rng = Math.random) {
     interplayStored = 0, // Rarität #167: D_INTERPLAY IV — in Niederlagen gebankter Score, beim nächsten Sieg als Flat ausgezahlt
     misfireScore = 0, // V2 §22.6 D15: Score-Ladung, +30 je Sieg ohne Crit (max 300), Auszahlung bei Crit
     winSuit = null, winSuitStreak = 0, // #71 Farbserie: gleicher-Farbe-Siegesserie
-    recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich
+    recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich (für secondLastResult, C_GUARD IV)
+    segmentWins = 0, // #189 Volles Haus: Siege im AKTUELLEN Segment vor diesem Stich (segment-genau, ersetzt das rollende Fenster)
     statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0, statOffer = null, // Stat-System (V2 §22.3)
     formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
@@ -130,8 +131,11 @@ export function resolveTrick(state, rng = Math.random) {
   const predValue = pos > 0 ? deck[playerOrder[seq[pos - 1]]].value : null;
 
   trickNo += 1;
-  // #71 Volles Haus: Siege in den (bis zu 4) Stichen VOR diesem — inkl. aktuellem Sieg = Fenster 5.
-  const recentWinCount = recentResults.filter((r) => r === "win").length;
+  // #189 Volles Haus: SEGMENT-genaue Sieg-Zählung. Beim ersten Stich eines Segments (actualPos % SEGMENT_SIZE === 0)
+  // zurücksetzen; recentWinCount = Siege DIESES Segments VOR diesem Stich. Ersetzt das alte rollende 4er-Fenster
+  // (recentResults), das Segment-/Durchlaufgrenzen ignorierte → „X Siege in einem Segment" ist jetzt exakt.
+  if (actualPos % SEGMENT_SIZE === 0) segmentWins = 0;
+  const recentWinCount = segmentWins;
   // Effektive Serie für Serien-Effekte (Stand VOR dem Stich).
   let serieStreak = winStreak;
   // Kartenrollen (V2 §22.6 C): Rolle der aktuellen Karte, Triumph-Armierung, Segment-Tiefste.
@@ -235,6 +239,7 @@ export function resolveTrick(state, rng = Math.random) {
 
   if (won) {
     winStreak += 1; wins += 1;
+    segmentWins += 1; // #189 Volles Haus: Sieg im aktuellen Segment (recentWinCount trug oben den Stand DAVOR)
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     serieStreak = winStreak; // effektive Serie NACH diesem Sieg
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
@@ -626,7 +631,7 @@ export function resolveTrick(state, rng = Math.random) {
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     freePerkReroll: newFreePerkReroll, freeSkillReroll: newFreeSkillReroll, // Planung (§10 P-L1)
     critFollowArmed, weaknessArmed, weaknessBig, interplayStored, misfireScore,
-    winSuit, winSuitStreak, recentResults,
+    winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung

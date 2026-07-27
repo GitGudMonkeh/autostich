@@ -447,6 +447,20 @@ describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien
     for (let i = 0; i < 5; i++) s = resolveTrick(s, never); // fünf Siege in Folge, fünfter auf Segmentposition 4
     expect(s.lastTrick.breakdown.flats).toBeCloseTo(500); // isolierter Flat-Anteil der Familie
   });
+
+  it("D_FULL_HOUSE #189: zählt segment-genau — kein Leck über die Segmentgrenze", () => {
+    // Spieler 5 überall; Gegner 0 überall AUSSER Position 5 (=9 → Niederlage). D_FULL_HOUSE II triggert an der
+    // 4. Segmentkarte (posInCycle%5===3) bei ≥3 Segment-Siegen davor. In Segment 1 (Pos 5–9) siegt der Spieler nur
+    // an Pos 6 und 7 (Pos 5 = Niederlage) → an Pos 8 nur 2 Segment-Siege davor → KEIN Bonus. Das alte rollende
+    // 4er-Fenster hätte den Sieg an Pos 4 (Segment 0) mitgezählt und fälschlich +650 gegeben.
+    const pDeck = Array.from({ length: 40 }, (_, i) => ({ id: `P${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: 5, value: 5 }));
+    const oDeck = Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: 0, value: i === 5 ? 9 : 0 }));
+    let s = { ...initialState(makeRng(1)), deck: pDeck, oppDeck: oDeck, playerOrder: identity(), oppOrder: identity(), familyTiers: { D_FULL_HOUSE: 2 } };
+    for (let i = 0; i < 9; i++) s = resolveTrick(s, never); // bis Pos 8 (4. Karte von Segment 1)
+    expect(s.lastTrick.originalPosition).toBe(8);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.flats).toBeCloseTo(0); // nur 2 Segment-Siege davor → kein Full-House (früher: +650 Leck)
+  });
 });
 
 describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt 3)", () => {

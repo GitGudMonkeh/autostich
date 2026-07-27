@@ -196,7 +196,8 @@ const D_FAMILIES = {
   },
   D_FULL_HOUSE: {
     id: "D_FULL_HOUSE", cat: "D", name: "Volles Haus", upgradeType: REPLACEMENT,
-    // Zählt die letzte Position eines Segments (posInCycle%5===4) + recentWinCount der Siege davor.
+    // Zählt eine Segmentposition (posInCycle%5) + recentWinCount = Siege DIESES Segments davor (#189: segment-genau,
+    // die Engine setzt den Zähler an jeder Segmentgrenze zurück → kein Leck über Segment-/Durchlaufgrenzen).
     tiers: {
       1: { desc: "Fünf Siege in einem Segment: +500 Score auf den fünften.",  scoreFlat: (c) => (c.posInCycle % 5 === 4 && (c.recentWinCount || 0) >= 4 ? 500 : 0) },
       2: { desc: "Vier Siege in einem Segment: +650 Score auf den vierten.",  scoreFlat: (c) => (c.posInCycle % 5 === 3 && (c.recentWinCount || 0) >= 3 ? 650 : 0) },
@@ -602,7 +603,7 @@ const C_FAMILIES = {
 //        openBoundaries → Anzahl offener Segmentgrenzen (E_SEGMENT; Infinity = alle)
 //      §10-Näherungen (der paarweise/laufbasierte Scanner kann einige IV-Sonderregeln nicht exakt abbilden):
 //        E_GENTLE IV „gleich = +1 Schritt" ≈ unbegrenzte Gleichstände; E_BIGSTEP IV „Richtung einmal wechseln"
-//        ≈ unbegrenzte Rückschritte; E_RPM I/II per-Segment-Budget 1 (mechanisch gleich); E_SEGMENT I/II öffnen
+//        ≈ unbegrenzte Rückschritte; E_SEGMENT I/II öffnen
 //        die ersten 1/2 Grenzen deterministisch (statt Auswahl → kein zusätzlicher Ziel-Fluss), III/IV alle.
 const INF = Infinity;
 const ANKER = 1.25; // Standard-Anker-Faktor (= ANCHOR_FORM_FACTOR/ANKER_FACTOR in constants/formations); IV hebt auf 1,35.
@@ -654,11 +655,13 @@ const E_FAMILIES = {
   },
   E_RPM: {
     id: "E_RPM", cat: "E", name: "Drehzahl", upgradeType: REPLACEMENT,
+    // #189: monotoner Stufen-Ladder auf EINER Achse (Doppel-Treppen je Segment). Zuvor trugen I und II beide
+    // drehSeg:1 (mechanisch identisch), II versprach im Text aber „je Treppe" mehr → jetzt 1/2/3/∞ pro Segment.
     tiers: {
-      1: { desc: "Einmal pro Segment darf eine Karte zu zwei Treppen gehören.", drehSeg: 1 },
-      2: { desc: "Je Treppe darf eine Karte zu einer weiteren Treppe gehören.",  drehSeg: 1 },
-      3: { desc: "Bis zu zwei Karten pro Segment dürfen zu zwei Treppen gehören.", drehSeg: 2 },
-      4: { desc: "Jede Karte darf gleichzeitig zu zwei Treppen gehören.",         drehSeg: INF },
+      1: { desc: "Einmal pro Segment darf eine Karte zu zwei Treppen gehören.",   drehSeg: 1 },
+      2: { desc: "Bis zu zwei Karten pro Segment dürfen zu zwei Treppen gehören.", drehSeg: 2 },
+      3: { desc: "Bis zu drei Karten pro Segment dürfen zu zwei Treppen gehören.", drehSeg: 3 },
+      4: { desc: "Jede Karte darf gleichzeitig zu zwei Treppen gehören.",          drehSeg: INF },
     },
   },
   E_LOSS: {
