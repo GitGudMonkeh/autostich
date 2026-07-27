@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { suitName, suitColor } from "../game/constants.js";
+import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
 import { formationLabel } from "./formationLabels.js";
@@ -78,7 +78,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {} }) {
       {ion > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
           <span className="opacity-45">Ionisierung:</span>
-          <Chip c="#5ec8f0">⚡ {ion}/4 · +{ion * 25} Score</Chip>
+          <Chip c="#5ec8f0">⚡ {ion}/{ION_MAX_STACKS} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
         </div>
       )}
     </div>

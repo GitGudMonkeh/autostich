@@ -1,4 +1,4 @@
-import { suitColor, suitName } from "../game/constants.js";
+import { suitColor, suitName, ION_MAX_STACKS, ION_SCORE_PER_STACK } from "../game/constants.js";
 import { FrostOverlay } from "./FrostOverlay.jsx";
 
 /* Eine Karte. Die große Zahl = effektiver Kampfwert dieses Stichs (= value + stichBonus),
@@ -34,7 +34,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
   const effective = value + stichBonus;
   // Ionisierung: BLAUER Rahmen wie der Serien-Schutz (Geladene Serie, #5ec8f0) → sofort erkennbar.
   // Kräftiger bei „voll". Wird mit einem etwaigen Gewinn-/Verlust-Glow LAYERED (bleibt also immer sichtbar).
-  const ionFull = ionStacks >= 4;
+  const ionFull = ionStacks >= ION_MAX_STACKS;
   const ionRing = ionStacks > 0 ? `0 0 0 2px #5ec8f0, 0 0 ${ionFull ? 12 : 9}px #5ec8f0${ionFull ? "aa" : "77"}` : null;
   // Frost (#93 F3 / #136): der eisige Look kommt jetzt aus dem FrostOverlay-Layer (Tint + Körnung + optional
   // Sweep), nicht mehr aus einem box-shadow → mehr „eisig" und weiterhin konfliktfrei mit Ion-Ring/Glow.
@@ -72,10 +72,10 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
       {frostbitten && (
         <div className="absolute bottom-1 right-1 text-[13px] leading-none" style={{ color: "#f0a09a", textShadow: "0 0 5px #e0605a" }} title="Frostbiss −3">❄</div>
       )}
-      {/* Ionisierung: Blitze in der unteren linken Ecke, vertikal von unten nach oben gestapelt (Anzahl = Stapel, max 4). */}
+      {/* Ionisierung: Blitze in der unteren linken Ecke, vertikal von unten nach oben gestapelt (Anzahl = Stapel, max ION_MAX_STACKS). */}
       {ionStacks > 0 && (
         <div className="absolute bottom-1 left-1 flex flex-col-reverse items-center leading-none"
-          title={`Ionisiert ${ionStacks}/4 — +${ionStacks * 25} Score bei Sieg${ionFull ? " · VOLL IONISIERT" : ""}`}>
+          title={`Ionisiert ${ionStacks}/${ION_MAX_STACKS} — +${ionStacks * ION_SCORE_PER_STACK} Score bei Sieg${ionFull ? " · VOLL IONISIERT" : ""}`}>
           {Array.from({ length: ionStacks }, (_, i) => (
             <span key={i} className="text-[11px]" style={{ color: "#5ec8f0", textShadow: "0 0 4px #5ec8f0", marginTop: -1 }}>⚡</span>
           ))}
