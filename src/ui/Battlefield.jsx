@@ -516,10 +516,17 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (!t) { seenTrick.current = -1; setFloats([]); return; }      // Menü/neuer Lauf → Pool leeren
     if (t.trickNo === seenTrick.current) return;
     seenTrick.current = t.trickNo;
-    // #110: Karten-Aufdeck-Sound je Stich — startet zeitgleich mit der Flip-Animation (Ergebnis steht bei RESOLVE_TRICK
-    // bereits fest → kein Nachhinken). Rate steigt dezent mit dem Turbo (kürzerer flipMs → höhere Rate, gedeckelt).
-    audio.play("cardflip", { rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)), gain: CARDFLIP_GAIN[t.result] ?? 1 });
+    // #110/#196: Karten-Aufdeck-Sound je Stich — startet zeitgleich mit der Flip-Animation (Ergebnis steht bei
+    // RESOLVE_TRICK fest). Rate steigt dezent mit dem Turbo. #196: bei Sieg lauter (×1,2) + Bass-Anhebung, die mit
+    // Crit und der Effekt-Stufe (fxIntensity, 0–4) wächst → der Klang zieht mit der visuellen Wucht mit;
+    // Niederlage/Gleichstand bleiben unverändert (kein Bass, kein Lautstärke-Boost).
     const w = t.result === "win" || t.result === "win_tie";
+    const flipTier = fxIntensity(t.gained || 0).tier; // 0–4 (STARK…GOTTGLEICH); tier 0 (<10k) → nur Sieg-Basis
+    audio.play("cardflip", {
+      rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)),
+      gain: (CARDFLIP_GAIN[t.result] ?? 1) * (w ? 1.2 : 1),
+      bass: w ? 4 + 1.5 * flipTier + (t.isCrit ? 4 : 0) : 0,
+    });
     const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
     const critC = t.isCrit ? CRIT_COLOR : "#d4a63a";
     const entries = [];
