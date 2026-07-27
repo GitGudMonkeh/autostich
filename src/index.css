@@ -131,6 +131,26 @@ button { font-family: inherit; }
   100% { transform: translate(-10px, -52px) rotate(-6deg); }
 }
 
+/* Krit-Explosion (statt Klingenschnitt bei einem kritischen Sieg): die Gegnerkarte berstet. `as-boom-card`
+   lässt die Karte kurz aufskalieren + überstrahlen (brightness), dann skaliert sie weg und fadet; `as-boom-flash`
+   ist der helle Zentralkern (dehnt sich, fadet); `as-boom-ring` ist die nach außen wachsende Schockwelle.
+   Die Partikel selbst nutzen dieselbe `as-spark`-Bahn wie die Slice-Funken (--dx/--dy, Start-Opacity 0).
+   reduced-motion greift global (unten) UND ExplosionFx wird bei reduzierter Bewegung gar nicht gerendert. */
+@keyframes as-boom-card {
+  0%   { transform: scale(1)    rotate(0deg); opacity: 1; filter: brightness(1); }
+  16%  { transform: scale(1.12) rotate(0deg); opacity: 1; filter: brightness(2.4); }
+  100% { transform: scale(1.55) rotate(6deg); opacity: 0; filter: brightness(1); }
+}
+@keyframes as-boom-flash {
+  0%   { transform: scale(0.3); opacity: 0; }
+  14%  { opacity: 1; }
+  100% { transform: scale(6);   opacity: 0; }
+}
+@keyframes as-boom-ring {
+  0%   { transform: scale(0.3); opacity: 0.9; }
+  100% { transform: scale(5);   opacity: 0; }
+}
+
 /* #136 Eis-Schimmer: wandernder Glanzstreif („Sweep-Shine") über eingefrorenen Karten. Nur auf der aktiven
    Battlefield-Karte (Board bleibt ruhig = Frostglas ohne Sweep). screen-Blend. reduced-motion global unten. */
 @keyframes as-frost-sweep { 0% { background-position: 160% 0; } 100% { background-position: -60% 0; } }

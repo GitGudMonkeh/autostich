@@ -112,6 +112,53 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0 }
   );
 }
 
+/* Krit-Partikelexplosion (statt Klingenschnitt): dieselbe Funken-DNA wie SliceFx (deterministischer Kranz aus
+   `seed`, ~40 % weiß / Rest Farbe, ein paar Konfetti), nur größer & runder — kein Schnitt, sondern die Karte
+   „berstet": ein heller Zentral-Flash blitzt auf, ein Schockwellen-Ring dehnt sich, die Karte skaliert kurz auf,
+   überstrahlt und zerstiebt, während ~28 Partikel radial nach außen schießen. Farbe = Crit-Lila (passt zum
+   KRITISCH-Text & Crit-Puls). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen. */
+function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed }) {
+  const N = 28;
+  const parts = Array.from({ length: N }, (_, i) => {
+    const ang = (i / N) * Math.PI * 2 + fjitter(seed * 3 + i * 7, 0.45);  // gleichmäßiger Kranz + Jitter
+    const rad = 62 + Math.abs(fjitter(seed * 5 + i * 13, 92));            // 62..154 px (weiter als der Slice)
+    return {
+      i,
+      dx: (Math.cos(ang) * rad).toFixed(1),
+      dy: (Math.sin(ang) * rad).toFixed(1),
+      sz: (3 + Math.abs(fjitter(seed * 7 + i * 5, 4))).toFixed(1),        // 3..7 px, gemischte Größen
+      white: i % 5 < 2,         // ~40 % weiß, Rest Crit-Farbe
+      confetti: i % 5 === 0,    // ~5 kleine Konfetti-Rechtecke
+    };
+  });
+  const ease = "cubic-bezier(0.2, 0.7, 0.2, 1)";
+  return (
+    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* Karte berstet: kurz aufskalieren + überstrahlen, dann zerstieben/faden. */}
+      <div className="absolute inset-0" style={{ animation: `as-boom-card ${cardDur}ms ${ease} both`, willChange: "transform, opacity, filter" }}>{cardEl}</div>
+      {/* Zentral-Flash: heller Kern (weiß → Farbe), dehnt sich und fadet. */}
+      <div style={{ position: "absolute", left: "50%", top: "50%", width: 26, height: 26, marginLeft: -13, marginTop: -13,
+        borderRadius: "50%", background: `radial-gradient(circle, #ffffff 0%, ${color} 46%, transparent 72%)`,
+        animation: `as-boom-flash ${flashDur}ms ease-out both`, willChange: "transform, opacity" }} />
+      {/* Schockwellen-Ring: dünner, glühender Ring wächst nach außen. */}
+      <div style={{ position: "absolute", left: "50%", top: "50%", width: 30, height: 30, marginLeft: -15, marginTop: -15,
+        borderRadius: "50%", border: `2px solid ${color}`, boxShadow: `0 0 10px ${color}, 0 0 4px #fff inset`,
+        animation: `as-boom-ring ${burstDur}ms ease-out both`, willChange: "transform, opacity" }} />
+      {/* Partikel aus dem Zentrum. */}
+      {parts.map((s) => (
+        <div key={s.i} style={{
+          position: "absolute", left: "50%", top: "50%",
+          width: s.confetti ? +(s.sz) + 2 : +s.sz, height: s.confetti ? (+s.sz + 2) / 2 : +s.sz,
+          borderRadius: s.confetti ? 1 : "50%",
+          background: s.white ? "#ffffff" : color, boxShadow: `0 0 6px ${s.white ? "#ffffff" : color}`,
+          "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
+          animation: `as-spark ${burstDur}ms ease-out both`, willChange: "transform, opacity",
+        }} />
+      ))}
+    </div>
+  );
+}
+
 /* #177+: Niederlage-Ghost-Pool. Bei einer Niederlage wird die Spielerkarte in-place ausgeblendet und stattdessen
    ein entkoppelter Klon in diesem Layer (im Spieler-Kartenslot, absolute inset-0) gerendert: erst kurz nach oben
    floaten (as-loss-drift), dann per SliceFx-`delay` schneiden. Weil der Pool NICHT pro Stich remountet, überlappt
@@ -174,6 +221,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const sHalves  = clamp(flipMs * 0.55, 150, 600);   // Hälften gleiten/rotieren/fallen/faden (~600 ms @1×)
   const sCut     = clamp(flipMs * 0.13, 55, 130);    // Schnittlinie wächst (~120 ms) & fadet
   const sSpark   = clamp(flipMs * 0.5, 150, 520);    // Funken (~500 ms)
+  const sBoom    = clamp(flipMs * 0.22, 90, 230);    // Krit-Zentral-Flash (kurz & hell)
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
   const sDrift   = clamp(flipMs * 0.3, 90, 260);     // Niederlage-Ghost floatet erst kurz (~260 ms @1×), dann Schnitt
   // Suit-Farbe der GESCHNITTENEN (Verlierer-)Karte → Schnittlinie + Funken. Sieg: Gegnerkarte · Niederlage: Spielerkarte.
@@ -181,8 +229,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   // Sieg: Gegnerkarte wird in-place geschnitten, Spielerkarte kippt an. Niederlage: Spielerkarte wird NICHT in-place
   // geschnitten, sondern als entkoppelter Ghost (floaten → schneiden, überlappt bei Turbo, s. lossGhosts unten) —
   // in-place bleibt sie nur unsichtbarer Platzhalter; Gegnerkarte (Sieger) kippt an.
-  const lossGhost    = sliceOn && lost;   // Spielerkarte verliert → entkoppelter Drift-+-Slice-Ghost
-  const oppSliced    = sliceOn && win;    // Gegnerkarte verliert → in-place geschnitten
+  const lossGhost    = sliceOn && lost;            // Spielerkarte verliert → entkoppelter Drift-+-Slice-Ghost
+  const critBoom     = sliceOn && win && isCrit;   // Krit-Sieg → Gegnerkarte explodiert (statt Schnitt)
+  const oppSliced    = sliceOn && win && !isCrit;  // normaler Sieg → Gegnerkarte in-place geschnitten
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
@@ -211,9 +260,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   ) : <div className="relative"><CardBack label="" /></div>;
 
   const oppCard = t ? (
-    <div key={`o${t.trickNo}`} className="relative" style={oppSliced ? undefined : dealStyle("as-deal-right")}>
+    <div key={`o${t.trickNo}`} className="relative" style={(oppSliced || critBoom) ? undefined : dealStyle("as-deal-right")}>
       {resultPulse(lost ? "#e0605a" : null, false)}
-      {oppSliced ? (
+      {critBoom ? (
+        <>
+          <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>{/* hält die 104×144-Box */}
+          <ExplosionFx cardEl={oCardEl} color={critColor} cardDur={sHalves} burstDur={sSpark} flashDur={sBoom} seed={t.trickNo * 3 + 1} />
+        </>
+      ) : oppSliced ? (
         <>
           <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>{/* hält die 104×144-Box */}
           <SliceFx cardEl={oCardEl} color={loserColor} halvesDur={sHalves} cutDur={sCut} sparkDur={sSpark} seed={t.trickNo * 3 + 1} />
