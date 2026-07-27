@@ -11,23 +11,36 @@ export const leaderboardConfigured = !!(BASE && KEY);
 const REST = `${BASE}/rest/v1/autostich_scores`;
 const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 
-// Spalten des Boards. `archetypes` (#139) ist optional: existiert die Spalte in der Tabelle
-// noch nicht (Migration steht aus), fällt fetch/publish unten auf die Alt-Spalten zurück, statt
-// mit 400 den ganzen Block lahmzulegen. So ist die Deploy-Reihenfolge (Code vs. Schema) egal.
-const COLS      = "name,score,level,tricks,cycles,archetypes,created_at";
+// Spalten des Boards, gestufte Fallback-Kaskade — je nachdem, wie weit die Tabelle migriert ist.
+// Fehlt eine Spalte, antwortet PostgREST mit 400; dann fällt fetch/publish auf die nächste (kleinere) Stufe
+// zurück, statt den ganzen Block lahmzulegen. So ist die Deploy-Reihenfolge (Code vs. Schema) egal.
+//  - COLS_FULL: alles inkl. #169-FB-8-Detailspalten (Run-Rückblick).
+//  - COLS_ARCH: nur bis `archetypes` (#139) — Zwischenstufe, damit die Icons NICHT ausfallen, solange nur die
+//    FB-8-Spalten noch fehlen.
+//  - COLS_BASE: ganz ohne Zusatzspalten (Ur-Tabelle).
+const FB8_COLS = "best_streak,perks,skills,max_formations,formation_score,crits,wins,crit_bonus_score,best_trick_score";
+const COLS_FULL = `name,score,level,tricks,cycles,archetypes,${FB8_COLS},created_at`;
+const COLS_ARCH = "name,score,level,tricks,cycles,archetypes,created_at";
 const COLS_BASE = "name,score,level,tricks,cycles,created_at";
+// #169 FB-8: Payload-Felder, die es in COLS_FULL, aber nicht in COLS_ARCH gibt (zum Stripen beim publish).
+const FB8_FIELDS = ["best_streak", "perks", "skills", "max_formations", "formation_score", "crits", "wins", "crit_bonus_score", "best_trick_score"];
+const omit = (obj, keys) => { const o = { ...obj }; for (const kk of keys) delete o[kk]; return o; };
 
-// Top-N global: Score↓, bei Gleichstand mehr Stiche, dann jünger.
+// Top-N global: Score↓, bei Gleichstand mehr Stiche, dann jünger. Fallback-Kaskade bei fehlenden Spalten.
 export async function fetchGlobalTop(limit = 10) {
   const url = (cols) => `${REST}?select=${cols}&order=score.desc,tricks.desc,created_at.desc&limit=${limit}`;
-  let res = await fetch(url(COLS), { headers });
-  if (res.status === 400) res = await fetch(url(COLS_BASE), { headers }); // Spalte `archetypes` noch nicht migriert
+  let res;
+  for (const cols of [COLS_FULL, COLS_ARCH, COLS_BASE]) {
+    res = await fetch(url(cols), { headers });
+    if (res.status !== 400) break; // 400 = Spalte fehlt (Migration steht aus) → nächste Stufe
+  }
   if (!res.ok) throw new Error(`fetchGlobalTop ${res.status}`);
   return res.json();
 }
 
-// Lauf veröffentlichen. entry: { name, score, level, tricks, cycles, archetypes? }.
+// Lauf veröffentlichen. entry: { name, score, level, tricks, cycles, archetypes?, + FB-8-Detailfelder? }.
 // Hinweis: `level` = Rundenzahl (= cycles); die Spalte bleibt aus Kompatibilität mit der bestehenden Tabelle befüllt.
+// Fallback-Kaskade beim Insert: volles Schema → ohne FB-8-Spalten → ohne `archetypes` (Basis).
 export async function publishRun(entry) {
   if (PREVIEW) return; // Preview-Build: kein Schreiben ins echte Leaderboard.
   const post = (body) => fetch(REST, {
@@ -35,10 +48,15 @@ export async function publishRun(entry) {
     headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify(body),
   });
-  let res = await post(entry);
-  if (res.status === 400 && entry.archetypes !== undefined) {
-    const { archetypes, ...base } = entry; // Spalte `archetypes` noch nicht migriert → ohne sie erneut posten
-    res = await post(base);
+  const hasFb8 = FB8_FIELDS.some((f) => entry[f] !== undefined);
+  const noFb8 = hasFb8 ? omit(entry, FB8_FIELDS) : entry;
+  const attempts = [entry];
+  if (hasFb8) attempts.push(noFb8);
+  if (noFb8.archetypes !== undefined) attempts.push(omit(noFb8, ["archetypes"]));
+  let res;
+  for (const body of attempts) {
+    res = await post(body);
+    if (res.status !== 400) break; // 400 = Spalte fehlt → nächste (kleinere) Stufe versuchen
   }
   if (!res.ok) throw new Error(`publishRun ${res.status}`);
 }

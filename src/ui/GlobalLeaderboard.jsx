@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
 import { leaderboardConfigured, fetchGlobalTop } from "../game/leaderboard.js";
 import { ARCHETYPE_META, decodeArchetypes } from "../game/skills.js";
+import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
 
 // Gespeicherte Archetyp-Kodierung ("fire,ice") → Icon-Meta in fester Reihenfolge Blitz→Feuer→Eis (#139).
 // Alt-Einträge ohne Wert ergeben einfach keine Icons.
 const archetypeIcons = (value) => decodeArchetypes(value).map((a) => ARCHETYPE_META[a]);
+
+// #169 FB-8: DB-Zeile (snake_case; perks/skills als kompakte ID-Liste) → normalisierter RunStats-Eintrag.
+// Alt-/pre-Migration-Zeilen liefern die Zusatzfelder nicht → RunStats zeigt „–" bzw. blendet leere Blöcke aus.
+const toRunEntry = (r) => ({
+  name: r.name, score: r.score,
+  bestStreak: r.best_streak,
+  perks: r.perks !== undefined ? (r.perks || "").split(",").filter(Boolean) : undefined,
+  skills: r.skills !== undefined ? (r.skills || "").split(",").filter(Boolean) : undefined,
+  maxFormations: r.max_formations, formationScore: r.formation_score,
+  crits: r.crits, wins: r.wins, critBonusScore: r.crit_bonus_score, bestTrickScore: r.best_trick_score,
+});
 
 /* Globaler Highscore (#14): additiv UNTER dem lokalen Block. Holt Top-N selbst und
    degradiert lautlos — fehlende Config blendet den Block ganz aus, offline/Fehler zeigt
@@ -18,6 +30,7 @@ const archetypeIcons = (value) => decodeArchetypes(value).map((a) => ARCHETYPE_M
 export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false }) {
   const [rows, setRows] = useState(null);   // null = lädt · [] = leer · [...] = Daten
   const [error, setError] = useState(false);
+  const [detail, setDetail] = useState(null); // #169 FB-8: gewählte Zeile → RunDetail-Overlay
 
   useEffect(() => {
     if (!leaderboardConfigured) return;
@@ -57,7 +70,9 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
             const mineRow = isMine(r);
             const icons = archetypeIcons(r.archetypes); // #139: ein Icon je Skill (leer bei Alt-Einträgen)
             return (
-              <div key={i} className="flex items-center gap-2 text-sm px-2 py-1 rounded"
+              // #169 FB-8: Zeile klickbar → Detailansicht (RunStats). Alt-Einträge degradieren.
+              <button key={i} onClick={() => setDetail({ entry: toRunEntry(r), rank: i + 1 })} title="Details anzeigen"
+                className="flex items-center gap-2 text-sm px-2 py-1 rounded text-left w-full transition-all hover:brightness-125"
                 style={{ background: mineRow ? "#5ab87a22" : "#20202a",
                   border: `1px solid ${mineRow ? "#5ab87a66" : "transparent"}` }}>
                 <span className="opacity-50 w-6 shrink-0">#{i + 1}</span>
@@ -70,7 +85,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                   </span>
                 )}
                 <span className="font-bold shrink-0" style={{ color: "#d4a63a" }}>{fmtScore(r.score)}</span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -78,11 +93,16 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
     </>
   );
 
-  return framed ? (
-    <div className="w-full max-w-sm rounded-xl p-4 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-      {body}
-    </div>
-  ) : (
-    <div className="mt-5">{body}</div>
+  return (
+    <>
+      {framed ? (
+        <div className="w-full max-w-sm rounded-xl p-4 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+          {body}
+        </div>
+      ) : (
+        <div className="mt-5">{body}</div>
+      )}
+      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} />}
+    </>
   );
 }

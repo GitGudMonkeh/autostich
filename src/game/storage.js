@@ -36,7 +36,9 @@ export function saveUsername(name) {
 }
 
 /* Lokale Highscore-Liste (Top 5) — getrennt vom Geist.
-   Eintrag: { score, level, tricks, cycles, ts }. */
+   Eintrag: { score, level, tricks, cycles, ts } + #169-FB-8-Run-Rückblick (bestStreak, perks[], skills[],
+   maxFormations, formationScore, crits, wins, critBonusScore, bestTrickScore) für die Detailansicht.
+   Additiv — Alt-Einträge ohne die Zusatzfelder degradieren sauber (RunStats zeigt „–" bzw. blendet aus). */
 export function loadHighscores() {
   try {
     const raw = localStorage.getItem(k("as_highscores"));

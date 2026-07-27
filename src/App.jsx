@@ -165,7 +165,11 @@ export function Autostich() {
     recorded.current = true;
     const finalScore = Math.floor(state.score);
     setHighscores(recordHighscore({
-      score: finalScore, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
+      score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
+      // #169 FB-8: Run-Rückblick-Stats für die lokale Detailansicht (RunStats). perks/skills als ID-Arrays.
+      bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
+      maxFormations: state.maxFormations, formationScore: state.formationScore,
+      crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
     }));
     // Globalen Lauf posten (#14) — additiv, fehlertolerant. myEntry hebt ihn im Board hervor;
     // pubToken lädt das Board nach dem Submit neu (damit der eigene Lauf drin ist).
@@ -176,7 +180,12 @@ export function Autostich() {
     const archetypes = (state.skills || []).map(archetypeOf).filter(Boolean).join(",");
     // `level` bleibt im Payload (= Rundenzahl), damit die bestehende Supabase-Spalte befüllt ist
     // (falls NOT NULL) — kein Schema-Wechsel nötig. Angezeigt wird ohnehin `cycles`.
-    const gEntry = { name, score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, archetypes };
+    const gEntry = { name, score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, archetypes,
+      // #169 FB-8: Detailspalten (snake_case = Supabase-Spalten). perks/skills als kompakte ID-Liste (wie archetypes).
+      // publishRun stript sie per Fallback-Kaskade, falls die Spalten noch nicht migriert sind.
+      best_streak: state.bestStreak, perks: (state.perks || []).join(","), skills: (state.skills || []).join(","),
+      max_formations: state.maxFormations, formation_score: state.formationScore,
+      crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore };
     setMyEntry(gEntry);
     if (leaderboardConfigured && name) {
       publishRun(gEntry).then(() => setPubToken((t) => t + 1)).catch(() => {});

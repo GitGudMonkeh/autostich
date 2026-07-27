@@ -15,22 +15,34 @@ async function loadBoard({ preview = false } = {}) {
 const realFetch = global.fetch;
 afterEach(() => { vi.unstubAllEnvs(); global.fetch = realFetch; });
 
-describe("fetchGlobalTop — 400 → COLS_BASE-Rückfall (#154)", () => {
-  it("fällt bei 400 (Spalte `archetypes` fehlt) auf die Basis-Spalten zurück", async () => {
+describe("fetchGlobalTop — 3-stufige Fallback-Kaskade (#154/#169 FB-8)", () => {
+  it("FB-8-Spalten fehlen → fällt auf die archetypes-Zwischenstufe zurück (Icons bleiben)", async () => {
     const { fetchGlobalTop } = await loadBoard();
     const urls = [];
     global.fetch = vi.fn(async (url) => {
       urls.push(url);
-      if (urls.length === 1) return { status: 400, ok: false };                       // archetypes-Spalte fehlt
+      if (urls.length === 1) return { status: 400, ok: false };                       // FB-8-Spalten fehlen
       return { status: 200, ok: true, json: async () => [{ name: "A", score: 5 }] };
     });
-    const rows = await fetchGlobalTop(3);
-    expect(rows).toEqual([{ name: "A", score: 5 }]);
+    expect(await fetchGlobalTop(3)).toEqual([{ name: "A", score: 5 }]);
     expect(urls).toHaveLength(2);
-    expect(urls[0]).toContain("archetypes");                                           // erst MIT archetypes
-    expect(urls[1]).not.toContain("archetypes");                                       // dann OHNE (COLS_BASE)
-    expect(urls[1]).toContain("select=name,score,level,tricks,cycles,created_at");
+    expect(urls[0]).toContain("best_streak");                                          // volle Stufe zuerst (FB-8-Spalten)
+    expect(urls[1]).toContain("archetypes");                                           // Zwischenstufe: archetypes bleibt
+    expect(urls[1]).not.toContain("best_streak");                                      // aber ohne FB-8-Spalten
     expect(urls[1]).toContain("limit=3");
+  });
+  it("auch archetypes fehlt → fällt weiter auf die Basis-Spalten zurück", async () => {
+    const { fetchGlobalTop } = await loadBoard();
+    const urls = [];
+    global.fetch = vi.fn(async (url) => {
+      urls.push(url);
+      if (urls.length < 3) return { status: 400, ok: false };                         // FULL + ARCH beide 400
+      return { status: 200, ok: true, json: async () => [] };
+    });
+    expect(await fetchGlobalTop()).toEqual([]);
+    expect(urls).toHaveLength(3);
+    expect(urls[2]).not.toContain("archetypes");                                       // Basis-Stufe
+    expect(urls[2]).toContain("select=name,score,level,tricks,cycles,created_at");
   });
   it("bei 200 direkt die Zeilen, kein Retry", async () => {
     const { fetchGlobalTop } = await loadBoard();
