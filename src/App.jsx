@@ -390,21 +390,7 @@ export function Autostich() {
         <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
         <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
       </div>
-      {/* #133/#111: „Nächster Track" im Kopf (freie Zelle); die untere Musik-Leiste zeigt nur den Titel. */}
-      {state.phase !== "gameover" && (
-        <div className="text-right">
-          <div className="text-[10px] uppercase tracking-wide opacity-50">Musik</div>
-          {/* Nur-Icon-Button, in Box-Höhe/Rhythmus an den MULT-Chip angeglichen (pt-0.5 + text-base). */}
-          <div className="leading-none pt-0.5">
-            <button onClick={() => music.next()} aria-label="Nächster Track"
-              title={musicTitle ? `Läuft: ${musicTitle} — nächster Track` : "Nächster Track"}
-              className="inline-block rounded px-2 py-0.5 text-base leading-none transition-all hover:brightness-110"
-              style={{ background: "#20202a", border: "1px solid #3a3a46" }}>
-              ⏭
-            </button>
-          </div>
-        </div>
-      )}
+      {/* #133/#111: Der „Nächster Track"-Button ist ins untere Musik-Panel gewandert (rechtsbündig, s. MusicBar). */}
     </>
   );
 
@@ -486,8 +472,8 @@ export function Autostich() {
             </div>
             <DeckHistogram deck={state.deck} />
           </button>
-          {/* Musik-Panel (#111): aktueller Track + „nächster Track" — ganz unten im Run. */}
-          {state.phase !== "gameover" && <MusicBar title={musicTitle} />}
+          {/* Musik-Panel (#111): aktueller Track + „nächster Track"-Button (rechtsbündig) — ganz unten im Run. */}
+          {state.phase !== "gameover" && <MusicBar title={musicTitle} onNext={() => music.next()} />}
         </>)}
       </div>
 
