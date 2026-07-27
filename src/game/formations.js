@@ -7,8 +7,8 @@
    Basis-Formationen (Faktoren §22.7, Balancing-Rework #95 / #Pass4 / #161 FB-5):
    - Wiederholung: ≥2 gleiche Werte.        2.→×1,25, 3.→×1,50, 4.→×1,80, danach je +0,40 (KEIN Cap).
    - Farbblock:    ≥3 gleiche Farbe.         ab 3. ×1,35, je weitere +0,20.
-   - Treppe:       ≥3 streng steigend, Schritt ≤3. ab 3. ×1,35, je weitere +0,20.
-   - Wechsel:      ≥3 Zick-Zack (Diff ≥5).   ab 3. ×1,40, je weitere +0,20.
+   - Treppe:       ≥3 streng steigend, Schritt ≤4. ab 3. ×1,35, je weitere +0,20.
+   - Wechsel:      ≥3 Zick-Zack (Diff ≥4).   ab 3. ×1,40, je weitere +0,20.
    - Anker: einzelne Position ×1,25 (zählt als Formation).
    - Überlappung: steckt eine Karte in mehreren Formationen, wird ihr Faktor-Produkt zusätzlich
      mit dem Überlappungsbonus multipliziert: 2 Formationen ×1,5 · 3 ×2 · 4 ×3.
@@ -36,8 +36,8 @@ export function openSegmentInfo(familyTiers) {
   const all = count === Infinity;
   return { active: count > 0, all, count, isOpen: (g) => all || (g >= 0 && g < count) };
 }
-export const WECHSEL_MIN_DIFF = 5;   // [#161 FB-5: 4→5 — Wechsel schwerer, größerer Nachbarabstand nötig] — natürlicher Default (Shop „Enger Wechsel" senkt ihn)
-const MAX_TREPPE_STEP  = 3;   // [#161 FB-5: Treppe zusätzlich zur strengen Monotonie max. 3 Schritt je Nachbarpaar]
+export const WECHSEL_MIN_DIFF = 4;   // [Balance: 5→4 — Wechsel eine Stufe leichter, kleinerer Nachbarabstand reicht] — natürlicher Default (Shop „Enger Wechsel" senkt ihn)
+const MAX_TREPPE_STEP  = 4;   // [Balance: 3→4 — Treppe eine Stufe leichter, größerer Schritt je Nachbarpaar erlaubt]
 // Die vier Basis-Formationstypen (ohne Anker) — Zielauswahl F-L1 Formationskern + Anzeige-Labels.
 export const FORMATION_TYPES = ["wiederholung", "farbblock", "treppe", "wechsel"];
 export const FORMATION_TYPE_LABELS = { wiederholung: "Wiederholung", farbblock: "Farbblock", treppe: "Treppe", wechsel: "Wechsel" };
@@ -144,7 +144,7 @@ function markTreppe(n, val, bind, e, canExtendSeg, assign, onRunEnd = null, isJo
 }
 
 // Wählt für die nächste Karte einen Kandidatenwert (Kristallform gibt eingefrorenen Karten [v−1,v,v+1]),
-// der die Zick-Zack-Bedingung erfüllt (|diff| ≥ minDiff, Default 5, Richtung passt) und die Amplitude maximiert (Peak so hoch,
+// der die Zick-Zack-Bedingung erfüllt (|diff| ≥ minDiff, Default 4, Richtung passt) und die Amplitude maximiert (Peak so hoch,
 // Valley so tief wie möglich → maximaler Spielraum für den nächsten Gegenzug). `need`: 0 frei, sonst ±1.
 function pickWechselValue(cands, cur, need, minDiff = WECHSEL_MIN_DIFF) {
   let best = null;
@@ -157,7 +157,7 @@ function pickWechselValue(cands, cur, need, minDiff = WECHSEL_MIN_DIFF) {
   return best;
 }
 
-// Wechsel (Zick-Zack): jede Nachbardifferenz ≥ WECHSEL_MIN_DIFF (Default 5) UND Richtungswechsel. Mindestlänge minLen (E5: 2 statt 3).
+// Wechsel (Zick-Zack): jede Nachbardifferenz ≥ WECHSEL_MIN_DIFF (Default 4) UND Richtungswechsel. Mindestlänge minLen (E5: 2 statt 3).
 // `valSets[k]` = Kandidatenwerte je Karte (Kristallform: ±1 auf eingefrorenen Karten; sonst Singleton).
 function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WECHSEL_MIN_DIFF, onRunEnd = null, isJoker = () => false, onRun = null) {
   const BIG = 1000; // Joker (A6): Extremwert in benötigter Richtung → maximale Amplitude, erfüllt die Zick-Zack-Bedingung stets.

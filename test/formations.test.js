@@ -24,38 +24,38 @@ describe("Wiederholung (≥2 gleiche Werte)", () => {
 
 describe("Farbblock (≥3 gleiche Farbe)", () => {
   it("ab der 3. Karte ×1,35, je weitere +0,20; <3 kein Bonus [#Pass4]", () => {
-    // Werte 5,7,6,8: enge Schritte (<5) → kein Wechsel; keine 3er-Steigung → keine Treppe → isolierter Farbblock.
+    // Werte 5,7,6,8: enge Schritte (<4) → kein Wechsel; keine 3er-Steigung → keine Treppe → isolierter Farbblock.
     expect(mults([["R", 5], ["R", 7], ["R", 6], ["R", 8]])).toEqual([1, 1, 1.35, 1.55]);
     expect(mults([["R", 5], ["R", 2]])).toEqual([1, 1]); // len 2 → nichts
   });
 });
 
-describe("Treppe (≥3 streng steigend, Schritt ≤3 [#161 FB-5])", () => {
+describe("Treppe (≥3 streng steigend, Schritt ≤4 [Balance])", () => {
   it("ab der 3. Karte ×1,35, je weitere +0,20", () => {
-    // Unterschiedliche Farben → kein Farbblock; Schritte +2 (≤3 gültige Treppe, <5 → kein Wechsel).
+    // Unterschiedliche Farben → kein Farbblock; Schritte +2 (≤4 gültige Treppe, <4 → kein Wechsel).
     expect(mults([["R", 1], ["B", 3], ["G", 5], ["Y", 7]])).toEqual([1, 1, 1.35, 1.55]);
   });
   it("ein Rückschritt beendet die Treppe", () => {
     expect(mults([["R", 1], ["B", 3], ["G", 2], ["Y", 4], ["R", 6]])).toEqual([1, 1, 1, 1, 1.35]);
   });
-  it("ein Schritt größer als 3 beendet die Treppe [#161 FB-5]", () => {
-    // 1→5 = +4 > 3 → keine Treppe über Pos 0; 5,7,9 (Schritte +2) bilden ab Pos 1 eine.
-    expect(mults([["R", 1], ["B", 5], ["G", 7], ["Y", 9]])).toEqual([1, 1, 1, 1.35]);
+  it("ein Schritt größer als 4 beendet die Treppe [Balance]", () => {
+    // 1→6 = +5 > 4 → keine Treppe über Pos 0; 6,8,10 (Schritte +2) bilden ab Pos 1 eine.
+    expect(mults([["R", 1], ["B", 6], ["G", 8], ["Y", 10]])).toEqual([1, 1, 1, 1.35]);
   });
 });
 
-describe("Wechsel (Zick-Zack: Nachbardifferenz ≥5, alternierende Richtung [#161 FB-5])", () => {
+describe("Wechsel (Zick-Zack: Nachbardifferenz ≥4, alternierende Richtung [Balance])", () => {
   it("alternierende große Sprünge ab der 3. Karte ×1,40, je weitere +0,20", () => {
     expect(mults([["R", 2], ["B", 9], ["G", 1], ["Y", 8]])).toEqual([1, 1, 1.4, 1.6]);
   });
-  it("große gleichgerichtete Sprünge sind weder Wechsel (keine Richtungsänderung) noch Treppe (Schritt >3)", () => {
-    // 1,7,13: streng steigend, aber Schritte je +6 → keine Treppe (>3) und ohne Richtungswechsel kein Wechsel.
+  it("große gleichgerichtete Sprünge sind weder Wechsel (keine Richtungsänderung) noch Treppe (Schritt >4)", () => {
+    // 1,7,13: streng steigend, aber Schritte je +6 → keine Treppe (>4) und ohne Richtungswechsel kein Wechsel.
     expect(typesAt([["R", 1], ["B", 7], ["G", 13]], 2)).toEqual([]);
     expect(mults([["R", 1], ["B", 7], ["G", 13]])).toEqual([1, 1, 1]);
   });
   it("findet einen Zick-Zack, der erst nach einem gleichgerichteten Sprung beginnt", () => {
     // 2,9,15,8: 2→9(+7) 9→15(+6, gleiche Richtung → Wechsel-Bruch); der Neustart 9,15,8 ist ein gültiger Zick-Zack.
-    // Keine Treppe (Schritte +7/+6 > 3). Nur der Wechsel 9,15,8 zahlt auf seiner 3. Karte (×1,40).
+    // Keine Treppe (Schritte +7/+6 > 4). Nur der Wechsel 9,15,8 zahlt auf seiner 3. Karte (×1,40).
     const deck = [["R", 2], ["B", 9], ["G", 15], ["Y", 8]];
     expect(mults(deck)).toEqual([1, 1, 1, 1.4]);
     expect(typesAt(deck, 2)).toEqual(["wechsel"]);
@@ -69,7 +69,7 @@ describe("Segment = Arena (Formationen enden an Segmentgrenzen)", () => {
     // Vier R-Karten ganz in Segment 0 → Farbblock.
     expect(mults([["R", 5], ["R", 7], ["R", 6], ["R", 8]])).toEqual([1, 1, 1.35, 1.55]);
     // Vier R-Karten über die Grenze 4|5 gelegt (Pos 3–6) → in zwei Hälften à 2 → kein Farbblock.
-    // Enge Werte (Diff <5, keine 3er-Steigung) → auch kein Wechsel/keine Treppe.
+    // Enge Werte (Diff <4, keine 3er-Steigung) → auch kein Wechsel/keine Treppe.
     const straddle = [["R", 6], ["B", 5], ["G", 7], ["R", 6], ["R", 8], ["R", 5], ["R", 7]];
     expect(mults(straddle)).toEqual([1, 1, 1, 1, 1, 1, 1]);
   });
@@ -143,9 +143,9 @@ describe("Rollen-Familien (Rarität #167): C_JOKER & C_BRIDGE über familyTiers"
     expect(withFam(deck, { C_JOKER: [deck[1].id] }, { C_JOKER: 4 })[2].formations.some((x) => x.type === "farbblock")).toBe(true);
   });
   it("C_BRIDGE: Span je Stufe (I ±1 reicht nicht, III ±2 erlaubt die steilere Treppe)", () => {
-    const deck = [["R", 3], ["B", 8], ["G", 9]].map(card); // 3→8 zu steil (Schritt 5 > 3); Bindeglied auf der 8
-    expect(withFam(deck, { C_BRIDGE: [deck[1].id] }, { C_BRIDGE: 1 })[2].formations.some((x) => x.type === "treppe")).toBe(false); // ±1
-    expect(withFam(deck, { C_BRIDGE: [deck[1].id] }, { C_BRIDGE: 3 })[2].formations.some((x) => x.type === "treppe")).toBe(true);  // ±2 → 8 zählt als 6 → 3,6,9
+    const deck = [["R", 3], ["B", 9], ["G", 11]].map(card); // 3→9 zu steil (Schritt 6 > 4); Bindeglied auf der 9
+    expect(withFam(deck, { C_BRIDGE: [deck[1].id] }, { C_BRIDGE: 1 })[2].formations.some((x) => x.type === "treppe")).toBe(false); // ±1 → 9 zählt als 8 → 3,8,11: Schritt 5 > 4
+    expect(withFam(deck, { C_BRIDGE: [deck[1].id] }, { C_BRIDGE: 3 })[2].formations.some((x) => x.type === "treppe")).toBe(true);  // ±2 → 9 zählt als 7 → 3,7,11 (Schritte +4)
   });
 });
 

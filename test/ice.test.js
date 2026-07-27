@@ -55,9 +55,9 @@ describe("Eis — Formations-Wildcards (#93 F3)", () => {
     expect(computeFormations([0, 1], deck, {}, [], [I10])[1].mult).toBeCloseTo(1.25 * 1.15); // Wiederholung ×1,25, Kristallform-Bonus ×1,15
   });
   it("Kristallform: eingefrorene Karte ermöglicht einen Wechsel via ±2 (#165)", () => {
-    const deck = [card("a", "R", 10), card("b", "B", 4), card("c", "G", 8, true)]; // 4→8 = +4 (<5, kein Wechsel)
+    const deck = [card("a", "R", 10), card("b", "B", 4), card("c", "G", 6, true)]; // 4→6 = +2 (<4, kein Wechsel)
     expect(computeFormations(ord(3), deck, {}, [], [])[0].formations.some((f) => f.type === "wechsel")).toBe(false);
-    expect(computeFormations(ord(3), deck, {}, [], [I10])[0].formations.some((f) => f.type === "wechsel")).toBe(true); // Kristallform 8→10 → +6 ≥5
+    expect(computeFormations(ord(3), deck, {}, [], [I10])[0].formations.some((f) => f.type === "wechsel")).toBe(true); // Kristallform 6→8 → 4→8 = +4 ≥4
   });
   it("Permafrost: eingefrorene Karte ist Joker für Wiederholung", () => {
     const deck = [card("a", "R", 5), card("b", "B", 9, true)];

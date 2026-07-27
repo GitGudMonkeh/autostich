@@ -167,8 +167,8 @@ const order5 = [0, 1, 2, 3, 4];
 
 describe("#165 Eis — Kristallform (SK_ICE_10, ±2 + Formationsbonus)", () => {
   it("±2 lässt eine Frostkarte einer Wiederholung beitreten (±1 würde nicht reichen)", () => {
-    // [5,5,7,..]; pos2 (Wert 7) frozen → mit ±2 zählt 7 als 5 → dreier-Wiederholung.
-    const deck = seg5([5, 5, 7, 3, 30], ["R", "B", "G", "Y", "R"], [2]);
+    // [5,5,7,20,30]; pos2 (Wert 7) frozen → mit ±2 zählt 7 als 5 → dreier-Wiederholung. 20/30 zu weit für Treppe/Wechsel.
+    const deck = seg5([5, 5, 7, 20, 30], ["R", "B", "G", "Y", "R"], [2]);
     const withoutIce = computeFormations(order5, deck, {}, [], []);
     const withCrystal = computeFormations(order5, deck, {}, [], [ICE_CRYSTAL]);
     expect(withoutIce[2].formations.some((f) => f.type === "wiederholung")).toBe(false);
@@ -177,16 +177,16 @@ describe("#165 Eis — Kristallform (SK_ICE_10, ±2 + Formationsbonus)", () => {
     expect(withCrystal[2].mult).toBeCloseTo(1.5 * 1.15);
   });
   it("Eisschritt bleibt ±1 (nur Kristallform schafft die ±2-Treppe)", () => {
-    // Treppe 2,4,? — pos2 (Wert 9) frozen: als Stufe nach 4 nötig ≤7; ±1→[8,10] reicht nicht, ±2→[7,11] schafft 7.
-    const deck = seg5([2, 4, 9, 20, 30], ["R", "B", "G", "Y", "R"], [2]);
+    // Treppe 2,4,? — pos2 (Wert 10) frozen: als Stufe nach 4 nötig ≤8; ±1→9 reicht nicht (Schritt 5), ±2→8 schafft es (Schritt 4).
+    const deck = seg5([2, 4, 10, 20, 30], ["R", "B", "G", "Y", "R"], [2]);
     const withStep = computeFormations(order5, deck, {}, [], [ICE_STEP]);
     const withCrystal = computeFormations(order5, deck, {}, [], [ICE_CRYSTAL]);
     expect(withStep[2].formations.some((f) => f.type === "treppe")).toBe(false);   // Eisschritt ±1 reicht nicht
     expect(withCrystal[2].formations.some((f) => f.type === "treppe")).toBe(true);  // Kristallform ±2 schafft die Treppe
   });
   it("Formationsbonus greift NICHT bei reinem Farbblock", () => {
-    // pos0-2 alle Farbe R (Farbblock), Werte so, dass keine Wied./Treppe/Wechsel entsteht; pos2 frozen.
-    const deck = seg5([3, 7, 11, 20, 25], ["R", "R", "R", "B", "G"], [2]);
+    // pos0-2 alle Farbe R (Farbblock), Werte 3/5/12 so, dass selbst mit ±2 (12→10) keine Treppe (5→10=+5 >4)/Wied./Wechsel; pos2 frozen.
+    const deck = seg5([3, 5, 12, 20, 25], ["R", "R", "R", "B", "G"], [2]);
     const withCrystal = computeFormations(order5, deck, {}, [], [ICE_CRYSTAL]);
     expect(withCrystal[2].formations.some((f) => f.type === "farbblock")).toBe(true);
     expect(withCrystal[2].formations.some((f) => ["wiederholung", "treppe", "wechsel"].includes(f.type))).toBe(false);
