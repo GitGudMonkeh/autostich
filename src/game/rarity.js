@@ -29,7 +29,8 @@ export const TIER_META = {
 export const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 
 // Drop-Gewichte je Stufe (Spec §10, offen → tunebar). Höhere Stufen seltener. [TUNING]
-export const TIER_WEIGHTS = { 1: 100, 2: 46, 3: 20, 4: 8 };
+// Summe = 100 → Gewichte entsprechen direkt den Ziel-Prozenten I 60 / II 25 / III 12 / IV 3.
+export const TIER_WEIGHTS = { 1: 60, 2: 25, 3: 12, 4: 3 };
 
 export const tierMeta   = (tier) => TIER_META[tier] || null;
 export const priceOfTier = (tier) => TIER_META[tier]?.price ?? 0;
