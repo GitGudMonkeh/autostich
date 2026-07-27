@@ -7,7 +7,7 @@ import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
 import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
 import {
   MIN_SAMPLE, hasEnoughData, avgScoreOrigin, scoreOrigin, pickRates,
-  archetypeUsage, bestArchetype, scoreLift, topRunsOrigin, bestRun, achievements,
+  archetypeUsage, bestArchetype, scoreLift, topRunsOrigin, bestRun,
 } from "../game/runStats.js";
 import { fmtScore } from "./format.js";
 import { fmtDuration } from "../game/deck.js";
@@ -108,7 +108,6 @@ export function StatsScreen({ onClose }) {
   const perkLift = useMemo(() => (enough ? scoreLift(history, "perks").filter((x) => x.lift > 0).slice(0, 3) : []), [history, enough]);
   const skillLift = useMemo(() => (enough ? scoreLift(history, "skills").filter((x) => x.lift > 0).slice(0, 3) : []), [history, enough]);
   const topOrigin = useMemo(() => topRunsOrigin(history, 3), [history]);
-  const achv = useMemo(() => achievements(history, profile), [history, profile]);
 
   const trend = history.slice(0, 10).map((r) => Math.floor(r.score || 0)).reverse(); // ältester → neuester
   const originSegs = (o) => [
@@ -269,21 +268,6 @@ export function StatsScreen({ onClose }) {
                   )}
                 </div>
               )}
-            </Section>
-
-            {/* Achievements / Meilensteine */}
-            <Section title="Meilensteine" hint={`${achv.filter((a) => a.done).length}/${achv.length}`}>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {achv.map((a) => (
-                  <div key={a.id} title={a.done ? a.desc : `${a.desc} (${fmtScore(a.cur)}/${fmtScore(a.target)})`}
-                    className="rounded-lg px-2.5 py-2 text-center transition-opacity"
-                    style={{ background: "#141419", border: `1px solid ${a.done ? "#d4a63a55" : "#26262e"}`, opacity: a.done ? 1 : 0.5 }}>
-                    <div className="text-xl" style={{ filter: a.done ? "none" : "grayscale(1)" }}>{a.icon}</div>
-                    <div className="text-[11px] font-semibold mt-0.5" style={{ color: a.done ? "#d4a63a" : "#c8c8ce" }}>{a.label}</div>
-                    {!a.done && <div className="text-[10px] opacity-60 tabular-nums">{fmtScore(a.cur)}/{fmtScore(a.target)}</div>}
-                  </div>
-                ))}
-              </div>
             </Section>
           </>
         )}
