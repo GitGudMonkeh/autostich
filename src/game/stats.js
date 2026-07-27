@@ -8,13 +8,18 @@ import * as C from "./constants.js";
    Basiswerte (Startzustand): Crit-Chance 0 %, Crit-Multiplikator 1,5×, Score/Sieg 100.
    Jeder Pick addiert `step` auf das State-Feld `field`; die Engine liest die Summen.
    ============================================================ */
+// #151/desc-check.md: Tuning-Zahlen NICHT doppelt hartkodieren, sondern aus den Konstanten interpolieren
+// (Text ↔ Code bleibt automatisch synchron). pp() = Prozentpunkte als ganze Zahl; de() formatiert deutsch (0,25 / 1,5).
+const pp = (x) => Math.round(x * 100);
+const de = (x) => String(x).replace(".", ",");
+
 export const STAT_DEFS = {
-  critChance: { id: "critChance", label: "Crit-Chance",           field: "statCritChance", step: C.STAT_CRIT_CHANCE_STEP, blurb: "+7 pp",      desc: "+7 Prozentpunkte Crit-Chance." },
-  critMult:   { id: "critMult",   label: "Crit-Multiplikator",    field: "statCritMult",   step: C.STAT_CRIT_MULT_STEP,   blurb: "+0,25×",    desc: "+0,25× Crit-Multiplikator (auf Basis 1,5×)." },
-  formMult:   { id: "formMult",   label: "Formations-Multiplikator", field: "statFormMult", step: C.STAT_FORM_MULT_STEP, blurb: "+5 %",       desc: "+5 % Score auf einen Sieg mit mindestens einer aktiven Formation (höchstens 1× pro Stich)." },
-  streakMult: { id: "streakMult", label: "Serien-Multiplikator",  field: "statStreakMult", step: C.STAT_STREAK_MULT_STEP, blurb: "+2 %/Serie", desc: "+2 % Score pro aktuellem Serienpunkt." },
-  // Einkommen (Shop-Spec §4) — additiv, stapelbar, kein Cap; gibt +3 Münzen bei JEDEM zukünftigen Shopbesuch je Pick.
-  economy:    { id: "economy",    label: "Einkommen",             field: "economyStatLevel", step: C.STAT_ECONOMY_STEP,   blurb: "+3 Münzen",  desc: "+3 Münzen bei jedem zukünftigen Shopbesuch." },
+  critChance: { id: "critChance", label: "Crit-Chance",           field: "statCritChance", step: C.STAT_CRIT_CHANCE_STEP, blurb: `+${pp(C.STAT_CRIT_CHANCE_STEP)} pp`,      desc: `+${pp(C.STAT_CRIT_CHANCE_STEP)} Prozentpunkte Crit-Chance.` },
+  critMult:   { id: "critMult",   label: "Crit-Multiplikator",    field: "statCritMult",   step: C.STAT_CRIT_MULT_STEP,   blurb: `+${de(C.STAT_CRIT_MULT_STEP)}×`,    desc: `+${de(C.STAT_CRIT_MULT_STEP)}× Crit-Multiplikator (auf Basis ${de(C.CRIT_BASE_MULT)}×).` },
+  formMult:   { id: "formMult",   label: "Formations-Multiplikator", field: "statFormMult", step: C.STAT_FORM_MULT_STEP, blurb: `+${pp(C.STAT_FORM_MULT_STEP)} %`,       desc: `+${pp(C.STAT_FORM_MULT_STEP)} % Score auf einen Sieg mit mindestens einer aktiven Formation (höchstens 1× pro Stich).` },
+  streakMult: { id: "streakMult", label: "Serien-Multiplikator",  field: "statStreakMult", step: C.STAT_STREAK_MULT_STEP, blurb: `+${pp(C.STAT_STREAK_MULT_STEP)} %/Serie`, desc: `+${pp(C.STAT_STREAK_MULT_STEP)} % Score pro aktuellem Serienpunkt.` },
+  // Einkommen (Shop-Spec §4) — additiv, stapelbar, kein Cap; gibt +SHOP_INCOME_PER_LEVEL Münzen bei JEDEM zukünftigen Shopbesuch je Pick.
+  economy:    { id: "economy",    label: "Einkommen",             field: "economyStatLevel", step: C.STAT_ECONOMY_STEP,   blurb: `+${C.SHOP_INCOME_PER_LEVEL} Münzen`,  desc: `+${C.SHOP_INCOME_PER_LEVEL} Münzen bei jedem zukünftigen Shopbesuch.` },
 };
 
 // Reihenfolge des Angebots (immer alle Stats). Shop-Spec §4.3: fünf Stats inkl. Einkommen.
