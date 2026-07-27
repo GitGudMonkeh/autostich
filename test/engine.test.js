@@ -447,10 +447,10 @@ describe("Stat-System — Engine (V2 §22.3)", () => {
     // Serie 11 (winStreak 10 → 11), großer Serien-Stat: 0,5 × 11 = 5,5 → auf STREAK_STAT_CAP (3,0) gedeckelt.
     const serie = 11;
     const gained = resolveTrick(scenario(12, 0, { statStreakMult: 0.5, winStreak: 10 }), rng).lastTrick.gained;
-    expect(gained).toBeCloseTo(100 * streakBaseMult(serie) * statStreakFactor(0.5, serie));
-    expect(gained).toBeCloseTo(100 * streakBaseMult(serie) * (1 + STREAK_STAT_CAP));
+    expect(gained).toBeCloseTo(B * streakBaseMult(serie) * statStreakFactor(0.5, serie));
+    expect(gained).toBeCloseTo(B * streakBaseMult(serie) * (1 + STREAK_STAT_CAP));
     // Ohne den Cap wäre der Faktor (1 + 5,5) → der Cap senkt den Score echt.
-    expect(gained).toBeLessThan(100 * streakBaseMult(serie) * (1 + 0.5 * serie));
+    expect(gained).toBeLessThan(B * streakBaseMult(serie) * (1 + 0.5 * serie));
   });
   it("Formations-Stat: greift nur bei aktiver Formation (§22.3)", () => {
     // Ohne Formation (erste Karte) kein Effekt …
