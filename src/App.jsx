@@ -390,7 +390,14 @@ export function Autostich() {
         <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
         <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
       </div>
-      {/* #133/#111: Der „Nächster Track"-Button ist ins untere Musik-Panel gewandert (rechtsbündig, s. MusicBar). */}
+      {/* #133/#111: Der „Nächster Track"-Button ist ins untere Musik-Panel gewandert (s. MusicBar). An seiner
+          Stelle (freie Kopf-Zelle) jetzt der Durchlauf-Zähler X / 44 — gleiche Werte wie in der StatusRail. */}
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Durchlauf</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>
+          {Math.min(state.cycle + 1, MAX_CYCLES)}<span className="text-xs opacity-45"> / {MAX_CYCLES}</span>
+        </div>
+      </div>
     </>
   );
 
