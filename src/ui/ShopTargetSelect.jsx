@@ -99,9 +99,9 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
                         const pos = start + k; const col = suitColor(c.suit);
                         const fb = formationBorder((state.formations || [])[pos]); // #161 FB-1: Formationsrand sichtbar machen
                         return (
-                          <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px ${fb.dashed ? "dashed" : "solid"} ${fb.color || col + "55"}` }}>
+                          <div key={pos} className="as-tile relative rounded-lg flex items-center justify-center" style={{ background: "#20202a", border: `2px ${fb.dashed ? "dashed" : "solid"} ${fb.color || col + "55"}` }}>
                             <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-                            <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
+                            <span className="text-lg sm:text-2xl font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
                           </div>
                         );
                       })}
@@ -208,9 +208,9 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
                       const fb = formationBorder((state.formations || [])[pos]); // #161 FB-1: Formationsrand sichtbar machen
                       const bcol = active ? GOLD : fb.color || col + "55";
                       return (
-                        <div key={pos} className="relative rounded-lg flex items-center justify-center" style={{ aspectRatio: "3 / 4", background: "#20202a", border: `2px ${!active && fb.dashed ? "dashed" : "solid"} ${bcol}` }}>
+                        <div key={pos} className="as-tile relative rounded-lg flex items-center justify-center" style={{ background: "#20202a", border: `2px ${!active && fb.dashed ? "dashed" : "solid"} ${bcol}` }}>
                           <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-                          <span className="text-lg font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
+                          <span className="text-lg sm:text-2xl font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
                         </div>
                       );
                     })}
