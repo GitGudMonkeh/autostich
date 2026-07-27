@@ -20,7 +20,7 @@
    ============================================================ */
 import { PERMAFROST_VALUE, EISANKER_FACTOR, CRYSTAL_OFFSET, ICE_STEP_OFFSET, CRYSTAL_FORM_BONUS, ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR } from "./constants.js";
 import { iceFlag, hasPermafrost, hasIceAnchor } from "./skills.js";
-import { activeFamilyEntries, familyTierParam } from "./families.js";
+import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 
 export const SEGMENT_SIZE = 5;
 export const WECHSEL_MIN_DIFF = 5;   // [#161 FB-5: 4→5 — Wechsel schwerer, größerer Nachbarabstand nötig] — natürlicher Default (Shop „Enger Wechsel" senkt ihn)
@@ -54,7 +54,7 @@ const FARBBLOCK_BASE = 1.35, TREPPE_BASE = 1.35, WECHSEL_BASE = 1.40; // [#Pass4
 // erste REALE Karte des Laufs verglichen (`anchor`), nie gegen den Joker; ein Lauf zählt nur mit ≥1 realer Karte.
 // `gap` = { run, seg }: erlaubte fremde Karten je LAUF bzw. je SEGMENT (E_PACE Wiederholung / E_COLORBRIDGE Farbblock,
 // Rarität #167). {0,0} = keine Überbrückung. Infinity = unbegrenzt (Stufe IV: fremde Karte zählt nicht, unterbricht nicht).
-function markRuns(n, minMembers, matches, gap, canExtendSeg, assign, transparent = () => false, onRunEnd = null, isJoker = () => false) {
+function markRuns(n, minMembers, matches, gap, canExtendSeg, assign, transparent = () => false, onRunEnd = null, isJoker = () => false, onRun = null) {
   const segGaps = {};
   let i = 0;
   while (i < n) {
@@ -77,6 +77,7 @@ function markRuns(n, minMembers, matches, gap, canExtendSeg, assign, transparent
     if (members.length >= minMembers && anchor !== -1) { // Joker erzeugen allein keine Formation
       members.forEach((pos, idx) => assign(pos, idx + 1));
       if (onRunEnd) onRunEnd(members[members.length - 1], members.length); // F6 Nachhall: letztes Mitglied + Ordinal
+      if (onRun) onRun(members); // #179 E_SEGMENT IV: Lauf-Mitglieder für den Grenz-Bonus melden
     }
     i = j + 1;
   }
@@ -92,7 +93,7 @@ function markRuns(n, minMembers, matches, gap, canExtendSeg, assign, transparent
 // je Lauf/Segment; drehSeg = Karten, die je Segment einen zweiten Treppen-Lauf beginnen dürfen (E_RPM). Rarität #167.
 // Alles 0 = klassische strenge Treppe. Infinity = unbegrenzt (Stufe IV — §10-Näherung: „gleich = +1 Schritt" bzw.
 // „Richtung einmal wechseln" als unbegrenzte Gleichstände/Rückschritte).
-function markTreppe(n, val, bind, e, canExtendSeg, assign, dir = 1, onRunEnd = null, isJoker = () => false) {
+function markTreppe(n, val, bind, e, canExtendSeg, assign, dir = 1, onRunEnd = null, isJoker = () => false, onRun = null) {
   const segEq = {}, segRev = {}, segDreh = {};
   let i = 0;
   while (i < n) {
@@ -120,6 +121,7 @@ function markTreppe(n, val, bind, e, canExtendSeg, assign, dir = 1, onRunEnd = n
     if (members.length >= 3 && hasReal) {                  // Joker allein bilden keine Treppe
       members.forEach((pos, idx) => assign(pos, idx + 1));
       if (onRunEnd) onRunEnd(members[members.length - 1], members.length); // F6 Nachhall
+      if (onRun) onRun(members); // #179 E_SEGMENT IV: Grenz-Bonus
     }
     // E_RPM Drehzahl: die letzte Karte darf einen neuen Lauf beginnen (zwei Treppen), begrenzt je Segment über drehSeg.
     const segJ = Math.floor(j / SEGMENT_SIZE);
@@ -143,7 +145,7 @@ function pickWechselValue(cands, cur, need, minDiff = WECHSEL_MIN_DIFF) {
 
 // Wechsel (Zick-Zack): jede Nachbardifferenz ≥4 UND Richtungswechsel. Mindestlänge minLen (E5: 2 statt 3).
 // `valSets[k]` = Kandidatenwerte je Karte (Kristallform: ±1 auf eingefrorenen Karten; sonst Singleton).
-function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WECHSEL_MIN_DIFF, onRunEnd = null, isJoker = () => false) {
+function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WECHSEL_MIN_DIFF, onRunEnd = null, isJoker = () => false, onRun = null) {
   const BIG = 1000; // Joker (A6): Extremwert in benötigter Richtung → maximale Amplitude, erfüllt die Zick-Zack-Bedingung stets.
   let i = 0;
   while (i < n) {
@@ -160,6 +162,7 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
     if (j - i + 1 >= minLen && reals >= 1) { // Joker allein bilden keinen Wechsel
       for (let k = i; k <= j; k++) assign(k, k - i + 1);
       if (onRunEnd) onRunEnd(j, j - i + 1); // F6 Nachhall: letztes Mitglied j + Ordinal
+      if (onRun) { const mem = []; for (let k = i; k <= j; k++) mem.push(k); onRun(mem); } // #179 E_SEGMENT IV: Grenz-Bonus
     }
     // Gleichgerichteter großer Schritt (rohe Werte) → diese Karte kann neu beginnen.
     i = (j < n - 1 && j > i && Math.abs(val[j + 1] - val[j]) >= minDiff && canExtendSeg(j)) ? j : j + 1;
@@ -168,19 +171,17 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
 
 /* Berechnet für jede Position { mult, formations: [{ type, ordinal, factor }] }.
    `order` = Ziehreihenfolge, `deck` = Karten, `roles` = Kartenrollen (Familien C_JOKER/C_BRIDGE unter familyId,
-   plus L-Rollen), `familyTiers` = Familienrang je Familie (#167, u. a. E-Formationswerkzeuge). `perks` wird nicht
-   mehr gelesen (die E-Werkzeuge E1–E9 sind zu Familien migriert) — Parameter bleibt für die Aufrufer-Signatur. */
-export function computeFormations(order, deck, roles = {}, perks = [], skills = [], anchors = [], pe = {}, familyTiers = {}) {
+   plus L-Rollen; #179 zusätzlich E_COLOR_ALLIANCE = gewählte Farben, E_CORE = [gewählter Formationstyp]),
+   `familyTiers` = Familienrang je Familie (#167, u. a. E-Formationswerkzeuge). `perks` wird nicht mehr gelesen
+   (E1–E9 sind zu Familien migriert) — Parameter bleibt für die Aufrufer-Signatur. Der frühere `pe`-Parameter
+   (shop.permanentEffects) entfiel #179 vollständig: Formations-Regeln laufen jetzt ausschließlich über familyTiers/roles. */
+export function computeFormations(order, deck, roles = {}, perks = [], skills = [], anchors = [], familyTiers = {}) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
-  // ---- Shop-Formationsitems (§9, permanente Regeländerungen) ----
-  const wechselMinDiff = pe.switchMinDifference || WECHSEL_MIN_DIFF; // Enger Wechsel: Mindestdifferenz je Stufe (5 → 4/3/2)
-  const wCardBonus = pe.wechselCardBonus || 0;                        // Enger Wechsel IV: ab 4. Karte +0,10 Faktor je Karte
-  const repBonus = pe.repetitionSecondFactorBonus || 0;              // Verstärkte Wiederholung: 2. Karte
-  const repThird = pe.repThirdBonus || 0;                            // …III: 3. Karte +0,10
-  const repMult = pe.repAllMult || 1;                                // …IV: alle Wiederholungsfaktoren ×1,20
-  const descending = !!pe.descendingStraights;                       // Abstieg: Treppen auch fallend
-  const descRev = pe.descendingRev || 0;                             // Abstieg III/IV: Berg/Tal ≈ Treppen-Rückschritt-Budget (§10)
+  // ---- Formations-Familien (#179): früher Shop-Kategorie „Formationen", jetzt Perk-Kat.-E-Familien (familyTiers). Ihre
+  //      Parameter liest der eP()-Block unten (E_STRONG_REP/E_AFTERGLOW/E_CORE) bzw. roles (E_COLOR_ALLIANCE/E_CORE).
+  //      Die drei Duplikat-Familien (Enger Wechsel/Abstieg/Offene Grenze) entfielen ersatzlos → E_PENDULUM/E_BIGSTEP/
+  //      E_SEGMENT decken sie ab. `pe` (ehem. shop.permanentEffects) wird nicht mehr gelesen (vestigial in der Signatur). ----
   // ---- Eis-Wildcards (#93 F3): nur auf eingefrorenen Karten, wenn der jeweilige Eis-Skill gehalten wird. ----
   const frozen = cards.map((c) => !!c.frozen);
   const permafrost = hasPermafrost(skills);
@@ -204,9 +205,9 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Joker: effektive Farbe = die des direkten Vorgängers (verkettet).
   const effSuit = cards.map((c) => c.suit);
   for (let k = 1; k < n; k++) if (jokerIds.has(cards[k].id)) effSuit[k] = effSuit[k - 1];
-  // Farballianz (Shop, #164): Farbgruppen zählen für Farbblöcke als eine Farbe (jede Gruppe auf ihre erste Farbe gemappt).
-  // linkedGroups = [[a,b],…] (Stufe III = eine 3er-Gruppe, IV = zwei Paare); altes 2er-Feld linkedColors bleibt kompatibel.
-  const linkedGroups = pe.linkedGroups || ((pe.linkedColors || []).length === 2 ? [pe.linkedColors] : []);
+  // Farballianz (#179, Perk-Familie E_COLOR_ALLIANCE): verlinkte Farbgruppen (roles + pairs-Flag, allianceGroups).
+  // Jede Gruppe wird für Farbblöcke auf ihre erste Farbe gemappt → zählt als eine Farbe.
+  const linkedGroups = allianceGroups(familyTiers, roles);
   for (const g of linkedGroups) { const ref = g[0]; for (const su of g) if (su !== ref) for (let k = 0; k < n; k++) if (effSuit[k] === su) effSuit[k] = ref; }
   // Bindeglied (C10, ±1) + Eis: Eisschritt/Kristallform geben ±1, Permafrost-Joker passt überall (großer Flex).
   const bind = cards.map((c, k) => {
@@ -222,20 +223,30 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const wiedGap = { run: eP("E_PACE", "gapRun", 0), seg: eP("E_PACE", "gapSeg", 0) };                       // E_PACE: Wiederholung-Gaps
   const suitGap = { run: eP("E_COLORBRIDGE", "suitGapRun", 0), seg: eP("E_COLORBRIDGE", "suitGapSeg", 0) }; // E_COLORBRIDGE: Farbblock-Gaps
   const treppeE = { eqRun: eP("E_GENTLE", "eqRun", 0), eqSeg: eP("E_GENTLE", "eqSeg", 0),                   // E_GENTLE: Gleichstände
-                    // E_BIGSTEP-Rückschritte + Shop „Abstieg" III/IV Berg/Tal (descRev, §10-Näherung über dasselbe Budget).
-                    revRun: Math.max(eP("E_BIGSTEP", "revRun", 0), descRev), revSeg: Math.max(eP("E_BIGSTEP", "revSeg", 0), descRev),
+                    revRun: eP("E_BIGSTEP", "revRun", 0), revSeg: eP("E_BIGSTEP", "revSeg", 0),             // E_BIGSTEP: Rückschritte
                     drehSeg: eP("E_RPM", "drehSeg", 0) };                                                   // E_RPM: Doppel-Treppe
   const wMinLen = eP("E_PENDULUM", "wMinLen", 3);                                                           // E_PENDULUM: Wechsel-Mindestlänge
-  const wMinDiff = Math.min(wechselMinDiff, eP("E_PENDULUM", "wMinDiff", WECHSEL_MIN_DIFF));                // Shop F2 + E_PENDULUM (kleiner = leichter)
+  const wMinDiff = eP("E_PENDULUM", "wMinDiff", WECHSEL_MIN_DIFF);                                          // E_PENDULUM: Wechsel-Mindestdifferenz
   const wFactorStart = eP("E_PENDULUM", "wFactorStart", 0);                                                // IV: Wechsel-Faktor bereits ab Länge 2
-  // Erste `openCount` interne Segmentgrenzen öffnen (Infinity = alle → crossSeg): E_SEGMENT ODER Shop „Offene Grenze"
-  // III/IV (pe.openBoundaryCount, #164). Ergänzt die einzeln gewählten Grenzen (openSegmentBoundaries, Offene Grenze I/II).
-  const openCount = Math.max(eP("E_SEGMENT", "openBoundaries", 0), pe.openBoundaryCount || 0);
+  // Verstärkte Wiederholung (#179, E_STRONG_REP): Boni auf die Wiederholungsfaktoren (2./3. Karte + Gesamt-Multiplikator).
+  const repBonus = eP("E_STRONG_REP", "repSecond", 0);   // 2. Karte
+  const repThird = eP("E_STRONG_REP", "repThird", 0);    // 3. Karte
+  const repMult  = eP("E_STRONG_REP", "repAllMult", 1);  // alle Wiederholungsfaktoren
+  // Erste `openCount` interne Segmentgrenzen öffnen (Infinity = alle → crossSeg): E_SEGMENT (#179 alleinige Quelle;
+  // „Offene Grenze" entfiel). I/II öffnen die ersten 1/2 Grenzen deterministisch, III/IV alle.
+  const openCount = eP("E_SEGMENT", "openBoundaries", 0);
   const crossSeg = openCount === Infinity;
-  const openBoundaries = new Set(pe.openSegmentBoundaries || []); // einzeln geöffnete Segmentgrenzen (Position k mit (k+1)%5==0)
+  const openBoundaries = new Set();
   if (!crossSeg && openCount > 0) for (let k = 0, opened = 0; k < n && opened < openCount; k++)
     if ((k + 1) % SEGMENT_SIZE === 0) { openBoundaries.add(k); opened++; }
   const canExtendSeg = (k) => crossSeg || ((k + 1) % SEGMENT_SIZE !== 0) || openBoundaries.has(k);
+  // #179 E_SEGMENT IV Grenz-Bonus: Karten in einer Formation, die eine (frühere) Segmentgrenze überschreitet,
+  // geben zusätzlich ×crossBonus. noteCross sammelt die Mitglieds-Positionen kreuzender Läufe (nur aktiv bei Stufe IV).
+  const segCrossBonus = eP("E_SEGMENT", "crossBonus", 1);
+  const crossPositions = new Set();
+  const noteCross = segCrossBonus > 1
+    ? (members) => { if (members.length > 1 && Math.floor(members[0] / SEGMENT_SIZE) !== Math.floor(members[members.length - 1] / SEGMENT_SIZE)) for (const p of members) crossPositions.add(p); }
+    : null;
   // Shop Jokeranker (§4.2, #164): je STUFE für bestimmte Basisformationen Wildcard (a.jokerTypes). Zählt NICHT als
   // eigener Anker (kein Faktor) und erzeugt allein keine Formation. Position → Menge erlaubter Formationstypen.
   const jokerFor = (type) => { const s = new Set(); for (const a of anchors || []) if (a.type === "joker" && a.position < n && (a.jokerTypes || []).includes(type)) s.add(a.position); return s; };
@@ -266,7 +277,7 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const wiedFactor = (ord) => wiederholungFactor(ord, repBonus, repThird, repMult);
   markRuns(n, 2, matchWied, wiedGap, canExtendSeg,
     (pos, ord) => add(pos, "wiederholung", ord, wiedFactor(ord)), () => false,
-    (last, ord) => recordEnd(last, "wiederholung", wiedFactor(ord)), isJW);
+    (last, ord) => recordEnd(last, "wiederholung", wiedFactor(ord)), isJW, noteCross);
 
   // Farbblock: Permafrost-Joker + freie Familien-Joker (C_JOKER III/IV) matchen jede Farbe; Frostbrücke macht
   // eingefrorene Karten transparent (kein Mitglied).
@@ -274,20 +285,19 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const farbSkip = (k) => frozen[k] && wildSkip && !jokerAll[k];
   markRuns(n, 3, matchSuit, suitGap, canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)), farbSkip,
-    (last, ord) => recordEnd(last, "farbblock", escalatingFactor(ord, FARBBLOCK_BASE)), isJF);
+    (last, ord) => recordEnd(last, "farbblock", escalatingFactor(ord, FARBBLOCK_BASE)), isJF, noteCross);
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));
-  markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, 1, treppeEnd, isJT);
-  if (descending) markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, -1, treppeEnd, isJT); // F1 Abstieg
+  markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, 1, treppeEnd, isJT, noteCross);
+  // (Fallende Treppen „Abstieg" entfielen #179 — E_BIGSTEP deckt Rückschritte/Richtungswechsel innerhalb der Treppe ab.)
   // Wechsel: Kristallform gibt eingefrorenen Karten ±2-Wertoptionen (#165; Permafrost/Eisschritt gelten hier NICHT).
   // E_PENDULUM IV: wFactorStart hebt den Wechsel-Faktor bereits ab Länge 2 auf ×1,35 (sonst erst ab der 3. Karte).
   const valSetWechsel = cards.map((c, k) => (frozen[k] && wildCrystal ? [val[k] - CRYSTAL_OFFSET, val[k], val[k] + CRYSTAL_OFFSET] : [val[k]]));
-  // Enger Wechsel IV (#164): ab der 4. Karte +wCardBonus je Karte, zusätzlich zum Eskalationsfaktor.
-  const wechselFactor = (ord) => Math.max(escalatingFactor(ord, WECHSEL_BASE), ord >= 2 && wFactorStart ? wFactorStart : 1) + (ord >= 4 ? wCardBonus * (ord - 3) : 0);
+  const wechselFactor = (ord) => Math.max(escalatingFactor(ord, WECHSEL_BASE), ord >= 2 && wFactorStart ? wFactorStart : 1);
   markWechsel(val, valSetWechsel, n, wMinLen, canExtendSeg,
     (pos, ord) => add(pos, "wechsel", ord, wechselFactor(ord)), wMinDiff,
-    (last, ord) => recordEnd(last, "wechsel", wechselFactor(ord)), isJX);
+    (last, ord) => recordEnd(last, "wechsel", wechselFactor(ord)), isJX, noteCross);
 
   // Anker (E_LOSS/E_QUICKSHOT, Rarität #167 Kat. E): Positionen + Faktor der gehaltenen Stufe — je siegreicher Anker,
   // zählt als Formation. E_QUICKSHOT IV „+2 Wert" (anchor.value) wird in der Engine auf die Anker-Positionen addiert.
@@ -306,6 +316,14 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   for (const p of out) {
     const c = Math.min(p.formations.length, 4);
     if (c >= 2) p.mult *= OVERLAP_BONUS[c];
+  }
+
+  // #179 E_SEGMENT IV Grenz-Bonus: Karten, die zu ≥1 segmentüberschreitenden Formation gehören, erhalten zusätzlich
+  // ×crossBonus (je Karte EINMAL, unabhängig von der Zahl kreuzender Läufe). NACH der Überlappung → zählt NICHT in
+  // deren Anzahl; als eigener Faktor in baseMult (fließt in den Formations-Score), analog Nachhall/Kern.
+  if (segCrossBonus > 1) for (const pos of crossPositions) {
+    out[pos].mult *= segCrossBonus;
+    out[pos].formations.push({ type: "grenzbonus", ordinal: 1, factor: segCrossBonus });
   }
 
   // #165 Kristallform-Bonus (§5.4): ist eine eingefrorene Karte (durch die ±2-Interpretation) Teil ≥1 Wiederholung/
@@ -329,10 +347,10 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // mit (sourceType) — F-L1 kann daran andocken.
   // #164 Stufen: afterglowMaxFactor kappt den Faktor (I ×1,20 · II ×1,25 · III/IV kein Cap = null); afterglowRepsOnly
   // (I) nur bei Wiederholungen; afterglowHold (IV = 2) trägt den Nachhall auf die nächsten zwei Karten.
-  if (pe.formationAfterglow) {
-    const agCap = pe.afterglowMaxFactor;            // null/undefined = kein Cap
-    const agRepsOnly = !!pe.afterglowRepsOnly;
-    const agHold = pe.afterglowHold || 1;
+  if (eP("E_AFTERGLOW", "afterglow", false)) {
+    const agCap = eP("E_AFTERGLOW", "afterglowMaxFactor", null);      // null = kein Cap
+    const agRepsOnly = !!eP("E_AFTERGLOW", "afterglowRepsOnly", false);
+    const agHold = eP("E_AFTERGLOW", "afterglowHold", 1);
     for (const key in endBest) {
       const p = Number(key);
       const { factor: rawF, type } = endBest[p];
@@ -352,8 +370,8 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // F-L1 Formationskern (Shop §9): jede Position, die Teil einer aktiven Formation des gewählten Typs ist
   // (eigener Basislauf des Typs ODER ein Nachhall dieses Ursprungstyps), bekommt zusätzlich ×FORMATION_CORE_FACTOR
   // als eigenen Faktor (§13). Als Meta-Faktor NACH der Überlappung, zählt nicht in deren Anzahl.
-  const coreType = pe.formationCoreType || null;
-  const coreFactor = pe.formationCoreFactor || FORMATION_CORE_FACTOR; // #164 Formationskern: Faktor je Stufe (1,15…1,50)
+  const coreType = (roles["E_CORE"] || [])[0] || null;                 // #179 Formationskern: gewählter Typ (roles["E_CORE"])
+  const coreFactor = eP("E_CORE", "coreFactor", FORMATION_CORE_FACTOR); // Faktor je Stufe (1,15…1,50)
   if (coreType) for (const p of out) {
     const partOfType = p.formations.some((f) => f.type === coreType || (f.type === "nachhall" && f.sourceType === coreType));
     if (partOfType) {

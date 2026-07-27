@@ -35,9 +35,9 @@ export const PERK_DECLINE_COINS   = 1;   // #138: Perk-Angebot komplett ablehnen
 export const SHOP_INCOME_PER_LEVEL = 3;
 
 // Shop-Angebot (Shop-Spec §5) [TUNING]
-export const SHOP_CATEGORIES         = ["cards", "anchors", "formations", "planning"]; // Reihenfolge = Anzeige-Reihenfolge
+export const SHOP_CATEGORIES         = ["cards", "anchors", "planning"]; // Reihenfolge = Anzeige-Reihenfolge (#179: „formations" zu Perks migriert)
 export const SHOP_ITEMS_PER_CATEGORY = 2;    // je Kategorie werden genau so viele Items angeboten
-export const SHOP_ITEMS_OFFERED      = 8;    // = SHOP_CATEGORIES.length × SHOP_ITEMS_PER_CATEGORY
+export const SHOP_ITEMS_OFFERED      = SHOP_CATEGORIES.length * SHOP_ITEMS_PER_CATEGORY; // = 6 (#179: 3 Kategorien × 2)
 export const SHOP_LEGENDARY_CHANCE   = 0.15; // Chance je Shop auf EIN legendäres Angebot (ersetzt ein normales) [#Pass4: 0,10→0,15 — Legendaries zugänglicher]
 // Vier feste Preisstufen (Spec §5.5) — keine Zwischenpreise.
 export const SHOP_PRICE = { cheap: 8, strong: 12, premium: 18, legendary: 30 };

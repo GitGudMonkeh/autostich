@@ -52,13 +52,16 @@ describe("Familien-Registry — Struktur", () => {
       else expect(f.tiers[t].pickTarget.cards).toBeGreaterThanOrEqual(1);
     }
   });
-  it("Kategorie E vollständig (9 Familien, alle Regelersetzung, ohne Ziel)", () => {
+  it("Kategorie E vollständig (14 Familien, alle Regelersetzung; #179 Farballianz/Formationskern mit Ziel)", () => {
     const e = FAMILY_LIST.filter((f) => f.cat === "E");
-    expect(e).toHaveLength(9);
-    for (const f of e) {
-      expect(f.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
-      for (const t of [1, 2, 3, 4]) expect(f.tiers[t].pickTarget).toBeUndefined();
-    }
+    expect(e).toHaveLength(14); // 9 Erkennungs-Werkzeuge + 5 aus dem Shop migrierte Formations-Familien (#179)
+    for (const f of e) expect(f.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
+    // Nur die migrierten Farballianz (Farb-Ziel) / Formationskern (Typ-Ziel) tragen pickTarget; der Rest ist ziel-los.
+    const withTarget = e.filter((f) => [1, 2, 3, 4].some((t) => f.tiers[t].pickTarget)).map((f) => f.id).sort();
+    expect(withTarget).toEqual(["E_COLOR_ALLIANCE", "E_CORE"]);
+    expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].pickTarget.suits).toBe(4);
+    expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].pairs).toBe(true);
+    expect(FAMILY_DEFS.E_CORE.tiers[1].pickTarget.formationType).toBe(true);
   });
 });
 

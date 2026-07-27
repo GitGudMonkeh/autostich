@@ -244,12 +244,11 @@ describe("resolveTrick — Durchlauf-Ende & persistente Reihenfolge (V2)", () =>
     // Formationskern (regeländernder Shop-Effekt). Vor dem Fix wurden beide beim Eintritt ignoriert (Default []/{}).
     expect(DECISION_SCHEDULE[2]).toBe("formation"); // Sanity: cycle 1 → 2 löst die Formationsphase aus
     const anchors = [{ type: "formation", position: 0 }];
-    const pe = { formationCoreType: "wiederholung" };
-    const shop = { coins: 0, anchors, permanentEffects: pe };
+    const shop = { coins: 0, anchors };
     const s = resolveTrick(scenario(5, 0, { cycle: 1, pos: TRICKS_PER_CYCLE - 1, shop }), makeRng(2));
     expect(s.phase).toBe("formation");
-    // Beim Eintritt gerenderte Formationen == vollständige Berechnung (mit anchors + pe), NICHT die argument-lose.
-    expect(s.formations).toEqual(computeFormations(s.playerOrder, s.deck, s.roles, s.perks, s.skills, anchors, pe));
+    // Beim Eintritt gerenderte Formationen == vollständige Berechnung (mit anchors + familyTiers), NICHT die argument-lose.
+    expect(s.formations).toEqual(computeFormations(s.playerOrder, s.deck, s.roles, s.perks, s.skills, anchors, s.familyTiers));
     // Konkret: der Formationsanker auf Pos 0 ist SOFORT da (regressierte vorher bis zum ersten Tausch).
     expect(s.formations[0].formations.some((f) => f.type === "anker")).toBe(true);
   });

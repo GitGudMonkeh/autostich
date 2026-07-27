@@ -216,7 +216,7 @@ describe("Familien-Ziel-Fluss — pickTarget-Stufen (Rarität #167, Kat. A)", ()
     const s0 = base({ familyId: "A_SUIT_BOOST", tier: 3 });
     const s1 = reducer(s0, { type: "PICK_FAMILY", familyId: "A_SUIT_BOOST", tier: 3, rng });
     expect(s1.phase).toBe("family-target");
-    expect(s1.familyTarget).toEqual({ familyId: "A_SUIT_BOOST", tier: 3, kind: "suits", need: 1, suits: [], cards: [] });
+    expect(s1.familyTarget).toEqual({ familyId: "A_SUIT_BOOST", tier: 3, kind: "suits", need: 1, suits: [], cards: [], formationType: null });
     expect(s1.offer).toBeNull();
     expect(s1.deck).toBe(s0.deck);       // noch keine Deckmod
     expect(s1.familyTiers).toEqual({});  // Rang erst bei CONFIRM

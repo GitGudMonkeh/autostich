@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { summarizeFormations, SEGMENT_SIZE } from "../game/formations.js";
+import { allianceGroups } from "../game/families.js";
 import { SKILL_DEFS } from "../game/skills.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
@@ -119,7 +120,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}} selectedPos={sel} onTilePick={clickPos} quietTiles />
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}

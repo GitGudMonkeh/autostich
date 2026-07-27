@@ -99,7 +99,7 @@ describe("Überlappungsbonus gegen echtes Deck: ×2 (3 Formationen) & ×3 (4) (#
   it("4 Formationen auf einer Position → Überlappung ×3 (3 Basis + Formationsanker)", () => {
     // Ein Shop-Formationsanker (§4.2) auf Pos 1 ergänzt die 4. Mitgliedschaft (×1,60) → OVERLAP_BONUS[4] = ×3.
     const deck = deck3.map(card);
-    const g = computeFormations(idOrder(4), deck, {}, [], [], [{ type: "formation", position: 1, factor: 1.6 }], {}, {});
+    const g = computeFormations(idOrder(4), deck, {}, [], [], [{ type: "formation", position: 1, factor: 1.6 }], {});
     expect(g[1].formations.map((f) => f.type).sort()).toEqual(["anker", "farbblock", "treppe", "wiederholung"]);
     // Faktoren > 1: Wiederholung ×1,25 · Anker ×1,60; Produkt × Überlappung ×3 = 6,0.
     expect(+g[1].mult.toFixed(4)).toBeCloseTo(1.25 * 1.6 * 3);
@@ -131,7 +131,7 @@ describe("formationPotential (Startdeck-Band, #Pass6)", () => {
 // Joker (C8) & Bindeglied (C10) sind zu den Familien C_JOKER/C_BRIDGE migriert (#167) — Tests direkt darunter.
 
 describe("Rollen-Familien (Rarität #167): C_JOKER & C_BRIDGE über familyTiers", () => {
-  const withFam = (deck, roles, familyTiers) => computeFormations(idOrder(deck.length), deck, roles, [], [], [], {}, familyTiers);
+  const withFam = (deck, roles, familyTiers) => computeFormations(idOrder(deck.length), deck, roles, [], [], [], familyTiers);
   it("C_JOKER I (pred): zählt als Vorgängerfarbe (wie flach C8)", () => {
     const deck = [["R", 5], ["R", 2], ["B", 8]].map(card); // B als R → Farbblock R,R,R
     expect(withFam(deck, { C_JOKER: [deck[2].id] }, { C_JOKER: 1 })[2].formations.some((x) => x.type === "farbblock")).toBe(true);
@@ -152,7 +152,7 @@ describe("Rollen-Familien (Rarität #167): C_JOKER & C_BRIDGE über familyTiers"
 describe("Formationsfamilien (Rarität #167 Kat. E über familyTiers)", () => {
   // E1–E9 sind zu Familien migriert (#167); computeFormations liest sie über familyTiers (8. Param). Stufe II ≈ das
   // frühere flache Verhalten.
-  const withE = (arr, familyTiers) => computeFormations(idOrder(arr.length), arr.map(card), {}, [], [], [], {}, familyTiers);
+  const withE = (arr, familyTiers) => computeFormations(idOrder(arr.length), arr.map(card), {}, [], [], [], familyTiers);
   const hasType = (g, pos, t) => g[pos].formations.some((x) => x.type === t);
 
   it("E_LOSS: Segment-Anker (II: Position 10/20/30/40 ×1,25; IV ×1,35)", () => {

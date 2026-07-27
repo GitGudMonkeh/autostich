@@ -2,6 +2,7 @@ import { suitColor, suitName, SUIT_ORDER, SHOP_CATEGORIES, SHOP_CATEGORY_LABELS 
 import { SEGMENT_SIZE, FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
 import { SHOP_ITEM_DEFS, SEGMENT_BOUNDARIES } from "../game/shop.js";
 import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
+import { allianceGroups } from "../game/families.js";
 import { romanOf } from "../game/rarity.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
@@ -185,7 +186,7 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
           // #112: Positions-Anker im geteilten CardGrid — mit Formations-/Rollen-Kontext; belegte Positionen ausgegraut (Silberring).
           <div className="mt-4">
             <CardGrid cards={cards} formations={state.formations} roles={state.roles}
-              anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}}
+              anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               pickedPos={st.position} disabledPos={[...occupied]} onTilePick={(pos) => onPosition(pos)} />
           </div>
         ) : spec.segment ? (
@@ -224,7 +225,7 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
             {/* #112: Karten im geteilten CardGrid — Formations-/Rollen-Kontext sichtbar (formationsbewusst wählen). */}
             <div className="mt-4">
               <CardGrid cards={cards} formations={state.formations} roles={state.roles}
-                anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}}
+                anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 pickedIds={sel} arrows={colors} onTilePick={(pos, c) => onCard(c.id)} />
             </div>
 

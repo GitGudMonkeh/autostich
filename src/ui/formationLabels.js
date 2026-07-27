@@ -12,6 +12,7 @@ export const FORMATION_TYPES = {
   anker:          { label: "Anker",        abbr: "A" },
   nachhall:       { label: "Nachhall",     abbr: "N" },
   formationskern: { label: "Kern",         abbr: "K" },
+  grenzbonus:     { label: "Grenzbonus",   abbr: "G" }, // #179 E_SEGMENT IV: segmentüberschreitende Formation
 };
 
 // Ausgeschriebener Name (Fallback: der rohe Typ, falls je ein neuer Typ ohne Eintrag auftaucht).

@@ -684,7 +684,67 @@ const E_FAMILIES = {
       1: { desc: "Eine Segmentgrenze ist offen; Formationen dürfen sie überschreiten.", openBoundaries: 1 },
       2: { desc: "Zwei Segmentgrenzen sind offen.",                                      openBoundaries: 2 },
       3: { desc: "Alle Segmentgrenzen sind offen.",                                      openBoundaries: INF },
-      4: { desc: "Alle Segmentgrenzen sind offen; Formationen laufen ohne Einschränkung weiter.", openBoundaries: INF },
+      // #179: IV war zuvor mechanisch identisch zu III (beide „alle Grenzen offen"). Jetzt eigener Effekt (Grenz-Bonus):
+      // Karten in einer Formation, die eine (frühere) Segmentgrenze überschreitet, geben zusätzlich ×1,25 Score.
+      4: { desc: "Alle Segmentgrenzen sind offen; Karten einer segmentüberschreitenden Formation geben zusätzlich ×1,25 Score.", openBoundaries: INF, crossBonus: 1.25 },
+    },
+  },
+  // ---- Aus dem Shop migrierte Formations-Familien (#179): ehemals Shop-Kategorie „Formationen" (SHOP_FORMATION_FAMILIES).
+  //      Identität = reine Formations-Erkennungsregeln → gehören zu den Perks (Kat. E). REGELERSETZUNG. Die Effekt-Parameter
+  //      der GEHALTENEN Stufe liest computeFormations (familyTierParam), analog zu den übrigen E-Werkzeugen; kein
+  //      shop.permanentEffects-Pfad mehr. Nutzer-Entscheid #179: die 3 Duplikate (Offene Grenze/Enger Wechsel/Abstieg)
+  //      entfielen ersatzlos, da E_SEGMENT/E_PENDULUM/E_BIGSTEP sie abdecken. ----
+  E_STRONG_REP: {
+    id: "E_STRONG_REP", cat: "E", name: "Verstärkte Wiederholung", upgradeType: REPLACEMENT,
+    // repSecond = Bonus auf die 2. Karte, repThird = Bonus auf die 3. Karte, repAllMult = Faktor auf ALLE Wiederholungsfaktoren.
+    tiers: {
+      1: { desc: "Die zweite Karte einer Wiederholung erhält ×1,30 (statt ×1,25).", repSecond: 0.05, repThird: 0, repAllMult: 1 },
+      2: { desc: "Die zweite Karte einer Wiederholung erhält ×1,35.",               repSecond: 0.10, repThird: 0, repAllMult: 1 },
+      3: { desc: "Zweite und dritte Wiederholungskarte erhalten je +0,10 Faktor.",  repSecond: 0.10, repThird: 0.10, repAllMult: 1 },
+      4: { desc: "Alle Wiederholungsfaktoren erhalten zusätzlich ×1,20.",           repSecond: 0.10, repThird: 0.10, repAllMult: 1.20 },
+    },
+  },
+  E_AFTERGLOW: {
+    id: "E_AFTERGLOW", cat: "E", name: "Nachhall", upgradeType: REPLACEMENT,
+    // afterglow = aktiv; afterglowMaxFactor kappt (null = kein Cap); afterglowRepsOnly = nur Wiederholungen; afterglowHold = Karten.
+    tiers: {
+      1: { desc: "Nachhall nur bei Wiederholungen; Faktor höchstens ×1,20.",                  afterglow: true, afterglowMaxFactor: 1.20, afterglowRepsOnly: true,  afterglowHold: 1 },
+      2: { desc: "Nachhall bei allen Formationen; Faktor höchstens ×1,25.",                    afterglow: true, afterglowMaxFactor: 1.25, afterglowRepsOnly: false, afterglowHold: 1 },
+      3: { desc: "Nachhall übernimmt den stärksten Einzelfaktor vollständig.",                 afterglow: true, afterglowMaxFactor: null, afterglowRepsOnly: false, afterglowHold: 1 },
+      4: { desc: "Nachhall übernimmt den stärksten Einzelfaktor und hält für die nächsten zwei Karten.", afterglow: true, afterglowMaxFactor: null, afterglowRepsOnly: false, afterglowHold: 2 },
+    },
+  },
+  E_COLOR_ALLIANCE: {
+    id: "E_COLOR_ALLIANCE", cat: "E", name: "Farballianz", upgradeType: REPLACEMENT,
+    // Farb-Ziel (pickTarget.suits): die gewählten Farben werden in roles["E_COLOR_ALLIANCE"] persistiert und in
+    // computeFormations zu linkedGroups aufgelöst. `pairs` (IV) = die 4 Farben bilden ZWEI Allianzen (je zwei).
+    tiers: {
+      1: { desc: "Wähle 2 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 2 } },
+      2: { desc: "Wähle 2 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 2 } },
+      3: { desc: "Wähle 3 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 3 } },
+      4: { desc: "Wähle 4 Farben: sie bilden zwei Allianzen (je zwei Farben zählen als eine).", pickTarget: { suits: 4 }, pairs: true },
+    },
+  },
+  E_CORE: {
+    id: "E_CORE", cat: "E", name: "Formationskern", upgradeType: REPLACEMENT,
+    // Formationstyp-Ziel (pickTarget.formationType): der gewählte Typ wird in roles["E_CORE"] persistiert; jede Position,
+    // die Teil einer aktiven Formation dieses Typs (inkl. Nachhall) ist, erhält zusätzlich ×coreFactor.
+    tiers: {
+      1: { desc: "Wähle 1 Formationstyp: seine aktiven Formationen erhalten zusätzlich ×1,15.", pickTarget: { formationType: true }, coreFactor: 1.15 },
+      2: { desc: "Wähle 1 Formationstyp: zusätzlich ×1,25.", pickTarget: { formationType: true }, coreFactor: 1.25 },
+      3: { desc: "Wähle 1 Formationstyp: zusätzlich ×1,40.", pickTarget: { formationType: true }, coreFactor: 1.40 },
+      4: { desc: "Wähle 1 Formationstyp: zusätzlich ×1,50 (inklusive Nachhall).", pickTarget: { formationType: true }, coreFactor: 1.50 },
+    },
+  },
+  E_TUNING: {
+    id: "E_TUNING", cat: "E", name: "Feinjustierung", upgradeType: REPLACEMENT,
+    // Kein Erkennungs-Effekt: liefert Formationsenergie für die Formationsphase (formationEnergyBonus). everySecond (I §10)
+    // ≈ nur jede zweite Formationsphase über die Durchlauf-Parität. Ehemals Perk E10 / Shop-Feinjustierung (#179).
+    tiers: {
+      1: { desc: "Jede zweite Formationsphase: +1 Energie.", energyBonus: 1, everySecond: true },
+      2: { desc: "Jede Formationsphase: +1 Energie.", energyBonus: 1 },
+      3: { desc: "Jede Formationsphase: +2 Energie.", energyBonus: 2 },
+      4: { desc: "Jede Formationsphase: +3 Energie.", energyBonus: 3 },
     },
   },
 };
@@ -754,6 +814,26 @@ export function familyProdHook(familyTiers, name, ctx) {
   return m;
 }
 
+// Feinjustierung (E_TUNING, #179 — ehem. Shop-Feinjustierung / Perk E10): Formationsenergie-Bonus aus dem gehaltenen
+// Rang. `everySecond` (Stufe I §10) nur jede zweite Formationsphase — über die Durchlauf-Parität genähert. cycle = state.cycle.
+export function formationEnergyBonus(familyTiers = {}, cycle = 0) {
+  const tier = (familyTiers || {}).E_TUNING || 0;
+  const def = tier ? E_FAMILIES.E_TUNING.tiers[tier] : null;
+  if (!def) return 0;
+  if (def.everySecond && (cycle % 2 !== 0)) return 0; // §10: „jede zweite Phase" ≈ gerade Durchläufe
+  return def.energyBonus || 0;
+}
+
+// Farballianz (#179, E_COLOR_ALLIANCE): die verlinkten Farbgruppen aus roles + `pairs`-Flag der gehaltenen Stufe.
+// Eine gemeinsame Quelle für computeFormations (Farbblock-Verschmelzung) UND die UI (diagonaler Zweifarben-Split).
+// [] = keine Allianz; [[a,b]] = eine Gruppe (2/3 Farben); [[a,b],[c,d]] = zwei Paare (Stufe IV).
+export function allianceGroups(familyTiers = {}, roles = {}) {
+  const suits = (roles || {}).E_COLOR_ALLIANCE || [];
+  if (suits.length < 2) return [];
+  const pairs = !!familyTierParam(familyTiers, "E_COLOR_ALLIANCE", "pairs");
+  return (pairs && suits.length === 4) ? [[suits[0], suits[1]], [suits[2], suits[3]]] : [suits.slice()];
+}
+
 // Belohnt eine gehaltene Familie Crits? (steuert die UI-Sichtbarkeit der Crit-Anzeigen, analog perks.hasCritPerk — #166).
 // Die crit-belohnenden D-Familien (D_CRIT_SCORE/D_SHARP_EYE/…) tragen scoreFlatOnCrit auf ihrer aktiven Stufe.
 export function hasCritFamily(familyTiers) {
@@ -808,6 +888,11 @@ export function applyFamilyPick(familyId, targetTier, ctx = {}, rng = Math.rando
     const merged = prev.slice();
     for (const id of chosen) if (!merged.includes(id)) merged.push(id);
     nextRoles = { ...(roles || {}), [familyId]: merged };
+  } else if (fam.upgradeType === UPGRADE_TYPES.REPLACEMENT && tierDef && tierDef.pickTarget && target) {
+    // REGELERSETZUNG mit Ziel (#179): E_COLOR_ALLIANCE (Farben) / E_CORE (Formationstyp). Das gewählte Ziel wird als
+    // „Rolle" der Familie persistiert — voller Ersatz je Stufe (kein Merge, REPLACEMENT). computeFormations liest roles[familyId].
+    if (tierDef.pickTarget.suits && target.suits) nextRoles = { ...(roles || {}), [familyId]: target.suits.slice() };
+    else if (tierDef.pickTarget.formationType && target.formationType) nextRoles = { ...(roles || {}), [familyId]: [target.formationType] };
   }
   return { familyTiers: withFamilyTier(familyTiers, familyId, targetTier), deck: nextDeck, roles: nextRoles };
 }

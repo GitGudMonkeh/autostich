@@ -3,6 +3,7 @@ import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { activeShopUpgrades, SHOP_ITEM_DEFS } from "../game/shop.js";
+import { allianceGroups } from "../game/families.js";
 import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
 import { TIER_META, romanOf } from "../game/rarity.js";
 import { suitName, SHOP_CATEGORY_LABELS } from "../game/constants.js";
@@ -54,7 +55,7 @@ export function ChronikOverview({ state, onClose }) {
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={anchors} pe={state.shop?.permanentEffects || {}}
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               selectedPos={selPos} onTilePick={(pos) => setSelPos(selPos === pos ? null : pos)} />
           </div>
 

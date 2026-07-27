@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PERK_DEFS } from "../game/perks.js";
+import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
 
 /* Kartenrollen-Zielauswahl (V2 §22.6 C / §22.5): öffnet nach dem Pick eines Ziel-Perks.
@@ -28,7 +29,7 @@ export function TargetSelect({ state, onConfirm }) {
 
         <div className="mt-4">
           <CardGrid cards={cards} formations={formations} roles={roles}
-            anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}}
+            anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
             pickedIds={sel} onTilePick={(pos, c) => toggle(c.id)} />
         </div>
 
