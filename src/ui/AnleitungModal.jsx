@@ -22,13 +22,13 @@ export function AnleitungModal({ onClose }) {
           <h2 className="text-xl font-bold mt-1">So funktioniert Autostich</h2>
         </div>
 
-        <div className="grid gap-2.5">
+        <div className="grid grid-cols-1 gap-2.5">
           {ITEMS.map(([icon, title, desc]) => (
-            <div key={title} className="flex gap-3 rounded-lg p-3" style={{ background: "#20202a" }}>
-              <div className="text-xl leading-none">{icon}</div>
-              <div>
-                <div className="font-bold text-sm">{title}</div>
-                <div className="text-sm opacity-75 leading-snug">{desc}</div>
+            <div key={title} className="flex gap-3 rounded-lg p-3 min-w-0" style={{ background: "#20202a" }}>
+              <div className="text-xl leading-none shrink-0">{icon}</div>
+              <div className="min-w-0">
+                <div className="font-bold text-sm break-words">{title}</div>
+                <div className="text-sm opacity-75 leading-snug break-words">{desc}</div>
               </div>
             </div>
           ))}
