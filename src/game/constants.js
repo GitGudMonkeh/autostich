@@ -29,7 +29,7 @@ export const DECISION_SCHEDULE = [
 // Shop-Münzökonomie (Shop-Spec §3) [TUNING]
 export const STARTING_COINS       = 2;   // Startmünzen bei Run-Beginn
 export const BASE_COINS_PER_CYCLE = 2;   // Münzen je vollständig abgeschlossenem Durchlauf (KONSTANT, ohne Einkommen)
-export const PERK_DECLINE_COINS   = 1;   // #138: Perk-Angebot komplett ablehnen → feste Münze (Runde nie „verschwendet")
+export const PERK_DECLINE_COINS   = 2;   // #138/#183: Perk-Angebot komplett ablehnen → feste Münzen (Runde nie „verschwendet")
 // Einkommens-Stat (überarbeitet): der Bonus wird PRO SHOP-BESUCH gutgeschrieben, nicht je Durchlauf —
 // +3 Münzen je Einkommen-Pick, gilt für jeden Shop nach der Wahl (auch den direkt bevorstehenden). [TUNING]
 export const SHOP_INCOME_PER_LEVEL = 3;
