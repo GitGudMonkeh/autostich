@@ -442,6 +442,9 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
 
   it("deterministisch über den rng (gleicher Seed → gleiches Angebot)", () => {
     expect(buildPerkOffer([], {}, rngS(7), 3)).toEqual(buildPerkOffer([], {}, rngS(7), 3));
+    // #156: der Seed treibt das Angebot — über mehrere Seeds ist es nicht konstant (kein Stub bestünde das).
+    const offers = Array.from({ length: 8 }, (_, s) => JSON.stringify(buildPerkOffer([], {}, rngS(s + 1), 3)));
+    expect(new Set(offers).size).toBeGreaterThan(1);
   });
 
   it("eine Familie erscheint höchstens einmal je Angebot (keine zwei Stufen derselben Familie)", () => {

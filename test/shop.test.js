@@ -172,6 +172,9 @@ describe("Shop-Angebot — Ziehung (Shop-Spec §5)", () => {
   });
   it("gleicher Seed → identisches Angebot (deterministisch, §5.3)", () => {
     expect(buildShopOffer(fxLeg(), initialShop(), makeRng(7))).toEqual(buildShopOffer(fxLeg(), initialShop(), makeRng(7)));
+    // #156: gleicher-Seed-Gleichheit allein bestünde auch ein konstanter Stub — der Seed muss das Angebot treiben.
+    const offers = Array.from({ length: 8 }, (_, s) => JSON.stringify(buildShopOffer(fxLeg(), initialShop(), makeRng(s + 1))));
+    expect(new Set(offers).size).toBeGreaterThan(1);
   });
   it("Cheap-Garantie überlebt die Legendär-Ersetzung (§5.6 + §5.7, auch bei nur einer Kategorie)", () => {
     // Wie live in S2: nur 'cards' bestückt, mit günstig/stark/premium/legendär. Beide Garantien müssen gelten.

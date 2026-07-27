@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
+import { resolveTrick } from "../src/game/engine.js";
 import { STAT_IDS } from "../src/game/stats.js";
 import { computeFormations, formationPotential } from "../src/game/formations.js";
 import { FORMATION_START_MIN, FORMATION_START_MAX, PERK_DECLINE_COINS } from "../src/game/constants.js";
@@ -25,6 +26,9 @@ describe("Reducer", () => {
     }
     // gleicher Seed → identische Anordnung (Rejection-Sampling bleibt deterministisch)
     expect(initialState(makeRng(5)).playerOrder).toEqual(initialState(makeRng(5)).playerOrder);
+    // #156: verschiedene Seeds → (meist) verschiedene Anordnung — der Seed treibt das Sampling wirklich.
+    const orders = new Set([5, 6, 7, 11].map((s) => initialState(makeRng(s)).playerOrder.join(",")));
+    expect(orders.size).toBeGreaterThan(1);
   });
 
   // Deck-Mods beim Pick (früher flache Kat.-A-Perks) sind zu KUMULATIVEN Familien migriert (#167) — der
@@ -334,5 +338,34 @@ describe("Ziel-Legendäre — CONFIRM_TARGET permMod (V2 §22.6)", () => {
       expect(s.deck[order[p]].value).toBe(Math.max(0, before[order[p]] - 2)); // Ziel −2 (Boden 0)
       expect(s.deck[order[p + 1]].value).toBe(before[order[p + 1]] + 6);      // direkter Nachfolger +6
     }
+  });
+});
+
+describe("RESOLVE_TRICK — Reducer-Dispatch (#158)", () => {
+  it("dispatcht auf resolveTrick und reicht action.rng durch", () => {
+    const play = initialState(makeRng(1)); // phase play
+    // Bislang riefen alle Engine-Tests resolveTrick direkt auf; die Case-Verdrahtung + action.rng-Weitergabe im
+    // Reducer war ungetestet. Gleiche Eingaben (frischer rng gleichen Seeds) → deep-gleiches Ergebnis.
+    const viaReducer = reducer(play, { type: "RESOLVE_TRICK", rng: makeRng(3) });
+    expect(viaReducer).toEqual(resolveTrick(play, makeRng(3)));
+    expect(viaReducer.lastTrick).toBeTruthy();          // ein Stich wurde aufgelöst
+    expect(viaReducer.trickNo).toBe((play.trickNo || 0) + 1);
+  });
+  it("außerhalb der play-Phase No-Op (resolveTrick gibt den State zurück)", () => {
+    const menu = { ...initialState(makeRng(1)), phase: "menu" };
+    expect(reducer(menu, { type: "RESOLVE_TRICK", rng })).toBe(menu);
+  });
+});
+
+describe("PICK_STAT — Formations-/Crit-Mult-Felder (#158)", () => {
+  const statState = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", statOffer: STAT_IDS, ...over });
+  it("formMult addiert den Step aufs statFormMult-Feld", () => {
+    const s = reducer(statState(), { type: "PICK_STAT", statId: "formMult", rng });
+    expect(s.statFormMult).toBeCloseTo(0.05); // STAT_FORM_MULT_STEP
+    expect(s.phase).toBe("play");
+  });
+  it("critMult addiert (stapelnd) aufs statCritMult-Feld", () => {
+    const s = reducer(statState({ statCritMult: 0.25 }), { type: "PICK_STAT", statId: "critMult", rng });
+    expect(s.statCritMult).toBeCloseTo(0.5); // 0,25 + STAT_CRIT_MULT_STEP (0,25)
   });
 });

@@ -84,6 +84,28 @@ describe("Stapelung mehrerer Formationen (Produkt × Überlappungsbonus)", () =>
   });
 });
 
+// #155: bisher war nur die 2-fach-Überlappung (×1,5) gegen ein echtes Deck geprüft. OVERLAP_BONUS = {2:1,5, 3:2, 4:3};
+// die großen Multiplikatoren ×2 (3 Formationen) und ×3 (4) hatten keinen Real-Deck-Regressionswächter.
+describe("Überlappungsbonus gegen echtes Deck: ×2 (3 Formationen) & ×3 (4) (#155)", () => {
+  // [R5,R5,R7,R9]: Pos 1 liegt gleichzeitig in Wiederholung (2. Karte), Farbblock (2. Karte) und Treppe (5,7,9)
+  // → 3 gleichzeitige Basis-Formationen auf EINER Position → OVERLAP_BONUS[3] = ×2.
+  const deck3 = [["R", 5], ["R", 5], ["R", 7], ["R", 9]];
+  it("3 Basis-Formationen auf einer Position → Überlappung ×2", () => {
+    expect(typesAt(deck3, 1)).toEqual(["farbblock", "treppe", "wiederholung"]);
+    // Faktor > 1 trägt nur die Wiederholung (2. Karte ×1,25); Farbblock@2/Treppe@1 sind noch ×1.
+    // Produkt 1,25 × Überlappung ×2 = 2,5.
+    expect(+forms(deck3)[1].mult.toFixed(4)).toBeCloseTo(1.25 * 2);
+  });
+  it("4 Formationen auf einer Position → Überlappung ×3 (3 Basis + Formationsanker)", () => {
+    // Ein Shop-Formationsanker (§4.2) auf Pos 1 ergänzt die 4. Mitgliedschaft (×1,60) → OVERLAP_BONUS[4] = ×3.
+    const deck = deck3.map(card);
+    const g = computeFormations(idOrder(4), deck, {}, [], [], [{ type: "formation", position: 1, factor: 1.6 }], {}, {});
+    expect(g[1].formations.map((f) => f.type).sort()).toEqual(["anker", "farbblock", "treppe", "wiederholung"]);
+    // Faktoren > 1: Wiederholung ×1,25 · Anker ×1,60; Produkt × Überlappung ×3 = 6,0.
+    expect(+g[1].mult.toFixed(4)).toBeCloseTo(1.25 * 1.6 * 3);
+  });
+});
+
 describe("positionHasFormation (speist den Formations-Stat)", () => {
   it("true nur bei wirksamem Multiplikator (>1)", () => {
     const f = forms([["R", 5], ["B", 5], ["G", 5]]); // Wiederholung: pos0 mult 1, pos1 1,25, pos2 1,50

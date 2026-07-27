@@ -81,6 +81,9 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
     expect(off.every((id) => SKILL_DEFS[id])).toBe(true);
     const archs = new Set(off.map(archetypeOf));
     expect(archs).toEqual(new Set(["lightning", "fire", "ice"])); // alle 3 vertreten (2 je Archetyp)
+    // #156: verschiedene Seeds → (meist) verschiedenes Angebot — der Seed treibt die Auswahl wirklich.
+    const offers = Array.from({ length: 8 }, (_, s) => buildSkillOffer([], [], makeRng(s + 1), 6).join(","));
+    expect(new Set(offers).size).toBeGreaterThan(1);
   });
   it("bereits gehaltene werden nicht erneut angeboten; leerer Pool → []", () => {
     expect(buildSkillOffer([LR], [], makeRng(1), 4)).not.toContain(LR);
