@@ -2,7 +2,7 @@
    TUNING-BLOCK  — hier dreht der Dev im Playtest
    ============================================================ */
 export const MAX_CYCLES       = 44;     // Shop-Spec (§2.1): fester Run über genau so viele Deck-Durchläufe, danach Ende [TUNING]
-export const SCORE_PER_WIN    = 100;    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING]
+export const SCORE_PER_WIN    = 400;    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Pacing-Pass: 100→400, flacht die Score-Kurve über den Run ab — flache Boni akkumulieren spät, höhere Basis hebt früh relativ stärker; Sim-validiert, siehe docs/sim-harness-plan]
 export const CRIT_BASE_MULT   = 1.5;    // V2 (§22.3): Basis-Crit-Multiplikator; der Crit-Mult-Stat baut darauf auf [TUNING]
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 
@@ -89,7 +89,7 @@ export const SKILLS_OFFERED     = 6;   // Skills je Skill-Runde (Prototyp: 2+2+2
 export const MAX_ARCHETYPES     = 3;   // Prototyp: alle 3 Archetypen gleichzeitig aktivierbar (Cap aufgehoben)
 export const SKILL_EVERY_CYCLES = 3;   // jede N-te Runde ist eine Skill-Runde (3, 6, 9 …), sonst Perk
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
-export const LIGHTNING_CRIT_PER_SKILL = 0.05; // Blitz: je gehaltenem Blitz-Skill
+export const LIGHTNING_CRIT_PER_SKILL = 0.08; // Blitz: je gehaltenem Blitz-Skill [Balance/Pacing: 0,05→0,08 — kleiner Blitz-Buff, Sim-validiert: hebt Blitz von 0,81× auf 0,89× des besten Archetyps bei SPW=400]
 export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
 // Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
 export const ION_SCORE_PER_STACK  = 25; // +Score je Ionisierungsstapel bei Sieg mit der Karte
