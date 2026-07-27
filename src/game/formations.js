@@ -4,12 +4,12 @@
    ein Formations-Multiplikator berechnet. Basis-Formationen sind SEGMENTGEBUNDEN (Arena, §22.7/Q3):
    ein Lauf endet an jeder Segmentgrenze. Rollen (Kat. C) und Werkzeuge (Kat. E) biegen die Erkennung.
 
-   Basis-Formationen (Faktoren §22.7, Balancing-Rework #95):
-   - Wiederholung: ≥2 gleiche Werte.        2.→×1,30, 3.→×1,60, 4.→×2,00, danach je +0,50 (KEIN Cap).
-   - Farbblock:    ≥3 gleiche Farbe.         ab 3. ×1,30, je weitere +0,20.
-   - Treppe:       ≥3 streng steigend.       ab 3. ×1,25, je weitere +0,20.
-   - Wechsel:      ≥3 Zick-Zack (Diff ≥4).   ab 3. ×1,25, je weitere +0,20.
-   - Anker (E7/E8): einzelne Position ×1,25 (zählt als Formation).
+   Basis-Formationen (Faktoren §22.7, Balancing-Rework #95 / #Pass4 / #161 FB-5):
+   - Wiederholung: ≥2 gleiche Werte.        2.→×1,25, 3.→×1,50, 4.→×1,80, danach je +0,40 (KEIN Cap).
+   - Farbblock:    ≥3 gleiche Farbe.         ab 3. ×1,35, je weitere +0,20.
+   - Treppe:       ≥3 streng steigend, Schritt ≤3. ab 3. ×1,35, je weitere +0,20.
+   - Wechsel:      ≥3 Zick-Zack (Diff ≥5).   ab 3. ×1,40, je weitere +0,20.
+   - Anker: einzelne Position ×1,25 (zählt als Formation).
    - Überlappung: steckt eine Karte in mehreren Formationen, wird ihr Faktor-Produkt zusätzlich
      mit dem Überlappungsbonus multipliziert: 2 Formationen ×1,5 · 3 ×2 · 4 ×3.
 
