@@ -1,11 +1,10 @@
 import { suitColor, suitName, SUIT_ORDER, SHOP_CATEGORIES, SHOP_CATEGORY_LABELS } from "../game/constants.js";
-import { SEGMENT_SIZE, FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
-import { SHOP_ITEM_DEFS, SEGMENT_BOUNDARIES } from "../game/shop.js";
+import { SEGMENT_SIZE } from "../game/formations.js";
+import { SHOP_ITEM_DEFS } from "../game/shop.js";
 import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
 import { allianceGroups } from "../game/families.js";
 import { romanOf } from "../game/rarity.js";
 import { CardGrid } from "./CardGrid.jsx";
-import { FormationPanel } from "./FormationPanel.jsx";
 import { formationBorder } from "./formationStyle.js";
 import { useEscape } from "./useEscape.js";
 
@@ -14,7 +13,7 @@ const GOLD = "#d4a63a";
 /* Shop-Ziel-Auswahl (Shop-Spec §12.2) — öffnet nach dem Kauf eines Ziel-Items (Kartenitems S2).
    Karten wählen (Limit aus dem Item), optional je Karte eine neue Farbe, oder ein Segment (K-L1).
    Abbrechen lässt Angebot & Münzen unverändert; Bestätigen zieht erst dann den Preis ab (Reducer). */
-export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onColorPair, onBoundary, onFormationType, onCategory, onOffer, onConfirm, onCancel }) {
+export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition, onCategory, onOffer, onConfirm, onCancel }) {
   useEscape(onCancel);
   const st = state.shopTarget || {};
   // Shop-Familie (#164): Name/Beschreibung/Ziel-Bedarf aus der Zielstufe; sonst flaches Item.
@@ -33,20 +32,13 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
 
   // Belegte Anker-Positionen; beim Anker-Upgrade ist die EIGENE (zu ersetzende) Position wählbar (#164).
   const occupied = new Set((state.shop?.anchors || []).filter((a) => a.type !== fam?.anchorType).map((a) => a.position));
-  const openBoundaries = new Set(state.shop?.permanentEffects?.openSegmentBoundaries || []);
-  const pair = st.colorPair || [];
-  const colorsNeed = spec.colors || 0; // Farballianz (#164): 2/2/3/4 Farben je Stufe (früher spec.colorPair = 2)
   const cardsDone = !spec.cards || sel.length === spec.cards;
   const colorsDone = !spec.color || sel.every((id) => colors[id]);
   const segDone = !spec.segment || st.segment != null;
   const posDone = !spec.position || st.position != null;
-  const pairDone = !colorsNeed || pair.length === colorsNeed;
-  const boundaryDone = !spec.boundary || st.boundary != null;
-  const ftDone = !spec.formationType || st.formationType != null;
   const catDone = !spec.category || st.category != null;
   const offerDone = !spec.offer || st.targetOfferId != null;
-  const ready = colorsNeed ? pairDone : spec.boundary ? boundaryDone : spec.formationType ? ftDone
-    : spec.category ? catDone : spec.offer ? offerDone : spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
+  const ready = spec.category ? catDone : spec.offer ? offerDone : spec.position ? posDone : spec.segment ? segDone : cardsDone && colorsDone;
   // Reservierung (P4): reservierbare Angebote = alle außer dem gerade gekauften P4 und bereits gekauften.
   const purchased = new Set(state.shop?.purchasedOfferIds || []);
   const reservable = (state.shop?.offers || []).filter((o) => o.offerId !== st.offerId && !purchased.has(o.offerId));
@@ -57,94 +49,12 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>Shop · {def.name}</div>
           <h2 className="text-xl font-bold mt-1">
-            {colorsNeed ? `Wähle ${colorsNeed} Farben` : spec.boundary ? "Wähle eine Segmentgrenze" : spec.formationType ? "Wähle einen Formationstyp" : spec.category ? "Wähle eine Kategorie" : spec.offer ? "Wähle ein Item zum Reservieren" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
+            {spec.category ? "Wähle eine Kategorie" : spec.offer ? "Wähle ein Item zum Reservieren" : spec.position ? "Wähle eine Position" : spec.segment ? "Wähle ein Segment" : `Wähle ${spec.cards} ${spec.cards === 1 ? "Karte" : "Karten"}${spec.color ? " + Farbe" : ""}`}
           </h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.description}</p>
         </div>
 
-        {colorsNeed ? (
-          <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{colorsNeed} Farben wählen (zählen für Farbblöcke als eine{colorsNeed === 4 ? "; je zwei bilden eine Allianz" : ""})</div>
-            <div className="flex gap-2 flex-wrap">
-              {SUIT_ORDER.map((su) => {
-                const on = pair.includes(su);
-                return (
-                  <button key={su} onClick={() => onColorPair(su)}
-                    className="px-4 py-2 rounded-lg text-sm font-bold transition-all"
-                    style={{ background: on ? suitColor(su) : `${suitColor(su)}22`, color: on ? "#141419" : suitColor(su), border: `2px solid ${suitColor(su)}` }}>
-                    {suitName(su)}
-                  </button>
-                );
-              })}
-            </div>
-            {/* #161 FB-1: aktive Formationen als Kontext — Farballianz verbindet Farben für Farbblöcke. */}
-            <FormationPanel state={state} className="mt-4" />
-          </div>
-        ) : spec.boundary ? (
-          // #124: Grenze im VOLLEN Board wählen — anklickbare Trennlinie zwischen den Segmenten, im Kontext der Kartenreihenfolge.
-          <div className="grid gap-0.5 mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-1">Grenze im Board wählen (verbindet die zwei angrenzenden Segmente)</div>
-            {Array.from({ length: nSeg }, (_, seg) => {
-              const start = seg * SEGMENT_SIZE;
-              const segCards = cards.slice(start, start + SEGMENT_SIZE);
-              const b = SEGMENT_BOUNDARIES[seg]; // Grenze NACH diesem Segment (undefined beim letzten)
-              const open = b != null && openBoundaries.has(b);
-              const active = b != null && st.boundary === b;
-              return (
-                <div key={seg}>
-                  <div className="flex items-center gap-2">
-                    <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{start + 1}–{start + segCards.length}</div>
-                    <div className="grid grid-cols-5 gap-1.5 flex-1">
-                      {segCards.map((c, k) => {
-                        const pos = start + k; const col = suitColor(c.suit);
-                        const fb = formationBorder((state.formations || [])[pos]); // #161 FB-1: Formationsrand sichtbar machen
-                        return (
-                          <div key={pos} className="as-tile relative rounded-lg flex items-center justify-center" style={{ background: "#20202a", border: `2px ${fb.dashed ? "dashed" : "solid"} ${fb.color || col + "55"}` }}>
-                            <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-                            <span className="text-lg sm:text-2xl font-bold font-pixel-dense" style={{ color: col }}>{c.value}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {b != null && (
-                    <div className="flex items-center gap-2 my-0.5">
-                      <div className="w-9 shrink-0" />
-                      <button onClick={() => !open && onBoundary(b)} disabled={open}
-                        className="flex-1 flex items-center justify-center rounded transition-all"
-                        style={{ height: 22, background: active ? `${GOLD}22` : open ? "#5ab87a1a" : "#1c1c22",
-                                 border: `1px ${active || open ? "solid" : "dashed"} ${active ? GOLD : open ? "#5ab87a" : "#3a3a46"}`,
-                                 cursor: open ? "not-allowed" : "pointer", opacity: open ? 0.75 : 1 }}>
-                        <span className="text-[10px] font-bold tracking-wide" style={{ color: active ? GOLD : open ? "#5ab87a" : "#9a9aa4" }}>
-                          ⟷ Grenze {b + 1}|{b + 2}{open ? " · bereits offen" : active ? " · ✓" : ""}
-                        </span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : spec.formationType ? (
-          <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Formationstyp wählen (jede Formation dieses Typs ×1,50)</div>
-            <div className="grid sm:grid-cols-2 gap-2">
-              {FORMATION_TYPES.map((ft) => {
-                const active = st.formationType === ft;
-                return (
-                  <button key={ft} onClick={() => onFormationType(ft)}
-                    className="rounded-xl p-3 text-left transition-all font-bold"
-                    style={{ background: active ? `${GOLD}22` : "#20202a", border: `2px solid ${active ? GOLD : "#33333e"}` }}>
-                    {FORMATION_TYPE_LABELS[ft]}
-                    {active && <span className="text-[11px] ml-2" style={{ color: GOLD }}>✓</span>}
-                  </button>
-                );
-              })}
-            </div>
-            {/* #161 FB-1: aktive Formationen als Kontext — welcher Typ ist im Layout vertreten? */}
-            <FormationPanel state={state} className="mt-4" />
-          </div>
-        ) : spec.category ? (
+        {spec.category ? (
           <div className="mt-4">
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Kategorie neu würfeln (nicht gekaufte Angebote werden ersetzt)</div>
             <div className="grid sm:grid-cols-2 gap-2">

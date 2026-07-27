@@ -264,9 +264,6 @@ export function Autostich() {
   const shopTargetColor = (cardId, color) => dispatch({ type: "SHOP_TARGET_COLOR", cardId, color });
   const shopTargetSegment = (segment) => dispatch({ type: "SHOP_TARGET_SEGMENT", segment });
   const shopTargetPosition = (position) => dispatch({ type: "SHOP_TARGET_POSITION", position });
-  const shopTargetColorPair = (color) => dispatch({ type: "SHOP_TARGET_COLOR_PAIR", color });
-  const shopTargetBoundary = (boundary) => dispatch({ type: "SHOP_TARGET_BOUNDARY", boundary });
-  const shopTargetFormationType = (formationType) => dispatch({ type: "SHOP_TARGET_FORMATION_TYPE", formationType });
   const shopTargetCategory = (category) => dispatch({ type: "SHOP_TARGET_CATEGORY", category });
   const shopTargetOffer = (offerId) => dispatch({ type: "SHOP_TARGET_OFFER", offerId });
   const shopTargetConfirm = () => dispatch({ type: "SHOP_TARGET_CONFIRM", rng: Math.random });
@@ -465,8 +462,7 @@ export function Autostich() {
       )}
       {state.phase === "shop-target" && (
         <ShopTargetSelect state={state} onCard={shopTargetCard} onColor={shopTargetColor}
-          onSegment={shopTargetSegment} onPosition={shopTargetPosition} onColorPair={shopTargetColorPair} onBoundary={shopTargetBoundary}
-          onFormationType={shopTargetFormationType} onCategory={shopTargetCategory} onOffer={shopTargetOffer}
+          onSegment={shopTargetSegment} onPosition={shopTargetPosition} onCategory={shopTargetCategory} onOffer={shopTargetOffer}
           onConfirm={shopTargetConfirm} onCancel={shopTargetCancel} />
       )}
       {state.phase === "target" && (
