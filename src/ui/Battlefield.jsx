@@ -6,6 +6,7 @@ import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
+import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js";
 import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 
 const BANNER = {
@@ -41,21 +42,6 @@ const CARDFLIP_RATE_CAP = 1.6;  // Deckel bewusst niedrig → bei MAX-Turbo blei
 const CARDFLIP_GAIN = { win: 1.5, win_tie: 1.5, tie: 0.6, loss: 0.2 };
 // Deterministischer Jitter aus einem Integer-Seed (kein Math.random im Render, #68) → [-amp, +amp].
 const fjitter = (seed, amp) => { const s = Math.sin(seed * 127.1 + 311.7) * 43758.5; return +(((s - Math.floor(s)) * 2 - 1) * amp).toFixed(1); };
-
-// Respektiert die OS-Einstellung „reduzierte Bewegung" (#15/#19).
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false);
-  useEffect(() => {
-    if (!window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const on = () => setReduced(mq.matches);
-    mq.addEventListener?.("change", on);
-    return () => mq.removeEventListener?.("change", on);
-  }, []);
-  return reduced;
-}
 
 /* Eine Seite: gespielte Karte MIT Nachziehstapel dahinter (ragt nur nach außen).
    `overlay` = entkoppelter Layer im Karten-Slot (z. B. Niederlage-Ghosts), der NICHT pro Stich remountet
@@ -295,7 +281,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     if (!entries.length) return;
     setFloats((cur) => [...cur, ...entries].slice(-6)); // Pool gedeckelt — kein unbegrenztes Stapeln
     const ids = entries.map((e) => e.id);
-    const tm = setTimeout(() => setFloats((cur) => cur.filter((f) => !ids.includes(f.id))), dur);
+    const tm = setTimeout(() => {
+      setFloats((cur) => cur.filter((f) => !ids.includes(f.id)));
+      floatTimers.current = floatTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen → kein unbegrenztes Wachstum über einen langen Lauf
+    }, dur);
     floatTimers.current.push(tm);
   }, [t?.trickNo]);
 
@@ -315,7 +304,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
       ionStacks: t.pCard.ionStacks || 0, frozen: t.pFrozen, allyColor: allyColorFor(t.pCard.suit),
     };
     setLossGhosts((cur) => [...cur, ghost].slice(-4)); // Pool gedeckelt
-    const tm = setTimeout(() => setLossGhosts((cur) => cur.filter((g) => g.id !== ghost.id)), sDrift + sHalves + 80);
+    const tm = setTimeout(() => {
+      setLossGhosts((cur) => cur.filter((g) => g.id !== ghost.id));
+      ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
+    }, sDrift + sHalves + 80);
     ghostTimers.current.push(tm);
   }, [t?.trickNo]);
 

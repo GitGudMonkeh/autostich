@@ -51,9 +51,13 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
 
   // Reaktives Delta (#95.6): Σ Formations-Stärke jetzt vs. Ausgangszustand der Phase, live nach jedem Tausch.
   const curStrength = strengthOf(formations);
-  const baseStrength = useRef(null);
-  if (baseStrength.current === null && formations.length) baseStrength.current = curStrength;
-  const delta = baseStrength.current === null ? 0 : curStrength - baseStrength.current;
+  // #159: Baseline an die Phasen-/Rundenidentität (state.cycle) binden statt an den Overlay-Remount. So wird sie
+  // beim Rundenwechsel deterministisch neu gesetzt — auch wenn die Komponente über Phasen hinweg NICHT neu mountet.
+  const baseStrength = useRef({ cycle: null, base: null });
+  if (baseStrength.current.cycle !== state.cycle && formations.length)
+    baseStrength.current = { cycle: state.cycle, base: curStrength };
+  const base = baseStrength.current.base;
+  const delta = base === null ? 0 : curStrength - base;
   const deltaColor = delta > 0.001 ? "#5ab87a" : delta < -0.001 ? "#e0605a" : "#8a8a92";
   const deltaStr = `${delta >= 0 ? "+" : "−"}${fmt(Math.abs(delta))}`;
 
