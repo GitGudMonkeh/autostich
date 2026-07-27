@@ -45,9 +45,8 @@ export const SHOP_PRICE = { cheap: 8, strong: 12, premium: 18, legendary: 30 };
 export const SHOP_CATEGORY_LABELS = { cards: "Karten", anchors: "Anker", formations: "Formationen", planning: "Planung" };
 
 // Shop-Positionsanker (Shop-Spec §8) — hängen an der Deckposition (0–39), nicht an card.id. [TUNING]
-export const ANCHOR_POWER_VALUE = 2;    // Kraftanker (A1): +temp Wert der Karte auf der Position
-export const ANCHOR_SCORE       = 150;  // Punkteanker (A2): +Flat-Score bei Sieg auf der Position
-export const ANCHOR_CRIT_CHANCE = 0.15; // Kritanker (A3): +Crit-Chance (Prozentpunkte) für den Stich auf der Position
+// (#189: ANCHOR_POWER_VALUE/ANCHOR_SCORE/ANCHOR_CRIT_CHANCE entfernt — die Anker-FAMILIEN in shopFamilies.js
+//  tragen ihre Stärke je Stufe selbst; nur der Formationsanker-Fallback bleibt.)
 export const ANCHOR_FORM_FACTOR = 1.25; // Formationsanker (A5): Position zählt als Anker ×1,25 (stapelt nicht mit E7/E8)
 
 // Shop-Formationsitems (Shop-Spec §9). [TUNING]

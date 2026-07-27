@@ -1,4 +1,4 @@
-import { suitColor, suitName, ION_MAX_STACKS, ION_SCORE_PER_STACK } from "../game/constants.js";
+import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK } from "../game/constants.js";
 import { FrostOverlay } from "./FrostOverlay.jsx";
 
 /* Eine Karte. Die große Zahl = effektiver Kampfwert dieses Stichs (= value + stichBonus),
@@ -53,9 +53,6 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
     >
       {/* #136 Eis-Schimmer: Frost-Layer (Tint + Körnung + optional Sweep) über der eingefrorenen Karte — hinter Text/Markern. */}
       {frozen && <FrostOverlay animated={frostAnimated} radius="0.75rem" />}
-      <div className="absolute top-1.5 left-2 text-[10px] uppercase tracking-wide" style={{ color }}>
-        {suitName(suit)}
-      </div>
       {permBoost > 0 && (
         <div className="absolute top-1.5 right-2 text-[11px] font-bold px-1 rounded"
           style={{ color: "#8a7de0", background: "#8a7de022" }}
