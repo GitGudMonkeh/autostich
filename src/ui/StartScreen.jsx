@@ -59,7 +59,7 @@ export function StartScreen({ onStart, highscores, best, onOptions, onStats, mut
             className="px-6 py-3 rounded-xl text-lg font-semibold transition-all"
             style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
           >
-            📊 Statistiken
+            Statistiken
           </button>
         )}
         {onOptions && (
@@ -69,7 +69,7 @@ export function StartScreen({ onStart, highscores, best, onOptions, onStats, mut
             className="px-6 py-3 rounded-xl text-lg font-semibold transition-all"
             style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
           >
-            ⚙ Optionen
+            Optionen
           </button>
         )}
       </div>
