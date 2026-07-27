@@ -77,35 +77,60 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
 // `quietTiles` (#132): unterdrückt den generischen Button-Klick-Sound der Kacheln (data-sfx="none"), damit die
 // aufrufende Ansicht einen eigenen Kachel-Sound spielen kann (Formationsphase → cardflip beim Tausch). Scoped:
 // die geteilten Nutzungen (Chronik/Shop-/Perk-Zielauswahl) lassen den Klick-Sound per Default unangetastet.
+// #FB Segmentarbeit: Verbinder ZWISCHEN zwei Segment-Zeilen — signalisiert, dass Formationen diese Grenze
+// überschreiten dürfen (welche Segmente ist durch die Lage zwischen ihren Bereichs-Labels ersichtlich).
+function SegmentBridge({ segA, segB }) {
+  const line = { background: "linear-gradient(90deg, #5ab87a00, #5ab87a99, #5ab87a00)" };
+  return (
+    <div className="flex items-center gap-2" title={`Segmentarbeit: Formationen dürfen die Grenze zwischen Segment ${segA} und ${segB} überschreiten`}>
+      <div className="w-9 shrink-0" />
+      <div className="flex-1 flex items-center gap-1.5">
+        <div className="h-px flex-1" style={line} />
+        <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide px-1.5 py-[1px] rounded-full whitespace-nowrap"
+          style={{ color: "#8be0a8", background: "#5ab87a1f", border: "1px solid #5ab87a55" }}>⇕ Grenze offen</span>
+        <div className="h-px flex-1" style={line} />
+      </div>
+    </div>
+  );
+}
+
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
-                          highlightPos = [], highlightTitle = null }) {
+                          highlightPos = [], highlightTitle = null, openSegments = null }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const pickedSet = new Set(pickedIds || []);
   const disabledSet = new Set(disabledPos || []);
   const highlightSet = new Set(highlightPos || []); // #182: Positionen mit Silberring ohne Anker (z. B. Zeitraffer 20 & 40)
   const nSeg = Math.ceil(cards.length / SEGMENT_SIZE);
+  // #FB: offene Segmentgrenzen (E_SEGMENT). Grenze g liegt zwischen Zeile g und g+1; nur zeichnen, wenn Werkzeug aktiv.
+  const segOpen = openSegments && openSegments.active ? openSegments : null;
   return (
     <div className="grid gap-1.5">
-      {Array.from({ length: nSeg }, (_, s) => (
-        <div key={s} className="flex items-center gap-2">
-          <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
-          <div className="grid grid-cols-5 gap-1.5 flex-1">
-            {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
-              const pos = s * SEGMENT_SIZE + k;
-              const ally = linkedPartnerOf(pe, c.suit);
-              const disabled = disabledSet.has(pos);
-              return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || []}
-                anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
-                selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
-                disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
-                ring={highlightSet.has(pos)} ringTitle={highlightTitle}
-                onClick={disabled ? undefined : () => onTilePick(pos, c)} />;
-            })}
+      {Array.from({ length: nSeg }).flatMap((_, s) => {
+        const row = (
+          <div key={`seg${s}`} className="flex items-center gap-2">
+            <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
+            <div className="grid grid-cols-5 gap-1.5 flex-1">
+              {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
+                const pos = s * SEGMENT_SIZE + k;
+                const ally = linkedPartnerOf(pe, c.suit);
+                const disabled = disabledSet.has(pos);
+                return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || []}
+                  anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
+                  selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
+                  disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
+                  ring={highlightSet.has(pos)} ringTitle={highlightTitle}
+                  onClick={disabled ? undefined : () => onTilePick(pos, c)} />;
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+        // Grenze NACH Segment s offen (und es folgt eine weitere Zeile) → Verbinder einschieben.
+        return segOpen && s < nSeg - 1 && segOpen.isOpen(s)
+          ? [row, <SegmentBridge key={`bridge${s}`} segA={s + 1} segB={s + 2} />]
+          : [row];
+      })}
     </div>
   );
 }

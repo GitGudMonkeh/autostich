@@ -23,6 +23,19 @@ import { iceFlag, hasPermafrost, hasIceAnchor } from "./skills.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 
 export const SEGMENT_SIZE = 5;
+
+// #FB Segmentarbeit-Sichtbarkeit: welche Segmentgrenzen öffnet E_SEGMENT? EINE Quelle für Engine (computeFormations)
+// UND UI (Formationsphase/Chronik) — kein Drift zwischen „was der Motor tut" und „was angezeigt wird".
+// „Grenze g" liegt zwischen Segment g und g+1 (0-basiert). Deterministisch werden die ersten `count` Grenzen von
+// vorne geöffnet (Stufe I/II = 1/2), Stufe III/IV = alle. Rückgabe:
+//   active = Werkzeug gehalten · all = alle Grenzen offen (Stufe III/IV) · count = Anzahl (Infinity bei all) ·
+//   isOpen(g) = ob die Grenze NACH Segment g offen ist.
+export function openSegmentInfo(familyTiers) {
+  const v = familyTierParam(familyTiers, "E_SEGMENT", "openBoundaries");
+  const count = v === undefined ? 0 : v;
+  const all = count === Infinity;
+  return { active: count > 0, all, count, isOpen: (g) => all || (g >= 0 && g < count) };
+}
 export const WECHSEL_MIN_DIFF = 5;   // [#161 FB-5: 4→5 — Wechsel schwerer, größerer Nachbarabstand nötig] — natürlicher Default (Shop „Enger Wechsel" senkt ihn)
 const MAX_TREPPE_STEP  = 3;   // [#161 FB-5: Treppe zusätzlich zur strengen Monotonie max. 3 Schritt je Nachbarpaar]
 // Die vier Basis-Formationstypen (ohne Anker) — Zielauswahl F-L1 Formationskern + Anzeige-Labels.
@@ -232,14 +245,12 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const repBonus = eP("E_STRONG_REP", "repSecond", 0);   // 2. Karte
   const repThird = eP("E_STRONG_REP", "repThird", 0);    // 3. Karte
   const repMult  = eP("E_STRONG_REP", "repAllMult", 1);  // alle Wiederholungsfaktoren
-  // Erste `openCount` interne Segmentgrenzen öffnen (Infinity = alle → crossSeg): E_SEGMENT (#179 alleinige Quelle;
-  // „Offene Grenze" entfiel). I/II öffnen die ersten 1/2 Grenzen deterministisch, III/IV alle.
-  const openCount = eP("E_SEGMENT", "openBoundaries", 0);
-  const crossSeg = openCount === Infinity;
-  const openBoundaries = new Set();
-  if (!crossSeg && openCount > 0) for (let k = 0, opened = 0; k < n && opened < openCount; k++)
-    if ((k + 1) % SEGMENT_SIZE === 0) { openBoundaries.add(k); opened++; }
-  const canExtendSeg = (k) => crossSeg || ((k + 1) % SEGMENT_SIZE !== 0) || openBoundaries.has(k);
+  // Interne Segmentgrenzen öffnen: E_SEGMENT (#179 alleinige Quelle; „Offene Grenze" entfiel). Stufe I/II öffnen die
+  // ersten 1/2 Grenzen deterministisch von vorne, III/IV alle. EINE Quelle mit der UI: openSegmentInfo (s. o.).
+  // Grenze NACH Position k existiert nur, wenn (k+1)%SEGMENT_SIZE===0; ihr 0-basierter Grenz-Index ist (k+1)/SIZE−1.
+  const segInfo = openSegmentInfo(familyTiers);
+  const crossSeg = segInfo.all;
+  const canExtendSeg = (k) => ((k + 1) % SEGMENT_SIZE !== 0) || segInfo.isOpen((k + 1) / SEGMENT_SIZE - 1);
   // #179 E_SEGMENT IV Grenz-Bonus: Karten in einer Formation, die eine (frühere) Segmentgrenze überschreitet,
   // geben zusätzlich ×crossBonus. noteCross sammelt die Mitglieds-Positionen kreuzender Läufe (nur aktiv bei Stufe IV).
   const segCrossBonus = eP("E_SEGMENT", "crossBonus", 1);

@@ -7,7 +7,7 @@ import { allianceGroups } from "../game/families.js";
 import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
 import { TIER_META, romanOf } from "../game/rarity.js";
 import { suitName, SHOP_CATEGORY_LABELS } from "../game/constants.js";
-import { FORMATION_TYPE_LABELS } from "../game/formations.js";
+import { FORMATION_TYPE_LABELS, openSegmentInfo } from "../game/formations.js";
 import { useEscape } from "./useEscape.js";
 
 /* Chronik-Kartenübersicht (§22.11): alle 40 Karten in aktueller Reihenfolge — nur Anzeige,
@@ -59,6 +59,7 @@ export function ChronikOverview({ state, onClose }) {
           <div className="md:w-1/2 md:shrink-0">
             <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               highlightPos={highlightPos} highlightTitle="⏱ Zeitraffer · gekoppelte Position (20 & 40)"
+              openSegments={openSegmentInfo(state.familyTiers)}
               selectedPos={selPos} onTilePick={(pos) => setSelPos(selPos === pos ? null : pos)} />
           </div>
 

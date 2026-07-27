@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { summarizeFormations, SEGMENT_SIZE } from "../game/formations.js";
+import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { SKILL_DEFS } from "../game/skills.js";
 import { CardGrid } from "./CardGrid.jsx";
@@ -49,6 +49,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
 
   const { count, maxMult } = summarizeFormations(formations);
   const hasSwaps = (formationSwaps || []).length > 0;
+  // #FB Segmentarbeit (E_SEGMENT): welche Segmentgrenzen sind offen? Speist den Verbinder im CardGrid + den Intro-Text.
+  const segInfo = openSegmentInfo(state.familyTiers);
 
   // Reaktives Delta (#95.6): Σ Formations-Stärke jetzt vs. Ausgangszustand der Phase, live nach jedem Tausch.
   const curStrength = strengthOf(formations);
@@ -109,7 +111,10 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         </div>
         {state.lastCycleScore != null && <div className="mb-2"><RoundScoreBadge state={state} /></div>}
         <p className="text-xs opacity-55 mb-2">
-          Tippe zwei Karten, um sie zu tauschen (1 Energie). Formationen entstehen nur <b>innerhalb</b> der {SEGMENT_SIZE}er-Segmente.
+          Tippe zwei Karten, um sie zu tauschen (1 Energie). Formationen entstehen nur <b>innerhalb</b> der {SEGMENT_SIZE}er-Segmente
+          {segInfo.active && (segInfo.all
+            ? <> — <span style={{ color: "#8be0a8" }}><b>Segmentarbeit:</b> alle Grenzen offen, Formationen laufen segmentübergreifend</span></>
+            : <> — <span style={{ color: "#8be0a8" }}><b>Segmentarbeit:</b> die mit <b>⇕</b> markierten Grenzen dürfen überschritten werden</span></>)}.
         </p>
         {frozenCards.length > 0 && (
           <p className="text-xs mb-3" style={{ color: "#7fd4f0" }}>
@@ -120,7 +125,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles />
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}

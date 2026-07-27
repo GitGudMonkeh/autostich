@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeFormations, positionHasFormation, formationPotential, SEGMENT_SIZE } from "../src/game/formations.js";
+import { computeFormations, positionHasFormation, formationPotential, SEGMENT_SIZE, openSegmentInfo } from "../src/game/formations.js";
 
 // Karten aus [suit, value]-Paaren; identity-Reihenfolge → Position i = deck[i].
 const card = ([s, v], i) => ({ id: `${s}${v}_${i}`, suit: s, baseRank: v, value: v });
@@ -167,9 +167,10 @@ describe("Formationsfamilien (Rarität #167 Kat. E über familyTiers)", () => {
     expect(hasType(withE(deck, { E_QUICKSHOT: 2 }), 4, "anker")).toBe(true); // Position 5
     expect(hasType(withE(deck, { E_QUICKSHOT: 1 }), 4, "anker")).toBe(true); // Position 5 auch bei I
   });
-  it("E_SEGMENT: Farbblock läuft über die geöffnete Segmentgrenze (III: alle offen)", () => {
-    const deck = [["B", 4], ["G", 1], ["Y", 3], ["R", 5], ["R", 2], ["R", 8], ["R", 3]]; // R-Block Pos 4–7 über Grenze
+  it("E_SEGMENT: Farbblock läuft über die geöffnete Segmentgrenze (I öffnet die ERSTE, III alle)", () => {
+    const deck = [["B", 4], ["G", 1], ["Y", 3], ["R", 5], ["R", 2], ["R", 8], ["R", 3]]; // R-Block Pos 4–7 über 1. Grenze
     expect(hasType(withE(deck, {}), 5, "farbblock")).toBe(false);
+    expect(hasType(withE(deck, { E_SEGMENT: 1 }), 5, "farbblock")).toBe(true); // Stufe I öffnet bereits die erste Grenze
     expect(hasType(withE(deck, { E_SEGMENT: 3 }), 5, "farbblock")).toBe(true);
   });
   it("E_PENDULUM: Wechsel ab 2 Karten (II Marker/Faktor 1); IV Faktor bereits ab Länge 2 (×1,35)", () => {
@@ -201,5 +202,34 @@ describe("Formationsfamilien (Rarität #167 Kat. E über familyTiers)", () => {
     const deck = [["R", 3], ["B", 5], ["G", 4], ["Y", 6]]; // 3,5,4,6: ein Rückschritt (5→4)
     expect(hasType(withE(deck, {}), 3, "treppe")).toBe(false);
     expect(hasType(withE(deck, { E_BIGSTEP: 2 }), 3, "treppe")).toBe(true);
+  });
+});
+
+// #FB openSegmentInfo: EINE Quelle für „welche Segmentgrenzen sind offen" (Engine canExtendSeg + UI-Verbinder).
+// Grenze g liegt zwischen Segment g und g+1 (0-basiert); Stufe I/II öffnen die ersten 1/2 von vorne, III/IV alle.
+describe("openSegmentInfo (Segmentarbeit-Sichtbarkeit)", () => {
+  it("ohne E_SEGMENT: inaktiv, keine Grenze offen", () => {
+    const s = openSegmentInfo({});
+    expect(s.active).toBe(false);
+    expect(s.all).toBe(false);
+    expect(s.isOpen(0)).toBe(false);
+  });
+  it("Stufe I: aktiv, nur die ERSTE Grenze (g=0) offen", () => {
+    const s = openSegmentInfo({ E_SEGMENT: 1 });
+    expect(s.active).toBe(true);
+    expect(s.all).toBe(false);
+    expect(s.count).toBe(1);
+    expect([s.isOpen(0), s.isOpen(1), s.isOpen(2)]).toEqual([true, false, false]);
+  });
+  it("Stufe II: die ersten ZWEI Grenzen (g=0,1) offen", () => {
+    const s = openSegmentInfo({ E_SEGMENT: 2 });
+    expect([s.isOpen(0), s.isOpen(1), s.isOpen(2)]).toEqual([true, true, false]);
+  });
+  it("Stufe III & IV: ALLE Grenzen offen", () => {
+    for (const t of [3, 4]) {
+      const s = openSegmentInfo({ E_SEGMENT: t });
+      expect(s.all).toBe(true);
+      expect([s.isOpen(0), s.isOpen(5), s.isOpen(99)]).toEqual([true, true, true]);
+    }
   });
 });
