@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
-  loadOptions, loadUsername, saveUsername, loadSeenGuide, saveSeenGuide } from "../src/game/storage.js";
+  loadOptions, loadUsername, saveUsername, loadSeenGuide, saveSeenGuide,
+  recordRun, loadProfile, isNoBuyRun, isMonoStatRun, MONO_STAT_MIN } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
 
 // #152: node-Env hat kein localStorage → die Persistenz-Funktionen fielen bisher nur in ihre try/catch-Defaults
@@ -14,7 +15,7 @@ function mockLS() {
     clear: () => m.clear(),
   };
 }
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2 };
+const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default" };
 
 describe("rankHighscores", () => {
   it("sortiert nach Score↓ und behält Top 5", () => {
@@ -105,5 +106,57 @@ describe("VITE_PREVIEW-Präfix trennt Namespaces (#152)", () => {
     mod.saveUsername("PreviewUser");
     expect(global.localStorage.getItem("preview_as_username")).toBe("PreviewUser");
     expect(global.localStorage.getItem("as_username")).toBeNull(); // echter Namespace isoliert
+  });
+});
+
+describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
+  const monoPicks = Array.from({ length: MONO_STAT_MIN }, () => "statCritChance");
+
+  it("isNoBuyRun: nur natürlicher Abschluss mit 0 Käufen", () => {
+    expect(isNoBuyRun({ completed: true, shopPurchases: 0 })).toBe(true);
+    expect(isNoBuyRun({ completed: true, shopPurchases: 3 })).toBe(false); // gekauft
+    expect(isNoBuyRun({ completed: false, shopPurchases: 0 })).toBe(false); // vorzeitig beendet
+    expect(isNoBuyRun({ completed: true })).toBe(true); // shopPurchases fehlt → 0
+    expect(isNoBuyRun(null)).toBe(false);
+  });
+
+  it("isMonoStatRun: kompletter Lauf, alle Stat-Picks identisch, Mindestanzahl", () => {
+    expect(isMonoStatRun({ completed: true, statPicks: monoPicks })).toBe(true);
+    expect(isMonoStatRun({ completed: true, statPicks: [...monoPicks.slice(1), "statFormMult"] })).toBe(false); // gemischt
+    expect(isMonoStatRun({ completed: false, statPicks: monoPicks })).toBe(false); // vorzeitig beendet
+    expect(isMonoStatRun({ completed: true, statPicks: ["statCritChance"] })).toBe(false); // < MONO_STAT_MIN
+    expect(isMonoStatRun({ completed: true, statPicks: [] })).toBe(false);
+    expect(isMonoStatRun({ completed: true })).toBe(false); // statPicks fehlt
+  });
+
+  describe("recordRun setzt + persistiert die sticky Flags", () => {
+    beforeEach(() => { global.localStorage = mockLS(); });
+    afterEach(() => { delete global.localStorage; });
+
+    it("frisches Profil: Flags sind false", () => {
+      expect(loadProfile().hadNoBuyRun).toBe(false);
+      expect(loadProfile().hadMonoStatRun).toBe(false);
+    });
+
+    it("noBuy-Lauf setzt hadNoBuyRun und persistiert", () => {
+      const { profile } = recordRun({ score: 100, ts: 1, completed: true, shopPurchases: 0, statPicks: [] });
+      expect(profile.hadNoBuyRun).toBe(true);
+      expect(profile.hadMonoStatRun).toBe(false);
+      expect(loadProfile().hadNoBuyRun).toBe(true);
+    });
+
+    it("Mono-Stat-Lauf (mit Käufen) setzt nur hadMonoStatRun", () => {
+      const { profile } = recordRun({ score: 100, ts: 1, completed: true, shopPurchases: 2, statPicks: monoPicks });
+      expect(profile.hadMonoStatRun).toBe(true);
+      expect(profile.hadNoBuyRun).toBe(false);
+    });
+
+    it("Flags bleiben sticky — ein späterer Lauf, der die Bedingung NICHT erfüllt, setzt sie nicht zurück", () => {
+      recordRun({ score: 100, ts: 1, completed: true, shopPurchases: 0, statPicks: monoPicks }); // beide erfüllt
+      const { profile } = recordRun({ score: 50, ts: 2, completed: false, shopPurchases: 5, statPicks: [] }); // nichts erfüllt
+      expect(profile.hadNoBuyRun).toBe(true);
+      expect(profile.hadMonoStatRun).toBe(true);
+      expect(profile.games).toBe(2);
+    });
   });
 });

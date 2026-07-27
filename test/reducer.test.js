@@ -124,6 +124,14 @@ describe("Stat-Auswahl — PICK_STAT (V2 §22.3)", () => {
     const play = initialState(makeRng(1)); // phase play, kein statOffer
     expect(reducer(play, { type: "PICK_STAT", statId: "critChance", rng })).toBe(play);
   });
+  it("#190: hängt den gewählten Stat an statPicks an (Mono-Stat-Challenge-Tracking)", () => {
+    expect(initialState(makeRng(1)).statPicks).toEqual([]); // frischer Lauf startet leer
+    const s1 = reducer(statState(), { type: "PICK_STAT", statId: "critChance", rng });
+    expect(s1.statPicks).toEqual(["critChance"]);
+    const s2 = reducer({ ...s1, phase: "levelup", statOffer: STAT_IDS }, { type: "PICK_STAT", statId: "critChance", rng });
+    const s3 = reducer({ ...s2, phase: "levelup", statOffer: STAT_IDS }, { type: "PICK_STAT", statId: "formMult", rng });
+    expect(s3.statPicks).toEqual(["critChance", "critChance", "formMult"]); // Reihenfolge bleibt erhalten
+  });
 });
 
 describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {

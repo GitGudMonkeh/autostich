@@ -351,7 +351,10 @@ function CritScreenFx({ tier, color }) {
   );
 }
 
-export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, frozen = 0, oppDeck = "stat" }) {
+export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, frozen = 0, oppDeck = "stat",
+  // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
+  // Defaults = bestehende Karten → ohne Auswahl identisches Verhalten (Gegner-Deck bleibt OPP_DECK_SKINS).
+  deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null }) {
   const reduced = usePrefersReducedMotion();
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
@@ -432,7 +435,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
           stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
           ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} frostAnimated allyColor={allyColorFor(t.pCard.suit)}
-          frontImage={cardFrontImg} />
+          frontImage={deckFront} />
   );
   // #186: die Gegnerkarte trägt den Skin-Front-Rahmen der kommenden Auswahl (Holo entfällt); Zahl/Effekte darüber.
   const oCardEl = t && (
@@ -448,10 +451,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {lossGhost ? (
         <div style={{ opacity: 0 }} aria-hidden="true">{pCardEl}</div>   /* in-place unsichtbar — der entkoppelte Ghost (Side-overlay) floatet + schneidet */
       ) : flipOn ? (
-        <FlipReveal front={playerFront} backImage={cardBackImg} dur={flipDur} />   /* #180: Rücken → Front */
+        <FlipReveal front={playerFront} backImage={deckBack} dur={flipDur} />   /* #180: Rücken → Front */
       ) : playerFront}
     </div>
-  ) : <div className="relative"><CardBack label="" image={cardBackImg} /></div>;
+  ) : <div className="relative"><CardBack label="" image={deckBack} /></div>;
 
   // Sieger kippt an; im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
   const oppFront = oppWinner ? <div style={winnerTilt(sWinner)}>{oCardEl}</div> : oCardEl;
@@ -571,7 +574,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         color: suitColor(t.pCard.suit), seed: t.trickNo * 2 + 7,
         suit: t.pCard.suit, value: t.pCard.value, baseRank: t.pCard.baseRank, stichBonus: t.pValue - t.pCard.value,
         ionStacks: t.pCard.ionStacks || 0, frozen: t.pFrozen, frostbitten: false,
-        allyColor: allyColorFor(t.pCard.suit), frontImage: cardFrontImg });
+        allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
     }
     if (win) {   // Gegnerkarte verliert → Schnitt- (normal) bzw. Explosions-Ghost (Krit) auf der Gegnerseite
       spawned.push({ ...base, id: `og${t.trickNo}`, side: "opp", fx: isCrit ? "explode" : "slice",
@@ -663,6 +666,18 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                // #188 v2: Screen-Shake bei großem Krit (Crit-only) — Panel jittert, Amplitude via --shake-amp nach Stufe.
                animation: shakeName ? `${shakeName} ${shakeDur}ms ease-in-out` : undefined,
                ...(shakeAmp ? { "--shake-amp": `${shakeAmp}px` } : {}) }}>
+      {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
+          bei z-0 → überdeckt die opake Panelfläche, bleibt aber HINTER Feuer-Glut/Frost/Blitz (spätere z-0/1/2)
+          und den Karten (z-10). Dunkler Scrim hält Karten/Text lesbar. Ohne Skin (null) → nichts, Standard bleibt. */}
+      {battlefield && (
+        <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+          <picture>
+            <source media="(max-width: 640px)" srcSet={battlefield.mobile} />
+            <img src={battlefield.desktop} alt="" className="w-full h-full object-cover" />
+          </picture>
+          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(12,12,16,0.55) 0%, rgba(12,12,16,0.38) 45%, rgba(12,12,16,0.62) 100%)" }} />
+        </div>
+      )}
       {/* Feuer-Glut (#142): warmer Radial-Verlauf von unten + innerer Glow, Deckkraft = Hitze-Verhältnis.
           Puls ab ~90 %. Liegt zuunterst (z-0), hinter Eis und Karten. */}
       {heatRatio > 0.001 && (
@@ -722,7 +737,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           </div>
         )}
 
-        <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={cardBackImg}
+        <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack}
               overlay={playerGhosts.length ? <SlashGhostLayer ghosts={playerGhosts} /> : null}>{playerCard}</Side>
 
         <img src={swordicon} alt="vs" width={46} height={46} draggable="false"

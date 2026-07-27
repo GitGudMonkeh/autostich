@@ -8,7 +8,7 @@ import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 import { fmtScore } from "./format.js";
 
 /* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste. */
-export function StartScreen({ onStart, highscores, best, onOptions, onStats, muted, onToggleMute, username = "", onEditName, myEntry = null, pubToken = 0 }) {
+export function StartScreen({ onStart, highscores, best, onOptions, onStats, onCustomize, muted, onToggleMute, username = "", onEditName, myEntry = null, pubToken = 0 }) {
   const [showGuide, setShowGuide] = useState(false);
   const [detail, setDetail] = useState(null); // #169 FB-8: gewählter lokaler Lauf → RunDetail-Overlay
 
@@ -60,6 +60,15 @@ export function StartScreen({ onStart, highscores, best, onOptions, onStats, mut
             style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
           >
             Statistiken
+          </button>
+        )}
+        {onCustomize && (
+          <button
+            onClick={onCustomize}
+            className="px-6 py-3 rounded-xl text-lg font-semibold transition-all"
+            style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
+          >
+            Deck
           </button>
         )}
         {onOptions && (

@@ -1,12 +1,13 @@
 import { Sparkline } from "./Sparkline.jsx";
 import { RunStats } from "./RunStats.jsx";
 import { fmtScore } from "./format.js";
+import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js"; // #190: Freischalt-Vorschau
 
 // Highscore-Listen (lokal + global) bewusst NICHT hier — sie stehen auf dem Startbildschirm und
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
 // #169 FB-8: der Statblock (Serie/Perks/Formationen/Crits + Perk-/Skill-Chips) steckt jetzt in der
 // geteilten RunStats-Komponente — dieselbe Anzeige nutzt die Leaderboard-Detailansicht (RunDetail).
-export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [] }) {
+export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [] }) {
   const score = Math.floor(state.score); // Zahlenwert für Record-Vergleich; Anzeige über fmtScore
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
@@ -18,6 +19,27 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           {state.shop && <div className="mt-1 text-xs font-bold" style={{ color: "#d4a63a" }}>🪙 {state.shop.coins ?? 0} Münzen übrig</div>}
           {isRecord && <div className="mt-2 text-sm font-bold" style={{ color: "#8a7de0" }}>★ Neuer Rekord!</div>}
         </div>
+
+        {/* #190: in diesem Lauf frisch freigeschaltete Skins — kleine Vorschau + Hinweis aufs Deck-Menü. */}
+        {newUnlocks.length > 0 && (
+          <div className="mt-4 rounded-xl p-3" style={{ background: "#1b1630", border: "1px solid #8a7de055" }}>
+            <div className="text-xs uppercase tracking-widest text-center mb-2" style={{ color: "#8a7de0" }}>★ Neu freigeschaltet</div>
+            <div className="flex flex-wrap justify-center gap-3">
+              {newUnlocks.map((u) => {
+                const img = u.type === "deck" ? deckAssets(u.id).back : (battlefieldAssets(u.id) || {}).desktop;
+                return (
+                  <div key={u.id} className="flex flex-col items-center gap-1" style={{ width: 74 }}>
+                    <div className="rounded-md overflow-hidden w-full" style={{ aspectRatio: u.type === "deck" ? "3 / 4" : "16 / 9", background: "#0c0c10", border: "1px solid #33333e" }}>
+                      {img && <img src={img} alt="" className={`w-full h-full ${u.type === "deck" ? "object-contain" : "object-cover"}`} />}
+                    </div>
+                    <span className="text-[10px] text-center leading-tight opacity-90">{u.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-[10px] text-center opacity-50 mt-2">Auswählbar im Menü unter „Deck".</div>
+          </div>
+        )}
 
         <div className="mt-5">
           <RunStats entry={{

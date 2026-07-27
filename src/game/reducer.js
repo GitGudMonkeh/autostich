@@ -60,6 +60,7 @@ export function initialState(rng = Math.random) {
     segmentWins: 0, // #189 Volles Haus: segment-genauer Sieg-Zähler (ersetzt das rollende Fenster)
     // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
     statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, economyStatLevel: 0, statOffer: null,
+    statPicks: [], // #190: Reihenfolge der gewählten Stats dieses Laufs (für die Mono-Stat-Challenge deck_c4)
     formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt
     formationEnergy: 0, formationSwaps: [], // Formationsphase (V2 §22.8): Energie + Undo-Historie der aktuellen Phase
     roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
@@ -443,7 +444,8 @@ export function reducer(state, action) {
       if (state.phase !== "levelup" || !state.statOffer) return state;
       const def = STAT_DEFS[action.statId];
       if (!def) return state;
-      return { ...state, [def.field]: (state[def.field] || 0) + def.step, phase: "play", statOffer: null };
+      return { ...state, [def.field]: (state[def.field] || 0) + def.step, phase: "play", statOffer: null,
+               statPicks: [...(state.statPicks || []), action.statId] }; // #190: Mono-Stat-Challenge-Tracking
     }
 
     // Skill-Auswahl (jede SKILL_EVERY_CYCLES-te Runde). Hinzufügen oder — bei vollen Slots — ersetzen.
