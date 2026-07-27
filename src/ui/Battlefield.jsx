@@ -323,6 +323,27 @@ function SlashGhostLayer({ ghosts }) {
   );
 }
 
+/* #188 v2: Vollbild-Screen-Effekte bei großem Krit-Sieg (Crit-only). FIXED → viewport-weit; MUSS außerhalb des
+   shake-Panels liegen (ein Transform-Vorfahre würde `fixed` relativ zum Panel positionieren und mit-verschieben).
+   Vollbild-Flash ab IRRE (tier≥3), Vignette ab GOTTGLEICH (tier≥4). pointer-events-none, aria-hidden. Nur bei
+   normaler Bewegung gerendert (Aufrufer prüft `reduced`). */
+function CritScreenFx({ tier, color }) {
+  const flash = tier >= 3, vignette = tier >= 4;
+  const flashMax = tier >= 4 ? 0.42 : 0.28;
+  return (
+    <>
+      {flash && (
+        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ zIndex: 30,
+          background: color, mixBlendMode: "screen", "--flash-max": flashMax, animation: "as-crit-flash 360ms ease-out both" }} />
+      )}
+      {vignette && (
+        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ zIndex: 30,
+          background: `radial-gradient(120% 100% at 50% 50%, transparent 50%, ${color}55 100%)`, animation: "as-crit-vignette 520ms ease-out both" }} />
+      )}
+    </>
+  );
+}
+
 export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, frozen = 0, oppDeck = "stat" }) {
   const reduced = usePrefersReducedMotion();
   const t = lastTrick;
@@ -538,6 +559,29 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const playerGhosts = slashGhosts.filter((g) => g.side === "player");
   const oppGhosts    = slashGhosts.filter((g) => g.side === "opp");
 
+  // #188 v2: Screen-Effekte bei großem KRIT-Sieg (Crit-only, Leitplanke 2). Erst ab STARK (tier≥1) — kleine
+  // Crits (<10k) bleiben ruhig. n zählt hoch → Shake-Keyframe wechselt a/b und startet sicher neu. Bei reduzierter
+  // Bewegung gar nicht gesetzt (kein Shake/Flash/Vignette). Auto-Reset nach ~700 ms → Overlay entfernt sich.
+  const [critFx, setCritFx] = useState(null);
+  const critFxN = useRef(0);
+  const critFxTimer = useRef(null);
+  useEffect(() => () => clearTimeout(critFxTimer.current), []);
+  useEffect(() => {
+    if (t && win && isCrit && !reduced) {
+      const { tier } = fxIntensity(t.gained || 0);
+      if (tier >= 1) {
+        critFxN.current += 1;
+        setCritFx({ n: critFxN.current, tier, color: CRIT_TIER_COLORS[tier] || critColor });
+        clearTimeout(critFxTimer.current);
+        critFxTimer.current = setTimeout(() => setCritFx(null), 700);
+      }
+    }
+  }, [t?.trickNo]);
+  // Shake-Parameter je Stufe (leicht → stark). Amplitude als CSS-Var ans Panel; Keyframe-Name wechselt je Krit (a/b).
+  const shakeAmp  = critFx ? [0, 3, 6, 9, 13][critFx.tier] : 0;
+  const shakeDur  = critFx ? 160 + critFx.tier * 50 : 0;
+  const shakeName = critFx ? (critFx.n % 2 ? "as-crit-shake-a" : "as-crit-shake-b") : undefined;
+
   // Formations-Float: soll ~1,5 s LÄNGER stehen bleiben als sein Stich, dann sanft ausklingen. Deshalb vom aktuellen
   // Stich entkoppelt in eigenem State. Ein Formations-Sieg setzt ihn (Phase „aktiv" = hält bei Opacity 1); sobald ein
   // Folgestich ihn nicht mehr zeigt, klingt er über FORM_LINGER_MS aus und wird entfernt. In Pause (kein Folgestich)
@@ -580,7 +624,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   const outerGlow = outerParts.length ? outerParts.join(", ") : undefined;
 
   return (
-    <div className="rounded-xl p-6 overflow-hidden as-panel relative" style={{ background: "#17171c", border: panelBorder, boxShadow: outerGlow }}>
+   <>
+    <div className="rounded-xl p-6 overflow-hidden as-panel relative"
+      style={{ background: "#17171c", border: panelBorder, boxShadow: outerGlow,
+               // #188 v2: Screen-Shake bei großem Krit (Crit-only) — Panel jittert, Amplitude via --shake-amp nach Stufe.
+               animation: shakeName ? `${shakeName} ${shakeDur}ms ease-in-out` : undefined,
+               ...(shakeAmp ? { "--shake-amp": `${shakeAmp}px` } : {}) }}>
       {/* Feuer-Glut (#142): warmer Radial-Verlauf von unten + innerer Glow, Deckkraft = Hitze-Verhältnis.
           Puls ab ~90 %. Liegt zuunterst (z-0), hinter Eis und Karten. */}
       {heatRatio > 0.001 && (
@@ -719,5 +768,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
         )}
       </div>
     </div>
+    {/* #188 v2: Vollbild-Flash/Vignette bei großem Krit (fixed, außerhalb des shake-Panels). key=n → Neustart je Krit. */}
+    {critFx && <CritScreenFx key={critFx.n} tier={critFx.tier} color={critFx.color} />}
+   </>
   );
 }

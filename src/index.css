@@ -168,6 +168,38 @@ button { font-family: inherit; }
   100% { transform: scale(5);   opacity: 0; }
 }
 
+/* #188 v2: Screen-Shake bei großem Krit-Sieg (Crit-only). Amplitude über --shake-amp (nach Stufe). Zwei
+   IDENTISCHE Keyframes (a/b) — das Battlefield-Panel wechselt je Krit den Namen, damit die einmalige Animation
+   sicher neu startet (ohne Remount). reduced-motion greift global (unten) → dann kein Shake. */
+@keyframes as-crit-shake-a {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  15% { transform: translate(calc(var(--shake-amp, 4px) * -1), calc(var(--shake-amp, 4px) * 0.5)) rotate(-0.5deg); }
+  30% { transform: translate(var(--shake-amp, 4px), calc(var(--shake-amp, 4px) * -0.6)) rotate(0.5deg); }
+  45% { transform: translate(calc(var(--shake-amp, 4px) * -0.7), calc(var(--shake-amp, 4px) * 0.4)) rotate(-0.3deg); }
+  62% { transform: translate(calc(var(--shake-amp, 4px) * 0.6), calc(var(--shake-amp, 4px) * 0.35)) rotate(0.3deg); }
+  82% { transform: translate(calc(var(--shake-amp, 4px) * -0.3), calc(var(--shake-amp, 4px) * -0.15)) rotate(0deg); }
+}
+@keyframes as-crit-shake-b {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  15% { transform: translate(calc(var(--shake-amp, 4px) * -1), calc(var(--shake-amp, 4px) * 0.5)) rotate(-0.5deg); }
+  30% { transform: translate(var(--shake-amp, 4px), calc(var(--shake-amp, 4px) * -0.6)) rotate(0.5deg); }
+  45% { transform: translate(calc(var(--shake-amp, 4px) * -0.7), calc(var(--shake-amp, 4px) * 0.4)) rotate(-0.3deg); }
+  62% { transform: translate(calc(var(--shake-amp, 4px) * 0.6), calc(var(--shake-amp, 4px) * 0.35)) rotate(0.3deg); }
+  82% { transform: translate(calc(var(--shake-amp, 4px) * -0.3), calc(var(--shake-amp, 4px) * -0.15)) rotate(0deg); }
+}
+/* #188 v2: kurzer Vollbild-Flash (ab IRRE) — heller Farb-Blitz (screen-Blend), fadet schnell. --flash-max je Stufe. */
+@keyframes as-crit-flash {
+  0%   { opacity: 0; }
+  12%  { opacity: var(--flash-max, 0.35); }
+  100% { opacity: 0; }
+}
+/* #188 v2: Vignette-Puls (ab GOTTGLEICH) — farbiger Randschatten pulst kurz auf. */
+@keyframes as-crit-vignette {
+  0%   { opacity: 0; }
+  22%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* #136 Eis-Schimmer: wandernder Glanzstreif („Sweep-Shine") über eingefrorenen Karten. Nur auf der aktiven
    Battlefield-Karte (Board bleibt ruhig = Frostglas ohne Sweep). screen-Blend. reduced-motion global unten. */
 @keyframes as-frost-sweep { 0% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
