@@ -27,7 +27,6 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
   const { wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, perks, crits, lightning,
           familyTiers = {}, statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0 } = state;
   const cycleLen = cycleLenFor(state.shop);  // 40, mit Zeitsegment 45 (§8 A-L1)
-  const remaining = cycleLen - pos;          // Karten bis zum nächsten Mischen (#6)
   const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
@@ -58,13 +57,14 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
         <div><span className="opacity-50">Verl. </span><span style={{ color: "#e0605a" }}>{losses}</span></div>
         <div><span className="opacity-50">Quote </span><span style={{ color: winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct}%</span></div>
       </div>
-      {/* Rest-Karten des laufenden Deck-Durchlaufs (#6) */}
+      {/* Deck-Position im laufenden Durchlauf (#193): Balken FÜLLT sich (0 → voll) und die Zahl
+          zählt HOCH — gleiche Richtung wie die Deck-Zahl unter dem Deck im Battlefield (#6). */}
       <div>
         <div className="flex justify-between text-xs mb-1">
-          <span className="opacity-60">Deck bis zum Mischen</span>
-          <span className="opacity-80">{remaining} / {cycleLen}</span>
+          <span className="opacity-60">Deck-Position</span>
+          <span className="opacity-80">{pos} / {cycleLen}</span>
         </div>
-        <Bar value={remaining} max={cycleLen} color="#8a7de0" height={6} />
+        <Bar value={pos} max={cycleLen} color="#8a7de0" height={6} />
       </div>
       {/* Formations-Faktor der aktuellen Aufstellung (#123) — dauerhaft sichtbar, nicht nur transient im Battlefield. */}
       {formCount > 0 && (

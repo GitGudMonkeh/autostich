@@ -83,13 +83,12 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           <div className="text-right shrink-0">
             <div className="text-[10px] uppercase tracking-wide opacity-50">Energie</div>
             <div className="text-2xl font-bold font-pixel-dense leading-none" style={{ color: formationEnergy > 0 ? "#d4a63a" : "#8a8a92" }}>{formationEnergy}</div>
-            {/* #95.6: Formations-Stärke Σ + reaktives Delta direkt unter der Energie → der Einfluss jedes Tauschs
-                ist sofort oben sichtbar (vorher nur unten in der Fußzeile). */}
+            {/* #95.6/#193: Im Kopf steht nur noch die Gesamtsumme Σ. Das reaktive Delta wandert neben
+                „Zurücksetzen" in die Sticky-Leiste (es gehört inhaltlich zur Reset-Aktion). */}
             <div className="mt-1.5 leading-tight">
               <div className="text-[10px] uppercase tracking-wide opacity-50">Formations-Stärke</div>
               <div className="font-pixel-dense text-base">
                 <span className="opacity-85">Σ {fmt(curStrength)}</span>
-                <span className="font-bold ml-1.5" style={{ color: deltaColor }}>{deltaStr}</span>
               </div>
             </div>
           </div>
@@ -97,11 +96,17 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig. */}
         <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mb-3 flex items-center justify-between gap-2 flex-wrap"
              style={{ background: "#15151b", borderBottom: "1px solid #2a2a34" }}>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <button onClick={onUndo} disabled={!hasSwaps} className="px-3 py-2 rounded-lg text-sm font-bold"
               style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>↶ Rückgängig</button>
             <button onClick={onReset} disabled={!hasSwaps} className="px-3 py-2 rounded-lg text-sm"
               style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
+            {/* #193: Differenz neben „Zurücksetzen" — zeigt, was ein Reset rückgängig machen würde
+                (bestehende Farbcodierung grün/rot/grau; Σ bleibt oben im Kopf). */}
+            <span className="font-pixel-dense text-sm whitespace-nowrap ml-0.5" title="Formations-Differenz seit Rundenbeginn (was ein Zurücksetzen rückgängig macht)">
+              <span className="opacity-45 mr-0.5">Δ</span>
+              <span className="font-bold" style={{ color: deltaColor }}>{deltaStr}</span>
+            </span>
           </div>
           <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
             style={{ background: "#5ab87a", color: "#0c0c10" }}>

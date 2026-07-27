@@ -79,6 +79,10 @@ function fxIntensity(gained) {
 }
 // #188: Farb-Rampe der Crit-Explosion je Stufe — Lila → Magenta → Warmgold → Weißgold (koppelt an die goldene Groß-Ansage).
 const CRIT_TIER_COLORS = ["#e879f9", "#e879f9", "#f472d0", "#ffc978", "#fff0b0"];
+// #192: Sieg-Farbrampe (Grün → Gold) für Screen-Effekte bei großen NORMALEN Siegen (ohne Crit) — bewusst
+// abgesetzt vom Crit-Lila. Basis = Sieg-Grün #5ab87a, zur Spitze hin Gold (koppelt an die goldene Groß-Ansage).
+// Normale Siege erreichen nur tier≥2 (BRUTAL+); die unteren Einträge sind nur Fallback.
+const WIN_TIER_COLORS = ["#5ab87a", "#5ab87a", "#5ab87a", "#8fce6a", "#d4a63a"];
 const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflow-hidden, nichts läuft raus
 const FORM_LINGER_MS = 1500; // Formations-Float bleibt ~1,5 s länger stehen (über den nächsten Stich hinaus) und klingt dann aus
 // #110: Karten-Aufdeck-Sound — DEZENTE Turbo-Kopplung der Abspielrate (leicht justierbar). Rate>1 = kürzer/schneller.
@@ -595,28 +599,32 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const playerGhosts = slashGhosts.filter((g) => g.side === "player");
   const oppGhosts    = slashGhosts.filter((g) => g.side === "opp");
 
-  // #188 v2: Screen-Effekte bei großem KRIT-Sieg (Crit-only, Leitplanke 2). Erst ab STARK (tier≥1) — kleine
-  // Crits (<10k) bleiben ruhig. n zählt hoch → Shake-Keyframe wechselt a/b und startet sicher neu. Bei reduzierter
-  // Bewegung gar nicht gesetzt (kein Shake/Flash/Vignette). Auto-Reset nach ~700 ms → Overlay entfernt sich.
-  const [critFx, setCritFx] = useState(null);
-  const critFxN = useRef(0);
-  const critFxTimer = useRef(null);
-  useEffect(() => () => clearTimeout(critFxTimer.current), []);
+  // #188 v2 / #192: Screen-Effekte bei großem SIEG. Der Screen-Shake läuft jetzt für BEIDE Ergebnisse, gestaffelt
+  // nach Score: Krit-Sieg ab STARK (tier≥1, unverändert), normaler Sieg erst ab BRUTAL (tier≥2) — eine Stufe höher,
+  // damit der Crit die stärkere Stufe bleibt und große Siege seit SCORE_PER_WIN 100→400 (#178) nicht abstumpfen.
+  // Flash/Vignette (CritScreenFx) bleiben Crit-exklusiv (isCrit im State mitgeführt). Bei reduzierter Bewegung gar
+  // nicht gesetzt (kein Shake/Flash/Vignette). Auto-Reset nach ~700 ms → Overlay/Aura entfernt sich.
+  const [screenFx, setScreenFx] = useState(null);
+  const screenFxN = useRef(0);
+  const screenFxTimer = useRef(null);
+  useEffect(() => () => clearTimeout(screenFxTimer.current), []);
   useEffect(() => {
-    if (t && win && isCrit && !reduced) {
+    if (t && win && !reduced) {
       const { tier } = fxIntensity(t.gained || 0);
-      if (tier >= 1) {
-        critFxN.current += 1;
-        setCritFx({ n: critFxN.current, tier, color: CRIT_TIER_COLORS[tier] || critColor });
-        clearTimeout(critFxTimer.current);
-        critFxTimer.current = setTimeout(() => setCritFx(null), 700);
+      const minTier = isCrit ? 1 : 2; // Crit ab STARK (10k), normaler Sieg erst ab BRUTAL (50k)
+      if (tier >= minTier) {
+        screenFxN.current += 1;
+        const colors = isCrit ? CRIT_TIER_COLORS : WIN_TIER_COLORS;
+        setScreenFx({ n: screenFxN.current, tier, isCrit, color: colors[tier] || (isCrit ? critColor : "#5ab87a") });
+        clearTimeout(screenFxTimer.current);
+        screenFxTimer.current = setTimeout(() => setScreenFx(null), 700);
       }
     }
   }, [t?.trickNo]);
-  // Shake-Parameter je Stufe (leicht → stark). Amplitude als CSS-Var ans Panel; Keyframe-Name wechselt je Krit (a/b).
-  const shakeAmp  = critFx ? [0, 3, 6, 9, 13][critFx.tier] : 0;
-  const shakeDur  = critFx ? 160 + critFx.tier * 50 : 0;
-  const shakeName = critFx ? (critFx.n % 2 ? "as-crit-shake-a" : "as-crit-shake-b") : undefined;
+  // Shake-Parameter je Stufe (leicht → stark). Amplitude als CSS-Var ans Panel; Keyframe-Name wechselt je Sieg (a/b).
+  const shakeAmp  = screenFx ? [0, 3, 6, 9, 13][screenFx.tier] : 0;
+  const shakeDur  = screenFx ? 160 + screenFx.tier * 50 : 0;
+  const shakeName = screenFx ? (screenFx.n % 2 ? "as-crit-shake-a" : "as-crit-shake-b") : undefined;
 
   // Formations-Float: soll ~1,5 s LÄNGER stehen bleiben als sein Stich, dann sanft ausklingen. Deshalb vom aktuellen
   // Stich entkoppelt in eigenem State. Ein Formations-Sieg setzt ihn (Phase „aktiv" = hält bei Opacity 1); sobald ein
@@ -657,13 +665,21 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   if (heatRatio >= 0.55) outerParts.push(`0 0 ${Math.round(18 * heatRatio)}px ${Math.round(4 * heatRatio)}px rgba(224,113,74,${(0.22 * heatRatio).toFixed(2)})`);
   if (lightOn)           outerParts.push(`0 0 ${Math.round(12 + 24 * chargeR)}px ${Math.round(chargeR * 4)}px rgba(94,200,240,${(0.14 + 0.34 * chargeR).toFixed(2)})`);
   if (chargeFull)        outerParts.push("0 0 44px 8px rgba(138,125,224,0.32)");
+  // #192: der Screen-Shake eines großen NORMALEN Siegs bekommt eine dezente grün/gold Panel-Aura (Sieg-Identität,
+  // WIN_TIER_COLORS), damit die „grün/gold"-Wirkung sichtbar ist, ohne Flash/Vignette (die Crit-exklusiv bleiben).
+  // Nur bei normalem Sieg (kein Crit) → der Crit-Look bleibt unverändert. Stärke wächst BRUTAL→GOTTGLEICH.
+  if (screenFx && !screenFx.isCrit) {
+    const gi = clamp((screenFx.tier - 2) / 2, 0, 1); // BRUTAL 0 · IRRE 0,5 · GOTTGLEICH 1
+    outerParts.push(`0 0 ${Math.round(30 + 26 * gi)}px ${Math.round(5 + 6 * gi)}px ${screenFx.color}${gi > 0.5 ? "66" : "4d"}`);
+  }
   const outerGlow = outerParts.length ? outerParts.join(", ") : undefined;
 
   return (
    <>
     <div className="rounded-xl p-6 overflow-hidden as-panel relative"
       style={{ background: "#17171c", border: panelBorder, boxShadow: outerGlow,
-               // #188 v2: Screen-Shake bei großem Krit (Crit-only) — Panel jittert, Amplitude via --shake-amp nach Stufe.
+               // #188 v2 / #192: Screen-Shake bei großem Sieg — Panel jittert, Amplitude via --shake-amp nach Stufe.
+               // Krit ab STARK, normaler Sieg ab BRUTAL (grün/gold Aura via outerGlow, kein Flash/Vignette).
                animation: shakeName ? `${shakeName} ${shakeDur}ms ease-in-out` : undefined,
                ...(shakeAmp ? { "--shake-amp": `${shakeAmp}px` } : {}) }}>
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
@@ -817,8 +833,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         )}
       </div>
     </div>
-    {/* #188 v2: Vollbild-Flash/Vignette bei großem Krit (fixed, außerhalb des shake-Panels). key=n → Neustart je Krit. */}
-    {critFx && <CritScreenFx key={critFx.n} tier={critFx.tier} color={critFx.color} />}
+    {/* #188 v2 / #192: Vollbild-Flash/Vignette NUR bei Krit (screenFx.isCrit) — normale Siege bekommen ausschließlich
+        den Shake (+ grün/gold Panel-Aura), erreichen Flash/Vignette also nie. key=n → Neustart je Sieg. */}
+    {screenFx && screenFx.isCrit && <CritScreenFx key={screenFx.n} tier={screenFx.tier} color={screenFx.color} />}
    </>
   );
 }
