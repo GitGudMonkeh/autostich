@@ -80,6 +80,31 @@ describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schrit
     expect(resolveTrick(scenario(12, 0, { familyTiers: {} }), rng).score).toBeCloseTo(B * 1.02);
     expect(resolveTrick(scenario(12, 0), rng).score).toBeCloseTo(B * 1.02); // Feld ganz weggelassen
   });
+
+  it("D_PRECISION #189 Fund B: I zahlt nur EINMAL je Paar (Referenz nach Auszahlung verbraucht)", () => {
+    // Drei aufeinanderfolgende wertgleiche Siege (Wert 7). Stufe I: der 2. Sieg zahlt +250 und VERBRAUCHT die
+    // Referenz → der 3. Sieg beginnt ein frisches Paar und zahlt nicht. flats = additive Boni (hier nur Präzision).
+    let s = scenario(7, 0, { familyTiers: { D_PRECISION: 1 } });
+    s = resolveTrick(s, rng); // Sieg 1: kein Vorstich-Sieg → kein Bonus, Referenz = 7
+    expect(s.lastWinValue).toBe(7);
+    expect(s.lastTrick.breakdown.flats).toBeCloseTo(0);
+    s = resolveTrick(s, rng); // Sieg 2: Paar → +250, Referenz verbraucht
+    expect(s.lastTrick.breakdown.flats).toBeCloseTo(250);
+    expect(s.lastWinValue).toBe(null);
+    s = resolveTrick(s, rng); // Sieg 3: frisches Paar → zahlt nicht, Referenz wieder 7
+    expect(s.lastTrick.breakdown.flats).toBeCloseTo(0);
+    expect(s.lastWinValue).toBe(7);
+  });
+
+  it("D_PRECISION IV #189 Fund B: die Kette läuft weiter — jeder wertgleiche Folgesieg zahlt (+800)", () => {
+    let s = scenario(7, 0, { familyTiers: { D_PRECISION: 4 } });
+    s = resolveTrick(s, rng); // Sieg 1: Referenz = 7
+    s = resolveTrick(s, rng); // Sieg 2: +800
+    expect(s.lastTrick.breakdown.flats).toBeCloseTo(800);
+    s = resolveTrick(s, rng); // Sieg 3: kettet → wieder +800
+    expect(s.lastTrick.breakdown.flats).toBeCloseTo(800);
+    expect(s.lastWinValue).toBe(7); // Referenz läuft mit (nicht verbraucht)
+  });
 });
 
 describe("Familien-Engine — Kategorie B (Wertboni über resolveTrick)", () => {
@@ -100,6 +125,16 @@ describe("Familien-Engine — Kategorie B (Wertboni über resolveTrick)", () => 
     const win = resolveTrick(scenario(5, 5, { familyTiers: { B_INITIATIVE: 2 }, tieArmed: true }), rng);
     expect(win.wins).toBe(1);
     expect(win.lastTrick.result).toBe("win_tie");
+  });
+  it("B_INITIATIVE III #189 Fund C: +1 Wert auf die nächste Karte nach Niederlage (differenziert von II)", () => {
+    // Nach einer Niederlage (lastResult "loss"): Stufe III hebt den Kampfwert um +1 → aus 5 vs 5 (Gleichstand) wird ein Sieg.
+    const s3 = resolveTrick(scenario(5, 5, { familyTiers: { B_INITIATIVE: 3 }, lastResult: "loss" }), rng);
+    expect(s3.lastTrick.pValue).toBe(6); // 5 + 1 → 6 > 5 → Sieg
+    expect(s3.wins).toBe(1);
+    // Stufe II gibt keinen Wertbonus → 5 vs 5 bleibt Gleichstand.
+    const s2 = resolveTrick(scenario(5, 5, { familyTiers: { B_INITIATIVE: 2 }, lastResult: "loss" }), rng);
+    expect(s2.lastTrick.pValue).toBe(5);
+    expect(s2.wins).toBe(0);
   });
   it("B_REVENGE III: bei GENAU 2 Niederlagen +6 auf die nächsten zwei Karten (successorQueue)", () => {
     const s = resolveTrick(scenario(3, 8, { familyTiers: { B_REVENGE: 3 }, lossStreak: 1 }), rng); // 2. Niederlage armiert

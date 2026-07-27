@@ -131,15 +131,17 @@ const D_FAMILIES = {
   },
   D_PRECISION: {
     id: "D_PRECISION", cat: "D", name: "Präzision", upgradeType: REPLACEMENT,
-    // I/II: exakt gleicher Wert wie der letzte Sieg. III/IV: gleicher oder ±1 Wert. (IV-Kette: Engine-Extra.)
+    // I/II: exakt gleicher Wert wie der letzte Sieg. III/IV: gleicher oder ±1 Wert.
+    // #189 Fund B: I–III zahlen nur EINMAL je Paar — die Engine verbraucht lastWinValue (Referenz) nach einer
+    // Auszahlung (precisionTol = Toleranz der Stufe: I/II 0, III/IV 1); nur IV (chain) kettet weiter (Referenz läuft mit).
     // #146: „aufeinanderfolgend" heißt: der VORIGE Stich war auch ein Sieg (lastResult === "win", inkl. Gleichstand-
     // Sieg → in der Engine ebenfalls "win"). Sonst würde ein alter lastWinValue Niederlagen/Gleichstände überdauern
     // und z. B. Sieg(7) → Niederlage → Sieg(7) fälschlich zahlen. lastWinValue selbst wird nur bei Sieg gesetzt.
     tiers: {
-      1: { desc: "Zwei Siege in Folge mit gleichem Kartenwert: +250 Score auf den zweiten.",        scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && c.winValue === c.lastWinValue ? 250 : 0) },
-      2: { desc: "Zwei Siege in Folge mit gleichem Kartenwert: +450 Score auf den zweiten.",        scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && c.winValue === c.lastWinValue ? 450 : 0) },
-      3: { desc: "Zwei Siege in Folge mit gleichem oder um 1 abweichendem Wert: +550 Score.",    scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && Math.abs(c.winValue - c.lastWinValue) <= 1 ? 550 : 0) },
-      4: { desc: "Zwei Siege in Folge mit gleichem oder um 1 abweichendem Wert: +800 Score; die Kette kann weiterlaufen.", scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && Math.abs(c.winValue - c.lastWinValue) <= 1 ? 800 : 0), chain: true },
+      1: { desc: "Zwei Siege in Folge mit gleichem Kartenwert: +250 Score auf den zweiten.",        scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && c.winValue === c.lastWinValue ? 250 : 0), precisionTol: 0 },
+      2: { desc: "Zwei Siege in Folge mit gleichem Kartenwert: +450 Score auf den zweiten.",        scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && c.winValue === c.lastWinValue ? 450 : 0), precisionTol: 0 },
+      3: { desc: "Zwei Siege in Folge mit gleichem oder um 1 abweichendem Wert: +550 Score auf den zweiten.",    scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && Math.abs(c.winValue - c.lastWinValue) <= 1 ? 550 : 0), precisionTol: 1 },
+      4: { desc: "Zwei Siege in Folge mit gleichem oder um 1 abweichendem Wert: +800 Score; die Kette läuft weiter (jeder wertgleiche Folgesieg zahlt).", scoreFlat: (c) => (c.lastResult === "win" && c.lastWinValue != null && Math.abs(c.winValue - c.lastWinValue) <= 1 ? 800 : 0), precisionTol: 1, chain: true },
     },
   },
   D_INTERPLAY: {
@@ -266,12 +268,13 @@ const B_FAMILIES = {
   },
   B_INITIATIVE: {
     id: "B_INITIATIVE", cat: "B", name: "Initiative", upgradeType: REPLACEMENT,
-    // Engine armiert den Gleichstands-Sieg über tieArmLosses (Niederlagen bis zur Armierung). IV gibt zusätzlich
-    // der nächsten Karte +2 Wert (cardBonus über lostLastTrick). III „+1 bei Gleichstand" = ebenfalls Gleichstand-Sieg.
+    // Engine armiert den Gleichstands-Sieg über tieArmLosses (Niederlagen bis zur Armierung). III/IV geben zusätzlich
+    // der nächsten Karte nach einer Niederlage +1 bzw. +2 Wert (cardBonus über lostLastTrick) — #189 Fund C: III war
+    // zuvor mechanisch identisch zu II (Phantom-Klausel), bekommt jetzt einen echten Wertbonus als Differenzierung.
     tiers: {
       1: { desc: "Nach zwei Niederlagen gewinnst du den nächsten Gleichstand.", tieArmLosses: 2 },
       2: { desc: "Nach einer Niederlage gewinnst du den nächsten Gleichstand.", tieArmLosses: 1 },
-      3: { desc: "Nach einer Niederlage gewinnst du den nächsten Gleichstand (nächste Karte zählt bei Gleichstand als +1).", tieArmLosses: 1 },
+      3: { desc: "Nach einer Niederlage: nächste Karte +1 Wert und gewinnt den nächsten Gleichstand.", tieArmLosses: 1, cardBonus: (c) => (c.lostLastTrick ? 1 : 0) },
       4: { desc: "Nach einer Niederlage: nächste Karte +2 Wert und gewinnt den nächsten Gleichstand.", tieArmLosses: 1, cardBonus: (c) => (c.lostLastTrick ? 2 : 0) },
     },
   },

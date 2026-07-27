@@ -365,11 +365,13 @@ describe("Kategorie B — Stufeneffekte (Spec §3.2 B)", () => {
     expect(f[4].cardBonus({ predValue: 5, pValueBase: 5 })).toBe(2); // gleich → +2
     expect(f[2].cardBonus({ predValue: null, pValueBase: 9 })).toBe(0); // kein Vorgänger
   });
-  it("Initiative: tieArmLosses je Stufe; IV zusätzlich +2 nach Niederlage", () => {
+  it("Initiative: tieArmLosses je Stufe; III/IV +1/+2 nach Niederlage (#189 Fund C)", () => {
     const f = FAMILY_DEFS.B_INITIATIVE.tiers;
     expect([1, 2, 3, 4].map((t) => f[t].tieArmLosses)).toEqual([2, 1, 1, 1]);
+    expect(f[3].cardBonus({ lostLastTrick: true })).toBe(1); // III differenziert von II (war zuvor identisch)
     expect(f[4].cardBonus({ lostLastTrick: true })).toBe(2);
     expect(f[1].cardBonus).toBeUndefined();
+    expect(f[2].cardBonus).toBeUndefined(); // II bleibt ohne Wertbonus
   });
 });
 

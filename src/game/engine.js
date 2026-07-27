@@ -85,6 +85,10 @@ export function resolveTrick(state, rng = Math.random) {
   const streakGainOnCrit   = familyTierParam(familyTiers, "D_CRIT_MOMENTUM", "streakGainOnCrit") || 0; // IV: Crit erhöht die Serie um 1
   const interplayStoreOnLoss = familyTierParam(familyTiers, "D_INTERPLAY", "storeOnLoss") || 0;     // IV: Niederlage bankt Score
   const critFollowCritBonus  = familyTierParam(familyTiers, "D_CRIT_FOLLOW", "critFollowCritBonus") || 0; // IV: Crit-Folgesieg, der selbst Crit ist
+  // #189 Fund B: D_PRECISION-Kette. precisionTol = Toleranz der gehaltenen Stufe (I/II 0, III/IV 1; undefined = nicht
+  // gehalten). Nur IV (chain) kettet — I–III verbrauchen nach einer Auszahlung die Referenz (siehe Sieg-Zweig unten).
+  const precisionTol    = familyTierParam(familyTiers, "D_PRECISION", "precisionTol");
+  const precisionChains = !!familyTierParam(familyTiers, "D_PRECISION", "chain");
   // Kategorie B (Stich): B5 Initiative armiert den Gleichstands-Sieg über tieArmLosses; B8 III armiert die
   // successorQueue der nächsten Karten (revengeTwoCard {losses, bonus, count}). Beide werden im Niederlage-Zweig gelesen.
   const tieArmLosses  = familyTierParam(familyTiers, "B_INITIATIVE", "tieArmLosses");
@@ -453,7 +457,12 @@ export function resolveTrick(state, rng = Math.random) {
     if (tieConverted) tieArmed = false;
     sinceWin = 0; // #71 Durchbruch: Sieg setzt den Zähler zurück
     lossStreak = 0; // #71 Revanche: Sieg beendet die Niederlagenserie
-    lastWinValue = pValue; // #71 Präzision: letzten Siegwert merken (NACH dem Vergleich in wctx)
+    // #71/#189 Präzision: Siegwert merken (NACH dem Vergleich in wctx). #189 Fund B: hat D_PRECISION mit diesem Sieg
+    // ausgezahlt (Toleranz der Stufe + Vorstich war Sieg — dieselbe Bedingung, die der scoreFlat-Hook oben sah), wird
+    // die Referenz bei I–III VERBRAUCHT (null) → der nächste Sieg beginnt ein frisches Paar. Nur IV (chain) läuft weiter.
+    const precisionPaid = precisionTol != null && lastResult === "win" && lastWinValue != null
+                          && Math.abs(pValue - lastWinValue) <= precisionTol;
+    lastWinValue = (precisionPaid && !precisionChains) ? null : pValue;
     // C_RELAY/C_LEADER (Familien, Kat. C zu #167 migriert): gewinnt eine Relay-Rolle, bekommen die nächsten `relay`
     // Karten je +relayBonus (Queue nach dem Verbrauch → Index 0 = nächste Karte). relay/relayBonus aus der gehaltenen Stufe.
     for (const { familyId, def } of activeFamilyEntries(familyTiers)) {
