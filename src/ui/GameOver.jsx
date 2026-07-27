@@ -2,11 +2,12 @@ import { useState } from "react";
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
+import { fmtScore } from "./format.js";
 
 // Highscore-Listen (lokal + global) bewusst NICHT hier — sie stehen auf dem Startbildschirm und
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
 export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [] }) {
-  const score = Math.floor(state.score);
+  const score = Math.floor(state.score); // Zahlenwert für Record-Vergleich; Anzeige über fmtScore
   const skills = state.skills || [];
   // #161 FB-2: Klick auf einen Perk/Skill zeigt dessen Beschreibung. sel = { kind, id } | null.
   const [sel, setSel] = useState(null);
@@ -20,7 +21,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
       <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
         <div className="text-center">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>Lauf beendet</div>
-          <div className="text-5xl font-bold mt-2" style={{ color: "#d4a63a" }}>{score.toLocaleString("de-DE")}</div>
+          <div className="text-5xl font-bold mt-2" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>
           <div className="text-sm opacity-60 mt-1">Score{timeStr ? ` · ${timeStr}` : ""}</div>
           {state.shop && <div className="mt-1 text-xs font-bold" style={{ color: "#d4a63a" }}>🪙 {state.shop.coins ?? 0} Münzen übrig</div>}
           {isRecord && <div className="mt-2 text-sm font-bold" style={{ color: "#8a7de0" }}>★ Neuer Rekord!</div>}
@@ -30,15 +31,15 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           <div><div className="opacity-50 text-xs">Beste Serie</div><div className="font-bold">{state.bestStreak}×</div></div>
           <div><div className="opacity-50 text-xs">Perks</div><div className="font-bold">{state.perks.length}</div></div>
           <div title="Maximal gleichzeitig aktive Formationen im Run"><div className="opacity-50 text-xs">Formationen</div><div className="font-bold" style={{ color: "#5ab87a" }}>{state.maxFormations ?? 0}</div></div>
-          <div title="Score-Anteil aus Formations-Multiplikatoren"><div className="opacity-50 text-xs">Form.-Score</div><div className="font-bold" style={{ color: "#5ab87a" }}>{Math.floor(state.formationScore || 0).toLocaleString("de-DE")}</div></div>
+          <div title="Score-Anteil aus Formations-Multiplikatoren"><div className="opacity-50 text-xs">Form.-Score</div><div className="font-bold" style={{ color: "#5ab87a" }}>{fmtScore(state.formationScore)}</div></div>
         </div>
 
         {state.bestTrickScore > 0 && (
           <div className="grid grid-cols-4 gap-2 text-center mt-3 text-sm">
             <div><div className="opacity-50 text-xs">Crits</div><div className="font-bold" style={{ color: "#e879f9" }}>{state.crits}</div></div>
             <div><div className="opacity-50 text-xs">Crit-Quote</div><div className="font-bold" style={{ color: "#e879f9" }}>{state.wins > 0 ? Math.round((state.crits / state.wins) * 100) : 0}%</div></div>
-            <div><div className="opacity-50 text-xs">Crit-Bonus</div><div className="font-bold" style={{ color: "#e879f9" }}>{Math.floor(state.critBonusScore).toLocaleString("de-DE")}</div></div>
-            <div><div className="opacity-50 text-xs">Bester Stich</div><div className="font-bold" style={{ color: "#d4a63a" }}>{Math.floor(state.bestTrickScore).toLocaleString("de-DE")}</div></div>
+            <div><div className="opacity-50 text-xs">Crit-Bonus</div><div className="font-bold" style={{ color: "#e879f9" }}>{fmtScore(state.critBonusScore)}</div></div>
+            <div><div className="opacity-50 text-xs">Bester Stich</div><div className="font-bold" style={{ color: "#d4a63a" }}>{fmtScore(state.bestTrickScore)}</div></div>
           </div>
         )}
 

@@ -7,6 +7,7 @@ import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js";
+import { fmtScore } from "./format.js";
 import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 import cardBackImg  from "../assets/cards/card-back.png";  // (#180) Spieler-Deck: Schwerter-Rücken
 import cardFrontImg from "../assets/cards/card-front.png"; // (#180) Spieler-Deck: Rahmen-Front (Zahl/Effekte darüber)
@@ -611,7 +612,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
               </span>
             ))}
             <span className="opacity-25">=</span>
-            <span className="font-bold" style={{ color: isCrit ? critColor : "#e8e8ea" }}>{Math.round(bd.total).toLocaleString("de-DE")}</span>
+            <span className="font-bold" style={{ color: isCrit ? critColor : "#e8e8ea" }}>{fmtScore(bd.total)}</span>
           </>
         )}
       </div>

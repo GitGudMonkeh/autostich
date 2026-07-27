@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { leaderboardConfigured, fetchGlobalTop } from "../game/leaderboard.js";
 import { ARCHETYPE_META, decodeArchetypes } from "../game/skills.js";
+import { fmtScore } from "./format.js";
 
 // Gespeicherte Archetyp-Kodierung ("fire,ice") → Icon-Meta in fester Reihenfolge Blitz→Feuer→Eis (#139).
 // Alt-Einträge ohne Wert ergeben einfach keine Icons.
@@ -68,7 +69,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                     {icons.map((m, k) => <span key={k} title={m.label}>{m.icon}</span>)}
                   </span>
                 )}
-                <span className="font-bold shrink-0" style={{ color: "#d4a63a" }}>{r.score.toLocaleString("de-DE")}</span>
+                <span className="font-bold shrink-0" style={{ color: "#d4a63a" }}>{fmtScore(r.score)}</span>
               </div>
             );
           })}

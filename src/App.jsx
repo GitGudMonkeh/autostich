@@ -6,6 +6,7 @@ import { allianceGroups } from "./game/families.js";
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, loadOptions, saveOptions, loadUsername, saveUsername } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
+import { fmtScore } from "./ui/format.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { Battlefield } from "./ui/Battlefield.jsx";
 import { Controls } from "./ui/Controls.jsx";
@@ -290,7 +291,7 @@ export function Autostich() {
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wide opacity-50">Score</div>
         <div className="text-xl font-bold font-pixel-dense leading-none" style={{ color: "#d4a63a" }}>
-          {Math.floor(state.score).toLocaleString("de-DE")}
+          {fmtScore(state.score)}
         </div>
         {/* #113: zweite Zeile IMMER reserviert (feste Höhe) → Geist-Delta/Rekord ändert die Zellenhöhe nie. */}
         <div className="text-xs font-normal leading-tight h-4 mt-0.5 whitespace-nowrap">
@@ -298,7 +299,7 @@ export function Autostich() {
             <span style={{ color: "#8a7de0" }}>⚑ Rekord</span>
           ) : ghost.delta != null ? (
             <span style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>
-              {ghost.delta >= 0 ? "▲ +" : "▼ "}{ghost.delta.toLocaleString("de-DE")}
+              {ghost.delta >= 0 ? "▲ +" : "▼ "}{fmtScore(ghost.delta)}
             </span>
           ) : null)}
         </div>
@@ -330,7 +331,7 @@ export function Autostich() {
       </div>
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
-        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
       </div>
       {/* #133/#111: „Nächster Track" im Kopf (freie Zelle); die untere Musik-Leiste zeigt nur den Titel. */}
       {state.phase !== "gameover" && (

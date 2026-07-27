@@ -2,11 +2,13 @@
    (Stat · Perk · Skill · Formation · Shop), damit die Info überall identisch aussieht. Liest die vom
    Reducer/Engine getrackten Felder (state.lastCycleScore / prevCycleScore) — keine eigene Rechenlogik im UI.
    Rendert nichts, solange noch kein Durchlauf abgeschlossen ist (Start-Panel → lastCycleScore == null). */
+import { fmtScore } from "./format.js";
+
 export function RoundScoreBadge({ state = {}, className = "" }) {
   const last = state.lastCycleScore;
   if (last == null) return null; // vor dem ersten abgeschlossenen Durchlauf: kein Rundenscore vorhanden
   const prev = state.prevCycleScore;
-  const scoreStr = Math.round(last).toLocaleString("de-DE");
+  const scoreStr = fmtScore(last);
   // %-Differenz nur mit sinnvoller Vorrunde: erste Runde (prev == null) oder Vorrunde mit 0 Punkten → keine Angabe.
   const hasDiff = prev != null && prev !== 0;
   const pct = hasDiff ? Math.round(((last - prev) / prev) * 100) : 0;
