@@ -133,7 +133,7 @@ export const SKILL_DEFS = {
   SK_FIRE_07: { id: "SK_FIRE_07", name: "Verbrennung", archetype: "fire", keywords: ["heat"],
     desc: "Feuer-Flat-Score pro Punkt +10 (erhöht die Hitzegewinnrate nicht).", burnBonus: true },
   SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat"],
-    desc: "Jeder Sieg gibt der nächsten Karte +1 temporären Wert, steigend bis +3; eine Niederlage setzt zurück.", fireRoll: true },
+    desc: "Jeder Sieg gibt der nächsten Karte +1 temporären Wert, steigend bis +3; eine Niederlage setzt zurück und kostet 10 % mehr Hitze.", fireRoll: true },
   SK_FIRE_09: { id: "SK_FIRE_09", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"],
     desc: "Hitze-Konsument: bei voller Hitze gibt der nächste Sieg +1.000 Score, dann werden 100 Hitze verbraucht.", heatConsumer: "conflagration" },
   SK_FIRE_10: { id: "SK_FIRE_10", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"],
@@ -281,6 +281,7 @@ export function heatLossFor(deficit, skills, afterglowArmed, heatValue = 0) {
   let inc = 0;
   if (fireFlag(skills, "glowingBlade") && heatValue >= C.GLOWING_THRESHOLD) inc += C.GLOWING_LOSS_INCREASE; // +10 %
   if (fireFlag(skills, "overheated")   && heatValue >= C.OVERHEAT_THRESHOLD) inc += C.OVERHEAT_LOSS_INCREASE; // +50 %
+  if (fireFlag(skills, "fireRoll")) inc += C.FIREROLL_LOSS_INCREASE; // Feuerwalze: +10 % (unabhängig von der Hitze-Höhe)
   if (inc > 0) l *= 1 + inc;
   if (fireFlag(skills, "heatShield")) l *= 0.5;
   return Math.floor(l);

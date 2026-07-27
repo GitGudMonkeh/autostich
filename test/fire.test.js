@@ -40,6 +40,12 @@ describe("Feuer — reine Helfer (#93 F1)", () => {
     expect(heatLossFor(5, [F4], false)).toBe(2);   // Hitzeschild floor(5/2)
     expect(heatLossFor(20, [F4], false)).toBe(5);  // floor(10/2)
   });
+  it("heatLossFor: Feuerwalze +10 % Hitzeverlust bei Niederlage (hitzeunabhängig)", () => {
+    expect(heatLossFor(10, [F8], false)).toBe(11);    // 10 × 1,10
+    expect(heatLossFor(5, [F8], false)).toBe(5);      // 5 × 1,10 = 5,5 → floor 5
+    expect(heatLossFor(20, [F8], false, 0)).toBe(11); // Cap 10 zuerst, dann ×1,10; greift auch bei 0 Hitze
+    expect(heatLossFor(20, [F8], true)).toBe(0);      // Nachglut hat weiter Vorrang
+  });
   it("fireScoreFor: (Vorsprung−2)×(25 + 5×(n−1) + Verbrennung 10); 0 ohne Feuer-Skill / Vorsprung<3", () => {
     expect(fireScoreFor(12, [])).toBe(0);          // kein Feuer-Skill
     expect(fireScoreFor(2, [F4])).toBe(0);         // Vorsprung < 3

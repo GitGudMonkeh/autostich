@@ -135,6 +135,7 @@ export const OVERHEAT_LOSS_INCREASE = 0.50; // Überhitzt: +50 % Hitzeverlust (m
 export const SPARKFLIGHT_MIN_MARGIN = 8;    // Mindest-Wertvorsprung, um zu speichern
 export const SPARKFLIGHT_RATE       = 0.25; // gespeichert wird floor(FeuerFlat × 0,25)
 export const FIREROLL_MAX      = 3;    // Feuerwalze: nächste Karte +1 je Siegsserie, bis +3 [#Pass2: 5→3, flacherer Snowball]
+export const FIREROLL_LOSS_INCREASE = 0.10; // Feuerwalze: Niederlagen kosten +10 % Hitze (additiv mit Glühende Klinge/Überhitzt) [TUNING]
 export const CONFLAGRATION_SCORE = 1000; // Flächenbrand (Konsument): +Flat bei Sieg mit voller Hitze …
 export const CONFLAGRATION_COST  = 100;  // …          … verbraucht exakt 100 Hitze
 export const MELT_COST         = 10;   // Schmelzpunkt (Konsument): −% Hitze je Stich …
