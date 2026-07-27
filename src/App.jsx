@@ -3,7 +3,7 @@ import { reducer, initialState, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE } from "./game/constants.js";
 import { baseScoreMultFor } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
-import { loadGhost, saveGhost, loadHighscores, recordHighscore, loadOptions, saveOptions, loadUsername, saveUsername } from "./game/storage.js";
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
 import { fmtScore } from "./ui/format.js";
@@ -27,6 +27,7 @@ import { frozenCount, archetypeOf } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
+import { StatsScreen } from "./ui/StatsScreen.jsx";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
 import { music } from "./ui/music.js";
@@ -41,6 +42,7 @@ export function Autostich() {
   const [paused, setPaused] = useState(false);
   const [options, setOptions] = useState(() => loadOptions());   // Optionen (#41): u. a. CRT-Skin
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
+  const [showStats, setShowStats] = useState(false);              // #172 FB-10: Statistik-Hub (nur im Menü)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/6× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
@@ -171,13 +173,19 @@ export function Autostich() {
     if (recorded.current || !state.trickNo) return;
     recorded.current = true;
     const finalScore = Math.floor(state.score);
-    setHighscores(recordHighscore({
+    // #169 FB-8: Run-Rückblick-Stats für die lokale Detailansicht (RunStats). perks/skills als ID-Arrays.
+    const localEntry = {
       score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
-      // #169 FB-8: Run-Rückblick-Stats für die lokale Detailansicht (RunStats). perks/skills als ID-Arrays.
       bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
       maxFormations: state.maxFormations, formationScore: state.formationScore,
       crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
-    }));
+    };
+    setHighscores(recordHighscore(localEntry));
+    // #172 FB-10: denselben Lauf in die Historie (letzte 30) + Profil-Totals schreiben — Basis für den Statistik-Hub.
+    // Zusätzlich: Lauf-Dauer (aus dem HUD-Timer) + im Lauf genutzte Archetypen (unique) für die Analyse.
+    const durationMs = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
+    const archetypesUsed = [...new Set((state.skills || []).map(archetypeOf).filter(Boolean))];
+    recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed });
     // Globalen Lauf posten (#14) — additiv, fehlertolerant. myEntry hebt ihn im Board hervor;
     // pubToken lädt das Board nach dem Submit neu (damit der eigene Lauf drin ist).
     const name = (username || "").trim().slice(0, 20);
@@ -390,6 +398,7 @@ export function Autostich() {
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+            onStats={() => setShowStats(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} myEntry={myEntry} pubToken={pubToken} />
         ) : (<>
@@ -485,6 +494,8 @@ export function Autostich() {
       {showOptions && (
         <OptionsModal options={options} onChange={changeOptions} onClose={() => setShowOptions(false)} />
       )}
+
+      {showStats && <StatsScreen onClose={() => setShowStats(false)} />}
 
       {showUsername && (
         <UsernameModal initial={username} firstTime={!username}
