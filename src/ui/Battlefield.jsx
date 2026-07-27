@@ -508,7 +508,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
     if (w && t.gained > 0)
       entries.push({ id: `s${t.trickNo}`, zone: "score", dur, seed: t.trickNo * 2, value: t.gained,
-                     text: `+${Math.round(t.gained * 10) / 10}`, color: critC });
+                     text: `+${fmtScore(t.gained)}`, color: critC }); // #184: Score ganzzahlig (floor), keine Nachkommastelle
     if (!entries.length) return;
     setFloats((cur) => [...cur, ...entries].slice(-6)); // Pool gedeckelt — kein unbegrenztes Stapeln
     const ids = entries.map((e) => e.id);
