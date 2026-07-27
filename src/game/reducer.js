@@ -1,7 +1,7 @@
 import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js";
-import { SHOP_FAMILY_DEFS, refineDelta } from "./shopFamilies.js";
+import { SHOP_FAMILY_DEFS } from "./shopFamilies.js";
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, hasGlacierPush, buildSkillOffer } from "./skills.js";
@@ -286,9 +286,9 @@ export function reducer(state, action) {
         if (spec.cards && st.cards.length !== spec.cards) return state;             // genau N Karten
         if (spec.color && st.cards.some((id) => !st.colors[id])) return state;      // je Karte eine Farbe
         if (spec.segment && st.segment == null) return state;                        // ein Segment
-        const prev = (shop.familyTiers || {})[st.familyId] || 0;                     // Feinschliff-Differenz aus dem gehaltenen Rang
-        const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, order: state.playerOrder,
-          refineDelta: fam.refineDiff ? refineDelta(prev, st.famTier) : undefined };
+        // #195: Feinschliff-Differenz wird per KARTE in onPick aufgelöst (card.refined), nicht mehr aus dem
+        // gehaltenen Familienrang — so bekommt eine frische Karte den vollen Stufenwert (kein +0-Nachkauf).
+        const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, order: state.playerOrder };
         const { deck } = applyFamilyPick(st.familyId, st.famTier,
           { familyTiers: {}, deck: state.deck, roles: state.roles, target }, action.rng, SHOP_FAMILY_DEFS);
         const newDeck = deck || state.deck;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useEscape } from "./useEscape.js";
-import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress } from "../game/cosmetics.js";
+import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress, resolveSkinId } from "../game/cosmetics.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { fmtScore } from "./format.js";
 
@@ -74,6 +74,11 @@ export function CustomizeScreen({ options, profile, onChoose, onClose }) {
   const p = profile || {};
   const deckId = options?.deckId || "default";
   const bfId = options?.battlefieldId || "default";
+  // #195: „Aktiv"-Markierung gegen die AUFGELÖSTE Skin-id (resolveSkinId fällt auf "default" zurück, wenn der
+  // gespeicherte Skin nicht existiert/gesperrt ist) — sonst würde ein gesperrter gespeicherter Skin zugleich als
+  // „🔒 gesperrt" UND „Aktiv" erscheinen, während real Default rendert.
+  const activeDeckId = resolveSkinId(DECK_DEFS, deckId, p);
+  const activeBfId = resolveSkinId(BATTLEFIELD_DEFS, bfId, p);
 
   const decks = Object.values(DECK_DEFS);
   const battlefields = Object.values(BATTLEFIELD_DEFS);
@@ -98,7 +103,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose }) {
               const unlocked = isUnlocked(def, p);
               return (
                 <SkinTile key={def.id} name={def.name} image={deckAssets(def.id).back}
-                  unlocked={unlocked} active={deckId === def.id} prog={unlockProgress(def, p)}
+                  unlocked={unlocked} active={activeDeckId === def.id} prog={unlockProgress(def, p)}
                   kind={def.unlock?.kind} aspect="3 / 4" fit="object-contain"
                   onSelect={() => onChoose({ deckId: def.id })} />
               );
@@ -115,7 +120,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose }) {
               const assets = battlefieldAssets(def.id);
               return (
                 <SkinTile key={def.id} name={def.name} image={assets ? assets.desktop : null}
-                  unlocked={unlocked} active={bfId === def.id} prog={unlockProgress(def, p)}
+                  unlocked={unlocked} active={activeBfId === def.id} prog={unlockProgress(def, p)}
                   kind={def.unlock?.kind} aspect="16 / 9" fit="object-cover"
                   onSelect={() => onChoose({ battlefieldId: def.id })} />
               );

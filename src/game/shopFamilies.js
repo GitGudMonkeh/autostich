@@ -90,23 +90,30 @@ const segmentBumpRandom = (deck, order, seg, n, delta, rng) =>
   bumpCards(deck, shuffle(segmentCardIds(deck, order, seg), rng).slice(0, n), delta);
 
 /* ---- Feinschliff (SF_REFINE) — „Differenz-Aufwertung" (Spec §4.2): eine gewählte Karte erreicht dauerhaft den
-        Zielwert der Stufe (I +1 · II +2 · III +3 · IV +5). Beim Upgrade wird nur die DIFFERENZ zur gehaltenen
-        Stufe verstärkt; ein direkter Drop gibt den vollen Zielwert. `refineDelta(prev,target)` berechnet den
-        anzuwendenden Bump — das Wiring liest den gehaltenen Rang und legt ihn als `target.refineDelta` in den
-        Ziel-Deskriptor (onPick unten). ---- */
+        Zielwert der Stufe (I +1 · II +2 · III +3 · IV +5). Der Bump ist die DIFFERENZ zum bereits per Feinschliff
+        erreichten Kartenwert — #195: pro KARTE getrackt (`card.refined`), NICHT am Familienrang. Sonst bekäme (a)
+        eine frische Karte bei einem Upgrade/Kartenwechsel nur die Rang-Differenz statt des vollen Stufenwerts und
+        (b) ein Nachkauf auf gemaxter Familie (repeatable IV, refineDelta=0) +0 für vollen Preis. Mit per-Karte-
+        Tracking bekommt eine frische Karte immer den vollen Zielwert, eine schon veredelte nur die Restdifferenz,
+        eine bereits am Ziel liegende +0 (nie negativ). ---- */
 export const REFINE_TOTAL = { 1: 1, 2: 2, 3: 3, 4: 5 };
-export const refineDelta = (prevTier, targetTier) => (REFINE_TOTAL[targetTier] || 0) - (REFINE_TOTAL[prevTier] || 0);
+// Bringt jede gewählte Karte per-Karte auf `targetTotal` Feinschliff-Wert (Differenz zum schon Erreichten, ≥0).
+const refineCards = (deck, ids, targetTotal) => deck.map((c) => {
+  if (!ids.includes(c.id)) return c;
+  const delta = targetTotal - (c.refined || 0);
+  return delta > 0 ? { ...c, value: c.value + delta, refined: targetTotal } : c;
+});
 
 const SHOP_CARD_FAMILIES = {
   SF_REFINE: {
     id: "SF_REFINE", cat: "cards", name: "Feinschliff", upgradeType: CUMULATIVE, repeatable: true,
-    legacyIds: ["K1", "K5", "K8"], refineDiff: true,
-    // onPick nutzt die vom Wiring gelieferte Differenz (target.refineDelta); direkter Drop = refineDelta(0,target).
+    legacyIds: ["K1", "K5", "K8"],
+    // onPick bringt jede gewählte Karte auf den Stufen-Zielwert REFINE_TOTAL[t] (per-Karte-Differenz, s. refineCards).
     tiers: {
-      1: { desc: "Wähle eine Karte: sie erhält dauerhaft +1 Wert.", refineTotal: 1, pickTarget: { cards: 1 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, t.refineDelta ?? REFINE_TOTAL[1]) },
-      2: { desc: "Wähle eine Karte: sie erhält dauerhaft +2 Wert.", refineTotal: 2, pickTarget: { cards: 1 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, t.refineDelta ?? REFINE_TOTAL[2]) },
-      3: { desc: "Wähle eine Karte: sie erhält dauerhaft +3 Wert.", refineTotal: 3, pickTarget: { cards: 1 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, t.refineDelta ?? REFINE_TOTAL[3]) },
-      4: { desc: "Wähle eine Karte: sie erhält dauerhaft +5 Wert.", refineTotal: 5, pickTarget: { cards: 1 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, t.refineDelta ?? REFINE_TOTAL[4]) },
+      1: { desc: "Wähle eine Karte: sie erhält dauerhaft +1 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[1]) },
+      2: { desc: "Wähle eine Karte: sie erhält dauerhaft +2 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[2]) },
+      3: { desc: "Wähle eine Karte: sie erhält dauerhaft +3 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[3]) },
+      4: { desc: "Wähle eine Karte: sie erhält dauerhaft +5 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[4]) },
     },
   },
   SF_MULTI_REFINE: {
@@ -240,15 +247,16 @@ const SHOP_ANCHOR_FAMILIES = {
     },
   },
   // Zeitsegment (§4.2, ehem. legendär A-L1): SEGMENT-Ziel, kein Positions-Anker. Stufe = Wiederholungstiefe (letzte
-  // `depth` Segmentkarten) + Effekt-Tiefe. §10-Näherung III: „nur Score/Serien-Effekte" ≈ die Wiederholung würfelt
-  // KEINE Crits (Score & Serie zählen; Crit-/Skill-Boni entfallen). IV = vollständige Wiederholung.
+  // `depth` Segmentkarten) + Effekt-Tiefe. §10-Näherung III (`reduced`): die Wiederholung würfelt KEINE Crits
+  // (#195: NUR Crits sind unterdrückt — Feuer/Blitz/Ionen/Skill-Effekte laufen in der Wiederholung weiter). IV =
+  // vollständige Wiederholung inkl. Crits.
   SF_A_TIME: {
     id: "SF_A_TIME", cat: "anchors", name: "Zeitsegment", upgradeType: REPLACEMENT, repeatable: false,
     anchorType: "time", legacyIds: ["A-L1"],
     tiers: {
       1: { desc: "Wähle 1 Segment: seine letzte Karte wird einmal wiederholt.", pickTarget: { segment: true }, depth: 1 },
       2: { desc: "Wähle 1 Segment: seine letzten zwei Karten werden wiederholt.", pickTarget: { segment: true }, depth: 2 },
-      3: { desc: "Wähle 1 Segment: alle fünf Karten werden wiederholt (nur Score- und Serien-Effekte zählen).", pickTarget: { segment: true }, depth: 5, reduced: true },
+      3: { desc: "Wähle 1 Segment: alle fünf Karten werden wiederholt (die Wiederholung würfelt jedoch keine Crits).", pickTarget: { segment: true }, depth: 5, reduced: true },
       4: { desc: "Wähle 1 Segment: alle fünf Karten werden vollständig wiederholt (Score, Serie, Crits, Skills, Positionseffekte).", pickTarget: { segment: true }, depth: 5 },
     },
   },

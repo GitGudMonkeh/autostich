@@ -724,10 +724,12 @@ const E_FAMILIES = {
     id: "E_COLOR_ALLIANCE", cat: "E", name: "Farballianz", upgradeType: REPLACEMENT,
     // Farb-Ziel (pickTarget.suits): die gewählten Farben werden in roles["E_COLOR_ALLIANCE"] persistiert und in
     // computeFormations zu linkedGroups aufgelöst. `pairs` (IV) = die 4 Farben bilden ZWEI Allianzen (je zwei).
+    // #195: monotone Leiter auf EINER Achse (Breite der Allianz) — I und II trugen zuvor beide suits:2 (mechanisch
+    // identische Phantom-Stufe, wie E_RPM/E_SEGMENT/B_INITIATIVE). Jetzt 2 → 3 → 4 (alle als eine) → 4 (zwei Allianzen).
     tiers: {
       1: { desc: "Wähle 2 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 2 } },
-      2: { desc: "Wähle 2 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 2 } },
-      3: { desc: "Wähle 3 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 3 } },
+      2: { desc: "Wähle 3 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 3 } },
+      3: { desc: "Wähle 4 Farben: alle vier zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 4 } },
       4: { desc: "Wähle 4 Farben: sie bilden zwei Allianzen (je zwei zählen als eine).", pickTarget: { suits: 4 }, pairs: true },
     },
   },
@@ -800,7 +802,7 @@ applyMusterDescs(FAMILY_DEFS); // Stufen-descs der Muster-Familien aus MUSTER_DE
 
 export const FAMILY_LIST = Object.values(FAMILY_DEFS);
 export const familyDef = (id) => FAMILY_DEFS[id] || null;
-export const familyCategory = (id) => FAMILY_DEFS[id]?.cat || null;
+// #195: familyCategory (id → cat) entfernt — kein Prod-Aufrufer (nur ein toter Test-Import).
 
 /* ---- Resolver (Engine-Brücke) ---- */
 

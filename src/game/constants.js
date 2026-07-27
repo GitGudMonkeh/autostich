@@ -42,7 +42,7 @@ export const SHOP_LEGENDARY_CHANCE   = 0.15; // Chance je Shop auf EIN legendär
 // Vier feste Preisstufen (Spec §5.5) — keine Zwischenpreise.
 export const SHOP_PRICE = { cheap: 8, strong: 12, premium: 18, legendary: 30 };
 // Anzeige-Labels der Kategorien (UI) — geteilte Quelle für ShopScreen/Tests.
-export const SHOP_CATEGORY_LABELS = { cards: "Karten", anchors: "Anker", formations: "Formationen", planning: "Planung" };
+export const SHOP_CATEGORY_LABELS = { cards: "Karten", anchors: "Anker", planning: "Planung" }; // #195: „formations" entfernt (#179 zu Perks migriert)
 
 // Shop-Positionsanker (Shop-Spec §8) — hängen an der Deckposition (0–39), nicht an card.id. [TUNING]
 // (#189: ANCHOR_POWER_VALUE/ANCHOR_SCORE/ANCHOR_CRIT_CHANCE entfernt — die Anker-FAMILIEN in shopFamilies.js

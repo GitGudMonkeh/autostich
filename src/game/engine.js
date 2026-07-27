@@ -247,7 +247,10 @@ export function resolveTrick(state, rng = Math.random) {
     // ein Farbwechsel HALBIERT die laufende Länge (min 1) statt sie auf 1 zurückzusetzen (suitHalveOnSwitch).
     const suitStreak = pCard.suit === winSuit ? winSuitStreak + 1
                      : (suitHalveOnSwitch ? Math.max(1, Math.floor(winSuitStreak / 2)) : 1);
-    const wctx = { winValue: pValue, margin: pValue - oValue, winStreak: serieStreak, wins, trickNo, posInCycle: pos,
+    // #195: posInCycle = actualPos (Deckposition), NICHT pos (Stich-Index) — muss zum segmentWins-Reset oben
+    // (actualPos % SEGMENT_SIZE) passen. Sonst divergieren bei partieller Zeitsegment-Wiederholung Gate (D_FULL_HOUSE
+    // liest posInCycle % 5) und Zähler → Volles Haus zahlt am falschen Stich. Einziger scoreFlat-Leser: D_FULL_HOUSE.
+    const wctx = { winValue: pValue, margin: pValue - oValue, winStreak: serieStreak, wins, trickNo, posInCycle: actualPos,
                    lastWinValue, // #71: Präzision (Vergleich mit letztem Siegwert)
                    critFollowArmed, weaknessArmed, weaknessBig, // Crit-Historie: Stand VOR diesem Sieg (D14/D16/D_WEAKNESS IV)
                    suitStreak, recentWinCount, // Farbserie / Volles Haus

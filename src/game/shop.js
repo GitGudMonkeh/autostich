@@ -231,14 +231,24 @@ export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = [
   }
 
   // Cheap-Garantie (§5.6) ZULETZT: fehlt ein günstiges Angebot (Preis 8 — flache Stufe „cheap" ODER Familien-Stufe I),
-  // ein NICHT-legendäres, NICHT-Familien-Angebot deterministisch durch ein günstiges FLACHES Item ersetzen (das
-  // gesetzte Legendär und die Familien-Karten bleiben so erhalten).
+  // eines deterministisch erzwingen. #195: Alle Kategorien sind familiengetrieben (SHOP_ITEM_DEFS leer) → der alte
+  // cheapPool aus flachen Items war IMMER leer und die Garantie feuerte nie (das günstigste Angebot konnte heimlich
+  // 12 sein → mit 8–11 Münzen nichts kaufbar). Jetzt familien-bewusst: das erste NICHT gekaufte, NICHT legendäre
+  // Angebot einer noch ungekauften Familie (Rang 0 → Stufe I echt offerierbar) auf Stufe I (Preis 8) herunterstufen;
+  // sonst der flache cheap-Pool (Fallback, falls je wieder flache Items existieren).
   if (!offers.some((o) => o.price === C.SHOP_PRICE.cheap)) {
-    const cheapPool = avail.filter((d) => !d.legendary && d.tier === "cheap" && !famCats.has(d.category));
-    const slots = offers.map((o, i) => (o.legendary || o.family ? -1 : i)).filter((i) => i >= 0);
-    if (cheapPool.length && slots.length) {
-      const repl = cheapPool[Math.floor(rng() * cheapPool.length)];
-      offers[slots[Math.floor(rng() * slots.length)]] = mk(repl);
+    const held = shop.familyTiers || {};
+    const purchased = new Set(shop.purchasedOfferIds || []);
+    const famSlot = offers.findIndex((o) => o.family && !o.legendary && !purchased.has(o.offerId) && (held[o.familyId] || 0) === 0);
+    if (famSlot >= 0) {
+      offers[famSlot] = { ...offers[famSlot], famTier: 1, price: priceOfTier(1) };
+    } else {
+      const cheapPool = avail.filter((d) => !d.legendary && d.tier === "cheap" && !famCats.has(d.category));
+      const slots = offers.map((o, i) => (o.legendary || o.family ? -1 : i)).filter((i) => i >= 0);
+      if (cheapPool.length && slots.length) {
+        const repl = cheapPool[Math.floor(rng() * cheapPool.length)];
+        offers[slots[Math.floor(rng() * slots.length)]] = mk(repl);
+      }
     }
   }
   return offers;

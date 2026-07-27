@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  FAMILY_DEFS, FAMILY_LIST, familyDef, familyCategory,
+  FAMILY_DEFS, FAMILY_LIST, familyDef,
   activeTierDef, activeTierDefs, familySumHook, familyProdHook, hasCritFamily,
   isLayoutFamily, layoutFamilies,
 } from "../src/game/families.js";
@@ -61,6 +61,9 @@ describe("Familien-Registry — Struktur", () => {
     expect(withTarget).toEqual(["E_COLOR_ALLIANCE", "E_CORE"]);
     expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].pickTarget.suits).toBe(4);
     expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].pairs).toBe(true);
+    // #195: monotone, distincte Farballianz-Leiter (I/II waren zuvor identisch suits:2) — 2/3/4/4, nur IV mit pairs.
+    expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[t].pickTarget.suits)).toEqual([2, 3, 4, 4]);
+    expect([1, 2, 3].every((t) => !FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[t].pairs)).toBe(true);
     expect(FAMILY_DEFS.E_CORE.tiers[1].pickTarget.formationType).toBe(true);
   });
 });

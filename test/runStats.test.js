@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   MIN_SAMPLE, hasEnoughData, scoreOrigin, avgScoreOrigin, pickRates,
-  archetypeUsage, bestArchetype, scoreLift, topRunsOrigin, bestRun, achievements,
+  archetypeUsage, bestArchetype, scoreLift, topRunsOrigin, bestRun,
 } from "../src/game/runStats.js";
 
 // Kompakter Lauf-Record-Builder — nur die Felder, die die Aggregation liest.
@@ -98,21 +98,9 @@ describe("topRunsOrigin / bestRun", () => {
   });
 });
 
-describe("hasEnoughData / achievements", () => {
+describe("hasEnoughData", () => {
   it("Kleinserien-Schwelle", () => {
     expect(hasEnoughData(Array(MIN_SAMPLE - 1).fill(run()))).toBe(false);
     expect(hasEnoughData(Array(MIN_SAMPLE).fill(run()))).toBe(true);
-  });
-  it("Meilensteine spiegeln Profil-Totals", () => {
-    const a = achievements([], { games: 10, bestScore: 120000, bestStreak: 5, maxCrits: 60, archetypesEver: ["fire", "ice", "lightning"] });
-    const by = Object.fromEntries(a.map((x) => [x.id, x]));
-    expect(by.first.done).toBe(true);
-    expect(by.ten.done).toBe(true);
-    expect(by.veteran.done).toBe(false); // 10 < 25
-    expect(by.score100k.done).toBe(true);
-    expect(by.score500k.done).toBe(false);
-    expect(by.streak20.done).toBe(false);
-    expect(by.crit50.done).toBe(true);
-    expect(by.allArch.done).toBe(true);
   });
 });

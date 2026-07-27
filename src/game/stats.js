@@ -5,7 +5,7 @@ import * as C from "./constants.js";
    alle vier angeboten; der Spieler wählt genau einen. Additiv, keine Seltenheiten,
    keine Caps, keine Diminishing Returns, beliebig oft wählbar.
 
-   Basiswerte (Startzustand): Crit-Chance 0 %, Crit-Multiplikator 1,5×, Score/Sieg 100.
+   Basiswerte (Startzustand): Crit-Chance 0 %, Crit-Multiplikator 1,5×, Score/Sieg 400 (#178 Pacing 100→400).
    Jeder Pick addiert `step` auf das State-Feld `field`; die Engine liest die Summen.
    ============================================================ */
 // #151/desc-check.md: Tuning-Zahlen NICHT doppelt hartkodieren, sondern aus den Konstanten interpolieren

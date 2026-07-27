@@ -87,7 +87,9 @@ export function loadProfile() {
         return { ...DEFAULT_PROFILE, ...p, archetypesEver: Array.isArray(p.archetypesEver) ? p.archetypesEver : [] };
     }
   } catch (e) {}
-  return { ...DEFAULT_PROFILE };
+  // #195: frisches archetypesEver-Array, damit der Leer-/Korrupt-Pfad NICHT die mutable Array-Referenz aus
+  // DEFAULT_PROFILE teilt (ein späterer push würde sonst den Modul-Default vergiften).
+  return { ...DEFAULT_PROFILE, archetypesEver: [] };
 }
 
 const n0 = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 0);

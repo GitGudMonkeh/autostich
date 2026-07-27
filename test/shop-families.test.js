@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng, buildDeck } from "../src/game/deck.js";
 import {
   SHOP_FAMILY_DEFS, SHOP_FAMILY_LIST, shopFamilyDef, shopFamilyCategory,
-  REFINE_TOTAL, refineDelta, offerableShopTiers, shopFamilyTierLabel, shopFamilyTierPrice, shopFamilyTierDesc,
+  REFINE_TOTAL, offerableShopTiers, shopFamilyTierLabel, shopFamilyTierPrice, shopFamilyTierDesc,
   ANCHOR_FAMILY_BY_TYPE, anchorTierDef, anchorTierParam,
 } from "../src/game/shopFamilies.js";
 import { UPGRADE_TYPES, TIERS } from "../src/game/rarity.js";
@@ -64,17 +64,21 @@ describe("Shop-Familien-Registry — Struktur (Spec §4)", () => {
 });
 
 describe("Karten-Shop-Familien — Deck-Effekte (Spec §4.2 Kartenfamilien)", () => {
-  it("SF_REFINE: Differenz-Aufwertung (direkter Drop = Zielwert, Upgrade = Differenz)", () => {
+  it("SF_REFINE: bringt jede Karte per-Karte auf den Stufen-Zielwert (#195)", () => {
     expect(REFINE_TOTAL).toEqual({ 1: 1, 2: 2, 3: 3, 4: 5 });
-    expect(refineDelta(0, 3)).toBe(3);   // direkter Drop III → +3
-    expect(refineDelta(1, 3)).toBe(2);   // Upgrade I→III → +2
-    expect(refineDelta(3, 4)).toBe(2);   // Upgrade III→IV → +2 (Gesamt 5)
-    const d = mkDeck();
-    const after = SHOP_FAMILY_DEFS.SF_REFINE.tiers[3].onPick(d, makeRng(1), { cardIds: ["c1"], refineDelta: refineDelta(1, 3) });
-    expect(valOf(after, "c1")).toBe(3 + 2); // held I, upgrade auf III → +2
-    // Fallback ohne refineDelta = voller Zielwert (direkter Drop).
-    const drop = SHOP_FAMILY_DEFS.SF_REFINE.tiers[4].onPick(mkDeck(), makeRng(1), { cardIds: ["c3"] });
-    expect(valOf(drop, "c3")).toBe(1 + 5);
+    const R = SHOP_FAMILY_DEFS.SF_REFINE.tiers;
+    // (a) Frische Karte → voller Stufen-Zielwert, unabhängig vom Familienrang (III = +3, nicht die Rang-Differenz).
+    expect(valOf(R[3].onPick(mkDeck(), makeRng(1), { cardIds: ["c1"] }), "c1")).toBe(3 + 3);
+    expect(valOf(R[4].onPick(mkDeck(), makeRng(1), { cardIds: ["c3"] }), "c3")).toBe(1 + 5);
+    // (b) Dieselbe Karte gestuft veredeln → nur die Restdifferenz (per-Karte via card.refined).
+    let d = R[1].onPick(mkDeck(), makeRng(1), { cardIds: ["c1"] });        // frisch, I → +1
+    expect(valOf(d, "c1")).toBe(3 + 1);
+    d = R[3].onPick(d, makeRng(1), { cardIds: ["c1"] });                    // Ziel 3, schon 1 → +2
+    expect(valOf(d, "c1")).toBe(3 + 3);
+    // (c) Nachkauf IV auf gemaxter Familie: frische Karte bekommt +5 (kein +0), eine schon am Ziel +0 (kein Doppel).
+    const maxed = R[4].onPick(mkDeck(), makeRng(1), { cardIds: ["c1"] });   // c1 → +5, refined 5
+    expect(valOf(R[4].onPick(maxed, makeRng(1), { cardIds: ["c3"] }), "c3")).toBe(1 + 5); // frisch → +5 (HIGH-Fix)
+    expect(valOf(R[4].onPick(maxed, makeRng(1), { cardIds: ["c1"] }), "c1")).toBe(3 + 5); // schon am Ziel → +0
   });
   it("SF_MULTI_REFINE: verstärkt genau die gewählten Karten je +1", () => {
     const after = SHOP_FAMILY_DEFS.SF_MULTI_REFINE.tiers[3].onPick(mkDeck(), makeRng(1), { cardIds: ["c0", "c2", "c5"] });

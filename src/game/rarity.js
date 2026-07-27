@@ -34,7 +34,6 @@ export const TIER_WEIGHTS = { 1: 100, 2: 46, 3: 20, 4: 8 };
 export const tierMeta   = (tier) => TIER_META[tier] || null;
 export const priceOfTier = (tier) => TIER_META[tier]?.price ?? 0;
 export const romanOf    = (tier) => ROMAN[tier] || String(tier);
-export const rarityKeyOf = (tier) => TIER_META[tier]?.rarity || null;
 export const tierColor  = (tier) => TIER_META[tier]?.color || "#8a8a95";
 // Sichtbares Etikett „Name III" (Spec §8). Leere/0-Stufe → nur der Name.
 export const tierLabel  = (name, tier) => (tier ? `${name} ${romanOf(tier)}` : name);
@@ -45,40 +44,14 @@ export function canOfferFamilyTier(currentTier, offeredTier) {
   return offeredTier > (currentTier || 0);
 }
 
-// Anbietbare Stufen einer Familie beim aktuellen Rang (leer, sobald IV erreicht → Familie abgeschlossen).
-export function offerableTiers(family, currentTier) {
-  return (family?.tiers || TIERS).filter((t) => canOfferFamilyTier(currentTier, t));
-}
-
 /* Familienzustand: { [familyId]: currentTier }. Reine Helfer (immutabel). */
 export const familyTierOf = (familyTiers, id) => (familyTiers || {})[id] || 0;
 export const withFamilyTier = (familyTiers, id, tier) => ({ ...(familyTiers || {}), [id]: tier });
-export const familyComplete = (familyTiers, id) => familyTierOf(familyTiers, id) >= 4;
 
-/* Familien-/stufenbewusstes Angebot (Spec §2): bis zu `count` VERSCHIEDENE Familien; jede erscheint
-   auf genau EINER anbietbaren Stufe, gewichtet nach TIER_WEIGHTS[tier]. Legendäre laufen NICHT hierüber.
-   Deterministisch über den injizierten rng (ein rng()-Zug je gewählter Familie) — kein Math.random hier.
-   `families`: [{ id, tiers?: number[], enabled?: boolean }]. `familyTiers`: aktueller Rang je Familie.
-   Rückgabe: [{ familyId, tier }] (leer, wenn kein anbietbares Paar existiert). */
-export function buildFamilyOffer(families = [], familyTiers = {}, rng = Math.random, count = 3) {
-  let pool = [];
-  for (const f of families) {
-    if (!f || f.enabled === false) continue;
-    const cur = familyTierOf(familyTiers, f.id);
-    for (const t of offerableTiers(f, cur)) pool.push({ id: f.id, tier: t, weight: TIER_WEIGHTS[t] || 0 });
-  }
-  const chosen = [];
-  while (chosen.length < count && pool.length > 0) {
-    const total = pool.reduce((a, x) => a + x.weight, 0);
-    if (total <= 0) break;
-    let r = rng() * total, i = 0;
-    while (i < pool.length - 1 && r >= pool[i].weight) { r -= pool[i].weight; i += 1; }
-    const pick = pool[i];
-    chosen.push({ familyId: pick.id, tier: pick.tier });
-    pool = pool.filter((x) => x.id !== pick.id); // eine Familie höchstens einmal je Angebot (Spec §15)
-  }
-  return chosen;
-}
+/* #195: `offerableTiers` + `buildFamilyOffer` (früher generischer Angebots-Builder) sowie `rarityKeyOf`/
+   `familyComplete` entfernt — kein Prod-Aufrufer. Die echten Angebots-Ziehungen laufen kategorie-spezifisch über
+   drawFamilyOffers (shop.js) bzw. buildPerkOffer (perks.js); `offerableTiers` trug zudem einen latenten Schema-Bug
+   (erwartete `tiers` als Array, echte Familien nutzen ein Objekt). `canOfferFamilyTier` bleibt (von perks.js genutzt). */
 
 /* Upgrade-Verhalten (Spec §2.3) — Marker-Konstanten für die Familien-Definitionen (#163/#164):
    - replacement: nur die Regel der höchsten gehaltenen Stufe ist aktiv (keine parallelen Trigger).

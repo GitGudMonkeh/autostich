@@ -18,7 +18,7 @@ const TIER = {
 };
 
 // Kategorie-Akzentfarben — farbige Rahmen je Kategorie um die Angebote.
-const CATEGORY_COLOR = { cards: "#8a7de0", anchors: "#5a8ade", formations: "#5ab87a", planning: "#e0714a" };
+const CATEGORY_COLOR = { cards: "#8a7de0", anchors: "#5a8ade", planning: "#e0714a" }; // #195: „formations" entfernt (#179 zu Perks migriert)
 
 /* Shop-Screen (Shop-Spec §12.1). S1: Angebote (2 je Kategorie) werden deterministisch gezogen und hier
    gruppiert dargestellt — Münzstand prominent, Preis/Stufe/Beschreibung je Item, Kauf-Button (deaktiviert,

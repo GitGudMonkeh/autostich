@@ -191,6 +191,31 @@ describe("Shop-Angebot — Ziehung (Shop-Spec §5)", () => {
       expect(legCount(off)).toBeLessThanOrEqual(1);
     }
   });
+  it("Cheap-Garantie familien-bewusst: jeder Familien-Shop hat ein Preis-8-Angebot (#195)", () => {
+    // Produktionspfad: SHOP_ITEM_DEFS ist leer, alle Kategorien sind familiengetrieben. Am frischen Shop sind alle
+    // Familien Rang 0 → die Garantie muss immer ein Preis-8-Angebot (Familien-Stufe I) sicherstellen. Vor dem Fix
+    // war der flache cheapPool immer leer und die Garantie feuerte nie → manche Seeds hatten 12 als günstigstes.
+    for (let seed = 1; seed <= 60; seed++) {
+      const off = buildShopOffer(SHOP_ITEM_DEFS, initialShop(), makeRng(seed), [], SHOP_FAMILY_DEFS);
+      expect(off.length).toBeGreaterThan(0);
+      expect(off.some((o) => o.price === SHOP_PRICE.cheap)).toBe(true);
+    }
+  });
+  it("Cheap-Garantie #195: erzwingt Stufe I einer Rang-0-Familie, wenn der Zug kein Preis-8 liefert", () => {
+    // Nur SF_REFINE ist Rang 0 (kann Stufe I anbieten); alle anderen Familien Rang 1 → deren Angebote sind ≥12.
+    const held = {};
+    for (const f of Object.values(SHOP_FAMILY_DEFS)) if (f.id !== "SF_REFINE") held[f.id] = 1;
+    const mkShop = () => ({ ...initialShop(), familyTiers: { ...held } });
+    // Seed 2: SF_REFINE würde natürlich auf Stufe III (@18) gezogen, sonst nur ≥12 → ohne Fix kein Preis-8; der Fix
+    // stuft SF_REFINE (einzige Rang-0-Familie) auf Stufe I (@8) herab.
+    const off = buildShopOffer(SHOP_ITEM_DEFS, mkShop(), makeRng(2), [], SHOP_FAMILY_DEFS);
+    expect(off.find((o) => o.price === SHOP_PRICE.cheap)).toMatchObject({ familyId: "SF_REFINE", famTier: 1 });
+    // Invariante über viele Seeds: ist SF_REFINE (einzige Stufe-I-Quelle) im Angebot, existiert IMMER ein Preis-8.
+    for (let seed = 1; seed <= 60; seed++) {
+      const o2 = buildShopOffer(SHOP_ITEM_DEFS, mkShop(), makeRng(seed), [], SHOP_FAMILY_DEFS);
+      if (o2.some((o) => o.familyId === "SF_REFINE")) expect(o2.some((o) => o.price === SHOP_PRICE.cheap)).toBe(true);
+    }
+  });
   it("isItemAvailable filtert gekaufte Legendäre und gekaufte nicht-wiederholbare Items (§15)", () => {
     expect(isItemAvailable({ id: "X_L", legendary: true, repeatable: false }, { boughtLegendaryIds: ["X_L"] })).toBe(false);
     expect(isItemAvailable({ id: "F1", repeatable: false }, { boughtNonRepeatableIds: ["F1"] })).toBe(false);
@@ -287,13 +312,28 @@ describe("Shop-Ziel-Flow — Kauf einer Karten-Familie (Shop-Spec §4/§12.2)", 
     expect(r.shopTarget).toBe(null);
     expect(val(r.deck, "R5")).toBe(before + 2); // direkter Drop II = +2
   });
-  it("Feinschliff-Differenz: Upgrade von gehaltenem Rang wendet nur die Differenz an", () => {
-    let s = reducer(famShop("SF_REFINE", 3, 1), { type: "BUY_ITEM", offerId: "o0" }); // Rang I gehalten, Kauf III
+  it("Feinschliff #195: frische Karte bekommt den vollen Stufenwert (unabhängig vom Familienrang)", () => {
+    // Familienrang I gehalten, aber die gewählte Karte ist unbehandelt → voller Wert der Stufe III (+3), nicht +2.
+    let s = reducer(famShop("SF_REFINE", 3, 1), { type: "BUY_ITEM", offerId: "o0" });
     s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R5" });
     const before = val(s.deck, "R5");
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.shop.familyTiers.SF_REFINE).toBe(3);
-    expect(val(r.deck, "R5")).toBe(before + 2); // +(3−1) = +2
+    expect(val(r.deck, "R5")).toBe(before + 3); // frisch, III → +3 (vorher fälschlich +2)
+  });
+  it("Feinschliff #195: dieselbe Karte gestuft veredelt bekommt nur die Restdifferenz", () => {
+    let s = reducer(famShop("SF_REFINE", 1), { type: "BUY_ITEM", offerId: "o0" }); // Feinschliff I
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R5" });
+    const base = val(s.deck, "R5");
+    s = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(val(s.deck, "R5")).toBe(base + 1); // I → +1
+    // 2. Kauf Feinschliff III auf DIESELBE Karte (Deck trägt card.refined weiter) → Ziel 3, schon 1 → nur +2.
+    const offer = { offerId: "o1", category: "cards", familyId: "SF_REFINE", famTier: 3, price: 18, family: true, legendary: false };
+    s = { ...s, phase: "shop", shop: { ...s.shop, offers: [offer] } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o1" });
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R5" });
+    s = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(val(s.deck, "R5")).toBe(base + 3); // +1 dann +2 = Gesamt +3
   });
   it("CANCEL → zurück in den Shop, Münzen & Angebot unverändert", () => {
     let s = reducer(famShop("SF_REFINE", 1), { type: "BUY_ITEM", offerId: "o0" });

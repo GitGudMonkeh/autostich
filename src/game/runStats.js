@@ -100,23 +100,5 @@ export function bestRun(history = []) {
   return [...history].sort((a, b) => clamp0(b.score) - clamp0(a.score))[0];
 }
 
-/* Meilensteine/Achievements (#172) — abgeleitet aus Profil-Totals + Historie. Rein deskriptiv.
-   `target`/`cur` erlauben eine Fortschrittsanzeige; `done` = erreicht. */
-export function achievements(history = [], profile = {}) {
-  const games = num(profile.games);
-  const best = num(profile.bestScore);
-  const streak = num(profile.bestStreak);
-  const crits = num(profile.maxCrits);
-  const archCount = uniq(profile.archetypesEver).length;
-  const mk = (id, icon, label, desc, cur, target) => ({ id, icon, label, desc, cur, target, done: cur >= target });
-  return [
-    mk("first", "🎬", "Erster Lauf", "Spiele deinen ersten Lauf.", games, 1),
-    mk("ten", "🎯", "Dranbleiber", "Spiele 10 Läufe.", games, 10),
-    mk("veteran", "🏅", "Veteran", "Spiele 25 Läufe.", games, 25),
-    mk("score100k", "💰", "Punktejäger", "Erreiche 100.000 Score in einem Lauf.", best, 100000),
-    mk("score500k", "👑", "Score-Gott", "Erreiche 500.000 Score in einem Lauf.", best, 500000),
-    mk("streak20", "🔥", "Serienkönig", "Erreiche eine Serie von 20.", streak, 20),
-    mk("crit50", "⚡", "Kritmeister", "Lande 50 Crits in einem Lauf.", crits, 50),
-    mk("allArch", "🌈", "Allrounder", "Spiele alle 3 Archetypen mindestens einmal.", archCount, 3),
-  ];
-}
+/* #195: `achievements()` (#172 Meilensteine) entfernt — die Achievements-Sektion wird nicht mehr gerendert,
+   es gab keinen Prod-Aufrufer mehr (nur noch Test + ein Kommentar-Verweis). */

@@ -106,7 +106,8 @@ function markRuns(n, minMembers, matches, gap, canExtendSeg, assign, transparent
 // je Lauf/Segment; drehSeg = Karten, die je Segment einen zweiten Treppen-Lauf beginnen dürfen (E_RPM). Rarität #167.
 // Alles 0 = klassische strenge Treppe. Infinity = unbegrenzt (Stufe IV — §10-Näherung: „gleich = +1 Schritt" bzw.
 // „Richtung einmal wechseln" als unbegrenzte Gleichstände/Rückschritte).
-function markTreppe(n, val, bind, e, canExtendSeg, assign, dir = 1, onRunEnd = null, isJoker = () => false, onRun = null) {
+// #195: nur aufsteigende Treppen (dir war fest 1 — der Abstieg-Aufruf ist längst entfernt; der tote dir=-1-Zweig raus).
+function markTreppe(n, val, bind, e, canExtendSeg, assign, onRunEnd = null, isJoker = () => false, onRun = null) {
   const segEq = {}, segRev = {}, segDreh = {};
   let i = 0;
   while (i < n) {
@@ -115,14 +116,14 @@ function markTreppe(n, val, bind, e, canExtendSeg, assign, dir = 1, onRunEnd = n
     let prev = isJoker(i) ? null : val[i], pb = isJoker(i) ? 0 : bind[i], hasReal = !isJoker(i);
     while (j + 1 < n && canExtendSeg(j)) {
       const jj = j + 1;
-      if (isJoker(jj)) { j = jj; members.push(j); if (prev != null) { prev += dir; pb = 0; } continue; } // Joker adaptiert
+      if (isJoker(jj)) { j = jj; members.push(j); if (prev != null) { prev += 1; pb = 0; } continue; } // Joker adaptiert
       const v = val[jj], b = bind[jj];
       // #161 FB-5: streng monoton (Abstand ≥1) UND Schritt ≤ MAX_TREPPE_STEP. `span` = kombinierte ±Flex beider
       // Karten (C10 Bindeglied, Eisschritt/Kristallform je ±1, Permafrost-Joker ±99) → günstigste Interpretation.
-      const span = b + pb, rawGap = dir === 1 ? v - prev : prev - v;
+      const span = b + pb, rawGap = v - prev;
       const step = prev == null ? true                    // nur Joker bisher → diese reale Karte fixiert die Kette
         : (rawGap + span >= 1 && rawGap - span <= MAX_TREPPE_STEP);
-      const revBack = prev != null && (dir === 1 ? v < prev : v > prev);
+      const revBack = prev != null && v < prev;
       const seg = Math.floor(jj / SEGMENT_SIZE);
       if (step) { j = jj; members.push(j); prev = v; pb = b; hasReal = true; }
       else if (v === prev && eqUsed < e.eqRun && (segEq[seg] || 0) < e.eqSeg) {        // E_GENTLE: Gleichstand
@@ -143,7 +144,7 @@ function markTreppe(n, val, bind, e, canExtendSeg, assign, dir = 1, onRunEnd = n
 }
 
 // Wählt für die nächste Karte einen Kandidatenwert (Kristallform gibt eingefrorenen Karten [v−1,v,v+1]),
-// der die Zick-Zack-Bedingung erfüllt (|diff| ≥ 4, Richtung passt) und die Amplitude maximiert (Peak so hoch,
+// der die Zick-Zack-Bedingung erfüllt (|diff| ≥ minDiff, Default 5, Richtung passt) und die Amplitude maximiert (Peak so hoch,
 // Valley so tief wie möglich → maximaler Spielraum für den nächsten Gegenzug). `need`: 0 frei, sonst ±1.
 function pickWechselValue(cands, cur, need, minDiff = WECHSEL_MIN_DIFF) {
   let best = null;
@@ -156,7 +157,7 @@ function pickWechselValue(cands, cur, need, minDiff = WECHSEL_MIN_DIFF) {
   return best;
 }
 
-// Wechsel (Zick-Zack): jede Nachbardifferenz ≥4 UND Richtungswechsel. Mindestlänge minLen (E5: 2 statt 3).
+// Wechsel (Zick-Zack): jede Nachbardifferenz ≥ WECHSEL_MIN_DIFF (Default 5) UND Richtungswechsel. Mindestlänge minLen (E5: 2 statt 3).
 // `valSets[k]` = Kandidatenwerte je Karte (Kristallform: ±1 auf eingefrorenen Karten; sonst Singleton).
 function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WECHSEL_MIN_DIFF, onRunEnd = null, isJoker = () => false, onRun = null) {
   const BIG = 1000; // Joker (A6): Extremwert in benötigter Richtung → maximale Amplitude, erfüllt die Zick-Zack-Bedingung stets.
@@ -300,7 +301,7 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));
-  markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, 1, treppeEnd, isJT, noteCross);
+  markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, treppeEnd, isJT, noteCross);
   // (Fallende Treppen „Abstieg" entfielen #179 — E_BIGSTEP deckt Rückschritte/Richtungswechsel innerhalb der Treppe ab.)
   // Wechsel: Kristallform gibt eingefrorenen Karten ±2-Wertoptionen (#165; Permafrost/Eisschritt gelten hier NICHT).
   // E_PENDULUM IV: wFactorStart hebt den Wechsel-Faktor bereits ab Länge 2 auf ×1,35 (sonst erst ab der 3. Karte).

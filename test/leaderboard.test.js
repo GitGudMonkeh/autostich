@@ -87,4 +87,48 @@ describe("publishRun — PREVIEW-Short-Circuit + archetypes-Strip (#154)", () =>
     await expect(publishRun({ name: "X", score: 1, level: 1, tricks: 1, cycles: 1 })).rejects.toThrow(/400/);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+  // #195: die FB-8-Strip-Kaskade (voll → ohne FB-8 → ohne archetypes) war ungetestet — beide bisherigen Tests
+  // schickten Einträge OHNE FB-8-Felder (hasFb8 immer false). Ein echter Run mit FB-8-Feldern gegen eine DB ohne
+  // FB-8-Spalten würde sonst 3× 400en und (via .catch der Aufrufer) still nie veröffentlichen, ohne dass ein Test anschlägt.
+  const fb8Entry = () => ({
+    name: "X", score: 9, level: 2, tricks: 3, cycles: 2, archetypes: "fire,ice",
+    best_streak: 7, perks: "a", skills: "b", max_formations: 4, formation_score: 100,
+    crits: 2, wins: 30, crit_bonus_score: 500, best_trick_score: 900,
+  });
+  it("FB-8-Strip-Kaskade #195: voll → ohne FB-8 (archetypes bleibt) → ohne archetypes (Basis)", async () => {
+    const { publishRun } = await loadBoard();
+    const bodies = [];
+    global.fetch = vi.fn(async (_url, opts) => {
+      bodies.push(JSON.parse(opts.body));
+      return bodies.length < 3 ? { status: 400, ok: false } : { status: 201, ok: true };
+    });
+    await publishRun(fb8Entry());
+    expect(bodies).toHaveLength(3);
+    // Stufe 1: volles Schema (FB-8-Felder + archetypes vorhanden)
+    expect(bodies[0].best_streak).toBe(7);
+    expect(bodies[0].crit_bonus_score).toBe(500);
+    expect(bodies[0].archetypes).toBe("fire,ice");
+    // Stufe 2: FB-8 gestript, archetypes UND Basisfelder bleiben erhalten
+    expect(bodies[1].best_streak).toBeUndefined();
+    expect(bodies[1].crit_bonus_score).toBeUndefined();
+    expect(bodies[1].archetypes).toBe("fire,ice");
+    expect(bodies[1].name).toBe("X");
+    expect(bodies[1].score).toBe(9);
+    // Stufe 3: auch archetypes gestript → Basis
+    expect(bodies[2].archetypes).toBeUndefined();
+    expect(bodies[2].best_streak).toBeUndefined();
+    expect(bodies[2].name).toBe("X");
+  });
+  it("FB-8-Strip-Kaskade #195: Stopp auf Stufe 2, sobald der FB-8-gestripte Insert greift (kein archetypes-Strip)", async () => {
+    const { publishRun } = await loadBoard();
+    const bodies = [];
+    global.fetch = vi.fn(async (_url, opts) => {
+      bodies.push(JSON.parse(opts.body));
+      return bodies.length === 1 ? { status: 400, ok: false } : { status: 201, ok: true };
+    });
+    await publishRun(fb8Entry());
+    expect(bodies).toHaveLength(2);          // kein dritter Versuch
+    expect(bodies[1].best_streak).toBeUndefined(); // FB-8 gestript
+    expect(bodies[1].archetypes).toBe("fire,ice"); // archetypes bleibt (Icons erhalten)
+  });
 });
