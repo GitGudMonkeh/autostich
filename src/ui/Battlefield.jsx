@@ -52,12 +52,19 @@ const FLOAT_ZONES = {
 // #169 FB-7: `size` = Peak-Zielgröße (px) je Stufe — höhere Stufe dominiert stärker. Der Render deckelt sie per
 // clamp() gegen die Viewport-Breite (mobil kein Überlauf) und zentriert echt (H+V) auf oberster Ebene.
 const BIG_SCORE_TIERS = [
-  { min: 500000, text: "GOTTGLEICH", size: 84 },
-  { min: 150000, text: "IRRE",       size: 72 },
-  { min: 50000,  text: "BRUTAL",     size: 64 },
-  { min: 10000,  text: "STARK",      size: 56 },
+  { min: 500000, text: "GOTTGLEICH", size: 104 },
+  { min: 150000, text: "IRRE",       size: 90 },
+  { min: 50000,  text: "BRUTAL",     size: 78 },
+  { min: 10000,  text: "STARK",      size: 68 },
 ];
 const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
+// #FB: Groß-Ansage („wie stark"). Sie hing bislang am Stich-Takt (key=trickNo) und wurde vom Folgestich sofort
+// ersetzt → bei 4×/MAX (flipMs ~160–440 ms) nur einen Wimpernschlag sichtbar. Jetzt entkoppelt in einem eigenen
+// Pool mit fester, langer Standzeit, damit sie ihre Animation IMMER voll ausspielt (auch bei Turbo).
+const BIG_ANNOUNCE_MS = 1900;       // feste Lebensdauer der Groß-Ansage — turbo-unabhängig, damit auch bei 4×/MAX lesbar
+// Vertikale Spuren gegen „zu sehr überlappen": aufeinanderfolgende Ansagen rotieren durch diese Y-Versätze (px, um die
+// Bildmitte), damit sie sich fächern statt exakt zu stapeln. Pool ist zusätzlich klein gedeckelt (max 3 gleichzeitig).
+const BIG_LANES = [0, -64, 64];
 // #188: Score-skalierte Effekt-Intensität aus dem Per-Stich-Score (t.gained). Nutzt DIESELBEN Schwellen wie
 // BIG_SCORE_TIERS → Slice/Explosion + Groß-Ansage eskalieren gemeinsam. Rückgabe:
 //   p    = weicher Anteil 0..1 (0 = heutiger Look/Floor bei ≤ STARK-Schwelle 10k, 1 = GOTTGLEICH 500k) — log-skaliert
@@ -523,6 +530,28 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     floatTimers.current.push(tm);
   }, [t?.trickNo]);
 
+  // #FB: Groß-Ansage-Pool („wie stark") — entkoppelt vom Stich-Takt (wie der Score-Float-Pool). Jeder Eintrag lebt
+  // BIG_ANNOUNCE_MS und entfernt sich selbst, unabhängig davon, wie schnell die Folgestiche kommen. So bleibt die
+  // Ansage auch bei 4×/MAX voll sichtbar, statt vom nächsten Stich abgeschnitten zu werden. Spur (lane) rotiert →
+  // aufeinanderfolgende Ansagen fächern vertikal, Pool klein gedeckelt → kein „zu sehr Überlappen".
+  const [bigFloats, setBigFloats] = useState([]);
+  const bigTimers = useRef([]);
+  const bigSeq = useRef(0);
+  useEffect(() => () => bigTimers.current.forEach(clearTimeout), []);
+  useEffect(() => {
+    if (!t) { setBigFloats([]); return; }   // Menü/neuer Lauf → Pool leeren
+    if (!bigScore) return;                   // nur bei einem großen Sieg-Stich
+    const lane = BIG_LANES[bigSeq.current % BIG_LANES.length];
+    bigSeq.current += 1;
+    const entry = { id: `b${t.trickNo}`, tier: bigScore, seed: t.trickNo, lane };
+    setBigFloats((cur) => [...cur, entry].slice(-3)); // max 3 gleichzeitig (jede auf eigener Spur)
+    const tm = setTimeout(() => {
+      setBigFloats((cur) => cur.filter((f) => f.id !== entry.id));
+      bigTimers.current = bigTimers.current.filter((x) => x !== tm);
+    }, BIG_ANNOUNCE_MS + 80);
+    bigTimers.current.push(tm);
+  }, [t?.trickNo]);
+
   // #177+/#186: Schnitt-/Explosions-Ghost-Pool — entkoppelt vom Stich-Takt (wie der Score-Float-Pool), damit die
   // geschnittene/berstende Karte erst wegfloatet, dann zerschneidet/explodiert und bei hohem Turbo/vielen Siegen mit
   // dem nächsten Stich überlappt. Gilt jetzt für BEIDE Seiten (Spieler bei Niederlage, Gegner bei Sieg) mit
@@ -735,17 +764,18 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             {formFloat.peak === 2 && "★ "}{formFloat.label} ×{formFloat.mult}
           </div>
         )}
-        {/* #105/#169 FB-7: Gestufte Groß-Score-Ansage — dominiert Peak-Momente: oberste Ebene (z-30, über allen
-            Floats), echt zentriert (H+V), Größe je Stufe (clamp deckelt mobil gegen Überlauf), Legendär-Gold. */}
-        {bigScore && (
-          <div key={`big${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap"
-            style={{ left: "50%", top: "50%", zIndex: 30,
-                     fontSize: `clamp(32px, 9vw, ${bigScore.size}px)`, color: "#d4a63a", textShadow: "0 0 26px #d4a63acc, 0 0 8px #d4a63a",
+        {/* #105/#169 FB-7 / #FB: Gestufte Groß-Score-Ansage — dominiert Peak-Momente: oberste Ebene (z-30, über allen
+            Floats), zentriert mit Spur-Versatz (BIG_LANES, gegen Überlappung), Größe je Stufe (clamp deckelt mobil gegen
+            Überlauf), Legendär-Gold. Aus dem entkoppelten Pool → volle Standzeit auch bei 4×/MAX. */}
+        {bigFloats.map((b) => (
+          <div key={b.id} className="pointer-events-none absolute font-extrabold whitespace-nowrap"
+            style={{ left: `calc(50% + ${fjitter(b.seed * 3 + 2, 12)}px)`, top: `calc(50% + ${b.lane}px)`, zIndex: 30,
+                     fontSize: `clamp(40px, 10vw, ${b.tier.size}px)`, color: "#d4a63a", textShadow: "0 0 34px #d4a63add, 0 0 12px #d4a63a, 0 2px 4px #0009",
                      transform: reduced ? "translate(-50%, -50%)" : undefined,
-                     animation: fx(`as-bigscore ${Math.max(900, floatDur - 200)}ms ease-out forwards`) }}>
-            {bigScore.text}
+                     animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
+            {b.tier.text}
           </div>
-        )}
+        ))}
       </div>
 
       <div className="relative z-10 h-8 mt-4 flex items-center justify-center">

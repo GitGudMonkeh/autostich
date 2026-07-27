@@ -52,8 +52,9 @@ button { font-family: inherit; }
 /* Crit (#19): stärkerer Gewinner-Pop + „KRITISCH"-Text. */
 @keyframes as-pop-crit { 0% { transform: scale(1); } 35% { transform: scale(1.30); } 65% { transform: scale(.95); } 100% { transform: scale(1); } }
 @keyframes as-krit { 0% { opacity:0; transform: translateX(-50%) scale(.4); } 25% { opacity:1; transform: translateX(-50%) scale(1.15); } 60% { opacity:1; transform: translateX(-50%) scale(1); } 100% { opacity:0; transform: translateX(-50%) scale(1); } }
-/* #169 FB-7: wie as-krit, aber echt zentriert (H+V) — Groß-Score-Peak-Ansage poppt aus der Bildmitte (translate statt nur X). */
-@keyframes as-bigscore { 0% { opacity:0; transform: translate(-50%,-50%) scale(.4); } 22% { opacity:1; transform: translate(-50%,-50%) scale(1.18); } 60% { opacity:1; transform: translate(-50%,-50%) scale(1); } 100% { opacity:0; transform: translate(-50%,-50%) scale(1); } }
+/* #169 FB-7 / #FB: wie as-krit, aber echt zentriert (H+V) — Groß-Score-Peak-Ansage poppt aus der Bildmitte. Schneller
+   Einflug, langes DECKENDES Halten (22–78 %, ~1 s bei 1900 ms → präsent auch bei 4×/MAX), dann Ausblenden mit Flare. */
+@keyframes as-bigscore { 0% { opacity:0; transform: translate(-50%,-50%) scale(.45); } 12% { opacity:1; transform: translate(-50%,-50%) scale(1.2); } 22% { opacity:1; transform: translate(-50%,-50%) scale(1); } 78% { opacity:1; transform: translate(-50%,-50%) scale(1); } 100% { opacity:0; transform: translate(-50%,-50%) scale(1.04); } }
 /* Kombo-Float (#31): eskalierende Siegesserie poppt + steigt (Serie ≥5 → ×1,5). */
 @keyframes as-combo { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-10px) scale(1); } 100% { opacity:0; transform: translateY(-30px) scale(1); } }
 /* Wie as-combo, aber HÄLT am Ende bei voller Opacity (forwards) — für den Formations-Multi-Float, damit er
