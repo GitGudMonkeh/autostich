@@ -430,7 +430,7 @@ export function Autostich() {
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
-              <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+              <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "stat"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} />

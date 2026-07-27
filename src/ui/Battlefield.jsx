@@ -86,7 +86,7 @@ const fjitter = (seed, amp) => { const s = Math.sin(seed * 127.1 + 311.7) * 4375
 /* Eine Seite: gespielte Karte MIT Nachziehstapel dahinter (ragt nur nach außen).
    `overlay` = entkoppelter Layer im Karten-Slot (z. B. Niederlage-Ghosts), der NICHT pro Stich remountet
    (steht nach `children`, also im selben `relative`-Slot, aber außerhalb des trickNo-gekeyten Karten-Wrappers). */
-function Side({ label, remaining, dealFrom, children, overlay = null, backImage = null }) {
+function Side({ label, remaining, position = 0, deckLen = 0, dealFrom, children, overlay = null, backImage = null }) {
   const dir = dealFrom === "left" ? -1 : 1;
   const behind = Math.min(3, Math.max(0, remaining - 1));
   return (
@@ -101,7 +101,7 @@ function Side({ label, remaining, dealFrom, children, overlay = null, backImage 
         {children}
         {overlay}
       </div>
-      <div className="text-[11px] opacity-55">Deck: {remaining}</div>
+      <div className="text-[11px] opacity-55">Deck: {position} / {deckLen}</div>
     </div>
   );
 }
@@ -344,9 +344,13 @@ function CritScreenFx({ tier, color }) {
   );
 }
 
-export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, frozen = 0, oppDeck = "stat" }) {
+export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, frozen = 0, oppDeck = "stat" }) {
   const reduced = usePrefersReducedMotion();
   const t = lastTrick;
+  // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
+  // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
+  // ersten Stich (kein t) 0. Beide Seiten spielen dieselbe Position → identischer Zähler.
+  const deckPos = t ? (t.originalPosition ?? 0) + 1 : 0;
   // #186: Gegner-Deck-Skin nach kommender Auswahl. back = Cover (verdeckter Stapel), front = Rahmen (Zahl darüber, Holo entfällt).
   const oppSkin = OPP_DECK_SKINS[oppDeck] || OPP_DECK_SKINS.stat;
   const oppBackImg = oppSkin.back, oppFrontImg = oppSkin.front;
@@ -689,13 +693,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
           </div>
         )}
 
-        <Side label="Du" remaining={remaining} dealFrom="left" backImage={cardBackImg}
+        <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={cardBackImg}
               overlay={playerGhosts.length ? <SlashGhostLayer ghosts={playerGhosts} /> : null}>{playerCard}</Side>
 
         <img src={swordicon} alt="vs" width={46} height={46} draggable="false"
              className="crt-vs-icon shrink-0 select-none" style={{ imageRendering: "pixelated" }} />
 
-        <Side label="Gegner" remaining={remaining} dealFrom="right" backImage={oppBackImg}
+        <Side label="Gegner" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg}
               overlay={oppGhosts.length ? <SlashGhostLayer ghosts={oppGhosts} /> : null}>{oppCard}</Side>
 
         {/* Aufsteigende Zahlen (#49/#68): je Typ eigene Streuzone (Score links / Leben rechts) mit
