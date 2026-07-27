@@ -1,6 +1,7 @@
 import * as C from "./constants.js";
 import { FAMILY_LIST } from "./families.js";
 import { TIERS, TIER_WEIGHTS, canOfferFamilyTier, familyTierOf } from "./rarity.js";
+import { lightningCritRaw } from "./skills.js";
 
 /* ============================================================
    PERK-REGISTRY  — datengetrieben (wie clauses.js in TrickLadder).
@@ -196,6 +197,14 @@ export function critChanceRawFor(perks, ctx) {
 }
 export function critChanceFor(perks, ctx) {
   return Math.min(1, Math.max(0, critChanceRawFor(perks, ctx)));
+}
+// #181: Gesamt-Roh-Crit-Chance des NÄCHSTEN Siegs (UNGEKLEMMT) — geteilte Quelle für StatusRail + StatSelect
+// (kein Drift). Spiegelt die Engine-Rechnung (engine.js:300): Perk-/Blitz-Basis + Crit-Chance-Stat. Der
+// positionsabhängige Kritanker (§4.2) bleibt der Engine vorbehalten; die Live-Anzeige zeigt die Grundchance.
+export function totalCritChanceRaw(state = {}) {
+  const { perks = [], winStreak = 0, wins = 0, trickNo = 0, pos = 0, lightning, skills = [], statCritChance = 0 } = state;
+  return critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos })
+       + lightningCritRaw(lightning, skills) + statCritChance;
 }
 // Crit-Faktor: Basis (CRIT_BASE_MULT 1,5) + Crit-Mult-Stat (V2 §22.3, baseBonus). V2 trägt kein Perk
 // mehr einen Crit-Mult (L5 ist jetzt Flat-Score) → nur Basis + Stat. Signatur (perks, ctx) bleibt für

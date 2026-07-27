@@ -1,7 +1,6 @@
-import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, critChanceRawFor, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
+import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
 import { familyDef, hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
-import { lightningCritRaw } from "../game/skills.js";
 import { PERK_DECLINE_COINS } from "../game/constants.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
@@ -44,10 +43,11 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
   const rerollTokens = (state.shop && state.shop.perkRerolls) || 0;
   const canReroll = !!onReroll && (freeReroll || rerollTokens > 0);
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
-  const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning, skills = [], statCritChance = 0, statCritMult = 0 } = state;
-  // Crit inkl. Blitz-Basis (lightning) + Crit-Chance-Stat — dieselbe Rechnung wie Engine/StatusRail (kein Drift).
-  const critRaw = critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos }) + lightningCritRaw(lightning, skills) + statCritChance;
-  const critPct = Math.round(Math.min(1, Math.max(0, critRaw)) * 100);
+  const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning, statCritChance = 0, statCritMult = 0 } = state;
+  // Crit inkl. Blitz-Basis (lightning) + Crit-Chance-Stat — dieselbe geteilte Quelle wie Engine/StatusRail (kein Drift).
+  // #181: ungeklemmt anzeigen (Gesamt-Crit kann > 100 % sein → speist L6 „Raserei" / Familie D „Überschusskrit").
+  const critRaw = totalCritChanceRaw(state);
+  const critPct = Math.round(Math.max(0, critRaw) * 100);
   const scoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos });
   const showCrit = hasCritPerk(perks) || hasCritFamily(state.familyTiers) || crits > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
   return (

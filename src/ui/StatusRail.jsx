@@ -1,9 +1,8 @@
 import { MAX_CYCLES } from "../game/constants.js";
 import { cycleLenFor } from "../game/shop.js";
 import { summarizeFormations } from "../game/formations.js";
-import { critChanceRawFor, hasCritPerk, critMultiplierFor } from "../game/perks.js";
+import { hasCritPerk, critMultiplierFor, totalCritChanceRaw } from "../game/perks.js";
 import { hasCritFamily } from "../game/families.js";
-import { lightningCritRaw } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
 
 function Bar({ value, max, color, height = 8 }) {
@@ -25,7 +24,7 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
-  const { wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, perks, crits, lightning, skills = [],
+  const { wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, perks, crits, lightning,
           familyTiers = {}, statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0 } = state;
   const cycleLen = cycleLenFor(state.shop);  // 40, mit Zeitsegment 45 (§8 A-L1)
   const remaining = cycleLen - pos;          // Karten bis zum nächsten Mischen (#6)
@@ -36,8 +35,11 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
   // Live-Crit-Chance des NÄCHSTEN Siegs: analog zum echten Wurf (#19). V2: Perks tragen keine Crit-Chance
   // mehr bei — die Blitz-Crit-Basis (lightning) + der Crit-Chance-Stat fließen additiv ein, dieselbe Rechnung
   // wie die Engine (kein Drift).
-  const critRaw = critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos }) + lightningCritRaw(lightning, skills) + statCritChance;
-  const critPct = Math.round(Math.min(1, Math.max(0, critRaw)) * 100);
+  const critRaw = totalCritChanceRaw(state);
+  // #181: Gesamt-Crit-Chance UNGEKLEMMT anzeigen (kann > 100 % sein — der Überschuss speist L6 „Raserei" und
+  // Familie D „Überschusskrit"). Nur nach unten bei 0 begrenzen; KEIN Math.min(1, …) mehr (das war nur Anzeige;
+  // der echte Wurf bleibt in der Engine bei engine.js:302 geklemmt).
+  const critPct = Math.round(Math.max(0, critRaw) * 100);
   // #123: Formations-Faktor der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
   // Formationsphase → kein Drift). „jetzt" = Faktor der nächsten zu spielenden Position.
   const { count: formCount, maxMult: formMaxMult } = summarizeFormations(state.formations || []);
