@@ -58,6 +58,20 @@ const BIG_SCORE_TIERS = [
   { min: 10000,  text: "STARK",      size: 56 },
 ];
 const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
+// #188: Score-skalierte Effekt-Intensität aus dem Per-Stich-Score (t.gained). Nutzt DIESELBEN Schwellen wie
+// BIG_SCORE_TIERS → Slice/Explosion + Groß-Ansage eskalieren gemeinsam. Rückgabe:
+//   p    = weicher Anteil 0..1 (0 = heutiger Look/Floor bei ≤ STARK-Schwelle 10k, 1 = GOTTGLEICH 500k) — log-skaliert
+//   tier = harte Stufe 0..4 (0 Base · 1 STARK · 2 BRUTAL · 3 IRRE · 4 GOTTGLEICH) für Unlock-Flourishes
+const FX_TIER_MINS = [10000, 50000, 150000, 500000]; // STARK · BRUTAL · IRRE · GOTTGLEICH (aus BIG_SCORE_TIERS)
+function fxIntensity(gained) {
+  const g = gained > 0 ? gained : 0;
+  let tier = 0;
+  for (let i = 0; i < FX_TIER_MINS.length; i++) if (g >= FX_TIER_MINS[i]) tier = i + 1;
+  const p = g <= 10000 ? 0 : Math.min(1, Math.log(g / 10000) / Math.log(50)); // log(500000/10000) = log(50) → 10k→0 … 500k→1
+  return { p, tier };
+}
+// #188: Farb-Rampe der Crit-Explosion je Stufe — Lila → Magenta → Warmgold → Weißgold (koppelt an die goldene Groß-Ansage).
+const CRIT_TIER_COLORS = ["#e879f9", "#e879f9", "#f472d0", "#ffc978", "#fff0b0"];
 const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflow-hidden, nichts läuft raus
 const FORM_LINGER_MS = 1500; // Formations-Float bleibt ~1,5 s länger stehen (über den nächsten Stich hinaus) und klingt dann aus
 // #110: Karten-Aufdeck-Sound — DEZENTE Turbo-Kopplung der Abspielrate (leicht justierbar). Rate>1 = kürzer/schneller.
@@ -112,11 +126,19 @@ function FlipReveal({ front, backImage, dur }) {
    (≈40 % weiß / 60 % Suit-Farbe, ein paar „Konfetti"-Rechtecke). Deterministisch aus `seed` (kein Math.random
    im Render, #68). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen in den nächsten Stich.
    Elemente entfernen sich mit dem Karten-Remount des nächsten Stichs (key nach trickNo) → kein Stapeln. */
-function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0 }) {
-  const N = 18;
+function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, tier = 0 }) {
+  // #188: score-skaliert. Kontinuierlich: Funkenzahl/-weite, Hälften-Distanz, Schnittlinien-Länge/Glow.
+  // Unlocks: ab BRUTAL (tier≥2) ein zweiter Kreuzschnitt, ab IRRE (tier≥3) zerfällt die Karte in VIER Teile
+  // statt zwei Hälften (optische Brücke zur Explosion). Screen-Effekte bleiben dem Crit vorbehalten (v2).
+  const sepMul = 1 + intensity * 0.6;   // Hälften/Viertel fliegen weiter
+  const radMul = 1 + intensity * 0.6;   // Funken streuen weiter
+  const N = Math.round(18 + intensity * 14);            // 18..32 Funken
+  const cutLen = Math.round(120 * (1 + intensity * 0.4)); // Schnittlinie länger
+  const quarters = tier >= 3;           // IRRE+: vier Teile
+  const crossCut = tier >= 2;           // BRUTAL+: zweiter Kreuzschnitt
   const sparks = Array.from({ length: N }, (_, i) => {
     const ang = (i / N) * Math.PI * 2 + fjitter(seed * 3 + i * 7, 0.55); // gleichmäßiger Kranz + leichter Jitter
-    const rad = 46 + Math.abs(fjitter(seed * 5 + i * 13, 70));           // 46..116 px (nach außen gewichtet)
+    const rad = (46 + Math.abs(fjitter(seed * 5 + i * 13, 70))) * radMul; // 46..116 px × Intensität
     return {
       i,
       dx: (Math.cos(ang) * rad).toFixed(1),
@@ -126,20 +148,41 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0 }
     };
   });
   const ease = "cubic-bezier(0.3, 0.7, 0.3, 1)";
+  // Schnittlinie (Winkel als CSS-Var → zweiter Kreuzschnitt nutzt dasselbe Keyframe mit anderem --cut-rot).
+  const cutLine = (rot, key) => (
+    <div key={key} style={{ position: "absolute", left: "50%", top: "50%", width: cutLen, height: 3, marginLeft: -cutLen / 2, marginTop: -1.5,
+      background: color, borderRadius: 2, transformOrigin: "center", boxShadow: `0 0 ${(6 + intensity * 6).toFixed(0)}px ${color}, 0 0 ${(14 + intensity * 10).toFixed(0)}px ${color}aa`,
+      "--cut-rot": `${rot}deg`, animation: `as-cut-line ${cutDur}ms ease-out ${delay}ms both` }} />
+  );
   // `delay` (ms = Ruhe-Beat) + fill-mode `both`: die Karte liegt erst still, dann setzt der Schnitt ein — während der
-  // Wartezeit zeigen die Hälften den 0 %-Zustand (Karte ganz), Schnittlinie/Funken bleiben unsichtbar. Das Wegfloaten
+  // Wartezeit zeigen die Teile den 0 %-Zustand (Karte ganz), Schnittlinie/Funken bleiben unsichtbar. Das Wegfloaten
   // übernimmt der Wrapper (as-loss-drift-rand) mit eigenem, späterem Delay (erst NACH dem Schnitt).
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      {/* Zwei Hälften — Klone der Verliererkarte, entlang der −24°-Schnittkante geteilt (die Polygone tilen die Karte). */}
-      <div className="absolute inset-0" style={{ clipPath: "polygon(0 0, 100% 0, 100% 34%, 0 66%)",
-        animation: `as-slice-top ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
-      <div className="absolute inset-0" style={{ clipPath: "polygon(0 66%, 100% 34%, 100% 100%, 0 100%)",
-        animation: `as-slice-bottom ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
-      {/* Schnittlinie: wächst per scaleX aus der Mitte, Länge ≈ Kartenbreite + 16 px, Glow (2×). */}
-      <div style={{ position: "absolute", left: "50%", top: "50%", width: 120, height: 3, marginLeft: -60, marginTop: -1.5,
-        background: color, borderRadius: 2, transformOrigin: "center", boxShadow: `0 0 6px ${color}, 0 0 14px ${color}aa`,
-        animation: `as-cut-line ${cutDur}ms ease-out ${delay}ms both` }} />
+      {quarters ? (
+        // IRRE+: vier Viertel (2×2-clip), fliegen in die vier Ecken (as-boom-shard-Bahn: --sx/--sy/--sr, 0%/9%-Halt).
+        [{ clip: "inset(0 50% 50% 0)", dx: -1, dy: -1 }, { clip: "inset(0 0 50% 50%)", dx: 1, dy: -1 },
+         { clip: "inset(50% 50% 0 0)", dx: -1, dy: 1 }, { clip: "inset(50% 0 0 50%)", dx: 1, dy: 1 }].map((q, k) => {
+          const dist = 54 * sepMul;
+          return (
+            <div key={`q${k}`} className="absolute inset-0" style={{ clipPath: q.clip,
+              "--sx": `${(q.dx * dist).toFixed(1)}px`, "--sy": `${(q.dy * dist + 12).toFixed(1)}px`, "--sr": `${fjitter(seed * 7 + k * 5, 22)}deg`,
+              animation: `as-boom-shard ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+          );
+        })
+      ) : (
+        <>
+          {/* Zwei Hälften — Klone der Verliererkarte, entlang der −24°-Schnittkante geteilt. Distanz via CSS-Var skaliert. */}
+          <div className="absolute inset-0" style={{ clipPath: "polygon(0 0, 100% 0, 100% 34%, 0 66%)",
+            "--half-tx": `${(-46 * sepMul).toFixed(1)}px`, "--half-ty": `${(-30 * sepMul).toFixed(1)}px`,
+            animation: `as-slice-top ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+          <div className="absolute inset-0" style={{ clipPath: "polygon(0 66%, 100% 34%, 100% 100%, 0 100%)",
+            "--half-bx": `${(46 * sepMul).toFixed(1)}px`, "--half-by": `${(60 * sepMul).toFixed(1)}px`,
+            animation: `as-slice-bottom ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+        </>
+      )}
+      {cutLine(-24, "cut1")}
+      {crossCut && cutLine(22, "cut2")}
       {/* Funken aus dem Schnittzentrum. */}
       {sparks.map((s) => (
         <div key={s.i} style={{
@@ -159,10 +202,20 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0 }
    „berstet": ein heller Zentral-Flash blitzt auf, ein Schockwellen-Ring dehnt sich, die Karte skaliert kurz auf,
    überstrahlt und zerstiebt, während ~28 Partikel radial nach außen schießen. Farbe = Crit-Lila (passt zum
    KRITISCH-Text & Crit-Puls). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen. */
-function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay = 0 }) {
+function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay = 0, intensity = 0, tier = 0 }) {
   // Die Krit-Karte zerbirst in ein Raster kleiner PIXEL-SHARDS (clip-path-Klone der Karte): jedes Fragment fliegt
   // radial nach außen, tumbelt (rotate) & fadet — die Karte „zerplatzt in Pixel". Deterministisch aus `seed` (kein
   // Math.random, #68). Bis 0%/9% halten die Shards (fill-mode both + delay) den Ganz-Zustand → Karte liegt erst.
+  // #188: score-skaliert. Kontinuierlich: Blast-Radius, Partikelzahl, Dauer. Unlocks je Stufe: 1/2/3 Schockwellen-
+  // Ringe + Farb-Shift Lila→Weißgold (CRIT_TIER_COLORS). Shard-Zahl bleibt ~konstant (Wumms kommt aus Radius/Ringen/
+  // Farbe/Dauer, nicht aus mehr Slivern). Screen-Effekte (Shake/Flash/Slow-Mo) folgen in v2 (Crit-only).
+  const shardMul = 1 + intensity * 0.6;   // Shards fliegen weiter (gedeckelt, sonst überm Panel)
+  const radMul   = 1 + intensity;         // Partikel/Flash/Ring: 1..2
+  const durMul   = 1 + intensity * 0.3;   // längeres Nachhängen bei großen Treffern (+0..30 %)
+  const cd = cardDur * durMul, bd = burstDur * durMul;
+  const amp = CRIT_TIER_COLORS[tier] || color;         // Farbe je Stufe (Lila → Weißgold)
+  const ringCount = tier >= 4 ? 3 : tier >= 2 ? 2 : 1; // BRUTAL: 2 · GOTTGLEICH: 3
+  const fsz = 26 * (1 + intensity * 0.6);              // Flash-Kerngröße
   const ROWS = 7, COLS = 5; // 35 Fragmente → „kleine Pixel"
   const shards = [];
   for (let r = 0; r < ROWS; r++) {
@@ -170,7 +223,7 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
       const i = r * COLS + c;
       const dirX = (c + 0.5) / COLS - 0.5; // −0.5..0.5: Zellmitte relativ zur Kartenmitte (Ecken fliegen weiter)
       const dirY = (r + 0.5) / ROWS - 0.5;
-      const spread = 150 + Math.abs(fjitter(seed * 5 + i * 13, 70)); // Streuweite
+      const spread = (150 + Math.abs(fjitter(seed * 5 + i * 13, 70))) * shardMul; // Streuweite × Intensität
       shards.push({
         i,
         // clip-path inset(top right bottom left) blendet die Karte auf DIESE Rasterzelle aus (Klon zeigt nur sein Stück).
@@ -181,16 +234,16 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
       });
     }
   }
-  const N = 20;
+  const N = Math.round(20 + intensity * 24); // 20..44 lose Partikel (gedeckelt)
   const parts = Array.from({ length: N }, (_, i) => {
     const ang = (i / N) * Math.PI * 2 + fjitter(seed * 3 + i * 7, 0.45);  // gleichmäßiger Kranz + Jitter
-    const rad = 62 + Math.abs(fjitter(seed * 5 + i * 13, 92));            // 62..154 px (weiter als der Slice)
+    const rad = (62 + Math.abs(fjitter(seed * 5 + i * 13, 92))) * radMul; // 62..154 px × Intensität
     return {
       i,
       dx: (Math.cos(ang) * rad).toFixed(1),
       dy: (Math.sin(ang) * rad).toFixed(1),
       sz: (3 + Math.abs(fjitter(seed * 7 + i * 5, 4))).toFixed(1),        // 3..7 px, gemischte Größen
-      white: i % 5 < 2,         // ~40 % weiß, Rest Crit-Farbe
+      white: i % 5 < 2,         // ~40 % weiß, Rest Crit-/Stufen-Farbe
       confetti: i % 5 === 0,    // ~4 kleine Konfetti-Rechtecke
     };
   });
@@ -202,26 +255,28 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
         <div key={`sh${s.i}`} className="absolute inset-0" style={{
           clipPath: s.clip,
           "--sx": `${s.sx}px`, "--sy": `${s.sy}px`, "--sr": `${s.sr}deg`,
-          animation: `as-boom-shard ${cardDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity",
+          animation: `as-boom-shard ${cd}ms ${ease} ${delay}ms both`, willChange: "transform, opacity",
         }}>{cardEl}</div>
       ))}
-      {/* Zentral-Flash: heller Kern (weiß → Farbe), dehnt sich und fadet. */}
-      <div style={{ position: "absolute", left: "50%", top: "50%", width: 26, height: 26, marginLeft: -13, marginTop: -13,
-        borderRadius: "50%", background: `radial-gradient(circle, #ffffff 0%, ${color} 46%, transparent 72%)`,
+      {/* Zentral-Flash: heller Kern (weiß → Stufen-Farbe), dehnt sich und fadet. */}
+      <div style={{ position: "absolute", left: "50%", top: "50%", width: fsz, height: fsz, marginLeft: -fsz / 2, marginTop: -fsz / 2,
+        borderRadius: "50%", background: `radial-gradient(circle, #ffffff 0%, ${amp} 46%, transparent 72%)`,
         animation: `as-boom-flash ${flashDur}ms ease-out ${delay}ms both`, willChange: "transform, opacity" }} />
-      {/* Schockwellen-Ring: dünner, glühender Ring wächst nach außen. */}
-      <div style={{ position: "absolute", left: "50%", top: "50%", width: 30, height: 30, marginLeft: -15, marginTop: -15,
-        borderRadius: "50%", border: `2px solid ${color}`, boxShadow: `0 0 10px ${color}, 0 0 4px #fff inset`,
-        animation: `as-boom-ring ${burstDur}ms ease-out ${delay}ms both`, willChange: "transform, opacity" }} />
+      {/* Schockwellen-Ringe: 1–3 dünne, glühende Ringe wachsen nach außen (gestaffelt je Stufe). */}
+      {Array.from({ length: ringCount }, (_, k) => k).map((k) => (
+        <div key={`rg${k}`} style={{ position: "absolute", left: "50%", top: "50%", width: 30, height: 30, marginLeft: -15, marginTop: -15,
+          borderRadius: "50%", border: `2px solid ${amp}`, boxShadow: `0 0 10px ${amp}, 0 0 4px #fff inset`,
+          animation: `as-boom-ring ${bd}ms ease-out ${delay + k * 90}ms both`, willChange: "transform, opacity" }} />
+      ))}
       {/* Lose Partikel aus dem Zentrum (zusätzlich zu den Karten-Shards). */}
       {parts.map((s) => (
         <div key={`pt${s.i}`} style={{
           position: "absolute", left: "50%", top: "50%",
           width: s.confetti ? +(s.sz) + 2 : +s.sz, height: s.confetti ? (+s.sz + 2) / 2 : +s.sz,
           borderRadius: s.confetti ? 1 : "50%",
-          background: s.white ? "#ffffff" : color, boxShadow: `0 0 6px ${s.white ? "#ffffff" : color}`,
+          background: s.white ? "#ffffff" : amp, boxShadow: `0 0 6px ${s.white ? "#ffffff" : amp}`,
           "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
-          animation: `as-spark ${burstDur}ms ease-out ${delay}ms both`, willChange: "transform, opacity",
+          animation: `as-spark ${bd}ms ease-out ${delay}ms both`, willChange: "transform, opacity",
         }} />
       ))}
     </div>
@@ -259,8 +314,8 @@ function SlashGhostLayer({ ghosts }) {
             style={{ animation: `as-loss-drift-rand ${g.float}ms cubic-bezier(0.2, 0.6, 0.3, 1) ${driftDelay}ms forwards`, willChange: "transform",
                      "--drx": `${(Math.cos(dang) * drad).toFixed(1)}px`, "--dry": `${(Math.sin(dang) * drad).toFixed(1)}px`, "--drot": `${drot}deg` }}>
             {isBoom
-              ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} />
-              : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} />}
+              ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} />
+              : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} />}
           </div>
         );
       })}
@@ -453,7 +508,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
   useEffect(() => {
     if (!t) { setSlashGhosts([]); return; }        // Menü/neuer Lauf → Pool leeren
     if (!sliceOn) return;                           // nur bei einem echten (animierten) Sieg/Niederlage-Stich
-    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat };
+    // #188: Effekt-Intensität aus dem Per-Stich-Score. Niederlage → t.gained 0 → Base (kein Skalieren).
+    const { p: fxP, tier: fxTier } = fxIntensity(t.gained || 0);
+    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, fxP, fxTier };
     const spawned = [];
     if (lost) {  // Spielerkarte verliert → Schnitt-Ghost auf der Spielerseite
       spawned.push({ ...base, id: `pg${t.trickNo}`, side: "player", fx: "slice",
@@ -475,7 +532,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, flipMs = 
     const tm = setTimeout(() => {
       setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
-    }, sRest + Math.max(sHalves, sSpark) + 100); // Lebensdauer: Ruhe + längster FX-Teil (Hälften/Shards bzw. Funken)
+    }, sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100); // Lebensdauer: Ruhe + längster FX-Teil (#188: um die skalierte Dauer verlängert)
     ghostTimers.current.push(tm);
   }, [t?.trickNo]);
   const playerGhosts = slashGhosts.filter((g) => g.side === "player");

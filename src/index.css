@@ -107,19 +107,22 @@ button { font-family: inherit; }
    Alle Dauern werden inline an den Flip-Takt gekoppelt (Battlefield.jsx) → nichts läuft in den nächsten Stich.
    Der ~12 %-Halt am Anfang der Hälften lässt die Karte einen Moment „ganz" stehen, bevor sie sich teilt.
    reduced-motion greift global (unten) UND die Effekt-Elemente werden gar nicht erst gerendert. */
+/* #188: Schnitt-Winkel als CSS-Var (--cut-rot, Fallback −24°) → der zweite Kreuzschnitt (ab BRUTAL) nutzt
+   dasselbe Keyframe mit anderem Winkel. */
 @keyframes as-cut-line {
-  0%   { transform: rotate(-24deg) scaleX(0); opacity: 0; }
+  0%   { transform: rotate(var(--cut-rot, -24deg)) scaleX(0); opacity: 0; }
   35%  { opacity: 1; }
-  55%  { transform: rotate(-24deg) scaleX(1); opacity: 1; }
-  100% { transform: rotate(-24deg) scaleX(1); opacity: 0; }
+  55%  { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 1; }
+  100% { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 0; }
 }
+/* #188: Hälften-Ziel als CSS-Vars (Fallbacks = bisherige Werte) → SliceFx skaliert die Distanz score-abhängig. */
 @keyframes as-slice-top {
   0%, 12% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-  100%    { transform: translate(-46px, -30px) rotate(-18deg); opacity: 0; }
+  100%    { transform: translate(var(--half-tx, -46px), var(--half-ty, -30px)) rotate(var(--half-tr, -18deg)); opacity: 0; }
 }
 @keyframes as-slice-bottom {
   0%, 12% { transform: translate(0, 0) rotate(0deg); opacity: .92; }
-  100%    { transform: translate(46px, 60px) rotate(20deg); opacity: 0; }
+  100%    { transform: translate(var(--half-bx, 46px), var(--half-by, 60px)) rotate(var(--half-br, 20deg)); opacity: 0; }
 }
 /* Start bei opacity 0 (+ schneller Einblend), damit die Funken bei einem animation-delay (Ghost: erst floaten,
    dann schneiden) während der Wartezeit unsichtbar bleiben — animation-fill-mode: both zeigt sonst den 0%-Zustand. */
