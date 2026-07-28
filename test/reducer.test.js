@@ -155,16 +155,17 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
   });
 
   it("PICK_SKILL bei vollen Slots: ohne replaceId no-op, mit gültigem Ziel wird ersetzt (#95)", () => {
-    const four = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04"];
-    const NEW = "SK_LIGHTNING_05";
-    const full = skillState({ skills: four, skillOffer: [NEW], lightning: { active: true, charge: 0, maxCharge: 10 } });
+    // volles Loadout = SKILL_SLOTS Skills (aktuell 6, Test-Experiment)
+    const held = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
+    const NEW = "SK_LIGHTNING_08";
+    const full = skillState({ skills: held, skillOffer: [NEW], lightning: { active: true, charge: 0, maxCharge: 10 } });
     // ohne Ersetzungsziel → unverändert (das war der Bug: bei vollen Slots tat der Klick nichts)
     expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, rng })).toBe(full);
     // ungültiges Ziel (nicht gehalten) → unverändert
     expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_07", rng })).toBe(full);
     // gültiges Ziel → ersetzt genau diesen Slot, Reihenfolge bleibt, zurück in play
     const s = reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_02", rng });
-    expect(s.skills).toEqual(["SK_LIGHTNING_01", NEW, "SK_LIGHTNING_03", "SK_LIGHTNING_04"]);
+    expect(s.skills).toEqual(["SK_LIGHTNING_01", NEW, "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"]);
     expect(s.phase).toBe("play");
   });
 
