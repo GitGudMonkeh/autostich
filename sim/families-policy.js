@@ -4,6 +4,7 @@
 // alle auf STRING-Options-IDs — diese Helfer bilden Einträge auf stabile IDs ab und zurück auf die Action.
 import { SUIT_ORDER } from "../src/game/constants.js";
 import { SHOP_FAMILY_DEFS } from "../src/game/shopFamilies.js";
+import { FORMATION_TYPES } from "../src/game/formations.js";
 
 export const isFamilyOffer = (e) => !!(e && typeof e === "object" && e.familyId);
 
@@ -35,6 +36,11 @@ export function familyTargetStep(s, rng) {
       const suit = SUIT_ORDER.find((su) => !ft.suits.includes(su));
       if (suit) return { type: "FAMILY_TARGET_SUIT", suit };
     }
+    return { type: "FAMILY_TARGET_CONFIRM", rng };
+  }
+  // kind === "formationType" (#179 E_CORE): genau EINEN Formationstyp wählen, dann CONFIRM (Antippen schaltet um).
+  if (ft.kind === "formationType") {
+    if (!ft.formationType) return { type: "FAMILY_TARGET_FORMATION_TYPE", formationType: FORMATION_TYPES[0] };
     return { type: "FAMILY_TARGET_CONFIRM", rng };
   }
   // kind === "cards": gültiges Zusatz-Ziel = existierende Karte, die keine Rolle DIESER Familie ist.
