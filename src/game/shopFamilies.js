@@ -90,23 +90,30 @@ const segmentBumpRandom = (deck, order, seg, n, delta, rng) =>
   bumpCards(deck, shuffle(segmentCardIds(deck, order, seg), rng).slice(0, n), delta);
 
 /* ---- Feinschliff (SF_REFINE) — „Differenz-Aufwertung" (Spec §4.2): eine gewählte Karte erreicht dauerhaft den
-        Zielwert der Stufe (I +1 · II +2 · III +3 · IV +5). Beim Upgrade wird nur die DIFFERENZ zur gehaltenen
-        Stufe verstärkt; ein direkter Drop gibt den vollen Zielwert. `refineDelta(prev,target)` berechnet den
-        anzuwendenden Bump — das Wiring liest den gehaltenen Rang und legt ihn als `target.refineDelta` in den
-        Ziel-Deskriptor (onPick unten). ---- */
+        Zielwert der Stufe (I +1 · II +2 · III +3 · IV +5). Der Bump ist die DIFFERENZ zum bereits per Feinschliff
+        erreichten Kartenwert — #195: pro KARTE getrackt (`card.refined`), NICHT am Familienrang. Sonst bekäme (a)
+        eine frische Karte bei einem Upgrade/Kartenwechsel nur die Rang-Differenz statt des vollen Stufenwerts und
+        (b) ein Nachkauf auf gemaxter Familie (repeatable IV, refineDelta=0) +0 für vollen Preis. Mit per-Karte-
+        Tracking bekommt eine frische Karte immer den vollen Zielwert, eine schon veredelte nur die Restdifferenz,
+        eine bereits am Ziel liegende +0 (nie negativ). ---- */
 export const REFINE_TOTAL = { 1: 1, 2: 2, 3: 3, 4: 5 };
-export const refineDelta = (prevTier, targetTier) => (REFINE_TOTAL[targetTier] || 0) - (REFINE_TOTAL[prevTier] || 0);
+// Bringt jede gewählte Karte per-Karte auf `targetTotal` Feinschliff-Wert (Differenz zum schon Erreichten, ≥0).
+const refineCards = (deck, ids, targetTotal) => deck.map((c) => {
+  if (!ids.includes(c.id)) return c;
+  const delta = targetTotal - (c.refined || 0);
+  return delta > 0 ? { ...c, value: c.value + delta, refined: targetTotal } : c;
+});
 
 const SHOP_CARD_FAMILIES = {
   SF_REFINE: {
     id: "SF_REFINE", cat: "cards", name: "Feinschliff", upgradeType: CUMULATIVE, repeatable: true,
-    legacyIds: ["K1", "K5", "K8"], refineDiff: true,
-    // onPick nutzt die vom Wiring gelieferte Differenz (target.refineDelta); direkter Drop = refineDelta(0,target).
+    legacyIds: ["K1", "K5", "K8"],
+    // onPick bringt jede gewählte Karte auf den Stufen-Zielwert REFINE_TOTAL[t] (per-Karte-Differenz, s. refineCards).
     tiers: {
-      1: { desc: "Wähle eine Karte: sie erhält dauerhaft +1 Wert.", refineTotal: 1, pickTarget: { cards: 1 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, t.refineDelta ?? REFINE_TOTAL[1]) },
-      2: { desc: "Wähle eine Karte: sie erhält dauerhaft +2 Wert.", refineTotal: 2, pickTarget: { cards: 1 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, t.refineDelta ?? REFINE_TOTAL[2]) },
-      3: { desc: "Wähle eine Karte: sie erhält dauerhaft +3 Wert.", refineTotal: 3, pickTarget: { cards: 1 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, t.refineDelta ?? REFINE_TOTAL[3]) },
-      4: { desc: "Wähle eine Karte: sie erhält dauerhaft +5 Wert.", refineTotal: 5, pickTarget: { cards: 1 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, t.refineDelta ?? REFINE_TOTAL[4]) },
+      1: { desc: "Wähle eine Karte: sie erhält dauerhaft +1 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[1]) },
+      2: { desc: "Wähle eine Karte: sie erhält dauerhaft +2 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[2]) },
+      3: { desc: "Wähle eine Karte: sie erhält dauerhaft +3 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[3]) },
+      4: { desc: "Wähle eine Karte: sie erhält dauerhaft +5 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[4]) },
     },
   },
   SF_MULTI_REFINE: {
@@ -240,108 +247,17 @@ const SHOP_ANCHOR_FAMILIES = {
     },
   },
   // Zeitsegment (§4.2, ehem. legendär A-L1): SEGMENT-Ziel, kein Positions-Anker. Stufe = Wiederholungstiefe (letzte
-  // `depth` Segmentkarten) + Effekt-Tiefe. §10-Näherung III: „nur Score/Serien-Effekte" ≈ die Wiederholung würfelt
-  // KEINE Crits (Score & Serie zählen; Crit-/Skill-Boni entfallen). IV = vollständige Wiederholung.
+  // `depth` Segmentkarten) + Effekt-Tiefe. §10-Näherung III (`reduced`): die Wiederholung würfelt KEINE Crits
+  // (#195: NUR Crits sind unterdrückt — Feuer/Blitz/Ionen/Skill-Effekte laufen in der Wiederholung weiter). IV =
+  // vollständige Wiederholung inkl. Crits.
   SF_A_TIME: {
     id: "SF_A_TIME", cat: "anchors", name: "Zeitsegment", upgradeType: REPLACEMENT, repeatable: false,
     anchorType: "time", legacyIds: ["A-L1"],
     tiers: {
       1: { desc: "Wähle 1 Segment: seine letzte Karte wird einmal wiederholt.", pickTarget: { segment: true }, depth: 1 },
       2: { desc: "Wähle 1 Segment: seine letzten zwei Karten werden wiederholt.", pickTarget: { segment: true }, depth: 2 },
-      3: { desc: "Wähle 1 Segment: alle fünf Karten werden wiederholt (nur Score- und Serien-Effekte zählen).", pickTarget: { segment: true }, depth: 5, reduced: true },
+      3: { desc: "Wähle 1 Segment: alle fünf Karten werden wiederholt (die Wiederholung würfelt jedoch keine Crits).", pickTarget: { segment: true }, depth: 5, reduced: true },
       4: { desc: "Wähle 1 Segment: alle fünf Karten werden vollständig wiederholt (Score, Serie, Crits, Skills, Positionseffekte).", pickTarget: { segment: true }, depth: 5 },
-    },
-  },
-};
-
-/* ---- Formations-Familien (Shop-Spec §4.2 Formationsfamilien + §4.3 Feinjustierung, #164) — REGELERSETZUNG.
-        Jede Stufe setzt einen `pe`-Patch in shop.permanentEffects (den computeFormations bereits liest); nur die
-        HÖCHSTE gekaufte Stufe ist aktiv, daher setzt jeder Stufen-Patch ALLE Felder der Familie vollständig
-        (inkl. neutraler Defaults), damit ein Upgrade die niedrigere Stufe sauber ersetzt. Nutzer-Entscheid #164:
-        repeatable:false → Abschluss bei IV. Feinjustierung (E10→Shop) wirkt NICHT über permEffects, sondern über
-        die Formationsenergie (engine liest den Rang → formationEnergyBonus).
-        §10-Näherungen (Scanner kann einige IV-Sonderregeln nicht exakt abbilden): Abstieg I≈II (voll fallend, „1
-        Segment/Durchlauf"-Drossel entfällt) · III/IV Berg/Tal ≈ Treppen-Rückschritt-Budget (descendingRev, reuse
-        E_BIGSTEP-Mechanik) · Enger Wechsel I=Mindestdifferenz 4 (statt 3, damit I<II strikt bleibt) · Feinjustierung
-        I „jede zweite Phase" ≈ über die Durchlauf-Parität. ---- */
-const INF_CAP = null; // afterglowMaxFactor = kein Cap (Nachhall III/IV)
-const SHOP_FORMATION_FAMILIES = {
-  SF_F_DESCENT: {
-    id: "SF_F_DESCENT", cat: "formations", name: "Abstieg", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F1"],
-    tiers: {
-      1: { desc: "Treppen dürfen streng steigend oder streng fallend verlaufen.", pe: { descendingStraights: true, descendingRev: 0 } },
-      2: { desc: "Treppen dürfen überall steigend oder fallend verlaufen.", pe: { descendingStraights: true, descendingRev: 0 } },
-      3: { desc: "Treppen dürfen einmal die Richtung wechseln (Berg/Tal).", pe: { descendingStraights: true, descendingRev: 1 } },
-      4: { desc: "Treppen dürfen mehrfach die Richtung wechseln (Berg/Tal).", pe: { descendingStraights: true, descendingRev: 2 } },
-    },
-  },
-  SF_F_TIGHT_SWITCH: {
-    id: "SF_F_TIGHT_SWITCH", cat: "formations", name: "Enger Wechsel", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F2"],
-    tiers: {
-      1: { desc: "Wechsel benötigen nur noch Nachbardifferenz 4 (statt 5).", pe: { switchMinDifference: 4, wechselCardBonus: 0 } },
-      2: { desc: "Wechsel benötigen nur noch Nachbardifferenz 3.", pe: { switchMinDifference: 3, wechselCardBonus: 0 } },
-      3: { desc: "Wechsel benötigen nur noch Nachbardifferenz 2.", pe: { switchMinDifference: 2, wechselCardBonus: 0 } },
-      4: { desc: "Wechsel benötigen Nachbardifferenz 2; ab der vierten Karte +0,10 Faktor je Karte.", pe: { switchMinDifference: 2, wechselCardBonus: 0.10 } },
-    },
-  },
-  SF_F_STRONG_REP: {
-    id: "SF_F_STRONG_REP", cat: "formations", name: "Verstärkte Wiederholung", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F3"],
-    tiers: {
-      1: { desc: "Die zweite Karte einer Wiederholung erhält ×1,30 (statt ×1,25).", pe: { repetitionSecondFactorBonus: 0.05, repThirdBonus: 0, repAllMult: 1 } },
-      2: { desc: "Die zweite Karte einer Wiederholung erhält ×1,35.", pe: { repetitionSecondFactorBonus: 0.10, repThirdBonus: 0, repAllMult: 1 } },
-      3: { desc: "Zweite und dritte Wiederholungskarte erhalten je +0,10 Faktor.", pe: { repetitionSecondFactorBonus: 0.10, repThirdBonus: 0.10, repAllMult: 1 } },
-      4: { desc: "Alle Wiederholungsfaktoren erhalten zusätzlich ×1,20.", pe: { repetitionSecondFactorBonus: 0.10, repThirdBonus: 0.10, repAllMult: 1.20 } },
-    },
-  },
-  SF_F_AFTERGLOW: {
-    id: "SF_F_AFTERGLOW", cat: "formations", name: "Nachhall", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F6"],
-    tiers: {
-      1: { desc: "Nachhall nur bei Wiederholungen; Faktor höchstens ×1,20.", pe: { formationAfterglow: true, afterglowMaxFactor: 1.20, afterglowRepsOnly: true, afterglowHold: 1 } },
-      2: { desc: "Nachhall bei allen Formationen; Faktor höchstens ×1,25.", pe: { formationAfterglow: true, afterglowMaxFactor: 1.25, afterglowRepsOnly: false, afterglowHold: 1 } },
-      3: { desc: "Nachhall übernimmt den stärksten Einzelfaktor vollständig.", pe: { formationAfterglow: true, afterglowMaxFactor: INF_CAP, afterglowRepsOnly: false, afterglowHold: 1 } },
-      4: { desc: "Nachhall übernimmt den stärksten Einzelfaktor und hält für die nächsten zwei Karten.", pe: { formationAfterglow: true, afterglowMaxFactor: INF_CAP, afterglowRepsOnly: false, afterglowHold: 2 } },
-    },
-  },
-  // Farballianz (§4.2): Farbgruppen zählen für Farbblöcke als eine Farbe. Ziel = `colors` Farben; die gewählten
-  // Farben werden im Reducer zu `permEffects.linkedGroups` aufgelöst (IV = zwei Paare). §10: I „1/Segment" entfällt (I≈II).
-  SF_F_COLOR_ALLIANCE: {
-    id: "SF_F_COLOR_ALLIANCE", cat: "formations", name: "Farballianz", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F4"],
-    tiers: {
-      1: { desc: "Wähle 2 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { colors: 2 } },
-      2: { desc: "Wähle 2 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { colors: 2 } },
-      3: { desc: "Wähle 3 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { colors: 3 } },
-      4: { desc: "Wähle 4 Farben: sie bilden zwei Allianzen (je zwei Farben zählen als eine).", pickTarget: { colors: 4 }, pairs: true },
-    },
-  },
-  // Offene Grenze (§4.2): Segmentgrenzen werden durchlässig. I/II wählen 1 Grenze; III/IV öffnen ziel-los die
-  // ersten zwei bzw. alle Grenzen (§10-deterministisch wie E_SEGMENT). §10: I „nur Wiederholungen" entfällt (I≈II).
-  SF_F_OPEN_BOUNDARY: {
-    id: "SF_F_OPEN_BOUNDARY", cat: "formations", name: "Offene Grenze", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F5"],
-    tiers: {
-      1: { desc: "Wähle 1 Segmentgrenze: Formationen dürfen sie überschreiten.", pickTarget: { boundary: true } },
-      2: { desc: "Wähle 1 Segmentgrenze: Formationen dürfen sie überschreiten.", pickTarget: { boundary: true } },
-      3: { desc: "Die ersten zwei Segmentgrenzen sind offen.", pe: { openBoundaryCount: 2 } },
-      4: { desc: "Alle Segmentgrenzen sind offen.", pe: { openBoundaryCount: Infinity } },
-    },
-  },
-  // Formationskern (§4.2, ehem. legendär F-L1): gewählter Formationstyp erhält zusätzlich den Stufen-Faktor (inkl. Nachhall).
-  SF_F_CORE: {
-    id: "SF_F_CORE", cat: "formations", name: "Formationskern", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["F-L1"],
-    tiers: {
-      1: { desc: "Wähle 1 Formationstyp: seine aktiven Formationen erhalten zusätzlich ×1,15.", pickTarget: { formationType: true }, pe: { formationCoreFactor: 1.15 } },
-      2: { desc: "Wähle 1 Formationstyp: zusätzlich ×1,25.", pickTarget: { formationType: true }, pe: { formationCoreFactor: 1.25 } },
-      3: { desc: "Wähle 1 Formationstyp: zusätzlich ×1,40.", pickTarget: { formationType: true }, pe: { formationCoreFactor: 1.40 } },
-      4: { desc: "Wähle 1 Formationstyp: zusätzlich ×1,50 (inklusive Nachhall).", pickTarget: { formationType: true }, pe: { formationCoreFactor: 1.50 } },
-    },
-  },
-  // Feinjustierung (E10→Shop, §4.3): Formationsenergie statt Tausch. KEIN permEffects-Patch — engine liest den Rang.
-  SF_F_TUNING: {
-    id: "SF_F_TUNING", cat: "formations", name: "Feinjustierung", upgradeType: REPLACEMENT, repeatable: false, legacyIds: ["E10"],
-    tiers: {
-      1: { desc: "Jede zweite Formationsphase: +1 Energie.", energyBonus: 1, everySecond: true },
-      2: { desc: "Jede Formationsphase: +1 Energie.", energyBonus: 1 },
-      3: { desc: "Jede Formationsphase: +2 Energie.", energyBonus: 2 },
-      4: { desc: "Jede Formationsphase: +3 Energie.", energyBonus: 3 },
     },
   },
 };
@@ -426,19 +342,10 @@ const SHOP_PLANNING_FAMILIES = {
 export const SHOP_FAMILY_DEFS = {
   ...SHOP_CARD_FAMILIES,
   ...SHOP_ANCHOR_FAMILIES,
-  ...SHOP_FORMATION_FAMILIES,
   ...SHOP_PLANNING_FAMILIES,
+  // Formations-Familien (SF_F_*) sind zu Perk-Kat.-E-Familien migriert (#179, families.js E_STRONG_REP/E_AFTERGLOW/
+  // E_COLOR_ALLIANCE/E_CORE/E_TUNING); die Shop-Kategorie „formations" existiert nicht mehr (SHOP_CATEGORIES).
 };
-
-// Feinjustierung (§4.3): Formationsenergie-Bonus aus dem gehaltenen Rang. `everySecond` (Stufe I §10) nur jede
-// zweite Formationsphase — über die Durchlauf-Parität genähert (kein separater Phasenzähler). cycle = state.cycle.
-export function formationEnergyBonus(shopFamilyTiers = {}, cycle = 0) {
-  const tier = shopFamilyTiers.SF_F_TUNING || 0;
-  const def = tier ? SHOP_FORMATION_FAMILIES.SF_F_TUNING.tiers[tier] : null;
-  if (!def) return 0;
-  if (def.everySecond && (cycle % 2 !== 0)) return 0; // §10: „jede zweite Phase" ≈ gerade Durchläufe
-  return def.energyBonus || 0;
-}
 
 // Anker-Familie zu einem Engine-Anker-Typ (power/score/crit/streak/formation/joker) — für die Stufen-Auflösung.
 export const ANCHOR_FAMILY_BY_TYPE = Object.fromEntries(

@@ -25,7 +25,7 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_02: {
     id: "SK_LIGHTNING_02", name: "Ionisierung", archetype: "lightning",
     keywords: ["charge", "ionize"],
-    desc: "Bei voller Ladung werden zwei zufällige noch nicht gespielte Karten ionisiert; danach wird die Ladung verbraucht.",
+    desc: "Bei voller Ladung 2 zufällige ungespielte Karten ionisieren, dann Ladung verbrauchen.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     onFullCharge: "ionize",                // Verbraucher: löst bei voller Ladung aus
     ionizeCount: () => C.ION_BASE_COUNT,   // 2 Karten je Auslösung
@@ -54,14 +54,14 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_06: {
     id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning",
     keywords: ["charge", "crit"],
-    desc: "Jeder Ladungsverbrauch gibt dauerhaft +2 % Crit-Chance (max +20 %); danach +100 Score für die nächsten drei Siege.",
+    desc: "Jeder Ladungsverbrauch gibt dauerhaft +2 % Crit-Chance (max +20 %), dann +100 Score auf die nächsten drei Siege.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     storm: true, // Reaktor: reagiert auf jeden Verbrauch (Engine führt stormCritBonus/stormScoreWinsRemaining)
   },
   SK_LIGHTNING_07: {
     id: "SK_LIGHTNING_07", name: "Geladene Serie", archetype: "lightning",
     keywords: ["charge", "streak"],
-    desc: "Bei voller Ladung wird deine Siegesserie geschützt (blauer Rahmen); die nächste Niederlage setzt sie nicht zurück. Die Ladung wird sofort verbraucht.",
+    desc: "Bei voller Ladung wird deine Siegesserie geschützt — die nächste Niederlage setzt sie nicht zurück. Die Ladung wird sofort verbraucht.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     onFullCharge: "protectStreak", // Verbraucher: setzt den Serien-Rahmen
   },
@@ -76,7 +76,7 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_09: {
     id: "SK_LIGHTNING_09", name: "Leitfähigkeit", archetype: "lightning",
     keywords: ["charge", "ionize", "crit"],
-    desc: "Ein Crit mit einer Karte direkt neben einer ionisierten Karte erzeugt 2 zusätzliche Ladungen.",
+    desc: "Ein Crit direkt neben einer ionisierten Karte erzeugt 2 zusätzliche Ladungen.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     conductivity: true,
   },
@@ -91,14 +91,14 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_11: {
     id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning",
     keywords: ["ionize", "charge"],
-    desc: "Würde eine Karte mit bereits 5 Ionisierungsstapeln ionisiert, erhält sie stattdessen +2 temporären Wert und erzeugt 1 Ladung.",
+    desc: "Wird eine Karte mit bereits 5 Ionisierungsstapeln erneut ionisiert, erhält sie stattdessen +2 temporären Wert und 1 Ladung.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     blitzcatcher: true,
   },
   SK_LIGHTNING_12: {
     id: "SK_LIGHTNING_12", name: "Spannungsbogen", archetype: "lightning",
     keywords: ["ionize"],
-    desc: "Gewinnt eine ionisierte Karte, wird ihr direkter Nachfolger um 1 Stapel ionisiert; volle (5) oder gespielte Karten werden in Deckreihenfolge vorwärts übersprungen.",
+    desc: "Gewinnt eine ionisierte Karte, wird ihr direkter Nachfolger um 1 Stapel ionisiert. Volle (5) Karten werden in Deckreihenfolge übersprungen.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     voltageArc: true,
   },
@@ -112,7 +112,7 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_L02: {
     id: "SK_LIGHTNING_L02", name: "Endloser Sturm", archetype: "lightning", legendary: true,
     keywords: ["charge"],
-    desc: "Nach vollständigem Verbrauch springt die Ladung sofort auf 50 % des Maximums (mit Reststrom gilt der höhere Wert).",
+    desc: "Nach vollem Verbrauch springt die Ladung sofort auf 50 % des Maximums (mit Reststrom gilt der höhere Wert).",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
     endlessStorm: true,
   },
@@ -127,33 +127,33 @@ export const SKILL_DEFS = {
   SK_FIRE_04: { id: "SK_FIRE_04", name: "Hitzeschild", archetype: "fire", keywords: ["heat"],
     desc: "Niederlagen halbieren den Hitzeverlust (zugunsten des Spielers abgerundet).", heatShield: true },
   SK_FIRE_05: { id: "SK_FIRE_05", name: "Nachglut", archetype: "fire", keywords: ["heat"],
-    desc: "Nach einem Sieg verursacht die nächste Niederlage 0 % Hitzeverlust (Siege erneuern, stapeln nicht).", afterglow: true },
+    desc: "Nach einem Sieg verursacht die nächste Niederlage 0 % Hitzeverlust (erneuert sich, stapelt nicht).", afterglow: true },
   SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"],
-    desc: "Bei ≥50 % Hitze erhalten alle eigenen Karten +1 temporären Wert (endet sofort unter 50 %). Solange aktiv, verursachen Niederlagen 10 % mehr Hitzeverlust.", glowingBlade: true },
+    desc: "Ab 50 % Hitze erhalten alle eigenen Karten +1 temporären Wert. Solange aktiv, verursachen Niederlagen 10 % mehr Hitzeverlust.", glowingBlade: true },
   SK_FIRE_07: { id: "SK_FIRE_07", name: "Verbrennung", archetype: "fire", keywords: ["heat"],
     desc: "Feuer-Flat-Score pro Punkt +10 (erhöht die Hitzegewinnrate nicht).", burnBonus: true },
   SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat"],
-    desc: "Jeder Sieg gibt der nächsten Karte +1 temporären Wert, steigend bis +3; eine Niederlage setzt zurück.", fireRoll: true },
+    desc: "Jeder Sieg gibt der nächsten Karte +1 temporären Wert, steigend bis +3; eine Niederlage setzt zurück und kostet 10 % mehr Hitze.", fireRoll: true },
   SK_FIRE_09: { id: "SK_FIRE_09", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"],
-    desc: "Hitze-Konsument: bei voller Hitze gibt der nächste Sieg +1.000 Score; danach werden 100 Hitze verbraucht.", heatConsumer: "conflagration" },
+    desc: "Hitze-Konsument: bei voller Hitze gibt der nächste Sieg +1.000 Score, dann werden 100 Hitze verbraucht.", heatConsumer: "conflagration" },
   SK_FIRE_10: { id: "SK_FIRE_10", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"],
-    desc: "Hitze-Konsument: vor jedem Stich −10 % Hitze, dafür eigene Karte +3 temporären Wert (nur ab 10 % Hitze).", heatConsumer: "melt" },
+    desc: "Hitze-Konsument: ab 10 % Hitze vor jedem Stich −10 % Hitze, dafür eigene Karte +3 temporären Wert.", heatConsumer: "melt" },
   SK_FIRE_11: { id: "SK_FIRE_11", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat", "consume"],
-    desc: "Nachbrand: jede Auslösung deines Hitze-Konsumenten gibt zusätzlich +Score in Höhe des 5-fachen der verbrauchten Hitze (Flächenbrand +500, Schmelzpunkt +50). Ohne Konsument wirkungslos.", suncore: true },
+    desc: "Jede Auslösung deines Hitze-Konsumenten gibt zusätzlich Score in Höhe der 5-fachen verbrauchten Hitze (Flächenbrand +500, Schmelzpunkt +50). Ohne Konsument wirkungslos.", suncore: true },
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: "Nachdem ein Hitze-Konsument ausgelöst hat, erhält die nächste eigene Karte +10 temporären Wert (stapelt nicht).", phoenix: true },
+    desc: "Nach Auslösen eines Hitze-Konsumenten erhält die nächste eigene Karte +10 temporären Wert (stapelt nicht).", phoenix: true },
   // ---- #165 Skills (Spec §5.3): zwei neue normale Feuer-Skills. Flags in engine.js/heatLossFor gelesen. ----
   SK_FIRE_13: { id: "SK_FIRE_13", name: "Überhitzt", archetype: "fire", keywords: ["heat"],
-    desc: "Bei ≥80 % Hitze erhalten alle eigenen Karten zusätzlich +2 temporären Wert. Solange aktiv, verursachen Niederlagen 50 % mehr Hitzeverlust (mit Glühende Klinge additiv).", overheated: true },
+    desc: "Ab 80 % Hitze erhalten alle eigenen Karten zusätzlich +2 temporären Wert. Solange aktiv, verursachen Niederlagen 50 % mehr Hitzeverlust (additiv mit Glühende Klinge).", overheated: true },
   SK_FIRE_14: { id: "SK_FIRE_14", name: "Funkenflug", archetype: "fire", keywords: ["heat"],
-    desc: "Ein Sieg mit ≥8 Wertvorsprung speichert 25 % seines Feuer-Flat-Scores. Der nächste Sieg zahlt den Speicher als zusätzlichen Flat-Score aus (ein Speicher gleichzeitig; Niederlage löscht ihn nicht).", sparkflight: true },
+    desc: "Ein Sieg mit ≥8 Wertvorsprung speichert 25 % seines Feuer-Flat-Scores; der nächste Sieg zahlt ihn zusätzlich aus. Nur ein Speicher, Niederlage löscht ihn nicht.", sparkflight: true },
 
   // ---- Eis-Archetyp (#93 F3) — Kontrolle/Aufstellung mit eingefrorenen Karten. Kein Konsument, keine Ressource. ----
   // Grundmechanik (erster Eis-Skill): friert eigene Karten ein (blau, an card.id). Formations-Flags in formations.js gelesen.
   SK_ICE_01: { id: "SK_ICE_01", name: "Frostgriff", archetype: "ice", keywords: ["freeze"],
     desc: "Friere 2 zusätzliche zufällige eigene Karten ein (oben auf die Eis-Grundzahl).", frostGrip: true },
   SK_ICE_02: { id: "SK_ICE_02", name: "Kalte Präzision", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eingefrorene Karten dürfen für Wiederholung als Wert ihres direkten Vorgängers zählen (echter Wert unverändert).", wildWiederholungPred: true },
+    desc: "Eingefrorene Karten dürfen für Wiederholungen als Wert ihres direkten Vorgängers zählen (echter Wert bleibt).", wildWiederholungPred: true },
   SK_ICE_03: { id: "SK_ICE_03", name: "Eisschritt", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Eingefrorene Karten dürfen für Treppen als 1 höher oder niedriger zählen.", wildTreppeStep: true },
   SK_ICE_04: { id: "SK_ICE_04", name: "Frostbrücke", archetype: "ice", keywords: ["freeze", "formation"],
@@ -161,31 +161,31 @@ export const SKILL_DEFS = {
   SK_ICE_05: { id: "SK_ICE_05", name: "Kältereserve", archetype: "ice", keywords: ["freeze"],
     desc: "Verlierst du mit einer eingefrorenen Karte, erhält sie beim nächsten Auftauchen +4 temporären Wert.", frostReserve: true },
   SK_ICE_06: { id: "SK_ICE_06", name: "Kaltfront", archetype: "ice", keywords: ["freeze"],
-    desc: "Nach einem kostenlosen Frosttausch: die eingefrorene Karte erhält im nächsten Durchlauf +3 temporären Wert (stapelt nicht).", coldFront: true },
+    desc: "Nach einem kostenlosen Frosttausch erhält die eingefrorene Karte im nächsten Durchlauf +3 temporären Wert (stapelt nicht).", coldFront: true },
   SK_ICE_07: { id: "SK_ICE_07", name: "Eisanker", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eingefrorene Karten zählen auf ihrer Position als Anker → bei Sieg ×1,25 Score (zählt als Formation).", iceAnchor: true },
+    desc: "Eingefrorene Karten zählen auf ihrer Position als Anker: bei Sieg ×1,25 Score (zählt als Formation).", iceAnchor: true },
   SK_ICE_08: { id: "SK_ICE_08", name: "Frostspur", archetype: "ice", keywords: ["freeze"],
-    desc: "Nach einem kostenlosen Frosttausch: der neue direkte Nachfolger erhält im nächsten Durchlauf +2 temporären Wert.", frostTrail: true },
+    desc: "Nach einem kostenlosen Frosttausch erhält der neue direkte Nachfolger im nächsten Durchlauf +2 temporären Wert.", frostTrail: true },
   SK_ICE_09: { id: "SK_ICE_09", name: "Stillstand", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Gewinnt eine eingefrorene Karte als Teil von mindestens einer aktiven Formation → +200 Score.", standstill: true },
   SK_ICE_10: { id: "SK_ICE_10", name: "Kristallform", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eingefrorene Karten dürfen für Wiederholung/Treppe/Wechsel als Wert −2, unverändert oder +2 zählen (günstigste Variante; echter Wert unverändert). Wird die Karte dadurch Teil ≥1 dieser Formationen, erhält sie zusätzlich einen Formationsbonus.", wildCrystal: true },
+    desc: "Eingefrorene Karten zählen für Wiederholung/Treppe/Wechsel als Wert −2, ±0 oder +2 (günstigste Variante, echter Wert bleibt). Bildet sie damit eine dieser Formationen, gibt es zusätzlich einen Formationsbonus.", wildCrystal: true },
   // ---- #165 Skills (Spec §5.4): zwei neue normale Eis-Skills. Flags in formations.js/engine.js/reducer.js gelesen. ----
   SK_ICE_11: { id: "SK_ICE_11", name: "Gletscherschub", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Entsteht durch einen kostenlosen Frosttausch am neuen Platz mindestens eine neue Formation, erhalten alle fünf Karten des betroffenen Segments im nächsten Durchlauf +2 temporären Wert.", glacierPush: true },
+    desc: "Bildet ein kostenloser Frosttausch am neuen Platz mindestens eine neue Formation, erhält das ganze Segment im nächsten Durchlauf +2 temporären Wert.", glacierPush: true },
   SK_ICE_12: { id: "SK_ICE_12", name: "Eisblüte", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Gewinnt eine eingefrorene Karte, die gleichzeitig Teil von mindestens zwei aktiven Formationen (keine Anker) ist, erhalten ihre direkten Deck-Nachbarn im nächsten Durchlauf je +3 temporären Wert.", iceBloom: true },
+    desc: "Gewinnt eine eingefrorene Karte in mindestens zwei aktiven Formationen (keine Anker), erhalten ihre direkten Deck-Nachbarn im nächsten Durchlauf je +3 temporären Wert.", iceBloom: true },
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Frostbiss", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: "Gewinnt eine eingefrorene Karte, erhalten 2 zufällige Gegnerkarten des nächsten Durchlaufs −3 temporären Wert (nur nächster Durchlauf; erst im Kampf sichtbar).", frostbite: true },
+    desc: "Gewinnt eine eingefrorene Karte, erhalten 2 zufällige Gegnerkarten des nächsten Durchlaufs −3 temporären Wert.", frostbite: true },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
-    desc: "Eingefrorene Karten erhalten +2 Dauerwert und zählen gleichzeitig als Joker für Wiederholung/Treppe/Farbblock.", permafrost: true },
+    desc: "Eingefrorene Karten erhalten +2 Dauerwert und zählen als Joker für Wiederholung/Treppe/Farbblock.", permafrost: true },
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
 export const archetypeOf = (id) => SKILL_DEFS[id]?.archetype || null;
 
 /* Skill-Archetypen (#93). Metadaten (Theming/Label) — geteilte Quelle für SkillSelect & HUD.
-   F0: nur „lightning" hat Skills; fire/ice folgen in F1/F3, die Metadaten stehen bereit. */
+   Alle drei Archetypen (Blitz/Feuer/Eis) sind vollständig ausgespielt (F0/F1/F3 abgeschlossen). */
 export const ARCHETYPE_META = {
   lightning: { key: "lightning", label: "Blitz",  icon: "⚡", color: "#8a7de0" }, // violett/elektrisch
   fire:      { key: "fire",      label: "Feuer",  icon: "🔥", color: "#e0714a" }, // warm/orange-rot
@@ -213,10 +213,10 @@ export function archetypesWithSkills(owned = []) {
   return ARCHETYPE_ORDER.filter((a) => have.has(a));
 }
 
-/* Aus welchen Archetypen wird das nächste Skill-Angebot gezogen (max C.MAX_ARCHETYPES)? Rein & testbar.
-   - 0 aktiv → bis zu 2 zufällige verfügbare Archetypen (Erstangebot).
-   - 1 aktiv → der aktive + 1 zufälliger noch nicht aktiver verfügbarer.
-   - 2 aktiv → nur die beiden aktiven. */
+/* Aus welchen Archetypen wird das nächste Skill-Angebot gezogen (max C.MAX_ARCHETYPES = 3)? Rein & testbar.
+   - 0 aktiv → bis zu 3 zufällige verfügbare Archetypen (Erstangebot).
+   - 1–2 aktiv → die aktiven + zufällige noch nicht aktive, bis max. C.MAX_ARCHETYPES.
+   - 3 aktiv → nur die drei aktiven. */
 export function offerArchetypes(activeArchetypes = [], available = [], rng = Math.random) {
   const active = (activeArchetypes || []).filter((a) => available.includes(a));
   if (active.length >= C.MAX_ARCHETYPES) return active.slice(0, C.MAX_ARCHETYPES);
@@ -281,6 +281,7 @@ export function heatLossFor(deficit, skills, afterglowArmed, heatValue = 0) {
   let inc = 0;
   if (fireFlag(skills, "glowingBlade") && heatValue >= C.GLOWING_THRESHOLD) inc += C.GLOWING_LOSS_INCREASE; // +10 %
   if (fireFlag(skills, "overheated")   && heatValue >= C.OVERHEAT_THRESHOLD) inc += C.OVERHEAT_LOSS_INCREASE; // +50 %
+  if (fireFlag(skills, "fireRoll")) inc += C.FIREROLL_LOSS_INCREASE; // Feuerwalze: +10 % (unabhängig von der Hitze-Höhe)
   if (inc > 0) l *= 1 + inc;
   if (fireFlag(skills, "heatShield")) l *= 0.5;
   return Math.floor(l);
@@ -349,7 +350,18 @@ export function addCharge(lightning, gained) {
   return { ...lightning, charge: Math.min(lightning.maxCharge, lightning.charge + gained) };
 }
 
-// Angebot (#93 F0): bis zu `count` noch nicht gehaltene Skills, nach Archetyp gruppiert (2+2),
+// Ein Skill ist ein „Konsument", wenn er eine verbrauchbare Ressource auslöst: Feuer-Hitze-Konsument
+// (heatConsumer: Flächenbrand/Schmelzpunkt) oder Blitz-Ladungs-Konsument (onFullCharge: Ionisierung/Geladene Serie).
+export const isConsumerSkill = (id) => { const d = SKILL_DEFS[id]; return !!(d && (d.heatConsumer || d.onFullCharge)); };
+// Hält der Build für diesen Archetyp bereits einen Konsumenten? Eis kennt keine → gilt als „hat einen" (nie erzwingen).
+// (heatConsumerCount/chargeConsumerCount stehen weiter unten im Modul — zur Laufzeit längst initialisiert.)
+export function ownsConsumerFor(arch, skills) {
+  if (arch === "fire") return heatConsumerCount(skills) > 0;
+  if (arch === "lightning") return chargeConsumerCount(skills) > 0;
+  return true;
+}
+
+// Angebot (#93 F0): bis zu `count` noch nicht gehaltene Skills, nach Archetyp gruppiert (2+2+2),
 // aus max C.MAX_ARCHETYPES Archetypen (offerArchetypes). Deterministisch über den injizierten rng.
 // Leerer Pool → [] (Reducer/Engine fällt auf Perk-Angebot zurück). F0: nur Blitz → 4 Blitz-Skills.
 export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0) {
@@ -362,13 +374,32 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   const legHit = legendaryChance > 0 && rng() < legendaryChance;
   const gateLeg = legendaryChance > 0;
   const isLeg = (id) => !!SKILL_DEFS[id]?.legendary;
-  const perArch = Math.max(1, Math.floor(count / chosen.length)); // 2 bei 2 Archetypen, count bei 1
+  // Konsument-Garantie: ein AKTIVER Feuer-/Blitz-Build ohne gehaltenen Konsumenten bekommt garantiert (mind.) einen
+  // seines Typs angeboten, solange einer verfügbar ist — sonst kann der Build nie „zünden" (frustrierend). Greift nur
+  // für in activeArchetypes stehende Archetypen.
+  const needsConsumer = (arch) => (activeArchetypes || []).includes(arch) && !ownsConsumerFor(arch, owned);
+  // #191: SCHON beim ERSTEN Skill-Angebot (noch kein Archetyp aktiv) garantiert mind. EINEN Konsumenten INSGESAMT —
+  // am ersten angebotenen Archetyp, der überhaupt einen hat (Feuer/Blitz; Eis hat keinen). So ist die Konsumenten-
+  // Richtung von Anfang an sichtbar, nicht erst nach der Archetyp-Festlegung. Leeres activeArchetypes = erstes Angebot.
+  const guaranteeAny = (activeArchetypes || []).length === 0;
+  const perArch = Math.max(1, Math.floor(count / chosen.length)); // 2 bei 3 Archetypen (count 6), count bei 1 Archetyp
   const offer = [];
   const rest = [];
   const legPool = [];
+  const guaranteed = new Set(); // garantierte Konsumenten-Slots — vor dem Legendär-Ersatz geschützt
+  let anyConsumerGuaranteed = false; // #191: schon EIN Konsument fürs Erst-Angebot fixiert? (nur einer insgesamt)
   for (const arch of chosen) {
     let pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)).map((s) => s.id), rng);
     if (gateLeg) { legPool.push(...pool.filter(isLeg)); pool = pool.filter((id) => !isLeg(id)); } // Legendäre nur über den Roll
+    // Garantierten Konsumenten dieses Archetyps nach vorne ziehen (deterministisch, kein zusätzlicher rng-Zug: die
+    // Pool-Reihenfolge stammt schon aus dem Shuffle; perArch ≥ 1 → Slot 0 wird gewählt). Zwei Auslöser:
+    //  · needsConsumer(arch): aktiver Archetyp ohne gehaltenen Konsumenten (Pro-Archetyp-Garantie).
+    //  · guaranteeAny (#191): erstes Angebot ohne aktiven Archetyp → EINEN insgesamt, am ersten Archetyp mit Konsument.
+    if (needsConsumer(arch) || (guaranteeAny && !anyConsumerGuaranteed)) {
+      const ci = pool.findIndex(isConsumerSkill);
+      if (ci > 0) pool.unshift(pool.splice(ci, 1)[0]);
+      if (ci >= 0) { guaranteed.add(pool[0]); if (guaranteeAny) anyConsumerGuaranteed = true; }
+    }
     for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
     rest.push(...pool); // Reste des Archetyps für die Auffüllung
   }
@@ -376,14 +407,15 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   while (offer.length < count && fill.length) offer.push(fill.shift());
   // Bei erfolgreichem Roll genau einen legendären Skill einsetzen. Balance (2+2+2) wahren: einen normalen Skill
   // DESSELBEN Archetyps ersetzen — NICHT blind den letzten Slot, sonst verliert ein anderer Archetyp einen Platz
-  // und der Legendär-Archetyp bekommt einen zu viel (#129). Fallback: letzter Slot bzw. auffüllen.
+  // und der Legendär-Archetyp bekommt einen zu viel (#129). Garantierte Konsumenten dabei überspringen.
+  // Fallback: letzter Slot bzw. auffüllen.
   if (legHit && legPool.length) {
     const leg = shuffle(legPool, rng)[0];
     if (!offer.includes(leg)) {
       if (offer.length >= count) {
         const legArch = archetypeOf(leg);
         let idx = -1;
-        for (let i = offer.length - 1; i >= 0; i--) if (archetypeOf(offer[i]) === legArch) { idx = i; break; }
+        for (let i = offer.length - 1; i >= 0; i--) if (archetypeOf(offer[i]) === legArch && !guaranteed.has(offer[i])) { idx = i; break; }
         offer[idx >= 0 ? idx : offer.length - 1] = leg;
       } else offer.push(leg);
     }

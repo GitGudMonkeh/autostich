@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js";
 
 /* Ambient-Partikel unter dem CRT-Skin (#41-Nachzug): langsam aufsteigende Pixel,
    rein dekorativ (pointer-events:none). Wird nur gerendert, wenn der Skin an ist
@@ -14,20 +14,6 @@ const PARTICLES = Array.from({ length: COUNT }, (_, i) => ({
   drift: (i % 2 ? 1 : -1) * (8 + (i % 4) * 6), // leichte Seitwärts-Drift
   opacity: 0.3 + (i % 4) * 0.12,      // 0,30–0,66 (dahinter durch die Panels gedämpft)
 }));
-
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false);
-  useEffect(() => {
-    if (!window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const on = () => setReduced(mq.matches);
-    mq.addEventListener?.("change", on);
-    return () => mq.removeEventListener?.("change", on);
-  }, []);
-  return reduced;
-}
 
 export function CrtParticles() {
   const reduced = usePrefersReducedMotion();

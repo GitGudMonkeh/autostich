@@ -69,6 +69,18 @@ describe("Blitz-Rework — Engine (#93 F2)", () => {
     const s = resolveTrick(scen(12, 0, { statCritChance: 1, skills: [COND], lightning: light() }), rng);
     expect(s.lightning.charge).toBe(1);
   });
+  it("#145 Leitfähigkeit unter Zeitsegment: Nachbar über actualPos statt pos", () => {
+    // Zeitsegment 0 (Tier 4) → Segment 0–4 wird wiederholt, seq hat 45 Einträge; bei Stich pos=40 ist
+    // actualPos=35. Der ionisierte Nachbar sitzt auf actualPos+1 (deck[36]). Der alte Bug las playerOrder[pos+1]
+    // = playerOrder[41] = undefined → Bonus fiel stumm aus. Der Fix findet den Nachbarn über actualPos.
+    const deck = constDeck(12).map((c, i) => (i === 36 ? { ...c, ionStacks: 1 } : c));
+    const s0 = scen(12, 0, { deck, statCritChance: 1, skills: [COND], lightning: light() });
+    s0.shop = { ...s0.shop, timeSegmentIndex: 0, timeSegmentTier: 4 };
+    s0.pos = 40; // Post-Wiederholung: pos 40 → actualPos 35 (pos+1 läuft ins Leere)
+    const s = resolveTrick(s0, rng);
+    expect(s.lastTrick.originalPosition).toBe(35); // actualPos korrekt gemappt
+    expect(s.lightning.charge).toBe(3);            // Basis 1 + Leitfähigkeit 2 (nur über actualPos gefunden)
+  });
   it("Donnergott: +1,0× Crit-Multiplikator (Basis 1,5 → 2,5)", () => {
     const base = resolveTrick(scen(12, 0, { statCritChance: 1, skills: [BLITZ], lightning: light() }), rng);
     const thunder = resolveTrick(scen(12, 0, { statCritChance: 1, skills: [THUNDER], lightning: light({ maxCharge: 15 }) }), rng);

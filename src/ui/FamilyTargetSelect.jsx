@@ -1,7 +1,8 @@
 import { suitColor, suitName, SUIT_ORDER } from "../game/constants.js";
-import { familyDef } from "../game/families.js";
+import { familyDef, allianceGroups } from "../game/families.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { CATEGORIES } from "../game/perks.js";
+import { FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
 import { CardGrid } from "./CardGrid.jsx";
 
@@ -11,7 +12,7 @@ import { CardGrid } from "./CardGrid.jsx";
    - "cards" (Kat. C: Rollen-Ziele bzw. C_SACRIFICE — `need` Karten im geteilten CardGrid wählen). Beim ROLLEN-Upgrade
      werden nur die ZUSÄTZLICHEN Ziele gewählt; bereits gehaltene Rollenkarten sind ausgegraut (Spec §2.3).
    Kein Abbrechen (wie die Rollen-Zielauswahl TargetSelect) — die Familie ist mit dem Pick bereits gewählt. */
-export function FamilyTargetSelect({ state, onSuit, onCard, onConfirm }) {
+export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onConfirm }) {
   const ft = state.familyTarget || {};
   const fam = familyDef(ft.familyId) || {};
   const tierDef = (fam.tiers && fam.tiers[ft.tier]) || {};
@@ -19,8 +20,9 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onConfirm }) {
   const tm = tierMeta(ft.tier) || { color: "#8a8a95", label: "" };
   const need = ft.need || 0;
   const isCards = ft.kind === "cards";
+  const isType = ft.kind === "formationType"; // #179 Formationskern (E_CORE): einen der vier Basistypen wählen
   const ordered = ft.kind === "suits" && need > 1; // Reihenfolge relevant (erste = Gewinner, zweite = Verlierer)
-  const sel = isCards ? (ft.cards || []) : (ft.suits || []);
+  const sel = isCards ? (ft.cards || []) : isType ? (ft.formationType ? [ft.formationType] : []) : (ft.suits || []);
   const ready = need > 0 && sel.length === need;
 
   const deck = state.deck || [];
@@ -44,8 +46,24 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onConfirm }) {
               Wähle {need} {need === 1 ? "Karte" : "Karten"}{heldIds.size > 0 ? ` (${heldIds.size} bereits als Rolle gebunden)` : ""}
             </div>
             <CardGrid cards={cards} formations={state.formations} roles={state.roles}
-              anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}}
+              anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               pickedIds={sel} disabledPos={disabledPos} onTilePick={(pos, c) => onCard(c.id)} />
+          </div>
+        ) : isType ? (
+          <div className="mt-4">
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Wähle einen Formationstyp</div>
+            <div className="flex gap-2 flex-wrap">
+              {FORMATION_TYPES.map((t) => {
+                const on = ft.formationType === t;
+                return (
+                  <button key={t} onClick={() => onFormationType(t)}
+                    className="px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                    style={{ background: on ? tm.color : "#20202a", color: on ? "#141419" : "#c8c8d0", border: `2px solid ${on ? tm.color : "#3a3a44"}` }}>
+                    {FORMATION_TYPE_LABELS[t] || t}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         ) : (
           <div className="mt-4">

@@ -1,5 +1,6 @@
 import { CardGrid } from "./CardGrid.jsx";
 import { summarizeFormations } from "../game/formations.js";
+import { allianceGroups } from "../game/families.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
@@ -22,7 +23,7 @@ export function FormationPanel({ state = {}, title = "Deine aktiven Formationen"
         <span className="text-[11px] font-bold" style={{ color: "#5ab87a" }}>{count} Formationen · max ×{fmt(maxMult)}</span>
       </div>
       <CardGrid cards={cards} formations={formations} roles={state.roles || {}}
-        anchors={state.shop?.anchors || []} pe={state.shop?.permanentEffects || {}}
+        anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
         pickedIds={pickedIds} pickedPos={pickedPos} onTilePick={() => {}} quietTiles />
     </div>
   );

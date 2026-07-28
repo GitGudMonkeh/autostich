@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { formationBorder } from "../src/ui/formationStyle.js";
+import { formationLabel, formationAbbr, FORMATION_TYPES } from "../src/ui/formationLabels.js";
 
 // Rahmen-Helfer (Issue #95): Farbe = Anzahl Formations-Mitgliedschaften (1 grün · 2 blau · 3 lila · 4 gold),
 // Stil = gestrichelt nur ohne wirksamen Multiplikator. Durch den Überlappungsbonus (#95) hat jede Karte
@@ -36,5 +37,22 @@ describe("formationBorder (#95.4/8)", () => {
 
   it("Anzahl bei 4 gedeckelt (gold)", () => {
     expect(formationBorder(pf(1, 1, 1, 1, 1))).toMatchObject({ color: GOLD, dashed: false, active: 4 });
+  });
+});
+
+describe("formationLabels (#147: eine Quelle für alle Formations-Anzeigen)", () => {
+  it("kennt auch nachhall und formationskern (leckten vorher als rohe Keys ins UI)", () => {
+    expect(formationLabel("nachhall")).toBe("Nachhall");
+    expect(formationLabel("formationskern")).toBe("Kern");
+    expect(formationAbbr("nachhall")).toBe("N");
+    expect(formationAbbr("formationskern")).toBe("K");
+  });
+  it("Badge-Kürzel sind paarweise verschieden", () => {
+    const abbrs = Object.values(FORMATION_TYPES).map((t) => t.abbr);
+    expect(new Set(abbrs).size).toBe(abbrs.length);
+  });
+  it("Fallback: unbekannter Typ → roher Key als Label, leeres Kürzel statt undefined", () => {
+    expect(formationLabel("xyz")).toBe("xyz");
+    expect(formationAbbr("xyz")).toBe("");
   });
 });

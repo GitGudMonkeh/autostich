@@ -1,5 +1,6 @@
 import { STAT_DEFS, STAT_IDS } from "../game/stats.js";
 import { CRIT_BASE_MULT, SHOP_INCOME_PER_LEVEL } from "../game/constants.js";
+import { totalCritChanceRaw } from "../game/perks.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { PanelMascot } from "./PanelMascot.jsx";
 import statMascot from "../assets/mascots/stat.gif";
@@ -10,7 +11,9 @@ const ACCENT = "#5a8ade"; // Stat-Akzent (blau) — abgesetzt von Perk (violett)
 function currentLabel(id, state) {
   const v = state[STAT_DEFS[id].field] || 0;
   switch (id) {
-    case "critChance": return `${Math.round(v * 100)} % Crit-Chance`;
+    // #181: GESAMT-Crit-Chance (Stat + Blitz + Perk), nicht nur der Stat-Anteil — dieselbe ungeklemmte Quelle
+    // wie StatusRail, damit die 100-%-Schwelle (L6 / Familie D „Überschusskrit") an der Entscheidung sichtbar ist.
+    case "critChance": return `${Math.round(Math.max(0, totalCritChanceRaw(state)) * 100)} % Crit-Chance (gesamt)`;
     case "critMult":   return `×${(CRIT_BASE_MULT + v).toFixed(2).replace(".", ",")} Crit-Faktor`;
     case "formMult":   return `+${Math.round(v * 100)} % bei aktiver Formation`;
     case "streakMult": return `+${(v * 100).toFixed(1).replace(".", ",")} % je Serienpunkt`;

@@ -1,5 +1,5 @@
 import * as C from "./constants.js";
-import { SEGMENT_SIZE, FORMATION_TYPE_LABELS } from "./formations.js";
+import { SEGMENT_SIZE } from "./formations.js";
 import { TIERS, TIER_WEIGHTS, priceOfTier } from "./rarity.js";
 import { SHOP_FAMILY_DEFS, timeSegmentDepth } from "./shopFamilies.js";
 
@@ -24,13 +24,12 @@ export const anchorTypeAt   = (anchors, pos) => (anchors || []).find((a) => a.po
 // Ganzer Anker-Eintrag auf einer Position ({ type, position, tier, familyId }) — Engine/formations lesen die Stufe (#164).
 export const anchorAt       = (anchors, pos) => (anchors || []).find((a) => a.position === pos) || null;
 export const positionOccupied = (anchors, pos) => (anchors || []).some((a) => a.position === pos);
-// F4 Farballianz (#125): Partner-Farbe (Suit-Key) einer Farbe, wenn eine Allianz aktiv ist — sonst null.
-// Rein für die UI (diagonaler Zweifarben-Split); ändert keine Regel.
-export const linkedPartnerOf = (pe, suit) => {
-  const lc = (pe && pe.linkedColors) || [];
-  if (lc.length !== 2) return null;
-  if (suit === lc[0]) return lc[1];
-  if (suit === lc[1]) return lc[0];
+// Farballianz (#179): Partner-Farbe (Suit-Key) einer Farbe innerhalb ihrer Allianz-Gruppe — sonst null.
+// Rein für die UI (diagonaler Zweifarben-Split); ändert keine Regel. `view` trägt `linkedGroups` (allianceGroups aus
+// families.js); Altfeld `linkedColors` (2er) bleibt kompatibel. Bei >2-Gruppen wird die erste andere Farbe gezeigt.
+export const linkedPartnerOf = (view, suit) => {
+  const groups = (view && view.linkedGroups) || ((view && (view.linkedColors || []).length === 2) ? [view.linkedColors] : []);
+  for (const g of groups) { if (g.includes(suit)) return g.find((s) => s !== suit) || null; }
   return null;
 };
 
@@ -62,16 +61,10 @@ export const skillFateReroll = (shop = {}) => !!(shop.fateControl || shop.skillF
 // Aktive dauerhafte Shop-Verbesserungen als Label-Liste (Chronik-Übersicht, §S6 Politur). Rein & anzeige-orientiert:
 // leitet die aktiven permanenten Regeländerungen (§9) + Anker-Legendäre + Planungs-Boni aus dem Shop-State ab.
 export function activeShopUpgrades(shop = {}) {
-  const pe = shop.permanentEffects || {};
   const pp = (x) => `+${Math.round(x * 100)} pp`;
   const out = [];
-  if (pe.descendingStraights) out.push("Abstieg");                                                       // F1
-  if (pe.switchMinDifference != null && pe.switchMinDifference < 4) out.push("Enger Wechsel");            // F2
-  if (pe.repetitionSecondFactorBonus > 0) out.push("Verstärkte Wiederholung");                            // F3
-  if ((pe.linkedColors || []).length === 2) out.push(`Farballianz ${pe.linkedColors.join("+")}`);         // F4
-  if ((pe.openSegmentBoundaries || []).length) out.push(`Offene Grenze ×${pe.openSegmentBoundaries.length}`); // F5
-  if (pe.formationAfterglow) out.push("Nachhall");                                                        // F6
-  if (pe.formationCoreType) out.push(`Formationskern: ${FORMATION_TYPE_LABELS[pe.formationCoreType] || pe.formationCoreType}`); // F-L1
+  // (Formations-Regeländerungen F1–F6/Formationskern sind #179 zu Perk-Kat.-E migriert — nicht mehr im Shop-State;
+  //  die Perk-Seite zeigt sie über layoutFamilies/BuildSummary.)
   if (shop.timeSegmentIndex != null) out.push(`Zeitsegment ${shop.timeSegmentIndex + 1}`);                // A-L1
   if (shop.fateControl) out.push("Schicksalskontrolle");                                                  // Schicksalskontrolle IV
   if (shop.perkFreeReroll && !shop.fateControl) out.push("Perk-Gratis-Neuwurf");                          // #164 Perk-Neuwurf IV / Schicksalskontrolle III
@@ -128,15 +121,7 @@ export function initialShop() {
     fateControl: false,             // Schicksalskontrolle IV: je Perk-/Skill-Auswahl ein kostenloser Neuwurf
     perkFreeReroll: false, skillFreeReroll: false, // #164: typ-spezifischer Gratis-Neuwurf (Perk-/Skill-Neuwurf IV, Schicksalskontrolle III)
     perkLegendaryBonus: 0, skillLegendaryBonus: 0, // P5/P6: additive Legendär-Chance (Cap in S5)
-    permanentEffects: {             // §9 F-Items: permanente Regeländerungen der Formationserkennung
-      descendingStraights: false,       // F1: Treppen auch fallend
-      switchMinDifference: 4,           // F2: Wechsel-Mindestdifferenz (→ 3)
-      repetitionSecondFactorBonus: 0,   // F3: 2. Wiederholungskarte +0,10
-      linkedColors: [],                 // F4: zwei Farben zählen als eine (Farbblock)
-      openSegmentBoundaries: [],        // F5: geöffnete Segmentgrenzen
-      formationAfterglow: false,        // F6: Nachhall
-      formationCoreType: null,          // F-L1: Formationskern-Typ
-    },
+    // (permanentEffects — Shop-Formations-Regeländerungen — entfielen #179: Formationen sind Perk-Kat.-E-Familien.)
     anchors: [],                    // S3: Positionsanker (an Position, nicht card.id)
     timeSegmentIndex: null,         // Zeitsegment (#164): gewähltes Segment
     timeSegmentTier: null,          // Zeitsegment-Stufe (Wiederholungstiefe/-tiefe der Effekte)
@@ -246,14 +231,24 @@ export function buildShopOffer(itemDefs, shop = {}, rng = Math.random, perks = [
   }
 
   // Cheap-Garantie (§5.6) ZULETZT: fehlt ein günstiges Angebot (Preis 8 — flache Stufe „cheap" ODER Familien-Stufe I),
-  // ein NICHT-legendäres, NICHT-Familien-Angebot deterministisch durch ein günstiges FLACHES Item ersetzen (das
-  // gesetzte Legendär und die Familien-Karten bleiben so erhalten).
+  // eines deterministisch erzwingen. #195: Alle Kategorien sind familiengetrieben (SHOP_ITEM_DEFS leer) → der alte
+  // cheapPool aus flachen Items war IMMER leer und die Garantie feuerte nie (das günstigste Angebot konnte heimlich
+  // 12 sein → mit 8–11 Münzen nichts kaufbar). Jetzt familien-bewusst: das erste NICHT gekaufte, NICHT legendäre
+  // Angebot einer noch ungekauften Familie (Rang 0 → Stufe I echt offerierbar) auf Stufe I (Preis 8) herunterstufen;
+  // sonst der flache cheap-Pool (Fallback, falls je wieder flache Items existieren).
   if (!offers.some((o) => o.price === C.SHOP_PRICE.cheap)) {
-    const cheapPool = avail.filter((d) => !d.legendary && d.tier === "cheap" && !famCats.has(d.category));
-    const slots = offers.map((o, i) => (o.legendary || o.family ? -1 : i)).filter((i) => i >= 0);
-    if (cheapPool.length && slots.length) {
-      const repl = cheapPool[Math.floor(rng() * cheapPool.length)];
-      offers[slots[Math.floor(rng() * slots.length)]] = mk(repl);
+    const held = shop.familyTiers || {};
+    const purchased = new Set(shop.purchasedOfferIds || []);
+    const famSlot = offers.findIndex((o) => o.family && !o.legendary && !purchased.has(o.offerId) && (held[o.familyId] || 0) === 0);
+    if (famSlot >= 0) {
+      offers[famSlot] = { ...offers[famSlot], famTier: 1, price: priceOfTier(1) };
+    } else {
+      const cheapPool = avail.filter((d) => !d.legendary && d.tier === "cheap" && !famCats.has(d.category));
+      const slots = offers.map((o, i) => (o.legendary || o.family ? -1 : i)).filter((i) => i >= 0);
+      if (cheapPool.length && slots.length) {
+        const repl = cheapPool[Math.floor(rng() * cheapPool.length)];
+        offers[slots[Math.floor(rng() * slots.length)]] = mk(repl);
+      }
     }
   }
   return offers;

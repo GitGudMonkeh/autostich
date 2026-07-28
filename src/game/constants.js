@@ -11,7 +11,8 @@ const envNum = (name, def) => {
   return Number.isFinite(n) ? n : def;
 };
 export const MAX_CYCLES       = 44;     // Shop-Spec (§2.1): fester Run über genau so viele Deck-Durchläufe, danach Ende [TUNING]
-export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 100);    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING]
+// Merge test/sim←main: ENV-Sweep-Haken bleibt, Default = main's Live-Balance (SPW 100→400, Pacing-Pass Sim-validiert).
+export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Default = Live-Balance 400]
 export const CRIT_BASE_MULT   = envNum("SIM_CRIT_BASE_MULT", 1.5);   // V2 (§22.3): Basis-Crit-Multiplikator; der Crit-Mult-Stat baut darauf auf [TUNING]
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 
@@ -38,25 +39,24 @@ export const DECISION_SCHEDULE = [
 // Shop-Münzökonomie (Shop-Spec §3) [TUNING]
 export const STARTING_COINS       = 2;   // Startmünzen bei Run-Beginn
 export const BASE_COINS_PER_CYCLE = 2;   // Münzen je vollständig abgeschlossenem Durchlauf (KONSTANT, ohne Einkommen)
-export const PERK_DECLINE_COINS   = 1;   // #138: Perk-Angebot komplett ablehnen → feste Münze (Runde nie „verschwendet")
+export const PERK_DECLINE_COINS   = 2;   // #138/#183: Perk-Angebot komplett ablehnen → feste Münzen (Runde nie „verschwendet")
 // Einkommens-Stat (überarbeitet): der Bonus wird PRO SHOP-BESUCH gutgeschrieben, nicht je Durchlauf —
 // +3 Münzen je Einkommen-Pick, gilt für jeden Shop nach der Wahl (auch den direkt bevorstehenden). [TUNING]
 export const SHOP_INCOME_PER_LEVEL = 3;
 
 // Shop-Angebot (Shop-Spec §5) [TUNING]
-export const SHOP_CATEGORIES         = ["cards", "anchors", "formations", "planning"]; // Reihenfolge = Anzeige-Reihenfolge
+export const SHOP_CATEGORIES         = ["cards", "anchors", "planning"]; // Reihenfolge = Anzeige-Reihenfolge (#179: „formations" zu Perks migriert)
 export const SHOP_ITEMS_PER_CATEGORY = 2;    // je Kategorie werden genau so viele Items angeboten
-export const SHOP_ITEMS_OFFERED      = 8;    // = SHOP_CATEGORIES.length × SHOP_ITEMS_PER_CATEGORY
-export const SHOP_LEGENDARY_CHANCE   = 0.15; // Chance je Shop auf EIN legendäres Angebot (ersetzt ein normales) [#Pass4: 0,10→0,15 — Legendaries zugänglicher]
+export const SHOP_ITEMS_OFFERED      = SHOP_CATEGORIES.length * SHOP_ITEMS_PER_CATEGORY; // = 6 (#179: 3 Kategorien × 2)
+export const SHOP_LEGENDARY_CHANCE   = 0.03; // Chance je Shop auf EIN legendäres Angebot (ersetzt ein normales) [0,15→0,03 — Legendaries seltener]
 // Vier feste Preisstufen (Spec §5.5) — keine Zwischenpreise.
 export const SHOP_PRICE = { cheap: 8, strong: 12, premium: 18, legendary: 30 };
 // Anzeige-Labels der Kategorien (UI) — geteilte Quelle für ShopScreen/Tests.
-export const SHOP_CATEGORY_LABELS = { cards: "Karten", anchors: "Anker", formations: "Formationen", planning: "Planung" };
+export const SHOP_CATEGORY_LABELS = { cards: "Karten", anchors: "Anker", planning: "Planung" }; // #195: „formations" entfernt (#179 zu Perks migriert)
 
 // Shop-Positionsanker (Shop-Spec §8) — hängen an der Deckposition (0–39), nicht an card.id. [TUNING]
-export const ANCHOR_POWER_VALUE = 2;    // Kraftanker (A1): +temp Wert der Karte auf der Position
-export const ANCHOR_SCORE       = 150;  // Punkteanker (A2): +Flat-Score bei Sieg auf der Position
-export const ANCHOR_CRIT_CHANCE = 0.15; // Kritanker (A3): +Crit-Chance (Prozentpunkte) für den Stich auf der Position
+// (#189: ANCHOR_POWER_VALUE/ANCHOR_SCORE/ANCHOR_CRIT_CHANCE entfernt — die Anker-FAMILIEN in shopFamilies.js
+//  tragen ihre Stärke je Stufe selbst; nur der Formationsanker-Fallback bleibt.)
 export const ANCHOR_FORM_FACTOR = 1.25; // Formationsanker (A5): Position zählt als Anker ×1,25 (stapelt nicht mit E7/E8)
 
 // Shop-Formationsitems (Shop-Spec §9). [TUNING]
@@ -88,8 +88,8 @@ export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendarie
 
 // Legendär-Roll (Shop-Spec §10 P5/P6): expliziter Wurf vor jedem Perk-/Skill-Angebot. Bei Erfolg wird genau
 // EIN Legendäres erzwungen, sonst enthält das Angebot keins. Chance = Basis + Bonus (P5/P6, je +5 pp), Bonus-Cap. [TUNING]
-export const PERK_LEGENDARY_BASE       = 0.08; // Basis-Legendär-Chance Perk-Angebot
-export const SKILL_LEGENDARY_BASE      = 0.08; // Basis-Legendär-Chance Skill-Angebot
+export const PERK_LEGENDARY_BASE       = 0.03; // Basis-Legendär-Chance Perk-Angebot [0,08→0,03]
+export const SKILL_LEGENDARY_BASE      = 0.03; // Basis-Legendär-Chance Skill-Angebot [0,08→0,03]
 export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P6): max +15 pp
 
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
@@ -98,7 +98,7 @@ export const SKILLS_OFFERED     = 6;   // Skills je Skill-Runde (Prototyp: 2+2+2
 export const MAX_ARCHETYPES     = 3;   // Prototyp: alle 3 Archetypen gleichzeitig aktivierbar (Cap aufgehoben)
 export const SKILL_EVERY_CYCLES = 3;   // jede N-te Runde ist eine Skill-Runde (3, 6, 9 …), sonst Perk
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
-export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.05); // Blitz: je gehaltenem Blitz-Skill [SIM-Tuning]
+export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.08); // Blitz: je gehaltenem Blitz-Skill [Default = Live-Balance 0,08 (Pacing-Buff), SIM-Sweep-Haken]
 export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
 // Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
 export const ION_SCORE_PER_STACK  = envNum("SIM_ION_SCORE_PER_STACK", 25); // +Score je Ionisierungsstapel bei Sieg mit der Karte [SIM-Tuning]
@@ -145,6 +145,7 @@ export const OVERHEAT_LOSS_INCREASE = 0.50; // Überhitzt: +50 % Hitzeverlust (m
 export const SPARKFLIGHT_MIN_MARGIN = 8;    // Mindest-Wertvorsprung, um zu speichern
 export const SPARKFLIGHT_RATE       = 0.25; // gespeichert wird floor(FeuerFlat × 0,25)
 export const FIREROLL_MAX      = 3;    // Feuerwalze: nächste Karte +1 je Siegsserie, bis +3 [#Pass2: 5→3, flacherer Snowball]
+export const FIREROLL_LOSS_INCREASE = 0.10; // Feuerwalze: Niederlagen kosten +10 % Hitze (additiv mit Glühende Klinge/Überhitzt) [TUNING]
 export const CONFLAGRATION_SCORE = 1000; // Flächenbrand (Konsument): +Flat bei Sieg mit voller Hitze …
 export const CONFLAGRATION_COST  = 100;  // …          … verbraucht exakt 100 Hitze
 export const MELT_COST         = 10;   // Schmelzpunkt (Konsument): −% Hitze je Stich …

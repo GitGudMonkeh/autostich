@@ -3,6 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialShop, coinsPerCycle, shopIncomeFor, buildShopOffer, rerollCategory, withReservedOffer, perkLegendaryChance, skillLegendaryChance, activeShopUpgrades, canAfford, isItemAvailable, priceOf, SHOP_ITEM_DEFS, playSequence, cycleLenFor, SEGMENT_BOUNDARIES } from "../src/game/shop.js";
+import { WECHSEL_MIN_DIFF } from "../src/game/formations.js";
 import { SHOP_FAMILY_DEFS, anchorTierDef } from "../src/game/shopFamilies.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS } from "../src/game/stats.js";
@@ -172,6 +173,9 @@ describe("Shop-Angebot — Ziehung (Shop-Spec §5)", () => {
   });
   it("gleicher Seed → identisches Angebot (deterministisch, §5.3)", () => {
     expect(buildShopOffer(fxLeg(), initialShop(), makeRng(7))).toEqual(buildShopOffer(fxLeg(), initialShop(), makeRng(7)));
+    // #156: gleicher-Seed-Gleichheit allein bestünde auch ein konstanter Stub — der Seed muss das Angebot treiben.
+    const offers = Array.from({ length: 8 }, (_, s) => JSON.stringify(buildShopOffer(fxLeg(), initialShop(), makeRng(s + 1))));
+    expect(new Set(offers).size).toBeGreaterThan(1);
   });
   it("Cheap-Garantie überlebt die Legendär-Ersetzung (§5.6 + §5.7, auch bei nur einer Kategorie)", () => {
     // Wie live in S2: nur 'cards' bestückt, mit günstig/stark/premium/legendär. Beide Garantien müssen gelten.
@@ -185,6 +189,31 @@ describe("Shop-Angebot — Ziehung (Shop-Spec §5)", () => {
       const off = buildShopOffer(fx, initialShop(), makeRng(seed));
       expect(off.some((o) => o.tier === "cheap")).toBe(true);
       expect(legCount(off)).toBeLessThanOrEqual(1);
+    }
+  });
+  it("Cheap-Garantie familien-bewusst: jeder Familien-Shop hat ein Preis-8-Angebot (#195)", () => {
+    // Produktionspfad: SHOP_ITEM_DEFS ist leer, alle Kategorien sind familiengetrieben. Am frischen Shop sind alle
+    // Familien Rang 0 → die Garantie muss immer ein Preis-8-Angebot (Familien-Stufe I) sicherstellen. Vor dem Fix
+    // war der flache cheapPool immer leer und die Garantie feuerte nie → manche Seeds hatten 12 als günstigstes.
+    for (let seed = 1; seed <= 60; seed++) {
+      const off = buildShopOffer(SHOP_ITEM_DEFS, initialShop(), makeRng(seed), [], SHOP_FAMILY_DEFS);
+      expect(off.length).toBeGreaterThan(0);
+      expect(off.some((o) => o.price === SHOP_PRICE.cheap)).toBe(true);
+    }
+  });
+  it("Cheap-Garantie #195: erzwingt Stufe I einer Rang-0-Familie, wenn der Zug kein Preis-8 liefert", () => {
+    // Nur SF_REFINE ist Rang 0 (kann Stufe I anbieten); alle anderen Familien Rang 1 → deren Angebote sind ≥12.
+    const held = {};
+    for (const f of Object.values(SHOP_FAMILY_DEFS)) if (f.id !== "SF_REFINE") held[f.id] = 1;
+    const mkShop = () => ({ ...initialShop(), familyTiers: { ...held } });
+    // Seed 2: SF_REFINE würde natürlich auf Stufe III (@18) gezogen, sonst nur ≥12 → ohne Fix kein Preis-8; der Fix
+    // stuft SF_REFINE (einzige Rang-0-Familie) auf Stufe I (@8) herab.
+    const off = buildShopOffer(SHOP_ITEM_DEFS, mkShop(), makeRng(2), [], SHOP_FAMILY_DEFS);
+    expect(off.find((o) => o.price === SHOP_PRICE.cheap)).toMatchObject({ familyId: "SF_REFINE", famTier: 1 });
+    // Invariante über viele Seeds: ist SF_REFINE (einzige Stufe-I-Quelle) im Angebot, existiert IMMER ein Preis-8.
+    for (let seed = 1; seed <= 60; seed++) {
+      const o2 = buildShopOffer(SHOP_ITEM_DEFS, mkShop(), makeRng(seed), [], SHOP_FAMILY_DEFS);
+      if (o2.some((o) => o.familyId === "SF_REFINE")) expect(o2.some((o) => o.price === SHOP_PRICE.cheap)).toBe(true);
     }
   });
   it("isItemAvailable filtert gekaufte Legendäre und gekaufte nicht-wiederholbare Items (§15)", () => {
@@ -283,13 +312,28 @@ describe("Shop-Ziel-Flow — Kauf einer Karten-Familie (Shop-Spec §4/§12.2)", 
     expect(r.shopTarget).toBe(null);
     expect(val(r.deck, "R5")).toBe(before + 2); // direkter Drop II = +2
   });
-  it("Feinschliff-Differenz: Upgrade von gehaltenem Rang wendet nur die Differenz an", () => {
-    let s = reducer(famShop("SF_REFINE", 3, 1), { type: "BUY_ITEM", offerId: "o0" }); // Rang I gehalten, Kauf III
+  it("Feinschliff #195: frische Karte bekommt den vollen Stufenwert (unabhängig vom Familienrang)", () => {
+    // Familienrang I gehalten, aber die gewählte Karte ist unbehandelt → voller Wert der Stufe III (+3), nicht +2.
+    let s = reducer(famShop("SF_REFINE", 3, 1), { type: "BUY_ITEM", offerId: "o0" });
     s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R5" });
     const before = val(s.deck, "R5");
     const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
     expect(r.shop.familyTiers.SF_REFINE).toBe(3);
-    expect(val(r.deck, "R5")).toBe(before + 2); // +(3−1) = +2
+    expect(val(r.deck, "R5")).toBe(before + 3); // frisch, III → +3 (vorher fälschlich +2)
+  });
+  it("Feinschliff #195: dieselbe Karte gestuft veredelt bekommt nur die Restdifferenz", () => {
+    let s = reducer(famShop("SF_REFINE", 1), { type: "BUY_ITEM", offerId: "o0" }); // Feinschliff I
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R5" });
+    const base = val(s.deck, "R5");
+    s = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(val(s.deck, "R5")).toBe(base + 1); // I → +1
+    // 2. Kauf Feinschliff III auf DIESELBE Karte (Deck trägt card.refined weiter) → Ziel 3, schon 1 → nur +2.
+    const offer = { offerId: "o1", category: "cards", familyId: "SF_REFINE", famTier: 3, price: 18, family: true, legendary: false };
+    s = { ...s, phase: "shop", shop: { ...s.shop, offers: [offer] } };
+    s = reducer(s, { type: "BUY_ITEM", offerId: "o1" });
+    s = reducer(s, { type: "SHOP_TARGET_CARD", cardId: "R5" });
+    s = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
+    expect(val(s.deck, "R5")).toBe(base + 3); // +1 dann +2 = Gesamt +3
   });
   it("CANCEL → zurück in den Shop, Münzen & Angebot unverändert", () => {
     let s = reducer(famShop("SF_REFINE", 1), { type: "BUY_ITEM", offerId: "o0" });
@@ -478,187 +522,6 @@ describe("Zeitsegment — A-L1 (Shop-Spec §8)", () => {
 const seqDeck = (vals) => vals.map((v, i) => ({ id: `Z${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
 const ord = (n) => Array.from({ length: n }, (_, i) => i);
 const hasForm = (out, pos, type) => out[pos].formations.some((f) => f.type === type);
-
-describe("Shop-Formationsitems — F1/F2/F3 (Shop-Spec §9)", () => {
-  it("F1 Abstieg: fallende Werte bilden erst mit descendingStraights eine Treppe", () => {
-    const deck = seqDeck([10, 7, 4, 2, 9]); // 10>7>4>2 fallend
-    expect(hasForm(computeFormations(ord(5), deck), 0, "treppe")).toBe(false);
-    expect(hasForm(computeFormations(ord(5), deck, {}, [], [], [], { descendingStraights: true }), 0, "treppe")).toBe(true);
-  });
-  it("F2 Enger Wechsel: Nachbardifferenz 3 zählt erst mit switchMinDifference 3", () => {
-    const deck = seqDeck([5, 8, 5, 8, 5]); // Zick-Zack mit |Diff| 3
-    expect(hasForm(computeFormations(ord(5), deck), 0, "wechsel")).toBe(false);
-    expect(hasForm(computeFormations(ord(5), deck, {}, [], [], [], { switchMinDifference: 3 }), 0, "wechsel")).toBe(true);
-  });
-  it("F3 Verstärkte Wiederholung: zweite Karte ×1,25 → ×1,35 (dritte bleibt ×1,50)", () => {
-    const deck = seqDeck([5, 5, 1, 1, 1]);
-    const base = computeFormations(ord(5), deck);
-    expect(base[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.25);
-    const buffed = computeFormations(ord(5), deck, {}, [], [], [], { repetitionSecondFactorBonus: 0.10 });
-    expect(buffed[1].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.35);
-    expect(buffed[4].formations.find((f) => f.type === "wiederholung").factor).toBeCloseTo(1.50); // 3. Karte (Ordinal 3) unverändert
-  });
-  it("Kauf einer ziel-losen Formations-Familie (Enger Wechsel II): setzt permanentEffects sofort, kein Ziel-Schritt", () => {
-    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_TIGHT_SWITCH", famTier: 2, price: 12, family: true, legendary: false };
-    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 20, offers: [offer] } };
-    const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
-    expect(r.phase).toBe("shop");                                 // ziel-los → sofort, keine shop-target-Phase
-    expect(r.shop.coins).toBe(8);                                 // 20 - 12
-    expect(r.shop.permanentEffects.switchMinDifference).toBe(3);  // Stufe II
-    expect(r.shop.familyTiers.SF_F_TIGHT_SWITCH).toBe(2);
-    expect(Array.isArray(r.formations)).toBe(true);
-  });
-});
-
-describe("Shop-Formationsitems — F4/F5 (Shop-Spec §9)", () => {
-  it("F4 Farballianz: zwei verlinkte Farben bilden zusammen einen Farbblock", () => {
-    const deck = [{ id: "c0", suit: "R", value: 2 }, { id: "c1", suit: "B", value: 7 }, { id: "c2", suit: "R", value: 3 }];
-    expect(hasForm(computeFormations(ord(3), deck), 0, "farbblock")).toBe(false); // R,B,R → kein Block
-    expect(hasForm(computeFormations(ord(3), deck, {}, [], [], [], { linkedColors: ["R", "B"] }), 0, "farbblock")).toBe(true);
-  });
-  it("F5 Offene Grenze: ein Farbblock überschreitet die Grenze erst, wenn sie geöffnet ist", () => {
-    const deck = [
-      { id: "a", suit: "G", value: 1 }, { id: "b", suit: "Y", value: 2 }, { id: "c", suit: "B", value: 3 },
-      { id: "d", suit: "R", value: 5 }, { id: "e", suit: "R", value: 1 }, { id: "f", suit: "R", value: 5 }, { id: "g", suit: "R", value: 1 },
-    ]; // R-Block auf Positionen 3–6, Grenze bei Position 4 (4|5)
-    expect(hasForm(computeFormations(ord(7), deck), 5, "farbblock")).toBe(false); // Grenze blockt → je Segment nur 2
-    expect(hasForm(computeFormations(ord(7), deck, {}, [], [], [], { openSegmentBoundaries: [4] }), 5, "farbblock")).toBe(true);
-  });
-  it("Kauf Farballianz II: zwei Farben wählen → linkedGroups gesetzt (Preis erst bei CONFIRM)", () => {
-    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_COLOR_ALLIANCE", famTier: 2, price: 12, family: true, legendary: false };
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 12, offers: [offer] } };
-    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
-    expect(s.phase).toBe("shop-target");
-    expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s); // < 2 Farben → unverändert
-    s = reducer(s, { type: "SHOP_TARGET_COLOR_PAIR", color: "R" });
-    s = reducer(s, { type: "SHOP_TARGET_COLOR_PAIR", color: "B" });
-    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
-    expect(r.shop.permanentEffects.linkedGroups).toEqual([["R", "B"]]);
-    expect(r.shop.familyTiers.SF_F_COLOR_ALLIANCE).toBe(2);
-    expect(r.shop.coins).toBe(0);
-  });
-  it("Farballianz IV: vier Farben → zwei Allianzen (zwei Paare)", () => {
-    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_COLOR_ALLIANCE", famTier: 4, price: 30, family: true, legendary: false };
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
-    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
-    for (const c of ["R", "B", "G", "Y"]) s = reducer(s, { type: "SHOP_TARGET_COLOR_PAIR", color: c });
-    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
-    expect(r.shop.permanentEffects.linkedGroups).toEqual([["R", "B"], ["G", "Y"]]);
-  });
-  it("Kauf Offene Grenze I: eine Grenze öffnen → openSegmentBoundaries", () => {
-    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_OPEN_BOUNDARY", famTier: 1, price: 8, family: true, legendary: false };
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 8, offers: [offer] } };
-    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
-    s = reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 9 });
-    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
-    expect(r.shop.permanentEffects.openSegmentBoundaries).toEqual([9]);
-    expect(r.shop.familyTiers.SF_F_OPEN_BOUNDARY).toBe(1);
-  });
-  it("Offene Grenze: bereits offene Grenze wird abgelehnt; verschiedene Grenzen stapeln", () => {
-    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_OPEN_BOUNDARY", famTier: 1, price: 8, family: true, legendary: false };
-    const base = { ...initialState(makeRng(1)), phase: "shop",
-      shop: { ...initialShop(), coins: 8, offers: [offer], permanentEffects: { ...initialShop().permanentEffects, openSegmentBoundaries: [4] } } };
-    let s = reducer(base, { type: "BUY_ITEM", offerId: "o0" });
-    expect(reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 4 })).toBe(s); // schon offen → ignoriert
-    s = reducer(s, { type: "SHOP_TARGET_BOUNDARY", boundary: 9 });
-    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
-    expect([...r.shop.permanentEffects.openSegmentBoundaries].sort((a, b) => a - b)).toEqual([4, 9]);
-  });
-  it("Offene Grenze IV (ziel-los): öffnet alle Grenzen sofort", () => {
-    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_OPEN_BOUNDARY", famTier: 4, price: 30, family: true, legendary: false };
-    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 30, offers: [offer] } };
-    const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
-    expect(r.phase).toBe("shop"); // ziel-los → sofort
-    expect(r.shop.permanentEffects.openBoundaryCount).toBe(Infinity);
-  });
-});
-
-describe("Shop-Formationsitem — F6 Nachhall (Shop-Spec §9)", () => {
-  it("die direkt folgende Karte erbt den Endfaktor als eigene Formation (bare Karte trägt sie)", () => {
-    const deck = seqDeck([20, 20, 19, 18, 17]); // Wiederholung [20,20] endet auf Pos 1, Rest fällt (keine weitere Formation)
-    const off = computeFormations(ord(5), deck);
-    expect(off[2].formations.some((f) => f.type === "nachhall")).toBe(false); // ohne F6 kein Nachhall
-    const on = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true });
-    const nh = on[2].formations.find((f) => f.type === "nachhall");
-    expect(nh).toBeTruthy();
-    expect(nh.factor).toBeCloseTo(1.25);       // wiederholungFactor(2)
-    expect(nh.sourceType).toBe("wiederholung"); // trägt Ursprungstyp mit (für F-L1)
-    expect(on[2].mult).toBeCloseTo(1.25);
-    expect(on[2].afterglowFactor).toBeCloseTo(1.25);
-    expect(on[3].formations.some((f) => f.type === "nachhall")).toBe(false); // kein Kaskadieren: Empfänger sendet nicht weiter
-  });
-  it("nimmt den höchsten Einzel-Endfaktor (Farbblock und Treppe je 1,35 → zuerst erfasster gewinnt)", () => {
-    const deck = [
-      { id: "a", suit: "R", value: 1 }, { id: "b", suit: "R", value: 2 }, { id: "c", suit: "R", value: 3 },
-      { id: "d", suit: "B", value: 20 }, { id: "e", suit: "G", value: 9 },
-    ]; // Pos 0–2: Farbblock UND Treppe, beide enden auf Pos 2
-    const on = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true });
-    const nh = on[3].formations.find((f) => f.type === "nachhall");
-    expect(nh.factor).toBeCloseTo(1.35);
-    expect(nh.sourceType).toBe("farbblock");
-  });
-  it("überschreitet Segmentgrenzen — Empfänger im nächsten Segment", () => {
-    const deck = seqDeck([30, 29, 28, 22, 22, 21, 20]); // Wiederholung [22,22] endet auf Pos 4 (Grenze 4|5)
-    const on = computeFormations(ord(7), deck, {}, [], [], [], { formationAfterglow: true });
-    const nh = on[5].formations.find((f) => f.type === "nachhall"); // Pos 5 = erstes Feld des Folgesegments
-    expect(nh && nh.factor).toBeCloseTo(1.25);
-  });
-  it("endet die Formation auf der letzten Position, gibt es keinen Empfänger", () => {
-    const deck = seqDeck([30, 29, 28, 27, 22, 22]); // Wiederholung [22,22] endet auf Pos 5 (= letzte Position)
-    const on = computeFormations(ord(6), deck, {}, [], [], [], { formationAfterglow: true });
-    expect(on.every((p) => !p.formations.some((f) => f.type === "nachhall"))).toBe(true);
-  });
-  it("Kauf Nachhall-Familie III (kein Ziel): setzt Nachhall-Parameter sofort", () => {
-    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_AFTERGLOW", famTier: 3, price: 18, family: true, legendary: false };
-    const s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
-    const r = reducer(s, { type: "BUY_ITEM", offerId: "o0", rng: makeRng(1) });
-    expect(r.phase).toBe("shop");
-    expect(r.shop.coins).toBe(0);
-    expect(r.shop.permanentEffects.formationAfterglow).toBe(true);
-    expect(r.shop.permanentEffects.afterglowMaxFactor).toBe(null); // III: kein Cap
-    expect(r.shop.familyTiers.SF_F_AFTERGLOW).toBe(3);
-  });
-});
-
-describe("Shop-Formationsitem — F-L1 Formationskern (Shop-Spec §9)", () => {
-  it("jede Position des gewählten Typs erhält zusätzlich ×1,50 als eigener Faktor", () => {
-    const deck = [
-      { id: "a", suit: "R", value: 30 }, { id: "b", suit: "R", value: 20 }, { id: "c", suit: "R", value: 10 }, { id: "d", suit: "B", value: 5 },
-    ]; // Farbblock [0,1,2] (fallende Werte → keine Treppe/Wechsel), Pos 3 andersfarbig
-    const off = computeFormations(ord(4), deck);
-    expect(off[2].coreFactor).toBe(1);
-    const on = computeFormations(ord(4), deck, {}, [], [], [], { formationCoreType: "farbblock" });
-    expect(on[0].coreFactor).toBeCloseTo(1.50); // Ordinal-1-Mitglied zählt auch als „Teil des Typs"
-    expect(on[2].coreFactor).toBeCloseTo(1.50);
-    expect(on[2].mult).toBeCloseTo(1.35 * 1.50);
-    expect(on[0].formations.some((f) => f.type === "formationskern")).toBe(true);
-    expect(on[3].coreFactor).toBe(1); // Pos 3 ist kein Farbblock → kein Kern
-  });
-  it("wird auch durch Nachhall des Ursprungstyps ausgelöst (nicht bei anderem Kern-Typ)", () => {
-    const deck = seqDeck([20, 20, 19, 18, 17]); // Nachhall auf Pos 2 trägt sourceType 'wiederholung'
-    const same = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true, formationCoreType: "wiederholung" });
-    expect(same[2].afterglowFactor).toBeCloseTo(1.25);
-    expect(same[2].coreFactor).toBeCloseTo(1.50);          // Nachhall(wiederholung) triggert Kern(wiederholung)
-    expect(same[2].mult).toBeCloseTo(1.25 * 1.50);
-    const other = computeFormations(ord(5), deck, {}, [], [], [], { formationAfterglow: true, formationCoreType: "treppe" });
-    expect(other[2].coreFactor).toBe(1);                   // Nachhall ist wiederholung, Kern ist treppe → kein Trigger
-  });
-  it("Kauf Formationskern III: Formationstyp wählen → formationCoreType + Stufen-Faktor gesetzt", () => {
-    const offer = { offerId: "o0", category: "formations", familyId: "SF_F_CORE", famTier: 3, price: 18, family: true, legendary: false };
-    let s = { ...initialState(makeRng(1)), phase: "shop", shop: { ...initialShop(), coins: 18, offers: [offer] } };
-    s = reducer(s, { type: "BUY_ITEM", offerId: "o0" });
-    expect(s.phase).toBe("shop-target");
-    expect(reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) })).toBe(s);                 // ohne Typ → unverändert
-    expect(reducer(s, { type: "SHOP_TARGET_FORMATION_TYPE", formationType: "bogus" })).toBe(s);   // ungültiger Typ → ignoriert
-    s = reducer(s, { type: "SHOP_TARGET_FORMATION_TYPE", formationType: "treppe" });
-    const r = reducer(s, { type: "SHOP_TARGET_CONFIRM", rng: makeRng(1) });
-    expect(r.phase).toBe("shop");
-    expect(r.shop.permanentEffects.formationCoreType).toBe("treppe");
-    expect(r.shop.permanentEffects.formationCoreFactor).toBe(1.40); // Stufe III
-    expect(r.shop.familyTiers.SF_F_CORE).toBe(3);
-    expect(r.shop.coins).toBe(0);
-  });
-});
 
 describe("Shop-Planungsitems — S5a Rerolls (Shop-Spec §10)", () => {
   it("Neuwurf-/Schicksals-Familien onBuy: Vorrat je Stufe, IV = dauerhafte Regel", () => {
@@ -931,18 +794,13 @@ describe("Shop-Politur — S6 activeShopUpgrades (Chronik-Übersicht)", () => {
   it("frischer Shop hat keine aktiven Verbesserungen", () => {
     expect(activeShopUpgrades(initialShop())).toEqual([]);
   });
-  it("leitet aktive dauerhafte Verbesserungen aus dem Shop-State ab", () => {
+  it("leitet aktive dauerhafte Verbesserungen aus dem Shop-State ab (#179: Formations-Upgrades sind jetzt Perks)", () => {
     const base = initialShop();
-    const shop = { ...base,
-      permanentEffects: { ...base.permanentEffects, descendingStraights: true, switchMinDifference: 3, formationAfterglow: true, formationCoreType: "treppe" },
-      timeSegmentIndex: 2, fateControl: true, perkLegendaryBonus: 0.10 };
+    const shop = { ...base, timeSegmentIndex: 2, fateControl: true, perkLegendaryBonus: 0.10, skillLegendaryBonus: 0.05 };
     const up = activeShopUpgrades(shop);
-    expect(up).toContain("Abstieg");
-    expect(up).toContain("Enger Wechsel");
-    expect(up).toContain("Nachhall");
-    expect(up.some((u) => u.startsWith("Formationskern"))).toBe(true);
     expect(up).toContain("Zeitsegment 3");
     expect(up).toContain("Schicksalskontrolle");
     expect(up.some((u) => u.startsWith("Perk-Legendär"))).toBe(true);
+    expect(up.some((u) => u.startsWith("Skill-Legendär"))).toBe(true);
   });
 });

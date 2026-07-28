@@ -1,10 +1,12 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
-import { BASE_FLIP_MS, GHOST_STEP } from "./game/constants.js";
+import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
 import { baseScoreMultFor } from "./game/perks.js";
-import { loadGhost, saveGhost, loadHighscores, recordHighscore, loadOptions, saveOptions, loadUsername, saveUsername } from "./game/storage.js";
+import { allianceGroups } from "./game/families.js";
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
+import { fmtScore } from "./ui/format.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { Battlefield } from "./ui/Battlefield.jsx";
 import { Controls } from "./ui/Controls.jsx";
@@ -25,6 +27,11 @@ import { frozenCount, archetypeOf } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
+import { StatsScreen } from "./ui/StatsScreen.jsx";
+import { CustomizeScreen } from "./ui/CustomizeScreen.jsx";
+import { RunLoader } from "./ui/RunLoader.jsx";
+import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
+import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
 import { music } from "./ui/music.js";
@@ -39,6 +46,11 @@ export function Autostich() {
   const [paused, setPaused] = useState(false);
   const [options, setOptions] = useState(() => loadOptions());   // Optionen (#41): u. a. CRT-Skin
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
+  const [showStats, setShowStats] = useState(false);              // #172 FB-10: Statistik-Hub (nur im Menü)
+  const [showCustomize, setShowCustomize] = useState(false);      // #190: Kollektion (Deck/Battlefield, nur im Menü)
+  const [profile, setProfile] = useState(loadProfile);            // #190: Profil (Freischalt-Status) — nach jedem Lauf aktualisiert
+  const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
+  const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/6× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
@@ -66,7 +78,7 @@ export function Autostich() {
   const prevMult = useRef(1);     // vorheriger Score-Mult (Puls nur bei Anstieg, #37)
   // Offenes Optionen-Overlay friert den Lauf ein (wie andere Overlays) — ohne den
   // Nutzer-Pause-Toggle zu verändern: beim Schließen läuft es im vorherigen Zustand weiter.
-  const active = state.phase === "play" && !paused && !showOptions;
+  const active = state.phase === "play" && !paused && !showOptions && !showChronik;
   // Dynamische Rundengeschwindigkeit (#95): jeder Durchlauf startet bei +0 % und beschleunigt
   // +2 % je in DIESEM Durchlauf gewonnenem Stich → sichtbare Eskalation zum Rundenende, Reset je Durchlauf.
   // Rein Anzeige/Ablauf (score-neutral wie der Turbo). cycleWins = Siege seit Durchlauf-Beginn.
@@ -76,6 +88,12 @@ export function Autostich() {
   const dynamicSpeed = 1 + 0.02 * cycleWins;
   // Effektive Flip-Zeit: Basis / (Turbo intern 1×/2×/4×/6× — Buttons X2/X4/MAX — × dynamische Rundengeschwindigkeit).
   const flipMs = BASE_FLIP_MS / (speedMult * dynamicSpeed);
+  // #188 v2: Hit-Stop/Slow-Mo — nach einem GROSSEN Krit-Sieg den nächsten Stich kurz verzögern (Micro-Hit-Stop ab
+  // IRRE ≥150k, längeres Slow-Mo ab GOTTGLEICH ≥500k). Nur bei nennenswertem Takt (kein Hit-Stop bei hohem Turbo,
+  // flipMs ≤ 170). Rein Timing/„Juice", score-neutral (wie Turbo). Basiert auf dem gerade gezeigten Stich (lastTrick).
+  const lt = state.lastTrick;
+  const hitStopMs = (flipMs > 170 && lt && lt.isCrit && (lt.result === "win" || lt.result === "win_tie"))
+    ? (lt.gained >= 500000 ? 220 : lt.gained >= 150000 ? 90 : 0) : 0;
 
   useEffect(() => {
     const g = loadGhost();
@@ -142,12 +160,14 @@ export function Autostich() {
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
-    if (state.phase !== "play" || paused || showOptions) return;
-    const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs);
+    if (state.phase !== "play" || paused || showOptions || showChronik) return;
+    // #188 v2: nach einem großen Krit-Sieg um hitStopMs verzögert (kurzer „Hit-Stop"/Slow-Mo), sonst normaler Takt.
+    const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs + hitStopMs);
     return () => clearTimeout(id);
     // #56: flipMs direkt (statt seiner Einzel-Eingaben speedPct/speedMult) → Deps veralten nicht,
     // falls flipMs künftig von weiteren Variablen abhängt.
-  }, [state.phase, state.trickNo, paused, showOptions, flipMs]);
+    // #148: showChronik friert den Lauf ein (wie showOptions) — Tricks laufen nicht mehr hinter dem Overlay weiter.
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, flipMs, hitStopMs]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -161,9 +181,35 @@ export function Autostich() {
     if (recorded.current || !state.trickNo) return;
     recorded.current = true;
     const finalScore = Math.floor(state.score);
-    setHighscores(recordHighscore({
-      score: finalScore, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
-    }));
+    // #169 FB-8: Run-Rückblick-Stats für die lokale Detailansicht (RunStats). perks/skills als ID-Arrays.
+    const localEntry = {
+      score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
+      bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
+      maxFormations: state.maxFormations, formationScore: state.formationScore,
+      crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
+    };
+    setHighscores(recordHighscore(localEntry));
+    // #172 FB-10: denselben Lauf in die Historie (letzte 30) + Profil-Totals schreiben — Basis für den Statistik-Hub.
+    // Zusätzlich: Lauf-Dauer (aus dem HUD-Timer) + im Lauf genutzte Archetypen (unique) für die Analyse.
+    const durationMs = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
+    const archetypesUsed = [...new Set((state.skills || []).map(archetypeOf).filter(Boolean))];
+    const prevProfile = profile;
+    // #190 Challenge-Tracking: nur ein natürlich abgeschlossener Lauf (cycle === MAX_CYCLES) zählt; plus die
+    // Rohdaten für die Erkennung (Shop-Käufe im ganzen Lauf, gewählte Stats). Erkennung/Flags in storage.recordRun.
+    const completed = state.cycle >= MAX_CYCLES;
+    const { profile: nextProfile } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
+      shopPurchases: state.shop?.purchaseLog?.length ?? 0, statPicks: state.statPicks || [], completed });
+    setProfile(nextProfile);
+    // #190: in DIESEM Lauf frisch freigeschaltete Skins (Bedingung vorher NICHT erfüllt, jetzt schon) → Siegesscreen.
+    const catalog = [
+      ...Object.values(DECK_DEFS).map((d) => ({ def: d, type: "deck" })),
+      ...Object.values(BATTLEFIELD_DEFS).map((d) => ({ def: d, type: "battlefield" })),
+    ];
+    setNewUnlocks(
+      catalog
+        .filter(({ def }) => def.unlock && isUnlocked(def, nextProfile) && !isUnlocked(def, prevProfile))
+        .map(({ def, type }) => ({ id: def.id, name: def.name, type }))
+    );
     // Globalen Lauf posten (#14) — additiv, fehlertolerant. myEntry hebt ihn im Board hervor;
     // pubToken lädt das Board nach dem Submit neu (damit der eigene Lauf drin ist).
     const name = (username || "").trim().slice(0, 20);
@@ -173,7 +219,12 @@ export function Autostich() {
     const archetypes = (state.skills || []).map(archetypeOf).filter(Boolean).join(",");
     // `level` bleibt im Payload (= Rundenzahl), damit die bestehende Supabase-Spalte befüllt ist
     // (falls NOT NULL) — kein Schema-Wechsel nötig. Angezeigt wird ohnehin `cycles`.
-    const gEntry = { name, score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, archetypes };
+    const gEntry = { name, score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, archetypes,
+      // #169 FB-8: Detailspalten (snake_case = Supabase-Spalten). perks/skills als kompakte ID-Liste (wie archetypes).
+      // publishRun stript sie per Fallback-Kaskade, falls die Spalten noch nicht migriert sind.
+      best_streak: state.bestStreak, perks: (state.perks || []).join(","), skills: (state.skills || []).join(","),
+      max_formations: state.maxFormations, formation_score: state.formationScore,
+      crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore };
     setMyEntry(gEntry);
     if (leaderboardConfigured && name) {
       publishRun(gEntry).then(() => setPubToken((t) => t + 1)).catch(() => {});
@@ -190,7 +241,13 @@ export function Autostich() {
     if (state.phase === "gameover") saveRun();
   }, [state.phase]);
 
-  function startRun() {
+  // #190: aktive Skins aus den Optionen (defensiver Fallback auf "default", falls (noch) gesperrt/unbekannt).
+  const activeDeckId = resolveSkinId(DECK_DEFS, options.deckId, profile);
+  const activeBfId   = resolveSkinId(BATTLEFIELD_DEFS, options.battlefieldId, profile);
+  const deckSkin = deckAssets(activeDeckId);
+  const bfSkin   = battlefieldAssets(activeBfId);
+
+  function beginRun() {
     currentTraj.current = [];
     runStartRecordTraj.current = recordTraj.current.slice(); // Rekord dieses Laufs festhalten, bevor saveRun ihn überschreibt (#35)
     recorded.current = false;
@@ -203,7 +260,13 @@ export function Autostich() {
     segStart.current = Date.now();
     setPaused(false);
     setIsRecord(false);
+    setNewUnlocks([]); // #190: Freischalt-Hinweis des Vorlaufs zurücksetzen
     dispatch({ type: "START_RUN", rng: Math.random });
+  }
+  // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
+  // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
+  function startRun() {
+    setPendingRun([deckSkin.front, deckSkin.back, ...(bfSkin ? [bfSkin.desktop, bfSkin.mobile] : [])]);
   }
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun läuft über den gameover-Effekt
@@ -221,6 +284,7 @@ export function Autostich() {
   // Familien-Ziel-Auswahl (Rarität #167): Farbe(n) (Kat. A) bzw. Karten (Kat. C Rollen) für pickTarget-Stufen wählen.
   const familyTargetSuit = (suit) => dispatch({ type: "FAMILY_TARGET_SUIT", suit });
   const familyTargetCard = (cardId) => dispatch({ type: "FAMILY_TARGET_CARD", cardId });
+  const familyTargetFormationType = (formationType) => dispatch({ type: "FAMILY_TARGET_FORMATION_TYPE", formationType }); // #179 E_CORE
   const familyTargetConfirm = () => dispatch({ type: "FAMILY_TARGET_CONFIRM", rng: Math.random });
   // Skill-Auswahl (jede 3. Runde): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
@@ -236,9 +300,6 @@ export function Autostich() {
   const shopTargetColor = (cardId, color) => dispatch({ type: "SHOP_TARGET_COLOR", cardId, color });
   const shopTargetSegment = (segment) => dispatch({ type: "SHOP_TARGET_SEGMENT", segment });
   const shopTargetPosition = (position) => dispatch({ type: "SHOP_TARGET_POSITION", position });
-  const shopTargetColorPair = (color) => dispatch({ type: "SHOP_TARGET_COLOR_PAIR", color });
-  const shopTargetBoundary = (boundary) => dispatch({ type: "SHOP_TARGET_BOUNDARY", boundary });
-  const shopTargetFormationType = (formationType) => dispatch({ type: "SHOP_TARGET_FORMATION_TYPE", formationType });
   const shopTargetCategory = (category) => dispatch({ type: "SHOP_TARGET_CATEGORY", category });
   const shopTargetOffer = (offerId) => dispatch({ type: "SHOP_TARGET_OFFER", offerId });
   const shopTargetConfirm = () => dispatch({ type: "SHOP_TARGET_CONFIRM", rng: Math.random });
@@ -287,7 +348,7 @@ export function Autostich() {
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wide opacity-50">Score</div>
         <div className="text-xl font-bold font-pixel-dense leading-none" style={{ color: "#d4a63a" }}>
-          {Math.floor(state.score).toLocaleString("de-DE")}
+          {fmtScore(state.score)}
         </div>
         {/* #113: zweite Zeile IMMER reserviert (feste Höhe) → Geist-Delta/Rekord ändert die Zellenhöhe nie. */}
         <div className="text-xs font-normal leading-tight h-4 mt-0.5 whitespace-nowrap">
@@ -295,7 +356,7 @@ export function Autostich() {
             <span style={{ color: "#8a7de0" }}>⚑ Rekord</span>
           ) : ghost.delta != null ? (
             <span style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>
-              {ghost.delta >= 0 ? "▲ +" : "▼ "}{ghost.delta.toLocaleString("de-DE")}
+              {ghost.delta >= 0 ? "▲ +" : "▼ "}{fmtScore(ghost.delta)}
             </span>
           ) : null)}
         </div>
@@ -327,23 +388,16 @@ export function Autostich() {
       </div>
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
-        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{best.toLocaleString("de-DE")}</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
       </div>
-      {/* #133/#111: „Nächster Track" im Kopf (freie Zelle); die untere Musik-Leiste zeigt nur den Titel. */}
-      {state.phase !== "gameover" && (
-        <div className="text-right">
-          <div className="text-[10px] uppercase tracking-wide opacity-50">Musik</div>
-          {/* Nur-Icon-Button, in Box-Höhe/Rhythmus an den MULT-Chip angeglichen (pt-0.5 + text-base). */}
-          <div className="leading-none pt-0.5">
-            <button onClick={() => music.next()} aria-label="Nächster Track"
-              title={musicTitle ? `Läuft: ${musicTitle} — nächster Track` : "Nächster Track"}
-              className="inline-block rounded px-2 py-0.5 text-base leading-none transition-all hover:brightness-110"
-              style={{ background: "#20202a", border: "1px solid #3a3a46" }}>
-              ⏭
-            </button>
-          </div>
+      {/* #133/#111: Der „Nächster Track"-Button ist ins untere Musik-Panel gewandert (s. MusicBar). An seiner
+          Stelle (freie Kopf-Zelle) jetzt der Durchlauf-Zähler X / 44 — gleiche Werte wie in der StatusRail. */}
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Durchlauf</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>
+          {Math.min(state.cycle + 1, MAX_CYCLES)}<span className="text-xs opacity-45"> / {MAX_CYCLES}</span>
         </div>
-      )}
+      </div>
     </>
   );
 
@@ -370,6 +424,7 @@ export function Autostich() {
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+            onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} myEntry={myEntry} pubToken={pubToken} />
         ) : (<>
@@ -401,8 +456,10 @@ export function Autostich() {
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
-              <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} flipMs={flipMs} pe={state.shop?.permanentEffects || {}}
-                heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)} />
+              <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+                heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)}
+                deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
+                oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "stat"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} />
               <HeatBar heat={state.heat} skills={state.skills} />
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
@@ -422,8 +479,8 @@ export function Autostich() {
             </div>
             <DeckHistogram deck={state.deck} />
           </button>
-          {/* Musik-Panel (#111): aktueller Track + „nächster Track" — ganz unten im Run. */}
-          {state.phase !== "gameover" && <MusicBar title={musicTitle} />}
+          {/* Musik-Panel (#111): aktueller Track + „nächster Track"-Button (rechtsbündig) — ganz unten im Run. */}
+          {state.phase !== "gameover" && <MusicBar title={musicTitle} onNext={() => music.next()} />}
         </>)}
       </div>
 
@@ -435,15 +492,14 @@ export function Autostich() {
       )}
       {state.phase === "shop-target" && (
         <ShopTargetSelect state={state} onCard={shopTargetCard} onColor={shopTargetColor}
-          onSegment={shopTargetSegment} onPosition={shopTargetPosition} onColorPair={shopTargetColorPair} onBoundary={shopTargetBoundary}
-          onFormationType={shopTargetFormationType} onCategory={shopTargetCategory} onOffer={shopTargetOffer}
+          onSegment={shopTargetSegment} onPosition={shopTargetPosition} onCategory={shopTargetCategory} onOffer={shopTargetOffer}
           onConfirm={shopTargetConfirm} onCancel={shopTargetCancel} />
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />
       )}
       {state.phase === "family-target" && (
-        <FamilyTargetSelect state={state} onSuit={familyTargetSuit} onCard={familyTargetCard} onConfirm={familyTargetConfirm} />
+        <FamilyTargetSelect state={state} onSuit={familyTargetSuit} onCard={familyTargetCard} onFormationType={familyTargetFormationType} onConfirm={familyTargetConfirm} />
       )}
       {showChronik && <ChronikOverview state={state} onClose={() => setShowChronik(false)} />}
       {state.phase === "levelup" && state.statOffer && (
@@ -458,11 +514,23 @@ export function Autostich() {
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
           currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu}
-          myEntry={myEntry} pubToken={pubToken} hasUsername={!!(username || "").trim()} onEditName={() => setShowUsername(true)} />
+          myEntry={myEntry} pubToken={pubToken} hasUsername={!!(username || "").trim()} onEditName={() => setShowUsername(true)}
+          newUnlocks={newUnlocks} />
       )}
 
       {showOptions && (
         <OptionsModal options={options} onChange={changeOptions} onClose={() => setShowOptions(false)} />
+      )}
+
+      {showStats && <StatsScreen onClose={() => setShowStats(false)} />}
+
+      {showCustomize && (
+        <CustomizeScreen options={options} profile={profile} onChoose={changeOptions} onClose={() => setShowCustomize(false)} />
+      )}
+
+      {/* #190: Vorlade-Balken beim Run-Start — lädt die aktiven Skins, dann startet der Lauf wirklich. */}
+      {pendingRun && (
+        <RunLoader images={pendingRun} onReady={() => { setPendingRun(null); beginRun(); }} />
       )}
 
       {showUsername && (

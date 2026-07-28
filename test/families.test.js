@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  FAMILY_DEFS, FAMILY_LIST, familyDef, familyCategory,
+  FAMILY_DEFS, FAMILY_LIST, familyDef,
   activeTierDef, activeTierDefs, familySumHook, familyProdHook, hasCritFamily,
   isLayoutFamily, layoutFamilies,
 } from "../src/game/families.js";
@@ -52,13 +52,19 @@ describe("Familien-Registry — Struktur", () => {
       else expect(f.tiers[t].pickTarget.cards).toBeGreaterThanOrEqual(1);
     }
   });
-  it("Kategorie E vollständig (9 Familien, alle Regelersetzung, ohne Ziel)", () => {
+  it("Kategorie E vollständig (14 Familien, alle Regelersetzung; #179 Farballianz/Formationskern mit Ziel)", () => {
     const e = FAMILY_LIST.filter((f) => f.cat === "E");
-    expect(e).toHaveLength(9);
-    for (const f of e) {
-      expect(f.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
-      for (const t of [1, 2, 3, 4]) expect(f.tiers[t].pickTarget).toBeUndefined();
-    }
+    expect(e).toHaveLength(14); // 9 Erkennungs-Werkzeuge + 5 aus dem Shop migrierte Formations-Familien (#179)
+    for (const f of e) expect(f.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
+    // Nur die migrierten Farballianz (Farb-Ziel) / Formationskern (Typ-Ziel) tragen pickTarget; der Rest ist ziel-los.
+    const withTarget = e.filter((f) => [1, 2, 3, 4].some((t) => f.tiers[t].pickTarget)).map((f) => f.id).sort();
+    expect(withTarget).toEqual(["E_COLOR_ALLIANCE", "E_CORE"]);
+    expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].pickTarget.suits).toBe(4);
+    expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].pairs).toBe(true);
+    // #195: monotone, distincte Farballianz-Leiter (I/II waren zuvor identisch suits:2) — 2/3/4/4, nur IV mit pairs.
+    expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[t].pickTarget.suits)).toEqual([2, 3, 4, 4]);
+    expect([1, 2, 3].every((t) => !FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[t].pairs)).toBe(true);
+    expect(FAMILY_DEFS.E_CORE.tiers[1].pickTarget.formationType).toBe(true);
   });
 });
 
@@ -272,8 +278,8 @@ describe("Kategorie E — Formations-Parameter je Stufe (Spec §3.2 E)", () => {
     expect([1, 2, 3, 4].map((t) => [p[t].wMinLen, p[t].wMinDiff])).toEqual([[3, 3], [2, 4], [2, 3], [2, 2]]);
     expect(p[4].wFactorStart).toBe(1.35);
   });
-  it("E_RPM: Doppel-Treppe-Budget je Segment (I/II 1, III 2, IV ∞)", () => {
-    expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_RPM.tiers[t].drehSeg)).toEqual([1, 1, 2, Infinity]);
+  it("E_RPM: Doppel-Treppe-Budget je Segment monoton 1/2/3/∞ (#189)", () => {
+    expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_RPM.tiers[t].drehSeg)).toEqual([1, 2, 3, Infinity]);
   });
   it("E_LOSS / E_QUICKSHOT: Anker-Prädikate + Faktor/Wert je Stufe (0-basierte Positionen)", () => {
     const l = FAMILY_DEFS.E_LOSS.tiers, q = FAMILY_DEFS.E_QUICKSHOT.tiers;
@@ -362,11 +368,13 @@ describe("Kategorie B — Stufeneffekte (Spec §3.2 B)", () => {
     expect(f[4].cardBonus({ predValue: 5, pValueBase: 5 })).toBe(2); // gleich → +2
     expect(f[2].cardBonus({ predValue: null, pValueBase: 9 })).toBe(0); // kein Vorgänger
   });
-  it("Initiative: tieArmLosses je Stufe; IV zusätzlich +2 nach Niederlage", () => {
+  it("Initiative: tieArmLosses je Stufe; III/IV +1/+2 nach Niederlage (#189 Fund C)", () => {
     const f = FAMILY_DEFS.B_INITIATIVE.tiers;
     expect([1, 2, 3, 4].map((t) => f[t].tieArmLosses)).toEqual([2, 1, 1, 1]);
+    expect(f[3].cardBonus({ lostLastTrick: true })).toBe(1); // III differenziert von II (war zuvor identisch)
     expect(f[4].cardBonus({ lostLastTrick: true })).toBe(2);
     expect(f[1].cardBonus).toBeUndefined();
+    expect(f[2].cardBonus).toBeUndefined(); // II bleibt ohne Wertbonus
   });
 });
 
@@ -395,12 +403,20 @@ describe("Kategorie D — Stufeneffekte (Spec §3.2 D)", () => {
     expect(f[1].scoreFlat({ margin: 9 })).toBe(0);
     expect(f[4].scoreFlat({ margin: 4 })).toBe(750);
   });
-  it("Präzision: I/II exakt gleich, III/IV auch ±1", () => {
+  it("Präzision: I/II exakt gleich, III/IV auch ±1 (nur bei aufeinanderfolgenden Siegen)", () => {
     const f = FAMILY_DEFS.D_PRECISION.tiers;
-    expect(f[1].scoreFlat({ winValue: 5, lastWinValue: 5 })).toBe(250);
-    expect(f[1].scoreFlat({ winValue: 5, lastWinValue: 6 })).toBe(0);   // ±1 zählt noch nicht
-    expect(f[3].scoreFlat({ winValue: 5, lastWinValue: 6 })).toBe(550); // ±1 zählt
-    expect(f[4].scoreFlat({ winValue: 5, lastWinValue: 7 })).toBe(0);   // ±2 nicht
+    const w = (extra) => ({ lastResult: "win", ...extra }); // Vorgänger war ein Sieg → „aufeinanderfolgend"
+    expect(f[1].scoreFlat(w({ winValue: 5, lastWinValue: 5 }))).toBe(250);
+    expect(f[1].scoreFlat(w({ winValue: 5, lastWinValue: 6 }))).toBe(0);   // ±1 zählt noch nicht
+    expect(f[3].scoreFlat(w({ winValue: 5, lastWinValue: 6 }))).toBe(550); // ±1 zählt
+    expect(f[4].scoreFlat(w({ winValue: 5, lastWinValue: 7 }))).toBe(0);   // ±2 nicht
+  });
+  it("Präzision: #146 — zahlt NICHT über eine Niederlage/Gleichstand hinweg (nicht aufeinanderfolgend)", () => {
+    const f = FAMILY_DEFS.D_PRECISION.tiers;
+    // gleicher Wert wie der letzte Sieg, aber der direkt vorige Stich war KEIN Sieg → kein Bonus.
+    expect(f[1].scoreFlat({ lastResult: "loss", winValue: 7, lastWinValue: 7 })).toBe(0);
+    expect(f[1].scoreFlat({ lastResult: "tie",  winValue: 7, lastWinValue: 7 })).toBe(0);
+    expect(f[4].scoreFlat({ lastResult: "loss", winValue: 7, lastWinValue: 7 })).toBe(0);
   });
   it("Zehnter Sieg: Zähler-Intervall sinkt 12→5", () => {
     const f = FAMILY_DEFS.D_TENTH_WIN.tiers;
