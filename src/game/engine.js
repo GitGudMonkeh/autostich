@@ -26,6 +26,12 @@ function prodHook(perks, name, ctx) {
 function ownsFlag(perks, flag) {
   return perks.some((id) => PERK_DEFS[id][flag]);
 }
+// Wert eines Perk-Markers des ERSTEN Trägers (0, wenn keiner) — so bleibt der Marker die einzige Quelle
+// (z. B. L4 critValueGain als Kappe), statt die Zahl zusätzlich in der Engine zu duplizieren.
+function flagValue(perks, flag) {
+  for (const id of perks) { const v = PERK_DEFS[id][flag]; if (v) return v; }
+  return 0;
+}
 
 // Crit-Wurf (pure, testbar): guaranteed override; sonst rng < gedeckelter Chance.
 // Ruft rng() NUR, wenn wirklich gewürfelt wird → minimaler/deterministischer Verbrauch.
@@ -141,22 +147,15 @@ export function resolveTrick(state, rng = Math.random) {
   // Kartenrollen (V2 §22.6 C): Rolle der aktuellen Karte, Triumph-Armierung, Segment-Tiefste.
   const isRole = (perkId) => (roles[perkId] || []).includes(pCard.id);
   const triumphActive = triumphArmed.includes(pCard.id);
-  let isSegmentLow = false, isSegmentHigh = false, segmentLowRank = -1, segmentIndex = -1;
+  let segmentLowRank = -1, segmentIndex = -1;
   // Gate: eine gehaltene segmentLow-Familie (C_SURVIVOR; flache C7 ist zu Familie migriert #167). segmentLowRank/
-  // segmentIndex liefern den Rang der Karte im Segment (0=tiefste, 1=zweittiefste); isSegmentLow/High bleiben für ggf. spätere Nutzung.
+  // segmentIndex liefern den Rang der Karte im Segment (0=tiefste, 1=zweittiefste).
   if (activeFamilyEntries(familyTiers).some((e) => e.def.segmentLow)) {
     const segStart = Math.floor(actualPos / SEGMENT_SIZE) * SEGMENT_SIZE;
     segmentIndex = Math.floor(actualPos / SEGMENT_SIZE);
-    let minVal = Infinity, minPos = -1, maxVal = -Infinity, maxPos = -1;
     const segPositions = [];
-    for (let k = segStart; k < segStart + SEGMENT_SIZE && k < playerOrder.length; k++) {
-      const v = deck[playerOrder[k]].value;
-      segPositions.push(k);
-      if (v < minVal) { minVal = v; minPos = k; }
-      if (v > maxVal) { maxVal = v; maxPos = k; }
-    }
-    isSegmentLow = actualPos === minPos; isSegmentHigh = actualPos === maxPos;
-    // Rang nach aktuellem Wert aufsteigend, stabil nach Position bei Gleichwert (Rang 0 = minPos → deckungsgleich mit isSegmentLow).
+    for (let k = segStart; k < segStart + SEGMENT_SIZE && k < playerOrder.length; k++) segPositions.push(k);
+    // Rang nach aktuellem Wert aufsteigend, stabil nach Position bei Gleichwert (Rang 0 = tiefste Karte des Segments).
     const sorted = segPositions.slice().sort((a, b) => deck[playerOrder[a]].value - deck[playerOrder[b]].value || a - b);
     segmentLowRank = sorted.indexOf(actualPos);
   }
@@ -176,7 +175,7 @@ export function resolveTrick(state, rng = Math.random) {
     lossStreak, // #71 Revanche: aufeinanderfolgende Niederlagen (Stand VOR diesem Stich)
     posForm, // V2 §22.6: Formation der gespielten Position (B6 Wiederholung / B9 Treppe)
     predValue, // V2 §22.6: Dauerwert des direkten Vorgängers (B10 Überzahl)
-    isRole, triumphActive, isSegmentLow, isSegmentHigh, // V2 §22.6 C/L: Kartenrollen (C1/C2/C3/C6/C7/L7)
+    isRole, triumphActive, // V2 §22.6 C/L: Kartenrollen (C1/C2/C3/C6/C7/L7)
     // Rarität #167 Kat. C: Ergebnis des ZWEITEN Vorgängers (C_GUARD IV), Segment-Rang/-Index (C_SURVIVOR).
     secondLastResult: recentResults.length >= 2 ? recentResults[recentResults.length - 2] : null,
     segmentLowRank, segmentIndex,
@@ -452,8 +451,9 @@ export function resolveTrick(state, rng = Math.random) {
       crits += 1; critBonusScore += critBonus;
       // D_CRIT_MOMENTUM IV: ein Crit erhöht die Siegesserie zusätzlich (wirkt ab dem nächsten Stich, wie der Serienanker).
       if (streakGainOnCrit) { winStreak += streakGainOnCrit; if (winStreak > bestStreak) bestStreak = winStreak; }
-      // L4 Kritische Masse: die kritisch getroffene Karte dauerhaft +1 (max +4 je Karte).
-      if (ownsFlag(perks, "critValueGain") && (l4Boost[pCard.id] || 0) < 4) {
+      // L4 Kritische Masse: die kritisch getroffene Karte dauerhaft +1 (Kappe = critValueGain der Perk-Def, einzige Quelle).
+      const l4Cap = flagValue(perks, "critValueGain");
+      if (l4Cap && (l4Boost[pCard.id] || 0) < l4Cap) {
         deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: c.value + 1 } : c));
         l4Boost = { ...l4Boost, [pCard.id]: (l4Boost[pCard.id] || 0) + 1 };
       }

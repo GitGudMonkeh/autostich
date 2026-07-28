@@ -106,6 +106,29 @@ describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schrit
     expect(s.lastTrick.breakdown.flats).toBeCloseTo(800);
     expect(s.lastWinValue).toBe(7); // Referenz läuft mit (nicht verbraucht)
   });
+
+  // Coverage-Gate (registry-guards.test.js): dedizierte Verhaltenstests für die zuvor nur strukturell erfassten D-Familien.
+  it("D_UNDERDOG: zahlt bei niedrigem Kampfwert (Stufe I: Wert ≤2 → +250)", () => {
+    expect(resolveTrick(scenario(2, 0, { familyTiers: { D_UNDERDOG: 1 } }), rng).lastTrick.breakdown.flats).toBeCloseTo(250);
+    expect(resolveTrick(scenario(3, 0, { familyTiers: { D_UNDERDOG: 1 } }), rng).lastTrick.breakdown.flats).toBeCloseTo(0); // Wert 3 > Schwelle 2
+  });
+  it("D_RHYTHM: zahlt auf jedem k-ten Sieg (Stufe IV: wins % 3 === 0 → +600)", () => {
+    let s = scenario(12, 0, { familyTiers: { D_RHYTHM: 4 }, deck: flatDeck() }); // formationsneutral
+    s = resolveTrick(s, rng); expect(s.lastTrick.breakdown.flats).toBeCloseTo(0);   // wins 1
+    s = resolveTrick(s, rng); expect(s.lastTrick.breakdown.flats).toBeCloseTo(0);   // wins 2
+    s = resolveTrick(s, rng); expect(s.lastTrick.breakdown.flats).toBeCloseTo(600); // wins 3 → 3 % 3 === 0
+  });
+  it("D_CRIT_HARVEST: scoreFlatOnCrit nur bei Crit MIT aktiver Formation (Stufe I: +175)", () => {
+    // 2-Karten-Wiederholung: Pos 0 formationslos, Pos 1 = Wiederholung (hasFormation). Crit über statCritChance:1 erzwungen.
+    const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }];
+    const opp = [{ id: "o0", suit: "R", baseRank: 0, value: 0 }, { id: "o1", suit: "R", baseRank: 0, value: 0 }];
+    const base = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1], oppOrder: [0, 1], familyTiers: { D_CRIT_HARVEST: 1 }, statCritChance: 1 };
+    let s = resolveTrick(base, rng);          // Pos 0: Crit, aber keine Formation → 0
+    expect(s.lastTrick.breakdown.flats).toBeCloseTo(0);
+    s = resolveTrick(s, rng);                 // Pos 1: Crit + Wiederholung → +175
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.lastTrick.breakdown.flats).toBeCloseTo(175);
+  });
 });
 
 describe("Familien-Engine — Kategorie B (Wertboni über resolveTrick)", () => {
