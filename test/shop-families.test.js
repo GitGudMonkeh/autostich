@@ -183,6 +183,9 @@ describe("Anker-Shop-Familien (Spec §4.2 Ankerfamilien)", () => {
   });
   it("ANCHOR_FAMILY_BY_TYPE + anchorTierParam lösen die Stufen-Stärke auf", () => {
     expect(ANCHOR_FAMILY_BY_TYPE.power.id).toBe("SF_A_POWER");
+    expect(ANCHOR_FAMILY_BY_TYPE.crit.id).toBe("SF_A_CRIT");
+    expect(ANCHOR_FAMILY_BY_TYPE.streak.id).toBe("SF_A_STREAK");
+    expect(ANCHOR_FAMILY_BY_TYPE.formation.id).toBe("SF_A_FORMATION");
     expect([1, 2, 3, 4].map((t) => anchorTierParam("power", t, "power"))).toEqual([1, 2, 4, 6]);
     expect([1, 2, 3, 4].map((t) => anchorTierParam("score", t, "score"))).toEqual([100, 200, 350, 600]);
     expect([1, 2, 3, 4].map((t) => anchorTierParam("crit", t, "crit"))).toEqual([0.10, 0.15, 0.25, 0.40]);

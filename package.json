@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "sim": "node sim/batch.js"
+    "sim": "node sim/batch.js",
+    "probe": "node sim/probe.js"
   },
   "dependencies": {
     "react": "^18.3.1",
