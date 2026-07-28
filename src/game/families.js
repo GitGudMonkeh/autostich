@@ -186,12 +186,13 @@ const D_FAMILIES = {
   },
   D_SUIT_STREAK: {
     id: "D_SUIT_STREAK", cat: "D", name: "Farbserie", upgradeType: REPLACEMENT,
-    // suitStreak wird in der Engine geführt; Stufe legt Schritt & Cap fest (Engine liest suitStep/suitCap/suitHalveOnSwitch).
+    // suitStreak wird in der Engine geführt; Schritt & Cap stecken direkt im scoreFlat-Hook (einzige Quelle).
+    // Die Engine liest hier nur suitHalveOnSwitch (Stufe IV: Farbwechsel halbiert die Stufe statt Reset).
     tiers: {
-      1: { desc: "Siege in Folge derselben Farbe: je +75 mehr Score (max +300).",  scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 75), 300),  suitStep: 75, suitCap: 300 },
-      2: { desc: "Siege in Folge derselben Farbe: je +100 mehr Score (max +500).", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 100), 500), suitStep: 100, suitCap: 500 },
-      3: { desc: "Siege in Folge derselben Farbe: je +150 mehr Score (max +750).", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 150), 750), suitStep: 150, suitCap: 750 },
-      4: { desc: "Siege in Folge derselben Farbe: je +200 mehr Score (max +1.200); ein Farbwechsel halbiert die Stufe statt sie zurückzusetzen.", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 200), 1200), suitStep: 200, suitCap: 1200, suitHalveOnSwitch: true },
+      1: { desc: "Siege in Folge derselben Farbe: je +75 mehr Score (max +300).",  scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 75), 300) },
+      2: { desc: "Siege in Folge derselben Farbe: je +100 mehr Score (max +500).", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 100), 500) },
+      3: { desc: "Siege in Folge derselben Farbe: je +150 mehr Score (max +750).", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 150), 750) },
+      4: { desc: "Siege in Folge derselben Farbe: je +200 mehr Score (max +1.200); ein Farbwechsel halbiert die Stufe statt sie zurückzusetzen.", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 200), 1200), suitHalveOnSwitch: true },
     },
   },
   D_FULL_HOUSE: {
