@@ -84,7 +84,7 @@ export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P
 
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
 export const SKILL_SLOTS       = 6;    // max gleichzeitig gehaltene Skills [Test-Experiment: 4→6]
-export const SKILLS_OFFERED     = 6;   // Skills je Skill-Runde (Prototyp: 2+2+2 — alle 3 Archetypen immer im Angebot)
+export const SKILLS_OFFERED     = 9;   // Skills je Skill-Runde (Test-Experiment: 3+3+3 — 3 pro Archetyp, alle 3 immer im Angebot)
 export const MAX_ARCHETYPES     = 3;   // Prototyp: alle 3 Archetypen gleichzeitig aktivierbar (Cap aufgehoben)
 export const SKILL_EVERY_CYCLES = 3;   // jede N-te Runde ist eine Skill-Runde (3, 6, 9 …), sonst Perk
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)

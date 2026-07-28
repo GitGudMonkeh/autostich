@@ -85,6 +85,15 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
     const offers = Array.from({ length: 8 }, (_, s) => buildSkillOffer([], [], makeRng(s + 1), 6).join(","));
     expect(new Set(offers).size).toBeGreaterThan(1);
   });
+  it("Test-Experiment: count 9 → genau 3 pro Archetyp (3+3+3)", () => {
+    for (let seed = 1; seed <= 12; seed++) {
+      const off = buildSkillOffer([], [], makeRng(seed), 9);
+      expect(off).toHaveLength(9);
+      const perArch = {};
+      for (const id of off) perArch[archetypeOf(id)] = (perArch[archetypeOf(id)] || 0) + 1;
+      expect(perArch).toEqual({ lightning: 3, fire: 3, ice: 3 });
+    }
+  });
   it("bereits gehaltene werden nicht erneut angeboten; leerer Pool → []", () => {
     expect(buildSkillOffer([LR], [], makeRng(1), 4)).not.toContain(LR);
     expect(buildSkillOffer(ALL, [], makeRng(1), 4)).toEqual([]);

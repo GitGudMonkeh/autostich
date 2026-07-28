@@ -412,7 +412,7 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
 
     const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4 }), rng); // → cycle 5 = skill
     expect(skillRound.phase).toBe("levelup");
-    expect(skillRound.skillOffer).toHaveLength(6); // Prototyp: SKILLS_OFFERED 6 (2+2+2, alle 3 Archetypen)
+    expect(skillRound.skillOffer).toHaveLength(9); // Test-Experiment: SKILLS_OFFERED 9 (3+3+3, alle 3 Archetypen)
     expect(skillRound.offer).toBeNull();
     expect(skillRound.statOffer).toBeNull();
 
