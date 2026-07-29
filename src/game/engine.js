@@ -4,8 +4,9 @@ import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakB
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus } from "./families.js";
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
   hasIonize, hasProtect, hasStorm, chargeFloorFor,
-  lightningCritMult, hasStaticCharge, hasConductivity, hasEndlessStorm, hasDischarge, // Blitz-Rework (#93 F2)
-  hasBlitzcatcher, hasVoltageArc, // #165 Skills (§5.2): Blitzfänger / Spannungsbogen
+  lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
+  hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasWetterleuchten, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
+  hasDoubleDischarge, hasAreaIonize, hasDurchschlag, // Blitz-Rework (v0): Legendäre
   fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer-Rework (v0)
   glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost, hasIceBloom } from "./skills.js"; // Eis (#93 F3 / #165 Eisblüte)
@@ -342,7 +343,10 @@ export function resolveTrick(state, rng = Math.random) {
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
     const critCtx = { ...wctx, rawCrit };
-    critMultiplier = critMultiplierFor(perks, critCtx, statCritMult) + lightningCritMult(skills); // Basis 1,5 + Crit-Mult-Stat + L6-Überschuss + Donnergott
+    // Basis 1,5 + Crit-Mult-Stat + L6-Überschuss + Donnergott + Durchschlag (dauerhaft) + Entladung (armierter Crit nach vollem Verbrauch, einmalig).
+    critMultiplier = critMultiplierFor(perks, critCtx, statCritMult) + lightningCritMult(skills)
+                   + (lightning?.durchschlagMult || 0)
+                   + ((lightning && lightning.dischargeArmed) ? C.ENTLADUNG_CRIT_MULT : 0);
     isCrit = rollCrit(critChance, forceCrit, rng) && !reducedRepeat; // forceCrit = L10; reducedRepeat = Zeitsegment III (§10: kein Crit in der Wiederholung)
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
@@ -354,9 +358,9 @@ export function resolveTrick(state, rng = Math.random) {
     if (l5Hit) l5Used = [...l5Used, pCard.id];
     const l5Flat = l5Hit ? (PERK_DEFS.L5.jackpotScore || 0) : 0;
     // (critCtx mit rawCrit ist oben — vor critMultiplier — gebildet; D6/D7/D8/D11/D15/D19 + Blitzableiter nutzen ihn.)
-    // Entladung (#93 F2): war der nächste Crit +500 armiert (aus einem früheren vollen Verbrauch)? Dieser Crit zahlt aus.
+    // Entladung (Rework v0): war der nächste Crit mit +Crit-Mult armiert (aus einem früheren vollen Verbrauch)?
+    // Der Crit-Mult-Bonus fließt oben in critMultiplier; hier nur die Armierung merken (unten entwaffnet).
     const dischargeArmedBefore = !!(lightning && lightning.dischargeArmed);
-    const dischargeFlat = (isCrit && dischargeArmedBefore) ? C.DISCHARGE_SCORE : 0;
     // Familien-Score-Flats (Rarität-Umbau #167, Kat. D) laufen ADDITIV neben den flachen Perk-Flats: nur die
     // gehaltene Familien-Stufe zählt (activeTierDefs) → kein Doppel-Trigger über Stufen (Spec §2.3/§9).
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx) + familySumHook(familyTiers, "scoreFlat", wctx)
@@ -364,7 +368,7 @@ export function resolveTrick(state, rng = Math.random) {
                                   + familySumHook(familyTiers, "scoreFlatOnCrit", critCtx)
                                   + (critFollowArmed ? critFollowCritBonus : 0) // D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist
                                   + (anchorType === "crit" ? (aParam("critScore") || 0) : 0) : 0) // Kritanker IV: Crit dort +250 Score
-                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat + dischargeFlat + iceFlat
+                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat + iceFlat
                       + (anchorType === "score" ? (aParam("score") || 0) : 0) // Punkteanker (§4.2, Stärke = Stufe)
                       + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
                       + interplayStored; // D_INTERPLAY IV: der in Niederlagen gebankte Score wird mit diesem Sieg als Flat ausgezahlt
@@ -391,24 +395,24 @@ export function resolveTrick(state, rng = Math.random) {
     if (formFactorTotal > 1) formationScore += gained * (1 - 1 / formFactorTotal);
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
-    // Blitz: Ladungsgewinn — bei Crit Basis +1 (aktiv) + Skill-Boni; bei Sieg OHNE Crit +1 via Statische Aufladung (#93 F2).
+    // Blitz-Rework (v0): Ladungsgewinn — Blitzableiter (Crit +1) · Statische Aufladung (Nicht-Crit-Sieg +1) ·
+    // Kaskade Überspannung (Crit auf/neben Ionis.) · Überschlag (Crit-Chance-Überschuss) · Dauerstrom (Serie).
     const ionizedCard = (pCard.ionStacks || 0) > 0;
     if (lightning && lightning.active) {
-      // Entladung (#93 F2): der oben ausgezahlte +500-Crit löst seine Armierung; ein neuer voller Verbrauch re-armiert weiter unten.
-      if (isCrit && dischargeArmedBefore) lightning = { ...lightning, dischargeArmed: false };
+      if (isCrit && dischargeArmedBefore) lightning = { ...lightning, dischargeArmed: false }; // Entladung entwaffnen (Crit-Mult oben verrechnet)
       let gainedCharge = 0;
       if (isCrit) {
-        gainedCharge = 1 + skillSum(skills, "chargeOnCrit", wctx)
-                         + (ionizedCard ? skillSum(skills, "chargeOnIonizedCrit", wctx) : 0);
-        // Leitfähigkeit (#93 F2): Crit mit einer Karte direkt neben ≥1 ionisierten Karte → +2 (einmalig).
-        // #145: Deck-Nachbarn über actualPos (0–39), nicht über den Stich-Zähler pos (0–44 unter Zeitsegment) —
-        // sonst liest pos≥40 undefined und der Bonus fällt im wiederholten Segment stumm aus.
+        gainedCharge += 1 + skillSum(skills, "chargeOnCrit", wctx);
+        // #145: Deck-Nachbarn über actualPos (0–39), nicht über den Stich-Zähler pos (0–44 unter Zeitsegment).
         const nbIon = (actualPos > 0 && (deck[playerOrder[actualPos - 1]]?.ionStacks || 0) > 0)
                    || (actualPos < playerOrder.length - 1 && (deck[playerOrder[actualPos + 1]]?.ionStacks || 0) > 0);
-        if (hasConductivity(skills) && nbIon) gainedCharge += C.CONDUCT_CHARGE;
+        if (hasUeberspannung(skills) && (ionizedCard || nbIon)) gainedCharge += C.UEBERSPANNUNG_CHARGE; // Kaskade (merge 04+09)
       } else if (hasStaticCharge(skills)) {
-        gainedCharge = C.STATIC_CHARGE; // Statische Aufladung: Sieg ohne Crit → 1 Ladung
+        gainedCharge += C.STATIC_CHARGE; // Statische Aufladung: Sieg ohne Crit → 1 Ladung
       }
+      // Überschlag: Crit-Chance-Überschuss über 100 % → Ladung (jeder Sieg). Dauerstrom: Serie → Ladung (skaliert mit Länge).
+      if (hasUeberschlag(skills) && rawCrit > 1) gainedCharge += Math.floor((rawCrit - 1) * C.UEBERSCHLAG_PER);
+      if (hasDauerstrom(skills)) gainedCharge += Math.min(Math.floor(serieStreak / C.DAUERSTROM_PER_STREAK), C.DAUERSTROM_MAX);
       if (gainedCharge > 0) {
         lightning = addCharge(lightning, gainedCharge);
         // Volle Ladung → Konsument (max 1, im Reducer erzwungen) auslösen; Reaktoren laufen bei JEDEM Verbrauch.
@@ -424,21 +428,22 @@ export function resolveTrick(state, rng = Math.random) {
             // kommenden Karten sind die seq-gemappten Restpositionen (dedupliziert, da ein wiederholtes Segment
             // Deck-Indizes doppelt nennt). Ohne Zeitsegment ist seq die Identität → identisch zu playerOrder.slice.
             const undrawn = [...new Set(seq.slice(pos + 1).map((p) => playerOrder[p]))]; // Deck-Indizes der noch kommenden Karten
+            // Doppelentladung (L, v0): der volle Verbrauch feuert den Ionisierungs-Konsumenten zweimal (Anzahl ×2).
+            const ionN = ionizeCountFor(skills) * (hasDoubleDischarge(skills) ? C.DOPPELENTLADUNG_FACTOR : 1);
             if (hasBlitzcatcher(skills)) {
-              // #165 Blitzfänger: volle Karten (5 Stapel) werden nicht ionisiert → je +2 temp Wert (nächstes Auftauchen) & +1 Ladung.
-              const res = ionizeCardsWithCatch(deck, undrawn, ionizeCountFor(skills), rng);
+              // Blitzfänger: volle Karten (5 Stapel) werden nicht ionisiert → je +2 temp Wert (nächstes Auftauchen) & +1 Ladung.
+              const res = ionizeCardsWithCatch(deck, undrawn, ionN, rng);
               deck = res.deck;
               for (const cid of res.catchIds) newIceTemp[cid] = Math.max(newIceTemp[cid] || 0, C.BLITZFAENGER_VALUE);
               blitzCatches = res.catchIds.length;
             } else {
-              deck = ionizeCards(deck, undrawn, ionizeCountFor(skills), rng);
+              deck = ionizeCards(deck, undrawn, ionN, rng);
             }
             consumed = true;
           }
           if (consumed) {
-            // Ladungsboden: Reststrom (3) ODER Endloser Sturm (50 % des Max, aufgerundet) — der HÖHERE gilt (nicht additiv).
-            let floor = chargeFloorFor(skills);
-            if (hasEndlessStorm(skills)) floor = Math.max(floor, Math.ceil(lightning.maxCharge / 2));
+            // Ladungsboden: Reststrom (3), sonst 0 (Endloser Sturm wurde im Rework durch Doppelentladung ersetzt).
+            const floor = chargeFloorFor(skills);
             lightning = consumeCharge(lightning, floor);
             // #165 Blitzfänger: die Fang-Ladungen entstehen NACH dem Verbrauch (sonst würde consumeCharge sie wieder auf den Boden setzen).
             if (blitzCatches > 0) lightning = addCharge(lightning, blitzCatches);
@@ -453,12 +458,26 @@ export function resolveTrick(state, rng = Math.random) {
         }
       }
     }
-    // Nach einem Sieg mit einer ionisierten Karte: diese Karte +1 Stapel (max); der Bonus wurde oben VORHER gewertet.
+    // Ionisierte Siegkarte: normalerweise +1 Stapel. Kurzschluss (v0): eine VOLLE (5) Karte entlädt stattdessen alle
+    // Stapel → Ladung-Burst, Karte auf 0 (Zyklus statt Sättigung). Der Ion-Score wurde oben VORHER gewertet.
     if (ionizedCard) {
-      deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
+      const stacks = pCard.ionStacks || 0;
+      if (hasKurzschluss(skills) && stacks >= C.ION_MAX_STACKS) {
+        deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: 0 } : c));
+        if (lightning && lightning.active) lightning = addCharge(lightning, stacks * C.KURZSCHLUSS_CHARGE_PER_STACK);
+      } else {
+        deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, stacks + 1) } : c));
+      }
     }
-    // #165 Spannungsbogen (§5.2): Sieg mit einer ionisierten Karte → der erste ungespielte, noch nicht volle Nachfolger
-    // in Deckreihenfolge (ab actualPos+1 vorwärts, KEIN Wrap) erhält +1 Ionisierungsstapel. Höchstens eine Karte je Trigger.
+    // Blitzschlag (v0, Kaskade): ein Crit ionisiert die gewonnene Karte (+1 Stapel) — schließt die Selbstspeisung.
+    if (isCrit && hasBlitzschlag(skills)) {
+      deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + C.BLITZSCHLAG_STACKS) } : c));
+    }
+    // Durchschlag (L, v0): Sieg mit VOLL ionisierter Karte (5, Stand vor dem Stich) + Crit → dauerhaft +Crit-Mult.
+    if (isCrit && hasDurchschlag(skills) && (pCard.ionStacks || 0) >= C.ION_MAX_STACKS && lightning && lightning.active) {
+      lightning = { ...lightning, durchschlagMult: (lightning.durchschlagMult || 0) + C.DURCHSCHLAG_CRIT_MULT };
+    }
+    // Spannungsbogen (§5.2): Sieg mit ionisierter Karte → erster ungespielter, nicht-voller Nachfolger +1 Stapel.
     if (ionizedCard && hasVoltageArc(skills)) {
       const played = new Set(seq.slice(0, pos + 1)); // in diesem Durchlauf bereits gespielte Deckpositionen (Zeitsegment-tauglich)
       for (let k = actualPos + 1; k < playerOrder.length; k++) {
@@ -467,6 +486,25 @@ export function resolveTrick(state, rng = Math.random) {
         deck = deck.map((c, i) => (i === di ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
         break;
       }
+    }
+    // Flächenionisation (L, v0): Sieg mit ionisierter Karte → ALLE ungespielten Deck-Nachbarn +1 Stapel (statt nur einer).
+    if (ionizedCard && hasAreaIonize(skills)) {
+      const played = new Set(seq.slice(0, pos + 1));
+      for (const k of [actualPos - 1, actualPos + 1]) {
+        if (k < 0 || k >= playerOrder.length) continue;
+        const di = playerOrder[k];
+        if (played.has(k) || (deck[di].ionStacks || 0) >= C.ION_MAX_STACKS) continue;
+        deck = deck.map((c, i) => (i === di ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
+      }
+    }
+    // Wetterleuchten (v0): Serie erreicht eine Schwelle → ionisiert Karten (Serie zündet Ionisierung).
+    if (hasWetterleuchten(skills) && serieStreak > 0 && serieStreak % C.WETTERLEUCHTEN_THRESHOLD === 0) {
+      const undrawnW = [...new Set(seq.slice(pos + 1).map((p) => playerOrder[p]))];
+      deck = ionizeCards(deck, undrawnW, C.WETTERLEUCHTEN_COUNT, rng);
+    }
+    // Spannungsstau (v0): Nicht-Crit-Siege rampen die Crit-Chance (bis Cap); ein Crit entlädt & resettet.
+    if (hasSpannungsstau(skills) && lightning && lightning.active) {
+      lightning = { ...lightning, stauBonus: isCrit ? 0 : Math.min(C.SPANNUNGSSTAU_CAP, (lightning.stauBonus || 0) + C.SPANNUNGSSTAU_STEP) };
     }
     // Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
     critFollowArmed = isCrit;                                        // D14 Crit-Folge: nur ein Crit rüstet den nächsten Sieg

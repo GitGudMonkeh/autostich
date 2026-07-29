@@ -14,108 +14,78 @@ import { shuffle } from "./deck.js";
    (lightning.active) — davor sind Ladung/Crit-Basis unsichtbar & inaktiv (Abschnitt 1).
    ============================================================ */
 export const SKILL_DEFS = {
-  SK_LIGHTNING_01: {
-    id: "SK_LIGHTNING_01", name: "Blitzableiter", archetype: "lightning",
-    keywords: ["charge", "crit"],
-    desc: "Jeder Crit erzeugt 1 zusätzliche Ladung und gibt +50 Score.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, // +5 pp je gehaltenem Blitz-Skill (Abschnitt 2a)
-    chargeOnCrit: () => 1,
-    scoreFlatOnCrit: () => 50,
-  },
-  SK_LIGHTNING_02: {
-    id: "SK_LIGHTNING_02", name: "Ionisierung", archetype: "lightning",
-    keywords: ["charge", "ionize"],
-    desc: "Bei voller Ladung 2 zufällige ungespielte Karten ionisieren, dann Ladung verbrauchen.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    onFullCharge: "ionize",                // Verbraucher: löst bei voller Ladung aus
-    ionizeCount: () => C.ION_BASE_COUNT,   // 2 Karten je Auslösung
-  },
-  SK_LIGHTNING_03: {
-    id: "SK_LIGHTNING_03", name: "Kettenblitz", archetype: "lightning",
-    keywords: ["ionize"],
-    desc: "Wenn Karten ionisiert werden, werden zwei zusätzliche Karten ionisiert.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    ionizeCount: () => C.KETTENBLITZ_COUNT, // +2 (nur wirksam zusammen mit Ionisierung)
-  },
-  SK_LIGHTNING_04: {
-    id: "SK_LIGHTNING_04", name: "Überspannung", archetype: "lightning",
-    keywords: ["charge", "ionize", "crit"],
-    desc: "Crits mit einer ionisierten Karte erzeugen 3 zusätzliche Ladungen.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    chargeOnIonizedCrit: () => C.UEBERSPANNUNG_CHARGE, // +3 Ladung bei Crit mit ionisierter Karte
-  },
-  SK_LIGHTNING_05: {
-    id: "SK_LIGHTNING_05", name: "Reststrom", archetype: "lightning",
-    keywords: ["charge"],
-    desc: "Nach jedem Verbrauch voller Ladung bleiben 3 Ladungen erhalten.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    chargeFloor: () => C.REST_CHARGE_FLOOR, // Reaktor: Ladungsboden nach Verbrauch
-  },
-  SK_LIGHTNING_06: {
-    id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning",
-    keywords: ["charge", "crit"],
-    desc: "Jeder Ladungsverbrauch gibt dauerhaft +2 % Crit-Chance (max +20 %), dann +100 Score auf die nächsten drei Siege.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    storm: true, // Reaktor: reagiert auf jeden Verbrauch (Engine führt stormCritBonus/stormScoreWinsRemaining)
-  },
-  SK_LIGHTNING_07: {
-    id: "SK_LIGHTNING_07", name: "Geladene Serie", archetype: "lightning",
-    keywords: ["charge", "streak"],
-    desc: "Bei voller Ladung wird deine Siegesserie geschützt — die nächste Niederlage setzt sie nicht zurück. Die Ladung wird sofort verbraucht.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    onFullCharge: "protectStreak", // Verbraucher: setzt den Serien-Rahmen
-  },
-  // ---- Blitz-Rework (#93 F2): neue normale Skills (08–10) + Legendäre (L01/L02). Flags in engine.js gelesen. ----
-  SK_LIGHTNING_08: {
-    id: "SK_LIGHTNING_08", name: "Statische Aufladung", archetype: "lightning",
-    keywords: ["charge"],
-    desc: "Jeder Sieg ohne Crit erzeugt 1 Ladung.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    staticCharge: true,
-  },
-  SK_LIGHTNING_09: {
-    id: "SK_LIGHTNING_09", name: "Leitfähigkeit", archetype: "lightning",
-    keywords: ["charge", "ionize", "crit"],
-    desc: "Ein Crit direkt neben einer ionisierten Karte erzeugt 2 zusätzliche Ladungen.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    conductivity: true,
-  },
-  SK_LIGHTNING_10: {
-    id: "SK_LIGHTNING_10", name: "Entladung", archetype: "lightning",
-    keywords: ["charge", "crit"],
-    desc: "Nach einem vollständigen Ladungsverbrauch gibt der nächste Crit +500 Score.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    discharge: true,
-  },
-  // ---- #165 Skills (Spec §5.2): zwei neue normale Blitz-Skills. Flags in engine.js/ionizeCardsWithCatch gelesen. ----
-  SK_LIGHTNING_11: {
-    id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning",
-    keywords: ["ionize", "charge"],
-    desc: "Wird eine Karte mit bereits 5 Ionisierungsstapeln erneut ionisiert, erhält sie stattdessen +2 temporären Wert und 1 Ladung.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    blitzcatcher: true,
-  },
-  SK_LIGHTNING_12: {
-    id: "SK_LIGHTNING_12", name: "Spannungsbogen", archetype: "lightning",
-    keywords: ["ionize"],
-    desc: "Gewinnt eine ionisierte Karte, wird ihr direkter Nachfolger um 1 Stapel ionisiert. Volle (5) Karten werden in Deckreihenfolge übersprungen.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    voltageArc: true,
-  },
-  SK_LIGHTNING_L01: {
-    id: "SK_LIGHTNING_L01", name: "Donnergott", archetype: "lightning", legendary: true,
-    keywords: ["charge", "crit"],
+  // ---- Blitz-Rework (v0) — „Der Sturm, der sich selbst nährt." 4 Währungen (Crit/Ladung/Ionis/Serie) + Kaskade.
+  //      Jeder Blitz-Skill trägt zur Crit-Chance bei (Sockel + je Skill). Flags in engine.js/skills.js gelesen.
+  // Linie 1 — Ladung (Aufbau · Reaktor · Entlade-Payoffs)
+  SK_LIGHTNING_01: { id: "SK_LIGHTNING_01", name: "Blitzableiter", archetype: "lightning", keywords: ["charge", "crit"],
+    desc: "Jeder Crit erzeugt +1 Ladung. Der zuverlässige Crit-Generator.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, chargeOnCrit: () => 1 },
+  SK_LIGHTNING_08: { id: "SK_LIGHTNING_08", name: "Statische Aufladung", archetype: "lightning", keywords: ["charge"],
+    desc: "Jeder Sieg ohne Crit erzeugt +1 Ladung — hält den Sturm am Bauen, auch wenn die Crits kalt bleiben.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, staticCharge: true },
+  SK_LIGHTNING_05: { id: "SK_LIGHTNING_05", name: "Reststrom", archetype: "lightning", keywords: ["charge"],
+    desc: "Nach jedem vollen Verbrauch bleibt ein Ladungsboden erhalten.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, chargeFloor: () => C.REST_CHARGE_FLOOR },
+  SK_LIGHTNING_06: { id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning", keywords: ["charge", "crit"],
+    desc: "Jeder Ladungsverbrauch gibt dauerhaft +Crit-Chance (bis Cap) und Score-Drip auf die nächsten Siege.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, storm: true },
+  SK_LIGHTNING_10: { id: "SK_LIGHTNING_10", name: "Entladung", archetype: "lightning", keywords: ["charge", "crit"],
+    desc: "Nach vollem Verbrauch bekommt der nächste Crit +1,0× Crit-Multiplikator.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, discharge: true },
+  // Linie 2 — Konsumenten (volle Ladung → Payoff; max 1 im Build)
+  SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionisierung", archetype: "lightning", keywords: ["charge", "ionize"],
+    desc: "Bei voller Ladung 2 ungespielte Karten ionisieren, dann Ladung verbrauchen. Die Ionis.-Saat.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, onFullCharge: "ionize", ionizeCount: () => C.ION_BASE_COUNT },
+  SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Geladene Serie", archetype: "lightning", keywords: ["charge", "streak"],
+    desc: "Bei voller Ladung wird deine Serie geschützt — die nächste Niederlage setzt sie nicht zurück. Die Ladung wird sofort verbraucht.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, onFullCharge: "protectStreak" },
+  // Linie 3 — Ionisierung (Breite · Tiefe · Überlauf · Konsum)
+  SK_LIGHTNING_03: { id: "SK_LIGHTNING_03", name: "Kettenblitz", archetype: "lightning", keywords: ["ionize"],
+    desc: "Wenn Karten ionisiert werden, werden zusätzliche Karten ionisiert (Breite).",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, ionizeCount: () => C.KETTENBLITZ_COUNT },
+  SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Spannungsbogen", archetype: "lightning", keywords: ["ionize"],
+    desc: "Gewinnt eine ionisierte Karte, springt ein Stapel auf ihren Nachfolger (Tiefe). Volle (5) Karten werden übersprungen.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, voltageArc: true },
+  SK_LIGHTNING_11: { id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning", keywords: ["ionize", "charge"],
+    desc: "Eine volle Karte (5) wird statt weiter ionisiert zu +2 temp Wert & +1 Ladung. Die volle Karte als Dauer-Score-Motor.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, blitzcatcher: true },
+  SK_LIGHTNING_09: { id: "SK_LIGHTNING_09", name: "Kurzschluss", archetype: "lightning", keywords: ["ionize", "charge"],
+    desc: "Eine volle Karte (5) entlädt beim Sieg alle Stapel → +Ladung-Burst, Karte auf 0 zurück. Zyklus statt Sättigung.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, kurzschluss: true },
+  // Linie 4 — Crit-Maschine (Chance & Mult erzeugen — Blitz-exklusiv)
+  SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsstau", archetype: "lightning", keywords: ["crit"],
+    desc: "Jeder Sieg ohne Crit erhöht die Crit-Chance des nächsten Siegs; ein Crit entlädt & resettet. Dürre spart sich auf.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, spannungsstau: true },
+  SK_LIGHTNING_14: { id: "SK_LIGHTNING_14", name: "Überschlag", archetype: "lightning", keywords: ["crit", "charge"],
+    desc: "Crit-Chance-Überschuss über 100 % wird in Ladung umgewandelt. Belohnt All-in auf Crit-Chance.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, ueberschlag: true },
+  // Linie 5 — Kaskade (Verkabelung — Ereignis zündet Ereignis)
+  SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Überspannung", archetype: "lightning", keywords: ["charge", "ionize", "crit"],
+    desc: "Ein Crit auf oder direkt neben einer ionisierten Karte erzeugt zusätzliche Ladung. Crit×Ionis.-Brücke.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, ueberspannung: true },
+  SK_LIGHTNING_15: { id: "SK_LIGHTNING_15", name: "Blitzschlag", archetype: "lightning", keywords: ["crit", "ionize"],
+    desc: "Ein Crit ionisiert die gewonnene Karte — schließt die Selbstspeisung (Crit → Ionis. → ionis. Sieg → …).",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, blitzschlag: true },
+  // Linie 6 — Serie-Schnittstelle (Serie → Blitz-Währung)
+  SK_LIGHTNING_16: { id: "SK_LIGHTNING_16", name: "Dauerstrom", archetype: "lightning", keywords: ["charge", "streak"],
+    desc: "Jeder Sieg in Folge gibt Ladung, skaliert mit der Serienlänge — die Serie speist den Akku.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, dauerstrom: true },
+  SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Wetterleuchten", archetype: "lightning", keywords: ["ionize", "streak"],
+    desc: "Bei Serienschwellen ionisiert es Karten — die Serie zündet Ionisierung (Schwellen-Burst).",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, wetterleuchten: true },
+  // Legendäre (Verstärker, kein Motor)
+  SK_LIGHTNING_L01: { id: "SK_LIGHTNING_L01", name: "Donnergott", archetype: "lightning", legendary: true, keywords: ["charge", "crit"],
     desc: "Maximale Ladung 10 → 15, dafür dauerhaft +1,0× Crit-Multiplikator. Konsumenten lösen erst bei 15 aus.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    thunderGod: true,
-  },
-  SK_LIGHTNING_L02: {
-    id: "SK_LIGHTNING_L02", name: "Endloser Sturm", archetype: "lightning", legendary: true,
-    keywords: ["charge"],
-    desc: "Nach vollem Verbrauch springt die Ladung sofort auf 50 % des Maximums (mit Reststrom gilt der höhere Wert).",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL,
-    endlessStorm: true,
-  },
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, thunderGod: true },
+  SK_LIGHTNING_L02: { id: "SK_LIGHTNING_L02", name: "Doppelentladung", archetype: "lightning", legendary: true, keywords: ["charge", "ionize"],
+    desc: "Bei vollem Ladungsverbrauch feuern die Konsumenten zweimal. Der endlose Sturm.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, doubleDischarge: true },
+  SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Flächenionisation", archetype: "lightning", legendary: true, keywords: ["ionize"],
+    desc: "Gewinnt eine ionisierte Karte, springen ihre Stapel auf alle ungespielten Nachbarn (statt nur einen).",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, areaIonize: true },
+  SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Durchschlag", archetype: "lightning", legendary: true, keywords: ["ionize", "crit"],
+    desc: "Gewinnt eine Karte mit voller Ionisierung (5) und Crit, gibt sie dauerhaft +0,25× Crit-Multiplikator. Harte Doppelbedingung.",
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, durchschlag: true },
 
   // ---- Feuer-Rework (v0) — „Hitze belohnt totale Überlegenheit." 21 Skills auf 7 Linien.
   //      Flags werden in skills.js-Helfern (heatGainFor/heatLossFor/fireScoreFor) + engine.js gelesen. ----
@@ -255,10 +225,11 @@ export function skillSum(skills, name, ctx) {
 }
 
 // Frischer Blitz-Substate — inaktiv. Wird beim ersten Blitz-Skill aktiviert (Reducer).
-// armed = Serien-Rahmen (Geladene Serie); storm* = Gewitterfront (Stufe C).
+// armed = Serien-Rahmen (Geladene Serie); storm* = Gewitterfront; dischargeArmed = Entladung (crit-mult);
+// stauBonus = Spannungsstau-Rampe (Crit-Chance); durchschlagMult = Durchschlag-Dauer-Crit-Mult (Rework v0).
 export function initLightning() {
   return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, armed: false, stormCritBonus: 0, stormScoreWinsRemaining: 0,
-    dischargeArmed: false }; // #93 F2 Entladung: nächster Crit +500 nach vollem Verbrauch
+    dischargeArmed: false, stauBonus: 0, durchschlagMult: 0 };
 }
 
 /* ---- Feuer-Archetyp (#93 F1) — Hitze-Substate + reine Helfer (testbar; Engine-Nutzung in resolveTrick) ---- */
@@ -396,7 +367,7 @@ export function unfreezeAll(deck) {
 // + Gewitterfront-Bonus (dauerhaft, Stufe C). Fließt additiv in die Gesamt-Crit-Chance. 0, solange inaktiv.
 export function lightningCritRaw(lightning, skills) {
   if (!lightning || !lightning.active) return 0;
-  return C.LIGHTNING_CRIT_BASE + skillSum(skills, "critChance", {}) + (lightning.stormCritBonus || 0);
+  return C.LIGHTNING_CRIT_BASE + skillSum(skills, "critChance", {}) + (lightning.stormCritBonus || 0) + (lightning.stauBonus || 0);
 }
 
 // Ladung erhöhen (immutabel), gedeckelt auf maxCharge. No-op, solange der Archetyp inaktiv ist.
@@ -499,16 +470,24 @@ export function chargeFloorFor(skills) {
 }
 export function hasStorm(skills) { return (skills || []).some((id) => SKILL_DEFS[id]?.storm); }
 
-// ---- Blitz-Rework (#93 F2): Flag-Prädikate + abgeleitete Werte ----
+// ---- Blitz-Rework (v0): Flag-Prädikate + abgeleitete Werte ----
 const lightFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
 export const hasThunderGod   = (skills) => lightFlag(skills, "thunderGod");
 export const hasStaticCharge = (skills) => lightFlag(skills, "staticCharge");
-export const hasConductivity = (skills) => lightFlag(skills, "conductivity");
-export const hasEndlessStorm = (skills) => lightFlag(skills, "endlessStorm");
 export const hasDischarge    = (skills) => lightFlag(skills, "discharge");
-// #165 Skills (§5.2): Blitzfänger (volle Karte statt ionisiert → +temp Wert & Ladung) / Spannungsbogen (Sieg-Ionisierung des Nachfolgers).
 export const hasBlitzcatcher = (skills) => lightFlag(skills, "blitzcatcher");
 export const hasVoltageArc   = (skills) => lightFlag(skills, "voltageArc");
+// Rework v0 — Kaskade/Crit-Maschine/Serie-Schnittstelle + Legendäre:
+export const hasUeberspannung  = (skills) => lightFlag(skills, "ueberspannung");  // Kaskade: Crit auf/neben Ionis. → Ladung (merge 04+09)
+export const hasKurzschluss    = (skills) => lightFlag(skills, "kurzschluss");    // volle (5) Siegkarte → Ladung-Burst, Reset
+export const hasSpannungsstau  = (skills) => lightFlag(skills, "spannungsstau");  // Nicht-Crit-Siege rampen Crit-Chance
+export const hasUeberschlag    = (skills) => lightFlag(skills, "ueberschlag");    // Crit-Chance >100 % → Ladung
+export const hasBlitzschlag    = (skills) => lightFlag(skills, "blitzschlag");    // Crit ionisiert die Siegkarte
+export const hasDauerstrom     = (skills) => lightFlag(skills, "dauerstrom");     // Serie → Ladung
+export const hasWetterleuchten = (skills) => lightFlag(skills, "wetterleuchten"); // Serienschwellen → ionisieren
+export const hasDoubleDischarge = (skills) => lightFlag(skills, "doubleDischarge"); // L: Konsumenten ×2
+export const hasAreaIonize     = (skills) => lightFlag(skills, "areaIonize");     // L: ionis. Sieg → alle Nachbarn
+export const hasDurchschlag    = (skills) => lightFlag(skills, "durchschlag");    // L: volle Ionis.+Crit → dauerhaft Crit-Mult
 // Ladungsmaximum je Build (Donnergott → 15) & dessen dauerhafter Crit-Multiplikator-Bonus.
 export const maxChargeFor      = (skills) => (hasThunderGod(skills) ? C.LIGHTNING_MAX_CHARGE_THUNDER : C.LIGHTNING_MAX_CHARGE);
 export const lightningCritMult = (skills) => (hasThunderGod(skills) ? C.THUNDER_CRIT_MULT : 0);

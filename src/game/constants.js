@@ -113,12 +113,26 @@ export const STORM_CRIT_STEP   = 0.02; // Gewitterfront: +Crit-Chance je Verbrau
 export const STORM_CRIT_CAP    = 0.20; // …          … gedeckelt
 export const STORM_SCORE       = envNum("SIM_STORM_SCORE", 100);  // Gewitterfront nach Cap: +Score je Sieg … [SIM-Tuning]
 export const STORM_SCORE_WINS  = 3;    // …          … für so viele folgende Siege
-// Blitz-Rework (#93 F2) — exklusiver Ladungs-Konsument + neue Skills/Legendäre [TUNING]
+/* ============================================================
+   BLITZ-REWORK v0 — „Der Sturm, der sich selbst nährt." 4 Währungen (⚡Crit · 🔋Ladung · 🧲Ionisierung ·
+   📈Serie) + 🔗Kaskade. Blitz BESITZT die Crit-Erzeugung. Werte v0, cross-archetype Sim-Pass. [v0 · tunebar]
+   ============================================================ */
 export const LIGHTNING_MAX_CHARGE_THUNDER = 15;  // Donnergott (L): hebt das Ladungsmaximum 10 → 15
 export const THUNDER_CRIT_MULT = 1.0;  // Donnergott (L): dauerhafter +Crit-Multiplikator
-export const STATIC_CHARGE     = envNum("SIM_STATIC_CHARGE", 1);    // Statische Aufladung: Ladung je Sieg OHNE Crit [SIM-Tuning]
-export const CONDUCT_CHARGE    = envNum("SIM_CONDUCT_CHARGE", 2);   // Leitfähigkeit: Zusatzladung bei Crit neben ionisierter Karte [SIM-Tuning]
-export const DISCHARGE_SCORE   = envNum("SIM_DISCHARGE_SCORE", 500);  // Entladung: +Flat beim nächsten Crit nach vollem Verbrauch [SIM-Tuning]
+export const STATIC_CHARGE     = envNum("SIM_STATIC_CHARGE", 1); // Statische Aufladung: Ladung je Sieg OHNE Crit // v0
+// UEBERSPANNUNG_CHARGE (oben, =3) = Kaskade: Crit auf/neben ionisierter Karte → Zusatzladung (merge 04+09).
+export const ENTLADUNG_CRIT_MULT      = 1.0;  // Entladung: nächster Crit nach vollem Verbrauch +1,0× Crit-Mult   // v0 — tunebar
+export const KURZSCHLUSS_CHARGE_PER_STACK = 1; // Kurzschluss: volle (5) Siegkarte entlädt alle Stapel → +1 Ladung je Stapel // v0
+export const SPANNUNGSSTAU_STEP       = 0.05; // Spannungsstau: +5 pp Crit-Chance je Sieg ohne Crit (ein Crit resettet) // v0
+export const SPANNUNGSSTAU_CAP        = 0.50; // Spannungsstau: … bis +50 pp                                       // v0 — tunebar
+export const UEBERSCHLAG_PER          = 10;   // Überschlag: Crit-Chance-Überschuss (>100 %) ×10 → Ladung (0,3 → +3) // v0
+export const BLITZSCHLAG_STACKS       = 1;    // Blitzschlag: ein Crit ionisiert die Siegkarte (+1 Stapel)          // v0
+export const DAUERSTROM_PER_STREAK    = 3;    // Dauerstrom: je 3 Serienpunkte +1 Ladung je Sieg in Folge           // v0
+export const DAUERSTROM_MAX           = 3;    // Dauerstrom: … höchstens +3 Ladung/Sieg                             // v0 — tunebar
+export const WETTERLEUCHTEN_THRESHOLD = 5;    // Wetterleuchten: bei jeder 5. Serienstufe ionisieren                // v0
+export const WETTERLEUCHTEN_COUNT     = 2;    // Wetterleuchten: … so viele Karten                                  // v0 — tunebar
+export const DOPPELENTLADUNG_FACTOR   = 2;    // Doppelentladung (L): Konsumenten feuern ×2 (Ionisierungs-Anzahl ×2) // v0
+export const DURCHSCHLAG_CRIT_MULT    = 0.25; // Durchschlag (L): volle Ionis. (5) + Crit → dauerhaft +0,25× Crit-Mult // v0 — tunebar
 
 /* ============================================================
    FEUER-REWORK v0 — Hitzeleiste 0–100. „Hitze belohnt totale Überlegenheit."
