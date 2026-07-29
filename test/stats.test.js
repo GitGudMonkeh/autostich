@@ -7,25 +7,26 @@ import { STREAK_STAT_CAP, STAT_STREAK_MULT_STEP, STAT_FORM_MULT_STEP } from "../
 describe("statStreakFactor — Serien-Stat-Cap (#153)", () => {
   it("unter dem Cap: linear 1 + statStreakMult × Serie", () => {
     expect(statStreakFactor(STAT_STREAK_MULT_STEP, 10)).toBeCloseTo(1 + STAT_STREAK_MULT_STEP * 10); // 0,02×10 = 0,20
-    expect(statStreakFactor(0.05, 20)).toBeCloseTo(1 + 1.0);                                          // 0,05×20 = 1,0 < 3
+    expect(statStreakFactor(0.05, 20)).toBeCloseTo(1 + 1.0);                                          // 0,05×20 = 1,0 < Cap
   });
   it("Serie 0 bzw. mult 0/undefined → neutral ×1", () => {
     expect(statStreakFactor(STAT_STREAK_MULT_STEP, 0)).toBe(1);
     expect(statStreakFactor(0, 50)).toBe(1);
     expect(statStreakFactor(undefined, undefined)).toBe(1);
   });
-  it("am Cap-Rand: exakt bei STREAK_STAT_CAP gedeckelt, eins darunter noch linear", () => {
-    // Grenze: 0,02 × 150 = 3,0 = STREAK_STAT_CAP → genau ×(1 + CAP).
-    expect(statStreakFactor(STAT_STREAK_MULT_STEP, 150)).toBeCloseTo(1 + STREAK_STAT_CAP);
-    // Eins unter dem Rand (0,02 × 149 = 2,98) → NICHT gedeckelt, echt kleiner.
-    expect(statStreakFactor(STAT_STREAK_MULT_STEP, 149)).toBeCloseTo(1 + STAT_STREAK_MULT_STEP * 149);
-    expect(statStreakFactor(STAT_STREAK_MULT_STEP, 149)).toBeLessThan(1 + STREAK_STAT_CAP);
+  it("am Cap-Rand: ab dem Rand gedeckelt, eins darunter noch linear (cap-relativ)", () => {
+    // Randserie aus dem Cap ableiten (nicht hart verdrahten) → hält bei jedem STREAK_STAT_CAP-Tuning.
+    const atCap = Math.ceil(STREAK_STAT_CAP / STAT_STREAK_MULT_STEP); // kleinste Serie, die den Cap erreicht
+    const below = atCap - 1;                                          // eins darunter → strikt unter dem Cap
+    expect(statStreakFactor(STAT_STREAK_MULT_STEP, atCap)).toBeCloseTo(1 + STREAK_STAT_CAP);
+    expect(statStreakFactor(STAT_STREAK_MULT_STEP, below)).toBeCloseTo(1 + STAT_STREAK_MULT_STEP * below);
+    expect(statStreakFactor(STAT_STREAK_MULT_STEP, below)).toBeLessThan(1 + STREAK_STAT_CAP);
   });
   it("weit über dem Cap bleibt exakt ×(1 + CAP) — Regressionswächter gegen Cap-Löschen/-Anheben", () => {
     // Zwei sehr verschiedene Über-Cap-Serien liefern NUR wegen des Caps denselben Faktor.
     expect(statStreakFactor(STAT_STREAK_MULT_STEP, 200)).toBeCloseTo(1 + STREAK_STAT_CAP);
     expect(statStreakFactor(STAT_STREAK_MULT_STEP, 200)).toBeCloseTo(statStreakFactor(STAT_STREAK_MULT_STEP, 400));
-    expect(statStreakFactor(0.5, 11)).toBeCloseTo(1 + STREAK_STAT_CAP); // 0,5×11 = 5,5 → gedeckelt auf 3,0
+    expect(statStreakFactor(0.5, 11)).toBeCloseTo(1 + STREAK_STAT_CAP); // 0,5×11 = 5,5 → über jedem Cap → gedeckelt
     // Ohne Cap wäre der Beitrag deutlich größer als STREAK_STAT_CAP — der Cap senkt den Score echt.
     expect(STAT_STREAK_MULT_STEP * 200).toBeGreaterThan(STREAK_STAT_CAP);
   });

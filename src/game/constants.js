@@ -10,11 +10,23 @@ const envNum = (name, def) => {
   const n = v == null || v === "" ? NaN : Number(v);
   return Number.isFinite(n) ? n : def;
 };
-export const MAX_CYCLES       = 44;     // Shop-Spec (§2.1): fester Run über genau so viele Deck-Durchläufe, danach Ende [TUNING]
+// SIM-Sweep-Haken: Rundenlänge per ENV. Default 44 = Live-Balance (im Browser existiert `process` nicht →
+// immer 44). `SIM_MAX_CYCLES=60 node sim/batch.js …` verlängert den Run, um zu messen, wie sich Builds über
+// 60–80 Durchläufe entwickeln (Pacing-Frage: „hört man auf, wenn das Build gut würde?"). Der Entscheidungsplan
+// (DECISION_SCHEDULE) wächst über buildSchedule() automatisch mit — Cycles 1–44 bleiben dabei byte-identisch.
+export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 44);     // Shop-Spec (§2.1): Run über so viele Deck-Durchläufe, danach Ende [TUNING · Sim-übersteuerbar]
 // Merge test/sim←main: ENV-Sweep-Haken bleibt, Default = main's Live-Balance (SPW 100→400, Pacing-Pass Sim-validiert).
 export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Default = Live-Balance 400]
 export const CRIT_BASE_MULT   = envNum("SIM_CRIT_BASE_MULT", 1.5);   // V2 (§22.3): Basis-Crit-Multiplikator; der Crit-Mult-Stat baut darauf auf [TUNING]
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
+// SIM-SÄTTIGUNGSHEBEL (Pacing-Experiment, Default AUS): weicher Deckel auf den Score JE SIEG. Ab dem Knie
+// WIN_SOFTCAP (Score/Sieg) zählt nur noch WIN_SOFTCAP_SLOPE des Überschusses (gained' = K + (gained−K)×slope).
+// Ziel: die Per-Sieg-Auszahlung SÄTTIGT → die Per-Cycle-Kurve bekommt einen Mid-Run-Peak statt reinem
+// Compounding. Anders als Per-Faktor-Caps (Serie/Crit) greift der Deckel am ERGEBNIS, egal welcher Faktor
+// explodiert. Nur test/sim: K=0 → No-op (im Browser gibt es kein `process.env` → immer aus).
+// Sweep: `SIM_WIN_SOFTCAP=5000 SIM_WIN_SOFTCAP_SLOPE=0.2 node sim/batch.js --mode pacing …`.
+export const WIN_SOFTCAP       = envNum("SIM_WIN_SOFTCAP", 0);          // 0 = aus; >0 = Knie K in Score/Sieg
+export const WIN_SOFTCAP_SLOPE = envNum("SIM_WIN_SOFTCAP_SLOPE", 0.25); // Rest-Steigung über dem Knie (0…1)
 
 // Stat-System (V2 §22.3) — bei jedem Stat-Pick alle vier angeboten, einer gewählt; additiv, keine Caps [TUNING]
 export const STAT_CRIT_CHANCE_STEP = envNum("SIM_STAT_CRIT_CHANCE_STEP", 0.07);  // Crit-Chance: +7 Prozentpunkte je Pick (#94; #161 FB-6: 0,05→0,07)
@@ -28,13 +40,30 @@ export const STAT_ECONOMY_STEP     = 1;     // Einkommen: je Pick +1 Level (Bonu
 // (nach cycle += 1); der Start-Entscheid (Index 0 = "stat") läuft über START_RUN.
 // Verteilung: 11 Stat · 11 Perk · 8 Formation · 8 Shop · 6 Skill.
 // Shop-Zeitpunkte (Durchlauf): 5, 11, 16, 22, 27, 33, 38, 42 · Skill-Zeitpunkte: 6, 12, 19, 28, 34, 41.
-export const DECISION_SCHEDULE = [
+const BASE_SCHEDULE = [
   "stat", "perk", "formation", "stat", "shop", "skill", "perk", "formation", "stat", "perk",   //  1–10
   "shop", "skill", "formation", "stat", "perk", "shop", "formation", "stat", "skill", "perk",  // 11–20
   "stat", "shop", "perk", "stat", "formation", "perk", "shop", "skill", "stat", "formation",   // 21–30
   "perk", "stat", "shop", "skill", "formation", "perk", "stat", "shop", "formation", "perk",   // 31–40
   "skill", "shop", "stat", "perk",                                                             // 41–44
 ];
+// Schwanz-Block für Runs über 44 Cycles hinaus (nur SIM_MAX_CYCLES > 44). 16 Cycles im SELBEN Mix-Verhältnis
+// wie die Basis (4 Stat · 4 Perk · 3 Formation · 3 Shop · 2 Skill = Stat/Perk je 25 %, Formation/Shop je ~19 %,
+// Skill ~13 %), Shop ~alle 6 & Skill ~alle 8 Cycles, kein Cluster, kein Doppel an der 44/45-Grenze (44=perk → 45=formation).
+const TAIL_BLOCK = [
+  "formation", "perk", "stat", "shop", "perk", "skill", "stat", "formation",
+  "perk", "shop", "stat", "formation", "perk", "skill", "stat", "shop",
+];
+// Entscheidungsplan der Länge n: Cycles 1–44 bleiben der handgesetzte BASE_SCHEDULE (Early/Mid unverändert —
+// wichtig, damit Sweeps über die Rundenlänge NUR den Schwanz variieren), darüber hinaus wird TAIL_BLOCK wiederholt.
+// Pur & testbar; die Engine liest ausschließlich das daraus gebaute DECISION_SCHEDULE.
+export function buildSchedule(n = MAX_CYCLES) {
+  if (n <= BASE_SCHEDULE.length) return BASE_SCHEDULE.slice(0, n);
+  const out = BASE_SCHEDULE.slice();
+  for (let i = 0; out.length < n; i++) out.push(TAIL_BLOCK[i % TAIL_BLOCK.length]);
+  return out;
+}
+export const DECISION_SCHEDULE = buildSchedule(MAX_CYCLES);
 
 // Shop-Münzökonomie (Shop-Spec §3) [TUNING]
 export const STARTING_COINS       = 2;   // Startmünzen bei Run-Beginn
@@ -78,7 +107,11 @@ export const STREAK_BASE_CAP  = envNum("SIM_STREAK_BASE_CAP", 1.50);  // … ged
 // Serien-STAT (statStreakMult): war ungedeckelt → mit langen Serien Runaway-Treiber (Sim-Befund).
 // Deckel des Stat-Beitrags analog zum Basis-Cap; bewusst großzügig, damit starke Serien-Builds stark
 // bleiben, aber nicht unbegrenzt eskalieren. [TUNING · Balance-Pass 1]
-export const STREAK_STAT_CAP  = envNum("SIM_STREAK_STAT_CAP", 3.00); // Stat-Serien-Faktor höchstens +300 %
+export const STREAK_STAT_CAP  = envNum("SIM_STREAK_STAT_CAP", 1.75); // Stat-Serien-Faktor höchstens +175 % [Balance: 3,0→1,75 — deckelte den Sustained-Streak-Rekord-Runaway (Pflanze-Paare, Serie 262); Median/p95/andere Fraktionen unberührt, Sim-validiert]
+// Crit-Multiplikator-STAT-Cap (Pendant zum Serien-Cap): statCritMult war der LETZTE ungedeckelte Stat-Multiplikator
+// → Crit-Runaway-Treiber (Bl+Pf). Default Infinity = kein Cap (Bestandsverhalten, im Browser inaktiv). Nur die
+// STAT-Zutat wird gedeckelt, nicht Basis-Crit/Perks/Donnergott. Sweep: `SIM_STAT_CRIT_MULT_CAP=1 node …`.
+export const STAT_CRIT_MULT_CAP = envNum("SIM_STAT_CRIT_MULT_CAP", Infinity); // max additiver Crit-Mult aus dem Stat
 // (D3_HIGH_MIN/D4_LOW_MAX entfernt — die Score-Perks sind zu Familien migriert, #167; Schwellen jetzt je Stufe in families.js.)
 
 // Raritäts-System (#33) [TUNING]
@@ -238,12 +271,12 @@ export const ARCHITEKT_STEP    = 0.15; // Architekt: +15 % je zusätzlicher Fros
    PFLANZE-FRAKTION v0 — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend) →
    Reife (grün — Farbe, nicht Kraft) → Farbblock → Score. Wert-Deckel 11 (kein Runaway). Werte v0. [v0 · tunebar]
    ============================================================ */
-export const PLANT_GREEN_THRESHOLD = 8;   // Wachstum-Schwelle für Reife (grün)                                // v0 — tunebar
-export const PLANT_VALUE_CAP       = 11;  // Wert-Deckel grüner Karten (Auto-Sieg; Tiefe zahlt dann in Score)   // v0
+export const PLANT_GREEN_THRESHOLD = envNum("SIM_PLANT_GREEN_THRESHOLD", 8);   // Wachstum-Schwelle für Reife (grün) [Sim-tunebar: höher = Feld ergrünt langsamer → Winrate sättigt weniger] // v0 — tunebar
+export const PLANT_VALUE_CAP       = envNum("SIM_PLANT_VALUE_CAP", 11);  // Wert-Deckel grüner Karten (Auto-Sieg; Tiefe zahlt dann in Score) [Sim-tunebar: 10 = kein Auto-Sieg mehr] // v0
 export const PLANT_ANCHOR_VALUE    = 11;  // Alter Anker: Aktivierung startet 1 Karte reif (grün, Wert 11)      // v0
 export const PLANT_GREEN_FARBBLOCK_CAP = 3;// Grün-Farbblock-Cap: der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt (v0.3: ganzes Feld grün → 40er-Block ×8+ war der Runaway) // tunebar
 // Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score)
-export const WURZELSCHLAG_PER_GROWTH = 4; // Wurzelschlag: +1 Dauerwert je 3 Wachstum (grüne Karte, bis Deckel)  // v0
+export const WURZELSCHLAG_PER_GROWTH = envNum("SIM_WURZELSCHLAG_PER_GROWTH", 4); // Wurzelschlag: +1 Dauerwert je N Wachstum (grüne Karte, bis Deckel) [Sim-tunebar: höher = Wert wächst langsamer → Auto-Sieg später] // v0
 export const WURZELTIEFE_SCORE     = 12;  // Wurzeltiefe: Flat-Score je Sieg einer grünen Karte (Wurzeln-Score) // v0 — tunebar
 export const PFAHLWURZEL_MULT      = 2;   // Pfahlwurzel: Wurzeln-Score ×2 bei Formations-Sieg                  // v0
 export const JAHRESRINGE_PER_GROWTH = 10; // Jahresringe: je 10 Wachstum der Karte +Wurzeln-Score              // v0
@@ -258,9 +291,9 @@ export const BLUETEZEIT_MULT       = 2;   // Blütezeit: Blüte-Score ×2 bei Fo
 // Linie 4 — Überwucherung (Mono-Grün-Payoff)
 export const PHOTOSYNTHESE_MULT    = 1.08;// Photosynthese: grüne Karte in Formation → ×1,15 Score              // v0 — tunebar
 export const BLAETTERDACH_MIN      = 4;   // Blätterdach: ab 4er-Grün-Farbblock …                               // v0
-export const BLAETTERDACH_SCORE    = 4;  // … +Score je Karte im Block                                         // v0 — tunebar
+export const BLAETTERDACH_SCORE    = envNum("SIM_BLAETTERDACH_SCORE", 4);  // … +Score je Karte im Block [Sim-tunebar] // v0 — tunebar
 export const UEBERWUCHERUNG_FIELD  = 0.66;// Überwucherung: ab 66 % Feld grün …                                 // v0 — tunebar
-export const UEBERWUCHERUNG_FACTOR = 0.20;// … alle Farbblöcke +0,20 Faktor                                     // v0
+export const UEBERWUCHERUNG_FACTOR = envNum("SIM_UEBERWUCHERUNG_FACTOR", 0.20);// … alle Farbblöcke +0,20 Faktor [Sim-tunebar: der feldweite multiplikative Compounder] // v0
 // Linie 5 — Ausläufer (Gegnerdeck: kolonisieren & ernten)
 export const AUSLAEUFER_HARVEST    = 2;   // Ausläufer: Ernte einer kolonisierten Gegnerkarte → +Wachstum       // v0 — tunebar
 export const ERNTEDANK_SCORE       = 70; // Erntedank: Ernte mit reifer Karte → +großer Flat-Score             // v0 — tunebar

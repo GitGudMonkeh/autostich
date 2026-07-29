@@ -214,7 +214,7 @@ export function totalCritChanceRaw(state = {}) {
 export function critMultiplierFor(perks, ctx = {}, baseBonus = 0) {
   let bonus = 0;
   for (const id of perks) { const f = PERK_DEFS[id].critMultBonus; if (f) bonus += f(ctx); }
-  return C.CRIT_BASE_MULT + (baseBonus || 0) + bonus;
+  return C.CRIT_BASE_MULT + Math.min(baseBonus || 0, C.STAT_CRIT_MULT_CAP) + bonus;
 }
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
 // V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit; L6 trägt Crit-Chance → alle zählen.

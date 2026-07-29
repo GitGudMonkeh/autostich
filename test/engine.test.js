@@ -443,7 +443,7 @@ describe("Stat-System — Engine (V2 §22.3)", () => {
       .toBeCloseTo(B * 1.08 * 1.04);
   });
   it("Serien-Stat ist bei STREAK_STAT_CAP gedeckelt (#153: Runaway-Schutz greift auch in der Engine)", () => {
-    // Serie 11 (winStreak 10 → 11), großer Serien-Stat: 0,5 × 11 = 5,5 → auf STREAK_STAT_CAP (3,0) gedeckelt.
+    // Serie 11 (winStreak 10 → 11), großer Serien-Stat: 0,5 × 11 = 5,5 → auf STREAK_STAT_CAP gedeckelt.
     const serie = 11;
     const gained = resolveTrick(scenario(12, 0, { statStreakMult: 0.5, winStreak: 10 }), rng).lastTrick.gained;
     expect(gained).toBeCloseTo(B * streakBaseMult(serie) * statStreakFactor(0.5, serie));

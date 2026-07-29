@@ -507,6 +507,9 @@ export function resolveTrick(state, rng = Math.random) {
     const formMult = formBaseMult * statFormFactor(statFormMult, hasFormation) * iceFormMult * plantFormMult; // + Eisdruck/Architekt + Photosynthese
     scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult * afterglowMult * coreMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
+    // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
+    // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
+    if (C.WIN_SOFTCAP > 0 && gained > C.WIN_SOFTCAP) gained = C.WIN_SOFTCAP + (gained - C.WIN_SOFTCAP) * C.WIN_SOFTCAP_SLOPE;
     critBonus = gained - scoreBeforeCrit;
     score += gained;
     breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, total: gained };
