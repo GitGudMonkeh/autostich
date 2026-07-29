@@ -234,6 +234,40 @@ export const VERGLETSCHERUNG_COUNT     = 2; // Vergletscherung: so viele Gegnerk
 export const VERGLETSCHERUNG_PER_LAYER = 1; // … −Wert je Schicht der Siegkarte (min 1)                      // v0 — tunebar
 export const ARCHITEKT_STEP    = 0.15; // Architekt: +15 % je zusätzlicher Frostkarte in derselben Spalte (pos%5) // v0 — tunebar
 
+/* ============================================================
+   PFLANZE-FRAKTION v0 — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend) →
+   Reife (grün — Farbe, nicht Kraft) → Farbblock → Score. Wert-Deckel 11 (kein Runaway). Werte v0. [v0 · tunebar]
+   ============================================================ */
+export const PLANT_GREEN_THRESHOLD = 8;   // Wachstum-Schwelle für Reife (grün)                                // v0 — tunebar
+export const PLANT_VALUE_CAP       = 11;  // Wert-Deckel grüner Karten (Auto-Sieg; Tiefe zahlt dann in Score)   // v0
+export const PLANT_ANCHOR_VALUE    = 11;  // Alter Anker: Aktivierung startet 1 Karte reif (grün, Wert 11)      // v0
+// Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score)
+export const WURZELSCHLAG_PER_GROWTH = 4; // Wurzelschlag: +1 Dauerwert je 3 Wachstum (grüne Karte, bis Deckel)  // v0
+export const WURZELTIEFE_SCORE     = 12;  // Wurzeltiefe: Flat-Score je Sieg einer grünen Karte (Wurzeln-Score) // v0 — tunebar
+export const PFAHLWURZEL_MULT      = 2;   // Pfahlwurzel: Wurzeln-Score ×2 bei Formations-Sieg                  // v0
+export const JAHRESRINGE_PER_GROWTH = 10; // Jahresringe: je 10 Wachstum der Karte +Wurzeln-Score              // v0
+export const JAHRESRINGE_SCORE     = 30;  // … so viel je 10er-Stufe                                            // v0 — tunebar
+// Linie 2 — Aussaat (Breite: Wachstum verbreiten)
+export const AUSSAAT_GROWTH        = 1;   // Aussaat: +Wachstum je Nachbar bei Sieg einer grünen Karte          // v0
+export const SETZLINGSBEET_GROWTH  = 3;   // Setzlingsbeet: niedrigste Karte je Segment startet +3 Wachstum     // v0
+export const ZAEHER_HALM_GROWTH    = 1;   // Zäher Halm: graue Karten wachsen +1 auch bei Niederlage            // v0
+// Linie 3 — Ranken/Blüte (Grün verbreiten)
+export const BLUETE_SCORE          = 15;  // Blüte: +Score je grüner Karte im Segment (wenn Nachbarn grün)      // v0 — tunebar
+export const BLUETEZEIT_MULT       = 2;   // Blütezeit: Blüte-Score ×2 bei Formations-Sieg                      // v0
+// Linie 4 — Überwucherung (Mono-Grün-Payoff)
+export const PHOTOSYNTHESE_MULT    = 1.08;// Photosynthese: grüne Karte in Formation → ×1,15 Score              // v0 — tunebar
+export const BLAETTERDACH_MIN      = 4;   // Blätterdach: ab 4er-Grün-Farbblock …                               // v0
+export const BLAETTERDACH_SCORE    = 4;  // … +Score je Karte im Block                                         // v0 — tunebar
+export const UEBERWUCHERUNG_FIELD  = 0.66;// Überwucherung: ab 66 % Feld grün …                                 // v0 — tunebar
+export const UEBERWUCHERUNG_FACTOR = 0.20;// … alle Farbblöcke +0,20 Faktor                                     // v0
+// Linie 5 — Ausläufer (Gegnerdeck: kolonisieren & ernten)
+export const AUSLAEUFER_HARVEST    = 2;   // Ausläufer: Ernte einer kolonisierten Gegnerkarte → +Wachstum       // v0 — tunebar
+export const ERNTEDANK_SCORE       = 70; // Erntedank: Ernte mit reifer Karte → +großer Flat-Score             // v0 — tunebar
+// Legendäre (Verstärker, meist mit Nachteil)
+export const WELTENBAUM_PER_GREEN  = 10;  // Weltenbaum: +1 Wachstum je 10 grüne Karten im Feld (Durchlauf-Ende) // v0
+export const EWIGER_FRUEHLING_FARBBLOCK = 2; // Ewiger Frühling: Farbblock zählt Grün ab 2 Karten               // v0
+export const EWIGER_FRUEHLING_FIELD = 0.33;  // … Überwucherung ab 33 % Feld                                    // v0
+
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
 

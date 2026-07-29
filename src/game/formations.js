@@ -18,8 +18,9 @@
    E3 Treppe darf 1× gleich · E4 Treppe darf 1× Rückschritt · E5 Wechsel schon ab 2 Karten ·
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
-import { EISANKER_FACTOR, CRYSTAL_OFFSET, ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR } from "./constants.js";
-import { iceFlag, hasIceAnchor } from "./skills.js";
+import { EISANKER_FACTOR, CRYSTAL_OFFSET, ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR,
+  UEBERWUCHERUNG_FIELD, UEBERWUCHERUNG_FACTOR, EWIGER_FRUEHLING_FARBBLOCK, EWIGER_FRUEHLING_FIELD } from "./constants.js";
+import { iceFlag, hasIceAnchor, hasEwigerFruehling, hasUeberwucherung, greenCount } from "./skills.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 
 export const SEGMENT_SIZE = 5;
@@ -221,6 +222,8 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Jede Gruppe wird für Farbblöcke auf ihre erste Farbe gemappt → zählt als eine Farbe.
   const linkedGroups = allianceGroups(familyTiers, roles);
   for (const g of linkedGroups) { const ref = g[0]; for (const su of g) if (su !== ref) for (let k = 0; k < n; k++) if (effSuit[k] === su) effSuit[k] = ref; }
+  // Pflanze (v0): grüne Karten (card.green) zählen als Farbe „G" für den Farbblock — grün → Farbblock → Score.
+  for (let k = 0; k < n; k++) if (cards[k].green) effSuit[k] = "G";
   // Bindeglied (C10, ±1) + Eis: Eisschritt/Kristallform geben ±1, Permafrost-Joker passt überall (großer Flex).
   const bind = cards.map((c, k) => {
     let b = famBridgeSpan[c.id] || 0; // Familie C_BRIDGE: Span je Stufe (1/2/99); flache C10 ist zu #167 migriert
@@ -292,9 +295,14 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // eingefrorene Karten transparent (kein Mitglied).
   const matchSuit = (a, b) => jokerAll[a] || jokerAll[b] || famJokerFree.has(cards[a].id) || famJokerFree.has(cards[b].id) || effSuit[a] === effSuit[b];
   const farbSkip = () => false; // (Frostbrücke ist im Rework Segment-Brücke, keine Farbblock-Transparenz mehr)
-  markRuns(n, 3, matchSuit, suitGap, canExtendSeg,
-    (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)), farbSkip,
-    (last, ord) => recordEnd(last, "farbblock", escalatingFactor(ord, FARBBLOCK_BASE)), isJF, noteCross);
+  // Pflanze (v0): Ewiger Frühling zählt Farbblock schon ab 2 Karten; Überwucherung (Feld genug grün) → alle Farbblöcke +0,20.
+  const farbMin = hasEwigerFruehling(skills) ? EWIGER_FRUEHLING_FARBBLOCK : 3;
+  const greenField = n > 0 ? greenCount(cards) / n : 0;
+  const uebThresh = hasEwigerFruehling(skills) ? EWIGER_FRUEHLING_FIELD : UEBERWUCHERUNG_FIELD;
+  const farbBase = FARBBLOCK_BASE + (hasUeberwucherung(skills) && greenField >= uebThresh ? UEBERWUCHERUNG_FACTOR : 0);
+  markRuns(n, farbMin, matchSuit, suitGap, canExtendSeg,
+    (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, farbBase)), farbSkip,
+    (last, ord) => recordEnd(last, "farbblock", escalatingFactor(ord, farbBase)), isJF, noteCross);
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));

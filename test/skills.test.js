@@ -53,7 +53,7 @@ describe("addCharge — gedeckelt & immutabel", () => {
 
 describe("archetypesWithSkills / offerArchetypes (Prototyp: alle 3 Archetypen)", () => {
   it("F3: lightning, fire & ice haben Skills; alles owned → keiner", () => {
-    expect(archetypesWithSkills([])).toEqual(["lightning", "fire", "ice"]); // Reihenfolge = ARCHETYPE_ORDER
+    expect(archetypesWithSkills([])).toEqual(["lightning", "fire", "ice", "plant"]); // Reihenfolge = ARCHETYPE_ORDER (4. Fraktion Pflanze)
     expect(archetypesWithSkills(ALL)).toEqual([]);
   });
   it("0 aktiv → ALLE verfügbaren Archetypen (Prototyp: Cap 3)", () => {
@@ -80,7 +80,8 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
     expect(new Set(off).size).toBe(6);
     expect(off.every((id) => SKILL_DEFS[id])).toBe(true);
     const archs = new Set(off.map(archetypeOf));
-    expect(archs).toEqual(new Set(["lightning", "fire", "ice"])); // alle 3 vertreten (2 je Archetyp)
+    expect(archs.size).toBe(3); // MAX_ARCHETYPES = 3 von 4 verfügbaren, 2 Skills je Archetyp
+    for (const a of archs) expect(["lightning", "fire", "ice", "plant"]).toContain(a);
     // #156: verschiedene Seeds → (meist) verschiedenes Angebot — der Seed treibt die Auswahl wirklich.
     const offers = Array.from({ length: 8 }, (_, s) => buildSkillOffer([], [], makeRng(s + 1), 6).join(","));
     expect(new Set(offers).size).toBeGreaterThan(1);
@@ -107,10 +108,12 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
     for (let seed = 1; seed <= 40; seed++) {
       const off = buildSkillOffer([], [], makeRng(seed), 6, 1); // erzwungener Legendär (Chance 1)
       expect(off).toHaveLength(6);
-      const byArch = { lightning: 0, fire: 0, ice: 0 };
-      for (const id of off) byArch[archetypeOf(id)]++;
-      // Jeder Archetyp genau 2 (einer davon legendär) — der Legendär ersetzt einen normalen Skill SEINES Archetyps.
-      expect(byArch).toEqual({ lightning: 2, fire: 2, ice: 2 });
+      const byArch = {};
+      for (const id of off) byArch[archetypeOf(id)] = (byArch[archetypeOf(id)] || 0) + 1;
+      // Genau 3 Archetypen (MAX_ARCHETYPES von 4), je 2 (einer davon legendär, ersetzt einen normalen SEINES Archetyps).
+      const counts = Object.values(byArch);
+      expect(counts).toHaveLength(3);
+      expect(counts.every((c) => c === 2)).toBe(true);
     }
   });
   it("bietet NIE einen gehaltenen Skill an und nie ein Duplikat (Invariante, #118)", () => {
@@ -166,9 +169,11 @@ describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", (
       const off = buildSkillOffer([], [], makeRng(seed), 6, 1); // Legendär erzwungen
       expect(off.some(isConsumer)).toBe(true);
       expect(off).toHaveLength(6);
-      const byArch = { lightning: 0, fire: 0, ice: 0 };
-      for (const id of off) byArch[archetypeOf(id)]++;
-      expect(byArch).toEqual({ lightning: 2, fire: 2, ice: 2 });
+      const byArch = {};
+      for (const id of off) byArch[archetypeOf(id)] = (byArch[archetypeOf(id)] || 0) + 1;
+      const counts = Object.values(byArch);
+      expect(counts).toHaveLength(3); // 3 von 4 Archetypen, je 2
+      expect(counts.every((c) => c === 2)).toBe(true);
     }
   });
 });

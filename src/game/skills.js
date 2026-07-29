@@ -190,6 +190,58 @@ export const SKILL_DEFS = {
     desc: "Frostkarten frieren Gegnerkarten proportional zu ihren Schichten ein (−Wert) — tiefer Gletscher, härtere Sperre.", vergletscherung: true },
   SK_ICE_L04: { id: "SK_ICE_L04", name: "Architekt", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
     desc: "Schaltet vertikale Formationen frei: Frostkarten in derselben Spalte (pos%5) bilden Formationen quer über Segmente.", architekt: true },
+
+  // ---- Pflanze-Fraktion (v0) — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend)
+  //      → Reife (grün) → Farbblock → Score. Grün = Farbe, nicht Kraft; Wert nur über Wurzeln (Deckel 11).
+  //      Grundmechanik: Alter Anker (Aktivierung startet 1 reife Karte). Flags in engine/formations/reducer gelesen. ----
+  // Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score)
+  SK_PLANT_01: { id: "SK_PLANT_01", name: "Wurzelschlag", archetype: "plant", keywords: ["growth", "value"],
+    desc: "Grüne Karten wachsen bei Sieg permanenten Wert an (+1 je 3 Wachstum, bis Wert 11). Der Wert-Motor.", wurzelschlag: true },
+  SK_PLANT_02: { id: "SK_PLANT_02", name: "Wurzeltiefe", archetype: "plant", keywords: ["growth", "score"],
+    desc: "Jeder Sieg einer grünen Karte gibt zusätzlich Flat-Score (Wurzeln-Score). Schaltet den Score-Ertrag reifer Pflanzen frei.", wurzeltiefe: true },
+  SK_PLANT_03: { id: "SK_PLANT_03", name: "Pfahlwurzel", archetype: "plant", keywords: ["growth", "score", "formation"],
+    desc: "Verstärker: Wurzeln-Score ×2, wenn die grüne Karte in einer Formation gewinnt.", pfahlwurzel: true },
+  SK_PLANT_04: { id: "SK_PLANT_04", name: "Jahresringe", archetype: "plant", keywords: ["growth", "score"],
+    desc: "Verstärker: Je 10 Wachstum einer Karte dauerhaft +Wurzeln-Score — nur für diese Karte. Alte Pflanzen zahlen am meisten.", jahresringe: true },
+  // Linie 2 — Aussaat (Breite: Wachstum verbreiten)
+  SK_PLANT_05: { id: "SK_PLANT_05", name: "Aussaat", archetype: "plant", keywords: ["growth"],
+    desc: "Gewinnt eine grüne Karte, sät sie beide Nachbarn: +1 Wachstum je Seite. Der Breiten-Motor.", aussaat: true },
+  SK_PLANT_06: { id: "SK_PLANT_06", name: "Flugsamen", archetype: "plant", keywords: ["growth"],
+    desc: "Verstärker: Aussaat überspringt schon grüne Karten und sät die nächste noch-graue dahinter.", flugsamen: true },
+  SK_PLANT_07: { id: "SK_PLANT_07", name: "Setzlingsbeet", archetype: "plant", keywords: ["growth"],
+    desc: "Die niedrigste Karte je Segment startet den Lauf mit +3 Wachstum Vorsprung. Anschub für schwache Setzlinge.", setzlingsbeet: true },
+  SK_PLANT_08: { id: "SK_PLANT_08", name: "Zäher Halm", archetype: "plant", keywords: ["growth"],
+    desc: "Unreife (graue) Karten wachsen auch bei Niederlage +1 — bis sie grün sind. Der Garten wächst durch Widrigkeit.", zaeherHalm: true },
+  // Linie 3 — Ranken/Blüte (Grün verbreiten)
+  SK_PLANT_09: { id: "SK_PLANT_09", name: "Ranken", archetype: "plant", keywords: ["green"],
+    desc: "Gewinnt eine grüne Karte, färbt sie einen noch-grauen Nachbarn sofort grün. Baut den Farbblock aktiv auf.", ranken: true },
+  SK_PLANT_10: { id: "SK_PLANT_10", name: "Blüte", archetype: "plant", keywords: ["green", "score"],
+    desc: "Gewinnt eine grüne Karte, deren Nachbarn schon grün sind, blüht sie: +Score je grüner Karte im Segment.", bluete: true },
+  SK_PLANT_11: { id: "SK_PLANT_11", name: "Blütezeit", archetype: "plant", keywords: ["green", "score", "formation"],
+    desc: "Verstärker: Blüte-Score ×2, wenn die Karte in einer Formation gewinnt.", bluetezeit: true },
+  // Linie 4 — Überwucherung (Mono-Grün-Payoff)
+  SK_PLANT_12: { id: "SK_PLANT_12", name: "Photosynthese", archetype: "plant", keywords: ["green", "formation"],
+    desc: "Grüne Karten in einer Formation geben zusätzlich ×1,15 Score. Der Grün-Formations-Multiplikator.", photosynthese: true },
+  SK_PLANT_13: { id: "SK_PLANT_13", name: "Blätterdach", archetype: "plant", keywords: ["green", "formation", "score"],
+    desc: "In einem grünen Farbblock ab 4 Karten gibt jede grüne Karte bei Sieg zusätzlich +Score je Karte im Block.", blaetterdach: true },
+  SK_PLANT_14: { id: "SK_PLANT_14", name: "Überwucherung", archetype: "plant", keywords: ["green", "formation"],
+    desc: "Ist das Feld ≥66 % grün, werden alle Farbblöcke stärker (+0,20 Faktor) und Blüte zählt doppelt.", ueberwucherung: true },
+  // Linie 5 — Ausläufer (Gegnerdeck: kolonisieren & ernten)
+  SK_PLANT_15: { id: "SK_PLANT_15", name: "Ausläufer", archetype: "plant", keywords: ["green", "colonize"],
+    desc: "Gewinnt eine grüne Karte, kolonisiert sie die niedrigste Gegnerkarte. Besiegst du eine kolonisierte Karte, erntest du +Wachstum.", auslaeufer: true },
+  SK_PLANT_16: { id: "SK_PLANT_16", name: "Rhizom", archetype: "plant", keywords: ["colonize"],
+    desc: "Verstärker: Kolonisiert aggressiver (früher & breiter) und beim Ernten den Gegner-Nachbarn mit.", rhizom: true },
+  SK_PLANT_17: { id: "SK_PLANT_17", name: "Erntedank", archetype: "plant", keywords: ["colonize", "score"],
+    desc: "Verstärker: Erntest du mit einer reifen Karte, gibt es zusätzlich großen Flat-Score.", erntedank: true },
+  // Legendäre (Verstärker, meist mit Nachteil)
+  SK_PLANT_L01: { id: "SK_PLANT_L01", name: "Weltenbaum", archetype: "plant", legendary: true, keywords: ["growth"],
+    desc: "Am Ende jedes Durchlaufs wächst der ganze Wald: jede Karte +1 Wachstum je 10 grüne im Feld. Ruht ohne Garten, reift mit wachsendem Feld immer mehr Nachzügler.", weltenbaum: true },
+  SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Mutterbaum", archetype: "plant", legendary: true, keywords: ["growth", "score"],
+    desc: "Gewinnt deine höchstgewachsene Karte, bekommt ihr ganzes Segment Wurzeln-Score. Nachteil: sie selbst erntet keinen Wurzeln-Score mehr.", mutterbaum: true },
+  SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Dornenkönig", archetype: "plant", legendary: true, keywords: ["colonize"],
+    desc: "Das ganze Gegnerdeck startet kolonisiert; jede Ernte verbraucht ihren Marker. Nachteil: danach keine neue Kolonisierung.", dornenkoenig: true },
+  SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "formation"],
+    desc: "Farbblock zählt Grün schon ab 2 Karten, Überwucherung ab 33 % Feld. Nachteil: nicht-grüne Karten geben keinen Formations-Bonus mehr.", ewigerFruehling: true },
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
@@ -201,8 +253,9 @@ export const ARCHETYPE_META = {
   lightning: { key: "lightning", label: "Blitz",  icon: "⚡", color: "#8a7de0" }, // violett/elektrisch
   fire:      { key: "fire",      label: "Feuer",  icon: "🔥", color: "#e0714a" }, // warm/orange-rot
   ice:       { key: "ice",       label: "Eis",    icon: "❄️", color: "#5ec8f0" }, // eis-blau
+  plant:     { key: "plant",     label: "Pflanze", icon: "🌿", color: "#5ab87a" }, // grün/wachsend (v0)
 };
-export const ARCHETYPE_ORDER = ["lightning", "fire", "ice"];
+export const ARCHETYPE_ORDER = ["lightning", "fire", "ice", "plant"];
 
 // Archetyp-Kodierung EINES Eintrags pro gehaltenem Skill ("fire,fire,ice", Reihenfolge egal) →
 // bekannte Keys MIT Wiederholung (ein Icon je Skill, #139) in fester Anzeige-Reihenfolge
@@ -404,6 +457,38 @@ export function freezeCards(deck, count, rng, preferLowest = false) {
 export function unfreezeAll(deck) {
   return (deck || []).map((c) => (c.frozen ? { ...c, frozen: false } : c));
 }
+
+/* ---- Pflanze-Fraktion (v0) — Wachstum (nur steigend) → Reife (grün) → Farbblock → Score. Reine Helfer. ---- */
+export const plantFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
+export const plantSkillCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "plant").length;
+// Reife: grün ist ein KARTEN-Flag (card.green, wie card.frozen) — gebacken bei Erreichen der Wachstums-Schwelle
+// ODER per Recolor (Alter Anker/Ranken). So liest die Formations-Erkennung Grün direkt von der Karte (Farbblock).
+export const isGreen = (card) => !!card?.green;
+export const greenCount = (deck) => (deck || []).filter((c) => c.green).length;
+// Soll diese Karte (nach Wachstums-Update) reif/grün sein? (Schwelle erreicht.)
+export const growthRipe = (growth) => (growth || 0) >= C.PLANT_GREEN_THRESHOLD;
+// Flag-Prädikate (in engine/formations/reducer gelesen).
+export const hasWurzelschlag  = (skills) => plantFlag(skills, "wurzelschlag");
+export const hasWurzeltiefe   = (skills) => plantFlag(skills, "wurzeltiefe");
+export const hasPfahlwurzel   = (skills) => plantFlag(skills, "pfahlwurzel");
+export const hasJahresringe   = (skills) => plantFlag(skills, "jahresringe");
+export const hasAussaat       = (skills) => plantFlag(skills, "aussaat");
+export const hasFlugsamen     = (skills) => plantFlag(skills, "flugsamen");
+export const hasSetzlingsbeet = (skills) => plantFlag(skills, "setzlingsbeet");
+export const hasZaeherHalm    = (skills) => plantFlag(skills, "zaeherHalm");
+export const hasRanken        = (skills) => plantFlag(skills, "ranken");
+export const hasBluete        = (skills) => plantFlag(skills, "bluete");
+export const hasBluetezeit    = (skills) => plantFlag(skills, "bluetezeit");
+export const hasPhotosynthese = (skills) => plantFlag(skills, "photosynthese");
+export const hasBlaetterdach  = (skills) => plantFlag(skills, "blaetterdach");
+export const hasUeberwucherung = (skills) => plantFlag(skills, "ueberwucherung");
+export const hasAuslaeufer    = (skills) => plantFlag(skills, "auslaeufer");
+export const hasRhizom        = (skills) => plantFlag(skills, "rhizom");
+export const hasErntedank     = (skills) => plantFlag(skills, "erntedank");
+export const hasWeltenbaum    = (skills) => plantFlag(skills, "weltenbaum");
+export const hasMutterbaum    = (skills) => plantFlag(skills, "mutterbaum");
+export const hasDornenkoenig  = (skills) => plantFlag(skills, "dornenkoenig");
+export const hasEwigerFruehling = (skills) => plantFlag(skills, "ewigerFruehling");
 
 // Roh-Crit-Beitrag des Blitz-Archetyps (Abschnitt 2a): Aktivierungs-Sockel + Σ Skill-critChance
 // + Gewitterfront-Bonus (dauerhaft, Stufe C). Fließt additiv in die Gesamt-Crit-Chance. 0, solange inaktiv.

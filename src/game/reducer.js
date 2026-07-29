@@ -4,7 +4,8 @@ import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js"
 import { SHOP_FAMILY_DEFS } from "./shopFamilies.js";
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
-  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront, hasGlacierPush, hasVerzahnung, hasGleitfrost, hasVerdichtung, buildSkillOffer } from "./skills.js";
+  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront, hasGlacierPush, hasVerzahnung, hasGleitfrost, hasVerdichtung,
+  hasSetzlingsbeet, hasDornenkoenig, buildSkillOffer } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, formationPotential, segmentGainedFormation, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, SHOP_ITEM_DEFS, positionOccupied, perkLegendaryChance, skillLegendaryChance, perkFateReroll, purchaseLogEntry, familyPurchaseLogEntry, rerollCategory } from "./shop.js";
@@ -81,6 +82,7 @@ export function initialState(rng = Math.random) {
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     iceTemp: {}, frostbitePending: {}, frostbiteActive: {}, frostSwapsUsed: [], // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff / genutzte Frosttausche
     layers: {}, frostFormPrev: [], // Eis-Rework (v0): Schichten je Frostkarte (permanent) / Beständigkeits-Historie
+    growth: {}, colonized: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green)
     ash: 0, brandPending: {}, brandActive: {}, forged: {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     tieArmed: false,
     shop: initialShop(), // Shop-System (Shop-Spec): Münzen + Angebot (+ später Anker/Regeländerungen)
@@ -482,12 +484,30 @@ export function reducer(state, action) {
       let iceTemp = state.iceTemp, frostSwapsUsed = state.frostSwapsUsed;
       let frostbitePending = state.frostbitePending, frostbiteActive = state.frostbiteActive;
       let layers = state.layers || {}, frostFormPrev = state.frostFormPrev || []; // Eis-Rework (v0): Schichten + Beständigkeits-Historie
+      let growth = state.growth || {}, colonized = state.colonized || {}; // Pflanze-Fraktion (v0): Wachstum / Kolonisierung
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15 (#93 F2)
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
       // Eis (#93 F3): dieser Pick friert so viele NEUE eigene Karten ein, dass das Ziel (frozenTargetFor) erreicht ist.
       if (arch === "ice") {
         const toFreeze = Math.max(0, frozenTargetFor(skills) - frozenCount(deck));
         if (toFreeze > 0) deck = freezeCards(deck, toFreeze, action.rng, hasFrostwahl(skills)); // Frostwahl: niedrigste Karten gezielt
+      }
+      // Pflanze (v0): erster Pflanze-Skill → Alter Anker (1 Karte reif: grün, Wert 11) + Setzlingsbeet/Dornenkönig.
+      if (arch === "plant" && !(state.activeArchetypes || []).includes("plant")) {
+        deck = deck.map((c, i) => (i === 0 ? { ...c, green: true, value: C.PLANT_ANCHOR_VALUE } : c)); // Alter Anker (Zündfunke ab Durchlauf 1)
+        if (hasSetzlingsbeet(skills)) { // niedrigste Karte je Segment +3 Wachstum
+          const g = { ...growth };
+          for (let seg = 0; seg * SEGMENT_SIZE < state.playerOrder.length; seg++) {
+            let lowId = null, lowV = Infinity;
+            for (let p = seg * SEGMENT_SIZE; p < (seg + 1) * SEGMENT_SIZE && p < state.playerOrder.length; p++) {
+              const c = deck[state.playerOrder[p]];
+              if (c.value < lowV) { lowV = c.value; lowId = c.id; }
+            }
+            if (lowId != null) g[lowId] = (g[lowId] || 0) + C.SETZLINGSBEET_GROWTH;
+          }
+          growth = g;
+        }
+        if (hasDornenkoenig(skills)) colonized = Object.fromEntries(state.oppDeck.map((c) => [c.id, true])); // Dornenkönig: ganzes Gegnerdeck kolonisiert
       }
       if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
       // #140: Verliert man durch Ersetzen den LETZTEN Skill eines Archetyps (0 Skills übrig), wird er deaktiviert
@@ -501,9 +521,10 @@ export function reducer(state, action) {
         iceTemp = {}; frostSwapsUsed = [];
         frostbitePending = {}; frostbiteActive = {}; layers = {}; frostFormPrev = [];
       }
+      if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green ? { ...c, green: false } : c)); growth = {}; colonized = {}; } // Pflanze weg (Anker-Wert bleibt gebacken)
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers);
-      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, layers, frostFormPrev, ash, brandPending, brandActive, forged, formations, phase: "play", skillOffer: null };
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, layers, frostFormPrev, growth, colonized, ash, brandPending, brandActive, forged, formations, phase: "play", skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").

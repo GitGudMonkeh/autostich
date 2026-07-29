@@ -11,7 +11,11 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
   hasStandstill, hasFrostReserve, hasIceBloom, hasIceAnchor, hasPermafrost, // Eis-Rework (v0)
   layerValue, totalLayers, hasGletscher, hasEisdruck, hasKristallineMasse, hasBestaendigkeit, hasVerschraenkung, // Eis-Rework (v0): Schicht-Engine
-  hasVergletscherung, hasArchitekt } from "./skills.js"; // Eis-Rework (v0): Legendäre
+  hasVergletscherung, hasArchitekt, // Eis-Rework (v0): Legendäre
+  growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
+  hasWurzelschlag, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Tiefe/Breite
+  hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
+  hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasDornenkoenig } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, summarizeFormations, baseFormationCount, SEGMENT_SIZE } from "./formations.js";
 import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, perkFateReroll, skillFateReroll, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
@@ -82,6 +86,7 @@ export function resolveTrick(state, rng = Math.random) {
     iceTemp = {}, frostbitePending = {}, frostbiteActive = {}, // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff (je oppCard.id → −Wert)
     layers = {}, frostFormPrev = [], // Eis-Rework (v0): Schichten je Frostkarte-id (permanent) / Frostkarten, die im Vordurchlauf in Formation siegten (Beständigkeit)
     ash = 0, brandPending = {}, brandActive = {}, forged = {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
+    growth = {}, colonized = {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green auf der Karte)
     shop = null, economyStatLevel = 0, // Shop-System (Shop-Spec §3): Münzstand + Einkommen-Level
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
   } = state;
@@ -244,6 +249,9 @@ export function resolveTrick(state, rng = Math.random) {
   let newBrandPending = { ...brandPending };
   let newBrandActive = brandActive;
   let newForged = forged;
+  // Pflanze-Fraktion (v0): Wachstum (immutabel fortgeschrieben) / kolonisierte Gegnerkarten. Grün = card.green (im deck gebacken).
+  let newGrowth = growth;
+  let newColonized = { ...colonized };
 
   let won = false, lost = false, tieConverted = false;
   if (pValue > oValue) won = true;
@@ -378,6 +386,72 @@ export function resolveTrick(state, rng = Math.random) {
         }
       }
     }
+    // ---- Pflanze-Fraktion (v0): Wachstum (Sieg → +1), Reife-Recolor, Wurzeln (Score/Wert), Aussaat/Ranken (Breite/Grün),
+    //      Blüte/Photosynthese/Blätterdach (Grün-Payoff), Ausläufer (Kolonisieren/Ernten). Grün = card.green.
+    let plantFlat = 0;
+    let plantFormMult = 1;
+    if ((activeArchetypes || []).includes("plant")) {
+      const inFormation = positionHasFormation(posForm);
+      const inFarbblock = (posForm.formations || []).some((f) => f.type === "farbblock");
+      // Wachstum: jeder Sieg der Karte +1 (nur steigend). Reife: Schwelle erreicht → grün backen.
+      const g = (newGrowth[pCard.id] || 0) + 1;
+      newGrowth = { ...newGrowth, [pCard.id]: g };
+      const cardGreen = pCard.green || growthRipe(g);
+      if (growthRipe(g) && !pCard.green) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c));
+      // Ernte: geschlagene Gegnerkarte kolonisiert? → +Wachstum; Erntedank (reif), Rhizom (Nachbar), Dornenkönig (Marker verbraucht).
+      if (newColonized[oCard.id]) {
+        newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST };
+        if (hasErntedank(skills) && cardGreen) plantFlat += C.ERNTEDANK_SCORE;
+        if (hasRhizom(skills)) { const oi = oppOrder[actualPos], nb = oi + 1 < oppDeck.length ? oi + 1 : oi - 1;
+          if (nb >= 0 && newColonized[oppDeck[nb].id]) newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; }
+        if (hasDornenkoenig(skills)) { const nc = { ...newColonized }; delete nc[oCard.id]; newColonized = nc; }
+      }
+      if (cardGreen) {
+        // Wurzeltiefe: Flat-Score je Sieg (Pfahlwurzel ×2 in Formation) + Jahresringe (je 10 Wachstum). Mutterbaum streut aufs Segment.
+        if (hasWurzeltiefe(skills)) {
+          let root = C.WURZELTIEFE_SCORE * (hasPfahlwurzel(skills) && inFormation ? C.PFAHLWURZEL_MULT : 1);
+          if (hasJahresringe(skills)) root += Math.floor(g / C.JAHRESRINGE_PER_GROWTH) * C.JAHRESRINGE_SCORE;
+          plantFlat += root;
+          if (hasMutterbaum(skills) && g >= Math.max(1, ...Object.values(newGrowth))) plantFlat += root; // Mutterbaum (v0-Näherung): Segment-Streuung
+        }
+        // Wurzelschlag: grüne Karte wächst permanenten Wert an (+1 je 3 Wachstum, bis Deckel 11).
+        if (hasWurzelschlag(skills) && g % C.WURZELSCHLAG_PER_GROWTH === 0 && pCard.value < C.PLANT_VALUE_CAP)
+          deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: Math.min(C.PLANT_VALUE_CAP, c.value + 1) } : c));
+        // Aussaat: beide Nachbarn +1 Wachstum (Flugsamen: grüne überspringen, nächste graue säen).
+        if (hasAussaat(skills)) {
+          for (const dir of [-1, 1]) {
+            let nb = actualPos + dir;
+            if (hasFlugsamen(skills)) while (nb >= 0 && nb < playerOrder.length && deck[playerOrder[nb]].green) nb += dir;
+            if (nb >= 0 && nb < playerOrder.length) { const nid = deck[playerOrder[nb]].id; newGrowth = { ...newGrowth, [nid]: (newGrowth[nid] || 0) + C.AUSSAAT_GROWTH }; }
+          }
+        }
+        // Ranken: einen noch-grauen Nachbarn sofort grün färben.
+        if (hasRanken(skills)) {
+          for (const dir of [-1, 1]) { const nb = actualPos + dir; if (nb < 0 || nb >= playerOrder.length) continue;
+            if (!deck[playerOrder[nb]].green) { const nid = deck[playerOrder[nb]].id; deck = deck.map((c) => (c.id === nid ? { ...c, green: true } : c)); break; } }
+        }
+        // Blüte: grüne Nachbarn → +Score je grüner Karte im Segment (Blütezeit ×2 in Formation, Überwucherung ×2).
+        if (hasBluete(skills)) {
+          const nbGreen = [-1, 1].every((dir) => { const nb = actualPos + dir; return nb < 0 || nb >= playerOrder.length || deck[playerOrder[nb]].green; });
+          if (nbGreen) {
+            const segStart = Math.floor(actualPos / SEGMENT_SIZE) * SEGMENT_SIZE;
+            let gs = 0; for (let p = segStart; p < segStart + SEGMENT_SIZE && p < playerOrder.length; p++) if (deck[playerOrder[p]].green) gs += 1;
+            let b = C.BLUETE_SCORE * gs * (hasBluetezeit(skills) && inFormation ? C.BLUETEZEIT_MULT : 1);
+            if (hasUeberwucherung(skills)) b *= 2;
+            plantFlat += b;
+          }
+        }
+        // Photosynthese: grüne Karte in Formation → ×1,15 (Formations-Faktor). Blätterdach: grüner Farbblock ≥4 → +Score/Karte.
+        if (hasPhotosynthese(skills) && inFormation) plantFormMult *= C.PHOTOSYNTHESE_MULT;
+        if (hasBlaetterdach(skills) && inFarbblock && greenCount(deck) >= C.BLAETTERDACH_MIN) plantFlat += C.BLAETTERDACH_SCORE * Math.min(greenCount(deck), 10);
+        // Ausläufer: die niedrigste noch nicht kolonisierte Gegnerkarte kolonisieren.
+        if (hasAuslaeufer(skills)) {
+          let lowId = null, lowV = Infinity;
+          for (const c of oppDeck) if (!newColonized[c.id] && c.value < lowV) { lowV = c.value; lowId = c.id; }
+          if (lowId != null) newColonized = { ...newColonized, [lowId]: true };
+        }
+      }
+    }
     // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.
     // Der Crit-Wurf verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift).
     // Blitz-Crit-Basis (Abschnitt 2a) wird additiv zugerechnet, unabhängig von L5-critChanceMult.
@@ -413,7 +487,7 @@ export function resolveTrick(state, rng = Math.random) {
                                   + familySumHook(familyTiers, "scoreFlatOnCrit", critCtx)
                                   + (critFollowArmed ? critFollowCritBonus : 0) // D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist
                                   + (anchorType === "crit" ? (aParam("critScore") || 0) : 0) : 0) // Kritanker IV: Crit dort +250 Score
-                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat + iceFlat
+                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat + iceFlat + plantFlat
                       + (anchorType === "score" ? (aParam("score") || 0) : 0) // Punkteanker (§4.2, Stärke = Stufe)
                       + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
                       + interplayStored; // D_INTERPLAY IV: der in Niederlagen gebankte Score wird mit diesem Sieg als Flat ausgezahlt
@@ -429,7 +503,7 @@ export function resolveTrick(state, rng = Math.random) {
     const afterglowMult = posForm.afterglowFactor || 1;                                // F6 Nachhall
     const coreMult = posForm.coreFactor || 1;                                          // F-L1 Formationskern
     const formBaseMult = (posForm.baseMult != null ? posForm.baseMult : formationMult); // echte Formationen (inkl. Überlappung)
-    const formMult = formBaseMult * statFormFactor(statFormMult, hasFormation) * iceFormMult; // Formation (§22.7 + Formations-Stat + Eisdruck/Architekt)
+    const formMult = formBaseMult * statFormFactor(statFormMult, hasFormation) * iceFormMult * plantFormMult; // + Eisdruck/Architekt + Photosynthese
     scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult * afterglowMult * coreMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     critBonus = gained - scoreBeforeCrit;
@@ -635,6 +709,12 @@ export function resolveTrick(state, rng = Math.random) {
     // Kältereserve (v0): Frostkarte verliert → bankt trotzdem +1 Schicht (der Gletscher wächst auch in der Niederlage).
     if (hasFrostReserve(skills) && pCard.frozen)
       newLayers = { ...newLayers, [pCard.id]: (newLayers[pCard.id] != null ? newLayers[pCard.id] : (layers[pCard.id] || 0)) + C.KAELTERESERVE_LAYER };
+    // Zäher Halm (Pflanze v0): unreife (graue) Karten wachsen auch bei Niederlage +1 — bis sie grün sind.
+    if (hasZaeherHalm(skills) && !pCard.green) {
+      const g = (newGrowth[pCard.id] || 0) + C.ZAEHER_HALM_GROWTH;
+      newGrowth = { ...newGrowth, [pCard.id]: g };
+      if (growthRipe(g)) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c)); // reif geworden → grün backen
+    }
     lastResult = "loss";
   } else {
     ties += 1;
@@ -727,6 +807,16 @@ export function resolveTrick(state, rng = Math.random) {
       }
       heat = { ...heat, phoenixUsed: false }; // Phönixfeuer: neuer Durchlauf → wieder verfügbar
     }
+    // ---- Pflanze-Fraktion (v0): Weltenbaum — am Durchlauf-Ende wächst der ganze Wald (+1 Wachstum je 10 grüne im Feld); Nachzügler reifen.
+    if (hasWeltenbaum(skills)) {
+      const per = Math.floor(greenCount(deck) / C.WELTENBAUM_PER_GREEN);
+      if (per > 0) {
+        const ng = { ...newGrowth };
+        for (const c of deck) ng[c.id] = (ng[c.id] || 0) + per;
+        newGrowth = ng;
+        deck = deck.map((c) => (!c.green && growthRipe(newGrowth[c.id] || 0) ? { ...c, green: true } : c));
+      }
+    }
 
     if (cycle >= C.MAX_CYCLES) {
       // Run-Ende nach dem letzten Durchlauf (§22.1): kein Neu-Mischen, keine Auswahl mehr.
@@ -799,6 +889,7 @@ export function resolveTrick(state, rng = Math.random) {
     iceTemp: newIceTemp, frostbitePending: newFrostbitePending, frostbiteActive: newFrostbiteActive, // Eis (Kaltfront temp / Vergletscherung)
     layers: newLayers, frostFormPrev: newFrostFormPrev, // Eis-Rework (v0): Schichten (permanent) + Beständigkeits-Historie
     ash: newAsh, brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer-Rework (v0)
+    growth: newGrowth, colonized: newColonized, // Pflanze-Fraktion (v0): Wachstum + Kolonisierung (grün = card.green im deck)
     shop, // Shop-System (Shop-Spec §3): aktualisierter Münzstand (economyStatLevel läuft unverändert über ...state)
     lastTrick, phase,
   };
