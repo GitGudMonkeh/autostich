@@ -241,7 +241,7 @@ export const GLEITFROST_EXTRA_SWAP = 1;// Gleitfrost: 2. kostenloser Frosttausch
 export const ICE_LAYER_VALUE   = 1;    // je Schicht +1 Dauerwert (Gletscher macht es superlinear)        // v0 — tunebar
 export const ICE_LAYER_MAX     = 12;   // Deckel wirksamer Schichten je Karte (Wert/Eisdruck/Vergletscherung) // Anti-Runaway v0.1: Bank-Pfad → 32 Schichten/Karte
 export const ICE_ABLAGE_A_LAYER = 1;   // Ablage A: Frostkarte siegt in ≥1 Formation → +1 Schicht          // v0
-export const ICE_ABLAGE_SCORE_PER_LAYER = 20; // Frost-Sieg: +Flat-Score je (gedeckelter ≤12) Schicht — „tiefe Pfeiler scoren groß" // v0.2: 8→20 (Ceiling-Blick: Eis an beiden Enden schwächste)
+export const ICE_ABLAGE_SCORE_PER_LAYER = envNum("SIM_ICE_ABLAGE_SCORE_PER_LAYER", 12); // Frost-Sieg: +Flat-Score je (gedeckelter ≤12) Schicht [Balance: 20→12 — der v0.2-Buff 8→20 war solver-los fehlkalibriert (Eis sah schwach aus), mit Aufstellung korrigiert; Sim-tunebar]
 export const PERMAFROST_LAYER_BONUS = 1; // Permafrost (L): +1 Schicht je Ablage                           // v0
 export const BESTAENDIGKEIT_LAYER = 1; // Beständigkeit: Sieg in Formation wie im Vordurchlauf → +1 Schicht // v0
 export const VERSCHRAENKUNG_LAYERS = 2;// Verschränkung: Sieg in ≥3 Formationen → +2 Schichten             // v0 — tunebar
@@ -255,11 +255,11 @@ export const GLACIER_PUSH_LAYER = 1;   // Gletscherschub: Frosttausch schafft Fo
 export const VERZAHNUNG_LAYER  = 1;    // Verzahnung: Frosttausch → 2. Formation (Überlappung) → +1 Schicht // v0
 export const KALTFRONT_VALUE   = 3;    // Kaltfront: getauschte Karte + neuer Nachbar +3 temp Wert (Platzierhilfe) // v0
 // Schicht-Schwellen
-export const EISDRUCK_STEP     = 0.05; // Eisdruck: +5 % Formationsfaktor je Schicht der Siegkarte          // v0 — tunebar
+export const EISDRUCK_STEP     = envNum("SIM_EISDRUCK_STEP", 0.05); // Eisdruck: +% Formationsfaktor je Schicht der Siegkarte [Sim-tunebar]
 export const KRISTALLINE_THRESHOLD = 20; // Kristalline Masse: Summe aller Schichten ≥ Schwelle …           // v0 — tunebar
 export const KRISTALLINE_VALUE = 2;    // … → alle Frostkarten +2 Wert                                      // v0
 // Formations-Interface / Anker
-export const CRYSTAL_OFFSET    = 2;    // Kristallform: ±2 Wert-Flex (Joker; Layer-Skalierung v0 aufgeschoben) // v0
+export const CRYSTAL_OFFSET    = envNum("SIM_CRYSTAL_OFFSET", 1);    // Kristallform: ±N Wert-Flex (Joker) [Balance: 2→1 — der ±2-Joker war ein Ceiling-Monster (Eis-Max −70 %, Median fast unberührt); Sim-tunebar] // v0
 export const EISANKER_FACTOR   = 1.25; // Eisanker: Frostkarte als Anker ×1,25 (+ garantierte Schicht)      // v0
 export const STILLSTAND_SCORE  = 200;  // Stillstand: +200 Flat, wenn eine Frostkarte in ≥1 Formation siegt  // v0 — tunebar
 // Legendäre (Gletscher / Vergletscherung / Architekt)
