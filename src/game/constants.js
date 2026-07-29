@@ -241,6 +241,7 @@ export const ARCHITEKT_STEP    = 0.15; // Architekt: +15 % je zusätzlicher Fros
 export const PLANT_GREEN_THRESHOLD = 8;   // Wachstum-Schwelle für Reife (grün)                                // v0 — tunebar
 export const PLANT_VALUE_CAP       = 11;  // Wert-Deckel grüner Karten (Auto-Sieg; Tiefe zahlt dann in Score)   // v0
 export const PLANT_ANCHOR_VALUE    = 11;  // Alter Anker: Aktivierung startet 1 Karte reif (grün, Wert 11)      // v0
+export const PLANT_GREEN_FARBBLOCK_CAP = 3;// Grün-Farbblock-Cap: der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt (v0.3: ganzes Feld grün → 40er-Block ×8+ war der Runaway) // tunebar
 // Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score)
 export const WURZELSCHLAG_PER_GROWTH = 4; // Wurzelschlag: +1 Dauerwert je 3 Wachstum (grüne Karte, bis Deckel)  // v0
 export const WURZELTIEFE_SCORE     = 12;  // Wurzeltiefe: Flat-Score je Sieg einer grünen Karte (Wurzeln-Score) // v0 — tunebar
