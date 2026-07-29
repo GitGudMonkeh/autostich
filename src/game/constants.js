@@ -93,7 +93,7 @@ export const SKILL_LEGENDARY_BASE      = 0.03; // Basis-Legendär-Chance Skill-A
 export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P6): max +15 pp
 
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
-export const SKILL_SLOTS       = envNum("SIM_SKILL_SLOTS", 4);    // max gleichzeitig gehaltene Skills [SIM-Sweep-Haken: Slot-Experiment (Autostich_Test testet 6); Default = main-Stand 4]
+export const SKILL_SLOTS       = envNum("SIM_SKILL_SLOTS", 6);    // max gleichzeitig gehaltene Skills [Default 6 = echtes Spiel (Autostich_Test); ENV-Sweep-Haken SIM_SKILL_SLOTS z. B. =4 für den alten main-Stand]
 export const SKILLS_OFFERED     = 6;   // Skills je Skill-Runde (Prototyp: 2+2+2 — alle 3 Archetypen immer im Angebot)
 export const MAX_ARCHETYPES     = 3;   // Prototyp: alle 3 Archetypen gleichzeitig aktivierbar (Cap aufgehoben)
 export const SKILL_EVERY_CYCLES = 3;   // jede N-te Runde ist eine Skill-Runde (3, 6, 9 …), sonst Perk

@@ -155,16 +155,17 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
   });
 
   it("PICK_SKILL bei vollen Slots: ohne replaceId no-op, mit gültigem Ziel wird ersetzt (#95)", () => {
-    const four = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04"];
-    const NEW = "SK_LIGHTNING_05";
-    const full = skillState({ skills: four, skillOffer: [NEW], lightning: { active: true, charge: 0, maxCharge: 10 } });
+    // SKILL_SLOTS = 6 (echtes Spiel): volle Slots = 6 gehaltene Skills. Nur 02 (Ionisierung) ist Konsument.
+    const six = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
+    const NEW = "SK_LIGHTNING_10"; // Entladung — kein Konsument, kollidiert also nicht mit dem verbleibenden 02
+    const full = skillState({ skills: six, skillOffer: [NEW], lightning: { active: true, charge: 0, maxCharge: 10 } });
     // ohne Ersetzungsziel → unverändert (das war der Bug: bei vollen Slots tat der Klick nichts)
     expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, rng })).toBe(full);
     // ungültiges Ziel (nicht gehalten) → unverändert
-    expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_07", rng })).toBe(full);
+    expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_09", rng })).toBe(full);
     // gültiges Ziel → ersetzt genau diesen Slot, Reihenfolge bleibt, zurück in play
-    const s = reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_02", rng });
-    expect(s.skills).toEqual(["SK_LIGHTNING_01", NEW, "SK_LIGHTNING_03", "SK_LIGHTNING_04"]);
+    const s = reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_04", rng });
+    expect(s.skills).toEqual(["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", NEW, "SK_LIGHTNING_05", "SK_LIGHTNING_06"]);
     expect(s.phase).toBe("play");
   });
 
