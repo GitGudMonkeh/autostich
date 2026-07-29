@@ -179,15 +179,23 @@ export const DURCHSCHLAG_MULT_CAP     = 2.0;  // Durchschlag: Deckel des dauerha
    ============================================================ */
 // Grundmechanik (passiv)
 export const HEAT_MAX          = 100;  // Hitzemaximum (fix)
-export const HEAT_MIN_MARGIN   = 3;    // Mindest-Wertvorsprung für margen-basierten Hitzegewinn & Feuer-Score
-export const HEAT_PER_POINT    = 1;    // % Hitze je (Vorsprung−2)  // v0 — tunebar, cross-archetype Sim-Pass
+export const HEAT_MIN_MARGIN   = envNum("SIM_HEAT_MIN_MARGIN", 3);    // Mindest-Wertvorsprung für margen-basierten Hitzegewinn & Feuer-Score [Sim-tunebar]
+export const HEAT_PER_POINT    = envNum("SIM_HEAT_PER_POINT", 1);    // % Hitze je (Vorsprung−2) [Sim-tunebar]
 export const HEAT_MARGIN_CAP   = 8;    // Deckel des effektiven Vorsprungs im Hitzegewinn (Late-Game-Runaway)
 export const HEAT_LOSS_MAX     = 10;   // max Hitzeverlust je Niederlage (%)
-export const FIRE_SCORE_BASE   = 25;   // Feuer-Flat-Score je Punkt (erster Feuer-Skill)  // v0 — tunebar
+export const FIRE_SCORE_BASE   = envNum("SIM_FIRE_SCORE_BASE", 25);   // Feuer-Flat-Score je Punkt (erster Feuer-Skill) [Sim-tunebar]
 export const FIRE_SCORE_PER_SKILL = 5; // +Feuer-Flat je Punkt je weiterem Feuer-Skill    // v0 — tunebar
+export const FIRE_MARGIN_OFFSET = envNum("SIM_FIRE_MARGIN_OFFSET", 2); // Feuer-Score-Offset: s = (Vorsprung − OFFSET) × Basis; kleiner = knappe Siege zahlen (Floor-Hebel) [Sim-tunebar]
+// GLUTDIVIDENDE (Feuer-Rework, FLOOR-Hebel): ein DIREKTER Score je Feuer-Sieg, der NICHT durch den Serien/Crit/
+// Formations-Stack multipliziert wird (er zählt flach NACH der Multiplikation). Damit hebt er den Median (kleine
+// Mults → der flache Aufschlag ist relativ groß) deutlich stärker als das Ceiling (riesige Mults → der Aufschlag
+// verschwindet relativ). ∝ gehaltener Hitze beim Sieg, gedeckelt bei FIRE_DIVIDEND_HEAT_CAP (Sättigung: Top-Runs
+// mit Vollhitze ziehen den Deckel nicht weiter hoch → floor-clean). Das ist Feuers fehlende „Immer-an-Engine".
+export const FIRE_HEAT_DIVIDEND     = envNum("SIM_FIRE_HEAT_DIVIDEND", 48);      // direkter Score je Hitze-% je Feuer-Sieg (0 = aus), skaliert mit Feuer-Bekenntnis; Sweep 60c → reines Feuer ≈ Blitz-Parität, Ceiling ~flat [TUNING · Feuer-Floor]
+export const FIRE_DIVIDEND_HEAT_CAP = envNum("SIM_FIRE_DIVIDEND_HEAT_CAP", 45);  // Hitze-Deckel für die Dividende (Sättigung → floor-clean) [TUNING · Feuer-Floor]
 // Linie 1 — Generation (Marge · Konstanz · Serie)
 export const EMBER_MULT        = 1.5;  // Glut: Hitzegewinn ×1,5                            // v0 — tunebar
-export const ZUNDER_HEAT       = 2;    // Zunder: +2 % Hitze je Sieg (auch knappe Siege)   // v0 — tunebar
+export const ZUNDER_HEAT       = envNum("SIM_ZUNDER_HEAT", 2);    // Zunder: +2 % Hitze je Sieg (auch knappe Siege) [Sim-tunebar]
 export const FEUERSTURM_STEP   = 1;    // Feuersturm: +1 % Hitze je Serienstufe            // v0 — tunebar
 export const FEUERSTURM_CAP    = 5;    // Feuersturm: … bis +5 %                            // v0 — tunebar
 // Linie 2 — Verteidigung (abschirmen · kontern)
@@ -208,7 +216,7 @@ export const VERBRENNUNG_T2_MARGIN = 12, VERBRENNUNG_T2_MULT = 2.0; // Verbrennu
 export const SPARKFLIGHT_MIN_MARGIN = 8;  // Funkenflug: Sieg ≥8 Vorsprung entlädt den Speicher voll // v0 — tunebar
 export const SPARKFLIGHT_LOSS_KEEP  = 0.5;// Funkenflug: Niederlage halbiert den Speicher     // v0 — tunebar
 // Linie 5 — Konsumenten (max 1 im Build — Burst vs. Drip)
-export const CONFLAG_MIN_HEAT = 80;     // Flächenbrand: ab 80 % Hitze bewaffnet             // v0 — tunebar
+export const CONFLAG_MIN_HEAT = envNum("SIM_CONFLAG_MIN_HEAT", 80);     // Flächenbrand: ab 80 % Hitze bewaffnet [Sim-tunebar]
 export const CONFLAG_PER_HEAT = 12;     // Flächenbrand: +12 Score je verbrannten Hitzepunkt (verbrennt die GANZE Hitze) // v0
 export const MELT_COST        = 10;     // Schmelzpunkt: −10 % Hitze je Stich                // v0 — tunebar
 export const MELT_PER_HEAT    = 5;      // Schmelzpunkt: +5 Score je verbrauchtem Hitzepunkt // v0 — tunebar
@@ -217,7 +225,7 @@ export const BRAND_VALUE      = 1;      // Brandmal: brandmarkierte Gegnerkarte 
 export const BRAND_ASH        = 1;      // Brandmal/Lauffeuer: +1 Asche je Brand              // v0 — tunebar
 export const BRAND_SPREAD_VALUE = 1;    // Lauffeuer: Übergriff auf eine Nachbarkarte −1 Wert // v0 — tunebar
 export const FORGE_COST       = 5;      // Ascheschmiede: 5 Asche je Schmiedung               // v0 — tunebar
-export const FORGE_VALUE      = 2;      // Ascheschmiede: niedrigste Karte +2 Dauerwert       // v0 — tunebar
+export const FORGE_VALUE      = envNum("SIM_FORGE_VALUE", 2);      // Ascheschmiede: niedrigste Karte +2 Dauerwert [Sim-tunebar]
 export const FORGE_MAX_PER_CARD = 6;    // Schmieden: Deckel geschmiedeter Dauerwert je Karte (Anti-Runaway v0.1: sonst R1→+20)
 export const FORGE_MAX_CARDS    = 10;   // Schmieden: max Anzahl VERSCHIEDENER geschmiedeter Karten (v0.2: Ascheschmiede = Boden heben, nicht ganzes Deck buffen → Winrate-Snowball)
 export const GLUTSTAHL_PER_VALUE = 12;  // Glutstahl: +Score je geschmiedetem Wert bei Sieg // v0.2: 20→12 (Feuer-Ceiling-Trim, Brand+Schmiede-Explosion)

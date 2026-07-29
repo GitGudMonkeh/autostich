@@ -92,7 +92,8 @@ describe("Feuer-Rework v0 — Engine-Integration", () => {
   it("Feuer-Score bei Sieg fließt in die multiplizierte Basis (Grund-Payoff)", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01"], heat: heat() }), noCrit);
     expect(s.lastTrick.result).toBe("win");
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + (6 - 2) * 25) * 1.02); // 1 Feuer-Skill → (Vorsprung−2)×25
+    // (Vorsprung−2)×25 in der multiplizierten Basis + Glutdividende (direkt, Hitze × Satz × Feuer-Bekenntnis 1/6).
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + (6 - 2) * 25) * 1.02 + Math.min(s.heat.value, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * Math.min(1, 1 / C.SKILL_SLOTS));
   });
   it("Hitzegewinn: Glut ×1,5 auf die Marge (Vorsprung 6 → +6 %)", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01"], heat: heat({ value: 0 }) }), noCrit);
@@ -106,8 +107,8 @@ describe("Feuer-Rework v0 — Engine-Integration", () => {
   it("Weißglut: Hitze-Überlauf über 100 wird zu Score (+10/Punkt)", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01", "SK_FIRE_07"], heat: heat({ value: 98 }) }), noCrit);
     expect(s.heat.value).toBe(100);
-    // Überlauf 4 → +40; Feuer-Score (2 Skills) (6−2)×30 = 120
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + 120 + 40) * 1.02);
+    // Überlauf 4 → +40; Feuer-Score (2 Skills) (6−2)×30 = 120; + Glutdividende (direkt, Hitze × Satz × Bekenntnis 2/6).
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + 120 + 40) * 1.02 + Math.min(s.heat.value, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * Math.min(1, 2 / C.SKILL_SLOTS));
   });
   it("Brandmal: Sieg brandmarkt die geschlagene Gegnerkarte (nächster Durchlauf) + Asche", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_13"], heat: heat() }), noCrit);

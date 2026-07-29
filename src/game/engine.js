@@ -7,7 +7,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
   hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasWetterleuchten, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
   hasDoubleDischarge, hasAreaIonize, hasDurchschlag, // Blitz-Rework (v0): Legendäre
-  fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer-Rework (v0)
+  fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, // Feuer-Rework (v0)
   glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
   hasStandstill, hasFrostReserve, hasIceBloom, hasIceAnchor, hasPermafrost, // Eis-Rework (v0)
   layerValue, totalLayers, hasGletscher, hasEisdruck, hasKristallineMasse, hasBestaendigkeit, hasVerschraenkung, // Eis-Rework (v0): Schicht-Engine
@@ -287,6 +287,7 @@ export function resolveTrick(state, rng = Math.random) {
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
     // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überlauf), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
     let fireFlat = meltScore; // Schmelzpunkt-Drip (im Vor-Stich verbrauchte Hitze) zahlt sich hier als Flat aus (nur bei Sieg)
+    let fireDividendHeat = 0;  // gehaltene Hitze beim Sieg (vor evtl. Flächenbrand-Verbrauch) → Glutdividende (direkter Score, s. u.)
     if (heat && heat.active) {
       const fmargin = pValue - oValue;
       // Hitzegewinn: Marge (Glut) + Zunder + Feuersturm (Serie) + Rückzündung (Rückstand des letzten Verlusts).
@@ -296,7 +297,8 @@ export function resolveTrick(state, rng = Math.random) {
       const overflow = Math.max(0, raw - heat.max);
       if (overflow > 0) fireFlat += whiteHeatScore(overflow, skills, heat.max);
       heat = { ...heat, value: Math.min(heat.max, raw) };
-      // Feuer-Score (Grund-Payoff): (Vorsprung−2)×Basis, ×Verbrennung (≥8/≥12), ×Sonnenzorn (≥80 %). Basis für Funkenflug.
+      fireDividendHeat = heat.value; // gehaltene Hitze NACH diesem Sieg, VOR evtl. Flächenbrand-Verbrauch → Glutdividende
+      // Feuer-Score (Grund-Payoff): (Vorsprung−OFFSET)×Basis, ×Verbrennung (≥8/≥12), ×Sonnenzorn (≥80 %). Basis für Funkenflug.
       const fireBaseFlat = fireScoreFor(fmargin, skills, heat.value);
       fireFlat += fireBaseFlat;
       // Flächenbrand (Konsument, Burst): Sieg ab 80 % Hitze verbrennt die GANZE Hitze → +12 Score/Punkt (Sonnenkern +5/Punkt).
@@ -511,11 +513,21 @@ export function resolveTrick(state, rng = Math.random) {
     // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
     if (C.WIN_SOFTCAP > 0 && gained > C.WIN_SOFTCAP) gained = C.WIN_SOFTCAP + (gained - C.WIN_SOFTCAP) * C.WIN_SOFTCAP_SLOPE;
     critBonus = gained - scoreBeforeCrit;
-    score += gained;
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, total: gained };
     // #161 FB-2: additiver Score-Anteil der Formations-Faktoren (echte Formationen + Formations-Stat + Nachhall + Kern).
+    // Auf dem MULTIPLIZIERTEN Score, VOR der Glutdividende (die läuft am Stack vorbei und zählt nicht als Formations-Score).
     const formFactorTotal = formMult * afterglowMult * coreMult;
     if (formFactorTotal > 1) formationScore += gained * (1 - 1 / formFactorTotal);
+    // Glutdividende (Feuer-Rework, Floor-Hebel): DIREKTER Score je Feuer-Sieg (∝ gehaltener Hitze, gedeckelt bei
+    // FIRE_DIVIDEND_HEAT_CAP), NICHT durch Serie/Crit/Form multipliziert → flach NACH dem Stack. Hebt den Median
+    // (kleine Mults) relativ stärker als das Ceiling (große Mults) = Feuers fehlende „Immer-an-Engine". Skaliert mit
+    // dem FEUER-BEKENNTNIS (Anteil Feuer-Skills an den Slots), damit ein 2-Skill-Splash die Dividende nicht in
+    // High-Winrate-Kombis (Eis/Pflanze) trägt → hält Spezialisieren ≈ Mischen (cross-health).
+    const fireCommit = Math.min(1, activeFireCount(skills) / C.SKILL_SLOTS);
+    const fireDirect = C.FIRE_HEAT_DIVIDEND > 0 && fireDividendHeat > 0 && fireCommit > 0
+      ? Math.min(fireDividendHeat, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * fireCommit : 0;
+    gained += fireDirect;
+    score += gained;
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, fireDirect, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz-Rework (v0): Ladungsgewinn — Blitzableiter (Crit +1) · Statische Aufladung (Nicht-Crit-Sieg +1) ·

@@ -7,9 +7,10 @@ import { randomPolicy } from "../sim/policies/random.js";
 // der Median ist gegen Heavy Tails robust (der #121-Feuer-Runaway bewegte den Median kaum), der
 // Mean reagiert dagegen stark auf Tail-Runaway. Nur zusammen fangen sie die relevanten Regressionen.
 //
-// Stand: NEU ZENTRIERT auf MAX_CYCLES-Default 60 (Ziel-Rundenlänge) + SKILL_SLOTS 6 + 4 Fraktionen (Feuer/Blitz/
-// Eis/Pflanze). Median ~2,67M, Mean ~3,50M über Seeds 1..40. (Bei 44 Cycles war es ~1,12M/~1,14M — die längere
-// Runde compoundet deutlich höher.) Bei ABSICHTLICHER Balance-Änderung neu zentrieren.
+// Stand: NEU ZENTRIERT auf MAX_CYCLES-Default 60 + SKILL_SLOTS 6 + 4 Fraktionen + Feuer-Glutdividende (Floor-Buff,
+// skaliert mit Feuer-Bekenntnis). Median ~2,82M, Mean ~3,82M über Seeds 1..40. (Vor der Glutdividende ~2,67M/~3,50M
+// bei 60 Cycles — die bekenntnis-skalierte Dividende hebt Random-Builds nur mäßig, reine/committete Feuer-Builds
+// stark.) Bei ABSICHTLICHER Balance-Änderung neu zentrieren.
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -17,14 +18,14 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    // Ist-Wert ~2,67M (60 Cycles). Band toleriert normales Tuning, schlägt bei ~±30 % Verschiebung an.
-    expect(median).toBeGreaterThan(1_900_000);
-    expect(median).toBeLessThan(3_600_000);
+    // Ist-Wert ~2,82M (60 Cycles + bekenntnis-skalierte Glutdividende). Band toleriert normales Tuning, schlägt bei ~±30 % an.
+    expect(median).toBeGreaterThan(2_050_000);
+    expect(median).toBeLessThan(3_700_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ~3,50M (60 Cycles). Obergrenze fängt einen Runaway (Mean ginge deutlich höher).
-    expect(mean).toBeGreaterThan(2_400_000);
-    expect(mean).toBeLessThan(5_300_000);
+    // Ist-Wert ~3,82M (60 Cycles + bekenntnis-skalierte Glutdividende). Obergrenze fängt einen Runaway (Mean ginge deutlich höher).
+    expect(mean).toBeGreaterThan(2_650_000);
+    expect(mean).toBeLessThan(5_500_000);
   });
 });

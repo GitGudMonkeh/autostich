@@ -359,12 +359,12 @@ export function verbrennungMult(margin) {
   if (margin >= C.VERBRENNUNG_T1_MARGIN) return C.VERBRENNUNG_T1_MULT;
   return 1;
 }
-// Feuer-Flat-Score bei Sieg: (Vorsprung−2) × (25 + 5×(FeuerSkills−1)), dann Verbrennung (×1,5/×2) und
-// Sonnenzorn (×1,25 ab 80 % Hitze). 0 ohne Feuer-Skill. `heatValue` = Hitze für die Sonnenzorn-Schwelle.
+// Feuer-Flat-Score bei Sieg: (Vorsprung−FIRE_MARGIN_OFFSET) × (25 + 5×(FeuerSkills−1)), dann Verbrennung (×1,5/×2)
+// und Sonnenzorn (×1,25 ab 80 % Hitze). 0 ohne Feuer-Skill. `heatValue` = Hitze für die Sonnenzorn-Schwelle.
 export function fireScoreFor(margin, skills, heatValue = 0) {
   const n = activeFireCount(skills);
   if (n === 0 || margin < C.HEAT_MIN_MARGIN) return 0;
-  let s = (margin - 2) * (C.FIRE_SCORE_BASE + C.FIRE_SCORE_PER_SKILL * (n - 1));
+  let s = (margin - C.FIRE_MARGIN_OFFSET) * (C.FIRE_SCORE_BASE + C.FIRE_SCORE_PER_SKILL * (n - 1));
   if (fireFlag(skills, "verbrennung")) s *= verbrennungMult(margin);
   if (fireFlag(skills, "sunwrath") && heatValue >= C.SUNWRATH_MIN_HEAT) s *= C.SUNWRATH_FIRESCORE_MULT;
   return Math.round(s);
