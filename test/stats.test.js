@@ -32,11 +32,17 @@ describe("statStreakFactor — Serien-Stat-Cap (#153)", () => {
   });
 });
 
-describe("statFormFactor — Formations-Stat nur bei aktiver Formation (#153)", () => {
-  it("greift nur mit Formation, sonst neutral", () => {
-    expect(statFormFactor(STAT_FORM_MULT_STEP, true)).toBeCloseTo(1 + STAT_FORM_MULT_STEP); // +5 %
+describe("statFormFactor — Formations-Stat skaliert mit ANZAHL Formationen (#153, Count-Rework)", () => {
+  it("greift nur mit Formation, sonst neutral (boolean-Aufrufer bleiben gültig: true→1, false→0)", () => {
+    expect(statFormFactor(STAT_FORM_MULT_STEP, true)).toBeCloseTo(1 + STAT_FORM_MULT_STEP); // 1 Formation → +5 %
     expect(statFormFactor(STAT_FORM_MULT_STEP, false)).toBe(1);
+    expect(statFormFactor(STAT_FORM_MULT_STEP, 0)).toBe(1);
     expect(statFormFactor(0.15, true)).toBeCloseTo(1.15);
     expect(statFormFactor(0, true)).toBe(1);
+  });
+  it("mehrere Formationen an der Siegposition → linearer Zuwachs (Spezialisierungs-Rampe)", () => {
+    expect(statFormFactor(STAT_FORM_MULT_STEP, 2)).toBeCloseTo(1 + 2 * STAT_FORM_MULT_STEP); // 2 Formationen → +10 %
+    expect(statFormFactor(STAT_FORM_MULT_STEP, 3)).toBeCloseTo(1 + 3 * STAT_FORM_MULT_STEP); // 3 → +15 %
+    expect(statFormFactor(0.05, 4)).toBeCloseTo(1.20);
   });
 });

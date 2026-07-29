@@ -17,7 +17,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
   hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasDornenkoenig } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
-import { computeFormations, positionHasFormation, summarizeFormations, baseFormationCount, SEGMENT_SIZE } from "./formations.js";
+import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE } from "./formations.js";
 import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, perkFateReroll, skillFateReroll, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
 import { SHOP_FAMILY_DEFS, timeSegmentDepth, timeSegmentReduced } from "./shopFamilies.js";
 
@@ -504,7 +504,7 @@ export function resolveTrick(state, rng = Math.random) {
     const afterglowMult = posForm.afterglowFactor || 1;                                // F6 Nachhall
     const coreMult = posForm.coreFactor || 1;                                          // F-L1 Formationskern
     const formBaseMult = (posForm.baseMult != null ? posForm.baseMult : formationMult); // echte Formationen (inkl. Überlappung)
-    const formMult = formBaseMult * statFormFactor(statFormMult, hasFormation) * iceFormMult * plantFormMult; // + Eisdruck/Architekt + Photosynthese
+    const formMult = formBaseMult * statFormFactor(statFormMult, activeFormationCount(posForm)) * iceFormMult * plantFormMult; // Formations-Stat ×Anzahl AKTIVER Formationen an der Siegposition + Eisdruck/Architekt + Photosynthese
     scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult * afterglowMult * coreMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der

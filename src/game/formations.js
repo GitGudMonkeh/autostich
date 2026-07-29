@@ -400,6 +400,12 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
 // Trägt eine Position eine wirksame Formation (Score-Faktor > 1)? → speist den Formations-Stat (§22.3).
 export const positionHasFormation = (posForm) => !!posForm && posForm.mult > 1;
 
+// Anzahl der an einer Position AKTIVEN Formationen (Einzel-Faktor > 1) — speist die Count-Skalierung des
+// Formations-Stats (#stat-rework: mehrere/überlappende Formationen je Sieg zahlen mehr). Deckungsgleich mit
+// positionHasFormation: ≥1 ⟺ mult > 1. Formations-Einträge mit factor ≤ 1 (z. B. Farbblock-Ordinal 1) zählen nicht.
+export const activeFormationCount = (posForm) =>
+  (posForm?.formations || []).filter((f) => (f.factor || 1) > 1).length;
+
 // #165: die vier Basis-Formationstypen (ohne Anker/Nachhall/Kern/Kristallform) als Set.
 const BASE_FORMATION_SET = new Set(FORMATION_TYPES);
 // Anzahl der Basis-Formationen (Nicht-Anker) an einer Position — Eisblüte verlangt ≥ 2 (§5.4).

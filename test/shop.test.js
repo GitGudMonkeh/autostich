@@ -79,13 +79,13 @@ describe("Münzökonomie (Shop-Spec §3)", () => {
   });
 });
 
-describe("Einkommens-Stat (Shop-Spec §4)", () => {
+describe("Einkommens-Stat (dormant — aus der Stat-Auswahl entfernt, Mechanik bleibt für Shop-Rework)", () => {
   const statState = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", statOffer: STAT_IDS, ...over });
-  it("Stat-Angebot enthält fünf Stats inkl. Einkommen (§4.3)", () => {
-    expect(STAT_IDS).toHaveLength(5);
-    expect(STAT_IDS).toContain("economy");
+  it("Einkommen ist NICHT mehr im Stat-Angebot — vier Kern-Stats (Sim-Befund Score-Falle)", () => {
+    expect(STAT_IDS).toHaveLength(4);
+    expect(STAT_IDS).not.toContain("economy");
   });
-  it("PICK_STAT economy erhöht economyStatLevel um 1 und kehrt in play zurück", () => {
+  it("PICK_STAT economy erhöht economyStatLevel um 1 und kehrt in play zurück (dormanter Mechanik-Pfad)", () => {
     const s = reducer(statState(), { type: "PICK_STAT", statId: "economy", rng });
     expect(s.phase).toBe("play");
     expect(s.economyStatLevel).toBe(1);

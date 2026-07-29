@@ -129,4 +129,7 @@ else if (mode === "eval") {
 } else if (mode === "cross") {
   const { runCross } = await import("./cross.js"); // Cross-Archetype: gemischte Builds (2–3 Fraktionen) vs. rein
   runCross({ arg, seed0 });
-} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety|cross)`); process.exit(1); }
+} else if (mode === "stats") {
+  const { runStats } = await import("./statvalue.js"); // Stat-Wert: konditionaler Marginalwert der 5 Stats je Build-Kontext
+  runStats({ arg, seed0 });
+} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety|cross|stats)`); process.exit(1); }
