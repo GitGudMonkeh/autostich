@@ -4,9 +4,9 @@ import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js"
 import { SHOP_FAMILY_DEFS } from "./shopFamilies.js";
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
-  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasColdFront, hasFrostTrail, hasGlacierPush, buildSkillOffer } from "./skills.js";
+  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront, hasGlacierPush, hasVerzahnung, hasGleitfrost, hasVerdichtung, buildSkillOffer } from "./skills.js";
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
-import { computeFormations, formationPotential, segmentGainedFormation, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
+import { computeFormations, formationPotential, segmentGainedFormation, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, SHOP_ITEM_DEFS, positionOccupied, perkLegendaryChance, skillLegendaryChance, perkFateReroll, purchaseLogEntry, familyPurchaseLogEntry, rerollCategory } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
@@ -79,7 +79,8 @@ export function initialState(rng = Math.random) {
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
     skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
-    iceTemp: {}, frostbitePending: [], frostbiteActive: [], frostSwapsUsed: [], // Eis-Archetyp (#93 F3): temp. Wertboni / Frostbiss-Marken / genutzte Frosttausche
+    iceTemp: {}, frostbitePending: {}, frostbiteActive: {}, frostSwapsUsed: [], // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff / genutzte Frosttausche
+    layers: {}, frostFormPrev: [], // Eis-Rework (v0): Schichten je Frostkarte (permanent) / Beständigkeits-Historie
     ash: 0, brandPending: {}, brandActive: {}, forged: {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     tieArmed: false,
     shop: initialShop(), // Shop-System (Shop-Spec): Münzen + Angebot (+ später Anker/Regeländerungen)
@@ -480,12 +481,13 @@ export function reducer(state, action) {
       // Eis-Zustand (wird beim Deaktivieren des Eis-Archetyps zurückgesetzt, #140).
       let iceTemp = state.iceTemp, frostSwapsUsed = state.frostSwapsUsed;
       let frostbitePending = state.frostbitePending, frostbiteActive = state.frostbiteActive;
+      let layers = state.layers || {}, frostFormPrev = state.frostFormPrev || []; // Eis-Rework (v0): Schichten + Beständigkeits-Historie
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15 (#93 F2)
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
       // Eis (#93 F3): dieser Pick friert so viele NEUE eigene Karten ein, dass das Ziel (frozenTargetFor) erreicht ist.
       if (arch === "ice") {
         const toFreeze = Math.max(0, frozenTargetFor(skills) - frozenCount(deck));
-        if (toFreeze > 0) deck = freezeCards(deck, toFreeze, action.rng);
+        if (toFreeze > 0) deck = freezeCards(deck, toFreeze, action.rng, hasFrostwahl(skills)); // Frostwahl: niedrigste Karten gezielt
       }
       if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
       // #140: Verliert man durch Ersetzen den LETZTEN Skill eines Archetyps (0 Skills übrig), wird er deaktiviert
@@ -494,14 +496,14 @@ export function reducer(state, action) {
       activeArchetypes = activeArchetypes.filter((a) => stillActive.has(a));
       if (!stillActive.has("lightning")) lightning = initLightning();               // Ladungsleiste weg
       if (!stillActive.has("fire")) { heat = null; ash = 0; brandPending = {}; brandActive = {}; forged = {}; } // Hitze/Asche/Brand/Schmiede weg (geschmiedete Dauerwerte bleiben gebacken)
-      if (!stillActive.has("ice")) {                                                 // eigene Frostkarten auftauen + Gegner-Frostbiss löschen
+      if (!stillActive.has("ice")) {                                                 // Frostkarten auftauen + Schichten/Vergletscherung löschen
         deck = unfreezeAll(deck);
         iceTemp = {}; frostSwapsUsed = [];
-        frostbitePending = []; frostbiteActive = [];
+        frostbitePending = {}; frostbiteActive = {}; layers = {}; frostFormPrev = [];
       }
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers);
-      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, ash, brandPending, brandActive, forged, formations, phase: "play", skillOffer: null };
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, layers, frostFormPrev, ash, brandPending, brandActive, forged, formations, phase: "play", skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
@@ -591,48 +593,60 @@ export function reducer(state, action) {
                  + formationEnergyBonus(state.familyTiers, state.cycle), // #179 Feinjustierung (Perk-Familie E_TUNING)
                formationSwaps: [], frostSwapsUsed: [] };
     }
-    // Bestätigen → Reihenfolge bleibt persistent. Eis: Kaltfront/Frostspur setzen jetzt (auf der finalen Reihenfolge)
-    // ihre temp. Wertboni für den nächsten Durchlauf, für jede eingefrorene Karte, die ihren Frosttausch genutzt hat.
+    // Bestätigen → Reihenfolge bleibt persistent. Eis-Rework (v0): Kaltfront (Platzierhilfe temp Wert),
+    // Gletscherschub/Verzahnung (Frosttausch schafft/überlappt Formation → Schicht), Ablage B (ungenutzte Tausche banken).
     case "CONFIRM_FORMATION": {
       if (state.phase !== "formation") return state;
       let iceTemp = state.iceTemp || {};
+      let layers = state.layers || {};
       const skills = state.skills, usedFrost = state.frostSwapsUsed || [];
-      if (usedFrost.length && (hasColdFront(skills) || hasFrostTrail(skills) || hasGlacierPush(skills))) {
+      const anchors = state.shop?.anchors || [];
+      const posOfFrost = (fid) => state.playerOrder.findIndex((di) => state.deck[di].id === fid);
+      // Kaltfront: getauschte Frostkarte + neuer Nachbar +3 temp Wert (Platzierhilfe für den nächsten Durchlauf).
+      if (usedFrost.length && hasKaltfront(skills)) {
         iceTemp = { ...iceTemp };
         for (const fid of usedFrost) {
-          const pos = state.playerOrder.findIndex((di) => state.deck[di].id === fid);
+          const pos = posOfFrost(fid);
           if (pos < 0) continue;
-          if (hasColdFront(skills)) iceTemp[fid] = C.KALTFRONT_VALUE;                       // Kaltfront: getauschte Frostkarte +3
-          if (hasFrostTrail(skills) && pos + 1 < state.playerOrder.length)                  // Frostspur: neuer Nachfolger +2
-            iceTemp[state.deck[state.playerOrder[pos + 1]].id] = C.FROSTSPUR_VALUE;
-        }
-        // #165 Gletscherschub (§5.4): schafft ein Frosttausch im Zielsegment eine NEUE Formation (Vergleich Ausgangs-
-        // reihenfolge dieser Phase ↔ finale), erhalten alle 5 Segmentkarten +2 (Math.max = renew, kein Stapeln/Downgrade).
-        if (hasGlacierPush(skills)) {
-          const anchors = state.shop?.anchors || [];
-          const finalForms = state.formations || computeFormations(state.playerOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers);
-          const origOrder = state.playerOrder.slice(); // Ausgangsreihenfolge = finale ohne alle Tausche dieser Phase
-          const swaps = state.formationSwaps || [];
-          for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [origOrder[i], origOrder[j]] = [origOrder[j], origOrder[i]]; }
-          const baseForms = computeFormations(origOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers);
-          const boosted = new Set();
-          for (const fid of usedFrost) {
-            const pos = state.playerOrder.findIndex((di) => state.deck[di].id === fid);
-            if (pos < 0) continue;
-            const seg = Math.floor(pos / SEGMENT_SIZE);
-            if (boosted.has(seg)) continue;
-            const segStart = seg * SEGMENT_SIZE;
-            if (segmentGainedFormation(baseForms, finalForms, segStart)) {
-              boosted.add(seg);
-              for (let p = segStart; p < segStart + SEGMENT_SIZE && p < state.playerOrder.length; p++) {
-                const cid = state.deck[state.playerOrder[p]].id;
-                iceTemp[cid] = Math.max(iceTemp[cid] || 0, C.GLACIER_VALUE);
-              }
-            }
+          iceTemp[fid] = C.KALTFRONT_VALUE;
+          if (pos + 1 < state.playerOrder.length) {
+            const nid = state.deck[state.playerOrder[pos + 1]].id;
+            iceTemp[nid] = Math.max(iceTemp[nid] || 0, C.KALTFRONT_VALUE);
           }
         }
       }
-      return { ...state, phase: "play", formationEnergy: 0, formationSwaps: [], frostSwapsUsed: [], iceTemp };
+      // Gletscherschub / Verzahnung: ein Frosttausch, der eine NEUE (bzw. zweite überlappende) Formation schafft, bankt eine Schicht.
+      if (usedFrost.length && (hasGlacierPush(skills) || hasVerzahnung(skills))) {
+        const finalForms = state.formations || computeFormations(state.playerOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers);
+        const origOrder = state.playerOrder.slice(); // Ausgangsreihenfolge = finale ohne alle Tausche dieser Phase
+        const swaps = state.formationSwaps || [];
+        for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [origOrder[i], origOrder[j]] = [origOrder[j], origOrder[i]]; }
+        const baseForms = computeFormations(origOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers);
+        layers = { ...layers };
+        for (const fid of usedFrost) {
+          const pos = posOfFrost(fid);
+          if (pos < 0) continue;
+          const segStart = Math.floor(pos / SEGMENT_SIZE) * SEGMENT_SIZE;
+          let add = 0;
+          if (hasGlacierPush(skills) && segmentGainedFormation(baseForms, finalForms, segStart)) add += C.GLACIER_PUSH_LAYER;
+          if (hasVerzahnung(skills) && baseFormationCount(finalForms[pos] || {}) >= 2) add += C.VERZAHNUNG_LAYER; // Überlappung
+          if (add > 0) layers[fid] = (layers[fid] || 0) + add;
+        }
+      }
+      // Ablage B: jede Frostkarte, die ihren freien Frosttausch NICHT genutzt hat, bankt Schicht-Fortschritt
+      // (Gleitfrost: mehr; Verdichtung: ×2). Grundmechanik — ein ungenutzter Tausch ist kein verlorener Zug.
+      {
+        const used = new Set(usedFrost);
+        const bankPer = (C.ICE_UNUSED_SWAP_LAYER + (hasGleitfrost(skills) ? C.GLEITFROST_EXTRA_SWAP * C.ICE_UNUSED_SWAP_LAYER : 0))
+                        * (hasVerdichtung(skills) ? C.VERDICHTUNG_FACTOR : 1);
+        const frozenUnused = state.deck.filter((c) => c.frozen && !used.has(c.id));
+        if (bankPer > 0 && frozenUnused.length) {
+          const nl = { ...layers };
+          for (const c of frozenUnused) nl[c.id] = (nl[c.id] || 0) + bankPer;
+          layers = nl;
+        }
+      }
+      return { ...state, phase: "play", formationEnergy: 0, formationSwaps: [], frostSwapsUsed: [], iceTemp, layers };
     }
 
     default:

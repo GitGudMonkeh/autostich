@@ -139,37 +139,57 @@ export const SKILL_DEFS = {
   SK_FIRE_L04: { id: "SK_FIRE_L04", name: "Damaststahl", archetype: "fire", legendary: true, keywords: ["heat", "forge"],
     desc: "Asche verfällt nie; geschmiedete Karten legen jeden Durchlauf +1 dauerhaften Wert nach.", damascus: true },
 
-  // ---- Eis-Archetyp (#93 F3) — Kontrolle/Aufstellung mit eingefrorenen Karten. Kein Konsument, keine Ressource. ----
-  // Grundmechanik (erster Eis-Skill): friert eigene Karten ein (blau, an card.id). Formations-Flags in formations.js gelesen.
+  // ---- Eis-Rework (v0) — „Gletscher: Architektur × Permanenz." Spine = SCHICHTEN je Frostkarte (permanent,
+  //      unverlierbar). Kein Konsument. Flags in engine.js/reducer.js/formations.js gelesen. 21 Skills auf 7 Linien.
+  // Linie 1 — Zugang (mehr Anker · Meißel · Bank)
   SK_ICE_01: { id: "SK_ICE_01", name: "Frostgriff", archetype: "ice", keywords: ["freeze"],
-    desc: "Friere 2 zusätzliche zufällige eigene Karten ein (oben auf die Eis-Grundzahl).", frostGrip: true },
-  SK_ICE_02: { id: "SK_ICE_02", name: "Kalte Präzision", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eingefrorene Karten dürfen für Wiederholungen als Wert ihres direkten Vorgängers zählen (echter Wert bleibt).", wildWiederholungPred: true },
-  SK_ICE_03: { id: "SK_ICE_03", name: "Eisschritt", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eingefrorene Karten dürfen für Treppen als 1 höher oder niedriger zählen.", wildTreppeStep: true },
-  SK_ICE_04: { id: "SK_ICE_04", name: "Frostbrücke", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eine eingefrorene Karte unterbricht keinen Farbblock (zählt selbst nicht dazu).", wildFarbblockSkip: true },
-  SK_ICE_05: { id: "SK_ICE_05", name: "Kältereserve", archetype: "ice", keywords: ["freeze"],
-    desc: "Verlierst du mit einer eingefrorenen Karte, erhält sie beim nächsten Auftauchen +4 temporären Wert.", frostReserve: true },
+    desc: "Friert beim Aktivieren +2 weitere eigene Karten ein — mehr Anker, mehr Meißel, mehr Bank.", frostGrip: true },
+  SK_ICE_02: { id: "SK_ICE_02", name: "Frostwahl", archetype: "ice", keywords: ["freeze"],
+    desc: "Du wählst, welche Karten einfrieren, statt zufällig (im Sim: die niedrigsten) — Architektur schon beim Einfrieren.", frostwahl: true },
+  SK_ICE_03: { id: "SK_ICE_03", name: "Gleitfrost", archetype: "ice", keywords: ["freeze"],
+    desc: "Jede Frostkarte bekommt einen zweiten kostenlosen Frosttausch; ungenutzte banken Schicht-Fortschritt.", gleitfrost: true },
+  // Linie 2 — Architektur (Frosttausch meißelt Formationen → Permanenz)
+  SK_ICE_04: { id: "SK_ICE_04", name: "Gletscherschub", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Schafft ein Frosttausch am neuen Platz eine neue Formation, lagert die versetzte Karte sofort eine Schicht ab — meißeln zahlt permanent.", glacierPush: true },
+  SK_ICE_05: { id: "SK_ICE_05", name: "Verzahnung", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Bringt ein Frosttausch eine Frostkarte in eine zweite Formation (Überlappung), gibt es eine Bonus-Schicht.", verzahnung: true },
   SK_ICE_06: { id: "SK_ICE_06", name: "Kaltfront", archetype: "ice", keywords: ["freeze"],
-    desc: "Nach einem kostenlosen Frosttausch erhält die eingefrorene Karte im nächsten Durchlauf +3 temporären Wert (stapelt nicht).", coldFront: true },
-  SK_ICE_07: { id: "SK_ICE_07", name: "Eisanker", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eingefrorene Karten zählen auf ihrer Position als Anker: bei Sieg ×1,25 Score (zählt als Formation).", iceAnchor: true },
-  SK_ICE_08: { id: "SK_ICE_08", name: "Frostspur", archetype: "ice", keywords: ["freeze"],
-    desc: "Nach einem kostenlosen Frosttausch erhält der neue direkte Nachfolger im nächsten Durchlauf +2 temporären Wert.", frostTrail: true },
-  SK_ICE_09: { id: "SK_ICE_09", name: "Stillstand", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Gewinnt eine eingefrorene Karte als Teil von mindestens einer aktiven Formation → +200 Score.", standstill: true },
-  SK_ICE_10: { id: "SK_ICE_10", name: "Kristallform", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eingefrorene Karten zählen für Wiederholung/Treppe/Wechsel als Wert −2, ±0 oder +2 (günstigste Variante, echter Wert bleibt). Bildet sie damit eine dieser Formationen, gibt es zusätzlich einen Formationsbonus.", wildCrystal: true },
-  // ---- #165 Skills (Spec §5.4): zwei neue normale Eis-Skills. Flags in formations.js/engine.js/reducer.js gelesen. ----
-  SK_ICE_11: { id: "SK_ICE_11", name: "Gletscherschub", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Bildet ein kostenloser Frosttausch am neuen Platz mindestens eine neue Formation, erhält das ganze Segment im nächsten Durchlauf +2 temporären Wert.", glacierPush: true },
-  SK_ICE_12: { id: "SK_ICE_12", name: "Eisblüte", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Gewinnt eine eingefrorene Karte in mindestens zwei aktiven Formationen (keine Anker), erhalten ihre direkten Deck-Nachbarn im nächsten Durchlauf je +3 temporären Wert.", iceBloom: true },
-  SK_ICE_L01: { id: "SK_ICE_L01", name: "Frostbiss", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: "Gewinnt eine eingefrorene Karte, erhalten 2 zufällige Gegnerkarten des nächsten Durchlaufs −3 temporären Wert.", frostbite: true },
-  SK_ICE_L02: { id: "SK_ICE_L02", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
-    desc: "Eingefrorene Karten erhalten +2 Dauerwert und zählen als Joker für Wiederholung/Treppe/Farbblock.", permafrost: true },
+    desc: "Nach einem Frosttausch erhalten die versetzte Karte und ihr neuer Nachbar diesen Durchlauf +3 Wert, damit die frische Platzierung greift.", kaltfront: true },
+  // Linie 3 — Permanenz (Schichten ablagern — der Spine, verliert nie)
+  SK_ICE_07: { id: "SK_ICE_07", name: "Kältereserve", archetype: "ice", keywords: ["freeze"],
+    desc: "Verliert eine Frostkarte, bankt sie trotzdem Schicht-Fortschritt — der Gletscher wächst auch in der Niederlage.", frostReserve: true },
+  SK_ICE_08: { id: "SK_ICE_08", name: "Beständigkeit", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Siegt eine Frostkarte in einer Formation wie im Vordurchlauf, lagert sie eine zusätzliche Schicht ab. Belohnt stehende Struktur.", bestaendigkeit: true },
+  SK_ICE_09: { id: "SK_ICE_09", name: "Verdichtung", archetype: "ice", keywords: ["freeze"],
+    desc: "Nicht eingelöste Frosttausche banken doppelten Fortschritt — Geduld verdichtet Schnee zu Gletschereis.", verdichtung: true },
+  // Linie 4 — Schicht-Schwellen (tiefe Schichten → großer Payout, kein Konsum)
+  SK_ICE_10: { id: "SK_ICE_10", name: "Eisdruck", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Je tiefer die Schichten einer Frostkarte, desto höher ihr Formationsfaktor — tiefe Pfeiler scoren groß.", eisdruck: true },
+  SK_ICE_11: { id: "SK_ICE_11", name: "Kristalline Masse", archetype: "ice", keywords: ["freeze"],
+    desc: "Übersteigt die Summe aller Schichten eine Schwelle, erhalten alle Frostkarten einen Wert-Bonus. Belohnt breiten Aufbau.", kristallineMasse: true },
+  // Linie 5 — Formations-Interface (Joker & Segment-Brücke)
+  SK_ICE_12: { id: "SK_ICE_12", name: "Kristallform", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Eine Frostkarte wirkt als Joker für Formationen (±2 Wert-Flex) — verdient, nicht gratis wie ein Perk.", kristallform: true },
+  SK_ICE_13: { id: "SK_ICE_13", name: "Frostbrücke", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Eine Frostkarte am Segmentrand verbindet die Formation ins nächste Segment.", frostbridge: true },
+  // Linie 6 — Überlappung / Anker (stehende Formationen zahlen)
+  SK_ICE_14: { id: "SK_ICE_14", name: "Eisanker", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Eine Frostkarte kann als Anker stehen (×1,25) und lagert dabei garantiert eine Schicht ab — auch ohne volle Formation.", iceAnchor: true },
+  SK_ICE_15: { id: "SK_ICE_15", name: "Stillstand", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Siegt eine Frostkarte in ≥1 Formation, gibt es +200 Flat-Score — bewusst flach, stützt das schwache frühe Spiel.", standstill: true },
+  SK_ICE_16: { id: "SK_ICE_16", name: "Eisblüte", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Siegt eine Frostkarte in ≥2 Formationen, banken ihre direkten (gefrorenen) Nachbarn Schicht-Fortschritt.", iceBloom: true },
+  SK_ICE_17: { id: "SK_ICE_17", name: "Verschränkung", archetype: "ice", keywords: ["freeze", "formation"],
+    desc: "Steht eine Frostkarte an der Kreuzung von ≥3 Formationen, lagert sie mehrere Schichten auf einmal ab — das Meisterstück.", verschraenkung: true },
+  // Legendäre (Verstärker, kein Motor — vier Seiten des Spine)
+  SK_ICE_L01: { id: "SK_ICE_L01", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze"],
+    desc: "Jede Ablage lagert eine zusätzliche Schicht ab — der Motor der Permanenz. Ohne eigene Ablagen wirkungslos.", permafrost: true },
+  SK_ICE_L02: { id: "SK_ICE_L02", name: "Gletscher", archetype: "ice", legendary: true, keywords: ["freeze"],
+    desc: "Je tiefer der Stapel, desto mehr Dauerwert gibt jede Schicht (superlinear) — der Schneeball, der unaufhaltsam wird.", gletscher: true },
+  SK_ICE_L03: { id: "SK_ICE_L03", name: "Vergletscherung", archetype: "ice", legendary: true, keywords: ["freeze"],
+    desc: "Frostkarten frieren Gegnerkarten proportional zu ihren Schichten ein (−Wert) — tiefer Gletscher, härtere Sperre.", vergletscherung: true },
+  SK_ICE_L04: { id: "SK_ICE_L04", name: "Architekt", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
+    desc: "Schaltet vertikale Formationen frei: Frostkarten in derselben Spalte (pos%5) bilden Formationen quer über Segmente.", architekt: true },
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
@@ -327,33 +347,55 @@ export const frozenCount = (deck) => (deck || []).filter((c) => c.frozen).length
 // Ein Eis-Flag/Prädikat + Anzahl gehaltener Eis-Skills (Grundmechanik zählt nicht).
 export const iceFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
 export const iceSkillCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "ice").length;
-// Formations-Wildcard-Prädikate (in formations.js gelesen) + Engine-Prädikate.
-export const hasFrostGrip     = (skills) => iceFlag(skills, "frostGrip");
-export const hasIceAnchor     = (skills) => iceFlag(skills, "iceAnchor");
-export const hasStandstill    = (skills) => iceFlag(skills, "standstill");
-export const hasFrostReserve  = (skills) => iceFlag(skills, "frostReserve");
-export const hasColdFront     = (skills) => iceFlag(skills, "coldFront");
-export const hasFrostTrail    = (skills) => iceFlag(skills, "frostTrail");
-export const hasFrostbite     = (skills) => iceFlag(skills, "frostbite");
-export const hasPermafrost    = (skills) => iceFlag(skills, "permafrost");
-// #165 Skills (§5.4): Gletscherschub (Frosttausch schafft Formation → Segment +2) / Eisblüte (Frostkarte in ≥2 Formationen → Nachbarn +3).
-export const hasGlacierPush   = (skills) => iceFlag(skills, "glacierPush");
-export const hasIceBloom      = (skills) => iceFlag(skills, "iceBloom");
+// ---- Eis-Rework (v0): Flag-Prädikate (Engine/Reducer; Kristallform/Frostbrücke werden in formations.js gelesen). ----
+export const hasFrostGrip        = (skills) => iceFlag(skills, "frostGrip");
+export const hasFrostwahl        = (skills) => iceFlag(skills, "frostwahl");        // Einfrieren gezielt (niedrigste)
+export const hasGleitfrost       = (skills) => iceFlag(skills, "gleitfrost");       // 2. Frosttausch + mehr Bank
+export const hasGlacierPush      = (skills) => iceFlag(skills, "glacierPush");      // Tausch schafft Formation → Schicht
+export const hasVerzahnung       = (skills) => iceFlag(skills, "verzahnung");       // Tausch → Überlappung → Schicht
+export const hasKaltfront        = (skills) => iceFlag(skills, "kaltfront");        // Platzierhilfe +temp Wert
+export const hasFrostReserve     = (skills) => iceFlag(skills, "frostReserve");     // Verlust → Schicht (Kältereserve)
+export const hasBestaendigkeit   = (skills) => iceFlag(skills, "bestaendigkeit");   // gleiche Formation wie Vordurchlauf → Schicht
+export const hasVerdichtung      = (skills) => iceFlag(skills, "verdichtung");      // Ablage-B ×2
+export const hasEisdruck         = (skills) => iceFlag(skills, "eisdruck");         // Schichttiefe → Formationsfaktor
+export const hasKristallineMasse = (skills) => iceFlag(skills, "kristallineMasse"); // Summe Schichten → Wert
+export const hasIceAnchor        = (skills) => iceFlag(skills, "iceAnchor");        // Anker + garantierte Schicht
+export const hasStandstill       = (skills) => iceFlag(skills, "standstill");       // Formations-Sieg → Flat
+export const hasIceBloom         = (skills) => iceFlag(skills, "iceBloom");         // ≥2 Formationen → Nachbarn banken
+export const hasVerschraenkung   = (skills) => iceFlag(skills, "verschraenkung");   // ≥3 Formationen → Multi-Schicht
+export const hasPermafrost       = (skills) => iceFlag(skills, "permafrost");       // +1 Schicht je Ablage
+export const hasGletscher        = (skills) => iceFlag(skills, "gletscher");        // Schicht-Dauerwert superlinear
+export const hasVergletscherung  = (skills) => iceFlag(skills, "vergletscherung");  // Gegner-Debuff ∝ Schichten
+export const hasArchitekt        = (skills) => iceFlag(skills, "architekt");        // vertikale Formationen (Spalte pos%5)
+// Dauerwert einer Frostkarte aus ihren Schichten. Gletscher (L): superlinear (dreieckig), sonst linear.
+export function layerValue(layers, gletscher = false) {
+  const n = layers || 0;
+  if (n <= 0) return 0;
+  return gletscher ? (n * (n + 1) / 2) * C.ICE_LAYER_VALUE : n * C.ICE_LAYER_VALUE;
+}
+// Summe aller Schichten (für Kristalline Masse).
+export const totalLayers = (layers) => Object.values(layers || {}).reduce((t, v) => t + (v || 0), 0);
 // Zielanzahl eingefrorener Karten: erster Eis-Skill = ICE_BASE_FREEZE, je weiterer +1, Frostgriff +2. 0 ohne Eis-Skill.
 export function frozenTargetFor(skills) {
   const n = iceSkillCount(skills);
   if (n === 0) return 0;
   return C.ICE_BASE_FREEZE + (n - 1) + (hasFrostGrip(skills) ? C.FROST_GRIP_BONUS : 0);
 }
-// `count` noch nicht eingefrorene eigene Karten einfrieren (immutabel, deterministisch über rng).
-export function freezeCards(deck, count, rng) {
+// `count` noch nicht eingefrorene eigene Karten einfrieren (immutabel, deterministisch).
+// preferLowest (Frostwahl): die niedrigsten Karten wählen (statt zufällig) — der Meißel beginnt beim Einfrieren.
+export function freezeCards(deck, count, rng, preferLowest = false) {
   const pool = (deck || []).map((_, i) => i).filter((i) => !deck[i].frozen);
   const chosen = new Set();
   let remaining = count;
-  while (remaining > 0 && pool.length > 0) {
-    const j = Math.floor(rng() * pool.length);
-    chosen.add(pool.splice(j, 1)[0]);
-    remaining -= 1;
+  if (preferLowest) {
+    pool.sort((a, b) => deck[a].value - deck[b].value || a - b);
+    while (remaining > 0 && pool.length > 0) { chosen.add(pool.shift()); remaining -= 1; }
+  } else {
+    while (remaining > 0 && pool.length > 0) {
+      const j = Math.floor(rng() * pool.length);
+      chosen.add(pool.splice(j, 1)[0]);
+      remaining -= 1;
+    }
   }
   return (deck || []).map((c, i) => (chosen.has(i) ? { ...c, frozen: true } : c));
 }

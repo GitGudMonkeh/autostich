@@ -193,22 +193,41 @@ export const SUNWRATH_WHITEHEAT_MULT = 2;   // … Weißglut ×2                
 export const SUNWRATH_FIRESCORE_MULT = 1.25;// … Feuer-Score ×1,25                              // v0 — tunebar
 export const DAMASCUS_FORGE_GROWTH = 1; // Damaststahl: geschmiedete Karten +1 Dauerwert je Durchlauf (Asche verfällt nie) // v0
 
-// Eis-Archetyp (#93 F3) — Kontroll-/Aufstellungs-Archetyp. Kein Konsument, keine verbrauchbare Ressource. [TUNING]
-export const ICE_BASE_FREEZE     = 2;    // erster Eis-Skill friert so viele eigene Karten ein
-export const FROST_GRIP_BONUS    = 2;    // Frostgriff: so viele zusätzliche eingefrorene Karten
-export const KAELTERESERVE_VALUE = 4;    // Kältereserve: +temp Wert beim nächsten Auftauchen einer verlorenen Frostkarte
-export const KALTFRONT_VALUE     = 3;    // Kaltfront: +temp Wert der eingefrorenen Karte im nächsten Durchlauf nach Frosttausch
-export const FROSTSPUR_VALUE      = 2;   // Frostspur: +temp Wert des neuen Nachfolgers im nächsten Durchlauf nach Frosttausch
-export const EISANKER_FACTOR     = 1.25; // Eisanker: eingefrorene Karte als Anker ×1,25 (zählt als Formation)
-export const STILLSTAND_SCORE    = 200;  // Stillstand: +Flat, wenn eine Frostkarte in ≥1 aktiver Formation gewinnt
-export const ICE_STEP_OFFSET     = 1;    // Eisschritt: ±1 Wert-Flex für Treppen (bleibt ±1, Spec §5.4 Abgrenzung)
-export const CRYSTAL_OFFSET      = 2;    // Kristallform (#165 §5.4): ±2 Wert-Flex für Wiederholung/Treppe/Wechsel [1→2]
-export const CRYSTAL_FORM_BONUS  = 1.15; // Kristallform (#165): zusätzlicher Formationsbonus, wenn eine Frostkarte dadurch Teil ≥1 Wied./Treppe/Wechsel ist. OFFENER BALANCEWERT (crystalFormBonusMultiplier) — tunebar.
-export const GLACIER_VALUE       = 2;    // Gletscherschub (#165 §5.4): +temp Wert je Karte des Zielsegments, wenn ein Frosttausch dort eine neue Formation schafft
-export const EISBLUETE_VALUE     = 3;    // Eisblüte (#165 §5.4): +temp Wert je direktem Nachbarn einer eingefrorenen Siegkarte in ≥2 Formationen
-export const FROSTBISS_COUNT     = 2;    // Frostbiss: so viele Gegnerkarten des nächsten Durchlaufs betroffen
-export const FROSTBISS_DEBUFF    = 3;    // Frostbiss: −temp Wert je betroffener Gegnerkarte (nie < 0)
-export const PERMAFROST_VALUE    = 2;    // Permafrost: +Dauerwert eingefrorener Karten
+/* ============================================================
+   EIS-REWORK v0 — „Was du richtig stellst, erstarrt für immer und wächst." Gletscher: Architektur × Permanenz.
+   Spine: SCHICHTEN je Frostkarte (permanent, unverlierbar). KEINE Konsumenten. Werte v0, cross-archetype Sim-Pass.
+   ============================================================ */
+// Grundmechanik / Zugang
+export const ICE_BASE_FREEZE   = 2;    // erster Eis-Skill friert so viele eigene Karten ein
+export const FROST_GRIP_BONUS  = 2;    // Frostgriff: +2 eingefrorene Karten
+export const GLEITFROST_EXTRA_SWAP = 1;// Gleitfrost: 2. kostenloser Frosttausch (mehr Bank)             // v0
+// Schichten (der Spine) — permanenter Dauerwert je Frostkarte
+export const ICE_LAYER_VALUE   = 1;    // je Schicht +1 Dauerwert (Gletscher macht es superlinear)        // v0 — tunebar
+export const ICE_ABLAGE_A_LAYER = 1;   // Ablage A: Frostkarte siegt in ≥1 Formation → +1 Schicht          // v0
+export const PERMAFROST_LAYER_BONUS = 1; // Permafrost (L): +1 Schicht je Ablage                           // v0
+export const BESTAENDIGKEIT_LAYER = 1; // Beständigkeit: Sieg in Formation wie im Vordurchlauf → +1 Schicht // v0
+export const VERSCHRAENKUNG_LAYERS = 2;// Verschränkung: Sieg in ≥3 Formationen → +2 Schichten             // v0 — tunebar
+export const KAELTERESERVE_LAYER = 1;  // Kältereserve: Frostkarte verliert → +1 Schicht (bankt)           // v0
+export const EISBLUETE_LAYER   = 1;    // Eisblüte: gefrorene Nachbarn einer ≥2-Formations-Siegkarte → +1 Schicht // v0
+// Ablage B (Bank) — ungenutzte Frosttausche
+export const ICE_UNUSED_SWAP_LAYER = 1;// ungenutzter Frosttausch → +1 Schicht                            // v0
+export const VERDICHTUNG_FACTOR = 2;   // Verdichtung: Ablage-B-Fortschritt ×2                             // v0 — tunebar
+// Architektur (Frosttausch meißelt Formationen → Permanenz)
+export const GLACIER_PUSH_LAYER = 1;   // Gletscherschub: Frosttausch schafft Formation → +1 Schicht        // v0
+export const VERZAHNUNG_LAYER  = 1;    // Verzahnung: Frosttausch → 2. Formation (Überlappung) → +1 Schicht // v0
+export const KALTFRONT_VALUE   = 3;    // Kaltfront: getauschte Karte + neuer Nachbar +3 temp Wert (Platzierhilfe) // v0
+// Schicht-Schwellen
+export const EISDRUCK_STEP     = 0.05; // Eisdruck: +5 % Formationsfaktor je Schicht der Siegkarte          // v0 — tunebar
+export const KRISTALLINE_THRESHOLD = 20; // Kristalline Masse: Summe aller Schichten ≥ Schwelle …           // v0 — tunebar
+export const KRISTALLINE_VALUE = 2;    // … → alle Frostkarten +2 Wert                                      // v0
+// Formations-Interface / Anker
+export const CRYSTAL_OFFSET    = 2;    // Kristallform: ±2 Wert-Flex (Joker; Layer-Skalierung v0 aufgeschoben) // v0
+export const EISANKER_FACTOR   = 1.25; // Eisanker: Frostkarte als Anker ×1,25 (+ garantierte Schicht)      // v0
+export const STILLSTAND_SCORE  = 200;  // Stillstand: +200 Flat, wenn eine Frostkarte in ≥1 Formation siegt  // v0 — tunebar
+// Legendäre (Gletscher / Vergletscherung / Architekt)
+export const VERGLETSCHERUNG_COUNT     = 2; // Vergletscherung: so viele Gegnerkarten je Frost-Sieg          // v0
+export const VERGLETSCHERUNG_PER_LAYER = 1; // … −Wert je Schicht der Siegkarte (min 1)                      // v0 — tunebar
+export const ARCHITEKT_STEP    = 0.15; // Architekt: +15 % je zusätzlicher Frostkarte in derselben Spalte (pos%5) // v0 — tunebar
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

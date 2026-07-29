@@ -9,7 +9,9 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasDoubleDischarge, hasAreaIonize, hasDurchschlag, // Blitz-Rework (v0): Legendäre
   fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer-Rework (v0)
   glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
-  hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost, hasIceBloom } from "./skills.js"; // Eis (#93 F3 / #165 Eisblüte)
+  hasStandstill, hasFrostReserve, hasIceBloom, hasIceAnchor, hasPermafrost, // Eis-Rework (v0)
+  layerValue, totalLayers, hasGletscher, hasEisdruck, hasKristallineMasse, hasBestaendigkeit, hasVerschraenkung, // Eis-Rework (v0): Schicht-Engine
+  hasVergletscherung, hasArchitekt } from "./skills.js"; // Eis-Rework (v0): Legendäre
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, summarizeFormations, baseFormationCount, SEGMENT_SIZE } from "./formations.js";
 import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, perkFateReroll, skillFateReroll, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
@@ -77,7 +79,8 @@ export function resolveTrick(state, rng = Math.random) {
     crits, critBonusScore, bestTrickScore,
     maxFormations = 0, formationScore = 0, // #161 FB-2: Run-Rückblick — Peak gleichzeitig aktiver Formationen + Score-Anteil aus Formationen
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
-    iceTemp = {}, frostbitePending = [], frostbiteActive = [], // Eis (#93 F3): temp. Wertboni je card.id / Frostbiss-Markierungen
+    iceTemp = {}, frostbitePending = {}, frostbiteActive = {}, // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff (je oppCard.id → −Wert)
+    layers = {}, frostFormPrev = [], // Eis-Rework (v0): Schichten je Frostkarte-id (permanent) / Frostkarten, die im Vordurchlauf in Formation siegten (Beständigkeit)
     ash = 0, brandPending = {}, brandActive = {}, forged = {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     shop = null, economyStatLevel = 0, // Shop-System (Shop-Spec §3): Münzstand + Einkommen-Level
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
@@ -208,7 +211,12 @@ export function resolveTrick(state, rng = Math.random) {
   // Rückzündung: nach einer Niederlage bekommt die Karte +2 Wert (hilft, den Konter zu gewinnen).
   if (fireFlag(skills, "rueckzuendung") && lastResult === "loss") fireValueBonus += C.RUECKZUENDUNG_VALUE;
   // ---- Eis (#93 F3): temp. Wertbonus (Kältereserve/Kaltfront/Frostspur, an card.id) + Permafrost +2 (Dauerwert eingefroren).
-  const iceValueBonus = (iceTemp[pCard.id] || 0) + (hasPermafrost(skills) && pCard.frozen ? C.PERMAFROST_VALUE : 0);
+  // Eis-Rework (v0): Schicht-Dauerwert der Frostkarte (Gletscher superlinear) + Kristalline Masse (Summe ≥ Schwelle).
+  const iceGletscher = hasGletscher(skills);
+  const iceTotalLayers = totalLayers(layers);
+  const iceValueBonus = (iceTemp[pCard.id] || 0)
+    + (pCard.frozen ? layerValue(layers[pCard.id] || 0, iceGletscher) : 0)
+    + (pCard.frozen && hasKristallineMasse(skills) && iceTotalLayers >= C.KRISTALLINE_THRESHOLD ? C.KRISTALLINE_VALUE : 0);
   const anchorPowerBonus = anchorType === "power" ? (aParam("power") || 0) : 0; // Kraftanker (§4.2, Stärke = Stufe)
   // E_QUICKSHOT IV (Rarität #167 Kat. E, Spec §3.2 E8 IV): jede Anker-Position (jede fünfte) erhält zusätzlich +2 Wert.
   // Der Anker-FAKTOR selbst läuft über computeFormations; hier nur der Stufe-IV-Wertbonus (anchor.value auf Anker-Positionen).
@@ -222,12 +230,15 @@ export function resolveTrick(state, rng = Math.random) {
   let newPos20Bonus = pos20Bonus;
   if (actualPos === 19) newPos20Bonus = pValue - pCard.value;
   // Frostbiss (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −3 Wert (nie < 0); sonst neutral (§12).
-  const oValue = Math.max(0, oCard.value - (frostbiteActive.includes(oCard.id) ? C.FROSTBISS_DEBUFF : 0) - (brandActive[oCard.id] || 0)); // Eis-Frostbiss + Feuer-Brand
+  const oValue = Math.max(0, oCard.value - (frostbiteActive[oCard.id] || 0) - (brandActive[oCard.id] || 0)); // Vergletscherung (Eis, ∝ Schichten) + Brand (Feuer)
   // Eis: der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht.
   let newIceTemp = { ...iceTemp };
   delete newIceTemp[pCard.id];
-  let newFrostbitePending = [...frostbitePending]; // im laufenden Durchlauf markierte Gegnerkarten (für den nächsten)
-  let newFrostbiteActive = frostbiteActive;        // in diesem Durchlauf aktive Marken (am Durchlauf-Ende ausgetauscht)
+  let newFrostbitePending = { ...frostbitePending }; // Vergletscherung: im laufenden Durchlauf markierte Gegnerkarten {oppId: −Wert} (für den nächsten)
+  let newFrostbiteActive = frostbiteActive;          // in diesem Durchlauf aktive Marken (am Durchlauf-Ende ausgetauscht)
+  let newLayers = layers;                            // Eis-Schichten (permanent; immutabel fortgeschrieben)
+  let newFrostFormPrev = frostFormPrev;              // Beständigkeit: Frostkarten, die im Vordurchlauf in Formation siegten
+  let newFrostFormCur = [];                          // dieser Durchlauf: Frostkarten, die in Formation siegen (wird am Ende zu prev)
   // Feuer-Rework (v0): Asche-Zuwachs / Brand-Marker für den NÄCHSTEN Durchlauf (brandActive wird am Durchlauf-Ende getauscht).
   let newAsh = ash;
   let newBrandPending = { ...brandPending };
@@ -313,23 +324,52 @@ export function resolveTrick(state, rng = Math.random) {
       }
     }
     // ---- Eis (#93 F3): Stillstand-Flat + Frostbiss-Markierung (Sieg mit einer eingefrorenen Karte).
+    // ---- Eis-Rework (v0): Ablage A (Sieg in ≥1 Formation → Schicht), Stillstand, Eisblüte, Verschränkung, Beständigkeit,
+    //      Eisanker-Schicht, Eisdruck/Architekt (Formations-Faktor), Vergletscherung (Gegner-Debuff ∝ Schichten).
     let iceFlat = 0;
+    let iceFormMult = 1; // Eisdruck/Architekt: zusätzlicher Formations-Faktor der Frostkarte (unten in formMult)
     if (pCard.frozen) {
-      // Stillstand: eingefrorene Karte gewinnt als Teil ≥1 aktiver Formation → +200 Flat.
-      if (hasStandstill(skills) && positionHasFormation(posForm)) iceFlat += C.STILLSTAND_SCORE;
-      // Frostbiss: 2 zufällige, noch nicht markierte Gegnerkarten für den NÄCHSTEN Durchlauf −3 (je Karte max 1×).
-      if (hasFrostbite(skills)) {
-        const marked = new Set(newFrostbitePending);
-        const pool = oppDeck.map((c) => c.id).filter((id) => !marked.has(id));
-        for (let k = 0; k < C.FROSTBISS_COUNT && pool.length; k++) newFrostbitePending.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+      const nForms = baseFormationCount(posForm);
+      const inFormation = positionHasFormation(posForm);
+      const myLayers = layers[pCard.id] || 0;
+      // Stillstand: Frostkarte siegt in ≥1 Formation → +200 Flat (flacher Früh-Support).
+      if (hasStandstill(skills) && inFormation) iceFlat += C.STILLSTAND_SCORE;
+      // Ablage A: Sieg in ≥1 Formation → +1 Schicht (+Permafrost/+Beständigkeit/+Verschränkung). Eisanker garantiert eine auch ohne volle Formation.
+      let addLayers = 0;
+      if (inFormation) {
+        addLayers += C.ICE_ABLAGE_A_LAYER;
+        if (hasPermafrost(skills)) addLayers += C.PERMAFROST_LAYER_BONUS;
+        if (hasBestaendigkeit(skills) && frostFormPrev.includes(pCard.id)) addLayers += C.BESTAENDIGKEIT_LAYER;
+        if (hasVerschraenkung(skills) && nForms >= 3) addLayers += C.VERSCHRAENKUNG_LAYERS;
+        newFrostFormCur = [...newFrostFormCur, pCard.id];
+      } else if (hasIceAnchor(skills)) {
+        addLayers += C.ICE_ABLAGE_A_LAYER + (hasPermafrost(skills) ? C.PERMAFROST_LAYER_BONUS : 0);
       }
-      // #165 Eisblüte (§5.4): siegt die Frostkarte in ≥2 aktiven Nicht-Anker-Formationen → beide direkten Deck-Nachbarn
-      // +3 temp Wert fürs nächste Auftauchen (renew, kein Stapeln; die Siegkarte selbst erhält nichts; Ränder = nur ein Nachbar).
-      if (hasIceBloom(skills) && baseFormationCount(posForm) >= 2) {
+      if (addLayers > 0) newLayers = { ...newLayers, [pCard.id]: myLayers + addLayers };
+      // Eisblüte: Sieg in ≥2 Formationen → gefrorene Deck-Nachbarn banken eine Schicht.
+      if (hasIceBloom(skills) && nForms >= 2) {
         for (const nb of [actualPos - 1, actualPos + 1]) {
           if (nb < 0 || nb >= playerOrder.length) continue;
-          const nid = deck[playerOrder[nb]].id;
-          newIceTemp[nid] = Math.max(newIceTemp[nid] || 0, C.EISBLUETE_VALUE);
+          const nc = deck[playerOrder[nb]];
+          if (nc.frozen) newLayers = { ...newLayers, [nc.id]: (newLayers[nc.id] != null ? newLayers[nc.id] : (layers[nc.id] || 0)) + C.EISBLUETE_LAYER };
+        }
+      }
+      // Eisdruck: Formationsfaktor skaliert mit den Schichten der Frostkarte.
+      if (hasEisdruck(skills) && inFormation && myLayers > 0) iceFormMult *= 1 + myLayers * C.EISDRUCK_STEP;
+      // Architekt: vertikale Formation — je weitere Frostkarte in derselben Spalte (pos%5) ein zusätzlicher Faktor.
+      if (hasArchitekt(skills)) {
+        const col = actualPos % SEGMENT_SIZE;
+        let colFrost = 0;
+        for (let p = 0; p < playerOrder.length; p++) if (p % SEGMENT_SIZE === col && deck[playerOrder[p]].frozen) colFrost += 1;
+        if (colFrost >= 2) iceFormMult *= 1 + (colFrost - 1) * C.ARCHITEKT_STEP;
+      }
+      // Vergletscherung: markiert Gegnerkarten für den NÄCHSTEN Durchlauf, −Wert ∝ Schichten der Siegkarte (min 1).
+      if (hasVergletscherung(skills)) {
+        const debuff = Math.max(1, myLayers * C.VERGLETSCHERUNG_PER_LAYER);
+        const pool = oppDeck.map((c) => c.id).filter((id) => !(id in newFrostbitePending));
+        for (let k = 0; k < C.VERGLETSCHERUNG_COUNT && pool.length; k++) {
+          const id = pool.splice(Math.floor(rng() * pool.length), 1)[0];
+          newFrostbitePending[id] = Math.max(newFrostbitePending[id] || 0, debuff);
         }
       }
     }
@@ -384,7 +424,7 @@ export function resolveTrick(state, rng = Math.random) {
     const afterglowMult = posForm.afterglowFactor || 1;                                // F6 Nachhall
     const coreMult = posForm.coreFactor || 1;                                          // F-L1 Formationskern
     const formBaseMult = (posForm.baseMult != null ? posForm.baseMult : formationMult); // echte Formationen (inkl. Überlappung)
-    const formMult = formBaseMult * statFormFactor(statFormMult, hasFormation);        // Formation (§22.7 + Formations-Stat)
+    const formMult = formBaseMult * statFormFactor(statFormMult, hasFormation) * iceFormMult; // Formation (§22.7 + Formations-Stat + Eisdruck/Architekt)
     scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult * afterglowMult * coreMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     critBonus = gained - scoreBeforeCrit;
@@ -587,8 +627,9 @@ export function resolveTrick(state, rng = Math.random) {
                sparkStore: Math.floor((heat.sparkStore || 0) * C.SPARKFLIGHT_LOSS_KEEP), // Funkenflug: Niederlage halbiert
                lastLossDeficit: deficit }; // Rückzündung: Rückstand für den nächsten Sieg merken
     }
-    // Eis (#93 F3): Kältereserve — Niederlage mit eingefrorener Karte → +4 temp Wert beim nächsten Auftauchen.
-    if (hasFrostReserve(skills) && pCard.frozen) newIceTemp[pCard.id] = C.KAELTERESERVE_VALUE;
+    // Kältereserve (v0): Frostkarte verliert → bankt trotzdem +1 Schicht (der Gletscher wächst auch in der Niederlage).
+    if (hasFrostReserve(skills) && pCard.frozen)
+      newLayers = { ...newLayers, [pCard.id]: (newLayers[pCard.id] != null ? newLayers[pCard.id] : (layers[pCard.id] || 0)) + C.KAELTERESERVE_LAYER };
     lastResult = "loss";
   } else {
     ties += 1;
@@ -610,7 +651,7 @@ export function resolveTrick(state, rng = Math.random) {
     // Formations-Multiplikator dieses Stichs (§22.7) + die beteiligten Formationen der Position (Anzeige/Float).
     formationMult: won ? formationMult : 1,
     formations: posForm.formations,
-    oFrostbitten: frostbiteActive.includes(oCard.id), // Eis (#93 F3): erst JETZT (im Kampf) sichtbar
+    oFrostbitten: (frostbiteActive[oCard.id] || 0) > 0, // Vergletscherung (Eis): erst JETZT (im Kampf) sichtbar
     pFrozen: !!pCard.frozen,
     isRepeatedSegmentTrick: isRepeat, originalPosition: actualPos, segmentIndex: timeSeg, // Zeitsegment (§8 A-L1 / §13)
     breakdown, // Ergebnis-Aufschlüsselung (§17): { base, flats, streakMult, perkMult, formMult, critMult, total } bei Sieg, sonst null
@@ -682,9 +723,12 @@ export function resolveTrick(state, rng = Math.random) {
       // Neuer Durchlauf: NUR das Gegnerdeck neu mischen; Spieler-Reihenfolge bleibt (persistent). pos zurück.
       oppOrder = shuffledOrder(oppDeck.length, rng);
       pos = 0;
-      // Frostbiss (#93 F3): die im gerade beendeten Durchlauf gesetzten Marken werden für den neuen Durchlauf aktiv.
+      // Vergletscherung (v0): die im gerade beendeten Durchlauf gesetzten Gegner-Marken {id: −Wert} werden jetzt aktiv.
       newFrostbiteActive = newFrostbitePending;
-      newFrostbitePending = [];
+      newFrostbitePending = {};
+      // Beständigkeit (v0): die Frostkarten, die diesen Durchlauf in Formation siegten, sind der Vergleich für den nächsten.
+      newFrostFormPrev = [...new Set(newFrostFormCur)];
+      newFrostFormCur = [];
       // Feuer-Brand (v0): analog — die im gerade beendeten Durchlauf gesetzten Brandmarken werden jetzt aktiv (−Wert).
       newBrandActive = newBrandPending;
       newBrandPending = {};
@@ -740,7 +784,8 @@ export function resolveTrick(state, rng = Math.random) {
     statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
-    iceTemp: newIceTemp, frostbitePending: newFrostbitePending, frostbiteActive: newFrostbiteActive, // Eis (#93 F3)
+    iceTemp: newIceTemp, frostbitePending: newFrostbitePending, frostbiteActive: newFrostbiteActive, // Eis (Kaltfront temp / Vergletscherung)
+    layers: newLayers, frostFormPrev: newFrostFormPrev, // Eis-Rework (v0): Schichten (permanent) + Beständigkeits-Historie
     ash: newAsh, brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer-Rework (v0)
     shop, // Shop-System (Shop-Spec §3): aktualisierter Münzstand (economyStatLevel läuft unverändert über ...state)
     lastTrick, phase,
