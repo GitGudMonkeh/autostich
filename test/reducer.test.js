@@ -196,14 +196,17 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
       skills: ["SK_ICE_01", "SK_LIGHTNING_01", "SK_LIGHTNING_03", "SK_LIGHTNING_04"],
       skillOffer: ["SK_LIGHTNING_05"], activeArchetypes: ["ice", "lightning"],
       lightning: { active: true, charge: 2, maxCharge: 10 },
-      deck, iceTemp: { x: 3 }, frostSwapsUsed: ["a"], frostbitePending: ["oX"], frostbiteActive: ["oY"] };
+      deck, iceTemp: { x: 3 }, frostSwapsUsed: ["a"], frostbitePending: { oX: 3 }, frostbiteActive: { oY: 3 },
+      layers: { c1: 4 }, frostFormPrev: ["c1"] }; // Eis-Rework (v0): Vergletscherung als Map, Schichten + Beständigkeits-Historie
     const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_05", replaceId: "SK_ICE_01", rng });
     expect(s.skills).not.toContain("SK_ICE_01");
     expect(s.deck.some((c) => c.frozen)).toBe(false);
-    expect(s.frostbitePending).toEqual([]);
-    expect(s.frostbiteActive).toEqual([]);
+    expect(s.frostbitePending).toEqual({});
+    expect(s.frostbiteActive).toEqual({});
     expect(s.iceTemp).toEqual({});
     expect(s.frostSwapsUsed).toEqual([]);
+    expect(s.layers).toEqual({});          // Schichten weg
+    expect(s.frostFormPrev).toEqual([]);   // Beständigkeits-Historie weg
     expect(s.activeArchetypes).toEqual(["lightning"]);
   });
 

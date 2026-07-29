@@ -354,13 +354,13 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
     expect(s.lastTrick.critChance).toBeCloseTo(LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL);
   });
 
-  it("Crit mit Blitzableiter: +2 Ladung (Basis 1 + Skill 1) und +50 in der multiplizierten Basis", () => {
-    // scoreBase = (Basis + 50) × streakBaseMult(1)=1,02, ×1,5 (Crit-Basis).
+  it("Crit mit Blitzableiter: +2 Ladung (Basis 1 + Skill 1), kein Crit-Flat mehr (+50 im Rework gestrippt)", () => {
+    // scoreBase = Basis × streakBaseMult(1)=1,02, ×1,5 (Crit-Basis). Blitzableiter gibt NUR Ladung.
     const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [LR], lightning: lit() }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(2);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo((B + 50) * 1.02);
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + 50) * 1.02 * 1.5);
+    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(B * 1.02);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * 1.5);
   });
 
   it("ohne Crit: keine Ladung, kein Crit-Flat", () => {

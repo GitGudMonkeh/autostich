@@ -1,6 +1,16 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, layerValue, totalLayers, frozenTargetFor, freezeCards, iceSkillCount } from "../src/game/skills.js";
+import { resolveTrick } from "../src/game/engine.js";
+import { initialState } from "../src/game/reducer.js";
+import { makeRng } from "../src/game/deck.js";
+
+// Engine-Test-Helfer (konstante Decks; pos 0 → Formations-Mult 1). Frostkarte auf Position 0.
+const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
+const identity = () => Array.from({ length: 40 }, (_, i) => i);
+const scen = (pVal, oVal, over = {}) => ({ ...initialState(makeRng(1)), deck: constDeck(pVal), oppDeck: constDeck(oVal), playerOrder: identity(), oppOrder: identity(), ...over });
+const withFrost0 = (v) => constDeck(v).map((c, i) => (i === 0 ? { ...c, frozen: true } : c));
+const noCrit = () => 0.99;
 
 /* Eis-Rework (v0) — Registrierungs- + Smoke-Tests. Nennt ALLE 21 Eis-Ids (Registry-Coverage-Gate) und prüft die
    reinen Eis-Helfer (Schicht-Dauerwert, Frostwahl-Einfrieren). Der Schicht-Spine (Ablage A/B, Eisdruck, Vergletscherung,
@@ -46,5 +56,33 @@ describe("Eis-Rework v0 — reine Helfer", () => {
     const deck = [{ id: "a", value: 8 }, { id: "b", value: 2 }, { id: "c", value: 5 }, { id: "d", value: 1 }];
     const frozen = freezeCards(deck, 2, () => 0.5, true).filter((c) => c.frozen).map((c) => c.id).sort();
     expect(frozen).toEqual(["b", "d"]); // die zwei niedrigsten (1, 2)
+  });
+});
+
+describe("Eis-Rework v0 — Engine-Integration (Schicht-Spine)", () => {
+  it("Schicht-Dauerwert: Frostkarte mit Schichten bekommt +Wert (linear)", () => {
+    const s = resolveTrick(scen(8, 10, { skills: ["SK_ICE_15"], deck: withFrost0(8), layers: { X0: 3 } }), noCrit);
+    expect(s.lastTrick.pValue).toBe(8 + 3 * C.ICE_LAYER_VALUE); // 3 Schichten heben den Kampfwert
+    expect(s.lastTrick.result).toBe("win");                     // 11 > 10
+  });
+  it("Eisanker: Frost-Sieg lagert garantiert eine Schicht ab", () => {
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_ICE_14"], deck: withFrost0(12) }), noCrit);
+    expect(s.layers.X0).toBe(C.ICE_ABLAGE_A_LAYER);
+  });
+  it("Kältereserve: Frostkarte verliert → bankt trotzdem eine Schicht", () => {
+    const s = resolveTrick(scen(4, 10, { skills: ["SK_ICE_07"], deck: withFrost0(4) }), noCrit);
+    expect(s.lastTrick.result).toBe("loss");
+    expect(s.layers.X0).toBe(C.KAELTERESERVE_LAYER);
+  });
+  it("Vergletscherung: Frost-Sieg markiert Gegnerkarten für den nächsten Durchlauf (−Wert ∝ Schichten)", () => {
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_ICE_L03"], deck: withFrost0(12), layers: { X0: 4 } }), noCrit);
+    const debuffs = Object.values(s.frostbitePending);
+    expect(debuffs).toHaveLength(C.VERGLETSCHERUNG_COUNT);
+    expect(debuffs[0]).toBe(4 * C.VERGLETSCHERUNG_PER_LAYER);
+  });
+  it("Eis-Score-Hebel: tiefe Schichten geben bei Frost-Sieg +Flat-Score", () => {
+    const s0 = resolveTrick(scen(12, 6, { skills: ["SK_ICE_15"], deck: withFrost0(12), layers: {} }), noCrit);
+    const s3 = resolveTrick(scen(12, 6, { skills: ["SK_ICE_15"], deck: withFrost0(12), layers: { X0: 3 } }), noCrit);
+    expect(s3.lastTrick.scoreGain).toBeCloseTo(s0.lastTrick.scoreGain + 3 * C.ICE_ABLAGE_SCORE_PER_LAYER * 1.02);
   });
 });

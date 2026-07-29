@@ -2,6 +2,17 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, heatGainFor, heatLossFor, fireScoreFor, verbrennungMult,
   glowingValueFor, whiteHeatScore, forgeCostFor, initHeat } from "../src/game/skills.js";
+import { resolveTrick } from "../src/game/engine.js";
+import { initialState } from "../src/game/reducer.js";
+import { makeRng } from "../src/game/deck.js";
+
+// Engine-Test-Helfer (konstante Decks; pos 0 → Formations-Mult 1, wie in den Bestandstests).
+const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
+const identity = () => Array.from({ length: 40 }, (_, i) => i);
+const scen = (pVal, oVal, over = {}) => ({ ...initialState(makeRng(1)), deck: constDeck(pVal), oppDeck: constDeck(oVal), playerOrder: identity(), oppOrder: identity(), ...over });
+const heat = (over = {}) => ({ ...initHeat(), active: true, ...over });
+const noCrit = () => 0.99;
+const B = C.SCORE_PER_WIN;
 
 /* Feuer-Rework (v0) — Registrierungs- + Smoke-Tests. Nennt ALLE 21 Feuer-Ids (Registry-Coverage-Gate)
    und prüft die reinen Feuer-Helfer auf plausible v0-Zahlen. Behavioral-Vollabdeckung (Engine/Reducer)
@@ -74,5 +85,38 @@ describe("Feuer-Rework v0 — reine Helfer", () => {
   });
   it("initHeat: frischer Substate", () => {
     expect(initHeat()).toMatchObject({ active: false, value: 0, fireRoll: 0, sparkStore: 0, phoenixUsed: false });
+  });
+});
+
+describe("Feuer-Rework v0 — Engine-Integration", () => {
+  it("Feuer-Score bei Sieg fließt in die multiplizierte Basis (Grund-Payoff)", () => {
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01"], heat: heat() }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + (6 - 2) * 25) * 1.02); // 1 Feuer-Skill → (Vorsprung−2)×25
+  });
+  it("Hitzegewinn: Glut ×1,5 auf die Marge (Vorsprung 6 → +6 %)", () => {
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01"], heat: heat({ value: 0 }) }), noCrit);
+    expect(s.heat.value).toBe(6); // round((min(6,8)−2)×1 × 1,5)
+  });
+  it("Glühende Klinge: +3 Wert bei 100 % Hitze macht einen Rückstand zum Sieg", () => {
+    const s = resolveTrick(scen(8, 10, { skills: ["SK_FIRE_06"], heat: heat({ value: 100 }) }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.pValue).toBe(11); // 8 + 3
+  });
+  it("Weißglut: Hitze-Überlauf über 100 wird zu Score (+10/Punkt)", () => {
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01", "SK_FIRE_07"], heat: heat({ value: 98 }) }), noCrit);
+    expect(s.heat.value).toBe(100);
+    // Überlauf 4 → +40; Feuer-Score (2 Skills) (6−2)×30 = 120
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + 120 + 40) * 1.02);
+  });
+  it("Brandmal: Sieg brandmarkt die geschlagene Gegnerkarte (nächster Durchlauf) + Asche", () => {
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_13"], heat: heat() }), noCrit);
+    expect(s.brandPending[s.lastTrick.oCard.id]).toBe(C.BRAND_VALUE);
+    expect(s.ash).toBe(C.BRAND_ASH);
+  });
+  it("Flächenbrand (Konsument): Sieg ab 80 % Hitze verbrennt die ganze Hitze (+12/Punkt Burst)", () => {
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01", "SK_FIRE_11"], heat: heat({ value: 90 }) }), noCrit);
+    expect(s.heat.value).toBe(0);
+    expect(s.lastTrick.scoreGain).toBeGreaterThan(B + 1000);
   });
 });

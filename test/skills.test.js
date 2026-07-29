@@ -11,10 +11,10 @@ const ALL = Object.keys(SKILL_DEFS);
 const active = (over = {}) => ({ active: true, charge: 0, maxCharge: LIGHTNING_MAX_CHARGE, ...over });
 
 describe("skills — Blitz-Registry", () => {
-  it("Blitzableiter: Hooks (critChance/chargeOnCrit/scoreFlatOnCrit) + archetype", () => {
+  it("Blitzableiter: Hooks (critChance/chargeOnCrit) + archetype (scoreFlatOnCrit im Rework gestrippt)", () => {
     expect(SKILL_DEFS[LR].critChance()).toBeCloseTo(LIGHTNING_CRIT_PER_SKILL);
     expect(SKILL_DEFS[LR].chargeOnCrit()).toBe(1);
-    expect(SKILL_DEFS[LR].scoreFlatOnCrit()).toBe(50);
+    expect(SKILL_DEFS[LR].scoreFlatOnCrit).toBeUndefined();
     expect(archetypeOf(LR)).toBe("lightning");
   });
   it("skillSum summiert einen Hook über die gehaltenen Skills (fehlender Hook → 0)", () => {

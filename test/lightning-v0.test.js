@@ -1,7 +1,19 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, initLightning, lightningCritRaw, maxChargeFor, lightningCritMult,
-  ionizeCountFor, chargeConsumerCount, hasDoubleDischarge, hasDurchschlag } from "../src/game/skills.js";
+  ionizeCountFor, chargeConsumerCount, hasDoubleDischarge, hasDurchschlag,
+  ionizeCardsWithCatch } from "../src/game/skills.js";
+import { resolveTrick } from "../src/game/engine.js";
+import { initialState } from "../src/game/reducer.js";
+import { makeRng } from "../src/game/deck.js";
+
+// Engine-Test-Helfer (konstante Decks; pos 0 → Formations-Mult 1).
+const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
+const identity = () => Array.from({ length: 40 }, (_, i) => i);
+const scen = (pVal, oVal, over = {}) => ({ ...initialState(makeRng(1)), deck: constDeck(pVal), oppDeck: constDeck(oVal), playerOrder: identity(), oppOrder: identity(), ...over });
+const light = (over = {}) => ({ ...initLightning(), active: true, ...over });
+const noCrit = () => 0.99, zero = () => 0;
+const ION = "SK_LIGHTNING_02", ARC = "SK_LIGHTNING_12";
 
 /* Blitz-Rework (v0) — Registrierungs- + Smoke-Tests. Nennt ALLE 21 Blitz-Ids (Registry-Coverage-Gate)
    und prüft die reinen Blitz-Helfer. Engine-Verhalten (4 Währungen + Kaskade) folgt im Tuning-Pass. */
@@ -53,5 +65,43 @@ describe("Blitz-Rework v0 — reine Helfer", () => {
     expect(hasDoubleDischarge(["SK_LIGHTNING_L02"])).toBe(true);
     expect(hasDurchschlag(["SK_LIGHTNING_L04"])).toBe(true);
     expect(hasDoubleDischarge(["SK_LIGHTNING_01"])).toBe(false);
+  });
+});
+
+describe("Blitz-Rework v0 — Engine-Integration", () => {
+  it("Ionis-Cap 5: Sieg mit ionisierter Karte 4→5; volle Karte bleibt 5", () => {
+    const d4 = constDeck(12).map((c, i) => (i === 0 ? { ...c, ionStacks: 4 } : c));
+    expect(resolveTrick(scen(12, 0, { skills: [ION], deck: d4, lightning: light() }), noCrit).deck[0].ionStacks).toBe(5);
+    const d5 = constDeck(12).map((c, i) => (i === 0 ? { ...c, ionStacks: 5 } : c));
+    expect(resolveTrick(scen(12, 0, { skills: [ION], deck: d5, lightning: light() }), noCrit).deck[0].ionStacks).toBe(5);
+  });
+  it("Blitzfänger: ionizeCardsWithCatch fängt eine volle Karte statt sie zu ionisieren", () => {
+    const res = ionizeCardsWithCatch([{ id: "A", ionStacks: 5 }, { id: "B", ionStacks: 0 }], [0], 1, makeRng(1));
+    expect(res.catchIds).toEqual(["A"]);
+    expect(res.deck[0].ionStacks).toBe(5);
+  });
+  it("Spannungsbogen: Sieg mit ionisierter Karte → direkter Nachfolger +1 Stapel", () => {
+    const deck = constDeck(12).map((c, i) => (i === 0 ? { ...c, ionStacks: 1 } : c));
+    const s = resolveTrick(scen(12, 0, { skills: [ARC], deck, lightning: light() }), noCrit);
+    expect(s.deck[1].ionStacks).toBe(1); // Nachfolger
+    expect(s.deck[0].ionStacks).toBe(2); // Siegkarte selbst +1
+  });
+  it("Spannungsstau: Sieg ohne Crit rampt die Crit-Chance; ein Crit resettet", () => {
+    const noC = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_13"], lightning: light() }), noCrit);
+    expect(noC.lightning.stauBonus).toBeCloseTo(C.SPANNUNGSSTAU_STEP);
+    const crit = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_13"], statCritChance: 1, lightning: light({ stauBonus: 0.3 }) }), zero);
+    expect(crit.lastTrick.isCrit).toBe(true);
+    expect(crit.lightning.stauBonus).toBe(0);
+  });
+  it("Kurzschluss: Sieg mit voller (5) Karte entlädt alle Stapel → +Ladung-Burst, Karte auf 0", () => {
+    const deck = constDeck(12).map((c, i) => (i === 0 ? { ...c, ionStacks: 5 } : c));
+    const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_09"], deck, lightning: light() }), noCrit);
+    expect(s.deck[0].ionStacks).toBe(0);
+    expect(s.lightning.charge).toBe(5 * C.KURZSCHLUSS_CHARGE_PER_STACK);
+  });
+  it("Blitzschlag: ein Crit ionisiert die gewonnene Karte (+1 Stapel)", () => {
+    const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_15"], statCritChance: 1, lightning: light() }), zero);
+    expect(s.lastTrick.isCrit).toBe(true);
+    expect(s.deck[0].ionStacks).toBe(C.BLITZSCHLAG_STACKS);
   });
 });
