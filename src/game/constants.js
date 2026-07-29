@@ -10,11 +10,11 @@ const envNum = (name, def) => {
   const n = v == null || v === "" ? NaN : Number(v);
   return Number.isFinite(n) ? n : def;
 };
-// SIM-Sweep-Haken: Rundenlänge per ENV. Default 44 = Live-Balance (im Browser existiert `process` nicht →
-// immer 44). `SIM_MAX_CYCLES=60 node sim/batch.js …` verlängert den Run, um zu messen, wie sich Builds über
-// 60–80 Durchläufe entwickeln (Pacing-Frage: „hört man auf, wenn das Build gut würde?"). Der Entscheidungsplan
-// (DECISION_SCHEDULE) wächst über buildSchedule() automatisch mit — Cycles 1–44 bleiben dabei byte-identisch.
-export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 44);     // Shop-Spec (§2.1): Run über so viele Deck-Durchläufe, danach Ende [TUNING · Sim-übersteuerbar]
+// Ziel-Rundenlänge = 60 Durchläufe (game-feel-Entscheid; der handgesetzte 60-Plan unten ist darauf ausgelegt).
+// SIM-Sweep-Haken: per ENV übersteuerbar (im Browser existiert `process` nicht → immer 60). `SIM_MAX_CYCLES=80
+// node sim/batch.js …` verlängert für Diagnose; für n ≤ 60 wird ein Prefix des 60-Plans gespielt, darüber
+// hinaus wächst DECISION_SCHEDULE über buildSchedule() via TAIL_BLOCK weiter.
+export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 60);     // Shop-Spec (§2.1): Run über so viele Deck-Durchläufe, danach Ende [TUNING · Sim-übersteuerbar]
 // Merge test/sim←main: ENV-Sweep-Haken bleibt, Default = main's Live-Balance (SPW 100→400, Pacing-Pass Sim-validiert).
 export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Default = Live-Balance 400]
 export const CRIT_BASE_MULT   = envNum("SIM_CRIT_BASE_MULT", 1.5);   // V2 (§22.3): Basis-Crit-Multiplikator; der Crit-Mult-Stat baut darauf auf [TUNING]
@@ -36,27 +36,31 @@ export const STAT_STREAK_MULT_STEP = envNum("SIM_STAT_STREAK_MULT_STEP", 0.02); 
 export const STAT_ECONOMY_STEP     = 1;     // Einkommen: je Pick +1 Level (Bonus = Level × SHOP_INCOME_PER_LEVEL Münzen/Shop)
 
 // Entscheidungsplan (Shop-Spec §2.2): Typ der Entscheidung VOR Durchlauf n (1-indexiert) = DECISION_SCHEDULE[n-1].
-// Fester 44-Einträge-Plan (ersetzt den alten zyklischen DECISION_CYCLE). Engine liest DECISION_SCHEDULE[cycle]
-// (nach cycle += 1); der Start-Entscheid (Index 0 = "stat") läuft über START_RUN.
-// Verteilung: 11 Stat · 11 Perk · 8 Formation · 8 Shop · 6 Skill.
-// Shop-Zeitpunkte (Durchlauf): 5, 11, 16, 22, 27, 33, 38, 42 · Skill-Zeitpunkte: 6, 12, 19, 28, 34, 41.
+// Fester 60-Einträge-Plan (Ziel-Rundenlänge, vom Dev handgesetzt — löst den alten 44-Plan ab). Engine liest
+// DECISION_SCHEDULE[cycle] (nach cycle += 1); der Start-Entscheid (Index 0 = "stat") läuft über START_RUN.
+// Verteilung: 13 Stat · 13 Perk · 12 Formation · 12 Shop (Architekt) · 10 Skill (≈ 21,7/21,7/20/20/16,7 %) —
+// bewusste Verschiebung Richtung Brett+Skill (mehr „bauen & Motoren", weniger Regler drehen).
+// Shop-Zeitpunkte (Durchlauf): 4, 9, 14, 19, 24, 29, 34, 39, 44, 49, 54, 58 · Skill: 7, 12, 18, 25, 32, 38, 43, 50, 55, 59.
+// Design-Invariante (Architekt→Aufstellung): JEDES Shop-Fenster wird exakt 2 Durchläufe später von einer
+// Formationsphase gefangen (4→6, 9→11, …, 58→60) = die Bauzeit-Einheit für den geplanten Architekt-Umbau.
+// „Shop" bleibt vorerst der bestehende Anker-Shop (das Architekt-Redesign ist noch in Planung).
 const BASE_SCHEDULE = [
-  "stat", "perk", "formation", "stat", "shop", "skill", "perk", "formation", "stat", "perk",   //  1–10
-  "shop", "skill", "formation", "stat", "perk", "shop", "formation", "stat", "skill", "perk",  // 11–20
-  "stat", "shop", "perk", "stat", "formation", "perk", "shop", "skill", "stat", "formation",   // 21–30
-  "perk", "stat", "shop", "skill", "formation", "perk", "stat", "shop", "formation", "perk",   // 31–40
-  "skill", "shop", "stat", "perk",                                                             // 41–44
+  "stat", "perk", "stat", "shop", "perk", "formation", "skill", "stat", "shop", "perk",           //  1–10
+  "formation", "skill", "stat", "shop", "perk", "formation", "stat", "skill", "shop", "perk",      // 11–20
+  "formation", "stat", "perk", "shop", "skill", "formation", "stat", "perk", "shop", "stat",       // 21–30
+  "formation", "skill", "perk", "shop", "stat", "formation", "perk", "skill", "shop", "stat",      // 31–40
+  "formation", "perk", "skill", "shop", "stat", "formation", "perk", "stat", "shop", "skill",      // 41–50
+  "formation", "perk", "stat", "shop", "skill", "formation", "perk", "shop", "skill", "formation", // 51–60
 ];
-// Schwanz-Block für Runs über 44 Cycles hinaus (nur SIM_MAX_CYCLES > 44). 16 Cycles im SELBEN Mix-Verhältnis
-// wie die Basis (4 Stat · 4 Perk · 3 Formation · 3 Shop · 2 Skill = Stat/Perk je 25 %, Formation/Shop je ~19 %,
-// Skill ~13 %), Shop ~alle 6 & Skill ~alle 8 Cycles, kein Cluster, kein Doppel an der 44/45-Grenze (44=perk → 45=formation).
+// Schwanz-Block für Runs ÜBER 60 Cycles hinaus (nur SIM_MAX_CYCLES > 60, reine Sweep-Diagnose). Hält grob das
+// 60er-Mix-Verhältnis, clustert nicht (nie zwei Shop/Skill hintereinander) und doppelt nicht an der 60/61-Grenze
+// (Cycle 60 = formation → Block-Start = perk).
 const TAIL_BLOCK = [
-  "formation", "perk", "stat", "shop", "perk", "skill", "stat", "formation",
-  "perk", "shop", "stat", "formation", "perk", "skill", "stat", "shop",
+  "perk", "stat", "formation", "shop", "perk", "skill", "stat", "formation", "shop", "perk", "stat", "skill",
 ];
-// Entscheidungsplan der Länge n: Cycles 1–44 bleiben der handgesetzte BASE_SCHEDULE (Early/Mid unverändert —
-// wichtig, damit Sweeps über die Rundenlänge NUR den Schwanz variieren), darüber hinaus wird TAIL_BLOCK wiederholt.
-// Pur & testbar; die Engine liest ausschließlich das daraus gebaute DECISION_SCHEDULE.
+// Entscheidungsplan der Länge n: für n ≤ 60 ein exaktes Prefix des handgesetzten 60-Plans; darüber hinaus wird
+// TAIL_BLOCK wiederholt (nur für SIM_MAX_CYCLES-Sweeps > 60). Pur & testbar; die Engine liest ausschließlich
+// das daraus gebaute DECISION_SCHEDULE.
 export function buildSchedule(n = MAX_CYCLES) {
   if (n <= BASE_SCHEDULE.length) return BASE_SCHEDULE.slice(0, n);
   const out = BASE_SCHEDULE.slice();

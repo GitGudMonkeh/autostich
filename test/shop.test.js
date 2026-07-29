@@ -16,25 +16,30 @@ const rng = makeRng(9);
 const atCycleEnd = (over = {}) => ({ ...initialState(makeRng(1)), pos: 39, ...over });
 
 describe("Shop-Rhythmus — Entscheidungsplan (Shop-Spec §2)", () => {
-  it("Run hat genau 44 Durchläufe und einen 44-Einträge-Plan", () => {
-    expect(MAX_CYCLES).toBe(44);
-    expect(DECISION_SCHEDULE).toHaveLength(44);
+  it("Run hat genau 60 Durchläufe und einen 60-Einträge-Plan", () => {
+    expect(MAX_CYCLES).toBe(60);
+    expect(DECISION_SCHEDULE).toHaveLength(60);
   });
-  it("Verteilung ist 11 Stat · 11 Perk · 8 Formation · 8 Shop · 6 Skill (§2.3)", () => {
+  it("Verteilung ist 13 Stat · 13 Perk · 12 Formation · 12 Shop · 10 Skill (§2.3)", () => {
     const count = (t) => DECISION_SCHEDULE.filter((d) => d === t).length;
-    expect(count("stat")).toBe(11);
-    expect(count("perk")).toBe(11);
-    expect(count("formation")).toBe(8);
-    expect(count("shop")).toBe(8);
-    expect(count("skill")).toBe(6);
+    expect(count("stat")).toBe(13);
+    expect(count("perk")).toBe(13);
+    expect(count("formation")).toBe(12);
+    expect(count("shop")).toBe(12);
+    expect(count("skill")).toBe(10);
   });
-  it("Shop-Zeitpunkte = 5, 11, 16, 22, 27, 33, 38, 42 (§2.4)", () => {
+  it("Shop-Zeitpunkte (Architekt) = 4, 9, 14, 19, 24, 29, 34, 39, 44, 49, 54, 58 (§2.4)", () => {
     const at = DECISION_SCHEDULE.map((d, i) => (d === "shop" ? i + 1 : null)).filter(Boolean);
-    expect(at).toEqual([5, 11, 16, 22, 27, 33, 38, 42]);
+    expect(at).toEqual([4, 9, 14, 19, 24, 29, 34, 39, 44, 49, 54, 58]);
   });
-  it("Skill-Zeitpunkte = 6, 12, 19, 28, 34, 41 (§2.5)", () => {
+  it("Skill-Zeitpunkte = 7, 12, 18, 25, 32, 38, 43, 50, 55, 59 (§2.5)", () => {
     const at = DECISION_SCHEDULE.map((d, i) => (d === "skill" ? i + 1 : null)).filter(Boolean);
-    expect(at).toEqual([6, 12, 19, 28, 34, 41]);
+    expect(at).toEqual([7, 12, 18, 25, 32, 38, 43, 50, 55, 59]);
+  });
+  it("Design-Invariante: jedes Shop-Fenster wird 2 Durchläufe später von einer Formation gefangen", () => {
+    DECISION_SCHEDULE.forEach((d, i) => {
+      if (d === "shop") expect(DECISION_SCHEDULE[i + 2]).toBe("formation"); // 4→6, 9→11, …, 58→60
+    });
   });
   it("erster Plan-Eintrag ist Stat (Start-Entscheid via START_RUN)", () => {
     expect(DECISION_SCHEDULE[0]).toBe("stat");
@@ -60,9 +65,9 @@ describe("Münzökonomie (Shop-Spec §3)", () => {
     expect(resolveTrick(atCycleEnd({ cycle: 0, economyStatLevel: 3 }), rng).shop.coins).toBe(STARTING_COINS + 2); // cycle 0→1 = Perk, kein Shop
   });
   it("Einkommensbonus wird beim Öffnen des Shops gutgeschrieben (+3 je Pick, pro Shop)", () => {
-    // cycle 3 → nächste Entscheidung ist der Shop (§2.2).
-    const base = resolveTrick(atCycleEnd({ cycle: 3, economyStatLevel: 0 }), rng);
-    const boosted = resolveTrick(atCycleEnd({ cycle: 3, economyStatLevel: 2 }), rng);
+    // cycle 2 → nächste Entscheidung ist der Shop (§2.2, 60-Plan: Shop bei 4, 9, 14, …).
+    const base = resolveTrick(atCycleEnd({ cycle: 2, economyStatLevel: 0 }), rng);
+    const boosted = resolveTrick(atCycleEnd({ cycle: 2, economyStatLevel: 2 }), rng);
     expect(base.phase).toBe("shop");
     expect(boosted.shop.coins - base.shop.coins).toBe(6); // +3 × 2 Picks
   });
@@ -225,7 +230,7 @@ describe("Shop-Angebot — Ziehung (Shop-Spec §5)", () => {
 
 describe("Shop-Kauf — BUY_ITEM (Shop-Spec §5.4)", () => {
   it("Engine zieht bei Shop-Eintritt ein volles Angebot (S5: alle 4 Kategorien → 8 Angebote)", () => {
-    const s = resolveTrick(atCycleEnd({ cycle: 3 }), rng); // → Shop-Runde
+    const s = resolveTrick(atCycleEnd({ cycle: 2 }), rng); // → Shop-Runde (cycle 2→3, 60-Plan)
     expect(s.phase).toBe("shop");
     expect(s.shop.offers).toHaveLength(SHOP_ITEMS_OFFERED); // Karten/Anker/Formationen/Planung je 2
     expect(s.shop.offers.every((o) => SHOP_CATEGORIES.includes(o.category))).toBe(true);
@@ -596,7 +601,7 @@ describe("Shop-Planungsitems — S5a Rerolls (Shop-Spec §10)", () => {
     expect(without.freePerkReroll).toBe(false);
   });
   it("Engine setzt freeSkillReroll beim Skill-Angebot mit aktiver Schicksalskontrolle", () => {
-    const s = resolveTrick(atCycleEnd({ cycle: 4, activeArchetypes: ["lightning"], // cycle 4→5 = Skill
+    const s = resolveTrick(atCycleEnd({ cycle: 5, activeArchetypes: ["lightning"], // cycle 5→6 = Skill (60-Plan)
       shop: { ...initialShop(), fateControl: true } }), rng);
     expect(s.phase).toBe("levelup");
     expect(s.skillOffer).toBeTruthy();
@@ -708,7 +713,7 @@ describe("Shop-Planungsitem — S5b P4 Reservierung (Shop-Spec §10)", () => {
     expect(r.shop.familyTiers.SF_P_RESERVE).toBe(3);
   });
   it("Engine: reserviertes Item erscheint beim nächsten Shop als 9. Angebot und verfällt danach", () => {
-    const s = resolveTrick(atCycleEnd({ cycle: 3, // cycle 3→4 = Shop
+    const s = resolveTrick(atCycleEnd({ cycle: 2, // cycle 2→3 = Shop (60-Plan)
       shop: { ...initialShop(), reservedItem: { family: true, familyId: "SF_REFINE", famTier: 3, category: "cards", price: 18 } } }), rng);
     expect(s.phase).toBe("shop");
     expect(s.shop.reservedItem).toBe(null);

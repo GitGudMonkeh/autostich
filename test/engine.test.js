@@ -242,10 +242,10 @@ describe("resolveTrick — Durchlauf-Ende & persistente Reihenfolge (V2)", () =>
   it("#137: Formationsphasen-Eintritt rechnet mit shop.permanentEffects + anchors (nicht erst nach dem ersten Tausch)", () => {
     // constDeck(5): Wert 5 überall → in jedem Segment eine Wiederholung. Formationsanker (A5) auf Pos 0 +
     // Formationskern (regeländernder Shop-Effekt). Vor dem Fix wurden beide beim Eintritt ignoriert (Default []/{}).
-    expect(DECISION_SCHEDULE[2]).toBe("formation"); // Sanity: cycle 1 → 2 löst die Formationsphase aus
+    expect(DECISION_SCHEDULE[5]).toBe("formation"); // Sanity: cycle 4 → 5 löst die Formationsphase aus (60-Plan)
     const anchors = [{ type: "formation", position: 0 }];
     const shop = { coins: 0, anchors };
-    const s = resolveTrick(scenario(5, 0, { cycle: 1, pos: TRICKS_PER_CYCLE - 1, shop }), makeRng(2));
+    const s = resolveTrick(scenario(5, 0, { cycle: 4, pos: TRICKS_PER_CYCLE - 1, shop }), makeRng(2));
     expect(s.phase).toBe("formation");
     // Beim Eintritt gerenderte Formationen == vollständige Berechnung (mit anchors + familyTiers), NICHT die argument-lose.
     expect(s.formations).toEqual(computeFormations(s.playerOrder, s.deck, s.roles, s.perks, s.skills, anchors, s.familyTiers));
@@ -382,7 +382,7 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
   });
 
   it("Entscheidungszyklus (§22.2): Perk/Formation/Stat/Skill je nach Durchlauf; leerer Skill-Pool → Perk", () => {
-    // Nach dem Durchlauf mit cycle C ist die Entscheidung DECISION_SCHEDULE[C+1] (Shop-Spec §2.2, fester 44-Plan).
+    // Nach dem Durchlauf mit cycle C ist die Entscheidung DECISION_SCHEDULE[C+1] (Shop-Spec §2.2, fester 60-Plan).
     const ALL = Object.keys(SKILL_DEFS); // alle Skills (Blitz + Feuer …) → leerer Pool erzwingt den Perk-Fallback
 
     const perkRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 0 }), rng); // → cycle 1 = perk
@@ -391,33 +391,33 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
     expect(perkRound.skillOffer).toBeNull();
     expect(perkRound.statOffer).toBeNull();
 
-    const formationRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1 }), rng); // → cycle 2 = formation
+    const statRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1 }), rng); // → cycle 2 = stat
+    expect(statRound.phase).toBe("levelup");
+    expect(statRound.statOffer).toEqual(STAT_IDS);
+    expect(statRound.offer).toBeNull();
+    expect(statRound.skillOffer).toBeNull();
+
+    const shopRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng); // → cycle 3 = shop (Shop-Spec §2.2)
+    expect(shopRound.phase).toBe("shop");
+    expect(shopRound.offer).toBeNull();
+    expect(shopRound.statOffer).toBeNull();
+    expect(shopRound.skillOffer).toBeNull();
+
+    const formationRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4 }), rng); // → cycle 5 = formation
     expect(formationRound.phase).toBe("formation");
     expect(formationRound.formationEnergy).toBe(FORMATION_ENERGY);
     expect(formationRound.offer).toBeNull();
     expect(formationRound.skillOffer).toBeNull();
     expect(formationRound.statOffer).toBeNull();
 
-    const statRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng); // → cycle 3 = stat
-    expect(statRound.phase).toBe("levelup");
-    expect(statRound.statOffer).toEqual(STAT_IDS);
-    expect(statRound.offer).toBeNull();
-    expect(statRound.skillOffer).toBeNull();
-
-    const shopRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 3 }), rng); // → cycle 4 = shop (Shop-Spec §2.2)
-    expect(shopRound.phase).toBe("shop");
-    expect(shopRound.offer).toBeNull();
-    expect(shopRound.statOffer).toBeNull();
-    expect(shopRound.skillOffer).toBeNull();
-
-    const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4 }), rng); // → cycle 5 = skill
+    const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 5 }), rng); // → cycle 6 = skill
     expect(skillRound.phase).toBe("levelup");
     expect(skillRound.skillOffer).toHaveLength(6); // Prototyp: SKILLS_OFFERED 6 (2+2+2, alle 3 Archetypen)
     expect(skillRound.offer).toBeNull();
     expect(skillRound.statOffer).toBeNull();
 
     // Skill-Runde mit vollem Skill-Besitz → Fallback auf Perk-Angebot (Runde nicht verschwendet).
-    const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4, skills: ALL }), rng);
+    const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 5, skills: ALL }), rng);
     expect(owned.skillOffer).toBeNull();
     expect(owned.offer).toHaveLength(3);
   });
@@ -589,7 +589,7 @@ describe("Reaktoren + Geladene Serie — Engine (Stufe C)", () => {
 
 describe("Formationswerkzeuge — Engine (V2 §22.6 E)", () => {
   it("E10 Feinjustierung: die Formationsphase startet mit +1 Energie", () => {
-    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1, perks: ["E10"] }), rng); // → cycle 2 (Formation)
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4, perks: ["E10"] }), rng); // → cycle 5 (Formation, 60-Plan)
     expect(s.phase).toBe("formation");
     expect(s.formationEnergy).toBe(FORMATION_ENERGY + 1);
   });

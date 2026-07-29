@@ -20,7 +20,7 @@ import { factionPolicy } from "./policies/faction.js";
 import { newMemory } from "./memory.js";
 import { MAX_CYCLES, TRICKS_PER_CYCLE } from "../src/game/constants.js";
 
-const CYCLES = MAX_CYCLES;      // 44
+const CYCLES = MAX_CYCLES;      // 60 (Default; per SIM_MAX_CYCLES übersteuerbar)
 const TPC = TRICKS_PER_CYCLE;   // 40
 
 function quantile(sorted, q) {
