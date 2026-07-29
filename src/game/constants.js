@@ -182,7 +182,8 @@ export const BRAND_SPREAD_VALUE = 1;    // Lauffeuer: Übergriff auf eine Nachba
 export const FORGE_COST       = 5;      // Ascheschmiede: 5 Asche je Schmiedung               // v0 — tunebar
 export const FORGE_VALUE      = 2;      // Ascheschmiede: niedrigste Karte +2 Dauerwert       // v0 — tunebar
 export const FORGE_MAX_PER_CARD = 6;    // Schmieden: Deckel geschmiedeter Dauerwert je Karte (Anti-Runaway v0.1: sonst R1→+20)
-export const GLUTSTAHL_PER_VALUE = 20;  // Glutstahl: +20 Score je geschmiedetem Wert bei Sieg // v0 — tunebar
+export const FORGE_MAX_CARDS    = 10;   // Schmieden: max Anzahl VERSCHIEDENER geschmiedeter Karten (v0.2: Ascheschmiede = Boden heben, nicht ganzes Deck buffen → Winrate-Snowball)
+export const GLUTSTAHL_PER_VALUE = 12;  // Glutstahl: +Score je geschmiedetem Wert bei Sieg // v0.2: 20→12 (Feuer-Ceiling-Trim, Brand+Schmiede-Explosion)
 export const SCHMELZOFEN_MIN_HEAT = 50; // Schmelzofen: ab 50 % Hitze …                       // v0 — tunebar
 export const SCHMELZOFEN_BRAND_BONUS = 1;   // … Brände −1 extra Wert & +1 extra Asche         // v0 — tunebar
 export const SCHMELZOFEN_FORGE_DISCOUNT = 1;// … Schmieden kostet 1 Asche weniger              // v0 — tunebar

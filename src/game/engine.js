@@ -703,10 +703,16 @@ export function resolveTrick(state, rng = Math.random) {
         const cost = forgeCostFor(skills, heat.value);
         let guardF = 0;
         while (newAsh >= cost && guardF++ < deck.length) {
-          // niedrigste Karte, die noch unter dem Schmiede-Deckel liegt (Anti-Runaway v0.1); sonst Schmieden stoppen.
+          // niedrigste schmiedbare Karte: unter dem Per-Karte-Deckel UND (schon geschmiedet ODER noch Platz unter
+          // FORGE_MAX_CARDS). So bleibt Ascheschmiede ein Boden-Heber (wenige tiefe Karten), kein Ganz-Deck-Buff.
+          const forgedCount = Object.keys(newForged).length;
           let lowId = null, lowV = Infinity;
-          for (const c of deck) { if ((newForged[c.id] || 0) < C.FORGE_MAX_PER_CARD && c.value < lowV) { lowV = c.value; lowId = c.id; } }
-          if (lowId == null) break; // alle Karten am Deckel → keine Schmiedung mehr (Asche bleibt erhalten)
+          for (const c of deck) {
+            if ((newForged[c.id] || 0) >= C.FORGE_MAX_PER_CARD) continue;               // Per-Karte-Deckel
+            if (!(newForged[c.id] > 0) && forgedCount >= C.FORGE_MAX_CARDS) continue;    // keine NEUE Karte über dem Kartendeckel
+            if (c.value < lowV) { lowV = c.value; lowId = c.id; }
+          }
+          if (lowId == null) break; // nichts mehr schmiedbar → Asche bleibt erhalten
           newAsh -= cost;
           deck = deck.map((c) => (c.id === lowId ? { ...c, value: c.value + C.FORGE_VALUE } : c));
           newForged = { ...newForged, [lowId]: (newForged[lowId] || 0) + C.FORGE_VALUE };
