@@ -369,7 +369,7 @@ export const hasVergletscherung  = (skills) => iceFlag(skills, "vergletscherung"
 export const hasArchitekt        = (skills) => iceFlag(skills, "architekt");        // vertikale Formationen (Spalte pos%5)
 // Dauerwert einer Frostkarte aus ihren Schichten. Gletscher (L): superlinear (dreieckig), sonst linear.
 export function layerValue(layers, gletscher = false) {
-  const n = layers || 0;
+  const n = Math.min(layers || 0, C.ICE_LAYER_MAX); // Anti-Runaway v0.1: wirksame Schichten gedeckelt
   if (n <= 0) return 0;
   return gletscher ? (n * (n + 1) / 2) * C.ICE_LAYER_VALUE : n * C.ICE_LAYER_VALUE;
 }

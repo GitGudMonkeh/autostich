@@ -133,6 +133,7 @@ export const WETTERLEUCHTEN_THRESHOLD = 5;    // Wetterleuchten: bei jeder 5. Se
 export const WETTERLEUCHTEN_COUNT     = 2;    // Wetterleuchten: … so viele Karten                                  // v0 — tunebar
 export const DOPPELENTLADUNG_FACTOR   = 2;    // Doppelentladung (L): Konsumenten feuern ×2 (Ionisierungs-Anzahl ×2) // v0
 export const DURCHSCHLAG_CRIT_MULT    = 0.25; // Durchschlag (L): volle Ionis. (5) + Crit → dauerhaft +0,25× Crit-Mult // v0 — tunebar
+export const DURCHSCHLAG_MULT_CAP     = 2.0;  // Durchschlag: Deckel des dauerhaften Crit-Mult-Bonus (Anti-Runaway v0.1: uncapped → +100× im Smoke)
 
 /* ============================================================
    FEUER-REWORK v0 — Hitzeleiste 0–100. „Hitze belohnt totale Überlegenheit."
@@ -180,6 +181,7 @@ export const BRAND_ASH        = 1;      // Brandmal/Lauffeuer: +1 Asche je Brand
 export const BRAND_SPREAD_VALUE = 1;    // Lauffeuer: Übergriff auf eine Nachbarkarte −1 Wert // v0 — tunebar
 export const FORGE_COST       = 5;      // Ascheschmiede: 5 Asche je Schmiedung               // v0 — tunebar
 export const FORGE_VALUE      = 2;      // Ascheschmiede: niedrigste Karte +2 Dauerwert       // v0 — tunebar
+export const FORGE_MAX_PER_CARD = 6;    // Schmieden: Deckel geschmiedeter Dauerwert je Karte (Anti-Runaway v0.1: sonst R1→+20)
 export const GLUTSTAHL_PER_VALUE = 20;  // Glutstahl: +20 Score je geschmiedetem Wert bei Sieg // v0 — tunebar
 export const SCHMELZOFEN_MIN_HEAT = 50; // Schmelzofen: ab 50 % Hitze …                       // v0 — tunebar
 export const SCHMELZOFEN_BRAND_BONUS = 1;   // … Brände −1 extra Wert & +1 extra Asche         // v0 — tunebar
@@ -203,6 +205,7 @@ export const FROST_GRIP_BONUS  = 2;    // Frostgriff: +2 eingefrorene Karten
 export const GLEITFROST_EXTRA_SWAP = 1;// Gleitfrost: 2. kostenloser Frosttausch (mehr Bank)             // v0
 // Schichten (der Spine) — permanenter Dauerwert je Frostkarte
 export const ICE_LAYER_VALUE   = 1;    // je Schicht +1 Dauerwert (Gletscher macht es superlinear)        // v0 — tunebar
+export const ICE_LAYER_MAX     = 12;   // Deckel wirksamer Schichten je Karte (Wert/Eisdruck/Vergletscherung) // Anti-Runaway v0.1: Bank-Pfad → 32 Schichten/Karte
 export const ICE_ABLAGE_A_LAYER = 1;   // Ablage A: Frostkarte siegt in ≥1 Formation → +1 Schicht          // v0
 export const PERMAFROST_LAYER_BONUS = 1; // Permafrost (L): +1 Schicht je Ablage                           // v0
 export const BESTAENDIGKEIT_LAYER = 1; // Beständigkeit: Sieg in Formation wie im Vordurchlauf → +1 Schicht // v0

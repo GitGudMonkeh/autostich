@@ -332,6 +332,7 @@ export function resolveTrick(state, rng = Math.random) {
       const nForms = baseFormationCount(posForm);
       const inFormation = positionHasFormation(posForm);
       const myLayers = layers[pCard.id] || 0;
+      const capLayers = Math.min(myLayers, C.ICE_LAYER_MAX); // Anti-Runaway v0.1: wirksame Schichten für Eisdruck/Vergletscherung gedeckelt
       // Stillstand: Frostkarte siegt in ≥1 Formation → +200 Flat (flacher Früh-Support).
       if (hasStandstill(skills) && inFormation) iceFlat += C.STILLSTAND_SCORE;
       // Ablage A: Sieg in ≥1 Formation → +1 Schicht (+Permafrost/+Beständigkeit/+Verschränkung). Eisanker garantiert eine auch ohne volle Formation.
@@ -355,7 +356,7 @@ export function resolveTrick(state, rng = Math.random) {
         }
       }
       // Eisdruck: Formationsfaktor skaliert mit den Schichten der Frostkarte.
-      if (hasEisdruck(skills) && inFormation && myLayers > 0) iceFormMult *= 1 + myLayers * C.EISDRUCK_STEP;
+      if (hasEisdruck(skills) && inFormation && capLayers > 0) iceFormMult *= 1 + capLayers * C.EISDRUCK_STEP;
       // Architekt: vertikale Formation — je weitere Frostkarte in derselben Spalte (pos%5) ein zusätzlicher Faktor.
       if (hasArchitekt(skills)) {
         const col = actualPos % SEGMENT_SIZE;
@@ -365,7 +366,7 @@ export function resolveTrick(state, rng = Math.random) {
       }
       // Vergletscherung: markiert Gegnerkarten für den NÄCHSTEN Durchlauf, −Wert ∝ Schichten der Siegkarte (min 1).
       if (hasVergletscherung(skills)) {
-        const debuff = Math.max(1, myLayers * C.VERGLETSCHERUNG_PER_LAYER);
+        const debuff = Math.max(1, capLayers * C.VERGLETSCHERUNG_PER_LAYER);
         const pool = oppDeck.map((c) => c.id).filter((id) => !(id in newFrostbitePending));
         for (let k = 0; k < C.VERGLETSCHERUNG_COUNT && pool.length; k++) {
           const id = pool.splice(Math.floor(rng() * pool.length), 1)[0];
@@ -515,7 +516,7 @@ export function resolveTrick(state, rng = Math.random) {
     }
     // Durchschlag (L, v0): Sieg mit VOLL ionisierter Karte (5, Stand vor dem Stich) + Crit → dauerhaft +Crit-Mult.
     if (isCrit && hasDurchschlag(skills) && (pCard.ionStacks || 0) >= C.ION_MAX_STACKS && lightning && lightning.active) {
-      lightning = { ...lightning, durchschlagMult: (lightning.durchschlagMult || 0) + C.DURCHSCHLAG_CRIT_MULT };
+      lightning = { ...lightning, durchschlagMult: Math.min(C.DURCHSCHLAG_MULT_CAP, (lightning.durchschlagMult || 0) + C.DURCHSCHLAG_CRIT_MULT) };
     }
     // Spannungsbogen (§5.2): Sieg mit ionisierter Karte → erster ungespielter, nicht-voller Nachfolger +1 Stapel.
     if (ionizedCard && hasVoltageArc(skills)) {
@@ -698,10 +699,11 @@ export function resolveTrick(state, rng = Math.random) {
         const cost = forgeCostFor(skills, heat.value);
         let guardF = 0;
         while (newAsh >= cost && guardF++ < deck.length) {
-          newAsh -= cost;
+          // niedrigste Karte, die noch unter dem Schmiede-Deckel liegt (Anti-Runaway v0.1); sonst Schmieden stoppen.
           let lowId = null, lowV = Infinity;
-          for (const c of deck) { if (c.value < lowV) { lowV = c.value; lowId = c.id; } }
-          if (lowId == null) break;
+          for (const c of deck) { if ((newForged[c.id] || 0) < C.FORGE_MAX_PER_CARD && c.value < lowV) { lowV = c.value; lowId = c.id; } }
+          if (lowId == null) break; // alle Karten am Deckel → keine Schmiedung mehr (Asche bleibt erhalten)
+          newAsh -= cost;
           deck = deck.map((c) => (c.id === lowId ? { ...c, value: c.value + C.FORGE_VALUE } : c));
           newForged = { ...newForged, [lowId]: (newForged[lowId] || 0) + C.FORGE_VALUE };
         }
