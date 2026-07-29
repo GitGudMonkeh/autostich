@@ -6,7 +6,8 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasIonize, hasProtect, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasConductivity, hasEndlessStorm, hasDischarge, // Blitz-Rework (#93 F2)
   hasBlitzcatcher, hasVoltageArc, // #165 Skills (§5.2): Blitzfänger / Spannungsbogen
-  fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer (#93 F1)
+  fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, // Feuer-Rework (v0)
+  glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
   hasStandstill, hasFrostReserve, hasFrostbite, hasPermafrost, hasIceBloom } from "./skills.js"; // Eis (#93 F3 / #165 Eisblüte)
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, summarizeFormations, baseFormationCount, SEGMENT_SIZE } from "./formations.js";
@@ -76,6 +77,7 @@ export function resolveTrick(state, rng = Math.random) {
     maxFormations = 0, formationScore = 0, // #161 FB-2: Run-Rückblick — Peak gleichzeitig aktiver Formationen + Score-Anteil aus Formationen
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
     iceTemp = {}, frostbitePending = [], frostbiteActive = [], // Eis (#93 F3): temp. Wertboni je card.id / Frostbiss-Markierungen
+    ash = 0, brandPending = {}, brandActive = {}, forged = {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     shop = null, economyStatLevel = 0, // Shop-System (Shop-Spec §3): Münzstand + Einkommen-Level
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
   } = state;
@@ -183,26 +185,27 @@ export function resolveTrick(state, rng = Math.random) {
   // Nachfolger-Bonus (C4 Staffelläufer / C5 Anführer): der Kopf der Queue gilt für DIESE Karte, dann verbraucht.
   const relayBonus = successorQueue[0] || 0;
   successorQueue = successorQueue.slice(1);
-  // ---- Feuer (#93 F1): Vor-Stich-Effekte, die den Kampfwert DIESES Stichs anheben (Schmelzpunkt/Glühende Klinge/Feuerwalze/Phönixfeuer).
+  // ---- Feuer-Rework (v0): Vor-Stich-Effekte (Schmelzpunkt-Drip, Glühende Klinge, Feuerwalze, Rückzündung-Wert).
   let heat = state.heat || null;
   let fireValueBonus = 0;
-  const suncore = fireFlag(skills, "suncore"); // Sonnenkern „Nachbrand" (#Pass5): +Score je Konsum-Auslösung
-  let meltConsumed = 0; // in diesem Stich vom Schmelzpunkt verbrauchte Hitze (Vehikel für den Nachbrand-Bonus)
+  const suncore = fireFlag(skills, "suncore"); // Sonnenkern: +Score je verbrauchtem Hitzepunkt (Konsum-Verstärker)
+  // Phönixfeuer: verbrauchte Hitze (value ≤ 0) entzündet 1×/Durchlauf neu (+40 % zurück). Nach jedem Konsum geprüft.
+  const reignite = (h) => (fireFlag(skills, "phoenix") && !h.phoenixUsed && h.value <= 0)
+    ? { ...h, value: Math.round(C.PHOENIX_REIGNITE * h.max), phoenixUsed: true } : h;
   if (heat && heat.active) {
-    // Phönixfeuer: im VORIGEN Stich armiert → diese Karte +10 (einmalig).
-    if (fireFlag(skills, "phoenix") && heat.phoenixArmed) { fireValueBonus += C.PHOENIX_VALUE; heat = { ...heat, phoenixArmed: false }; }
-    // Schmelzpunkt (Konsument): vor jedem Stich −10 % Hitze, +3 Wert (nur ab 10 %); armiert Phönix für den NÄCHSTEN Stich.
+    // Schmelzpunkt (Konsument, Drip): vor JEDEM Stich −10 % Hitze für +5 Score/Punkt (Sonnenkern +5/Punkt extra).
+    // Flacher Drip, sieg-unabhängig (nicht durch Serie/Formation multipliziert).
     if (heatConsumerOf(skills) === "melt" && heat.value >= C.MELT_COST) {
       heat = { ...heat, value: heat.value - C.MELT_COST };
-      meltConsumed = C.MELT_COST; // Sonnenkern-Nachbrand liest das im Sieg-Block (zahlt sich nur bei Sieg aus)
-      fireValueBonus += C.MELT_VALUE;
-      if (fireFlag(skills, "phoenix")) heat = { ...heat, phoenixArmed: true };
+      score += C.MELT_COST * (C.MELT_PER_HEAT + (suncore ? C.SUNCORE_PER_HEAT : 0));
+      heat = reignite(heat);
     }
-    // Glühende Klinge: ab 50 % Hitze alle Karten +1 (#165). Überhitzt: ab 80 % zusätzlich +2 (zusammen +3). Feuerwalze: aktueller Stapel.
-    if (fireFlag(skills, "glowingBlade") && heat.value >= C.GLOWING_THRESHOLD) fireValueBonus += C.GLOWING_VALUE;
-    if (fireFlag(skills, "overheated")   && heat.value >= C.OVERHEAT_THRESHOLD) fireValueBonus += C.OVERHEAT_VALUE;
+    // Glühende Klinge: +Wert je Hitze-Stufe (+Sonnenzorn). Feuerwalze: aktueller Stapel (nur ab 40 % Hitze aufgebaut).
+    fireValueBonus += glowingValueFor(heat.value, skills);
     if (fireFlag(skills, "fireRoll")) fireValueBonus += Math.min(heat.fireRoll || 0, C.FIREROLL_MAX);
   }
+  // Rückzündung: nach einer Niederlage bekommt die Karte +2 Wert (hilft, den Konter zu gewinnen).
+  if (fireFlag(skills, "rueckzuendung") && lastResult === "loss") fireValueBonus += C.RUECKZUENDUNG_VALUE;
   // ---- Eis (#93 F3): temp. Wertbonus (Kältereserve/Kaltfront/Frostspur, an card.id) + Permafrost +2 (Dauerwert eingefroren).
   const iceValueBonus = (iceTemp[pCard.id] || 0) + (hasPermafrost(skills) && pCard.frozen ? C.PERMAFROST_VALUE : 0);
   const anchorPowerBonus = anchorType === "power" ? (aParam("power") || 0) : 0; // Kraftanker (§4.2, Stärke = Stufe)
@@ -218,12 +221,17 @@ export function resolveTrick(state, rng = Math.random) {
   let newPos20Bonus = pos20Bonus;
   if (actualPos === 19) newPos20Bonus = pValue - pCard.value;
   // Frostbiss (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −3 Wert (nie < 0); sonst neutral (§12).
-  const oValue = Math.max(0, oCard.value - (frostbiteActive.includes(oCard.id) ? C.FROSTBISS_DEBUFF : 0));
+  const oValue = Math.max(0, oCard.value - (frostbiteActive.includes(oCard.id) ? C.FROSTBISS_DEBUFF : 0) - (brandActive[oCard.id] || 0)); // Eis-Frostbiss + Feuer-Brand
   // Eis: der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht.
   let newIceTemp = { ...iceTemp };
   delete newIceTemp[pCard.id];
   let newFrostbitePending = [...frostbitePending]; // im laufenden Durchlauf markierte Gegnerkarten (für den nächsten)
   let newFrostbiteActive = frostbiteActive;        // in diesem Durchlauf aktive Marken (am Durchlauf-Ende ausgetauscht)
+  // Feuer-Rework (v0): Asche-Zuwachs / Brand-Marker für den NÄCHSTEN Durchlauf (brandActive wird am Durchlauf-Ende getauscht).
+  let newAsh = ash;
+  let newBrandPending = { ...brandPending };
+  let newBrandActive = brandActive;
+  let newForged = forged;
 
   let won = false, lost = false, tieConverted = false;
   if (pValue > oValue) won = true;
@@ -256,30 +264,51 @@ export function resolveTrick(state, rng = Math.random) {
                    baseValue: pCard.value, // Basiswert der gespielten Karte
                    hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung (D15)
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
-    // ---- Feuer (#93 F1): Hitzegewinn, Feuer-Flat-Score, Flächenbrand-Konsument, Nachglut, Feuerwalze.
+    // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überlauf), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
     let fireFlat = 0;
     if (heat && heat.active) {
       const fmargin = pValue - oValue;
-      heat = { ...heat, value: Math.min(heat.max, heat.value + heatGainFor(fmargin, skills, pCard.value)) };
-      const fireBaseFlat = fireScoreFor(fmargin, skills); // Feuer-Flat-Score dieses Stichs (Basis für Funkenflug)
-      fireFlat += fireBaseFlat; // in die multiplizierte Basis
-      // Sonnenkern-Nachbrand (Schmelzpunkt): die vor dem Stich verbrauchte Hitze zahlt sich im Sieg als Flat aus.
-      if (suncore && meltConsumed) fireFlat += C.SUNCORE_BURN_PER_HEAT * meltConsumed;
-      // Flächenbrand: Sieg bei voller Hitze (≥100) → +1000 flach, verbraucht exakt 100; armiert Phönix.
-      if (heatConsumerOf(skills) === "conflagration" && heat.value >= C.HEAT_MAX) {
-        fireFlat += C.CONFLAGRATION_SCORE;
-        if (suncore) fireFlat += C.SUNCORE_BURN_PER_HEAT * C.CONFLAGRATION_COST; // Nachbrand: +K × verbrauchte 100 Hitze
-        heat = { ...heat, value: heat.value - C.CONFLAGRATION_COST };
-        if (fireFlag(skills, "phoenix")) heat = { ...heat, phoenixArmed: true };
+      // Hitzegewinn: Marge (Glut) + Zunder + Feuersturm (Serie) + Rückzündung (Rückstand des letzten Verlusts).
+      const gain = heatGainFor(fmargin, skills, { winStreak: serieStreak, lostLast: lastResult === "loss", deficit: heat.lastLossDeficit || 0 });
+      const raw = heat.value + gain;
+      // Weißglut: der über HEAT_MAX hinaus überlaufende Hitzeanteil wird zu Score (Sonnenzorn ×2).
+      const overflow = Math.max(0, raw - heat.max);
+      if (overflow > 0) fireFlat += whiteHeatScore(overflow, skills, heat.max);
+      heat = { ...heat, value: Math.min(heat.max, raw) };
+      // Feuer-Score (Grund-Payoff): (Vorsprung−2)×Basis, ×Verbrennung (≥8/≥12), ×Sonnenzorn (≥80 %). Basis für Funkenflug.
+      const fireBaseFlat = fireScoreFor(fmargin, skills, heat.value);
+      fireFlat += fireBaseFlat;
+      // Flächenbrand (Konsument, Burst): Sieg ab 80 % Hitze verbrennt die GANZE Hitze → +12 Score/Punkt (Sonnenkern +5/Punkt).
+      if (heatConsumerOf(skills) === "conflagration" && heat.value >= C.CONFLAG_MIN_HEAT) {
+        const burned = heat.value;
+        fireFlat += burned * (C.CONFLAG_PER_HEAT + (suncore ? C.SUNCORE_PER_HEAT : 0));
+        heat = reignite({ ...heat, value: 0 }); // Phönixfeuer: verbrauchte Hitze entzündet 1×/Durchlauf neu
       }
-      if (fireFlag(skills, "afterglow")) heat = { ...heat, afterglowArmed: true }; // Nachglut: nächste Niederlage 0 Verlust
-      if (fireFlag(skills, "fireRoll")) heat = { ...heat, fireRoll: Math.min((heat.fireRoll || 0) + 1, C.FIREROLL_MAX) }; // Feuerwalze-Stapel
-      // #165 Funkenflug: gespeicherten Betrag auszahlen (jeder Sieg) ODER neu speichern (Sieg ≥8 Vorsprung, nur wenn leer).
-      // Der auszahlende Sieg erzeugt keinen neuen Speicher; maßgeblich ist ausschließlich der Feuer-Flat-Score.
+      // Feuerwalze: nächste Karte +1 Wert (bis +3) — nur ab 40 % Hitze aufgebaut.
+      if (fireFlag(skills, "fireRoll") && heat.value >= C.FIREROLL_MIN_HEAT)
+        heat = { ...heat, fireRoll: Math.min((heat.fireRoll || 0) + 1, C.FIREROLL_MAX) };
+      // Funkenflug: kleine Siege banken ihren Feuer-Score; ein Sieg ≥8 Vorsprung entlädt den Speicher voll.
       if (fireFlag(skills, "sparkflight")) {
-        const stored = heat.sparkStore || 0;
-        if (stored > 0) { fireFlat += stored; heat = { ...heat, sparkStore: 0 }; }
-        else if (fmargin >= C.SPARKFLIGHT_MIN_MARGIN) heat = { ...heat, sparkStore: Math.floor(fireBaseFlat * C.SPARKFLIGHT_RATE) };
+        if (fmargin >= C.SPARKFLIGHT_MIN_MARGIN) { fireFlat += heat.sparkStore || 0; heat = { ...heat, sparkStore: 0 }; }
+        else heat = { ...heat, sparkStore: (heat.sparkStore || 0) + fireBaseFlat };
+      }
+    }
+    // Glutstahl: geschmiedete Siegkarte → +20 Score je geschmiedetem Wert (fließt in die multiplizierte Basis).
+    if (fireFlag(skills, "glutstahl") && (forged[pCard.id] || 0) > 0) fireFlat += (forged[pCard.id] || 0) * C.GLUTSTAHL_PER_VALUE;
+    // Brand (Brandmal): jeder Sieg brandmarkt die geschlagene Gegnerkarte für den NÄCHSTEN Durchlauf (−Wert) + Asche.
+    // Lauffeuer: der Brand greift auf einen oppDeck-Nachbarn über. Schmelzofen (≥50 % Hitze): −1 Wert & +1 Asche stärker.
+    if (fireFlag(skills, "brandmal")) {
+      const hot = !!(heat && heat.active && heat.value >= C.SCHMELZOFEN_MIN_HEAT && fireFlag(skills, "schmelzofen"));
+      const brandBonus = hot ? C.SCHMELZOFEN_BRAND_BONUS : 0;
+      newBrandPending[oCard.id] = Math.max(newBrandPending[oCard.id] || 0, C.BRAND_VALUE + brandBonus);
+      newAsh += C.BRAND_ASH + brandBonus;
+      if (fireFlag(skills, "lauffeuer")) {
+        const oi = oppOrder[actualPos];                     // Index der Gegnerkarte im oppDeck-Array
+        const nb = oi + 1 < oppDeck.length ? oi + 1 : oi - 1; // Deck-Nachbar (kein Wrap; Rand → linker Nachbar)
+        if (nb >= 0) {
+          newBrandPending[oppDeck[nb].id] = Math.max(newBrandPending[oppDeck[nb].id] || 0, C.BRAND_SPREAD_VALUE + brandBonus);
+          newAsh += C.BRAND_ASH + brandBonus;
+        }
       }
     }
     // ---- Eis (#93 F3): Stillstand-Flat + Frostbiss-Markierung (Sieg mit einer eingefrorenen Karte).
@@ -512,11 +541,13 @@ export function resolveTrick(state, rng = Math.random) {
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie (auch mit Rahmen)
     serieStreak = 0;
     if (rahmenRedeemed) lightning = { ...lightning, armed: false }; // Rahmen eingelöst → entfernt
-    // ---- Feuer (#93 F1): Hitzeverlust (Nachglut fängt ihn ab), danach Nachglut verbraucht & Feuerwalze zurückgesetzt.
+    // ---- Feuer-Rework (v0): Hitzeverlust (Glutbett), Feuerwalze zurücksetzen, Funkenflug halbieren, Rückstand merken.
     if (heat && heat.active) {
-      // #165: heat.value = Hitze VOR dem Verlust → speist die 50/80-Schwellen von Glühende Klinge/Überhitzt.
-      const loss = heatLossFor(oValue - pValue, skills, heat.afterglowArmed, heat.value);
-      heat = { ...heat, value: Math.max(0, heat.value - loss), afterglowArmed: false, fireRoll: 0 };
+      const deficit = oValue - pValue;
+      const loss = heatLossFor(deficit, skills, heat.value); // heat.value = Hitze VOR dem Verlust (Glutbett-Schwelle)
+      heat = { ...heat, value: Math.max(0, heat.value - loss), fireRoll: 0,
+               sparkStore: Math.floor((heat.sparkStore || 0) * C.SPARKFLIGHT_LOSS_KEEP), // Funkenflug: Niederlage halbiert
+               lastLossDeficit: deficit }; // Rückzündung: Rückstand für den nächsten Sieg merken
     }
     // Eis (#93 F3): Kältereserve — Niederlage mit eingefrorener Karte → +4 temp Wert beim nächsten Auftauchen.
     if (hasFrostReserve(skills) && pCard.frozen) newIceTemp[pCard.id] = C.KAELTERESERVE_VALUE;
@@ -580,6 +611,31 @@ export function resolveTrick(state, rng = Math.random) {
     // #98: temporäre Positions-Boni enden mit dem Durchlauf — sonst würde ein an Position 40 armierter
     // Relay (C4/C5) bzw. der L11-Pos20-Merker auf Position 1 des nächsten (persistenten) Durchlaufs durchsickern.
     successorQueue = []; newPos20Bonus = 0;
+    // ---- Feuer-Rework (v0): Durchlauf-Ende — Schmieden (Ascheschmiede), Damaststahl-Wachstum, Phönix-Reset.
+    if (heat && heat.active) {
+      // Ascheschmiede: solange genug Asche, jeweils die aktuell niedrigste Karte dauerhaft +2 Wert (spreizt sich über
+      // die tiefen Karten, da nach jedem Schmieden neu die tiefste gesucht wird). Schmelzofen senkt die Kosten ab 50 % Hitze.
+      if (fireFlag(skills, "ascheschmiede")) {
+        const cost = forgeCostFor(skills, heat.value);
+        let guardF = 0;
+        while (newAsh >= cost && guardF++ < deck.length) {
+          newAsh -= cost;
+          let lowId = null, lowV = Infinity;
+          for (const c of deck) { if (c.value < lowV) { lowV = c.value; lowId = c.id; } }
+          if (lowId == null) break;
+          deck = deck.map((c) => (c.id === lowId ? { ...c, value: c.value + C.FORGE_VALUE } : c));
+          newForged = { ...newForged, [lowId]: (newForged[lowId] || 0) + C.FORGE_VALUE };
+        }
+      }
+      // Damaststahl: geschmiedete Karten legen jeden Durchlauf +1 dauerhaften Wert nach (Asche verfällt ohnehin nie).
+      if (fireFlag(skills, "damascus") && Object.keys(newForged).length) {
+        const grown = { ...newForged };
+        deck = deck.map((c) => (grown[c.id] ? { ...c, value: c.value + C.DAMASCUS_FORGE_GROWTH } : c));
+        for (const id of Object.keys(grown)) grown[id] += C.DAMASCUS_FORGE_GROWTH;
+        newForged = grown;
+      }
+      heat = { ...heat, phoenixUsed: false }; // Phönixfeuer: neuer Durchlauf → wieder verfügbar
+    }
 
     if (cycle >= C.MAX_CYCLES) {
       // Run-Ende nach dem letzten Durchlauf (§22.1): kein Neu-Mischen, keine Auswahl mehr.
@@ -591,6 +647,9 @@ export function resolveTrick(state, rng = Math.random) {
       // Frostbiss (#93 F3): die im gerade beendeten Durchlauf gesetzten Marken werden für den neuen Durchlauf aktiv.
       newFrostbiteActive = newFrostbitePending;
       newFrostbitePending = [];
+      // Feuer-Brand (v0): analog — die im gerade beendeten Durchlauf gesetzten Brandmarken werden jetzt aktiv (−Wert).
+      newBrandActive = newBrandPending;
+      newBrandPending = {};
       // Entscheidung VOR dem neuen Durchlauf nach dem festen Plan (Shop-Spec §2.2): DECISION_SCHEDULE[cycle]
       // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
       const decision = C.DECISION_SCHEDULE[cycle];
@@ -644,6 +703,7 @@ export function resolveTrick(state, rng = Math.random) {
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
     iceTemp: newIceTemp, frostbitePending: newFrostbitePending, frostbiteActive: newFrostbiteActive, // Eis (#93 F3)
+    ash: newAsh, brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer-Rework (v0)
     shop, // Shop-System (Shop-Spec §3): aktualisierter Münzstand (economyStatLevel läuft unverändert über ...state)
     lastTrick, phase,
   };

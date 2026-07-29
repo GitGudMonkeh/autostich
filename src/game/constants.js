@@ -120,38 +120,64 @@ export const STATIC_CHARGE     = envNum("SIM_STATIC_CHARGE", 1);    // Statische
 export const CONDUCT_CHARGE    = envNum("SIM_CONDUCT_CHARGE", 2);   // Leitfähigkeit: Zusatzladung bei Crit neben ionisierter Karte [SIM-Tuning]
 export const DISCHARGE_SCORE   = envNum("SIM_DISCHARGE_SCORE", 500);  // Entladung: +Flat beim nächsten Crit nach vollem Verbrauch [SIM-Tuning]
 
-// Feuer-Archetyp (#93 F1) — Hitzeleiste 0–100. Belohnt totale Überlegenheit. [TUNING]
-export const HEAT_MAX          = 100;  // Hitzemaximum (fix; #Pass5: Sonnenkern hebt es nicht mehr, wurde „Nachbrand")
-export const HEAT_MIN_MARGIN   = 3;    // Mindest-Wertvorsprung für Hitzegewinn & Feuer-Score
-export const HEAT_PER_POINT    = 1;    // % Hitze je relevantem Differenzpunkt (Vorsprung−2) [#121: 2→1]
-export const HEAT_MARGIN_CAP   = 8;    // Deckel des effektiven Vorsprungs im Hitzegewinn (Late-Game-Runaway) [#121]
+/* ============================================================
+   FEUER-REWORK v0 — Hitzeleiste 0–100. „Hitze belohnt totale Überlegenheit."
+   Alle Zahlen sind Vorschlags-Startwerte (v0), geerdet an der bestehenden Hitze-Ökonomie
+   (Gewinn ≈ (Vorsprung−2) %, Score-Basis 400). Werte-Tuning: cross-archetype Sim-Pass. [v0 · tunebar]
+   ============================================================ */
+// Grundmechanik (passiv)
+export const HEAT_MAX          = 100;  // Hitzemaximum (fix)
+export const HEAT_MIN_MARGIN   = 3;    // Mindest-Wertvorsprung für margen-basierten Hitzegewinn & Feuer-Score
+export const HEAT_PER_POINT    = 1;    // % Hitze je (Vorsprung−2)  // v0 — tunebar, cross-archetype Sim-Pass
+export const HEAT_MARGIN_CAP   = 8;    // Deckel des effektiven Vorsprungs im Hitzegewinn (Late-Game-Runaway)
 export const HEAT_LOSS_MAX     = 10;   // max Hitzeverlust je Niederlage (%)
-export const FIRE_SCORE_BASE   = 25;   // Feuer-Flat-Score je Punkt (erster Feuer-Skill)
-export const FIRE_SCORE_PER_SKILL = 5; // +Feuer-Flat je Punkt je weiterem Feuer-Skill
-export const BURN_BONUS        = 10;   // Verbrennung: +Feuer-Flat je Punkt
-export const EMBER_MULT        = 1.5;  // Glut: Hitzegewinn ×1,5 (kaufmännisch gerundet)
-export const FUEL_BONUS        = 5;    // Brennstoff: +% Hitze bei Sieg mit Dauerwert ≥ FUEL_MIN_VALUE
-export const FUEL_MIN_VALUE    = 8;
-export const ACCEL_BONUS       = 10;   // Brandbeschleuniger: +% Hitze bei Vorsprung ≥ ACCEL_MIN_MARGIN [#121: 15→10]
-export const ACCEL_MIN_MARGIN  = 10;
-export const GLOWING_THRESHOLD = 50;   // Glühende Klinge: ab dieser Hitze alle Karten +GLOWING_VALUE
-export const GLOWING_VALUE     = 1;    // [#165 Skills §5.3: 2→1]
-export const GLOWING_LOSS_INCREASE  = 0.10; // Glühende Klinge (#165): +10 % Hitzeverlust bei Niederlage, solange aktiv (Hitze ≥ 50)
-// Überhitzt (#165 §5.3) — zusätzlicher Feuer-Skill ab hoher Hitze; Verlust-Modifikatoren ADDIEREN vor Hitzeschild.
-export const OVERHEAT_THRESHOLD     = 80;   // ab dieser Hitze wirkt Überhitzt
-export const OVERHEAT_VALUE         = 2;    // Überhitzt: zusätzlich +2 temp Wert (zusammen mit Glühende Klinge +3)
-export const OVERHEAT_LOSS_INCREASE = 0.50; // Überhitzt: +50 % Hitzeverlust (mit Glühende Klinge additiv → +60 %)
-// Funkenflug (#165 §5.3) — bankt einen Anteil des Feuer-Flat-Scores, zahlt ihn beim nächsten Sieg als Flat aus.
-export const SPARKFLIGHT_MIN_MARGIN = 8;    // Mindest-Wertvorsprung, um zu speichern
-export const SPARKFLIGHT_RATE       = 0.25; // gespeichert wird floor(FeuerFlat × 0,25)
-export const FIREROLL_MAX      = 3;    // Feuerwalze: nächste Karte +1 je Siegsserie, bis +3 [#Pass2: 5→3, flacherer Snowball]
-export const FIREROLL_LOSS_INCREASE = 0.10; // Feuerwalze: Niederlagen kosten +10 % Hitze (additiv mit Glühende Klinge/Überhitzt) [TUNING]
-export const CONFLAGRATION_SCORE = 1000; // Flächenbrand (Konsument): +Flat bei Sieg mit voller Hitze …
-export const CONFLAGRATION_COST  = 100;  // …          … verbraucht exakt 100 Hitze
-export const MELT_COST         = 10;   // Schmelzpunkt (Konsument): −% Hitze je Stich …
-export const MELT_VALUE        = 3;    // …          … dafür eigene Karte +Wert
-export const PHOENIX_VALUE     = 10;   // Phönixfeuer (L): nach Konsumenten-Auslösung nächste Karte +Wert
-export const SUNCORE_BURN_PER_HEAT = 5;  // Sonnenkern „Nachbrand" (L): +Score = K × je Konsum verbrauchter Hitze (Flächenbrand 100→+500, Schmelzpunkt 10→+50) [#Pass5, sim-getunt]
+export const FIRE_SCORE_BASE   = 25;   // Feuer-Flat-Score je Punkt (erster Feuer-Skill)  // v0 — tunebar
+export const FIRE_SCORE_PER_SKILL = 5; // +Feuer-Flat je Punkt je weiterem Feuer-Skill    // v0 — tunebar
+// Linie 1 — Generation (Marge · Konstanz · Serie)
+export const EMBER_MULT        = 1.5;  // Glut: Hitzegewinn ×1,5                            // v0 — tunebar
+export const ZUNDER_HEAT       = 2;    // Zunder: +2 % Hitze je Sieg (auch knappe Siege)   // v0 — tunebar
+export const FEUERSTURM_STEP   = 1;    // Feuersturm: +1 % Hitze je Serienstufe            // v0 — tunebar
+export const FEUERSTURM_CAP    = 5;    // Feuersturm: … bis +5 %                            // v0 — tunebar
+// Linie 2 — Verteidigung (abschirmen · kontern)
+export const GLUTBETT_MULT       = 0.5; // Glutbett: Hitzeverlust ×0,5                       // v0 — tunebar
+export const GLUTBETT_FREE_BELOW = 30;  // Glutbett: unter 30 % Hitze gar kein Verlust      // v0 — tunebar
+export const RUECKZUENDUNG_HEAT_PER_DEFICIT = 1; // Rückzündung: +1 % Hitze je Rückstandspunkt (Sieg nach Niederlage) // v0
+export const RUECKZUENDUNG_VALUE = 2;   // Rückzündung: … und die Siegkarte +2 Wert         // v0 — tunebar
+// Linie 3 — Schwellen-Payoffs (hohe Hitze → Belohnung)
+export const GLOWING_T1_HEAT = 40, GLOWING_T1_VALUE = 1; // Glühende Klinge: +1 Wert ab 40 % // v0 — tunebar
+export const GLOWING_T2_HEAT = 70, GLOWING_T2_VALUE = 2; //                 +2 Wert ab 70 %  // v0 — tunebar
+export const GLOWING_T3_HEAT = 100, GLOWING_T3_VALUE = 3;//                 +3 Wert bei 100 % // v0 — tunebar
+export const WHITEHEAT_PER_POINT = 10;  // Weißglut: +10 Score je überlaufendem Hitzepunkt   // v0 — tunebar
+// Linie 4 — Wert-/Score-Motoren
+export const FIREROLL_MIN_HEAT = 40;    // Feuerwalze: erst ab 40 % Hitze                    // v0 — tunebar
+export const FIREROLL_MAX       = 3;    // Feuerwalze: +1 Wert je Sieg in Folge, bis +3      // v0 — tunebar
+export const VERBRENNUNG_T1_MARGIN = 8,  VERBRENNUNG_T1_MULT = 1.5; // Verbrennung: Feuer-Score ×1,5 ab 8 Vorsprung // v0
+export const VERBRENNUNG_T2_MARGIN = 12, VERBRENNUNG_T2_MULT = 2.0; // Verbrennung: Feuer-Score ×2 ab 12 Vorsprung  // v0
+export const SPARKFLIGHT_MIN_MARGIN = 8;  // Funkenflug: Sieg ≥8 Vorsprung entlädt den Speicher voll // v0 — tunebar
+export const SPARKFLIGHT_LOSS_KEEP  = 0.5;// Funkenflug: Niederlage halbiert den Speicher     // v0 — tunebar
+// Linie 5 — Konsumenten (max 1 im Build — Burst vs. Drip)
+export const CONFLAG_MIN_HEAT = 80;     // Flächenbrand: ab 80 % Hitze bewaffnet             // v0 — tunebar
+export const CONFLAG_PER_HEAT = 12;     // Flächenbrand: +12 Score je verbrannten Hitzepunkt (verbrennt die GANZE Hitze) // v0
+export const MELT_COST        = 10;     // Schmelzpunkt: −10 % Hitze je Stich                // v0 — tunebar
+export const MELT_PER_HEAT    = 5;      // Schmelzpunkt: +5 Score je verbrauchtem Hitzepunkt // v0 — tunebar
+// Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
+export const BRAND_VALUE      = 2;      // Brandmal: brandmarkierte Gegnerkarte −2 Wert       // v0 — tunebar
+export const BRAND_ASH        = 1;      // Brandmal/Lauffeuer: +1 Asche je Brand              // v0 — tunebar
+export const BRAND_SPREAD_VALUE = 1;    // Lauffeuer: Übergriff auf eine Nachbarkarte −1 Wert // v0 — tunebar
+export const FORGE_COST       = 5;      // Ascheschmiede: 5 Asche je Schmiedung               // v0 — tunebar
+export const FORGE_VALUE      = 2;      // Ascheschmiede: niedrigste Karte +2 Dauerwert       // v0 — tunebar
+export const GLUTSTAHL_PER_VALUE = 20;  // Glutstahl: +20 Score je geschmiedetem Wert bei Sieg // v0 — tunebar
+export const SCHMELZOFEN_MIN_HEAT = 50; // Schmelzofen: ab 50 % Hitze …                       // v0 — tunebar
+export const SCHMELZOFEN_BRAND_BONUS = 1;   // … Brände −1 extra Wert & +1 extra Asche         // v0 — tunebar
+export const SCHMELZOFEN_FORGE_DISCOUNT = 1;// … Schmieden kostet 1 Asche weniger              // v0 — tunebar
+// Legendäre (Verstärker, kein Motor)
+export const SUNCORE_PER_HEAT = 5;      // Sonnenkern: +5 Score je verbrauchtem Hitzepunkt (zusätzlich zum Konsum) // v0
+export const PHOENIX_REIGNITE = 0.40;   // Phönixfeuer: verbrauchte Hitze entzündet neu (+40 % zurück), 1×/Durchlauf // v0
+export const SUNWRATH_MIN_HEAT = 80;    // Sonnenzorn: ab 80 % Hitze sind alle Feuer-Effekte verstärkt … // v0 — tunebar
+export const SUNWRATH_GLOWING_BONUS  = 1;   // … Glühende Klinge +1 Stufe                      // v0 — tunebar
+export const SUNWRATH_WHITEHEAT_MULT = 2;   // … Weißglut ×2                                    // v0 — tunebar
+export const SUNWRATH_FIRESCORE_MULT = 1.25;// … Feuer-Score ×1,25                              // v0 — tunebar
+export const DAMASCUS_FORGE_GROWTH = 1; // Damaststahl: geschmiedete Karten +1 Dauerwert je Durchlauf (Asche verfällt nie) // v0
 
 // Eis-Archetyp (#93 F3) — Kontroll-/Aufstellungs-Archetyp. Kein Konsument, keine verbrauchbare Ressource. [TUNING]
 export const ICE_BASE_FREEZE     = 2;    // erster Eis-Skill friert so viele eigene Karten ein

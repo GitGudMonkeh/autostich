@@ -80,6 +80,7 @@ export function initialState(rng = Math.random) {
     skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     iceTemp: {}, frostbitePending: [], frostbiteActive: [], frostSwapsUsed: [], // Eis-Archetyp (#93 F3): temp. Wertboni / Frostbiss-Marken / genutzte Frosttausche
+    ash: 0, brandPending: {}, brandActive: {}, forged: {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     tieArmed: false,
     shop: initialShop(), // Shop-System (Shop-Spec): Münzen + Angebot (+ später Anker/Regeländerungen)
     shopTarget: null,    // Shop-Ziel-Auswahl (Shop-Spec §12.2): aktive Karten-/Farb-/Segment-Auswahl beim Kauf
@@ -474,6 +475,8 @@ export function reducer(state, action) {
       let lightning = state.lightning;
       let heat = state.heat;
       let deck = state.deck;
+      // Feuer-Rework (v0): Asche / Brand-Marker / geschmiedete Werte (beim Deaktivieren des Feuer-Archetyps zurückgesetzt).
+      let ash = state.ash || 0, brandPending = state.brandPending || {}, brandActive = state.brandActive || {}, forged = state.forged || {};
       // Eis-Zustand (wird beim Deaktivieren des Eis-Archetyps zurückgesetzt, #140).
       let iceTemp = state.iceTemp, frostSwapsUsed = state.frostSwapsUsed;
       let frostbitePending = state.frostbitePending, frostbiteActive = state.frostbiteActive;
@@ -490,7 +493,7 @@ export function reducer(state, action) {
       const stillActive = new Set(skills.map(archetypeOf).filter(Boolean));
       activeArchetypes = activeArchetypes.filter((a) => stillActive.has(a));
       if (!stillActive.has("lightning")) lightning = initLightning();               // Ladungsleiste weg
-      if (!stillActive.has("fire"))      heat = null;                                // Hitzeleiste weg
+      if (!stillActive.has("fire")) { heat = null; ash = 0; brandPending = {}; brandActive = {}; forged = {}; } // Hitze/Asche/Brand/Schmiede weg (geschmiedete Dauerwerte bleiben gebacken)
       if (!stillActive.has("ice")) {                                                 // eigene Frostkarten auftauen + Gegner-Frostbiss löschen
         deck = unfreezeAll(deck);
         iceTemp = {}; frostSwapsUsed = [];
@@ -498,7 +501,7 @@ export function reducer(state, action) {
       }
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers);
-      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, formations, phase: "play", skillOffer: null };
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, ash, brandPending, brandActive, forged, formations, phase: "play", skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
