@@ -123,4 +123,7 @@ else if (mode === "eval") {
 } else if (mode === "balance") {
   const { runBalance } = await import("./balance.js"); // Balance-Diagnose A (reine Fraktionen vs. Mix)
   runBalance({ arg, seed0 });
-} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance)`); process.exit(1); }
+} else if (mode === "variety") {
+  const { runVariety } = await import("./variety.js"); // Build-Variety je Fraktion (Skill-Lift)
+  runVariety({ arg, seed0 });
+} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety)`); process.exit(1); }

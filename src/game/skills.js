@@ -42,7 +42,7 @@ export const SKILL_DEFS = {
   // Linie 3 — Ionisierung (Breite · Tiefe · Überlauf · Konsum)
   SK_LIGHTNING_03: { id: "SK_LIGHTNING_03", name: "Kettenblitz", archetype: "lightning", keywords: ["ionize"],
     desc: "Wenn Karten ionisiert werden, werden zusätzliche Karten ionisiert (Breite).",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, ionizeCount: () => C.KETTENBLITZ_COUNT },
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, enabler: "SK_LIGHTNING_02", ionizeCount: () => C.KETTENBLITZ_COUNT },
   SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Spannungsbogen", archetype: "lightning", keywords: ["ionize"],
     desc: "Gewinnt eine ionisierte Karte, springt ein Stapel auf ihren Nachfolger (Tiefe). Volle (5) Karten werden übersprungen.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, voltageArc: true },
@@ -122,11 +122,11 @@ export const SKILL_DEFS = {
   SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand"],
     desc: "Jeder Sieg brandmarkt eine Gegnerkarte (−2 Wert) und gibt +1 Asche.", brandmal: true },
   SK_FIRE_14: { id: "SK_FIRE_14", name: "Lauffeuer", archetype: "fire", keywords: ["heat", "brand"],
-    desc: "Brandmarken greifen auf eine Nachbarkarte über (−1 Wert) und geben +1 Asche.", lauffeuer: true },
+    desc: "Brandmarken greifen auf eine Nachbarkarte über (−1 Wert) und geben +1 Asche.", enabler: "SK_FIRE_13", lauffeuer: true },
   SK_FIRE_15: { id: "SK_FIRE_15", name: "Ascheschmiede", archetype: "fire", keywords: ["heat", "forge"],
     desc: "Für 5 Asche erhält deine niedrigste Karte dauerhaft +2 Wert.", ascheschmiede: true },
   SK_FIRE_16: { id: "SK_FIRE_16", name: "Glutstahl", archetype: "fire", keywords: ["heat", "forge"],
-    desc: "Geschmiedete Karten geben bei Sieg +20 Score je geschmiedetem Wert.", glutstahl: true },
+    desc: "Geschmiedete Karten geben bei Sieg +20 Score je geschmiedetem Wert.", enabler: "SK_FIRE_15", glutstahl: true },
   SK_FIRE_17: { id: "SK_FIRE_17", name: "Schmelzofen", archetype: "fire", keywords: ["heat", "brand", "forge"],
     desc: "Ab 50 % Hitze brennen Brände stärker (−1 Wert, +1 Asche) und Schmieden kostet 1 Asche weniger.", schmelzofen: true },
   // Legendäre (Verstärker, kein Motor)
@@ -200,14 +200,14 @@ export const SKILL_DEFS = {
   SK_PLANT_02: { id: "SK_PLANT_02", name: "Wurzeltiefe", archetype: "plant", keywords: ["growth", "score"],
     desc: "Jeder Sieg einer grünen Karte gibt zusätzlich Flat-Score (Wurzeln-Score). Schaltet den Score-Ertrag reifer Pflanzen frei.", wurzeltiefe: true },
   SK_PLANT_03: { id: "SK_PLANT_03", name: "Pfahlwurzel", archetype: "plant", keywords: ["growth", "score", "formation"],
-    desc: "Verstärker: Wurzeln-Score ×2, wenn die grüne Karte in einer Formation gewinnt.", pfahlwurzel: true },
+    desc: "Verstärker: Wurzeln-Score ×2, wenn die grüne Karte in einer Formation gewinnt.", enabler: "SK_PLANT_02", pfahlwurzel: true },
   SK_PLANT_04: { id: "SK_PLANT_04", name: "Jahresringe", archetype: "plant", keywords: ["growth", "score"],
-    desc: "Verstärker: Je 10 Wachstum einer Karte dauerhaft +Wurzeln-Score — nur für diese Karte. Alte Pflanzen zahlen am meisten.", jahresringe: true },
+    desc: "Verstärker: Je 10 Wachstum einer Karte dauerhaft +Wurzeln-Score — nur für diese Karte. Alte Pflanzen zahlen am meisten.", enabler: "SK_PLANT_02", jahresringe: true },
   // Linie 2 — Aussaat (Breite: Wachstum verbreiten)
   SK_PLANT_05: { id: "SK_PLANT_05", name: "Aussaat", archetype: "plant", keywords: ["growth"],
     desc: "Gewinnt eine grüne Karte, sät sie beide Nachbarn: +1 Wachstum je Seite. Der Breiten-Motor.", aussaat: true },
   SK_PLANT_06: { id: "SK_PLANT_06", name: "Flugsamen", archetype: "plant", keywords: ["growth"],
-    desc: "Verstärker: Aussaat überspringt schon grüne Karten und sät die nächste noch-graue dahinter.", flugsamen: true },
+    desc: "Verstärker: Aussaat überspringt schon grüne Karten und sät die nächste noch-graue dahinter.", enabler: "SK_PLANT_05", flugsamen: true },
   SK_PLANT_07: { id: "SK_PLANT_07", name: "Setzlingsbeet", archetype: "plant", keywords: ["growth"],
     desc: "Die niedrigste Karte je Segment startet den Lauf mit +3 Wachstum Vorsprung. Anschub für schwache Setzlinge.", setzlingsbeet: true },
   SK_PLANT_08: { id: "SK_PLANT_08", name: "Zäher Halm", archetype: "plant", keywords: ["growth"],
@@ -218,7 +218,7 @@ export const SKILL_DEFS = {
   SK_PLANT_10: { id: "SK_PLANT_10", name: "Blüte", archetype: "plant", keywords: ["green", "score"],
     desc: "Gewinnt eine grüne Karte, deren Nachbarn schon grün sind, blüht sie: +Score je grüner Karte im Segment.", bluete: true },
   SK_PLANT_11: { id: "SK_PLANT_11", name: "Blütezeit", archetype: "plant", keywords: ["green", "score", "formation"],
-    desc: "Verstärker: Blüte-Score ×2, wenn die Karte in einer Formation gewinnt.", bluetezeit: true },
+    desc: "Verstärker: Blüte-Score ×2, wenn die Karte in einer Formation gewinnt.", enabler: "SK_PLANT_10", bluetezeit: true },
   // Linie 4 — Überwucherung (Mono-Grün-Payoff)
   SK_PLANT_12: { id: "SK_PLANT_12", name: "Photosynthese", archetype: "plant", keywords: ["green", "formation"],
     desc: "Grüne Karten in einer Formation geben zusätzlich ×1,15 Score. Der Grün-Formations-Multiplikator.", photosynthese: true },
@@ -230,9 +230,9 @@ export const SKILL_DEFS = {
   SK_PLANT_15: { id: "SK_PLANT_15", name: "Ausläufer", archetype: "plant", keywords: ["green", "colonize"],
     desc: "Gewinnt eine grüne Karte, kolonisiert sie die niedrigste Gegnerkarte. Besiegst du eine kolonisierte Karte, erntest du +Wachstum.", auslaeufer: true },
   SK_PLANT_16: { id: "SK_PLANT_16", name: "Rhizom", archetype: "plant", keywords: ["colonize"],
-    desc: "Verstärker: Kolonisiert aggressiver (früher & breiter) und beim Ernten den Gegner-Nachbarn mit.", rhizom: true },
+    desc: "Verstärker: Kolonisiert aggressiver (früher & breiter) und beim Ernten den Gegner-Nachbarn mit.", enabler: "SK_PLANT_15", rhizom: true },
   SK_PLANT_17: { id: "SK_PLANT_17", name: "Erntedank", archetype: "plant", keywords: ["colonize", "score"],
-    desc: "Verstärker: Erntest du mit einer reifen Karte, gibt es zusätzlich großen Flat-Score.", erntedank: true },
+    desc: "Verstärker: Erntest du mit einer reifen Karte, gibt es zusätzlich großen Flat-Score.", enabler: "SK_PLANT_15", erntedank: true },
   // Legendäre (Verstärker, meist mit Nachteil)
   SK_PLANT_L01: { id: "SK_PLANT_L01", name: "Weltenbaum", archetype: "plant", legendary: true, keywords: ["growth"],
     desc: "Am Ende jedes Durchlaufs wächst der ganze Wald: jede Karte +1 Wachstum je 10 grüne im Feld. Ruht ohne Garten, reift mit wachsendem Feld immer mehr Nachzügler.", weltenbaum: true },
@@ -542,7 +542,10 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   const guaranteed = new Set(); // garantierte Konsumenten-Slots — vor dem Legendär-Ersatz geschützt
   let anyConsumerGuaranteed = false; // #191: schon EIN Konsument fürs Erst-Angebot fixiert? (nur einer insgesamt)
   for (const arch of chosen) {
-    let pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)).map((s) => s.id), rng);
+    // Enabler-Gating (Anti-Pech): ein Verstärker-Skill (s.enabler) wird NUR angeboten, wenn seine Basis gehalten wird —
+    // sonst ist er ein toter Pick (Variety-Befund: der schwache Tail sind fast durchweg ungegatete Verstärker).
+    let pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)
+      && (!s.enabler || (owned || []).includes(s.enabler))).map((s) => s.id), rng);
     if (gateLeg) { legPool.push(...pool.filter(isLeg)); pool = pool.filter((id) => !isLeg(id)); } // Legendäre nur über den Roll
     // Garantierten Konsumenten dieses Archetyps nach vorne ziehen (deterministisch, kein zusätzlicher rng-Zug: die
     // Pool-Reihenfolge stammt schon aus dem Shuffle; perArch ≥ 1 → Slot 0 wird gewählt). Zwei Auslöser:

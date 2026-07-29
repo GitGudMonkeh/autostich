@@ -197,16 +197,17 @@ export function resolveTrick(state, rng = Math.random) {
   // ---- Feuer-Rework (v0): Vor-Stich-Effekte (Schmelzpunkt-Drip, Glühende Klinge, Feuerwalze, Rückzündung-Wert).
   let heat = state.heat || null;
   let fireValueBonus = 0;
+  let meltScore = 0; // Schmelzpunkt-Drip dieses Stichs — im Sieg-Block als Flat ausgezahlt (Ledger-konsistent, s. u.)
   const suncore = fireFlag(skills, "suncore"); // Sonnenkern: +Score je verbrauchtem Hitzepunkt (Konsum-Verstärker)
   // Phönixfeuer: verbrauchte Hitze (value ≤ 0) entzündet 1×/Durchlauf neu (+40 % zurück). Nach jedem Konsum geprüft.
   const reignite = (h) => (fireFlag(skills, "phoenix") && !h.phoenixUsed && h.value <= 0)
     ? { ...h, value: Math.round(C.PHOENIX_REIGNITE * h.max), phoenixUsed: true } : h;
   if (heat && heat.active) {
-    // Schmelzpunkt (Konsument, Drip): vor JEDEM Stich −10 % Hitze für +5 Score/Punkt (Sonnenkern +5/Punkt extra).
-    // Flacher Drip, sieg-unabhängig (nicht durch Serie/Formation multipliziert).
+    // Schmelzpunkt (Konsument, Drip): vor JEDEM Stich −10 % Hitze; der Score zahlt sich im SIEG-Block aus (+5/Punkt,
+    // Sonnenkern +5/Punkt) — so bleibt er im Per-Karte-Ledger attribuiert (kein loser score+= außerhalb von gained).
     if (heatConsumerOf(skills) === "melt" && heat.value >= C.MELT_COST) {
       heat = { ...heat, value: heat.value - C.MELT_COST };
-      score += C.MELT_COST * (C.MELT_PER_HEAT + (suncore ? C.SUNCORE_PER_HEAT : 0));
+      meltScore = C.MELT_COST * (C.MELT_PER_HEAT + (suncore ? C.SUNCORE_PER_HEAT : 0));
       heat = reignite(heat);
     }
     // Glühende Klinge: +Wert je Hitze-Stufe (+Sonnenzorn). Feuerwalze: aktueller Stapel (nur ab 40 % Hitze aufgebaut).
@@ -285,7 +286,7 @@ export function resolveTrick(state, rng = Math.random) {
                    hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung (D15)
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
     // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überlauf), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
-    let fireFlat = 0;
+    let fireFlat = meltScore; // Schmelzpunkt-Drip (im Vor-Stich verbrauchte Hitze) zahlt sich hier als Flat aus (nur bei Sieg)
     if (heat && heat.active) {
       const fmargin = pValue - oValue;
       // Hitzegewinn: Marge (Glut) + Zunder + Feuersturm (Serie) + Rückzündung (Rückstand des letzten Verlusts).
