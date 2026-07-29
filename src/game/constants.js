@@ -176,7 +176,7 @@ export const CONFLAG_PER_HEAT = 12;     // Flächenbrand: +12 Score je verbrannt
 export const MELT_COST        = 10;     // Schmelzpunkt: −10 % Hitze je Stich                // v0 — tunebar
 export const MELT_PER_HEAT    = 5;      // Schmelzpunkt: +5 Score je verbrauchtem Hitzepunkt // v0 — tunebar
 // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
-export const BRAND_VALUE      = 2;      // Brandmal: brandmarkierte Gegnerkarte −2 Wert       // v0 — tunebar
+export const BRAND_VALUE      = 1;      // Brandmal: brandmarkierte Gegnerkarte −1 Wert (v0.1: 2→1, Brand-Winrate-Tail zähmen) // tunebar
 export const BRAND_ASH        = 1;      // Brandmal/Lauffeuer: +1 Asche je Brand              // v0 — tunebar
 export const BRAND_SPREAD_VALUE = 1;    // Lauffeuer: Übergriff auf eine Nachbarkarte −1 Wert // v0 — tunebar
 export const FORGE_COST       = 5;      // Ascheschmiede: 5 Asche je Schmiedung               // v0 — tunebar
@@ -207,6 +207,7 @@ export const GLEITFROST_EXTRA_SWAP = 1;// Gleitfrost: 2. kostenloser Frosttausch
 export const ICE_LAYER_VALUE   = 1;    // je Schicht +1 Dauerwert (Gletscher macht es superlinear)        // v0 — tunebar
 export const ICE_LAYER_MAX     = 12;   // Deckel wirksamer Schichten je Karte (Wert/Eisdruck/Vergletscherung) // Anti-Runaway v0.1: Bank-Pfad → 32 Schichten/Karte
 export const ICE_ABLAGE_A_LAYER = 1;   // Ablage A: Frostkarte siegt in ≥1 Formation → +1 Schicht          // v0
+export const ICE_ABLAGE_SCORE_PER_LAYER = 8; // Formations-Sieg einer Frostkarte: +Flat-Score je (gedeckelter) Schicht — „tiefe Pfeiler scoren groß" // v0.1 Eis-Score-Hebel
 export const PERMAFROST_LAYER_BONUS = 1; // Permafrost (L): +1 Schicht je Ablage                           // v0
 export const BESTAENDIGKEIT_LAYER = 1; // Beständigkeit: Sieg in Formation wie im Vordurchlauf → +1 Schicht // v0
 export const VERSCHRAENKUNG_LAYERS = 2;// Verschränkung: Sieg in ≥3 Formationen → +2 Schichten             // v0 — tunebar

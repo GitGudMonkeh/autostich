@@ -335,6 +335,10 @@ export function resolveTrick(state, rng = Math.random) {
       const capLayers = Math.min(myLayers, C.ICE_LAYER_MAX); // Anti-Runaway v0.1: wirksame Schichten für Eisdruck/Vergletscherung gedeckelt
       // Stillstand: Frostkarte siegt in ≥1 Formation → +200 Flat (flacher Früh-Support).
       if (hasStandstill(skills) && inFormation) iceFlat += C.STILLSTAND_SCORE;
+      // Eis-Score-Hebel (v0.1): tiefe Schichten zahlen bei JEDEM Frost-Sieg in Score — „tiefe Pfeiler scoren groß".
+      // NICHT formations-gebunden: Eis friert niedrige Karten (Frostwahl), die selten in Formation siegen; die Schichten
+      // machen sie stark genug zum Siegen, DANN zahlen sie. Alle Eis-Builds profitieren.
+      if (capLayers > 0) iceFlat += capLayers * C.ICE_ABLAGE_SCORE_PER_LAYER;
       // Ablage A: Sieg in ≥1 Formation → +1 Schicht (+Permafrost/+Beständigkeit/+Verschränkung). Eisanker garantiert eine auch ohne volle Formation.
       let addLayers = 0;
       if (inFormation) {
