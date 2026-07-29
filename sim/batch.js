@@ -120,4 +120,7 @@ else if (mode === "eval") {
 } else if (mode === "pacing") {
   const { runPacing } = await import("./pacing.js"); // S6: lazy, wie eval
   runPacing({ arg, seed0, c, f, write });
-} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing)`); process.exit(1); }
+} else if (mode === "balance") {
+  const { runBalance } = await import("./balance.js"); // Balance-Diagnose A (reine Fraktionen vs. Mix)
+  runBalance({ arg, seed0 });
+} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance)`); process.exit(1); }
