@@ -126,4 +126,7 @@ else if (mode === "eval") {
 } else if (mode === "variety") {
   const { runVariety } = await import("./variety.js"); // Build-Variety je Fraktion (Skill-Lift)
   runVariety({ arg, seed0 });
-} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety)`); process.exit(1); }
+} else if (mode === "cross") {
+  const { runCross } = await import("./cross.js"); // Cross-Archetype: gemischte Builds (2–3 Fraktionen) vs. rein
+  runCross({ arg, seed0 });
+} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety|cross)`); process.exit(1); }
