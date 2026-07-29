@@ -14,6 +14,7 @@
 import { runOne } from "./run.js";
 import { randomPolicy } from "./policies/random.js";
 import { ucbPolicy } from "./policies/ucb.js";
+import { factionPolicy } from "./policies/faction.js";
 import { newMemory } from "./memory.js";
 import { MAX_CYCLES, TRICKS_PER_CYCLE } from "../src/game/constants.js";
 
@@ -90,9 +91,6 @@ export function runPacing({ arg, seed0, c, f, write }) {
     return runs;
   };
 
-  const random = collect(() => ({ policy: randomPolicy() }), seed0, false);
-  const ucb = collect(() => ({ policy: ucbPolicy({ c }) }), 10_000_000 + seed0, true);
-
   const report = (label, runs) => {
     const m = metrics(runs);
     console.log(`\n=== ${label} — ${N} Runs ===`);
@@ -108,6 +106,19 @@ export function runPacing({ arg, seed0, c, f, write }) {
     return m;
   };
 
+  // --factions 1 → Pacing JE FRAKTION (fraktions-biased) statt random+ucb; Mix als Referenz.
+  if (arg("--factions", "")) {
+    const payload = { mode: "pacing-factions", runs: N, seedFrom: seed0, cycles: CYCLES };
+    for (const [label, target] of [["FEUER", "fire"], ["BLITZ", "lightning"], ["EIS", "ice"]])
+      payload[target] = report(label, collect(() => ({ policy: factionPolicy(target) }), seed0, false));
+    payload.mix = report("MIX (Random-Referenz)", collect(() => ({ policy: randomPolicy() }), seed0, false));
+    write(payload);
+    console.log(`\nHinweis: Ziel je Fraktion = „letzte 10" p50 ~30–33 % (Typ-Run nicht spät-lastig), by-C30 ≥ ~55 %.`);
+    return payload;
+  }
+
+  const random = collect(() => ({ policy: randomPolicy() }), seed0, false);
+  const ucb = collect(() => ({ policy: ucbPolicy({ c }) }), 10_000_000 + seed0, true);
   const payload = {
     mode: "pacing", runs: N, seedFrom: seed0, cycles: CYCLES,
     random: report("RANDOM (naiver Build)", random),
