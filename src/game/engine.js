@@ -207,7 +207,7 @@ export function resolveTrick(state, rng = Math.random) {
     // Sonnenkern +5/Punkt) — so bleibt er im Per-Karte-Ledger attribuiert (kein loser score+= außerhalb von gained).
     if (heatConsumerOf(skills) === "melt" && heat.value >= C.MELT_COST) {
       heat = { ...heat, value: heat.value - C.MELT_COST };
-      meltScore = C.MELT_COST * (C.MELT_PER_HEAT + (suncore ? C.SUNCORE_PER_HEAT : 0));
+      meltScore = C.MELT_COST * C.MELT_PER_HEAT;
       heat = reignite(heat);
     }
     // Glühende Klinge: +Wert je Hitze-Stufe (+Sonnenzorn). Feuerwalze: aktueller Stapel (nur ab 40 % Hitze aufgebaut).
@@ -231,7 +231,9 @@ export function resolveTrick(state, rng = Math.random) {
   // Familien-Wertboni (Kategorie B, Rarität #167) laufen ADDITIV neben den flachen Perk-cardBonus-Hooks —
   // gleicher Kontext (inkl. pValueBase = Dauerwert der Karte), nur die aktive Familien-Stufe zählt.
   const familyValueBonus = familySumHook(familyTiers, "cardBonus", { ...ctx, pValueBase: pCard.value });
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + l11Bonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue;
+  // Damaststahl (L, Underdog): geschmiedete Karten kämpfen mit +Wert → die tiefen Schmiede-Karten schlagen über ihrem Gewicht.
+  const damascusCombat = (fireFlag(skills, "damascus") && (forged[pCard.id] || 0) > 0) ? C.DAMASCUS_COMBAT : 0;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + l11Bonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + damascusCombat;
   // L11: den temporären Wertbonus dieser Karte an Position 20 für Position 40 merken.
   let newPos20Bonus = pos20Bonus;
   if (actualPos === 19) newPos20Bonus = pValue - pCard.value;
@@ -296,7 +298,7 @@ export function resolveTrick(state, rng = Math.random) {
       // Weißglut: der über HEAT_MAX hinaus überlaufende Hitzeanteil wird zu Score (Sonnenzorn ×2).
       const overflow = Math.max(0, raw - heat.max);
       if (overflow > 0) fireFlat += whiteHeatScore(overflow, skills, heat.max);
-      heat = { ...heat, value: Math.min(heat.max, raw) };
+      heat = { ...heat, value: Math.min(heat.max, raw), peak: Math.max(heat.peak || 0, Math.min(heat.max, raw)) }; // peak = Sonnenzorn
       fireDividendHeat = heat.value; // gehaltene Hitze NACH diesem Sieg, VOR evtl. Flächenbrand-Verbrauch → Glutdividende
       // Feuer-Score (Grund-Payoff): (Vorsprung−OFFSET)×Basis, ×Verbrennung (≥8/≥12), ×Sonnenzorn (≥80 %). Basis für Funkenflug.
       const fireBaseFlat = fireScoreFor(fmargin, skills, heat.value);
@@ -304,7 +306,7 @@ export function resolveTrick(state, rng = Math.random) {
       // Flächenbrand (Konsument, Burst): Sieg ab 80 % Hitze verbrennt die GANZE Hitze → +12 Score/Punkt (Sonnenkern +5/Punkt).
       if (heatConsumerOf(skills) === "conflagration" && heat.value >= C.CONFLAG_MIN_HEAT) {
         const burned = heat.value;
-        fireFlat += burned * (C.CONFLAG_PER_HEAT + (suncore ? C.SUNCORE_PER_HEAT : 0));
+        fireFlat += burned * C.CONFLAG_PER_HEAT;
         heat = reignite({ ...heat, value: 0 }); // Phönixfeuer: verbrauchte Hitze entzündet 1×/Durchlauf neu
       }
       // Feuerwalze: nächste Karte +1 Wert (bis +3) — nur ab 40 % Hitze aufgebaut.
@@ -507,7 +509,10 @@ export function resolveTrick(state, rng = Math.random) {
     const coreMult = posForm.coreFactor || 1;                                          // F-L1 Formationskern
     const formBaseMult = (posForm.baseMult != null ? posForm.baseMult : formationMult); // echte Formationen (inkl. Überlappung)
     const formMult = formBaseMult * statFormFactor(statFormMult, activeFormationCount(posForm)) * iceFormMult * plantFormMult; // Formations-Stat ×Anzahl AKTIVER Formationen an der Siegposition + Eisdruck/Architekt + Photosynthese
-    scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult * afterglowMult * coreMult;
+    // Sonnenzorn (L): dauerhafter Score-Multiplikator ∝ HÖCHSTER je gehaltener Hitze (heat.peak) — auf den GESAMTEN Sieg-Score
+    // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
+    const sunwrathMult = (fireFlag(skills, "sunwrath") && heat && heat.active) ? (1 + (heat.peak || 0) * C.SUNWRATH_PEAK_STEP) : 1;
+    scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult * afterglowMult * coreMult * sunwrathMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
     // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
@@ -523,8 +528,14 @@ export function resolveTrick(state, rng = Math.random) {
     // dem FEUER-BEKENNTNIS (Anteil Feuer-Skills an den Slots), damit ein 2-Skill-Splash die Dividende nicht in
     // High-Winrate-Kombis (Eis/Pflanze) trägt → hält Spezialisieren ≈ Mischen (cross-health).
     const fireCommit = Math.min(1, activeFireCount(skills) / C.SKILL_SLOTS);
-    const fireDirect = C.FIRE_HEAT_DIVIDEND > 0 && fireDividendHeat > 0 && fireCommit > 0
+    let fireDirect = C.FIRE_HEAT_DIVIDEND > 0 && fireDividendHeat > 0 && fireCommit > 0
       ? Math.min(fireDividendHeat, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * fireCommit : 0;
+    // Damaststahl (L): DIREKTER Score je Sieg ∝ GESAMTEM geschmiedeten Wert im Deck (am Stack vorbei) — eine „Damast-
+    // Dividende", die die Schmiede-Investition bei JEDEM Sieg auszahlt (nicht nur wenn die geschmiedete Karte gewinnt).
+    if (fireFlag(skills, "damascus")) {
+      const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
+      if (totalForged > 0) fireDirect += totalForged * C.DAMASCUS_DIRECT;
+    }
     gained += fireDirect;
     score += gained;
     breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, fireDirect, total: gained };
@@ -717,8 +728,11 @@ export function resolveTrick(state, rng = Math.random) {
     // ---- Feuer-Rework (v0): Hitzeverlust (Glutbett), Feuerwalze zurücksetzen, Funkenflug halbieren, Rückstand merken.
     if (heat && heat.active) {
       const deficit = oValue - pValue;
-      const loss = heatLossFor(deficit, skills, heat.value); // heat.value = Hitze VOR dem Verlust (Glutbett-Schwelle)
-      heat = { ...heat, value: Math.max(0, heat.value - loss), fireRoll: 0,
+      // Phönixfeuer (L): Niederlagen GEBEN Hitze (+je Rückstandspunkt) statt sie zu nehmen — Anti-fragil/Konsistenz.
+      const phoenixGain = fireFlag(skills, "phoenix") ? deficit * C.PHOENIX_LOSS_HEAT : 0;
+      const loss = phoenixGain ? 0 : heatLossFor(deficit, skills, heat.value); // heat.value = Hitze VOR dem Verlust (Glutbett-Schwelle)
+      const nv = Math.min(heat.max, Math.max(0, heat.value - loss) + phoenixGain);
+      heat = { ...heat, value: nv, peak: Math.max(heat.peak || 0, nv), fireRoll: 0,
                sparkStore: Math.floor((heat.sparkStore || 0) * C.SPARKFLIGHT_LOSS_KEEP), // Funkenflug: Niederlage halbiert
                lastLossDeficit: deficit }; // Rückzündung: Rückstand für den nächsten Sieg merken
     }
@@ -804,7 +818,7 @@ export function resolveTrick(state, rng = Math.random) {
           const forgedCount = Object.keys(newForged).length;
           let lowId = null, lowV = Infinity;
           for (const c of deck) {
-            if ((newForged[c.id] || 0) >= C.FORGE_MAX_PER_CARD) continue;               // Per-Karte-Deckel
+            if ((newForged[c.id] || 0) >= C.FORGE_MAX_PER_CARD && !fireFlag(skills, "damascus")) continue; // Per-Karte-Deckel (Damaststahl hebt ihn auf)
             if (!(newForged[c.id] > 0) && forgedCount >= C.FORGE_MAX_CARDS) continue;    // keine NEUE Karte über dem Kartendeckel
             if (c.value < lowV) { lowV = c.value; lowId = c.id; }
           }
@@ -814,13 +828,27 @@ export function resolveTrick(state, rng = Math.random) {
           newForged = { ...newForged, [lowId]: (newForged[lowId] || 0) + C.FORGE_VALUE };
         }
       }
-      // Damaststahl: geschmiedete Karten legen jeden Durchlauf +1 dauerhaften Wert nach (Asche verfällt ohnehin nie).
-      if (fireFlag(skills, "damascus") && Object.keys(newForged).length) {
-        const grown = { ...newForged };
-        deck = deck.map((c) => (grown[c.id] ? { ...c, value: c.value + C.DAMASCUS_FORGE_GROWTH } : c));
-        for (const id of Object.keys(grown)) grown[id] += C.DAMASCUS_FORGE_GROWTH;
-        newForged = grown;
+      // Damaststahl (L): SELBST-Schmiede (braucht Ascheschmiede/Asche NICHT) — nimmt je Durchlauf die niedrigste noch
+      // nicht geschmiedete Karte auf, dann wachsen ALLE geschmiedeten Karten weiter (Asche verfällt ohnehin nie).
+      if (fireFlag(skills, "damascus")) {
+        let lowId = null, lowV = Infinity;
+        if (Object.keys(newForged).length < C.DAMASCUS_MAX_FORGED) // Deckel: nur bis MAX_FORGED neue Karten aufnehmen
+          for (const c of deck) if (!(newForged[c.id] > 0) && c.value < lowV) { lowV = c.value; lowId = c.id; }
+        if (lowId != null) {
+          deck = deck.map((c) => (c.id === lowId ? { ...c, value: c.value + C.FORGE_VALUE } : c));
+          newForged = { ...newForged, [lowId]: (newForged[lowId] || 0) + C.FORGE_VALUE };
+        }
+        if (Object.keys(newForged).length) {
+          const grown = { ...newForged };
+          deck = deck.map((c) => (grown[c.id] ? { ...c, value: c.value + C.DAMASCUS_FORGE_GROWTH } : c));
+          for (const id of Object.keys(grown)) grown[id] += C.DAMASCUS_FORGE_GROWTH;
+          newForged = grown;
+        }
       }
+      // Sonnenkern (L): endet der Durchlauf mit hoher Hitze, brennt sie sich dauerhaft in ALLE Karten UNTER dem Deckel (+Wert) →
+      // hebt über den Run den Deck-BODEN bis SONNENKERN_CARD_CAP (selbst-limitierend, kein Auto-Sieg-Runaway) = stetige Win-Condition.
+      if (suncore && heat.value >= C.SONNENKERN_MIN_HEAT)
+        deck = deck.map((c) => (c.value < C.SONNENKERN_CARD_CAP ? { ...c, value: c.value + C.SONNENKERN_VALUE } : c));
       heat = { ...heat, phoenixUsed: false }; // Phönixfeuer: neuer Durchlauf → wieder verfügbar
     }
     // ---- Pflanze-Fraktion (v0): Weltenbaum — am Durchlauf-Ende wächst der ganze Wald (+1 Wachstum je 10 grüne im Feld); Nachzügler reifen.

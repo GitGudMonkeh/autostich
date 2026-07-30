@@ -129,15 +129,15 @@ export const SKILL_DEFS = {
     desc: "Geschmiedete Karten geben bei Sieg +20 Score je geschmiedetem Wert.", enabler: "SK_FIRE_15", glutstahl: true },
   SK_FIRE_17: { id: "SK_FIRE_17", name: "Schmelzofen", archetype: "fire", keywords: ["heat", "brand", "forge"],
     desc: "Ab 50 % Hitze brennen Brände stärker (−1 Wert, +1 Asche) und Schmieden kostet 1 Asche weniger.", schmelzofen: true },
-  // Legendäre (Verstärker, kein Motor)
-  SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat", "consume"],
-    desc: "Jede Konsum-Auslösung gibt zusätzlich +5 Score je verbrauchtem Hitzepunkt (Flächenbrand +500). Ohne Konsument wirkungslos.", suncore: true },
-  SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat", "consume"],
-    desc: "Ist deine Hitze verbraucht, entzündet sie sich neu: +40 % zurück, einmal pro Durchlauf.", phoenix: true },
+  // Legendäre (umgeformt: dauerhaft/compoundend/direkt — je eine eigene Achse & Feuer-Playstyle)
+  SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat"],
+    desc: "Beendest du einen Durchlauf mit hoher Hitze, brennt sie sich dauerhaft in deine tiefen Karten (+Wert bis zum Deckel) — dein Deck wird über den Run heiß & stark. Halte-Motor.", suncore: true },
+  SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
+    desc: "Niederlagen nehmen dir keine Hitze — sie GEBEN welche (je Rückstandspunkt). Aus jeder Niederlage steigst du heißer auf; zusätzlich entzündet verbrauchte Hitze 1×/Durchlauf neu.", phoenix: true },
   SK_FIRE_L03: { id: "SK_FIRE_L03", name: "Sonnenzorn", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: "Ab 80 % Hitze sind alle Feuer-Effekte verstärkt: Glühende Klinge +1 Stufe, Weißglut ×2, Feuer-Score ×1,25.", sunwrath: true },
+    desc: "Dein gesamter Sieg-Score wächst dauerhaft mit der HÖCHSTEN Hitze, die du je gehalten hast (Peak 100 → bis ×2). Treib die Hitze hoch, dann bleibt der Zorn.", sunwrath: true },
   SK_FIRE_L04: { id: "SK_FIRE_L04", name: "Damaststahl", archetype: "fire", legendary: true, keywords: ["heat", "forge"],
-    desc: "Asche verfällt nie; geschmiedete Karten legen jeden Durchlauf +1 dauerhaften Wert nach.", damascus: true },
+    desc: "Schmiedet selbst (ohne Asche) deine tiefsten Karten und gibt geschmiedeten Karten einen Kampf-Bonus — sie schlagen über ihrem Gewicht. Jeder Sieg zahlt eine Damast-Dividende je Schmiedewert. Asche verfällt nie.", damascus: true },
 
   // ---- Eis-Rework (v0) — „Gletscher: Architektur × Permanenz." Spine = SCHICHTEN je Frostkarte (permanent,
   //      unverlierbar). Kein Konsument. Flags in engine.js/reducer.js/formations.js gelesen. 21 Skills auf 7 Linien.
@@ -310,7 +310,7 @@ export function initLightning() {
 // Frischer Hitze-Substate — inaktiv. Wird beim ersten Feuer-Skill aktiviert (Reducer).
 // fireRoll = Feuerwalze-Stapel · sparkStore = Funkenflug-Speicher · phoenixUsed = Phönixfeuer (1×/Durchlauf).
 export function initHeat() {
-  return { active: false, value: 0, max: C.HEAT_MAX, fireRoll: 0, sparkStore: 0, phoenixUsed: false };
+  return { active: false, value: 0, max: C.HEAT_MAX, fireRoll: 0, sparkStore: 0, phoenixUsed: false, peak: 0 };
 }
 
 // Anzahl gehaltener Feuer-Skills (Grundmechanik zählt nicht) & ob ein Feuer-Flag gehalten wird.
@@ -346,7 +346,7 @@ export function heatGainFor(margin, skills, ctx = {}) {
 // Hitzeverlust bei Niederlage (%): Basis min(Rückstand,10). Glutbett: ×0,5, unter 30 % Hitze gar keiner.
 // `heatValue` = Hitze VOR dem Verlust.
 export function heatLossFor(deficit, skills, heatValue = 0) {
-  let l = Math.min(deficit, C.HEAT_LOSS_MAX);
+  let l = Math.min(deficit, C.HEAT_LOSS_MAX) + heatValue * C.HEAT_LOSS_PCT; // Basis-Verlust + prozentuale Abkühlung (hält hohe Hitze nicht-trivial: mehr Verlust wenn heiß)
   if (fireFlag(skills, "glutbett")) {
     if (heatValue < C.GLUTBETT_FREE_BELOW) return 0;
     l *= C.GLUTBETT_MULT;
@@ -359,32 +359,28 @@ export function verbrennungMult(margin) {
   if (margin >= C.VERBRENNUNG_T1_MARGIN) return C.VERBRENNUNG_T1_MULT;
   return 1;
 }
-// Feuer-Flat-Score bei Sieg: (Vorsprung−FIRE_MARGIN_OFFSET) × (25 + 5×(FeuerSkills−1)), dann Verbrennung (×1,5/×2)
-// und Sonnenzorn (×1,25 ab 80 % Hitze). 0 ohne Feuer-Skill. `heatValue` = Hitze für die Sonnenzorn-Schwelle.
+// Feuer-Flat-Score bei Sieg: (Vorsprung−FIRE_MARGIN_OFFSET) × (25 + 5×(FeuerSkills−1)), dann Verbrennung (×1,5/×2).
+// 0 ohne Feuer-Skill. (Sonnenzorn wirkt jetzt als peak-hitze-Multiplikator in der Engine, nicht mehr hier.)
 export function fireScoreFor(margin, skills, heatValue = 0) {
   const n = activeFireCount(skills);
   if (n === 0 || margin < C.HEAT_MIN_MARGIN) return 0;
   let s = (margin - C.FIRE_MARGIN_OFFSET) * (C.FIRE_SCORE_BASE + C.FIRE_SCORE_PER_SKILL * (n - 1));
   if (fireFlag(skills, "verbrennung")) s *= verbrennungMult(margin);
-  if (fireFlag(skills, "sunwrath") && heatValue >= C.SUNWRATH_MIN_HEAT) s *= C.SUNWRATH_FIRESCORE_MULT;
   return Math.round(s);
 }
-// Glühende-Klinge-Wertbonus nach Hitze (Stufen +1/+2/+3), +Sonnenzorn-Stufe (ab 80 % Hitze).
+// Glühende-Klinge-Wertbonus nach Hitze (Stufen +1/+2/+3). Reiner Nicht-Legendär-Skill.
 export function glowingValueFor(heatValue, skills) {
   if (!fireFlag(skills, "glowingBlade")) return 0;
   let v = 0;
   if (heatValue >= C.GLOWING_T1_HEAT) v = C.GLOWING_T1_VALUE;
   if (heatValue >= C.GLOWING_T2_HEAT) v = C.GLOWING_T2_VALUE;
   if (heatValue >= C.GLOWING_T3_HEAT) v = C.GLOWING_T3_VALUE;
-  if (v > 0 && fireFlag(skills, "sunwrath") && heatValue >= C.SUNWRATH_MIN_HEAT) v += C.SUNWRATH_GLOWING_BONUS;
   return v;
 }
-// Weißglut-Score aus Hitze-Überlauf: überlaufende Punkte × 10, Sonnenzorn ×2 (ab 80 % Hitze).
+// Weißglut-Score aus Hitze-Überlauf: überlaufende Punkte × 10. Reiner Nicht-Legendär-Skill.
 export function whiteHeatScore(overflow, skills, heatValue = 0) {
   if (overflow <= 0 || !fireFlag(skills, "whiteHeat")) return 0;
-  let per = C.WHITEHEAT_PER_POINT;
-  if (fireFlag(skills, "sunwrath") && heatValue >= C.SUNWRATH_MIN_HEAT) per *= C.SUNWRATH_WHITEHEAT_MULT;
-  return overflow * per;
+  return overflow * C.WHITEHEAT_PER_POINT;
 }
 // Schmieden: Asche-Kosten je Schmiedung (Schmelzofen-Rabatt ab 50 % Hitze, min 1).
 export function forgeCostFor(skills, heatValue = 0) {

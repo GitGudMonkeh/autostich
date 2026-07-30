@@ -126,7 +126,7 @@ export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendarie
 // Legendär-Roll (Shop-Spec §10 P5/P6): expliziter Wurf vor jedem Perk-/Skill-Angebot. Bei Erfolg wird genau
 // EIN Legendäres erzwungen, sonst enthält das Angebot keins. Chance = Basis + Bonus (P5/P6, je +5 pp), Bonus-Cap. [TUNING]
 export const PERK_LEGENDARY_BASE       = 0.03; // Basis-Legendär-Chance Perk-Angebot [0,08→0,03]
-export const SKILL_LEGENDARY_BASE      = 0.03; // Basis-Legendär-Chance Skill-Angebot [0,08→0,03]
+export const SKILL_LEGENDARY_BASE      = envNum("SIM_SKILL_LEGENDARY_BASE", 0.03); // Basis-Legendär-Chance Skill-Angebot [0,08→0,03; Sim-tunebar für Legendär-Messung]
 export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P6): max +15 pp
 
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
@@ -168,7 +168,7 @@ export const DAUERSTROM_PER_STREAK    = 3;    // Dauerstrom: je 3 Serienpunkte +
 export const DAUERSTROM_MAX           = 3;    // Dauerstrom: … höchstens +3 Ladung/Sieg                             // v0 — tunebar
 export const WETTERLEUCHTEN_THRESHOLD = 5;    // Wetterleuchten: bei jeder 5. Serienstufe ionisieren                // v0
 export const WETTERLEUCHTEN_COUNT     = 2;    // Wetterleuchten: … so viele Karten                                  // v0 — tunebar
-export const DOPPELENTLADUNG_FACTOR   = 2;    // Doppelentladung (L): Konsumenten feuern ×2 (Ionisierungs-Anzahl ×2) // v0
+export const DOPPELENTLADUNG_FACTOR   = envNum("SIM_DOPPELENTLADUNG_FACTOR", 3);    // Doppelentladung (L): Konsumenten feuern FACTOR-fach (Ionisierungs-Anzahl x FACTOR) [Legendaer-Buff v1: 2->3]
 export const DURCHSCHLAG_CRIT_MULT    = 0.25; // Durchschlag (L): volle Ionis. (5) + Crit → dauerhaft +0,25× Crit-Mult // v0 — tunebar
 export const DURCHSCHLAG_MULT_CAP     = 2.0;  // Durchschlag: Deckel des dauerhaften Crit-Mult-Bonus (Anti-Runaway v0.1: uncapped → +100× im Smoke)
 
@@ -181,8 +181,9 @@ export const DURCHSCHLAG_MULT_CAP     = 2.0;  // Durchschlag: Deckel des dauerha
 export const HEAT_MAX          = 100;  // Hitzemaximum (fix)
 export const HEAT_MIN_MARGIN   = envNum("SIM_HEAT_MIN_MARGIN", 3);    // Mindest-Wertvorsprung für margen-basierten Hitzegewinn & Feuer-Score [Sim-tunebar]
 export const HEAT_PER_POINT    = envNum("SIM_HEAT_PER_POINT", 1);    // % Hitze je (Vorsprung−2) [Sim-tunebar]
-export const HEAT_MARGIN_CAP   = 8;    // Deckel des effektiven Vorsprungs im Hitzegewinn (Late-Game-Runaway)
-export const HEAT_LOSS_MAX     = 10;   // max Hitzeverlust je Niederlage (%)
+export const HEAT_MARGIN_CAP   = envNum("SIM_HEAT_MARGIN_CAP", 8);    // Deckel des effektiven Vorsprungs im Hitzegewinn [Sim-tunebar]
+export const HEAT_LOSS_MAX     = envNum("SIM_HEAT_LOSS_MAX", 10);   // max Hitzeverlust je Niederlage (%) [Sim-tunebar: Kühlung fürs Halte-Playstyle]
+export const HEAT_LOSS_PCT     = envNum("SIM_HEAT_LOSS_PCT", 0.25); // zusätzl. Hitzeverlust je Niederlage = Anteil der AKTUELLEN Hitze — hält hohe Hitze nicht-trivial (beißt NUR bei hoher Hitze → Konsum-Builds unberührt; Halte-Playstyle muss Hitze durch Siege halten) [Fire-Heat-Fix]
 export const FIRE_SCORE_BASE   = envNum("SIM_FIRE_SCORE_BASE", 25);   // Feuer-Flat-Score je Punkt (erster Feuer-Skill) [Sim-tunebar]
 export const FIRE_SCORE_PER_SKILL = 5; // +Feuer-Flat je Punkt je weiterem Feuer-Skill    // v0 — tunebar
 export const FIRE_MARGIN_OFFSET = envNum("SIM_FIRE_MARGIN_OFFSET", 2); // Feuer-Score-Offset: s = (Vorsprung − OFFSET) × Basis; kleiner = knappe Siege zahlen (Floor-Hebel) [Sim-tunebar]
@@ -232,14 +233,22 @@ export const GLUTSTAHL_PER_VALUE = 12;  // Glutstahl: +Score je geschmiedetem We
 export const SCHMELZOFEN_MIN_HEAT = 50; // Schmelzofen: ab 50 % Hitze …                       // v0 — tunebar
 export const SCHMELZOFEN_BRAND_BONUS = 1;   // … Brände −1 extra Wert & +1 extra Asche         // v0 — tunebar
 export const SCHMELZOFEN_FORGE_DISCOUNT = 1;// … Schmieden kostet 1 Asche weniger              // v0 — tunebar
-// Legendäre (Verstärker, kein Motor)
-export const SUNCORE_PER_HEAT = 5;      // Sonnenkern: +5 Score je verbrauchtem Hitzepunkt (zusätzlich zum Konsum) // v0
-export const PHOENIX_REIGNITE = 0.40;   // Phönixfeuer: verbrauchte Hitze entzündet neu (+40 % zurück), 1×/Durchlauf // v0
-export const SUNWRATH_MIN_HEAT = 80;    // Sonnenzorn: ab 80 % Hitze sind alle Feuer-Effekte verstärkt … // v0 — tunebar
-export const SUNWRATH_GLOWING_BONUS  = 1;   // … Glühende Klinge +1 Stufe                      // v0 — tunebar
-export const SUNWRATH_WHITEHEAT_MULT = 2;   // … Weißglut ×2                                    // v0 — tunebar
-export const SUNWRATH_FIRESCORE_MULT = 1.25;// … Feuer-Score ×1,25                              // v0 — tunebar
-export const DAMASCUS_FORGE_GROWTH = 1; // Damaststahl: geschmiedete Karten +1 Dauerwert je Durchlauf (Asche verfällt nie) // v0
+// Legendäre — UMGEFORMT (dauerhaft/compoundend/direkt statt situativ), vier verschiedene Achsen.
+// Sonnenzorn (L) — SCORE-Mult ∝ HÖCHSTER je gehaltener Hitze (heat.peak): dauerhafter Feuer-Score-Multiplikator.
+export const SUNWRATH_PEAK_STEP    = envNum("SIM_SUNWRATH_PEAK_STEP", 0.010); // +GESAMT-Score je Peak-Hitze-% (Peak 100 → ×2,0) [Legendär-Umbau]
+// Sonnenkern (L) — WIN-CONDITION: endet ein Durchlauf mit hoher Hitze, brennt sie sich dauerhaft in ALLE Karten (+Wert).
+export const SONNENKERN_MIN_HEAT   = envNum("SIM_SONNENKERN_MIN_HEAT", 70);   // ab dieser End-Hitze brennt Sonnenkern ein [Legendär-Umbau]
+export const SONNENKERN_VALUE      = envNum("SIM_SONNENKERN_VALUE", 1);       // +Dauerwert je heißem Durchlauf (auf Karten unter dem Deckel) [Legendär-Umbau]
+export const SONNENKERN_CARD_CAP   = envNum("SIM_SONNENKERN_CARD_CAP", 7);    // nur Karten UNTER diesem Wert brennen ein → hebt den Deck-BODEN (selbst-limitierend, kein Auto-Sieg) [Legendär-Umbau]
+// Phönixfeuer (L) — KONSISTENZ: Niederlagen GEBEN Hitze (+je Rückstandspunkt) statt sie zu nehmen; + Reignite bei Konsum-0.
+export const PHOENIX_LOSS_HEAT     = envNum("SIM_PHOENIX_LOSS_HEAT", 8);      // +Hitze je Rückstandspunkt bei Niederlage (statt Verlust) [Legendär-Umbau]
+export const PHOENIX_REIGNITE      = envNum("SIM_PHOENIX_REIGNITE", 0.40);    // verbrauchte Hitze entzündet neu (Anteil zurück), 1×/Durchlauf
+// Damaststahl (L) — DIREKT-SCORE: geschmiedete Siegkarte → direkter Score ∝ geschmiedetem Wert (am Stack vorbei); Deckel entfällt; Asche verfällt nie.
+export const DAMASCUS_MAX_FORGED   = envNum("SIM_DAMASCUS_MAX_FORGED", 4);    // Selbst-Schmiede deckelt auf so viele Karten (gegen 60-Runden-Compounding) [Legendär-Umbau]
+export const DAMASCUS_FORGE_GROWTH = envNum("SIM_DAMASCUS_FORGE_GROWTH", 0);  // geschmiedete Karten +Dauerwert je Durchlauf (0 = kein Compounding) [Legendär-Umbau]
+export const DAMASCUS_DIRECT       = envNum("SIM_DAMASCUS_DIRECT", 16);        // direkter Score je Punkt GESAMT-Schmiedewert, je Sieg (Damast-Dividende) [Legendär-Umbau]
+export const DAMASCUS_COMBAT       = envNum("SIM_DAMASCUS_COMBAT", 5);        // Underdog: geschmiedete Karten kämpfen mit +Wert (schlagen über ihrem Gewicht) [Legendär-Umbau]
+// (Sonnenzorns alte ≥MIN_HEAT-Verstärkungen ausgebaut → Glühende Klinge/Weißglut sind jetzt reine Nicht-Legendär-Skills.)
 
 /* ============================================================
    EIS-REWORK v0 — „Was du richtig stellst, erstarrt für immer und wächst." Gletscher: Architektur × Permanenz.
@@ -254,7 +263,7 @@ export const ICE_LAYER_VALUE   = 1;    // je Schicht +1 Dauerwert (Gletscher mac
 export const ICE_LAYER_MAX     = 12;   // Deckel wirksamer Schichten je Karte (Wert/Eisdruck/Vergletscherung) // Anti-Runaway v0.1: Bank-Pfad → 32 Schichten/Karte
 export const ICE_ABLAGE_A_LAYER = 1;   // Ablage A: Frostkarte siegt in ≥1 Formation → +1 Schicht          // v0
 export const ICE_ABLAGE_SCORE_PER_LAYER = envNum("SIM_ICE_ABLAGE_SCORE_PER_LAYER", 12); // Frost-Sieg: +Flat-Score je (gedeckelter ≤12) Schicht [Balance: 20→12 — der v0.2-Buff 8→20 war solver-los fehlkalibriert (Eis sah schwach aus), mit Aufstellung korrigiert; Sim-tunebar]
-export const PERMAFROST_LAYER_BONUS = 1; // Permafrost (L): +1 Schicht je Ablage                           // v0
+export const PERMAFROST_LAYER_BONUS = envNum("SIM_PERMAFROST_LAYER_BONUS", 2); // Permafrost (L): +Schichten je Ablage [Legendär-Buff v1: 1→2]
 export const BESTAENDIGKEIT_LAYER = 1; // Beständigkeit: Sieg in Formation wie im Vordurchlauf → +1 Schicht // v0
 export const VERSCHRAENKUNG_LAYERS = 2;// Verschränkung: Sieg in ≥3 Formationen → +2 Schichten             // v0 — tunebar
 export const KAELTERESERVE_LAYER = 1;  // Kältereserve: Frostkarte verliert → +1 Schicht (bankt)           // v0
@@ -277,7 +286,7 @@ export const STILLSTAND_SCORE  = 200;  // Stillstand: +200 Flat, wenn eine Frost
 // Legendäre (Gletscher / Vergletscherung / Architekt)
 export const VERGLETSCHERUNG_COUNT     = 2; // Vergletscherung: so viele Gegnerkarten je Frost-Sieg          // v0
 export const VERGLETSCHERUNG_PER_LAYER = 1; // … −Wert je Schicht der Siegkarte (min 1)                      // v0 — tunebar
-export const ARCHITEKT_STEP    = 0.15; // Architekt: +15 % je zusätzlicher Frostkarte in derselben Spalte (pos%5) // v0 — tunebar
+export const ARCHITEKT_STEP    = envNum("SIM_ARCHITEKT_STEP", 0.35); // Architekt (L): +% je zusätzlicher Frostkarte in derselben Spalte (pos%5) [Legendär-Buff v1: 0,15→0,35]
 
 /* ============================================================
    PFLANZE-FRAKTION v0 — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend) →
@@ -310,9 +319,9 @@ export const UEBERWUCHERUNG_FACTOR = envNum("SIM_UEBERWUCHERUNG_FACTOR", 0.20);/
 export const AUSLAEUFER_HARVEST    = 2;   // Ausläufer: Ernte einer kolonisierten Gegnerkarte → +Wachstum       // v0 — tunebar
 export const ERNTEDANK_SCORE       = 70; // Erntedank: Ernte mit reifer Karte → +großer Flat-Score             // v0 — tunebar
 // Legendäre (Verstärker, meist mit Nachteil)
-export const WELTENBAUM_PER_GREEN  = 10;  // Weltenbaum: +1 Wachstum je 10 grüne Karten im Feld (Durchlauf-Ende) // v0
+export const WELTENBAUM_PER_GREEN  = envNum("SIM_WELTENBAUM_PER_GREEN", 5);  // Weltenbaum (L): +1 Wachstum je N grüne Karten im Feld (Durchlauf-Ende) [Legendär-Buff v1: 10→5]
 export const EWIGER_FRUEHLING_FARBBLOCK = 2; // Ewiger Frühling: Farbblock zählt Grün ab 2 Karten               // v0
-export const EWIGER_FRUEHLING_FIELD = 0.33;  // … Überwucherung ab 33 % Feld                                    // v0
+export const EWIGER_FRUEHLING_FIELD = envNum("SIM_EWIGER_FRUEHLING_FIELD", 0.25);  // Ewiger Frühling (L): Überwucherung ab diesem Feld-Anteil [Legendär-Buff v1: 0,33→0,25]
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

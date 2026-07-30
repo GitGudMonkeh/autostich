@@ -52,30 +52,29 @@ describe("Feuer-Rework v0 — reine Helfer", () => {
   });
   it("heatLossFor: Glutbett halbiert / unter 30 % gratis / Deckel", () => {
     expect(heatLossFor(8, [])).toBe(8);
-    expect(heatLossFor(8, ["SK_FIRE_04"], 50)).toBe(4);   // ×0,5
+    expect(heatLossFor(8, ["SK_FIRE_04"], 50)).toBe(Math.floor((Math.min(8, C.HEAT_LOSS_MAX) + 50 * C.HEAT_LOSS_PCT) * C.GLUTBETT_MULT)); // (Basis + %-Kühlung) × Glutbett 0,5
     expect(heatLossFor(8, ["SK_FIRE_04"], 20)).toBe(0);   // unter 30 % → kein Verlust
     expect(heatLossFor(20, [])).toBe(C.HEAT_LOSS_MAX);    // Deckel
   });
-  it("fireScoreFor + Verbrennung(≥8/≥12) + Sonnenzorn(≥80 %)", () => {
+  it("fireScoreFor + Verbrennung(≥8/≥12) (Sonnenzorn wirkt jetzt als Engine-Multiplikator, nicht hier)", () => {
     expect(fireScoreFor(6, ["SK_FIRE_09"], 0)).toBe((6 - 2) * 25);          // Marge<8 → ×1
     expect(fireScoreFor(10, ["SK_FIRE_09"], 0)).toBe(Math.round((10 - 2) * 25 * 1.5));
     expect(fireScoreFor(12, ["SK_FIRE_09"], 0)).toBe(Math.round((12 - 2) * 25 * 2));
-    expect(fireScoreFor(6, ["SK_FIRE_L03"], 80)).toBe(Math.round((6 - 2) * 25 * 1.25)); // Sonnenzorn ≥80 % → ×1,25
-    expect(fireScoreFor(6, ["SK_FIRE_L03"], 0)).toBe((6 - 2) * 25);                       // unter 80 % kein Sonnenzorn
+    expect(fireScoreFor(6, ["SK_FIRE_L03"], 100)).toBe((6 - 2) * 25);       // Sonnenzorn verstärkt den Helfer NICHT mehr
     expect(verbrennungMult(7)).toBe(1);
     expect(verbrennungMult(8)).toBe(C.VERBRENNUNG_T1_MULT);
     expect(verbrennungMult(12)).toBe(C.VERBRENNUNG_T2_MULT);
   });
-  it("glowingValueFor: Stufen 40/70/100 + Sonnenzorn +1 Stufe", () => {
+  it("glowingValueFor: Stufen 40/70/100 (reiner Nicht-Legendär-Skill, kein Sonnenzorn-Bonus mehr)", () => {
     expect(glowingValueFor(39, ["SK_FIRE_06"])).toBe(0);
     expect(glowingValueFor(40, ["SK_FIRE_06"])).toBe(1);
     expect(glowingValueFor(70, ["SK_FIRE_06"])).toBe(2);
     expect(glowingValueFor(100, ["SK_FIRE_06"])).toBe(3);
-    expect(glowingValueFor(100, ["SK_FIRE_06", "SK_FIRE_L03"])).toBe(4); // +Sonnenzorn
+    expect(glowingValueFor(100, ["SK_FIRE_06", "SK_FIRE_L03"])).toBe(3); // Sonnenzorn hebt die Stufe nicht mehr
   });
-  it("whiteHeatScore: +10/Punkt, Sonnenzorn ×2", () => {
+  it("whiteHeatScore: +10/Punkt (reiner Nicht-Legendär-Skill, kein Sonnenzorn ×2 mehr)", () => {
     expect(whiteHeatScore(3, ["SK_FIRE_07"], 100)).toBe(30);
-    expect(whiteHeatScore(3, ["SK_FIRE_07", "SK_FIRE_L03"], 100)).toBe(60);
+    expect(whiteHeatScore(3, ["SK_FIRE_07", "SK_FIRE_L03"], 100)).toBe(30);
     expect(whiteHeatScore(3, [], 100)).toBe(0); // ohne Weißglut
   });
   it("forgeCostFor: 5, Schmelzofen-Rabatt ab 50 %", () => {
