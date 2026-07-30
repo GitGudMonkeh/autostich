@@ -78,6 +78,45 @@ describe("Pflanze-Fraktion v0 — Engine-Integration", () => {
   });
 });
 
+/* Pflanze-Legendär-Reshape (2026-07-30) — Pflanze hat drei flutende Währungen (plant-economy.mjs: Grün→100 %,
+   Überlauf-Wachstum „alter Wald" verschwendet, Kolonie→40); alle 4 „mach-mehr"-Legendären waren tot (0,86-1,00×).
+   Sie lesen jetzt den verschwendeten BESTAND und zahlen je GRÜNEM Sieg DIREKT (post-stack, breakdown.plantDirect),
+   hart gedeckelt, bekenntnis-skaliert (plantSkillCount/SKILL_SLOTS). Generisches Pflanze bleibt unberührt. */
+describe("Pflanze-Legendär-Reshape — Fluten-Dividende (plantDirect)", () => {
+  const commit1 = Math.min(1, 1 / C.SKILL_SLOTS); // 1 Pflanze-Skill (nur die Legendäre) gehalten
+  const greenDeck = (n) => constDeck(C.PLANT_VALUE_CAP).map((c, i) => (i < n ? { ...c, green: true } : c)); // erste n grün, Wert=Deckel (need=0)
+  const growthMap = (n, v) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`X${i}`, v]));
+  const sumOverflow = (deck, growth) => { let s = 0; for (const c of deck) if (c.green) { const ov = (growth[c.id] || 0) - Math.max(0, C.PLANT_VALUE_CAP - c.value) * C.WURZELSCHLAG_PER_GROWTH; if (ov > 0) s += ov; } return s; };
+  const maxOverflow = (deck, growth) => { let m = 0; for (const c of deck) if (c.green) { const ov = (growth[c.id] || 0) - Math.max(0, C.PLANT_VALUE_CAP - c.value) * C.WURZELSCHLAG_PER_GROWTH; if (ov > m) m = ov; } return m; };
+
+  it("generisches Pflanze (ohne Legendäre): kein plantDirect trotz Überlauf-Wachstum + vollem grünen Feld", () => {
+    const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_02"], deck: greenDeck(10), growth: growthMap(10, 40) }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.plantDirect || 0).toBe(0); // generisches Pflanze unberührt → bestätigte Balance geschützt
+  });
+  it("Weltenbaum (BREITE): Σ Überlauf-Wachstum × WELTENBAUM_DIRECT je grünem Sieg (gedeckelt, bekenntnis-skaliert)", () => {
+    const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L01"], deck: greenDeck(5), growth: growthMap(5, 30) }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.plantDirect).toBeCloseTo(Math.min(sumOverflow(s.deck, s.growth), C.WELTENBAUM_OVERFLOW_CAP) * C.WELTENBAUM_DIRECT * commit1);
+  });
+  it("Mutterbaum (TIEFE): max Überlauf-Wachstum des tiefsten Baums × MUTTERBAUM_DIRECT je grünem Sieg (gedeckelt)", () => {
+    const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L02"], deck: greenDeck(5), growth: { X0: 45, X1: 30, X2: 20, X3: 10, X4: 5 } }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.plantDirect).toBeCloseTo(Math.min(maxOverflow(s.deck, s.growth), C.MUTTERBAUM_OVERFLOW_CAP) * C.MUTTERBAUM_DIRECT * commit1);
+  });
+  it("Dornenkönig (KOLONIE): #kolonisierte Gegnerkarten × DORNENKOENIG_DIRECT je grünem Sieg (gedeckelt)", () => {
+    const colonized = Object.fromEntries(Array.from({ length: 20 }, (_, i) => [`X${i}`, true]));
+    const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L03"], deck: greenDeck(3), growth: growthMap(3, 10), colonized }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.plantDirect).toBeCloseTo(Math.min(Object.keys(s.colonized).length, C.DORNENKOENIG_COLON_CAP) * C.DORNENKOENIG_DIRECT * commit1);
+  });
+  it("Ewiger Frühling (GRÜN-FELD): #grüne Karten × EWIGER_FRUEHLING_DIRECT je grünem Sieg (gedeckelt)", () => {
+    const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L04"], deck: greenDeck(12), growth: growthMap(12, 5) }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.plantDirect).toBeCloseTo(Math.min(greenCount(s.deck), C.EWIGER_FRUEHLING_FIELD_CAP) * C.EWIGER_FRUEHLING_DIRECT * commit1);
+  });
+});
+
 describe("Pflanze-Fraktion v0 — Aktivierung (Alter Anker)", () => {
   it("erster Pflanze-Skill → 1 Karte startet reif (grün, Wert 11)", () => {
     const base = initialState(makeRng(1));

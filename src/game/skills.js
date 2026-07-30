@@ -233,15 +233,15 @@ export const SKILL_DEFS = {
     desc: "Verstärker: Kolonisiert aggressiver (früher & breiter) und beim Ernten den Gegner-Nachbarn mit.", enabler: "SK_PLANT_15", rhizom: true },
   SK_PLANT_17: { id: "SK_PLANT_17", name: "Erntedank", archetype: "plant", keywords: ["colonize", "score"],
     desc: "Verstärker: Erntest du mit einer reifen Karte, gibt es zusätzlich großen Flat-Score.", enabler: "SK_PLANT_15", erntedank: true },
-  // Legendäre (Verstärker, meist mit Nachteil)
+  // Legendäre (Reshape 2026-07-30: lesen die verschwendeten Fluten — Überlauf-Wachstum/Grün-Feld/Kolonie — und zahlen je grünem Sieg DIREKT)
   SK_PLANT_L01: { id: "SK_PLANT_L01", name: "Weltenbaum", archetype: "plant", legendary: true, keywords: ["growth"],
-    desc: "Am Ende jedes Durchlaufs wächst der ganze Wald: jede Karte +1 Wachstum je 10 grüne im Feld. Ruht ohne Garten, reift mit wachsendem Feld immer mehr Nachzügler.", weltenbaum: true },
+    desc: "Am Ende jedes Durchlaufs wächst der ganze Wald (+1 Wachstum je 10 grüne im Feld). Und je mehr Überschuss-Wachstum dein alter Wald über den Wert-Deckel angehäuft hat, desto mehr Punkte zahlt jeder grüne Sieg direkt — der uralte Wald wird zu Score.", weltenbaum: true },
   SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Mutterbaum", archetype: "plant", legendary: true, keywords: ["growth", "score"],
-    desc: "Gewinnt deine höchstgewachsene Karte, bekommt ihr ganzes Segment Wurzeln-Score. Nachteil: sie selbst erntet keinen Wurzeln-Score mehr.", mutterbaum: true },
+    desc: "Gewinnt deine höchstgewachsene Karte, bekommt ihr ganzes Segment Wurzeln-Score. Und je tiefer dein ÄLTESTER Baum über den Wert-Deckel gewachsen ist, desto mehr Punkte zahlt jeder grüne Sieg direkt — der Mutterbaum trägt den ganzen Garten.", mutterbaum: true },
   SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Dornenkönig", archetype: "plant", legendary: true, keywords: ["colonize"],
-    desc: "Das ganze Gegnerdeck startet kolonisiert; jede Ernte verbraucht ihren Marker. Nachteil: danach keine neue Kolonisierung.", dornenkoenig: true },
+    desc: "Das ganze Gegnerdeck startet kolonisiert; jede Ernte verbraucht ihren Marker. Und je mehr Gegnerkarten unter deiner Kolonie stehen, desto mehr Punkte zahlt jeder grüne Sieg direkt — das Dornenreich wird zu Score.", dornenkoenig: true },
   SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "formation"],
-    desc: "Farbblock zählt Grün schon ab 2 Karten, Überwucherung ab 33 % Feld. Nachteil: nicht-grüne Karten geben keinen Formations-Bonus mehr.", ewigerFruehling: true },
+    desc: "Farbblock zählt Grün schon ab 2 Karten, Überwucherung ab 33 % Feld. Und je größer dein ewig-grünes Feld (mehr grüne Karten), desto mehr Punkte zahlt jeder grüne Sieg direkt — der ewige Frühling wird zu Score.", ewigerFruehling: true },
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);

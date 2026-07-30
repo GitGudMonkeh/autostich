@@ -66,7 +66,7 @@ describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
     const b = s.lastTrick.breakdown;
     expect(b.base).toBe(B);
     expect(b.critMult).toBeGreaterThan(1);
-    expect((b.base + b.flats) * b.streakMult * b.perkMult * b.formMult * b.critMult + (b.fireDirect || 0) + (b.iceDirect || 0) + (b.lightDirect || 0)).toBeCloseTo(b.total); // + Glut-/Eis-/Blitz-Dividende (direkt, am Stack vorbei)
+    expect((b.base + b.flats) * b.streakMult * b.perkMult * b.formMult * b.critMult + (b.fireDirect || 0) + (b.iceDirect || 0) + (b.lightDirect || 0) + (b.plantDirect || 0)).toBeCloseTo(b.total); // + Glut-/Eis-/Blitz-/Pflanze-Dividende (direkt, am Stack vorbei)
     expect(b.total).toBeCloseTo(s.lastTrick.gained);
   });
   it("lastTrick.breakdown ist null bei Niederlage/Gleichstand", () => {
