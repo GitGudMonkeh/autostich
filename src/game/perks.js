@@ -78,7 +78,7 @@ export const PERK_DEFS = {
   L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
         desc: "Jeder Durchlauf mit positiver Bilanz (mehr Siege als Niederlagen) gibt dauerhaft +Score, der sich mit jedem weiteren aufstapelt (flach, kein Multiplikator)." },
   L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,
-        desc: "Gewinnst du die ersten fünf Stiche eines Durchlaufs in Folge, gibt es einen großen Score-Bonus. Reißt die Serie vorher, verfällt die Wette für diesen Durchlauf." },
+        desc: "Eröffnungs-Wette: Gewinnst du die ersten fünf Stiche eines Durchlaufs in Folge, gibt es einen großen Score-Bonus (bis zu dreimal pro Lauf)." },
   L_HENK: { id: "L_HENK", cat: "D", rarity: "legendary", label: "Henker", henker: true,
         desc: "Im letzten Segment (Positionen 36–40) zählt jeder Sieg doppelt und ist garantiert ein Crit." },
   L_ECHO: { id: "L_ECHO", cat: "C", rarity: "legendary", label: "Echo", echo: true,

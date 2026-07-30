@@ -4,7 +4,7 @@ import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
 import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, STREAK_STAT_CAP, SCORE_PER_WIN, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
-  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, PATT_MARGIN, ZINSESZINS_STEP, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE } from "../src/game/constants.js";
+  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ZINSESZINS_STEP, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS, statStreakFactor } from "../src/game/stats.js";
 import { streakBaseMult } from "../src/game/perks.js";
@@ -195,12 +195,17 @@ describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
     const noPatt = resolveTrick(scenario(12 - PATT_MARGIN, 12, {}), rng);              // ohne Patt → Niederlage
     expect(noPatt.lastTrick.result).toBe("loss");
   });
-  it("L_VAB Vabanque: die ersten VABANQUE_TRICKS Stiche eines Durchlaufs in Folge → +VABANQUE_SCORE, sonst verfällt (#203)", () => {
-    // VABANQUE_TRICKS-ter Stich des Durchlaufs (pos = TRICKS−1) als TRICKS-ter Sieg in Folge (cycleWins TRICKS−1 → TRICKS).
-    const paid = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1 }), rng);
-    expect(paid.lastTrick.breakdown.perkDirect).toBe(VABANQUE_SCORE);                 // alle Eröffnungsstiche gewonnen
-    const voided = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 2 }), rng);
-    expect(voided.lastTrick.breakdown.perkDirect).toBe(0);                            // Serie vorher gerissen → verfällt
+  it("L_VAB Vabanque: erste VABANQUE_TRICKS Stiche eines Durchlaufs in Folge → +VABANQUE_SCORE, je Lauf gedeckelt (#203)", () => {
+    // TRICKS-ter Stich (pos = TRICKS−1) als TRICKS-ter Sieg in Folge (cycleWins TRICKS−1 → TRICKS) → Payout + Zähler hoch.
+    const paid = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: 0 }), rng);
+    expect(paid.lastTrick.breakdown.perkDirect).toBe(VABANQUE_SCORE);
+    expect(paid.vabanquePaid).toBe(1);
+    // Serie vorher gerissen (cycleWins < TRICKS am TRICKS-ten Stich) → kein Payout.
+    const voided = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 2, vabanquePaid: 0 }), rng);
+    expect(voided.lastTrick.breakdown.perkDirect).toBe(0);
+    // Lauf-Deckel erreicht → kein weiterer Payout trotz erfüllter Eröffnung (Anti-Front-Load-Exploit).
+    const capped = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: VABANQUE_MAX_PAYOUTS }), rng);
+    expect(capped.lastTrick.breakdown.perkDirect).toBe(0);
   });
 });
 

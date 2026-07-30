@@ -133,19 +133,23 @@ export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P
    LEGENDÄR-PERKS-REWORK (#203, 2026-07-30): 11 generische Legendäre (nach Hook, kein Archetyp).
    3 behalten (Unaufhaltsam/Raserei/Kritische Masse), 8 neu. Alle Knöpfe ENV-tunebar (Default = v0-Startwert).
    ============================================================ */
-// v0.1-Balance (2026-07-30, perk-impact.mjs N=300 @ SIM_PERK_LEGENDARY_BASE=0.7, je nativem Skill-Lean): Ziel-Band ~1,2–1,7×
-// Grenzbeitrag = Median(mit Perk) ÷ Median(gleicher Lean ohne Legendäre). Erreicht: Unaufhaltsam 1,55 · Krit.Masse 1,47 ·
-// Sammler 1,33 · Brennpunkt 1,29 · Umverteilung 1,26 · Henker 1,26 · Zinseszins 1,23 · Echo 1,22 · Patt 1,21 · Vabanque 1,18 ·
-// Raserei 1,13 (Favorit, ikonische +5 %/Serie belassen). Runaway-Check (Max forced-0.7 ÷ Baseline-Max): ×-Cluster
-// (Brennpunkt/Henker/Sammler) CLEAN (0,51–1,12× — feste ×-Multiplikatoren gedeckelt). Winrate-Hebel Patt/Unaufhaltsam/
-// Umverteilung tragen erwartete Fat-Tails (Serien-Snowball, von STREAK_STAT_CAP gebändigt, abs. in der Elementar-Chase-
-// Decke ~73M, Max-Ratio < Elementar-Max-Spread 7,47×). Straffungs-Knöpfe falls gewünscht: PATT_MARGIN, UNAUFHALTSAM_VALUE.
+// v0.1-Balance (2026-07-30, perk-impact.mjs @ SIM_PERK_LEGENDARY_BASE=0.7, je nativem Skill-Lean): Ziel-Band ~1,2–1,7×
+// Grenzbeitrag = Median(mit Perk) ÷ Median(gleicher Lean ohne Legendäre). Erreicht: Krit.Masse 1,51 · Unaufhaltsam 1,49 ·
+// Sammler 1,31 · Vabanque 1,31 (nativ=Front-Load, s. u.) · Brennpunkt 1,28 · Henker 1,26 · Umverteilung 1,25 · Echo 1,22 ·
+// Patt 1,20 · Zinseszins 1,19 · Raserei 1,14 (Favorit, ikonische +5 %/Serie belassen). Runaway-Check (Max forced-0.7 ÷
+// Baseline-Max): ×-Cluster (Brennpunkt/Henker/Sammler) CLEAN (0,51–1,12× — feste ×-Multiplikatoren gedeckelt). Winrate-
+// Hebel Patt/Unaufhaltsam/Umverteilung tragen erwartete Fat-Tails (Serien-Snowball, von STREAK_STAT_CAP gebändigt, abs. in
+// der Elementar-Chase-Decke ~73M, Max-Ratio < Elementar-Max-Spread 7,47×). Straffungs-Knöpfe: PATT_MARGIN, UNAUFHALTSAM_VALUE.
+// VABANQUE: nativer Kontext ist FRONT-LOAD (stärkste Karten nach vorn → Eröffnung sichern); ohne Aufstellung ~1,11× (falscher
+// Kontext). `playerOrder` ist persistent+arrangierbar → ohne Deckel per-Durchlauf-Exploit (~24×/Lauf, +8,4M). VABANQUE_MAX_
+// PAYOUTS deckelt hart: Front-Load max 3× (1,31×), Greedy natürlich ~2× → Exploit erschlagen, Front-Load kaum voraus.
 export const UNAUFHALTSAM_VALUE  = envNum("SIM_UNAUFHALTSAM_VALUE", 3);   // Unaufhaltsam (Serie): nächste Karte +Wert solange Serie läuft [4→3: war 2,03× überzogen]
 export const KRITMASSE_VALUE     = envNum("SIM_KRITMASSE_VALUE", 3);      // Kritische Masse (Crit): Dauerwert je Crit, Deckel [4→3: war 1,74×]
 export const RASEREI_CRIT_STEP   = envNum("SIM_RASEREI_CRIT_STEP", 0.05); // Raserei (Serie): +Crit-Chance je Sieg-Folge [Favorit, unverändert]
 export const ZINSESZINS_STEP     = envNum("SIM_ZINSESZINS_STEP", 1600);   // Zinseszins (Durchlauf-Bilanz): +flacher Dauer-Score je positivem Durchlauf (stapelt, KEIN Mult) [900→1600]
-export const VABANQUE_SCORE      = envNum("SIM_VABANQUE_SCORE", 350000);  // Vabanque (Eröffnung): erste N Stiche eines Durchlaufs in Folge → +Score, sonst verfällt [3000→350000: per Durchlauf, s. engine.js]
+export const VABANQUE_SCORE      = envNum("SIM_VABANQUE_SCORE", 400000);  // Vabanque (Eröffnung): erste N Stiche eines Durchlaufs in Folge → +Score [3000→400000: per Durchlauf, s. engine.js]
 export const VABANQUE_TRICKS     = envNum("SIM_VABANQUE_TRICKS", 5);      // …          … so viele Eröffnungs-Stiche
+export const VABANQUE_MAX_PAYOUTS = envNum("SIM_VABANQUE_MAX_PAYOUTS", 3); // … Lauf-Deckel: so oft zahlt Vabanque max je Lauf (Anti-Front-Load-Exploit; s. engine.js)
 export const HENKER_MULT         = envNum("SIM_HENKER_MULT", 2.0);        // Henker (Segment-Finale): Score × in der End-Zone + garantierter Crit
 export const HENKER_ZONE_START   = 35;                                    // … ab Deck-Position 36 (Index 35) = letztes Segment 36–40
 export const SAMMLER_STEP        = envNum("SIM_SAMMLER_STEP", 0.15);      // Sammler (Formationsvielfalt): +Formations-Mult je distinct Formationsart im Durchlauf

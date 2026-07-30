@@ -81,6 +81,7 @@ export function resolveTrick(state, rng = Math.random) {
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
     zinsBonus = 0, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Legendär-Perks-Rework (#203): Zinseszins-Dauerdividende / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
+    vabanquePaid = 0, // Vabanque (#203): Zahl der Eröffnungs-Wetten, die dieser Lauf schon ausgezahlt hat (Lauf-Deckel gegen Front-Load-Exploit)
     crits, critBonusScore, bestTrickScore,
     maxFormations = 0, formationScore = 0, // #161 FB-2: Run-Rückblick — Peak gleichzeitig aktiver Formationen + Score-Anteil aus Formationen
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
@@ -619,12 +620,16 @@ export function resolveTrick(state, rng = Math.random) {
       if (hasDoubleDischarge(skills)) lightDirect += Math.min(sumIon, C.DOPPELENT_FIELD_CAP) * C.DOPPELENT_DIRECT * lightCommit;
     }
     // Vabanque (#203, Eröffnungs-Wette): die ersten VABANQUE_TRICKS Stiche eines DURCHLAUFS in Folge gewonnen →
-    // +VABANQUE_SCORE, DIREKT (post-stack). `pos` ist der Stich-Index im Durchlauf (0-basiert, VOR dem pos+=1 am
-    // Durchlauf-Ende); cycleWins zählt die Siege dieses Durchlaufs inkl. dieses → am VABANQUE_TRICKS-ten Stich (pos =
-    // TRICKS−1) sind ALLE Eröffnungsstiche gewonnen ⟺ cycleWins === TRICKS. Reißt die Serie vorher, ist cycleWins <
-    // TRICKS → verfällt (für diesen Durchlauf). PER DURCHLAUF statt per Lauf, weil der Perk mitten im Lauf erworben
-    // wird (die Lauf-Eröffnung ist dann längst vorbei → per-Lauf würde NIE feuern).
-    const perkDirect = (ownsFlag(perks, "vabanque") && pos === C.VABANQUE_TRICKS - 1 && cycleWins === C.VABANQUE_TRICKS) ? C.VABANQUE_SCORE : 0;
+    // +VABANQUE_SCORE DIREKT (post-stack). pos = Stich-Index im Durchlauf (VOR pos+=1); cycleWins zählt die Siege inkl.
+    // dieses → am TRICKS-ten Stich (pos = TRICKS−1) sind alle Eröffnungsstiche gewonnen ⟺ cycleWins === TRICKS.
+    // LAUF-DECKEL (vabanquePaid < VABANQUE_MAX_PAYOUTS): `playerOrder` ist persistent + in der Formationsphase spieler-
+    // arrangierbar → ohne Deckel ließe sich die Eröffnung durch Vorne-Legen der stärksten Karten JEDEN Durchlauf
+    // abgreifen (~24–60×/Lauf → Runaway, gemessen +8,4M/Lauf). Der Deckel begrenzt den Exploit auf MAX_PAYOUTS×SCORE;
+    // ein Greedy-Spieler trifft die Eröffnung natürlich ~2×/Lauf, ein Front-Loader erreicht nur den Deckel.
+    let perkDirect = 0;
+    if (ownsFlag(perks, "vabanque") && pos === C.VABANQUE_TRICKS - 1 && cycleWins === C.VABANQUE_TRICKS && vabanquePaid < C.VABANQUE_MAX_PAYOUTS) {
+      perkDirect = C.VABANQUE_SCORE; vabanquePaid += 1;
+    }
     gained += fireDirect + iceDirect + lightDirect + plantDirect + perkDirect;
     score += gained;
     breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, formStat: formStatFactor, iceForm: iceFormMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, lightDirect, plantDirect, perkDirect, total: gained };
@@ -1019,7 +1024,7 @@ export function resolveTrick(state, rng = Math.random) {
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
-    zinsBonus, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, // Legendär-Perks-Rework (#203)
+    zinsBonus, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, // Legendär-Perks-Rework (#203)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
