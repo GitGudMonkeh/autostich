@@ -78,10 +78,10 @@ export const SKILL_DEFS = {
     desc: "Maximale Ladung 10 → 15, dafür dauerhaft +1,0× Crit-Multiplikator. Konsumenten lösen erst bei 15 aus.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, thunderGod: true },
   SK_LIGHTNING_L02: { id: "SK_LIGHTNING_L02", name: "Doppelentladung", archetype: "lightning", legendary: true, keywords: ["charge", "ionize"],
-    desc: "Bei vollem Ladungsverbrauch feuern die Konsumenten zweimal. Der endlose Sturm.",
+    desc: "Bei vollem Ladungsverbrauch feuert der Konsument mehrfach. Und je mehr Ladung im Feld steht (Σ Ionisierungsstapel), desto mehr Punkte zahlt jeder Sieg mit ionisierter Karte direkt — der endlose Sturm entlädt sich ins Feld.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, doubleDischarge: true },
   SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Flächenionisation", archetype: "lightning", legendary: true, keywords: ["ionize"],
-    desc: "Gewinnt eine ionisierte Karte, springen ihre Stapel auf alle ungespielten Nachbarn (statt nur einen).",
+    desc: "Gewinnt eine ionisierte Karte, springen ihre Stapel auf alle ungespielten Nachbarn (statt nur einen). Und je breiter das ionisierte Feld (mehr ionisierte Karten), desto mehr Punkte zahlt jeder Sieg mit ionisierter Karte direkt — die Sturmzelle wird zu Score.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, areaIonize: true },
   SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Durchschlag", archetype: "lightning", legendary: true, keywords: ["ionize", "crit"],
     desc: "Gewinnt eine Karte mit voller Ionisierung (5) und Crit, gibt sie dauerhaft +0,25× Crit-Multiplikator. Harte Doppelbedingung.",
@@ -315,6 +315,8 @@ export function initHeat() {
 
 // Anzahl gehaltener Feuer-Skills (Grundmechanik zählt nicht) & ob ein Feuer-Flag gehalten wird.
 export const activeFireCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "fire").length;
+// Anzahl gehaltener Blitz-Skills — Bekenntnis-Skalierung der Blitz-Legendär-Dividende (cross-health, wie activeFireCount/iceSkillCount).
+export const activeLightningCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "lightning").length;
 export const fireFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
 // Hitze-Maximum (fix 100).
 export const heatMaxFor = () => C.HEAT_MAX;

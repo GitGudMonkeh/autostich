@@ -171,6 +171,14 @@ export const WETTERLEUCHTEN_COUNT     = 2;    // Wetterleuchten: … so viele Ka
 export const DOPPELENTLADUNG_FACTOR   = envNum("SIM_DOPPELENTLADUNG_FACTOR", 3);    // Doppelentladung (L): Konsumenten feuern FACTOR-fach (Ionisierungs-Anzahl x FACTOR) [Legendaer-Buff v1: 2->3]
 export const DURCHSCHLAG_CRIT_MULT    = 0.25; // Durchschlag (L): volle Ionis. (5) + Crit → dauerhaft +0,25× Crit-Mult // v0 — tunebar
 export const DURCHSCHLAG_MULT_CAP     = 2.0;  // Durchschlag: Deckel des dauerhaften Crit-Mult-Bonus (Anti-Runaway v0.1: uncapped → +100× im Smoke)
+// Blitz-Legendär-Reshape (2026-07-30): die Ionisierung FLUTET (blitz-economy.mjs: alle Karten @Deckel 5, ~ganzes Deck ab Cycle 20)
+// → „mehr Ionis."-Legendäre (Doppelentladung/Flächenionisation) waren tot (1,01×/0,90×). Sie lesen jetzt den BESTAND des
+// gesättigten Feldes und zahlen je IONISIERTEM Sieg DIREKT (post-stack, hart gedeckelt = Plateau, bekenntnis-skaliert = cross-health).
+// Nur Legendär-Halter → generisches Blitz (ION_SCORE_PER_STACK) unberührt. Analog zur Eis-Überlauf-Dividende.
+export const FLAECHENION_DIRECT       = envNum("SIM_FLAECHENION_DIRECT", 70);  // Flächenionisation (Sturmzelle, BREITE): DIREKTer Score je ionisiertem Sieg × #ionisierte Karten [reshape 1,30×]
+export const FLAECHENION_FIELD_CAP    = envNum("SIM_FLAECHENION_FIELD_CAP", 30); // … gedeckelte Feldbreite (max gezählte ionisierte Karten)
+export const DOPPELENT_DIRECT         = envNum("SIM_DOPPELENT_DIRECT", 16);    // Doppelentladung (endloser Sturm, ENERGIE): DIREKTer Score je ionisiertem Sieg × Σ Stapel im Feld [reshape ~1,28×]
+export const DOPPELENT_FIELD_CAP      = envNum("SIM_DOPPELENT_FIELD_CAP", 120); // … gedeckelte Feldenergie (max gezählte Σ Stapel)
 
 /* ============================================================
    FEUER-REWORK v0 — Hitzeleiste 0–100. „Hitze belohnt totale Überlegenheit."

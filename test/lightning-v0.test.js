@@ -105,3 +105,43 @@ describe("Blitz-Rework v0 — Engine-Integration", () => {
     expect(s.deck[0].ionStacks).toBe(C.BLITZSCHLAG_STACKS);
   });
 });
+
+/* Blitz-Legendär-Reshape (2026-07-30) — die Ionisierung FLUTET (blitz-economy.mjs: alle Karten @Deckel 5, ~ganzes Deck ab
+   Cycle 20), „mehr Ionis."-Legendäre waren tot (Doppelentl. 1,01× / Flächenion. 0,90×). Sie lesen jetzt den BESTAND des
+   gesättigten Feldes und zahlen je IONISIERTEM Sieg DIREKT (post-stack, breakdown.lightDirect), hart gedeckelt,
+   bekenntnis-skaliert (activeLightningCount/SKILL_SLOTS). Generisches Blitz bleibt unberührt. */
+describe("Blitz-Legendär-Reshape — Feld-Dividende (lightDirect)", () => {
+  const commit1 = Math.min(1, 1 / C.SKILL_SLOTS); // 1 Blitz-Skill (nur die Legendäre) gehalten
+  const ionDeck = (n, stacks) => constDeck(12).map((c, i) => (i < n ? { ...c, ionStacks: stacks } : c));
+
+  it("generisches Blitz (ohne Legendäre): kein lightDirect trotz voll ionisiertem Feld", () => {
+    const s = resolveTrick(scen(12, 0, { skills: [ION], deck: ionDeck(10, 5), lightning: light() }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.lightDirect || 0).toBe(0); // Deckel/Generik unberührt → Floor/Ceiling geschützt
+  });
+
+  it("Flächenionisation (BREITE): #ionisierte Karten × FLAECHENION_DIRECT je ionisiertem Sieg (gedeckelt, bekenntnis-skaliert)", () => {
+    const n = 5;
+    const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_L03"], deck: ionDeck(n, 1), lightning: light() }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.lightDirect).toBeCloseTo(Math.min(n, C.FLAECHENION_FIELD_CAP) * C.FLAECHENION_DIRECT * commit1);
+    // Über der Feldbreite plateaut es (kein Runaway).
+    const wide = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_L03"], deck: ionDeck(C.FLAECHENION_FIELD_CAP + 6, 1), lightning: light() }), noCrit);
+    expect(wide.lastTrick.breakdown.lightDirect).toBeCloseTo(C.FLAECHENION_FIELD_CAP * C.FLAECHENION_DIRECT * commit1);
+  });
+
+  it("Doppelentladung (ENERGIE): Σ Stapel × DOPPELENT_DIRECT je ionisiertem Sieg (gedeckelt)", () => {
+    const n = 6, stacks = 5; // Σ = 30 < Deckel
+    const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_L02"], deck: ionDeck(n, stacks), lightning: light() }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.lightDirect).toBeCloseTo(Math.min(n * stacks, C.DOPPELENT_FIELD_CAP) * C.DOPPELENT_DIRECT * commit1);
+  });
+
+  it("nur bei IONISIERTEM Sieg: gewinnt eine nicht-ionisierte Karte → kein lightDirect (trotz ionisiertem Restfeld)", () => {
+    const deck = constDeck(12).map((c, i) => (i > 0 && i <= 5 ? { ...c, ionStacks: 3 } : c)); // deck[0] NICHT ionisiert
+    const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_L03"], deck, lightning: light() }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.deck[0].ionStacks || 0).toBe(0);
+    expect(s.lastTrick.breakdown.lightDirect || 0).toBe(0);
+  });
+});
