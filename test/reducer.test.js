@@ -34,29 +34,23 @@ describe("Reducer", () => {
   // Deck-Mods beim Pick (früher flache Kat.-A-Perks) sind zu KUMULATIVEN Familien migriert (#167) — der
   // Familien-Pick + Ziel-Fluss ist in test/families-engine.test.js geprüft; PICK_PERK verändert das Deck nicht mehr.
   it("PICK_PERK ignoriert Perks außerhalb des Angebots", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L1", "L2", "L3"] };
-    expect(reducer(s0, { type: "PICK_PERK", perkId: "L5", rng })).toBe(s0); // nicht im Angebot → No-Op
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L_UMV", "L2", "L4"] };
+    expect(reducer(s0, { type: "PICK_PERK", perkId: "L_VAB", rng })).toBe(s0); // nicht im Angebot → No-Op
   });
 
-  it("L1 Überladung (Ziel-Perk): CONFIRM_TARGET gibt 5 gewählten Karten +6", () => {
-    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L1"] };
-    s = reducer(s, { type: "PICK_PERK", perkId: "L1", rng: makeRng(1) });
-    expect(s.phase).toBe("target");
-    const ids = s.playerOrder.slice(0, 5).map((di) => s.deck[di].id);
-    const vals = ids.map((id) => s.deck.find((c) => c.id === id).value);
-    s = reducer(s, { type: "CONFIRM_TARGET", cardIds: ids });
-    ids.forEach((id, i) => expect(s.deck.find((c) => c.id === id).value).toBe(vals[i] + 6));
-  });
-  it("L5 Jackpot (Zufalls-Rolle): PICK_PERK setzt 4 zufällige Karten als Rolle und geht direkt in play", () => {
-    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L5"] };
-    s = reducer(s, { type: "PICK_PERK", perkId: "L5", rng: makeRng(1) });
-    expect(s.phase).toBe("play");
-    expect(s.roles.L5).toHaveLength(4);
-    expect(new Set(s.roles.L5).size).toBe(4);
+  it("L_UMV Umverteilung: PICK_PERK setzt alle Karten dauerhaft auf den Deck-Durchschnitt und geht direkt in play (#203)", () => {
+    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L_UMV"] };
+    const deckLen = s.deck.length;
+    const avg = Math.round(s.deck.reduce((t, c) => t + c.value, 0) / deckLen);
+    s = reducer(s, { type: "PICK_PERK", perkId: "L_UMV", rng: makeRng(1) });
+    expect(s.phase).toBe("play");                             // kein Ziel-Schritt
+    expect(s.perks).toEqual(["L_UMV"]);
+    expect(s.deck.every((c) => c.value === avg)).toBe(true);  // alle Karten auf den Durchschnitt
+    expect(s.deck).toHaveLength(deckLen);                     // KEINE Karte entfernt
   });
 
   it("RESET beginnt einen frischen Lauf mit Start-Pick = Stat (V2 §22.2)", () => {
-    const dirty = { ...initialState(makeRng(1)), score: 999, perks: ["L1", "L3"] };
+    const dirty = { ...initialState(makeRng(1)), score: 999, perks: ["L2", "L4"] };
     const fresh = reducer(dirty, { type: "RESET", rng });
     expect(fresh.score).toBe(0);
     expect(fresh.perks).toEqual([]);
@@ -81,7 +75,7 @@ describe("Reducer", () => {
 
 describe("PICK_PERK — nach jeder Runde zurück in play (Neuer Loop)", () => {
   it("Wahl aus dem levelup-Angebot → play, offer null, Perk übernommen", () => {
-    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L1", "L2", "L3"] };
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L_UMV", "L2", "L4"] };
     const s1 = reducer(s0, { type: "PICK_PERK", perkId: "L2", rng }); // L2: cardBonus, kein needsTarget → direkt play
     expect(s1.phase).toBe("play");
     expect(s1.offer).toBeNull();
@@ -155,17 +149,17 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
   });
 
   it("PICK_SKILL bei vollen Slots: ohne replaceId no-op, mit gültigem Ziel wird ersetzt (#95)", () => {
-    // volles Loadout = SKILL_SLOTS Skills (aktuell 6, Test-Experiment)
-    const held = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
-    const NEW = "SK_LIGHTNING_08";
-    const full = skillState({ skills: held, skillOffer: [NEW], lightning: { active: true, charge: 0, maxCharge: 10 } });
+    // SKILL_SLOTS = 6 (echtes Spiel): volle Slots = 6 gehaltene Skills. Nur 02 (Ionisierung) ist Konsument.
+    const six = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
+    const NEW = "SK_LIGHTNING_10"; // Entladung — kein Konsument, kollidiert also nicht mit dem verbleibenden 02
+    const full = skillState({ skills: six, skillOffer: [NEW], lightning: { active: true, charge: 0, maxCharge: 10 } });
     // ohne Ersetzungsziel → unverändert (das war der Bug: bei vollen Slots tat der Klick nichts)
     expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, rng })).toBe(full);
     // ungültiges Ziel (nicht gehalten) → unverändert
-    expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_07", rng })).toBe(full);
+    expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_09", rng })).toBe(full);
     // gültiges Ziel → ersetzt genau diesen Slot, Reihenfolge bleibt, zurück in play
-    const s = reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_02", rng });
-    expect(s.skills).toEqual(["SK_LIGHTNING_01", NEW, "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"]);
+    const s = reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_04", rng });
+    expect(s.skills).toEqual(["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", NEW, "SK_LIGHTNING_05", "SK_LIGHTNING_06"]);
     expect(s.phase).toBe("play");
   });
 
@@ -197,14 +191,17 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
       skills: ["SK_ICE_01", "SK_LIGHTNING_01", "SK_LIGHTNING_03", "SK_LIGHTNING_04"],
       skillOffer: ["SK_LIGHTNING_05"], activeArchetypes: ["ice", "lightning"],
       lightning: { active: true, charge: 2, maxCharge: 10 },
-      deck, iceTemp: { x: 3 }, frostSwapsUsed: ["a"], frostbitePending: ["oX"], frostbiteActive: ["oY"] };
+      deck, iceTemp: { x: 3 }, frostSwapsUsed: ["a"], frostbitePending: { oX: 3 }, frostbiteActive: { oY: 3 },
+      layers: { c1: 4 }, frostFormPrev: ["c1"] }; // Eis-Rework (v0): Vergletscherung als Map, Schichten + Beständigkeits-Historie
     const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_05", replaceId: "SK_ICE_01", rng });
     expect(s.skills).not.toContain("SK_ICE_01");
     expect(s.deck.some((c) => c.frozen)).toBe(false);
-    expect(s.frostbitePending).toEqual([]);
-    expect(s.frostbiteActive).toEqual([]);
+    expect(s.frostbitePending).toEqual({});
+    expect(s.frostbiteActive).toEqual({});
     expect(s.iceTemp).toEqual({});
     expect(s.frostSwapsUsed).toEqual([]);
+    expect(s.layers).toEqual({});          // Schichten weg
+    expect(s.frostFormPrev).toEqual([]);   // Beständigkeits-Historie weg
     expect(s.activeArchetypes).toEqual(["lightning"]);
   });
 
@@ -248,7 +245,7 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
 });
 
 describe("DECLINE_PERK — Perk-Angebot ablehnen → +Münze (#138)", () => {
-  const perkLevelup = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["L1", "L2", "L3"], ...over });
+  const perkLevelup = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["L_UMV", "L2", "L4"], ...over });
 
   it("schreibt PERK_DECLINE_COINS gut, verwirft das Angebot und kehrt in play zurück", () => {
     const s0 = perkLevelup({ shop: { ...initialState(makeRng(1)).shop, coins: 3 } });
@@ -331,24 +328,10 @@ describe("Formationsphase — SWAP/UNDO/RESET/CONFIRM (V2 §22.8)", () => {
 });
 
 // Kat.-C-Rollen (inkl. C9 Opfergabe) sind zu Familien migriert (#167) → laufen über den Familien-Ziel-Fluss
-// (FAMILY_TARGET_*, geprüft in families-engine.test.js). Das flache CONFIRM_TARGET dient nur noch den Ziel-Legendären
-// (L1/L9 permMod); die Ziel-Phasen-Öffnung/Validierung deckt der L1-Test oben ab.
-describe("Ziel-Legendäre — CONFIRM_TARGET permMod (V2 §22.6)", () => {
-  it("L9 Blutvertrag: 4 gewählte Karten −2, ihre direkten Nachfolger +6 (dauerhaft)", () => {
-    let s = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L9", "L1", "L2"] };
-    s = reducer(s, { type: "PICK_PERK", perkId: "L9", rng: makeRng(1) });
-    expect(s.phase).toBe("target");
-    const order = s.playerOrder;
-    const targetPos = [0, 2, 4, 6];                          // nicht benachbart → Nachfolger disjunkt von den Zielen
-    const ids = targetPos.map((p) => s.deck[order[p]].id);
-    const before = s.deck.map((c) => c.value);
-    s = reducer(s, { type: "CONFIRM_TARGET", cardIds: ids });
-    for (const p of targetPos) {
-      expect(s.deck[order[p]].value).toBe(Math.max(0, before[order[p]] - 2)); // Ziel −2 (Boden 0)
-      expect(s.deck[order[p + 1]].value).toBe(before[order[p + 1]] + 6);      // direkter Nachfolger +6
-    }
-  });
-});
+// (FAMILY_TARGET_*, geprüft in families-engine.test.js). Die Ziel-Legendären (L1 Überladung / L9 Blutvertrag,
+// needsTarget/permMod) sind im Legendär-Perks-Rework (#203) entfernt; der einzige deck-umformende Legendär ist jetzt
+// Umverteilung (L_UMV, KEIN Ziel-Schritt, oben geprüft). Das flache CONFIRM_TARGET/needsTarget bleibt als (aktuell
+// ungenutzte) Reducer-Infrastruktur für die spätere UI (TargetSelect) erhalten.
 
 describe("RESOLVE_TRICK — Reducer-Dispatch (#158)", () => {
   it("dispatcht auf resolveTrick und reicht action.rng durch", () => {

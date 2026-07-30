@@ -1,0 +1,72 @@
+// Headless-Treiber (Sim S0). Spielt EINEN vollständigen Run mit einem geseedeten rng
+// gegen den aktuellen Build durch und gibt Telemetrie zurück.
+//
+// Determinismus-Invariante (docs/sim-harness-plan.md §9): EIN makeRng(seed) pro Run,
+// dieselbe Referenz für ALLE Dispatches → gleicher Seed + gleiche Policy = gleicher Score.
+// Die game/-Schicht bleibt pure; jegliche Adaptivität lebt in der Policy, nicht hier.
+import { reducer } from "../src/game/reducer.js";
+import { makeRng } from "../src/game/deck.js";
+import { newTelemetry, observe, summarizeCards, summarizeFormations, fingerprint } from "./metrics.js";
+
+const GUARD_MAX = 1_000_000; // Endlos-Schleifen-Backstop (ein realer Run macht ~1.8k Stiche)
+
+// Telemetrie aus Endzustand (Kennzahlen + Build-Fingerprint) + Per-Karte-Ledger (S1) aus dem lastTrick-Strom.
+function finalize(s, seed, tel) {
+  return {
+    seed,
+    score: s.score,
+    tricks: s.trickNo,
+    cycles: s.cycle,
+    wins: s.wins,
+    losses: s.losses,
+    ties: s.ties,
+    crits: s.crits,
+    critBonusScore: s.critBonusScore,
+    bestStreak: s.bestStreak,
+    bestTrickScore: s.bestTrickScore,
+    coins: s.shop?.coins ?? 0,
+    formationWinRate: s.wins ? tel.formationWins / s.wins : 0, // Anteil der Siege mit aktiver Formation (S1)
+    fingerprint: fingerprint(s),
+    build: {
+      perks: [...s.perks].sort(),
+      skills: [...s.skills].sort(),
+      archetypes: [...(s.activeArchetypes || [])].sort(),
+      stats: {
+        critChance: s.statCritChance,
+        critMult: s.statCritMult,
+        formMult: s.statFormMult,
+        streakMult: s.statStreakMult,
+        economy: s.economyStatLevel,
+      },
+    },
+    cards: summarizeCards(tel), // Per-Karte-Ledger (S1): Auftritte/Winrate/Crits/Score-Anteil
+    formations: summarizeFormations(tel), // Formations-Häufigkeit je Typ (Präsenz-Rate)
+  };
+}
+
+// mem (optional): Cross-Run-Banditengedächtnis (S2). Wird an die Policy durchgereicht (adaptive Wahl)
+// und am Run-Ende mit dem Run-Score belohnt. Ohne mem verhält sich runOne wie in S0/S1 (Eval-Modus).
+// hooks (optional): { onTrick(state) } — nach jedem aufgelösten Stich aufgerufen (Pro-Cycle-Sampling,
+// Pacing-Analyse). Rein beobachtend; ändert weder rng noch State → Determinismus-Invariante bleibt.
+export function runOne(seed, policy, mem = null, hooks = null) {
+  const rng = makeRng(seed);
+  let s = reducer(null, { type: "START_RUN", rng }); // START_RUN ignoriert den (null-)State
+  const tel = newTelemetry();
+  let guard = 0;
+  while (s.phase !== "gameover") {
+    if (++guard > GUARD_MAX) throw new Error(`runOne: Guard bei Phase '${s.phase}' (seed ${seed}) — kein Fortschritt zum gameover`);
+    if (s.phase === "play") {
+      s = reducer(s, { type: "RESOLVE_TRICK", rng });
+      observe(tel, s.lastTrick); // S1: jeden aufgelösten Stich ins Per-Karte-Ledger aufnehmen
+      if (hooks && hooks.onTrick) hooks.onTrick(s); // S6: Pro-Stich-Beobachter (Pacing-Kurve)
+    } else {
+      const action = policy.act(s, rng, mem);
+      if (!action) throw new Error(`Policy '${policy.name}' lieferte keine Action für Phase '${s.phase}' (seed ${seed})`);
+      const next = reducer(s, action);
+      if (next === s) throw new Error(`Policy '${policy.name}' Action '${action.type}' brachte keinen Fortschritt in Phase '${s.phase}' (seed ${seed})`);
+      s = next;
+    }
+  }
+  if (mem) mem.reward(s.score); // S2: Run-Score auf alle in diesem Run gezogenen Arme buchen
+  return finalize(s, seed, tel);
+}

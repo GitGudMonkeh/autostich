@@ -10,9 +10,9 @@ import { lightningCritRaw } from "./skills.js";
      scoreFlat(ctx)       -> additiver Score bei Sieg (Kat. D — fließt in die multiplizierte Basis)
      scoreFlatOnCrit(ctx) -> additiver Score NUR bei Crit (Kat. D)
      scoreMult(ctx)       -> multiplikativer Score-Faktor bei Sieg
-   Kat.-C/E/L-Sonderfälle laufen über Marker/Flags am Perk (needsTarget, relay, triumph, permMod,
-   sacrificeMod, jokerRole/bridgeRole, segmentLow/segmentHigh, critValueGain, successorCrit,
-   swapExtremes, repeatPos, randomTarget, extraSwap) — je an ihrer Definition erklärt.
+   Kat.-E/L-Sonderfälle laufen über Marker/Flags am Perk. Legendär-Perks-Rework (#203): critValueGain (L4),
+   redistribute/zinseszins/vabanque/henker/echo/sammler/brennpunkt/patt (die 8 neuen) + extraSwap (E10) —
+   je an ihrer Definition erklärt, verdrahtet in engine.js/reducer.js (ownsFlag/flagValue-Hooks).
    Crit-Chance/-Mult kommen NICHT aus den Perks, sondern aus Stat + Blitz-Skills (Engine).
    rarity: "legendary" markiert Legendaries (Default "common") — Gewicht in buildOffer.
 
@@ -58,41 +58,37 @@ export const PERK_DEFS = {
 
   // ---- Legendär (#33): mächtig, aber mit Nachteil. rarity "legendary" → Gewicht 8 & Level-Gate ≥5
   //      (buildOffer). Nutzen bestehende Kategorien (A–E) plus die neuen Legendär-Hooks oben. ----
-  L1: { id: "L1", cat: "A", rarity: "legendary", label: "Überladung", needsTarget: 5,
-        desc: "Wähle fünf Karten. Sie erhalten dauerhaft +6 Wert.",
-        permMod: (deck, order, ids) => deck.map((c) => (ids.includes(c.id) ? { ...c, value: c.value + 6 } : c)) },
+  // ---- Legendär-Perks-Rework (#203, 2026-07-30): 11 GENERISCHE Legendäre, nach HOOK organisiert (kein Archetyp).
+  //      3 behalten (Unaufhaltsam/Raserei/Kritische Masse), 8 neu. „Verstärker, kein Motor" · „harte Bedingung →
+  //      großer Payout" · distinct in der Art (lauf-verändernd/permanent/multiplikativ/deck-umformend) vs. Familien.
+  //      Der ganze ×-Multiplikator-Raum ist family-free (Brennpunkt/Henker) = klare Legendär-Lane. Skala: Stich ⊂
+  //      Segment(5) ⊂ Durchlauf(40) ⊂ Lauf. Engine-Hooks + ENV-Knöpfe je Flag.
   L2: { id: "L2", cat: "B", rarity: "legendary", label: "Unaufhaltsam",
         desc: "Solange du siegst, erhält die nächste Karte +4 Wert (bis eine Niederlage eintritt).",
-        cardBonus: (ctx) => (ctx.winStreak > 0 ? 4 : 0) }, // #115: flach & gedeckelt (kein Wert-Snowball mehr)
-  L3: { id: "L3", cat: "A", rarity: "legendary", label: "Letztes Aufbäumen",
-        desc: "Alle Karten auf den Positionen 36–40 erhalten +5 Wert.",
-        cardBonus: (ctx) => (ctx.posInCycle >= 35 ? 5 : 0) },
-  L4: { id: "L4", cat: "D", rarity: "legendary", label: "Kritische Masse", critValueGain: 4,
-        desc: "Jeder Crit gibt der betreffenden Karte dauerhaft +1 Wert (maximal +4)." },
-  L5: { id: "L5", cat: "D", rarity: "legendary", label: "Jackpot", randomTarget: 4, jackpotScore: 1000,
-        desc: "Vier zufällige Karten geben bei ihrem ersten Crit pro Durchlauf +1.000 Score." },
+        cardBonus: (ctx) => (ctx.winStreak > 0 ? C.UNAUFHALTSAM_VALUE : 0) }, // Serie-Hook (Favorit, behalten)
   L6: { id: "L6", cat: "D", rarity: "legendary", label: "Raserei",
         desc: "Jeder Sieg in Folge gibt +5 % Crit-Chance. Über 100 % Gesamt-Crit wird der Überschuss zu Crit-Schaden (max +100 %).",
-        // #115: neue DNA (Crit statt Wert). critChance fließt in die Gesamt-rawCrit; der Überschuss über 100 %
-        // wird additiv zum Crit-Faktor (harmoniert mit D19 „Überschusskrit"). Kein Wert-Snowball → entsnowballt.
-        critChance: (ctx) => 0.05 * (ctx.winStreak || 0),
-        critMultBonus: (ctx) => Math.min(Math.max(0, (ctx.rawCrit || 0) - 1), 1) },
-  // L7 „Königsmacher" ersatzlos entfernt (Rarität-Umbau #162, Spec §3.3/§7/§9 — nicht mehr im Pool/Angebot).
-  L8: { id: "L8", cat: "A", rarity: "legendary", label: "Schicksalsmaschine", swapExtremes: true,
-        desc: "Nach jedem Durchlauf tauschen die erfolgreichste und die erfolgloseste Karte ihre Werte." },
-  L9: { id: "L9", cat: "A", rarity: "legendary", label: "Blutvertrag", needsTarget: 4,
-        desc: "Wähle vier Karten. Sie verlieren dauerhaft 2 Wert; ihre direkten Nachfolger erhalten dauerhaft +6 Wert.",
-        permMod: (deck, order, ids) => {
-          const succ = new Set(ids.map((id) => {
-            const idx = order.findIndex((di) => deck[di].id === id);
-            return idx >= 0 && idx + 1 < order.length ? deck[order[idx + 1]].id : null;
-          }).filter(Boolean));
-          return deck.map((c) => { let v = c.value; if (ids.includes(c.id)) v -= 2; if (succ.has(c.id)) v += 6; return { ...c, value: Math.max(0, v) }; });
-        } },
-  L10: { id: "L10", cat: "D", rarity: "legendary", label: "Kettenreaktion", successorCrit: true,
-        desc: "Nach einem Crit ist der direkte Nachfolger garantiert kritisch, falls er gewinnt." },
-  L11: { id: "L11", cat: "A", rarity: "legendary", label: "Zeitraffer", repeatPos: true,
-        desc: "Position 40 wiederholt die temporären Kartenwert-Effekte, die zuvor auf Position 20 ausgelöst wurden." },
+        critChance: (ctx) => C.RASEREI_CRIT_STEP * (ctx.winStreak || 0),
+        critMultBonus: (ctx) => Math.min(Math.max(0, (ctx.rawCrit || 0) - 1), 1) }, // Serie→Crit-Hook (Favorit, behalten)
+  L4: { id: "L4", cat: "D", rarity: "legendary", label: "Kritische Masse", critValueGain: C.KRITMASSE_VALUE,
+        desc: "Jeder Crit gibt der betreffenden Karte dauerhaft +1 Wert (maximal +4)." }, // Crit-Hook (revived L4)
+  // --- 8 neue ---
+  L_UMV: { id: "L_UMV", cat: "A", rarity: "legendary", label: "Umverteilung", redistribute: true,
+        desc: "Sofort: alle Karten nehmen dauerhaft den Durchschnittswert des Decks an (keine Karte wird entfernt). Stark bei schiefem Deck." },
+  L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
+        desc: "Jeder Durchlauf mit positiver Bilanz (mehr Siege als Niederlagen) gibt dauerhaft +Score, der sich mit jedem weiteren aufstapelt (flach, kein Multiplikator)." },
+  L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,
+        desc: "Eröffnungs-Wette: Gewinnst du die ersten fünf Stiche eines Durchlaufs in Folge, gibt es einen großen Score-Bonus (bis zu dreimal pro Lauf)." },
+  L_HENK: { id: "L_HENK", cat: "D", rarity: "legendary", label: "Henker", henker: true,
+        desc: "Im letzten Segment (Positionen 36–40) zählt jeder Sieg doppelt und ist garantiert ein Crit." },
+  L_ECHO: { id: "L_ECHO", cat: "C", rarity: "legendary", label: "Echo", echo: true,
+        desc: "Am Ende jedes Durchlaufs wird dein höchstwertiger Stich dieses Durchlaufs ein zweites Mal gutgeschrieben." },
+  L_SAMM: { id: "L_SAMM", cat: "E", rarity: "legendary", label: "Sammler", sammler: true,
+        desc: "Je unterschiedlicher Formationsart, die in einem Durchlauf gewinnt (max. 5), +0,15 Formations-Multiplikator für den restlichen Durchlauf." },
+  L_BRENN: { id: "L_BRENN", cat: "E", rarity: "legendary", label: "Brennpunkt", brennpunkt: true,
+        desc: "Gewinnt eine Karte in mindestens drei gleichzeitigen Formationen, zählt der Stich doppelt." },
+  L_PATT: { id: "L_PATT", cat: "B", rarity: "legendary", label: "Patt", patt: true,
+        desc: "Eine Niederlage um höchstens einen Wert zählt stattdessen als Sieg." },
 };
 
 export const PERK_LIST = Object.values(PERK_DEFS);
@@ -116,7 +112,7 @@ const LAYOUT_EXTRA = new Set([
   // B-Stich, D-Score UND C-Rollen sind zu Familien migriert (#167) — ihre positions-/formations-/segmentbezogenen
   // Familien (u. a. Vorhut/Finisher/Joker/Bindeglied/Überlebensvorteil, Punktebonus/Kritische Ernte) sind in der
   // Aufstellungshilfe noch NICHT berücksichtigt (folgt mit #166 UI, da layoutPerks nur flache `perks` kennt).
-  "L3", "L11",                            // Positionen 36–40 · Position 20→40 (L7 „Königsmacher" entfernt, #162)
+  "L_HENK",                               // Henker (#203): letztes Segment (Positionen 36–40) — positionsgebunden
 ]);
 export function isLayoutPerk(id) { return PERK_DEFS[id]?.cat === "E" || LAYOUT_EXTRA.has(id); }
 export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); }
@@ -127,8 +123,8 @@ export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); 
 // ins Angebot statt über PERK_DEFS. Wächst mit jeder migrierten Kategorie (D, B, A, C; später +E).
 export const MIGRATED_CATS = new Set(["D", "B", "A", "C", "E"]);
 
-// Ist dieser flache Perk durch eine Familie ersetzt? Nur reguläre Perks migrierter Kategorien — die legendären
-// D-Perks (L4/L5/L6/L10) bleiben flach im Legendär-Pool (Spec §3.1).
+// Ist dieser flache Perk durch eine Familie ersetzt? Nur reguläre Perks migrierter Kategorien — die 11 generischen
+// Legendären (#203, alle Kategorien) bleiben flach im Legendär-Pool (Spec §3.1).
 export function isMigratedPerk(p) {
   return !!p && MIGRATED_CATS.has(p.cat) && (p.rarity || "common") !== "legendary";
 }
@@ -214,7 +210,7 @@ export function totalCritChanceRaw(state = {}) {
 export function critMultiplierFor(perks, ctx = {}, baseBonus = 0) {
   let bonus = 0;
   for (const id of perks) { const f = PERK_DEFS[id].critMultBonus; if (f) bonus += f(ctx); }
-  return C.CRIT_BASE_MULT + (baseBonus || 0) + bonus;
+  return C.CRIT_BASE_MULT + Math.min(baseBonus || 0, C.STAT_CRIT_MULT_CAP) + bonus;
 }
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
 // V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit; L6 trägt Crit-Chance → alle zählen.
