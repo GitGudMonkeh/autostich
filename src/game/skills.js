@@ -277,10 +277,10 @@ export function archetypesWithSkills(owned = []) {
   return ARCHETYPE_ORDER.filter((a) => have.has(a));
 }
 
-/* Aus welchen Archetypen wird das nächste Skill-Angebot gezogen (max C.MAX_ARCHETYPES = 3)? Rein & testbar.
-   - 0 aktiv → bis zu 3 zufällige verfügbare Archetypen (Erstangebot).
-   - 1–2 aktiv → die aktiven + zufällige noch nicht aktive, bis max. C.MAX_ARCHETYPES.
-   - 3 aktiv → nur die drei aktiven. */
+/* Aus welchen Archetypen wird das nächste Skill-Angebot gezogen (max C.MAX_ARCHETYPES = 4)? Rein & testbar.
+   - 0 aktiv → bis zu 4 zufällige verfügbare Archetypen (Erstangebot).
+   - 1–3 aktiv → die aktiven + zufällige noch nicht aktive, bis max. C.MAX_ARCHETYPES.
+   - 4 aktiv → nur die vier aktiven. */
 export function offerArchetypes(activeArchetypes = [], available = [], rng = Math.random) {
   const active = (activeArchetypes || []).filter((a) => available.includes(a));
   if (active.length >= C.MAX_ARCHETYPES) return active.slice(0, C.MAX_ARCHETYPES);
@@ -512,7 +512,7 @@ export function ownsConsumerFor(arch, skills) {
   return true;
 }
 
-// Angebot (#93 F0): bis zu `count` noch nicht gehaltene Skills, nach Archetyp gruppiert (2+2+2),
+// Angebot (#93 F0): bis zu `count` noch nicht gehaltene Skills, nach Archetyp gruppiert (3+3+3+3),
 // aus max C.MAX_ARCHETYPES Archetypen (offerArchetypes). Deterministisch über den injizierten rng.
 // Leerer Pool → [] (Reducer/Engine fällt auf Perk-Angebot zurück). F0: nur Blitz → 4 Blitz-Skills.
 export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0) {
@@ -533,7 +533,7 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   // am ersten angebotenen Archetyp, der überhaupt einen hat (Feuer/Blitz; Eis hat keinen). So ist die Konsumenten-
   // Richtung von Anfang an sichtbar, nicht erst nach der Archetyp-Festlegung. Leeres activeArchetypes = erstes Angebot.
   const guaranteeAny = (activeArchetypes || []).length === 0;
-  const perArch = Math.max(1, Math.floor(count / chosen.length)); // 2 bei 3 Archetypen (count 6), count bei 1 Archetyp
+  const perArch = Math.max(1, Math.floor(count / chosen.length)); // 3 bei 4 Archetypen (count 12), count bei 1 Archetyp
   const offer = [];
   const rest = [];
   const legPool = [];
