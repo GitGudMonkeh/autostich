@@ -2,7 +2,8 @@ import { useState } from "react";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../game/skills.js";
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE,
          ION_MAX_STACKS, ION_SCORE_PER_STACK,
-         FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, BURN_BONUS, ICE_BASE_FREEZE, FROST_GRIP_BONUS } from "../game/constants.js";
+         FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, ICE_BASE_FREEZE, FROST_GRIP_BONUS,
+         PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, PLANT_ANCHOR_VALUE } from "../game/constants.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { PanelMascot } from "./PanelMascot.jsx";
@@ -23,10 +24,14 @@ const KEYWORD_INFO = {
   ionize: { label: "Ionisierung", icon: "⚡", color: "#8a7de0", text: `Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +${ION_SCORE_PER_STACK} Score pro Stapel und erhält danach +1 Stapel (max ${ION_MAX_STACKS}).` },
   streak: { label: "Serie", icon: "⚡", color: "#8a7de0", text: "Geladene Serie schützt deine Siegesserie — die nächste Niederlage setzt sie nicht zurück." },
   // #116: Feuer-Flat-Score-Grundmechanik quantifiziert (Zahlen aus constants.js → kein Text↔Code-Drift).
-  heat: { label: "Hitze", icon: "🔥", color: "#e0714a", text: `Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Flat-Score = (Vorsprung − 2) × ${FIRE_SCORE_BASE} (+${FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill; Verbrennung +${BURN_BONUS}/Punkt); klare Niederlagen kühlen sie ab.` },
+  heat: { label: "Hitze", icon: "🔥", color: "#e0714a", text: `Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Flat-Score = (Vorsprung − 2) × ${FIRE_SCORE_BASE} (+${FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill); klare Niederlagen kühlen sie ab.` },
   consume: { label: "Hitze-Konsument", icon: "🔥", color: "#e0714a", text: "Verbraucht angesammelte Hitze für einen starken Effekt. Höchstens ein Konsument gleichzeitig — ein zweiter ersetzt den bestehenden." },
   // #122: Einfrier-Grundzahl genannt (aus constants.js) — sonst ist „wie viele Karten?" nirgends ersichtlich.
   freeze: { label: "Eingefroren", icon: "❄️", color: "#5ec8f0", text: `Eis friert eigene Karten dauerhaft ein (blau): ${ICE_BASE_FREEZE} beim ersten Eis-Skill, +1 je weiterem (Frostgriff: +${FROST_GRIP_BONUS}). Eingefrorene Karten biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden.` },
+  // Pflanze (v0): Wachstum → Reife (grün) → Farbblock; Kolonisieren markiert Gegnerkarten grün.
+  growth:   { label: "Wachstum", icon: "🌿", color: "#5ab87a", text: `Eigene Karten wachsen bei Siegen (nur steigend). Ab ${PLANT_GREEN_THRESHOLD} Wachstum wird eine Karte dauerhaft grün (reif).` },
+  green:    { label: "Grün", icon: "🌿", color: "#5ab87a", text: "Grüne Karten sind dauerhaft (wie eingefroren) und bilden einen gemeinsamen Farbblock — je größer der Block, desto mehr Score." },
+  colonize: { label: "Kolonisieren", icon: "🌿", color: "#5ab87a", text: "Markiert gegnerische Karten grün (Ausläufer/Rhizom) — kolonisierte Karten lassen sich für Score ernten." },
 };
 
 /* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint jede 3. Runde STATT eines Perks.
@@ -56,6 +61,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const fireFirstPick = !(state.heat && state.heat.active); // erster Feuer-Skill schaltet die Hitzeleiste frei
   const hasIceOffer = offer.some((id) => archetypeOf(id) === "ice");
   const iceFirstPick = !(state.activeArchetypes || []).includes("ice"); // erster Eis-Skill schaltet das Einfrieren frei
+  const hasPlantOffer = offer.some((id) => archetypeOf(id) === "plant");
+  const plantFirstPick = !(state.activeArchetypes || []).includes("plant"); // erster Pflanze-Skill schaltet Wachstum/Grün frei
   const showFormations = hasIceOffer || (skills || []).some((id) => archetypeOf(id) === "ice"); // #161 FB-1: Formations-Panel bei Eis-Relevanz
 
   // Konsumenten-Typ eines Skills (#93): Hitze („heat") / Ladung („charge") / kein Konsument (null).
@@ -139,6 +146,22 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           ) : (
             <>Jeder weitere Eis-Skill friert eine <b style={{ color: "#5ec8f0" }}>weitere eigene Karte</b> ein und
               erweitert deine Formations- und Aufstellungs-Optionen.</>
+          )}
+        </div>
+        )}
+
+        {/* Was ein Pflanze-Skill freischaltet: Wachstum → Grün → Farbblock — nur wenn Pflanze im Angebot ist (v0). */}
+        {hasPlantOffer && (
+        <div className="mt-3 rounded-lg px-3 py-2 text-xs leading-snug"
+          style={{ background: "#5ab87a14", border: "1px solid #5ab87a44" }}>
+          {plantFirstPick ? (
+            <>Dein erster Pflanze-Skill schaltet das <b style={{ color: "#5ab87a" }}>Wachstum</b> frei: eigene Karten
+              wachsen bei Siegen (nur steigend); ab {PLANT_GREEN_THRESHOLD} Wachstum werden sie dauerhaft{" "}
+              <b style={{ color: "#86e0a0" }}>grün</b> und bilden einen wachsenden Farbblock, der Score gibt.
+              Ein <b style={{ color: "#86e0a0" }}>Alter Anker</b> startet sofort mit 1 reifen grünen Karte (Wert {PLANT_ANCHOR_VALUE}).</>
+          ) : (
+            <>Jeder weitere Pflanze-Skill vertieft das <b style={{ color: "#5ab87a" }}>Wachstum</b> — mehr grüne Karten,
+              größerer Farbblock, höhere Werte (bis {PLANT_VALUE_CAP}). Wachstum/Grün sind bereits aktiv.</>
           )}
         </div>
         )}

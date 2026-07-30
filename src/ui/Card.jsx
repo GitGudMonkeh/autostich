@@ -6,7 +6,7 @@ import { FrostOverlay } from "./FrostOverlay.jsx";
      value      = dauerhafter Kartenwert (inkl. Kat.-A-Mods)
      baseRank   = Ursprungswert → dauerhafter Boost = value − baseRank (violett „+X")
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
-export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, allyColor = null, frontImage = null }) {
+export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, green = false, allyColor = null, frontImage = null }) {
   const color = suitColor(suit);
   // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
   // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
@@ -40,6 +40,8 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
   // Sweep), nicht mehr aus einem box-shadow → mehr „eisig" und weiterhin konfliktfrei mit Ion-Ring/Glow.
   // Frostbiss (#126): feindlicher −3-Debuff auf einer Gegnerkarte → ROTER Innen-Schimmer (nicht blau wie eigener Frost).
   const frostbiteGlow = frostbitten ? "inset 0 0 14px #e0605a55" : null;
+  // Pflanze (v0): grüne (reife) Karte → grüner Innensaum + Flächen-Schein; markiert Karten des Farbblocks (kollisionsfrei mit Ion-Ring, da inset).
+  const greenGlow = green ? "inset 0 0 0 1px #5ab87a88, inset 0 0 16px #5ab87a55" : null;
   return (
     <div
       className="as-card as-card-holo relative rounded-xl overflow-hidden flex flex-col items-center justify-center select-none transition-all"
@@ -49,7 +51,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
         opacity: dim ? 0.35 : 1,
         // Ion-Rahmen (blau) zuerst → liegt oben; Gewinn-/Verlust-Glow (#135) & Frostbiss darunter; Holo-Saum zuletzt. Frost = eigener Layer.
         // Glow REIN blur-basiert (kein 0-Blur-Ring mehr) → weicher, kantenloser Rand statt harter Kontur am Kartenrand.
-        boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, frostbiteGlow, ambientEdge].filter(Boolean).join(", "),
+        boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, frostbiteGlow, greenGlow, ambientEdge].filter(Boolean).join(", "),
       }}
     >
       {/* #136 Eis-Schimmer: Frost-Layer (Tint + Körnung + optional Sweep) über der eingefrorenen Karte — hinter Text/Markern. */}
@@ -69,6 +71,10 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
       {/* Frostbiss (#126): frostgebissene GEGNERkarte — ROTES ❄, klar als feindlicher −3-Debuff (nicht wie eigener Frost). */}
       {frostbitten && (
         <div className="absolute bottom-1 right-1 text-[13px] leading-none" style={{ color: "#f0a09a", textShadow: "0 0 5px #e0605a" }} title="Frostbiss −3">❄</div>
+      )}
+      {/* Pflanze (v0): grünes Blatt oben links markiert eine reife/grüne Karte (Teil des Farbblocks, dauerhaft). */}
+      {green && (
+        <div className="absolute top-1 left-1 text-[13px] leading-none" style={{ color: "#86e0a0", textShadow: "0 0 5px #5ab87a" }} title="Grün (reif) — Teil des Farbblocks">🌿</div>
       )}
       {/* Ionisierung: Blitze in der unteren linken Ecke, vertikal von unten nach oben gestapelt (Anzahl = Stapel, max ION_MAX_STACKS). */}
       {ionStacks > 0 && (

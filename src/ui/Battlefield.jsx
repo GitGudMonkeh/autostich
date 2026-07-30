@@ -308,7 +308,7 @@ function SlashGhostLayer({ ghosts }) {
       {ghosts.map((g) => {
         const cardEl = (
           <Card suit={g.suit} value={g.value} baseRank={g.baseRank} stichBonus={g.stichBonus}
-            ionStacks={g.ionStacks} frozen={g.frozen} frostbitten={g.frostbitten} frostAnimated
+            ionStacks={g.ionStacks} frozen={g.frozen} frostbitten={g.frostbitten} green={g.green} frostAnimated
             allyColor={g.allyColor} frontImage={g.frontImage} />
         );
         // Reihenfolge (Wunsch): Karte liegt (rest) → Slice/Explosion IN PLACE (delay = g.rest) → DANACH floatet der
@@ -438,13 +438,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const pCardEl = t && (
     <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
           stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-          ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} frostAnimated allyColor={allyColorFor(t.pCard.suit)}
+          ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} green={!!t.pCard.green} frostAnimated allyColor={allyColorFor(t.pCard.suit)}
           frontImage={deckFront} />
   );
   // #186: die Gegnerkarte trägt den Skin-Front-Rahmen der kommenden Auswahl (Holo entfällt); Zahl/Effekte darüber.
   const oCardEl = t && (
     <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
-          frostbitten={t.oFrostbitten} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
+          frostbitten={t.oFrostbitten} green={!!t.oCard.green} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
   );
 
   // Sieger kippt an (as-slice-winner); im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
@@ -588,14 +588,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       spawned.push({ ...base, id: `pg${t.trickNo}-${ghostSeq.current++}`, side: "player", fx: "slice",
         color: suitColor(t.pCard.suit), seed: t.trickNo * 2 + 7,
         suit: t.pCard.suit, value: t.pCard.value, baseRank: t.pCard.baseRank, stichBonus: t.pValue - t.pCard.value,
-        ionStacks: t.pCard.ionStacks || 0, frozen: t.pFrozen, frostbitten: false,
+        ionStacks: t.pCard.ionStacks || 0, frozen: t.pFrozen, frostbitten: false, green: !!t.pCard.green,
         allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
     }
     if (win) {   // Gegnerkarte verliert → Schnitt- (normal) bzw. Explosions-Ghost (Krit) auf der Gegnerseite
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp", fx: isCrit ? "explode" : "slice",
         color: isCrit ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
-        ionStacks: 0, frozen: false, frostbitten: t.oFrostbitten,
+        ionStacks: 0, frozen: false, frostbitten: t.oFrostbitten, green: !!t.oCard.green,
         allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
     }
     if (!spawned.length) return;
