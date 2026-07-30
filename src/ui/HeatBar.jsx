@@ -16,14 +16,16 @@ export function HeatBar({ heat, skills = [] }) {
   const glowMark = fireFlag(skills, "glowingBlade") ? (50 / max) * 100 : null;
 
   const badges = [];
-  if (heat.afterglowArmed) badges.push({ k: "ng", t: "Nachglut bereit", c: "#f0c05a" });
+  // Rework (v0): frühere Hitze-Badges „Nachglut" (heat.afterglowArmed) & „Phönix +10" (heat.phoenixArmed)
+  // entfernt — die Felder existieren nicht mehr (Nachglut ist jetzt der Formations-Faktor afterglowFactor,
+  // Phönixfeuer nutzt heat.phoenixUsed/Reignite). Reworkte Feuer-Indikatoren (Sonnenzorn/Phönix-bereit/
+  // Funkenflug) folgen im Indikator-Pass → AP3 (#206).
   // Feuerwalze DAUERHAFT anzeigen, sobald der Skill gehalten wird (nicht mehr bei jedem Stich ein-/ausblenden);
   // die +N nur zeigen, wenn die Walze wirklich aktiv ist (>0) — sonst gedämpft ohne Zahl.
   if (fireFlag(skills, "fireRoll")) {
     const fr = heat.fireRoll || 0;
     badges.push({ k: "fw", t: fr > 0 ? `Feuerwalze +${fr}` : "Feuerwalze", c: HOT, dim: fr === 0 });
   }
-  if (heat.phoenixArmed) badges.push({ k: "px", t: "Phönix +10", c: "#f07a5a" });
 
   return (
     <div className="rounded-xl p-3 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
