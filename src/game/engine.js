@@ -541,7 +541,13 @@ export function resolveTrick(state, rng = Math.random) {
     const afterglowMult = posForm.afterglowFactor || 1;                                // F6 Nachhall
     const coreMult = posForm.coreFactor || 1;                                          // F-L1 Formationskern
     const formBaseMult = (posForm.baseMult != null ? posForm.baseMult : formationMult); // echte Formationen (inkl. Überlappung)
-    const formMult = formBaseMult * statFormFactor(statFormMult, activeFormationCount(posForm)) * iceFormMult * plantFormMult; // Formations-Stat ×Anzahl AKTIVER Formationen an der Siegposition + Eisdruck/Architekt + Photosynthese
+    const formStatFactor = statFormFactor(statFormMult, activeFormationCount(posForm)); // Formations-Stat × Anzahl AKTIVER Formationen an der Siegposition
+    // Eis-Ceiling-Hebel: dichte Formations-Überlappung (formBaseMult) ist der EINZIGE Eis-Ceiling-Treiber. Weicher
+    // Deckel NUR für Frostkarten, NUR über der Schwelle → Median-Frost-Siege (formBase < Schwelle) & Nicht-Eis unberührt.
+    let formBaseEff = formBaseMult;
+    if (pCard.frozen && C.ICE_FORMBASE_SOFTCAP > 0 && formBaseEff > C.ICE_FORMBASE_SOFTCAP)
+      formBaseEff = C.ICE_FORMBASE_SOFTCAP + (formBaseEff - C.ICE_FORMBASE_SOFTCAP) * C.ICE_FORMBASE_SLOPE;
+    const formMult = formBaseEff * formStatFactor * iceFormMult * plantFormMult; // + Eisdruck/Architekt (iceFormMult) + Photosynthese (plantFormMult)
     // Sonnenzorn (L): dauerhafter Score-Multiplikator ∝ HÖCHSTER je gehaltener Hitze (heat.peak) — auf den GESAMTEN Sieg-Score
     // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
     const sunwrathMult = (fireFlag(skills, "sunwrath") && heat && heat.active) ? (1 + (heat.peak || 0) * C.SUNWRATH_PEAK_STEP) : 1;
@@ -571,7 +577,7 @@ export function resolveTrick(state, rng = Math.random) {
     }
     gained += fireDirect + iceDirect;
     score += gained;
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, total: gained };
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, formStat: formStatFactor, iceForm: iceFormMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz-Rework (v0): Ladungsgewinn — Blitzableiter (Crit +1) · Statische Aufladung (Nicht-Crit-Sieg +1) ·

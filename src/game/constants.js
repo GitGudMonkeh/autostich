@@ -297,6 +297,15 @@ export const PERMAFROST_DIRECT       = envNum("SIM_PERMAFROST_DIRECT", 270);    
 export const PERMAFROST_OVERFLOW_CAP = envNum("SIM_PERMAFROST_OVERFLOW_CAP", 60);// … gedeckelte Gesamt-Überlauf-Summe (Plateau)
 export const VERGLETSCHERUNG_DIRECT  = envNum("SIM_VERGLETSCHERUNG_DIRECT", 130);// Vergletscherung: Bonus-Score je Punkt GESAMTER aktiver Gegner-Vergletscherung (Σ frostbiteActive), je Frost-Sieg [Sweep: →1,29×]
 export const VERGLETSCHERUNG_DEBUFF_CAP = envNum("SIM_VERGLETSCHERUNG_DEBUFF_CAP", 60); // … gedeckelte Debuff-Summe (Plateau)
+// Eis-Ceiling-Hebel (2026-07-30): Eis' Ceiling (p90 ~2,4× Feld) ist ZU 100 % `formBaseMult` — dichte Formations-
+// Überlappung (Kristallform-Joker + Frostbrücke) treibt den Frost-Sieg-formBase auf 4-6 (Autopsie Top5% 4,39 vs
+// Median 2,32; formStat/iceForm/streak/crit alle flach). Weicher Deckel NUR für Frostkarten, NUR ÜBER der Schwelle:
+// Median (formBase < Schwelle) und generisches Nicht-Eis bleiben unberührt → Floor gehalten, nur die Spitze glatt.
+// Sweep (60c, N=250): Floor & Ceiling teilen sich dieselbe Formations-Engine → ein Ceiling-Schnitt kostet Floor.
+// User-Ziel: Eis auf das Niveau der anderen bringen, nur ein klein wenig darüber. 2,0/0,3 landet Eis-Floor 4,17M
+// (Pflanze 4,01M +4 %, klar aber knapp #1), Ceiling p90 12,4M→7,98M (Spread 2,39×→1,54×), Winrates unverändert.
+export const ICE_FORMBASE_SOFTCAP = envNum("SIM_ICE_FORMBASE_SOFTCAP", 2.0);  // Schwelle: ab hier greifen Diminishing Returns (0 = aus)
+export const ICE_FORMBASE_SLOPE   = envNum("SIM_ICE_FORMBASE_SLOPE", 0.3);    // Anteil des Überschusses über der Schwelle, der noch zählt (0 = harter Deckel, 1 = kein Effekt)
 
 /* ============================================================
    PFLANZE-FRAKTION v0 — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend) →
