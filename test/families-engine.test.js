@@ -556,8 +556,8 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
 
   it("besessene flache Perks werden nicht erneut angeboten (Legendäre — alle regulären Perks sind Familien)", () => {
     for (let seed = 0; seed < 30; seed++) {
-      const off = buildPerkOffer(["L1", "L2"], {}, rngS(seed), 3, 1); // Legendär-Wurf aktiv, aber L1/L2 besessen
-      expect(off).not.toContain("L1");
+      const off = buildPerkOffer(["L_UMV", "L2"], {}, rngS(seed), 3, 1); // Legendär-Wurf aktiv, aber L_UMV/L2 besessen
+      expect(off).not.toContain("L_UMV");
       expect(off).not.toContain("L2");
     }
   });

@@ -3,7 +3,8 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
-import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, STREAK_STAT_CAP, SCORE_PER_WIN, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL } from "../src/game/constants.js";
+import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, STREAK_STAT_CAP, SCORE_PER_WIN, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
+  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, PATT_MARGIN, ZINSESZINS_STEP, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS, statStreakFactor } from "../src/game/stats.js";
 import { streakBaseMult } from "../src/game/perks.js";
@@ -136,10 +137,10 @@ describe("resolveTrick — Crit & globale Score-Formel (ohne Tempo)", () => {
 });
 
 describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
-  it("L2 Unaufhaltsam: flach +4 solange die Serie läuft (kein Wert-Snowball), 0 ohne Serie (#115)", () => {
-    expect(resolveTrick(scenario(12, 0, { perks: ["L2"], winStreak: 3 }), rng).lastTrick.pValue).toBe(16); // 12 + 4
-    expect(resolveTrick(scenario(12, 0, { perks: ["L2"], winStreak: 9 }), rng).lastTrick.pValue).toBe(16); // flach — kein +18
-    expect(resolveTrick(scenario(12, 0, { perks: ["L2"], winStreak: 0 }), rng).lastTrick.pValue).toBe(12); // Serie 0 → kein Bonus
+  it("L2 Unaufhaltsam: flach +UNAUFHALTSAM_VALUE solange die Serie läuft (kein Wert-Snowball), 0 ohne Serie (#115)", () => {
+    expect(resolveTrick(scenario(12, 0, { perks: ["L2"], winStreak: 3 }), rng).lastTrick.pValue).toBe(12 + UNAUFHALTSAM_VALUE);
+    expect(resolveTrick(scenario(12, 0, { perks: ["L2"], winStreak: 9 }), rng).lastTrick.pValue).toBe(12 + UNAUFHALTSAM_VALUE); // flach — kein Snowball
+    expect(resolveTrick(scenario(12, 0, { perks: ["L2"], winStreak: 0 }), rng).lastTrick.pValue).toBe(12);                      // Serie 0 → kein Bonus
   });
   it("L6 Raserei: +5 % Crit-Chance je Serienpunkt, KEIN Wertbonus mehr (#115)", () => {
     const t = (ws) => resolveTrick(scenario(12, 0, { perks: ["L6"], winStreak: ws }), rng).lastTrick;
@@ -166,12 +167,40 @@ describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
     const capped = resolveTrick({ ...s, l4Boost: { a: 4 }, deck: [{ id: "a", suit: "R", baseRank: 9, value: 9 }], playerOrder: [0], pos: 0 }, rng);
     expect(capped.deck[0].value).toBe(9);
   });
-  it("L5 Jackpot: erster Crit einer L5-Zufallskarte je Durchlauf → +1000 Score", () => {
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, perks: ["L5"], roles: { L5: ["X0"] } }), rng);
-    expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo((B + 1000) * 1.02); // Jackpot-Flat in der Basis
-    expect(s.l5Used).toContain("X0");
-    // Zweite L5-Karte an pos1 wäre nötig; hier prüfen wir nur, dass die erste verbraucht ist.
+  it("L_HENK Henker: Segment-Finale (Pos 36–40) erzwingt Crit UND verdoppelt den Stich (#203)", () => {
+    const end = resolveTrick(scenario(12, 0, { perks: ["L_HENK"], pos: HENKER_ZONE_START + 1 }), () => 0.99); // rng 0.99, 0 Crit-Chance
+    expect(end.lastTrick.isCrit).toBe(true);                                          // garantierter Crit trotz 0 Chance
+    expect(end.lastTrick.scoreBeforeCrit).toBeCloseTo(B * streakBaseMult(1) * HENKER_MULT); // ×2 im Score-Stack
+    const early = resolveTrick(scenario(12, 0, { perks: ["L_HENK"], pos: 10 }), () => 0.99); // außerhalb der Zone
+    expect(early.lastTrick.isCrit).toBe(false);
+    expect(early.lastTrick.scoreBeforeCrit).toBeCloseTo(B * streakBaseMult(1));       // kein ×2
+  });
+  it("L_BRENN Brennpunkt: Sieg in ≥3 gleichzeitigen Formationen verdoppelt den Stich (#203)", () => {
+    const forms = identity().map(() => ({ mult: 1, formations: [] }));
+    forms[5] = { mult: 2, baseMult: 2, formations: [{ type: "treppe", factor: 1.5 }, { type: "wiederholung", factor: 1.3 }, { type: "farbblock", factor: 1.2 }] };
+    forms[6] = { mult: 1.5, baseMult: 1.5, formations: [{ type: "treppe", factor: 1.5 }, { type: "wiederholung", factor: 1.3 }] };
+    const withB = resolveTrick(scenario(12, 0, { perks: ["L_BRENN"], pos: 5, formations: forms }), rng).lastTrick;
+    const noB   = resolveTrick(scenario(12, 0, { pos: 5, formations: forms }), rng).lastTrick;
+    expect(withB.scoreBeforeCrit).toBeCloseTo(noB.scoreBeforeCrit * BRENNPUNKT_MULT); // Tiefe 3 → ×2
+    const two   = resolveTrick(scenario(12, 0, { perks: ["L_BRENN"], pos: 6, formations: forms }), rng).lastTrick;
+    const twoNo = resolveTrick(scenario(12, 0, { pos: 6, formations: forms }), rng).lastTrick;
+    expect(two.scoreBeforeCrit).toBeCloseTo(twoNo.scoreBeforeCrit);                   // nur 2 Formationen → kein Brennpunkt
+  });
+  it("L_PATT Patt: eine Niederlage um ≤ PATT_MARGIN Wert zählt als Sieg (#203)", () => {
+    const win = resolveTrick(scenario(12 - PATT_MARGIN, 12, { perks: ["L_PATT"] }), rng); // Rückstand = Marge → Sieg
+    expect(win.lastTrick.result).toBe("win");
+    expect(win.wins).toBe(1);
+    const loss = resolveTrick(scenario(12 - PATT_MARGIN - 1, 12, { perks: ["L_PATT"] }), rng); // Rückstand > Marge → Niederlage
+    expect(loss.lastTrick.result).toBe("loss");
+    const noPatt = resolveTrick(scenario(12 - PATT_MARGIN, 12, {}), rng);              // ohne Patt → Niederlage
+    expect(noPatt.lastTrick.result).toBe("loss");
+  });
+  it("L_VAB Vabanque: die ersten VABANQUE_TRICKS Stiche eines Durchlaufs in Folge → +VABANQUE_SCORE, sonst verfällt (#203)", () => {
+    // VABANQUE_TRICKS-ter Stich des Durchlaufs (pos = TRICKS−1) als TRICKS-ter Sieg in Folge (cycleWins TRICKS−1 → TRICKS).
+    const paid = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1 }), rng);
+    expect(paid.lastTrick.breakdown.perkDirect).toBe(VABANQUE_SCORE);                 // alle Eröffnungsstiche gewonnen
+    const voided = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 2 }), rng);
+    expect(voided.lastTrick.breakdown.perkDirect).toBe(0);                            // Serie vorher gerissen → verfällt
   });
 });
 
@@ -208,11 +237,10 @@ describe("resolveTrick — Durchlauf-Ende & persistente Reihenfolge (V2)", () =>
     expect([...s.oppOrder].sort((a, b) => a - b)).toEqual(identity()); // … aber eine Permutation
   });
 
-  it("#98: temporäre Positions-Boni (Relay-Queue / L11-Pos20) bluten nicht in den nächsten Durchlauf", () => {
-    const s = resolveTrick(scenario(12, 0, { pos: 39, successorQueue: [2, 2], pos20Bonus: 7 }), rng);
+  it("#98: temporäre Positions-Boni (Relay-Queue) bluten nicht in den nächsten Durchlauf", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39, successorQueue: [2, 2] }), rng);
     expect(s.cycle).toBe(1);
     expect(s.successorQueue).toEqual([]); // am Durchlauf-Ende geleert → Position 1 des Folgedurchlaufs erbt nichts
-    expect(s.pos20Bonus).toBe(0);
   });
 
   it("Run-Ende nach MAX_CYCLES Durchläufen → gameover, kein Angebot (der letzte Sieg zählt noch)", () => {
@@ -305,43 +333,35 @@ describe("Serien-/Crit-Rares — Engine (#71 Phase 2e)", () => {
   });
 });
 
-describe("Neue Legendaries — Engine (V2 §22.6 L)", () => {
-  const seq40 = Array.from({ length: 40 }, (_, i) => i);
-
-  it("L3 Letztes Aufbäumen: Karten auf Position 36–40 (posInCycle>=35) bekommen +5", () => {
-    expect(resolveTrick(scenario(5, 0, { pos: 35, perks: ["L3"] }), rng).lastTrick.pValue).toBe(10); // 5 + 5
-    expect(resolveTrick(scenario(5, 0, { pos: 34, perks: ["L3"] }), rng).lastTrick.pValue).toBe(5);   // Position 35 → kein Bonus
+describe("Legendär-Perks Durchlauf-Ende & Formationsvielfalt (Legendär-Perks-Rework #203)", () => {
+  it("L_ZINS Zinseszins: positive Durchlauf-Bilanz stapelt eine flache Dauer-Dividende (am Durchlauf-Ende)", () => {
+    // 40. Stich (pos 39) als Sieg, Bilanz positiv (mehr Siege als Niederlagen) → zinsBonus += Step, dem Schlussstich gutgeschrieben.
+    const s = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 39, cycleWins: 25, cycleLosses: 10, zinsBonus: 0 }), rng);
+    expect(s.cycle).toBe(1);                                  // Durchlauf-Ende
+    expect(s.zinsBonus).toBe(ZINSESZINS_STEP);                // eine Stufe gestapelt
+    expect(s.cycleWins).toBe(0);                              // Bilanz für den nächsten Durchlauf zurückgesetzt
+    expect(s.lastTrick.gained).toBeGreaterThan(B);           // Stich-Score + Dividende (Score-Rekonziliation)
+    // Negative Bilanz → keine neue Stufe (der bestehende Bonus wird aber weiter ausgezahlt).
+    const neg = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 39, cycleWins: 5, cycleLosses: 20, zinsBonus: ZINSESZINS_STEP }), rng);
+    expect(neg.zinsBonus).toBe(ZINSESZINS_STEP);             // NICHT weiter gestapelt
   });
-
-  // L7 „Königsmacher" entfernt (#162, Spec §9) — Test ersatzlos gestrichen; C7 „Überlebensvorteil" deckt segmentLow ab.
-
-  it("L8 Schicksalsmaschine: am Durchlauf-Ende tauschen erfolgreichste & erfolgloseste Karte die Werte", () => {
-    const deck = Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: 1, value: i === 0 ? 20 : i === 1 ? 3 : 12 }));
-    const opp = Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: 0, value: 0 }));
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: seq40, oppOrder: seq40, pos: 39, perks: ["L8"], l8Wins: { X0: 5 } };
-    s = resolveTrick(s, rng); // letzter Stich → Durchlauf-Ende → Tausch X0 (5 Erfolge) ↔ X1 (0)
+  it("L_ECHO Echo: am Durchlauf-Ende wird der beste Stich des Durchlaufs nochmal gutgeschrieben (auch bei Schluss-Niederlage)", () => {
+    const s = resolveTrick(scenario(0, 12, { perks: ["L_ECHO"], pos: 39, cycleBestTrick: 5000, score: 100000 }), rng); // Schlussstich Niederlage
     expect(s.cycle).toBe(1);
-    expect(s.deck.find((c) => c.id === "X0").value).toBe(3);  // bekommt X1s Wert
-    expect(s.deck.find((c) => c.id === "X1").value).toBe(20); // bekommt X0s Wert
+    expect(s.score).toBeCloseTo(100000 + 5000 * ECHO_FACTOR); // Echo = bester Stich × Faktor
+    expect(s.cycleBestTrick).toBe(0);                         // zurückgesetzt
+    expect(s.lastTrick.gained).toBeCloseTo(5000 * ECHO_FACTOR); // dem (verlorenen) Schlussstich gutgeschrieben
   });
-
-  it("L10 Kettenreaktion: chainArmed erzwingt einen Crit beim nächsten Sieg (und armiert erneut)", () => {
-    const s = resolveTrick(scenario(12, 0, { perks: ["L10"], chainArmed: true }), () => 0.99); // keine Chance, aber armiert
-    expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.chainArmed).toBe(true); // Crit armiert die Kette erneut
-    expect(resolveTrick(scenario(12, 0, { perks: ["L10"] }), () => 0.99).lastTrick.isCrit).toBe(false); // ohne Armierung & Chance
-  });
-
-  it("L11 Zeitraffer: Position 40 wiederholt den Wertbonus von Position 20", () => {
-    const deck = Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: "R", baseRank: 5, value: 5 }));
-    const opp = Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: 0, value: 0 }));
-    // Familie B_TENTH_STRIKE I gibt Position 20 (pos 19) +6; L11 wiederholt das an Position 40 (pos 39).
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: seq40, oppOrder: seq40, pos: 19, perks: ["L11"], familyTiers: { B_TENTH_STRIKE: 1 } };
-    s = resolveTrick(s, rng); // pos19: B_TENTH_STRIKE +6 → pValue 11, pos20Bonus = 6
-    expect(s.lastTrick.pValue).toBe(11);
-    expect(s.pos20Bonus).toBe(6);
-    s = resolveTrick({ ...s, pos: 39 }, rng); // pos39: B_TENTH_STRIKE +6 + L11-Wiederholung +6 → 5+6+6 = 17
-    expect(s.lastTrick.pValue).toBe(17);
+  it("L_SAMM Sammler: +Formations-Mult je distinct gesammelter Formationsart (Stand VOR dem Sieg)", () => {
+    const forms = identity().map(() => ({ mult: 1, formations: [] }));
+    forms[5] = { mult: 1.5, baseMult: 1.5, formations: [{ type: "farbblock", factor: 1.5 }] };
+    // schon 2 Arten gesammelt → formMult × (1 + 2 × SAMMLER_STEP)
+    const s = resolveTrick(scenario(12, 0, { perks: ["L_SAMM"], pos: 5, formations: forms, sammlerTypes: ["treppe", "wiederholung"] }), rng).lastTrick;
+    const base = resolveTrick(scenario(12, 0, { pos: 5, formations: forms }), rng).lastTrick;
+    expect(s.scoreBeforeCrit).toBeCloseTo(base.scoreBeforeCrit * (1 + 2 * SAMMLER_STEP));
+    // der eigene Sieg nimmt seine Formationsart in den Durchlauf-Satz auf (für die FOLGENDEN Siege).
+    const s2 = resolveTrick(scenario(12, 0, { perks: ["L_SAMM"], pos: 5, formations: forms, sammlerTypes: [] }), rng);
+    expect(s2.sammlerTypes).toContain("farbblock");
   });
 });
 
@@ -598,20 +618,20 @@ describe("Formationswerkzeuge — Engine (V2 §22.6 E)", () => {
 describe("Zeitsegment × positionsgebundener Effekt: pos ≠ actualPos (#157)", () => {
   // Unter einem Zeitsegment weicht der Stich-Index `pos` von der Deckposition `actualPos` ab. Bislang lief JEDER
   // positionsgebundene Test OHNE Zeitsegment (pos === actualPos), d. h. die Divergenz wurde strukturell nie
-  // ausgelöst. L3 „Letztes Aufbäumen" (+5 Wert ab actualPos ≥ 35) ist positionsgebunden → es MUSS actualPos
-  // (Deckposition) lesen, nicht den Stich-Index. Zeitsegment 6 wiederholt die Deckpositionen 30–34 als Stiche
+  // ausgelöst. L_HENK „Henker" (garantierter Crit ab actualPos ≥ HENKER_ZONE_START) ist positionsgebunden → es MUSS
+  // actualPos (Deckposition) lesen, nicht den Stich-Index. Zeitsegment 6 wiederholt die Deckpositionen 30–34 als Stiche
   // 35–39; die echten Positionen 35–39 rutschen auf die Stiche 40–44 → an Stich 35 gilt pos ≥ 35, aber actualPos < 35.
   const seg6 = { ...initialShop(), timeSegmentIndex: 6, timeSegmentTier: 4 };
-  const pValAt = (pos, shop) => resolveTrick(scenario(12, 0, { pos, perks: ["L3"], shop }), makeRng(2)).lastTrick.pValue;
+  const critAt = (pos, shop) => resolveTrick(scenario(12, 0, { pos, perks: ["L_HENK"], shop }), () => 0.99).lastTrick.isCrit; // rng 0.99 → nur Henker erzwingt
 
-  it("ohne Zeitsegment gilt pos === actualPos (L3 greift ab Position 35)", () => {
-    expect(pValAt(34, initialShop())).toBe(12); // Position 34 < 35 → kein Bonus
-    expect(pValAt(35, initialShop())).toBe(17); // Position 35 → +5
+  it("ohne Zeitsegment gilt pos === actualPos (Henker erzwingt Crit ab Position 36)", () => {
+    expect(critAt(HENKER_ZONE_START - 1, initialShop())).toBe(false); // actualPos 34 < 35 → kein erzwungener Crit
+    expect(critAt(HENKER_ZONE_START, initialShop())).toBe(true);      // actualPos 35 → erzwungener Crit
   });
-  it("mit Zeitsegment liest L3 actualPos, NICHT den Stich-Index (pinnt die actualPos-Regel, vgl. #145)", () => {
-    expect(pValAt(35, seg6)).toBe(12); // Stich 35 = Wiederholung von Deckpos 30 → actualPos 30 < 35 → KEIN Bonus …
-    expect(pValAt(40, seg6)).toBe(17); // … Stich 40 = echte Deckpos 35 → actualPos 35 → +5.
-    // Ein pos-statt-actualPos-Bug gäbe an Stich 35 (pos ≥ 35) fälschlich +5.
+  it("mit Zeitsegment liest Henker actualPos, NICHT den Stich-Index (pinnt die actualPos-Regel, vgl. #145)", () => {
+    expect(critAt(35, seg6)).toBe(false); // Stich 35 = Wiederholung von Deckpos 30 → actualPos 30 < 35 → KEIN Crit …
+    expect(critAt(40, seg6)).toBe(true);  // … Stich 40 = echte Deckpos 35 → actualPos 35 → erzwungener Crit.
+    // Ein pos-statt-actualPos-Bug gäbe an Stich 35 (pos ≥ 35) fälschlich einen Crit.
   });
 });
 

@@ -17,7 +17,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
   hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasDornenkoenig, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
-import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE } from "./formations.js";
+import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, perkFateReroll, skillFateReroll, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
 import { SHOP_FAMILY_DEFS, timeSegmentDepth, timeSegmentReduced } from "./shopFamilies.js";
 
@@ -79,7 +79,8 @@ export function resolveTrick(state, rng = Math.random) {
     statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0, statOffer = null, // Stat-System (V2 §22.3)
     formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
-    l4Boost = {}, l5Used = [], l8Wins = {}, chainArmed = false, pos20Bonus = 0, // Legendaries (V2 §22.6 L): L4 Wert-Gewinn / L5 Jackpot-Verbrauch / L8 Erfolge / L10 Kette / L11 Wiederholung
+    l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
+    zinsBonus = 0, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Legendär-Perks-Rework (#203): Zinseszins-Dauerdividende / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
     crits, critBonusScore, bestTrickScore,
     maxFormations = 0, formationScore = 0, // #161 FB-2: Run-Rückblick — Peak gleichzeitig aktiver Formationen + Score-Anteil aus Formationen
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
@@ -170,10 +171,9 @@ export function resolveTrick(state, rng = Math.random) {
     const sorted = segPositions.slice().sort((a, b) => deck[playerOrder[a]].value - deck[playerOrder[b]].value || a - b);
     segmentLowRank = sorted.indexOf(actualPos);
   }
-  // L10 Kettenreaktion: der direkte Nachfolger eines Crits ist garantiert kritisch (falls er gewinnt).
-  const forceCrit = chainArmed; chainArmed = false;
-  // L11 Zeitraffer: Position 40 wiederholt den temporären Wertbonus von Position 20.
-  const l11Bonus = (actualPos === 39 && ownsFlag(perks, "repeatPos")) ? (pos20Bonus || 0) : 0;
+  // Henker (#203): im letzten Segment (Pos 36–40 / Index ≥ HENKER_ZONE_START) ist jeder Sieg garantiert ein Crit
+  // (der ×-Bonus läuft unten im Score-Stack). Ersetzt die alte L10-Kettenreaktion (chainArmed) als forceCrit-Quelle.
+  const forceCrit = ownsFlag(perks, "henker") && actualPos >= C.HENKER_ZONE_START;
   // C2 Triumph: die Armierung dieser Karte wird durch das Spielen verbraucht (Neu-Armierung nur bei Sieg).
   if (triumphActive) triumphArmed = triumphArmed.filter((id) => id !== pCard.id);
   const ctx = {
@@ -233,10 +233,7 @@ export function resolveTrick(state, rng = Math.random) {
   const familyValueBonus = familySumHook(familyTiers, "cardBonus", { ...ctx, pValueBase: pCard.value });
   // Damaststahl (L, Underdog): geschmiedete Karten kämpfen mit +Wert → die tiefen Schmiede-Karten schlagen über ihrem Gewicht.
   const damascusCombat = (fireFlag(skills, "damascus") && (forged[pCard.id] || 0) > 0) ? C.DAMASCUS_COMBAT : 0;
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + l11Bonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + damascusCombat;
-  // L11: den temporären Wertbonus dieser Karte an Position 20 für Position 40 merken.
-  let newPos20Bonus = pos20Bonus;
-  if (actualPos === 19) newPos20Bonus = pValue - pCard.value;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + damascusCombat;
   // Frostbiss (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −3 Wert (nie < 0); sonst neutral (§12).
   const oValue = Math.max(0, oCard.value - (frostbiteActive[oCard.id] || 0) - (brandActive[oCard.id] || 0)); // Vergletscherung (Eis, ∝ Schichten) + Brand (Feuer)
   // Eis: der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht.
@@ -262,13 +259,16 @@ export function resolveTrick(state, rng = Math.random) {
   // Gleichstand → Sieg nur via B5 „Initiative" (tieArmed).
   else if (tieArmed) { won = true; tieConverted = true; }
   // sonst echter Gleichstand: kein Effekt (§4.1)
+  // Patt (#203): eine Niederlage um höchstens PATT_MARGIN Wert zählt stattdessen als Sieg (Winrate-Hebel; harte Bedingung
+  // = knapp verloren). Marge = oValue − pValue (≥1 bei Niederlage); der Sieg-Zweig läuft danach normal (Marge dann −PATT..0).
+  if (lost && ownsFlag(perks, "patt") && (oValue - pValue) <= C.PATT_MARGIN) { lost = false; won = true; }
 
   let gained = 0;
   let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
   let breakdown = null; // Ergebnis-Aufschlüsselung eines Siegs (§17): exakt die Faktoren der Score-Formel
 
   if (won) {
-    winStreak += 1; wins += 1;
+    winStreak += 1; wins += 1; cycleWins += 1; // cycleWins: Durchlauf-Sieg-Bilanz für Zinseszins (#203)
     segmentWins += 1; // #189 Volles Haus: Sieg im aktuellen Segment (recentWinCount trug oben den Stand DAVOR)
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     serieStreak = winStreak; // effektive Serie NACH diesem Sieg
@@ -534,10 +534,6 @@ export function resolveTrick(state, rng = Math.random) {
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.
     // Ionisierung: Score der gespielten Karte (Stapel VOR dem Zuwachs). Gewitterfront: +100 für die nächsten Siege.
     const stormScore = (lightning && (lightning.stormScoreWinsRemaining || 0) > 0) ? C.STORM_SCORE : 0;
-    // L5 Jackpot: erster Crit einer L5-Zufallskarte je Durchlauf → +1000 flach (in die multiplizierte Basis).
-    const l5Hit = isCrit && (roles.L5 || []).includes(pCard.id) && !l5Used.includes(pCard.id);
-    if (l5Hit) l5Used = [...l5Used, pCard.id];
-    const l5Flat = l5Hit ? (PERK_DEFS.L5.jackpotScore || 0) : 0;
     // (critCtx mit rawCrit ist oben — vor critMultiplier — gebildet; D6/D7/D8/D11/D15/D19 + Blitzableiter nutzen ihn.)
     // Entladung (Rework v0): war der nächste Crit mit +Crit-Mult armiert (aus einem früheren vollen Verbrauch)?
     // Der Crit-Mult-Bonus fließt oben in critMultiplier; hier nur die Armierung merken (unten entwaffnet).
@@ -549,7 +545,7 @@ export function resolveTrick(state, rng = Math.random) {
                                   + familySumHook(familyTiers, "scoreFlatOnCrit", critCtx)
                                   + (critFollowArmed ? critFollowCritBonus : 0) // D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist
                                   + (anchorType === "crit" ? (aParam("critScore") || 0) : 0) : 0) // Kritanker IV: Crit dort +250 Score
-                      + ionScoreFor(pCard) + stormScore + l5Flat + fireFlat + iceFlat + plantFlat
+                      + ionScoreFor(pCard) + stormScore + fireFlat + iceFlat + plantFlat
                       + (anchorType === "score" ? (aParam("score") || 0) : 0) // Punkteanker (§4.2, Stärke = Stufe)
                       + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
                       + interplayStored; // D_INTERPLAY IV: der in Niederlagen gebankte Score wird mit diesem Sieg als Flat ausgezahlt
@@ -558,7 +554,10 @@ export function resolveTrick(state, rng = Math.random) {
     // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
     const flats = scoreBase - C.SCORE_PER_WIN;                                         // additive Boni (Perk-/Crit-Flats, Ion, Storm, L5-Jackpot)
     const streakMult = streakBaseMult(serieStreak) * statStreakFactor(statStreakMult, serieStreak); // Serie (#39 + Serien-Stat)
-    const perkMult = prodHook(perks, "scoreMult", wctx) * familyProdHook(familyTiers, "scoreMult", wctx); // globale Perk-/Familien-Multiplikatoren
+    // Legendär-Perks-Rework (#203) — der ×-Multiplikator-Raum ist die family-free Legendär-Lane. Henker (Score, Kat. D)
+    // faltet in perkMult; Brennpunkt/Sammler (Formation, Kat. E) falten unten in formMult → §17-Breakdown bleibt exakt.
+    const henkerMult = (ownsFlag(perks, "henker") && actualPos >= C.HENKER_ZONE_START) ? C.HENKER_MULT : 1; // Segment-Finale ×
+    const perkMult = prodHook(perks, "scoreMult", wctx) * familyProdHook(familyTiers, "scoreMult", wctx) * henkerMult; // globale Perk-/Familien-Multiplikatoren + Henker (#203)
     // Formation (§22.7) in drei benannte Faktoren (§13): Basis-Formationen×Formations-Stat, dann die Shop-Meta-Faktoren
     // Nachhall (F6) und Formationskern (F-L1) je eigen. Produkt = formationMult × Stat (unverändert; Aufspaltung ist rein
     // für die Ergebnis-Aufschlüsselung — Multiplikation ist kommutativ).
@@ -571,7 +570,12 @@ export function resolveTrick(state, rng = Math.random) {
     let formBaseEff = formBaseMult;
     if (pCard.frozen && C.ICE_FORMBASE_SOFTCAP > 0 && formBaseEff > C.ICE_FORMBASE_SOFTCAP)
       formBaseEff = C.ICE_FORMBASE_SOFTCAP + (formBaseEff - C.ICE_FORMBASE_SOFTCAP) * C.ICE_FORMBASE_SLOPE;
-    const formMult = formBaseEff * formStatFactor * iceFormMult * plantFormMult; // + Eisdruck/Architekt (iceFormMult) + Photosynthese (plantFormMult)
+    // Brennpunkt (#203, Formations-Tiefe): Sieg in ≥ BRENNPUNKT_MIN_FORMS gleichzeitigen Formationen → ×BRENNPUNKT_MULT.
+    const brennpunktMult = (ownsFlag(perks, "brennpunkt") && activeFormationCount(posForm) >= C.BRENNPUNKT_MIN_FORMS) ? C.BRENNPUNKT_MULT : 1;
+    // Sammler (#203, Formationsvielfalt): +SAMMLER_STEP je distinct Formationsart, die diesen Durchlauf SCHON gesammelt
+    // wurde (Stand VOR diesem Sieg → wächst über den Durchlauf; „für den restlichen Durchlauf"), max SAMMLER_MAX.
+    const sammlerMult = ownsFlag(perks, "sammler") ? 1 + C.SAMMLER_STEP * Math.min(sammlerTypes.length, C.SAMMLER_MAX) : 1;
+    const formMult = formBaseEff * formStatFactor * iceFormMult * plantFormMult * brennpunktMult * sammlerMult; // + Eisdruck/Architekt (iceFormMult) + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203)
     // Sonnenzorn (L): dauerhafter Score-Multiplikator ∝ HÖCHSTER je gehaltener Hitze (heat.peak) — auf den GESAMTEN Sieg-Score
     // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
     const sunwrathMult = (fireFlag(skills, "sunwrath") && heat && heat.active) ? (1 + (heat.peak || 0) * C.SUNWRATH_PEAK_STEP) : 1;
@@ -614,9 +618,16 @@ export function resolveTrick(state, rng = Math.random) {
       // Doppelentladung (endloser Sturm, ENERGIE): jeder Treffer detoniert die gesamte Ladung des Feldes (Σ Stapel).
       if (hasDoubleDischarge(skills)) lightDirect += Math.min(sumIon, C.DOPPELENT_FIELD_CAP) * C.DOPPELENT_DIRECT * lightCommit;
     }
-    gained += fireDirect + iceDirect + lightDirect + plantDirect;
+    // Vabanque (#203, Eröffnungs-Wette): die ersten VABANQUE_TRICKS Stiche eines DURCHLAUFS in Folge gewonnen →
+    // +VABANQUE_SCORE, DIREKT (post-stack). `pos` ist der Stich-Index im Durchlauf (0-basiert, VOR dem pos+=1 am
+    // Durchlauf-Ende); cycleWins zählt die Siege dieses Durchlaufs inkl. dieses → am VABANQUE_TRICKS-ten Stich (pos =
+    // TRICKS−1) sind ALLE Eröffnungsstiche gewonnen ⟺ cycleWins === TRICKS. Reißt die Serie vorher, ist cycleWins <
+    // TRICKS → verfällt (für diesen Durchlauf). PER DURCHLAUF statt per Lauf, weil der Perk mitten im Lauf erworben
+    // wird (die Lauf-Eröffnung ist dann längst vorbei → per-Lauf würde NIE feuern).
+    const perkDirect = (ownsFlag(perks, "vabanque") && pos === C.VABANQUE_TRICKS - 1 && cycleWins === C.VABANQUE_TRICKS) ? C.VABANQUE_SCORE : 0;
+    gained += fireDirect + iceDirect + lightDirect + plantDirect + perkDirect;
     score += gained;
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, formStat: formStatFactor, iceForm: iceFormMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, lightDirect, plantDirect, total: gained };
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, formStat: formStatFactor, iceForm: iceFormMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, lightDirect, plantDirect, perkDirect, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz-Rework (v0): Ladungsgewinn — Blitzableiter (Crit +1) · Statische Aufladung (Nicht-Crit-Sieg +1) ·
@@ -748,10 +759,13 @@ export function resolveTrick(state, rng = Math.random) {
         deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: c.value + 1 } : c));
         l4Boost = { ...l4Boost, [pCard.id]: (l4Boost[pCard.id] || 0) + 1 };
       }
-      // L10 Kettenreaktion: nach diesem Crit ist der direkte Nachfolger garantiert kritisch (falls er gewinnt).
-      if (ownsFlag(perks, "successorCrit")) chainArmed = true;
     }
     bestTrickScore = Math.max(bestTrickScore, gained);
+    cycleBestTrick = Math.max(cycleBestTrick, gained); // Echo (#203): bester Stich DIESES Durchlaufs (am Durchlauf-Ende nochmal)
+    // Sammler (#203): die diesen Stich GEWONNENEN Basis-Formationsarten (factor > 1) in den Durchlauf-Satz aufnehmen —
+    // sie heben den formMult erst der FOLGENDEN Siege dieses Durchlaufs (sammlerMult liest den Stand VOR dem Sieg).
+    if (ownsFlag(perks, "sammler"))
+      for (const f of posForm.formations || []) if ((f.factor || 1) > 1 && FORMATION_TYPES.includes(f.type) && !sammlerTypes.includes(f.type)) sammlerTypes.push(f.type);
     initiative = "player";
     if (tieConverted) tieArmed = false;
     sinceWin = 0; // #71 Durchbruch: Sieg setzt den Zähler zurück
@@ -770,8 +784,6 @@ export function resolveTrick(state, rng = Math.random) {
     // C_TRIUMPH: gewinnt eine Triumph-Rolle, wird sie fürs nächste Auftauchen armiert.
     if (activeFamilyEntries(familyTiers).some((e) => e.def.triumph && isRole(e.familyId)))
       triumphArmed = [...triumphArmed, pCard.id];
-    // L8 Schicksalsmaschine: Erfolge je Karte diesen Durchlauf (für den Wert-Tausch am Durchlauf-Ende).
-    if (ownsFlag(perks, "swapExtremes")) l8Wins = { ...l8Wins, [pCard.id]: (l8Wins[pCard.id] || 0) + 1 };
     // Serienanker (§8 A4): Sieg auf einer Serienanker-Position gibt +1 Serienpunkt — NACH der Wertung dieses Siegs.
     // Serienanker (§4.2): Sieg dort gibt `streak` ZUSÄTZLICHE Serienpunkte; Stufe I nur bei gerader Siegzahl
     // (§10-Näherung „jeder zweite Sieg" über die globale Siegzahl-Parität — `wins` ist für diesen Sieg schon erhöht).
@@ -780,7 +792,7 @@ export function resolveTrick(state, rng = Math.random) {
     }
     lastResult = "win";
   } else if (lost) {
-    losses += 1;
+    losses += 1; cycleLosses += 1; // cycleLosses: Durchlauf-Bilanz für Zinseszins (#203)
     // Geladene Serie (Stufe C): gesetzter Serien-Rahmen fängt DIESE Niederlage ab — winStreak
     // bleibt erhalten (Serien-Effekte laufen weiter). Sonst bricht die Serie. Der Rahmen wird danach eingelöst.
     const rahmenRedeemed = !!(lightning && lightning.armed);
@@ -862,7 +874,20 @@ export function resolveTrick(state, rng = Math.random) {
   let newFreePerkReroll = false, newFreeSkillReroll = false; // P-L1: gratis Reroll gilt nur fürs frisch erzeugte Angebot
   if (pos >= cycleLen) { // Zeitsegment (§8 A-L1): Durchlauf endet nach cycleLen Stichen (40, mit Zeitsegment 45)
     cycle += 1;
-    // #131 Rundenscore: Zuwachs dieses gerade beendeten Durchlaufs (score enthält bereits den letzten Stich)
+    // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf
+    //      attribuiert). Zinseszins — positive Durchlauf-Bilanz (mehr Siege als Niederlagen) stapelt eine FLACHE Dauer-
+    //      Dividende (kein Mult), die jeden Durchlauf ausgezahlt wird (compoundet über den Lauf). Echo — der beste Stich
+    //      dieses Durchlaufs wird ein zweites Mal gutgeschrieben (× ECHO_FACTOR).
+    let cycleEndScore = 0;
+    if (ownsFlag(perks, "zinseszins")) { if (cycleWins > cycleLosses) zinsBonus += C.ZINSESZINS_STEP; cycleEndScore += zinsBonus; }
+    if (ownsFlag(perks, "echo")) cycleEndScore += cycleBestTrick * C.ECHO_FACTOR;
+    score += cycleEndScore;
+    // Per-Karte-Ledger (Sim S1): die Durchlauf-Ende-Payoffs dem gerade gespielten Schluss-Stich gutschreiben, damit die
+    // Score-Summe je Karte weiterhin exakt `score` reproduziert (metrics.observe liest lastTrick.gained). lastTrick ist
+    // oben schon gebaut; Mutation einer const-Objekt-Property ist erlaubt.
+    if (cycleEndScore) { lastTrick.gained += cycleEndScore; lastTrick.scoreGain += cycleEndScore; }
+    cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; // Pro-Durchlauf-States zurücksetzen (#203)
+    // #131 Rundenscore: Zuwachs dieses gerade beendeten Durchlaufs (score enthält bereits den letzten Stich + #203-Payoffs)
     // + Rollover, damit das nächste Entscheidungs-Panel Rundenscore und %-Differenz zur Vorrunde zeigen kann.
     prevCycleScore = lastCycleScore;
     lastCycleScore = score - scoreAtCycleStart;
@@ -870,19 +895,9 @@ export function resolveTrick(state, rng = Math.random) {
     // Shop-Münzökonomie (Shop-Spec §3.2): jeder vollständig abgeschlossene Durchlauf zahlt die konstante Basis
     // (das Einkommen wirkt am Shop, siehe unten). Auch nach dem letzten Durchlauf (→ gameover) vergeben (§3.5).
     shop = { ...(shop || {}), coins: ((shop && shop.coins) || 0) + coinsPerCycle() };
-    // L8 Schicksalsmaschine: erfolgreichste und erfolgloseste Karte tauschen ihre Dauerwerte.
-    if (ownsFlag(perks, "swapExtremes")) {
-      let bestId = null, worstId = null, bestW = -1, worstW = Infinity;
-      for (const c of deck) { const w = l8Wins[c.id] || 0; if (w > bestW) { bestW = w; bestId = c.id; } if (w < worstW) { worstW = w; worstId = c.id; } }
-      if (bestId && worstId && bestId !== worstId && bestW > worstW) {
-        const bv = deck.find((c) => c.id === bestId).value, wv = deck.find((c) => c.id === worstId).value;
-        deck = deck.map((c) => (c.id === bestId ? { ...c, value: wv } : c.id === worstId ? { ...c, value: bv } : c));
-      }
-    }
-    l5Used = []; l8Wins = {}; // Pro-Durchlauf-States zurücksetzen (L5-Jackpot-Verbrauch, L8-Erfolge)
     // #98: temporäre Positions-Boni enden mit dem Durchlauf — sonst würde ein an Position 40 armierter
-    // Relay (C4/C5) bzw. der L11-Pos20-Merker auf Position 1 des nächsten (persistenten) Durchlaufs durchsickern.
-    successorQueue = []; newPos20Bonus = 0;
+    // Relay (C4/C5) auf Position 1 des nächsten (persistenten) Durchlaufs durchsickern.
+    successorQueue = [];
     // ---- Feuer-Rework (v0): Durchlauf-Ende — Schmieden (Ascheschmiede), Damaststahl-Wachstum, Phönix-Reset.
     if (heat && heat.active) {
       // Ascheschmiede: solange genug Asche, jeweils die aktuell niedrigste Karte dauerhaft +2 Wert (spreizt sich über
@@ -1003,7 +1018,8 @@ export function resolveTrick(state, rng = Math.random) {
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
-    l4Boost, l5Used, l8Wins, chainArmed, pos20Bonus: newPos20Bonus, // Legendaries (V2 §22.6 L)
+    l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
+    zinsBonus, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, // Legendär-Perks-Rework (#203)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)

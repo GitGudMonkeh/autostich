@@ -36,10 +36,12 @@ export function observe(tel, t) {
     tel.cards.set(id, c);
   }
   c.appearances += 1;
+  // Score fällt regulär nur bei Sieg an (gained = 0 sonst) — Ausnahme: die Durchlauf-Ende-Payoffs (#203 Zinseszins/Echo)
+  // schreibt die Engine dem Schluss-Stich gut, der auch eine Niederlage sein kann → ergebnisUNabhängig verbuchen.
+  c.score += t.gained || 0;
   if (isWin(t.result)) {
     c.wins += 1;
     if (t.isCrit) c.crits += 1;
-    c.score += t.gained || 0;
     tel.wins += 1;
     if ((t.formations && t.formations.length) || (t.formationMult || 1) > 1) tel.formationWins += 1;
   } else if (t.result === "loss") {

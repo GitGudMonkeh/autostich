@@ -1,4 +1,4 @@
-import { buildDeck, shuffledOrder, shuffle } from "./deck.js";
+import { buildDeck, shuffledOrder } from "./deck.js";
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js";
 import { SHOP_FAMILY_DEFS } from "./shopFamilies.js";
@@ -65,7 +65,8 @@ export function initialState(rng = Math.random) {
     formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt
     formationEnergy: 0, formationSwaps: [], // Formationsphase (V2 §22.8): Energie + Undo-Historie der aktuellen Phase
     roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
-    l4Boost: {}, l5Used: [], l8Wins: {}, chainArmed: false, pos20Bonus: 0, // Legendaries (V2 §22.6 L)
+    l4Boost: {}, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
+    zinsBonus: 0, cycleWins: 0, cycleLosses: 0, cycleBestTrick: 0, sammlerTypes: [], // Legendär-Perks-Rework (#203)
     perks: [], offer: null,
     // Raritätssystem (Epic #167, Spec §2.1): Familienrang je Familie { [familyId]: 1|2|3|4 }. Läuft ADDITIV
     // neben `perks` (flache Legendäre) — die Engine löst aktive Familien-Stufen über activeTierDefs auf.
@@ -342,12 +343,20 @@ export function reducer(state, action) {
       const def = PERK_DEFS[perkId];
       const perks = [...state.perks, perkId];
       // Kat. A (Deck-Mods beim Pick) ist zu Familien migriert (#167) → flache Perks verändern das Deck nicht mehr.
-      // L5 Jackpot & Co.: zufällige Kartenrolle sofort setzen (kein manueller Ziel-Schritt).
-      let roles = state.roles;
-      if (def.randomTarget) roles = { ...(state.roles || {}), [perkId]: shuffle(state.deck.map((c) => c.id), rng).slice(0, def.randomTarget) };
+      let deck = state.deck;
+      // Umverteilung (L_UMV, #203): alle Karten nehmen sofort DAUERHAFT den (gerundeten) Deck-Durchschnittswert an
+      // (KEINE Karte wird entfernt) → glättet ein schiefes Deck und macht es uniform (→ Wiederholungs-Formationen).
+      // round statt floor: floor senkt jede Karte um ~0,5 → drückt die Winrate; round bleibt neutral um den Ø.
+      if (def.redistribute) {
+        const avg = Math.round(state.deck.reduce((s, c) => s + c.value, 0) / Math.max(1, state.deck.length));
+        deck = state.deck.map((c) => ({ ...c, value: avg }));
+      }
       // Perks mit manueller Kartenauswahl öffnen die Zielauswahl (§22.5); sonst weiter.
       const goTarget = !!def.needsTarget;
-      return { ...state, perks, roles, offer: null,
+      const formations = def.redistribute
+        ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers)
+        : state.formations;
+      return { ...state, perks, deck, offer: null, formations,
                phase: goTarget ? "target" : "play",
                targetPerk: goTarget ? perkId : null };
     }
