@@ -181,13 +181,13 @@ export const SKILL_DEFS = {
     desc: "Siegt eine Frostkarte in ≥2 Formationen, banken ihre direkten (gefrorenen) Nachbarn Schicht-Fortschritt.", iceBloom: true },
   SK_ICE_17: { id: "SK_ICE_17", name: "Verschränkung", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Steht eine Frostkarte an der Kreuzung von ≥3 Formationen, lagert sie mehrere Schichten auf einmal ab — das Meisterstück.", verschraenkung: true },
-  // Legendäre (Verstärker, kein Motor — vier Seiten des Spine)
+  // Legendäre (vier Seiten des Spine — verwandeln die tiefen Schichten in DIREKTEN Score)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: "Jede Ablage lagert eine zusätzliche Schicht ab — der Motor der Permanenz. Ohne eigene Ablagen wirkungslos.", permafrost: true },
+    desc: "Jede Ablage lagert eine zusätzliche Schicht ab (der Motor der Permanenz). Je mehr Schichten du über alle Frostkarten anhäufst, desto mehr Punkte zahlt jeder Frost-Sieg direkt — Breite wird zu Score.", permafrost: true },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Gletscher", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: "Je tiefer der Stapel, desto mehr Dauerwert gibt jede Schicht (superlinear) — der Schneeball, der unaufhaltsam wird.", gletscher: true },
+    desc: "Je tiefer der Stapel, desto mehr gibt jede Schicht (superlinear). Dein TIEFSTER Pfeiler zahlt bei jedem Frost-Sieg direkt Punkte — je tiefer der eine Pfeiler, desto überproportional mehr (der Schneeball).", gletscher: true },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Vergletscherung", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: "Frostkarten frieren Gegnerkarten proportional zu ihren Schichten ein (−Wert) — tiefer Gletscher, härtere Sperre.", vergletscherung: true },
+    desc: "Frostkarten frieren Gegnerkarten proportional zu ihren Schichten ein (−Wert). Je mehr Gegner-Eis aktiv ist, desto mehr Punkte zahlt jeder Frost-Sieg direkt — die Sperre wird zu Score.", vergletscherung: true },
   SK_ICE_L04: { id: "SK_ICE_L04", name: "Architekt", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
     desc: "Schaltet vertikale Formationen frei: Frostkarten in derselben Spalte (pos%5) bilden Formationen quer über Segmente.", architekt: true },
 
