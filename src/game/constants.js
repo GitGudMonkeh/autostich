@@ -286,7 +286,17 @@ export const STILLSTAND_SCORE  = 200;  // Stillstand: +200 Flat, wenn eine Frost
 // Legendäre (Gletscher / Vergletscherung / Architekt)
 export const VERGLETSCHERUNG_COUNT     = 2; // Vergletscherung: so viele Gegnerkarten je Frost-Sieg          // v0
 export const VERGLETSCHERUNG_PER_LAYER = 1; // … −Wert je Schicht der Siegkarte (min 1)                      // v0 — tunebar
-export const ARCHITEKT_STEP    = envNum("SIM_ARCHITEKT_STEP", 0.35); // Architekt (L): +% je zusätzlicher Frostkarte in derselben Spalte (pos%5) [Legendär-Buff v1: 0,15→0,35]
+export const ARCHITEKT_STEP    = envNum("SIM_ARCHITEKT_STEP", 0.55); // Architekt (L): +% je zusätzlicher Frostkarte in derselben Spalte (pos%5) [Legendär-Reshape: 0,35→0,55 — die einzige Geometrie-Legendäre (nicht deckel-limitiert), hebt 1,14→Band]
+// ── Legendär-Reshape (2026-07-30): Tiefe über die Legendären wiederbeleben. Die ÜBERLAUF-Tiefe (Schichten über
+//    ICE_LAYER_MAX) ist generisch verschwendet (~58 von 70/Karte). Gletscher/Permafrost verwandeln sie in DIREKTEN,
+//    post-stack, HART gedeckelten Score (Damaststahl-Lektion: permanente Akkumulation über 60 Runden = Plateau, kein
+//    Wachstum). Nur Legendär-Halter → generisches Eis (Deckel 12, #1-Floor) bleibt unberührt. Bekenntnis-skaliert (cross-health).
+export const GLETSCHER_DIRECT        = envNum("SIM_GLETSCHER_DIRECT", 68);       // Gletscher: Score je DREIECKS-Einheit m(m+1)/2 der Tiefe des TIEFSTEN Pfeilers (superlinear, Konzentration), je Frost-Sieg [Sweep: →1,32×]
+export const GLETSCHER_OVERFLOW_CAP  = envNum("SIM_GLETSCHER_OVERFLOW_CAP", 20); // … gedeckelte Pfeiler-Tiefe (Plateau — tieferer Pfeiler zahlt superlinear mehr, dann flach → kein Runaway)
+export const PERMAFROST_DIRECT       = envNum("SIM_PERMAFROST_DIRECT", 270);     // Permafrost: Score je Überlauf-Schicht — SUMME über alle Frostkarten (Breite — viele banken), je Frost-Sieg
+export const PERMAFROST_OVERFLOW_CAP = envNum("SIM_PERMAFROST_OVERFLOW_CAP", 60);// … gedeckelte Gesamt-Überlauf-Summe (Plateau)
+export const VERGLETSCHERUNG_DIRECT  = envNum("SIM_VERGLETSCHERUNG_DIRECT", 130);// Vergletscherung: Bonus-Score je Punkt GESAMTER aktiver Gegner-Vergletscherung (Σ frostbiteActive), je Frost-Sieg [Sweep: →1,29×]
+export const VERGLETSCHERUNG_DEBUFF_CAP = envNum("SIM_VERGLETSCHERUNG_DEBUFF_CAP", 60); // … gedeckelte Debuff-Summe (Plateau)
 
 /* ============================================================
    PFLANZE-FRAKTION v0 — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend) →

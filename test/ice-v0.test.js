@@ -86,3 +86,35 @@ describe("Eis-Rework v0 — Engine-Integration (Schicht-Spine)", () => {
     expect(s3.lastTrick.scoreGain).toBeCloseTo(s0.lastTrick.scoreGain + 3 * C.ICE_ABLAGE_SCORE_PER_LAYER * 1.02);
   });
 });
+
+/* Eis-Legendär-Reshape (2026-07-30) — die ÜBERLAUF-Tiefe (Schichten über ICE_LAYER_MAX, generisch verschwendet) zahlt
+   für Legendär-Halter DIREKT (post-stack, breakdown.iceDirect), hart gedeckelt. Bekenntnis-skaliert (iceSkillCount/SKILL_SLOTS). */
+describe("Eis-Legendär-Reshape — Überlauf-Dividende (iceDirect)", () => {
+  const commit1 = Math.min(1, 1 / C.SKILL_SLOTS); // 1 Eis-Skill gehalten
+  it("generisches Eis (ohne Legendäre): kein iceDirect trotz tiefer Überlauf-Schichten", () => {
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_ICE_15"], deck: withFrost0(12), layers: { X0: C.ICE_LAYER_MAX + 30 } }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.iceDirect || 0).toBe(0); // Deckel unberührt → #1-Floor geschützt
+  });
+  it("Gletscher: Überlauf des TIEFSTEN Pfeilers → superlinearer iceDirect je Frost-Sieg (Deckel-geplateaut)", () => {
+    const ov = 8;
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_ICE_L02"], deck: withFrost0(12), layers: { X0: C.ICE_LAYER_MAX + ov } }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.iceDirect).toBeCloseTo((ov * (ov + 1) / 2) * C.GLETSCHER_DIRECT * commit1);
+    // Über dem Deckel plateaut es (Überlauf 30 → m = GLETSCHER_OVERFLOW_CAP, kein Runaway).
+    const cap = C.GLETSCHER_OVERFLOW_CAP;
+    const sCap = resolveTrick(scen(12, 6, { skills: ["SK_ICE_L02"], deck: withFrost0(12), layers: { X0: C.ICE_LAYER_MAX + cap + 25 } }), noCrit);
+    expect(sCap.lastTrick.breakdown.iceDirect).toBeCloseTo((cap * (cap + 1) / 2) * C.GLETSCHER_DIRECT * commit1);
+  });
+  it("Permafrost: SUMME der Überlauf-Tiefe über alle Frostkarten → linearer iceDirect je Frost-Sieg", () => {
+    const ov = 8;
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_ICE_L01"], deck: withFrost0(12), layers: { X0: C.ICE_LAYER_MAX + ov } }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.iceDirect).toBeCloseTo(Math.min(ov, C.PERMAFROST_OVERFLOW_CAP) * C.PERMAFROST_DIRECT * commit1);
+  });
+  it("Vergletscherung: Σ aktiver Gegner-Debuff → iceDirect je Frost-Sieg (gedeckelt)", () => {
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_ICE_L03"], deck: withFrost0(12), frostbiteActive: { Z1: 5, Z2: 7 } }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.iceDirect).toBeCloseTo(Math.min(12, C.VERGLETSCHERUNG_DEBUFF_CAP) * C.VERGLETSCHERUNG_DIRECT * commit1);
+  });
+});

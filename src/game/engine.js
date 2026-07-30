@@ -9,7 +9,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasDoubleDischarge, hasAreaIonize, hasDurchschlag, // Blitz-Rework (v0): Legendäre
   fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, // Feuer-Rework (v0)
   glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
-  hasStandstill, hasFrostReserve, hasIceBloom, hasIceAnchor, hasPermafrost, // Eis-Rework (v0)
+  hasStandstill, hasFrostReserve, hasIceBloom, hasIceAnchor, hasPermafrost, iceSkillCount, // Eis-Rework (v0)
   layerValue, totalLayers, hasGletscher, hasEisdruck, hasKristallineMasse, hasBestaendigkeit, hasVerschraenkung, // Eis-Rework (v0): Schicht-Engine
   hasVergletscherung, hasArchitekt, // Eis-Rework (v0): Legendäre
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
@@ -340,6 +340,7 @@ export function resolveTrick(state, rng = Math.random) {
     // ---- Eis-Rework (v0): Ablage A (Sieg in ≥1 Formation → Schicht), Stillstand, Eisblüte, Verschränkung, Beständigkeit,
     //      Eisanker-Schicht, Eisdruck/Architekt (Formations-Faktor), Vergletscherung (Gegner-Debuff ∝ Schichten).
     let iceFlat = 0;
+    let iceDirect = 0;   // Eis-Legendär-Reshape: DIREKTE, post-stack, hart gedeckelte Dividende aus der Überlauf-Tiefe (unten zu `gained`)
     let iceFormMult = 1; // Eisdruck/Architekt: zusätzlicher Formations-Faktor der Frostkarte (unten in formMult)
     if (pCard.frozen) {
       const nForms = baseFormationCount(posForm);
@@ -389,6 +390,38 @@ export function resolveTrick(state, rng = Math.random) {
           const id = pool.splice(Math.floor(rng() * pool.length), 1)[0];
           newFrostbitePending[id] = Math.max(newFrostbitePending[id] || 0, debuff);
         }
+      }
+      // ---- Eis-Legendär-Reshape (2026-07-30): DIREKTE Dividende aus der ÜBERLAUF-Tiefe (Schichten über ICE_LAYER_MAX,
+      //      generisch verschwendet). Am Multiplikator-Stack VORBEI (unten zu `gained`), hart gedeckelt (Plateau, kein
+      //      Wachstum), bekenntnis-skaliert (cross-health). Nur Legendär-Halter → generisches Eis (Deckel 12) unberührt.
+      if (hasGletscher(skills) || hasPermafrost(skills)) {
+        const iceCommit = Math.min(1, iceSkillCount(skills) / C.SKILL_SLOTS);
+        // EIN Scan über alle Frostkarten: TIEFSTER Pfeiler (Gletscher, Konzentration) + SUMME (Permafrost, Breite).
+        // Wichtig: die Überlauf-Tiefe sitzt auf GEBANKTEN Karten (Ablage B bankt ungenutzte Frostkarten) — also gerade
+        // die, die NICHT gewinnen → eine Dividende auf die SIEGKARTE zündet kaum. Beide Legendäre lesen daher den
+        // BESTAND (nicht die Siegkarte) und zahlen je Frost-Sieg.
+        let maxOv = 0, sumOv = 0;
+        for (const c of deck) if (c.frozen) {
+          const o = (layers[c.id] || 0) - C.ICE_LAYER_MAX;
+          if (o > 0) { sumOv += o; if (o > maxOv) maxOv = o; }
+        }
+        // Gletscher (Konzentration, SUPERLINEAR): der EINE tiefste Pfeiler zahlt je Frost-Sieg — je tiefer, desto mehr
+        // JEDE Schicht (dreieckig m(m+1)/2, via Deckel geplateaut). Das ist die „Gletscher wächst"-Fantasie, gebändigt.
+        if (hasGletscher(skills) && maxOv > 0) {
+          const m = Math.min(maxOv, C.GLETSCHER_OVERFLOW_CAP);
+          iceDirect += (m * (m + 1) / 2) * C.GLETSCHER_DIRECT * iceCommit;
+        }
+        // Permafrost (Breite/Motor): die SUMME der Überlauf-Tiefe über alle Frostkarten zahlt je Frost-Sieg (linear, gedeckelt).
+        if (hasPermafrost(skills) && sumOv > 0)
+          iceDirect += Math.min(sumOv, C.PERMAFROST_OVERFLOW_CAP) * C.PERMAFROST_DIRECT * iceCommit;
+      }
+      // Vergletscherung (Reshape): je Frost-Sieg Bonus-Score ∝ GESAMTER aktiver Gegner-Vergletscherung (Σ frostbiteActive,
+      // gedeckelt) — je tiefer der Gegner glaziert, desto mehr scort jeder Sieg. Zuverlässig (jeder Frost-Sieg), statt der
+      // engen „schlage eine markierte Karte"-Bedingung (die bei starken Builds kaum zündete → 1,0×).
+      if (hasVergletscherung(skills)) {
+        let totDebuff = 0;
+        for (const id in frostbiteActive) totDebuff += frostbiteActive[id];
+        if (totDebuff > 0) iceDirect += Math.min(totDebuff, C.VERGLETSCHERUNG_DEBUFF_CAP) * C.VERGLETSCHERUNG_DIRECT * Math.min(1, iceSkillCount(skills) / C.SKILL_SLOTS);
       }
     }
     // ---- Pflanze-Fraktion (v0): Wachstum (Sieg → +1), Reife-Recolor, Wurzeln (Score/Wert), Aussaat/Ranken (Breite/Grün),
@@ -536,9 +569,9 @@ export function resolveTrick(state, rng = Math.random) {
       const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
       if (totalForged > 0) fireDirect += totalForged * C.DAMASCUS_DIRECT;
     }
-    gained += fireDirect;
+    gained += fireDirect + iceDirect;
     score += gained;
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, fireDirect, total: gained };
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz-Rework (v0): Ladungsgewinn — Blitzableiter (Crit +1) · Statische Aufladung (Nicht-Crit-Sieg +1) ·
