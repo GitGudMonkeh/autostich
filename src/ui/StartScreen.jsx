@@ -6,7 +6,7 @@ import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügte
 import { fmtScore } from "./format.js";
 
 /* Startbildschirm (#4): Seed-Paste-Leiste oben (#205), darunter #227 Variante B — linke gleichbreite Button-Spalte
-   (ohne Icons, gestapelt: Normaler Run · Meister Run · Bestenliste · Statistiken · Deck · Anleitung · Optionen) +
+   (ohne Icons, gestapelt: Normaler Run · Meister Run · Bestenliste · Statistiken · Deck · Optionen · Anleitung) +
    rechts ein ruhiger Rekord-Block. Die volle Score-Liste (deine Läufe + global) liegt hinter „Bestenliste" (#217). */
 export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
@@ -99,8 +99,8 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
           )}
           {onStats && <button onClick={onStats} className={secCls} style={secSty}>Statistiken</button>}
           {onCustomize && <button onClick={onCustomize} className={secCls} style={secSty}>Deck</button>}
-          <button onClick={() => setShowGuide(true)} className={secCls} style={secSty}>Anleitung</button>
           {onOptions && <button onClick={onOptions} aria-label="Optionen" className={secCls} style={secSty}>Optionen</button>}
+          <button onClick={() => setShowGuide(true)} className={secCls} style={secSty}>Anleitung</button>
 
           {/* Lokaler Nickname (#14) — unter dem Button-Stack. */}
           {onEditName && (
