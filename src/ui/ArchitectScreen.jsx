@@ -7,6 +7,8 @@ import {
 import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { SUIT_ORDER } from "../game/constants.js";
 import { ARCH_CAT as CAT } from "./indicators/vocab.js";
+import { formationBorder } from "./formationStyle.js";
+import { formationAbbr } from "./formationLabels.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { useEscape } from "./useEscape.js";
 
@@ -24,6 +26,7 @@ const SUIT_COLOR = { R: "#d9553f", B: "#4f82d6", G: "#3f9d63", Y: "#c79a2e" };
 const GOLD = "#c8962f"; // Legendär
 const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 const tierLabel = (t) => (t === "legendary" ? "★" : ROMAN[t] || "");
+const fmt = (x) => x.toFixed(2).replace(".", ",");
 
 // Footprint einer Form bei (anchor, rotIdx) — im Gitter, sonst null. Nutzt die Rotationslagen aus architect.js.
 function footprintAt(form, rotIdx, anchor) {
@@ -89,12 +92,12 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   );
   const structF = useMemo(() => structureFactorMap(occ), [occ]);
 
-  // Formations-Stärke (echte Engine, inkl. Architekt-formation-Gebäude) — Anzahl aktiver Formationen als Readout.
-  const formCount = useMemo(() => {
-    if (!cards.length) return 0;
-    const f = computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, architect);
-    return summarizeFormations(f).count;
+  // Formationen je Position (echte Engine, inkl. Architekt-formation-Gebäude) — #224.1: direkt aufs Board (×mult + Typ).
+  const formations = useMemo(() => {
+    if (!cards.length) return [];
+    return computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, architect);
   }, [architect, order, deck, state.roles, state.perks, state.skills, state.familyTiers]);
+  const formCount = useMemo(() => summarizeFormations(formations).count, [formations]);
 
   // Effektiver Kartenwert je Position (Basiswert + Architekt-value-Bonus, konditional wie in der Engine).
   const buildingAt = (pos) => buildings.find((b) => b.footprint.includes(pos)) || null;
@@ -190,6 +193,15 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const boost = ev - card.value;
                 const anchorCell = b ? Math.min(...b.footprint) : -1;
                 const isSel = b && b.id === selId;
+                // #224.1: aktive Formation an dieser Position (echte Engine) — ×mult + Typ-Kürzel + Formationsfarbe.
+                const pf = formations[pos] || { mult: 1, formations: [] };
+                const inForm = pf.mult > 1;
+                const fb = formationBorder(pf);
+                const formLabels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
+                const sFac = structF[pos] || 1; // Struktur-Faktor (volle Zeile/Spalte/Diagonale)
+                const title = b
+                  ? `${fam.name} (${tierLabel(b.tier)}) — ${famEff(fam, b)}${inForm ? ` · Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`
+                  : `Pos ${pos + 1}${inForm ? ` — Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`;
                 return (
                   <button key={pos} onClick={() => tapCell(pos)}
                     className="relative rounded-md aspect-square flex items-center justify-center font-mono font-bold transition-all"
@@ -203,16 +215,25 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                         !b && structLit(pos) ? `inset 0 0 0 2px ${CAT.value.color}88` : null,
                         b && structLit(pos) ? `0 0 8px ${cat.color}` : null,
                       ].filter(Boolean).join(", ") || undefined,
-                      cursor: deleteActive && b ? "pointer" : (deleteActive ? "default" : "pointer"),
-                      outline: deleteActive && b ? "2px solid #d1462f" : undefined,
+                      // #224.1: Formations-Ring (Rahmenfarbe nach Formations-Anzahl) als AUSSEN-Outline → gruppiert die
+                      // Formation, getrennt vom Kategorie-Rahmen. Im Abreißen-Modus weicht er dem roten Lösch-Ring.
+                      outline: deleteActive && b ? "2px solid #d1462f" : (inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined),
+                      outlineOffset: 1,
+                      cursor: deleteActive && !b ? "default" : "pointer",
                     }}
-                    title={b ? `${fam.name} (${tierLabel(b.tier)}) — ${famEff(fam, b)}` : `Pos ${pos + 1}`}>
+                    title={title}>
                     <span className="absolute top-[3px] right-[3px] w-[7px] h-[7px] rounded-full" style={{ background: SUIT_COLOR[card.suit] }} />
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
-                    <span className="text-[13px] sm:text-[15px]">{ev}</span>
+                    <span className="text-[13px] sm:text-[15px] leading-none">{ev}</span>
                     {b && pos === anchorCell && (
-                      <span className="absolute bottom-[1px] left-[3px] text-[8px] font-bold" style={{ color: "rgba(255,255,255,0.92)" }}>
-                        {fam.name.slice(0, 3).toUpperCase()} {tierLabel(b.tier)}
+                      <span className="absolute bottom-[1px] left-[3px] text-[7px] font-bold" style={{ color: "rgba(255,255,255,0.92)" }}>
+                        {fam.name.slice(0, 3).toUpperCase()}{tierLabel(b.tier)}
+                      </span>
+                    )}
+                    {/* #224.1: Formation an dieser Position — ×mult + Typ (W/F/T/Z) mittig unten, in der Formationsfarbe. */}
+                    {inForm && (
+                      <span className="absolute bottom-[1px] left-1/2 -translate-x-1/2 text-[7px] font-bold leading-none whitespace-nowrap" style={{ color: fb.color, textShadow: "0 1px 2px #000a" }}>
+                        {formLabels}×{fmt(pf.mult)}
                       </span>
                     )}
                     {/* #224.9: Ziel-Farbe des colorLocked-Gebäudes (Buntglas/Zunfthaus) — weiß umrandeter Punkt, klar getrennt von der Karten-Suit oben. */}
@@ -230,6 +251,11 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ background: v.color }} />{v.label}</span>
               ))}
               <span className="inline-flex items-center gap-1.5"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${GOLD}` }} />legendär</span>
+            </div>
+            {/* #224.1: Formations-Legende — Ring + „×mult" markiert aktive Formationen; W/F/T/Z = Typ. */}
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] font-mono opacity-60">
+              <span>Ring = aktive Formation (×mult)</span>
+              <span><b>W</b> Wiederholung</span><span><b>F</b> Farbblock</span><span><b>T</b> Treppe</span><span><b>Z</b> Wechsel</span><span><b>A</b> Anker</span>
             </div>
           </section>
 
