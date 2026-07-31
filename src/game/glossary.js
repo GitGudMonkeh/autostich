@@ -58,6 +58,10 @@ export const GLOSSARY = {
     text: `Grüne Karten sind dauerhaft und bilden einen gemeinsamen Farbblock — je größer der Block, desto mehr Score. Grün ist Farbe, nicht Kraft; Wert wächst nur über Wurzeln (Deckel ${C.PLANT_VALUE_CAP}).` },
   colonize: { label: "Kolonisieren", icon: "🌿", color: CLR.plant,
     text: "Markiert gegnerische Karten grün (Ausläufer/Rhizom). Besiegst du eine kolonisierte Karte, erntest du Wachstum." },
+  overgrowth: { label: "Überwucherung", icon: "🌿", color: CLR.plant,
+    text: `Ist das Feld ≥${Math.round(C.UEBERWUCHERUNG_FIELD * 100)} % grün, werden alle Farbblöcke stärker (+${de(C.UEBERWUCHERUNG_FACTOR)} Faktor) und Blüte zählt doppelt.` },
+  eternalSpring: { label: "Ewiger Frühling", icon: "🌿", color: CLR.plant,
+    text: `Farbblock zählt Grün schon ab ${C.EWIGER_FRUEHLING_FARBBLOCK} Karten und Überwucherung schon ab ${Math.round(C.EWIGER_FRUEHLING_FIELD * 100)} % Feld. Je größer dein ewig-grünes Feld, desto mehr Punkte zahlt jeder grüne Sieg direkt.` },
 };
 
 // Ist ein Token im Glossar erklärt? (Filter für die Keyword-Chips — generische Tokens fallen raus.)

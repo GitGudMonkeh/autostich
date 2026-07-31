@@ -126,7 +126,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
       {/* Frost (#93 F3): Schneeflocke unten rechts markiert eine eingefrorene EIGENE Karte (blau, überall sichtbar).
           #211: teilt sich die untere rechte Ecke mit dem Pflanze-Wachstumsring → bei beidem weicht das ❄ nach LINKS aus. */}
       {frozen && (
-        <div className="absolute bottom-1 text-[13px] leading-none" style={{ right: showGrowthRing ? 22 : 4, color: "#bfe9f7", textShadow: "0 0 5px #7fd4f0" }} title="Eingefroren">❄</div>
+        <div className="absolute bottom-1 text-[15px] leading-none" style={{ right: showGrowthRing ? 22 : 4, color: "#d6f2fc", textShadow: "0 0 8px #7fd4f0, 0 1px 2px #000a" }} title="Eingefroren">❄</div>
       )}
       {/* Pflanze (#211): Wachstumsring unten-rechts — füllender Kreis 0 → Reife-Schwelle auf der EIGENEN, noch wachsenden
           Karte; bei Reife ausgeblendet (dann trägt die grüne Zahl + 🌿 das Signal). Sitzt in vocab.CORNER.growthRing. */}
@@ -143,17 +143,17 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
       {colonized > 0 && (
         <div className="absolute left-0.5 top-1/2 -translate-y-1/2 flex flex-col items-center leading-none"
           title={`Kolonisiert (Ausläufer) · Ernte +${colonized} Wachstum`}>
-          <span className="text-[13px]" style={{ color: "#86e0a0", textShadow: "0 0 5px #5ab87a" }}>🌿</span>
+          <span className="text-[15px]" style={{ color: "#9dedb4", textShadow: "0 0 8px #5ab87a, 0 1px 2px #000a" }}>🌿</span>
           <span className="text-[9px] font-bold mt-0.5" style={{ color: "#86e0a0" }}>+{colonized}</span>
         </div>
       )}
       {/* Frostbiss (#126): frostgebissene GEGNERkarte — ROTES ❄, klar als feindlicher −3-Debuff (nicht wie eigener Frost). */}
       {frostbitten && (
-        <div className="absolute bottom-1 right-1 text-[13px] leading-none" style={{ color: "#f0a09a", textShadow: "0 0 5px #e0605a" }} title="Frostbiss −3">❄</div>
+        <div className="absolute bottom-1 right-1 text-[15px] leading-none" style={{ color: "#f7b0aa", textShadow: "0 0 8px #e0605a, 0 1px 2px #000a" }} title="Frostbiss −3">❄</div>
       )}
       {/* Pflanze (v0): grünes Blatt oben links markiert eine reife/grüne Karte (Teil des Farbblocks, dauerhaft). */}
       {green && (
-        <div className="absolute top-1 left-1 text-[13px] leading-none" style={{ color: "#86e0a0", textShadow: "0 0 5px #5ab87a" }} title="Grün (reif) — Teil des Farbblocks">🌿</div>
+        <div className="absolute top-1 left-1 text-[15px] leading-none" style={{ color: "#9dedb4", textShadow: "0 0 8px #5ab87a, 0 1px 2px #000a" }} title="Grün (reif) — Teil des Farbblocks">🌿</div>
       )}
       {/* Feuer (#206): Brandmarke auf der GEGNERkarte — warmes −N oben links (versetzt zu 🌿) + Flamme unten rechts (links neben ❄). Warm/orange → „Feuer, nicht Eis". */}
       {branded > 0 && (
@@ -161,8 +161,8 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
           <div className="absolute top-1 text-[10px] font-bold px-1 rounded leading-none"
             style={{ left: green ? 22 : 4, color: "#f7c48a", background: "#e0714a33", textShadow: "0 0 5px #e0714a" }}
             title={`Gebrandmarkt −${branded} Wert`}>−{branded}</div>
-          <div className="absolute bottom-1 text-[13px] leading-none"
-            style={{ right: frostbitten ? 20 : 4, color: "#f0a83a", textShadow: "0 0 6px #e0714a" }}
+          <div className="absolute bottom-1 text-[15px] leading-none"
+            style={{ right: frostbitten ? 20 : 4, color: "#f7b04a", textShadow: "0 0 9px #e0714a, 0 1px 2px #000a" }}
             title={`Gebrandmarkt −${branded} Wert`}>🔥</div>
         </>
       )}

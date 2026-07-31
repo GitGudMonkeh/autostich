@@ -99,6 +99,13 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
             {val > 0 && <Chip c="#8fcfe6">+{val} Dauerwert</Chip>}
             {flat > 0 && <Chip c="#8fcfe6">+{flat} je Frost-Sieg</Chip>}
             {over > 0 && <Chip c="#e6f7ff">Überlauf {over}</Chip>}
+            {/* #219.2: „Dauerwert" ist der aus den Schichten dauerhaft gewachsene Wert — er steckt SCHON im
+                Kartenwert oben (kein zusätzlicher Stich-Bonus). Klarstellung, damit die getrennte Zahl nicht doppelt wirkt. */}
+            {val > 0 && (
+              <div className="w-full text-[10px] opacity-55 leading-snug mt-0.5">
+                Dauerwert = aus {frostLayers} Eisschicht{frostLayers === 1 ? "" : "en"} dauerhaft gewachsen — bereits im Kartenwert {card.value} enthalten (kein zusätzlicher Stich-Bonus).
+              </div>
+            )}
           </div>
         );
       })()}

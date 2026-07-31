@@ -227,7 +227,7 @@ export const SKILL_DEFS = {
     desc: `Grüne Karten in einer Formation geben zusätzlich ×${de(C.PHOTOSYNTHESE_MULT)} Score. Der Grün-Formations-Multiplikator.`, photosynthese: true },
   SK_PLANT_13: { id: "SK_PLANT_13", name: "Blätterdach", archetype: "plant", keywords: ["green", "formation", "score"],
     desc: "In einem grünen Farbblock ab 4 Karten gibt jede grüne Karte bei Sieg zusätzlich +Score je Karte im Block.", blaetterdach: true },
-  SK_PLANT_14: { id: "SK_PLANT_14", name: "Überwucherung", archetype: "plant", keywords: ["green", "formation"],
+  SK_PLANT_14: { id: "SK_PLANT_14", name: "Überwucherung", archetype: "plant", keywords: ["green", "formation", "overgrowth"],
     desc: "Ist das Feld ≥66 % grün, werden alle Farbblöcke stärker (+0,20 Faktor) und Blüte zählt doppelt.", ueberwucherung: true },
   // Linie 5 — Ausläufer (Gegnerdeck: kolonisieren & ernten)
   SK_PLANT_15: { id: "SK_PLANT_15", name: "Ausläufer", archetype: "plant", keywords: ["green", "colonize"],
@@ -243,7 +243,7 @@ export const SKILL_DEFS = {
     desc: "Ist deine höchstgewachsene Karte am Zug, verdoppelt sie ihren Wurzeln-Score. Und je tiefer dein ÄLTESTER Baum über den Wert-Deckel gewachsen ist, desto mehr Punkte zahlt jeder grüne Sieg direkt — der Mutterbaum trägt den ganzen Garten.", mutterbaum: true },
   SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Dornenkönig", archetype: "plant", legendary: true, keywords: ["colonize"],
     desc: "Das ganze Gegnerdeck startet kolonisiert; jede Ernte verbraucht ihren Marker. Und je mehr Gegnerkarten unter deiner Kolonie stehen, desto mehr Punkte zahlt jeder grüne Sieg direkt — das Dornenreich wird zu Score.", dornenkoenig: true },
-  SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "formation"],
+  SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "formation", "overgrowth", "eternalSpring"],
     desc: "Farbblock zählt Grün schon ab 2 Karten, Überwucherung ab 25 % Feld. Und je größer dein ewig-grünes Feld (mehr grüne Karten), desto mehr Punkte zahlt jeder grüne Sieg direkt — der ewige Frühling wird zu Score.", ewigerFruehling: true },
 };
 
