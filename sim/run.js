@@ -7,6 +7,7 @@
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { newTelemetry, observe, summarizeCards, summarizeFormations, fingerprint } from "./metrics.js";
+import { summarizeArchitect } from "../src/game/architect.js"; // #202: Architekt-Metriken im Run-Ergebnis
 
 const GUARD_MAX = 1_000_000; // Endlos-Schleifen-Backstop (ein realer Run macht ~1.8k Stiche)
 
@@ -41,6 +42,7 @@ function finalize(s, seed, tel) {
     },
     cards: summarizeCards(tel), // Per-Karte-Ledger (S1): Auftritte/Winrate/Crits/Score-Anteil
     formations: summarizeFormations(tel), // Formations-Häufigkeit je Typ (Präsenz-Rate)
+    architect: s.architectEnabled ? summarizeArchitect(s.architect) : null, // #202: Architekt-Metriken (Abdeckung/Gebäude/Stufen/Häuserzeilen)
   };
 }
 
@@ -48,9 +50,10 @@ function finalize(s, seed, tel) {
 // und am Run-Ende mit dem Run-Score belohnt. Ohne mem verhält sich runOne wie in S0/S1 (Eval-Modus).
 // hooks (optional): { onTrick(state) } — nach jedem aufgelösten Stich aufgerufen (Pro-Cycle-Sampling,
 // Pacing-Analyse). Rein beobachtend; ändert weder rng noch State → Determinismus-Invariante bleibt.
-export function runOne(seed, policy, mem = null, hooks = null) {
+export function runOne(seed, policy, mem = null, hooks = null, opts = {}) {
   const rng = makeRng(seed);
-  let s = reducer(null, { type: "START_RUN", rng }); // START_RUN ignoriert den (null-)State
+  // #202: Architekt-A/B über opts (architect/shopDisabled) durch START_RUN in den State gefädelt.
+  let s = reducer(null, { type: "START_RUN", rng, architect: opts.architect, shopDisabled: opts.shopDisabled }); // START_RUN ignoriert den (null-)State
   const tel = newTelemetry();
   let guard = 0;
   while (s.phase !== "gameover") {

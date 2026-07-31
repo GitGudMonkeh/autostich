@@ -560,36 +560,37 @@ describe("Shop-Planungsitems — S5a Rerolls (Shop-Spec §10)", () => {
 
   const levelupPerk = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["A1", "A2", "A3"], ...over });
 
-  it("REROLL_PERK verbraucht einen Token und baut ein neues Angebot", () => {
-    const s = levelupPerk({ shop: { ...initialShop(), perkRerolls: 2 } });
+  // #202/#214: Rerolls kommen nicht mehr aus dem (dormanten) Shop, sondern aus dem geteilten state.rerolls-Pool (Perk+Skill).
+  it("REROLL_PERK verbraucht einen Reroll (geteilter Pool) und baut ein neues Angebot", () => {
+    const s = levelupPerk({ rerolls: 2 });
     const r = reducer(s, { type: "REROLL_PERK", rng: makeRng(5) });
-    expect(r.shop.perkRerolls).toBe(1);
+    expect(r.rerolls).toBe(1);
     expect(Array.isArray(r.offer)).toBe(true);
     expect(r.offer.length).toBeGreaterThan(0);
   });
-  it("REROLL_PERK nutzt den gratis Reroll (fateControl) ZUERST, Token bleibt unangetastet", () => {
-    const s = levelupPerk({ freePerkReroll: true, shop: { ...initialShop(), perkRerolls: 2 } });
+  it("REROLL_PERK nutzt den gratis Reroll (fateControl) ZUERST, der Pool bleibt unangetastet", () => {
+    const s = levelupPerk({ freePerkReroll: true, rerolls: 2 });
     const r = reducer(s, { type: "REROLL_PERK", rng: makeRng(5) });
     expect(r.freePerkReroll).toBe(false); // gratis verbraucht
-    expect(r.shop.perkRerolls).toBe(2);   // Token unangetastet
+    expect(r.rerolls).toBe(2);            // Pool unangetastet
   });
   it("REROLL_PERK ohne Ressource ist wirkungslos", () => {
-    const s = levelupPerk({ shop: initialShop() }); // 0 Token, kein gratis
+    const s = levelupPerk({ rerolls: 0 }); // 0 Rerolls, kein gratis
     expect(reducer(s, { type: "REROLL_PERK", rng: makeRng(5) })).toBe(s);
   });
-  it("REROLL_SKILL verbraucht einen Token und baut ein neues Skill-Angebot", () => {
+  it("REROLL_SKILL verbraucht einen Reroll (geteilter Pool) und baut ein neues Skill-Angebot", () => {
     const s = { ...initialState(makeRng(1)), phase: "levelup", skillOffer: ["SK_LIGHTNING_01"],
-      activeArchetypes: ["lightning"], skills: [], shop: { ...initialShop(), skillRerolls: 1 } };
+      activeArchetypes: ["lightning"], skills: [], rerolls: 1 };
     const r = reducer(s, { type: "REROLL_SKILL", rng: makeRng(3) });
-    expect(r.shop.skillRerolls).toBe(0);
+    expect(r.rerolls).toBe(0);
     expect(r.skillOffer.length).toBeGreaterThan(0);
   });
-  it("REROLL_SKILL nutzt den gratis Reroll zuerst (Token unangetastet)", () => {
+  it("REROLL_SKILL nutzt den gratis Reroll zuerst (Pool unangetastet)", () => {
     const s = { ...initialState(makeRng(1)), phase: "levelup", skillOffer: ["SK_LIGHTNING_01"],
-      activeArchetypes: ["lightning"], skills: [], freeSkillReroll: true, shop: { ...initialShop(), skillRerolls: 1 } };
+      activeArchetypes: ["lightning"], skills: [], freeSkillReroll: true, rerolls: 1 };
     const r = reducer(s, { type: "REROLL_SKILL", rng: makeRng(3) });
     expect(r.freeSkillReroll).toBe(false);
-    expect(r.shop.skillRerolls).toBe(1);
+    expect(r.rerolls).toBe(1);
   });
 
   it("Engine setzt freePerkReroll beim Perk-Angebot nur mit aktiver Schicksalskontrolle", () => {

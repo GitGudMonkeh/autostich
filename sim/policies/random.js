@@ -14,6 +14,7 @@ import { SHOP_ITEM_DEFS, canAfford } from "../../src/game/shop.js";
 import { SHOP_FAMILY_DEFS } from "../../src/game/shopFamilies.js";
 import { SKILL_SLOTS, MAX_ARCHETYPES } from "../../src/game/constants.js";
 import { perkActionFor, familyTargetStep } from "../families-policy.js";
+import { architectStep } from "../architect-policy.js"; // #202: Architekt-Phase (random/greedy platzieren)
 
 const pick = (arr, rng) => arr[Math.floor(rng() * arr.length)];
 
@@ -28,9 +29,9 @@ export function canAddSkill(s, id) {
   return heatConsumerCount(next) <= 1 && chargeConsumerCount(next) <= 1;
 }
 
-export function randomPolicy() {
+export function randomPolicy({ architectGreedy = false } = {}) {
   return {
-    name: "random",
+    name: architectGreedy ? "random+arch" : "random",
     act(s, rng) {
       switch (s.phase) {
         case "levelup": {
@@ -74,6 +75,9 @@ export function randomPolicy() {
 
         case "shop-target":
           return { type: "SHOP_TARGET_CANCEL" }; // Sicherheitsnetz: S0 betritt diese Phase nicht
+
+        case "architect": // Architekt-Phase (#202, Shop-Ersatz): random oder greedy platzieren, dann fertig.
+          return architectStep(s, rng, { greedy: architectGreedy });
 
         default:
           return null; // runOne bricht mit klarer Meldung ab

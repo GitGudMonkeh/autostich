@@ -271,7 +271,7 @@ export function Autostich() {
     setPaused(false);
     setIsRecord(false);
     setNewUnlocks([]); // #190: Freischalt-Hinweis des Vorlaufs zurücksetzen
-    dispatch({ type: "START_RUN", rng: Math.random });
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true }); // #202: der Architekt ersetzt im Spiel den Shop
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.

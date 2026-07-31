@@ -15,6 +15,15 @@ const envNum = (name, def) => {
 // node sim/batch.js …` verlängert für Diagnose; für n ≤ 60 wird ein Prefix des 60-Plans gespielt, darüber
 // hinaus wächst DECISION_SCHEDULE über buildSchedule() via TAIL_BLOCK weiter.
 export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 60);     // Shop-Spec (§2.1): Run über so viele Deck-Durchläufe, danach Ende [TUNING · Sim-übersteuerbar]
+// Architekt (#202, Shop-Ersatz): Modul-Default-Schalter. Das Spiel startet den Lauf mit architect:true (START_RUN, App.jsx);
+// dieser Default greift nur, wenn keine Action-Flag gesetzt ist (Sim ohne A/B). Im Browser existiert `process` nicht → false.
+export const ARCHITECT_ENABLED = (typeof process !== "undefined" && process.env && (process.env.ARCHITECT === "1" || process.env.ARCHITECT === "true")) || false;
+// #202/#214: Baseline des geteilten Reroll-Pools (Perk+Skill) je Lauf. Fix, kein Nachschub — Rerolls sind die Belohnungs-
+// Fläche für die Meistergrade (#217). Rang-Bonus fädelt später über einen erhöhten Startwert ein.
+export const BASE_REROLLS      = envNum("SIM_BASE_REROLLS", 2);
+// Feuer-Ziel-Hebel (#202): Verstärkung, mit der eine volle Architekt-Struktur die Glutdividende hebt
+// (fireDirect × (1+(struktMult−1)×AMP)). Isoliert Feuer (fireDirect=0 sonst) [Sim-getunt amp=2].
+export const FIRE_STRUCT_DIVIDEND_AMP = envNum("SIM_FIRE_STRUCT_DIV_AMP", 2);
 // Merge test/sim←main: ENV-Sweep-Haken bleibt, Default = main's Live-Balance (SPW 100→400, Pacing-Pass Sim-validiert).
 export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Default = Live-Balance 400]
 export const CRIT_BASE_MULT   = envNum("SIM_CRIT_BASE_MULT", 1.5);   // V2 (§22.3): Basis-Crit-Multiplikator; der Crit-Mult-Stat baut darauf auf [TUNING]

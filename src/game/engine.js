@@ -20,6 +20,7 @@ import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, perkFateReroll, skillFateReroll, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
 import { SHOP_FAMILY_DEFS, timeSegmentDepth, timeSegmentReduced } from "./shopFamilies.js";
+import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -91,6 +92,8 @@ export function resolveTrick(state, rng = Math.random) {
     growth = {}, colonized = {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green auf der Karte)
     shop = null, economyStatLevel = 0, // Shop-System (Shop-Spec §3): Münzstand + Einkommen-Level
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
+    architect = null, architectEnabled = false, architectPre = null, // Architekt (#202, Shop-Ersatz): Gebäude-Overlay (8×5) + Durchlauf-Precompute
+    shopDisabled = false, // Sim-Referenz: 'shop'-Slots als No-Op (weder Shop noch Architekt) → Null-Baseline „ohne"
   } = state;
 
   // Rarität-Umbau #167 (Schritt 2): engine-gekoppelte D-Stufen liefern ihre Parameter über die GEHALTENE
@@ -135,7 +138,13 @@ export function resolveTrick(state, rng = Math.random) {
   // berechnet und für den ganzen Durchlauf stabil gehalten. Greifen bei Sieg der jeweiligen Karte.
   let formations = state.formations || [];
   const anchors = (shop && shop.anchors) || []; // Shop-Positionsanker (§8) — an der Deckposition
-  if (pos === 0) formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers);
+  const archState = architectEnabled ? architect : null; // Architekt nur aktiv, wenn das Flag gesetzt ist (im Spiel default an)
+  // Architekt-Precompute je Durchlauf (stabil): value-/score-Effekte + Struktur-Faktor je Position (target einmal bestimmt).
+  let archPreNow = architectPre;
+  if (pos === 0) {
+    formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
+    archPreNow = archState ? precomputeArchitect(archState, playerOrder, deck) : null;
+  }
   // #161 FB-2: Peak gleichzeitig aktiver Formationen über den Run — zu Durchlaufbeginn, sobald das Layout feststeht.
   if (pos === 0) maxFormations = Math.max(maxFormations || 0, summarizeFormations(formations).count);
   const posForm = formations[actualPos] || { mult: 1, formations: [] };
@@ -234,7 +243,9 @@ export function resolveTrick(state, rng = Math.random) {
   const familyValueBonus = familySumHook(familyTiers, "cardBonus", { ...ctx, pValueBase: pCard.value });
   // Damaststahl (L, Underdog): geschmiedete Karten kämpfen mit +Wert → die tiefen Schmiede-Karten schlagen über ihrem Gewicht.
   const damascusCombat = (fireFlag(skills, "damascus") && (forged[pCard.id] || 0) > 0) ? C.DAMASCUS_COMBAT : 0;
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + damascusCombat;
+  // Architekt value-Gebäude (#202, Tragwerk): +temp Wert VOR dem Vergleich (an dieser Position, Bedingung je Familie).
+  const architectValue = archPreNow ? architectValueBonus(archPreNow, actualPos, pCard) : 0;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + damascusCombat;
   // Frostbiss (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −3 Wert (nie < 0); sonst neutral (§12).
   const oValue = Math.max(0, oCard.value - (frostbiteActive[oCard.id] || 0) - (brandActive[oCard.id] || 0)); // Vergletscherung (Eis, ∝ Schichten) + Brand (Feuer)
   // Eis: der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht.
@@ -253,6 +264,7 @@ export function resolveTrick(state, rng = Math.random) {
   // Pflanze-Fraktion (v0): Wachstum (immutabel fortgeschrieben) / kolonisierte Gegnerkarten. Grün = card.green (im deck gebacken).
   let newGrowth = growth;
   let newColonized = { ...colonized };
+  let architectBump = null; // Architekt Meilenstein (#202): Gebäude-id, dessen Sieg-Zähler nach diesem Stich hochzählt
 
   let won = false, lost = false, tieConverted = false;
   if (pValue > oValue) won = true;
@@ -543,6 +555,13 @@ export function resolveTrick(state, rng = Math.random) {
     // Entladung (Rework v0): war der nächste Crit mit +Crit-Mult armiert (aus einem früheren vollen Verbrauch)?
     // Der Crit-Mult-Bonus fließt oben in critMultiplier; hier nur die Armierung merken (unten entwaffnet).
     const dischargeArmedBefore = !!(lightning && lightning.dischargeArmed);
+    // Architekt score-Gebäude (#202, Handelsbauten): Flat in die multiplizierte Basis; Mult (Schatzkammer/Struktur) als
+    // eigener Faktor. Meilenstein-Zähler (bump) wird nach dem Stich fortgeschrieben. Bedingungen: Crit/Farbe/Serie/Ziel.
+    const architectScoreRes = archPreNow
+      ? architectScore(archPreNow, actualPos, { isCrit, serieStreak, suit: pCard.suit }, (architect && architect.winCounters) || {})
+      : { flat: 0, mult: 1, bump: null };
+    architectBump = architectScoreRes.bump;
+    const architectMult = architectScoreRes.mult;
     // Familien-Score-Flats (Rarität-Umbau #167, Kat. D) laufen ADDITIV neben den flachen Perk-Flats: nur die
     // gehaltene Familien-Stufe zählt (activeTierDefs) → kein Doppel-Trigger über Stufen (Spec §2.3/§9).
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx) + familySumHook(familyTiers, "scoreFlat", wctx)
@@ -553,6 +572,7 @@ export function resolveTrick(state, rng = Math.random) {
                       + ionScoreFor(pCard) + stormScore + fireFlat + iceFlat + plantFlat
                       + (anchorType === "score" ? (aParam("score") || 0) : 0) // Punkteanker (§4.2, Stärke = Stufe)
                       + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
+                      + architectScoreRes.flat // Architekt Handelsbauten (#202): Flat-Score, s. o.
                       + interplayStored; // D_INTERPLAY IV: der in Niederlagen gebankte Score wird mit diesem Sieg als Flat ausgezahlt
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
@@ -584,7 +604,8 @@ export function resolveTrick(state, rng = Math.random) {
     // Sonnenzorn (L): dauerhafter Score-Multiplikator ∝ HÖCHSTER je gehaltener Hitze (heat.peak) — auf den GESAMTEN Sieg-Score
     // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
     const sunwrathMult = (fireFlag(skills, "sunwrath") && heat && heat.active) ? (1 + (heat.peak || 0) * C.SUNWRATH_PEAK_STEP) : 1;
-    scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult * afterglowMult * coreMult * sunwrathMult;
+    // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
+    scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult * afterglowMult * coreMult * sunwrathMult * architectMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
     // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
@@ -638,9 +659,14 @@ export function resolveTrick(state, rng = Math.random) {
     if (ownsFlag(perks, "vabanque") && pos === C.VABANQUE_TRICKS - 1 && cycleWins === C.VABANQUE_TRICKS && vabanquePaid < C.VABANQUE_MAX_PAYOUTS) {
       perkDirect = C.VABANQUE_SCORE; vabanquePaid += 1;
     }
-    gained += fireDirect + iceDirect + lightDirect + plantDirect + perkDirect;
+    // Feuer-Ziel-Hebel (#202): die Architekt-STRUKTUR (volle Zeile/Spalte/Diagonale) multipliziert AUCH die Glutdividende.
+    // Ohne das umgeht Feuers bewusst mult-freier Floor die Architekt-Geometrie → Strukturen heben Feuer kaum. Nur der reine
+    // Struktur-Faktor (segFactor), NICHT Schatzkammer/Score-Bauten.
+    const archStructMult = archPreNow ? (archPreNow.segFactor[actualPos] || 1) : 1;
+    const fireStructMult = 1 + (archStructMult - 1) * C.FIRE_STRUCT_DIVIDEND_AMP; // Struktur-Hebel auf die Dividende verstärkt (Feuer-isoliert)
+    gained += fireDirect * fireStructMult + iceDirect + lightDirect + plantDirect + perkDirect;
     score += gained;
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, formStat: formStatFactor, iceForm: iceFormMult, afterglowMult, coreMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, lightDirect, plantDirect, perkDirect, total: gained };
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, formStat: formStatFactor, iceForm: iceFormMult, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, lightDirect, plantDirect, perkDirect, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz-Rework (v0): Ladungsgewinn — Blitzableiter (Crit +1) · Statische Aufladung (Nicht-Crit-Sieg +1) ·
@@ -885,6 +911,11 @@ export function resolveTrick(state, rng = Math.random) {
   let newFormationEnergy = formationEnergy;
   let newFormationSwaps = formationSwaps;
   let newFreePerkReroll = false, newFreeSkillReroll = false; // P-L1: gratis Reroll gilt nur fürs frisch erzeugte Angebot
+  // Architekt (#202): Meilenstein-Zähler nach diesem Stich fortschreiben (bump = Gebäude-id eines Siegs auf seiner Abdeckung).
+  let newArchitect = architect;
+  if (architectEnabled && architect && architectBump != null)
+    newArchitect = { ...architect, winCounters: { ...architect.winCounters, [architectBump]: (architect.winCounters[architectBump] || 0) + 1 } };
+  const newArchitectPre = archPreNow;
   if (pos >= cycleLen) { // Zeitsegment (§8 A-L1): Durchlauf endet nach cycleLen Stichen (40, mit Zeitsegment 45)
     cycle += 1;
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf
@@ -997,6 +1028,15 @@ export function resolveTrick(state, rng = Math.random) {
       } else if (decision === "perk") {
         const off = buildPerkOffer(perks, familyTiers, rng, C.PERKS_OFFERED, perkLegendaryChance(shop));
         if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; }
+      } else if (decision === "shop" && architectEnabled) {
+        // Architekt-Phase (#202, Shop-Ersatz): STATT des Shops die Architekt-Phase öffnen — ein frisches Bauplan-Angebot
+        // ziehen (deterministisch über rng) und die Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen.
+        phase = "architect";
+        newArchitect = { ...(newArchitect || architect), offers: buildArchitectOffer(newArchitect || architect, rng), actedMain: false, moved: false };
+      } else if (decision === "shop" && shopDisabled) {
+        // Sim-Referenz „ohne": weder Shop noch Architekt — die Entscheidung ist ein No-Op, der Durchlauf startet direkt
+        // (Null-Baseline). Kein rng-Verbrauch.
+        phase = "play";
       } else if (decision === "shop") {
         // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen, Einkommensbonus gutschreiben (+3 je Einkommen-Level,
         // pro Shop) und ein frisches Angebot ziehen (§5, deterministisch über rng). Danach ein evtl. im letzten
@@ -1013,7 +1053,7 @@ export function resolveTrick(state, rng = Math.random) {
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
-        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers);
+        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
       }
     }
   }
@@ -1029,6 +1069,7 @@ export function resolveTrick(state, rng = Math.random) {
     critFollowArmed, weaknessArmed, weaknessBig, interplayStored, misfireScore,
     winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
+    architect: newArchitect, architectEnabled, architectPre: newArchitectPre, shopDisabled, // Architekt (#202, Shop-Ersatz)
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)

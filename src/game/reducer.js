@@ -12,10 +12,14 @@ import { initialShop, SHOP_ITEM_DEFS, positionOccupied, perkLegendaryChance, ski
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
+import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER } from "./architect.js";
 
 /* Reiner Reducer — Determinismus-Invariante: kein Math.random / Date hier drin.
    Zufall kommt als Action-Payload (rng), siehe App.jsx. Phasen:
    play → levelup → play … → gameover. */
+// Architekt (#202, Shop-Ersatz): an computeFormations weitergereicht, damit Formations-Vorschauen (Aufstellungsphase)
+// die Gebäude-Effekte sehen. null, solange das Flag aus ist (A/B-neutral).
+const archOf = (s) => (s && s.architectEnabled ? s.architect : null);
 // Start-playerOrder mit Formations-Potential im Ziel-Band (#Pass6): neu mischen, bis Σ(mult−1) in
 // [FORMATION_START_MIN, MAX] liegt, sonst nach TRIES die potential-nächste Anordnung (Fallback → terminiert
 // immer). Rein deterministisch (rng injiziert); begrenzt die Start-Varianz des Formations-Potentials.
@@ -86,8 +90,13 @@ export function initialState(rng = Math.random) {
     growth: {}, colonized: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green)
     ash: 0, brandPending: {}, brandActive: {}, forged: {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     tieArmed: false,
-    shop: initialShop(), // Shop-System (Shop-Spec): Münzen + Angebot (+ später Anker/Regeländerungen)
+    shop: initialShop(), // Shop-System (Shop-Spec): Münzen + Angebot (+ später Anker/Regeländerungen) — im Spiel durch den Architekten ersetzt (dormant)
     shopTarget: null,    // Shop-Ziel-Auswahl (Shop-Spec §12.2): aktive Karten-/Farb-/Segment-Auswahl beim Kauf
+    architectEnabled: false,       // Architekt (#202): Flag — bei true ersetzt die Architekt-Phase den Shop (im Spiel via START_RUN gesetzt; A/B im Sim)
+    architect: { ...initialArchitect(), maxCover: ARCH_MAX_COVER }, // Gebäude-Overlay (8×5) + Angebot + Meilenstein-Zähler; maxCover als #217-Seam (Rang-Bonus: base + Grad×N) run-geseedet
+    architectPre: null,            // Precompute je Durchlauf (von der Engine gefüllt)
+    shopDisabled: false,           // Sim-Referenz: 'shop'-Slots als No-Op (Null-Baseline „ohne")
+    rerolls: C.BASE_REROLLS,       // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill) — ersetzt shop.perkRerolls/skillRerolls; Baseline, kein Nachschub (#217-Reward-Fläche)
     lastTrick: null,
   };
 }
@@ -111,7 +120,10 @@ export function reducer(state, action) {
     case "RESET": {
       // Start-Entscheidung vor Durchlauf 0 = Stat (DECISION_CYCLE[0], §22.2). Immer alle vier Stats.
       const s = initialState(action.rng);
-      return { ...s, phase: "levelup", statOffer: STAT_IDS };
+      // Architekt-Flag (#202): das Spiel startet mit architect:true (Shop-Ersatz); der Sim übersteuert per Action (A/B),
+      // sonst greift der Modul-Default (env ARCHITECT). shopDisabled = Sim-Null-Baseline „ohne".
+      const architectEnabled = action.architect != null ? !!action.architect : !!C.ARCHITECT_ENABLED;
+      return { ...s, phase: "levelup", statOffer: STAT_IDS, architectEnabled, shopDisabled: !!action.shopDisabled };
     }
 
     case "TO_MENU":     // laufenden Run verlassen (#5)
@@ -126,6 +138,61 @@ export function reducer(state, action) {
       return state.phase === "shop"
         ? { ...state, phase: "play", shop: { ...state.shop, offers: null, purchasedOfferIds: [] } }
         : state;
+
+    /* ---- Architekt (#202, Shop-Ersatz): Bau-Aktionen. Hauptaktion (errichten ODER ausbauen) ist EXKLUSIV je Phase;
+           versetzen genau 1×; abreißen unbegrenzt; fertig → Durchlauf startet. Alle Platzierungen rein validiert. ---- */
+    case "ARCHITECT_BUILD": { // errichten: Bauplan (Familie+Stufe aus dem Angebot) an gültiger Position/Rotation
+      if (state.phase !== "architect") return state;
+      const a = state.architect;
+      if (a.actedMain) return state;                                   // Hauptaktion bereits verbraucht
+      const off = (a.offers || []).find((o) => o.familyId === action.familyId && o.tier === action.tier && !o.used);
+      if (!off) return state;                                          // Bauplan nicht (mehr) im Angebot
+      const fam = archFamily(action.familyId);
+      if (!fam) return state;
+      if (!isValidFootprint(fam.form, action.footprint, a.buildings)) return state; // Form/Gitter/Overlap
+      if (archOccupied(a.buildings).size + action.footprint.length > (a.maxCover ?? ARCH_MAX_COVER)) return state; // Baufeld-Deckel: keine neue Fläche über maxCover
+      if (fam.colorLocked && !C.SUIT_ORDER.includes(action.colorChoice)) return state; // Buntglas/Zunfthaus brauchen eine Farbe
+      const footprint = [...action.footprint].sort((x, y) => x - y);
+      const building = { id: a.nextId, familyId: fam.id, tier: off.tier, footprint, colorChoice: fam.colorLocked ? action.colorChoice : null };
+      const offers = a.offers.map((o) => (o === off ? { ...o, used: true } : o));
+      return { ...state, architect: { ...a, buildings: [...a.buildings, building], nextId: a.nextId + 1, actedMain: true, offers } };
+    }
+    case "ARCHITECT_UPGRADE": { // ausbauen: bestehendes Gebäude +1 Stufe (max 4; Legendäre haben keine Stufen)
+      if (state.phase !== "architect") return state;
+      const a = state.architect;
+      if (a.actedMain) return state;
+      const b = a.buildings.find((x) => x.id === action.buildingId);
+      if (!b) return state;
+      const fam = archFamily(b.familyId);
+      if (!fam || fam.legendary || b.tier >= ARCH_MAX_TIER) return state; // legendär/Maximalstufe → nicht ausbaubar
+      const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, tier: x.tier + 1 } : x));
+      return { ...state, architect: { ...a, buildings, actedMain: true } };
+    }
+    case "ARCHITECT_MOVE": { // versetzen: genau 1× je Phase, an neue gültige Position (ohne Overlap mit den ANDEREN)
+      if (state.phase !== "architect") return state;
+      const a = state.architect;
+      if (a.moved) return state;
+      const b = a.buildings.find((x) => x.id === action.buildingId);
+      if (!b) return state;
+      const fam = archFamily(b.familyId);
+      const others = a.buildings.filter((x) => x.id !== b.id);
+      if (!fam || !isValidFootprint(fam.form, action.footprint, others)) return state;
+      const footprint = [...action.footprint].sort((x, y) => x - y);
+      const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, footprint } : x));
+      return { ...state, architect: { ...a, buildings, moved: true } };
+    }
+    case "ARCHITECT_DEMOLISH": { // abreißen: jederzeit, unbegrenzt, ohne Gegenwert (nur Platz frei)
+      if (state.phase !== "architect") return state;
+      const a = state.architect;
+      const buildings = a.buildings.filter((x) => x.id !== action.buildingId);
+      if (buildings.length === a.buildings.length) return state;       // nichts entfernt → kein Fortschritt
+      const winCounters = { ...a.winCounters }; delete winCounters[action.buildingId];
+      return { ...state, architect: { ...a, buildings, winCounters } };
+    }
+    case "ARCHITECT_DONE": { // Architekt-Phase verlassen → zugehöriger Durchlauf startet (Angebot leeren).
+      if (state.phase !== "architect") return state;
+      return { ...state, phase: "play", architect: { ...state.architect, offers: null } };
+    }
 
     case "BUY_ITEM": {  // Kauf im Shop (Shop-Spec §5.4). Ziel-Items (targetMode) laufen über den Target-Flow (ab S2).
       if (state.phase !== "shop") return state;
@@ -532,7 +599,7 @@ export function reducer(state, action) {
       }
       if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green ? { ...c, green: false } : c)); growth = {}; colonized = {}; } // Pflanze weg (Anker-Wert bleibt gebacken)
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers);
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
       return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, layers, frostFormPrev, growth, colonized, ash, brandPending, brandActive, forged, formations, phase: "play", skillOffer: null };
     }
 
@@ -559,11 +626,11 @@ export function reducer(state, action) {
     case "REROLL_PERK": {
       if (state.phase !== "levelup" || !state.offer) return state;
       const free = !!state.freePerkReroll;
-      const tokens = (state.shop && state.shop.perkRerolls) || 0;
+      const tokens = state.rerolls || 0;                             // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill), ersetzt shop.perkRerolls
       if (!free && tokens <= 0) return state;                        // keine Ressource → wirkungslos
       const offer = buildPerkOffer(state.perks, state.familyTiers, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
-      const shop = free ? state.shop : { ...state.shop, perkRerolls: tokens - 1 };
-      return { ...state, offer, shop, freePerkReroll: free ? false : state.freePerkReroll };
+      const rerolls = free ? tokens : tokens - 1;
+      return { ...state, offer, rerolls, freePerkReroll: free ? false : state.freePerkReroll };
     }
 
     // Skill-Angebot neu würfeln (Shop-Spec §10 P2/P-L1): analog; erfüllt weiterhin Archetyp-/Konsumentenregeln
@@ -571,12 +638,12 @@ export function reducer(state, action) {
     case "REROLL_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
       const free = !!state.freeSkillReroll;
-      const tokens = (state.shop && state.shop.skillRerolls) || 0;
+      const tokens = state.rerolls || 0;                             // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill), ersetzt shop.skillRerolls
       if (!free && tokens <= 0) return state;
       const offer = buildSkillOffer(state.skills, state.activeArchetypes, action.rng, C.SKILLS_OFFERED, skillLegendaryChance(state.shop));
       if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
-      const shop = free ? state.shop : { ...state.shop, skillRerolls: tokens - 1 };
-      return { ...state, skillOffer: offer, shop, freeSkillReroll: free ? false : state.freeSkillReroll };
+      const rerolls = free ? tokens : tokens - 1;
+      return { ...state, skillOffer: offer, rerolls, freeSkillReroll: free ? false : state.freeSkillReroll };
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.
@@ -596,7 +663,7 @@ export function reducer(state, action) {
       if (!isFree && (state.formationEnergy || 0) <= 0) return state; // bezahlter Tausch braucht Energie
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state)),
                formationEnergy: isFree ? state.formationEnergy : state.formationEnergy - 1,
                formationSwaps: [...(state.formationSwaps || []), { i, j, free: isFree, frozenId: freeFrozenId, idA: cardA.id, idB: cardB.id }],
                frostSwapsUsed: isFree ? [...used, freeFrozenId] : used };
@@ -609,7 +676,7 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       [order[last.i], order[last.j]] = [order[last.j], order[last.i]];
       const frostSwapsUsed = last.free ? (state.frostSwapsUsed || []).filter((id) => id !== last.frozenId) : (state.frostSwapsUsed || []);
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state)),
                formationEnergy: last.free ? state.formationEnergy : state.formationEnergy + 1, formationSwaps: swaps, frostSwapsUsed };
     }
     // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie + freie Frosttausche zurück.
@@ -618,7 +685,7 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       const swaps = state.formationSwaps || [];
       for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state)),
                formationEnergy: C.FORMATION_ENERGY + (state.perks || []).reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
                  + formationEnergyBonus(state.familyTiers, state.cycle), // #179 Feinjustierung (Perk-Familie E_TUNING)
                formationSwaps: [], frostSwapsUsed: [] };
@@ -647,11 +714,11 @@ export function reducer(state, action) {
       }
       // Gletscherschub / Verzahnung: ein Frosttausch, der eine NEUE (bzw. zweite überlappende) Formation schafft, bankt eine Schicht.
       if (usedFrost.length && (hasGlacierPush(skills) || hasVerzahnung(skills))) {
-        const finalForms = state.formations || computeFormations(state.playerOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers);
+        const finalForms = state.formations || computeFormations(state.playerOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers, archOf(state));
         const origOrder = state.playerOrder.slice(); // Ausgangsreihenfolge = finale ohne alle Tausche dieser Phase
         const swaps = state.formationSwaps || [];
         for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [origOrder[i], origOrder[j]] = [origOrder[j], origOrder[i]]; }
-        const baseForms = computeFormations(origOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers);
+        const baseForms = computeFormations(origOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers, archOf(state));
         layers = { ...layers };
         for (const fid of usedFrost) {
           const pos = posOfFrost(fid);
