@@ -61,10 +61,11 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
       {card.frozen && <FrostOverlay animated={false} radius="0.5rem" />}
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
       {/* Architekt-Gebäude-Badge (#202/#224.7): nur der echte Wert-Boost „+X" mittig an der oberen Kante (kein Icon mehr —
-          die Kategorie liest man am Rahmen/Ring + Tooltip). Nur bei value-Gebäuden (boost > 0); score/formation zeigt nur den Ring. */}
+          die Kategorie liest man am Rahmen/Ring + Tooltip). Nur bei value-Gebäuden (boost > 0); score/formation zeigt nur den Ring.
+          #UI: Badge-Farbe = die Karten-Farbe, für die das Gebäude den Wert-Bonus gibt (arch.badgeSuit); farblos → grau (#888). */}
       {arch && arch.boost > 0 && (
         <span className="absolute top-0 left-1/2 -translate-x-1/2 text-[8px] sm:text-[9px] font-bold leading-none px-1 rounded-b-[3px] z-10"
-          style={{ background: arch.legendary ? "#c8962f" : arch.color, color: "#fff" }}
+          style={{ background: suitColor(arch.badgeSuit), color: "#fff" }}
           title={`🏗 ${arch.name} · +${arch.boost} Wert`}>
           +{arch.boost}
         </span>
