@@ -8,6 +8,7 @@ import {
 import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { SUIT_ORDER } from "../game/constants.js";
 import { ARCH_CAT as CAT } from "./indicators/vocab.js";
+import { tierColor } from "../game/rarity.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
@@ -273,6 +274,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const canDragHere = !removeFor && ((phase === "place" && isPending) || (phase === "move" && !!b));
                 const fam = b ? familyDef(b.familyId) : null;
                 const cat = fam ? CAT[fam.category] : null;
+                // Raritäts-Rahmen: Stufenfarbe (I grau · II grün · III blau · IV lila), Legendär = Gold. Füllung bleibt Kategorie.
+                const tierCol = b ? (fam.legendary ? GOLD : tierColor(b.tier)) : null;
                 const ev = effValueAt(pos);
                 const boost = ev - card.value;
                 const anchorCell = b ? Math.min(...b.footprint) : -1;
@@ -299,11 +302,13 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       opacity: (isDragOrig && !inDragPrev) ? 0.35 : (isPending && !inDragPrev ? 0.82 : 1),
                       touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
-                        inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,
-                        b && fam.legendary ? `inset 0 0 0 2px ${GOLD}` : null,
-                        isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,
-                        !b && structLit(pos) ? "inset 0 0 0 2px #f0b429aa" : null,
-                        b && structLit(pos) ? "inset 0 0 0 2px #f0b429, 0 0 10px #f0b42999" : null, // #224.13: fertige Struktur = klarer Gold-Rahmen (live, vor dem Bestätigen)
+                        inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
+                        isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,                              // ausgewählt (weiß)
+                        // Raritäts-Rahmen je Gebäude: 2px Stufenfarbe am Rand + 1px dunkle Trennlinie → auch bei ähnlicher Füllfarbe klar lesbar.
+                        b ? `inset 0 0 0 2px ${tierCol}, inset 0 0 0 3px #0d1620cc` : null,
+                        b && fam.legendary ? `0 0 8px ${GOLD}55` : null,                                   // Legendär → zusätzlicher warmer Glow
+                        b && structLit(pos) ? "0 0 10px #f0b42999" : null,                                // Gebäude auf fertiger Struktur → Gold-Glow (außen, konkurriert nicht mit dem Rahmen)
+                        !b && structLit(pos) ? "inset 0 0 0 2px #f0b429aa" : null,                        // leere Zelle einer fast-fertigen Struktur → Gold-Hinweis
                       ].filter(Boolean).join(", ") || undefined,
                       outline: isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined)),
                       outlineOffset: 1,
@@ -336,7 +341,14 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
               {Object.entries(CAT).map(([k, v]) => (
                 <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ background: v.color }} />{v.label}</span>
               ))}
-              <span className="inline-flex items-center gap-1.5"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${GOLD}` }} />legendär</span>
+            </div>
+            {/* Raritäts-Rahmen = Stufe des Gebäudes (Füllung = Kategorie). */}
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-[10px] font-mono opacity-70">
+              <span className="opacity-70">Rahmen = Stufe:</span>
+              {[1, 2, 3, 4].map((t) => (
+                <span key={t} className="inline-flex items-center gap-1"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${tierColor(t)}` }} />{ROMAN[t]}</span>
+              ))}
+              <span className="inline-flex items-center gap-1"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${GOLD}` }} />★ legendär</span>
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] font-mono opacity-60">
               <span>Ring = aktive Formation (×mult)</span>
