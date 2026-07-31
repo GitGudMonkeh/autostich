@@ -6,6 +6,7 @@ import {
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { SUIT_ORDER } from "../game/constants.js";
+import { ARCH_CAT as CAT } from "./indicators/vocab.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { useEscape } from "./useEscape.js";
 
@@ -17,12 +18,8 @@ import { useEscape } from "./useEscape.js";
    Interaktion touch-sicher: Tippen→Setzen + Tippen→Verschieben (kein Drag), Drehen per Knopf (Mockup-Fallback).
    ============================================================ */
 
-// Kategorie-Rahmen/Icon (NICHT Füllfarbe — sonst Kollision mit den Karten-Suits R/B/G/Y). Aus dem Mockup.
-const CAT = {
-  value:     { color: "#3b7dbe", label: "Wert",      icon: "▛" },
-  score:     { color: "#2f9d55", label: "Punkte",    icon: "◆" },
-  formation: { color: "#d1652f", label: "Formation", icon: "✶" },
-};
+// Kategorie-Rahmen/Icon (CAT) kommt aus dem geteilten Vokabular (indicators/vocab.js → ARCH_CAT) — NICHT Füllfarbe
+// (sonst Kollision mit den Karten-Suits R/B/G/Y). Geteilt mit dem Aufstellungs-Overlay (FormationPhase).
 const SUIT_COLOR = { R: "#d9553f", B: "#4f82d6", G: "#3f9d63", Y: "#c79a2e" };
 const GOLD = "#c8962f"; // Legendär
 const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };

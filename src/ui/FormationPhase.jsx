@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { SKILL_DEFS, hasGletscher, hasArchitekt, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
+import { precomputeArchitect, architectValueBonus, familyDef as archFamilyDef } from "../game/architect.js";
+import { ARCH_CAT } from "./indicators/vocab.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
@@ -21,6 +23,13 @@ const strengthOf = (fs) => (fs || []).reduce((s, pf) => s + ((pf.mult || 1) - 1)
 export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const { playerOrder = [], deck = [], formations = [], formationEnergy = 0, formationSwaps = [] } = state;
   const [sel, setSel] = useState(null);
+  // Architekt-Gebäude-Overlay (#202): zeigt in der Aufstellung, welche Positionen von welchem Gebäude gebufft werden —
+  // die andere Seite der „platzieren (Architekt) → routen (Aufstellung)"-Schleife. Toggle-bar, Default an. Der Wert-Boost
+  // je Zelle kommt aus der ECHTEN Engine (precomputeArchitect + architectValueBonus), spiegelt also die Sieg-Rechnung.
+  const [showArch, setShowArch] = useState(true);
+  const architect = state.architect;
+  const archBuildings = (state.architectEnabled && architect && architect.buildings) || [];
+  const hasArch = archBuildings.length > 0;
   // Gehaltene Eis-Skills, die die Formationserkennung beeinflussen (Keyword „formation") → im Formationsfenster
   // sichtbar machen. Reuse der bestehenden desc-Texte aus SKILL_DEFS (kein Desc↔Code-Drift).
   const iceFormSkills = (state.skills || []).filter((id) => {
@@ -29,6 +38,24 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   });
 
   const cards = playerOrder.map((di) => deck[di]);
+  // Architekt-Abdeckung je Position: { cat, color, icon, boost, legendary, name }. boost = echter Wert-Bonus der Karte,
+  // die dort im Stich steht (nur value-Gebäude; konditional wie in der Engine). Neu berechnet je Aufstellung (folgt Tauschen).
+  const architectCover = (() => {
+    if (!hasArch) return null;
+    const pre = precomputeArchitect(architect, playerOrder, deck);
+    const cover = {};
+    for (const b of architect.buildings) {
+      const fam = archFamilyDef(b.familyId);
+      if (!fam) continue;
+      const cat = ARCH_CAT[fam.category];
+      for (const pos of b.footprint) {
+        const card = deck[playerOrder[pos]];
+        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card) : 0;
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name };
+      }
+    }
+    return cover;
+  })();
   // Eis (#93 F3): eingefrorene Karten mit noch freiem Frosttausch machen einen Tausch KOSTENLOS (auch bei 0 Energie).
   const frostSwapsUsed = state.frostSwapsUsed || [];
   const frozenCards = cards.filter((c) => c.frozen);
@@ -166,7 +193,22 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} frostPillarPos={frostPillar.positions} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} />
+            {/* Architekt-Overlay-Steuerung (#202): welche Karten liegen unter welchem Gebäude? Toggle + Kategorie-Legende. */}
+            {hasArch && (
+              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
+                <button onClick={() => setShowArch((v) => !v)} className="px-2 py-1 rounded-lg font-bold"
+                  style={showArch ? { background: `${ARCH_CAT.value.color}22`, border: `1px solid ${ARCH_CAT.value.color}`, color: "#cfe3f5" }
+                                  : { background: "#20202a", border: "1px solid #3a3a46", color: "#8a8a92" }}>
+                  🏗 Gebäude {showArch ? "an" : "aus"}
+                </button>
+                {showArch && Object.entries(ARCH_CAT).map(([k, v]) => (
+                  <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
+                    <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
+                  </span>
+                ))}
+              </div>
+            )}
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} frostPillarPos={frostPillar.positions} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}

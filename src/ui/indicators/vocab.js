@@ -40,6 +40,16 @@ export const GLACIER = "#bfe9f7"; // Architekt-Pfeiler / „Masse-Schwelle errei
 export const PLANT_RIPE = "#86e0a0"; // reife (grüne) Zahl — leuchtet intensiv grün
 export const PLANT_FULL = "#c8ffdc"; // voll ausgewachsen (Wert-Deckel) — hellster Grün-Ton (+ 🌿)
 
+// ---- Architekt-Kategorien (#202) ----
+// Rahmen/Icon-Vokabular fürs Brett-Overlay. Bewusst NICHT als Vollflächen-Füllung genutzt (kollidiert sonst mit den
+// Karten-Suits R/B/G/Y) — nur als Rand/Glow/Badge. EINZIGE Quelle, geteilt von ArchitectScreen (Bauphase) und dem
+// Gebäude-Overlay der Aufstellungsphase (FormationPhase/CardGrid). Blau/Grün/Orange = Wert/Punkte/Formation.
+export const ARCH_CAT = {
+  value:     { color: "#3b7dbe", label: "Wert",      icon: "▛" },
+  score:     { color: "#2f9d55", label: "Punkte",    icon: "◆" },
+  formation: { color: "#d1652f", label: "Formation", icon: "✶" },
+};
+
 // ---- Karten-Ecken-Belegung (Single Source of Truth) ----
 // Reserviert je Fraktion, damit sich in gemischten Builds (alle 4 mischbar) nichts überdeckt.
 // Werte = grobe Ecke; die exakte Positionierung (Offsets bei Kollision) macht Card.jsx.

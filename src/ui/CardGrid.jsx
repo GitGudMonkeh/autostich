@@ -18,7 +18,7 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
    Auswahl-Zustände (#112): `selected` = weiß (Tausch/Detail) · `picked` = gold ✓ (Mehrfach-/Positionsauswahl) ·
    `arrow` = Farbpfeil „→X" (Shop-Farbwechsel) · `disabled` = ausgegraut, nicht klickbar (z. B. belegte Anker). */
 function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
-                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, pillar = false, dimmed = false }) {
+                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, pillar = false, dimmed = false, arch = null }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -41,6 +41,8 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
   // Eis-Architekt (#210): eine hervorgehobene Frost-Spalte (senkrechte Formation) → eisiger Inset-Rim + Cyan-Glow.
   // Stapelt sich unter dem Auswahl-/Formations-Glow, damit beide lesbar bleiben (Pfeiler quer über die Segment-Zeilen).
   const pillarShadow = pillar ? "inset 0 0 0 1.5px rgba(191,233,247,0.60), 0 0 12px rgba(94,200,240,0.50)" : null;
+  // Architekt-Gebäude-Overlay (#202): kategorie-farbiger Inset-Ring + weicher Glow auf abgedeckten Karten (Legendär = Gold).
+  const archShadow = arch ? `inset 0 0 0 2px ${arch.legendary ? "#c8962f" : arch.color}, 0 0 7px ${arch.color}77` : null;
   // F4 Farballianz (#125): diagonaler Zweifarben-Split auch in der Grid-Kachel (obere Hälfte Eigen-, untere Partnerfarbe).
   const tileBg = allyColor
     ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColor}30 51%, ${allyColor}30 100%), #20202a`
@@ -54,10 +56,19 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
                // selected(weiß) haben Vorrang und bleiben voll sichtbar; disabled (0,45) sticht durch.
                opacity: disabled ? 0.45 : (dimmed && !selected && !picked ? 0.55 : 1), cursor: disabled ? "not-allowed" : "pointer",
                ...(anchorRing || {}),
-               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, pillarShadow].filter(Boolean).join(", ") || undefined }}>
+               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, pillarShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
       {/* #136 Frostglas: ruhiger Eis-Layer (Tint + Körnung, KEIN Sweep) für eingefrorene Board-Karten. */}
       {card.frozen && <FrostOverlay animated={false} radius="0.5rem" />}
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
+      {/* Architekt-Gebäude-Badge (#202): Kategorie-Icon (+ echter Wert-Boost) mittig an der oberen Kante — frei zwischen
+          #Pos (links) und dem Ionis-/Frost-Cluster (rechts). Rein anzeige-seitig, nur in der Aufstellung mit Overlay an. */}
+      {arch && (
+        <span className="absolute top-0 left-1/2 -translate-x-1/2 text-[8px] sm:text-[9px] font-bold leading-none px-1 rounded-b-[3px] z-10"
+          style={{ background: arch.legendary ? "#c8962f" : arch.color, color: "#fff" }}
+          title={`🏗 ${arch.name}${arch.boost > 0 ? ` · +${arch.boost} Wert` : ""}`}>
+          {arch.icon}{arch.boost > 0 ? `+${arch.boost}` : ""}
+        </span>
+      )}
       {((card.ionStacks || 0) > 0 || card.frozen || ripe) && (
         <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">
           {(card.ionStacks || 0) > 0 && <span style={{ color: "#5ec8f0" }}>⚡{card.ionStacks}</span>}
@@ -111,7 +122,7 @@ function SegmentBridge({ segA, segB }) {
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
                           highlightPos = [], highlightTitle = null, openSegments = null, frostPillarPos = [], swappedIds = new Set(),
-                          segStrength = [], segDelta = [] }) {
+                          segStrength = [], segDelta = [], architectCover = null }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const pickedSet = new Set(pickedIds || []);
@@ -150,7 +161,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
                   disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle} pillar={pillarSet.has(pos)}
-                  dimmed={swappedIds.has(c.id)}
+                  dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
                   onClick={disabled ? undefined : () => onTilePick(pos, c)} />;
               })}
             </div>
