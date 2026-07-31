@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PERK_DEFS } from "../game/perks.js";
 import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
+import { architectCoverFor } from "./architectCover.js";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 
@@ -19,6 +20,7 @@ export function TargetSelect({ state, onConfirm }) {
 
   const cards = playerOrder.map((di) => deck[di]);
   const ready = sel.length === need;
+  const architectCover = architectCoverFor(state); // Gebäude-Overlay fürs Deck (informierte Wahl)
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
@@ -32,7 +34,7 @@ export function TargetSelect({ state, onConfirm }) {
         <div className="mt-4">
           <CardGrid cards={cards} formations={formations} roles={roles}
             anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
-            pickedIds={sel} onTilePick={(pos, c) => toggle(c.id)} />
+            architectCover={architectCover} pickedIds={sel} onTilePick={(pos, c) => toggle(c.id)} />
         </div>
 
         <div className="flex items-center justify-between mt-4">

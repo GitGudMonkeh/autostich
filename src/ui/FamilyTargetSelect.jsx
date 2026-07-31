@@ -5,6 +5,7 @@ import { CATEGORIES } from "../game/perks.js";
 import { FORMATION_TYPES, FORMATION_TYPE_LABELS, computeFormations } from "../game/formations.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
 import { CardGrid } from "./CardGrid.jsx";
+import { architectCoverFor } from "./architectCover.js";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe (raritätsunabhängig)
 
@@ -32,6 +33,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
   const cards = order.map((di) => deck[di]);
   const heldIds = new Set((state.roles && state.roles[ft.familyId]) || []); // bereits gehaltene Rollenkarten (Upgrade)
   const disabledPos = order.map((di, pos) => (heldIds.has(deck[di].id) ? pos : -1)).filter((p) => p >= 0);
+  const architectCover = architectCoverFor(state); // Gebäude-Overlay fürs Deck (informierte Wahl)
 
   // #201.6 (b): Formations-Stärke-Vorschau bei Farb-/Wert-Perks (nur suits-Modus, A_SUIT_BOOST/DUEL). Trockendurchlauf
   // des REINEN tierDef.onPick auf einer Deck-Kopie → Formationen neu rechnen → „aktuell → nachher (±Δ)". Rein lesend.
@@ -58,12 +60,12 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
             </div>
             <CardGrid cards={cards} formations={state.formations} roles={state.roles}
               anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
-              pickedIds={sel} disabledPos={disabledPos} onTilePick={(pos, c) => onCard(c.id)} />
+              architectCover={architectCover} pickedIds={sel} disabledPos={disabledPos} onTilePick={(pos, c) => onCard(c.id)} />
           </div>
         ) : isType ? (
           <div className="mt-4">
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Wähle einen Formationstyp</div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {FORMATION_TYPES.map((t) => {
                 const on = ft.formationType === t;
                 return (
@@ -75,13 +77,20 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
                 );
               })}
             </div>
+            {/* #UI: Deck mit aktuellen Formationen + Gebäuden — damit man sieht, welche Formationstypen man hat. */}
+            <div className="mt-4">
+              <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Dein Deck · aktuelle Formationen{architectCover ? " & Gebäude" : ""}</div>
+              <CardGrid cards={cards} formations={state.formations} roles={state.roles}
+                anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+                architectCover={architectCover} onTilePick={() => {}} quietTiles />
+            </div>
           </div>
         ) : (
           <div className="mt-4">
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
               {ordered ? "Reihenfolge: erste Farbe = Gewinner (+), zweite = Verlierer (−)" : `Wähle ${need === 1 ? "eine Farbe" : `${need} Farben`}`}
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {SUIT_ORDER.map((su) => {
                 const idx = sel.indexOf(su);
                 const on = idx >= 0;
@@ -99,6 +108,13 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
             <div className="mt-4">
               <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte je Farbe</div>
               <DeckHistogram deck={state.deck} />
+            </div>
+            {/* #UI: Deck mit aktuellen Formationen + Gebäuden — für eine informierte Farbwahl. */}
+            <div className="mt-4">
+              <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Dein Deck · aktuelle Formationen{architectCover ? " & Gebäude" : ""}</div>
+              <CardGrid cards={cards} formations={state.formations} roles={state.roles}
+                anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+                architectCover={architectCover} onTilePick={() => {}} quietTiles />
             </div>
           </div>
         )}

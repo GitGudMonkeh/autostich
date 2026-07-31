@@ -5,6 +5,7 @@ import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
 import { allianceGroups } from "../game/families.js";
 import { romanOf } from "../game/rarity.js";
 import { CardGrid } from "./CardGrid.jsx";
+import { architectCoverFor } from "./architectCover.js";
 import { formationBorder } from "./formationStyle.js";
 import { useEscape } from "./useEscape.js";
 
@@ -25,6 +26,7 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
   const deck = state.deck || [];
   const order = state.playerOrder || [];
   const cards = order.map((di) => deck[di]);
+  const architectCover = architectCoverFor(state); // Gebäude-Overlay fürs Deck (informierte Wahl)
   const nSeg = Math.ceil(cards.length / SEGMENT_SIZE);
   const sel = st.cards || [];
   const colors = st.colors || {};
@@ -97,7 +99,7 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
           <div className="mt-4">
             <CardGrid cards={cards} formations={state.formations} roles={state.roles}
               anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
-              pickedPos={st.position} disabledPos={[...occupied]} onTilePick={(pos) => onPosition(pos)} />
+              architectCover={architectCover} pickedPos={st.position} disabledPos={[...occupied]} onTilePick={(pos) => onPosition(pos)} />
           </div>
         ) : spec.segment ? (
           // #124: Segment im VOLLEN Board wählen — markierbarer 5er-Block im durchgehenden Deck statt isolierter Kachel.
@@ -136,7 +138,7 @@ export function ShopTargetSelect({ state, onCard, onColor, onSegment, onPosition
             <div className="mt-4">
               <CardGrid cards={cards} formations={state.formations} roles={state.roles}
                 anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
-                pickedIds={sel} arrows={colors} onTilePick={(pos, c) => onCard(c.id)} />
+                architectCover={architectCover} pickedIds={sel} arrows={colors} onTilePick={(pos, c) => onCard(c.id)} />
             </div>
 
             {spec.color && sel.length > 0 && (
