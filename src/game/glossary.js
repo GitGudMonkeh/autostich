@@ -40,6 +40,8 @@ export const GLOSSARY = {
     text: "Verbraucht angesammelte Hitze für einen starken Effekt. Höchstens ein Konsument gleichzeitig — ein zweiter ersetzt den bestehenden." },
   brand: { label: "Brandmal", icon: "🔥", color: CLR.fire,
     text: `Eine gebrandmarkte Gegnerkarte verliert Wert; jeder Brand gibt +${C.BRAND_ASH} Asche — Rohstoff der Feuer-Schmiede, und gehaltene Asche gibt zusätzlich kleinen Score je Feuer-Sieg.` },
+  ash: { label: "Asche", icon: "🔥", color: CLR.fire,
+    text: `Rohstoff der Feuer-Schmiede: Brände geben +${C.BRAND_ASH} Asche. Die Ascheschmiede verbraucht ${C.FORGE_COST} Asche je Schmiedung (+${C.FORGE_VALUE} Dauerwert); Damaststahl lässt sie nie verfallen. Gehaltene Asche gibt zusätzlich kleinen Score je Feuer-Sieg.` },
   forge: { label: "Schmieden", icon: "🔥", color: CLR.fire,
     text: `Asche wird zu dauerhaftem Kartenwert (Ascheschmiede: ${C.FORGE_COST} Asche → +${C.FORGE_VALUE} Wert auf die niedrigste Karte).` },
 

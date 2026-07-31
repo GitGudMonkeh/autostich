@@ -1,4 +1,6 @@
-import { fireFlag, heatConsumerOf } from "../game/skills.js";
+import { fireFlag, heatConsumerOf, glowingValueFor } from "../game/skills.js";
+import { GLOWING_T1_HEAT, GLOWING_T2_HEAT } from "../game/constants.js";
+import { GLOSSARY } from "../game/glossary.js";
 import { IndicatorPanel, CounterCell } from "./indicators/panelKit.jsx";
 import { FIRE, FIRE_HOT, ASH, FORGE, WHITE_HEAT } from "./indicators/vocab.js";
 
@@ -38,8 +40,8 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {} }) {
   const hot = value >= 50;                         // Glühende-Klinge-Schwelle
   const consumer = heatConsumerOf(skills);         // "conflagration" | "melt" | null
   const conflagReady = consumer === "conflagration" && value >= 100;
-  // Schwellenmarke bei 50 % nur, wenn Glühende Klinge gehalten wird.
-  const glowMark = fireFlag(skills, "glowingBlade") ? (50 / max) * 100 : null;
+  // #219.5: Glühende Klinge markiert die ECHTEN Schwellen (40/70/100; 100 = Leisten-Ende) statt fälschlich 50 %.
+  const glow = fireFlag(skills, "glowingBlade");
   // Weißglut (#206 §3): bei voller Hitze läuft der Überschuss als Score über (heat bei max gedeckelt) →
   // Schwellenzustand. Weiße Kappe am heißen Ende, sobald der Skill gehalten wird; „ausbrennend" bei max.
   const whiteHeat = fireFlag(skills, "whiteHeat");
@@ -56,6 +58,11 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {} }) {
   if (fireFlag(skills, "fireRoll")) {
     const fr = heat.fireRoll || 0;
     badges.push({ k: "fw", t: fr > 0 ? `Feuerwalze +${fr}` : "Feuerwalze", c: HOT, dim: fr === 0 });
+  }
+  // #219.5: Glühende Klinge als fixes, immer sichtbares Readout (Bonus 0/+1/+2/+3 je nach Hitze) — wie Feuerwalze.
+  if (glow) {
+    const gv = glowingValueFor(value, skills);
+    badges.push({ k: "gk", t: gv > 0 ? `Glühende Klinge +${gv}` : "Glühende Klinge", c: HOT, dim: gv === 0 });
   }
 
   return (
@@ -75,9 +82,10 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {} }) {
               style={{ width: `${pct}%`,
                        background: hot ? `linear-gradient(90deg, ${FIRE}, ${HOT})` : FIRE,
                        boxShadow: conflagReady ? `0 0 8px ${HOT}` : hot ? `0 0 6px ${FIRE}88` : undefined }} />
-            {glowMark != null && (
-              <div className="absolute inset-y-0" style={{ left: `${glowMark}%`, width: 2, background: "#ffffff55" }} title="Glühende Klinge ab 50 %" />
-            )}
+            {glow && [GLOWING_T1_HEAT, GLOWING_T2_HEAT].map((t) => (
+              <div key={t} className="absolute inset-y-0" style={{ left: `${(t / max) * 100}%`, width: 2, background: "#ffffff55" }}
+                title={`Glühende Klinge: +Wert ab ${t} % Hitze`} />
+            ))}
             {/* Weißglut-Kappe am heißen Ende — „brennt weiß aus" bei voller Hitze (kein Zähler, s. o.). */}
             {whiteHeat && (
               <div className="absolute inset-y-0 right-0 transition-all"
@@ -104,7 +112,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {} }) {
           <div className="flex flex-col justify-center gap-1.5 shrink-0">
             {showAsh && (
               <CounterCell icon={<AshIcon />} value={ash} label="Asche" color={ASH} dim={ash === 0}
-                title="Asche — Brandmarken sammeln sie; die Ascheschmiede wandelt sie in dauerhaften Kartenwert. Gehaltene Asche gibt zusätzlich kleinen Score je Feuer-Sieg." />
+                title={`Asche — ${GLOSSARY.ash.text}`} />
             )}
             {showForge && (
               <CounterCell icon={<AnvilIcon />} value={`+${totalForged}`} label="Schmiede" color={FORGE}
