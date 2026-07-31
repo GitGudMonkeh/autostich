@@ -255,7 +255,7 @@ Stufe; `TIER_WEIGHTS` die Angebots-Gewichtung. Flache Legendäre laufen weiter �
 `ShopScreen` (+ `ShopTargetSelect`/`FamilyTargetSelect`/`TargetSelect`), `StatusRail`, `ChronikOverview`
 (Kartenübersicht), `GameOver`, `GlobalLeaderboard`, `MusicBar`/`MuteButton`, `AnleitungModal`,
 `OptionsModal`, `UsernameModal`, Archetyp-HUD (`HeatBar`/`ChargeBar`/`CrystalBar`/`FrostOverlay`),
-`Sparkline`, `CrtParticles`, `PanelMascot`.
+`Sparkline`, `CrtParticles`.
 
 Bewegung respektiert `prefers-reduced-motion` (gemeinsamer Hook `usePrefersReducedMotion`); abweisbare
 Overlays teilen sich `useEscape` (Escape schließt).

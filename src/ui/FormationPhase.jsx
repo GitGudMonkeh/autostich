@@ -6,8 +6,6 @@ import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
-import { PanelMascot } from "./PanelMascot.jsx";
-import formationMascot from "../assets/mascots/formation.gif";
 import { audio } from "./audio.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
@@ -81,25 +79,19 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const deltaStr = `${delta >= 0 ? "+" : "−"}${fmt(Math.abs(delta))}`;
 
   return (
-    <div className="fixed inset-0 overlay-root z-30 flex items-center sm:items-start justify-center p-3 sm:pt-28" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
-      {/* #130: nicht scrollender Wrapper → Alien-Admiral-Maskottchen schaut oben über die Karte hervor (Desktop-Peek);
-          Panel oben angedockt (sm:items-start + sm:pt-28) + sm:max-h, damit der Peek nie vom Viewport geklippt wird. */}
-      <div className="relative w-full max-w-4xl">
-        <PanelMascot src={formationMascot} accent="#5ab87a" peekMaxH={120} overlap={28} />
+    <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
+      <div className="w-full max-w-4xl">
         {/* Eis-Architekt (#210): der Aufstellungsrahmen vereist — icy Border + Inset-Rim + äußerer Frost-Glow (liegt auf
             der Border-Box, scrollt also nicht mit dem Inhalt). Nur bei gehaltenem Architekt (legendär). */}
-        <div className="relative z-10 w-full rounded-2xl p-5 max-h-[95dvh] sm:max-h-[calc(100dvh-8rem)] overflow-y-auto overlay-card"
+        <div className="w-full rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card"
           style={{ background: "#15151b",
                    border: architektOn ? "1px solid #5ec8f077" : "1px solid #33333e",
                    boxShadow: architektOn ? "inset 0 0 0 1px rgba(191,233,247,0.22), inset 0 0 26px rgba(94,200,240,0.12), 0 0 30px rgba(94,200,240,0.16)" : undefined }}>
         {/* Kopf */}
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <PanelMascot src={formationMascot} accent="#5ab87a" variant="avatar" avatarObjectPosition="center top" />
-            <div>
-              <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>Aufstellung · Runde {(state.cycle || 0) + 1}</div>
-              <h2 className="text-xl font-bold">Deck aufstellen</h2>
-            </div>
+          <div className="min-w-0">
+            <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>Aufstellung · Runde {(state.cycle || 0) + 1}</div>
+            <h2 className="text-xl font-bold">Deck aufstellen</h2>
           </div>
           <div className="text-right shrink-0">
             <div className="text-[10px] uppercase tracking-wide opacity-50">Energie</div>

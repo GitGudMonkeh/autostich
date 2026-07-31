@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   loadOptions, loadUsername, saveUsername, loadSeenGuide, saveSeenGuide,
-  recordRun, loadProfile, isNoBuyRun, isMonoStatRun, MONO_STAT_MIN } from "../src/game/storage.js";
+  recordRun, loadProfile, isNoBuyRun, isMonoStatRun, MONO_STAT_MIN,
+  monoArchetypeOf, isAllArchetypesRun } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
 
 // #152: node-Env hat kein localStorage → die Persistenz-Funktionen fielen bisher nur in ihre try/catch-Defaults
@@ -130,6 +131,24 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
     expect(isMonoStatRun({ completed: true })).toBe(false); // statPicks fehlt
   });
 
+  // #215 Archetyp-Decks
+  it("monoArchetypeOf: genau EIN Archetyp → dessen id, sonst null (nur natürlicher Abschluss)", () => {
+    expect(monoArchetypeOf({ completed: true, archetypes: ["fire"] })).toBe("fire");
+    expect(monoArchetypeOf({ completed: true, archetypes: ["fire", "fire"] })).toBe("fire"); // Duplikate egal
+    expect(monoArchetypeOf({ completed: true, archetypes: ["fire", "ice"] })).toBe(null);     // gemischt
+    expect(monoArchetypeOf({ completed: true, archetypes: [] })).toBe(null);
+    expect(monoArchetypeOf({ completed: false, archetypes: ["fire"] })).toBe(null);           // vorzeitig beendet
+    expect(monoArchetypeOf({ completed: true })).toBe(null);                                   // archetypes fehlt
+    expect(monoArchetypeOf(null)).toBe(null);
+  });
+
+  it("isAllArchetypesRun: alle vier Fraktionen im selben Lauf", () => {
+    expect(isAllArchetypesRun({ completed: true, archetypes: ["fire", "lightning", "ice", "plant"] })).toBe(true);
+    expect(isAllArchetypesRun({ completed: true, archetypes: ["fire", "lightning", "ice"] })).toBe(false); // nur drei
+    expect(isAllArchetypesRun({ completed: false, archetypes: ["fire", "lightning", "ice", "plant"] })).toBe(false); // vorzeitig
+    expect(isAllArchetypesRun({ completed: true })).toBe(false);
+  });
+
   describe("recordRun setzt + persistiert die sticky Flags", () => {
     beforeEach(() => { global.localStorage = mockLS(); });
     afterEach(() => { delete global.localStorage; });
@@ -158,6 +177,16 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
       expect(profile.hadNoBuyRun).toBe(true);
       expect(profile.hadMonoStatRun).toBe(true);
       expect(profile.games).toBe(2);
+    });
+
+    it("#215: Mono-Map + Bund-Flag werden sticky fortgeschrieben (schaltet deck_c5..c9)", () => {
+      const base = { completed: true, score: 100, bestStreak: 1, crits: 0, durationMs: 1, ts: 1 };
+      recordRun({ ...base, archetypes: ["fire"] });                              // Mono-Feuer
+      expect(loadProfile().monoArchetypeRuns.fire).toBe(true);
+      expect(loadProfile().hadAllArchetypesRun).toBe(false);
+      recordRun({ ...base, archetypes: ["fire", "lightning", "ice", "plant"] }); // Element-Bund
+      expect(loadProfile().monoArchetypeRuns.fire).toBe(true);                   // sticky: bleibt
+      expect(loadProfile().hadAllArchetypesRun).toBe(true);
     });
   });
 });

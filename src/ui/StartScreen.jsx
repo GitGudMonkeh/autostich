@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { AnleitungModal } from "./AnleitungModal.jsx";
 import { GlobalLeaderboard } from "./GlobalLeaderboard.jsx";
 import { RunDetail } from "./RunDetail.jsx";
-import logoGroup from "../assets/mascots/logo-group.png";
 import { MuteButton } from "./MuteButton.jsx";
 import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 import { fmtScore } from "./format.js";
@@ -31,12 +30,6 @@ export function StartScreen({ onStart, highscores, best, onOptions, onStats, onC
         </h1>
         <p className="text-sm opacity-45 mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
       </div>
-
-      {/* #134: Maskottchen-Gruppenbild als dekoratives Start-Logo (ersetzt das alte CardLogo). Rein optisch,
-          Seitenverhältnis erhalten (Portrait), feste Höhe passend zum bisherigen Logo-Bereich. */}
-      <img src={logoGroup} alt="" aria-hidden
-        className="pointer-events-none select-none w-auto"
-        style={{ maxHeight: 140, filter: "drop-shadow(0 5px 16px rgba(138,125,224,0.35))" }} />
 
       <div className="flex flex-wrap gap-3 justify-center">
         <button

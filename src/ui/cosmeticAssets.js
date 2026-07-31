@@ -23,6 +23,16 @@ import c2Front from "../assets/cards/decks_player/deck_c2/front.png"; // #190 de
 import c2Back  from "../assets/cards/decks_player/deck_c2/back.png";
 import c3Front from "../assets/cards/decks_player/deck_c3/front.png"; // #190 deck_c3 „Sparfuchs" (Challenge: kein Shop-Kauf)
 import c3Back  from "../assets/cards/decks_player/deck_c3/back.png";
+import c5Front from "../assets/cards/decks_player/deck_c5/front.png"; // #215 deck_c5 „Reines Feuer" (Mono-Feuer-Lauf)
+import c5Back  from "../assets/cards/decks_player/deck_c5/back.png";
+import c6Front from "../assets/cards/decks_player/deck_c6/front.png"; // #215 deck_c6 „Reiner Blitz" (Mono-Blitz)
+import c6Back  from "../assets/cards/decks_player/deck_c6/back.png";
+import c7Front from "../assets/cards/decks_player/deck_c7/front.png"; // #215 deck_c7 „Reines Eis" (Mono-Eis)
+import c7Back  from "../assets/cards/decks_player/deck_c7/back.png";
+import c8Front from "../assets/cards/decks_player/deck_c8/front.png"; // #215 deck_c8 „Reine Pflanze" (Mono-Pflanze)
+import c8Back  from "../assets/cards/decks_player/deck_c8/back.png";
+import c9Front from "../assets/cards/decks_player/deck_c9/front.png"; // #215 deck_c9 „Element-Bund" (alle vier Fraktionen)
+import c9Back  from "../assets/cards/decks_player/deck_c9/back.png";
 import bf1Desktop from "../assets/battlefields/bf_1/desktop.jpg"; // #190 bf_1 „Neon-Boulevard" (ultrawide)
 import bf1Mobile  from "../assets/battlefields/bf_1/mobile.jpg";  // (4:3, schmalerer Viewport)
 import bf2Desktop from "../assets/battlefields/bf_2/desktop.jpg"; // #190 bf_2 „Nachttankstelle" (ultrawide)
@@ -42,6 +52,11 @@ export const DECK_ASSETS = {
   deck_c1: { front: c1Front,     back: c1Back },
   deck_c2: { front: c2Front,     back: c2Back },
   deck_c3: { front: c3Front,     back: c3Back },
+  deck_c5: { front: c5Front,     back: c5Back }, // #215 Archetyp-Decks
+  deck_c6: { front: c6Front,     back: c6Back },
+  deck_c7: { front: c7Front,     back: c7Back },
+  deck_c8: { front: c8Front,     back: c8Back },
+  deck_c9: { front: c9Front,     back: c9Back },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne

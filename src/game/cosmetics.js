@@ -12,6 +12,8 @@
      { kind: "score",  n }   → profile.bestScore  >= n
      { kind: "noBuyRun" }    → profile.hadNoBuyRun    === true  (Lauf ohne Shop-Kauf, Challenge 3)
      { kind: "monoStatRun" } → profile.hadMonoStatRun === true  (Lauf mit nur einem Stat, Challenge 4)
+     { kind: "monoArchetypeRun", archetype } → profile.monoArchetypeRuns[archetype] (Lauf nur mit dieser Fraktion, #215 deck_c5..c8)
+     { kind: "allArchetypesRun" }            → profile.hadAllArchetypesRun === true (Lauf mit allen vier Fraktionen, #215 deck_c9)
 
    Katalog wächst „Deck für Deck": ein neues Deck = ein Eintrag hier + sein Bild-Paar in
    cosmeticAssets.js. Solange ein Bild-Asset noch nicht im Repo liegt, bleibt der Eintrag draußen
@@ -33,6 +35,12 @@ export const DECK_DEFS = {
   deck_c2: { id: "deck_c2", name: "Rekordhalter",      unlock: { kind: "score",  n: 10_000_000 } },
   deck_c3: { id: "deck_c3", name: "Sparfuchs",         unlock: { kind: "noBuyRun" } },
   // deck_c4 (monoStatRun) folgt.
+  // Archetyp-Challenge-Decks (#215): Mono-Archetyp-Lauf je Fraktion + Element-Bund (alle vier).
+  deck_c5: { id: "deck_c5", name: "Reines Feuer",  unlock: { kind: "monoArchetypeRun", archetype: "fire" } },
+  deck_c6: { id: "deck_c6", name: "Reiner Blitz",  unlock: { kind: "monoArchetypeRun", archetype: "lightning" } },
+  deck_c7: { id: "deck_c7", name: "Reines Eis",    unlock: { kind: "monoArchetypeRun", archetype: "ice" } },
+  deck_c8: { id: "deck_c8", name: "Reine Pflanze", unlock: { kind: "monoArchetypeRun", archetype: "plant" } },
+  deck_c9: { id: "deck_c9", name: "Element-Bund",  unlock: { kind: "allArchetypesRun" } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -47,6 +55,8 @@ export const BATTLEFIELD_DEFS = {
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".
 const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+// #215: Anzeigenamen der Fraktionen für die Freischalt-Labels (Archetyp-Decks).
+const ARCH_LABEL = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze" };
 
 // Reine Freischalt-Prüfung. Unbekannte kinds blockieren NICHT (defensiv: neuer kind ohne Code-Update
 // soll kein Deck unsichtbar-gesperrt lassen).
@@ -60,6 +70,8 @@ export function isUnlocked(def, profile) {
     case "score":       return (p.bestScore  || 0) >= u.n;
     case "noBuyRun":    return !!p.hadNoBuyRun;
     case "monoStatRun": return !!p.hadMonoStatRun;
+    case "monoArchetypeRun": return !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]); // #215: Lauf nur mit dieser Fraktion
+    case "allArchetypesRun": return !!p.hadAllArchetypesRun;                                     // #215: Lauf mit allen vier
     default:            return true;
   }
 }
@@ -91,6 +103,14 @@ export function unlockProgress(def, profile) {
     case "monoStatRun": {
       const done = !!p.hadMonoStatRun;
       return { done, cur: done ? 1 : 0, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" };
+    }
+    case "monoArchetypeRun": {
+      const done = !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]);
+      return { done, cur: done ? 1 : 0, target: 1, label: `Schließe einen Lauf nur mit ${ARCH_LABEL[u.archetype] || u.archetype}-Skills ab` };
+    }
+    case "allArchetypesRun": {
+      const done = !!p.hadAllArchetypesRun;
+      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf mit allen vier Elementen ab" };
     }
     default:
       return { done: true, cur: 1, target: 1, label: "" };

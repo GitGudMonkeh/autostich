@@ -77,19 +77,22 @@ export function loadRunHistory() {
 }
 
 const DEFAULT_PROFILE = { games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
-  hadNoBuyRun: false, hadMonoStatRun: false }; // #190: sticky Challenge-Flags (einmal true → bleiben) für deck_c3/deck_c4
+  hadNoBuyRun: false, hadMonoStatRun: false, // #190: sticky Challenge-Flags (einmal true → bleiben) für deck_c3/deck_c4
+  monoArchetypeRuns: {}, hadAllArchetypesRun: false }; // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
 export function loadProfile() {
   try {
     const raw = localStorage.getItem(k("as_profile"));
     if (raw) {
       const p = JSON.parse(raw);
       if (p && typeof p === "object")
-        return { ...DEFAULT_PROFILE, ...p, archetypesEver: Array.isArray(p.archetypesEver) ? p.archetypesEver : [] };
+        return { ...DEFAULT_PROFILE, ...p,
+          archetypesEver: Array.isArray(p.archetypesEver) ? p.archetypesEver : [],
+          monoArchetypeRuns: (p.monoArchetypeRuns && typeof p.monoArchetypeRuns === "object") ? p.monoArchetypeRuns : {} };
     }
   } catch (e) {}
-  // #195: frisches archetypesEver-Array, damit der Leer-/Korrupt-Pfad NICHT die mutable Array-Referenz aus
-  // DEFAULT_PROFILE teilt (ein späterer push würde sonst den Modul-Default vergiften).
-  return { ...DEFAULT_PROFILE, archetypesEver: [] };
+  // #195: frisches archetypesEver-Array + #215 frische monoArchetypeRuns-Map, damit der Leer-/Korrupt-Pfad NICHT die
+  // mutablen Referenzen aus DEFAULT_PROFILE teilt (ein späterer push/Zuweisung würde sonst den Modul-Default vergiften).
+  return { ...DEFAULT_PROFILE, archetypesEver: [], monoArchetypeRuns: {} };
 }
 
 const n0 = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 0);
@@ -108,6 +111,20 @@ export function isMonoStatRun(record) {
   const picks = Array.isArray(record.statPicks) ? record.statPicks : [];
   return picks.length >= MONO_STAT_MIN && picks.every((s) => s === picks[0]);
 }
+/* #215 Archetyp-Decks — auf record.archetypes (Set der im Lauf gehaltenen Skill-Archetypen, App.jsx:196), nur bei
+   natürlichem Abschluss (completed).
+   - monoArchetypeOf: genau EIN Archetyp gehalten → dessen id ("fire"|"lightning"|"ice"|"plant"), sonst null.
+   - isAllArchetypesRun: alle vier Archetypen im selben Lauf gehalten (Element-Bund). */
+export function monoArchetypeOf(record) {
+  if (!record || record.completed !== true) return null;
+  const a = Array.isArray(record.archetypes) ? [...new Set(record.archetypes)] : [];
+  return a.length === 1 ? a[0] : null;
+}
+export function isAllArchetypesRun(record) {
+  if (!record || record.completed !== true) return false;
+  const a = Array.isArray(record.archetypes) ? record.archetypes : [];
+  return new Set(a).size === 4;
+}
 
 // Einen abgeschlossenen Lauf in die Historie voranstellen (auf CAP gedeckelt) UND die kumulierten
 // Profil-Totals fortschreiben. Gibt { history, profile } für ein sofortiges UI-Update zurück.
@@ -117,6 +134,10 @@ export function recordRun(record) {
   const p = loadProfile();
   const arch = new Set(p.archetypesEver);
   for (const a of (record.archetypes || [])) arch.add(a);
+  // #215: Mono-Archetyp-Läufe je Fraktion in einer sticky-Map sammeln (einmal erfüllt → bleibt).
+  const monoArchetypeRuns = { ...(p.monoArchetypeRuns || {}) };
+  const monoArch = monoArchetypeOf(record);
+  if (monoArch) monoArchetypeRuns[monoArch] = true;
   const profile = {
     games: p.games + 1,
     totalScore: p.totalScore + n0(record.score),
@@ -129,6 +150,9 @@ export function recordRun(record) {
     // #190: sticky Challenge-Flags — einmal erfüllt, bleiben sie true (schalten deck_c3/deck_c4 frei).
     hadNoBuyRun: !!p.hadNoBuyRun || isNoBuyRun(record),
     hadMonoStatRun: !!p.hadMonoStatRun || isMonoStatRun(record),
+    // #215: Archetyp-Decks — Mono-Läufe je Fraktion (deck_c5..c8) + Element-Bund (alle vier, deck_c9).
+    monoArchetypeRuns,
+    hadAllArchetypesRun: !!p.hadAllArchetypesRun || isAllArchetypesRun(record),
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
   return { history, profile };
