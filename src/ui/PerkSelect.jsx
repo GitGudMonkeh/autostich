@@ -36,9 +36,9 @@ function offerView(entry, familyTiers = {}) {
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
 export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], deck = [], state = {} }) {
-  // Neuwurf (Shop-Spec §10 P1/P-L1): gratis Reroll (Schicksalskontrolle) zuerst, sonst gespeicherte Token.
+  // Neuwurf (#202/#214): gratis Reroll (Schicksalskontrolle) zuerst, sonst der geteilte Reroll-Pool (Perk+Skill).
   const freeReroll = !!state.freePerkReroll;
-  const rerollTokens = (state.shop && state.shop.perkRerolls) || 0;
+  const rerollTokens = state.rerolls || 0;
   const canReroll = !!onReroll && (freeReroll || rerollTokens > 0);
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
   const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning, statCritChance = 0, statCritMult = 0 } = state;

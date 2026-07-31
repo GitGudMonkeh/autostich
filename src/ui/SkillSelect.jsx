@@ -38,9 +38,9 @@ function KeywordGlossary({ tokens }) {
    Archetyps (inkl. Schlüsselbegriffe) klappt per Tap/Klick auf den Archetyp-Header auf. */
 export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {} }) {
   const held = skills.map((id) => SKILL_DEFS[id]).filter(Boolean);
-  // Neuwurf (Shop-Spec §10 P2/P-L1): gratis Reroll (Schicksalskontrolle) zuerst, sonst gespeicherte Token.
+  // Neuwurf (#202/#214): gratis Reroll (Schicksalskontrolle) zuerst, sonst der geteilte Reroll-Pool (Perk+Skill).
   const freeReroll = !!state.freeSkillReroll;
-  const rerollTokens = (state.shop && state.shop.skillRerolls) || 0;
+  const rerollTokens = state.rerolls || 0;
   const canReroll = !!onReroll && (freeReroll || rerollTokens > 0);
   const full = skills.length >= SKILL_SLOTS;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel

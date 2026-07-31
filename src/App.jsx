@@ -18,6 +18,7 @@ import { StatSelect } from "./ui/StatSelect.jsx";
 import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { ShopScreen } from "./ui/ShopScreen.jsx";
 import { ShopTargetSelect } from "./ui/ShopTargetSelect.jsx";
+import { ArchitectScreen } from "./ui/ArchitectScreen.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { FamilyTargetSelect } from "./ui/FamilyTargetSelect.jsx";
 import { ChronikOverview } from "./ui/ChronikOverview.jsx";
@@ -305,6 +306,12 @@ export function Autostich() {
   // Shop-Runde (Shop-Spec §2.6): kaufen (§5.4) bzw. verlassen/bestätigen → zugehöriger Durchlauf startet.
   const buyItem = (offerId) => dispatch({ type: "BUY_ITEM", offerId, rng: Math.random });
   const leaveShop = () => dispatch({ type: "LEAVE_SHOP" });
+  // Architekt (#202, Shop-Ersatz): Bauplan errichten / Gebäude ausbauen / versetzen / abreißen / Phase bestätigen.
+  const architectBuild = ({ familyId, tier, footprint, colorChoice }) => dispatch({ type: "ARCHITECT_BUILD", familyId, tier, footprint, colorChoice });
+  const architectUpgrade = (buildingId) => dispatch({ type: "ARCHITECT_UPGRADE", buildingId });
+  const architectMove = ({ buildingId, footprint }) => dispatch({ type: "ARCHITECT_MOVE", buildingId, footprint });
+  const architectDemolish = (buildingId) => dispatch({ type: "ARCHITECT_DEMOLISH", buildingId });
+  const architectDone = () => dispatch({ type: "ARCHITECT_DONE" });
   // Shop-Ziel-Auswahl (Shop-Spec §12.2): Karten/Farben/Segment wählen, bestätigen oder abbrechen.
   const shopTargetCard = (cardId) => dispatch({ type: "SHOP_TARGET_CARD", cardId });
   const shopTargetColor = (cardId, color) => dispatch({ type: "SHOP_TARGET_COLOR", cardId, color });
@@ -507,6 +514,10 @@ export function Autostich() {
       )}
       {state.phase === "shop" && (
         <ShopScreen state={state} onLeave={leaveShop} onBuy={buyItem} />
+      )}
+      {state.phase === "architect" && (
+        <ArchitectScreen state={state} onBuild={architectBuild} onUpgrade={architectUpgrade}
+          onMove={architectMove} onDemolish={architectDemolish} onDone={architectDone} />
       )}
       {state.phase === "shop-target" && (
         <ShopTargetSelect state={state} onCard={shopTargetCard} onColor={shopTargetColor}
