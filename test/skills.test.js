@@ -179,6 +179,18 @@ describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", (
     for (let seed = 1; seed <= 40; seed++)
       expect(buildSkillOffer([], [], makeRng(seed), 6).some(isConsumer)).toBe(true);
   });
+  // #223: das Erst-Angebot enthält IMMER alle 4 Archetypen → JEDER Konsumenten-Archetyp (Feuer & Blitz) muss seinen
+  // Konsumenten zeigen, nicht nur der erste in chosen-Reihenfolge — sonst „verpufft" der Blitz-Ladungsaufbau ohne
+  // sichtbaren Blitz-Konsumenten (Nutzer-Befund). Gilt bei count 6 (je 1 + Fill) wie 12 (3+3+3+3) und mit Legendär-Roll.
+  it("#223 Erst-Angebot garantiert BEIDE Konsumenten-Archetypen — Feuer UND Blitz", () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const [count, chance] of [[6, 0], [12, 0], [12, 1]]) {
+        const off = buildSkillOffer([], [], makeRng(seed), count, chance);
+        expect(off.some(isFireConsumer)).toBe(true);
+        expect(off.some(isChargeConsumer)).toBe(true);
+      }
+    }
+  });
   it("#191 Erst-Angebot: Konsument-Garantie hält auch bei erzwungenem Legendär-Roll + 3+3+3+3-Balance", () => {
     const isConsumer = (id) => isFireConsumer(id) || isChargeConsumer(id);
     for (let seed = 1; seed <= 40; seed++) {
