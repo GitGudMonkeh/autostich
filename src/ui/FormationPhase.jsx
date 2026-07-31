@@ -170,7 +170,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           </div>
           <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
             style={{ background: GOLD, color: "#141419" }}>
-            Durchlauf starten
+            Fortfahren
             {/* #UI: „max ×…" raus — stattdessen die restliche Energie (formationEnergy). Der Energie-Wert
                 steht zusätzlich oben rechts im Kopf; hier als Handlungs-Hinweis direkt an der Start-Aktion. */}
             <span className="ml-2 font-normal opacity-80">· {count} Formationen · noch {formationEnergy} Energie</span>
