@@ -29,11 +29,11 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
   };
 
   // #227 Variante B: gleichbreite, gestapelte Buttons ohne Icons — sekundärer Stil (dunkel), einheitliche Höhe/Breite.
-  const secCls = "w-full px-6 py-3 rounded-xl text-lg font-semibold transition-all hover:-translate-y-0.5";
+  const secCls = "w-full px-6 py-2.5 rounded-xl text-base font-semibold transition-all hover:-translate-y-0.5";
   const secSty = { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
 
   return (
-    <div className="relative grid gap-5 justify-items-center content-start py-10">
+    <div className="relative grid gap-4 justify-items-center content-start py-6">
       {/* #133: Schnell-Mute jederzeit sichtbar oben rechts — togglet dasselbe options.muted wie die Optionen. */}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-0 right-0" />}
       <div className="text-center">
@@ -77,17 +77,17 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
 
       {/* #227 Variante B: linke gleichbreite Button-Spalte (ohne Icons, gestapelt) + rechts ruhiger Rekord-Block.
           Die volle Score-Liste (deine Läufe + global) lebt hinter dem „Bestenliste"-Button (LeaderboardScreen, #217). */}
-      <div className="w-full max-w-2xl grid gap-4 sm:grid-cols-[minmax(0,1fr)_240px] items-start">
+      <div className="w-full max-w-2xl grid gap-3 sm:grid-cols-[minmax(0,1fr)_240px] items-start">
         {/* Links: gleichbreite, gestapelte Buttons */}
-        <div className="grid gap-2.5">
+        <div className="grid gap-2">
           <button onClick={onStart}
-            className="w-full px-6 py-3 rounded-xl text-lg font-bold transition-all hover:-translate-y-0.5"
+            className="w-full px-6 py-2.5 rounded-xl text-lg font-bold transition-all hover:-translate-y-0.5"
             style={{ background: "#5ab87a", color: "#141419" }}>
             Normaler Run
           </button>
           {onMasterRun && (
             <button onClick={onMasterRun}
-              className="relative w-full px-6 py-3 rounded-xl text-lg font-bold transition-all hover:-translate-y-0.5"
+              className="relative w-full px-6 py-2.5 rounded-xl text-lg font-bold transition-all hover:-translate-y-0.5"
               style={{ background: "#8a7de0", color: "#141419" }}>
               Meister Run
               <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
@@ -114,9 +114,9 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
 
         {/* Rechts: ruhiger Rekord-Block. Die volle Liste liegt hinter „Bestenliste"; der „Neueste Challenges"-Ticker
             folgt mit dem globalen Board (Schicht B, /test). */}
-        <div className="w-full rounded-xl p-4 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+        <div className="w-full rounded-xl p-3 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
           <div className="text-[11px] uppercase tracking-wide opacity-50">Rekord</div>
-          <div className="text-2xl font-bold mt-0.5" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
+          <div className="text-xl font-bold mt-0.5" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
           {highscores.length > 0 ? (
             <button onClick={onLeaderboard || undefined} disabled={!onLeaderboard}
               className="text-[12px] opacity-55 hover:opacity-90 transition-opacity mt-2 text-left disabled:hover:opacity-55">
