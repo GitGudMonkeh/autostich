@@ -31,7 +31,7 @@ export const WIN_SOFTCAP_SLOPE = envNum("SIM_WIN_SOFTCAP_SLOPE", 0.25); // Rest-
 // Stat-System (V2 §22.3) — bei jedem Stat-Pick alle vier angeboten, einer gewählt; additiv, keine Caps [TUNING]
 export const STAT_CRIT_CHANCE_STEP = envNum("SIM_STAT_CRIT_CHANCE_STEP", 0.07);  // Crit-Chance: +7 Prozentpunkte je Pick (#94; #161 FB-6: 0,05→0,07)
 export const STAT_CRIT_MULT_STEP   = envNum("SIM_STAT_CRIT_MULT_STEP", 0.25);    // Crit-Multiplikator: +0,25× je Pick (auf Basis 1,5) [#Pass3: 0,2→0,25 Crit-Buff]
-export const STAT_FORM_MULT_STEP   = envNum("SIM_STAT_FORM_MULT_STEP", 0.05);    // Formations-Mult: +5 % Score bei aktiver Formation je Pick (max 1×/Stich)
+export const STAT_FORM_MULT_STEP   = envNum("SIM_STAT_FORM_MULT_STEP", 0.05);    // Formations-Mult: +5 % Score JE aktiver Formation an der Siegposition je Pick (count-skaliert, statFormFactor)
 export const STAT_STREAK_MULT_STEP = envNum("SIM_STAT_STREAK_MULT_STEP", 0.02);  // Serien-Mult: +2 % Score je aktuellem Serienpunkt je Pick (#94)
 export const STAT_ECONOMY_STEP     = 1;     // Einkommen: je Pick +1 Level (Bonus = Level × SHOP_INCOME_PER_LEVEL Münzen/Shop)
 
@@ -367,7 +367,7 @@ export const ZAEHER_HALM_GROWTH    = 1;   // Zäher Halm: graue Karten wachsen +
 export const BLUETE_SCORE          = 15;  // Blüte: +Score je grüner Karte im Segment (wenn Nachbarn grün)      // v0 — tunebar
 export const BLUETEZEIT_MULT       = 2;   // Blütezeit: Blüte-Score ×2 bei Formations-Sieg                      // v0
 // Linie 4 — Überwucherung (Mono-Grün-Payoff)
-export const PHOTOSYNTHESE_MULT    = 1.08;// Photosynthese: grüne Karte in Formation → ×1,15 Score              // v0 — tunebar
+export const PHOTOSYNTHESE_MULT    = 1.08;// Photosynthese: grüne Karte in Formation → ×1,08 Score              // v0 — tunebar
 export const BLAETTERDACH_MIN      = 4;   // Blätterdach: ab 4er-Grün-Farbblock …                               // v0
 export const BLAETTERDACH_SCORE    = envNum("SIM_BLAETTERDACH_SCORE", 4);  // … +Score je Karte im Block [Sim-tunebar] // v0 — tunebar
 export const UEBERWUCHERUNG_FIELD  = 0.66;// Überwucherung: ab 66 % Feld grün …                                 // v0 — tunebar

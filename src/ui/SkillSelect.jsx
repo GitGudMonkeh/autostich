@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../game/skills.js";
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE,
-         ION_MAX_STACKS, ION_SCORE_PER_STACK,
-         FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, ICE_BASE_FREEZE, FROST_GRIP_BONUS,
-         PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, PLANT_ANCHOR_VALUE } from "../game/constants.js";
+         PLANT_GREEN_THRESHOLD } from "../game/constants.js";
+import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { PanelMascot } from "./PanelMascot.jsx";
@@ -13,30 +12,32 @@ import skillMascot from "../assets/mascots/skill.gif";
 const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "•", color: "#8a8a95" };
 
 const SOCKET_PCT = Math.round(LIGHTNING_CRIT_BASE * 100);         // einmaliger Aktivierungs-Sockel (5 %)
-const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // je Blitz-Skill (5 %)
+const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // je Blitz-Skill (8 %)
 
 // Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
 const LIGHT = "#8a7de0";
 
-// Schlüsselbegriffe der Skills — unten im Overlay erklärt (nur die im Angebot vorkommenden). Icon/Farbe je Archetyp.
-const KEYWORD_INFO = {
-  charge: { label: "Ladung", icon: "⚡", color: "#8a7de0", text: `Crits erzeugen Ladung (max ${LIGHTNING_MAX_CHARGE}). Bei voller Ladung lösen Blitz-Skills Effekte aus oder verbrauchen sie.` },
-  ionize: { label: "Ionisierung", icon: "⚡", color: "#8a7de0", text: `Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +${ION_SCORE_PER_STACK} Score pro Stapel und erhält danach +1 Stapel (max ${ION_MAX_STACKS}).` },
-  streak: { label: "Serie", icon: "⚡", color: "#8a7de0", text: "Geladene Serie schützt deine Siegesserie — die nächste Niederlage setzt sie nicht zurück." },
-  // #116: Feuer-Flat-Score-Grundmechanik quantifiziert (Zahlen aus constants.js → kein Text↔Code-Drift).
-  heat: { label: "Hitze", icon: "🔥", color: "#e0714a", text: `Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Flat-Score = (Vorsprung − 2) × ${FIRE_SCORE_BASE} (+${FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill); klare Niederlagen kühlen sie ab.` },
-  consume: { label: "Hitze-Konsument", icon: "🔥", color: "#e0714a", text: "Verbraucht angesammelte Hitze für einen starken Effekt. Höchstens ein Konsument gleichzeitig — ein zweiter ersetzt den bestehenden." },
-  // #122: Einfrier-Grundzahl genannt (aus constants.js) — sonst ist „wie viele Karten?" nirgends ersichtlich.
-  freeze: { label: "Eingefroren", icon: "❄️", color: "#5ec8f0", text: `Eis friert eigene Karten dauerhaft ein (blau): ${ICE_BASE_FREEZE} beim ersten Eis-Skill, +1 je weiterem (Frostgriff: +${FROST_GRIP_BONUS}). Eingefrorene Karten biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden.` },
-  // Pflanze (v0): Wachstum → Reife (grün) → Farbblock; Kolonisieren markiert Gegnerkarten grün.
-  growth:   { label: "Wachstum", icon: "🌿", color: "#5ab87a", text: `Eigene Karten wachsen bei Siegen (nur steigend). Ab ${PLANT_GREEN_THRESHOLD} Wachstum wird eine Karte dauerhaft grün (reif).` },
-  green:    { label: "Grün", icon: "🌿", color: "#5ab87a", text: "Grüne Karten sind dauerhaft (wie eingefroren) und bilden einen gemeinsamen Farbblock — je größer der Block, desto mehr Score." },
-  colonize: { label: "Kolonisieren", icon: "🌿", color: "#5ab87a", text: "Markiert gegnerische Karten grün (Ausläufer/Rhizom) — kolonisierte Karten lassen sich für Score ernten." },
-};
+// Kleine Glossar-Liste (label — text) für einen Satz Schlüsselbegriffe. Wiederverwendet für den
+// Archetyp-Passiv-Aufklapper (#201 P9) UND die Detailansicht gehaltener Skills (#201 P1).
+function KeywordGlossary({ tokens }) {
+  if (!tokens.length) return null;
+  return (
+    <div className="grid gap-1.5 mt-2">
+      {tokens.map((k) => (
+        <div key={k} className="text-xs leading-snug">
+          <span className="font-bold" style={{ color: GLOSSARY[k].color }}>{GLOSSARY[k].icon} {GLOSSARY[k].label}</span>
+          <span className="opacity-70"> — {GLOSSARY[k].text}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint jede 3. Runde STATT eines Perks.
    Seltene, regelverändernde Motoren. Ablehnen → stattdessen ein Perk (Runde nie verschwendet).
-   Bei vollen Slots: neuen Skill wählen → dann den zu ersetzenden Skill antippen (übergibt replaceId). */
+   Bei vollen Slots: neuen Skill wählen → dann den zu ersetzenden Skill antippen (übergibt replaceId).
+   #201 P9: Angebot bleibt kompakt (nur Name + Kurztext). Die ausführliche Passiv-Beschreibung des
+   Archetyps (inkl. Schlüsselbegriffe) klappt per Tap/Klick auf den Archetyp-Header auf. */
 export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {} }) {
   const held = skills.map((id) => SKILL_DEFS[id]).filter(Boolean);
   // Neuwurf (Shop-Spec §10 P2/P-L1): gratis Reroll (Schicksalskontrolle) zuerst, sonst gespeicherte Token.
@@ -46,24 +47,43 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const full = skills.length >= SKILL_SLOTS;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
   const [openSkill, setOpenSkill] = useState(null); // gehaltener Skill, dessen Beschreibung aufgeklappt ist
+  const [openArch, setOpenArch] = useState(null);   // Archetyp, dessen Passiv-Beschreibung aufgeklappt ist (#201 P9)
   const [pendingConsumer, setPendingConsumer] = useState(null); // #93: Konsumenten-Ersatzdialog { id, replace, type }
-  // Schlüsselbegriffe, die in den angebotenen Skills vorkommen (charge/ionize/streak).
-  const kws = [...new Set(offer.flatMap((id) => SKILL_DEFS[id]?.keywords || []))].filter((k) => KEYWORD_INFO[k]);
-  // Ist der Blitz-Archetyp noch nicht aktiv, schaltet DIESER Skill ihn frei (Ladung + Crit-Sockel).
-  const firstPick = !(state.lightning && state.lightning.active);
-  // Angebot nach Archetyp gruppieren (feste Reihenfolge) — #93 F0: 2+2, aktuell nur Blitz.
+
+  // Ist der jeweilige Archetyp beim Spieler noch inaktiv → DIESER Skill schaltet ihn frei (erster Pick).
+  const isFirstPick = {
+    lightning: !(state.lightning && state.lightning.active),
+    fire: !(state.heat && state.heat.active),
+    ice: !(state.activeArchetypes || []).includes("ice"),
+    plant: !(state.activeArchetypes || []).includes("plant"),
+  };
+  // Kurze Passiv-Erklärung je Archetyp (erster Pick = „schaltet frei", sonst = „vertieft"). Style-Guide: knapp,
+  // Wirkung vor Bedingung. Ergänzt im Aufklapper durch die Glossar-Einträge der angebotenen Schlüsselbegriffe.
+  const unlockLine = (arch) => {
+    const first = isFirstPick[arch];
+    switch (arch) {
+      case "lightning": return first
+        ? `Schaltet den Blitz-Archetyp frei: Ladung (Crits erzeugen Ladung, max ${LIGHTNING_MAX_CHARGE}) und eine Crit-Basis von +${SOCKET_PCT + PER_SKILL_PCT} % (Sockel +${SOCKET_PCT} % plus +${PER_SKILL_PCT} % je Blitz-Skill).`
+        : `Jeder weitere Blitz-Skill gibt +${PER_SKILL_PCT} % Crit-Chance. Ladung und Crit-Basis sind bereits aktiv.`;
+      case "fire": return first
+        ? "Schaltet die Hitzeleiste frei (0–100 %): Siege mit klarem Wertvorsprung heizen auf und geben Feuer-Score, klare Niederlagen kühlen ab."
+        : "Jeder weitere Feuer-Skill erhöht den Feuer-Score je Vorsprungspunkt. Die Hitzeleiste ist bereits aktiv.";
+      case "ice": return first
+        ? "Schaltet das Einfrieren frei: eigene Karten werden blau, biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden. Jeder weitere Eis-Skill friert eine weitere Karte ein."
+        : "Jeder weitere Eis-Skill friert eine weitere eigene Karte ein und erweitert deine Aufstellungs-Optionen.";
+      case "plant": return first
+        ? `Schaltet das Wachstum frei: eigene Karten wachsen bei Siegen; ab ${PLANT_GREEN_THRESHOLD} Wachstum werden sie grün und bilden einen Farbblock, der Score gibt.`
+        : "Jeder weitere Pflanze-Skill vertieft das Wachstum — mehr grüne Karten, größerer Farbblock. Wachstum und Grün sind bereits aktiv.";
+      default: return "";
+    }
+  };
+
+  // Angebot nach Archetyp gruppieren (feste Reihenfolge). #93 F0: 2+2 …; jetzt bis zu 4 Fraktionen im Angebot.
   // #118: defensiver Guard — ein bereits gehaltener Skill erscheint NIE als Angebots-Karte (selbst bei inkonsistentem State).
   const groups = ARCHETYPE_ORDER
     .map((arch) => ({ arch, meta: ARCHETYPE_META[arch], ids: offer.filter((id) => archetypeOf(id) === arch && !skills.includes(id)) }))
     .filter((g) => g.ids.length);
-  const hasBlitzOffer = offer.some((id) => archetypeOf(id) === "lightning");
-  const hasFireOffer = offer.some((id) => archetypeOf(id) === "fire");
-  const fireFirstPick = !(state.heat && state.heat.active); // erster Feuer-Skill schaltet die Hitzeleiste frei
-  const hasIceOffer = offer.some((id) => archetypeOf(id) === "ice");
-  const iceFirstPick = !(state.activeArchetypes || []).includes("ice"); // erster Eis-Skill schaltet das Einfrieren frei
-  const hasPlantOffer = offer.some((id) => archetypeOf(id) === "plant");
-  const plantFirstPick = !(state.activeArchetypes || []).includes("plant"); // erster Pflanze-Skill schaltet Wachstum/Grün frei
-  const showFormations = hasIceOffer || (skills || []).some((id) => archetypeOf(id) === "ice"); // #161 FB-1: Formations-Panel bei Eis-Relevanz
+  const showFormations = groups.some((g) => g.arch === "ice") || (skills || []).some((id) => archetypeOf(id) === "ice"); // #161 FB-1: Formations-Panel bei Eis-Relevanz
 
   // Konsumenten-Typ eines Skills (#93): Hitze („heat") / Ladung („charge") / kein Konsument (null).
   const consumerTypeOf = (id) => (SKILL_DEFS[id]?.heatConsumer ? "heat" : SKILL_DEFS[id]?.onFullCharge ? "charge" : null);
@@ -104,68 +124,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
 
-        {/* Was ein Blitz-Skill freischaltet: Ladungs-System + Crit-Basis — nur wenn Blitz im Angebot ist (#93 F0). */}
-        {hasBlitzOffer && (
-        <div className="mt-3 rounded-lg px-3 py-2 text-xs leading-snug"
-          style={{ background: `${LIGHT}14`, border: `1px solid ${LIGHT}44` }}>
-          {firstPick ? (
-            <>Dein erster Blitz-Skill schaltet den <b style={{ color: LIGHT }}>Blitz-Archetyp</b> frei:{" "}
-              <b style={{ color: "#5ec8f0" }}>Ladung</b> (Crits erzeugen Ladung, max {LIGHTNING_MAX_CHARGE}) und eine{" "}
-              <b style={{ color: "#e879f9" }}>Crit-Basis von +{SOCKET_PCT + PER_SKILL_PCT} %</b>{" "}
-              (einmaliger Sockel +{SOCKET_PCT} % plus +{PER_SKILL_PCT} % je gehaltenem Blitz-Skill).</>
-          ) : (
-            <>Jeder weitere Blitz-Skill gibt <b style={{ color: "#e879f9" }}>+{PER_SKILL_PCT} % Crit-Chance</b>{" "}
-              (zusätzlich zum einmaligen Aktivierungs-Sockel von +{SOCKET_PCT} %). Ladung/Crit-Basis sind bereits aktiv.</>
-          )}
-        </div>
-        )}
-
-        {/* Was ein Feuer-Skill freischaltet: Hitzeleiste — nur wenn Feuer im Angebot ist (#93 F1). */}
-        {hasFireOffer && (
-        <div className="mt-3 rounded-lg px-3 py-2 text-xs leading-snug"
-          style={{ background: "#e0714a14", border: "1px solid #e0714a44" }}>
-          {fireFirstPick ? (
-            <>Dein erster Feuer-Skill schaltet die <b style={{ color: "#e0714a" }}>Hitzeleiste</b> frei (0–100 %):{" "}
-              Siege mit klarem <b style={{ color: "#f0a83a" }}>Wertvorsprung</b> heizen auf und geben Feuer-Flat-Score,
-              klare Niederlagen kühlen ab. Belohnt totale Überlegenheit statt knapper Siege.</>
-          ) : (
-            <>Jeder weitere Feuer-Skill erhöht den <b style={{ color: "#f0a83a" }}>Feuer-Flat-Score</b> pro Vorsprungspunkt.
-              Die Hitzeleiste ist bereits aktiv.</>
-          )}
-        </div>
-        )}
-
-        {/* Was ein Eis-Skill freischaltet: Einfrieren + Aufstellungskontrolle — nur wenn Eis im Angebot ist (#93 F3). */}
-        {hasIceOffer && (
-        <div className="mt-3 rounded-lg px-3 py-2 text-xs leading-snug"
-          style={{ background: "#5ec8f014", border: "1px solid #5ec8f044" }}>
-          {iceFirstPick ? (
-            <>Dein erster Eis-Skill friert <b style={{ color: "#5ec8f0" }}>eigene Karten</b> ein (blau): sie biegen
-              Formationen und dürfen <b style={{ color: "#bfe9f7" }}>1× je Aufstellungsphase kostenlos getauscht</b> werden.
-              Jeder weitere Eis-Skill friert eine weitere Karte ein. Kontrolle & Aufstellung statt Crit.</>
-          ) : (
-            <>Jeder weitere Eis-Skill friert eine <b style={{ color: "#5ec8f0" }}>weitere eigene Karte</b> ein und
-              erweitert deine Formations- und Aufstellungs-Optionen.</>
-          )}
-        </div>
-        )}
-
-        {/* Was ein Pflanze-Skill freischaltet: Wachstum → Grün → Farbblock — nur wenn Pflanze im Angebot ist (v0). */}
-        {hasPlantOffer && (
-        <div className="mt-3 rounded-lg px-3 py-2 text-xs leading-snug"
-          style={{ background: "#5ab87a14", border: "1px solid #5ab87a44" }}>
-          {plantFirstPick ? (
-            <>Dein erster Pflanze-Skill schaltet das <b style={{ color: "#5ab87a" }}>Wachstum</b> frei: eigene Karten
-              wachsen bei Siegen (nur steigend); ab {PLANT_GREEN_THRESHOLD} Wachstum werden sie dauerhaft{" "}
-              <b style={{ color: "#86e0a0" }}>grün</b> und bilden einen wachsenden Farbblock, der Score gibt.
-              Ein <b style={{ color: "#86e0a0" }}>Alter Anker</b> startet sofort mit 1 reifen grünen Karte (Wert {PLANT_ANCHOR_VALUE}).</>
-          ) : (
-            <>Jeder weitere Pflanze-Skill vertieft das <b style={{ color: "#5ab87a" }}>Wachstum</b> — mehr grüne Karten,
-              größerer Farbblock, höhere Werte (bis {PLANT_VALUE_CAP}). Wachstum/Grün sind bereits aktiv.</>
-          )}
-        </div>
-        )}
-
         {/* Konsumenten-Ersatzdialog (#93): zweiter Konsument desselben Typs ersetzt den bestehenden. */}
         {pendingConsumer && (
           <div className="mt-3 rounded-lg px-3 py-3 text-xs leading-snug" style={{ background: "#d4a63a1a", border: "1px solid #d4a63a66", color: "#e8dcb8" }}>
@@ -193,14 +151,26 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           </div>
         )}
 
-        {/* Angebot nach Archetyp gruppiert (#93 F0). Bei mehreren Archetypen je eine Überschrift + Trennlinie. */}
+        {/* Angebot nach Archetyp gruppiert. Der Header ist tappbar (#201 P9): er klappt die Passiv-Beschreibung
+            des Archetyps + die Erklärung seiner Schlüsselbegriffe auf — das Angebot selbst bleibt kompakt. */}
         <div className="mt-5 grid gap-4">
-          {groups.map((g) => (
+          {groups.map((g) => {
+            const detailOpen = openArch === g.arch;
+            const groupKws = glossaryKeywords(g.ids, SKILL_DEFS);
+            return (
             <div key={g.arch}>
-              {groups.length > 1 && (
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: g.meta.color }}>{g.meta.icon} {g.meta.label}</span>
-                  <div className="flex-1 h-px" style={{ background: `${g.meta.color}33` }} />
+              <button type="button" onClick={() => setOpenArch(detailOpen ? null : g.arch)}
+                className="w-full flex items-center gap-2 mb-2 text-left transition-opacity hover:opacity-100"
+                title={`${g.meta.label}: Passiv & Begriffe`} aria-expanded={detailOpen}>
+                <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: g.meta.color }}>{g.meta.icon} {g.meta.label}</span>
+                <span className="text-[10px] opacity-45" style={{ color: g.meta.color }}>{detailOpen ? "▾ Passiv" : "▸ Passiv & Begriffe"}</span>
+                <div className="flex-1 h-px" style={{ background: `${g.meta.color}33` }} />
+              </button>
+              {detailOpen && (
+                <div className="mb-3 rounded-lg px-3 py-2 text-xs leading-snug"
+                  style={{ background: `${g.meta.color}14`, border: `1px solid ${g.meta.color}44` }}>
+                  <div className="opacity-90">{unlockLine(g.arch)}</div>
+                  <KeywordGlossary tokens={groupKws} />
                 </div>
               )}
               <div className="grid sm:grid-cols-2 gap-3">
@@ -240,7 +210,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 })}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="text-center mt-5 flex flex-wrap items-center justify-center gap-2">
@@ -285,9 +256,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 )
               ))}
             </div>
+            {/* #201 P1: die aufgeklappte Beschreibung eines gehaltenen Skills erklärt gleich seine Schlüsselbegriffe
+                mit — abrufbar unabhängig davon, ob der Begriff gerade im Angebot vorkommt. */}
             {!pending && openSkill && SKILL_DEFS[openSkill] && (
-              <div className="text-[11px] mt-2 px-2 py-1 rounded leading-snug" style={{ background: `${ac(openSkill).color}14`, color: "#d8d0f0" }}>
-                {SKILL_DEFS[openSkill].desc}
+              <div className="text-[11px] mt-2 px-2 py-2 rounded leading-snug" style={{ background: `${ac(openSkill).color}14`, color: "#d8d0f0" }}>
+                <div>{SKILL_DEFS[openSkill].desc}</div>
+                <KeywordGlossary tokens={glossaryKeywords([openSkill], SKILL_DEFS)} />
               </div>
             )}
             {pending && (
@@ -302,21 +276,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {showFormations && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <FormationPanel state={state} title="Deine aktiven Formationen (Eis biegt die Erkennung)" />
-          </div>
-        )}
-
-        {/* Schlüsselbegriffe (Ladung/Ionisierung/…) unten erklärt — nur die im Angebot vorkommenden. */}
-        {kws.length > 0 && (
-          <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Schlüsselbegriffe</div>
-            <div className="grid gap-1.5">
-              {kws.map((k) => (
-                <div key={k} className="text-xs leading-snug">
-                  <span className="font-bold" style={{ color: KEYWORD_INFO[k].color }}>{KEYWORD_INFO[k].icon} {KEYWORD_INFO[k].label}</span>
-                  <span className="opacity-70"> — {KEYWORD_INFO[k].text}</span>
-                </div>
-              ))}
-            </div>
           </div>
         )}
         </div>

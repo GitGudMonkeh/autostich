@@ -3,6 +3,10 @@ import { FAMILY_LIST } from "./families.js";
 import { TIERS, TIER_WEIGHTS, canOfferFamilyTier, familyTierOf } from "./rarity.js";
 import { lightningCritRaw } from "./skills.js";
 
+// Deutsche Zahlformatierung (2.5 → „2,5") — Beschreibungszahlen aus den Konstanten interpolieren (kein Text↔Code-Drift).
+const de = (x) => String(x).replace(".", ",");
+const pct = (x) => Math.round(x * 100);
+
 /* ============================================================
    PERK-REGISTRY  — datengetrieben (wie clauses.js in TrickLadder).
    Score-/Wert-Hooks (alle optional), ausgewertet in engine.js:
@@ -64,31 +68,31 @@ export const PERK_DEFS = {
   //      Der ganze ×-Multiplikator-Raum ist family-free (Brennpunkt/Henker) = klare Legendär-Lane. Skala: Stich ⊂
   //      Segment(5) ⊂ Durchlauf(40) ⊂ Lauf. Engine-Hooks + ENV-Knöpfe je Flag.
   L2: { id: "L2", cat: "B", rarity: "legendary", label: "Unaufhaltsam",
-        desc: "Solange du siegst, erhält die nächste Karte +4 Wert (bis eine Niederlage eintritt).",
+        desc: `Solange du siegst, erhält die nächste Karte +${C.UNAUFHALTSAM_VALUE} Wert (bis eine Niederlage eintritt).`,
         cardBonus: (ctx) => (ctx.winStreak > 0 ? C.UNAUFHALTSAM_VALUE : 0) }, // Serie-Hook (Favorit, behalten)
   L6: { id: "L6", cat: "D", rarity: "legendary", label: "Raserei",
-        desc: "Jeder Sieg in Folge gibt +5 % Crit-Chance. Über 100 % Gesamt-Crit wird der Überschuss zu Crit-Schaden (max +100 %).",
+        desc: `Jeder Sieg in Folge gibt +${pct(C.RASEREI_CRIT_STEP)} % Crit-Chance. Über 100 % Gesamt-Crit wird der Überschuss zu Crit-Schaden (max +100 %).`,
         critChance: (ctx) => C.RASEREI_CRIT_STEP * (ctx.winStreak || 0),
         critMultBonus: (ctx) => Math.min(Math.max(0, (ctx.rawCrit || 0) - 1), 1) }, // Serie→Crit-Hook (Favorit, behalten)
   L4: { id: "L4", cat: "D", rarity: "legendary", label: "Kritische Masse", critValueGain: C.KRITMASSE_VALUE,
-        desc: "Jeder Crit gibt der betreffenden Karte dauerhaft +1 Wert (maximal +4)." }, // Crit-Hook (revived L4)
+        desc: `Jeder Crit gibt der betreffenden Karte dauerhaft +1 Wert (maximal +${C.KRITMASSE_VALUE}).` }, // Crit-Hook (revived L4)
   // --- 8 neue ---
   L_UMV: { id: "L_UMV", cat: "A", rarity: "legendary", label: "Umverteilung", redistribute: true,
         desc: "Sofort: alle Karten nehmen dauerhaft den Durchschnittswert des Decks an (keine Karte wird entfernt). Stark bei schiefem Deck." },
   L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
         desc: "Jeder Durchlauf mit positiver Bilanz (mehr Siege als Niederlagen) gibt dauerhaft +Score, der sich mit jedem weiteren aufstapelt (flach, kein Multiplikator)." },
   L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,
-        desc: "Eröffnungs-Wette: Gewinnst du die ersten fünf Stiche eines Durchlaufs in Folge, gibt es einen großen Score-Bonus (bis zu dreimal pro Lauf)." },
+        desc: `Eröffnungs-Wette: Gewinnst du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge, gibt es einen großen Score-Bonus (bis zu ${C.VABANQUE_MAX_PAYOUTS} Mal pro Lauf).` },
   L_HENK: { id: "L_HENK", cat: "D", rarity: "legendary", label: "Henker", henker: true,
-        desc: "Im letzten Segment (Positionen 36–40) zählt jeder Sieg doppelt und ist garantiert ein Crit." },
+        desc: `Im letzten Segment (Positionen ${C.HENKER_ZONE_START + 1}–40) zählt jeder Sieg ${de(C.HENKER_MULT)}-fach und ist garantiert ein Crit.` },
   L_ECHO: { id: "L_ECHO", cat: "C", rarity: "legendary", label: "Echo", echo: true,
-        desc: "Am Ende jedes Durchlaufs wird dein höchstwertiger Stich dieses Durchlaufs ein zweites Mal gutgeschrieben." },
+        desc: `Am Ende jedes Durchlaufs wird dein höchstwertiger Stich dieses Durchlaufs noch einmal ×${de(C.ECHO_FACTOR)} gutgeschrieben.` },
   L_SAMM: { id: "L_SAMM", cat: "E", rarity: "legendary", label: "Sammler", sammler: true,
-        desc: "Je unterschiedlicher Formationsart, die in einem Durchlauf gewinnt (max. 5), +0,15 Formations-Multiplikator für den restlichen Durchlauf." },
+        desc: `Jede unterschiedliche Formationsart, die in einem Durchlauf gewinnt (höchstens ${C.SAMMLER_MAX}), gibt +${de(C.SAMMLER_STEP)} Formations-Multiplikator für den restlichen Durchlauf.` },
   L_BRENN: { id: "L_BRENN", cat: "E", rarity: "legendary", label: "Brennpunkt", brennpunkt: true,
-        desc: "Gewinnt eine Karte in mindestens drei gleichzeitigen Formationen, zählt der Stich doppelt." },
+        desc: `Gewinnt eine Karte in mindestens ${C.BRENNPUNKT_MIN_FORMS} gleichzeitigen Formationen, zählt der Stich ×${de(C.BRENNPUNKT_MULT)}.` },
   L_PATT: { id: "L_PATT", cat: "B", rarity: "legendary", label: "Patt", patt: true,
-        desc: "Eine Niederlage um höchstens einen Wert zählt stattdessen als Sieg." },
+        desc: `Eine Niederlage um höchstens ${C.PATT_MARGIN} Werte zählt stattdessen als Sieg.` },
 };
 
 export const PERK_LIST = Object.values(PERK_DEFS);

@@ -1,6 +1,9 @@
 import * as C from "./constants.js";
 import { shuffle } from "./deck.js";
 
+// Deutsche Zahlformatierung (1.08 → „1,08") — driftgefährdete Beschreibungszahlen aus den Konstanten interpolieren.
+const de = (x) => String(x).replace(".", ",");
+
 /* ============================================================
    SKILL-REGISTRY — seltene, regelverändernde Build-Motoren NEBEN den Perks
    (Spezifikation: docs/blitz-archetyp.md). Gleiche Hook-Shape wie Perks
@@ -47,7 +50,7 @@ export const SKILL_DEFS = {
     desc: "Gewinnt eine ionisierte Karte, springt ein Stapel auf ihren Nachfolger (Tiefe). Volle (5) Karten werden übersprungen.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, voltageArc: true },
   SK_LIGHTNING_11: { id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning", keywords: ["ionize", "charge"],
-    desc: "Eine volle Karte (5) wird statt weiter ionisiert zu +2 temp Wert & +1 Ladung. Die volle Karte als Dauer-Score-Motor.",
+    desc: `Eine volle Karte (5) wird statt weiter ionisiert zu +${C.BLITZFAENGER_VALUE} temporärem Wert und +1 Ladung. Die volle Karte als Dauer-Score-Motor.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, blitzcatcher: true },
   SK_LIGHTNING_09: { id: "SK_LIGHTNING_09", name: "Kurzschluss", archetype: "lightning", keywords: ["ionize", "charge"],
     desc: "Eine volle Karte (5) entlädt beim Sieg alle Stapel → +Ladung-Burst, Karte auf 0 zurück. Zyklus statt Sättigung.",
@@ -120,13 +123,13 @@ export const SKILL_DEFS = {
     desc: "Vor jedem Stich −10 % Hitze für +5 Score je verbrauchtem Hitzepunkt (≈ +50).", heatConsumer: "melt" },
   // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
   SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand"],
-    desc: "Jeder Sieg brandmarkt eine Gegnerkarte (−2 Wert) und gibt +1 Asche.", brandmal: true },
+    desc: `Jeder Sieg brandmarkt eine Gegnerkarte (−${C.BRAND_VALUE} Wert) und gibt +${C.BRAND_ASH} Asche.`, brandmal: true },
   SK_FIRE_14: { id: "SK_FIRE_14", name: "Lauffeuer", archetype: "fire", keywords: ["heat", "brand"],
     desc: "Brandmarken greifen auf eine Nachbarkarte über (−1 Wert) und geben +1 Asche.", enabler: "SK_FIRE_13", lauffeuer: true },
   SK_FIRE_15: { id: "SK_FIRE_15", name: "Ascheschmiede", archetype: "fire", keywords: ["heat", "forge"],
     desc: "Für 5 Asche erhält deine niedrigste Karte dauerhaft +2 Wert.", ascheschmiede: true },
   SK_FIRE_16: { id: "SK_FIRE_16", name: "Glutstahl", archetype: "fire", keywords: ["heat", "forge"],
-    desc: "Geschmiedete Karten geben bei Sieg +20 Score je geschmiedetem Wert.", enabler: "SK_FIRE_15", glutstahl: true },
+    desc: `Geschmiedete Karten geben bei Sieg +${C.GLUTSTAHL_PER_VALUE} Score je geschmiedetem Wert.`, enabler: "SK_FIRE_15", glutstahl: true },
   SK_FIRE_17: { id: "SK_FIRE_17", name: "Schmelzofen", archetype: "fire", keywords: ["heat", "brand", "forge"],
     desc: "Ab 50 % Hitze brennen Brände stärker (−1 Wert, +1 Asche) und Schmieden kostet 1 Asche weniger.", schmelzofen: true },
   // Legendäre (umgeformt: dauerhaft/compoundend/direkt — je eine eigene Achse & Feuer-Playstyle)
@@ -145,7 +148,7 @@ export const SKILL_DEFS = {
   SK_ICE_01: { id: "SK_ICE_01", name: "Frostgriff", archetype: "ice", keywords: ["freeze"],
     desc: "Friert beim Aktivieren +2 weitere eigene Karten ein — mehr Anker, mehr Meißel, mehr Bank.", frostGrip: true },
   SK_ICE_02: { id: "SK_ICE_02", name: "Frostwahl", archetype: "ice", keywords: ["freeze"],
-    desc: "Du wählst, welche Karten einfrieren, statt zufällig (im Sim: die niedrigsten) — Architektur schon beim Einfrieren.", frostwahl: true },
+    desc: "Du wählst selbst, welche eigenen Karten einfrieren, statt sie dem Zufall zu überlassen — Architektur schon beim Einfrieren.", frostwahl: true },
   SK_ICE_03: { id: "SK_ICE_03", name: "Gleitfrost", archetype: "ice", keywords: ["freeze"],
     desc: "Jede Frostkarte bekommt einen zweiten kostenlosen Frosttausch; ungenutzte banken Schicht-Fortschritt.", gleitfrost: true },
   // Linie 2 — Architektur (Frosttausch meißelt Formationen → Permanenz)
@@ -183,7 +186,7 @@ export const SKILL_DEFS = {
     desc: "Steht eine Frostkarte an der Kreuzung von ≥3 Formationen, lagert sie mehrere Schichten auf einmal ab — das Meisterstück.", verschraenkung: true },
   // Legendäre (vier Seiten des Spine — verwandeln die tiefen Schichten in DIREKTEN Score)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: "Jede Ablage lagert eine zusätzliche Schicht ab (der Motor der Permanenz). Je mehr Schichten du über alle Frostkarten anhäufst, desto mehr Punkte zahlt jeder Frost-Sieg direkt — Breite wird zu Score.", permafrost: true },
+    desc: `Jede Ablage lagert +${C.PERMAFROST_LAYER_BONUS} zusätzliche Schichten ab (der Motor der Permanenz). Je mehr Schichten du über alle Frostkarten anhäufst, desto mehr Punkte zahlt jeder Frost-Sieg direkt — Breite wird zu Score.`, permafrost: true },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Gletscher", archetype: "ice", legendary: true, keywords: ["freeze"],
     desc: "Je tiefer der Stapel, desto mehr gibt jede Schicht (superlinear). Dein TIEFSTER Pfeiler zahlt bei jedem Frost-Sieg direkt Punkte — je tiefer der eine Pfeiler, desto überproportional mehr (der Schneeball).", gletscher: true },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Vergletscherung", archetype: "ice", legendary: true, keywords: ["freeze"],
@@ -196,7 +199,7 @@ export const SKILL_DEFS = {
   //      Grundmechanik: Alter Anker (Aktivierung startet 1 reife Karte). Flags in engine/formations/reducer gelesen. ----
   // Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score)
   SK_PLANT_01: { id: "SK_PLANT_01", name: "Wurzelschlag", archetype: "plant", keywords: ["growth", "value"],
-    desc: "Grüne Karten wachsen bei Sieg permanenten Wert an (+1 je 3 Wachstum, bis Wert 11). Der Wert-Motor.", wurzelschlag: true },
+    desc: `Grüne Karten wachsen bei Sieg permanenten Wert an (+1 je ${C.WURZELSCHLAG_PER_GROWTH} Wachstum, bis Wert ${C.PLANT_VALUE_CAP}). Der Wert-Motor.`, wurzelschlag: true },
   SK_PLANT_02: { id: "SK_PLANT_02", name: "Wurzeltiefe", archetype: "plant", keywords: ["growth", "score"],
     desc: "Jeder Sieg einer grünen Karte gibt zusätzlich Flat-Score (Wurzeln-Score). Schaltet den Score-Ertrag reifer Pflanzen frei.", wurzeltiefe: true },
   SK_PLANT_03: { id: "SK_PLANT_03", name: "Pfahlwurzel", archetype: "plant", keywords: ["growth", "score", "formation"],
@@ -221,7 +224,7 @@ export const SKILL_DEFS = {
     desc: "Verstärker: Blüte-Score ×2, wenn die Karte in einer Formation gewinnt.", enabler: "SK_PLANT_10", bluetezeit: true },
   // Linie 4 — Überwucherung (Mono-Grün-Payoff)
   SK_PLANT_12: { id: "SK_PLANT_12", name: "Photosynthese", archetype: "plant", keywords: ["green", "formation"],
-    desc: "Grüne Karten in einer Formation geben zusätzlich ×1,15 Score. Der Grün-Formations-Multiplikator.", photosynthese: true },
+    desc: `Grüne Karten in einer Formation geben zusätzlich ×${de(C.PHOTOSYNTHESE_MULT)} Score. Der Grün-Formations-Multiplikator.`, photosynthese: true },
   SK_PLANT_13: { id: "SK_PLANT_13", name: "Blätterdach", archetype: "plant", keywords: ["green", "formation", "score"],
     desc: "In einem grünen Farbblock ab 4 Karten gibt jede grüne Karte bei Sieg zusätzlich +Score je Karte im Block.", blaetterdach: true },
   SK_PLANT_14: { id: "SK_PLANT_14", name: "Überwucherung", archetype: "plant", keywords: ["green", "formation"],
