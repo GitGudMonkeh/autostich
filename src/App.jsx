@@ -538,7 +538,8 @@ export function Autostich() {
               <PlantBar active={(state.activeArchetypes || []).includes("plant")}
                 deck={state.deck || []}
                 growth={state.growth || {}}
-                colonized={state.colonized || {}} />
+                colonized={state.colonized || {}}
+                skills={state.skills || []} />
               <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} />
             </div>
             <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
