@@ -76,10 +76,9 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const [deleteActive, setDeleteActive] = useState(false);
   const [selId, setSelId] = useState(null);         // zum Verschieben ausgewähltes Gebäude
   const [rotIdx, setRotIdx] = useState(0);          // Rotation für das Verschieben
-  const [colorPick, setColorPick] = useState(null); // Farbwahl-Vormerkung für colorLocked-Baupläne
+  const [colorPick, setColorPick] = useState(SUIT_ORDER[0]); // #224.9: Farbe für colorLocked vorbelegt → Bauplan sofort errichtbar (nicht rätselhaft gesperrt)
 
   const acted = !!architect.actedMain;
-  const moved = !!architect.moved;
   const occ = useMemo(() => occupiedCells(buildings), [buildings]);
   const coverCount = occ.size;
 
@@ -122,7 +121,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     const fits = enumeratePlacements(fam.form, buildings);
     if (!fits.length) return;                    // kein Platz
     onBuild?.({ familyId: o.familyId, tier: o.tier, footprint: fits[0], colorChoice: fam.colorLocked ? colorPick : null });
-    setColorPick(null);
+    setColorPick(SUIT_ORDER[0]); // #224.9: wieder vorbelegen (nicht auf null → nächster colorLocked bleibt errichtbar)
   };
   const tapCell = (pos) => {
     const b = buildingAt(pos);
@@ -139,8 +138,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     }
     // Ausbauen (Schritt 1, Modus upgrade): Gebäude antippen → +1 Stufe.
     if (step === 0 && mode === "upgrade" && !acted) { if (b) onUpgrade?.(b.id); return; }
-    // sonst: Gebäude antippen → zum Verschieben auswählen (nur wenn noch nicht versetzt).
-    if (b && !moved) { setSelId(b.id); setRotIdx(0); }
+    // sonst: Gebäude antippen → zum Verschieben auswählen (#224.10: jederzeit, beliebig oft bis zum Bestätigen).
+    if (b) { setSelId(b.id); setRotIdx(0); }
   };
 
   const goStep = (n) => { setStep(n); if (n > 0) { setDeleteActive(false); setMode(null); } };
@@ -215,6 +214,11 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       <span className="absolute bottom-[1px] left-[3px] text-[8px] font-bold" style={{ color: "rgba(255,255,255,0.92)" }}>
                         {fam.name.slice(0, 3).toUpperCase()} {tierLabel(b.tier)}
                       </span>
+                    )}
+                    {/* #224.9: Ziel-Farbe des colorLocked-Gebäudes (Buntglas/Zunfthaus) — weiß umrandeter Punkt, klar getrennt von der Karten-Suit oben. */}
+                    {b && pos === anchorCell && b.colorChoice && (
+                      <span className="absolute bottom-[2px] right-[3px] w-[8px] h-[8px] rounded-full" title={`bufft Farbe ${b.colorChoice}`}
+                        style={{ background: SUIT_COLOR[b.colorChoice], boxShadow: "0 0 0 1.5px rgba(255,255,255,0.9)" }} />
                     )}
                   </button>
                 );
@@ -292,7 +296,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                             </div>
                             {fam.colorLocked && !o.used && (
                               <div className="flex items-center gap-1.5 mt-2 text-[11px] font-mono">
-                                <span className="opacity-60">Farbe:</span>
+                                <span className="opacity-60">bufft Farbe:</span>{/* #224.9: die Ziel-Farbe ist wählbar & sichtbar (der Effekt gilt nur ihr) */}
                                 {SUIT_ORDER.map((s) => (
                                   <button key={s} onClick={() => setColorPick(s)} className="w-5 h-5 rounded-full"
                                     style={{ background: SUIT_COLOR[s], outline: colorPick === s ? "2px solid #fff" : "none", outlineOffset: 1 }} title={s} />
@@ -317,7 +321,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
               {step === 0 && acted && (
                 <div>
                   <div className="text-sm rounded-r-lg px-3 py-2.5 mb-1" style={{ background: `${CAT.score.color}18`, borderLeft: `3px solid ${CAT.score.color}` }}>
-                    ✓ Hauptaktion gesetzt. Tippe das Gebäude auf dem Brett an und dann eine freie Zelle, um es zu verschieben (⟳ dreht){moved ? " — bereits 1× versetzt" : ""}.
+                    ✓ Hauptaktion gesetzt. Tippe ein Gebäude auf dem Brett an und dann eine freie Zelle, um es zu verschieben — beliebig oft bis zum Bestätigen (⟳ dreht).
                   </div>
                   <button onClick={() => goStep(1)} className="w-full rounded-lg py-2 text-sm font-bold mt-2" style={{ background: CAT.value.color, color: "#fff" }}>Weiter → Verschieben</button>
                 </div>
@@ -326,7 +330,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
               {step === 1 && (
                 <div>
                   <div className="text-sm rounded-r-lg px-3 py-2.5" style={{ background: `${CAT.score.color}14`, borderLeft: `3px solid ${CAT.score.color}` }}>
-                    Verschieben (optional, 1×): Gebäude antippen → freie Zelle antippen. ⟳ dreht das ausgewählte Gebäude.{moved ? " — schon genutzt" : ""}
+                    Verschieben (optional, beliebig oft): Gebäude antippen → freie Zelle antippen. ⟳ dreht das ausgewählte Gebäude. Übernommen wird nur der bestätigte Stand.
                   </div>
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => goStep(0)} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>

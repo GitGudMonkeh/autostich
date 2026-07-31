@@ -220,15 +220,16 @@ describe("Architekt — Reducer-Aktionen", () => {
     expect(up.architect.actedMain).toBe(true);
   });
 
-  it("MOVE genau einmal; DEMOLISH unbegrenzt; DONE → play", () => {
+  it("MOVE beliebig oft (#224.10); DEMOLISH unbegrenzt; DONE → play", () => {
     let s = inArchitectPhase();
     s = reducer(s, { type: "ARCHITECT_BUILD", familyId: "A_STUETZE", tier: 2, footprint: [0, 1] });
     const id = s.architect.buildings[0].id;
     const moved = reducer(s, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [10, 11] });
     expect(moved.architect.buildings[0].footprint).toEqual([10, 11]);
-    expect(moved.architect.moved).toBe(true);
-    expect(reducer(moved, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [20, 21] })).toBe(moved); // 2. Move abgelehnt
-    const demo = reducer(moved, { type: "ARCHITECT_DEMOLISH", buildingId: id });
+    const moved2 = reducer(moved, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [20, 21] }); // 2. Move JETZT erlaubt
+    expect(moved2.architect.buildings[0].footprint).toEqual([20, 21]);
+    expect(reducer(moved2, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [10, 12] })).toBe(moved2); // ungültige Domino-Form abgelehnt
+    const demo = reducer(moved2, { type: "ARCHITECT_DEMOLISH", buildingId: id });
     expect(demo.architect.buildings.length).toBe(0);
     expect(reducer(demo, { type: "ARCHITECT_DONE" }).phase).toBe("play");
   });

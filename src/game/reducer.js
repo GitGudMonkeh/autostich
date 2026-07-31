@@ -169,10 +169,9 @@ export function reducer(state, action) {
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, tier: x.tier + 1 } : x));
       return { ...state, architect: { ...a, buildings, actedMain: true } };
     }
-    case "ARCHITECT_MOVE": { // versetzen: genau 1× je Phase, an neue gültige Position (ohne Overlap mit den ANDEREN)
+    case "ARCHITECT_MOVE": { // versetzen: BELIEBIG OFT bis zum Bestätigen (#224.10), an neue gültige Position (ohne Overlap mit den ANDEREN)
       if (state.phase !== "architect") return state;
       const a = state.architect;
-      if (a.moved) return state;
       const b = a.buildings.find((x) => x.id === action.buildingId);
       if (!b) return state;
       const fam = archFamily(b.familyId);
@@ -180,7 +179,7 @@ export function reducer(state, action) {
       if (!fam || !isValidFootprint(fam.form, action.footprint, others)) return state;
       const footprint = [...action.footprint].sort((x, y) => x - y);
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, footprint } : x));
-      return { ...state, architect: { ...a, buildings, moved: true } };
+      return { ...state, architect: { ...a, buildings, moved: true } }; // moved-Flag bleibt (Telemetrie), deckelt aber nicht mehr
     }
     case "ARCHITECT_DEMOLISH": { // abreißen: jederzeit, unbegrenzt, ohne Gegenwert (nur Platz frei)
       if (state.phase !== "architect") return state;
