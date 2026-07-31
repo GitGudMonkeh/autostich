@@ -256,8 +256,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
         {state.lastCycleScore != null && <div className="mb-3"><RoundScoreBadge state={state} /></div>}
 
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] items-start">
-          {/* ---- Brett 8×5 (auf Mobil UNTER dem Assistenten: md:order-1) ---- */}
-          <section className="rounded-xl p-3 md:order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
+          {/* ---- Brett 8×5 — Mobil in der Mitte (order-2): Phase-Panel drüber, Vorschau drunter; Desktop links (md:order-1). ---- */}
+          <section className="rounded-xl p-3 order-2 md:order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
             <div className="flex items-center justify-between mb-2">
               <div className="text-[11px] font-mono uppercase tracking-wide opacity-60">Brett · 8 × 5</div>
               {showRotate && (
@@ -344,9 +344,10 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
             </div>
           </section>
 
-          {/* ---- Bau-Assistent (phasenabhängig) + Vorschau — auf Mobil OBEN (order-first), Desktop rechts (md:order-2) ---- */}
-          <section className="flex flex-col gap-4 order-first md:order-2">
-            <div className="rounded-xl p-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
+          {/* ---- Bau-Assistent + Vorschau. Mobil: `contents` löst die Gruppe auf → Phase-Panel (order-1) ÜBER dem Brett (order-2),
+                 Vorschau (order-3) DRUNTER. Desktop: wieder eine flex-Spalte rechts (md:flex, md:order-2). ---- */}
+          <section className="contents md:flex md:flex-col md:gap-4 md:order-2">
+            <div className="rounded-xl p-3 order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. */}
               <div className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}>
@@ -406,9 +407,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                     <button onClick={() => { if (canUpgradeAny) setPhase("upgrade"); }} disabled={!canUpgradeAny}
                       className="rounded-lg p-2.5 text-left w-full transition-all hover:brightness-110"
                       style={{ background: "#16232f", border: `1px dashed ${CAT.value.color}66`, opacity: canUpgradeAny ? 1 : 0.4, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
-                      <div className="text-sm font-bold flex items-center gap-2">⬆ Aufrüsten
-                        <span className="text-[11px] font-mono font-normal opacity-60">— ein Gebäude +1 Stufe {canUpgradeAny ? "" : "(nichts ausbaubar)"}</span>
-                      </div>
+                      <div className="text-sm font-bold">⬆ Aufrüsten</div>
+                      <div className="text-[11px] font-mono opacity-60 leading-snug mt-0.5">ein Gebäude +1 Stufe{canUpgradeAny ? "" : " · nichts ausbaubar"}</div>
                     </button>
                   </div>
                   <div className="mt-3">
@@ -460,8 +460,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
               )}
             </div>
 
-            {/* Vorschau & Brett-Status */}
-            <div className="rounded-xl p-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
+            {/* Vorschau & Brett-Status — Mobil UNTER dem Brett (order-3), Desktop unter dem Phase-Panel in der rechten Spalte. */}
+            <div className="rounded-xl p-3 order-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
               <div className="text-[11px] font-mono uppercase tracking-wide opacity-60 mb-2">Vorschau & Brett-Status</div>
               {dragPrev && (() => {
                 const ok = dragPrev.valid && dragPrev.footprint.length > 0;
