@@ -1,7 +1,6 @@
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
 import { familyDef, hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
-import { PERK_DECLINE_COINS } from "../game/constants.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
@@ -121,7 +120,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
           Jeder Perk ist pro Lauf nur einmal wählbar.
         </div>
 
-        {/* #138: Neu würfeln (falls verfügbar) + „Alle ablehnen (+🪙 N)" — eine Perk-Runde ist nie „verschwendet". */}
+        {/* #138: Neu würfeln (falls verfügbar) + „Alle ablehnen" — eine Perk-Runde ist nie „verschwendet" (keine Münzen mehr, #225.1). */}
         <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
           {canReroll && (
             <button onClick={onReroll}
@@ -134,7 +133,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             <button onClick={onDecline}
               className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
               style={{ background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }}>
-              Alle ablehnen · +🪙 {PERK_DECLINE_COINS}
+              Alle ablehnen
             </button>
           )}
         </div>

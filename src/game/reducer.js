@@ -639,12 +639,11 @@ export function reducer(state, action) {
         : { ...state, skillOffer: null, freeSkillReroll: false, phase: "play" };                   // Perk-Pool leer → weiterspielen
     }
 
-    // Perk-Angebot komplett ablehnen (#138): +PERK_DECLINE_COINS Münze, Angebot verworfen, weiter im Spiel — so ist
-    // eine Perk-Runde nie „verschwendet". Feste Münze (der Einkommen-Stat wirkt nur pro Shop-Besuch, hier nicht).
+    // Perk-Angebot komplett ablehnen (#138): Angebot verworfen, weiter im Spiel — so ist eine Perk-Runde nie
+    // „verschwendet". Keine Belohnung mehr: mit dem Architekten (#202/#225.1) gibt es keine Münzökonomie.
     case "DECLINE_PERK": {
       if (state.phase !== "levelup" || !state.offer) return state;
-      const shop = { ...(state.shop || {}), coins: ((state.shop && state.shop.coins) || 0) + C.PERK_DECLINE_COINS };
-      return { ...state, offer: null, shop, freePerkReroll: false, phase: "play" };
+      return { ...state, offer: null, freePerkReroll: false, phase: "play" };
     }
 
     // Perk-Angebot neu würfeln (Shop-Spec §10 P1/P-L1): gratis Reroll (Schicksalskontrolle) zuerst, sonst
