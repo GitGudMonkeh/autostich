@@ -15,13 +15,13 @@
      { kind: "monoStatRun" } → profile.hadMonoStatRun === true  (Lauf mit nur einem Stat, Challenge 4)
      { kind: "monoArchetypeRun", archetype } → profile.monoArchetypeRuns[archetype] (Lauf nur mit dieser Fraktion, #215 deck_c5..c8)
      { kind: "allArchetypesRun" }            → profile.hadAllArchetypesRun === true (Lauf mit allen vier Fraktionen, #215 deck_c9)
-     { kind: "masteryGrade", n }             → profile.masteryGrade >= n (erreichter Meistergrad I..V, #217 deck_rank_*)
+     { kind: "masteryGrade", n }             → profile.masteryGrade >= n (Meister I..V = n1–5 #217 deck_rank_* · Großmeister I..V = n6–10 #226 deck_gm_*)
 
    Katalog wächst „Deck für Deck": ein neues Deck = ein Eintrag hier + sein Bild-Paar in
    cosmeticAssets.js. Solange ein Bild-Asset noch nicht im Repo liegt, bleibt der Eintrag draußen
    (temporärer Umsetzungs-Zwischenstand); im fertigen Feature ist jeder Katalog-Eintrag sichtbar. */
 
-import { MASTERY_ROMAN } from "./mastery.js"; // #217: römische Grad-Ziffer für die Deck-Freischalt-Labels
+import { masteryGradeLabel } from "./mastery.js"; // #217/#226: Rang-Label (Meister „Rang I" / Großmeister „Großmeister I") für Freischalt-Texte
 
 // Progressions-Schwellen (gespielte Läufe) — Issue #190.
 export const DECK_GAME_UNLOCKS = [5, 15, 25, 35];        // deck_p1..p4
@@ -51,6 +51,12 @@ export const DECK_DEFS = {
   deck_rank_gold:    { id: "deck_rank_gold",    name: "Gold",    unlock: { kind: "masteryGrade", n: 3 } },
   deck_rank_platin:  { id: "deck_rank_platin",  name: "Platin",  unlock: { kind: "masteryGrade", n: 4 } },
   deck_rank_diamond: { id: "deck_rank_diamond", name: "Diamant", unlock: { kind: "masteryGrade", n: 5 } },
+  // Großmeister-Decks (#226): je erreichter Großmeister-Rang (I..V = masteryGrade 6..10) schaltet eines frei.
+  deck_gm_rot:   { id: "deck_gm_rot",   name: "Rot",          unlock: { kind: "masteryGrade", n: 6 } },
+  deck_gm_blau:  { id: "deck_gm_blau",  name: "Blau",         unlock: { kind: "masteryGrade", n: 7 } },
+  deck_gm_gruen: { id: "deck_gm_gruen", name: "Grün",         unlock: { kind: "masteryGrade", n: 8 } },
+  deck_gm_lila:  { id: "deck_gm_lila",  name: "Lila",         unlock: { kind: "masteryGrade", n: 9 } },
+  deck_gm_marco: { id: "deck_gm_marco", name: "Marco stinkt", unlock: { kind: "masteryGrade", n: 10 } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -130,7 +136,7 @@ export function unlockProgress(def, profile) {
     }
     case "masteryGrade": {
       const have = p.masteryGrade || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche Rang ${MASTERY_ROMAN[u.n] || u.n}` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche ${masteryGradeLabel(u.n)}` };
     }
     default:
       return { done: true, cur: 1, target: 1, label: "" };

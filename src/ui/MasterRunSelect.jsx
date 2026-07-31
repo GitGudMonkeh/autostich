@@ -11,9 +11,10 @@ import {
 import { DECK_DEFS } from "../game/cosmetics.js";
 import { fmtScore } from "./format.js";
 
-const RANK_DECK_ID = { 1: "deck_rank_bronze", 2: "deck_rank_silber", 3: "deck_rank_gold", 4: "deck_rank_platin", 5: "deck_rank_diamond" };
-// #226 Großmeister-Deck-Anzeigenamen (Assets liegen als deck_gm_* bereit; die Kosmetik-Registry-Verdrahtung folgt separat).
-const GM_DECK_NAME = { 6: "Rot", 7: "Blau", 8: "Grün", 9: "Lila", 10: "Marco stinkt" };
+const RANK_DECK_ID = {
+  1: "deck_rank_bronze", 2: "deck_rank_silber", 3: "deck_rank_gold", 4: "deck_rank_platin", 5: "deck_rank_diamond",
+  6: "deck_gm_rot", 7: "deck_gm_blau", 8: "deck_gm_gruen", 9: "deck_gm_lila", 10: "deck_gm_marco", // #226 Großmeister-Decks
+};
 const ACCENT = "#8a7de0";
 const ACCENT_HI = "#b3a8f5";
 const GM_ACCENT = "#d4a63a"; // Gold — Großmeister-Tier abgesetzt vom Meister-Violett
@@ -65,7 +66,7 @@ export function MasterRunSelect({ profile, onPlay, onClose }) {
             const unlocked = maxRank >= n;
             const roman = rankRoman(n);
             const tierLabel = gm ? `Großmeister ${roman}` : `Rang ${roman}`;
-            const deckName = gm ? (GM_DECK_NAME[n] || "") : (DECK_DEFS[RANK_DECK_ID[n]]?.name || "");
+            const deckName = DECK_DEFS[RANK_DECK_ID[n]]?.name || "";
             // Kumulativ: bisherige (grau) + neue (farbig). Meister bringt Rewards; Großmeister nur Schwierigkeit + Deck.
             const prevRewards = gm ? [] : [...new Set(Array.from({ length: n - 1 }, (_, k) => MASTERY_REWARD_LABELS[k + 1] || []).flat())];
             const newRewards = MASTERY_REWARD_LABELS[n] || [];

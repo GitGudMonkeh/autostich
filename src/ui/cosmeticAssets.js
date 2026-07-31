@@ -43,6 +43,16 @@ import rankPlatinFront  from "../assets/cards/decks_player/deck_rank_platin/fron
 import rankPlatinBack   from "../assets/cards/decks_player/deck_rank_platin/back.png";
 import rankDiamondFront from "../assets/cards/decks_player/deck_rank_diamond/front.png";
 import rankDiamondBack  from "../assets/cards/decks_player/deck_rank_diamond/back.png";
+import gmRotFront   from "../assets/cards/decks_player/deck_gm_rot/front.png";   // #226 Großmeister-Decks (Rang I..V)
+import gmRotBack    from "../assets/cards/decks_player/deck_gm_rot/back.png";
+import gmBlauFront  from "../assets/cards/decks_player/deck_gm_blau/front.png";
+import gmBlauBack   from "../assets/cards/decks_player/deck_gm_blau/back.png";
+import gmGruenFront from "../assets/cards/decks_player/deck_gm_gruen/front.png";
+import gmGruenBack  from "../assets/cards/decks_player/deck_gm_gruen/back.png";
+import gmLilaFront  from "../assets/cards/decks_player/deck_gm_lila/front.png";
+import gmLilaBack   from "../assets/cards/decks_player/deck_gm_lila/back.png";
+import gmMarcoFront from "../assets/cards/decks_player/deck_gm_marco/front.png";
+import gmMarcoBack  from "../assets/cards/decks_player/deck_gm_marco/back.png";
 import bf1Desktop from "../assets/battlefields/bf_1/desktop.jpg"; // #190 bf_1 „Neon-Boulevard" (ultrawide)
 import bf1Mobile  from "../assets/battlefields/bf_1/mobile.jpg";  // (4:3, schmalerer Viewport)
 import bf2Desktop from "../assets/battlefields/bf_2/desktop.jpg"; // #190 bf_2 „Nachttankstelle" (ultrawide)
@@ -72,6 +82,11 @@ export const DECK_ASSETS = {
   deck_rank_gold:    { front: rankGoldFront,    back: rankGoldBack },
   deck_rank_platin:  { front: rankPlatinFront,  back: rankPlatinBack },
   deck_rank_diamond: { front: rankDiamondFront, back: rankDiamondBack },
+  deck_gm_rot:   { front: gmRotFront,   back: gmRotBack },   // #226 Großmeister-Decks
+  deck_gm_blau:  { front: gmBlauFront,  back: gmBlauBack },
+  deck_gm_gruen: { front: gmGruenFront, back: gmGruenBack },
+  deck_gm_lila:  { front: gmLilaFront,  back: gmLilaBack },
+  deck_gm_marco: { front: gmMarcoFront, back: gmMarcoBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne

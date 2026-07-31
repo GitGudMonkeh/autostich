@@ -23,6 +23,16 @@ describe("cosmetics — Katalog", () => {
     expect(prog).toMatchObject({ done: false, cur: 3, target: 4 });
     expect(prog.label).toContain("Rang");
   });
+  it("#226 Großmeister-Decks: deck_gm_* an Rang 6..10 gekoppelt (unlock + Großmeister-Label)", () => {
+    expect(DECK_DEFS.deck_gm_rot.unlock).toEqual({ kind: "masteryGrade", n: 6 });
+    expect(DECK_DEFS.deck_gm_marco.unlock).toEqual({ kind: "masteryGrade", n: 10 });
+    // Großmeister II (Grad 7) → Rot/Blau frei, Grün gesperrt.
+    const p = prof({ masteryGrade: 7 });
+    expect(isUnlocked(DECK_DEFS.deck_gm_blau, p)).toBe(true);
+    expect(isUnlocked(DECK_DEFS.deck_gm_gruen, p)).toBe(false);
+    // Label nutzt das Großmeister-Rang-Label (nicht die rohe Zahl).
+    expect(unlockProgress(DECK_DEFS.deck_gm_gruen, p).label).toContain("Großmeister");
+  });
   it("deck_p1 schaltet bei 5 Läufen frei (erste Progressionsstufe)", () => {
     expect(DECK_DEFS.deck_p1.unlock).toEqual({ kind: "games", n: 5 });
     expect(DECK_GAME_UNLOCKS[0]).toBe(5);
