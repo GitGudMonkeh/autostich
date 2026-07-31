@@ -172,7 +172,7 @@ export const SKILL_DEFS = {
     desc: "Übersteigt die Summe aller Schichten eine Schwelle, erhalten alle Frostkarten einen Wert-Bonus. Belohnt breiten Aufbau.", kristallineMasse: true },
   // Linie 5 — Formations-Interface (Joker & Segment-Brücke)
   SK_ICE_12: { id: "SK_ICE_12", name: "Kristallform", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eine Frostkarte wirkt als Joker für Formationen (±2 Wert-Flex) — verdient, nicht gratis wie ein Perk.", kristallform: true },
+    desc: `Eine Frostkarte wirkt als Joker für Formationen (±${C.CRYSTAL_OFFSET} Wert-Flex) — verdient, nicht gratis wie ein Perk.`, kristallform: true },
   SK_ICE_13: { id: "SK_ICE_13", name: "Frostbrücke", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Eine Frostkarte am Segmentrand verbindet die Formation ins nächste Segment.", frostbridge: true },
   // Linie 6 — Überlappung / Anker (stehende Formationen zahlen)

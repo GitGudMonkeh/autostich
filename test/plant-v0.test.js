@@ -128,3 +128,30 @@ describe("Pflanze-Fraktion v0 — Aktivierung (Alter Anker)", () => {
     expect(green[0].value).toBe(C.PLANT_ANCHOR_VALUE);
   });
 });
+
+/* Die zwei getunten Farbblock-Regler der Pflanze (v0.3-Parität — der voll-grüne ×8-Riesenblock war der Runaway):
+   PLANT_GREEN_FARBBLOCK_CAP deckelt die Ordinalzahl grüner Karten, UEBERWUCHERUNG_FACTOR hebt ab ≥66 % grün die
+   Farbblock-Basis. Beide bislang ohne Guard. Werte über computeFormations gemessen (gleiche Farbe → ein Lauf). */
+describe("Pflanze-Farbblock — getunte Regler (Grün-Cap + Überwucherung)", () => {
+  const greenRun = (n, value = 5) => Array.from({ length: n }, (_, i) => ({ id: `G${i}`, suit: "R", baseRank: value, value, green: true }));
+  const plainRun = (n, value = 5) => Array.from({ length: n }, (_, i) => ({ id: `P${i}`, suit: "R", baseRank: value, value }));
+  const ord = (n) => Array.from({ length: n }, (_, i) => i);
+  const farbFactors = (forms) => forms.flatMap((p) => (p.formations || []).filter((f) => f.type === "farbblock").map((f) => f.factor));
+  const distinctAbove1 = (a) => new Set(a.filter((f) => f > 1).map((f) => f.toFixed(4))).size;
+
+  it("Grün-Cap: der grüne Farbblock plateaut ab Ordinal PLANT_GREEN_FARBBLOCK_CAP, ein ungrüner eskaliert weiter", () => {
+    const n = 5; // ein Segment (SEGMENT_SIZE 5) → ein zusammenhängender Lauf, gleicher Wert → nur Farbblock (keine Treppe/Wechsel)
+    const green = farbFactors(computeFormations(ord(n), greenRun(n), {}, [], [], [], {}));
+    const plain = farbFactors(computeFormations(ord(n), plainRun(n), {}, [], [], [], {}));
+    expect(distinctAbove1(green)).toBe(1);                       // grün: ab dem Cap flach → genau ein wirksamer Faktor
+    expect(distinctAbove1(plain)).toBeGreaterThan(1);            // ungrün: eskaliert weiter → mehrere Faktoren
+    expect(Math.max(...green)).toBeLessThan(Math.max(...plain)); // der Cap drückt die grüne Decke
+  });
+
+  it("Überwucherung: ab ≥66 % grün hebt SK_PLANT_14 die Farbblock-Basis um genau UEBERWUCHERUNG_FACTOR", () => {
+    const n = 4; // 100 % grün → über der 66-%-Schwelle
+    const withUeb = farbFactors(computeFormations(ord(n), greenRun(n), {}, [], ["SK_PLANT_14"], [], {}));
+    const without = farbFactors(computeFormations(ord(n), greenRun(n), {}, [], [], [], {}));
+    expect(Math.max(...withUeb) - Math.max(...without)).toBeCloseTo(C.UEBERWUCHERUNG_FACTOR);
+  });
+});

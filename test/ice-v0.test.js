@@ -4,6 +4,7 @@ import { SKILL_DEFS, layerValue, totalLayers, frozenTargetFor, freezeCards, iceS
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
+import { computeFormations } from "../src/game/formations.js";
 
 // Engine-Test-Helfer (konstante Decks; pos 0 → Formations-Mult 1). Frostkarte auf Position 0.
 const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
@@ -116,5 +117,34 @@ describe("Eis-Legendär-Reshape — Überlauf-Dividende (iceDirect)", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_ICE_L03"], deck: withFrost0(12), frostbiteActive: { Z1: 5, Z2: 7 } }), noCrit);
     expect(s.lastTrick.result).toBe("win");
     expect(s.lastTrick.breakdown.iceDirect).toBeCloseTo(Math.min(12, C.VERGLETSCHERUNG_DEBUFF_CAP) * C.VERGLETSCHERUNG_DIRECT * commit1);
+  });
+});
+
+/* Kristallform (SK_ICE_12) = ±CRYSTAL_OFFSET Wert-Flex auf Frostkarten. v0.3-Balance (#204 Eis-Ceiling-Hebel): 2→1,
+   der ±2-Joker war das Ceiling-Monster (Eis-Max −70 %, Median fast unberührt). Deckt den bislang ungetesteten
+   Formations-Joker-Flex ab UND sperrt den getunten Wert gegen Text↔Code-Drift. */
+describe("Kristallform — CRYSTAL_OFFSET (Eis-Ceiling-Hebel #204)", () => {
+  const card = (id, suit, value, frozen = false) => ({ id, suit, baseRank: value, value, frozen });
+  const order3 = [0, 1, 2];
+  const hasWechsel = (forms) => forms.some((p) => (p.formations || []).some((f) => f.type === "wechsel"));
+
+  it("getunter Wert = 1 und die Beschreibung folgt der Konstante (drift-fest)", () => {
+    expect(C.CRYSTAL_OFFSET).toBe(1);
+    expect(SKILL_DEFS.SK_ICE_12.desc).toContain(`±${C.CRYSTAL_OFFSET} Wert-Flex`);
+  });
+
+  it("±1-Flex überbrückt einen Wechsel, den die rohen Werte knapp verfehlen — aber nur MIT Kristallform", () => {
+    // Werte 10·6·9, Mitte eingefroren: roh scheitert der Zick-Zack (2. Schritt 6→9 = +3 < Mindestdifferenz 4).
+    // Mit ±1 wird die 6 zur 5 → 10→5→9 schließt den Wechsel. Verschiedene Farben → kein Farbblock stört die Prüfung.
+    const deckA = [card("a", "R", 10), card("b", "B", 6, true), card("c", "Y", 9)];
+    expect(hasWechsel(computeFormations(order3, deckA, {}, [], ["SK_ICE_12"], [], {}))).toBe(true);
+    expect(hasWechsel(computeFormations(order3, deckA, {}, [], [], [], {}))).toBe(false); // ohne Kristallform: kein Flex
+  });
+
+  it("die Reichweite ist genau ±1: eine Lücke, die ±2 bräuchte, bleibt ungebrückt", () => {
+    // Werte 10·7·9: selbst mit Flex reicht die 7 nur bis 6 (10→6→9 = zweiter Schritt +3 < 4). Erst ±2 (die alte,
+    // generfte Einstellung) erreichte die 5 und schlösse den Wechsel → pinnt CRYSTAL_OFFSET auf 1, nicht ≥2.
+    const deckB = [card("a", "R", 10), card("b", "B", 7, true), card("c", "Y", 9)];
+    expect(hasWechsel(computeFormations(order3, deckB, {}, [], ["SK_ICE_12"], [], {}))).toBe(false);
   });
 });

@@ -50,14 +50,17 @@ export function runCross({ arg, seed0 } = {}) {
   const wantDist = arg && arg("--dist", "");
   console.log(`\n=== CROSS-ARCHETYPE (Multi-Target Slot-Split, ${runs} Runs, Seeds ${seed0}..${seed0 + runs - 1}) ===`);
 
-  // Alle 15 Builds messen: reine Fraktionen + Mix + Kombis (Paare & Tripel) — gleiche Seeds.
+  // Alle 16 Builds messen: reine Fraktionen + Mix + Kombis (Paare, Tripel & der 4er-Quad) — gleiche Seeds.
+  // Der Quad (Fe+Bl+Ei+Pf) ist der BIASED, solver-gespielte 4-Fraktions-Build (Slot-Split ~2+2+1+1 über 6 Slots) —
+  // das gezielte Gegenstück zum unbiasten „Mix (Random)". Er misst die Quad-Synergie-Decke, die MAX_ARCHETYPES=4 im
+  // Live-Spiel überhaupt erst zulässt (die Paare/Tripel deckten das nicht ab → AP5-Gegenprobe).
   const pure = {};
   for (const a of ARCHES) pure[a] = measure(factionPolicy(a), runs, seed0);
   const mix = measure(randomPolicy(), runs, seed0);
   const mixFloor = mix.median;
   const pureFloorMax = (members) => Math.max(...members.map((a) => pure[a].median));
 
-  const comboRows = [...combos(ARCHES, 2), ...combos(ARCHES, 3)]
+  const comboRows = [...combos(ARCHES, 2), ...combos(ARCHES, 3), ...combos(ARCHES, 4)]
     .map((members) => ({ members, m: measure(factionPolicy(members), runs, seed0) }))
     .map(({ members, m }) => ({ members, m, vsPure: m.median / pureFloorMax(members), vsMix: m.median / mixFloor }))
     .sort((a, b) => b.m.median - a.m.median);
@@ -73,7 +76,7 @@ export function runCross({ arg, seed0 } = {}) {
   }
   console.log(`  ${"Mix (Random)".padEnd(15)} ${fmt(mix.median).padStart(9)}  1,00×    —        ${fmt(mix.p90).padStart(9)} ${fmt(mix.p95).padStart(9)} ${(mix.winrate * 100).toFixed(1).padStart(5)}%`);
 
-  console.log(`\n  — Kombis (Paare 3+3 · Tripel 2+2+2), nach Floor —`);
+  console.log(`\n  — Kombis (Paare 3+3 · Tripel 2+2+2 · Quad 2+2+1+1), nach Floor —`);
   console.log(hdr);
   for (const { members, m, vsPure, vsMix } of comboRows) {
     const label = members.map((a) => SHORT[a]).join("+");

@@ -201,7 +201,7 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   //      Vorgängerwert für Wiederholung/Treppe/Wechsel — merge Kalte Präzision/Eisschritt/alt-Kristallform);
   //      Frostbrücke = Segment-Brücke. Schicht-DAUERWERT wirkt im KAMPF (engine.js), nicht in der Erkennung (v0). ----
   const frozen = cards.map((c) => !!c.frozen);
-  const kristallform = iceFlag(skills, "kristallform"); // Joker: ±2 + Vorgängerwert (Wiederholung/Treppe/Wechsel)
+  const kristallform = iceFlag(skills, "kristallform"); // Joker: ±CRYSTAL_OFFSET (v0.3: 1) + Vorgängerwert (Wiederholung/Treppe/Wechsel)
   const frostbridge  = iceFlag(skills, "frostbridge");  // Segment-Brücke: Formation darf an einer Frostkarte die Segmentgrenze queren
   const val = cards.map((c) => c.value);
   // Familien-Rollen (Rarität #167 Kat. C): Joker (C_JOKER) + Bindeglied (C_BRIDGE) aus den gehaltenen Familien-Stufen.
@@ -310,7 +310,7 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));
   markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, treppeEnd, isJT, noteCross);
   // (Fallende Treppen „Abstieg" entfielen #179 — E_BIGSTEP deckt Rückschritte/Richtungswechsel innerhalb der Treppe ab.)
-  // Wechsel: Kristallform gibt eingefrorenen Karten ±2-Wertoptionen (#165; Permafrost/Eisschritt gelten hier NICHT).
+  // Wechsel: Kristallform gibt eingefrorenen Karten ±CRYSTAL_OFFSET-Wertoptionen (#165; Permafrost/Eisschritt gelten hier NICHT).
   // E_PENDULUM IV: wFactorStart hebt den Wechsel-Faktor bereits ab Länge 2 auf ×1,35 (sonst erst ab der 3. Karte).
   const valSetWechsel = cards.map((c, k) => (frozen[k] && kristallform ? [val[k] - CRYSTAL_OFFSET, val[k], val[k] + CRYSTAL_OFFSET] : [val[k]]));
   const wechselFactor = (ord) => Math.max(escalatingFactor(ord, WECHSEL_BASE), ord >= 2 && wFactorStart ? wFactorStart : 1);

@@ -4,7 +4,7 @@ import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, build
   offerArchetypes, archetypesWithSkills, decodeArchetypes,
   ionScoreFor, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor } from "../src/game/skills.js";
-import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE } from "../src/game/constants.js";
+import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, MAX_ARCHETYPES } from "../src/game/constants.js";
 
 const LR = "SK_LIGHTNING_01";
 const ALL = Object.keys(SKILL_DEFS);
@@ -51,24 +51,33 @@ describe("addCharge — gedeckelt & immutabel", () => {
   });
 });
 
-describe("archetypesWithSkills / offerArchetypes (Prototyp: alle 3 Archetypen)", () => {
-  it("F3: lightning, fire & ice haben Skills; alles owned → keiner", () => {
-    expect(archetypesWithSkills([])).toEqual(["lightning", "fire", "ice", "plant"]); // Reihenfolge = ARCHETYPE_ORDER (4. Fraktion Pflanze)
+describe("archetypesWithSkills / offerArchetypes (4 Archetypen, Cap = MAX_ARCHETYPES)", () => {
+  const ALL4 = ["lightning", "fire", "ice", "plant"];
+  it("F3: alle vier Fraktionen haben Skills; alles owned → keiner", () => {
+    expect(archetypesWithSkills([])).toEqual(ALL4); // Reihenfolge = ARCHETYPE_ORDER (4. Fraktion Pflanze)
     expect(archetypesWithSkills(ALL)).toEqual([]);
   });
-  it("0 aktiv → ALLE verfügbaren Archetypen (Prototyp: Cap 3)", () => {
-    expect(offerArchetypes([], ["lightning"], makeRng(3))).toEqual(["lightning"]);           // nur 1 verfügbar
-    expect(offerArchetypes([], ["lightning", "fire", "ice"], makeRng(3))).toHaveLength(3);   // alle 3
+  it("0 aktiv → ALLE verfügbaren Archetypen (bis MAX_ARCHETYPES = 4)", () => {
+    expect(offerArchetypes([], ["lightning"], makeRng(3))).toEqual(["lightning"]); // nur 1 verfügbar
+    expect(new Set(offerArchetypes([], ALL4, makeRng(3)))).toEqual(new Set(ALL4)); // alle 4 → 3+3+3+3
   });
-  it("1 aktiv → aktiver + alle übrigen verfügbaren", () => {
-    const r = offerArchetypes(["lightning"], ["lightning", "fire", "ice"], makeRng(3));
-    expect(r).toContain("lightning");
-    expect(r).toHaveLength(3);
-    expect(new Set(r)).toEqual(new Set(["lightning", "fire", "ice"]));
+  it("Cap: nie mehr als MAX_ARCHETYPES, auch bei mehr verfügbaren (synthetisch)", () => {
+    expect(MAX_ARCHETYPES).toBe(4); // Live-Default (ENV SIM_MAX_ARCHETYPES übersteuerbar)
+    const many = ["a", "b", "c", "d", "e", "f"]; // 6 synthetische Archetypen > Cap
+    expect(offerArchetypes([], many, makeRng(3))).toHaveLength(MAX_ARCHETYPES);
+    expect(offerArchetypes(["a", "b", "c", "d", "e"], many, makeRng(3))).toHaveLength(MAX_ARCHETYPES); // 5 aktiv → auf 4 gekappt
   });
-  it("2 aktiv → beide aktiven + der dritte (kein Cap mehr bei 2)", () => {
-    expect(new Set(offerArchetypes(["lightning", "fire"], ["lightning", "fire", "ice"], makeRng(3))))
-      .toEqual(new Set(["lightning", "fire", "ice"]));
+  it("1–3 aktiv → aktive + zufällige übrige, aufgefüllt bis 4", () => {
+    const r1 = offerArchetypes(["lightning"], ALL4, makeRng(3));
+    expect(r1).toContain("lightning");
+    expect(new Set(r1)).toEqual(new Set(ALL4)); // 1 aktiv → alle 4
+    const r3 = offerArchetypes(["lightning", "fire", "ice"], ALL4, makeRng(3));
+    expect(new Set(r3)).toEqual(new Set(ALL4)); // 3 aktiv → +Pflanze = alle 4
+  });
+  it("4 aktiv → genau die vier aktiven (keine neue Fraktion mehr)", () => {
+    expect(new Set(offerArchetypes(ALL4, ALL4, makeRng(3)))).toEqual(new Set(ALL4));
+    // nur VERFÜGBARE aktive zählen: aktiv+erschöpft (alles owned) fällt raus
+    expect(offerArchetypes(["lightning", "fire"], ["fire"], makeRng(3))).toEqual(["fire"]);
   });
 });
 
