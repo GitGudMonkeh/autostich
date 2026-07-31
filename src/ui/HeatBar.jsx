@@ -104,7 +104,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {} }) {
           <div className="flex flex-col justify-center gap-1.5 shrink-0">
             {showAsh && (
               <CounterCell icon={<AshIcon />} value={ash} label="Asche" color={ASH} dim={ash === 0}
-                title="Asche — Brandmarken sammeln sie; die Ascheschmiede wandelt sie in dauerhaften Kartenwert." />
+                title="Asche — Brandmarken sammeln sie; die Ascheschmiede wandelt sie in dauerhaften Kartenwert. Gehaltene Asche gibt zusätzlich kleinen Score je Feuer-Sieg." />
             )}
             {showForge && (
               <CounterCell icon={<AnvilIcon />} value={`+${totalForged}`} label="Schmiede" color={FORGE}
