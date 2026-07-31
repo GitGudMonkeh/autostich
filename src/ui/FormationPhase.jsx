@@ -8,6 +8,7 @@ import { LayoutPerks } from "./LayoutPerks.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { audio } from "./audio.js";
 
+const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
 const strengthOf = (fs) => (fs || []).reduce((s, pf) => s + ((pf.mult || 1) - 1), 0);
@@ -122,7 +123,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
             </span>
           </div>
           <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
-            style={{ background: "#5ab87a", color: "#0c0c10" }}>
+            style={{ background: GOLD, color: "#141419" }}>
             Durchlauf starten
             <span className="ml-2 font-normal opacity-80">· {count} Formationen · max ×{fmt(maxMult)}</span>
           </button>

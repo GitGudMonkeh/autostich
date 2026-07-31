@@ -3,6 +3,8 @@ import { PERK_DEFS } from "../game/perks.js";
 import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
 
+const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
+
 /* Kartenrollen-Zielauswahl (V2 §22.6 C / §22.5): öffnet nach dem Pick eines Ziel-Perks.
    Genau needsTarget Karten antippen, dann bestätigen. Danach ist die Rolle fixiert.
    #112: nutzt das geteilte CardGrid → Desktop-Kompakt-Styling + Formations-/Rollen-Kontext wie in der Aufstellung. */
@@ -37,7 +39,7 @@ export function TargetSelect({ state, onConfirm }) {
           <span className="text-xs opacity-60 tabular-nums">{sel.length} / {need} gewählt</span>
           <button onClick={() => ready && onConfirm(sel)} disabled={!ready}
             className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
-            style={{ background: ready ? "#5ab87a" : "#2a2a33", color: ready ? "#0c0c10" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
+            style={{ background: ready ? GOLD : "#2a2a33", color: ready ? "#141419" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
             Bestätigen
           </button>
         </div>

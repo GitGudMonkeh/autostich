@@ -6,6 +6,8 @@ import { FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
 import { CardGrid } from "./CardGrid.jsx";
 
+const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe (raritätsunabhängig)
+
 /* Familien-Ziel-Auswahl (Rarität #167, Spec §2.3/§2.4) — öffnet nach dem Pick einer Stufe mit `pickTarget`.
    Zwei Modi (state.familyTarget.kind):
    - "suits" (Kat. A: A_SUIT_BOOST III/IV = 1 Farbe, A_SUIT_DUEL III/IV = 1 bzw. 2 Farben, Reihenfolge Gewinner→Verlierer)
@@ -96,7 +98,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
           <span className="text-xs opacity-60 tabular-nums">{sel.length} / {need} gewählt</span>
           <button onClick={() => ready && onConfirm()} disabled={!ready}
             className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
-            style={{ background: ready ? tm.color : "#2a2a33", color: ready ? "#141419" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
+            style={{ background: ready ? GOLD : "#2a2a33", color: ready ? "#141419" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
             Bestätigen
           </button>
         </div>
