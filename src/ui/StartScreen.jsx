@@ -4,12 +4,22 @@ import { GlobalLeaderboard } from "./GlobalLeaderboard.jsx";
 import { RunDetail } from "./RunDetail.jsx";
 import { MuteButton } from "./MuteButton.jsx";
 import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
+import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
 import { fmtScore } from "./format.js";
 
-/* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste. */
-export function StartScreen({ onStart, highscores, best, onOptions, onStats, onCustomize, muted, onToggleMute, username = "", onEditName, myEntry = null, pubToken = 0 }) {
+/* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste.
+   #205: Seed-Paste-Leiste ganz oben („Seed einfügen & spielen") — der schnelle Weg, eine Challenge anzunehmen. */
+export function StartScreen({ onStart, onPlaySeed = null, highscores, best, onOptions, onStats, onCustomize, muted, onToggleMute, username = "", onEditName, myEntry = null, pubToken = 0 }) {
   const [showGuide, setShowGuide] = useState(false);
   const [detail, setDetail] = useState(null); // #169 FB-8: gewählter lokaler Lauf → RunDetail-Overlay
+  const [seedInput, setSeedInput] = useState("");
+  const [seedError, setSeedError] = useState(false);
+  const tryPlaySeed = () => {
+    const s = parseSeed(seedInput);
+    if (s == null) { setSeedError(true); return; }
+    setSeedError(false);
+    onPlaySeed(s);
+  };
 
   // Beim allerersten Start die Anleitung einmal automatisch zeigen (#12).
   useEffect(() => {
@@ -30,6 +40,28 @@ export function StartScreen({ onStart, highscores, best, onOptions, onStats, onC
         </h1>
         <p className="text-sm opacity-45 mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
       </div>
+
+      {/* #205: Seed einfügen & spielen — Challenge annehmen, ohne den Statistik-Hub zu öffnen. */}
+      {onPlaySeed && (
+        <div className="w-full max-w-sm">
+          <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
+            <input
+              value={seedInput}
+              onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
+              placeholder="Seed einfügen & spielen …"
+              aria-label="Seed einfügen und spielen"
+              className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono tracking-wide"
+              style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#30303a"}`, color: "#e8e8ea" }}
+            />
+            <button type="submit" disabled={!seedInput.trim()}
+              className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
+              style={{ background: "#8a7de0", color: "#141419" }}>
+              ↻ Spielen
+            </button>
+          </form>
+          {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>Kein gültiger Seed — prüf den Code und versuch es erneut.</div>}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3 justify-center">
         <button
@@ -114,7 +146,7 @@ export function StartScreen({ onStart, highscores, best, onOptions, onStats, onC
       <GlobalLeaderboard framed mine={myEntry} reloadToken={pubToken} />
 
       {showGuide && <AnleitungModal onClose={closeGuide} />}
-      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} />}
+      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} onPlaySeed={onPlaySeed} />}
     </div>
   );
 }

@@ -1,13 +1,17 @@
 import { useEscape } from "./useEscape.js";
 import { RunStats } from "./RunStats.jsx";
 import { CardGrid } from "./CardGrid.jsx"; // #201.8 Stufe B: finale Aufstellung aus dem Snapshot (schreibgeschützt)
+import { SeedChip } from "./SeedChip.jsx"; // #205 Challenger Mode: Seed kopieren / nachspielen
 import { fmtScore } from "./format.js";
 
 /* #169 FB-8: Detailansicht eines Bestenlisten-Eintrags (lokal ODER global) — Overlay über der Liste, zeigt
    denselben Statblock wie der eigene Victory-Screen (RunStats). Escape/Klick-außen schließt. `entry` ist bereits
    normalisiert (perks/skills als ID-Arrays; global-Strings dekodieren die Aufrufer). Alt-/pre-Migration-Einträge
    liefern nur einen Teil der Felder → RunStats zeigt „–" bzw. blendet leere Blöcke aus. */
-export function RunDetail({ entry, rank = null, onClose }) {
+/* #205: `anonymized` (fremder Board-Eintrag) blendet Build-Blöcke aus — Perk-/Skill-Chips (via RunStats) UND
+   die finale Aufstellung — sodass fremde Runs nicht 1:1 nachbaubar sind (nur Kennzahlen/Icons/Score/Seed).
+   Eigene/lokale Läufe bleiben voll. `onPlaySeed` (optional) macht den Seed-Chip nachspielbar. */
+export function RunDetail({ entry, rank = null, onClose, anonymized = false, onPlaySeed = null }) {
   useEscape(onClose);
   if (!entry) return null;
   const name = entry.name;
@@ -27,11 +31,17 @@ export function RunDetail({ entry, rank = null, onClose }) {
         <div className="text-center my-3">
           <div className="text-4xl font-bold" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>
           <div className="text-xs opacity-50 mt-0.5">Score</div>
+          {/* #205: Seed dieses Laufs — kopieren & (optional) nachspielen. Alt-Läufe ohne Seed zeigen nichts. */}
+          {entry.seedCode && (
+            <div className="flex justify-center mt-2">
+              <SeedChip code={entry.seedCode} onReplay={onPlaySeed ? () => onPlaySeed(entry.seed) : null} />
+            </div>
+          )}
         </div>
-        <RunStats entry={entry} />
+        <RunStats entry={entry} anonymized={anonymized} />
         {/* #201.8 Stufe B: finale Deck-Aufstellung, sofern der Lauf einen Snapshot hat (nur eigene/lokale Läufe;
-            alte Einträge & globale Fremd-Läufe haben keinen → Abschnitt wird ausgeblendet). */}
-        {entry.deckSnapshot?.cards?.length > 0 && (
+            alte Einträge & globale Fremd-Läufe haben keinen → Abschnitt wird ausgeblendet). #205: bei anonymized aus. */}
+        {!anonymized && entry.deckSnapshot?.cards?.length > 0 && (
           <details className="mt-4 rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">Finale Aufstellung ansehen</summary>
             <div className="p-3 pt-0">

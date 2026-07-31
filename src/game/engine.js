@@ -1,5 +1,6 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
+import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus } from "./families.js";
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
@@ -94,7 +95,14 @@ export function resolveTrick(state, rng = Math.random) {
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
     architect = null, architectEnabled = false, architectPre = null, // Architekt (#202, Shop-Ersatz): Gebäude-Overlay (8×5) + Durchlauf-Precompute
     shopDisabled = false, // Sim-Referenz: 'shop'-Slots als No-Op (weder Shop noch Architekt) → Null-Baseline „ohne"
+    seed = null, offerRerolls = 0, // #205 Challenger Mode: Lauf-Seed (null = unseeded/Sim) + Reroll-Index des akt. Angebots
   } = state;
+
+  // #205: adressierte rng-Ableitung im Durchlauf. Bei gesetztem seed ein FRISCHER, build-unabhängig adressierter
+  // Sub-Strom `(seed, ...parts)` je Zieh-Punkt (Crit/Ionisierung/Neumischung/Angebotsbau); sonst der injizierte rng
+  // (Sim/Alt-Verhalten byte-identisch). Weil DECISION_SCHEDULE je Durchlauf genau eine Entscheidung liefert, ist
+  // `(seed, cycle, kind[, pos/index])` eindeutig — die interne Draw-Zahl einer Stelle bleibt lokal (kein Cross-Bleed).
+  const rngAtOr = (...parts) => (seed != null ? rngAt(seed, ...parts) : rng);
 
   // Rarität-Umbau #167 (Schritt 2): engine-gekoppelte D-Stufen liefern ihre Parameter über die GEHALTENE
   // Familien-Stufe (familyTierParam). Ohne Familie greifen die alten flachen D15/D16/D17-Konstanten →
@@ -399,8 +407,9 @@ export function resolveTrick(state, rng = Math.random) {
       if (hasVergletscherung(skills)) {
         const debuff = Math.max(1, capLayers * C.VERGLETSCHERUNG_PER_LAYER);
         const pool = oppDeck.map((c) => c.id).filter((id) => !(id in newFrostbitePending));
+        const glaciateRng = rngAtOr(cycle, "glaciate", pos); // #205: eigener Sub-Strom je Stich
         for (let k = 0; k < C.VERGLETSCHERUNG_COUNT && pool.length; k++) {
-          const id = pool.splice(Math.floor(rng() * pool.length), 1)[0];
+          const id = pool.splice(Math.floor(glaciateRng() * pool.length), 1)[0];
           newFrostbitePending[id] = Math.max(newFrostbitePending[id] || 0, debuff);
         }
       }
@@ -545,7 +554,7 @@ export function resolveTrick(state, rng = Math.random) {
     critMultiplier = critMultiplierFor(perks, critCtx, statCritMult) + lightningCritMult(skills)
                    + (lightning?.durchschlagMult || 0)
                    + ((lightning && lightning.dischargeArmed) ? C.ENTLADUNG_CRIT_MULT : 0);
-    isCrit = rollCrit(critChance, forceCrit, rng) && !reducedRepeat; // forceCrit = L10; reducedRepeat = Zeitsegment III (§10: kein Crit in der Wiederholung)
+    isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = L10; reducedRepeat = Zeitsegment III
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.
@@ -706,12 +715,12 @@ export function resolveTrick(state, rng = Math.random) {
             const ionN = ionizeCountFor(skills) * (hasDoubleDischarge(skills) ? C.DOPPELENTLADUNG_FACTOR : 1);
             if (hasBlitzcatcher(skills)) {
               // Blitzfänger: volle Karten (5 Stapel) werden nicht ionisiert → je +2 temp Wert (nächstes Auftauchen) & +1 Ladung.
-              const res = ionizeCardsWithCatch(deck, undrawn, ionN, rng);
+              const res = ionizeCardsWithCatch(deck, undrawn, ionN, rngAtOr(cycle, "ion", pos));
               deck = res.deck;
               for (const cid of res.catchIds) newIceTemp[cid] = Math.max(newIceTemp[cid] || 0, C.BLITZFAENGER_VALUE);
               blitzCatches = res.catchIds.length;
             } else {
-              deck = ionizeCards(deck, undrawn, ionN, rng);
+              deck = ionizeCards(deck, undrawn, ionN, rngAtOr(cycle, "ion", pos));
             }
             consumed = true;
           }
@@ -774,7 +783,7 @@ export function resolveTrick(state, rng = Math.random) {
     // Wetterleuchten (v0): Serie erreicht eine Schwelle → ionisiert Karten (Serie zündet Ionisierung).
     if (hasWetterleuchten(skills) && serieStreak > 0 && serieStreak % C.WETTERLEUCHTEN_THRESHOLD === 0) {
       const undrawnW = [...new Set(seq.slice(pos + 1).map((p) => playerOrder[p]))];
-      deck = ionizeCards(deck, undrawnW, C.WETTERLEUCHTEN_COUNT, rng);
+      deck = ionizeCards(deck, undrawnW, C.WETTERLEUCHTEN_COUNT, rngAtOr(cycle, "weather", pos));
     }
     // Spannungsstau (v0): Nicht-Crit-Siege rampen die Crit-Chance (bis Cap); ein Crit entlädt & resettet.
     if (hasSpannungsstau(skills) && lightning && lightning.active) {
@@ -1004,7 +1013,7 @@ export function resolveTrick(state, rng = Math.random) {
       phase = "gameover";
     } else {
       // Neuer Durchlauf: NUR das Gegnerdeck neu mischen; Spieler-Reihenfolge bleibt (persistent). pos zurück.
-      oppOrder = shuffledOrder(oppDeck.length, rng);
+      oppOrder = shuffledOrder(oppDeck.length, rngAtOr(cycle, "oppdeal")); // #205: Gegner-Neumischung adressiert je (neuem) cycle
       pos = 0;
       // Vergletscherung (v0): die im gerade beendeten Durchlauf gesetzten Gegner-Marken {id: −Wert} werden jetzt aktiv.
       newFrostbiteActive = newFrostbitePending;
@@ -1022,17 +1031,17 @@ export function resolveTrick(state, rng = Math.random) {
       if (decision === "stat") {
         phase = "levelup"; newStatOffer = STAT_IDS; // immer alle Stats (Shop-Spec §4.3: fünf inkl. Einkommen)
       } else if (decision === "skill") {
-        const soff = buildSkillOffer(skills, activeArchetypes, rng, C.SKILLS_OFFERED, skillLegendaryChance(shop));
+        const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(shop));
         if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = skillFate; }
-        else { const off = buildPerkOffer(perks, familyTiers, rng, C.PERKS_OFFERED, perkLegendaryChance(shop)); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; } } // leerer Skill-Pool → Perk
+        else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop)); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; } } // leerer Skill-Pool → Perk
       } else if (decision === "perk") {
-        const off = buildPerkOffer(perks, familyTiers, rng, C.PERKS_OFFERED, perkLegendaryChance(shop));
+        const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop));
         if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; }
       } else if (decision === "shop" && architectEnabled) {
         // Architekt-Phase (#202, Shop-Ersatz): STATT des Shops die Architekt-Phase öffnen — ein frisches Bauplan-Angebot
         // ziehen (deterministisch über rng) und die Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen.
         phase = "architect";
-        newArchitect = { ...(newArchitect || architect), offers: buildArchitectOffer(newArchitect || architect, rng), actedMain: false, moved: false };
+        newArchitect = { ...(newArchitect || architect), offers: buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch")), actedMain: false, moved: false };
       } else if (decision === "shop" && shopDisabled) {
         // Sim-Referenz „ohne": weder Shop noch Architekt — die Entscheidung ist ein No-Op, der Durchlauf startet direkt
         // (Null-Baseline). Kein rng-Verbrauch.
@@ -1043,7 +1052,7 @@ export function resolveTrick(state, rng = Math.random) {
         // Shop reserviertes Item (§10 P4) als zusätzliches Angebot anhängen (Reservierung verfällt damit).
         phase = "shop";
         shop = { ...shop, coins: (shop.coins || 0) + shopIncomeFor(economyStatLevel),
-                 offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rng, perks, SHOP_FAMILY_DEFS), purchasedOfferIds: [] };
+                 offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rngAtOr(cycle, "shop", 0), perks, SHOP_FAMILY_DEFS), purchasedOfferIds: [] };
         shop = withReservedOffer(shop, SHOP_ITEM_DEFS, perks, SHOP_FAMILY_DEFS);
       } else if (decision === "formation") {
         // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ Shop-Feinjustierung), Vorschau berechnen.
@@ -1060,6 +1069,7 @@ export function resolveTrick(state, rng = Math.random) {
 
   return {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
+    offerRerolls: 0, // #205: neues (Zyklus-Ende-)Angebot → Reroll-Index zurück auf 0 (Rerolls im Reducer zählen hoch)
     score, winStreak, bestStreak, wins, losses, ties,
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 

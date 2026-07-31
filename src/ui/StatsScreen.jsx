@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useEscape } from "./useEscape.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { RunDetail } from "./RunDetail.jsx";
+import { SeedChip } from "./SeedChip.jsx"; // #205 Challenger Mode: kopierbarer Seed + Nachspielen
 import { loadRunHistory, loadProfile } from "../game/storage.js";
 import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
 import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
@@ -87,13 +88,61 @@ function BarRow({ label, color, frac, right }) {
   );
 }
 
-export function StatsScreen({ onClose }) {
+// #205: Lauf-Historie nach Seed gruppieren (nur Läufe MIT Seed). Je Seed: bester lokaler Score, Anzahl Läufe,
+// jüngste Aktivität. Sortiert nach jüngster Aktivität (Challenge-Reiter „was du zuletzt herausgefordert hast").
+function challengeSeeds(history) {
+  const by = new Map();
+  for (const r of history) {
+    const code = r.seedCode;
+    if (!code) continue;
+    const g = by.get(code) || { code, seed: r.seed, best: 0, plays: 0, lastTs: 0 };
+    g.best = Math.max(g.best, Math.floor(r.score || 0));
+    g.plays += 1;
+    g.lastTs = Math.max(g.lastTs, r.ts || 0);
+    by.set(code, g);
+  }
+  return [...by.values()].sort((a, b) => b.lastTs - a.lastTs);
+}
+
+// #205 Challenges-Reiter (lokal): Liste eigener Seeds mit bestem lokalem Score + „↻ Nachspielen" / „⧉ kopieren".
+// Der globale Top-3-pro-Seed-Vergleich ist board-abhängig und kommt mit der Online-Bestenliste (Schicht B, #197).
+function ChallengesPanel({ seeds, onPlaySeed }) {
+  if (!seeds || seeds.length === 0) {
+    return (
+      <div className="text-center opacity-55 py-10 text-sm leading-relaxed">
+        Noch keine Seeds. Jeder Lauf bekommt jetzt einen teilbaren Seed — spiel einen Run,
+        oder füg auf der Startseite einen fremden Seed ein und nimm die Challenge an.
+      </div>
+    );
+  }
+  return (
+    <Section title="Deine Seeds" hint="zuletzt gespielt zuerst">
+      <div className="grid gap-1.5">
+        {seeds.map((g) => (
+          <div key={g.code} className="flex items-center gap-2 flex-wrap px-3 py-2 rounded-lg"
+            style={{ background: "#141419", border: "1px solid #26262e" }}>
+            <SeedChip code={g.code} onReplay={onPlaySeed ? () => onPlaySeed(g.seed) : null} />
+            <span className="ml-auto text-xs opacity-55 tabular-nums">{g.plays}× gespielt</span>
+            <span className="font-bold tabular-nums" style={{ color: "#d4a63a" }}>{fmtScore(g.best)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="text-[11px] opacity-40 mt-3 leading-relaxed">
+        Bestwert = dein bester lokaler Lauf auf diesem Seed. Der globale Vergleich (Top-3 pro Seed) kommt mit der Online-Bestenliste.
+      </div>
+    </Section>
+  );
+}
+
+export function StatsScreen({ onClose, onPlaySeed = null }) {
   useEscape(onClose);
   const [detail, setDetail] = useState(null); // { entry, rank } | null
+  const [tab, setTab] = useState("overview"); // #205: „overview" (bestehende Statistik) | „challenges"
 
   // Beim Öffnen einmal frisch laden (nach jedem Lauf aktuell).
   const history = useMemo(() => loadRunHistory(), []);
   const profile = useMemo(() => loadProfile(), []);
+  const seeds = useMemo(() => challengeSeeds(history), [history]);
 
   const empty = history.length === 0;
   const games = profile.games || 0;
@@ -126,7 +175,20 @@ export function StatsScreen({ onClose }) {
           <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
         </div>
 
-        {empty ? (
+        {/* #205: Reiter — Übersicht (bestehende Statistik) · Challenges (Seeds nachspielen). */}
+        <div className="flex gap-1 mt-4" role="tablist">
+          {[["overview", "Übersicht"], ["challenges", "Challenges"]].map(([id, label]) => (
+            <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all"
+              style={tab === id ? { background: "#8a7de0", color: "#141419" } : { background: "#20202a", color: "#c8c8d0", border: "1px solid #30303a" }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "challenges" ? (
+          <ChallengesPanel seeds={seeds} onPlaySeed={onPlaySeed} />
+        ) : empty ? (
           <div className="text-center opacity-50 py-12">Noch keine Läufe — spiel einen Run, dann erscheinen hier deine Statistiken.</div>
         ) : (
           <>
@@ -273,7 +335,7 @@ export function StatsScreen({ onClose }) {
         )}
       </div>
 
-      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} />}
+      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} onPlaySeed={onPlaySeed} />}
     </div>
   );
 }

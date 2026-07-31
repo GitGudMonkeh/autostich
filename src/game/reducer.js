@@ -1,4 +1,5 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
+import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js";
 import { SHOP_FAMILY_DEFS } from "./shopFamilies.js";
@@ -20,6 +21,10 @@ import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCe
 // Architekt (#202, Shop-Ersatz): an computeFormations weitergereicht, damit Formations-Vorschauen (Aufstellungsphase)
 // die Gebäude-Effekte sehen. null, solange das Flag aus ist (A/B-neutral).
 const archOf = (s) => (s && s.architectEnabled ? s.architect : null);
+// #205 Challenger Mode: adressierte rng-Ableitung. Bei gesetztem seed ein FRISCHER, build-unabhängig
+// adressierter Sub-Strom `(seed, ...parts)`; sonst der als Action-Payload injizierte rng (Sim/Alt-Verhalten
+// byte-identisch). Adressen nutzen state.cycle + eine feste Kennung, damit jeder Zieh-Punkt seinen eigenen Strom hat.
+const rngFor = (state, action, ...parts) => (state.seed != null ? rngAt(state.seed, ...parts) : action.rng);
 // Start-playerOrder mit Formations-Potential im Ziel-Band (#Pass6): neu mischen, bis Σ(mult−1) in
 // [FORMATION_START_MIN, MAX] liegt, sonst nach TRIES die potential-nächste Anordnung (Fallback → terminiert
 // immer). Rein deterministisch (rng injiziert); begrenzt die Start-Varianz des Formations-Potentials.
@@ -36,14 +41,20 @@ function startOrderInBand(deck, rng) {
   return best;
 }
 
-export function initialState(rng = Math.random) {
+export function initialState(rng = Math.random, seed = null) {
   const deck = buildDeck();
   const oppDeck = buildDeck();
+  // #205 Seedbare Runs: bei gesetztem seed leiten sich Start-Deal + Gegner-Deal aus GETRENNTEN
+  // adressierten Sub-Strömen ab (build-unabhängig, reproduzierbar); sonst der injizierte rng
+  // (Sim/Alt-Verhalten byte-identisch — seed == null → exakt der bisherige Pfad).
+  const dealRng = seed != null ? rngAt(seed, 0, "deal") : rng;
+  const oppDealRng = seed != null ? rngAt(seed, 0, "oppdeal") : rng;
   return {
     phase: "play",
+    seed,                                             // #205: Lauf-Seed (32-bit uint; null = unseeded, z. B. Sim)
     deck, oppDeck,                                    // deck = Spieler (perk-modifizierbar)
-    playerOrder: startOrderInBand(deck, rng),         // Ziehreihenfolge, Formations-Potential im Band (#Pass6)
-    oppOrder: shuffledOrder(oppDeck.length, rng),
+    playerOrder: startOrderInBand(deck, dealRng),     // Ziehreihenfolge, Formations-Potential im Band (#Pass6)
+    oppOrder: shuffledOrder(oppDeck.length, oppDealRng),
     pos: 0, cycle: 0, trickNo: 0,
     score: 0,
     // #131 Rundenscore: Score-Zuwachs je Durchlauf + die letzten zwei abgeschlossenen Rundenscores, damit die
@@ -98,6 +109,7 @@ export function initialState(rng = Math.random) {
     shopDisabled: false,           // Sim-Referenz: 'shop'-Slots als No-Op (Null-Baseline „ohne")
     rerolls: C.BASE_REROLLS,       // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill) — ersetzt shop.perkRerolls/skillRerolls; Baseline, kein Nachschub (#217-Reward-Fläche)
     rerollsUsed: 0,                // #214: Zähler benutzter Rerolls (Perk+Skill, bezahlt ODER gratis) über den Lauf → Sparfuchs-Challenge (deck_c3 „noRerollRun")
+    offerRerolls: 0,               // #205: Reroll-Index des AKTUELLEN Angebots (Original = 0) → adressiert `(seed,cycle,kind,offerRerolls)`; von der Engine bei jedem frischen Angebot auf 0 gesetzt
     lastTrick: null,
   };
 }
@@ -120,7 +132,9 @@ export function reducer(state, action) {
     case "START_RUN":   // frischer Lauf aus dem Menü / Neustart
     case "RESET": {
       // Start-Entscheidung vor Durchlauf 0 = Stat (DECISION_CYCLE[0], §22.2). Immer alle vier Stats.
-      const s = initialState(action.rng);
+      // #205: action.seed (Challenge/frischer Lauf) macht den Lauf seedbar; null (Sim) → Alt-Verhalten via action.rng.
+      const seed = action.seed != null ? (action.seed >>> 0) : null;
+      const s = initialState(action.rng, seed);
       // Architekt-Flag (#202): das Spiel startet mit architect:true (Shop-Ersatz); der Sim übersteuert per Action (A/B),
       // sonst greift der Modul-Default (env ARCHITECT). shopDisabled = Sim-Null-Baseline „ohne".
       const architectEnabled = action.architect != null ? !!action.architect : !!C.ARCHITECT_ENABLED;
@@ -225,7 +239,7 @@ export function reducer(state, action) {
                  shopTarget: { offerId: offer.offerId, itemId: def.id, cards: [], colors: {}, segment: null, position: null, colorPair: [], boundary: null, formationType: null, category: null, targetOfferId: null } };
       }
       // Sofort-Items (kein Ziel, z. B. Planung ab S5): Effekt anwenden, danach generische Münz-/Kauf-Buchhaltung.
-      const patch = def.apply ? def.apply(state, null, action.rng) : {};
+      const patch = def.apply ? def.apply(state, null, rngFor(state, action, state.cycle, "shopbuy")) : {};
       const merged = { ...state, ...patch };
       const newShop = { ...(merged.shop || shop) };
       newShop.coins = (shop.coins || 0) - offer.price;                          // Preis sofort abziehen
@@ -344,7 +358,7 @@ export function reducer(state, action) {
             const cats = scope === Infinity ? C.SHOP_CATEGORIES
               : Array.from({ length: Math.min(scope, C.SHOP_CATEGORIES.length) }, (_, k) => C.SHOP_CATEGORIES[(i0 + k) % C.SHOP_CATEGORIES.length]);
             let sh = base;
-            for (const cat of cats) sh = rerollCategory(sh, cat, SHOP_ITEM_DEFS, action.rng, state.perks, null, SHOP_FAMILY_DEFS);
+            for (const cat of cats) sh = rerollCategory(sh, cat, SHOP_ITEM_DEFS, rngFor(state, action, state.cycle, "shopreroll", cat), state.perks, null, SHOP_FAMILY_DEFS);
             return { ...state, phase: "shop", shopTarget: null, shop: sh };
           }
           // Reservierung: gewähltes Angebot merken; `reserveShops` = Persistenz (Anzahl folgender Shops).
@@ -362,7 +376,7 @@ export function reducer(state, action) {
         // gehaltenen Familienrang — so bekommt eine frische Karte den vollen Stufenwert (kein +0-Nachkauf).
         const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, order: state.playerOrder };
         const { deck } = applyFamilyPick(st.familyId, st.famTier,
-          { familyTiers: {}, deck: state.deck, roles: state.roles, target }, action.rng, SHOP_FAMILY_DEFS);
+          { familyTiers: {}, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "shopfam"), SHOP_FAMILY_DEFS);
         const newDeck = deck || state.deck;
         const newShop = { ...shop, coins: (shop.coins || 0) - offer.price,          // Preis erst jetzt abziehen (§12.2)
           purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
@@ -386,7 +400,7 @@ export function reducer(state, action) {
         || !(shop.offers || []).some((o) => o.offerId === st.targetOfferId)
         || (shop.purchasedOfferIds || []).includes(st.targetOfferId))) return state;
       const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, position: st.position, colorPair: st.colorPair, boundary: st.boundary, formationType: st.formationType, category: st.category, offerId: st.targetOfferId };
-      const patch = def.apply ? def.apply(state, target, action.rng) : {};
+      const patch = def.apply ? def.apply(state, target, rngFor(state, action, state.cycle, "shopitem")) : {};
       const merged = { ...state, ...patch };
       const deck = patch.deck || state.deck;
       // Buchhaltung auf dem (evtl. durch apply veränderten) Shop — z. B. Anker-Items legen shop.anchors an.
@@ -441,7 +455,7 @@ export function reducer(state, action) {
       if (!state.offer || !state.offer.some((e) => e && e.familyId === familyId && e.tier === tier)) return state;
       const applyNow = () => {
         const { familyTiers, deck, roles } = applyFamilyPick(
-          familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rng);
+          familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rngFor(state, action, state.cycle, "pick"));
         return { ...state, familyTiers, deck, roles, offer: null, phase: "play" };
       };
       const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
@@ -497,7 +511,7 @@ export function reducer(state, action) {
       if (sel.length !== ft.need) return state;                                            // genau `need` Ziele nötig
       const target = { suits: ft.suits, cards: ft.cards, formationType: ft.formationType, order: state.playerOrder };
       const { familyTiers, deck, roles } = applyFamilyPick(
-        ft.familyId, ft.tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, action.rng);
+        ft.familyId, ft.tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
       // Rollen/Deck können die Formationserkennung ändern (C_JOKER/C_BRIDGE, C_SACRIFICE-Deckmod) → neu berechnen (wie CONFIRM_TARGET).
       const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers);
       return { ...state, familyTiers, deck, roles, formations, phase: "play", familyTarget: null };
@@ -566,7 +580,7 @@ export function reducer(state, action) {
       // Eis (#93 F3): dieser Pick friert so viele NEUE eigene Karten ein, dass das Ziel (frozenTargetFor) erreicht ist.
       if (arch === "ice") {
         const toFreeze = Math.max(0, frozenTargetFor(skills) - frozenCount(deck));
-        if (toFreeze > 0) deck = freezeCards(deck, toFreeze, action.rng, hasFrostwahl(skills)); // Frostwahl: niedrigste Karten gezielt
+        if (toFreeze > 0) deck = freezeCards(deck, toFreeze, rngFor(state, action, state.cycle, "freeze"), hasFrostwahl(skills)); // Frostwahl: niedrigste Karten gezielt
       }
       // Pflanze (v0): erster Pflanze-Skill → Alter Anker (1 Karte reif: grün, Wert 11) + Setzlingsbeet/Dornenkönig.
       if (arch === "plant" && !(state.activeArchetypes || []).includes("plant")) {
@@ -606,10 +620,10 @@ export function reducer(state, action) {
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
-      const off = buildPerkOffer(state.perks, state.familyTiers, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
+      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop));
       const fate = perkFateReroll(state.shop);                       // #164: gratis Perk-Reroll gilt fürs neue Perk-Angebot
       return off.length > 0
-        ? { ...state, skillOffer: null, offer: off, freePerkReroll: fate, freeSkillReroll: false } // → Perk-Auswahl
+        ? { ...state, skillOffer: null, offer: off, offerRerolls: 0, freePerkReroll: fate, freeSkillReroll: false } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0)
         : { ...state, skillOffer: null, freeSkillReroll: false, phase: "play" };                   // Perk-Pool leer → weiterspielen
     }
 
@@ -628,9 +642,10 @@ export function reducer(state, action) {
       const free = !!state.freePerkReroll;
       const tokens = state.rerolls || 0;                             // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill), ersetzt shop.perkRerolls
       if (!free && tokens <= 0) return state;                        // keine Ressource → wirkungslos
-      const offer = buildPerkOffer(state.perks, state.familyTiers, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
+      const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
+      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop));
       const rerolls = free ? tokens : tokens - 1;
-      return { ...state, offer, rerolls, rerollsUsed: (state.rerollsUsed || 0) + 1, freePerkReroll: free ? false : state.freePerkReroll };
+      return { ...state, offer, offerRerolls: idx, rerolls, rerollsUsed: (state.rerollsUsed || 0) + 1, freePerkReroll: free ? false : state.freePerkReroll };
     }
 
     // Skill-Angebot neu würfeln (Shop-Spec §10 P2/P-L1): analog; erfüllt weiterhin Archetyp-/Konsumentenregeln
@@ -640,10 +655,11 @@ export function reducer(state, action) {
       const free = !!state.freeSkillReroll;
       const tokens = state.rerolls || 0;                             // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill), ersetzt shop.skillRerolls
       if (!free && tokens <= 0) return state;
-      const offer = buildSkillOffer(state.skills, state.activeArchetypes, action.rng, C.SKILLS_OFFERED, skillLegendaryChance(state.shop));
+      const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
+      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLegendaryChance(state.shop));
       if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
       const rerolls = free ? tokens : tokens - 1;
-      return { ...state, skillOffer: offer, rerolls, rerollsUsed: (state.rerollsUsed || 0) + 1, freeSkillReroll: free ? false : state.freeSkillReroll };
+      return { ...state, skillOffer: offer, offerRerolls: idx, rerolls, rerollsUsed: (state.rerollsUsed || 0) + 1, freeSkillReroll: free ? false : state.freeSkillReroll };
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.

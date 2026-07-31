@@ -4,6 +4,7 @@ import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/
 import { baseScoreMultFor, totalCritChanceRaw } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
+import { randomSeed, formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Lauf-Seed erzeugen / anzeigen
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
@@ -31,6 +32,7 @@ import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { StatsScreen } from "./ui/StatsScreen.jsx";
+import { SeedChip } from "./ui/SeedChip.jsx"; // #205 Challenger Mode: Seed im HUD kopierbar
 import { CustomizeScreen } from "./ui/CustomizeScreen.jsx";
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
@@ -55,6 +57,7 @@ export function Autostich() {
   const [profile, setProfile] = useState(loadProfile);            // #190: Profil (Freischalt-Status) — nach jedem Lauf aktualisiert
   const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
+  const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/6× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
@@ -193,6 +196,9 @@ export function Autostich() {
       bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
       maxFormations: state.maxFormations, formationScore: state.formationScore,
       crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
+      // #205: Lauf-Seed lokal mitspeichern (roh + teilbarer Code) → Nachspielen/Kopieren im Challenge-Reiter. Alt-Läufe
+      // ohne Seed degradieren sauber (kein Challenge-Knopf). Global (gEntry) folgt mit dem Board-Umzug (Schicht B, #197).
+      seed: state.seed ?? null, seedCode: state.seed != null ? formatSeed(state.seed) : null,
     };
     setHighscores(recordHighscore(localEntry));
     // #172 FB-10: denselben Lauf in die Historie (letzte 30) + Profil-Totals schreiben — Basis für den Statistik-Hub.
@@ -260,6 +266,10 @@ export function Autostich() {
   const bfSkin   = battlefieldAssets(activeBfId);
 
   function beginRun() {
+    // #205: Challenge-Seed (falls per Paste/Nachspielen gesetzt) ODER frischer Zufalls-Seed. Der Seed macht
+    // den Lauf reproduzierbar & teilbar; jeder Lauf bekommt einen, auch der normale „Neuer Run".
+    const seed = pendingSeed.current != null ? (pendingSeed.current >>> 0) : randomSeed();
+    pendingSeed.current = null;
     currentTraj.current = [];
     runStartRecordTraj.current = recordTraj.current.slice(); // Rekord dieses Laufs festhalten, bevor saveRun ihn überschreibt (#35)
     recorded.current = false;
@@ -273,11 +283,14 @@ export function Autostich() {
     setPaused(false);
     setIsRecord(false);
     setNewUnlocks([]); // #190: Freischalt-Hinweis des Vorlaufs zurücksetzen
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true }); // #202: der Architekt ersetzt im Spiel den Shop
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed }); // #202 Architekt ersetzt den Shop · #205 seedbarer Lauf
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
-  function startRun() {
+  // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
+  // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
+  function startRun(seed) {
+    pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
     setPendingRun([deckSkin.front, deckSkin.back, ...(bfSkin ? [bfSkin.desktop, bfSkin.mobile] : [])]);
   }
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
@@ -437,7 +450,7 @@ export function Autostich() {
       {options.skin === "crt" && state.phase === "menu" && <CrtParticles />}
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
-          <StartScreen onStart={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+          <StartScreen onStart={startRun} onPlaySeed={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} myEntry={myEntry} pubToken={pubToken} />
@@ -448,6 +461,8 @@ export function Autostich() {
                 AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
               </h1>
               <p className="text-xs opacity-45">Roguelite-Autobattler-Stechspiel · Prototyp</p>
+              {/* #205: Seed dieses Laufs — jederzeit kopierbar zum Teilen/Herausfordern. */}
+              {state.seed != null && <div className="mt-1"><SeedChip code={formatSeed(state.seed)} /></div>}
             </div>
             {/* Desktop: Kopf-Stats rechts neben der Wortmarke (eine Zeile). Auf Mobil stehen dieselben Zellen
                 als eigenes gerahmtes Panel NACH der Controls-Leiste (s. u.) → hier nur ab sm sichtbar. */}
@@ -548,7 +563,7 @@ export function Autostich() {
         <OptionsModal options={options} onChange={changeOptions} onClose={() => setShowOptions(false)} />
       )}
 
-      {showStats && <StatsScreen onClose={() => setShowStats(false)} />}
+      {showStats && <StatsScreen onClose={() => setShowStats(false)} onPlaySeed={(seed) => { setShowStats(false); startRun(seed); }} />}
 
       {showCustomize && (
         <CustomizeScreen options={options} profile={profile} onChoose={changeOptions} onClose={() => setShowCustomize(false)} />
