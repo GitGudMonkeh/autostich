@@ -28,6 +28,6 @@ function fire(pattern) {
 
 export const haptics = {
   setEnabled(v) { enabled = !!v; },
-  tick() { fire(12); },               // kurzer Bestätigungs-Tick
-  denied() { fire([16, 40, 24]); },   // distinktes „verwehrt"-Stottern (buzz–pause–buzz)
+  tick() { fire(6); },                // kurzer Bestätigungs-Tick (halbiert: 12→6 ms, sanfter)
+  denied() { fire([8, 40, 12]); },    // distinktes „verwehrt"-Stottern (buzz–pause–buzz), Buzz-Dauern halbiert; Pause bleibt für den Rhythmus
 };
