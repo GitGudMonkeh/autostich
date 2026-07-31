@@ -5,17 +5,23 @@ import { MAX_COVER as ARCH_MAX_COVER } from "../src/game/architect.js";
 import { buildPerkOffer } from "../src/game/perks.js";
 import { buildSkillOffer, isLegendarySkill } from "../src/game/skills.js";
 import { rngAt } from "../src/game/rng.js";
+import { masteryRerollBonus } from "../src/game/mastery.js";
 
 // START_RUN mit gegebenem Grad; Architekt an, damit maxCover greift.
+// startAt = normaler Lauf (masterRun false); startMaster = Meister-Lauf (masterRun true → der Rang zieht den Neuwurf-Pool).
 const startAt = (grade) => reducer({}, { type: "START_RUN", rng: Math.random, architect: true, masteryGrade: grade });
+const startMaster = (grade) => reducer({}, { type: "START_RUN", rng: Math.random, architect: true, masterRun: true, masteryGrade: grade });
 
 describe("#217 START_RUN — Grad übersetzt in Lauf-Rewards", () => {
-  it("Reroll-Pool: Grad 0..5 → 2/3/4/5/5/5", () => {
-    expect([0, 1, 2, 3, 4, 5].map((g) => startAt(g).rerolls))
-      .toEqual([2, 3, 4, 5, 5, 5].map((n) => C.BASE_REROLLS + n - 2)); // BASE_REROLLS=2 → exakt 2/3/4/5/5/5
+  it("Reroll-Pool im MEISTER-Lauf: Rang 0..5 → 0/1/2/3/3/3 (Rang 0 = 0 Neuwürfe, Maximum 3)", () => {
+    expect([0, 1, 2, 3, 4, 5].map((g) => startMaster(g).rerolls)).toEqual([0, 1, 2, 3, 3, 3]);
   });
-  it("Baufeld-Deckel: +2 je Grad ab II (24/24/26/28/30/32)", () => {
-    expect([0, 1, 2, 3, 4, 5].map((g) => startAt(g).architect.maxCover))
+  it("Reroll-Pool im NORMALEN Lauf: feste Basis (2), unabhängig vom Grad — keine Leiter", () => {
+    expect([0, 1, 2, 3, 4, 5].map((g) => startAt(g).rerolls)).toEqual([2, 2, 2, 2, 2, 2]);
+    expect(startAt(0).rerolls).toBe(C.BASE_REROLLS);
+  });
+  it("Baufeld-Deckel: +2 je Rang ab II (24/24/26/28/30/32)", () => {
+    expect([0, 1, 2, 3, 4, 5].map((g) => startMaster(g).architect.maxCover))
       .toEqual([0, 0, 2, 4, 6, 8].map((b) => ARCH_MAX_COVER + b));
   });
   it("masteryGrade landet auf dem State (auch geklemmt)", () => {
@@ -33,8 +39,8 @@ describe("#217 START_RUN — Grad übersetzt in Lauf-Rewards", () => {
   it("masterRun-Flag: default false, per Action gesetzt (steuert Rang-Balken + Leiter)", () => {
     expect(reducer({}, { type: "START_RUN", rng: Math.random, architect: true }).masterRun).toBe(false);
     expect(reducer({}, { type: "START_RUN", rng: Math.random, architect: true, masterRun: true, masteryGrade: 2 }).masterRun).toBe(true);
-    // Rewards hängen am gewählten Rang, NICHT am masterRun-Flag (ein Rang-2-Lauf hat die Rewards, egal wie geflaggt).
-    expect(reducer({}, { type: "START_RUN", rng: Math.random, architect: true, masterRun: true, masteryGrade: 2 }).rerolls).toBe(C.BASE_REROLLS + 2);
+    // Der Neuwurf-Pool hängt jetzt AM masterRun-Flag: nur der Meister-Lauf zieht ihn aus dem Rang (Rang 2 → masteryRerollBonus(2) = 2).
+    expect(reducer({}, { type: "START_RUN", rng: Math.random, architect: true, masterRun: true, masteryGrade: 2 }).rerolls).toBe(masteryRerollBonus(2));
   });
   it("Grad 0 = Basiswerte (No-op) — identisch zum Start ohne masteryGrade", () => {
     const withZero = startAt(0);

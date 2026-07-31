@@ -146,10 +146,13 @@ export function reducer(state, action) {
       // #217 Meistergrade: den run-übergreifenden Grad (aus dem Profil, via App) in die Lauf-Rewards übersetzen.
       // Grad 0 (frischer Spieler / Sim ohne masteryGrade) = Basiswerte → alles byte-identisch zum bisherigen Start.
       const grade = Math.max(0, Math.min(MASTERY_MAX_GRADE, Math.floor(Number(action.masteryGrade) || 0)));
+      const masterRun = !!action.masterRun; // #217: Meister-Lauf? Steuert die Rang-Leiter — UND den Neuwurf-Pool.
       return { ...s, phase: "levelup", statOffer: STAT_IDS, architectEnabled, shopDisabled: !!action.shopDisabled,
-        masteryGrade: grade, masterRun: !!action.masterRun,
+        masteryGrade: grade, masterRun,
         difficulty: difficultyForGrade(grade), // #226 Großmeister: Ramp je Rang (Meister → null = No-op)
-        rerolls: C.BASE_REROLLS + masteryRerollBonus(grade),                                  // Neuwurf-Pool 2 → 3/4/5
+        // Neuwurf-Pool: der Meister-Lauf zieht ihn ALLEIN aus dem Rang (masteryRerollBonus 0/1/2/3/3/3 → Rang 0 = 0 Neuwürfe, Maximum 3).
+        // Der normale Lauf hat keine Leiter → feste Basis (BASE_REROLLS = 2). (Vorher: Basis+Rang → 2/3/4/5, auch im normalen Lauf.)
+        rerolls: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
         architect: { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) } }; // Baufeld +2/Grad ab II
     }
 
