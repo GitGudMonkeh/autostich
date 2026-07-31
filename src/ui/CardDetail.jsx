@@ -13,7 +13,7 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
    Modifikatoren. Wird unter der Kachelfläche in Chronik-Übersicht UND Formationsphase genutzt.
    Rollen-Chips sind anklickbar → klappen die Perk-Beschreibung auf (touch-tauglich, plus Hover-Titel). */
 export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostReadout = false, frostLayers = 0, frostGletscher = false,
-                            plantReadout = false, plantGrowth = 0, plantRoots = 0, plantPfahl = false }) {
+                            plantReadout = false, plantGrowth = 0, plantRoots = 0, plantPfahl = false, forgedValue = 0 }) {
   const [openRole, setOpenRole] = useState(null); // aktuell aufgeklappte Rolle (perkId)
   useEffect(() => { setOpenRole(null); }, [card?.id]); // Karte gewechselt → Beschreibung schließen
 
@@ -130,6 +130,14 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
           </div>
         );
       })()}
+      {/* Feuer (#218): geschmiedeter Dauerwert dieser Karte (state.forged) — der einzige per-Karte-Feuerzustand des
+          Spielerdecks (Brand liegt auf Gegnerkarten, Hitze/Asche/Weißglut sind global). ⚒ wie der Karten-Indikator (#206). */}
+      {forgedValue > 0 && (
+        <div className="flex flex-wrap gap-1.5 items-center mt-1">
+          <span className="opacity-45">🔥 Feuer:</span>
+          <Chip c="#e0714a">⚒ Geschmiedet +{forgedValue} Dauerwert</Chip>
+        </div>
+      )}
     </div>
   );
 }

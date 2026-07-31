@@ -47,7 +47,6 @@ import { music } from "./ui/music.js";
 import { MusicBar } from "./ui/MusicBar.jsx";
 import { UsernameModal } from "./ui/UsernameModal.jsx";
 import { CrtParticles } from "./ui/CrtParticles.jsx";
-import { DeckHistogram } from "./ui/BuildSummary.jsx";
 import { multTierColor, multTierLevel } from "./ui/multTier.js";
 
 export function Autostich() {
@@ -533,14 +532,12 @@ export function Autostich() {
             <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>
 
-          {/* Chronik — Deck-Werte-Histogramm, volle Breite ganz unten (#28) */}
-          <button onClick={() => setShowChronik(true)} className="rounded-xl p-4 as-panel text-left w-full transition-all hover:brightness-110"
+          {/* #218: Chronik schlank — kein dauerhaftes Histogramm mehr im Spielpanel, nur ein klickbares Panel, das die
+              (inhaltlich erweiterte) Kartenübersicht öffnet. Die Wert-Verteilung wandert in die Übersicht. */}
+          <button onClick={() => setShowChronik(true)} className="rounded-xl px-4 py-3 as-panel text-left w-full transition-all hover:brightness-110 flex items-center justify-between gap-3"
             style={{ background: "#17171c", border: "1px solid #26262e" }}>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2 flex justify-between">
-              <span>Chronik — Deck-Werte je Farbe</span>
-              <span className="normal-case tracking-normal" style={{ color: "#8a7de0" }}>Kartenübersicht ›</span>
-            </div>
-            <DeckHistogram deck={state.deck} />
+            <span className="text-sm font-semibold">🎴 Kartenübersicht</span>
+            <span className="text-[11px] opacity-60">alle Karten · Zustände · Formationen <span style={{ color: "#8a7de0" }}>›</span></span>
           </button>
           {/* Musik-Panel (#111): aktueller Track + „nächster Track"-Button (rechtsbündig) — ganz unten im Run. */}
           {state.phase !== "gameover" && <MusicBar title={musicTitle} onNext={() => music.next()} />}

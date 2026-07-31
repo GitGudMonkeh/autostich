@@ -7,8 +7,15 @@ import { allianceGroups } from "../game/families.js";
 import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
 import { TIER_META, romanOf } from "../game/rarity.js";
 import { suitName, SHOP_CATEGORY_LABELS } from "../game/constants.js";
-import { FORMATION_TYPE_LABELS, openSegmentInfo } from "../game/formations.js";
+import { FORMATION_TYPE_LABELS, openSegmentInfo, summarizeFormations } from "../game/formations.js";
 import { useEscape } from "./useEscape.js";
+// #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
+import { hasGletscher, plantRootScore, hasPfahlwurzel } from "../game/skills.js";
+import { DeckHistogram } from "./BuildSummary.jsx";
+import { occupiedCells as archOccupied, familyDef as archFamily } from "../game/architect.js";
+import { ARCH_CAT } from "./indicators/vocab.js";
+
+const fmtX = (x) => x.toFixed(2).replace(".", ","); // ×-Multiplikator-Format (1,50)
 
 /* Chronik-Kartenübersicht (§22.11): alle 40 Karten in aktueller Reihenfolge — nur Anzeige,
    mit Formations- und Rollen-Markern. Klick auf eine Karte zeigt Rolle & Modifikatoren (#95.5).
@@ -34,12 +41,24 @@ export function ChronikOverview({ state, onClose }) {
   const { deck = [], playerOrder = [], formations = [] } = state;
   const [selPos, setSelPos] = useState(null);
   const cards = playerOrder.map((di) => deck[di]);
+  const selCard = selPos != null ? cards[selPos] : null; // #218: aktuell angetippte Karte (für die Elementar-Readouts)
   const anchors = [...(state.shop?.anchors || [])].sort((a, b) => a.position - b.position); // Shop-Positionsanker (§8)
   // #182: Zeitraffer (L11) koppelt Position 20 & 40 — dort denselben Silberring wie ein Anker zeigen (reine Anzeige).
   const highlightPos = (state.perks || []).includes("L11") ? [19, 39].filter((p) => p < cards.length) : [];
   const upgrades = activeShopUpgrades(state.shop || {}); // aktive dauerhafte Shop-Verbesserungen (§9/§10)
   const purchaseLog = state.shop?.purchaseLog || []; // #127: alle Käufe des Runs (chronologisch)
   useEscape(onClose); // #159: Escape schließt die (rein lesende) Übersicht — wie die übrigen abweisbaren Overlays (#58)
+
+  // #218: kompakte Formations-Zusammenfassung — aktive Typen mit ihrem Höchst-Multiplikator (ohne zweites Karten-Grid).
+  const { count: formCount, maxMult: formMaxMult } = summarizeFormations(formations);
+  const formByType = {};
+  for (const pf of formations) for (const f of ((pf && pf.formations) || [])) if (f.factor > 1) formByType[f.type] = Math.max(formByType[f.type] || 0, f.factor);
+  // #218: Architekt-Zusammenfassung — nur wenn der Architekt aktiv ist UND Gebäude stehen (#202). Zahl · Abdeckung · Kategorien.
+  const archBuildings = (state.architectEnabled && state.architect && state.architect.buildings) ? state.architect.buildings : [];
+  const archOcc = archOccupied(archBuildings).size;
+  const archMax = (state.architect && state.architect.maxCover) || 0;
+  const archByCat = {};
+  for (const b of archBuildings) { const cat = archFamily(b.familyId)?.category; if (cat) archByCat[cat] = (archByCat[cat] || 0) + 1; }
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
@@ -65,7 +84,14 @@ export function ChronikOverview({ state, onClose }) {
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
           <div className="md:flex-1 md:min-w-0 mt-3 md:mt-0 grid gap-3 content-start">
-            <CardDetail card={selPos != null ? cards[selPos] : null} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} familyTiers={state.familyTiers} />
+            {/* #218: Kartendetail zeigt jetzt auch die Elementar-Zustände (Frost/Schichten · Pflanze/Wachstum · Feuer/geschmiedet),
+                genau wie in der Aufstellung (FormationPhase). selCard = die aktuell angetippte Karte. */}
+            <CardDetail card={selCard} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} familyTiers={state.familyTiers}
+              frostReadout frostLayers={selCard ? (state.layers?.[selCard.id] || 0) : 0} frostGletscher={hasGletscher(state.skills || [])}
+              plantReadout plantGrowth={selCard ? (state.growth?.[selCard.id] || 0) : 0}
+              plantRoots={selCard ? plantRootScore(state.skills || [], state.growth?.[selCard.id] || 0) : 0}
+              plantPfahl={hasPfahlwurzel(state.skills || [])}
+              forgedValue={selCard ? (state.forged?.[selCard.id] || 0) : 0} />
             <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
             {anchors.length > 0 && (
               <div className="text-[11px] rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
@@ -124,6 +150,57 @@ export function ChronikOverview({ state, onClose }) {
               <span style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr = mehr Multi (Überlappung ×1,5/×2/×3) · gestrichelt = ohne ×</span>
             </div>
           </div>
+        </div>
+
+        {/* #218: globale Zusatz-Infos unter Karten-Grid & Detail — Verteilung, aktive Formationen, Architektenphase. */}
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {/* Verteilung — das frühere Live-Histogramm, jetzt als Kurzstatistik hier. */}
+          <div className="rounded-lg p-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Verteilung · Deck-Werte je Farbe</div>
+            <DeckHistogram deck={deck} />
+          </div>
+
+          {/* Aktuelle Formationen — kompakt (aktive Typen + Höchst-Multiplikator), ohne zweites Karten-Grid. */}
+          <div className="rounded-lg p-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] uppercase tracking-wide opacity-50">Aktuelle Formationen</span>
+              <span className="text-[11px] font-bold" style={{ color: "#5ab87a" }}>{formCount} · max ×{fmtX(formMaxMult)}</span>
+            </div>
+            {Object.keys(formByType).length ? (
+              <div className="flex flex-wrap gap-1.5">
+                {Object.entries(formByType).sort((a, b) => b[1] - a[1]).map(([type, fac]) => (
+                  <span key={type} className="px-1.5 py-0.5 rounded text-[11px]" style={{ background: "#5ab87a22", color: "#8be0a8" }}>
+                    {FORMATION_TYPE_LABELS[type] || type} ×{fmtX(fac)}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[11px] opacity-40">Keine aktiven Formationen mit Multiplikator.</div>
+            )}
+          </div>
+
+          {/* Architektenphase-Bonus — nur wenn der Architekt aktiv ist und Gebäude stehen (#202/#218). */}
+          {archBuildings.length > 0 && (
+            <div className="rounded-lg p-3 sm:col-span-2" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] uppercase tracking-wide opacity-50">🏗 Architektenphase</span>
+                <span className="text-[11px] font-bold" style={{ color: ARCH_CAT?.value?.color || "#8a7de0" }}>
+                  {archBuildings.length} Gebäude · {archOcc}/{archMax} Zellen
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {Object.entries(archByCat).map(([cat, n]) => {
+                  const meta = ARCH_CAT?.[cat] || {};
+                  return (
+                    <span key={cat} className="px-1.5 py-0.5 rounded text-[11px]"
+                      style={{ background: (meta.color || "#8a8a92") + "22", color: meta.color || "#c8c8ce" }}>
+                      {meta.icon ? meta.icon + " " : ""}{meta.label || cat} · {n}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
