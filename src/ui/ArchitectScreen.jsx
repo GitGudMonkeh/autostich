@@ -205,8 +205,11 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     const b = buildingAt(pos);
     const canDrag = !removeFor && ((phase === "place" && b && b.id === PENDING_ID) || (phase === "move" && b));
     if (canDrag) { startDrag(pos, b, e); return; }
-    const up = () => { window.removeEventListener("pointerup", up); tapCell(pos); };
-    window.addEventListener("pointerup", up);
+    // Kein Ziehen hier: Tap → tapCell, aber ein Scroll (pointercancel) darf keinen Tap auslösen und keinen Listener hinterlassen.
+    const cleanup = () => { window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", cancel); };
+    const up = () => { cleanup(); tapCell(pos); };
+    const cancel = () => { cleanup(); };
+    window.addEventListener("pointerup", up); window.addEventListener("pointercancel", cancel);
   };
   const rotateSelected = () => {
     const b = buildings.find((x) => x.id === selId); if (!b) return;
@@ -262,10 +265,12 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
               )}
             </div>
-            <div className="grid grid-cols-5 gap-1" style={{ maxWidth: 360, margin: "0 auto" }}>
+            <div className="grid grid-cols-5 gap-1" style={{ maxWidth: 300, margin: "0 auto" }}>
               {(() => { const dragCells = dragPrev ? new Set(dragPrev.footprint) : null; const draggingId = dragPrev ? dragPrev.id : null; return cards.map((card, pos) => {
                 const b = buildingAt(pos);
                 const isPending = b && b.id === PENDING_ID;
+                // Nur Zellen mit einem ziehbaren Gebäude fangen die Geste (touchAction:none) — sonst scrollt der Finger die Seite.
+                const canDragHere = !removeFor && ((phase === "place" && isPending) || (phase === "move" && !!b));
                 const fam = b ? familyDef(b.familyId) : null;
                 const cat = fam ? CAT[fam.category] : null;
                 const ev = effValueAt(pos);
@@ -292,7 +297,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       color: b || inDragPrev ? "#fff" : "#adbecc",
                       border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b ? cat.color : "#20303d")}`,
                       opacity: (isDragOrig && !inDragPrev) ? 0.35 : (isPending && !inDragPrev ? 0.82 : 1),
-                      touchAction: "none",
+                      touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,
                         b && fam.legendary ? `inset 0 0 0 2px ${GOLD}` : null,
@@ -345,13 +350,13 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. */}
               <div className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}>
-                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur-Kombis (zählen je Durchlauf)</div>
+                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur-Kombis · ×Punkte je Durchlauf</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   <span>volle <b>Zeile</b> ×{fmt(HAEUSERZEILE_FACTOR)}</span>
                   <span>volle <b>Spalte</b> ×{fmt(SPALTE_FACTOR)}</span>
                   <span><b>Diagonale</b> ×{fmt(DIAGONALE_FACTOR)}</span>
                 </div>
-                <div className="opacity-60 mt-1">Fertige Struktur → <span style={{ color: "#f0b429", fontWeight: 700 }}>Gold-Rahmen</span> am Brett (live, schon vor dem Bestätigen). Faktoren stapeln multiplikativ.</div>
+                <div className="opacity-60 mt-1">Jede Karte auf einer vollständigen Zeile/Spalte/Diagonale macht bei einem Sieg entsprechend mehr <b>Punkte</b>. Faktoren stapeln multiplikativ.</div>
               </div>
 
               {/* removeFor: kein Platz → Gebäude entfernen anbieten */}
