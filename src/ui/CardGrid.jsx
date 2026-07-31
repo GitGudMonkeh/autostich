@@ -108,7 +108,8 @@ function SegmentBridge({ segA, segB }) {
 
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
-                          highlightPos = [], highlightTitle = null, openSegments = null, frostPillarPos = [], swappedIds = new Set() }) {
+                          highlightPos = [], highlightTitle = null, openSegments = null, frostPillarPos = [], swappedIds = new Set(),
+                          segStrength = [], segDelta = [] }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const pickedSet = new Set(pickedIds || []);
@@ -121,9 +122,20 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
   return (
     <div className="grid gap-1.5">
       {Array.from({ length: nSeg }).flatMap((_, s) => {
+        // #201.5: Pro-Segment-Stärke am Bereichs-Label + Verbesserungs-Highlight. Statischer Tint (kein Puls →
+        // reduced-motion automatisch erfüllt): stärker seit Phasenbeginn → grün, schwächer → dezent rot, sonst gedämpft.
+        const segS = segStrength[s];
+        const segD = segDelta[s] ?? 0;
+        const segTint = segD > 0.001 ? "#5ab87a" : segD < -0.001 ? "#e0605a" : "#8a8a92";
         const row = (
           <div key={`seg${s}`} className="flex items-center gap-2">
-            <div className="text-[10px] opacity-40 w-9 shrink-0 text-right tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
+            <div className="w-9 shrink-0 text-right leading-tight">
+              <div className="text-[10px] opacity-40 tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
+              {segS != null && (
+                <div className="text-[9px] font-bold font-pixel-dense tabular-nums" style={{ color: segTint }}
+                  title="Formations-Stärke dieses Segments (grün = seit Rundenbeginn stärker, rot = schwächer)">×{fmt(1 + segS)}</div>
+              )}
+            </div>
             <div className="grid grid-cols-5 gap-1.5 flex-1">
               {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
                 const pos = s * SEGMENT_SIZE + k;

@@ -1,7 +1,10 @@
 import { Sparkline } from "./Sparkline.jsx";
 import { RunStats } from "./RunStats.jsx";
+import { CardGrid } from "./CardGrid.jsx";
 import { fmtScore } from "./format.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js"; // #190: Freischalt-Vorschau
+import { computeFormations } from "../game/formations.js"; // #201.8: finale Aufstellung + Rahmen
+import { allianceGroups } from "../game/families.js";
 
 // Highscore-Listen (lokal + global) bewusst NICHT hier — sie stehen auf dem Startbildschirm und
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
@@ -9,6 +12,12 @@ import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js"; // #190: Fr
 // geteilten RunStats-Komponente — dieselbe Anzeige nutzt die Leaderboard-Detailansicht (RunDetail).
 export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [] }) {
   const score = Math.floor(state.score); // Zahlenwert für Record-Vergleich; Anzeige über fmtScore
+  // #201.8 Stufe A: finale Aufstellung aus dem Live-state; Formationen frisch berechnet (rein, matcht das Enddeck).
+  const finalOrder = state.playerOrder || [];
+  const finalCards = finalOrder.map((di) => state.deck[di]);
+  const finalForms = finalOrder.length
+    ? computeFormations(finalOrder, state.deck || [], state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {})
+    : [];
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
@@ -62,6 +71,17 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             </div>
             <Sparkline current={currentTraj} record={recordTraj} height={110} />
           </div>
+        )}
+
+        {/* #201.8 Stufe A: finale Deck-Aufstellung schreibgeschützt — bestehendes CardGrid (rendert Formationsrahmen). Aufklappbar, um den Screen kurz zu halten. */}
+        {finalOrder.length > 0 && (
+          <details className="mt-5 rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+            <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">Finale Aufstellung ansehen</summary>
+            <div className="p-3 pt-0">
+              <CardGrid cards={finalCards} formations={finalForms} roles={state.roles} anchors={state.shop?.anchors || []}
+                pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} quietTiles />
+            </div>
+          </details>
         )}
 
         <div className="flex gap-2 mt-6">
