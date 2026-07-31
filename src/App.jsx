@@ -513,10 +513,8 @@ export function Autostich() {
 
           {/* Mobil: dieselben Kopf-Stats als eigenes gerahmtes Panel an ZWEITER Stelle (direkt nach der
               Controls-Leiste). Auf Desktop ausgeblendet (dort stehen sie im Header). */}
-          {/* #UI: Mobil-Statuspanel schwebt (sticky) — wie die Bestätigungsleiste der Aufstellung —, bleibt beim
-              Scrollen oben sichtbar. Deckende Panel-Farbe + Schatten, damit Inhalt sauber darunter durchläuft. */}
-          <div className="sm:hidden sticky top-0 z-30 grid grid-cols-3 gap-x-3 gap-y-2 justify-items-center rounded-xl p-3 as-panel"
-            style={{ background: "#17171c", border: "1px solid #26262e", boxShadow: "0 4px 14px #0007" }}>
+          <div className="sm:hidden grid grid-cols-3 gap-x-3 gap-y-2 justify-items-center rounded-xl p-3 as-panel"
+            style={{ background: "#17171c", border: "1px solid #26262e" }}>
             {statCells}
           </div>
 
