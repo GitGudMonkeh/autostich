@@ -7,6 +7,7 @@ import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { audio } from "./audio.js";
+import { haptics } from "./haptics.js";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 const fmt = (x) => x.toFixed(2).replace(".", ",");
@@ -58,7 +59,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
     if (sel === pos) { setSel(null); return; }  // Abwählen — still
     // #132: erfolgreicher Tausch klingt wie ein Kartendreh (cardflip), nicht wie ein Button-Klick.
     if (formationEnergy > 0 || canFree(sel, pos)) { onSwap(sel, pos); audio.play("cardflip", { gain: 0.9 }); }
-    else audio.play("denied"); // #110: Tausch ohne Energie (und kein Frost-Freitausch) → verwehrt-Sound
+    else { audio.play("denied"); haptics.denied(); } // #110/#207: Tausch ohne Energie (und kein Frost-Freitausch) → verwehrt-Sound + distinkte Haptik
     setSel(null);
   };
 

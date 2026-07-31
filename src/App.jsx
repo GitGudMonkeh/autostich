@@ -36,6 +36,7 @@ import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/c
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
+import { haptics } from "./ui/haptics.js";
 import { music } from "./ui/music.js";
 import { MusicBar } from "./ui/MusicBar.jsx";
 import { UsernameModal } from "./ui/UsernameModal.jsx";
@@ -120,18 +121,20 @@ export function Autostich() {
       const btn = e.target.closest && e.target.closest("button");
       if (!btn || btn.dataset.sfx === "none") return;
       audio.play("button");
+      haptics.tick(); // #207: dezenter Haptik-Tick auf Mobile — spiegelt exakt den Klick-Sound (gleiches data-sfx="none"-Opt-out)
     };
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
   }, []);
-  // Optionen → Audio-Manager spiegeln (Mute/Lautstärke).
+  // Optionen → Audio-Manager spiegeln (Mute/Lautstärke). #207: Haptik-Toggle spiegeln (Default an; wirkt nur auf Mobile).
   useEffect(() => { audio.setMuted(!!options.muted); audio.setVolume(options.sfxVol ?? 0.4); }, [options.muted, options.sfxVol]);
+  useEffect(() => { haptics.setEnabled(options.haptics !== false); }, [options.haptics]);
   // Kauf-Sound (#110): am Wachstum des Kauf-Logs (#127) → exakt 1× je ABGESCHLOSSENEM Kauf (immediate & Ziel-Items),
   // nie premature (Ziel-Flow öffnen) und nie bei no-op. Deshalb Cashout-Buttons via data-sfx="none" stummgeschaltet.
   const prevBuys = useRef(0);
   useEffect(() => {
     const n = state.shop?.purchaseLog?.length || 0;
-    if (n > prevBuys.current) audio.play("buy");
+    if (n > prevBuys.current) { audio.play("buy"); haptics.tick(); } // #207: Kauf-Bestätigung buzzt mit (Cashout-Button ist data-sfx="none")
     prevBuys.current = n;
   }, [state.shop?.purchaseLog?.length]);
   // Musik (#111): Titel-Abo für die Anzeige + phasengesteuerte Wiedergabe. musicHome = Menü ODER Gameover

@@ -101,6 +101,10 @@ export function OptionsModal({ options, onChange, onClose }) {
               options={[{ v: "auto", label: "Auto" }, { v: "an", label: "An" }, { v: "aus", label: "Aus" }]}
               onChange={(v) => onChange({ reducedFx: v })} />
           </Row>
+          {/* #207: Haptik — kurzes Vibrations-Feedback bei Bestätigungen. Wirkt nur auf Touch-Geräten (Handy); System-„reduzierte Bewegung“ schaltet sie ohnehin ab. */}
+          <Row title="Haptik (Vibration)" desc="Kurzes Vibrieren bei Bestätigungen. Nur auf Touch-Geräten (Handy) spürbar; System-Einstellung „reduzierte Bewegung“ wird respektiert.">
+            <Toggle on={options.haptics !== false} onClick={() => onChange({ haptics: options.haptics === false })} />
+          </Row>
         </div>
 
         <div className="rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "#8a7de022", color: "#c9c0f0" }}>
