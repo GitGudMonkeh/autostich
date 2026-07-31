@@ -363,10 +363,9 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
           {/* ---- Bau-Assistent + Vorschau. Mobil: `contents` löst die Gruppe auf → Phase-Panel (order-1) ÜBER dem Brett (order-2),
                  Vorschau (order-3) DRUNTER. Desktop: wieder eine flex-Spalte rechts (md:flex, md:order-2). ---- */}
           <section className="contents md:flex md:flex-col md:gap-4 md:order-2">
-            {/* #UI: Bau-Panel (Buttons) schwebt auf Mobil oben (sticky) — wie die Bestätigungsleiste der Aufstellung —,
-                damit man beim Ziehen am Brett unten nicht hochscrollen muss, um „Bauen"/„Bestätigen" zu treffen.
-                Desktop unverändert (md:static). */}
-            <div className="rounded-xl p-3 order-1 sticky top-0 z-20 md:static" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
+            {/* Bau-Assistent (Referenz + Anleitung + Farbwahl) — scrollt normal. Die Aktions-Buttons stehen in der
+                schwebenden Leiste darunter (#UI „nur Buttons"). */}
+            <div className="rounded-xl p-3 order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. */}
               <div className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}>
@@ -385,7 +384,6 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
                     <b>Kein Platz</b> für „{pendingFamName(removeFor)}". Soll ein Gebäude weichen? Tippe eins (rot gestrichelt) zum <b>Zerstören</b> — danach wird der Bauplan automatisch platziert.
                   </div>
-                  <button onClick={() => setRemoveFor(null)} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>
                 </div>
               )}
 
@@ -431,9 +429,6 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       <div className="text-[11px] font-mono opacity-60 leading-snug mt-0.5">ein Gebäude +1 Stufe{canUpgradeAny ? "" : " · nichts ausbaubar"}</div>
                     </button>
                   </div>
-                  <div className="mt-3">
-                    <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Nichts bauen · Durchlauf starten →</button>
-                  </div>
                 </div>
               )}
 
@@ -452,10 +447,6 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       ))}
                     </div>
                   )}
-                  <div className="flex gap-2">
-                    <button onClick={cancelPending} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
-                    <button onClick={confirmBuild} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Bauen ✓</button>
-                  </div>
                 </div>
               )}
 
@@ -465,7 +456,6 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
                     <b>Aufrüsten:</b> tippe ein Gebäude auf dem Brett → +1 Stufe.
                   </div>
-                  <button onClick={() => { setPhase("choose"); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
                 </div>
               )}
 
@@ -475,9 +465,28 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.score.color}18`, borderLeft: `3px solid ${CAT.score.color}` }}>
                     ✓ <b>Fertig gebaut.</b> Optional: Gebäude auf dem Brett <b>ziehen</b> zum Verschieben (Griff überall, ⟳ dreht) — beliebig oft. Sonst direkt weiter.
                   </div>
-                  <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Durchlauf starten →</button>
                 </div>
               )}
+            </div>
+
+            {/* #UI „nur Buttons": schmale, schwebende Aktions-Leiste (mobil oben angeheftet) — nur die Phasen-Buttons,
+                damit sie beim Ziehen am Brett erreichbar bleiben. Anleitung/Referenz/Farbwahl bleiben im Panel drüber.
+                Desktop: normale Leiste (md:static). */}
+            <div className="order-1 sticky top-0 z-20 md:static rounded-xl p-2" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
+              {removeFor ? (
+                <button onClick={() => setRemoveFor(null)} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>
+              ) : phase === "choose" ? (
+                <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Nichts bauen · Fortfahren →</button>
+              ) : phase === "place" && pending ? (
+                <div className="flex gap-2">
+                  <button onClick={cancelPending} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
+                  <button onClick={confirmBuild} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Bauen ✓</button>
+                </div>
+              ) : phase === "upgrade" ? (
+                <button onClick={() => setPhase("choose")} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
+              ) : phase === "move" ? (
+                <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Fortfahren →</button>
+              ) : null}
             </div>
 
             {/* Vorschau & Brett-Status — Mobil UNTER dem Brett (order-3), Desktop unter dem Phase-Panel in der rechten Spalte. */}
