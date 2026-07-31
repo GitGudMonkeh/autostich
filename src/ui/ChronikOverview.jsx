@@ -74,7 +74,7 @@ export function ChronikOverview({ state, onClose }) {
       for (const pos of b.footprint) {
         const card = deck[playerOrder[pos]];
         const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card) : 0;
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name };
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, bid: b.id };
       }
     }
     return cover;

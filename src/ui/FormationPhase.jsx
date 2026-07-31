@@ -55,7 +55,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         // #UI: badgeSuit = die Karten-Farbe, für die das Gebäude den Wert-Bonus gibt (colorLocked → colorChoice),
         // sonst null → grau. Speist die „+N"-Badge-Farbe im CardGrid.
         const badgeSuit = fam.colorLocked ? (b.colorChoice || null) : null;
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, badgeSuit };
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, badgeSuit, bid: b.id };
       }
     }
     return cover;

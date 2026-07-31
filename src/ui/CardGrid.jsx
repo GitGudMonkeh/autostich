@@ -12,6 +12,25 @@ import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 const ANCHOR_LABEL = { power: "Kraft", score: "Punkte", crit: "Krit", streak: "Serie", formation: "Formation", joker: "Joker" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
+// #UI: Architekt-Overlay als durchgezogener Rahmen in GEBÄUDE-FORM. Je Zelle bekommt sie ihre Perimeter-Kanten:
+// eine Kante ist Rahmen, wenn der Nachbar dahinter NICHT zum selben Gebäude gehört (andere/keine bid). So fallen
+// die inneren Trennwände weg und die Zellen eines Gebäudes verschmelzen zu EINER Kontur. Raster = SEGMENT_SIZE Spalten.
+function archWithEdges(cover, pos, total) {
+  const a = cover && cover[pos];
+  if (!a) return null;
+  const col = pos % SEGMENT_SIZE;
+  const same = (p, exists) => exists && cover[p] && cover[p].bid != null && cover[p].bid === a.bid;
+  return {
+    ...a,
+    edges: {
+      top:    !same(pos - SEGMENT_SIZE, pos - SEGMENT_SIZE >= 0),
+      bottom: !same(pos + SEGMENT_SIZE, pos + SEGMENT_SIZE < total),
+      left:   !same(pos - 1, col > 0),
+      right:  !same(pos + 1, col < SEGMENT_SIZE - 1),
+    },
+  };
+}
+
 /* Eine Kachel der 40-Karten-Übersicht (geteilt von Formationsphase, Chronik, Perk-Zielauswahl & Shop, Issue #101/#112).
    Kompakt auf Desktop: flachere Ratio (sm:aspect-square) + kleinere Zahl. Auf Mobil unverändert (aspect-[3/4], text-lg).
    Zeigt Rahmen-Tier, ×mult, Formations-Kürzel, Rolle-●, Ionisierung, Frost.
@@ -41,8 +60,16 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
   // Eis-Architekt (#210): eine hervorgehobene Frost-Spalte (senkrechte Formation) → eisiger Inset-Rim + Cyan-Glow.
   // Stapelt sich unter dem Auswahl-/Formations-Glow, damit beide lesbar bleiben (Pfeiler quer über die Segment-Zeilen).
   const pillarShadow = pillar ? "inset 0 0 0 1.5px rgba(191,233,247,0.60), 0 0 12px rgba(94,200,240,0.50)" : null;
-  // Architekt-Gebäude-Overlay (#202): kategorie-farbiger Inset-Ring + weicher Glow auf abgedeckten Karten (Legendär = Gold).
-  const archShadow = arch ? `inset 0 0 0 2px ${arch.legendary ? "#c8962f" : arch.color}, 0 0 7px ${arch.color}77` : null;
+  // Architekt-Gebäude-Overlay (#202/#UI): durchgezogener Rahmen in GEBÄUDE-FORM — nur die Perimeter-Kanten (arch.edges)
+  // als solide 2px-Linien; geteilte (innere) Kanten bleiben offen → die Zellen eines Gebäudes verschmelzen zur Kontur.
+  // Fallback ohne edges (Alt-Aufrufer): voller Inset-Ring + Glow wie bisher. Legendär = Gold.
+  const archCol = arch ? (arch.legendary ? "#c8962f" : arch.color) : null;
+  const archShadow = !arch ? null : (arch.edges
+    ? [arch.edges.top    && `inset 0 2px 0 0 ${archCol}`,
+       arch.edges.right  && `inset -2px 0 0 0 ${archCol}`,
+       arch.edges.bottom && `inset 0 -2px 0 0 ${archCol}`,
+       arch.edges.left   && `inset 2px 0 0 0 ${archCol}`].filter(Boolean).join(", ")
+    : `inset 0 0 0 2px ${archCol}, 0 0 7px ${arch.color}77`);
   // F4 Farballianz (#125): diagonaler Zweifarben-Split auch in der Grid-Kachel (obere Hälfte Eigen-, untere Partnerfarbe).
   const tileBg = allyColor
     ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColor}30 51%, ${allyColor}30 100%), #20202a`
@@ -162,7 +189,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
                   disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle} pillar={pillarSet.has(pos)}
-                  dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
+                  dimmed={swappedIds.has(c.id)} arch={archWithEdges(architectCover, pos, cards.length)}
                   onClick={disabled ? undefined : () => onTilePick(pos, c)} />;
               })}
             </div>
