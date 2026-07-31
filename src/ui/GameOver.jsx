@@ -53,7 +53,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         <div className="mt-5">
           <RunStats entry={{
             bestStreak: state.bestStreak, perks: state.perks, skills: state.skills || [],
-            maxFormations: state.maxFormations, formationScore: state.formationScore,
+            maxFormations: state.maxFormations, formationScore: state.formationScore, buildingScore: state.buildingScore,
             crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
           }} />
         </div>

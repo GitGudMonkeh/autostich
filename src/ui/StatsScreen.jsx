@@ -25,6 +25,7 @@ import { DECK_DEFS } from "../game/cosmetics.js"; // #217: Grad-Deck-Namen
 const ORIGIN_META = {
   formations: { label: "Formationen", color: "#5ab87a" },
   crits: { label: "Crit-Bonus", color: "#e879f9" },       // v0.3: Crit ist kein universeller Bonus mehr (Blitz + Krit-Stat)
+  buildings: { label: "Gebäude", color: "#5a8ade" },      // #UI: Architekt-Score-Bauten (Struktur/Schatzkammer/Handelsbauten)
   rest: { label: "Elementar & Basis", color: "#8a8a95" }, // v0.3: Basis/Serie + alle Fraktions-Mechaniken (noch nicht einzeln getrennt)
 };
 const perkLabel = (id) => PERK_DEFS[id]?.label || id;
@@ -255,6 +256,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
   const originSegs = (o) => [
     { key: "formations", label: ORIGIN_META.formations.label, color: ORIGIN_META.formations.color, value: o.formations },
     { key: "crits", label: ORIGIN_META.crits.label, color: ORIGIN_META.crits.color, value: o.crits },
+    { key: "buildings", label: ORIGIN_META.buildings.label, color: ORIGIN_META.buildings.color, value: o.buildings },
     { key: "rest", label: ORIGIN_META.rest.label, color: ORIGIN_META.rest.color, value: o.rest },
   ];
 

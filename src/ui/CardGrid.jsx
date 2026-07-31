@@ -149,7 +149,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
               <div className="text-[10px] opacity-40 tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
               {segS != null && (
                 <div className="text-[9px] font-bold font-pixel-dense tabular-nums" style={{ color: segTint }}
-                  title="Formations-Stärke dieses Segments (grün = seit Rundenbeginn stärker, rot = schwächer)">×{fmt(1 + segS)}</div>
+                  title="Formations-Bonus dieses Segments in % (grün = seit Rundenbeginn stärker, rot = schwächer)">+{Math.round(segS * 100)} %</div>
               )}
             </div>
             <div className="grid grid-cols-5 gap-1.5 flex-1">

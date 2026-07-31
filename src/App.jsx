@@ -200,7 +200,7 @@ export function Autostich() {
     const localEntry = {
       score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
       bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
-      maxFormations: state.maxFormations, formationScore: state.formationScore,
+      maxFormations: state.maxFormations, formationScore: state.formationScore, buildingScore: state.buildingScore,
       crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
       // #205: Lauf-Seed lokal mitspeichern (roh + teilbarer Code) → Nachspielen/Kopieren im Challenge-Reiter. Alt-Läufe
       // ohne Seed degradieren sauber (kein Challenge-Knopf). Global (gEntry) folgt mit dem Board-Umzug (Schicht B, #197).

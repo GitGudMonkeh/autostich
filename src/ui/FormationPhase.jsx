@@ -12,9 +12,10 @@ import { audio } from "./audio.js";
 import { haptics } from "./haptics.js";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
-const fmt = (x) => x.toFixed(2).replace(".", ",");
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
 const strengthOf = (fs) => (fs || []).reduce((s, pf) => s + ((pf.mult || 1) - 1), 0);
+// #UI: Formations-Stärke als Bonus in % (statt Σ-Summe) — Σ(mult−1)·100.
+const pctOf = (x) => Math.round(x * 100);
 
 /* Formationsphase (V2 §22.8): pausiert den Run und öffnet die Deck-Aufstellung.
    Zwei Karten antippen = Tausch (1 Energie). Formationen werden nach jedem Tausch live neu berechnet
@@ -111,7 +112,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const base = baseStrength.current.base;
   const delta = base === null ? 0 : curStrength - base;
   const deltaColor = delta > 0.001 ? "#5ab87a" : delta < -0.001 ? "#e0605a" : "#8a8a92";
-  const deltaStr = `${delta >= 0 ? "+" : "−"}${fmt(Math.abs(delta))}`;
+  const deltaStr = `${delta >= 0 ? "+" : "−"}${pctOf(Math.abs(delta))} %`;
 
   // #201.5: Pro-Segment-Stärke + Verbesserungs-Highlight. Analog zur Gesamt-Baseline oben, aber je 5er-Segment:
   // jedes Segment zeigt seine eigene Formations-Stärke am Bereichs-Label; ein seit Phasenbeginn stärker gewordenes
@@ -144,9 +145,9 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
             {/* #95.6/#193: Im Kopf steht nur noch die Gesamtsumme Σ. Das reaktive Delta wandert neben
                 „Zurücksetzen" in die Sticky-Leiste (es gehört inhaltlich zur Reset-Aktion). */}
             <div className="mt-1.5 leading-tight">
-              <div className="text-[10px] uppercase tracking-wide opacity-50">Formations-Stärke</div>
+              <div className="text-[10px] uppercase tracking-wide opacity-50">Formations-Bonus</div>
               <div className="font-pixel-dense text-base">
-                <span className="opacity-85">Σ {fmt(curStrength)}</span>
+                <span className="opacity-85">+{pctOf(curStrength)} %</span>
               </div>
             </div>
           </div>
