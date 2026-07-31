@@ -53,6 +53,16 @@ export const DIAGONALE_FACTOR    = 1.34;                 // volle Diagonale (5 Z
 // Stufen-Skalierung: numerischer Effekt (Wert/Score) gerundet; Faktor-Effekte additiv über FORM_TIER_BONUS.
 export const tierNum    = (base, tier) => (tier === "legendary" ? base : Math.round(base * (TIER_FACTOR[tier] || 1)));
 export const tierFactor = (base, tier) => (tier === "legendary" ? base : base + FORM_TIER_BONUS * ((tier || 1) - 1));
+// Aufwert-Status eines Gebäudes: joker/transparentFarb/crossSeg lesen `tier` NICHT → dort ist Aufrüsten ein No-op.
+// „Nicht aufwertbar" = legendär | inert (No-op-Effektart) | max (Stufe IV). `reason` speist Label/Meldung in der UI.
+const TIER_INERT_KINDS = new Set(["joker", "transparentFarb", "crossSeg"]);
+export function upgradeInfo(fam, tier) {
+  if (!fam) return { can: false, reason: null };
+  if (fam.legendary) return { can: false, reason: "legendary" };
+  if (TIER_INERT_KINDS.has(fam.base && fam.base.kind)) return { can: false, reason: "inert" };
+  if (!(typeof tier === "number" && tier < MAX_TIER)) return { can: false, reason: "max" };
+  return { can: true, reason: null };
+}
 // Kreuzgang-Bindeglied-Span (Bedingung minimal weiten): I/II ±1, III/IV ±2.
 const bindSpanFor = (tier) => (tier === "legendary" || tier >= 3 ? 2 : 1);
 // Rampe-Schwelle (Bedingung minimal weiten): Wert ≤ 5 + (Stufe−1).
@@ -154,7 +164,6 @@ export const ARCHITECT_FAMILIES = {
   A_KLAMMER:    { id: "A_KLAMMER",    name: "Klammer",    category: "formation", form: "domino",    base: { kind: "joker", types: ["farbblock"] } },
   A_ARKADE:     { id: "A_ARKADE",     name: "Arkade",     category: "formation", form: "domino",    base: { kind: "transparentFarb" } },
   A_KREUZGANG:  { id: "A_KREUZGANG",  name: "Kreuzgang",  category: "formation", form: "tromino_l", base: { kind: "bind" } },
-  A_PRISMA:     { id: "A_PRISMA",     name: "Prisma",     category: "formation", form: "tetro_t",   base: { kind: "joker", types: ["wiederholung", "farbblock", "treppe", "wechsel"] } },
   A_FRIES:      { id: "A_FRIES",      name: "Fries",      category: "formation", form: "block2x2",  base: { kind: "joker", types: ["wiederholung"] } },
   A_PFEILER:    { id: "A_PFEILER",    name: "Pfeiler",    category: "formation", form: "line4",     base: { kind: "crossSeg" } },
   A_GRUNDSTEIN: { id: "A_GRUNDSTEIN", name: "Grundstein", category: "formation", form: "block2x2",  base: { kind: "anker", factor: 1.10 } },
@@ -167,6 +176,9 @@ export const ARCHITECT_FAMILIES = {
   A_PRUNKSAAL:  { id: "A_PRUNKSAAL",  name: "Prunksaal",       category: "score",     form: "zeile",    base: { kind: "flat", score: 100 },  legendary: true },
   A_KATHEDRALE: { id: "A_KATHEDRALE", name: "Kathedrale",      category: "formation", form: "zeile",    base: { kind: "formMult", factor: 1.4 }, legendary: true },
   A_BASILIKA:   { id: "A_BASILIKA",   name: "Basilika",        category: "formation", form: "zeile",    base: { kind: "joker", types: ["wiederholung", "farbblock", "treppe", "wechsel"] }, legendary: true },
+  // Prisma (Joker alle 4) war als normales Formations-Gebäude zu stark (schon nach dem 1. Lauf dominant) → in die
+  // Legendären gezogen: nur noch über den seltenen Legendär-Slot, Effekt unverändert (Tetro-T, 4 Zellen).
+  A_PRISMA:     { id: "A_PRISMA",     name: "Prisma",          category: "formation", form: "tetro_t",  base: { kind: "joker", types: ["wiederholung", "farbblock", "treppe", "wechsel"] }, legendary: true },
 };
 export const familyDef = (id) => ARCHITECT_FAMILIES[id] || null;
 export const CATEGORIES = ["value", "score", "formation"];
