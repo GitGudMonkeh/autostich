@@ -65,7 +65,9 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
           {ripe && <span style={{ textShadow: "0 0 3px #5ab87a" }} title="Grün (reif) — zählt fürs Farbblock">🌿</span>}
         </span>
       )}
-      <span className="text-lg sm:text-2xl font-bold font-pixel-dense" style={{ color: numCol, textShadow: ripe ? `0 0 6px ${numCol}99` : undefined }}>{card.value}</span>
+      {/* #201.6a: Wert lesbarer — am Handy größer (text-xl statt -lg) + Kontrast-Schatten für JEDE Suit (nicht nur reife),
+          damit die Zahl auf der dunklen Kachel unabhängig von der Farbe klar liest. Reife behält ihren grünen Glow. */}
+      <span className="text-xl sm:text-2xl font-bold font-pixel-dense" style={{ color: numCol, textShadow: ripe ? `0 0 6px ${numCol}99, 0 1px 2px #000a` : "0 1px 2px #000a, 0 0 3px #0006" }}>{card.value}</span>
       {inForm && <span className="text-[9px] sm:text-xs font-bold leading-none" style={{ color: fb.color || "#5ab87a" }}>×{fmt(pf.mult)}</span>}
       {/* #112: Auswahl-Marker — Farbpfeil „→X" (Shop-Farbwechsel) bzw. ✓ (gold) für gewählte Karten/Position. */}
       {(arrow || picked) && (
@@ -120,7 +122,9 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
   // #FB: offene Segmentgrenzen (E_SEGMENT). Grenze g liegt zwischen Zeile g und g+1; nur zeichnen, wenn Werkzeug aktiv.
   const segOpen = openSegments && openSegments.active ? openSegments : null;
   return (
-    <div className="grid gap-1.5">
+    // #201.6a: etwas mehr Abstand ZWISCHEN den Segment-Zeilen (gap-2.5 statt -1.5) als innerhalb einer Zeile (gap-1.5)
+    // → die Segmente lesen sich als eigene Bänder, die Grenzen sind klarer.
+    <div className="grid gap-2.5">
       {Array.from({ length: nSeg }).flatMap((_, s) => {
         // #201.5: Pro-Segment-Stärke am Bereichs-Label + Verbesserungs-Highlight. Statischer Tint (kein Puls →
         // reduced-motion automatisch erfüllt): stärker seit Phasenbeginn → grün, schwächer → dezent rot, sonst gedämpft.
