@@ -257,9 +257,10 @@ export function resolveTrick(state, rng = Math.random) {
   // Architekt value-Gebäude (#202, Tragwerk): +temp Wert VOR dem Vergleich (an dieser Position, Bedingung je Familie).
   const architectValue = archPreNow ? architectValueBonus(archPreNow, actualPos, pCard) : 0;
   const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + damascusCombat;
-  // #226 Großmeister: mitwachsender Gegner-Aufschlag (Ramp) — +1 Wert alle oppRampEvery Durchläufe, additiv VOR den
-  // Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, damit alles byte-identisch bleibt.
-  const oppValueMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
+  // #226 Großmeister: Gegner-Aufschlag = flacher oppValue + mitwachsender Ramp (+1 Wert alle oppRampEvery Durchläufe),
+  // additiv VOR den Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, byte-identisch.
+  const rampMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
+  const oppValueMod = difficulty ? (difficulty.oppValue || 0) + rampMod : 0;
   // Frostbiss (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −3 Wert (nie < 0); sonst neutral (§12).
   const oValue = Math.max(0, oCard.value + oppValueMod - (frostbiteActive[oCard.id] || 0) - (brandActive[oCard.id] || 0)); // Vergletscherung (Eis, ∝ Schichten) + Brand (Feuer)
   // Eis: der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht.
@@ -1015,7 +1016,8 @@ export function resolveTrick(state, rng = Math.random) {
       }
     }
 
-    if (cycle >= C.MAX_CYCLES) {
+    // #226 Großmeister: kürzerer Lauf als Schwierigkeits-Hebel (maxCycles override, sonst C.MAX_CYCLES=60 → byte-identisch).
+    if (cycle >= (difficulty && difficulty.maxCycles ? difficulty.maxCycles : C.MAX_CYCLES)) {
       // Run-Ende nach dem letzten Durchlauf (§22.1): kein Neu-Mischen, keine Auswahl mehr.
       phase = "gameover";
     } else {

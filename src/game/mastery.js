@@ -32,18 +32,23 @@ export const MASTERY_ROMAN = ROMAN5;
 export const isGrandmaster = (g) => clampGrade(g) > MASTERY_MEISTER_MAX;
 export const rankRoman = (g) => { const c = clampGrade(g); return c === 0 ? "" : ROMAN5[isGrandmaster(c) ? c - MASTERY_MEISTER_MAX : c]; };
 
-// Großmeister-Schwierigkeit = „mitwachsender Gegner" (Ramp): +1 Gegner-Wert alle N Durchläufe (kleineres N = härter),
-// additiv VOR den Debuffs (Frost/Brand kontern ihn → nimmt dem Spieler NICHTS weg, macht nur den Gegner stärker).
-// Leiter Großmeister I..V, env-tunebar (SIM_GM_RAMP="15,12,9,7,5"). [TUNING] Erst-Schätzung — mit der Ascension-Sim zu validieren.
-const GM_RAMP_LADDER = (() => {
-  const env = (typeof process !== "undefined" && process.env && process.env.SIM_GM_RAMP) || "";
-  const p = env.split(",").map(Number).filter((x) => x > 0);
-  return p.length === MASTERY_MEISTER_MAX ? p : [15, 12, 9, 7, 5];
-})();
+// Großmeister-Schwierigkeit — N=250-validierte Leiter (Kommentar an #217, issuecomment-5143757920). KOMBINIERT drei
+// additive Hebel, kumulativ eskalierend, ohne dem Spieler etwas wegzunehmen (Gegner-Aufschlag VOR den Debuffs →
+// Frost/Brand kontern ihn). Ziel bleibt 50 M an ALLEN Stufen (Clear 5,3 %→0,1 %).
+//   oppValue     = flacher Gegner-Wert-Aufschlag (Median-Killer)
+//   oppRampEvery = mitwachsender Gegner: +1 Wert alle N Durchläufe (Decken-Killer, trifft das späte Compounding)
+//   maxCycles    = kürzerer Lauf (schärfster Decken-Killer; nur oben in der Leiter, sanfte −3er-Schritte)
+const GM_LADDER = [
+  { oppValue: 1 },                                   // GI   (Grad 6)  — Median 0,82×, Clear 3,1 %
+  { oppValue: 1, oppRampEvery: 20 },                 // GII  (Grad 7)  — 0,59× / 1,6 %
+  { oppValue: 2, oppRampEvery: 15 },                 // GIII (Grad 8)  — 0,44× / 1,1 %
+  { oppValue: 2, oppRampEvery: 12, maxCycles: 57 },  // GIV  (Grad 9)  — 0,31× / 0,2 %
+  { oppValue: 3, oppRampEvery: 12, maxCycles: 54 },  // GV   (Grad 10) — 0,21× / 0,1 %
+];
 // Schwierigkeits-Modifikatoren des Grades g (für state.difficulty in der Engine). Meister (≤V) → null (No-op).
 export function difficultyForGrade(g) {
   const c = clampGrade(g);
-  return c <= MASTERY_MEISTER_MAX ? null : { oppRampEvery: GM_RAMP_LADDER[c - MASTERY_MEISTER_MAX - 1] };
+  return c <= MASTERY_MEISTER_MAX ? null : GM_LADDER[c - MASTERY_MEISTER_MAX - 1];
 }
 
 // Schwelle des Grades g (1..5); außerhalb → Infinity (nie erreichbar).

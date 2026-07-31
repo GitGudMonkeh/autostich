@@ -95,7 +95,7 @@ export function MasterRunSelect({ profile, onPlay, onClose }) {
                         <span key={`n${r}`} className="text-[10.5px] px-1.5 py-0.5 rounded font-semibold" style={{ background: `${ACCENT}22`, color: ACCENT_HI, border: `1px solid ${ACCENT}55` }}>{r}</span>
                       ))}
                       {gm && (
-                        <span className="text-[10.5px] px-1.5 py-0.5 rounded font-semibold" style={{ background: `${GM_ACCENT}22`, color: "#e6c766", border: `1px solid ${GM_ACCENT}55` }}>Gegner wächst mit</span>
+                        <span className="text-[10.5px] px-1.5 py-0.5 rounded font-semibold" style={{ background: `${GM_ACCENT}22`, color: "#e6c766", border: `1px solid ${GM_ACCENT}55` }}>härterer Gegner</span>
                       )}
                     </div>
                     <div className="text-[11px] opacity-45 mt-0.5">Deck: {deckName}</div>

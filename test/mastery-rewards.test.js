@@ -24,11 +24,11 @@ describe("#217 START_RUN — Grad übersetzt in Lauf-Rewards", () => {
     expect(startAt(-2).masteryGrade).toBe(0);   // geklemmt
     expect(startAt(undefined).masteryGrade).toBe(0); // Sim/ohne Grad → 0
   });
-  it("#226 Großmeister: START_RUN setzt state.difficulty (Ramp je Rang; Meister/Basis = null No-op)", () => {
-    expect(startAt(0).difficulty).toBe(null);                     // Basis
-    expect(startAt(5).difficulty).toBe(null);                     // Meister V → kein Ramp
-    expect(startAt(6).difficulty).toEqual({ oppRampEvery: 15 });  // Großmeister I
-    expect(startAt(10).difficulty).toEqual({ oppRampEvery: 5 });  // Großmeister V (härter)
+  it("#226 Großmeister: START_RUN setzt state.difficulty (validierte Leiter je Rang; Meister/Basis = null No-op)", () => {
+    expect(startAt(0).difficulty).toBe(null);                                                    // Basis
+    expect(startAt(5).difficulty).toBe(null);                                                    // Meister V → kein Modifikator
+    expect(startAt(6).difficulty).toEqual({ oppValue: 1 });                                      // Großmeister I
+    expect(startAt(10).difficulty).toEqual({ oppValue: 3, oppRampEvery: 12, maxCycles: 54 });    // Großmeister V (härtester)
   });
   it("masterRun-Flag: default false, per Action gesetzt (steuert Rang-Balken + Leiter)", () => {
     expect(reducer({}, { type: "START_RUN", rng: Math.random, architect: true }).masterRun).toBe(false);

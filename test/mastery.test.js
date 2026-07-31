@@ -73,10 +73,11 @@ describe("#226 Großmeister — Tier über Meister V (Grade 6..10)", () => {
     expect(MASTERY_MEISTER_MAX).toBe(5);
     expect(MASTERY_THRESHOLDS.slice(5)).toEqual([50_000_000, 50_000_000, 50_000_000, 50_000_000, 50_000_000]);
   });
-  it("difficultyForGrade: Meister → null, Großmeister → mitwachsender Ramp (kleineres N = härter)", () => {
+  it("difficultyForGrade: Meister → null; Großmeister → validierte kombinierte Leiter (oppValue + Ramp + kürzere Läufe)", () => {
     expect(difficultyForGrade(5)).toBe(null);
-    expect(difficultyForGrade(6)).toEqual({ oppRampEvery: 15 });
-    expect(difficultyForGrade(10)).toEqual({ oppRampEvery: 5 });
+    expect(difficultyForGrade(6)).toEqual({ oppValue: 1 });                                    // GI
+    expect(difficultyForGrade(8)).toEqual({ oppValue: 2, oppRampEvery: 15 });                  // GIII
+    expect(difficultyForGrade(10)).toEqual({ oppValue: 3, oppRampEvery: 12, maxCycles: 54 });  // GV (härtester)
   });
   it("Rewards steigen NUR bis Meister V (kein Entzug, kein Zuwachs bei Großmeister)", () => {
     expect(masteryCoverBonus(10)).toBe(masteryCoverBonus(5)); // Baufeld bleibt 32 (kein Brett-Overflow)
