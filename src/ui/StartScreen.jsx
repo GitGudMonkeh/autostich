@@ -37,9 +37,19 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
       {/* #133: Schnell-Mute jederzeit sichtbar oben rechts — togglet dasselbe options.muted wie die Optionen. */}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-0 right-0" />}
       <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight font-pixel crt-title as-wordmark-hero">
-          AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
-        </h1>
+        <div className="relative inline-block">
+          <h1 className="text-4xl font-bold tracking-tight font-pixel crt-title as-wordmark-hero">
+            AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
+          </h1>
+          {/* Versions-Banner unten rechts am Logo — gleicher Gold-Stil wie der TESTBRANCH-Marker (App.jsx). */}
+          <span
+            className="absolute -bottom-2 -right-5 px-1.5 py-0.5 rounded text-[10px] font-bold font-pixel tracking-wide"
+            style={{ background: "#d4a63a", color: "#141419", boxShadow: "0 0 8px rgba(212,166,58,.6)", pointerEvents: "none" }}
+            aria-hidden="true"
+          >
+            v0.3
+          </span>
+        </div>
         <p className="text-sm opacity-45 mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
       </div>
 
