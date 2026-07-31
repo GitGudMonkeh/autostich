@@ -436,18 +436,17 @@ export function Autostich() {
           </span>
         </div>
       </div>
-      {/* #225.1: Münzanzeige entfernt — mit dem Architekten (#202) entfällt die Münz-Ökonomie. */}
-      <div className="text-right">
-        <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
-        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
-      </div>
-      {/* #133/#111: Der „Nächster Track"-Button ist ins untere Musik-Panel gewandert (s. MusicBar). An seiner
-          Stelle (freie Kopf-Zelle) jetzt der Durchlauf-Zähler X / 44 — gleiche Werte wie in der StatusRail. */}
+      {/* #UI: Durchlauf-Zelle direkt nach „Mult" → landet im Mobil-3er-Grid unter „Zeit" (linke Spalte). */}
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wide opacity-50">Durchlauf</div>
         <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>
           {Math.min(state.cycle + 1, MAX_CYCLES)}<span className="text-xs opacity-45"> / {MAX_CYCLES}</span>
         </div>
+      </div>
+      {/* #225.1: Münzanzeige entfernt (#202). #UI: „Bester Score" unter den aktuellen Score (mittlere Mobil-Spalte). */}
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
       </div>
       {/* #218/#UI: Kartenübersicht — als LETZTE Kopf-Zelle, damit sie im Mobil-3er-Grid unten rechts landet
           (Daumen-Reichweite). Icon = Mini-Kartenrücken des aktiven Decks (matcht den Spiel-Look statt Emoji),
@@ -514,8 +513,10 @@ export function Autostich() {
 
           {/* Mobil: dieselben Kopf-Stats als eigenes gerahmtes Panel an ZWEITER Stelle (direkt nach der
               Controls-Leiste). Auf Desktop ausgeblendet (dort stehen sie im Header). */}
-          <div className="sm:hidden grid grid-cols-3 gap-x-3 gap-y-2 justify-items-center rounded-xl p-3 as-panel"
-            style={{ background: "#17171c", border: "1px solid #26262e" }}>
+          {/* #UI: Mobil-Statuspanel schwebt (sticky) — wie die Bestätigungsleiste der Aufstellung —, bleibt beim
+              Scrollen oben sichtbar. Deckende Panel-Farbe + Schatten, damit Inhalt sauber darunter durchläuft. */}
+          <div className="sm:hidden sticky top-0 z-30 grid grid-cols-3 gap-x-3 gap-y-2 justify-items-center rounded-xl p-3 as-panel"
+            style={{ background: "#17171c", border: "1px solid #26262e", boxShadow: "0 4px 14px #0007" }}>
             {statCells}
           </div>
 
