@@ -23,7 +23,7 @@ import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
 import { CrystalBar } from "./ui/CrystalBar.jsx";
-import { frozenCount, archetypeOf } from "./game/skills.js";
+import { frozenCount, archetypeOf, hasKristallineMasse } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
@@ -458,14 +458,15 @@ export function Autostich() {
             <div className="grid gap-4">
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)}
-                forged={state.forged || {}} brandActive={state.brandActive || {}}
+                forged={state.forged || {}} brandActive={state.brandActive || {}} layers={state.layers || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "stat"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} />
               <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}} />
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
-                ownCount={frozenCount(state.deck)}
-                enemyCount={(state.frostbiteActive || []).length} />
+                layers={state.layers || {}}
+                frostbite={state.frostbiteActive || {}}
+                hasKristalline={hasKristallineMasse(state.skills || [])} />
               <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} />
             </div>
             <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />

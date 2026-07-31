@@ -1,12 +1,43 @@
-import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK } from "../game/constants.js";
+import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX } from "../game/constants.js";
 import { FrostOverlay } from "./FrostOverlay.jsx";
+
+// Eis (#210): Schicht-Eck-Kristalle — dezenter, gestapelter Hinweis „diese Karte ist geschichtet" (bewusst KEINE
+// Zahl auf der Karte). Mehr Schichten → mehr Kristalle; ab dem wirksamen Deckel (ICE_LAYER_MAX) leuchten obenauf
+// Überlauf-Kristalle heller = Überlauf-Tiefe (die Nahrung der Eis-Legendären). Sitzt in der durch den Ion-Umzug
+// (#208) freigeräumten unteren linken Ecke (vocab.CORNER.frostLayers). Farben inline wie im übrigen Card-Stil.
+const CRYSTAL = "#8fcfe6", CRYSTAL_OVER = "#e6f7ff"; // gedämpfter Schicht-Kristall · heller Überlauf-Kristall
+function FrostLayerCrystals({ layers }) {
+  const n = layers || 0;
+  if (n <= 0) return null;
+  const eff = Math.min(n, ICE_LAYER_MAX);            // wirksame Schichten (gedeckelt)
+  const over = Math.max(0, n - ICE_LAYER_MAX);       // Überlauf-Tiefe
+  const basePips = Math.min(5, Math.max(1, Math.ceil(eff / 2.5))); // 1..5 gedämpfte Kristalle (grobe Tiefe)
+  const overPips = over > 0 ? Math.min(2, Math.ceil(over / 6)) : 0; // 0..2 helle Überlauf-Kristalle obenauf
+  const pips = [];
+  for (let i = 0; i < basePips; i++) pips.push(false);
+  for (let i = 0; i < overPips; i++) pips.push(true);
+  return (
+    // flex-col-reverse: der erste (gedämpfte) Kristall sitzt unten, die hellen Überlauf-Kristalle stapeln sich obenauf.
+    <div className="absolute bottom-1 left-1 flex flex-col-reverse items-center leading-none" style={{ gap: 1 }}
+      title={`Geschichtet — ${n} Schicht${n === 1 ? "" : "en"}${over > 0 ? ` · Überlauf +${over}` : ""}`}>
+      {pips.map((isOver, i) => (
+        <span key={i} style={{
+          fontSize: 9,
+          color: isOver ? CRYSTAL_OVER : CRYSTAL,
+          opacity: isOver ? 0.9 : 0.55,
+          textShadow: isOver ? "0 0 5px #bfe9f7" : "0 0 3px #8fcfe688",
+        }}>◆</span>
+      ))}
+    </div>
+  );
+}
 
 /* Eine Karte. Die große Zahl = effektiver Kampfwert dieses Stichs (= value + stichBonus),
    damit sie immer zum Stich-Ausgang passt.
      value      = dauerhafter Kartenwert (inkl. Kat.-A-Mods)
      baseRank   = Ursprungswert → dauerhafter Boost = value − baseRank (violett „+X")
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
-export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, green = false, forged = 0, branded = 0, allyColor = null, frontImage = null }) {
+export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, green = false, forged = 0, branded = 0, frostLayers = 0, allyColor = null, frontImage = null }) {
   const color = suitColor(suit);
   // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
   // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
@@ -58,8 +89,10 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
         boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, frostbiteGlow, greenGlow, forgedGlow, brandGlow, ambientEdge].filter(Boolean).join(", "),
       }}
     >
-      {/* #136 Eis-Schimmer: Frost-Layer (Tint + Körnung + optional Sweep) über der eingefrorenen Karte — hinter Text/Markern. */}
+      {/* #136/#210 Eis-Schimmer: Frost-Kanten-Layer (Ecken + Inset-Rim + optional Sweep) über der eingefrorenen Karte — hinter Text/Markern, Mitte frei. */}
       {frozen && <FrostOverlay animated={frostAnimated} radius="0.75rem" />}
+      {/* Eis (#210): Schicht-Eck-Kristalle unten-links (nur eingefrorene, geschichtete Karten) — grobes „geschichtet", keine Zahl. */}
+      {frozen && frostLayers > 0 && <FrostLayerCrystals layers={frostLayers} />}
       {permBoost > 0 && (
         <div className="absolute top-1.5 right-2 text-[11px] font-bold px-1 rounded"
           style={{ color: "#8a7de0", background: "#8a7de022" }}

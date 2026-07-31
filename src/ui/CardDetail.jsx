@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK } from "../game/constants.js";
+import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX, ICE_ABLAGE_SCORE_PER_LAYER } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
+import { layerValue } from "../game/skills.js";
 import { formationLabel } from "./formationLabels.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
@@ -9,7 +10,7 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
 /* Detailanzeige einer angetippten Karte (Issue #95, Punkt 5): Rolle(n) und alle aktiven
    Modifikatoren. Wird unter der Kachelfläche in Chronik-Übersicht UND Formationsphase genutzt.
    Rollen-Chips sind anklickbar → klappen die Perk-Beschreibung auf (touch-tauglich, plus Hover-Titel). */
-export function CardDetail({ card, pos, posForm, roles, familyTiers = {} }) {
+export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostReadout = false, frostLayers = 0, frostGletscher = false }) {
   const [openRole, setOpenRole] = useState(null); // aktuell aufgeklappte Rolle (perkId)
   useEffect(() => { setOpenRole(null); }, [card?.id]); // Karte gewechselt → Beschreibung schließen
 
@@ -81,6 +82,23 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {} }) {
           <Chip c="#5ec8f0">⚡ {ion}/{ION_MAX_STACKS} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
         </div>
       )}
+      {/* Eis (#210): Schicht-Werte einer eingefrorenen Karte — nur in der Aufstellung (frostReadout). Hier stehen die
+          konkreten Zahlen, die die Eck-Kristalle auf der Karte bewusst NICHT zeigen: Schichten, Dauerwert (Gletscher =
+          superlinear n(n+1)/2, sonst linear), Flat je Frost-Sieg (gedeckelt ≤12) und die Überlauf-Tiefe (Nahrung der Legendären). */}
+      {frostReadout && card.frozen && (() => {
+        const val = layerValue(frostLayers, frostGletscher);
+        const flat = ICE_ABLAGE_SCORE_PER_LAYER * Math.min(frostLayers, ICE_LAYER_MAX);
+        const over = Math.max(0, frostLayers - ICE_LAYER_MAX);
+        return (
+          <div className="flex flex-wrap gap-1.5 items-center mt-1">
+            <span className="opacity-45">❄ Schichten:</span>
+            <Chip c="#8fcfe6">{frostLayers}{frostGletscher ? " · Gletscher" : ""}</Chip>
+            {val > 0 && <Chip c="#8fcfe6">+{val} Dauerwert</Chip>}
+            {flat > 0 && <Chip c="#8fcfe6">+{flat} je Frost-Sieg</Chip>}
+            {over > 0 && <Chip c="#e6f7ff">Überlauf {over}</Chip>}
+          </div>
+        );
+      })()}
     </div>
   );
 }

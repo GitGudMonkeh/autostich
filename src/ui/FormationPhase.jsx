@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
-import { SKILL_DEFS } from "../game/skills.js";
+import { SKILL_DEFS, hasGletscher, hasArchitekt } from "../game/skills.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
@@ -33,6 +33,20 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const frostSwapsUsed = state.frostSwapsUsed || [];
   const frozenCards = cards.filter((c) => c.frozen);
   const freeFrostLeft = frozenCards.filter((c) => !frostSwapsUsed.includes(c.id)).length;
+  // Eis-Architekt (#210, Legendär): bei aktivem Architekt vereist der Aufstellungsrahmen und die TRAGENDE Spalte
+  // (Position % SEGMENT_SIZE) aus Frostkarten wird als senkrechte Formation (Pfeiler) hervorgehoben. Gewählt wird die
+  // Spalte mit den meisten Frostkarten (≥2 — die Engine gibt den Architekt-Faktor erst ab 2 in derselben Spalte); bei
+  // Gleichstand die linkere. Rein anzeige-seitig, spiegelt die Engine-Spaltenlogik (engine.js: p % SEGMENT_SIZE).
+  const architektOn = hasArchitekt(state.skills || []);
+  const frostPillar = (() => {
+    if (!architektOn) return { col: -1, positions: [] };
+    const byCol = Array.from({ length: SEGMENT_SIZE }, () => []);
+    cards.forEach((c, pos) => { if (c.frozen) byCol[pos % SEGMENT_SIZE].push(pos); });
+    let best = -1;
+    for (let col = 0; col < SEGMENT_SIZE; col++)
+      if (byCol[col].length >= 2 && (best < 0 || byCol[col].length > byCol[best].length)) best = col;
+    return { col: best, positions: best >= 0 ? byCol[best] : [] };
+  })();
   const canFree = (a, b) => {
     const ca = cards[a], cb = cards[b];
     return (ca?.frozen && !frostSwapsUsed.includes(ca.id)) || (cb?.frozen && !frostSwapsUsed.includes(cb.id));
@@ -70,7 +84,12 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           Panel oben angedockt (sm:items-start + sm:pt-28) + sm:max-h, damit der Peek nie vom Viewport geklippt wird. */}
       <div className="relative w-full max-w-4xl">
         <PanelMascot src={formationMascot} accent="#5ab87a" peekMaxH={120} overlap={28} />
-        <div className="relative z-10 w-full rounded-2xl p-5 max-h-[95dvh] sm:max-h-[calc(100dvh-8rem)] overflow-y-auto overlay-card" style={{ background: "#15151b", border: "1px solid #33333e" }}>
+        {/* Eis-Architekt (#210): der Aufstellungsrahmen vereist — icy Border + Inset-Rim + äußerer Frost-Glow (liegt auf
+            der Border-Box, scrollt also nicht mit dem Inhalt). Nur bei gehaltenem Architekt (legendär). */}
+        <div className="relative z-10 w-full rounded-2xl p-5 max-h-[95dvh] sm:max-h-[calc(100dvh-8rem)] overflow-y-auto overlay-card"
+          style={{ background: "#15151b",
+                   border: architektOn ? "1px solid #5ec8f077" : "1px solid #33333e",
+                   boxShadow: architektOn ? "inset 0 0 0 1px rgba(191,233,247,0.22), inset 0 0 26px rgba(94,200,240,0.12), 0 0 30px rgba(94,200,240,0.16)" : undefined }}>
         {/* Kopf */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -126,16 +145,25 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
             ❄ <b>{freeFrostLeft}</b> von {frozenCards.length} eingefrorenen Karten haben noch einen <b>kostenlosen Frosttausch</b> (ohne Energie).
           </p>
         )}
+        {/* Eis-Architekt (#210): Hinweis auf die vereiste, hervorgehobene Spalte (senkrechte Formation). Nur wenn aktiv. */}
+        {architektOn && (
+          <p className="text-xs mb-3" style={{ color: "#bfe9f7" }}>
+            ❄ <b>Architekt</b> — {frostPillar.col >= 0
+              ? <>Spalte <b>{frostPillar.col + 1}</b> aus <b>{frostPillar.positions.length}</b> Frostkarten bildet eine <b>senkrechte Formation</b> (Pfeiler, je weitere Frostkarte in der Spalte mehr Multiplikator).</>
+              : <>stelle <b>≥2 Frostkarten</b> in dieselbe Spalte (gleiche Position je Segment), um eine <b>senkrechte Formation</b> zu meißeln.</>}
+          </p>
+        )}
 
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} />
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} frostPillarPos={frostPillar.positions} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
           <div className="md:flex-1 md:min-w-0 mt-3 md:mt-0 grid gap-3 content-start">
-            <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} familyTiers={state.familyTiers} />
+            <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} familyTiers={state.familyTiers}
+              frostReadout frostLayers={sel != null && cards[sel] ? (state.layers?.[cards[sel].id] || 0) : 0} frostGletscher={hasGletscher(state.skills || [])} />
             <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
             {/* Kurz-Erklärung der Formationen mit Kürzel (#95.7). #103: nur Kürzel + Name grün,
                 Beschreibung (nach dem „—") in Standard-Textfarbe → bessere Lesbarkeit. */}

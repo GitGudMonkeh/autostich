@@ -23,6 +23,14 @@ export const CASCADE = "#9b8cff"; // Kaskade-Kettenglied (gefüllt) — violett-
 export const CASCADE_BRIGHT = "#e7e0ff"; // helles Ende der Kette (voll/aktiv aufglühend)
 export const THUNDER = "#8a7de0"; // Donnergott (Legendär) — der bestehende Blitz-Violett-Akzent
 
+// ---- Eis-Unterfarben (#210) ----
+// Der Frost teilt sich das ICE-Cyan (❄ + Kanten-Rim). Die SCHICHTEN (der Spine) bekommen einen eigenen, ruhigeren
+// Kristallton, damit ein geschichteter Frost von einem bloß „eingefrorenen" unterscheidbar ist; die ÜBERLAUF-Tiefe
+// (Schichten über dem wirksamen Deckel 12 — die Nahrung der Legendären) leuchtet heller aus dem Stapel heraus.
+export const CRYSTAL = "#8fcfe6"; // Schicht-Kristall (gedämpft, im Deckel-Bereich ≤12)
+export const CRYSTAL_OVER = "#e6f7ff"; // Überlauf-Kristall — hell (Tiefe > Deckel = Direkt-Score der Legendären)
+export const GLACIER = "#bfe9f7"; // Architekt-Pfeiler / „Masse-Schwelle erreicht" — heller Eis-Akzent
+
 // ---- Karten-Ecken-Belegung (Single Source of Truth) ----
 // Reserviert je Fraktion, damit sich in gemischten Builds (alle 4 mischbar) nichts überdeckt.
 // Werte = grobe Ecke; die exakte Positionierung (Offsets bei Kollision) macht Card.jsx.
@@ -35,7 +43,8 @@ export const CORNER = {
   //                    frühere untere linke Ecke ist damit GERÄUMT und für Eis/Pflanze reserviert (siehe unten).
   frost: "bottom-right", //  ❄ Eis: eingefroren (eigen) / Frostbiss (Gegner) (bestehend)
   brandMark: "bottom-right", //  🔥 Feuer-Brand auf GEGNERkarte — links neben ❄ versetzt
-  // FREI reserviert: "bottom-left" — nach dem Ionisierungs-Umzug (#208) offen für kommende Eis-/Pflanze-Marker.
+  frostLayers: "bottom-left", //  ❖ Eis-Schichten (#210): dezente, gestapelte Eck-Kristalle (grobes „geschichtet"), heller ab
+  //                    Überlauf (12). Sitzt in der durch den Ion-Umzug (#208) geräumten unteren linken Ecke.
 };
 
 // ---- Reserviertes Vokabular (Kollisionsverbote) ----
@@ -44,3 +53,6 @@ export const CORNER = {
 //   Geschmiedet = weicher INNEN-Glow (inset), KEIN Ring, KEIN äußerer Halo.
 // - Frostbiss = kaltes ❄ (blau/rot-kalt). Brand = warm/orange + Char → „das ist Feuer, nicht Eis".
 // - KASKADE-Cyan ↔ -Violett getrennt halten: Ladung/Ionisierung = Cyan (LIGHTNING); die selbst-nährende Kette = CASCADE (violett).
+// - Frost (#210) ist ein KANTEN-/ECK-Treatment (eisige Ecken + dünner Inset-Rim), KEIN Vollflächen-Tint → die Mitte
+//   bleibt frei für die Feuer-Innenglut (koexistenzfähig). Die Schicht-Kristalle (bottom-left) sind NUR eigene
+//   Schichten; der rote Gegner-Frostbiss (❄, bottom-right) bleibt davon getrennt.
