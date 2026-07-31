@@ -29,16 +29,16 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
   };
 
   // #227 Variante B: gleichbreite, gestapelte Buttons ohne Icons — sekundärer Stil (dunkel), einheitliche Höhe/Breite.
-  const secCls = "w-full px-6 py-2.5 rounded-xl text-base font-semibold transition-all hover:-translate-y-0.5";
+  const secCls = "w-full px-5 py-2 rounded-lg text-sm font-medium transition-all hover:-translate-y-0.5";
   const secSty = { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
 
   return (
-    <div className="relative grid gap-4 justify-items-center content-start py-6">
+    <div className="relative grid gap-3 justify-items-center content-start py-5">
       {/* #133: Schnell-Mute jederzeit sichtbar oben rechts — togglet dasselbe options.muted wie die Optionen. */}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-0 right-0" />}
       <div className="text-center">
         <div className="relative inline-block">
-          <h1 className="text-4xl font-bold tracking-tight font-pixel crt-title as-wordmark-hero">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight font-pixel crt-title as-wordmark-hero">
             AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
           </h1>
           {/* Versions-Banner unten rechts am Logo — gleicher Gold-Stil wie der TESTBRANCH-Marker (App.jsx). */}
@@ -50,7 +50,7 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
             v0.3
           </span>
         </div>
-        <p className="text-sm opacity-45 mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
+        <p className="text-xs opacity-45 mt-0.5">Roguelite-Autobattler-Stechspiel · Prototyp</p>
       </div>
 
       {/* #205: Seed einfügen & spielen — Challenge annehmen, ohne den Statistik-Hub zu öffnen. */}
@@ -77,17 +77,17 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
 
       {/* #227 Variante B: linke gleichbreite Button-Spalte (ohne Icons, gestapelt) + rechts ruhiger Rekord-Block.
           Die volle Score-Liste (deine Läufe + global) lebt hinter dem „Bestenliste"-Button (LeaderboardScreen, #217). */}
-      <div className="w-full max-w-2xl grid gap-3 sm:grid-cols-[minmax(0,1fr)_240px] items-start">
+      <div className="w-full max-w-2xl grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_240px] items-start">
         {/* Links: gleichbreite, gestapelte Buttons */}
-        <div className="grid gap-2">
+        <div className="grid gap-1.5">
           <button onClick={onStart}
-            className="w-full px-6 py-2.5 rounded-xl text-lg font-bold transition-all hover:-translate-y-0.5"
+            className="w-full px-5 py-2 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
             style={{ background: "#5ab87a", color: "#141419" }}>
             Normaler Run
           </button>
           {onMasterRun && (
             <button onClick={onMasterRun}
-              className="relative w-full px-6 py-2.5 rounded-xl text-lg font-bold transition-all hover:-translate-y-0.5"
+              className="relative w-full px-5 py-2 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
               style={{ background: "#8a7de0", color: "#141419" }}>
               Meister Run
               <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
