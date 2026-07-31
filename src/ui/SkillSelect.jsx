@@ -151,10 +151,16 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             return (
             <div key={g.arch}>
               <button type="button" onClick={() => setOpenArch(detailOpen ? null : g.arch)}
-                className="w-full flex items-center gap-2 mb-2 text-left transition-opacity hover:opacity-100"
-                title={`${g.meta.label}: Passiv & Begriffe`} aria-expanded={detailOpen}>
+                className="w-full flex items-center gap-2 mb-2 text-left"
+                title={`${g.meta.label}: Passiv & Begriffe ${detailOpen ? "einklappen" : "ausklappen"}`} aria-expanded={detailOpen}>
                 <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: g.meta.color }}>{g.meta.icon} {g.meta.label}</span>
-                <span className="text-[10px] opacity-45" style={{ color: g.meta.color }}>{detailOpen ? "▾ Passiv" : "▸ Passiv & Begriffe"}</span>
+                {/* #UI: dezenter, aber klar tappbarer „ausklappen"-Hinweis — kleiner Chip mit rotierendem Chevron
+                    (statt nur dünnem Dreieck), damit erkennbar ist, dass der Kopf Passiv/Begriffe aufklappt. */}
+                <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
+                  style={{ color: g.meta.color, background: `${g.meta.color}14`, border: `1px solid ${g.meta.color}3a` }}>
+                  <span className="transition-transform" style={{ display: "inline-block", transform: detailOpen ? "rotate(90deg)" : "none" }}>▸</span>
+                  {detailOpen ? "Passiv" : "Passiv & Begriffe"}
+                </span>
                 <div className="flex-1 h-px" style={{ background: `${g.meta.color}33` }} />
               </button>
               {detailOpen && (
