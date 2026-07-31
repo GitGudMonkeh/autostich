@@ -3,6 +3,7 @@ import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/form
 import { allianceGroups } from "../game/families.js";
 import { SKILL_DEFS, hasGletscher, hasArchitekt, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
 import { precomputeArchitect, architectValueBonus, familyDef as archFamilyDef } from "../game/architect.js";
+import { architectEffectStrings } from "./archEffects.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
@@ -55,7 +56,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         // #UI: badgeSuit = die Karten-Farbe, für die das Gebäude den Wert-Bonus gibt (colorLocked → colorChoice),
         // sonst null → grau. Speist die „+N"-Badge-Farbe im CardGrid.
         const badgeSuit = fam.colorLocked ? (b.colorChoice || null) : null;
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, badgeSuit, bid: b.id };
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card) };
       }
     }
     return cover;
@@ -220,6 +221,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
           <div className="md:flex-1 md:min-w-0 mt-3 md:mt-0 grid gap-3 content-start">
             <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} familyTiers={state.familyTiers}
+              arch={sel != null && architectCover ? architectCover[sel] : null}
               frostReadout frostLayers={sel != null && cards[sel] ? (state.layers?.[cards[sel].id] || 0) : 0} frostGletscher={hasGletscher(state.skills || [])}
               plantReadout={plantHeld}
               plantGrowth={sel != null && cards[sel] ? (state.growth?.[cards[sel].id] || 0) : 0}

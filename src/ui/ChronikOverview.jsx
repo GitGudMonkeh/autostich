@@ -13,6 +13,7 @@ import { useEscape } from "./useEscape.js";
 import { hasGletscher, plantRootScore, hasPfahlwurzel } from "../game/skills.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
 import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus } from "../game/architect.js";
+import { architectEffectStrings } from "./archEffects.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 
 const fmtX = (x) => x.toFixed(2).replace(".", ","); // ×-Multiplikator-Format (1,50)
@@ -74,7 +75,7 @@ export function ChronikOverview({ state, onClose }) {
       for (const pos of b.footprint) {
         const card = deck[playerOrder[pos]];
         const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card) : 0;
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, bid: b.id };
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, bid: b.id, effects: architectEffectStrings(pre, pos, card) };
       }
     }
     return cover;
@@ -123,6 +124,7 @@ export function ChronikOverview({ state, onClose }) {
             {/* #218: Kartendetail zeigt jetzt auch die Elementar-Zustände (Frost/Schichten · Pflanze/Wachstum · Feuer/geschmiedet),
                 genau wie in der Aufstellung (FormationPhase). selCard = die aktuell angetippte Karte. */}
             <CardDetail card={selCard} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} familyTiers={state.familyTiers}
+              arch={selPos != null && architectCover ? architectCover[selPos] : null}
               frostReadout frostLayers={selCard ? (state.layers?.[selCard.id] || 0) : 0} frostGletscher={hasGletscher(state.skills || [])}
               plantReadout plantGrowth={selCard ? (state.growth?.[selCard.id] || 0) : 0}
               plantRoots={selCard ? plantRootScore(state.skills || [], state.growth?.[selCard.id] || 0) : 0}

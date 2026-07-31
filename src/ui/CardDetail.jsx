@@ -13,7 +13,7 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
    Modifikatoren. Wird unter der Kachelfläche in Chronik-Übersicht UND Formationsphase genutzt.
    Rollen-Chips sind anklickbar → klappen die Perk-Beschreibung auf (touch-tauglich, plus Hover-Titel). */
 export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostReadout = false, frostLayers = 0, frostGletscher = false,
-                            plantReadout = false, plantGrowth = 0, plantRoots = 0, plantPfahl = false, forgedValue = 0 }) {
+                            plantReadout = false, plantGrowth = 0, plantRoots = 0, plantPfahl = false, forgedValue = 0, arch = null }) {
   const [openRole, setOpenRole] = useState(null); // aktuell aufgeklappte Rolle (perkId)
   useEffect(() => { setOpenRole(null); }, [card?.id]); // Karte gewechselt → Beschreibung schließen
 
@@ -136,6 +136,18 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
           <span className="opacity-45">🔥 Feuer:</span>
           <Chip c="#e0714a">⚒ Geschmiedet +{forgedValue} Dauerwert</Chip>
+        </div>
+      )}
+      {/* #UI: Architekt-Gebäude, das auf diese Position (Karte) wirkt — Name + die konkreten Effekte an dieser Zelle
+          (Wert-Boost · Score-Effekt · Struktur-Faktor). Speist sich aus architectCover (Chronik/Aufstellung). */}
+      {arch && (
+        <div className="flex flex-wrap gap-1.5 items-center mt-1">
+          <span className="opacity-45">🏗 Gebäude:</span>
+          <Chip c={arch.legendary ? "#d4a63a" : arch.color}>{arch.name}</Chip>
+          {(arch.effects || []).map((e, i) => (
+            <Chip key={i} c={arch.legendary ? "#d4a63a" : arch.color}>{e}</Chip>
+          ))}
+          {(arch.effects || []).length === 0 && <span className="opacity-40">keine direkte Wirkung an dieser Karte</span>}
         </div>
       )}
     </div>
