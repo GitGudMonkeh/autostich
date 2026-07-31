@@ -363,7 +363,10 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
           {/* ---- Bau-Assistent + Vorschau. Mobil: `contents` löst die Gruppe auf → Phase-Panel (order-1) ÜBER dem Brett (order-2),
                  Vorschau (order-3) DRUNTER. Desktop: wieder eine flex-Spalte rechts (md:flex, md:order-2). ---- */}
           <section className="contents md:flex md:flex-col md:gap-4 md:order-2">
-            <div className="rounded-xl p-3 order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
+            {/* #UI: Bau-Panel (Buttons) schwebt auf Mobil oben (sticky) — wie die Bestätigungsleiste der Aufstellung —,
+                damit man beim Ziehen am Brett unten nicht hochscrollen muss, um „Bauen"/„Bestätigen" zu treffen.
+                Desktop unverändert (md:static). */}
+            <div className="rounded-xl p-3 order-1 sticky top-0 z-20 md:static" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. */}
               <div className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}>
