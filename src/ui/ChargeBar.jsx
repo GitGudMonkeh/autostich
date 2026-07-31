@@ -114,14 +114,21 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
         </div>
       </div>
 
-      {consumer && (
+      {consumer ? (
         <div className="flex flex-wrap gap-1.5">
           <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
             style={{ background: `${LIGHTNING}22`, color: LIGHTNING, border: `1px solid ${LIGHTNING}66` }}>
             Konsument: {consumer}
           </span>
         </div>
-      )}
+      ) : full ? (
+        // #223: volle Ladung ohne Konsument ist komplett inert (alle Reaktoren hängen an `consumed`) → dezenter
+        // Awareness-Hinweis. Die Garantie (#191) BIETET einen Konsumenten an, erzwingt ihn aber bewusst nicht.
+        <div className="text-[11px] leading-snug rounded px-2 py-1.5"
+          style={{ background: `${LIGHTNING}14`, color: LIGHTNING, border: `1px solid ${LIGHTNING}44` }}>
+          ⚡ Voll — ohne Konsument verpufft die Ladung. Wähle <b>Ionisierung</b> oder <b>Geladene Serie</b>.
+        </div>
+      ) : null}
     </IndicatorPanel>
   );
 }

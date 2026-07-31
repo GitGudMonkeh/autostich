@@ -163,6 +163,13 @@ describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", (
     ).some((off) => !off.some(isChargeConsumer));
     expect(anyClean).toBe(true);
   });
+  it("#223 Kontrolle Feuer: hält man einen Hitze-Konsumenten → KEINER erzwungen (symmetrisch zu Blitz)", () => {
+    // Flächenbrand (Hitze-Konsument) gehalten → über viele Seeds gibt es mind. ein Angebot ganz OHNE Hitze-Konsument.
+    const anyClean = Array.from({ length: 30 }, (_, s) =>
+      buildSkillOffer(["SK_FIRE_11"], ["fire"], makeRng(s + 1), 6)
+    ).some((off) => !off.some(isFireConsumer));
+    expect(anyClean).toBe(true);
+  });
   it("Erst-Angebot (leeres activeArchetypes) bleibt deterministisch — kein rng-Drift", () => {
     expect(buildSkillOffer([], [], makeRng(1), 6)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
   });
