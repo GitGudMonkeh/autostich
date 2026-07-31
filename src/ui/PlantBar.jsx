@@ -84,7 +84,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
       {/* Ausläufer (kolonisierte Gegnerkarten) — eigene, getrennte Zeile: der Griff ins Gegnerdeck (Ernte/Dornenkönig). */}
       {colonizedN > 0 && (
         <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t" style={{ borderColor: `${PLANT}22` }}>
-          <span className="opacity-55 shrink-0">Ausläufer · kolonisiert</span>
+          <span className="opacity-55 shrink-0">Ausläufer · Kolonisiert</span>
           <span className="tabular-nums font-bold shrink-0" style={{ color: PLANT_RIPE }}>{colonizedN}</span>
           <span className="inline-flex flex-wrap gap-0.5 min-w-0">
             {Array.from({ length: Math.min(colonizedN, 12) }, (_, i) => (
