@@ -90,9 +90,9 @@ describe("canChallenge — Gating bis eigener Max-Grad", () => {
 });
 
 describe("Anzeige-Label", () => {
-  it("Grad 0 → 'Kein Grad', sonst römisch", () => {
-    expect(masteryGradeLabel(0)).toBe("Kein Grad");
-    expect(masteryGradeLabel(3)).toBe("Grad III");
-    expect(masteryGradeLabel(5)).toBe("Grad V");
+  it("Rang 0 → 'Kein Rang', sonst römisch", () => {
+    expect(masteryGradeLabel(0)).toBe("Kein Rang");
+    expect(masteryGradeLabel(3)).toBe("Rang III");
+    expect(masteryGradeLabel(5)).toBe("Rang V");
   });
 });

@@ -148,13 +148,13 @@ function MasterPanel({ profile, best }) {
   const next = grade < MASTERY_MAX_GRADE ? grade + 1 : null;
   return (
     <>
-      <Section title="Meistergrade" hint="experimentell">
+      <Section title="Meisterränge" hint="experimentell">
         <div className="flex items-center gap-3 flex-wrap mb-1">
-          <Kpi label="Aktueller Grad" value={grade >= 1 ? `Grad ${MASTERY_ROMAN[grade]}` : "—"} color={grade >= 1 ? MASTER_ACCENT : undefined} />
+          <Kpi label="Aktueller Rang" value={grade >= 1 ? `Rang ${MASTERY_ROMAN[grade]}` : "Kein Rang"} color={grade >= 1 ? MASTER_ACCENT : undefined} />
           <Kpi label="Bester Score" value={fmtScore(pbScore)} color="#d4a63a" />
         </div>
         <div className="text-[11px] opacity-45 leading-relaxed mb-1">
-          Dein bester Lauf-Score schaltet Grade frei — einen pro Lauf, der Reihe nach. Höhere Grade geben dauerhafte Vorteile (nur grob gezeigt) + je ein Deck.
+          Nur <b>Meister-Läufe</b> schalten Ränge frei — einer pro Lauf, der Reihe nach. Höhere Ränge geben dauerhafte Vorteile (nur grob gezeigt) + je ein Deck.
         </div>
       </Section>
       <div className="grid gap-1.5 mt-2">
@@ -197,7 +197,7 @@ function MasterPanel({ profile, best }) {
         })}
       </div>
       <div className="text-[11px] opacity-40 mt-3 leading-relaxed">
-        Experimentell. Über Grad V öffnet sich später das Großmeister-System (noch nicht gebaut).
+        Experimentell. Über Rang V öffnet sich später das Großmeister-System (noch nicht gebaut).
       </div>
     </>
   );

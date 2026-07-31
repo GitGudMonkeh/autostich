@@ -130,7 +130,7 @@ export function unlockProgress(def, profile) {
     }
     case "masteryGrade": {
       const have = p.masteryGrade || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche Meister-${MASTERY_ROMAN[u.n] || u.n}` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche Rang ${MASTERY_ROMAN[u.n] || u.n}` };
     }
     default:
       return { done: true, cur: 1, target: 1, label: "" };

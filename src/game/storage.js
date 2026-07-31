@@ -160,9 +160,10 @@ export function recordRun(record) {
     // #215: Archetyp-Decks — Mono-Läufe je Fraktion (deck_c5..c8) + Element-Bund (alle vier, deck_c9).
     monoArchetypeRuns,
     hadAllArchetypesRun: !!p.hadAllArchetypesRun || isAllArchetypesRun(record),
-    // #217: Meistergrad sequentiell fortschreiben — jeder Lauf (Score zählt, kein completed-Zwang) schaltet
-    // höchstens den NÄCHSTEN Grad frei (advanceGrade prüft gegen die Grad+1-Schwelle; kein Multi-Sprung).
-    masteryGrade: advanceGrade(p.masteryGrade, n0(record.score)),
+    // #217: Rang-Leiter — NUR Meister-Läufe (record.masterRun) schalten den nächsten Rang frei (eigener Modus). Ein
+    // Meister-Lauf schaltet höchstens den NÄCHSTEN Rang frei (advanceGrade prüft gegen die Rang+1-Schwelle; kein
+    // Multi-Sprung; Score zählt, kein completed-Zwang). Normale Läufe lassen den Rang unverändert.
+    masteryGrade: record.masterRun ? advanceGrade(p.masteryGrade, n0(record.score)) : (p.masteryGrade || 0),
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
   return { history, profile };

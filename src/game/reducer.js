@@ -112,8 +112,9 @@ export function initialState(rng = Math.random, seed = null) {
     rerolls: C.BASE_REROLLS,       // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill) — ersetzt shop.perkRerolls/skillRerolls; Baseline, kein Nachschub (#217-Reward-Fläche)
     rerollsUsed: 0,                // #214: Zähler benutzter Rerolls (Perk+Skill, bezahlt ODER gratis) über den Lauf → Sparfuchs-Challenge (deck_c3 „noRerollRun")
     offerRerolls: 0,               // #205: Reroll-Index des AKTUELLEN Angebots (Original = 0) → adressiert `(seed,cycle,kind,offerRerolls)`; von der Engine bei jedem frischen Angebot auf 0 gesetzt
-    masteryGrade: 0,               // #217: Meistergrad dieses Laufs (0..5) — von START_RUN aus dem Profil gesetzt; 0 = Basiswerte (No-op)
-    masteryLegGranted: false,      // #217 Grad V: wurde der garantierte Legendär in diesem Lauf schon angeboten? (1×/Lauf)
+    masteryGrade: 0,               // #217: gewählter Rang dieses Laufs (0..5) — von START_RUN gesetzt; 0 = Basiswerte (No-op)
+    masterRun: false,              // #217: ist dies ein Meister-Lauf? Nur dann Rang-Balken + Rang-Leiter (normaler Lauf = false)
+    masteryLegGranted: false,      // #217 Rang V: wurde der garantierte Legendär in diesem Lauf schon angeboten? (1×/Lauf)
     lastTrick: null,
   };
 }
@@ -146,7 +147,7 @@ export function reducer(state, action) {
       // Grad 0 (frischer Spieler / Sim ohne masteryGrade) = Basiswerte → alles byte-identisch zum bisherigen Start.
       const grade = Math.max(0, Math.min(5, Math.floor(Number(action.masteryGrade) || 0)));
       return { ...s, phase: "levelup", statOffer: STAT_IDS, architectEnabled, shopDisabled: !!action.shopDisabled,
-        masteryGrade: grade,
+        masteryGrade: grade, masterRun: !!action.masterRun,
         rerolls: C.BASE_REROLLS + masteryRerollBonus(grade),                                  // Neuwurf-Pool 2 → 3/4/5
         architect: { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) } }; // Baufeld +2/Grad ab II
     }

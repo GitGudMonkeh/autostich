@@ -8,7 +8,7 @@ import { fmtScore } from "./format.js";
 
 /* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste.
    #205: Seed-Paste-Leiste ganz oben („Seed einfügen & spielen") — der schnelle Weg, eine Challenge anzunehmen. */
-export function StartScreen({ onStart, onPlaySeed = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
   const [detail, setDetail] = useState(null); // #169 FB-8: gewählter lokaler Lauf → RunDetail-Overlay
   const [seedInput, setSeedInput] = useState("");
@@ -68,8 +68,17 @@ export function StartScreen({ onStart, onPlaySeed = null, highscores, best, onOp
           className="px-8 py-3 rounded-xl text-lg font-bold transition-all hover:-translate-y-0.5"
           style={{ background: "#5ab87a", color: "#141419" }}
         >
-          ▶ Neuer Run
+          ▶ Normaler Run
         </button>
+        {onMasterRun && (
+          <button
+            onClick={onMasterRun}
+            className="px-6 py-3 rounded-xl text-lg font-bold transition-all hover:-translate-y-0.5"
+            style={{ background: "#8a7de0", color: "#141419" }}
+          >
+            Meister Run
+          </button>
+        )}
         <button
           onClick={() => setShowGuide(true)}
           className="px-6 py-3 rounded-xl text-lg font-semibold transition-all"

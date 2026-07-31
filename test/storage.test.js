@@ -184,6 +184,21 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
       expect(later.profile.hadNoRerollRun).toBe(false);
     });
 
+    it("#217 Rang-Leiter: nur Meister-Läufe schalten den nächsten Rang frei (sequentiell)", () => {
+      // Normaler Lauf mit riesigem Score → Rang bleibt 0 (zählt nicht).
+      let p = recordRun({ score: 999_000_000, ts: 1, completed: true, statPicks: [] }).profile;
+      expect(p.masteryGrade).toBe(0);
+      // Meister-Lauf ≥ Rang-I-Schwelle → Rang 1 (nur EIN Rang trotz riesigem Score).
+      p = recordRun({ score: 999_000_000, ts: 2, completed: true, statPicks: [], masterRun: true }).profile;
+      expect(p.masteryGrade).toBe(1);
+      // Normaler Lauf dazwischen ändert den Rang NICHT.
+      p = recordRun({ score: 999_000_000, ts: 3, completed: true, statPicks: [] }).profile;
+      expect(p.masteryGrade).toBe(1);
+      // Nächster Meister-Lauf → Rang 2.
+      p = recordRun({ score: 999_000_000, ts: 4, completed: true, statPicks: [], masterRun: true }).profile;
+      expect(p.masteryGrade).toBe(2);
+    });
+
     it("Mono-Stat-Lauf (mit Käufen) setzt nur hadMonoStatRun", () => {
       const { profile } = recordRun({ score: 100, ts: 1, completed: true, shopPurchases: 2, statPicks: monoPicks });
       expect(profile.hadMonoStatRun).toBe(true);

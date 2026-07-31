@@ -16,9 +16,9 @@
 
 export const MASTERY_MAX_GRADE = 5;
 
-// Schwellen [Grad I..V] — Best-Single-Run-Score (2026-07-31: 7,5/10/15/25/50 M). [TUNING]
-// I–III im erreichbaren Band, IV≈p99, V=Fernziel (bewusst aspirational, nicht sim-kalibriert).
-export const MASTERY_THRESHOLDS = [7_500_000, 10_000_000, 15_000_000, 25_000_000, 50_000_000];
+// Schwellen [Rang I..V] — Best-Single-Run-Score eines MEISTER-Laufs (2026-07-31: 5/10/15/25/50 M; Rang I 7,5→5 M
+// als Einstieg gesenkt). [TUNING] I–III im erreichbaren Band, IV≈p99, V=Fernziel (aspirational, nicht sim-kalibriert).
+export const MASTERY_THRESHOLDS = [5_000_000, 10_000_000, 15_000_000, 25_000_000, 50_000_000];
 
 // Grad → römisch (Index 0 = „kein Grad"). Minimalistische Rangnamen (keine Bildkarten, 1–10-Deck).
 export const MASTERY_ROMAN = ["", "I", "II", "III", "IV", "V"];
@@ -71,7 +71,8 @@ export const masteryLegendGuaranteed = (g) => clampGrade(g) >= MASTERY_MAX_GRADE
 
 /* ---- Anzeige-Helfer (grob, keine Prozente/Zahlen — Balatro-Decks-Geist) ------------------ */
 
-export const masteryGradeLabel = (g) => (clampGrade(g) >= 1 ? `Grad ${MASTERY_ROMAN[clampGrade(g)]}` : "Kein Grad");
+// Anzeige (User-Begriff: „Rang", nicht „Grad"; intern bleibt der Bezeichner masteryGrade). 0 = „Kein Rang".
+export const masteryGradeLabel = (g) => (clampGrade(g) >= 1 ? `Rang ${MASTERY_ROMAN[clampGrade(g)]}` : "Kein Rang");
 
 /* #217 Challenger-Gating (#205): ein fremder Lauf ist nur herausforderbar, wenn er auf einem Grad ≤ dem eigenen
    Max-Grad gespielt wurde (sonst hätte der Herausforderer nicht dieselben Rewards). Reine, board-unabhängige Regel.

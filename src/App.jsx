@@ -36,6 +36,7 @@ import { StatsScreen } from "./ui/StatsScreen.jsx";
 import { SeedChip } from "./ui/SeedChip.jsx"; // #205 Challenger Mode: Seed im HUD kopierbar
 import { CustomizeScreen } from "./ui/CustomizeScreen.jsx";
 import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale Bestenliste als eigener Screen
+import { MasterRunSelect } from "./ui/MasterRunSelect.jsx"; // #217: Rang-Auswahl für den Meister-Lauf
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
@@ -61,6 +62,9 @@ export function Autostich() {
   const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
   const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
+  const pendingMaster = useRef(false);                            // #217: nächster Lauf = Meister-Lauf? (nur diese zählen für die Rang-Leiter)
+  const pendingGrade = useRef(0);                                 // #217: gewählter Rang für den nächsten Meister-Lauf (0 = ranglos)
+  const [showMasterSelect, setShowMasterSelect] = useState(false); // #217: Rang-Auswahl-Overlay (Meister-Lauf starten)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/6× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
@@ -202,9 +206,10 @@ export function Autostich() {
       // #205: Lauf-Seed lokal mitspeichern (roh + teilbarer Code) → Nachspielen/Kopieren im Challenge-Reiter. Alt-Läufe
       // ohne Seed degradieren sauber (kein Challenge-Knopf). Global (gEntry) folgt mit dem Board-Umzug (Schicht B, #197).
       seed: state.seed ?? null, seedCode: state.seed != null ? formatSeed(state.seed) : null,
-      // #217: Grad, mit dem dieser Lauf gespielt wurde (die Rewards, die er hatte) — Datengrundlage für das
-      // spätere Challenger-Gating „nur bis zum eigenen Max-Grad" + PB-Segmentierung je Grad am globalen Board.
+      // #217: Rang, mit dem dieser Lauf gespielt wurde + ob er ein Meister-Lauf war. `masterRun` steuert die Rang-Leiter
+      // (nur Meister-Läufe schalten frei, storage.recordRun); `masteryGrade` = gespielte Rewards (Gating/PB-Segmentierung).
       masteryGrade: state.masteryGrade || 0,
+      masterRun: !!state.masterRun,
     };
     setHighscores(recordHighscore(localEntry));
     // #172 FB-10: denselben Lauf in die Historie (letzte 30) + Profil-Totals schreiben — Basis für den Statistik-Hub.
@@ -289,16 +294,30 @@ export function Autostich() {
     setPaused(false);
     setIsRecord(false);
     setNewUnlocks([]); // #190: Freischalt-Hinweis des Vorlaufs zurücksetzen
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, masteryGrade: profile.masteryGrade || 0 }); // #202 Architekt ersetzt den Shop · #205 seedbarer Lauf · #217 Meistergrad-Rewards
+    // #217: Meister-Lauf? Nur dann Rang-Rewards + Rang-Leiter. Gewählter Rang defensiv auf ≤ eigenem Max-Rang geklemmt
+    // (der Picker bietet ohnehin nur freigeschaltete an). Normaler Lauf = Rang 0, keine Rewards, zählt nicht.
+    const masterRun = pendingMaster.current;
+    const grade = masterRun ? Math.max(0, Math.min(profile.masteryGrade || 0, pendingGrade.current | 0)) : 0;
+    pendingMaster.current = false; pendingGrade.current = 0;
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, masteryGrade: grade, masterRun }); // #202 Architekt · #205 Seed · #217 Meister-Lauf
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
   // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
   // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
-  function startRun(seed) {
+  // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
+  function launchRun({ seed = null, master = false, grade = 0 } = {}) {
     pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
+    pendingMaster.current = !!master;
+    pendingGrade.current = grade | 0;
     setPendingRun([deckSkin.front, deckSkin.back, ...(bfSkin ? [bfSkin.desktop, bfSkin.mobile] : [])]);
   }
+  // #217: Normaler Lauf (Rang 0, keine Rewards, zählt nicht) — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
+  function startRun(seed) { launchRun({ seed: (typeof seed === "number" && Number.isFinite(seed)) ? seed : null, master: false }); }
+  // #217: Meister-Lauf auf gewähltem Rang (0 = ranglos). Nur diese zählen für die Rang-Leiter.
+  function startMasterRun(grade = 0) { launchRun({ master: true, grade: grade | 0 }); }
+  // #217: Neustart behält die Lauf-Art (ein Meister-Lauf startet als Meister-Lauf auf demselben Rang neu).
+  function restartRun() { launchRun({ master: !!state.masterRun, grade: state.masteryGrade || 0 }); }
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun läuft über den gameover-Effekt
   // Perk-Auswahl: ein Angebotseintrag ist entweder eine Familie {familyId,tier} (Rarität #167) oder ein flacher perkId-String.
@@ -456,7 +475,7 @@ export function Autostich() {
       {options.skin === "crt" && state.phase === "menu" && <CrtParticles />}
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
-          <StartScreen onStart={startRun} onPlaySeed={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+          <StartScreen onStart={startRun} onPlaySeed={startRun} onMasterRun={() => setShowMasterSelect(true)} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} />
@@ -478,7 +497,7 @@ export function Autostich() {
           <Controls
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
-            onRestart={startRun} onAbort={endRun} onOptions={() => setShowOptions(true)}
+            onRestart={restartRun} onAbort={endRun} onOptions={() => setShowOptions(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
 
@@ -491,7 +510,7 @@ export function Autostich() {
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
-              <MasteryBar grade={profile.masteryGrade || 0} score={state.score} />
+              {state.masterRun && <MasteryBar grade={profile.masteryGrade || 0} score={state.score} />}
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)}
                 forged={state.forged || {}} brandActive={state.brandActive || {}} layers={state.layers || {}}
@@ -578,6 +597,12 @@ export function Autostich() {
 
       {showLeaderboard && (
         <LeaderboardScreen mine={myEntry} reloadToken={pubToken} onClose={() => setShowLeaderboard(false)} />
+      )}
+
+      {showMasterSelect && (
+        <MasterRunSelect profile={profile}
+          onPlay={(grade) => { setShowMasterSelect(false); startMasterRun(grade); }}
+          onClose={() => setShowMasterSelect(false)} />
       )}
 
       {/* #190: Vorlade-Balken beim Run-Start — lädt die aktiven Skins, dann startet der Lauf wirklich. */}

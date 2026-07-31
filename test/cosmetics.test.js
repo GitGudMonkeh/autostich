@@ -21,7 +21,7 @@ describe("cosmetics — Katalog", () => {
     expect(isUnlocked(DECK_DEFS.deck_rank_platin, p)).toBe(false);
     const prog = unlockProgress(DECK_DEFS.deck_rank_platin, p);
     expect(prog).toMatchObject({ done: false, cur: 3, target: 4 });
-    expect(prog.label).toContain("Meister");
+    expect(prog.label).toContain("Rang");
   });
   it("deck_p1 schaltet bei 5 Läufen frei (erste Progressionsstufe)", () => {
     expect(DECK_DEFS.deck_p1.unlock).toEqual({ kind: "games", n: 5 });

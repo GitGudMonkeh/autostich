@@ -24,6 +24,12 @@ describe("#217 START_RUN — Grad übersetzt in Lauf-Rewards", () => {
     expect(startAt(-2).masteryGrade).toBe(0);   // geklemmt
     expect(startAt(undefined).masteryGrade).toBe(0); // Sim/ohne Grad → 0
   });
+  it("masterRun-Flag: default false, per Action gesetzt (steuert Rang-Balken + Leiter)", () => {
+    expect(reducer({}, { type: "START_RUN", rng: Math.random, architect: true }).masterRun).toBe(false);
+    expect(reducer({}, { type: "START_RUN", rng: Math.random, architect: true, masterRun: true, masteryGrade: 2 }).masterRun).toBe(true);
+    // Rewards hängen am gewählten Rang, NICHT am masterRun-Flag (ein Rang-2-Lauf hat die Rewards, egal wie geflaggt).
+    expect(reducer({}, { type: "START_RUN", rng: Math.random, architect: true, masterRun: true, masteryGrade: 2 }).rerolls).toBe(C.BASE_REROLLS + 2);
+  });
   it("Grad 0 = Basiswerte (No-op) — identisch zum Start ohne masteryGrade", () => {
     const withZero = startAt(0);
     const without = reducer({}, { type: "START_RUN", rng: Math.random, architect: true });
