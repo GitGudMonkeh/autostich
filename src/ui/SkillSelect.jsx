@@ -171,10 +171,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   const col = g.meta.color;
                   return (
                     <button key={id} onClick={() => clickSkill(id)}
-                      className="text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5"
+                      className={`text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
                       style={{ background: sel ? "#2a2740" : "#20202a",
-                               border: `1px solid ${sel ? col : col + "88"}`,
-                               boxShadow: sel ? `0 0 16px ${col}88` : `0 0 14px ${col}33` }}>
+                               // Legendär: einheitlicher Gold-Rahmen (Border + animierter Glanz via .as-legendary, #201.3) statt archetyp-farbigem Glow.
+                               border: `1px solid ${s.legendary ? "#d4a63a" : (sel ? col : col + "88")}`,
+                               boxShadow: s.legendary ? undefined : (sel ? `0 0 16px ${col}88` : `0 0 14px ${col}33`) }}>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>

@@ -235,6 +235,15 @@ button { font-family: inherit; }
 @keyframes as-motor-flow { 0% { background-position: 120% 0; } 100% { background-position: -20% 0; } }
 .as-motor-flow { animation: as-motor-flow 1.3s linear infinite; }
 
+/* #201.3: einheitlicher Legendär-Rahmen (Shop/Perk/Skill) — animierter Gold-Glanz. Der Keyframe RUHT bei 0%/100% auf dem
+   statischen Gold-Ring → unter reduced-motion (Regel unten) bleibt genau dieser Ring stehen, kein Puls. Als Klasse an die
+   Legendär-Karte gehängt; die Karte setzt dann KEINE eigene Inline-box-shadow (die würde den Ring überschreiben). */
+@keyframes as-legendary {
+  0%, 100% { box-shadow: 0 0 0 1px #d4a63a99, 0 0 12px #d4a63a55; }
+  50%      { box-shadow: 0 0 0 1px #f0d27a, 0 0 22px #d4a63acc, 0 0 34px #d4a63a55; }
+}
+.as-legendary { box-shadow: 0 0 0 1px #d4a63a99, 0 0 12px #d4a63a55; animation: as-legendary 1.9s ease-in-out infinite; }
+
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

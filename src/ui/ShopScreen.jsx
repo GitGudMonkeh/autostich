@@ -74,9 +74,9 @@ export function ShopScreen({ state = {}, onLeave, onBuy }) {
                   const affordable = canAfford(shop, offer);
                   const disabled = sold || !affordable; // Ziel-Items öffnen beim Kauf die Ziel-Auswahl (§12.2)
                   return (
-                    <div key={offer.offerId} className="rounded-xl p-3"
+                    <div key={offer.offerId} className={`rounded-xl p-3${offer.legendary ? " as-legendary" : ""}`}
                       style={{ background: "#20202a", border: `1px solid ${offer.legendary ? GOLD + "88" : CATEGORY_COLOR[cat] + "66"}`,
-                               boxShadow: offer.legendary ? `0 0 10px ${GOLD}33` : `0 0 6px ${CATEGORY_COLOR[cat]}22`, opacity: sold ? 0.5 : 1 }}>
+                               boxShadow: offer.legendary ? undefined : `0 0 6px ${CATEGORY_COLOR[cat]}22`, opacity: sold ? 0.5 : 1 }}>
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-bold text-sm">
                           {name}

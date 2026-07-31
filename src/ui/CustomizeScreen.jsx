@@ -38,7 +38,7 @@ function SkinTile({ name, image, unlocked, active, prog, kind, aspect, fit, onSe
         {image ? (
           <img src={image} alt="" loading="lazy"
             className={`w-full h-full ${fit}`}
-            style={{ filter: unlocked ? undefined : "grayscale(1) brightness(0.45)" }} />
+            style={{ filter: unlocked ? undefined : "grayscale(1) brightness(0.7)" }} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-xs opacity-40">Standard</div>
         )}
@@ -49,16 +49,20 @@ function SkinTile({ name, image, unlocked, active, prog, kind, aspect, fit, onSe
         )}
 
         {!unlocked && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center"
-            style={{ background: "rgba(10,10,14,0.62)" }}>
-            <span style={{ fontSize: 18 }}>🔒</span>
-            <span className="text-[11px] leading-snug opacity-90">{prog.label}</span>
-            {detail && detail.text && <span className="text-[10px] opacity-65">{detail.text}</span>}
-            {detail && detail.bar && (
-              <div className="h-1 w-4/5 rounded-full overflow-hidden mt-0.5" style={{ background: "#20202a" }}>
-                <div className="h-full rounded-full" style={{ width: `${Math.round((prog.cur / prog.target) * 100)}%`, background: "#8a7de0" }} />
-              </div>
-            )}
+          // #201.7: Motiv erahnbar lassen — nur leichter Voll-Tint + lokaler Scrim NUR hinter Text/Schloss (statt Vollverdeckung).
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center"
+            style={{ background: "rgba(10,10,14,0.28)" }}>
+            <div className="flex flex-col items-center gap-1.5 rounded-lg px-3 py-2"
+              style={{ background: "rgba(8,8,12,0.6)", backdropFilter: "blur(1px)" }}>
+              <span style={{ fontSize: 18 }}>🔒</span>
+              <span className="text-[11px] leading-snug opacity-90">{prog.label}</span>
+              {detail && detail.text && <span className="text-[10px] opacity-65">{detail.text}</span>}
+              {detail && detail.bar && (
+                <div className="h-1 w-20 rounded-full overflow-hidden mt-0.5" style={{ background: "#20202a" }}>
+                  <div className="h-full rounded-full" style={{ width: `${Math.round((prog.cur / prog.target) * 100)}%`, background: "#8a7de0" }} />
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

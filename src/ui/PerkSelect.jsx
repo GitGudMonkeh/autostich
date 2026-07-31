@@ -74,11 +74,12 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
               <button
                 key={v.key}
                 onClick={() => onPick(v.entry)}
-                className="text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5"
+                className={`text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
                 style={{ background: "#20202a",
                          // Familie: Rahmen = Stufenfarbe (grau/grün/blau/lila). Flach: Seltenheit (grau/grün/gold).
                          border: `1px solid ${v.accent}${(v.isFamily ? v.tier === 1 : v.rar === "common") ? "55" : ""}`,
-                         boxShadow: (!v.isFamily && v.leg) ? `0 0 0 1px ${LEG_GOLD}66, 0 0 16px ${LEG_GOLD}33`
+                         // Legendär (flach): einheitlicher animierter Gold-Rahmen über die .as-legendary-Klasse (#201.3) → hier KEINE Inline-box-shadow.
+                         boxShadow: (!v.isFamily && v.leg) ? undefined
                                   : (v.isFamily ? v.glow : v.rar === "rare") ? `0 0 12px ${v.accent}22` : undefined }}
               >
                 <div className="flex flex-wrap items-center gap-1.5">

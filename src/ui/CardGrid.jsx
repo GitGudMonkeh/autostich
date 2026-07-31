@@ -18,7 +18,7 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
    Auswahl-Zustände (#112): `selected` = weiß (Tausch/Detail) · `picked` = gold ✓ (Mehrfach-/Positionsauswahl) ·
    `arrow` = Farbpfeil „→X" (Shop-Farbwechsel) · `disabled` = ausgegraut, nicht klickbar (z. B. belegte Anker). */
 function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
-                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, pillar = false }) {
+                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, pillar = false, dimmed = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -50,7 +50,9 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
       title={anchorType ? `⚓ Anker · ${ANCHOR_LABEL[anchorType] || anchorType}` : ring ? (ringTitle || undefined) : undefined}
       className="as-tile relative rounded-lg flex flex-col items-center justify-center transition-all"
       style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
-               opacity: disabled ? 0.45 : 1, cursor: disabled ? "not-allowed" : "pointer",
+               // #201.4: schon getauschte Karte dezent ausgrauen (rein kosmetisch, bleibt klickbar). picked(gold)/
+               // selected(weiß) haben Vorrang und bleiben voll sichtbar; disabled (0,45) sticht durch.
+               opacity: disabled ? 0.45 : (dimmed && !selected && !picked ? 0.55 : 1), cursor: disabled ? "not-allowed" : "pointer",
                ...(anchorRing || {}),
                boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, pillarShadow].filter(Boolean).join(", ") || undefined }}>
       {/* #136 Frostglas: ruhiger Eis-Layer (Tint + Körnung, KEIN Sweep) für eingefrorene Board-Karten. */}
@@ -106,7 +108,7 @@ function SegmentBridge({ segA, segB }) {
 
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
-                          highlightPos = [], highlightTitle = null, openSegments = null, frostPillarPos = [] }) {
+                          highlightPos = [], highlightTitle = null, openSegments = null, frostPillarPos = [], swappedIds = new Set() }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const pickedSet = new Set(pickedIds || []);
@@ -132,6 +134,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
                   disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle} pillar={pillarSet.has(pos)}
+                  dimmed={swappedIds.has(c.id)}
                   onClick={disabled ? undefined : () => onTilePick(pos, c)} />;
               })}
             </div>

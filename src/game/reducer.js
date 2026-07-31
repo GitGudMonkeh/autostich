@@ -598,7 +598,7 @@ export function reducer(state, action) {
       [order[i], order[j]] = [order[j], order[i]];
       return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers),
                formationEnergy: isFree ? state.formationEnergy : state.formationEnergy - 1,
-               formationSwaps: [...(state.formationSwaps || []), { i, j, free: isFree, frozenId: freeFrozenId }],
+               formationSwaps: [...(state.formationSwaps || []), { i, j, free: isFree, frozenId: freeFrozenId, idA: cardA.id, idB: cardB.id }],
                frostSwapsUsed: isFree ? [...used, freeFrozenId] : used };
     }
     // Letzten Tausch rückgängig machen → bezahlter Tausch erstattet Energie, freier Frosttausch wird zurückgegeben.

@@ -288,7 +288,7 @@ describe("Formationsphase — SWAP/UNDO/RESET/CONFIRM (V2 §22.8)", () => {
     const s = reducer(formState(), { type: "SWAP_CARDS", i: 1, j: 2 });
     expect(s.playerOrder).toEqual([0, 2, 1, 3, 4]);      // Werte jetzt 5,5,8,2,3
     expect(s.formationEnergy).toBe(3);
-    expect(s.formationSwaps).toEqual([{ i: 1, j: 2, free: false, frozenId: null }]); // #93 F3: Swap-Record trägt Frost-Info
+    expect(s.formationSwaps).toEqual([{ i: 1, j: 2, free: false, frozenId: null, idA: "b", idB: "c" }]); // #93 F3: Frost-Info · #201.4: getauschte Karten-IDs
     expect(s.formations[1].mult).toBeCloseTo(1.25);      // 2. Karte des neuen Wiederholungspaars
   });
   it("SWAP_CARDS ohne Energie oder mit i==j ist wirkungslos", () => {
