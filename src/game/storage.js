@@ -141,7 +141,7 @@ export function recordRun(record) {
    `deckId`/`battlefieldId` (#190): gewähltes kosmetisches Deck-/Battlefield-Skin (Default = aktueller
    Look). Merge über Default degradiert Alt-Daten sauber; die UI fällt zusätzlich defensiv auf "default"
    zurück, falls ein gespeicherter Skin (noch) nicht existiert oder nicht mehr freigeschaltet ist. */
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default" }; // #110/#111 Sound + #190 Kosmetik
+const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "auto" }; // #110/#111 Sound + #190 Kosmetik + #200 Effekte-reduziert (auto|an|aus)
 export function loadOptions() {
   try {
     const raw = localStorage.getItem(k("as_options"));

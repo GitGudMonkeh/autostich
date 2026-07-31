@@ -30,6 +30,24 @@ function Toggle({ on, onClick }) {
   );
 }
 
+/* 3-Wege-Auswahl (z. B. Auto/An/Aus) im Stil der übrigen UI. */
+function Segmented({ value, options, onChange }) {
+  return (
+    <div className="flex rounded-lg overflow-hidden shrink-0" style={{ border: "1px solid #3a3a44" }}>
+      {options.map((o) => {
+        const on = value === o.v;
+        return (
+          <button key={o.v} role="radio" aria-checked={on} onClick={() => onChange(o.v)}
+            className="px-3 py-1.5 text-xs font-bold transition-all"
+            style={{ background: on ? "#5ab87a" : "#25252e", color: on ? "#141419" : "#c8c8d0" }}>
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /* Eine Options-Zeile: Titel + Beschreibung links, Steuerung rechts. */
 function Row({ title, desc, children }) {
   return (
@@ -76,6 +94,12 @@ export function OptionsModal({ options, onChange, onClose }) {
               onChange={(e) => onChange({ musicVol: Number(e.target.value) })}
               aria-label="Musik-Lautstärke"
               style={{ width: 120, accentColor: "#8a7de0", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
+          </Row>
+          {/* #200: Effekte reduziert (auto/an/aus) — lässt teure „Juice"-Layer weg, für flüssigeres Spiel auf schwachen Geräten. */}
+          <Row title="Effekte reduziert" desc="Lässt teure Effekte weg (Schnitt/Explosion, Blitz-Flash, Screen-Shake) — flüssiger auf schwachen Geräten. „Auto“ erkennt Handy und System-Einstellung.">
+            <Segmented value={options.reducedFx ?? "auto"}
+              options={[{ v: "auto", label: "Auto" }, { v: "an", label: "An" }, { v: "aus", label: "Aus" }]}
+              onChange={(v) => onChange({ reducedFx: v })} />
           </Row>
         </div>
 

@@ -462,6 +462,7 @@ export function Autostich() {
                 forged={state.forged || {}} brandActive={state.brandActive || {}} layers={state.layers || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
+                reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "stat"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} />
               <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}} />

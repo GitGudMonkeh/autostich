@@ -6,7 +6,7 @@ import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
-import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js";
+import { useReducedFx } from "./useReducedFx.js";
 import { fmtScore } from "./format.js";
 import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 import cardBackImg  from "../assets/cards/card-back.png";  // (#180) Spieler-Deck: Schwerter-Rücken
@@ -137,13 +137,13 @@ function FlipReveal({ front, backImage, dur }) {
    (≈40 % weiß / 60 % Suit-Farbe, ein paar „Konfetti"-Rechtecke). Deterministisch aus `seed` (kein Math.random
    im Render, #68). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen in den nächsten Stich.
    Elemente entfernen sich mit dem Karten-Remount des nächsten Stichs (key nach trickNo) → kein Stapeln. */
-function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, tier = 0 }) {
+function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, tier = 0, scale = 1 }) {
   // #188: score-skaliert. Kontinuierlich: Funkenzahl/-weite, Hälften-Distanz, Schnittlinien-Länge/Glow.
   // Unlocks: ab BRUTAL (tier≥2) ein zweiter Kreuzschnitt, ab IRRE (tier≥3) zerfällt die Karte in VIER Teile
   // statt zwei Hälften (optische Brücke zur Explosion). Screen-Effekte bleiben dem Crit vorbehalten (v2).
   const sepMul = 1 + intensity * 0.6;   // Hälften/Viertel fliegen weiter
   const radMul = 1 + intensity * 0.6;   // Funken streuen weiter
-  const N = Math.round(18 + intensity * 14);            // 18..32 Funken
+  const N = Math.max(6, Math.round((18 + intensity * 14) * scale)); // 18..32 Funken, turbo-ausgedünnt (#200 A, Boden 6)
   const cutLen = Math.round(120 * (1 + intensity * 0.4)); // Schnittlinie länger
   const quarters = tier >= 3;           // IRRE+: vier Teile
   const crossCut = tier >= 2;           // BRUTAL+: zweiter Kreuzschnitt
@@ -213,7 +213,7 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, 
    „berstet": ein heller Zentral-Flash blitzt auf, ein Schockwellen-Ring dehnt sich, die Karte skaliert kurz auf,
    überstrahlt und zerstiebt, während ~28 Partikel radial nach außen schießen. Farbe = Crit-Lila (passt zum
    KRITISCH-Text & Crit-Puls). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen. */
-function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay = 0, intensity = 0, tier = 0 }) {
+function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay = 0, intensity = 0, tier = 0, scale = 1 }) {
   // Die Krit-Karte zerbirst in ein Raster kleiner PIXEL-SHARDS (clip-path-Klone der Karte): jedes Fragment fliegt
   // radial nach außen, tumbelt (rotate) & fadet — die Karte „zerplatzt in Pixel". Deterministisch aus `seed` (kein
   // Math.random, #68). Bis 0%/9% halten die Shards (fill-mode both + delay) den Ganz-Zustand → Karte liegt erst.
@@ -245,7 +245,7 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
       });
     }
   }
-  const N = Math.round(20 + intensity * 24); // 20..44 lose Partikel (gedeckelt)
+  const N = Math.max(8, Math.round((20 + intensity * 24) * scale)); // 20..44 lose Partikel, turbo-ausgedünnt (#200 A, Boden 8; das Shard-Raster 7×5 bleibt voll)
   const parts = Array.from({ length: N }, (_, i) => {
     const ang = (i / N) * Math.PI * 2 + fjitter(seed * 3 + i * 7, 0.45);  // gleichmäßiger Kranz + Jitter
     const rad = (62 + Math.abs(fjitter(seed * 5 + i * 13, 92))) * radMul; // 62..154 px × Intensität
@@ -326,8 +326,8 @@ function SlashGhostLayer({ ghosts }) {
             style={{ animation: `as-loss-drift-rand ${g.float}ms cubic-bezier(0.2, 0.6, 0.3, 1) ${driftDelay}ms forwards`, willChange: "transform",
                      "--drx": `${(Math.cos(dang) * drad).toFixed(1)}px`, "--dry": `${(Math.sin(dang) * drad).toFixed(1)}px`, "--drot": `${drot}deg` }}>
             {isBoom
-              ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} />
-              : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} />}
+              ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
+              : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />}
           </div>
         );
       })}
@@ -365,8 +365,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   growth = {}, colonized = {},
   // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
   // Defaults = bestehende Karten → ohne Auswahl identisches Verhalten (Gegner-Deck bleibt OPP_DECK_SKINS).
-  deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null }) {
-  const reduced = usePrefersReducedMotion();
+  deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
+  // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
+  reducedFx = "auto" }) {
+  const reduced = useReducedFx(reducedFx);
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -391,6 +393,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #135: Ergebnis-Puls-Dauer an den Flip-Takt gekoppelt (wie die übrigen „Juice"-Animationen).
   const pulseDur = clamp(flipMs * 0.7, 300, 700);
   const fx = (a) => (reduced ? undefined : a);
+  // #200 A — Effekt-Budget: je schneller der Takt, desto weniger lose Partikel/Funken und desto flacher der Ghost-Pool.
+  // flipMs ≥ 2× (875) = voll; 4× (~437) ≈ 0,5; MAX (~291) = Boden 0,45. Rein visuell (score-neutral wie der Turbo).
+  const fxScale  = clamp(flipMs / 875, 0.45, 1);
+  const ghostCap = Math.max(2, Math.round(6 * fxScale)); // gleichzeitige Schnitt-/Explosions-Ghosts (ältester wird recycelt)
   // #95: einheitliche Float-Dauer für Score- UND Formations-Float (letzterer war zuvor kürzer).
   const floatDur = clamp(flipMs * 0.7, 360, 760) + 1300;
   // #95: Float-Größe skaliert mit dem Gewinn — klein bleibt lesbar (20 px), groß gedeckelt (52 px).
@@ -589,7 +595,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (!sliceOn) return;                           // nur bei einem echten (animierten) Sieg/Niederlage-Stich
     // #188: Effekt-Intensität aus dem Per-Stich-Score. Niederlage → t.gained 0 → Base (kein Skalieren).
     const { p: fxP, tier: fxTier } = fxIntensity(t.gained || 0);
-    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, fxP, fxTier };
+    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, fxP, fxTier, scale: fxScale };
     const spawned = [];
     if (lost) {  // Spielerkarte verliert → Schnitt-Ghost auf der Spielerseite
       spawned.push({ ...base, id: `pg${t.trickNo}-${ghostSeq.current++}`, side: "player", fx: "slice",
@@ -606,7 +612,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
     }
     if (!spawned.length) return;
-    setSlashGhosts((cur) => [...cur, ...spawned].slice(-6)); // Pool gedeckelt
+    setSlashGhosts((cur) => [...cur, ...spawned].slice(-ghostCap)); // Pool gedeckelt (turbo-abhängig, #200 A)
     const ids = spawned.map((g) => g.id);
     const tm = setTimeout(() => {
       setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
