@@ -72,12 +72,11 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
 
   // UI-Zustand: Schritt · Hauptaktions-Modus · Abreißen · Reposition-Auswahl (Verschieben) · Rotation · Farbwahl · Rückfrage.
   const [step, setStep] = useState(0);
-  const [mode, setMode] = useState(null);          // "build" | "upgrade" | null (nur in Schritt 0, vor der Hauptaktion)
+  const [mode, setMode] = useState("build");       // "build" | "upgrade" | null — #224.3: „Bauen" vorausgewählt → Angebot sofort da, direkt platzierbar
   const [deleteActive, setDeleteActive] = useState(false);
   const [selId, setSelId] = useState(null);         // zum Verschieben ausgewähltes Gebäude
   const [rotIdx, setRotIdx] = useState(0);          // Rotation für das Verschieben
   const [colorPick, setColorPick] = useState(null); // Farbwahl-Vormerkung für colorLocked-Baupläne
-  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const acted = !!architect.actedMain;
   const moved = !!architect.moved;
@@ -145,7 +144,6 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   };
 
   const goStep = (n) => { setStep(n); if (n > 0) { setDeleteActive(false); setMode(null); } };
-  const confirmDone = () => { setConfirmOpen(false); onDone?.(); };
 
   // Struktur-Highlights fürs Brett (volle Zeile/Spalte/Diagonale → Faktor > 1 an der Position).
   const structLit = (pos) => (structF[pos] || 1) > 1;
@@ -164,7 +162,12 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
           </div>
           <div className="text-right">
             <div className="text-[10px] uppercase tracking-wide opacity-50">Runde {round}</div>
-            <div className="text-sm font-mono opacity-70">Abdeckung {Math.round(coverCount / N_POS * 100)}% · {coverCount}/{maxCover}</div>
+            {/* #224.8: Baufeld (knappe Kernressource) klar sichtbar — kräftiges Gold + explizit die freien Baupunkte. */}
+            <div className="text-[10px] uppercase tracking-wide opacity-50 mt-0.5">Baufeld frei</div>
+            <div className="font-pixel-dense font-bold leading-none" style={{ color: GOLD, fontSize: 22 }}>
+              {Math.max(0, maxCover - coverCount)}<span className="text-xs opacity-70 font-mono"> / {maxCover}</span>
+            </div>
+            <div className="text-[11px] font-mono opacity-55">{coverCount} belegt · {Math.round(coverCount / N_POS * 100)}%</div>
           </div>
         </div>
         {state.lastCycleScore != null && <div className="mb-3"><RoundScoreBadge state={state} /></div>}
@@ -229,12 +232,14 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
           {/* ---- Bau-Assistent + Vorschau ---- */}
           <section className="flex flex-col gap-4">
             <div className="rounded-xl p-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
-              {/* Schrittleiste */}
+              {/* Schrittleiste — #224.5: Nummer und Label immer als getrennte Zeilen (kein umbruchs-abhängiges Layout). */}
               <div className="flex gap-1.5 mb-3 text-[11px] font-mono">
-                {["1 · Hauptaktion", "2 · Verschieben", "3 · Bestätigen"].map((lbl, i) => (
-                  <span key={i} className="flex-1 text-center rounded-md py-1.5 px-1"
+                {[["1 ·", "Hauptaktion"], ["2 ·", "Verschieben"], ["3 ·", "Bestätigen"]].map(([n, w], i) => (
+                  <span key={i} className="flex-1 text-center rounded-md py-1.5 px-1 leading-tight"
                     style={{ background: i === step ? `${CAT.value.color}22` : "#16232f", border: `1px solid ${i === step ? CAT.value.color : "#20303d"}`,
-                             color: i === step ? "#e7eef5" : (i < step ? CAT.value.color : "#7f93a4"), fontWeight: i === step ? 700 : 500 }}>{lbl}</span>
+                             color: i === step ? "#e7eef5" : (i < step ? CAT.value.color : "#7f93a4"), fontWeight: i === step ? 700 : 500 }}>
+                    <span className="block">{n}</span><span className="block">{w}</span>
+                  </span>
                 ))}
               </div>
 
@@ -337,7 +342,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   </div>
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => goStep(1)} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
-                    <button onClick={() => setConfirmOpen(true)} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Bau bestätigen →</button>
+                    {/* #224.6: „Bau bestätigen" schließt direkt ab (kein zusätzliches Modal mehr) — nur eine Rückfrage. */}
+                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Bau bestätigen →</button>
                   </div>
                 </div>
               )}
@@ -368,20 +374,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
             </div>
           </section>
         </div>
-
-        {/* Bestätigungs-Modal */}
-        {confirmOpen && (
-          <div className="fixed inset-0 z-30 flex items-center justify-center p-5" style={{ background: "#080e14aa" }}>
-            <div className="rounded-2xl p-5 w-full max-w-sm" style={{ background: "#111c27", border: "1px solid #2b3e4d" }}>
-              <h3 className="text-base font-bold mb-2">Bau bestätigen?</h3>
-              <p className="text-sm opacity-70 mb-4">{buildings.length} Gebäude, {Math.round(coverCount / N_POS * 100)}% Abdeckung. Danach startet Durchlauf {round}.</p>
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setConfirmOpen(false)} className="rounded-lg px-3 py-1.5 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>
-                <button onClick={confirmDone} className="rounded-lg px-3 py-1.5 text-xs font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Bestätigen</button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* #224.6: Bestätigungs-Modal entfernt — der Bestätigen-Schritt ist die einzige Rückfrage. */}
       </div>
     </div>
   );

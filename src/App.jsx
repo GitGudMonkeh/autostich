@@ -399,11 +399,7 @@ export function Autostich() {
           </span>
         </div>
       </div>
-      {/* Münzen (Shop-Spec §3) — Run-Ressource für den Shop */}
-      <div className="text-right">
-        <div className="text-[10px] uppercase tracking-wide opacity-50">Münzen</div>
-        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>🪙 {state.shop?.coins ?? 0}</div>
-      </div>
+      {/* #225.1: Münzanzeige entfernt — mit dem Architekten (#202) entfällt die Münz-Ökonomie. */}
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
         <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>

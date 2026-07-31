@@ -27,8 +27,6 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
   const { wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, perks, crits, lightning,
           familyTiers = {}, statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0 } = state;
   const cycleLen = cycleLenFor(state.shop);  // 40, mit Zeitsegment 45 (§8 A-L1)
-  const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
-  const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   const showCrit = hasCritPerk(perks) || hasCritFamily(familyTiers) || (crits || 0) > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
   // Live-Crit-Chance des NÄCHSTEN Siegs: analog zum echten Wurf (#19). V2: Perks tragen keine Crit-Chance
@@ -52,10 +50,10 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
         <Stat label="Stiche" value={trickNo} />
         <Stat label="Durchlauf" value={<span>{Math.min(cycle + 1, MAX_CYCLES)}<span className="text-xs opacity-45"> / {MAX_CYCLES}</span></span>} />
       </div>
-      <div className="grid grid-cols-3 gap-3 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
+      {/* #225.2: „Quote"-Zeile entfernt — nur Siege/Verluste bleiben (Grid auf 2 Spalten angepasst). */}
+      <div className="grid grid-cols-2 gap-3 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
         <div><span className="opacity-50">Siege </span><span style={{ color: "#5ab87a" }}>{wins}</span></div>
         <div><span className="opacity-50">Verl. </span><span style={{ color: "#e0605a" }}>{losses}</span></div>
-        <div><span className="opacity-50">Quote </span><span style={{ color: winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct}%</span></div>
       </div>
       {/* Deck-Position im laufenden Durchlauf (#193): Balken FÜLLT sich (0 → voll) und die Zahl
           zählt HOCH — gleiche Richtung wie die Deck-Zahl unter dem Deck im Battlefield (#6). */}

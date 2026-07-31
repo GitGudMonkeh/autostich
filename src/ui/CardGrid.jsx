@@ -60,13 +60,13 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
       {/* #136 Frostglas: ruhiger Eis-Layer (Tint + Körnung, KEIN Sweep) für eingefrorene Board-Karten. */}
       {card.frozen && <FrostOverlay animated={false} radius="0.5rem" />}
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-      {/* Architekt-Gebäude-Badge (#202): Kategorie-Icon (+ echter Wert-Boost) mittig an der oberen Kante — frei zwischen
-          #Pos (links) und dem Ionis-/Frost-Cluster (rechts). Rein anzeige-seitig, nur in der Aufstellung mit Overlay an. */}
-      {arch && (
+      {/* Architekt-Gebäude-Badge (#202/#224.7): nur der echte Wert-Boost „+X" mittig an der oberen Kante (kein Icon mehr —
+          die Kategorie liest man am Rahmen/Ring + Tooltip). Nur bei value-Gebäuden (boost > 0); score/formation zeigt nur den Ring. */}
+      {arch && arch.boost > 0 && (
         <span className="absolute top-0 left-1/2 -translate-x-1/2 text-[8px] sm:text-[9px] font-bold leading-none px-1 rounded-b-[3px] z-10"
           style={{ background: arch.legendary ? "#c8962f" : arch.color, color: "#fff" }}
-          title={`🏗 ${arch.name}${arch.boost > 0 ? ` · +${arch.boost} Wert` : ""}`}>
-          {arch.icon}{arch.boost > 0 ? `+${arch.boost}` : ""}
+          title={`🏗 ${arch.name} · +${arch.boost} Wert`}>
+          +{arch.boost}
         </span>
       )}
       {((card.ionStacks || 0) > 0 || card.frozen || ripe) && (
