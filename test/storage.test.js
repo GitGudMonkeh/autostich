@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   loadOptions, loadUsername, saveUsername, loadSeenGuide, saveSeenGuide,
-  recordRun, loadProfile, isNoBuyRun, isMonoStatRun, MONO_STAT_MIN,
+  recordRun, loadProfile, isNoBuyRun, isNoRerollRun, isMonoStatRun, MONO_STAT_MIN,
   monoArchetypeOf, isAllArchetypesRun } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
 
@@ -123,6 +123,14 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
     expect(isNoBuyRun(null)).toBe(false);
   });
 
+  it("isNoRerollRun (#214 Sparfuchs): nur natürlicher Abschluss ohne benutzten Reroll", () => {
+    expect(isNoRerollRun({ completed: true, rerollsUsed: 0 })).toBe(true);
+    expect(isNoRerollRun({ completed: true, rerollsUsed: 2 })).toBe(false); // gererollt
+    expect(isNoRerollRun({ completed: false, rerollsUsed: 0 })).toBe(false); // vorzeitig beendet
+    expect(isNoRerollRun({ completed: true })).toBe(true); // rerollsUsed fehlt → 0
+    expect(isNoRerollRun(null)).toBe(false);
+  });
+
   it("isMonoStatRun: kompletter Lauf, alle Stat-Picks identisch, Mindestanzahl", () => {
     expect(isMonoStatRun({ completed: true, statPicks: monoPicks })).toBe(true);
     expect(isMonoStatRun({ completed: true, statPicks: [...monoPicks.slice(1), "statFormMult"] })).toBe(false); // gemischt
@@ -157,6 +165,7 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
     it("frisches Profil: Flags sind false", () => {
       expect(loadProfile().hadNoBuyRun).toBe(false);
       expect(loadProfile().hadMonoStatRun).toBe(false);
+      expect(loadProfile().hadNoRerollRun).toBe(false); // #214
     });
 
     it("noBuy-Lauf setzt hadNoBuyRun und persistiert", () => {
@@ -164,6 +173,15 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
       expect(profile.hadNoBuyRun).toBe(true);
       expect(profile.hadMonoStatRun).toBe(false);
       expect(loadProfile().hadNoBuyRun).toBe(true);
+    });
+
+    it("#214: noReroll-Lauf setzt hadNoRerollRun (persistiert), ein Reroll-Lauf nicht", () => {
+      const { profile } = recordRun({ score: 100, ts: 1, completed: true, rerollsUsed: 0, statPicks: [] });
+      expect(profile.hadNoRerollRun).toBe(true);
+      expect(loadProfile().hadNoRerollRun).toBe(true);
+      global.localStorage = mockLS(); // frisches Profil
+      const later = recordRun({ score: 100, ts: 2, completed: true, rerollsUsed: 3, statPicks: [] });
+      expect(later.profile.hadNoRerollRun).toBe(false);
     });
 
     it("Mono-Stat-Lauf (mit Käufen) setzt nur hadMonoStatRun", () => {

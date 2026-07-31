@@ -77,7 +77,7 @@ export function loadRunHistory() {
 }
 
 const DEFAULT_PROFILE = { games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
-  hadNoBuyRun: false, hadMonoStatRun: false, // #190: sticky Challenge-Flags (einmal true → bleiben) für deck_c3/deck_c4
+  hadNoBuyRun: false, hadMonoStatRun: false, hadNoRerollRun: false, // #190/#214: sticky Challenge-Flags (einmal true → bleiben); noReroll = Sparfuchs deck_c3
   monoArchetypeRuns: {}, hadAllArchetypesRun: false }; // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
 export function loadProfile() {
   try {
@@ -105,6 +105,10 @@ const n0 = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 0);
 export const MONO_STAT_MIN = 5; // Mindestzahl Stat-Picks, damit „immer derselbe" zählt (ein voller Lauf hat 11)
 export function isNoBuyRun(record) {
   return !!record && record.completed === true && n0(record.shopPurchases) === 0;
+}
+// #214 Sparfuchs (deck_c3, löst noBuyRun ab): natürlicher Abschluss OHNE einen benutzten Reroll (record.rerollsUsed === 0).
+export function isNoRerollRun(record) {
+  return !!record && record.completed === true && n0(record.rerollsUsed) === 0;
 }
 export function isMonoStatRun(record) {
   if (!record || record.completed !== true) return false;
@@ -147,9 +151,10 @@ export function recordRun(record) {
     maxCrits: Math.max(p.maxCrits, n0(record.crits)),
     archetypesEver: [...arch],
     firstTs: p.firstTs || n0(record.ts),
-    // #190: sticky Challenge-Flags — einmal erfüllt, bleiben sie true (schalten deck_c3/deck_c4 frei).
+    // #190/#214: sticky Challenge-Flags — einmal erfüllt, bleiben sie true. noReroll schaltet deck_c3 „Sparfuchs" frei.
     hadNoBuyRun: !!p.hadNoBuyRun || isNoBuyRun(record),
     hadMonoStatRun: !!p.hadMonoStatRun || isMonoStatRun(record),
+    hadNoRerollRun: !!p.hadNoRerollRun || isNoRerollRun(record),
     // #215: Archetyp-Decks — Mono-Läufe je Fraktion (deck_c5..c8) + Element-Bund (alle vier, deck_c9).
     monoArchetypeRuns,
     hadAllArchetypesRun: !!p.hadAllArchetypesRun || isAllArchetypesRun(record),

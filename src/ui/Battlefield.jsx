@@ -8,29 +8,29 @@ import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useReducedFx } from "./useReducedFx.js";
 import { fmtScore } from "./format.js";
-import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 import cardBackImg  from "../assets/cards/card-back.png";  // (#180) Spieler-Deck: Schwerter-Rücken
 import cardFrontImg from "../assets/cards/card-front.png"; // (#180) Spieler-Deck: Rahmen-Front (Zahl/Effekte darüber)
-// (#186) Gegner-Deck: je Auswahl-Typ ein eigenes Deck (Cover = Rücken, Front = Rahmen). Der Gegner spielt jede
-// Runde das Deck der KOMMENDEN Auswahl (DECISION_SCHEDULE) — die App reicht den Typ als `oppDeck` durch.
-import statCover from "../assets/cards/decks/stat-cover.png";
-import statFront from "../assets/cards/decks/stat-front.png";
-import perkCover from "../assets/cards/decks/perk-cover.png";
-import perkFront from "../assets/cards/decks/perk-front.png";
-import skillCover from "../assets/cards/decks/skill-cover.png";
-import skillFront from "../assets/cards/decks/skill-front.png";
-import shopCover from "../assets/cards/decks/shop-cover.png";
-import shopFront from "../assets/cards/decks/shop-front.png";
-import formationCover from "../assets/cards/decks/formation-cover.png";
-import formationFront from "../assets/cards/decks/formation-front.png";
+// (#186/#214) Gegner-Deck: je Auswahl-Typ ein eigenes Deck (Cover = Rücken, Front = Rahmen). Der Gegner spielt jede
+// Runde das Deck der KOMMENDEN Auswahl (DECISION_SCHEDULE) — die App reicht den Typ als `oppDeck` durch. #214: die
+// Gegner-Decks tragen jetzt die Archetyp-Motive (dieselbe Kunst wie die Spieler-Challenge-Decks #215, deck_c5–c9).
+import c5Front from "../assets/cards/decks_player/deck_c5/front.png"; // 🔥 Feuer  → stat
+import c5Back  from "../assets/cards/decks_player/deck_c5/back.png";
+import c6Front from "../assets/cards/decks_player/deck_c6/front.png"; // ⚡ Blitz  → shop/architekt
+import c6Back  from "../assets/cards/decks_player/deck_c6/back.png";
+import c7Front from "../assets/cards/decks_player/deck_c7/front.png"; // ❄️ Eis    → perk
+import c7Back  from "../assets/cards/decks_player/deck_c7/back.png";
+import c8Front from "../assets/cards/decks_player/deck_c8/front.png"; // 🌱 Pflanze → formation
+import c8Back  from "../assets/cards/decks_player/deck_c8/back.png";
+import c9Front from "../assets/cards/decks_player/deck_c9/front.png"; // 🎴 Mix    → skill
+import c9Back  from "../assets/cards/decks_player/deck_c9/back.png";
 
-// Auswahl-Typ → Gegner-Deck-Skin (Cover/Front). Fällt auf „stat" zurück (z. B. letzter Durchlauf ohne Folge-Auswahl).
+// Auswahl-Typ → Gegner-Deck-Skin (Cover/Front) auf Archetyp-Motiv (#214). Fällt auf „stat" (Feuer) zurück.
 const OPP_DECK_SKINS = {
-  stat:      { back: statCover,      front: statFront },
-  perk:      { back: perkCover,      front: perkFront },
-  skill:     { back: skillCover,     front: skillFront },
-  shop:      { back: shopCover,      front: shopFront },
-  formation: { back: formationCover, front: formationFront },
+  stat:      { back: c5Back, front: c5Front }, // Feuer
+  perk:      { back: c7Back, front: c7Front }, // Eis
+  skill:     { back: c9Back, front: c9Front }, // Mix / Element-Bund
+  shop:      { back: c6Back, front: c6Front }, // Blitz (Auswahl-Typ „shop" = Architekt-Phase, #202)
+  formation: { back: c8Back, front: c8Front }, // Pflanze
 };
 
 const BANNER = {
@@ -780,8 +780,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack}
               overlay={playerGhosts.length ? <SlashGhostLayer ghosts={playerGhosts} /> : null}>{playerCard}</Side>
 
-        <img src={swordicon} alt="vs" width={46} height={46} draggable="false"
-             className="crt-vs-icon shrink-0 select-none" style={{ imageRendering: "pixelated" }} />
+        {/* #214: „vs"-Schwerter-Icon (#42) entfernt — die beiden Seiten stehen sich jetzt ohne Trenn-Icon gegenüber. */}
 
         <Side label="Gegner" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg}
               overlay={oppGhosts.length ? <SlashGhostLayer ghosts={oppGhosts} /> : null}>{oppCard}</Side>

@@ -10,7 +10,8 @@
      { kind: "games",  n }   → profile.games      >= n   (gespielte Läufe)
      { kind: "streak", n }   → profile.bestStreak >= n
      { kind: "score",  n }   → profile.bestScore  >= n
-     { kind: "noBuyRun" }    → profile.hadNoBuyRun    === true  (Lauf ohne Shop-Kauf, Challenge 3)
+     { kind: "noBuyRun" }    → profile.hadNoBuyRun    === true  (Lauf ohne Shop-Kauf — obsolet seit #202/#214, Shop dormant)
+     { kind: "noRerollRun" } → profile.hadNoRerollRun === true  (Lauf ohne benutzten Reroll, Sparfuchs deck_c3 · #214)
      { kind: "monoStatRun" } → profile.hadMonoStatRun === true  (Lauf mit nur einem Stat, Challenge 4)
      { kind: "monoArchetypeRun", archetype } → profile.monoArchetypeRuns[archetype] (Lauf nur mit dieser Fraktion, #215 deck_c5..c8)
      { kind: "allArchetypesRun" }            → profile.hadAllArchetypesRun === true (Lauf mit allen vier Fraktionen, #215 deck_c9)
@@ -33,7 +34,7 @@ export const DECK_DEFS = {
   // Challenge-Decks (nur Decks, keine Battlefields):
   deck_c1: { id: "deck_c1", name: "Endloskette",       unlock: { kind: "streak", n: 100 } },
   deck_c2: { id: "deck_c2", name: "Rekordhalter",      unlock: { kind: "score",  n: 10_000_000 } },
-  deck_c3: { id: "deck_c3", name: "Sparfuchs",         unlock: { kind: "noBuyRun" } },
+  deck_c3: { id: "deck_c3", name: "Sparfuchs",         unlock: { kind: "noRerollRun" } }, // #214: löst noBuyRun ab (Shop → Architekt, #202)
   // deck_c4 (monoStatRun) folgt.
   // Archetyp-Challenge-Decks (#215): Mono-Archetyp-Lauf je Fraktion + Element-Bund (alle vier).
   deck_c5: { id: "deck_c5", name: "Reines Feuer",  unlock: { kind: "monoArchetypeRun", archetype: "fire" } },
@@ -69,6 +70,7 @@ export function isUnlocked(def, profile) {
     case "streak":      return (p.bestStreak || 0) >= u.n;
     case "score":       return (p.bestScore  || 0) >= u.n;
     case "noBuyRun":    return !!p.hadNoBuyRun;
+    case "noRerollRun": return !!p.hadNoRerollRun; // #214 Sparfuchs
     case "monoStatRun": return !!p.hadMonoStatRun;
     case "monoArchetypeRun": return !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]); // #215: Lauf nur mit dieser Fraktion
     case "allArchetypesRun": return !!p.hadAllArchetypesRun;                                     // #215: Lauf mit allen vier
@@ -99,6 +101,10 @@ export function unlockProgress(def, profile) {
     case "noBuyRun": {
       const done = !!p.hadNoBuyRun;
       return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf ohne einen einzigen Shop-Kauf ab" };
+    }
+    case "noRerollRun": {
+      const done = !!p.hadNoRerollRun;
+      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" };
     }
     case "monoStatRun": {
       const done = !!p.hadMonoStatRun;

@@ -209,7 +209,8 @@ export function Autostich() {
       formations: computeFormations(state.playerOrder || [], state.deck || [], state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {}),
     };
     const { profile: nextProfile } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
-      shopPurchases: state.shop?.purchaseLog?.length ?? 0, statPicks: state.statPicks || [], completed, deckSnapshot });
+      shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
+      statPicks: state.statPicks || [], completed, deckSnapshot });
     setProfile(nextProfile);
     // #190: in DIESEM Lauf frisch freigeschaltete Skins (Bedingung vorher NICHT erfüllt, jetzt schon) → Siegesscreen.
     const catalog = [

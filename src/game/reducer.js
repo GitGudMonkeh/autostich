@@ -97,6 +97,7 @@ export function initialState(rng = Math.random) {
     architectPre: null,            // Precompute je Durchlauf (von der Engine gefüllt)
     shopDisabled: false,           // Sim-Referenz: 'shop'-Slots als No-Op (Null-Baseline „ohne")
     rerolls: C.BASE_REROLLS,       // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill) — ersetzt shop.perkRerolls/skillRerolls; Baseline, kein Nachschub (#217-Reward-Fläche)
+    rerollsUsed: 0,                // #214: Zähler benutzter Rerolls (Perk+Skill, bezahlt ODER gratis) über den Lauf → Sparfuchs-Challenge (deck_c3 „noRerollRun")
     lastTrick: null,
   };
 }
@@ -630,7 +631,7 @@ export function reducer(state, action) {
       if (!free && tokens <= 0) return state;                        // keine Ressource → wirkungslos
       const offer = buildPerkOffer(state.perks, state.familyTiers, action.rng, PERKS_OFFERED, perkLegendaryChance(state.shop));
       const rerolls = free ? tokens : tokens - 1;
-      return { ...state, offer, rerolls, freePerkReroll: free ? false : state.freePerkReroll };
+      return { ...state, offer, rerolls, rerollsUsed: (state.rerollsUsed || 0) + 1, freePerkReroll: free ? false : state.freePerkReroll };
     }
 
     // Skill-Angebot neu würfeln (Shop-Spec §10 P2/P-L1): analog; erfüllt weiterhin Archetyp-/Konsumentenregeln
@@ -643,7 +644,7 @@ export function reducer(state, action) {
       const offer = buildSkillOffer(state.skills, state.activeArchetypes, action.rng, C.SKILLS_OFFERED, skillLegendaryChance(state.shop));
       if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
       const rerolls = free ? tokens : tokens - 1;
-      return { ...state, skillOffer: offer, rerolls, freeSkillReroll: free ? false : state.freeSkillReroll };
+      return { ...state, skillOffer: offer, rerolls, rerollsUsed: (state.rerollsUsed || 0) + 1, freeSkillReroll: free ? false : state.freeSkillReroll };
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.

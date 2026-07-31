@@ -49,10 +49,10 @@ describe("cosmetics — Katalog", () => {
   it("Challenge-Decks c1/c2/c3 haben die richtigen Bedingungen", () => {
     expect(DECK_DEFS.deck_c1.unlock).toEqual({ kind: "streak", n: 100 });
     expect(DECK_DEFS.deck_c2.unlock).toEqual({ kind: "score", n: 10_000_000 });
-    expect(DECK_DEFS.deck_c3.unlock).toEqual({ kind: "noBuyRun" });
+    expect(DECK_DEFS.deck_c3.unlock).toEqual({ kind: "noRerollRun" }); // #214: löst noBuyRun ab
     expect(isUnlocked(DECK_DEFS.deck_c1, prof({ bestStreak: 100 }))).toBe(true);
     expect(isUnlocked(DECK_DEFS.deck_c2, prof({ bestScore: 10_000_000 }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c3, prof({ hadNoBuyRun: true }))).toBe(true);
+    expect(isUnlocked(DECK_DEFS.deck_c3, prof({ hadNoRerollRun: true }))).toBe(true);
     expect(isUnlocked(DECK_DEFS.deck_c3, prof())).toBe(false);
   });
   it("Archetyp-Decks c5-c9 (#215): Mono-Archetyp je Fraktion + Element-Bund", () => {
@@ -110,6 +110,14 @@ describe("cosmetics — isUnlocked", () => {
     expect(isUnlocked(noBuy, prof({ hadNoBuyRun: true }))).toBe(true);
     expect(isUnlocked(mono, prof())).toBe(false);
     expect(isUnlocked(mono, prof({ hadMonoStatRun: true }))).toBe(true);
+  });
+
+  it("noRerollRun (#214 Sparfuchs): an hadNoRerollRun gebunden + Klartext-Fortschritt", () => {
+    const noReroll = { unlock: { kind: "noRerollRun" } };
+    expect(isUnlocked(noReroll, prof())).toBe(false);
+    expect(isUnlocked(noReroll, prof({ hadNoRerollRun: true }))).toBe(true);
+    expect(unlockProgress(noReroll, prof())).toEqual({ done: false, cur: 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
+    expect(unlockProgress(noReroll, prof({ hadNoRerollRun: true }))).toEqual({ done: true, cur: 1, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
   });
 
   it("unbekannter kind blockiert nicht (defensiv)", () => {
