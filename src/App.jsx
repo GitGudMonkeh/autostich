@@ -596,7 +596,9 @@ export function Autostich() {
       )}
 
       {showLeaderboard && (
-        <LeaderboardScreen mine={myEntry} reloadToken={pubToken} onClose={() => setShowLeaderboard(false)} />
+        <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best}
+          onPlaySeed={(seed) => { setShowLeaderboard(false); startRun(seed); }}
+          onClose={() => setShowLeaderboard(false)} />
       )}
 
       {showMasterSelect && (
