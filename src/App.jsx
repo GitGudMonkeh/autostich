@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
-import { baseScoreMultFor } from "./game/perks.js";
+import { baseScoreMultFor, totalCritChanceRaw } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile } from "./game/storage.js";
@@ -473,7 +473,7 @@ export function Autostich() {
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "stat"} />
-              <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} />
+              <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)} />
               <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}} />
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
                 layers={state.layers || {}}
