@@ -3,6 +3,7 @@ import {
   familyDef, shapeRotations, enumeratePlacements, isValidFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, structureFactorMap,
   rowOf, colOf, posOf, ROWS, COLS, N_POS, MAX_TIER, tierNum, tierFactor,
+  HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR,
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { SUIT_ORDER } from "../game/constants.js";
@@ -162,14 +163,14 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const confirmBuild = () => {
     if (!pending) return;
     onBuild?.({ familyId: pending.familyId, tier: pending.tier, footprint: pending.footprint, colorChoice: pending.colorChoice });
-    setPending(null); setSelId(null); setPhase("after");
+    setPending(null); setSelId(null); setPhase("move"); // direkt ins Fertig-/Verschieben-Panel (ein Panel, ein Bestätigen)
   };
   const cancelPending = () => { setPending(null); setSelId(null); setPhase("choose"); };
 
   // ---- Tap je Phase ----
   const tapCell = (pos) => {
     if (removeFor) { const cb = committedAt(pos); if (cb) onDemolish?.(cb.id); return; } // entfernen für wartenden Bauplan
-    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const f = familyDef(cb.familyId); if (f && !f.legendary && cb.tier < MAX_TIER) { onUpgrade?.(cb.id); setPhase("after"); } } return; }
+    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const f = familyDef(cb.familyId); if (f && !f.legendary && cb.tier < MAX_TIER) { onUpgrade?.(cb.id); setPhase("move"); } } return; }
     if (phase === "place") { const b = buildingAt(pos); if (b && b.id === PENDING_ID) setSelId(PENDING_ID); return; }
     if (phase === "move") { const b = buildingAt(pos); if (b) setSelId(b.id); return; }
   };
@@ -252,8 +253,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
         {state.lastCycleScore != null && <div className="mb-3"><RoundScoreBadge state={state} /></div>}
 
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] items-start">
-          {/* ---- Brett 8×5 ---- */}
-          <section className="rounded-xl p-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
+          {/* ---- Brett 8×5 (auf Mobil UNTER dem Assistenten: md:order-1) ---- */}
+          <section className="rounded-xl p-3 md:order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
             <div className="flex items-center justify-between mb-2">
               <div className="text-[11px] font-mono uppercase tracking-wide opacity-60">Brett · 8 × 5</div>
               {showRotate && (
@@ -296,8 +297,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,
                         b && fam.legendary ? `inset 0 0 0 2px ${GOLD}` : null,
                         isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,
-                        !b && structLit(pos) ? `inset 0 0 0 2px ${CAT.value.color}88` : null,
-                        b && structLit(pos) ? `0 0 8px ${cat.color}` : null,
+                        !b && structLit(pos) ? "inset 0 0 0 2px #f0b429aa" : null,
+                        b && structLit(pos) ? "inset 0 0 0 2px #f0b429, 0 0 10px #f0b42999" : null, // #224.13: fertige Struktur = klarer Gold-Rahmen (live, vor dem Bestätigen)
                       ].filter(Boolean).join(", ") || undefined,
                       outline: isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined)),
                       outlineOffset: 1,
@@ -338,15 +339,26 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
             </div>
           </section>
 
-          {/* ---- Bau-Assistent (phasenabhängig) + Vorschau ---- */}
-          <section className="flex flex-col gap-4">
+          {/* ---- Bau-Assistent (phasenabhängig) + Vorschau — auf Mobil OBEN (order-first), Desktop rechts (md:order-2) ---- */}
+          <section className="flex flex-col gap-4 order-first md:order-2">
             <div className="rounded-xl p-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
+
+              {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. */}
+              <div className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}>
+                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur-Kombis (zählen je Durchlauf)</div>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                  <span>volle <b>Zeile</b> ×{fmt(HAEUSERZEILE_FACTOR)}</span>
+                  <span>volle <b>Spalte</b> ×{fmt(SPALTE_FACTOR)}</span>
+                  <span><b>Diagonale</b> ×{fmt(DIAGONALE_FACTOR)}</span>
+                </div>
+                <div className="opacity-60 mt-1">Fertige Struktur → <span style={{ color: "#f0b429", fontWeight: 700 }}>Gold-Rahmen</span> am Brett (live, schon vor dem Bestätigen). Faktoren stapeln multiplikativ.</div>
+              </div>
 
               {/* removeFor: kein Platz → Gebäude entfernen anbieten */}
               {removeFor && (
                 <div>
                   <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
-                    <b>Kein Platz</b> für „{pendingFamName(removeFor)}". Tippe ein bestehendes Gebäude (rot gestrichelt) zum <b>Entfernen</b> — danach wird automatisch platziert.
+                    <b>Kein Platz</b> für „{pendingFamName(removeFor)}". Soll ein Gebäude weichen? Tippe eins (rot gestrichelt) zum <b>Zerstören</b> — danach wird der Bauplan automatisch platziert.
                   </div>
                   <button onClick={() => setRemoveFor(null)} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>
                 </div>
@@ -432,29 +444,13 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 </div>
               )}
 
-              {/* after: verschieben ODER beenden */}
-              {!removeFor && phase === "after" && (
-                <div>
-                  <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.score.color}18`, borderLeft: `3px solid ${CAT.score.color}` }}>
-                    ✓ Fertig gebaut. Willst du noch ein Gebäude verschieben — oder die Phase beenden?
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => { setSelId(null); setPhase("move"); }} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: `1px solid ${CAT.value.color}` }}>↔ Verschieben</button>
-                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Beenden →</button>
-                  </div>
-                </div>
-              )}
-
-              {/* move: beliebig oft verschieben, dann bestätigen */}
+              {/* Fertig: EIN Panel — optional beliebig oft verschieben, dann direkt starten. */}
               {!removeFor && phase === "move" && (
                 <div>
-                  <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.score.color}14`, borderLeft: `3px solid ${CAT.score.color}` }}>
-                    <b>Verschieben</b> (beliebig oft): Gebäude <b>ziehen</b> (Griff überall, Live-Vorschau grün/rot); antippen + <b>⟳</b> dreht.
+                  <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.score.color}18`, borderLeft: `3px solid ${CAT.score.color}` }}>
+                    ✓ <b>Fertig gebaut.</b> Optional: Gebäude auf dem Brett <b>ziehen</b> zum Verschieben (Griff überall, ⟳ dreht) — beliebig oft. Sonst direkt weiter.
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => { setSelId(null); setPhase("after"); }} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
-                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Bestätigen →</button>
-                  </div>
+                  <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Durchlauf starten →</button>
                 </div>
               )}
             </div>
