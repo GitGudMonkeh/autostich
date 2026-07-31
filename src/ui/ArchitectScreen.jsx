@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
   ARCHITECT_FAMILIES, familyDef, shapeRotations, enumeratePlacements, isValidFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, structureFactorMap,
@@ -77,9 +77,11 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const [step, setStep] = useState(0);
   const [mode, setMode] = useState("build");       // "build" | "upgrade" | null — #224.3: „Bauen" vorausgewählt → Angebot sofort da, direkt platzierbar
   const [deleteActive, setDeleteActive] = useState(false);
-  const [selId, setSelId] = useState(null);         // zum Verschieben ausgewähltes Gebäude
-  const [rotIdx, setRotIdx] = useState(0);          // Rotation für das Verschieben
+  const [selId, setSelId] = useState(null);         // ausgewähltes Gebäude (⟳ dreht es; ziehen verschiebt)
   const [colorPick, setColorPick] = useState(SUIT_ORDER[0]); // #224.9: Farbe für colorLocked vorbelegt → Bauplan sofort errichtbar (nicht rätselhaft gesperrt)
+  // #224.4 Drag&Drop: dragRef = laufende Geste (Pointer), dragPrev = Live-Vorschau des Zielfußabdrucks (löst Re-Render aus).
+  const dragRef = useRef(null);
+  const [dragPrev, setDragPrev] = useState(null); // { footprint:number[], valid:bool, id } während einer aktiven Drag-Geste
 
   const acted = !!architect.actedMain;
   const occ = useMemo(() => occupiedCells(buildings), [buildings]);
@@ -129,21 +131,82 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const tapCell = (pos) => {
     const b = buildingAt(pos);
     if (deleteActive) { if (b) onDemolish?.(b.id); return; }
-    // Verschieben: ausgewähltes Gebäude an eine (leere) Zielposition setzen.
-    if (selId != null) {
+    // Tap-Fallback Verschieben (neben Drag&Drop): ausgewähltes Gebäude an eine (leere) Zielposition setzen (Rotation erhalten).
+    if (selId != null && !b) {
       const b2 = buildings.find((x) => x.id === selId);
       if (!b2) { setSelId(null); return; }
       const fam = familyDef(b2.familyId);
-      const fp = footprintAt(fam.form, rotIdx, pos);
+      const fp = footprintAt(fam.form, currentRotOf(b2), pos);
       const others = buildings.filter((x) => x.id !== selId);
       if (fp && isValidFootprint(fam.form, fp, others)) { onMove?.({ buildingId: selId, footprint: fp }); setSelId(null); }
       return;
     }
     // Ausbauen (Schritt 1, Modus upgrade): Gebäude antippen → +1 Stufe.
     if (step === 0 && mode === "upgrade" && !acted) { if (b) onUpgrade?.(b.id); return; }
-    // sonst: Gebäude antippen → zum Verschieben auswählen (#224.10: jederzeit, beliebig oft bis zum Bestätigen).
-    if (b) { setSelId(b.id); setRotIdx(0); }
+    // sonst: Gebäude antippen → auswählen (⟳ dreht an Ort und Stelle; ziehen verschiebt).
+    if (b) { setSelId(b.id); }
   };
+
+  // ---- #224.4 Drag & Drop (Griff überall am Fußabdruck, robustes Hit-Testing) ----
+  const anchorOf = (fp) => posOf(Math.min(...fp.map(rowOf)), Math.min(...fp.map(colOf)));
+  // Welche Rotationslage hat der aktuelle Fußabdruck? (Gebäude speichern Fußabdruck, nicht Rotation.)
+  const currentRotOf = (b) => {
+    const form = familyDef(b.familyId).form, rots = shapeRotations(form), anchor = anchorOf(b.footprint), set = new Set(b.footprint);
+    for (let r = 0; r < rots.length; r++) { const fp = footprintAt(form, r, anchor); if (fp && fp.length === b.footprint.length && fp.every((p) => set.has(p))) return r; }
+    return 0;
+  };
+  // Board-Position unter dem Pointer (Hit-Testing über data-arch-pos → jede Zelle greift zuverlässig).
+  const cellPos = (x, y) => { const el = document.elementFromPoint(x, y), c = el && el.closest ? el.closest("[data-arch-pos]") : null; return c ? Number(c.getAttribute("data-arch-pos")) : null; };
+
+  const startDrag = (pos, b, e) => {
+    const form = familyDef(b.familyId).form;
+    const a = anchorOf(b.footprint);
+    const grabRow = rowOf(pos) - rowOf(a), grabCol = colOf(pos) - colOf(a); // Greifpunkt relativ zum Anker → Gebäude folgt dem Finger
+    const rot = currentRotOf(b);
+    const others = buildings.filter((x) => x.id !== b.id);
+    const g = { id: b.id, x0: e.clientX, y0: e.clientY, active: false };
+    dragRef.current = g;
+    const fpFor = (target) => { const ar = rowOf(target) - grabRow, ac = colOf(target) - grabCol; return (ar < 0 || ac < 0 || ar >= ROWS || ac >= COLS) ? null : footprintAt(form, rot, posOf(ar, ac)); };
+    const move = (ev) => {
+      if (!g.active) { const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0; if (dx * dx + dy * dy < 36) return; g.active = true; setSelId(b.id); }
+      ev.preventDefault();
+      const target = cellPos(ev.clientX, ev.clientY);
+      const fp = target == null ? null : fpFor(target);
+      setDragPrev(fp ? { footprint: fp, valid: !!isValidFootprint(form, fp, others), id: b.id } : { footprint: [], valid: false, id: b.id });
+    };
+    const up = (ev) => {
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      const wasActive = g.active; dragRef.current = null;
+      if (wasActive) { const target = cellPos(ev.clientX, ev.clientY), fp = target == null ? null : fpFor(target); if (fp && isValidFootprint(form, fp, others)) onMove?.({ buildingId: b.id, footprint: fp }); setDragPrev(null); }
+      else tapCell(pos); // keine echte Bewegung → als Tap behandeln (auswählen/…)
+    };
+    window.addEventListener("pointermove", move, { passive: false }); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+  };
+  // Einheitlicher Pointer-Einstieg je Zelle: Gebäude im Normal-Modus = Drag; sonst (leer / Abreißen / Ausbauen) = Tap auf pointerup.
+  const onCellDown = (pos, e) => {
+    const b = buildingAt(pos);
+    const canDrag = b && !deleteActive && !(step === 0 && mode === "upgrade" && !acted);
+    if (canDrag) { startDrag(pos, b, e); return; }
+    const up = () => { window.removeEventListener("pointerup", up); tapCell(pos); };
+    window.addEventListener("pointerup", up);
+  };
+  // ⟳ dreht das ausgewählte Gebäude AN ORT UND STELLE (nächste passende Rotationslage am selben Anker).
+  const rotateSelected = () => {
+    const b = buildings.find((x) => x.id === selId); if (!b) return;
+    const form = familyDef(b.familyId).form, rots = shapeRotations(form), a = anchorOf(b.footprint), cur = currentRotOf(b), others = buildings.filter((x) => x.id !== b.id);
+    for (let k = 1; k <= rots.length; k++) { const fp = footprintAt(form, (cur + k) % rots.length, a); if (fp && isValidFootprint(form, fp, others)) { onMove?.({ buildingId: b.id, footprint: fp }); return; } }
+  };
+
+  // #224.2 Live-Delta: wie ändern sich Σ Kartenwert und Formationen, wenn das gezogene Gebäude an die Vorschau-Position kommt?
+  const dragDelta = useMemo(() => {
+    if (!dragPrev || !dragPrev.footprint.length) return null;
+    const previewBuildings = buildings.map((x) => (x.id === dragPrev.id ? { ...x, footprint: [...dragPrev.footprint].sort((m, n) => m - n) } : x));
+    const previewArch = { ...architect, buildings: previewBuildings };
+    const p2 = precomputeArchitect(previewArch, order, deck);
+    const val2 = cards.reduce((t, c, p) => t + c.value + (architectValueBonus(p2, p, c) || 0), 0);
+    const form2 = summarizeFormations(computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, previewArch)).count;
+    return { dVal: val2 - sumValue, dForm: form2 - formCount, valid: dragPrev.valid };
+  }, [dragPrev]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const goStep = (n) => { setStep(n); if (n > 0) { setDeleteActive(false); setMode(null); } };
 
@@ -179,13 +242,13 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
           <section className="rounded-xl p-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
             <div className="flex items-center justify-between mb-2">
               <div className="text-[11px] font-mono uppercase tracking-wide opacity-60">Brett · 8 × 5</div>
-              {selId != null && (
-                <button onClick={() => setRotIdx((r) => r + 1)} className="text-xs font-bold rounded-lg px-2.5 py-1"
+              {selId != null && buildings.some((x) => x.id === selId) && (
+                <button onClick={rotateSelected} className="text-xs font-bold rounded-lg px-2.5 py-1"
                   style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
               )}
             </div>
             <div className="grid grid-cols-5 gap-1" style={{ maxWidth: 360, margin: "0 auto" }}>
-              {cards.map((card, pos) => {
+              {(() => { const dragCells = dragPrev ? new Set(dragPrev.footprint) : null; const draggingId = dragPrev ? dragPrev.id : null; return cards.map((card, pos) => {
                 const b = buildingAt(pos);
                 const fam = b ? familyDef(b.familyId) : null;
                 const cat = fam ? CAT[fam.category] : null;
@@ -202,16 +265,24 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const title = b
                   ? `${fam.name} (${tierLabel(b.tier)}) — ${famEff(fam, b)}${inForm ? ` · Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`
                   : `Pos ${pos + 1}${inForm ? ` — Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`;
+                // #224.4: Drag-Vorschau — diese Zelle liegt unter dem gezogenen Gebäude (grün gültig / rot ungültig);
+                // die Ursprungs-Zellen des gezogenen Gebäudes werden gedimmt.
+                const inDragPrev = dragCells ? dragCells.has(pos) : false;
+                const dragValid = dragPrev && dragPrev.valid;
+                const isDragOrig = draggingId != null && b && b.id === draggingId;
                 return (
-                  <button key={pos} onClick={() => tapCell(pos)}
+                  <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
                     className="relative rounded-md aspect-square flex items-center justify-center font-mono font-bold transition-all"
                     style={{
-                      background: b ? `${cat.color}` : "#16232f",
-                      color: b ? "#fff" : "#adbecc",
-                      border: `1px solid ${b ? cat.color : "#20303d"}`,
+                      background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b ? `${cat.color}` : "#16232f"),
+                      color: b || inDragPrev ? "#fff" : "#adbecc",
+                      border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b ? cat.color : "#20303d")}`,
+                      opacity: isDragOrig && !inDragPrev ? 0.35 : 1,
+                      touchAction: "none", // Touch-Drag: die Zelle scrollt nicht, der Finger zieht das Gebäude
                       boxShadow: [
+                        inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,
                         b && fam.legendary ? `inset 0 0 0 2px ${GOLD}` : null,
-                        isSel ? "inset 0 0 0 2px #fff" : null,
+                        isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,
                         !b && structLit(pos) ? `inset 0 0 0 2px ${CAT.value.color}88` : null,
                         b && structLit(pos) ? `0 0 8px ${cat.color}` : null,
                       ].filter(Boolean).join(", ") || undefined,
@@ -243,7 +314,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                     )}
                   </button>
                 );
-              })}
+              }); })()}
             </div>
             {/* Legende (Rahmen/Icon, nicht Füllfarbe wegen Suit-Kollision) */}
             <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[11px] font-mono opacity-80">
@@ -332,7 +403,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                           </div>
                         );
                       })}
-                      <div className="text-[11px] font-mono opacity-50">↳ Bauplan „Errichten" → wird an die erste freie Stelle gesetzt. Danach auf dem Brett antippen → an eine andere Position tippen (⟳ dreht).</div>
+                      <div className="text-[11px] font-mono opacity-50">↳ Bauplan „Errichten" → wird an die erste freie Stelle gesetzt. Danach auf dem Brett <b>ziehen</b> (Griff überall am Gebäude) zum Versetzen; antippen + ⟳ dreht.</div>
                     </div>
                   )}
                   {mode === "upgrade" && (
@@ -347,7 +418,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
               {step === 0 && acted && (
                 <div>
                   <div className="text-sm rounded-r-lg px-3 py-2.5 mb-1" style={{ background: `${CAT.score.color}18`, borderLeft: `3px solid ${CAT.score.color}` }}>
-                    ✓ Hauptaktion gesetzt. Tippe ein Gebäude auf dem Brett an und dann eine freie Zelle, um es zu verschieben — beliebig oft bis zum Bestätigen (⟳ dreht).
+                    ✓ Hauptaktion gesetzt. <b>Zieh</b> ein Gebäude an die gewünschte Stelle (Griff überall am Gebäude, Live-Vorschau) — beliebig oft bis zum Bestätigen; antippen + ⟳ dreht.
                   </div>
                   <button onClick={() => goStep(1)} className="w-full rounded-lg py-2 text-sm font-bold mt-2" style={{ background: CAT.value.color, color: "#fff" }}>Weiter → Verschieben</button>
                 </div>
@@ -356,7 +427,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
               {step === 1 && (
                 <div>
                   <div className="text-sm rounded-r-lg px-3 py-2.5" style={{ background: `${CAT.score.color}14`, borderLeft: `3px solid ${CAT.score.color}` }}>
-                    Verschieben (optional, beliebig oft): Gebäude antippen → freie Zelle antippen. ⟳ dreht das ausgewählte Gebäude. Übernommen wird nur der bestätigte Stand.
+                    Verschieben (optional, beliebig oft): Gebäude <b>ziehen</b> (Griff überall, Live-Vorschau grün/rot). Antippen wählt aus; ⟳ dreht. Übernommen wird nur der bestätigte Stand.
                   </div>
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => goStep(0)} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
@@ -389,6 +460,21 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
             {/* Vorschau & Brett-Status */}
             <div className="rounded-xl p-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
               <div className="text-[11px] font-mono uppercase tracking-wide opacity-60 mb-2">Vorschau & Brett-Status</div>
+              {/* #224.2: Live-Delta beim Ziehen — HIER (nicht über dem Brett), damit das Brett nicht mitten im Ziehen verrutscht.
+                  An dragPrev gebunden (nicht dragDelta) → auch bei ungültigem Ziel („passt hier nicht") sichtbar. */}
+              {dragPrev && (() => {
+                const ok = dragPrev.valid && dragPrev.footprint.length > 0;
+                return (
+                  <div className="mb-2 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex items-center gap-3 flex-wrap"
+                    style={{ background: ok ? "#15351f" : "#3a1518", border: `1px solid ${ok ? "#2f9d55" : "#d1462f"}` }}>
+                    <span className="font-bold" style={{ color: ok ? "#5fce86" : "#e0705a" }}>{ok ? "Vorschau" : "passt hier nicht"}</span>
+                    {ok && dragDelta && <>
+                      <span>Σ Wert <b style={{ color: dragDelta.dVal >= 0 ? "#5fce86" : "#e0705a" }}>{dragDelta.dVal >= 0 ? "+" : ""}{dragDelta.dVal}</b></span>
+                      <span>Formationen <b style={{ color: dragDelta.dForm >= 0 ? "#5fce86" : "#e0705a" }}>{dragDelta.dForm >= 0 ? "+" : ""}{dragDelta.dForm}</b></span>
+                    </>}
+                  </div>
+                );
+              })()}
               <div className="grid grid-cols-2 gap-2">
                 <Stat k="Formationen" v={formCount} hero />
                 <Stat k="Σ Kartenwert" v={sumValue} hero />
