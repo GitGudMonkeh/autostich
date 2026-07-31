@@ -102,6 +102,10 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const effArch = useMemo(() => ({ ...architect, buildings }), [architect, buildings]);
   const pre = useMemo(() => (cards.length ? precomputeArchitect(effArch, order, deck) : null), [effArch, order, deck, cards.length]);
   const structF = useMemo(() => structureFactorMap(occ), [occ]);
+  // Struktur-Kombi-Bonus als Summe (#UI): Σ der Extra-Faktoren über alle Karten auf fertigen Strukturen
+  // (Zeile/Spalte/Diagonale, multiplikativ gestapelt) → Gesamt-Punkte-Bonus in Prozent. Nicht beteiligte Zellen
+  // haben Faktor 1 → (f−1)=0, tragen nichts bei.
+  const structBonusPct = useMemo(() => Math.round(structF.reduce((t, f) => t + (f - 1), 0) * 100), [structF]);
   const formations = useMemo(() => {
     if (!cards.length) return [];
     return computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, effArch);
@@ -391,11 +395,12 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       const fam = familyDef(o.familyId);
                       if (!fam) return null;
                       const cat = CAT[fam.category];
+                      const tierCol = o.legendary ? GOLD : tierColor(o.tier); // Rahmen/Badge = Stufe (Rarität): grau/grün/blau/lila/gold
                       const noRoom = !fitFor(o);
                       return (
                         <button key={idx} onClick={() => chooseOffer(o)} disabled={o.used}
                           className="rounded-lg p-2.5 text-left w-full transition-all hover:brightness-110"
-                          style={{ background: "#16232f", border: `1px solid ${o.legendary ? GOLD + "88" : cat.color + "66"}`, opacity: o.used ? 0.4 : 1, cursor: o.used ? "not-allowed" : "pointer" }}>
+                          style={{ background: `linear-gradient(${cat.color}1f, ${cat.color}1f), #16232f`, border: `1px solid ${tierCol}`, opacity: o.used ? 0.4 : 1, cursor: o.used ? "not-allowed" : "pointer" }}>
                           <div className="grid grid-cols-[auto_1fr_auto] gap-2.5 items-center">
                             <div className="p-1 rounded" style={{ background: "#0e1822" }}><MiniShape form={fam.form} color={cat.color} /></div>
                             <div className="min-w-0">
@@ -406,7 +411,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                             </div>
                             <div className="text-right flex flex-col items-end gap-1">
                               <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded"
-                                style={{ background: o.legendary ? `${GOLD}22` : "#0e1822", color: o.legendary ? GOLD : "#adbecc" }}>
+                                style={{ background: `${tierCol}22`, color: tierCol, border: `1px solid ${tierCol}66` }}>
                                 {o.legendary ? "Legendär" : `Stufe ${tierLabel(o.tier)}`}
                               </span>
                               {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>kein Platz →</span>}
@@ -489,7 +494,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 );
               })()}
               <div className="grid grid-cols-2 gap-2">
-                <Stat k="Formationen" v={formCount} hero />
+                <Stat k="Struktur-Bonus" v={`+${structBonusPct} %`} hero />
                 <Stat k="Σ Kartenwert" v={sumValue} hero />
                 <Stat k="Abdeckung" v={`${Math.round(coverCount / N_POS * 100)}%`} />
                 <Stat k="Häuserzeilen" v={houseRows} />
