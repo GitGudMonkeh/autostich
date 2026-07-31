@@ -1,5 +1,6 @@
 import { useEscape } from "./useEscape.js";
 import { RunStats } from "./RunStats.jsx";
+import { CardGrid } from "./CardGrid.jsx"; // #201.8 Stufe B: finale Aufstellung aus dem Snapshot (schreibgeschützt)
 import { fmtScore } from "./format.js";
 
 /* #169 FB-8: Detailansicht eines Bestenlisten-Eintrags (lokal ODER global) — Overlay über der Liste, zeigt
@@ -28,6 +29,16 @@ export function RunDetail({ entry, rank = null, onClose }) {
           <div className="text-xs opacity-50 mt-0.5">Score</div>
         </div>
         <RunStats entry={entry} />
+        {/* #201.8 Stufe B: finale Deck-Aufstellung, sofern der Lauf einen Snapshot hat (nur eigene/lokale Läufe;
+            alte Einträge & globale Fremd-Läufe haben keinen → Abschnitt wird ausgeblendet). */}
+        {entry.deckSnapshot?.cards?.length > 0 && (
+          <details className="mt-4 rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+            <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">Finale Aufstellung ansehen</summary>
+            <div className="p-3 pt-0">
+              <CardGrid cards={entry.deckSnapshot.cards} formations={entry.deckSnapshot.formations || []} quietTiles />
+            </div>
+          </details>
+        )}
       </div>
     </div>
   );

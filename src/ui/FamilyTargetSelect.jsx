@@ -2,7 +2,7 @@ import { suitColor, suitName, SUIT_ORDER } from "../game/constants.js";
 import { familyDef, allianceGroups } from "../game/families.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { CATEGORIES } from "../game/perks.js";
-import { FORMATION_TYPES, FORMATION_TYPE_LABELS } from "../game/formations.js";
+import { FORMATION_TYPES, FORMATION_TYPE_LABELS, computeFormations } from "../game/formations.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
 import { CardGrid } from "./CardGrid.jsx";
 
@@ -32,6 +32,15 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
   const cards = order.map((di) => deck[di]);
   const heldIds = new Set((state.roles && state.roles[ft.familyId]) || []); // bereits gehaltene Rollenkarten (Upgrade)
   const disabledPos = order.map((di, pos) => (heldIds.has(deck[di].id) ? pos : -1)).filter((p) => p >= 0);
+
+  // #201.6 (b): Formations-Stärke-Vorschau bei Farb-/Wert-Perks (nur suits-Modus, A_SUIT_BOOST/DUEL). Trockendurchlauf
+  // des REINEN tierDef.onPick auf einer Deck-Kopie → Formationen neu rechnen → „aktuell → nachher (±Δ)". Rein lesend.
+  const fmtStr = (x) => x.toFixed(2).replace(".", ",");
+  const strengthOf = (fs) => (fs || []).reduce((sum, pf) => sum + ((pf.mult || 1) - 1), 0);
+  const previewOn = ft.kind === "suits" && typeof tierDef.onPick === "function";
+  const strengthFor = (dk) => strengthOf(computeFormations(order, dk, state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {}));
+  const curStrength = previewOn ? strengthFor(deck) : 0;
+  const projStrength = (previewOn && ready) ? strengthFor(tierDef.onPick(deck, () => 0.5, { suits: sel })) : null;
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
@@ -94,6 +103,17 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
           </div>
         )}
 
+        {previewOn && (
+          <div className="text-center text-[11px] mt-4 opacity-85">
+            <span className="opacity-60">Formations-Stärke:</span>{" "}
+            <span className="tabular-nums font-pixel-dense">×{fmtStr(1 + curStrength)}</span>
+            {projStrength != null && (() => {
+              const d = projStrength - curStrength;
+              const c = d > 0.001 ? "#5ab87a" : d < -0.001 ? "#e0605a" : "#c8c8d0";
+              return (<>{" → "}<span className="tabular-nums font-pixel-dense" style={{ color: c }}>×{fmtStr(1 + projStrength)}</span>{" "}<span style={{ color: c }}>({d >= 0 ? "+" : "−"}{fmtStr(Math.abs(d))})</span></>);
+            })()}
+          </div>
+        )}
         <div className="flex items-center justify-between mt-5">
           <span className="text-xs opacity-60 tabular-nums">{sel.length} / {need} gewählt</span>
           <button onClick={() => ready && onConfirm()} disabled={!ready}
