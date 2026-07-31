@@ -115,11 +115,14 @@ export const masteryGradeLabel = (g) => {
    (Grad ≤ aktuell), eingefügte Roh-Seeds tragen KEINEN Grad → nicht gatebar ohne Board. Hier als Fundament. */
 export const canChallenge = (entryGrade, playerGrade) => clampGrade(entryGrade) <= clampGrade(playerGrade);
 
-// Spieler-sichtbare Reward-Kurzlabels je Grad (kumulativ NEU dazukommend), nur grob.
+// Spieler-sichtbare Reward-Labels je Rang — KUMULATIVER Vollbestand (nicht Deltas): jeder Rang listet seinen
+// kompletten Stand. Spiegelt die Reward-Ableitungen (masteryRerollBonus 1/2/3, masteryRareShift III→„häufiger"/
+// IV→„noch häufiger", masteryLegendMult IV, masteryLegendGuaranteed V). Die UI hebt je Rang das NEU/Hochgestufte
+// hervor (Diff zum Vorrang) → kein doppeltes „Neuwürfe" mehr.
 export const MASTERY_REWARD_LABELS = {
-  1: ["Mehr Neuwürfe"],
-  2: ["Noch mehr Neuwürfe"],
-  3: ["Mehr Neuwürfe", "Seltene häufiger"],
-  4: ["Seltene viel häufiger", "Legendäre häufiger"],
-  5: ["Garantierter Legendär"],
+  1: ["1 Neuwurf"],
+  2: ["2 Neuwürfe"],
+  3: ["3 Neuwürfe", "Seltene häufiger"],
+  4: ["3 Neuwürfe", "Seltene noch häufiger", "Legendäre häufiger"],
+  5: ["3 Neuwürfe", "Seltene noch häufiger", "Legendäre häufiger", "1 garantierter Legendär"],
 };

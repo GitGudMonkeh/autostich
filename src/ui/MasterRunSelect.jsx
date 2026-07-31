@@ -67,9 +67,12 @@ export function MasterRunSelect({ profile, onPlay, onClose }) {
             const roman = rankRoman(n);
             const tierLabel = gm ? `Großmeister ${roman}` : `Rang ${roman}`;
             const deckName = DECK_DEFS[RANK_DECK_ID[n]]?.name || "";
-            // Kumulativ: bisherige (grau) + neue (farbig). Meister bringt Rewards; Großmeister nur Schwierigkeit + Deck.
-            const prevRewards = gm ? [] : [...new Set(Array.from({ length: n - 1 }, (_, k) => MASTERY_REWARD_LABELS[k + 1] || []).flat())];
-            const newRewards = MASTERY_REWARD_LABELS[n] || [];
+            // Kumulativer Vollbestand je Rang: getragen (grau) = schon im Vorrang enthalten, neu/hochgestuft (farbig)
+            // = an diesem Rang dazugekommen. Diff zum Vorrang → kein Doppel-Anzeigen. Großmeister: nur Schwierigkeit + Deck.
+            const prevFull = gm ? [] : (MASTERY_REWARD_LABELS[n - 1] || []);
+            const fullRewards = MASTERY_REWARD_LABELS[n] || [];
+            const prevRewards = fullRewards.filter((r) => prevFull.includes(r));
+            const newRewards = fullRewards.filter((r) => !prevFull.includes(r));
             return (
               <Fragment key={n}>
                 {n === MASTERY_MEISTER_MAX + 1 && (
