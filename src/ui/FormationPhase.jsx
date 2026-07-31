@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
-import { SKILL_DEFS, hasGletscher, hasArchitekt } from "../game/skills.js";
+import { SKILL_DEFS, hasGletscher, hasArchitekt, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
@@ -38,6 +38,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   // Spalte mit den meisten Frostkarten (≥2 — die Engine gibt den Architekt-Faktor erst ab 2 in derselben Spalte); bei
   // Gleichstand die linkere. Rein anzeige-seitig, spiegelt die Engine-Spaltenlogik (engine.js: p % SEGMENT_SIZE).
   const architektOn = hasArchitekt(state.skills || []);
+  // Pflanze (#211): Klick-Detail-Readout nur, wenn ein Pflanzen-Skill gehalten wird (sonst irrelevant).
+  const plantHeld = plantSkillCount(state.skills || []) > 0;
   const frostPillar = (() => {
     if (!architektOn) return { col: -1, positions: [] };
     const byCol = Array.from({ length: SEGMENT_SIZE }, () => []);
@@ -163,7 +165,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
           <div className="md:flex-1 md:min-w-0 mt-3 md:mt-0 grid gap-3 content-start">
             <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} familyTiers={state.familyTiers}
-              frostReadout frostLayers={sel != null && cards[sel] ? (state.layers?.[cards[sel].id] || 0) : 0} frostGletscher={hasGletscher(state.skills || [])} />
+              frostReadout frostLayers={sel != null && cards[sel] ? (state.layers?.[cards[sel].id] || 0) : 0} frostGletscher={hasGletscher(state.skills || [])}
+              plantReadout={plantHeld}
+              plantGrowth={sel != null && cards[sel] ? (state.growth?.[cards[sel].id] || 0) : 0}
+              plantRoots={sel != null && cards[sel] ? plantRootScore(state.skills || [], state.growth?.[cards[sel].id] || 0) : 0}
+              plantPfahl={hasPfahlwurzel(state.skills || [])} />
             <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
             {/* Kurz-Erklärung der Formationen mit Kürzel (#95.7). #103: nur Kürzel + Name grün,
                 Beschreibung (nach dem „—") in Standard-Textfarbe → bessere Lesbarkeit. */}

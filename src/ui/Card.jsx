@@ -1,5 +1,6 @@
-import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX } from "../game/constants.js";
+import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
 import { FrostOverlay } from "./FrostOverlay.jsx";
+import { plantNumberColor, PLANT } from "./indicators/vocab.js";
 
 // Eis (#210): Schicht-Eck-Kristalle — dezenter, gestapelter Hinweis „diese Karte ist geschichtet" (bewusst KEINE
 // Zahl auf der Karte). Mehr Schichten → mehr Kristalle; ab dem wirksamen Deckel (ICE_LAYER_MAX) leuchten obenauf
@@ -37,7 +38,7 @@ function FrostLayerCrystals({ layers }) {
      value      = dauerhafter Kartenwert (inkl. Kat.-A-Mods)
      baseRank   = Ursprungswert → dauerhafter Boost = value − baseRank (violett „+X")
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
-export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, green = false, forged = 0, branded = 0, frostLayers = 0, allyColor = null, frontImage = null }) {
+export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, green = false, forged = 0, branded = 0, frostLayers = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null }) {
   const color = suitColor(suit);
   // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
   // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
@@ -77,6 +78,19 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
   const forgedGlow = forged > 0 ? "inset 0 0 18px #f0a83a5e, inset 0 0 7px #f0b74a4a" : null;
   // Feuer (#206): gebrandmarkte GEGNERkarte „verkohlt von unten" — warmer, GERICHTETER Char-Saum (Inset von unten), klar vom kalten Frostbiss abgesetzt.
   const brandGlow = branded > 0 ? "inset 0 -17px 16px -8px #e0714a88, inset 0 -3px 6px -2px #f0a83a66" : null;
+  // Pflanze (#211): kolonisierte GEGNERkarte (Ausläufer) — grüne Ranke wächst vom LINKEN Rand herein (gerichteter Inset von
+  // links), organisch/grün → klar von Brand (warm, von unten) und Frostbiss (kalt, ❄) abgesetzt. Marker + Ernte-Tag folgen unten.
+  const colonizedGlow = colonized > 0 ? "inset 15px 0 16px -8px #5ab87a99, inset 3px 0 6px -2px #86e0a066" : null;
+  // Pflanze (#211): Kartenzahl ergrünt mit dem Wachstum (Suit-Farbe → Grün) und leuchtet intensiv grün ab Reife; voll
+  // ausgewachsen am hellsten. `pt` = null → keine Pflanzen-Wirkung (normale Suit-Farbe). Wachstumsring (unten-rechts) nur
+  // solange die Karte wächst und NICHT reif ist (bei Reife übernimmt die grüne Zahl + 🌿 das Signal).
+  const pt = plantNumberColor(color, growth, green, value);
+  const numColor = pt ? pt.color : color;
+  const numShadow = pt
+    ? `0 0 ${Math.round(10 + 10 * pt.glow)}px ${pt.color}${pt.ripe ? "cc" : "88"}, 0 1px 3px #000c`
+    : `0 0 12px ${color}77, 0 1px 3px #000c`;
+  const showGrowthRing = !green && (growth || 0) > 0;
+  const growthPct = Math.min(100, ((growth || 0) / PLANT_GREEN_THRESHOLD) * 100);
   return (
     <div
       className="as-card as-card-holo relative rounded-xl overflow-hidden flex flex-col items-center justify-center select-none transition-all"
@@ -86,7 +100,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
         opacity: dim ? 0.35 : 1,
         // Ion-Rahmen (blau) zuerst → liegt oben; Gewinn-/Verlust-Glow (#135) & Frostbiss darunter; Holo-Saum zuletzt. Frost = eigener Layer.
         // Glow REIN blur-basiert (kein 0-Blur-Ring mehr) → weicher, kantenloser Rand statt harter Kontur am Kartenrand.
-        boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, frostbiteGlow, greenGlow, forgedGlow, brandGlow, ambientEdge].filter(Boolean).join(", "),
+        boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, frostbiteGlow, greenGlow, forgedGlow, brandGlow, colonizedGlow, ambientEdge].filter(Boolean).join(", "),
       }}
     >
       {/* #136/#210 Eis-Schimmer: Frost-Kanten-Layer (Ecken + Inset-Rim + optional Sweep) über der eingefrorenen Karte — hinter Text/Markern, Mitte frei. */}
@@ -108,10 +122,30 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
           ⚒+{forged}
         </div>
       )}
-      <div className="text-5xl font-bold card-num" style={{ color, textShadow: `0 0 12px ${color}77, 0 1px 3px #000c` }}>{effective}</div>
-      {/* Frost (#93 F3): Schneeflocke unten rechts markiert eine eingefrorene EIGENE Karte (blau, überall sichtbar). */}
+      <div className="text-5xl font-bold card-num" style={{ color: numColor, textShadow: numShadow }}>{effective}</div>
+      {/* Frost (#93 F3): Schneeflocke unten rechts markiert eine eingefrorene EIGENE Karte (blau, überall sichtbar).
+          #211: teilt sich die untere rechte Ecke mit dem Pflanze-Wachstumsring → bei beidem weicht das ❄ nach LINKS aus. */}
       {frozen && (
-        <div className="absolute bottom-1 right-1 text-[13px] leading-none" style={{ color: "#bfe9f7", textShadow: "0 0 5px #7fd4f0" }} title="Eingefroren">❄</div>
+        <div className="absolute bottom-1 text-[13px] leading-none" style={{ right: showGrowthRing ? 22 : 4, color: "#bfe9f7", textShadow: "0 0 5px #7fd4f0" }} title="Eingefroren">❄</div>
+      )}
+      {/* Pflanze (#211): Wachstumsring unten-rechts — füllender Kreis 0 → Reife-Schwelle auf der EIGENEN, noch wachsenden
+          Karte; bei Reife ausgeblendet (dann trägt die grüne Zahl + 🌿 das Signal). Sitzt in vocab.CORNER.growthRing. */}
+      {showGrowthRing && (
+        <div className="absolute bottom-1 right-1 rounded-full" title={`Wachstum ${growth} / ${PLANT_GREEN_THRESHOLD} → reif`}
+          style={{ width: 16, height: 16, background: `conic-gradient(${PLANT} ${growthPct}%, #ffffff1f ${growthPct}%)`,
+                   border: `1px solid ${PLANT}66`, boxShadow: `0 0 4px ${PLANT}55` }}>
+          <div className="absolute rounded-full" style={{ inset: 3, background: HOLO_BASE }} />
+        </div>
+      )}
+      {/* Pflanze (#211): Ausläufer-Marker auf der kolonisierten GEGNERkarte — grüne Ranke am linken Rand + „Ernte +N".
+          Grün/organisch, klar abgesetzt von Brand (warm) und Frostbiss (❄). Vertikal zentriert → kollidiert weder mit
+          🌿-reif (top-left) noch mit ❖-Schichten (bottom-left) noch mit der zentrierten Zahl. */}
+      {colonized > 0 && (
+        <div className="absolute left-0.5 top-1/2 -translate-y-1/2 flex flex-col items-center leading-none"
+          title={`Kolonisiert (Ausläufer) · Ernte +${colonized} Wachstum`}>
+          <span className="text-[13px]" style={{ color: "#86e0a0", textShadow: "0 0 5px #5ab87a" }}>🌿</span>
+          <span className="text-[9px] font-bold mt-0.5" style={{ color: "#86e0a0" }}>+{colonized}</span>
+        </div>
       )}
       {/* Frostbiss (#126): frostgebissene GEGNERkarte — ROTES ❄, klar als feindlicher −3-Debuff (nicht wie eigener Frost). */}
       {frostbitten && (

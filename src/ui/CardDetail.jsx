@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX, ICE_ABLAGE_SCORE_PER_LAYER } from "../game/constants.js";
+import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX, ICE_ABLAGE_SCORE_PER_LAYER,
+         PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, WURZELSCHLAG_PER_GROWTH } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
 import { layerValue } from "../game/skills.js";
+import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { formationLabel } from "./formationLabels.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
@@ -10,7 +12,8 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
 /* Detailanzeige einer angetippten Karte (Issue #95, Punkt 5): Rolle(n) und alle aktiven
    Modifikatoren. Wird unter der Kachelfläche in Chronik-Übersicht UND Formationsphase genutzt.
    Rollen-Chips sind anklickbar → klappen die Perk-Beschreibung auf (touch-tauglich, plus Hover-Titel). */
-export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostReadout = false, frostLayers = 0, frostGletscher = false }) {
+export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostReadout = false, frostLayers = 0, frostGletscher = false,
+                            plantReadout = false, plantGrowth = 0, plantRoots = 0, plantPfahl = false }) {
   const [openRole, setOpenRole] = useState(null); // aktuell aufgeklappte Rolle (perkId)
   useEffect(() => { setOpenRole(null); }, [card?.id]); // Karte gewechselt → Beschreibung schließen
 
@@ -96,6 +99,27 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
             {val > 0 && <Chip c="#8fcfe6">+{val} Dauerwert</Chip>}
             {flat > 0 && <Chip c="#8fcfe6">+{flat} je Frost-Sieg</Chip>}
             {over > 0 && <Chip c="#e6f7ff">Überlauf {over}</Chip>}
+          </div>
+        );
+      })()}
+      {/* Pflanze (#211): Wachstums-/Reife-Werte in der Aufstellung — Zustand, Wachstum, Wert (bis Deckel), Wurzeln-Score
+          je Sieg (Wurzeltiefe + Jahresringe, Pfahlwurzel ×2 in Formation) und die Überlauf-Tiefe (Wachstum über dem, was
+          Wurzelschlag zum Wert-Deckel braucht = Nahrung der Pflanze-Legendären). Nur für Pflanzen-Karten (reif ODER wachsend). */}
+      {plantReadout && (card.green || plantGrowth > 0) && (() => {
+        const ripe = !!card.green;
+        const full = ripe && card.value >= PLANT_VALUE_CAP;
+        const stateLabel = full ? "Ausgewachsen" : ripe ? "Grün (reif)" : "Setzling";
+        const stateCol = full ? PLANT_FULL : ripe ? PLANT_RIPE : "#9aa4a0";
+        const need = Math.max(0, PLANT_VALUE_CAP - card.value) * WURZELSCHLAG_PER_GROWTH; // Wachstum bis zum Wert-Deckel
+        const overflow = ripe ? Math.max(0, plantGrowth - need) : 0;                      // „alter Wald" (Direkt-Score der Legendären)
+        return (
+          <div className="flex flex-wrap gap-1.5 items-center mt-1">
+            <span className="opacity-45">🌿 Pflanze:</span>
+            <Chip c={stateCol}>{stateLabel}</Chip>
+            <Chip c={PLANT}>Wachstum {plantGrowth}{ripe ? "" : ` / ${PLANT_GREEN_THRESHOLD}`}</Chip>
+            <Chip c={PLANT}>Wert {card.value} / {PLANT_VALUE_CAP}</Chip>
+            {ripe && plantRoots > 0 && <Chip c={PLANT}>+{plantRoots} Wurzeln/Sieg{plantPfahl ? " (×2 Form.)" : ""}</Chip>}
+            {overflow > 0 && <Chip c={PLANT_FULL}>Überlauf {overflow}</Chip>}
           </div>
         );
       })()}

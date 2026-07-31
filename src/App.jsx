@@ -23,6 +23,7 @@ import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
 import { CrystalBar } from "./ui/CrystalBar.jsx";
+import { PlantBar } from "./ui/PlantBar.jsx";
 import { frozenCount, archetypeOf, hasKristallineMasse } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
@@ -459,6 +460,7 @@ export function Autostich() {
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)}
                 forged={state.forged || {}} brandActive={state.brandActive || {}} layers={state.layers || {}}
+                growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "stat"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} />
@@ -467,6 +469,10 @@ export function Autostich() {
                 layers={state.layers || {}}
                 frostbite={state.frostbiteActive || {}}
                 hasKristalline={hasKristallineMasse(state.skills || [])} />
+              <PlantBar active={(state.activeArchetypes || []).includes("plant")}
+                deck={state.deck || []}
+                growth={state.growth || {}}
+                colonized={state.colonized || {}} />
               <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} />
             </div>
             <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />

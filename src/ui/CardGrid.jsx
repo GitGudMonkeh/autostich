@@ -1,4 +1,4 @@
-import { suitColor } from "../game/constants.js";
+import { suitColor, PLANT_VALUE_CAP } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
 import { SEGMENT_SIZE } from "../game/formations.js";
@@ -6,6 +6,7 @@ import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { FrostOverlay } from "./FrostOverlay.jsx";
+import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
 const ANCHOR_LABEL = { power: "Kraft", score: "Punkte", crit: "Krit", streak: "Serie", formation: "Formation", joker: "Joker" };
@@ -21,6 +22,11 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
+  // Pflanze (#211): reife (grüne) Karte → Zahl leuchtet grün (voll ausgewachsen am hellsten). Wichtig als
+  // Farbblock-Planungssignal in der Aufstellung; heller als die Grün-Suit (#5ab87a) + 🌿 im Status-Cluster
+  // machen eine reife Grün-Karte trotz gleicher Grundfarbe erkennbar.
+  const ripe = !!card.green;
+  const numCol = ripe ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : col;
   const labels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
   const fb = formationBorder(pf);
   // #112: „picked" (gold) hat Vorrang vor „selected" (weiß) vor Formations-/Farbrand.
@@ -50,13 +56,14 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
       {/* #136 Frostglas: ruhiger Eis-Layer (Tint + Körnung, KEIN Sweep) für eingefrorene Board-Karten. */}
       {card.frozen && <FrostOverlay animated={false} radius="0.5rem" />}
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
-      {((card.ionStacks || 0) > 0 || card.frozen) && (
+      {((card.ionStacks || 0) > 0 || card.frozen || ripe) && (
         <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">
           {(card.ionStacks || 0) > 0 && <span style={{ color: "#5ec8f0" }}>⚡{card.ionStacks}</span>}
           {card.frozen && <span style={{ color: "#bfe9f7", textShadow: "0 0 3px #7fd4f0" }} title="Eingefroren">❄</span>}
+          {ripe && <span style={{ textShadow: "0 0 3px #5ab87a" }} title="Grün (reif) — zählt fürs Farbblock">🌿</span>}
         </span>
       )}
-      <span className="text-lg sm:text-2xl font-bold font-pixel-dense" style={{ color: col }}>{card.value}</span>
+      <span className="text-lg sm:text-2xl font-bold font-pixel-dense" style={{ color: numCol, textShadow: ripe ? `0 0 6px ${numCol}99` : undefined }}>{card.value}</span>
       {inForm && <span className="text-[9px] sm:text-xs font-bold leading-none" style={{ color: fb.color || "#5ab87a" }}>×{fmt(pf.mult)}</span>}
       {/* #112: Auswahl-Marker — Farbpfeil „→X" (Shop-Farbwechsel) bzw. ✓ (gold) für gewählte Karten/Position. */}
       {(arrow || picked) && (

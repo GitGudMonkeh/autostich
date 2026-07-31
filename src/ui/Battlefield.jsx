@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
-import { TRICKS_PER_CYCLE, suitColor } from "../game/constants.js";
+import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
@@ -309,7 +309,7 @@ function SlashGhostLayer({ ghosts }) {
         const cardEl = (
           <Card suit={g.suit} value={g.value} baseRank={g.baseRank} stichBonus={g.stichBonus}
             ionStacks={g.ionStacks} frozen={g.frozen} frostbitten={g.frostbitten} green={g.green}
-            forged={g.forged || 0} branded={g.branded || 0} frostLayers={g.frostLayers || 0} frostAnimated
+            forged={g.forged || 0} branded={g.branded || 0} frostLayers={g.frostLayers || 0} growth={g.growth || 0} colonized={g.colonized || 0} frostAnimated
             allyColor={g.allyColor} frontImage={g.frontImage} />
         );
         // Reihenfolge (Wunsch): Karte liegt (rest) → Slice/Explosion IN PLACE (delay = g.rest) → DANACH floatet der
@@ -361,6 +361,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   forged = {}, brandActive = {},
   // Eis-Rework (#210): Schichten je Frostkarte-id → Schicht-Eck-Kristalle auf der eigenen (eingefrorenen) Karte.
   layers = {},
+  // Pflanze-Rework (#211): Wachstum je eigener Karte-id (Wachstumsring + grüne Zahl) + kolonisierte Gegnerkarten (Ausläufer-Marker).
+  growth = {}, colonized = {},
   // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
   // Defaults = bestehende Karten → ohne Auswahl identisches Verhalten (Gegner-Deck bleibt OPP_DECK_SKINS).
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null }) {
@@ -443,13 +445,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const pCardEl = t && (
     <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
           stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-          ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} frostLayers={layers[t.pCard.id] || 0} frostAnimated allyColor={allyColorFor(t.pCard.suit)}
+          ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} frostLayers={layers[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} frostAnimated allyColor={allyColorFor(t.pCard.suit)}
           frontImage={deckFront} />
   );
   // #186: die Gegnerkarte trägt den Skin-Front-Rahmen der kommenden Auswahl (Holo entfällt); Zahl/Effekte darüber.
   const oCardEl = t && (
     <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
-          frostbitten={t.oFrostbitten} green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
+          frostbitten={t.oFrostbitten} green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
   );
 
   // Sieger kippt an (as-slice-winner); im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
@@ -594,14 +596,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         color: suitColor(t.pCard.suit), seed: t.trickNo * 2 + 7,
         suit: t.pCard.suit, value: t.pCard.value, baseRank: t.pCard.baseRank, stichBonus: t.pValue - t.pCard.value,
         ionStacks: t.pCard.ionStacks || 0, frozen: t.pFrozen, frostbitten: false, green: !!t.pCard.green,
-        forged: forged[t.pCard.id] || 0, frostLayers: layers[t.pCard.id] || 0, allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
+        forged: forged[t.pCard.id] || 0, frostLayers: layers[t.pCard.id] || 0, growth: growth[t.pCard.id] || 0, allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
     }
     if (win) {   // Gegnerkarte verliert → Schnitt- (normal) bzw. Explosions-Ghost (Krit) auf der Gegnerseite
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp", fx: isCrit ? "explode" : "slice",
         color: isCrit ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, frozen: false, frostbitten: t.oFrostbitten, green: !!t.oCard.green,
-        branded: brandActive[t.oCard.id] || 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
+        branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
     }
     if (!spawned.length) return;
     setSlashGhosts((cur) => [...cur, ...spawned].slice(-6)); // Pool gedeckelt

@@ -465,6 +465,15 @@ export const isGreen = (card) => !!card?.green;
 export const greenCount = (deck) => (deck || []).filter((c) => c.green).length;
 // Soll diese Karte (nach Wachstums-Update) reif/grün sein? (Schwelle erreicht.)
 export const growthRipe = (growth) => (growth || 0) >= C.PLANT_GREEN_THRESHOLD;
+// Wurzeln-Score je Sieg einer grünen Karte (Anzeige-Helfer für CardDetail #211): BASIS-Flat aus Wurzeltiefe +
+// Jahresringe (je 10 Wachstum). Spiegelt engine.js (Wurzeltiefe/Jahresringe); der Pfahlwurzel-Faktor (×2 in Formation)
+// wird in der UI separat vermerkt, damit die Basiszahl stabil bleibt.
+export const plantRootScore = (skills, growth) => {
+  if (!hasWurzeltiefe(skills)) return 0;
+  let r = C.WURZELTIEFE_SCORE;
+  if (hasJahresringe(skills)) r += Math.floor((growth || 0) / C.JAHRESRINGE_PER_GROWTH) * C.JAHRESRINGE_SCORE;
+  return r;
+};
 // Flag-Prädikate (in engine/formations/reducer gelesen).
 export const hasWurzelschlag  = (skills) => plantFlag(skills, "wurzelschlag");
 export const hasWurzeltiefe   = (skills) => plantFlag(skills, "wurzeltiefe");
