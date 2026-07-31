@@ -433,11 +433,10 @@ export function resolveTrick(state, rng = Math.random) {
     if ((activeArchetypes || []).includes("plant")) {
       const inFormation = positionHasFormation(posForm);
       const inFarbblock = (posForm.formations || []).some((f) => f.type === "farbblock");
-      // Wachstum: je Sieg +Zuwachs, GEGATET an die Grün-Quote (Anti-Splash, v0.3): min(1, grüneKarten / GREEN_REF).
-      // Ein Token-Splash (nur der grüne Anker) bootstrappt so fast nichts; nur ein committetes grünes Deck erreicht +1/Sieg.
+      // Wachstum: je Sieg +Zuwachs, GEGATET an die Pflanzen-Skill-Anzahl (Anti-Splash, v0.3): min(1, PflanzenSkills / SKILL_REF).
+      // 1 Splash-Skill = 1/3 Speed, volle +1/Sieg erst ab SKILL_REF Skills → hohes Wachstum verlangt echtes Deck-Commitment.
       const prevG = newGrowth[pCard.id] || 0;
-      const nGreen = deck.reduce((n, c) => n + (c.green ? 1 : 0), 0);
-      const growInc = Math.min(1, C.PLANT_GROWTH_GREEN_REF > 0 ? nGreen / C.PLANT_GROWTH_GREEN_REF : 1);
+      const growInc = Math.min(1, C.PLANT_GROWTH_SKILL_REF > 0 ? plantSkillCount(skills) / C.PLANT_GROWTH_SKILL_REF : 1);
       const g = prevG + growInc;
       newGrowth = { ...newGrowth, [pCard.id]: g };
       const cardGreen = pCard.green || growthRipe(g);
@@ -609,6 +608,10 @@ export function resolveTrick(state, rng = Math.random) {
       const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
       if (totalForged > 0) fireDirect += totalForged * C.DAMASCUS_DIRECT;
     }
+    // Asche-Dividende (v0.3): gehaltene Asche gibt einen kleinen DIREKTen Score je Feuer-Sieg (post-stack, gedeckelt,
+    // bekenntnis-skaliert) → toter Asche-Stapel (Schmieden ist gedeckelt) fühlt sich nicht mehr verschwendet an.
+    if (C.ASH_DIVIDEND > 0 && newAsh > 0 && fireCommit > 0)
+      fireDirect += Math.min(newAsh, C.ASH_DIVIDEND_CAP) * C.ASH_DIVIDEND * fireCommit;
     // Blitz-Legendär-Reshape (2026-07-30): DIREKTE Dividende aus dem GESÄTTIGTEN Ionisierungsfeld. Die Ionisierung flutet
     // (blitz-economy.mjs: alle Karten @Deckel 5, ~ganzes Deck ab Cycle 20) → „mehr Ionis."-Legendäre waren tot (1,01×/0,90×).
     // Sie lesen jetzt den BESTAND des Feldes (Stand VOR dem +1 der Siegkarte) und zahlen je IONISIERTEM Sieg DIREKT — am

@@ -267,6 +267,10 @@ export const FORGE_COST       = 5;      // Ascheschmiede: 5 Asche je Schmiedung 
 export const FORGE_VALUE      = envNum("SIM_FORGE_VALUE", 2);      // Ascheschmiede: niedrigste Karte +2 Dauerwert [Sim-tunebar]
 export const FORGE_MAX_PER_CARD = 6;    // Schmieden: Deckel geschmiedeter Dauerwert je Karte (Anti-Runaway v0.1: sonst R1→+20)
 export const FORGE_MAX_CARDS    = 10;   // Schmieden: max Anzahl VERSCHIEDENER geschmiedeter Karten (v0.2: Ascheschmiede = Boden heben, nicht ganzes Deck buffen → Winrate-Snowball)
+// Asche-Dividende (v0.3): ungenutzte Asche (Schmieden ist gedeckelt → Asche stapelt tot) gibt einen kleinen DIREKTen
+// Score je Feuer-Sieg — post-stack, GEDECKELT (kein Hort-Runaway), bekenntnis-skaliert (kein Splash-Abuse). [Sim-tunebar]
+export const ASH_DIVIDEND      = envNum("SIM_ASH_DIVIDEND", 2); // Score je gehaltener Asche pro Feuer-Sieg (kleiner Buff ~+8 %)
+export const ASH_DIVIDEND_CAP  = envNum("SIM_ASH_DIVIDEND_CAP", 300); // Deckel der gezählten Asche (darüber kein weiterer Wert → Hort lohnt nicht)
 export const GLUTSTAHL_PER_VALUE = 12;  // Glutstahl: +Score je geschmiedetem Wert bei Sieg // v0.2: 20→12 (Feuer-Ceiling-Trim, Brand+Schmiede-Explosion)
 export const SCHMELZOFEN_MIN_HEAT = 50; // Schmelzofen: ab 50 % Hitze …                       // v0 — tunebar
 export const SCHMELZOFEN_BRAND_BONUS = 1;   // … Brände −1 extra Wert & +1 extra Asche         // v0 — tunebar
@@ -350,10 +354,10 @@ export const ICE_FORMBASE_SLOPE   = envNum("SIM_ICE_FORMBASE_SLOPE", 0.3);    //
    Reife (grün — Farbe, nicht Kraft) → Farbblock → Score. Wert-Deckel 11 (kein Runaway). Werte v0. [v0 · tunebar]
    ============================================================ */
 export const PLANT_GREEN_THRESHOLD = envNum("SIM_PLANT_GREEN_THRESHOLD", 8);   // Wachstum-Schwelle für Reife (grün) [Sim-tunebar: höher = Feld ergrünt langsamer → Winrate sättigt weniger] // v0 — tunebar
-// Grün-Gate fürs Win-Wachstum (v0.3, Anti-Splash): pro Sieg wächst eine Karte um min(1, grüneKarten / REF). Bei REF=20
-// (= 50 % grün) volle +1/Sieg (alte Speed). Ein Token-Splash (nur der grüne Anker) bootstrappt so kaum → hohes Wachstum
-// ist an Pflanzen-Deck-Commitment gegatet, statt 1 Skill zur Pflicht für alle Decks zu machen. [Sim-tunebar]
-export const PLANT_GROWTH_GREEN_REF = envNum("SIM_PLANT_GROWTH_GREEN_REF", 12);
+// Skill-Gate fürs Win-Wachstum (v0.3, Anti-Splash): pro Sieg wächst eine Karte um min(1, PflanzenSkills / REF). Bei REF=3
+// volle +1/Sieg ab 3 Pflanzen-Skills; 1 Splash-Skill = 1/3 Speed. Hohes Wachstum ist so an Pflanzen-Deck-COMMITMENT
+// (Skill-Anzahl) gegatet, statt 1 Skill zur Pflicht für alle Decks zu machen. [Sim-tunebar]
+export const PLANT_GROWTH_SKILL_REF = envNum("SIM_PLANT_GROWTH_SKILL_REF", 3);
 export const PLANT_VALUE_CAP       = envNum("SIM_PLANT_VALUE_CAP", 11);  // Wert-Deckel grüner Karten (Auto-Sieg; Tiefe zahlt dann in Score) [Sim-tunebar: 10 = kein Auto-Sieg mehr] // v0
 export const PLANT_ANCHOR_VALUE    = 11;  // Alter Anker: Aktivierung startet 1 Karte reif (grün, Wert 11)      // v0
 export const PLANT_GREEN_FARBBLOCK_CAP = 3;// Grün-Farbblock-Cap: der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt (v0.3: ganzes Feld grün → 40er-Block ×8+ war der Runaway) // tunebar
