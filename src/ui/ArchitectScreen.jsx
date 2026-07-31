@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import {
   familyDef, shapeRotations, enumeratePlacements, isValidFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, structureFactorMap,
-  rowOf, colOf, posOf, ROWS, COLS, N_POS, MAX_TIER, tierNum, tierFactor,
+  rowOf, colOf, posOf, ROWS, COLS, N_POS, MAX_TIER, tierNum, tierFactor, upgradeInfo,
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR,
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
@@ -88,6 +88,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const [removeFor, setRemoveFor] = useState(null);        // Bauplan wartet auf Platz → Gebäude entfernen anbieten
   const dragRef = useRef(null);
   const [dragPrev, setDragPrev] = useState(null);          // { footprint, valid, id } während einer Drag-Geste
+  const [upgradeMsg, setUpgradeMsg] = useState(null);      // { name, reason } — Meldung beim Antippen eines nicht-aufwertbaren Gebäudes (Aufrüsten-Phase)
 
   // Effektive Gebäude = committet (+ in „place" das Vorschau-Gebäude). Board/Precompute/Formationen rechnen damit.
   const pendingBuilding = pending
@@ -126,7 +127,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const catCount = { value: 0, score: 0, formation: 0 };
   for (const b of committed) { const f = familyDef(b.familyId); if (f) catCount[f.category] += 1; }
 
-  const canUpgradeAny = committed.some((b) => { const f = familyDef(b.familyId); return f && !f.legendary && typeof b.tier === "number" && b.tier < MAX_TIER; });
+  const canUpgradeAny = committed.some((b) => upgradeInfo(familyDef(b.familyId), b.tier).can);
 
   // ---- Geometrie-Helfer ----
   const anchorOf = (fp) => posOf(Math.min(...fp.map(rowOf)), Math.min(...fp.map(colOf)));
@@ -175,7 +176,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   // ---- Tap je Phase ----
   const tapCell = (pos) => {
     if (removeFor) { const cb = committedAt(pos); if (cb) onDemolish?.(cb.id); return; } // entfernen für wartenden Bauplan
-    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const f = familyDef(cb.familyId); if (f && !f.legendary && cb.tier < MAX_TIER) { onUpgrade?.(cb.id); setPhase("move"); } } return; }
+    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { onUpgrade?.(cb.id); setUpgradeMsg(null); setPhase("move"); } else { setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: info.reason }); } } return; }
     if (phase === "place") { const b = buildingAt(pos); if (b && b.id === PENDING_ID) setSelId(PENDING_ID); return; }
     if (phase === "move") { const b = buildingAt(pos); if (b) setSelId(b.id); return; }
   };
@@ -290,6 +291,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const formLabels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
                 const sFac = structF[pos] || 1;
                 const isRemovable = !!removeFor && !!committedAt(pos);
+                // Aufrüsten-Phase: nicht-aufwertbare Gebäude ausgrauen (Legendär/No-op-Effekt/max Stufe).
+                const upgradeDim = phase === "upgrade" && b && !isPending && !upgradeInfo(fam, b.tier).can;
                 const title = b
                   ? `${fam.name} (${tierLabel(b.tier)})${isPending ? " · Vorschau" : ""} — ${famEff(fam, b)}${inForm ? ` · Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`
                   : `Pos ${pos + 1}${inForm ? ` — Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`;
@@ -303,7 +306,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b ? `${cat.color}` : "#16232f"),
                       color: b || inDragPrev ? "#fff" : "#adbecc",
                       border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b ? cat.color : "#20303d")}`,
-                      opacity: (isDragOrig && !inDragPrev) ? 0.35 : (isPending && !inDragPrev ? 0.82 : 1),
+                      opacity: (isDragOrig && !inDragPrev) ? 0.35 : upgradeDim ? 0.4 : (isPending && !inDragPrev ? 0.82 : 1),
                       touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
@@ -415,6 +418,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                                 style={{ background: `${tierCol}22`, color: tierCol, border: `1px solid ${tierCol}66` }}>
                                 {o.legendary ? "Legendär" : `Stufe ${tierLabel(o.tier)}`}
                               </span>
+                              {!o.legendary && (() => { const u = upgradeInfo(fam, o.tier); return u.can ? null : <span className="text-[9px] font-mono" style={{ color: "#8a97a5" }} title="Aufrüsten ändert bei diesem Effekt nichts">{u.reason === "max" ? "max. Stufe" : "keine Aufwertung"}</span>; })()}
                               {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>kein Platz →</span>}
                             </div>
                           </div>
@@ -422,7 +426,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       );
                     })}
                     {/* 4. Wahl: Aufrüsten */}
-                    <button onClick={() => { if (canUpgradeAny) setPhase("upgrade"); }} disabled={!canUpgradeAny}
+                    <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
                       className="rounded-lg p-2.5 text-left w-full transition-all hover:brightness-110"
                       style={{ background: "#16232f", border: `1px dashed ${CAT.value.color}66`, opacity: canUpgradeAny ? 1 : 0.4, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
                       <div className="text-sm font-bold">⬆ Aufrüsten</div>
@@ -454,8 +458,13 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
               {!removeFor && phase === "upgrade" && (
                 <div>
                   <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
-                    <b>Aufrüsten:</b> tippe ein Gebäude auf dem Brett → +1 Stufe.
+                    <b>Aufrüsten:</b> tippe ein <b>aufwertbares</b> Gebäude → +1 Stufe. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
                   </div>
+                  {upgradeMsg && (
+                    <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
+                      <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : "nicht aufwertbar"}.
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -483,10 +492,26 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   <button onClick={confirmBuild} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Bauen ✓</button>
                 </div>
               ) : phase === "upgrade" ? (
-                <button onClick={() => setPhase("choose")} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
+                <button onClick={() => { setUpgradeMsg(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
               ) : phase === "move" ? (
                 <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Fortfahren →</button>
               ) : null}
+              {/* #UI: Effekt des gerade platzierten (place) bzw. gewählten (move) Gebäudes — floatet mit der Leiste. */}
+              {(() => {
+                const eb = phase === "place" && pending ? pending : phase === "move" && selId ? buildings.find((x) => x.id === selId) : null;
+                const efam = eb ? familyDef(eb.familyId) : null;
+                if (!efam) return null;
+                return (
+                  <div className="mt-2 pt-2 text-[11px] font-mono leading-snug" style={{ borderTop: "1px solid #20303d" }}>
+                    <span className="inline-flex items-center gap-1.5 align-middle">
+                      <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[efam.category].color }} />
+                      <b>{efam.name}</b>
+                      <span className="opacity-55">{efam.legendary ? "Legendär" : `Stufe ${tierLabel(eb.tier)}`}</span>
+                    </span>
+                    <span className="opacity-80"> — {famEff(efam, eb)}</span>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Vorschau & Brett-Status — Mobil UNTER dem Brett (order-3), Desktop unter dem Phase-Panel in der rechten Spalte. */}
