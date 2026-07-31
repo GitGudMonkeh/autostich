@@ -51,7 +51,7 @@ export const GLOSSARY = {
 
   // ---- Pflanze (🌿) — Wachstum → Reife (grün) → Farbblock → Score ----
   growth: { label: "Wachstum", icon: "🌿", color: CLR.plant,
-    text: `Eigene Karten wachsen bei Siegen (nur steigend). Ab ${C.PLANT_GREEN_THRESHOLD} Wachstum wird eine Karte dauerhaft grün (reif).` },
+    text: `Eigene Karten wachsen bei Siegen (nur steigend) — umso schneller, je grüner dein Feld ist (volles Tempo ab ${C.PLANT_GROWTH_GREEN_REF} grünen Karten, darunter anteilig). Ab ${C.PLANT_GREEN_THRESHOLD} Wachstum wird eine Karte dauerhaft grün (reif).` },
   green: { label: "Grün (Reife)", icon: "🌿", color: CLR.plant,
     text: `Grüne Karten sind dauerhaft und bilden einen gemeinsamen Farbblock — je größer der Block, desto mehr Score. Grün ist Farbe, nicht Kraft; Wert wächst nur über Wurzeln (Deckel ${C.PLANT_VALUE_CAP}).` },
   colonize: { label: "Kolonisieren", icon: "🌿", color: CLR.plant,

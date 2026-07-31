@@ -433,8 +433,12 @@ export function resolveTrick(state, rng = Math.random) {
     if ((activeArchetypes || []).includes("plant")) {
       const inFormation = positionHasFormation(posForm);
       const inFarbblock = (posForm.formations || []).some((f) => f.type === "farbblock");
-      // Wachstum: jeder Sieg der Karte +1 (nur steigend). Reife: Schwelle erreicht → grün backen.
-      const g = (newGrowth[pCard.id] || 0) + 1;
+      // Wachstum: je Sieg +Zuwachs, GEGATET an die Grün-Quote (Anti-Splash, v0.3): min(1, grüneKarten / GREEN_REF).
+      // Ein Token-Splash (nur der grüne Anker) bootstrappt so fast nichts; nur ein committetes grünes Deck erreicht +1/Sieg.
+      const prevG = newGrowth[pCard.id] || 0;
+      const nGreen = deck.reduce((n, c) => n + (c.green ? 1 : 0), 0);
+      const growInc = Math.min(1, C.PLANT_GROWTH_GREEN_REF > 0 ? nGreen / C.PLANT_GROWTH_GREEN_REF : 1);
+      const g = prevG + growInc;
       newGrowth = { ...newGrowth, [pCard.id]: g };
       const cardGreen = pCard.green || growthRipe(g);
       if (growthRipe(g) && !pCard.green) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c));
@@ -454,8 +458,9 @@ export function resolveTrick(state, rng = Math.random) {
           plantFlat += root;
           if (hasMutterbaum(skills) && g >= Math.max(1, ...Object.values(newGrowth))) plantFlat += root; // Mutterbaum (v0-Näherung): Segment-Streuung
         }
-        // Wurzelschlag: grüne Karte wächst permanenten Wert an (+1 je 3 Wachstum, bis Deckel 11).
-        if (hasWurzelschlag(skills) && g % C.WURZELSCHLAG_PER_GROWTH === 0 && pCard.value < C.PLANT_VALUE_CAP)
+        // Wurzelschlag: grüne Karte wächst permanenten Wert an (+1 je N Wachstum, bis Deckel). Float-sicher (Wachstum ist
+        // seit dem Grün-Gate gebrochen): +1 Wert, wenn dieser Sieg eine neue N-Schwelle überschreitet.
+        if (hasWurzelschlag(skills) && Math.floor(g / C.WURZELSCHLAG_PER_GROWTH) > Math.floor(prevG / C.WURZELSCHLAG_PER_GROWTH) && pCard.value < C.PLANT_VALUE_CAP)
           deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: Math.min(C.PLANT_VALUE_CAP, c.value + 1) } : c));
         // Aussaat: beide Nachbarn +1 Wachstum (Flugsamen: grüne überspringen, nächste graue säen).
         if (hasAussaat(skills)) {

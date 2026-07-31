@@ -350,6 +350,10 @@ export const ICE_FORMBASE_SLOPE   = envNum("SIM_ICE_FORMBASE_SLOPE", 0.3);    //
    Reife (grün — Farbe, nicht Kraft) → Farbblock → Score. Wert-Deckel 11 (kein Runaway). Werte v0. [v0 · tunebar]
    ============================================================ */
 export const PLANT_GREEN_THRESHOLD = envNum("SIM_PLANT_GREEN_THRESHOLD", 8);   // Wachstum-Schwelle für Reife (grün) [Sim-tunebar: höher = Feld ergrünt langsamer → Winrate sättigt weniger] // v0 — tunebar
+// Grün-Gate fürs Win-Wachstum (v0.3, Anti-Splash): pro Sieg wächst eine Karte um min(1, grüneKarten / REF). Bei REF=20
+// (= 50 % grün) volle +1/Sieg (alte Speed). Ein Token-Splash (nur der grüne Anker) bootstrappt so kaum → hohes Wachstum
+// ist an Pflanzen-Deck-Commitment gegatet, statt 1 Skill zur Pflicht für alle Decks zu machen. [Sim-tunebar]
+export const PLANT_GROWTH_GREEN_REF = envNum("SIM_PLANT_GROWTH_GREEN_REF", 12);
 export const PLANT_VALUE_CAP       = envNum("SIM_PLANT_VALUE_CAP", 11);  // Wert-Deckel grüner Karten (Auto-Sieg; Tiefe zahlt dann in Score) [Sim-tunebar: 10 = kein Auto-Sieg mehr] // v0
 export const PLANT_ANCHOR_VALUE    = 11;  // Alter Anker: Aktivierung startet 1 Karte reif (grün, Wert 11)      // v0
 export const PLANT_GREEN_FARBBLOCK_CAP = 3;// Grün-Farbblock-Cap: der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt (v0.3: ganzes Feld grün → 40er-Block ×8+ war der Runaway) // tunebar

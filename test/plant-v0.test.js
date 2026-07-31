@@ -12,6 +12,7 @@ const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, su
 const identity = () => Array.from({ length: 40 }, (_, i) => i);
 const scen = (pVal, oVal, over = {}) => ({ ...initialState(makeRng(1)), deck: constDeck(pVal), oppDeck: constDeck(oVal), playerOrder: identity(), oppOrder: identity(), activeArchetypes: ["plant"], ...over });
 const green0 = (v) => constDeck(v).map((c, i) => (i === 0 ? { ...c, green: true } : c));
+const greenN = (v, n) => constDeck(v).map((c, i) => (i >= 1 && i <= n ? { ...c, green: true } : c)); // Karten 1..n grün, X0 grau (Grün-Gate-Setup)
 const noCrit = () => 0.99;
 const B = C.SCORE_PER_WIN;
 const PLANT_IDS = [
@@ -49,10 +50,17 @@ describe("Pflanze-Fraktion v0 — reine Helfer", () => {
 });
 
 describe("Pflanze-Fraktion v0 — Engine-Integration", () => {
-  it("Wachstum: Sieg → +1; an der Reife-Schwelle wird die Karte grün", () => {
-    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_05"], growth: { X0: C.PLANT_GREEN_THRESHOLD - 1 } }), noCrit);
+  it("Wachstum: bei vollem Grün-Feld gibt Sieg +1; an der Reife-Schwelle wird die Karte grün", () => {
+    // Grün-Gate: Win-Wachstum = min(1, grün/REF). Bei ≥ REF grünen Karten volle +1 → Schwelle → grün.
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_05"], deck: greenN(12, C.PLANT_GROWTH_GREEN_REF), growth: { X0: C.PLANT_GREEN_THRESHOLD - 1 } }), noCrit);
     expect(s.growth.X0).toBe(C.PLANT_GREEN_THRESHOLD);
     expect(s.deck[0].green).toBe(true);
+  });
+  it("Grün-Gate: bei wenig Grün wächst ein Sieg nur anteilig (Anti-Splash)", () => {
+    const nG = 5; // 5 grüne Karten → Win-Wachstum = 5/REF (< 1)
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_05"], deck: greenN(12, nG), growth: { X0: 0 } }), noCrit);
+    expect(s.growth.X0).toBeCloseTo(nG / C.PLANT_GROWTH_GREEN_REF);
+    expect(s.deck[0].green).toBeFalsy(); // grau bleibt grau — kein Bootstrap aus einem Sieg
   });
   it("Wurzeltiefe: Sieg einer grünen Karte gibt Wurzeln-Score (Flat)", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_02"], deck: green0(12), growth: { X0: 4 } }), noCrit);

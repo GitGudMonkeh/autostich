@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../game/skills.js";
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE,
-         PLANT_GREEN_THRESHOLD } from "../game/constants.js";
+         PLANT_GREEN_THRESHOLD, PLANT_GROWTH_GREEN_REF } from "../game/constants.js";
 import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
@@ -70,7 +70,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         ? "Schaltet das Einfrieren frei: eigene Karten werden blau, biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden. Jeder weitere Eis-Skill friert eine weitere Karte ein."
         : "Jeder weitere Eis-Skill friert eine weitere eigene Karte ein und erweitert deine Aufstellungs-Optionen.";
       case "plant": return first
-        ? `Schaltet das Wachstum frei: eigene Karten wachsen bei Siegen; ab ${PLANT_GREEN_THRESHOLD} Wachstum werden sie grün und bilden einen Farbblock, der Score gibt.`
+        ? `Schaltet das Wachstum frei: eigene Karten wachsen bei Siegen — je grüner dein Feld, desto schneller (volles Tempo ab ${PLANT_GROWTH_GREEN_REF} grünen Karten). Ab ${PLANT_GREEN_THRESHOLD} Wachstum werden sie grün und bilden einen Farbblock, der Score gibt.`
         : "Jeder weitere Pflanze-Skill vertieft das Wachstum — mehr grüne Karten, größerer Farbblock. Wachstum und Grün sind bereits aktiv.";
       default: return "";
     }
