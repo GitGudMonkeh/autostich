@@ -13,6 +13,8 @@ import { initialShop, SHOP_ITEM_DEFS, positionOccupied, perkLegendaryChance, ski
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
+import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
+import { masteryRerollBonus, masteryCoverBonus, masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER } from "./architect.js";
 
 /* Reiner Reducer — Determinismus-Invariante: kein Math.random / Date hier drin.
@@ -110,6 +112,8 @@ export function initialState(rng = Math.random, seed = null) {
     rerolls: C.BASE_REROLLS,       // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill) — ersetzt shop.perkRerolls/skillRerolls; Baseline, kein Nachschub (#217-Reward-Fläche)
     rerollsUsed: 0,                // #214: Zähler benutzter Rerolls (Perk+Skill, bezahlt ODER gratis) über den Lauf → Sparfuchs-Challenge (deck_c3 „noRerollRun")
     offerRerolls: 0,               // #205: Reroll-Index des AKTUELLEN Angebots (Original = 0) → adressiert `(seed,cycle,kind,offerRerolls)`; von der Engine bei jedem frischen Angebot auf 0 gesetzt
+    masteryGrade: 0,               // #217: Meistergrad dieses Laufs (0..5) — von START_RUN aus dem Profil gesetzt; 0 = Basiswerte (No-op)
+    masteryLegGranted: false,      // #217 Grad V: wurde der garantierte Legendär in diesem Lauf schon angeboten? (1×/Lauf)
     lastTrick: null,
   };
 }
@@ -138,7 +142,13 @@ export function reducer(state, action) {
       // Architekt-Flag (#202): das Spiel startet mit architect:true (Shop-Ersatz); der Sim übersteuert per Action (A/B),
       // sonst greift der Modul-Default (env ARCHITECT). shopDisabled = Sim-Null-Baseline „ohne".
       const architectEnabled = action.architect != null ? !!action.architect : !!C.ARCHITECT_ENABLED;
-      return { ...s, phase: "levelup", statOffer: STAT_IDS, architectEnabled, shopDisabled: !!action.shopDisabled };
+      // #217 Meistergrade: den run-übergreifenden Grad (aus dem Profil, via App) in die Lauf-Rewards übersetzen.
+      // Grad 0 (frischer Spieler / Sim ohne masteryGrade) = Basiswerte → alles byte-identisch zum bisherigen Start.
+      const grade = Math.max(0, Math.min(5, Math.floor(Number(action.masteryGrade) || 0)));
+      return { ...s, phase: "levelup", statOffer: STAT_IDS, architectEnabled, shopDisabled: !!action.shopDisabled,
+        masteryGrade: grade,
+        rerolls: C.BASE_REROLLS + masteryRerollBonus(grade),                                  // Neuwurf-Pool 2 → 3/4/5
+        architect: { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) } }; // Baufeld +2/Grad ab II
     }
 
     case "TO_MENU":     // laufenden Run verlassen (#5)
@@ -620,7 +630,7 @@ export function reducer(state, action) {
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
-      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop));
+      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade)); // #217: Grad-Rewards
       const fate = perkFateReroll(state.shop);                       // #164: gratis Perk-Reroll gilt fürs neue Perk-Angebot
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off, offerRerolls: 0, freePerkReroll: fate, freeSkillReroll: false } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0)
@@ -643,7 +653,7 @@ export function reducer(state, action) {
       const tokens = state.rerolls || 0;                             // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill), ersetzt shop.perkRerolls
       if (!free && tokens <= 0) return state;                        // keine Ressource → wirkungslos
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop));
+      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade)); // #217: Grad-Rewards
       const rerolls = free ? tokens : tokens - 1;
       return { ...state, offer, offerRerolls: idx, rerolls, rerollsUsed: (state.rerollsUsed || 0) + 1, freePerkReroll: free ? false : state.freePerkReroll };
     }
@@ -656,10 +666,14 @@ export function reducer(state, action) {
       const tokens = state.rerolls || 0;                             // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill), ersetzt shop.skillRerolls
       if (!free && tokens <= 0) return state;
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLegendaryChance(state.shop));
+      // #217: Grad-V-Garantie greift auch beim Neuwurf (Chance 1), solange noch kein Legendär angeboten wurde; sonst Legendär×Mult.
+      const guarantee = masteryLegendGuaranteed(state.masteryGrade) && !state.masteryLegGranted;
+      const skillLeg = guarantee ? 1 : skillLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade);
+      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLeg);
       if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
       const rerolls = free ? tokens : tokens - 1;
-      return { ...state, skillOffer: offer, offerRerolls: idx, rerolls, rerollsUsed: (state.rerollsUsed || 0) + 1, freeSkillReroll: free ? false : state.freeSkillReroll };
+      const masteryLegGranted = state.masteryLegGranted || (guarantee && offer.some(isLegendarySkill)); // Garantie eingelöst
+      return { ...state, skillOffer: offer, offerRerolls: idx, rerolls, rerollsUsed: (state.rerollsUsed || 0) + 1, freeSkillReroll: free ? false : state.freeSkillReroll, masteryLegGranted };
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.

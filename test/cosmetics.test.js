@@ -12,6 +12,17 @@ describe("cosmetics — Katalog", () => {
     expect(DECK_DEFS.default.unlock).toBeNull();
     expect(BATTLEFIELD_DEFS.default.unlock).toBeNull();
   });
+  it("#217 Meistergrad-Decks: deck_rank_* an Grad I..V gekoppelt (unlock + Fortschritt)", () => {
+    expect(DECK_DEFS.deck_rank_bronze.unlock).toEqual({ kind: "masteryGrade", n: 1 });
+    expect(DECK_DEFS.deck_rank_diamond.unlock).toEqual({ kind: "masteryGrade", n: 5 });
+    // Grad 3 → Bronze/Silber/Gold frei, Platin/Diamant gesperrt.
+    const p = prof({ masteryGrade: 3 });
+    expect(isUnlocked(DECK_DEFS.deck_rank_gold, p)).toBe(true);
+    expect(isUnlocked(DECK_DEFS.deck_rank_platin, p)).toBe(false);
+    const prog = unlockProgress(DECK_DEFS.deck_rank_platin, p);
+    expect(prog).toMatchObject({ done: false, cur: 3, target: 4 });
+    expect(prog.label).toContain("Meister");
+  });
   it("deck_p1 schaltet bei 5 Läufen frei (erste Progressionsstufe)", () => {
     expect(DECK_DEFS.deck_p1.unlock).toEqual({ kind: "games", n: 5 });
     expect(DECK_GAME_UNLOCKS[0]).toBe(5);

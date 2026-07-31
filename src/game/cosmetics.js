@@ -15,10 +15,13 @@
      { kind: "monoStatRun" } → profile.hadMonoStatRun === true  (Lauf mit nur einem Stat, Challenge 4)
      { kind: "monoArchetypeRun", archetype } → profile.monoArchetypeRuns[archetype] (Lauf nur mit dieser Fraktion, #215 deck_c5..c8)
      { kind: "allArchetypesRun" }            → profile.hadAllArchetypesRun === true (Lauf mit allen vier Fraktionen, #215 deck_c9)
+     { kind: "masteryGrade", n }             → profile.masteryGrade >= n (erreichter Meistergrad I..V, #217 deck_rank_*)
 
    Katalog wächst „Deck für Deck": ein neues Deck = ein Eintrag hier + sein Bild-Paar in
    cosmeticAssets.js. Solange ein Bild-Asset noch nicht im Repo liegt, bleibt der Eintrag draußen
    (temporärer Umsetzungs-Zwischenstand); im fertigen Feature ist jeder Katalog-Eintrag sichtbar. */
+
+import { MASTERY_ROMAN } from "./mastery.js"; // #217: römische Grad-Ziffer für die Deck-Freischalt-Labels
 
 // Progressions-Schwellen (gespielte Läufe) — Issue #190.
 export const DECK_GAME_UNLOCKS = [5, 15, 25, 35];        // deck_p1..p4
@@ -42,6 +45,12 @@ export const DECK_DEFS = {
   deck_c7: { id: "deck_c7", name: "Reines Eis",    unlock: { kind: "monoArchetypeRun", archetype: "ice" } },
   deck_c8: { id: "deck_c8", name: "Reine Pflanze", unlock: { kind: "monoArchetypeRun", archetype: "plant" } },
   deck_c9: { id: "deck_c9", name: "Element-Bund",  unlock: { kind: "allArchetypesRun" } },
+  // Meistergrad-Decks (#217): je erreichter Grad (I..V) schaltet eines frei — Beweis der laufübergreifenden Meisterschaft.
+  deck_rank_bronze:  { id: "deck_rank_bronze",  name: "Bronze",  unlock: { kind: "masteryGrade", n: 1 } },
+  deck_rank_silber:  { id: "deck_rank_silber",  name: "Silber",  unlock: { kind: "masteryGrade", n: 2 } },
+  deck_rank_gold:    { id: "deck_rank_gold",    name: "Gold",    unlock: { kind: "masteryGrade", n: 3 } },
+  deck_rank_platin:  { id: "deck_rank_platin",  name: "Platin",  unlock: { kind: "masteryGrade", n: 4 } },
+  deck_rank_diamond: { id: "deck_rank_diamond", name: "Diamant", unlock: { kind: "masteryGrade", n: 5 } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -74,6 +83,7 @@ export function isUnlocked(def, profile) {
     case "monoStatRun": return !!p.hadMonoStatRun;
     case "monoArchetypeRun": return !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]); // #215: Lauf nur mit dieser Fraktion
     case "allArchetypesRun": return !!p.hadAllArchetypesRun;                                     // #215: Lauf mit allen vier
+    case "masteryGrade": return (p.masteryGrade || 0) >= u.n;                                    // #217: erreichter Meistergrad
     default:            return true;
   }
 }
@@ -117,6 +127,10 @@ export function unlockProgress(def, profile) {
     case "allArchetypesRun": {
       const done = !!p.hadAllArchetypesRun;
       return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf mit allen vier Elementen ab" };
+    }
+    case "masteryGrade": {
+      const have = p.masteryGrade || 0;
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche Meister-${MASTERY_ROMAN[u.n] || u.n}` };
     }
     default:
       return { done: true, cur: 1, target: 1, label: "" };

@@ -527,6 +527,9 @@ export function ownsConsumerFor(arch, skills) {
 // Angebot (#93 F0): bis zu `count` noch nicht gehaltene Skills, nach Archetyp gruppiert (3+3+3+3),
 // aus max C.MAX_ARCHETYPES Archetypen (offerArchetypes). Deterministisch über den injizierten rng.
 // Leerer Pool → [] (Reducer/Engine fällt auf Perk-Angebot zurück). F0: nur Blitz → 4 Blitz-Skills.
+// #217 Meistergrade: ob eine Skill-id ein Legendär ist (Garantie-Erkennung bei Grad V). Rein & node-testbar.
+export const isLegendarySkill = (id) => !!SKILL_DEFS[id]?.legendary;
+
 export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0) {
   const available = archetypesWithSkills(owned);
   const chosen = offerArchetypes(activeArchetypes || [], available, rng);

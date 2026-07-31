@@ -1,4 +1,5 @@
 import { GHOST_STEP } from "./constants.js";
+import { advanceGrade } from "./mastery.js";
 
 /* Preview-Build (Testbranch auf /autostich/test/) teilt sich die Origin mit der echten
    Seite → derselbe localStorage. Ein Präfix trennt die Namespaces, damit Test-Runs den
@@ -78,7 +79,8 @@ export function loadRunHistory() {
 
 const DEFAULT_PROFILE = { games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
   hadNoBuyRun: false, hadMonoStatRun: false, hadNoRerollRun: false, // #190/#214: sticky Challenge-Flags (einmal true → bleiben); noReroll = Sparfuchs deck_c3
-  monoArchetypeRuns: {}, hadAllArchetypesRun: false }; // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
+  monoArchetypeRuns: {}, hadAllArchetypesRun: false, // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
+  masteryGrade: 0 }; // #217: laufübergreifender Meistergrad (0..5), sequentiell freigeschaltet über Score-Schwellen
 export function loadProfile() {
   try {
     const raw = localStorage.getItem(k("as_profile"));
@@ -158,6 +160,9 @@ export function recordRun(record) {
     // #215: Archetyp-Decks — Mono-Läufe je Fraktion (deck_c5..c8) + Element-Bund (alle vier, deck_c9).
     monoArchetypeRuns,
     hadAllArchetypesRun: !!p.hadAllArchetypesRun || isAllArchetypesRun(record),
+    // #217: Meistergrad sequentiell fortschreiben — jeder Lauf (Score zählt, kein completed-Zwang) schaltet
+    // höchstens den NÄCHSTEN Grad frei (advanceGrade prüft gegen die Grad+1-Schwelle; kein Multi-Sprung).
+    masteryGrade: advanceGrade(p.masteryGrade, n0(record.score)),
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
   return { history, profile };

@@ -27,6 +27,7 @@ import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
 import { CrystalBar } from "./ui/CrystalBar.jsx";
 import { PlantBar } from "./ui/PlantBar.jsx";
+import { MasteryBar } from "./ui/MasteryBar.jsx";
 import { frozenCount, archetypeOf, hasKristallineMasse } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
@@ -34,6 +35,7 @@ import { StartScreen } from "./ui/StartScreen.jsx";
 import { StatsScreen } from "./ui/StatsScreen.jsx";
 import { SeedChip } from "./ui/SeedChip.jsx"; // #205 Challenger Mode: Seed im HUD kopierbar
 import { CustomizeScreen } from "./ui/CustomizeScreen.jsx";
+import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale Bestenliste als eigener Screen
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
@@ -54,6 +56,7 @@ export function Autostich() {
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
   const [showStats, setShowStats] = useState(false);              // #172 FB-10: Statistik-Hub (nur im Menü)
   const [showCustomize, setShowCustomize] = useState(false);      // #190: Kollektion (Deck/Battlefield, nur im Menü)
+  const [showLeaderboard, setShowLeaderboard] = useState(false);  // #217: globale Bestenliste zog vom Startbildschirm in einen eigenen Screen
   const [profile, setProfile] = useState(loadProfile);            // #190: Profil (Freischalt-Status) — nach jedem Lauf aktualisiert
   const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
@@ -199,6 +202,9 @@ export function Autostich() {
       // #205: Lauf-Seed lokal mitspeichern (roh + teilbarer Code) → Nachspielen/Kopieren im Challenge-Reiter. Alt-Läufe
       // ohne Seed degradieren sauber (kein Challenge-Knopf). Global (gEntry) folgt mit dem Board-Umzug (Schicht B, #197).
       seed: state.seed ?? null, seedCode: state.seed != null ? formatSeed(state.seed) : null,
+      // #217: Grad, mit dem dieser Lauf gespielt wurde (die Rewards, die er hatte) — Datengrundlage für das
+      // spätere Challenger-Gating „nur bis zum eigenen Max-Grad" + PB-Segmentierung je Grad am globalen Board.
+      masteryGrade: state.masteryGrade || 0,
     };
     setHighscores(recordHighscore(localEntry));
     // #172 FB-10: denselben Lauf in die Historie (letzte 30) + Profil-Totals schreiben — Basis für den Statistik-Hub.
@@ -283,7 +289,7 @@ export function Autostich() {
     setPaused(false);
     setIsRecord(false);
     setNewUnlocks([]); // #190: Freischalt-Hinweis des Vorlaufs zurücksetzen
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed }); // #202 Architekt ersetzt den Shop · #205 seedbarer Lauf
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, masteryGrade: profile.masteryGrade || 0 }); // #202 Architekt ersetzt den Shop · #205 seedbarer Lauf · #217 Meistergrad-Rewards
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
@@ -451,9 +457,9 @@ export function Autostich() {
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} onPlaySeed={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
-            onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)}
+            onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
-            username={username} onEditName={() => setShowUsername(true)} myEntry={myEntry} pubToken={pubToken} />
+            username={username} onEditName={() => setShowUsername(true)} />
         ) : (<>
           <header className="flex items-end justify-between flex-wrap gap-2">
             <div>
@@ -485,6 +491,7 @@ export function Autostich() {
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4">
+              <MasteryBar grade={profile.masteryGrade || 0} score={state.score} />
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)}
                 forged={state.forged || {}} brandActive={state.brandActive || {}} layers={state.layers || {}}
@@ -567,6 +574,10 @@ export function Autostich() {
 
       {showCustomize && (
         <CustomizeScreen options={options} profile={profile} onChoose={changeOptions} onClose={() => setShowCustomize(false)} />
+      )}
+
+      {showLeaderboard && (
+        <LeaderboardScreen mine={myEntry} reloadToken={pubToken} onClose={() => setShowLeaderboard(false)} />
       )}
 
       {/* #190: Vorlade-Balken beim Run-Start — lädt die aktiven Skins, dann startet der Lauf wirklich. */}

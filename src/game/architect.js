@@ -14,6 +14,7 @@
    Legendäre kommen fertig (keine Stufen). Alle Zahlen sind Platzhalter → per Sim tunen (TUNING-Block unten).
    ============================================================ */
 import { SUIT_ORDER } from "./constants.js";
+import { tierWeightsForShift } from "./rarity.js";
 
 // Brett-Geometrie (fix; NICHT aus formations.js importiert, um den Import-Zyklus formations↔architect zu vermeiden).
 export const COLS = 5;                    // Spalten je Segment (= SEGMENT_SIZE)
@@ -28,9 +29,10 @@ export const posOf = (r, c) => r * COLS + c;
        Stufen-Tail komprimiert + die breiten Multiplikatoren (Häuserzeile/Schatzkammer/Kathedrale/Grundstein) runter. ---- */
 export const TIER_FACTOR   = [0, 1, 1.4, 1.9, 2.5];      // numerischer Effekt = base × TIER_FACTOR[tier] (Index 1..4) [Pass1: Tail 2,4/3,5→1,9/2,5]
 export const FORM_TIER_BONUS = 0.1;                       // Formations-/Faktor-Effekte: je Stufe +0,1 auf den Faktor
-// SIM-Rare-Buff-Hook (Rang-Reward-Messung, spiegelt rarity.js): SIM_RARE_SHIFT=1/2 → seltene Baupläne häufiger. Default 0.
+// SIM-Rare-Buff-Hook (Rang-Reward-Messung): SIM_RARE_SHIFT=1/2 → seltene Baupläne häufiger. Default 0. Tabellen aus
+// rarity.js (Single Source, kein Drift). #217: der Grad-Reward reicht seinen rareShift zur Laufzeit an buildArchitectOffer.
 const _archRareShift = (typeof process !== "undefined" && process.env && Number(process.env.SIM_RARE_SHIFT)) || 0;
-export const TIER_WEIGHTS  = ({ 0: { 1: 60, 2: 25, 3: 12, 4: 3 }, 1: { 1: 52, 2: 25, 3: 16, 4: 7 }, 2: { 1: 40, 2: 23, 3: 25, 4: 12 } })[_archRareShift] || { 1: 60, 2: 25, 3: 12, 4: 3 }; // Angebots-Stufengewichte
+export const TIER_WEIGHTS  = tierWeightsForShift(_archRareShift); // Angebots-Stufengewichte (Env-Default; Laufzeit-Shift via Param)
 // Kategorie-Gewicht im Angebot (Pass2): formation hebelt das bestehende Formations-Multiplikator-System (Overlap/
 // Eskalation) und explodiert besonders mit Eis (Schichten/Eisdruck) → seltener anbieten = weniger formation-Gebäude
 // auf dem Brett (Sim: formation-only +58–71 % vs value +21–25 %). value/score liegen bereits im Zielband.
@@ -192,14 +194,15 @@ export function initialArchitect() {
 // So lässt sich der Eigenbeitrag JE KATEGORIE messen (welche Kategorie treibt den Score/die Spät-Lastigkeit?).
 const ONLY_CAT = (typeof process !== "undefined" && process.env && process.env.ARCH_ONLY_CAT) || null;
 
-function weightedTier(rng) {
-  const entries = Object.entries(TIER_WEIGHTS);
+function weightedTier(rng, rareShift = _archRareShift) {
+  const entries = Object.entries(tierWeightsForShift(rareShift));
   const total = entries.reduce((a, [, w]) => a + w, 0);
   let r = rng() * total;
   for (const [t, w] of entries) { if (r < w) return Number(t); r -= w; }
   return Number(entries[entries.length - 1][0]);
 }
-export function buildArchitectOffer(architect, rng) {
+// #217: rareShift default = Env-Hook (Sim). Der Grad-Reward reicht zur Laufzeit masteryRareShift(grade) durch (Grad 0 = 0 = Basis).
+export function buildArchitectOffer(architect, rng, rareShift = _archRareShift) {
   const builtLeg = new Set((architect.buildings || []).filter((b) => familyDef(b.familyId)?.legendary).map((b) => b.familyId));
   const offers = [], usedFam = new Set();
   // Legendär-Slot (höchstens einer): expliziter Wurf, dann eine noch nicht errichtete legendäre Familie ziehen.
@@ -220,7 +223,7 @@ export function buildArchitectOffer(architect, rng) {
     let r = rng() * total, f = pool[pool.length - 1];
     for (const fam of pool) { const w = ARCHITECT_CAT_WEIGHT[fam.category] ?? 1; if (r < w) { f = fam; break; } r -= w; }
     usedFam.add(f.id);
-    offers.push({ familyId: f.id, tier: weightedTier(rng), used: false });
+    offers.push({ familyId: f.id, tier: weightedTier(rng, rareShift), used: false });
   }
   return offers;
 }

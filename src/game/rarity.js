@@ -30,7 +30,16 @@ export const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 
 // Drop-Gewichte je Stufe (Spec §10, offen → tunebar). Höhere Stufen seltener. [TUNING]
 // Summe = 100 → Gewichte entsprechen direkt den Ziel-Prozenten I 60 / II 25 / III 12 / IV 3.
-export const TIER_WEIGHTS = { 1: 60, 2: 25, 3: 12, 4: 3 };
+// #217 Meistergrade — Rarität-Shift: höhere Grade verschieben Gewicht zu Selten/Rar. shift 0 = Basis,
+// 1 (Grad III) / 2 (Grad IV+). Tabellen IDENTISCH zu architect.js (Single Source hier → kein Drift; der
+// Sim-Env-Hook SIM_RARE_SHIFT und der Grad-Reward greifen auf dieselbe Skala zu).
+export const TIER_WEIGHTS_BY_SHIFT = {
+  0: { 1: 60, 2: 25, 3: 12, 4: 3 },
+  1: { 1: 52, 2: 25, 3: 16, 4: 7 },
+  2: { 1: 40, 2: 23, 3: 25, 4: 12 },
+};
+export const tierWeightsForShift = (shift) => TIER_WEIGHTS_BY_SHIFT[shift] || TIER_WEIGHTS_BY_SHIFT[0];
+export const TIER_WEIGHTS = TIER_WEIGHTS_BY_SHIFT[0]; // Basis (shift 0) — unveränderte Bestandssemantik
 
 export const tierMeta   = (tier) => TIER_META[tier] || null;
 export const priceOfTier = (tier) => TIER_META[tier]?.price ?? 0;

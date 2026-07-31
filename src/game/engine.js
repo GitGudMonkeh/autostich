@@ -22,6 +22,8 @@ import { computeFormations, positionHasFormation, activeFormationCount, summariz
 import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, perkFateReroll, skillFateReroll, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
 import { SHOP_FAMILY_DEFS, timeSegmentDepth, timeSegmentReduced } from "./shopFamilies.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
+import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
+import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -920,6 +922,7 @@ export function resolveTrick(state, rng = Math.random) {
   let newFormationEnergy = formationEnergy;
   let newFormationSwaps = formationSwaps;
   let newFreePerkReroll = false, newFreeSkillReroll = false; // P-L1: gratis Reroll gilt nur fürs frisch erzeugte Angebot
+  let newMasteryLegGranted = state.masteryLegGranted || false; // #217 Grad V: 1×/Lauf garantierter Legendär — eingelöst-Flag
   // Architekt (#202): Meilenstein-Zähler nach diesem Stich fortschreiben (bump = Gebäude-id eines Siegs auf seiner Abdeckung).
   let newArchitect = architect;
   if (architectEnabled && architect && architectBump != null)
@@ -1028,20 +1031,28 @@ export function resolveTrick(state, rng = Math.random) {
       // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
       const decision = C.DECISION_SCHEDULE[cycle];
       const perkFate = perkFateReroll(shop), skillFate = skillFateReroll(shop); // #164 Schicksalskontrolle/Neuwurf IV: gratis Reroll je Auswahl
+      // #217 Meistergrade — Reward-Ableitungen (Grad 0 = No-op: Mult ×1, Shift 0, keine Garantie → byte-identisch).
+      const mGrade = state.masteryGrade || 0;
+      const mLegMult = masteryLegendMult(mGrade), mRareShift = masteryRareShift(mGrade);
       if (decision === "stat") {
         phase = "levelup"; newStatOffer = STAT_IDS; // immer alle Stats (Shop-Spec §4.3: fünf inkl. Einkommen)
       } else if (decision === "skill") {
-        const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(shop));
-        if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = skillFate; }
-        else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop)); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; } } // leerer Skill-Pool → Perk
+        // Grad V: solange dieser Lauf noch kein garantiertes Legendär bekam, das Skill-Angebot mit Chance 1 forcieren.
+        const guarantee = masteryLegendGuaranteed(mGrade) && !newMasteryLegGranted;
+        const skillLeg = guarantee ? 1 : skillLegendaryChance(shop) * mLegMult;
+        const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLeg);
+        if (soff.length > 0) {
+          phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = skillFate;
+          if (guarantee && soff.some(isLegendarySkill)) newMasteryLegGranted = true; // Garantie eingelöst, sobald ein Legendär tatsächlich im Angebot ist
+        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; } } // leerer Skill-Pool → Perk
       } else if (decision === "perk") {
-        const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop));
+        const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift);
         if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; }
       } else if (decision === "shop" && architectEnabled) {
         // Architekt-Phase (#202, Shop-Ersatz): STATT des Shops die Architekt-Phase öffnen — ein frisches Bauplan-Angebot
-        // ziehen (deterministisch über rng) und die Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen.
+        // ziehen (deterministisch über rng) und die Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen. #217: rareShift durchreichen.
         phase = "architect";
-        newArchitect = { ...(newArchitect || architect), offers: buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch")), actedMain: false, moved: false };
+        newArchitect = { ...(newArchitect || architect), offers: buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch"), mRareShift), actedMain: false, moved: false };
       } else if (decision === "shop" && shopDisabled) {
         // Sim-Referenz „ohne": weder Shop noch Architekt — die Entscheidung ist ein No-Op, der Durchlauf startet direkt
         // (Null-Baseline). Kein rng-Verbrauch.
@@ -1076,6 +1087,7 @@ export function resolveTrick(state, rng = Math.random) {
     crits, critBonusScore, bestTrickScore, maxFormations, formationScore, // #161 FB-2: Run-Rückblick
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     freePerkReroll: newFreePerkReroll, freeSkillReroll: newFreeSkillReroll, // Planung (§10 P-L1)
+    masteryLegGranted: newMasteryLegGranted, // #217 Grad V: garantierter Legendär je Lauf eingelöst? (masteryGrade selbst läuft über ...state)
     critFollowArmed, weaknessArmed, weaknessBig, interplayStored, misfireScore,
     winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet

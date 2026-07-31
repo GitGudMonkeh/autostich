@@ -1,6 +1,6 @@
 import * as C from "./constants.js";
 import { FAMILY_LIST } from "./families.js";
-import { TIERS, TIER_WEIGHTS, canOfferFamilyTier, familyTierOf } from "./rarity.js";
+import { TIERS, TIER_WEIGHTS, tierWeightsForShift, canOfferFamilyTier, familyTierOf } from "./rarity.js";
 import { lightningCritRaw } from "./skills.js";
 
 // Deutsche Zahlformatierung (2.5 → „2,5") — Beschreibungszahlen aus den Konstanten interpolieren (kein Text↔Code-Drift).
@@ -138,7 +138,10 @@ export function isMigratedPerk(p) {
    (Familie auf einer anbietbaren Zielstufe). Familien-Stufen sind nach TIER_WEIGHTS gewichtet, flache Perks nach
    RARITY_WEIGHTS; der explizite Legendär-Wurf (P5) bleibt wie in buildOffer. Deterministisch über den injizierten
    rng. `owned` = flache Perk-ids; `familyTiers` = aktueller Rang je Familie. */
-export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0) {
+export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0, rareShift = 0) {
+  // #217 Meistergrade: Rarität-Shift (0 = Basis) verschiebt die Familien-Stufengewichte zu Selten/Rar. rareShift 0
+  // liefert die Basistabelle → byte-identisch zum bisherigen Verhalten (Grad-0 / Sim / Bestandstests unberührt).
+  const tierWeights = tierWeightsForShift(rareShift);
   // Flacher Legacy-Pool: nicht besessen, offerable, NICHT migriert (reguläre D-Perks raus; Legendäre bleiben).
   let flat = PERK_LIST.filter((p) => !owned.includes(p.id) && p.offerable !== false && !isMigratedPerk(p));
   const chosen = [];
@@ -164,7 +167,7 @@ export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, 
     // FAMILY_DEFS führt `tiers` als OBJEKT {1:def,…} → anbietbare Stufen direkt über TIERS filtern
     // (nicht offerableTiers aus rarity.js, das ein Array erwartet).
     for (const t of TIERS) {
-      if (fam.tiers[t] && canOfferFamilyTier(cur, t)) pool.push({ familyId: fam.id, tier: t, weight: TIER_WEIGHTS[t] || 0 });
+      if (fam.tiers[t] && canOfferFamilyTier(cur, t)) pool.push({ familyId: fam.id, tier: t, weight: tierWeights[t] || 0 });
     }
   }
   // count VERSCHIEDENE Einheiten ziehen (eine Familie bzw. ein Perk höchstens einmal je Angebot, Spec §15).

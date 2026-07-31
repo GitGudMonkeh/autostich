@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { AnleitungModal } from "./AnleitungModal.jsx";
-import { GlobalLeaderboard } from "./GlobalLeaderboard.jsx";
 import { RunDetail } from "./RunDetail.jsx";
 import { MuteButton } from "./MuteButton.jsx";
 import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
@@ -9,7 +8,7 @@ import { fmtScore } from "./format.js";
 
 /* Startbildschirm (#4): Einstieg mit „Neuer Run", Anleitung (#12) und lokaler Bestenliste.
    #205: Seed-Paste-Leiste ganz oben („Seed einfügen & spielen") — der schnelle Weg, eine Challenge anzunehmen. */
-export function StartScreen({ onStart, onPlaySeed = null, highscores, best, onOptions, onStats, onCustomize, muted, onToggleMute, username = "", onEditName, myEntry = null, pubToken = 0 }) {
+export function StartScreen({ onStart, onPlaySeed = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
   const [detail, setDetail] = useState(null); // #169 FB-8: gewählter lokaler Lauf → RunDetail-Overlay
   const [seedInput, setSeedInput] = useState("");
@@ -87,6 +86,15 @@ export function StartScreen({ onStart, onPlaySeed = null, highscores, best, onOp
             Statistiken
           </button>
         )}
+        {onLeaderboard && (
+          <button
+            onClick={onLeaderboard}
+            className="px-6 py-3 rounded-xl text-lg font-semibold transition-all"
+            style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
+          >
+            Bestenliste
+          </button>
+        )}
         {onCustomize && (
           <button
             onClick={onCustomize}
@@ -141,9 +149,8 @@ export function StartScreen({ onStart, onPlaySeed = null, highscores, best, onOp
         )}
       </div>
 
-      {/* Globaler Highscore (#14) — additiv unter dem lokalen Block; blendet sich ohne
-          Config/offline lautlos aus. Der lokale Block oben bleibt immer sichtbar. */}
-      <GlobalLeaderboard framed mine={myEntry} reloadToken={pubToken} />
+      {/* #217: Globale Bestenliste zog vom Startbildschirm in einen eigenen Screen (Button „Bestenliste") — der
+          Startbildschirm ist aufgeräumt; nur der kleine lokale „Deine Läufe"-Block oben bleibt hier. */}
 
       {showGuide && <AnleitungModal onClose={closeGuide} />}
       {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} onPlaySeed={onPlaySeed} />}
