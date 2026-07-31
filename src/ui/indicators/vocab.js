@@ -16,6 +16,13 @@ export const FORGE = "#f0b74a"; // Schmiede-Gold
 export const FORGE_GLOW = "#f0a83a"; // Glut-Glow der geschmiedeten Karte
 export const WHITE_HEAT = "#fff2d8"; // Weißglut-Kappe am heißen Ende
 
+// ---- Blitz-Unterfarben (#208) ----
+// Ladung/Ionisierung teilen sich das Blitz-Cyan (LIGHTNING). Die KASKADE (Serie-Kette, „Sturm, der sich selbst
+// nährt") ist bewusst violett-elektrisch abgesetzt vom Ladungs-Cyan → die beiden Ströme bleiben unterscheidbar.
+export const CASCADE = "#9b8cff"; // Kaskade-Kettenglied (gefüllt) — violett-elektrisch
+export const CASCADE_BRIGHT = "#e7e0ff"; // helles Ende der Kette (voll/aktiv aufglühend)
+export const THUNDER = "#8a7de0"; // Donnergott (Legendär) — der bestehende Blitz-Violett-Akzent
+
 // ---- Karten-Ecken-Belegung (Single Source of Truth) ----
 // Reserviert je Fraktion, damit sich in gemischten Builds (alle 4 mischbar) nichts überdeckt.
 // Werte = grobe Ecke; die exakte Positionierung (Offsets bei Kollision) macht Card.jsx.
@@ -24,12 +31,16 @@ export const CORNER = {
   forge: "top-right", //  ⚒ Feuer — unter dem permBoost gestapelt (Betrag der Schmiede)
   green: "top-left", //  🌿 Pflanze reif (bestehend)
   brandBadge: "top-left", //  −N Feuer-Brand auf GEGNERkarte (versetzt zu 🌿)
-  ion: "bottom-left", //  ⚡ Blitz Ionisierung, EIGENE Karte (bestehend)
+  ion: "top-edge", //  ⚡ Blitz Ionisierung (#208): Pip-Track MITTIG auf der oberen Rahmenkante (max 5) + 2px-Ring; die
+  //                    frühere untere linke Ecke ist damit GERÄUMT und für Eis/Pflanze reserviert (siehe unten).
   frost: "bottom-right", //  ❄ Eis: eingefroren (eigen) / Frostbiss (Gegner) (bestehend)
   brandMark: "bottom-right", //  🔥 Feuer-Brand auf GEGNERkarte — links neben ❄ versetzt
+  // FREI reserviert: "bottom-left" — nach dem Ionisierungs-Umzug (#208) offen für kommende Eis-/Pflanze-Marker.
 };
 
 // ---- Reserviertes Vokabular (Kollisionsverbote) ----
-// - Der farbige 2px-KONTUR-Ring (`0 0 0 2px …`) ist der IONISIERUNG vorbehalten (blau).
+// - Der farbige 2px-KONTUR-Ring (`0 0 0 2px …`) ist der IONISIERUNG vorbehalten (blau). Er glüht bei voll (5) auf;
+//   den Zählstand trägt zusätzlich der Pip-Track auf der oberen Rahmenkante (#208). Kein anderer Effekt nutzt den Ring.
 //   Geschmiedet = weicher INNEN-Glow (inset), KEIN Ring, KEIN äußerer Halo.
 // - Frostbiss = kaltes ❄ (blau/rot-kalt). Brand = warm/orange + Char → „das ist Feuer, nicht Eis".
+// - KASKADE-Cyan ↔ -Violett getrennt halten: Ladung/Ionisierung = Cyan (LIGHTNING); die selbst-nährende Kette = CASCADE (violett).

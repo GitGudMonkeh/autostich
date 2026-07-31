@@ -99,13 +99,22 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
             title={`Gebrandmarkt −${branded} Wert`}>🔥</div>
         </>
       )}
-      {/* Ionisierung: Blitze in der unteren linken Ecke, vertikal von unten nach oben gestapelt (Anzahl = Stapel, max ION_MAX_STACKS). */}
+      {/* Ionisierung (#208): Pip-Track MITTIG auf der oberen Rahmenkante (gefüllt = Stapel, max ION_MAX_STACKS). Der
+          2px-Ionisierungs-Ring (oben) glüht bei VOLL zusätzlich auf. Damit ist die frühere untere linke Ecke geräumt
+          (für Eis/Pflanze reserviert, vocab.CORNER). Mittig platziert → kollisionsfrei mit 🌿/−N (links) und +X/⚒ (rechts). */}
       {ionStacks > 0 && (
-        <div className="absolute bottom-1 left-1 flex flex-col-reverse items-center leading-none"
+        <div className="absolute top-1 left-1/2 -translate-x-1/2 flex gap-0.5 leading-none"
           title={`Ionisiert ${ionStacks}/${ION_MAX_STACKS} — +${ionStacks * ION_SCORE_PER_STACK} Score bei Sieg${ionFull ? " · VOLL IONISIERT" : ""}`}>
-          {Array.from({ length: ionStacks }, (_, i) => (
-            <span key={i} className="text-[11px]" style={{ color: "#5ec8f0", textShadow: "0 0 4px #5ec8f0", marginTop: -1 }}>⚡</span>
-          ))}
+          {Array.from({ length: ION_MAX_STACKS }, (_, i) => {
+            const on = i < ionStacks;
+            return (
+              <span key={i} className="rounded-full transition-all" style={{
+                width: 6, height: 3,
+                background: on ? "#5ec8f0" : "#5ec8f024",
+                boxShadow: on ? (ionFull ? "0 0 5px #5ec8f0" : "0 0 3px #5ec8f0aa") : undefined,
+              }} />
+            );
+          })}
         </div>
       )}
       <div className="absolute bottom-1.5 flex flex-col items-center leading-tight text-[10px]">
