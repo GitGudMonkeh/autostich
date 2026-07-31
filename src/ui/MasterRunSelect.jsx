@@ -56,7 +56,9 @@ export function MasterRunSelect({ profile, onPlay, onClose }) {
             const n = i + 1;
             const unlocked = maxRank >= n;
             const deckName = DECK_DEFS[RANK_DECK_ID[n]]?.name || "";
-            const rewards = MASTERY_REWARD_LABELS[n] || [];
+            // Kumulativ sichtbar machen: bisherige Belohnungen (grau) + die NEUE dieses Rangs (farbig).
+            const prevRewards = [...new Set(Array.from({ length: n - 1 }, (_, k) => MASTERY_REWARD_LABELS[k + 1] || []).flat())];
+            const newRewards = MASTERY_REWARD_LABELS[n] || [];
             return (
               <div key={n} className="flex items-center gap-3 px-3 py-2 rounded-lg"
                 style={{ background: unlocked ? "#141419" : "#111116", border: `1px solid ${unlocked ? `${ACCENT}55` : "#26262e"}`, opacity: unlocked ? 1 : 0.5 }}>
@@ -67,8 +69,14 @@ export function MasterRunSelect({ profile, onPlay, onClose }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[12px] font-bold" style={{ color: unlocked ? ACCENT_HI : "#8a8a95" }}>Rang {MASTERY_ROMAN[n]}</span>
-                    {rewards.map((r) => (
-                      <span key={r} className="text-[10.5px] px-1.5 py-0.5 rounded" style={{ background: "#20202a", color: "#c8c8d0" }}>{r}</span>
+                    {/* bisherige Belohnungen (grau) */}
+                    {prevRewards.map((r) => (
+                      <span key={`p${r}`} className="text-[10.5px] px-1.5 py-0.5 rounded" style={{ background: "#17171c", color: "#7a7a88" }}>{r}</span>
+                    ))}
+                    {prevRewards.length > 0 && <span className="text-[12px] font-bold px-0.5" style={{ color: ACCENT }}>+</span>}
+                    {/* neu bei diesem Rang (farbig) */}
+                    {newRewards.map((r) => (
+                      <span key={`n${r}`} className="text-[10.5px] px-1.5 py-0.5 rounded font-semibold" style={{ background: `${ACCENT}22`, color: ACCENT_HI, border: `1px solid ${ACCENT}55` }}>{r}</span>
                     ))}
                   </div>
                   <div className="text-[11px] opacity-45 mt-0.5">Deck: {deckName}</div>
@@ -90,7 +98,7 @@ export function MasterRunSelect({ profile, onPlay, onClose }) {
         </div>
 
         <div className="text-[11px] opacity-40 mt-3 leading-relaxed">
-          Belohnungen sind kumulativ (ein höherer Rang enthält alle darunter). Experimentell · über Rang V öffnet sich später das Großmeister-System.
+          Belohnungen sind kumulativ — <span style={{ color: "#7a7a88" }}>graue</span> Chips gibt's schon ab niedrigeren Rängen, <span style={{ color: ACCENT_HI }}>farbige</span> kommen bei diesem Rang neu dazu. Experimentell · über Rang V öffnet sich später das Großmeister-System.
         </div>
       </div>
     </div>
