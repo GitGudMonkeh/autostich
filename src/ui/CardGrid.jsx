@@ -1,3 +1,4 @@
+import { useRef, useState, useLayoutEffect } from "react";
 import { suitColor, PLANT_VALUE_CAP } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
@@ -12,23 +13,29 @@ import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 const ANCHOR_LABEL = { power: "Kraft", score: "Punkte", crit: "Krit", streak: "Serie", formation: "Formation", joker: "Joker" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
-// #UI: Architekt-Overlay als durchgezogener Rahmen in GEBÄUDE-FORM. Je Zelle bekommt sie ihre Perimeter-Kanten:
-// eine Kante ist Rahmen, wenn der Nachbar dahinter NICHT zum selben Gebäude gehört (andere/keine bid). So fallen
-// die inneren Trennwände weg und die Zellen eines Gebäudes verschmelzen zu EINER Kontur. Raster = SEGMENT_SIZE Spalten.
-function archWithEdges(cover, pos, total) {
-  const a = cover && cover[pos];
-  if (!a) return null;
-  const col = pos % SEGMENT_SIZE;
-  const same = (p, exists) => exists && cover[p] && cover[p].bid != null && cover[p].bid === a.bid;
-  return {
-    ...a,
-    edges: {
-      top:    !same(pos - SEGMENT_SIZE, pos - SEGMENT_SIZE >= 0),
-      bottom: !same(pos + SEGMENT_SIZE, pos + SEGMENT_SIZE < total),
-      left:   !same(pos - 1, col > 0),
-      right:  !same(pos + 1, col < SEGMENT_SIZE - 1),
-    },
-  };
+// #UI: Architekt-Overlay als EIN durchgezogener Rahmen in GEBÄUDE-FORM (statt Kästen um jede Karte). Aus den gemessenen
+// Zell-Rechtecken (`cells`: pos → {left,top,right,bottom} relativ zum Grid) werden je Gebäude nur die PERIMETER-Kanten
+// als Liniensegmente erzeugt: eine Kante gehört zur Kontur, wenn der Nachbar dahinter NICHT zum selben Gebäude (bid)
+// gehört. Die Rechtecke werden um exH/exV (halbe Raster-Lücke) geweitet → die Kanten benachbarter Gebäudezellen
+// treffen sich EXAKT in der Lückenmitte und die Kontur läuft über die Lücken hinweg durch. Rein & unit-testbar.
+export function archFrameLines(cover, cells, total, exH, exV) {
+  const lines = [];
+  if (!cover || !cells) return lines;
+  for (const key of Object.keys(cover)) {
+    const pos = Number(key);
+    const a = cover[pos];
+    const rect = cells[pos];
+    if (!a || !rect) continue;
+    const col = pos % SEGMENT_SIZE;
+    const same = (p, exists) => exists && cover[p] && cover[p].bid != null && cover[p].bid === a.bid;
+    const color = a.legendary ? "#c8962f" : a.color;
+    const L = rect.left - exH, R = rect.right + exH, T = rect.top - exV, B = rect.bottom + exV;
+    if (!same(pos - SEGMENT_SIZE, pos - SEGMENT_SIZE >= 0)) lines.push({ x1: L, y1: T, x2: R, y2: T, color }); // oben
+    if (!same(pos + SEGMENT_SIZE, pos + SEGMENT_SIZE < total)) lines.push({ x1: L, y1: B, x2: R, y2: B, color }); // unten
+    if (!same(pos - 1, col > 0)) lines.push({ x1: L, y1: T, x2: L, y2: B, color }); // links
+    if (!same(pos + 1, col < SEGMENT_SIZE - 1)) lines.push({ x1: R, y1: T, x2: R, y2: B, color }); // rechts
+  }
+  return lines;
 }
 
 /* Eine Kachel der 40-Karten-Übersicht (geteilt von Formationsphase, Chronik, Perk-Zielauswahl & Shop, Issue #101/#112).
@@ -60,22 +67,16 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
   // Eis-Architekt (#210): eine hervorgehobene Frost-Spalte (senkrechte Formation) → eisiger Inset-Rim + Cyan-Glow.
   // Stapelt sich unter dem Auswahl-/Formations-Glow, damit beide lesbar bleiben (Pfeiler quer über die Segment-Zeilen).
   const pillarShadow = pillar ? "inset 0 0 0 1.5px rgba(191,233,247,0.60), 0 0 12px rgba(94,200,240,0.50)" : null;
-  // Architekt-Gebäude-Overlay (#202/#UI): durchgezogener Rahmen in GEBÄUDE-FORM — nur die Perimeter-Kanten (arch.edges)
-  // als solide 2px-Linien; geteilte (innere) Kanten bleiben offen → die Zellen eines Gebäudes verschmelzen zur Kontur.
-  // Fallback ohne edges (Alt-Aufrufer): voller Inset-Ring + Glow wie bisher. Legendär = Gold.
-  const archCol = arch ? (arch.legendary ? "#c8962f" : arch.color) : null;
-  const archShadow = !arch ? null : (arch.edges
-    ? [arch.edges.top    && `inset 0 2px 0 0 ${archCol}`,
-       arch.edges.right  && `inset -2px 0 0 0 ${archCol}`,
-       arch.edges.bottom && `inset 0 -2px 0 0 ${archCol}`,
-       arch.edges.left   && `inset 2px 0 0 0 ${archCol}`].filter(Boolean).join(", ")
-    : `inset 0 0 0 2px ${archCol}, 0 0 7px ${arch.color}77`);
+  // Architekt-Gebäude-Overlay (#202/#UI): der RAHMEN in Gebäude-Form wird jetzt als durchgezogene SVG-Kontur ÜBER dem
+  // Grid gezeichnet (CardGrid, archFrameLines) — nicht mehr als Kasten je Karte. Die Kachel selbst bekommt nur noch
+  // einen sehr dezenten Kategorie-Farbwash, damit man abgedeckte Zellen auch als Fläche erkennt (Legendär = Gold).
+  const archShadow = arch ? `inset 0 0 0 9999px ${(arch.legendary ? "#c8962f" : arch.color)}1f` : null;
   // F4 Farballianz (#125): diagonaler Zweifarben-Split auch in der Grid-Kachel (obere Hälfte Eigen-, untere Partnerfarbe).
   const tileBg = allyColor
     ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColor}30 51%, ${allyColor}30 100%), #20202a`
     : "#20202a";
   return (
-    <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined}
+    <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined} data-pos={arch ? pos : undefined}
       title={anchorType ? `⚓ Anker · ${ANCHOR_LABEL[anchorType] || anchorType}` : ring ? (ringTitle || undefined) : undefined}
       className="as-tile relative rounded-lg flex flex-col items-center justify-center transition-all"
       style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
@@ -160,10 +161,48 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
   const nSeg = Math.ceil(cards.length / SEGMENT_SIZE);
   // #FB: offene Segmentgrenzen (E_SEGMENT). Grenze g liegt zwischen Zeile g und g+1; nur zeichnen, wenn Werkzeug aktiv.
   const segOpen = openSegments && openSegments.active ? openSegments : null;
+  // #UI: Gebäude-Rahmen als durchgezogene SVG-Kontur ÜBER dem Grid (statt Kasten je Karte). Nach dem Layout werden die
+  // Zell-Rechtecke (data-pos) relativ zum Grid gemessen und je Gebäude in Perimeter-Linien übersetzt (archFrameLines);
+  // ein ResizeObserver hält es bei Größenänderung aktuell. archSig (pos:bid …) hält die Effekt-Deps stabil → keine
+  // Render-Schleife, obwohl architectCover je Render neu erzeugt wird. Nur aktiv, wenn architectCover gesetzt ist.
+  const wrapRef = useRef(null);
+  const [archFrame, setArchFrame] = useState(null);
+  const archSig = architectCover ? Object.keys(architectCover).map((p) => `${p}:${architectCover[p].bid}`).join(",") : "";
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap || !architectCover) { setArchFrame(null); return; }
+    const measure = () => {
+      const wr = wrap.getBoundingClientRect();
+      const cells = {};
+      wrap.querySelectorAll("[data-pos]").forEach((el) => {
+        const p = Number(el.getAttribute("data-pos"));
+        const r = el.getBoundingClientRect();
+        cells[p] = { left: r.left - wr.left, top: r.top - wr.top, right: r.right - wr.left, bottom: r.bottom - wr.top };
+      });
+      let exH = 3, exV = 5; // halbe Raster-Lücken aus Nachbarzellen messen, sonst feste Fallbacks
+      if (cells[0] && cells[1]) exH = Math.max(0, (cells[1].left - cells[0].right) / 2);
+      if (cells[0] && cells[SEGMENT_SIZE]) exV = Math.max(0, (cells[SEGMENT_SIZE].top - cells[0].bottom) / 2);
+      setArchFrame({ w: wr.width, h: wr.height, lines: archFrameLines(architectCover, cells, cards.length, exH, exV) });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [archSig, cards.length]);
   return (
     // #201.6a: etwas mehr Abstand ZWISCHEN den Segment-Zeilen (gap-2.5 statt -1.5) als innerhalb einer Zeile (gap-1.5)
     // → die Segmente lesen sich als eigene Bänder, die Grenzen sind klarer.
-    <div className="grid gap-2.5">
+    <div ref={wrapRef} className="relative grid gap-2.5">
+      {/* #UI: Gebäude-Kontur (SVG) über dem Grid — eine durchgezogene Linie je Gebäude in seiner Form. */}
+      {archFrame && archFrame.lines.length > 0 && (
+        <svg className="absolute left-0 top-0 pointer-events-none" width={archFrame.w} height={archFrame.h}
+             style={{ overflow: "visible", zIndex: 5 }} aria-hidden="true">
+          {archFrame.lines.map((l, i) => (
+            <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.color} strokeWidth="2.5" strokeLinecap="square" />
+          ))}
+        </svg>
+      )}
       {Array.from({ length: nSeg }).flatMap((_, s) => {
         // #201.5: Pro-Segment-Stärke am Bereichs-Label + Verbesserungs-Highlight. Statischer Tint (kein Puls →
         // reduced-motion automatisch erfüllt): stärker seit Phasenbeginn → grün, schwächer → dezent rot, sonst gedämpft.
@@ -189,7 +228,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
                   disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle} pillar={pillarSet.has(pos)}
-                  dimmed={swappedIds.has(c.id)} arch={archWithEdges(architectCover, pos, cards.length)}
+                  dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
                   onClick={disabled ? undefined : () => onTilePick(pos, c)} />;
               })}
             </div>
