@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useEscape } from "./useEscape.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { RunDetail } from "./RunDetail.jsx";
@@ -12,17 +12,20 @@ import {
 } from "../game/runStats.js";
 import { fmtScore } from "./format.js";
 import { fmtDuration } from "../game/deck.js";
-import { MASTERY_THRESHOLDS, MASTERY_ROMAN, MASTERY_REWARD_LABELS, MASTERY_MAX_GRADE, masteryGradeLabel } from "../game/mastery.js"; // #217 Meistergrade
+import { MASTERY_THRESHOLDS, MASTERY_REWARD_LABELS, MASTERY_MAX_GRADE, MASTERY_MEISTER_MAX, isGrandmaster, rankRoman, masteryGradeLabel } from "../game/mastery.js"; // #217/#226 Meister- & Großmeisterränge
 import { DECK_DEFS } from "../game/cosmetics.js"; // #217: Grad-Deck-Namen
 
 /* #172 FB-10 — Statistik-Hub (Hauptmenü). Rein lokal aus der Lauf-Historie (storage.loadRunHistory)
    + Profil-Totals (loadProfile), aggregiert über game/runStats.js. Wiederverwendung: Sparkline (Score-Trend),
    RunDetail/RunStats (Klick auf einen Lauf → derselbe Statblock wie im Victory-Screen, #169 FB-8). */
 
+// Score-Herkunft-Segmente. v0.3: die Engine trennt nur Formationen + Crit-Bonus heraus — Basis, Serie und ALLE
+// Fraktions-Mechaniken (Feuer/Eis/Blitz/Pflanze) fallen zusammen in „Elementar & Basis" (ehrliches Sammel-Label
+// statt „Übrige"; eine echte Fraktions-Zerlegung bräuchte Engine-Akkumulatoren, bewusst später).
 const ORIGIN_META = {
   formations: { label: "Formationen", color: "#5ab87a" },
-  crits: { label: "Crits", color: "#e879f9" },
-  rest: { label: "Übrige", color: "#8a8a95" },
+  crits: { label: "Crit-Bonus", color: "#e879f9" },       // v0.3: Crit ist kein universeller Bonus mehr (Blitz + Krit-Stat)
+  rest: { label: "Elementar & Basis", color: "#8a8a95" }, // v0.3: Basis/Serie + alle Fraktions-Mechaniken (noch nicht einzeln getrennt)
 };
 const perkLabel = (id) => PERK_DEFS[id]?.label || id;
 const skillLabel = (id) => SKILL_DEFS[id]?.name || id;
@@ -136,68 +139,89 @@ function ChallengesPanel({ seeds, onPlaySeed }) {
   );
 }
 
-// #217 Meistergrade — Master-Reiter: die 5 Grade als Balatro-Decks-Reihe. Bedingung = Score-Schwelle, Reward nur GROB
-// (Kurzlabels, keine Prozente). Der aktuelle Grad ist hervorgehoben, der nächste als Ziel markiert. Sequentiell: ein Lauf
-// schaltet höchstens den nächsten frei. Deck-Namen aus der Kosmetik-Registry (#190/#217 deck_rank_*).
-const RANK_DECK_ID = { 1: "deck_rank_bronze", 2: "deck_rank_silber", 3: "deck_rank_gold", 4: "deck_rank_platin", 5: "deck_rank_diamond" };
+// #217/#226 Meister- & Großmeisterränge — Master-Reiter: 10 Ränge als Balatro-Decks-Reihe. Bedingung = Score-Schwelle,
+// Reward nur GROB (Kurzlabels, keine Prozente). Der aktuelle Rang ist hervorgehoben, der nächste als Ziel markiert.
+// Sequentiell: ein Lauf schaltet höchstens den nächsten frei. Meister I–V (violett) geben Rewards; Großmeister I–V (gold)
+// steigern nur die Schwierigkeit (Ramp), Ziel bleibt 50 M. Deck-Namen aus der Kosmetik-Registry (deck_rank_* / deck_gm_*).
+const RANK_DECK_ID = {
+  1: "deck_rank_bronze", 2: "deck_rank_silber", 3: "deck_rank_gold", 4: "deck_rank_platin", 5: "deck_rank_diamond",
+  6: "deck_gm_rot", 7: "deck_gm_blau", 8: "deck_gm_gruen", 9: "deck_gm_lila", 10: "deck_gm_marco", // #226 Großmeister-Decks
+};
 const MASTER_ACCENT = "#8a7de0";
+const GM_ACCENT = "#d4a63a"; // Gold — Großmeister-Tier abgesetzt vom Meister-Violett
 
 function MasterPanel({ profile, best }) {
   const grade = profile.masteryGrade || 0;
   const pbScore = Math.max(profile.bestScore || 0, best ? Math.floor(best.score || 0) : 0);
   const next = grade < MASTERY_MAX_GRADE ? grade + 1 : null;
+  const gmActive = isGrandmaster(grade);
   return (
     <>
       <Section title="Meisterränge" hint="experimentell">
         <div className="flex items-center gap-3 flex-wrap mb-1">
-          <Kpi label="Aktueller Rang" value={grade >= 1 ? `Rang ${MASTERY_ROMAN[grade]}` : "Kein Rang"} color={grade >= 1 ? MASTER_ACCENT : undefined} />
+          <Kpi label="Aktueller Rang" value={grade >= 1 ? masteryGradeLabel(grade) : "Kein Rang"} color={grade >= 1 ? (gmActive ? GM_ACCENT : MASTER_ACCENT) : undefined} />
           <Kpi label="Bester Score" value={fmtScore(pbScore)} color="#d4a63a" />
         </div>
         <div className="text-[11px] opacity-45 leading-relaxed mb-1">
-          Nur <b>Meister-Läufe</b> schalten Ränge frei — einer pro Lauf, der Reihe nach. Höhere Ränge geben dauerhafte Vorteile (nur grob gezeigt) + je ein Deck.
+          Nur <b>Meister-Läufe</b> schalten Ränge frei — einer pro Lauf, der Reihe nach. Meister I–V geben dauerhafte Vorteile (nur grob gezeigt); ab <b style={{ color: GM_ACCENT }}>Großmeister</b> wächst nur der Gegner mit, das Ziel bleibt 50 M. Je Rang ein Deck.
         </div>
       </Section>
       <div className="grid gap-1.5 mt-2">
         {MASTERY_THRESHOLDS.map((thr, i) => {
           const n = i + 1;
+          const gm = isGrandmaster(n);                 // Großmeister-Tier (Ränge 6–10)?
+          const acc = gm ? GM_ACCENT : MASTER_ACCENT;
           const unlocked = grade >= n;
           const isNext = n === next;
+          const roman = rankRoman(n);                  // I..V je Tier (Meister ODER Großmeister)
           const deckName = DECK_DEFS[RANK_DECK_ID[n]]?.name || "";
-          const rewards = MASTERY_REWARD_LABELS[n] || [];
+          const rewards = gm ? [] : (MASTERY_REWARD_LABELS[n] || []); // Großmeister bringt keine neuen Rewards
           return (
-            <div key={n} className="flex items-center gap-3 px-3 py-2 rounded-lg"
-              style={{
-                background: isNext ? "#1c1a26" : "#141419",
-                border: `1px solid ${unlocked ? `${MASTER_ACCENT}66` : isNext ? `${MASTER_ACCENT}44` : "#26262e"}`,
-                opacity: unlocked || isNext ? 1 : 0.6,
-              }}>
-              {/* Grad-Ziffer */}
-              <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-pixel text-sm"
-                style={{ background: unlocked ? MASTER_ACCENT : "#20202a", color: unlocked ? "#141419" : "#7a7a88", border: unlocked ? "none" : "1px solid #33333e" }}>
-                {MASTERY_ROMAN[n]}
-              </div>
-              {/* Reward + Deck */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {rewards.map((r) => (
-                    <span key={r} className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: "#20202a", color: "#c8c8d0" }}>{r}</span>
-                  ))}
+            <Fragment key={n}>
+              {/* Trenner + Tier-Label vor dem ersten Großmeister-Rang. */}
+              {n === MASTERY_MEISTER_MAX + 1 && (
+                <div className="flex items-center gap-2 mt-2 mb-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: GM_ACCENT }}>Großmeister</span>
+                  <span className="flex-1 h-px" style={{ background: `${GM_ACCENT}44` }} />
+                  <span className="text-[10px] opacity-45">nur die Schwierigkeit steigt · Ziel bleibt {fmtScore(thr)}</span>
                 </div>
-                <div className="text-[11px] opacity-45 mt-0.5">Deck: {deckName}</div>
-              </div>
-              {/* Bedingung / Status */}
-              <div className="shrink-0 text-right">
-                <div className="text-xs font-bold tabular-nums" style={{ color: unlocked ? MASTER_ACCENT : "#c8c8d0" }}>{fmtScore(thr)}</div>
-                <div className="text-[10px] font-semibold" style={{ color: unlocked ? MASTER_ACCENT : isNext ? "#b3a8f5" : "#7a7a88" }}>
-                  {unlocked ? "✓ frei" : isNext ? "nächstes Ziel" : "gesperrt"}
+              )}
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg"
+                style={{
+                  background: isNext ? "#1c1a26" : "#141419",
+                  border: `1px solid ${unlocked ? `${acc}66` : isNext ? `${acc}44` : "#26262e"}`,
+                  opacity: unlocked || isNext ? 1 : 0.6,
+                }}>
+                {/* Rang-Ziffer */}
+                <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-pixel text-sm"
+                  style={{ background: unlocked ? acc : "#20202a", color: unlocked ? "#141419" : "#7a7a88", border: unlocked ? "none" : "1px solid #33333e" }}>
+                  {roman}
+                </div>
+                {/* Reward (Meister) bzw. Schwierigkeits-Hinweis (Großmeister) + Deck */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {gm ? (
+                      <span className="text-[11px] px-1.5 py-0.5 rounded font-semibold" style={{ background: `${GM_ACCENT}22`, color: "#e6c766", border: `1px solid ${GM_ACCENT}55` }}>härterer Gegner</span>
+                    ) : rewards.map((r) => (
+                      <span key={r} className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: "#20202a", color: "#c8c8d0" }}>{r}</span>
+                    ))}
+                  </div>
+                  <div className="text-[11px] opacity-45 mt-0.5">Deck: {deckName}</div>
+                </div>
+                {/* Bedingung / Status */}
+                <div className="shrink-0 text-right">
+                  <div className="text-xs font-bold tabular-nums" style={{ color: unlocked ? acc : "#c8c8d0" }}>{fmtScore(thr)}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: unlocked ? acc : isNext ? "#b3a8f5" : "#7a7a88" }}>
+                    {unlocked ? "✓ frei" : isNext ? "nächstes Ziel" : "gesperrt"}
+                  </div>
                 </div>
               </div>
-            </div>
+            </Fragment>
           );
         })}
       </div>
       <div className="text-[11px] opacity-40 mt-3 leading-relaxed">
-        Experimentell. Über Rang V öffnet sich später das Großmeister-System (noch nicht gebaut).
+        Experimentell. Ab <b style={{ color: GM_ACCENT }}>Großmeister</b> (über Rang V) wächst nur der Gegner mit — das Ziel bleibt 50 M, neue Belohnungen gibt es nicht.
       </div>
     </>
   );
@@ -333,6 +357,9 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
               <div className="rounded-lg px-3 py-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
                 <div className="text-[11px] opacity-50 mb-2">Score-Herkunft</div>
                 <StackedBar segments={originSegs(origin)} />
+                <div className="text-[11px] opacity-40 mt-2.5 leading-relaxed">
+                  <b style={{ color: ORIGIN_META.rest.color }}>Elementar &amp; Basis</b> bündelt Basissiege, Serie und alle Fraktions-Mechaniken (Feuer/Eis/Blitz/Pflanze) — noch nicht einzeln aufgeschlüsselt. <b style={{ color: ORIGIN_META.crits.color }}>Crit-Bonus</b> stammt seit v0.3 nur aus Blitz&nbsp;+ dem Krit-Stat, nicht mehr universell.
+                </div>
               </div>
               <div className="grid sm:grid-cols-2 gap-3 mt-3">
                 <div className="rounded-lg px-3 py-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
@@ -399,11 +426,11 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                   {topOrigin.runs > 0 && topOrigin.total > 0 && (
                     <div className="rounded-lg px-3 py-2.5" style={{ background: "#141419", border: "1px solid #26262e" }}>
                       <span className="opacity-55">Score-Herkunft deiner Top-{topOrigin.runs}: </span>
-                      <span style={{ color: ORIGIN_META.formations.color }}>{pct(topOrigin.shares.formations)} Formationen</span>
+                      <span style={{ color: ORIGIN_META.formations.color }}>{pct(topOrigin.shares.formations)} {ORIGIN_META.formations.label}</span>
                       <span className="opacity-40"> · </span>
-                      <span style={{ color: ORIGIN_META.crits.color }}>{pct(topOrigin.shares.crits)} Crits</span>
+                      <span style={{ color: ORIGIN_META.crits.color }}>{pct(topOrigin.shares.crits)} {ORIGIN_META.crits.label}</span>
                       <span className="opacity-40"> · </span>
-                      <span style={{ color: ORIGIN_META.rest.color }}>{pct(topOrigin.shares.rest)} übrig</span>.
+                      <span style={{ color: ORIGIN_META.rest.color }}>{pct(topOrigin.shares.rest)} {ORIGIN_META.rest.label}</span>.
                     </div>
                   )}
                 </div>
