@@ -436,13 +436,6 @@ export function Autostich() {
           </span>
         </div>
       </div>
-      {/* #218: Kartenübersicht als klickbare Kopf-Zelle (nach Mult) — öffnet das Übersichts-Overlay; ersetzt den unteren
-          Panel-Balken → schlankere UI. Icon als „Wert", Label wie die übrigen Zellen. */}
-      <button onClick={() => setShowChronik(true)} title="Kartenübersicht öffnen"
-        className="text-right cursor-pointer transition-all hover:brightness-125">
-        <div className="text-[10px] uppercase tracking-wide opacity-50">Kartenübersicht</div>
-        <div className="text-xl leading-none pt-0.5" style={{ color: "#8a7de0" }}>🎴</div>
-      </button>
       {/* #225.1: Münzanzeige entfernt — mit dem Architekten (#202) entfällt die Münz-Ökonomie. */}
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
@@ -456,6 +449,18 @@ export function Autostich() {
           {Math.min(state.cycle + 1, MAX_CYCLES)}<span className="text-xs opacity-45"> / {MAX_CYCLES}</span>
         </div>
       </div>
+      {/* #218/#UI: Kartenübersicht — als LETZTE Kopf-Zelle, damit sie im Mobil-3er-Grid unten rechts landet
+          (Daumen-Reichweite). Icon = Mini-Kartenrücken des aktiven Decks (matcht den Spiel-Look statt Emoji),
+          Label auf „Karten" gekürzt (passt zur Breite der übrigen Labels). */}
+      <button onClick={() => setShowChronik(true)} title="Kartenübersicht öffnen"
+        className="text-right cursor-pointer transition-all hover:brightness-125">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Karten</div>
+        <div className="flex justify-end pt-0.5">
+          <img src={deckSkin.back} alt="Kartenübersicht" draggable="false"
+            className="h-7 w-auto rounded-[3px] object-cover"
+            style={{ border: "1px solid #ffffff22", boxShadow: "0 1px 3px #0006" }} />
+        </div>
+      </button>
     </>
   );
 
