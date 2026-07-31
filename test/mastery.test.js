@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
-  MASTERY_MAX_GRADE, MASTERY_THRESHOLDS, advanceGrade, masteryProgress, nextThreshold, thresholdForGrade,
+  MASTERY_MAX_GRADE, MASTERY_MEISTER_MAX, MASTERY_THRESHOLDS, advanceGrade, masteryProgress, nextThreshold, thresholdForGrade,
   masteryRerollBonus, masteryCoverBonus, masteryRareShift, masteryLegendMult, masteryLegendGuaranteed,
-  masteryGradeLabel, canChallenge,
+  masteryGradeLabel, canChallenge, difficultyForGrade, isGrandmaster, rankRoman,
 } from "../src/game/mastery.js";
 
 const [T1, T2, T3, T4, T5] = MASTERY_THRESHOLDS;
@@ -39,7 +39,8 @@ describe("Schwellen-Helfer", () => {
   it("nextThreshold folgt dem aktuellen Grad", () => {
     expect(nextThreshold(0)).toBe(T1);
     expect(nextThreshold(4)).toBe(T5);
-    expect(nextThreshold(5)).toBe(null); // Höchstgrad: kein Ziel mehr
+    expect(nextThreshold(5)).toBe(T5);   // Grad V → nächstes Ziel = Großmeister I (50 M)
+    expect(nextThreshold(MASTERY_MAX_GRADE)).toBe(null); // absoluter Höchstgrad: kein Ziel mehr
   });
   it("thresholdForGrade gibt die Grad-eigene Schwelle", () => {
     expect(thresholdForGrade(1)).toBe(T1);
@@ -54,8 +55,41 @@ describe("masteryProgress — grober Balken 0..1", () => {
   it("über der Schwelle → auf 1 gedeckelt", () => {
     expect(masteryProgress(0, T1 * 3)).toBe(1);
   });
-  it("Höchstgrad → 1 (Balken voll/ausgeblendet)", () => {
-    expect(masteryProgress(5, 0)).toBe(1);
+  it("Höchstgrad → 1 (Balken voll)", () => {
+    expect(masteryProgress(MASTERY_MAX_GRADE, 0)).toBe(1);
+    expect(masteryProgress(5, 0)).toBe(0); // Grad V ist NICHT mehr Max (Großmeister folgt)
+  });
+});
+
+describe("#226 Großmeister — Tier über Meister V (Grade 6..10)", () => {
+  it("isGrandmaster / rankRoman: Meister I–V vs Großmeister I–V", () => {
+    expect([5, 6, 10].map(isGrandmaster)).toEqual([false, true, true]);
+    expect([3, 6, 10].map(rankRoman)).toEqual(["III", "I", "V"]);
+    expect(masteryGradeLabel(6)).toBe("Großmeister I");
+    expect(masteryGradeLabel(10)).toBe("Großmeister V");
+  });
+  it("MASTERY_MAX_GRADE = 10, MEISTER_MAX = 5; alle Großmeister-Schwellen = 50 M (Ziel bleibt)", () => {
+    expect(MASTERY_MAX_GRADE).toBe(10);
+    expect(MASTERY_MEISTER_MAX).toBe(5);
+    expect(MASTERY_THRESHOLDS.slice(5)).toEqual([50_000_000, 50_000_000, 50_000_000, 50_000_000, 50_000_000]);
+  });
+  it("difficultyForGrade: Meister → null, Großmeister → mitwachsender Ramp (kleineres N = härter)", () => {
+    expect(difficultyForGrade(5)).toBe(null);
+    expect(difficultyForGrade(6)).toEqual({ oppRampEvery: 15 });
+    expect(difficultyForGrade(10)).toEqual({ oppRampEvery: 5 });
+  });
+  it("Rewards steigen NUR bis Meister V (kein Entzug, kein Zuwachs bei Großmeister)", () => {
+    expect(masteryCoverBonus(10)).toBe(masteryCoverBonus(5)); // Baufeld bleibt 32 (kein Brett-Overflow)
+    expect([5, 6, 10].map(masteryLegendGuaranteed)).toEqual([true, true, true]);
+    expect([5, 6, 10].map(masteryRareShift)).toEqual([2, 2, 2]);
+  });
+  it("Aufstieg ab Meister V nur AUF dem aktuellen Max-Rang gespielt (Anti-Farm-Gate)", () => {
+    expect(advanceGrade(5, T5, 5)).toBe(6);  // Meister V gespielt → Großmeister I frei
+    expect(advanceGrade(5, T5, 3)).toBe(5);  // auf leichterem Rang III gefarmt → KEIN Aufstieg
+    expect(advanceGrade(6, T5, 6)).toBe(7);  // Großmeister I gespielt → II frei
+    expect(advanceGrade(6, T5, 4)).toBe(6);  // leichter gespielt → blockiert
+    expect(advanceGrade(4, T5, 1)).toBe(5);  // Meister I–IV bleibt ungegatet (Ramp-frei, altes Verhalten)
+    expect(advanceGrade(10, T5 * 100, 10)).toBe(10); // absoluter Höchstgrad stabil
   });
 });
 

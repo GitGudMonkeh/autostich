@@ -14,7 +14,7 @@ import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
-import { masteryRerollBonus, masteryCoverBonus, masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade
+import { masteryRerollBonus, masteryCoverBonus, masteryLegendMult, masteryRareShift, masteryLegendGuaranteed, difficultyForGrade, MASTERY_MAX_GRADE } from "./mastery.js"; // #217 Meistergrade / #226 Großmeister
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER } from "./architect.js";
 
 /* Reiner Reducer — Determinismus-Invariante: kein Math.random / Date hier drin.
@@ -145,9 +145,10 @@ export function reducer(state, action) {
       const architectEnabled = action.architect != null ? !!action.architect : !!C.ARCHITECT_ENABLED;
       // #217 Meistergrade: den run-übergreifenden Grad (aus dem Profil, via App) in die Lauf-Rewards übersetzen.
       // Grad 0 (frischer Spieler / Sim ohne masteryGrade) = Basiswerte → alles byte-identisch zum bisherigen Start.
-      const grade = Math.max(0, Math.min(5, Math.floor(Number(action.masteryGrade) || 0)));
+      const grade = Math.max(0, Math.min(MASTERY_MAX_GRADE, Math.floor(Number(action.masteryGrade) || 0)));
       return { ...s, phase: "levelup", statOffer: STAT_IDS, architectEnabled, shopDisabled: !!action.shopDisabled,
         masteryGrade: grade, masterRun: !!action.masterRun,
+        difficulty: difficultyForGrade(grade), // #226 Großmeister: Ramp je Rang (Meister → null = No-op)
         rerolls: C.BASE_REROLLS + masteryRerollBonus(grade),                                  // Neuwurf-Pool 2 → 3/4/5
         architect: { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) } }; // Baufeld +2/Grad ab II
     }

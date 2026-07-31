@@ -98,6 +98,7 @@ export function resolveTrick(state, rng = Math.random) {
     architect = null, architectEnabled = false, architectPre = null, // Architekt (#202, Shop-Ersatz): Gebäude-Overlay (8×5) + Durchlauf-Precompute
     shopDisabled = false, // Sim-Referenz: 'shop'-Slots als No-Op (weder Shop noch Architekt) → Null-Baseline „ohne"
     seed = null, offerRerolls = 0, // #205 Challenger Mode: Lauf-Seed (null = unseeded/Sim) + Reroll-Index des akt. Angebots
+    difficulty = null, // #226 Großmeister: { oppRampEvery } — mitwachsender Gegner. null (Meister/Basis) = No-op, byte-identisch.
   } = state;
 
   // #205: adressierte rng-Ableitung im Durchlauf. Bei gesetztem seed ein FRISCHER, build-unabhängig adressierter
@@ -256,8 +257,11 @@ export function resolveTrick(state, rng = Math.random) {
   // Architekt value-Gebäude (#202, Tragwerk): +temp Wert VOR dem Vergleich (an dieser Position, Bedingung je Familie).
   const architectValue = archPreNow ? architectValueBonus(archPreNow, actualPos, pCard) : 0;
   const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + damascusCombat;
+  // #226 Großmeister: mitwachsender Gegner-Aufschlag (Ramp) — +1 Wert alle oppRampEvery Durchläufe, additiv VOR den
+  // Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, damit alles byte-identisch bleibt.
+  const oppValueMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
   // Frostbiss (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −3 Wert (nie < 0); sonst neutral (§12).
-  const oValue = Math.max(0, oCard.value - (frostbiteActive[oCard.id] || 0) - (brandActive[oCard.id] || 0)); // Vergletscherung (Eis, ∝ Schichten) + Brand (Feuer)
+  const oValue = Math.max(0, oCard.value + oppValueMod - (frostbiteActive[oCard.id] || 0) - (brandActive[oCard.id] || 0)); // Vergletscherung (Eis, ∝ Schichten) + Brand (Feuer)
   // Eis: der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht.
   let newIceTemp = { ...iceTemp };
   delete newIceTemp[pCard.id];

@@ -163,7 +163,9 @@ export function recordRun(record) {
     // #217: Rang-Leiter — NUR Meister-Läufe (record.masterRun) schalten den nächsten Rang frei (eigener Modus). Ein
     // Meister-Lauf schaltet höchstens den NÄCHSTEN Rang frei (advanceGrade prüft gegen die Rang+1-Schwelle; kein
     // Multi-Sprung; Score zählt, kein completed-Zwang). Normale Läufe lassen den Rang unverändert.
-    masteryGrade: record.masterRun ? advanceGrade(p.masteryGrade, n0(record.score)) : (p.masteryGrade || 0),
+    // #226 Großmeister: der gespielte Rang (record.masteryGrade) gatet den Aufstieg — ab Meister V zählt nur ein Lauf
+    // AUF dem aktuellen Max-Rang (sonst ließe sich die 50-M-Schwelle auf leichterem Ramp farmen).
+    masteryGrade: record.masterRun ? advanceGrade(p.masteryGrade, n0(record.score), record.masteryGrade) : (p.masteryGrade || 0),
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
   return { history, profile };

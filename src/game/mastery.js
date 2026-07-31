@@ -14,16 +14,37 @@
    liefern bei Grad 0 exakt die Basiswerte → Seed-Determinismus + Bestandstests unberührt.
    ============================================================ */
 
-export const MASTERY_MAX_GRADE = 5;
+export const MASTERY_MEISTER_MAX = 5;   // Meister I–V — bis hier steigen die REWARDS.
+export const MASTERY_MAX_GRADE = 10;    // + Großmeister I–V (Grade 6–10): NUR die Schwierigkeit steigt, keine neuen Rewards (#226).
 
-// Schwellen [Rang I..V] — Best-Single-Run-Score eines MEISTER-Laufs (2026-07-31: 5/10/15/25/50 M; Rang I 7,5→5 M
-// als Einstieg gesenkt). [TUNING] I–III im erreichbaren Band, IV≈p99, V=Fernziel (aspirational, nicht sim-kalibriert).
-export const MASTERY_THRESHOLDS = [5_000_000, 10_000_000, 15_000_000, 25_000_000, 50_000_000];
-
-// Grad → römisch (Index 0 = „kein Grad"). Minimalistische Rangnamen (keine Bildkarten, 1–10-Deck).
-export const MASTERY_ROMAN = ["", "I", "II", "III", "IV", "V"];
+// Schwellen [Grad 1..10]. Meister I–V: 5/10/15/25/50 M. Großmeister I–V: alle 50 M — das ZIEL bleibt 50 M,
+// härter wird nur der Gegner (mitwachsender Ramp, difficultyForGrade). [TUNING] Meister I–III im Band, IV≈p99, V+ Fernziel.
+export const MASTERY_THRESHOLDS = [
+  5_000_000, 10_000_000, 15_000_000, 25_000_000, 50_000_000,
+  50_000_000, 50_000_000, 50_000_000, 50_000_000, 50_000_000,
+];
 
 const clampGrade = (g) => Math.max(0, Math.min(MASTERY_MAX_GRADE, Math.floor(Number(g) || 0)));
+
+// Römische Rang-Ziffer je Tier (Meister I–V bzw. Großmeister I–V). MASTERY_ROMAN bleibt Meister-kompatibel.
+const ROMAN5 = ["", "I", "II", "III", "IV", "V"];
+export const MASTERY_ROMAN = ROMAN5;
+export const isGrandmaster = (g) => clampGrade(g) > MASTERY_MEISTER_MAX;
+export const rankRoman = (g) => { const c = clampGrade(g); return c === 0 ? "" : ROMAN5[isGrandmaster(c) ? c - MASTERY_MEISTER_MAX : c]; };
+
+// Großmeister-Schwierigkeit = „mitwachsender Gegner" (Ramp): +1 Gegner-Wert alle N Durchläufe (kleineres N = härter),
+// additiv VOR den Debuffs (Frost/Brand kontern ihn → nimmt dem Spieler NICHTS weg, macht nur den Gegner stärker).
+// Leiter Großmeister I..V, env-tunebar (SIM_GM_RAMP="15,12,9,7,5"). [TUNING] Erst-Schätzung — mit der Ascension-Sim zu validieren.
+const GM_RAMP_LADDER = (() => {
+  const env = (typeof process !== "undefined" && process.env && process.env.SIM_GM_RAMP) || "";
+  const p = env.split(",").map(Number).filter((x) => x > 0);
+  return p.length === MASTERY_MEISTER_MAX ? p : [15, 12, 9, 7, 5];
+})();
+// Schwierigkeits-Modifikatoren des Grades g (für state.difficulty in der Engine). Meister (≤V) → null (No-op).
+export function difficultyForGrade(g) {
+  const c = clampGrade(g);
+  return c <= MASTERY_MEISTER_MAX ? null : { oppRampEvery: GM_RAMP_LADDER[c - MASTERY_MEISTER_MAX - 1] };
+}
 
 // Schwelle des Grades g (1..5); außerhalb → Infinity (nie erreichbar).
 export const thresholdForGrade = (g) => MASTERY_THRESHOLDS[clampGrade(g) - 1] ?? Infinity;
@@ -37,9 +58,13 @@ export const nextThreshold = (cur) => {
 /* Sequentielle Freischaltung: ein Lauf schaltet AT MOST einen Grad frei, geprüft gegen die
    Schwelle des nächsten Grades (Grad+1). Score jenseits mehrerer Schwellen springt NICHT mehrere
    Grade. Höchstgrad erreicht → unverändert. Bei Grad 0 mit zu kleinem Score → 0 (No-op). */
-export function advanceGrade(current, score) {
+export function advanceGrade(current, score, playedGrade = current) {
   const cur = clampGrade(current);
   if (cur >= MASTERY_MAX_GRADE) return cur;
+  // Großmeister-Aufstieg (ab Meister V, cur≥5): NUR wenn AUF dem aktuellen Max-Rang gespielt wurde — sonst
+  // ließe sich die konstante 50-M-Schwelle auf einem leichteren Rang (schwächerer Ramp) farmen. Meister I–IV (cur<5)
+  // bleibt ungegatet (Meister-Ränge haben denselben, ramp-freien Score → identisch zum bisherigen Verhalten).
+  if (cur >= MASTERY_MEISTER_MAX && clampGrade(playedGrade) !== cur) return cur;
   const s = Number(score) || 0;
   return s >= MASTERY_THRESHOLDS[cur] ? cur + 1 : cur;
 }
@@ -57,8 +82,9 @@ export function masteryProgress(current, score) {
 // Neuwurf-Pool: Basis 2 → +1 je Grad I/II/III, gedeckelt bei Σ5 (Grad IV/V bringen keine Rerolls mehr).
 export const masteryRerollBonus = (g) => Math.min(clampGrade(g), 3);
 
-// Architekt-Baufeld-Deckel: +2 Zellen je Grad AB II (Grad I bleibt 24). base 24 → 24/24/26/28/30/32.
-export const masteryCoverBonus = (g) => Math.max(0, clampGrade(g) - 1) * 2;
+// Architekt-Baufeld-Deckel: +2 Zellen je Grad AB II (Grad I bleibt 24). base 24 → 24/24/26/28/30/32. Bei Grad V
+// gedeckelt (Großmeister bringt KEINE weiteren Zellen → sonst Brett-Overflow; nur die Schwierigkeit steigt).
+export const masteryCoverBonus = (g) => Math.max(0, Math.min(clampGrade(g), MASTERY_MEISTER_MAX) - 1) * 2;
 
 // Rarität-Shift (Selten/Rar häufiger): Grad III → 1, Grad IV+ → 2, sonst 0. Spiegelt TIER_WEIGHTS-Tabellen.
 export const masteryRareShift = (g) => { const x = clampGrade(g); return x >= 4 ? 2 : x === 3 ? 1 : 0; };
@@ -66,13 +92,17 @@ export const masteryRareShift = (g) => { const x = clampGrade(g); return x >= 4 
 // Legendär-Chancen-Multiplikator: Grad IV+ → ×3, sonst ×1 (unverändert).
 export const masteryLegendMult = (g) => (clampGrade(g) >= 4 ? 3 : 1);
 
-// Garantierter Legendär (1×/Lauf): erst ab Grad V.
-export const masteryLegendGuaranteed = (g) => clampGrade(g) >= MASTERY_MAX_GRADE;
+// Garantierter Legendär (1×/Lauf): ab Meister V (und damit auch für alle Großmeister-Ränge).
+export const masteryLegendGuaranteed = (g) => clampGrade(g) >= MASTERY_MEISTER_MAX;
 
 /* ---- Anzeige-Helfer (grob, keine Prozente/Zahlen — Balatro-Decks-Geist) ------------------ */
 
 // Anzeige (User-Begriff: „Rang", nicht „Grad"; intern bleibt der Bezeichner masteryGrade). 0 = „Kein Rang".
-export const masteryGradeLabel = (g) => (clampGrade(g) >= 1 ? `Rang ${MASTERY_ROMAN[clampGrade(g)]}` : "Kein Rang");
+export const masteryGradeLabel = (g) => {
+  const c = clampGrade(g);
+  if (c === 0) return "Kein Rang";
+  return isGrandmaster(c) ? `Großmeister ${rankRoman(c)}` : `Rang ${rankRoman(c)}`;
+};
 
 /* #217 Challenger-Gating (#205): ein fremder Lauf ist nur herausforderbar, wenn er auf einem Grad ≤ dem eigenen
    Max-Grad gespielt wurde (sonst hätte der Herausforderer nicht dieselben Rewards). Reine, board-unabhängige Regel.
