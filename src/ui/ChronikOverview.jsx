@@ -12,7 +12,7 @@ import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
 import { hasGletscher, plantRootScore, hasPfahlwurzel } from "../game/skills.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
-import { occupiedCells as archOccupied, familyDef as archFamily } from "../game/architect.js";
+import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus } from "../game/architect.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 
 const fmtX = (x) => x.toFixed(2).replace(".", ","); // ×-Multiplikator-Format (1,50)
@@ -40,6 +40,7 @@ function targetLabel(t, deck) {
 export function ChronikOverview({ state, onClose }) {
   const { deck = [], playerOrder = [], formations = [] } = state;
   const [selPos, setSelPos] = useState(null);
+  const [showArch, setShowArch] = useState(true); // #218: Architekt-Gebäude-Overlay auf dem Grid ein-/ausblenden (wie in der Aufstellung)
   const cards = playerOrder.map((di) => deck[di]);
   const selCard = selPos != null ? cards[selPos] : null; // #218: aktuell angetippte Karte (für die Elementar-Readouts)
   const anchors = [...(state.shop?.anchors || [])].sort((a, b) => a.position - b.position); // Shop-Positionsanker (§8)
@@ -59,6 +60,25 @@ export function ChronikOverview({ state, onClose }) {
   const archMax = (state.architect && state.architect.maxCover) || 0;
   const archByCat = {};
   for (const b of archBuildings) { const cat = archFamily(b.familyId)?.category; if (cat) archByCat[cat] = (archByCat[cat] || 0) + 1; }
+  // #218: Gebäude-Abdeckung je Position { cat, color, icon, boost, legendary, name } — 1:1 wie in der Aufstellung
+  // (precomputeArchitect + architectValueBonus, echte Engine-Werte). Auf dem Grid ein-/ausblendbar (showArch).
+  const hasArch = archBuildings.length > 0;
+  const architectCover = (() => {
+    if (!hasArch) return null;
+    const pre = precomputeArchitect(state.architect, playerOrder, deck);
+    const cover = {};
+    for (const b of archBuildings) {
+      const fam = archFamily(b.familyId);
+      if (!fam) continue;
+      const cat = ARCH_CAT[fam.category];
+      for (const pos of b.footprint) {
+        const card = deck[playerOrder[pos]];
+        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card) : 0;
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name };
+      }
+    }
+    return cover;
+  })();
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
@@ -76,9 +96,25 @@ export function ChronikOverview({ state, onClose }) {
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
+            {/* #218: Architekt-Gebäude auf dem Grid ein-/ausblenden (Toggle + Kategorie-Legende) — wie in der Aufstellung. */}
+            {hasArch && (
+              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
+                <button onClick={() => setShowArch((v) => !v)} className="px-2 py-1 rounded-lg font-bold"
+                  style={showArch ? { background: `${ARCH_CAT.value.color}22`, border: `1px solid ${ARCH_CAT.value.color}`, color: "#cfe3f5" }
+                                  : { background: "#20202a", border: "1px solid #3a3a46", color: "#8a8a92" }}>
+                  🏗 Gebäude {showArch ? "an" : "aus"}
+                </button>
+                {showArch && Object.entries(ARCH_CAT).map(([k, v]) => (
+                  <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
+                    <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
+                  </span>
+                ))}
+              </div>
+            )}
             <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               highlightPos={highlightPos} highlightTitle="⏱ Zeitraffer · gekoppelte Position (20 & 40)"
               openSegments={openSegmentInfo(state.familyTiers)}
+              architectCover={hasArch && showArch ? architectCover : null}
               selectedPos={selPos} onTilePick={(pos) => setSelPos(selPos === pos ? null : pos)} />
           </div>
 

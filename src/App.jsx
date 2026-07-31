@@ -436,11 +436,11 @@ export function Autostich() {
           </span>
         </div>
       </div>
-      {/* #218: Kartenaufstellung als klickbare Kopf-Zelle (nach Mult) — öffnet die Kartenübersicht; ersetzt den unteren
+      {/* #218: Kartenübersicht als klickbare Kopf-Zelle (nach Mult) — öffnet das Übersichts-Overlay; ersetzt den unteren
           Panel-Balken → schlankere UI. Icon als „Wert", Label wie die übrigen Zellen. */}
       <button onClick={() => setShowChronik(true)} title="Kartenübersicht öffnen"
         className="text-right cursor-pointer transition-all hover:brightness-125">
-        <div className="text-[10px] uppercase tracking-wide opacity-50">Kartenaufstellung</div>
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Kartenübersicht</div>
         <div className="text-xl leading-none pt-0.5" style={{ color: "#8a7de0" }}>🎴</div>
       </button>
       {/* #225.1: Münzanzeige entfernt — mit dem Architekten (#202) entfällt die Münz-Ökonomie. */}
@@ -539,7 +539,7 @@ export function Autostich() {
             <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>
 
-          {/* #218: Der Kartenübersicht-Einstieg sitzt jetzt als klickbare Kopf-Zelle „Kartenaufstellung" (🎴, nach Mult)
+          {/* #218: Der Kartenübersicht-Einstieg sitzt jetzt als klickbare Kopf-Zelle „Kartenübersicht" (🎴, nach Mult)
               → der untere Panel-Balken entfällt, die UI ist schlanker. */}
           {/* Musik-Panel (#111): aktueller Track + „nächster Track"-Button (rechtsbündig) — ganz unten im Run. */}
           {state.phase !== "gameover" && <MusicBar title={musicTitle} onNext={() => music.next()} />}
