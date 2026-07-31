@@ -55,7 +55,7 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
 
       {/* #205: Seed einfügen & spielen — Challenge annehmen, ohne den Statistik-Hub zu öffnen. */}
       {onPlaySeed && (
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-xs sm:max-w-sm">
           <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
             <input
               value={seedInput}
@@ -77,7 +77,7 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
 
       {/* #227 Variante B: linke gleichbreite Button-Spalte (ohne Icons, gestapelt) + rechts ruhiger Rekord-Block.
           Die volle Score-Liste (deine Läufe + global) lebt hinter dem „Bestenliste"-Button (LeaderboardScreen, #217). */}
-      <div className="w-full max-w-2xl grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_240px] items-start">
+      <div className="w-full max-w-xs sm:max-w-2xl grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_240px] items-start">
         {/* Links: gleichbreite, gestapelte Buttons */}
         <div className="grid gap-1.5">
           <button onClick={onStart}
