@@ -42,7 +42,7 @@ describe("fetchGlobalTop — 3-stufige Fallback-Kaskade (#154/#169 FB-8)", () =>
     expect(await fetchGlobalTop()).toEqual([]);
     expect(urls).toHaveLength(3);
     expect(urls[2]).not.toContain("archetypes");                                       // Basis-Stufe
-    expect(urls[2]).toContain("select=name,score,level,tricks,cycles,created_at");
+    expect(urls[2]).toContain("select=id,name,score,level,tricks,cycles,created_at");   // #229 N2: id vorangestellt
   });
   it("bei 200 direkt die Zeilen, kein Retry", async () => {
     const { fetchGlobalTop } = await loadBoard();
@@ -130,5 +130,19 @@ describe("publishRun — PREVIEW-Short-Circuit + archetypes-Strip (#154)", () =>
     expect(bodies).toHaveLength(2);          // kein dritter Versuch
     expect(bodies[1].best_streak).toBeUndefined(); // FB-8 gestript
     expect(bodies[1].archetypes).toBe("fire,ice"); // archetypes bleibt (Icons erhalten)
+  });
+
+  // #229 N2: publishRun gibt die eingefügte Zeile (mit server-seitiger id) zurück (return=representation),
+  // damit der Aufrufer den eigenen Lauf im Board EINDEUTIG markieren kann statt per name+score-Heuristik.
+  it("#229 N2: gibt die eingefügte Zeile (mit id) zurück", async () => {
+    const { publishRun } = await loadBoard();
+    global.fetch = vi.fn(async () => ({ status: 201, ok: true, json: async () => [{ id: 77, name: "X", score: 9 }] }));
+    const saved = await publishRun({ name: "X", score: 9, level: 1, tricks: 1, cycles: 1 });
+    expect(saved).toEqual({ id: 77, name: "X", score: 9 });
+  });
+  it("#229 N2: fehlender representation-Body → null, ohne zu werfen (defensiv)", async () => {
+    const { publishRun } = await loadBoard();
+    global.fetch = vi.fn(async () => ({ status: 201, ok: true })); // kein json()
+    await expect(publishRun({ name: "X", score: 9, level: 1, tricks: 1, cycles: 1 })).resolves.toBeNull();
   });
 });

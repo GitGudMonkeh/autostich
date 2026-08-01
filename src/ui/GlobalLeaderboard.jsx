@@ -46,11 +46,16 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
   if (!leaderboardConfigured) return null; // ohne Config: Block entfällt komplett
 
   // Eigenen Lauf genau einmal hervorheben (erste Übereinstimmung).
+  // #229 N2: bevorzugt per eindeutiger id (das Board vergibt sie, publishRun reicht sie in myEntry nach) → trifft
+  // nie eine gleichnamige Fremd-Zeile. Fallback auf die name+score-Heuristik nur, wenn keine id vorliegt
+  // (z. B. Preview-Build schreibt nie → kein eigener Eintrag im Board, dann ist der Fallback ohnehin folgenlos).
   let flagged = false;
   const isMine = (r) => {
-    if (flagged || !mine || !mine.name) return false;
-    const hit = r.name === mine.name && r.score === mine.score
-      && r.tricks === mine.tricks && r.cycles === mine.cycles;
+    if (flagged || !mine) return false;
+    const hit = mine.id != null
+      ? r.id === mine.id
+      : (!!mine.name && r.name === mine.name && r.score === mine.score
+          && r.tricks === mine.tricks && r.cycles === mine.cycles);
     if (hit) flagged = true;
     return hit;
   };

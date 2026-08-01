@@ -19,9 +19,10 @@ const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 //    FB-8-Spalten noch fehlen.
 //  - COLS_BASE: ganz ohne Zusatzspalten (Ur-Tabelle).
 const FB8_COLS = "best_streak,perks,skills,max_formations,formation_score,crits,wins,crit_bonus_score,best_trick_score";
-const COLS_FULL = `name,score,level,tricks,cycles,archetypes,${FB8_COLS},created_at`;
-const COLS_ARCH = "name,score,level,tricks,cycles,archetypes,created_at";
-const COLS_BASE = "name,score,level,tricks,cycles,created_at";
+// #229 N2: `id` mitselektieren → die Eigen-Zeile lässt sich im Board EINDEUTIG markieren (statt per name+score-Heuristik).
+const COLS_FULL = `id,name,score,level,tricks,cycles,archetypes,${FB8_COLS},created_at`;
+const COLS_ARCH = "id,name,score,level,tricks,cycles,archetypes,created_at";
+const COLS_BASE = "id,name,score,level,tricks,cycles,created_at";
 // #169 FB-8: Payload-Felder, die es in COLS_FULL, aber nicht in COLS_ARCH gibt (zum Stripen beim publish).
 const FB8_FIELDS = ["best_streak", "perks", "skills", "max_formations", "formation_score", "crits", "wins", "crit_bonus_score", "best_trick_score"];
 const omit = (obj, keys) => { const o = { ...obj }; for (const kk of keys) delete o[kk]; return o; };
@@ -45,7 +46,8 @@ export async function publishRun(entry) {
   if (PREVIEW) return; // Preview-Build: kein Schreiben ins echte Leaderboard.
   const post = (body) => fetch(REST, {
     method: "POST",
-    headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+    // #229 N2: return=representation → die eingefügte Zeile (inkl. server-seitiger id/created_at) kommt zurück.
+    headers: { ...headers, "Content-Type": "application/json", Prefer: "return=representation" },
     body: JSON.stringify(body),
   });
   const hasFb8 = FB8_FIELDS.some((f) => entry[f] !== undefined);
@@ -67,4 +69,10 @@ export async function publishRun(entry) {
     }
   }
   if (!res.ok) throw new Error(`publishRun ${res.status}`);
+  // #229 N2: die eingefügte Zeile (mit id) zurückgeben, damit der Aufrufer den eigenen Lauf im Board eindeutig
+  // markieren kann. Defensiv: fehlendes/leeres json (Test-Mock, oder Server ohne representation) → null.
+  try {
+    const saved = typeof res.json === "function" ? await res.json() : null;
+    return Array.isArray(saved) ? saved[0] : saved;
+  } catch (e) { return null; }
 }

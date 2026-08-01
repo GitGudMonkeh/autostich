@@ -255,7 +255,11 @@ export function Autostich() {
       crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore };
     setMyEntry(gEntry);
     if (leaderboardConfigured && name) {
-      publishRun(gEntry).then(() => setPubToken((t) => t + 1)).catch(() => {});
+      publishRun(gEntry).then((saved) => {
+        // #229 N2: die vom Board vergebene id nachtragen → GlobalLeaderboard markiert die Eigen-Zeile eindeutig.
+        if (saved && saved.id != null) setMyEntry((e) => (e ? { ...e, id: saved.id } : e));
+        setPubToken((t) => t + 1);
+      }).catch(() => {});
     }
     if (finalScore > recordTotal.current) {
       recordTraj.current = currentTraj.current.slice();
