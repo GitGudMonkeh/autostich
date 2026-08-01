@@ -12,6 +12,7 @@ import { tierColor } from "../game/rarity.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { GlossaryPanel } from "./Glossary.jsx";
 import { useEscape } from "./useEscape.js";
 
 /* ============================================================
@@ -262,7 +263,10 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
         <div className="flex items-start justify-between gap-4 mb-3">
           <div className="min-w-0">
             <div className="text-[10px] uppercase tracking-[0.18em] font-mono opacity-60" style={{ color: CAT.value.color }}>Architekt · Bauphase</div>
-            <h2 className="text-xl font-bold mt-0.5">🏗 Der Architekt</h2>
+            <div className="flex items-center gap-2 mt-0.5">
+              <h2 className="text-xl font-bold">🏗 Der Architekt</h2>
+              <GlossaryPanel />
+            </div>
           </div>
           <div className="text-right">
             <div className="text-[10px] uppercase tracking-wide opacity-50">Runde {round}</div>

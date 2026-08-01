@@ -9,6 +9,7 @@ import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { audio } from "./audio.js";
 import { haptics } from "./haptics.js";
 
@@ -146,7 +147,10 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         <div className="flex items-center justify-between mb-2">
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>Aufstellung · Runde {(state.cycle || 0) + 1}</div>
-            <h2 className="text-xl font-bold">Deck aufstellen</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold">Deck aufstellen</h2>
+              <GlossaryPanel />
+            </div>
           </div>
           <div className="text-right shrink-0">
             <div className="text-[10px] uppercase tracking-wide opacity-50">Energie</div>
@@ -254,7 +258,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
                 {iceFormSkills.map((id) => (
                   <div key={id}>
                     <b style={{ color: "#8be0f8" }}>{SKILL_DEFS[id].name}</b>
-                    <span> — {SKILL_DEFS[id].desc}</span>
+                    <span> — <GlossaryText text={SKILL_DEFS[id].desc} /></span>
                   </div>
                 ))}
               </div>

@@ -2,6 +2,7 @@ import { STAT_DEFS, STAT_IDS } from "../game/stats.js";
 import { CRIT_BASE_MULT } from "../game/constants.js";
 import { totalCritChanceRaw } from "../game/perks.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 
 const ACCENT = "#5a8ade"; // Stat-Akzent (blau) — abgesetzt von Perk (violett) / Skill (blitzblau)
 
@@ -26,7 +27,8 @@ export function StatSelect({ offer = STAT_IDS, onPick, state = {} }) {
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
-        <div className="w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
+        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
+          <GlossaryPanel className="absolute top-3 right-3 z-10" />
           <div className="text-center mb-1">
             <div className="text-xs uppercase tracking-widest" style={{ color: ACCENT }}>
               {isStart ? "Start" : `Runde ${(state.cycle || 0) + 1}`}
@@ -51,7 +53,7 @@ export function StatSelect({ offer = STAT_IDS, onPick, state = {} }) {
                     <span className="text-xs px-1.5 py-0.5 rounded font-bold whitespace-nowrap"
                       style={{ background: `${ACCENT}22`, color: ACCENT }}>{d.blurb}</span>
                   </div>
-                  <p className="text-xs opacity-70 leading-snug">{d.desc}</p>
+                  <p className="text-xs opacity-70 leading-snug"><GlossaryText text={d.desc} /></p>
                   <div className="text-[11px] opacity-50 mt-auto pt-1">Aktuell: {currentLabel(id, state)}</div>
                 </button>
               );

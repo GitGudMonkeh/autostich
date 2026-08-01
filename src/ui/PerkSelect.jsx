@@ -4,6 +4,7 @@ import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
@@ -50,7 +51,8 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
-        <div className="w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
+        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
+        <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>
             {(state.perks || []).length === 0 ? "Start" : `Runde ${(state.cycle || 0) + 1}`}
@@ -110,7 +112,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                   )}
                 </div>
                 <div className="font-bold" style={{ color: (!v.isFamily && v.leg) ? LEG_GOLD : v.isFamily ? v.accent : cat.color }}>{v.name}</div>
-                <div className="text-sm opacity-75 leading-snug">{v.desc}</div>
+                <div className="text-sm opacity-75 leading-snug"><GlossaryText text={v.desc} /></div>
               </button>
             );
           })}

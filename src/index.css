@@ -395,3 +395,41 @@ button { font-family: inherit; }
   92%  { opacity: 1; }
   100% { transform: translateY(-101vh) translateX(var(--drift)); opacity: 0; }
 }
+
+/* ============================================================================
+   GLOSSAR (Glossar-Rework) — ⓘ-Icon je Panel öffnet das durchsuchbare Glossar;
+   Begriffe in Beschreibungen werden fett markiert. Unlayered (nach @import
+   tailwindcss) → gewinnt gegen Tailwind-Utilities.
+   ============================================================================ */
+/* Fett markierter Glossar-Begriff in Beschreibungen — Signal „steht im Glossar". NICHT klickbar. */
+.gloss-term { font-weight: 700; color: #eae5ff; }
+
+/* Der ⓘ-Kreis (Panels + Haupt-/Spielseite). */
+.gloss-i-btn {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; flex: none; cursor: pointer;
+  font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 700;
+  font-size: 0.82rem; line-height: 1;
+  color: #8a7de0; background: #1b1830; border: 1px solid #3b3563;
+  transition: background .12s ease, box-shadow .12s ease, transform .12s ease;
+}
+.gloss-i-btn:hover { background: #241f42; box-shadow: 0 0 0 3px #8a7de022, 0 0 12px -2px #8a7de0; transform: translateY(-1px); }
+.gloss-i-btn:active { transform: translateY(0); }
+.gloss-i-btn:focus-visible { outline: 2px solid #8a7de0; outline-offset: 2px; }
+
+/* Titel-„i" im Overlay-Kopf. */
+.gloss-i-mark {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: Georgia, serif; font-style: italic; font-weight: 700; font-size: 0.72rem;
+  color: #8a7de0; background: #1b1830; border: 1px solid #3b3563;
+}
+.gloss-search::placeholder { color: #5c5c68; }
+.gloss-search:focus { outline: none; border-color: #8a7de0; box-shadow: 0 0 0 3px #8a7de022; }
+.gloss-chiprow { scrollbar-width: none; }
+.gloss-chiprow::-webkit-scrollbar { display: none; }
+.gloss-chip { border: 1px solid #33333e; background: #1a1a21; color: #9a9aa4; cursor: pointer; transition: color .12s, background .12s, border-color .12s; }
+.gloss-chip:hover { color: #e8e8ea; border-color: #4a4258; }
+.gloss-chip-on { background: #241f42; border-color: #4a3f78; color: #e5e0ff; }
+.gloss-chip:focus-visible { outline: 2px solid #8a7de0; outline-offset: 2px; }
+.gloss-term-row:hover { background: #1a1a22; }

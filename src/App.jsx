@@ -11,6 +11,7 @@ import { fmtDuration } from "./game/deck.js";
 import { fmtScore } from "./ui/format.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { Battlefield } from "./ui/Battlefield.jsx";
+import { GlossaryPanel } from "./ui/Glossary.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
@@ -487,7 +488,11 @@ export function Autostich() {
             </div>
             {/* Desktop: Kopf-Stats rechts neben der Wortmarke (eine Zeile). Auf Mobil stehen dieselben Zellen
                 als eigenes gerahmtes Panel NACH der Controls-Leiste (s. u.) → hier nur ab sm sichtbar. */}
-            <div className="hidden sm:flex sm:items-start sm:gap-5">{statCells}</div>
+            {/* Kopf-Stats (Desktop) + das Glossar-ⓘ als ruhige Utility-Gruppe rechts; ⓘ bleibt auch mobil sichtbar. */}
+            <div className="flex items-start gap-3">
+              <GlossaryPanel />
+              <div className="hidden sm:flex sm:items-start sm:gap-5">{statCells}</div>
+            </div>
           </header>
 
           <Controls

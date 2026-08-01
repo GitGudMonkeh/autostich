@@ -5,6 +5,7 @@ import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
 import { fmtScore } from "./format.js";
 import logo from "../assets/logo.png";
+import { GlossaryPanel } from "./Glossary.jsx";
 
 /* Startbildschirm (#4): Redesign „Richtung A — zentriert & entschlackt" (aus dem Startmenü-Redesign).
    Der Inhalt wird vertikal zentriert (füllt die frühere untere Leere) und bekommt eine klare Rangfolge:
@@ -39,6 +40,8 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
     <div className="relative flex flex-col items-center gap-6 pt-8 pb-10">
       {/* #133: Schnell-Mute jederzeit sichtbar oben rechts — togglet dasselbe options.muted wie die Optionen. */}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-0 right-0" />}
+      {/* Glossar jederzeit erreichbar — oben links (die obere rechte Ecke belegt der Mute-Knopf). */}
+      <GlossaryPanel className="absolute top-0 left-0" />
 
       {/* Wortmarke */}
       <div className="text-center">

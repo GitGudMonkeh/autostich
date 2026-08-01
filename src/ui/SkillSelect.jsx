@@ -4,6 +4,7 @@ import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_M
          PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF } from "../game/constants.js";
 import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
@@ -105,7 +106,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
-        <div className="w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
+        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
+        <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Runde {(state.cycle || 0) + 1}</div>
           <h2 className="text-xl font-bold mt-1">Wähle einen Skill</h2>
@@ -203,7 +205,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                         {sel && <span className="text-[10px] font-bold" style={{ color: col }}>✓ ausgewählt</span>}
                       </div>
                       <div className="font-bold" style={{ color: col }}>{s.name}</div>
-                      <div className="text-sm opacity-75 leading-snug">{s.desc}</div>
+                      <div className="text-sm opacity-75 leading-snug"><GlossaryText text={s.desc} /></div>
                     </button>
                   );
                 })}
