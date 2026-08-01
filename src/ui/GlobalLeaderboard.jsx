@@ -71,7 +71,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
             const icons = archetypeIcons(r.archetypes); // #139: ein Icon je Skill (leer bei Alt-Einträgen)
             return (
               // #169 FB-8: Zeile klickbar → Detailansicht (RunStats). Alt-Einträge degradieren.
-              <button key={i} onClick={() => setDetail({ entry: toRunEntry(r), rank: i + 1 })} title="Details anzeigen"
+              <button key={i} onClick={() => setDetail({ entry: toRunEntry(r), rank: i + 1, anonymized: !mineRow })} title="Details anzeigen"
                 className="flex items-center gap-2 text-sm px-2 py-1 rounded text-left w-full transition-all hover:brightness-125"
                 style={{ background: mineRow ? "#5ab87a22" : "#20202a",
                   border: `1px solid ${mineRow ? "#5ab87a66" : "transparent"}` }}>
@@ -102,7 +102,8 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
       ) : (
         <div className="mt-5">{body}</div>
       )}
-      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} />}
+      {/* #205 Anti-Copy: fremde Board-Läufe anonymisiert (nur Kennzahlen/Icons/Score, keine Perks/Skills/Aufstellung). */}
+      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} anonymized={detail.anonymized} />}
     </>
   );
 }

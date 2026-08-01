@@ -1,44 +1,51 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
-import { baseScoreMultFor } from "./game/perks.js";
+import { baseScoreMultFor, totalCritChanceRaw } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
+import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
+import { randomSeed, formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Lauf-Seed erzeugen / anzeigen
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
 import { fmtScore } from "./ui/format.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { Battlefield } from "./ui/Battlefield.jsx";
+import { GlossaryPanel } from "./ui/Glossary.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { StatSelect } from "./ui/StatSelect.jsx";
 import { FormationPhase } from "./ui/FormationPhase.jsx";
-import { ShopScreen } from "./ui/ShopScreen.jsx";
-import { ShopTargetSelect } from "./ui/ShopTargetSelect.jsx";
+import { ArchitectScreen } from "./ui/ArchitectScreen.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { FamilyTargetSelect } from "./ui/FamilyTargetSelect.jsx";
 import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
 import { CrystalBar } from "./ui/CrystalBar.jsx";
-import { frozenCount, archetypeOf } from "./game/skills.js";
+import { PlantBar } from "./ui/PlantBar.jsx";
+import { MasteryBar } from "./ui/MasteryBar.jsx";
+import { frozenCount, archetypeOf, hasKristallineMasse } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { StatsScreen } from "./ui/StatsScreen.jsx";
+import { SeedChip } from "./ui/SeedChip.jsx"; // #205 Challenger Mode: Seed im HUD kopierbar
 import { CustomizeScreen } from "./ui/CustomizeScreen.jsx";
+import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale Bestenliste als eigener Screen
+import { MasterRunSelect } from "./ui/MasterRunSelect.jsx"; // #217: Rang-Auswahl für den Meister-Lauf
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
+import { haptics } from "./ui/haptics.js";
 import { music } from "./ui/music.js";
 import { MusicBar } from "./ui/MusicBar.jsx";
 import { UsernameModal } from "./ui/UsernameModal.jsx";
 import { CrtParticles } from "./ui/CrtParticles.jsx";
-import { DeckHistogram } from "./ui/BuildSummary.jsx";
 import { multTierColor, multTierLevel } from "./ui/multTier.js";
 
 export function Autostich() {
@@ -48,10 +55,16 @@ export function Autostich() {
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
   const [showStats, setShowStats] = useState(false);              // #172 FB-10: Statistik-Hub (nur im Menü)
   const [showCustomize, setShowCustomize] = useState(false);      // #190: Kollektion (Deck/Battlefield, nur im Menü)
+  const [showLeaderboard, setShowLeaderboard] = useState(false);  // #217: globale Bestenliste zog vom Startbildschirm in einen eigenen Screen
   const [profile, setProfile] = useState(loadProfile);            // #190: Profil (Freischalt-Status) — nach jedem Lauf aktualisiert
   const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
+  const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
+  const pendingMaster = useRef(false);                            // #217: nächster Lauf = Meister-Lauf? (nur diese zählen für die Rang-Leiter)
+  const pendingGrade = useRef(0);                                 // #217: gewählter Rang für den nächsten Meister-Lauf (0 = ranglos)
+  const [showMasterSelect, setShowMasterSelect] = useState(false); // #217: Rang-Auswahl-Overlay (Meister-Lauf starten)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
+  const [glossaryOpen, setGlossaryOpen] = useState(false);        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/6× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
@@ -78,7 +91,7 @@ export function Autostich() {
   const prevMult = useRef(1);     // vorheriger Score-Mult (Puls nur bei Anstieg, #37)
   // Offenes Optionen-Overlay friert den Lauf ein (wie andere Overlays) — ohne den
   // Nutzer-Pause-Toggle zu verändern: beim Schließen läuft es im vorherigen Zustand weiter.
-  const active = state.phase === "play" && !paused && !showOptions && !showChronik;
+  const active = state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen;
   // Dynamische Rundengeschwindigkeit (#95): jeder Durchlauf startet bei +0 % und beschleunigt
   // +2 % je in DIESEM Durchlauf gewonnenem Stich → sichtbare Eskalation zum Rundenende, Reset je Durchlauf.
   // Rein Anzeige/Ablauf (score-neutral wie der Turbo). cycleWins = Siege seit Durchlauf-Beginn.
@@ -118,18 +131,20 @@ export function Autostich() {
       const btn = e.target.closest && e.target.closest("button");
       if (!btn || btn.dataset.sfx === "none") return;
       audio.play("button");
+      haptics.tick(); // #207: dezenter Haptik-Tick auf Mobile — spiegelt exakt den Klick-Sound (gleiches data-sfx="none"-Opt-out)
     };
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
   }, []);
-  // Optionen → Audio-Manager spiegeln (Mute/Lautstärke).
+  // Optionen → Audio-Manager spiegeln (Mute/Lautstärke). #207: Haptik-Toggle spiegeln (Default an; wirkt nur auf Mobile).
   useEffect(() => { audio.setMuted(!!options.muted); audio.setVolume(options.sfxVol ?? 0.4); }, [options.muted, options.sfxVol]);
+  useEffect(() => { haptics.setEnabled(options.haptics !== false); }, [options.haptics]);
   // Kauf-Sound (#110): am Wachstum des Kauf-Logs (#127) → exakt 1× je ABGESCHLOSSENEM Kauf (immediate & Ziel-Items),
   // nie premature (Ziel-Flow öffnen) und nie bei no-op. Deshalb Cashout-Buttons via data-sfx="none" stummgeschaltet.
   const prevBuys = useRef(0);
   useEffect(() => {
     const n = state.shop?.purchaseLog?.length || 0;
-    if (n > prevBuys.current) audio.play("buy");
+    if (n > prevBuys.current) { audio.play("buy"); haptics.tick(); } // #207: Kauf-Bestätigung buzzt mit (Cashout-Button ist data-sfx="none")
     prevBuys.current = n;
   }, [state.shop?.purchaseLog?.length]);
   // Musik (#111): Titel-Abo für die Anzeige + phasengesteuerte Wiedergabe. musicHome = Menü ODER Gameover
@@ -160,14 +175,14 @@ export function Autostich() {
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
-    if (state.phase !== "play" || paused || showOptions || showChronik) return;
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen) return;
     // #188 v2: nach einem großen Krit-Sieg um hitStopMs verzögert (kurzer „Hit-Stop"/Slow-Mo), sonst normaler Takt.
     const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs + hitStopMs);
     return () => clearTimeout(id);
     // #56: flipMs direkt (statt seiner Einzel-Eingaben speedPct/speedMult) → Deps veralten nicht,
     // falls flipMs künftig von weiteren Variablen abhängt.
     // #148: showChronik friert den Lauf ein (wie showOptions) — Tricks laufen nicht mehr hinter dem Overlay weiter.
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, flipMs, hitStopMs]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, flipMs, hitStopMs]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -185,8 +200,15 @@ export function Autostich() {
     const localEntry = {
       score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
       bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
-      maxFormations: state.maxFormations, formationScore: state.formationScore,
+      maxFormations: state.maxFormations, formationScore: state.formationScore, buildingScore: state.buildingScore,
       crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
+      // #205: Lauf-Seed lokal mitspeichern (roh + teilbarer Code) → Nachspielen/Kopieren im Challenge-Reiter. Alt-Läufe
+      // ohne Seed degradieren sauber (kein Challenge-Knopf). Global (gEntry) folgt mit dem Board-Umzug (Schicht B, #197).
+      seed: state.seed ?? null, seedCode: state.seed != null ? formatSeed(state.seed) : null,
+      // #217: Rang, mit dem dieser Lauf gespielt wurde + ob er ein Meister-Lauf war. `masterRun` steuert die Rang-Leiter
+      // (nur Meister-Läufe schalten frei, storage.recordRun); `masteryGrade` = gespielte Rewards (Gating/PB-Segmentierung).
+      masteryGrade: state.masteryGrade || 0,
+      masterRun: !!state.masterRun,
     };
     setHighscores(recordHighscore(localEntry));
     // #172 FB-10: denselben Lauf in die Historie (letzte 30) + Profil-Totals schreiben — Basis für den Statistik-Hub.
@@ -197,8 +219,14 @@ export function Autostich() {
     // #190 Challenge-Tracking: nur ein natürlich abgeschlossener Lauf (cycle === MAX_CYCLES) zählt; plus die
     // Rohdaten für die Erkennung (Shop-Käufe im ganzen Lauf, gewählte Stats). Erkennung/Flags in storage.recordRun.
     const completed = state.cycle >= MAX_CYCLES;
+    // #201.8 Stufe B: kompakte finale Aufstellung mitpersistieren (playerOrder ist bereits in Spielreihenfolge aufgelöst).
+    const deckSnapshot = {
+      cards: (state.playerOrder || []).map((di) => { const c = state.deck[di]; return { id: c.id, value: c.value, suit: c.suit, green: !!c.green, frozen: !!c.frozen }; }),
+      formations: computeFormations(state.playerOrder || [], state.deck || [], state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {}),
+    };
     const { profile: nextProfile } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
-      shopPurchases: state.shop?.purchaseLog?.length ?? 0, statPicks: state.statPicks || [], completed });
+      shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
+      statPicks: state.statPicks || [], completed, deckSnapshot });
     setProfile(nextProfile);
     // #190: in DIESEM Lauf frisch freigeschaltete Skins (Bedingung vorher NICHT erfüllt, jetzt schon) → Siegesscreen.
     const catalog = [
@@ -248,6 +276,10 @@ export function Autostich() {
   const bfSkin   = battlefieldAssets(activeBfId);
 
   function beginRun() {
+    // #205: Challenge-Seed (falls per Paste/Nachspielen gesetzt) ODER frischer Zufalls-Seed. Der Seed macht
+    // den Lauf reproduzierbar & teilbar; jeder Lauf bekommt einen, auch der normale „Neuer Run".
+    const seed = pendingSeed.current != null ? (pendingSeed.current >>> 0) : randomSeed();
+    pendingSeed.current = null;
     currentTraj.current = [];
     runStartRecordTraj.current = recordTraj.current.slice(); // Rekord dieses Laufs festhalten, bevor saveRun ihn überschreibt (#35)
     recorded.current = false;
@@ -261,13 +293,30 @@ export function Autostich() {
     setPaused(false);
     setIsRecord(false);
     setNewUnlocks([]); // #190: Freischalt-Hinweis des Vorlaufs zurücksetzen
-    dispatch({ type: "START_RUN", rng: Math.random });
+    // #217: Meister-Lauf? Nur dann Rang-Rewards + Rang-Leiter. Gewählter Rang defensiv auf ≤ eigenem Max-Rang geklemmt
+    // (der Picker bietet ohnehin nur freigeschaltete an). Normaler Lauf = Rang 0, keine Rewards, zählt nicht.
+    const masterRun = pendingMaster.current;
+    const grade = masterRun ? Math.max(0, Math.min(profile.masteryGrade || 0, pendingGrade.current | 0)) : 0;
+    pendingMaster.current = false; pendingGrade.current = 0;
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, masteryGrade: grade, masterRun }); // #202 Architekt · #205 Seed · #217 Meister-Lauf
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
-  function startRun() {
+  // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
+  // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
+  // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
+  function launchRun({ seed = null, master = false, grade = 0 } = {}) {
+    pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
+    pendingMaster.current = !!master;
+    pendingGrade.current = grade | 0;
     setPendingRun([deckSkin.front, deckSkin.back, ...(bfSkin ? [bfSkin.desktop, bfSkin.mobile] : [])]);
   }
+  // #217: Normaler Lauf (Rang 0, keine Rewards, zählt nicht) — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
+  function startRun(seed) { launchRun({ seed: (typeof seed === "number" && Number.isFinite(seed)) ? seed : null, master: false }); }
+  // #217: Meister-Lauf auf gewähltem Rang (0 = ranglos). Nur diese zählen für die Rang-Leiter.
+  function startMasterRun(grade = 0) { launchRun({ master: true, grade: grade | 0 }); }
+  // #217: Neustart behält die Lauf-Art (ein Meister-Lauf startet als Meister-Lauf auf demselben Rang neu).
+  function restartRun() { launchRun({ master: !!state.masterRun, grade: state.masteryGrade || 0 }); }
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun läuft über den gameover-Effekt
   // Perk-Auswahl: ein Angebotseintrag ist entweder eine Familie {familyId,tier} (Rarität #167) oder ein flacher perkId-String.
@@ -292,18 +341,12 @@ export function Autostich() {
   const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
   const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138: Perk-Angebot ablehnen → +Münze
   const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
-  // Shop-Runde (Shop-Spec §2.6): kaufen (§5.4) bzw. verlassen/bestätigen → zugehöriger Durchlauf startet.
-  const buyItem = (offerId) => dispatch({ type: "BUY_ITEM", offerId, rng: Math.random });
-  const leaveShop = () => dispatch({ type: "LEAVE_SHOP" });
-  // Shop-Ziel-Auswahl (Shop-Spec §12.2): Karten/Farben/Segment wählen, bestätigen oder abbrechen.
-  const shopTargetCard = (cardId) => dispatch({ type: "SHOP_TARGET_CARD", cardId });
-  const shopTargetColor = (cardId, color) => dispatch({ type: "SHOP_TARGET_COLOR", cardId, color });
-  const shopTargetSegment = (segment) => dispatch({ type: "SHOP_TARGET_SEGMENT", segment });
-  const shopTargetPosition = (position) => dispatch({ type: "SHOP_TARGET_POSITION", position });
-  const shopTargetCategory = (category) => dispatch({ type: "SHOP_TARGET_CATEGORY", category });
-  const shopTargetOffer = (offerId) => dispatch({ type: "SHOP_TARGET_OFFER", offerId });
-  const shopTargetConfirm = () => dispatch({ type: "SHOP_TARGET_CONFIRM", rng: Math.random });
-  const shopTargetCancel = () => dispatch({ type: "SHOP_TARGET_CANCEL" });
+  // Architekt (#202, ersetzt den Shop): Bauplan errichten / Gebäude ausbauen / versetzen / abreißen / Phase bestätigen.
+  const architectBuild = ({ familyId, tier, footprint, colorChoice }) => dispatch({ type: "ARCHITECT_BUILD", familyId, tier, footprint, colorChoice });
+  const architectUpgrade = (buildingId) => dispatch({ type: "ARCHITECT_UPGRADE", buildingId });
+  const architectMove = ({ buildingId, footprint }) => dispatch({ type: "ARCHITECT_MOVE", buildingId, footprint });
+  const architectDemolish = (buildingId) => dispatch({ type: "ARCHITECT_DEMOLISH", buildingId });
+  const architectDone = () => dispatch({ type: "ARCHITECT_DONE" });
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
@@ -381,23 +424,30 @@ export function Autostich() {
           </span>
         </div>
       </div>
-      {/* Münzen (Shop-Spec §3) — Run-Ressource für den Shop */}
-      <div className="text-right">
-        <div className="text-[10px] uppercase tracking-wide opacity-50">Münzen</div>
-        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>🪙 {state.shop?.coins ?? 0}</div>
-      </div>
-      <div className="text-right">
-        <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
-        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
-      </div>
-      {/* #133/#111: Der „Nächster Track"-Button ist ins untere Musik-Panel gewandert (s. MusicBar). An seiner
-          Stelle (freie Kopf-Zelle) jetzt der Durchlauf-Zähler X / 44 — gleiche Werte wie in der StatusRail. */}
+      {/* #UI: Durchlauf-Zelle direkt nach „Mult" → landet im Mobil-3er-Grid unter „Zeit" (linke Spalte). */}
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wide opacity-50">Durchlauf</div>
         <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>
           {Math.min(state.cycle + 1, MAX_CYCLES)}<span className="text-xs opacity-45"> / {MAX_CYCLES}</span>
         </div>
       </div>
+      {/* #225.1: Münzanzeige entfernt (#202). #UI: „Bester Score" unter den aktuellen Score (mittlere Mobil-Spalte). */}
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
+      </div>
+      {/* #218/#UI: Kartenübersicht — als LETZTE Kopf-Zelle, damit sie im Mobil-3er-Grid unten rechts landet
+          (Daumen-Reichweite). Icon = Mini-Kartenrücken des aktiven Decks (matcht den Spiel-Look statt Emoji),
+          Label auf „Karten" gekürzt (passt zur Breite der übrigen Labels). */}
+      <button onClick={() => setShowChronik(true)} title="Kartenübersicht öffnen"
+        className="text-right cursor-pointer transition-all hover:brightness-125">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Karten</div>
+        <div className="flex justify-end pt-0.5">
+          <img src={deckSkin.back} alt="Kartenübersicht" draggable="false"
+            className="h-7 w-auto rounded-[3px] object-cover"
+            style={{ border: "1px solid #ffffff22", boxShadow: "0 1px 3px #0006" }} />
+        </div>
+      </button>
     </>
   );
 
@@ -423,10 +473,10 @@ export function Autostich() {
       {options.skin === "crt" && state.phase === "menu" && <CrtParticles />}
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
-          <StartScreen onStart={startRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
-            onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)}
+          <StartScreen onStart={startRun} onPlaySeed={startRun} onMasterRun={() => setShowMasterSelect(true)} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+            onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
-            username={username} onEditName={() => setShowUsername(true)} myEntry={myEntry} pubToken={pubToken} />
+            username={username} onEditName={() => setShowUsername(true)} />
         ) : (<>
           <header className="flex items-end justify-between flex-wrap gap-2">
             <div>
@@ -434,16 +484,22 @@ export function Autostich() {
                 AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
               </h1>
               <p className="text-xs opacity-45">Roguelite-Autobattler-Stechspiel · Prototyp</p>
+              {/* #205: Seed dieses Laufs — jederzeit kopierbar zum Teilen/Herausfordern. */}
+              {state.seed != null && <div className="mt-1"><SeedChip code={formatSeed(state.seed)} /></div>}
             </div>
             {/* Desktop: Kopf-Stats rechts neben der Wortmarke (eine Zeile). Auf Mobil stehen dieselben Zellen
                 als eigenes gerahmtes Panel NACH der Controls-Leiste (s. u.) → hier nur ab sm sichtbar. */}
-            <div className="hidden sm:flex sm:items-start sm:gap-5">{statCells}</div>
+            {/* Kopf-Stats (Desktop) + das Glossar-ⓘ als ruhige Utility-Gruppe rechts; ⓘ bleibt auch mobil sichtbar. */}
+            <div className="flex items-start gap-3">
+              <GlossaryPanel onOpenChange={setGlossaryOpen} />
+              <div className="hidden sm:flex sm:items-start sm:gap-5">{statCells}</div>
+            </div>
           </header>
 
           <Controls
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
-            onRestart={startRun} onAbort={endRun} onOptions={() => setShowOptions(true)}
+            onRestart={restartRun} onAbort={endRun} onOptions={() => setShowOptions(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
 
@@ -454,31 +510,42 @@ export function Autostich() {
             {statCells}
           </div>
 
+          {/* #UI: Mobil-Reihenfolge Battlefield → Stats → Perks (order-1/2/3). Desktop bleibt 2-spaltig via
+              explizite lg-Grid-Platzierung: Battlefield+Bars (links oben) + Perks (links unten), Stats-Sidebar rechts. */}
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
-            <div className="grid gap-4">
+            <div className="grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
+              {state.masterRun && <MasteryBar grade={profile.masteryGrade || 0} score={state.score} />}
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)}
+                forged={state.forged || {}} brandActive={state.brandActive || {}} layers={state.layers || {}}
+                growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
+                reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "stat"} />
-              <ChargeBar lightning={state.lightning} skills={state.skills} />
-              <HeatBar heat={state.heat} skills={state.skills} />
+              <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)} />
+              <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}} />
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
-                ownCount={frozenCount(state.deck)}
-                enemyCount={(state.frostbiteActive || []).length} />
+                layers={state.layers || {}}
+                frostbite={state.frostbiteActive || {}}
+                hasKristalline={hasKristallineMasse(state.skills || [])} />
+              <PlantBar active={(state.activeArchetypes || []).includes("plant")}
+                deck={state.deck || []}
+                growth={state.growth || {}}
+                colonized={state.colonized || {}}
+                skills={state.skills || []} />
+            </div>
+            {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
+            <div className="order-2 lg:col-start-2 lg:row-start-1">
+              <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
+            </div>
+            {/* Perks/Skills — Mobil unter den Stats (order-3), Desktop links unter dem Battlefield. */}
+            <div className="order-3 lg:col-start-1 lg:row-start-2">
               <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} />
             </div>
-            <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>
 
-          {/* Chronik — Deck-Werte-Histogramm, volle Breite ganz unten (#28) */}
-          <button onClick={() => setShowChronik(true)} className="rounded-xl p-4 as-panel text-left w-full transition-all hover:brightness-110"
-            style={{ background: "#17171c", border: "1px solid #26262e" }}>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2 flex justify-between">
-              <span>Chronik — Deck-Werte je Farbe</span>
-              <span className="normal-case tracking-normal" style={{ color: "#8a7de0" }}>Kartenübersicht ›</span>
-            </div>
-            <DeckHistogram deck={state.deck} />
-          </button>
+          {/* #218: Der Kartenübersicht-Einstieg sitzt jetzt als klickbare Kopf-Zelle „Kartenübersicht" (🎴, nach Mult)
+              → der untere Panel-Balken entfällt, die UI ist schlanker. */}
           {/* Musik-Panel (#111): aktueller Track + „nächster Track"-Button (rechtsbündig) — ganz unten im Run. */}
           {state.phase !== "gameover" && <MusicBar title={musicTitle} onNext={() => music.next()} />}
         </>)}
@@ -487,13 +554,9 @@ export function Autostich() {
       {state.phase === "formation" && (
         <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} />
       )}
-      {state.phase === "shop" && (
-        <ShopScreen state={state} onLeave={leaveShop} onBuy={buyItem} />
-      )}
-      {state.phase === "shop-target" && (
-        <ShopTargetSelect state={state} onCard={shopTargetCard} onColor={shopTargetColor}
-          onSegment={shopTargetSegment} onPosition={shopTargetPosition} onCategory={shopTargetCategory} onOffer={shopTargetOffer}
-          onConfirm={shopTargetConfirm} onCancel={shopTargetCancel} />
+      {state.phase === "architect" && (
+        <ArchitectScreen state={state} onBuild={architectBuild} onUpgrade={architectUpgrade}
+          onMove={architectMove} onDemolish={architectDemolish} onDone={architectDone} />
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />
@@ -522,10 +585,22 @@ export function Autostich() {
         <OptionsModal options={options} onChange={changeOptions} onClose={() => setShowOptions(false)} />
       )}
 
-      {showStats && <StatsScreen onClose={() => setShowStats(false)} />}
+      {showStats && <StatsScreen onClose={() => setShowStats(false)} onPlaySeed={(seed) => { setShowStats(false); startRun(seed); }} />}
 
       {showCustomize && (
         <CustomizeScreen options={options} profile={profile} onChoose={changeOptions} onClose={() => setShowCustomize(false)} />
+      )}
+
+      {showLeaderboard && (
+        <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best}
+          onPlaySeed={(seed) => { setShowLeaderboard(false); startRun(seed); }}
+          onClose={() => setShowLeaderboard(false)} />
+      )}
+
+      {showMasterSelect && (
+        <MasterRunSelect profile={profile}
+          onPlay={(grade) => { setShowMasterSelect(false); startMasterRun(grade); }}
+          onClose={() => setShowMasterSelect(false)} />
       )}
 
       {/* #190: Vorlade-Balken beim Run-Start — lädt die aktiven Skins, dann startet der Lauf wirklich. */}

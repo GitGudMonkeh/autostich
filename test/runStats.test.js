@@ -5,20 +5,24 @@ import {
 } from "../src/game/runStats.js";
 
 // Kompakter Lauf-Record-Builder — nur die Felder, die die Aggregation liest.
-const run = (o = {}) => ({ score: 0, formationScore: 0, critBonusScore: 0, bestStreak: 0, crits: 0, perks: [], skills: [], archetypes: [], ...o });
+const run = (o = {}) => ({ score: 0, formationScore: 0, critBonusScore: 0, buildingScore: 0, bestStreak: 0, crits: 0, perks: [], skills: [], archetypes: [], ...o });
 
 describe("scoreOrigin", () => {
   it("zerlegt in Formationen/Crits/Übrige und deckelt am Score", () => {
     expect(scoreOrigin(run({ score: 1000, formationScore: 400, critBonusScore: 300 })))
-      .toEqual({ formations: 400, crits: 300, rest: 300, total: 1000 });
+      .toEqual({ formations: 400, crits: 300, buildings: 0, rest: 300, total: 1000 });
   });
   it("wird nie negativ, wenn Teil-Scores > Gesamt (Alt-/Rundungsdaten)", () => {
     const o = scoreOrigin(run({ score: 500, formationScore: 400, critBonusScore: 300 }));
-    expect(o.formations + o.crits + o.rest).toBe(500);
+    expect(o.formations + o.crits + o.buildings + o.rest).toBe(500);
     expect(o.rest).toBeGreaterThanOrEqual(0);
   });
   it("fehlende Felder → 0", () => {
-    expect(scoreOrigin({ score: 200 })).toEqual({ formations: 0, crits: 0, rest: 200, total: 200 });
+    expect(scoreOrigin({ score: 200 })).toEqual({ formations: 0, crits: 0, buildings: 0, rest: 200, total: 200 });
+  });
+  it("attribuiert Gebäude-Score (#UI) und deckelt am Rest", () => {
+    expect(scoreOrigin(run({ score: 1000, formationScore: 200, critBonusScore: 100, buildingScore: 300 })))
+      .toEqual({ formations: 200, crits: 100, buildings: 300, rest: 400, total: 1000 });
   });
 });
 
@@ -29,10 +33,10 @@ describe("avgScoreOrigin", () => {
     expect(a.formations).toBe(250);
     expect(a.crits).toBe(250);
     expect(a.rest).toBe(500);
-    expect(a.shares.formations + a.shares.crits + a.shares.rest).toBeCloseTo(1, 6);
+    expect(a.shares.formations + a.shares.crits + a.shares.buildings + a.shares.rest).toBeCloseTo(1, 6);
   });
   it("leere Historie → Nullen ohne Division durch 0", () => {
-    expect(avgScoreOrigin([])).toEqual({ formations: 0, crits: 0, rest: 0, total: 0, shares: { formations: 0, crits: 0, rest: 0 } });
+    expect(avgScoreOrigin([])).toEqual({ formations: 0, crits: 0, buildings: 0, rest: 0, total: 0, shares: { formations: 0, crits: 0, buildings: 0, rest: 0 } });
   });
 });
 

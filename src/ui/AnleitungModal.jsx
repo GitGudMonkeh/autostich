@@ -1,10 +1,11 @@
 import { useEscape } from "./useEscape.js";
+import { MAX_CYCLES } from "../game/constants.js";
 
 /* Schnellstart-Anleitung (#12): erklärt den grundsätzlichen Spielablauf.
    Erreichbar über den Startbildschirm; beim allerersten Start einmal automatisch. */
 const ITEMS = [
   ["🃏", "Automatisches Stechspiel", "Beide Seiten decken je eine Karte auf — die höhere Karte gewinnt den Stich. Du spielst keine Karte selbst."],
-  ["🏆", "Ziel: maximaler Score", "Ein Lauf geht über genau 44 Deck-Durchläufe. Sammle so viel Score wie möglich; Bestscore und Geist laufen über den Score."],
+  ["🏆", "Ziel: maximaler Score", `Ein Lauf geht über genau ${MAX_CYCLES} Deck-Durchläufe. Sammle so viel Score wie möglich; Bestscore und Geist laufen über den Score.`],
   ["⚔️", "Sieg · Niederlage · Gleichstand", "Sieg → +Score (× deine Multiplikatoren). Niederlage → kein Score, und die Siegesserie reißt. Gleichstand → nichts passiert."],
   ["✨", "Entscheidung vor jedem Durchlauf", "Reihum wählst du einen Stat, einen Perk, die Deck-Aufstellung oder einen Skill — dein Build wird dauerhaft stärker."],
   ["🧩", "Formationen & Aufstellung", "In der Formationsphase ordnest du dein Deck an: benachbarte Karten bilden Formationen (Wiederholung/Farbblock/Treppe/Wechsel) und geben bei Sieg Score-Multiplikatoren."],

@@ -4,17 +4,17 @@ import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, build
   offerArchetypes, archetypesWithSkills, decodeArchetypes,
   ionScoreFor, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasProtect, hasStorm, chargeFloorFor } from "../src/game/skills.js";
-import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE } from "../src/game/constants.js";
+import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, MAX_ARCHETYPES } from "../src/game/constants.js";
 
 const LR = "SK_LIGHTNING_01";
 const ALL = Object.keys(SKILL_DEFS);
 const active = (over = {}) => ({ active: true, charge: 0, maxCharge: LIGHTNING_MAX_CHARGE, ...over });
 
 describe("skills — Blitz-Registry", () => {
-  it("Blitzableiter: Hooks (critChance/chargeOnCrit/scoreFlatOnCrit) + archetype", () => {
+  it("Blitzableiter: Hooks (critChance/chargeOnCrit) + archetype (scoreFlatOnCrit im Rework gestrippt)", () => {
     expect(SKILL_DEFS[LR].critChance()).toBeCloseTo(LIGHTNING_CRIT_PER_SKILL);
     expect(SKILL_DEFS[LR].chargeOnCrit()).toBe(1);
-    expect(SKILL_DEFS[LR].scoreFlatOnCrit()).toBe(50);
+    expect(SKILL_DEFS[LR].scoreFlatOnCrit).toBeUndefined();
     expect(archetypeOf(LR)).toBe("lightning");
   });
   it("skillSum summiert einen Hook über die gehaltenen Skills (fehlender Hook → 0)", () => {
@@ -51,28 +51,37 @@ describe("addCharge — gedeckelt & immutabel", () => {
   });
 });
 
-describe("archetypesWithSkills / offerArchetypes (Prototyp: alle 3 Archetypen)", () => {
-  it("F3: lightning, fire & ice haben Skills; alles owned → keiner", () => {
-    expect(archetypesWithSkills([])).toEqual(["lightning", "fire", "ice"]); // Reihenfolge = ARCHETYPE_ORDER
+describe("archetypesWithSkills / offerArchetypes (4 Archetypen, Cap = MAX_ARCHETYPES)", () => {
+  const ALL4 = ["lightning", "fire", "ice", "plant"];
+  it("F3: alle vier Fraktionen haben Skills; alles owned → keiner", () => {
+    expect(archetypesWithSkills([])).toEqual(ALL4); // Reihenfolge = ARCHETYPE_ORDER (4. Fraktion Pflanze)
     expect(archetypesWithSkills(ALL)).toEqual([]);
   });
-  it("0 aktiv → ALLE verfügbaren Archetypen (Prototyp: Cap 3)", () => {
-    expect(offerArchetypes([], ["lightning"], makeRng(3))).toEqual(["lightning"]);           // nur 1 verfügbar
-    expect(offerArchetypes([], ["lightning", "fire", "ice"], makeRng(3))).toHaveLength(3);   // alle 3
+  it("0 aktiv → ALLE verfügbaren Archetypen (bis MAX_ARCHETYPES = 4)", () => {
+    expect(offerArchetypes([], ["lightning"], makeRng(3))).toEqual(["lightning"]); // nur 1 verfügbar
+    expect(new Set(offerArchetypes([], ALL4, makeRng(3)))).toEqual(new Set(ALL4)); // alle 4 → 3+3+3+3
   });
-  it("1 aktiv → aktiver + alle übrigen verfügbaren", () => {
-    const r = offerArchetypes(["lightning"], ["lightning", "fire", "ice"], makeRng(3));
-    expect(r).toContain("lightning");
-    expect(r).toHaveLength(3);
-    expect(new Set(r)).toEqual(new Set(["lightning", "fire", "ice"]));
+  it("Cap: nie mehr als MAX_ARCHETYPES, auch bei mehr verfügbaren (synthetisch)", () => {
+    expect(MAX_ARCHETYPES).toBe(4); // Live-Default (ENV SIM_MAX_ARCHETYPES übersteuerbar)
+    const many = ["a", "b", "c", "d", "e", "f"]; // 6 synthetische Archetypen > Cap
+    expect(offerArchetypes([], many, makeRng(3))).toHaveLength(MAX_ARCHETYPES);
+    expect(offerArchetypes(["a", "b", "c", "d", "e"], many, makeRng(3))).toHaveLength(MAX_ARCHETYPES); // 5 aktiv → auf 4 gekappt
   });
-  it("2 aktiv → beide aktiven + der dritte (kein Cap mehr bei 2)", () => {
-    expect(new Set(offerArchetypes(["lightning", "fire"], ["lightning", "fire", "ice"], makeRng(3))))
-      .toEqual(new Set(["lightning", "fire", "ice"]));
+  it("1–3 aktiv → aktive + zufällige übrige, aufgefüllt bis 4", () => {
+    const r1 = offerArchetypes(["lightning"], ALL4, makeRng(3));
+    expect(r1).toContain("lightning");
+    expect(new Set(r1)).toEqual(new Set(ALL4)); // 1 aktiv → alle 4
+    const r3 = offerArchetypes(["lightning", "fire", "ice"], ALL4, makeRng(3));
+    expect(new Set(r3)).toEqual(new Set(ALL4)); // 3 aktiv → +Pflanze = alle 4
+  });
+  it("4 aktiv → genau die vier aktiven (keine neue Fraktion mehr)", () => {
+    expect(new Set(offerArchetypes(ALL4, ALL4, makeRng(3)))).toEqual(new Set(ALL4));
+    // nur VERFÜGBARE aktive zählen: aktiv+erschöpft (alles owned) fällt raus
+    expect(offerArchetypes(["lightning", "fire"], ["fire"], makeRng(3))).toEqual(["fire"]);
   });
 });
 
-describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
+describe("buildSkillOffer (3+3+3+3 über alle 4 Archetypen)", () => {
   it("liefert count distinkte, nicht-gehaltene Skills, deterministisch bei festem Seed", () => {
     const off = buildSkillOffer([], [], makeRng(1), 6);
     expect(off).toEqual(buildSkillOffer([], [], makeRng(1), 6));
@@ -80,19 +89,11 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
     expect(new Set(off).size).toBe(6);
     expect(off.every((id) => SKILL_DEFS[id])).toBe(true);
     const archs = new Set(off.map(archetypeOf));
-    expect(archs).toEqual(new Set(["lightning", "fire", "ice"])); // alle 3 vertreten (2 je Archetyp)
+    expect(archs.size).toBe(4); // MAX_ARCHETYPES = 4 → alle 4 Archetypen vertreten (count 6 / 4 = je 1 + 2 Fill)
+    for (const a of archs) expect(["lightning", "fire", "ice", "plant"]).toContain(a);
     // #156: verschiedene Seeds → (meist) verschiedenes Angebot — der Seed treibt die Auswahl wirklich.
     const offers = Array.from({ length: 8 }, (_, s) => buildSkillOffer([], [], makeRng(s + 1), 6).join(","));
     expect(new Set(offers).size).toBeGreaterThan(1);
-  });
-  it("Test-Experiment: count 9 → genau 3 pro Archetyp (3+3+3)", () => {
-    for (let seed = 1; seed <= 12; seed++) {
-      const off = buildSkillOffer([], [], makeRng(seed), 9);
-      expect(off).toHaveLength(9);
-      const perArch = {};
-      for (const id of off) perArch[archetypeOf(id)] = (perArch[archetypeOf(id)] || 0) + 1;
-      expect(perArch).toEqual({ lightning: 3, fire: 3, ice: 3 });
-    }
   });
   it("bereits gehaltene werden nicht erneut angeboten; leerer Pool → []", () => {
     expect(buildSkillOffer([LR], [], makeRng(1), 4)).not.toContain(LR);
@@ -112,14 +113,16 @@ describe("buildSkillOffer (Prototyp: 2+2+2 über alle 3 Archetypen)", () => {
     for (let seed = 1; seed <= 40; seed++)
       expect(buildSkillOffer([], [], makeRng(seed), 6, 0.5).filter((id) => SKILL_DEFS[id].legendary).length).toBeLessThanOrEqual(1);
   });
-  it("Legendär-Roll erhält die 2+2+2-Archetyp-Balance (#129)", () => {
+  it("Legendär-Roll erhält die 3+3+3+3-Archetyp-Balance (#129)", () => {
     for (let seed = 1; seed <= 40; seed++) {
-      const off = buildSkillOffer([], [], makeRng(seed), 6, 1); // erzwungener Legendär (Chance 1)
-      expect(off).toHaveLength(6);
-      const byArch = { lightning: 0, fire: 0, ice: 0 };
-      for (const id of off) byArch[archetypeOf(id)]++;
-      // Jeder Archetyp genau 2 (einer davon legendär) — der Legendär ersetzt einen normalen Skill SEINES Archetyps.
-      expect(byArch).toEqual({ lightning: 2, fire: 2, ice: 2 });
+      const off = buildSkillOffer([], [], makeRng(seed), 12, 1); // erzwungener Legendär (Chance 1)
+      expect(off).toHaveLength(12);
+      const byArch = {};
+      for (const id of off) byArch[archetypeOf(id)] = (byArch[archetypeOf(id)] || 0) + 1;
+      // Alle 4 Archetypen, je 3 (einer davon legendär, ersetzt einen normalen SEINES Archetyps).
+      const counts = Object.values(byArch);
+      expect(counts).toHaveLength(4);
+      expect(counts.every((c) => c === 3)).toBe(true);
     }
   });
   it("bietet NIE einen gehaltenen Skill an und nie ein Duplikat (Invariante, #118)", () => {
@@ -160,6 +163,13 @@ describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", (
     ).some((off) => !off.some(isChargeConsumer));
     expect(anyClean).toBe(true);
   });
+  it("#223 Kontrolle Feuer: hält man einen Hitze-Konsumenten → KEINER erzwungen (symmetrisch zu Blitz)", () => {
+    // Flächenbrand (Hitze-Konsument) gehalten → über viele Seeds gibt es mind. ein Angebot ganz OHNE Hitze-Konsument.
+    const anyClean = Array.from({ length: 30 }, (_, s) =>
+      buildSkillOffer(["SK_FIRE_11"], ["fire"], makeRng(s + 1), 6)
+    ).some((off) => !off.some(isFireConsumer));
+    expect(anyClean).toBe(true);
+  });
   it("Erst-Angebot (leeres activeArchetypes) bleibt deterministisch — kein rng-Drift", () => {
     expect(buildSkillOffer([], [], makeRng(1), 6)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
   });
@@ -169,15 +179,29 @@ describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", (
     for (let seed = 1; seed <= 40; seed++)
       expect(buildSkillOffer([], [], makeRng(seed), 6).some(isConsumer)).toBe(true);
   });
-  it("#191 Erst-Angebot: Konsument-Garantie hält auch bei erzwungenem Legendär-Roll + 2+2+2-Balance", () => {
+  // #223: das Erst-Angebot enthält IMMER alle 4 Archetypen → JEDER Konsumenten-Archetyp (Feuer & Blitz) muss seinen
+  // Konsumenten zeigen, nicht nur der erste in chosen-Reihenfolge — sonst „verpufft" der Blitz-Ladungsaufbau ohne
+  // sichtbaren Blitz-Konsumenten (Nutzer-Befund). Gilt bei count 6 (je 1 + Fill) wie 12 (3+3+3+3) und mit Legendär-Roll.
+  it("#223 Erst-Angebot garantiert BEIDE Konsumenten-Archetypen — Feuer UND Blitz", () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const [count, chance] of [[6, 0], [12, 0], [12, 1]]) {
+        const off = buildSkillOffer([], [], makeRng(seed), count, chance);
+        expect(off.some(isFireConsumer)).toBe(true);
+        expect(off.some(isChargeConsumer)).toBe(true);
+      }
+    }
+  });
+  it("#191 Erst-Angebot: Konsument-Garantie hält auch bei erzwungenem Legendär-Roll + 3+3+3+3-Balance", () => {
     const isConsumer = (id) => isFireConsumer(id) || isChargeConsumer(id);
     for (let seed = 1; seed <= 40; seed++) {
-      const off = buildSkillOffer([], [], makeRng(seed), 6, 1); // Legendär erzwungen
+      const off = buildSkillOffer([], [], makeRng(seed), 12, 1); // Legendär erzwungen
       expect(off.some(isConsumer)).toBe(true);
-      expect(off).toHaveLength(6);
-      const byArch = { lightning: 0, fire: 0, ice: 0 };
-      for (const id of off) byArch[archetypeOf(id)]++;
-      expect(byArch).toEqual({ lightning: 2, fire: 2, ice: 2 });
+      expect(off).toHaveLength(12);
+      const byArch = {};
+      for (const id of off) byArch[archetypeOf(id)] = (byArch[archetypeOf(id)] || 0) + 1;
+      const counts = Object.values(byArch);
+      expect(counts).toHaveLength(4); // alle 4 Archetypen, je 3
+      expect(counts.every((c) => c === 3)).toBe(true);
     }
   });
 });

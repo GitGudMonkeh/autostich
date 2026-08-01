@@ -11,13 +11,17 @@ import { fmtScore } from "./format.js";
    Graceful degradation: `entry`-Felder sind alle optional. Fehlt eine Zahl (Alt-Eintrag / pre-Migration), zeigt
    die Kachel „–"; leere Perk-/Skill-Listen blenden ihren Block aus. `perks`/`skills` sind ID-Arrays. */
 const num = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : null);
-export function RunStats({ entry = {} }) {
+// #205 Anti-Copy: `anonymized` (fremder Board-Eintrag) blendet die Perk-/Skill-Chips aus — man sieht Kennzahlen
+// + Archetyp-Icons + Score/Seed, aber NICHT die konkreten Perks/Skills (kein 1:1-Nachbauen fremder Runs).
+// Eigene/lokale Läufe (anonymized=false, Default) bleiben voll aufgeschlüsselt (Selbst-Review).
+export function RunStats({ entry = {}, anonymized = false }) {
   // null = unbekannt (Alt-Eintrag ohne die Spalte) → „–"; [] = bekannt leer → „0".
   const perks = Array.isArray(entry.perks) ? entry.perks : null;
   const skills = Array.isArray(entry.skills) ? entry.skills : null;
   const bestStreak = num(entry.bestStreak);
   const maxFormations = num(entry.maxFormations);
   const formationScore = num(entry.formationScore);
+  const buildingScore = num(entry.buildingScore); // #UI: Score-Anteil aus Architekt-Gebäuden
   const crits = num(entry.crits);
   const wins = num(entry.wins);
   const critBonusScore = num(entry.critBonusScore);
@@ -38,11 +42,12 @@ export function RunStats({ entry = {} }) {
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-2 text-center text-sm">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center text-sm">
         {cell("Beste Serie", bestStreak == null ? null : `${bestStreak}×`)}
         {cell("Perks", perks == null ? null : perks.length)}
         {cell("Formationen", maxFormations, "Maximal gleichzeitig aktive Formationen im Run", "#5ab87a")}
         {cell("Form.-Score", formationScore == null ? null : fmtScore(formationScore), "Score-Anteil aus Formations-Multiplikatoren", "#5ab87a")}
+        {cell("Geb.-Score", buildingScore == null ? null : fmtScore(buildingScore), "Score-Anteil aus Architekt-Gebäuden (Struktur/Schatzkammer/Handelsbauten)", "#5a8ade")}
       </div>
 
       {bestTrickScore != null && bestTrickScore > 0 && (
@@ -54,7 +59,7 @@ export function RunStats({ entry = {} }) {
         </div>
       )}
 
-      {((perks && perks.length > 0) || (skills && skills.length > 0)) && (
+      {!anonymized && ((perks && perks.length > 0) || (skills && skills.length > 0)) && (
         <div className="mt-4">
           {perks && perks.length > 0 && (
             <div className="flex flex-wrap gap-1.5 justify-center">

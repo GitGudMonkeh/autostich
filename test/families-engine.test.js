@@ -486,20 +486,6 @@ describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien
     expect(s.lastTrick.breakdown.flats).toBeCloseTo(0); // nur 2 Segment-Siege davor → kein Full-House (früher: +650 Leck)
   });
 
-  it("D_FULL_HOUSE #195: Gate nutzt die Deckposition, nicht den Stich-Index (partielles Zeitsegment)", () => {
-    // Zeitsegment 0, Tiefe 1 (Stufe I): die letzte Segment-0-Karte (Deckpos 4) wird einmal wiederholt →
-    // seq = [0,1,2,3,4, 4, 5,6,7,8,9,…]. Ab da divergiert der Stich-Index (pos) um 1 von der Deckposition (actualPos).
-    // Deckpos 9 (5. Karte von Segment 1) liegt bei Stich-Index 10: alt (pos%5===0) hätte NICHT ausgelöst; korrekt
-    // zählt die Deckposition (actualPos%5===4) → D_FULL_HOUSE I feuert am 5. Segment-Sieg (+500).
-    let s = scenario(0, 0, {
-      familyTiers: { D_FULL_HOUSE: 1 }, deck: flatDeck(), oppDeck: constDeck(0),
-      shop: { ...initialShop(), timeSegmentIndex: 0, timeSegmentTier: 1 },
-    });
-    for (let i = 0; i < 11; i++) s = resolveTrick(s, never); // bis Stich-Index 10 = Deckposition 9
-    expect(s.lastTrick.originalPosition).toBe(9);
-    expect(s.lastTrick.result).toBe("win");
-    expect(s.lastTrick.breakdown.flats).toBeCloseTo(500); // 5. Segment-Sieg → Volles Haus I (alt: 0, Gate am falschen Stich)
-  });
 });
 
 describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt 3)", () => {
@@ -556,8 +542,8 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
 
   it("besessene flache Perks werden nicht erneut angeboten (Legendäre — alle regulären Perks sind Familien)", () => {
     for (let seed = 0; seed < 30; seed++) {
-      const off = buildPerkOffer(["L1", "L2"], {}, rngS(seed), 3, 1); // Legendär-Wurf aktiv, aber L1/L2 besessen
-      expect(off).not.toContain("L1");
+      const off = buildPerkOffer(["L_UMV", "L2"], {}, rngS(seed), 3, 1); // Legendär-Wurf aktiv, aber L_UMV/L2 besessen
+      expect(off).not.toContain("L_UMV");
       expect(off).not.toContain("L2");
     }
   });

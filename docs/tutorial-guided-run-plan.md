@@ -1,13 +1,13 @@
 # Autostich — Tutorial / Guided Run (Durchplanung)
 
 > **Status:** Reine **Durchplanung** — kein Code. Nordstern-Doc für das Feature „Tutorial-Button mit geführtem Run".
-> **Idee (Nutzer):** Ein **Tutorial-Button** startet einen **geführten Run**, der einem alles erklärt. **Vor jeder Phase** erscheint ein **Pop-up mit den Charakteren (Maskottchen)**, das erklärt, was man in der Phase macht, und **kurz die Panels erklärt**.
+> **Idee (Nutzer):** Ein **Tutorial-Button** startet einen **geführten Run**, der einem alles erklärt. **Vor jeder Phase** erscheint ein **Erklär-Pop-up**, das erklärt, was man in der Phase macht, und **kurz die Panels erklärt**.
 
 ---
 
 ## 1. Ziel & Abgrenzung
 
-- **Ziel:** Neue Spieler lernen den kompletten Loop nicht aus einem Textblock, sondern **im echten Spiel**, Schritt für Schritt, mit den Maskottchen als „Lehrern".
+- **Ziel:** Neue Spieler lernen den kompletten Loop nicht aus einem Textblock, sondern **im echten Spiel**, Schritt für Schritt, mit kurzen Erklär-Pop-ups als „Lehrern".
 - **Abgrenzung zur bestehenden `AnleitungModal` (#12):** Die ist ein **statischer** 6-Kachel-Schnellstart. Das Tutorial ist **interaktiv** (geführter Run). Beide können koexistieren: Anleitung = „nachlesen", Tutorial = „machen". (Entscheidung §12.)
 - **Keine `game/`-Änderung nötig:** Das Tutorial ist **reine UI/Overlay-Logik**. Der geführte Run ist ein normaler Run — nur mit festem Seed + Erklär-Overlay obendrauf. Der pure, deterministische `game/`-Layer bleibt unangetastet.
 
@@ -17,7 +17,7 @@
 
 Zwei Erklär-Ebenen, genau wie vom Nutzer beschrieben:
 
-1. **Phasen-Intro-Pop-up (blockierend):** Beim **ersten** Betreten jeder Phase erscheint ein Pop-up mit dem **Phasen-Maskottchen** + kurzer Erklärung „was mache ich hier". Bestätigen mit „Verstanden/Weiter".
+1. **Phasen-Intro-Pop-up (blockierend):** Beim **ersten** Betreten jeder Phase erscheint ein Pop-up mit kurzer Erklärung „was mache ich hier". Bestätigen mit „Verstanden/Weiter".
 2. **Panel-Coach-Marks (kurz):** Direkt danach werden **die relevanten Panels der Phase** kurz erklärt — Spotlight/Marker auf ein Panel + ein Satz. Steppbar (Weiter) oder auf einmal.
 
 **Ablauf-Prinzip:** Die Pop-ups feuern beim **ersten Auftreten** jeder Phasenart (nicht in jedem Durchlauf). Sobald alle Phasenarten einmal erklärt wurden, verschwindet das Overlay und der Run läuft normal weiter (der Spieler kann ihn zu Ende spielen oder aufgeben).
@@ -35,21 +35,19 @@ Zwei Erklär-Ebenen, genau wie vom Nutzer beschrieben:
 
 ---
 
-## 4. Phasen-Abdeckung & Charaktere
+## 4. Phasen-Abdeckung
 
-| Reihenfolge | Phase (State) | Maskottchen (Host) | „Was mache ich hier" (Kern) |
-|---|---|---|---|
-| 0 | Run-Start / `play` | Gruppenbild / Default | Ziel: **maximaler Score** über 44 Durchläufe, kein Leben/Tod. Der Autobattler spielt von selbst. |
-| 1 | Kampf (`play`) | — (Battlefield) | Höhere Karte gewinnt, Gleichstand zählt nicht. Serie & Score wachsen. |
-| 2 | Stat (`levelup`/`statOffer`) | `stat.gif` | Einen von fünf Stats dauerhaft wählen (Crit-Chance/-Mult, Formation, Serie, Einkommen). |
-| 3 | Perk (`levelup`/`offer`) | `perk.gif` | Einen von 3 Perks (A–E + Legendär), einmal pro Lauf; alle ablehnen → Münze. |
-| 4 | Formation (`formation`) | `formation.gif` | Deck-Aufstellung: Karten tauschen (Energie), Formationen bauen (multiplizieren Score). |
-| 5 | Shop (`shop`) | `shop.gif` | Münzen ausgeben: Karten/Anker/Formationen/Planung, Preisstufen, Ziel-Auswahl. |
-| 6 | Skill (`levelup`/`skillOffer`) | `skill.gif` | Archetyp-Skills (⚡Blitz/🔥Feuer/❄️Eis), 4 Slots; erster Skill aktiviert den Archetyp. |
-| 7 | Ziel-Auswahl (`target`/`shop-target`) | passend | Wenn ein Perk/Item Karten braucht: N Karten antippen. |
-| 8 | Game Over | Gruppenbild | Score, Aufschlüsselung, Build lesen. |
-
-(Die Maskottchen sind schon da: `src/assets/mascots/{stat,perk,formation,shop,skill}.gif` + `logo-group.png`, heute via `PanelMascot.jsx` genutzt.)
+| Reihenfolge | Phase (State) | „Was mache ich hier" (Kern) |
+|---|---|---|
+| 0 | Run-Start / `play` | Ziel: **maximaler Score** über 44 Durchläufe, kein Leben/Tod. Der Autobattler spielt von selbst. |
+| 1 | Kampf (`play`) | Höhere Karte gewinnt, Gleichstand zählt nicht. Serie & Score wachsen. |
+| 2 | Stat (`levelup`/`statOffer`) | Einen von fünf Stats dauerhaft wählen (Crit-Chance/-Mult, Formation, Serie, Einkommen). |
+| 3 | Perk (`levelup`/`offer`) | Einen von 3 Perks (A–E + Legendär), einmal pro Lauf; alle ablehnen → Münze. |
+| 4 | Formation (`formation`) | Deck-Aufstellung: Karten tauschen (Energie), Formationen bauen (multiplizieren Score). |
+| 5 | Shop (`shop`) | Münzen ausgeben: Karten/Anker/Formationen/Planung, Preisstufen, Ziel-Auswahl. |
+| 6 | Skill (`levelup`/`skillOffer`) | Archetyp-Skills (⚡Blitz/🔥Feuer/❄️Eis), 4 Slots; erster Skill aktiviert den Archetyp. |
+| 7 | Ziel-Auswahl (`target`/`shop-target`) | Wenn ein Perk/Item Karten braucht: N Karten antippen. |
+| 8 | Game Over | Score, Aufschlüsselung, Build lesen. |
 
 ---
 
@@ -75,7 +73,6 @@ Der gesamte Text lebt in **einem** Modul (`src/ui/tutorial/tutorialScript.js`), 
 {
   id: "phase-shop",
   trigger: { phase: "shop", firstOnly: true },   // feuert beim ersten Shop
-  mascot: "shop",                                  // Host-Maskottchen
   title: "Der Shop",
   body: "Hier gibst du deine Münzen aus …",
   coachmarks: [
@@ -98,7 +95,7 @@ Alles **UI-Layer**, kein `game/`-Eingriff:
 
 - **Neu:**
   - `src/ui/tutorial/tutorialScript.js` — Inhalte (Daten).
-  - `src/ui/tutorial/TutorialOverlay.jsx` — Maskottchen-Pop-up + Coach-Mark-Spotlight + Fortschritt/Skip.
+  - `src/ui/tutorial/TutorialOverlay.jsx` — Erklär-Pop-up + Coach-Mark-Spotlight + Fortschritt/Skip.
   - `src/ui/tutorial/useTutorial.js` — State-Maschine: beobachtet `state.phase` (+ abgeleitete Entscheidungsart), zeigt den passenden Step beim **ersten** Auftreten, merkt gezeigte Steps.
   - `TUTORIAL_SEED` (Konstante) + `as_tutorial_done` (Persistenz).
 - **Geändert (minimal):**
@@ -128,7 +125,7 @@ Alles **UI-Layer**, kein `game/`-Eingriff:
 
 - **Skip:** pro Step „Überspringen" + global „Tutorial beenden" (setzt `as_tutorial_done`).
 - **Fortschritt:** kleine Anzeige „Schritt 3/8".
-- **Mobil:** Pop-up als Bottom-Sheet; Coach-Mark-Marker repositionieren; Maskottchen kleiner (hängt an **FB-9**). `data-tut`-Anker müssen im Scroll-Container gefunden werden.
+- **Mobil:** Pop-up als Bottom-Sheet; Coach-Mark-Marker repositionieren. `data-tut`-Anker müssen im Scroll-Container gefunden werden.
 - **`prefers-reduced-motion`:** Spotlight-Animation aus (wie beim übrigen „Juice").
 - **Nicht nerven:** Pop-ups nur beim **ersten** Auftreten; kurze Texte; jederzeit wegklickbar.
 
@@ -139,7 +136,7 @@ Alles **UI-Layer**, kein `game/`-Eingriff:
 Jede Welle lauffähig, Spiel bleibt spielbar:
 
 - **W0 — Gerüst:** `tutorialActive`-Flag, geseedeter `START_RUN`, `TutorialOverlay`-Skelett, Step-Engine an `state.phase`, Persistenz, StartScreen-Button.
-- **W1 — Phasen-Pop-up:** Maskottchen-Bubble je Phase + Weiter/Skip + Fortschritt.
+- **W1 — Phasen-Pop-up:** Erklär-Bubble je Phase + Weiter/Skip + Fortschritt.
 - **W2 — Coach-Marks:** Spotlight/Marker-System + `data-tut`-Anker auf allen Panels; Panel-Erklärungen.
 - **W3 — Inhalte:** alle Phasentexte final; Seed per Sim wählen (schöner Demo-Verlauf).
 - **W4 — Politur:** Bottom-Sheet/Mobil, reduced-motion, Wiederholung, Erststart-Integration mit `AnleitungModal`, Text-Feinschliff.
@@ -153,7 +150,7 @@ Jede Welle lauffähig, Spiel bleibt spielbar:
 3. **Tutorial-Ende:** Nach allen erklärten Phasen den Run **normal weiterlaufen** lassen (empfohlen) oder mit „Du bist bereit!"-Screen früh beenden?
 4. **Erststart:** Tutorial die auto-öffnende `AnleitungModal` **ersetzen** lassen, oder beide anbieten (empfohlen: beide)?
 5. **Tiefe:** Sub-Phasen (Ziel-Auswahl, Game Over) auch mit Coach-Marks, oder nur die 5 Hauptphasen + Kampf?
-6. **Text/Stimme:** haben die Maskottchen eigene „Stimmen"/Namen? Wer schreibt die finale Copy?
+6. **Text/Stimme:** Tonfall der Erklärtexte — wer schreibt die finale Copy?
 
 ---
 
@@ -161,5 +158,5 @@ Jede Welle lauffähig, Spiel bleibt spielbar:
 
 - **Umfang:** mittel-groß, ~4 Wellen. **Kein Spiellogik-Risiko** (UI-only, `game/` unangetastet).
 - **Hauptrisiko:** responsives Ankern der Coach-Marks (Scroll/Mobil) + „nicht nervig" halten (Skip/Kürze).
-- **Synergien:** nutzt bestehende Maskottchen + `PanelMascot`; berührt **FB-9** (Mobil-Maskottchen); kann Texte aus `AnleitungModal` recyceln.
+- **Synergien:** kann Texte aus `AnleitungModal` recyceln.
 ```

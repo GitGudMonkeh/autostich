@@ -18,9 +18,11 @@
    E3 Treppe darf 1× gleich · E4 Treppe darf 1× Rückschritt · E5 Wechsel schon ab 2 Karten ·
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
-import { PERMAFROST_VALUE, EISANKER_FACTOR, CRYSTAL_OFFSET, ICE_STEP_OFFSET, CRYSTAL_FORM_BONUS, ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR } from "./constants.js";
-import { iceFlag, hasPermafrost, hasIceAnchor } from "./skills.js";
+import { EISANKER_FACTOR, CRYSTAL_OFFSET, ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR,
+  UEBERWUCHERUNG_FIELD, UEBERWUCHERUNG_FACTOR, EWIGER_FRUEHLING_FARBBLOCK, EWIGER_FRUEHLING_FIELD, PLANT_GREEN_FARBBLOCK_CAP } from "./constants.js";
+import { iceFlag, hasIceAnchor, hasEwigerFruehling, hasUeberwucherung, greenCount } from "./skills.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
+import { architectFormSpec } from "./architect.js";
 
 export const SEGMENT_SIZE = 5;
 
@@ -189,22 +191,23 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
    `familyTiers` = Familienrang je Familie (#167, u. a. E-Formationswerkzeuge). `perks` wird nicht mehr gelesen
    (E1–E9 sind zu Familien migriert) — Parameter bleibt für die Aufrufer-Signatur. Der frühere `pe`-Parameter
    (shop.permanentEffects) entfiel #179 vollständig: Formations-Regeln laufen jetzt ausschließlich über familyTiers/roles. */
-export function computeFormations(order, deck, roles = {}, perks = [], skills = [], anchors = [], familyTiers = {}) {
+export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
+  // ---- Architekt (#202, Shop-Ersatz): formation-Gebäude biegen die Erkennung für abgedeckte Positionen (Joker /
+  //      Farbblock-Transparenz / Bindeglied / Segmentgrenze / Anker / Formations-Mult). null = kein Architekt aktiv. ----
+  const af = architect ? architectFormSpec(architect, order, deck) : null;
   // ---- Formations-Familien (#179): früher Shop-Kategorie „Formationen", jetzt Perk-Kat.-E-Familien (familyTiers). Ihre
   //      Parameter liest der eP()-Block unten (E_STRONG_REP/E_AFTERGLOW/E_CORE) bzw. roles (E_COLOR_ALLIANCE/E_CORE).
   //      Die drei Duplikat-Familien (Enger Wechsel/Abstieg/Offene Grenze) entfielen ersatzlos → E_PENDULUM/E_BIGSTEP/
   //      E_SEGMENT decken sie ab. `pe` (ehem. shop.permanentEffects) wird nicht mehr gelesen (vestigial in der Signatur). ----
-  // ---- Eis-Wildcards (#93 F3): nur auf eingefrorenen Karten, wenn der jeweilige Eis-Skill gehalten wird. ----
+  // ---- Eis-Rework (v0): Formations-Wildcards nur auf eingefrorenen Karten. Kristallform = Joker (±CRYSTAL_OFFSET Wert-Flex + [#230 N12: war „±2", ist 1]
+  //      Vorgängerwert für Wiederholung/Treppe/Wechsel — merge Kalte Präzision/Eisschritt/alt-Kristallform);
+  //      Frostbrücke = Segment-Brücke. Schicht-DAUERWERT wirkt im KAMPF (engine.js), nicht in der Erkennung (v0). ----
   const frozen = cards.map((c) => !!c.frozen);
-  const permafrost = hasPermafrost(skills);
-  const wildCrystal = iceFlag(skills, "wildCrystal");       // Kristallform: ±1 für Wiederholung/Treppe
-  const wildPred = iceFlag(skills, "wildWiederholungPred"); // Kalte Präzision: Wiederholung = Wert des Vorgängers
-  const wildStep = iceFlag(skills, "wildTreppeStep");       // Eisschritt: Treppe ±1
-  const wildSkip = iceFlag(skills, "wildFarbblockSkip");    // Frostbrücke: transparent im Farbblock
-  // Permafrost: +2 Dauerwert auf eingefrorenen Karten (echter Wert; im Kampf gespiegelt in engine.js).
-  const val = cards.map((c, k) => c.value + (permafrost && frozen[k] ? PERMAFROST_VALUE : 0));
+  const kristallform = iceFlag(skills, "kristallform"); // Joker: ±CRYSTAL_OFFSET (v0.3: 1) + Vorgängerwert (Wiederholung/Treppe/Wechsel)
+  const frostbridge  = iceFlag(skills, "frostbridge");  // Segment-Brücke: Formation darf an einer Frostkarte die Segmentgrenze queren
+  const val = cards.map((c) => c.value);
   // Familien-Rollen (Rarität #167 Kat. C): Joker (C_JOKER) + Bindeglied (C_BRIDGE) aus den gehaltenen Familien-Stufen.
   // §10-Näherung Joker: jokerMode "pred" (I/II) = Vorgängerfarbe wie flach C8; "predOrSucc"/"free" (III/IV) = Farbblock-
   // Wildcard (der paarweise Scanner kann die Vorgänger-oder-Nachfolger-Regel nicht abbilden, ohne verschiedenfarbige Blöcke
@@ -223,12 +226,13 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Jede Gruppe wird für Farbblöcke auf ihre erste Farbe gemappt → zählt als eine Farbe.
   const linkedGroups = allianceGroups(familyTiers, roles);
   for (const g of linkedGroups) { const ref = g[0]; for (const su of g) if (su !== ref) for (let k = 0; k < n; k++) if (effSuit[k] === su) effSuit[k] = ref; }
+  // Pflanze (v0): grüne Karten (card.green) zählen als Farbe „G" für den Farbblock — grün → Farbblock → Score.
+  for (let k = 0; k < n; k++) if (cards[k].green) effSuit[k] = "G";
   // Bindeglied (C10, ±1) + Eis: Eisschritt/Kristallform geben ±1, Permafrost-Joker passt überall (großer Flex).
   const bind = cards.map((c, k) => {
     let b = famBridgeSpan[c.id] || 0; // Familie C_BRIDGE: Span je Stufe (1/2/99); flache C10 ist zu #167 migriert
-    if (frozen[k] && wildStep)    b = Math.max(b, ICE_STEP_OFFSET); // Eisschritt bleibt ±1 (§5.4 Abgrenzung)
-    if (frozen[k] && wildCrystal) b = Math.max(b, CRYSTAL_OFFSET);  // Kristallform ±2 (#165 §5.4)
-    if (frozen[k] && permafrost) b = Math.max(b, 99); // Joker: fügt sich in jede Treppe
+    if (frozen[k] && kristallform) b = Math.max(b, CRYSTAL_OFFSET); // Kristallform: ±CRYSTAL_OFFSET Treppen-Flex (Joker)
+    if (af && af.bind[k]) b = Math.max(b, af.bind[k]); // Architekt Kreuzgang: Treppen-Bindeglied ±Span
     return b;
   });
   // ---- E-Formationsfamilien (Rarität #167 Kat. E, REGELERSETZUNG): Parameter der GEHALTENEN Stufe je Familie
@@ -251,7 +255,10 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Grenze NACH Position k existiert nur, wenn (k+1)%SEGMENT_SIZE===0; ihr 0-basierter Grenz-Index ist (k+1)/SIZE−1.
   const segInfo = openSegmentInfo(familyTiers);
   const crossSeg = segInfo.all;
-  const canExtendSeg = (k) => ((k + 1) % SEGMENT_SIZE !== 0) || segInfo.isOpen((k + 1) / SEGMENT_SIZE - 1);
+  // Frostbrücke (v0, Eis): eine Frostkarte am Segmentrand öffnet die Grenze — die Formation darf ins nächste Segment laufen.
+  const canExtendSeg = (k) => ((k + 1) % SEGMENT_SIZE !== 0) || segInfo.isOpen((k + 1) / SEGMENT_SIZE - 1)
+    || (frostbridge && (frozen[k] || frozen[k + 1]))
+    || (af && af.crossSeg.has(Math.floor(k / SEGMENT_SIZE))); // Architekt Pfeiler: Segmentgrenze der berührten Zeile offen
   // #179 E_SEGMENT IV Grenz-Bonus: Karten in einer Formation, die eine (frühere) Segmentgrenze überschreitet,
   // geben zusätzlich ×crossBonus. noteCross sammelt die Mitglieds-Positionen kreuzender Läufe (nur aktiv bei Stufe IV).
   const segCrossBonus = eP("E_SEGMENT", "crossBonus", 1);
@@ -263,7 +270,11 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // eigener Anker (kein Faktor) und erzeugt allein keine Formation. Position → Menge erlaubter Formationstypen.
   const jokerFor = (type) => { const s = new Set(); for (const a of anchors || []) if (a.type === "joker" && a.position < n && (a.jokerTypes || []).includes(type)) s.add(a.position); return s; };
   const jokerWied = jokerFor("wiederholung"), jokerTreppe = jokerFor("treppe"), jokerFarbblock = jokerFor("farbblock"), jokerWechsel = jokerFor("wechsel");
-  const isJW = (k) => jokerWied.has(k), isJT = (k) => jokerTreppe.has(k), isJF = (k) => jokerFarbblock.has(k), isJX = (k) => jokerWechsel.has(k);
+  // Architekt-Joker (Klammer/Prisma/Fries/Gewölbe/Basilika) unionieren mit den Anker-Jokern je Typ.
+  const isJW = (k) => jokerWied.has(k) || !!(af && af.jokerW.has(k)),
+        isJT = (k) => jokerTreppe.has(k) || !!(af && af.jokerT.has(k)),
+        isJF = (k) => jokerFarbblock.has(k) || !!(af && af.jokerF.has(k)),
+        isJX = (k) => jokerWechsel.has(k) || !!(af && af.jokerX.has(k));
 
   const out = Array.from({ length: n }, () => ({ mult: 1, baseMult: 1, afterglowFactor: 1, coreFactor: 1, formations: [] }));
   const add = (pos, type, ordinal, factor) => {
@@ -280,11 +291,10 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Wiederholung: Wert-Mengen je Karte (Kristallform ±1, Kalte Präzision = Vorgängerwert); Permafrost-Joker matcht alles.
   const valSetWied = cards.map((c, k) => {
     const s = new Set([val[k]]);
-    if (frozen[k] && wildCrystal) { s.add(val[k] - CRYSTAL_OFFSET); s.add(val[k] + CRYSTAL_OFFSET); } // #165: ±2
-    if (frozen[k] && wildPred && k > 0) s.add(val[k - 1]);
+    if (frozen[k] && kristallform) { s.add(val[k] - CRYSTAL_OFFSET); s.add(val[k] + CRYSTAL_OFFSET); if (k > 0) s.add(val[k - 1]); } // Kristallform: ±CRYSTAL_OFFSET + Vorgängerwert
     return s;
   });
-  const jokerAll = frozen.map((f) => f && permafrost); // Permafrost: Joker für Wiederholung UND Farbblock
+  const jokerAll = frozen.map(() => false); // (Permafrost-Farbblock-Joker im Rework entfernt — Kristallform ist kein Farbblock-Joker)
   const matchWied = (a, b) => jokerAll[a] || jokerAll[b] || [...valSetWied[a]].some((v) => valSetWied[b].has(v));
   const wiedFactor = (ord) => wiederholungFactor(ord, repBonus, repThird, repMult);
   markRuns(n, 2, matchWied, wiedGap, canExtendSeg,
@@ -294,18 +304,28 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Farbblock: Permafrost-Joker + freie Familien-Joker (C_JOKER III/IV) matchen jede Farbe; Frostbrücke macht
   // eingefrorene Karten transparent (kein Mitglied).
   const matchSuit = (a, b) => jokerAll[a] || jokerAll[b] || famJokerFree.has(cards[a].id) || famJokerFree.has(cards[b].id) || effSuit[a] === effSuit[b];
-  const farbSkip = (k) => frozen[k] && wildSkip && !jokerAll[k];
-  markRuns(n, 3, matchSuit, suitGap, canExtendSeg,
-    (pos, ord) => add(pos, "farbblock", ord, escalatingFactor(ord, FARBBLOCK_BASE)), farbSkip,
-    (last, ord) => recordEnd(last, "farbblock", escalatingFactor(ord, FARBBLOCK_BASE)), isJF, noteCross);
+  const farbSkip = (k) => !!(af && af.transparentFarb.has(k)); // Architekt Arkade: abgedeckte Karte unterbricht den Farbblock nicht (transparent)
+  // Pflanze (v0): Ewiger Frühling zählt Farbblock schon ab 2 Karten; Überwucherung (Feld genug grün) → alle Farbblöcke +0,20.
+  const farbMin = hasEwigerFruehling(skills) ? EWIGER_FRUEHLING_FARBBLOCK : 3;
+  const greenField = n > 0 ? greenCount(cards) / n : 0;
+  const uebThresh = hasEwigerFruehling(skills) ? EWIGER_FRUEHLING_FIELD : UEBERWUCHERUNG_FIELD;
+  const farbBase = FARBBLOCK_BASE + (hasUeberwucherung(skills) && greenField >= uebThresh ? UEBERWUCHERUNG_FACTOR : 0);
+  // Grün-Farbblock-Cap (v0.3): grüne (card.green) Karten deckeln ihre Ordinalzahl → ein voll-grünes Feld gibt keinen ×8-Riesenblock mehr.
+  const farbFactor = (pos, ord) => escalatingFactor(cards[pos].green ? Math.min(ord, PLANT_GREEN_FARBBLOCK_CAP) : ord, farbBase);
+  // onRun: Grenz-Bonus melden (noteCross) UND die echte Lauflänge auf jedem Farbblock-Eintrag ablegen
+  // (Blätterdach #228 C2 zahlt „je Karte im Block" — braucht die Blockgröße, nicht nur das Ordinal an der Siegposition).
+  markRuns(n, farbMin, matchSuit, suitGap, canExtendSeg,
+    (pos, ord) => add(pos, "farbblock", ord, farbFactor(pos, ord)), farbSkip,
+    (last, ord) => recordEnd(last, "farbblock", farbFactor(last, ord)), isJF,
+    (mem) => { if (noteCross) noteCross(mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) fe.len = mem.length; } });
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));
   markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, treppeEnd, isJT, noteCross);
   // (Fallende Treppen „Abstieg" entfielen #179 — E_BIGSTEP deckt Rückschritte/Richtungswechsel innerhalb der Treppe ab.)
-  // Wechsel: Kristallform gibt eingefrorenen Karten ±2-Wertoptionen (#165; Permafrost/Eisschritt gelten hier NICHT).
+  // Wechsel: Kristallform gibt eingefrorenen Karten ±CRYSTAL_OFFSET-Wertoptionen (#165; Permafrost/Eisschritt gelten hier NICHT).
   // E_PENDULUM IV: wFactorStart hebt den Wechsel-Faktor bereits ab Länge 2 auf ×1,35 (sonst erst ab der 3. Karte).
-  const valSetWechsel = cards.map((c, k) => (frozen[k] && wildCrystal ? [val[k] - CRYSTAL_OFFSET, val[k], val[k] + CRYSTAL_OFFSET] : [val[k]]));
+  const valSetWechsel = cards.map((c, k) => (frozen[k] && kristallform ? [val[k] - CRYSTAL_OFFSET, val[k], val[k] + CRYSTAL_OFFSET] : [val[k]]));
   const wechselFactor = (ord) => Math.max(escalatingFactor(ord, WECHSEL_BASE), ord >= 2 && wFactorStart ? wFactorStart : 1);
   markWechsel(val, valSetWechsel, n, wMinLen, canExtendSeg,
     (pos, ord) => add(pos, "wechsel", ord, wechselFactor(ord)), wMinDiff,
@@ -321,6 +341,8 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   // Formationsanker (Shop §4.2, #164): jede Anker-Position zählt als Anker mit dem Stufen-Faktor (a.factor, 1,15…1,60),
   // falls dort noch kein Anker liegt (E7/E8/Eisanker). IV (×1,60) überlappt mit natürlichen Formationen (multipliziert dazu).
   for (const a of anchors) if (a.type === "formation" && a.position < n && !out[a.position].formations.some((f) => f.type === "anker")) add(a.position, "anker", 1, a.factor || ANCHOR_FORM_FACTOR);
+  // Architekt Grundstein (#202): jede abgedeckte Zelle zählt als Anker (Faktor je Stufe), falls dort noch kein Anker liegt.
+  if (af) for (const key in af.anker) { const pos = Number(key); if (pos < n && !out[pos].formations.some((f) => f.type === "anker")) add(pos, "anker", 1, af.anker[pos]); }
 
   // Überlappungsbonus (#95): steckt eine Karte in mehreren Formationen, multipliziert der
   // Bonus das Faktor-Produkt zusätzlich (2 Formationen ×1,5 · 3 ×2 · 4 ×3). Gezählt werden ALLE
@@ -338,13 +360,17 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
     out[pos].formations.push({ type: "grenzbonus", ordinal: 1, factor: segCrossBonus });
   }
 
-  // #165 Kristallform-Bonus (§5.4): ist eine eingefrorene Karte (durch die ±2-Interpretation) Teil ≥1 Wiederholung/
-  // Treppe/Wechsel, erhält sie zusätzlich einen Formationsbonus ×CRYSTAL_FORM_BONUS — je Karte/Stich nur einmal.
-  // NACH der Überlappung (zählt nicht in deren Anzahl), VOR der baseMult-Erfassung → fließt als Formationsfaktor in
-  // den Score (engine liest baseMult). Farbblock und Anker lösen den Bonus NICHT aus.
-  if (wildCrystal) for (let pos = 0; pos < n; pos++) {
-    if (frozen[pos] && out[pos].formations.some((f) => f.type === "wiederholung" || f.type === "treppe" || f.type === "wechsel"))
-      out[pos].mult *= CRYSTAL_FORM_BONUS;
+  // (Eis-Rework v0: der alte Kristallform-Zusatzbonus ×1,15 entfällt — Kristallform ist jetzt ein reiner ±CRYSTAL_OFFSET-Joker;
+  //  der Schicht-Payoff läuft über die Schichten/Eisdruck in der Engine, nicht über einen Extra-Formationsfaktor.)
+
+  // Architekt Kathedrale (#202): „Formationen ×2" — abgedeckte Positionen mit einer aktiven Formation (mult > 1) skalieren.
+  // NACH der Überlappung, VOR baseMult → fließt in den Formations-Score, zählt aber nicht in die Überlappungs-Anzahl.
+  if (af) for (const key in af.formMult) {
+    const pos = Number(key), factor = af.formMult[pos];
+    if (pos < n && factor > 1 && out[pos].mult > 1) {
+      out[pos].mult *= factor;
+      out[pos].formations.push({ type: "architekt", ordinal: 1, factor });
+    }
   }
 
   // baseMult = Beitrag der „echten" Formationen (inkl. Überlappung), OHNE die Meta-Faktoren
@@ -398,6 +424,12 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
 
 // Trägt eine Position eine wirksame Formation (Score-Faktor > 1)? → speist den Formations-Stat (§22.3).
 export const positionHasFormation = (posForm) => !!posForm && posForm.mult > 1;
+
+// Anzahl der an einer Position AKTIVEN Formationen (Einzel-Faktor > 1) — speist die Count-Skalierung des
+// Formations-Stats (#stat-rework: mehrere/überlappende Formationen je Sieg zahlen mehr). Deckungsgleich mit
+// positionHasFormation: ≥1 ⟺ mult > 1. Formations-Einträge mit factor ≤ 1 (z. B. Farbblock-Ordinal 1) zählen nicht.
+export const activeFormationCount = (posForm) =>
+  (posForm?.formations || []).filter((f) => (f.factor || 1) > 1).length;
 
 // #165: die vier Basis-Formationstypen (ohne Anker/Nachhall/Kern/Kristallform) als Set.
 const BASE_FORMATION_SET = new Set(FORMATION_TYPES);

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { buildDeck } from "../src/game/deck.js";
 import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks } from "../src/game/perks.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
+import { UNAUFHALTSAM_VALUE, KRITMASSE_VALUE } from "../src/game/constants.js";
 
 // Kat.-A-Deck-Mods (früher A1–A10 onPick) sind zu KUMULATIVEN Familien migriert (#167) — die
 // Deck-Effekte je Stufe sind in test/families.test.js geprüft (onPick direkt), der Reducer-Pick +
@@ -11,8 +12,8 @@ describe("effectivePlayerValue — cardBonus-Summation", () => {
   // Kat. B und C sind zu Familien migriert (#167) — Engine-Integration in families-engine.test.js.
   // Hier bleibt die generische Summation der flachen cardBonus-Hooks geprüft (jetzt über ein Legendär-Beispiel).
   it("summiert die cardBonus-Hooks der gehaltenen Perks auf den Basiswert", () => {
-    expect(effectivePlayerValue(5, ["L3"], { posInCycle: 35 })).toBe(10); // L3 +5 auf Position 36–40
-    expect(effectivePlayerValue(5, ["L3"], { posInCycle: 10 })).toBe(5);  // Bedingung nicht erfüllt
+    expect(effectivePlayerValue(5, ["L2"], { winStreak: 3 })).toBe(5 + UNAUFHALTSAM_VALUE); // L2 Unaufhaltsam +Wert solange die Serie läuft
+    expect(effectivePlayerValue(5, ["L2"], { winStreak: 0 })).toBe(5);                       // Bedingung (Serie) nicht erfüllt
   });
 });
 
@@ -21,57 +22,52 @@ describe("effectivePlayerValue — cardBonus-Summation", () => {
 
 describe("critChanceFor / critChanceRawFor (V2: kein Perk trägt Crit-Chance — Stat/Blitz in der Engine)", () => {
   it("kein Perk-Beitrag → Roh-Chance 0 (Stat/Blitz addiert die Engine obendrauf)", () => {
-    expect(critChanceRawFor(["L4", "L5"], {})).toBe(0);
-    expect(critChanceFor(["L4", "L5"], {})).toBe(0);
+    expect(critChanceRawFor(["L4", "L_UMV"], {})).toBe(0);
+    expect(critChanceFor(["L4", "L_UMV"], {})).toBe(0);
   });
   it("critChanceFor klemmt auf [0,1]", () => {
     expect(critChanceFor([], {})).toBe(0);
   });
 });
 
-describe("Legendäre Perks — Hooks (V2 §22.6 L)", () => {
-  it("die zehn verbliebenen L-Perks sind als legendary markiert (L7 entfernt, #162)", () => {
-    for (const id of ["L1", "L2", "L3", "L4", "L5", "L6", "L8", "L9", "L10", "L11"]) expect(isLegendary(id)).toBe(true);
-    expect(PERK_DEFS.L7).toBeUndefined(); // Königsmacher ersatzlos entfernt (Spec §9)
-    expect(isLegendary("E1")).toBe(false);
+describe("Legendäre Perks — Hooks (Legendär-Perks-Rework #203)", () => {
+  const KEPT = ["L2", "L4", "L6"];                                                   // behalten (Serie/Crit-Favoriten)
+  const NEU  = ["L_UMV", "L_ZINS", "L_VAB", "L_HENK", "L_ECHO", "L_SAMM", "L_BRENN", "L_PATT"]; // 8 neue generische
+
+  it("die 11 generischen Legendären sind legendär; die Erstgen (L1/L3/L5/L7–L11) ist entfernt", () => {
+    for (const id of [...KEPT, ...NEU]) expect(isLegendary(id)).toBe(true);
+    for (const id of ["L1", "L3", "L5", "L7", "L8", "L9", "L10", "L11"]) expect(PERK_DEFS[id]).toBeUndefined();
+    expect(isLegendary("E10")).toBe(false);
   });
-  it("L1 Überladung: permMod +6 auf die gewählten Karten", () => {
-    const deck = buildDeck().slice(0, 3);
-    const out = PERK_DEFS.L1.permMod(deck, [0, 1, 2], [deck[0].id, deck[1].id]);
-    expect(out[0].value).toBe(deck[0].value + 6);
-    expect(out[1].value).toBe(deck[1].value + 6);
-    expect(out[2].value).toBe(deck[2].value); // nicht gewählt
-  });
-  it("L2 Unaufhaltsam: flach +4 solange die Serie läuft, 0 ohne Serie (#115)", () => {
+  it("L2 Unaufhaltsam: flach +UNAUFHALTSAM_VALUE solange die Serie läuft, 0 ohne Serie (#115)", () => {
     expect(PERK_DEFS.L2.cardBonus({ winStreak: 0 })).toBe(0);
-    expect(PERK_DEFS.L2.cardBonus({ winStreak: 3 })).toBe(4);
-    expect(PERK_DEFS.L2.cardBonus({ winStreak: 9 })).toBe(4); // flach, kein Snowball
+    expect(PERK_DEFS.L2.cardBonus({ winStreak: 3 })).toBe(UNAUFHALTSAM_VALUE);
+    expect(PERK_DEFS.L2.cardBonus({ winStreak: 9 })).toBe(UNAUFHALTSAM_VALUE); // flach, kein Snowball
   });
-  it("L3 Letztes Aufbäumen: +5 auf Position 36–40", () => {
-    expect(PERK_DEFS.L3.cardBonus({ posInCycle: 35 })).toBe(5);
-    expect(PERK_DEFS.L3.cardBonus({ posInCycle: 39 })).toBe(5);
-    expect(PERK_DEFS.L3.cardBonus({ posInCycle: 34 })).toBe(0);
+  it("L6 Raserei: +5 % Crit-Chance je Serienpunkt + Überschuss→Crit-Schaden (kein cardBonus) (#115)", () => {
+    expect(PERK_DEFS.L6.cardBonus).toBeUndefined();
+    expect(PERK_DEFS.L6.critChance({ winStreak: 5 })).toBeCloseTo(0.25);
+    expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 1.5 })).toBeCloseTo(0.5);
+    expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 3 })).toBeCloseTo(1);
+    expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 0.8 })).toBe(0);
   });
-  it("L6 Raserei: +5 % Crit-Chance je Serienpunkt + Überschuss→Crit-Schaden (kein cardBonus mehr) (#115)", () => {
-    expect(PERK_DEFS.L6.cardBonus).toBeUndefined();                       // kein Wertbonus mehr
-    expect(PERK_DEFS.L6.critChance({ winStreak: 5 })).toBeCloseTo(0.25);  // +5 %/Serienpunkt
-    expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 1.5 })).toBeCloseTo(0.5); // Überschuss über 100 %
-    expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 3 })).toBeCloseTo(1);     // Cap +100 %
-    expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 0.8 })).toBe(0);          // unter 100 % → 0
+  it("L4 Kritische Masse: critValueGain-Marker (Deckel des dauerhaften Crit-Wert-Gewinns)", () => {
+    expect(PERK_DEFS.L4.critValueGain).toBe(KRITMASSE_VALUE);
   });
-  it("L9 Blutvertrag: permMod −2/gewählt, +6/Nachfolger", () => {
-    const deck = buildDeck().slice(0, 3);
-    const out = PERK_DEFS.L9.permMod(deck, [0, 1, 2], [deck[0].id]);
-    expect(out[0].value).toBe(Math.max(0, deck[0].value - 2));
-    expect(out[1].value).toBe(deck[1].value + 6); // direkter Nachfolger
+  it("die 8 neuen Legendären tragen je ihren Engine-Flag (Marker → in engine.js/reducer.js verdrahtet)", () => {
+    expect(PERK_DEFS.L_UMV.redistribute).toBe(true);   // Umverteilung (reducer PICK_PERK)
+    expect(PERK_DEFS.L_ZINS.zinseszins).toBe(true);    // Zinseszins (Durchlauf-Ende)
+    expect(PERK_DEFS.L_VAB.vabanque).toBe(true);       // Vabanque (Eröffnungs-Serie)
+    expect(PERK_DEFS.L_HENK.henker).toBe(true);        // Henker (Segment-Finale)
+    expect(PERK_DEFS.L_ECHO.echo).toBe(true);          // Echo (bester Stich)
+    expect(PERK_DEFS.L_SAMM.sammler).toBe(true);       // Sammler (Formationsvielfalt)
+    expect(PERK_DEFS.L_BRENN.brennpunkt).toBe(true);   // Brennpunkt (Formations-Tiefe)
+    expect(PERK_DEFS.L_PATT.patt).toBe(true);          // Patt (knappe Niederlage)
   });
-  it("Marker-Legendaries: L4 critValueGain, L5 randomTarget/jackpotScore, L8 swapExtremes, L10 successorCrit, L11 repeatPos", () => {
-    expect(PERK_DEFS.L4.critValueGain).toBe(4);
-    expect(PERK_DEFS.L5.randomTarget).toBe(4);
-    expect(PERK_DEFS.L5.jackpotScore).toBe(1000);
-    expect(PERK_DEFS.L8.swapExtremes).toBe(true);
-    expect(PERK_DEFS.L10.successorCrit).toBe(true);
-    expect(PERK_DEFS.L11.repeatPos).toBe(true);
+  it("keine Erstgen-Marker mehr im Registry (permMod/randomTarget/jackpotScore/swapExtremes/successorCrit/repeatPos)", () => {
+    for (const p of PERK_LIST)
+      for (const k of ["permMod", "needsTarget", "randomTarget", "jackpotScore", "swapExtremes", "successorCrit", "repeatPos"])
+        expect(p[k]).toBeUndefined();
   });
 });
 
@@ -91,7 +87,7 @@ describe("streakBaseMult (Basis-Siegesserie #39)", () => {
 describe("baseScoreMultFor (Header-Chip #37 — V2: nur noch Basis-Serie #39)", () => {
   it("Serie 0 → ×1,00; D-Perks multiplizieren nicht mehr (Flat-Score)", () => {
     expect(baseScoreMultFor([], {})).toBeCloseTo(1);
-    expect(baseScoreMultFor(["L2", "L3"], {})).toBeCloseTo(1); // flache Perks tragen keinen Score-Multiplikator
+    expect(baseScoreMultFor(["L2", "L4"], {})).toBeCloseTo(1); // flache Perks tragen keinen Score-Multiplikator
   });
   it("Siegesserie hebt den Mult (#39): +2 %/Stufe bis Cap +150 % (#100)", () => {
     expect(baseScoreMultFor([], { winStreak: 0 })).toBeCloseTo(1);
@@ -105,14 +101,14 @@ describe("Layout-Perks (#95): Positions-/Formations-relevante Perks", () => {
   it("verbliebene cat-E-Perks (nur E10) zählen als Layout-Perk", () => {
     PERK_LIST.filter((p) => p.cat === "E").forEach((p) => expect(isLayoutPerk(p.id)).toBe(true));
   });
-  it("kuratierte L sind enthalten, layout-fremde Perks nicht", () => {
-    // B/C/D/E sind zu Familien migriert (#167); ihre layout-relevanten Familien folgen mit #166 (layoutPerks kennt
-    // nur flache `perks`). Übrig als flache Layout-Perks: L3/L11 (+ das nie angebotene E10 cat E).
-    ["L3", "L11"].forEach((id) => expect(isLayoutPerk(id)).toBe(true));
-    ["L1", "L5"].forEach((id) => expect(isLayoutPerk(id)).toBe(false));
+  it("positionsgebundene/Formations-Legendäre sind Layout-Perks, andere nicht (#203)", () => {
+    // Henker ist positionsgebunden (Pos 36–40, LAYOUT_EXTRA); Brennpunkt/Sammler sind cat E (über die cat-Regel).
+    // Der Rest der 11 (Umverteilung/Echo/Zinseszins/Vabanque/Patt) ist layout-fremd.
+    ["L_HENK", "L_BRENN", "L_SAMM"].forEach((id) => expect(isLayoutPerk(id)).toBe(true));
+    ["L_UMV", "L_ECHO", "L_ZINS", "L_VAB", "L_PATT"].forEach((id) => expect(isLayoutPerk(id)).toBe(false));
   });
   it("layoutPerks filtert die gehaltenen Perks in Reihenfolge", () => {
-    expect(layoutPerks(["L1", "L11", "L3"])).toEqual(["L11", "L3"]);
+    expect(layoutPerks(["L_UMV", "L_HENK", "L_BRENN"])).toEqual(["L_HENK", "L_BRENN"]);
     expect(layoutPerks([])).toEqual([]);
   });
 });
@@ -126,9 +122,10 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
     expect(PERK_DEFS.E10.extraSwap).toBe(1);
     expect(PERK_DEFS.E10.offerable).toBe(false); // #162: aus dem Perk-Pool genommen → wird Shop-Familie (#164)
   });
-  it("V2 §22.4: alle A–E sind normal (keine Rares mehr); nur L ist legendär", () => {
+  it("V2 §22.4 / #203: genau die 11 generischen Legendären sind legendär, alles andere normal", () => {
+    const LEGENDARY = new Set(["L2", "L4", "L6", "L_UMV", "L_ZINS", "L_VAB", "L_HENK", "L_ECHO", "L_SAMM", "L_BRENN", "L_PATT"]);
     for (const p of PERK_LIST) {
-      if (/^L\d/.test(p.id)) expect(p.rarity).toBe("legendary");
+      if (LEGENDARY.has(p.id)) expect(p.rarity).toBe("legendary");
       else expect(p.rarity || "common").toBe("common");
     }
   });

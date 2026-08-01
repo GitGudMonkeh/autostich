@@ -2,6 +2,9 @@ import { useState } from "react";
 import { PERK_DEFS } from "../game/perks.js";
 import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
+import { architectCoverFor } from "./architectCover.js";
+
+const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 
 /* Kartenrollen-Zielauswahl (V2 §22.6 C / §22.5): öffnet nach dem Pick eines Ziel-Perks.
    Genau needsTarget Karten antippen, dann bestätigen. Danach ist die Rolle fixiert.
@@ -17,6 +20,7 @@ export function TargetSelect({ state, onConfirm }) {
 
   const cards = playerOrder.map((di) => deck[di]);
   const ready = sel.length === need;
+  const architectCover = architectCoverFor(state); // Gebäude-Overlay fürs Deck (informierte Wahl)
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
@@ -30,14 +34,14 @@ export function TargetSelect({ state, onConfirm }) {
         <div className="mt-4">
           <CardGrid cards={cards} formations={formations} roles={roles}
             anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
-            pickedIds={sel} onTilePick={(pos, c) => toggle(c.id)} />
+            architectCover={architectCover} pickedIds={sel} onTilePick={(pos, c) => toggle(c.id)} />
         </div>
 
         <div className="flex items-center justify-between mt-4">
           <span className="text-xs opacity-60 tabular-nums">{sel.length} / {need} gewählt</span>
           <button onClick={() => ready && onConfirm(sel)} disabled={!ready}
             className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
-            style={{ background: ready ? "#5ab87a" : "#2a2a33", color: ready ? "#0c0c10" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
+            style={{ background: ready ? GOLD : "#2a2a33", color: ready ? "#141419" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
             Bestätigen
           </button>
         </div>

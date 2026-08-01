@@ -19,6 +19,9 @@ out/
 coverage/
 .nyc_output/
 
+# Sim-Harness-Output (generierte Balancing-Daten)
+sim/out/
+
 # Logs
 logs/
 *.log

@@ -1,12 +1,10 @@
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
 import { familyDef, hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
-import { PERK_DECLINE_COINS } from "../game/constants.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
-import { PanelMascot } from "./PanelMascot.jsx";
-import perkMascot from "../assets/mascots/perk.gif";
+import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
@@ -38,9 +36,9 @@ function offerView(entry, familyTiers = {}) {
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
 export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], deck = [], state = {} }) {
-  // Neuwurf (Shop-Spec §10 P1/P-L1): gratis Reroll (Schicksalskontrolle) zuerst, sonst gespeicherte Token.
+  // Neuwurf (#202/#214): gratis Reroll (Schicksalskontrolle) zuerst, sonst der geteilte Reroll-Pool (Perk+Skill).
   const freeReroll = !!state.freePerkReroll;
-  const rerollTokens = (state.shop && state.shop.perkRerolls) || 0;
+  const rerollTokens = state.rerolls || 0;
   const canReroll = !!onReroll && (freeReroll || rerollTokens > 0);
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
   const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning, statCritChance = 0, statCritMult = 0 } = state;
@@ -51,20 +49,15 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
   const scoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos });
   const showCrit = hasCritPerk(perks) || hasCritFamily(state.familyTiers) || crits > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
   return (
-    <div className="fixed inset-0 overlay-root z-20 flex items-center sm:items-start justify-center p-4 sm:pt-28" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
-      {/* #130: nicht scrollender Wrapper → Roboter-Maskottchen schaut oben über die Karte hervor (Desktop-Peek);
-          Panel oben angedockt (sm:items-start + sm:pt-28) + sm:max-h, damit der Peek nie vom Viewport geklippt wird. */}
-      <div className="relative w-full max-w-3xl">
-        <PanelMascot src={perkMascot} accent="#8a7de0" peekMaxH={120} overlap={28} />
-        <div className="relative z-10 w-full rounded-2xl p-6 max-h-[92dvh] sm:max-h-[calc(100dvh-8rem)] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
+    <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
+      <div className="w-full max-w-3xl">
+        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
+        <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>
             {(state.perks || []).length === 0 ? "Start" : `Runde ${(state.cycle || 0) + 1}`}
           </div>
-          <div className="flex items-center justify-center gap-2 mt-1">
-            <PanelMascot src={perkMascot} accent="#8a7de0" variant="avatar" avatarObjectPosition="center top" />
-            <h2 className="text-xl font-bold">Wähle einen Perk</h2>
-          </div>
+          <h2 className="text-xl font-bold mt-1">Wähle einen Perk</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
 
@@ -82,11 +75,12 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
               <button
                 key={v.key}
                 onClick={() => onPick(v.entry)}
-                className="text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5"
+                className={`text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
                 style={{ background: "#20202a",
                          // Familie: Rahmen = Stufenfarbe (grau/grün/blau/lila). Flach: Seltenheit (grau/grün/gold).
                          border: `1px solid ${v.accent}${(v.isFamily ? v.tier === 1 : v.rar === "common") ? "55" : ""}`,
-                         boxShadow: (!v.isFamily && v.leg) ? `0 0 0 1px ${LEG_GOLD}66, 0 0 16px ${LEG_GOLD}33`
+                         // Legendär (flach): einheitlicher animierter Gold-Rahmen über die .as-legendary-Klasse (#201.3) → hier KEINE Inline-box-shadow.
+                         boxShadow: (!v.isFamily && v.leg) ? undefined
                                   : (v.isFamily ? v.glow : v.rar === "rare") ? `0 0 12px ${v.accent}22` : undefined }}
               >
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -118,7 +112,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                   )}
                 </div>
                 <div className="font-bold" style={{ color: (!v.isFamily && v.leg) ? LEG_GOLD : v.isFamily ? v.accent : cat.color }}>{v.name}</div>
-                <div className="text-sm opacity-75 leading-snug">{v.desc}</div>
+                <div className="text-sm opacity-75 leading-snug"><GlossaryText text={v.desc} /></div>
               </button>
             );
           })}
@@ -128,7 +122,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
           Jeder Perk ist pro Lauf nur einmal wählbar.
         </div>
 
-        {/* #138: Neu würfeln (falls verfügbar) + „Alle ablehnen (+🪙 N)" — eine Perk-Runde ist nie „verschwendet". */}
+        {/* #138: Neu würfeln (falls verfügbar) + „Alle ablehnen" — eine Perk-Runde ist nie „verschwendet" (keine Münzen mehr, #225.1). */}
         <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
           {canReroll && (
             <button onClick={onReroll}
@@ -141,7 +135,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             <button onClick={onDecline}
               className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
               style={{ background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }}>
-              Alle ablehnen · +🪙 {PERK_DECLINE_COINS}
+              Alle ablehnen
             </button>
           )}
         </div>

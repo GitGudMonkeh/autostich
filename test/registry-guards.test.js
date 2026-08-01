@@ -3,7 +3,6 @@ import { readFileSync, readdirSync } from "node:fs";
 import { PERK_LIST } from "../src/game/perks.js";
 import { FAMILY_DEFS } from "../src/game/families.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
-import { SHOP_FAMILY_DEFS } from "../src/game/shopFamilies.js";
 import { UPGRADE_TYPES } from "../src/game/rarity.js";
 
 /* ============================================================
@@ -28,7 +27,7 @@ const gameSrc = (p) => readFileSync(new URL(`../src/game/${p}`, import.meta.url)
 // Consumer-Quellen: hier werden Marker/Hooks tatsächlich ausgelesen (Engine, Formationen, Reducer, Helfer).
 const CONSUMER_FILES = [
   "engine.js", "formations.js", "reducer.js", "stats.js", "runStats.js",
-  "shop.js", "shopFamilies.js", "perks.js", "skills.js", "families.js", "deck.js",
+  "shop.js", "perks.js", "skills.js", "families.js", "deck.js",
 ];
 const CONSUMER_SRC = CONSUMER_FILES.map(gameSrc).join("\n");
 
@@ -52,8 +51,6 @@ function collectEffectKeys() {
   for (const fam of Object.values(FAMILY_DEFS))
     for (const [t, def] of Object.entries(fam.tiers)) for (const k of Object.keys(def)) add(k, `Familie ${fam.id} Stufe ${t}`);
   for (const s of Object.values(SKILL_DEFS)) for (const k of Object.keys(s)) add(k, `Skill ${s.id}`);
-  for (const fam of Object.values(SHOP_FAMILY_DEFS))
-    for (const [t, def] of Object.entries(fam.tiers)) for (const k of Object.keys(def)) add(k, `Shop-Familie ${fam.id} Stufe ${t}`);
   return byKey;
 }
 
@@ -130,9 +127,7 @@ function tierSignature(def) {
 
 // Bewusst identische Nachbarstufen (im Registry als §10-Näherung dokumentiert) — jede muss hier explizit stehen,
 // damit NEUE, unbeabsichtigte Phantom-Stufen weiter rot werden.
-const KNOWN_PHANTOM = new Set([
-  "SF_P_RESTOCK:1-2", // §10-Näherung: I≈II (je eine Kategorie neu würfeln) — bewusst gleich (shopFamilies.js).
-]);
+const KNOWN_PHANTOM = new Set(); // (der einzige bewusste Phantom-Eintrag lag bei den Shop-Familien — #229 entfernt)
 
 function phantomPairs(defs) {
   const out = [];
@@ -153,10 +148,6 @@ describe("Registry-Guard 2 — keine Phantom-Stufen (REGELERSETZUNG)", () => {
   it("Perk-Familien: keine zwei benachbarten Stufen wirken identisch", () => {
     const ph = phantomPairs(FAMILY_DEFS);
     expect(ph, `Phantom-Stufen (mechanisch identisch zur Nachbarstufe, Text verspricht aber mehr):\n  ${ph.join("\n  ")}`).toEqual([]);
-  });
-  it("Shop-Familien: keine zwei benachbarten Stufen wirken identisch", () => {
-    const ph = phantomPairs(SHOP_FAMILY_DEFS);
-    expect(ph, `Phantom-Shop-Stufen:\n  ${ph.join("\n  ")}`).toEqual([]);
   });
   it("Selbsttest: der Guard fängt eine künstlich identische Stufe (keine vacuous-Pass)", () => {
     const R = UPGRADE_TYPES.REPLACEMENT;
@@ -194,9 +185,5 @@ describe("Registry-Guard 3 — Coverage-Gate (jeder Eintrag hat einen Test)", ()
   it("jeder Skill kommt in einem Test vor", () => {
     const missing = uncoveredIds(Object.keys(SKILL_DEFS));
     expect(missing, `Skills ohne Test: ${missing.join(", ")}`).toEqual([]);
-  });
-  it("jede Shop-Familie kommt in einem Test vor", () => {
-    const missing = uncoveredIds(Object.keys(SHOP_FAMILY_DEFS));
-    expect(missing, `Shop-Familien ohne Test: ${missing.join(", ")}`).toEqual([]);
   });
 });

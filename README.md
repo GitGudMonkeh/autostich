@@ -4,8 +4,11 @@
 > Eigenes Repo `GitGudMonkeh/autostich`, Deploy auf GitHub Pages unter `/autostich/`.
 > UI-Text **Deutsch**, Code-Identifier **Englisch**.
 >
-> Stand: Prototyp, V2-Systeme (Runden/Stats/Skills/Formationen/Shop) + 4-Stufen-Raritätsfamilien.
-> **586 Vitest-Fälle**, CI grün (Tests → Build → Pages).
+> Stand: Prototyp, V2-Systeme (Runden/Stats/Skills/Formationen) + 4-Stufen-Raritätsfamilien;
+> **v0.3-Rework:** 4 Elementar-Fraktionen (Feuer/Blitz/Eis/Pflanze), Architekt (ersetzt den Shop),
+> Meisterränge (laufübergreifend), Challenger-Seeds, Chronik. Einzelne Abschnitte unten beschreiben
+> teils noch den V2-Stand — im Zweifel gilt der Code (siehe unten).
+> **746 Vitest-Fälle** (36 Dateien), CI grün (Tests → Build → Pages).
 > Diese Übersicht ist **aus dem Code abgeleitet** — die Quelle der Wahrheit bleibt der Code
 > (`src/game/*`). Bei Unstimmigkeit gilt der Code, nicht dieses Dokument.
 
@@ -255,7 +258,7 @@ Stufe; `TIER_WEIGHTS` die Angebots-Gewichtung. Flache Legendäre laufen weiter �
 `ShopScreen` (+ `ShopTargetSelect`/`FamilyTargetSelect`/`TargetSelect`), `StatusRail`, `ChronikOverview`
 (Kartenübersicht), `GameOver`, `GlobalLeaderboard`, `MusicBar`/`MuteButton`, `AnleitungModal`,
 `OptionsModal`, `UsernameModal`, Archetyp-HUD (`HeatBar`/`ChargeBar`/`CrystalBar`/`FrostOverlay`),
-`Sparkline`, `CrtParticles`, `PanelMascot`.
+`Sparkline`, `CrtParticles`.
 
 Bewegung respektiert `prefers-reduced-motion` (gemeinsamer Hook `usePrefersReducedMotion`); abweisbare
 Overlays teilen sich `useEscape` (Escape schließt).
@@ -320,7 +323,7 @@ Archetyp- und Shop-Familien-Feintuning stehen ebenfalls im Tuning-Block (`LIGHTN
 
 ## 17. Tests & Deployment
 
-- **Tests:** Vitest, nur der `game/`-Layer — **586 Fälle** (`vite.config.js` → `environment: "node"`).
+- **Tests:** Vitest, nur der `game/`-Layer — **746 Fälle** in 36 Dateien (`vite.config.js` → `environment: "node"`).
   `npm test` / `npm run test:watch`.
 - **Deployment:** GitHub Actions auf Push nach `main` → `npm ci` → `npm test` → `npm run build` → Pages.
   `vite.config.js`: `base = "/autostich/"` beim Build (Testbranch überschreibt via `DEPLOY_BASE`), `"/"` im Dev.
