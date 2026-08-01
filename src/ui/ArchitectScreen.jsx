@@ -112,6 +112,16 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     return computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, effArch);
   }, [effArch, order, deck, state.roles, state.perks, state.skills, state.familyTiers]);
   const formCount = useMemo(() => summarizeFormations(formations).count, [formations]);
+  // #UI: Formationen OHNE Architekt — Referenz, um die NEU durch Gebäude gegründeten Formationen zu isolieren.
+  const formationsNoArch = useMemo(() => (cards.length ? computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, null) : []), [order, deck, state.roles, state.perks, state.skills, state.familyTiers]);
+  // #UI: Gebäude-Score-Boost in % — was die Platzierung dem Score bringt: Struktur-Kombis (Σ structF−1) PLUS die neu
+  // durch Gebäude gegründeten Formationen (Formations-Stärke mit − ohne Architekt). Live beim Bauen/Verschieben.
+  const archBoostPct = useMemo(() => {
+    const sum = (fs) => (fs || []).reduce((s, pf) => s + ((pf.mult || 1) - 1), 0);
+    const structBonus = structF.reduce((t, f) => t + (f - 1), 0);
+    const formGain = Math.max(0, sum(formations) - sum(formationsNoArch));
+    return Math.round((structBonus + formGain) * 100);
+  }, [structF, formations, formationsNoArch]);
 
   const buildingAt = (pos) => buildings.find((b) => b.footprint.includes(pos)) || null;
   const committedAt = (pos) => committed.find((b) => b.footprint.includes(pos)) || null;
@@ -265,7 +275,11 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
           {/* ---- Brett 8×5 — Mobil in der Mitte (order-2): Phase-Panel drüber, Vorschau drunter; Desktop links (md:order-1). ---- */}
           <section className="rounded-xl p-3 order-2 md:order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
             <div className="flex items-center justify-between mb-2">
-              <div className="text-[11px] font-mono uppercase tracking-wide opacity-60">Brett · 8 × 5</div>
+              <div className="text-[11px] font-mono uppercase tracking-wide flex items-baseline gap-1.5"
+                title="Score-Boost durch die Gebäude: Struktur-Kombis (volle Zeile/Spalte/Diagonale) + neu gegründete Formationen. Aktualisiert live beim Bauen/Verschieben.">
+                <span className="opacity-50">Gebäude-Boost</span>
+                <span className="font-bold tabular-nums" style={{ color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct}%</span>
+              </div>
               {showRotate && (
                 <button onClick={rotateSelected} className="text-xs font-bold rounded-lg px-2.5 py-1"
                   style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>

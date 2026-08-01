@@ -161,6 +161,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   <span className="transition-transform" style={{ display: "inline-block", transform: detailOpen ? "rotate(90deg)" : "none" }}>▸</span>
                   {detailOpen ? "Passiv" : "Passiv & Begriffe"}
                 </span>
+                {!detailOpen && <span className="text-[10px] whitespace-nowrap shrink-0" style={{ color: "#6b6b76" }}>klicken für mehr Details</span>}
                 <div className="flex-1 h-px" style={{ background: `${g.meta.color}33` }} />
               </button>
               {detailOpen && (
