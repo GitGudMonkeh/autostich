@@ -36,10 +36,11 @@ export function saveUsername(name) {
   try { localStorage.setItem(k("as_username"), name); } catch (e) {}
 }
 
-/* Lokale Highscore-Liste (Top 5) — getrennt vom Geist.
+/* Lokale Highscore-Liste (Top 20) — getrennt vom Geist.
    Eintrag: { score, level, tricks, cycles, ts } + #169-FB-8-Run-Rückblick (bestStreak, perks[], skills[],
    maxFormations, formationScore, buildingScore, crits, wins, critBonusScore, bestTrickScore) für die Detailansicht.
    Additiv — Alt-Einträge ohne die Zusatzfelder degradieren sauber (RunStats zeigt „–" bzw. blendet aus). */
+export const HIGHSCORE_CAP = 20; // #217 Bestenliste: „Meine Runs"/„Master" listen bis zu 20 → echte All-Time-Top-20 (vorher 5)
 export function loadHighscores() {
   try {
     const raw = localStorage.getItem(k("as_highscores"));
@@ -48,13 +49,13 @@ export function loadHighscores() {
   return [];
 }
 // Reine Rang-Logik (ohne localStorage → unit-testbar): Score↓, bei Gleichstand mehr
-// Stiche, dann jünger. Top 5.
+// Stiche, dann jünger. Top HIGHSCORE_CAP (20).
 export function rankHighscores(list, entry) {
   return [...list, entry]
     .sort((a, b) => b.score - a.score || b.tricks - a.tricks || b.ts - a.ts)
-    .slice(0, 5);
+    .slice(0, HIGHSCORE_CAP);
 }
-// Neuen Lauf einsortieren + persistieren. Gibt die neue Top-5-Liste zurück.
+// Neuen Lauf einsortieren + persistieren. Gibt die neue Top-Liste zurück.
 export function recordHighscore(entry) {
   const top = rankHighscores(loadHighscores(), entry);
   try { localStorage.setItem(k("as_highscores"), JSON.stringify(top)); } catch (e) {}
@@ -62,7 +63,7 @@ export function recordHighscore(entry) {
 }
 
 /* LAUF-HISTORIE + PROFIL (#172 FB-10) — Basis für den Statistik-Hub. Getrennt von der Top-5-Highscore-
-   Liste: dort zählt nur der Score (Top 5), hier der VERLAUF (letzte N Läufe, chronologisch neueste zuerst)
+   Liste: dort zählt nur der Score (Top 20), hier der VERLAUF (letzte N Läufe, chronologisch neueste zuerst)
    plus kumulierte All-Time-Totals, die auch dann stimmen, wenn Läufe aus dem gedeckelten Verlauf fallen.
    Rein lokal (kein Supabase). Ein Lauf-Record = derselbe Statblock wie ein Highscore-Eintrag (#169 FB-8)
    + `durationMs` (Lauf-Dauer) + `archetypes[]` (im Lauf genutzte Skill-Archetypen, unique).

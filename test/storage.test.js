@@ -19,12 +19,15 @@ function mockLS() {
 const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "auto", haptics: true };
 
 describe("rankHighscores", () => {
-  it("sortiert nach Score↓ und behält Top 5", () => {
+  it("sortiert nach Score↓ und behält die Top 20", () => {
     let list = [];
-    for (const sc of [50, 300, 120, 90, 400, 10, 260]) {
+    // 25 Läufe (Scores 1..25) → nur die 20 besten (25..6) bleiben, absteigend.
+    for (let sc = 1; sc <= 25; sc++) {
       list = rankHighscores(list, { score: sc, level: 1, tricks: 1, cycles: 0, ts: sc });
     }
-    expect(list.map((e) => e.score)).toEqual([400, 300, 260, 120, 90]);
+    expect(list).toHaveLength(20);
+    expect(list[0].score).toBe(25);
+    expect(list[19].score).toBe(6);
   });
 
   it("bricht Score-Gleichstand über mehr Stiche, dann jünger", () => {
