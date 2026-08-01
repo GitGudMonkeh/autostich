@@ -74,17 +74,18 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
   const masterTop = useMemo(() => allRuns.filter((r) => r.masterRun).slice(0, TOP_N), [allRuns]);
 
   return (
-    <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
+    <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
-      <div className="w-full max-w-2xl rounded-2xl p-5 sm:p-6 my-auto overlay-card"
-        style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between gap-3 mb-3">
+      {/* Feste Kartenhöhe → das Fenster bleibt beim Tab-Wechsel gleich groß & an gleicher Stelle; nur die Liste scrollt intern. */}
+      <div className="w-full max-w-2xl rounded-2xl p-5 sm:p-6 overlay-card flex flex-col"
+        style={{ background: "#181820", border: "1px solid #33333e", height: "min(85vh, 720px)" }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
           <h2 className="text-lg font-bold flex items-center gap-2">🏆 Bestenliste</h2>
           <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
         </div>
 
         {/* Reiter */}
-        <div className="flex gap-1 mb-4" role="tablist">
+        <div className="flex gap-1 mb-4 shrink-0" role="tablist">
           {TABS.map(({ id, label }) => (
             <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
               className="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all"
@@ -94,7 +95,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
           ))}
         </div>
 
-        <div className="rounded-xl p-4 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+        <div className="rounded-xl p-4 as-panel flex-1 min-h-0 overflow-y-auto" style={{ background: "#17171c", border: "1px solid #26262e" }}>
           {tab === "mine" && (
             <>
               <div className="flex items-center justify-between mb-2">
