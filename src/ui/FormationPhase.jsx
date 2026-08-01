@@ -154,7 +154,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           </div>
         </div>
         {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig. */}
-        <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mb-3 flex items-center justify-between gap-2 flex-wrap"
+        <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mb-3 flex items-center justify-center gap-2 flex-wrap"
              style={{ background: "#15151b", borderBottom: "1px solid #2a2a34" }}>
           <div className="flex gap-2 items-center">
             <button onClick={onUndo} disabled={!hasSwaps} className="px-3 py-2 rounded-lg text-sm font-bold"
