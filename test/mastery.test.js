@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   MASTERY_MAX_GRADE, MASTERY_MEISTER_MAX, MASTERY_THRESHOLDS, advanceGrade, masteryProgress, nextThreshold, thresholdForGrade,
   masteryRerollBonus, masteryCoverBonus, masteryRareShift, masteryLegendMult, masteryLegendGuaranteed,
-  masteryGradeLabel, canChallenge, difficultyForGrade, isGrandmaster, rankRoman,
+  masteryGradeLabel, canChallenge, difficultyForGrade, isGrandmaster, rankRoman, MASTERY_REWARD_LABELS,
 } from "../src/game/mastery.js";
 
 const [T1, T2, T3, T4, T5] = MASTERY_THRESHOLDS;
@@ -109,6 +109,12 @@ describe("Reward-Ableitungen — Grad 0 = Basiswerte (No-op)", () => {
   });
   it("Garantierter Legendär erst ab Grad V", () => {
     expect([0, 1, 2, 3, 4, 5].map(masteryLegendGuaranteed)).toEqual([false, false, false, false, false, true]);
+  });
+  it("Reward-Labels führen das Baufeld je Rang passend zu masteryCoverBonus (ab II)", () => {
+    expect(MASTERY_REWARD_LABELS[1].some((r) => /Baufeld/.test(r))).toBe(false); // Rang I = Basis (24), kein Baufeld-Label
+    for (const n of [2, 3, 4, 5]) {
+      expect(MASTERY_REWARD_LABELS[n]).toContain(`+${masteryCoverBonus(n)} Baufeld`); // +2/+4/+6/+8
+    }
   });
 });
 

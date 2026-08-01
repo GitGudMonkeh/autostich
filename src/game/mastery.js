@@ -116,13 +116,14 @@ export const masteryGradeLabel = (g) => {
 export const canChallenge = (entryGrade, playerGrade) => clampGrade(entryGrade) <= clampGrade(playerGrade);
 
 // Spieler-sichtbare Reward-Labels je Rang — KUMULATIVER Vollbestand (nicht Deltas): jeder Rang listet seinen
-// kompletten Stand. Spiegelt die Reward-Ableitungen (masteryRerollBonus 1/2/3, masteryRareShift III→„häufiger"/
-// IV→„noch häufiger", masteryLegendMult IV, masteryLegendGuaranteed V). Die UI hebt je Rang das NEU/Hochgestufte
-// hervor (Diff zum Vorrang) → kein doppeltes „Neuwürfe" mehr.
+// kompletten Stand. Spiegelt die Reward-Ableitungen (masteryRerollBonus 1/2/3, masteryCoverBonus +2/+4/+6/+8 ab II,
+// masteryRareShift III→„häufiger"/IV→„noch häufiger", masteryLegendMult IV, masteryLegendGuaranteed V). Der Baufeld-
+// String wächst je Rang (+2/+4/…) → die Diff-Logik der UI markiert ihn korrekt an jedem Rang als hochgestuft.
+// Die UI hebt je Rang das NEU/Hochgestufte hervor (Diff zum Vorrang) → kein doppeltes „Neuwürfe" mehr.
 export const MASTERY_REWARD_LABELS = {
   1: ["1 Neuwurf"],
-  2: ["2 Neuwürfe"],
-  3: ["3 Neuwürfe", "Seltene häufiger"],
-  4: ["3 Neuwürfe", "Seltene noch häufiger", "Legendäre häufiger"],
-  5: ["3 Neuwürfe", "Seltene noch häufiger", "Legendäre häufiger", "1 garantierter Legendär"],
+  2: ["2 Neuwürfe", "+2 Baufeld"],
+  3: ["3 Neuwürfe", "+4 Baufeld", "Seltene häufiger"],
+  4: ["3 Neuwürfe", "+6 Baufeld", "Seltene noch häufiger", "Legendäre häufiger"],
+  5: ["3 Neuwürfe", "+8 Baufeld", "Seltene noch häufiger", "Legendäre häufiger", "1 garantierter Legendär"],
 };
