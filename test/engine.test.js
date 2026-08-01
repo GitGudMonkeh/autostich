@@ -422,8 +422,8 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
     expect(statRound.offer).toBeNull();
     expect(statRound.skillOffer).toBeNull();
 
-    const shopRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng); // → cycle 3 = shop (Shop-Spec §2.2)
-    expect(shopRound.phase).toBe("shop");
+    const shopRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng); // → cycle 3 = ex-Shop-Slot; ohne Architekt (Sim-Baseline) → direkt play (#229: Shop entfernt, mit Architekt → "architect")
+    expect(shopRound.phase).toBe("play");
     expect(shopRound.offer).toBeNull();
     expect(shopRound.statOffer).toBeNull();
     expect(shopRound.skillOffer).toBeNull();
@@ -617,26 +617,6 @@ describe("Formationswerkzeuge — Engine (V2 §22.6 E)", () => {
     const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4, perks: ["E10"] }), rng); // → cycle 5 (Formation, 60-Plan)
     expect(s.phase).toBe("formation");
     expect(s.formationEnergy).toBe(FORMATION_ENERGY + 1);
-  });
-});
-
-describe("Zeitsegment × positionsgebundener Effekt: pos ≠ actualPos (#157)", () => {
-  // Unter einem Zeitsegment weicht der Stich-Index `pos` von der Deckposition `actualPos` ab. Bislang lief JEDER
-  // positionsgebundene Test OHNE Zeitsegment (pos === actualPos), d. h. die Divergenz wurde strukturell nie
-  // ausgelöst. L_HENK „Henker" (garantierter Crit ab actualPos ≥ HENKER_ZONE_START) ist positionsgebunden → es MUSS
-  // actualPos (Deckposition) lesen, nicht den Stich-Index. Zeitsegment 6 wiederholt die Deckpositionen 30–34 als Stiche
-  // 35–39; die echten Positionen 35–39 rutschen auf die Stiche 40–44 → an Stich 35 gilt pos ≥ 35, aber actualPos < 35.
-  const seg6 = { ...initialShop(), timeSegmentIndex: 6, timeSegmentTier: 4 };
-  const critAt = (pos, shop) => resolveTrick(scenario(12, 0, { pos, perks: ["L_HENK"], shop }), () => 0.99).lastTrick.isCrit; // rng 0.99 → nur Henker erzwingt
-
-  it("ohne Zeitsegment gilt pos === actualPos (Henker erzwingt Crit ab Position 36)", () => {
-    expect(critAt(HENKER_ZONE_START - 1, initialShop())).toBe(false); // actualPos 34 < 35 → kein erzwungener Crit
-    expect(critAt(HENKER_ZONE_START, initialShop())).toBe(true);      // actualPos 35 → erzwungener Crit
-  });
-  it("mit Zeitsegment liest Henker actualPos, NICHT den Stich-Index (pinnt die actualPos-Regel, vgl. #145)", () => {
-    expect(critAt(35, seg6)).toBe(false); // Stich 35 = Wiederholung von Deckpos 30 → actualPos 30 < 35 → KEIN Crit …
-    expect(critAt(40, seg6)).toBe(true);  // … Stich 40 = echte Deckpos 35 → actualPos 35 → erzwungener Crit.
-    // Ein pos-statt-actualPos-Bug gäbe an Stich 35 (pos ≥ 35) fälschlich einen Crit.
   });
 });
 

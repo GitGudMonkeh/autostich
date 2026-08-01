@@ -14,7 +14,7 @@ import { newMemory } from "./memory.js";
 import { fixedPolicy } from "./policies/fixed.js";
 
 const MIN_N = 5;
-const SENTINELS = new Set(["__decline__", "__leave__"]); // Nicht-Wahl-Arme gehören nicht in den Priority-Build
+const SENTINELS = new Set(["__decline__"]); // Nicht-Wahl-Arme gehören nicht in den Priority-Build
 
 function quantile(xs, q) {
   const s = [...xs].sort((a, b) => a - b);
@@ -65,7 +65,7 @@ export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, top
   const explorePol = ucbPolicy({ c, solveFormations: !!env.solveFormations });
   for (let i = 0; i < exploreRuns; i++) runOne(seed0 + i, explorePol, mem);
   const bestById = new Map();
-  for (const kind of ["stat", "perk", "skill", "shopitem"]) {
+  for (const kind of ["stat", "perk", "skill"]) {
     for (const r of mem.ranking(kind)) {
       if (r.n < MIN_N || SENTINELS.has(r.id)) continue;
       const cur = bestById.get(r.id);

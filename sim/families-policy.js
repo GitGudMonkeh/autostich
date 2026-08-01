@@ -3,7 +3,6 @@
 // (`o.itemId`) ODER Shop-Familien (`o.family` + `o.familyId`/`o.famTier`). Bandit/Priority/Ablation arbeiten
 // alle auf STRING-Options-IDs — diese Helfer bilden Einträge auf stabile IDs ab und zurück auf die Action.
 import { SUIT_ORDER } from "../src/game/constants.js";
-import { SHOP_FAMILY_DEFS } from "../src/game/shopFamilies.js";
 import { FORMATION_TYPES } from "../src/game/formations.js";
 
 export const isFamilyOffer = (e) => !!(e && typeof e === "object" && e.familyId);
@@ -17,12 +16,6 @@ export const perkActionFor = (e, rng) =>
     ? { type: "PICK_FAMILY", familyId: e.familyId, tier: e.tier, rng }
     : { type: "PICK_PERK", perkId: e, rng };
 
-// Stabile Options-ID eines Shop-Angebots (flaches Item vs. Shop-Familie je (Familie,Stufe)).
-export const shopOptionId = (o) => (o.family ? `SF:${o.familyId}:${o.famTier}` : o.itemId);
-
-// Hat diese Shop-Familien-Stufe einen Ziel-Fluss (öffnet shop-target)?
-export const shopFamilyHasTarget = (o) =>
-  !!(o.family && SHOP_FAMILY_DEFS[o.familyId]?.tiers?.[o.famTier]?.pickTarget);
 
 // Deterministischer Ziel-Füllschritt für die family-target-Phase (Perk-Familien A/C, Spec §2.3/§2.4).
 // Ein Schritt pro Aufruf: der Reihe nach die nötigen Farben bzw. Karten wählen, dann CONFIRM (mit rng —

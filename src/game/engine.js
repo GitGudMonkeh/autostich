@@ -19,8 +19,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasDornenkoenig, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
-import { coinsPerCycle, shopIncomeFor, buildShopOffer, withReservedOffer, perkLegendaryChance, skillLegendaryChance, perkFateReroll, skillFateReroll, SHOP_ITEM_DEFS, anchorAt, playSequence } from "./shop.js";
-import { SHOP_FAMILY_DEFS, timeSegmentDepth, timeSegmentReduced } from "./shopFamilies.js";
+import { perkLegendaryChance, skillLegendaryChance, perkFateReroll, skillFateReroll, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
 import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
@@ -93,10 +92,9 @@ export function resolveTrick(state, rng = Math.random) {
     layers = {}, frostFormPrev = [], // Eis-Rework (v0): Schichten je Frostkarte-id (permanent) / Frostkarten, die im Vordurchlauf in Formation siegten (Beständigkeit)
     ash = 0, brandPending = {}, brandActive = {}, forged = {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     growth = {}, colonized = {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green auf der Karte)
-    shop = null, economyStatLevel = 0, // Shop-System (Shop-Spec §3): Münzstand + Einkommen-Level
+    shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
     architect = null, architectEnabled = false, architectPre = null, // Architekt (#202, Shop-Ersatz): Gebäude-Overlay (8×5) + Durchlauf-Precompute
-    shopDisabled = false, // Sim-Referenz: 'shop'-Slots als No-Op (weder Shop noch Architekt) → Null-Baseline „ohne"
     seed = null, offerRerolls = 0, // #205 Challenger Mode: Lauf-Seed (null = unseeded/Sim) + Reroll-Index des akt. Angebots
     difficulty = null, // #226 Großmeister: { oppRampEvery } — mitwachsender Gegner. null (Meister/Basis) = No-op, byte-identisch.
   } = state;
@@ -128,20 +126,15 @@ export function resolveTrick(state, rng = Math.random) {
   const tieArmLosses  = familyTierParam(familyTiers, "B_INITIATIVE", "tieArmLosses");
   const revengeTwoCard = familyTierParam(familyTiers, "B_REVENGE", "revengeTwoCard");
 
-  // Zeitsegment (Shop §8 A-L1): `pos` ist der Stich-Index dieses Durchlaufs, `actualPos` die zugehörige
-  // Deckposition. Ohne Zeitsegment sind beide gleich; mit Zeitsegment wird das gewählte Segment direkt nach
-  // seinem ersten Spielen wiederholt (45 Stiche) — positionsgebundene Effekte nutzen actualPos („zählt erneut").
-  const timeSeg = shop && shop.timeSegmentIndex != null ? shop.timeSegmentIndex : null;
-  // Zeitsegment-Stufe (#164): Wiederholungstiefe + Effekt-Tiefe. Ohne Stufe (Altzustand) = volle Wiederholung (Default).
-  const timeSegTier = timeSeg != null ? (shop.timeSegmentTier || 4) : 0;
-  const timeDepth = timeSeg != null ? timeSegmentDepth(timeSegTier) : 0;
-  const seq = playSequence(timeSeg, C.TRICKS_PER_CYCLE, SEGMENT_SIZE, timeDepth);
-  const cycleLen = seq.length;
-  const actualPos = seq[pos];
-  const segEnd = timeSeg != null ? timeSeg * SEGMENT_SIZE + SEGMENT_SIZE : 0;
-  const isRepeat = timeSeg != null && pos >= segEnd && pos < segEnd + timeDepth;
-  // §10-Näherung Stufe III: die Wiederholung würfelt keine Crits (nur Score/Serie zählen). IV = vollständig.
-  const reducedRepeat = isRepeat && timeSegmentReduced(timeSegTier);
+  // #229: Zeitsegment (eine Shop-Funktion) entfernt — jeder Durchlauf ist genau TRICKS_PER_CYCLE Stiche, der
+  // Stich-Index IST die Deckposition (seq = Identität), keine Wiederholung. `seq`/`timeSeg` bleiben als Identität/null
+  // erhalten, damit die Downstream-Nutzer (predValue, undrawn-Slices, lastTrick-Marker) unverändert laufen.
+  const timeSeg = null;
+  const seq = playerOrder.map((_, i) => i);
+  const cycleLen = C.TRICKS_PER_CYCLE;
+  const actualPos = pos;
+  const isRepeat = false;
+  const reducedRepeat = false;
   const pCard = deck[playerOrder[actualPos]];
   const oCard = oppDeck[oppOrder[actualPos]];
 
@@ -971,9 +964,6 @@ export function resolveTrick(state, rng = Math.random) {
     prevCycleScore = lastCycleScore;
     lastCycleScore = score - scoreAtCycleStart;
     scoreAtCycleStart = score;
-    // Shop-Münzökonomie (Shop-Spec §3.2): jeder vollständig abgeschlossene Durchlauf zahlt die konstante Basis
-    // (das Einkommen wirkt am Shop, siehe unten). Auch nach dem letzten Durchlauf (→ gameover) vergeben (§3.5).
-    shop = { ...(shop || {}), coins: ((shop && shop.coins) || 0) + coinsPerCycle() };
     // #98: temporäre Positions-Boni enden mit dem Durchlauf — sonst würde ein an Position 40 armierter
     // Relay (C4/C5) auf Position 1 des nächsten (persistenten) Durchlaufs durchsickern.
     successorQueue = [];
@@ -1073,22 +1063,14 @@ export function resolveTrick(state, rng = Math.random) {
         const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift);
         if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; }
       } else if (decision === "shop" && architectEnabled) {
-        // Architekt-Phase (#202, Shop-Ersatz): STATT des Shops die Architekt-Phase öffnen — ein frisches Bauplan-Angebot
-        // ziehen (deterministisch über rng) und die Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen. #217: rareShift durchreichen.
+        // Architekt-Phase (#202, ersetzt den Shop): frisches Bauplan-Angebot ziehen (deterministisch über rng) und die
+        // Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen. #217: rareShift durchreichen.
         phase = "architect";
         newArchitect = { ...(newArchitect || architect), offers: buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch"), mRareShift), actedMain: false, moved: false };
-      } else if (decision === "shop" && shopDisabled) {
-        // Sim-Referenz „ohne": weder Shop noch Architekt — die Entscheidung ist ein No-Op, der Durchlauf startet direkt
-        // (Null-Baseline). Kein rng-Verbrauch.
-        phase = "play";
       } else if (decision === "shop") {
-        // Shop-Runde (Shop-Spec §2.6): Shop-Phase öffnen, Einkommensbonus gutschreiben (+3 je Einkommen-Level,
-        // pro Shop) und ein frisches Angebot ziehen (§5, deterministisch über rng). Danach ein evtl. im letzten
-        // Shop reserviertes Item (§10 P4) als zusätzliches Angebot anhängen (Reservierung verfällt damit).
-        phase = "shop";
-        shop = { ...shop, coins: (shop.coins || 0) + shopIncomeFor(economyStatLevel),
-                 offers: buildShopOffer(SHOP_ITEM_DEFS, shop, rngAtOr(cycle, "shop", 0), perks, SHOP_FAMILY_DEFS), purchasedOfferIds: [] };
-        shop = withReservedOffer(shop, SHOP_ITEM_DEFS, perks, SHOP_FAMILY_DEFS);
+        // #229: Shop entfernt — ohne aktiven Architekten (Sim-Baseline / architect:false) ist die 'shop'-Entscheidung
+        // ein No-Op; der Durchlauf startet direkt (kein rng-Verbrauch).
+        phase = "play";
       } else if (decision === "formation") {
         // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ Shop-Feinjustierung), Vorschau berechnen.
         phase = "formation";
@@ -1115,7 +1097,7 @@ export function resolveTrick(state, rng = Math.random) {
     critFollowArmed, weaknessArmed, weaknessBig, interplayStored, misfireScore,
     winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
-    architect: newArchitect, architectEnabled, architectPre: newArchitectPre, shopDisabled, // Architekt (#202, Shop-Ersatz)
+    architect: newArchitect, architectEnabled, architectPre: newArchitectPre, // Architekt (#202, ersetzt den Shop)
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
@@ -1128,7 +1110,7 @@ export function resolveTrick(state, rng = Math.random) {
     layers: newLayers, frostFormPrev: newFrostFormPrev, // Eis-Rework (v0): Schichten (permanent) + Beständigkeits-Historie
     ash: newAsh, brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer-Rework (v0)
     growth: newGrowth, colonized: newColonized, // Pflanze-Fraktion (v0): Wachstum + Kolonisierung (grün = card.green im deck)
-    shop, // Shop-System (Shop-Spec §3): aktualisierter Münzstand (economyStatLevel läuft unverändert über ...state)
+    shop, // hält nur noch die (inerten) Positionsanker (#229: Shop entfernt)
     lastTrick, phase,
   };
 }

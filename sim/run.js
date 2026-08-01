@@ -25,7 +25,6 @@ function finalize(s, seed, tel) {
     critBonusScore: s.critBonusScore,
     bestStreak: s.bestStreak,
     bestTrickScore: s.bestTrickScore,
-    coins: s.shop?.coins ?? 0,
     formationWinRate: s.wins ? tel.formationWins / s.wins : 0, // Anteil der Siege mit aktiver Formation (S1)
     fingerprint: fingerprint(s),
     build: {
@@ -37,7 +36,6 @@ function finalize(s, seed, tel) {
         critMult: s.statCritMult,
         formMult: s.statFormMult,
         streakMult: s.statStreakMult,
-        economy: s.economyStatLevel,
       },
     },
     cards: summarizeCards(tel), // Per-Karte-Ledger (S1): Auftritte/Winrate/Crits/Score-Anteil

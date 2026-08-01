@@ -244,15 +244,13 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
   });
 });
 
-describe("DECLINE_PERK — Perk-Angebot ablehnen (#138, keine Münzen mehr #225.1)", () => {
+describe("DECLINE_PERK — Perk-Angebot ablehnen (#138)", () => {
   const perkLevelup = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["L_UMV", "L2", "L4"], ...over });
 
-  it("verwirft das Angebot, kehrt in play zurück und vergibt KEINE Münzen", () => {
-    const s0 = perkLevelup({ shop: { ...initialState(makeRng(1)).shop, coins: 3 } });
-    const s = reducer(s0, { type: "DECLINE_PERK" });
+  it("verwirft das Angebot und kehrt in play zurück", () => {
+    const s = reducer(perkLevelup(), { type: "DECLINE_PERK" });
     expect(s.phase).toBe("play");
     expect(s.offer).toBeNull();
-    expect(s.shop.coins).toBe(3); // unverändert — Ablehnen ist keine Einnahmequelle mehr
   });
 
   it("ist außerhalb der Perk-Auswahl wirkungslos (falsche Phase oder kein Angebot)", () => {

@@ -79,6 +79,6 @@ export function fingerprint(state) {
   const p = [...(state.perks || [])].sort().join(",");
   const s = [...(state.skills || [])].sort().join(",");
   const a = [...(state.activeArchetypes || [])].sort().join(",");
-  const st = [state.statCritChance, state.statCritMult, state.statFormMult, state.statStreakMult, state.economyStatLevel].join("/");
+  const st = [state.statCritChance, state.statCritMult, state.statFormMult, state.statStreakMult].join("/");
   return `P:${p}|S:${s}|A:${a}|St:${st}`;
 }

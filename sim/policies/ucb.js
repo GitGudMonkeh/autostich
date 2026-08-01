@@ -9,13 +9,11 @@
 // Nicht-Angebots-Phasen (target/formation/shop/shop-target) delegiert die Policy an die Baseline —
 // so bleibt S2 auf die Auswahl-Arme fokussiert; der Formations-/Shop-Ausbau kommt in S4.
 import { randomPolicy, canAddSkill } from "./random.js";
-import { buyableOffers, shopTargetStep } from "../shop-policy.js";
 import { greedyFormationStep } from "../formation.js";
 import { armKey } from "../memory.js";
-import { perkOptionId, perkActionFor, shopOptionId } from "../families-policy.js";
+import { perkOptionId, perkActionFor } from "../families-policy.js";
 
 const DECLINE = "__decline__"; // Skill-Ablehnung als eigener Arm (auch „nichts nehmen" ist eine Entscheidung)
-const SHOP_LEAVE = "__leave__"; // Shop verlassen als eigener Arm (Nicht-Kauf ist auch eine Entscheidung)
 export const byArchetype = (s) => [...(s.activeArchetypes || [])].sort().join(",") || "none";
 
 // solveFormations: optimiert auch im Explore die Aufstellung (Greedy-Solver). Wichtig für eine faire
@@ -59,17 +57,6 @@ export function ucbPolicy({ c = 1.4, bucket = byArchetype, solveFormations = fal
           }
           return { type: "RESOLVE_TRICK", rng };
         }
-        case "shop": {
-          // UCB über {jetzt kaufbare Options-ids} + „verlassen". Flache Items UND Shop-Familien (je Familie+Stufe).
-          const buyable = buyableOffers(s);
-          if (!buyable.length) return { type: "LEAVE_SHOP" };
-          const cands = [...new Set(buyable.map(shopOptionId)), SHOP_LEAVE];
-          const choice = ucbPick("shopitem", cands, s, mem);
-          if (choice === SHOP_LEAVE) return { type: "LEAVE_SHOP" };
-          return { type: "BUY_ITEM", offerId: buyable.find((o) => shopOptionId(o) === choice).offerId, rng };
-        }
-        case "shop-target":
-          return shopTargetStep(s, rng); // Ziel-Fluss deterministisch füllen (S4)
         case "formation":
           return solveFormations ? greedyFormationStep(s) : base.act(s, rng);
         default:

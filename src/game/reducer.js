@@ -2,14 +2,13 @@ import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js";
-import { SHOP_FAMILY_DEFS } from "./shopFamilies.js";
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront, hasGlacierPush, hasVerzahnung, hasGleitfrost, hasVerdichtung,
   hasSetzlingsbeet, hasDornenkoenig, buildSkillOffer } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
 import { computeFormations, formationPotential, segmentGainedFormation, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
-import { initialShop, SHOP_ITEM_DEFS, positionOccupied, perkLegendaryChance, skillLegendaryChance, perkFateReroll, purchaseLogEntry, familyPurchaseLogEntry, rerollCategory } from "./shop.js";
+import { initialShop, perkLegendaryChance, skillLegendaryChance, perkFateReroll } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
@@ -77,7 +76,7 @@ export function initialState(rng = Math.random, seed = null) {
     winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Farbserie / Volles Haus (recentResults → secondLastResult)
     segmentWins: 0, // #189 Volles Haus: segment-genauer Sieg-Zähler (ersetzt das rollende Fenster)
     // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
-    statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, economyStatLevel: 0, statOffer: null,
+    statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, statOffer: null,
     statPicks: [], // #190: Reihenfolge der gewählten Stats dieses Laufs (für die Mono-Stat-Challenge deck_c4)
     formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt
     formationEnergy: 0, formationSwaps: [], // Formationsphase (V2 §22.8): Energie + Undo-Historie der aktuellen Phase
@@ -103,12 +102,10 @@ export function initialState(rng = Math.random, seed = null) {
     growth: {}, colonized: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green)
     ash: 0, brandPending: {}, brandActive: {}, forged: {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     tieArmed: false,
-    shop: initialShop(), // Shop-System (Shop-Spec): Münzen + Angebot (+ später Anker/Regeländerungen) — im Spiel durch den Architekten ersetzt (dormant)
-    shopTarget: null,    // Shop-Ziel-Auswahl (Shop-Spec §12.2): aktive Karten-/Farb-/Segment-Auswahl beim Kauf
-    architectEnabled: false,       // Architekt (#202): Flag — bei true ersetzt die Architekt-Phase den Shop (im Spiel via START_RUN gesetzt; A/B im Sim)
+    shop: initialShop(), // hält nur noch die (inerten) Positionsanker — der Shop ist entfernt (#229)
+    architectEnabled: false,       // Architekt (#202): Flag — bei true öffnet sich die Architekt-Phase (im Spiel via START_RUN true; false = Sim-Baseline ohne Architekt)
     architect: { ...initialArchitect(), maxCover: ARCH_MAX_COVER }, // Gebäude-Overlay (8×5) + Angebot + Meilenstein-Zähler; maxCover als #217-Seam (Rang-Bonus: base + Grad×N) run-geseedet
     architectPre: null,            // Precompute je Durchlauf (von der Engine gefüllt)
-    shopDisabled: false,           // Sim-Referenz: 'shop'-Slots als No-Op (Null-Baseline „ohne")
     rerolls: C.BASE_REROLLS,       // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill) — ersetzt shop.perkRerolls/skillRerolls; Baseline, kein Nachschub (#217-Reward-Fläche)
     rerollsUsed: 0,                // #214: Zähler benutzter Rerolls (Perk+Skill, bezahlt ODER gratis) über den Lauf → Sparfuchs-Challenge (deck_c3 „noRerollRun")
     offerRerolls: 0,               // #205: Reroll-Index des AKTUELLEN Angebots (Original = 0) → adressiert `(seed,cycle,kind,offerRerolls)`; von der Engine bei jedem frischen Angebot auf 0 gesetzt
@@ -124,14 +121,6 @@ export function menuState() {
   return { phase: "menu" };
 }
 
-// Ziel-Bedarf eines Shop-Kaufs (flaches Item ODER Shop-Familie #164) — liefert den Ziel-Deskriptor
-// { cards?, color?, segment?, position?, ... }. Familien tragen ihn als `pickTarget` der Zielstufe.
-function shopTargetSpec(st) {
-  if (!st) return {};
-  if (st.familyId) return SHOP_FAMILY_DEFS[st.familyId]?.tiers?.[st.famTier]?.pickTarget || {};
-  return SHOP_ITEM_DEFS[st.itemId]?.target || {};
-}
-
 export function reducer(state, action) {
   switch (action.type) {
     case "START_RUN":   // frischer Lauf aus dem Menü / Neustart
@@ -142,12 +131,12 @@ export function reducer(state, action) {
       const s = initialState(action.rng, seed);
       // Architekt-Flag (#202): das Spiel startet mit architect:true (Shop-Ersatz); der Sim übersteuert per Action (A/B),
       // sonst greift der Modul-Default (env ARCHITECT). shopDisabled = Sim-Null-Baseline „ohne".
-      const architectEnabled = action.architect != null ? !!action.architect : !!C.ARCHITECT_ENABLED;
+      const architectEnabled = action.architect != null ? !!action.architect : !!C.ARCHITECT_ENABLED; // #229: false = Sim-Baseline (kein Architekt, direkt in den Durchlauf)
       // #217 Meistergrade: den run-übergreifenden Grad (aus dem Profil, via App) in die Lauf-Rewards übersetzen.
       // Grad 0 (frischer Spieler / Sim ohne masteryGrade) = Basiswerte → alles byte-identisch zum bisherigen Start.
       const grade = Math.max(0, Math.min(MASTERY_MAX_GRADE, Math.floor(Number(action.masteryGrade) || 0)));
       const masterRun = !!action.masterRun; // #217: Meister-Lauf? Steuert die Rang-Leiter — UND den Neuwurf-Pool.
-      return { ...s, phase: "levelup", statOffer: STAT_IDS, architectEnabled, shopDisabled: !!action.shopDisabled,
+      return { ...s, phase: "levelup", statOffer: STAT_IDS, architectEnabled,
         masteryGrade: grade, masterRun,
         difficulty: difficultyForGrade(grade), // #226 Großmeister: Ramp je Rang (Meister → null = No-op)
         // Neuwurf-Pool: der Meister-Lauf zieht ihn ALLEIN aus dem Rang (masteryRerollBonus 0/1/2/3/3/3 → Rang 0 = 0 Neuwürfe, Maximum 3).
@@ -163,11 +152,6 @@ export function reducer(state, action) {
       // Highscore/Geist sichert der gameover-Effekt in App.jsx (saveRun). Menü/Gameover ignorieren.
       return (state.phase === "menu" || state.phase === "gameover") ? state : { ...state, phase: "gameover" };
 
-    case "LEAVE_SHOP":  // Shop-Runde bestätigen/verlassen (Shop-Spec §2.6) → zugehöriger Durchlauf startet.
-      // Nicht gekaufte normale Items werden verworfen (§5.4): Angebot leeren. Reservierung (P4) bleibt (S5).
-      return state.phase === "shop"
-        ? { ...state, phase: "play", shop: { ...state.shop, offers: null, purchasedOfferIds: [] } }
-        : state;
 
     /* ---- Architekt (#202, Shop-Ersatz): Bau-Aktionen. Hauptaktion (errichten ODER ausbauen) ist EXKLUSIV je Phase;
            versetzen genau 1×; abreißen unbegrenzt; fertig → Durchlauf startet. Alle Platzierungen rein validiert. ---- */
@@ -221,212 +205,6 @@ export function reducer(state, action) {
     case "ARCHITECT_DONE": { // Architekt-Phase verlassen → zugehöriger Durchlauf startet (Angebot leeren).
       if (state.phase !== "architect") return state;
       return { ...state, phase: "play", architect: { ...state.architect, offers: null } };
-    }
-
-    case "BUY_ITEM": {  // Kauf im Shop (Shop-Spec §5.4). Ziel-Items (targetMode) laufen über den Target-Flow (ab S2).
-      if (state.phase !== "shop") return state;
-      const shop = state.shop || {};
-      const offer = (shop.offers || []).find((o) => o.offerId === action.offerId);
-      if (!offer) return state;
-      if ((shop.purchasedOfferIds || []).includes(offer.offerId)) return state; // dasselbe Angebot nicht zweimal
-      if ((shop.coins || 0) < offer.price) return state;                        // nicht bezahlbar
-      // Shop-Familie (#164): Ziel-Familien (Karten/Anker/…) öffnen die shop-target-Phase; ziel-lose Familien
-      // (Planung: Neuwürfe/Legendär-Boni/Schicksalskontrolle) wenden ihren Effekt sofort an (kein Ziel-Schritt).
-      if (offer.family) {
-        const fam = SHOP_FAMILY_DEFS[offer.familyId];
-        const tierDef = fam && fam.tiers[offer.famTier];
-        if (!fam || !tierDef) return state;
-        if (!tierDef.pickTarget) {
-          const newShop = { ...shop, coins: (shop.coins || 0) - offer.price,
-            purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
-            familyTiers: { ...(shop.familyTiers || {}), [fam.id]: offer.famTier },
-            purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, offer.famTier, offer.price, state.cycle, null)] };
-          if (tierDef.onBuy) Object.assign(newShop, tierDef.onBuy(shop));                                 // Planungs-Familien: Shop-Felder setzen
-          return { ...state, phase: "shop", shop: newShop };
-        }
-        return { ...state, phase: "shop-target",
-                 shopTarget: { offerId: offer.offerId, familyId: offer.familyId, famTier: offer.famTier, cards: [], colors: {}, segment: null, position: null, colorPair: [], boundary: null, formationType: null, category: null, targetOfferId: null } };
-      }
-      const def = SHOP_ITEM_DEFS[offer.itemId];
-      if (!def) return state;
-      if (def.target) { // Ziel-Auswahl nötig (§12.2): in die shop-target-Phase; Münzen erst nach Bestätigung.
-        return { ...state, phase: "shop-target",
-                 shopTarget: { offerId: offer.offerId, itemId: def.id, cards: [], colors: {}, segment: null, position: null, colorPair: [], boundary: null, formationType: null, category: null, targetOfferId: null } };
-      }
-      // Sofort-Items (kein Ziel, z. B. Planung ab S5): Effekt anwenden, danach generische Münz-/Kauf-Buchhaltung.
-      const patch = def.apply ? def.apply(state, null, rngFor(state, action, state.cycle, "shopbuy")) : {};
-      const merged = { ...state, ...patch };
-      const newShop = { ...(merged.shop || shop) };
-      newShop.coins = (shop.coins || 0) - offer.price;                          // Preis sofort abziehen
-      newShop.purchasedOfferIds = [...(shop.purchasedOfferIds || []), offer.offerId];
-      if (def.legendary) newShop.boughtLegendaryIds = [...(shop.boughtLegendaryIds || []), def.id]; // §5.7 nie wieder
-      if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
-      newShop.purchaseLog = [...(shop.purchaseLog || []), purchaseLogEntry(def, offer.price, state.cycle)]; // #127
-      // Formationen neu berechnen — F-Items (§9) ändern die Erkennung permanent.
-      const deck2 = patch.deck || state.deck;
-      const formations2 = computeFormations(state.playerOrder, deck2, state.roles, state.perks, state.skills, newShop.anchors, state.familyTiers);
-      return { ...merged, deck: deck2, formations: formations2, shop: newShop };
-    }
-
-    // ---- Shop-Ziel-Auswahl (Shop-Spec §12.2) — Karten/Farben/Segment wählen; Münzen erst bei CONFIRM. ----
-    case "SHOP_TARGET_CARD": {
-      if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const need = shopTargetSpec(state.shopTarget).cards || 0;
-      if (!need || !state.deck.some((c) => c.id === action.cardId)) return state;
-      let cards = state.shopTarget.cards.slice();
-      const colors = { ...state.shopTarget.colors };
-      if (cards.includes(action.cardId)) { cards = cards.filter((id) => id !== action.cardId); delete colors[action.cardId]; }
-      else if (cards.length < need) cards.push(action.cardId);
-      else if (need === 1) { delete colors[cards[0]]; cards = [action.cardId]; } // Einzelziel: umschalten
-      else return state;                                                          // Limit erreicht → ignorieren
-      return { ...state, shopTarget: { ...state.shopTarget, cards, colors } };
-    }
-    case "SHOP_TARGET_COLOR": {
-      if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      if (!shopTargetSpec(state.shopTarget).color || !state.shopTarget.cards.includes(action.cardId)) return state;
-      const card = state.deck.find((c) => c.id === action.cardId);
-      if (!card || action.color === card.suit || !C.SUIT_ORDER.includes(action.color)) return state; // andere gültige Farbe
-      return { ...state, shopTarget: { ...state.shopTarget, colors: { ...state.shopTarget.colors, [action.cardId]: action.color } } };
-    }
-    case "SHOP_TARGET_SEGMENT": {
-      if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const nSeg = Math.ceil(state.playerOrder.length / SEGMENT_SIZE);
-      if (!shopTargetSpec(state.shopTarget).segment || !(action.segment >= 0 && action.segment < nSeg)) return state;
-      return { ...state, shopTarget: { ...state.shopTarget, segment: action.segment } };
-    }
-    case "SHOP_TARGET_POSITION": { // Anker-Position wählen (§8): 0..39, nur freie Positionen (max 1 Anker/Position).
-      if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const st = state.shopTarget;
-      const p = action.position;
-      if (!shopTargetSpec(st).position || !(p >= 0 && p < state.playerOrder.length)) return state;
-      // #164 Anker-Familie: die eigene (zu ersetzende) Anker-Position ist erlaubt; nur FREMDE Anker blockieren (§8.1).
-      const ownType = st.familyId ? SHOP_FAMILY_DEFS[st.familyId]?.anchorType : null;
-      if ((state.shop?.anchors || []).some((a) => a.position === p && a.type !== ownType)) return state;
-      return { ...state, shopTarget: { ...st, position: p } };
-    }
-    // (SHOP_TARGET_COLOR_PAIR / _BOUNDARY / _FORMATION_TYPE entfielen #179 — sie bedienten nur die zu Perks migrierten
-    //  Formations-Familien Farballianz/Offene Grenze/Formationskern; die Perk-Seite nutzt den family-target-Flow.)
-    case "SHOP_TARGET_CATEGORY": { // Warenwechsel (#164): eine der vier Shop-Kategorien wählen.
-      if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      if (!shopTargetSpec(state.shopTarget).category || !C.SHOP_CATEGORIES.includes(action.category)) return state;
-      return { ...state, shopTarget: { ...state.shopTarget, category: action.category } };
-    }
-    case "SHOP_TARGET_OFFER": { // Reservierung (#164): ein anderes, noch nicht gekauftes Angebot wählen (nicht die Reservierung selbst).
-      if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      if (!shopTargetSpec(state.shopTarget).offer) return state;
-      const target = (state.shop?.offers || []).find((o) => o.offerId === action.offerId);
-      if (!target || action.offerId === state.shopTarget.offerId) return state;      // muss existieren & darf nicht P4 selbst sein
-      if ((state.shop?.purchasedOfferIds || []).includes(action.offerId)) return state; // nur nicht gekaufte Items
-      const cur = state.shopTarget.targetOfferId === action.offerId ? null : action.offerId; // Antippen schaltet um/ab
-      return { ...state, shopTarget: { ...state.shopTarget, targetOfferId: cur } };
-    }
-    case "SHOP_TARGET_CANCEL": // Abbrechen (§12.2): Angebot & Münzen unverändert → zurück in den Shop.
-      return state.phase === "shop-target" ? { ...state, phase: "shop", shopTarget: null } : state;
-    case "SHOP_TARGET_CONFIRM": {
-      if (state.phase !== "shop-target" || !state.shopTarget) return state;
-      const st = state.shopTarget;
-      const shop = state.shop || {};
-      const offer = (shop.offers || []).find((o) => o.offerId === st.offerId);
-      if (!offer) return state;
-      if ((shop.purchasedOfferIds || []).includes(offer.offerId)) return state;     // schon gekauft
-      if ((shop.coins || 0) < offer.price) return state;                            // nicht bezahlbar
-      // ---- Shop-Familie (#164): kumulatives Kartenpaket via applyFamilyPick; Rang in shop.familyTiers. ----
-      if (st.familyId) {
-        const fam = SHOP_FAMILY_DEFS[st.familyId];
-        const tierDef = fam && fam.tiers[st.famTier];
-        if (!fam || !tierDef) return state;
-        const spec = tierDef.pickTarget || {};
-        // ---- Anker-Familie (#164): EIN Anker je Typ, Stärke = Stufe; Position (neu) gewählt, fremde Anker blockieren. ----
-        if (fam.cat === "anchors") {
-          // Zeitsegment (SF_A_TIME): Segment + Stufe (Wiederholungstiefe) setzen — kein Positions-Anker.
-          if (fam.anchorType === "time") {
-            if (spec.segment && st.segment == null) return state;
-            const newShop = { ...shop, timeSegmentIndex: st.segment, timeSegmentTier: st.famTier, coins: (shop.coins || 0) - offer.price,
-              purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
-              familyTiers: { ...(shop.familyTiers || {}), [fam.id]: st.famTier },
-              purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, st.famTier, offer.price, state.cycle, { segment: st.segment })] };
-            return { ...state, phase: "shop", shopTarget: null, shop: newShop };
-          }
-          if (spec.position && (st.position == null || (shop.anchors || []).some((a) => a.position === st.position && a.type !== fam.anchorType))) return state;
-          // Stufen-Parameter (power/score/crit/streak/factor/jokerTypes/…) auf den Anker-Eintrag legen → Engine/formations
-          // lesen sie direkt (kein Registry-Lookup je Stich, kein Import-Zyklus formations↔shopFamilies).
-          const { desc, pickTarget, ...params } = tierDef;
-          const anchors = [...(shop.anchors || []).filter((a) => a.type !== fam.anchorType), { type: fam.anchorType, position: st.position, tier: st.famTier, familyId: fam.id, ...params }];
-          const newShop = { ...shop, anchors, coins: (shop.coins || 0) - offer.price,
-            purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
-            familyTiers: { ...(shop.familyTiers || {}), [fam.id]: st.famTier },
-            purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, st.famTier, offer.price, state.cycle, { position: st.position })] };
-          const formations = computeFormations(state.playerOrder, state.deck, state.roles, state.perks, state.skills, newShop.anchors, state.familyTiers);
-          return { ...state, formations, phase: "shop", shopTarget: null, shop: newShop };
-        }
-        // (Ziel-Formations-Familien Farballianz/Offene Grenze/Formationskern sind #179 zu Perk-Kat.-E migriert — kein Shop-Pfad mehr.)
-        // ---- Ziel-Planungs-Familie (#164): Warenwechsel (Sofort-Reroll) / Reservierung (Angebot vormerken). ----
-        if (fam.cat === "planning") {
-          const base = { ...shop, coins: (shop.coins || 0) - offer.price,
-            purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
-            familyTiers: { ...(shop.familyTiers || {}), [fam.id]: st.famTier },
-            purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(fam.id, offer.category, st.famTier, offer.price, state.cycle, { category: st.category, offerId: st.targetOfferId })] };
-          if (fam.id === "SF_P_RESTOCK") { // Warenwechsel: `restockScope` Kategorien ab der gewählten neu würfeln (das gekaufte Angebot bleibt).
-            if (st.category == null) return state;
-            const scope = tierDef.restockScope || 1;
-            const i0 = C.SHOP_CATEGORIES.indexOf(st.category);
-            const cats = scope === Infinity ? C.SHOP_CATEGORIES
-              : Array.from({ length: Math.min(scope, C.SHOP_CATEGORIES.length) }, (_, k) => C.SHOP_CATEGORIES[(i0 + k) % C.SHOP_CATEGORIES.length]);
-            let sh = base;
-            for (const cat of cats) sh = rerollCategory(sh, cat, SHOP_ITEM_DEFS, rngFor(state, action, state.cycle, "shopreroll", cat), state.perks, null, SHOP_FAMILY_DEFS);
-            return { ...state, phase: "shop", shopTarget: null, shop: sh };
-          }
-          // Reservierung: gewähltes Angebot merken; `reserveShops` = Persistenz (Anzahl folgender Shops).
-          if (st.targetOfferId == null || !(shop.offers || []).some((o) => o.offerId === st.targetOfferId)
-            || (shop.purchasedOfferIds || []).includes(st.targetOfferId)) return state;
-          const off = (shop.offers || []).find((o) => o.offerId === st.targetOfferId);
-          const reservedItem = { ...(off.family ? { family: true, familyId: off.familyId, famTier: off.famTier } : { itemId: off.itemId, tier: off.tier, legendary: !!off.legendary }),
-            category: off.category, price: off.price, shopsLeft: tierDef.reserveShops || 1 };
-          return { ...state, phase: "shop", shopTarget: null, shop: { ...base, reservedItem } };
-        }
-        if (spec.cards && st.cards.length !== spec.cards) return state;             // genau N Karten
-        if (spec.color && st.cards.some((id) => !st.colors[id])) return state;      // je Karte eine Farbe
-        if (spec.segment && st.segment == null) return state;                        // ein Segment
-        // #195: Feinschliff-Differenz wird per KARTE in onPick aufgelöst (card.refined), nicht mehr aus dem
-        // gehaltenen Familienrang — so bekommt eine frische Karte den vollen Stufenwert (kein +0-Nachkauf).
-        const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, order: state.playerOrder };
-        const { deck } = applyFamilyPick(st.familyId, st.famTier,
-          { familyTiers: {}, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "shopfam"), SHOP_FAMILY_DEFS);
-        const newDeck = deck || state.deck;
-        const newShop = { ...shop, coins: (shop.coins || 0) - offer.price,          // Preis erst jetzt abziehen (§12.2)
-          purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId],
-          familyTiers: { ...(shop.familyTiers || {}), [st.familyId]: st.famTier },
-          purchaseLog: [...(shop.purchaseLog || []), familyPurchaseLogEntry(st.familyId, offer.category, st.famTier, offer.price, state.cycle, target)] };
-        const formations = computeFormations(state.playerOrder, newDeck, state.roles, state.perks, state.skills, newShop.anchors, state.familyTiers);
-        return { ...state, deck: newDeck, formations, phase: "shop", shopTarget: null, shop: newShop };
-      }
-      const def = SHOP_ITEM_DEFS[st.itemId];
-      if (!def) return state;
-      const spec = def.target || {};
-      if (spec.cards && st.cards.length !== spec.cards) return state;             // genau N Karten
-      if (spec.color && st.cards.some((id) => !st.colors[id])) return state;      // je gewählter Karte eine Farbe
-      if (spec.segment && st.segment == null) return state;                       // ein Segment
-      if (spec.position && (st.position == null || positionOccupied(shop.anchors, st.position))) return state; // freie Position
-      if (spec.colorPair && (st.colorPair || []).length !== 2) return state;      // genau zwei Farben (F4)
-      if (spec.boundary && st.boundary == null) return state;                     // eine Grenze (F5)
-      if (spec.formationType && st.formationType == null) return state;           // ein Formationstyp (F-L1)
-      if (spec.category && st.category == null) return state;                      // eine Kategorie (P3)
-      if (spec.offer && (st.targetOfferId == null                                 // ein reservierbares Angebot (P4)
-        || !(shop.offers || []).some((o) => o.offerId === st.targetOfferId)
-        || (shop.purchasedOfferIds || []).includes(st.targetOfferId))) return state;
-      const target = { cardIds: st.cards, colors: st.colors, segment: st.segment, position: st.position, colorPair: st.colorPair, boundary: st.boundary, formationType: st.formationType, category: st.category, offerId: st.targetOfferId };
-      const patch = def.apply ? def.apply(state, target, rngFor(state, action, state.cycle, "shopitem")) : {};
-      const merged = { ...state, ...patch };
-      const deck = patch.deck || state.deck;
-      // Buchhaltung auf dem (evtl. durch apply veränderten) Shop — z. B. Anker-Items legen shop.anchors an.
-      const newShop = { ...(merged.shop || shop), coins: (shop.coins || 0) - offer.price, // Preis erst jetzt abziehen (§12.2)
-        purchasedOfferIds: [...(shop.purchasedOfferIds || []), offer.offerId] };
-      if (def.legendary) newShop.boughtLegendaryIds = [...(shop.boughtLegendaryIds || []), def.id];
-      if (def.repeatable === false) newShop.boughtNonRepeatableIds = [...(shop.boughtNonRepeatableIds || []), def.id];
-      newShop.purchaseLog = [...(shop.purchaseLog || []), purchaseLogEntry(def, offer.price, state.cycle, target)]; // #127
-      // Formationen mit den (evtl. neuen) Ankern neu berechnen — A5 Formationsanker wirkt sofort.
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills, newShop.anchors, state.familyTiers);
-      return { ...merged, deck, formations, phase: "shop", shopTarget: null, shop: newShop };
     }
 
     case "RESOLVE_TRICK":

@@ -7,7 +7,6 @@
 //   statPolicy("crit-pair", factionPolicy("lightning")) → Crit-Chance/Mult balanciert, im Blitz-Kontext
 import { randomPolicy } from "./random.js";
 import { greedyFormationStep } from "../formation.js";
-import { buyableOffers, shopTargetStep } from "../shop-policy.js";
 import * as C from "../../src/game/constants.js";
 
 // Aktiv-Spiel-Wrapper: legt Formations-Solver + Ziel-Shop über eine Build-Basis (sonst delegiert es).
@@ -18,18 +17,13 @@ export function activePolicy(base = randomPolicy(), { solveFormations = true, bu
     name: `active(${base.name})`,
     act(s, rng, mem) {
       if (s.phase === "formation" && solveFormations) return greedyFormationStep(s);
-      if (s.phase === "shop" && buyShop) {
-        const buyable = buyableOffers(s);
-        return buyable.length ? { type: "BUY_ITEM", offerId: buyable[0].offerId, rng } : { type: "LEAVE_SHOP" };
-      }
-      if (s.phase === "shop-target" && buyShop) return shopTargetStep(s, rng);
       return base.act(s, rng, mem);
     },
   };
 }
 
-const STEP = { critChance: C.STAT_CRIT_CHANCE_STEP, critMult: C.STAT_CRIT_MULT_STEP, formMult: C.STAT_FORM_MULT_STEP, streakMult: C.STAT_STREAK_MULT_STEP, economy: C.STAT_ECONOMY_STEP };
-const FIELD = { critChance: "statCritChance", critMult: "statCritMult", formMult: "statFormMult", streakMult: "statStreakMult", economy: "economyStatLevel" };
+const STEP = { critChance: C.STAT_CRIT_CHANCE_STEP, critMult: C.STAT_CRIT_MULT_STEP, formMult: C.STAT_FORM_MULT_STEP, streakMult: C.STAT_STREAK_MULT_STEP };
+const FIELD = { critChance: "statCritChance", critMult: "statCritMult", formMult: "statFormMult", streakMult: "statStreakMult" };
 const heldCount = (s, id) => Math.round((s[FIELD[id]] || 0) / STEP[id]);
 
 export function statPolicy(strategy, base = randomPolicy()) {

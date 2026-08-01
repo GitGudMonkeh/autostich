@@ -18,10 +18,7 @@ export const STAT_DEFS = {
   critMult:   { id: "critMult",   label: "Crit-Multiplikator",    field: "statCritMult",   step: C.STAT_CRIT_MULT_STEP,   blurb: `+${de(C.STAT_CRIT_MULT_STEP)}×`,    desc: `+${de(C.STAT_CRIT_MULT_STEP)}× Crit-Multiplikator (auf Basis ${de(C.CRIT_BASE_MULT)}×).` },
   formMult:   { id: "formMult",   label: "Formations-Multiplikator", field: "statFormMult", step: C.STAT_FORM_MULT_STEP, blurb: `+${pp(C.STAT_FORM_MULT_STEP)} %/Formation`, desc: `+${pp(C.STAT_FORM_MULT_STEP)} % Score je aktiver Formation an der Siegposition (mehrere gleichzeitige Formationen stapeln).` },
   streakMult: { id: "streakMult", label: "Serien-Multiplikator",  field: "statStreakMult", step: C.STAT_STREAK_MULT_STEP, blurb: `+${pp(C.STAT_STREAK_MULT_STEP)} %/Serie`, desc: `+${pp(C.STAT_STREAK_MULT_STEP)} % Score je aktuellem Serienpunkt (bis +${pp(C.STREAK_STAT_CAP)} %).` },
-  // Einkommen (Shop-Spec §4) — DORMANT: nicht mehr in STAT_IDS (aus der Stat-Auswahl entfernt, Sim-Befund
-  // „Score-Falle": mono 0,75×, LOO +6–9 % sogar mit Ziel-Shop). Def + Reducer-Pfad bleiben für den anstehenden
-  // Shop-Rework, der das Einkommen an anderer Stelle wieder verankert. Additiv, stapelbar, kein Cap.
-  economy:    { id: "economy",    label: "Einkommen",             field: "economyStatLevel", step: C.STAT_ECONOMY_STEP,   blurb: `+${C.SHOP_INCOME_PER_LEVEL} Münzen`,  desc: `+${C.SHOP_INCOME_PER_LEVEL} Münzen bei jedem zukünftigen Shopbesuch.` },
+  // (Einkommen-Stat #229 entfernt — der Shop ist weg; es gibt keine Münzen mehr.)
 };
 
 // Reihenfolge des Angebots — die VIER angebotenen Kern-Stats (Einkommen entfernt → kommt beim Shop-Rework wieder).

@@ -10,8 +10,6 @@
 //    (Ziel-Items bleiben in S0 außen vor; das hält die shop-target-Phase draußen.)
 import { PERK_DEFS } from "../../src/game/perks.js";
 import { archetypeOf, heatConsumerCount, chargeConsumerCount } from "../../src/game/skills.js";
-import { SHOP_ITEM_DEFS, canAfford } from "../../src/game/shop.js";
-import { SHOP_FAMILY_DEFS } from "../../src/game/shopFamilies.js";
 import { SKILL_SLOTS, MAX_ARCHETYPES } from "../../src/game/constants.js";
 import { perkActionFor, familyTargetStep } from "../families-policy.js";
 import { architectStep } from "../architect-policy.js"; // #202: Architekt-Phase (random/greedy platzieren)
@@ -60,23 +58,7 @@ export function randomPolicy({ architectGreedy = false } = {}) {
         case "formation":
           return { type: "CONFIRM_FORMATION" }; // Baseline: Reihenfolge unangetastet lassen
 
-        case "shop": {
-          // S0-Baseline: nur SOFORT-Angebote kaufen (kein Ziel-Fluss) — flache Nicht-Ziel-Items UND ziel-lose
-          // Shop-Familien; Ziel-Items/-Familien bleiben in S0 außen vor (der Solver in S4 kauft auch die).
-          const shop = s.shop || {};
-          const purchased = new Set(shop.purchasedOfferIds || []);
-          const buyable = (shop.offers || []).filter((o) => {
-            if (purchased.has(o.offerId) || !canAfford(shop, o)) return false;
-            if (o.family) return !SHOP_FAMILY_DEFS[o.familyId]?.tiers?.[o.famTier]?.pickTarget;
-            return !SHOP_ITEM_DEFS[o.itemId]?.target;
-          });
-          return buyable.length ? { type: "BUY_ITEM", offerId: buyable[0].offerId, rng } : { type: "LEAVE_SHOP" };
-        }
-
-        case "shop-target":
-          return { type: "SHOP_TARGET_CANCEL" }; // Sicherheitsnetz: S0 betritt diese Phase nicht
-
-        case "architect": // Architekt-Phase (#202, Shop-Ersatz): random oder greedy platzieren, dann fertig.
+        case "architect": // Architekt-Phase (#202, ersetzt den Shop): random oder greedy platzieren, dann fertig.
           return architectStep(s, rng, { greedy: architectGreedy });
 
         default:

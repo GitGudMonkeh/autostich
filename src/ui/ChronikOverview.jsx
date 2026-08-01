@@ -2,10 +2,7 @@ import { useState, useMemo } from "react";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
-import { activeShopUpgrades, SHOP_ITEM_DEFS } from "../game/shop.js";
 import { allianceGroups } from "../game/families.js";
-import { SHOP_FAMILY_DEFS } from "../game/shopFamilies.js";
-import { TIER_META, romanOf } from "../game/rarity.js";
 import { suitName, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { FORMATION_TYPE_LABELS, openSegmentInfo, summarizeFormations } from "../game/formations.js";
 import { useEscape } from "./useEscape.js";
@@ -47,8 +44,6 @@ export function ChronikOverview({ state, onClose }) {
   const anchors = [...(state.shop?.anchors || [])].sort((a, b) => a.position - b.position); // Shop-Positionsanker (§8)
   // #182: Zeitraffer (L11) koppelt Position 20 & 40 — dort denselben Silberring wie ein Anker zeigen (reine Anzeige).
   const highlightPos = (state.perks || []).includes("L11") ? [19, 39].filter((p) => p < cards.length) : [];
-  const upgrades = activeShopUpgrades(state.shop || {}); // aktive dauerhafte Shop-Verbesserungen (§9/§10)
-  const purchaseLog = state.shop?.purchaseLog || []; // #127: alle Käufe des Runs (chronologisch)
   useEscape(onClose); // #159: Escape schließt die (rein lesende) Übersicht — wie die übrigen abweisbaren Overlays (#58)
 
   // #218: kompakte Formations-Zusammenfassung — aktive Typen mit ihrem Höchst-Multiplikator (ohne zweites Karten-Grid).
@@ -139,43 +134,6 @@ export function ChronikOverview({ state, onClose }) {
                   {anchors.map((a, i) => (
                     <span key={i} style={{ color: "#5a8ade" }}>⚓ Pos {a.position + 1} · {ANCHOR_LABEL[a.type] || a.type}</span>
                   ))}
-                </div>
-              </div>
-            )}
-            {upgrades.length > 0 && (
-              <div className="text-[11px] rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-                <div className="uppercase tracking-wide opacity-50 mb-1">Shop-Verbesserungen</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {upgrades.map((u, i) => (
-                    <span key={i} className="px-1.5 py-0.5 rounded" style={{ background: "#d4a63a1a", color: "#d4a63a", border: "1px solid #d4a63a44" }}>{u}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* #127: Kauf-Übersicht — welche Items im Run gekauft wurden + statische Wirkung (Beschreibung + Ziel). */}
-            {purchaseLog.length > 0 && (
-              <div className="text-[11px] rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-                <div className="uppercase tracking-wide opacity-50 mb-1.5">Käufe · {purchaseLog.length}</div>
-                <div className="grid gap-1.5 max-h-56 overflow-y-auto pr-1">
-                  {purchaseLog.map((e, i) => {
-                    // Shop-Familie (#164): Name „Familie III" + Stufenfarbe/-label aus TIER_META; sonst flaches Item.
-                    const fam = e.family ? SHOP_FAMILY_DEFS[e.itemId] : null;
-                    const d = fam ? { name: `${fam.name} ${romanOf(e.tier)}`, description: fam.tiers[e.tier]?.desc } : (SHOP_ITEM_DEFS[e.itemId] || {});
-                    const tl = fam ? { l: TIER_META[e.tier]?.label || "", c: TIER_META[e.tier]?.color || "#8a8a95" } : (TIER_LABEL[e.tier] || { l: e.tier, c: "#8a8a95" });
-                    const tgt = targetLabel(e.target, deck);
-                    return (
-                      <div key={i} className="leading-snug">
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="font-bold">{d.name || e.itemId}{tgt && <span className="opacity-70 font-normal"> → {tgt}</span>}</span>
-                          <span className="shrink-0 flex items-center gap-2 whitespace-nowrap">
-                            <span style={{ color: tl.c }}>{tl.l}</span>
-                            <span style={{ color: "#d4a63a" }}>🪙 {e.price}</span>
-                          </span>
-                        </div>
-                        {d.description && <div className="opacity-55">{d.description}</div>}
-                      </div>
-                    );
-                  })}
                 </div>
               </div>
             )}

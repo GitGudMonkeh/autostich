@@ -16,7 +16,6 @@
 import { PERK_DEFS } from "../src/game/perks.js";
 import { FAMILY_DEFS } from "../src/game/families.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
-import { SHOP_FAMILY_DEFS } from "../src/game/shopFamilies.js";
 import { buildDeck, makeRng, shuffledOrder } from "../src/game/deck.js";
 import { SUIT_ORDER } from "../src/game/constants.js";
 
@@ -127,7 +126,6 @@ function resolve(rawId) {
   if (PERK_DEFS[id]) return { kind: "Perk (Legendär/flach)", id, def: PERK_DEFS[id], single: true };
   if (SKILL_DEFS[id]) return { kind: `Skill (${SKILL_DEFS[id].archetype})`, id, def: SKILL_DEFS[id], single: true };
   if (FAMILY_DEFS[id]) return { kind: `Perk-Familie (Kat. ${FAMILY_DEFS[id].cat}, ${FAMILY_DEFS[id].upgradeType})`, id, fam: FAMILY_DEFS[id], tier };
-  if (SHOP_FAMILY_DEFS[id]) return { kind: `Shop-Familie (${SHOP_FAMILY_DEFS[id].cat}, ${SHOP_FAMILY_DEFS[id].upgradeType})`, id, fam: SHOP_FAMILY_DEFS[id], tier };
   return null;
 }
 
@@ -136,7 +134,6 @@ function listAll() {
   line("Perks", Object.keys(PERK_DEFS));
   line("Perk-Familien", Object.keys(FAMILY_DEFS));
   line("Skills", Object.keys(SKILL_DEFS));
-  line("Shop-Familien", Object.keys(SHOP_FAMILY_DEFS));
 }
 
 const arg = process.argv[2];

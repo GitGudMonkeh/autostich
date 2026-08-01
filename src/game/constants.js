@@ -42,7 +42,6 @@ export const STAT_CRIT_CHANCE_STEP = envNum("SIM_STAT_CRIT_CHANCE_STEP", 0.07); 
 export const STAT_CRIT_MULT_STEP   = envNum("SIM_STAT_CRIT_MULT_STEP", 0.25);    // Crit-Multiplikator: +0,25× je Pick (auf Basis 1,5) [#Pass3: 0,2→0,25 Crit-Buff]
 export const STAT_FORM_MULT_STEP   = envNum("SIM_STAT_FORM_MULT_STEP", 0.05);    // Formations-Mult: +5 % Score JE aktiver Formation an der Siegposition je Pick (count-skaliert, statFormFactor)
 export const STAT_STREAK_MULT_STEP = envNum("SIM_STAT_STREAK_MULT_STEP", 0.02);  // Serien-Mult: +2 % Score je aktuellem Serienpunkt je Pick (#94)
-export const STAT_ECONOMY_STEP     = 1;     // Einkommen: je Pick +1 Level (Bonus = Level × SHOP_INCOME_PER_LEVEL Münzen/Shop)
 
 // Entscheidungsplan (Shop-Spec §2.2): Typ der Entscheidung VOR Durchlauf n (1-indexiert) = DECISION_SCHEDULE[n-1].
 // Fester 60-Einträge-Plan (Ziel-Rundenlänge, vom Dev handgesetzt — löst den alten 44-Plan ab). Engine liest
@@ -78,21 +77,8 @@ export function buildSchedule(n = MAX_CYCLES) {
 }
 export const DECISION_SCHEDULE = buildSchedule(MAX_CYCLES);
 
-// Shop-Münzökonomie (Shop-Spec §3) [TUNING]
-export const STARTING_COINS       = 2;   // Startmünzen bei Run-Beginn
-export const BASE_COINS_PER_CYCLE = 2;   // Münzen je vollständig abgeschlossenem Durchlauf (KONSTANT, ohne Einkommen)
-// Einkommens-Stat (überarbeitet): der Bonus wird PRO SHOP-BESUCH gutgeschrieben, nicht je Durchlauf —
-// +3 Münzen je Einkommen-Pick, gilt für jeden Shop nach der Wahl (auch den direkt bevorstehenden). [TUNING]
-export const SHOP_INCOME_PER_LEVEL = 3;
-
-// Shop-Angebot (Shop-Spec §5) [TUNING]
-export const SHOP_CATEGORIES         = ["cards", "anchors", "planning"]; // Reihenfolge = Anzeige-Reihenfolge (#179: „formations" zu Perks migriert)
-export const SHOP_ITEMS_PER_CATEGORY = 2;    // je Kategorie werden genau so viele Items angeboten
-export const SHOP_ITEMS_OFFERED      = SHOP_CATEGORIES.length * SHOP_ITEMS_PER_CATEGORY; // = 6 (#179: 3 Kategorien × 2)
-export const SHOP_LEGENDARY_CHANCE   = 0.03; // Chance je Shop auf EIN legendäres Angebot (ersetzt ein normales) [0,15→0,03 — Legendaries seltener]
-// Vier feste Preisstufen (Spec §5.5) — keine Zwischenpreise.
-export const SHOP_PRICE = { cheap: 8, strong: 12, premium: 18, legendary: 30 };
-// Anzeige-Labels der Kategorien (UI) — geteilte Quelle für ShopScreen/Tests.
+// (#229: Shop-Münzökonomie + Shop-Angebots-Konstanten entfernt — der Shop ist weg, es gibt keine Münzen/Angebote mehr.)
+// Anzeige-Labels der (ex-Shop-)Kategorien — von der Chronik-Ziel-Beschriftung noch referenziert.
 export const SHOP_CATEGORY_LABELS = { cards: "Karten", anchors: "Anker", planning: "Planung" }; // #195: „formations" entfernt (#179 zu Perks migriert)
 
 // Shop-Positionsanker (Shop-Spec §8) — hängen an der Deckposition (0–39), nicht an card.id. [TUNING]
