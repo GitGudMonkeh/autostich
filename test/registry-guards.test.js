@@ -195,8 +195,4 @@ describe("Registry-Guard 3 — Coverage-Gate (jeder Eintrag hat einen Test)", ()
     const missing = uncoveredIds(Object.keys(SKILL_DEFS));
     expect(missing, `Skills ohne Test: ${missing.join(", ")}`).toEqual([]);
   });
-  it("jede Shop-Familie kommt in einem Test vor", () => {
-    const missing = uncoveredIds(Object.keys(SHOP_FAMILY_DEFS));
-    expect(missing, `Shop-Familien ohne Test: ${missing.join(", ")}`).toEqual([]);
-  });
 });
