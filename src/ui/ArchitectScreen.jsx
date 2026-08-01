@@ -93,6 +93,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const dragOffsetRef = useRef({ dx: 0, dy: 0 });          // roher Pixel-Versatz des Drags — REF statt State: kein Re-Render je Maus-Move (Maus feuert viel öfter als Touch → sonst „schwammig")
   const dragGhostRef = useRef(null);                       // DOM-Ref des Ghost-Rahmens; sein transform wird je pointermove DIREKT gesetzt (flüssig)
   const [upgradeMsg, setUpgradeMsg] = useState(null);      // { name, reason } — Meldung beim Antippen eines nicht-aufwertbaren Gebäudes (Aufrüsten-Phase)
+  const [pendingDemolish, setPendingDemolish] = useState(null); // #235: markiertes Abriss-Ziel (buildingId) — wird erst mit „Abreißen" wirklich entfernt (zweistufig)
 
   // Effektive Gebäude = committet (+ in „place" das Vorschau-Gebäude). Board/Precompute/Formationen rechnen damit.
   const pendingBuilding = pending
@@ -226,7 +227,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     if (fp) {
       const fam = familyDef(removeFor.familyId);
       setPending({ familyId: removeFor.familyId, tier: removeFor.tier, legendary: removeFor.legendary, colorChoice: fam.colorLocked ? colorPick : null, footprint: fp });
-      setSelId(PENDING_ID); setPhase("place"); setRemoveFor(null);
+      setSelId(PENDING_ID); setPhase("place"); setRemoveFor(null); setPendingDemolish(null);
     }
   }, [committed, removeFor]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -236,10 +237,12 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     setPending(null); setSelId(null); setPhase("move"); // direkt ins Fertig-/Verschieben-Panel (ein Panel, ein Bestätigen)
   };
   const cancelPending = () => { setPending(null); setSelId(null); setPhase("choose"); };
+  // #235: markiertes Gebäude wirklich abreißen (danach platziert der removeFor-Effekt den wartenden Bauplan automatisch).
+  const confirmDemolish = () => { if (pendingDemolish == null) return; onDemolish?.(pendingDemolish); setPendingDemolish(null); };
 
   // ---- Tap je Phase ----
   const tapCell = (pos) => {
-    if (removeFor) { const cb = committedAt(pos); if (cb) onDemolish?.(cb.id); return; } // entfernen für wartenden Bauplan
+    if (removeFor) { const cb = committedAt(pos); if (cb) setPendingDemolish(cb.id); return; } // #235: markieren statt sofort abreißen (Effekte zeigen, erst mit Bestätigen weg)
     if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { onUpgrade?.(cb.id); setUpgradeMsg(null); setPhase("move"); } else { setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: info.reason }); } } return; }
     if (phase === "place") { const b = buildingAt(pos); if (b && b.id === PENDING_ID) setSelId(PENDING_ID); return; }
     if (phase === "move") { const b = buildingAt(pos); if (b) setSelId(b.id); return; }
@@ -403,11 +406,14 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const fb = formationBorder(pf);
                 const formLabels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
                 const sFac = structF[pos] || 1;
-                const isRemovable = !!removeFor && !!committedAt(pos);
+                const cbHere = removeFor ? committedAt(pos) : null;
+                const isRemovable = !!removeFor && !!cbHere;
+                const isMarkedDemolish = !!removeFor && pendingDemolish != null && !!cbHere && cbHere.id === pendingDemolish; // #235: markiertes Abriss-Ziel
                 // Aufrüsten-Phase: nicht-aufwertbare Gebäude ausgrauen (Legendär/No-op-Effekt/max Stufe).
                 const upgradeDim = phase === "upgrade" && b && !isPending && !upgradeInfo(fam, b.tier).can;
+                const upCan = phase === "upgrade" && b && !isPending && upgradeInfo(fam, b.tier).can; // #232: aufwertbar → Ziel-Stufe am Gebäude zeigen
                 const title = b
-                  ? `${fam.name} (${tierLabel(b.tier)})${isPending ? " · Vorschau" : ""} — ${famEff(fam, b)}${inForm ? ` · Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`
+                  ? `${fam.name} (${tierLabel(b.tier)})${isPending ? " · Vorschau" : ""} — ${famEff(fam, b)}${upCan ? ` → Stufe ${tierLabel(b.tier + 1)}: ${famEff(fam, { tier: b.tier + 1 })}` : ""}${inForm ? ` · Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`
                   : `Pos ${pos + 1}${inForm ? ` — Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`;
                 const inDragPrev = dragCells ? dragCells.has(pos) : false;
                 const dragValid = dragPrev && dragPrev.valid;
@@ -425,6 +431,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       opacity: upgradeDim ? 0.4 : (isPending && !inDragPrev ? 0.82 : 1),
                       touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
+                        isMarkedDemolish ? "inset 0 0 0 2px #ff6a4d, inset 0 0 16px #ff3b1e66" : null,     // #235: markiertes Abriss-Ziel rot hervorheben
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
                         isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,                              // ausgewählt (weiß)
                         // #UI: Raritäts-Rahmen JE ZELLE entfällt — die durchgezogene SVG-Kontur (oben) zeichnet ihn jetzt
@@ -433,7 +440,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                         // Gebäude auf fertiger Struktur (Kombi erfüllt) → schimmernder Gold-Rahmen wie ein Legendär via .arch-struct-lit::after (siehe index.css).
                         !b && structLit(pos) ? "inset 0 0 0 2px #f0b429aa" : null,                        // leere Zelle einer fast-fertigen Struktur → Gold-Hinweis
                       ].filter(Boolean).join(", ") || undefined,
-                      outline: isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined)),
+                      outline: isMarkedDemolish ? "2px solid #ff6a4d" : (isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined))),
                       outlineOffset: 1,
                       cursor: "pointer",
                     }}
@@ -442,8 +449,9 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
                     <span className="text-[13px] sm:text-[15px] leading-none">{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (
-                      <span className="absolute bottom-[1px] left-[3px] text-[7px] font-bold" style={{ color: "rgba(255,255,255,0.92)" }}>
+                      <span className="absolute bottom-[1px] left-[3px] text-[7px] font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
                         {fam.name.slice(0, 3).toUpperCase()}{tierLabel(b.tier)}
+                        {upCan && <span style={{ color: "#f0b429" }}>→{tierLabel(b.tier + 1)}</span>}
                       </span>
                     )}
                     {inForm && (
@@ -497,14 +505,37 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 <div className="opacity-60 mt-1">Jede Karte auf einer vollständigen Zeile/Spalte/Diagonale macht bei einem Sieg entsprechend mehr <b>Punkte</b>. Faktoren stapeln multiplikativ.</div>
               </div>
 
-              {/* removeFor: kein Platz → Gebäude entfernen anbieten */}
-              {removeFor && (
-                <div>
-                  <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
-                    <b>Kein Platz</b> für „{pendingFamName(removeFor)}". Soll ein Gebäude weichen? Tippe eins (rot gestrichelt) zum <b>Zerstören</b> — danach wird der Bauplan automatisch platziert.
+              {/* removeFor: kein Platz → Gebäude entfernen anbieten. #235: zweistufig — erst markieren (Effekte zeigen), dann bestätigen. */}
+              {removeFor && (() => {
+                const marked = pendingDemolish != null ? committed.find((x) => x.id === pendingDemolish) : null;
+                const mfam = marked ? familyDef(marked.familyId) : null;
+                return (
+                  <div>
+                    {!marked ? (
+                      <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
+                        <b>Kein Platz</b> für „{pendingFamName(removeFor)}". Soll ein Gebäude weichen? Tippe eins (rot gestrichelt) zum <b>Markieren</b> — es wird erst nach Bestätigen abgerissen.
+                      </div>
+                    ) : (
+                      <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #ff6a4d" }}>
+                        <div className="text-sm mb-1">Dieses Gebäude abreißen, um „{pendingFamName(removeFor)}" zu bauen?</div>
+                        <div className="rounded-lg px-2.5 py-1.5 mb-2 text-[11px] font-mono leading-snug" style={{ background: "#2a1416", border: "1px solid #d1462f66" }}>
+                          <span className="inline-flex items-center gap-1.5 align-middle">
+                            <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: mfam ? CAT[mfam.category].color : "#d1462f" }} />
+                            <b>{mfam ? mfam.name : "Gebäude"}</b>
+                            <span className="opacity-55">{mfam && mfam.legendary ? "Legendär" : `Stufe ${tierLabel(marked.tier)}`}</span>
+                          </span>
+                          <span className="opacity-80"> — {mfam ? famEff(mfam, marked) : ""}</span>
+                          <div className="opacity-60 mt-0.5">Geht beim Abriss verloren.</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => setPendingDemolish(null)} className="flex-1 rounded-lg py-1.5 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>
+                          <button onClick={confirmDemolish} className="flex-1 rounded-lg py-1.5 text-xs font-bold" style={{ background: "#d1462f", color: "#fff" }}>Abreißen ✓</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* choose: 3 Baupläne + „Aufrüsten" */}
               {!removeFor && phase === "choose" && (
@@ -581,6 +612,21 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : "nicht aufwertbar"}.
                     </div>
                   )}
+                  {/* #232: Vorschau je aufwertbarem Gebäude — Ziel-Stufe + neuer Kurzeffekt, damit man nicht blind entscheidet, was sich lohnt. */}
+                  {committed.some((b) => upgradeInfo(familyDef(b.familyId), b.tier).can) && (
+                    <div className="flex flex-col gap-1 mt-1">
+                      {committed.filter((b) => upgradeInfo(familyDef(b.familyId), b.tier).can).map((b) => {
+                        const f = familyDef(b.familyId);
+                        return (
+                          <div key={b.id} className="rounded px-2 py-1 text-[10px] font-mono leading-snug flex flex-wrap items-baseline gap-x-1.5" style={{ background: "#16232f", border: "1px solid #24333f" }}>
+                            <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
+                            <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
+                            <span className="opacity-70">{famEff(f, { tier: b.tier + 1 })}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -599,7 +645,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 Desktop: normale Leiste (md:static). */}
             <div className="order-1 sticky top-0 z-20 md:static rounded-xl p-2" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
               {removeFor ? (
-                <button onClick={() => setRemoveFor(null)} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>
+                <button onClick={() => { setRemoveFor(null); setPendingDemolish(null); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
               ) : phase === "choose" ? (
                 <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Nichts bauen · Fortfahren →</button>
               ) : phase === "place" && pending ? (

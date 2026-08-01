@@ -163,6 +163,29 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     expect(s.phase).toBe("play");
   });
 
+  it("#234 PICK_SKILL erlaubt einen ZWEITEN Hitze-Konsumenten (Feuer nicht mehr exklusiv)", () => {
+    // Flächenbrand (SK_FIRE_11, conflagration) schon gehalten; Schmelzpunkt (SK_FIRE_12, melt) im Angebot.
+    const st = skillState({
+      skills: ["SK_FIRE_11"], activeArchetypes: ["fire"],
+      skillOffer: ["SK_FIRE_12"], heat: { active: true, value: 0, max: 100 },
+    });
+    const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_FIRE_12", rng });
+    expect(s.skills).toContain("SK_FIRE_11");
+    expect(s.skills).toContain("SK_FIRE_12"); // beide Hitze-Konsumenten gleichzeitig gehalten
+  });
+
+  it("#234 Blitz-Ladungs-Konsumenten bleiben exklusiv (zweiter ohne Ersetzen = no-op; mit Ersetzen erlaubt)", () => {
+    // Ionisierung (SK_LIGHTNING_02) gehalten; zweiter Ladungs-Konsument (SK_LIGHTNING_07) im Angebot.
+    const st = skillState({
+      skills: ["SK_LIGHTNING_02"], activeArchetypes: ["lightning"],
+      skillOffer: ["SK_LIGHTNING_07"], lightning: { active: true, charge: 0, maxCharge: 10 },
+    });
+    expect(reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_07", rng })).toBe(st); // ohne Ersetzen → blockiert
+    const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_07", replaceId: "SK_LIGHTNING_02", rng });
+    expect(s.skills).toContain("SK_LIGHTNING_07");
+    expect(s.skills).not.toContain("SK_LIGHTNING_02"); // ersetzt den bestehenden Ladungs-Konsumenten
+  });
+
   it("PICK_SKILL erlaubt einen dritten Archetyp (Prototyp: Cap 3 aufgehoben)", () => {
     // Zwei Archetypen schon aktiv (mit gehaltenen Skills) → ein Blitz-Skill ist der dritte und jetzt WÄHLBAR.
     const twoActive = skillState({ skills: ["SK_FIRE_01", "SK_ICE_01"], activeArchetypes: ["fire", "ice"], skillOffer: [LR] });

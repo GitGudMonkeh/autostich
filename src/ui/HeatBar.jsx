@@ -1,4 +1,4 @@
-import { fireFlag, heatConsumerOf, glowingValueFor } from "../game/skills.js";
+import { fireFlag, hasHeatConsumer, glowingValueFor } from "../game/skills.js";
 import { GLOWING_T1_HEAT, GLOWING_T2_HEAT } from "../game/constants.js";
 import { GLOSSARY } from "../game/glossary.js";
 import { IndicatorPanel, CounterCell } from "./indicators/panelKit.jsx";
@@ -38,8 +38,8 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {} }) {
   const { value, max } = heat;
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   const hot = value >= 50;                         // Glühende-Klinge-Schwelle
-  const consumer = heatConsumerOf(skills);         // "conflagration" | "melt" | null
-  const conflagReady = consumer === "conflagration" && value >= 100;
+  // #234: Feuer darf mehrere Hitze-Konsumenten halten → je Typ prüfen (nicht nur den ersten).
+  const conflagReady = hasHeatConsumer(skills, "conflagration") && value >= 100;
   // #219.5: Glühende Klinge markiert die ECHTEN Schwellen (40/70/100; 100 = Leisten-Ende) statt fälschlich 50 %.
   const glow = fireFlag(skills, "glowingBlade");
   // Weißglut (#206 §3): bei voller Hitze läuft der Überschuss als Score über (heat bei max gedeckelt) →

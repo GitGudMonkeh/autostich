@@ -3,7 +3,7 @@ import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Strö
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js";
 import { UPGRADE_TYPES } from "./rarity.js";
-import { archetypeOf, initLightning, initHeat, heatMaxFor, heatConsumerCount, maxChargeFor, chargeConsumerCount,
+import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront, hasGlacierPush, hasVerzahnung, hasGleitfrost, hasVerdichtung,
   hasSetzlingsbeet, hasDornenkoenig, buildSkillOffer } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte
 import { STAT_DEFS, STAT_IDS } from "./stats.js";
@@ -338,7 +338,7 @@ export function reducer(state, action) {
                statPicks: [...(state.statPicks || []), action.statId] }; // #190: Mono-Stat-Challenge-Tracking
     }
 
-    // Skill-Auswahl (jede SKILL_EVERY_CYCLES-te Runde). Hinzufügen oder — bei vollen Slots — ersetzen.
+    // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE). Hinzufügen oder — bei vollen Slots — ersetzen.
     // Der erste Skill eines Archetyps schaltet dessen System frei (lightning.active).
     case "PICK_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
@@ -357,9 +357,9 @@ export function reducer(state, action) {
       } else {
         return state;                                              // volle Slots ohne gültiges Ersetzungsziel
       }
-      // Konsumenten-Exklusivität (#93 F1/F2): höchstens EIN Hitze-Konsument UND höchstens EIN Ladungs-Konsument.
-      // Ein zweiter desselben Typs ist nur wählbar, wenn er den bestehenden ersetzt (replaceId = der alte Konsument).
-      if (heatConsumerCount(skills) > 1 || chargeConsumerCount(skills) > 1) return state;
+      // Konsumenten-Exklusivität (#234): nur noch Blitz hält höchstens EINEN Ladungs-Konsumenten (ein zweiter ersetzt ihn).
+      // Feuer darf mehrere Hitze-Konsumenten kombinieren (Flächenbrand ≠ Schmelzpunkt) — die Engine wendet jeden einzeln an.
+      if (chargeConsumerCount(skills) > 1) return state;
       let activeArchetypes = state.activeArchetypes || [];
       let lightning = state.lightning;
       let heat = state.heat;

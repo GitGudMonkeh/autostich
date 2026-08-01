@@ -323,13 +323,17 @@ export const activeLightningCount = (skills) => (skills || []).filter((id) => SK
 export const fireFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
 // Hitze-Maximum (fix 100).
 export const heatMaxFor = () => C.HEAT_MAX;
-// Gehaltener Hitze-Konsument („conflagration"/„melt") oder null (max 1, im Reducer erzwungen).
+// Erster gehaltener Hitze-Konsument („conflagration"/„melt") oder null. #234: Feuer darf mehrere gleichzeitig halten →
+// die Engine nutzt NICHT mehr diesen (First-only), sondern hasHeatConsumer je Typ. Hier nur noch für Kompatibilität.
 export function heatConsumerOf(skills) {
   for (const id of skills || []) { const c = SKILL_DEFS[id]?.heatConsumer; if (c) return c; }
   return null;
 }
-// Anzahl gehaltener Hitze-Konsumenten (der Reducer blockt > 1).
+// Anzahl gehaltener Hitze-Konsumenten (#234: informativ — nicht mehr im Reducer geblockt, seit Feuer mehrere halten darf).
 export const heatConsumerCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.heatConsumer).length;
+// Hält der Spieler den Hitze-Konsumenten `kind` ("conflagration"/"melt")? #234: mehrere gleichzeitig erlaubt (heben sich
+// nicht auf) → die Engine prüft jeden Konsumenten EINZELN hiermit, statt nur den ersten (heatConsumerOf).
+export const hasHeatConsumer = (skills, kind) => (skills || []).some((id) => SKILL_DEFS[id]?.heatConsumer === kind);
 
 // Hitzegewinn bei Sieg (%). ctx = { winStreak, lostLast, deficit } für Serie/Rückzündung.
 //  · Marge (ab HEAT_MIN_MARGIN): (min(Vorsprung, CAP)−2)×PER_POINT, Glut ×1,5 (kaufm. gerundet)
