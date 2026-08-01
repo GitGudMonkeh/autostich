@@ -10,7 +10,14 @@ import { fmtScore } from "./format.js";
 
    Graceful degradation: `entry`-Felder sind alle optional. Fehlt eine Zahl (Alt-Eintrag / pre-Migration), zeigt
    die Kachel „–"; leere Perk-/Skill-Listen blenden ihren Block aus. `perks`/`skills` sind ID-Arrays. */
-const num = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : null);
+// #241: bigint-Spalten (score/formation_score/crit_bonus_score/best_trick_score/seed) kommen aus der Supabase-REST-API
+// als JSON-STRINGS (PostgREST bewahrt so die Präzision) → als Zahl parsen, sonst „–". Lokale Läufe liefern bereits
+// echte Zahlen → No-op. Ohne das zeigten fremde/globale Läufe bei den bigint-Kennzahlen leer (und der Crit-Block,
+// dessen Sichtbarkeit an bestTrickScore>0 hängt, verschwand ganz).
+const num = (v) => {
+  const n = typeof v === "string" && v.trim() !== "" ? Number(v) : v;
+  return typeof n === "number" && !Number.isNaN(n) ? n : null;
+};
 // #205 Anti-Copy: `anonymized` (fremder Board-Eintrag) blendet die Perk-/Skill-Chips aus — man sieht Kennzahlen
 // + Archetyp-Icons + Score/Seed, aber NICHT die konkreten Perks/Skills (kein 1:1-Nachbauen fremder Runs).
 // Eigene/lokale Läufe (anonymized=false, Default) bleiben voll aufgeschlüsselt (Selbst-Review).

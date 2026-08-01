@@ -169,6 +169,14 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   </button>
                 ))}
               </div>
+              {/* #238: Persistenz-Hinweis — nur wenn eine betroffene Fraktion (Feuer/Eis/Pflanze) gehalten wird.
+                  Ablegen des LETZTEN Skills einer Fraktion setzt deren Gegner-Schwächungen zurück, eigene
+                  aufgewertete Karten bleiben aber gebacken (Wahrheit: reducer.js stillActive-Pfad). */}
+              {held.some((s) => ["fire", "ice", "plant"].includes(archetypeOf(s.id))) && (
+                <div className="mt-3 rounded-lg px-3 py-2 text-[11px] leading-snug" style={{ background: "#16232f", border: "1px solid #2b3e4d", color: "#b8c4d0" }}>
+                  <b style={{ color: "#e0605a" }}>Gegner-Schwächungen</b> (Frost/Brand/Kolonie) werden zurückgesetzt, wenn du den <b>letzten Skill einer Fraktion</b> ablegst. <b style={{ color: "#5fce86" }}>Eigene aufgewertete Karten</b> (geschmiedeter/gewachsener Wert) bleiben erhalten.
+                </div>
+              )}
               <button onClick={() => setPending(null)} className="w-full mt-3 rounded-lg py-2 text-sm font-bold" style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>Abbrechen</button>
             </div>
           </div>
