@@ -1,5 +1,6 @@
 import { Sparkline } from "./Sparkline.jsx";
 import { RunStats } from "./RunStats.jsx";
+import { RunGraphs } from "./RunGraphs.jsx"; // #251: Score-Quellen-Balken + Durchlauf-Graph (Score je Stich, Sieg/Niederlage)
 import { CardGrid } from "./CardGrid.jsx";
 import { fmtScore } from "./format.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js"; // #190: Freischalt-Vorschau
@@ -73,6 +74,9 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             <Sparkline current={currentTraj} record={recordTraj} height={110} />
           </div>
         )}
+
+        {/* #251: Score-Quellen-Balken (Formation/Gebäude/Serie/Crit/Sonstige) + Durchlauf-Graph (Score je Stich, Sieg/Niederlage). */}
+        <RunGraphs state={state} />
 
         {/* #201.8 Stufe A: finale Deck-Aufstellung schreibgeschützt — bestehendes CardGrid (rendert Formationsrahmen). Aufklappbar, um den Screen kurz zu halten. */}
         {finalOrder.length > 0 && (

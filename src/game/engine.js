@@ -96,7 +96,7 @@ export function resolveTrick(state, rng) {
     zinsBonus = 0, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Legendär-Perks-Rework (#203): Zinseszins-Dauerdividende / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
     vabanquePaid = 0, // Vabanque (#203): Zahl der Eröffnungs-Wetten, die dieser Lauf schon ausgezahlt hat (Lauf-Deckel gegen Front-Load-Exploit)
     crits, critBonusScore, bestTrickScore,
-    maxFormations = 0, formationScore = 0, buildingScore = 0, // #161 FB-2: Peak Formationen + Score-Anteil aus Formationen; buildingScore = Score-Anteil aus Architekt-Gebäuden (#UI)
+    maxFormations = 0, formationScore = 0, buildingScore = 0, streakScore = 0, // #161 FB-2 + #251: Score-Anteile (Formation / Architekt-Gebäude / Serie)
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
     iceTemp = {}, frostbitePending = {}, frostbiteActive = {}, // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff (je oppCard.id → −Wert)
     layers = {}, frostFormPrev = [], // Eis-Rework (v0): Schichten je Frostkarte-id (permanent) / Frostkarten, die im Vordurchlauf in Formation siegten (Beständigkeit)
@@ -646,6 +646,8 @@ export function resolveTrick(state, rng) {
     // plantFormMult/brennpunktMult/sammlerMult → dieser Anteil wird hier der Formation zugeschlagen statt seinen echten Quellen.
     const formFactorTotal = formMult * afterglowMult * coreMult;
     if (formFactorTotal > 1) formationScore += gained * (1 - 1 / formFactorTotal);
+    // #251: Serien-Anteil — der Serien-Multiplikator als Faktor-Anteil an `gained` (analog formationScore; Näherung, da die Faktoren multiplikativ ineinandergreifen).
+    if (streakMult > 1) streakScore += gained * (1 - 1 / streakMult);
     // #UI: Gebäude-Score-Anteil — analog zu formationScore. Architekt-Score-Mult (Struktur/Schatzkammer) als
     // Faktor-Anteil an `gained`, plus der Handelsbauten-Flat mit seinem Beitrag OHNE den (separat gezählten)
     // architectMult → kein Doppelzählen. Nur Architekt-Score-Bauten; der Wert-Bonus (Basis) bleibt unattribuiert.
@@ -1094,13 +1096,25 @@ export function resolveTrick(state, rng) {
     }
   }
 
+  // #251: Score je Stich in den Durchlauf-Puffer (nested `trickLog[cycle] = [{gained,won},…]`) — pro Stich nur die
+  // Außenliste + den aktuellen Durchlauf-Bucket kopieren (O(n) über den Lauf) statt die ganze flache Liste (O(n²) →
+  // Sim-Bremse). `state.cycle` = der Durchlauf, IN dem dieser Stich gespielt wurde (VOR evtl. Inkrement am Durchlauf-Ende).
+  // Nur bauen, wenn ein Puffer existiert (das Spiel initialisiert `trickLog: []`); der Sim setzt ihn auf `null` → kein
+  // Aufbau (die Sim braucht den Graph nicht; spart die Array-Kopien über Tausende Läufe).
+  let nextTrickLog = state.trickLog;
+  if (Array.isArray(nextTrickLog)) {
+    nextTrickLog = nextTrickLog.slice();
+    nextTrickLog[state.cycle] = [...(nextTrickLog[state.cycle] || []), { gained, won: !!won }];
+  }
+
   return {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     offerRerolls: 0, // #205: neues (Zyklus-Ende-)Angebot → Reroll-Index zurück auf 0 (Rerolls im Reducer zählen hoch)
     score, winStreak, bestStreak, wins, losses, ties,
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 
-    crits, critBonusScore, bestTrickScore, maxFormations, formationScore, buildingScore, // #161 FB-2 / #UI: Run-Rückblick (+ Gebäude-Score)
+    crits, critBonusScore, bestTrickScore, maxFormations, formationScore, buildingScore, streakScore, // #161 FB-2 / #UI / #251: Run-Rückblick (+ Gebäude-/Serien-Score)
+    trickLog: nextTrickLog, // #251: Score je Stich (+ Sieg/Niederlage), nach Durchlauf gebucket → Durchlauf-Graph
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     freePerkReroll: newFreePerkReroll, freeSkillReroll: newFreeSkillReroll, // Planung (§10 P-L1)
     masteryLegGranted: newMasteryLegGranted, // #217 Grad V: garantierter Legendär je Lauf eingelöst? (masteryGrade selbst läuft über ...state)
