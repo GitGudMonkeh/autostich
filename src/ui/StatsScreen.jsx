@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState, useEffect } from "react";
 import { useEscape } from "./useEscape.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { RunDetail } from "./RunDetail.jsx";
+import { SeedChip } from "./SeedChip.jsx"; // #205 Challenger Mode: kopierbarer Seed + Nachspielen
+import { fetchSeedTop, leaderboardConfigured } from "../game/leaderboard.js"; // #205 Schicht B: globaler Top-3-pro-Seed
 import { loadRunHistory, loadProfile } from "../game/storage.js";
 import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
 import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
@@ -11,15 +13,21 @@ import {
 } from "../game/runStats.js";
 import { fmtScore } from "./format.js";
 import { fmtDuration } from "../game/deck.js";
+import { MASTERY_THRESHOLDS, MASTERY_REWARD_LABELS, MASTERY_MAX_GRADE, MASTERY_MEISTER_MAX, isGrandmaster, rankRoman, masteryGradeLabel } from "../game/mastery.js"; // #217/#226 Meister- & Großmeisterränge
+import { DECK_DEFS } from "../game/cosmetics.js"; // #217: Grad-Deck-Namen
 
 /* #172 FB-10 — Statistik-Hub (Hauptmenü). Rein lokal aus der Lauf-Historie (storage.loadRunHistory)
    + Profil-Totals (loadProfile), aggregiert über game/runStats.js. Wiederverwendung: Sparkline (Score-Trend),
    RunDetail/RunStats (Klick auf einen Lauf → derselbe Statblock wie im Victory-Screen, #169 FB-8). */
 
+// Score-Herkunft-Segmente. v0.3: die Engine trennt nur Formationen + Crit-Bonus heraus — Basis, Serie und ALLE
+// Fraktions-Mechaniken (Feuer/Eis/Blitz/Pflanze) fallen zusammen in „Elementar & Basis" (ehrliches Sammel-Label
+// statt „Übrige"; eine echte Fraktions-Zerlegung bräuchte Engine-Akkumulatoren, bewusst später).
 const ORIGIN_META = {
   formations: { label: "Formationen", color: "#5ab87a" },
-  crits: { label: "Crits", color: "#e879f9" },
-  rest: { label: "Übrige", color: "#8a8a95" },
+  crits: { label: "Crit-Bonus", color: "#e879f9" },       // v0.3: Crit ist kein universeller Bonus mehr (Blitz + Krit-Stat)
+  buildings: { label: "Gebäude", color: "#5a8ade" },      // #UI: Architekt-Score-Bauten (Struktur/Schatzkammer/Handelsbauten)
+  rest: { label: "Elementar & Basis", color: "#8a8a95" }, // v0.3: Basis/Serie + alle Fraktions-Mechaniken (noch nicht einzeln getrennt)
 };
 const perkLabel = (id) => PERK_DEFS[id]?.label || id;
 const skillLabel = (id) => SKILL_DEFS[id]?.name || id;
@@ -87,13 +95,186 @@ function BarRow({ label, color, frac, right }) {
   );
 }
 
-export function StatsScreen({ onClose }) {
+// #205: Lauf-Historie nach Seed gruppieren (nur Läufe MIT Seed). Je Seed: bester lokaler Score, Anzahl Läufe,
+// jüngste Aktivität. Sortiert nach jüngster Aktivität (Challenge-Reiter „was du zuletzt herausgefordert hast").
+function challengeSeeds(history) {
+  const by = new Map();
+  for (const r of history) {
+    const code = r.seedCode;
+    if (!code) continue;
+    const g = by.get(code) || { code, seed: r.seed, best: 0, plays: 0, lastTs: 0 };
+    g.best = Math.max(g.best, Math.floor(r.score || 0));
+    g.plays += 1;
+    g.lastTs = Math.max(g.lastTs, r.ts || 0);
+    by.set(code, g);
+  }
+  return [...by.values()].sort((a, b) => b.lastTs - a.lastTs);
+}
+
+// #205 Schicht B: globaler Top-3 auf GENAU diesem Seed (lazy — fetcht erst beim Aufklappen, nicht für alle Seeds auf
+// einmal). Degradiert lautlos (Board nicht verfügbar / kein Eintrag). Score-Herkunft = dieselbe Tabelle wie das Board.
+function SeedGlobalTop3({ seed }) {
+  const [rows, setRows] = useState(null); // null = lädt · [] = leer · [...] = Daten
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    setError(false); setRows(null);
+    fetchSeedTop(seed, 3)
+      .then((d) => { if (alive) setRows(Array.isArray(d) ? d : []); })
+      .catch(() => { if (alive) setError(true); });
+    return () => { alive = false; };
+  }, [seed]);
+  if (error) return <div className="text-[11px] opacity-40 px-1 py-1.5">Global nicht verfügbar.</div>;
+  if (rows === null) return <div className="text-[11px] opacity-40 px-1 py-1.5">Lädt globale Top 3 …</div>;
+  if (rows.length === 0) return <div className="text-[11px] opacity-40 px-1 py-1.5">Noch keine globalen Läufe auf diesem Seed.</div>;
+  return (
+    <div className="grid gap-0.5 px-1 py-1.5">
+      {rows.map((r, i) => (
+        <div key={r.id ?? i} className="flex items-center gap-2 text-xs">
+          <span className="opacity-50 w-4 shrink-0 tabular-nums">#{i + 1}</span>
+          <span className="flex-1 truncate opacity-85">{r.name || "—"}</span>
+          <span className="font-bold tabular-nums shrink-0" style={{ color: "#d4a63a" }}>{fmtScore(r.score)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// #205 Challenges-Reiter: eigene Seeds mit bestem LOKALEM Score + „↻ Nachspielen" / „⧉ kopieren"; je Seed aufklappbar
+// der globale Top-3-Vergleich (Schicht B, aus derselben Board-Tabelle).
+function ChallengesPanel({ seeds, onPlaySeed }) {
+  if (!seeds || seeds.length === 0) {
+    return (
+      <div className="text-center opacity-55 py-10 text-sm leading-relaxed">
+        Noch keine Seeds. Jeder Lauf bekommt jetzt einen teilbaren Seed — spiel einen Run,
+        oder füg auf der Startseite einen fremden Seed ein und nimm die Challenge an.
+      </div>
+    );
+  }
+  return (
+    <Section title="Deine Seeds" hint="zuletzt gespielt zuerst">
+      <div className="grid gap-1.5">
+        {seeds.map((g) => (
+          <div key={g.code} className="rounded-lg overflow-hidden" style={{ background: "#141419", border: "1px solid #26262e" }}>
+            <div className="flex items-center gap-2 flex-wrap px-3 py-2">
+              <SeedChip code={g.code} onReplay={onPlaySeed ? () => onPlaySeed(g.seed) : null} />
+              <span className="ml-auto text-xs opacity-55 tabular-nums">{g.plays}× gespielt</span>
+              <span className="font-bold tabular-nums" style={{ color: "#d4a63a" }}>{fmtScore(g.best)}</span>
+            </div>
+            {/* #205 Schicht B: globaler Top-3 auf diesem Seed — lazy erst beim Aufklappen. */}
+            {leaderboardConfigured && (
+              <details style={{ borderTop: "1px solid #26262e" }}>
+                <summary className="cursor-pointer select-none text-[11px] uppercase tracking-wide opacity-60 px-3 py-1.5">🌐 Top 3 global</summary>
+                <div className="px-2 pb-1"><SeedGlobalTop3 seed={g.seed} /></div>
+              </details>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="text-[11px] opacity-40 mt-3 leading-relaxed">
+        Bestwert = dein bester lokaler Lauf auf diesem Seed. „Top 3 global" vergleicht mit den besten Läufen anderer auf demselben Seed.
+      </div>
+    </Section>
+  );
+}
+
+// #217/#226 Meister- & Großmeisterränge — Master-Reiter: 10 Ränge als Balatro-Decks-Reihe. Bedingung = Score-Schwelle,
+// Reward nur GROB (Kurzlabels, keine Prozente). Der aktuelle Rang ist hervorgehoben, der nächste als Ziel markiert.
+// Sequentiell: ein Lauf schaltet höchstens den nächsten frei. Meister I–V (violett) geben Rewards; Großmeister I–V (gold)
+// steigern nur die Schwierigkeit (Ramp), Ziel bleibt 50 M. Deck-Namen aus der Kosmetik-Registry (deck_rank_* / deck_gm_*).
+const RANK_DECK_ID = {
+  1: "deck_rank_bronze", 2: "deck_rank_silber", 3: "deck_rank_gold", 4: "deck_rank_platin", 5: "deck_rank_diamond",
+  6: "deck_gm_rot", 7: "deck_gm_blau", 8: "deck_gm_gruen", 9: "deck_gm_lila", 10: "deck_gm_marco", // #226 Großmeister-Decks
+};
+const MASTER_ACCENT = "#8a7de0";
+const GM_ACCENT = "#d4a63a"; // Gold — Großmeister-Tier abgesetzt vom Meister-Violett
+
+function MasterPanel({ profile, best }) {
+  const grade = profile.masteryGrade || 0;
+  const pbScore = Math.max(profile.bestScore || 0, best ? Math.floor(best.score || 0) : 0);
+  const next = grade < MASTERY_MAX_GRADE ? grade + 1 : null;
+  const gmActive = isGrandmaster(grade);
+  return (
+    <>
+      <Section title="Meisterränge" hint="experimentell">
+        <div className="flex items-center gap-3 flex-wrap mb-1">
+          <Kpi label="Aktueller Rang" value={grade >= 1 ? masteryGradeLabel(grade) : "Kein Rang"} color={grade >= 1 ? (gmActive ? GM_ACCENT : MASTER_ACCENT) : undefined} />
+          <Kpi label="Bester Score" value={fmtScore(pbScore)} color="#d4a63a" />
+        </div>
+        <div className="text-[11px] opacity-45 leading-relaxed mb-1">
+          Nur <b>Meister-Läufe</b> schalten Ränge frei — einer pro Lauf, der Reihe nach. Meister I–V geben dauerhafte Vorteile (nur grob gezeigt); ab <b style={{ color: GM_ACCENT }}>Großmeister</b> wächst nur der Gegner mit, das Ziel bleibt 50 M. Je Rang ein Deck.
+        </div>
+      </Section>
+      <div className="grid gap-1.5 mt-2">
+        {MASTERY_THRESHOLDS.map((thr, i) => {
+          const n = i + 1;
+          const gm = isGrandmaster(n);                 // Großmeister-Tier (Ränge 6–10)?
+          const acc = gm ? GM_ACCENT : MASTER_ACCENT;
+          const unlocked = grade >= n;
+          const isNext = n === next;
+          const roman = rankRoman(n);                  // I..V je Tier (Meister ODER Großmeister)
+          const deckName = DECK_DEFS[RANK_DECK_ID[n]]?.name || "";
+          const rewards = gm ? [] : (MASTERY_REWARD_LABELS[n] || []); // Großmeister bringt keine neuen Rewards
+          return (
+            <Fragment key={n}>
+              {/* Trenner + Tier-Label vor dem ersten Großmeister-Rang. */}
+              {n === MASTERY_MEISTER_MAX + 1 && (
+                <div className="flex items-center gap-2 mt-2 mb-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: GM_ACCENT }}>Großmeister</span>
+                  <span className="flex-1 h-px" style={{ background: `${GM_ACCENT}44` }} />
+                  <span className="text-[10px] opacity-45">nur die Schwierigkeit steigt · Ziel bleibt {fmtScore(thr)}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg"
+                style={{
+                  background: isNext ? "#1c1a26" : "#141419",
+                  border: `1px solid ${unlocked ? `${acc}66` : isNext ? `${acc}44` : "#26262e"}`,
+                  opacity: unlocked || isNext ? 1 : 0.6,
+                }}>
+                {/* Rang-Ziffer */}
+                <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-pixel text-sm"
+                  style={{ background: unlocked ? acc : "#20202a", color: unlocked ? "#141419" : "#7a7a88", border: unlocked ? "none" : "1px solid #33333e" }}>
+                  {roman}
+                </div>
+                {/* Reward (Meister) bzw. Schwierigkeits-Hinweis (Großmeister) + Deck */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {gm ? (
+                      <span className="text-[11px] px-1.5 py-0.5 rounded font-semibold" style={{ background: `${GM_ACCENT}22`, color: "#e6c766", border: `1px solid ${GM_ACCENT}55` }}>härterer Gegner</span>
+                    ) : rewards.map((r) => (
+                      <span key={r} className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: "#20202a", color: "#c8c8d0" }}>{r}</span>
+                    ))}
+                  </div>
+                  <div className="text-[11px] opacity-45 mt-0.5">Deck: {deckName}</div>
+                </div>
+                {/* Bedingung / Status */}
+                <div className="shrink-0 text-right">
+                  <div className="text-xs font-bold tabular-nums" style={{ color: unlocked ? acc : "#c8c8d0" }}>{fmtScore(thr)}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: unlocked ? acc : isNext ? "#b3a8f5" : "#7a7a88" }}>
+                    {unlocked ? "✓ frei" : isNext ? "nächstes Ziel" : "gesperrt"}
+                  </div>
+                </div>
+              </div>
+            </Fragment>
+          );
+        })}
+      </div>
+      <div className="text-[11px] opacity-40 mt-3 leading-relaxed">
+        Experimentell. Ab <b style={{ color: GM_ACCENT }}>Großmeister</b> (über Rang V) wächst nur der Gegner mit — das Ziel bleibt 50 M, neue Belohnungen gibt es nicht.
+      </div>
+    </>
+  );
+}
+
+export function StatsScreen({ onClose, onPlaySeed = null }) {
   useEscape(onClose);
   const [detail, setDetail] = useState(null); // { entry, rank } | null
+  const [tab, setTab] = useState("overview"); // #205: „overview" (bestehende Statistik) | „challenges"
 
   // Beim Öffnen einmal frisch laden (nach jedem Lauf aktuell).
   const history = useMemo(() => loadRunHistory(), []);
   const profile = useMemo(() => loadProfile(), []);
+  const seeds = useMemo(() => challengeSeeds(history), [history]);
 
   const empty = history.length === 0;
   const games = profile.games || 0;
@@ -113,6 +294,7 @@ export function StatsScreen({ onClose }) {
   const originSegs = (o) => [
     { key: "formations", label: ORIGIN_META.formations.label, color: ORIGIN_META.formations.color, value: o.formations },
     { key: "crits", label: ORIGIN_META.crits.label, color: ORIGIN_META.crits.color, value: o.crits },
+    { key: "buildings", label: ORIGIN_META.buildings.label, color: ORIGIN_META.buildings.color, value: o.buildings },
     { key: "rest", label: ORIGIN_META.rest.label, color: ORIGIN_META.rest.color, value: o.rest },
   ];
 
@@ -122,11 +304,33 @@ export function StatsScreen({ onClose }) {
       <div className="w-full max-w-2xl rounded-2xl p-5 sm:p-6 my-auto overlay-card"
         style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-bold flex items-center gap-2">📊 Statistiken</h2>
+          <h2 className="text-lg font-bold flex items-center gap-2">Statistiken</h2>
           <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
         </div>
 
-        {empty ? (
+        {/* #205/#217: Reiter — Übersicht · Master (Meistergrade) · Challenges (Seeds nachspielen). */}
+        <div className="flex gap-1 mt-4" role="tablist">
+          {[["overview", "Übersicht"], ["master", "Master"], ["challenges", "Challenges"]].map(([id, label]) => (
+            <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
+              className="relative px-3 py-1.5 rounded-lg text-sm font-semibold transition-all"
+              style={tab === id ? { background: "#8a7de0", color: "#141419" } : { background: "#20202a", color: "#c8c8d0", border: "1px solid #30303a" }}>
+              {label}
+              {/* #217: „Experimentell"-Marker am Master-Reiter — Stil wie der TESTBRANCH-Marker (Gold-Pill, font-pixel), am Button verankert. */}
+              {id === "master" && (
+                <span className="absolute -top-1.5 -right-1.5 px-1 rounded text-[8px] font-bold font-pixel leading-tight"
+                  style={{ background: "#d4a63a", color: "#141419", boxShadow: "0 0 6px rgba(212,166,58,.6)" }} aria-label="experimentell">
+                  exp
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {tab === "master" ? (
+          <MasterPanel profile={profile} best={best} />
+        ) : tab === "challenges" ? (
+          <ChallengesPanel seeds={seeds} onPlaySeed={onPlaySeed} />
+        ) : empty ? (
           <div className="text-center opacity-50 py-12">Noch keine Läufe — spiel einen Run, dann erscheinen hier deine Statistiken.</div>
         ) : (
           <>
@@ -193,6 +397,9 @@ export function StatsScreen({ onClose }) {
               <div className="rounded-lg px-3 py-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
                 <div className="text-[11px] opacity-50 mb-2">Score-Herkunft</div>
                 <StackedBar segments={originSegs(origin)} />
+                <div className="text-[11px] opacity-40 mt-2.5 leading-relaxed">
+                  <b style={{ color: ORIGIN_META.rest.color }}>Elementar &amp; Basis</b> bündelt Basissiege, Serie und alle Archetyp-Mechaniken (Feuer/Eis/Blitz/Pflanze) — noch nicht einzeln aufgeschlüsselt. <b style={{ color: ORIGIN_META.crits.color }}>Crit-Bonus</b> stammt seit v0.3 nur aus Blitz&nbsp;+ dem Krit-Stat, nicht mehr universell.
+                </div>
               </div>
               <div className="grid sm:grid-cols-2 gap-3 mt-3">
                 <div className="rounded-lg px-3 py-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
@@ -259,11 +466,11 @@ export function StatsScreen({ onClose }) {
                   {topOrigin.runs > 0 && topOrigin.total > 0 && (
                     <div className="rounded-lg px-3 py-2.5" style={{ background: "#141419", border: "1px solid #26262e" }}>
                       <span className="opacity-55">Score-Herkunft deiner Top-{topOrigin.runs}: </span>
-                      <span style={{ color: ORIGIN_META.formations.color }}>{pct(topOrigin.shares.formations)} Formationen</span>
+                      <span style={{ color: ORIGIN_META.formations.color }}>{pct(topOrigin.shares.formations)} {ORIGIN_META.formations.label}</span>
                       <span className="opacity-40"> · </span>
-                      <span style={{ color: ORIGIN_META.crits.color }}>{pct(topOrigin.shares.crits)} Crits</span>
+                      <span style={{ color: ORIGIN_META.crits.color }}>{pct(topOrigin.shares.crits)} {ORIGIN_META.crits.label}</span>
                       <span className="opacity-40"> · </span>
-                      <span style={{ color: ORIGIN_META.rest.color }}>{pct(topOrigin.shares.rest)} übrig</span>.
+                      <span style={{ color: ORIGIN_META.rest.color }}>{pct(topOrigin.shares.rest)} {ORIGIN_META.rest.label}</span>.
                     </div>
                   )}
                 </div>
@@ -273,7 +480,7 @@ export function StatsScreen({ onClose }) {
         )}
       </div>
 
-      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} />}
+      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} onPlaySeed={onPlaySeed} />}
     </div>
   );
 }

@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "sim": "node sim/batch.js",
     "probe": "node sim/probe.js"
   },
   "dependencies": {

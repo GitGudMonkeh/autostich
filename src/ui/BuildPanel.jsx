@@ -12,7 +12,7 @@ export function BuildPanel({ perks, skills = [], familyTiers = {} }) {
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
             Perks — {perks.length + famCount}
           </div>
-          <PerkList perks={perks} familyTiers={familyTiers} empty="Noch keine Perks. Nach jeder Runde wählst du einen dazu." />
+          <PerkList perks={perks} familyTiers={familyTiers} empty="Noch keine Perks. In manchen Durchläufen wählst du einen dazu." />
         </div>
         <div className="sm:border-l sm:pl-4" style={{ borderColor: "#26262e" }}>
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">

@@ -26,20 +26,22 @@ export function scoreOrigin(r = {}) {
   const score = clamp0(r.score);
   const formations = Math.min(score, clamp0(r.formationScore));
   const crits = Math.min(score - formations, clamp0(r.critBonusScore));
-  const rest = Math.max(0, score - formations - crits);
-  return { formations, crits, rest, total: score };
+  const buildings = Math.min(score - formations - crits, clamp0(r.buildingScore)); // #UI: Architekt-Gebäude-Anteil
+  const rest = Math.max(0, score - formations - crits - buildings);
+  return { formations, crits, buildings, rest, total: score };
 }
 
 /* Ø Score-Herkunft über eine Menge Läufe — als absolute Ø-Werte UND als Anteile (0..1) am Ø-Gesamt. */
 export function avgScoreOrigin(history = []) {
-  if (!history.length) return { formations: 0, crits: 0, rest: 0, total: 0, shares: { formations: 0, crits: 0, rest: 0 } };
+  if (!history.length) return { formations: 0, crits: 0, buildings: 0, rest: 0, total: 0, shares: { formations: 0, crits: 0, buildings: 0, rest: 0 } };
   const o = history.map(scoreOrigin);
   const formations = avg(o.map((x) => x.formations));
   const crits = avg(o.map((x) => x.crits));
+  const buildings = avg(o.map((x) => x.buildings));
   const rest = avg(o.map((x) => x.rest));
-  const total = formations + crits + rest;
+  const total = formations + crits + buildings + rest;
   const share = (v) => (total > 0 ? v / total : 0);
-  return { formations, crits, rest, total, shares: { formations: share(formations), crits: share(crits), rest: share(rest) } };
+  return { formations, crits, buildings, rest, total, shares: { formations: share(formations), crits: share(crits), buildings: share(buildings), rest: share(rest) } };
 }
 
 /* Pick-Raten für ein ID-Feld ("perks" | "skills"): wie oft & in welchem Anteil der Läufe gewählt.

@@ -42,7 +42,7 @@ describe("fetchGlobalTop — 3-stufige Fallback-Kaskade (#154/#169 FB-8)", () =>
     expect(await fetchGlobalTop()).toEqual([]);
     expect(urls).toHaveLength(3);
     expect(urls[2]).not.toContain("archetypes");                                       // Basis-Stufe
-    expect(urls[2]).toContain("select=name,score,level,tricks,cycles,created_at");
+    expect(urls[2]).toContain("select=id,name,score,level,tricks,cycles,created_at");   // #229 N2: id vorangestellt
   });
   it("bei 200 direkt die Zeilen, kein Retry", async () => {
     const { fetchGlobalTop } = await loadBoard();
@@ -55,6 +55,59 @@ describe("fetchGlobalTop — 3-stufige Fallback-Kaskade (#154/#169 FB-8)", () =>
     const { fetchGlobalTop } = await loadBoard();
     global.fetch = vi.fn(async () => ({ status: 500, ok: false }));
     await expect(fetchGlobalTop()).rejects.toThrow(/500/);
+  });
+  it("#217: normales Board filtert Meister-Läufe raus (mastery_grade is null)", async () => {
+    const { fetchGlobalTop } = await loadBoard();
+    let url;
+    global.fetch = vi.fn(async (u) => { url = u; return { status: 200, ok: true, json: async () => [] }; });
+    await fetchGlobalTop(5);
+    expect(url).toContain("mastery_grade=is.null");
+  });
+});
+
+describe("fetchMasterTop — Master-Board je Rang (#217)", () => {
+  it("fragt genau den Rang ab (mastery_grade=eq.G), Score-sortiert, inkl. Snapshot-Spalte", async () => {
+    const { fetchMasterTop } = await loadBoard();
+    let url;
+    global.fetch = vi.fn(async (u) => { url = u; return { status: 200, ok: true, json: async () => [{ id: 1, name: "M", score: 9 }] }; });
+    const rows = await fetchMasterTop(3, 7);
+    expect(rows).toEqual([{ id: 1, name: "M", score: 9 }]);
+    expect(url).toContain("mastery_grade=eq.3");
+    expect(url).toContain("order=score.desc");
+    expect(url).toContain("limit=7");
+    expect(url).toContain("deck_snapshot"); // COLS_FULL inkl. Aufstellungs-Snapshot
+  });
+  it("Ranglos (Grad 0) ist eine gültige Board-Abfrage", async () => {
+    const { fetchMasterTop } = await loadBoard();
+    let url;
+    global.fetch = vi.fn(async (u) => { url = u; return { status: 200, ok: true, json: async () => [] }; });
+    await fetchMasterTop(0);
+    expect(url).toContain("mastery_grade=eq.0");
+  });
+  it("wirft bei Fehler (kein Fallback; Aufrufer fängt ab)", async () => {
+    const { fetchMasterTop } = await loadBoard();
+    global.fetch = vi.fn(async () => ({ status: 400, ok: false }));
+    await expect(fetchMasterTop(1)).rejects.toThrow(/400/);
+  });
+});
+
+describe("fetchSeedTop — Challenge-Board (Top-N pro Seed, #205)", () => {
+  it("fragt genau den Seed ab (seed=eq.N), Score-sortiert + limit", async () => {
+    const { fetchSeedTop } = await loadBoard();
+    let url;
+    global.fetch = vi.fn(async (u) => { url = u; return { status: 200, ok: true, json: async () => [{ id: 1, name: "A", score: 9, seed: 123 }] }; });
+    const rows = await fetchSeedTop(123, 3);
+    expect(rows).toEqual([{ id: 1, name: "A", score: 9, seed: 123 }]);
+    expect(url).toContain("seed=eq.123");
+    expect(url).toContain("order=score.desc");
+    expect(url).toContain("limit=3");
+  });
+  it("ungültiger Seed → [] ohne fetch", async () => {
+    const { fetchSeedTop } = await loadBoard();
+    const fetchMock = vi.fn();
+    global.fetch = fetchMock;
+    expect(await fetchSeedTop(undefined)).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
@@ -130,5 +183,38 @@ describe("publishRun — PREVIEW-Short-Circuit + archetypes-Strip (#154)", () =>
     expect(bodies).toHaveLength(2);          // kein dritter Versuch
     expect(bodies[1].best_streak).toBeUndefined(); // FB-8 gestript
     expect(bodies[1].archetypes).toBe("fire,ice"); // archetypes bleibt (Icons erhalten)
+  });
+
+  // #229 N2: publishRun gibt die eingefügte Zeile (mit server-seitiger id) zurück (return=representation),
+  // damit der Aufrufer den eigenen Lauf im Board EINDEUTIG markieren kann statt per name+score-Heuristik.
+  it("#229 N2: gibt die eingefügte Zeile (mit id) zurück", async () => {
+    const { publishRun } = await loadBoard();
+    global.fetch = vi.fn(async () => ({ status: 201, ok: true, json: async () => [{ id: 77, name: "X", score: 9 }] }));
+    const saved = await publishRun({ name: "X", score: 9, level: 1, tricks: 1, cycles: 1 });
+    expect(saved).toEqual({ id: 77, name: "X", score: 9 });
+  });
+  it("#229 N2: fehlender representation-Body → null, ohne zu werfen (defensiv)", async () => {
+    const { publishRun } = await loadBoard();
+    global.fetch = vi.fn(async () => ({ status: 201, ok: true })); // kein json()
+    await expect(publishRun({ name: "X", score: 9, level: 1, tricks: 1, cycles: 1 })).resolves.toBeNull();
+  });
+  it("#217: strippt mastery_grade + deck_snapshot mit den FB-8-Feldern bei 400 (fehlende Spalten)", async () => {
+    const { publishRun } = await loadBoard();
+    const bodies = [];
+    global.fetch = vi.fn(async (_u, opts) => {
+      bodies.push(JSON.parse(opts.body));
+      return bodies.length === 1 ? { status: 400, ok: false } : { status: 201, ok: true };
+    });
+    await publishRun({ name: "M", score: 9, level: 1, tricks: 1, cycles: 1, archetypes: "fire",
+      best_streak: 3, mastery_grade: 2, seed: 42, deck_snapshot: { cards: [{ id: "c0", value: 5, suit: "R" }], formations: [] } });
+    expect(bodies).toHaveLength(2);
+    expect(bodies[0].mastery_grade).toBe(2);           // Stufe 1: voll (mit Master-Feldern)
+    expect(bodies[0].deck_snapshot).toBeDefined();
+    expect(bodies[0].seed).toBe(42);                   // ... inkl. #205 seed
+    expect(bodies[1].mastery_grade).toBeUndefined();   // Stufe 2: Master-Felder gestript
+    expect(bodies[1].deck_snapshot).toBeUndefined();
+    expect(bodies[1].seed).toBeUndefined();            // seed ebenfalls gestript
+    expect(bodies[1].best_streak).toBeUndefined();     // FB-8 ebenfalls gestript
+    expect(bodies[1].archetypes).toBe("fire");         // archetypes bleibt (Icons)
   });
 });

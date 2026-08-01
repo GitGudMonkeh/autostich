@@ -3,6 +3,7 @@ import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { SKILL_DEFS, ARCHETYPE_META, archetypeOf } from "../game/skills.js";
+import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
 import { SUIT_ORDER, suitColor, suitName } from "../game/constants.js";
 
 // Archetyp-Meta eines Skills (Icon/Farbe/Label) — Fallback neutral (#93 F1: Feuer & Blitz gemischt).
@@ -117,6 +118,13 @@ export function SkillList({ skills = [], empty = "Noch keine Skills." }) {
             <span className="font-bold" style={{ color: om.color }}>{open.name}</span>
           </div>
           <div className="opacity-80 leading-snug">{open.desc}</div>
+          {/* #201 P1: Schlüsselbegriffe des Skills gleich mit erklärt — im Build jederzeit abrufbar. */}
+          {glossaryKeywords([open.id], SKILL_DEFS).map((k) => (
+            <div key={k} className="text-xs leading-snug mt-1.5">
+              <span className="font-bold" style={{ color: GLOSSARY[k].color }}>{GLOSSARY[k].icon} {GLOSSARY[k].label}</span>
+              <span className="opacity-70"> — {GLOSSARY[k].text}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>

@@ -10,12 +10,17 @@
      { kind: "games",  n }   → profile.games      >= n   (gespielte Läufe)
      { kind: "streak", n }   → profile.bestStreak >= n
      { kind: "score",  n }   → profile.bestScore  >= n
-     { kind: "noBuyRun" }    → profile.hadNoBuyRun    === true  (Lauf ohne Shop-Kauf, Challenge 3)
+     { kind: "noRerollRun" } → profile.hadNoRerollRun === true  (Lauf ohne benutzten Reroll, Sparfuchs deck_c3 · #214)
      { kind: "monoStatRun" } → profile.hadMonoStatRun === true  (Lauf mit nur einem Stat, Challenge 4)
+     { kind: "monoArchetypeRun", archetype } → profile.monoArchetypeRuns[archetype] (Lauf nur mit dieser Fraktion, #215 deck_c5..c8)
+     { kind: "allArchetypesRun" }            → profile.hadAllArchetypesRun === true (Lauf mit allen vier Fraktionen, #215 deck_c9)
+     { kind: "masteryGrade", n }             → profile.masteryGrade >= n (Meister I..V = n1–5 #217 deck_rank_* · Großmeister I..V = n6–10 #226 deck_gm_*)
 
    Katalog wächst „Deck für Deck": ein neues Deck = ein Eintrag hier + sein Bild-Paar in
    cosmeticAssets.js. Solange ein Bild-Asset noch nicht im Repo liegt, bleibt der Eintrag draußen
    (temporärer Umsetzungs-Zwischenstand); im fertigen Feature ist jeder Katalog-Eintrag sichtbar. */
+
+import { masteryGradeLabel } from "./mastery.js"; // #217/#226: Rang-Label (Meister „Rang I" / Großmeister „Großmeister I") für Freischalt-Texte
 
 // Progressions-Schwellen (gespielte Läufe) — Issue #190.
 export const DECK_GAME_UNLOCKS = [5, 15, 25, 35];        // deck_p1..p4
@@ -31,8 +36,26 @@ export const DECK_DEFS = {
   // Challenge-Decks (nur Decks, keine Battlefields):
   deck_c1: { id: "deck_c1", name: "Endloskette",       unlock: { kind: "streak", n: 100 } },
   deck_c2: { id: "deck_c2", name: "Rekordhalter",      unlock: { kind: "score",  n: 10_000_000 } },
-  deck_c3: { id: "deck_c3", name: "Sparfuchs",         unlock: { kind: "noBuyRun" } },
+  deck_c3: { id: "deck_c3", name: "Sparfuchs",         unlock: { kind: "noRerollRun" } }, // #214: löst noBuyRun ab (Shop → Architekt, #202)
   // deck_c4 (monoStatRun) folgt.
+  // Archetyp-Challenge-Decks (#215): Mono-Archetyp-Lauf je Fraktion + Element-Bund (alle vier).
+  deck_c5: { id: "deck_c5", name: "Reines Feuer",  unlock: { kind: "monoArchetypeRun", archetype: "fire" } },
+  deck_c6: { id: "deck_c6", name: "Reiner Blitz",  unlock: { kind: "monoArchetypeRun", archetype: "lightning" } },
+  deck_c7: { id: "deck_c7", name: "Reines Eis",    unlock: { kind: "monoArchetypeRun", archetype: "ice" } },
+  deck_c8: { id: "deck_c8", name: "Reine Pflanze", unlock: { kind: "monoArchetypeRun", archetype: "plant" } },
+  deck_c9: { id: "deck_c9", name: "Element-Bund",  unlock: { kind: "allArchetypesRun" } },
+  // Meistergrad-Decks (#217): je erreichter Grad (I..V) schaltet eines frei — Beweis der laufübergreifenden Meisterschaft.
+  deck_rank_bronze:  { id: "deck_rank_bronze",  name: "Bronze",  unlock: { kind: "masteryGrade", n: 1 } },
+  deck_rank_silber:  { id: "deck_rank_silber",  name: "Silber",  unlock: { kind: "masteryGrade", n: 2 } },
+  deck_rank_gold:    { id: "deck_rank_gold",    name: "Gold",    unlock: { kind: "masteryGrade", n: 3 } },
+  deck_rank_platin:  { id: "deck_rank_platin",  name: "Platin",  unlock: { kind: "masteryGrade", n: 4 } },
+  deck_rank_diamond: { id: "deck_rank_diamond", name: "Diamant", unlock: { kind: "masteryGrade", n: 5 } },
+  // Großmeister-Decks (#226): je erreichter Großmeister-Rang (I..V = masteryGrade 6..10) schaltet eines frei.
+  deck_gm_rot:   { id: "deck_gm_rot",   name: "Rot",          unlock: { kind: "masteryGrade", n: 6 } },
+  deck_gm_blau:  { id: "deck_gm_blau",  name: "Blau",         unlock: { kind: "masteryGrade", n: 7 } },
+  deck_gm_gruen: { id: "deck_gm_gruen", name: "Grün",         unlock: { kind: "masteryGrade", n: 8 } },
+  deck_gm_lila:  { id: "deck_gm_lila",  name: "Lila",         unlock: { kind: "masteryGrade", n: 9 } },
+  deck_gm_marco: { id: "deck_gm_marco", name: "Marco stinkt", unlock: { kind: "masteryGrade", n: 10 } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -47,6 +70,8 @@ export const BATTLEFIELD_DEFS = {
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".
 const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+// #215: Anzeigenamen der Fraktionen für die Freischalt-Labels (Archetyp-Decks).
+const ARCH_LABEL = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze" };
 
 // Reine Freischalt-Prüfung. Unbekannte kinds blockieren NICHT (defensiv: neuer kind ohne Code-Update
 // soll kein Deck unsichtbar-gesperrt lassen).
@@ -58,8 +83,11 @@ export function isUnlocked(def, profile) {
     case "games":       return (p.games      || 0) >= u.n;
     case "streak":      return (p.bestStreak || 0) >= u.n;
     case "score":       return (p.bestScore  || 0) >= u.n;
-    case "noBuyRun":    return !!p.hadNoBuyRun;
+    case "noRerollRun": return !!p.hadNoRerollRun; // #214 Sparfuchs
     case "monoStatRun": return !!p.hadMonoStatRun;
+    case "monoArchetypeRun": return !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]); // #215: Lauf nur mit dieser Fraktion
+    case "allArchetypesRun": return !!p.hadAllArchetypesRun;                                     // #215: Lauf mit allen vier
+    case "masteryGrade": return (p.masteryGrade || 0) >= u.n;                                    // #217: erreichter Meistergrad
     default:            return true;
   }
 }
@@ -84,13 +112,25 @@ export function unlockProgress(def, profile) {
       const have = p.bestScore || 0;
       return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche Score ${grp(u.n)}` };
     }
-    case "noBuyRun": {
-      const done = !!p.hadNoBuyRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf ohne einen einzigen Shop-Kauf ab" };
+    case "noRerollRun": {
+      const done = !!p.hadNoRerollRun;
+      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" };
     }
     case "monoStatRun": {
       const done = !!p.hadMonoStatRun;
       return { done, cur: done ? 1 : 0, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" };
+    }
+    case "monoArchetypeRun": {
+      const done = !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]);
+      return { done, cur: done ? 1 : 0, target: 1, label: `Schließe einen Lauf nur mit ${ARCH_LABEL[u.archetype] || u.archetype}-Skills ab` };
+    }
+    case "allArchetypesRun": {
+      const done = !!p.hadAllArchetypesRun;
+      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf mit allen vier Elementen ab" };
+    }
+    case "masteryGrade": {
+      const have = p.masteryGrade || 0;
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche ${masteryGradeLabel(u.n)}` };
     }
     default:
       return { done: true, cur: 1, target: 1, label: "" };

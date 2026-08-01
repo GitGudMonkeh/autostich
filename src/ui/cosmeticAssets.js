@@ -23,6 +23,36 @@ import c2Front from "../assets/cards/decks_player/deck_c2/front.png"; // #190 de
 import c2Back  from "../assets/cards/decks_player/deck_c2/back.png";
 import c3Front from "../assets/cards/decks_player/deck_c3/front.png"; // #190 deck_c3 „Sparfuchs" (Challenge: kein Shop-Kauf)
 import c3Back  from "../assets/cards/decks_player/deck_c3/back.png";
+import c5Front from "../assets/cards/decks_player/deck_c5/front.png"; // #215 deck_c5 „Reines Feuer" (Mono-Feuer-Lauf)
+import c5Back  from "../assets/cards/decks_player/deck_c5/back.png";
+import c6Front from "../assets/cards/decks_player/deck_c6/front.png"; // #215 deck_c6 „Reiner Blitz" (Mono-Blitz)
+import c6Back  from "../assets/cards/decks_player/deck_c6/back.png";
+import c7Front from "../assets/cards/decks_player/deck_c7/front.png"; // #215 deck_c7 „Reines Eis" (Mono-Eis)
+import c7Back  from "../assets/cards/decks_player/deck_c7/back.png";
+import c8Front from "../assets/cards/decks_player/deck_c8/front.png"; // #215 deck_c8 „Reine Pflanze" (Mono-Pflanze)
+import c8Back  from "../assets/cards/decks_player/deck_c8/back.png";
+import c9Front from "../assets/cards/decks_player/deck_c9/front.png"; // #215 deck_c9 „Element-Bund" (alle vier Fraktionen)
+import c9Back  from "../assets/cards/decks_player/deck_c9/back.png";
+import rankBronzeFront  from "../assets/cards/decks_player/deck_rank_bronze/front.png"; // #217 Meistergrad-Decks (Grad I..V)
+import rankBronzeBack   from "../assets/cards/decks_player/deck_rank_bronze/back.png";
+import rankSilberFront  from "../assets/cards/decks_player/deck_rank_silber/front.png";
+import rankSilberBack   from "../assets/cards/decks_player/deck_rank_silber/back.png";
+import rankGoldFront    from "../assets/cards/decks_player/deck_rank_gold/front.png";
+import rankGoldBack     from "../assets/cards/decks_player/deck_rank_gold/back.png";
+import rankPlatinFront  from "../assets/cards/decks_player/deck_rank_platin/front.png";
+import rankPlatinBack   from "../assets/cards/decks_player/deck_rank_platin/back.png";
+import rankDiamondFront from "../assets/cards/decks_player/deck_rank_diamond/front.png";
+import rankDiamondBack  from "../assets/cards/decks_player/deck_rank_diamond/back.png";
+import gmRotFront   from "../assets/cards/decks_player/deck_gm_rot/front.png";   // #226 Großmeister-Decks (Rang I..V)
+import gmRotBack    from "../assets/cards/decks_player/deck_gm_rot/back.png";
+import gmBlauFront  from "../assets/cards/decks_player/deck_gm_blau/front.png";
+import gmBlauBack   from "../assets/cards/decks_player/deck_gm_blau/back.png";
+import gmGruenFront from "../assets/cards/decks_player/deck_gm_gruen/front.png";
+import gmGruenBack  from "../assets/cards/decks_player/deck_gm_gruen/back.png";
+import gmLilaFront  from "../assets/cards/decks_player/deck_gm_lila/front.png";
+import gmLilaBack   from "../assets/cards/decks_player/deck_gm_lila/back.png";
+import gmMarcoFront from "../assets/cards/decks_player/deck_gm_marco/front.png";
+import gmMarcoBack  from "../assets/cards/decks_player/deck_gm_marco/back.png";
 import bf1Desktop from "../assets/battlefields/bf_1/desktop.jpg"; // #190 bf_1 „Neon-Boulevard" (ultrawide)
 import bf1Mobile  from "../assets/battlefields/bf_1/mobile.jpg";  // (4:3, schmalerer Viewport)
 import bf2Desktop from "../assets/battlefields/bf_2/desktop.jpg"; // #190 bf_2 „Nachttankstelle" (ultrawide)
@@ -42,6 +72,21 @@ export const DECK_ASSETS = {
   deck_c1: { front: c1Front,     back: c1Back },
   deck_c2: { front: c2Front,     back: c2Back },
   deck_c3: { front: c3Front,     back: c3Back },
+  deck_c5: { front: c5Front,     back: c5Back }, // #215 Archetyp-Decks
+  deck_c6: { front: c6Front,     back: c6Back },
+  deck_c7: { front: c7Front,     back: c7Back },
+  deck_c8: { front: c8Front,     back: c8Back },
+  deck_c9: { front: c9Front,     back: c9Back },
+  deck_rank_bronze:  { front: rankBronzeFront,  back: rankBronzeBack },  // #217 Meistergrad-Decks
+  deck_rank_silber:  { front: rankSilberFront,  back: rankSilberBack },
+  deck_rank_gold:    { front: rankGoldFront,    back: rankGoldBack },
+  deck_rank_platin:  { front: rankPlatinFront,  back: rankPlatinBack },
+  deck_rank_diamond: { front: rankDiamondFront, back: rankDiamondBack },
+  deck_gm_rot:   { front: gmRotFront,   back: gmRotBack },   // #226 Großmeister-Decks
+  deck_gm_blau:  { front: gmBlauFront,  back: gmBlauBack },
+  deck_gm_gruen: { front: gmGruenFront, back: gmGruenBack },
+  deck_gm_lila:  { front: gmLilaFront,  back: gmLilaBack },
+  deck_gm_marco: { front: gmMarcoFront, back: gmMarcoBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne

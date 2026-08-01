@@ -229,6 +229,39 @@ button { font-family: inherit; }
 .as-charge-pulse { animation: as-charge-pulse 1.1s ease-in-out infinite; }
 .as-frost-pulse  { animation: as-frost-pulse  2.8s ease-in-out infinite; }
 
+/* Blitz-Motor (#208): Energie „fließt" die aktiven Verbinder entlang (bewegter Farbverlauf). Der Verbinder trägt
+   `background-size: 220%`; die Animation schiebt die Position → ein wandernder Lichtpuls. Ruht implizit unter
+   reduced-motion (globale Regel unten) → der Verbinder bleibt dann einfach statisch gefärbt. */
+@keyframes as-motor-flow { 0% { background-position: 120% 0; } 100% { background-position: -20% 0; } }
+.as-motor-flow { animation: as-motor-flow 1.3s linear infinite; }
+
+/* #201.3: einheitlicher Legendär-Rahmen (Shop/Perk/Skill) — animierter Gold-Glanz. Der Keyframe RUHT bei 0%/100% auf dem
+   statischen Gold-Ring → unter reduced-motion (Regel unten) bleibt genau dieser Ring stehen, kein Puls. Als Klasse an die
+   Legendär-Karte gehängt; die Karte setzt dann KEINE eigene Inline-box-shadow (die würde den Ring überschreiben). */
+@keyframes as-legendary {
+  0%, 100% { box-shadow: 0 0 0 1px #d4a63a99, 0 0 12px #d4a63a55; }
+  50%      { box-shadow: 0 0 0 1px #f0d27a, 0 0 22px #d4a63acc, 0 0 34px #d4a63a55; }
+}
+.as-legendary { box-shadow: 0 0 0 1px #d4a63a99, 0 0 12px #d4a63a55; animation: as-legendary 1.9s ease-in-out infinite; }
+
+/* Architekt: fertige Struktur-Kombi (volle Zeile/Spalte/Diagonale) — der Rahmen schimmert wie ein Legendär,
+   damit man die erfüllte Kombi sofort erkennt. Als ::after-Overlay, damit die Inline-box-shadow der Zelle
+   (Raritätsrahmen etc.) erhalten bleibt. Ruht bei 0%/100% auf dem statischen Gold-Glow → unter reduced-motion
+   (Regel unten) bleibt genau dieser Ring/Glow stehen, kein Puls. Gold #f0b429 = die bestehende Kombi-Farbe. */
+@keyframes arch-struct-shimmer {
+  0%, 100% { box-shadow: 0 0 0 1px #f0b42988, 0 0 9px #f0b42999; }
+  50%      { box-shadow: 0 0 0 1px #ffe08a, 0 0 18px #f0b429e0, 0 0 30px #f0b42955; }
+}
+.arch-struct-lit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px #f0b42988, 0 0 9px #f0b42999;
+  animation: arch-struct-shimmer 1.7s ease-in-out infinite;
+}
+
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -340,11 +373,7 @@ button { font-family: inherit; }
   to   { background-position: 0% center, 200% center; }
 }
 
-/* Gekreuzte-Schwerter-Icon zwischen den Karten (#42): im Default schlicht, unter dem
-   CRT-Skin blaues Neon-Glow passend zur Klingenfarbe. */
-[data-skin="crt"] .crt-vs-icon {
-  filter: drop-shadow(0 0 5px #5a8ade) drop-shadow(0 0 11px rgba(90,138,222,0.55));
-}
+/* (#214) Das gekreuzte-Schwerter-„vs"-Icon (#42) zwischen den Karten wurde entfernt — Regel .crt-vs-icon gestrichen. */
 
 /* Ambient-Partikel unter Skin (#41-Nachzug). Wird nur gerendert, wenn der Skin an
    ist (App) und keine reduzierte Bewegung gilt (CrtParticles.jsx). pointer-events:none.
@@ -366,3 +395,41 @@ button { font-family: inherit; }
   92%  { opacity: 1; }
   100% { transform: translateY(-101vh) translateX(var(--drift)); opacity: 0; }
 }
+
+/* ============================================================================
+   GLOSSAR (Glossar-Rework) — ⓘ-Icon je Panel öffnet das durchsuchbare Glossar;
+   Begriffe in Beschreibungen werden fett markiert. Unlayered (nach @import
+   tailwindcss) → gewinnt gegen Tailwind-Utilities.
+   ============================================================================ */
+/* Fett markierter Glossar-Begriff in Beschreibungen — Signal „steht im Glossar". NICHT klickbar. */
+.gloss-term { font-weight: 700; color: #eae5ff; }
+
+/* Der ⓘ-Kreis (Panels + Haupt-/Spielseite). */
+.gloss-i-btn {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; flex: none; cursor: pointer;
+  font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 700;
+  font-size: 0.82rem; line-height: 1;
+  color: #8a7de0; background: #1b1830; border: 1px solid #3b3563;
+  transition: background .12s ease, box-shadow .12s ease, transform .12s ease;
+}
+.gloss-i-btn:hover { background: #241f42; box-shadow: 0 0 0 3px #8a7de022, 0 0 12px -2px #8a7de0; transform: translateY(-1px); }
+.gloss-i-btn:active { transform: translateY(0); }
+.gloss-i-btn:focus-visible { outline: 2px solid #8a7de0; outline-offset: 2px; }
+
+/* Titel-„i" im Overlay-Kopf. */
+.gloss-i-mark {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: Georgia, serif; font-style: italic; font-weight: 700; font-size: 0.72rem;
+  color: #8a7de0; background: #1b1830; border: 1px solid #3b3563;
+}
+.gloss-search::placeholder { color: #5c5c68; }
+.gloss-search:focus { outline: none; border-color: #8a7de0; box-shadow: 0 0 0 3px #8a7de022; }
+.gloss-chiprow { scrollbar-width: none; }
+.gloss-chiprow::-webkit-scrollbar { display: none; }
+.gloss-chip { border: 1px solid #33333e; background: #1a1a21; color: #9a9aa4; cursor: pointer; transition: color .12s, background .12s, border-color .12s; }
+.gloss-chip:hover { color: #e8e8ea; border-color: #4a4258; }
+.gloss-chip-on { background: #241f42; border-color: #4a3f78; color: #e5e0ff; }
+.gloss-chip:focus-visible { outline: 2px solid #8a7de0; outline-offset: 2px; }
+.gloss-term-row:hover { background: #1a1a22; }

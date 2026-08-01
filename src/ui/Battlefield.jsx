@@ -1,36 +1,36 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
-import { TRICKS_PER_CYCLE, suitColor } from "../game/constants.js";
+import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
-import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js";
+import { useReducedFx } from "./useReducedFx.js";
 import { fmtScore } from "./format.js";
-import swordicon from "../assets/icons/swordicon.png"; // (#42) Vite bundelt & hasht -> subpfad-sicher
 import cardBackImg  from "../assets/cards/card-back.png";  // (#180) Spieler-Deck: Schwerter-Rücken
 import cardFrontImg from "../assets/cards/card-front.png"; // (#180) Spieler-Deck: Rahmen-Front (Zahl/Effekte darüber)
-// (#186) Gegner-Deck: je Auswahl-Typ ein eigenes Deck (Cover = Rücken, Front = Rahmen). Der Gegner spielt jede
-// Runde das Deck der KOMMENDEN Auswahl (DECISION_SCHEDULE) — die App reicht den Typ als `oppDeck` durch.
-import statCover from "../assets/cards/decks/stat-cover.png";
-import statFront from "../assets/cards/decks/stat-front.png";
-import perkCover from "../assets/cards/decks/perk-cover.png";
-import perkFront from "../assets/cards/decks/perk-front.png";
-import skillCover from "../assets/cards/decks/skill-cover.png";
-import skillFront from "../assets/cards/decks/skill-front.png";
-import shopCover from "../assets/cards/decks/shop-cover.png";
-import shopFront from "../assets/cards/decks/shop-front.png";
-import formationCover from "../assets/cards/decks/formation-cover.png";
-import formationFront from "../assets/cards/decks/formation-front.png";
+// (#186/#214) Gegner-Deck: je Auswahl-Typ ein eigenes Deck (Cover = Rücken, Front = Rahmen). Der Gegner spielt jede
+// Runde das Deck der KOMMENDEN Auswahl (DECISION_SCHEDULE) — die App reicht den Typ als `oppDeck` durch. #214: die
+// Gegner-Decks tragen jetzt die Archetyp-Motive (dieselbe Kunst wie die Spieler-Challenge-Decks #215, deck_c5–c9).
+import c5Front from "../assets/cards/decks_player/deck_c5/front.png"; // 🔥 Feuer  → stat
+import c5Back  from "../assets/cards/decks_player/deck_c5/back.png";
+import c6Front from "../assets/cards/decks_player/deck_c6/front.png"; // ⚡ Blitz  → shop/architekt
+import c6Back  from "../assets/cards/decks_player/deck_c6/back.png";
+import c7Front from "../assets/cards/decks_player/deck_c7/front.png"; // ❄️ Eis    → perk
+import c7Back  from "../assets/cards/decks_player/deck_c7/back.png";
+import c8Front from "../assets/cards/decks_player/deck_c8/front.png"; // 🌱 Pflanze → formation
+import c8Back  from "../assets/cards/decks_player/deck_c8/back.png";
+import c9Front from "../assets/cards/decks_player/deck_c9/front.png"; // 🎴 Mix    → skill
+import c9Back  from "../assets/cards/decks_player/deck_c9/back.png";
 
-// Auswahl-Typ → Gegner-Deck-Skin (Cover/Front). Fällt auf „stat" zurück (z. B. letzter Durchlauf ohne Folge-Auswahl).
+// Auswahl-Typ → Gegner-Deck-Skin (Cover/Front) auf Archetyp-Motiv (#214). Fällt auf „stat" (Feuer) zurück.
 const OPP_DECK_SKINS = {
-  stat:      { back: statCover,      front: statFront },
-  perk:      { back: perkCover,      front: perkFront },
-  skill:     { back: skillCover,     front: skillFront },
-  shop:      { back: shopCover,      front: shopFront },
-  formation: { back: formationCover, front: formationFront },
+  stat:      { back: c5Back, front: c5Front }, // Feuer
+  perk:      { back: c7Back, front: c7Front }, // Eis
+  skill:     { back: c9Back, front: c9Front }, // Mix / Element-Bund
+  shop:      { back: c6Back, front: c6Front }, // Blitz (Auswahl-Typ „shop" = Architekt-Phase, #202)
+  formation: { back: c8Back, front: c8Front }, // Pflanze
 };
 
 const BANNER = {
@@ -137,13 +137,13 @@ function FlipReveal({ front, backImage, dur }) {
    (≈40 % weiß / 60 % Suit-Farbe, ein paar „Konfetti"-Rechtecke). Deterministisch aus `seed` (kein Math.random
    im Render, #68). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen in den nächsten Stich.
    Elemente entfernen sich mit dem Karten-Remount des nächsten Stichs (key nach trickNo) → kein Stapeln. */
-function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, tier = 0 }) {
+function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, tier = 0, scale = 1 }) {
   // #188: score-skaliert. Kontinuierlich: Funkenzahl/-weite, Hälften-Distanz, Schnittlinien-Länge/Glow.
   // Unlocks: ab BRUTAL (tier≥2) ein zweiter Kreuzschnitt, ab IRRE (tier≥3) zerfällt die Karte in VIER Teile
   // statt zwei Hälften (optische Brücke zur Explosion). Screen-Effekte bleiben dem Crit vorbehalten (v2).
   const sepMul = 1 + intensity * 0.6;   // Hälften/Viertel fliegen weiter
   const radMul = 1 + intensity * 0.6;   // Funken streuen weiter
-  const N = Math.round(18 + intensity * 14);            // 18..32 Funken
+  const N = Math.max(6, Math.round((18 + intensity * 14) * scale)); // 18..32 Funken, turbo-ausgedünnt (#200 A, Boden 6)
   const cutLen = Math.round(120 * (1 + intensity * 0.4)); // Schnittlinie länger
   const quarters = tier >= 3;           // IRRE+: vier Teile
   const crossCut = tier >= 2;           // BRUTAL+: zweiter Kreuzschnitt
@@ -213,7 +213,7 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, 
    „berstet": ein heller Zentral-Flash blitzt auf, ein Schockwellen-Ring dehnt sich, die Karte skaliert kurz auf,
    überstrahlt und zerstiebt, während ~28 Partikel radial nach außen schießen. Farbe = Crit-Lila (passt zum
    KRITISCH-Text & Crit-Puls). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen. */
-function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay = 0, intensity = 0, tier = 0 }) {
+function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay = 0, intensity = 0, tier = 0, scale = 1 }) {
   // Die Krit-Karte zerbirst in ein Raster kleiner PIXEL-SHARDS (clip-path-Klone der Karte): jedes Fragment fliegt
   // radial nach außen, tumbelt (rotate) & fadet — die Karte „zerplatzt in Pixel". Deterministisch aus `seed` (kein
   // Math.random, #68). Bis 0%/9% halten die Shards (fill-mode both + delay) den Ganz-Zustand → Karte liegt erst.
@@ -245,7 +245,7 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
       });
     }
   }
-  const N = Math.round(20 + intensity * 24); // 20..44 lose Partikel (gedeckelt)
+  const N = Math.max(8, Math.round((20 + intensity * 24) * scale)); // 20..44 lose Partikel, turbo-ausgedünnt (#200 A, Boden 8; das Shard-Raster 7×5 bleibt voll)
   const parts = Array.from({ length: N }, (_, i) => {
     const ang = (i / N) * Math.PI * 2 + fjitter(seed * 3 + i * 7, 0.45);  // gleichmäßiger Kranz + Jitter
     const rad = (62 + Math.abs(fjitter(seed * 5 + i * 13, 92))) * radMul; // 62..154 px × Intensität
@@ -308,7 +308,8 @@ function SlashGhostLayer({ ghosts }) {
       {ghosts.map((g) => {
         const cardEl = (
           <Card suit={g.suit} value={g.value} baseRank={g.baseRank} stichBonus={g.stichBonus}
-            ionStacks={g.ionStacks} frozen={g.frozen} frostbitten={g.frostbitten} frostAnimated
+            ionStacks={g.ionStacks} frozen={g.frozen} frostbitten={g.frostbitten} green={g.green}
+            forged={g.forged || 0} branded={g.branded || 0} frostLayers={g.frostLayers || 0} growth={g.growth || 0} colonized={g.colonized || 0} frostAnimated
             allyColor={g.allyColor} frontImage={g.frontImage} />
         );
         // Reihenfolge (Wunsch): Karte liegt (rest) → Slice/Explosion IN PLACE (delay = g.rest) → DANACH floatet der
@@ -325,8 +326,8 @@ function SlashGhostLayer({ ghosts }) {
             style={{ animation: `as-loss-drift-rand ${g.float}ms cubic-bezier(0.2, 0.6, 0.3, 1) ${driftDelay}ms forwards`, willChange: "transform",
                      "--drx": `${(Math.cos(dang) * drad).toFixed(1)}px`, "--dry": `${(Math.sin(dang) * drad).toFixed(1)}px`, "--drot": `${drot}deg` }}>
             {isBoom
-              ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} />
-              : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} />}
+              ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
+              : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />}
           </div>
         );
       })}
@@ -356,10 +357,18 @@ function CritScreenFx({ tier, color }) {
 }
 
 export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, frozen = 0, oppDeck = "stat",
+  // Feuer-Rework (#206): geschmiedete Dauerwerte (eigene Karten) + aktive Brandmarken (Gegnerkarten) für die Karten-Indikatoren.
+  forged = {}, brandActive = {},
+  // Eis-Rework (#210): Schichten je Frostkarte-id → Schicht-Eck-Kristalle auf der eigenen (eingefrorenen) Karte.
+  layers = {},
+  // Pflanze-Rework (#211): Wachstum je eigener Karte-id (Wachstumsring + grüne Zahl) + kolonisierte Gegnerkarten (Ausläufer-Marker).
+  growth = {}, colonized = {},
   // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
   // Defaults = bestehende Karten → ohne Auswahl identisches Verhalten (Gegner-Deck bleibt OPP_DECK_SKINS).
-  deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null }) {
-  const reduced = usePrefersReducedMotion();
+  deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
+  // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
+  reducedFx = "auto" }) {
+  const reduced = useReducedFx(reducedFx);
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -384,6 +393,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #135: Ergebnis-Puls-Dauer an den Flip-Takt gekoppelt (wie die übrigen „Juice"-Animationen).
   const pulseDur = clamp(flipMs * 0.7, 300, 700);
   const fx = (a) => (reduced ? undefined : a);
+  // #200 A — Effekt-Budget: je schneller der Takt, desto weniger lose Partikel/Funken und desto flacher der Ghost-Pool.
+  // flipMs ≥ 2× (875) = voll; 4× (~437) ≈ 0,5; MAX (~291) = Boden 0,45. Rein visuell (score-neutral wie der Turbo).
+  const fxScale  = clamp(flipMs / 875, 0.45, 1);
+  const ghostCap = Math.max(2, Math.round(6 * fxScale)); // gleichzeitige Schnitt-/Explosions-Ghosts (ältester wird recycelt)
   // #95: einheitliche Float-Dauer für Score- UND Formations-Float (letzterer war zuvor kürzer).
   const floatDur = clamp(flipMs * 0.7, 360, 760) + 1300;
   // #95: Float-Größe skaliert mit dem Gewinn — klein bleibt lesbar (20 px), groß gedeckelt (52 px).
@@ -438,13 +451,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const pCardEl = t && (
     <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
           stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-          ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} frostAnimated allyColor={allyColorFor(t.pCard.suit)}
+          ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} frostLayers={layers[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} frostAnimated allyColor={allyColorFor(t.pCard.suit)}
           frontImage={deckFront} />
   );
   // #186: die Gegnerkarte trägt den Skin-Front-Rahmen der kommenden Auswahl (Holo entfällt); Zahl/Effekte darüber.
   const oCardEl = t && (
     <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
-          frostbitten={t.oFrostbitten} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
+          frostbitten={t.oFrostbitten} green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
   );
 
   // Sieger kippt an (as-slice-winner); im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
@@ -582,24 +595,24 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (!sliceOn) return;                           // nur bei einem echten (animierten) Sieg/Niederlage-Stich
     // #188: Effekt-Intensität aus dem Per-Stich-Score. Niederlage → t.gained 0 → Base (kein Skalieren).
     const { p: fxP, tier: fxTier } = fxIntensity(t.gained || 0);
-    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, fxP, fxTier };
+    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, fxP, fxTier, scale: fxScale };
     const spawned = [];
     if (lost) {  // Spielerkarte verliert → Schnitt-Ghost auf der Spielerseite
       spawned.push({ ...base, id: `pg${t.trickNo}-${ghostSeq.current++}`, side: "player", fx: "slice",
         color: suitColor(t.pCard.suit), seed: t.trickNo * 2 + 7,
         suit: t.pCard.suit, value: t.pCard.value, baseRank: t.pCard.baseRank, stichBonus: t.pValue - t.pCard.value,
-        ionStacks: t.pCard.ionStacks || 0, frozen: t.pFrozen, frostbitten: false,
-        allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
+        ionStacks: t.pCard.ionStacks || 0, frozen: t.pFrozen, frostbitten: false, green: !!t.pCard.green,
+        forged: forged[t.pCard.id] || 0, frostLayers: layers[t.pCard.id] || 0, growth: growth[t.pCard.id] || 0, allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
     }
     if (win) {   // Gegnerkarte verliert → Schnitt- (normal) bzw. Explosions-Ghost (Krit) auf der Gegnerseite
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp", fx: isCrit ? "explode" : "slice",
         color: isCrit ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
-        ionStacks: 0, frozen: false, frostbitten: t.oFrostbitten,
-        allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
+        ionStacks: 0, frozen: false, frostbitten: t.oFrostbitten, green: !!t.oCard.green,
+        branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
     }
     if (!spawned.length) return;
-    setSlashGhosts((cur) => [...cur, ...spawned].slice(-6)); // Pool gedeckelt
+    setSlashGhosts((cur) => [...cur, ...spawned].slice(-ghostCap)); // Pool gedeckelt (turbo-abhängig, #200 A)
     const ids = spawned.map((g) => g.id);
     const tm = setTimeout(() => {
       setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
@@ -767,8 +780,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack}
               overlay={playerGhosts.length ? <SlashGhostLayer ghosts={playerGhosts} /> : null}>{playerCard}</Side>
 
-        <img src={swordicon} alt="vs" width={46} height={46} draggable="false"
-             className="crt-vs-icon shrink-0 select-none" style={{ imageRendering: "pixelated" }} />
+        {/* #214: „vs"-Schwerter-Icon (#42) entfernt — die beiden Seiten stehen sich jetzt ohne Trenn-Icon gegenüber. */}
 
         <Side label="Gegner" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg}
               overlay={oppGhosts.length ? <SlashGhostLayer ghosts={oppGhosts} /> : null}>{oppCard}</Side>

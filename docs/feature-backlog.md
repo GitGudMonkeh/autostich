@@ -129,18 +129,8 @@
   3. Wie viel Historie fremder (globaler) Einträge lohnt die Migration — nur ab jetzt neue Läufe voll, alte reduziert?
 - **Notizen:** Passt zu **FB-3** (Liste bleibt schlank: Stiche/Runden raus) — die Detailansicht liefert die Tiefe on-demand. Gebündelt in Issue [#169](https://github.com/GitGudMonkeh/autostich/issues/169).
 
-### FB-9 — Maskottchen auf Mobile größer (maximal möglich, ohne UI zu verschieben/brechen)
-- **Status:** gesammelt
-- **Beschreibung:** Das Maskottchen soll auf **Mobile** größer werden — aber **nur so weit, wie es das UI weder verschiebt noch bricht**. Ziel ist, das **Maximum** zu finden, das bei den kleinsten unterstützten Handy-Breiten noch sauber passt.
-- **Motivation / Warum:** Der Charakter ist auf dem Handy aktuell nur ein kleiner runder Avatar (46 px) und dadurch kaum präsent.
-- **Betroffene Bereiche:**
-  - `src/ui/PanelMascot.jsx` — Mobile-Variante `variant="avatar"`, Default `avatarSize = 46`. Der Avatar sitzt **inline neben der Überschrift** (`sm:hidden`, `object-cover`, `shrink-0`) — genau diese Header-Zeile ist die Layout-Grenze (zu groß → Überschrift bricht um / Header wächst / drängt).
-  - Alle **5 Nutzungsstellen** rendern den Mobile-Avatar mit der Default-Größe: `FormationPhase.jsx`, `PerkSelect.jsx`, `SkillSelect.jsx`, `ShopScreen.jsx`, `StatSelect.jsx`. → Bump der Default-Größe in `PanelMascot.jsx` wirkt auf alle fünf; ggf. je Panel feinjustieren.
-- **Offene Fragen / Vorgehen:**
-  1. „Was ist das Maximum?" = **Investigation** in der Browser-Preview (Mobile-Preset 375 px, ggf. schmaler) über alle 5 Panels: größten `avatarSize` finden, bei dem keine Header-Zeile umbricht/verschiebt. Dann diesen Wert (mit kleinem Sicherheitsabstand) setzen.
-  2. Runder Avatar beibehalten oder auf Mobile eine andere, größere Darstellung (z.B. kleiner Peek) — solange nichts verschoben/gebrochen wird?
-  3. Einheitliche Größe für alle Panels oder pro Panel (unterschiedliche Header-Längen)?
-- **Notizen:** Reine Responsive-UI-Änderung; kein `game/`-Layer betroffen, keine Tests. Verifikation via Browser-Preview (mobile). Gebündelt in Issue [#170](https://github.com/GitGudMonkeh/autostich/issues/170).
+### FB-9 — (entfällt)
+- **Status:** hinfällig — die Entscheidungs-Panels haben keine Charakter-Grafik mehr (mit [#209](https://github.com/GitGudMonkeh/autostich/issues/209) entfernt, Panels bleiben schlicht). Dieses Item betraf ausschließlich die Mobile-Darstellung dieser Grafik und ist damit gegenstandslos.
 
 ### FB-10 — Hauptmenü: Statistik-Hub (Profil-Totals, Bestes Build, Lauf-Historie & Graphen)
 - **Status:** gesammelt (mit Research)

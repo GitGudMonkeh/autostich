@@ -5,12 +5,33 @@ import {
 } from "../src/game/cosmetics.js";
 
 // Minimal-Profil-Helfer (nur die Felder, die die Freischalt-Logik liest).
-const prof = (o = {}) => ({ games: 0, bestStreak: 0, bestScore: 0, hadNoBuyRun: false, hadMonoStatRun: false, ...o });
+const prof = (o = {}) => ({ games: 0, bestStreak: 0, bestScore: 0, hadMonoStatRun: false, ...o });
 
 describe("cosmetics — Katalog", () => {
   it("Default-Decks/Battlefields sind ohne unlock (immer frei)", () => {
     expect(DECK_DEFS.default.unlock).toBeNull();
     expect(BATTLEFIELD_DEFS.default.unlock).toBeNull();
+  });
+  it("#217 Meistergrad-Decks: deck_rank_* an Grad I..V gekoppelt (unlock + Fortschritt)", () => {
+    expect(DECK_DEFS.deck_rank_bronze.unlock).toEqual({ kind: "masteryGrade", n: 1 });
+    expect(DECK_DEFS.deck_rank_diamond.unlock).toEqual({ kind: "masteryGrade", n: 5 });
+    // Grad 3 → Bronze/Silber/Gold frei, Platin/Diamant gesperrt.
+    const p = prof({ masteryGrade: 3 });
+    expect(isUnlocked(DECK_DEFS.deck_rank_gold, p)).toBe(true);
+    expect(isUnlocked(DECK_DEFS.deck_rank_platin, p)).toBe(false);
+    const prog = unlockProgress(DECK_DEFS.deck_rank_platin, p);
+    expect(prog).toMatchObject({ done: false, cur: 3, target: 4 });
+    expect(prog.label).toContain("Rang");
+  });
+  it("#226 Großmeister-Decks: deck_gm_* an Rang 6..10 gekoppelt (unlock + Großmeister-Label)", () => {
+    expect(DECK_DEFS.deck_gm_rot.unlock).toEqual({ kind: "masteryGrade", n: 6 });
+    expect(DECK_DEFS.deck_gm_marco.unlock).toEqual({ kind: "masteryGrade", n: 10 });
+    // Großmeister II (Grad 7) → Rot/Blau frei, Grün gesperrt.
+    const p = prof({ masteryGrade: 7 });
+    expect(isUnlocked(DECK_DEFS.deck_gm_blau, p)).toBe(true);
+    expect(isUnlocked(DECK_DEFS.deck_gm_gruen, p)).toBe(false);
+    // Label nutzt das Großmeister-Rang-Label (nicht die rohe Zahl).
+    expect(unlockProgress(DECK_DEFS.deck_gm_gruen, p).label).toContain("Großmeister");
   });
   it("deck_p1 schaltet bei 5 Läufen frei (erste Progressionsstufe)", () => {
     expect(DECK_DEFS.deck_p1.unlock).toEqual({ kind: "games", n: 5 });
@@ -49,11 +70,29 @@ describe("cosmetics — Katalog", () => {
   it("Challenge-Decks c1/c2/c3 haben die richtigen Bedingungen", () => {
     expect(DECK_DEFS.deck_c1.unlock).toEqual({ kind: "streak", n: 100 });
     expect(DECK_DEFS.deck_c2.unlock).toEqual({ kind: "score", n: 10_000_000 });
-    expect(DECK_DEFS.deck_c3.unlock).toEqual({ kind: "noBuyRun" });
+    expect(DECK_DEFS.deck_c3.unlock).toEqual({ kind: "noRerollRun" }); // #214: löst noBuyRun ab
     expect(isUnlocked(DECK_DEFS.deck_c1, prof({ bestStreak: 100 }))).toBe(true);
     expect(isUnlocked(DECK_DEFS.deck_c2, prof({ bestScore: 10_000_000 }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c3, prof({ hadNoBuyRun: true }))).toBe(true);
+    expect(isUnlocked(DECK_DEFS.deck_c3, prof({ hadNoRerollRun: true }))).toBe(true);
     expect(isUnlocked(DECK_DEFS.deck_c3, prof())).toBe(false);
+  });
+  it("Archetyp-Decks c5-c9 (#215): Mono-Archetyp je Fraktion + Element-Bund", () => {
+    expect(DECK_DEFS.deck_c5.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "fire" });
+    expect(DECK_DEFS.deck_c6.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "lightning" });
+    expect(DECK_DEFS.deck_c7.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "ice" });
+    expect(DECK_DEFS.deck_c8.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "plant" });
+    expect(DECK_DEFS.deck_c9.unlock).toEqual({ kind: "allArchetypesRun" });
+    // Mono: nur die passende Fraktion schaltet ihr Deck frei
+    expect(isUnlocked(DECK_DEFS.deck_c5, prof({ monoArchetypeRuns: { fire: true } }))).toBe(true);
+    expect(isUnlocked(DECK_DEFS.deck_c5, prof({ monoArchetypeRuns: { ice: true } }))).toBe(false);
+    expect(isUnlocked(DECK_DEFS.deck_c7, prof({ monoArchetypeRuns: { ice: true } }))).toBe(true);
+    expect(isUnlocked(DECK_DEFS.deck_c5, prof())).toBe(false); // ohne Flag gesperrt
+    // Bund: nur mit dem all-Flag
+    expect(isUnlocked(DECK_DEFS.deck_c9, prof({ hadAllArchetypesRun: true }))).toBe(true);
+    expect(isUnlocked(DECK_DEFS.deck_c9, prof())).toBe(false);
+    // unlockProgress liefert sprechende Labels
+    expect(unlockProgress(DECK_DEFS.deck_c8, prof()).label).toMatch(/Pflanze/);
+    expect(unlockProgress(DECK_DEFS.deck_c9, prof({ hadAllArchetypesRun: true })).done).toBe(true);
   });
   it("alle Progressions-Schwellen sind vollständig abgedeckt (Decks 5/15/25/35, BF 10/20/30/40)", () => {
     const deckGames = Object.values(DECK_DEFS).filter(d => d.unlock?.kind === "games").map(d => d.unlock.n).sort((a,b)=>a-b);
@@ -85,13 +124,18 @@ describe("cosmetics — isUnlocked", () => {
     expect(isUnlocked(score, prof({ bestScore: 10_000_000 }))).toBe(true);
   });
 
-  it("noBuyRun/monoStatRun: an Profil-Flags gebunden", () => {
-    const noBuy = { unlock: { kind: "noBuyRun" } };
+  it("monoStatRun: an Profil-Flag gebunden", () => {
     const mono  = { unlock: { kind: "monoStatRun" } };
-    expect(isUnlocked(noBuy, prof())).toBe(false);
-    expect(isUnlocked(noBuy, prof({ hadNoBuyRun: true }))).toBe(true);
     expect(isUnlocked(mono, prof())).toBe(false);
     expect(isUnlocked(mono, prof({ hadMonoStatRun: true }))).toBe(true);
+  });
+
+  it("noRerollRun (#214 Sparfuchs): an hadNoRerollRun gebunden + Klartext-Fortschritt", () => {
+    const noReroll = { unlock: { kind: "noRerollRun" } };
+    expect(isUnlocked(noReroll, prof())).toBe(false);
+    expect(isUnlocked(noReroll, prof({ hadNoRerollRun: true }))).toBe(true);
+    expect(unlockProgress(noReroll, prof())).toEqual({ done: false, cur: 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
+    expect(unlockProgress(noReroll, prof({ hadNoRerollRun: true }))).toEqual({ done: true, cur: 1, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
   });
 
   it("unbekannter kind blockiert nicht (defensiv)", () => {
@@ -126,8 +170,8 @@ describe("cosmetics — unlockProgress", () => {
   });
 
   it("Flag-Challenges: target 1, cur 0/1, Klartext-Bedingung", () => {
-    const noBuyLocked = unlockProgress({ unlock: { kind: "noBuyRun" } }, prof());
-    expect(noBuyLocked).toEqual({ done: false, cur: 0, target: 1, label: "Schließe einen Lauf ohne einen einzigen Shop-Kauf ab" });
+    const monoLocked = unlockProgress({ unlock: { kind: "monoStatRun" } }, prof());
+    expect(monoLocked).toEqual({ done: false, cur: 0, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" });
     const monoDone = unlockProgress({ unlock: { kind: "monoStatRun" } }, prof({ hadMonoStatRun: true }));
     expect(monoDone).toEqual({ done: true, cur: 1, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" });
   });

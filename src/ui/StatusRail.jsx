@@ -1,6 +1,7 @@
-import { MAX_CYCLES } from "../game/constants.js";
+import { useMemo } from "react";
 import { cycleLenFor } from "../game/shop.js";
 import { summarizeFormations } from "../game/formations.js";
+import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
 import { hasCritPerk, critMultiplierFor, totalCritChanceRaw } from "../game/perks.js";
 import { hasCritFamily } from "../game/families.js";
 import { Sparkline } from "./Sparkline.jsx";
@@ -24,10 +25,12 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
-  const { wins, losses, ties, cycle, trickNo, winStreak, bestStreak, pos, perks, crits, lightning,
+  const { wins, losses, ties, trickNo, winStreak, bestStreak, pos, perks, crits, lightning,
           familyTiers = {}, statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0 } = state;
   const cycleLen = cycleLenFor(state.shop);  // 40, mit Zeitsegment 45 (§8 A-L1)
-  const decided = wins + losses;            // Gleichstände zählen nicht als entschieden (§4.4)
+  // #UI: Stich-Siegesquote — Anteil gewonnener an den ENTSCHIEDENEN Stichen (Gleichstände zählen nicht). Ersetzt die
+  // Durchlauf-Zelle (Durchlauf steht bereits im Kopf-Panel). Rot <50 %, grün ≥50 %.
+  const decided = wins + losses;
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   const showCrit = hasCritPerk(perks) || hasCritFamily(familyTiers) || (crits || 0) > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
@@ -39,10 +42,30 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
   // Familie D „Überschusskrit"). Nur nach unten bei 0 begrenzen; KEIN Math.min(1, …) mehr (das war nur Anzeige;
   // der echte Wurf bleibt in der Engine bei engine.js:302 geklemmt).
   const critPct = Math.round(Math.max(0, critRaw) * 100);
-  // #123: Formations-Faktor der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
-  // Formationsphase → kein Drift). „jetzt" = Faktor der nächsten zu spielenden Position.
-  const { count: formCount, maxMult: formMaxMult } = summarizeFormations(state.formations || []);
-  const nowFormMult = (state.formations || [])[pos]?.mult || 1;
+  // #123/#UI: Formations-Bonus der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
+  // Formationsphase → kein Drift). Als SUMME aller Positionen in % (Σ(mult−1)·100) — nicht mehr max/aktuelle Position.
+  const { count: formCount } = summarizeFormations(state.formations || []);
+  const formBonusPct = Math.round((state.formations || []).reduce((s, pf) => s + ((pf.mult || 1) - 1), 0) * 100);
+  // #UI: Gebäude-Bonus — Summe über ALLE Gebäude in % (nicht nur die aktuelle Position). Kombiniert die beiden
+  // %-fähigen Effektarten: (a) Wert-Boosts der value-Gebäude („+N") relativ zum Basis-Kartenwert der gebufften Karten
+  // + (b) multiplikative Boni (Struktur-Zeile/Spalte/Diagonale × Schatzkammer-Mult) als Σ(mult−1). Rein flache/bedingte
+  // Score-Gebäude (Punktebonus/Serie/Crit) lassen sich nicht als stabiler %-Wert ausdrücken → hier nicht enthalten.
+  const buildBonusPct = useMemo(() => {
+    const architect = state.architect;
+    if (!(state.architectEnabled && architect && (architect.buildings || []).length)) return 0;
+    const order = state.playerOrder || [], deck = state.deck || [];
+    const pre = precomputeArchitect(architect, order, deck);
+    let boost = 0, base = 0, multSum = 0;
+    for (let p = 0; p < order.length; p++) {
+      const card = deck[order[p]];
+      if (card) { const b = architectValueBonus(pre, p, card); if (b > 0) { boost += b; base += card.value; } }
+      const sc = pre.score[p];
+      const m = (pre.segFactor[p] || 1) * (sc && sc.kind === "mult" ? sc.factor : 1);
+      if (m > 1) multSum += m - 1;
+    }
+    const valueFrac = base > 0 ? boost / base : 0;
+    return Math.round((valueFrac + multSum) * 100);
+  }, [state.architect, state.architectEnabled, state.playerOrder, state.deck]);
   return (
     <div className="rounded-xl p-4 grid gap-3 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       {/* Kennzahlen */}
@@ -50,12 +73,12 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
         <Stat label="Serie" tone={winStreak >= 3 ? "#e0605a" : undefined}
           value={<span>{winStreak > 0 ? `${winStreak}×` : "–"}<span className="text-xs opacity-45 ml-1">best {bestStreak}×</span></span>} />
         <Stat label="Stiche" value={trickNo} />
-        <Stat label="Durchlauf" value={<span>{Math.min(cycle + 1, MAX_CYCLES)}<span className="text-xs opacity-45"> / {MAX_CYCLES}</span></span>} />
+        <Stat label="Siegquote" tone={decided === 0 ? undefined : (winPct >= 50 ? "#5ab87a" : "#e0605a")} value={decided > 0 ? `${winPct}%` : "–"} />
       </div>
-      <div className="grid grid-cols-3 gap-3 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
+      {/* #225.2: „Quote"-Zeile entfernt — nur Siege/Verluste bleiben (Grid auf 2 Spalten angepasst). */}
+      <div className="grid grid-cols-2 gap-3 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
         <div><span className="opacity-50">Siege </span><span style={{ color: "#5ab87a" }}>{wins}</span></div>
         <div><span className="opacity-50">Verl. </span><span style={{ color: "#e0605a" }}>{losses}</span></div>
-        <div><span className="opacity-50">Quote </span><span style={{ color: winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct}%</span></div>
       </div>
       {/* Deck-Position im laufenden Durchlauf (#193): Balken FÜLLT sich (0 → voll) und die Zahl
           zählt HOCH — gleiche Richtung wie die Deck-Zahl unter dem Deck im Battlefield (#6). */}
@@ -66,11 +89,11 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
         </div>
         <Bar value={pos} max={cycleLen} color="#8a7de0" height={6} />
       </div>
-      {/* Formations-Faktor der aktuellen Aufstellung (#123) — dauerhaft sichtbar, nicht nur transient im Battlefield. */}
-      {formCount > 0 && (
+      {/* Formations-/Gebäude-Bonus als SUMME in % (#123/#UI) — dauerhaft sichtbar, nicht nur transient im Battlefield. */}
+      {(formCount > 0 || buildBonusPct > 0) && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
-          <span><span className="opacity-50">Formation </span><span style={{ color: "#5ab87a" }}>{formCount} · max ×{fmtMult(formMaxMult)}</span></span>
-          {nowFormMult > 1.001 && <span><span className="opacity-50">jetzt </span><span style={{ color: "#5ab87a" }}>×{fmtMult(nowFormMult)}</span></span>}
+          {formCount > 0 && <span><span className="opacity-50">Formation </span><span style={{ color: "#5ab87a" }}>{formCount} · +{formBonusPct} %</span></span>}
+          {buildBonusPct > 0 && <span title="Summe aller Gebäude-Boni in %: Wert-Boosts (relativ zum Kartenwert) + Struktur-/Schatzkammer-Multiplikatoren"><span className="opacity-50">Gebäude </span><span style={{ color: "#d4a63a" }}>+{buildBonusPct} %</span></span>}
         </div>
       )}
       {/* Crit (#19/#46). Der Gesamt-Score-Mult steht dauerhaft im Header-Chip (#37).
