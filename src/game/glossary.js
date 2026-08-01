@@ -222,8 +222,11 @@ export const GLOSSARY = {
 
   /* ============ 4 · Pflanze ============ */
   growth: { category: "frak", group: "plant", label: "Wachstum", icon: "🌿", color: CLR.plant,
-    text: `Eigene Karten wachsen bei Siegen (nur steigend) — umso schneller, je mehr Pflanze-Skills du hältst (volles Tempo ab ${C.PLANT_GROWTH_SKILL_REF} Skills, darunter anteilig). Ab ${C.PLANT_GREEN_THRESHOLD} Wachstum wird eine Karte dauerhaft grün (reif).`,
+    text: `Eigene Karten wachsen bei Siegen (nur steigend) — umso schneller, je mehr Pflanze-Skills du hältst (volles Tempo ab ${C.PLANT_GROWTH_SKILL_REF} Skills, darunter anteilig). Ab ${C.PLANT_GREEN_THRESHOLD} Wachstum wird eine Karte dauerhaft grün (reif); darunter ist sie ein Setzling.`,
     match: ["Wachstum"] },
+  setzling: { category: "frak", group: "plant", label: "Setzling", icon: "🌱", color: CLR.plant,
+    text: `Eine Karte, die schon wächst, aber noch nicht reif ist (Wachstum unter ${C.PLANT_GREEN_THRESHOLD}). Ein Setzling zählt noch NICHT zum grünen Farbblock — erst ab ${C.PLANT_GREEN_THRESHOLD} Wachstum wird er grün (reif). Setzlingsbeet gibt der niedrigsten Karte je Segment +${C.SETZLINGSBEET_GROWTH} Wachstum Vorsprung.`,
+    match: ["Setzling", "Setzlinge", "Setzlingen"] },
   green: { category: "frak", group: "plant", label: "Grün (Reife)", icon: "🌿", color: CLR.plant,
     text: `Grüne Karten sind dauerhaft und bilden einen gemeinsamen Farbblock — je größer der Block, desto mehr Score. Grün ist Farbe, nicht Kraft; Kartenwert wächst nur über Wurzeln (Deckel ${C.PLANT_VALUE_CAP}).`,
     match: ["Grün", "grüne", "grünen", "grüner", "Reife", "reif"] },

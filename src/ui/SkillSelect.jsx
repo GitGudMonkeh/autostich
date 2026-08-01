@@ -71,7 +71,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         ? "Schaltet das Einfrieren frei: eigene Karten werden blau, biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden. Jeder weitere Eis-Skill friert eine weitere Karte ein."
         : "Jeder weitere Eis-Skill friert eine weitere eigene Karte ein und erweitert deine Aufstellungs-Optionen.";
       case "plant": return first
-        ? `Schaltet das Wachstum frei: eigene Karten wachsen bei Siegen — je mehr Pflanze-Skills, desto schneller (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Skills). Ab ${PLANT_GREEN_THRESHOLD} Wachstum werden sie grün und bilden einen Farbblock, der Score gibt.`
+        ? `Schaltet das Wachstum frei: eigene Karten wachsen bei Siegen — je mehr Pflanze-Skills, desto schneller (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Skills). Eine wachsende, noch nicht reife Karte ist ein Setzling; ab ${PLANT_GREEN_THRESHOLD} Wachstum wird sie grün und bildet einen Farbblock, der Score gibt.`
         : `Jeder weitere Pflanze-Skill beschleunigt das Wachstum (volles Tempo ab ${PLANT_GROWTH_SKILL_REF}) — mehr grüne Karten, größerer Farbblock. Wachstum und Grün sind bereits aktiv.`;
       default: return "";
     }
