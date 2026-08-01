@@ -90,7 +90,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const [removeFor, setRemoveFor] = useState(null);        // Bauplan wartet auf Platz → Gebäude entfernen anbieten
   const dragRef = useRef(null);
   const [dragPrev, setDragPrev] = useState(null);          // { footprint, valid, id } — GESNAPPTES Drop-Ziel (nur bei Zellwechsel neu → dragDelta bleibt billig)
-  const [dragOffset, setDragOffset] = useState(null);      // { dx, dy } roher Pixel-Versatz — das Gebäude folgt dem Finger frei; Snap erst beim Drop
+  const dragOffsetRef = useRef({ dx: 0, dy: 0 });          // roher Pixel-Versatz des Drags — REF statt State: kein Re-Render je Maus-Move (Maus feuert viel öfter als Touch → sonst „schwammig")
+  const dragGhostRef = useRef(null);                       // DOM-Ref des Ghost-Rahmens; sein transform wird je pointermove DIREKT gesetzt (flüssig)
   const [upgradeMsg, setUpgradeMsg] = useState(null);      // { name, reason } — Meldung beim Antippen eines nicht-aufwertbaren Gebäudes (Aufrüsten-Phase)
 
   // Effektive Gebäude = committet (+ in „place" das Vorschau-Gebäude). Board/Precompute/Formationen rechnen damit.
@@ -165,9 +166,10 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   }, [archSig]);
 
   // #UI: Drag-Ghost — beim Verschieben folgt NUR der (leicht transparente) Gebäude-Rahmen dem Finger; die Karten
-  // darunter bleiben liegen (kein Mitziehen, keine Lücke). Rechtecke aus den gemessenen Zellen, um dragOffset versetzt.
+  // darunter bleiben liegen (kein Mitziehen, keine Lücke). Rechtecke aus den gemessenen Zellen; der Versatz kommt
+  // ref-getrieben (dragOffsetRef) → das transform wird im pointermove direkt am DOM gesetzt, nicht über einen State.
   const dragGhost = (() => {
-    if (!dragOffset || !dragPrev || !(archFrame && archFrame.cells)) return null;
+    if (!dragPrev || !(archFrame && archFrame.cells)) return null;
     const b = buildings.find((x) => x.id === dragPrev.id);
     if (!b) return null;
     const fam = familyDef(b.familyId);
@@ -270,7 +272,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
       const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0;
       if (!g.active) { if (dx * dx + dy * dy < 36) return; g.active = true; setSelId(b.id); }
       ev.preventDefault();
-      setDragOffset({ dx, dy }); // freies, pixelgenaues Folgen (jeder Move; billig — setzt kein dragPrev, triggert also keine Delta-Neuberechnung)
+      dragOffsetRef.current = { dx, dy };                                     // freies, pixelgenaues Folgen — OHNE setState
+      if (dragGhostRef.current) dragGhostRef.current.style.transform = `translate(${dx}px, ${dy}px)`; // direkt am DOM → kein Re-Render, keine Latenz
       const target = cellPos(ev.clientX, ev.clientY);
       const fp = target == null ? null : fpFor(target);
       const key = fp ? fp.join(",") : "∅";
@@ -281,7 +284,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     const up = (ev) => {
       window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
       const wasActive = g.active; dragRef.current = null;
-      setDragOffset(null); // Ghost loslassen → das Gebäude snappt auf die (gesnappte) Zielzelle
+      dragOffsetRef.current = { dx: 0, dy: 0 }; // Ghost loslassen → das Gebäude snappt auf die (gesnappte) Zielzelle
       if (wasActive) { const target = cellPos(ev.clientX, ev.clientY), fp = target == null ? null : fpFor(target); if (fp && isValidFootprint(form, fp, others)) commit(fp); setDragPrev(null); }
       else tapCell(pos);
     };
@@ -370,7 +373,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
               )}
               {/* #UI: Drag-Ghost — NUR der leicht transparente Gebäude-Rahmen folgt dem Finger (Karten bleiben liegen). */}
               {dragGhost && (
-                <div className="absolute left-0 top-0 pointer-events-none" style={{ transform: `translate(${dragOffset.dx}px, ${dragOffset.dy}px)`, zIndex: 30 }}>
+                <div ref={dragGhostRef} className="absolute left-0 top-0 pointer-events-none" style={{ transform: `translate(${dragOffsetRef.current.dx}px, ${dragOffsetRef.current.dy}px)`, zIndex: 30, willChange: "transform" }}>
                   {dragGhost.footprint.map((p) => { const r = archFrame.cells[p]; if (!r) return null;
                     return <div key={p} className="absolute rounded-md" style={{ left: r.left, top: r.top, width: r.right - r.left, height: r.bottom - r.top, background: `${dragGhost.color}33`, border: `2px solid ${dragGhost.color}cc`, boxShadow: "0 4px 12px #00000066" }} />; })}
                 </div>
