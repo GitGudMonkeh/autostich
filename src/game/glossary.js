@@ -152,7 +152,7 @@ export const GLOSSARY = {
     text: "Eine Karte darf bei der Erkennung den benötigten Wert oder die Farbe annehmen. Bildet allein keine Formation.",
     match: ["Joker"] },
   bindeglied: { category: "form", label: "Bindeglied", icon: "∿", color: CLR.neutral,
-    text: "Eine Karte darf für eine Treppe im Wert abweichen (Spannweite je Stufe ±1 / ±2 / frei).",
+    text: "Eine Karte darf für eine Treppe im Wert abweichen (Spannweite je Stufe: I/II ±1, III/IV ±2).",
     match: ["Bindeglied"] },
   formenergie: { category: "form", label: "Formations-Energie", icon: "⚡", color: CLR.neutral,
     text: `Das Tausch-Budget der Aufstellungsphase (${C.FORMATION_ENERGY} je Phase). Jeder Tausch zweier Karten kostet 1.`,

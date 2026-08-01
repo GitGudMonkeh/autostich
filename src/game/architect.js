@@ -64,7 +64,7 @@ export function upgradeInfo(fam, tier) {
   return { can: true, reason: null };
 }
 // Kreuzgang-Bindeglied-Span (Bedingung minimal weiten): I/II ±1, III/IV ±2.
-const bindSpanFor = (tier) => (tier === "legendary" || tier >= 3 ? 2 : 1);
+export const bindSpanFor = (tier) => (tier === "legendary" || tier >= 3 ? 2 : 1);
 // Rampe-Schwelle (Bedingung minimal weiten): Wert ≤ 5 + (Stufe−1).
 const rampThresholdFor = (tier) => 5 + (tier === "legendary" ? 0 : (tier || 1) - 1);
 
