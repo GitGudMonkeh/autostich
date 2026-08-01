@@ -94,6 +94,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const dragGhostRef = useRef(null);                       // DOM-Ref des Ghost-Rahmens; sein transform wird je pointermove DIREKT gesetzt (flüssig)
   const [upgradeMsg, setUpgradeMsg] = useState(null);      // { name, reason } — Meldung beim Antippen eines nicht-aufwertbaren Gebäudes (Aufrüsten-Phase)
   const [pendingDemolish, setPendingDemolish] = useState(null); // #235: markiertes Abriss-Ziel (buildingId) — wird erst mit „Abreißen" wirklich entfernt (zweistufig)
+  const [pendingUpgrade, setPendingUpgrade] = useState(null);   // #237: markiertes Aufrüst-Ziel (buildingId) — zeigt Jetzt/Danach-Effekt, aufgewertet erst mit „Aufwerten bestätigen" (kein Sofort-Upgrade)
 
   // Effektive Gebäude = committet (+ in „place" das Vorschau-Gebäude). Board/Precompute/Formationen rechnen damit.
   const pendingBuilding = pending
@@ -239,11 +240,13 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const cancelPending = () => { setPending(null); setSelId(null); setPhase("choose"); };
   // #235: markiertes Gebäude wirklich abreißen (danach platziert der removeFor-Effekt den wartenden Bauplan automatisch).
   const confirmDemolish = () => { if (pendingDemolish == null) return; onDemolish?.(pendingDemolish); setPendingDemolish(null); };
+  // #237: markiertes Gebäude wirklich aufwerten (erst nach „Aufwerten bestätigen" — nie durch einen Fehltipp).
+  const confirmUpgrade = () => { if (pendingUpgrade == null) return; onUpgrade?.(pendingUpgrade); setPendingUpgrade(null); setUpgradeMsg(null); setPhase("move"); };
 
   // ---- Tap je Phase ----
   const tapCell = (pos) => {
     if (removeFor) { const cb = committedAt(pos); if (cb) setPendingDemolish(cb.id); return; } // #235: markieren statt sofort abreißen (Effekte zeigen, erst mit Bestätigen weg)
-    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { onUpgrade?.(cb.id); setUpgradeMsg(null); setPhase("move"); } else { setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: info.reason }); } } return; }
+    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { setPendingUpgrade(cb.id); setUpgradeMsg(null); } else { setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: info.reason }); setPendingUpgrade(null); } } return; } // #237: markieren + Jetzt/Danach zeigen, Aufwertung erst über den Bestätigen-Knopf
     if (phase === "place") { const b = buildingAt(pos); if (b && b.id === PENDING_ID) setSelId(PENDING_ID); return; }
     if (phase === "move") { const b = buildingAt(pos); if (b) setSelId(b.id); return; }
   };
@@ -412,6 +415,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 // Aufrüsten-Phase: nicht-aufwertbare Gebäude ausgrauen (Legendär/No-op-Effekt/max Stufe).
                 const upgradeDim = phase === "upgrade" && b && !isPending && !upgradeInfo(fam, b.tier).can;
                 const upCan = phase === "upgrade" && b && !isPending && upgradeInfo(fam, b.tier).can; // #232: aufwertbar → Ziel-Stufe am Gebäude zeigen
+                const isMarkedUpgrade = phase === "upgrade" && pendingUpgrade != null && b && b.id === pendingUpgrade; // #237: markiertes Aufrüst-Ziel (gold)
                 const title = b
                   ? `${fam.name} (${tierLabel(b.tier)})${isPending ? " · Vorschau" : ""} — ${famEff(fam, b)}${upCan ? ` → Stufe ${tierLabel(b.tier + 1)}: ${famEff(fam, { tier: b.tier + 1 })}` : ""}${inForm ? ` · Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`
                   : `Pos ${pos + 1}${inForm ? ` — Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`;
@@ -432,6 +436,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
                         isMarkedDemolish ? "inset 0 0 0 2px #ff6a4d, inset 0 0 16px #ff3b1e66" : null,     // #235: markiertes Abriss-Ziel rot hervorheben
+                        isMarkedUpgrade ? "inset 0 0 0 2px #f0b429, inset 0 0 16px #f0b42966" : null,      // #237: markiertes Aufrüst-Ziel gold hervorheben
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
                         isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,                              // ausgewählt (weiß)
                         // #UI: Raritäts-Rahmen JE ZELLE entfällt — die durchgezogene SVG-Kontur (oben) zeichnet ihn jetzt
@@ -440,7 +445,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                         // Gebäude auf fertiger Struktur (Kombi erfüllt) → schimmernder Gold-Rahmen wie ein Legendär via .arch-struct-lit::after (siehe index.css).
                         !b && structLit(pos) ? "inset 0 0 0 2px #f0b429aa" : null,                        // leere Zelle einer fast-fertigen Struktur → Gold-Hinweis
                       ].filter(Boolean).join(", ") || undefined,
-                      outline: isMarkedDemolish ? "2px solid #ff6a4d" : (isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined))),
+                      outline: isMarkedDemolish ? "2px solid #ff6a4d" : isMarkedUpgrade ? "2px solid #f0b429" : (isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined))),
                       outlineOffset: 1,
                       cursor: "pointer",
                     }}
@@ -573,7 +578,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       );
                     })}
                     {/* 4. Wahl: Aufrüsten */}
-                    <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
+                    <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
                       className="rounded-lg p-2.5 text-left w-full transition-all hover:brightness-110"
                       style={{ background: "#16232f", border: `1px dashed ${CAT.value.color}66`, opacity: canUpgradeAny ? 1 : 0.4, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
                       <div className="text-sm font-bold">⬆ Aufrüsten</div>
@@ -601,34 +606,60 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 </div>
               )}
 
-              {/* upgrade: Gebäude antippen */}
-              {!removeFor && phase === "upgrade" && (
-                <div>
-                  <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
-                    <b>Aufrüsten:</b> tippe ein <b>aufwertbares</b> Gebäude → +1 Stufe. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
-                  </div>
-                  {upgradeMsg && (
-                    <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
-                      <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : "nicht aufwertbar"}.
-                    </div>
-                  )}
-                  {/* #232: Vorschau je aufwertbarem Gebäude — Ziel-Stufe + neuer Kurzeffekt, damit man nicht blind entscheidet, was sich lohnt. */}
-                  {committed.some((b) => upgradeInfo(familyDef(b.familyId), b.tier).can) && (
-                    <div className="flex flex-col gap-1 mt-1">
-                      {committed.filter((b) => upgradeInfo(familyDef(b.familyId), b.tier).can).map((b) => {
-                        const f = familyDef(b.familyId);
-                        return (
-                          <div key={b.id} className="rounded px-2 py-1 text-[10px] font-mono leading-snug flex flex-wrap items-baseline gap-x-1.5" style={{ background: "#16232f", border: "1px solid #24333f" }}>
-                            <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
-                            <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
-                            <span className="opacity-70">{famEff(f, { tier: b.tier + 1 })}</span>
+              {/* upgrade: Gebäude auswählen → Jetzt/Danach sehen → mit „Aufwerten bestätigen" committen (#237: kein Sofort-Upgrade). */}
+              {!removeFor && phase === "upgrade" && (() => {
+                const up = pendingUpgrade != null ? committed.find((x) => x.id === pendingUpgrade) : null;
+                const uf = up ? familyDef(up.familyId) : null;
+                return (
+                  <div>
+                    {up && uf ? (
+                      // Ausgewähltes Gebäude: aktueller UND nächster Effekt (beide sichtbar), bestätigt wird über den Knopf unten.
+                      <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: "3px solid #f0b429" }}>
+                        <div className="text-sm font-semibold flex items-center gap-1.5 flex-wrap">
+                          <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[uf.category].color }} />
+                          {uf.name}
+                          <span className="font-mono" style={{ color: "#f0b429" }}>Stufe {tierLabel(up.tier)} → {tierLabel(up.tier + 1)}</span>
+                        </div>
+                        <div className="mt-1.5 grid gap-1 text-[11px] font-mono leading-snug">
+                          <div className="rounded px-2 py-1" style={{ background: "#16232f", border: "1px solid #24333f" }}>
+                            <span className="opacity-55">Jetzt:</span> {famEff(uf, up)}
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
+                          <div className="rounded px-2 py-1" style={{ background: "#15291a", border: "1px solid #2f6d3a" }}>
+                            <span className="opacity-55">Danach:</span> <span style={{ color: "#8fe0a0" }}>{famEff(uf, { tier: up.tier + 1 })}</span>
+                          </div>
+                        </div>
+                        <div className="text-[11px] opacity-60 mt-1.5">Mit <b>„⬆ Aufwerten bestätigen"</b> unten wird die Aufwertung ausgeführt.</div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
+                          <b>Aufrüsten:</b> tippe ein <b>aufwertbares</b> Gebäude, um es <b>auszuwählen</b> — du siehst dann den aktuellen und den nächsten Effekt und bestätigst mit dem Knopf. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
+                        </div>
+                        {upgradeMsg && (
+                          <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
+                            <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : "nicht aufwertbar"}.
+                          </div>
+                        )}
+                        {/* #232: Übersicht je aufwertbarem Gebäude — aktueller Effekt + Ziel-Stufe (Auswahl per Tap aufs Brett). */}
+                        {committed.some((b) => upgradeInfo(familyDef(b.familyId), b.tier).can) && (
+                          <div className="flex flex-col gap-1 mt-1">
+                            {committed.filter((b) => upgradeInfo(familyDef(b.familyId), b.tier).can).map((b) => {
+                              const f = familyDef(b.familyId);
+                              return (
+                                <div key={b.id} className="rounded px-2 py-1 text-[10px] font-mono leading-snug flex flex-wrap items-baseline gap-x-1.5" style={{ background: "#16232f", border: "1px solid #24333f" }}>
+                                  <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
+                                  <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
+                                  <span className="opacity-70">{famEff(f, b)}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Fertig: EIN Panel — optional beliebig oft verschieben, dann direkt starten. */}
               {!removeFor && phase === "move" && (
@@ -653,8 +684,13 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   <button onClick={cancelPending} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
                   <button onClick={confirmBuild} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Bauen ✓</button>
                 </div>
+              ) : phase === "upgrade" && pendingUpgrade != null ? (
+                <div className="flex gap-2">
+                  <button onClick={() => setPendingUpgrade(null)} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>
+                  <button onClick={confirmUpgrade} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#f0b429", color: "#141419" }}>⬆ Aufwerten bestätigen</button>
+                </div>
               ) : phase === "upgrade" ? (
-                <button onClick={() => { setUpgradeMsg(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
+                <button onClick={() => { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
               ) : phase === "move" ? (
                 <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Fortfahren →</button>
               ) : null}
