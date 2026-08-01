@@ -268,21 +268,29 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     };
     const commit = (fp) => { if (b.id === PENDING_ID) setPending((p) => (p ? { ...p, footprint: fp } : p)); else onMove?.({ buildingId: b.id, footprint: fp }); };
     let lastKey = "∅"; // [#224.11] letzter gesnappter Fußabdruck → Re-Render/Delta nur bei Zielzellen-Wechsel
-    const move = (ev) => {
-      const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0;
-      if (!g.active) { if (dx * dx + dy * dy < 36) return; g.active = true; setSelId(b.id); }
-      ev.preventDefault();
-      dragOffsetRef.current = { dx, dy };                                     // freies, pixelgenaues Folgen — OHNE setState
-      if (dragGhostRef.current) dragGhostRef.current.style.transform = `translate(${dx}px, ${dy}px)`; // direkt am DOM → kein Re-Render, keine Latenz
-      const target = cellPos(ev.clientX, ev.clientY);
+    let rafId = null, lastXY = null; // Snap-Berechnung (cellPos → elementFromPoint ERZWINGT Layout) auf 1×/Frame drosseln
+    const snapStep = () => {
+      rafId = null;
+      if (!lastXY) return;
+      const target = cellPos(lastXY.x, lastXY.y);
       const fp = target == null ? null : fpFor(target);
       const key = fp ? fp.join(",") : "∅";
       if (key === lastKey) return; // Snap-Ziel unverändert → dragPrev (+ dragDelta/computeFormations) NICHT neu setzen
       lastKey = key;
       setDragPrev(fp ? { footprint: fp, valid: !!isValidFootprint(form, fp, others), id: b.id } : { footprint: [], valid: false, id: b.id });
     };
+    const move = (ev) => {
+      const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0;
+      if (!g.active) { if (dx * dx + dy * dy < 36) return; g.active = true; setSelId(b.id); }
+      ev.preventDefault();
+      dragOffsetRef.current = { dx, dy };                                     // freies, pixelgenaues Folgen — OHNE setState
+      if (dragGhostRef.current) dragGhostRef.current.style.transform = `translate(${dx}px, ${dy}px)`; // direkt am DOM → kein Re-Render, keine Latenz
+      lastXY = { x: ev.clientX, y: ev.clientY };
+      if (rafId == null) rafId = requestAnimationFrame(snapStep);             // Layout-erzwingendes elementFromPoint höchstens 1×/Frame (kein Thrash je Move)
+    };
     const up = (ev) => {
       window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; } // ausstehenden Snap-Frame verwerfen
       const wasActive = g.active; dragRef.current = null;
       dragOffsetRef.current = { dx: 0, dy: 0 }; // Ghost loslassen → das Gebäude snappt auf die (gesnappte) Zielzelle
       if (wasActive) { const target = cellPos(ev.clientX, ev.clientY), fp = target == null ? null : fpFor(target); if (fp && isValidFootprint(form, fp, others)) commit(fp); setDragPrev(null); }
