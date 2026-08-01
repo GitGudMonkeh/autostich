@@ -219,13 +219,13 @@ export function resolveTrick(state, rng = Math.random) {
   let heat = state.heat || null;
   let fireValueBonus = 0;
   let meltScore = 0; // Schmelzpunkt-Drip dieses Stichs — im Sieg-Block als Flat ausgezahlt (Ledger-konsistent, s. u.)
-  const suncore = fireFlag(skills, "suncore"); // Sonnenkern: +Score je verbrauchtem Hitzepunkt (Konsum-Verstärker)
+  const suncore = fireFlag(skills, "suncore"); // Sonnenkern (L): Win-Condition — brennt am Durchlauf-Ende hohe Hitze dauerhaft in den Deck-Boden (s. u., ~Z.1020); KEIN Konsum-Verstärker mehr [#230 N11]
   // Phönixfeuer: verbrauchte Hitze (value ≤ 0) entzündet 1×/Durchlauf neu (+40 % zurück). Nach jedem Konsum geprüft.
   const reignite = (h) => (fireFlag(skills, "phoenix") && !h.phoenixUsed && h.value <= 0)
     ? { ...h, value: Math.round(C.PHOENIX_REIGNITE * h.max), phoenixUsed: true } : h;
   if (heat && heat.active) {
-    // Schmelzpunkt (Konsument, Drip): vor JEDEM Stich −10 % Hitze; der Score zahlt sich im SIEG-Block aus (+5/Punkt,
-    // Sonnenkern +5/Punkt) — so bleibt er im Per-Karte-Ledger attribuiert (kein loser score+= außerhalb von gained).
+    // Schmelzpunkt (Konsument, Drip): vor JEDEM Stich −10 % Hitze; der Score zahlt sich im SIEG-Block aus (MELT_PER_HEAT
+    // je Punkt) — so bleibt er im Per-Karte-Ledger attribuiert (kein loser score+= außerhalb von gained). [#230 N11: Sonnenkern-Bonus hier entfernt]
     if (heatConsumerOf(skills) === "melt" && heat.value >= C.MELT_COST) {
       heat = { ...heat, value: heat.value - C.MELT_COST };
       meltScore = C.MELT_COST * C.MELT_PER_HEAT;
@@ -331,7 +331,7 @@ export function resolveTrick(state, rng = Math.random) {
       // Feuer-Score (Grund-Payoff): (Vorsprung−OFFSET)×Basis, ×Verbrennung (≥8/≥12), ×Sonnenzorn (≥80 %). Basis für Funkenflug.
       const fireBaseFlat = fireScoreFor(fmargin, skills, heat.value);
       fireFlat += fireBaseFlat;
-      // Flächenbrand (Konsument, Burst): Sieg ab 80 % Hitze verbrennt die GANZE Hitze → +12 Score/Punkt (Sonnenkern +5/Punkt).
+      // Flächenbrand (Konsument, Burst): Sieg ab 80 % Hitze verbrennt die GANZE Hitze → +CONFLAG_PER_HEAT Score/Punkt. [#230 N11: Sonnenkern-Bonus hier entfernt]
       if (heatConsumerOf(skills) === "conflagration" && heat.value >= C.CONFLAG_MIN_HEAT) {
         const burned = heat.value;
         fireFlat += burned * C.CONFLAG_PER_HEAT;
@@ -346,7 +346,7 @@ export function resolveTrick(state, rng = Math.random) {
         else heat = { ...heat, sparkStore: (heat.sparkStore || 0) + fireBaseFlat };
       }
     }
-    // Glutstahl: geschmiedete Siegkarte → +20 Score je geschmiedetem Wert (fließt in die multiplizierte Basis).
+    // Glutstahl: geschmiedete Siegkarte → +GLUTSTAHL_PER_VALUE Score je geschmiedetem Wert (fließt in die multiplizierte Basis). [#230 N10: war „+20", ist 12]
     if (fireFlag(skills, "glutstahl") && (forged[pCard.id] || 0) > 0) fireFlat += (forged[pCard.id] || 0) * C.GLUTSTAHL_PER_VALUE;
     // Brand (Brandmal): jeder Sieg brandmarkt die geschlagene Gegnerkarte für den NÄCHSTEN Durchlauf (−Wert) + Asche.
     // Lauffeuer: der Brand greift auf einen oppDeck-Nachbarn über. Schmelzofen (≥50 % Hitze): −1 Wert & +1 Asche stärker.
@@ -516,7 +516,7 @@ export function resolveTrick(state, rng = Math.random) {
             plantFlat += b;
           }
         }
-        // Photosynthese: grüne Karte in Formation → ×1,15 (Formations-Faktor).
+        // Photosynthese: grüne Karte in Formation → ×PHOTOSYNTHESE_MULT (Formations-Faktor). [#230 N9: war „×1,15", ist 1,08]
         if (hasPhotosynthese(skills) && inFormation) plantFormMult *= C.PHOTOSYNTHESE_MULT;
         // Blätterdach: grüner Farbblock ab BLAETTERDACH_MIN Karten → +Score je Karte IM BLOCK (echte Lauflänge des
         // Farbblocks an der Siegposition, nicht die deckweite Grünzahl). Grün = eine gemeinsame Farbe „G" → der Lauf an

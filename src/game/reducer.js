@@ -566,7 +566,7 @@ export function reducer(state, action) {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
       const { skillId, replaceId } = action;
       if (!state.skillOffer.includes(skillId) || state.skills.includes(skillId)) return state;
-      // Max-2-Archetypen (#93 F0): ein Skill eines dritten (noch nicht aktiven) Archetyps ist nicht wählbar.
+      // Archetyp-Deckel (#93 F0 → v0.3: MAX_ARCHETYPES=4, alle Fraktionen mischbar): ein Skill eines weiteren, noch nicht aktiven Archetyps ist nicht wählbar, sobald das Limit erreicht ist. [#230 N13]
       const arch = archetypeOf(skillId);
       const active0 = state.activeArchetypes || [];
       if (arch && !active0.includes(arch) && active0.length >= C.MAX_ARCHETYPES) return state;

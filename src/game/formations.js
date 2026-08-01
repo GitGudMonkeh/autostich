@@ -201,7 +201,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   //      Parameter liest der eP()-Block unten (E_STRONG_REP/E_AFTERGLOW/E_CORE) bzw. roles (E_COLOR_ALLIANCE/E_CORE).
   //      Die drei Duplikat-Familien (Enger Wechsel/Abstieg/Offene Grenze) entfielen ersatzlos → E_PENDULUM/E_BIGSTEP/
   //      E_SEGMENT decken sie ab. `pe` (ehem. shop.permanentEffects) wird nicht mehr gelesen (vestigial in der Signatur). ----
-  // ---- Eis-Rework (v0): Formations-Wildcards nur auf eingefrorenen Karten. Kristallform = Joker (±2 Wert-Flex +
+  // ---- Eis-Rework (v0): Formations-Wildcards nur auf eingefrorenen Karten. Kristallform = Joker (±CRYSTAL_OFFSET Wert-Flex + [#230 N12: war „±2", ist 1]
   //      Vorgängerwert für Wiederholung/Treppe/Wechsel — merge Kalte Präzision/Eisschritt/alt-Kristallform);
   //      Frostbrücke = Segment-Brücke. Schicht-DAUERWERT wirkt im KAMPF (engine.js), nicht in der Erkennung (v0). ----
   const frozen = cards.map((c) => !!c.frozen);
@@ -231,7 +231,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // Bindeglied (C10, ±1) + Eis: Eisschritt/Kristallform geben ±1, Permafrost-Joker passt überall (großer Flex).
   const bind = cards.map((c, k) => {
     let b = famBridgeSpan[c.id] || 0; // Familie C_BRIDGE: Span je Stufe (1/2/99); flache C10 ist zu #167 migriert
-    if (frozen[k] && kristallform) b = Math.max(b, CRYSTAL_OFFSET); // Kristallform: ±2 Treppen-Flex (Joker)
+    if (frozen[k] && kristallform) b = Math.max(b, CRYSTAL_OFFSET); // Kristallform: ±CRYSTAL_OFFSET Treppen-Flex (Joker)
     if (af && af.bind[k]) b = Math.max(b, af.bind[k]); // Architekt Kreuzgang: Treppen-Bindeglied ±Span
     return b;
   });
@@ -291,7 +291,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // Wiederholung: Wert-Mengen je Karte (Kristallform ±1, Kalte Präzision = Vorgängerwert); Permafrost-Joker matcht alles.
   const valSetWied = cards.map((c, k) => {
     const s = new Set([val[k]]);
-    if (frozen[k] && kristallform) { s.add(val[k] - CRYSTAL_OFFSET); s.add(val[k] + CRYSTAL_OFFSET); if (k > 0) s.add(val[k - 1]); } // Kristallform: ±2 + Vorgängerwert
+    if (frozen[k] && kristallform) { s.add(val[k] - CRYSTAL_OFFSET); s.add(val[k] + CRYSTAL_OFFSET); if (k > 0) s.add(val[k - 1]); } // Kristallform: ±CRYSTAL_OFFSET + Vorgängerwert
     return s;
   });
   const jokerAll = frozen.map(() => false); // (Permafrost-Farbblock-Joker im Rework entfernt — Kristallform ist kein Farbblock-Joker)
@@ -360,7 +360,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
     out[pos].formations.push({ type: "grenzbonus", ordinal: 1, factor: segCrossBonus });
   }
 
-  // (Eis-Rework v0: der alte Kristallform-Zusatzbonus ×1,15 entfällt — Kristallform ist jetzt ein reiner ±2-Joker;
+  // (Eis-Rework v0: der alte Kristallform-Zusatzbonus ×1,15 entfällt — Kristallform ist jetzt ein reiner ±CRYSTAL_OFFSET-Joker;
   //  der Schicht-Payoff läuft über die Schichten/Eisdruck in der Engine, nicht über einen Extra-Formationsfaktor.)
 
   // Architekt Kathedrale (#202): „Formationen ×2" — abgedeckte Positionen mit einer aktiven Formation (mult > 1) skalieren.
