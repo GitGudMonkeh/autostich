@@ -1,8 +1,14 @@
 # Begleitinfo zum deutschen String-Export — *Autostich*
 
-**Quelle:** Branch `Autostich_Test` (das spielbare Spiel, deployt nach `/autostich/test/`), Commit `85921f7`.
+**Quelle:** Branch `Autostich_Test` (das spielbare Spiel, deployt nach `/autostich/test/`), Commit `244816a`.
 **Nicht** der Sim-/Balance-Branch `test/sim` — „/test" meint die spielbare Test-Seite.
-**Umfang:** `strings_de.csv` = **1 498 Zeilen** (826 Datentexte + 672 UI-Texte).
+**Umfang:** `strings_de.csv` = **1 504 Zeilen** (826 Datentexte + 678 UI-Texte).
+
+> **Aktualisiert (Commit 244816a, #231–#236):** gegenüber der Erstlieferung (85921f7) 17 Zeilen geändert, 7 neu, 1 entfernt.
+> — 12 Glossar-Erklärtexte umformuliert (`tutorial.glossary.*`); neue Konstante `C.FIRST_SKILL_CYCLE = 7`.
+> — Architekt: neuer zweistufiger Abriss (Markieren → Bestätigen, #235) → 4 neue `store.architectscreen.demolish-*`; „Kein Platz"-Meldung + Zell-Tooltip (Upgrade-Vorschau #232) angepasst.
+> — Skill-Auswahl: neuer Ersetzen-Dialog (#234) → 3 neue `ui.skillselect.replace-modal-*`; alter „tippe unten"-Hinweis entfernt; Voll-Slots-Text geändert.
+> — BuildPanel: „ab Runde 3" → „ab Runde {n}" (aus `FIRST_SKILL_CYCLE`).
 **Format:** UTF-8 **ohne BOM**, RFC-4180 (alle Felder gequotet, `""`-Escape), CRLF, sortiert nach `category` → `id`, nichts dedupliziert. Roundtrip-geprüft: jede Zeile hat exakt 8 Spalten.
 
 ---
@@ -22,12 +28,12 @@
 
    | category | Zeilen | Inhalt |
    |---|---|---|
-   | `ui` | 484 | gesamte Oberfläche: Buttons, Labels, Header, HUD-Balken, Phasen, Indikatoren, Fraktions-/Stat-/Formations-/Farbnamen |
+   | `ui` | 486 | gesamte Oberfläche: Buttons, Labels, Header, HUD-Balken, Phasen, Indikatoren, Fraktions-/Stat-/Formations-/Farbnamen |
    | `item` | 395 | Perk-Familien (4 Stufen), legendäre Perks, Architekt-Baupläne, Deck-/Spielfeld-Kosmetik |
    | `tutorial` | 190 | Glossar-Erklärtexte + Anleitung |
    | `ability` | 168 | Archetyp-Skills (Feuer/Blitz/Eis/Pflanze), Name + Beschreibung |
    | `achievement` | 167 | Meisterränge/Belohnungen, Bestenliste, Chronik, Statistik-Hub, Freischaltungen |
-   | `store` | 79 | „Der Architekt" (Bau-/Angebotsphase — der Shop-Ersatz) |
+   | `store` | 83 | „Der Architekt" (Bau-/Angebotsphase — der Shop-Ersatz) |
    | `system` | 15 | Seed/Speichern/Laden/Fehler/Teilen/Verbindung |
 
 3. **⚠️ Zahlen in Datentexten sind resolvet — der einzige Punkt, wo ich vom „Platzhalter literal lassen" abgewichen bin.** Viele Beschreibungen holen ihre Zahlen zur Buildzeit aus Balance-**Konstanten** (`+${C.FORGE_VALUE} Kartenwert` → „+2 Kartenwert"). Im CSV steht die **fertige Zahl** — das, was der Spieler sieht, und gut lesbar fürs Glattziehen. Das sind echte Build-Konstanten, keine Laufzeit-Variablen; deshalb die Ausnahme. **Vor** der EN-Übersetzung sollten diese 52 Konstanten (Punkt 1b / Anhang) zu echten Platzhaltern werden — sonst frieren wir mit der Übersetzung die aktuellen Balance-Zahlen im Text ein (genau die Drift, die der Code heute vermeidet).
@@ -40,22 +46,22 @@
 
 ## 1. Variablen / Platzhalter
 
-### 1a. Laufzeit-Variablen (77) in UI-Texten — Syntax `{name}`
+### 1a. Laufzeit-Variablen (79) in UI-Texten — Syntax `{name}`
 
-Ursprünglich JS-Template-Interpolationen `${…}`. **Fast alle sind Zahlen** (Werte, Faktoren, Prozente, Zähler). Häufigste:
-`{n}`(40×), `{wert}`(22×), `{faktor}`(13×), `{runde}`(5×), `{punkte}`(5×), `{gebaeude}`(4×), `{stufe}`(4×), `{schwelle}`(4×).
+Ursprünglich JS-Template-Interpolationen `${…}`. **79 Tokens, fast alle Zahlen** (Werte, Faktoren, Prozente, Zähler). Häufigste:
+`{n}`(41×), `{wert}`(22×), `{faktor}`(13×), `{runde}`(5×), `{gebaeude}`(5×), `{punkte}`(5×), `{stufe}`(4×), `{schwelle}`(4×).
 
 **Diese Tokens sind KEINE reinen Zahlen** (Typ beachten):
-- `{name}` = Spielername (frei) · `{deckName}` = Deck-Name · `{skillName}`,`{skillA}`,`{skillB}` = Skill-Namen · `{konsument}`,`{konsumTyp}` = Konsumenten-Skill · `{ankerTyp}`,`{rolle}`,`{typen}` = Spielbegriffe
+- `{name}` = Spielername (frei) · `{deckName}` = Deck-Name · `{skillName}`,`{skillA}`,`{skillB}` = Skill-Namen · `{konsument}`,`{konsumTyp}` = Konsumenten-Skill · `{ankerTyp}`,`{rolle}`,`{typen}` = Spielbegriffe · `{zieleffekt}` = Kurzeffekt der nächsten Bauplan-Stufe (Architekt-Tooltip)
 - `{rangLabel}` = z. B. „Rang III" / „Großmeister II" · `{rangRomanisch}`,`{vonRang}`,`{zuRang}` = Rang-Ziffer · `{archetyp}` = Fraktion
 - `{farbe}`,`{farbwahl}` = Kartenfarbe (Rot/Blau/Grün/Gelb) · `{glossartext}` = eingebetteter Glossar-Satz · `{titel}` = Musiktitel
 - `{plural}` = **Wortendungs-Ternär** (z. B. „" vs. „en"/„s") — siehe Punkt 4 · `{gehalten}`,`{gewählt}`,`{zustand}`,`{status}`,`{aktuell}`,`{gebunden}` = Zustands-/Statuswörter · `{suche}` = Sucheingabe · `{label}`,`{effekt}`,`{einheit}` = generische Textbausteine
 
 Vollständige Frequenzliste in **Anhang B**. Der `context` jeder CSV-Zeile nennt in der Regel schon, was das Token bedeutet (Feld `Var.:`).
 
-### 1b. Build-Konstanten (52) in Datentexten — im CSV bereits als Zahl resolvet
+### 1b. Build-Konstanten (53) in Datentexten — im CSV bereits als Zahl resolvet
 
-Diese Zahlen kommen zur Buildzeit aus `src/game/constants.js`. Deutsche Formatierung via Helfer `de()` (Dezimalkomma). **Vor EN-Übersetzung tokenisieren.** Vollständige Tabelle in **Anhang A**. Verteilung der interpolierten Texte: Glossar 24, Perks 9, Skills 8, Stats 4.
+Diese Zahlen kommen zur Buildzeit aus `src/game/constants.js`. Deutsche Formatierung via Helfer `de()` (Dezimalkomma). **Vor EN-Übersetzung tokenisieren.** Vollständige Tabelle in **Anhang A**. Verteilung der interpolierten Texte: Glossar 25, Perks 9, Skills 8, Stats 4.
 
 ---
 
@@ -72,7 +78,7 @@ Diese Zahlen kommen zur Buildzeit aus `src/game/constants.js`. Deutsche Formatie
 
 Zwei Muster:
 
-**(a) Interpolierte Werte mitten im Satz** — 152 CSV-Zeilen enthalten mindestens ein `{token}`. Unkritisch, solange die Übersetzung die Wortstellung frei wählen darf (DE-Satzbau ≠ EN — nicht auf feste Reihenfolge verlassen).
+**(a) Interpolierte Werte mitten im Satz** — 154 CSV-Zeilen enthalten mindestens ein `{token}`. Unkritisch, solange die Übersetzung die Wortstellung frei wählen darf (DE-Satzbau ≠ EN — nicht auf feste Reihenfolge verlassen).
 
 **(b) Um `<b>`/`<span>` gestückelte Sätze** — 10 Stellen standen im JSX als **mehrere** Textknoten und wurden im CSV zu einem Satz zusammengezogen. **Diese vor der Übersetzung im Code zu je einem String (mit Platzhalter statt inline-`<b>`) umbauen:**
 
@@ -85,7 +91,7 @@ Zwei Muster:
 | `achievement.chronikoverview.frame-legend` | ChronikOverview.jsx:155 |
 | `achievement.masterrunselect.pick-rank` | MasterRunSelect.jsx:41 |
 | `achievement.masterrunselect.cumulative-hint` | MasterRunSelect.jsx:127 |
-| `ui.skillselect.consumer-replace` | SkillSelect.jsx:142 |
+| `ui.skillselect.replace-modal-intro` | SkillSelect.jsx:153 |
 | `achievement.startscreen.logged-in` | StartScreen.jsx:145 |
 | `ui.chargebar.full-hint` | ChargeBar.jsx:129 |
 
@@ -133,7 +139,7 @@ Ich liefere dieselbe CSV zurück, nur die geänderten Zeilen (DE-Vereinheitlichu
 
 ---
 
-## Anhang A — Build-Konstanten in Datentexten (52)
+## Anhang A — Build-Konstanten in Datentexten (53)
 
 Aktueller Wert (deutsch formatiert) und Anzahl Verwendungen in Anzeigetexten. Diese Zahlen stehen im CSV **resolvet**; vor EN-Übersetzung zu Platzhaltern machen.
 
@@ -155,6 +161,7 @@ Aktueller Wert (deutsch formatiert) und Anzahl Verwendungen in Anzeigetexten. Di
 | `C.FIRE_MARGIN_OFFSET` | 2 | 1 |
 | `C.FIRE_SCORE_BASE` | 25 | 1 |
 | `C.FIRE_SCORE_PER_SKILL` | 5 | 1 |
+| `C.FIRST_SKILL_CYCLE` | 7 | 1 |
 | `C.FORGE_COST` | 5 | 3 |
 | `C.FORGE_VALUE` | 2 | 3 |
 | `C.FORMATION_ENERGY` | 4 | 1 |
@@ -192,6 +199,6 @@ Aktueller Wert (deutsch formatiert) und Anzahl Verwendungen in Anzeigetexten. Di
 | `C.VABANQUE_TRICKS` | 5 | 1 |
 | `C.WURZELSCHLAG_PER_GROWTH` | 4 | 1 |
 
-## Anhang B — Laufzeit-Tokens (77), nach Häufigkeit
+## Anhang B — Laufzeit-Tokens (79), nach Häufigkeit
 
-`{n}`(40), `{wert}`(22), `{faktor}`(13), `{runde}`(5), `{punkte}`(5), `{gebaeude}`(4), `{stufe}`(4), `{schwelle}`(4), `{pct}`(3), `{mult}`(3), `{farbe}`(3), `{boost}`(3), `{basis}`(3), `{max}`(3), `{score}`(3), `{plural}`(3), `{maxSlots}`(3), `{prozent}`(3), `{ziel}`(2), `{typen}`(2), `{count}`(2), `{over}`(2), `{wachstum}`(2), `{deckName}`(2), `{rolle}`(2), `{rangRomanisch}`(2), `{rangLabel}`(2), `{jeSkill}`(2), `{vollTempoAb}`(2), `{gehalten}`(2), `{konsumTyp}`(2), `{übrig}`(2), `{gewählt}`(2), `{benötigt}`(2), `{effekt}`(1), `{betrag}`(1), `{einheit}`(1), `{segmentgroesse}`(1), `{gesamt}`(1), `{spalte}`(1), `{status}`(1), `{position}`(1), `{deckLen}`(1), `{ankerTyp}`(1), `{segA}`(1), `{segB}`(1), `{ion}`(1), `{flat}`(1), `{schichten}`(1), `{kartenwert}`(1), `{deckel}`(1), `{wurzeln}`(1), `{label}`(1), `{min}`(1), `{belegt}`(1), `{maxLadung}`(1), `{critBasis}`(1), `{sockel}`(1), `{grünAb}`(1), `{skillA}`(1), `{skillB}`(1), `{skillName}`(1), `{archetyp}`(1), `{zustand}`(1), `{vonRang}`(1), `{zuRang}`(1), `{gebunden}`(1), `{farbwahl}`(1), `{name}`(1), `{aktuell}`(1), `{suche}`(1), `{maxDurchläufe}`(1), `{t}`(1), `{glossartext}`(1), `{konsument}`(1), `{titel}`(1), `{m}`(1)
+`{n}`(41), `{wert}`(22), `{faktor}`(13), `{runde}`(5), `{gebaeude}`(5), `{punkte}`(5), `{stufe}`(4), `{schwelle}`(4), `{pct}`(3), `{mult}`(3), `{farbe}`(3), `{boost}`(3), `{basis}`(3), `{max}`(3), `{score}`(3), `{plural}`(3), `{maxSlots}`(3), `{prozent}`(3), `{ziel}`(2), `{typen}`(2), `{count}`(2), `{over}`(2), `{wachstum}`(2), `{deckName}`(2), `{rolle}`(2), `{rangRomanisch}`(2), `{rangLabel}`(2), `{jeSkill}`(2), `{vollTempoAb}`(2), `{gehalten}`(2), `{konsumTyp}`(2), `{übrig}`(2), `{gewählt}`(2), `{benötigt}`(2), `{effekt}`(1), `{zielstufe}`(1), `{zieleffekt}`(1), `{betrag}`(1), `{einheit}`(1), `{segmentgroesse}`(1), `{gesamt}`(1), `{spalte}`(1), `{status}`(1), `{position}`(1), `{deckLen}`(1), `{ankerTyp}`(1), `{segA}`(1), `{segB}`(1), `{ion}`(1), `{flat}`(1), `{schichten}`(1), `{kartenwert}`(1), `{deckel}`(1), `{wurzeln}`(1), `{label}`(1), `{min}`(1), `{belegt}`(1), `{maxLadung}`(1), `{critBasis}`(1), `{sockel}`(1), `{grünAb}`(1), `{skillA}`(1), `{skillB}`(1), `{archetyp}`(1), `{zustand}`(1), `{skillName}`(1), `{vonRang}`(1), `{zuRang}`(1), `{gebunden}`(1), `{farbwahl}`(1), `{name}`(1), `{aktuell}`(1), `{suche}`(1), `{maxDurchläufe}`(1), `{t}`(1), `{glossartext}`(1), `{konsument}`(1), `{titel}`(1), `{m}`(1)
