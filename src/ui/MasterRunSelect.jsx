@@ -89,19 +89,21 @@ export function MasterRunSelect({ profile, onPlay, onClose }) {
                     {roman}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[12px] font-bold" style={{ color: unlocked ? accHi : "#8a8a95" }}>{tierLabel}</span>
-                      {prevRewards.map((r) => (
-                        <span key={`p${r}`} className="text-[10.5px] px-1.5 py-0.5 rounded" style={{ background: "#17171c", color: "#7a7a88" }}>{r}</span>
-                      ))}
-                      {prevRewards.length > 0 && <span className="text-[12px] font-bold px-0.5" style={{ color: ACCENT }}>+</span>}
-                      {newRewards.map((r) => (
-                        <span key={`n${r}`} className="text-[10.5px] px-1.5 py-0.5 rounded font-semibold" style={{ background: `${ACCENT}22`, color: ACCENT_HI, border: `1px solid ${ACCENT}55` }}>{r}</span>
-                      ))}
-                      {gm && (
-                        <span className="text-[10.5px] px-1.5 py-0.5 rounded font-semibold" style={{ background: `${GM_ACCENT}22`, color: "#e6c766", border: `1px solid ${GM_ACCENT}55` }}>härterer Gegner</span>
-                      )}
-                    </div>
+                    <div className="text-[12px] font-bold" style={{ color: unlocked ? accHi : "#8a8a95" }}>{tierLabel}</div>
+                    {(prevRewards.length > 0 || newRewards.length > 0 || gm) && (
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                        {prevRewards.map((r) => (
+                          <span key={`p${r}`} className="text-[10.5px] px-1.5 py-0.5 rounded" style={{ background: "#17171c", color: "#7a7a88" }}>{r}</span>
+                        ))}
+                        {prevRewards.length > 0 && newRewards.length > 0 && <span className="text-[12px] font-bold px-0.5" style={{ color: ACCENT }}>+</span>}
+                        {newRewards.map((r) => (
+                          <span key={`n${r}`} className="text-[10.5px] px-1.5 py-0.5 rounded font-semibold" style={{ background: `${ACCENT}22`, color: ACCENT_HI, border: `1px solid ${ACCENT}55` }}>{r}</span>
+                        ))}
+                        {gm && (
+                          <span className="text-[10.5px] px-1.5 py-0.5 rounded font-semibold" style={{ background: `${GM_ACCENT}22`, color: "#e6c766", border: `1px solid ${GM_ACCENT}55` }}>härterer Gegner</span>
+                        )}
+                      </div>
+                    )}
                     <div className="text-[11px] opacity-45 mt-0.5">Deck: {deckName}</div>
                   </div>
                   <div className="shrink-0">
