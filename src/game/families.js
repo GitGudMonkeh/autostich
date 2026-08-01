@@ -715,7 +715,7 @@ const E_FAMILIES = {
     id: "E_AFTERGLOW", cat: "E", name: "Nachhall", upgradeType: REPLACEMENT,
     // afterglow = aktiv; afterglowMaxFactor kappt (null = kein Cap); afterglowRepsOnly = nur Wiederholungen; afterglowHold = Karten.
     tiers: {
-      1: { desc: "Nachhall nur bei Wiederholungen; Faktor höchstens ×1,20.",                  afterglow: true, afterglowMaxFactor: 1.20, afterglowRepsOnly: true,  afterglowHold: 1 },
+      1: { desc: "Nachhall: der Formations-Faktor deiner Wiederholung überträgt sich auf die nächste Karte (höchstens ×1,20), auch wenn sie selbst nicht Teil der Formation ist.", afterglow: true, afterglowMaxFactor: 1.20, afterglowRepsOnly: true,  afterglowHold: 1 },
       2: { desc: "Nachhall bei allen Formationen; Faktor höchstens ×1,25.",                    afterglow: true, afterglowMaxFactor: 1.25, afterglowRepsOnly: false, afterglowHold: 1 },
       3: { desc: "Nachhall übernimmt den stärksten Einzelfaktor vollständig.",                 afterglow: true, afterglowMaxFactor: null, afterglowRepsOnly: false, afterglowHold: 1 },
       4: { desc: "Nachhall übernimmt den stärksten Einzelfaktor und hält für die nächsten zwei Karten.", afterglow: true, afterglowMaxFactor: null, afterglowRepsOnly: false, afterglowHold: 2 },

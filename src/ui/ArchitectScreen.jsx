@@ -202,11 +202,15 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     dragRef.current = g;
     const fpFor = (target) => { const ar = rowOf(target) - grabRow, ac = colOf(target) - grabCol; return (ar < 0 || ac < 0 || ar >= ROWS || ac >= COLS) ? null : footprintAt(form, rot, posOf(ar, ac)); };
     const commit = (fp) => { if (b.id === PENDING_ID) setPending((p) => (p ? { ...p, footprint: fp } : p)); else onMove?.({ buildingId: b.id, footprint: fp }); };
+    let lastKey = "∅"; // [#224.11] letzter gesnappter Fußabdruck → Re-Render/Delta nur bei Zielzellen-Wechsel
     const move = (ev) => {
       if (!g.active) { const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0; if (dx * dx + dy * dy < 36) return; g.active = true; setSelId(b.id); }
       ev.preventDefault();
       const target = cellPos(ev.clientX, ev.clientY);
       const fp = target == null ? null : fpFor(target);
+      const key = fp ? fp.join(",") : "∅";
+      if (key === lastKey) return; // gleiche Zielzelle → kein neues dragPrev (spart Re-Render + computeFormations je Pixel)
+      lastKey = key;
       setDragPrev(fp ? { footprint: fp, valid: !!isValidFootprint(form, fp, others), id: b.id } : { footprint: [], valid: false, id: b.id });
     };
     const up = (ev) => {
@@ -315,7 +319,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const isDragOrig = draggingId != null && b && b.id === draggingId;
                 return (
                   <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
-                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold transition-all${b && structLit(pos) ? " arch-struct-lit" : ""}`}
+                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}${b && structLit(pos) ? " arch-struct-lit" : ""}`}
                     style={{
                       background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b ? `${cat.color}` : "#16232f"),
                       color: b || inDragPrev ? "#fff" : "#adbecc",
