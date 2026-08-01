@@ -296,8 +296,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 // Nur Zellen mit einem ziehbaren Gebäude fangen die Geste (touchAction:none) — sonst scrollt der Finger die Seite.
                 const canDragHere = !removeFor && ((phase === "place" && isPending) || (phase === "move" && !!b));
                 const fam = b ? familyDef(b.familyId) : null;
-                const cat = fam ? CAT[fam.category] : null;
-                // Raritäts-Rahmen: Stufenfarbe (I grau · II grün · III blau · IV lila), Legendär = Gold. Füllung bleibt Kategorie.
+                // Raritäts-Rahmen: Stufenfarbe (I grau · II grün · III blau · IV lila), Legendär = Gold. Füllung ist einheitlich (Typ-Farbe raus, #UI).
                 const tierCol = b ? (fam.legendary ? GOLD : tierColor(b.tier)) : null;
                 const ev = effValueAt(pos);
                 const boost = ev - card.value;
@@ -321,9 +320,10 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
                     className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}${b && structLit(pos) ? " arch-struct-lit" : ""}`}
                     style={{
-                      background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b ? `${cat.color}` : "#16232f"),
+                      // #UI: Gebäude-Füllung/-Rand einheitlich (Typ-Farbe raus); die Stufe/Rarität zeigt der Ring (boxShadow) unten.
+                      background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b ? "#233140" : "#16232f"),
                       color: b || inDragPrev ? "#fff" : "#adbecc",
-                      border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b ? cat.color : "#20303d")}`,
+                      border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b ? "#2a3a46" : "#20303d")}`,
                       opacity: (isDragOrig && !inDragPrev) ? 0.35 : upgradeDim ? 0.4 : (isPending && !inDragPrev ? 0.82 : 1),
                       touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
@@ -422,7 +422,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       return (
                         <button key={idx} onClick={() => chooseOffer(o)} disabled={o.used}
                           className="rounded-lg p-2.5 text-left w-full transition-all hover:brightness-110"
-                          style={{ background: `linear-gradient(${cat.color}1f, ${cat.color}1f), #16232f`, border: `1px solid ${tierCol}`, opacity: o.used ? 0.4 : 1, cursor: o.used ? "not-allowed" : "pointer" }}>
+                          style={{ background: "#16232f", border: `1px solid ${tierCol}`, opacity: o.used ? 0.4 : 1, cursor: o.used ? "not-allowed" : "pointer" }}>
                           <div className="grid grid-cols-[auto_1fr_auto] gap-2.5 items-center">
                             <div className="p-1 rounded" style={{ background: "#0e1822" }}><MiniShape form={fam.form} color={cat.color} /></div>
                             <div className="min-w-0">
@@ -520,7 +520,9 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const efam = eb ? familyDef(eb.familyId) : null;
                 if (!efam) return null;
                 return (
-                  <div className="mt-2 pt-2 text-[11px] font-mono leading-snug" style={{ borderTop: "1px solid #20303d" }}>
+                  // #UI: Effekt-Readout mit typ-farbigem Rahmen (Kategorie-Farbe = die Typ-Farbe, die vorher der Gebäude-Hintergrund trug).
+                  <div className="mt-2 rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug"
+                    style={{ border: `1px solid ${CAT[efam.category].color}`, background: `${CAT[efam.category].color}12` }}>
                     <span className="inline-flex items-center gap-1.5 align-middle">
                       <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[efam.category].color }} />
                       <b>{efam.name}</b>
