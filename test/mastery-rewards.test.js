@@ -73,18 +73,19 @@ describe("#217 Rarität-Shift — buildPerkOffer(rareShift) verschiebt zu höher
   });
 });
 
-describe("#217 Grad-V-Garantie — Legendär-Chance 1 forciert einen Legendär ins Skill-Angebot", () => {
-  it("aktiver Archetyp mit Legendär + Chance 1 → Angebot enthält ein Legendär", () => {
-    // Mehrere Seeds prüfen — die Garantie muss unabhängig vom Zug greifen (deterministisch pro Seed).
+describe("#217/#247 Grad-V-Garantie — guaranteeOne forciert (mind.) einen Legendär ins Skill-Angebot", () => {
+  it("aktiver Archetyp mit Legendär + guaranteeOne → Angebot enthält ein Legendär, selbst bei reiner Basis-Chance", () => {
+    // Mehrere Seeds prüfen — die Garantie muss unabhängig vom Zug greifen (deterministisch pro Seed). #247: die Garantie
+    // läuft jetzt über den separaten guaranteeOne-Flag (nicht Chance 1), damit sie „mindestens einen" heißt, nicht „in jedem".
     for (const c of [1, 2, 3, 7, 42]) {
-      const offer = buildSkillOffer([], ["lightning"], rngAt(1234, c, "skill", 0), C.SKILLS_OFFERED, 1);
+      const offer = buildSkillOffer([], ["lightning"], rngAt(1234, c, "skill", 0), C.SKILLS_OFFERED, C.SKILL_LEGENDARY_BASE, true);
       expect(offer.length).toBeGreaterThan(0);
       expect(offer.some(isLegendarySkill)).toBe(true);
     }
   });
-  it("Chance 0 (Grad < V) forciert NICHT — Bestandsverhalten", () => {
+  it("weder Chance noch Garantie (Grad < V) forciert NICHT — Bestandsverhalten", () => {
     const offer = buildSkillOffer([], ["lightning"], rngAt(1234, 1, "skill", 0), C.SKILLS_OFFERED, 0);
-    // Ohne Roll dürfen Legendäre nur zufällig-gewichtet auftauchen; bei Chance 0 sind sie ausgeschlossen (gateLeg=false → altes Modell).
+    // Ohne Roll dürfen Legendäre nur zufällig-gewichtet auftauchen; bei Chance 0 & ohne Garantie sind sie ausgeschlossen (gateLeg=false → altes Modell).
     expect(offer.every((id) => !isLegendarySkill(id) || true)).toBe(true); // strukturell gültig (kein Crash); Verteilung deckt rarity.test ab
   });
 });

@@ -104,14 +104,18 @@ describe("buildSkillOffer (3+3+3+3 über alle 4 Archetypen)", () => {
   it("ohne Legendär-Chance (0) bleibt das Verhalten unverändert (kein rng-Drift)", () => {
     expect(buildSkillOffer([], [], makeRng(1), 6, 0)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
   });
-  it("legendaryChance=1 erzwingt genau EINEN legendären Skill, Chance>0 nie zwei", () => {
+  it("#247 Legendär je Archetyp: eigener Wurf, max EINER pro Archetyp, mehrere je Angebot möglich", () => {
+    // Chance 1 → jeder der 4 Archetypen bekommt genau EINEN Legendär (mehrere je Angebot, nie zwei im selben Archetyp).
     for (let seed = 1; seed <= 20; seed++) {
-      const off = buildSkillOffer([], [], makeRng(seed), 6, 1);
-      expect(off).toHaveLength(6);
-      expect(off.filter((id) => SKILL_DEFS[id].legendary)).toHaveLength(1);
+      const off = buildSkillOffer([], [], makeRng(seed), 12, 1);
+      expect(off).toHaveLength(12);
+      const legByArch = {};
+      for (const id of off) if (SKILL_DEFS[id].legendary) legByArch[archetypeOf(id)] = (legByArch[archetypeOf(id)] || 0) + 1;
+      expect(Object.values(legByArch).every((c) => c === 1)).toBe(true); // nie zwei Legendäre im selben Archetyp
+      expect(Object.keys(legByArch)).toHaveLength(4);                    // alle 4 würfeln unabhängig → 4 Legendäre bei Chance 1
     }
-    for (let seed = 1; seed <= 40; seed++)
-      expect(buildSkillOffer([], [], makeRng(seed), 6, 0.5).filter((id) => SKILL_DEFS[id].legendary).length).toBeLessThanOrEqual(1);
+    // Determinismus bleibt: gleicher Seed → identisches Angebot (auch mit Per-Archetyp-Würfen).
+    expect(buildSkillOffer([], [], makeRng(7), 12, 0.5)).toEqual(buildSkillOffer([], [], makeRng(7), 12, 0.5));
   });
   it("Legendär-Roll erhält die 3+3+3+3-Archetyp-Balance (#129)", () => {
     for (let seed = 1; seed <= 40; seed++) {
