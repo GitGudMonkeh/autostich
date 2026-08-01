@@ -1,14 +1,15 @@
 import { useEscape } from "./useEscape.js";
 
-/* Patchnotes (Startbildschirm-Button): kurze, spielernahe Übersicht der letzten Neuerungen.
-   Bewusst knapp — gleiche Inhaltsquelle wie die geteilte Patchnotes-Seite (Artifact). */
+/* Patchnotes (Startbildschirm-Button): spielernahe Übersicht der Version 0.3 („Elementar-Rework").
+   Bewusst knapp gehalten — gleiche Inhaltsquelle wie die geteilte Patchnotes-Seite (Artifact). */
 const ITEMS = [
-  ["📖", "Neues Glossar", "Das ⓘ auf jedem Auswahlbildschirm öffnet ein durchsuchbares Glossar — alle Begriffe (Hitze, Ladung, Formationen, Struktur-Kombis …) an einem Ort erklärt."],
-  ["🏗", "Architekt: flüssiger bauen", "Gebäude ziehst du jetzt frei mit Maus oder Finger — der Rahmen folgt weich und rastet beim Loslassen ein. Egal welche Zelle du greifst, du kannst bis an jeden Rand platzieren."],
-  ["🖼", "Architekt: klarere Anzeige", "Jedes Gebäude hat eine durchgehende Kontur. Erfüllte Struktur-Kombis (volle Zeile, Spalte oder Diagonale) schimmern golden — jetzt auch in der Aufstellung und der Chronik."],
-  ["🔎", "Mehr Durchblick am Deck", "Tippe eine Karte an und sieh ihre Elementar-Zustände, das Wachstum und das wirkende Gebäude samt Stufe. Am Rundenende lässt sich die finale Aufstellung mit allen Rahmen ansehen."],
-  ["🌿", "Pflanze-Balance korrigiert", "Überwucherung und Blätterdach wirken jetzt genau wie beschrieben (Grün-Anteil des Feldes bzw. Größe des Farbblocks)."],
-  ["✨", "Viele kleine Verbesserungen", "„Nachhall“ und die Feuer-Asche werden erklärt, die Glühende Klinge zeigt ihren aktuellen Bonus, in der Aufstellung zählt die Richtung des Tauschs (Δ), Legendäre funkeln, Bestätigen-Buttons sind einheitlich und schon getauschte Karten werden ausgegraut. Dazu dezentes Haptik-Feedback auf Handys und Effekt-Optionen für einen ruhigeren Ablauf."],
+  ["🔥", "Vier Elementar-Fraktionen", "Feuer, Blitz, Eis und die neue Fraktion Pflanze — jede mit eigenem System (Hitze & Schmieden, Ladung & Crits, Eisschichten & Einfrieren, Wachstum & Farbblöcke). Alle vier frei mischbar, mit Live-Markern direkt auf den Karten."],
+  ["🏗", "Der Architekt statt Shop", "Zwischen den Durchläufen baust du auf einem 8×5-Raster Gebäude (Wert, Punkte oder Formation). Volle Zeilen, Spalten oder Diagonalen bilden Struktur-Kombis mit Gold-Bonus. Alles per Drag & Drop, mit Vorschau in der Aufstellung."],
+  ["🏅", "Meisterränge", "Laufübergreifende Progression: „Meister-Läufe“ schalten nacheinander Ränge frei — dauerhafte Belohnungen wie mehr Neuwürfe, mehr Baufeld, bessere Raritäten und garantierte Legendäre."],
+  ["🎯", "Challenger-Modus", "Jeder Lauf hat jetzt einen Seed. Kopier und teil ihn, spiel denselben Ausgangs-Lauf mit einem anderen Build — und vergleicht eure Scores."],
+  ["📖", "Glossar & Chronik", "Ein durchsuchbares Glossar (ⓘ auf jedem Auswahlbildschirm) erklärt alle Begriffe. Die Chronik zeigt Deck, Formationen und Architekt-Übersicht; ein Karten-Tipp verrät Elementar-Zustände, Wachstum und das wirkende Gebäude samt Stufe."],
+  ["🌿", "Balance & Korrektheit", "Alle vier Fraktionen wurden aufeinander abgestimmt. Pflanze-Effekte (Überwucherung, Blätterdach) wirken jetzt genau wie beschrieben."],
+  ["✨", "Decks, Bedienung & Feinschliff", "Neue freischaltbare Deck-Designs; aufgeräumter Startbildschirm; einheitliche Bestätigen-Buttons; funkelnde Legendäre; ausgegraute getauschte Karten; klareres Aufstellungs-Feedback (Δ); Vibration auf Handys; Effekt-Optionen und viele Text-Klarstellungen."],
 ];
 
 export function PatchNotesModal({ onClose }) {
@@ -17,9 +18,9 @@ export function PatchNotesModal({ onClose }) {
     <div onClick={onClose} className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
         <div className="text-center mb-4">
-          <div className="text-xs uppercase tracking-widest" style={{ color: "#d4a63a" }}>Patchnotes</div>
-          <h2 className="text-xl font-bold mt-1">Feinschliff &amp; Glossar</h2>
-          <p className="text-xs opacity-45 mt-1">Neuerungen seit dem Elementar-Rework</p>
+          <div className="text-xs uppercase tracking-widest" style={{ color: "#d4a63a" }}>Patchnotes · Version 0.3</div>
+          <h2 className="text-xl font-bold mt-1">Das Elementar-Rework</h2>
+          <p className="text-xs opacity-45 mt-1">Der große 0.3-Umbau — alles Neue auf einen Blick</p>
         </div>
 
         <div className="grid grid-cols-1 gap-2.5">
