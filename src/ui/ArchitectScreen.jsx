@@ -583,10 +583,10 @@ function famEff(fam, b) {
   const base = fam.base;
   const nz = (v) => tierNum(v, t);
   switch (base.kind) {
-    case "flat":       return fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Wert` : `Sieg +${nz(base.score)} Punkte`;
-    case "lowValue":   return `niedrige Karten +${nz(base.value)} Wert`;
-    case "color":      return fam.category === "value" ? `passende Farbe +${nz(base.value)} Wert` : `passende Farbe +${nz(base.score)} Punkte`;
-    case "target":     return `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Wert" : "Punkte"}`;
+    case "flat":       return fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Punkte`;
+    case "lowValue":   return `niedrige Karten +${nz(base.value)} Stichwert`;
+    case "color":      return fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Punkte`;
+    case "target":     return `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Punkte"}`;
     case "streak":     return `Sieg +${nz(base.score)} Punkte × Serie`;
     case "crit":       return `Crit-Sieg +${nz(base.score)} Punkte`;
     case "milestone":  return `jeder ${base.every}. Sieg +${nz(base.score)} Punkte`;

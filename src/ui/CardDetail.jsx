@@ -43,7 +43,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
       <div className="flex items-center gap-2 mb-1.5">
         {pos != null && <span className="opacity-40 tabular-nums">#{pos + 1}</span>}
         <span className="font-bold text-sm" style={{ color: col }}>{suitName(card.suit)} {card.value}</span>
-        {permBoost > 0 && <span style={{ color: "#8a7de0" }}>Ursprung {card.baseRank} (+{permBoost} dauerhaft)</span>}
+        {permBoost > 0 && <span style={{ color: "#8a7de0" }}>Ursprung {card.baseRank} (+{permBoost} Kartenwert)</span>}
       </div>
       <div className="flex flex-wrap gap-1.5 items-center">
         <span className="opacity-45">Rollen:</span>
@@ -96,14 +96,14 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
           <div className="flex flex-wrap gap-1.5 items-center mt-1">
             <span className="opacity-45">❄ Schichten:</span>
             <Chip c="#8fcfe6">{frostLayers}{frostGletscher ? " · Gletscher" : ""}</Chip>
-            {val > 0 && <Chip c="#8fcfe6">+{val} Dauerwert</Chip>}
+            {val > 0 && <Chip c="#8fcfe6">+{val} Stichwert</Chip>}
             {flat > 0 && <Chip c="#8fcfe6">+{flat} je Frost-Sieg</Chip>}
             {over > 0 && <Chip c="#e6f7ff">Überlauf {over}</Chip>}
-            {/* #219.2: „Dauerwert" ist der aus den Schichten dauerhaft gewachsene Wert — er steckt SCHON im
-                Kartenwert oben (kein zusätzlicher Stich-Bonus). Klarstellung, damit die getrennte Zahl nicht doppelt wirkt. */}
+            {/* #219.2 (korrigiert): Der Schicht-Wert ist ein STICHWERT — er wird bei jedem Frost-Sieg auf den Stich
+                addiert (iceValueBonus in engine.js: pValue), NICHT dauerhaft in den Kartenwert geschrieben. */}
             {val > 0 && (
               <div className="w-full text-[10px] opacity-55 leading-snug mt-0.5">
-                Dauerwert = aus {frostLayers} Eisschicht{frostLayers === 1 ? "" : "en"} dauerhaft gewachsen — bereits im Kartenwert {card.value} enthalten (kein zusätzlicher Stich-Bonus).
+                Stichwert = aus {frostLayers} Eisschicht{frostLayers === 1 ? "" : "en"}: jeder Frost-Sieg zählt +{val} auf den Stichwert (nicht dauerhaft im Kartenwert {card.value}).
               </div>
             )}
           </div>
@@ -124,7 +124,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
             <span className="opacity-45">🌿 Pflanze:</span>
             <Chip c={stateCol}>{stateLabel}</Chip>
             <Chip c={PLANT}>Wachstum {plantGrowth}{ripe ? "" : ` / ${PLANT_GREEN_THRESHOLD}`}</Chip>
-            <Chip c={PLANT}>Wert {card.value} / {PLANT_VALUE_CAP}</Chip>
+            <Chip c={PLANT}>Kartenwert {card.value} / {PLANT_VALUE_CAP}</Chip>
             {ripe && plantRoots > 0 && <Chip c={PLANT}>+{plantRoots} Wurzeln/Sieg{plantPfahl ? " (×2 Form.)" : ""}</Chip>}
             {overflow > 0 && <Chip c={PLANT_FULL}>Überlauf {overflow}</Chip>}
           </div>
@@ -135,7 +135,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
       {forgedValue > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
           <span className="opacity-45">🔥 Feuer:</span>
-          <Chip c="#e0714a">⚒ Geschmiedet +{forgedValue} Dauerwert</Chip>
+          <Chip c="#e0714a">⚒ Geschmiedet +{forgedValue} Kartenwert</Chip>
         </div>
       )}
       {/* #UI: Architekt-Gebäude, das auf diese Position (Karte) wirkt — Name + die konkreten Effekte an dieser Zelle

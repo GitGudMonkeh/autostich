@@ -64,7 +64,7 @@ describe("architectEffectStrings — Gebäude-Effekte an einer Position (CardDet
   it("Wert-Boost + Score-Mult + Struktur-Faktor werden lesbar formatiert", () => {
     const pre = { value: [{ kind: "flat", amount: 2 }], score: [{ kind: "mult", factor: 1.35 }], segFactor: [1.2] };
     const s = architectEffectStrings(pre, 0, { value: 5, suit: "R" });
-    expect(s).toContain("+2 Wert");
+    expect(s).toContain("+2 Stichwert");
     expect(s).toContain("×1,35 Punkte");
     expect(s).toContain("Struktur ×1,20");
   });

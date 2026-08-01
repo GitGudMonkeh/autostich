@@ -41,7 +41,7 @@ export const GLOSSARY = {
   brand: { label: "Brandmal", icon: "🔥", color: CLR.fire,
     text: `Eine gebrandmarkte Gegnerkarte verliert Wert; jeder Brand gibt +${C.BRAND_ASH} Asche — Rohstoff der Feuer-Schmiede, und gehaltene Asche gibt zusätzlich kleinen Score je Feuer-Sieg.` },
   ash: { label: "Asche", icon: "🔥", color: CLR.fire,
-    text: `Rohstoff der Feuer-Schmiede: Brände geben +${C.BRAND_ASH} Asche. Die Ascheschmiede verbraucht ${C.FORGE_COST} Asche je Schmiedung (+${C.FORGE_VALUE} Dauerwert); Damaststahl lässt sie nie verfallen. Gehaltene Asche gibt zusätzlich kleinen Score je Feuer-Sieg.` },
+    text: `Rohstoff der Feuer-Schmiede: Brände geben +${C.BRAND_ASH} Asche. Die Ascheschmiede verbraucht ${C.FORGE_COST} Asche je Schmiedung (+${C.FORGE_VALUE} Kartenwert); Damaststahl lässt sie nie verfallen. Gehaltene Asche gibt zusätzlich kleinen Score je Feuer-Sieg.` },
   forge: { label: "Schmieden", icon: "🔥", color: CLR.fire,
     text: `Asche wird zu dauerhaftem Kartenwert (Ascheschmiede: ${C.FORGE_COST} Asche → +${C.FORGE_VALUE} Wert auf die niedrigste Karte).` },
 
@@ -55,7 +55,7 @@ export const GLOSSARY = {
   growth: { label: "Wachstum", icon: "🌿", color: CLR.plant,
     text: `Eigene Karten wachsen bei Siegen (nur steigend) — umso schneller, je mehr Pflanze-Skills du hältst (volles Tempo ab ${C.PLANT_GROWTH_SKILL_REF} Skills, darunter anteilig). Ab ${C.PLANT_GREEN_THRESHOLD} Wachstum wird eine Karte dauerhaft grün (reif).` },
   green: { label: "Grün (Reife)", icon: "🌿", color: CLR.plant,
-    text: `Grüne Karten sind dauerhaft und bilden einen gemeinsamen Farbblock — je größer der Block, desto mehr Score. Grün ist Farbe, nicht Kraft; Wert wächst nur über Wurzeln (Deckel ${C.PLANT_VALUE_CAP}).` },
+    text: `Grüne Karten sind dauerhaft und bilden einen gemeinsamen Farbblock — je größer der Block, desto mehr Score. Grün ist Farbe, nicht Kraft; Kartenwert wächst nur über Wurzeln (Deckel ${C.PLANT_VALUE_CAP}).` },
   colonize: { label: "Kolonisieren", icon: "🌿", color: CLR.plant,
     text: "Markiert gegnerische Karten grün (Ausläufer/Rhizom). Besiegst du eine kolonisierte Karte, erntest du Wachstum." },
   overgrowth: { label: "Überwucherung", icon: "🌿", color: CLR.plant,

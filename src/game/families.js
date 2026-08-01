@@ -262,10 +262,10 @@ const B_FAMILIES = {
     id: "B_TENTH_STRIKE", cat: "B", name: "Zehnter Schlag", upgradeType: REPLACEMENT,
     // posInCycle ist 0-basiert → Position n = posInCycle n-1; „(pos+1) % k === 0" trifft jede k-te Position.
     tiers: {
-      1: { desc: "Karten auf Position 20 und 40: +6 Wert.",               cardBonus: (c) => ((c.posInCycle + 1) % 20 === 0 ? 6 : 0) },
-      2: { desc: "Karten auf Position 10, 20, 30 und 40: +6 Wert.",       cardBonus: (c) => ((c.posInCycle + 1) % 10 === 0 ? 6 : 0) },
-      3: { desc: "Jede fünfte Position (5, 10 … 40): +6 Wert.",            cardBonus: (c) => ((c.posInCycle + 1) % 5 === 0 ? 6 : 0) },
-      4: { desc: "Jede fünfte Position: +8 Wert.",                          cardBonus: (c) => ((c.posInCycle + 1) % 5 === 0 ? 8 : 0) },
+      1: { desc: "Karten auf Position 20 und 40: +6 Stichwert.",               cardBonus: (c) => ((c.posInCycle + 1) % 20 === 0 ? 6 : 0) },
+      2: { desc: "Karten auf Position 10, 20, 30 und 40: +6 Stichwert.",       cardBonus: (c) => ((c.posInCycle + 1) % 10 === 0 ? 6 : 0) },
+      3: { desc: "Jede fünfte Position (5, 10 … 40): +6 Stichwert.",            cardBonus: (c) => ((c.posInCycle + 1) % 5 === 0 ? 6 : 0) },
+      4: { desc: "Jede fünfte Position: +8 Stichwert.",                          cardBonus: (c) => ((c.posInCycle + 1) % 5 === 0 ? 8 : 0) },
     },
   },
   B_INITIATIVE: {
@@ -276,17 +276,17 @@ const B_FAMILIES = {
     tiers: {
       1: { desc: "Nach zwei Niederlagen gewinnst du den nächsten Gleichstand.", tieArmLosses: 2 },
       2: { desc: "Nach einer Niederlage gewinnst du den nächsten Gleichstand.", tieArmLosses: 1 },
-      3: { desc: "Nach einer Niederlage: nächste Karte +1 Wert und gewinnt den nächsten Gleichstand.", tieArmLosses: 1, cardBonus: (c) => (c.lostLastTrick ? 1 : 0) },
-      4: { desc: "Nach einer Niederlage: nächste Karte +2 Wert und gewinnt den nächsten Gleichstand.", tieArmLosses: 1, cardBonus: (c) => (c.lostLastTrick ? 2 : 0) },
+      3: { desc: "Nach einer Niederlage: nächste Karte +1 Stichwert und gewinnt den nächsten Gleichstand.", tieArmLosses: 1, cardBonus: (c) => (c.lostLastTrick ? 1 : 0) },
+      4: { desc: "Nach einer Niederlage: nächste Karte +2 Stichwert und gewinnt den nächsten Gleichstand.", tieArmLosses: 1, cardBonus: (c) => (c.lostLastTrick ? 2 : 0) },
     },
   },
   B_TIGHT: {
     id: "B_TIGHT", cat: "B", name: "Knappe Kiste", upgradeType: REPLACEMENT,
     tiers: {
-      1: { desc: "Liegt die Karte in einer Wiederholung: +1 temporärer Wert.",          cardBonus: (c) => (inRepeat(c) ? 1 : 0) },
-      2: { desc: "Liegt die Karte in einer Wiederholung: +2 temporärer Wert.",          cardBonus: (c) => (inRepeat(c) ? 2 : 0) },
-      3: { desc: "Liegt die Karte in ≥1 Formation: +2 temporärer Wert.",  cardBonus: (c) => (inAnyFormation(c) ? 2 : 0) },
-      4: { desc: "Liegt die Karte in ≥1 Formation: +3 temporärer Wert.",  cardBonus: (c) => (inAnyFormation(c) ? 3 : 0) },
+      1: { desc: "Liegt die Karte in einer Wiederholung: +1 Stichwert.",          cardBonus: (c) => (inRepeat(c) ? 1 : 0) },
+      2: { desc: "Liegt die Karte in einer Wiederholung: +2 Stichwert.",          cardBonus: (c) => (inRepeat(c) ? 2 : 0) },
+      3: { desc: "Liegt die Karte in ≥1 Formation: +2 Stichwert.",  cardBonus: (c) => (inAnyFormation(c) ? 2 : 0) },
+      4: { desc: "Liegt die Karte in ≥1 Formation: +3 Stichwert.",  cardBonus: (c) => (inAnyFormation(c) ? 3 : 0) },
     },
   },
   B_BREAKTHROUGH: {
@@ -303,29 +303,29 @@ const B_FAMILIES = {
     // I/II/IV: einfacher cardBonus über lossStreak. III: die nächsten ZWEI Karten je +6 (Engine armiert die
     // successorQueue, wenn lossStreak GENAU die Schwelle erreicht — revengeTwoCard {losses, bonus, count}).
     tiers: {
-      1: { desc: "Nach drei Niederlagen in Folge: nächste Karte +6 Wert.", cardBonus: (c) => ((c.lossStreak || 0) >= 3 ? 6 : 0) },
-      2: { desc: "Nach zwei Niederlagen in Folge: nächste Karte +7 Wert.", cardBonus: (c) => ((c.lossStreak || 0) >= 2 ? 7 : 0) },
-      3: { desc: "Nach zwei Niederlagen in Folge: die nächsten zwei Karten je +6 Wert.", revengeTwoCard: { losses: 2, bonus: 6, count: 2 } },
-      4: { desc: "Nach jeder Niederlage: nächste Karte +8 Wert.", cardBonus: (c) => ((c.lossStreak || 0) >= 1 ? 8 : 0) },
+      1: { desc: "Nach drei Niederlagen in Folge: nächste Karte +6 Stichwert.", cardBonus: (c) => ((c.lossStreak || 0) >= 3 ? 6 : 0) },
+      2: { desc: "Nach zwei Niederlagen in Folge: nächste Karte +7 Stichwert.", cardBonus: (c) => ((c.lossStreak || 0) >= 2 ? 7 : 0) },
+      3: { desc: "Nach zwei Niederlagen in Folge: die nächsten zwei Karten je +6 Stichwert.", revengeTwoCard: { losses: 2, bonus: 6, count: 2 } },
+      4: { desc: "Nach jeder Niederlage: nächste Karte +8 Stichwert.", cardBonus: (c) => ((c.lossStreak || 0) >= 1 ? 8 : 0) },
     },
   },
   B_PERFECT: {
     id: "B_PERFECT", cat: "B", name: "Perfekte Folge", upgradeType: REPLACEMENT,
     tiers: {
-      1: { desc: "Treppenkarten: ab der dritten +1, danach +2 temporärer Wert.", cardBonus: (c) => stairBonus(c, [0, 0, 1], 2) },
-      2: { desc: "Treppenkarten: +1/+2/+3, danach +4 temporärer Wert.",                cardBonus: (c) => stairBonus(c, [1, 2, 3], 4) },
-      3: { desc: "Treppenkarten: +2/+3/+4, danach +5 temporärer Wert.",                cardBonus: (c) => stairBonus(c, [2, 3, 4], 5) },
-      4: { desc: "Treppenkarten: +3/+4/+5, danach +6 temporärer Wert.",                cardBonus: (c) => stairBonus(c, [3, 4, 5], 6) },
+      1: { desc: "Treppenkarten: ab der dritten +1, danach +2 Stichwert.", cardBonus: (c) => stairBonus(c, [0, 0, 1], 2) },
+      2: { desc: "Treppenkarten: +1/+2/+3, danach +4 Stichwert.",                cardBonus: (c) => stairBonus(c, [1, 2, 3], 4) },
+      3: { desc: "Treppenkarten: +2/+3/+4, danach +5 Stichwert.",                cardBonus: (c) => stairBonus(c, [2, 3, 4], 5) },
+      4: { desc: "Treppenkarten: +3/+4/+5, danach +6 Stichwert.",                cardBonus: (c) => stairBonus(c, [3, 4, 5], 6) },
     },
   },
   B_SUPERIOR: {
     id: "B_SUPERIOR", cat: "B", name: "Überzahl", upgradeType: REPLACEMENT,
     // Vergleich des DAUERWERTS (pValueBase) mit dem des direkten Vorgängers (predValue). Pos 0 (kein Vorgänger) → 0.
     tiers: {
-      1: { desc: "Dauerwert ≥2 höher als der Vorgänger: +2 temporärer Wert.", cardBonus: (c) => (c.predValue != null && c.pValueBase - c.predValue >= 2 ? 2 : 0) },
-      2: { desc: "Dauerwert höher als der Vorgänger: +3 temporärer Wert.",              cardBonus: (c) => (c.predValue != null && c.pValueBase > c.predValue ? 3 : 0) },
-      3: { desc: "Dauerwert nicht niedriger als der Vorgänger: +3 temporärer Wert.",    cardBonus: (c) => (c.predValue != null && c.pValueBase >= c.predValue ? 3 : 0) },
-      4: { desc: "Höher als der Vorgänger: +5; genau gleich: +2 temporärer Wert.",                   cardBonus: (c) => (c.predValue == null ? 0 : c.pValueBase > c.predValue ? 5 : c.pValueBase === c.predValue ? 2 : 0) },
+      1: { desc: "Dauerwert ≥2 höher als der Vorgänger: +2 Stichwert.", cardBonus: (c) => (c.predValue != null && c.pValueBase - c.predValue >= 2 ? 2 : 0) },
+      2: { desc: "Dauerwert höher als der Vorgänger: +3 Stichwert.",              cardBonus: (c) => (c.predValue != null && c.pValueBase > c.predValue ? 3 : 0) },
+      3: { desc: "Dauerwert nicht niedriger als der Vorgänger: +3 Stichwert.",    cardBonus: (c) => (c.predValue != null && c.pValueBase >= c.predValue ? 3 : 0) },
+      4: { desc: "Höher als der Vorgänger: +5; genau gleich: +2 Stichwert.",                   cardBonus: (c) => (c.predValue == null ? 0 : c.pValueBase > c.predValue ? 5 : c.pValueBase === c.predValue ? 2 : 0) },
     },
   },
 };
@@ -374,49 +374,49 @@ const A_FAMILIES = {
   A_EVEN: {
     id: "A_EVEN", cat: "A", name: "Gerade Stärke", upgradeType: CUMULATIVE,
     tiers: {
-      1: { desc: "Vier zufällige gerade Karten: dauerhaft +1 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value % 2 === 0, 4, 1, rng) },
-      2: { desc: "Alle ursprünglichen 2er und 8er: dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 2 || c.baseRank === 8, 1) },
-      3: { desc: "Alle ursprünglichen 4er und 6er: dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 4 || c.baseRank === 6, 1) },
-      4: { desc: "Alle geraden Karten: zusätzlich +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 0, 1) },
+      1: { desc: "Vier zufällige gerade Karten: dauerhaft +1 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value % 2 === 0, 4, 1, rng) },
+      2: { desc: "Alle ursprünglichen 2er und 8er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 2 || c.baseRank === 8, 1) },
+      3: { desc: "Alle ursprünglichen 4er und 6er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 4 || c.baseRank === 6, 1) },
+      4: { desc: "Alle geraden Karten: zusätzlich +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 0, 1) },
     },
   },
   A_ODD: {
     id: "A_ODD", cat: "A", name: "Ungerade Stärke", upgradeType: CUMULATIVE,
     tiers: {
-      1: { desc: "Vier zufällige ungerade Karten: dauerhaft +1 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value % 2 === 1, 4, 1, rng) },
-      2: { desc: "Alle ursprünglichen 3er und 7er: dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 3 || c.baseRank === 7, 1) },
-      3: { desc: "Alle ursprünglichen 1er und 9er: dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 1 || c.baseRank === 9, 1) },
-      4: { desc: "Alle ungeraden Karten: zusätzlich +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 1, 1) },
+      1: { desc: "Vier zufällige ungerade Karten: dauerhaft +1 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value % 2 === 1, 4, 1, rng) },
+      2: { desc: "Alle ursprünglichen 3er und 7er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 3 || c.baseRank === 7, 1) },
+      3: { desc: "Alle ursprünglichen 1er und 9er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 1 || c.baseRank === 9, 1) },
+      4: { desc: "Alle ungeraden Karten: zusätzlich +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 1, 1) },
     },
   },
   A_SUIT_BOOST: {
     id: "A_SUIT_BOOST", cat: "A", name: "Farbverstärkung", upgradeType: CUMULATIVE,
     // III/IV: Spieler wählt die Farbe (pickTarget). I/II: zufällige Farbe.
     tiers: {
-      1: { desc: "Eine zufällige Farbe: vier zufällige Karten dauerhaft +1 Wert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpRandomWhere(d, (c) => c.suit === s, 4, 1, rng); } },
-      2: { desc: "Eine zufällige Farbe: alle Karten dauerhaft +1 Wert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpWhere(d, (c) => c.suit === s, 1); } },
-      3: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +1 Wert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => c.suit === target.suits[0], 1) : d) },
-      4: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +2 Wert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => c.suit === target.suits[0], 2) : d) },
+      1: { desc: "Eine zufällige Farbe: vier zufällige Karten dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpRandomWhere(d, (c) => c.suit === s, 4, 1, rng); } },
+      2: { desc: "Eine zufällige Farbe: alle Karten dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpWhere(d, (c) => c.suit === s, 1); } },
+      3: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +1 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => c.suit === target.suits[0], 1) : d) },
+      4: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +2 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => c.suit === target.suits[0], 2) : d) },
     },
   },
   A_SMALL_BIG: {
     id: "A_SMALL_BIG", cat: "A", name: "Kleine ganz groß", upgradeType: CUMULATIVE,
     // „1–3er" = ursprünglicher Wert (baseRank), bleibt über spätere Boni hinweg konstant.
     tiers: {
-      1: { desc: "Zwei zufällige ursprüngliche 1–3er: dauerhaft je +3 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 2, 3, rng) },
-      2: { desc: "Drei zufällige ursprüngliche 1–3er: dauerhaft je +4 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 3, 4, rng) },
-      3: { desc: "Vier zufällige ursprüngliche 1–3er: dauerhaft je +5 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 4, 5, rng) },
-      4: { desc: "Alle ursprünglichen 1–3er: dauerhaft +3 Wert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 3) },
+      1: { desc: "Zwei zufällige ursprüngliche 1–3er: dauerhaft je +3 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 2, 3, rng) },
+      2: { desc: "Drei zufällige ursprüngliche 1–3er: dauerhaft je +4 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 3, 4, rng) },
+      3: { desc: "Vier zufällige ursprüngliche 1–3er: dauerhaft je +5 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 4, 5, rng) },
+      4: { desc: "Alle ursprünglichen 1–3er: dauerhaft +3 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 3) },
     },
   },
   A_MIDRANGE: {
     id: "A_MIDRANGE", cat: "A", name: "Mittelklasse", upgradeType: CUMULATIVE,
     // Prüfung des AKTUELLEN Werts erfolgt jeweils beim Pick.
     tiers: {
-      1: { desc: "Drei zufällige Karten mit aktuellem Wert 4–7: dauerhaft +1 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value >= 4 && c.value <= 7, 3, 1, rng) },
-      2: { desc: "Fünf zufällige Karten mit aktuellem Wert 4–7: dauerhaft +1 Wert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value >= 4 && c.value <= 7, 5, 1, rng) },
-      3: { desc: "Alle Karten mit aktuellem Wert 4–7: dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.value >= 4 && c.value <= 7, 1) },
-      4: { desc: "Alle Karten mit aktuellem Wert 3–8: dauerhaft +1 Wert.", onPick: (d) => bumpWhere(d, (c) => c.value >= 3 && c.value <= 8, 1) },
+      1: { desc: "Drei zufällige Karten mit aktuellem Wert 4–7: dauerhaft +1 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value >= 4 && c.value <= 7, 3, 1, rng) },
+      2: { desc: "Fünf zufällige Karten mit aktuellem Wert 4–7: dauerhaft +1 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value >= 4 && c.value <= 7, 5, 1, rng) },
+      3: { desc: "Alle Karten mit aktuellem Wert 4–7: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.value >= 4 && c.value <= 7, 1) },
+      4: { desc: "Alle Karten mit aktuellem Wert 3–8: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.value >= 3 && c.value <= 8, 1) },
     },
   },
   A_TOP: {
@@ -442,20 +442,20 @@ const A_FAMILIES = {
     id: "A_SUIT_DUEL", cat: "A", name: "Farbduell", upgradeType: CUMULATIVE,
     // Jede Stufe führt ihren Tausch dauerhaft aus (Gewinnerfarbe hoch, Verliererfarbe −1). III/IV: Spieler wählt.
     tiers: {
-      1: { desc: "Eine zufällige Farbe +1 Wert dauerhaft, eine andere −1 Wert.", onPick: (d, rng) => { const s = shuffle(SUIT_ORDER, rng); return suitDuel(d, s[0], s[1], 1, -1); } },
-      2: { desc: "Eine zufällige Farbe +2 Wert dauerhaft, eine andere −1 Wert.", onPick: (d, rng) => { const s = shuffle(SUIT_ORDER, rng); return suitDuel(d, s[0], s[1], 2, -1); } },
-      3: { desc: "Wähle die Gewinnerfarbe (+3 Wert); eine andere Farbe verliert zufällig −1 Wert.", pickTarget: { suits: 1 }, onPick: (d, rng, target) => { const up = target?.suits?.[0]; if (!up) return d; const down = shuffle(SUIT_ORDER.filter((s) => s !== up), rng)[0]; return suitDuel(d, up, down, 3, -1); } },
-      4: { desc: "Wähle Gewinner- und Verliererfarbe: +4 / −1 Wert.", pickTarget: { suits: 2 }, onPick: (d, _rng, target) => { const [up, down] = target?.suits || []; return up && down ? suitDuel(d, up, down, 4, -1) : d; } },
+      1: { desc: "Eine zufällige Farbe +1 Kartenwert dauerhaft, eine andere −1 Kartenwert.", onPick: (d, rng) => { const s = shuffle(SUIT_ORDER, rng); return suitDuel(d, s[0], s[1], 1, -1); } },
+      2: { desc: "Eine zufällige Farbe +2 Kartenwert dauerhaft, eine andere −1 Kartenwert.", onPick: (d, rng) => { const s = shuffle(SUIT_ORDER, rng); return suitDuel(d, s[0], s[1], 2, -1); } },
+      3: { desc: "Wähle die Gewinnerfarbe (+3 Kartenwert); eine andere Farbe verliert zufällig −1 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, rng, target) => { const up = target?.suits?.[0]; if (!up) return d; const down = shuffle(SUIT_ORDER.filter((s) => s !== up), rng)[0]; return suitDuel(d, up, down, 3, -1); } },
+      4: { desc: "Wähle Gewinner- und Verliererfarbe: +4 / −1 Kartenwert.", pickTarget: { suits: 2 }, onPick: (d, _rng, target) => { const [up, down] = target?.suits || []; return up && down ? suitDuel(d, up, down, 4, -1) : d; } },
     },
   },
   A_CONDENSE: {
     id: "A_CONDENSE", cat: "A", name: "Verdichtung", upgradeType: CUMULATIVE,
     // Deckzustand (Häufigkeit je aktuellem Wert) wird beim Pick geprüft.
     tiers: {
-      1: { desc: "Zwei zufällige Karten aus mehrfach vorkommenden Wertgruppen: dauerhaft +1 Wert.", onPick: (d, rng) => { const cnt = valueCounts(d); return bumpRandomWhere(d, (c) => cnt[c.value] > 1, 2, 1, rng); } },
-      2: { desc: "Vier zufällige Karten aus mehrfach vorkommenden Wertgruppen: dauerhaft +1 Wert.", onPick: (d, rng) => { const cnt = valueCounts(d); return bumpRandomWhere(d, (c) => cnt[c.value] > 1, 4, 1, rng); } },
-      3: { desc: "Alle Karten aus Wertgruppen mit ≥3 Vorkommen: dauerhaft +1 Wert.", onPick: (d) => { const cnt = valueCounts(d); return bumpWhere(d, (c) => cnt[c.value] >= 3, 1); } },
-      4: { desc: "Alle Karten aus mehrfach vorkommenden Wertgruppen: dauerhaft +1 Wert.", onPick: (d) => { const cnt = valueCounts(d); return bumpWhere(d, (c) => cnt[c.value] >= 2, 1); } },
+      1: { desc: "Zwei zufällige Karten aus mehrfach vorkommenden Wertgruppen: dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const cnt = valueCounts(d); return bumpRandomWhere(d, (c) => cnt[c.value] > 1, 2, 1, rng); } },
+      2: { desc: "Vier zufällige Karten aus mehrfach vorkommenden Wertgruppen: dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const cnt = valueCounts(d); return bumpRandomWhere(d, (c) => cnt[c.value] > 1, 4, 1, rng); } },
+      3: { desc: "Alle Karten aus Wertgruppen mit ≥3 Vorkommen: dauerhaft +1 Kartenwert.", onPick: (d) => { const cnt = valueCounts(d); return bumpWhere(d, (c) => cnt[c.value] >= 3, 1); } },
+      4: { desc: "Alle Karten aus mehrfach vorkommenden Wertgruppen: dauerhaft +1 Kartenwert.", onPick: (d) => { const cnt = valueCounts(d); return bumpWhere(d, (c) => cnt[c.value] >= 2, 1); } },
     },
   },
 };
@@ -511,38 +511,38 @@ const C_FAMILIES = {
     id: "C_GUARD", cat: "C", name: "Leibwache", upgradeType: ROLE,
     // I–III: verliert der direkte Vorgänger (lastResult="loss"). IV: verliert einer der ZWEI Vorgänger (secondLastResult).
     tiers: {
-      1: { desc: "Wähle 1 Karte: verliert ihr Vorgänger, +3 Wert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && c.lastResult === "loss" ? 3 : 0) },
-      2: { desc: "Wähle 2 Karten: verliert ihr Vorgänger, +4 Wert.", pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && c.lastResult === "loss" ? 4 : 0) },
-      3: { desc: "Wähle 3 Karten: verliert ihr Vorgänger, +5 Wert.", pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && c.lastResult === "loss" ? 5 : 0) },
-      4: { desc: "Wähle 4 Karten: verliert einer ihrer zwei Vorgänger, +6 Wert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && (c.lastResult === "loss" || c.secondLastResult === "loss") ? 6 : 0) },
+      1: { desc: "Wähle 1 Karte: verliert ihr Vorgänger, +3 Stichwert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && c.lastResult === "loss" ? 3 : 0) },
+      2: { desc: "Wähle 2 Karten: verliert ihr Vorgänger, +4 Stichwert.", pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && c.lastResult === "loss" ? 4 : 0) },
+      3: { desc: "Wähle 3 Karten: verliert ihr Vorgänger, +5 Stichwert.", pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && c.lastResult === "loss" ? 5 : 0) },
+      4: { desc: "Wähle 4 Karten: verliert einer ihrer zwei Vorgänger, +6 Stichwert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_GUARD") && (c.lastResult === "loss" || c.secondLastResult === "loss") ? 6 : 0) },
     },
   },
   C_RELAY: {
     id: "C_RELAY", cat: "C", name: "Staffelläufer", upgradeType: ROLE,
     // relay: nach einem Sieg der Rollenkarte erhalten die nächsten `relay` Karten je +relayBonus Wert (successorQueue).
     tiers: {
-      1: { desc: "Wähle 1 Karte: nach ihrem Sieg direkter Nachfolger +2 Wert.",  pickTarget: { cards: 1 }, relay: 1, relayBonus: 2 },
-      2: { desc: "Wähle 2 Karten: nach ihrem Sieg direkter Nachfolger +2 Wert.", pickTarget: { cards: 2 }, relay: 1, relayBonus: 2 },
-      3: { desc: "Wähle 3 Karten: nach ihrem Sieg direkter Nachfolger +3 Wert.", pickTarget: { cards: 3 }, relay: 1, relayBonus: 3 },
-      4: { desc: "Wähle 4 Karten: nach ihrem Sieg die nächsten zwei Karten je +3 Wert.", pickTarget: { cards: 4 }, relay: 2, relayBonus: 3 },
+      1: { desc: "Wähle 1 Karte: nach ihrem Sieg direkter Nachfolger +2 Stichwert.",  pickTarget: { cards: 1 }, relay: 1, relayBonus: 2 },
+      2: { desc: "Wähle 2 Karten: nach ihrem Sieg direkter Nachfolger +2 Stichwert.", pickTarget: { cards: 2 }, relay: 1, relayBonus: 2 },
+      3: { desc: "Wähle 3 Karten: nach ihrem Sieg direkter Nachfolger +3 Stichwert.", pickTarget: { cards: 3 }, relay: 1, relayBonus: 3 },
+      4: { desc: "Wähle 4 Karten: nach ihrem Sieg die nächsten zwei Karten je +3 Stichwert.", pickTarget: { cards: 4 }, relay: 2, relayBonus: 3 },
     },
   },
   C_LEADER: {
     id: "C_LEADER", cat: "C", name: "Anführer", upgradeType: ROLE,
     tiers: {
-      1: { desc: "Wähle 1 Karte: nach ihrem Sieg nächste Karte +2 Wert.",  pickTarget: { cards: 1 }, relay: 1, relayBonus: 2 },
-      2: { desc: "Wähle 1 Karte: nach ihrem Sieg die nächsten zwei Karten je +2 Wert.", pickTarget: { cards: 1 }, relay: 2, relayBonus: 2 },
-      3: { desc: "Wähle 2 Karten: nach ihrem Sieg die nächsten zwei Karten je +3 Wert.", pickTarget: { cards: 2 }, relay: 2, relayBonus: 3 },
-      4: { desc: "Wähle 2 Karten: nach ihrem Sieg die nächsten drei Karten je +4 Wert.", pickTarget: { cards: 2 }, relay: 3, relayBonus: 4 },
+      1: { desc: "Wähle 1 Karte: nach ihrem Sieg nächste Karte +2 Stichwert.",  pickTarget: { cards: 1 }, relay: 1, relayBonus: 2 },
+      2: { desc: "Wähle 1 Karte: nach ihrem Sieg die nächsten zwei Karten je +2 Stichwert.", pickTarget: { cards: 1 }, relay: 2, relayBonus: 2 },
+      3: { desc: "Wähle 2 Karten: nach ihrem Sieg die nächsten zwei Karten je +3 Stichwert.", pickTarget: { cards: 2 }, relay: 2, relayBonus: 3 },
+      4: { desc: "Wähle 2 Karten: nach ihrem Sieg die nächsten drei Karten je +4 Stichwert.", pickTarget: { cards: 2 }, relay: 3, relayBonus: 4 },
     },
   },
   C_FINISHER: {
     id: "C_FINISHER", cat: "C", name: "Finisher", upgradeType: ROLE,
     tiers: {
-      1: { desc: "Wähle 1 Karte: auf der letzten Segmentposition +3 Wert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && c.posInCycle % 5 === 4 ? 3 : 0) },
-      2: { desc: "Wähle 2 Karten: auf der letzten Segmentposition +4 Wert.", pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && c.posInCycle % 5 === 4 ? 4 : 0) },
-      3: { desc: "Wähle 3 Karten: auf der letzten Segmentposition +5 Wert.", pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && c.posInCycle % 5 === 4 ? 5 : 0) },
-      4: { desc: "Wähle 4 Karten: auf den letzten zwei Segmentpositionen +5 Wert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && (c.posInCycle % 5 === 4 || c.posInCycle % 5 === 3) ? 5 : 0) },
+      1: { desc: "Wähle 1 Karte: auf der letzten Segmentposition +3 Stichwert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && c.posInCycle % 5 === 4 ? 3 : 0) },
+      2: { desc: "Wähle 2 Karten: auf der letzten Segmentposition +4 Stichwert.", pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && c.posInCycle % 5 === 4 ? 4 : 0) },
+      3: { desc: "Wähle 3 Karten: auf der letzten Segmentposition +5 Stichwert.", pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && c.posInCycle % 5 === 4 ? 5 : 0) },
+      4: { desc: "Wähle 4 Karten: auf den letzten zwei Segmentpositionen +5 Stichwert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && (c.posInCycle % 5 === 4 || c.posInCycle % 5 === 3) ? 5 : 0) },
     },
   },
   C_SURVIVOR: {
@@ -551,10 +551,10 @@ const C_FAMILIES = {
     // §10-Default: „vier zufällige Segmente" (I) → deterministisch die ersten vier Segmente (Pos 1–20), damit kein
     // per-Run-Zufallszustand nötig ist; II+ deckt alle Segmente ab. `segmentLow`-Marker triggert das Engine-Gate.
     tiers: {
-      1: { desc: "Die niedrigste Karte der ersten vier Segmente: +2 Wert.", segmentLow: true, cardBonus: (c) => (c.segmentIndex < 4 && c.segmentLowRank === 0 ? 2 : 0) },
-      2: { desc: "Die niedrigste Karte jedes Segments: +2 Wert.",           segmentLow: true, cardBonus: (c) => (c.segmentLowRank === 0 ? 2 : 0) },
-      3: { desc: "Die zwei niedrigsten Karten jedes Segments: +3 Wert.",  segmentLow: true, cardBonus: (c) => (c.segmentLowRank <= 1 ? 3 : 0) },
-      4: { desc: "Die zwei niedrigsten Karten jedes Segments: +5 Wert.",  segmentLow: true, cardBonus: (c) => (c.segmentLowRank <= 1 ? 5 : 0) },
+      1: { desc: "Die niedrigste Karte der ersten vier Segmente: +2 Stichwert.", segmentLow: true, cardBonus: (c) => (c.segmentIndex < 4 && c.segmentLowRank === 0 ? 2 : 0) },
+      2: { desc: "Die niedrigste Karte jedes Segments: +2 Stichwert.",           segmentLow: true, cardBonus: (c) => (c.segmentLowRank === 0 ? 2 : 0) },
+      3: { desc: "Die zwei niedrigsten Karten jedes Segments: +3 Stichwert.",  segmentLow: true, cardBonus: (c) => (c.segmentLowRank <= 1 ? 3 : 0) },
+      4: { desc: "Die zwei niedrigsten Karten jedes Segments: +5 Stichwert.",  segmentLow: true, cardBonus: (c) => (c.segmentLowRank <= 1 ? 5 : 0) },
     },
   },
   C_JOKER: {
@@ -574,10 +574,10 @@ const C_FAMILIES = {
     // Kumulativer Pick-Effekt: je gewählter Karte −loss Wert, ihr direkter Nachfolger (in playerOrder) +gain — dauerhaft.
     // onPick(deck, rng, target) mit target={cards, order} (order = playerOrder, aus dem Reducer). Frühere Opfer bleiben.
     tiers: {
-      1: { desc: "Wähle 1 Karte: −2 Wert dauerhaft, direkter Nachfolger +3 Wert.", pickTarget: { cards: 1 }, onPick: (d, _rng, t) => sacrifice(d, t, 2, 3) },
-      2: { desc: "Wähle 1 Karte: −2 Wert dauerhaft, direkter Nachfolger +4 Wert.", pickTarget: { cards: 1 }, onPick: (d, _rng, t) => sacrifice(d, t, 2, 4) },
-      3: { desc: "Wähle 1 Karte: −3 Wert dauerhaft, direkter Nachfolger +6 Wert.", pickTarget: { cards: 1 }, onPick: (d, _rng, t) => sacrifice(d, t, 3, 6) },
-      4: { desc: "Wähle 2 Karten: je −3 Wert dauerhaft, direkter Nachfolger je +7 Wert.", pickTarget: { cards: 2 }, onPick: (d, _rng, t) => sacrifice(d, t, 3, 7) },
+      1: { desc: "Wähle 1 Karte: −2 Kartenwert dauerhaft, direkter Nachfolger +3 Kartenwert.", pickTarget: { cards: 1 }, onPick: (d, _rng, t) => sacrifice(d, t, 2, 3) },
+      2: { desc: "Wähle 1 Karte: −2 Kartenwert dauerhaft, direkter Nachfolger +4 Kartenwert.", pickTarget: { cards: 1 }, onPick: (d, _rng, t) => sacrifice(d, t, 2, 4) },
+      3: { desc: "Wähle 1 Karte: −3 Kartenwert dauerhaft, direkter Nachfolger +6 Kartenwert.", pickTarget: { cards: 1 }, onPick: (d, _rng, t) => sacrifice(d, t, 3, 6) },
+      4: { desc: "Wähle 2 Karten: je −3 Kartenwert dauerhaft, direkter Nachfolger je +7 Kartenwert.", pickTarget: { cards: 2 }, onPick: (d, _rng, t) => sacrifice(d, t, 3, 7) },
     },
   },
   C_BRIDGE: {
@@ -682,7 +682,7 @@ const E_FAMILIES = {
       1: { desc: "Positionen 5 und 25 sind Anker (siegreicher Anker ×1,25).", anchor: { at: (p) => (p - 4) % 20 === 0, factor: ANKER, value: 0 } },
       2: { desc: "Positionen 5, 15, 25 und 35 sind Anker.",                    anchor: { at: (p) => (p - 4) % 10 === 0, factor: ANKER, value: 0 } },
       3: { desc: "Jede fünfte Position (5, 10 … 40) ist ein Anker.",              anchor: { at: (p) => (p + 1) % 5 === 0, factor: ANKER, value: 0 } },
-      4: { desc: "Jede fünfte Position ist ein ×1,35-Anker und erhält +2 Wert.",   anchor: { at: (p) => (p + 1) % 5 === 0, factor: 1.35, value: 2 } },
+      4: { desc: "Jede fünfte Position ist ein ×1,35-Anker und erhält +2 Stichwert.",   anchor: { at: (p) => (p + 1) % 5 === 0, factor: 1.35, value: 2 } },
     },
   },
   E_SEGMENT: {
@@ -763,15 +763,15 @@ const E_FAMILIES = {
    Stufen-descs werden nach dem Zusammenbau von FAMILY_DEFS erzeugt (applyMusterDescs). Die Effekt-Hooks der
    Stufen bleiben unberührt — nur die Anzeige-Texte kommen aus dieser einen Quelle. ---- */
 const MUSTER_DESC = {
-  A_WEAK_STRONG: { tpl: "Alle ursprünglichen $0: dauerhaft +$1 Wert.", vals: [["5er","1"],["4er","2"],["3er","3"],["1er und 2er","4"]] },
-  A_TOP: { tpl: "Die $0 aktuell höchsten Karten: dauerhaft je +$1 Wert.", vals: [["zwei","2"],["drei","3"],["vier","4"],["fünf","5"]] },
-  A_BOTTOM: { tpl: "Die $0 aktuell niedrigsten Karten: dauerhaft je +$1 Wert.", vals: [["zwei","3"],["drei","4"],["vier","5"],["fünf","6"]] },
-  B_COUNTER: { tpl: "Nach einer Niederlage: nächste Karte +$0 Wert.", vals: [["3"],["5"],["7"],["10"]] },
-  B_MOMENTUM: { tpl: "Nach genau $0 Siegen in Folge: nächste Karte +$1 Wert.", vals: [["4","4"],["3","5"],["3","7"],["3","10"]] },
-  B_OPENING: { tpl: "Die ersten $0 Karten jedes Durchlaufs: je +$1 Wert.", vals: [["2","2"],["3","3"],["4","4"],["5","5"]] },
-  B_BREAKTHROUGH: { tpl: "Nach $0 Stichen ohne Sieg: nächste Karte +$1 Wert.", vals: [["6","7"],["5","10"],["4","12"],["3","15"]] },
-  C_VANGUARD: { tpl: "Wähle $0: auf Position $1 +$2 Wert.", vals: [["1 Karte","1–5","2"],["2 Karten","1–5","3"],["3 Karten","1–5","4"],["4 Karten","1–10","4"]] },
-  C_TRIUMPH: { tpl: "Wähle $0: nach einem Sieg beim nächsten Auftauchen +$1 Wert.", vals: [["1 Karte","2"],["2 Karten","2"],["3 Karten","3"],["4 Karten","4"]] },
+  A_WEAK_STRONG: { tpl: "Alle ursprünglichen $0: dauerhaft +$1 Kartenwert.", vals: [["5er","1"],["4er","2"],["3er","3"],["1er und 2er","4"]] },
+  A_TOP: { tpl: "Die $0 aktuell höchsten Karten: dauerhaft je +$1 Kartenwert.", vals: [["zwei","2"],["drei","3"],["vier","4"],["fünf","5"]] },
+  A_BOTTOM: { tpl: "Die $0 aktuell niedrigsten Karten: dauerhaft je +$1 Kartenwert.", vals: [["zwei","3"],["drei","4"],["vier","5"],["fünf","6"]] },
+  B_COUNTER: { tpl: "Nach einer Niederlage: nächste Karte +$0 Stichwert.", vals: [["3"],["5"],["7"],["10"]] },
+  B_MOMENTUM: { tpl: "Nach genau $0 Siegen in Folge: nächste Karte +$1 Stichwert.", vals: [["4","4"],["3","5"],["3","7"],["3","10"]] },
+  B_OPENING: { tpl: "Die ersten $0 Karten jedes Durchlaufs: je +$1 Stichwert.", vals: [["2","2"],["3","3"],["4","4"],["5","5"]] },
+  B_BREAKTHROUGH: { tpl: "Nach $0 Stichen ohne Sieg: nächste Karte +$1 Stichwert.", vals: [["6","7"],["5","10"],["4","12"],["3","15"]] },
+  C_VANGUARD: { tpl: "Wähle $0: auf Position $1 +$2 Stichwert.", vals: [["1 Karte","1–5","2"],["2 Karten","1–5","3"],["3 Karten","1–5","4"],["4 Karten","1–10","4"]] },
+  C_TRIUMPH: { tpl: "Wähle $0: nach einem Sieg beim nächsten Auftauchen +$1 Stichwert.", vals: [["1 Karte","2"],["2 Karten","2"],["3 Karten","3"],["4 Karten","4"]] },
   D_FORMATION_BONUS: { tpl: "Sieg mit ≥1 aktiver Formation: +$0 Score.", vals: [["50"],["100"],["175"],["300"]] },
   D_STREAK: { tpl: "Jeder Sieg: +$0 Score je Serienpunkt (max +$1).", vals: [["15","150"],["25","250"],["35","420"],["50","750"]] },
   D_HIGH: { tpl: "Sieg mit Kartenwert ≥$0: +$1 Score.", vals: [["9","100"],["8","150"],["7","225"],["6","350"]] },

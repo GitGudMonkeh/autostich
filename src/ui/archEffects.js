@@ -14,7 +14,7 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
 export function architectEffectStrings(pre, pos, card, fam = null, tier = 1) {
   const out = [];
   const vb = card ? architectValueBonus(pre, pos, card) : 0; // Wert-Boost (konditional wie in der Engine)
-  if (vb > 0) out.push(`+${vb} Wert`);
+  if (vb > 0) out.push(`+${vb} Stichwert`);
   const sc = pre && pre.score && pre.score[pos];
   if (sc) {
     switch (sc.kind) {

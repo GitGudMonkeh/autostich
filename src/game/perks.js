@@ -68,17 +68,17 @@ export const PERK_DEFS = {
   //      Der ganze ×-Multiplikator-Raum ist family-free (Brennpunkt/Henker) = klare Legendär-Lane. Skala: Stich ⊂
   //      Segment(5) ⊂ Durchlauf(40) ⊂ Lauf. Engine-Hooks + ENV-Knöpfe je Flag.
   L2: { id: "L2", cat: "B", rarity: "legendary", label: "Unaufhaltsam",
-        desc: `Solange du siegst, erhält die nächste Karte +${C.UNAUFHALTSAM_VALUE} Wert (bis eine Niederlage eintritt).`,
+        desc: `Solange du siegst, erhält die nächste Karte +${C.UNAUFHALTSAM_VALUE} Stichwert (bis eine Niederlage eintritt).`,
         cardBonus: (ctx) => (ctx.winStreak > 0 ? C.UNAUFHALTSAM_VALUE : 0) }, // Serie-Hook (Favorit, behalten)
   L6: { id: "L6", cat: "D", rarity: "legendary", label: "Raserei",
         desc: `Jeder Sieg in Folge gibt +${pct(C.RASEREI_CRIT_STEP)} % Crit-Chance. Über 100 % Gesamt-Crit wird der Überschuss zu Crit-Schaden (max +100 %).`,
         critChance: (ctx) => C.RASEREI_CRIT_STEP * (ctx.winStreak || 0),
         critMultBonus: (ctx) => Math.min(Math.max(0, (ctx.rawCrit || 0) - 1), 1) }, // Serie→Crit-Hook (Favorit, behalten)
   L4: { id: "L4", cat: "D", rarity: "legendary", label: "Kritische Masse", critValueGain: C.KRITMASSE_VALUE,
-        desc: `Jeder Crit gibt der betreffenden Karte dauerhaft +1 Wert (maximal +${C.KRITMASSE_VALUE}).` }, // Crit-Hook (revived L4)
+        desc: `Jeder Crit gibt der betreffenden Karte dauerhaft +1 Kartenwert (maximal +${C.KRITMASSE_VALUE}).` }, // Crit-Hook (revived L4)
   // --- 8 neue ---
   L_UMV: { id: "L_UMV", cat: "A", rarity: "legendary", label: "Umverteilung", redistribute: true,
-        desc: "Sofort: alle Karten nehmen dauerhaft den Durchschnittswert des Decks an (keine Karte wird entfernt). Stark bei schiefem Deck." },
+        desc: "Sofort: alle Karten nehmen dauerhaft den durchschnittlichen Kartenwert des Decks an (keine Karte wird entfernt). Stark bei schiefem Deck." },
   L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
         desc: "Jeder Durchlauf mit positiver Bilanz (mehr Siege als Niederlagen) gibt dauerhaft +Score, der sich mit jedem weiteren aufstapelt (flach, kein Multiplikator)." },
   L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,

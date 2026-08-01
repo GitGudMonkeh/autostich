@@ -110,10 +110,10 @@ const SHOP_CARD_FAMILIES = {
     legacyIds: ["K1", "K5", "K8"],
     // onPick bringt jede gewählte Karte auf den Stufen-Zielwert REFINE_TOTAL[t] (per-Karte-Differenz, s. refineCards).
     tiers: {
-      1: { desc: "Wähle eine Karte: sie erhält dauerhaft +1 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[1]) },
-      2: { desc: "Wähle eine Karte: sie erhält dauerhaft +2 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[2]) },
-      3: { desc: "Wähle eine Karte: sie erhält dauerhaft +3 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[3]) },
-      4: { desc: "Wähle eine Karte: sie erhält dauerhaft +5 Wert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[4]) },
+      1: { desc: "Wähle eine Karte: sie erhält dauerhaft +1 Kartenwert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[1]) },
+      2: { desc: "Wähle eine Karte: sie erhält dauerhaft +2 Kartenwert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[2]) },
+      3: { desc: "Wähle eine Karte: sie erhält dauerhaft +3 Kartenwert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[3]) },
+      4: { desc: "Wähle eine Karte: sie erhält dauerhaft +5 Kartenwert.", pickTarget: { cards: 1 }, onPick: (d, _r, t) => refineCards(d, t.cardIds, REFINE_TOTAL[4]) },
     },
   },
   SF_MULTI_REFINE: {
@@ -121,10 +121,10 @@ const SHOP_CARD_FAMILIES = {
     legacyIds: ["K6", "K9"],
     // Kumulativ: jede gekaufte Stufe verstärkt IHR eigenes Kartenpaket (+1 je gewählter Karte); frühere bleiben.
     tiers: {
-      1: { desc: "Wähle 1 Karte: sie erhält dauerhaft +1 Wert.",       pickTarget: { cards: 1 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, 1) },
-      2: { desc: "Wähle 2 Karten: sie erhalten dauerhaft je +1 Wert.", pickTarget: { cards: 2 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, 1) },
-      3: { desc: "Wähle 3 Karten: sie erhalten dauerhaft je +1 Wert.", pickTarget: { cards: 3 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, 1) },
-      4: { desc: "Wähle 5 Karten: sie erhalten dauerhaft je +1 Wert.", pickTarget: { cards: 5 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, 1) },
+      1: { desc: "Wähle 1 Karte: sie erhält dauerhaft +1 Kartenwert.",       pickTarget: { cards: 1 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, 1) },
+      2: { desc: "Wähle 2 Karten: sie erhalten dauerhaft je +1 Kartenwert.", pickTarget: { cards: 2 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, 1) },
+      3: { desc: "Wähle 3 Karten: sie erhalten dauerhaft je +1 Kartenwert.", pickTarget: { cards: 3 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, 1) },
+      4: { desc: "Wähle 5 Karten: sie erhalten dauerhaft je +1 Kartenwert.", pickTarget: { cards: 5 }, onPick: (d, _r, t) => bumpCards(d, t.cardIds, 1) },
     },
   },
   SF_RECOLOR: {
@@ -143,10 +143,10 @@ const SHOP_CARD_FAMILIES = {
     legacyIds: ["K3"],
     tiers: {
       1: { desc: "Wähle 2 Karten: sie tauschen ihre Dauerwerte.", pickTarget: { cards: 2 }, onPick: (d, _r, t) => swapValues(d, t.cardIds) },
-      2: { desc: "Wähle 2 Karten: sie tauschen ihre Dauerwerte, danach erhält die niedrigere +1 Wert.", pickTarget: { cards: 2 }, onPick: (d, _r, t) => swapValuesThenBumpLower(d, t.cardIds) },
+      2: { desc: "Wähle 2 Karten: sie tauschen ihre Dauerwerte, danach erhält die niedrigere +1 Kartenwert.", pickTarget: { cards: 2 }, onPick: (d, _r, t) => swapValuesThenBumpLower(d, t.cardIds) },
       3: { desc: "Wähle 2 Paare (4 Karten): jedes Paar tauscht seine Dauerwerte.", pickTarget: { cards: 4 }, onPick: (d, _r, t) => swapTwoPairs(d, t.cardIds, "value") },
       // §10-Näherung: freie Wertaufteilung ≈ Tausch + beide +1 (Betrags-UI deferiert).
-      4: { desc: "Wähle 2 Karten: sie tauschen ihre Dauerwerte, danach erhalten beide +1 Wert.", pickTarget: { cards: 2 }, onPick: (d, _r, t) => bumpCards(swapValues(d, t.cardIds), t.cardIds, 1) },
+      4: { desc: "Wähle 2 Karten: sie tauschen ihre Dauerwerte, danach erhalten beide +1 Kartenwert.", pickTarget: { cards: 2 }, onPick: (d, _r, t) => bumpCards(swapValues(d, t.cardIds), t.cardIds, 1) },
     },
   },
   SF_COLOR_SWAP: {
@@ -166,10 +166,10 @@ const SHOP_CARD_FAMILIES = {
     legacyIds: ["K-L1"],
     // onPick nutzt target.segment + target.order (= playerOrder). I/II verstärken zufällige Karten des Segments.
     tiers: {
-      1: { desc: "Wähle 1 Segment: zwei zufällige Karten darin erhalten dauerhaft +1 Wert.", pickTarget: { segment: true }, onPick: (d, rng, t) => segmentBumpRandom(d, t.order, t.segment, 2, 1, rng) },
-      2: { desc: "Wähle 1 Segment: drei zufällige Karten darin erhalten dauerhaft +1 Wert.", pickTarget: { segment: true }, onPick: (d, rng, t) => segmentBumpRandom(d, t.order, t.segment, 3, 1, rng) },
-      3: { desc: "Wähle 1 Segment: alle fünf Karten darin erhalten dauerhaft +1 Wert.",      pickTarget: { segment: true }, onPick: (d, _r, t) => segmentBump(d, t.order, t.segment, 1) },
-      4: { desc: "Wähle 1 Segment: alle fünf Karten darin erhalten dauerhaft +2 Wert.",      pickTarget: { segment: true }, onPick: (d, _r, t) => segmentBump(d, t.order, t.segment, 2) },
+      1: { desc: "Wähle 1 Segment: zwei zufällige Karten darin erhalten dauerhaft +1 Kartenwert.", pickTarget: { segment: true }, onPick: (d, rng, t) => segmentBumpRandom(d, t.order, t.segment, 2, 1, rng) },
+      2: { desc: "Wähle 1 Segment: drei zufällige Karten darin erhalten dauerhaft +1 Kartenwert.", pickTarget: { segment: true }, onPick: (d, rng, t) => segmentBumpRandom(d, t.order, t.segment, 3, 1, rng) },
+      3: { desc: "Wähle 1 Segment: alle fünf Karten darin erhalten dauerhaft +1 Kartenwert.",      pickTarget: { segment: true }, onPick: (d, _r, t) => segmentBump(d, t.order, t.segment, 1) },
+      4: { desc: "Wähle 1 Segment: alle fünf Karten darin erhalten dauerhaft +2 Kartenwert.",      pickTarget: { segment: true }, onPick: (d, _r, t) => segmentBump(d, t.order, t.segment, 2) },
     },
   },
 };
@@ -187,10 +187,10 @@ const SHOP_ANCHOR_FAMILIES = {
     id: "SF_A_POWER", cat: "anchors", name: "Kraftanker", upgradeType: REPLACEMENT, repeatable: false,
     anchorType: "power", legacyIds: ["A1"],
     tiers: {
-      1: { desc: "Wähle 1 Position: +1 temporärer Wert im Stich.", pickTarget: { position: true }, power: 1 },
-      2: { desc: "Wähle 1 Position: +2 temporärer Wert im Stich.", pickTarget: { position: true }, power: 2 },
-      3: { desc: "Wähle 1 Position: +4 temporärer Wert im Stich.", pickTarget: { position: true }, power: 4 },
-      4: { desc: "Wähle 1 Position: +6 temporärer Wert; bei Sieg zusätzlich +100 Score.", pickTarget: { position: true }, power: 6, winScore: 100 },
+      1: { desc: "Wähle 1 Position: +1 Stichwert im Stich.", pickTarget: { position: true }, power: 1 },
+      2: { desc: "Wähle 1 Position: +2 Stichwert im Stich.", pickTarget: { position: true }, power: 2 },
+      3: { desc: "Wähle 1 Position: +4 Stichwert im Stich.", pickTarget: { position: true }, power: 4 },
+      4: { desc: "Wähle 1 Position: +6 Stichwert; bei Sieg zusätzlich +100 Score.", pickTarget: { position: true }, power: 6, winScore: 100 },
     },
   },
   SF_A_SCORE: {
