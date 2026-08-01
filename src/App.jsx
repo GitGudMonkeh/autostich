@@ -248,6 +248,7 @@ export function Autostich() {
     // `level` bleibt im Payload (= Rundenzahl), damit die bestehende Supabase-Spalte befüllt ist
     // (falls NOT NULL) — kein Schema-Wechsel nötig. Angezeigt wird ohnehin `cycles`.
     const gEntry = { name, score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, archetypes,
+      seed: state.seed ?? null, // #205: Lauf-Seed mitposten → Board-Einträge sind nachspielbar + Challenge-Board (Top-3 pro Seed)
       // #169 FB-8: Detailspalten (snake_case = Supabase-Spalten). perks/skills als kompakte ID-Liste (wie archetypes).
       // publishRun stript sie per Fallback-Kaskade, falls die Spalten noch nicht migriert sind.
       best_streak: state.bestStreak, perks: (state.perks || []).join(","), skills: (state.skills || []).join(","),

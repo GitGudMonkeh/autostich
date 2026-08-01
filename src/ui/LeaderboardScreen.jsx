@@ -126,7 +126,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
                     </button>
                   ))}
                 </div>
-                <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} masterGrade={masterGrade} />
+                <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} masterGrade={masterGrade} onPlaySeed={onPlaySeed} />
               </>
             ) : (
               // Kein Board konfiguriert (offline/Preview ohne Config): lokale Meister-Läufe als Fallback.
@@ -142,7 +142,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
 
           {tab === "global" && (
             leaderboardConfigured
-              ? <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} />
+              ? <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} onPlaySeed={onPlaySeed} />
               : <div className="text-sm opacity-40 text-center py-6">Globale Bestenliste ist nicht verfügbar.</div>
           )}
         </div>

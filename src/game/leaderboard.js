@@ -22,12 +22,13 @@ const FB8_COLS = "best_streak,perks,skills,max_formations,formation_score,crits,
 // #217 Master-Board: mastery_grade (gespielter Rang; NULL = normaler Lauf) + deck_snapshot (finale Aufstellung, nur Meister-Läufe).
 const MASTER_COLS = "mastery_grade,deck_snapshot";
 // #229 N2: `id` mitselektieren → die Eigen-Zeile lässt sich im Board EINDEUTIG markieren (statt per name+score-Heuristik).
-const COLS_FULL = `id,name,score,level,tricks,cycles,archetypes,${FB8_COLS},${MASTER_COLS},created_at`;
+// #205: `seed` mitselektieren → Board-Einträge sind nachspielbar (Challenge) + Challenge-Board (Top-3 pro Seed).
+const COLS_FULL = `id,name,score,level,tricks,cycles,archetypes,${FB8_COLS},${MASTER_COLS},seed,created_at`;
 const COLS_ARCH = "id,name,score,level,tricks,cycles,archetypes,created_at";
 const COLS_BASE = "id,name,score,level,tricks,cycles,created_at";
 // Payload-Felder, die es in COLS_FULL, aber nicht in COLS_ARCH gibt (zum Stripen beim publish, falls die Spalten fehlen):
-// #169 FB-8-Detailfelder + #217 Master-Felder (mastery_grade/deck_snapshot).
-const EXTRA_FIELDS = ["best_streak", "perks", "skills", "max_formations", "formation_score", "crits", "wins", "crit_bonus_score", "best_trick_score", "mastery_grade", "deck_snapshot"];
+// #169 FB-8-Detailfelder + #217 Master-Felder (mastery_grade/deck_snapshot) + #205 seed.
+const EXTRA_FIELDS = ["best_streak", "perks", "skills", "max_formations", "formation_score", "crits", "wins", "crit_bonus_score", "best_trick_score", "mastery_grade", "deck_snapshot", "seed"];
 const omit = (obj, keys) => { const o = { ...obj }; for (const kk of keys) delete o[kk]; return o; };
 
 // Top-N global (NORMALES Board): Score↓, bei Gleichstand mehr Stiche, dann jünger. Fallback-Kaskade bei fehlenden
@@ -51,6 +52,17 @@ export async function fetchMasterTop(grade, limit = 10) {
   const g = Math.max(0, Math.floor(Number(grade) || 0));
   const res = await fetch(`${REST}?select=${COLS_FULL}&mastery_grade=eq.${g}&order=score.desc,tricks.desc,created_at.desc&limit=${limit}`, { headers });
   if (!res.ok) throw new Error(`fetchMasterTop ${res.status}`);
+  return res.json();
+}
+
+// #205 Challenge-Board: Top-N der Läufe auf GENAU diesem Seed (seed = eq.<seed>), Score↓ — dieselbe Tabelle wie das
+// globale Board (ein sauberes Schema, seed erstklassig + indiziert). Für den „Top-3 pro Seed"-Vergleich im
+// Challenges-Reiter. Ungültiger Seed → []; kein Kaskaden-Fallback (seed-Spalte existiert erst nach der Migration).
+export async function fetchSeedTop(seed, limit = 3) {
+  const s = Number(seed);
+  if (!Number.isFinite(s)) return [];
+  const res = await fetch(`${REST}?select=${COLS_FULL}&seed=eq.${s >>> 0}&order=score.desc,tricks.desc,created_at.desc&limit=${limit}`, { headers });
+  if (!res.ok) throw new Error(`fetchSeedTop ${res.status}`);
   return res.json();
 }
 

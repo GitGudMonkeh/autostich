@@ -91,6 +91,26 @@ describe("fetchMasterTop — Master-Board je Rang (#217)", () => {
   });
 });
 
+describe("fetchSeedTop — Challenge-Board (Top-N pro Seed, #205)", () => {
+  it("fragt genau den Seed ab (seed=eq.N), Score-sortiert + limit", async () => {
+    const { fetchSeedTop } = await loadBoard();
+    let url;
+    global.fetch = vi.fn(async (u) => { url = u; return { status: 200, ok: true, json: async () => [{ id: 1, name: "A", score: 9, seed: 123 }] }; });
+    const rows = await fetchSeedTop(123, 3);
+    expect(rows).toEqual([{ id: 1, name: "A", score: 9, seed: 123 }]);
+    expect(url).toContain("seed=eq.123");
+    expect(url).toContain("order=score.desc");
+    expect(url).toContain("limit=3");
+  });
+  it("ungültiger Seed → [] ohne fetch", async () => {
+    const { fetchSeedTop } = await loadBoard();
+    const fetchMock = vi.fn();
+    global.fetch = fetchMock;
+    expect(await fetchSeedTop(undefined)).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("publishRun — PREVIEW-Short-Circuit + archetypes-Strip (#154)", () => {
   it("PREVIEW=1 schreibt NIE ins echte Board (Short-Circuit vor fetch)", async () => {
     const { publishRun } = await loadBoard({ preview: true });
@@ -186,12 +206,14 @@ describe("publishRun — PREVIEW-Short-Circuit + archetypes-Strip (#154)", () =>
       return bodies.length === 1 ? { status: 400, ok: false } : { status: 201, ok: true };
     });
     await publishRun({ name: "M", score: 9, level: 1, tricks: 1, cycles: 1, archetypes: "fire",
-      best_streak: 3, mastery_grade: 2, deck_snapshot: { cards: [{ id: "c0", value: 5, suit: "R" }], formations: [] } });
+      best_streak: 3, mastery_grade: 2, seed: 42, deck_snapshot: { cards: [{ id: "c0", value: 5, suit: "R" }], formations: [] } });
     expect(bodies).toHaveLength(2);
     expect(bodies[0].mastery_grade).toBe(2);           // Stufe 1: voll (mit Master-Feldern)
     expect(bodies[0].deck_snapshot).toBeDefined();
+    expect(bodies[0].seed).toBe(42);                   // ... inkl. #205 seed
     expect(bodies[1].mastery_grade).toBeUndefined();   // Stufe 2: Master-Felder gestript
     expect(bodies[1].deck_snapshot).toBeUndefined();
+    expect(bodies[1].seed).toBeUndefined();            // seed ebenfalls gestript
     expect(bodies[1].best_streak).toBeUndefined();     // FB-8 ebenfalls gestript
     expect(bodies[1].archetypes).toBe("fire");         // archetypes bleibt (Icons)
   });

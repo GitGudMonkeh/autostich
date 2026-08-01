@@ -40,12 +40,16 @@ create table if not exists public.autostich_scores (
   mastery_grade     smallint,
   -- #201 P8-C / #217: kompakte finale Aufstellung (nur bei Meister-Läufen befüllt → kein Bloat bei normalen Läufen).
   -- Wird nur dem EIGENEN Lauf angezeigt (Anti-Copy #205); Struktur = { cards:[{id,value,suit,green,frozen}], formations:[...] }.
-  deck_snapshot     jsonb
+  deck_snapshot     jsonb,
+  -- #205 Challenger: Lauf-Seed (uint32 → bigint, NULL bei Alt-/seedlosen Läufen). Challenge-Board = dieselbe Tabelle,
+  -- Top-3-pro-Seed via `seed = eq.<n> order by score desc`. Erstklassig + indiziert (kein Bolt-on).
+  seed              bigint
 );
 
 -- Falls die Tabelle schon existiert (frühere Version ohne diese Spalten): additiv nachziehen (idempotent).
 alter table public.autostich_scores add column if not exists mastery_grade smallint;
 alter table public.autostich_scores add column if not exists deck_snapshot jsonb;
+alter table public.autostich_scores add column if not exists seed bigint;
 
 -- Row Level Security: offenes Board → die anon-Rolle (publishable key) darf LESEN und EINFÜGEN,
 -- aber NICHT ändern oder löschen (kein update/delete-Policy → per Default verweigert).
@@ -69,3 +73,8 @@ create index if not exists autostich_scores_rank_idx
 create index if not exists autostich_scores_master_idx
   on public.autostich_scores (mastery_grade, score desc)
   where mastery_grade is not null;
+
+-- #205 Challenger: Index für die Top-3-pro-Seed-Abfrage (seed + score desc).
+create index if not exists autostich_scores_seed_idx
+  on public.autostich_scores (seed, score desc)
+  where seed is not null;

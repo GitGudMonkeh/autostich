@@ -3,6 +3,7 @@ import { leaderboardConfigured, fetchGlobalTop, fetchMasterTop } from "../game/l
 import { ARCHETYPE_META, decodeArchetypes } from "../game/skills.js";
 import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
+import { formatSeed } from "../game/rng.js"; // #205: Seed der Board-Zeile → SeedChip/Nachspielen in RunDetail
 
 // Gespeicherte Archetyp-Kodierung ("fire,ice") → Icon-Meta in fester Reihenfolge Blitz→Feuer→Eis (#139).
 // Alt-Einträge ohne Wert ergeben einfach keine Icons.
@@ -20,6 +21,9 @@ const toRunEntry = (r) => ({
   // #217/#201 P8-C: finale Aufstellung (nur bei Meister-Läufen befüllt) → RunDetail zeigt sie NUR für die eigene
   // Zeile (Anti-Copy #205 blendet sie bei anonymized aus).
   deckSnapshot: r.deck_snapshot,
+  // #205: Seed → RunDetail zeigt den (kopierbaren, nachspielbaren) SeedChip. Kein Anti-Copy-Thema (Seed ist die
+  // Herausforderung, kein Build-Detail).
+  seed: r.seed ?? null, seedCode: r.seed != null ? formatSeed(r.seed) : null,
 });
 
 /* Globaler Highscore (#14): additiv UNTER dem lokalen Block. Holt Top-N selbst und
@@ -32,7 +36,7 @@ const toRunEntry = (r) => ({
    framed      — eigener Panel-Rahmen (StartScreen). Ohne: schlichte Sektion (Game-Over).
    masterGrade — #217: gesetzt (0..10) → zeigt das Master-Board GENAU dieses Rangs (fetchMasterTop) statt des
                  normalen Boards. Die Rang-Auswahl passiert außen (LeaderboardScreen). */
-export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, masterGrade = null }) {
+export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, masterGrade = null, onPlaySeed = null }) {
   const [rows, setRows] = useState(null);   // null = lädt · [] = leer · [...] = Daten
   const [error, setError] = useState(false);
   const [detail, setDetail] = useState(null); // #169 FB-8: gewählte Zeile → RunDetail-Overlay
@@ -114,7 +118,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
         <div className="mt-5">{body}</div>
       )}
       {/* #205 Anti-Copy: fremde Board-Läufe anonymisiert (nur Kennzahlen/Icons/Score, keine Perks/Skills/Aufstellung). */}
-      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} anonymized={detail.anonymized} />}
+      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} anonymized={detail.anonymized} onPlaySeed={onPlaySeed} />}
     </>
   );
 }
