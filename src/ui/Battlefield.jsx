@@ -34,10 +34,10 @@ const OPP_DECK_SKINS = {
 };
 
 const BANNER = {
-  win:     { text: "GEWONNEN",            color: "#5ab87a" },
-  win_tie: { text: "GLEICHSTAND → SIEG",  color: "#8a7de0" },
-  loss:    { text: "VERLOREN",            color: "#e0605a" },
-  tie:     { text: "GLEICHSTAND",         color: "#8a8a92" },
+  win:     { text: "Gewonnen",            color: "#5ab87a" },
+  win_tie: { text: "Gleichstand → Sieg",  color: "#8a7de0" },
+  loss:    { text: "Verloren",            color: "#e0605a" },
+  tie:     { text: "Gleichstand",         color: "#8a8a92" },
 };
 const CRIT_COLOR = "#e879f9";
 
@@ -52,10 +52,10 @@ const FLOAT_ZONES = {
 // #169 FB-7: `size` = Peak-Zielgröße (px) je Stufe — höhere Stufe dominiert stärker. Der Render deckelt sie per
 // clamp() gegen die Viewport-Breite (mobil kein Überlauf) und zentriert echt (H+V) auf oberster Ebene.
 const BIG_SCORE_TIERS = [
-  { min: 500000, text: "GOTTGLEICH", size: 104 },
-  { min: 150000, text: "IRRE",       size: 90 },
-  { min: 50000,  text: "BRUTAL",     size: 78 },
-  { min: 10000,  text: "STARK",      size: 68 },
+  { min: 500000, text: "Gottgleich", size: 104 },
+  { min: 150000, text: "Irre",       size: 90 },
+  { min: 50000,  text: "Brutal",     size: 78 },
+  { min: 10000,  text: "Stark",      size: 68 },
 ];
 const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
 // #FB: Groß-Ansage („wie stark"). Sie hing bislang am Stich-Takt (key=trickNo) und wurde vom Folgestich sofort
@@ -384,7 +384,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const isCrit = !!(t && t.isCrit);
   const critColor = CRIT_COLOR;
   const banner = t
-    ? (isCrit ? { text: "GEWONNEN · KRITISCH", color: CRIT_COLOR } : BANNER[t.result])
+    ? (isCrit ? { text: "Gewonnen · Kritisch", color: CRIT_COLOR } : BANNER[t.result])
     : null;
 
   // Effektdauern an den Flip-Takt koppeln; unter reduzierter Bewegung Animationen weglassen

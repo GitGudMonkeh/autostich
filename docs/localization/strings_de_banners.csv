@@ -1,0 +1,11 @@
+id,category,de,en,context,limit,status,note
+ui.battlefield.banner-win,ui,Gewonnen,,Ergebnis-Banner über den Karten bei Sieg,,new,"BANNERS: war „GEWONNEN"" — Versalien raus, Großschrift macht jetzt .as-banner (text-transform)"
+ui.battlefield.banner-loss,ui,Verloren,,Ergebnis-Banner über den Karten bei Niederlage,,new,"BANNERS: war „VERLOREN"" — Versalien raus, Großschrift macht jetzt .as-banner (text-transform)"
+ui.battlefield.banner-tie,ui,Gleichstand,,Ergebnis-Banner bei echtem Gleichstand,,new,"BANNERS: war „GLEICHSTAND"" — Versalien raus, Großschrift macht jetzt .as-banner (text-transform)"
+ui.battlefield.banner-win-crit,ui,Gewonnen · Kritisch,,Ergebnis-Banner bei kritischem Sieg,,new,"BANNERS: war „GEWONNEN · KRITISCH"" — Versalien raus, Großschrift macht jetzt .as-banner (text-transform)"
+ui.battlefield.banner-win-tie,ui,Gleichstand → Sieg,,"Ergebnis-Banner bei Gleichstand, der als Sieg gewertet wird",,new,"BANNERS: war „GLEICHSTAND → SIEG"" — Versalien raus, Großschrift macht jetzt .as-banner (text-transform)"
+ui.battlefield.bigscore-strong,ui,Stark,,Große Score-Ansage bei hohem Einzelstich-Score (unterste Stufe),,new,"BANNERS: war „STARK"" — Versalien raus, Großschrift macht jetzt .as-banner (text-transform)"
+ui.battlefield.bigscore-brutal,ui,Brutal,,Große Score-Ansage bei hohem Einzelstich-Score,,new,"BANNERS: war „BRUTAL"" — Versalien raus, Großschrift macht jetzt .as-banner (text-transform)"
+ui.battlefield.bigscore-insane,ui,Irre,,Große Score-Ansage bei hohem Einzelstich-Score,,new,"BANNERS: war „IRRE"" — Versalien raus, Großschrift macht jetzt .as-banner (text-transform)"
+ui.battlefield.bigscore-godlike,ui,Gottgleich,,Große Score-Ansage bei sehr hohem Einzelstich-Score (höchste Stufe),,new,"BANNERS: war „GOTTGLEICH"" — Versalien raus, Großschrift macht jetzt .as-banner (text-transform)"
+ui.battlefield.crit-text,ui,Kritisch,,"Großer KRITISCH-Text über den Karten bei kritischem Sieg · Es folgt „!"" (normale Bewegung) oder „ ×{mult}"" (reduzierte Bewegung)",,needs-context,"BANNERS: war „KRITISCH"" — Versalien raus, Großschrift macht jetzt .as-banner (text-transform). ACHTUNG: laut Kontext wird im Code „!"" bzw. „ ×{mult}"" angehängt — Satz-Konkatenation, vor EN auf zwei vollständige Strings umbauen"
