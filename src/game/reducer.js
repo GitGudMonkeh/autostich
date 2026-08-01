@@ -64,7 +64,8 @@ export function initialState(rng = Math.random, seed = null) {
     scoreAtCycleStart: 0, lastCycleScore: null, prevCycleScore: null,
     winStreak: 0, bestStreak: 0, wins: 0, losses: 0, ties: 0,
     crits: 0, critBonusScore: 0, bestTrickScore: 0,
-    maxFormations: 0, formationScore: 0, buildingScore: 0, // #161 FB-2: Peak Formationen + Score-Anteil aus Formationen; buildingScore = Architekt-Gebäude-Anteil (#UI)
+    maxFormations: 0, formationScore: 0, buildingScore: 0, streakScore: 0, // #161 FB-2 + #251: Score-Anteile (Formation / Gebäude / Serie)
+    trickLog: [], // #251: Score je Stich (+ Sieg/Niederlage), akkumuliert über den Lauf (mit cycle) → Durchlauf-Graph
     initiative: "player",
     lastResult: null,
     sinceWin: 0, // #71 Durchbruch: aufeinanderfolgende Stiche ohne Sieg

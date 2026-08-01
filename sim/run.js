@@ -53,6 +53,7 @@ export function runOne(seed, policy, mem = null, hooks = null, opts = {}) {
   // #202/#229: Architekt ist jetzt der Default (der Shop ist entfernt). Nur ein expliziter opts.architect === false
   // fährt noch den (auslaufenden) Shop-Pfad. shopDisabled bleibt für Alt-A/B durchgereicht.
   let s = reducer(null, { type: "START_RUN", rng, architect: opts.architect ?? true, shopDisabled: opts.shopDisabled }); // START_RUN ignoriert den (null-)State
+  s = { ...s, trickLog: null }; // #251: Sim braucht den Durchlauf-Graph-Puffer nicht → aus (spart Array-Kopien über Tausende Läufe)
   const tel = newTelemetry();
   let guard = 0;
   while (s.phase !== "gameover") {
