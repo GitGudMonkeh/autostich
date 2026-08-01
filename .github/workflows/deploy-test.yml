@@ -20,12 +20,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # #250: volle Historie → git rev-list --count HEAD als Build-Nummer
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm test
+      # #250: Build-Stempel (Version) — Commit-Count + kurze SHA + Umgebung in die Env (Vite exponiert VITE_*).
+      - name: Build-Metadaten
+        run: |
+          echo "VITE_BUILD_NUM=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
+          echo "VITE_BUILD_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "VITE_ENV=test" >> "$GITHUB_ENV"
       - run: npm run build
         env:
           # Assets müssen unter dem Unterpfad aufgelöst werden.
