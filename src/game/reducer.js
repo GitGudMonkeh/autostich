@@ -471,7 +471,10 @@ export function reducer(state, action) {
       const applyNow = () => {
         const { familyTiers, deck, roles } = applyFamilyPick(
           familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rngFor(state, action, state.cycle, "pick"));
-        return { ...state, familyTiers, deck, roles, offer: null, phase: "play" };
+        // [#229 N3] Formationen sofort neu berechnen (analog CONFIRM_TARGET) — sonst bis zum nächsten RESOLVE_TRICK stale.
+        return { ...state, familyTiers, deck, roles,
+          formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers),
+          offer: null, phase: "play" };
       };
       const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
       if (!pt) return applyNow();                                                          // kein Ziel → direkt anwenden

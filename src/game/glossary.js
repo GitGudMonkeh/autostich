@@ -65,7 +65,7 @@ export const GLOSSARY = {
 };
 
 // Ist ein Token im Glossar erklärt? (Filter für die Keyword-Chips — generische Tokens fallen raus.)
-export const isGlossaryTerm = (token) => Object.prototype.hasOwnProperty.call(GLOSSARY, token);
+const isGlossaryTerm = (token) => Object.prototype.hasOwnProperty.call(GLOSSARY, token);
 
 // Eindeutige, im Glossar erklärte Schlüsselbegriffe einer Skill-Menge (Reihenfolge = Erstauftreten).
 // `skillDefs` wird injiziert (SKILL_DEFS), damit das Glossar nicht von skills.js abhängt (kein Zyklus).

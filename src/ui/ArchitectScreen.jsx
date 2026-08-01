@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import {
   familyDef, shapeRotations, enumeratePlacements, isValidFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, structureFactorMap,
-  rowOf, colOf, posOf, ROWS, COLS, N_POS, MAX_TIER, tierNum, tierFactor, upgradeInfo,
+  rowOf, colOf, posOf, ROWS, COLS, N_POS, tierNum, tierFactor, upgradeInfo,
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR,
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";

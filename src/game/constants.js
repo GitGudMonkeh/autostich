@@ -81,7 +81,6 @@ export const DECISION_SCHEDULE = buildSchedule(MAX_CYCLES);
 // Shop-Münzökonomie (Shop-Spec §3) [TUNING]
 export const STARTING_COINS       = 2;   // Startmünzen bei Run-Beginn
 export const BASE_COINS_PER_CYCLE = 2;   // Münzen je vollständig abgeschlossenem Durchlauf (KONSTANT, ohne Einkommen)
-export const PERK_DECLINE_COINS   = 2;   // #138/#183: Perk-Angebot komplett ablehnen → feste Münzen (Runde nie „verschwendet")
 // Einkommens-Stat (überarbeitet): der Bonus wird PRO SHOP-BESUCH gutgeschrieben, nicht je Durchlauf —
 // +3 Münzen je Einkommen-Pick, gilt für jeden Shop nach der Wahl (auch den direkt bevorstehenden). [TUNING]
 export const SHOP_INCOME_PER_LEVEL = 3;
@@ -413,10 +412,6 @@ export const EWIGER_FRUEHLING_FIELD_CAP = envNum("SIM_EWIGER_FRUEHLING_FIELD_CAP
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
-
-// Werte dürfen unbegrenzt über 10 steigen (Design-Entscheid: Deck-Mods sollen den
-// Gegner-Maximalwert überbieten können) — kein Cap.
-export const VALUE_CAP = null;
 
 // Tempo — Basis „langsam" ist fest; die Speed-Stufen (1×–4×) sind rein Anzeige und score-neutral
 // (V2 gelockte Entscheidung #5). Kein manueller Regler beeinflusst den Score.

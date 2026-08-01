@@ -833,7 +833,8 @@ export function resolveTrick(state, rng = Math.random) {
     // Sammler (#203): die diesen Stich GEWONNENEN Basis-Formationsarten (factor > 1) in den Durchlauf-Satz aufnehmen —
     // sie heben den formMult erst der FOLGENDEN Siege dieses Durchlaufs (sammlerMult liest den Stand VOR dem Sieg).
     if (ownsFlag(perks, "sammler"))
-      for (const f of posForm.formations || []) if ((f.factor || 1) > 1 && FORMATION_TYPES.includes(f.type) && !sammlerTypes.includes(f.type)) sammlerTypes.push(f.type);
+      // [#229 C4] nicht in-place mutieren (Bruch der Pure-Invariante) — neu binden, damit ein früher Snapshot unberührt bleibt.
+      for (const f of posForm.formations || []) if ((f.factor || 1) > 1 && FORMATION_TYPES.includes(f.type) && !sammlerTypes.includes(f.type)) sammlerTypes = [...sammlerTypes, f.type];
     initiative = "player";
     if (tieConverted) tieArmed = false;
     sinceWin = 0; // #71 Durchbruch: Sieg setzt den Zähler zurück

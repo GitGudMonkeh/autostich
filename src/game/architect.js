@@ -193,8 +193,7 @@ export function initialArchitect() {
     nextId: 1,           // fortlaufende Gebäude-id
     winCounters: {},     // je Gebäude-id: Siege auf der Abdeckung (Meilenstein-Schwelle)
     actedMain: false,    // Hauptaktion (errichten/ausbauen) in DIESER Phase verbraucht?
-    moved: false,        // 1× versetzen in DIESER Phase verbraucht?
-    hzCompletions: 0,    // Telemetrie: Summe erreichter Häuserzeilen über den Run (bei Phasen-Ende gezählt)
+    moved: false,        // im Spiel kein Deckel mehr; nur die Sim-Architekt-Policy nutzt es als „einmal versetzen"-Signal
   };
 }
 

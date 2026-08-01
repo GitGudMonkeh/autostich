@@ -191,7 +191,7 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
    `familyTiers` = Familienrang je Familie (#167, u. a. E-Formationswerkzeuge). `perks` wird nicht mehr gelesen
    (E1–E9 sind zu Familien migriert) — Parameter bleibt für die Aufrufer-Signatur. Der frühere `pe`-Parameter
    (shop.permanentEffects) entfiel #179 vollständig: Formations-Regeln laufen jetzt ausschließlich über familyTiers/roles. */
-export function computeFormations(order, deck, roles = {}, perks = [], skills = [], anchors = [], familyTiers = {}, architect = null) {
+export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
   // ---- Architekt (#202, Shop-Ersatz): formation-Gebäude biegen die Erkennung für abgedeckte Positionen (Joker /

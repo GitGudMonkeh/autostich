@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { SKILL_DEFS, hasGletscher, hasArchitekt, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
@@ -42,7 +42,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const cards = playerOrder.map((di) => deck[di]);
   // Architekt-Abdeckung je Position: { cat, color, icon, boost, legendary, name }. boost = echter Wert-Bonus der Karte,
   // die dort im Stich steht (nur value-Gebäude; konditional wie in der Engine). Neu berechnet je Aufstellung (folgt Tauschen).
-  const architectCover = (() => {
+  const architectCover = useMemo(() => { // [#229 T7] nur neu berechnen, wenn Aufstellung/Architekt sich ändern (nicht bei jeder Kachel-Auswahl)
     if (!hasArch) return null;
     const pre = precomputeArchitect(architect, playerOrder, deck);
     const cover = {};
@@ -60,7 +60,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
       }
     }
     return cover;
-  })();
+  }, [hasArch, architect, playerOrder, deck]);
   // Eis (#93 F3): eingefrorene Karten mit noch freiem Frosttausch machen einen Tausch KOSTENLOS (auch bei 0 Energie).
   const frostSwapsUsed = state.frostSwapsUsed || [];
   const frozenCards = cards.filter((c) => c.frozen);

@@ -366,7 +366,6 @@ export const shopFamilyCategory = (id) => SHOP_FAMILY_DEFS[id]?.cat || null;
 // Sichtbares Etikett „Name III" + Preis/Farbe der Zielstufe (rarity.js).
 export const shopFamilyTierLabel = (id, tier) => { const f = SHOP_FAMILY_DEFS[id]; return f ? `${f.name} ${romanOf(tier)}` : ""; };
 export const shopFamilyTierPrice = (tier) => priceOfTier(tier);
-export const shopFamilyTierMeta  = (tier) => TIER_META[tier] || null;
 // Beschreibung der Zielstufe.
 export const shopFamilyTierDesc = (id, tier) => SHOP_FAMILY_DEFS[id]?.tiers?.[tier]?.desc || "";
 // Anbietbare Stufen einer Shop-Familie beim aktuellen Rang (leer, sobald IV erreicht → abgeschlossen; Spec §4.1).

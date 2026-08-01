@@ -396,7 +396,6 @@ export function forgeCostFor(skills, heatValue = 0) {
 
 /* ---- Eis-Archetyp (#93 F3) — eingefrorene Karten (blau, an card.id) + reine Helfer ---- */
 
-export const isFrozen = (card) => !!card?.frozen;
 export const frozenCount = (deck) => (deck || []).filter((c) => c.frozen).length;
 // Ein Eis-Flag/Prädikat + Anzahl gehaltener Eis-Skills (Grundmechanik zählt nicht).
 export const iceFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);

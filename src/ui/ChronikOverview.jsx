@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
@@ -64,7 +64,7 @@ export function ChronikOverview({ state, onClose }) {
   // #218: Gebäude-Abdeckung je Position { cat, color, icon, boost, legendary, name } — 1:1 wie in der Aufstellung
   // (precomputeArchitect + architectValueBonus, echte Engine-Werte). Auf dem Grid ein-/ausblendbar (showArch).
   const hasArch = archBuildings.length > 0;
-  const architectCover = (() => {
+  const architectCover = useMemo(() => { // [#229 T8] nur bei Änderung neu berechnen (lief zuvor bei jeder Render, auch bei showArch=false)
     if (!hasArch) return null;
     const pre = precomputeArchitect(state.architect, playerOrder, deck);
     const cover = {};
@@ -75,11 +75,12 @@ export function ChronikOverview({ state, onClose }) {
       for (const pos of b.footprint) {
         const card = deck[playerOrder[pos]];
         const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card) : 0;
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier) };
+        const badgeSuit = fam.colorLocked ? (b.colorChoice || null) : null; // [#229 N1] Wert-Badge in Kartenfarbe (sonst grau) — wie in der Aufstellung
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier) };
       }
     }
     return cover;
-  })();
+  }, [hasArch, state.architect, playerOrder, deck, archBuildings]);
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
