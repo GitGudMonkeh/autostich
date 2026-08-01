@@ -244,13 +244,17 @@ button { font-family: inherit; }
 }
 .as-legendary { box-shadow: 0 0 0 1px #d4a63a99, 0 0 12px #d4a63a55; animation: as-legendary 1.9s ease-in-out infinite; }
 
-/* Architekt: fertige Struktur-Kombi (volle Zeile/Spalte/Diagonale) — der Rahmen schimmert wie ein Legendär,
-   damit man die erfüllte Kombi sofort erkennt. Als ::after-Overlay, damit die Inline-box-shadow der Zelle
-   (Raritätsrahmen etc.) erhalten bleibt. Ruht bei 0%/100% auf dem statischen Gold-Glow → unter reduced-motion
-   (Regel unten) bleibt genau dieser Ring/Glow stehen, kein Puls. Gold #f0b429 = die bestehende Kombi-Farbe. */
-@keyframes arch-struct-shimmer {
-  0%, 100% { box-shadow: 0 0 0 1px #f0b42988, 0 0 9px #f0b42999; }
-  50%      { box-shadow: 0 0 0 1px #ffe08a, 0 0 18px #f0b429e0, 0 0 30px #f0b42955; }
+/* Architekt: fertige Struktur-Kombi (volle Zeile/Spalte/Diagonale) — statt eines goldenen RAHMENS (#236: der
+   kollidierte mit dem Raritätsrahmen/der SVG-Kontur des Gebäudes und verdeckte dessen Stufenfarbe) leuchtet jetzt
+   der HINTERGRUND der Zelle weich golden-transparent. Diffuser Radial-Wash, der zum Perimeter hin auf 0 fällt →
+   KEIN Rand-Ring, die Gebäude-Rahmenfarbe bleibt frei; im Zentrum leicht abgesenkt, damit die Zahl lesbar bleibt.
+   Als ::after-Overlay (border-radius: inherit), damit die Inline-box-shadow der Zelle erhalten bleibt. Sanfter Puls
+   über opacity; ruht bei 0%/100% auf einem sichtbaren Glow → unter reduced-motion (Regel unten) bleibt der statische
+   Glow stehen, kein Puls. Gold #f0b429 = die bestehende Kombi-Farbe. Gilt für alle Nutzer der Klasse (Architekt-
+   Screen, Aufstellphase/CardGrid, Chronik). */
+@keyframes arch-struct-glow {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
 }
 .arch-struct-lit::after {
   content: "";
@@ -258,8 +262,12 @@ button { font-family: inherit; }
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  box-shadow: 0 0 0 1px #f0b42988, 0 0 9px #f0b42999;
-  animation: arch-struct-shimmer 1.7s ease-in-out infinite;
+  background: radial-gradient(ellipse at center,
+    rgba(240,180,41,0.16) 0%,
+    rgba(240,180,41,0.30) 42%,
+    rgba(240,180,41,0.12) 66%,
+    rgba(240,180,41,0) 82%);
+  animation: arch-struct-glow 1.7s ease-in-out infinite;
 }
 
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */

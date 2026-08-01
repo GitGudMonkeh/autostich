@@ -32,7 +32,7 @@ function KeywordGlossary({ tokens }) {
   );
 }
 
-/* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint jede 3. Runde STATT eines Perks.
+/* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint zu festen Zeitpunkten (DECISION_SCHEDULE, erstmals Runde 7) STATT eines Perks.
    Seltene, regelverändernde Motoren. Ablehnen → stattdessen ein Perk (Runde nie verschwendet).
    Bei vollen Slots: neuen Skill wählen → dann den zu ersetzenden Skill antippen (übergibt replaceId).
    #201 P9: Angebot bleibt kompakt (nur Name + Kurztext). Die ausführliche Passiv-Beschreibung des
@@ -88,19 +88,19 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const consumerTypeOf = (id) => (SKILL_DEFS[id]?.heatConsumer ? "heat" : SKILL_DEFS[id]?.onFullCharge ? "charge" : null);
   const CONSUMER_LABEL = { heat: "Hitze", charge: "Ladungs" };
 
-  // Freier Slot → direkt wählen. Volle Slots → neuen Skill vormerken, dann Ersetzungsziel antippen.
-  // Zweiter Konsument desselben Typs → Bestätigungsdialog (ersetzt den bestehenden, max 1 je Typ).
+  // Freier Slot → direkt wählen. Volle Slots → neuen Skill vormerken → Ersetzen-Fenster (#234).
+  // #234: Nur Blitz-LADUNGS-Konsumenten sind exklusiv (max 1) → Ersatzdialog beim zweiten. Feuer-HITZE-Konsumenten
+  // dürfen mehrere gleichzeitig (heben sich nicht auf) → wie normale Skills behandeln.
   const clickSkill = (id) => {
-    const ctype = consumerTypeOf(id);
-    if (ctype && !skills.includes(id)) {
-      const existing = skills.find((s) => consumerTypeOf(s) === ctype);
+    if (consumerTypeOf(id) === "charge" && !skills.includes(id)) {
+      const existing = skills.find((s) => consumerTypeOf(s) === "charge");
       if (existing && existing !== id) {
-        setPendingConsumer((cur) => (cur && cur.id === id ? null : { id, replace: existing, type: ctype }));
+        setPendingConsumer((cur) => (cur && cur.id === id ? null : { id, replace: existing, type: "charge" }));
         return;
       }
     }
     if (!full) { onPick(id); return; }
-    setPending((cur) => (cur === id ? null : id));
+    setPending((cur) => (cur === id ? null : id)); // volle Slots → Ersetzen-Fenster öffnet über `pending`
   };
 
   return (
@@ -135,12 +135,42 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           </div>
         )}
 
-        {/* Bei vollen Slots: Hinweis zum Ersetzen. */}
-        {full && (
+        {/* Bei vollen Slots: Hinweis, dass beim Wählen ein Ersetzen-Fenster erscheint (#234). */}
+        {full && !pending && (
           <div className="mt-3 rounded-lg px-3 py-2 text-xs" style={{ background: "#d4a63a14", border: "1px solid #d4a63a55", color: "#e8dcb8" }}>
-            {pending
-              ? <>Neuer Skill <b style={{ color: LIGHT }}>{SKILL_DEFS[pending]?.name}</b> gewählt — tippe unten den Skill an, der ihn ersetzen soll.</>
-              : <>Alle {SKILL_SLOTS} Slots belegt. Wähle einen neuen Skill, dann tippe unten den zu ersetzenden Skill an.</>}
+            Alle {SKILL_SLOTS} Slots belegt. Wähle einen neuen Skill — ein Fenster fragt dann, welchen du ersetzt.
+          </div>
+        )}
+
+        {/* #234: Ersetzen-Fenster bei vollen Slots — zeigt alle gehaltenen Skills MIT Beschreibung; gilt für ALLE Archetypen. */}
+        {full && pending && (
+          <div className="fixed inset-0 z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+            <div className="w-full max-w-md rounded-2xl p-5 max-h-[88dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
+              <div className="text-center mb-3">
+                <div className="text-xs uppercase tracking-widest" style={{ color: "#d4a63a" }}>Slots voll</div>
+                <h3 className="text-lg font-bold mt-1">Welchen Skill ersetzen?</h3>
+                <p className="text-xs opacity-65 mt-1">
+                  Neu: <b style={{ color: ac(pending).color }}>{ac(pending).icon} {SKILL_DEFS[pending]?.name}</b>. Tippe den Skill, der weichen soll.
+                </p>
+              </div>
+              <div className="grid gap-2">
+                {held.map((s) => (
+                  <button key={s.id} onClick={() => { onPick(pending, s.id); setPending(null); }}
+                    className="text-left rounded-xl p-3 flex flex-col gap-1 transition-all hover:brightness-110"
+                    style={{ background: "#20202a", border: `1px solid ${ac(s.id).color}66` }}>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}>{ac(s.id).icon} {ac(s.id).label.toUpperCase()}</span>
+                      {(s.heatConsumer || s.onFullCharge) && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>KONSUMENT</span>}
+                      {s.legendary && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>★ LEGENDÄR</span>}
+                    </div>
+                    <div className="font-bold text-sm" style={{ color: ac(s.id).color }}>{s.name}</div>
+                    <div className="text-xs opacity-75 leading-snug"><GlossaryText text={s.desc} /></div>
+                    <div className="text-[10px] font-bold mt-0.5" style={{ color: "#e0605a" }}>↔ diesen ersetzen</div>
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setPending(null)} className="w-full mt-3 rounded-lg py-2 text-sm font-bold" style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>Abbrechen</button>
+            </div>
           </div>
         )}
 
@@ -235,40 +265,27 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {held.length > 0 && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              {pending ? "Welchen Skill ersetzen?" : `Deine Skills — ${held.length}/${SKILL_SLOTS} · bereits gehalten · antippen für Beschreibung`}
+              Deine Skills — {held.length}/{SKILL_SLOTS} · bereits gehalten · antippen für Beschreibung
             </div>
             <div className="flex flex-wrap gap-2">
-              {/* #118: gehaltene Skills NEUTRAL (grau) statt in Archetyp-Akzentfarbe — sonst wirken sie wie ein wählbares
-                  Angebot. Akzent-/Aktionsfarbe nur im „ersetzen"-Modus (pending). */}
+              {/* #118: gehaltene Skills NEUTRAL (grau) — sonst wirken sie wie ein wählbares Angebot.
+                  #234: Ersetzen läuft jetzt übers Modal (bei vollen Slots), nicht mehr übers Antippen hier. */}
               {held.map((s) => (
-                pending ? (
-                  <button key={s.id} onClick={() => onPick(pending, s.id)} title={s.desc}
-                    className="text-xs px-2 py-1 rounded transition-all hover:brightness-125"
-                    style={{ background: "#e0605a1f", color: "#e0605a", border: "1px solid #e0605a88" }}>
-                    {ac(s.id).icon} {s.name} <span className="opacity-70">↔ ersetzen</span>
-                  </button>
-                ) : (
-                  <button key={s.id} onClick={() => setOpenSkill(openSkill === s.id ? null : s.id)} title={s.desc}
-                    className="text-xs px-2 py-1 rounded transition-all"
-                    style={{ background: openSkill === s.id ? "#2a2a33" : "#1c1c22", color: "#9a9aa4",
-                             border: `1px solid ${openSkill === s.id ? "#4a4a55" : "#33333e"}` }}>
-                    {ac(s.id).icon} {s.name} <span className="opacity-55">✓ gehalten</span> <span className="opacity-40">{openSkill === s.id ? "▾" : "▸"}</span>
-                  </button>
-                )
+                <button key={s.id} onClick={() => setOpenSkill(openSkill === s.id ? null : s.id)} title={s.desc}
+                  className="text-xs px-2 py-1 rounded transition-all"
+                  style={{ background: openSkill === s.id ? "#2a2a33" : "#1c1c22", color: "#9a9aa4",
+                           border: `1px solid ${openSkill === s.id ? "#4a4a55" : "#33333e"}` }}>
+                  {ac(s.id).icon} {s.name} <span className="opacity-55">✓ gehalten</span> <span className="opacity-40">{openSkill === s.id ? "▾" : "▸"}</span>
+                </button>
               ))}
             </div>
             {/* #201 P1: die aufgeklappte Beschreibung eines gehaltenen Skills erklärt gleich seine Schlüsselbegriffe
                 mit — abrufbar unabhängig davon, ob der Begriff gerade im Angebot vorkommt. */}
-            {!pending && openSkill && SKILL_DEFS[openSkill] && (
+            {openSkill && SKILL_DEFS[openSkill] && (
               <div className="text-[11px] mt-2 px-2 py-2 rounded leading-snug" style={{ background: `${ac(openSkill).color}14`, color: "#d8d0f0" }}>
                 <div>{SKILL_DEFS[openSkill].desc}</div>
                 <KeywordGlossary tokens={glossaryKeywords([openSkill], SKILL_DEFS)} />
               </div>
-            )}
-            {pending && (
-              <button onClick={() => setPending(null)} className="text-[11px] mt-2 opacity-60 hover:opacity-90 underline">
-                Abbrechen
-              </button>
             )}
           </div>
         )}

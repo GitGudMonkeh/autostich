@@ -8,7 +8,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
   hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasWetterleuchten, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
   hasDoubleDischarge, hasAreaIonize, hasDurchschlag, activeLightningCount, // Blitz-Rework (v0): Legendäre + Bekenntnis-Skalierung
-  fireFlag, heatConsumerOf, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, // Feuer-Rework (v0)
+  fireFlag, hasHeatConsumer, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, // Feuer-Rework (v0); #234: hasHeatConsumer statt heatConsumerOf (mehrere Hitze-Konsumenten je einzeln)
   glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
   hasStandstill, hasFrostReserve, hasIceBloom, hasIceAnchor, hasPermafrost, iceSkillCount, // Eis-Rework (v0)
   layerValue, totalLayers, hasGletscher, hasEisdruck, hasKristallineMasse, hasBestaendigkeit, hasVerschraenkung, // Eis-Rework (v0): Schicht-Engine
@@ -229,7 +229,7 @@ export function resolveTrick(state, rng) {
   if (heat && heat.active) {
     // Schmelzpunkt (Konsument, Drip): vor JEDEM Stich −10 % Hitze; der Score zahlt sich im SIEG-Block aus (MELT_PER_HEAT
     // je Punkt) — so bleibt er im Per-Karte-Ledger attribuiert (kein loser score+= außerhalb von gained). [#230 N11: Sonnenkern-Bonus hier entfernt]
-    if (heatConsumerOf(skills) === "melt" && heat.value >= C.MELT_COST) {
+    if (hasHeatConsumer(skills, "melt") && heat.value >= C.MELT_COST) {
       heat = { ...heat, value: heat.value - C.MELT_COST };
       meltScore = C.MELT_COST * C.MELT_PER_HEAT;
       heat = reignite(heat);
@@ -335,7 +335,7 @@ export function resolveTrick(state, rng) {
       const fireBaseFlat = fireScoreFor(fmargin, skills, heat.value);
       fireFlat += fireBaseFlat;
       // Flächenbrand (Konsument, Burst): Sieg ab 80 % Hitze verbrennt die GANZE Hitze → +CONFLAG_PER_HEAT Score/Punkt. [#230 N11: Sonnenkern-Bonus hier entfernt]
-      if (heatConsumerOf(skills) === "conflagration" && heat.value >= C.CONFLAG_MIN_HEAT) {
+      if (hasHeatConsumer(skills, "conflagration") && heat.value >= C.CONFLAG_MIN_HEAT) {
         const burned = heat.value;
         fireFlat += burned * C.CONFLAG_PER_HEAT;
         heat = reignite({ ...heat, value: 0 }); // Phönixfeuer: verbrauchte Hitze entzündet 1×/Durchlauf neu

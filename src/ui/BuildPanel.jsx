@@ -1,4 +1,5 @@
 import { PerkList, SkillList } from "./BuildSummary.jsx";
+import { FIRST_SKILL_CYCLE } from "../game/constants.js";
 
 /* Build-Übersicht unter dem Battlefield: links die gewählten Perks, rechts die Skills
    (Blitz-Archetyp). Beide anklickbar → Beschreibung. Deck-Histogramm sitzt als eigener
@@ -18,7 +19,7 @@ export function BuildPanel({ perks, skills = [], familyTiers = {} }) {
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
             Skills — {skills.length}
           </div>
-          <SkillList skills={skills} empty="Noch keine Skills — ab Runde 3 wählbar." />
+          <SkillList skills={skills} empty={`Noch keine Skills — ab Runde ${FIRST_SKILL_CYCLE} wählbar.`} />
         </div>
       </div>
     </div>

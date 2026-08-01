@@ -345,7 +345,7 @@ export function Autostich() {
   const familyTargetCard = (cardId) => dispatch({ type: "FAMILY_TARGET_CARD", cardId });
   const familyTargetFormationType = (formationType) => dispatch({ type: "FAMILY_TARGET_FORMATION_TYPE", formationType }); // #179 E_CORE
   const familyTargetConfirm = () => dispatch({ type: "FAMILY_TARGET_CONFIRM", rng: Math.random });
-  // Skill-Auswahl (jede 3. Runde): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
+  // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
   const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
