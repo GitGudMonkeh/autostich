@@ -1,5 +1,5 @@
 import { STAT_DEFS, STAT_IDS } from "../game/stats.js";
-import { CRIT_BASE_MULT, SHOP_INCOME_PER_LEVEL } from "../game/constants.js";
+import { CRIT_BASE_MULT } from "../game/constants.js";
 import { totalCritChanceRaw } from "../game/perks.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 
@@ -15,13 +15,12 @@ function currentLabel(id, state) {
     case "critMult":   return `×${(CRIT_BASE_MULT + v).toFixed(2).replace(".", ",")} Crit-Faktor`;
     case "formMult":   return `+${Math.round(v * 100)} % bei aktiver Formation`;
     case "streakMult": return `+${(v * 100).toFixed(1).replace(".", ",")} % je Serienpunkt`;
-    case "economy":    return `+${v * SHOP_INCOME_PER_LEVEL} Münzen pro Shop`;
     default: return "";
   }
 }
 
-/* Stat-Auswahl (V2 §22.2/§22.3): pausiert den Run, bietet IMMER alle Stats (Shop-Spec §4.3: fünf inkl.
-   Einkommen); genau einer wird gewählt. Additiv, stapelbar, ohne Obergrenze. */
+/* Stat-Auswahl (V2 §22.2/§22.3): pausiert den Run, bietet die vier Kern-Stats (das Einkommen ist seit dem
+   Architekt-Umbau #202 nicht mehr im Angebot); genau einer wird gewählt. Additiv, stapelbar, ohne Obergrenze. */
 export function StatSelect({ offer = STAT_IDS, onPick, state = {} }) {
   const isStart = (state.trickNo || 0) === 0;
   return (

@@ -17,8 +17,6 @@ import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { StatSelect } from "./ui/StatSelect.jsx";
 import { FormationPhase } from "./ui/FormationPhase.jsx";
-import { ShopScreen } from "./ui/ShopScreen.jsx";
-import { ShopTargetSelect } from "./ui/ShopTargetSelect.jsx";
 import { ArchitectScreen } from "./ui/ArchitectScreen.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { FamilyTargetSelect } from "./ui/FamilyTargetSelect.jsx";
@@ -341,24 +339,12 @@ export function Autostich() {
   const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
   const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138: Perk-Angebot ablehnen → +Münze
   const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
-  // Shop-Runde (Shop-Spec §2.6): kaufen (§5.4) bzw. verlassen/bestätigen → zugehöriger Durchlauf startet.
-  const buyItem = (offerId) => dispatch({ type: "BUY_ITEM", offerId, rng: Math.random });
-  const leaveShop = () => dispatch({ type: "LEAVE_SHOP" });
-  // Architekt (#202, Shop-Ersatz): Bauplan errichten / Gebäude ausbauen / versetzen / abreißen / Phase bestätigen.
+  // Architekt (#202, ersetzt den Shop): Bauplan errichten / Gebäude ausbauen / versetzen / abreißen / Phase bestätigen.
   const architectBuild = ({ familyId, tier, footprint, colorChoice }) => dispatch({ type: "ARCHITECT_BUILD", familyId, tier, footprint, colorChoice });
   const architectUpgrade = (buildingId) => dispatch({ type: "ARCHITECT_UPGRADE", buildingId });
   const architectMove = ({ buildingId, footprint }) => dispatch({ type: "ARCHITECT_MOVE", buildingId, footprint });
   const architectDemolish = (buildingId) => dispatch({ type: "ARCHITECT_DEMOLISH", buildingId });
   const architectDone = () => dispatch({ type: "ARCHITECT_DONE" });
-  // Shop-Ziel-Auswahl (Shop-Spec §12.2): Karten/Farben/Segment wählen, bestätigen oder abbrechen.
-  const shopTargetCard = (cardId) => dispatch({ type: "SHOP_TARGET_CARD", cardId });
-  const shopTargetColor = (cardId, color) => dispatch({ type: "SHOP_TARGET_COLOR", cardId, color });
-  const shopTargetSegment = (segment) => dispatch({ type: "SHOP_TARGET_SEGMENT", segment });
-  const shopTargetPosition = (position) => dispatch({ type: "SHOP_TARGET_POSITION", position });
-  const shopTargetCategory = (category) => dispatch({ type: "SHOP_TARGET_CATEGORY", category });
-  const shopTargetOffer = (offerId) => dispatch({ type: "SHOP_TARGET_OFFER", offerId });
-  const shopTargetConfirm = () => dispatch({ type: "SHOP_TARGET_CONFIRM", rng: Math.random });
-  const shopTargetCancel = () => dispatch({ type: "SHOP_TARGET_CANCEL" });
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
@@ -562,17 +548,9 @@ export function Autostich() {
       {state.phase === "formation" && (
         <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} />
       )}
-      {state.phase === "shop" && (
-        <ShopScreen state={state} onLeave={leaveShop} onBuy={buyItem} />
-      )}
       {state.phase === "architect" && (
         <ArchitectScreen state={state} onBuild={architectBuild} onUpgrade={architectUpgrade}
           onMove={architectMove} onDemolish={architectDemolish} onDone={architectDone} />
-      )}
-      {state.phase === "shop-target" && (
-        <ShopTargetSelect state={state} onCard={shopTargetCard} onColor={shopTargetColor}
-          onSegment={shopTargetSegment} onPosition={shopTargetPosition} onCategory={shopTargetCategory} onOffer={shopTargetOffer}
-          onConfirm={shopTargetConfirm} onCancel={shopTargetCancel} />
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />
