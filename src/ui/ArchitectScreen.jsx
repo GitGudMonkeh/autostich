@@ -155,7 +155,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
       let exH = 2, exV = 2; // halbe Raster-Lücke aus Nachbarzellen; sonst feste Fallbacks
       if (cells[0] && cells[1]) exH = Math.max(0, (cells[1].left - cells[0].right) / 2);
       if (cells[0] && cells[COLS]) exV = Math.max(0, (cells[COLS].top - cells[0].bottom) / 2);
-      setArchFrame({ w: wr.width, h: wr.height, lines: archFrameLines(archCover, cells, N_POS, exH, exV) });
+      setArchFrame({ w: wr.width, h: wr.height, cells, lines: archFrameLines(archCover, cells, N_POS, exH, exV) });
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -163,6 +163,17 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [archSig]);
+
+  // #UI: Drag-Ghost — beim Verschieben folgt NUR der (leicht transparente) Gebäude-Rahmen dem Finger; die Karten
+  // darunter bleiben liegen (kein Mitziehen, keine Lücke). Rechtecke aus den gemessenen Zellen, um dragOffset versetzt.
+  const dragGhost = (() => {
+    if (!dragOffset || !dragPrev || !(archFrame && archFrame.cells)) return null;
+    const b = buildings.find((x) => x.id === dragPrev.id);
+    if (!b) return null;
+    const fam = familyDef(b.familyId);
+    const color = fam && fam.legendary ? GOLD : (fam ? tierColor(b.tier) : "#8a97a5");
+    return { footprint: b.footprint, color };
+  })();
 
   const buildingAt = (pos) => buildings.find((b) => b.footprint.includes(pos)) || null;
   const committedAt = (pos) => committed.find((b) => b.footprint.includes(pos)) || null;
@@ -241,7 +252,18 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     const others = buildings.filter((x) => x.id !== b.id);
     const g = { id: b.id, x0: e.clientX, y0: e.clientY, active: false };
     dragRef.current = g;
-    const fpFor = (target) => { const ar = rowOf(target) - grabRow, ac = colOf(target) - grabCol; return (ar < 0 || ac < 0 || ar >= ROWS || ac >= COLS) ? null : footprintAt(form, rot, posOf(ar, ac)); };
+    // Fußabdruck-Ausdehnung der aktuellen Rotation → den Anker so KLEMMEN, dass das GANZE Gebäude im Brett bleibt.
+    // Ohne das ließe sich ein Gebäude, das man NICHT an seiner Ankerzelle (oben-links) gegriffen hat, nicht an den
+    // linken/oberen Rand schieben (die Zielrechnung liefe aus dem Gitter → null → nicht platzierbar).
+    const rotCells = (() => { const rs = shapeRotations(form); return rs[((rot % rs.length) + rs.length) % rs.length] || []; })();
+    let sMinR = 0, sMinC = 0, sMaxR = 0, sMaxC = 0;
+    for (const [dr, dc] of rotCells) { sMinR = Math.min(sMinR, dr); sMinC = Math.min(sMinC, dc); sMaxR = Math.max(sMaxR, dr); sMaxC = Math.max(sMaxC, dc); }
+    const fpFor = (target) => {
+      let ar = rowOf(target) - grabRow, ac = colOf(target) - grabCol;
+      ar = Math.max(-sMinR, Math.min(ar, ROWS - 1 - sMaxR));
+      ac = Math.max(-sMinC, Math.min(ac, COLS - 1 - sMaxC));
+      return footprintAt(form, rot, posOf(ar, ac));
+    };
     const commit = (fp) => { if (b.id === PENDING_ID) setPending((p) => (p ? { ...p, footprint: fp } : p)); else onMove?.({ buildingId: b.id, footprint: fp }); };
     let lastKey = "∅"; // [#224.11] letzter gesnappter Fußabdruck → Re-Render/Delta nur bei Zielzellen-Wechsel
     const move = (ev) => {
@@ -346,6 +368,13 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   ))}
                 </svg>
               )}
+              {/* #UI: Drag-Ghost — NUR der leicht transparente Gebäude-Rahmen folgt dem Finger (Karten bleiben liegen). */}
+              {dragGhost && (
+                <div className="absolute left-0 top-0 pointer-events-none" style={{ transform: `translate(${dragOffset.dx}px, ${dragOffset.dy}px)`, zIndex: 30 }}>
+                  {dragGhost.footprint.map((p) => { const r = archFrame.cells[p]; if (!r) return null;
+                    return <div key={p} className="absolute rounded-md" style={{ left: r.left, top: r.top, width: r.right - r.left, height: r.bottom - r.top, background: `${dragGhost.color}33`, border: `2px solid ${dragGhost.color}cc`, boxShadow: "0 4px 12px #00000066" }} />; })}
+                </div>
+              )}
               {(() => { const dragCells = dragPrev ? new Set(dragPrev.footprint) : null; const draggingId = dragPrev ? dragPrev.id : null; return cards.map((card, pos) => {
                 const b = buildingAt(pos);
                 const isPending = b && b.id === PENDING_ID;
@@ -374,23 +403,22 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const isDragOrig = draggingId != null && b && b.id === draggingId;
                 return (
                   <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
-                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}${b && structLit(pos) ? " arch-struct-lit" : ""}`}
+                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}${b && !isDragOrig && structLit(pos) ? " arch-struct-lit" : ""}`}
                     style={{
                       // #UI: Gebäude-Füllung/-Rand einheitlich (Typ-Farbe raus); die Stufe/Rarität zeigt der Ring (boxShadow) unten.
-                      background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b ? "#233140" : "#16232f"),
-                      color: b || inDragPrev ? "#fff" : "#adbecc",
-                      border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b ? "#2a3a46" : "#20303d")}`,
-                      opacity: upgradeDim ? 0.4 : (isPending && !inDragPrev ? 0.82 : 1), // Origin NICHT ausgrauen — es wird angehoben & folgt dem Finger
-                      transform: isDragOrig && dragOffset ? `translate(${dragOffset.dx}px, ${dragOffset.dy}px)` : undefined, // freies, pixelgenaues Folgen
-                      zIndex: isDragOrig ? 20 : undefined,            // angehobenes Gebäude schwebt über Brett + Kontur
-                      pointerEvents: isDragOrig ? "none" : undefined, // elementFromPoint trifft so die Zielzelle DARUNTER (Snap-Erkennung)
+                      // #UI: Origin-Zellen des gezogenen Gebäudes zeigen sich als LEERES Feld (Gebäude „aufgehoben"); die
+                      // Karte darunter bleibt sichtbar. KEIN Transform → kein Mitziehen der Karte, keine Lücke. Der Rahmen wandert als Ghost.
+                      background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b && !isDragOrig ? "#233140" : "#16232f"),
+                      color: (b && !isDragOrig) || inDragPrev ? "#fff" : "#adbecc",
+                      border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b && !isDragOrig ? "#2a3a46" : "#20303d")}`,
+                      opacity: upgradeDim ? 0.4 : (isPending && !inDragPrev ? 0.82 : 1),
                       touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
                         isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,                              // ausgewählt (weiß)
                         // #UI: Raritäts-Rahmen JE ZELLE entfällt — die durchgezogene SVG-Kontur (oben) zeichnet ihn jetzt
                         // in Stufenfarbe als EINE Gebäude-Form (wie in der Aufstellungsphase).
-                        b && fam.legendary ? `0 0 8px ${GOLD}55` : null,                                   // Legendär → zusätzlicher warmer Glow
+                        b && !isDragOrig && fam.legendary ? `0 0 8px ${GOLD}55` : null,                     // Legendär → zusätzlicher warmer Glow (nicht am aufgehobenen Origin)
                         // Gebäude auf fertiger Struktur (Kombi erfüllt) → schimmernder Gold-Rahmen wie ein Legendär via .arch-struct-lit::after (siehe index.css).
                         !b && structLit(pos) ? "inset 0 0 0 2px #f0b429aa" : null,                        // leere Zelle einer fast-fertigen Struktur → Gold-Hinweis
                       ].filter(Boolean).join(", ") || undefined,
@@ -402,7 +430,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                     <span className="absolute top-[3px] right-[3px] w-[7px] h-[7px] rounded-full" style={{ background: SUIT_COLOR[card.suit] }} />
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
                     <span className="text-[13px] sm:text-[15px] leading-none">{ev}</span>
-                    {b && pos === anchorCell && (
+                    {b && !isDragOrig && pos === anchorCell && (
                       <span className="absolute bottom-[1px] left-[3px] text-[7px] font-bold" style={{ color: "rgba(255,255,255,0.92)" }}>
                         {fam.name.slice(0, 3).toUpperCase()}{tierLabel(b.tier)}
                       </span>
