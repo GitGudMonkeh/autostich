@@ -95,6 +95,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const [upgradeMsg, setUpgradeMsg] = useState(null);      // { name, reason } — Meldung beim Antippen eines nicht-aufwertbaren Gebäudes (Aufrüsten-Phase)
   const [pendingDemolish, setPendingDemolish] = useState(null); // #235: markiertes Abriss-Ziel (buildingId) — wird erst mit „Abreißen" wirklich entfernt (zweistufig)
   const [pendingUpgrade, setPendingUpgrade] = useState(null);   // #237: markiertes Aufrüst-Ziel (buildingId) — zeigt Jetzt/Danach-Effekt, aufgewertet erst mit „Aufwerten bestätigen" (kein Sofort-Upgrade)
+  const [showCombos, setShowCombos] = useState(true);           // #UI: Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben — Toggle oben am Brett
+  const [showForms, setShowForms] = useState(true);             // #UI: Formationsrahmen (Ring + Label) am Brett ein-/ausblenden — Toggle oben am Brett
 
   // Effektive Gebäude = committet (+ in „place" das Vorschau-Gebäude). Board/Precompute/Formationen rechnen damit.
   const pendingBuilding = pending
@@ -370,16 +372,24 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 <span className="opacity-50">Gebäude-Boost</span>
                 <span className="font-bold tabular-nums" style={{ color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct}%</span>
               </div>
-              {showRotate && (
-                <button onClick={rotateSelected} className="text-xs font-bold rounded-lg px-2.5 py-1"
-                  style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
-              )}
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => setShowCombos((v) => !v)} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
+                  style={{ background: showCombos ? "#3a1c1a" : "#16232f", border: `1px solid ${showCombos ? "#d1462f" : "#2b3e4d"}`, color: showCombos ? "#e88a7f" : "#7d8a97" }}
+                  title="Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben">{showCombos ? "◉" : "○"} Kombis</button>
+                <button onClick={() => setShowForms((v) => !v)} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
+                  style={{ background: showForms ? "#16283a" : "#16232f", border: `1px solid ${showForms ? "#3b7dbe" : "#2b3e4d"}`, color: showForms ? "#7db4e6" : "#7d8a97" }}
+                  title="Formationsrahmen (Ring + Label) am Brett ein-/ausblenden">{showForms ? "◉" : "○"} Formationen</button>
+                {showRotate && (
+                  <button onClick={rotateSelected} className="text-xs font-bold rounded-lg px-2.5 py-1"
+                    style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
+                )}
+              </div>
             </div>
             <div ref={boardRef} className="relative grid grid-cols-5 gap-1" style={{ maxWidth: 300, margin: "0 auto" }}>
               {/* #UI: durchgezogene Gebäude-Kontur (SVG) über dem Brett — eine Linie je Gebäude in seiner Form (wie Aufstellung).
                   Während eines Drags ausgeblendet (das Gebäude schwebt frei) → snappt beim Loslassen wieder an seine neue Form. */}
               {archFrame && archFrame.lines.length > 0 && !dragPrev && (
-                <svg className="absolute left-0 top-0 pointer-events-none" width={archFrame.w} height={archFrame.h} style={{ overflow: "visible", zIndex: 5 }} aria-hidden="true">
+                <svg className="absolute left-0 top-0 pointer-events-none" width={archFrame.w} height={archFrame.h} style={{ overflow: "visible", zIndex: 5, opacity: phase === "upgrade" ? 0.28 : 1 }} aria-hidden="true">
                   {archFrame.lines.map((l, i) => (
                     <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.color} strokeWidth="2.5" strokeLinecap="square" />
                   ))}
@@ -392,7 +402,10 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                     return <div key={p} className="absolute rounded-md" style={{ left: r.left, top: r.top, width: r.right - r.left, height: r.bottom - r.top, background: `${dragGhost.color}33`, border: `2px solid ${dragGhost.color}cc`, boxShadow: "0 4px 12px #00000066" }} />; })}
                 </div>
               )}
-              {(() => { const dragCells = dragPrev ? new Set(dragPrev.footprint) : null; const draggingId = dragPrev ? dragPrev.id : null; return cards.map((card, pos) => {
+              {(() => { const dragCells = dragPrev ? new Set(dragPrev.footprint) : null; const draggingId = dragPrev ? dragPrev.id : null;
+                // #UI: beim Ziehen die Felder ANDERER Gebäude ausgrauen — dort ist kein Ablegen möglich.
+                const blocked = dragPrev ? (() => { const s = new Set(); for (const x of buildings) if (x.id !== dragPrev.id) for (const p of x.footprint) s.add(p); return s; })() : null;
+                return cards.map((card, pos) => {
                 const b = buildingAt(pos);
                 const isPending = b && b.id === PENDING_ID;
                 // Nur Zellen mit einem ziehbaren Gebäude fangen die Geste (touchAction:none) — sonst scrollt der Finger die Seite.
@@ -412,10 +425,12 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const cbHere = removeFor ? committedAt(pos) : null;
                 const isRemovable = !!removeFor && !!cbHere;
                 const isMarkedDemolish = !!removeFor && pendingDemolish != null && !!cbHere && cbHere.id === pendingDemolish; // #235: markiertes Abriss-Ziel
-                // Aufrüsten-Phase: nicht-aufwertbare Gebäude ausgrauen (Legendär/No-op-Effekt/max Stufe).
-                const upgradeDim = phase === "upgrade" && b && !isPending && !upgradeInfo(fam, b.tier).can;
-                const upCan = phase === "upgrade" && b && !isPending && upgradeInfo(fam, b.tier).can; // #232: aufwertbar → Ziel-Stufe am Gebäude zeigen
+                // #237/#UI: Aufrüst-Phase = Spotlight — ALLES ausgegraut außer aufwertbaren Gebäuden (die werden hervorgehoben).
+                const upCan = phase === "upgrade" && b && !isPending && upgradeInfo(fam, b.tier).can; // aufwertbar → hervorheben (Ziel-Stufe am Gebäude, #232)
                 const isMarkedUpgrade = phase === "upgrade" && pendingUpgrade != null && b && b.id === pendingUpgrade; // #237: markiertes Aufrüst-Ziel (gold)
+                const upgradeDim = phase === "upgrade" && !upCan && !isMarkedUpgrade; // nicht-aufwertbar (inkl. leere Zellen) → ausgrauen
+                // #UI: beim Ziehen belegte Fremdfläche → ausgrauen (kein Ablegen möglich), außer sie ist gerade Drag-Vorschau.
+                const isBlocked = !!blocked && blocked.has(pos) && !(dragCells && dragCells.has(pos));
                 const title = b
                   ? `${fam.name} (${tierLabel(b.tier)})${isPending ? " · Vorschau" : ""} — ${famEff(fam, b)}${upCan ? ` → Stufe ${tierLabel(b.tier + 1)}: ${famEff(fam, { tier: b.tier + 1 })}` : ""}${inForm ? ` · Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`
                   : `Pos ${pos + 1}${inForm ? ` — Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`;
@@ -424,7 +439,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const isDragOrig = draggingId != null && b && b.id === draggingId;
                 return (
                   <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
-                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}${b && !isDragOrig && structLit(pos) ? " arch-struct-lit" : ""}`}
+                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}`}
                     style={{
                       // #UI: Gebäude-Füllung/-Rand einheitlich (Typ-Farbe raus); die Stufe/Rarität zeigt der Ring (boxShadow) unten.
                       // #UI: Origin-Zellen des gezogenen Gebäudes zeigen sich als LEERES Feld (Gebäude „aufgehoben"); die
@@ -432,34 +447,38 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b && !isDragOrig ? "#233140" : "#16232f"),
                       color: (b && !isDragOrig) || inDragPrev ? "#fff" : "#adbecc",
                       border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b && !isDragOrig ? "#2a3a46" : "#20303d")}`,
-                      opacity: upgradeDim ? 0.4 : (isPending && !inDragPrev ? 0.82 : 1),
+                      opacity: upgradeDim ? 0.28 : (isBlocked ? 0.34 : (isPending && !inDragPrev ? 0.82 : 1)),
+                      filter: (upgradeDim || isBlocked) ? "grayscale(0.75)" : undefined,
                       touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
                         isMarkedDemolish ? "inset 0 0 0 2px #ff6a4d, inset 0 0 16px #ff3b1e66" : null,     // #235: markiertes Abriss-Ziel rot hervorheben
                         isMarkedUpgrade ? "inset 0 0 0 2px #f0b429, inset 0 0 16px #f0b42966" : null,      // #237: markiertes Aufrüst-Ziel gold hervorheben
+                        upCan && !isMarkedUpgrade ? "inset 0 0 0 2px #f0b42999, 0 0 12px #f0b42966" : null, // #UI: aufwertbares Gebäude im Aufrüst-Spotlight hervorheben
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
                         isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,                              // ausgewählt (weiß)
                         // #UI: Raritäts-Rahmen JE ZELLE entfällt — die durchgezogene SVG-Kontur (oben) zeichnet ihn jetzt
                         // in Stufenfarbe als EINE Gebäude-Form (wie in der Aufstellungsphase).
                         b && !isDragOrig && fam.legendary ? `0 0 8px ${GOLD}55` : null,                     // Legendär → zusätzlicher warmer Glow (nicht am aufgehobenen Origin)
-                        // Gebäude auf fertiger Struktur (Kombi erfüllt) → schimmernder Gold-Rahmen wie ein Legendär via .arch-struct-lit::after (siehe index.css).
-                        !b && structLit(pos) ? "inset 0 0 0 2px #f0b429aa" : null,                        // leere Zelle einer fast-fertigen Struktur → Gold-Hinweis
                       ].filter(Boolean).join(", ") || undefined,
-                      outline: isMarkedDemolish ? "2px solid #ff6a4d" : isMarkedUpgrade ? "2px solid #f0b429" : (isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined))),
+                      outline: isMarkedDemolish ? "2px solid #ff6a4d" : isMarkedUpgrade ? "2px solid #f0b429" : (isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (showForms && inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined))),
                       outlineOffset: 1,
                       cursor: "pointer",
                     }}
                     title={title}>
-                    <span className="absolute top-[3px] right-[3px] w-[7px] h-[7px] rounded-full" style={{ background: SUIT_COLOR[card.suit] }} />
+                    {/* #UI: Kombi-Fläche — Zellen auf fertiger Struktur bekommen eine leicht transparente rote Fläche (Toggle „Kombis"). */}
+                    {showCombos && !dragPrev && structLit(pos) && (
+                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "#d1462f30", boxShadow: "inset 0 0 0 1px #d1462f66" }} />
+                    )}
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
-                    <span className="text-[13px] sm:text-[15px] leading-none">{ev}</span>
+                    {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
+                    <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : SUIT_COLOR[card.suit], textShadow: (b && !isDragOrig) ? "0 1px 2px #000a" : undefined }}>{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (
                       <span className="absolute bottom-[1px] left-[3px] text-[7px] font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
                         {fam.name.slice(0, 3).toUpperCase()}{tierLabel(b.tier)}
                         {upCan && <span style={{ color: "#f0b429" }}>→{tierLabel(b.tier + 1)}</span>}
                       </span>
                     )}
-                    {inForm && (
+                    {showForms && inForm && (
                       <span className="absolute bottom-[1px] left-1/2 -translate-x-1/2 text-[7px] font-bold leading-none whitespace-nowrap" style={{ color: fb.color, textShadow: "0 1px 2px #000a" }}>
                         {formLabels}×{fmt(pf.mult)}
                       </span>
