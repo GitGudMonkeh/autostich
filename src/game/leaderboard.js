@@ -54,9 +54,17 @@ export async function publishRun(entry) {
   if (hasFb8) attempts.push(noFb8);
   if (noFb8.archetypes !== undefined) attempts.push(omit(noFb8, ["archetypes"]));
   let res;
-  for (const body of attempts) {
-    res = await post(body);
+  for (let i = 0; i < attempts.length; i++) {
+    res = await post(attempts[i]);
     if (res.status !== 400) break; // 400 = Spalte fehlt → nächste (kleinere) Stufe versuchen
+    // #197: 400 nicht still schlucken — sonst gehen die FB-8-Detaildaten dauerhaft verloren, ohne
+    // dass ein Schema-Drift (z. B. varchar-Längenlimit statt text) je auffällt. Response-Body loggen,
+    // solange es noch eine kleinere Stufe gibt, auf die wir degradieren. Best-effort: das Logging darf
+    // die Fallback-Kaskade niemals brechen (fehlendes res.text im Test-Mock/Nicht-Response ignorieren).
+    if (i < attempts.length - 1) {
+      const detail = typeof res.text === "function" ? await res.text().catch(() => "") : "";
+      console.warn(`publishRun: Insert → 400, degradiere zur nächsten Spalten-Stufe (möglicher Schema-Drift, siehe #197).${detail ? ` Response: ${detail}` : ""}`);
+    }
   }
   if (!res.ok) throw new Error(`publishRun ${res.status}`);
 }
