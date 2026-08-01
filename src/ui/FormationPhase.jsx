@@ -168,12 +168,12 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
               <span className="font-bold" style={{ color: deltaColor }}>{deltaStr}</span>
             </span>
           </div>
-          <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
+          <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg text-sm transition-all hover:brightness-110 flex flex-col items-center leading-tight"
             style={{ background: GOLD, color: "#141419" }}>
-            Fortfahren
-            {/* #UI: „max ×…" raus — stattdessen die restliche Energie (formationEnergy). Der Energie-Wert
-                steht zusätzlich oben rechts im Kopf; hier als Handlungs-Hinweis direkt an der Start-Aktion. */}
-            <span className="ml-2 font-normal opacity-80">· {count} Formationen · noch {formationEnergy} Energie</span>
+            <span className="font-bold">Fortfahren</span>
+            {/* #UI: „max ×…" raus — stattdessen die restliche Energie (formationEnergy) + Formationszahl,
+                zweizeilig unter „Fortfahren", einzeilig & zentriert. Der Energie-Wert steht zusätzlich oben im Kopf. */}
+            <span className="font-normal opacity-80 whitespace-nowrap">{count} Formationen · noch {formationEnergy} Energie</span>
           </button>
         </div>
         {state.lastCycleScore != null && <div className="mb-2"><RoundScoreBadge state={state} /></div>}
