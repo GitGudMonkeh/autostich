@@ -52,8 +52,9 @@ function finalize(s, seed, tel) {
 // Pacing-Analyse). Rein beobachtend; ändert weder rng noch State → Determinismus-Invariante bleibt.
 export function runOne(seed, policy, mem = null, hooks = null, opts = {}) {
   const rng = makeRng(seed);
-  // #202: Architekt-A/B über opts (architect/shopDisabled) durch START_RUN in den State gefädelt.
-  let s = reducer(null, { type: "START_RUN", rng, architect: opts.architect, shopDisabled: opts.shopDisabled }); // START_RUN ignoriert den (null-)State
+  // #202/#229: Architekt ist jetzt der Default (der Shop ist entfernt). Nur ein expliziter opts.architect === false
+  // fährt noch den (auslaufenden) Shop-Pfad. shopDisabled bleibt für Alt-A/B durchgereicht.
+  let s = reducer(null, { type: "START_RUN", rng, architect: opts.architect ?? true, shopDisabled: opts.shopDisabled }); // START_RUN ignoriert den (null-)State
   const tel = newTelemetry();
   let guard = 0;
   while (s.phase !== "gameover") {
