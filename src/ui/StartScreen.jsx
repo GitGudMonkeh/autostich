@@ -5,9 +5,11 @@ import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
 import { fmtScore } from "./format.js";
 
-/* Startbildschirm (#4): Seed-Paste-Leiste oben (#205), darunter #227 Variante B — linke gleichbreite Button-Spalte
-   (ohne Icons, gestapelt: Normaler Run · Meister Run · Bestenliste · Statistiken · Deck · Optionen · Anleitung) +
-   rechts ein ruhiger Rekord-Block. Die volle Score-Liste (deine Läufe + global) liegt hinter „Bestenliste" (#217). */
+/* Startbildschirm (#4): Redesign „Richtung A — zentriert & entschlackt" (aus dem Startmenü-Redesign).
+   Der Inhalt wird vertikal zentriert (füllt die frühere untere Leere) und bekommt eine klare Rangfolge:
+   Wortmarke → zwei prominente Startmodi → demotierte Seed-Zeile → Sekundär-Navigation als ruhige
+   Chip-Reihe (statt fünf gleich breiter Balken) → schlanker Rekord-Fuß. Die volle Score-Liste
+   (deine Läufe + global) liegt weiterhin hinter „Bestenliste" (LeaderboardScreen, #217). */
 export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
   const [seedInput, setSeedInput] = useState("");
@@ -28,14 +30,16 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
     saveSeenGuide();
   };
 
-  // #227 Variante B: gleichbreite, gestapelte Buttons ohne Icons — sekundärer Stil (dunkel), einheitliche Höhe/Breite.
-  const secCls = "w-full px-5 py-2 rounded-lg text-sm font-medium transition-all hover:-translate-y-0.5";
-  const secSty = { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
+  // Sekundär-Navigation als ruhige Chip-Reihe — kompakter Pillen-Stil (dunkel, sekundär), einheitlich.
+  const chipCls = "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all hover:-translate-y-0.5";
+  const chipSty = { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
 
   return (
-    <div className="relative grid gap-3 justify-items-center content-start py-5">
+    <div className="relative min-h-[80vh] flex flex-col items-center justify-center gap-6 py-6">
       {/* #133: Schnell-Mute jederzeit sichtbar oben rechts — togglet dasselbe options.muted wie die Optionen. */}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-0 right-0" />}
+
+      {/* Wortmarke */}
       <div className="text-center">
         <div className="relative inline-block">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight font-pixel crt-title as-wordmark-hero">
@@ -50,82 +54,85 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
             v0.3
           </span>
         </div>
-        <p className="text-xs opacity-45 mt-0.5">Roguelite-Autobattler-Stechspiel · Prototyp</p>
+        <p className="text-xs opacity-45 mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
       </div>
 
-      {/* #205: Seed einfügen & spielen — Challenge annehmen, ohne den Statistik-Hub zu öffnen. */}
-      {onPlaySeed && (
-        <div className="w-full max-w-xs sm:max-w-sm">
-          <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
-            <input
-              value={seedInput}
-              onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
-              placeholder="Seed einfügen & spielen …"
-              aria-label="Seed einfügen und spielen"
-              className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono tracking-wide"
-              style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#30303a"}`, color: "#e8e8ea" }}
-            />
-            <button type="submit" disabled={!seedInput.trim()}
-              className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
-              style={{ background: "#8a7de0", color: "#141419" }}>
-              ↻ Spielen
-            </button>
-          </form>
-          {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>Kein gültiger Seed — prüf den Code und versuch es erneut.</div>}
-        </div>
-      )}
-
-      {/* #227 Variante B: linke gleichbreite Button-Spalte (ohne Icons, gestapelt) + rechts ruhiger Rekord-Block.
-          Die volle Score-Liste (deine Läufe + global) lebt hinter dem „Bestenliste"-Button (LeaderboardScreen, #217). */}
-      <div className="w-full max-w-xs sm:max-w-2xl grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_240px] items-start">
-        {/* Links: gleichbreite, gestapelte Buttons */}
-        <div className="grid gap-1.5">
-          <button onClick={onStart}
-            className="w-full px-5 py-2 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
-            style={{ background: "#5ab87a", color: "#141419" }}>
-            Normaler Run
+      {/* Startmodi (Blickfang) + demotierte Seed-Zeile darunter. */}
+      <div className="w-full max-w-xs flex flex-col gap-2.5">
+        <button onClick={onStart}
+          className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
+          style={{ background: "#5ab87a", color: "#141419" }}>
+          Normaler Run
+        </button>
+        {onMasterRun && (
+          <button onClick={onMasterRun}
+            className="relative w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
+            style={{ background: "#8a7de0", color: "#141419" }}>
+            Meister Run
+            <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
+              style={{ background: "#d4a63a", color: "#141419", boxShadow: "0 0 6px rgba(212,166,58,.6)" }} aria-label="experimentell">exp</span>
           </button>
-          {onMasterRun && (
-            <button onClick={onMasterRun}
-              className="relative w-full px-5 py-2 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
-              style={{ background: "#8a7de0", color: "#141419" }}>
-              Meister Run
-              <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
-                style={{ background: "#d4a63a", color: "#141419", boxShadow: "0 0 6px rgba(212,166,58,.6)" }} aria-label="experimentell">exp</span>
-            </button>
-          )}
-          {onLeaderboard && (
-            <button onClick={onLeaderboard} className={secCls} style={secSty}>Bestenliste <span className="opacity-45">›</span></button>
-          )}
-          {onStats && <button onClick={onStats} className={secCls} style={secSty}>Statistiken</button>}
-          {onCustomize && <button onClick={onCustomize} className={secCls} style={secSty}>Deck</button>}
-          {onOptions && <button onClick={onOptions} aria-label="Optionen" className={secCls} style={secSty}>Optionen</button>}
-          <button onClick={() => setShowGuide(true)} className={secCls} style={secSty}>Anleitung</button>
+        )}
 
-          {/* Lokaler Nickname (#14) — unter dem Button-Stack. */}
-          {onEditName && (
-            <button onClick={onEditName} className="text-xs opacity-60 hover:opacity-100 transition-opacity mt-1 text-left px-1">
-              {username
-                ? <>Angemeldet als <b style={{ color: "#5ab87a" }}>{username}</b> · Name ändern</>
-                : <>Namen festlegen für den globalen Highscore</>}
-            </button>
-          )}
-        </div>
+        {/* #205: Seed einfügen & spielen — bewusst unter die Startmodi demotiert (ruhiger, sekundärer Stil,
+            damit das Nischen-Feature nicht mehr gleichberechtigt in der ersten Zeile steht). */}
+        {onPlaySeed && (
+          <div className="mt-0.5">
+            <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
+              <input
+                value={seedInput}
+                onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
+                placeholder="Seed einfügen & spielen …"
+                aria-label="Seed einfügen und spielen"
+                className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono tracking-wide"
+                style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
+              />
+              <button type="submit" disabled={!seedInput.trim()}
+                className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
+                style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
+                ↻ Spielen
+              </button>
+            </form>
+            {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>Kein gültiger Seed — prüf den Code und versuch es erneut.</div>}
+          </div>
+        )}
+      </div>
 
-        {/* Rechts: ruhiger Rekord-Block. Die volle Liste liegt hinter „Bestenliste"; der „Neueste Challenges"-Ticker
-            folgt mit dem globalen Board (Schicht B, /test). */}
-        <div className="w-full rounded-xl p-3 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-          <div className="text-[11px] uppercase tracking-wide opacity-50">Rekord</div>
-          <div className="text-xl font-bold mt-0.5" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
+      {/* Sekundär-Navigation — ruhige Chip-Reihe statt fünf gleich breiter Balken. */}
+      <div className="flex flex-wrap justify-center gap-2 max-w-xs sm:max-w-md">
+        {onLeaderboard && <button onClick={onLeaderboard} className={chipCls} style={chipSty}>Bestenliste</button>}
+        {onStats && <button onClick={onStats} className={chipCls} style={chipSty}>Statistiken</button>}
+        {onCustomize && <button onClick={onCustomize} className={chipCls} style={chipSty}>Deck</button>}
+        {onOptions && <button onClick={onOptions} aria-label="Optionen" className={chipCls} style={chipSty}>Optionen</button>}
+        <button onClick={() => setShowGuide(true)} className={chipCls} style={chipSty}>Anleitung</button>
+      </div>
+
+      {/* Rekord-Fuß — schlank & zentriert; die volle Liste (deine Läufe + global) liegt hinter „Bestenliste". */}
+      <div className="w-full max-w-xs flex flex-col items-center gap-2">
+        <button onClick={onLeaderboard || undefined} disabled={!onLeaderboard}
+          className="w-full rounded-xl px-4 py-2.5 as-panel flex items-center justify-between gap-3 text-left transition-all enabled:hover:-translate-y-0.5 disabled:cursor-default"
+          style={{ background: "#17171c", border: "1px solid #26262e" }}>
+          <span className="flex items-baseline gap-2 min-w-0">
+            <span className="text-[11px] uppercase tracking-wide opacity-50 shrink-0">Rekord</span>
+            <span className="text-lg font-bold truncate" style={{ color: "#d4a63a" }}>{fmtScore(best)}</span>
+          </span>
           {highscores.length > 0 ? (
-            <button onClick={onLeaderboard || undefined} disabled={!onLeaderboard}
-              className="text-[12px] opacity-55 hover:opacity-90 transition-opacity mt-2 text-left disabled:hover:opacity-55">
-              {highscores.length} {highscores.length === 1 ? "Lauf" : "Läufe"}{onLeaderboard ? " · alle ansehen ›" : ""}
-            </button>
+            <span className="text-[12px] opacity-55 shrink-0">
+              {highscores.length} {highscores.length === 1 ? "Lauf" : "Läufe"}{onLeaderboard ? " ›" : ""}
+            </span>
           ) : (
-            <div className="text-[12px] opacity-40 mt-2">Noch keine Läufe — leg los.</div>
+            <span className="text-[12px] opacity-40 shrink-0">Noch keine Läufe</span>
           )}
-        </div>
+        </button>
+
+        {/* Lokaler Nickname (#14). */}
+        {onEditName && (
+          <button onClick={onEditName} className="text-xs opacity-60 hover:opacity-100 transition-opacity px-1">
+            {username
+              ? <>Angemeldet als <b style={{ color: "#5ab87a" }}>{username}</b> · Name ändern</>
+              : <>Namen festlegen für den globalen Highscore</>}
+          </button>
+        )}
       </div>
 
       {showGuide && <AnleitungModal onClose={closeGuide} />}
