@@ -5,6 +5,7 @@ import { fmtScore } from "./format.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js"; // #190: Freischalt-Vorschau
 import { computeFormations } from "../game/formations.js"; // #201.8: finale Aufstellung + Rahmen
 import { allianceGroups } from "../game/families.js";
+import { architectCoverFor } from "./architectCover.js"; // #UI: Gebäude-Rahmen auch im Victory-Screen (wie Chronik)
 
 // Highscore-Listen (lokal + global) bewusst NICHT hier — sie stehen auf dem Startbildschirm und
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
@@ -79,7 +80,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">Finale Aufstellung ansehen</summary>
             <div className="p-3 pt-0">
               <CardGrid cards={finalCards} formations={finalForms} roles={state.roles} anchors={state.shop?.anchors || []}
-                pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} quietTiles />
+                pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} architectCover={architectCoverFor(state)} quietTiles />
             </div>
           </details>
         )}
