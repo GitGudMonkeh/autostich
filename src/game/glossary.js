@@ -7,7 +7,7 @@ import * as C from "./constants.js";
    Auswahlpanel öffnet das durchsuchbare, kategorisierte Glossar; die Skill-Detailansicht nutzt es weiter (glossaryKeywords).
 
    Struktur: GLOSSARY[id] = { category, group?, label, icon, color, text, match? }.
-   - `id`  = stabiler Schlüssel. Die 14 Fraktions-Tokens (charge/heat/freeze/…) BLEIBEN als ids erhalten, damit
+   - `id`  = stabiler Schlüssel. Die 14 Archetyp-Tokens (charge/heat/freeze/…) BLEIBEN als ids erhalten, damit
              `GLOSSARY[token]` und glossaryKeywords() (SkillSelect) unverändert funktionieren.
    - `category`/`group` = Einsortierung fürs Overlay (GLOSSARY_CATEGORIES / GLOSSARY_GROUPS).
    - `match` = Wortformen (inkl. deutscher Flexionen + Alt-Bezeichnungen wie „Dauerwert"), die in Beschreibungen
@@ -17,7 +17,7 @@ import * as C from "./constants.js";
    (value/score) haben bewusst keinen Eintrag.
 
    Ton/Format folgen dem Style-Guide (docs/text-style-guide.md): kurze Sätze, Bedingung → Wirkung, Dezimal-Komma,
-   Tuning-Zahlen aus den Konstanten interpoliert. Rework-Stand: Shop raus (Architekt), 4 Stats, 4 Fraktionen.
+   Tuning-Zahlen aus den Konstanten interpoliert. Rework-Stand: Shop raus (Architekt), 4 Stats, 4 Archetypen.
    ============================================================ */
 
 // Deutsche Zahlformatierung (1.5 → „1,5") — Dezimal-Komma, keine doppelte Zahlpflege.
@@ -26,10 +26,10 @@ const de = (x) => String(x).replace(".", ",");
 const pct = (x) => Math.round(x * 100);
 
 // Akzentfarben (hartkodiert, damit das Glossar NUR von constants.js abhängt — kein Import-Zyklus).
-// Fraktionsfarben identisch zu ARCHETYPE_META; Formation ist fraktionsübergreifend → neutrales Blau.
+// Archetyp-Farben identisch zu ARCHETYPE_META; Formation ist archetypübergreifend → neutrales Blau.
 const CLR = {
   lightning: "#8a7de0", fire: "#e0714a", ice: "#5ec8f0", plant: "#5ab87a",
-  neutral: "#5a8ade",   // Formationen (fraktionsübergreifend)
+  neutral: "#5a8ade",   // Formationen (archetypübergreifend)
   grund: "#7f89ad",     // Grundbegriffe / Stats (gedämpftes Blaugrau)
   deck: "#c2a24a",      // Deck & Karten (gedämpftes Gold)
   perk: "#a48ad0",      // Perks / Familien
@@ -43,7 +43,7 @@ export const GLOSSARY_CATEGORIES = [
   { id: "grund", label: "Grundbegriffe",      color: CLR.grund },
   { id: "deck",  label: "Deck & Karten",      color: CLR.deck },
   { id: "form",  label: "Formationen",        color: CLR.neutral },
-  { id: "frak",  label: "Fraktionen",         color: CLR.lightning },
+  { id: "frak",  label: "Archetypen",         color: CLR.lightning },
   { id: "stat",  label: "Werte · Stats",      color: CLR.grund },
   { id: "perk",  label: "Perks & Rarität",    color: CLR.perk },
   { id: "arch",  label: "Der Architekt",      color: CLR.arch },
@@ -155,15 +155,15 @@ export const GLOSSARY = {
     text: `Das Tausch-Budget der Aufstellungsphase (${C.FORMATION_ENERGY} je Phase). Jeder Tausch zweier Karten kostet 1.`,
     match: ["Formations-Energie", "Tausch", "Tausche"] },
 
-  /* ============ 4 · Fraktionen — Allgemein ============ */
-  archetyp: { category: "frak", group: "gen", label: "Archetyp / Fraktion", icon: "✦", color: CLR.lightning,
+  /* ============ 4 · Archetypen — Allgemein ============ */
+  archetyp: { category: "frak", group: "gen", label: "Archetyp", icon: "✦", color: CLR.lightning,
     text: `Eine Skill-Familie mit eigener Identität (Feuer · Blitz · Eis · Pflanze). Der erste Skill schaltet sie frei; bis zu ${C.MAX_ARCHETYPES} mischbar.`,
     match: ["Archetyp", "Archetypen", "Fraktion", "Fraktionen"] },
   skillslot: { category: "frak", group: "gen", label: "Skill-Slot", icon: "▭", color: CLR.lightning,
     text: `Du hältst höchstens ${C.SKILL_SLOTS} Skills gleichzeitig. Ist der Vorrat voll, ersetzt ein neuer einen alten.`,
     match: ["Skill-Slot", "Skill-Slots", "Slots"] },
   skillrunde: { category: "frak", group: "gen", label: "Skill-Runde", icon: "◷", color: CLR.lightning,
-    text: `Jede dritte Entscheidung bietet Skills statt Perks (${C.SKILLS_OFFERED} Skills, alle 4 Fraktionen im Angebot).`,
+    text: `Jede dritte Entscheidung bietet Skills statt Perks (${C.SKILLS_OFFERED} Skills, alle 4 Archetypen im Angebot).`,
     match: ["Skill-Runde", "Skill-Runden"] },
   consume: { category: "frak", group: "gen", label: "Konsument", icon: "⊗", color: CLR.lightning,
     text: "Ein Skill, der eine angesammelte Ressource (Hitze bzw. Ladung) für einen starken Effekt verbraucht. Höchstens ein Konsument gleichzeitig — ein zweiter ersetzt den bestehenden.",
