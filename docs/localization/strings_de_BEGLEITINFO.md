@@ -2,11 +2,10 @@
 
 **Quelle:** Branch `Autostich_Test` (das spielbare Spiel, deployt nach `/autostich/test/`), Commit `244816a`.
 **Nicht** der Sim-/Balance-Branch `test/sim` — „/test" meint die spielbare Test-Seite.
-**Umfang:** `strings_de.csv` = **1 512 Zeilen** (826 Datentexte + 686 UI-Texte).
+**Umfang:** `strings_de.csv` = **1 516 Zeilen** (826 Datentexte + 690 UI-Texte). Stand: Commit `2502cb8`.
 
-> **Aktualisiert (Commit ff149d6, #231–#237+):** gegenüber der Erstlieferung (85921f7) 18 Zeilen geändert, 15 neu, 1 entfernt (siehe `strings_de_delta_since_85921f7.csv`).
-> — #237 (Architekt-Aufwerten): `upgrade-instructions` geändert + 4 neue `store.architectscreen.upgrade-*` (Jetzt/Danach-Vorschau + „Aufwerten bestätigen").
-> — ff149d6 (Architekt-Brett): 4 neue `store.architectscreen.toggle-*` (Kombis-/Formationen-Toggle + Tooltips).
+> **Dev-Delta (`strings_de_delta_since_85921f7.csv`):** gegenüber der Erstlieferung (85921f7) **38 Zeilen** (20 geändert, 18 neu, 1 entfernt) — Code-Änderungen für den Cleanup-Durchlauf v1.2. Enthält: 12 Glossar-Neuschreibungen, Abriss-/Aufwerten-Flow (#235/#237), Ersetzen-Modal (#234), Brett-Toggles, Zinseszins-Text (#240), #238-Persistenz-Hinweis, `Abdeckung→Baufeld belegt`.
+> **Bereits loc-angewandt (nicht im Delta):** Banner-Batch + restliche Battlefield-Caps — 13 Zeilen (Gewonnen/Verloren/…/Stark/Brutal/…/Kritisch!/Voll geladen/Formation) sind auf normal-case umgestellt, Großschrift macht jetzt CSS.
 > — 12 Glossar-Erklärtexte umformuliert (`tutorial.glossary.*`); neue Konstante `C.FIRST_SKILL_CYCLE = 7`.
 > — Architekt: neuer zweistufiger Abriss (Markieren → Bestätigen, #235) → 4 neue `store.architectscreen.demolish-*`; „Kein Platz"-Meldung + Zell-Tooltip (Upgrade-Vorschau #232) angepasst.
 > — Skill-Auswahl: neuer Ersetzen-Dialog (#234) → 3 neue `ui.skillselect.replace-modal-*`; alter „tippe unten"-Hinweis entfernt; Voll-Slots-Text geändert.
@@ -30,7 +29,7 @@
 
    | category | Zeilen | Inhalt |
    |---|---|---|
-   | `ui` | 486 | gesamte Oberfläche: Buttons, Labels, Header, HUD-Balken, Phasen, Indikatoren, Fraktions-/Stat-/Formations-/Farbnamen |
+   | `ui` | 490 | gesamte Oberfläche: Buttons, Labels, Header, HUD-Balken, Phasen, Indikatoren, Fraktions-/Stat-/Formations-/Farbnamen |
    | `item` | 395 | Perk-Familien (4 Stufen), legendäre Perks, Architekt-Baupläne, Deck-/Spielfeld-Kosmetik |
    | `tutorial` | 190 | Glossar-Erklärtexte + Anleitung |
    | `ability` | 168 | Archetyp-Skills (Feuer/Blitz/Eis/Pflanze), Name + Beschreibung |
@@ -61,7 +60,7 @@ Ursprünglich JS-Template-Interpolationen `${…}`. **79 Tokens, fast alle Zahle
 
 Vollständige Frequenzliste in **Anhang B**. Der `context` jeder CSV-Zeile nennt in der Regel schon, was das Token bedeutet (Feld `Var.:`).
 
-### 1b. Build-Konstanten (53) in Datentexten — im CSV bereits als Zahl resolvet
+### 1b. Build-Konstanten (54) in Datentexten — im CSV bereits als Zahl resolvet
 
 Diese Zahlen kommen zur Buildzeit aus `src/game/constants.js`. Deutsche Formatierung via Helfer `de()` (Dezimalkomma). **Vor EN-Übersetzung tokenisieren.** Vollständige Tabelle in **Anhang A**. Verteilung der interpolierten Texte: Glossar 25, Perks 9, Skills 8, Stats 4.
 
@@ -141,7 +140,7 @@ Ich liefere dieselbe CSV zurück, nur die geänderten Zeilen (DE-Vereinheitlichu
 
 ---
 
-## Anhang A — Build-Konstanten in Datentexten (53)
+## Anhang A — Build-Konstanten in Datentexten (54)
 
 Aktueller Wert (deutsch formatiert) und Anzahl Verwendungen in Anzeigetexten. Diese Zahlen stehen im CSV **resolvet**; vor EN-Übersetzung zu Platzhaltern machen.
 
@@ -200,6 +199,7 @@ Aktueller Wert (deutsch formatiert) und Anzahl Verwendungen in Anzeigetexten. Di
 | `C.VABANQUE_MAX_PAYOUTS` | 3 | 1 |
 | `C.VABANQUE_TRICKS` | 5 | 1 |
 | `C.WURZELSCHLAG_PER_GROWTH` | 4 | 1 |
+| `C.ZINSESZINS_STEP` | 1600 | 1 |
 
 ## Anhang B — Laufzeit-Tokens (79), nach Häufigkeit
 

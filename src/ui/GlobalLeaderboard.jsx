@@ -23,7 +23,9 @@ const toRunEntry = (r) => ({
   deckSnapshot: r.deck_snapshot,
   // #205: Seed → RunDetail zeigt den (kopierbaren, nachspielbaren) SeedChip. Kein Anti-Copy-Thema (Seed ist die
   // Herausforderung, kein Build-Detail).
-  seed: r.seed ?? null, seedCode: r.seed != null ? formatSeed(r.seed) : null,
+  // #241: seed ist bigint → kommt als String aus der REST-API → als Zahl casten, sonst zeigt SeedChip nichts
+  // (formatSeed toleriert Strings) UND startRun ignoriert den Seed (akzeptiert nur typeof number) → Nachspielen kaputt.
+  seed: r.seed != null ? Number(r.seed) : null, seedCode: r.seed != null ? formatSeed(Number(r.seed)) : null,
 });
 
 /* Globaler Highscore (#14): additiv UNTER dem lokalen Block. Holt Top-N selbst und
