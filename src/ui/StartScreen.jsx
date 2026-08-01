@@ -4,6 +4,7 @@ import { MuteButton } from "./MuteButton.jsx";
 import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
 import { fmtScore } from "./format.js";
+import logo from "../assets/logo.png";
 
 /* Startbildschirm (#4): Redesign „Richtung A — zentriert & entschlackt" (aus dem Startmenü-Redesign).
    Der Inhalt wird vertikal zentriert (füllt die frühere untere Leere) und bekommt eine klare Rangfolge:
@@ -35,7 +36,7 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
   const chipSty = { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
 
   return (
-    <div className="relative min-h-[80vh] flex flex-col items-center justify-center gap-6 py-6">
+    <div className="relative flex flex-col items-center gap-6 pt-8 pb-10">
       {/* #133: Schnell-Mute jederzeit sichtbar oben rechts — togglet dasselbe options.muted wie die Optionen. */}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-0 right-0" />}
 
@@ -56,6 +57,15 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
         </div>
         <p className="text-xs opacity-45 mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
       </div>
+
+      {/* Element-Logo unter der Wortmarke — die vier Fraktionen (Feuer/Blitz/Pflanze/Eis) um den Stern.
+          Das PNG hat einen dunkelgrauen Hintergrund (nicht transparent) → mix-blend-mode:screen lässt ihn ins dunkle
+          Menü verschwinden (Dunkles wird transparent, die Elemente glühen); die radiale Maske glättet die Kanten. */}
+      <img src={logo} alt="Autostich" draggable="false"
+        className="w-32 h-32 object-contain"
+        style={{ mixBlendMode: "screen",
+                 WebkitMaskImage: "radial-gradient(circle, #000 66%, transparent 95%)",
+                 maskImage: "radial-gradient(circle, #000 66%, transparent 95%)" }} />
 
       {/* Startmodi (Blickfang) + demotierte Seed-Zeile darunter. */}
       <div className="w-full max-w-xs flex flex-col gap-2.5">
