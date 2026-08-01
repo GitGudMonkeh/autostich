@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import {
   familyDef, shapeRotations, enumeratePlacements, isValidFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, structureFactorMap,
@@ -11,6 +11,7 @@ import { ARCH_CAT as CAT } from "./indicators/vocab.js";
 import { tierColor } from "../game/rarity.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
+import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel } from "./Glossary.jsx";
 import { useEscape } from "./useEscape.js";
@@ -88,7 +89,8 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const [colorPick, setColorPick] = useState(SUIT_ORDER[0]);
   const [removeFor, setRemoveFor] = useState(null);        // Bauplan wartet auf Platz → Gebäude entfernen anbieten
   const dragRef = useRef(null);
-  const [dragPrev, setDragPrev] = useState(null);          // { footprint, valid, id } während einer Drag-Geste
+  const [dragPrev, setDragPrev] = useState(null);          // { footprint, valid, id } — GESNAPPTES Drop-Ziel (nur bei Zellwechsel neu → dragDelta bleibt billig)
+  const [dragOffset, setDragOffset] = useState(null);      // { dx, dy } roher Pixel-Versatz — das Gebäude folgt dem Finger frei; Snap erst beim Drop
   const [upgradeMsg, setUpgradeMsg] = useState(null);      // { name, reason } — Meldung beim Antippen eines nicht-aufwertbaren Gebäudes (Aufrüsten-Phase)
 
   // Effektive Gebäude = committet (+ in „place" das Vorschau-Gebäude). Board/Precompute/Formationen rechnen damit.
@@ -123,6 +125,44 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     const formGain = Math.max(0, sum(formations) - sum(formationsNoArch));
     return Math.round((structBonus + formGain) * 100);
   }, [structF, formations, formationsNoArch]);
+
+  // #UI: Gebäude-Kontur als durchgezogene SVG-Linie (wie in der Aufstellungsphase, archFrameLines) statt eines
+  // Raritäts-Rahmens JE ZELLE → ein mehrzelliges Gebäude liest sich als EINE Form. Farbe = Stufen-/Raritätsfarbe.
+  const archCover = useMemo(() => {
+    const cover = {};
+    for (const b of buildings) {
+      const fam = familyDef(b.familyId);
+      if (!fam) continue;
+      const color = fam.legendary ? GOLD : tierColor(b.tier);
+      for (const p of b.footprint) cover[p] = { bid: b.id, color, legendary: !!fam.legendary };
+    }
+    return cover;
+  }, [buildings]);
+  const boardRef = useRef(null);
+  const [archFrame, setArchFrame] = useState(null);
+  const archSig = Object.keys(archCover).map((p) => `${p}:${archCover[p].bid}:${archCover[p].color}`).join(",");
+  useLayoutEffect(() => {
+    const wrap = boardRef.current;
+    if (!wrap) { setArchFrame(null); return; }
+    const measure = () => {
+      const wr = wrap.getBoundingClientRect();
+      const cells = {};
+      wrap.querySelectorAll("[data-arch-pos]").forEach((el) => {
+        const p = Number(el.getAttribute("data-arch-pos"));
+        const r = el.getBoundingClientRect();
+        cells[p] = { left: r.left - wr.left, top: r.top - wr.top, right: r.right - wr.left, bottom: r.bottom - wr.top };
+      });
+      let exH = 2, exV = 2; // halbe Raster-Lücke aus Nachbarzellen; sonst feste Fallbacks
+      if (cells[0] && cells[1]) exH = Math.max(0, (cells[1].left - cells[0].right) / 2);
+      if (cells[0] && cells[COLS]) exV = Math.max(0, (cells[COLS].top - cells[0].bottom) / 2);
+      setArchFrame({ w: wr.width, h: wr.height, lines: archFrameLines(archCover, cells, N_POS, exH, exV) });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [archSig]);
 
   const buildingAt = (pos) => buildings.find((b) => b.footprint.includes(pos)) || null;
   const committedAt = (pos) => committed.find((b) => b.footprint.includes(pos)) || null;
@@ -205,18 +245,21 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
     const commit = (fp) => { if (b.id === PENDING_ID) setPending((p) => (p ? { ...p, footprint: fp } : p)); else onMove?.({ buildingId: b.id, footprint: fp }); };
     let lastKey = "∅"; // [#224.11] letzter gesnappter Fußabdruck → Re-Render/Delta nur bei Zielzellen-Wechsel
     const move = (ev) => {
-      if (!g.active) { const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0; if (dx * dx + dy * dy < 36) return; g.active = true; setSelId(b.id); }
+      const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0;
+      if (!g.active) { if (dx * dx + dy * dy < 36) return; g.active = true; setSelId(b.id); }
       ev.preventDefault();
+      setDragOffset({ dx, dy }); // freies, pixelgenaues Folgen (jeder Move; billig — setzt kein dragPrev, triggert also keine Delta-Neuberechnung)
       const target = cellPos(ev.clientX, ev.clientY);
       const fp = target == null ? null : fpFor(target);
       const key = fp ? fp.join(",") : "∅";
-      if (key === lastKey) return; // gleiche Zielzelle → kein neues dragPrev (spart Re-Render + computeFormations je Pixel)
+      if (key === lastKey) return; // Snap-Ziel unverändert → dragPrev (+ dragDelta/computeFormations) NICHT neu setzen
       lastKey = key;
       setDragPrev(fp ? { footprint: fp, valid: !!isValidFootprint(form, fp, others), id: b.id } : { footprint: [], valid: false, id: b.id });
     };
     const up = (ev) => {
       window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
       const wasActive = g.active; dragRef.current = null;
+      setDragOffset(null); // Ghost loslassen → das Gebäude snappt auf die (gesnappte) Zielzelle
       if (wasActive) { const target = cellPos(ev.clientX, ev.clientY), fp = target == null ? null : fpFor(target); if (fp && isValidFootprint(form, fp, others)) commit(fp); setDragPrev(null); }
       else tapCell(pos);
     };
@@ -293,7 +336,16 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
               )}
             </div>
-            <div className="grid grid-cols-5 gap-1" style={{ maxWidth: 300, margin: "0 auto" }}>
+            <div ref={boardRef} className="relative grid grid-cols-5 gap-1" style={{ maxWidth: 300, margin: "0 auto" }}>
+              {/* #UI: durchgezogene Gebäude-Kontur (SVG) über dem Brett — eine Linie je Gebäude in seiner Form (wie Aufstellung).
+                  Während eines Drags ausgeblendet (das Gebäude schwebt frei) → snappt beim Loslassen wieder an seine neue Form. */}
+              {archFrame && archFrame.lines.length > 0 && !dragPrev && (
+                <svg className="absolute left-0 top-0 pointer-events-none" width={archFrame.w} height={archFrame.h} style={{ overflow: "visible", zIndex: 5 }} aria-hidden="true">
+                  {archFrame.lines.map((l, i) => (
+                    <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.color} strokeWidth="2.5" strokeLinecap="square" />
+                  ))}
+                </svg>
+              )}
               {(() => { const dragCells = dragPrev ? new Set(dragPrev.footprint) : null; const draggingId = dragPrev ? dragPrev.id : null; return cards.map((card, pos) => {
                 const b = buildingAt(pos);
                 const isPending = b && b.id === PENDING_ID;
@@ -328,13 +380,16 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b ? "#233140" : "#16232f"),
                       color: b || inDragPrev ? "#fff" : "#adbecc",
                       border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b ? "#2a3a46" : "#20303d")}`,
-                      opacity: (isDragOrig && !inDragPrev) ? 0.35 : upgradeDim ? 0.4 : (isPending && !inDragPrev ? 0.82 : 1),
+                      opacity: upgradeDim ? 0.4 : (isPending && !inDragPrev ? 0.82 : 1), // Origin NICHT ausgrauen — es wird angehoben & folgt dem Finger
+                      transform: isDragOrig && dragOffset ? `translate(${dragOffset.dx}px, ${dragOffset.dy}px)` : undefined, // freies, pixelgenaues Folgen
+                      zIndex: isDragOrig ? 20 : undefined,            // angehobenes Gebäude schwebt über Brett + Kontur
+                      pointerEvents: isDragOrig ? "none" : undefined, // elementFromPoint trifft so die Zielzelle DARUNTER (Snap-Erkennung)
                       touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
                         isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,                              // ausgewählt (weiß)
-                        // Raritäts-Rahmen je Gebäude: 2px Stufenfarbe am Rand + 1px dunkle Trennlinie → auch bei ähnlicher Füllfarbe klar lesbar.
-                        b ? `inset 0 0 0 2px ${tierCol}, inset 0 0 0 3px #0d1620cc` : null,
+                        // #UI: Raritäts-Rahmen JE ZELLE entfällt — die durchgezogene SVG-Kontur (oben) zeichnet ihn jetzt
+                        // in Stufenfarbe als EINE Gebäude-Form (wie in der Aufstellungsphase).
                         b && fam.legendary ? `0 0 8px ${GOLD}55` : null,                                   // Legendär → zusätzlicher warmer Glow
                         // Gebäude auf fertiger Struktur (Kombi erfüllt) → schimmernder Gold-Rahmen wie ein Legendär via .arch-struct-lit::after (siehe index.css).
                         !b && structLit(pos) ? "inset 0 0 0 2px #f0b429aa" : null,                        // leere Zelle einer fast-fertigen Struktur → Gold-Hinweis
