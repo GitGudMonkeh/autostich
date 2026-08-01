@@ -1,5 +1,11 @@
 name: Deploy to GitHub Pages
 
+# ⚠️ WARTUNGSMODUS (für den rework→main-Merge). Statt des App-Builds wird die statische
+# Wartungsseite (maintenance/index.html) in den gh-pages-Root deployt und überschreibt index.html.
+# Der Unterordner test/ (und alte Assets) bleibt via keep_files erhalten.
+#
+# ZUM REAKTIVIEREN der Live-Seite: diesen Commit reverten (`git revert <sha>`) — dann greift wieder
+# der App-Build (npm ci/test/build). Der alte Workflow steht in der Git-History dieses Files.
 on:
   push:
     branches: [main]
@@ -20,17 +26,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build   # base = /autostich/ (Default in vite.config.js)
+      - name: Wartungsseite als Deploy-Inhalt bereitstellen
+        run: |
+          mkdir -p dist
+          cp maintenance/index.html dist/index.html
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: dist
-          # Root der Pages-Seite. keep_files: den Unterordner test/ (Preview) NICHT mitlöschen.
+          # Root der Pages-Seite. keep_files: den Unterordner test/ (Preview) + alte Assets NICHT mitlöschen.
           keep_files: true
-          commit_message: "deploy(main): ${{ github.sha }}"
+          commit_message: "deploy(main): Wartungsseite ${{ github.sha }}"
