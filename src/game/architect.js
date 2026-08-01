@@ -234,7 +234,13 @@ export function buildArchitectOffer(architect, rng, rareShift = _archRareShift) 
     let r = rng() * total, f = pool[pool.length - 1];
     for (const fam of pool) { const w = ARCHITECT_CAT_WEIGHT[fam.category] ?? 1; if (r < w) { f = fam; break; } r -= w; }
     usedFam.add(f.id);
-    offers.push({ familyId: f.id, tier: weightedTier(rng, rareShift), used: false });
+    // T2 (#229): stufen-inerte Familien (joker/transparentFarb/crossSeg, siehe TIER_INERT_KINDS) skalieren NICHT
+    // mit `tier` — Aufrüsten ist dort ohnehin ein No-op (upgradeInfo → reason "inert"). Sie dürfen dann auch nicht
+    // mit höherem Raritätsrahmen als „Stufe III/IV" angeboten werden → auf Stufe 1 pinnen. Der weightedTier-rng-Zug
+    // wird TROTZDEM immer gezogen (auch wenn verworfen), damit der Zufallsstrom identisch bleibt (Determinismus/Seed).
+    const t = weightedTier(rng, rareShift);
+    const inert = TIER_INERT_KINDS.has(f.base && f.base.kind);
+    offers.push({ familyId: f.id, tier: inert ? 1 : t, used: false });
   }
   return offers;
 }

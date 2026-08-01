@@ -78,6 +78,23 @@ describe("Architekt — Angebot (deterministisch)", () => {
     }
     expect(maxLeg).toBeLessThanOrEqual(1);
   });
+
+  it("T2 (#229): stufen-inerte Familien (joker/transparentFarb/crossSeg) werden nur als Stufe 1 angeboten", () => {
+    // Ihr Effekt kennt keine Stufe → sie dürfen nicht mit höherem Raritätsrahmen angeboten werden (Aufrüsten
+    // ist dort ohnehin No-op). Der Pin ist gezielt: normale Familien skalieren weiter über Stufen > 1.
+    const INERT = new Set(["joker", "transparentFarb", "crossSeg"]);
+    let sawInert = false, sawScaledNormal = false;
+    for (let s = 0; s < 300; s++) {
+      for (const o of buildArchitectOffer(initialArchitect(), makeRng(s))) {
+        if (o.legendary) continue;
+        const kind = familyDef(o.familyId)?.base?.kind;
+        if (INERT.has(kind)) { sawInert = true; expect(o.tier).toBe(1); }
+        else if (typeof o.tier === "number" && o.tier > 1) sawScaledNormal = true;
+      }
+    }
+    expect(sawInert).toBe(true);        // die inerten Familien tauchen im Angebot tatsächlich auf
+    expect(sawScaledNormal).toBe(true); // ... und der Pin lässt normale Familien weiter Stufen > 1 bekommen
+  });
 });
 
 describe("Architekt — value-Effekte (Precompute + Anwendung)", () => {
