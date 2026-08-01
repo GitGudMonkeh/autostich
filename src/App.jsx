@@ -518,8 +518,10 @@ export function Autostich() {
             {statCells}
           </div>
 
+          {/* #UI: Mobil-Reihenfolge Battlefield → Stats → Perks (order-1/2/3). Desktop bleibt 2-spaltig via
+              explizite lg-Grid-Platzierung: Battlefield+Bars (links oben) + Perks (links unten), Stats-Sidebar rechts. */}
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
-            <div className="grid gap-4">
+            <div className="grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
               {state.masterRun && <MasteryBar grade={profile.masteryGrade || 0} score={state.score} />}
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)}
@@ -539,9 +541,15 @@ export function Autostich() {
                 growth={state.growth || {}}
                 colonized={state.colonized || {}}
                 skills={state.skills || []} />
+            </div>
+            {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
+            <div className="order-2 lg:col-start-2 lg:row-start-1">
+              <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
+            </div>
+            {/* Perks/Skills — Mobil unter den Stats (order-3), Desktop links unter dem Battlefield. */}
+            <div className="order-3 lg:col-start-1 lg:row-start-2">
               <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} />
             </div>
-            <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
           </div>
 
           {/* #218: Der Kartenübersicht-Einstieg sitzt jetzt als klickbare Kopf-Zelle „Kartenübersicht" (🎴, nach Mult)
