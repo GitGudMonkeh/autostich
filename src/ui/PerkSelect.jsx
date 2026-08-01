@@ -147,7 +147,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
               {(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((t) => t > 0).length;
                 return `Dein Build — ${n} Perk${n === 1 ? "" : "s"}`; })()}
             </div>
-            <PerkList perks={perks} familyTiers={state.familyTiers} empty="Noch keine Perks gewählt." />
+            <PerkList perks={perks} familyTiers={state.familyTiers} zinsBonus={state.zinsBonus} empty="Noch keine Perks gewählt." />
           </div>
           <div>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte je Farbe</div>

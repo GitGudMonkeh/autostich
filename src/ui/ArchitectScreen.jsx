@@ -70,7 +70,7 @@ function MiniShape({ form, color, rotIdx = 0 }) {
   );
 }
 
-export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemolish, onDone }) {
+export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onDemolish, onDone }) {
   useEscape(onDone);
   const architect = state.architect || { buildings: [], offers: [] };
   const committed = architect.buildings || [];
@@ -95,8 +95,11 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const [upgradeMsg, setUpgradeMsg] = useState(null);      // { name, reason } — Meldung beim Antippen eines nicht-aufwertbaren Gebäudes (Aufrüsten-Phase)
   const [pendingDemolish, setPendingDemolish] = useState(null); // #235: markiertes Abriss-Ziel (buildingId) — wird erst mit „Abreißen" wirklich entfernt (zweistufig)
   const [pendingUpgrade, setPendingUpgrade] = useState(null);   // #237: markiertes Aufrüst-Ziel (buildingId) — zeigt Jetzt/Danach-Effekt, aufgewertet erst mit „Aufwerten bestätigen" (kein Sofort-Upgrade)
-  const [showCombos, setShowCombos] = useState(true);           // #UI: Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben — Toggle oben am Brett
-  const [showForms, setShowForms] = useState(true);             // #UI: Formationsrahmen (Ring + Label) am Brett ein-/ausblenden — Toggle oben am Brett
+  // #243: Toggle-Stellung aus den Optionen (überlebt Runden + Sessions); onOption persistiert die Wahl.
+  const [showCombos, setShowCombos] = useState(options.archShowCombos !== false); // #UI: Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben
+  const [showForms, setShowForms] = useState(options.archShowForms !== false);    // #UI: Formationsrahmen (Ring + Label) am Brett ein-/ausblenden
+  const toggleCombos = () => { const v = !showCombos; setShowCombos(v); onOption?.({ archShowCombos: v }); };
+  const toggleForms  = () => { const v = !showForms;  setShowForms(v);  onOption?.({ archShowForms: v }); };
 
   // Effektive Gebäude = committet (+ in „place" das Vorschau-Gebäude). Board/Precompute/Formationen rechnen damit.
   const pendingBuilding = pending
@@ -358,7 +361,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
             <div className="font-pixel-dense font-bold leading-none" style={{ color: GOLD, fontSize: 22 }}>
               {Math.max(0, maxCover - coverCount)}<span className="text-xs opacity-70 font-mono"> / {maxCover}</span>
             </div>
-            <div className="text-[11px] font-mono opacity-55">{coverCount} belegt · {Math.round(coverCount / N_POS * 100)}%</div>
+            <div className="text-[11px] font-mono opacity-55">{coverCount} belegt · {Math.round(coverCount / maxCover * 100)}%</div>
           </div>
         </div>
         {state.lastCycleScore != null && <div className="mb-3"><RoundScoreBadge state={state} /></div>}
@@ -373,10 +376,10 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 <span className="font-bold tabular-nums" style={{ color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct}%</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <button onClick={() => setShowCombos((v) => !v)} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
+                <button onClick={toggleCombos} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
                   style={{ background: showCombos ? "#3a1c1a" : "#16232f", border: `1px solid ${showCombos ? "#d1462f" : "#2b3e4d"}`, color: showCombos ? "#e88a7f" : "#7d8a97" }}
                   title="Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben">{showCombos ? "◉" : "○"} Kombis</button>
-                <button onClick={() => setShowForms((v) => !v)} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
+                <button onClick={toggleForms} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
                   style={{ background: showForms ? "#16283a" : "#16232f", border: `1px solid ${showForms ? "#3b7dbe" : "#2b3e4d"}`, color: showForms ? "#7db4e6" : "#7d8a97" }}
                   title="Formationsrahmen (Ring + Label) am Brett ein-/ausblenden">{showForms ? "◉" : "○"} Formationen</button>
                 {showRotate && (
@@ -752,7 +755,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
               <div className="grid grid-cols-2 gap-2">
                 <Stat k="Struktur-Bonus" v={`+${structBonusPct} %`} hero />
                 <Stat k="Σ Kartenwert" v={sumValue} hero />
-                <Stat k="Abdeckung" v={`${Math.round(coverCount / N_POS * 100)}%`} />
+                <Stat k="Baufeld belegt" v={`${Math.round(coverCount / maxCover * 100)}%`} />
                 <Stat k="Häuserzeilen" v={houseRows} />
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[12px] font-mono opacity-80">
