@@ -4,7 +4,8 @@ import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/
 import { baseScoreMultFor, totalCritChanceRaw } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
-import { randomSeed, formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Lauf-Seed erzeugen / anzeigen
+import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
+import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";

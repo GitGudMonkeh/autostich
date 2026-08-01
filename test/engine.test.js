@@ -224,6 +224,17 @@ describe("rollCrit", () => {
     expect(rollCrit(0.3, false, () => 0.2)).toBe(true);
     expect(rollCrit(0.3, false, () => 0.5)).toBe(false);
   });
+  it("#229 N8: wirft ohne injizierte rng (kein stiller Math.random-Fallback)", () => {
+    expect(() => rollCrit(0.5, false)).toThrow(/rng muss injiziert werden/);
+  });
+});
+
+describe("resolveTrick — rng-Pflicht (#229 N8)", () => {
+  it("wirft im Play ohne injizierte rng, bleibt aber außerhalb Play ein rng-freies No-op", () => {
+    expect(() => resolveTrick(scenario(12, 0))).toThrow(/rng muss injiziert werden/); // play → rng nötig
+    const notPlay = { ...scenario(12, 0), phase: "levelup" };
+    expect(resolveTrick(notPlay)).toBe(notPlay); // Nicht-Play → No-op ohne rng
+  });
 });
 
 describe("resolveTrick — Durchlauf-Ende & persistente Reihenfolge (V2)", () => {

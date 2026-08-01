@@ -44,9 +44,18 @@ function flagValue(perks, flag) {
   return 0;
 }
 
+// #229 N8: Determinismus-Invariante HART absichern — statt still auf Math.random zu defaulten, wirft eine
+// vergessene rng-Injektion laut. (Der Zufall wird primär aus state.seed abgeleitet; rng ist der explizite
+// Fallback, wenn kein Seed vorliegt — und muss dann ebenfalls bewusst übergeben werden, nie stilles Math.random.)
+function requireRng(rng, where) {
+  if (typeof rng !== "function") throw new Error(`${where}: rng muss injiziert werden (Determinismus-Invariante #229 N8) — kein stiller Math.random-Fallback.`);
+  return rng;
+}
+
 // Crit-Wurf (pure, testbar): guaranteed override; sonst rng < gedeckelter Chance.
 // Ruft rng() NUR, wenn wirklich gewürfelt wird → minimaler/deterministischer Verbrauch.
-export function rollCrit(chance, guaranteed, rng = Math.random) {
+export function rollCrit(chance, guaranteed, rng) {
+  requireRng(rng, "rollCrit"); // #229 N8: rng ist Pflicht (kein Math.random-Default mehr)
   if (guaranteed) return true;
   const c = Math.min(1, Math.max(0, chance));
   if (c <= 0) return false;
@@ -63,8 +72,9 @@ export function effectivePlayerValue(baseValue, perks, ctx) {
    mischen, Perk-/Skill-Angebot) gebraucht — als Abhängigkeit injiziert, damit die Schicht
    deterministisch/seedbar bleibt (kein Math.random hier drin).
    Spieler-Reihenfolge ist PERSISTENT: nur das Gegnerdeck wird pro Durchlauf neu gemischt. */
-export function resolveTrick(state, rng = Math.random) {
-  if (state.phase !== "play") return state;
+export function resolveTrick(state, rng) {
+  if (state.phase !== "play") return state; // Nicht-Play → No-op, braucht keine rng
+  requireRng(rng, "resolveTrick"); // #229 N8: rng ist Pflicht (kein Math.random-Default mehr); Zufall kommt primär aus state.seed via rngAtOr
 
   let {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,

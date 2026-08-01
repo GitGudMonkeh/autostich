@@ -1,3 +1,10 @@
+/* #229 N7: Frischer 32-bit-Lauf-Seed. Bewusst im UI-Layer (nicht in game/rng.js) — Math.random gehört NICHT in
+   den deterministischen Game-Core. Wird in App.jsx beim Start eines Laufs gewürfelt und in den State gelegt;
+   der Reducer/die Engine bleiben rein und leiten allen Zufall aus diesem Seed ab (Determinismus-Invariante). */
+export function randomSeed() {
+  return (Math.random() * 0x100000000) >>> 0;
+}
+
 /* #205 Challenger Mode — Seed teilen. Kopiert Text in die Zwischenablage: bevorzugt die async Clipboard-API
    (nur in sicheren Kontexten), sonst ein execCommand("copy")-Fallback über ein unsichtbares Textfeld
    (ältere/restriktive Browser). Gibt true bei Erfolg zurück; wirft nie. */

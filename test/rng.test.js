@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { hash32, rngAt, randomSeed, formatSeed, parseSeed } from "../src/game/rng.js";
+import { hash32, rngAt, formatSeed, parseSeed } from "../src/game/rng.js";
 
 // Zieht n Werte aus einem Generator (Reihenfolge = Strom).
 const draws = (gen, n) => Array.from({ length: n }, () => gen());
@@ -50,7 +50,7 @@ describe("formatSeed / parseSeed — Base32-Roundtrip", () => {
     expect(s).toMatch(/^[0-9A-HJKMNP-TV-Z]{7}$/); // ohne I,L,O,U
   });
   it("roundtrip über repräsentative Werte inkl. Ränder", () => {
-    for (const n of [0, 1, 31, 32, 123456789, 0xffffffff, randomSeed(), randomSeed()]) {
+    for (const n of [0, 1, 31, 32, 123456789, 0xffffffff, 0xdeadbeef, 0x1337c0de]) {
       expect(parseSeed(formatSeed(n))).toBe(n >>> 0);
     }
   });

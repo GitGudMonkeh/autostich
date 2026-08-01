@@ -37,11 +37,8 @@ export function rngAt(seed, ...parts) {
   return makeRng(hash32(seed, ...parts));
 }
 
-// Frischer 32-bit-Lauf-Seed. EINZIGE Math.random-Nutzung des Features — wird in App.jsx beim
-// Start eines Laufs gewürfelt und in den State gelegt; der Reducer bleibt rein (Invariante).
-export function randomSeed() {
-  return (Math.random() * 0x100000000) >>> 0;
-}
+// #229 N7: `randomSeed()` (die einzige Math.random-Nutzung) lebt jetzt im UI-Layer (src/ui/seedShare.js) — dieses
+// Game-Core-Modul bleibt frei von Math.random/Date. Der Seed kommt fertig aus der UI in den State.
 
 /* Anzeige/Teilen: tippfehlerrobuste Base32 (Crockford-Alphabet — ohne I/L/O/U). Ein 32-bit-
    Seed → feste 7 Zeichen (Großbuchstaben). parseSeed ist tolerant: Groß/Klein egal, verwechsel-
