@@ -71,7 +71,7 @@ export function ChronikOverview({ state, onClose }) {
         const card = deck[playerOrder[pos]];
         const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card) : 0;
         const badgeSuit = fam.colorLocked ? (b.colorChoice || null) : null; // [#229 N1] Wert-Badge in Kartenfarbe (sonst grau) — wie in der Aufstellung
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier) };
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, tier: b.tier, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier) };
       }
     }
     return cover;

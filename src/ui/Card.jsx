@@ -131,7 +131,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
       {/* Pflanze (#211): Wachstumsring unten-rechts — füllender Kreis 0 → Reife-Schwelle auf der EIGENEN, noch wachsenden
           Karte; bei Reife ausgeblendet (dann trägt die grüne Zahl + 🌿 das Signal). Sitzt in vocab.CORNER.growthRing. */}
       {showGrowthRing && (
-        <div className="absolute bottom-1 right-1 rounded-full" title={`Wachstum ${growth} / ${PLANT_GREEN_THRESHOLD} → reif`}
+        <div className="absolute bottom-1 right-1 rounded-full" title={`Wachstum ${String(Math.round(growth * 10) / 10).replace(".", ",")} / ${PLANT_GREEN_THRESHOLD} → reif`}
           style={{ width: 16, height: 16, background: `conic-gradient(${PLANT} ${growthPct}%, #ffffff1f ${growthPct}%)`,
                    border: `1px solid ${PLANT}66`, boxShadow: `0 0 4px ${PLANT}55` }}>
           <div className="absolute rounded-full" style={{ inset: 3, background: HOLO_BASE }} />

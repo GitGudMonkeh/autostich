@@ -8,6 +8,8 @@ import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { formationLabel } from "./formationLabels.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
+// #UI: Wachstum/Überlauf sind durch das Skill-Gating gebrochen (z. B. 4,333…) → auf EINE Nachkommastelle runden.
+const fmt1 = (x) => String(Math.round(x * 10) / 10).replace(".", ",");
 
 /* Detailanzeige einer angetippten Karte (Issue #95, Punkt 5): Rolle(n) und alle aktiven
    Modifikatoren. Wird unter der Kachelfläche in Chronik-Übersicht UND Formationsphase genutzt.
@@ -123,10 +125,10 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
           <div className="flex flex-wrap gap-1.5 items-center mt-1">
             <span className="opacity-45">🌿 Pflanze:</span>
             <Chip c={stateCol}>{stateLabel}</Chip>
-            <Chip c={PLANT}>Wachstum {plantGrowth}{ripe ? "" : ` / ${PLANT_GREEN_THRESHOLD}`}</Chip>
+            <Chip c={PLANT}>Wachstum {fmt1(plantGrowth)}{ripe ? "" : ` / ${PLANT_GREEN_THRESHOLD}`}</Chip>
             <Chip c={PLANT}>Kartenwert {card.value} / {PLANT_VALUE_CAP}</Chip>
             {ripe && plantRoots > 0 && <Chip c={PLANT}>+{plantRoots} Wurzeln/Sieg{plantPfahl ? " (×2 Form.)" : ""}</Chip>}
-            {overflow > 0 && <Chip c={PLANT_FULL}>Überlauf {overflow}</Chip>}
+            {overflow > 0 && <Chip c={PLANT_FULL}>Überlauf {fmt1(overflow)}</Chip>}
           </div>
         );
       })()}
@@ -143,7 +145,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
       {arch && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
           <span className="opacity-45">🏗 Gebäude:</span>
-          <Chip c={arch.legendary ? "#d4a63a" : arch.color}>{arch.name}</Chip>
+          <Chip c={arch.legendary ? "#d4a63a" : arch.color}>{arch.name}{arch.legendary ? " ★" : arch.tier ? ` · Stufe ${arch.tier}` : ""}</Chip>
           {(arch.effects || []).map((e, i) => (
             <Chip key={i} c={arch.legendary ? "#d4a63a" : arch.color}>{e}</Chip>
           ))}
