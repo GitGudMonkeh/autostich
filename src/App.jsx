@@ -252,7 +252,11 @@ export function Autostich() {
       // publishRun stript sie per Fallback-Kaskade, falls die Spalten noch nicht migriert sind.
       best_streak: state.bestStreak, perks: (state.perks || []).join(","), skills: (state.skills || []).join(","),
       max_formations: state.maxFormations, formation_score: state.formationScore,
-      crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore };
+      crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore,
+      // #217 Master-Board: NUR Meister-Läufe tragen den gespielten Rang (mastery_grade, 0=ranglos..10) + die finale
+      // Aufstellung (deck_snapshot, P8-C). So landen sie im Master-Board (je Rang) statt im normalen Board; normale
+      // Läufe posten wie bisher (kein mastery_grade → normales Board via mastery_grade is null).
+      ...(state.masterRun ? { mastery_grade: state.masteryGrade || 0, deck_snapshot: deckSnapshot } : {}) };
     setMyEntry(gEntry);
     if (leaderboardConfigured && name) {
       publishRun(gEntry).then((saved) => {
@@ -597,6 +601,7 @@ export function Autostich() {
 
       {showLeaderboard && (
         <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best}
+          masteryGrade={profile.masteryGrade || 0}
           onPlaySeed={(seed) => { setShowLeaderboard(false); startRun(seed); }}
           onClose={() => setShowLeaderboard(false)} />
       )}

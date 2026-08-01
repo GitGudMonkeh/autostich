@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { leaderboardConfigured, fetchGlobalTop } from "../game/leaderboard.js";
+import { leaderboardConfigured, fetchGlobalTop, fetchMasterTop } from "../game/leaderboard.js";
 import { ARCHETYPE_META, decodeArchetypes } from "../game/skills.js";
 import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
@@ -17,6 +17,9 @@ const toRunEntry = (r) => ({
   skills: r.skills !== undefined ? (r.skills || "").split(",").filter(Boolean) : undefined,
   maxFormations: r.max_formations, formationScore: r.formation_score,
   crits: r.crits, wins: r.wins, critBonusScore: r.crit_bonus_score, bestTrickScore: r.best_trick_score,
+  // #217/#201 P8-C: finale Aufstellung (nur bei Meister-Läufen befüllt) → RunDetail zeigt sie NUR für die eigene
+  // Zeile (Anti-Copy #205 blendet sie bei anonymized aus).
+  deckSnapshot: r.deck_snapshot,
 });
 
 /* Globaler Highscore (#14): additiv UNTER dem lokalen Block. Holt Top-N selbst und
@@ -26,22 +29,25 @@ const toRunEntry = (r) => ({
    mine        — der eigene, gerade gepostete Lauf → wird in der Liste hervorgehoben.
    reloadToken — neu laden, sobald er sich ändert (nach dem Submit, damit der eigene
                  Lauf enthalten ist).
-   framed      — eigener Panel-Rahmen (StartScreen). Ohne: schlichte Sektion (Game-Over). */
-export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false }) {
+   framed      — eigener Panel-Rahmen (StartScreen). Ohne: schlichte Sektion (Game-Over).
+   masterGrade — #217: gesetzt (0..10) → zeigt das Master-Board GENAU dieses Rangs (fetchMasterTop) statt des
+                 normalen Boards. Die Rang-Auswahl passiert außen (LeaderboardScreen). */
+export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, masterGrade = null }) {
   const [rows, setRows] = useState(null);   // null = lädt · [] = leer · [...] = Daten
   const [error, setError] = useState(false);
   const [detail, setDetail] = useState(null); // #169 FB-8: gewählte Zeile → RunDetail-Overlay
+  const isMaster = masterGrade != null;
 
   useEffect(() => {
     if (!leaderboardConfigured) return;
     let alive = true;
     setError(false);
     setRows(null);
-    fetchGlobalTop(limit)
+    (isMaster ? fetchMasterTop(masterGrade, limit) : fetchGlobalTop(limit))
       .then((data) => { if (alive) setRows(Array.isArray(data) ? data : []); })
       .catch(() => { if (alive) setError(true); });
     return () => { alive = false; };
-  }, [limit, reloadToken]);
+  }, [limit, reloadToken, masterGrade]);
 
   if (!leaderboardConfigured) return null; // ohne Config: Block entfällt komplett
 
@@ -62,13 +68,13 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
 
   const body = (
     <>
-      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Global — Top {limit}</div>
+      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{isMaster ? "Master" : "Global"} — Top {limit}</div>
       {error ? (
         <div className="text-xs opacity-40 text-center py-3">Global nicht verfügbar.</div>
       ) : rows === null ? (
         <div className="text-xs opacity-40 text-center py-3">Lädt globale Bestenliste …</div>
       ) : rows.length === 0 ? (
-        <div className="text-xs opacity-40 text-center py-3">Noch keine globalen Einträge — sei die/der Erste.</div>
+        <div className="text-xs opacity-40 text-center py-3">{isMaster ? "Noch keine Einträge auf diesem Rang." : "Noch keine globalen Einträge — sei die/der Erste."}</div>
       ) : (
         <div className="grid gap-1">
           {rows.map((r, i) => {

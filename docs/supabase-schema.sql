@@ -34,8 +34,18 @@ create table if not exists public.autostich_scores (
   crits             integer,
   wins              integer,
   crit_bonus_score  bigint,
-  best_trick_score  bigint
+  best_trick_score  bigint,
+  -- #217 Master-Board: gespielter Meister-/Großmeister-Rang (1..10; NULL = normaler Lauf). Trennt die Boards:
+  -- normales Board = `mastery_grade is null`, Master-Board (je Rang) = `mastery_grade = <g>`.
+  mastery_grade     smallint,
+  -- #201 P8-C / #217: kompakte finale Aufstellung (nur bei Meister-Läufen befüllt → kein Bloat bei normalen Läufen).
+  -- Wird nur dem EIGENEN Lauf angezeigt (Anti-Copy #205); Struktur = { cards:[{id,value,suit,green,frozen}], formations:[...] }.
+  deck_snapshot     jsonb
 );
+
+-- Falls die Tabelle schon existiert (frühere Version ohne diese Spalten): additiv nachziehen (idempotent).
+alter table public.autostich_scores add column if not exists mastery_grade smallint;
+alter table public.autostich_scores add column if not exists deck_snapshot jsonb;
 
 -- Row Level Security: offenes Board → die anon-Rolle (publishable key) darf LESEN und EINFÜGEN,
 -- aber NICHT ändern oder löschen (kein update/delete-Policy → per Default verweigert).
@@ -54,3 +64,8 @@ create policy "anon can insert scores"
 -- Index für die Bestenlisten-Abfrage: order by score desc, tricks desc, created_at desc + limit N.
 create index if not exists autostich_scores_rank_idx
   on public.autostich_scores (score desc, tricks desc, created_at desc);
+
+-- #217 Master-Board: Index für die per-Rang-Abfrage (nur Meister-Läufe; mastery_grade + score desc).
+create index if not exists autostich_scores_master_idx
+  on public.autostich_scores (mastery_grade, score desc)
+  where mastery_grade is not null;

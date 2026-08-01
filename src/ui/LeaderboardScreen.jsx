@@ -7,9 +7,12 @@ import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
 import { loadRunHistory } from "../game/storage.js";
 import { leaderboardConfigured } from "../game/leaderboard.js";
-import { masteryGradeLabel } from "../game/mastery.js";
+import { masteryGradeLabel, rankRoman, MASTERY_MEISTER_MAX } from "../game/mastery.js";
 
 const TOP_N = 20;
+// #217 Master-Board: getrennte Boards je Rang. Ranglos (0) + Meister I..V. Großmeister (6..10) werden bereits
+// erfasst (mastery_grade), aber vorerst NICHT als eigene Board-Reiter gezeigt (extrem selten; später erweiterbar).
+const MASTER_GRADES = Array.from({ length: MASTERY_MEISTER_MAX + 1 }, (_, g) => g); // [0,1,2,3,4,5]
 const TABS = [
   { id: "mine",   label: "Meine Runs" },
   { id: "global", label: "Global" },
@@ -51,10 +54,12 @@ function LocalRunList({ runs, empty, onPick, showRank = false }) {
   );
 }
 
-export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highscores = [], best = 0, onPlaySeed = null }) {
+export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highscores = [], best = 0, onPlaySeed = null, masteryGrade = 0 }) {
   useEscape(onClose);
   const [tab, setTab] = useState("mine");
   const [detail, setDetail] = useState(null); // gewählter lokaler Lauf → RunDetail-Overlay
+  // #217 Master-Board: aktuell gewählter Rang-Reiter — Default = eigener Rang (auf Meister I..V geklemmt), sonst Ranglos.
+  const [masterGrade, setMasterGrade] = useState(() => Math.max(0, Math.min(MASTERY_MEISTER_MAX, masteryGrade | 0)));
 
   // Alle eigenen Läufe: Run-Historie (bis 30, mit Deck-Snapshot) + Top-5-Highscores, per Zeitstempel dedupliziert
   // (Historie zuerst → die reichere Version gewinnt), nach Score sortiert.
@@ -107,13 +112,32 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
           )}
 
           {tab === "master" && (
-            <>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] uppercase tracking-wide opacity-50">Master — Top {TOP_N}</span>
-                <span className="text-sm font-bold" style={{ color: "#b3a8ff" }}>{masterTop.length} Meister-Läufe</span>
-              </div>
-              <LocalRunList runs={masterTop} empty="Noch keine Meister-Läufe — starte einen im Meister-Modus." onPick={setDetail} showRank />
-            </>
+            leaderboardConfigured ? (
+              <>
+                {/* #217: getrennte Boards je Rang — Rang-Picker (Ranglos + Meister I..V). */}
+                <div className="flex gap-1 mb-3 overflow-x-auto pb-1" role="tablist" aria-label="Rang">
+                  {MASTER_GRADES.map((g) => (
+                    <button key={g} role="tab" aria-selected={masterGrade === g} onClick={() => setMasterGrade(g)}
+                      className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all"
+                      style={masterGrade === g
+                        ? { background: LILA, color: "#141419" }
+                        : { background: "#20202a", color: "#b3a8ff", border: "1px solid #30303a" }}>
+                      {g === 0 ? "Ranglos" : rankRoman(g)}
+                    </button>
+                  ))}
+                </div>
+                <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} masterGrade={masterGrade} />
+              </>
+            ) : (
+              // Kein Board konfiguriert (offline/Preview ohne Config): lokale Meister-Läufe als Fallback.
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] uppercase tracking-wide opacity-50">Master (lokal) — Top {TOP_N}</span>
+                  <span className="text-sm font-bold" style={{ color: "#b3a8ff" }}>{masterTop.length} Meister-Läufe</span>
+                </div>
+                <LocalRunList runs={masterTop} empty="Noch keine Meister-Läufe — starte einen im Meister-Modus." onPick={setDetail} showRank />
+              </>
+            )
           )}
 
           {tab === "global" && (
