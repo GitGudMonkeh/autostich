@@ -2,9 +2,10 @@
 
 **Quelle:** Branch `Autostich_Test` (das spielbare Spiel, deployt nach `/autostich/test/`), Commit `244816a`.
 **Nicht** der Sim-/Balance-Branch `test/sim` — „/test" meint die spielbare Test-Seite.
-**Umfang:** `strings_de.csv` = **1 504 Zeilen** (826 Datentexte + 678 UI-Texte).
+**Umfang:** `strings_de.csv` = **1 508 Zeilen** (826 Datentexte + 682 UI-Texte).
 
-> **Aktualisiert (Commit 244816a, #231–#236):** gegenüber der Erstlieferung (85921f7) 17 Zeilen geändert, 7 neu, 1 entfernt.
+> **Aktualisiert (Commit e8f2590, #231–#237):** gegenüber der Erstlieferung (85921f7) 18 Zeilen geändert, 11 neu, 1 entfernt (siehe `strings_de_delta_since_85921f7.csv`).
+> — #237 (Architekt-Aufwerten): `upgrade-instructions` geändert + 4 neue `store.architectscreen.upgrade-*` (Jetzt/Danach-Vorschau + „Aufwerten bestätigen").
 > — 12 Glossar-Erklärtexte umformuliert (`tutorial.glossary.*`); neue Konstante `C.FIRST_SKILL_CYCLE = 7`.
 > — Architekt: neuer zweistufiger Abriss (Markieren → Bestätigen, #235) → 4 neue `store.architectscreen.demolish-*`; „Kein Platz"-Meldung + Zell-Tooltip (Upgrade-Vorschau #232) angepasst.
 > — Skill-Auswahl: neuer Ersetzen-Dialog (#234) → 3 neue `ui.skillselect.replace-modal-*`; alter „tippe unten"-Hinweis entfernt; Voll-Slots-Text geändert.
@@ -33,7 +34,7 @@
    | `tutorial` | 190 | Glossar-Erklärtexte + Anleitung |
    | `ability` | 168 | Archetyp-Skills (Feuer/Blitz/Eis/Pflanze), Name + Beschreibung |
    | `achievement` | 167 | Meisterränge/Belohnungen, Bestenliste, Chronik, Statistik-Hub, Freischaltungen |
-   | `store` | 83 | „Der Architekt" (Bau-/Angebotsphase — der Shop-Ersatz) |
+   | `store` | 87 | „Der Architekt" (Bau-/Angebotsphase — der Shop-Ersatz) |
    | `system` | 15 | Seed/Speichern/Laden/Fehler/Teilen/Verbindung |
 
 3. **⚠️ Zahlen in Datentexten sind resolvet — der einzige Punkt, wo ich vom „Platzhalter literal lassen" abgewichen bin.** Viele Beschreibungen holen ihre Zahlen zur Buildzeit aus Balance-**Konstanten** (`+${C.FORGE_VALUE} Kartenwert` → „+2 Kartenwert"). Im CSV steht die **fertige Zahl** — das, was der Spieler sieht, und gut lesbar fürs Glattziehen. Das sind echte Build-Konstanten, keine Laufzeit-Variablen; deshalb die Ausnahme. **Vor** der EN-Übersetzung sollten diese 52 Konstanten (Punkt 1b / Anhang) zu echten Platzhaltern werden — sonst frieren wir mit der Übersetzung die aktuellen Balance-Zahlen im Text ein (genau die Drift, die der Code heute vermeidet).
