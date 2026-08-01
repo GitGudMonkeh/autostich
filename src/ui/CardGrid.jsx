@@ -82,7 +82,7 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
       style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
                // #201.4: schon getauschte Karte dezent ausgrauen (rein kosmetisch, bleibt klickbar). picked(gold)/
                // selected(weiß) haben Vorrang und bleiben voll sichtbar; disabled (0,45) sticht durch.
-               opacity: disabled ? 0.45 : (dimmed && !selected && !picked ? 0.55 : 1), cursor: disabled ? "not-allowed" : "pointer",
+               opacity: disabled ? 0.45 : (dimmed && !selected && !picked ? 0.55 : 1), cursor: !onClick ? "default" : (disabled ? "not-allowed" : "pointer"),
                ...(anchorRing || {}),
                boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, pillarShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
       {/* #136 Frostglas: ruhiger Eis-Layer (Tint + Körnung, KEIN Sweep) für eingefrorene Board-Karten. */}
@@ -229,7 +229,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                   disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle} pillar={pillarSet.has(pos)}
                   dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
-                  onClick={disabled ? undefined : () => onTilePick(pos, c)} />;
+                  onClick={disabled || !onTilePick ? undefined : () => onTilePick(pos, c)} />;
               })}
             </div>
           </div>

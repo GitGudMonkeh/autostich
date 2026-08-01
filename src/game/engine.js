@@ -460,7 +460,6 @@ export function resolveTrick(state, rng = Math.random) {
     let plantDirect = 0; // Pflanze-Legendär-Reshape: DIREKTe, post-stack, gedeckelte Dividende aus den Fluten (unten zu `gained`)
     if ((activeArchetypes || []).includes("plant")) {
       const inFormation = positionHasFormation(posForm);
-      const inFarbblock = (posForm.formations || []).some((f) => f.type === "farbblock");
       // Wachstum: je Sieg +Zuwachs, GEGATET an die Pflanzen-Skill-Anzahl (Anti-Splash, v0.3): min(1, PflanzenSkills / SKILL_REF).
       // 1 Splash-Skill = 1/3 Speed, volle +1/Sieg erst ab SKILL_REF Skills → hohes Wachstum verlangt echtes Deck-Commitment.
       const prevG = newGrowth[pCard.id] || 0;
@@ -509,13 +508,22 @@ export function resolveTrick(state, rng = Math.random) {
             const segStart = Math.floor(actualPos / SEGMENT_SIZE) * SEGMENT_SIZE;
             let gs = 0; for (let p = segStart; p < segStart + SEGMENT_SIZE && p < playerOrder.length; p++) if (deck[playerOrder[p]].green) gs += 1;
             let b = C.BLUETE_SCORE * gs * (hasBluetezeit(skills) && inFormation ? C.BLUETEZEIT_MULT : 1);
-            if (hasUeberwucherung(skills)) b *= 2;
+            // Überwucherung verdoppelt die Blüte NUR, wenn das Feld genug grün ist (≥66 %, mit Ewiger Frühling ≥25 %) —
+            // gleich gegatet wie der Farbblock-+0,20-Teil in formations.js (Text/Glossar SK_PLANT_14). [#228 C1]
+            const greenFieldRatio = deck.length > 0 ? greenCount(deck) / deck.length : 0;
+            const uebThresh = hasEwigerFruehling(skills) ? C.EWIGER_FRUEHLING_FIELD : C.UEBERWUCHERUNG_FIELD;
+            if (hasUeberwucherung(skills) && greenFieldRatio >= uebThresh) b *= 2;
             plantFlat += b;
           }
         }
-        // Photosynthese: grüne Karte in Formation → ×1,15 (Formations-Faktor). Blätterdach: grüner Farbblock ≥4 → +Score/Karte.
+        // Photosynthese: grüne Karte in Formation → ×1,15 (Formations-Faktor).
         if (hasPhotosynthese(skills) && inFormation) plantFormMult *= C.PHOTOSYNTHESE_MULT;
-        if (hasBlaetterdach(skills) && inFarbblock && greenCount(deck) >= C.BLAETTERDACH_MIN) plantFlat += C.BLAETTERDACH_SCORE * Math.min(greenCount(deck), 10);
+        // Blätterdach: grüner Farbblock ab BLAETTERDACH_MIN Karten → +Score je Karte IM BLOCK (echte Lauflänge des
+        // Farbblocks an der Siegposition, nicht die deckweite Grünzahl). Grün = eine gemeinsame Farbe „G" → der Lauf an
+        // einer grünen Position besteht aus grünen Karten. Analog zur Blüte, die nur das Segment zählt. [#228 C2]
+        const fbEntry = (posForm.formations || []).find((f) => f.type === "farbblock");
+        const fbLen = fbEntry ? (fbEntry.len || 0) : 0;
+        if (hasBlaetterdach(skills) && fbLen >= C.BLAETTERDACH_MIN) plantFlat += C.BLAETTERDACH_SCORE * Math.min(fbLen, C.BLAETTERDACH_CARD_CAP);
         // Ausläufer: die niedrigste noch nicht kolonisierte Gegnerkarte kolonisieren.
         if (hasAuslaeufer(skills)) {
           let lowId = null, lowV = Infinity;

@@ -312,9 +312,12 @@ export function computeFormations(order, deck, roles = {}, perks = [], skills = 
   const farbBase = FARBBLOCK_BASE + (hasUeberwucherung(skills) && greenField >= uebThresh ? UEBERWUCHERUNG_FACTOR : 0);
   // Grün-Farbblock-Cap (v0.3): grüne (card.green) Karten deckeln ihre Ordinalzahl → ein voll-grünes Feld gibt keinen ×8-Riesenblock mehr.
   const farbFactor = (pos, ord) => escalatingFactor(cards[pos].green ? Math.min(ord, PLANT_GREEN_FARBBLOCK_CAP) : ord, farbBase);
+  // onRun: Grenz-Bonus melden (noteCross) UND die echte Lauflänge auf jedem Farbblock-Eintrag ablegen
+  // (Blätterdach #228 C2 zahlt „je Karte im Block" — braucht die Blockgröße, nicht nur das Ordinal an der Siegposition).
   markRuns(n, farbMin, matchSuit, suitGap, canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, farbFactor(pos, ord)), farbSkip,
-    (last, ord) => recordEnd(last, "farbblock", farbFactor(last, ord)), isJF, noteCross);
+    (last, ord) => recordEnd(last, "farbblock", farbFactor(last, ord)), isJF,
+    (mem) => { if (noteCross) noteCross(mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) fe.len = mem.length; } });
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));

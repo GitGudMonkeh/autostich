@@ -161,3 +161,42 @@ describe("Pflanze-Farbblock — getunte Regler (Grün-Cap + Überwucherung)", ()
     expect(Math.max(...withUeb) - Math.max(...without)).toBeCloseTo(C.UEBERWUCHERUNG_FACTOR);
   });
 });
+
+/* QA-Sweep #216 → Issue #228: zwei Pflanze-Correctness-Bugs, wo die Engine vom Skill-Text/Glossar abwich.
+   Assertion über `breakdown.flats` (= plantFlat in einem reinen Pflanze-Szenario) statt scoreGain — so ist der
+   Flat-Score isoliert, unabhängig vom Formations-Multiplikator (mehrere grüne Nachbarn bilden Wiederholung/Farbblock
+   → Überlappungs-Bonus verzerrte den Gesamt-Score). Sieg immer an Pos 0 (grün, Wert 12 > Gegner 6). */
+describe("Pflanze-Correctness #228 (QA #216)", () => {
+  const range = (a, b) => Array.from({ length: b - a }, (_, i) => a + i); // [a, b)
+  const greenAt = (idx, v = 12) => { const set = new Set(idx); return constDeck(v).map((c, i) => (set.has(i) ? { ...c, green: true } : c)); };
+  const flats = (skills, deck) => resolveTrick(scen(12, 6, { skills, deck }), noCrit).lastTrick.breakdown.flats;
+
+  it("C1 — Überwucherung verdoppelt die Blüte NUR bei ≥66 % grünem Feld, nicht schon bei Skill-Besitz", () => {
+    // Blüte an Pos 0 (grün, rechter Nachbar grün); Segment-Grün gs = 2 → Blüte-Flat = 2×BLUETE_SCORE.
+    const low = greenAt([0, 1]);                       // 2/40 grün = 5 % → unter 66 %
+    const high = greenAt([0, 1, ...range(10, 36)]);    // 28/40 grün = 70 % → über 66 % (Extra-Grün außerhalb Segment 0)
+    const bluete = C.BLUETE_SCORE * 2;                 // gs = 2
+    expect(flats(["SK_PLANT_10", "SK_PLANT_14"], low)).toBeCloseTo(bluete);   // niedriges Feld: NICHT verdoppelt (der Bug verdoppelte hier immer)
+    expect(flats(["SK_PLANT_10"], low)).toBeCloseTo(bluete);                  // == ohne Überwucherung → Skill wirkungslos bei zu wenig Grün
+    expect(flats(["SK_PLANT_10", "SK_PLANT_14"], high)).toBeCloseTo(bluete * 2); // hohes Feld (≥66 %): verdoppelt
+  });
+
+  it("C2 — Blätterdach zahlt nach Farbblock-Blockgröße, nicht nach deckweiter Grünzahl", () => {
+    // Grüner 4er-Block an Pos 0–3 (Sieg an Pos 0). Extra-Grün AUSSERHALB des Blocks darf den Score NICHT erhöhen.
+    const base = flats(["SK_PLANT_13"], greenAt([0, 1, 2, 3]));                       // Block 4, deckweit 4 grün
+    const withExtra = flats(["SK_PLANT_13"], greenAt([0, 1, 2, 3, ...range(20, 30)])); // Block bleibt 4, deckweit 14 grün
+    expect(base).toBeCloseTo(4 * C.BLAETTERDACH_SCORE); // je Karte IM BLOCK, Block = 4
+    expect(withExtra).toBeCloseTo(base);                 // deckweites Grün außerhalb des Blocks ändert nichts (der Bug zahlte hier 10×Score)
+  });
+
+  it("C2 — Blätterdach löst NICHT bei einem 3er-Block aus, auch wenn das Deck ≥4 grüne Karten hat", () => {
+    const deck = greenAt([0, 1, 2, ...range(20, 30)]); // 3er-Block an Pos 0 + 10 Grün woanders → deckweit 13 grün
+    expect(flats(["SK_PLANT_13"], deck)).toBeCloseTo(0); // Block 3 < BLAETTERDACH_MIN → inert (der Bug löste hier aus)
+  });
+
+  it("C2 — Blätterdach skaliert mit der echten Blockgröße (je Karte im Block)", () => {
+    // 5er-Block (füllt ein Segment) → 5×Score. Farbblöcke sind an Segmentgrenzen begrenzt (SEGMENT_SIZE 5),
+    // der Deckel BLAETTERDACH_CARD_CAP greift erst bei geöffneten Segmenten (Architekt/E_SEGMENT).
+    expect(flats(["SK_PLANT_13"], greenAt(range(0, 5)))).toBeCloseTo(5 * C.BLAETTERDACH_SCORE);
+  });
+});
