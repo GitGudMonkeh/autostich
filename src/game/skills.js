@@ -533,15 +533,15 @@ export function ownsConsumerFor(arch, skills) {
 // #217 Meistergrade: ob eine Skill-id ein Legendär ist (Garantie-Erkennung bei Grad V). Rein & node-testbar.
 export const isLegendarySkill = (id) => !!SKILL_DEFS[id]?.legendary;
 
-export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0) {
+export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0, guaranteeOne = false) {
   const available = archetypesWithSkills(owned);
   const chosen = offerArchetypes(activeArchetypes || [], available, rng);
   if (!chosen.length) return [];
-  // Expliziter Legendär-Roll (Shop-Spec §10 P6): NUR wenn eine Legendär-Chance übergeben ist. Legendäre Skills
-  // werden dann aus dem normalen Zug ausgeschlossen und kommen ausschließlich über diesen Wurf (bei Erfolg genau
-  // einer). Ohne Chance (0) bleibt das alte Verhalten exakt erhalten (kein rng-Drift für Bestandstests).
-  const legHit = legendaryChance > 0 && rng() < legendaryChance;
-  const gateLeg = legendaryChance > 0;
+  // #247: Legendäre laufen über einen eigenen Wurf JE ARCHETYP (nicht mehr EIN globaler Roll). Bei gateLeg werden sie
+  // aus dem normalen Zug ausgeschlossen und kommen ausschließlich über diese Würfe — je getroffenem Archetyp EINER
+  // (mehrere je Angebot möglich, nie zwei im selben Archetyp). Ohne Chance UND ohne Garantie (Grad < V) bleibt das
+  // alte Verhalten exakt erhalten (kein rng-Drift, Legendäre gewichtet im Pool) → Bestandstests/Sim mit Chance 0 unberührt.
+  const gateLeg = legendaryChance > 0 || guaranteeOne;
   const isLeg = (id) => !!SKILL_DEFS[id]?.legendary;
   // Konsument-Garantie: ein AKTIVER Feuer-/Blitz-Build ohne gehaltenen Konsumenten bekommt garantiert (mind.) einen
   // seines Typs angeboten, solange einer verfügbar ist — sonst kann der Build nie „zünden" (frustrierend). Greift nur
@@ -555,14 +555,15 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   const perArch = Math.max(1, Math.floor(count / chosen.length)); // 3 bei 4 Archetypen (count 12), count bei 1 Archetyp
   const offer = [];
   const rest = [];
-  const legPool = [];
-  const guaranteed = new Set(); // garantierte Konsumenten-Slots — vor dem Legendär-Ersatz geschützt
+  const guaranteed = new Set();  // garantierte Konsumenten-Slots — vor dem Legendär-Ersatz geschützt
+  const archLegs = {};           // #247: getroffener Legendär je Archetyp (aus dessen eigenem Wurf)
+  const legPoolByArch = {};      // #247: verfügbare Legendäre je Archetyp (auch für die Grad-V-Garantie)
   for (const arch of chosen) {
     // Enabler-Gating (Anti-Pech): ein Verstärker-Skill (s.enabler) wird NUR angeboten, wenn seine Basis gehalten wird —
     // sonst ist er ein toter Pick (Variety-Befund: der schwache Tail sind fast durchweg ungegatete Verstärker).
     let pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)
       && (!s.enabler || (owned || []).includes(s.enabler))).map((s) => s.id), rng);
-    if (gateLeg) { legPool.push(...pool.filter(isLeg)); pool = pool.filter((id) => !isLeg(id)); } // Legendäre nur über den Roll
+    if (gateLeg) { legPoolByArch[arch] = pool.filter(isLeg); pool = pool.filter((id) => !isLeg(id)); } // Legendäre nur über die Würfe
     // Garantierten Konsumenten dieses Archetyps nach vorne ziehen (deterministisch, kein zusätzlicher rng-Zug: die
     // Pool-Reihenfolge stammt schon aus dem Shuffle; perArch ≥ 1 → Slot 0 wird gewählt). Zwei Auslöser:
     //  · needsConsumer(arch): aktiver Archetyp ohne gehaltenen Konsumenten (Pro-Archetyp-Garantie, Runden 2+).
@@ -574,22 +575,32 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
     }
     for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
     rest.push(...pool); // Reste des Archetyps für die Auffüllung
+    // #247: eigener Legendär-Wurf für DIESEN Archetyp — genau EIN rng()-Zug je Archetyp (nur wenn er Legendäre hat),
+    // stabile Reihenfolge (chosen). Der Meisterrang-Mult (IV+ ×3) steckt bereits im übergebenen legendaryChance;
+    // die Grad-V-Garantie („mindestens einer") kommt separat über guaranteeOne — NICHT als chance=1 (das wäre „in jedem").
+    if (legendaryChance > 0 && legPoolByArch[arch].length && rng() < legendaryChance) {
+      archLegs[arch] = shuffle(legPoolByArch[arch], rng)[0];
+    }
   }
   const fill = shuffle(rest, rng); // auffüllen bis count, falls ein Archetyp zu wenige Skills hatte
   while (offer.length < count && fill.length) offer.push(fill.shift());
-  // Bei erfolgreichem Roll genau einen legendären Skill einsetzen. Balance (2+2+2) wahren: einen normalen Skill
-  // DESSELBEN Archetyps ersetzen — NICHT blind den letzten Slot, sonst verliert ein anderer Archetyp einen Platz
-  // und der Legendär-Archetyp bekommt einen zu viel (#129). Garantierte Konsumenten dabei überspringen.
-  // Fallback: letzter Slot bzw. auffüllen.
-  if (legHit && legPool.length) {
-    const leg = shuffle(legPool, rng)[0];
-    if (!offer.includes(leg)) {
-      if (offer.length >= count) {
-        const legArch = archetypeOf(leg);
-        let idx = -1;
-        for (let i = offer.length - 1; i >= 0; i--) if (archetypeOf(offer[i]) === legArch && !guaranteed.has(offer[i])) { idx = i; break; }
-        offer[idx >= 0 ? idx : offer.length - 1] = leg;
-      } else offer.push(leg);
+  // #247: je getroffenem Archetyp den Legendär einsetzen — ersetzt einen normalen Skill DESSELBEN Archetyps (Balance je
+  // Archetyp wahren: 3→2 normal + 1 legendär), garantierte Konsumenten überspringen. Kein ersetzbarer Slot dieses
+  // Archetyps (alles garantiert/schon legendär) → auslassen; so bleiben Angebotslänge UND Konsument-Garantie erhalten.
+  const placeLeg = (arch, leg) => {
+    if (!leg || offer.includes(leg)) return false;
+    for (let i = offer.length - 1; i >= 0; i--) {
+      if (archetypeOf(offer[i]) === arch && !guaranteed.has(offer[i]) && !isLeg(offer[i])) { offer[i] = leg; return true; }
+    }
+    return false;
+  };
+  for (const arch of chosen) placeLeg(arch, archLegs[arch]);
+  // #247 Grad-V-Garantie: kam über die Würfe KEIN Legendär, forciere (mind.) EINEN — erster Archetyp mit verfügbarem
+  // Legendär und ersetzbarem Slot. Bewusst „mindestens einer", nicht „in jedem Archetyp".
+  if (guaranteeOne && !offer.some(isLeg)) {
+    for (const arch of chosen) {
+      const pool = legPoolByArch[arch];
+      if (pool && pool.length && placeLeg(arch, shuffle(pool, rng)[0])) break;
     }
   }
   return offer;

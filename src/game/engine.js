@@ -1063,10 +1063,11 @@ export function resolveTrick(state, rng) {
       if (decision === "stat") {
         phase = "levelup"; newStatOffer = STAT_IDS; // immer alle Stats (Shop-Spec §4.3: fünf inkl. Einkommen)
       } else if (decision === "skill") {
-        // Grad V: solange dieser Lauf noch kein garantiertes Legendär bekam, das Skill-Angebot mit Chance 1 forcieren.
+        // Grad V: solange dieser Lauf noch kein garantiertes Legendär bekam, mind. EINEN forcieren (#247: als eigener
+        // guaranteeOne-Parameter — NICHT mehr Chance 1, das würde bei der Per-Archetyp-Ziehung in JEDEM Archetyp einen setzen).
         const guarantee = masteryLegendGuaranteed(mGrade) && !newMasteryLegGranted;
-        const skillLeg = guarantee ? 1 : skillLegendaryChance(shop) * mLegMult;
-        const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLeg);
+        const skillLeg = skillLegendaryChance(shop) * mLegMult; // #247: Per-Archetyp-Chance (Basis × Meisterrang-Mult)
+        const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLeg, guarantee);
         if (soff.length > 0) {
           phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = skillFate;
           if (guarantee && soff.some(isLegendarySkill)) newMasteryLegGranted = true; // Garantie eingelöst, sobald ein Legendär tatsächlich im Angebot ist

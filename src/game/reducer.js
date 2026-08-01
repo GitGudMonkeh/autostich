@@ -452,10 +452,11 @@ export function reducer(state, action) {
       const tokens = state.rerolls || 0;                             // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill), ersetzt shop.skillRerolls
       if (!free && tokens <= 0) return state;
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      // #217: Grad-V-Garantie greift auch beim Neuwurf (Chance 1), solange noch kein Legendär angeboten wurde; sonst Legendär×Mult.
+      // #217/#247: Grad-V-Garantie greift auch beim Neuwurf (mind. EINER via guaranteeOne), solange noch kein Legendär
+      // angeboten wurde; sonst Per-Archetyp-Chance × Meisterrang-Mult (nicht mehr Chance 1 = „in jedem Archetyp").
       const guarantee = masteryLegendGuaranteed(state.masteryGrade) && !state.masteryLegGranted;
-      const skillLeg = guarantee ? 1 : skillLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade);
-      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLeg);
+      const skillLeg = skillLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade);
+      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLeg, guarantee);
       if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
       const rerolls = free ? tokens : tokens - 1;
       const masteryLegGranted = state.masteryLegGranted || (guarantee && offer.some(isLegendarySkill)); // Garantie eingelöst

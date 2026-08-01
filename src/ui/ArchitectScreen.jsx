@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import {
   familyDef, shapeRotations, enumeratePlacements, isValidFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, structureFactorMap,
-  rowOf, colOf, posOf, ROWS, COLS, N_POS, tierNum, tierFactor, upgradeInfo,
+  rowOf, colOf, posOf, ROWS, COLS, N_POS, tierNum, tierFactor, upgradeInfo, bindSpanFor,
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR,
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
@@ -400,10 +400,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 <button onClick={toggleForms} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
                   style={{ background: showForms ? "#16283a" : "#16232f", border: `1px solid ${showForms ? "#3b7dbe" : "#2b3e4d"}`, color: showForms ? "#7db4e6" : "#7d8a97" }}
                   title="Formationsrahmen (Ring + Label) am Brett ein-/ausblenden">{showForms ? "◉" : "○"} Formationen</button>
-                {showRotate && (
-                  <button onClick={rotateSelected} className="text-xs font-bold rounded-lg px-2.5 py-1"
-                    style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
-                )}
+                {/* #248: „⟳ Drehen" wandert in die schwebende Aktionsleiste (unten) — dort beim Ziehen ohne Scrollen erreichbar. */}
               </div>
             </div>
             <div ref={boardRef} className="relative grid grid-cols-5 gap-1" style={{ maxWidth: 300, margin: "0 auto" }}>
@@ -474,7 +471,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       boxShadow: [
                         isMarkedDemolish ? "inset 0 0 0 2px #ff6a4d, inset 0 0 16px #ff3b1e66" : null,     // #235: markiertes Abriss-Ziel rot hervorheben
                         isMarkedUpgrade ? "inset 0 0 0 2px #f0b429, inset 0 0 16px #f0b42966" : null,      // #237: markiertes Aufrüst-Ziel gold hervorheben
-                        upCan && !isMarkedUpgrade ? "inset 0 0 0 2px #f0b42999, 0 0 12px #f0b42966" : null, // #UI: aufwertbares Gebäude im Aufrüst-Spotlight hervorheben
+                        upCan && !isMarkedUpgrade ? `0 0 10px ${tierCol}66` : null,                        // #249: aufwertbares Gebäude dezent in SEINER Stufenfarbe leuchten (kein Gold) — Gold erst beim ausgewählten
+                        upCan && !isMarkedUpgrade ? `inset 0 0 0 2px ${tierCol}` : null,                   // #249: Rahmen in Stufenfarbe (der SVG-Contour ist im Aufrüst-Spotlight gedimmt)
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
                         isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,                              // ausgewählt (weiß)
                         // #UI: Raritäts-Rahmen JE ZELLE entfällt — die durchgezogene SVG-Kontur (oben) zeichnet ihn jetzt
@@ -719,6 +717,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 damit sie beim Ziehen am Brett erreichbar bleiben. Anleitung/Referenz/Farbwahl bleiben im Panel drüber.
                 Desktop: normale Leiste (md:static). */}
             <div className="order-1 sticky top-0 z-20 md:static rounded-xl p-2" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
+              {/* #248: Rotieren in der schwebenden Leiste — nur bei ausgewähltem Gebäude in place/move; beim Ziehen ohne Scrollen erreichbar. */}
+              {showRotate && (
+                <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
+              )}
               {removeFor ? (
                 <button onClick={() => { setRemoveFor(null); setPendingDemolish(null); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
               ) : phase === "choose" ? (
@@ -823,7 +825,7 @@ function famEff(fam, b) {
     case "mult":       return `Siege hier ×${base.factor}`;
     case "joker":      return `Formations-Joker (${base.types.join("/")})`;
     case "transparentFarb": return "Farbblock-Transparenz";
-    case "bind":       return "Treppen-Bindeglied (±Span)";
+    case "bind":       return `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`;
     case "crossSeg":   return "öffnet die Segmentgrenze";
     case "anker":      return `jede Zelle = Anker ×${tierFactor(base.factor, t).toFixed(2)}`;
     case "formMult":   return `Formationen hier ×${base.factor}`;
