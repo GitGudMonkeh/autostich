@@ -322,7 +322,25 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const rotateSelected = () => {
     const b = buildings.find((x) => x.id === selId); if (!b) return;
     const form = familyDef(b.familyId).form, rots = shapeRotations(form), a = anchorOf(b.footprint), cur = currentRotOf(b), others = buildings.filter((x) => x.id !== b.id);
-    for (let k = 1; k <= rots.length; k++) { const fp = footprintAt(form, (cur + k) % rots.length, a); if (fp && isValidFootprint(form, fp, others)) { if (b.id === PENDING_ID) setPending((p) => (p ? { ...p, footprint: fp } : p)); else onMove?.({ buildingId: b.id, footprint: fp }); return; } }
+    const ar0 = rowOf(a), ac0 = colOf(a);
+    const apply = (fp) => { if (b.id === PENDING_ID) setPending((p) => (p ? { ...p, footprint: fp } : p)); else onMove?.({ buildingId: b.id, footprint: fp }); };
+    // #239 Fix: NICHT nur um den aktuellen Anker drehen — am Brettrand läuft die gedrehte Form sonst aus dem Gitter
+    // (z. B. ein 1×4 unten → hochkant reicht unten über das Brett hinaus → „lässt sich nicht drehen"). Für die nächste
+    // Rotation den NÄCHSTGELEGENEN gültigen Platz brettweit suchen (in-Brett + ohne Überlappung) und dorthin drehen.
+    // In-place bleibt bevorzugt (Manhattan-Distanz 0), sonst minimal verschieben; gibt es keinen Platz → nächste Rotation.
+    for (let k = 1; k <= rots.length; k++) {
+      const rotIdx = (((cur + k) % rots.length) + rots.length) % rots.length;
+      const cells = rots[rotIdx] || [];
+      let mxR = 0, mxC = 0; for (const [dr, dc] of cells) { mxR = Math.max(mxR, dr); mxC = Math.max(mxC, dc); }
+      let best = null, bestD = Infinity;
+      for (let r = 0; r <= ROWS - 1 - mxR; r++) for (let c = 0; c <= COLS - 1 - mxC; c++) {
+        const fp = footprintAt(form, rotIdx, posOf(r, c));
+        if (!fp || !isValidFootprint(form, fp, others)) continue;
+        const d = Math.abs(r - ar0) + Math.abs(c - ac0);
+        if (d < bestD) { bestD = d; best = fp; }
+      }
+      if (best) { apply(best); return; }
+    }
   };
 
   // Live-Delta beim Ziehen (Vorschau-Position).
