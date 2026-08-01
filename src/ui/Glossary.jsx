@@ -86,7 +86,7 @@ export function GlossaryOverlay({ onClose }) {
   return (
     <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label="Glossar">
       <div className="absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
-      <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-6 pointer-events-none">
+      <div className="absolute inset-0 flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
         <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card"
           style={{ maxHeight: "92dvh", background: "linear-gradient(180deg,#16131f 0%,#131318 42%)", border: "1px solid #2a2a33", boxShadow: "0 30px 80px -30px #000" }}>
 
@@ -114,7 +114,7 @@ export function GlossaryOverlay({ onClose }) {
           </div>
 
           {/* Kategorie-Chips (Sprungnavigation) */}
-          <div className="flex gap-1.5 px-4 py-2.5 flex-none overflow-x-auto gloss-chiprow" style={{ borderBottom: "1px solid #2a2a33" }}>
+          <div className="flex flex-nowrap sm:flex-wrap gap-1.5 px-4 py-2.5 flex-none overflow-x-auto sm:overflow-x-visible gloss-chiprow" style={{ borderBottom: "1px solid #2a2a33" }}>
             <Chip label="Alle" active={activeCat === "all"} onClick={() => jump("all")} />
             {GLOSSARY_CATEGORIES.map((c) => (
               <Chip key={c.id} label={c.label} dot={c.color} active={activeCat === c.id} onClick={() => jump(c.id)} />
@@ -178,12 +178,14 @@ function TermRow({ e }) {
 }
 
 // Drop-in: das ⓘ + das selbstverwaltete Overlay. In Panel-/HUD-Köpfe setzen.
-export function GlossaryPanel({ className = "", style }) {
+// `onOpenChange` meldet den Öffnungszustand nach oben (App pausiert damit den Auto-Battler im Spiel-HUD).
+export function GlossaryPanel({ className = "", style, onOpenChange }) {
   const [open, setOpen] = useState(false);
+  const set = (v) => { setOpen(v); onOpenChange?.(v); };
   return (
     <>
-      <GlossaryButton onClick={() => setOpen(true)} className={className} style={style} />
-      {open && <GlossaryOverlay onClose={() => setOpen(false)} />}
+      <GlossaryButton onClick={() => set(true)} className={className} style={style} />
+      {open && <GlossaryOverlay onClose={() => set(false)} />}
     </>
   );
 }
