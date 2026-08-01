@@ -492,7 +492,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const formMult = t ? (t.formationMult || 1) : 1;
   const showFormation = win && t && formMult > 1.001;
   const activeForms = t ? (t.formations || []).filter((f) => f.factor > 1) : [];
-  const formLabel = activeForms.length === 1 ? formationLabel(activeForms[0].type).toUpperCase() : "FORMATION";
+  const formLabel = activeForms.length === 1 ? formationLabel(activeForms[0].type) : "Formation"; // Loc: Caps via CSS (formFloat textTransform), Quelle normal geschrieben
   const formationStr = formMult.toFixed(2).replace(".", ",");
   const formPeak = formMult >= 12 ? 2 : formMult >= 6 ? 1 : 0; // 0 normal · 1 verstärkt · 2 Peak
   // #128: Float-Farbe = Rahmenfarbe der Übersicht — Tier nach Formations-Anzahl (formationBorder, kein Drift).
@@ -760,7 +760,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                    filter: `drop-shadow(0 0 ${Math.round(4 + 8 * chargeR)}px #5ec8f0)${chargeFull ? " drop-shadow(0 0 10px #8a7de0)" : ""}` }}>
           ⚡
           {chargeFull && (
-            <div className="font-pixel-dense" style={{ position: "absolute", top: 21, left: "50%", transform: "translateX(-50%)", fontSize: 8, letterSpacing: 1, whiteSpace: "nowrap", color: "#bfe9f7" }}>VOLL GELADEN</div>
+            <div className="font-pixel-dense" style={{ position: "absolute", top: 21, left: "50%", transform: "translateX(-50%)", fontSize: 8, letterSpacing: 1, whiteSpace: "nowrap", color: "#bfe9f7", textTransform: "uppercase" }}>Voll geladen</div>
           )}
         </div>
       )}
@@ -770,10 +770,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
             style={{ left: `calc(${FLOAT_ZONES.crit.left} + ${fjitter(t.trickNo * 5 + 2, JITTER_X)}px)`,
                      top:  `calc(${FLOAT_ZONES.crit.top} + ${fjitter(t.trickNo * 5 + 9, JITTER_Y)}px)`,
-                     fontSize: 26, color: critColor, textShadow: `0 0 12px ${critColor}aa`,
+                     fontSize: 26, color: critColor, textShadow: `0 0 12px ${critColor}aa`, textTransform: "uppercase", // Loc: Caps via CSS
                      transform: reduced ? "translateX(-50%)" : undefined,
                      animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900) + 1000}ms ease-out forwards`) }}>
-            KRITISCH{reduced ? ` ×${critMultStr}` : "!"}
+            {reduced ? `Kritisch ×${critMultStr}` : "Kritisch!"}
           </div>
         )}
 
@@ -810,6 +810,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             style={{ right: `calc(${FLOAT_ZONES.formation.right} + ${fjitter(formFloat.key * 4 + 5, JITTER_X)}px)`,
                      top:  `calc(${FLOAT_ZONES.formation.top} + ${fjitter(formFloat.key * 4 + 11, JITTER_Y)}px)`,
                      fontSize: formFloat.peak === 2 ? 26 : formFloat.peak === 1 ? 21 : 17,
+                     textTransform: "uppercase", // Loc: Formations-Label-Caps via CSS
                      color: formFloat.color,
                      textShadow: `0 0 ${formFloat.peak === 2 ? 16 : formFloat.peak === 1 ? 12 : 10}px ${formFloat.color}${formFloat.peak ? "cc" : "88"}`,
                      animation: fx(formLeaving
