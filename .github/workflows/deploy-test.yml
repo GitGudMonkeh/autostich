@@ -1,7 +1,12 @@
 name: Deploy Testbranch to Pages (/test/)
 
-# Deployt den Testbranch als Unterpfad /autostich/test/ auf DIESELBE Pages-Seite wie main.
-# So lassen sich große Features live prüfen, ohne die Hauptseite anzufassen.
+# ⚠️ WARTUNGSMODUS (vorbereitet für den späteren rework→main-Merge).
+# Statt des App-Builds wird die statische Wartungsseite (maintenance/index.html) nach
+# /autostich/test/ deployt und überschreibt dort index.html. Root (main-Seite) bleibt unangetastet.
+#
+# ZUM REAKTIVIEREN der Testseite: diesen Commit reverten (`git revert <sha>`) — dann greift wieder
+# der App-Build (npm ci/test/build mit DEPLOY_BASE=/autostich/test/ + VITE_PREVIEW=1). Der alte
+# Workflow steht dafür in der Git-History dieses Files.
 on:
   push:
     branches: [Autostich_Test]
@@ -20,23 +25,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-        env:
-          # Assets müssen unter dem Unterpfad aufgelöst werden.
-          DEPLOY_BASE: /autostich/test/
-          # Preview-Build: eigener localStorage-Namespace + kein Schreiben ins echte Leaderboard.
-          VITE_PREVIEW: "1"
+      - name: Wartungsseite als Deploy-Inhalt bereitstellen
+        run: |
+          mkdir -p dist
+          cp maintenance/index.html dist/index.html
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: dist
           # Nur in den Unterordner test/ schreiben; Root (main-Seite) unangetastet lassen.
+          # keep_files: true → alte App-Assets bleiben liegen (die Wartungsseite ist self-contained
+          # und referenziert sie nicht), aber index.html wird durch die Wartungsseite ersetzt.
           destination_dir: test
           keep_files: true
-          commit_message: "deploy(test): ${{ github.sha }}"
+          commit_message: "deploy(test): Wartungsseite ${{ github.sha }}"

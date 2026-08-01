@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>AUTOSTICH — Wartung</title>
+  <style>
+    :root{
+      --bg:#100e0a; --panel:#1a1712; --ink:#f1ead9; --soft:#b8ad97; --faint:#8a8069;
+      --gold:#e6b64a; --gold-bright:#f4cd6a; --hair:#332d22;
+      --mono:"Cascadia Code",Consolas,"SF Mono",ui-monospace,monospace;
+      --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+      --serif:"Constantia","Palatino Linotype",Palatino,Georgia,serif;
+    }
+    *{box-sizing:border-box;margin:0}
+    html,body{height:100%}
+    body{
+      background:radial-gradient(120% 70% at 50% -10%, rgba(230,182,74,.10), transparent 60%), var(--bg);
+      color:var(--ink); font-family:var(--sans);
+      min-height:100%; display:flex; align-items:center; justify-content:center;
+      padding:32px 20px; -webkit-font-smoothing:antialiased;
+    }
+    .card{ max-width:560px; text-align:center; }
+    .badge{
+      display:inline-flex; align-items:center; gap:9px;
+      font-family:var(--mono); font-size:.72rem; letter-spacing:.24em; text-transform:uppercase;
+      color:var(--gold); border:1px solid color-mix(in srgb,var(--gold) 40%,var(--hair));
+      background:color-mix(in srgb,var(--gold) 8%,transparent);
+      border-radius:999px; padding:6px 14px; margin-bottom:30px;
+    }
+    .badge .dot{ width:7px;height:7px;border-radius:50%; background:var(--gold);
+      box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 22%,transparent);
+      animation:pulse 1.9s ease-in-out infinite; }
+    @keyframes pulse{ 0%,100%{opacity:.55;transform:scale(.85)} 50%{opacity:1;transform:scale(1.15)} }
+    .wordmark{
+      font-family:var(--serif); font-weight:700; letter-spacing:.05em;
+      font-size:clamp(2.6rem,12vw,4.4rem); line-height:.95;
+      background:linear-gradient(176deg,var(--gold-bright),var(--gold) 55%,color-mix(in srgb,var(--gold) 55%,var(--ink)));
+      -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+    }
+    h1{ font-family:var(--serif); font-weight:700; font-size:clamp(1.3rem,4vw,1.7rem);
+      margin:26px 0 10px; color:var(--ink); }
+    p{ color:var(--soft); font-size:1.02rem; line-height:1.6; max-width:44ch; margin:0 auto; }
+    .rule{ width:64px; height:2px; margin:28px auto 0;
+      background:linear-gradient(90deg,transparent,var(--gold),transparent); opacity:.7; }
+    .note{ margin-top:22px; font-family:var(--mono); font-size:.74rem; letter-spacing:.06em; color:var(--faint); }
+    @media (prefers-reduced-motion:reduce){ .badge .dot{animation:none} }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <span class="badge"><span class="dot"></span>Wartungsarbeiten</span>
+    <div class="wordmark">AUTOSTICH</div>
+    <h1>Die Testseite wird gerade überarbeitet</h1>
+    <p>Wir bauen im Hintergrund am nächsten großen Update. Die Testumgebung ist deshalb kurzzeitig offline — schau bald wieder vorbei.</p>
+    <div class="rule"></div>
+    <p class="note">Testumgebung · /autostich/test/</p>
+  </main>
+</body>
+</html>
