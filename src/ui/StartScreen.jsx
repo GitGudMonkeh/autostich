@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { AnleitungModal } from "./AnleitungModal.jsx";
-import { PatchNotesModal } from "./PatchNotesModal.jsx";
 import { MuteButton } from "./MuteButton.jsx";
 import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
@@ -15,7 +14,6 @@ import { GlossaryPanel } from "./Glossary.jsx";
    (deine Läufe + global) liegt weiterhin hinter „Bestenliste" (LeaderboardScreen, #217). */
 export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
-  const [showPatch, setShowPatch] = useState(false);
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const tryPlaySeed = () => {
@@ -120,7 +118,6 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
         {onCustomize && <button onClick={onCustomize} className={chipCls} style={chipSty}>Deck</button>}
         {onOptions && <button onClick={onOptions} aria-label="Optionen" className={chipCls} style={chipSty}>Optionen</button>}
         <button onClick={() => setShowGuide(true)} className={chipCls} style={chipSty}>Anleitung</button>
-        <button onClick={() => setShowPatch(true)} className={chipCls} style={chipSty}>Patchnotes</button>
       </div>
 
       {/* Rekord-Fuß — schlank & zentriert; die volle Liste (deine Läufe + global) liegt hinter „Bestenliste". */}
@@ -152,7 +149,6 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
       </div>
 
       {showGuide && <AnleitungModal onClose={closeGuide} />}
-      {showPatch && <PatchNotesModal onClose={() => setShowPatch(false)} />}
     </div>
   );
 }
