@@ -315,7 +315,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const isDragOrig = draggingId != null && b && b.id === draggingId;
                 return (
                   <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
-                    className="relative rounded-md aspect-square flex items-center justify-center font-mono font-bold transition-all"
+                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold transition-all${b && structLit(pos) ? " arch-struct-lit" : ""}`}
                     style={{
                       background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b ? `${cat.color}` : "#16232f"),
                       color: b || inDragPrev ? "#fff" : "#adbecc",
@@ -328,7 +328,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                         // Raritäts-Rahmen je Gebäude: 2px Stufenfarbe am Rand + 1px dunkle Trennlinie → auch bei ähnlicher Füllfarbe klar lesbar.
                         b ? `inset 0 0 0 2px ${tierCol}, inset 0 0 0 3px #0d1620cc` : null,
                         b && fam.legendary ? `0 0 8px ${GOLD}55` : null,                                   // Legendär → zusätzlicher warmer Glow
-                        b && structLit(pos) ? "0 0 10px #f0b42999" : null,                                // Gebäude auf fertiger Struktur → Gold-Glow (außen, konkurriert nicht mit dem Rahmen)
+                        // Gebäude auf fertiger Struktur (Kombi erfüllt) → schimmernder Gold-Rahmen wie ein Legendär via .arch-struct-lit::after (siehe index.css).
                         !b && structLit(pos) ? "inset 0 0 0 2px #f0b429aa" : null,                        // leere Zelle einer fast-fertigen Struktur → Gold-Hinweis
                       ].filter(Boolean).join(", ") || undefined,
                       outline: isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined)),
