@@ -9,7 +9,7 @@ import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
 import { hasGletscher, plantRootScore, hasPfahlwurzel } from "../game/skills.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
-import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus } from "../game/architect.js";
+import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus, structureFactorMap } from "../game/architect.js";
 import { architectEffectStrings } from "./archEffects.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 
@@ -76,6 +76,13 @@ export function ChronikOverview({ state, onClose }) {
     }
     return cover;
   }, [hasArch, state.architect, playerOrder, deck, archBuildings]);
+  // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) → goldener Schimmer-Rahmen wie im Architekt-Screen.
+  const structLitPos = useMemo(() => {
+    if (!hasArch) return null;
+    const set = new Set();
+    structureFactorMap(archOccupied(archBuildings)).forEach((f, pos) => { if (f > 1) set.add(pos); });
+    return set;
+  }, [hasArch, archBuildings]);
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
@@ -112,6 +119,7 @@ export function ChronikOverview({ state, onClose }) {
               highlightPos={highlightPos} highlightTitle="⏱ Zeitraffer · gekoppelte Position (20 & 40)"
               openSegments={openSegmentInfo(state.familyTiers)}
               architectCover={hasArch && showArch ? architectCover : null}
+              structPos={hasArch && showArch ? structLitPos : null}
               selectedPos={selPos} onTilePick={(pos) => setSelPos(selPos === pos ? null : pos)} />
           </div>
 

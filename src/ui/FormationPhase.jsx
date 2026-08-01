@@ -2,7 +2,7 @@ import { useState, useRef, useMemo } from "react";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { SKILL_DEFS, hasGletscher, hasArchitekt, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
-import { precomputeArchitect, architectValueBonus, familyDef as archFamilyDef } from "../game/architect.js";
+import { precomputeArchitect, architectValueBonus, familyDef as archFamilyDef, occupiedCells, structureFactorMap } from "../game/architect.js";
 import { architectEffectStrings } from "./archEffects.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 import { CardGrid } from "./CardGrid.jsx";
@@ -61,6 +61,14 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
     }
     return cover;
   }, [hasArch, architect, playerOrder, deck]);
+  // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) — dieselben Positionen wie im Architekt-Screen bekommen
+  // den goldenen Schimmer-Rahmen (arch-struct-lit). Nur Geometrie (Gebäude-Abdeckung), unabhängig von Karten/Tauschen.
+  const structLitPos = useMemo(() => {
+    if (!hasArch) return null;
+    const set = new Set();
+    structureFactorMap(occupiedCells(archBuildings)).forEach((f, pos) => { if (f > 1) set.add(pos); });
+    return set;
+  }, [hasArch, archBuildings]);
   // Eis (#93 F3): eingefrorene Karten mit noch freiem Frosttausch machen einen Tausch KOSTENLOS (auch bei 0 Energie).
   const frostSwapsUsed = state.frostSwapsUsed || [];
   const frozenCards = cards.filter((c) => c.frozen);
@@ -215,7 +223,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
                 ))}
               </div>
             )}
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} frostPillarPos={frostPillar.positions} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} />
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} frostPillarPos={frostPillar.positions} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
