@@ -71,7 +71,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         ? "Schaltet das Einfrieren frei: eigene Karten werden blau, biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden. Jeder weitere Eis-Skill friert eine weitere Karte ein."
         : "Jeder weitere Eis-Skill friert eine weitere eigene Karte ein und erweitert deine Aufstellungs-Optionen.";
       case "plant": return first
-        ? `Schaltet das Wachstum frei: eigene Karten wachsen bei Siegen — je mehr Pflanze-Skills, desto schneller (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Skills). Ab ${PLANT_GREEN_THRESHOLD} Wachstum werden sie grün und bilden einen Farbblock, der Score gibt.`
+        ? `Schaltet das Wachstum frei: eigene Karten wachsen bei Siegen — je mehr Pflanze-Skills, desto schneller (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Skills). Eine wachsende, noch nicht reife Karte ist ein Setzling; ab ${PLANT_GREEN_THRESHOLD} Wachstum wird sie grün und bildet einen Farbblock, der Score gibt.`
         : `Jeder weitere Pflanze-Skill beschleunigt das Wachstum (volles Tempo ab ${PLANT_GROWTH_SKILL_REF}) — mehr grüne Karten, größerer Farbblock. Wachstum und Grün sind bereits aktiv.`;
       default: return "";
     }
@@ -109,7 +109,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
-          <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Runde {(state.cycle || 0) + 1}</div>
+          <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Durchlauf {(state.cycle || 0) + 1}</div>
           <h2 className="text-xl font-bold mt-1">Wähle einen Skill</h2>
           <p className="text-xs opacity-55 mt-1">
             Skills sind seltene, regelverändernde Motoren — {skills.length}/{SKILL_SLOTS} Slots belegt.
@@ -169,6 +169,14 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   </button>
                 ))}
               </div>
+              {/* #238: Persistenz-Hinweis — nur wenn eine betroffene Fraktion (Feuer/Eis/Pflanze) gehalten wird.
+                  Ablegen des LETZTEN Skills einer Fraktion setzt deren Gegner-Schwächungen zurück, eigene
+                  aufgewertete Karten bleiben aber gebacken (Wahrheit: reducer.js stillActive-Pfad). */}
+              {held.some((s) => ["fire", "ice", "plant"].includes(archetypeOf(s.id))) && (
+                <div className="mt-3 rounded-lg px-3 py-2 text-[11px] leading-snug" style={{ background: "#16232f", border: "1px solid #2b3e4d", color: "#b8c4d0" }}>
+                  <b style={{ color: "#e0605a" }}>Gegner-Schwächungen</b> (Frost/Brand/Ausläufer) werden zurückgesetzt, wenn du den <b>letzten Skill eines Archetyps</b> ablegst. <b style={{ color: "#5fce86" }}>Eigene aufgewertete Karten</b> (geschmiedeter/gewachsener Wert) bleiben erhalten.
+                </div>
+              )}
               <button onClick={() => setPending(null)} className="w-full mt-3 rounded-lg py-2 text-sm font-bold" style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>Abbrechen</button>
             </div>
           </div>

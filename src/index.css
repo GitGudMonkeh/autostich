@@ -333,6 +333,10 @@ button { font-family: inherit; }
   text-shadow: 0 0 8px currentColor;
 }
 
+/* Q2/Loc: Ergebnis-Banner-Großschrift zentral über CSS statt im String (Battlefield <span class="as-banner">).
+   Der Übersetzer liefert die Banner normal geschrieben; ein zweiter Caps-Mechanismus im String entfällt. */
+.as-banner { text-transform: uppercase; }
+
 /* Press Start 2P ist breiter -> Groessen der Wortmarke/des Banners herunterregeln. */
 [data-skin="crt"] .as-wordmark-header { font-size: 1rem; line-height: 1.3; }
 [data-skin="crt"] .as-wordmark-hero   { font-size: 1.9rem; line-height: 1.35; }

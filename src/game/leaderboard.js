@@ -71,6 +71,13 @@ export async function fetchSeedTop(seed, limit = 3) {
 // Fallback-Kaskade beim Insert: volles Schema → ohne FB-8-Spalten → ohne `archetypes` (Basis).
 export async function publishRun(entry) {
   if (PREVIEW) return; // Preview-Build: kein Schreiben ins echte Leaderboard.
+  // #241 Wurzelfix: die bigint-Spalten (score/formation_score/crit_bonus_score/best_trick_score/seed) dulden nur GANZE
+  // Zahlen — die Engine-Scores sind aber Floats (aus multiplizierten Werten). Ein Float-Insert antwortet mit 400, die
+  // Fallback-Kaskade degradiert dann auf `noExtra` und ALLE Detailfelder (auch die ganzzahligen wie best_streak/seed)
+  // gehen still verloren (= der #197-Datenverlust). Darum vor dem Posten runden.
+  const BIGINT_INT = ["score", "formation_score", "crit_bonus_score", "best_trick_score", "seed"];
+  entry = { ...entry };
+  for (const f of BIGINT_INT) if (typeof entry[f] === "number" && Number.isFinite(entry[f])) entry[f] = Math.round(entry[f]);
   const post = (body) => fetch(REST, {
     method: "POST",
     // #229 N2: return=representation → die eingefügte Zeile (inkl. server-seitiger id/created_at) kommt zurück.

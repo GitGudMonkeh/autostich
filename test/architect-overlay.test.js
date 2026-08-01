@@ -65,16 +65,16 @@ describe("architectEffectStrings — Gebäude-Effekte an einer Position (CardDet
     const pre = { value: [{ kind: "flat", amount: 2 }], score: [{ kind: "mult", factor: 1.35 }], segFactor: [1.2] };
     const s = architectEffectStrings(pre, 0, { value: 5, suit: "R" });
     expect(s).toContain("+2 Stichwert");
-    expect(s).toContain("×1,35 Punkte");
+    expect(s).toContain("×1,35 Score");
     expect(s).toContain("Struktur ×1,20");
   });
   it("ohne Effekt an der Position → leere Liste", () => {
     const pre = { value: [null], score: [null], segFactor: [1] };
     expect(architectEffectStrings(pre, 0, { value: 5, suit: "R" })).toEqual([]);
   });
-  it("Flat-Punkte + bedingter Farb-Score", () => {
+  it("Flat-Score + bedingter Farb-Score", () => {
     const pre = { value: [null], score: [{ kind: "color", amount: 40, colorChoice: "B" }], segFactor: [1] };
-    expect(architectEffectStrings(pre, 0, { value: 5, suit: "R" })).toEqual(["+40 Punkte bei Blau"]);
+    expect(architectEffectStrings(pre, 0, { value: 5, suit: "R" })).toEqual(["+40 Score bei Blau"]);
   });
   it("Formations-Gebäude: Rolle wird ausformuliert (Joker / Formations-Multiplikator)", () => {
     const preEmpty = { value: [null], score: [null], segFactor: [1] };

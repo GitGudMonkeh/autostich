@@ -146,7 +146,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
         {/* Kopf */}
         <div className="flex items-center justify-between mb-2">
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>Aufstellung · Runde {(state.cycle || 0) + 1}</div>
+            <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>Aufstellung · Durchlauf {(state.cycle || 0) + 1}</div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold">Deck aufstellen</h2>
               <GlossaryPanel />
@@ -175,7 +175,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
               style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
             {/* #193: Differenz neben „Zurücksetzen" — zeigt, was ein Reset rückgängig machen würde
                 (bestehende Farbcodierung grün/rot/grau; Σ bleibt oben im Kopf). */}
-            <span className="font-pixel-dense text-sm whitespace-nowrap ml-0.5" title="Formations-Differenz seit Rundenbeginn (was ein Zurücksetzen rückgängig macht)">
+            <span className="font-pixel-dense text-sm whitespace-nowrap ml-0.5" title="Formations-Differenz seit Durchlaufbeginn (was ein Zurücksetzen rückgängig macht)">
               <span className="opacity-45 mr-0.5">Δ</span>
               <span className="font-bold" style={{ color: deltaColor }}>{deltaStr}</span>
             </span>

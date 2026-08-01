@@ -31,7 +31,7 @@ export function StatSelect({ offer = STAT_IDS, onPick, state = {} }) {
           <GlossaryPanel className="absolute top-3 right-3 z-10" />
           <div className="text-center mb-1">
             <div className="text-xs uppercase tracking-widest" style={{ color: ACCENT }}>
-              {isStart ? "Start" : `Runde ${(state.cycle || 0) + 1}`}
+              {isStart ? "Start" : `Durchlauf ${(state.cycle || 0) + 1}`}
             </div>
             <h2 className="text-xl font-bold mt-1">Wähle einen Stat</h2>
             <p className="text-xs opacity-45 mt-1">Dauerhaft · stapelbar · ohne Obergrenze</p>

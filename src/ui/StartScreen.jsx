@@ -6,6 +6,7 @@ import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügte
 import { fmtScore } from "./format.js";
 import logo from "../assets/logo.png";
 import { GlossaryPanel } from "./Glossary.jsx";
+import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel unten
 
 /* Startbildschirm (#4): Redesign „Richtung A — zentriert & entschlackt" (aus dem Startmenü-Redesign).
    Der Inhalt wird vertikal zentriert (füllt die frühere untere Leere) und bekommt eine klare Rangfolge:
@@ -147,6 +148,9 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
           </button>
         )}
       </div>
+
+      {/* #250 Versions-/Build-Stempel unten — nach jedem Push sichtbar, ob er gelandet ist (+ Umgebung + kurze SHA). */}
+      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text" title="Version · Umgebung · Commit">{VERSION_FULL}</div>
 
       {showGuide && <AnleitungModal onClose={closeGuide} />}
     </div>

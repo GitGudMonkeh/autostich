@@ -17,11 +17,11 @@ export function RoundScoreBadge({ state = {}, className = "" }) {
   return (
     <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ${className}`}
       style={{ background: "#20202a", border: "1px solid #33333e" }}>
-      <span className="opacity-55 uppercase tracking-wide text-[10px]">Rundenscore</span>
+      <span className="opacity-55 uppercase tracking-wide text-[10px]">Durchlauf-Score</span>
       <span className="font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{scoreStr}</span>
       {hasDiff
         ? <span className="font-bold" title="Differenz zur Vorrunde" style={{ color: diffColor }}>{diffStr}</span>
-        : <span className="opacity-45" title="keine Vorrunde zum Vergleich">{prev == null ? "erste Runde" : "—"}</span>}
+        : <span className="opacity-45" title="keine Vorrunde zum Vergleich">{prev == null ? "erster Durchlauf" : "—"}</span>}
     </span>
   );
 }

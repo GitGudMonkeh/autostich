@@ -55,7 +55,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>
-            {(state.perks || []).length === 0 ? "Start" : `Runde ${(state.cycle || 0) + 1}`}
+            {(state.perks || []).length === 0 ? "Start" : `Durchlauf ${(state.cycle || 0) + 1}`}
           </div>
           <h2 className="text-xl font-bold mt-1">Wähle einen Perk</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
@@ -98,7 +98,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                       {v.upgrade && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: `${v.accent}14`, color: v.accent, border: `1px dashed ${v.accent}88` }}>
-                          ⬆ UPGRADE · {romanOf(v.held)}→{romanOf(v.tier)}
+                          ⬆ AUFWERTEN · {romanOf(v.held)}→{romanOf(v.tier)}
                         </span>
                       )}
                     </>
@@ -147,7 +147,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
               {(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((t) => t > 0).length;
                 return `Dein Build — ${n} Perk${n === 1 ? "" : "s"}`; })()}
             </div>
-            <PerkList perks={perks} familyTiers={state.familyTiers} empty="Noch keine Perks gewählt." />
+            <PerkList perks={perks} familyTiers={state.familyTiers} zinsBonus={state.zinsBonus} empty="Noch keine Perks gewählt." />
           </div>
           <div>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte je Farbe</div>

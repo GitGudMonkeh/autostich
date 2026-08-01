@@ -70,7 +70,7 @@ function MiniShape({ form, color, rotIdx = 0 }) {
   );
 }
 
-export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemolish, onDone }) {
+export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onDemolish, onDone }) {
   useEscape(onDone);
   const architect = state.architect || { buildings: [], offers: [] };
   const committed = architect.buildings || [];
@@ -94,6 +94,12 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const dragGhostRef = useRef(null);                       // DOM-Ref des Ghost-Rahmens; sein transform wird je pointermove DIREKT gesetzt (flüssig)
   const [upgradeMsg, setUpgradeMsg] = useState(null);      // { name, reason } — Meldung beim Antippen eines nicht-aufwertbaren Gebäudes (Aufrüsten-Phase)
   const [pendingDemolish, setPendingDemolish] = useState(null); // #235: markiertes Abriss-Ziel (buildingId) — wird erst mit „Abreißen" wirklich entfernt (zweistufig)
+  const [pendingUpgrade, setPendingUpgrade] = useState(null);   // #237: markiertes Aufrüst-Ziel (buildingId) — zeigt Jetzt/Danach-Effekt, aufgewertet erst mit „Aufwerten bestätigen" (kein Sofort-Upgrade)
+  // #243: Toggle-Stellung aus den Optionen (überlebt Runden + Sessions); onOption persistiert die Wahl.
+  const [showCombos, setShowCombos] = useState(options.archShowCombos !== false); // #UI: Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben
+  const [showForms, setShowForms] = useState(options.archShowForms !== false);    // #UI: Formationsrahmen (Ring + Label) am Brett ein-/ausblenden
+  const toggleCombos = () => { const v = !showCombos; setShowCombos(v); onOption?.({ archShowCombos: v }); };
+  const toggleForms  = () => { const v = !showForms;  setShowForms(v);  onOption?.({ archShowForms: v }); };
 
   // Effektive Gebäude = committet (+ in „place" das Vorschau-Gebäude). Board/Precompute/Formationen rechnen damit.
   const pendingBuilding = pending
@@ -239,11 +245,13 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const cancelPending = () => { setPending(null); setSelId(null); setPhase("choose"); };
   // #235: markiertes Gebäude wirklich abreißen (danach platziert der removeFor-Effekt den wartenden Bauplan automatisch).
   const confirmDemolish = () => { if (pendingDemolish == null) return; onDemolish?.(pendingDemolish); setPendingDemolish(null); };
+  // #237: markiertes Gebäude wirklich aufwerten (erst nach „Aufwerten bestätigen" — nie durch einen Fehltipp).
+  const confirmUpgrade = () => { if (pendingUpgrade == null) return; onUpgrade?.(pendingUpgrade); setPendingUpgrade(null); setUpgradeMsg(null); setPhase("move"); };
 
   // ---- Tap je Phase ----
   const tapCell = (pos) => {
     if (removeFor) { const cb = committedAt(pos); if (cb) setPendingDemolish(cb.id); return; } // #235: markieren statt sofort abreißen (Effekte zeigen, erst mit Bestätigen weg)
-    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { onUpgrade?.(cb.id); setUpgradeMsg(null); setPhase("move"); } else { setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: info.reason }); } } return; }
+    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { setPendingUpgrade(cb.id); setUpgradeMsg(null); } else { setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: info.reason }); setPendingUpgrade(null); } } return; } // #237: markieren + Jetzt/Danach zeigen, Aufwertung erst über den Bestätigen-Knopf
     if (phase === "place") { const b = buildingAt(pos); if (b && b.id === PENDING_ID) setSelId(PENDING_ID); return; }
     if (phase === "move") { const b = buildingAt(pos); if (b) setSelId(b.id); return; }
   };
@@ -314,7 +322,25 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
   const rotateSelected = () => {
     const b = buildings.find((x) => x.id === selId); if (!b) return;
     const form = familyDef(b.familyId).form, rots = shapeRotations(form), a = anchorOf(b.footprint), cur = currentRotOf(b), others = buildings.filter((x) => x.id !== b.id);
-    for (let k = 1; k <= rots.length; k++) { const fp = footprintAt(form, (cur + k) % rots.length, a); if (fp && isValidFootprint(form, fp, others)) { if (b.id === PENDING_ID) setPending((p) => (p ? { ...p, footprint: fp } : p)); else onMove?.({ buildingId: b.id, footprint: fp }); return; } }
+    const ar0 = rowOf(a), ac0 = colOf(a);
+    const apply = (fp) => { if (b.id === PENDING_ID) setPending((p) => (p ? { ...p, footprint: fp } : p)); else onMove?.({ buildingId: b.id, footprint: fp }); };
+    // #239 Fix: NICHT nur um den aktuellen Anker drehen — am Brettrand läuft die gedrehte Form sonst aus dem Gitter
+    // (z. B. ein 1×4 unten → hochkant reicht unten über das Brett hinaus → „lässt sich nicht drehen"). Für die nächste
+    // Rotation den NÄCHSTGELEGENEN gültigen Platz brettweit suchen (in-Brett + ohne Überlappung) und dorthin drehen.
+    // In-place bleibt bevorzugt (Manhattan-Distanz 0), sonst minimal verschieben; gibt es keinen Platz → nächste Rotation.
+    for (let k = 1; k <= rots.length; k++) {
+      const rotIdx = (((cur + k) % rots.length) + rots.length) % rots.length;
+      const cells = rots[rotIdx] || [];
+      let mxR = 0, mxC = 0; for (const [dr, dc] of cells) { mxR = Math.max(mxR, dr); mxC = Math.max(mxC, dc); }
+      let best = null, bestD = Infinity;
+      for (let r = 0; r <= ROWS - 1 - mxR; r++) for (let c = 0; c <= COLS - 1 - mxC; c++) {
+        const fp = footprintAt(form, rotIdx, posOf(r, c));
+        if (!fp || !isValidFootprint(form, fp, others)) continue;
+        const d = Math.abs(r - ar0) + Math.abs(c - ac0);
+        if (d < bestD) { bestD = d; best = fp; }
+      }
+      if (best) { apply(best); return; }
+    }
   };
 
   // Live-Delta beim Ziehen (Vorschau-Position).
@@ -348,12 +374,12 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wide opacity-50">Runde {round}</div>
+            <div className="text-[10px] uppercase tracking-wide opacity-50">Durchlauf {round}</div>
             <div className="text-[10px] uppercase tracking-wide opacity-50 mt-0.5">Baufeld frei</div>
             <div className="font-pixel-dense font-bold leading-none" style={{ color: GOLD, fontSize: 22 }}>
               {Math.max(0, maxCover - coverCount)}<span className="text-xs opacity-70 font-mono"> / {maxCover}</span>
             </div>
-            <div className="text-[11px] font-mono opacity-55">{coverCount} belegt · {Math.round(coverCount / N_POS * 100)}%</div>
+            <div className="text-[11px] font-mono opacity-55">{coverCount} belegt · {Math.round(coverCount / maxCover * 100)}%</div>
           </div>
         </div>
         {state.lastCycleScore != null && <div className="mb-3"><RoundScoreBadge state={state} /></div>}
@@ -367,16 +393,24 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 <span className="opacity-50">Gebäude-Boost</span>
                 <span className="font-bold tabular-nums" style={{ color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct}%</span>
               </div>
-              {showRotate && (
-                <button onClick={rotateSelected} className="text-xs font-bold rounded-lg px-2.5 py-1"
-                  style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
-              )}
+              <div className="flex items-center gap-1.5">
+                <button onClick={toggleCombos} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
+                  style={{ background: showCombos ? "#3a1c1a" : "#16232f", border: `1px solid ${showCombos ? "#d1462f" : "#2b3e4d"}`, color: showCombos ? "#e88a7f" : "#7d8a97" }}
+                  title="Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben">{showCombos ? "◉" : "○"} Kombis</button>
+                <button onClick={toggleForms} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
+                  style={{ background: showForms ? "#16283a" : "#16232f", border: `1px solid ${showForms ? "#3b7dbe" : "#2b3e4d"}`, color: showForms ? "#7db4e6" : "#7d8a97" }}
+                  title="Formationsrahmen (Ring + Label) am Brett ein-/ausblenden">{showForms ? "◉" : "○"} Formationen</button>
+                {showRotate && (
+                  <button onClick={rotateSelected} className="text-xs font-bold rounded-lg px-2.5 py-1"
+                    style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
+                )}
+              </div>
             </div>
             <div ref={boardRef} className="relative grid grid-cols-5 gap-1" style={{ maxWidth: 300, margin: "0 auto" }}>
               {/* #UI: durchgezogene Gebäude-Kontur (SVG) über dem Brett — eine Linie je Gebäude in seiner Form (wie Aufstellung).
                   Während eines Drags ausgeblendet (das Gebäude schwebt frei) → snappt beim Loslassen wieder an seine neue Form. */}
               {archFrame && archFrame.lines.length > 0 && !dragPrev && (
-                <svg className="absolute left-0 top-0 pointer-events-none" width={archFrame.w} height={archFrame.h} style={{ overflow: "visible", zIndex: 5 }} aria-hidden="true">
+                <svg className="absolute left-0 top-0 pointer-events-none" width={archFrame.w} height={archFrame.h} style={{ overflow: "visible", zIndex: 5, opacity: phase === "upgrade" ? 0.28 : 1 }} aria-hidden="true">
                   {archFrame.lines.map((l, i) => (
                     <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.color} strokeWidth="2.5" strokeLinecap="square" />
                   ))}
@@ -389,7 +423,10 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                     return <div key={p} className="absolute rounded-md" style={{ left: r.left, top: r.top, width: r.right - r.left, height: r.bottom - r.top, background: `${dragGhost.color}33`, border: `2px solid ${dragGhost.color}cc`, boxShadow: "0 4px 12px #00000066" }} />; })}
                 </div>
               )}
-              {(() => { const dragCells = dragPrev ? new Set(dragPrev.footprint) : null; const draggingId = dragPrev ? dragPrev.id : null; return cards.map((card, pos) => {
+              {(() => { const dragCells = dragPrev ? new Set(dragPrev.footprint) : null; const draggingId = dragPrev ? dragPrev.id : null;
+                // #UI: beim Ziehen die Felder ANDERER Gebäude ausgrauen — dort ist kein Ablegen möglich.
+                const blocked = dragPrev ? (() => { const s = new Set(); for (const x of buildings) if (x.id !== dragPrev.id) for (const p of x.footprint) s.add(p); return s; })() : null;
+                return cards.map((card, pos) => {
                 const b = buildingAt(pos);
                 const isPending = b && b.id === PENDING_ID;
                 // Nur Zellen mit einem ziehbaren Gebäude fangen die Geste (touchAction:none) — sonst scrollt der Finger die Seite.
@@ -409,9 +446,12 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const cbHere = removeFor ? committedAt(pos) : null;
                 const isRemovable = !!removeFor && !!cbHere;
                 const isMarkedDemolish = !!removeFor && pendingDemolish != null && !!cbHere && cbHere.id === pendingDemolish; // #235: markiertes Abriss-Ziel
-                // Aufrüsten-Phase: nicht-aufwertbare Gebäude ausgrauen (Legendär/No-op-Effekt/max Stufe).
-                const upgradeDim = phase === "upgrade" && b && !isPending && !upgradeInfo(fam, b.tier).can;
-                const upCan = phase === "upgrade" && b && !isPending && upgradeInfo(fam, b.tier).can; // #232: aufwertbar → Ziel-Stufe am Gebäude zeigen
+                // #237/#UI: Aufrüst-Phase = Spotlight — ALLES ausgegraut außer aufwertbaren Gebäuden (die werden hervorgehoben).
+                const upCan = phase === "upgrade" && b && !isPending && upgradeInfo(fam, b.tier).can; // aufwertbar → hervorheben (Ziel-Stufe am Gebäude, #232)
+                const isMarkedUpgrade = phase === "upgrade" && pendingUpgrade != null && b && b.id === pendingUpgrade; // #237: markiertes Aufrüst-Ziel (gold)
+                const upgradeDim = phase === "upgrade" && !upCan && !isMarkedUpgrade; // nicht-aufwertbar (inkl. leere Zellen) → ausgrauen
+                // #UI: beim Ziehen belegte Fremdfläche → ausgrauen (kein Ablegen möglich), außer sie ist gerade Drag-Vorschau.
+                const isBlocked = !!blocked && blocked.has(pos) && !(dragCells && dragCells.has(pos));
                 const title = b
                   ? `${fam.name} (${tierLabel(b.tier)})${isPending ? " · Vorschau" : ""} — ${famEff(fam, b)}${upCan ? ` → Stufe ${tierLabel(b.tier + 1)}: ${famEff(fam, { tier: b.tier + 1 })}` : ""}${inForm ? ` · Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`
                   : `Pos ${pos + 1}${inForm ? ` — Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`;
@@ -420,7 +460,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 const isDragOrig = draggingId != null && b && b.id === draggingId;
                 return (
                   <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
-                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}${b && !isDragOrig && structLit(pos) ? " arch-struct-lit" : ""}`}
+                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}`}
                     style={{
                       // #UI: Gebäude-Füllung/-Rand einheitlich (Typ-Farbe raus); die Stufe/Rarität zeigt der Ring (boxShadow) unten.
                       // #UI: Origin-Zellen des gezogenen Gebäudes zeigen sich als LEERES Feld (Gebäude „aufgehoben"); die
@@ -428,33 +468,42 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b && !isDragOrig ? "#233140" : "#16232f"),
                       color: (b && !isDragOrig) || inDragPrev ? "#fff" : "#adbecc",
                       border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b && !isDragOrig ? "#2a3a46" : "#20303d")}`,
-                      opacity: upgradeDim ? 0.4 : (isPending && !inDragPrev ? 0.82 : 1),
+                      opacity: upgradeDim ? 0.28 : (isBlocked ? 0.5 : (isPending && !inDragPrev ? 0.82 : 1)),
+                      filter: upgradeDim ? "grayscale(0.75)" : (isBlocked ? "grayscale(0.55)" : undefined),
                       touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
                         isMarkedDemolish ? "inset 0 0 0 2px #ff6a4d, inset 0 0 16px #ff3b1e66" : null,     // #235: markiertes Abriss-Ziel rot hervorheben
+                        isMarkedUpgrade ? "inset 0 0 0 2px #f0b429, inset 0 0 16px #f0b42966" : null,      // #237: markiertes Aufrüst-Ziel gold hervorheben
+                        upCan && !isMarkedUpgrade ? "inset 0 0 0 2px #f0b42999, 0 0 12px #f0b42966" : null, // #UI: aufwertbares Gebäude im Aufrüst-Spotlight hervorheben
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
                         isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,                              // ausgewählt (weiß)
                         // #UI: Raritäts-Rahmen JE ZELLE entfällt — die durchgezogene SVG-Kontur (oben) zeichnet ihn jetzt
                         // in Stufenfarbe als EINE Gebäude-Form (wie in der Aufstellungsphase).
                         b && !isDragOrig && fam.legendary ? `0 0 8px ${GOLD}55` : null,                     // Legendär → zusätzlicher warmer Glow (nicht am aufgehobenen Origin)
-                        // Gebäude auf fertiger Struktur (Kombi erfüllt) → schimmernder Gold-Rahmen wie ein Legendär via .arch-struct-lit::after (siehe index.css).
-                        !b && structLit(pos) ? "inset 0 0 0 2px #f0b429aa" : null,                        // leere Zelle einer fast-fertigen Struktur → Gold-Hinweis
                       ].filter(Boolean).join(", ") || undefined,
-                      outline: isMarkedDemolish ? "2px solid #ff6a4d" : (isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined))),
+                      outline: isMarkedDemolish ? "2px solid #ff6a4d" : isMarkedUpgrade ? "2px solid #f0b429" : (isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (showForms && inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined))),
                       outlineOffset: 1,
                       cursor: "pointer",
                     }}
                     title={title}>
-                    <span className="absolute top-[3px] right-[3px] w-[7px] h-[7px] rounded-full" style={{ background: SUIT_COLOR[card.suit] }} />
+                    {/* #UI: Kombi-Fläche — Zellen auf fertiger Struktur bekommen eine leicht transparente rote Fläche (Toggle „Kombis"). */}
+                    {showCombos && !dragPrev && structLit(pos) && (
+                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "#d1462f30", boxShadow: "inset 0 0 0 1px #d1462f66" }} />
+                    )}
+                    {/* #UI: gesperrte Fläche beim Ziehen — Diagonal-Schraffur + Rim, damit „hier nicht ablegbar" klar heraussticht. */}
+                    {isBlocked && (
+                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(8,12,18,0.62) 3.5px, rgba(8,12,18,0.62) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(134,153,168,0.45)" }} />
+                    )}
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
-                    <span className="text-[13px] sm:text-[15px] leading-none">{ev}</span>
+                    {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
+                    <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : SUIT_COLOR[card.suit], textShadow: (b && !isDragOrig) ? "0 1px 2px #000a" : undefined }}>{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (
                       <span className="absolute bottom-[1px] left-[3px] text-[7px] font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
                         {fam.name.slice(0, 3).toUpperCase()}{tierLabel(b.tier)}
                         {upCan && <span style={{ color: "#f0b429" }}>→{tierLabel(b.tier + 1)}</span>}
                       </span>
                     )}
-                    {inForm && (
+                    {showForms && inForm && (
                       <span className="absolute bottom-[1px] left-1/2 -translate-x-1/2 text-[7px] font-bold leading-none whitespace-nowrap" style={{ color: fb.color, textShadow: "0 1px 2px #000a" }}>
                         {formLabels}×{fmt(pf.mult)}
                       </span>
@@ -496,13 +545,13 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. */}
               <div className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}>
-                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur-Kombis · ×Punkte je Durchlauf</div>
+                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur-Kombis · ×Score je Durchlauf</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   <span>volle <b>Zeile</b> ×{fmt(HAEUSERZEILE_FACTOR)}</span>
                   <span>volle <b>Spalte</b> ×{fmt(SPALTE_FACTOR)}</span>
                   <span><b>Diagonale</b> ×{fmt(DIAGONALE_FACTOR)}</span>
                 </div>
-                <div className="opacity-60 mt-1">Jede Karte auf einer vollständigen Zeile/Spalte/Diagonale macht bei einem Sieg entsprechend mehr <b>Punkte</b>. Faktoren stapeln multiplikativ.</div>
+                <div className="opacity-60 mt-1">Jede Karte auf einer vollständigen Zeile/Spalte/Diagonale macht bei einem Sieg entsprechend mehr <b>Score</b>. Faktoren stapeln multiplikativ.</div>
               </div>
 
               {/* removeFor: kein Platz → Gebäude entfernen anbieten. #235: zweistufig — erst markieren (Effekte zeigen), dann bestätigen. */}
@@ -513,11 +562,11 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   <div>
                     {!marked ? (
                       <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
-                        <b>Kein Platz</b> für „{pendingFamName(removeFor)}". Soll ein Gebäude weichen? Tippe eins (rot gestrichelt) zum <b>Markieren</b> — es wird erst nach Bestätigen abgerissen.
+                        <b>Kein Platz</b> für „{pendingFamName(removeFor)}“. Soll ein Gebäude weichen? Tippe eins (rot gestrichelt) zum <b>Markieren</b> — es wird erst nach Bestätigen abgerissen.
                       </div>
                     ) : (
                       <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #ff6a4d" }}>
-                        <div className="text-sm mb-1">Dieses Gebäude abreißen, um „{pendingFamName(removeFor)}" zu bauen?</div>
+                        <div className="text-sm mb-1">Dieses Gebäude abreißen, um „{pendingFamName(removeFor)}“ zu bauen?</div>
                         <div className="rounded-lg px-2.5 py-1.5 mb-2 text-[11px] font-mono leading-snug" style={{ background: "#2a1416", border: "1px solid #d1462f66" }}>
                           <span className="inline-flex items-center gap-1.5 align-middle">
                             <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: mfam ? CAT[mfam.category].color : "#d1462f" }} />
@@ -565,7 +614,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                                 style={{ background: `${tierCol}22`, color: tierCol, border: `1px solid ${tierCol}66` }}>
                                 {o.legendary ? "Legendär" : `Stufe ${tierLabel(o.tier)}`}
                               </span>
-                              {!o.legendary && (() => { const u = upgradeInfo(fam, o.tier); return u.can ? null : <span className="text-[9px] font-mono" style={{ color: "#8a97a5" }} title="Aufrüsten ändert bei diesem Effekt nichts">{u.reason === "max" ? "max. Stufe" : "keine Aufwertung"}</span>; })()}
+                              {!o.legendary && (() => { const u = upgradeInfo(fam, o.tier); return u.can ? null : <span className="text-[9px] font-mono" style={{ color: "#8a97a5" }} title="Aufwerten ändert bei diesem Effekt nichts">{u.reason === "max" ? "max. Stufe" : "keine Aufwertung"}</span>; })()}
                               {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>kein Platz →</span>}
                             </div>
                           </div>
@@ -573,10 +622,10 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                       );
                     })}
                     {/* 4. Wahl: Aufrüsten */}
-                    <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
+                    <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
                       className="rounded-lg p-2.5 text-left w-full transition-all hover:brightness-110"
                       style={{ background: "#16232f", border: `1px dashed ${CAT.value.color}66`, opacity: canUpgradeAny ? 1 : 0.4, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
-                      <div className="text-sm font-bold">⬆ Aufrüsten</div>
+                      <div className="text-sm font-bold">⬆ Aufwerten</div>
                       <div className="text-[11px] font-mono opacity-60 leading-snug mt-0.5">ein Gebäude +1 Stufe{canUpgradeAny ? "" : " · nichts ausbaubar"}</div>
                     </button>
                   </div>
@@ -587,7 +636,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
               {!removeFor && phase === "place" && pending && (
                 <div>
                   <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
-                    <b>Platzieren:</b> zieh das Gebäude (weiß gestrichelt) an die richtige Stelle, <b>⟳ Drehen</b> oben. „Bauen" errichtet es.
+                    <b>Platzieren:</b> zieh das Gebäude (weiß gestrichelt) an die richtige Stelle, <b>⟳ Drehen</b> oben. „Bauen“ errichtet es.
                   </div>
                   {pendingFam && pendingFam.colorLocked && (
                     <div className="flex items-center gap-1.5 mb-2 text-[11px] font-mono">
@@ -601,34 +650,60 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                 </div>
               )}
 
-              {/* upgrade: Gebäude antippen */}
-              {!removeFor && phase === "upgrade" && (
-                <div>
-                  <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
-                    <b>Aufrüsten:</b> tippe ein <b>aufwertbares</b> Gebäude → +1 Stufe. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
-                  </div>
-                  {upgradeMsg && (
-                    <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
-                      <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : "nicht aufwertbar"}.
-                    </div>
-                  )}
-                  {/* #232: Vorschau je aufwertbarem Gebäude — Ziel-Stufe + neuer Kurzeffekt, damit man nicht blind entscheidet, was sich lohnt. */}
-                  {committed.some((b) => upgradeInfo(familyDef(b.familyId), b.tier).can) && (
-                    <div className="flex flex-col gap-1 mt-1">
-                      {committed.filter((b) => upgradeInfo(familyDef(b.familyId), b.tier).can).map((b) => {
-                        const f = familyDef(b.familyId);
-                        return (
-                          <div key={b.id} className="rounded px-2 py-1 text-[10px] font-mono leading-snug flex flex-wrap items-baseline gap-x-1.5" style={{ background: "#16232f", border: "1px solid #24333f" }}>
-                            <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
-                            <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
-                            <span className="opacity-70">{famEff(f, { tier: b.tier + 1 })}</span>
+              {/* upgrade: Gebäude auswählen → Jetzt/Danach sehen → mit „Aufwerten bestätigen" committen (#237: kein Sofort-Upgrade). */}
+              {!removeFor && phase === "upgrade" && (() => {
+                const up = pendingUpgrade != null ? committed.find((x) => x.id === pendingUpgrade) : null;
+                const uf = up ? familyDef(up.familyId) : null;
+                return (
+                  <div>
+                    {up && uf ? (
+                      // Ausgewähltes Gebäude: aktueller UND nächster Effekt (beide sichtbar), bestätigt wird über den Knopf unten.
+                      <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: "3px solid #f0b429" }}>
+                        <div className="text-sm font-semibold flex items-center gap-1.5 flex-wrap">
+                          <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[uf.category].color }} />
+                          {uf.name}
+                          <span className="font-mono" style={{ color: "#f0b429" }}>Stufe {tierLabel(up.tier)} → {tierLabel(up.tier + 1)}</span>
+                        </div>
+                        <div className="mt-1.5 grid gap-1 text-[11px] font-mono leading-snug">
+                          <div className="rounded px-2 py-1" style={{ background: "#16232f", border: "1px solid #24333f" }}>
+                            <span className="opacity-55">Jetzt:</span> {famEff(uf, up)}
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
+                          <div className="rounded px-2 py-1" style={{ background: "#15291a", border: "1px solid #2f6d3a" }}>
+                            <span className="opacity-55">Danach:</span> <span style={{ color: "#8fe0a0" }}>{famEff(uf, { tier: up.tier + 1 })}</span>
+                          </div>
+                        </div>
+                        <div className="text-[11px] opacity-60 mt-1.5">Unten bestätigen, dann wird aufgewertet.</div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
+                          <b>Aufwerten:</b> tippe ein aufwertbares Gebäude an — du siehst aktuellen und nächsten Effekt und bestätigst unten. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
+                        </div>
+                        {upgradeMsg && (
+                          <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
+                            <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : "nicht aufwertbar"}.
+                          </div>
+                        )}
+                        {/* #232: Übersicht je aufwertbarem Gebäude — aktueller Effekt + Ziel-Stufe (Auswahl per Tap aufs Brett). */}
+                        {committed.some((b) => upgradeInfo(familyDef(b.familyId), b.tier).can) && (
+                          <div className="flex flex-col gap-1 mt-1">
+                            {committed.filter((b) => upgradeInfo(familyDef(b.familyId), b.tier).can).map((b) => {
+                              const f = familyDef(b.familyId);
+                              return (
+                                <div key={b.id} className="rounded px-2 py-1 text-[10px] font-mono leading-snug flex flex-wrap items-baseline gap-x-1.5" style={{ background: "#16232f", border: "1px solid #24333f" }}>
+                                  <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
+                                  <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
+                                  <span className="opacity-70">{famEff(f, b)}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Fertig: EIN Panel — optional beliebig oft verschieben, dann direkt starten. */}
               {!removeFor && phase === "move" && (
@@ -653,8 +728,13 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
                   <button onClick={cancelPending} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
                   <button onClick={confirmBuild} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Bauen ✓</button>
                 </div>
+              ) : phase === "upgrade" && pendingUpgrade != null ? (
+                <div className="flex gap-2">
+                  <button onClick={() => setPendingUpgrade(null)} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>
+                  <button onClick={confirmUpgrade} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#f0b429", color: "#141419" }}>⬆ Aufwerten bestätigen</button>
+                </div>
               ) : phase === "upgrade" ? (
-                <button onClick={() => { setUpgradeMsg(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
+                <button onClick={() => { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
               ) : phase === "move" ? (
                 <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Fortfahren →</button>
               ) : null}
@@ -697,7 +777,7 @@ export function ArchitectScreen({ state = {}, onBuild, onUpgrade, onMove, onDemo
               <div className="grid grid-cols-2 gap-2">
                 <Stat k="Struktur-Bonus" v={`+${structBonusPct} %`} hero />
                 <Stat k="Σ Kartenwert" v={sumValue} hero />
-                <Stat k="Abdeckung" v={`${Math.round(coverCount / N_POS * 100)}%`} />
+                <Stat k="Baufeld belegt" v={`${Math.round(coverCount / maxCover * 100)}%`} />
                 <Stat k="Häuserzeilen" v={houseRows} />
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[12px] font-mono opacity-80">
@@ -733,13 +813,13 @@ function famEff(fam, b) {
   const base = fam.base;
   const nz = (v) => tierNum(v, t);
   switch (base.kind) {
-    case "flat":       return fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Punkte`;
+    case "flat":       return fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`;
     case "lowValue":   return `niedrige Karten +${nz(base.value)} Stichwert`;
-    case "color":      return fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Punkte`;
+    case "color":      return fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`;
     case "target":     return `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Punkte"}`;
-    case "streak":     return `Sieg +${nz(base.score)} Punkte × Serie`;
-    case "crit":       return `Crit-Sieg +${nz(base.score)} Punkte`;
-    case "milestone":  return `jeder ${base.every}. Sieg +${nz(base.score)} Punkte`;
+    case "streak":     return `Sieg +${nz(base.score)} Score × Serie`;
+    case "crit":       return `Crit-Sieg +${nz(base.score)} Score`;
+    case "milestone":  return `jeder ${base.every}. Sieg +${nz(base.score)} Score`;
     case "mult":       return `Siege hier ×${base.factor}`;
     case "joker":      return `Formations-Joker (${base.types.join("/")})`;
     case "transparentFarb": return "Farbblock-Transparenz";

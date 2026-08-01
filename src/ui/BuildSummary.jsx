@@ -13,7 +13,7 @@ const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "�
 
 /* Aktive Perks & Familien je Kategorie, anklickbar → Beschreibung (#1). Klick löst keine Auswahl aus.
    Rarität #167: `familyTiers` mischt gehaltene Familien (Name + römische Stufe, Stufenfarbe) unter die flachen Perks. */
-export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks." }) {
+export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.", zinsBonus }) {
   const [open, setOpen] = useState(null); // { kind: "perk"|"family", id }
   const isOpen = (kind, id) => open && open.kind === kind && open.id === id;
   const toggle = (kind, id) => setOpen(isOpen(kind, id) ? null : { kind, id });
@@ -81,6 +81,14 @@ export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks." 
             <span className="font-bold" style={{ color: detail.c }}>{detail.name}</span>
           </div>
           <div className="opacity-80 leading-snug">{detail.desc}</div>
+          {/* #240: Zinseszins — aktueller aufgestapelter Bonus im laufenden Lauf (nur wenn der Perk offen ist und ein Lauf läuft). */}
+          {open && open.kind === "perk" && PERK_DEFS[open.id]?.zinseszins && zinsBonus != null && (
+            <div className="mt-2 pt-2 text-xs font-mono flex items-center gap-1.5" style={{ borderTop: `1px solid ${detail.c}33` }}>
+              <span className="opacity-55">Aktueller Bonus:</span>
+              <b style={{ color: detail.c }}>+{zinsBonus.toLocaleString("de-DE")}</b>
+              <span className="opacity-55">Score je Durchlauf-Ende</span>
+            </div>
+          )}
         </div>
       )}
     </div>

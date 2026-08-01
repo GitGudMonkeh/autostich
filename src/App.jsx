@@ -550,7 +550,7 @@ export function Autostich() {
             </div>
             {/* Perks/Skills — Mobil unter den Stats (order-3), Desktop links unter dem Battlefield. */}
             <div className="order-3 lg:col-start-1 lg:row-start-2">
-              <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} />
+              <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zinsBonus={state.zinsBonus} />
             </div>
           </div>
 
@@ -565,7 +565,7 @@ export function Autostich() {
         <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} />
       )}
       {state.phase === "architect" && (
-        <ArchitectScreen state={state} onBuild={architectBuild} onUpgrade={architectUpgrade}
+        <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}
           onMove={architectMove} onDemolish={architectDemolish} onDone={architectDone} />
       )}
       {state.phase === "target" && (

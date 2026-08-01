@@ -18,7 +18,7 @@ const fmtX = (x) => x.toFixed(2).replace(".", ","); // ×-Multiplikator-Format (
 /* Chronik-Kartenübersicht (§22.11): alle 40 Karten in aktueller Reihenfolge — nur Anzeige,
    mit Formations- und Rollen-Markern. Klick auf eine Karte zeigt Rolle & Modifikatoren (#95.5).
    Desktop (#101): zweispaltig — Karten-Grid links, Info-Panel rechts; Mobil gestapelt. */
-const ANCHOR_LABEL = { power: "Kraft", score: "Punkte", crit: "Krit", streak: "Serie", formation: "Formation", joker: "Joker" };
+const ANCHOR_LABEL = { power: "Kraft", score: "Score", crit: "Crit", streak: "Serie", formation: "Formation", joker: "Joker" };
 // #127: Preisstufen-Label/Farbe (wie ShopScreen) für die Kauf-Übersicht.
 const TIER_LABEL = { cheap: { l: "Günstig", c: "#8a8a95" }, strong: { l: "Stark", c: "#5a8ade" }, premium: { l: "Premium", c: "#8a7de0" }, legendary: { l: "Legendär", c: "#d4a63a" } };
 // #127: kompakte Ziel-Beschriftung eines Kauf-Log-Eintrags (Position/Segment/Farbpaar/Grenze/Typ/Kategorie/Karten).

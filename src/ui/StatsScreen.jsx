@@ -172,7 +172,7 @@ function ChallengesPanel({ seeds, onPlaySeed }) {
         ))}
       </div>
       <div className="text-[11px] opacity-40 mt-3 leading-relaxed">
-        Bestwert = dein bester lokaler Lauf auf diesem Seed. „Top 3 global" vergleicht mit den besten Läufen anderer auf demselben Seed.
+        Bestwert = dein bester lokaler Lauf auf diesem Seed. „Top 3 global“ vergleicht mit den besten Läufen anderer auf demselben Seed.
       </div>
     </Section>
   );
@@ -398,7 +398,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                 <div className="text-[11px] opacity-50 mb-2">Score-Herkunft</div>
                 <StackedBar segments={originSegs(origin)} />
                 <div className="text-[11px] opacity-40 mt-2.5 leading-relaxed">
-                  <b style={{ color: ORIGIN_META.rest.color }}>Elementar &amp; Basis</b> bündelt Basissiege, Serie und alle Archetyp-Mechaniken (Feuer/Eis/Blitz/Pflanze) — noch nicht einzeln aufgeschlüsselt. <b style={{ color: ORIGIN_META.crits.color }}>Crit-Bonus</b> stammt seit v0.3 nur aus Blitz&nbsp;+ dem Krit-Stat, nicht mehr universell.
+                  <b style={{ color: ORIGIN_META.rest.color }}>Elementar &amp; Basis</b> bündelt Basissiege, Serie und alle Archetyp-Mechaniken (Feuer/Eis/Blitz/Pflanze) — noch nicht einzeln aufgeschlüsselt. <b style={{ color: ORIGIN_META.crits.color }}>Crit-Bonus</b> stammt seit v0.3 nur aus Blitz&nbsp;+ dem Crit-Stat, nicht mehr universell.
                 </div>
               </div>
               <div className="grid sm:grid-cols-2 gap-3 mt-3">
