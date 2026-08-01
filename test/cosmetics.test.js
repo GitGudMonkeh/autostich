@@ -5,7 +5,7 @@ import {
 } from "../src/game/cosmetics.js";
 
 // Minimal-Profil-Helfer (nur die Felder, die die Freischalt-Logik liest).
-const prof = (o = {}) => ({ games: 0, bestStreak: 0, bestScore: 0, hadNoBuyRun: false, hadMonoStatRun: false, ...o });
+const prof = (o = {}) => ({ games: 0, bestStreak: 0, bestScore: 0, hadMonoStatRun: false, ...o });
 
 describe("cosmetics — Katalog", () => {
   it("Default-Decks/Battlefields sind ohne unlock (immer frei)", () => {
@@ -124,11 +124,8 @@ describe("cosmetics — isUnlocked", () => {
     expect(isUnlocked(score, prof({ bestScore: 10_000_000 }))).toBe(true);
   });
 
-  it("noBuyRun/monoStatRun: an Profil-Flags gebunden", () => {
-    const noBuy = { unlock: { kind: "noBuyRun" } };
+  it("monoStatRun: an Profil-Flag gebunden", () => {
     const mono  = { unlock: { kind: "monoStatRun" } };
-    expect(isUnlocked(noBuy, prof())).toBe(false);
-    expect(isUnlocked(noBuy, prof({ hadNoBuyRun: true }))).toBe(true);
     expect(isUnlocked(mono, prof())).toBe(false);
     expect(isUnlocked(mono, prof({ hadMonoStatRun: true }))).toBe(true);
   });
@@ -173,8 +170,8 @@ describe("cosmetics — unlockProgress", () => {
   });
 
   it("Flag-Challenges: target 1, cur 0/1, Klartext-Bedingung", () => {
-    const noBuyLocked = unlockProgress({ unlock: { kind: "noBuyRun" } }, prof());
-    expect(noBuyLocked).toEqual({ done: false, cur: 0, target: 1, label: "Schließe einen Lauf ohne einen einzigen Shop-Kauf ab" });
+    const monoLocked = unlockProgress({ unlock: { kind: "monoStatRun" } }, prof());
+    expect(monoLocked).toEqual({ done: false, cur: 0, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" });
     const monoDone = unlockProgress({ unlock: { kind: "monoStatRun" } }, prof({ hadMonoStatRun: true }));
     expect(monoDone).toEqual({ done: true, cur: 1, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" });
   });

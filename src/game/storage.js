@@ -78,7 +78,7 @@ export function loadRunHistory() {
 }
 
 const DEFAULT_PROFILE = { games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
-  hadNoBuyRun: false, hadMonoStatRun: false, hadNoRerollRun: false, // #190/#214: sticky Challenge-Flags (einmal true → bleiben); noReroll = Sparfuchs deck_c3
+  hadMonoStatRun: false, hadNoRerollRun: false, // #190/#214: sticky Challenge-Flags (einmal true → bleiben); noReroll = Sparfuchs deck_c3
   monoArchetypeRuns: {}, hadAllArchetypesRun: false, // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
   masteryGrade: 0 }; // #217: laufübergreifender Meistergrad (0..5), sequentiell freigeschaltet über Score-Schwellen
 export function loadProfile() {
@@ -102,13 +102,10 @@ const n0 = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 0);
 /* #190 Challenge-Erkennung — reine Funktionen, arbeiten NUR auf dem Run-Record (kein localStorage), unit-testbar.
    `completed` (in App.saveRun gesetzt) = nur ein NATÜRLICH abgeschlossener Lauf (cycle === MAX_CYCLES); ein
    freiwilliges Beenden zählt NICHT.
-   - noBuyRun:    kompletter Lauf ohne einen einzigen Shop-Kauf (record.shopPurchases === 0).
    - monoStatRun: kompletter Lauf, in dem IMMER derselbe Stat gewählt wurde (alle record.statPicks identisch). */
 export const MONO_STAT_MIN = 5; // Mindestzahl Stat-Picks, damit „immer derselbe" zählt (ein voller Lauf hat 11)
-export function isNoBuyRun(record) {
-  return !!record && record.completed === true && n0(record.shopPurchases) === 0;
-}
-// #214 Sparfuchs (deck_c3, löst noBuyRun ab): natürlicher Abschluss OHNE einen benutzten Reroll (record.rerollsUsed === 0).
+// #229 T12: isNoBuyRun/hadNoBuyRun entfernt — Shop ist seit #202 (Architekt) dormant, kein Deck nutzt noBuyRun mehr.
+// #214 Sparfuchs (deck_c3): natürlicher Abschluss OHNE einen benutzten Reroll (record.rerollsUsed === 0).
 export function isNoRerollRun(record) {
   return !!record && record.completed === true && n0(record.rerollsUsed) === 0;
 }
@@ -154,7 +151,6 @@ export function recordRun(record) {
     archetypesEver: [...arch],
     firstTs: p.firstTs || n0(record.ts),
     // #190/#214: sticky Challenge-Flags — einmal erfüllt, bleiben sie true. noReroll schaltet deck_c3 „Sparfuchs" frei.
-    hadNoBuyRun: !!p.hadNoBuyRun || isNoBuyRun(record),
     hadMonoStatRun: !!p.hadMonoStatRun || isMonoStatRun(record),
     hadNoRerollRun: !!p.hadNoRerollRun || isNoRerollRun(record),
     // #215: Archetyp-Decks — Mono-Läufe je Fraktion (deck_c5..c8) + Element-Bund (alle vier, deck_c9).

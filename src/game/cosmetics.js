@@ -10,7 +10,6 @@
      { kind: "games",  n }   → profile.games      >= n   (gespielte Läufe)
      { kind: "streak", n }   → profile.bestStreak >= n
      { kind: "score",  n }   → profile.bestScore  >= n
-     { kind: "noBuyRun" }    → profile.hadNoBuyRun    === true  (Lauf ohne Shop-Kauf — obsolet seit #202/#214, Shop dormant)
      { kind: "noRerollRun" } → profile.hadNoRerollRun === true  (Lauf ohne benutzten Reroll, Sparfuchs deck_c3 · #214)
      { kind: "monoStatRun" } → profile.hadMonoStatRun === true  (Lauf mit nur einem Stat, Challenge 4)
      { kind: "monoArchetypeRun", archetype } → profile.monoArchetypeRuns[archetype] (Lauf nur mit dieser Fraktion, #215 deck_c5..c8)
@@ -84,7 +83,6 @@ export function isUnlocked(def, profile) {
     case "games":       return (p.games      || 0) >= u.n;
     case "streak":      return (p.bestStreak || 0) >= u.n;
     case "score":       return (p.bestScore  || 0) >= u.n;
-    case "noBuyRun":    return !!p.hadNoBuyRun;
     case "noRerollRun": return !!p.hadNoRerollRun; // #214 Sparfuchs
     case "monoStatRun": return !!p.hadMonoStatRun;
     case "monoArchetypeRun": return !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]); // #215: Lauf nur mit dieser Fraktion
@@ -113,10 +111,6 @@ export function unlockProgress(def, profile) {
     case "score": {
       const have = p.bestScore || 0;
       return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche Score ${grp(u.n)}` };
-    }
-    case "noBuyRun": {
-      const done = !!p.hadNoBuyRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf ohne einen einzigen Shop-Kauf ab" };
     }
     case "noRerollRun": {
       const done = !!p.hadNoRerollRun;

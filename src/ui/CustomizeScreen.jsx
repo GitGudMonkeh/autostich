@@ -14,7 +14,7 @@ function progressDetail(kind, p) {
     case "games":  return { bar: true,  text: `${p.cur} / ${p.target} Läufe` };
     case "streak": return { bar: true,  text: `beste Serie bisher: ${p.cur}` };
     case "score":  return { bar: true,  text: `bester Score bisher: ${fmtScore(p.cur)}` };
-    default:       return { bar: false, text: "" }; // noBuyRun / monoStatRun (Flag-Challenges)
+    default:       return { bar: false, text: "" }; // monoStatRun u. a. Flag-Challenges
   }
 }
 
