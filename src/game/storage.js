@@ -78,19 +78,45 @@ export function loadRunHistory() {
   return [];
 }
 
-const DEFAULT_PROFILE = { games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
+// #229 T11: Schema-Version des Profil-Blobs — der schema-fragilste Persistenz-Teil (masteryGrade-Skala,
+// monoArchetypeRuns-Form). Bei einem breaking change hochzählen UND einen Migrations-Block in migrateProfile
+// anhängen. Bislang keine breaking migration nötig → 1 (Baseline). Andere Keys (Ghost/Highscores/Optionen)
+// degradieren weiter rein additiv über Merge-über-Default und brauchen keine Versionierung.
+export const PROFILE_SCHEMA_VERSION = 1;
+const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
+  games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
   hadMonoStatRun: false, hadNoRerollRun: false, // #190/#214: sticky Challenge-Flags (einmal true → bleiben); noReroll = Sparfuchs deck_c3
   monoArchetypeRuns: {}, hadAllArchetypesRun: false, // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
   masteryGrade: 0 }; // #217: laufübergreifender Meistergrad (0..5), sequentiell freigeschaltet über Score-Schwellen
+
+/* #229 T11: reiner, stufenweiser Migrations-Switch für den Profil-Blob (kein localStorage → unit-testbar).
+   Migriert von der gespeicherten Version hoch bis zur aktuellen; jeder Block transformiert v → v+1 und ist
+   idempotent (ein bereits aktuelles Profil bleibt unverändert). Ein unversioniertes Alt-Profil gilt als v0.
+   Neue breaking changes: PROFILE_SCHEMA_VERSION erhöhen + hier einen `if (v < N)`-Block anhängen. */
+export function migrateProfile(p) {
+  if (!p || typeof p !== "object") return p;
+  let v = typeof p.schemaVersion === "number" ? p.schemaVersion : 0;
+  const out = { ...p };
+  if (v < 1) {
+    // v0 (unversioniert) → v1 (aktuelle Baseline): Alt-Profile sind strukturell bereits v1-kompatibel — fehlende
+    // Felder füllt loadProfile über DEFAULT_PROFILE. Hier ist nur die Versions-Markierung nötig, keine Transformation.
+    v = 1;
+  }
+  // if (v < 2) { /* v1 → v2: konkrete Transformation von out.* */ v = 2; }
+  out.schemaVersion = v;
+  return out;
+}
 export function loadProfile() {
   try {
     const raw = localStorage.getItem(k("as_profile"));
     if (raw) {
-      const p = JSON.parse(raw);
-      if (p && typeof p === "object")
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        const p = migrateProfile(parsed); // erst hochmigrieren, dann über Default mergen (füllt fehlende Felder)
         return { ...DEFAULT_PROFILE, ...p,
           archetypesEver: Array.isArray(p.archetypesEver) ? p.archetypesEver : [],
           monoArchetypeRuns: (p.monoArchetypeRuns && typeof p.monoArchetypeRuns === "object") ? p.monoArchetypeRuns : {} };
+      }
     }
   } catch (e) {}
   // #195: frisches archetypesEver-Array + #215 frische monoArchetypeRuns-Map, damit der Leer-/Korrupt-Pfad NICHT die
@@ -143,6 +169,7 @@ export function recordRun(record) {
   const monoArch = monoArchetypeOf(record);
   if (monoArch) monoArchetypeRuns[monoArch] = true;
   const profile = {
+    schemaVersion: PROFILE_SCHEMA_VERSION, // #229 T11: gespeicherte Profile tragen die Version (Migrations-Anker)
     games: p.games + 1,
     totalScore: p.totalScore + n0(record.score),
     totalDurationMs: p.totalDurationMs + n0(record.durationMs),

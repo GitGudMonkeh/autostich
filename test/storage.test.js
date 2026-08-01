@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   loadOptions, loadUsername, saveUsername, loadSeenGuide, saveSeenGuide,
   recordRun, loadProfile, isNoRerollRun, isMonoStatRun, MONO_STAT_MIN,
-  monoArchetypeOf, isAllArchetypesRun } from "../src/game/storage.js";
+  monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
 
 // #152: node-Env hat kein localStorage → die Persistenz-Funktionen fielen bisher nur in ihre try/catch-Defaults
@@ -56,6 +56,43 @@ describe("Geist-Persistenz + Versions-Migration (#152)", () => {
     expect(loadGhost()).toEqual({ traj: [7], total: 7, step: GHOST_STEP });
     global.localStorage.setItem("as_ghost", "{kaputt");
     expect(loadGhost()).toEqual({ traj: [], total: 0, step: GHOST_STEP });
+  });
+});
+
+describe("#229 T11 — Profil-Schema-Version + Migration", () => {
+  beforeEach(() => { global.localStorage = mockLS(); });
+  afterEach(() => { delete global.localStorage; });
+
+  it("migrateProfile stempelt ein unversioniertes Alt-Profil auf die aktuelle Version, ohne Felder zu verlieren", () => {
+    const legacy = { games: 3, bestScore: 500, masteryGrade: 2, monoArchetypeRuns: { fire: true } };
+    const m = migrateProfile(legacy);
+    expect(m.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
+    expect(m.games).toBe(3);
+    expect(m.bestScore).toBe(500);
+    expect(m.masteryGrade).toBe(2);
+    expect(m.monoArchetypeRuns).toEqual({ fire: true });
+  });
+  it("migrateProfile ist idempotent (aktuelles Profil bleibt unverändert)", () => {
+    const cur = { schemaVersion: PROFILE_SCHEMA_VERSION, games: 1 };
+    expect(migrateProfile(cur)).toEqual(cur);
+  });
+  it("migrateProfile gibt Nicht-Objekte unverändert zurück (defensiv)", () => {
+    expect(migrateProfile(null)).toBe(null);
+    expect(migrateProfile(undefined)).toBe(undefined);
+  });
+  it("loadProfile migriert ein gespeichertes Alt-Profil (kein schemaVersion) hoch + füllt Default-Felder", () => {
+    global.localStorage.setItem("as_profile", JSON.stringify({ games: 7, bestScore: 900 }));
+    const p = loadProfile();
+    expect(p.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
+    expect(p.games).toBe(7);
+    expect(p.bestScore).toBe(900);
+    expect(p.masteryGrade).toBe(0);          // fehlendes Feld aus DEFAULT_PROFILE ergänzt
+    expect(p.monoArchetypeRuns).toEqual({});
+  });
+  it("recordRun persistiert die Schema-Version im Profil", () => {
+    const { profile } = recordRun({ score: 100, ts: 1, completed: true, statPicks: [] });
+    expect(profile.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
+    expect(loadProfile().schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
   });
 });
 
