@@ -35,7 +35,7 @@ export const CATEGORIES = {
   A: { key: "A", name: "Deck",   desc: "Dauerhafte Kartenwerte",   color: "#8a7de0" },
   B: { key: "B", name: "Stich",  desc: "Stich-Effekte",            color: "#e0605a" },
   C: { key: "C", name: "Rolle",  desc: "Kartenrollen",             color: "#5ab87a" },
-  D: { key: "D", name: "Score",  desc: "Punkte",                   color: "#d4a63a" },
+  D: { key: "D", name: "Score",  desc: "Score",                   color: "#d4a63a" },
   E: { key: "E", name: "Form",   desc: "Formationswerkzeuge",      color: "#5a8ade" },
 };
 
@@ -80,9 +80,9 @@ export const PERK_DEFS = {
   L_UMV: { id: "L_UMV", cat: "A", rarity: "legendary", label: "Umverteilung", redistribute: true,
         desc: "Sofort: alle Karten nehmen dauerhaft den durchschnittlichen Kartenwert des Decks an (keine Karte wird entfernt). Stark bei schiefem Deck." },
   L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
-        desc: `Jeder Durchlauf mit positiver Bilanz (mehr Siege als Niederlagen) hebt einen Dauer-Bonus um +${C.ZINSESZINS_STEP} Score; der aufgestapelte Bonus wird an jedem Durchlauf-Ende ausgezahlt (flach, kein Multiplikator).` },
+        desc: `Jeder Durchlauf mit positiver Bilanz (mehr Siege als Niederlagen) hebt einen Dauer-Bonus um +${C.ZINSESZINS_STEP} Score; der aufgestapelte Bonus wird am Ende jedes Durchlaufs ausgezahlt (flach, kein Multiplikator).` },
   L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,
-        desc: `Eröffnungs-Wette: Gewinnst du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge, gibt es einen großen Score-Bonus (bis zu ${C.VABANQUE_MAX_PAYOUTS} Mal pro Lauf).` },
+        desc: `Eröffnungs-Wette: Gewinnst du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge, gibt es +${C.VABANQUE_SCORE} Score (bis zu ${C.VABANQUE_MAX_PAYOUTS} Mal pro Lauf).` },
   L_HENK: { id: "L_HENK", cat: "D", rarity: "legendary", label: "Henker", henker: true,
         desc: `Im letzten Segment (Positionen ${C.HENKER_ZONE_START + 1}–40) zählt jeder Sieg ${de(C.HENKER_MULT)}-fach und ist garantiert ein Crit.` },
   L_ECHO: { id: "L_ECHO", cat: "C", rarity: "legendary", label: "Echo", echo: true,

@@ -20,7 +20,7 @@ export function SeedChip({ code, onReplay = null }) {
         style={{ background: "#20202a", border: "1px solid #33333e", color: "#c8c8d0" }}>
         <span aria-hidden>⧉</span>{code}
       </button>
-      {copied && <span style={{ color: "#5ab87a" }}>kopiert!</span>}
+      {copied && <span style={{ color: "#5ab87a" }}>kopiert</span>}
       {onReplay && (
         <button onClick={(e) => { e?.stopPropagation?.(); onReplay(); }} title="Diesen Seed nachspielen"
           className="px-2 py-0.5 rounded font-semibold transition-all hover:brightness-125"

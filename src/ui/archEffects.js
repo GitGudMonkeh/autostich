@@ -18,13 +18,13 @@ export function architectEffectStrings(pre, pos, card, fam = null, tier = 1) {
   const sc = pre && pre.score && pre.score[pos];
   if (sc) {
     switch (sc.kind) {
-      case "flat":      out.push(`+${sc.amount} Punkte`); break;
-      case "mult":      out.push(`×${fmt(sc.factor)} Punkte`); break;
-      case "streak":    out.push(`+${sc.amount} Punkte je Serienpunkt`); break;
-      case "crit":      out.push(`+${sc.amount} Punkte bei Crit`); break;
-      case "color":     out.push(`+${sc.amount} Punkte bei ${suitName(sc.colorChoice)}`); break;
-      case "milestone": out.push(`+${sc.amount} Punkte alle ${sc.every} Siege`); break;
-      case "target":    out.push(`+${sc.amount} Punkte`); break;
+      case "flat":      out.push(`+${sc.amount} Score`); break;
+      case "mult":      out.push(`×${fmt(sc.factor)} Score`); break;
+      case "streak":    out.push(`+${sc.amount} Score je Serienpunkt`); break;
+      case "crit":      out.push(`+${sc.amount} Score bei Crit`); break;
+      case "color":     out.push(`+${sc.amount} Score bei ${suitName(sc.colorChoice)}`); break;
+      case "milestone": out.push(`+${sc.amount} Score alle ${sc.every} Siege`); break;
+      case "target":    out.push(`+${sc.amount} Score`); break;
       default: break;
     }
   }

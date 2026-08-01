@@ -46,7 +46,7 @@ export const PLANT_FULL = "#c8ffdc"; // voll ausgewachsen (Wert-Deckel) — hell
 // Gebäude-Overlay der Aufstellungsphase (FormationPhase/CardGrid). Blau/Grün/Orange = Wert/Punkte/Formation.
 export const ARCH_CAT = {
   value:     { color: "#3b7dbe", label: "Wert",      icon: "▛" },
-  score:     { color: "#2f9d55", label: "Punkte",    icon: "◆" },
+  score:     { color: "#2f9d55", label: "Score",    icon: "◆" },
   formation: { color: "#d1652f", label: "Formation", icon: "✶" },
 };
 

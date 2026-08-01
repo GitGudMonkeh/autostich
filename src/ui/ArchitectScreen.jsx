@@ -374,7 +374,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wide opacity-50">Runde {round}</div>
+            <div className="text-[10px] uppercase tracking-wide opacity-50">Durchlauf {round}</div>
             <div className="text-[10px] uppercase tracking-wide opacity-50 mt-0.5">Baufeld frei</div>
             <div className="font-pixel-dense font-bold leading-none" style={{ color: GOLD, fontSize: 22 }}>
               {Math.max(0, maxCover - coverCount)}<span className="text-xs opacity-70 font-mono"> / {maxCover}</span>
@@ -545,13 +545,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. */}
               <div className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}>
-                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur-Kombis · ×Punkte je Durchlauf</div>
+                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur-Kombis · ×Score je Durchlauf</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   <span>volle <b>Zeile</b> ×{fmt(HAEUSERZEILE_FACTOR)}</span>
                   <span>volle <b>Spalte</b> ×{fmt(SPALTE_FACTOR)}</span>
                   <span><b>Diagonale</b> ×{fmt(DIAGONALE_FACTOR)}</span>
                 </div>
-                <div className="opacity-60 mt-1">Jede Karte auf einer vollständigen Zeile/Spalte/Diagonale macht bei einem Sieg entsprechend mehr <b>Punkte</b>. Faktoren stapeln multiplikativ.</div>
+                <div className="opacity-60 mt-1">Jede Karte auf einer vollständigen Zeile/Spalte/Diagonale macht bei einem Sieg entsprechend mehr <b>Score</b>. Faktoren stapeln multiplikativ.</div>
               </div>
 
               {/* removeFor: kein Platz → Gebäude entfernen anbieten. #235: zweistufig — erst markieren (Effekte zeigen), dann bestätigen. */}
@@ -562,11 +562,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                   <div>
                     {!marked ? (
                       <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
-                        <b>Kein Platz</b> für „{pendingFamName(removeFor)}". Soll ein Gebäude weichen? Tippe eins (rot gestrichelt) zum <b>Markieren</b> — es wird erst nach Bestätigen abgerissen.
+                        <b>Kein Platz</b> für „{pendingFamName(removeFor)}“. Soll ein Gebäude weichen? Tippe eins (rot gestrichelt) zum <b>Markieren</b> — es wird erst nach Bestätigen abgerissen.
                       </div>
                     ) : (
                       <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #ff6a4d" }}>
-                        <div className="text-sm mb-1">Dieses Gebäude abreißen, um „{pendingFamName(removeFor)}" zu bauen?</div>
+                        <div className="text-sm mb-1">Dieses Gebäude abreißen, um „{pendingFamName(removeFor)}“ zu bauen?</div>
                         <div className="rounded-lg px-2.5 py-1.5 mb-2 text-[11px] font-mono leading-snug" style={{ background: "#2a1416", border: "1px solid #d1462f66" }}>
                           <span className="inline-flex items-center gap-1.5 align-middle">
                             <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: mfam ? CAT[mfam.category].color : "#d1462f" }} />
@@ -614,7 +614,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                                 style={{ background: `${tierCol}22`, color: tierCol, border: `1px solid ${tierCol}66` }}>
                                 {o.legendary ? "Legendär" : `Stufe ${tierLabel(o.tier)}`}
                               </span>
-                              {!o.legendary && (() => { const u = upgradeInfo(fam, o.tier); return u.can ? null : <span className="text-[9px] font-mono" style={{ color: "#8a97a5" }} title="Aufrüsten ändert bei diesem Effekt nichts">{u.reason === "max" ? "max. Stufe" : "keine Aufwertung"}</span>; })()}
+                              {!o.legendary && (() => { const u = upgradeInfo(fam, o.tier); return u.can ? null : <span className="text-[9px] font-mono" style={{ color: "#8a97a5" }} title="Aufwerten ändert bei diesem Effekt nichts">{u.reason === "max" ? "max. Stufe" : "keine Aufwertung"}</span>; })()}
                               {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>kein Platz →</span>}
                             </div>
                           </div>
@@ -625,7 +625,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
                       className="rounded-lg p-2.5 text-left w-full transition-all hover:brightness-110"
                       style={{ background: "#16232f", border: `1px dashed ${CAT.value.color}66`, opacity: canUpgradeAny ? 1 : 0.4, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
-                      <div className="text-sm font-bold">⬆ Aufrüsten</div>
+                      <div className="text-sm font-bold">⬆ Aufwerten</div>
                       <div className="text-[11px] font-mono opacity-60 leading-snug mt-0.5">ein Gebäude +1 Stufe{canUpgradeAny ? "" : " · nichts ausbaubar"}</div>
                     </button>
                   </div>
@@ -636,7 +636,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               {!removeFor && phase === "place" && pending && (
                 <div>
                   <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
-                    <b>Platzieren:</b> zieh das Gebäude (weiß gestrichelt) an die richtige Stelle, <b>⟳ Drehen</b> oben. „Bauen" errichtet es.
+                    <b>Platzieren:</b> zieh das Gebäude (weiß gestrichelt) an die richtige Stelle, <b>⟳ Drehen</b> oben. „Bauen“ errichtet es.
                   </div>
                   {pendingFam && pendingFam.colorLocked && (
                     <div className="flex items-center gap-1.5 mb-2 text-[11px] font-mono">
@@ -672,12 +672,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                             <span className="opacity-55">Danach:</span> <span style={{ color: "#8fe0a0" }}>{famEff(uf, { tier: up.tier + 1 })}</span>
                           </div>
                         </div>
-                        <div className="text-[11px] opacity-60 mt-1.5">Mit <b>„⬆ Aufwerten bestätigen"</b> unten wird die Aufwertung ausgeführt.</div>
+                        <div className="text-[11px] opacity-60 mt-1.5">Unten bestätigen, dann wird aufgewertet.</div>
                       </div>
                     ) : (
                       <>
                         <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
-                          <b>Aufrüsten:</b> tippe ein <b>aufwertbares</b> Gebäude, um es <b>auszuwählen</b> — du siehst dann den aktuellen und den nächsten Effekt und bestätigst mit dem Knopf. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
+                          <b>Aufwerten:</b> tippe ein aufwertbares Gebäude an — du siehst aktuellen und nächsten Effekt und bestätigst unten. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
                         </div>
                         {upgradeMsg && (
                           <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
@@ -813,13 +813,13 @@ function famEff(fam, b) {
   const base = fam.base;
   const nz = (v) => tierNum(v, t);
   switch (base.kind) {
-    case "flat":       return fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Punkte`;
+    case "flat":       return fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`;
     case "lowValue":   return `niedrige Karten +${nz(base.value)} Stichwert`;
-    case "color":      return fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Punkte`;
+    case "color":      return fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`;
     case "target":     return `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Punkte"}`;
-    case "streak":     return `Sieg +${nz(base.score)} Punkte × Serie`;
-    case "crit":       return `Crit-Sieg +${nz(base.score)} Punkte`;
-    case "milestone":  return `jeder ${base.every}. Sieg +${nz(base.score)} Punkte`;
+    case "streak":     return `Sieg +${nz(base.score)} Score × Serie`;
+    case "crit":       return `Crit-Sieg +${nz(base.score)} Score`;
+    case "milestone":  return `jeder ${base.every}. Sieg +${nz(base.score)} Score`;
     case "mult":       return `Siege hier ×${base.factor}`;
     case "joker":      return `Formations-Joker (${base.types.join("/")})`;
     case "transparentFarb": return "Farbblock-Transparenz";

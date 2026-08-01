@@ -125,7 +125,7 @@ export function GlossaryOverlay({ onClose }) {
           <div ref={bodyRef} className="flex-1 overflow-y-auto overlay-card pb-8" style={{ overscrollBehavior: "contain" }}>
             {sections.length === 0 && (
               <div className="px-5 py-9 text-center text-sm" style={{ color: "#71717c" }}>
-                Kein Begriff zu <b style={{ color: "#c9c2ea" }}>„{q.trim()}"</b>.<br />Andere Schreibweise probieren?
+                Kein Begriff zu <b style={{ color: "#c9c2ea" }}>„{q.trim()}“</b>.<br />Andere Schreibweise probieren?
               </div>
             )}
             {sections.map(({ cat, items, groups }) => (

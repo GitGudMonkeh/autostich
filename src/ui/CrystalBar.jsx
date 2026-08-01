@@ -31,7 +31,7 @@ export function CrystalBar({ active, layers = {}, frostbite = {}, hasKristalline
         {/* Kristalline Masse (Hauptelement): Σ aller Schichten, Balken bis zur Schwelle. */}
         <div className="flex-1 min-w-0">
           <div className="flex justify-between text-xs mb-1.5">
-            <span className="opacity-60">❄️ Kristalline Masse
+            <span className="opacity-60">❄ Kristalline Masse
               {reached && <span style={{ color: OVER }}> · SCHWELLE{hasKristalline ? ` · alle Frostkarten +${KRISTALLINE_VALUE}` : ""}</span>}
             </span>
             <span className="font-bold tabular-nums" style={{ color: reached ? OVER : ICE }}>Σ {totalMass} / {KRISTALLINE_THRESHOLD}</span>

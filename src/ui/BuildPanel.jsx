@@ -19,7 +19,7 @@ export function BuildPanel({ perks, skills = [], familyTiers = {}, zinsBonus }) 
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
             Skills — {skills.length}
           </div>
-          <SkillList skills={skills} empty={`Noch keine Skills — ab Runde ${FIRST_SKILL_CYCLE} wählbar.`} />
+          <SkillList skills={skills} empty={`Noch keine Skills — ab Durchlauf ${FIRST_SKILL_CYCLE} wählbar.`} />
         </div>
       </div>
     </div>

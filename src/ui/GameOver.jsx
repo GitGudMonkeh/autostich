@@ -27,7 +27,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           <div className="text-5xl font-bold mt-2" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>
           <div className="text-sm opacity-60 mt-1">Score{timeStr ? ` · ${timeStr}` : ""}</div>
           {/* #202: Münzen-Zeile entfernt — der Shop ist seit dem Architekt-Umbau dormant, Münzen sind obsolet. */}
-          {isRecord && <div className="mt-2 text-sm font-bold" style={{ color: "#8a7de0" }}>★ Neuer Rekord!</div>}
+          {isRecord && <div className="mt-2 text-sm font-bold" style={{ color: "#8a7de0" }}>★ Neuer Rekord</div>}
         </div>
 
         {/* #190: in diesem Lauf frisch freigeschaltete Skins — kleine Vorschau + Hinweis aufs Deck-Menü. */}
@@ -47,7 +47,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                 );
               })}
             </div>
-            <div className="text-[10px] text-center opacity-50 mt-2">Auswählbar im Menü unter „Deck".</div>
+            <div className="text-[10px] text-center opacity-50 mt-2">Auswählbar im Menü unter „Deck“.</div>
           </div>
         )}
 
@@ -64,7 +64,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         {currentTraj.length >= 2 && (
           <div className="mt-5">
             <div className="flex items-center justify-between text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              <span>Punkteverlauf</span>
+              <span>Score-Verlauf</span>
               <span className="flex gap-2 normal-case tracking-normal">
                 <span style={{ color: "#d4a63a" }}>Lauf</span>
                 {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>Rekord</span> : <span className="opacity-40">erster Lauf</span>}

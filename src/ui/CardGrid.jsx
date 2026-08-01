@@ -10,7 +10,7 @@ import { FrostOverlay } from "./FrostOverlay.jsx";
 import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
-const ANCHOR_LABEL = { power: "Kraft", score: "Punkte", crit: "Krit", streak: "Serie", formation: "Formation", joker: "Joker" };
+const ANCHOR_LABEL = { power: "Kraft", score: "Score", crit: "Crit", streak: "Serie", formation: "Formation", joker: "Joker" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
 // #UI: Architekt-Overlay als EIN durchgezogener Rahmen in GEBÄUDE-FORM (statt Kästen um jede Karte). Aus den gemessenen
@@ -215,7 +215,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
               <div className="text-[10px] opacity-40 tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
               {segS != null && (
                 <div className="text-[9px] font-bold font-pixel-dense tabular-nums" style={{ color: segTint }}
-                  title="Formations-Bonus dieses Segments in % (grün = seit Rundenbeginn stärker, rot = schwächer)">+{Math.round(segS * 100)} %</div>
+                  title="Formations-Bonus dieses Segments in % (grün = seit Durchlaufbeginn stärker, rot = schwächer)">+{Math.round(segS * 100)} %</div>
               )}
             </div>
             <div className="grid grid-cols-5 gap-1.5 flex-1">

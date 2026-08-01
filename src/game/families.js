@@ -30,7 +30,7 @@ const { REPLACEMENT, CUMULATIVE, ROLE } = UPGRADE_TYPES;
 // suitStreak, recentWinCount, lastWinValue, critFollowArmed, weaknessArmed, misfireScore, rawCrit.
 const D_FAMILIES = {
   D_FORMATION_BONUS: {
-    id: "D_FORMATION_BONUS", cat: "D", name: "Punktebonus", upgradeType: REPLACEMENT,
+    id: "D_FORMATION_BONUS", cat: "D", name: "Score-Bonus", upgradeType: REPLACEMENT,
     tiers: {
       1: { scoreFlat: (c) => (c.hasFormation ? 50 : 0) },
       2: { scoreFlat: (c) => (c.hasFormation ? 100 : 0) },
