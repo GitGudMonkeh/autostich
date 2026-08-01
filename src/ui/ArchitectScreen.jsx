@@ -450,8 +450,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b && !isDragOrig ? "#233140" : "#16232f"),
                       color: (b && !isDragOrig) || inDragPrev ? "#fff" : "#adbecc",
                       border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b && !isDragOrig ? "#2a3a46" : "#20303d")}`,
-                      opacity: upgradeDim ? 0.28 : (isBlocked ? 0.34 : (isPending && !inDragPrev ? 0.82 : 1)),
-                      filter: (upgradeDim || isBlocked) ? "grayscale(0.75)" : undefined,
+                      opacity: upgradeDim ? 0.28 : (isBlocked ? 0.5 : (isPending && !inDragPrev ? 0.82 : 1)),
+                      filter: upgradeDim ? "grayscale(0.75)" : (isBlocked ? "grayscale(0.55)" : undefined),
                       touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
                         isMarkedDemolish ? "inset 0 0 0 2px #ff6a4d, inset 0 0 16px #ff3b1e66" : null,     // #235: markiertes Abriss-Ziel rot hervorheben
@@ -471,6 +471,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     {/* #UI: Kombi-Fläche — Zellen auf fertiger Struktur bekommen eine leicht transparente rote Fläche (Toggle „Kombis"). */}
                     {showCombos && !dragPrev && structLit(pos) && (
                       <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "#d1462f30", boxShadow: "inset 0 0 0 1px #d1462f66" }} />
+                    )}
+                    {/* #UI: gesperrte Fläche beim Ziehen — Diagonal-Schraffur + Rim, damit „hier nicht ablegbar" klar heraussticht. */}
+                    {isBlocked && (
+                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(8,12,18,0.62) 3.5px, rgba(8,12,18,0.62) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(134,153,168,0.45)" }} />
                     )}
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
