@@ -92,7 +92,11 @@ export function Autostich() {
   const prevMult = useRef(1);     // vorheriger Score-Mult (Puls nur bei Anstieg, #37)
   // Offenes Optionen-Overlay friert den Lauf ein (wie andere Overlays) — ohne den
   // Nutzer-Pause-Toggle zu verändern: beim Schließen läuft es im vorherigen Zustand weiter.
-  const active = state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen;
+  // #260: Der Lauf-Timer zählt in ALLEN Spielphasen (auch Auswahlen: Skill-/Perk-/Stat-/Ziel-Wahl, Architekt,
+  // Aufstellung) — nur Menü/Gameover stehen außerhalb. So schätzt die Zeit die echte Rundendauer, statt nur die
+  // reine Stichspiel-Zeit. Echte Unterbrechungen (Pause, Optionen-/Chronik-/Glossar-Overlay) frieren weiterhin ein.
+  const inRun = state.phase !== "menu" && state.phase !== "gameover";
+  const active = inRun && !paused && !showOptions && !showChronik && !glossaryOpen;
   // Dynamische Rundengeschwindigkeit (#95): jeder Durchlauf startet bei +0 % und beschleunigt
   // +2 % je in DIESEM Durchlauf gewonnenem Stich → sichtbare Eskalation zum Rundenende, Reset je Durchlauf.
   // Rein Anzeige/Ablauf (score-neutral wie der Turbo). cycleWins = Siege seit Durchlauf-Beginn.
