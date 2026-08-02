@@ -99,6 +99,12 @@ export const PERK_DEFS = {
   L_MONO: { id: "L_MONO", cat: "D", rarity: "legendary", label: "Monochrom",
         desc: `Jeder Sieg in einer Farbserie zählt ×(1 + ${pct(C.MONOCHROM_STEP)} % je Folgesieg derselben Farbe, höchstens +${pct(C.MONOCHROM_CAP)} %). Ein Farbwechsel oder eine Niederlage setzt die Farbserie zurück.`,
         scoreMult: (ctx) => 1 + Math.min(C.MONOCHROM_STEP * Math.max(0, (ctx.suitStreak || 1) - 1), C.MONOCHROM_CAP) },
+  // --- Gebäude-Legendäre (Architekt-Lane, needsArchitect → nur bei aktivem Architekten im Angebot). Flag-verdrahtet
+  //     wie die #203-Legendären: `richtfest` am Durchlauf-Ende (engine.js), `bauhuette` beim Pick (reducer.js). ---
+  L_RICHT: { id: "L_RICHT", cat: "E", rarity: "legendary", label: "Richtfest", richtfest: true, needsArchitect: true,
+        desc: `Am Ende jedes Durchlaufs: je vollendeter Gebäude-Struktur (volle Zeile, Spalte oder Diagonale) +${C.RICHTFEST_STEP} dauerhafter Score. Der aufgestapelte Bonus wird jeden Durchlauf ausgezahlt (flach, kein Multiplikator).` },
+  L_BAUH: { id: "L_BAUH", cat: "E", rarity: "legendary", label: "Bauhütte", bauhuette: true, needsArchitect: true,
+        desc: `Sofort: das Baufeld des Architekten wächst dauerhaft um ${C.BAUHUETTE_COVER} Zellen — du kannst mehr Gebäude platzieren.` },
 };
 
 export const PERK_LIST = Object.values(PERK_DEFS);
@@ -149,7 +155,9 @@ export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, 
   // liefert die Basistabelle → byte-identisch zum bisherigen Verhalten (Grad-0 / Sim / Bestandstests unberührt).
   const tierWeights = tierWeightsForShift(rareShift);
   // Flacher Legacy-Pool: nicht besessen, offerable, NICHT migriert (reguläre D-Perks raus; Legendäre bleiben).
-  let flat = PERK_LIST.filter((p) => !owned.includes(p.id) && p.offerable !== false && !isMigratedPerk(p));
+  // Gebäude-Legendäre (needsArchitect) nur mit aktivem Architekten — sonst inert (kein Gebäude-Overlay).
+  let flat = PERK_LIST.filter((p) => !owned.includes(p.id) && p.offerable !== false && !isMigratedPerk(p)
+    && !(p.needsArchitect && !architectEnabled));
   const chosen = [];
   let legendaries = 0;
   // Expliziter Legendär-Wurf (Shop-Spec §10 P5) — identisch zu buildOffer: nur bei übergebener Chance, dann genau

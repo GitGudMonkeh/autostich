@@ -7,7 +7,7 @@ import { applyFamilyPick, FAMILY_DEFS } from "../src/game/families.js";
 import { computeFormations } from "../src/game/formations.js";
 import { precomputeArchitect } from "../src/game/architect.js";
 import { buildPerkOffer, isMigratedPerk, PERK_DEFS, PERK_LIST, isLegendary } from "../src/game/perks.js";
-import { SCORE_PER_WIN } from "../src/game/constants.js";
+import { SCORE_PER_WIN, RICHTFEST_STEP, BAUHUETTE_COVER } from "../src/game/constants.js";
 const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Sieg-Basis (Pacing-Pass 100→400)
 
 /* Engine-Verdrahtung des Raritätssystems (Epic #167, Schritt 1): der End-to-End-Nachweis, dass eine
@@ -269,6 +269,33 @@ describe("Legendär-Engine — L_MONO Monochrom (scoreMult über Farbserie)", ()
     const withMono = resolveTrick(base(["L_MONO"]), rng).lastTrick.gained;
     const without  = resolveTrick(base([]), rng).lastTrick.gained;
     expect(withMono / without).toBeCloseTo(1 + 2 * 0.15); // suitStreak 3 → ×1,30
+  });
+});
+
+describe("Gebäude-Legendäre — Richtfest (Durchlauf-Ende) + Bauhütte (Pick)", () => {
+  it("completedStructures/precompute: eine volle Segment-Zeile = 1 Struktur", () => {
+    const arch = { buildings: [{ id: "b1", familyId: "A_PRUNKSAAL", tier: "legendary", footprint: [0, 1, 2, 3, 4] }], winCounters: {} };
+    expect(precomputeArchitect(arch, identity(), constDeck(12)).structureCount).toBe(1);
+  });
+  it("L_RICHT (Richtfest): Struktur-Dividende stapelt je Durchlauf-Ende (+Schritt × Strukturen)", () => {
+    const arch = { buildings: [{ id: "b1", familyId: "A_PRUNKSAAL", tier: "legendary", footprint: [0, 1, 2, 3, 4] }], winCounters: {} };
+    const pre = precomputeArchitect(arch, identity(), constDeck(12));
+    const s = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, richtfestBonus: 0 }), rng);
+    expect(s.cycle).toBe(1);                                  // Durchlauf-Ende
+    expect(s.richtfestBonus).toBe(RICHTFEST_STEP);            // 1 Struktur → +Schritt
+    // Folgedurchlauf mit demselben Bau: stapelt weiter.
+    const s2 = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, richtfestBonus: RICHTFEST_STEP }), rng);
+    expect(s2.richtfestBonus).toBe(2 * RICHTFEST_STEP);
+    // ohne vollendete Struktur (kein Bau) → kein Zuwachs.
+    const s0 = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, richtfestBonus: 0 }), rng);
+    expect(s0.richtfestBonus).toBe(0);
+  });
+  it("L_BAUH (Bauhütte): PICK_PERK hebt den Baufeld-Deckel (maxCover) dauerhaft", () => {
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L_BAUH"] };
+    const before = s0.architect.maxCover;
+    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "L_BAUH", rng });
+    expect(s1.perks).toContain("L_BAUH");
+    expect(s1.architect.maxCover).toBe(before + BAUHUETTE_COVER);
   });
 });
 
@@ -593,6 +620,21 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
     expect(withoutArch).not.toContain("C_ECKSTEIN");
     expect(withoutArch).not.toContain("D_BEBAUUNG");
     expect(withoutArch.length).toBe(withArch.length - 2); // exakt die zwei Gebäude-Familien fehlen
+  });
+
+  it("Gebäude-Legendäre (needsArchitect) nur mit Architekt im flachen Pool", () => {
+    // Alle Nicht-Gebäude-Legendären besessen + alle Familien auf IV → einzig offerbar: L_RICHT/L_BAUH.
+    const ownedLeg = ["L2", "L4", "L6", "L_UMV", "L_ZINS", "L_VAB", "L_HENK", "L_ECHO", "L_SAMM", "L_BRENN", "L_PATT", "L_MONO"];
+    const allFamsIV = Object.fromEntries(Object.keys(FAMILY_DEFS).map((id) => [id, 4]));
+    let sawBuild = false;
+    for (let seed = 0; seed < 20 && !sawBuild; seed++) // mit Architekt: Legendär-Wurf zieht ein Gebäude-Legendäres
+      if (buildPerkOffer(ownedLeg, allFamsIV, rngS(seed), 3, 1, 0, true).some((e) => e === "L_RICHT" || e === "L_BAUH")) sawBuild = true;
+    expect(sawBuild).toBe(true);
+    for (let seed = 0; seed < 20; seed++) { // ohne Architekt: nie ein Gebäude-Legendäres
+      const off = buildPerkOffer(ownedLeg, allFamsIV, rngS(seed), 3, 1, 0, false);
+      expect(off).not.toContain("L_RICHT");
+      expect(off).not.toContain("L_BAUH");
+    }
   });
 
   it("bietet nur Stufen ECHT über dem gehaltenen Rang an; IV schließt die Familie ab", () => {

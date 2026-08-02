@@ -226,12 +226,16 @@ export function reducer(state, action) {
         const avg = Math.round(state.deck.reduce((s, c) => s + c.value, 0) / Math.max(1, state.deck.length));
         deck = state.deck.map((c) => ({ ...c, value: avg }));
       }
+      // Bauhütte (L_BAUH, Gebäude-Legendäres): hebt sofort dauerhaft den Baufeld-Deckel (maxCover) → mehr Bauplatz.
+      const architect = def.bauhuette && state.architect
+        ? { ...state.architect, maxCover: (state.architect.maxCover ?? ARCH_MAX_COVER) + C.BAUHUETTE_COVER }
+        : state.architect;
       // Perks mit manueller Kartenauswahl öffnen die Zielauswahl (§22.5); sonst weiter.
       const goTarget = !!def.needsTarget;
       const formations = def.redistribute
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers)
         : state.formations;
-      return { ...state, perks, deck, offer: null, formations,
+      return { ...state, perks, deck, architect, offer: null, formations,
                phase: goTarget ? "target" : "play",
                targetPerk: goTarget ? perkId : null };
     }

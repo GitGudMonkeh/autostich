@@ -94,6 +94,7 @@ export function resolveTrick(state, rng) {
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
     zinsBonus = 0, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Legendär-Perks-Rework (#203): Zinseszins-Dauerdividende / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
+    richtfestBonus = 0, // Gebäude-Legendäres Richtfest: aufgestapelte Struktur-Dauerdividende (Auszahlung je Durchlauf-Ende)
     vabanquePaid = 0, // Vabanque (#203): Zahl der Eröffnungs-Wetten, die dieser Lauf schon ausgezahlt hat (Lauf-Deckel gegen Front-Load-Exploit)
     crits, critBonusScore, bestTrickScore,
     maxFormations = 0, formationScore = 0, buildingScore = 0, streakScore = 0, // #161 FB-2 + #251: Score-Anteile (Formation / Architekt-Gebäude / Serie)
@@ -970,6 +971,8 @@ export function resolveTrick(state, rng) {
     let cycleEndScore = 0;
     if (ownsFlag(perks, "zinseszins")) { if (cycleWins > cycleLosses) zinsBonus += C.ZINSESZINS_STEP; cycleEndScore += zinsBonus; }
     if (ownsFlag(perks, "echo")) cycleEndScore += cycleBestTrick * C.ECHO_FACTOR;
+    // Richtfest (Gebäude-Legendäres): je vollendeter Struktur diesen Durchlauf +Schritt auf den Dauer-Bonus, dann auszahlen.
+    if (ownsFlag(perks, "richtfest") && archPreNow) { richtfestBonus += C.RICHTFEST_STEP * (archPreNow.structureCount || 0); cycleEndScore += richtfestBonus; }
     score += cycleEndScore;
     // Per-Karte-Ledger (Sim S1): die Durchlauf-Ende-Payoffs dem gerade gespielten Schluss-Stich gutschreiben, damit die
     // Score-Summe je Karte weiterhin exakt `score` reproduziert (metrics.observe liest lastTrick.gained). lastTrick ist
@@ -1132,6 +1135,7 @@ export function resolveTrick(state, rng) {
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
     zinsBonus, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, // Legendär-Perks-Rework (#203)
+    richtfestBonus, // Gebäude-Legendäres Richtfest (Struktur-Dauerdividende)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)

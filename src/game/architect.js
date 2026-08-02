@@ -273,6 +273,21 @@ export function structureFactorMap(coverSet) {
   return sf;
 }
 
+// Anzahl VOLLENDETER Strukturen (volle Zeilen + volle Spalten + volle Diagonalen) im Cover-Set — die Zähl-Variante
+// zu structureFactorMap (dort Faktor je Position). Quelle für das Gebäude-Legendäre „Richtfest" (Durchlauf-Ende).
+export function completedStructures(coverSet) {
+  let n = 0;
+  for (let r = 0; r < ROWS; r++) { let full = true; for (let c = 0; c < COLS; c++) if (!coverSet.has(posOf(r, c))) { full = false; break; } if (full) n++; }
+  for (let c = 0; c < COLS; c++) { let full = true; for (let r = 0; r < ROWS; r++) if (!coverSet.has(posOf(r, c))) { full = false; break; } if (full) n++; }
+  for (let r0 = 0; r0 <= ROWS - COLS; r0++) {
+    const main = [], anti = [];
+    for (let i = 0; i < COLS; i++) { main.push(posOf(r0 + i, i)); anti.push(posOf(r0 + i, COLS - 1 - i)); }
+    if (main.every((p) => coverSet.has(p))) n++;
+    if (anti.every((p) => coverSet.has(p))) n++;
+  }
+  return n;
+}
+
 /* ============================================================
    PRECOMPUTE (zu Durchlauf-Beginn, stabil pro Durchlauf) — je Position die aufgelösten value-/score-Effekte
    (target highest/lowest hier EINMAL bestimmt) + Häuserzeile-Faktor je Position. Gebäude überlappen nie →
@@ -304,7 +319,8 @@ export function precomputeArchitect(architect, order, deck) {
   for (let p = 0; p < N_POS; p++) segFactor[p] = sf[p];
   // #Pool: cover/coverCount für Gebäude-Perks (Eckstein liest cover[actualPos], Dichte Bebauung coverCount).
   // segFactor[p] > 1 markiert zusätzlich eine vollendete Struktur (Zeile/Spalte/Diagonale) an der Position.
-  return { value, score, segFactor, cover, coverCount: coverSet.size };
+  // structureCount = Anzahl vollendeter Strukturen (Richtfest, Durchlauf-Ende).
+  return { value, score, segFactor, cover, coverCount: coverSet.size, structureCount: completedStructures(coverSet) };
 }
 
 // Löst die (positionsgebundenen) value-/score-Effekte eines Gebäudes auf → [ [pos, effect], … ].
