@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "sim": "node sim/batch.js",
-    "probe": "node sim/probe.js"
+    "probe": "node sim/probe.js",
+    "gen:db": "node scripts/gen-db.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
