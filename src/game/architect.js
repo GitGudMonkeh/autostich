@@ -59,7 +59,12 @@ const TIER_INERT_KINDS = new Set(["joker", "transparentFarb", "crossSeg"]);
 export function upgradeInfo(fam, tier) {
   if (!fam) return { can: false, reason: null };
   if (fam.legendary) return { can: false, reason: "legendary" };
-  if (TIER_INERT_KINDS.has(fam.base && fam.base.kind)) return { can: false, reason: "inert" };
+  // #Pool: stufen-inerte Effektarten (joker/…) sind normalerweise No-op beim Aufrüsten. MIT tierKick werden sie bis
+  // zur Kick-Stufe `at` wieder aufwertbar (dort zündet der Zusatz), darüber wieder inert.
+  if (TIER_INERT_KINDS.has(fam.base && fam.base.kind)) {
+    if (fam.tierKick && typeof tier === "number" && tier < fam.tierKick.at) return { can: true, reason: null };
+    return { can: false, reason: "inert" };
+  }
   if (!(typeof tier === "number" && tier < MAX_TIER)) return { can: false, reason: "max" };
   return { can: true, reason: null };
 }
@@ -195,12 +200,12 @@ export const ARCHITECT_FAMILIES = {
   A_SPEICHER:    { id: "A_SPEICHER",    name: "Speicherstadt", category: "score", form: "luecke", base: { kind: "compound", score: 40 } },
 
   /* ---- formation · Sakralbau (I–IV) ---- */
-  A_KLAMMER:    { id: "A_KLAMMER",    name: "Klammer",    category: "formation", form: "domino",    base: { kind: "joker", types: ["farbblock"] } },
+  A_KLAMMER:    { id: "A_KLAMMER",    name: "Klammer",    category: "formation", form: "domino",    base: { kind: "joker", types: ["farbblock"] }, tierKick: { at: 3, addType: "wiederholung" } },
   A_ARKADE:     { id: "A_ARKADE",     name: "Arkade",     category: "formation", form: "domino",    base: { kind: "transparentFarb" } },
   A_KREUZGANG:  { id: "A_KREUZGANG",  name: "Kreuzgang",  category: "formation", form: "tromino_l", base: { kind: "bind" } },
   A_FRIES:      { id: "A_FRIES",      name: "Fries",      category: "formation", form: "block2x2",  base: { kind: "joker", types: ["wiederholung"] } },
   A_PFEILER:    { id: "A_PFEILER",    name: "Pfeiler",    category: "formation", form: "line4",     base: { kind: "crossSeg" } },
-  A_GRUNDSTEIN: { id: "A_GRUNDSTEIN", name: "Grundstein", category: "formation", form: "block2x2",  base: { kind: "anker", factor: 1.10 } },
+  A_GRUNDSTEIN: { id: "A_GRUNDSTEIN", name: "Grundstein", category: "formation", form: "block2x2",  base: { kind: "anker", factor: 1.10 }, tierKick: { at: 3, ankerValue: 2 } },
   A_GEWOELBE:   { id: "A_GEWOELBE",   name: "Gewölbe",    category: "formation", form: "tetro_t",   base: { kind: "joker", types: ["wiederholung", "treppe"] } },
 
   /* ---- legendär (keine Stufen, kommen fertig; 2 je Kategorie) ---- */
@@ -274,7 +279,9 @@ export function buildArchitectOffer(architect, rng, rareShift = _archRareShift) 
     // wird TROTZDEM immer gezogen (auch wenn verworfen), damit der Zufallsstrom identisch bleibt (Determinismus/Seed).
     const t = weightedTier(rng, rareShift);
     const inert = TIER_INERT_KINDS.has(f.base && f.base.kind);
-    offers.push({ familyId: f.id, tier: inert ? 1 : t, used: false });
+    // Inert ohne Kick → auf Stufe 1 pinnen (Aufrüsten ist No-op). Inert MIT Kick → bis zur Kick-Stufe `at` erlauben.
+    const tier = inert ? (f.tierKick ? Math.min(t, f.tierKick.at) : 1) : t;
+    offers.push({ familyId: f.id, tier, used: false });
   }
   return offers;
 }
@@ -350,8 +357,12 @@ export function precomputeArchitect(architect, order, deck) {
     } else if (fam.category === "score") {
       const eff = resolveNumEffect(fam, b, "score", order, deck, cardVal, boardCtx);
       for (const [p, e] of eff) score[p] = e;
+    } else if (fam.category === "formation" && fam.tierKick && fam.tierKick.ankerValue && typeof b.tier === "number" && b.tier >= fam.tierKick.at) {
+      // #Pool tierKick: Grundstein III legt zusätzlich einen flachen Stichwert auf jede (Anker-)Zelle. Formations-
+      // Gebäude überlappen nie value-Gebäude → value[p] ist hier frei. Der Anker-Faktor läuft davon unberührt über formSpec.
+      for (const p of b.footprint) value[p] = { kind: "flat", amount: fam.tierKick.ankerValue, familyId: fam.id, buildingId: b.id };
     }
-    // formation-Gebäude wirken über architectFormSpec (computeFormations), nicht hier.
+    // formation-Gebäude wirken sonst über architectFormSpec (computeFormations), nicht hier.
   }
   // Struktur-Boni (Zeile/Spalte/Diagonale) — multiplikativ auf jede beteiligte Position.
   const coverSet = new Set(); for (let p = 0; p < N_POS; p++) if (cover[p]) coverSet.add(p);
@@ -465,8 +476,10 @@ export function architectFormSpec(architect, order, deck) {
     if (!fam || fam.category !== "formation") continue;
     any = true;
     const k = fam.base.kind;
+    // #Pool tierKick: Klammer III schaltet einen zweiten Joker-Typ frei (reaktiviert das inerte joker-Aufrüsten).
+    const kickOn = fam.tierKick && typeof b.tier === "number" && b.tier >= fam.tierKick.at;
     for (const p of b.footprint) {
-      if (k === "joker") { for (const t of fam.base.types) jokerSetFor[t].add(p); }
+      if (k === "joker") { for (const t of fam.base.types) jokerSetFor[t].add(p); if (kickOn && fam.tierKick.addType) jokerSetFor[fam.tierKick.addType].add(p); }
       else if (k === "transparentFarb") transparentFarb.add(p);
       else if (k === "crossSeg") crossSeg.add(rowOf(p)); // Pfeiler: öffnet die 1D-Segmentgrenze der berührten Zeilen
       else if (k === "bind") bind[p] = Math.max(bind[p] || 0, bindSpanFor(b.tier));

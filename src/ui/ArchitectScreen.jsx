@@ -843,6 +843,8 @@ function famEff(fam, b) {
     else if (k.critFlatMult) kickTxt = `bei Crit ×${k.critFlatMult} Flat`;
     else if (k.streakDoubleFrom) kickTxt = `ab Serie ${k.streakDoubleFrom} doppelt`;
     else if (k.every) kickTxt = `jeder ${k.every}. statt ${base.every}. Sieg`;
+    else if (k.addType) kickTxt = `+Joker ${k.addType}`;
+    else if (k.ankerValue) kickTxt = `+${k.ankerValue} Stichwert je Zelle`;
     if (kickTxt) s += on ? ` · ${kickTxt}` : ` (Stufe ${k.at}: ${kickTxt})`;
   }
   return s;

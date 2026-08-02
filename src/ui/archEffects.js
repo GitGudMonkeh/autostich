@@ -32,7 +32,11 @@ export function architectEffectStrings(pre, pos, card, fam = null, tier = 1) {
   if (fam && fam.category === "formation" && fam.base) {
     const base = fam.base;
     switch (base.kind) {
-      case "joker":           out.push(`Formations-Joker (${(base.types || []).join("/")})`); break;
+      case "joker": {         // #Pool tierKick: Klammer III fügt einen zweiten Joker-Typ hinzu (ab Stufe `at`).
+        const types = [...(base.types || [])];
+        if (fam.tierKick && fam.tierKick.addType && tier >= fam.tierKick.at) types.push(fam.tierKick.addType);
+        out.push(`Formations-Joker (${types.join("/")})`); break;
+      }
       case "transparentFarb": out.push("Farbblock-Transparenz"); break;
       case "bind":            out.push("Treppen-Bindeglied (±Span)"); break;
       case "crossSeg":        out.push("öffnet die Segmentgrenze"); break;
