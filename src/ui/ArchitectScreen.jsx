@@ -352,7 +352,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   }, [dragPrev]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const structLit = (pos) => (structF[pos] || 1) > 1;
+  // #262: Eine Form ist nur drehbar, wenn sie mehr als eine distinkte Lage hat. `zeile` (Legendäre) sowie `single`/`block2x2`
+  // stehen in NO_ROTATE (architect.js) → shapeRotations liefert genau eine Lage → „⟳ Drehen" wäre wirkungslos.
+  const rotatableForm = (form) => shapeRotations(form).length > 1;
   const showRotate = selId != null && buildings.some((x) => x.id === selId) && (phase === "place" || phase === "move");
+  const selBuilding = buildings.find((x) => x.id === selId);
+  const selRotatable = !!selBuilding && rotatableForm(familyDef(selBuilding.familyId).form);
   const pendingFam = pending ? familyDef(pending.familyId) : null;
 
   return (
@@ -629,6 +634,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                             <span className="w-[9px] h-[9px] rounded-full inline-block shrink-0" style={{ background: cat.color }} />{fam.name}
                           </div>
                           <div className="text-[10px] font-mono opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
+                          {!rotatableForm(fam.form) && <span className="text-[9px] font-mono" style={{ color: "#8a97a5" }} title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch).">nicht drehbar</span>}
                           {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>kein Platz → ersetzen</span>}
                         </button>
                       );
@@ -734,9 +740,15 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 Desktop: normale Leiste (md:static). */}
             <div className="order-1 sticky top-0 z-20 md:static rounded-xl p-2" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
               {/* #248: Rotieren in der schwebenden Leiste — nur bei ausgewähltem Gebäude in place/move; beim Ziehen ohne Scrollen erreichbar. */}
-              {showRotate && (
+              {showRotate && (selRotatable ? (
                 <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
-              )}
+              ) : (
+                // #262: nicht drehbare Form (zeilengebundene Legendäre / symmetrisch) → Button ausgegraut statt wirkungslos.
+                <button type="button" disabled aria-disabled="true"
+                  title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch)."
+                  className="w-full mb-2 rounded-lg py-2 text-sm font-bold cursor-not-allowed"
+                  style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>⟳ Nicht drehbar</button>
+              ))}
               {removeFor ? (
                 <button onClick={() => { setRemoveFor(null); setPendingDemolish(null); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
               ) : phase === "choose" ? (
