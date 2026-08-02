@@ -10,6 +10,15 @@ import { FormationPanel } from "./FormationPanel.jsx";
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "•", color: "#8a8a95" };
 
+// #238b: Was verschwindet, wenn der LETZTE Skill eines Archetyps abgelegt wird (Wahrheit: reducer.js stillActive-Pfad).
+// Bereits in die Karten gebackener Wert (geschmiedet/gewachsen) bleibt erhalten → Zusatz nur bei Feuer/Pflanze.
+const ARCH_LOSS = {
+  plant:     { text: "alle grünen Karten & das Wachstum gehen verloren", baked: true },
+  ice:       { text: "Frostkarten tauen auf, alle Schichten gehen verloren", baked: false },
+  fire:      { text: "Hitze & Asche gehen verloren", baked: true },
+  lightning: { text: "die Ladung geht verloren", baked: false },
+};
+
 const SOCKET_PCT = Math.round(LIGHTNING_CRIT_BASE * 100);         // einmaliger Aktivierungs-Sockel (5 %)
 const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // je Blitz-Skill (8 %)
 
@@ -154,10 +163,16 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 </p>
               </div>
               <div className="grid gap-2">
-                {held.map((s) => (
+                {held.map((s) => {
+                  const arch = archetypeOf(s.id);
+                  // #238b: Ersetzt man DIESEN Skill, wird sein Archetyp nur dann deaktiviert, wenn er der letzte
+                  // seiner Art ist UND der NEUE Skill (pending) nicht selbst denselben Archetyp hat (dann bleibt er aktiv).
+                  const deactivates = !!arch && ARCH_LOSS[arch] && archetypeOf(pending) !== arch
+                    && held.filter((h) => archetypeOf(h.id) === arch).length === 1;
+                  return (
                   <button key={s.id} onClick={() => { onPick(pending, s.id); setPending(null); }}
                     className="text-left rounded-xl p-3 flex flex-col gap-1 transition-all hover:brightness-110"
-                    style={{ background: "#20202a", border: `1px solid ${ac(s.id).color}66` }}>
+                    style={{ background: "#20202a", border: `1px solid ${deactivates ? "#d1462f" : ac(s.id).color + "66"}` }}>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}>{ac(s.id).icon} {ac(s.id).label.toUpperCase()}</span>
                       {(s.heatConsumer || s.onFullCharge) && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>KONSUMENT</span>}
@@ -166,17 +181,16 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     <div className="font-bold text-sm" style={{ color: ac(s.id).color }}>{s.name}</div>
                     <div className="text-xs opacity-75 leading-snug"><GlossaryText text={s.desc} /></div>
                     <div className="text-[10px] font-bold mt-0.5" style={{ color: "#e0605a" }}>↔ diesen ersetzen</div>
+                    {/* #238b: gezielte Warnung — nur wenn dieses Ersetzen den letzten Skill des Archetyps entfernt. */}
+                    {deactivates && (
+                      <div className="mt-1 rounded px-2 py-1 text-[10px] font-bold leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f66", color: "#f0a898" }}>
+                        ⚠ Letzter {ac(s.id).label}-Skill: {ARCH_LOSS[arch].text}.{ARCH_LOSS[arch].baked ? " Bereits aufgewerteter Kartenwert bleibt." : ""}
+                      </div>
+                    )}
                   </button>
-                ))}
+                  );
+                })}
               </div>
-              {/* #238: Persistenz-Hinweis — nur wenn eine betroffene Fraktion (Feuer/Eis/Pflanze) gehalten wird.
-                  Ablegen des LETZTEN Skills einer Fraktion setzt deren Gegner-Schwächungen zurück, eigene
-                  aufgewertete Karten bleiben aber gebacken (Wahrheit: reducer.js stillActive-Pfad). */}
-              {held.some((s) => ["fire", "ice", "plant"].includes(archetypeOf(s.id))) && (
-                <div className="mt-3 rounded-lg px-3 py-2 text-[11px] leading-snug" style={{ background: "#16232f", border: "1px solid #2b3e4d", color: "#b8c4d0" }}>
-                  <b style={{ color: "#e0605a" }}>Gegner-Schwächungen</b> (Frost/Brand/Ausläufer) werden zurückgesetzt, wenn du den <b>letzten Skill eines Archetyps</b> ablegst. <b style={{ color: "#5fce86" }}>Eigene aufgewertete Karten</b> (geschmiedeter/gewachsener Wert) bleiben erhalten.
-                </div>
-              )}
               <button onClick={() => setPending(null)} className="w-full mt-3 rounded-lg py-2 text-sm font-bold" style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>Abbrechen</button>
             </div>
           </div>
