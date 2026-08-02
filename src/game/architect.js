@@ -302,7 +302,9 @@ export function precomputeArchitect(architect, order, deck) {
   const coverSet = new Set(); for (let p = 0; p < N_POS; p++) if (cover[p]) coverSet.add(p);
   const sf = structureFactorMap(coverSet);
   for (let p = 0; p < N_POS; p++) segFactor[p] = sf[p];
-  return { value, score, segFactor };
+  // #Pool: cover/coverCount für Gebäude-Perks (Eckstein liest cover[actualPos], Dichte Bebauung coverCount).
+  // segFactor[p] > 1 markiert zusätzlich eine vollendete Struktur (Zeile/Spalte/Diagonale) an der Position.
+  return { value, score, segFactor, cover, coverCount: coverSet.size };
 }
 
 // Löst die (positionsgebundenen) value-/score-Effekte eines Gebäudes auf → [ [pos, effect], … ].

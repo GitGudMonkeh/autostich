@@ -215,6 +215,17 @@ const D_FAMILIES = {
       4: { desc: "Jeder Überschuss-Crit: +500 Score plus 5 je Prozentpunkt über 100 %.", scoreFlatOnCrit: (c) => ((c.rawCrit || 0) > 1 ? 500 + Math.round(((c.rawCrit || 0) - 1) * 100) * 5 : 0) },
     },
   },
+  D_BEBAUUNG: {
+    id: "D_BEBAUUNG", cat: "D", name: "Dichte Bebauung", upgradeType: REPLACEMENT, needsArchitect: true,
+    // Gebäude-Perk (Architekt): jeder Sieg zahlt Flat-Score je vom Gebäude-Overlay abgedeckter Position
+    // (ctx.coverCount, 0–MAX_COVER). Belohnt Bauen in die Breite; Schritt & Deckel steigen je Stufe.
+    tiers: {
+      1: { desc: "Jeder Sieg: +4 Score je abgedeckter Position (max +100).",  scoreFlat: (c) => Math.min(4 * (c.coverCount || 0), 100) },
+      2: { desc: "Jeder Sieg: +6 Score je abgedeckter Position (max +160).",  scoreFlat: (c) => Math.min(6 * (c.coverCount || 0), 160) },
+      3: { desc: "Jeder Sieg: +9 Score je abgedeckter Position (max +240).",  scoreFlat: (c) => Math.min(9 * (c.coverCount || 0), 240) },
+      4: { desc: "Jeder Sieg: +12 Score je abgedeckter Position (max +360).", scoreFlat: (c) => Math.min(12 * (c.coverCount || 0), 360) },
+    },
+  },
 };
 
 // ---- B · Stich (Spec §3.2 B) — temporäre Wertboni auf die gespielte Karte, allesamt Regelersetzung. ----
@@ -579,6 +590,18 @@ const C_FAMILIES = {
       4: { desc: "Wähle 4 Karten: in ≥1 Formation +6; liegt die Karte in ≥2 Formationen, +9 Stichwert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKPFEILER") && inAnyFormation(c) ? ((c.posForm && (c.posForm.formations || []).length >= 2) ? 9 : 6) : 0) },
     },
   },
+  C_ECKSTEIN: {
+    id: "C_ECKSTEIN", cat: "C", name: "Eckstein", upgradeType: ROLE, needsArchitect: true,
+    // Gebäude-Perk (Architekt): die Rollenkarte erhält ihren Bonus, solange sie UNTER einem Gebäude liegt
+    // (ctx.underBuilding). Pendant zu C_ECKPFEILER (Formation), nur eben für das Gebäude-Overlay. IV-Kicker,
+    // wenn die Position unter einer VOLLENDETEN Struktur liegt (Zeile/Spalte/Diagonale, ctx.underStructure).
+    tiers: {
+      1: { desc: "Wähle 1 Karte: liegt sie unter einem Gebäude, +3 Stichwert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 3 : 0) },
+      2: { desc: "Wähle 2 Karten: unter einem Gebäude, +4 Stichwert.",           pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 4 : 0) },
+      3: { desc: "Wähle 3 Karten: unter einem Gebäude, +5 Stichwert.",           pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 5 : 0) },
+      4: { desc: "Wähle 4 Karten: unter einem Gebäude +6; unter einer vollendeten Struktur +9 Stichwert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? (c.underStructure ? 9 : 6) : 0) },
+    },
+  },
   C_SURVIVOR: {
     id: "C_SURVIVOR", cat: "C", name: "Überlebensvorteil", upgradeType: REPLACEMENT,
     // Kein Ziel. Engine liefert je Karte segmentLowRank (0=tiefste, 1=zweittiefste im Segment) + segmentIndex.
@@ -924,7 +947,7 @@ export function hasCritFamily(familyTiers) {
 // analog perks.LAYOUT_EXTRA). Kuratiert: die positions-/nachbarschafts-/segment-/formationsbezogenen C-/B-/D-Familien;
 // ALLE E-Formationswerkzeuge kommen über cat==="E" dazu.
 export const LAYOUT_FAMILY_IDS = new Set([
-  "C_VANGUARD", "C_GUARD", "C_RELAY", "C_LEADER", "C_FINISHER", "C_SURVIVOR", "C_JOKER", "C_BRIDGE", "C_ECKPFEILER", // Rollen an Position/Nachbar/Segment/Formation
+  "C_VANGUARD", "C_GUARD", "C_RELAY", "C_LEADER", "C_FINISHER", "C_SURVIVOR", "C_JOKER", "C_BRIDGE", "C_ECKPFEILER", "C_ECKSTEIN", // Rollen an Position/Nachbar/Segment/Formation/Gebäude
   "B_OPENING", "B_FINALE", "B_TENTH_STRIKE", "B_TIGHT", "B_PERFECT", "B_SUPERIOR",                    // positions-/formationsbezogene Stich-Familien
   "D_FORMATION_BONUS", "D_CRIT_HARVEST", "D_FULL_HOUSE",                                              // formations-/segmentbezogene Score-Familien
 ]);

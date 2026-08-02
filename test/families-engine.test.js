@@ -5,6 +5,7 @@ import { resolveTrick } from "../src/game/engine.js";
 import { initialShop } from "../src/game/shop.js";
 import { applyFamilyPick, FAMILY_DEFS } from "../src/game/families.js";
 import { computeFormations } from "../src/game/formations.js";
+import { precomputeArchitect } from "../src/game/architect.js";
 import { buildPerkOffer, isMigratedPerk, PERK_DEFS, PERK_LIST, isLegendary } from "../src/game/perks.js";
 import { SCORE_PER_WIN } from "../src/game/constants.js";
 const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Sieg-Basis (Pacing-Pass 100→400)
@@ -223,6 +224,24 @@ describe("Familien-Engine — Kategorie C (Rollen über resolveTrick, Schritt 2b
     expect(resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 1 }, roles: { C_ECKPFEILER: ["X0"] }, pos: 0 }), rng).lastTrick.pValue).toBe(5);
     // Stufe IV Basis (eine Formation) → +6.
     expect(resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 4 }, roles: { C_ECKPFEILER: ["X2"] }, pos: 2 }), rng).lastTrick.pValue).toBe(11);
+  });
+  it("C_ECKSTEIN (Gebäude-Perk): Rollenkarte unter einem Gebäude erhält den Bonus", () => {
+    // Score-Gebäude (A_ZOLLHAUS) deckt Positionen 2,3 ab OHNE Wertbonus → isoliert den C_ECKSTEIN-Wert.
+    const arch = { buildings: [{ id: "b1", familyId: "A_ZOLLHAUS", tier: 1, footprint: [2, 3] }], winCounters: {} };
+    const pre = precomputeArchitect(arch, identity(), constDeck(5));
+    const eck = (over) => scenario(5, 6, { architectPre: pre, ...over });
+    expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: { C_ECKSTEIN: ["X2"] }, pos: 2 }), rng).lastTrick.pValue).toBe(8); // 5 + 3 (unter Gebäude)
+    // ohne Rolle → kein Bonus.
+    expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: {}, pos: 2 }), rng).lastTrick.pValue).toBe(5);
+    // Rollenkarte auf unbedeckter Position (Pos 1) → kein Bonus.
+    expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: { C_ECKSTEIN: ["X1"] }, pos: 1 }), rng).lastTrick.pValue).toBe(5);
+  });
+  it("D_BEBAUUNG (Gebäude-Perk): Flat-Score skaliert mit der Abdeckung (coverCount)", () => {
+    const arch = { buildings: [{ id: "b1", familyId: "A_ZOLLHAUS", tier: 1, footprint: [2, 3] }], winCounters: {} };
+    const pre = precomputeArchitect(arch, identity(), constDeck(8)); // coverCount = 2
+    // Sieg (8 > 6) an einer beliebigen Position: D_BEBAUUNG I → +4 je Zelle = +8 Flat (einziger scoreFlat-Leser).
+    const s = resolveTrick(scenario(8, 6, { familyTiers: { D_BEBAUUNG: 1 }, architectPre: pre, pos: 10 }), rng);
+    expect(s.lastTrick.breakdown.flats).toBeCloseTo(8); // 4 × coverCount(2)
   });
   it("C_SURVIVOR: Segment-Rang (I nur erste 4 Segmente, II nur Tiefste, III zwei Tiefste)", () => {
     // Segment 0 (Pos 0–4) Werte [1,5,2,9,7] → Pos 0 tiefste (Rang 0), Pos 2 zweittiefste (Rang 1).
@@ -551,6 +570,18 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
       const fams = buildPerkOffer([], {}, rngS(seed), 3).filter(isFam).map((e) => e.familyId);
       expect(new Set(fams).size).toBe(fams.length);
     }
+  });
+
+  it("Gebäude-Perks (needsArchitect): nur mit aktivem Architekten im Angebot", () => {
+    // count groß → Pool wird komplett gezogen (jede Familie einmal). Vergleich der gezogenen Familien-IDs.
+    const drawAllFams = (arch) => buildPerkOffer([], {}, rngS(1), 200, 0, 0, arch).filter(isFam).map((e) => e.familyId);
+    const withArch = drawAllFams(true);
+    expect(withArch).toContain("C_ECKSTEIN");
+    expect(withArch).toContain("D_BEBAUUNG");
+    const withoutArch = drawAllFams(false); // Default (Sim/Bestand) → gegatet
+    expect(withoutArch).not.toContain("C_ECKSTEIN");
+    expect(withoutArch).not.toContain("D_BEBAUUNG");
+    expect(withoutArch.length).toBe(withArch.length - 2); // exakt die zwei Gebäude-Familien fehlen
   });
 
   it("bietet nur Stufen ECHT über dem gehaltenen Rang an; IV schließt die Familie ab", () => {

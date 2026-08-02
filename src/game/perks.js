@@ -138,7 +138,7 @@ export function isMigratedPerk(p) {
    (Familie auf einer anbietbaren Zielstufe). Familien-Stufen sind nach TIER_WEIGHTS gewichtet, flache Perks nach
    RARITY_WEIGHTS; der explizite Legendär-Wurf (P5) bleibt wie in buildOffer. Deterministisch über den injizierten
    rng. `owned` = flache Perk-ids; `familyTiers` = aktueller Rang je Familie. */
-export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0, rareShift = 0) {
+export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0, rareShift = 0, architectEnabled = false) {
   // #217 Meistergrade: Rarität-Shift (0 = Basis) verschiebt die Familien-Stufengewichte zu Selten/Rar. rareShift 0
   // liefert die Basistabelle → byte-identisch zum bisherigen Verhalten (Grad-0 / Sim / Bestandstests unberührt).
   const tierWeights = tierWeightsForShift(rareShift);
@@ -163,6 +163,10 @@ export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, 
     // Nur Familien MIGRIERTER Kategorien anbieten. Eine neu angelegte, aber noch nicht migrierte Familie
     // (z. B. Kategorie A) läuft sonst PARALLEL zu ihrem noch existierenden flachen Perk ins Angebot (Doppelung).
     if (!MIGRATED_CATS.has(fam.cat)) continue;
+    // Gebäude-Perks (fam.needsArchitect) nur anbieten, wenn der Architekt aktiv ist. Sonst wären sie inert
+    // (kein Gebäude-Overlay → underBuilding/coverCount stets leer) und würden im Architekt-freien Sim/Bestand
+    // tote Angebots-Slots belegen. Default architectEnabled=false → Sim/Tests byte-identisch (kein Gebäude-Perk).
+    if (fam.needsArchitect && !architectEnabled) continue;
     const cur = familyTierOf(familyTiers, fam.id);
     // FAMILY_DEFS führt `tiers` als OBJEKT {1:def,…} → anbietbare Stufen direkt über TIERS filtern
     // (nicht offerableTiers aus rarity.js, das ein Array erwartet).

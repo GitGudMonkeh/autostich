@@ -214,6 +214,10 @@ export function resolveTrick(state, rng) {
     // Rarität #167 Kat. C: Ergebnis des ZWEITEN Vorgängers (C_GUARD IV), Segment-Rang/-Index (C_SURVIVOR).
     secondLastResult: recentResults.length >= 2 ? recentResults[recentResults.length - 2] : null,
     segmentLowRank, segmentIndex,
+    // Gebäude-Perks (Architekt): liegt die Position unter einem Gebäude (C_ECKSTEIN) bzw. unter einer
+    // vollendeten Struktur (Zeile/Spalte/Diagonale, segFactor>1 → C_ECKSTEIN IV). Ohne Architekt false.
+    underBuilding: archPreNow ? !!(archPreNow.cover && archPreNow.cover[actualPos]) : false,
+    underStructure: archPreNow ? ((archPreNow.segFactor[actualPos] || 1) > 1) : false,
   };
   // Nachfolger-Bonus (C4 Staffelläufer / C5 Anführer): der Kopf der Queue gilt für DIESE Karte, dann verbraucht.
   const relayBonus = successorQueue[0] || 0;
@@ -316,6 +320,7 @@ export function resolveTrick(state, rng) {
                    critFollowArmed, weaknessArmed, weaknessBig, // Crit-Historie: Stand VOR diesem Sieg (D14/D16/D_WEAKNESS IV)
                    suitStreak, recentWinCount, // Farbserie / Volles Haus
                    baseValue: pCard.value, // Basiswert der gespielten Karte
+                   coverCount: archPreNow ? (archPreNow.coverCount || 0) : 0, // Gebäude-Perk Dichte Bebauung (D_BEBAUUNG): abgedeckte Positionen
                    hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung (D15)
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
     // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überlauf), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
@@ -1071,9 +1076,9 @@ export function resolveTrick(state, rng) {
         if (soff.length > 0) {
           phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = skillFate;
           if (guarantee && soff.some(isLegendarySkill)) newMasteryLegGranted = true; // Garantie eingelöst, sobald ein Legendär tatsächlich im Angebot ist
-        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; } } // leerer Skill-Pool → Perk
+        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift, architectEnabled); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; } } // leerer Skill-Pool → Perk
       } else if (decision === "perk") {
-        const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift);
+        const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift, architectEnabled);
         if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; }
       } else if (decision === "shop" && architectEnabled) {
         // Architekt-Phase (#202, ersetzt den Shop): frisches Bauplan-Angebot ziehen (deterministisch über rng) und die

@@ -21,9 +21,9 @@ describe("Familien-Registry — Struktur", () => {
       }
     }
   });
-  it("Kategorie D vollständig (19 Familien, alle Regelersetzung)", () => {
+  it("Kategorie D vollständig (20 Familien, alle Regelersetzung)", () => {
     const d = FAMILY_LIST.filter((f) => f.cat === "D");
-    expect(d).toHaveLength(19);
+    expect(d).toHaveLength(20); // +D_BEBAUUNG (Gebäude-Perk, Score je Abdeckung)
     for (const f of d) expect(f.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
   });
   it("Kategorie B vollständig (11 Familien, alle Regelersetzung)", () => {
@@ -39,11 +39,11 @@ describe("Familien-Registry — Struktur", () => {
       for (const t of [1, 2, 3, 4]) expect(typeof f.tiers[t].onPick).toBe("function");
     }
   });
-  it("Kategorie C vollständig (11 Familien: 9 ROLE, 1 REPLACEMENT, 1 CUMULATIVE)", () => {
+  it("Kategorie C vollständig (12 Familien: 10 ROLE, 1 REPLACEMENT, 1 CUMULATIVE)", () => {
     const c = FAMILY_LIST.filter((f) => f.cat === "C");
-    expect(c).toHaveLength(11); // +C_ECKPFEILER (Rolle, belohnt Formationslage)
+    expect(c).toHaveLength(12); // +C_ECKPFEILER (Formationslage) +C_ECKSTEIN (Gebäudelage)
     const byType = (t) => c.filter((f) => f.upgradeType === t).map((f) => f.id);
-    expect(byType(UPGRADE_TYPES.ROLE)).toHaveLength(9);
+    expect(byType(UPGRADE_TYPES.ROLE)).toHaveLength(10);
     expect(byType(UPGRADE_TYPES.REPLACEMENT)).toEqual(["C_SURVIVOR"]);
     expect(byType(UPGRADE_TYPES.CUMULATIVE)).toEqual(["C_SACRIFICE"]);
     // ROLE/CUMULATIVE-Stufen tragen pickTarget.cards; REPLACEMENT (C_SURVIVOR) trägt kein Ziel.

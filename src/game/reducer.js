@@ -417,7 +417,7 @@ export function reducer(state, action) {
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
-      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade)); // #217: Grad-Rewards
+      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade), state.architectEnabled); // #217: Grad-Rewards
       const fate = perkFateReroll(state.shop);                       // #164: gratis Perk-Reroll gilt fürs neue Perk-Angebot
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off, offerRerolls: 0, freePerkReroll: fate, freeSkillReroll: false } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0)
@@ -439,7 +439,7 @@ export function reducer(state, action) {
       const tokens = state.rerolls || 0;                             // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill), ersetzt shop.perkRerolls
       if (!free && tokens <= 0) return state;                        // keine Ressource → wirkungslos
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade)); // #217: Grad-Rewards
+      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade), state.architectEnabled); // #217: Grad-Rewards
       const rerolls = free ? tokens : tokens - 1;
       return { ...state, offer, offerRerolls: idx, rerolls, rerollsUsed: (state.rerollsUsed || 0) + 1, freePerkReroll: free ? false : state.freePerkReroll };
     }
