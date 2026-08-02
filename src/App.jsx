@@ -453,14 +453,10 @@ export function Autostich() {
         <div className="text-xl font-bold leading-none pt-0.5">
           <span className={multShakeClass}>
           <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base font-pixel-dense"
-            title={state.lightning?.armed
-              ? "Serie geschützt (Geladene Serie): Die nächste Niederlage setzt die Siegesserie nicht zurück."
-              : "Score-Multiplikator: Siegesserie (Basis, +2 %/Stufe bis +150 %) × Perk-Mult — Farbe steigt mit der Höhe (grau/grün/blau/lila/gold)"}
+            title="Score-Multiplikator: Siegesserie (Basis, +2 %/Stufe bis +150 %) × Perk-Mult — Farbe steigt mit der Höhe (grau/grün/blau/lila/gold)"
             style={{ fontVariantNumeric: "tabular-nums",
                      background: multHot ? `${multColor}22` : "#ffffff0f",
                      color: multHot ? multColor : "#8a8a92",
-                     // Geladene Serie (Stufe C): blauer Rahmen zeigt den Serien-Schutz an.
-                     boxShadow: state.lightning?.armed ? "0 0 0 2px #5ec8f0, 0 0 9px #5ec8f077" : undefined,
                      animation: multPulse > 0 ? "as-multpulse 420ms ease-out" : undefined }}>
             ×{fmtMult(baseScoreMult)}
           </span>

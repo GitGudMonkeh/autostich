@@ -4,9 +4,9 @@ import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Strö
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus } from "./families.js";
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
-  hasIonize, hasProtect, hasStorm, chargeFloorFor,
+  hasIonize, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
-  hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasWetterleuchten, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
+  hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasSeriesCrit, hasBlitzableiter, hasWetterleuchten, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
   hasDoubleDischarge, hasAreaIonize, hasDurchschlag, activeLightningCount, // Blitz-Rework (v0): Legendäre + Bekenntnis-Skalierung
   fireFlag, hasHeatConsumer, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, // Feuer-Rework (v0); #234: hasHeatConsumer statt heatConsumerOf (mehrere Hitze-Konsumenten je einzeln)
   glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
@@ -569,7 +569,7 @@ export function resolveTrick(state, rng) {
     // Blitz-Crit-Basis (Abschnitt 2a) wird additiv zugerechnet, unabhängig von L5-critChanceMult.
     // Crit-Chance-Stat (V2 §22.3) fließt additiv in die Roh-Chance (mit Perk-/Blitz-Basis); ungeklemmt (Überschusskrit).
     // Roh-Crit-Chance (ungeklemmt): Perk-/Blitz-Basis + Crit-Chance-Stat. D-Crit-Flats sehen rawCrit (critCtx).
-    const rawCrit = critChanceRawFor(perks, wctx) + lightningCritRaw(lightning, skills) + statCritChance
+    const rawCrit = critChanceRawFor(perks, wctx) + lightningCritRaw(lightning, skills, serieStreak) + statCritChance
                     + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
@@ -735,15 +735,11 @@ export function resolveTrick(state, rng) {
       if (hasDauerstrom(skills)) gainedCharge += Math.min(Math.floor(serieStreak / C.DAUERSTROM_PER_STREAK), C.DAUERSTROM_MAX);
       if (gainedCharge > 0) {
         lightning = addCharge(lightning, gainedCharge);
-        // Volle Ladung → Konsument (max 1, im Reducer erzwungen) auslösen; Reaktoren laufen bei JEDEM Verbrauch.
-        // Geladene Serie setzt den Rahmen (nur wenn nicht schon gesetzt), sonst „parkt" die Ladung; Ionisierung ionisiert.
+        // Volle Ladung → Konsument (Ionisierung; max 1, im Reducer erzwungen) auslösen; Reaktoren laufen bei JEDEM Verbrauch.
         if (lightning.charge >= lightning.maxCharge) {
           let consumed = false;
           let blitzCatches = 0; // #165 Blitzfänger: Anzahl voller Karten, die statt ionisiert +Ladung erzeugen
-          if (hasProtect(skills) && !lightning.armed) {
-            lightning = { ...lightning, armed: true };            // Geladene Serie: Serien-Rahmen scharf
-            consumed = true;
-          } else if (hasIonize(skills)) {
+          if (hasIonize(skills)) {
             // #145: unter Zeitsegment ist `pos` der Stich-Zähler (0–44), nicht die Deck-Position — die noch
             // kommenden Karten sind die seq-gemappten Restpositionen (dedupliziert, da ein wiederholtes Segment
             // Deck-Indizes doppelt nennt). Ohne Zeitsegment ist seq die Identität → identisch zu playerOrder.slice.
@@ -768,6 +764,14 @@ export function resolveTrick(state, rng) {
             // #165 Blitzfänger: die Fang-Ladungen entstehen NACH dem Verbrauch (sonst würde consumeCharge sie wieder auf den Boden setzen).
             if (blitzCatches > 0) lightning = addCharge(lightning, blitzCatches);
             if (hasDischarge(skills)) lightning = { ...lightning, dischargeArmed: true }; // Entladung: nächsten Crit armieren
+            // On-Consume-Passives (Rework v0) — kleiner Payoff bei JEDEM vollen Verbrauch, hält die Kettenfantasie am Laufen:
+            if (hasBlitzableiter(skills)) lightning = addCharge(lightning, C.BLITZABLEITER_CONSUME_CHARGE); // Blitzableiter: Ladung zurück
+            if (hasDauerstrom(skills)) // Dauerstrom: dauerhafte Crit-Chance-Rampe je Verbrauch (Cap)
+              lightning = { ...lightning, dauerstromCritBonus: Math.min(C.DAUERSTROM_CONSUME_CRIT_CAP, (lightning.dauerstromCritBonus || 0) + C.DAUERSTROM_CONSUME_CRIT) };
+            if (hasStaticCharge(skills)) { // Statische Aufladung: +Flat-Score bei jedem Verbrauch (Direkt-Score, nicht multipliziert)
+              score += C.CONSUME_SCORE; gained += C.CONSUME_SCORE;
+              breakdown.lightDirect = (breakdown.lightDirect || 0) + C.CONSUME_SCORE; breakdown.total = (breakdown.total || 0) + C.CONSUME_SCORE;
+            }
             if (hasStorm(skills)) { // Gewitterfront-Reaktor: erst Crit-Chance (Cap), danach Score für die nächsten Siege
               const cur = lightning.stormCritBonus || 0;
               lightning = cur < C.STORM_CRIT_CAP
@@ -879,12 +883,9 @@ export function resolveTrick(state, rng) {
     lastResult = "win";
   } else if (lost) {
     losses += 1; cycleLosses += 1; // cycleLosses: Durchlauf-Bilanz für Zinseszins (#203)
-    // Geladene Serie (Stufe C): gesetzter Serien-Rahmen fängt DIESE Niederlage ab — winStreak
-    // bleibt erhalten (Serien-Effekte laufen weiter). Sonst bricht die Serie. Der Rahmen wird danach eingelöst.
-    const rahmenRedeemed = !!(lightning && lightning.armed);
     // Serienanker IV (§4.2): eine Niederlage auf dieser Position setzt die Serie NICHT zurück.
     const streakNoReset = anchorType === "streak" && !!aParam("noReset");
-    winStreak = (rahmenRedeemed || streakNoReset) ? winStreak : 0;
+    winStreak = streakNoReset ? winStreak : 0;
     initiative = "opp";
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
     lossStreak += 1; // #71 Revanche: aufeinanderfolgende Niederlagen
@@ -898,9 +899,8 @@ export function resolveTrick(state, rng) {
     if (oValue - pValue >= weaknessDeficit) weaknessArmed = true;
     weaknessBig = weaknessBigDeficit != null && (oValue - pValue) >= weaknessBigDeficit;
     if (interplayStoreOnLoss) interplayStored += interplayStoreOnLoss; // D_INTERPLAY IV: Niederlage bankt Score für den nächsten Sieg
-    winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie (auch mit Rahmen)
+    winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie
     serieStreak = 0;
-    if (rahmenRedeemed) lightning = { ...lightning, armed: false }; // Rahmen eingelöst → entfernt
     // ---- Feuer-Rework (v0): Hitzeverlust (Glutbett), Feuerwalze zurücksetzen, Funkenflug halbieren, Rückstand merken.
     if (heat && heat.active) {
       const deficit = oValue - pValue;

@@ -226,7 +226,7 @@ export function critChanceFor(perks, ctx) {
 export function totalCritChanceRaw(state = {}) {
   const { perks = [], winStreak = 0, wins = 0, trickNo = 0, pos = 0, lightning, skills = [], statCritChance = 0 } = state;
   return critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos })
-       + lightningCritRaw(lightning, skills) + statCritChance;
+       + lightningCritRaw(lightning, skills, winStreak + 1) + statCritChance;
 }
 // Crit-Faktor: Basis (CRIT_BASE_MULT 1,5) + Crit-Mult-Stat (V2 §22.3, baseBonus). V2 trägt kein Perk
 // mehr einen Crit-Mult (L5 ist jetzt Flat-Score) → nur Basis + Stat. Signatur (perks, ctx) bleibt für

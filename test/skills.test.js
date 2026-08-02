@@ -3,7 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer, archetypeOf,
   offerArchetypes, archetypesWithSkills, decodeArchetypes,
   ionScoreFor, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
-  hasIonize, hasProtect, hasStorm, chargeFloorFor } from "../src/game/skills.js";
+  hasIonize, hasSeriesCrit, hasStorm, chargeFloorFor } from "../src/game/skills.js";
 import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, MAX_ARCHETYPES } from "../src/game/constants.js";
 
 const LR = "SK_LIGHTNING_01";
@@ -144,7 +144,7 @@ describe("buildSkillOffer (3+3+3+3 über alle 4 Archetypen)", () => {
 // solange man keinen aktiv hat — sonst kann der Build nie „zünden" (Nutzer-Wunsch: sonst frustrierend).
 describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", () => {
   const isFireConsumer   = (id) => !!SKILL_DEFS[id]?.heatConsumer;  // Flächenbrand/Schmelzpunkt
-  const isChargeConsumer = (id) => !!SKILL_DEFS[id]?.onFullCharge;  // Ionisierung/Geladene Serie
+  const isChargeConsumer = (id) => !!SKILL_DEFS[id]?.onFullCharge;  // Ionisierung
   it("aktiver Feuer-Build ohne Hitze-Konsument → garantiert ein Hitze-Konsument im Angebot", () => {
     for (let seed = 1; seed <= 40; seed++)
       expect(buildSkillOffer(["SK_FIRE_01"], ["fire"], makeRng(seed), 6).some(isFireConsumer)).toBe(true);
@@ -247,13 +247,14 @@ describe("Ionisierung — Helfer (Stufe B)", () => {
   });
 });
 
-describe("Reaktoren + Geladene Serie — Helfer (Stufe C)", () => {
+describe("Reaktoren + Ladungsserie — Helfer (Stufe C)", () => {
   const R = "SK_LIGHTNING_05", G = "SK_LIGHTNING_06", S = "SK_LIGHTNING_07", I = "SK_LIGHTNING_02";
-  it("Verbraucher-Prädikate: Ionisierung/Geladene Serie sind Verbraucher, Reststrom nicht", () => {
+  it("Verbraucher-Prädikate: nur Ionisierung ist Verbraucher; Ladungsserie speist die Crit-Maschine", () => {
     expect(hasIonize([I])).toBe(true);
-    expect(hasProtect([S])).toBe(true);
-    expect(hasProtect([I])).toBe(false);
-    expect(consumesCharge([S])).toBe(true);   // Geladene Serie verbraucht ebenfalls
+    expect(hasSeriesCrit([S])).toBe(true);    // Ladungsserie: Serie → Crit-Chance
+    expect(hasSeriesCrit([I])).toBe(false);
+    expect(consumesCharge([S])).toBe(false);  // Ladungsserie verbraucht KEINE Ladung mehr (Rework v0)
+    expect(consumesCharge([I])).toBe(true);   // Ionisierung verbraucht
     expect(consumesCharge([R])).toBe(false);  // Reststrom ist Reaktor, kein Verbraucher
   });
   it("chargeFloorFor: Reststrom setzt Boden 3, sonst 0", () => {
