@@ -837,21 +837,43 @@ function famEff(fam, b) {
   const t = b?.tier ?? 1;
   const base = fam.base;
   const nz = (v) => tierNum(v, t);
+  let s;
   switch (base.kind) {
-    case "flat":       return fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`;
-    case "lowValue":   return `niedrige Karten +${nz(base.value)} Stichwert`;
-    case "color":      return fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`;
-    case "target":     return `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Punkte"}`;
-    case "streak":     return `Sieg +${nz(base.score)} Score × Serie`;
-    case "crit":       return `Crit-Sieg +${nz(base.score)} Score`;
-    case "milestone":  return `jeder ${base.every}. Sieg +${nz(base.score)} Score`;
-    case "mult":       return `Siege hier ×${base.factor}`;
-    case "joker":      return `Formations-Joker (${base.types.join("/")})`;
-    case "transparentFarb": return "Farbblock-Transparenz";
-    case "bind":       return `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`;
-    case "crossSeg":   return "öffnet die Segmentgrenze";
-    case "anker":      return `jede Zelle = Anker ×${tierFactor(base.factor, t).toFixed(2)}`;
-    case "formMult":   return `Formationen hier ×${base.factor}`;
-    default:           return "";
+    case "flat":       s = fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`; break;
+    case "lowValue":   s = `niedrige Karten +${nz(base.value)} Stichwert`; break;
+    case "color":      s = fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`; break;
+    case "target":     s = `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Punkte"}`; break;
+    case "streak":     s = `Sieg +${nz(base.score)} Score × Serie`; break;
+    case "crit":       s = `Crit-Sieg +${nz(base.score)} Score`; break;
+    case "milestone":  s = `jeder ${base.every}. Sieg +${nz(base.score)} Score`; break;
+    case "mult":       s = `Siege hier ×${base.factor}`; break;
+    // #Pool: Distrikt-Effekte — hängen vom Brett ab (Nachbarschaft / vollendete Strukturen).
+    case "neighbor":   s = fam.category === "value" ? `+${nz(base.value)} Stichwert je Nachbargebäude (max ${base.cap})` : `Sieg +${nz(base.score)} Score je Nachbargebäude (max ${base.cap})`; break;
+    case "compound":   s = `Sieg +${nz(base.score)} Score je vollendeter Struktur`; break;
+    // #Pool Batch 3: Lage/Staffel — hängen von der Position ab.
+    case "segment":    s = `${base.half === "early" ? "frühe" : "späte"} Segmente ${fam.category === "value" ? `+${nz(base.value)} Stichwert` : `+${nz(base.score)} Score`}`; break;
+    case "relay":      s = base.both ? `strahlt +${nz(base.score)} Score in beide Nachbarfelder` : `reicht +${nz(base.score)} Score ans Feld rechts weiter`; break;
+    // #Pool Batch 4: Risiko — Crit-Wette.
+    case "gamble":     s = `Crit-Sieg +${nz(base.score)} Score · Sieg ohne Crit −${base.penalty}`; break;
+    case "joker":      s = `Formations-Joker (${base.types.join("/")})`; break;
+    case "transparentFarb": s = "Farbblock-Transparenz"; break;
+    case "bind":       s = `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`; break;
+    case "crossSeg":   s = "öffnet die Segmentgrenze"; break;
+    case "anker":      s = `jede Zelle = Anker ×${tierFactor(base.factor, t).toFixed(2)}`; break;
+    case "formMult":   s = `Formationen hier ×${base.factor}`; break;
+    default:           s = ""; break;
   }
+  // #Pool tierKick: qualitativer Zusatz ab Stufe `at` sichtbar machen (aktiv ab dieser Stufe, sonst als Vorschau markiert).
+  if (fam.tierKick && s) {
+    const k = fam.tierKick, on = t >= k.at;
+    let kickTxt = "";
+    if (k.mult) kickTxt = `zusätzlich ×${k.mult} Score`;
+    else if (k.critFlatMult) kickTxt = `bei Crit ×${k.critFlatMult} Flat`;
+    else if (k.streakDoubleFrom) kickTxt = `ab Serie ${k.streakDoubleFrom} doppelt`;
+    else if (k.every) kickTxt = `jeder ${k.every}. statt ${base.every}. Sieg`;
+    else if (k.addType) kickTxt = `+Joker ${k.addType}`;
+    else if (k.ankerValue) kickTxt = `+${k.ankerValue} Stichwert je Zelle`;
+    if (kickTxt) s += on ? ` · ${kickTxt}` : ` (Stufe ${k.at}: ${kickTxt})`;
+  }
+  return s;
 }
