@@ -25,7 +25,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
       <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
         <div className="text-center">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>Lauf beendet</div>
-          <div className="text-5xl font-bold mt-2" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>
+          <div className="text-4xl sm:text-5xl font-bold mt-2 tabular-nums leading-tight break-words" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>
           <div className="text-sm opacity-60 mt-1">Score{timeStr ? ` · ${timeStr}` : ""}</div>
           {/* #202: Münzen-Zeile entfernt — der Shop ist seit dem Architekt-Umbau dormant, Münzen sind obsolet. */}
           {isRecord && <div className="mt-2 text-sm font-bold" style={{ color: "#8a7de0" }}>★ Neuer Rekord</div>}

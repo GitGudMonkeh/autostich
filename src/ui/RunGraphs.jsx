@@ -32,18 +32,17 @@ export function sourceShares(state) {
   return { score, ...out };
 }
 
-export function RunGraphs({ state }) {
+/* #252: Reiner Verhältnis-Balken + %-Legende — GETEILT zwischen Victory-Screen (RunGraphs) und der Live-StatusRail.
+   `showTitle` blendet die „Woraus kommt der Score"-Überschrift ein (Victory: an; StatusRail: aus, dort liefert der
+   einklappbare Panel-Kopf den Titel). Gibt null zurück, solange noch kein Score da ist. */
+export function ScoreSourceBar({ state, showTitle = true }) {
   const sh = sourceShares(state);
+  if (!sh.score) return null;
   const total = sh.score || 1;
-  const log = Array.isArray(state.trickLog) ? state.trickLog : [];
-  const hasGraph = log.some((c) => c && c.length);
-  if (!sh.score && !hasGraph) return null;
   const pct = (v) => Math.round((v / total) * 100);
-
   return (
-    <div className="mt-5">
-      {/* (1) Verhältnis-Balken: woraus kommt der Score */}
-      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Woraus kommt der Score</div>
+    <div>
+      {showTitle && <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Woraus kommt der Score</div>}
       <div className="flex w-full h-4 rounded overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
         {SRC.map((s) => { const v = sh[s.key]; if (!v) return null;
           return <div key={s.key} title={`${s.label}: ${fmtScore(v)} (${pct(v)} %)`} style={{ width: `${(v / total) * 100}%`, background: s.color }} />; })}
@@ -56,6 +55,20 @@ export function RunGraphs({ state }) {
             </span>
           ); })}
       </div>
+    </div>
+  );
+}
+
+export function RunGraphs({ state }) {
+  const sh = sourceShares(state);
+  const log = Array.isArray(state.trickLog) ? state.trickLog : [];
+  const hasGraph = log.some((c) => c && c.length);
+  if (!sh.score && !hasGraph) return null;
+
+  return (
+    <div className="mt-5">
+      {/* (1) Verhältnis-Balken: woraus kommt der Score (geteilte Komponente, auch live in der StatusRail #252) */}
+      <ScoreSourceBar state={state} showTitle />
 
       {/* (2) Durchlauf-Graph: Score je Stich, je Durchlauf getrennt (eigene Skala = „Reset je Durchlauf"). */}
       {hasGraph && (

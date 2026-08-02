@@ -382,3 +382,28 @@ describe("PICK_STAT — Formations-/Crit-Mult-Felder (#158)", () => {
     expect(s.statCritMult).toBeCloseTo(0.5); // 0,25 + STAT_CRIT_MULT_STEP (0,25)
   });
 });
+
+// #261: ARCHITECT_RECOLOR — Buff-Farbe eines colorLocked-Gebäudes in der Arrange-Phase anpassen (wie MOVE, kein actedMain).
+describe("ARCHITECT_RECOLOR (#261)", () => {
+  const archState = (building) => ({
+    phase: "architect", architectEnabled: true,
+    architect: { buildings: [building], nextId: 2, offers: [], winCounters: {}, maxCover: 40 },
+  });
+  it("colorLocked-Gebäude bekommt die neue Buff-Farbe", () => {
+    const s = reducer(archState({ id: 1, familyId: "A_BUNTGLAS", tier: 1, footprint: [0, 1, 2, 6], colorChoice: "R" }),
+      { type: "ARCHITECT_RECOLOR", buildingId: 1, colorChoice: "B" });
+    expect(s.architect.buildings[0].colorChoice).toBe("B");
+  });
+  it("ungültige Farbe → No-op (State unverändert)", () => {
+    const st = archState({ id: 1, familyId: "A_BUNTGLAS", tier: 1, footprint: [0, 1, 2, 6], colorChoice: "R" });
+    expect(reducer(st, { type: "ARCHITECT_RECOLOR", buildingId: 1, colorChoice: "X" })).toBe(st);
+  });
+  it("nicht-colorLocked-Gebäude → No-op", () => {
+    const st = archState({ id: 1, familyId: "A_MEILENSTEIN", tier: 1, footprint: [0, 1, 5, 6], colorChoice: null });
+    expect(reducer(st, { type: "ARCHITECT_RECOLOR", buildingId: 1, colorChoice: "B" })).toBe(st);
+  });
+  it("außerhalb der architect-Phase → No-op", () => {
+    const st = { ...archState({ id: 1, familyId: "A_BUNTGLAS", tier: 1, footprint: [0], colorChoice: "R" }), phase: "play" };
+    expect(reducer(st, { type: "ARCHITECT_RECOLOR", buildingId: 1, colorChoice: "B" })).toBe(st);
+  });
+});
