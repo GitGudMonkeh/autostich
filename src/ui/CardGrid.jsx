@@ -29,11 +29,21 @@ export function archFrameLines(cover, cells, total, exH, exV) {
     const col = pos % SEGMENT_SIZE;
     const same = (p, exists) => exists && cover[p] && cover[p].bid != null && cover[p].bid === a.bid;
     const color = a.legendary ? "#c8962f" : a.color;
-    const L = rect.left - exH, R = rect.right + exH, T = rect.top - exV, B = rect.bottom + exV;
-    if (!same(pos - SEGMENT_SIZE, pos - SEGMENT_SIZE >= 0)) lines.push({ x1: L, y1: T, x2: R, y2: T, color }); // oben
-    if (!same(pos + SEGMENT_SIZE, pos + SEGMENT_SIZE < total)) lines.push({ x1: L, y1: B, x2: R, y2: B, color }); // unten
-    if (!same(pos - 1, col > 0)) lines.push({ x1: L, y1: T, x2: L, y2: B, color }); // links
-    if (!same(pos + 1, col < SEGMENT_SIZE - 1)) lines.push({ x1: R, y1: T, x2: R, y2: B, color }); // rechts
+    const up = pos - SEGMENT_SIZE, down = pos + SEGMENT_SIZE, lft = pos - 1, rgt = pos + 1;
+    const sameUp = same(up, up >= 0), sameDown = same(down, down < total);
+    const sameLeft = same(lft, col > 0), sameRight = same(rgt, col < SEGMENT_SIZE - 1);
+    // #255: Kanten-Ausdehnung PRO NAHT. An einer INNEREN Naht (Nachbarzelle = dasselbe Gebäude) bis zur halben
+    // TATSÄCHLICH gemessenen Lücke ausdehnen — so schließt die Kontur auch über eine geöffnete, durch die
+    // SegmentBridge VERBREITERTE Segmentgrenze lückenlos. An Außenkanten die halbe Nominal-Lücke (exH/exV).
+    const halfV = (p) => { const r = cells[p]; return r ? Math.max(0, (p < pos ? rect.top - r.bottom : r.top - rect.bottom) / 2) : exV; };
+    const halfH = (p) => { const r = cells[p]; return r ? Math.max(0, (p < pos ? rect.left - r.right : r.left - rect.right) / 2) : exH; };
+    const exUp = sameUp ? halfV(up) : exV, exDown = sameDown ? halfV(down) : exV;
+    const exLeft = sameLeft ? halfH(lft) : exH, exRight = sameRight ? halfH(rgt) : exH;
+    const L = rect.left - exLeft, R = rect.right + exRight, T = rect.top - exUp, B = rect.bottom + exDown;
+    if (!sameUp)    lines.push({ x1: L, y1: T, x2: R, y2: T, color }); // oben
+    if (!sameDown)  lines.push({ x1: L, y1: B, x2: R, y2: B, color }); // unten
+    if (!sameLeft)  lines.push({ x1: L, y1: T, x2: L, y2: B, color }); // links
+    if (!sameRight) lines.push({ x1: R, y1: T, x2: R, y2: B, color }); // rechts
   }
   return lines;
 }
@@ -181,7 +191,15 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
       });
       let exH = 3, exV = 5; // halbe Raster-Lücken aus Nachbarzellen messen, sonst feste Fallbacks
       if (cells[0] && cells[1]) exH = Math.max(0, (cells[1].left - cells[0].right) / 2);
-      if (cells[0] && cells[SEGMENT_SIZE]) exV = Math.max(0, (cells[SEGMENT_SIZE].top - cells[0].bottom) / 2);
+      // #255: exV = halbe MINIMALE vertikale Lücke über alle Zeilenübergänge — eine geöffnete Grenze
+      // (SegmentBridge) verbreitert EINEN Übergang; das Minimum bleibt die normale Zeilenlücke, sodass
+      // der Außenrand nicht aufgebläht wird (innere Nähte dehnen sich in archFrameLines eh pro Lücke).
+      let minGapV = Infinity;
+      for (let p = 0; p + SEGMENT_SIZE < cards.length; p++) {
+        const a = cells[p], b = cells[p + SEGMENT_SIZE];
+        if (a && b && b.top > a.bottom) minGapV = Math.min(minGapV, b.top - a.bottom);
+      }
+      if (Number.isFinite(minGapV)) exV = Math.max(0, minGapV / 2);
       setArchFrame({ w: wr.width, h: wr.height, lines: archFrameLines(architectCover, cells, cards.length, exH, exV) });
     };
     measure();
