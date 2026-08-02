@@ -261,6 +261,17 @@ describe("Familien-Engine — Kategorie E (E_QUICKSHOT IV Anker-Wert über resol
   });
 });
 
+describe("Legendär-Engine — L_MONO Monochrom (scoreMult über Farbserie)", () => {
+  it("scoreMult greift multiplikativ über resolveTrick (Farbserie 3 → +30 %)", () => {
+    // flatDeck: F0 = Farbe R, Wert 12 → Sieg gegen 0, keine Formation. winSuit R + winSuitStreak 2 → suitStreak 3.
+    const base = (perks) => ({ ...initialState(makeRng(1)), deck: flatDeck(), oppDeck: constDeck(0),
+      playerOrder: identity(), oppOrder: identity(), perks, winSuit: "R", winSuitStreak: 2 });
+    const withMono = resolveTrick(base(["L_MONO"]), rng).lastTrick.gained;
+    const without  = resolveTrick(base([]), rng).lastTrick.gained;
+    expect(withMono / without).toBeCloseTo(1 + 2 * 0.15); // suitStreak 3 → ×1,30
+  });
+});
+
 describe("Reducer PICK_FAMILY (Schritt 1 + Angebotsvalidierung Schritt 3)", () => {
   it("setzt familyTiers[id] auf die Zielstufe und kehrt ins Spiel zurück", () => {
     const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: [{ familyId: "D_HIGH", tier: 3 }] };

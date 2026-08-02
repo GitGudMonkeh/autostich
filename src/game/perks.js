@@ -93,6 +93,12 @@ export const PERK_DEFS = {
         desc: `Gewinnt eine Karte in mindestens ${C.BRENNPUNKT_MIN_FORMS} gleichzeitigen Formationen, zählt der Stich ×${de(C.BRENNPUNKT_MULT)}.` },
   L_PATT: { id: "L_PATT", cat: "B", rarity: "legendary", label: "Patt", patt: true,
         desc: `Eine Niederlage um höchstens ${C.PATT_MARGIN} Werte zählt stattdessen als Sieg.` },
+  // --- Pool-Erweiterung: Farb-Legendäres (Farb-Identitäts-Lücke). scoreMult-Hook → automatisch über prodHook
+  //     ausgewertet, KEIN Engine-Flag/-Umbau. Belohnt einen Mono-Farb-Build: der Zusatz-Mult wächst mit der
+  //     Farbserie (suitStreak, schon im Sieg-ctx) und läuft multiplikativ im Score-Stack. „Verstärker, kein Motor". ---
+  L_MONO: { id: "L_MONO", cat: "D", rarity: "legendary", label: "Monochrom",
+        desc: `Jeder Sieg in einer Farbserie zählt ×(1 + ${pct(C.MONOCHROM_STEP)} % je Folgesieg derselben Farbe, höchstens +${pct(C.MONOCHROM_CAP)} %). Ein Farbwechsel oder eine Niederlage setzt die Farbserie zurück.`,
+        scoreMult: (ctx) => 1 + Math.min(C.MONOCHROM_STEP * Math.max(0, (ctx.suitStreak || 1) - 1), C.MONOCHROM_CAP) },
 };
 
 export const PERK_LIST = Object.values(PERK_DEFS);
