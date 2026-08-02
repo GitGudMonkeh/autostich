@@ -672,24 +672,28 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     ) : (
                       <>
                         <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
-                          <b>Aufwerten:</b> tippe ein aufwertbares Gebäude an — du siehst aktuellen und nächsten Effekt und bestätigst unten. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
+                          <b>Aufwerten:</b> wähle unten ein Gebäude (oder tippe es am Brett an) — es wird gold markiert, du siehst aktuellen und nächsten Effekt und bestätigst unten. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
                         </div>
                         {upgradeMsg && (
                           <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
                             <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : "nicht aufwertbar"}.
                           </div>
                         )}
-                        {/* #232: Übersicht je aufwertbarem Gebäude — aktueller Effekt + Ziel-Stufe (Auswahl per Tap aufs Brett). */}
+                        {/* #232/#261: Liste ALLER aufwertbaren Gebäude — KLICKBAR (wie Skill-/Ersetzen-Menü). Ein Klick
+                            markiert das Gebäude (setPendingUpgrade) → es leuchtet gold am Brett und Jetzt/Danach erscheint;
+                            aufgewertet wird erst mit „Aufwerten bestätigen". Alternativ weiterhin per Tap aufs Brett. */}
                         {committed.some((b) => upgradeInfo(familyDef(b.familyId), b.tier).can) && (
                           <div className="flex flex-col gap-1 mt-1">
                             {committed.filter((b) => upgradeInfo(familyDef(b.familyId), b.tier).can).map((b) => {
                               const f = familyDef(b.familyId);
                               return (
-                                <div key={b.id} className="rounded px-2 py-1 text-[10px] font-mono leading-snug flex flex-wrap items-baseline gap-x-1.5" style={{ background: "#16232f", border: "1px solid #24333f" }}>
+                                <button key={b.id} onClick={() => { setPendingUpgrade(b.id); setUpgradeMsg(null); }}
+                                  className="rounded px-2 py-1.5 text-left text-[10px] font-mono leading-snug flex flex-wrap items-baseline gap-x-1.5 transition-all hover:brightness-125"
+                                  style={{ background: "#16232f", border: "1px solid #2f4150" }}>
                                   <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
                                   <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
                                   <span className="opacity-70">{famEff(f, b)}</span>
-                                </div>
+                                </button>
                               );
                             })}
                           </div>
