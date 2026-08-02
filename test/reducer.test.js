@@ -174,16 +174,16 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     expect(s.skills).toContain("SK_FIRE_12"); // beide Hitze-Konsumenten gleichzeitig gehalten
   });
 
-  it("#234 Blitz-Ladungs-Konsumenten bleiben exklusiv (zweiter ohne Ersetzen = no-op; mit Ersetzen erlaubt)", () => {
-    // Ionisierung (SK_LIGHTNING_02) gehalten; zweiter Ladungs-Konsument (SK_LIGHTNING_07) im Angebot.
+  it("#234-Reshape v0: Ladungsserie ist KEIN Ladungs-Konsument mehr → frei neben Ionisierung wählbar", () => {
+    // Rework v0: nur noch Ionisierung (SK_LIGHTNING_02) verbraucht Ladung; Ladungsserie (SK_LIGHTNING_07)
+    // speist die Crit-Maschine und unterliegt keiner Konsument-Exklusivität → beide zusammen haltbar.
     const st = skillState({
       skills: ["SK_LIGHTNING_02"], activeArchetypes: ["lightning"],
       skillOffer: ["SK_LIGHTNING_07"], lightning: { active: true, charge: 0, maxCharge: 10 },
     });
-    expect(reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_07", rng })).toBe(st); // ohne Ersetzen → blockiert
-    const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_07", replaceId: "SK_LIGHTNING_02", rng });
+    const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_07", rng });
     expect(s.skills).toContain("SK_LIGHTNING_07");
-    expect(s.skills).not.toContain("SK_LIGHTNING_02"); // ersetzt den bestehenden Ladungs-Konsumenten
+    expect(s.skills).toContain("SK_LIGHTNING_02"); // keine Exklusivität — Ladungsserie verbraucht nichts
   });
 
   it("PICK_SKILL erlaubt einen dritten Archetyp (Prototyp: Cap 3 aufgehoben)", () => {

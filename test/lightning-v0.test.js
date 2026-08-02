@@ -35,10 +35,12 @@ describe("Blitz-Rework v0 — Roster", () => {
       expect(SKILL_DEFS[id].critChance()).toBe(C.LIGHTNING_CRIT_PER_SKILL); // Blitz besitzt die Crit-Erzeugung
     }
   });
-  it("genau ein Ladungs-Konsument-Paar (Ionisierung/Geladene Serie)", () => {
+  it("nur noch ein Ladungs-Konsument (Ionisierung); Ladungsserie speist die Crit-Maschine", () => {
     expect(SKILL_DEFS.SK_LIGHTNING_02.onFullCharge).toBe("ionize");
-    expect(SKILL_DEFS.SK_LIGHTNING_07.onFullCharge).toBe("protectStreak");
-    expect(chargeConsumerCount(["SK_LIGHTNING_02", "SK_LIGHTNING_07"])).toBe(2); // Reducer blockt >1 beim Pick
+    expect(SKILL_DEFS.SK_LIGHTNING_07.onFullCharge).toBeUndefined(); // Rework v0: kein Verbraucher mehr
+    expect(SKILL_DEFS.SK_LIGHTNING_07.seriesCrit).toBe(true);
+    expect(SKILL_DEFS.SK_LIGHTNING_07.name).toBe("Ladungsserie");
+    expect(chargeConsumerCount(["SK_LIGHTNING_02", "SK_LIGHTNING_07"])).toBe(1); // nur Ionisierung zählt
   });
 });
 
@@ -50,6 +52,16 @@ describe("Blitz-Rework v0 — reine Helfer", () => {
     const l = { active: true, stormCritBonus: 0.04, stauBonus: 0.1 };
     expect(lightningCritRaw(l, ["SK_LIGHTNING_01"])).toBeCloseTo(C.LIGHTNING_CRIT_BASE + C.LIGHTNING_CRIT_PER_SKILL + 0.04 + 0.1, 6);
     expect(lightningCritRaw({ active: false }, ["SK_LIGHTNING_01"])).toBe(0); // inaktiv → 0
+  });
+  it("lightningCritRaw: Ladungsserie skaliert mit der Serie (Cap) + Dauerstrom-Verbrauchsrampe", () => {
+    const base = C.LIGHTNING_CRIT_BASE + C.LIGHTNING_CRIT_PER_SKILL;
+    // Serie 3 → +3·STEP; ohne Ladungsserie ignoriert der streak-Parameter.
+    expect(lightningCritRaw(light(), ["SK_LIGHTNING_01"], 3)).toBeCloseTo(base, 6);
+    expect(lightningCritRaw(light(), ["SK_LIGHTNING_07"], 3)).toBeCloseTo(base + 3 * C.SERIESCRIT_STEP, 6);
+    // Über dem Cap deckelt es.
+    expect(lightningCritRaw(light(), ["SK_LIGHTNING_07"], 999)).toBeCloseTo(base + C.SERIESCRIT_CAP, 6);
+    // Dauerstrom-Verbrauchsrampe (persistentes Feld) fließt additiv ein.
+    expect(lightningCritRaw(light({ dauerstromCritBonus: 0.06 }), ["SK_LIGHTNING_01"], 0)).toBeCloseTo(base + 0.06, 6);
   });
   it("maxChargeFor / lightningCritMult: Donnergott 10→15 & +1,0×", () => {
     expect(maxChargeFor([])).toBe(C.LIGHTNING_MAX_CHARGE);

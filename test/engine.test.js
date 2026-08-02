@@ -4,7 +4,8 @@ import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
 import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, STREAK_STAT_CAP, SCORE_PER_WIN, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
-  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ZINSESZINS_STEP, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE } from "../src/game/constants.js";
+  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ZINSESZINS_STEP, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
+  SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
 import { STAT_IDS, statStreakFactor } from "../src/game/stats.js";
 import { streakBaseMult } from "../src/game/perks.js";
@@ -567,19 +568,22 @@ describe("Ionisierung — Engine (Stufe B)", () => {
   });
 
   it("Volle Ladung + Ionisierung: ungespielte Karten werden ionisiert, Ladung verbraucht", () => {
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1,skills: ["SK_LIGHTNING_01", I], lightning: lit({ charge: 9 }) }), rng);
+    // Nur Ionisierung (kein Blitzableiter) → sauberer Verbrauch bis auf den Boden (0).
+    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [I], lightning: lit({ charge: 9 }) }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(0);
     expect(s.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(2);
   });
 });
 
-describe("Reaktoren + Geladene Serie — Engine (Stufe C)", () => {
-  const LR = "SK_LIGHTNING_01", I = "SK_LIGHTNING_02", R = "SK_LIGHTNING_05", G = "SK_LIGHTNING_06", S = "SK_LIGHTNING_07";
-  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, armed: false, stormCritBonus: 0, stormScoreWinsRemaining: 0, ...over });
+describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)", () => {
+  const LR = "SK_LIGHTNING_01", I = "SK_LIGHTNING_02", R = "SK_LIGHTNING_05", G = "SK_LIGHTNING_06", S = "SK_LIGHTNING_07",
+        ST = "SK_LIGHTNING_08", DA = "SK_LIGHTNING_16";
+  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: 0, stormScoreWinsRemaining: 0, dauerstromCritBonus: 0, ...over });
 
   it("Reststrom: Verbrauch lässt Ladung auf 3 statt 0 fallen", () => {
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1,skills: [LR, I, R], lightning: lit({ charge: 9 }) }), rng);
+    // Kein Blitzableiter → isolierter Reststrom-Boden (3); Blitzableiter würde +1 obendrauf geben (eigener Test).
+    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [I, R], lightning: lit({ charge: 9 }) }), rng);
     expect(s.lightning.charge).toBe(3);
   });
 
@@ -596,27 +600,47 @@ describe("Reaktoren + Geladene Serie — Engine (Stufe C)", () => {
     expect(s.lightning.stormScoreWinsRemaining).toBe(1);
   });
 
-  it("Geladene Serie: volle Ladung setzt den Serien-Rahmen und verbraucht die Ladung", () => {
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1,skills: [LR, S], lightning: lit({ charge: 9 }) }), rng);
-    expect(s.lightning.armed).toBe(true);
-    expect(s.lightning.charge).toBe(0);
+  it("Ladungsserie: ist KEIN Verbraucher — volle Ladung ohne Ionisierung parkt (kein Verbrauch)", () => {
+    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [LR, S], lightning: lit({ charge: 9 }) }), rng);
+    expect(s.lightning.charge).toBe(10);   // voll → parkt, kein Konsument
+    expect(s.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(0); // nichts ionisiert
   });
 
-  it("Geladene Serie: eine Niederlage bei gesetztem Rahmen bewahrt die Serie, bleibt sonst normal", () => {
-    const s = resolveTrick(scenario(0, 12, { skills: [S], lightning: lit({ armed: true }), winStreak: 5 }), rng);
+  it("Ladungsserie: eine Niederlage setzt die Serie normal zurück (kein Schutz mehr)", () => {
+    const s = resolveTrick(scenario(0, 12, { skills: [S], lightning: lit(), winStreak: 5 }), rng);
     expect(s.losses).toBe(1);
-    expect(s.winStreak).toBe(5);            // Siegesserie geschützt
-    expect(s.lightning.armed).toBe(false);  // Rahmen eingelöst
+    expect(s.winStreak).toBe(0);            // kein Rahmen → Serie reißt
     expect(s.lastResult).toBe("loss");
   });
 
-  it("Priorität: Geladene Serie setzt den Rahmen VOR Ionisierung; bei gesetztem Rahmen greift Ionisierung", () => {
-    const first = resolveTrick(scenario(12, 0, { statCritChance: 1,skills: [LR, S, I], lightning: lit({ charge: 9 }) }), rng);
-    expect(first.lightning.armed).toBe(true);
-    expect(first.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(0); // Rahmen zuerst, keine Ionisierung
+  it("On-Consume: Blitzableiter gibt bei jedem vollen Verbrauch +1 Ladung zurück (über den Boden)", () => {
+    // [LR, I]: Crit → +2 Ladung (Basis +1, Blitzableiter +1) → voll (10) → Ionisierung verbraucht (Boden 0) → Blitzableiter +1.
+    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [LR, I], lightning: lit({ charge: 8 }) }), rng);
+    expect(s.deck.filter((c) => (c.ionStacks || 0) > 0).length).toBeGreaterThan(0); // verbraucht → ionisiert
+    expect(s.lightning.charge).toBe(BLITZABLEITER_CONSUME_CHARGE);                   // 0 (Boden) + 1 zurück
+  });
 
-    const second = resolveTrick(scenario(12, 0, { statCritChance: 1,skills: [LR, S, I], lightning: lit({ charge: 9, armed: true }) }), rng);
-    expect(second.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(2); // Rahmen gesetzt → jetzt ionisieren
+  it("On-Consume: Dauerstrom rampt je vollem Verbrauch die Crit-Chance dauerhaft (dauerstromCritBonus)", () => {
+    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [I, DA], lightning: lit({ charge: 9 }) }), rng);
+    expect(s.lightning.dauerstromCritBonus).toBeCloseTo(DAUERSTROM_CONSUME_CRIT, 6);
+  });
+
+  it("On-Consume: Statische Aufladung gibt bei jedem vollen Verbrauch +CONSUME_SCORE Flat-Score", () => {
+    const withSt = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [I, ST], lightning: lit({ charge: 9 }) }), rng);
+    const without = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [I],     lightning: lit({ charge: 9 }) }), rng);
+    expect(withSt.lastTrick.scoreGain - without.lastTrick.scoreGain).toBeCloseTo(CONSUME_SCORE, 6);
+  });
+
+  it("Ladungsserie: die Serie speist die Crit-Chance (steigt je Serienpunkt, Cap +30 pp)", () => {
+    const base = LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL;
+    // Sieg → serieStreak = winStreak+1; Ladungsserie addiert serieStreak·STEP (Cap) auf die Crit-Chance.
+    const lo = resolveTrick(scenario(12, 0, { skills: [S], lightning: lit(), winStreak: 0 }), rng);
+    const hi = resolveTrick(scenario(12, 0, { skills: [S], lightning: lit(), winStreak: 4 }), rng);
+    expect(lo.lastTrick.critChance).toBeCloseTo(base + 1 * SERIESCRIT_STEP, 6);
+    expect(hi.lastTrick.critChance).toBeCloseTo(base + 5 * SERIESCRIT_STEP, 6);
+    // Ohne Ladungsserie ignoriert die Engine die Serie für die Crit-Chance.
+    const noSeries = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit(), winStreak: 4 }), rng);
+    expect(noSeries.lastTrick.critChance).toBeCloseTo(base, 6);
   });
 });
 

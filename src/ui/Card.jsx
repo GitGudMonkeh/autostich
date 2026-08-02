@@ -67,7 +67,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
   const ambientEdge = skinned ? null : `inset 0 0 0 1px ${color}3a, inset 0 0 13px ${color}12, 0 0 10px ${color}2e`;
   const permBoost = baseRank != null ? value - baseRank : 0;
   const effective = value + stichBonus;
-  // Ionisierung: BLAUER Rahmen wie der Serien-Schutz (Geladene Serie, #5ec8f0) → sofort erkennbar.
+  // Ionisierung: BLAUER Rahmen (#5ec8f0) → sofort erkennbar.
   // Kräftiger bei „voll". Wird mit einem etwaigen Gewinn-/Verlust-Glow LAYERED (bleibt also immer sichtbar).
   const ionFull = ionStacks >= ION_MAX_STACKS;
   const ionRing = ionStacks > 0 ? `0 0 0 2px #5ec8f0, 0 0 ${ionFull ? 12 : 9}px #5ec8f0${ionFull ? "aa" : "77"}` : null;

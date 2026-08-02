@@ -39,9 +39,9 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionisierung", archetype: "lightning", keywords: ["charge", "ionize"],
     desc: "Bei voller Ladung 2 ungespielte Karten ionisieren, dann Ladung verbrauchen. Die Ionis.-Saat.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, onFullCharge: "ionize", ionizeCount: () => C.ION_BASE_COUNT },
-  SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Geladene Serie", archetype: "lightning", keywords: ["charge", "streak"],
-    desc: "Bei voller Ladung wird deine Serie geschützt — die nächste Niederlage setzt sie nicht zurück. Die Ladung wird sofort verbraucht.",
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, onFullCharge: "protectStreak" },
+  SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["crit", "streak"],
+    desc: `Jeder Serienpunkt gibt +${Math.round(C.SERIESCRIT_STEP * 100)} pp Crit-Chance (bis +${Math.round(C.SERIESCRIT_CAP * 100)} pp) — je länger die Serie, desto heißer die Crit-Maschine. Kein Ladungsverbraucher.`,
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, seriesCrit: true },
   // Linie 3 — Ionisierung (Breite · Tiefe · Überlauf · Konsum)
   SK_LIGHTNING_03: { id: "SK_LIGHTNING_03", name: "Kettenblitz", archetype: "lightning", keywords: ["ionize"],
     desc: `Wenn Karten ionisiert werden, werden +${C.KETTENBLITZ_COUNT} weitere Karten ionisiert (Breite).`,
@@ -301,11 +301,11 @@ export function skillSum(skills, name, ctx) {
 }
 
 // Frischer Blitz-Substate — inaktiv. Wird beim ersten Blitz-Skill aktiviert (Reducer).
-// armed = Serien-Rahmen (Geladene Serie); storm* = Gewitterfront; dischargeArmed = Entladung (crit-mult);
-// stauBonus = Spannungsstau-Rampe (Crit-Chance); durchschlagMult = Durchschlag-Dauer-Crit-Mult (Rework v0).
+// storm* = Gewitterfront; dischargeArmed = Entladung (crit-mult); stauBonus = Spannungsstau-Rampe (Crit-Chance);
+// durchschlagMult = Durchschlag-Dauer-Crit-Mult; dauerstromCritBonus = Dauerstrom-Verbrauchsrampe (Crit-Chance, Rework v0).
 export function initLightning() {
-  return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, armed: false, stormCritBonus: 0, stormScoreWinsRemaining: 0,
-    dischargeArmed: false, stauBonus: 0, durchschlagMult: 0 };
+  return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, stormCritBonus: 0, stormScoreWinsRemaining: 0,
+    dischargeArmed: false, stauBonus: 0, durchschlagMult: 0, dauerstromCritBonus: 0 };
 }
 
 /* ---- Feuer-Archetyp (#93 F1) — Hitze-Substate + reine Helfer (testbar; Engine-Nutzung in resolveTrick) ---- */
@@ -505,9 +505,12 @@ export const hasEwigerFruehling = (skills) => plantFlag(skills, "ewigerFruehling
 
 // Roh-Crit-Beitrag des Blitz-Archetyps (Abschnitt 2a): Aktivierungs-Sockel + Σ Skill-critChance
 // + Gewitterfront-Bonus (dauerhaft, Stufe C). Fließt additiv in die Gesamt-Crit-Chance. 0, solange inaktiv.
-export function lightningCritRaw(lightning, skills) {
+export function lightningCritRaw(lightning, skills, streak = 0) {
   if (!lightning || !lightning.active) return 0;
-  return C.LIGHTNING_CRIT_BASE + skillSum(skills, "critChance", {}) + (lightning.stormCritBonus || 0) + (lightning.stauBonus || 0);
+  // Ladungsserie (v0): Serie speist die Crit-Maschine — je Serienpunkt +Crit-Chance (Cap). Dauerstrom-Verbrauchsrampe (dauerhaft).
+  const series = hasSeriesCrit(skills) ? Math.min((streak || 0) * C.SERIESCRIT_STEP, C.SERIESCRIT_CAP) : 0;
+  return C.LIGHTNING_CRIT_BASE + skillSum(skills, "critChance", {}) + (lightning.stormCritBonus || 0)
+    + (lightning.stauBonus || 0) + (lightning.dauerstromCritBonus || 0) + series;
 }
 
 // Ladung erhöhen (immutabel), gedeckelt auf maxCharge. No-op, solange der Archetyp inaktiv ist.
@@ -517,7 +520,7 @@ export function addCharge(lightning, gained) {
 }
 
 // Ein Skill ist ein „Konsument", wenn er eine verbrauchbare Ressource auslöst: Feuer-Hitze-Konsument
-// (heatConsumer: Flächenbrand/Schmelzpunkt) oder Blitz-Ladungs-Konsument (onFullCharge: Ionisierung/Geladene Serie).
+// (heatConsumer: Flächenbrand/Schmelzpunkt) oder Blitz-Ladungs-Konsument (onFullCharge: Ionisierung).
 export const isConsumerSkill = (id) => { const d = SKILL_DEFS[id]; return !!(d && (d.heatConsumer || d.onFullCharge)); };
 // Hält der Build für diesen Archetyp bereits einen Konsumenten? Eis kennt keine → gilt als „hat einen" (nie erzwingen).
 // (heatConsumerCount/chargeConsumerCount stehen weiter unten im Modul — zur Laufzeit längst initialisiert.)
@@ -543,10 +546,11 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   // alte Verhalten exakt erhalten (kein rng-Drift, Legendäre gewichtet im Pool) → Bestandstests/Sim mit Chance 0 unberührt.
   const gateLeg = legendaryChance > 0 || guaranteeOne;
   const isLeg = (id) => !!SKILL_DEFS[id]?.legendary;
-  // Konsument-Garantie: ein AKTIVER Feuer-/Blitz-Build ohne gehaltenen Konsumenten bekommt garantiert (mind.) einen
-  // seines Typs angeboten, solange einer verfügbar ist — sonst kann der Build nie „zünden" (frustrierend). Greift nur
-  // für in activeArchetypes stehende Archetypen.
-  const needsConsumer = (arch) => (activeArchetypes || []).includes(arch) && !ownsConsumerFor(arch, owned);
+  // Konsument-Garantie: ein angebotener Feuer-/Blitz-Archetyp ohne gehaltenen Konsumenten bekommt garantiert (mind.)
+  // einen seines Typs angeboten, solange einer verfügbar ist — sonst kann der Build nie „zünden" (frustrierend). Seit
+  // Blitz-Rework v0 NICHT mehr an activeArchetypes gebunden: der Verbraucher wird angeboten, bis er gewählt ist, damit
+  // ein späterer Einstieg (z. B. Blitz nachträglich ins Deck) nie ohne Ladungsverbraucher dasteht.
+  const needsConsumer = (arch) => !ownsConsumerFor(arch, owned);
   // #191/#223: SCHON beim ERSTEN Skill-Angebot (noch kein Archetyp aktiv) bekommt JEDER angebotene Konsumenten-
   // Archetyp (Feuer & Blitz; Eis/Pflanze haben keinen) garantiert seinen Konsumenten ins Angebot — nicht nur EINER
   // insgesamt. Sonst zeigt das Erst-Angebot z. B. Blitz-Ladungsaufbau OHNE Blitz-Konsument (die Ladung „verpufft"),
@@ -613,11 +617,11 @@ export function ionScoreFor(card) {
   return (card?.ionStacks || 0) * C.ION_SCORE_PER_STACK;
 }
 
-// Voll-Ladungs-Verbraucher (Abschnitt 6): Ionisierung (ionize) und Geladene Serie (protectStreak).
+// Voll-Ladungs-Verbraucher (Abschnitt 6): seit Rework v0 nur noch Ionisierung (ionize). Ladungsserie
+// verbraucht keine Ladung mehr, sondern speist die Crit-Maschine (seriesCrit) — s. lightningCritRaw.
 export function hasIonize(skills)  { return (skills || []).some((id) => SKILL_DEFS[id]?.onFullCharge === "ionize"); }
-export function hasProtect(skills) { return (skills || []).some((id) => SKILL_DEFS[id]?.onFullCharge === "protectStreak"); }
-// Prädikat „hat der Build einen Verbraucher?" — Test-/Anzeige-API; die Engine prüft hasIonize/hasProtect direkt.
-export function consumesCharge(skills) { return hasIonize(skills) || hasProtect(skills); }
+// Prädikat „hat der Build einen Verbraucher?" — Test-/Anzeige-API; die Engine prüft hasIonize direkt.
+export function consumesCharge(skills) { return hasIonize(skills); }
 
 // Reaktoren (laufen bei JEDEM Verbrauch): Reststrom (Ladungsboden), Gewitterfront (Crit/Score).
 export function chargeFloorFor(skills) {
@@ -640,7 +644,9 @@ export const hasKurzschluss    = (skills) => lightFlag(skills, "kurzschluss");  
 export const hasSpannungsstau  = (skills) => lightFlag(skills, "spannungsstau");  // Nicht-Crit-Siege rampen Crit-Chance
 export const hasUeberschlag    = (skills) => lightFlag(skills, "ueberschlag");    // Crit-Chance >100 % → Ladung
 export const hasBlitzschlag    = (skills) => lightFlag(skills, "blitzschlag");    // Crit ionisiert die Siegkarte
-export const hasDauerstrom     = (skills) => lightFlag(skills, "dauerstrom");     // Serie → Ladung
+export const hasDauerstrom     = (skills) => lightFlag(skills, "dauerstrom");     // Serie → Ladung (+ On-Consume-Crit-Rampe)
+export const hasSeriesCrit     = (skills) => lightFlag(skills, "seriesCrit");     // Ladungsserie: Serie → Crit-Chance (kein Verbraucher)
+export const hasBlitzableiter  = (skills) => lightFlag(skills, "chargeOnCrit");   // Blitzableiter: Crit → Ladung (+ Ladung zurück bei Verbrauch)
 export const hasWetterleuchten = (skills) => lightFlag(skills, "wetterleuchten"); // Serienschwellen → ionisieren
 export const hasDoubleDischarge = (skills) => lightFlag(skills, "doubleDischarge"); // L: Konsumenten ×2
 export const hasAreaIonize     = (skills) => lightFlag(skills, "areaIonize");     // L: ionis. Sieg → alle Nachbarn
@@ -648,9 +654,9 @@ export const hasDurchschlag    = (skills) => lightFlag(skills, "durchschlag");  
 // Ladungsmaximum je Build (Donnergott → 15) & dessen dauerhafter Crit-Multiplikator-Bonus.
 export const maxChargeFor      = (skills) => (hasThunderGod(skills) ? C.LIGHTNING_MAX_CHARGE_THUNDER : C.LIGHTNING_MAX_CHARGE);
 export const lightningCritMult = (skills) => (hasThunderGod(skills) ? C.THUNDER_CRIT_MULT : 0);
-// Anzahl gehaltener Ladungs-Konsumenten (Ionisierung/Geladene Serie); der Reducer blockt > 1.
+// Anzahl gehaltener Ladungs-Konsumenten (nur noch Ionisierung); der Reducer blockt > 1.
 export const chargeConsumerCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.onFullCharge).length;
-// Aktiver Ladungs-Konsument (für HUD/Badge): "ionize" | "protectStreak" | null.
+// Aktiver Ladungs-Konsument (für HUD/Badge): "ionize" | null (Rework v0: nur noch Ionisierung).
 export const chargeConsumerOf = (skills) => {
   for (const id of skills || []) { const c = SKILL_DEFS[id]?.onFullCharge; if (c) return c; }
   return null;
