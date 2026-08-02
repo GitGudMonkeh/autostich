@@ -185,7 +185,7 @@ const D_FAMILIES = {
     },
   },
   D_SUIT_STREAK: {
-    id: "D_SUIT_STREAK", cat: "D", name: "Farbserie", upgradeType: REPLACEMENT,
+    id: "D_SUIT_STREAK", cat: "D", name: "Farbrausch", upgradeType: REPLACEMENT,
     // suitStreak wird in der Engine geführt; Schritt & Cap stecken direkt im scoreFlat-Hook (einzige Quelle).
     // Die Engine liest hier nur suitHalveOnSwitch (Stufe IV: Farbwechsel halbiert die Stufe statt Reset).
     tiers: {
@@ -217,13 +217,13 @@ const D_FAMILIES = {
   },
   D_BEBAUUNG: {
     id: "D_BEBAUUNG", cat: "D", name: "Dichte Bebauung", upgradeType: REPLACEMENT, needsArchitect: true,
-    // Gebäude-Perk (Architekt): jeder Sieg zahlt Flat-Score je vom Gebäude-Overlay abgedeckter Position
+    // Gebäude-Perk (Architekt): jeder Sieg zahlt Flat-Score je vom Gebäude-Overlay abgedeckter Zelle
     // (ctx.coverCount, 0–MAX_COVER). Belohnt Bauen in die Breite; Schritt & Deckel steigen je Stufe.
     tiers: {
-      1: { desc: "Jeder Sieg: +4 Score je abgedeckter Position (max +100).",  scoreFlat: (c) => Math.min(4 * (c.coverCount || 0), 100) },
-      2: { desc: "Jeder Sieg: +6 Score je abgedeckter Position (max +160).",  scoreFlat: (c) => Math.min(6 * (c.coverCount || 0), 160) },
-      3: { desc: "Jeder Sieg: +9 Score je abgedeckter Position (max +240).",  scoreFlat: (c) => Math.min(9 * (c.coverCount || 0), 240) },
-      4: { desc: "Jeder Sieg: +12 Score je abgedeckter Position (max +360).", scoreFlat: (c) => Math.min(12 * (c.coverCount || 0), 360) },
+      1: { desc: "Jeder Sieg: +4 Score je abgedeckter Zelle (max +100).",  scoreFlat: (c) => Math.min(4 * (c.coverCount || 0), 100) },
+      2: { desc: "Jeder Sieg: +6 Score je abgedeckter Zelle (max +160).",  scoreFlat: (c) => Math.min(6 * (c.coverCount || 0), 160) },
+      3: { desc: "Jeder Sieg: +9 Score je abgedeckter Zelle (max +240).",  scoreFlat: (c) => Math.min(9 * (c.coverCount || 0), 240) },
+      4: { desc: "Jeder Sieg: +12 Score je abgedeckter Zelle (max +360).", scoreFlat: (c) => Math.min(12 * (c.coverCount || 0), 360) },
     },
   },
 };
