@@ -258,6 +258,17 @@ const B_FAMILIES = {
       4: { cardBonus: (c) => (c.posInCycle <= 4 ? 5 : 0) },
     },
   },
+  B_FINALE: {
+    id: "B_FINALE", cat: "B", name: "Starkes Finale", upgradeType: REPLACEMENT,
+    // Spiegel zu B_OPENING: verstärkt die LETZTEN Karten jedes Durchlaufs (posInCycle 0-basiert → Pos 40 = 39).
+    // Fenster wächst je Stufe ans Durchlauf-Ende (letzte 2/3/4/5 Positionen), Bonus 2/3/4/5 wie beim Auftakt.
+    tiers: {
+      1: { cardBonus: (c) => (c.posInCycle >= 38 ? 2 : 0) },
+      2: { cardBonus: (c) => (c.posInCycle >= 37 ? 3 : 0) },
+      3: { cardBonus: (c) => (c.posInCycle >= 36 ? 4 : 0) },
+      4: { cardBonus: (c) => (c.posInCycle >= 35 ? 5 : 0) },
+    },
+  },
   B_TENTH_STRIKE: {
     id: "B_TENTH_STRIKE", cat: "B", name: "Zehnter Schlag", upgradeType: REPLACEMENT,
     // posInCycle ist 0-basiert → Position n = posInCycle n-1; „(pos+1) % k === 0" trifft jede k-te Position.
@@ -369,6 +380,17 @@ const A_FAMILIES = {
       2: { onPick: (d) => bumpWhere(d, (c) => c.baseRank === 4, 2) },
       3: { onPick: (d) => bumpWhere(d, (c) => c.baseRank === 3, 3) },
       4: { onPick: (d) => bumpWhere(d, (c) => c.baseRank <= 2, 4) },
+    },
+  },
+  A_HIGH_STRONG: {
+    id: "A_HIGH_STRONG", cat: "A", name: "Starke Karten werden stärker", upgradeType: CUMULATIVE,
+    // Spiegel zu A_WEAK_STRONG: von der Spitze abwärts. Hebt hohe Karten sicher über die Gegner-10
+    // (garantierte Siege) und speist Hoch-Karten-/Crit-Wert-Builds. Zahlenkurve gespiegelt (1/2/3/4).
+    tiers: {
+      1: { onPick: (d) => bumpWhere(d, (c) => c.baseRank === 6, 1) },
+      2: { onPick: (d) => bumpWhere(d, (c) => c.baseRank === 7, 2) },
+      3: { onPick: (d) => bumpWhere(d, (c) => c.baseRank === 8, 3) },
+      4: { onPick: (d) => bumpWhere(d, (c) => c.baseRank >= 9, 4) },
     },
   },
   A_EVEN: {
@@ -543,6 +565,18 @@ const C_FAMILIES = {
       2: { desc: "Wähle 2 Karten: auf der letzten Segmentposition +4 Stichwert.", pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && c.posInCycle % 5 === 4 ? 4 : 0) },
       3: { desc: "Wähle 3 Karten: auf der letzten Segmentposition +5 Stichwert.", pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && c.posInCycle % 5 === 4 ? 5 : 0) },
       4: { desc: "Wähle 4 Karten: auf den letzten zwei Segmentpositionen +5 Stichwert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_FINISHER") && (c.posInCycle % 5 === 4 || c.posInCycle % 5 === 3) ? 5 : 0) },
+    },
+  },
+  C_ECKPFEILER: {
+    id: "C_ECKPFEILER", cat: "C", name: "Eckpfeiler", upgradeType: ROLE,
+    // Belohnt AUFSTELLUNG: die Rollenkarte erhält ihren Bonus, solange sie in ≥1 Formation liegt (posForm.mult>1).
+    // Distinct von B_TIGHT (alle Karten) und den E-Werkzeugen (nur Erkennung). IV-Kicker über die Überlappung
+    // (≥2 gleichzeitige Formationen), analog zu den übrigen IV-Sonderregeln. Nutzt nur bestehende ctx-Felder.
+    tiers: {
+      1: { desc: "Wähle 1 Karte: liegt sie in ≥1 Formation, +3 Stichwert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKPFEILER") && inAnyFormation(c) ? 3 : 0) },
+      2: { desc: "Wähle 2 Karten: in ≥1 Formation, +4 Stichwert.",           pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKPFEILER") && inAnyFormation(c) ? 4 : 0) },
+      3: { desc: "Wähle 3 Karten: in ≥1 Formation, +5 Stichwert.",           pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKPFEILER") && inAnyFormation(c) ? 5 : 0) },
+      4: { desc: "Wähle 4 Karten: in ≥1 Formation +6; liegt die Karte in ≥2 Formationen, +9 Stichwert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKPFEILER") && inAnyFormation(c) ? ((c.posForm && (c.posForm.formations || []).length >= 2) ? 9 : 6) : 0) },
     },
   },
   C_SURVIVOR: {
@@ -764,11 +798,13 @@ const E_FAMILIES = {
    Stufen bleiben unberührt — nur die Anzeige-Texte kommen aus dieser einen Quelle. ---- */
 const MUSTER_DESC = {
   A_WEAK_STRONG: { tpl: "Alle ursprünglichen $0: dauerhaft +$1 Kartenwert.", vals: [["5er","1"],["4er","2"],["3er","3"],["1er und 2er","4"]] },
+  A_HIGH_STRONG: { tpl: "Alle ursprünglichen $0: dauerhaft +$1 Kartenwert.", vals: [["6er","1"],["7er","2"],["8er","3"],["9er und 10er","4"]] },
   A_TOP: { tpl: "Die $0 aktuell höchsten Karten: dauerhaft je +$1 Kartenwert.", vals: [["zwei","2"],["drei","3"],["vier","4"],["fünf","5"]] },
   A_BOTTOM: { tpl: "Die $0 aktuell niedrigsten Karten: dauerhaft je +$1 Kartenwert.", vals: [["zwei","3"],["drei","4"],["vier","5"],["fünf","6"]] },
   B_COUNTER: { tpl: "Nach einer Niederlage: nächste Karte +$0 Stichwert.", vals: [["3"],["5"],["7"],["10"]] },
   B_MOMENTUM: { tpl: "Nach genau $0 Siegen in Folge: nächste Karte +$1 Stichwert.", vals: [["4","4"],["3","5"],["3","7"],["3","10"]] },
   B_OPENING: { tpl: "Die ersten $0 Karten jedes Durchlaufs: je +$1 Stichwert.", vals: [["2","2"],["3","3"],["4","4"],["5","5"]] },
+  B_FINALE: { tpl: "Die letzten $0 Karten jedes Durchlaufs: je +$1 Stichwert.", vals: [["2","2"],["3","3"],["4","4"],["5","5"]] },
   B_BREAKTHROUGH: { tpl: "Nach $0 Stichen ohne Sieg: nächste Karte +$1 Stichwert.", vals: [["6","7"],["5","10"],["4","12"],["3","15"]] },
   C_VANGUARD: { tpl: "Wähle $0: auf Position $1 +$2 Stichwert.", vals: [["1 Karte","1–5","2"],["2 Karten","1–5","3"],["3 Karten","1–5","4"],["4 Karten","1–10","4"]] },
   C_TRIUMPH: { tpl: "Wähle $0: nach einem Sieg beim nächsten Auftauchen +$1 Stichwert.", vals: [["1 Karte","2"],["2 Karten","2"],["3 Karten","3"],["4 Karten","4"]] },
@@ -888,8 +924,8 @@ export function hasCritFamily(familyTiers) {
 // analog perks.LAYOUT_EXTRA). Kuratiert: die positions-/nachbarschafts-/segment-/formationsbezogenen C-/B-/D-Familien;
 // ALLE E-Formationswerkzeuge kommen über cat==="E" dazu.
 export const LAYOUT_FAMILY_IDS = new Set([
-  "C_VANGUARD", "C_GUARD", "C_RELAY", "C_LEADER", "C_FINISHER", "C_SURVIVOR", "C_JOKER", "C_BRIDGE", // Rollen an Position/Nachbar/Segment/Formation
-  "B_OPENING", "B_TENTH_STRIKE", "B_TIGHT", "B_PERFECT", "B_SUPERIOR",                                // positions-/formationsbezogene Stich-Familien
+  "C_VANGUARD", "C_GUARD", "C_RELAY", "C_LEADER", "C_FINISHER", "C_SURVIVOR", "C_JOKER", "C_BRIDGE", "C_ECKPFEILER", // Rollen an Position/Nachbar/Segment/Formation
+  "B_OPENING", "B_FINALE", "B_TENTH_STRIKE", "B_TIGHT", "B_PERFECT", "B_SUPERIOR",                    // positions-/formationsbezogene Stich-Familien
   "D_FORMATION_BONUS", "D_CRIT_HARVEST", "D_FULL_HOUSE",                                              // formations-/segmentbezogene Score-Familien
 ]);
 export const isLayoutFamily = (id) => LAYOUT_FAMILY_IDS.has(id) || FAMILY_DEFS[id]?.cat === "E";

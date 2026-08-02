@@ -4,6 +4,7 @@ import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialShop } from "../src/game/shop.js";
 import { applyFamilyPick, FAMILY_DEFS } from "../src/game/families.js";
+import { computeFormations } from "../src/game/formations.js";
 import { buildPerkOffer, isMigratedPerk, PERK_DEFS, PERK_LIST, isLegendary } from "../src/game/perks.js";
 import { SCORE_PER_WIN } from "../src/game/constants.js";
 const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Sieg-Basis (Pacing-Pass 100→400)
@@ -142,6 +143,13 @@ describe("Familien-Engine — Kategorie B (Wertboni über resolveTrick)", () => 
     expect(s.lastTrick.pValue).toBe(7);  // Pos 0 → +2 → 7 > 6 → Sieg
     expect(s.wins).toBe(1);
   });
+  it("B_FINALE: die letzten Karten je Durchlauf erhalten den Wertbonus (Stufe I: Pos 39–40 +2)", () => {
+    const s = resolveTrick(scenario(5, 6, { familyTiers: { B_FINALE: 1 }, pos: 38 }), rng);
+    expect(s.lastTrick.pValue).toBe(7);  // Pos 39 (posInCycle 38 ≥ 38) → +2 → 7 > 6 → Sieg
+    expect(s.wins).toBe(1);
+    // Position vor dem Fenster (Pos 38, posInCycle 37 < 38) → kein Bonus.
+    expect(resolveTrick(scenario(5, 6, { familyTiers: { B_FINALE: 1 }, pos: 37 }), rng).lastTrick.pValue).toBe(5);
+  });
   it("B_INITIATIVE: tieArmLosses armiert den Gleichstand-Sieg je Stufe", () => {
     expect(resolveTrick(scenario(3, 8, { familyTiers: { B_INITIATIVE: 1 } }), rng).tieArmed).toBe(false); // 1 Niederlage < Schwelle 2
     expect(resolveTrick(scenario(3, 8, { familyTiers: { B_INITIATIVE: 1 }, lossStreak: 1 }), rng).tieArmed).toBe(true); // 2. Niederlage
@@ -200,6 +208,21 @@ describe("Familien-Engine — Kategorie C (Rollen über resolveTrick, Schritt 2b
     expect(resolveTrick(armed, rng).lastTrick.pValue).toBe(9); // 3 + 6 (zweiter Vorgänger verlor)
     const both = scenario(3, 8, { familyTiers: { C_GUARD: 4 }, roles: { C_GUARD: ["X0"] }, lastResult: "win", recentResults: ["win", "win"] });
     expect(resolveTrick(both, rng).lastTrick.pValue).toBe(3); // beide gewonnen → kein Bonus
+  });
+  it("C_ECKPFEILER: Rollenkarte in einer Formation erhält den Bonus (nur mit Rolle + Formation)", () => {
+    // constDeck(5): identische Werte → Wiederholung je Segment; Pos 3 (posInCycle 2, 3. Karte) liegt in der Formation (mult>1).
+    // Formationen werden nur bei pos 0 berechnet und für den Durchlauf gehalten → für pos>0 vorberechnet mitgeben.
+    const forms = computeFormations(identity(), constDeck(5), {}, [], [], [], {}, null);
+    const eck = (over) => scenario(5, 6, { formations: forms, ...over });
+    const s = resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 1 }, roles: { C_ECKPFEILER: ["X2"] }, pos: 2 }), rng);
+    expect(s.lastTrick.pValue).toBe(8); // 5 + 3 (in Wiederholung)
+    expect(s.wins).toBe(1);
+    // ohne Rolle → kein Bonus.
+    expect(resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 1 }, roles: {}, pos: 2 }), rng).lastTrick.pValue).toBe(5);
+    // Rollenkarte auf Pos 1 (erste Karte der Wiederholung → mult 1, keine Formation) → kein Bonus.
+    expect(resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 1 }, roles: { C_ECKPFEILER: ["X0"] }, pos: 0 }), rng).lastTrick.pValue).toBe(5);
+    // Stufe IV Basis (eine Formation) → +6.
+    expect(resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 4 }, roles: { C_ECKPFEILER: ["X2"] }, pos: 2 }), rng).lastTrick.pValue).toBe(11);
   });
   it("C_SURVIVOR: Segment-Rang (I nur erste 4 Segmente, II nur Tiefste, III zwei Tiefste)", () => {
     // Segment 0 (Pos 0–4) Werte [1,5,2,9,7] → Pos 0 tiefste (Rang 0), Pos 2 zweittiefste (Rang 1).

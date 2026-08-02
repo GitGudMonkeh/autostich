@@ -26,24 +26,24 @@ describe("Familien-Registry — Struktur", () => {
     expect(d).toHaveLength(19);
     for (const f of d) expect(f.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
   });
-  it("Kategorie B vollständig (10 Familien, alle Regelersetzung)", () => {
+  it("Kategorie B vollständig (11 Familien, alle Regelersetzung)", () => {
     const b = FAMILY_LIST.filter((f) => f.cat === "B");
-    expect(b).toHaveLength(10);
+    expect(b).toHaveLength(11); // +B_FINALE (Spiegel zu B_OPENING)
     for (const f of b) expect(f.upgradeType).toBe(UPGRADE_TYPES.REPLACEMENT);
   });
-  it("Kategorie A vollständig (10 Familien, alle Kumulativ, jede Stufe mit onPick)", () => {
+  it("Kategorie A vollständig (11 Familien, alle Kumulativ, jede Stufe mit onPick)", () => {
     const a = FAMILY_LIST.filter((f) => f.cat === "A");
-    expect(a).toHaveLength(10);
+    expect(a).toHaveLength(11); // +A_HIGH_STRONG (Spiegel zu A_WEAK_STRONG)
     for (const f of a) {
       expect(f.upgradeType).toBe(UPGRADE_TYPES.CUMULATIVE);
       for (const t of [1, 2, 3, 4]) expect(typeof f.tiers[t].onPick).toBe("function");
     }
   });
-  it("Kategorie C vollständig (10 Familien: 8 ROLE, 1 REPLACEMENT, 1 CUMULATIVE)", () => {
+  it("Kategorie C vollständig (11 Familien: 9 ROLE, 1 REPLACEMENT, 1 CUMULATIVE)", () => {
     const c = FAMILY_LIST.filter((f) => f.cat === "C");
-    expect(c).toHaveLength(10);
+    expect(c).toHaveLength(11); // +C_ECKPFEILER (Rolle, belohnt Formationslage)
     const byType = (t) => c.filter((f) => f.upgradeType === t).map((f) => f.id);
-    expect(byType(UPGRADE_TYPES.ROLE)).toHaveLength(8);
+    expect(byType(UPGRADE_TYPES.ROLE)).toHaveLength(9);
     expect(byType(UPGRADE_TYPES.REPLACEMENT)).toEqual(["C_SURVIVOR"]);
     expect(byType(UPGRADE_TYPES.CUMULATIVE)).toEqual(["C_SACRIFICE"]);
     // ROLE/CUMULATIVE-Stufen tragen pickTarget.cards; REPLACEMENT (C_SURVIVOR) trägt kein Ziel.
@@ -83,6 +83,18 @@ describe("Kategorie A — Kumulative Deck-Stufen (Spec §3.2 A)", () => {
     expect(grp(4, 2)).toEqual([6, 6, 6, 6]); // 2 → +4
     // Nachbargruppen bleiben unberührt (Stufe I fasst nur die 5er an).
     expect(t[1].onPick(buildDeck()).filter((c) => c.baseRank !== 5).every((c) => c.value === c.baseRank)).toBe(true);
+  });
+
+  it("A_HIGH_STRONG: ursprüngliche Wertgruppen aufwärts (6→+1, 7→+2, 8→+3, 9&10→+4)", () => {
+    const t = FAMILY_DEFS.A_HIGH_STRONG.tiers;
+    const grp = (tier, base) => t[tier].onPick(buildDeck()).filter((c) => c.baseRank === base).map((c) => c.value);
+    expect(grp(1, 6)).toEqual([7, 7, 7, 7]);   // 6 → +1
+    expect(grp(2, 7)).toEqual([9, 9, 9, 9]);   // 7 → +2
+    expect(grp(3, 8)).toEqual([11, 11, 11, 11]); // 8 → +3
+    expect(grp(4, 9)).toEqual([13, 13, 13, 13]); // 9 → +4
+    expect(grp(4, 10)).toEqual([14, 14, 14, 14]); // 10 → +4
+    // Nachbargruppen bleiben unberührt (Stufe I fasst nur die 6er an).
+    expect(t[1].onPick(buildDeck()).filter((c) => c.baseRank !== 6).every((c) => c.value === c.baseRank)).toBe(true);
   });
 
   it("A_EVEN: I vier zufällige Gerade; II 2er&8er; III 4er&6er; IV alle Geraden je +1", () => {
