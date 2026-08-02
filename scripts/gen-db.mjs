@@ -11,7 +11,7 @@ import { SKILL_LIST, ARCHETYPE_META } from "../src/game/skills.js";
 import { PERK_DEFS, CATEGORIES, RARITY_META, rarityOf } from "../src/game/perks.js";
 import { FAMILY_LIST } from "../src/game/families.js";
 import { ARCHITECT_FAMILIES } from "../src/game/architect.js";
-import { tierNum, tierFactor, bindSpanFor } from "../src/game/architect.js";
+import { tierNum, tierFactor, bindSpanFor, TIER_INERT_KINDS } from "../src/game/architect.js";
 import { STAT_DEFS } from "../src/game/stats.js";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
@@ -22,9 +22,9 @@ const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 // Identische aufeinanderfolgende Stufen zu Bereichen zusammenfassen (z. B. „I–IV" statt 4× derselbe Text).
 // Zeigt echte Stufen-Unterschiede und verschweigt Schein-Stufen bei nicht skalierenden Effekten
 // (joker/transparentFarb/crossSeg ohne tierKick sind im Spiel nicht aufwertbar).
-function tierRanges(textFor) {
+function tierRanges(textFor, maxTier = 4) {
   const g = [];
-  for (let t = 1; t <= 4; t++) {
+  for (let t = 1; t <= maxTier; t++) {
     const text = textFor(t), last = g[g.length - 1];
     if (last && last.text === text) last.to = t;
     else g.push({ from: t, to: t, text });
@@ -122,15 +122,22 @@ for (const f of FAMILY_LIST) {
 // ---- Architekt-Gebäude (ARCHITECT_FAMILIES) ----
 const ARCH_CAT_LABEL = { value: "Wert", score: "Score", formation: "Formation" };
 const ARCH_CAT_COLOR = { value: "#4f82d6", score: "#c79a2e", formation: "#3f9d63" };
+const ROMANV = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 for (const fam of Object.values(ARCHITECT_FAMILIES)) {
   const catLabel = ARCH_CAT_LABEL[fam.category] || fam.category;
+  // Maximal ERREICHBARE Stufe: stufen-inerte Formen (joker/transparentFarb/crossSeg) werden im Spiel auf Stufe 1
+  // gepinnt (nicht aufwertbar) — mit tierKick bis zur Kick-Stufe `at`; alle anderen bis IV. So zeigt der Katalog
+  // nur real existierende Stufen.
+  const inert = TIER_INERT_KINDS.has(fam.base && fam.base.kind);
+  const maxTier = inert ? (fam.tierKick ? fam.tierKick.at : 1) : 4;
   const lines = fam.legendary
     ? [{ label: "★ Legendär", text: archEff(fam, "legendary") }]
-    : tierRanges((t) => archEff(fam, t));
+    : tierRanges((t) => archEff(fam, t), maxTier);
+  const rarity = fam.legendary ? "Legendär" : (maxTier === 1 ? "fix · Stufe I (nicht aufwertbar)" : `Familie I–${ROMANV[maxTier]}`);
   entries.push({
     kind: "Gebäude", id: fam.id, name: fam.name,
     group: catLabel, groupColor: ARCH_CAT_COLOR[fam.category] || "#8a8a95", icon: "🏗",
-    rarity: fam.legendary ? "Legendär" : "Familie I–IV",
+    rarity,
     tags: ["Gebäude", catLabel, fam.form, fam.legendary ? "Legendär" : "Familie"],
     lines,
   });

@@ -55,7 +55,7 @@ export const tierNum    = (base, tier) => (tier === "legendary" ? base : Math.ro
 export const tierFactor = (base, tier) => (tier === "legendary" ? base : base + FORM_TIER_BONUS * ((tier || 1) - 1));
 // Aufwert-Status eines Gebäudes: joker/transparentFarb/crossSeg lesen `tier` NICHT → dort ist Aufrüsten ein No-op.
 // „Nicht aufwertbar" = legendär | inert (No-op-Effektart) | max (Stufe IV). `reason` speist Label/Meldung in der UI.
-const TIER_INERT_KINDS = new Set(["joker", "transparentFarb", "crossSeg"]);
+export const TIER_INERT_KINDS = new Set(["joker", "transparentFarb", "crossSeg"]); // #256: exportiert für den DB-/Katalog-Generator (max. erreichbare Stufe)
 export function upgradeInfo(fam, tier) {
   if (!fam) return { can: false, reason: null };
   if (fam.legendary) return { can: false, reason: "legendary" };
