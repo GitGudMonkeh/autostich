@@ -205,6 +205,10 @@ export const ARCHITECT_FAMILIES = {
   // Lage/Staffel (#Pool Batch 3): Effekt hängt von der POSITION ab (Segment-Hälfte / Weitergabe) → Platzierung zählt.
   A_VORWERK:     { id: "A_VORWERK",     name: "Vorwerk",     category: "score", form: "zwilling", base: { kind: "segment", score: 70, half: "early" } }, // nur in den frühen 4 Segmenten
   A_LAUFGANG:    { id: "A_LAUFGANG",    name: "Laufgang",    category: "score", form: "diag3",    base: { kind: "relay", score: 50 } },               // reicht Score ans Feld rechts weiter
+  // Risiko (#Pool Batch 4): Wette auf den Crit. Sieg MIT Crit → Jackpot; Sieg OHNE Crit → Abzug (penalty). Aufwerten hebt
+  // NUR den Jackpot (tierNum auf score), der Abzug bleibt fix. Der Crit ist nicht steuerbar → echte Wette. Boden in engine.
+  A_LOSBUDE:     { id: "A_LOSBUDE",     name: "Losbude",     category: "score", form: "domino",      base: { kind: "gamble", score: 90,  penalty: 15 } },
+  A_WETTHALLE:   { id: "A_WETTHALLE",   name: "Wetthalle",   category: "score", form: "grundstueck", base: { kind: "gamble", score: 260, penalty: 60 } },
 
   /* ---- formation · Sakralbau (I–IV) ---- */
   A_KLAMMER:    { id: "A_KLAMMER",    name: "Klammer",    category: "formation", form: "domino",    base: { kind: "joker", types: ["farbblock"] }, tierKick: { at: 3, addType: "wiederholung" } },
@@ -427,6 +431,8 @@ function resolveNumEffect(fam, b, cat, order, deck, cardVal, boardCtx = {}) {
     // #Pool Batch 3 segment (Lage): Zelle wirkt nur in ihrer Segment-Hälfte (early = Zeilen 0..3). Zeile steht fest →
     // hier entschieden und auf flat gebacken (qualifizierende Zellen bekommen den Betrag, andere gar keinen Effekt).
     else if (base.kind === "segment") { const early = rowOf(p) < ROWS / 2; if (base.half === "early" ? early : !early) e = { kind: "flat", amount: tierNum(cat === "value" ? base.value : base.score, b.tier) }; }
+    // #Pool Batch 4 gamble (Risiko): Wette auf den Crit. Jackpot skaliert mit der Stufe, der Abzug bleibt fix.
+    else if (base.kind === "gamble") e = { kind: "gamble", crit: tierNum(base.score, b.tier), penalty: base.penalty };
     // Stufen-Kicker (#Pool): qualitativer Zusatz ab Stufe `at` — als Zusatzfeld am flat/streak-Effekt (Engine liest es).
     if (kickOn && e) {
       if (e.kind === "flat" && fam.tierKick.mult) e.mult = fam.tierKick.mult;                       // Zollhaus IV: ×Mult
@@ -459,6 +465,8 @@ export function architectScore(pre, actualPos, ctx, counters) {
     switch (e.kind) {
       // #Pool tierKick: critFlatMult (Kontor IV) verdoppelt den flat bei Crit; mult (Zollhaus IV) legt einen eigenen Faktor auf.
       case "flat":     flat += e.amount * (e.critFlatMult && ctx.isCrit ? e.critFlatMult : 1); if (e.mult) mult *= e.mult; break;
+      // #Pool Batch 4: Crit-Wette — Jackpot bei Crit, sonst Abzug. Der Boden (nie < 0) sitzt in der Engine (scoreBase-Klemme).
+      case "gamble":   flat += ctx.isCrit ? e.crit : -e.penalty; break;
       // #Pool tierKick: streakDoubleFrom (Reihenhaus III) verdoppelt den Serien-Score ab der Schwelle.
       case "streak": { const s = ctx.serieStreak || 0; flat += e.amount * s * (e.streakDoubleFrom && s >= e.streakDoubleFrom ? 2 : 1); break; }
       case "crit":     if (ctx.isCrit) flat += e.amount; break;

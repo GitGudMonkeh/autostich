@@ -172,6 +172,17 @@ describe("Architekt — score-Effekte", () => {
     for (const p of [1, 7, 13]) expect(architectScore(pre, p, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(amt);
     expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(0);
   });
+  it("gamble (Losbude, #Pool): Crit → Jackpot, Sieg ohne Crit → Abzug", () => {
+    const pre = precomputeArchitect({ buildings: [B("A_LOSBUDE", [0, 1], 1)] }, idOrder, deck);
+    const jackpot = tierNum(ARCHITECT_FAMILIES.A_LOSBUDE.base.score, 1), penalty = ARCHITECT_FAMILIES.A_LOSBUDE.base.penalty;
+    expect(architectScore(pre, 0, { isCrit: true,  serieStreak: 1, suit: "R" }, {}).flat).toBe(jackpot);
+    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(-penalty);
+  });
+  it("gamble Jackpot skaliert mit der Stufe, der Abzug bleibt fix", () => {
+    const pre = precomputeArchitect({ buildings: [B("A_WETTHALLE", [0, 2, 10, 12], 3)] }, idOrder, deck);
+    expect(architectScore(pre, 0, { isCrit: true,  serieStreak: 1, suit: "R" }, {}).flat).toBe(tierNum(ARCHITECT_FAMILIES.A_WETTHALLE.base.score, 3));
+    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(-ARCHITECT_FAMILIES.A_WETTHALLE.base.penalty); // Abzug tier-unabhängig
+  });
   it("Häuserzeile: volle Segment-Zeile → ×Faktor auf Siege im Segment", () => {
     const pre = precomputeArchitect({ buildings: [B("A_STUETZE", [0, 1, 2, 3, 4], 1)] }, idOrder, deck);
     expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).mult).toBeCloseTo(HAEUSERZEILE_FACTOR);

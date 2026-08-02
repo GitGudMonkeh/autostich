@@ -25,6 +25,8 @@ export function architectEffectStrings(pre, pos, card, fam = null, tier = 1) {
       case "color":     out.push(`+${sc.amount} Score bei ${suitName(sc.colorChoice)}`); break;
       case "milestone": out.push(`+${sc.amount} Score alle ${sc.every} Siege`); break;
       case "target":    out.push(`+${sc.amount} Score`); break;
+      case "gamble":    out.push(`+${sc.crit} Score bei Crit, sonst −${sc.penalty}`); break; // #Pool Batch 4: Crit-Wette
+
       default: break;
     }
   }
