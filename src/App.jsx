@@ -550,7 +550,7 @@ export function Autostich() {
             </div>
             {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
             <div className="order-2 lg:col-start-2 lg:row-start-1">
-              <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
+              <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} options={options} onOption={changeOptions} />
             </div>
             {/* Perks/Skills — Mobil unter den Stats (order-3), Desktop links unter dem Battlefield. */}
             <div className="order-3 lg:col-start-1 lg:row-start-2">
