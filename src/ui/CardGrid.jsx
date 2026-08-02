@@ -1,4 +1,4 @@
-import { useRef, useState, useLayoutEffect } from "react";
+import { memo, useRef, useState, useLayoutEffect } from "react";
 import { suitColor, PLANT_VALUE_CAP } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
@@ -53,7 +53,9 @@ export function archFrameLines(cover, cells, total, exH, exV) {
    Zeigt Rahmen-Tier, ×mult, Formations-Kürzel, Rolle-●, Ionisierung, Frost.
    Auswahl-Zustände (#112): `selected` = weiß (Tausch/Detail) · `picked` = gold ✓ (Mehrfach-/Positionsauswahl) ·
    `arrow` = Farbpfeil „→X" (Shop-Farbwechsel) · `disabled` = ausgegraut, nicht klickbar (z. B. belegte Anker). */
-function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
+// #259: eine von bis zu 40 Grid-Kacheln → React.memo überspringt Re-Render bei unveränderten Props (bes. in
+// read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
+const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
                    picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, pillar = false, dimmed = false, arch = null, structLit = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
@@ -129,7 +131,7 @@ function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorT
       {roleIds.length > 0 && <span className="absolute bottom-0.5 left-1 text-[8px] sm:text-xs leading-none" style={{ color: "#d4a63a" }} title={roleTitle}>●</span>}
     </button>
   );
-}
+});
 
 /* Segment-Grid: je Segment eine Zeile [Bereichs-Label][5 Kacheln]. `roles` = state.roles.
    onTilePick(pos, card) meldet Klicks. Auswahl-Props (#112):

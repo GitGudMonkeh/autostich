@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
 import { FrostOverlay } from "./FrostOverlay.jsx";
 import { plantNumberColor, PLANT } from "./indicators/vocab.js";
@@ -38,7 +39,9 @@ function FrostLayerCrystals({ layers }) {
      value      = dauerhafter Kartenwert (inkl. Kat.-A-Mods)
      baseRank   = Ursprungswert → dauerhafter Boost = value − baseRank (violett „+X")
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
-export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, green = false, forged = 0, branded = 0, frostLayers = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null }) {
+// #259: reiner Präsentations-Leaf mit teuren Bild-Layern → React.memo überspringt Re-Render bei unveränderten
+// (primitiven) Props. Beim Auto-Play/Timer-Takt rendern nur die tatsächlich wechselnden Karten neu, nicht alle.
+function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, green = false, forged = 0, branded = 0, frostLayers = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null }) {
   const color = suitColor(suit);
   // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
   // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
@@ -192,7 +195,7 @@ export function Card({ suit, value, baseRank = null, stichBonus = 0, dim = false
   );
 }
 
-export function CardBack({ label = "?", image = null }) {
+function CardBackView({ label = "?", image = null }) {
   // Skin-Rücken (#180): liegt ein `image` an, zeigt der Stapel den Pixel-Art-Kartenrücken statt des
   // gestrichelten Platzhalters (gleiche 104×144-Box). Ohne Bild bleibt der neutrale Platzhalter.
   if (image) {
@@ -213,3 +216,6 @@ export function CardBack({ label = "?", image = null }) {
     </div>
   );
 }
+
+export const Card = memo(CardView);
+export const CardBack = memo(CardBackView);
