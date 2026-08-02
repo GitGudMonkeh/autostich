@@ -93,6 +93,18 @@ export const PERK_DEFS = {
         desc: `Gewinnt eine Karte in mindestens ${C.BRENNPUNKT_MIN_FORMS} gleichzeitigen Formationen, zählt der Stich ×${de(C.BRENNPUNKT_MULT)}.` },
   L_PATT: { id: "L_PATT", cat: "B", rarity: "legendary", label: "Patt", patt: true,
         desc: `Eine Niederlage um höchstens ${C.PATT_MARGIN} Werte zählt stattdessen als Sieg.` },
+  // --- Pool-Erweiterung: Farb-Legendäres (Farb-Identitäts-Lücke). scoreMult-Hook → automatisch über prodHook
+  //     ausgewertet, KEIN Engine-Flag/-Umbau. Belohnt einen Mono-Farb-Build: der Zusatz-Mult wächst mit der
+  //     Farbserie (suitStreak, schon im Sieg-ctx) und läuft multiplikativ im Score-Stack. „Verstärker, kein Motor". ---
+  L_MONO: { id: "L_MONO", cat: "D", rarity: "legendary", label: "Monochrom",
+        desc: `Jeder Sieg in einer Farbserie zählt ×(1 + ${pct(C.MONOCHROM_STEP)} % je Folgesieg derselben Farbe, höchstens +${pct(C.MONOCHROM_CAP)} %). Ein Farbwechsel oder eine Niederlage setzt die Farbserie zurück.`,
+        scoreMult: (ctx) => 1 + Math.min(C.MONOCHROM_STEP * Math.max(0, (ctx.suitStreak || 1) - 1), C.MONOCHROM_CAP) },
+  // --- Gebäude-Legendäre (Architekt-Lane, needsArchitect → nur bei aktivem Architekten im Angebot). Flag-verdrahtet
+  //     wie die #203-Legendären: `richtfest` am Durchlauf-Ende (engine.js), `bauhuette` beim Pick (reducer.js). ---
+  L_RICHT: { id: "L_RICHT", cat: "E", rarity: "legendary", label: "Richtfest", richtfest: true, needsArchitect: true,
+        desc: `Am Ende jedes Durchlaufs: je vollendeter Gebäude-Struktur (volle Zeile, Spalte oder Diagonale) +${C.RICHTFEST_STEP} dauerhafter Score. Der aufgestapelte Bonus wird jeden Durchlauf ausgezahlt (flach, kein Multiplikator).` },
+  L_BAUH: { id: "L_BAUH", cat: "E", rarity: "legendary", label: "Bauhütte", bauhuette: true, needsArchitect: true,
+        desc: `Sofort: das Baufeld des Architekten wächst dauerhaft um ${C.BAUHUETTE_COVER} Zellen — du kannst mehr Gebäude platzieren.` },
 };
 
 export const PERK_LIST = Object.values(PERK_DEFS);
@@ -138,12 +150,14 @@ export function isMigratedPerk(p) {
    (Familie auf einer anbietbaren Zielstufe). Familien-Stufen sind nach TIER_WEIGHTS gewichtet, flache Perks nach
    RARITY_WEIGHTS; der explizite Legendär-Wurf (P5) bleibt wie in buildOffer. Deterministisch über den injizierten
    rng. `owned` = flache Perk-ids; `familyTiers` = aktueller Rang je Familie. */
-export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0, rareShift = 0) {
+export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0, rareShift = 0, architectEnabled = false) {
   // #217 Meistergrade: Rarität-Shift (0 = Basis) verschiebt die Familien-Stufengewichte zu Selten/Rar. rareShift 0
   // liefert die Basistabelle → byte-identisch zum bisherigen Verhalten (Grad-0 / Sim / Bestandstests unberührt).
   const tierWeights = tierWeightsForShift(rareShift);
   // Flacher Legacy-Pool: nicht besessen, offerable, NICHT migriert (reguläre D-Perks raus; Legendäre bleiben).
-  let flat = PERK_LIST.filter((p) => !owned.includes(p.id) && p.offerable !== false && !isMigratedPerk(p));
+  // Gebäude-Legendäre (needsArchitect) nur mit aktivem Architekten — sonst inert (kein Gebäude-Overlay).
+  let flat = PERK_LIST.filter((p) => !owned.includes(p.id) && p.offerable !== false && !isMigratedPerk(p)
+    && !(p.needsArchitect && !architectEnabled));
   const chosen = [];
   let legendaries = 0;
   // Expliziter Legendär-Wurf (Shop-Spec §10 P5) — identisch zu buildOffer: nur bei übergebener Chance, dann genau
@@ -163,6 +177,10 @@ export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, 
     // Nur Familien MIGRIERTER Kategorien anbieten. Eine neu angelegte, aber noch nicht migrierte Familie
     // (z. B. Kategorie A) läuft sonst PARALLEL zu ihrem noch existierenden flachen Perk ins Angebot (Doppelung).
     if (!MIGRATED_CATS.has(fam.cat)) continue;
+    // Gebäude-Perks (fam.needsArchitect) nur anbieten, wenn der Architekt aktiv ist. Sonst wären sie inert
+    // (kein Gebäude-Overlay → underBuilding/coverCount stets leer) und würden im Architekt-freien Sim/Bestand
+    // tote Angebots-Slots belegen. Default architectEnabled=false → Sim/Tests byte-identisch (kein Gebäude-Perk).
+    if (fam.needsArchitect && !architectEnabled) continue;
     const cur = familyTierOf(familyTiers, fam.id);
     // FAMILY_DEFS führt `tiers` als OBJEKT {1:def,…} → anbietbare Stufen direkt über TIERS filtern
     // (nicht offerableTiers aus rarity.js, das ein Array erwartet).

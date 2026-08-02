@@ -4,8 +4,10 @@ import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialShop } from "../src/game/shop.js";
 import { applyFamilyPick, FAMILY_DEFS } from "../src/game/families.js";
+import { computeFormations } from "../src/game/formations.js";
+import { precomputeArchitect } from "../src/game/architect.js";
 import { buildPerkOffer, isMigratedPerk, PERK_DEFS, PERK_LIST, isLegendary } from "../src/game/perks.js";
-import { SCORE_PER_WIN } from "../src/game/constants.js";
+import { SCORE_PER_WIN, RICHTFEST_STEP, BAUHUETTE_COVER } from "../src/game/constants.js";
 const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Sieg-Basis (Pacing-Pass 100→400)
 
 /* Engine-Verdrahtung des Raritätssystems (Epic #167, Schritt 1): der End-to-End-Nachweis, dass eine
@@ -142,6 +144,13 @@ describe("Familien-Engine — Kategorie B (Wertboni über resolveTrick)", () => 
     expect(s.lastTrick.pValue).toBe(7);  // Pos 0 → +2 → 7 > 6 → Sieg
     expect(s.wins).toBe(1);
   });
+  it("B_FINALE: die letzten Karten je Durchlauf erhalten den Wertbonus (Stufe I: Pos 39–40 +2)", () => {
+    const s = resolveTrick(scenario(5, 6, { familyTiers: { B_FINALE: 1 }, pos: 38 }), rng);
+    expect(s.lastTrick.pValue).toBe(7);  // Pos 39 (posInCycle 38 ≥ 38) → +2 → 7 > 6 → Sieg
+    expect(s.wins).toBe(1);
+    // Position vor dem Fenster (Pos 38, posInCycle 37 < 38) → kein Bonus.
+    expect(resolveTrick(scenario(5, 6, { familyTiers: { B_FINALE: 1 }, pos: 37 }), rng).lastTrick.pValue).toBe(5);
+  });
   it("B_INITIATIVE: tieArmLosses armiert den Gleichstand-Sieg je Stufe", () => {
     expect(resolveTrick(scenario(3, 8, { familyTiers: { B_INITIATIVE: 1 } }), rng).tieArmed).toBe(false); // 1 Niederlage < Schwelle 2
     expect(resolveTrick(scenario(3, 8, { familyTiers: { B_INITIATIVE: 1 }, lossStreak: 1 }), rng).tieArmed).toBe(true); // 2. Niederlage
@@ -201,6 +210,39 @@ describe("Familien-Engine — Kategorie C (Rollen über resolveTrick, Schritt 2b
     const both = scenario(3, 8, { familyTiers: { C_GUARD: 4 }, roles: { C_GUARD: ["X0"] }, lastResult: "win", recentResults: ["win", "win"] });
     expect(resolveTrick(both, rng).lastTrick.pValue).toBe(3); // beide gewonnen → kein Bonus
   });
+  it("C_ECKPFEILER: Rollenkarte in einer Formation erhält den Bonus (nur mit Rolle + Formation)", () => {
+    // constDeck(5): identische Werte → Wiederholung je Segment; Pos 3 (posInCycle 2, 3. Karte) liegt in der Formation (mult>1).
+    // Formationen werden nur bei pos 0 berechnet und für den Durchlauf gehalten → für pos>0 vorberechnet mitgeben.
+    const forms = computeFormations(identity(), constDeck(5), {}, [], [], [], {}, null);
+    const eck = (over) => scenario(5, 6, { formations: forms, ...over });
+    const s = resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 1 }, roles: { C_ECKPFEILER: ["X2"] }, pos: 2 }), rng);
+    expect(s.lastTrick.pValue).toBe(8); // 5 + 3 (in Wiederholung)
+    expect(s.wins).toBe(1);
+    // ohne Rolle → kein Bonus.
+    expect(resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 1 }, roles: {}, pos: 2 }), rng).lastTrick.pValue).toBe(5);
+    // Rollenkarte auf Pos 1 (erste Karte der Wiederholung → mult 1, keine Formation) → kein Bonus.
+    expect(resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 1 }, roles: { C_ECKPFEILER: ["X0"] }, pos: 0 }), rng).lastTrick.pValue).toBe(5);
+    // Stufe IV Basis (eine Formation) → +6.
+    expect(resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 4 }, roles: { C_ECKPFEILER: ["X2"] }, pos: 2 }), rng).lastTrick.pValue).toBe(11);
+  });
+  it("C_ECKSTEIN (Gebäude-Perk): Rollenkarte unter einem Gebäude erhält den Bonus", () => {
+    // Score-Gebäude (A_ZOLLHAUS) deckt Positionen 2,3 ab OHNE Wertbonus → isoliert den C_ECKSTEIN-Wert.
+    const arch = { buildings: [{ id: "b1", familyId: "A_ZOLLHAUS", tier: 1, footprint: [2, 3] }], winCounters: {} };
+    const pre = precomputeArchitect(arch, identity(), constDeck(5));
+    const eck = (over) => scenario(5, 6, { architectPre: pre, ...over });
+    expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: { C_ECKSTEIN: ["X2"] }, pos: 2 }), rng).lastTrick.pValue).toBe(8); // 5 + 3 (unter Gebäude)
+    // ohne Rolle → kein Bonus.
+    expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: {}, pos: 2 }), rng).lastTrick.pValue).toBe(5);
+    // Rollenkarte auf unbedeckter Position (Pos 1) → kein Bonus.
+    expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: { C_ECKSTEIN: ["X1"] }, pos: 1 }), rng).lastTrick.pValue).toBe(5);
+  });
+  it("D_BEBAUUNG (Gebäude-Perk): Flat-Score skaliert mit der Abdeckung (coverCount)", () => {
+    const arch = { buildings: [{ id: "b1", familyId: "A_ZOLLHAUS", tier: 1, footprint: [2, 3] }], winCounters: {} };
+    const pre = precomputeArchitect(arch, identity(), constDeck(8)); // coverCount = 2
+    // Sieg (8 > 6) an einer beliebigen Position: D_BEBAUUNG I → +4 je Zelle = +8 Flat (einziger scoreFlat-Leser).
+    const s = resolveTrick(scenario(8, 6, { familyTiers: { D_BEBAUUNG: 1 }, architectPre: pre, pos: 10 }), rng);
+    expect(s.lastTrick.breakdown.flats).toBeCloseTo(8); // 4 × coverCount(2)
+  });
   it("C_SURVIVOR: Segment-Rang (I nur erste 4 Segmente, II nur Tiefste, III zwei Tiefste)", () => {
     // Segment 0 (Pos 0–4) Werte [1,5,2,9,7] → Pos 0 tiefste (Rang 0), Pos 2 zweittiefste (Rang 1).
     const deck = [1, 5, 2, 9, 7, ...Array(35).fill(9)].map((v, i) => ({ id: `Y${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
@@ -216,6 +258,44 @@ describe("Familien-Engine — Kategorie E (E_QUICKSHOT IV Anker-Wert über resol
     expect(resolveTrick(scenario(5, 0, { familyTiers: { E_QUICKSHOT: 4 }, pos: 4 }), rng).lastTrick.pValue).toBe(7); // Pos 5 → +2
     expect(resolveTrick(scenario(5, 0, { familyTiers: { E_QUICKSHOT: 4 }, pos: 3 }), rng).lastTrick.pValue).toBe(5); // Pos 4 → kein Anker
     expect(resolveTrick(scenario(5, 0, { familyTiers: { E_QUICKSHOT: 3 }, pos: 4 }), rng).lastTrick.pValue).toBe(5); // III: anchor.value 0 → kein Wertbonus
+  });
+});
+
+describe("Legendär-Engine — L_MONO Monochrom (scoreMult über Farbserie)", () => {
+  it("scoreMult greift multiplikativ über resolveTrick (Farbserie 3 → +30 %)", () => {
+    // flatDeck: F0 = Farbe R, Wert 12 → Sieg gegen 0, keine Formation. winSuit R + winSuitStreak 2 → suitStreak 3.
+    const base = (perks) => ({ ...initialState(makeRng(1)), deck: flatDeck(), oppDeck: constDeck(0),
+      playerOrder: identity(), oppOrder: identity(), perks, winSuit: "R", winSuitStreak: 2 });
+    const withMono = resolveTrick(base(["L_MONO"]), rng).lastTrick.gained;
+    const without  = resolveTrick(base([]), rng).lastTrick.gained;
+    expect(withMono / without).toBeCloseTo(1 + 2 * 0.15); // suitStreak 3 → ×1,30
+  });
+});
+
+describe("Gebäude-Legendäre — Richtfest (Durchlauf-Ende) + Bauhütte (Pick)", () => {
+  it("completedStructures/precompute: eine volle Segment-Zeile = 1 Struktur", () => {
+    const arch = { buildings: [{ id: "b1", familyId: "A_PRUNKSAAL", tier: "legendary", footprint: [0, 1, 2, 3, 4] }], winCounters: {} };
+    expect(precomputeArchitect(arch, identity(), constDeck(12)).structureCount).toBe(1);
+  });
+  it("L_RICHT (Richtfest): Struktur-Dividende stapelt je Durchlauf-Ende (+Schritt × Strukturen)", () => {
+    const arch = { buildings: [{ id: "b1", familyId: "A_PRUNKSAAL", tier: "legendary", footprint: [0, 1, 2, 3, 4] }], winCounters: {} };
+    const pre = precomputeArchitect(arch, identity(), constDeck(12));
+    const s = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, richtfestBonus: 0 }), rng);
+    expect(s.cycle).toBe(1);                                  // Durchlauf-Ende
+    expect(s.richtfestBonus).toBe(RICHTFEST_STEP);            // 1 Struktur → +Schritt
+    // Folgedurchlauf mit demselben Bau: stapelt weiter.
+    const s2 = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, richtfestBonus: RICHTFEST_STEP }), rng);
+    expect(s2.richtfestBonus).toBe(2 * RICHTFEST_STEP);
+    // ohne vollendete Struktur (kein Bau) → kein Zuwachs.
+    const s0 = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, richtfestBonus: 0 }), rng);
+    expect(s0.richtfestBonus).toBe(0);
+  });
+  it("L_BAUH (Bauhütte): PICK_PERK hebt den Baufeld-Deckel (maxCover) dauerhaft", () => {
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L_BAUH"] };
+    const before = s0.architect.maxCover;
+    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "L_BAUH", rng });
+    expect(s1.perks).toContain("L_BAUH");
+    expect(s1.architect.maxCover).toBe(before + BAUHUETTE_COVER);
   });
 });
 
@@ -527,6 +607,33 @@ describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt
     for (let seed = 0; seed < 40; seed++) {
       const fams = buildPerkOffer([], {}, rngS(seed), 3).filter(isFam).map((e) => e.familyId);
       expect(new Set(fams).size).toBe(fams.length);
+    }
+  });
+
+  it("Gebäude-Perks (needsArchitect): nur mit aktivem Architekten im Angebot", () => {
+    // count groß → Pool wird komplett gezogen (jede Familie einmal). Vergleich der gezogenen Familien-IDs.
+    const drawAllFams = (arch) => buildPerkOffer([], {}, rngS(1), 200, 0, 0, arch).filter(isFam).map((e) => e.familyId);
+    const withArch = drawAllFams(true);
+    expect(withArch).toContain("C_ECKSTEIN");
+    expect(withArch).toContain("D_BEBAUUNG");
+    const withoutArch = drawAllFams(false); // Default (Sim/Bestand) → gegatet
+    expect(withoutArch).not.toContain("C_ECKSTEIN");
+    expect(withoutArch).not.toContain("D_BEBAUUNG");
+    expect(withoutArch.length).toBe(withArch.length - 2); // exakt die zwei Gebäude-Familien fehlen
+  });
+
+  it("Gebäude-Legendäre (needsArchitect) nur mit Architekt im flachen Pool", () => {
+    // Alle Nicht-Gebäude-Legendären besessen + alle Familien auf IV → einzig offerbar: L_RICHT/L_BAUH.
+    const ownedLeg = ["L2", "L4", "L6", "L_UMV", "L_ZINS", "L_VAB", "L_HENK", "L_ECHO", "L_SAMM", "L_BRENN", "L_PATT", "L_MONO"];
+    const allFamsIV = Object.fromEntries(Object.keys(FAMILY_DEFS).map((id) => [id, 4]));
+    let sawBuild = false;
+    for (let seed = 0; seed < 20 && !sawBuild; seed++) // mit Architekt: Legendär-Wurf zieht ein Gebäude-Legendäres
+      if (buildPerkOffer(ownedLeg, allFamsIV, rngS(seed), 3, 1, 0, true).some((e) => e === "L_RICHT" || e === "L_BAUH")) sawBuild = true;
+    expect(sawBuild).toBe(true);
+    for (let seed = 0; seed < 20; seed++) { // ohne Architekt: nie ein Gebäude-Legendäres
+      const off = buildPerkOffer(ownedLeg, allFamsIV, rngS(seed), 3, 1, 0, false);
+      expect(off).not.toContain("L_RICHT");
+      expect(off).not.toContain("L_BAUH");
     }
   });
 

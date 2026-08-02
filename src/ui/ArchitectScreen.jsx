@@ -352,12 +352,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   }, [dragPrev]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const structLit = (pos) => (structF[pos] || 1) > 1;
-  // #262: „⟳ Drehen" nur zeigen, wenn die Form eine ECHTE Alternativlage hat (shapeRotations > 1). Sonst wäre der
-  // Button tot — z. B. bei den legendären zeile-Gebäuden (Basilika/Kathedrale/Prunksaal/Fundamentplatte) sowie
-  // block2x2/single (alle in NO_ROTATE). Verhindert den wirkungslosen Button.
-  const selForRotate = selId != null ? buildings.find((x) => x.id === selId) : null;
-  const selRotatable = !!selForRotate && shapeRotations(familyDef(selForRotate.familyId).form).length > 1;
-  const showRotate = selRotatable && (phase === "place" || phase === "move");
+  // #262: Eine Form ist nur drehbar, wenn sie mehr als eine distinkte Lage hat. `zeile` (Legendäre) sowie `single`/`block2x2`
+  // stehen in NO_ROTATE (architect.js) → shapeRotations liefert genau eine Lage → „⟳ Drehen" wäre wirkungslos.
+  const rotatableForm = (form) => shapeRotations(form).length > 1;
+  const showRotate = selId != null && buildings.some((x) => x.id === selId) && (phase === "place" || phase === "move");
+  const selBuilding = buildings.find((x) => x.id === selId);
+  const selRotatable = !!selBuilding && rotatableForm(familyDef(selBuilding.familyId).form);
   const pendingFam = pending ? familyDef(pending.familyId) : null;
 
   return (
@@ -634,6 +634,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                             <span className="w-[9px] h-[9px] rounded-full inline-block shrink-0" style={{ background: cat.color }} />{fam.name}
                           </div>
                           <div className="text-[10px] font-mono opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
+                          {!rotatableForm(fam.form) && <span className="text-[9px] font-mono" style={{ color: "#8a97a5" }} title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch).">nicht drehbar</span>}
                           {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>kein Platz → ersetzen</span>}
                         </button>
                       );
@@ -739,9 +740,15 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 Desktop: normale Leiste (md:static). */}
             <div className="order-1 sticky top-0 z-20 md:static rounded-xl p-2" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
               {/* #248: Rotieren in der schwebenden Leiste — nur bei ausgewähltem Gebäude in place/move; beim Ziehen ohne Scrollen erreichbar. */}
-              {showRotate && (
+              {showRotate && (selRotatable ? (
                 <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
-              )}
+              ) : (
+                // #262: nicht drehbare Form (zeilengebundene Legendäre / symmetrisch) → Button ausgegraut statt wirkungslos.
+                <button type="button" disabled aria-disabled="true"
+                  title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch)."
+                  className="w-full mb-2 rounded-lg py-2 text-sm font-bold cursor-not-allowed"
+                  style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>⟳ Nicht drehbar</button>
+              ))}
               {removeFor ? (
                 <button onClick={() => { setRemoveFor(null); setPendingDemolish(null); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
               ) : phase === "choose" ? (
@@ -830,21 +837,43 @@ function famEff(fam, b) {
   const t = b?.tier ?? 1;
   const base = fam.base;
   const nz = (v) => tierNum(v, t);
+  let s;
   switch (base.kind) {
-    case "flat":       return fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`;
-    case "lowValue":   return `niedrige Karten +${nz(base.value)} Stichwert`;
-    case "color":      return fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`;
-    case "target":     return `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Punkte"}`;
-    case "streak":     return `Sieg +${nz(base.score)} Score × Serie`;
-    case "crit":       return `Crit-Sieg +${nz(base.score)} Score`;
-    case "milestone":  return `jeder ${base.every}. Sieg +${nz(base.score)} Score`;
-    case "mult":       return `Siege hier ×${base.factor}`;
-    case "joker":      return `Formations-Joker (${base.types.join("/")})`;
-    case "transparentFarb": return "Farbblock-Transparenz";
-    case "bind":       return `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`;
-    case "crossSeg":   return "öffnet die Segmentgrenze";
-    case "anker":      return `jede Zelle = Anker ×${tierFactor(base.factor, t).toFixed(2)}`;
-    case "formMult":   return `Formationen hier ×${base.factor}`;
-    default:           return "";
+    case "flat":       s = fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`; break;
+    case "lowValue":   s = `niedrige Karten +${nz(base.value)} Stichwert`; break;
+    case "color":      s = fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`; break;
+    case "target":     s = `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Punkte"}`; break;
+    case "streak":     s = `Sieg +${nz(base.score)} Score × Serie`; break;
+    case "crit":       s = `Crit-Sieg +${nz(base.score)} Score`; break;
+    case "milestone":  s = `jeder ${base.every}. Sieg +${nz(base.score)} Score`; break;
+    case "mult":       s = `Siege hier ×${base.factor}`; break;
+    // #Pool: Distrikt-Effekte — hängen vom Brett ab (Nachbarschaft / vollendete Strukturen).
+    case "neighbor":   s = fam.category === "value" ? `+${nz(base.value)} Stichwert je Nachbargebäude (max ${base.cap})` : `Sieg +${nz(base.score)} Score je Nachbargebäude (max ${base.cap})`; break;
+    case "compound":   s = `Sieg +${nz(base.score)} Score je vollendeter Struktur`; break;
+    // #Pool Batch 3: Lage/Staffel — hängen von der Position ab.
+    case "segment":    s = `${base.half === "early" ? "frühe" : "späte"} Segmente ${fam.category === "value" ? `+${nz(base.value)} Stichwert` : `+${nz(base.score)} Score`}`; break;
+    case "relay":      s = base.both ? `strahlt +${nz(base.score)} Score in beide Nachbarfelder` : `reicht +${nz(base.score)} Score ans Feld rechts weiter`; break;
+    // #Pool Batch 4: Risiko — Crit-Wette.
+    case "gamble":     s = `Crit-Sieg +${nz(base.score)} Score · Sieg ohne Crit −${base.penalty}`; break;
+    case "joker":      s = `Formations-Joker (${base.types.join("/")})`; break;
+    case "transparentFarb": s = "Farbblock-Transparenz"; break;
+    case "bind":       s = `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`; break;
+    case "crossSeg":   s = "öffnet die Segmentgrenze"; break;
+    case "anker":      s = `jede Zelle = Anker ×${tierFactor(base.factor, t).toFixed(2)}`; break;
+    case "formMult":   s = `Formationen hier ×${base.factor}`; break;
+    default:           s = ""; break;
   }
+  // #Pool tierKick: qualitativer Zusatz ab Stufe `at` sichtbar machen (aktiv ab dieser Stufe, sonst als Vorschau markiert).
+  if (fam.tierKick && s) {
+    const k = fam.tierKick, on = t >= k.at;
+    let kickTxt = "";
+    if (k.mult) kickTxt = `zusätzlich ×${k.mult} Score`;
+    else if (k.critFlatMult) kickTxt = `bei Crit ×${k.critFlatMult} Flat`;
+    else if (k.streakDoubleFrom) kickTxt = `ab Serie ${k.streakDoubleFrom} doppelt`;
+    else if (k.every) kickTxt = `jeder ${k.every}. statt ${base.every}. Sieg`;
+    else if (k.addType) kickTxt = `+Joker ${k.addType}`;
+    else if (k.ankerValue) kickTxt = `+${k.ankerValue} Stichwert je Zelle`;
+    if (kickTxt) s += on ? ` · ${kickTxt}` : ` (Stufe ${k.at}: ${kickTxt})`;
+  }
+  return s;
 }

@@ -59,7 +59,12 @@ const TIER_INERT_KINDS = new Set(["joker", "transparentFarb", "crossSeg"]);
 export function upgradeInfo(fam, tier) {
   if (!fam) return { can: false, reason: null };
   if (fam.legendary) return { can: false, reason: "legendary" };
-  if (TIER_INERT_KINDS.has(fam.base && fam.base.kind)) return { can: false, reason: "inert" };
+  // #Pool: stufen-inerte Effektarten (joker/…) sind normalerweise No-op beim Aufrüsten. MIT tierKick werden sie bis
+  // zur Kick-Stufe `at` wieder aufwertbar (dort zündet der Zusatz), darüber wieder inert.
+  if (TIER_INERT_KINDS.has(fam.base && fam.base.kind)) {
+    if (fam.tierKick && typeof tier === "number" && tier < fam.tierKick.at) return { can: true, reason: null };
+    return { can: false, reason: "inert" };
+  }
   if (!(typeof tier === "number" && tier < MAX_TIER)) return { can: false, reason: "max" };
   return { can: true, reason: null };
 }
@@ -85,6 +90,14 @@ const SHAPES = {
   block2x2:  [[0, 0], [0, 1], [1, 0], [1, 1]],
   block2x3:  [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2]],
   zeile:     [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]],  // ganze Segment-Zeile (keine Rotation)
+  // Nicht-zwingend-zusammenhängende / Streu-Formen (#Pool-Umbau): die Geometrie (shapeRotations/enumeratePlacements/
+  // isValidFootprint) arbeitet auf reinen Zellmengen → getrennte Zellen sind gültig. `luecke` = Domino mit Loch
+  // (überspannt ein Segment, lässt die Mitte frei); `plus` = Plus-Pentomino (4-fach symmetrisch → 1 Lage).
+  luecke:     [[0, 0], [0, 2]],                          // zwei Zellen mit Lücke (nicht zusammenhängend)
+  plus:       [[0, 1], [1, 0], [1, 1], [1, 2], [2, 1]],  // Plus-Pentomino (5 Zellen)
+  diag3:      [[0, 0], [1, 1], [2, 2]],                  // Diagonal-Tromino (nicht zusammenhängend, 3 Zellen)
+  zwilling:   [[0, 0], [2, 0]],                          // zwei Zellen, gleiche Spalte, Lücke (nicht zusammenhängend)
+  grundstueck:[[0, 0], [0, 2], [2, 0], [2, 2]],          // vier Ecken eines 3×3 (nicht zusammenhängend, 4 Zellen)
 };
 const NO_ROTATE = new Set(["zeile", "single", "block2x2"]); // symmetrisch/zeilengebunden → eine Lage genügt
 
@@ -106,6 +119,27 @@ export function shapeRotations(form) {
 
 // Belegte Zellen (Positionen) aller Gebäude.
 export const occupiedCells = (buildings) => new Set((buildings || []).flatMap((b) => b.footprint));
+// Nachbarschaft (#Pool): je Gebäude-id die Anzahl VERSCHIEDENER anderer Gebäude, die orthogonal angrenzen (eine Zelle
+// des einen grenzt an eine Zelle des anderen). Rein geometrisch (kein order/deck) → einmal pro Durchlauf im Precompute.
+export function neighborCounts(buildings = []) {
+  const owner = new Map();                                   // pos → buildingId
+  for (const b of buildings) for (const p of b.footprint) owner.set(p, b.id);
+  const counts = {};
+  for (const b of buildings) {
+    const nb = new Set();
+    for (const p of b.footprint) {
+      const r = rowOf(p), c = colOf(p);
+      const adj = [];
+      if (r > 0) adj.push(posOf(r - 1, c));
+      if (r < ROWS - 1) adj.push(posOf(r + 1, c));
+      if (c > 0) adj.push(posOf(r, c - 1));
+      if (c < COLS - 1) adj.push(posOf(r, c + 1));
+      for (const q of adj) { const o = owner.get(q); if (o != null && o !== b.id) nb.add(o); }
+    }
+    counts[b.id] = nb.size;
+  }
+  return counts;
+}
 const sameSet = (a, b) => a.length === b.length && (() => { const s = new Set(a); return b.every((x) => s.has(x)); })();
 
 // Alle gültigen Platzierungen einer Form (in-Gitter UND kein Overlap mit `buildings`). Dedupliziert nach Footprint.
@@ -150,23 +184,39 @@ export const ARCHITECT_FAMILIES = {
   A_BUNTGLAS: { id: "A_BUNTGLAS", name: "Buntglas",     category: "value", form: "tetro_t",   base: { kind: "color", value: 3 }, colorLocked: true },
   A_FIRST:    { id: "A_FIRST",    name: "Firstträger",  category: "value", form: "line4",     base: { kind: "target", value: 3 }, target: "highest" },
   A_SOCKEL:   { id: "A_SOCKEL",   name: "Sockel",       category: "value", form: "tetro_l",   base: { kind: "target", value: 3 }, target: "lowest" },
+  A_ZUNFTV:   { id: "A_ZUNFTV",   name: "Zunftviertel", category: "value", form: "tromino_l",  base: { kind: "neighbor", value: 1, cap: 3 } }, // #Pool: +Wert je Nachbargebäude
+  A_WEHRGANG: { id: "A_WEHRGANG", name: "Wehrgang",     category: "value", form: "grundstueck", base: { kind: "segment", value: 2, half: "early" } }, // #Pool Batch 3: +Wert nur in den frühen Segmenten
 
   /* ---- score · Handelsbauten (I–IV) ---- */
-  A_ZOLLHAUS:    { id: "A_ZOLLHAUS",    name: "Zollhaus",    category: "score", form: "domino",  base: { kind: "flat", score: 35 } },
-  A_KONTOR:      { id: "A_KONTOR",      name: "Kontor",      category: "score", form: "tetro_l", base: { kind: "flat", score: 65 } },
-  A_REIHENHAUS:  { id: "A_REIHENHAUS",  name: "Reihenhaus",  category: "score", form: "line4",   base: { kind: "streak", score: 9 } },
+  // tierKick (#Pool): ab Stufe `at` zündet ein QUALITATIVER Zusatzeffekt (nicht nur die skalierte Zahl) → Ausbau
+  // wird zur echten Wahl statt Zahlen-Tick. Werte bewusst konservativ (Leitplanke: Eigenbeitrag ~25–35 %, nicht spät-lastig).
+  A_ZOLLHAUS:    { id: "A_ZOLLHAUS",    name: "Zollhaus",    category: "score", form: "domino",  base: { kind: "flat", score: 35 }, tierKick: { at: 4, mult: 1.15 } },
+  A_KONTOR:      { id: "A_KONTOR",      name: "Kontor",      category: "score", form: "tetro_l", base: { kind: "flat", score: 65 }, tierKick: { at: 4, critFlatMult: 2 } },
+  A_REIHENHAUS:  { id: "A_REIHENHAUS",  name: "Reihenhaus",  category: "score", form: "line4",   base: { kind: "streak", score: 9 }, tierKick: { at: 3, streakDoubleFrom: 4 } },
   A_ZINNE:       { id: "A_ZINNE",       name: "Zinne",       category: "score", form: "tetro_t", base: { kind: "crit", score: 80 } }, // Pass3: 130→80 (Blitz-Crit-Synergie dämpfen)
   A_ZUNFTHAUS:   { id: "A_ZUNFTHAUS",   name: "Zunfthaus",   category: "score", form: "tetro_t", base: { kind: "color", score: 130 }, colorLocked: true },
   A_GIEBEL:      { id: "A_GIEBEL",      name: "Giebel",      category: "score", form: "line4",   base: { kind: "target", score: 160 }, target: "highest" },
-  A_MEILENSTEIN: { id: "A_MEILENSTEIN", name: "Meilenstein", category: "score", form: "block2x2", base: { kind: "milestone", score: 200, every: 5 } },
+  A_MEILENSTEIN: { id: "A_MEILENSTEIN", name: "Meilenstein", category: "score", form: "block2x2", base: { kind: "milestone", score: 200, every: 5 }, tierKick: { at: 4, every: 3 } },
+
+  /* ---- score · Distrikt (I–IV, #Pool): Gebäude, die auf das BRETT reagieren (Nachbarschaft / vollendete Strukturen).
+         Zahlen zählen erst, wenn dicht/strukturiert gebaut wird → Spannung gegen die Struktur-Streuung (Zeile/Spalte). ---- */
+  A_MARKT:       { id: "A_MARKT",       name: "Marktplatz",  category: "score", form: "plus",   base: { kind: "neighbor", score: 20, cap: 4 } },
+  A_SPEICHER:    { id: "A_SPEICHER",    name: "Speicherstadt", category: "score", form: "luecke", base: { kind: "compound", score: 40 } },
+  // Lage/Staffel (#Pool Batch 3): Effekt hängt von der POSITION ab (Segment-Hälfte / Weitergabe) → Platzierung zählt.
+  A_VORWERK:     { id: "A_VORWERK",     name: "Vorwerk",     category: "score", form: "zwilling", base: { kind: "segment", score: 70, half: "early" } }, // nur in den frühen 4 Segmenten
+  A_LAUFGANG:    { id: "A_LAUFGANG",    name: "Laufgang",    category: "score", form: "diag3",    base: { kind: "relay", score: 50 } },               // reicht Score ans Feld rechts weiter
+  // Risiko (#Pool Batch 4): Wette auf den Crit. Sieg MIT Crit → Jackpot; Sieg OHNE Crit → Abzug (penalty). Aufwerten hebt
+  // NUR den Jackpot (tierNum auf score), der Abzug bleibt fix. Der Crit ist nicht steuerbar → echte Wette. Boden in engine.
+  A_LOSBUDE:     { id: "A_LOSBUDE",     name: "Losbude",     category: "score", form: "domino",      base: { kind: "gamble", score: 90,  penalty: 15 } },
+  A_WETTHALLE:   { id: "A_WETTHALLE",   name: "Wetthalle",   category: "score", form: "grundstueck", base: { kind: "gamble", score: 260, penalty: 60 } },
 
   /* ---- formation · Sakralbau (I–IV) ---- */
-  A_KLAMMER:    { id: "A_KLAMMER",    name: "Klammer",    category: "formation", form: "domino",    base: { kind: "joker", types: ["farbblock"] } },
+  A_KLAMMER:    { id: "A_KLAMMER",    name: "Klammer",    category: "formation", form: "domino",    base: { kind: "joker", types: ["farbblock"] }, tierKick: { at: 3, addType: "wiederholung" } },
   A_ARKADE:     { id: "A_ARKADE",     name: "Arkade",     category: "formation", form: "domino",    base: { kind: "transparentFarb" } },
   A_KREUZGANG:  { id: "A_KREUZGANG",  name: "Kreuzgang",  category: "formation", form: "tromino_l", base: { kind: "bind" } },
   A_FRIES:      { id: "A_FRIES",      name: "Fries",      category: "formation", form: "block2x2",  base: { kind: "joker", types: ["wiederholung"] } },
   A_PFEILER:    { id: "A_PFEILER",    name: "Pfeiler",    category: "formation", form: "line4",     base: { kind: "crossSeg" } },
-  A_GRUNDSTEIN: { id: "A_GRUNDSTEIN", name: "Grundstein", category: "formation", form: "block2x2",  base: { kind: "anker", factor: 1.10 } },
+  A_GRUNDSTEIN: { id: "A_GRUNDSTEIN", name: "Grundstein", category: "formation", form: "block2x2",  base: { kind: "anker", factor: 1.10 }, tierKick: { at: 3, ankerValue: 2 } },
   A_GEWOELBE:   { id: "A_GEWOELBE",   name: "Gewölbe",    category: "formation", form: "tetro_t",   base: { kind: "joker", types: ["wiederholung", "treppe"] } },
 
   /* ---- legendär (keine Stufen, kommen fertig; 2 je Kategorie) ---- */
@@ -179,6 +229,14 @@ export const ARCHITECT_FAMILIES = {
   // Prisma (Joker alle 4) war als normales Formations-Gebäude zu stark (schon nach dem 1. Lauf dominant) → in die
   // Legendären gezogen: nur noch über den seltenen Legendär-Slot, Effekt unverändert (Tetro-T, 4 Zellen).
   A_PRISMA:     { id: "A_PRISMA",     name: "Prisma",          category: "formation", form: "tetro_t",  base: { kind: "joker", types: ["wiederholung", "farbblock", "treppe", "wechsel"] }, legendary: true },
+
+  /* ---- legendär · Distrikt (#Pool Batch 5): heben die neuen Mechaniken (Nachbarschaft/Ballung/Staffel/Risiko) auf
+         Legendär-Niveau. Kommen fertig stark, aber mit großer/gestreuter Form → schwer optimal zu platzieren. ---- */
+  A_LEUCHTTURM: { id: "A_LEUCHTTURM", name: "Leuchtturm",      category: "score", form: "line4",       base: { kind: "relay", score: 100, both: true }, legendary: true },   // strahlt in BEIDE Nachbarfelder
+  A_RATHAUS:    { id: "A_RATHAUS",    name: "Rathaus",         category: "score", form: "block2x2",    base: { kind: "neighbor", score: 45, cap: 6 }, legendary: true },     // Distrikt-Hauptstadt
+  A_SPIELBANK:  { id: "A_SPIELBANK",  name: "Spielbank",       category: "score", form: "grundstueck", base: { kind: "gamble", score: 500, penalty: 80 }, legendary: true },  // größter Jackpot
+  A_STERNWARTE: { id: "A_STERNWARTE", name: "Sternwarte",      category: "score", form: "zeile",       base: { kind: "compound", score: 90 }, legendary: true },             // +Score je vollendeter Struktur
+  A_ZWINGER:    { id: "A_ZWINGER",    name: "Zwinger",         category: "value", form: "block2x3",    base: { kind: "neighbor", value: 2, cap: 5 }, legendary: true },      // Wert-Distrikt, große Fläche
 };
 export const familyDef = (id) => ARCHITECT_FAMILIES[id] || null;
 export const CATEGORIES = ["value", "score", "formation"];
@@ -240,7 +298,9 @@ export function buildArchitectOffer(architect, rng, rareShift = _archRareShift) 
     // wird TROTZDEM immer gezogen (auch wenn verworfen), damit der Zufallsstrom identisch bleibt (Determinismus/Seed).
     const t = weightedTier(rng, rareShift);
     const inert = TIER_INERT_KINDS.has(f.base && f.base.kind);
-    offers.push({ familyId: f.id, tier: inert ? 1 : t, used: false });
+    // Inert ohne Kick → auf Stufe 1 pinnen (Aufrüsten ist No-op). Inert MIT Kick → bis zur Kick-Stufe `at` erlauben.
+    const tier = inert ? (f.tierKick ? Math.min(t, f.tierKick.at) : 1) : t;
+    offers.push({ familyId: f.id, tier, used: false });
   }
   return offers;
 }
@@ -273,6 +333,21 @@ export function structureFactorMap(coverSet) {
   return sf;
 }
 
+// Anzahl VOLLENDETER Strukturen (volle Zeilen + volle Spalten + volle Diagonalen) im Cover-Set — die Zähl-Variante
+// zu structureFactorMap (dort Faktor je Position). Quelle für das Gebäude-Legendäre „Richtfest" (Durchlauf-Ende).
+export function completedStructures(coverSet) {
+  let n = 0;
+  for (let r = 0; r < ROWS; r++) { let full = true; for (let c = 0; c < COLS; c++) if (!coverSet.has(posOf(r, c))) { full = false; break; } if (full) n++; }
+  for (let c = 0; c < COLS; c++) { let full = true; for (let r = 0; r < ROWS; r++) if (!coverSet.has(posOf(r, c))) { full = false; break; } if (full) n++; }
+  for (let r0 = 0; r0 <= ROWS - COLS; r0++) {
+    const main = [], anti = [];
+    for (let i = 0; i < COLS; i++) { main.push(posOf(r0 + i, i)); anti.push(posOf(r0 + i, COLS - 1 - i)); }
+    if (main.every((p) => coverSet.has(p))) n++;
+    if (anti.every((p) => coverSet.has(p))) n++;
+  }
+  return n;
+}
+
 /* ============================================================
    PRECOMPUTE (zu Durchlauf-Beginn, stabil pro Durchlauf) — je Position die aufgelösten value-/score-Effekte
    (target highest/lowest hier EINMAL bestimmt) + Häuserzeile-Faktor je Position. Gebäude überlappen nie →
@@ -285,31 +360,57 @@ export function precomputeArchitect(architect, order, deck) {
   const cover = new Array(N_POS).fill(false);
   const cardVal = (p) => (deck[order[p]] ? deck[order[p]].value : 0);
 
-  for (const b of architect.buildings || []) {
+  // Brett-Kennzahlen für die Distrikt-Effekte (neighbor/compound) EINMAL vorab — rein geometrisch, stabil pro Durchlauf.
+  const buildings = architect.buildings || [];
+  const nbc = neighborCounts(buildings);
+  const structCount = completedStructures(occupiedCells(buildings));
+  const boardCtx = { nbc, structCount };
+
+  for (const b of buildings) {
     const fam = familyDef(b.familyId);
     if (!fam) continue;
     for (const p of b.footprint) cover[p] = true;
     if (fam.category === "value") {
-      const eff = resolveNumEffect(fam, b, "value", order, deck, cardVal);
+      const eff = resolveNumEffect(fam, b, "value", order, deck, cardVal, boardCtx);
       for (const [p, e] of eff) value[p] = e;
     } else if (fam.category === "score") {
-      const eff = resolveNumEffect(fam, b, "score", order, deck, cardVal);
+      const eff = resolveNumEffect(fam, b, "score", order, deck, cardVal, boardCtx);
       for (const [p, e] of eff) score[p] = e;
+    } else if (fam.category === "formation" && fam.tierKick && fam.tierKick.ankerValue && typeof b.tier === "number" && b.tier >= fam.tierKick.at) {
+      // #Pool tierKick: Grundstein III legt zusätzlich einen flachen Stichwert auf jede (Anker-)Zelle. Formations-
+      // Gebäude überlappen nie value-Gebäude → value[p] ist hier frei. Der Anker-Faktor läuft davon unberührt über formSpec.
+      for (const p of b.footprint) value[p] = { kind: "flat", amount: fam.tierKick.ankerValue, familyId: fam.id, buildingId: b.id };
     }
-    // formation-Gebäude wirken über architectFormSpec (computeFormations), nicht hier.
+    // formation-Gebäude wirken sonst über architectFormSpec (computeFormations), nicht hier.
+  }
+  // #Pool Batch 3 relay (Staffel): Laufgang reicht seinen Score an die Zelle RECHTS jeder Fußabdruck-Zelle weiter.
+  // Eigener additiver Kanal (nicht der Ein-Effekt-pro-Position-Slot) → keine Kollision mit dem Ziel-Score-Gebäude.
+  const relayFlat = new Array(N_POS).fill(0);
+  for (const b of buildings) {
+    const fam = familyDef(b.familyId);
+    if (!fam || (fam.base && fam.base.kind) !== "relay") continue;
+    const amt = tierNum(fam.base.score, b.tier);
+    for (const p of b.footprint) {
+      if (colOf(p) < COLS - 1) relayFlat[p + 1] += amt;                       // Staffel nach rechts
+      if (fam.base.both && colOf(p) > 0) relayFlat[p - 1] += amt;             // Leuchtturm (legendär): auch nach links
+    }
   }
   // Struktur-Boni (Zeile/Spalte/Diagonale) — multiplikativ auf jede beteiligte Position.
   const coverSet = new Set(); for (let p = 0; p < N_POS; p++) if (cover[p]) coverSet.add(p);
   const sf = structureFactorMap(coverSet);
   for (let p = 0; p < N_POS; p++) segFactor[p] = sf[p];
-  return { value, score, segFactor };
+  // #Pool: cover/coverCount für Gebäude-Perks (Eckstein liest cover[actualPos], Dichte Bebauung coverCount).
+  // segFactor[p] > 1 markiert zusätzlich eine vollendete Struktur (Zeile/Spalte/Diagonale) an der Position.
+  // structureCount = Anzahl vollendeter Strukturen (Richtfest, Durchlauf-Ende).
+  return { value, score, segFactor, relayFlat, cover, coverCount: coverSet.size, structureCount: completedStructures(coverSet) };
 }
 
 // Löst die (positionsgebundenen) value-/score-Effekte eines Gebäudes auf → [ [pos, effect], … ].
 // target-Familien (highest/lowest) legen ihren Effekt NUR auf die Zielposition (einmal bestimmt).
-function resolveNumEffect(fam, b, cat, order, deck, cardVal) {
+function resolveNumEffect(fam, b, cat, order, deck, cardVal, boardCtx = {}) {
   const base = fam.base;
   const out = [];
+  const kickOn = base && fam.tierKick && typeof b.tier === "number" && b.tier >= fam.tierKick.at; // #Pool: Stufen-Kicker aktiv?
   if (base.kind === "target") {
     const cmp = fam.target === "highest"
       ? (a, c) => cardVal(c) > cardVal(a) || (cardVal(c) === cardVal(a) && c < a)
@@ -320,6 +421,14 @@ function resolveNumEffect(fam, b, cat, order, deck, cardVal) {
     out.push([tgt, { kind: "target", amount, familyId: fam.id, buildingId: b.id }]);
     return out;
   }
+  // #Pool: Distrikt-Effekte (neighbor/compound) sind rein brett-abhängig → hier EINMAL auf einen flachen Betrag
+  // gebacken (nbc/structCount stehen fest pro Durchlauf). So bleiben architectValueBonus/architectScore effektfrei
+  // von neuen Sonderfällen: sie sehen nur einen `flat`. amount=0 (keine Nachbarn / keine Struktur) → kein Bonus.
+  const bakedFlat = () => {
+    const per = tierNum(cat === "value" ? base.value : base.score, b.tier);
+    if (base.kind === "neighbor") return per * Math.min(boardCtx.nbc ? (boardCtx.nbc[b.id] || 0) : 0, base.cap ?? 99);
+    return per * (boardCtx.structCount || 0); // compound
+  };
   for (const p of b.footprint) {
     let e = null;
     if (base.kind === "flat") e = { kind: "flat", amount: tierNum(cat === "value" ? base.value : base.score, b.tier) };
@@ -327,8 +436,20 @@ function resolveNumEffect(fam, b, cat, order, deck, cardVal) {
     else if (base.kind === "color") e = { kind: "color", amount: tierNum(cat === "value" ? base.value : base.score, b.tier), colorChoice: b.colorChoice };
     else if (base.kind === "streak") e = { kind: "streak", amount: tierNum(base.score, b.tier) };
     else if (base.kind === "crit") e = { kind: "crit", amount: tierNum(base.score, b.tier) };
-    else if (base.kind === "milestone") e = { kind: "milestone", amount: tierNum(base.score, b.tier), every: base.every, buildingId: b.id };
+    else if (base.kind === "milestone") e = { kind: "milestone", amount: tierNum(base.score, b.tier), every: kickOn ? fam.tierKick.every : base.every, buildingId: b.id };
     else if (base.kind === "mult") e = { kind: "mult", factor: base.factor }; // Schatzkammer (legendär, keine Stufe)
+    else if (base.kind === "neighbor" || base.kind === "compound") e = { kind: "flat", amount: bakedFlat() };
+    // #Pool Batch 3 segment (Lage): Zelle wirkt nur in ihrer Segment-Hälfte (early = Zeilen 0..3). Zeile steht fest →
+    // hier entschieden und auf flat gebacken (qualifizierende Zellen bekommen den Betrag, andere gar keinen Effekt).
+    else if (base.kind === "segment") { const early = rowOf(p) < ROWS / 2; if (base.half === "early" ? early : !early) e = { kind: "flat", amount: tierNum(cat === "value" ? base.value : base.score, b.tier) }; }
+    // #Pool Batch 4 gamble (Risiko): Wette auf den Crit. Jackpot skaliert mit der Stufe, der Abzug bleibt fix.
+    else if (base.kind === "gamble") e = { kind: "gamble", crit: tierNum(base.score, b.tier), penalty: base.penalty };
+    // Stufen-Kicker (#Pool): qualitativer Zusatz ab Stufe `at` — als Zusatzfeld am flat/streak-Effekt (Engine liest es).
+    if (kickOn && e) {
+      if (e.kind === "flat" && fam.tierKick.mult) e.mult = fam.tierKick.mult;                       // Zollhaus IV: ×Mult
+      if (e.kind === "flat" && fam.tierKick.critFlatMult) e.critFlatMult = fam.tierKick.critFlatMult; // Kontor IV: Crit ×
+      if (e.kind === "streak" && fam.tierKick.streakDoubleFrom) e.streakDoubleFrom = fam.tierKick.streakDoubleFrom; // Reihenhaus III
+    }
     if (e) { e.familyId = fam.id; e.buildingId = b.id; out.push([p, e]); }
   }
   return out;
@@ -348,12 +469,17 @@ export function architectValueBonus(pre, actualPos, pCard) {
 // score: bei Sieg an actualPos → { flat (in scoreBase), mult (eigener Faktor), bump (Gebäude-id für Meilenstein-Zähler) }.
 // Häuserzeile fließt IMMER als Mult (segFactor). `ctx` = { isCrit, serieStreak, suit }; `counters` = winCounters (Lesen).
 export function architectScore(pre, actualPos, ctx, counters) {
-  let flat = 0, mult = pre ? (pre.segFactor[actualPos] || 1) : 1, bump = null;
+  // #Pool Batch 3: relayFlat (Staffel) fließt IMMER ein, wenn die Zielposition gewinnt — unabhängig vom eigenen Effekt hier.
+  let flat = (pre && pre.relayFlat && pre.relayFlat[actualPos]) || 0, mult = pre ? (pre.segFactor[actualPos] || 1) : 1, bump = null;
   const e = pre && pre.score[actualPos];
   if (e) {
     switch (e.kind) {
-      case "flat":     flat += e.amount; break;
-      case "streak":   flat += e.amount * (ctx.serieStreak || 0); break;
+      // #Pool tierKick: critFlatMult (Kontor IV) verdoppelt den flat bei Crit; mult (Zollhaus IV) legt einen eigenen Faktor auf.
+      case "flat":     flat += e.amount * (e.critFlatMult && ctx.isCrit ? e.critFlatMult : 1); if (e.mult) mult *= e.mult; break;
+      // #Pool Batch 4: Crit-Wette — Jackpot bei Crit, sonst Abzug. Der Boden (nie < 0) sitzt in der Engine (scoreBase-Klemme).
+      case "gamble":   flat += ctx.isCrit ? e.crit : -e.penalty; break;
+      // #Pool tierKick: streakDoubleFrom (Reihenhaus III) verdoppelt den Serien-Score ab der Schwelle.
+      case "streak": { const s = ctx.serieStreak || 0; flat += e.amount * s * (e.streakDoubleFrom && s >= e.streakDoubleFrom ? 2 : 1); break; }
       case "crit":     if (ctx.isCrit) flat += e.amount; break;
       case "color":    if (ctx.suit === e.colorChoice) flat += e.amount; break;
       case "target":   flat += e.amount; break;
@@ -389,8 +515,10 @@ export function architectFormSpec(architect, order, deck) {
     if (!fam || fam.category !== "formation") continue;
     any = true;
     const k = fam.base.kind;
+    // #Pool tierKick: Klammer III schaltet einen zweiten Joker-Typ frei (reaktiviert das inerte joker-Aufrüsten).
+    const kickOn = fam.tierKick && typeof b.tier === "number" && b.tier >= fam.tierKick.at;
     for (const p of b.footprint) {
-      if (k === "joker") { for (const t of fam.base.types) jokerSetFor[t].add(p); }
+      if (k === "joker") { for (const t of fam.base.types) jokerSetFor[t].add(p); if (kickOn && fam.tierKick.addType) jokerSetFor[fam.tierKick.addType].add(p); }
       else if (k === "transparentFarb") transparentFarb.add(p);
       else if (k === "crossSeg") crossSeg.add(rowOf(p)); // Pfeiler: öffnet die 1D-Segmentgrenze der berührten Zeilen
       else if (k === "bind") bind[p] = Math.max(bind[p] || 0, bindSpanFor(b.tier));

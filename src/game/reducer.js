@@ -236,12 +236,16 @@ export function reducer(state, action) {
         const avg = Math.round(state.deck.reduce((s, c) => s + c.value, 0) / Math.max(1, state.deck.length));
         deck = state.deck.map((c) => ({ ...c, value: avg }));
       }
+      // Bauhütte (L_BAUH, Gebäude-Legendäres): hebt sofort dauerhaft den Baufeld-Deckel (maxCover) → mehr Bauplatz.
+      const architect = def.bauhuette && state.architect
+        ? { ...state.architect, maxCover: (state.architect.maxCover ?? ARCH_MAX_COVER) + C.BAUHUETTE_COVER }
+        : state.architect;
       // Perks mit manueller Kartenauswahl öffnen die Zielauswahl (§22.5); sonst weiter.
       const goTarget = !!def.needsTarget;
       const formations = def.redistribute
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers)
         : state.formations;
-      return { ...state, perks, deck, offer: null, formations,
+      return { ...state, perks, deck, architect, offer: null, formations,
                phase: goTarget ? "target" : "play",
                targetPerk: goTarget ? perkId : null };
     }
@@ -427,7 +431,7 @@ export function reducer(state, action) {
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
-      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade)); // #217: Grad-Rewards
+      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade), state.architectEnabled); // #217: Grad-Rewards
       const fate = perkFateReroll(state.shop);                       // #164: gratis Perk-Reroll gilt fürs neue Perk-Angebot
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off, offerRerolls: 0, freePerkReroll: fate, freeSkillReroll: false } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0)
@@ -449,7 +453,7 @@ export function reducer(state, action) {
       const tokens = state.rerolls || 0;                             // #202/#214: EIN geteilter Reroll-Pool (Perk+Skill), ersetzt shop.perkRerolls
       if (!free && tokens <= 0) return state;                        // keine Ressource → wirkungslos
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade)); // #217: Grad-Rewards
+      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade), state.architectEnabled); // #217: Grad-Rewards
       const rerolls = free ? tokens : tokens - 1;
       return { ...state, offer, offerRerolls: idx, rerolls, rerollsUsed: (state.rerollsUsed || 0) + 1, freePerkReroll: free ? false : state.freePerkReroll };
     }
