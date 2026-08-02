@@ -4,13 +4,28 @@
 > Eigenes Repo `GitGudMonkeh/autostich`, Deploy auf GitHub Pages unter `/autostich/`.
 > UI-Text **Deutsch**, Code-Identifier **Englisch**.
 >
-> Stand: Prototyp, V2-Systeme (Runden/Stats/Skills/Formationen) + 4-Stufen-Raritätsfamilien;
-> **v0.3-Rework:** 4 Elementar-Fraktionen (Feuer/Blitz/Eis/Pflanze), Architekt (ersetzt den Shop),
-> Meisterränge (laufübergreifend), Challenger-Seeds, Chronik. Einzelne Abschnitte unten beschreiben
-> teils noch den V2-Stand — im Zweifel gilt der Code (siehe unten).
-> **746 Vitest-Fälle** (36 Dateien), CI grün (Tests → Build → Pages).
+> Stand: **v0.3** — 4 Elementar-Fraktionen (Feuer/Blitz/Eis/Pflanze), **Architekt** (ersetzt den alten
+> Shop/die Münzökonomie), Meisterränge (laufübergreifend), Challenger-Seeds, Chronik. Darauf aufbauend die
+> V2-Systeme (Runden/Stats/Skills/Formationen) + 4-Stufen-Raritätsfamilien. Einzelne Detail-Abschnitte unten
+> tragen noch V2-Begriffe (z. B. „(Shop)"-Herkunftslabels an Formations-Perks) — im Zweifel gilt der Code.
+> **680+ Vitest-Fälle** (37 Dateien), CI grün (Tests → Build → Pages).
 > Diese Übersicht ist **aus dem Code abgeleitet** — die Quelle der Wahrheit bleibt der Code
 > (`src/game/*`). Bei Unstimmigkeit gilt der Code, nicht dieses Dokument.
+
+---
+
+## Schnellstart
+
+```bash
+npm install       # Abhängigkeiten
+npm run dev       # Dev-Server (Vite, http://localhost:5173)
+npm test          # Vitest (game/-Layer, Node-Umgebung)
+npm run build     # Produktions-Build nach dist/ (base = /autostich/)
+npm run preview   # gebauten Stand lokal ansehen
+```
+
+**Deploy:** GitHub Actions auf Push nach `main` → `npm ci` → `npm test` → `npm run build` → GitHub Pages
+(`/autostich/`). Entwickelt wird auf `Autostich_Test`, danach nach `main` gemergt.
 
 ---
 
@@ -22,13 +37,13 @@ Karte du spielst — du baust **zwischen** den Durchläufen einen Build, der dei
 dauerhaft stärker macht.
 
 ```
-Stiche auto-auflösen → Durchlauf-Ende → eine Entscheidung (Stat · Perk · Skill · Formation · Shop)
+Stiche auto-auflösen → Durchlauf-Ende → eine Entscheidung (Stat · Perk · Skill · Formation · Architekt)
 → Build/Aufstellung werden stärker → nächster Durchlauf … über genau MAX_CYCLES Runden → Ende.
 ```
 
 **Ziel:** möglichst hoher **Score** über den festen Lauf. **Kein Leben, kein Tod durch Schaden** —
-der Lauf hat eine feste Länge (`MAX_CYCLES = 44` Deck-Durchläufe), danach Game Over. Der Reiz liegt im
-*Bauen während des Laufs* — Deckwerte, Kartenrollen, Formationsaufstellung, Archetyp-Skills und Shop.
+der Lauf hat eine feste Länge (`MAX_CYCLES = 60` Deck-Durchläufe), danach Game Over. Der Reiz liegt im
+*Bauen während des Laufs* — Deckwerte, Kartenrollen, Formationsaufstellung, Archetyp-Skills und Architekt-Gebäude.
 
 **Design-Pointe:** Kartenwerte dürfen **über 10 hinaus** wachsen (`VALUE_CAP = null`) — ab Wert 11
 überbietet deine Karte jede mögliche Gegnerkarte (Gegner-Maximum ist 10). Farbe ist im reinen Wert­vergleich
@@ -54,7 +69,7 @@ kosmetisch, wird aber über **Formationen** (Farbblock), Farb-Perks und Archetyp
 
 Ein **reiner Reducer** (`src/game/reducer.js`) treibt `state.phase`; die Stich-Auflösung liegt in
 `engine.js` (`resolveTrick`, pure). Nach jedem Durchlauf steht **genau eine Entscheidung** an, deren Typ
-der feste **Entscheidungsplan** `DECISION_SCHEDULE` (44 Einträge) vorgibt.
+der feste **Entscheidungsplan** `DECISION_SCHEDULE` (60 Einträge) vorgibt.
 
 | Phase | Bedeutung |
 |---|---|
@@ -62,12 +77,12 @@ der feste **Entscheidungsplan** `DECISION_SCHEDULE` (44 Einträge) vorgibt.
 | `play` | Der Autobattler läuft: Stich für Stich, auto-getaktet. |
 | `levelup` | Auswahl-Overlay — je nach Plan **Perk** (`PerkSelect`), **Stat** (`StatSelect`) oder **Skill** (`SkillSelect`); pausiert. |
 | `formation` | **Formationsphase** (`FormationPhase`, §22.8): Karten der Aufstellung tauschen. |
-| `shop` | **Shop** (`ShopScreen`): Münzen ausgeben (Karten · Anker · Formationen · Planung). |
+| `shop` | **Architekt** (`ArchitectScreen`, #202 · Shop-Ersatz): Gebäude auf dem 8×5-Baufeld platzieren/aufwerten (keine Münzen). Der Aktionsschlüssel heißt intern noch `shop`. |
 | `gameover` | Nach `MAX_CYCLES` Durchläufen: Endbildschirm (`GameOver`) mit Score, Statistik, Bestenliste. |
 
-**Entscheidungsplan** (`DECISION_SCHEDULE`, Shop-Spec §2.2): fester 44-Einträge-Plan statt eines Zyklus —
-Verteilung **11 Stat · 11 Perk · 8 Formation · 8 Shop · 6 Skill**. Ziel-Flows (Karten/Positionen/Farben
-wählen) laufen als Unter-Overlays von Perk-/Shop-Auswahl (`CONFIRM_TARGET`, `SHOP_TARGET_*`, `FAMILY_TARGET_*`).
+**Entscheidungsplan** (`DECISION_SCHEDULE`): fester 60-Einträge-Plan statt eines Zyklus —
+Verteilung **13 Stat · 13 Perk · 12 Formation · 12 Architekt (`shop`) · 10 Skill**. Ziel-Flows (Karten/
+Positionen/Farben wählen) laufen als Unter-Overlays der Perk-Auswahl (`CONFIRM_TARGET`, `FAMILY_TARGET_*`).
 
 **Actions (Auszug):** `START_RUN`/`RESET`, `TO_MENU`, `END_RUN`, `RESOLVE_TRICK` (ein Stich; `action.rng`
 wird an `resolveTrick` gereicht), `PICK_PERK`/`PICK_FAMILY`, `PICK_STAT`, `PICK_SKILL`/`DECLINE_SKILL`,
@@ -188,7 +203,7 @@ L11 Zeitraffer (mächtig, teils mit Nachteil; kein Leben mehr → reine Wert-/Sc
 
 Auf **Skill-Runden** wählst du aus **`SKILLS_OFFERED = 6`** Skills (2+2+2 über alle drei Archetypen,
 `MAX_ARCHETYPES = 3`), bis zu **`SKILL_SLOTS = 4`** gleichzeitig. Ein expliziter Legendär-Wurf
-(`SKILL_LEGENDARY_BASE` + Shop-Bonus) kann genau einen legendären Skill einsetzen.
+(`SKILL_LEGENDARY_BASE`, 3 % je Archetyp × Meisterrang-Mult) kann legendäre Skills einsetzen.
 
 - **⚡ Blitz** — Ladung/Ionisierung/Crit: Ladung sammeln (`LIGHTNING_MAX_CHARGE`), Karten ionisieren
   (`ION_*` → +Score je Stapel), Gewitterfront/Reaktoren, Legendäre (Donnergott u. a.). Positionsgebundene
@@ -202,20 +217,27 @@ Auf **Skill-Runden** wählst du aus **`SKILLS_OFFERED = 6`** Skills (2+2+2 über
 
 ---
 
-## 10. Shop (Shop-Spec) — `shop.js` · `shopFamilies.js`
+## 10. Architekt (Shop-Ersatz, #202) — `architect.js` · `ArchitectScreen.jsx`
 
-Münzökonomie: `STARTING_COINS = 2`, `BASE_COINS_PER_CYCLE = 2`, Einkommens-Stat gibt je Pick
-`+SHOP_INCOME_PER_LEVEL` pro Shop-Besuch; komplettes Ablehnen eines Perk-Angebots gibt `PERK_DECLINE_COINS`.
+Der alte **Shop mit Münzökonomie ist entfernt** (#229). An der `shop`-Entscheidung öffnet stattdessen der
+**Architekt**: ein **8×5-Baufeld**, auf dem du **Gebäude** aus einem Bauplan-Angebot platzierst. Keine
+Münzen, keine Preise — die Begrenzung ist der **Bauplatz** (`MAX_COVER`, per Meisterrang +2/Grad ab II).
 
-- **Angebot:** `SHOP_ITEMS_PER_CATEGORY = 2` je Kategorie (`SHOP_CATEGORIES = cards · anchors · formations
-  · planning`), Cheap-Garantie, höchstens **eine** legendäre Ersetzung (`SHOP_LEGENDARY_CHANCE`).
-- **Preise:** vier feste Stufen `SHOP_PRICE = { cheap 8, strong 12, premium 18, legendary 30 }`.
-- **Shop-Familien** (4 Stufen I–IV, `SHOP_FAMILY_DEFS`): Karten-Pakete (Feinschliff/Umlackierung/Werttausch
-  …), **Anker** (Kraft/Punkte/Krit/Serie/Formation/Joker + **Zeitsegment**), **Formations-Regeln**
-  (Abstieg, Enger Wechsel, Verstärkte Wiederholung, Nachhall, Farballianz, Offene Grenze, Formationskern,
-  Feinjustierung) und **Planung** (Perk-/Skill-Neuwurf, Legendensuche, Warenwechsel, Reservierung,
-  Schicksalskontrolle). **Positionsanker** hängen an der Deckposition (nicht `card.id`); das **Zeitsegment**
-  wiederholt ein Segment im Durchlauf (`playSequence`).
+- **Angebot:** `ARCHITECT_OFFER = 3` Baupläne je Phase + „Aufwerten", höchstens **eine** legendäre Familie
+  (`ARCHITECT_LEGENDARY_CHANCE`), Kategorie-gewichtet (`ARCHITECT_CAT_WEIGHT`). Deterministisch über den
+  Lauf-Seed; **neu würfelbar** über den Gebäude-Reroll-Pool (#263).
+- **Ablauf (#261):** Bauplan wählen = verbindlich → Gebäude wird sofort platziert → eine kombinierte
+  Verschiebe-/Dreh-Phase (alle Gebäude frei ziehbar) → **ein** „Bestätigen" startet den Durchlauf. Kein
+  Platz → Ersetzen-Menü im Skill-Stil.
+- **Gebäude-Familien** (`ARCHITECT_FAMILIES`, 4 Stufen I–IV + Legendäre): drei Kategorien **Wert** (Stichwert-
+  Boosts), **Score** (Flat/Serie/Crit/Meilenstein) und **Formation** (Anker/Joker/Formations-Mult/Segment
+  öffnen). Struktur-Kombis (volle Zeile/Spalte/Diagonale) stapeln multiplikativ; colorLocked-Gebäude buffen
+  eine wählbare Farbe.
+- **Reroll-Ökonomie (#263):** drei getrennte Pools je Lauf à `BASE_REROLLS` (2) — **Perks · Gebäude · Skills**,
+  nicht untereinander teilbar, kein Nachschub. Meisterrang zieht die Pools stattdessen aus `masteryRerollBonus`.
+
+> Die **Positionsanker**/das **Zeitsegment** aus dem alten Shop leben als inerter Substate in `shop.js` weiter
+> (`initialShop`), sind aber im Architekt-Spiel ohne Funktion.
 
 ---
 
@@ -255,7 +277,7 @@ Stufe; `TIER_WEIGHTS` die Angebots-Gewichtung. Flache Legendäre laufen weiter �
 
 `StartScreen`, `Controls`, `Battlefield` (+ Klingenschnitt-/Float-„Juice"), `Card`/`CardBack`, `CardGrid`,
 `CardDetail`, `BuildPanel`/`BuildSummary`, `PerkSelect`/`StatSelect`/`SkillSelect`, `FormationPhase`,
-`ShopScreen` (+ `ShopTargetSelect`/`FamilyTargetSelect`/`TargetSelect`), `StatusRail`, `ChronikOverview`
+`ArchitectScreen` (Bauphase, #202) + `FamilyTargetSelect`/`TargetSelect`, `StatusRail`, `ChronikOverview`
 (Kartenübersicht), `GameOver`, `GlobalLeaderboard`, `MusicBar`/`MuteButton`, `AnleitungModal`,
 `OptionsModal`, `UsernameModal`, Archetyp-HUD (`HeatBar`/`ChargeBar`/`CrystalBar`/`FrostOverlay`),
 `Sparkline`, `CrtParticles`.
@@ -298,7 +320,7 @@ src/App.jsx        useReducer-State + Seiteneffekte (Auto-Play-Takt, Timer, Geis
 
 | Konstante | Wert | Bedeutung |
 |---|---|---|
-| `MAX_CYCLES` | 44 | Feste Lauflänge in Deck-Durchläufen (danach Ende). |
+| `MAX_CYCLES` | 60 | Feste Lauflänge in Deck-Durchläufen (danach Ende). |
 | `TRICKS_PER_CYCLE` | 40 | Stiche je Durchlauf (aus Deckgröße abgeleitet). |
 | `SCORE_PER_WIN` | 100 | Basispunkte je Sieg. |
 | `CRIT_BASE_MULT` | 1,5 | Basis-Crit-Faktor (Crit-Mult-Stat baut darauf auf). |
@@ -309,8 +331,9 @@ src/App.jsx        useReducer-State + Seiteneffekte (Auto-Play-Takt, Timer, Geis
 | `SEGMENT_SIZE` *(formations.js)* | 5 | Formations-Segmentgröße (Arena-Grenzen). |
 | `OVERLAP_BONUS` *(formations.js)* | {2:1,5 · 3:2 · 4:3} | Überlappungs-Multiplikator je Anzahl Formationen. |
 | `PERKS_OFFERED` / `SKILLS_OFFERED` / `SKILL_SLOTS` | 3 / 6 / 4 | Angebotsgrößen. |
-| `STARTING_COINS` / `BASE_COINS_PER_CYCLE` / `SHOP_INCOME_PER_LEVEL` | 2 / 2 / 3 | Shop-Münzökonomie. |
-| `SHOP_PRICE` | 8/12/18/30 | Vier feste Preisstufen (cheap/strong/premium/legendary). |
+| `BASE_REROLLS` | 2 | Reroll-Pool je Kategorie/Lauf (#263: getrennt Perks · Gebäude · Skills). |
+| `ARCHITECT_OFFER` / `MAX_COVER` | 3 / 24 | Baupläne je Architekt-Angebot / Baufeld-Kapazität (Rang +2/Grad ab II). |
+| `SKILL_LEGENDARY_BASE` / `PERK_LEGENDARY_BASE` | 0,03 / 0,03 | Basis-Legendär-Chance je Skill-Archetyp / Perk-Angebot. |
 | `RARITY_WEIGHTS` | {100/25/9} | Gewicht flacher Perks (common/rare/legendary). |
 | `BASE_FLIP_MS` | 1750 | ms je Stich (Speed 1×; score-neutral). |
 | `GHOST_STEP` | 13 | Geist-Score-Stützstelle alle N Stiche. |
@@ -323,7 +346,7 @@ Archetyp- und Shop-Familien-Feintuning stehen ebenfalls im Tuning-Block (`LIGHTN
 
 ## 17. Tests & Deployment
 
-- **Tests:** Vitest, nur der `game/`-Layer — **746 Fälle** in 36 Dateien (`vite.config.js` → `environment: "node"`).
+- **Tests:** Vitest, nur der `game/`-Layer — **680+ Fälle** in 37 Dateien (`vite.config.js` → `environment: "node"`).
   `npm test` / `npm run test:watch`.
 - **Deployment:** GitHub Actions auf Push nach `main` → `npm ci` → `npm test` → `npm run build` → Pages.
   `vite.config.js`: `base = "/autostich/"` beim Build (Testbranch überschreibt via `DEPLOY_BASE`), `"/"` im Dev.
