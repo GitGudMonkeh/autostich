@@ -352,7 +352,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   }, [dragPrev]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const structLit = (pos) => (structF[pos] || 1) > 1;
-  const showRotate = selId != null && buildings.some((x) => x.id === selId) && (phase === "place" || phase === "move");
+  // #262: „⟳ Drehen" nur zeigen, wenn die Form eine ECHTE Alternativlage hat (shapeRotations > 1). Sonst wäre der
+  // Button tot — z. B. bei den legendären zeile-Gebäuden (Basilika/Kathedrale/Prunksaal/Fundamentplatte) sowie
+  // block2x2/single (alle in NO_ROTATE). Verhindert den wirkungslosen Button.
+  const selForRotate = selId != null ? buildings.find((x) => x.id === selId) : null;
+  const selRotatable = !!selForRotate && shapeRotations(familyDef(selForRotate.familyId).form).length > 1;
+  const showRotate = selRotatable && (phase === "place" || phase === "move");
   const pendingFam = pending ? familyDef(pending.familyId) : null;
 
   return (
