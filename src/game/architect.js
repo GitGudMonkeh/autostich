@@ -93,8 +93,11 @@ const SHAPES = {
   // Nicht-zwingend-zusammenhängende / Streu-Formen (#Pool-Umbau): die Geometrie (shapeRotations/enumeratePlacements/
   // isValidFootprint) arbeitet auf reinen Zellmengen → getrennte Zellen sind gültig. `luecke` = Domino mit Loch
   // (überspannt ein Segment, lässt die Mitte frei); `plus` = Plus-Pentomino (4-fach symmetrisch → 1 Lage).
-  luecke:    [[0, 0], [0, 2]],                          // zwei Zellen mit Lücke (nicht zusammenhängend)
-  plus:      [[0, 1], [1, 0], [1, 1], [1, 2], [2, 1]],  // Plus-Pentomino (5 Zellen)
+  luecke:     [[0, 0], [0, 2]],                          // zwei Zellen mit Lücke (nicht zusammenhängend)
+  plus:       [[0, 1], [1, 0], [1, 1], [1, 2], [2, 1]],  // Plus-Pentomino (5 Zellen)
+  diag3:      [[0, 0], [1, 1], [2, 2]],                  // Diagonal-Tromino (nicht zusammenhängend, 3 Zellen)
+  zwilling:   [[0, 0], [2, 0]],                          // zwei Zellen, gleiche Spalte, Lücke (nicht zusammenhängend)
+  grundstueck:[[0, 0], [0, 2], [2, 0], [2, 2]],          // vier Ecken eines 3×3 (nicht zusammenhängend, 4 Zellen)
 };
 const NO_ROTATE = new Set(["zeile", "single", "block2x2"]); // symmetrisch/zeilengebunden → eine Lage genügt
 
@@ -182,6 +185,7 @@ export const ARCHITECT_FAMILIES = {
   A_FIRST:    { id: "A_FIRST",    name: "Firstträger",  category: "value", form: "line4",     base: { kind: "target", value: 3 }, target: "highest" },
   A_SOCKEL:   { id: "A_SOCKEL",   name: "Sockel",       category: "value", form: "tetro_l",   base: { kind: "target", value: 3 }, target: "lowest" },
   A_ZUNFTV:   { id: "A_ZUNFTV",   name: "Zunftviertel", category: "value", form: "tromino_l",  base: { kind: "neighbor", value: 1, cap: 3 } }, // #Pool: +Wert je Nachbargebäude
+  A_WEHRGANG: { id: "A_WEHRGANG", name: "Wehrgang",     category: "value", form: "grundstueck", base: { kind: "segment", value: 2, half: "early" } }, // #Pool Batch 3: +Wert nur in den frühen Segmenten
 
   /* ---- score · Handelsbauten (I–IV) ---- */
   // tierKick (#Pool): ab Stufe `at` zündet ein QUALITATIVER Zusatzeffekt (nicht nur die skalierte Zahl) → Ausbau
@@ -198,6 +202,9 @@ export const ARCHITECT_FAMILIES = {
          Zahlen zählen erst, wenn dicht/strukturiert gebaut wird → Spannung gegen die Struktur-Streuung (Zeile/Spalte). ---- */
   A_MARKT:       { id: "A_MARKT",       name: "Marktplatz",  category: "score", form: "plus",   base: { kind: "neighbor", score: 20, cap: 4 } },
   A_SPEICHER:    { id: "A_SPEICHER",    name: "Speicherstadt", category: "score", form: "luecke", base: { kind: "compound", score: 40 } },
+  // Lage/Staffel (#Pool Batch 3): Effekt hängt von der POSITION ab (Segment-Hälfte / Weitergabe) → Platzierung zählt.
+  A_VORWERK:     { id: "A_VORWERK",     name: "Vorwerk",     category: "score", form: "zwilling", base: { kind: "segment", score: 70, half: "early" } }, // nur in den frühen 4 Segmenten
+  A_LAUFGANG:    { id: "A_LAUFGANG",    name: "Laufgang",    category: "score", form: "diag3",    base: { kind: "relay", score: 50 } },               // reicht Score ans Feld rechts weiter
 
   /* ---- formation · Sakralbau (I–IV) ---- */
   A_KLAMMER:    { id: "A_KLAMMER",    name: "Klammer",    category: "formation", form: "domino",    base: { kind: "joker", types: ["farbblock"] }, tierKick: { at: 3, addType: "wiederholung" } },
@@ -364,6 +371,15 @@ export function precomputeArchitect(architect, order, deck) {
     }
     // formation-Gebäude wirken sonst über architectFormSpec (computeFormations), nicht hier.
   }
+  // #Pool Batch 3 relay (Staffel): Laufgang reicht seinen Score an die Zelle RECHTS jeder Fußabdruck-Zelle weiter.
+  // Eigener additiver Kanal (nicht der Ein-Effekt-pro-Position-Slot) → keine Kollision mit dem Ziel-Score-Gebäude.
+  const relayFlat = new Array(N_POS).fill(0);
+  for (const b of buildings) {
+    const fam = familyDef(b.familyId);
+    if (!fam || (fam.base && fam.base.kind) !== "relay") continue;
+    const amt = tierNum(fam.base.score, b.tier);
+    for (const p of b.footprint) if (colOf(p) < COLS - 1) relayFlat[p + 1] += amt;
+  }
   // Struktur-Boni (Zeile/Spalte/Diagonale) — multiplikativ auf jede beteiligte Position.
   const coverSet = new Set(); for (let p = 0; p < N_POS; p++) if (cover[p]) coverSet.add(p);
   const sf = structureFactorMap(coverSet);
@@ -371,7 +387,7 @@ export function precomputeArchitect(architect, order, deck) {
   // #Pool: cover/coverCount für Gebäude-Perks (Eckstein liest cover[actualPos], Dichte Bebauung coverCount).
   // segFactor[p] > 1 markiert zusätzlich eine vollendete Struktur (Zeile/Spalte/Diagonale) an der Position.
   // structureCount = Anzahl vollendeter Strukturen (Richtfest, Durchlauf-Ende).
-  return { value, score, segFactor, cover, coverCount: coverSet.size, structureCount: completedStructures(coverSet) };
+  return { value, score, segFactor, relayFlat, cover, coverCount: coverSet.size, structureCount: completedStructures(coverSet) };
 }
 
 // Löst die (positionsgebundenen) value-/score-Effekte eines Gebäudes auf → [ [pos, effect], … ].
@@ -408,6 +424,9 @@ function resolveNumEffect(fam, b, cat, order, deck, cardVal, boardCtx = {}) {
     else if (base.kind === "milestone") e = { kind: "milestone", amount: tierNum(base.score, b.tier), every: kickOn ? fam.tierKick.every : base.every, buildingId: b.id };
     else if (base.kind === "mult") e = { kind: "mult", factor: base.factor }; // Schatzkammer (legendär, keine Stufe)
     else if (base.kind === "neighbor" || base.kind === "compound") e = { kind: "flat", amount: bakedFlat() };
+    // #Pool Batch 3 segment (Lage): Zelle wirkt nur in ihrer Segment-Hälfte (early = Zeilen 0..3). Zeile steht fest →
+    // hier entschieden und auf flat gebacken (qualifizierende Zellen bekommen den Betrag, andere gar keinen Effekt).
+    else if (base.kind === "segment") { const early = rowOf(p) < ROWS / 2; if (base.half === "early" ? early : !early) e = { kind: "flat", amount: tierNum(cat === "value" ? base.value : base.score, b.tier) }; }
     // Stufen-Kicker (#Pool): qualitativer Zusatz ab Stufe `at` — als Zusatzfeld am flat/streak-Effekt (Engine liest es).
     if (kickOn && e) {
       if (e.kind === "flat" && fam.tierKick.mult) e.mult = fam.tierKick.mult;                       // Zollhaus IV: ×Mult
@@ -433,7 +452,8 @@ export function architectValueBonus(pre, actualPos, pCard) {
 // score: bei Sieg an actualPos → { flat (in scoreBase), mult (eigener Faktor), bump (Gebäude-id für Meilenstein-Zähler) }.
 // Häuserzeile fließt IMMER als Mult (segFactor). `ctx` = { isCrit, serieStreak, suit }; `counters` = winCounters (Lesen).
 export function architectScore(pre, actualPos, ctx, counters) {
-  let flat = 0, mult = pre ? (pre.segFactor[actualPos] || 1) : 1, bump = null;
+  // #Pool Batch 3: relayFlat (Staffel) fließt IMMER ein, wenn die Zielposition gewinnt — unabhängig vom eigenen Effekt hier.
+  let flat = (pre && pre.relayFlat && pre.relayFlat[actualPos]) || 0, mult = pre ? (pre.segFactor[actualPos] || 1) : 1, bump = null;
   const e = pre && pre.score[actualPos];
   if (e) {
     switch (e.kind) {

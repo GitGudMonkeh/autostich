@@ -161,6 +161,17 @@ describe("Architekt — score-Effekte", () => {
     expect(r4.flat).toBe(tierNum(ARCHITECT_FAMILIES.A_MEILENSTEIN.base.score, 1)); expect(r4.bump).toBe(1);
     expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, { 1: 0 }).flat).toBe(0); // next = 1
   });
+  it("segment (Vorwerk, #Pool): zahlt nur in der frühen Segment-Hälfte (Zeilen 0..3)", () => {
+    const pre = precomputeArchitect({ buildings: [B("A_VORWERK", [0, 25], 1)] }, idOrder, deck); // Pos 0 = Zeile 0 (früh), Pos 25 = Zeile 5 (spät)
+    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(tierNum(ARCHITECT_FAMILIES.A_VORWERK.base.score, 1));
+    expect(architectScore(pre, 25, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(0); // späte Hälfte → kein Effekt
+  });
+  it("relay (Laufgang, #Pool): reicht den Score an das Feld rechts jeder Zelle weiter; am Gebäude selbst 0", () => {
+    const pre = precomputeArchitect({ buildings: [B("A_LAUFGANG", [0, 6, 12], 1)] }, idOrder, deck);
+    const amt = tierNum(ARCHITECT_FAMILIES.A_LAUFGANG.base.score, 1);
+    for (const p of [1, 7, 13]) expect(architectScore(pre, p, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(amt);
+    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(0);
+  });
   it("Häuserzeile: volle Segment-Zeile → ×Faktor auf Siege im Segment", () => {
     const pre = precomputeArchitect({ buildings: [B("A_STUETZE", [0, 1, 2, 3, 4], 1)] }, idOrder, deck);
     expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).mult).toBeCloseTo(HAEUSERZEILE_FACTOR);

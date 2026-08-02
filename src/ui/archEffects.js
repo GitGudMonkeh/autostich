@@ -45,6 +45,8 @@ export function architectEffectStrings(pre, pos, card, fam = null, tier = 1) {
       default: break;
     }
   }
+  const rf = pre && pre.relayFlat && pre.relayFlat[pos]; // #Pool Batch 3: eingestaffelter Score (Laufgang von links)
+  if (rf > 0) out.push(`+${rf} Score (Staffel)`);
   const sf = pre && pre.segFactor && pre.segFactor[pos];
   if (sf && sf > 1.0001) out.push(`Struktur ×${fmt(sf)}`); // Zeile/Spalte/Diagonale
   return out;

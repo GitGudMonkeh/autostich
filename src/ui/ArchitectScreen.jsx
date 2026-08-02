@@ -827,6 +827,9 @@ function famEff(fam, b) {
     // #Pool: Distrikt-Effekte — hängen vom Brett ab (Nachbarschaft / vollendete Strukturen).
     case "neighbor":   s = fam.category === "value" ? `+${nz(base.value)} Stichwert je Nachbargebäude (max ${base.cap})` : `Sieg +${nz(base.score)} Score je Nachbargebäude (max ${base.cap})`; break;
     case "compound":   s = `Sieg +${nz(base.score)} Score je vollendeter Struktur`; break;
+    // #Pool Batch 3: Lage/Staffel — hängen von der Position ab.
+    case "segment":    s = `${base.half === "early" ? "frühe" : "späte"} Segmente ${fam.category === "value" ? `+${nz(base.value)} Stichwert` : `+${nz(base.score)} Score`}`; break;
+    case "relay":      s = `reicht +${nz(base.score)} Score ans Feld rechts weiter`; break;
     case "joker":      s = `Formations-Joker (${base.types.join("/")})`; break;
     case "transparentFarb": s = "Farbblock-Transparenz"; break;
     case "bind":       s = `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`; break;
