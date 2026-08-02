@@ -42,7 +42,7 @@ export function ScoreSourceBar({ state, showTitle = true }) {
   const pct = (v) => Math.round((v / total) * 100);
   return (
     <div>
-      {showTitle && <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Woraus kommt der Score</div>}
+      {showTitle && <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Score-Herkunft</div>}
       <div className="flex w-full h-4 rounded overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
         {SRC.map((s) => { const v = sh[s.key]; if (!v) return null;
           return <div key={s.key} title={`${s.label}: ${fmtScore(v)} (${pct(v)} %)`} style={{ width: `${(v / total) * 100}%`, background: s.color }} />; })}

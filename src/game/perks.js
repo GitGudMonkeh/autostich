@@ -6,6 +6,7 @@ import { lightningCritRaw } from "./skills.js";
 // Deutsche Zahlformatierung (2.5 → „2,5") — Beschreibungszahlen aus den Konstanten interpolieren (kein Text↔Code-Drift).
 const de = (x) => String(x).replace(".", ",");
 const pct = (x) => Math.round(x * 100);
+const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Tausendertrenner (1600 → „1.600")
 
 /* ============================================================
    PERK-REGISTRY  — datengetrieben (wie clauses.js in TrickLadder).
@@ -80,7 +81,7 @@ export const PERK_DEFS = {
   L_UMV: { id: "L_UMV", cat: "A", rarity: "legendary", label: "Umverteilung", redistribute: true,
         desc: "Sofort: alle Karten nehmen dauerhaft den durchschnittlichen Kartenwert des Decks an (keine Karte wird entfernt). Stark bei schiefem Deck." },
   L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
-        desc: `Jeder Durchlauf mit positiver Bilanz (mehr Siege als Niederlagen) hebt einen Dauer-Bonus um +${C.ZINSESZINS_STEP} Score; der aufgestapelte Bonus wird am Ende jedes Durchlaufs ausgezahlt (flach, kein Multiplikator).` },
+        desc: `Jeder Durchlauf mit positiver Bilanz (mehr Siege als Niederlagen) hebt einen Dauer-Bonus um +${grp(C.ZINSESZINS_STEP)} Score; der aufgestapelte Bonus wird am Ende jedes Durchlaufs ausgezahlt (flach, kein Multiplikator).` },
   L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,
         desc: `Eröffnungs-Wette: Gewinnst du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge, gibt es +${C.VABANQUE_SCORE} Score (bis zu ${C.VABANQUE_MAX_PAYOUTS} Mal pro Lauf).` },
   L_HENK: { id: "L_HENK", cat: "D", rarity: "legendary", label: "Henker", henker: true,
@@ -97,12 +98,12 @@ export const PERK_DEFS = {
   //     ausgewertet, KEIN Engine-Flag/-Umbau. Belohnt einen Mono-Farb-Build: der Zusatz-Mult wächst mit der
   //     Farbserie (suitStreak, schon im Sieg-ctx) und läuft multiplikativ im Score-Stack. „Verstärker, kein Motor". ---
   L_MONO: { id: "L_MONO", cat: "D", rarity: "legendary", label: "Monochrom",
-        desc: `Jeder Sieg in einer Farbserie zählt ×(1 + ${pct(C.MONOCHROM_STEP)} % je Folgesieg derselben Farbe, höchstens +${pct(C.MONOCHROM_CAP)} %). Ein Farbwechsel oder eine Niederlage setzt die Farbserie zurück.`,
+        desc: `Aufeinanderfolgende Siege derselben Farbe: je Folgesieg +${pct(C.MONOCHROM_STEP)} % Score, höchstens +${pct(C.MONOCHROM_CAP)} %. Ein Farbwechsel oder eine Niederlage setzt die Farbserie zurück.`,
         scoreMult: (ctx) => 1 + Math.min(C.MONOCHROM_STEP * Math.max(0, (ctx.suitStreak || 1) - 1), C.MONOCHROM_CAP) },
   // --- Gebäude-Legendäre (Architekt-Lane, needsArchitect → nur bei aktivem Architekten im Angebot). Flag-verdrahtet
   //     wie die #203-Legendären: `richtfest` am Durchlauf-Ende (engine.js), `bauhuette` beim Pick (reducer.js). ---
   L_RICHT: { id: "L_RICHT", cat: "E", rarity: "legendary", label: "Richtfest", richtfest: true, needsArchitect: true,
-        desc: `Am Ende jedes Durchlaufs: je vollendeter Gebäude-Struktur (volle Zeile, Spalte oder Diagonale) +${C.RICHTFEST_STEP} dauerhafter Score. Der aufgestapelte Bonus wird jeden Durchlauf ausgezahlt (flach, kein Multiplikator).` },
+        desc: `Am Ende jedes Durchlaufs: je vollendeter Struktur (volle Zeile, Spalte oder Diagonale) +${C.RICHTFEST_STEP} dauerhafter Score. Der aufgestapelte Bonus wird am Ende jedes Durchlaufs ausgezahlt (flach, kein Multiplikator).` },
   L_BAUH: { id: "L_BAUH", cat: "E", rarity: "legendary", label: "Bauhütte", bauhuette: true, needsArchitect: true,
         desc: `Sofort: das Baufeld des Architekten wächst dauerhaft um ${C.BAUHUETTE_COVER} Zellen — du kannst mehr Gebäude platzieren.` },
 };

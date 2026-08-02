@@ -133,7 +133,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
       {/* #252: Score-Quellen-Balken LIVE (geteilte Komponente mit dem Victory-Screen) — einklappbar, default eingeklappt,
           Zustand über Runs gemerkt. Nur zeigen, wenn schon Score da ist. */}
       {sourceShares(state).score > 0 && (
-        <Collapsible title="Woraus kommt der Score"
+        <Collapsible title="Score-Herkunft"
           collapsed={options.collapseScoreSource ?? true}
           onToggle={() => onOption && onOption({ collapseScoreSource: !(options.collapseScoreSource ?? true) })}>
           <ScoreSourceBar state={state} showTitle={false} />

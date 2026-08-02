@@ -645,7 +645,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       style={{ background: "#16232f", border: `1px dashed ${CAT.value.color}66`, opacity: canUpgradeAny ? 1 : 0.4, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
                       <div className="text-lg leading-none">⬆</div>
                       <div className="text-[13px] font-bold leading-tight">Aufwerten</div>
-                      <div className="text-[10px] font-mono opacity-60 leading-snug">ein Gebäude +1 Stufe{canUpgradeAny ? "" : " · nichts ausbaubar"}</div>
+                      <div className="text-[10px] font-mono opacity-60 leading-snug">ein Gebäude +1 Stufe{canUpgradeAny ? "" : " · nichts aufwertbar"}</div>
                     </button>
                   </div>
                   {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). */}
@@ -849,7 +849,7 @@ function famEff(fam, b) {
     case "flat":       s = fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`; break;
     case "lowValue":   s = `niedrige Karten +${nz(base.value)} Stichwert`; break;
     case "color":      s = fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`; break;
-    case "target":     s = `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Punkte"}`; break;
+    case "target":     s = `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Score"}`; break;
     case "streak":     s = `Sieg +${nz(base.score)} Score × Serie`; break;
     case "crit":       s = `Crit-Sieg +${nz(base.score)} Score`; break;
     case "milestone":  s = `jeder ${base.every}. Sieg +${nz(base.score)} Score`; break;
@@ -861,7 +861,7 @@ function famEff(fam, b) {
     case "segment":    s = `${base.half === "early" ? "frühe" : "späte"} Segmente ${fam.category === "value" ? `+${nz(base.value)} Stichwert` : `+${nz(base.score)} Score`}`; break;
     case "relay":      s = base.both ? `strahlt +${nz(base.score)} Score in beide Nachbarfelder` : `reicht +${nz(base.score)} Score ans Feld rechts weiter`; break;
     // #Pool Batch 4: Risiko — Crit-Wette.
-    case "gamble":     s = `Crit-Sieg +${nz(base.score)} Score · Sieg ohne Crit −${base.penalty}`; break;
+    case "gamble":     s = `Crit-Sieg +${nz(base.score)} Score · Sieg ohne Crit −${base.penalty} Score`; break;
     case "joker":      s = `Formations-Joker (${base.types.join("/")})`; break;
     case "transparentFarb": s = "Farbblock-Transparenz"; break;
     case "bind":       s = `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`; break;
@@ -875,11 +875,11 @@ function famEff(fam, b) {
     const k = fam.tierKick, on = t >= k.at;
     let kickTxt = "";
     if (k.mult) kickTxt = `zusätzlich ×${k.mult} Score`;
-    else if (k.critFlatMult) kickTxt = `bei Crit ×${k.critFlatMult} Flat`;
+    else if (k.critFlatMult) kickTxt = `bei Crit ×${k.critFlatMult} Direkt-Score`;
     else if (k.streakDoubleFrom) kickTxt = `ab Serie ${k.streakDoubleFrom} doppelt`;
     else if (k.every) kickTxt = `jeder ${k.every}. statt ${base.every}. Sieg`;
-    else if (k.addType) kickTxt = `+Joker ${k.addType}`;
-    else if (k.ankerValue) kickTxt = `+${k.ankerValue} Stichwert je Zelle`;
+    else if (k.addType) kickTxt = `zweiter Joker-Typ: ${k.addType}`;
+    else if (k.ankerValue) kickTxt = `+${k.ankerValue} Stichwert je Ankerzelle`;
     if (kickTxt) s += on ? ` · ${kickTxt}` : ` (Stufe ${k.at}: ${kickTxt})`;
   }
   return s;

@@ -39,7 +39,7 @@ describe("RunGraphs sourceShares", () => {
       trickLog: [[{ gained: 50, won: true }, { gained: 0, won: false }], [{ gained: 120, won: true }]],
     };
     const html = renderToStaticMarkup(createElement(RunGraphs, { state }));
-    expect(html).toContain("Woraus kommt der Score");
+    expect(html).toContain("Score-Herkunft");
     expect(html).toContain("Stich-Score je Durchlauf");
     expect(html).toContain("D1"); // Durchlauf-Label
   });
