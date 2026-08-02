@@ -36,10 +36,9 @@ function offerView(entry, familyTiers = {}) {
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
 export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], deck = [], state = {} }) {
-  // Neuwurf (#202/#214): gratis Reroll (Schicksalskontrolle) zuerst, sonst der geteilte Reroll-Pool (Perk+Skill).
-  const freeReroll = !!state.freePerkReroll;
-  const rerollTokens = state.rerolls || 0;
-  const canReroll = !!onReroll && (freeReroll || rerollTokens > 0);
+  // Neuwurf (#263): eigener Perk-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
+  const rerollTokens = state.rerollsPerk || 0;
+  const canReroll = !!onReroll && rerollTokens > 0;
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
   const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning, statCritChance = 0, statCritMult = 0 } = state;
   // Crit inkl. Blitz-Basis (lightning) + Crit-Chance-Stat — dieselbe geteilte Quelle wie Engine/StatusRail (kein Drift).
@@ -128,7 +127,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             <button onClick={onReroll}
               className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
               style={{ background: "#20202a", color: LEG_GOLD, border: `1px solid ${LEG_GOLD}66` }}>
-              🎲 Angebot neu würfeln {freeReroll ? "· gratis" : `· ${rerollTokens} übrig`}
+              🎲 Angebot neu würfeln · {rerollTokens} übrig
             </button>
           )}
           {onDecline && (
