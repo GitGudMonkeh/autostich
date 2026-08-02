@@ -17,16 +17,16 @@ import { GlossaryPanel } from "./Glossary.jsx";
 import { useEscape } from "./useEscape.js";
 
 /* ============================================================
-   Der Architekt (#202) — natürlicher Bau-Ablauf (#224.12, „experiment: fühlt sich das besser an?").
+   Der Architekt (#202) — Präsentations-Rework (#261): perk-artige Auswahl + EIN durchgehender Verschiebe-Flow.
    Ablauf je Phase:
-     choose   — Fenster mit 3 Bauplänen (perk-artig) + 4. Wahl „Aufrüsten"; darunter das Board (Vorschau).
-     place    — nur Board: das gewählte Gebäude liegt als VORSCHAU drauf; ziehen/⟳ drehen; „Bauen" committet.
-     upgrade  — nur Board: ein bestehendes Gebäude antippen → +1 Stufe → danach.
-     after    — „Verschieben" ODER „Beenden".
-     move     — nur Board: Gebäude beliebig oft ziehen; „Bestätigen" → Durchlauf startet.
-   Löschen: KEIN Dauerknopf mehr — passt ein gewählter Bauplan nirgends (Deckel/kein Platz), wird angeboten,
-   ein bestehendes Gebäude zu entfernen (removeFor), danach wird automatisch platziert.
-   Bauen ist bis „Bauen" nur LOKALE Vorschau (pending) — Reducer bleibt unverändert (onBuild erst beim Commit).
+     choose   — Auswahlfenster im Perk-Stil: 3 Baupläne + „Aufwerten" als 4. Karte, alle vier NEBENEINANDER;
+                darunter das Board. Die Wahl ist VERBINDLICH.
+     upgrade  — Board: ein bestehendes Gebäude wählen → Jetzt/Danach → „Aufwerten bestätigen" → move.
+     move     — EINE kombinierte Platzier-/Verschiebe-Phase: ALLE Gebäude (inkl. des eben gewählten) frei
+                ziehen/⟳ drehen; colorLocked-Buff-Farbe hier anpassen (onRecolor); EIN „Bestätigen" startet den Durchlauf.
+   Kein „Bauen"-Button mehr: die Wahl baut SOFORT (chooseOffer → onBuild, commit-on-choose) und landet direkt in move.
+   Ersetzen (#261): passt ein Bauplan nirgends (Deckel/kein Platz), erscheint ein Skill-artiges Ersetzen-Menü
+   (Liste der Gebäude, removeFor) — die Auswahl wird am Board hervorgehoben, dann abgerissen und automatisch gebaut.
    Geometrie/Validierung aus architect.js (SSOT); Aktionen als echte Reducer-Dispatches.
    ============================================================ */
 
@@ -70,7 +70,7 @@ function MiniShape({ form, color, rotIdx = 0 }) {
   );
 }
 
-export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onDemolish, onDone }) {
+export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onDemolish, onRecolor, onReroll, onDone }) {
   useEscape(onDone);
   const architect = state.architect || { buildings: [], offers: [] };
   const committed = architect.buildings || [];
@@ -217,32 +217,29 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const fits = enumeratePlacements(fam.form, committed);
     return fits.length ? fits[0] : null;
   };
+  // #261: Bauplan wählen = VERBINDLICH → das Gebäude wird SOFORT committet (kein „Bauen"-Button, kein Zurück ins
+  // Auswahlfenster) und ist direkt Teil der einen kombinierten Platzier-/Verschiebe-Phase ("move"). Ein einziges
+  // „Bestätigen" am Ende schließt ab. Kein Platz → Ersetzen-Menü (Skill-Stil, s. removeFor).
   const chooseOffer = (o) => {
     if (o.used) return;
     const fam = familyDef(o.familyId); if (!fam) return;
     const fp = fitFor(o);
-    if (!fp) { setRemoveFor(o); return; }                // kein Platz → entfernen anbieten
-    setPending({ familyId: o.familyId, tier: o.tier, legendary: o.legendary, colorChoice: fam.colorLocked ? colorPick : null, footprint: fp });
-    setSelId(PENDING_ID);
-    setPhase("place");
+    if (!fp) { setRemoveFor(o); return; }                // kein Platz → Ersetzen-Menü
+    const newId = architect.nextId;                      // Reducer vergibt genau diese id an das neue Gebäude
+    onBuild?.({ familyId: o.familyId, tier: o.tier, footprint: fp, colorChoice: fam.colorLocked ? colorPick : null });
+    setSelId(newId); setPhase("move");
   };
-  // Sobald durch Entfernen Platz frei wird, den wartenden Bauplan automatisch platzieren.
+  // Sobald durch Entfernen Platz frei wird, den wartenden Bauplan automatisch bauen (und in die Verschiebe-Phase).
   useEffect(() => {
     if (!removeFor) return;
     const fp = fitFor(removeFor);
     if (fp) {
       const fam = familyDef(removeFor.familyId);
-      setPending({ familyId: removeFor.familyId, tier: removeFor.tier, legendary: removeFor.legendary, colorChoice: fam.colorLocked ? colorPick : null, footprint: fp });
-      setSelId(PENDING_ID); setPhase("place"); setRemoveFor(null); setPendingDemolish(null);
+      const newId = architect.nextId;
+      onBuild?.({ familyId: removeFor.familyId, tier: removeFor.tier, footprint: fp, colorChoice: fam.colorLocked ? colorPick : null });
+      setSelId(newId); setPhase("move"); setRemoveFor(null); setPendingDemolish(null);
     }
   }, [committed, removeFor]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const confirmBuild = () => {
-    if (!pending) return;
-    onBuild?.({ familyId: pending.familyId, tier: pending.tier, footprint: pending.footprint, colorChoice: pending.colorChoice });
-    setPending(null); setSelId(null); setPhase("move"); // direkt ins Fertig-/Verschieben-Panel (ein Panel, ein Bestätigen)
-  };
-  const cancelPending = () => { setPending(null); setSelId(null); setPhase("choose"); };
   // #235: markiertes Gebäude wirklich abreißen (danach platziert der removeFor-Effekt den wartenden Bauplan automatisch).
   const confirmDemolish = () => { if (pendingDemolish == null) return; onDemolish?.(pendingDemolish); setPendingDemolish(null); };
   // #237: markiertes Gebäude wirklich aufwerten (erst nach „Aufwerten bestätigen" — nie durch einen Fehltipp).
@@ -355,7 +352,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   }, [dragPrev]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const structLit = (pos) => (structF[pos] || 1) > 1;
+  // #262: Eine Form ist nur drehbar, wenn sie mehr als eine distinkte Lage hat. `zeile` (Legendäre) sowie `single`/`block2x2`
+  // stehen in NO_ROTATE (architect.js) → shapeRotations liefert genau eine Lage → „⟳ Drehen" wäre wirkungslos.
+  const rotatableForm = (form) => shapeRotations(form).length > 1;
   const showRotate = selId != null && buildings.some((x) => x.id === selId) && (phase === "place" || phase === "move");
+  const selBuilding = buildings.find((x) => x.id === selId);
+  const selRotatable = !!selBuilding && rotatableForm(familyDef(selBuilding.familyId).form);
   const pendingFam = pending ? familyDef(pending.familyId) : null;
 
   return (
@@ -559,9 +561,30 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 return (
                   <div>
                     {!marked ? (
-                      <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
-                        <b>Kein Platz</b> für „{pendingFamName(removeFor)}“. Soll ein Gebäude weichen? Tippe eins (rot gestrichelt) zum <b>Markieren</b> — es wird erst nach Bestätigen abgerissen.
-                      </div>
+                      <>
+                        <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
+                          <b>Kein Platz</b> für „{pendingFamName(removeFor)}“. Welches Gebäude soll ersetzt werden? Wähle es unten — es wird am Brett hervorgehoben; abgerissen wird erst nach Bestätigen.
+                        </div>
+                        {/* #261: Ersetzen im Skill-Stil — Liste der bestehenden Gebäude; Auswahl markiert + hebt am Brett hervor (Board bleibt sichtbar). */}
+                        <div className="flex flex-col gap-1 mb-2">
+                          {committed.map((b) => {
+                            const bf = familyDef(b.familyId);
+                            if (!bf) return null;
+                            return (
+                              <button key={b.id} onClick={() => setPendingDemolish(b.id)}
+                                className="rounded-lg px-2.5 py-1.5 text-left text-[11px] font-mono leading-snug transition-all hover:brightness-110"
+                                style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>
+                                <span className="inline-flex items-center gap-1.5 align-middle">
+                                  <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[bf.category].color }} />
+                                  <b>{bf.name}</b>
+                                  <span className="opacity-55">{bf.legendary ? "Legendär" : `Stufe ${tierLabel(b.tier)}`}</span>
+                                </span>
+                                <span className="opacity-75"> — {famEff(bf, b)}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
                     ) : (
                       <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #ff6a4d" }}>
                         <div className="text-sm mb-1">Dieses Gebäude abreißen, um „{pendingFamName(removeFor)}“ zu bauen?</div>
@@ -584,11 +607,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 );
               })()}
 
-              {/* choose: 3 Baupläne + „Aufrüsten" */}
+              {/* #261: Auswahl im Perk-Stil — 3 Baupläne + „Aufwerten" als 4. Karte, alle vier NEBENEINANDER (kompakt).
+                  Die Wahl ist verbindlich: chooseOffer baut sofort und geht in die Verschiebe-Phase (kein Zurück). */}
               {!removeFor && phase === "choose" && (
                 <div>
                   <div className="text-sm font-semibold mb-2">Was baust du diese Phase?</div>
-                  <div className="flex flex-col gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {offers.map((o, idx) => {
                       const fam = familyDef(o.familyId);
                       if (!fam) return null;
@@ -597,53 +621,39 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       const noRoom = !fitFor(o);
                       return (
                         <button key={idx} onClick={() => chooseOffer(o)} disabled={o.used}
-                          className="rounded-lg p-2.5 text-left w-full transition-all hover:brightness-110"
+                          className="rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110"
                           style={{ background: "#16232f", border: `1px solid ${tierCol}`, opacity: o.used ? 0.4 : 1, cursor: o.used ? "not-allowed" : "pointer" }}>
-                          <div className="grid grid-cols-[auto_1fr_auto] gap-2.5 items-center">
+                          <div className="flex items-center justify-between gap-1">
                             <div className="p-1 rounded" style={{ background: "#0e1822" }}><MiniShape form={fam.form} color={cat.color} /></div>
-                            <div className="min-w-0">
-                              <div className="text-sm font-bold flex items-center gap-1.5">
-                                <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: cat.color }} />{fam.name}
-                              </div>
-                              <div className="text-[11px] font-mono opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
-                            </div>
-                            <div className="text-right flex flex-col items-end gap-1">
-                              <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded"
-                                style={{ background: `${tierCol}22`, color: tierCol, border: `1px solid ${tierCol}66` }}>
-                                {o.legendary ? "Legendär" : `Stufe ${tierLabel(o.tier)}`}
-                              </span>
-                              {!o.legendary && (() => { const u = upgradeInfo(fam, o.tier); return u.can ? null : <span className="text-[9px] font-mono" style={{ color: "#8a97a5" }} title="Aufwerten ändert bei diesem Effekt nichts">{u.reason === "max" ? "max. Stufe" : "keine Aufwertung"}</span>; })()}
-                              {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>kein Platz →</span>}
-                            </div>
+                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
+                              style={{ background: `${tierCol}22`, color: tierCol, border: `1px solid ${tierCol}66` }}>
+                              {o.legendary ? "★" : tierLabel(o.tier)}
+                            </span>
                           </div>
+                          <div className="text-[13px] font-bold flex items-center gap-1 leading-tight">
+                            <span className="w-[9px] h-[9px] rounded-full inline-block shrink-0" style={{ background: cat.color }} />{fam.name}
+                          </div>
+                          <div className="text-[10px] font-mono opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
+                          {!rotatableForm(fam.form) && <span className="text-[9px] font-mono" style={{ color: "#8a97a5" }} title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch).">nicht drehbar</span>}
+                          {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>kein Platz → ersetzen</span>}
                         </button>
                       );
                     })}
-                    {/* 4. Wahl: Aufrüsten */}
+                    {/* 4. Karte: Aufwerten */}
                     <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
-                      className="rounded-lg p-2.5 text-left w-full transition-all hover:brightness-110"
+                      className="rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110"
                       style={{ background: "#16232f", border: `1px dashed ${CAT.value.color}66`, opacity: canUpgradeAny ? 1 : 0.4, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
-                      <div className="text-sm font-bold">⬆ Aufwerten</div>
-                      <div className="text-[11px] font-mono opacity-60 leading-snug mt-0.5">ein Gebäude +1 Stufe{canUpgradeAny ? "" : " · nichts ausbaubar"}</div>
+                      <div className="text-lg leading-none">⬆</div>
+                      <div className="text-[13px] font-bold leading-tight">Aufwerten</div>
+                      <div className="text-[10px] font-mono opacity-60 leading-snug">ein Gebäude +1 Stufe{canUpgradeAny ? "" : " · nichts aufwertbar"}</div>
                     </button>
                   </div>
-                </div>
-              )}
-
-              {/* place: Vorschau-Gebäude positionieren */}
-              {!removeFor && phase === "place" && pending && (
-                <div>
-                  <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
-                    <b>Platzieren:</b> zieh das Gebäude (weiß gestrichelt) an die richtige Stelle, <b>⟳ Drehen</b> oben. „Bauen“ errichtet es.
-                  </div>
-                  {pendingFam && pendingFam.colorLocked && (
-                    <div className="flex items-center gap-1.5 mb-2 text-[11px] font-mono">
-                      <span className="opacity-60">bufft Farbe:</span>
-                      {SUIT_ORDER.map((s) => (
-                        <button key={s} onClick={() => setPending((p) => (p ? { ...p, colorChoice: s } : p))} className="w-5 h-5 rounded-full"
-                          style={{ background: SUIT_COLOR[s], outline: pending.colorChoice === s ? "2px solid #fff" : "none", outlineOffset: 1 }} title={s} />
-                      ))}
-                    </div>
+                  {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). */}
+                  {onReroll && (state.rerollsArch || 0) > 0 && (
+                    <button onClick={onReroll} className="w-full mt-2 rounded-lg py-2 text-xs font-bold transition-all hover:brightness-110"
+                      style={{ background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }}>
+                      🎲 Baupläne neu würfeln · {state.rerollsArch} übrig
+                    </button>
                   )}
                 </div>
               )}
@@ -675,24 +685,28 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     ) : (
                       <>
                         <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
-                          <b>Aufwerten:</b> tippe ein aufwertbares Gebäude an — du siehst aktuellen und nächsten Effekt und bestätigst unten. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
+                          <b>Aufwerten:</b> wähle unten ein Gebäude (oder tippe es am Brett an) — es wird gold markiert, du siehst aktuellen und nächsten Effekt und bestätigst unten. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
                         </div>
                         {upgradeMsg && (
                           <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
                             <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : "nicht aufwertbar"}.
                           </div>
                         )}
-                        {/* #232: Übersicht je aufwertbarem Gebäude — aktueller Effekt + Ziel-Stufe (Auswahl per Tap aufs Brett). */}
+                        {/* #232/#261: Liste ALLER aufwertbaren Gebäude — KLICKBAR (wie Skill-/Ersetzen-Menü). Ein Klick
+                            markiert das Gebäude (setPendingUpgrade) → es leuchtet gold am Brett und Jetzt/Danach erscheint;
+                            aufgewertet wird erst mit „Aufwerten bestätigen". Alternativ weiterhin per Tap aufs Brett. */}
                         {committed.some((b) => upgradeInfo(familyDef(b.familyId), b.tier).can) && (
                           <div className="flex flex-col gap-1 mt-1">
                             {committed.filter((b) => upgradeInfo(familyDef(b.familyId), b.tier).can).map((b) => {
                               const f = familyDef(b.familyId);
                               return (
-                                <div key={b.id} className="rounded px-2 py-1 text-[10px] font-mono leading-snug flex flex-wrap items-baseline gap-x-1.5" style={{ background: "#16232f", border: "1px solid #24333f" }}>
+                                <button key={b.id} onClick={() => { setPendingUpgrade(b.id); setUpgradeMsg(null); }}
+                                  className="rounded px-2 py-1.5 text-left text-[10px] font-mono leading-snug flex flex-wrap items-baseline gap-x-1.5 transition-all hover:brightness-125"
+                                  style={{ background: "#16232f", border: "1px solid #2f4150" }}>
                                   <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
                                   <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
                                   <span className="opacity-70">{famEff(f, b)}</span>
-                                </div>
+                                </button>
                               );
                             })}
                           </div>
@@ -703,14 +717,29 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 );
               })()}
 
-              {/* Fertig: EIN Panel — optional beliebig oft verschieben, dann direkt starten. */}
-              {!removeFor && phase === "move" && (
-                <div>
-                  <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.score.color}18`, borderLeft: `3px solid ${CAT.score.color}` }}>
-                    ✓ <b>Fertig gebaut.</b> Optional: Gebäude auf dem Brett <b>ziehen</b> zum Verschieben (Griff überall, ⟳ dreht) — beliebig oft. Sonst direkt weiter.
+              {/* #261: EINE kombinierte Platzier-/Verschiebe-Phase — alle Gebäude (inkl. des eben gewählten) sind frei
+                  ziehbar/drehbar; ein einziges „Bestätigen" unten schließt ab. */}
+              {!removeFor && phase === "move" && (() => {
+                const selB = selId != null ? committed.find((x) => x.id === selId) : null;
+                const selFam = selB ? familyDef(selB.familyId) : null;
+                return (
+                  <div>
+                    <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
+                      <b>Platzieren & Verschieben:</b> zieh Gebäude am Brett an ihren Platz (Griff überall, <b>⟳ Drehen</b> oben) — beliebig oft. Unten <b>Bestätigen</b> startet den Durchlauf.
+                    </div>
+                    {/* #261: Buff-Farbe eines gewählten colorLocked-Gebäudes (Buntglas/Zunfthaus) hier anpassen (onRecolor). */}
+                    {selB && selFam && selFam.colorLocked && (
+                      <div className="flex items-center gap-1.5 mb-2 text-[11px] font-mono">
+                        <span className="opacity-60">bufft Farbe:</span>
+                        {SUIT_ORDER.map((s) => (
+                          <button key={s} onClick={() => onRecolor?.({ buildingId: selB.id, colorChoice: s })} className="w-5 h-5 rounded-full"
+                            style={{ background: SUIT_COLOR[s], outline: selB.colorChoice === s ? "2px solid #fff" : "none", outlineOffset: 1 }} title={s} />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* #UI „nur Buttons": schmale, schwebende Aktions-Leiste (mobil oben angeheftet) — nur die Phasen-Buttons,
@@ -718,18 +747,19 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 Desktop: normale Leiste (md:static). */}
             <div className="order-1 sticky top-0 z-20 md:static rounded-xl p-2" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
               {/* #248: Rotieren in der schwebenden Leiste — nur bei ausgewähltem Gebäude in place/move; beim Ziehen ohne Scrollen erreichbar. */}
-              {showRotate && (
+              {showRotate && (selRotatable ? (
                 <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
-              )}
+              ) : (
+                // #262: nicht drehbare Form (zeilengebundene Legendäre / symmetrisch) → Button ausgegraut statt wirkungslos.
+                <button type="button" disabled aria-disabled="true"
+                  title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch)."
+                  className="w-full mb-2 rounded-lg py-2 text-sm font-bold cursor-not-allowed"
+                  style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>⟳ Nicht drehbar</button>
+              ))}
               {removeFor ? (
                 <button onClick={() => { setRemoveFor(null); setPendingDemolish(null); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
               ) : phase === "choose" ? (
                 <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Nichts bauen · Fortfahren →</button>
-              ) : phase === "place" && pending ? (
-                <div className="flex gap-2">
-                  <button onClick={cancelPending} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
-                  <button onClick={confirmBuild} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Bauen ✓</button>
-                </div>
               ) : phase === "upgrade" && pendingUpgrade != null ? (
                 <div className="flex gap-2">
                   <button onClick={() => setPendingUpgrade(null)} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>
@@ -738,7 +768,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               ) : phase === "upgrade" ? (
                 <button onClick={() => { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
               ) : phase === "move" ? (
-                <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>Fortfahren →</button>
+                <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>✓ Bestätigen · Durchlauf starten</button>
               ) : null}
               {/* #UI: Effekt des gerade platzierten (place) bzw. gewählten (move) Gebäudes — floatet mit der Leiste. */}
               {(() => {
@@ -814,21 +844,43 @@ function famEff(fam, b) {
   const t = b?.tier ?? 1;
   const base = fam.base;
   const nz = (v) => tierNum(v, t);
+  let s;
   switch (base.kind) {
-    case "flat":       return fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`;
-    case "lowValue":   return `niedrige Karten +${nz(base.value)} Stichwert`;
-    case "color":      return fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`;
-    case "target":     return `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Punkte"}`;
-    case "streak":     return `Sieg +${nz(base.score)} Score × Serie`;
-    case "crit":       return `Crit-Sieg +${nz(base.score)} Score`;
-    case "milestone":  return `jeder ${base.every}. Sieg +${nz(base.score)} Score`;
-    case "mult":       return `Siege hier ×${base.factor}`;
-    case "joker":      return `Formations-Joker (${base.types.join("/")})`;
-    case "transparentFarb": return "Farbblock-Transparenz";
-    case "bind":       return `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`;
-    case "crossSeg":   return "öffnet die Segmentgrenze";
-    case "anker":      return `jede Zelle = Anker ×${tierFactor(base.factor, t).toFixed(2)}`;
-    case "formMult":   return `Formationen hier ×${base.factor}`;
-    default:           return "";
+    case "flat":       s = fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`; break;
+    case "lowValue":   s = `niedrige Karten +${nz(base.value)} Stichwert`; break;
+    case "color":      s = fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`; break;
+    case "target":     s = `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Score"}`; break;
+    case "streak":     s = `Sieg +${nz(base.score)} Score × Serie`; break;
+    case "crit":       s = `Crit-Sieg +${nz(base.score)} Score`; break;
+    case "milestone":  s = `jeder ${base.every}. Sieg +${nz(base.score)} Score`; break;
+    case "mult":       s = `Siege hier ×${base.factor}`; break;
+    // #Pool: Distrikt-Effekte — hängen vom Brett ab (Nachbarschaft / vollendete Strukturen).
+    case "neighbor":   s = fam.category === "value" ? `+${nz(base.value)} Stichwert je Nachbargebäude (max ${base.cap})` : `Sieg +${nz(base.score)} Score je Nachbargebäude (max ${base.cap})`; break;
+    case "compound":   s = `Sieg +${nz(base.score)} Score je vollendeter Struktur`; break;
+    // #Pool Batch 3: Lage/Staffel — hängen von der Position ab.
+    case "segment":    s = `${base.half === "early" ? "frühe" : "späte"} Segmente ${fam.category === "value" ? `+${nz(base.value)} Stichwert` : `+${nz(base.score)} Score`}`; break;
+    case "relay":      s = base.both ? `strahlt +${nz(base.score)} Score in beide Nachbarfelder` : `reicht +${nz(base.score)} Score ans Feld rechts weiter`; break;
+    // #Pool Batch 4: Risiko — Crit-Wette.
+    case "gamble":     s = `Crit-Sieg +${nz(base.score)} Score · Sieg ohne Crit −${base.penalty} Score`; break;
+    case "joker":      s = `Formations-Joker (${base.types.join("/")})`; break;
+    case "transparentFarb": s = "Farbblock-Transparenz"; break;
+    case "bind":       s = `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`; break;
+    case "crossSeg":   s = "öffnet die Segmentgrenze"; break;
+    case "anker":      s = `jede Zelle = Anker ×${tierFactor(base.factor, t).toFixed(2)}`; break;
+    case "formMult":   s = `Formationen hier ×${base.factor}`; break;
+    default:           s = ""; break;
   }
+  // #Pool tierKick: qualitativer Zusatz ab Stufe `at` sichtbar machen (aktiv ab dieser Stufe, sonst als Vorschau markiert).
+  if (fam.tierKick && s) {
+    const k = fam.tierKick, on = t >= k.at;
+    let kickTxt = "";
+    if (k.mult) kickTxt = `zusätzlich ×${k.mult} Score`;
+    else if (k.critFlatMult) kickTxt = `bei Crit ×${k.critFlatMult} Direkt-Score`;
+    else if (k.streakDoubleFrom) kickTxt = `ab Serie ${k.streakDoubleFrom} doppelt`;
+    else if (k.every) kickTxt = `jeder ${k.every}. statt ${base.every}. Sieg`;
+    else if (k.addType) kickTxt = `zweiter Joker-Typ: ${k.addType}`;
+    else if (k.ankerValue) kickTxt = `+${k.ankerValue} Stichwert je Ankerzelle`;
+    if (kickTxt) s += on ? ` · ${kickTxt}` : ` (Stufe ${k.at}: ${kickTxt})`;
+  }
+  return s;
 }

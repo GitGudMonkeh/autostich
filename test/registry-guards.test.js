@@ -108,6 +108,7 @@ const BATTERY = (() => {
       pValueBase: int(0, 12), posForm: pick(POSFORMS), isRole: () => roleFlag,
       triumphActive: r() < 0.5, secondLastResult: pick(["win", "loss", null]),
       segmentLowRank: int(-1, 2), segmentIndex: int(0, 7), trickNo: int(1, 45),
+      coverCount: int(0, 24), underBuilding: r() < 0.5, underStructure: r() < 0.5, // Gebäude-Perks (Architekt)
     };
   });
 })();

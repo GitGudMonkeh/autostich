@@ -5,6 +5,23 @@ import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
 import { hasCritPerk, critMultiplierFor, totalCritChanceRaw } from "../game/perks.js";
 import { hasCritFamily } from "../game/families.js";
 import { Sparkline } from "./Sparkline.jsx";
+import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
+
+// #252: einklappbarer Panel-Abschnitt (Kopf mit ▸/▾ togglet; Inhalt nur bei !collapsed). Der Zustand kommt aus den
+// Optionen (über Runs gemerkt) — der Kopf ruft onToggle, das die Option persistiert.
+function Collapsible({ title, collapsed, onToggle, children }) {
+  return (
+    <div className="pt-1 border-t" style={{ borderColor: "#26262e" }}>
+      <button type="button" onClick={onToggle} data-sfx="none"
+        className="w-full flex items-center gap-1 text-[10px] uppercase tracking-wide opacity-50 hover:opacity-80"
+        style={{ background: "transparent" }} aria-expanded={!collapsed}>
+        <span className="inline-block w-2 text-center" aria-hidden="true">{collapsed ? "▸" : "▾"}</span>
+        <span>{title}</span>
+      </button>
+      {!collapsed && <div className="mt-1">{children}</div>}
+    </div>
+  );
+}
 
 function Bar({ value, max, color, height = 8 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
@@ -24,7 +41,7 @@ function Stat({ label, value, tone }) {
   );
 }
 
-export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
+export function StatusRail({ state, currentTraj = [], recordTraj = [], options = {}, onOption }) {
   const { wins, losses, ties, trickNo, winStreak, bestStreak, pos, perks, crits, lightning,
           familyTiers = {}, statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0 } = state;
   const cycleLen = cycleLenFor(state.shop);  // 40, mit Zeitsegment 45 (§8 A-L1)
@@ -113,17 +130,27 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [] }) {
           {statFormMult > 0 && <span title="Formations-Stat: +5 % Score je Pick bei aktiver Formation (ab Phase mit Formationen wirksam)"><span className="opacity-50">Form-Stat </span><span style={{ color: "#5a8ade" }}>+{Math.round(statFormMult * 100)} %</span></span>}
         </div>
       )}
-      {/* Score-Verlauf: aktueller Lauf vs. Rekord/Geist (#30) */}
-      <div className="pt-1 border-t" style={{ borderColor: "#26262e" }}>
-        <div className="flex items-center justify-between text-[10px] uppercase tracking-wide opacity-50 mb-1">
-          <span>Score-Verlauf</span>
-          <span className="flex gap-2 normal-case tracking-normal">
+      {/* #252: Score-Quellen-Balken LIVE (geteilte Komponente mit dem Victory-Screen) — einklappbar, default eingeklappt,
+          Zustand über Runs gemerkt. Nur zeigen, wenn schon Score da ist. */}
+      {sourceShares(state).score > 0 && (
+        <Collapsible title="Score-Herkunft"
+          collapsed={options.collapseScoreSource ?? true}
+          onToggle={() => onOption && onOption({ collapseScoreSource: !(options.collapseScoreSource ?? true) })}>
+          <ScoreSourceBar state={state} showTitle={false} />
+        </Collapsible>
+      )}
+      {/* Score-Verlauf: aktueller Lauf vs. Rekord/Geist (#30) — einklappbar, default eingeklappt (#252). */}
+      <Collapsible title="Score-Verlauf"
+        collapsed={options.collapseScoreTrend ?? true}
+        onToggle={() => onOption && onOption({ collapseScoreTrend: !(options.collapseScoreTrend ?? true) })}>
+        <div className="flex items-center justify-end text-[10px] normal-case tracking-normal opacity-60 mb-1">
+          <span className="flex gap-2">
             <span style={{ color: "#d4a63a" }}>Lauf</span>
             {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>Rekord</span> : <span className="opacity-40">erster Lauf</span>}
           </span>
         </div>
         <Sparkline current={currentTraj} record={recordTraj} />
-      </div>
+      </Collapsible>
     </div>
   );
 }

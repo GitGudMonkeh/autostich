@@ -35,6 +35,7 @@ jobs:
           echo "VITE_BUILD_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
           echo "VITE_ENV=main" >> "$GITHUB_ENV"
       - run: npm run build   # base = /autostich/ (Default in vite.config.js)
+      - run: npm run gen:db  # #256: Core Game Database aus src/game/* → dist/db/ (unter /autostich/db/)
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

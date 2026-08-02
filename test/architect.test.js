@@ -79,21 +79,26 @@ describe("Architekt — Angebot (deterministisch)", () => {
     expect(maxLeg).toBeLessThanOrEqual(1);
   });
 
-  it("T2 (#229): stufen-inerte Familien (joker/transparentFarb/crossSeg) werden nur als Stufe 1 angeboten", () => {
+  it("T2 (#229/#Pool): stufen-inerte Familien OHNE Kick nur Stufe 1; MIT tierKick bis zur Kick-Stufe `at`", () => {
     // Ihr Effekt kennt keine Stufe → sie dürfen nicht mit höherem Raritätsrahmen angeboten werden (Aufrüsten
-    // ist dort ohnehin No-op). Der Pin ist gezielt: normale Familien skalieren weiter über Stufen > 1.
+    // ist dort ohnehin No-op). Ausnahme #Pool: inerte Familien MIT tierKick (z. B. Klammer) sind bis `at` sinnvoll
+    // aufwertbar → sie dürfen bis Stufe `at` angeboten werden. Normale Familien skalieren weiter über Stufen > 1.
     const INERT = new Set(["joker", "transparentFarb", "crossSeg"]);
-    let sawInert = false, sawScaledNormal = false;
+    let sawInertPinned = false, sawInertKicked = false, sawScaledNormal = false;
     for (let s = 0; s < 300; s++) {
       for (const o of buildArchitectOffer(initialArchitect(), makeRng(s))) {
         if (o.legendary) continue;
-        const kind = familyDef(o.familyId)?.base?.kind;
-        if (INERT.has(kind)) { sawInert = true; expect(o.tier).toBe(1); }
-        else if (typeof o.tier === "number" && o.tier > 1) sawScaledNormal = true;
+        const fam = familyDef(o.familyId);
+        const kind = fam?.base?.kind;
+        if (INERT.has(kind)) {
+          if (fam.tierKick) { sawInertKicked = true; expect(o.tier).toBeLessThanOrEqual(fam.tierKick.at); } // MIT Kick: ≤ at
+          else { sawInertPinned = true; expect(o.tier).toBe(1); }                                            // OHNE Kick: Stufe 1
+        } else if (typeof o.tier === "number" && o.tier > 1) sawScaledNormal = true;
       }
     }
-    expect(sawInert).toBe(true);        // die inerten Familien tauchen im Angebot tatsächlich auf
-    expect(sawScaledNormal).toBe(true); // ... und der Pin lässt normale Familien weiter Stufen > 1 bekommen
+    expect(sawInertPinned).toBe(true);  // inerte Familien ohne Kick tauchen auf und bleiben auf Stufe 1
+    expect(sawInertKicked).toBe(true);  // inerte Familien mit Kick tauchen auf und dürfen Stufen > 1 (bis at)
+    expect(sawScaledNormal).toBe(true); // ... normale Familien skalieren weiter über Stufen > 1
   });
 });
 
@@ -155,6 +160,28 @@ describe("Architekt — score-Effekte", () => {
     const r4 = architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, { 1: 4 }); // next = 5 → zahlt
     expect(r4.flat).toBe(tierNum(ARCHITECT_FAMILIES.A_MEILENSTEIN.base.score, 1)); expect(r4.bump).toBe(1);
     expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, { 1: 0 }).flat).toBe(0); // next = 1
+  });
+  it("segment (Vorwerk, #Pool): zahlt nur in der frühen Segment-Hälfte (Zeilen 0..3)", () => {
+    const pre = precomputeArchitect({ buildings: [B("A_VORWERK", [0, 25], 1)] }, idOrder, deck); // Pos 0 = Zeile 0 (früh), Pos 25 = Zeile 5 (spät)
+    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(tierNum(ARCHITECT_FAMILIES.A_VORWERK.base.score, 1));
+    expect(architectScore(pre, 25, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(0); // späte Hälfte → kein Effekt
+  });
+  it("relay (Laufgang, #Pool): reicht den Score an das Feld rechts jeder Zelle weiter; am Gebäude selbst 0", () => {
+    const pre = precomputeArchitect({ buildings: [B("A_LAUFGANG", [0, 6, 12], 1)] }, idOrder, deck);
+    const amt = tierNum(ARCHITECT_FAMILIES.A_LAUFGANG.base.score, 1);
+    for (const p of [1, 7, 13]) expect(architectScore(pre, p, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(amt);
+    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(0);
+  });
+  it("gamble (Losbude, #Pool): Crit → Jackpot, Sieg ohne Crit → Abzug", () => {
+    const pre = precomputeArchitect({ buildings: [B("A_LOSBUDE", [0, 1], 1)] }, idOrder, deck);
+    const jackpot = tierNum(ARCHITECT_FAMILIES.A_LOSBUDE.base.score, 1), penalty = ARCHITECT_FAMILIES.A_LOSBUDE.base.penalty;
+    expect(architectScore(pre, 0, { isCrit: true,  serieStreak: 1, suit: "R" }, {}).flat).toBe(jackpot);
+    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(-penalty);
+  });
+  it("gamble Jackpot skaliert mit der Stufe, der Abzug bleibt fix", () => {
+    const pre = precomputeArchitect({ buildings: [B("A_WETTHALLE", [0, 2, 10, 12], 3)] }, idOrder, deck);
+    expect(architectScore(pre, 0, { isCrit: true,  serieStreak: 1, suit: "R" }, {}).flat).toBe(tierNum(ARCHITECT_FAMILIES.A_WETTHALLE.base.score, 3));
+    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(-ARCHITECT_FAMILIES.A_WETTHALLE.base.penalty); // Abzug tier-unabhängig
   });
   it("Häuserzeile: volle Segment-Zeile → ×Faktor auf Siege im Segment", () => {
     const pre = precomputeArchitect({ buildings: [B("A_STUETZE", [0, 1, 2, 3, 4], 1)] }, idOrder, deck);

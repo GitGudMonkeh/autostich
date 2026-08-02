@@ -19,7 +19,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasDornenkoenig, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
 import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
-import { perkLegendaryChance, skillLegendaryChance, perkFateReroll, skillFateReroll, anchorAt } from "./shop.js";
+import { perkLegendaryChance, skillLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
 import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
@@ -94,6 +94,7 @@ export function resolveTrick(state, rng) {
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
     zinsBonus = 0, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Legendär-Perks-Rework (#203): Zinseszins-Dauerdividende / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
+    richtfestBonus = 0, // Gebäude-Legendäres Richtfest: aufgestapelte Struktur-Dauerdividende (Auszahlung je Durchlauf-Ende)
     vabanquePaid = 0, // Vabanque (#203): Zahl der Eröffnungs-Wetten, die dieser Lauf schon ausgezahlt hat (Lauf-Deckel gegen Front-Load-Exploit)
     crits, critBonusScore, bestTrickScore,
     maxFormations = 0, formationScore = 0, buildingScore = 0, streakScore = 0, // #161 FB-2 + #251: Score-Anteile (Formation / Architekt-Gebäude / Serie)
@@ -214,6 +215,10 @@ export function resolveTrick(state, rng) {
     // Rarität #167 Kat. C: Ergebnis des ZWEITEN Vorgängers (C_GUARD IV), Segment-Rang/-Index (C_SURVIVOR).
     secondLastResult: recentResults.length >= 2 ? recentResults[recentResults.length - 2] : null,
     segmentLowRank, segmentIndex,
+    // Gebäude-Perks (Architekt): liegt die Position unter einem Gebäude (C_ECKSTEIN) bzw. unter einer
+    // vollendeten Struktur (Zeile/Spalte/Diagonale, segFactor>1 → C_ECKSTEIN IV). Ohne Architekt false.
+    underBuilding: archPreNow ? !!(archPreNow.cover && archPreNow.cover[actualPos]) : false,
+    underStructure: archPreNow ? ((archPreNow.segFactor[actualPos] || 1) > 1) : false,
   };
   // Nachfolger-Bonus (C4 Staffelläufer / C5 Anführer): der Kopf der Queue gilt für DIESE Karte, dann verbraucht.
   const relayBonus = successorQueue[0] || 0;
@@ -316,6 +321,7 @@ export function resolveTrick(state, rng) {
                    critFollowArmed, weaknessArmed, weaknessBig, // Crit-Historie: Stand VOR diesem Sieg (D14/D16/D_WEAKNESS IV)
                    suitStreak, recentWinCount, // Farbserie / Volles Haus
                    baseValue: pCard.value, // Basiswert der gespielten Karte
+                   coverCount: archPreNow ? (archPreNow.coverCount || 0) : 0, // Gebäude-Perk Dichte Bebauung (D_BEBAUUNG): abgedeckte Positionen
                    hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung (D15)
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
     // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überlauf), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
@@ -632,7 +638,9 @@ export function resolveTrick(state, rng) {
     // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
     const sunwrathMult = (fireFlag(skills, "sunwrath") && heat && heat.active) ? (1 + (heat.peak || 0) * C.SUNWRATH_PEAK_STEP) : 1;
     // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
-    scoreBeforeCrit = scoreBase * streakMult * perkMult * formMult * afterglowMult * coreMult * sunwrathMult * architectMult;
+    // #Pool Batch 4 (gamble/Risiko): Boden — der Architekt-Abzug (negativer Flat) darf den Stich höchstens auf 0 drücken,
+    // nie ins Minus (sonst kippen die nachgelagerten Multiplikatoren). Bei Basis 400 praktisch immer ein No-op.
+    scoreBeforeCrit = Math.max(0, scoreBase) * streakMult * perkMult * formMult * afterglowMult * coreMult * sunwrathMult * architectMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
     // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
@@ -949,7 +957,6 @@ export function resolveTrick(state, rng) {
   let newStatOffer = statOffer;
   let newFormationEnergy = formationEnergy;
   let newFormationSwaps = formationSwaps;
-  let newFreePerkReroll = false, newFreeSkillReroll = false; // P-L1: gratis Reroll gilt nur fürs frisch erzeugte Angebot
   let newMasteryLegGranted = state.masteryLegGranted || false; // #217 Grad V: 1×/Lauf garantierter Legendär — eingelöst-Flag
   // Architekt (#202): Meilenstein-Zähler nach diesem Stich fortschreiben (bump = Gebäude-id eines Siegs auf seiner Abdeckung).
   let newArchitect = architect;
@@ -965,6 +972,8 @@ export function resolveTrick(state, rng) {
     let cycleEndScore = 0;
     if (ownsFlag(perks, "zinseszins")) { if (cycleWins > cycleLosses) zinsBonus += C.ZINSESZINS_STEP; cycleEndScore += zinsBonus; }
     if (ownsFlag(perks, "echo")) cycleEndScore += cycleBestTrick * C.ECHO_FACTOR;
+    // Richtfest (Gebäude-Legendäres): je vollendeter Struktur diesen Durchlauf +Schritt auf den Dauer-Bonus, dann auszahlen.
+    if (ownsFlag(perks, "richtfest") && archPreNow) { richtfestBonus += C.RICHTFEST_STEP * (archPreNow.structureCount || 0); cycleEndScore += richtfestBonus; }
     score += cycleEndScore;
     // Per-Karte-Ledger (Sim S1): die Durchlauf-Ende-Payoffs dem gerade gespielten Schluss-Stich gutschreiben, damit die
     // Score-Summe je Karte weiterhin exakt `score` reproduziert (metrics.observe liest lastTrick.gained). lastTrick ist
@@ -1056,7 +1065,6 @@ export function resolveTrick(state, rng) {
       // Entscheidung VOR dem neuen Durchlauf nach dem festen Plan (Shop-Spec §2.2): DECISION_SCHEDULE[cycle]
       // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
       const decision = C.DECISION_SCHEDULE[cycle];
-      const perkFate = perkFateReroll(shop), skillFate = skillFateReroll(shop); // #164 Schicksalskontrolle/Neuwurf IV: gratis Reroll je Auswahl
       // #217 Meistergrade — Reward-Ableitungen (Grad 0 = No-op: Mult ×1, Shift 0, keine Garantie → byte-identisch).
       const mGrade = state.masteryGrade || 0;
       const mLegMult = masteryLegendMult(mGrade), mRareShift = masteryRareShift(mGrade);
@@ -1069,12 +1077,12 @@ export function resolveTrick(state, rng) {
         const skillLeg = skillLegendaryChance(shop) * mLegMult; // #247: Per-Archetyp-Chance (Basis × Meisterrang-Mult)
         const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLeg, guarantee);
         if (soff.length > 0) {
-          phase = "levelup"; newSkillOffer = soff; newFreeSkillReroll = skillFate;
+          phase = "levelup"; newSkillOffer = soff;
           if (guarantee && soff.some(isLegendarySkill)) newMasteryLegGranted = true; // Garantie eingelöst, sobald ein Legendär tatsächlich im Angebot ist
-        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift); if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; } } // leerer Skill-Pool → Perk
+        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift, architectEnabled); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk
       } else if (decision === "perk") {
-        const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift);
-        if (off.length > 0) { phase = "levelup"; newOffer = off; newFreePerkReroll = perkFate; }
+        const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift, architectEnabled);
+        if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "shop" && architectEnabled) {
         // Architekt-Phase (#202, ersetzt den Shop): frisches Bauplan-Angebot ziehen (deterministisch über rng) und die
         // Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen. #217: rareShift durchreichen.
@@ -1117,7 +1125,6 @@ export function resolveTrick(state, rng) {
     crits, critBonusScore, bestTrickScore, maxFormations, formationScore, buildingScore, streakScore, // #161 FB-2 / #UI / #251: Run-Rückblick (+ Gebäude-/Serien-Score)
     trickLog: nextTrickLog, // #251: Score je Stich (+ Sieg/Niederlage), nach Durchlauf gebucket → Durchlauf-Graph
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
-    freePerkReroll: newFreePerkReroll, freeSkillReroll: newFreeSkillReroll, // Planung (§10 P-L1)
     masteryLegGranted: newMasteryLegGranted, // #217 Grad V: garantierter Legendär je Lauf eingelöst? (masteryGrade selbst läuft über ...state)
     critFollowArmed, weaknessArmed, weaknessBig, interplayStored, misfireScore,
     winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
@@ -1127,6 +1134,7 @@ export function resolveTrick(state, rng) {
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
     zinsBonus, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, // Legendär-Perks-Rework (#203)
+    richtfestBonus, // Gebäude-Legendäres Richtfest (Struktur-Dauerdividende)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)

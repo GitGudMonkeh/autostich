@@ -123,7 +123,7 @@ export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendarie
 // Legendär-Roll (Shop-Spec §10 P5/P6): expliziter Wurf vor jedem Perk-/Skill-Angebot. Bei Erfolg wird genau
 // EIN Legendäres erzwungen, sonst enthält das Angebot keins. Chance = Basis + Bonus (P5/P6, je +5 pp), Bonus-Cap. [TUNING]
 export const PERK_LEGENDARY_BASE       = envNum("SIM_PERK_LEGENDARY_BASE", 0.03); // Basis-Legendär-Chance Perk-Angebot [0,08→0,03; Sim-tunebar für Legendär-Perk-Messung]
-export const SKILL_LEGENDARY_BASE      = envNum("SIM_SKILL_LEGENDARY_BASE", 0.04); // Basis-Legendär-Chance Skill-Angebot, JE ARCHETYP gewürfelt (#247: 0,03→0,04, eigener Wurf pro Fraktion → mehrere Legendäre je Angebot möglich)
+export const SKILL_LEGENDARY_BASE      = envNum("SIM_SKILL_LEGENDARY_BASE", 0.03); // Basis-Legendär-Chance Skill-Angebot = 3 %, JE ARCHETYP gewürfelt (#263: 0,04→0,03 zurück; #247-Mechanik bleibt: eigener Wurf pro Fraktion → mehrere Legendäre je Angebot möglich)
 export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P6): max +15 pp
 
 /* ============================================================
@@ -155,6 +155,10 @@ export const BRENNPUNKT_MULT     = envNum("SIM_BRENNPUNKT_MULT", 2.5);    // Bre
 export const BRENNPUNKT_MIN_FORMS = envNum("SIM_BRENNPUNKT_MIN_FORMS", 3);// … Mindestzahl gleichzeitiger Formationen
 export const PATT_MARGIN         = envNum("SIM_PATT_MARGIN", 2);          // Patt (knappe Niederlage): Niederlage um ≤ diese Marge zählt als Sieg [1→2]
 export const ECHO_FACTOR         = envNum("SIM_ECHO_FACTOR", 1.6);        // Echo (bester Stich): am Durchlauf-Ende den höchsten Stich × diesem Faktor nochmal gutschreiben [1,0→1,6]
+export const MONOCHROM_STEP      = envNum("SIM_MONOCHROM_STEP", 0.15);    // Monochrom (Farbserie): +Score-Mult je Folgesieg derselben Farbe (Zusatzfaktor, multiplikativ)
+export const MONOCHROM_CAP       = envNum("SIM_MONOCHROM_CAP", 1.5);      // … Deckel des Zusatz-Mults (+150 % → Peak ×2,5 bei Farbserie 11); Farbwechsel/Niederlage setzt zurück
+export const RICHTFEST_STEP      = envNum("SIM_RICHTFEST_STEP", 250);     // Richtfest (Gebäude-Struktur): +dauerhafter Score je vollendeter Struktur/Durchlauf (stapelt, Auszahlung je Durchlauf-Ende, kein Mult)
+export const BAUHUETTE_COVER     = envNum("SIM_BAUHUETTE_COVER", 8);      // Bauhütte (Gebäude-Baufeld): hebt beim Pick den Baufeld-Deckel (maxCover) dauerhaft um so viele Zellen
 
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
 export const SKILL_SLOTS       = envNum("SIM_SKILL_SLOTS", 6);    // max gleichzeitig gehaltene Skills [Default 6 = echtes Spiel (Autostich_Test); ENV-Sweep-Haken SIM_SKILL_SLOTS z. B. =4 für den alten main-Stand]

@@ -10,6 +10,7 @@ import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadO
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
 import { fmtScore } from "./ui/format.js";
+import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { Battlefield } from "./ui/Battlefield.jsx";
 import { GlossaryPanel } from "./ui/Glossary.jsx";
@@ -66,6 +67,7 @@ export function Autostich() {
   const [showMasterSelect, setShowMasterSelect] = useState(false); // #217: Rang-Auswahl-Overlay (Meister-Lauf starten)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [glossaryOpen, setGlossaryOpen] = useState(false);        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
+  const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/6× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
@@ -92,7 +94,11 @@ export function Autostich() {
   const prevMult = useRef(1);     // vorheriger Score-Mult (Puls nur bei Anstieg, #37)
   // Offenes Optionen-Overlay friert den Lauf ein (wie andere Overlays) — ohne den
   // Nutzer-Pause-Toggle zu verändern: beim Schließen läuft es im vorherigen Zustand weiter.
-  const active = state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen;
+  // #260: Der Lauf-Timer zählt in ALLEN Spielphasen (auch Auswahlen: Skill-/Perk-/Stat-/Ziel-Wahl, Architekt,
+  // Aufstellung) — nur Menü/Gameover stehen außerhalb. So schätzt die Zeit die echte Rundendauer, statt nur die
+  // reine Stichspiel-Zeit. Echte Unterbrechungen (Pause, Optionen-/Chronik-/Glossar-Overlay) frieren weiterhin ein.
+  const inRun = state.phase !== "menu" && state.phase !== "gameover";
+  const active = inRun && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort;
   // Dynamische Rundengeschwindigkeit (#95): jeder Durchlauf startet bei +0 % und beschleunigt
   // +2 % je in DIESEM Durchlauf gewonnenem Stich → sichtbare Eskalation zum Rundenende, Reset je Durchlauf.
   // Rein Anzeige/Ablauf (score-neutral wie der Turbo). cycleWins = Siege seit Durchlauf-Beginn.
@@ -159,6 +165,31 @@ export function Autostich() {
   useEffect(() => { music.setPaused(paused && state.phase === "play"); }, [paused, state.phase]);
   const changeOptions = (patch) => setOptions((o) => saveOptions({ ...o, ...patch }));
 
+  // #254: Zentrale Zurück-Behandlung (mobil, Swipe/Hardware/Browser). Priorität: oberstes abweisbares Overlay
+  // schließen → im aktiven Lauf Abbruch-Rückfrage öffnen (nicht sofort verlassen) → sonst Standard-Zurück zulassen.
+  // Rückgabe true = Geste verbraucht (Guard hält die App), false = normale Navigation (z. B. Menü verlassen).
+  const handleBack = () => {
+    if (showUsername) { setShowUsername(false); return true; }
+    if (glossaryOpen) { setGlossaryOpen(false); return true; }
+    if (showChronik) { setShowChronik(false); return true; }
+    if (showOptions) { setShowOptions(false); return true; }
+    if (showStats) { setShowStats(false); return true; }
+    if (showCustomize) { setShowCustomize(false); return true; }
+    if (showLeaderboard) { setShowLeaderboard(false); return true; }
+    if (showMasterSelect) { setShowMasterSelect(false); return true; }
+    if (confirmAbort) { setConfirmAbort(false); return true; }   // offene Rückfrage → abbrechen (schließen)
+    if (inRun) { setConfirmAbort(true); return true; }            // aktiver Lauf → erst fragen, nichts verlieren
+    return false;                                                 // Menü/Gameover, nichts offen → Standard-Zurück
+  };
+  useBackGuard(handleBack);
+  // #254: Harte Reloads/Tab-Schließen im aktiven Lauf absichern (ergänzt den Zurück-Guard).
+  useEffect(() => {
+    if (!inRun) return;
+    const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [inRun]);
+
   // Timer-Segmente: bei Wechsel aktiv <-> inaktiv die verstrichene Zeit verbuchen.
   useEffect(() => {
     if (active && segStart.current == null) segStart.current = Date.now();
@@ -176,14 +207,14 @@ export function Autostich() {
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
-    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen) return;
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort) return; // #254: Abbruch-Rückfrage friert den Lauf ein (wie ein Overlay)
     // #188 v2: nach einem großen Krit-Sieg um hitStopMs verzögert (kurzer „Hit-Stop"/Slow-Mo), sonst normaler Takt.
     const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs + hitStopMs);
     return () => clearTimeout(id);
     // #56: flipMs direkt (statt seiner Einzel-Eingaben speedPct/speedMult) → Deps veralten nicht,
     // falls flipMs künftig von weiteren Variablen abhängt.
     // #148: showChronik friert den Lauf ein (wie showOptions) — Tricks laufen nicht mehr hinter dem Overlay weiter.
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, flipMs, hitStopMs]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, flipMs, hitStopMs]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -356,7 +387,9 @@ export function Autostich() {
   const architectUpgrade = (buildingId) => dispatch({ type: "ARCHITECT_UPGRADE", buildingId });
   const architectMove = ({ buildingId, footprint }) => dispatch({ type: "ARCHITECT_MOVE", buildingId, footprint });
   const architectDemolish = (buildingId) => dispatch({ type: "ARCHITECT_DEMOLISH", buildingId });
+  const architectRecolor = ({ buildingId, colorChoice }) => dispatch({ type: "ARCHITECT_RECOLOR", buildingId, colorChoice });
   const architectDone = () => dispatch({ type: "ARCHITECT_DONE" });
+  const rerollArchitect = () => dispatch({ type: "REROLL_ARCHITECT", rng: Math.random }); // #263: Gebäude-Reroll-Pool
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
@@ -509,7 +542,7 @@ export function Autostich() {
           <Controls
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
-            onRestart={restartRun} onAbort={endRun} onOptions={() => setShowOptions(true)}
+            onRestart={restartRun} onAbort={() => setConfirmAbort(true)} onOptions={() => setShowOptions(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
 
@@ -546,7 +579,7 @@ export function Autostich() {
             </div>
             {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
             <div className="order-2 lg:col-start-2 lg:row-start-1">
-              <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} />
+              <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} options={options} onOption={changeOptions} />
             </div>
             {/* Perks/Skills — Mobil unter den Stats (order-3), Desktop links unter dem Battlefield. */}
             <div className="order-3 lg:col-start-1 lg:row-start-2">
@@ -566,7 +599,7 @@ export function Autostich() {
       )}
       {state.phase === "architect" && (
         <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}
-          onMove={architectMove} onDemolish={architectDemolish} onDone={architectDone} />
+          onMove={architectMove} onDemolish={architectDemolish} onRecolor={architectRecolor} onReroll={rerollArchitect} onDone={architectDone} />
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />
@@ -622,6 +655,20 @@ export function Autostich() {
       {showUsername && (
         <UsernameModal initial={username} firstTime={!username}
           onSave={onSaveUsername} onClose={() => setShowUsername(false)} />
+      )}
+      {/* #254: Abbruch-Rückfrage — vom „Beenden"-Button ODER von der Zurück-Geste im aktiven Lauf. Kein Ein-Tap-Verlust. */}
+      {confirmAbort && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
+          onClick={() => setConfirmAbort(false)}>
+          <div className="w-full max-w-xs rounded-2xl p-5" style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
+            <div className="text-base font-bold" style={{ color: "#e0605a" }}>Lauf wirklich abbrechen?</div>
+            <div className="text-sm opacity-70 mt-1.5">Der Fortschritt dieses Laufs geht verloren.</div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setConfirmAbort(false)} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#16161c", border: "1px solid #33333e" }}>Weiterspielen</button>
+              <button onClick={() => { setConfirmAbort(false); endRun(); }} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#e0605a", color: "#fff" }}>Beenden</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -382,3 +382,62 @@ describe("PICK_STAT — Formations-/Crit-Mult-Felder (#158)", () => {
     expect(s.statCritMult).toBeCloseTo(0.5); // 0,25 + STAT_CRIT_MULT_STEP (0,25)
   });
 });
+
+// #261: ARCHITECT_RECOLOR — Buff-Farbe eines colorLocked-Gebäudes in der Arrange-Phase anpassen (wie MOVE, kein actedMain).
+describe("ARCHITECT_RECOLOR (#261)", () => {
+  const archState = (building) => ({
+    phase: "architect", architectEnabled: true,
+    architect: { buildings: [building], nextId: 2, offers: [], winCounters: {}, maxCover: 40 },
+  });
+  it("colorLocked-Gebäude bekommt die neue Buff-Farbe", () => {
+    const s = reducer(archState({ id: 1, familyId: "A_BUNTGLAS", tier: 1, footprint: [0, 1, 2, 6], colorChoice: "R" }),
+      { type: "ARCHITECT_RECOLOR", buildingId: 1, colorChoice: "B" });
+    expect(s.architect.buildings[0].colorChoice).toBe("B");
+  });
+  it("ungültige Farbe → No-op (State unverändert)", () => {
+    const st = archState({ id: 1, familyId: "A_BUNTGLAS", tier: 1, footprint: [0, 1, 2, 6], colorChoice: "R" });
+    expect(reducer(st, { type: "ARCHITECT_RECOLOR", buildingId: 1, colorChoice: "X" })).toBe(st);
+  });
+  it("nicht-colorLocked-Gebäude → No-op", () => {
+    const st = archState({ id: 1, familyId: "A_MEILENSTEIN", tier: 1, footprint: [0, 1, 5, 6], colorChoice: null });
+    expect(reducer(st, { type: "ARCHITECT_RECOLOR", buildingId: 1, colorChoice: "B" })).toBe(st);
+  });
+  it("außerhalb der architect-Phase → No-op", () => {
+    const st = { ...archState({ id: 1, familyId: "A_BUNTGLAS", tier: 1, footprint: [0], colorChoice: "R" }), phase: "play" };
+    expect(reducer(st, { type: "ARCHITECT_RECOLOR", buildingId: 1, colorChoice: "B" })).toBe(st);
+  });
+});
+
+// #263: REROLL_ARCHITECT — Architekt-Bauplan-Angebot neu würfeln über den eigenen Gebäude-Reroll-Pool.
+describe("REROLL_ARCHITECT (#263)", () => {
+  const base = (over = {}) => ({
+    phase: "architect", architectEnabled: true, seed: 12345, cycle: 0, offerRerolls: 0, masteryGrade: 0,
+    rerollsArch: 2, rerollsUsed: 0,
+    architect: { buildings: [], offers: [{ familyId: "seed", tier: 1, used: false }], actedMain: false, moved: false },
+    ...over,
+  });
+  it("verbraucht 1 Gebäude-Reroll, zählt rerollsUsed + offerRerolls hoch, liefert ein neues Angebot", () => {
+    const s = reducer(base(), { type: "REROLL_ARCHITECT", rng: Math.random });
+    expect(s.rerollsArch).toBe(1);
+    expect(s.rerollsUsed).toBe(1);
+    expect(s.offerRerolls).toBe(1);
+    expect(s.architect.offers.length).toBeGreaterThan(0);
+  });
+  it("deterministisch: gleicher Seed/Cycle/Index → identisches Angebot", () => {
+    const a = reducer(base(), { type: "REROLL_ARCHITECT", rng: Math.random });
+    const b = reducer(base(), { type: "REROLL_ARCHITECT", rng: Math.random });
+    expect(a.architect.offers.map((o) => `${o.familyId}:${o.tier}`)).toEqual(b.architect.offers.map((o) => `${o.familyId}:${o.tier}`));
+  });
+  it("No-op ohne Gebäude-Reroll-Vorrat", () => {
+    const st = base({ rerollsArch: 0 });
+    expect(reducer(st, { type: "REROLL_ARCHITECT", rng: Math.random })).toBe(st);
+  });
+  it("No-op, wenn die Hauptaktion schon verbraucht ist (actedMain)", () => {
+    const st = base({ architect: { buildings: [], offers: [], actedMain: true, moved: false } });
+    expect(reducer(st, { type: "REROLL_ARCHITECT", rng: Math.random })).toBe(st);
+  });
+  it("No-op außerhalb der architect-Phase", () => {
+    const st = base({ phase: "play" });
+    expect(reducer(st, { type: "REROLL_ARCHITECT", rng: Math.random })).toBe(st);
+  });
+});

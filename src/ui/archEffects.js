@@ -18,13 +18,15 @@ export function architectEffectStrings(pre, pos, card, fam = null, tier = 1) {
   const sc = pre && pre.score && pre.score[pos];
   if (sc) {
     switch (sc.kind) {
-      case "flat":      out.push(`+${sc.amount} Score`); break;
+      case "flat":      out.push(`+${sc.amount} Score`); if (sc.mult) out.push(`×${fmt(sc.mult)} Score`); break; // #Pool tierKick (Zollhaus IV)
       case "mult":      out.push(`×${fmt(sc.factor)} Score`); break;
       case "streak":    out.push(`+${sc.amount} Score je Serienpunkt`); break;
       case "crit":      out.push(`+${sc.amount} Score bei Crit`); break;
       case "color":     out.push(`+${sc.amount} Score bei ${suitName(sc.colorChoice)}`); break;
       case "milestone": out.push(`+${sc.amount} Score alle ${sc.every} Siege`); break;
       case "target":    out.push(`+${sc.amount} Score`); break;
+      case "gamble":    out.push(`+${sc.crit} Score bei Crit, sonst −${sc.penalty}`); break; // #Pool Batch 4: Crit-Wette
+
       default: break;
     }
   }
@@ -32,7 +34,11 @@ export function architectEffectStrings(pre, pos, card, fam = null, tier = 1) {
   if (fam && fam.category === "formation" && fam.base) {
     const base = fam.base;
     switch (base.kind) {
-      case "joker":           out.push(`Formations-Joker (${(base.types || []).join("/")})`); break;
+      case "joker": {         // #Pool tierKick: Klammer III fügt einen zweiten Joker-Typ hinzu (ab Stufe `at`).
+        const types = [...(base.types || [])];
+        if (fam.tierKick && fam.tierKick.addType && tier >= fam.tierKick.at) types.push(fam.tierKick.addType);
+        out.push(`Formations-Joker (${types.join("/")})`); break;
+      }
       case "transparentFarb": out.push("Farbblock-Transparenz"); break;
       case "bind":            out.push("Treppen-Bindeglied (±Span)"); break;
       case "crossSeg":        out.push("öffnet die Segmentgrenze"); break;
@@ -41,6 +47,8 @@ export function architectEffectStrings(pre, pos, card, fam = null, tier = 1) {
       default: break;
     }
   }
+  const rf = pre && pre.relayFlat && pre.relayFlat[pos]; // #Pool Batch 3: eingestaffelter Score (Laufgang von links)
+  if (rf > 0) out.push(`+${rf} Score (Staffel)`);
   const sf = pre && pre.segFactor && pre.segFactor[pos];
   if (sf && sf > 1.0001) out.push(`Struktur ×${fmt(sf)}`); // Zeile/Spalte/Diagonale
   return out;

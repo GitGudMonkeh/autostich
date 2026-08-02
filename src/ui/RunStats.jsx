@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
-import { fmtScore } from "./format.js";
+import { fmtScore, fmtScoreShort } from "./format.js";
 
 /* #169 FB-8: wiederverwendbarer Run-Statblock — dieselben Kennzahlen wie im GameOver-/Victory-Screen
    (Beste Serie · Perks · Formationen · Form.-Score · Crits/Quote/Bonus · Bester Stich) plus die Perk-/Skill-
@@ -42,27 +42,34 @@ export function RunStats({ entry = {}, anonymized = false }) {
       : (SKILL_DEFS[sel.id] ? { title: SKILL_DEFS[sel.id].name, desc: SKILL_DEFS[sel.id].desc, color: (ARCHETYPE_META[SKILL_DEFS[sel.id].archetype] || {}).color || "#8a8a95" } : null);
 
   const cell = (label, value, title, color) => (
-    <div title={title}><div className="opacity-50 text-xs">{label}</div>
-      <div className="font-bold" style={color ? { color } : undefined}>{value == null ? "–" : value}</div></div>
+    <div title={title} className="min-w-0"><div className="opacity-50 text-xs">{label}</div>
+      <div className="font-bold tabular-nums leading-tight" style={color ? { color } : undefined}>{value == null ? "–" : value}</div></div>
+  );
+  // #253: Score-Kachel — kompakt abgekürzt (Mio./Mrd.) gegen Kollisionen bei hohen Scores; voller Wert im Tooltip.
+  const scoreCell = (label, val, desc, color) => cell(
+    label,
+    val == null ? null : fmtScoreShort(val),
+    val == null ? desc : (desc ? `${desc} · ${fmtScore(val)}` : fmtScore(val)),
+    color,
   );
   const critQuote = crits != null && wins != null && wins > 0 ? `${Math.round((crits / wins) * 100)}%` : (crits != null ? "0%" : null);
 
   return (
     <>
-      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center text-sm">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-2 text-center text-sm">
         {cell("Beste Serie", bestStreak == null ? null : `${bestStreak}×`)}
         {cell("Perks", perks == null ? null : perks.length)}
         {cell("Formationen", maxFormations, "Maximal gleichzeitig aktive Formationen im Run", "#5ab87a")}
-        {cell("Form.-Score", formationScore == null ? null : fmtScore(formationScore), "Score-Anteil aus Formations-Multiplikatoren", "#5ab87a")}
-        {cell("Geb.-Score", buildingScore == null ? null : fmtScore(buildingScore), "Score-Anteil aus Architekt-Gebäuden (Struktur/Schatzkammer/Handelsbauten)", "#5a8ade")}
+        {scoreCell("Form.-Score", formationScore, "Score-Anteil aus Formations-Multiplikatoren", "#5ab87a")}
+        {scoreCell("Geb.-Score", buildingScore, "Score-Anteil aus Architekt-Gebäuden (Struktur/Schatzkammer/Handelsbauten)", "#5a8ade")}
       </div>
 
       {bestTrickScore != null && bestTrickScore > 0 && (
-        <div className="grid grid-cols-4 gap-2 text-center mt-3 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-2 text-center mt-3 text-sm">
           {cell("Crits", crits, undefined, "#e879f9")}
           {cell("Crit-Quote", critQuote, undefined, "#e879f9")}
-          {cell("Crit-Bonus", critBonusScore == null ? null : fmtScore(critBonusScore), undefined, "#e879f9")}
-          {cell("Bester Stich", bestTrickScore == null ? null : fmtScore(bestTrickScore), undefined, "#d4a63a")}
+          {scoreCell("Crit-Bonus", critBonusScore, undefined, "#e879f9")}
+          {scoreCell("Bester Stich", bestTrickScore, undefined, "#d4a63a")}
         </div>
       )}
 
