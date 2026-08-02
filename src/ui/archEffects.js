@@ -18,7 +18,7 @@ export function architectEffectStrings(pre, pos, card, fam = null, tier = 1) {
   const sc = pre && pre.score && pre.score[pos];
   if (sc) {
     switch (sc.kind) {
-      case "flat":      out.push(`+${sc.amount} Score`); break;
+      case "flat":      out.push(`+${sc.amount} Score`); if (sc.mult) out.push(`×${fmt(sc.mult)} Score`); break; // #Pool tierKick (Zollhaus IV)
       case "mult":      out.push(`×${fmt(sc.factor)} Score`); break;
       case "streak":    out.push(`+${sc.amount} Score je Serienpunkt`); break;
       case "crit":      out.push(`+${sc.amount} Score bei Crit`); break;
