@@ -195,6 +195,16 @@ export function reducer(state, action) {
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, footprint } : x));
       return { ...state, architect: { ...a, buildings, moved: true } }; // moved-Flag bleibt (Telemetrie), deckelt aber nicht mehr
     }
+    case "ARCHITECT_RECOLOR": { // #261: Buff-Farbe eines colorLocked-Gebäudes anpassen — freie Anpassung bis zum Bestätigen (wie MOVE, kein actedMain)
+      if (state.phase !== "architect") return state;
+      const a = state.architect;
+      const b = a.buildings.find((x) => x.id === action.buildingId);
+      if (!b) return state;
+      const fam = archFamily(b.familyId);
+      if (!fam || !fam.colorLocked || !C.SUIT_ORDER.includes(action.colorChoice)) return state;
+      const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, colorChoice: action.colorChoice } : x));
+      return { ...state, architect: { ...a, buildings } };
+    }
     case "ARCHITECT_DEMOLISH": { // abreißen: jederzeit, unbegrenzt, ohne Gegenwert (nur Platz frei)
       if (state.phase !== "architect") return state;
       const a = state.architect;

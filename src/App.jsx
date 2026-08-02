@@ -387,6 +387,7 @@ export function Autostich() {
   const architectUpgrade = (buildingId) => dispatch({ type: "ARCHITECT_UPGRADE", buildingId });
   const architectMove = ({ buildingId, footprint }) => dispatch({ type: "ARCHITECT_MOVE", buildingId, footprint });
   const architectDemolish = (buildingId) => dispatch({ type: "ARCHITECT_DEMOLISH", buildingId });
+  const architectRecolor = ({ buildingId, colorChoice }) => dispatch({ type: "ARCHITECT_RECOLOR", buildingId, colorChoice });
   const architectDone = () => dispatch({ type: "ARCHITECT_DONE" });
 
   // Geist-Vergleich „hier"
@@ -597,7 +598,7 @@ export function Autostich() {
       )}
       {state.phase === "architect" && (
         <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}
-          onMove={architectMove} onDemolish={architectDemolish} onDone={architectDone} />
+          onMove={architectMove} onDemolish={architectDemolish} onRecolor={architectRecolor} onDone={architectDone} />
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />
