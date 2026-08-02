@@ -13,7 +13,7 @@ import { LIGHTNING, CASCADE, CASCADE_BRIGHT } from "./indicators/vocab.js";
 // Rein anzeige-seitig: liest state.lightning + state.skills + state.winStreak + die (ungeklemmte) Crit-Chance,
 // keine Engine-Logik hier. Die Motor-Stationen-Reihe und das Donnergott-Badge aus #208 sind bewusst entfallen
 // (überluden das Panel; Donnergott zeigt sich ohnehin über das größere Ladungs-Maximum + Score).
-const CONSUMER_LABEL = { ionize: "Ionisierung", protectStreak: "Geladene Serie" };
+const CONSUMER_LABEL = { ionize: "Ionisierung" };
 const CHAIN_VISIBLE = 8;   // sichtbare Kettenglieder; darüber zählt „×N" weiter (winStreak ist ungedeckelt)
 const STREAK_FULL = 10;    // Serien-Länge, ab der der Serien-Anteil der Intensität voll (100 %) zählt
 
@@ -126,7 +126,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
         // Awareness-Hinweis. Die Garantie (#191) BIETET einen Konsumenten an, erzwingt ihn aber bewusst nicht.
         <div className="text-[11px] leading-snug rounded px-2 py-1.5"
           style={{ background: `${LIGHTNING}14`, color: LIGHTNING, border: `1px solid ${LIGHTNING}44` }}>
-          ⚡ Voll — ohne Konsument verpufft die Ladung. Wähle <b>Ionisierung</b> oder <b>Geladene Serie</b>.
+          ⚡ Voll — ohne Konsument verpufft die Ladung. Wähle <b>Ionisierung</b>, um sie zu verbrauchen.
         </div>
       ) : null}
     </IndicatorPanel>
