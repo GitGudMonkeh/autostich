@@ -95,6 +95,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const [upgradeMsg, setUpgradeMsg] = useState(null);      // { name, reason } — Meldung beim Antippen eines nicht-aufwertbaren Gebäudes (Aufrüsten-Phase)
   const [pendingDemolish, setPendingDemolish] = useState(null); // #235: markiertes Abriss-Ziel (buildingId) — wird erst mit „Abreißen" wirklich entfernt (zweistufig)
   const [pendingUpgrade, setPendingUpgrade] = useState(null);   // #237: markiertes Aufrüst-Ziel (buildingId) — zeigt Jetzt/Danach-Effekt, aufgewertet erst mit „Aufwerten bestätigen" (kein Sofort-Upgrade)
+  const [upgradeDone, setUpgradeDone] = useState(null);         // Erfolgs-Feedback: { name, from, to } — hervorgehobene Zeile im Platzieren-Screen, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen).
   // #243: Toggle-Stellung aus den Optionen (überlebt Runden + Sessions); onOption persistiert die Wahl.
   const [showCombos, setShowCombos] = useState(options.archShowCombos !== false); // #UI: Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben
   const [showForms, setShowForms] = useState(options.archShowForms !== false);    // #UI: Formationsrahmen (Ring + Label) am Brett ein-/ausblenden
@@ -243,7 +244,23 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   // #235: markiertes Gebäude wirklich abreißen (danach platziert der removeFor-Effekt den wartenden Bauplan automatisch).
   const confirmDemolish = () => { if (pendingDemolish == null) return; onDemolish?.(pendingDemolish); setPendingDemolish(null); };
   // #237: markiertes Gebäude wirklich aufwerten (erst nach „Aufwerten bestätigen" — nie durch einen Fehltipp).
-  const confirmUpgrade = () => { if (pendingUpgrade == null) return; onUpgrade?.(pendingUpgrade); setPendingUpgrade(null); setUpgradeMsg(null); setPhase("move"); };
+  // Härtung: NUR weiterschalten, wenn das Upgrade wirklich anwendbar ist. Ist die Hauptaktion der Bauphase schon
+  // verbraucht (actedMain) oder das Gebäude nicht (mehr) aufwertbar (Stufe IV/legendär/inert), lehnt der Reducer
+  // still ab — dann darf die UI NICHT kommentarlos in den Platzieren-Screen springen, sondern zeigt die Meldung.
+  const confirmUpgrade = () => {
+    if (pendingUpgrade == null) return;
+    const b = committed.find((x) => x.id === pendingUpgrade);
+    const fam = b ? familyDef(b.familyId) : null;
+    const info = upgradeInfo(fam, b?.tier);
+    if (!b || !fam || !info.can || architect.actedMain) {                       // No-op-Bedingungen des Reducers spiegeln → kein Scheinerfolg
+      setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: architect.actedMain ? "acted" : info.reason });
+      setPendingUpgrade(null);
+      return;
+    }
+    onUpgrade?.(pendingUpgrade);
+    setUpgradeDone({ name: fam.name, from: b.tier, to: b.tier + 1 });           // sichtbares Erfolgs-Feedback für den Platzieren-Screen
+    setPendingUpgrade(null); setUpgradeMsg(null); setPhase("move");
+  };
 
   // ---- Tap je Phase ----
   const tapCell = (pos) => {
@@ -689,7 +706,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         </div>
                         {upgradeMsg && (
                           <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
-                            <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : "nicht aufwertbar"}.
+                            <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : upgradeMsg.reason === "acted" ? "in dieser Bauphase ist die Hauptaktion (Bauen ODER Aufwerten) schon verbraucht" : "nicht aufwertbar"}.
                           </div>
                         )}
                         {/* #232/#261: Liste ALLER aufwertbaren Gebäude — KLICKBAR (wie Skill-/Ersetzen-Menü). Ein Klick
@@ -724,6 +741,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const selFam = selB ? familyDef(selB.familyId) : null;
                 return (
                   <div>
+                    {/* Erfolgs-Feedback: hervorgehobene Zeile, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen — die Ziffer am Gebäude ist winzig). */}
+                    {upgradeDone && (
+                      <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2 flex items-center gap-1.5 flex-wrap" style={{ background: "#15291a", borderLeft: "3px solid #f0b429", color: "#d7f0c8" }}>
+                        <span aria-hidden="true">⬆</span> <b>„{upgradeDone.name}"</b> aufgewertet:
+                        <span className="font-mono" style={{ color: "#f0b429" }}>Stufe {tierLabel(upgradeDone.from)} → {tierLabel(upgradeDone.to)}</span>
+                      </div>
+                    )}
                     <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
                       <b>Platzieren & Verschieben:</b> zieh Gebäude am Brett an ihren Platz (Griff überall, <b>⟳ Drehen</b> oben) — beliebig oft. Unten <b>Bestätigen</b> startet den Durchlauf.
                     </div>
