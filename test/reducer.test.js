@@ -407,3 +407,37 @@ describe("ARCHITECT_RECOLOR (#261)", () => {
     expect(reducer(st, { type: "ARCHITECT_RECOLOR", buildingId: 1, colorChoice: "B" })).toBe(st);
   });
 });
+
+// #263: REROLL_ARCHITECT — Architekt-Bauplan-Angebot neu würfeln über den eigenen Gebäude-Reroll-Pool.
+describe("REROLL_ARCHITECT (#263)", () => {
+  const base = (over = {}) => ({
+    phase: "architect", architectEnabled: true, seed: 12345, cycle: 0, offerRerolls: 0, masteryGrade: 0,
+    rerollsArch: 2, rerollsUsed: 0,
+    architect: { buildings: [], offers: [{ familyId: "seed", tier: 1, used: false }], actedMain: false, moved: false },
+    ...over,
+  });
+  it("verbraucht 1 Gebäude-Reroll, zählt rerollsUsed + offerRerolls hoch, liefert ein neues Angebot", () => {
+    const s = reducer(base(), { type: "REROLL_ARCHITECT", rng: Math.random });
+    expect(s.rerollsArch).toBe(1);
+    expect(s.rerollsUsed).toBe(1);
+    expect(s.offerRerolls).toBe(1);
+    expect(s.architect.offers.length).toBeGreaterThan(0);
+  });
+  it("deterministisch: gleicher Seed/Cycle/Index → identisches Angebot", () => {
+    const a = reducer(base(), { type: "REROLL_ARCHITECT", rng: Math.random });
+    const b = reducer(base(), { type: "REROLL_ARCHITECT", rng: Math.random });
+    expect(a.architect.offers.map((o) => `${o.familyId}:${o.tier}`)).toEqual(b.architect.offers.map((o) => `${o.familyId}:${o.tier}`));
+  });
+  it("No-op ohne Gebäude-Reroll-Vorrat", () => {
+    const st = base({ rerollsArch: 0 });
+    expect(reducer(st, { type: "REROLL_ARCHITECT", rng: Math.random })).toBe(st);
+  });
+  it("No-op, wenn die Hauptaktion schon verbraucht ist (actedMain)", () => {
+    const st = base({ architect: { buildings: [], offers: [], actedMain: true, moved: false } });
+    expect(reducer(st, { type: "REROLL_ARCHITECT", rng: Math.random })).toBe(st);
+  });
+  it("No-op außerhalb der architect-Phase", () => {
+    const st = base({ phase: "play" });
+    expect(reducer(st, { type: "REROLL_ARCHITECT", rng: Math.random })).toBe(st);
+  });
+});

@@ -48,10 +48,9 @@ function KeywordGlossary({ tokens }) {
    Archetyps (inkl. Schlüsselbegriffe) klappt per Tap/Klick auf den Archetyp-Header auf. */
 export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {} }) {
   const held = skills.map((id) => SKILL_DEFS[id]).filter(Boolean);
-  // Neuwurf (#202/#214): gratis Reroll (Schicksalskontrolle) zuerst, sonst der geteilte Reroll-Pool (Perk+Skill).
-  const freeReroll = !!state.freeSkillReroll;
-  const rerollTokens = state.rerolls || 0;
-  const canReroll = !!onReroll && (freeReroll || rerollTokens > 0);
+  // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
+  const rerollTokens = state.rerollsSkill || 0;
+  const canReroll = !!onReroll && rerollTokens > 0;
   const full = skills.length >= SKILL_SLOTS;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
   const [openSkill, setOpenSkill] = useState(null); // gehaltener Skill, dessen Beschreibung aufgeklappt ist
@@ -272,7 +271,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             <button onClick={onReroll}
               className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
               style={{ background: "#20202a", color: "#d4a63a", border: "1px solid #d4a63a66" }}>
-              🎲 Angebot neu würfeln {freeReroll ? "· gratis" : `· ${rerollTokens} übrig`}
+              🎲 Angebot neu würfeln · {rerollTokens} übrig
             </button>
           )}
           <button

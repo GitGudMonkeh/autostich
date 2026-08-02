@@ -70,7 +70,7 @@ function MiniShape({ form, color, rotIdx = 0 }) {
   );
 }
 
-export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onDemolish, onRecolor, onDone }) {
+export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onDemolish, onRecolor, onReroll, onDone }) {
   useEscape(onDone);
   const architect = state.architect || { buildings: [], offers: [] };
   const committed = architect.buildings || [];
@@ -648,6 +648,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       <div className="text-[10px] font-mono opacity-60 leading-snug">ein Gebäude +1 Stufe{canUpgradeAny ? "" : " · nichts ausbaubar"}</div>
                     </button>
                   </div>
+                  {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). */}
+                  {onReroll && (state.rerollsArch || 0) > 0 && (
+                    <button onClick={onReroll} className="w-full mt-2 rounded-lg py-2 text-xs font-bold transition-all hover:brightness-110"
+                      style={{ background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }}>
+                      🎲 Baupläne neu würfeln · {state.rerollsArch} übrig
+                    </button>
+                  )}
                 </div>
               )}
 

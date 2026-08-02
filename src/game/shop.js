@@ -29,9 +29,7 @@ export const perkLegendaryChance  = (shop = {}) => C.PERK_LEGENDARY_BASE  + Math
 // #247: Der additive „skillLegendaryBonus"-Pity ist totes Feld (Rest vom entfernten Shop, wurde nie hochgezählt) und
 // entfällt hier — die Skill-Legendär-Chance ist die reine Basis (je Archetyp gewürfelt in buildSkillOffer).
 export const skillLegendaryChance = () => C.SKILL_LEGENDARY_BASE;
-// Kostenloser Neuwurf je Perk-/Skill-Auswahl (Schicksalskontrolle/typ-spezifisch) — im Architekt-Spiel immer false.
-export const perkFateReroll  = (shop = {}) => !!(shop.fateControl || shop.perkFreeReroll);
-export const skillFateReroll = (shop = {}) => !!(shop.fateControl || shop.skillFreeReroll);
+// #263: Free-Reroll-/fateControl-Mechanik entfernt — alle Rerolls laufen ausschließlich über die drei Kategorie-Pools.
 
 // Zykluslänge je Durchlauf: konstant TRICKS_PER_CYCLE (#229: das Shop-Zeitsegment ist entfernt).
 export const cycleLenFor = () => C.TRICKS_PER_CYCLE;

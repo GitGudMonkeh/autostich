@@ -88,7 +88,7 @@ export const GLOSSARY = {
     text: "Dein gespeicherter Bestlauf als Vergleich — sein Score-Stand blitzt alle paar Stiche als Messlatte auf.",
     match: ["Geist", "Rekord"] },
   reroll: { category: "grund", label: "Neuwurf (Reroll)", icon: "🎲", color: CLR.grund,
-    text: `Würfelt ein Perk- oder Skill-Angebot komplett neu. Geteilter Vorrat je Lauf (Start ${C.BASE_REROLLS}); Meisterränge geben mehr. Ersetzt die alte Münzökonomie.`,
+    text: `Würfelt ein Angebot komplett neu. Drei GETRENNTE Vorräte je Lauf — Perks · Gebäude · Skills, je ${C.BASE_REROLLS}, nicht untereinander teilbar, kein Nachschub. Meisterränge geben (pro Kategorie) mehr. Ersetzt die alte Münzökonomie.`,
     match: ["Neuwurf", "Neuwürfe", "Reroll"] },
 
   /* ============ 2 · Deck & Karten ============ */
