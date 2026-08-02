@@ -19,6 +19,22 @@ const OUT_DIR = process.env.DB_OUT_DIR || resolve(__dir, "../dist/db");
 
 const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 
+// Identische aufeinanderfolgende Stufen zu Bereichen zusammenfassen (z. B. „I–IV" statt 4× derselbe Text).
+// Zeigt echte Stufen-Unterschiede und verschweigt Schein-Stufen bei nicht skalierenden Effekten
+// (joker/transparentFarb/crossSeg ohne tierKick sind im Spiel nicht aufwertbar).
+function tierRanges(textFor) {
+  const g = [];
+  for (let t = 1; t <= 4; t++) {
+    const text = textFor(t), last = g[g.length - 1];
+    if (last && last.text === text) last.to = t;
+    else g.push({ from: t, to: t, text });
+  }
+  return g.filter((x) => x.text).map((x) => ({
+    label: x.from === x.to ? `Stufe ${ROMAN[x.from]}` : `Stufe ${ROMAN[x.from]}–${ROMAN[x.to]}`,
+    text: x.text,
+  }));
+}
+
 // Architekt-Effekt je Stufe — 1:1 gespiegelt aus ArchitectScreen.famEff (inkl. neuer Distrikt-/Lage-/Risiko-Kinds
 // und dem qualitativen tierKick-Zusatz), driftsicher über die architect.js-Stufen-Helfer.
 function archEff(fam, tier) {
@@ -93,7 +109,7 @@ for (const p of Object.values(PERK_DEFS)) {
 // ---- Perk-Familien (Rarität, 4 Stufen I–IV) ----
 for (const f of FAMILY_LIST) {
   const cat = CATEGORIES[f.cat] || { label: f.cat, color: "#8a8a95" };
-  const lines = [1, 2, 3, 4].map((t) => ({ label: `Stufe ${ROMAN[t]}`, text: (f.tiers?.[t]?.desc) || "" })).filter((l) => l.text);
+  const lines = tierRanges((t) => (f.tiers?.[t]?.desc) || "");
   entries.push({
     kind: "Perk-Familie", id: f.id, name: f.name,
     group: cat.label, groupColor: cat.color, icon: "",
@@ -110,7 +126,7 @@ for (const fam of Object.values(ARCHITECT_FAMILIES)) {
   const catLabel = ARCH_CAT_LABEL[fam.category] || fam.category;
   const lines = fam.legendary
     ? [{ label: "★ Legendär", text: archEff(fam, "legendary") }]
-    : [1, 2, 3, 4].map((t) => ({ label: `Stufe ${ROMAN[t]}`, text: archEff(fam, t) }));
+    : tierRanges((t) => archEff(fam, t));
   entries.push({
     kind: "Gebäude", id: fam.id, name: fam.name,
     group: catLabel, groupColor: ARCH_CAT_COLOR[fam.category] || "#8a8a95", icon: "🏗",
