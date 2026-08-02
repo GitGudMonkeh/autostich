@@ -829,7 +829,7 @@ function famEff(fam, b) {
     case "compound":   s = `Sieg +${nz(base.score)} Score je vollendeter Struktur`; break;
     // #Pool Batch 3: Lage/Staffel — hängen von der Position ab.
     case "segment":    s = `${base.half === "early" ? "frühe" : "späte"} Segmente ${fam.category === "value" ? `+${nz(base.value)} Stichwert` : `+${nz(base.score)} Score`}`; break;
-    case "relay":      s = `reicht +${nz(base.score)} Score ans Feld rechts weiter`; break;
+    case "relay":      s = base.both ? `strahlt +${nz(base.score)} Score in beide Nachbarfelder` : `reicht +${nz(base.score)} Score ans Feld rechts weiter`; break;
     // #Pool Batch 4: Risiko — Crit-Wette.
     case "gamble":     s = `Crit-Sieg +${nz(base.score)} Score · Sieg ohne Crit −${base.penalty}`; break;
     case "joker":      s = `Formations-Joker (${base.types.join("/")})`; break;

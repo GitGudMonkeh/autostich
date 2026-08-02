@@ -229,6 +229,14 @@ export const ARCHITECT_FAMILIES = {
   // Prisma (Joker alle 4) war als normales Formations-Gebäude zu stark (schon nach dem 1. Lauf dominant) → in die
   // Legendären gezogen: nur noch über den seltenen Legendär-Slot, Effekt unverändert (Tetro-T, 4 Zellen).
   A_PRISMA:     { id: "A_PRISMA",     name: "Prisma",          category: "formation", form: "tetro_t",  base: { kind: "joker", types: ["wiederholung", "farbblock", "treppe", "wechsel"] }, legendary: true },
+
+  /* ---- legendär · Distrikt (#Pool Batch 5): heben die neuen Mechaniken (Nachbarschaft/Ballung/Staffel/Risiko) auf
+         Legendär-Niveau. Kommen fertig stark, aber mit großer/gestreuter Form → schwer optimal zu platzieren. ---- */
+  A_LEUCHTTURM: { id: "A_LEUCHTTURM", name: "Leuchtturm",      category: "score", form: "line4",       base: { kind: "relay", score: 100, both: true }, legendary: true },   // strahlt in BEIDE Nachbarfelder
+  A_RATHAUS:    { id: "A_RATHAUS",    name: "Rathaus",         category: "score", form: "block2x2",    base: { kind: "neighbor", score: 45, cap: 6 }, legendary: true },     // Distrikt-Hauptstadt
+  A_SPIELBANK:  { id: "A_SPIELBANK",  name: "Spielbank",       category: "score", form: "grundstueck", base: { kind: "gamble", score: 500, penalty: 80 }, legendary: true },  // größter Jackpot
+  A_STERNWARTE: { id: "A_STERNWARTE", name: "Sternwarte",      category: "score", form: "zeile",       base: { kind: "compound", score: 90 }, legendary: true },             // +Score je vollendeter Struktur
+  A_ZWINGER:    { id: "A_ZWINGER",    name: "Zwinger",         category: "value", form: "block2x3",    base: { kind: "neighbor", value: 2, cap: 5 }, legendary: true },      // Wert-Distrikt, große Fläche
 };
 export const familyDef = (id) => ARCHITECT_FAMILIES[id] || null;
 export const CATEGORIES = ["value", "score", "formation"];
@@ -382,7 +390,10 @@ export function precomputeArchitect(architect, order, deck) {
     const fam = familyDef(b.familyId);
     if (!fam || (fam.base && fam.base.kind) !== "relay") continue;
     const amt = tierNum(fam.base.score, b.tier);
-    for (const p of b.footprint) if (colOf(p) < COLS - 1) relayFlat[p + 1] += amt;
+    for (const p of b.footprint) {
+      if (colOf(p) < COLS - 1) relayFlat[p + 1] += amt;                       // Staffel nach rechts
+      if (fam.base.both && colOf(p) > 0) relayFlat[p - 1] += amt;             // Leuchtturm (legendär): auch nach links
+    }
   }
   // Struktur-Boni (Zeile/Spalte/Diagonale) — multiplikativ auf jede beteiligte Position.
   const coverSet = new Set(); for (let p = 0; p < N_POS; p++) if (cover[p]) coverSet.add(p);
