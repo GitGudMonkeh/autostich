@@ -573,8 +573,9 @@ export function reducer(state, action) {
                  + formationEnergyBonus(state.familyTiers, state.cycle), // #179 Feinjustierung (Perk-Familie E_TUNING)
                formationSwaps: [], frostSwapsUsed: [] };
     }
-    // Bestätigen → Reihenfolge bleibt persistent. Eis-Rework (v0): Kaltfront (Platzierhilfe temp Wert),
-    // Gletscherschub/Verzahnung (Frosttausch schafft/überlappt Formation → Schicht), Ablage B (ungenutzte Tausche banken).
+    // Bestätigen → Reihenfolge bleibt persistent. Eis-Rework: Gletscherschub/Verzahnung (Frosttausch schafft/überlappt
+    // Formation → Schicht), Ablage B (ungenutzte Tausche banken). (#269: Kaltfront ist zu „Kälteleitung" umgebaut — live
+    // in der Engine aus playerOrder berechnet, kein Swap-Zeit-Temp-Wert mehr.)
     case "CONFIRM_FORMATION": {
       if (state.phase !== "formation") return state;
       let iceTemp = state.iceTemp || {};
@@ -582,19 +583,6 @@ export function reducer(state, action) {
       const skills = state.skills, usedFrost = state.frostSwapsUsed || [];
       const anchors = state.shop?.anchors || [];
       const posOfFrost = (fid) => state.playerOrder.findIndex((di) => state.deck[di].id === fid);
-      // Kaltfront: getauschte Frostkarte + neuer Nachbar +3 temp Wert (Platzierhilfe für den nächsten Durchlauf).
-      if (usedFrost.length && hasKaltfront(skills)) {
-        iceTemp = { ...iceTemp };
-        for (const fid of usedFrost) {
-          const pos = posOfFrost(fid);
-          if (pos < 0) continue;
-          iceTemp[fid] = C.KALTFRONT_VALUE;
-          if (pos + 1 < state.playerOrder.length) {
-            const nid = state.deck[state.playerOrder[pos + 1]].id;
-            iceTemp[nid] = Math.max(iceTemp[nid] || 0, C.KALTFRONT_VALUE);
-          }
-        }
-      }
       // Gletscherschub / Verzahnung: ein Frosttausch, der eine NEUE (bzw. zweite überlappende) Formation schafft, bankt eine Schicht.
       if (usedFrost.length && (hasGlacierPush(skills) || hasVerzahnung(skills))) {
         const finalForms = state.formations || computeFormations(state.playerOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers, archOf(state));

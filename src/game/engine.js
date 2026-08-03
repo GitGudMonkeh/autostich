@@ -11,7 +11,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   fireFlag, hasHeatConsumer, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, // Feuer-Rework (v0); #234: hasHeatConsumer statt heatConsumerOf (mehrere Hitze-Konsumenten je einzeln)
   glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
   hasStandstill, hasFrostReserve, hasIceBloom, hasIceAnchor, hasPermafrost, iceSkillCount, // Eis-Rework (v0)
-  layerValue, totalLayers, hasGletscher, hasEisdruck, hasKristallineMasse, hasBestaendigkeit, hasVerschraenkung, // Eis-Rework (v0): Schicht-Engine
+  layerValue, layerScore, kristallineBonus, totalLayers, hasGletscher, hasEisdruck, hasKristallineMasse, hasBestaendigkeit, hasVerschraenkung, hasKaltfront, // Eis-Rework (#269): Schicht-Engine
   hasVergletscherung, hasArchitekt, // Eis-Rework (v0): Legendäre
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
   hasWurzelschlag, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Tiefe/Breite
@@ -248,11 +248,23 @@ export function resolveTrick(state, rng) {
   if (fireFlag(skills, "rueckzuendung") && lastResult === "loss") fireValueBonus += C.RUECKZUENDUNG_VALUE;
   // ---- Eis (#93 F3): temp. Wertbonus (Kältereserve/Kaltfront/Frostspur, an card.id) + Permafrost +2 (Dauerwert eingefroren).
   // Eis-Rework (v0): Schicht-Dauerwert der Frostkarte (Gletscher superlinear) + Kristalline Masse (Summe ≥ Schwelle).
-  const iceGletscher = hasGletscher(skills);
   const iceTotalLayers = totalLayers(layers);
+  // Kaltfront → Kälteleitung (#269): eine NICHT-gefrorene Siegkarte mit direktem gefrorenen Nachbarn wird temporär vereist
+  // und leiht einen ANTEIL der Schichten des (tiefsten) Frost-Nachbarn — für Dauerwert (hier) UND Schicht-Score (im Sieg).
+  // Rein aus playerOrder je Durchlauf, keine permanenten Schichten. `conductedLayers` = geliehene Schichtzahl (0 = inaktiv).
+  let conductedLayers = 0;
+  if (hasKaltfront(skills) && !pCard.frozen) {
+    for (const nb of [actualPos - 1, actualPos + 1]) {
+      if (nb < 0 || nb >= playerOrder.length) continue;
+      const nc = deck[playerOrder[nb]];
+      if (nc && nc.frozen) conductedLayers = Math.max(conductedLayers, layers[nc.id] || 0);
+    }
+  }
+  // #269: Schicht→Dauerwert (linear, gedeckelt) + Kristalline Masse (skalierend je Σ-Schichten) + Kälteleitung-Leihwert.
   const iceValueBonus = (iceTemp[pCard.id] || 0)
-    + (pCard.frozen ? layerValue(layers[pCard.id] || 0, iceGletscher) : 0)
-    + (pCard.frozen && hasKristallineMasse(skills) && iceTotalLayers >= C.KRISTALLINE_THRESHOLD ? C.KRISTALLINE_VALUE : 0);
+    + (pCard.frozen ? layerValue(layers[pCard.id] || 0) : 0)
+    + (pCard.frozen && hasKristallineMasse(skills) ? kristallineBonus(iceTotalLayers) : 0)
+    + (conductedLayers > 0 ? Math.floor(layerValue(conductedLayers) * C.KALTFRONT_SHARE) : 0);
   const anchorPowerBonus = anchorType === "power" ? (aParam("power") || 0) : 0; // Kraftanker (§4.2, Stärke = Stufe)
   // E_QUICKSHOT IV (Rarität #167 Kat. E, Spec §3.2 E8 IV): jede Anker-Position (jede fünfte) erhält zusätzlich +2 Wert.
   // Der Anker-FAKTOR selbst läuft über computeFormations; hier nur der Stufe-IV-Wertbonus (anchor.value auf Anker-Positionen).
@@ -384,31 +396,39 @@ export function resolveTrick(state, rng) {
       const nForms = baseFormationCount(posForm);
       const inFormation = positionHasFormation(posForm);
       const myLayers = layers[pCard.id] || 0;
-      const capLayers = Math.min(myLayers, C.ICE_LAYER_MAX); // Anti-Runaway v0.1: wirksame Schichten für Eisdruck/Vergletscherung gedeckelt
-      // Stillstand: Frostkarte siegt in ≥1 Formation → +200 Flat (flacher Früh-Support).
-      if (hasStandstill(skills) && inFormation) iceFlat += C.STILLSTAND_SCORE;
-      // Eis-Score-Hebel (v0.1): tiefe Schichten zahlen bei JEDEM Frost-Sieg in Score — „tiefe Pfeiler scoren groß".
-      // NICHT formations-gebunden: Eis friert niedrige Karten (Frostwahl), die selten in Formation siegen; die Schichten
-      // machen sie stark genug zum Siegen, DANN zahlen sie. Alle Eis-Builds profitieren.
-      if (capLayers > 0) iceFlat += capLayers * C.ICE_ABLAGE_SCORE_PER_LAYER;
-      // Ablage A: Sieg in ≥1 Formation → +1 Schicht (+Permafrost/+Beständigkeit/+Verschränkung). Eisanker garantiert eine auch ohne volle Formation.
-      let addLayers = 0;
-      if (inFormation) {
+      const capLayers = Math.min(myLayers, C.ICE_LAYER_MAX); // gedeckelte Schichten für Eisdruck/Vergletscherung
+      // #269 PAYOFF-MOTOR: Schicht→Score DREIECKIG und DIREKT (post-stack, plateaut bei P — läuft NICHT über formBaseMult,
+      // also kein Joker-Runaway). Zahlt bei JEDEM Frost-Sieg aus den (vor diesem Sieg) gebankten Schichten.
+      if (myLayers > 0) iceDirect += layerScore(myLayers);
+      // Stillstand (#269 RETUNE): Frost-Formations-Sieg → Direkt-Score ∝ Schichten der Karte (belohnt tiefe Pfeiler in Formation).
+      if (hasStandstill(skills) && inFormation) iceDirect += myLayers * C.STILLSTAND_PER_LAYER;
+      // Verschränkung (#269 V-B „Tiefen-Leihe"): je Frost-Sieg zahlt ein Anteil der TIEFSTEN ANDEREN Frostkarte mit (Score,
+      // keine neue Schicht) → gebankte tiefe Pfeiler scoren bei jedem Sieg mit.
+      if (hasVerschraenkung(skills)) {
+        let deepestOther = 0;
+        for (const c of deck) if (c.frozen && c.id !== pCard.id) { const l = layers[c.id] || 0; if (l > deepestOther) deepestOther = l; }
+        const borrowed = Math.floor(Math.min(deepestOther, C.ICE_LAYER_SCORE_PLATEAU) * C.VERSCHRAENKUNG_SHARE);
+        if (borrowed > 0) iceDirect += borrowed * C.ICE_LAYER_SCORE_K;
+      }
+      // Schicht-Gewinn — MOTOR IMMER AN (#269): jeder Frost-Sieg +ICE_WIN_LAYER; ein Formations-Sieg gibt +ICE_ABLAGE_A_LAYER
+      // obendrauf (+Permafrost/+Beständigkeit). Eisanker gewährt den Formations-Bonus auch ohne volle Formation.
+      let addLayers = C.ICE_WIN_LAYER;
+      const formBonus = inFormation || hasIceAnchor(skills);
+      if (formBonus) {
         addLayers += C.ICE_ABLAGE_A_LAYER;
         if (hasPermafrost(skills)) addLayers += C.PERMAFROST_LAYER_BONUS;
-        if (hasBestaendigkeit(skills) && frostFormPrev.includes(pCard.id)) addLayers += C.BESTAENDIGKEIT_LAYER;
-        if (hasVerschraenkung(skills) && nForms >= 3) addLayers += C.VERSCHRAENKUNG_LAYERS;
-        newFrostFormCur = [...newFrostFormCur, pCard.id];
-      } else if (hasIceAnchor(skills)) {
-        addLayers += C.ICE_ABLAGE_A_LAYER + (hasPermafrost(skills) ? C.PERMAFROST_LAYER_BONUS : 0);
+        if (inFormation && hasBestaendigkeit(skills) && frostFormPrev.includes(pCard.id)) addLayers += C.BESTAENDIGKEIT_LAYER;
       }
-      if (addLayers > 0) newLayers = { ...newLayers, [pCard.id]: myLayers + addLayers };
-      // Eisblüte: Sieg in ≥2 Formationen → gefrorene Deck-Nachbarn banken eine Schicht.
-      if (hasIceBloom(skills) && nForms >= 2) {
+      if (inFormation) newFrostFormCur = [...newFrostFormCur, pCard.id];
+      newLayers = { ...newLayers, [pCard.id]: myLayers + addLayers };
+      // Eisblüte (#269 REWORK): Sieg in ≥2 Formationen → gefrorene Deck-Nachbarn banken einen ANTEIL der Schichten der
+      // Siegkarte (permanent, min 1) → skaliert mit Tiefe statt fix +1.
+      if (hasIceBloom(skills) && nForms >= 2 && myLayers > 0) {
+        const spread = Math.max(1, Math.floor(myLayers * C.EISBLUETE_SHARE));
         for (const nb of [actualPos - 1, actualPos + 1]) {
           if (nb < 0 || nb >= playerOrder.length) continue;
           const nc = deck[playerOrder[nb]];
-          if (nc.frozen) newLayers = { ...newLayers, [nc.id]: (newLayers[nc.id] != null ? newLayers[nc.id] : (layers[nc.id] || 0)) + C.EISBLUETE_LAYER };
+          if (nc.frozen) newLayers = { ...newLayers, [nc.id]: (newLayers[nc.id] != null ? newLayers[nc.id] : (layers[nc.id] || 0)) + spread };
         }
       }
       // Eisdruck: Formationsfaktor skaliert mit den Schichten der Frostkarte.
@@ -463,6 +483,9 @@ export function resolveTrick(state, rng) {
         if (totDebuff > 0) iceDirect += Math.min(totDebuff, C.VERGLETSCHERUNG_DEBUFF_CAP) * C.VERGLETSCHERUNG_DIRECT * Math.min(1, iceSkillCount(skills) / C.SKILL_SLOTS);
       }
     }
+    // Kälteleitung (#269): eine NICHT-gefrorene Siegkarte mit gefrorenem Nachbarn zahlt einen Anteil des Schicht-Scores des
+    // (tiefsten) Frost-Nachbarn mit (temporär, aus playerOrder — keine permanenten Schichten). Der Dauerwert-Anteil floss oben in iceValueBonus.
+    if (conductedLayers > 0) iceDirect += Math.floor(layerScore(conductedLayers) * C.KALTFRONT_SHARE);
     // ---- Pflanze-Fraktion (v0): Wachstum (Sieg → +1), Reife-Recolor, Wurzeln (Score/Wert), Aussaat/Ranken (Breite/Grün),
     //      Blüte/Photosynthese/Blätterdach (Grün-Payoff), Ausläufer (Kolonisieren/Ernten). Grün = card.green.
     let plantFlat = 0;

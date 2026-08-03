@@ -1,48 +1,57 @@
-// ❄️ Frost (Eis-Archetyp) — Masse-Panel (#210). Der Eis-Spine („Gletscher: Architektur × Permanenz") hat KEINEN
-// Konsumenten → also KEINE verbrauchbare Leiste. Gezeigt wird nur:
-//   • Kristalline Masse gesamt (Σ aller Schichten) mit Schwellenmarke (KRISTALLINE_THRESHOLD): ab der Schwelle
-//     erhalten alle Frostkarten +Wert (Kristalline Masse).
-//   • Überlauf pro Sieg (Summe der Schichten ÜBER dem wirksamen Deckel ICE_LAYER_MAX) — die Überlauf-Tiefe ist die
-//     Nahrung der Eis-Legendären (Direkt-Score je Frost-Sieg).
-// Der Gegner-Frostbiss (Vergletscherung, −Wert) bleibt eine eigene, getrennte ROTE Zeile — „mein Aufbau" (blau) ist
-// klar vom „feindlichen Debuff" (rot) getrennt. Rein informativ, keine Engine-Kopplung.
+// ❄️ Frost (Eis-Archetyp) — Masse-Panel (#210 · #269). Der Eis-Spine hat KEINEN Konsumenten → keine verbrauchbare
+// Leiste. Gezeigt wird (#269 macht den Nutzen in Score sichtbar):
+//   • „Schichten zahlen ~Z Score/Frost-Sieg" — die HUD-Summe des dreieckigen Schicht→Score-Motors (Σ layerScore je Frostkarte).
+//   • Kristalline Masse gesamt (Σ aller Schichten) mit Fortschritt zur nächsten Stufe (je KRISTALLINE_STEP → +1 Wert, gedeckelt).
+//   • Überlauf pro Sieg (Schichten ÜBER dem Deckel ICE_LAYER_MAX) — Nahrung der Eis-Legendären (Direkt-Score je Frost-Sieg).
+// Der Gegner-Frostbiss (Vergletscherung, −Wert) bleibt eine eigene, getrennte ROTE Zeile.
 import { IndicatorPanel, CounterCell } from "./indicators/panelKit.jsx";
-import { KRISTALLINE_THRESHOLD, KRISTALLINE_VALUE, ICE_LAYER_MAX } from "../game/constants.js";
+import { KRISTALLINE_STEP, KRISTALLINE_MAX_VALUE, ICE_LAYER_MAX } from "../game/constants.js";
+import { layerScore, kristallineBonus } from "../game/skills.js";
 
 const ICE = "#5ec8f0";  // eigener Frost / Masse (blau)
 const OVER = "#e6f7ff"; // Überlauf-Tiefe / Schwelle erreicht (hell)
 const FOE = "#e0605a";  // feindlicher Frostbiss-Debuff (App-Rotton)
+const grp = (n) => Math.round(n).toLocaleString("de-DE");
 
 export function CrystalBar({ active, layers = {}, frostbite = {}, hasKristalline = false }) {
   if (!active) return null;
   const vals = Object.values(layers || {});
   const totalMass = vals.reduce((t, v) => t + (v || 0), 0);
   const overflowTotal = vals.reduce((t, v) => t + Math.max(0, (v || 0) - ICE_LAYER_MAX), 0);
-  const reached = totalMass >= KRISTALLINE_THRESHOLD;
-  const pct = Math.min(100, (totalMass / KRISTALLINE_THRESHOLD) * 100);
-  // Gegner-Frostbiss (Vergletscherung): {oppId: −Wert} → Anzahl markierter Gegnerkarten + Summe des Debuffs.
+  // #269: der Schicht→Score-Motor — Summe des dreieckigen Direkt-Scores, den ALLE Frostkarten je Frost-Sieg zahlen.
+  const scorePerWin = vals.reduce((t, v) => t + layerScore(v || 0), 0);
+  // Kristalline Masse (skalierend): aktueller Wertbonus + Fortschritt zur nächsten Stufe.
+  const kristBonus = kristallineBonus(totalMass);
+  const capped = kristBonus >= KRISTALLINE_MAX_VALUE;
+  const pct = capped ? 100 : Math.min(100, ((totalMass % KRISTALLINE_STEP) / KRISTALLINE_STEP) * 100);
+  // Gegner-Frostbiss (Vergletscherung): {oppId: −Wert}.
   const foeVals = Object.values(frostbite || {});
   const enemyCount = foeVals.length;
   const enemyDebuff = foeVals.reduce((t, v) => t + (v || 0), 0);
 
   return (
     <IndicatorPanel>
+      {/* #269: HUD-Summe — der Score-Wert der Schichten, prominent. */}
+      {scorePerWin > 0 && (
+        <div className="flex items-baseline justify-between text-xs mb-2">
+          <span className="opacity-60">❄ Schichten zahlen</span>
+          <span className="font-bold tabular-nums" style={{ color: OVER, textShadow: `0 0 6px ${ICE}` }}>~{grp(scorePerWin)} Score / Frost-Sieg</span>
+        </div>
+      )}
       <div className="flex items-stretch gap-3">
-        {/* Kristalline Masse (Hauptelement): Σ aller Schichten, Balken bis zur Schwelle. */}
+        {/* Kristalline Masse: Σ aller Schichten + Fortschritt zur nächsten +1-Wert-Stufe. */}
         <div className="flex-1 min-w-0">
           <div className="flex justify-between text-xs mb-1.5">
             <span className="opacity-60">❄ Kristalline Masse
-              {reached && <span style={{ color: OVER }}> · SCHWELLE{hasKristalline ? ` · alle Frostkarten +${KRISTALLINE_VALUE}` : ""}</span>}
+              {hasKristalline && kristBonus > 0 && <span style={{ color: OVER }}> · alle Frostkarten +{kristBonus}{capped ? " (max)" : ""}</span>}
             </span>
-            <span className="font-bold tabular-nums" style={{ color: reached ? OVER : ICE }}>Σ {totalMass} / {KRISTALLINE_THRESHOLD}</span>
+            <span className="font-bold tabular-nums" style={{ color: kristBonus > 0 ? OVER : ICE }}>Σ {totalMass}</span>
           </div>
           <div className="relative rounded-sm overflow-hidden" style={{ height: 12, background: "#26262e" }}
-            title={`Summe aller Schichten. Ab ${KRISTALLINE_THRESHOLD} erhalten alle Frostkarten +${KRISTALLINE_VALUE} Wert (Kristalline Masse).`}>
+            title={`Summe aller Schichten. Je ${KRISTALLINE_STEP} erhalten alle Frostkarten +1 Wert (Kristalline Masse, bis +${KRISTALLINE_MAX_VALUE}).`}>
             <div className="absolute inset-y-0 left-0 transition-all"
-              style={{ width: `${pct}%`, background: reached ? `linear-gradient(90deg, ${ICE}, ${OVER})` : ICE,
-                       boxShadow: reached ? `0 0 8px ${ICE}` : undefined }} />
-            {/* Schwellenmarke am rechten Balkenende (= KRISTALLINE_THRESHOLD). */}
-            <div className="absolute inset-y-0 right-0" style={{ width: 2, background: "#ffffff66" }} title={`Schwelle ${KRISTALLINE_THRESHOLD}`} />
+              style={{ width: `${pct}%`, background: kristBonus > 0 ? `linear-gradient(90deg, ${ICE}, ${OVER})` : ICE,
+                       boxShadow: kristBonus > 0 ? `0 0 8px ${ICE}` : undefined }} />
           </div>
           <div className="text-[10px] opacity-45 mt-1">Kein Konsument — Schichten sind permanent.</div>
         </div>
@@ -52,11 +61,11 @@ export function CrystalBar({ active, layers = {}, frostbite = {}, hasKristalline
           <CounterCell
             icon={<span style={{ color: OVER, fontSize: 12, lineHeight: 1, textShadow: `0 0 5px ${ICE}` }}>◆</span>}
             value={overflowTotal} label="Überlauf" color={ICE} glow={overflowTotal > 0} dim={overflowTotal === 0}
-            title="Überlauf-Tiefe (Schichten über dem wirksamen Deckel) — Nahrung der Eis-Legendären: Direkt-Score je Frost-Sieg." />
+            title="Überlauf-Tiefe (Schichten über dem Deckel) — Nahrung der Eis-Legendären: Direkt-Score je Frost-Sieg." />
         </div>
       </div>
 
-      {/* Gegner-Frostbiss (Vergletscherung) — eigene, getrennte ROTE Zeile. Nur wenn aktuell Gegnerkarten markiert sind. */}
+      {/* Gegner-Frostbiss (Vergletscherung) — eigene, getrennte ROTE Zeile. */}
       {enemyCount > 0 && (
         <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t" style={{ borderColor: "#e0605a22" }}>
           <span className="opacity-55 shrink-0">Gegner-Frostbiss</span>

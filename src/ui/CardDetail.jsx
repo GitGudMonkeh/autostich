@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX, ICE_ABLAGE_SCORE_PER_LAYER,
+import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX,
          PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, WURZELSCHLAG_PER_GROWTH } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
-import { layerValue } from "../game/skills.js";
+import { layerValue, layerScore } from "../game/skills.js";
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { formationLabel } from "./formationLabels.js";
 
@@ -91,15 +91,15 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
           konkreten Zahlen, die die Eck-Kristalle auf der Karte bewusst NICHT zeigen: Schichten, Dauerwert (Gletscher =
           superlinear n(n+1)/2, sonst linear), Flat je Frost-Sieg (gedeckelt ≤12) und die Überlauf-Tiefe (Nahrung der Legendären). */}
       {frostReadout && card.frozen && (() => {
-        const val = layerValue(frostLayers, frostGletscher);
-        const flat = ICE_ABLAGE_SCORE_PER_LAYER * Math.min(frostLayers, ICE_LAYER_MAX);
+        const val = layerValue(frostLayers);
+        const scorePerWin = layerScore(frostLayers); // #269: dreieckiger Direkt-Score je Frost-Sieg (der Payoff-Motor)
         const over = Math.max(0, frostLayers - ICE_LAYER_MAX);
         return (
           <div className="flex flex-wrap gap-1.5 items-center mt-1">
             <span className="opacity-45">❄ Schichten:</span>
-            <Chip c="#8fcfe6">{frostLayers}{frostGletscher ? " · Gletscher" : ""}</Chip>
+            <Chip c="#8fcfe6">{frostLayers}</Chip>
             {val > 0 && <Chip c="#8fcfe6">+{val} Stichwert</Chip>}
-            {flat > 0 && <Chip c="#8fcfe6">+{flat} je Frost-Sieg</Chip>}
+            {scorePerWin > 0 && <Chip c="#8fcfe6">~{scorePerWin.toLocaleString("de-DE")} Score/Frost-Sieg</Chip>}
             {over > 0 && <Chip c="#e6f7ff">Überlauf {over}</Chip>}
             {/* #219.2 (korrigiert): Der Schicht-Wert ist ein STICHWERT — er wird bei jedem Frost-Sieg auf den Stich
                 addiert (iceValueBonus in engine.js: pValue), NICHT dauerhaft in den Kartenwert geschrieben. */}

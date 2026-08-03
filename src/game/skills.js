@@ -158,8 +158,8 @@ export const SKILL_DEFS = {
     desc: "Schafft ein Frosttausch am neuen Platz eine neue Formation, lagert die versetzte Karte sofort eine Schicht ab.", glacierPush: true },
   SK_ICE_05: { id: "SK_ICE_05", name: "Verzahnung", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Bringt ein Frosttausch eine Frostkarte in eine zweite Formation (Überlappung), gibt es eine Bonus-Schicht.", verzahnung: true },
-  SK_ICE_06: { id: "SK_ICE_06", name: "Kaltfront", archetype: "ice", keywords: ["freeze"],
-    desc: "Nach einem Frosttausch erhalten die versetzte Karte und ihr neuer Nachbar diesen Durchlauf +3 Stichwert.", kaltfront: true },
+  SK_ICE_06: { id: "SK_ICE_06", name: "Kälteleitung", archetype: "ice", keywords: ["freeze"],
+    desc: `Die direkten nicht-gefrorenen Nachbarn einer Frostkarte werden temporär vereist und bekommen ${pct(C.KALTFRONT_SHARE)} % des Schicht-Scores und Dauerwerts der Frostkarte — solange sie daneben liegen.`, kaltfront: true },
   // Linie 3 — Permanenz (Schichten ablagern — der Spine, verliert nie)
   SK_ICE_07: { id: "SK_ICE_07", name: "Kältereserve", archetype: "ice", keywords: ["freeze"],
     desc: `Verliert eine Frostkarte, lagert sie trotzdem +${C.KAELTERESERVE_LAYER} Schicht ab.`, frostReserve: true },
@@ -171,7 +171,7 @@ export const SKILL_DEFS = {
   SK_ICE_10: { id: "SK_ICE_10", name: "Eisdruck", archetype: "ice", keywords: ["freeze", "formation"],
     desc: `Je Schicht einer Frostkarte +${Math.round(C.EISDRUCK_STEP * 100)} % Formationsfaktor (wirksam bis ${C.ICE_LAYER_MAX} Schichten).`, eisdruck: true },
   SK_ICE_11: { id: "SK_ICE_11", name: "Kristalline Masse", archetype: "ice", keywords: ["freeze"],
-    desc: `Ab ${C.KRISTALLINE_THRESHOLD} Schichten insgesamt (über alle Frostkarten) erhalten alle Frostkarten +${C.KRISTALLINE_VALUE} Stichwert.`, kristallineMasse: true },
+    desc: `Je ${C.KRISTALLINE_STEP} Schichten insgesamt (über alle Frostkarten) erhalten alle Frostkarten +1 Stichwert (bis +${C.KRISTALLINE_MAX_VALUE}).`, kristallineMasse: true },
   // Linie 5 — Formations-Interface (Joker & Segment-Brücke)
   SK_ICE_12: { id: "SK_ICE_12", name: "Kristallform", archetype: "ice", keywords: ["freeze", "formation"],
     desc: `Eine Frostkarte wirkt als Joker für Formationen (±${C.CRYSTAL_OFFSET} Wert-Flex).`, kristallform: true },
@@ -181,11 +181,11 @@ export const SKILL_DEFS = {
   SK_ICE_14: { id: "SK_ICE_14", name: "Eisanker", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Eine Frostkarte kann als Anker stehen (×1,25) und lagert dabei garantiert eine Schicht ab — auch ohne volle Formation.", iceAnchor: true },
   SK_ICE_15: { id: "SK_ICE_15", name: "Stillstand", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: `Siegt eine Frostkarte in ≥1 Formation, gibt es +${C.STILLSTAND_SCORE} Direkt-Score.`, standstill: true },
+    desc: `Siegt eine Frostkarte in ≥1 Formation, gibt es +${C.STILLSTAND_PER_LAYER} Direkt-Score je Schicht der Karte (belohnt tiefe Pfeiler in Formation).`, standstill: true },
   SK_ICE_16: { id: "SK_ICE_16", name: "Eisblüte", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: `Siegt eine Frostkarte in ≥2 Formationen, lagern ihre direkten (gefrorenen) Nachbarn je +${C.EISBLUETE_LAYER} Schicht ab.`, iceBloom: true },
-  SK_ICE_17: { id: "SK_ICE_17", name: "Verschränkung", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: `Steht eine Frostkarte an der Kreuzung von ≥3 Formationen, lagert sie +${C.VERSCHRAENKUNG_LAYERS} Schichten auf einmal ab.`, verschraenkung: true },
+    desc: `Siegt eine Frostkarte in ≥2 Formationen, banken ihre direkten (gefrorenen) Nachbarn je ${pct(C.EISBLUETE_SHARE)} % ihrer Schichten (mindestens 1, dauerhaft).`, iceBloom: true },
+  SK_ICE_17: { id: "SK_ICE_17", name: "Verschränkung", archetype: "ice", keywords: ["freeze"],
+    desc: `Gewinnt eine Frostkarte, zählt sie ${pct(C.VERSCHRAENKUNG_SHARE)} % der Schichten deiner tiefsten anderen Frostkarte zu ihrer Score-Auszahlung hinzu — gebankte tiefe Pfeiler zahlen bei jedem Frost-Sieg mit.`, verschraenkung: true },
   // Legendäre (vier Seiten des Spine — verwandeln die tiefen Schichten in DIREKTEN Score)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze"],
     desc: `Jede Ablage lagert +${C.PERMAFROST_LAYER_BONUS} zusätzliche Schichten ab. Jeder Frost-Sieg gibt +${C.PERMAFROST_DIRECT} Score je Überlauf-Schicht (Schichten über ${C.ICE_LAYER_MAX}), summiert über alle Frostkarten (bis ${C.PERMAFROST_OVERFLOW_CAP}).`, permafrost: true },
@@ -427,11 +427,20 @@ export const hasPermafrost       = (skills) => iceFlag(skills, "permafrost");   
 export const hasGletscher        = (skills) => iceFlag(skills, "gletscher");        // Schicht-Dauerwert superlinear
 export const hasVergletscherung  = (skills) => iceFlag(skills, "vergletscherung");  // Gegner-Debuff ∝ Schichten
 export const hasArchitekt        = (skills) => iceFlag(skills, "architekt");        // vertikale Formationen (Spalte pos%5)
-// Dauerwert einer Frostkarte aus ihren Schichten. Gletscher (L): superlinear (dreieckig), sonst linear.
-export function layerValue(layers, gletscher = false) {
-  const n = Math.min(layers || 0, C.ICE_LAYER_MAX); // Anti-Runaway v0.1: wirksame Schichten gedeckelt
-  if (n <= 0) return 0;
-  return gletscher ? (n * (n + 1) / 2) * C.ICE_LAYER_VALUE : n * C.ICE_LAYER_VALUE;
+// Dauerwert einer Frostkarte aus ihren Schichten (#269: linear, gedeckelt bei ICE_LAYER_VALUE_CAP ~10; Gletscher wirkt
+// jetzt auf den SCORE, nicht den Wert).
+export function layerValue(layers) {
+  return Math.min(layers || 0, C.ICE_LAYER_VALUE_CAP) * C.ICE_LAYER_VALUE;
+}
+// Schicht→Score DREIECKIG (#269, der Payoff-Motor): je Frost-Sieg m(m+1)/2 × K, m = min(Schichten, Plateau P). DIREKT
+// (am Multiplikator-Stack/Joker vorbei) → der Payoff läuft durch den gedeckelten Schicht-Pfad, nicht über formBaseMult.
+export function layerScore(layers) {
+  const m = Math.min(layers || 0, C.ICE_LAYER_SCORE_PLATEAU);
+  return m > 0 ? (m * (m + 1) / 2) * C.ICE_LAYER_SCORE_K : 0;
+}
+// Kristalline Masse (#269): skalierender Wertbonus je Frostkarte aus der Σ-Schichtenzahl (je KRISTALLINE_STEP +1, gedeckelt).
+export function kristallineBonus(totalLayers) {
+  return Math.min(Math.floor((totalLayers || 0) / C.KRISTALLINE_STEP), C.KRISTALLINE_MAX_VALUE);
 }
 // Summe aller Schichten (für Kristalline Masse).
 export const totalLayers = (layers) => Object.values(layers || {}).reduce((t, v) => t + (v || 0), 0);
