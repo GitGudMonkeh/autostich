@@ -474,7 +474,7 @@ export function Autostich() {
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wide opacity-50">Durchlauf</div>
         <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>
-          {Math.min(state.cycle + 1, MAX_CYCLES)}<span className="text-xs opacity-45"> / {MAX_CYCLES}</span>
+          {Math.min(state.cycle + 1, state.maxCycles || MAX_CYCLES)}<span className="text-xs opacity-45"> / {state.maxCycles || MAX_CYCLES}</span>
         </div>
       </div>
       {/* #225.1: Münzanzeige entfernt (#202). #UI: „Bester Score" unter den aktuellen Score (mittlere Mobil-Spalte). */}
