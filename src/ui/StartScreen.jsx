@@ -13,7 +13,7 @@ import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel un
    Wortmarke → zwei prominente Startmodi → demotierte Seed-Zeile → Sekundär-Navigation als ruhige
    Chip-Reihe (statt fünf gleich breiter Balken) → schlanker Rekord-Fuß. Die volle Score-Liste
    (deine Läufe + global) liegt weiterhin hinter „Bestenliste" (LeaderboardScreen, #217). */
-export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onMasterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
@@ -73,6 +73,17 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, on
 
       {/* Startmodi (Blickfang) + demotierte Seed-Zeile darunter. */}
       <div className="w-full max-w-xs flex flex-col gap-2.5">
+        {/* Resume (#Auto-Save): gespeicherter laufender Run → prominent oben. Erscheint nur, wenn ein Snapshot vorliegt. */}
+        {onResume && resume && (
+          <button onClick={onResume}
+            className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
+            style={{ background: "#d4a63a", color: "#141419", boxShadow: "0 0 10px rgba(212,166,58,.45)" }}>
+            <span>▶ Lauf fortsetzen</span>
+            <span className="text-[11px] font-mono font-semibold opacity-80">
+              Durchlauf {Math.min((resume.cycle || 0) + 1, resume.totalCycles)}/{resume.totalCycles} · Score {Math.round(resume.score || 0).toLocaleString("de-DE")}{resume.masterRun ? ` · Meister ${resume.grade || 0}` : ""}
+            </span>
+          </button>
+        )}
         <button onClick={onStart}
           className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
           style={{ background: "#5ab87a", color: "#141419" }}>

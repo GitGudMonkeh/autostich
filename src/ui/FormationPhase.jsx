@@ -30,6 +30,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   // die andere Seite der „platzieren (Architekt) → routen (Aufstellung)"-Schleife. Toggle-bar, Default an. Der Wert-Boost
   // je Zelle kommt aus der ECHTEN Engine (precomputeArchitect + architectValueBonus), spiegelt also die Sieg-Rechnung.
   const [showArch, setShowArch] = useState(true);
+  const [inspectBid, setInspectBid] = useState(null); // inspiziertes Gebäude: Liste ↔ Brett (Rahmen glüht), gesetzt per Karten-Auswahl ODER Listen-Klick — wie in der Chronik
   const architect = state.architect;
   const archBuildings = (state.architectEnabled && architect && architect.buildings) || [];
   const hasArch = archBuildings.length > 0;
@@ -63,7 +64,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
     return cover;
   }, [hasArch, architect, playerOrder, deck]);
   // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) — dieselben Positionen wie im Architekt-Screen bekommen
-  // den goldenen Schimmer-Rahmen (arch-struct-lit). Nur Geometrie (Gebäude-Abdeckung), unabhängig von Karten/Tauschen.
+  // den roten Kombi-Wash (arch-struct-lit, wie im Architekt-Screen). Nur Geometrie (Gebäude-Abdeckung), unabhängig von Karten/Tauschen.
   const structLitPos = useMemo(() => {
     if (!hasArch) return null;
     const set = new Set();
@@ -96,12 +97,12 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   };
 
   const clickPos = (pos) => {
-    if (sel === null) { setSel(pos); return; }  // erste Karte wählen — still (kein Menü-Klick, #132)
-    if (sel === pos) { setSel(null); return; }  // Abwählen — still
+    if (sel === null) { setSel(pos); setInspectBid(architectCover ? (architectCover[pos]?.bid ?? null) : null); return; }  // erste Karte wählen — Gebäude-Rahmen leuchtet
+    if (sel === pos) { setSel(null); setInspectBid(null); return; }  // Abwählen — still
     // #132: erfolgreicher Tausch klingt wie ein Kartendreh (cardflip), nicht wie ein Button-Klick.
     if (formationEnergy > 0 || canFree(sel, pos)) { onSwap(sel, pos); audio.play("cardflip", { gain: 0.9 }); }
     else { audio.play("denied"); haptics.denied(); } // #110/#207: Tausch ohne Energie (und kein Frost-Freitausch) → verwehrt-Sound + distinkte Haptik
-    setSel(null);
+    setSel(null); setInspectBid(null);
   };
 
   const { count } = summarizeFormations(formations);
@@ -227,7 +228,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
                 ))}
               </div>
             )}
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} frostPillarPos={frostPillar.positions} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} />
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} frostPillarPos={frostPillar.positions} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} glowBid={hasArch && showArch ? inspectBid : null} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
@@ -239,6 +240,35 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
               plantGrowth={sel != null && cards[sel] ? (state.growth?.[cards[sel].id] || 0) : 0}
               plantRoots={sel != null && cards[sel] ? plantRootScore(state.skills || [], state.growth?.[cards[sel].id] || 0) : 0}
               plantPfahl={hasPfahlwurzel(state.skills || [])} />
+            {/* Gebäude-Liste (wie in der Chronik): antippen lässt den Gebäude-Rahmen am Brett cyan leuchten — und
+                umgekehrt markiert das Antippen einer Karte im Gebäude hier den Eintrag. Nur bei aktivem Overlay sichtbar-verlinkt. */}
+            {hasArch && (
+              <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+                <div className="text-[11px] uppercase tracking-wide opacity-50 mb-0.5">🏗 Deine Gebäude ({archBuildings.length})</div>
+                <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
+                <div className="grid gap-1">
+                  {archBuildings.map((b) => {
+                    const fam = archFamilyDef(b.familyId); if (!fam) return null;
+                    const anchor = Math.min(...b.footprint);
+                    const eff = architectCover?.[anchor]?.effects?.join(" · ") || "";
+                    const meta = ARCH_CAT[fam.category] || {};
+                    const on = inspectBid === b.id;
+                    return (
+                      <button key={b.id} id={`form-bld-${b.id}`} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
+                        className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
+                        style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
+                        <span className="inline-flex items-center gap-1.5 flex-wrap">
+                          <span className="w-[8px] h-[8px] rounded-[2px] inline-block" style={{ background: fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92") }} />
+                          <b>{fam.name}</b>
+                          <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
+                        </span>
+                        {eff && <span className="opacity-75">{eff}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
             {/* Kurz-Erklärung der Formationen mit Kürzel (#95.7). #103: nur Kürzel + Name grün,
                 Beschreibung (nach dem „—") in Standard-Textfarbe → bessere Lesbarkeit. */}

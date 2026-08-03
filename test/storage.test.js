@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   loadOptions, loadUsername, saveUsername, loadSeenGuide, saveSeenGuide,
   recordRun, loadProfile, isNoRerollRun,
-  monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION } from "../src/game/storage.js";
+  monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION,
+  saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
 
 // #152: node-Env hat kein localStorage → die Persistenz-Funktionen fielen bisher nur in ihre try/catch-Defaults
@@ -229,5 +230,49 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
       expect(loadProfile().monoArchetypeRuns.fire).toBe(true);                   // sticky: bleibt
       expect(loadProfile().hadAllArchetypesRun).toBe(true);
     });
+  });
+});
+
+describe("Aktiver Lauf (Resume / Auto-Save)", () => {
+  beforeEach(() => { global.localStorage = mockLS(); });
+  afterEach(() => { delete global.localStorage; });
+
+  const runState = (over = {}) => ({ phase: "play", deck: [{ id: "R1", value: 3 }], cycle: 4, score: 1234, ...over });
+
+  it("saveActiveRun → loadActiveRun rundet State + meta zurück", () => {
+    const s = runState();
+    saveActiveRun(s, { timeBase: 5000, runId: 42, currentTraj: [1, 2] });
+    const r = loadActiveRun();
+    expect(r.state).toEqual(s);
+    expect(r.meta).toEqual({ timeBase: 5000, runId: 42, currentTraj: [1, 2] });
+  });
+
+  it("speichert KEINEN Menü-/Gameover-Snapshot (nicht fortsetzbar)", () => {
+    saveActiveRun(runState({ phase: "menu" }));
+    expect(loadActiveRun()).toBeNull();
+    saveActiveRun(runState({ phase: "gameover" }));
+    expect(loadActiveRun()).toBeNull();
+  });
+
+  it("ohne Deck wird nicht gespeichert", () => {
+    saveActiveRun({ phase: "play", cycle: 1 });
+    expect(loadActiveRun()).toBeNull();
+  });
+
+  it("falsches Schema wird verworfen (inkompatibler Snapshot nach Deploy)", () => {
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA + 99, state: runState(), meta: {} }));
+    expect(loadActiveRun()).toBeNull();
+  });
+
+  it("kaputter Blob → null (kein Absturz)", () => {
+    global.localStorage.setItem("as_activerun", "{kaputt");
+    expect(loadActiveRun()).toBeNull();
+  });
+
+  it("clearActiveRun entfernt den Snapshot", () => {
+    saveActiveRun(runState());
+    expect(loadActiveRun()).not.toBeNull();
+    clearActiveRun();
+    expect(loadActiveRun()).toBeNull();
   });
 });
