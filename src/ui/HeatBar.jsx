@@ -71,9 +71,9 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
 
   return (
     <IndicatorPanel>
-      {/* #270.2 Motor auf einen Blick: Eigen-Score nach Fantasie (Feuer-Grund / Weißglut) + verbrannte Asche (Motor-Zähler). */}
+      {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Feuer-Grund / Weißglut) + verbrannte Asche (Lauf-Zähler). */}
       <div className="mb-2">
-        <YieldMeter title="🔥 Feuer-Motor" accent={HOT} channels={[
+        <YieldMeter title="🔥 Feuer-Ertrag" accent={HOT} channels={[
           { label: "Feuer-Score", value: fireBase, color: FIRE_HOT },
           { label: "Weißglut", value: fireWhite, color: WHITE_HEAT },
         ]} />

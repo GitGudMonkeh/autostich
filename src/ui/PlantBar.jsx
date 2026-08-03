@@ -50,9 +50,9 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
 
   return (
     <IndicatorPanel>
-      {/* #270.2 Motor auf einen Blick: Eigen-Score nach Fantasie (Wurzel/Blüte/Ernte) + Gewachsen (Motor-Zähler). */}
+      {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Wurzel/Blüte/Ernte) + Gewachsen (Lauf-Zähler). */}
       <div className="mb-2">
-        <YieldMeter title="🌿 Garten-Motor" accent={PLANT_RIPE} channels={[
+        <YieldMeter title="🌿 Garten-Ertrag" accent={PLANT_RIPE} channels={[
           { label: "Wurzel", value: rootScore, color: PLANT },
           { label: "Blüte", value: bloomScore, color: BLOOM },
           { label: "Ernte", value: harvestScore, color: PLANT_RIPE },
