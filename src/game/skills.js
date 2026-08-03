@@ -81,7 +81,7 @@ export const SKILL_DEFS = {
     desc: "Maximale Ladung 10 → 15, dafür dauerhaft +1,0× Crit-Multiplikator. Konsumenten lösen erst bei 15 aus.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, thunderGod: true },
   SK_LIGHTNING_L02: { id: "SK_LIGHTNING_L02", name: "Doppelentladung", archetype: "lightning", legendary: true, keywords: ["charge", "ionize"],
-    desc: `Bei vollem Ladungsverbrauch feuert der Konsument ${C.DOPPELENTLADUNG_FACTOR}-fach (${C.DOPPELENTLADUNG_FACTOR}× Ionisierungs-Anzahl). Und je mehr Ladung im Feld steht (Σ Ionisierungsstapel), desto mehr zahlt jeder Sieg mit ionisierter Karte direkt: +${C.DOPPELENT_DIRECT} je Stapel im Feld (gedeckelt ${C.DOPPELENT_FIELD_CAP}, skaliert mit deinem Bekenntnis).`,
+    desc: `Zwei Effekte: (1) Bei vollem Ladungsverbrauch ionisiert der Konsument ${C.DOPPELENTLADUNG_FACTOR}× so viele Karten. (2) Jeder Sieg mit ionisierter Karte gibt zusätzlich +${C.DOPPELENT_DIRECT} Score direkt (flach, am Multiplikator vorbei) je Ionisierungsstapel im Feld (Σ aller Stapel, max. ${C.DOPPELENT_FIELD_CAP} gezählt) — skaliert mit deinem Blitz-Bekenntnis (Anteil Blitz-Skills in deinen Skill-Slots).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, doubleDischarge: true },
   SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Flächenionisation", archetype: "lightning", legendary: true, keywords: ["ionize"],
     desc: `Gewinnt eine ionisierte Karte, springen ihre Stapel auf alle ungespielten Nachbarn (statt nur einen). Und je breiter das ionisierte Feld (mehr ionisierte Karten), desto mehr zahlt jeder Sieg mit ionisierter Karte direkt: +${C.FLAECHENION_DIRECT} je ionisierte Karte (gedeckelt ${C.FLAECHENION_FIELD_CAP}, skaliert mit deinem Bekenntnis).`,
