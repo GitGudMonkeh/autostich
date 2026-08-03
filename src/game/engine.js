@@ -629,7 +629,7 @@ export function resolveTrick(state, rng) {
     // Architekt score-Gebäude (#202, Handelsbauten): Flat in die multiplizierte Basis; Mult (Schatzkammer/Struktur) als
     // eigener Faktor. Meilenstein-Zähler (bump) wird nach dem Stich fortgeschrieben. Bedingungen: Crit/Farbe/Serie/Ziel.
     const architectScoreRes = archPreNow
-      ? architectScore(archPreNow, actualPos, { isCrit, serieStreak, suit: pCard.suit }, (architect && architect.winCounters) || {})
+      ? architectScore(archPreNow, actualPos, { isCrit, serieStreak, suit: pCard.green ? "G" : pCard.suit }, (architect && architect.winCounters) || {}) // Pflanze: grün → Farbe „G" (konsistent zum Farbblock)
       : { flat: 0, mult: 1, bump: null };
     architectBump = architectScoreRes.bump;
     const architectMult = architectScoreRes.mult;

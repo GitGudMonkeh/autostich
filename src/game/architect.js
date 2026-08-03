@@ -516,7 +516,9 @@ export function architectValueBonus(pre, actualPos, pCard) {
   if (!e) return 0;
   if (e.kind === "flat") return e.amount;
   if (e.kind === "lowValue") return pCard.value <= e.threshold ? e.amount : 0;
-  if (e.kind === "color") return pCard.suit === e.colorChoice ? e.amount : 0;
+  // Pflanze (v0): grüne Karten zählen als Farbe „G" (wie im Farbblock, formations.js) — ein Farb-Gebäude bufft die
+  // sichtbar grüne Karte, nicht mehr ihre Ursprungsfarbe. Sonst zeigte der Architekt bei begrüntem Deck falsche Werte.
+  if (e.kind === "color") return (pCard.green ? "G" : pCard.suit) === e.colorChoice ? e.amount : 0;
   if (e.kind === "target") return e.amount; // Effekt liegt nur auf der Zielposition
   return 0;
 }

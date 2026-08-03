@@ -173,6 +173,21 @@ describe("Architekt — value-Effekte (Precompute + Anwendung)", () => {
     expect(architectValueBonus(pre, 1, deck[1])).toBe(0);             // B != choice
   });
 
+  it("color (Buntglas) + Pflanze: grüne Karte zählt als Farbe G, nicht als Ursprungsfarbe", () => {
+    // Bug: der Architekt matchte die URSPRUNGSFARBE. Grün (card.green) überschreibt die Farbe zu „G" (wie im Farbblock),
+    // also bufft ein G-Gebäude die sichtbar grüne Karte — und ein Ursprungsfarb-Gebäude bufft sie nicht mehr.
+    const deck = fakeDeck(() => 5, (i) => (i === 2 ? "G" : "R")); // pos0/1 = R, pos2 = native G
+    const amt = tierNum(ARCHITECT_FAMILIES.A_BUNTGLAS.base.value, 1);
+    const g = precomputeArchitect({ buildings: [B("A_BUNTGLAS", [0, 1, 2, 3], 1, { colorChoice: "G" })] }, idOrder, deck);
+    expect(architectValueBonus(g, 0, deck[0])).toBe(0);                          // R, nicht grün → kein G-Buff
+    expect(architectValueBonus(g, 1, { ...deck[1], green: true })).toBe(amt);    // ursprünglich R, aber grün → als G gebufft (der Fix)
+    expect(architectValueBonus(g, 2, deck[2])).toBe(amt);                        // native G-Karte
+    // Umkehrung: ein R-Gebäude bufft die jetzt grüne (ursprünglich R) Karte NICHT mehr.
+    const r = precomputeArchitect({ buildings: [B("A_BUNTGLAS", [0, 1], 1, { colorChoice: "R" })] }, idOrder, deck);
+    expect(architectValueBonus(r, 0, { ...deck[0], green: true })).toBe(0);      // grün → nicht mehr R
+    expect(architectValueBonus(r, 0, deck[0])).toBe(amt);                        // nicht grün → weiterhin R
+  });
+
   it("target highest/lowest: Effekt liegt nur auf der Ziel-Position", () => {
     const deck = fakeDeck((i) => [2, 9, 4, 7][i] ?? 0); // Werte an 0..3
     const hi = precomputeArchitect({ buildings: [B("A_FIRST", [0, 1, 2, 3], 1)] }, idOrder, deck);
