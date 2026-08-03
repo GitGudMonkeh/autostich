@@ -6,6 +6,7 @@ import { familyDef } from "../game/families.js";
 import { layerValue } from "../game/skills.js";
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { formationLabel } from "./formationLabels.js";
+import { formationBorder } from "./formationStyle.js"; // Rahmenfarbe = Anzahl Formationen (grau/grün/blau/lila/gold), wie die Kacheln
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 // #UI: Wachstum/Überlauf sind durch das Skill-Gating gebrochen (z. B. 4,333…) → auf EINE Nachkommastelle runden.
@@ -41,7 +42,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
   );
 
   return (
-    <div className="rounded-lg px-3 py-2 text-xs" style={{ background: "#1b1b22", border: "1px solid #2c2c36" }}>
+    <div className="rounded-lg px-3 py-2 text-xs" style={{ background: "#1b1b22", border: `1.5px solid ${formationBorder(posForm).color || "#5a6672"}` }}>
       <div className="flex items-center gap-2 mb-1.5">
         {pos != null && <span className="opacity-40 tabular-nums">#{pos + 1}</span>}
         <span className="font-bold text-sm" style={{ color: col }}>{suitName(card.suit)} {card.value}</span>
