@@ -221,9 +221,11 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
           {/* Inspiziertes Gebäude (glowBid) zuletzt zeichnen → seine Rahmenlinien liegen oben und glühen cyan. */}
           {[...archFrame.lines].sort((a, b) => (glowBid != null && a.bid === glowBid ? 1 : 0) - (glowBid != null && b.bid === glowBid ? 1 : 0)).map((l, i) => {
             const glow = glowBid != null && l.bid === glowBid;
+            // Rahmen glühen in ihrer Gebäude-Typfarbe (Wert/Score/Formation), sobald das Overlay an ist — dezenter,
+            // einzelner Schein. Das inspizierte Gebäude bleibt kräftig cyan (stärkerer Doppel-Schein) → klar abgesetzt.
             return <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
               stroke={glow ? "#5ec8f0" : l.color} strokeWidth={glow ? 4 : 2.5} strokeLinecap="square"
-              style={glow ? { filter: "drop-shadow(0 0 4px #5ec8f0) drop-shadow(0 0 2px #5ec8f0)" } : undefined} />;
+              style={{ filter: glow ? "drop-shadow(0 0 4px #5ec8f0) drop-shadow(0 0 2px #5ec8f0)" : `drop-shadow(0 0 2px ${l.color})` }} />;
           })}
         </svg>
       )}
