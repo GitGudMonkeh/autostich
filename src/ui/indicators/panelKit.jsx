@@ -29,15 +29,22 @@ export function YieldMeter({ title, channels = [], accent = "#e8e8ea" }) {
         <span className="opacity-60">{title}</span>
         <span className="font-bold tabular-nums" style={{ color: accent }}>~{nfmt(total)}</span>
       </div>
-      {/* Gestapelter Anteils-Balken — Segmentbreite = Anteil des Kanals am Eigen-Score (nur bei ≥2 Kanälen aussagekräftig). */}
-      {!single && (
-        <div className="flex w-full rounded-sm overflow-hidden" style={{ height: 10, background: "#26262e" }}>
-          {active.map((c) => (
-            <div key={c.label} title={`${c.label}: ${nfmt(c.value)} (${Math.round((100 * c.value) / total)} %)`}
-              style={{ width: `${(100 * c.value) / total}%`, background: c.color }} />
-          ))}
-        </div>
-      )}
+      {/* Gestapelter Anteils-Balken — Segmentbreite = Anteil des Kanals am Eigen-Score (nur bei ≥2 Kanälen aussagekräftig).
+          Jeder aktive Kanal bekommt eine MINDESTBREITE (Sichtbarkeit kleiner Kanäle wie Weißglut); der Boden wird den
+          großen Segmenten anteilig abgezogen, Summe bleibt 100 %. Der WAHRE Anteil steht exakt im Tooltip + der Legende. */}
+      {!single && (() => {
+        const MIN_SEG = 0.06; // 6 % Mindestbreite je Kanal
+        const floor = active.length * MIN_SEG < 1 ? MIN_SEG : 0; // Schutz bei sehr vielen Kanälen (dann kein Boden)
+        const pctOf = (c) => (floor + (c.value / total) * (1 - active.length * floor)) * 100;
+        return (
+          <div className="flex w-full rounded-sm overflow-hidden" style={{ height: 10, background: "#26262e" }}>
+            {active.map((c) => (
+              <div key={c.label} title={`${c.label}: ${nfmt(c.value)} (${Math.round((100 * c.value) / total)} %)`}
+                style={{ width: `${pctOf(c)}%`, background: c.color }} />
+            ))}
+          </div>
+        );
+      })()}
       {/* Legende: nur aktive Kanäle, Punkt + Name + Zahl. */}
       <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px]">
         {active.map((c) => (
