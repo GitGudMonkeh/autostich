@@ -84,7 +84,7 @@ export const SKILL_DEFS = {
     desc: `Bei vollem Ladungsverbrauch ionisiert der Konsument ${C.DOPPELENTLADUNG_FACTOR}× so viele Karten. Zusätzlich gibt jeder Sieg mit einer ionisierten Karte +${C.DOPPELENT_DIRECT} Score je Ionisierungsstapel auf dem Feld (bis ${C.DOPPELENT_FIELD_CAP} Stapel).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, doubleDischarge: true },
   SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Flächenionisation", archetype: "lightning", legendary: true, keywords: ["ionize"],
-    desc: `Gewinnt eine ionisierte Karte, springen ihre Stapel auf alle ungespielten Nachbarn (statt nur einen). Und je breiter das ionisierte Feld (mehr ionisierte Karten), desto mehr zahlt jeder Sieg mit ionisierter Karte direkt: +${C.FLAECHENION_DIRECT} je ionisierte Karte (gedeckelt ${C.FLAECHENION_FIELD_CAP}, skaliert mit deinem Bekenntnis).`,
+    desc: `Gewinnst du mit einer ionisierten Karte, bekommen beide ungespielten Nachbarkarten je +1 Ionisierungsstapel. Zusätzlich gibt jeder Sieg mit einer ionisierten Karte +${C.FLAECHENION_DIRECT} Score je ionisierter Karte auf dem Feld (bis ${C.FLAECHENION_FIELD_CAP} Karten).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, areaIonize: true },
   SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Durchschlag", archetype: "lightning", legendary: true, keywords: ["ionize", "crit"],
     desc: "Gewinnt eine Karte mit voller Ionisierung (5) und Crit, gibt sie dauerhaft +0,25× Crit-Multiplikator. Harte Doppelbedingung.",
