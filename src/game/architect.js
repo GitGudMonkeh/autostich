@@ -171,6 +171,60 @@ export function isValidFootprint(form, footprint, buildings = []) {
   return enumeratePlacements(form, buildings).some((fp) => sameSet(fp, footprint));
 }
 
+// Footprint einer Form bei (rotIdx, anchor) — im Gitter, sonst null.
+function footprintAtRot(form, rotIdx, anchor) {
+  const rots = shapeRotations(form);
+  if (!rots.length) return null;
+  const cells = rots[((rotIdx % rots.length) + rots.length) % rots.length];
+  const ar = rowOf(anchor), ac = colOf(anchor);
+  const fp = [];
+  for (const [dr, dc] of cells) {
+    const r = ar + dr, c = ac + dc;
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null;
+    fp.push(posOf(r, c));
+  }
+  return fp.sort((a, b) => a - b);
+}
+
+// Aktuelle Rotationslage (Index in shapeRotations) eines platzierten Footprints — sonst 0.
+export function currentRotationIndex(form, footprint) {
+  const rots = shapeRotations(form);
+  const set = new Set(footprint);
+  const anchor = posOf(Math.min(...footprint.map(rowOf)), Math.min(...footprint.map(colOf)));
+  for (let r = 0; r < rots.length; r++) {
+    const fp = footprintAtRot(form, r, anchor);
+    if (fp && fp.length === footprint.length && fp.every((p) => set.has(p))) return r;
+  }
+  return 0;
+}
+
+// #266: Nächste ECHTE Rotation eines platzierten Gebäudes finden — in-place bevorzugt (Manhattan-Distanz 0 zum
+// aktuellen Anker), sonst der nächstgelegene gültige Platz BRETTWEIT (in-Gitter + kein Overlap mit `others`). Es
+// werden NUR andere Lagen als die aktuelle geprüft (k < rots.length) → nie ein No-Op: findet keine andere Lage
+// irgendwo Platz, ist das Ergebnis `null` (der Aufrufer gibt dann Feedback, statt still nichts zu tun). Vorher lief
+// die Suche bis inkl. der aktuellen Lage, die an ihren eigenen Zellen trivial „passte" → am vollen Brettrand
+// „drehte" sich sichtbar nichts.
+export function nextRotationFootprint(form, footprint, others = []) {
+  const rots = shapeRotations(form);
+  if (rots.length <= 1 || !Array.isArray(footprint) || !footprint.length) return null;
+  const cur = currentRotationIndex(form, footprint);
+  const ar0 = Math.min(...footprint.map(rowOf)), ac0 = Math.min(...footprint.map(colOf));
+  for (let k = 1; k < rots.length; k++) {
+    const rotIdx = (((cur + k) % rots.length) + rots.length) % rots.length;
+    const cells = rots[rotIdx] || [];
+    let mxR = 0, mxC = 0; for (const [dr, dc] of cells) { mxR = Math.max(mxR, dr); mxC = Math.max(mxC, dc); }
+    let best = null, bestD = Infinity;
+    for (let r = 0; r <= ROWS - 1 - mxR; r++) for (let c = 0; c <= COLS - 1 - mxC; c++) {
+      const fp = footprintAtRot(form, rotIdx, posOf(r, c));
+      if (!fp || !isValidFootprint(form, fp, others)) continue;
+      const d = Math.abs(r - ar0) + Math.abs(c - ac0);
+      if (d < bestD) { bestD = d; best = fp; }
+    }
+    if (best) return best;
+  }
+  return null;
+}
+
 /* ============================================================
    KATALOG — 22 Stufen-Familien (7 value · 7 score · 8 formation) + 6 legendäre (2 je Kategorie).
    `base` trägt Effekt-Art (kind) + Basiswert (Stufe I). Alle Basiswerte = Platzhalter.

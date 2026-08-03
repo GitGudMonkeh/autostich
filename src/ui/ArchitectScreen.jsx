@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import {
-  familyDef, shapeRotations, enumeratePlacements, isValidFootprint,
+  familyDef, shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, structureFactorMap,
   rowOf, colOf, posOf, ROWS, COLS, N_POS, tierNum, tierFactor, upgradeInfo, bindSpanFor,
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR,
@@ -93,6 +93,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const dragOffsetRef = useRef({ dx: 0, dy: 0 });          // roher Pixel-Versatz des Drags — REF statt State: kein Re-Render je Maus-Move (Maus feuert viel öfter als Touch → sonst „schwammig")
   const dragGhostRef = useRef(null);                       // DOM-Ref des Ghost-Rahmens; sein transform wird je pointermove DIREKT gesetzt (flüssig)
   const [upgradeMsg, setUpgradeMsg] = useState(null);      // { name, reason } — Meldung beim Antippen eines nicht-aufwertbaren Gebäudes (Aufrüsten-Phase)
+  const [rotateMsg, setRotateMsg] = useState(null);        // #266: Hinweis „kein Platz zum Drehen" (statt still nichts zu tun), wenn keine andere Lage brettweit passt
   const [pendingDemolish, setPendingDemolish] = useState(null); // #235: markiertes Abriss-Ziel (buildingId) — wird erst mit „Abreißen" wirklich entfernt (zweistufig)
   const [pendingUpgrade, setPendingUpgrade] = useState(null);   // #237: markiertes Aufrüst-Ziel (buildingId) — zeigt Jetzt/Danach-Effekt, aufgewertet erst mit „Aufwerten bestätigen" (kein Sofort-Upgrade)
   const [upgradeDone, setUpgradeDone] = useState(null);         // Erfolgs-Feedback: { name, from, to } — hervorgehobene Zeile im Platzieren-Screen, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen).
@@ -242,6 +243,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     }
   }, [committed, removeFor]); // eslint-disable-line react-hooks/exhaustive-deps
   // #235: markiertes Gebäude wirklich abreißen (danach platziert der removeFor-Effekt den wartenden Bauplan automatisch).
+  // #266: Der Dreh-Hinweis verfällt, sobald ein anderes Gebäude gewählt oder die Phase gewechselt wird (er gilt genau
+  // für die zuletzt versuchte Rotation an der aktuellen Lage).
+  useEffect(() => { setRotateMsg(null); }, [selId, phase]);
   const confirmDemolish = () => { if (pendingDemolish == null) return; onDemolish?.(pendingDemolish); setPendingDemolish(null); };
   // #237: markiertes Gebäude wirklich aufwerten (erst nach „Aufwerten bestätigen" — nie durch einen Fehltipp).
   // Härtung: NUR weiterschalten, wenn das Upgrade wirklich anwendbar ist. Ist die Hauptaktion der Bauphase schon
@@ -306,7 +310,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     };
     const move = (ev) => {
       const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0;
-      if (!g.active) { if (dx * dx + dy * dy < 36) return; g.active = true; setSelId(b.id); }
+      if (!g.active) { if (dx * dx + dy * dy < 36) return; g.active = true; setSelId(b.id); setRotateMsg(null); } // #266: beim Ziehen den „kein Platz"-Hinweis aufheben (Lage ändert sich gleich)
       ev.preventDefault();
       dragOffsetRef.current = { dx, dy };                                     // freies, pixelgenaues Folgen — OHNE setState
       if (dragGhostRef.current) dragGhostRef.current.style.transform = `translate(${dx}px, ${dy}px)`; // direkt am DOM → kein Re-Render, keine Latenz
@@ -334,27 +338,19 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     window.addEventListener("pointerup", up); window.addEventListener("pointercancel", cancel);
   };
   const rotateSelected = () => {
+    setRotateMsg(null);
     const b = buildings.find((x) => x.id === selId); if (!b) return;
-    const form = familyDef(b.familyId).form, rots = shapeRotations(form), a = anchorOf(b.footprint), cur = currentRotOf(b), others = buildings.filter((x) => x.id !== b.id);
-    const ar0 = rowOf(a), ac0 = colOf(a);
-    const apply = (fp) => { if (b.id === PENDING_ID) setPending((p) => (p ? { ...p, footprint: fp } : p)); else onMove?.({ buildingId: b.id, footprint: fp }); };
-    // #239 Fix: NICHT nur um den aktuellen Anker drehen — am Brettrand läuft die gedrehte Form sonst aus dem Gitter
-    // (z. B. ein 1×4 unten → hochkant reicht unten über das Brett hinaus → „lässt sich nicht drehen"). Für die nächste
-    // Rotation den NÄCHSTGELEGENEN gültigen Platz brettweit suchen (in-Brett + ohne Überlappung) und dorthin drehen.
-    // In-place bleibt bevorzugt (Manhattan-Distanz 0), sonst minimal verschieben; gibt es keinen Platz → nächste Rotation.
-    for (let k = 1; k <= rots.length; k++) {
-      const rotIdx = (((cur + k) % rots.length) + rots.length) % rots.length;
-      const cells = rots[rotIdx] || [];
-      let mxR = 0, mxC = 0; for (const [dr, dc] of cells) { mxR = Math.max(mxR, dr); mxC = Math.max(mxC, dc); }
-      let best = null, bestD = Infinity;
-      for (let r = 0; r <= ROWS - 1 - mxR; r++) for (let c = 0; c <= COLS - 1 - mxC; c++) {
-        const fp = footprintAt(form, rotIdx, posOf(r, c));
-        if (!fp || !isValidFootprint(form, fp, others)) continue;
-        const d = Math.abs(r - ar0) + Math.abs(c - ac0);
-        if (d < bestD) { bestD = d; best = fp; }
-      }
-      if (best) { apply(best); return; }
+    const form = familyDef(b.familyId).form, others = buildings.filter((x) => x.id !== b.id);
+    // #239/#266: In-place bevorzugt, sonst nächstgelegener gültiger Platz brettweit — NUR echte andere Lagen (nie ein
+    // No-Op). Geometrie/Suche als SSOT in architect.js (nextRotationFootprint), damit sie testbar ist. `null` = keine
+    // andere Lage passt irgendwo → dem Spieler sagen, statt still nichts zu tun.
+    const best = nextRotationFootprint(form, b.footprint, others);
+    if (best) {
+      if (b.id === PENDING_ID) setPending((p) => (p ? { ...p, footprint: best } : p));
+      else onMove?.({ buildingId: b.id, footprint: best });
+      return;
     }
+    setRotateMsg("Kein Platz zum Drehen — zieh das Gebäude erst an eine freiere Stelle.");
   };
 
   // Live-Delta beim Ziehen (Vorschau-Position).
@@ -785,6 +781,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                   className="w-full mb-2 rounded-lg py-2 text-sm font-bold cursor-not-allowed"
                   style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>⟳ Nicht drehbar</button>
               ))}
+              {/* #266: „kein Platz zum Drehen" — ehrliches Feedback statt eines wirkungslosen Buttons am vollen Brettrand. */}
+              {showRotate && rotateMsg && (
+                <div className="mb-2 rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f", color: "#e0705a" }}>
+                  ⟳ {rotateMsg}
+                </div>
+              )}
               {removeFor ? (
                 <button onClick={() => { setRemoveFor(null); setPendingDemolish(null); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
               ) : phase === "choose" ? (

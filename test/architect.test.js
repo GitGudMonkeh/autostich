@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   ARCHITECT_FAMILIES, familyDef, shapeRotations, enumeratePlacements, isValidFootprint, occupiedCells,
+  nextRotationFootprint, currentRotationIndex, ROWS, COLS,
   buildArchitectOffer, initialArchitect, precomputeArchitect, architectValueBonus, architectScore,
   architectFormSpec, summarizeArchitect, tierNum, tierFactor, ARCHITECT_OFFER, MAX_TIER, HAEUSERZEILE_FACTOR,
   posOf, rowOf, colOf, N_POS,
@@ -57,6 +58,52 @@ describe("Architekt — Geometrie & Platzierung", () => {
 
   it("occupiedCells sammelt alle Footprint-Zellen", () => {
     expect(occupiedCells([B("A_STUETZE", [0, 1]), { footprint: [10, 11] }]).size).toBe(4);
+  });
+});
+
+describe("Architekt — Rotation (#266: kein No-Op am Brettrand)", () => {
+  const sameSet = (a, b) => a.length === b.length && new Set(a).size === new Set([...a, ...b]).size;
+
+  it("dreht ein T am rechten Rand auf freiem Brett in eine ECHTE andere Lage", () => {
+    // T (tetro_t) an der rechten Wand, Stiel nach links — exakt der gemeldete Fall.
+    const fp = [24, 28, 29, 34]; // (4,4)(5,3)(5,4)(6,4)
+    expect(isValidFootprint("tetro_t", fp, [])).toBe(true);
+    const rot = nextRotationFootprint("tetro_t", fp, []);
+    expect(rot).not.toBeNull();
+    expect(sameSet(rot, fp)).toBe(false);                    // nicht derselbe Footprint (kein No-Op)
+    expect(isValidFootprint("tetro_t", rot, [])).toBe(true); // gültige, in-Gitter-Platzierung
+  });
+
+  it("liefert null (statt eines No-Op-Footprints), wenn keine andere Lage brettweit passt", () => {
+    const fp = [24, 28, 29, 34];
+    const occAll = [];
+    for (let p = 0; p < ROWS * COLS; p++) if (!fp.includes(p)) occAll.push(p);
+    const others = [{ id: 9, footprint: occAll }]; // ganzes Brett belegt außer dem T selbst
+    expect(nextRotationFootprint("tetro_t", fp, others)).toBeNull();
+  });
+
+  it("bevorzugt die in-place/nächstgelegene Lage (kleine Verschiebung, kein Teleport)", () => {
+    const fp = [24, 28, 29, 34]; // rechte Wand
+    const rot = nextRotationFootprint("tetro_t", fp, []);
+    // nächstgelegene Lage bleibt im selben Zeilenband (Zeilen 4–6), verschiebt nur wenige Spalten nach links.
+    const rows = rot.map((p) => Math.floor(p / COLS));
+    expect(Math.min(...rows)).toBeGreaterThanOrEqual(4);
+    expect(Math.max(...rows)).toBeLessThanOrEqual(6);
+  });
+
+  it("dreht ein waagerechtes 1×4 am unteren Rand hochkant (Original #239)", () => {
+    const fp = [35, 36, 37, 38]; // unterste Zeile (7), Spalten 0–3
+    expect(currentRotationIndex("line4", fp)).toBeDefined();
+    const rot = nextRotationFootprint("line4", fp, []);
+    expect(rot).not.toBeNull();
+    const cols = rot.map((p) => p % COLS);
+    expect(new Set(cols).size).toBe(1);                       // vertikale Lage (eine Spalte)
+    expect(rot.every((p) => p >= 0 && p < ROWS * COLS)).toBe(true);
+  });
+
+  it("nicht drehbare Formen (single/block2x2/zeile) liefern null", () => {
+    expect(nextRotationFootprint("single", [12], [])).toBeNull();
+    expect(nextRotationFootprint("block2x2", [0, 1, 5, 6], [])).toBeNull();
   });
 });
 
