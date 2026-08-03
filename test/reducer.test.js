@@ -441,3 +441,26 @@ describe("REROLL_ARCHITECT (#263)", () => {
     expect(reducer(st, { type: "REROLL_ARCHITECT", rng: Math.random })).toBe(st);
   });
 });
+
+// RESTORE_RUN (Resume / Auto-Save): lädt einen gespeicherten laufenden Run-Snapshot zurück in den Reducer.
+describe("RESTORE_RUN (Resume)", () => {
+  const snap = { phase: "play", deck: [{ id: "R1", value: 5 }], cycle: 7, score: 4200, pos: 3 };
+  it("ersetzt den (Menü-)State durch den gültigen Snapshot", () => {
+    const s = reducer({ phase: "menu" }, { type: "RESTORE_RUN", state: snap });
+    expect(s).toEqual(snap);
+    expect(s.cycle).toBe(7);
+  });
+  it("ignoriert Snapshots ohne Deck (State unverändert)", () => {
+    const cur = { phase: "menu" };
+    expect(reducer(cur, { type: "RESTORE_RUN", state: { phase: "play", cycle: 1 } })).toBe(cur);
+  });
+  it("ignoriert Menü-/Gameover-Snapshots", () => {
+    const cur = { phase: "menu" };
+    expect(reducer(cur, { type: "RESTORE_RUN", state: { ...snap, phase: "menu" } })).toBe(cur);
+    expect(reducer(cur, { type: "RESTORE_RUN", state: { ...snap, phase: "gameover" } })).toBe(cur);
+  });
+  it("ignoriert fehlenden Snapshot", () => {
+    const cur = { phase: "menu" };
+    expect(reducer(cur, { type: "RESTORE_RUN" })).toBe(cur);
+  });
+});

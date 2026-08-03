@@ -6,7 +6,7 @@ import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
-import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile } from "./game/storage.js";
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveActiveRun, loadActiveRun, clearActiveRun } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
 import { fmtScore } from "./ui/format.js";
@@ -90,6 +90,11 @@ export function Autostich() {
   const runStartRecordTraj = useRef([]); // Rekord gegen den DIESER Lauf antritt — Snapshot vor saveRun (#35)
   const runId       = useRef(Date.now());
   const recorded    = useRef(false);
+  // RESUME (Auto-Save) — gespeicherter laufender Run (überlebt Wegtabben/Schließen des Browsers, v. a. Mobile).
+  // `resumable` speist den „Fortsetzen"-Knopf im Menü; `stateRef` hält den AKTUELLEN State, damit die
+  // Lifecycle-Handler (visibilitychange/pagehide) ohne ständiges Re-Registrieren snapshotten können.
+  const [resumable, setResumable] = useState(() => loadActiveRun());
+  const stateRef = useRef(state);
 
   // RUN-TIMER (#10) — akkumulierte aktive Zeit; friert bei Pause / außerhalb „play" ein (#9)
   const timeBase = useRef(0);
@@ -102,6 +107,7 @@ export function Autostich() {
   // reine Stichspiel-Zeit. Echte Unterbrechungen (Pause, Optionen-/Chronik-/Glossar-Overlay) frieren weiterhin ein.
   const inRun = state.phase !== "menu" && state.phase !== "gameover";
   const active = inRun && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort;
+  stateRef.current = state; // Snapshot-Handler lesen immer den aktuellen State (kein Re-Registrieren je Stich)
   // Effektive Lauflänge — spiegelt die Engine-Endbedingung (engine.js): Dev-Run (state.maxCycles) ODER
   // Großmeister IV/V (difficulty.maxCycles 57/54) ODER Basis (MAX_CYCLES 60). HUD-Nenner + Completion-Check lesen DIES.
   const totalCycles = state.maxCycles || state.difficulty?.maxCycles || MAX_CYCLES;
@@ -195,6 +201,30 @@ export function Autostich() {
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [inRun]);
+
+  // AUTO-SAVE (Resume) — snapshottet den laufenden Run in localStorage, damit er das Wegtabben/Schließen des
+  // Browsers überlebt (Mobile verwirft Background-Tabs; Pause allein speichert nichts). Liest State/Timer aus Refs.
+  const persistActiveRun = () => {
+    const s = stateRef.current;
+    if (!s || s.phase === "menu" || s.phase === "gameover") return;
+    const tb = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
+    saveActiveRun(s, { timeBase: tb, runId: runId.current, currentTraj: currentTraj.current });
+  };
+  // Mobile-zuverlässige Speicherpunkte: Tab in den Hintergrund (visibilitychange→hidden) ODER Seite entladen
+  // (pagehide) → sofortiger Snapshot. beforeunload feuert auf Mobile NICHT verlässlich → DAS hier ist der eigentliche Fix.
+  useEffect(() => {
+    const onVis = () => { if (document.visibilityState === "hidden") persistActiveRun(); };
+    window.addEventListener("pagehide", persistActiveRun);
+    document.addEventListener("visibilitychange", onVis);
+    return () => { window.removeEventListener("pagehide", persistActiveRun); document.removeEventListener("visibilitychange", onVis); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Checkpoints im Lauf: bei jedem Durchlauf-Wechsel und jeder Entscheidungsphase (levelup/formation/architect/…)
+  // sofort snapshotten — niederfrequent, deckt die üblichen Verlustpunkte ab (die feineren fängt visibilitychange).
+  useEffect(() => {
+    if (inRun) persistActiveRun();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.cycle, state.phase, inRun]);
 
   // Timer-Segmente: bei Wechsel aktiv <-> inaktiv die verstrichene Zeit verbuchen.
   useEffect(() => {
@@ -311,9 +341,9 @@ export function Autostich() {
       setIsRecord(true);
     }
   }
-  // Bei Game-Over automatisch werten.
+  // Bei Game-Over automatisch werten + den Resume-Snapshot löschen (Lauf ist beendet → kein Fortsetzen mehr).
   useEffect(() => {
-    if (state.phase === "gameover") saveRun();
+    if (state.phase === "gameover") { saveRun(); clearActiveRun(); setResumable(null); }
   }, [state.phase]);
 
   // #190: aktive Skins aus den Optionen (defensiver Fallback auf "default", falls (noch) gesperrt/unbekannt).
@@ -323,6 +353,7 @@ export function Autostich() {
   const bfSkin   = battlefieldAssets(activeBfId);
 
   function beginRun() {
+    clearActiveRun(); setResumable(null); // frischer Lauf ersetzt einen evtl. gespeicherten Resume-Snapshot
     // #205: Challenge-Seed (falls per Paste/Nachspielen gesetzt) ODER frischer Zufalls-Seed. Der Seed macht
     // den Lauf reproduzierbar & teilbar; jeder Lauf bekommt einen, auch der normale „Neuer Run".
     const seed = pendingSeed.current != null ? (pendingSeed.current >>> 0) : randomSeed();
@@ -368,8 +399,31 @@ export function Autostich() {
   function restartRun() { launchRun({ master: !!state.masterRun, grade: state.masteryGrade || 0 }); }
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
   function startDevRun(dev) { launchRun({ dev }); }
-  const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
-  const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun läuft über den gameover-Effekt
+  const toMenu = () => { saveRun(); clearActiveRun(); setResumable(null); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
+  const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun + clearActiveRun laufen über den gameover-Effekt
+  // RESUME (Phase 1): gespeicherten Lauf fortsetzen — Refs (Timer/Geist-Linie/Attribution) aus dem Snapshot
+  // wiederherstellen, dann den State laden. Der Timer läuft ab jetzt weiter (segStart neu gesetzt).
+  function resumeRun() {
+    const r = resumable; if (!r) return;
+    const m = r.meta || {};
+    timeBase.current = typeof m.timeBase === "number" ? m.timeBase : 0;
+    segStart.current = Date.now();
+    runId.current = m.runId || Date.now();
+    currentTraj.current = Array.isArray(m.currentTraj) ? m.currentTraj.slice() : [];
+    runStartRecordTraj.current = recordTraj.current.slice();
+    recorded.current = false;
+    setPaused(false); setIsRecord(false); setNewUnlocks([]);
+    setResumable(null);
+    dispatch({ type: "RESTORE_RUN", state: r.state });
+  }
+  // „Beenden & speichern" (Phase 2): Lauf pausieren fürs spätere Fortsetzen. Snapshot sichern, aber NICHT als
+  // beendeten Lauf werten (kein saveRun) und NICHT löschen (kein clearActiveRun) → zurück ins Menü, wo „Fortsetzen" steht.
+  function suspendRun() {
+    persistActiveRun();
+    setResumable(loadActiveRun());
+    setConfirmAbort(false); setPaused(false);
+    dispatch({ type: "TO_MENU" });
+  }
   // Perk-Auswahl: ein Angebotseintrag ist entweder eine Familie {familyId,tier} (Rarität #167) oder ein flacher perkId-String.
   const pick = (entry) => (entry && typeof entry === "object" && entry.familyId)
     ? dispatch({ type: "PICK_FAMILY", familyId: entry.familyId, tier: entry.tier, rng: Math.random })
@@ -523,6 +577,8 @@ export function Autostich() {
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} onPlaySeed={startRun} onMasterRun={() => setShowMasterSelect(true)} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+            onResume={resumable ? resumeRun : null}
+            resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score, masterRun: !!resumable.state.masterRun, grade: resumable.state.masteryGrade || 0 } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
             onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
@@ -672,11 +728,14 @@ export function Autostich() {
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
           onClick={() => setConfirmAbort(false)}>
           <div className="w-full max-w-xs rounded-2xl p-5" style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
-            <div className="text-base font-bold" style={{ color: "#e0605a" }}>Lauf wirklich abbrechen?</div>
-            <div className="text-sm opacity-70 mt-1.5">Der Fortschritt dieses Laufs geht verloren.</div>
-            <div className="flex gap-2 mt-4">
-              <button onClick={() => setConfirmAbort(false)} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#16161c", border: "1px solid #33333e" }}>Weiterspielen</button>
-              <button onClick={() => { setConfirmAbort(false); endRun(); }} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#e0605a", color: "#fff" }}>Beenden</button>
+            <div className="text-base font-bold">Lauf pausieren oder beenden?</div>
+            <div className="text-sm opacity-70 mt-1.5"><b>Beenden &amp; speichern</b> merkt sich den Lauf — du kannst ihn später im Menü fortsetzen. <b>Beenden</b> wertet ihn und zeigt den Endscreen.</div>
+            <div className="flex flex-col gap-2 mt-4">
+              <button onClick={suspendRun} className="rounded-lg py-2 text-sm font-bold" style={{ background: "#2f6d3a", color: "#fff" }}>Beenden &amp; speichern</button>
+              <div className="flex gap-2">
+                <button onClick={() => setConfirmAbort(false)} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#16161c", border: "1px solid #33333e" }}>Weiterspielen</button>
+                <button onClick={() => { setConfirmAbort(false); endRun(); }} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#e0605a", color: "#fff" }}>Beenden</button>
+              </div>
             </div>
           </div>
         </div>

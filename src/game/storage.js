@@ -223,3 +223,32 @@ export function loadSeenGuide() {
 export function saveSeenGuide() {
   try { localStorage.setItem(k("as_seen_guide"), "1"); } catch (e) {}
 }
+
+/* AKTIVER LAUF (Resume) — Snapshot des laufenden Reducer-States, damit ein Run das Wegtabben/Schließen
+   des Browsers überlebt (Mobile verwirft Background-Tabs; der State liegt sonst nur im Arbeitsspeicher).
+   Der State ist voll serialisierbar (~6 KB, keine Funktionen). `meta` trägt UI-seitige Ephemera aus App.jsx
+   (Lauf-Timer, runId, Geist-Linie), die nicht im Reducer-State stehen.
+   Schema-Stempel: nach einem Deploy mit inkompatiblem State-Shape wird ein Alt-Snapshot verworfen (nie ein
+   kaputter Run geladen). Menü-/Gameover-Snapshots gelten nicht als „fortsetzbar". */
+export const ACTIVE_RUN_SCHEMA = 1; // bei breaking change am Reducer-State-Shape hochzählen → Alt-Snapshots werden verworfen
+export function saveActiveRun(state, meta = {}) {
+  try {
+    if (!state || !state.deck || state.phase === "menu" || state.phase === "gameover") return;
+    localStorage.setItem(k("as_activerun"), JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state, meta }));
+  } catch (e) {}
+}
+export function loadActiveRun() {
+  try {
+    const raw = localStorage.getItem(k("as_activerun"));
+    if (raw) {
+      const b = JSON.parse(raw);
+      if (b && b.schema === ACTIVE_RUN_SCHEMA && b.state && b.state.deck &&
+          b.state.phase !== "menu" && b.state.phase !== "gameover")
+        return { state: b.state, meta: b.meta || {} };
+    }
+  } catch (e) {}
+  return null;
+}
+export function clearActiveRun() {
+  try { localStorage.removeItem(k("as_activerun")); } catch (e) {}
+}
