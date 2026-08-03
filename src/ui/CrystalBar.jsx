@@ -48,12 +48,13 @@ export function CrystalBar({ active, layers = {}, frostbite = {}, hasKristalline
       <div className="flex items-stretch gap-3">
         {/* Kristalline Masse: Σ aller Schichten + Fortschritt zur nächsten +1-Wert-Stufe. */}
         <div className="flex-1 min-w-0">
-          <div className="flex justify-between text-xs mb-1.5">
-            <span className="opacity-60">❄ Kristalline Masse
-              {hasKristalline && kristBonus > 0 && <span style={{ color: OVER }}> · alle Frostkarten +{kristBonus}{capped ? " (max)" : ""}</span>}
-            </span>
-            <span className="font-bold tabular-nums" style={{ color: kristBonus > 0 ? OVER : ICE }}>Σ {totalMass}</span>
+          <div className="flex items-baseline justify-between text-xs mb-1 gap-2">
+            <span className="opacity-60 shrink-0">❄ Kristalline Masse</span>
+            <span className="font-bold tabular-nums shrink-0" style={{ color: kristBonus > 0 ? OVER : ICE }}>Σ {totalMass}</span>
           </div>
+          {hasKristalline && kristBonus > 0 && (
+            <div className="text-[10px] mb-1 leading-snug" style={{ color: OVER }}>alle Frostkarten +{kristBonus}{capped ? " (max)" : ""}</div>
+          )}
           <div className="relative rounded-sm overflow-hidden" style={{ height: 12, background: "#26262e" }}
             title={`Summe aller Schichten. Je ${KRISTALLINE_STEP} erhalten alle Frostkarten +1 Wert (Kristalline Masse, bis +${KRISTALLINE_MAX_VALUE}).`}>
             <div className="absolute inset-y-0 left-0 transition-all"

@@ -53,7 +53,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const canReroll = !!onReroll && rerollTokens > 0;
   const full = skills.length >= SKILL_SLOTS;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
-  const [openSkill, setOpenSkill] = useState(null); // gehaltener Skill, dessen Beschreibung aufgeklappt ist
   const [openArch, setOpenArch] = useState(null);   // Archetyp, dessen Passiv-Beschreibung aufgeklappt ist (#201 P9)
   const devMode = !!state.devMode;                  // Dev-Run: Archetyp-Gruppen eingeklappt, Klick öffnet die Skills
   const [openGroup, setOpenGroup] = useState(null); // Dev-Run: welcher Archetyp gerade seine Skills zeigt
@@ -294,28 +293,23 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {held.length > 0 && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              Deine Skills — {held.length}/{SKILL_SLOTS} · bereits gehalten · antippen für Beschreibung
+              Deine Skills — {held.length}/{SKILL_SLOTS} · bereits gehalten
             </div>
-            <div className="flex flex-wrap gap-2">
-              {/* #118: gehaltene Skills NEUTRAL (grau) — sonst wirken sie wie ein wählbares Angebot.
-                  #234: Ersetzen läuft jetzt übers Modal (bei vollen Slots), nicht mehr übers Antippen hier. */}
+            {/* #201 P1 / #UI: gehaltene Skills zeigen ihre Beschreibung DIREKT (kein Antippen mehr) — man kann seinen
+                Build auf einen Blick lesen. NEUTRAL (grau), damit sie nicht wie ein wählbares Angebot wirken. */}
+            <div className="flex flex-col gap-2">
               {held.map((s) => (
-                <button key={s.id} onClick={() => setOpenSkill(openSkill === s.id ? null : s.id)} title={s.desc}
-                  className="text-xs px-2 py-1 rounded transition-all"
-                  style={{ background: openSkill === s.id ? "#2a2a33" : "#1c1c22", color: "#9a9aa4",
-                           border: `1px solid ${openSkill === s.id ? "#4a4a55" : "#33333e"}` }}>
-                  {ac(s.id).icon} {s.name} <span className="opacity-55">✓ gehalten</span> <span className="opacity-40">{openSkill === s.id ? "▾" : "▸"}</span>
-                </button>
+                <div key={s.id} className="text-xs px-2.5 py-2 rounded leading-snug"
+                  style={{ background: "#1c1c22", border: "1px solid #33333e" }}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span style={{ color: ac(s.id).color }}>{ac(s.id).icon}</span>
+                    <b style={{ color: "#c8c8d0" }}>{s.name}</b>
+                    <span className="opacity-40 text-[11px]">✓ gehalten</span>
+                  </div>
+                  <div className="opacity-70" style={{ color: "#cfcad8" }}><GlossaryText text={s.desc} /></div>
+                </div>
               ))}
             </div>
-            {/* #201 P1: die aufgeklappte Beschreibung eines gehaltenen Skills erklärt gleich seine Schlüsselbegriffe
-                mit — abrufbar unabhängig davon, ob der Begriff gerade im Angebot vorkommt. */}
-            {openSkill && SKILL_DEFS[openSkill] && (
-              <div className="text-[11px] mt-2 px-2 py-2 rounded leading-snug" style={{ background: `${ac(openSkill).color}14`, color: "#d8d0f0" }}>
-                <div>{SKILL_DEFS[openSkill].desc}</div>
-                <KeywordGlossary tokens={glossaryKeywords([openSkill], SKILL_DEFS)} />
-              </div>
-            )}
           </div>
         )}
 
