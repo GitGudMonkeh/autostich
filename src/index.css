@@ -246,12 +246,12 @@ button { font-family: inherit; }
 
 /* Architekt: fertige Struktur-Kombi (volle Zeile/Spalte/Diagonale) — statt eines goldenen RAHMENS (#236: der
    kollidierte mit dem Raritätsrahmen/der SVG-Kontur des Gebäudes und verdeckte dessen Stufenfarbe) leuchtet jetzt
-   der HINTERGRUND der Zelle weich golden-transparent. Diffuser Radial-Wash, der zum Perimeter hin auf 0 fällt →
+   der HINTERGRUND der Zelle weich rot-transparent. Diffuser Radial-Wash, der zum Perimeter hin auf 0 fällt →
    KEIN Rand-Ring, die Gebäude-Rahmenfarbe bleibt frei; im Zentrum leicht abgesenkt, damit die Zahl lesbar bleibt.
    Als ::after-Overlay (border-radius: inherit), damit die Inline-box-shadow der Zelle erhalten bleibt. Sanfter Puls
    über opacity; ruht bei 0%/100% auf einem sichtbaren Glow → unter reduced-motion (Regel unten) bleibt der statische
-   Glow stehen, kein Puls. Gold #f0b429 = die bestehende Kombi-Farbe. Gilt für alle Nutzer der Klasse (Architekt-
-   Screen, Aufstellphase/CardGrid, Chronik). */
+   Glow stehen, kein Puls. Rot #d1462f = die Architekt-Kombi-Farbe (einheitlich in Aufstellphase/CardGrid + Chronik,
+   passend zum roten Kombi-Overlay im Architekt-Screen). */
 @keyframes arch-struct-glow {
   0%, 100% { opacity: 0.6; }
   50%      { opacity: 1; }
@@ -263,10 +263,10 @@ button { font-family: inherit; }
   border-radius: inherit;
   pointer-events: none;
   background: radial-gradient(ellipse at center,
-    rgba(240,180,41,0.16) 0%,
-    rgba(240,180,41,0.30) 42%,
-    rgba(240,180,41,0.12) 66%,
-    rgba(240,180,41,0) 82%);
+    rgba(209,70,47,0.18) 0%,
+    rgba(209,70,47,0.34) 42%,
+    rgba(209,70,47,0.14) 66%,
+    rgba(209,70,47,0) 82%);
   animation: arch-struct-glow 1.7s ease-in-out infinite;
 }
 

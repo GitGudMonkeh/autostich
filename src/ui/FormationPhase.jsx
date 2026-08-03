@@ -63,7 +63,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
     return cover;
   }, [hasArch, architect, playerOrder, deck]);
   // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) — dieselben Positionen wie im Architekt-Screen bekommen
-  // den goldenen Schimmer-Rahmen (arch-struct-lit). Nur Geometrie (Gebäude-Abdeckung), unabhängig von Karten/Tauschen.
+  // den roten Kombi-Wash (arch-struct-lit, wie im Architekt-Screen). Nur Geometrie (Gebäude-Abdeckung), unabhängig von Karten/Tauschen.
   const structLitPos = useMemo(() => {
     if (!hasArch) return null;
     const set = new Set();
