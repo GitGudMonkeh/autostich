@@ -136,11 +136,11 @@ export const SKILL_DEFS = {
   SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat"],
     desc: `Endet ein Durchlauf mit ≥${C.SONNENKERN_MIN_HEAT} % Hitze, erhält jede Karte unter Wert ${C.SONNENKERN_CARD_CAP} dauerhaft +${C.SONNENKERN_VALUE} Kartenwert.`, suncore: true },
   SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: "Niederlagen nehmen dir keine Hitze — sie geben welche (je Rückstandspunkt). Aus jeder Niederlage steigst du heißer auf; zusätzlich entzündet verbrauchte Hitze 1×/Durchlauf neu.", phoenix: true },
+    desc: `Niederlagen kosten keine Hitze, sondern geben +${C.PHOENIX_LOSS_HEAT} % Hitze je Rückstandspunkt. Sinkt deine Hitze durch Verbrauch auf 0, entzündet sie sich 1×/Durchlauf auf ${Math.round(C.PHOENIX_REIGNITE * 100)} % neu.`, phoenix: true },
   SK_FIRE_L03: { id: "SK_FIRE_L03", name: "Sonnenzorn", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: "Dein gesamter Sieg-Score wächst dauerhaft mit der höchsten Hitze, die du je gehalten hast (Peak 100 → bis ×2). Treib die Hitze hoch, dann bleibt der Zorn.", sunwrath: true },
+    desc: `Dein gesamter Sieg-Score wird mit deiner höchsten je gehaltenen Hitze multipliziert: +${Math.round(C.SUNWRATH_PEAK_STEP * 100)} % je Peak-Prozent (Peak 100 → ×2).`, sunwrath: true },
   SK_FIRE_L04: { id: "SK_FIRE_L04", name: "Damaststahl", archetype: "fire", legendary: true, keywords: ["heat", "forge", "ash"],
-    desc: `Schmiedet selbst (ohne Asche) deine tiefsten Karten und gibt geschmiedeten Karten einen Kampf-Bonus — sie schlagen über ihrem Gewicht. Jeder Sieg zahlt +${C.DAMASCUS_DIRECT} Score je Punkt Gesamt-Schmiedewert. Asche verfällt nie.`, damascus: true },
+    desc: `Schmiedet ohne Asche jeden Durchlauf deine niedrigste Karte (+${C.FORGE_VALUE} Wert, bis ${C.DAMASCUS_MAX_FORGED} Karten). Geschmiedete Karten kämpfen mit +${C.DAMASCUS_COMBAT} Wert. Jeder Sieg gibt +${C.DAMASCUS_DIRECT} Score je Punkt Gesamt-Schmiedewert. Kein Ascheverbrauch.`, damascus: true },
 
   // ---- Eis-Rework (v0) — „Gletscher: Architektur × Permanenz." Spine = SCHICHTEN je Frostkarte (permanent,
   //      unverlierbar). Kein Konsument. Flags in engine.js/reducer.js/formations.js gelesen. 21 Skills auf 7 Linien.
