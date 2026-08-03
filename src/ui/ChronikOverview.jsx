@@ -126,7 +126,7 @@ export function ChronikOverview({ state, onClose }) {
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
-          <div className="md:flex-1 md:min-w-0 mt-3 md:mt-0 grid gap-3 content-start">
+          <div className="md:flex-1 md:min-w-0 mt-5 md:mt-0 grid gap-3 content-start">
             {/* #218: Kartendetail zeigt jetzt auch die Elementar-Zustände (Frost/Schichten · Pflanze/Wachstum · Feuer/geschmiedet),
                 genau wie in der Aufstellung (FormationPhase). selCard = die aktuell angetippte Karte. */}
             <CardDetail card={selCard} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} familyTiers={state.familyTiers}
@@ -136,6 +136,35 @@ export function ChronikOverview({ state, onClose }) {
               plantRoots={selCard ? plantRootScore(state.skills || [], state.growth?.[selCard.id] || 0) : 0}
               plantPfahl={hasPfahlwurzel(state.skills || [])}
               forgedValue={selCard ? (state.forged?.[selCard.id] || 0) : 0} />
+            {/* Gebäude-Liste (wie in der Aufstellphase): antippen lässt den Gebäude-Rahmen am Brett cyan leuchten — und
+                umgekehrt markiert das Antippen einer Karte im Gebäude hier den Eintrag. Direkt unter dem Kartendetail. */}
+            {hasArch && (
+              <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
+                <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Deine Gebäude ({archBuildings.length})</div>
+                <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
+                <div className="grid gap-1">
+                  {archBuildings.map((b) => {
+                    const fam = archFamily(b.familyId); if (!fam) return null;
+                    const anchor = Math.min(...b.footprint);
+                    const eff = architectCover?.[anchor]?.effects?.join(" · ") || "";
+                    const meta = ARCH_CAT?.[fam.category] || {};
+                    const on = inspectBid === b.id;
+                    return (
+                      <button key={b.id} id={`chr-bld-${b.id}`} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
+                        className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
+                        style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
+                        <span className="inline-flex items-center gap-1.5 flex-wrap">
+                          <span className="w-[8px] h-[8px] rounded-[2px] inline-block" style={{ background: fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92") }} />
+                          <b>{fam.name}</b>
+                          <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
+                        </span>
+                        {eff && <span className="opacity-75">{eff}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
             {anchors.length > 0 && (
               <div className="text-[11px] rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
@@ -195,7 +224,7 @@ export function ChronikOverview({ state, onClose }) {
                   {archBuildings.length} Gebäude · {archOcc}/{archMax} Zellen
                 </span>
               </div>
-              <div className="flex flex-wrap gap-1.5 mb-2">
+              <div className="flex flex-wrap gap-1.5">
                 {Object.entries(archByCat).map(([cat, n]) => {
                   const meta = ARCH_CAT?.[cat] || {};
                   return (
@@ -203,30 +232,6 @@ export function ChronikOverview({ state, onClose }) {
                       style={{ background: (meta.color || "#8a8a92") + "22", color: meta.color || "#c8c8ce" }}>
                       {meta.icon ? meta.icon + " " : ""}{meta.label || cat} · {n}
                     </span>
-                  );
-                })}
-              </div>
-              {/* Einzelne Gebäude mit Effekt — antippen lässt den Gebäude-Rahmen am Brett cyan leuchten (wo liegt es?);
-                  umgekehrt markiert das Antippen einer Karte im Gebäude hier den Eintrag. */}
-              <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
-              <div className="grid gap-1 sm:grid-cols-2">
-                {archBuildings.map((b) => {
-                  const fam = archFamily(b.familyId); if (!fam) return null;
-                  const anchor = Math.min(...b.footprint);
-                  const eff = architectCover?.[anchor]?.effects?.join(" · ") || "";
-                  const meta = ARCH_CAT?.[fam.category] || {};
-                  const on = inspectBid === b.id;
-                  return (
-                    <button key={b.id} id={`chr-bld-${b.id}`} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
-                      className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
-                      style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
-                      <span className="inline-flex items-center gap-1.5 flex-wrap">
-                        <span className="w-[8px] h-[8px] rounded-[2px] inline-block" style={{ background: fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92") }} />
-                        <b>{fam.name}</b>
-                        <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
-                      </span>
-                      {eff && <span className="opacity-75">{eff}</span>}
-                    </button>
                   );
                 })}
               </div>

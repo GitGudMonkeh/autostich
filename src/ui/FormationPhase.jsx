@@ -232,7 +232,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
-          <div className="md:flex-1 md:min-w-0 mt-3 md:mt-0 grid gap-3 content-start">
+          <div className="md:flex-1 md:min-w-0 mt-5 md:mt-0 grid gap-3 content-start">
             <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} familyTiers={state.familyTiers}
               arch={sel != null && architectCover ? architectCover[sel] : null}
               frostReadout frostLayers={sel != null && cards[sel] ? (state.layers?.[cards[sel].id] || 0) : 0} frostGletscher={hasGletscher(state.skills || [])}
@@ -243,8 +243,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
             {/* Gebäude-Liste (wie in der Chronik): antippen lässt den Gebäude-Rahmen am Brett cyan leuchten — und
                 umgekehrt markiert das Antippen einer Karte im Gebäude hier den Eintrag. Nur bei aktivem Overlay sichtbar-verlinkt. */}
             {hasArch && (
-              <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-                <div className="text-[11px] uppercase tracking-wide opacity-50 mb-0.5">🏗 Deine Gebäude ({archBuildings.length})</div>
+              <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
+                <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Deine Gebäude ({archBuildings.length})</div>
                 <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
                 <div className="grid gap-1">
                   {archBuildings.map((b) => {
