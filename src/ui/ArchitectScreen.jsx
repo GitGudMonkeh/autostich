@@ -876,7 +876,7 @@ function famEff(fam, b) {
     case "target":     s = `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Score"}`; break;
     case "streak":     s = `Sieg +${nz(base.score)} Score × Serie`; break;
     case "crit":       s = `Crit-Sieg +${nz(base.score)} Score`; break;
-    case "milestone":  s = `jeder ${base.every}. Sieg +${nz(base.score)} Score`; break;
+    case "milestone": { const every = (base.kind === "milestone" && fam.tierKick && fam.tierKick.every && t >= fam.tierKick.at) ? fam.tierKick.every : base.every; s = `jeder ${every}. Sieg auf diesem Gebäude +${nz(base.score)} Score`; break; }
     case "mult":       s = `Siege hier ×${base.factor}`; break;
     // #Pool: Distrikt-Effekte — hängen vom Brett ab (Nachbarschaft / vollendete Strukturen).
     case "neighbor":   s = fam.category === "value" ? `+${nz(base.value)} Stichwert je Nachbargebäude (max ${base.cap})` : `Sieg +${nz(base.score)} Score je Nachbargebäude (max ${base.cap})`; break;
@@ -901,7 +901,6 @@ function famEff(fam, b) {
     if (k.mult) kickTxt = `zusätzlich ×${k.mult} Score`;
     else if (k.critFlatMult) kickTxt = `bei Crit ×${k.critFlatMult} Direkt-Score`;
     else if (k.streakDoubleFrom) kickTxt = `ab Serie ${k.streakDoubleFrom} doppelt`;
-    else if (k.every) kickTxt = `jeder ${k.every}. statt ${base.every}. Sieg`;
     else if (k.addType) kickTxt = `zweiter Joker-Typ: ${k.addType}`;
     else if (k.ankerValue) kickTxt = `+${k.ankerValue} Stichwert je Ankerzelle`;
     if (kickTxt) s += on ? ` · ${kickTxt}` : ` (Stufe ${k.at}: ${kickTxt})`;
