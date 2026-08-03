@@ -679,10 +679,8 @@ export function resolveTrick(state, rng) {
       const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
       if (totalForged > 0) fireDirect += totalForged * C.DAMASCUS_DIRECT;
     }
-    // Asche-Dividende (v0.3): gehaltene Asche gibt einen kleinen DIREKTen Score je Feuer-Sieg (post-stack, gedeckelt,
-    // bekenntnis-skaliert) → toter Asche-Stapel (Schmieden ist gedeckelt) fühlt sich nicht mehr verschwendet an.
-    if (C.ASH_DIVIDEND > 0 && newAsh > 0 && fireCommit > 0)
-      fireDirect += Math.min(newAsh, C.ASH_DIVIDEND_CAP) * C.ASH_DIVIDEND * fireCommit;
+    // (#268: die per-Sieg-Asche-Dividende ist entfernt — ungenutzte Asche wird jetzt am Durchlauf-Ende über den
+    //  Weißglut-Überlauf vollständig in Score verbrannt, statt als kleiner Dauer-Drip je Sieg zu tropfen.)
     // Blitz-Legendär-Reshape (2026-07-30): DIREKTE Dividende aus dem GESÄTTIGTEN Ionisierungsfeld. Die Ionisierung flutet
     // (blitz-economy.mjs: alle Karten @Deckel 5, ~ganzes Deck ab Cycle 20) → „mehr Ionis."-Legendäre waren tot (1,01×/0,90×).
     // Sie lesen jetzt den BESTAND des Feldes (Stand VOR dem +1 der Siegkarte) und zahlen je IONISIERTEM Sieg DIREKT — am
@@ -997,10 +995,11 @@ export function resolveTrick(state, rng) {
       // die tiefen Karten, da nach jedem Schmieden neu die tiefste gesucht wird). Schmelzofen senkt die Kosten ab 50 % Hitze.
       if (fireFlag(skills, "ascheschmiede")) {
         const cost = forgeCostFor(skills, heat.value);
+        // Stufe 1 (permanent, gedeckelt): solange Asche & eine schmiedbare Karte da ist, die aktuell niedrigste Karte
+        // dauerhaft +FORGE_VALUE. Boden-Heber (wenige tiefe Karten), kein Ganz-Deck-Buff.
         let guardF = 0;
         while (newAsh >= cost && guardF++ < deck.length) {
-          // niedrigste schmiedbare Karte: unter dem Per-Karte-Deckel UND (schon geschmiedet ODER noch Platz unter
-          // FORGE_MAX_CARDS). So bleibt Ascheschmiede ein Boden-Heber (wenige tiefe Karten), kein Ganz-Deck-Buff.
+          // niedrigste schmiedbare Karte: unter dem Per-Karte-Deckel UND (schon geschmiedet ODER noch Platz unter FORGE_MAX_CARDS).
           const forgedCount = Object.keys(newForged).length;
           let lowId = null, lowV = Infinity;
           for (const c of deck) {
@@ -1008,10 +1007,20 @@ export function resolveTrick(state, rng) {
             if (!(newForged[c.id] > 0) && forgedCount >= C.FORGE_MAX_CARDS) continue;    // keine NEUE Karte über dem Kartendeckel
             if (c.value < lowV) { lowV = c.value; lowId = c.id; }
           }
-          if (lowId == null) break; // nichts mehr schmiedbar → Asche bleibt erhalten
+          if (lowId == null) break; // Kapazität voll → raus aus Stufe 1 (Rest-Asche geht in den Weißglut-Überlauf)
           newAsh -= cost;
           deck = deck.map((c) => (c.id === lowId ? { ...c, value: c.value + C.FORGE_VALUE } : c));
           newForged = { ...newForged, [lowId]: (newForged[lowId] || 0) + C.FORGE_VALUE };
+        }
+        // Stufe 2 — Weißglut-Überlauf (#268): ist die Kapazität voll und liegt noch Asche ≥ Kosten, „glüht die Schmiede
+        // weiß" → je FORGE_COST-Portion +FORGE_OVERFLOW_SCORE (sichtbarer Score-Burst). Asche wird so auf < Kosten
+        // heruntergefahren (vollständig ausgegeben). Post-stack-Flat (am Sieg-Multiplikator vorbei), dem Schluss-Stich gutgeschrieben.
+        if (C.FORGE_OVERFLOW_SCORE > 0 && newAsh >= cost) {
+          const portions = Math.floor(newAsh / cost);
+          const burst = portions * C.FORGE_OVERFLOW_SCORE;
+          newAsh -= portions * cost;
+          score += burst;
+          if (lastTrick) { lastTrick.gained += burst; lastTrick.scoreGain += burst; } // Per-Karte-Ledger konsistent halten
         }
       }
       // Damaststahl (L): SELBST-Schmiede (braucht Ascheschmiede/Asche NICHT) — nimmt je Durchlauf die niedrigste noch

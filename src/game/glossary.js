@@ -24,6 +24,8 @@ import * as C from "./constants.js";
 const de = (x) => String(x).replace(".", ",");
 // Prozent(punkte) als ganze Zahl (0,07 → 7).
 const pct = (x) => Math.round(x * 100);
+// Tausendertrenner (2000 → „2.000").
+const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
 // Akzentfarben (hartkodiert, damit das Glossar NUR von constants.js abhängt — kein Import-Zyklus).
 // Archetyp-Farben identisch zu ARCHETYPE_META; Formation ist archetypübergreifend → neutrales Blau.
@@ -189,11 +191,14 @@ export const GLOSSARY = {
     text: "Zusätzlicher Score bei jedem Feuer-Sieg, der direkt zählt (ohne Serie/Crit/Formation zu durchlaufen). Je mehr Hitze du hältst, desto mehr — bis zu einem Deckel. Stark im frühen Spiel.",
     match: ["Glutdividende"] },
   brand: { category: "frak", group: "fire", label: "Brandmal", icon: "🔥", color: CLR.fire,
-    text: `Eine gebrandmarkte Gegnerkarte verliert Wert; jeder Brand gibt +${C.BRAND_ASH} Asche — Rohstoff der Feuer-Schmiede, und gehaltene Asche gibt zusätzlich kleinen Score je Feuer-Sieg.`,
+    text: `Eine gebrandmarkte Gegnerkarte verliert Wert; jeder Brand gibt +${C.BRAND_ASH} Asche — der Rohstoff der Feuer-Schmiede.`,
     match: ["Brandmal", "Brand", "Brände", "gebrandmarkte"] },
   ash: { category: "frak", group: "fire", label: "Asche", icon: "🔥", color: CLR.fire,
-    text: `Rohstoff der Feuer-Schmiede: Brände geben +${C.BRAND_ASH} Asche. Die Ascheschmiede verbraucht ${C.FORGE_COST} Asche je Schmiedung (+${C.FORGE_VALUE} Kartenwert); Damaststahl lässt sie nie verfallen. Gehaltene Asche gibt zusätzlich kleinen Score je Feuer-Sieg.`,
+    text: `Rohstoff der Feuer-Schmiede: Brände geben +${C.BRAND_ASH} Asche. Die Ascheschmiede verbraucht ${C.FORGE_COST} Asche je Schmiedung (+${C.FORGE_VALUE} Kartenwert); ist die Schmiede voll, verglüht restliche Asche als Weißglut zu Score. Damaststahl lässt Asche nie verfallen.`,
     match: ["Asche"] },
+  whiteheat: { category: "frak", group: "fire", label: "Weißglut-Überlauf", icon: "🔥", color: CLR.fire,
+    text: `Ist die Schmiede-Kapazität voll, wird restliche Asche am Durchlauf-Ende in Score-Häppchen verbrannt (+${grp(C.FORGE_OVERFLOW_SCORE)} Score je ${C.FORGE_COST} Asche) — Asche wird so jeden Durchlauf vollständig ausgegeben, kein toter Haufen mehr.`,
+    match: ["Weißglut"] },
   forge: { category: "frak", group: "fire", label: "Schmieden", icon: "⚒", color: CLR.fire,
     text: `Asche wird zu dauerhaftem Kartenwert (Ascheschmiede: ${C.FORGE_COST} Asche → +${C.FORGE_VALUE} Wert auf die niedrigste Karte).`,
     match: ["Schmieden", "geschmiedet", "Schmiede", "Ascheschmiede"] },

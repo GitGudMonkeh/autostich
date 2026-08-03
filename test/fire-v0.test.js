@@ -77,9 +77,10 @@ describe("Feuer-Rework v0 — reine Helfer", () => {
     expect(whiteHeatScore(3, ["SK_FIRE_07", "SK_FIRE_L03"], 100)).toBe(30);
     expect(whiteHeatScore(3, [], 100)).toBe(0); // ohne Weißglut
   });
-  it("forgeCostFor: 5, Schmelzofen-Rabatt ab 50 %", () => {
+  it("forgeCostFor: FORGE_COST, Schmelzofen-Rabatt als Faktor ab 50 % (#268)", () => {
     expect(forgeCostFor(["SK_FIRE_15"], 0)).toBe(C.FORGE_COST);
-    expect(forgeCostFor(["SK_FIRE_15", "SK_FIRE_17"], 60)).toBe(C.FORGE_COST - 1);
+    // #268: Rabatt ist ein FAKTOR (−25 %), skaliert mit den Kosten (20 → 15), ganzzahlig gerundet.
+    expect(forgeCostFor(["SK_FIRE_15", "SK_FIRE_17"], 60)).toBe(Math.round(C.FORGE_COST * (1 - C.SCHMELZOFEN_FORGE_DISCOUNT)));
     expect(forgeCostFor(["SK_FIRE_15", "SK_FIRE_17"], 20)).toBe(C.FORGE_COST); // unter 50 % kein Rabatt
   });
   it("initHeat: frischer Substate", () => {
@@ -118,5 +119,24 @@ describe("Feuer-Rework v0 — Engine-Integration", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01", "SK_FIRE_11"], heat: heat({ value: 90 }) }), noCrit);
     expect(s.heat.value).toBe(0);
     expect(s.lastTrick.scoreGain).toBeGreaterThan(B + 1000);
+  });
+  // #268 Asche-Ökonomie: einen vollen Durchlauf (40 Stiche) spielen → am Durchlauf-Ende greift die Ascheschmiede.
+  const playCycle = (s) => { let g = 0; while (s.cycle === 0 && g++ < 100) s = resolveTrick(s, noCrit); return s; };
+  it("#268 Ascheschmiede: Kosten 20 / Value 3 — floor(Asche/Kosten) Schmiedungen je Durchlauf-Ende, Rest-Asche bleibt", () => {
+    // 45 gebankte Asche, leere Schmiede, kein Brand (Asche wächst im Durchlauf nicht) → 45/20 = 2 Schmiedungen, Rest 5.
+    const s = playCycle(scen(12, 0, { skills: ["SK_FIRE_15"], heat: heat({ value: 0 }), ash: 45 }));
+    expect(s.ash).toBe(45 - 2 * C.FORGE_COST);                 // 5 < Kosten → bleibt liegen (banken)
+    expect(Object.keys(s.forged)).toHaveLength(2);             // zwei verschiedene (die je aktuell niedrigsten) Karten
+    expect(Object.values(s.forged).every((v) => v === C.FORGE_VALUE)).toBe(true); // je +3 Dauerwert
+    expect(s.deck.find((c) => c.id === "X0").value).toBe(12 + C.FORGE_VALUE);
+  });
+  it("#268 Weißglut-Überlauf: bei voller Schmiede-Kapazität wird Rest-Asche in Score-Häppchen verbrannt (Asche < Kosten)", () => {
+    // Kapazität voll: alle FORGE_MAX_CARDS Karten am Per-Karte-Deckel → keine Schmiedung mehr → Stufe 2 (Weißglut).
+    const forged = {}; for (let i = 0; i < C.FORGE_MAX_CARDS; i++) forged[`X${i}`] = C.FORGE_MAX_PER_CARD;
+    const s = playCycle(scen(12, 0, { skills: ["SK_FIRE_15"], heat: heat({ value: 0 }), ash: 50, forged: { ...forged } }));
+    expect(s.ash).toBe(50 - 2 * C.FORGE_COST);                 // 2 Portionen à 20 verbrannt → 10 < Kosten
+    expect(Object.keys(s.forged)).toHaveLength(C.FORGE_MAX_CARDS); // keine NEUE Karte geschmiedet (Kapazität voll)
+    // Der Weißglut-Burst (2 × FORGE_OVERFLOW_SCORE) steckt im Durchlauf-Score des letzten Stichs.
+    expect(s.lastCycleScore).toBeGreaterThanOrEqual(2 * C.FORGE_OVERFLOW_SCORE);
   });
 });

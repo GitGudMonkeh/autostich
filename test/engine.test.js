@@ -3,7 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
-import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
+import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
   HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ZINSESZINS_STEP, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
   SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
@@ -111,13 +111,13 @@ describe("resolveTrick — Crit & globale Score-Formel (ohne Tempo)", () => {
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo((B + 800) * 1.02);
   });
 
-  it("Crit multipliziert den vollen scoreBeforeCrit mit der Basis 1,5", () => {
-    // Crit-Chance 1 (Blitz-Stau) → garantierter Crit (verbraucht rng). scoreBeforeCrit = Basis×1,02, ×1,5 mit Crit.
+  it("Crit multipliziert den vollen scoreBeforeCrit mit dem Basis-Crit-Multiplikator", () => {
+    // Crit-Chance 1 (Blitz-Stau) → garantierter Crit (verbraucht rng). scoreBeforeCrit = Basis×1,02, ×CRIT_BASE_MULT mit Crit.
     const s = resolveTrick(scenario(12, 0, { lightning: litCrit(1) }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(B * 1.02);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * 1.5);
-    expect(s.lastTrick.critBonus).toBeCloseTo(B * 1.02 * 0.5);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * CRIT_BASE_MULT);
+    expect(s.lastTrick.critBonus).toBeCloseTo(B * 1.02 * (CRIT_BASE_MULT - 1));
   });
 
   it("Niederlagen und Gleichstände lösen keinen Crit aus", () => {
@@ -136,8 +136,8 @@ describe("resolveTrick — Crit & globale Score-Formel (ohne Tempo)", () => {
   it("crits, critBonusScore und bestTrickScore werden geführt", () => {
     const s = resolveTrick(scenario(12, 0, { lightning: litCrit(1) }), rng);
     expect(s.crits).toBe(1);
-    expect(s.critBonusScore).toBeCloseTo(B * 1.02 * 0.5); // Crit-Bonus = Basis×1,02×0,5
-    expect(s.bestTrickScore).toBeCloseTo(B * 1.02 * 1.5);
+    expect(s.critBonusScore).toBeCloseTo(B * 1.02 * (CRIT_BASE_MULT - 1)); // Crit-Bonus = Basis×1,02×0,5
+    expect(s.bestTrickScore).toBeCloseTo(B * 1.02 * CRIT_BASE_MULT);
   });
 });
 
@@ -155,10 +155,10 @@ describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
   });
   it("L6 Raserei: Gesamt-Crit-Überschuss über 100 % wird additiv zu Crit-Schaden (max +100 %, total-aware) (#115)", () => {
     const cm = (ws, over = {}) => resolveTrick(scenario(12, 0, { perks: ["L6"], winStreak: ws, ...over }), rng).lastTrick.critMultiplier;
-    expect(cm(9)).toBeCloseTo(1.5);                          // Serie 10 → rawCrit 0,5 < 1 → nur Basis 1,5
-    expect(cm(29)).toBeCloseTo(2.0);                         // Serie 30 → rawCrit 1,5 → +0,5 → 2,0
-    expect(cm(49)).toBeCloseTo(2.5);                         // Serie 50 → rawCrit 2,5 → +1,0 (Cap) → 2,5
-    expect(cm(6, { lightning: litCrit(0.7) })).toBeCloseTo(1.55); // total-aware: Serie 7 → 0,35 + 0,70 = 1,05 → +0,05
+    expect(cm(9)).toBeCloseTo(CRIT_BASE_MULT);               // Serie 10 → rawCrit 0,5 < 1 → nur Basis
+    expect(cm(29)).toBeCloseTo(CRIT_BASE_MULT + 0.5);        // Serie 30 → rawCrit 1,5 → +0,5
+    expect(cm(49)).toBeCloseTo(CRIT_BASE_MULT + 1.0);        // Serie 50 → rawCrit 2,5 → +1,0 (Cap)
+    expect(cm(6, { lightning: litCrit(0.7) })).toBeCloseTo(CRIT_BASE_MULT + 0.05); // total-aware: Serie 7 → 0,35 + 0,70 = 1,05 → +0,05
   });
   it("L4 Kritische Masse: Crit gibt der Karte dauerhaft +1 (max +4)", () => {
     const deck = [{ id: "a", suit: "R", baseRank: 5, value: 5 }];
@@ -401,7 +401,7 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(2);
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(B * 1.02);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * 1.5);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * CRIT_BASE_MULT);
   });
 
   it("ohne Crit: keine Ladung, kein Crit-Flat", () => {
@@ -464,12 +464,13 @@ describe("Crit-Chance/-Mult über Blitz & Präzision — Engine (#267, Stat-Ersa
     // Gleiche Anhebung über den Blitz-Spannungsstau als additiver Stat-Ersatz: Sockel 0,05 + 0,01 → 0,06.
     expect(resolveTrick(scenario(12, 0, { lightning: { active: true, charge: 0, maxCharge: 10, stauBonus: 0.01 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
   });
-  it("Crit-Mult: Präzision-Wucht hebt den Crit-Faktor auf 1,5 + Bonus (P_FORCE II → 1,9)", () => {
-    // P_FORCE II → +0,40× auf Basis 1,5 → 1,9; Crit über den Blitz-Stau (rawCrit 1) garantiert.
+  it("Crit-Mult: Präzision-Wucht hebt den Crit-Faktor auf Basis + Bonus (P_FORCE II → Basis + 0,40)", () => {
+    // P_FORCE II → +0,40× auf den Basis-Crit-Mult; Crit über den Blitz-Stau (rawCrit 1) garantiert.
     const s = resolveTrick(scenario(12, 0, { familyTiers: { P_FORCE: 2 }, lightning: litCrit(1) }), rng);
+    const expected = CRIT_BASE_MULT + 0.40;
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.critMultiplier).toBeCloseTo(1.9);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * 1.9); // scoreBeforeCrit Basis×1,02 × 1,9
+    expect(s.lastTrick.critMultiplier).toBeCloseTo(expected);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * expected); // scoreBeforeCrit Basis×1,02 × Crit-Faktor
   });
 });
 
@@ -493,7 +494,7 @@ describe("Formations-Engine — Integration (V2 §22.7)", () => {
     s = resolveTrick(s, rng); // pos1: Formation ×1,25, dann Crit ×1,5
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(B * 1.04 * 1.25);      // Formation IN der Basis
-    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.04 * 1.25 * 1.5);      // Crit ×1,5 danach
+    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.04 * 1.25 * CRIT_BASE_MULT);      // Crit ×1,5 danach
   });
 
   it("Formationen werden persistent im State gehalten (je Durchlauf berechnet)", () => {

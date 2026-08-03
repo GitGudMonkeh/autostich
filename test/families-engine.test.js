@@ -7,7 +7,7 @@ import { applyFamilyPick, FAMILY_DEFS } from "../src/game/families.js";
 import { computeFormations } from "../src/game/formations.js";
 import { precomputeArchitect } from "../src/game/architect.js";
 import { buildPerkOffer, isMigratedPerk, PERK_DEFS, PERK_LIST, isLegendary } from "../src/game/perks.js";
-import { SCORE_PER_WIN, RICHTFEST_STEP, BAUHUETTE_COVER } from "../src/game/constants.js";
+import { SCORE_PER_WIN, RICHTFEST_STEP, BAUHUETTE_COVER, CRIT_BASE_MULT, PRECISION_FORCE_MULT } from "../src/game/constants.js";
 const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Sieg-Basis (Pacing-Pass 100→400)
 
 /* Engine-Verdrahtung des Raritätssystems (Epic #167, Schritt 1): der End-to-End-Nachweis, dass eine
@@ -584,12 +584,12 @@ describe("Familien-Engine — Kategorie P (Präzision: Crit-Chance/-Mult über r
     expect(resolveTrick(scenario(12, 0, { familyTiers: { P_SHARPNESS: 4 } }), high).lastTrick.critChance).toBeCloseTo(0.15);
   });
 
-  it("P_FORCE: +Crit-Multiplikator auf Basis 1,5 (Stufe I → 1,75 / IV → 2,40); Crit via P_SHARPNESS + rng 0 erzwungen", () => {
+  it("P_FORCE: +Crit-Multiplikator auf den Basis-Crit-Mult (Stufe I → +0,25 / IV → +0,90); Crit via P_SHARPNESS + rng 0 erzwungen", () => {
     // P_SHARPNESS IV liefert die Crit-CHANCE (0,15), rng 0 löst den Crit aus; P_FORCE liefert nur den Crit-MULT.
     const trick = (force) => resolveTrick(scenario(12, 0, { familyTiers: { P_FORCE: force, P_SHARPNESS: 4 } }), zero).lastTrick;
     expect(trick(1).isCrit).toBe(true);
-    expect(trick(1).critMultiplier).toBeCloseTo(1.75); // 1,5 + 0,25
-    expect(trick(4).critMultiplier).toBeCloseTo(2.40); // 1,5 + 0,90
+    expect(trick(1).critMultiplier).toBeCloseTo(CRIT_BASE_MULT + PRECISION_FORCE_MULT[0]); // Basis + 0,25
+    expect(trick(4).critMultiplier).toBeCloseTo(CRIT_BASE_MULT + PRECISION_FORCE_MULT[3]); // Basis + 0,90
   });
 
   it("P_AIM: Crit-Chance nur auf Karten ab der Stufen-Schwelle (IV: Wert ≥ 6)", () => {

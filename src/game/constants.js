@@ -27,7 +27,7 @@ export const BASE_REROLLS      = envNum("SIM_BASE_REROLLS", 2);
 export const FIRE_STRUCT_DIVIDEND_AMP = envNum("SIM_FIRE_STRUCT_DIV_AMP", 2);
 // Merge test/sim←main: ENV-Sweep-Haken bleibt, Default = main's Live-Balance (SPW 100→400, Pacing-Pass Sim-validiert).
 export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Default = Live-Balance 400]
-export const CRIT_BASE_MULT   = envNum("SIM_CRIT_BASE_MULT", 1.5);   // V2 (§22.3): Basis-Crit-Multiplikator; der Crit-Mult-Stat baut darauf auf [TUNING]
+export const CRIT_BASE_MULT   = envNum("SIM_CRIT_BASE_MULT", 2.0);   // Basis-Crit-Multiplikator. #268: 1,5→2,0 — jetzt wo Crit aus der Stat-Phase raus ist, hilft der höhere Basis-Mult differenziell dem Crit-Archetyp Blitz (Sim: +28 % Blitz-Floor, Spread 1,46×→1,22×), Nicht-Blitz nur +5–7 % (RNG-gegateter Präzision-Crit) [TUNING · Sim-übersteuerbar]
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 // SIM-SÄTTIGUNGSHEBEL (Pacing-Experiment, Default AUS): weicher Deckel auf den Score JE SIEG. Ab dem Knie
 // WIN_SOFTCAP (Score/Sieg) zählt nur noch WIN_SOFTCAP_SLOPE des Überschusses (gained' = K + (gained−K)×slope).
@@ -292,18 +292,21 @@ export const MELT_PER_HEAT    = 5;      // Schmelzpunkt: +5 Score je verbrauchte
 export const BRAND_VALUE      = 1;      // Brandmal: brandmarkierte Gegnerkarte −1 Wert (v0.1: 2→1, Brand-Winrate-Tail zähmen) // tunebar
 export const BRAND_ASH        = 1;      // Brandmal/Lauffeuer: +1 Asche je Brand              // v0 — tunebar
 export const BRAND_SPREAD_VALUE = 1;    // Lauffeuer: Übergriff auf eine Nachbarkarte −1 Wert // v0 — tunebar
-export const FORGE_COST       = 5;      // Ascheschmiede: 5 Asche je Schmiedung               // v0 — tunebar
-export const FORGE_VALUE      = envNum("SIM_FORGE_VALUE", 2);      // Ascheschmiede: niedrigste Karte +2 Dauerwert [Sim-tunebar]
-export const FORGE_MAX_PER_CARD = 6;    // Schmieden: Deckel geschmiedeter Dauerwert je Karte (Anti-Runaway v0.1: sonst R1→+20)
-export const FORGE_MAX_CARDS    = 10;   // Schmieden: max Anzahl VERSCHIEDENER geschmiedeter Karten (v0.2: Ascheschmiede = Boden heben, nicht ganzes Deck buffen → Winrate-Snowball)
-// Asche-Dividende (v0.3): ungenutzte Asche (Schmieden ist gedeckelt → Asche stapelt tot) gibt einen kleinen DIREKTen
-// Score je Feuer-Sieg — post-stack, GEDECKELT (kein Hort-Runaway), bekenntnis-skaliert (kein Splash-Abuse). [Sim-tunebar]
-export const ASH_DIVIDEND      = envNum("SIM_ASH_DIVIDEND", 2); // Score je gehaltener Asche pro Feuer-Sieg (kleiner Buff ~+8 %)
-export const ASH_DIVIDEND_CAP  = envNum("SIM_ASH_DIVIDEND_CAP", 300); // Deckel der gezählten Asche (darüber kein weiterer Wert → Hort lohnt nicht)
+// #268 Asche-Ökonomie: Asche als KNAPPE, vollständig verbrauchte Ressource. Kosten hoch (≈ ein Durchlauf-Einkommen je
+// Schmiedung), Wert hoch (echter Payoff) → „früh nehmen, horten, später ernten". Am Durchlauf-Ende floor(Asche/Kosten)
+// Schmiedungen; Rest fließt über den Weißglut-Überlauf (unten) in Score → kein toter Haufen mehr.
+export const FORGE_COST       = envNum("SIM_FORGE_COST", 20);     // Ascheschmiede: 20 Asche je Schmiedung (≈ ein 50 %-Durchlauf-Einkommen) [#268 · Sim-tunebar]
+export const FORGE_VALUE      = envNum("SIM_FORGE_VALUE", 3);     // Ascheschmiede: niedrigste Karte +3 Dauerwert (echter Payoff) [#268 · Sim-tunebar]
+export const FORGE_MAX_PER_CARD = envNum("SIM_FORGE_MAX_PER_CARD", 9); // Schmieden: Deckel geschmiedeter Dauerwert je Karte (3 Schmiedungen/Karte bei Value 3) [#268: 6→9]
+export const FORGE_MAX_CARDS    = 10;   // Schmieden: max Anzahl VERSCHIEDENER geschmiedeter Karten (Boden heben, nicht ganzes Deck buffen)
+// Weißglut-Überlauf (#268, Variante A — ersetzt die alte Asche-Dividende): ist die Schmiede-Kapazität voll, wird die
+// RESTLICHE Asche am Durchlauf-Ende in Score-Häppchen (je FORGE_COST) verbrannt → „die Schmiede glüht weiß". Asche wird so
+// jeden Durchlauf auf < Kosten heruntergefahren (vollständig ausgegeben), mit konkretem Effekt. [#268 · Haupt-Balance-Hebel]
+export const FORGE_OVERFLOW_SCORE = envNum("SIM_FORGE_OVERFLOW_SCORE", 2000); // Score je FORGE_COST-Portion überlaufender Asche
 export const GLUTSTAHL_PER_VALUE = 12;  // Glutstahl: +Score je geschmiedetem Wert bei Sieg // v0.2: 20→12 (Feuer-Ceiling-Trim, Brand+Schmiede-Explosion)
 export const SCHMELZOFEN_MIN_HEAT = 50; // Schmelzofen: ab 50 % Hitze …                       // v0 — tunebar
 export const SCHMELZOFEN_BRAND_BONUS = 1;   // … Brände −1 extra Wert & +1 extra Asche         // v0 — tunebar
-export const SCHMELZOFEN_FORGE_DISCOUNT = 1;// … Schmieden kostet 1 Asche weniger              // v0 — tunebar
+export const SCHMELZOFEN_FORGE_DISCOUNT = envNum("SIM_SCHMELZOFEN_FORGE_DISCOUNT", 0.25); // … Schmieden −25 % Kosten (FAKTOR, skaliert mit den Kosten: 20→15) [#268: flat 1 → Faktor]
 // Legendäre — UMGEFORMT (dauerhaft/compoundend/direkt statt situativ), vier verschiedene Achsen.
 // Sonnenzorn (L) — SCORE-Mult ∝ HÖCHSTER je gehaltener Hitze (heat.peak): dauerhafter Feuer-Score-Multiplikator.
 export const SUNWRATH_PEAK_STEP    = envNum("SIM_SUNWRATH_PEAK_STEP", 0.010); // +GESAMT-Score je Peak-Hitze-% (Peak 100 → ×2,0) [Legendär-Umbau]
@@ -317,7 +320,7 @@ export const PHOENIX_REIGNITE      = envNum("SIM_PHOENIX_REIGNITE", 0.40);    //
 // Damaststahl (L) — DIREKT-SCORE: geschmiedete Siegkarte → direkter Score ∝ geschmiedetem Wert (am Stack vorbei); Deckel entfällt; Asche verfällt nie.
 export const DAMASCUS_MAX_FORGED   = envNum("SIM_DAMASCUS_MAX_FORGED", 4);    // Selbst-Schmiede deckelt auf so viele Karten (gegen 60-Runden-Compounding) [Legendär-Umbau]
 export const DAMASCUS_FORGE_GROWTH = envNum("SIM_DAMASCUS_FORGE_GROWTH", 0);  // geschmiedete Karten +Dauerwert je Durchlauf (0 = kein Compounding) [Legendär-Umbau]
-export const DAMASCUS_DIRECT       = envNum("SIM_DAMASCUS_DIRECT", 16);        // direkter Score je Punkt GESAMT-Schmiedewert, je Sieg (Damast-Dividende) [Legendär-Umbau]
+export const DAMASCUS_DIRECT       = envNum("SIM_DAMASCUS_DIRECT", 11);        // direkter Score je Punkt GESAMT-Schmiedewert, je Sieg (Damast-Dividende) [#268: 16→11 — FORGE_VALUE 2→3 lässt den Schmiedewert ~50 % schneller wachsen]
 export const DAMASCUS_COMBAT       = envNum("SIM_DAMASCUS_COMBAT", 5);        // Underdog: geschmiedete Karten kämpfen mit +Wert (schlagen über ihrem Gewicht) [Legendär-Umbau]
 // (Sonnenzorns alte ≥MIN_HEAT-Verstärkungen ausgebaut → Glühende Klinge/Weißglut sind jetzt reine Nicht-Legendär-Skills.)
 
