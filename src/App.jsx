@@ -102,6 +102,9 @@ export function Autostich() {
   // reine Stichspiel-Zeit. Echte Unterbrechungen (Pause, Optionen-/Chronik-/Glossar-Overlay) frieren weiterhin ein.
   const inRun = state.phase !== "menu" && state.phase !== "gameover";
   const active = inRun && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort;
+  // Effektive Lauflänge — spiegelt die Engine-Endbedingung (engine.js): Dev-Run (state.maxCycles) ODER
+  // Großmeister IV/V (difficulty.maxCycles 57/54) ODER Basis (MAX_CYCLES 60). HUD-Nenner + Completion-Check lesen DIES.
+  const totalCycles = state.maxCycles || state.difficulty?.maxCycles || MAX_CYCLES;
   // Dynamische Rundengeschwindigkeit (#95): jeder Durchlauf startet bei +0 % und beschleunigt
   // +2 % je in DIESEM Durchlauf gewonnenem Stich → sichtbare Eskalation zum Rundenende, Reset je Durchlauf.
   // Rein Anzeige/Ablauf (score-neutral wie der Turbo). cycleWins = Siege seit Durchlauf-Beginn.
@@ -253,7 +256,7 @@ export function Autostich() {
     const prevProfile = profile;
     // #190 Challenge-Tracking: nur ein natürlich abgeschlossener Lauf (cycle === MAX_CYCLES) zählt; plus die
     // Rohdaten für die Erkennung (Shop-Käufe im ganzen Lauf, gewählte Stats). Erkennung/Flags in storage.recordRun.
-    const completed = state.cycle >= MAX_CYCLES;
+    const completed = state.cycle >= totalCycles;
     // #201.8 Stufe B: kompakte finale Aufstellung mitpersistieren (playerOrder ist bereits in Spielreihenfolge aufgelöst).
     const deckSnapshot = {
       cards: (state.playerOrder || []).map((di) => { const c = state.deck[di]; return { id: c.id, value: c.value, suit: c.suit, green: !!c.green, frozen: !!c.frozen }; }),
@@ -474,7 +477,7 @@ export function Autostich() {
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wide opacity-50">Durchlauf</div>
         <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>
-          {Math.min(state.cycle + 1, state.maxCycles || MAX_CYCLES)}<span className="text-xs opacity-45"> / {state.maxCycles || MAX_CYCLES}</span>
+          {Math.min(state.cycle + 1, totalCycles)}<span className="text-xs opacity-45"> / {totalCycles}</span>
         </div>
       </div>
       {/* #225.1: Münzanzeige entfernt (#202). #UI: „Bester Score" unter den aktuellen Score (mittlere Mobil-Spalte). */}
