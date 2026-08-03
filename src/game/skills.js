@@ -190,7 +190,7 @@ export const SKILL_DEFS = {
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Gletscher", archetype: "ice", legendary: true, keywords: ["freeze"],
     desc: `Je tiefer der Stapel, desto mehr gibt jede Schicht (superlinear). Dein tiefster Pfeiler zahlt bei jedem Frost-Sieg direkt: +${C.GLETSCHER_DIRECT} je Tiefenstufe, superlinear aufsummiert (Tiefe gedeckelt ${C.GLETSCHER_OVERFLOW_CAP}, skaliert mit deinem Bekenntnis) — je tiefer, desto überproportional mehr.`, gletscher: true },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Vergletscherung", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: `Frostkarten frieren Gegnerkarten proportional zu ihren Schichten ein (−Wert). Je mehr Gegner-Eis aktiv ist, desto mehr zahlt jeder Frost-Sieg direkt: +${C.VERGLETSCHERUNG_DIRECT} je Punkt aktiver Gegner-Vergletscherung (gedeckelt ${C.VERGLETSCHERUNG_DEBUFF_CAP}, skaliert mit deinem Bekenntnis).`, vergletscherung: true },
+    desc: `Jeder Frost-Sieg friert ${C.VERGLETSCHERUNG_COUNT} Gegnerkarten proportional zu den Schichten der Siegkarte ein (−Wert). Zusätzlich +${C.VERGLETSCHERUNG_DIRECT} Score je Punkt, den deine Vereisung Gegnern gerade abzieht (alle −Wert-Marken zusammen, bis ${C.VERGLETSCHERUNG_DEBUFF_CAP}).`, vergletscherung: true },
   SK_ICE_L04: { id: "SK_ICE_L04", name: "Architekt", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
     desc: `Schaltet vertikale Formationen frei: Frostkarten in derselben Spalte bilden Formationen über Segmente hinweg — je zusätzliche Frostkarte in der Spalte +${Math.round(C.ARCHITEKT_STEP * 100)} % Formationsfaktor.`, architekt: true },
 
