@@ -102,8 +102,12 @@ export function resolveTrick(state, rng) {
     // #270 Fraktions-Panels: kumulative Fantasie-Kennzahlen je Fraktion (nur Anzeige). Ertrag = ROHER Eigen-Score, den die
     // Fraktions-Mechanik erzeugt hat: ihre Flats (VOR dem geteilten Multiplikator-Stack) + ihre post-stack Direkt-Dividenden.
     // Bewusst der Roh-Beitrag (nicht mit Formation/Serie/Crit multipliziert) → ehrliche, nicht aufgeblähte Zahl je Fraktion.
-    fireYield = 0, iceYield = 0, lightYield = 0, plantYield = 0, // Eigen-Score-Ertrag je Fraktion
-    ionTotal = 0, growthTotal = 0, ashBurned = 0, // Motor-Zähler: ionisierte Karten / gewachsenes Wachstum / verbrannte Asche
+    // Getrennte Sub-Kanäle je namentlicher Fantasie (#270.2): Pflanze Wurzel/Blüte/Ernte · Feuer Grund/Weißglut. Eis/Blitz
+    // bleiben je EIN kohärenter Kanal (Eis = „Schichten zahlen", Blitz = Ionisierung; Blitz-Crit steht global in der Rail).
+    iceYield = 0, lightYield = 0, // Eis- / Blitz-Eigen-Score (je ein Kanal)
+    plantRoot = 0, plantBloom = 0, plantHarvest = 0, // Pflanze: Wurzel- / Blüten- / Ernte-Score
+    fireBase = 0, fireWhite = 0, // Feuer: Grund-Score / Weißglut-Score
+    ionTotal = 0, growthTotal = 0, ashBurned = 0, brandTotal = 0, // Motor-Zähler: ionisierte Karten / Wachstum / verbrannte Asche / gebrandmarkte Gegnerkarten
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
     iceTemp = {}, frostbitePending = {}, frostbiteActive = {}, // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff (je oppCard.id → −Wert)
     layers = {}, frostFormPrev = [], // Eis-Rework (v0): Schichten je Frostkarte-id (permanent) / Frostkarten, die im Vordurchlauf in Formation siegten (Beständigkeit)
@@ -344,6 +348,7 @@ export function resolveTrick(state, rng) {
     winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
     // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überlauf), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
     let fireFlat = meltScore; // Schmelzpunkt-Drip (im Vor-Stich verbrauchte Hitze) zahlt sich hier als Flat aus (nur bei Sieg)
+    let fireWhiteWin = 0;     // #270.2: Weißglut-Anteil DIESES Siegs (Rest von fireFlat = Feuer-Grund-Score)
     let fireDividendHeat = 0;  // gehaltene Hitze beim Sieg (vor evtl. Flächenbrand-Verbrauch) → Glutdividende (direkter Score, s. u.)
     if (heat && heat.active) {
       const fmargin = pValue - oValue;
@@ -352,7 +357,7 @@ export function resolveTrick(state, rng) {
       const raw = heat.value + gain;
       // Weißglut: der über HEAT_MAX hinaus überlaufende Hitzeanteil wird zu Score (Sonnenzorn ×2).
       const overflow = Math.max(0, raw - heat.max);
-      if (overflow > 0) fireFlat += whiteHeatScore(overflow, skills, heat.max);
+      if (overflow > 0) { const wh = whiteHeatScore(overflow, skills, heat.max); fireFlat += wh; fireWhiteWin += wh; } // #270.2: Weißglut-Kanal
       heat = { ...heat, value: Math.min(heat.max, raw), peak: Math.max(heat.peak || 0, Math.min(heat.max, raw)) }; // peak = Sonnenzorn
       fireDividendHeat = heat.value; // gehaltene Hitze NACH diesem Sieg, VOR evtl. Flächenbrand-Verbrauch → Glutdividende
       // Feuer-Score (Grund-Payoff): (Vorsprung−OFFSET)×Basis, ×Verbrennung (≥8/≥12), ×Sonnenzorn (≥80 %). Basis für Funkenflug.
@@ -381,13 +386,13 @@ export function resolveTrick(state, rng) {
       const hot = !!(heat && heat.active && heat.value >= C.SCHMELZOFEN_MIN_HEAT && fireFlag(skills, "schmelzofen"));
       const brandBonus = hot ? C.SCHMELZOFEN_BRAND_BONUS : 0;
       newBrandPending[oCard.id] = Math.max(newBrandPending[oCard.id] || 0, C.BRAND_VALUE + brandBonus);
-      newAsh += C.BRAND_ASH + brandBonus;
+      newAsh += C.BRAND_ASH + brandBonus; brandTotal += 1; // #270.2: Motor-Zähler „gebrandmarkte Gegnerkarten"
       if (fireFlag(skills, "lauffeuer")) {
         const oi = oppOrder[actualPos];                     // Index der Gegnerkarte im oppDeck-Array
         const nb = oi + 1 < oppDeck.length ? oi + 1 : oi - 1; // Deck-Nachbar (kein Wrap; Rand → linker Nachbar)
         if (nb >= 0) {
           newBrandPending[oppDeck[nb].id] = Math.max(newBrandPending[oppDeck[nb].id] || 0, C.BRAND_SPREAD_VALUE + brandBonus);
-          newAsh += C.BRAND_ASH + brandBonus;
+          newAsh += C.BRAND_ASH + brandBonus; brandTotal += 1; // #270.2: Lauffeuer-Übergriff zählt mit
         }
       }
     }
@@ -510,7 +515,7 @@ export function resolveTrick(state, rng) {
       // Ernte: geschlagene Gegnerkarte kolonisiert? → +Wachstum; Erntedank (reif), Rhizom (Nachbar), Dornenkönig (Marker verbraucht).
       if (newColonized[oCard.id]) {
         newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; growthTotal += C.AUSLAEUFER_HARVEST; // #270
-        if (hasErntedank(skills) && cardGreen) plantFlat += C.ERNTEDANK_SCORE;
+        if (hasErntedank(skills) && cardGreen) { plantFlat += C.ERNTEDANK_SCORE; plantHarvest += C.ERNTEDANK_SCORE; } // #270.2: Ernte-Score-Kanal
         if (hasRhizom(skills)) { const oi = oppOrder[actualPos], nb = oi + 1 < oppDeck.length ? oi + 1 : oi - 1;
           if (nb >= 0 && newColonized[oppDeck[nb].id]) { newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; growthTotal += C.AUSLAEUFER_HARVEST; } } // #270
         if (hasDornenkoenig(skills)) { const nc = { ...newColonized }; delete nc[oCard.id]; newColonized = nc; }
@@ -520,8 +525,8 @@ export function resolveTrick(state, rng) {
         if (hasWurzeltiefe(skills)) {
           let root = C.WURZELTIEFE_SCORE * (hasPfahlwurzel(skills) && inFormation ? C.PFAHLWURZEL_MULT : 1);
           if (hasJahresringe(skills)) root += Math.floor(g / C.JAHRESRINGE_PER_GROWTH) * C.JAHRESRINGE_SCORE;
-          plantFlat += root;
-          if (hasMutterbaum(skills) && g >= Math.max(1, ...Object.values(newGrowth))) plantFlat += root; // Mutterbaum (v0-Näherung): Segment-Streuung
+          plantFlat += root; plantRoot += root; // #270.2: Wurzel-Score-Kanal
+          if (hasMutterbaum(skills) && g >= Math.max(1, ...Object.values(newGrowth))) { plantFlat += root; plantRoot += root; } // Mutterbaum (v0-Näherung): Segment-Streuung
         }
         // Wurzelschlag: grüne Karte wächst permanenten Wert an (+1 je N Wachstum, bis Deckel). Float-sicher (Wachstum ist
         // seit dem Grün-Gate gebrochen): +1 Wert, wenn dieser Sieg eine neue N-Schwelle überschreitet.
@@ -552,7 +557,7 @@ export function resolveTrick(state, rng) {
             const greenFieldRatio = deck.length > 0 ? greenCount(deck) / deck.length : 0;
             const uebThresh = hasEwigerFruehling(skills) ? C.EWIGER_FRUEHLING_FIELD : C.UEBERWUCHERUNG_FIELD;
             if (hasUeberwucherung(skills) && greenFieldRatio >= uebThresh) b *= 2;
-            plantFlat += b;
+            plantFlat += b; plantBloom += b; // #270.2: Blüten-Score-Kanal
           }
         }
         // Photosynthese: grüne Karte in Formation → ×PHOTOSYNTHESE_MULT (Formations-Faktor). [#230 N9: war „×1,15", ist 1,08]
@@ -562,7 +567,7 @@ export function resolveTrick(state, rng) {
         // einer grünen Position besteht aus grünen Karten. Analog zur Blüte, die nur das Segment zählt. [#228 C2]
         const fbEntry = (posForm.formations || []).find((f) => f.type === "farbblock");
         const fbLen = fbEntry ? (fbEntry.len || 0) : 0;
-        if (hasBlaetterdach(skills) && fbLen >= C.BLAETTERDACH_MIN) plantFlat += C.BLAETTERDACH_SCORE * Math.min(fbLen, C.BLAETTERDACH_CARD_CAP);
+        if (hasBlaetterdach(skills) && fbLen >= C.BLAETTERDACH_MIN) { const bd = C.BLAETTERDACH_SCORE * Math.min(fbLen, C.BLAETTERDACH_CARD_CAP); plantFlat += bd; plantRoot += bd; } // #270.2: Blätterdach → Wurzel-Kanal (Feld-Score)
         // Ausläufer: die niedrigste noch nicht kolonisierte Gegnerkarte kolonisieren.
         if (hasAuslaeufer(skills)) {
           let lowId = null, lowV = Infinity;
@@ -583,14 +588,14 @@ export function resolveTrick(state, rng) {
               if (ov > 0) { sumOv += ov; if (ov > maxOv) maxOv = ov; }
             }
             // Weltenbaum (BREITE): die SUMME des Überlauf-Wachstums über den ganzen Wald zahlt je grünem Sieg.
-            if (hasWeltenbaum(skills)) plantDirect += Math.min(sumOv, C.WELTENBAUM_OVERFLOW_CAP) * C.WELTENBAUM_DIRECT * plantCommit;
+            if (hasWeltenbaum(skills)) { const d = Math.min(sumOv, C.WELTENBAUM_OVERFLOW_CAP) * C.WELTENBAUM_DIRECT * plantCommit; plantDirect += d; plantRoot += d; } // #270.2: alter Wald → Wurzel-Kanal
             // Mutterbaum (TIEFE): der EINE tiefste Baum (max Überlauf) zahlt je grünem Sieg (Konzentration).
-            if (hasMutterbaum(skills)) plantDirect += Math.min(maxOv, C.MUTTERBAUM_OVERFLOW_CAP) * C.MUTTERBAUM_DIRECT * plantCommit;
+            if (hasMutterbaum(skills)) { const d = Math.min(maxOv, C.MUTTERBAUM_OVERFLOW_CAP) * C.MUTTERBAUM_DIRECT * plantCommit; plantDirect += d; plantRoot += d; } // #270.2: Wurzel-Kanal
           }
           // Dornenkönig (KOLONIE): die kolonisierte Gegner-Breite zahlt je grünem Sieg (das Reich unter Kontrolle).
-          if (hasDornenkoenig(skills)) plantDirect += Math.min(Object.keys(newColonized).length, C.DORNENKOENIG_COLON_CAP) * C.DORNENKOENIG_DIRECT * plantCommit;
+          if (hasDornenkoenig(skills)) { const d = Math.min(Object.keys(newColonized).length, C.DORNENKOENIG_COLON_CAP) * C.DORNENKOENIG_DIRECT * plantCommit; plantDirect += d; plantHarvest += d; } // #270.2: Kolonie → Ernte-Kanal
           // Ewiger Frühling (GRÜN-FELD): das ewige grüne Feld zahlt je grünem Sieg ∝ #grüne Karten.
-          if (hasEwigerFruehling(skills)) plantDirect += Math.min(greenCount(deck), C.EWIGER_FRUEHLING_FIELD_CAP) * C.EWIGER_FRUEHLING_DIRECT * plantCommit;
+          if (hasEwigerFruehling(skills)) { const d = Math.min(greenCount(deck), C.EWIGER_FRUEHLING_FIELD_CAP) * C.EWIGER_FRUEHLING_DIRECT * plantCommit; plantDirect += d; plantRoot += d; } // #270.2: Grün-Feld → Wurzel-Kanal
         }
       }
     }
@@ -640,8 +645,10 @@ export function resolveTrick(state, rng) {
                       + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
                       + architectScoreRes.flat // Architekt Handelsbauten (#202): Flat-Score, s. o.
                       + interplayStored; // D_INTERPLAY IV: der in Niederlagen gebankte Score wird mit diesem Sieg als Flat ausgezahlt
-    // #270: Fraktions-Flat-Anteile zum Ertrag (Roh-Score VOR dem Multiplikator-Stack) — je Fraktion in ihrem Kanal.
-    lightYield += ionScoreFor(pCard) + stormScore; fireYield += fireFlat; iceYield += iceFlat; plantYield += plantFlat;
+    // #270: Fraktions-Flat-Anteile zum Ertrag (Roh-Score VOR dem Multiplikator-Stack). Blitz/Eis je EIN Kanal; Feuer in
+    // Grund/Weißglut gespalten (Pflanze-Kanäle Wurzel/Blüte/Ernte wurden schon an ihren Quellen oben akkumuliert).
+    lightYield += ionScoreFor(pCard) + stormScore; iceYield += iceFlat;
+    fireWhite += fireWhiteWin; fireBase += fireFlat - fireWhiteWin;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
     // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
@@ -754,7 +761,8 @@ export function resolveTrick(state, rng) {
     score += gained;
     // #270: post-stack Direkt-Dividenden zum Fraktions-Ertrag (die Flat-Anteile kamen bei scoreBase oben dazu). Statischer
     // Ladungs-Konsum-Score (unten, +CONSUME_SCORE) und der Weißglut-Überlauf-Burst (Durchlauf-Ende) kommen dort dazu.
-    fireYield += fireDirectApplied; iceYield += iceDirect; lightYield += lightDirect; plantYield += plantDirect;
+    // Feuer-Glutdividende → Grund-Kanal; Pflanze-Legendär-Direkt wurde schon oben in Wurzel/Ernte gebucht.
+    fireBase += fireDirectApplied; iceYield += iceDirect; lightYield += lightDirect;
     breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, iceForm: iceFormMult, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, lightDirect, plantDirect, perkDirect, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
@@ -1064,7 +1072,7 @@ export function resolveTrick(state, rng) {
           const portions = Math.floor(newAsh / cost);
           const burst = portions * C.FORGE_OVERFLOW_SCORE;
           newAsh -= portions * cost; ashBurned += portions * cost; // #270: verbrannte Asche (Weißglut-Überlauf)
-          score += burst; fireYield += burst; // #270: Weißglut-Burst zählt zum Feuer-Ertrag
+          score += burst; fireWhite += burst; // #270.2: Weißglut-Überlauf-Burst → Weißglut-Kanal
           if (lastTrick) { lastTrick.gained += burst; lastTrick.scoreGain += burst; } // Per-Karte-Ledger konsistent halten
         }
       }
@@ -1182,7 +1190,8 @@ export function resolveTrick(state, rng) {
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 
     crits, critBonusScore, bestTrickScore, maxFormations, formationScore, buildingScore, streakScore, // #161 FB-2 / #UI / #251: Run-Rückblick (+ Gebäude-/Serien-Score)
-    fireYield, iceYield, lightYield, plantYield, ionTotal, growthTotal, ashBurned, // #270: Fraktions-Panel-Kennzahlen (Eigen-Score-Ertrag + Motor-Zähler)
+    iceYield, lightYield, plantRoot, plantBloom, plantHarvest, fireBase, fireWhite, // #270: Fraktions-Eigen-Score (Kanäle je Fantasie)
+    ionTotal, growthTotal, ashBurned, brandTotal, // #270: Motor-Zähler
     trickLog: nextTrickLog, // #251: Score je Stich (+ Sieg/Niederlage), nach Durchlauf gebucket → Durchlauf-Graph
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     masteryLegGranted: newMasteryLegGranted, // #217 Grad V: garantierter Legendär je Lauf eingelöst? (masteryGrade selbst läuft über ...state)

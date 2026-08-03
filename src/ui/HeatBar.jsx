@@ -1,8 +1,10 @@
 import { fireFlag, hasHeatConsumer, glowingValueFor } from "../game/skills.js";
 import { GLOWING_T1_HEAT, GLOWING_T2_HEAT } from "../game/constants.js";
 import { GLOSSARY } from "../game/glossary.js";
-import { IndicatorPanel, CounterCell } from "./indicators/panelKit.jsx";
+import { IndicatorPanel, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FIRE, FIRE_HOT, ASH, FORGE, WHITE_HEAT } from "./indicators/vocab.js";
+
+const BRAND = "#e0605a"; // Brandmal am Gegner (Debuff, App-Rotton)
 
 // 🔥 Hitze (Feuer-Archetyp, #93 F1) — eigener Block zwischen Battlefield und Build-Panel, analog zur ⚡ Ladung.
 // Kontinuierliche Leiste 0–100. Nur sichtbar, sobald ein Feuer-Skill aktiv ist.
@@ -35,7 +37,7 @@ function AnvilIcon() {
 
 const grp = (n) => Math.round(n).toLocaleString("de-DE");
 
-export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0, yield: yieldScore = 0 }) {
+export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0, brandTotal = 0, fireBase = 0, fireWhite = 0 }) {
   if (!heat || !heat.active) return null;
   const { value, max } = heat;
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
@@ -69,13 +71,16 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
 
   return (
     <IndicatorPanel>
-      {/* #270 Fraktions-Fantasie sichtbar: Feuer-Ertrag (eingespielter Eigen-Score, Feuers Kern) + „Asche verbrannt" (Motor-Zähler). */}
-      {(yieldScore > 0 || ashBurned > 0) && (
-        <div className="flex items-baseline justify-between text-xs mb-2">
-          <span className="opacity-60">🔥 Feuer-Ertrag{yieldScore > 0 && <span className="font-bold tabular-nums" style={{ color: HOT }}> ~{grp(yieldScore)}</span>}</span>
-          {ashBurned > 0 && <span className="tabular-nums" style={{ color: ASH }} title="Verbrannte Asche über den ganzen Lauf (Schmieden + Weißglut-Überlauf).">Asche verbrannt {grp(ashBurned)}</span>}
-        </div>
-      )}
+      {/* #270.2 Motor auf einen Blick: Eigen-Score nach Fantasie (Feuer-Grund / Weißglut) + verbrannte Asche (Motor-Zähler). */}
+      <div className="mb-2">
+        <YieldMeter title="🔥 Feuer-Motor" accent={HOT} channels={[
+          { label: "Feuer-Score", value: fireBase, color: FIRE_HOT },
+          { label: "Weißglut", value: fireWhite, color: WHITE_HEAT },
+        ]} />
+        {ashBurned > 0 && (
+          <div className="text-[10px] opacity-55 mt-1">🔥 Asche verbrannt <b className="tabular-nums" style={{ color: ASH }}>{grp(ashBurned)}</b> <span className="opacity-70">über den Lauf</span></div>
+        )}
+      </div>
       <div className="flex items-stretch gap-3">
         {/* Hitzeleiste (Hauptelement) */}
         <div className="flex-1 min-w-0">
@@ -131,6 +136,19 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
           </div>
         )}
       </div>
+
+      {/* #270.2 Brand — gebrandmarkte Gegnerkarten über den Lauf (Feuers Gegner-Debuff, analog Eis-Frostbiss). Eigene rote Zeile. */}
+      {brandTotal > 0 && (
+        <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t" style={{ borderColor: `${BRAND}22` }}>
+          <span className="opacity-55 shrink-0">Brand · Gegnerkarten</span>
+          <span className="tabular-nums font-bold shrink-0" style={{ color: BRAND }}>{grp(brandTotal)}</span>
+          <span className="inline-flex flex-wrap gap-0.5 min-w-0">
+            {Array.from({ length: Math.min(brandTotal, 12) }, (_, i) => (
+              <span key={i} style={{ color: BRAND, textShadow: `0 0 4px ${BRAND}88`, fontSize: 11, lineHeight: 1 }}>🔥</span>
+            ))}
+          </span>
+        </div>
+      )}
     </IndicatorPanel>
   );
 }

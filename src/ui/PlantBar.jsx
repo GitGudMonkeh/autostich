@@ -7,7 +7,7 @@
 //   • Setzling (wachsend, noch nicht reif) · Grün (reif, Wert < Deckel) · Ausgewachsen (Wert = Deckel) als Zähler.
 //   • Ausläufer (kolonisierte Gegnerkarten) als eigene, getrennte Zeile — der Griff ins Gegnerdeck (Ernte/Dornenkönig).
 // Rein informativ, keine Engine-Kopplung (spiegelt state.deck/growth/colonized).
-import { IndicatorPanel, CounterCell } from "./indicators/panelKit.jsx";
+import { IndicatorPanel, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { PLANT_VALUE_CAP, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD } from "../game/constants.js";
 import { hasUeberwucherung, hasEwigerFruehling } from "../game/skills.js";
@@ -15,7 +15,10 @@ import { hasUeberwucherung, hasEwigerFruehling } from "../game/skills.js";
 const SEED = "#9aa4a0"; // grauer Setzling (wachsend, noch nicht reif)
 const grp = (n) => Math.round(n).toLocaleString("de-DE");
 
-export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skills = [], growthTotal = 0, yield: yieldScore = 0 }) {
+const BLOOM = "#e58fbf"; // Blüte (rosa) · Wurzel = PLANT (grün) · Ernte = PLANT_RIPE (hell)
+
+export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skills = [], growthTotal = 0,
+                          rootScore = 0, bloomScore = 0, harvestScore = 0 }) {
   if (!active) return null;
   const total = deck.length || 0;
   let setzling = 0, gruen = 0, ausgewachsen = 0;
@@ -47,13 +50,17 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
 
   return (
     <IndicatorPanel>
-      {/* #270 Fraktions-Fantasie sichtbar: „Gewachsen" (Motor-Zähler: Lauf-Summe Wachstum) + Wurzel-Score (eingespielter Eigen-Score). */}
-      {(growthTotal > 0 || yieldScore > 0) && (
-        <div className="flex items-baseline justify-between text-xs mb-2">
-          <span className="opacity-60">🌱 Gewachsen{growthTotal > 0 && <span className="font-bold tabular-nums" style={{ color: PLANT_RIPE }}> {grp(growthTotal)}</span>}</span>
-          {yieldScore > 0 && <span className="tabular-nums" style={{ color: PLANT }} title="Roher Wurzel-Eigen-Score (Wurzeltiefe/Jahresringe/Ernte/Blüte), den der Multiplikator-Stack weiter verstärkt.">Wurzel-Score ~{grp(yieldScore)}</span>}
-        </div>
-      )}
+      {/* #270.2 Motor auf einen Blick: Eigen-Score nach Fantasie (Wurzel/Blüte/Ernte) + Gewachsen (Motor-Zähler). */}
+      <div className="mb-2">
+        <YieldMeter title="🌿 Garten-Motor" accent={PLANT_RIPE} channels={[
+          { label: "Wurzel", value: rootScore, color: PLANT },
+          { label: "Blüte", value: bloomScore, color: BLOOM },
+          { label: "Ernte", value: harvestScore, color: PLANT_RIPE },
+        ]} />
+        {growthTotal > 0 && (
+          <div className="text-[10px] opacity-55 mt-1">🌱 Gewachsen <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{grp(growthTotal)}</b> <span className="opacity-70">Wachstum gesamt</span></div>
+        )}
+      </div>
       {/* Grün-Anteil (Hauptelement): Balken bis 100 %, zwei Schwellenmarken. */}
       <div className="flex justify-between text-xs mb-1.5">
         <span className="opacity-60">🌿 Grün-Anteil des Feldes
