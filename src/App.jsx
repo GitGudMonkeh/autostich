@@ -575,17 +575,21 @@ export function Autostich() {
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
-              <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)} />
-              <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}} />
+              <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
+                ionTotal={state.ionTotal || 0} yield={state.lightYield || 0} />
+              <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}}
+                ashBurned={state.ashBurned || 0} yield={state.fireYield || 0} />
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
                 layers={state.layers || {}}
                 frostbite={state.frostbiteActive || {}}
-                hasKristalline={hasKristallineMasse(state.skills || [])} />
+                hasKristalline={hasKristallineMasse(state.skills || [])}
+                yield={state.iceYield || 0} />
               <PlantBar active={(state.activeArchetypes || []).includes("plant")}
                 deck={state.deck || []}
                 growth={state.growth || {}}
                 colonized={state.colonized || {}}
-                skills={state.skills || []} />
+                skills={state.skills || []}
+                growthTotal={state.growthTotal || 0} yield={state.plantYield || 0} />
             </div>
             {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
             <div className="order-2 lg:col-start-2 lg:row-start-1">

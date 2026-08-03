@@ -33,7 +33,9 @@ function AnvilIcon() {
   );
 }
 
-export function HeatBar({ heat, skills = [], ash = 0, forged = {} }) {
+const grp = (n) => Math.round(n).toLocaleString("de-DE");
+
+export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0, yield: yieldScore = 0 }) {
   if (!heat || !heat.active) return null;
   const { value, max } = heat;
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
@@ -67,6 +69,13 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {} }) {
 
   return (
     <IndicatorPanel>
+      {/* #270 Fraktions-Fantasie sichtbar: Feuer-Ertrag (eingespielter Eigen-Score, Feuers Kern) + „Asche verbrannt" (Motor-Zähler). */}
+      {(yieldScore > 0 || ashBurned > 0) && (
+        <div className="flex items-baseline justify-between text-xs mb-2">
+          <span className="opacity-60">🔥 Feuer-Ertrag{yieldScore > 0 && <span className="font-bold tabular-nums" style={{ color: HOT }}> ~{grp(yieldScore)}</span>}</span>
+          {ashBurned > 0 && <span className="tabular-nums" style={{ color: ASH }} title="Verbrannte Asche über den ganzen Lauf (Schmieden + Weißglut-Überlauf).">Asche verbrannt {grp(ashBurned)}</span>}
+        </div>
+      )}
       <div className="flex items-stretch gap-3">
         {/* Hitzeleiste (Hauptelement) */}
         <div className="flex-1 min-w-0">

@@ -127,6 +127,8 @@ export function initialState(rng = Math.random, seed = null) {
     frostSelect: null, // Frostwahl (#265): offene Kartenwahl beim Einfrieren { need, chosen } — null = keine offene Wahl
     growth: {}, colonized: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green)
     ash: 0, brandPending: {}, brandActive: {}, forged: {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
+    // #270 Fraktions-Panels: kumulative Lauf-Kennzahlen (nur Anzeige) — Direkt-Ertrag (Σ post-stack Direkt-Score) + Motor-Zähler.
+    fireYield: 0, iceYield: 0, lightYield: 0, plantYield: 0, ionTotal: 0, growthTotal: 0, ashBurned: 0,
     tieArmed: false,
     shop: initialShop(), // hält nur noch die (inerten) Positionsanker — der Shop ist entfernt (#229)
     architectEnabled: false,       // Architekt (#202): Flag — bei true öffnet sich die Architekt-Phase (im Spiel via START_RUN true; false = Sim-Baseline ohne Architekt)

@@ -99,6 +99,11 @@ export function resolveTrick(state, rng) {
     vabanquePaid = 0, // Vabanque (#203): Zahl der Eröffnungs-Wetten, die dieser Lauf schon ausgezahlt hat (Lauf-Deckel gegen Front-Load-Exploit)
     crits, critBonusScore, bestTrickScore,
     maxFormations = 0, formationScore = 0, buildingScore = 0, streakScore = 0, // #161 FB-2 + #251: Score-Anteile (Formation / Architekt-Gebäude / Serie)
+    // #270 Fraktions-Panels: kumulative Fantasie-Kennzahlen je Fraktion (nur Anzeige). Ertrag = ROHER Eigen-Score, den die
+    // Fraktions-Mechanik erzeugt hat: ihre Flats (VOR dem geteilten Multiplikator-Stack) + ihre post-stack Direkt-Dividenden.
+    // Bewusst der Roh-Beitrag (nicht mit Formation/Serie/Crit multipliziert) → ehrliche, nicht aufgeblähte Zahl je Fraktion.
+    fireYield = 0, iceYield = 0, lightYield = 0, plantYield = 0, // Eigen-Score-Ertrag je Fraktion
+    ionTotal = 0, growthTotal = 0, ashBurned = 0, // Motor-Zähler: ionisierte Karten / gewachsenes Wachstum / verbrannte Asche
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
     iceTemp = {}, frostbitePending = {}, frostbiteActive = {}, // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff (je oppCard.id → −Wert)
     layers = {}, frostFormPrev = [], // Eis-Rework (v0): Schichten je Frostkarte-id (permanent) / Frostkarten, die im Vordurchlauf in Formation siegten (Beständigkeit)
@@ -499,14 +504,15 @@ export function resolveTrick(state, rng) {
       const growInc = Math.min(1, C.PLANT_GROWTH_SKILL_REF > 0 ? plantSkillCount(skills) / C.PLANT_GROWTH_SKILL_REF : 1);
       const g = prevG + growInc;
       newGrowth = { ...newGrowth, [pCard.id]: g };
+      growthTotal += growInc; // #270: Motor-Zähler „Gewachsen" — Lauf-Summe des zugewachsenen Wachstums
       const cardGreen = pCard.green || growthRipe(g);
       if (growthRipe(g) && !pCard.green) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c));
       // Ernte: geschlagene Gegnerkarte kolonisiert? → +Wachstum; Erntedank (reif), Rhizom (Nachbar), Dornenkönig (Marker verbraucht).
       if (newColonized[oCard.id]) {
-        newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST };
+        newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; growthTotal += C.AUSLAEUFER_HARVEST; // #270
         if (hasErntedank(skills) && cardGreen) plantFlat += C.ERNTEDANK_SCORE;
         if (hasRhizom(skills)) { const oi = oppOrder[actualPos], nb = oi + 1 < oppDeck.length ? oi + 1 : oi - 1;
-          if (nb >= 0 && newColonized[oppDeck[nb].id]) newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; }
+          if (nb >= 0 && newColonized[oppDeck[nb].id]) { newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; growthTotal += C.AUSLAEUFER_HARVEST; } } // #270
         if (hasDornenkoenig(skills)) { const nc = { ...newColonized }; delete nc[oCard.id]; newColonized = nc; }
       }
       if (cardGreen) {
@@ -526,7 +532,7 @@ export function resolveTrick(state, rng) {
           for (const dir of [-1, 1]) {
             let nb = actualPos + dir;
             if (hasFlugsamen(skills)) while (nb >= 0 && nb < playerOrder.length && deck[playerOrder[nb]].green) nb += dir;
-            if (nb >= 0 && nb < playerOrder.length) { const nid = deck[playerOrder[nb]].id; newGrowth = { ...newGrowth, [nid]: (newGrowth[nid] || 0) + C.AUSSAAT_GROWTH }; }
+            if (nb >= 0 && nb < playerOrder.length) { const nid = deck[playerOrder[nb]].id; newGrowth = { ...newGrowth, [nid]: (newGrowth[nid] || 0) + C.AUSSAAT_GROWTH }; growthTotal += C.AUSSAAT_GROWTH; } // #270
           }
         }
         // Ranken: einen noch-grauen Nachbarn sofort grün färben.
@@ -634,6 +640,8 @@ export function resolveTrick(state, rng) {
                       + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
                       + architectScoreRes.flat // Architekt Handelsbauten (#202): Flat-Score, s. o.
                       + interplayStored; // D_INTERPLAY IV: der in Niederlagen gebankte Score wird mit diesem Sieg als Flat ausgezahlt
+    // #270: Fraktions-Flat-Anteile zum Ertrag (Roh-Score VOR dem Multiplikator-Stack) — je Fraktion in ihrem Kanal.
+    lightYield += ionScoreFor(pCard) + stormScore; fireYield += fireFlat; iceYield += iceFlat; plantYield += plantFlat;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
     // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
@@ -741,8 +749,12 @@ export function resolveTrick(state, rng) {
     // Struktur-Faktor (segFactor), NICHT Schatzkammer/Score-Bauten.
     const archStructMult = archPreNow ? (archPreNow.segFactor[actualPos] || 1) : 1;
     const fireStructMult = 1 + (archStructMult - 1) * C.FIRE_STRUCT_DIVIDEND_AMP; // Struktur-Hebel auf die Dividende verstärkt (Feuer-isoliert)
-    gained += fireDirect * fireStructMult + iceDirect + lightDirect + plantDirect + perkDirect;
+    const fireDirectApplied = fireDirect * fireStructMult;
+    gained += fireDirectApplied + iceDirect + lightDirect + plantDirect + perkDirect;
     score += gained;
+    // #270: post-stack Direkt-Dividenden zum Fraktions-Ertrag (die Flat-Anteile kamen bei scoreBase oben dazu). Statischer
+    // Ladungs-Konsum-Score (unten, +CONSUME_SCORE) und der Weißglut-Überlauf-Burst (Durchlauf-Ende) kommen dort dazu.
+    fireYield += fireDirectApplied; iceYield += iceDirect; lightYield += lightDirect; plantYield += plantDirect;
     breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, iceForm: iceFormMult, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, lightDirect, plantDirect, perkDirect, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
@@ -777,6 +789,7 @@ export function resolveTrick(state, rng) {
             const undrawn = [...new Set(seq.slice(pos + 1).map((p) => playerOrder[p]))]; // Deck-Indizes der noch kommenden Karten
             // Doppelentladung (L, v0): der volle Verbrauch feuert den Ionisierungs-Konsumenten zweimal (Anzahl ×2).
             const ionN = ionizeCountFor(skills) * (hasDoubleDischarge(skills) ? C.DOPPELENTLADUNG_FACTOR : 1);
+            const ionBefore = deck.reduce((t, c) => t + (c.ionStacks || 0), 0); // #270: Motor-Zähler (tatsächlich neu ionisierte Stapel = Diff)
             if (hasBlitzcatcher(skills)) {
               // Blitzfänger: volle Karten (5 Stapel) werden nicht ionisiert → je +2 temp Wert (nächstes Auftauchen) & +1 Ladung.
               const res = ionizeCardsWithCatch(deck, undrawn, ionN, rngAtOr(cycle, "ion", pos));
@@ -786,6 +799,7 @@ export function resolveTrick(state, rng) {
             } else {
               deck = ionizeCards(deck, undrawn, ionN, rngAtOr(cycle, "ion", pos));
             }
+            ionTotal += Math.max(0, deck.reduce((t, c) => t + (c.ionStacks || 0), 0) - ionBefore); // #270: durch den Konsumenten ionisierte Karten
             consumed = true;
           }
           if (consumed) {
@@ -800,7 +814,7 @@ export function resolveTrick(state, rng) {
             if (hasDauerstrom(skills)) // Dauerstrom: dauerhafte Crit-Chance-Rampe je Verbrauch (Cap)
               lightning = { ...lightning, dauerstromCritBonus: Math.min(C.DAUERSTROM_CONSUME_CRIT_CAP, (lightning.dauerstromCritBonus || 0) + C.DAUERSTROM_CONSUME_CRIT) };
             if (hasStaticCharge(skills)) { // Statische Aufladung: +Flat-Score bei jedem Verbrauch (Direkt-Score, nicht multipliziert)
-              score += C.CONSUME_SCORE; gained += C.CONSUME_SCORE;
+              score += C.CONSUME_SCORE; gained += C.CONSUME_SCORE; lightYield += C.CONSUME_SCORE;
               breakdown.lightDirect = (breakdown.lightDirect || 0) + C.CONSUME_SCORE; breakdown.total = (breakdown.total || 0) + C.CONSUME_SCORE;
             }
             if (hasStorm(skills)) { // Gewitterfront-Reaktor: erst Crit-Chance (Cap), danach Score für die nächsten Siege
@@ -855,7 +869,9 @@ export function resolveTrick(state, rng) {
     // Wetterleuchten (v0): Serie erreicht eine Schwelle → ionisiert Karten (Serie zündet Ionisierung).
     if (hasWetterleuchten(skills) && serieStreak > 0 && serieStreak % C.WETTERLEUCHTEN_THRESHOLD === 0) {
       const undrawnW = [...new Set(seq.slice(pos + 1).map((p) => playerOrder[p]))];
+      const ionBeforeW = deck.reduce((t, c) => t + (c.ionStacks || 0), 0);
       deck = ionizeCards(deck, undrawnW, C.WETTERLEUCHTEN_COUNT, rngAtOr(cycle, "weather", pos));
+      ionTotal += Math.max(0, deck.reduce((t, c) => t + (c.ionStacks || 0), 0) - ionBeforeW); // #270: Wetterleuchten-Ionisierungen
     }
     // Spannungsstau (v0): Nicht-Crit-Siege rampen die Crit-Chance (bis Cap); ein Crit entlädt & resettet.
     if (hasSpannungsstau(skills) && lightning && lightning.active) {
@@ -949,7 +965,7 @@ export function resolveTrick(state, rng) {
     // Zäher Halm (Pflanze v0): unreife (graue) Karten wachsen auch bei Niederlage +1 — bis sie grün sind.
     if (hasZaeherHalm(skills) && !pCard.green) {
       const g = (newGrowth[pCard.id] || 0) + C.ZAEHER_HALM_GROWTH;
-      newGrowth = { ...newGrowth, [pCard.id]: g };
+      newGrowth = { ...newGrowth, [pCard.id]: g }; growthTotal += C.ZAEHER_HALM_GROWTH; // #270
       if (growthRipe(g)) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c)); // reif geworden → grün backen
     }
     lastResult = "loss";
@@ -1037,7 +1053,7 @@ export function resolveTrick(state, rng) {
             if (c.value < lowV) { lowV = c.value; lowId = c.id; }
           }
           if (lowId == null) break; // Kapazität voll → raus aus Stufe 1 (Rest-Asche geht in den Weißglut-Überlauf)
-          newAsh -= cost;
+          newAsh -= cost; ashBurned += cost; // #270: Motor-Zähler „Asche verbrannt"
           deck = deck.map((c) => (c.id === lowId ? { ...c, value: c.value + C.FORGE_VALUE } : c));
           newForged = { ...newForged, [lowId]: (newForged[lowId] || 0) + C.FORGE_VALUE };
         }
@@ -1047,8 +1063,8 @@ export function resolveTrick(state, rng) {
         if (C.FORGE_OVERFLOW_SCORE > 0 && newAsh >= cost) {
           const portions = Math.floor(newAsh / cost);
           const burst = portions * C.FORGE_OVERFLOW_SCORE;
-          newAsh -= portions * cost;
-          score += burst;
+          newAsh -= portions * cost; ashBurned += portions * cost; // #270: verbrannte Asche (Weißglut-Überlauf)
+          score += burst; fireYield += burst; // #270: Weißglut-Burst zählt zum Feuer-Ertrag
           if (lastTrick) { lastTrick.gained += burst; lastTrick.scoreGain += burst; } // Per-Karte-Ledger konsistent halten
         }
       }
@@ -1166,6 +1182,7 @@ export function resolveTrick(state, rng) {
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 
     crits, critBonusScore, bestTrickScore, maxFormations, formationScore, buildingScore, streakScore, // #161 FB-2 / #UI / #251: Run-Rückblick (+ Gebäude-/Serien-Score)
+    fireYield, iceYield, lightYield, plantYield, ionTotal, growthTotal, ashBurned, // #270: Fraktions-Panel-Kennzahlen (Eigen-Score-Ertrag + Motor-Zähler)
     trickLog: nextTrickLog, // #251: Score je Stich (+ Sieg/Niederlage), nach Durchlauf gebucket → Durchlauf-Graph
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     masteryLegGranted: newMasteryLegGranted, // #217 Grad V: garantierter Legendär je Lauf eingelöst? (masteryGrade selbst läuft über ...state)

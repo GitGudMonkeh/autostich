@@ -51,7 +51,9 @@ function StreakChain({ streak }) {
   );
 }
 
-export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 0 }) {
+const grp = (n) => Math.round(n).toLocaleString("de-DE");
+
+export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 0, ionTotal = 0, yield: yieldScore = 0 }) {
   if (!lightning || !lightning.active) return null;
   const { charge, maxCharge } = lightning;
   const full = charge >= maxCharge;
@@ -72,6 +74,13 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
 
   return (
     <IndicatorPanel className="grid gap-3">
+      {/* #270 Fraktions-Fantasie sichtbar: „Totale Ionisierung" (Motor-Zähler) + Blitz-Ertrag (eingespielter Eigen-Score). */}
+      {(ionTotal > 0 || yieldScore > 0) && (
+        <div className="flex items-baseline justify-between text-xs">
+          <span className="opacity-60">⚡ Totale Ionisierung{ionTotal > 0 && <span className="font-bold tabular-nums" style={{ color: CASCADE_BRIGHT }}> {grp(ionTotal)}</span>}<span className="opacity-45"> Karten</span></span>
+          {yieldScore > 0 && <span className="tabular-nums" style={{ color: LIGHTNING }} title="Roher Blitz-Eigen-Score (Ionisierung/Sturm/Ladungs-Direktscore), den der Multiplikator-Stack weiter verstärkt.">Ertrag ~{grp(yieldScore)}</span>}
+        </div>
+      )}
       {/* Ladung — Segment-Maximum (Cyan), glüht bei VOLL. */}
       <div>
         <div className="flex justify-between text-xs mb-1.5">

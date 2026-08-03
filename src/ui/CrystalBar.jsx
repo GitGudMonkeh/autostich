@@ -13,7 +13,7 @@ const OVER = "#e6f7ff"; // Überlauf-Tiefe / Schwelle erreicht (hell)
 const FOE = "#e0605a";  // feindlicher Frostbiss-Debuff (App-Rotton)
 const grp = (n) => Math.round(n).toLocaleString("de-DE");
 
-export function CrystalBar({ active, layers = {}, frostbite = {}, hasKristalline = false }) {
+export function CrystalBar({ active, layers = {}, frostbite = {}, hasKristalline = false, yield: yieldScore = 0 }) {
   if (!active) return null;
   const vals = Object.values(layers || {});
   const totalMass = vals.reduce((t, v) => t + (v || 0), 0);
@@ -36,6 +36,13 @@ export function CrystalBar({ active, layers = {}, frostbite = {}, hasKristalline
         <div className="flex items-baseline justify-between text-xs mb-2">
           <span className="opacity-60">❄ Schichten zahlen</span>
           <span className="font-bold tabular-nums" style={{ color: OVER, textShadow: `0 0 6px ${ICE}` }}>~{grp(scorePerWin)} Score / Frost-Sieg</span>
+        </div>
+      )}
+      {/* #270: kumulativer Frost-Ertrag — der Eigen-Score, den der Schicht-Motor über den Lauf schon eingespielt hat. */}
+      {yieldScore > 0 && (
+        <div className="flex items-baseline justify-between text-xs mb-2">
+          <span className="opacity-60">❄ Frost-Ertrag</span>
+          <span className="tabular-nums" style={{ color: ICE }} title="Eingespielter Frost-Eigen-Score über den ganzen Lauf (Schicht→Score-Motor).">~{grp(yieldScore)}</span>
         </div>
       )}
       <div className="flex items-stretch gap-3">

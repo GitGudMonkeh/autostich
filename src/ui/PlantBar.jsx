@@ -13,8 +13,9 @@ import { PLANT_VALUE_CAP, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD } from ".
 import { hasUeberwucherung, hasEwigerFruehling } from "../game/skills.js";
 
 const SEED = "#9aa4a0"; // grauer Setzling (wachsend, noch nicht reif)
+const grp = (n) => Math.round(n).toLocaleString("de-DE");
 
-export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skills = [] }) {
+export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skills = [], growthTotal = 0, yield: yieldScore = 0 }) {
   if (!active) return null;
   const total = deck.length || 0;
   let setzling = 0, gruen = 0, ausgewachsen = 0;
@@ -46,6 +47,13 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
 
   return (
     <IndicatorPanel>
+      {/* #270 Fraktions-Fantasie sichtbar: „Gewachsen" (Motor-Zähler: Lauf-Summe Wachstum) + Wurzel-Score (eingespielter Eigen-Score). */}
+      {(growthTotal > 0 || yieldScore > 0) && (
+        <div className="flex items-baseline justify-between text-xs mb-2">
+          <span className="opacity-60">🌱 Gewachsen{growthTotal > 0 && <span className="font-bold tabular-nums" style={{ color: PLANT_RIPE }}> {grp(growthTotal)}</span>}</span>
+          {yieldScore > 0 && <span className="tabular-nums" style={{ color: PLANT }} title="Roher Wurzel-Eigen-Score (Wurzeltiefe/Jahresringe/Ernte/Blüte), den der Multiplikator-Stack weiter verstärkt.">Wurzel-Score ~{grp(yieldScore)}</span>}
+        </div>
+      )}
       {/* Grün-Anteil (Hauptelement): Balken bis 100 %, zwei Schwellenmarken. */}
       <div className="flex justify-between text-xs mb-1.5">
         <span className="opacity-60">🌿 Grün-Anteil des Feldes
