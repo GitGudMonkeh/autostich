@@ -13,7 +13,7 @@ import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel un
    Wortmarke → zwei prominente Startmodi → demotierte Seed-Zeile → Sekundär-Navigation als ruhige
    Chip-Reihe (statt fünf gleich breiter Balken) → schlanker Rekord-Fuß. Die volle Score-Liste
    (deine Läufe + global) liegt weiterhin hinter „Bestenliste" (LeaderboardScreen, #217). */
-export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
@@ -85,6 +85,15 @@ export function StartScreen({ onStart, onPlaySeed = null, onMasterRun = null, hi
             Meister Run
             <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
               style={{ background: "#d4a63a", color: "#141419", boxShadow: "0 0 6px rgba(212,166,58,.6)" }} aria-label="experimentell">exp</span>
+          </button>
+        )}
+
+        {/* Dev Run (Test-Layout, nur Preview-Build) — frei konfigurierbarer Testlauf. Gold-Stil wie der Preview-Marker. */}
+        {onDevRun && (
+          <button onClick={onDevRun}
+            className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
+            style={{ background: "#d4a63a", color: "#141419" }}>
+            ⚙ Dev Run
           </button>
         )}
 

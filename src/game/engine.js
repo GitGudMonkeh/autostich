@@ -22,6 +22,7 @@ import { computeFormations, positionHasFormation, activeFormationCount, summariz
 import { perkLegendaryChance, skillLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
+import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
 
 function sumHook(perks, name, ctx) {
@@ -1045,8 +1046,9 @@ export function resolveTrick(state, rng) {
       }
     }
 
-    // #226 Großmeister: kürzerer Lauf als Schwierigkeits-Hebel (maxCycles override, sonst C.MAX_CYCLES=60 → byte-identisch).
-    if (cycle >= (difficulty && difficulty.maxCycles ? difficulty.maxCycles : C.MAX_CYCLES)) {
+    // #226 Großmeister: kürzerer Lauf als Schwierigkeits-Hebel (maxCycles override, sonst C.MAX_CYCLES → byte-identisch).
+    // Dev-Run (Test-Layout): state.maxCycles setzt die Rundenzahl eines einzelnen Laufs frei (20..100); null → Bestand.
+    if (cycle >= (state.maxCycles || (difficulty && difficulty.maxCycles) || C.MAX_CYCLES)) {
       // Run-Ende nach dem letzten Durchlauf (§22.1): kein Neu-Mischen, keine Auswahl mehr.
       phase = "gameover";
     } else {
@@ -1062,9 +1064,10 @@ export function resolveTrick(state, rng) {
       // Feuer-Brand (v0): analog — die im gerade beendeten Durchlauf gesetzten Brandmarken werden jetzt aktiv (−Wert).
       newBrandActive = newBrandPending;
       newBrandPending = {};
-      // Entscheidung VOR dem neuen Durchlauf nach dem festen Plan (Shop-Spec §2.2): DECISION_SCHEDULE[cycle]
+      // Entscheidung VOR dem neuen Durchlauf nach dem Plan (Shop-Spec §2.2): schedule[cycle]
       // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
-      const decision = C.DECISION_SCHEDULE[cycle];
+      // Dev-Run (Test-Layout): state.devSchedule überschreibt den globalen Plan pro Lauf; null → Bestand.
+      const decision = (state.devSchedule || C.DECISION_SCHEDULE)[cycle];
       // #217 Meistergrade — Reward-Ableitungen (Grad 0 = No-op: Mult ×1, Shift 0, keine Garantie → byte-identisch).
       const mGrade = state.masteryGrade || 0;
       const mLegMult = masteryLegendMult(mGrade), mRareShift = masteryRareShift(mGrade);
@@ -1075,19 +1078,20 @@ export function resolveTrick(state, rng) {
         // guaranteeOne-Parameter — NICHT mehr Chance 1, das würde bei der Per-Archetyp-Ziehung in JEDEM Archetyp einen setzen).
         const guarantee = masteryLegendGuaranteed(mGrade) && !newMasteryLegGranted;
         const skillLeg = skillLegendaryChance(shop) * mLegMult; // #247: Per-Archetyp-Chance (Basis × Meisterrang-Mult)
-        const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLeg, guarantee);
+        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLeg, guarantee);
         if (soff.length > 0) {
           phase = "levelup"; newSkillOffer = soff;
           if (guarantee && soff.some(isLegendarySkill)) newMasteryLegGranted = true; // Garantie eingelöst, sobald ein Legendär tatsächlich im Angebot ist
         } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift, architectEnabled); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk
       } else if (decision === "perk") {
-        const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift, architectEnabled);
+        const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift, architectEnabled);
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "shop" && architectEnabled) {
         // Architekt-Phase (#202, ersetzt den Shop): frisches Bauplan-Angebot ziehen (deterministisch über rng) und die
-        // Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen. #217: rareShift durchreichen.
+        // Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen. #217: rareShift durchreichen. Dev-Run → voller Katalog.
         phase = "architect";
-        newArchitect = { ...(newArchitect || architect), offers: buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch"), mRareShift), actedMain: false, moved: false };
+        const archOffers = state.devMode ? fullArchitectOffer() : buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch"), mRareShift);
+        newArchitect = { ...(newArchitect || architect), offers: archOffers, actedMain: false, moved: false };
       } else if (decision === "shop") {
         // #229: Shop entfernt — ohne aktiven Architekten (Sim-Baseline / architect:false) ist die 'shop'-Entscheidung
         // ein No-Op; der Durchlauf startet direkt (kein rng-Verbrauch).
@@ -1095,7 +1099,8 @@ export function resolveTrick(state, rng) {
       } else if (decision === "formation") {
         // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ Shop-Feinjustierung), Vorschau berechnen.
         phase = "formation";
-        newFormationEnergy = C.FORMATION_ENERGY + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
+        // Dev-Run (Test-Layout): state.devEnergy setzt die Formations-Energie-Basis pro Lauf frei; null → C.FORMATION_ENERGY.
+        newFormationEnergy = (state.devEnergy ?? C.FORMATION_ENERGY) + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
           + formationEnergyBonus(familyTiers, cycle); // #179 Feinjustierung (jetzt Perk-Familie E_TUNING): +Energie je Stufe
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim

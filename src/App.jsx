@@ -36,6 +36,7 @@ import { StartScreen } from "./ui/StartScreen.jsx";
 import { StatsScreen } from "./ui/StatsScreen.jsx";
 import { SeedChip } from "./ui/SeedChip.jsx"; // #205 Challenger Mode: Seed im HUD kopierbar
 import { CustomizeScreen } from "./ui/CustomizeScreen.jsx";
+import { DevRunSetup } from "./ui/DevRunSetup.jsx"; // Dev-Run (nur Preview-Build)
 import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale Bestenliste als eigener Screen
 import { MasterRunSelect } from "./ui/MasterRunSelect.jsx"; // #217: Rang-Auswahl für den Meister-Lauf
 import { RunLoader } from "./ui/RunLoader.jsx";
@@ -64,6 +65,8 @@ export function Autostich() {
   const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
   const pendingMaster = useRef(false);                            // #217: nächster Lauf = Meister-Lauf? (nur diese zählen für die Rang-Leiter)
   const pendingGrade = useRef(0);                                 // #217: gewählter Rang für den nächsten Meister-Lauf (0 = ranglos)
+  const pendingDev = useRef(null);                                // Dev-Run: Config { rounds, schedule, cover, energy } für den nächsten Lauf (null = normaler Lauf)
+  const [showDevSetup, setShowDevSetup] = useState(false);        // Dev-Run-Setup-Overlay (nur Preview-Build)
   const [showMasterSelect, setShowMasterSelect] = useState(false); // #217: Rang-Auswahl-Overlay (Meister-Lauf starten)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [glossaryOpen, setGlossaryOpen] = useState(false);        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
@@ -339,17 +342,19 @@ export function Autostich() {
     const masterRun = pendingMaster.current;
     const grade = masterRun ? Math.max(0, Math.min(profile.masteryGrade || 0, pendingGrade.current | 0)) : 0;
     pendingMaster.current = false; pendingGrade.current = 0;
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, masteryGrade: grade, masterRun }); // #202 Architekt · #205 Seed · #217 Meister-Lauf
+    const dev = pendingDev.current; pendingDev.current = null; // Dev-Run-Config (Test-Layout) für DIESEN Lauf, dann zurücksetzen
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, masteryGrade: grade, masterRun, dev }); // #202 Architekt · #205 Seed · #217 Meister-Lauf · Dev-Run
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
   // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
   // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
   // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
-  function launchRun({ seed = null, master = false, grade = 0 } = {}) {
+  function launchRun({ seed = null, master = false, grade = 0, dev = null } = {}) {
     pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
     pendingMaster.current = !!master;
     pendingGrade.current = grade | 0;
+    pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
     setPendingRun([deckSkin.front, deckSkin.back, ...(bfSkin ? [bfSkin.desktop, bfSkin.mobile] : [])]);
   }
   // #217: Normaler Lauf (Rang 0, keine Rewards, zählt nicht) — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
@@ -358,6 +363,8 @@ export function Autostich() {
   function startMasterRun(grade = 0) { launchRun({ master: true, grade: grade | 0 }); }
   // #217: Neustart behält die Lauf-Art (ein Meister-Lauf startet als Meister-Lauf auf demselben Rang neu).
   function restartRun() { launchRun({ master: !!state.masterRun, grade: state.masteryGrade || 0 }); }
+  // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
+  function startDevRun(dev) { launchRun({ dev }); }
   const toMenu = () => { saveRun(); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun läuft über den gameover-Effekt
   // Perk-Auswahl: ein Angebotseintrag ist entweder eine Familie {familyId,tier} (Rarität #167) oder ein flacher perkId-String.
@@ -467,7 +474,7 @@ export function Autostich() {
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wide opacity-50">Durchlauf</div>
         <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>
-          {Math.min(state.cycle + 1, MAX_CYCLES)}<span className="text-xs opacity-45"> / {MAX_CYCLES}</span>
+          {Math.min(state.cycle + 1, state.maxCycles || MAX_CYCLES)}<span className="text-xs opacity-45"> / {state.maxCycles || MAX_CYCLES}</span>
         </div>
       </div>
       {/* #225.1: Münzanzeige entfernt (#202). #UI: „Bester Score" unter den aktuellen Score (mittlere Mobil-Spalte). */}
@@ -514,6 +521,7 @@ export function Autostich() {
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} onPlaySeed={startRun} onMasterRun={() => setShowMasterSelect(true)} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
+            onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} />
         ) : (<>
@@ -628,6 +636,10 @@ export function Autostich() {
 
       {showCustomize && (
         <CustomizeScreen options={options} profile={profile} onChoose={changeOptions} onClose={() => setShowCustomize(false)} />
+      )}
+
+      {showDevSetup && (
+        <DevRunSetup onStart={(cfg) => { setShowDevSetup(false); startDevRun(cfg); }} onClose={() => setShowDevSetup(false)} />
       )}
 
       {showLeaderboard && (

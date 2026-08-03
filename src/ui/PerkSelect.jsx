@@ -2,6 +2,7 @@ import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCr
 import { familyDef, hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
 import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
+import { DevPerkCatalog } from "./DevPerkCatalog.jsx"; // Dev-Run: Voll-Katalog statt Zufallsangebot
 import { FormationPanel } from "./FormationPanel.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
@@ -66,6 +67,9 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
           <span><span className="opacity-50">Score-Mult </span><span style={{ color: "#d4a63a" }}>×{fmtMult(scoreMult)}</span></span>
         </div>
 
+        {state.devMode ? (
+          <DevPerkCatalog offer={offer} onPick={onPick} onDecline={onDecline} />
+        ) : (
         <div className="grid sm:grid-cols-3 gap-3 mt-5">
           {offer.map((entry) => {
             const v = offerView(entry, state.familyTiers);
@@ -116,12 +120,16 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             );
           })}
         </div>
+        )}
 
+        {!state.devMode && (
         <div className="text-center text-xs opacity-40 mt-3">
           Jeder Perk ist pro Lauf nur einmal wählbar.
         </div>
+        )}
 
-        {/* #138: Neu würfeln (falls verfügbar) + „Alle ablehnen" — eine Perk-Runde ist nie „verschwendet" (keine Münzen mehr, #225.1). */}
+        {/* #138: Neu würfeln (falls verfügbar) + „Alle ablehnen" — eine Perk-Runde ist nie „verschwendet" (keine Münzen mehr, #225.1). Im Dev-Modus hat der Katalog sein eigenes „Überspringen". */}
+        {!state.devMode && (
         <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
           {canReroll && (
             <button onClick={onReroll}
@@ -138,6 +146,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             </button>
           )}
         </div>
+        )}
 
         {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). */}
         <div className="mt-5 pt-4 border-t grid sm:grid-cols-2 gap-4" style={{ borderColor: "#2a2a33" }}>

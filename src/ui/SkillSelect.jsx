@@ -55,6 +55,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
   const [openSkill, setOpenSkill] = useState(null); // gehaltener Skill, dessen Beschreibung aufgeklappt ist
   const [openArch, setOpenArch] = useState(null);   // Archetyp, dessen Passiv-Beschreibung aufgeklappt ist (#201 P9)
+  const devMode = !!state.devMode;                  // Dev-Run: Archetyp-Gruppen eingeklappt, Klick öffnet die Skills
+  const [openGroup, setOpenGroup] = useState(null); // Dev-Run: welcher Archetyp gerade seine Skills zeigt
   const [pendingConsumer, setPendingConsumer] = useState(null); // #93: Konsumenten-Ersatzdialog { id, replace, type }
 
   // Ist der jeweilige Archetyp beim Spieler noch inaktiv → DIESER Skill schaltet ihn frei (erster Pick).
@@ -201,29 +203,33 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           {groups.map((g) => {
             const detailOpen = openArch === g.arch;
             const groupKws = glossaryKeywords(g.ids, SKILL_DEFS);
+            const groupOpen = devMode ? openGroup === g.arch : true; // Dev-Run: Skills erst nach Klick sichtbar
             return (
             <div key={g.arch}>
-              <button type="button" onClick={() => setOpenArch(detailOpen ? null : g.arch)}
+              <button type="button"
+                onClick={() => devMode ? setOpenGroup(groupOpen ? null : g.arch) : setOpenArch(detailOpen ? null : g.arch)}
                 className="w-full flex items-center gap-2 mb-2 text-left"
-                title={`${g.meta.label}: Passiv ${detailOpen ? "einklappen" : "ausklappen"}`} aria-expanded={detailOpen}>
+                title={devMode ? `${g.meta.label}: Skills ${groupOpen ? "einklappen" : "ausklappen"}` : `${g.meta.label}: Passiv ${detailOpen ? "einklappen" : "ausklappen"}`}
+                aria-expanded={devMode ? groupOpen : detailOpen}>
                 <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: g.meta.color }}>{g.meta.icon} {g.meta.label}</span>
-                {/* #UI: dezenter, aber klar tappbarer „ausklappen"-Hinweis — kleiner Chip mit rotierendem Chevron
-                    (statt nur dünnem Dreieck), damit erkennbar ist, dass der Kopf die Passiv-Beschreibung aufklappt. */}
+                {/* #UI: dezenter, aber klar tappbarer „ausklappen"-Hinweis — kleiner Chip mit rotierendem Chevron.
+                    Normal: klappt die Passiv-Beschreibung auf. Dev-Run: klappt die Skill-Liste des Archetyps auf. */}
                 <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
                   style={{ color: g.meta.color, background: `${g.meta.color}14`, border: `1px solid ${g.meta.color}3a` }}>
-                  <span className="transition-transform" style={{ display: "inline-block", transform: detailOpen ? "rotate(90deg)" : "none" }}>▸</span>
-                  Passiv
+                  <span className="transition-transform" style={{ display: "inline-block", transform: (devMode ? groupOpen : detailOpen) ? "rotate(90deg)" : "none" }}>▸</span>
+                  {devMode ? `${g.ids.length} Skills` : "Passiv"}
                 </span>
-                {!detailOpen && <span className="text-[10px] whitespace-nowrap shrink-0" style={{ color: "#6b6b76" }}>klicken für mehr Details</span>}
+                {!devMode && !detailOpen && <span className="text-[10px] whitespace-nowrap shrink-0" style={{ color: "#6b6b76" }}>klicken für mehr Details</span>}
                 <div className="flex-1 h-px" style={{ background: `${g.meta.color}33` }} />
               </button>
-              {detailOpen && (
+              {!devMode && detailOpen && (
                 <div className="mb-3 rounded-lg px-3 py-2 text-xs leading-snug"
                   style={{ background: `${g.meta.color}14`, border: `1px solid ${g.meta.color}44` }}>
                   <div className="opacity-90">{unlockLine(g.arch)}</div>
                   <KeywordGlossary tokens={groupKws} />
                 </div>
               )}
+              {groupOpen && (
               <div className="grid sm:grid-cols-2 gap-3">
                 {g.ids.map((id) => {
                   const s = SKILL_DEFS[id];
@@ -261,13 +267,15 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   );
                 })}
               </div>
+              )}
             </div>
             );
           })}
         </div>
 
         <div className="text-center mt-5 flex flex-wrap items-center justify-center gap-2">
-          {canReroll && (
+          {/* Dev-Run: Reroll entfällt (Voll-Katalog), und statt „Ablehnen → Perk" gibt es ein neutrales „Runde überspringen". */}
+          {!devMode && canReroll && (
             <button onClick={onReroll}
               className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
               style={{ background: "#20202a", color: "#d4a63a", border: "1px solid #d4a63a66" }}>
@@ -279,7 +287,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             className="text-xs px-4 py-2 rounded-lg transition-all hover:opacity-80"
             style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
           >
-            Ablehnen → stattdessen ein Perk
+            {devMode ? "Runde überspringen" : "Ablehnen → stattdessen ein Perk"}
           </button>
         </div>
 

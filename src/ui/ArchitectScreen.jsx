@@ -629,6 +629,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               {!removeFor && phase === "choose" && (
                 <div>
                   <div className="text-sm font-semibold mb-2">Was baust du diese Phase?</div>
+                  {state.devMode ? (
+                    <DevArchCatalog offers={offers} onChoose={chooseOffer} canUpgradeAny={canUpgradeAny}
+                      onUpgrade={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} />
+                  ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {offers.map((o, idx) => {
                       const fam = familyDef(o.familyId);
@@ -665,8 +669,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       <div className="text-[10px] font-mono opacity-60 leading-snug">ein Gebäude +1 Stufe{canUpgradeAny ? "" : " · nichts aufwertbar"}</div>
                     </button>
                   </div>
-                  {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). */}
-                  {onReroll && (state.rerollsArch || 0) > 0 && (
+                  )}
+                  {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). Im Dev-Modus entfällt Reroll (Voll-Katalog). */}
+                  {!state.devMode && onReroll && (state.rerollsArch || 0) > 0 && (
                     <button onClick={onReroll} className="w-full mt-2 rounded-lg py-2 text-xs font-bold transition-all hover:brightness-110"
                       style={{ background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }}>
                       🎲 Baupläne neu würfeln · {state.rerollsArch} übrig
@@ -876,7 +881,7 @@ function famEff(fam, b) {
     case "target":     s = `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Score"}`; break;
     case "streak":     s = `Sieg +${nz(base.score)} Score × Serie`; break;
     case "crit":       s = `Crit-Sieg +${nz(base.score)} Score`; break;
-    case "milestone":  s = `jeder ${base.every}. Sieg +${nz(base.score)} Score`; break;
+    case "milestone": { const every = (base.kind === "milestone" && fam.tierKick && fam.tierKick.every && t >= fam.tierKick.at) ? fam.tierKick.every : base.every; s = `jeder ${every}. Sieg auf diesem Gebäude +${nz(base.score)} Score`; break; }
     case "mult":       s = `Siege hier ×${base.factor}`; break;
     // #Pool: Distrikt-Effekte — hängen vom Brett ab (Nachbarschaft / vollendete Strukturen).
     case "neighbor":   s = fam.category === "value" ? `+${nz(base.value)} Stichwert je Nachbargebäude (max ${base.cap})` : `Sieg +${nz(base.score)} Score je Nachbargebäude (max ${base.cap})`; break;
@@ -901,10 +906,87 @@ function famEff(fam, b) {
     if (k.mult) kickTxt = `zusätzlich ×${k.mult} Score`;
     else if (k.critFlatMult) kickTxt = `bei Crit ×${k.critFlatMult} Direkt-Score`;
     else if (k.streakDoubleFrom) kickTxt = `ab Serie ${k.streakDoubleFrom} doppelt`;
-    else if (k.every) kickTxt = `jeder ${k.every}. statt ${base.every}. Sieg`;
     else if (k.addType) kickTxt = `zweiter Joker-Typ: ${k.addType}`;
     else if (k.ankerValue) kickTxt = `+${k.ankerValue} Stichwert je Ankerzelle`;
     if (kickTxt) s += on ? ` · ${kickTxt}` : ` (Stufe ${k.at}: ${kickTxt})`;
   }
   return s;
+}
+
+/* Dev-Run-Bauplan-Katalog (nur Preview): statt der 3er-Auswahl ALLE Baupläne, nach Kategorie (Wert/Score/
+   Formation) aufklappbar → Familie (mit Effekt-Beschreibung) → Stufe. Klick auf eine Stufe baut sofort (chooseOffer,
+   wie sonst). `offers` ist der Voll-Katalog (devCatalog.fullArchitectOffer). Ein Bau pro Phase bleibt. */
+const ARCH_CAT_ORDER = ["value", "score", "formation"];
+function DevArchCatalog({ offers, onChoose, canUpgradeAny, onUpgrade }) {
+  const [openCat, setOpenCat] = useState("value");
+  const [openFam, setOpenFam] = useState(null);
+  const byCat = {};
+  for (const o of offers) {
+    const fam = familyDef(o.familyId); if (!fam) continue;
+    (byCat[fam.category] ||= {});
+    (byCat[fam.category][o.familyId] ||= []).push(o);
+  }
+  const tval = (t) => (t === "legendary" ? 99 : t);
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="text-[11px] opacity-55">Voll-Katalog (Dev): Kategorie → Familie → Stufe. Ein Bau pro Phase (danach Verschieben/Bestätigen).</div>
+      {ARCH_CAT_ORDER.filter((c) => byCat[c]).map((c) => {
+        const meta = CAT[c] || { label: c, color: "#8a97a5" };
+        const fids = Object.keys(byCat[c]);
+        const open = openCat === c;
+        return (
+          <div key={c} className="flex flex-col gap-1.5">
+            <button onClick={() => setOpenCat(open ? null : c)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold"
+              style={{ background: open ? `${meta.color}1f` : "#13202b", border: `1px solid ${open ? meta.color : "#26323d"}`, color: open ? meta.color : "#c8d2da" }}>
+              <span>{meta.label} <span className="opacity-55 font-normal">· {fids.length}</span></span>
+              <span className="opacity-70">{open ? "▲" : "▼"}</span>
+            </button>
+            {open && (
+              <div className="flex flex-col gap-1.5 pl-1">
+                {fids.map((fid) => {
+                  const fam = familyDef(fid);
+                  const os = byCat[c][fid].slice().sort((a, b) => tval(a.tier) - tval(b.tier));
+                  const fo = openFam === fid;
+                  // Effekt schon auf der Familien-Ebene (repräsentativ: Stufe 1) — erst beim Aufklappen die Stufen.
+                  const repDesc = famEff(fam, { tier: os[0]?.tier ?? 1 });
+                  return (
+                    <div key={fid} className="rounded-lg" style={{ background: "#13202b", border: "1px solid #26323d" }}>
+                      <button onClick={() => setOpenFam(fo ? null : fid)} className="w-full flex items-start justify-between gap-2 px-3 py-2 text-left">
+                        <span className="flex flex-col gap-0.5 min-w-0">
+                          <span className="font-semibold text-sm" style={{ color: meta.color }}>{fam.name}</span>
+                          {repDesc && <span className="text-[11px] font-mono opacity-60 leading-snug">{repDesc}</span>}
+                        </span>
+                        <span className="text-[11px] opacity-50 shrink-0 mt-0.5 whitespace-nowrap">{fo ? "▲ Stufe" : "▼ Stufe"}</span>
+                      </button>
+                      {fo && (
+                        <div className="px-3 pb-2.5 flex flex-wrap gap-1.5">
+                          {os.map((o) => {
+                            const col = o.legendary ? GOLD : tierColor(o.tier);
+                            return (
+                              <button key={String(o.tier)} onClick={() => onChoose(o)} disabled={o.used}
+                                title={famEff(fam, { tier: o.tier })}
+                                className="px-2.5 py-1 rounded text-xs font-bold transition-all hover:-translate-y-0.5"
+                                style={{ background: `${col}1f`, color: col, border: `1px solid ${col}88`, opacity: o.used ? 0.4 : 1 }}>
+                                {tierLabel(o.tier)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <button onClick={onUpgrade} disabled={!canUpgradeAny}
+        className="self-start mt-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+        style={{ background: "#13202b", border: `1px dashed ${CAT.value.color}66`, color: CAT.value.color, opacity: canUpgradeAny ? 1 : 0.4 }}>
+        ⬆ Aufwerten{canUpgradeAny ? "" : " · nichts aufwertbar"}
+      </button>
+    </div>
+  );
 }
