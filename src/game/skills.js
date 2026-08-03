@@ -186,13 +186,13 @@ export const SKILL_DEFS = {
     desc: `Steht eine Frostkarte an der Kreuzung von ≥3 Formationen, lagert sie +${C.VERSCHRAENKUNG_LAYERS} Schichten auf einmal ab — das Meisterstück.`, verschraenkung: true },
   // Legendäre (vier Seiten des Spine — verwandeln die tiefen Schichten in DIREKTEN Score)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: `Jede Ablage lagert +${C.PERMAFROST_LAYER_BONUS} zusätzliche Schichten ab (der Motor der Permanenz). Je mehr Schichten du über alle Frostkarten anhäufst, desto mehr zahlt jeder Frost-Sieg direkt: +${C.PERMAFROST_DIRECT} je Überlauf-Schicht (Σ über alle Frostkarten, gedeckelt ${C.PERMAFROST_OVERFLOW_CAP}, skaliert mit deinem Bekenntnis).`, permafrost: true },
+    desc: `Jede Ablage lagert +${C.PERMAFROST_LAYER_BONUS} zusätzliche Schichten ab. Jeder Frost-Sieg gibt +${C.PERMAFROST_DIRECT} Score je Überlauf-Schicht (Schichten über ${C.ICE_LAYER_MAX}), summiert über alle Frostkarten (bis ${C.PERMAFROST_OVERFLOW_CAP}).`, permafrost: true },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Gletscher", archetype: "ice", legendary: true, keywords: ["freeze"],
     desc: `Je tiefer der Stapel, desto mehr gibt jede Schicht (superlinear). Dein tiefster Pfeiler zahlt bei jedem Frost-Sieg direkt: +${C.GLETSCHER_DIRECT} je Tiefenstufe, superlinear aufsummiert (Tiefe gedeckelt ${C.GLETSCHER_OVERFLOW_CAP}, skaliert mit deinem Bekenntnis) — je tiefer, desto überproportional mehr.`, gletscher: true },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Vergletscherung", archetype: "ice", legendary: true, keywords: ["freeze"],
     desc: `Frostkarten frieren Gegnerkarten proportional zu ihren Schichten ein (−Wert). Je mehr Gegner-Eis aktiv ist, desto mehr zahlt jeder Frost-Sieg direkt: +${C.VERGLETSCHERUNG_DIRECT} je Punkt aktiver Gegner-Vergletscherung (gedeckelt ${C.VERGLETSCHERUNG_DEBUFF_CAP}, skaliert mit deinem Bekenntnis).`, vergletscherung: true },
   SK_ICE_L04: { id: "SK_ICE_L04", name: "Architekt", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
-    desc: `Schaltet vertikale Formationen frei: Frostkarten in derselben Spalte (pos%5) bilden Formationen quer über Segmente — je zusätzliche Frostkarte in der Spalte +${Math.round(C.ARCHITEKT_STEP * 100)} % Formationsfaktor.`, architekt: true },
+    desc: `Schaltet vertikale Formationen frei: Frostkarten in derselben Spalte bilden Formationen über Segmente hinweg — je zusätzliche Frostkarte in der Spalte +${Math.round(C.ARCHITEKT_STEP * 100)} % Formationsfaktor.`, architekt: true },
 
   // ---- Pflanze-Fraktion (v0) — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend)
   //      → Reife (grün) → Farbblock → Score. Grün = Farbe, nicht Kraft; Wert nur über Wurzeln (Deckel 11).
