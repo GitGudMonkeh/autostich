@@ -14,7 +14,8 @@ import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
 import { masteryRerollBonus, masteryCoverBonus, masteryLegendMult, masteryRareShift, masteryLegendGuaranteed, difficultyForGrade, MASTERY_MAX_GRADE } from "./mastery.js"; // #217 Meistergrade / #226 Großmeister
-import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER } from "./architect.js";
+import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
+import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
 
 /* Reiner Reducer — Determinismus-Invariante: kein Math.random / Date hier drin.
    Zufall kommt als Action-Payload (rng), siehe App.jsx. Phasen:
@@ -40,6 +41,34 @@ function startOrderInBand(deck, rng) {
     if (d < bestD) { best = order; bestD = d; }
   }
   return best;
+}
+
+// Dev-Run (nur Preview): Erst-Angebot/-Phase eines Laufs für die Start-Entscheidung schedule[0] (frischer Build →
+// perks/skills/familyTiers leer). Spiegelt die Angebots-Erzeugung der Engine; im devMode kommt der Voll-Katalog.
+// Wird NUR vom Dev-Run genutzt — der normale Lauf startet unverändert über den Stat-Pfad in START_RUN.
+function startDecisionSetup(decision, s, seed, actionRng, grade, architectEnabled, devEnergy, devMode = false) {
+  const mLegMult = masteryLegendMult(grade), mRareShift = masteryRareShift(grade);
+  const rngAtOr = (...parts) => (seed != null ? rngAt(seed, 0, ...parts) : actionRng);
+  if (decision === "stat") return { phase: "levelup", statOffer: STAT_IDS };
+  if (decision === "perk") {
+    const off = devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * mLegMult, mRareShift, architectEnabled);
+    return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
+  }
+  if (decision === "shop") {
+    if (!architectEnabled) return { phase: "play" };
+    const offers = devMode ? fullArchitectOffer() : buildArchitectOffer(s.architect, rngAtOr("arch"), mRareShift);
+    return { phase: "architect", architect: { ...s.architect, offers, actedMain: false, moved: false } };
+  }
+  if (decision === "formation") {
+    const formations = computeFormations(s.playerOrder, s.deck, s.roles, [], [], s.shop?.anchors || [], s.familyTiers, architectEnabled ? s.architect : null);
+    return { phase: "formation", formationEnergy: (devEnergy ?? C.FORMATION_ENERGY), formationSwaps: [], formations };
+  }
+  // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
+  const guarantee = masteryLegendGuaranteed(grade);
+  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(s.shop) * mLegMult, guarantee);
+  if (soff.length) return { phase: "levelup", skillOffer: soff, masteryLegGranted: guarantee && !devMode && soff.some(isLegendarySkill) };
+  const off = buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * mLegMult, mRareShift, architectEnabled);
+  return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
 }
 
 export function initialState(rng = Math.random, seed = null) {
@@ -104,6 +133,9 @@ export function initialState(rng = Math.random, seed = null) {
     architectEnabled: false,       // Architekt (#202): Flag — bei true öffnet sich die Architekt-Phase (im Spiel via START_RUN true; false = Sim-Baseline ohne Architekt)
     architect: { ...initialArchitect(), maxCover: ARCH_MAX_COVER }, // Gebäude-Overlay (8×5) + Angebot + Meilenstein-Zähler; maxCover als #217-Seam (Rang-Bonus: base + Grad×N) run-geseedet
     architectPre: null,            // Precompute je Durchlauf (von der Engine gefüllt)
+    // Dev-Run (nur Preview): pro-Lauf-Overrides. null/false → Bestandsverhalten (globaler Plan, C.MAX_CYCLES,
+    // C.FORMATION_ENERGY, Zufallsangebote). Von START_RUN mit action.dev gesetzt; die Engine liest sie im Übergang.
+    devSchedule: null, maxCycles: null, devEnergy: null, devMode: false,
     // #263: DREI getrennte Reroll-Pools je Lauf (Perks · Gebäude · Skills), je BASE_REROLLS (2), nicht untereinander
     // teilbar, kein Nachschub. Ersetzt den einen geteilten Pool; Gebäude/Architekt hat jetzt auch einen Reroll.
     rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
@@ -136,6 +168,22 @@ export function reducer(state, action) {
       // Grad 0 (frischer Spieler / Sim ohne masteryGrade) = Basiswerte → alles byte-identisch zum bisherigen Start.
       const grade = Math.max(0, Math.min(MASTERY_MAX_GRADE, Math.floor(Number(action.masteryGrade) || 0)));
       const masterRun = !!action.masterRun; // #217: Meister-Lauf? Steuert die Rang-Leiter — UND den Neuwurf-Pool.
+      // Dev-Run (nur Preview): action.dev = { rounds, schedule, cover, energy } konfiguriert einen frei einstellbaren Lauf.
+      // Nur dieser Zweig weicht ab; ohne action.dev bleibt der normale Lauf-Start UNVERÄNDERT (Start = Stat).
+      const dev = action.dev && typeof action.dev === "object" ? action.dev : null;
+      if (dev) {
+        const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
+        const devSchedule = Array.from({ length: devRounds }, (_, i) => (Array.isArray(dev.schedule) && dev.schedule[i]) || C.DECISION_SCHEDULE[i] || "perk");
+        const devCover = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.cover) ?? 0)));
+        const devEnergy = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.energy) ?? 0)));
+        const sBase = { ...s, architect: { ...s.architect, maxCover: devCover } };
+        const patch = startDecisionSetup(devSchedule[0], sBase, seed, action.rng, grade, true, devEnergy, true);
+        return { ...sBase, architectEnabled: true, masteryGrade: grade, masterRun,
+          devSchedule, maxCycles: devRounds, devEnergy, devMode: true,
+          difficulty: difficultyForGrade(grade),
+          rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
+          skillOffer: null, offer: null, statOffer: null, masteryLegGranted: false, ...patch };
+      }
       return { ...s, phase: "levelup", statOffer: STAT_IDS, architectEnabled,
         masteryGrade: grade, masterRun,
         difficulty: difficultyForGrade(grade), // #226 Großmeister: Ramp je Rang (Meister → null = No-op)
@@ -237,6 +285,7 @@ export function reducer(state, action) {
       const { perkId, rng } = action;
       if (!state.offer || !state.offer.includes(perkId)) return state;
       const def = PERK_DEFS[perkId];
+      if (!def) return state; // Sicherheitsnetz (v. a. Dev-Voll-Katalog): unbekannte perkId → No-Op statt Crash
       const perks = [...state.perks, perkId];
       // Kat. A (Deck-Mods beim Pick) ist zu Familien migriert (#167) → flache Perks verändern das Deck nicht mehr.
       let deck = state.deck;
@@ -442,6 +491,7 @@ export function reducer(state, action) {
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
+      if (state.devMode) return { ...state, skillOffer: null, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
       const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade), state.architectEnabled); // #217: Grad-Rewards
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off, offerRerolls: 0 } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0)

@@ -166,7 +166,7 @@ export const SKILLS_OFFERED     = envNum("SIM_SKILLS_OFFERED", 12);   // Skills 
 export const MAX_ARCHETYPES     = envNum("SIM_MAX_ARCHETYPES", 4);    // gleichzeitig aktive Fraktionen [Default 4 = alle 4 mischbar; ENV-Sweep-Haken, z. B. =3 für den Sim-validierten 3-von-4-Stand (Cross-Vergleich)]
 // (vestigial entfernt: SKILL_EVERY_CYCLES — Skill-Runden kommen nicht mehr „jede 3.", sondern aus dem festen DECISION_SCHEDULE; siehe FIRST_SKILL_CYCLE)
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
-export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.08); // Blitz: je gehaltenem Blitz-Skill [Default = Live-Balance 0,08 (Pacing-Buff), SIM-Sweep-Haken]
+export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.10); // Blitz: je gehaltenem Blitz-Skill [Buff: 0,08→0,10 = +10 pp Crit je Blitz-Skill, SIM-Sweep-Haken]
 export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
 // Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
 export const ION_SCORE_PER_STACK  = envNum("SIM_ION_SCORE_PER_STACK", 25); // +Score je Ionisierungsstapel bei Sieg mit der Karte [SIM-Tuning]
