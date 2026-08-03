@@ -276,11 +276,25 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
         isJF = (k) => jokerFarbblock.has(k) || !!(af && af.jokerF.has(k)),
         isJX = (k) => jokerWechsel.has(k) || !!(af && af.jokerX.has(k));
 
-  const out = Array.from({ length: n }, () => ({ mult: 1, baseMult: 1, afterglowFactor: 1, coreFactor: 1, formations: [] }));
+  const out = Array.from({ length: n }, () => ({ mult: 1, baseMult: 1, jokerFactor: 1, afterglowFactor: 1, coreFactor: 1, formations: [] }));
   const add = (pos, type, ordinal, factor) => {
     if (factor > 1) out[pos].mult *= factor;
     out[pos].formations.push({ type, ordinal, factor });
   };
+  // #269 Option 1: Formationen, die eine Frostkarte tragen UND wo der Build den Joker (Kristallform) bzw. die Brücke
+  // (Frostbrücke) hält, gelten als „joker-gestützt": sie zählen VOLL für den Schicht-Motor (baseFormationCount, Bonus-
+  // Schicht, Eisdruck …), aber die Engine dämpft ihren Formations-SCORE über `jokerFactor` (× ICE_JOKER_FORMSCORE_SHARE).
+  // So füttern Joker/Brücke den Schicht-Payoff, treiben aber nicht mehr den Score-Runaway. `jokerFactor` = Produkt der
+  // Faktoren joker-gestützter Formationen an der Position (die Engine rechnet sie heraus und dämpft neu).
+  const jokerActive = kristallform || frostbridge;
+  const tagJoker = (members, type) => {
+    if (!jokerActive || !members.some((p) => frozen[p])) return;
+    for (const p of members) {
+      const fe = out[p].formations.find((f) => f.type === type && !f.viaJoker);
+      if (fe && fe.factor > 1) { fe.viaJoker = true; out[p].jokerFactor *= fe.factor; }
+    }
+  };
+  const onRunJoker = (type) => (mem) => { if (noteCross) noteCross(mem); tagJoker(mem, type); };
   // F6 Nachhall: bester (höchster) Endfaktor je Endposition eines Basislaufs (Wiederholung/Farbblock/Treppe/Wechsel).
   // Der Empfänger ist die direkt folgende Karte; Anker zählen NICHT als Ursprung.
   const endBest = {}; // pos(letztes Mitglied) → { factor, type }
@@ -299,7 +313,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   const wiedFactor = (ord) => wiederholungFactor(ord, repBonus, repThird, repMult);
   markRuns(n, 2, matchWied, wiedGap, canExtendSeg,
     (pos, ord) => add(pos, "wiederholung", ord, wiedFactor(ord)), () => false,
-    (last, ord) => recordEnd(last, "wiederholung", wiedFactor(ord)), isJW, noteCross);
+    (last, ord) => recordEnd(last, "wiederholung", wiedFactor(ord)), isJW, onRunJoker("wiederholung"));
 
   // Farbblock: Permafrost-Joker + freie Familien-Joker (C_JOKER III/IV) matchen jede Farbe; Frostbrücke macht
   // eingefrorene Karten transparent (kein Mitglied).
@@ -317,11 +331,11 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   markRuns(n, farbMin, matchSuit, suitGap, canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, farbFactor(pos, ord)), farbSkip,
     (last, ord) => recordEnd(last, "farbblock", farbFactor(last, ord)), isJF,
-    (mem) => { if (noteCross) noteCross(mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) fe.len = mem.length; } });
+    (mem) => { if (noteCross) noteCross(mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) fe.len = mem.length; } tagJoker(mem, "farbblock"); });
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));
-  markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, treppeEnd, isJT, noteCross);
+  markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, treppeEnd, isJT, onRunJoker("treppe"));
   // (Fallende Treppen „Abstieg" entfielen #179 — E_BIGSTEP deckt Rückschritte/Richtungswechsel innerhalb der Treppe ab.)
   // Wechsel: Kristallform gibt eingefrorenen Karten ±CRYSTAL_OFFSET-Wertoptionen (#165; Permafrost/Eisschritt gelten hier NICHT).
   // E_PENDULUM IV: wFactorStart hebt den Wechsel-Faktor bereits ab Länge 2 auf ×1,35 (sonst erst ab der 3. Karte).
@@ -329,7 +343,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   const wechselFactor = (ord) => Math.max(escalatingFactor(ord, WECHSEL_BASE), ord >= 2 && wFactorStart ? wFactorStart : 1);
   markWechsel(val, valSetWechsel, n, wMinLen, canExtendSeg,
     (pos, ord) => add(pos, "wechsel", ord, wechselFactor(ord)), wMinDiff,
-    (last, ord) => recordEnd(last, "wechsel", wechselFactor(ord)), isJX, noteCross);
+    (last, ord) => recordEnd(last, "wechsel", wechselFactor(ord)), isJX, onRunJoker("wechsel"));
 
   // Anker (E_LOSS/E_QUICKSHOT, Rarität #167 Kat. E): Positionen + Faktor der gehaltenen Stufe — je siegreicher Anker,
   // zählt als Formation. E_QUICKSHOT IV „+2 Wert" (anchor.value) wird in der Engine auf die Anker-Positionen addiert.

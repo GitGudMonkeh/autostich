@@ -394,6 +394,11 @@ export const VERGLETSCHERUNG_DEBUFF_CAP = envNum("SIM_VERGLETSCHERUNG_DEBUFF_CAP
 // (Pflanze 4,01M +4 %, klar aber knapp #1), Ceiling p90 12,4M→7,98M (Spread 2,39×→1,54×), Winrates unverändert.
 export const ICE_FORMBASE_SOFTCAP = envNum("SIM_ICE_FORMBASE_SOFTCAP", 1.5);  // Schwelle: ab hier greifen Diminishing Returns (0 = aus) [#269: 2,0→1,5 — Joker-Score weicher, da der Payoff jetzt direkt läuft]
 export const ICE_FORMBASE_SLOPE   = envNum("SIM_ICE_FORMBASE_SLOPE", 0.2);    // Anteil des Überschusses über der Schwelle, der noch zählt [#269: 0,3→0,2]
+// Joker-Formations-Score-Anteil (#269 Option 1): Formationen, die eine Frostkarte tragen und wo der Build Kristallform/
+// Frostbrücke hält, zählen VOLL für den Schicht-Motor, aber nur zu diesem Anteil für den Formations-SCORE (formBaseMult).
+// So füttern die Joker den Schicht-Payoff, ohne den Score-Ceiling zu treiben. 1 = wie früher, 0 = Joker gibt gar keinen
+// Score-Mult. Der zentrale Ceiling-Hebel für Eis. [#269 · Sim-tunebar]
+export const ICE_JOKER_FORMSCORE_SHARE = envNum("SIM_ICE_JOKER_FORMSCORE_SHARE", 0.5);
 
 /* ============================================================
    PFLANZE-FRAKTION v0 — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend) →

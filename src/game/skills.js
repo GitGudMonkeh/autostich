@@ -174,9 +174,9 @@ export const SKILL_DEFS = {
     desc: `Je ${C.KRISTALLINE_STEP} Schichten insgesamt (über alle Frostkarten) erhalten alle Frostkarten +1 Stichwert (bis +${C.KRISTALLINE_MAX_VALUE}).`, kristallineMasse: true },
   // Linie 5 — Formations-Interface (Joker & Segment-Brücke)
   SK_ICE_12: { id: "SK_ICE_12", name: "Kristallform", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: `Eine Frostkarte wirkt als Joker für Formationen (±${C.CRYSTAL_OFFSET} Wert-Flex).`, kristallform: true },
+    desc: `Eine Frostkarte springt als Joker in Formationen ein (±${C.CRYSTAL_OFFSET} Wert-Flex) — sie festigt das Eis (voller Schicht-Gewinn), trägt aber nur ${pct(C.ICE_JOKER_FORMSCORE_SHARE)} % zum Formations-Score bei.`, kristallform: true },
   SK_ICE_13: { id: "SK_ICE_13", name: "Frostbrücke", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Eine Frostkarte am Segmentrand verbindet die Formation ins nächste Segment.", frostbridge: true },
+    desc: `Eine Frostkarte am Segmentrand spannt eine Eisbrücke ins nächste Segment. Die Brücke trägt Schichten (voller Schicht-Gewinn), aber der Stich darüber zählt nur ${pct(C.ICE_JOKER_FORMSCORE_SHARE)} % Formations-Score.`, frostbridge: true },
   // Linie 6 — Überlappung / Anker (stehende Formationen zahlen)
   SK_ICE_14: { id: "SK_ICE_14", name: "Eisanker", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Eine Frostkarte kann als Anker stehen (×1,25) und lagert dabei garantiert eine Schicht ab — auch ohne volle Formation.", iceAnchor: true },
