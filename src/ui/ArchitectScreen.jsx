@@ -519,6 +519,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(8,12,18,0.62) 3.5px, rgba(8,12,18,0.62) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(134,153,168,0.45)" }} />
                     )}
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
+                    {/* #UI: eingefrorene (Eis-)Karte auch am Bau-Brett markieren — ❄ in der freien oberen rechten Ecke. */}
+                    {card.frozen && <span aria-hidden className="absolute top-[1px] right-[3px] text-[8px] leading-none" title="eingefroren (Frost)" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0cc" }}>❄</span>}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
                     <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : SUIT_COLOR[card.suit], textShadow: (b && !isDragOrig) ? "0 1px 2px #000a" : undefined }}>{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (
@@ -734,7 +736,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                                   style={{ background: "#16232f", border: "1px solid #2f4150" }}>
                                   <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
                                   <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
-                                  <span className="opacity-70">{famEff(f, b)}</span>
+                                  {/* #UI: schon in der Liste zeigen, was die Aufwertung bringt (jetzt → danach), ohne erst klicken zu müssen. */}
+                                  <span className="opacity-55">{famEff(f, b)}</span>
+                                  <span style={{ color: "#8fe0a0" }}>→ {famEff(f, { tier: b.tier + 1 })}</span>
                                 </button>
                               );
                             })}
