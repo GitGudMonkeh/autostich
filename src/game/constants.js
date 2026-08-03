@@ -337,7 +337,7 @@ export const GLEITFROST_EXTRA_SWAP = 1;// Gleitfrost: 2. kostenloser Frosttausch
 // den gedeckelten Schicht-Pfad, nicht über formBaseMult → kein Ceiling-Runaway), plateaut bei P.
 export const ICE_WIN_LAYER     = envNum("SIM_ICE_WIN_LAYER", 1);      // Motor: JEDER Frost-Sieg lagert +1 Schicht ab [#269]
 export const ICE_ABLAGE_A_LAYER = 1;   // Formation-Bonus: Frost-Sieg in ≥1 Formation → +1 Schicht ZUSÄTZLICH (obendrauf) [#269]
-export const ICE_LAYER_SCORE_K = envNum("SIM_ICE_LAYER_SCORE_K", 22); // Schicht→Score dreieckig: je Frost-Sieg m(m+1)/2 × K (m = min(Schichten, Plateau)) [#269 · Haupt-Hebel; K=22 setzt den Floor auf Feld-Niveau]
+export const ICE_LAYER_SCORE_K = envNum("SIM_ICE_LAYER_SCORE_K", 26); // Schicht→Score dreieckig: je Frost-Sieg m(m+1)/2 × K (m = min(Schichten, Plateau)) [#269 · Haupt-Floor-Hebel; Ceiling läuft über ICE_JOKER_FORMSCORE_SHARE]
 export const ICE_LAYER_SCORE_PLATEAU = envNum("SIM_ICE_LAYER_SCORE_PLATEAU", 12); // Plateau P der dreieckigen Auszahlung (12-Schicht-Karte ≈ +2.340/Sieg) [#269]
 export const ICE_LAYER_VALUE   = 1;    // Schicht→Dauerwert: +1 je Schicht (damit Frostkarten weiter gewinnen) // v0 — tunebar
 export const ICE_LAYER_VALUE_CAP = envNum("SIM_ICE_LAYER_VALUE_CAP", 10); // Deckel wirksamer Schichten für den DAUERWERT [#269: ~10]
@@ -398,7 +398,7 @@ export const ICE_FORMBASE_SLOPE   = envNum("SIM_ICE_FORMBASE_SLOPE", 0.2);    //
 // Frostbrücke hält, zählen VOLL für den Schicht-Motor, aber nur zu diesem Anteil für den Formations-SCORE (formBaseMult).
 // So füttern die Joker den Schicht-Payoff, ohne den Score-Ceiling zu treiben. 1 = wie früher, 0 = Joker gibt gar keinen
 // Score-Mult. Der zentrale Ceiling-Hebel für Eis. [#269 · Sim-tunebar]
-export const ICE_JOKER_FORMSCORE_SHARE = envNum("SIM_ICE_JOKER_FORMSCORE_SHARE", 0.5);
+export const ICE_JOKER_FORMSCORE_SHARE = envNum("SIM_ICE_JOKER_FORMSCORE_SHARE", 0.3);
 
 /* ============================================================
    PFLANZE-FRAKTION v0 — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend) →
