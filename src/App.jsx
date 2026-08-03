@@ -18,7 +18,6 @@ import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
-import { StatSelect } from "./ui/StatSelect.jsx";
 import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { ArchitectScreen } from "./ui/ArchitectScreen.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
@@ -264,7 +263,7 @@ export function Autostich() {
     };
     const { profile: nextProfile } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
       shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
-      statPicks: state.statPicks || [], completed, deckSnapshot });
+      completed, deckSnapshot });
     setProfile(nextProfile);
     // #190: in DIESEM Lauf frisch freigeschaltete Skins (Bedingung vorher NICHT erfüllt, jetzt schon) → Siegesscreen.
     const catalog = [
@@ -374,7 +373,7 @@ export function Autostich() {
   const pick = (entry) => (entry && typeof entry === "object" && entry.familyId)
     ? dispatch({ type: "PICK_FAMILY", familyId: entry.familyId, tier: entry.tier, rng: Math.random })
     : dispatch({ type: "PICK_PERK", perkId: entry, rng: Math.random });
-  const pickStat = (id) => dispatch({ type: "PICK_STAT", statId: id, rng: Math.random });
+  // (#267: pickStat entfernt — es gibt keine Stat-Phase mehr; Crit-Perks laufen über den Perk-Fluss (Präzision-Familien).)
   // Formationsphase (§22.8): Tausch / Undo / Zurücksetzen / Bestätigen.
   const swapCards = (i, j) => dispatch({ type: "SWAP_CARDS", i, j });
   const undoSwap = () => dispatch({ type: "UNDO_SWAP" });
@@ -571,7 +570,7 @@ export function Autostich() {
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
                 reducedFx={options.reducedFx}
-                oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "stat"} />
+                oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)} />
               <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}} />
               <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
@@ -615,9 +614,6 @@ export function Autostich() {
         <FamilyTargetSelect state={state} onSuit={familyTargetSuit} onCard={familyTargetCard} onFormationType={familyTargetFormationType} onConfirm={familyTargetConfirm} />
       )}
       {showChronik && <ChronikOverview state={state} onClose={() => setShowChronik(false)} />}
-      {state.phase === "levelup" && state.statOffer && (
-        <StatSelect offer={state.statOffer} onPick={pickStat} state={state} />
-      )}
       {state.phase === "levelup" && state.offer && (
         <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} perks={state.perks} deck={state.deck} state={state} />
       )}

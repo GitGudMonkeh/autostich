@@ -1,5 +1,5 @@
 import * as C from "./constants.js";
-import { FAMILY_LIST } from "./families.js";
+import { FAMILY_LIST, familyCritChanceRaw } from "./families.js";
 import { TIERS, TIER_WEIGHTS, tierWeightsForShift, canOfferFamilyTier, familyTierOf } from "./rarity.js";
 import { lightningCritRaw } from "./skills.js";
 
@@ -18,7 +18,9 @@ const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Tausender
    Kat.-E/L-Sonderfälle laufen über Marker/Flags am Perk. Legendär-Perks-Rework (#203): critValueGain (L4),
    redistribute/zinseszins/vabanque/henker/echo/sammler/brennpunkt/patt (die 8 neuen) + extraSwap (E10) —
    je an ihrer Definition erklärt, verdrahtet in engine.js/reducer.js (ownsFlag/flagValue-Hooks).
-   Crit-Chance/-Mult kommen NICHT aus den Perks, sondern aus Stat + Blitz-Skills (Engine).
+   Crit-Chance/-Mult kommen aus der Perk-FAMILIE „Präzision" (#267, families.js Kat. P) + Blitz-Skills — die Engine
+   addiert beide (familyCritChanceRaw/familyCritMult) zur Crit-Aggregation. Basis-Crit = 0. Flache Perks tragen
+   weiterhin nur situative Crit-Boni (L6 „Raserei"); reguläre Crit-Chance/-Mult sind Familien.
    rarity: "legendary" markiert Legendaries (Default "common") — Gewicht in buildOffer.
 
    ctx-Felder je Stich: { posInCycle, trickNo, lastResult, lostLastTrick, winStreak, sinceWin,
@@ -38,6 +40,7 @@ export const CATEGORIES = {
   C: { key: "C", name: "Rolle",  desc: "Kartenrollen",             color: "#5ab87a" },
   D: { key: "D", name: "Score",  desc: "Score",                   color: "#d4a63a" },
   E: { key: "E", name: "Form",   desc: "Formationswerkzeuge",      color: "#5a8ade" },
+  P: { key: "P", name: "Präzision", desc: "Crit-Chance & Crit-Schaden", color: "#e08a3a" }, // #267: Crit-Perk-Kategorie
 };
 
 export const PERK_DEFS = {
@@ -138,7 +141,7 @@ export function layoutPerks(owned) { return (owned || []).filter(isLayoutPerk); 
 
 // Migrierte Kategorien: ihre REGULÄREN (nicht legendären) Perks sind jetzt Familien und kommen über FAMILY_DEFS
 // ins Angebot statt über PERK_DEFS. Wächst mit jeder migrierten Kategorie (D, B, A, C; später +E).
-export const MIGRATED_CATS = new Set(["D", "B", "A", "C", "E"]);
+export const MIGRATED_CATS = new Set(["D", "B", "A", "C", "E", "P"]); // #267: „Präzision" (P) — reine Familien-Kategorie (Crit-Perks)
 
 // Ist dieser flache Perk durch eine Familie ersetzt? Nur reguläre Perks migrierter Kategorien — die 11 generischen
 // Legendären (#203, alle Kategorien) bleiben flach im Legendär-Pool (Spec §3.1).
@@ -185,8 +188,11 @@ export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, 
     const cur = familyTierOf(familyTiers, fam.id);
     // FAMILY_DEFS führt `tiers` als OBJEKT {1:def,…} → anbietbare Stufen direkt über TIERS filtern
     // (nicht offerableTiers aus rarity.js, das ein Array erwartet).
+    // #267: die Präzision-Familien (Crit-Perks) tragen ein eigenes Angebots-Gewicht (PRECISION_OFFER_WEIGHT) — der
+    // Haupt-Balance-Hebel: zu häufig → Crit wird wieder universell; zu selten → Nicht-Blitz-Crit passiert nie.
+    const famWeightMult = fam.cat === "P" ? C.PRECISION_OFFER_WEIGHT : 1;
     for (const t of TIERS) {
-      if (fam.tiers[t] && canOfferFamilyTier(cur, t)) pool.push({ familyId: fam.id, tier: t, weight: tierWeights[t] || 0 });
+      if (fam.tiers[t] && canOfferFamilyTier(cur, t)) pool.push({ familyId: fam.id, tier: t, weight: (tierWeights[t] || 0) * famWeightMult });
     }
   }
   // count VERSCHIEDENE Einheiten ziehen (eine Familie bzw. ein Perk höchstens einmal je Angebot, Spec §15).
@@ -220,23 +226,25 @@ export function critChanceRawFor(perks, ctx) {
 export function critChanceFor(perks, ctx) {
   return Math.min(1, Math.max(0, critChanceRawFor(perks, ctx)));
 }
-// #181: Gesamt-Roh-Crit-Chance des NÄCHSTEN Siegs (UNGEKLEMMT) — geteilte Quelle für StatusRail + StatSelect
-// (kein Drift). Spiegelt die Engine-Rechnung (engine.js:300): Perk-/Blitz-Basis + Crit-Chance-Stat. Der
-// positionsabhängige Kritanker (§4.2) bleibt der Engine vorbehalten; die Live-Anzeige zeigt die Grundchance.
+// #181: Gesamt-Roh-Crit-Chance des NÄCHSTEN Siegs (UNGEKLEMMT) — geteilte Quelle für StatusRail (kein Drift).
+// Spiegelt die Engine-Rechnung: Perk-/Blitz-Basis + Präzision-Familien. #267: der Crit-Chance-Stat ist weg; die
+// UNKONDITIONALE Präzision-Crit-Chance (Schärfe) fließt hier ein (winValue/formCount/suit neutral → die
+// konditionalen Generatoren Zielsicherheit/Brennglas/Farbfokus bleiben im Live-Preview aus = ehrlicher Crit-Boden).
+// Der positionsabhängige Kritanker (§4.2) bleibt der Engine vorbehalten.
 export function totalCritChanceRaw(state = {}) {
-  const { perks = [], winStreak = 0, wins = 0, trickNo = 0, pos = 0, lightning, skills = [], statCritChance = 0 } = state;
+  const { perks = [], winStreak = 0, wins = 0, trickNo = 0, pos = 0, lightning, skills = [], familyTiers = {}, roles = {} } = state;
   return critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos })
-       + lightningCritRaw(lightning, skills, winStreak + 1) + statCritChance;
+       + lightningCritRaw(lightning, skills, winStreak + 1)
+       + familyCritChanceRaw(familyTiers, { winValue: 0, suit: null, formCount: 0, focusSuits: (roles || {}).P_COLORFOCUS || [] });
 }
-// Crit-Faktor: Basis (CRIT_BASE_MULT 1,5) + Crit-Mult-Stat (V2 §22.3, baseBonus). V2 trägt kein Perk
-// mehr einen Crit-Mult (L5 ist jetzt Flat-Score) → nur Basis + Stat. Signatur (perks, ctx) bleibt für
-// die Aufrufer (Engine/StatusRail) stabil. Geteilte Quelle für Engine + Anzeige (kein Drift).
-// #115: additiver Perk→Crit-Mult-Kanal via `critMultBonus`-Hook (erwartet `rawCrit` im ctx). L6 „Raserei"
-// wandelt Gesamt-Crit-Überschuss über 100 % in Crit-Schaden. Der Aufrufer muss `rawCrit` im ctx mitgeben.
-export function critMultiplierFor(perks, ctx = {}, baseBonus = 0) {
+// Crit-Faktor: Basis (CRIT_BASE_MULT 1,5) + Perk-Crit-Mult-Boni (critMultBonus-Hook). #267: der Crit-Mult-Stat ist
+// weg → die Präzision-Familie „Wucht" (familyCritMult) UND Blitz addiert die Engine SEPARAT (nicht hier). Signatur
+// (perks, ctx) bleibt für die Aufrufer stabil. #115: L6 „Raserei" wandelt Crit-Überschuss >100 % in Crit-Schaden
+// (erwartet `rawCrit` im ctx).
+export function critMultiplierFor(perks, ctx = {}) {
   let bonus = 0;
   for (const id of perks) { const f = PERK_DEFS[id].critMultBonus; if (f) bonus += f(ctx); }
-  return C.CRIT_BASE_MULT + Math.min(baseBonus || 0, C.STAT_CRIT_MULT_CAP) + bonus;
+  return C.CRIT_BASE_MULT + bonus;
 }
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
 // V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit; L6 trägt Crit-Chance → alle zählen.

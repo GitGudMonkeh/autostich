@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { STAT_IDS } from "../src/game/stats.js";
+// (#267: STAT_IDS/stats.js entfernt — die Stat-Phase ist weg; Runde 1 ist ein Skill.)
 import { computeFormations, formationPotential } from "../src/game/formations.js";
 import { FORMATION_START_MIN, FORMATION_START_MAX } from "../src/game/constants.js";
 
@@ -49,20 +49,22 @@ describe("Reducer", () => {
     expect(s.deck).toHaveLength(deckLen);                     // KEINE Karte entfernt
   });
 
-  it("RESET beginnt einen frischen Lauf mit Start-Pick = Stat (V2 §22.2)", () => {
+  it("RESET beginnt einen frischen Lauf mit Start-Pick = Skill (#267, Runde 1 Blind-Commit)", () => {
     const dirty = { ...initialState(makeRng(1)), score: 999, perks: ["L2", "L4"] };
     const fresh = reducer(dirty, { type: "RESET", rng });
     expect(fresh.score).toBe(0);
     expect(fresh.perks).toEqual([]);
-    expect(fresh.phase).toBe("levelup"); // Start-Entscheidung (Durchlauf 0) = Stat
-    expect(fresh.statOffer).toEqual(STAT_IDS);
+    expect(fresh.phase).toBe("levelup"); // Start-Entscheidung (Runde 1) = Skill
+    expect(Array.isArray(fresh.skillOffer)).toBe(true);
+    expect(fresh.skillOffer.length).toBeGreaterThan(0);
     expect(fresh.offer).toBeNull();
   });
 
-  it("START_RUN startet aus dem Menü einen frischen Lauf mit Start-Pick = Stat", () => {
+  it("START_RUN startet aus dem Menü einen frischen Lauf mit Start-Pick = Skill", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng });
     expect(s.phase).toBe("levelup");
-    expect(s.statOffer).toEqual(STAT_IDS);
+    expect(Array.isArray(s.skillOffer)).toBe(true);
+    expect(s.skillOffer.length).toBeGreaterThan(0);
     expect(s.offer).toBeNull();
     expect(s.trickNo).toBe(0);
     expect(s.perks).toEqual([]);
@@ -99,34 +101,8 @@ describe("END_RUN — Beenden → Endscreen", () => {
   });
 });
 
-describe("Stat-Auswahl — PICK_STAT (V2 §22.3)", () => {
-  const statState = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", statOffer: STAT_IDS, ...over });
-
-  it("addiert den Step aufs Summenfeld und kehrt in play zurück", () => {
-    const s = reducer(statState(), { type: "PICK_STAT", statId: "critChance", rng });
-    expect(s.phase).toBe("play");
-    expect(s.statOffer).toBeNull();
-    expect(s.statCritChance).toBeCloseTo(0.07); // #94/#161 FB-6: +7 pp je Pick
-  });
-  it("stapelt additiv über mehrere Picks", () => {
-    const s = reducer(statState({ statStreakMult: 0.02 }), { type: "PICK_STAT", statId: "streakMult", rng });
-    expect(s.statStreakMult).toBeCloseTo(0.04); // #94: +2 %/Pick, zweiter Pick → 0,04
-  });
-  it("ignoriert unbekannte Stats und Picks außerhalb der Stat-Auswahl", () => {
-    const s0 = statState();
-    expect(reducer(s0, { type: "PICK_STAT", statId: "nope", rng })).toBe(s0);
-    const play = initialState(makeRng(1)); // phase play, kein statOffer
-    expect(reducer(play, { type: "PICK_STAT", statId: "critChance", rng })).toBe(play);
-  });
-  it("#190: hängt den gewählten Stat an statPicks an (Mono-Stat-Challenge-Tracking)", () => {
-    expect(initialState(makeRng(1)).statPicks).toEqual([]); // frischer Lauf startet leer
-    const s1 = reducer(statState(), { type: "PICK_STAT", statId: "critChance", rng });
-    expect(s1.statPicks).toEqual(["critChance"]);
-    const s2 = reducer({ ...s1, phase: "levelup", statOffer: STAT_IDS }, { type: "PICK_STAT", statId: "critChance", rng });
-    const s3 = reducer({ ...s2, phase: "levelup", statOffer: STAT_IDS }, { type: "PICK_STAT", statId: "formMult", rng });
-    expect(s3.statPicks).toEqual(["critChance", "critChance", "formMult"]); // Reihenfolge bleibt erhalten
-  });
-});
+// (#267: „Stat-Auswahl — PICK_STAT"-Suite entfernt — es gibt keine Stat-Phase mehr. Crit-Perks (Präzision-Familien)
+//  laufen über den normalen PICK_FAMILY-Fluss und sind in families(-engine).test.js abgedeckt.)
 
 describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
   const LR = "SK_LIGHTNING_01";
@@ -370,18 +346,7 @@ describe("RESOLVE_TRICK — Reducer-Dispatch (#158)", () => {
   });
 });
 
-describe("PICK_STAT — Formations-/Crit-Mult-Felder (#158)", () => {
-  const statState = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", statOffer: STAT_IDS, ...over });
-  it("formMult addiert den Step aufs statFormMult-Feld", () => {
-    const s = reducer(statState(), { type: "PICK_STAT", statId: "formMult", rng });
-    expect(s.statFormMult).toBeCloseTo(0.05); // STAT_FORM_MULT_STEP
-    expect(s.phase).toBe("play");
-  });
-  it("critMult addiert (stapelnd) aufs statCritMult-Feld", () => {
-    const s = reducer(statState({ statCritMult: 0.25 }), { type: "PICK_STAT", statId: "critMult", rng });
-    expect(s.statCritMult).toBeCloseTo(0.5); // 0,25 + STAT_CRIT_MULT_STEP (0,25)
-  });
-});
+// (#267: „PICK_STAT — Formations-/Crit-Mult-Felder"-Suite entfernt — die Stat-Phase ist weg.)
 
 // #261: ARCHITECT_RECOLOR — Buff-Farbe eines colorLocked-Gebäudes in der Arrange-Phase anpassen (wie MOVE, kein actedMain).
 describe("ARCHITECT_RECOLOR (#261)", () => {

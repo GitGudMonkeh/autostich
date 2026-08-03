@@ -1,6 +1,7 @@
 import { UPGRADE_TYPES, withFamilyTier } from "./rarity.js";
 import { shuffle } from "./deck.js";
 import { SUIT_ORDER } from "./constants.js";
+import * as C from "./constants.js";
 
 /* ============================================================
    FAMILIEN-REGISTRY (Rarität-Umbau #163, Spec docs/rarity-system.md §3.2).
@@ -130,7 +131,7 @@ const D_FAMILIES = {
     },
   },
   D_PRECISION: {
-    id: "D_PRECISION", cat: "D", name: "Präzision", upgradeType: REPLACEMENT,
+    id: "D_PRECISION", cat: "D", name: "Gleichklang", upgradeType: REPLACEMENT, // (#267: von „Präzision" umbenannt — die Crit-Perk-Kategorie heißt jetzt Präzision)
     // I/II: exakt gleicher Wert wie der letzte Sieg. III/IV: gleicher oder ±1 Wert.
     // #189 Fund B: I–III zahlen nur EINMAL je Paar — die Engine verbraucht lastWinValue (Referenz) nach einer
     // Auszahlung (precisionTol = Toleranz der Stufe: I/II 0, III/IV 1); nur IV (chain) kettet weiter (Referenz läuft mit).
@@ -815,6 +816,74 @@ const E_FAMILIES = {
   },
 };
 
+// ---- P · Präzision (#267 Teil 2) — Crit-Chance/-Mult als RNG-gegatete Perk-Familien (Ersatz für den entfernten
+//      Crit-Stat). Basis-Crit 0. Allesamt REGELERSETZUNG (nur die höchste gehaltene Stufe aktiv). KEIN Legendär.
+//      Hooks (von der Engine in der Crit-Aggregation je Stich gelesen):
+//        critChance(ctx) → +Roh-Crit-Chance (ungeklemmt, additiv zu Perk-/Blitz-Crit)
+//        critMult()      → +Crit-Multiplikator (auf Basis 1,5)
+//      Karten-Kontext ctx: { winValue, suit, formCount, focusSuits } (Kartenwert / Kartenfarbe / #aktive Formationen
+//      an der Siegposition / gewählte Farben bei Farbfokus). Zwei gerade Motoren (Schärfe/Wucht) + drei konditionale
+//      Generatoren (Zielsicherheit/Brennglas/Farbfokus). pp/×-Werte + Skalen aus den Konstanten (drift-frei). ----
+const ppP = (x) => Math.round(x * 100);            // pp als ganze Zahl
+const deP = (x) => String(x).replace(".", ",");    // deutsche Dezimalschreibweise
+const cSc = (x) => x * C.PRECISION_CHANCE_SCALE;   // Crit-Chance-Skala
+const mSc = (x) => x * C.PRECISION_MULT_SCALE;     // Crit-Mult-Skala
+const P_FAMILIES = {
+  P_SHARPNESS: {
+    id: "P_SHARPNESS", cat: "P", name: "Schärfe", upgradeType: REPLACEMENT,
+    // Grund-Crit-Motor (Stat-Ersatz): flat +Crit-Chance auf ALLE Karten.
+    tiers: {
+      1: { desc: `Alle Karten: +${ppP(C.PRECISION_SHARP_PP[0])} Prozentpunkte Crit-Chance.`, critChance: () => cSc(C.PRECISION_SHARP_PP[0]) },
+      2: { desc: `Alle Karten: +${ppP(C.PRECISION_SHARP_PP[1])} Prozentpunkte Crit-Chance.`, critChance: () => cSc(C.PRECISION_SHARP_PP[1]) },
+      3: { desc: `Alle Karten: +${ppP(C.PRECISION_SHARP_PP[2])} Prozentpunkte Crit-Chance.`, critChance: () => cSc(C.PRECISION_SHARP_PP[2]) },
+      4: { desc: `Alle Karten: +${ppP(C.PRECISION_SHARP_PP[3])} Prozentpunkte Crit-Chance.`, critChance: () => cSc(C.PRECISION_SHARP_PP[3]) },
+    },
+  },
+  P_FORCE: {
+    id: "P_FORCE", cat: "P", name: "Wucht", upgradeType: REPLACEMENT,
+    // Crit-Schaden (Mult-Stat-Ersatz): +Crit-Multiplikator auf Basis 1,5.
+    tiers: {
+      1: { desc: `+${deP(C.PRECISION_FORCE_MULT[0])}× Crit-Multiplikator (auf Basis ${deP(C.CRIT_BASE_MULT)}×).`, critMult: () => mSc(C.PRECISION_FORCE_MULT[0]) },
+      2: { desc: `+${deP(C.PRECISION_FORCE_MULT[1])}× Crit-Multiplikator (auf Basis ${deP(C.CRIT_BASE_MULT)}×).`, critMult: () => mSc(C.PRECISION_FORCE_MULT[1]) },
+      3: { desc: `+${deP(C.PRECISION_FORCE_MULT[2])}× Crit-Multiplikator (auf Basis ${deP(C.CRIT_BASE_MULT)}×).`, critMult: () => mSc(C.PRECISION_FORCE_MULT[2]) },
+      4: { desc: `+${deP(C.PRECISION_FORCE_MULT[3])}× Crit-Multiplikator (auf Basis ${deP(C.CRIT_BASE_MULT)}×).`, critMult: () => mSc(C.PRECISION_FORCE_MULT[3]) },
+    },
+  },
+  P_AIM: {
+    id: "P_AIM", cat: "P", name: "Zielsicherheit", upgradeType: REPLACEMENT,
+    // Konditional (Hochwert-/Überlegenheits-Builds): +Crit-Chance nur auf hohe Karten; die Schwelle weitet sich je Stufe.
+    tiers: {
+      1: { desc: `Karten mit Wert ≥ ${C.PRECISION_AIM_THRESH[0]}: +${ppP(C.PRECISION_AIM_PP)} Prozentpunkte Crit-Chance.`, critChance: (c) => ((c.winValue || 0) >= C.PRECISION_AIM_THRESH[0] ? cSc(C.PRECISION_AIM_PP) : 0) },
+      2: { desc: `Karten mit Wert ≥ ${C.PRECISION_AIM_THRESH[1]}: +${ppP(C.PRECISION_AIM_PP)} Prozentpunkte Crit-Chance.`, critChance: (c) => ((c.winValue || 0) >= C.PRECISION_AIM_THRESH[1] ? cSc(C.PRECISION_AIM_PP) : 0) },
+      3: { desc: `Karten mit Wert ≥ ${C.PRECISION_AIM_THRESH[2]}: +${ppP(C.PRECISION_AIM_PP)} Prozentpunkte Crit-Chance.`, critChance: (c) => ((c.winValue || 0) >= C.PRECISION_AIM_THRESH[2] ? cSc(C.PRECISION_AIM_PP) : 0) },
+      4: { desc: `Karten mit Wert ≥ ${C.PRECISION_AIM_THRESH[3]}: +${ppP(C.PRECISION_AIM_PP)} Prozentpunkte Crit-Chance.`, critChance: (c) => ((c.winValue || 0) >= C.PRECISION_AIM_THRESH[3] ? cSc(C.PRECISION_AIM_PP) : 0) },
+    },
+  },
+  P_LENS: {
+    id: "P_LENS", cat: "P", name: "Brennglas", upgradeType: REPLACEMENT,
+    // Konditional (Formations-Overlap · Variante B): +Crit-Chance JE Formation ab der 2. an der Siegposition, Cap +3
+    // Extra-Formationen. Belohnt Tiefe (der Chase), nicht bloße Präsenz. formCount = #aktive Formationen der Siegposition.
+    tiers: {
+      1: { desc: `+${ppP(C.PRECISION_LENS_PP[0])} Prozentpunkte Crit-Chance je gleichzeitiger Formation ab der zweiten an der Siegposition (max ${C.PRECISION_LENS_CAP} extra).`, critChance: (c) => cSc(C.PRECISION_LENS_PP[0] * Math.min(Math.max((c.formCount || 0) - 1, 0), C.PRECISION_LENS_CAP)) },
+      2: { desc: `+${ppP(C.PRECISION_LENS_PP[1])} Prozentpunkte Crit-Chance je gleichzeitiger Formation ab der zweiten an der Siegposition (max ${C.PRECISION_LENS_CAP} extra).`, critChance: (c) => cSc(C.PRECISION_LENS_PP[1] * Math.min(Math.max((c.formCount || 0) - 1, 0), C.PRECISION_LENS_CAP)) },
+      3: { desc: `+${ppP(C.PRECISION_LENS_PP[2])} Prozentpunkte Crit-Chance je gleichzeitiger Formation ab der zweiten an der Siegposition (max ${C.PRECISION_LENS_CAP} extra).`, critChance: (c) => cSc(C.PRECISION_LENS_PP[2] * Math.min(Math.max((c.formCount || 0) - 1, 0), C.PRECISION_LENS_CAP)) },
+      4: { desc: `+${ppP(C.PRECISION_LENS_PP[3])} Prozentpunkte Crit-Chance je gleichzeitiger Formation ab der zweiten an der Siegposition (max ${C.PRECISION_LENS_CAP} extra).`, critChance: (c) => cSc(C.PRECISION_LENS_PP[3] * Math.min(Math.max((c.formCount || 0) - 1, 0), C.PRECISION_LENS_CAP)) },
+    },
+  },
+  P_COLORFOCUS: {
+    id: "P_COLORFOCUS", cat: "P", name: "Farbfokus", upgradeType: REPLACEMENT,
+    // Konditional (Farbblock / Pflanze-Grün): Farbe(n) wählen → +Crit-Chance nur auf Karten dieser Farbe. IV-Twist:
+    // statt höherer pp eine ZWEITE wählbare Farbe (beide auf Stufe-III-Wert). Ziel-Fluss über pickTarget.suits
+    // (REPLACEMENT mit Ziel → applyFamilyPick persistiert roles["P_COLORFOCUS"]); die Engine gibt focusSuits durch.
+    tiers: {
+      1: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[0])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).includes(c.suit) ? cSc(C.PRECISION_COLOR_PP[0]) : 0) },
+      2: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[1])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).includes(c.suit) ? cSc(C.PRECISION_COLOR_PP[1]) : 0) },
+      3: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[2])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).includes(c.suit) ? cSc(C.PRECISION_COLOR_PP[2]) : 0) },
+      4: { desc: `Wähle ZWEI Farben: Karten dieser Farben je +${ppP(C.PRECISION_COLOR_PP[3])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 2 }, critChance: (c) => ((c.focusSuits || []).includes(c.suit) ? cSc(C.PRECISION_COLOR_PP[3]) : 0) },
+    },
+  },
+};
+
 /* ---- Muster-Beschreibungen (Text-Vereinfachung): 20 Familien teilen je EINEN Satz. Statt viermal fast
    identischer desc-Strings steht der Satz hier einmal als Template ($0,$1… = Werte je Stufe); die vier
    Stufen-descs werden nach dem Zusammenbau von FAMILY_DEFS erzeugt (applyMusterDescs). Die Effekt-Hooks der
@@ -856,6 +925,7 @@ export const FAMILY_DEFS = {
   ...A_FAMILIES,
   ...C_FAMILIES,
   ...E_FAMILIES,
+  ...P_FAMILIES,
 };
 
 applyMusterDescs(FAMILY_DEFS); // Stufen-descs der Muster-Familien aus MUSTER_DESC erzeugen
@@ -917,6 +987,17 @@ export function familyProdHook(familyTiers, name, ctx) {
   return m;
 }
 
+// Präzision (#267): Summe der Roh-Crit-Chance über die aktiven Familien-Stufen (critChance-Hook). UNGEKLEMMT —
+// additiv zu Perk-/Blitz-Crit; die Engine klemmt die Gesamtsumme. ctx trägt den Karten-Kontext { winValue, suit,
+// formCount, focusSuits } für die konditionalen Generatoren (Zielsicherheit/Brennglas/Farbfokus).
+export function familyCritChanceRaw(familyTiers, ctx = {}) {
+  return familySumHook(familyTiers, "critChance", ctx);
+}
+// Präzision (#267): Summe des additiven Crit-Multiplikators über die aktiven Familien-Stufen (critMult-Hook, Wucht).
+export function familyCritMult(familyTiers) {
+  return familySumHook(familyTiers, "critMult", {});
+}
+
 // Feinjustierung (E_TUNING, #179 — ehem. Shop-Feinjustierung / Perk E10): Formationsenergie-Bonus aus dem gehaltenen
 // Rang. `everySecond` (Stufe I §10) nur jede zweite Formationsphase — über die Durchlauf-Parität genähert. cycle = state.cycle.
 export function formationEnergyBonus(familyTiers = {}, cycle = 0) {
@@ -940,7 +1021,7 @@ export function allianceGroups(familyTiers = {}, roles = {}) {
 // Belohnt eine gehaltene Familie Crits? (steuert die UI-Sichtbarkeit der Crit-Anzeigen, analog perks.hasCritPerk — #166).
 // Die crit-belohnenden D-Familien (D_CRIT_SCORE/D_SHARP_EYE/…) tragen scoreFlatOnCrit auf ihrer aktiven Stufe.
 export function hasCritFamily(familyTiers) {
-  return activeTierDefs(familyTiers).some((def) => !!def.scoreFlatOnCrit);
+  return activeTierDefs(familyTiers).some((def) => !!def.scoreFlatOnCrit || !!def.critChance || !!def.critMult);
 }
 
 // Familien, deren Wirkung von Position/Reihenfolge/Nachbarschaft/Formation abhängt — für die Aufstellungshilfe (#166,

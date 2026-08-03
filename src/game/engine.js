@@ -2,7 +2,7 @@ import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
-import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus } from "./families.js";
+import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult } from "./families.js";
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
   hasIonize, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
@@ -17,7 +17,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, io
   hasWurzelschlag, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Tiefe/Breite
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
   hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasDornenkoenig, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
-import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
+// (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, skillLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
@@ -90,7 +90,7 @@ export function resolveTrick(state, rng) {
     winSuit = null, winSuitStreak = 0, // #71 Farbserie: gleicher-Farbe-Siegesserie
     recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich (für secondLastResult, C_GUARD IV)
     segmentWins = 0, // #189 Volles Haus: Siege im AKTUELLEN Segment vor diesem Stich (segment-genau, ersetzt das rollende Fenster)
-    statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0, statOffer = null, // Stat-System (V2 §22.3)
+    // (#267: Stat-System entfernt — statCrit*/statForm*/statStreak*/statOffer sind weg; Crit kommt aus Präzision-Familien + Blitz.)
     formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
@@ -568,15 +568,18 @@ export function resolveTrick(state, rng) {
     // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.
     // Der Crit-Wurf verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift).
     // Blitz-Crit-Basis (Abschnitt 2a) wird additiv zugerechnet, unabhängig von L5-critChanceMult.
-    // Crit-Chance-Stat (V2 §22.3) fließt additiv in die Roh-Chance (mit Perk-/Blitz-Basis); ungeklemmt (Überschusskrit).
-    // Roh-Crit-Chance (ungeklemmt): Perk-/Blitz-Basis + Crit-Chance-Stat. D-Crit-Flats sehen rawCrit (critCtx).
-    const rawCrit = critChanceRawFor(perks, wctx) + lightningCritRaw(lightning, skills, serieStreak) + statCritChance
+    // #267: die Crit-Chance kommt jetzt aus der Perk-FAMILIE „Präzision" (RNG-gegatet, Stat-Ersatz) statt aus dem Stat.
+    // Karten-Kontext für die konditionalen Generatoren: Kartenwert / Kartenfarbe / #aktive Formationen der Siegposition /
+    // gewählte Farben (Farbfokus, aus roles). Roh-Crit-Chance (ungeklemmt): Perk-Basis + Präzision + Blitz + Kritanker.
+    const critFamCtx = { winValue: pValue, suit: pCard.suit, formCount: activeFormationCount(posForm), focusSuits: (roles && roles.P_COLORFOCUS) || [] };
+    const rawCrit = critChanceRawFor(perks, wctx) + familyCritChanceRaw(familyTiers, critFamCtx) + lightningCritRaw(lightning, skills, serieStreak)
                     + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
     const critCtx = { ...wctx, rawCrit };
-    // Basis 1,5 + Crit-Mult-Stat + L6-Überschuss + Donnergott + Durchschlag (dauerhaft) + Entladung (armierter Crit nach vollem Verbrauch, einmalig).
-    critMultiplier = critMultiplierFor(perks, critCtx, statCritMult) + lightningCritMult(skills)
+    // Basis 1,5 + Präzision „Wucht" (familyCritMult) + L6-Überschuss + Blitz + Donnergott + Durchschlag (dauerhaft)
+    // + Entladung (armierter Crit nach vollem Verbrauch, einmalig). #267: der Crit-Mult-Stat ist weg.
+    critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers) + lightningCritMult(skills)
                    + (lightning?.durchschlagMult || 0)
                    + ((lightning && lightning.dischargeArmed) ? C.ENTLADUNG_CRIT_MULT : 0);
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = L10; reducedRepeat = Zeitsegment III
@@ -612,7 +615,7 @@ export function resolveTrick(state, rng) {
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
     // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
     const flats = scoreBase - C.SCORE_PER_WIN;                                         // additive Boni (Perk-/Crit-Flats, Ion, Storm, L5-Jackpot)
-    const streakMult = streakBaseMult(serieStreak) * statStreakFactor(statStreakMult, serieStreak); // Serie (#39 + Serien-Stat)
+    const streakMult = streakBaseMult(serieStreak); // Serie (#39). #267: der Serien-Stat-Booster ist weg — nur noch das Basis-System.
     // Legendär-Perks-Rework (#203) — der ×-Multiplikator-Raum ist die family-free Legendär-Lane. Henker (Score, Kat. D)
     // faltet in perkMult; Brennpunkt/Sammler (Formation, Kat. E) falten unten in formMult → §17-Breakdown bleibt exakt.
     const henkerMult = (ownsFlag(perks, "henker") && actualPos >= C.HENKER_ZONE_START) ? C.HENKER_MULT : 1; // Segment-Finale ×
@@ -623,7 +626,7 @@ export function resolveTrick(state, rng) {
     const afterglowMult = posForm.afterglowFactor || 1;                                // F6 Nachhall
     const coreMult = posForm.coreFactor || 1;                                          // F-L1 Formationskern
     const formBaseMult = (posForm.baseMult != null ? posForm.baseMult : formationMult); // echte Formationen (inkl. Überlappung)
-    const formStatFactor = statFormFactor(statFormMult, activeFormationCount(posForm)); // Formations-Stat × Anzahl AKTIVER Formationen an der Siegposition
+    // (#267: der Formations-Stat-Booster obendrauf ist weg — Formations-Builds skalieren über Perks/Familien statt Stat.)
     // Eis-Ceiling-Hebel: dichte Formations-Überlappung (formBaseMult) ist der EINZIGE Eis-Ceiling-Treiber. Weicher
     // Deckel NUR für Frostkarten, NUR über der Schwelle → Median-Frost-Siege (formBase < Schwelle) & Nicht-Eis unberührt.
     let formBaseEff = formBaseMult;
@@ -634,7 +637,7 @@ export function resolveTrick(state, rng) {
     // Sammler (#203, Formationsvielfalt): +SAMMLER_STEP je distinct Formationsart, die diesen Durchlauf SCHON gesammelt
     // wurde (Stand VOR diesem Sieg → wächst über den Durchlauf; „für den restlichen Durchlauf"), max SAMMLER_MAX.
     const sammlerMult = ownsFlag(perks, "sammler") ? 1 + C.SAMMLER_STEP * Math.min(sammlerTypes.length, C.SAMMLER_MAX) : 1;
-    const formMult = formBaseEff * formStatFactor * iceFormMult * plantFormMult * brennpunktMult * sammlerMult; // + Eisdruck/Architekt (iceFormMult) + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203)
+    const formMult = formBaseEff * iceFormMult * plantFormMult * brennpunktMult * sammlerMult; // + Eisdruck/Architekt (iceFormMult) + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203)
     // Sonnenzorn (L): dauerhafter Score-Multiplikator ∝ HÖCHSTER je gehaltener Hitze (heat.peak) — auf den GESAMTEN Sieg-Score
     // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
     const sunwrathMult = (fireFlag(skills, "sunwrath") && heat && heat.active) ? (1 + (heat.peak || 0) * C.SUNWRATH_PEAK_STEP) : 1;
@@ -713,7 +716,7 @@ export function resolveTrick(state, rng) {
     const fireStructMult = 1 + (archStructMult - 1) * C.FIRE_STRUCT_DIVIDEND_AMP; // Struktur-Hebel auf die Dividende verstärkt (Feuer-isoliert)
     gained += fireDirect * fireStructMult + iceDirect + lightDirect + plantDirect + perkDirect;
     score += gained;
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, formStat: formStatFactor, iceForm: iceFormMult, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, lightDirect, plantDirect, perkDirect, total: gained };
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, iceForm: iceFormMult, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, lightDirect, plantDirect, perkDirect, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz-Rework (v0): Ladungsgewinn — Blitzableiter (Crit +1) · Statische Aufladung (Nicht-Crit-Sieg +1) ·
@@ -955,7 +958,6 @@ export function resolveTrick(state, rng) {
   let phase = "play";
   let newOffer = offer;
   let newSkillOffer = skillOffer;
-  let newStatOffer = statOffer;
   let newFormationEnergy = formationEnergy;
   let newFormationSwaps = formationSwaps;
   let newMasteryLegGranted = state.masteryLegGranted || false; // #217 Grad V: 1×/Lauf garantierter Legendär — eingelöst-Flag
@@ -1071,9 +1073,7 @@ export function resolveTrick(state, rng) {
       // #217 Meistergrade — Reward-Ableitungen (Grad 0 = No-op: Mult ×1, Shift 0, keine Garantie → byte-identisch).
       const mGrade = state.masteryGrade || 0;
       const mLegMult = masteryLegendMult(mGrade), mRareShift = masteryRareShift(mGrade);
-      if (decision === "stat") {
-        phase = "levelup"; newStatOffer = STAT_IDS; // immer alle Stats (Shop-Spec §4.3: fünf inkl. Einkommen)
-      } else if (decision === "skill") {
+      if (decision === "skill") {
         // Grad V: solange dieser Lauf noch kein garantiertes Legendär bekam, mind. EINEN forcieren (#247: als eigener
         // guaranteeOne-Parameter — NICHT mehr Chance 1, das würde bei der Per-Archetyp-Ziehung in JEDEM Archetyp einen setzen).
         const guarantee = masteryLegendGuaranteed(mGrade) && !newMasteryLegGranted;
@@ -1141,7 +1141,6 @@ export function resolveTrick(state, rng) {
     zinsBonus, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, // Legendär-Perks-Rework (#203)
     richtfestBonus, // Gebäude-Legendäres Richtfest (Struktur-Dauerdividende)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
-    statOffer: newStatOffer, // Stat-System (V2 §22.3)
     skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
     iceTemp: newIceTemp, frostbitePending: newFrostbitePending, frostbiteActive: newFrostbiteActive, // Eis (Kaltfront temp / Vergletscherung)

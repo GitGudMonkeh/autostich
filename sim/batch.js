@@ -96,12 +96,12 @@ function runExplore() {
   const policy = ucbPolicy({ c });
   const scores = [];
   for (let i = 0; i < N; i++) scores.push(runOne(seed0 + i, policy, mem).score);
-  const rankings = { stat: mem.ranking("stat"), perk: mem.ranking("perk"), skill: mem.ranking("skill") };
+  const rankings = { perk: mem.ranking("perk"), skill: mem.ranking("skill") };
   const scoreAgg = stats(scores);
   console.log(`sim 'ucb' explore: ${N} runs (seeds ${seed0}..${seed0 + N - 1}), c=${c}`);
   console.log(`  score   median ${f(scoreAgg.p50)}  p90 ${f(scoreAgg.p90)}  mean ${f(scoreAgg.mean)}`);
   const row = (r) => `    ${r.id.padEnd(16)} ${String(r.bucket).padEnd(14)} n=${String(r.n).padStart(4)}  mean ${r.mean.toFixed(3)}`;
-  for (const kind of ["stat", "perk", "skill"]) {
+  for (const kind of ["perk", "skill"]) {
     const rows = rankings[kind];
     const confident = rows.filter((r) => r.n >= MIN_N); // nur ausreichend gesampelte Arme sind aussagekräftig
     const under = rows.length - confident.length;
@@ -129,7 +129,4 @@ else if (mode === "eval") {
 } else if (mode === "cross") {
   const { runCross } = await import("./cross.js"); // Cross-Archetype: gemischte Builds (2–3 Fraktionen) vs. rein
   runCross({ arg, seed0 });
-} else if (mode === "stats") {
-  const { runStats } = await import("./statvalue.js"); // Stat-Wert: konditionaler Marginalwert der 5 Stats je Build-Kontext
-  runStats({ arg, seed0 });
-} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety|cross|stats)`); process.exit(1); }
+} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety|cross)`); process.exit(1); }

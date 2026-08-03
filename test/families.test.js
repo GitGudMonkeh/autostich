@@ -11,7 +11,7 @@ describe("Familien-Registry — Struktur", () => {
   it("jede Familie hat id/cat/name/upgradeType und vier Stufen mit Beschreibung", () => {
     for (const fam of FAMILY_LIST) {
       expect(fam.id).toBeTruthy();
-      expect(["A", "B", "C", "D", "E"]).toContain(fam.cat);
+      expect(["A", "B", "C", "D", "E", "P"]).toContain(fam.cat);
       expect(fam.name).toBeTruthy();
       expect(Object.values(UPGRADE_TYPES)).toContain(fam.upgradeType);
       for (const t of [1, 2, 3, 4]) {

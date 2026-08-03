@@ -6,7 +6,7 @@ import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront, hasGlacierPush, hasVerzahnung, hasGleitfrost, hasVerdichtung,
   hasSetzlingsbeet, hasDornenkoenig, buildSkillOffer } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte
-import { STAT_DEFS, STAT_IDS } from "./stats.js";
+// (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, segmentGainedFormation, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
 import { resolveTrick } from "./engine.js";
@@ -49,7 +49,7 @@ function startOrderInBand(deck, rng) {
 function startDecisionSetup(decision, s, seed, actionRng, grade, architectEnabled, devEnergy, devMode = false) {
   const mLegMult = masteryLegendMult(grade), mRareShift = masteryRareShift(grade);
   const rngAtOr = (...parts) => (seed != null ? rngAt(seed, 0, ...parts) : actionRng);
-  if (decision === "stat") return { phase: "levelup", statOffer: STAT_IDS };
+  // (#267: „stat"-Zweig entfernt — es gibt keine Stat-Phase mehr.)
   if (decision === "perk") {
     const off = devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * mLegMult, mRareShift, architectEnabled);
     return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
@@ -105,9 +105,7 @@ export function initialState(rng = Math.random, seed = null) {
     misfireScore: 0, // V2 §22.6 D15: Score-Ladung (Fehlzündung)
     winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Farbserie / Volles Haus (recentResults → secondLastResult)
     segmentWins: 0, // #189 Volles Haus: segment-genauer Sieg-Zähler (ersetzt das rollende Fenster)
-    // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
-    statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, statOffer: null,
-    statPicks: [], // #190: Reihenfolge der gewählten Stats dieses Laufs (für die Mono-Stat-Challenge deck_c4)
+    // (#267: Stat-System entfernt — keine statCrit*/statForm*/statStreak*/statOffer/statPicks mehr.)
     formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt
     formationEnergy: 0, formationSwaps: [], // Formationsphase (V2 §22.8): Energie + Undo-Historie der aktuellen Phase
     roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
@@ -182,9 +180,14 @@ export function reducer(state, action) {
           devSchedule, maxCycles: devRounds, devEnergy, devMode: true,
           difficulty: difficultyForGrade(grade),
           rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
-          skillOffer: null, offer: null, statOffer: null, masteryLegGranted: false, ...patch };
+          skillOffer: null, offer: null, masteryLegGranted: false, ...patch };
       }
-      return { ...s, phase: "levelup", statOffer: STAT_IDS, architectEnabled,
+      // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
+      // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
+      const architectStart = { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) }; // Baufeld +2/Grad ab II
+      const sBase = { ...s, architect: architectStart, architectEnabled };
+      const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, grade, architectEnabled, undefined, false);
+      return { ...sBase, architectEnabled,
         masteryGrade: grade, masterRun,
         difficulty: difficultyForGrade(grade), // #226 Großmeister: Ramp je Rang (Meister → null = No-op)
         // #263: drei getrennte Reroll-Pools. Normal-Lauf je BASE_REROLLS (2/2/2). Meister-Lauf zieht je Pool weiter
@@ -192,7 +195,7 @@ export function reducer(state, action) {
         rerollsPerk: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
         rerollsArch: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
         rerollsSkill: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
-        architect: { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) } }; // Baufeld +2/Grad ab II
+        masteryLegGranted: false, ...startPatch };
     }
 
     case "TO_MENU":     // laufenden Run verlassen (#5)
@@ -404,14 +407,7 @@ export function reducer(state, action) {
       return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers), phase: "play", targetPerk: null };
     }
 
-    // Stat-Auswahl (V2 §22.3): der gewählte Stat addiert seinen Step auf das zugehörige Summenfeld.
-    case "PICK_STAT": {
-      if (state.phase !== "levelup" || !state.statOffer) return state;
-      const def = STAT_DEFS[action.statId];
-      if (!def) return state;
-      return { ...state, [def.field]: (state[def.field] || 0) + def.step, phase: "play", statOffer: null,
-               statPicks: [...(state.statPicks || []), action.statId] }; // #190: Mono-Stat-Challenge-Tracking
-    }
+    // (#267: PICK_STAT entfernt — es gibt keine Stat-Phase mehr.)
 
     // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE). Hinzufügen oder — bei vollen Slots — ersetzen.
     // Der erste Skill eines Archetyps schaltet dessen System frei (lightning.active).

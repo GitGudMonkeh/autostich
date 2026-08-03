@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { randomPolicy } from "../sim/policies/random.js";
-import { STAT_IDS } from "../src/game/stats.js";
+// (#267: STAT_IDS/stats.js entfernt — Runde 1 ist jetzt ein Skill statt eines Stats.)
 
 /* #205 Challenger Mode — seedbare Runs (Schicht A).
    Kern-Invarianten der adressierten Sub-Ströme:
@@ -44,12 +44,14 @@ describe("#205 (a) Reproduzierbarkeit — gleicher Seed + gleiche Picks → bit-
   });
 });
 
-// Spielt Durchlauf 1 (Stat-Pick + alle Stiche) und liefert das FRISCHE Perk-Angebot vor Durchlauf 2
-// (DECISION_SCHEDULE[1] === "perk"). Der Stat-Pick (statIdx) macht die beiden Builds ab Zug 1 verschieden.
-function firstPerkOffer(seed, statIdx) {
+// Spielt Durchlauf 1 (Skill-Pick + alle Stiche) und liefert das FRISCHE Perk-Angebot vor Durchlauf 2
+// (DECISION_SCHEDULE[1] === "perk"). #267: Runde 1 = Skill; der Skill-Pick (skillIdx) macht die beiden Builds ab Zug 1
+// verschieden — das Perk-Angebot vor Durchlauf 2 ist trotzdem seed-adressiert (build-unabhängig).
+function firstPerkOffer(seed, skillIdx) {
   const rng = makeRng(1); // Policy-rng irrelevant — Picks sind hier fest vorgegeben
   let s = reducer(null, { type: "START_RUN", rng, seed });
-  s = reducer(s, { type: "PICK_STAT", statId: STAT_IDS[statIdx], rng });
+  const skillId = s.skillOffer[Math.min(skillIdx, s.skillOffer.length - 1)];
+  s = reducer(s, { type: "PICK_SKILL", skillId, rng });
   let guard = 0;
   while (s.phase === "play") { if (++guard > 100000) throw new Error("kein Perk-Angebot"); s = reducer(s, { type: "RESOLVE_TRICK", rng }); }
   expect(s.phase).toBe("levelup");

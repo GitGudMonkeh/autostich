@@ -11,7 +11,6 @@
      { kind: "streak", n }   → profile.bestStreak >= n
      { kind: "score",  n }   → profile.bestScore  >= n
      { kind: "noRerollRun" } → profile.hadNoRerollRun === true  (Lauf ohne benutzten Reroll, Sparfuchs deck_c3 · #214)
-     { kind: "monoStatRun" } → profile.hadMonoStatRun === true  (Lauf mit nur einem Stat, Challenge 4)
      { kind: "monoArchetypeRun", archetype } → profile.monoArchetypeRuns[archetype] (Lauf nur mit dieser Fraktion, #215 deck_c5..c8)
      { kind: "allArchetypesRun" }            → profile.hadAllArchetypesRun === true (Lauf mit allen vier Fraktionen, #215 deck_c9)
      { kind: "masteryGrade", n }             → profile.masteryGrade >= n (Meister I..V = n1–5 #217 deck_rank_* · Großmeister I..V = n6–10 #226 deck_gm_*)
@@ -37,7 +36,7 @@ export const DECK_DEFS = {
   deck_c1: { id: "deck_c1", name: "Endloskette",       unlock: { kind: "streak", n: 100 } },
   deck_c2: { id: "deck_c2", name: "Rekordhalter",      unlock: { kind: "score",  n: 10_000_000 } },
   deck_c3: { id: "deck_c3", name: "Sparfuchs",         unlock: { kind: "noRerollRun" } }, // #214: löst noBuyRun ab (Shop → Architekt, #202)
-  // deck_c4 (monoStatRun) folgt.
+  // (#267: deck_c4 (monoStatRun) gestrichen — die Stat-Phase ist entfernt.)
   // Archetyp-Challenge-Decks (#215): Mono-Archetyp-Lauf je Fraktion + Element-Bund (alle vier).
   deck_c5: { id: "deck_c5", name: "Reines Feuer",  unlock: { kind: "monoArchetypeRun", archetype: "fire" } },
   deck_c6: { id: "deck_c6", name: "Reiner Blitz",  unlock: { kind: "monoArchetypeRun", archetype: "lightning" } },
@@ -84,7 +83,6 @@ export function isUnlocked(def, profile) {
     case "streak":      return (p.bestStreak || 0) >= u.n;
     case "score":       return (p.bestScore  || 0) >= u.n;
     case "noRerollRun": return !!p.hadNoRerollRun; // #214 Sparfuchs
-    case "monoStatRun": return !!p.hadMonoStatRun;
     case "monoArchetypeRun": return !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]); // #215: Lauf nur mit dieser Fraktion
     case "allArchetypesRun": return !!p.hadAllArchetypesRun;                                     // #215: Lauf mit allen vier
     case "masteryGrade": return (p.masteryGrade || 0) >= u.n;                                    // #217: erreichter Meistergrad
@@ -115,10 +113,6 @@ export function unlockProgress(def, profile) {
     case "noRerollRun": {
       const done = !!p.hadNoRerollRun;
       return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" };
-    }
-    case "monoStatRun": {
-      const done = !!p.hadMonoStatRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" };
     }
     case "monoArchetypeRun": {
       const done = !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]);

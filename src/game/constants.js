@@ -10,11 +10,12 @@ const envNum = (name, def) => {
   const n = v == null || v === "" ? NaN : Number(v);
   return Number.isFinite(n) ? n : def;
 };
-// Ziel-Rundenlänge = 60 Durchläufe (game-feel-Entscheid; der handgesetzte 60-Plan unten ist darauf ausgelegt).
-// SIM-Sweep-Haken: per ENV übersteuerbar (im Browser existiert `process` nicht → immer 60). `SIM_MAX_CYCLES=80
-// node sim/batch.js …` verlängert für Diagnose; für n ≤ 60 wird ein Prefix des 60-Plans gespielt, darüber
+// Ziel-Rundenlänge = 45 Durchläufe (#267 Struktur-Rework; Ziel-Band 40–50). Der handgesetzte 45-Plan unten
+// (Commitment-Funnel Skill→Perk→Aufstellen→Architekt) ist darauf ausgelegt — Builds kommen früher online.
+// SIM-Sweep-Haken: per ENV übersteuerbar (im Browser existiert `process` nicht → immer 45). `SIM_MAX_CYCLES=50
+// node sim/batch.js …` verlängert/verkürzt für Diagnose; für n ≤ 45 wird ein Prefix des 45-Plans gespielt, darüber
 // hinaus wächst DECISION_SCHEDULE über buildSchedule() via TAIL_BLOCK weiter.
-export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 60);     // Shop-Spec (§2.1): Run über so viele Deck-Durchläufe, danach Ende [TUNING · Sim-übersteuerbar]
+export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 45);     // #267: Run über so viele Deck-Durchläufe, danach Ende [TUNING · Sim-übersteuerbar]
 // Architekt (#202, Shop-Ersatz): Modul-Default-Schalter. Das Spiel startet den Lauf mit architect:true (START_RUN, App.jsx);
 // dieser Default greift nur, wenn keine Action-Flag gesetzt ist (Sim ohne A/B). Im Browser existiert `process` nicht → false.
 export const ARCHITECT_ENABLED = (typeof process !== "undefined" && process.env && (process.env.ARCHITECT === "1" || process.env.ARCHITECT === "true")) || false;
@@ -37,34 +38,32 @@ export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 export const WIN_SOFTCAP       = envNum("SIM_WIN_SOFTCAP", 0);          // 0 = aus; >0 = Knie K in Score/Sieg
 export const WIN_SOFTCAP_SLOPE = envNum("SIM_WIN_SOFTCAP_SLOPE", 0.25); // Rest-Steigung über dem Knie (0…1)
 
-// Stat-System (V2 §22.3) — bei jedem Stat-Pick alle vier angeboten, einer gewählt; additiv, keine Caps [TUNING]
-export const STAT_CRIT_CHANCE_STEP = envNum("SIM_STAT_CRIT_CHANCE_STEP", 0.07);  // Crit-Chance: +7 Prozentpunkte je Pick (#94; #161 FB-6: 0,05→0,07)
-export const STAT_CRIT_MULT_STEP   = envNum("SIM_STAT_CRIT_MULT_STEP", 0.25);    // Crit-Multiplikator: +0,25× je Pick (auf Basis 1,5) [#Pass3: 0,2→0,25 Crit-Buff]
-export const STAT_FORM_MULT_STEP   = envNum("SIM_STAT_FORM_MULT_STEP", 0.05);    // Formations-Mult: +5 % Score JE aktiver Formation an der Siegposition je Pick (count-skaliert, statFormFactor)
-export const STAT_STREAK_MULT_STEP = envNum("SIM_STAT_STREAK_MULT_STEP", 0.02);  // Serien-Mult: +2 % Score je aktuellem Serienpunkt je Pick (#94)
+// (#267 Struktur-Rework: die Stat-Phase ist entfernt. Die vier Kern-Stats — Crit-Chance/Crit-Mult/Formations-Mult/
+//  Serien-Mult — waren eine „gelöste" Entscheidung; Formation & Serie behalten ihre BASIS-Systeme (Formationsfaktoren,
+//  STREAK_BASE), nur der Stat-Booster obendrauf verschwindet. Crit-Chance/-Mult kommen jetzt aus der Perk-Familie
+//  „Präzision" (siehe PRECISION_* unten) bzw. aus Blitz. Basis-Crit = 0. STAT_*_STEP/STREAK_STAT_CAP/STAT_CRIT_MULT_CAP
+//  sind damit obsolet und entfernt.)
 
-// Entscheidungsplan (Shop-Spec §2.2): Typ der Entscheidung VOR Durchlauf n (1-indexiert) = DECISION_SCHEDULE[n-1].
-// Fester 60-Einträge-Plan (Ziel-Rundenlänge, vom Dev handgesetzt — löst den alten 44-Plan ab). Engine liest
-// DECISION_SCHEDULE[cycle] (nach cycle += 1); der Start-Entscheid (Index 0 = "stat") läuft über START_RUN.
-// Verteilung: 13 Stat · 13 Perk · 12 Formation · 12 Shop (Architekt) · 10 Skill (≈ 21,7/21,7/20/20/16,7 %) —
-// bewusste Verschiebung Richtung Brett+Skill (mehr „bauen & Motoren", weniger Regler drehen).
-// Shop-Zeitpunkte (Durchlauf): 4, 9, 14, 19, 24, 29, 34, 39, 44, 49, 54, 58 · Skill: 7, 12, 18, 25, 32, 38, 43, 50, 55, 59.
-// Design-Invariante (Architekt→Aufstellung): JEDES Shop-Fenster wird exakt 2 Durchläufe später von einer
-// Formationsphase gefangen (4→6, 9→11, …, 58→60) = die Bauzeit-Einheit für den geplanten Architekt-Umbau.
-// „Shop" bleibt vorerst der bestehende Anker-Shop (das Architekt-Redesign ist noch in Planung).
+// Entscheidungsplan (#267): Typ der Entscheidung VOR Durchlauf n (1-indexiert) = DECISION_SCHEDULE[n-1].
+// Fester 45-Einträge-Plan (Commitment-Funnel Skill→Perk→Aufstellen→Architekt, vom Dev handgesetzt — löst den alten
+// 60-Plan ab). Engine liest DECISION_SCHEDULE[cycle] (nach cycle += 1); der Start-Entscheid (Index 0 = "skill",
+// Runde 1) läuft über START_RUN. Bewusster Blind-Commit: das Deck ist noch vanilla, kein Infoverlust.
+// Verteilung: 8 Skill · 13 Perk · 12 Formation (Aufstellen) · 12 Shop (Architekt). Skills sind front-loaded
+// (Runden 1,5,9,13,17 in der Frühphase) und tapern aus; SKILL_SLOTS=6 → Skill-Runden ⑦ (Runde 31, mid) & ⑧
+// (Runde 41, end) sind Tausch-Fenster (bestehende Skill-Ersatz-Mechanik). Ein Block = Skill→Perk→Aufstellen→
+// Architekt: erst Brett stellen, dann das Gebäude drauf. Exakte Indizes sind sim-tunebarer Feinschliff.
 const BASE_SCHEDULE = [
-  "stat", "perk", "stat", "shop", "perk", "formation", "skill", "stat", "shop", "perk",           //  1–10
-  "formation", "skill", "stat", "shop", "perk", "formation", "stat", "skill", "shop", "perk",      // 11–20
-  "formation", "stat", "perk", "shop", "skill", "formation", "stat", "perk", "shop", "stat",       // 21–30
-  "formation", "skill", "perk", "shop", "stat", "formation", "perk", "skill", "shop", "stat",      // 31–40
-  "formation", "perk", "skill", "shop", "stat", "formation", "perk", "stat", "shop", "skill",      // 41–50
-  "formation", "perk", "stat", "shop", "skill", "formation", "perk", "shop", "skill", "formation", // 51–60
+  "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk",     //  1–10
+  "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", // 11–20
+  "perk", "skill", "formation", "shop", "perk", "formation", "shop", "perk", "formation", "shop",  // 21–30
+  "skill", "perk", "formation", "shop", "perk", "formation", "shop", "perk", "formation", "shop",  // 31–40
+  "skill", "perk", "formation", "shop", "perk",                                                     // 41–45
 ];
-// Schwanz-Block für Runs ÜBER 60 Cycles hinaus (nur SIM_MAX_CYCLES > 60, reine Sweep-Diagnose). Hält grob das
-// 60er-Mix-Verhältnis, clustert nicht (nie zwei Shop/Skill hintereinander) und doppelt nicht an der 60/61-Grenze
-// (Cycle 60 = formation → Block-Start = perk).
+// Schwanz-Block für Runs ÜBER 45 Cycles hinaus (nur SIM_MAX_CYCLES > 45, reine Sweep-Diagnose). Hält grob das
+// 45er-Mix-Verhältnis, clustert nicht (nie zwei Shop/Skill hintereinander) und doppelt nicht an der 45/46-Grenze
+// (Cycle 45 = perk → Block-Start = formation).
 const TAIL_BLOCK = [
-  "perk", "stat", "formation", "shop", "perk", "skill", "stat", "formation", "shop", "perk", "stat", "skill",
+  "formation", "shop", "skill", "perk", "formation", "shop", "perk", "skill", "formation", "shop", "perk", "formation",
 ];
 // Entscheidungsplan der Länge n: für n ≤ 60 ein exaktes Prefix des handgesetzten 60-Plans; darüber hinaus wird
 // TAIL_BLOCK wiederholt (nur für SIM_MAX_CYCLES-Sweeps > 60). Pur & testbar; die Engine liest ausschließlich
@@ -105,15 +104,36 @@ export const FORMATION_START_TRIES = 200;   // max Neumischungen; danach potenti
 // Basis-Siegesserie (#39): jede Serie hebt den Score-Mult leicht. [TUNING]
 export const STREAK_BASE_STEP = envNum("SIM_STREAK_BASE_STEP", 0.02); // +2 % je Serienstufe [TUNING]
 export const STREAK_BASE_CAP  = envNum("SIM_STREAK_BASE_CAP", 1.50);  // … gedeckelt bei +150 % (Cap ab Serie 75, #100) [TUNING]
-// Serien-STAT (statStreakMult): war ungedeckelt → mit langen Serien Runaway-Treiber (Sim-Befund).
-// Deckel des Stat-Beitrags analog zum Basis-Cap; bewusst großzügig, damit starke Serien-Builds stark
-// bleiben, aber nicht unbegrenzt eskalieren. [TUNING · Balance-Pass 1]
-export const STREAK_STAT_CAP  = envNum("SIM_STREAK_STAT_CAP", 1.75); // Stat-Serien-Faktor höchstens +175 % [Balance: 3,0→1,75 — deckelte den Sustained-Streak-Rekord-Runaway (Pflanze-Paare, Serie 262); Median/p95/andere Fraktionen unberührt, Sim-validiert]
-// Crit-Multiplikator-STAT-Cap (Pendant zum Serien-Cap): statCritMult war der LETZTE ungedeckelte Stat-Multiplikator
-// → Crit-Runaway-Treiber (Bl+Pf). Default Infinity = kein Cap (Bestandsverhalten, im Browser inaktiv). Nur die
-// STAT-Zutat wird gedeckelt, nicht Basis-Crit/Perks/Donnergott. Sweep: `SIM_STAT_CRIT_MULT_CAP=1 node …`.
-export const STAT_CRIT_MULT_CAP = envNum("SIM_STAT_CRIT_MULT_CAP", Infinity); // max additiver Crit-Mult aus dem Stat
-// (D3_HIGH_MIN/D4_LOW_MAX entfernt — die Score-Perks sind zu Familien migriert, #167; Schwellen jetzt je Stufe in families.js.)
+// (#267: STREAK_STAT_CAP / STAT_CRIT_MULT_CAP entfernt — die Stat-Booster (Serien-Stat / Crit-Mult-Stat) sind mit der
+//  Stat-Phase weg. Serie skaliert nur noch über STREAK_BASE (oben) + Perks; Crit-Mult über Basis 1,5 + Präzision/Blitz.)
+
+/* ============================================================
+   PRÄZISION — Crit als Perk-Kategorie (#267 Teil 2). Basis-Crit 0; Crit-Chance/-Mult, die früher aus dem Stat kamen,
+   kommen jetzt als RNG-gegatete Perk-FAMILIEN (fünf 4-stufige Familien, KEIN Legendär). Blitz bleibt der verlässliche
+   Crit-Archetyp (self-generiert); Präzision ist additiv und für jeden Build wählbar, aber zufalls-abhängig.
+   Werte v0 · sim-tunebar. HAUPT-Hebel = Verfügbarkeit/Rarität (PRECISION_OFFER_WEIGHT), NICHT die pp-Stärke:
+   zu häufig/stark → Crit wird wieder universell; zu selten → Nicht-Blitz-Crit passiert nie.
+   ============================================================ */
+// Angebots-Gewicht der Präzision-Familien im Perk-Angebot (multipliziert das Stufen-Gewicht). <1 = seltener, >1 = häufiger.
+// Der kritische Balance-Knopf (#267 Haupt-Hebel). Default 1 = normale Familien-Rarität.
+export const PRECISION_OFFER_WEIGHT = envNum("SIM_PRECISION_OFFER_WEIGHT", 1);
+// Globale Stärke-Skalen (Feintuning obendrauf; 1 = v0-Werte).
+export const PRECISION_CHANCE_SCALE = envNum("SIM_PRECISION_CHANCE_SCALE", 1); // skaliert alle Präzision-Crit-CHANCE-pp
+export const PRECISION_MULT_SCALE   = envNum("SIM_PRECISION_MULT_SCALE", 1);   // skaliert alle Präzision-Crit-MULT-Boni
+// Schärfe (flat +Crit-Chance auf alle Karten) — Grund-Crit-Motor (Stat-Ersatz). pp je Stufe I/II/III/IV.
+export const PRECISION_SHARP_PP   = [0.06, 0.09, 0.12, 0.15];
+// Wucht (+Crit-Multiplikator auf Basis 1,5) — Crit-Schaden (Mult-Stat-Ersatz). ×-Bonus je Stufe.
+export const PRECISION_FORCE_MULT = [0.25, 0.40, 0.60, 0.90];
+// Zielsicherheit (+Crit-Chance auf HOHE Karten; Schwelle weitet sich) — Hochwert-/Überlegenheits-Builds (Feuer-Marge).
+export const PRECISION_AIM_THRESH = [9, 8, 7, 6];   // Karten ≥ Schwelle je Stufe
+export const PRECISION_AIM_PP     = 0.15;           // … je qualifizierender Karte
+// Brennglas (Variante B, gewählt): +Crit-Chance JE Formation ab der 2. an der Siegposition, Cap +3 Extra-Formationen.
+// Belohnt Tiefe, nicht bloße Präsenz (der Chase). pp je Formation >1 je Stufe.
+export const PRECISION_LENS_PP    = [0.06, 0.08, 0.10, 0.13];
+export const PRECISION_LENS_CAP   = 3;              // max gezählte Extra-Formationen (Anti-Runaway)
+// Farbfokus (Farbe wählen → +Crit-Chance auf diese Farbe). IV-Twist: statt höherer pp eine ZWEITE wählbare Farbe
+// (beide auf Stufe-III-Wert). pp je Stufe (III/IV gleich; IV wählt zwei Farben).
+export const PRECISION_COLOR_PP   = [0.10, 0.14, 0.18, 0.18];
 
 // Raritäts-System (#33) [TUNING]
 export const RARITY_WEIGHTS            = { common: 100, rare: 25, legendary: 9 }; // 3-Stufen-Rarität; „common" = normal [TUNING]

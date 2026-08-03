@@ -101,7 +101,7 @@ describe("Blitz-Rework v0 — Engine-Integration", () => {
   it("Spannungsstau: Sieg ohne Crit rampt die Crit-Chance; ein Crit resettet", () => {
     const noC = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_13"], lightning: light() }), noCrit);
     expect(noC.lightning.stauBonus).toBeCloseTo(C.SPANNUNGSSTAU_STEP);
-    const crit = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_13"], statCritChance: 1, lightning: light({ stauBonus: 0.3 }) }), zero);
+    const crit = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_13"], lightning: light({ stauBonus: 0.3 }) }), zero); // Crit aus den Blitz-Skills (rng 0)
     expect(crit.lastTrick.isCrit).toBe(true);
     expect(crit.lightning.stauBonus).toBe(0);
   });
@@ -112,7 +112,7 @@ describe("Blitz-Rework v0 — Engine-Integration", () => {
     expect(s.lightning.charge).toBe(5 * C.KURZSCHLUSS_CHARGE_PER_STACK);
   });
   it("Blitzschlag: ein Crit ionisiert die gewonnene Karte (+1 Stapel)", () => {
-    const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_15"], statCritChance: 1, lightning: light() }), zero);
+    const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_15"], lightning: light() }), zero); // Crit aus den Blitz-Skills (rng 0)
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.deck[0].ionStacks).toBe(C.BLITZSCHLAG_STACKS);
   });

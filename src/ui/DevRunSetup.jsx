@@ -7,11 +7,10 @@ import { FORMATION_ENERGY } from "../game/constants.js";
    Baupunkte (Baufeld/maxCover) und Formations-Energie. Die freie Perk-/Skill-/Bau-Auswahl im Lauf folgt in Phase 2.
    Rein UI: baut eine dev-Config { rounds, schedule, cover, energy } und reicht sie via onStart nach oben. */
 
-// Die fünf Entscheidungstypen. `token` = interner Plan-Wert (Engine/Reducer), `label` = Anzeige.
+// Die vier Entscheidungstypen (#267: „Stat" entfernt). `token` = interner Plan-Wert (Engine/Reducer), `label` = Anzeige.
 const TYPES = [
   { token: "skill",     label: "Skill",       color: "#8a7de0" },
   { token: "perk",      label: "Perk",        color: "#5ab87a" },
-  { token: "stat",      label: "Stat",        color: "#d4a63a" },
   { token: "formation", label: "Aufstellung", color: "#5a8ade" },
   { token: "shop",      label: "Architekt",   color: "#e0605a" },
 ];

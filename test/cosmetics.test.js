@@ -5,7 +5,7 @@ import {
 } from "../src/game/cosmetics.js";
 
 // Minimal-Profil-Helfer (nur die Felder, die die Freischalt-Logik liest).
-const prof = (o = {}) => ({ games: 0, bestStreak: 0, bestScore: 0, hadMonoStatRun: false, ...o });
+const prof = (o = {}) => ({ games: 0, bestStreak: 0, bestScore: 0, hadNoRerollRun: false, ...o });
 
 describe("cosmetics — Katalog", () => {
   it("Default-Decks/Battlefields sind ohne unlock (immer frei)", () => {
@@ -124,11 +124,7 @@ describe("cosmetics — isUnlocked", () => {
     expect(isUnlocked(score, prof({ bestScore: 10_000_000 }))).toBe(true);
   });
 
-  it("monoStatRun: an Profil-Flag gebunden", () => {
-    const mono  = { unlock: { kind: "monoStatRun" } };
-    expect(isUnlocked(mono, prof())).toBe(false);
-    expect(isUnlocked(mono, prof({ hadMonoStatRun: true }))).toBe(true);
-  });
+  // (#267: monoStatRun-Test entfernt — die Stat-Phase/Mono-Stat-Challenge ist weg.)
 
   it("noRerollRun (#214 Sparfuchs): an hadNoRerollRun gebunden + Klartext-Fortschritt", () => {
     const noReroll = { unlock: { kind: "noRerollRun" } };
@@ -170,10 +166,10 @@ describe("cosmetics — unlockProgress", () => {
   });
 
   it("Flag-Challenges: target 1, cur 0/1, Klartext-Bedingung", () => {
-    const monoLocked = unlockProgress({ unlock: { kind: "monoStatRun" } }, prof());
-    expect(monoLocked).toEqual({ done: false, cur: 0, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" });
-    const monoDone = unlockProgress({ unlock: { kind: "monoStatRun" } }, prof({ hadMonoStatRun: true }));
-    expect(monoDone).toEqual({ done: true, cur: 1, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" });
+    const locked = unlockProgress({ unlock: { kind: "noRerollRun" } }, prof());
+    expect(locked).toEqual({ done: false, cur: 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
+    const done = unlockProgress({ unlock: { kind: "noRerollRun" } }, prof({ hadNoRerollRun: true }));
+    expect(done).toEqual({ done: true, cur: 1, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
   });
 });
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   loadOptions, loadUsername, saveUsername, loadSeenGuide, saveSeenGuide,
-  recordRun, loadProfile, isNoRerollRun, isMonoStatRun, MONO_STAT_MIN,
+  recordRun, loadProfile, isNoRerollRun,
   monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
 
@@ -153,7 +153,7 @@ describe("VITE_PREVIEW-Präfix trennt Namespaces (#152)", () => {
 });
 
 describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
-  const monoPicks = Array.from({ length: MONO_STAT_MIN }, () => "statCritChance");
+  // (#267: die Mono-Stat-Challenge ist entfernt — die Stat-Phase ist weg.)
 
   it("isNoRerollRun (#214 Sparfuchs): nur natürlicher Abschluss ohne benutzten Reroll", () => {
     expect(isNoRerollRun({ completed: true, rerollsUsed: 0 })).toBe(true);
@@ -161,15 +161,6 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
     expect(isNoRerollRun({ completed: false, rerollsUsed: 0 })).toBe(false); // vorzeitig beendet
     expect(isNoRerollRun({ completed: true })).toBe(true); // rerollsUsed fehlt → 0
     expect(isNoRerollRun(null)).toBe(false);
-  });
-
-  it("isMonoStatRun: kompletter Lauf, alle Stat-Picks identisch, Mindestanzahl", () => {
-    expect(isMonoStatRun({ completed: true, statPicks: monoPicks })).toBe(true);
-    expect(isMonoStatRun({ completed: true, statPicks: [...monoPicks.slice(1), "statFormMult"] })).toBe(false); // gemischt
-    expect(isMonoStatRun({ completed: false, statPicks: monoPicks })).toBe(false); // vorzeitig beendet
-    expect(isMonoStatRun({ completed: true, statPicks: ["statCritChance"] })).toBe(false); // < MONO_STAT_MIN
-    expect(isMonoStatRun({ completed: true, statPicks: [] })).toBe(false);
-    expect(isMonoStatRun({ completed: true })).toBe(false); // statPicks fehlt
   });
 
   // #215 Archetyp-Decks
@@ -195,7 +186,6 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
     afterEach(() => { delete global.localStorage; });
 
     it("frisches Profil: Flags sind false", () => {
-      expect(loadProfile().hadMonoStatRun).toBe(false);
       expect(loadProfile().hadNoRerollRun).toBe(false); // #214
     });
 
@@ -223,16 +213,10 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
       expect(p.masteryGrade).toBe(2);
     });
 
-    it("Mono-Stat-Lauf (mit Käufen) setzt nur hadMonoStatRun", () => {
-      const { profile } = recordRun({ score: 100, ts: 1, completed: true, shopPurchases: 2, statPicks: monoPicks });
-      expect(profile.hadMonoStatRun).toBe(true);
-    });
-
-    it("Flags bleiben sticky — ein späterer Lauf, der die Bedingung NICHT erfüllt, setzt sie nicht zurück", () => {
-      recordRun({ score: 100, ts: 1, completed: true, rerollsUsed: 0, statPicks: monoPicks }); // monoStat + noReroll erfüllt
-      const { profile } = recordRun({ score: 50, ts: 2, completed: false, rerollsUsed: 5, statPicks: [] }); // nichts erfüllt
+    it("Flag bleibt sticky — ein späterer Lauf, der die Bedingung NICHT erfüllt, setzt es nicht zurück", () => {
+      recordRun({ score: 100, ts: 1, completed: true, rerollsUsed: 0 }); // noReroll erfüllt
+      const { profile } = recordRun({ score: 50, ts: 2, completed: false, rerollsUsed: 5 }); // nichts erfüllt
       expect(profile.hadNoRerollRun).toBe(true);
-      expect(profile.hadMonoStatRun).toBe(true);
       expect(profile.games).toBe(2);
     });
 

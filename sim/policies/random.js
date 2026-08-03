@@ -33,7 +33,6 @@ export function randomPolicy({ architectGreedy = false } = {}) {
     act(s, rng) {
       switch (s.phase) {
         case "levelup": {
-          if (s.statOffer) return { type: "PICK_STAT", statId: pick(s.statOffer, rng) };
           if (s.skillOffer) {
             const addable = s.skillOffer.filter((id) => canAddSkill(s, id));
             return addable.length

@@ -29,10 +29,6 @@ export function fixedPolicy(priority, { drop = null, solveFormations = false, bu
     act(s, rng) {
       switch (s.phase) {
         case "levelup": {
-          if (s.statOffer) {
-            const pick = bestOf(s.statOffer) ?? s.statOffer.find((id) => id !== drop) ?? s.statOffer[0];
-            return { type: "PICK_STAT", statId: pick };
-          }
           if (s.skillOffer) {
             const addable = s.skillOffer.filter((id) => id !== drop && canAddSkill(s, id));
             const pick = bestOf(addable) ?? addable[0];
