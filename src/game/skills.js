@@ -115,7 +115,7 @@ export const SKILL_DEFS = {
   SK_FIRE_09: { id: "SK_FIRE_09", name: "Verbrennung", archetype: "fire", keywords: ["heat"],
     desc: "Große Vorsprünge geben mehr Feuer-Score: ×1,5 ab 8, ×2 ab 12 Wertvorsprung.", verbrennung: true },
   SK_FIRE_10: { id: "SK_FIRE_10", name: "Funkenflug", archetype: "fire", keywords: ["heat"],
-    desc: "Siege in Folge speichern Feuer-Score. Ein Sieg mit ≥8 Vorsprung entlädt ihn voll, eine Niederlage zur Hälfte.", sparkflight: true },
+    desc: `Jeder Sieg unter ${C.SPARKFLIGHT_MIN_MARGIN} Vorsprung sammelt zusätzlich seinen Feuer-Score in einem Speicher. Ein Sieg mit ≥${C.SPARKFLIGHT_MIN_MARGIN} Vorsprung schüttet den Speicher aus und leert ihn; eine Niederlage halbiert ihn.`, sparkflight: true },
   // Linie 5 — Konsumenten (max 1 im Build — Burst vs. Drip)
   SK_FIRE_11: { id: "SK_FIRE_11", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"],
     desc: `Ab ${C.CONFLAG_MIN_HEAT} % Hitze verbrennt der nächste Sieg deine ganze Hitze für +${C.CONFLAG_PER_HEAT} Score je Hitzepunkt (voll ≈ +${C.CONFLAG_PER_HEAT * C.HEAT_MAX}).`, heatConsumer: "conflagration" },
@@ -134,7 +134,7 @@ export const SKILL_DEFS = {
     desc: "Ab 50 % Hitze brennen Brände stärker (−1 Wert, +1 Asche) und Schmieden kostet 1 Asche weniger.", schmelzofen: true },
   // Legendäre (umgeformt: dauerhaft/compoundend/direkt — je eine eigene Achse & Feuer-Playstyle)
   SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: "Beendest du einen Durchlauf mit hoher Hitze, brennt sie sich dauerhaft in deine tiefen Karten (+Kartenwert bis zum Deckel) — dein Deck wird über den Run heiß & stark. Halte-Motor.", suncore: true },
+    desc: `Endet ein Durchlauf mit ≥${C.SONNENKERN_MIN_HEAT} % Hitze, erhält jede Karte unter Wert ${C.SONNENKERN_CARD_CAP} dauerhaft +${C.SONNENKERN_VALUE} Kartenwert.`, suncore: true },
   SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
     desc: "Niederlagen nehmen dir keine Hitze — sie geben welche (je Rückstandspunkt). Aus jeder Niederlage steigst du heißer auf; zusätzlich entzündet verbrauchte Hitze 1×/Durchlauf neu.", phoenix: true },
   SK_FIRE_L03: { id: "SK_FIRE_L03", name: "Sonnenzorn", archetype: "fire", legendary: true, keywords: ["heat"],
