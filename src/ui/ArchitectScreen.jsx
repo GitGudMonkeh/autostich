@@ -7,8 +7,8 @@ import {
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { hasKaltfront } from "../game/skills.js"; // Kälteleitung: temporär vereiste Nachbarn markieren
-import { SUIT_ORDER } from "../game/constants.js";
-import { ARCH_CAT as CAT } from "./indicators/vocab.js";
+import { SUIT_ORDER, PLANT_VALUE_CAP } from "../game/constants.js";
+import { ARCH_CAT as CAT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { tierColor } from "../game/rarity.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
@@ -470,6 +470,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const tierCol = b ? (fam.legendary ? GOLD : tierColor(b.tier)) : null;
                 const ev = effValueAt(pos);
                 const boost = ev - card.value;
+                // Pflanze (#211): reife (grüne) Karte → Zahl leuchtet grün (voll ausgewachsen am hellsten), wie am Aufstellungs-Brett.
+                const numCol = card.green ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : SUIT_COLOR[card.suit];
                 const anchorCell = b ? Math.min(...b.footprint) : -1;
                 const isSel = b && b.id === selId;
                 const pf = formations[pos] || { mult: 1, formations: [] };
@@ -537,7 +539,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     {/* #UI: Kälteleitung — temporär vereister Nachbar einer Frostkarte, dezenter als echtes Frost (kleiner, blasser, kein Glow). */}
                     {!card.frozen && conductedSet.has(pos) && <span aria-hidden className="absolute top-[1px] right-[2px] text-[6px] leading-none" title="Kälteleitung: temporär vereist (Nachbar einer Frostkarte)" style={{ color: "#5ec8f0", opacity: 0.45 }}>❄</span>}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
-                    <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : SUIT_COLOR[card.suit], textShadow: (b && !isDragOrig) ? "0 1px 2px #000a" : undefined }}>{ev}</span>
+                    <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (
                       <span className="absolute bottom-[1px] left-[3px] text-[7px] font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
                         {fam.name.slice(0, 3).toUpperCase()}{tierLabel(b.tier)}
