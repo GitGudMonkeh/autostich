@@ -39,6 +39,7 @@ export function ChronikOverview({ state, onClose }) {
   const { deck = [], playerOrder = [], formations = [] } = state;
   const [selPos, setSelPos] = useState(null);
   const [showArch, setShowArch] = useState(true); // #218: Architekt-Gebäude-Overlay auf dem Grid ein-/ausblenden (wie in der Aufstellung)
+  const [inspectBid, setInspectBid] = useState(null); // inspiziertes Gebäude: Liste ↔ Brett (Rahmen glüht), gesetzt per Karten-Tap ODER Listen-Klick
   const cards = playerOrder.map((di) => deck[di]);
   const selCard = selPos != null ? cards[selPos] : null; // #218: aktuell angetippte Karte (für die Elementar-Readouts)
   const anchors = [...(state.shop?.anchors || [])].sort((a, b) => a.position - b.position); // Shop-Positionsanker (§8)
@@ -120,7 +121,8 @@ export function ChronikOverview({ state, onClose }) {
               openSegments={openSegmentInfo(state.familyTiers)}
               architectCover={hasArch && showArch ? architectCover : null}
               structPos={hasArch && showArch ? structLitPos : null}
-              selectedPos={selPos} onTilePick={(pos) => setSelPos(selPos === pos ? null : pos)} />
+              glowBid={hasArch && showArch ? inspectBid : null}
+              selectedPos={selPos} onTilePick={(pos) => { const ns = selPos === pos ? null : pos; setSelPos(ns); setInspectBid(ns != null && architectCover ? (architectCover[ns]?.bid ?? null) : null); }} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
@@ -193,7 +195,7 @@ export function ChronikOverview({ state, onClose }) {
                   {archBuildings.length} Gebäude · {archOcc}/{archMax} Zellen
                 </span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 mb-2">
                 {Object.entries(archByCat).map(([cat, n]) => {
                   const meta = ARCH_CAT?.[cat] || {};
                   return (
@@ -201,6 +203,30 @@ export function ChronikOverview({ state, onClose }) {
                       style={{ background: (meta.color || "#8a8a92") + "22", color: meta.color || "#c8c8ce" }}>
                       {meta.icon ? meta.icon + " " : ""}{meta.label || cat} · {n}
                     </span>
+                  );
+                })}
+              </div>
+              {/* Einzelne Gebäude mit Effekt — antippen lässt den Gebäude-Rahmen am Brett cyan leuchten (wo liegt es?);
+                  umgekehrt markiert das Antippen einer Karte im Gebäude hier den Eintrag. */}
+              <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
+              <div className="grid gap-1 sm:grid-cols-2">
+                {archBuildings.map((b) => {
+                  const fam = archFamily(b.familyId); if (!fam) return null;
+                  const anchor = Math.min(...b.footprint);
+                  const eff = architectCover?.[anchor]?.effects?.join(" · ") || "";
+                  const meta = ARCH_CAT?.[fam.category] || {};
+                  const on = inspectBid === b.id;
+                  return (
+                    <button key={b.id} id={`chr-bld-${b.id}`} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
+                      className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
+                      style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
+                      <span className="inline-flex items-center gap-1.5 flex-wrap">
+                        <span className="w-[8px] h-[8px] rounded-[2px] inline-block" style={{ background: fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92") }} />
+                        <b>{fam.name}</b>
+                        <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
+                      </span>
+                      {eff && <span className="opacity-75">{eff}</span>}
+                    </button>
                   );
                 })}
               </div>

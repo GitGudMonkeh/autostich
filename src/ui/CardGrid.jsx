@@ -40,10 +40,10 @@ export function archFrameLines(cover, cells, total, exH, exV) {
     const exUp = sameUp ? halfV(up) : exV, exDown = sameDown ? halfV(down) : exV;
     const exLeft = sameLeft ? halfH(lft) : exH, exRight = sameRight ? halfH(rgt) : exH;
     const L = rect.left - exLeft, R = rect.right + exRight, T = rect.top - exUp, B = rect.bottom + exDown;
-    if (!sameUp)    lines.push({ x1: L, y1: T, x2: R, y2: T, color }); // oben
-    if (!sameDown)  lines.push({ x1: L, y1: B, x2: R, y2: B, color }); // unten
-    if (!sameLeft)  lines.push({ x1: L, y1: T, x2: L, y2: B, color }); // links
-    if (!sameRight) lines.push({ x1: R, y1: T, x2: R, y2: B, color }); // rechts
+    if (!sameUp)    lines.push({ x1: L, y1: T, x2: R, y2: T, color, bid: a.bid }); // oben
+    if (!sameDown)  lines.push({ x1: L, y1: B, x2: R, y2: B, color, bid: a.bid }); // unten
+    if (!sameLeft)  lines.push({ x1: L, y1: T, x2: L, y2: B, color, bid: a.bid }); // links
+    if (!sameRight) lines.push({ x1: R, y1: T, x2: R, y2: B, color, bid: a.bid }); // rechts
   }
   return lines;
 }
@@ -163,7 +163,7 @@ function SegmentBridge({ segA, segB }) {
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
                           highlightPos = [], highlightTitle = null, openSegments = null, frostPillarPos = [], swappedIds = new Set(),
-                          segStrength = [], segDelta = [], architectCover = null, structPos = null }) {
+                          segStrength = [], segDelta = [], architectCover = null, structPos = null, glowBid = null }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const pickedSet = new Set(pickedIds || []);
@@ -218,9 +218,13 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
       {archFrame && archFrame.lines.length > 0 && (
         <svg className="absolute left-0 top-0 pointer-events-none" width={archFrame.w} height={archFrame.h}
              style={{ overflow: "visible", zIndex: 5 }} aria-hidden="true">
-          {archFrame.lines.map((l, i) => (
-            <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.color} strokeWidth="2.5" strokeLinecap="square" />
-          ))}
+          {/* Inspiziertes Gebäude (glowBid) zuletzt zeichnen → seine Rahmenlinien liegen oben und glühen cyan. */}
+          {[...archFrame.lines].sort((a, b) => (glowBid != null && a.bid === glowBid ? 1 : 0) - (glowBid != null && b.bid === glowBid ? 1 : 0)).map((l, i) => {
+            const glow = glowBid != null && l.bid === glowBid;
+            return <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+              stroke={glow ? "#5ec8f0" : l.color} strokeWidth={glow ? 4 : 2.5} strokeLinecap="square"
+              style={glow ? { filter: "drop-shadow(0 0 4px #5ec8f0) drop-shadow(0 0 2px #5ec8f0)" } : undefined} />;
+          })}
         </svg>
       )}
       {Array.from({ length: nSeg }).flatMap((_, s) => {
