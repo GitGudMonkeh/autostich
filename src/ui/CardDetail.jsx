@@ -127,7 +127,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
             <Chip c={stateCol}>{stateLabel}</Chip>
             <Chip c={PLANT}>Wachstum {fmt1(plantGrowth)}{ripe ? "" : ` / ${PLANT_GREEN_THRESHOLD}`}</Chip>
             <Chip c={PLANT}>Kartenwert {card.value} / {PLANT_VALUE_CAP}</Chip>
-            {ripe && plantRoots > 0 && <Chip c={PLANT}>+{plantRoots} Wurzeln/Sieg{plantPfahl ? " (×2 Form.)" : ""}</Chip>}
+            {ripe && plantRoots > 0 && <Chip c={PLANT}>+{plantRoots} Wurzel-Score/Sieg{plantPfahl ? " (×2 Form.)" : ""}</Chip>}
             {overflow > 0 && <Chip c={PLANT_FULL}>Überlauf {fmt1(overflow)}</Chip>}
           </div>
         );
