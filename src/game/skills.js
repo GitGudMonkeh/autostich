@@ -188,7 +188,7 @@ export const SKILL_DEFS = {
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze"],
     desc: `Jede Ablage lagert +${C.PERMAFROST_LAYER_BONUS} zusätzliche Schichten ab. Jeder Frost-Sieg gibt +${C.PERMAFROST_DIRECT} Score je Überlauf-Schicht (Schichten über ${C.ICE_LAYER_MAX}), summiert über alle Frostkarten (bis ${C.PERMAFROST_OVERFLOW_CAP}).`, permafrost: true },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Gletscher", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: `Je tiefer der Stapel, desto mehr gibt jede Schicht (superlinear). Dein tiefster Pfeiler zahlt bei jedem Frost-Sieg direkt: +${C.GLETSCHER_DIRECT} je Tiefenstufe, superlinear aufsummiert (Tiefe gedeckelt ${C.GLETSCHER_OVERFLOW_CAP}, skaliert mit deinem Bekenntnis) — je tiefer, desto überproportional mehr.`, gletscher: true },
+    desc: `Deine tiefste Frostkarte zählt alle ihre Schichten über ${C.ICE_LAYER_MAX} (bis max. ${C.GLETSCHER_OVERFLOW_CAP}). Jeder Frost-Sieg gibt daraus +${C.GLETSCHER_DIRECT} Bonus je Tiefenstufe, aufsummiert.`, gletscher: true },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Vergletscherung", archetype: "ice", legendary: true, keywords: ["freeze"],
     desc: `Jeder Frost-Sieg friert ${C.VERGLETSCHERUNG_COUNT} Gegnerkarten proportional zu den Schichten der Siegkarte ein (−Wert). Zusätzlich +${C.VERGLETSCHERUNG_DIRECT} Score je Punkt, den deine Vereisung Gegnern gerade abzieht (alle −Wert-Marken zusammen, bis ${C.VERGLETSCHERUNG_DEBUFF_CAP}).`, vergletscherung: true },
   SK_ICE_L04: { id: "SK_ICE_L04", name: "Architekt", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
