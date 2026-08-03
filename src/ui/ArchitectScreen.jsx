@@ -97,6 +97,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const [pendingDemolish, setPendingDemolish] = useState(null); // #235: markiertes Abriss-Ziel (buildingId) — wird erst mit „Abreißen" wirklich entfernt (zweistufig)
   const [pendingUpgrade, setPendingUpgrade] = useState(null);   // #237: markiertes Aufrüst-Ziel (buildingId) — zeigt Jetzt/Danach-Effekt, aufgewertet erst mit „Aufwerten bestätigen" (kein Sofort-Upgrade)
   const [upgradeDone, setUpgradeDone] = useState(null);         // Erfolgs-Feedback: { name, from, to } — hervorgehobene Zeile im Platzieren-Screen, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen).
+  const [inspectId, setInspectId] = useState(null);             // choose-Phase: welches bereits gebaute Gebäude gerade „inspiziert" wird (Liste ↔ Brett verlinkt, gegenseitiges Leuchten).
   // #243: Toggle-Stellung aus den Optionen (überlebt Runden + Sessions); onOption persistiert die Wahl.
   const [showCombos, setShowCombos] = useState(options.archShowCombos !== false); // #UI: Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben
   const [showForms, setShowForms] = useState(options.archShowForms !== false);    // #UI: Formationsrahmen (Ring + Label) am Brett ein-/ausblenden
@@ -246,6 +247,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   // #266: Der Dreh-Hinweis verfällt, sobald ein anderes Gebäude gewählt oder die Phase gewechselt wird (er gilt genau
   // für die zuletzt versuchte Rotation an der aktuellen Lage).
   useEffect(() => { setRotateMsg(null); }, [selId, phase]);
+  useEffect(() => { setInspectId(null); }, [phase]); // Inspektion ist choose-only → beim Phasenwechsel zurücksetzen
+  // Brett-Tap → zugehörige Beschreibung in die Sicht scrollen (damit man das Leuchten sieht, auch bei langer Liste).
+  useEffect(() => {
+    if (inspectId == null) return;
+    const el = typeof document !== "undefined" && document.getElementById(`arch-inspect-${inspectId}`);
+    if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [inspectId]);
   const confirmDemolish = () => { if (pendingDemolish == null) return; onDemolish?.(pendingDemolish); setPendingDemolish(null); };
   // #237: markiertes Gebäude wirklich aufwerten (erst nach „Aufwerten bestätigen" — nie durch einen Fehltipp).
   // Härtung: NUR weiterschalten, wenn das Upgrade wirklich anwendbar ist. Ist die Hauptaktion der Bauphase schon
@@ -272,6 +280,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { setPendingUpgrade(cb.id); setUpgradeMsg(null); } else { setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: info.reason }); setPendingUpgrade(null); } } return; } // #237: markieren + Jetzt/Danach zeigen, Aufwertung erst über den Bestätigen-Knopf
     if (phase === "place") { const b = buildingAt(pos); if (b && b.id === PENDING_ID) setSelId(PENDING_ID); return; }
     if (phase === "move") { const b = buildingAt(pos); if (b) setSelId(b.id); return; }
+    if (phase === "choose") { const cb = committedAt(pos); if (cb) setInspectId((cur) => (cur === cb.id ? null : cb.id)); return; } // Brett-Tap → Beschreibung leuchtet (Liste ↔ Brett)
   };
 
   // ---- Drag & Drop (Vorschau-Gebäude in „place", bestehende in „move"); Griff überall am Fußabdruck ----
@@ -461,6 +470,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 // #237/#UI: Aufrüst-Phase = Spotlight — ALLES ausgegraut außer aufwertbaren Gebäuden (die werden hervorgehoben).
                 const upCan = phase === "upgrade" && b && !isPending && upgradeInfo(fam, b.tier).can; // aufwertbar → hervorheben (Ziel-Stufe am Gebäude, #232)
                 const isMarkedUpgrade = phase === "upgrade" && pendingUpgrade != null && b && b.id === pendingUpgrade; // #237: markiertes Aufrüst-Ziel (gold)
+                const isInspected = phase === "choose" && inspectId != null && b && b.id === inspectId; // choose: aus der Liste inspiziertes Gebäude → leuchtet (cyan), zeigt wo es liegt
                 const upgradeDim = phase === "upgrade" && !upCan && !isMarkedUpgrade; // nicht-aufwertbar (inkl. leere Zellen) → ausgrauen
                 // #UI: beim Ziehen belegte Fremdfläche → ausgrauen (kein Ablegen möglich), außer sie ist gerade Drag-Vorschau.
                 const isBlocked = !!blocked && blocked.has(pos) && !(dragCells && dragCells.has(pos));
@@ -486,6 +496,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       boxShadow: [
                         isMarkedDemolish ? "inset 0 0 0 2px #ff6a4d, inset 0 0 16px #ff3b1e66" : null,     // #235: markiertes Abriss-Ziel rot hervorheben
                         isMarkedUpgrade ? "inset 0 0 0 2px #f0b429, inset 0 0 16px #f0b42966" : null,      // #237: markiertes Aufrüst-Ziel gold hervorheben
+                        isInspected ? "inset 0 0 0 2px #5ec8f0, 0 0 14px #5ec8f0aa, inset 0 0 16px #5ec8f055" : null, // choose: inspiziertes Gebäude cyan leuchten lassen (wo liegt es?)
                         upCan && !isMarkedUpgrade ? `0 0 10px ${tierCol}66` : null,                        // #249: aufwertbares Gebäude dezent in SEINER Stufenfarbe leuchten (kein Gold) — Gold erst beim ausgewählten
                         upCan && !isMarkedUpgrade ? `inset 0 0 0 2px ${tierCol}` : null,                   // #249: Rahmen in Stufenfarbe (der SVG-Contour ist im Aufrüst-Spotlight gedimmt)
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
@@ -820,6 +831,33 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 );
               })()}
             </div>
+
+            {/* choose: „Was habe ich schon?" — alle gebauten Gebäude mit Beschreibung, verlinkt mit dem Brett.
+                Antippen (Liste ODER Brett) lässt Gebäude + Beschreibung gemeinsam cyan leuchten. Steht direkt unter „Nichts bauen". */}
+            {!removeFor && phase === "choose" && committed.length > 0 && (
+              <div className="order-1 rounded-xl p-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
+                <div className="text-[11px] font-mono uppercase tracking-wide opacity-60 mb-0.5">Deine Gebäude ({committed.length})</div>
+                <div className="text-[10px] opacity-45 mb-2">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
+                <div className="flex flex-col gap-1">
+                  {committed.map((b) => {
+                    const f = familyDef(b.familyId); if (!f) return null;
+                    const on = inspectId === b.id;
+                    return (
+                      <button key={b.id} id={`arch-inspect-${b.id}`} onClick={() => setInspectId(on ? null : b.id)}
+                        className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
+                        style={{ background: on ? "#12313f" : "#16232f", border: `1px solid ${on ? "#5ec8f0" : "#24333f"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
+                        <span className="inline-flex items-center gap-1.5 flex-wrap">
+                          <span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: f.legendary ? GOLD : CAT[f.category].color }} />
+                          <b>{f.name}</b>
+                          <span className="opacity-55">{f.legendary ? "Legendär" : `Stufe ${tierLabel(b.tier)}`}</span>
+                        </span>
+                        <span className="opacity-75">{famEff(f, b)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Vorschau & Brett-Status — Mobil UNTER dem Brett (order-3), Desktop unter dem Phase-Panel in der rechten Spalte. */}
             <div className="rounded-xl p-3 order-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
