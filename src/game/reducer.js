@@ -124,6 +124,7 @@ export function initialState(rng = Math.random, seed = null) {
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     iceTemp: {}, frostbitePending: {}, frostbiteActive: {}, frostSwapsUsed: [], // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff / genutzte Frosttausche
     layers: {}, frostFormPrev: [], // Eis-Rework (v0): Schichten je Frostkarte (permanent) / Beständigkeits-Historie
+    frostSelect: null, // Frostwahl (#265): offene Kartenwahl beim Einfrieren { need, chosen } — null = keine offene Wahl
     growth: {}, colonized: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green)
     ash: 0, brandPending: {}, brandActive: {}, forged: {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     tieArmed: false,
@@ -391,6 +392,28 @@ export function reducer(state, action) {
       return { ...state, familyTiers, deck, roles, formations, phase: "play", familyTarget: null };
     }
 
+    // Frostwahl (#265): der Spieler wählt selbst, welche eigenen Karten einfrieren. TOGGLE wählt/entwählt (bis `need`),
+    // CONFIRM friert die gewählten ein und geht in play. Nur nicht-gefrorene eigene Karten sind wählbar.
+    case "FROST_SELECT_TOGGLE": {
+      if (state.phase !== "frost-select" || !state.frostSelect) return state;
+      const fs = state.frostSelect;
+      const card = state.deck.find((c) => c.id === action.cardId);
+      if (!card || card.frozen) return state;                                    // nur nicht-gefrorene eigene Karten
+      let chosen = fs.chosen.slice();
+      if (chosen.includes(action.cardId)) chosen = chosen.filter((x) => x !== action.cardId); // abwählen
+      else if (chosen.length < fs.need) chosen.push(action.cardId);                            // hinzufügen (bis need)
+      return { ...state, frostSelect: { ...fs, chosen } };
+    }
+    case "FROST_SELECT_CONFIRM": {
+      if (state.phase !== "frost-select" || !state.frostSelect) return state;
+      const fs = state.frostSelect;
+      if (!fs.chosen.length) return state;                                       // mindestens eine Karte wählen
+      const ids = new Set(fs.chosen);
+      const deck = state.deck.map((c) => (ids.has(c.id) ? { ...c, frozen: true } : c));
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
+      return { ...state, deck, formations, phase: "play", frostSelect: null };
+    }
+
     // Zielauswahl bestätigen (V2 §22.6): genau needsTarget Karten → Rolle setzen bzw. dauerhafte Wertmod (L1/L9).
     // C-Rollen (inkl. C9 Opfergabe) sind zu Familien migriert (#167) → laufen über den Familien-Ziel-Fluss, nicht hier.
     case "CONFIRM_TARGET": {
@@ -445,9 +468,15 @@ export function reducer(state, action) {
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15 (#93 F2)
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
       // Eis (#93 F3): dieser Pick friert so viele NEUE eigene Karten ein, dass das Ziel (frozenTargetFor) erreicht ist.
+      // #265 Frostwahl-Fix: MIT Frostwahl wählt der Spieler die Karten SELBST (frost-select-Phase, unten), statt Auto-
+      // Einfrieren. OHNE Frostwahl frieren wie bisher zufällige Karten ein.
+      let pendingFrostSelect = null;
       if (arch === "ice") {
         const toFreeze = Math.max(0, frozenTargetFor(skills) - frozenCount(deck));
-        if (toFreeze > 0) deck = freezeCards(deck, toFreeze, rngFor(state, action, state.cycle, "freeze"), hasFrostwahl(skills)); // Frostwahl: niedrigste Karten gezielt
+        if (toFreeze > 0) {
+          if (hasFrostwahl(skills)) pendingFrostSelect = { need: toFreeze, chosen: [] };
+          else deck = freezeCards(deck, toFreeze, rngFor(state, action, state.cycle, "freeze"), false);
+        }
       }
       // Pflanze (v0): erster Pflanze-Skill → Alter Anker (1 Karte reif: grün, Wert 11) + Setzlingsbeet/Dornenkönig.
       if (arch === "plant" && !(state.activeArchetypes || []).includes("plant")) {
@@ -481,7 +510,9 @@ export function reducer(state, action) {
       if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green ? { ...c, green: false } : c)); growth = {}; colonized = {}; } // Pflanze weg (Anker-Wert bleibt gebacken)
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
-      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, layers, frostFormPrev, growth, colonized, ash, brandPending, brandActive, forged, formations, phase: "play", skillOffer: null };
+      // #265: bei offener Frostwahl in die frost-select-Phase (Spieler wählt die einzufrierenden Karten), sonst direkt weiter.
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, layers, frostFormPrev, growth, colonized, ash, brandPending, brandActive, forged, formations,
+               phase: pendingFrostSelect ? "frost-select" : "play", frostSelect: pendingFrostSelect, skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").

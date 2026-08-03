@@ -243,6 +243,59 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
   });
 });
 
+describe("Frostwahl — frost-select-Fluss (#265)", () => {
+  const FW = "SK_ICE_02"; // Frostwahl
+  const iceState = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", skillOffer: [FW], ...over });
+
+  it("PICK_SKILL mit Frostwahl öffnet die frost-select-Phase (need = ICE_BASE_FREEZE), friert noch nichts ein", () => {
+    const s = reducer(iceState(), { type: "PICK_SKILL", skillId: FW, rng });
+    expect(s.phase).toBe("frost-select");
+    expect(s.frostSelect).toEqual({ need: 2, chosen: [] }); // ICE_BASE_FREEZE = 2, Frostwahl selbst friert nichts vorab
+    expect(s.deck.some((c) => c.frozen)).toBe(false);       // Auto-Einfrieren unterbleibt — der Spieler wählt
+    expect(s.skills).toEqual([FW]);
+    expect(s.skillOffer).toBeNull();
+  });
+
+  it("FROST_SELECT_TOGGLE wählt/entwählt bis need, ignoriert bereits gefrorene und Übermaß", () => {
+    let s = reducer(iceState(), { type: "PICK_SKILL", skillId: FW, rng });
+    const [a, b, c] = s.deck.map((x) => x.id);
+    s = reducer(s, { type: "FROST_SELECT_TOGGLE", cardId: a });
+    expect(s.frostSelect.chosen).toEqual([a]);
+    s = reducer(s, { type: "FROST_SELECT_TOGGLE", cardId: a }); // erneut → abwählen
+    expect(s.frostSelect.chosen).toEqual([]);
+    s = reducer(s, { type: "FROST_SELECT_TOGGLE", cardId: a });
+    s = reducer(s, { type: "FROST_SELECT_TOGGLE", cardId: b });
+    expect(s.frostSelect.chosen).toEqual([a, b]);
+    s = reducer(s, { type: "FROST_SELECT_TOGGLE", cardId: c }); // need erreicht → keine dritte Karte
+    expect(s.frostSelect.chosen).toEqual([a, b]);
+  });
+
+  it("FROST_SELECT_CONFIRM friert genau die gewählten Karten ein und geht in play", () => {
+    let s = reducer(iceState(), { type: "PICK_SKILL", skillId: FW, rng });
+    const [a, b] = s.deck.map((x) => x.id);
+    s = reducer(s, { type: "FROST_SELECT_TOGGLE", cardId: a });
+    s = reducer(s, { type: "FROST_SELECT_TOGGLE", cardId: b });
+    s = reducer(s, { type: "FROST_SELECT_CONFIRM" });
+    expect(s.phase).toBe("play");
+    expect(s.frostSelect).toBeNull();
+    const frozenIds = s.deck.filter((c) => c.frozen).map((c) => c.id);
+    expect(new Set(frozenIds)).toEqual(new Set([a, b]));
+  });
+
+  it("OHNE Frostwahl friert der Eis-Skill wie bisher automatisch ein (kein frost-select)", () => {
+    const s = reducer(iceState({ skillOffer: ["SK_ICE_03"] }), { type: "PICK_SKILL", skillId: "SK_ICE_03", rng });
+    expect(s.phase).toBe("play");
+    expect(s.frostSelect).toBeNull();
+    expect(s.deck.filter((c) => c.frozen)).toHaveLength(2); // Auto-Einfrieren auf ICE_BASE_FREEZE
+  });
+
+  it("FROST_SELECT_* sind außerhalb der frost-select-Phase wirkungslos", () => {
+    const play = initialState(makeRng(1));
+    expect(reducer(play, { type: "FROST_SELECT_TOGGLE", cardId: play.deck[0].id })).toBe(play);
+    expect(reducer(play, { type: "FROST_SELECT_CONFIRM" })).toBe(play);
+  });
+});
+
 describe("DECLINE_PERK — Perk-Angebot ablehnen (#138)", () => {
   const perkLevelup = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", offer: ["L_UMV", "L2", "L4"], ...over });
 

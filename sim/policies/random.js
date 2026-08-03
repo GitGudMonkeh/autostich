@@ -54,6 +54,18 @@ export function randomPolicy({ architectGreedy = false } = {}) {
         case "family-target":
           return familyTargetStep(s, rng);
 
+        // Frostwahl (#265): die niedrigsten `need` nicht-gefrorenen Karten wählen (spiegelt das alte Auto-Verhalten →
+        // Balance/Determinismus erhalten), dann bestätigen.
+        case "frost-select": {
+          const fs = s.frostSelect || { need: 0, chosen: [] };
+          if (fs.chosen.length < fs.need) {
+            const pool = s.deck.filter((c) => !c.frozen && !fs.chosen.includes(c.id))
+              .sort((a, b) => a.value - b.value || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+            if (pool.length) return { type: "FROST_SELECT_TOGGLE", cardId: pool[0].id };
+          }
+          return { type: "FROST_SELECT_CONFIRM" };
+        }
+
         case "formation":
           return { type: "CONFIRM_FORMATION" }; // Baseline: Reihenfolge unangetastet lassen
 
