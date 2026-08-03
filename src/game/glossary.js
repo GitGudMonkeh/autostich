@@ -238,7 +238,7 @@ export const GLOSSARY = {
     match: ["Grün", "grüne", "grünen", "grüner", "Reife", "reif"] },
   wurzeln: { category: "frak", group: "plant", label: "Wurzeln", icon: "🌿", color: CLR.plant,
     text: `Der einzige Weg, den Kartenwert grüner Karten zu erhöhen (bis zum Deckel ${C.PLANT_VALUE_CAP}). Ist der Deckel erreicht, geben weitere Wurzeln stattdessen Score.`,
-    match: ["Wurzeln", "Wurzeln-Score"] },
+    match: ["Wurzeln", "Wurzel-Score", "Wurzeln-Score"] },
   colonize: { category: "frak", group: "plant", label: "Kolonisieren / Ausläufer", icon: "🌿", color: CLR.plant,
     text: "Markiert gegnerische Karten grün (Ausläufer/Rhizom). Besiegst du eine kolonisierte Karte, erntest du Wachstum.",
     match: ["Kolonisieren", "kolonisierte", "Ausläufer"] },
