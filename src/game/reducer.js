@@ -198,6 +198,11 @@ export function reducer(state, action) {
     case "TO_MENU":     // laufenden Run verlassen (#5)
       return menuState();
 
+    case "RESTORE_RUN": // Resume: einen gespeicherten laufenden Run laden — der komplette Reducer-State wird durch
+      // den Snapshot ersetzt. Guard gegen Unfug (kein Deck / Menü-/Gameover-Snapshot → ignorieren, kein Sprung).
+      return (action.state && action.state.deck && action.state.phase !== "menu" && action.state.phase !== "gameover")
+        ? action.state : state;
+
     case "END_RUN":     // Lauf freiwillig beenden → Endscreen (GameOver) statt direkt ins Menü.
       // Highscore/Geist sichert der gameover-Effekt in App.jsx (saveRun). Menü/Gameover ignorieren.
       return (state.phase === "menu" || state.phase === "gameover") ? state : { ...state, phase: "gameover" };
