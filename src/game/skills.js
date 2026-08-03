@@ -50,10 +50,10 @@ export const SKILL_DEFS = {
     desc: "Gewinnt eine ionisierte Karte, springt ein Stapel auf ihren Nachfolger (Tiefe). Volle (5) Karten werden übersprungen.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, voltageArc: true },
   SK_LIGHTNING_11: { id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning", keywords: ["ionize", "charge"],
-    desc: `Eine volle Karte (5) wird statt weiter ionisiert zu +${C.BLITZFAENGER_VALUE} Stichwert und +1 Ladung. Die volle Karte als Dauer-Score-Motor.`,
+    desc: `Ionisierung, die eine bereits volle Karte (${C.ION_MAX_STACKS} Stapel) trifft, verpufft sonst. Mit Blitzfänger gibt sie stattdessen +${C.BLITZFAENGER_VALUE} Stichwert (temporär, nächstes Auftauchen) und +1 Ladung.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, blitzcatcher: true },
   SK_LIGHTNING_09: { id: "SK_LIGHTNING_09", name: "Kurzschluss", archetype: "lightning", keywords: ["ionize", "charge"],
-    desc: "Eine volle Karte (5) entlädt beim Sieg alle Stapel → +Ladung-Burst, Karte auf 0 zurück. Zyklus statt Sättigung.",
+    desc: `Gewinnst du mit einer voll ionisierten Karte (${C.ION_MAX_STACKS} Stapel), setzt sie alle Stapel auf 0 zurück und gibt +${C.ION_MAX_STACKS * C.KURZSCHLUSS_CHARGE_PER_STACK} Ladung (${C.KURZSCHLUSS_CHARGE_PER_STACK} je Stapel). Der Sieg-Score aus den Stapeln zählt vorher normal.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, kurzschluss: true },
   // Linie 4 — Crit-Maschine (Chance & Mult erzeugen — Blitz-exklusiv)
   SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsstau", archetype: "lightning", keywords: ["crit"],
