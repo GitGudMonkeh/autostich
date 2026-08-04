@@ -434,10 +434,10 @@ export const JAHRESRINGE_SCORE     = 30;  // … so viel je 10er-Stufe          
 // sind (anders als Eis' dreieckiger Schicht-Score). Beide Achsen bekommen daher einen SUPERLINEAREN (dreieckigen) High-
 // End-Anteil — additiv oben drauf, nur am oberen Rand → reines Ceiling, Floor unberührt, beide Skills bleiben Picks.
 // Wurzel/TIEFE: dreieckig in der Wachstums-Tiefe der Siegkarte (Wachstum über dem Wert-Deckel). Nur mit Wurzeltiefe.
-export const PLANT_ROOT_DEEP_K     = envNum("SIM_PLANT_ROOT_DEEP_K", 4);   // Score je Dreiecks-Einheit m(m+1)/2 der Siegkarten-Tiefe [Sim-tunebar]
+export const PLANT_ROOT_DEEP_K     = envNum("SIM_PLANT_ROOT_DEEP_K", 5);   // Score je Dreiecks-Einheit m(m+1)/2 der Siegkarten-Tiefe [Sim-tunebar]
 export const PLANT_ROOT_DEEP_CAP   = envNum("SIM_PLANT_ROOT_DEEP_CAP", 25); // gedeckelte gezählte Tiefe (Plateau, kein Runaway)
 // Blüte/BREITE: dreieckig im vollen grünen Feld (greenCount). Nur mit Blüte UND wenn das Feld überwuchert ist (Gating wie Überwucherung).
-export const PLANT_BLOOM_FIELD_K   = envNum("SIM_PLANT_BLOOM_FIELD_K", 4);   // Score je Dreiecks-Einheit m(m+1)/2 der Feldgröße [Sim-tunebar]
+export const PLANT_BLOOM_FIELD_K   = envNum("SIM_PLANT_BLOOM_FIELD_K", 5);   // Score je Dreiecks-Einheit m(m+1)/2 der Feldgröße [Sim-tunebar]
 export const PLANT_BLOOM_FIELD_CAP = envNum("SIM_PLANT_BLOOM_FIELD_CAP", 25); // gedeckelte gezählte Feldgröße (Plateau)
 // Linie 2 — Aussaat (Breite: Wachstum verbreiten)
 export const AUSSAAT_GROWTH        = 1;   // Aussaat: +Wachstum je Nachbar bei Sieg einer grünen Karte          // v0
