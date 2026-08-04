@@ -33,14 +33,12 @@ Leitbild: *„Die Werkstatt wächst mit dir."* Der Baum ist die Werkstatt/das Fu
 
 ## 3 · Kern-Modell
 
-### 3.1 Währung — Konstruktionspunkte (KP)
-Läufe verdienen **KP**, KP kauft Knoten. Vorschlag (v0, alles sim-/tunebar):
+### 3.1 Währung — Konstruktionspunkte (KP) · **beschlossen: Hybrid (A)**
+Läufe verdienen **KP**, KP kauft Knoten. Drei Quellen (alle sim-/tunebar):
 
 - **+1 KP** je abgeschlossenem Lauf (Grundstock, auch bei schwachem Lauf → Progression bricht nie ab).
 - **+KP je Score-Meilenstein** des Laufs (z. B. je erreichte 2M-Schwelle +1 KP, gedeckelt) → guter Lauf zahlt sich aus.
-- **+KP bei Rang-Aufstieg** (Meister I→V) als Bonus-Schub.
-
-> **Offene Entscheidung A:** genaue KP-Kurve. Alternativen: rein score-skaliert / rein rang-basiert / hybrid (Vorschlag).
+- **+KP bei Rang-Aufstieg** = einmaliger Schub, sobald ein neuer **Meister-Rang** erreicht wird (Ränge I–V werden über Score-Schwellen freigeschaltet, `advanceGrade`). Belohnt Langzeit-Fortschritt, nicht nur Grind. *(Optional streichbar, falls unerwünscht.)*
 
 ### 3.2 Knoten & Stufen
 Ein **Knoten** hat: `id`, Branch, Kosten (KP), optionale **Voraussetzung** (Vorgänger-Knoten und/oder Mindest-Rang), Effekt. Manche Knoten sind **mehrstufig** (dieselbe id, Level 1..N) — das ist das „3 Knoten"-Muster.
@@ -69,7 +67,7 @@ Vier thematische Äste, an den Spiel-Säulen ausgerichtet:
    - z. B. Blitz Start +1 Ladung · Feuer Start-Hitze · Eis 1 Gratis-Schicht · Pflanze 1 Setzling vorgewachsen.
 4. **👑 Meisterschaft** — Prestige/Skalierung (nimmt die heutigen Rang-Multiplikatoren auf: LegendMult, RareShift, Legendär-Garantie), jetzt als **wählbare** Knoten statt automatisch.
 
-> **Offene Entscheidung B:** Größe für v1 — schlanker Baum (≈ 10–14 Knoten) zum Start, später erweitern? (Vorschlag: ja.)
+**Beschlossen (B): ~14 Knoten für v1** — genug für echte Wahl über vier Äste, klein genug zum sauberen Balancing; später erweiterbar. Grobe Verteilung: Architekt/Baufeld ~4 · Auftakt ~4 · Fraktionen 4 (je 1) · Meisterschaft ~2–3.
 
 ---
 
@@ -77,10 +75,7 @@ Vier thematische Äste, an den Spiel-Säulen ausgerichtet:
 
 Zwei Optionen:
 
-- **(B1) Tree ersetzt die Auto-Rewards** *(Vorschlag).* `masteryGrade` bleibt als **Prestige-Rang + Schwierigkeit + KP-Quelle + Gate für tiefe Knoten**. Die heutigen Auto-Rewards (Cover/Reroll/LegendMult) werden zu **Knoten** — man *wählt* sie, statt sie geschenkt zu bekommen. Klarste Fantasie, kein Doppel-Buff.
-- **(B2) Tree zusätzlich** — Auto-Rewards bleiben, Baum obendrauf. Schneller gebaut, aber Power-Creep + zwei parallele Systeme.
-
-> **Offene Entscheidung C:** B1 (falten) vs. B2 (schichten). Vorschlag **B1**.
+**Beschlossen (C): B1 — falten.** `masteryGrade` bleibt als **Prestige-Rang + Schwierigkeit + KP-Quelle + Gate für tiefe Knoten**. Die heutigen Auto-Rewards (Cover/Reroll/LegendMult/RareShift/Legendär-Garantie) werden zu **wählbaren Knoten** — man investiert KP hinein, statt sie automatisch geschenkt zu bekommen. Kein Doppel-Buff, klare Fantasie, ein System statt zwei.
 
 ---
 
@@ -100,16 +95,16 @@ nodes: { [nodeId]: level },     // freigeschaltete Knoten + Stufe
 
 ---
 
-## 6 · Bestenlisten-Fairness (wichtig)
+## 6 · Bestenlisten-Fairness · **beschlossen (D): zwei-stufig**
 
-Ein Meta-Baum macht Läufe stärker → Highscores zwischen frischem und ausgebautem Profil sind **nicht mehr vergleichbar**.
+Ein Meta-Baum macht Läufe stärker → Highscores zwischen frischem und ausgebautem Profil sind **nicht mehr vergleichbar**. Lösung: die globale Liste läuft **immer unter gleichen Bedingungen für alle** — es gibt zwei faire Standard-Zustände:
 
-> **Offene Entscheidung D:** Wie damit umgehen?
-> - **(D1)** Bestenliste nur für **Challenger-Seed / „faire" Läufe**, die den Tree ignorieren (fixe Basiswerte).
-> - **(D2)** Getrennte Boards: „mit Ausbau" vs. „fair".
-> - **(D3)** Tree-Boni sind moderat genug, dass es egal ist (riskant).
->
-> Vorschlag: **D1** — der Meister/Challenger-Modus fährt basis-fair, der normale Lauf nutzt den Tree.
+- **Fair-Modus (Basis) — global, immer verfügbar.** Der Tree wird **ignoriert**, es gelten fixe Basiswerte. Alle Teilnehmer starten gleich → vergleichbar. (Der normale Lauf nutzt weiterhin deinen Tree, zählt aber nur lokal/für die KP-Ernte.)
+- **Vollausbau-Liga (Prestige) — global, freigeschaltet, wenn dein Baum KOMPLETT ist.** Hier läuft jeder mit dem **voll ausgebauten Tree als fixem Standard** → wieder gleiche Bedingungen für alle, nur auf höherem Niveau. Das ist der „Endgame"-Wettbewerb: erst den Baum fertigstellen, dann in der Liga antreten, wo der Max-Baum die Norm ist.
+
+So bleibt jede globale Wertung apples-to-apples (alle gleich, ob auf Basis- oder Max-Niveau), und der Baum-Ausbau ist ein PvE-Ziel mit klarem Prestige-Payoff (Zugang zur Liga).
+
+> Offen (klein): fährt die Vollausbau-Liga zusätzlich basis-fair-Seeds (Challenger), oder freie Seeds? Später.
 
 ---
 
@@ -138,15 +133,15 @@ Der **Tree-Screen** selbst (eigener Screen wie Kollektion/Bestenliste): Branch-S
 
 ---
 
-## 9 · Offene Entscheidungen (zusammengefasst)
+## 9 · Entscheidungen — **beschlossen**
 
-| # | Frage | Vorschlag |
+| # | Frage | Beschluss |
 |---|---|---|
-| A | KP-Kurve (wie verdient man Punkte?) | Hybrid: +1/Lauf + Score-Meilensteine + Rang-Aufstieg |
-| B | Baumgröße v1 | schlank (≈10–14 Knoten), später erweitern |
-| C | Rang-Rewards falten (B1) oder schichten (B2)? | **B1** falten |
-| D | Bestenlisten-Fairness | **D1** fairer Challenger/Meister-Modus ignoriert Tree |
-| E | Respec: frei / kostet / keiner? | frei in v1 (Experimentier-freundlich), später ggf. Kosten |
+| A | KP-Kurve | **Hybrid**: +1/Lauf + Score-Meilensteine + Rang-Aufstiegs-Schub |
+| B | Baumgröße v1 | **~14 Knoten** |
+| C | Rang-Rewards falten oder schichten? | **falten** (B1) — Auto-Rewards werden wählbare Knoten |
+| D | Bestenlisten-Fairness | **zwei-stufig**: Fair-Modus (Basis, Tree ignoriert) + **Vollausbau-Liga** (freigeschaltet bei komplettem Baum, alle mit Max-Tree) |
+| E | Respec | **frei** (v1) |
 
 ---
 
