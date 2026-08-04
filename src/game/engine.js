@@ -13,7 +13,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
   hasStandstill, hasFrostReserve, hasIceBloom, hasIceAnchor, hasPermafrost, iceSkillCount, // Eis-Rework (v0)
   layerValue, layerScore, kristallineBonus, totalLayers, hasGletscher, hasEisdruck, hasKristallineMasse, hasBestaendigkeit, hasVerschraenkung, hasKaltfront, // Eis-Rework (#269): Schicht-Engine
   hasVergletscherung, hasArchitekt, // Eis-Rework (v0): Legendäre
-  hasEiskalt, hasFrostschlag, hasUeberlaufMotorDepth, hasUeberlaufMotorBreadth, // Überlauf-Konsum: Crit aus Vorrat + Frost-Crit-Payoff + zwei Vorrats-Motoren
+  hasEiskalt, hasFrostschlag, hasUeberlaufMotorDepth, hasFrostkaskade, // Überlauf-Konsum: Crit aus Vorrat + Frost-Crit-Payoff + Tiefen-Motor + Crit-Momentum
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
   hasWurzelschlag, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Tiefe/Breite
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
@@ -88,6 +88,7 @@ export function resolveTrick(state, rng) {
     weaknessBig = false, // Rarität #167: D_WEAKNESS IV — die rüstende Niederlage hatte großen Abstand (→ +900 statt +600)
     interplayStored = 0, // Rarität #167: D_INTERPLAY IV — in Niederlagen gebankter Score, beim nächsten Sieg als Flat ausgezahlt
     misfireScore = 0, // V2 §22.6 D15: Score-Ladung, +30 je Sieg ohne Crit (max 300), Auszahlung bei Crit
+    iceCritCarry = 0, // Frostkaskade: von einem Frost-Crit auf den nächsten Frost-Sieg getragene Crit-Chance (Kette)
     winSuit = null, winSuitStreak = 0, // #71 Farbserie: gleicher-Farbe-Siegesserie
     recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich (für secondLastResult, C_GUARD IV)
     segmentWins = 0, // #189 Volles Haus: Siege im AKTUELLEN Segment vor diesem Stich (segment-genau, ersetzt das rollende Fenster)
@@ -433,9 +434,8 @@ export function resolveTrick(state, rng) {
         if (hasPermafrost(skills)) addLayers += C.PERMAFROST_LAYER_BONUS;
         if (inFormation && hasBestaendigkeit(skills) && frostFormPrev.includes(pCard.id)) addLayers += C.BESTAENDIGKEIT_LAYER;
       }
-      // Überlauf-Motoren (umgewidmete Frosttausch-Skills): füttern den Überlauf-Vorrat, den Eiskalt verbrennt.
-      if (hasUeberlaufMotorBreadth(skills)) addLayers += C.UEBERLAUF_MOTOR_BREADTH;                       // Breite: jeder Frost-Sieg +1
-      if (hasUeberlaufMotorDepth(skills) && myLayers >= C.ICE_LAYER_MAX) addLayers += C.UEBERLAUF_MOTOR_DEPTH; // Tiefe: schon tiefe Karte +1
+      // Überlauf-Motor (Tiefenfrost): vertieft schon tiefe Pfeiler → füttert den Überlauf-Vorrat, den Eiskalt verbrennt.
+      if (hasUeberlaufMotorDepth(skills) && myLayers >= C.ICE_LAYER_MAX) addLayers += C.UEBERLAUF_MOTOR_DEPTH;
       if (inFormation) newFrostFormCur = [...newFrostFormCur, pCard.id];
       newLayers = { ...newLayers, [pCard.id]: myLayers + addLayers };
       // Eisblüte (#269 REWORK): Sieg in ≥2 Formationen → gefrorene Deck-Nachbarn banken einen ANTEIL der Schichten der
@@ -640,9 +640,12 @@ export function resolveTrick(state, rng) {
       for (const c of deck) if (c.frozen) { const o = (layers[c.id] || 0) - C.ICE_LAYER_MAX; if (o > 0) iceOverflowSum += o; }
     }
     const eiskaltCrit = iceOverflowSum > 0 ? Math.min(C.EISKALT_CRIT_CAP, iceOverflowSum * C.EISKALT_CRIT_PER) : 0;
+    // Frostkaskade: die aus dem letzten Frost-Crit getragene Crit-Chance addiert sich auf diesen Frost-Sieg (Kette).
+    const flaecheCarryIn = (pCard.frozen && hasFrostkaskade(skills)) ? (iceCritCarry || 0) : 0;
     const rawCrit = critChanceRawFor(perks, wctx) + familyCritChanceRaw(familyTiers, critFamCtx) + lightningCritRaw(lightning, skills, serieStreak)
                     + (lightning?.active ? ionCritChance(deck) : 0) // #271: feldweiter Ionisierungs-Crit (Breite); Überschuss >100 % → Überschlag→Ladung
                     + eiskaltCrit // #Überlauf-Konsum: Eiskalt — gezielter Frost-Crit aus dem Überlauf-Vorrat (unten verbrannt)
+                    + flaecheCarryIn // Frostkaskade: Crit-Chance-Kette vom letzten Frost-Crit
                     + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
@@ -652,6 +655,8 @@ export function resolveTrick(state, rng) {
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers) + lightningCritMult(skills)
                    + (lightning?.durchschlagMult || 0)
                    + ((lightning && lightning.dischargeArmed) ? C.ENTLADUNG_CRIT_MULT : 0);
+    // Frostkaskade: Crit-Chance-Überschuss über 100 % (Eiskalt-Flut) geht nicht verloren → wird zu Crit-Multiplikator.
+    if (pCard.frozen && hasFrostkaskade(skills) && rawCrit > 1) critMultiplier += (rawCrit - 1) * C.FLAECHE_EXCESS_TO_MULT;
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = L10; reducedRepeat = Zeitsegment III
     // Eiskalt-Verbrauch (#Überlauf-Konsum): der Frost-Sieg brennt bis zu EISKALT_SPEND Überlauf-Schichten ab — von den
     // TIEFSTEN Frostkarten zuerst, NIE unter das Plateau (produktive Schichten bleiben permanent). Verbraucht wird UNABHÄNGIG
@@ -946,6 +951,8 @@ export function resolveTrick(state, rng) {
     }
     // Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
     critFollowArmed = isCrit;                                        // D14 Crit-Folge: nur ein Crit rüstet den nächsten Sieg
+    // Frostkaskade: ein Frost-Crit trägt einen Anteil SEINER Crit-Chance auf den nächsten Frost-Sieg; ohne Crit reißt die Kette.
+    if (pCard.frozen && hasFrostkaskade(skills)) iceCritCarry = isCrit ? C.FLAECHE_CARRY_SHARE * critChance : 0;
     // D15/D_MISFIRE: Ladung je Sieg ohne Crit (Stufen-Schritt/Cap); ein Crit zahlt oben die volle Ladung aus und
     // behält danach misfireRetain-Anteil (IV: 25 %, sonst 0 → Reset). Default 30/300/0 = flaches D15.
     misfireScore = isCrit ? Math.round((misfireScore || 0) * misfireRetain)
@@ -1265,7 +1272,7 @@ export function resolveTrick(state, rng) {
     trickLog: nextTrickLog, // #251: Score je Stich (+ Sieg/Niederlage), nach Durchlauf gebucket → Durchlauf-Graph
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     masteryLegGranted: newMasteryLegGranted, // #217 Grad V: garantierter Legendär je Lauf eingelöst? (masteryGrade selbst läuft über ...state)
-    critFollowArmed, weaknessArmed, weaknessBig, interplayStored, misfireScore,
+    critFollowArmed, weaknessArmed, weaknessBig, interplayStored, misfireScore, iceCritCarry,
     winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     architect: newArchitect, architectEnabled, architectPre: newArchitectPre, // Architekt (#202, ersetzt den Shop)

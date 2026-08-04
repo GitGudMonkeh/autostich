@@ -404,7 +404,11 @@ export const EISKALT_SPEND      = envNum("SIM_EISKALT_SPEND", 4);        // MIND
 export const EISKALT_SPEND_FRAC = envNum("SIM_EISKALT_SPEND_FRAC", 0.25);// HAUPT-Hebel: %-Anteil des Vorrats, der je Frost-Sieg verbrannt wird → hält den Vorrat gebändigt (echte Konkurrenz zur Dividende)
 export const FROSTSCHLAG_DIRECT_MULT = envNum("SIM_FROSTSCHLAG_DIRECT_MULT", 0.60); // Frost-Sieg-Crit hebt den iceDirect dieses Stichs um +60 % (nur mit Frostschlag)
 export const UEBERLAUF_MOTOR_DEPTH   = envNum("SIM_UEBERLAUF_MOTOR_DEPTH", 1);   // Tiefen-Motor (Verzahnung umgewidmet): Frost-Sieg einer Karte ≥ Plateau lagert +1 extra Schicht ab (vertieft Pfeiler → Vorrat)
-export const UEBERLAUF_MOTOR_BREADTH = envNum("SIM_UEBERLAUF_MOTOR_BREADTH", 1); // Breiten-Motor (Verdichtung umgewidmet): JEDER Frost-Sieg lagert +1 extra Schicht ab (mehr Karten erreichen Überlauf → Vorrat)
+// Frostkaskade (Verdichtung umgewidmet → Crit-Momentum): crittet eine Frostkarte, trägt sie einen Anteil ihrer Crit-Chance
+// auf den nächsten Frost-Sieg (Kette). Steht die Chance schon bei 100 % (Eiskalt-Flut), fängt der Überschuss als Crit-Mult
+// auf, statt verloren zu gehen — analog Blitz' Überschlag. Kein Generator (Überlauf flutet ohnehin). Alle sim-tunebar.
+export const FLAECHE_CARRY_SHARE     = envNum("SIM_FLAECHE_CARRY_SHARE", 0.5);   // Anteil der Crit-Chance eines Frost-Crits, der auf den nächsten Frost-Sieg wandert
+export const FLAECHE_EXCESS_TO_MULT  = envNum("SIM_FLAECHE_EXCESS_TO_MULT", 0.5);// Crit-Chance-Überschuss über 100 % → +Crit-Multiplikator (je volle 100 % Überschuss)
 export const VERGLETSCHERUNG_DIRECT  = envNum("SIM_VERGLETSCHERUNG_DIRECT", 130);// Vergletscherung: Bonus-Score je Punkt GESAMTER aktiver Gegner-Vergletscherung (Σ frostbiteActive), je Frost-Sieg [Sweep: →1,29×]
 export const VERGLETSCHERUNG_DEBUFF_CAP = envNum("SIM_VERGLETSCHERUNG_DEBUFF_CAP", 60); // … gedeckelte Debuff-Summe (Plateau)
 // Eis-Ceiling-Hebel (2026-07-30): Eis' Ceiling (p90 ~2,4× Feld) ist ZU 100 % `formBaseMult` — dichte Formations-
