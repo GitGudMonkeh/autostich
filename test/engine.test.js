@@ -336,6 +336,18 @@ describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
     s = resolveTrick(s, rng); expect(s.winSuitStreak).toBe(1); expect(s.winSuit).toBe("B"); // Farbwechsel
     expect(resolveTrick(scenario(0, 12, { winSuit: "R", winSuitStreak: 3 }), rng).winSuitStreak).toBe(0); // Niederlage bricht
   });
+
+  it("Farbserie + Pflanze-Grün: pflanzen-grüne Karten verschiedener Originalfarben halten die Serie als „G\"", () => {
+    const deck = [
+      { id: "a", suit: "R", baseRank: 12, value: 12, green: true },
+      { id: "b", suit: "B", baseRank: 12, value: 12, green: true }, // andere Originalfarbe, aber grün
+      { id: "c", suit: "Y", baseRank: 12, value: 12 },              // nicht grün → Farbwechsel
+    ];
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: mk([0, 0, 0]), playerOrder: [0, 1, 2], oppOrder: [0, 1, 2] };
+    s = resolveTrick(s, rng); expect(s.winSuit).toBe("G"); expect(s.winSuitStreak).toBe(1); // grüne R → „G"
+    s = resolveTrick(s, rng); expect(s.winSuit).toBe("G"); expect(s.winSuitStreak).toBe(2); // grüne B → Serie HÄLT (beide „G")
+    s = resolveTrick(s, rng); expect(s.winSuit).toBe("Y"); expect(s.winSuitStreak).toBe(1); // nicht-grüne Y → Farbwechsel
+  });
   // D17 Farbserie / D18 Volles Haus als Familien (D_SUIT_STREAK / D_FULL_HOUSE) — Score-Tests in families-engine.test.js.
   it("Volles-Haus-Fenster: recentResults hält die letzten 4 Ergebnisse", () => {
     expect(resolveTrick(scenario(12, 0, { recentResults: ["loss", "win", "tie", "win"] }), rng).recentResults).toEqual(["win", "tie", "win", "win"]);

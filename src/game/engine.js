@@ -335,7 +335,10 @@ export function resolveTrick(state, rng) {
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
     // #71 Farbserie: Länge der Serie gewonnener Stiche gleicher Farbe INKL. dieses Siegs. D_SUIT_STREAK IV:
     // ein Farbwechsel HALBIERT die laufende Länge (min 1) statt sie auf 1 zurückzusetzen (suitHalveOnSwitch).
-    const suitStreak = pCard.suit === winSuit ? winSuitStreak + 1
+    // Effektive Farbe: pflanzen-grüne Karten (card.green) zählen als „Grün" („G") — auf dem Board grün angezeigt, also
+    // auch für die Farbserie dieselbe Farbe (konsistent zu Farbverstärkung). Ein Lauf grüner Karten hält so die Serie.
+    const eSuit = pCard.green ? "G" : pCard.suit;
+    const suitStreak = eSuit === winSuit ? winSuitStreak + 1
                      : (suitHalveOnSwitch ? Math.max(1, Math.floor(winSuitStreak / 2)) : 1);
     // #195: posInCycle = actualPos (Deckposition), NICHT pos (Stich-Index) — muss zum segmentWins-Reset oben
     // (actualPos % SEGMENT_SIZE) passen. Sonst divergieren bei partieller Zeitsegment-Wiederholung Gate (D_FULL_HOUSE
@@ -347,7 +350,7 @@ export function resolveTrick(state, rng) {
                    baseValue: pCard.value, // Basiswert der gespielten Karte
                    coverCount: archPreNow ? (archPreNow.coverCount || 0) : 0, // Gebäude-Perk Dichte Bebauung (D_BEBAUUNG): abgedeckte Positionen
                    hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung (D15)
-    winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
+    winSuit = eSuit; winSuitStreak = suitStreak; // Farbserie fortschreiben (effektive Farbe: grün = „G")
     // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überlauf), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
     let fireFlat = meltScore; // Schmelzpunkt-Drip (im Vor-Stich verbrauchte Hitze) zahlt sich hier als Flat aus (nur bei Sieg)
     let fireWhiteWin = 0;     // #270.2: Weißglut-Anteil DIESES Siegs (Rest von fireFlat = Feuer-Grund-Score)

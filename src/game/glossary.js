@@ -93,7 +93,7 @@ export const GLOSSARY = {
     text: `Würfelt ein Angebot komplett neu. Drei GETRENNTE Vorräte je Lauf — Perks · Gebäude · Skills, je ${C.BASE_REROLLS}, nicht untereinander teilbar, kein Nachschub. Meisterränge geben (pro Kategorie) mehr. Ersetzt die alte Münzökonomie.`,
     match: ["Neuwurf", "Neuwürfe", "Reroll"] },
   farbserie: { category: "grund", label: "Farbserie", icon: "🎨", color: CLR.deck,
-    text: "Aufeinanderfolgende Siege derselben Kartenfarbe. Ein Farbwechsel oder eine Niederlage setzt sie zurück. Speist u. a. den Perk Monochrom und die Familie Farbrausch.",
+    text: "Aufeinanderfolgende Siege derselben Kartenfarbe. Ein Farbwechsel oder eine Niederlage setzt sie zurück. Pflanzen-grüne Karten zählen dabei als Grün. Speist u. a. den Perk Monochrom und die Familie Farbrausch.",
     match: ["Farbserie", "Farbserien"] },
   direktscore: { category: "grund", label: "Direkt-Score", icon: "＋", color: CLR.grund,
     text: "Score, der direkt zählt — ohne durch Serie, Crit oder Formation multipliziert zu werden. Wirkt flach und sofort, oft stark im frühen Spiel.",
