@@ -382,6 +382,9 @@ const suitDuel = (deck, up, down, upDelta, downDelta) =>
   deck.map((c) => (c.suit === up ? { ...c, value: Math.max(0, c.value + upDelta) }
     : c.suit === down ? { ...c, value: Math.max(0, c.value + downDelta) } : c));
 const randomSuit = (rng) => SUIT_ORDER[Math.floor(rng() * SUIT_ORDER.length)];
+// Farb-Prädikat für farbbasierte Wert-Boosts: „Grün" (Suit „G") umfasst auch pflanzen-grüne Karten (card.green) —
+// auf dem Board werden sie als grün angezeigt, also zählen sie auch als Grün. Alle anderen Farben: nur die Originalfarbe.
+const suitMatch = (c, s) => c.suit === s || (s === "G" && !!c.green);
 
 const A_FAMILIES = {
   A_WEAK_STRONG: {
@@ -427,10 +430,10 @@ const A_FAMILIES = {
     id: "A_SUIT_BOOST", cat: "A", name: "Farbverstärkung", upgradeType: CUMULATIVE,
     // III/IV: Spieler wählt die Farbe (pickTarget). I/II: zufällige Farbe.
     tiers: {
-      1: { desc: "Eine zufällige Farbe: vier zufällige Karten dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpRandomWhere(d, (c) => c.suit === s, 4, 1, rng); } },
-      2: { desc: "Eine zufällige Farbe: alle Karten dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpWhere(d, (c) => c.suit === s, 1); } },
-      3: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +1 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => c.suit === target.suits[0], 1) : d) },
-      4: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +2 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => c.suit === target.suits[0], 2) : d) },
+      1: { desc: "Eine zufällige Farbe: vier zufällige Karten dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpRandomWhere(d, (c) => suitMatch(c, s), 4, 1, rng); } },
+      2: { desc: "Eine zufällige Farbe: alle Karten dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpWhere(d, (c) => suitMatch(c, s), 1); } },
+      3: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +1 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => suitMatch(c, target.suits[0]), 1) : d) },
+      4: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +2 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => suitMatch(c, target.suits[0]), 2) : d) },
     },
   },
   A_SMALL_BIG: {

@@ -133,6 +133,20 @@ describe("Kategorie A — Kumulative Deck-Stufen (Spec §3.2 A)", () => {
     expect(t[3].onPick(d, makeRng(0), null)).toBe(d); // ohne Ziel-Flow → No-Op (identische Referenz)
   });
 
+  it("A_SUIT_BOOST + Pflanze-Grün: „Grün\" bumpt auch pflanzen-grüne Karten (card.green), andere Farben nur Originalfarbe", () => {
+    const t = FAMILY_DEFS.A_SUIT_BOOST.tiers;
+    const d = buildDeck();
+    const redIdx = d.findIndex((c) => c.suit === "R");
+    d[redIdx] = { ...d[redIdx], green: true }; // eine rote Karte ist pflanzen-grün (auf dem Board grün)
+    const out = t[3].onPick(d, makeRng(0), { suits: ["G"] });
+    expect(out[redIdx].value).toBe(d[redIdx].baseRank + 1); // zählt bei „Grün\" mit (via card.green)
+    expect(out.filter((c) => c.suit === "G").every((c) => c.value === c.baseRank + 1)).toBe(true); // echte Grün-Karten auch
+    const blue = out.find((c) => c.suit === "B" && !c.green); // eine nicht-grüne Blaue bleibt unberührt
+    expect(blue.value).toBe(blue.baseRank);
+    // Gegenprobe: „Blau\" ignoriert pflanzen-grün → die pflanzen-grüne ROTE Karte bekommt nichts von einem Blau-Boost.
+    expect(t[3].onPick(d, makeRng(0), { suits: ["B"] })[redIdx].value).toBe(d[redIdx].baseRank);
+  });
+
   it("A_SMALL_BIG: zufällige ursprüngliche 1–3er (2/3/4 Karten), IV alle zwölf", () => {
     const t = FAMILY_DEFS.A_SMALL_BIG.tiers; const d = buildDeck();
     expect(nChanged(d, t[1].onPick(d, makeRng(4)))).toBe(2);
