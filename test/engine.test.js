@@ -5,7 +5,7 @@ import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
 import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
   HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ZINSESZINS_STEP, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
-  SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT } from "../src/game/constants.js";
+  SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT, ION_SCORE_PER_STACK } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
 import { streakBaseMult } from "../src/game/perks.js";
 import { initialShop } from "../src/game/shop.js";
@@ -520,10 +520,10 @@ describe("Ionisierung — Engine (Stufe B)", () => {
   // constDeck mit stabilen ids; die gespielte Karte (pos 0) trägt `stacks` Ionisierungsstapel.
   const ionDeck = (v, stacks) => constDeck(v).map((c, i) => (i === 0 ? { ...c, id: "P0", ionStacks: stacks } : { ...c, id: `P${i}` }));
 
-  it("ionScore der gespielten Karte fließt in die multiplizierte Basis (+25/Stapel)", () => {
-    // 2 Stapel → +50: (Basis+50) × streakBaseMult(1)=1,02 (kein Crit).
+  it("ionScore der gespielten Karte fließt in die multiplizierte Basis (+ION_SCORE_PER_STACK/Stapel)", () => {
+    // 2 Stapel → +2×Flat: (Basis + 2×Flat) × streakBaseMult(1)=1,02 (kein Crit; rng 0,99 > die +2 pp Feld-Crit).
     const s = resolveTrick(scenario(12, 0, { deck: ionDeck(12, 2), playerOrder: identity() }), () => 0.99);
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + 50) * 1.02);
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + 2 * ION_SCORE_PER_STACK) * 1.02);
   });
 
   it("Sieg mit ionisierter Karte erhöht deren Stapel (+1, max 5 — #165 Skills-Spec §5.1)", () => {

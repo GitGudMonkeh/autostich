@@ -5,7 +5,7 @@ import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, build
   ionScoreFor, ionCritChance, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasSeriesCrit, hasStorm, chargeFloorFor } from "../src/game/skills.js";
 import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, MAX_ARCHETYPES,
-  ION_CRIT_PP_PER_STACK, ION_CRIT_STACK_CAP } from "../src/game/constants.js";
+  ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK, ION_CRIT_STACK_CAP } from "../src/game/constants.js";
 
 const LR = "SK_LIGHTNING_01";
 const ALL = Object.keys(SKILL_DEFS);
@@ -215,8 +215,8 @@ describe("Ionisierung — Helfer (Stufe B)", () => {
   const I = "SK_LIGHTNING_02", K = "SK_LIGHTNING_03";
   const mkDeck = (stacks) => stacks.map((s, i) => ({ id: `c${i}`, suit: "R", baseRank: 1, value: 1, ...(s ? { ionStacks: s } : {}) }));
 
-  it("ionScoreFor: +25 je Stapel (0 ohne / null)", () => {
-    expect(ionScoreFor({ ionStacks: 3 })).toBe(75);
+  it("ionScoreFor: +ION_SCORE_PER_STACK je Stapel (0 ohne / null)", () => {
+    expect(ionScoreFor({ ionStacks: 3 })).toBe(3 * ION_SCORE_PER_STACK);
     expect(ionScoreFor({ ionStacks: 0 })).toBe(0);
     expect(ionScoreFor({})).toBe(0);
     expect(ionScoreFor(null)).toBe(0);
