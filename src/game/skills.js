@@ -55,7 +55,7 @@ export const SKILL_DEFS = {
     desc: `Trifft eine Ionisierung eine bereits volle Karte (${C.ION_MAX_STACKS} Stapel), verpufft sie sonst. Mit Blitzfänger gibt sie stattdessen +${C.BLITZFAENGER_VALUE} Stichwert (nur beim nächsten Auftauchen) und +1 Ladung.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, blitzcatcher: true },
   SK_LIGHTNING_09: { id: "SK_LIGHTNING_09", name: "Kurzschluss", archetype: "lightning", keywords: ["ionize", "charge"],
-    desc: `Gewinnst du mit einer voll ionisierten Karte (${C.ION_MAX_STACKS} Stapel), entlädt sie alle Stapel und gibt +${C.ION_MAX_STACKS * C.KURZSCHLUSS_CHARGE_PER_STACK} Ladung (${C.KURZSCHLUSS_CHARGE_PER_STACK} je Stapel). Ihr Sieg-Score aus den Stapeln zählt vorher normal.`,
+    desc: `Gewinnst du mit einer voll ionisierten Karte (${C.ION_MAX_STACKS} Stapel), kurzschließt sie: +${C.KURZSCHLUSS_SCORE} Score und +${C.KURZSCHLUSS_CHARGE} Ladung — bei jedem Sieg, ohne die Stapel zu verlieren.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, kurzschluss: true },
   // Linie 4 — Crit-Maschine (Chance & Mult erzeugen — Blitz-exklusiv)
   SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsstau", archetype: "lightning", keywords: ["crit"],
@@ -675,7 +675,7 @@ export const hasBlitzcatcher = (skills) => lightFlag(skills, "blitzcatcher");
 export const hasVoltageArc   = (skills) => lightFlag(skills, "voltageArc");
 // Rework v0 — Kaskade/Crit-Maschine/Serie-Schnittstelle + Legendäre:
 export const hasUeberspannung  = (skills) => lightFlag(skills, "ueberspannung");  // Kaskade: Crit auf/neben Ionis. → Ladung (merge 04+09)
-export const hasKurzschluss    = (skills) => lightFlag(skills, "kurzschluss");    // volle (5) Siegkarte → Ladung-Burst, Reset
+export const hasKurzschluss    = (skills) => lightFlag(skills, "kurzschluss");    // volle (5) Siegkarte → Score+Ladung-Burst je Sieg, Stapel bleiben
 export const hasSpannungsstau  = (skills) => lightFlag(skills, "spannungsstau");  // Nicht-Crit-Siege rampen Crit-Chance
 export const hasUeberschlag    = (skills) => lightFlag(skills, "ueberschlag");    // Crit-Chance >100 % → Ladung
 export const hasBlitzschlag    = (skills) => lightFlag(skills, "blitzschlag");    // Crit ionisiert die Siegkarte

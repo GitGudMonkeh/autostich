@@ -795,6 +795,9 @@ export function resolveTrick(state, rng) {
       // Doppelentladung (endloser Sturm, ENERGIE): jeder Treffer detoniert die gesamte Ladung des Feldes (Σ Stapel).
       if (hasDoubleDischarge(skills)) lightDirect += Math.min(sumIon, C.DOPPELENT_FIELD_CAP) * C.DOPPELENT_DIRECT * lightCommit;
     }
+    // Kurzschluss (Rework): eine VOLLE (5) Siegkarte „kurzschließt" bei JEDEM Sieg → Direkt-Score-Burst (post-stack),
+    // OHNE die Stapel zu opfern. Wiederkehrender Payoff fürs Maxen (Stapel bleiben → weiter Flat-Score + Feld-Crit #271).
+    if (hasKurzschluss(skills) && (pCard.ionStacks || 0) >= C.ION_MAX_STACKS) lightDirect += C.KURZSCHLUSS_SCORE;
     // Vabanque (#203, Eröffnungs-Wette): die ersten VABANQUE_TRICKS Stiche eines DURCHLAUFS in Folge gewonnen →
     // +VABANQUE_SCORE DIREKT (post-stack). pos = Stich-Index im Durchlauf (VOR pos+=1); cycleWins zählt die Siege inkl.
     // dieses → am TRICKS-ten Stich (pos = TRICKS−1) sind alle Eröffnungsstiche gewonnen ⟺ cycleWins === TRICKS.
@@ -893,16 +896,14 @@ export function resolveTrick(state, rng) {
         }
       }
     }
-    // Ionisierte Siegkarte: normalerweise +1 Stapel. Kurzschluss (v0): eine VOLLE (5) Karte entlädt stattdessen alle
-    // Stapel → Ladung-Burst, Karte auf 0 (Zyklus statt Sättigung). Der Ion-Score wurde oben VORHER gewertet.
+    // Ionisierte Siegkarte: +1 Stapel (voll bleibt voll — kein Reset mehr). Kurzschluss (Rework): eine VOLLE Karte gibt
+    // zusätzlich einen Ladungs-Burst je Sieg — Stapel bleiben (Payoff statt Sättigung entladen; der Score-Burst läuft
+    // oben über lightDirect).
     if (ionizedCard) {
       const stacks = pCard.ionStacks || 0;
-      if (hasKurzschluss(skills) && stacks >= C.ION_MAX_STACKS) {
-        deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: 0 } : c));
-        if (lightning && lightning.active) lightning = addCharge(lightning, stacks * C.KURZSCHLUSS_CHARGE_PER_STACK);
-      } else {
-        deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, stacks + 1) } : c));
-      }
+      deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, stacks + 1) } : c));
+      if (hasKurzschluss(skills) && stacks >= C.ION_MAX_STACKS && lightning && lightning.active)
+        lightning = addCharge(lightning, C.KURZSCHLUSS_CHARGE);
     }
     // Blitzschlag (v0, Kaskade): ein Crit ionisiert die gewonnene Karte (+1 Stapel) — schließt die Selbstspeisung.
     if (isCrit && hasBlitzschlag(skills)) {

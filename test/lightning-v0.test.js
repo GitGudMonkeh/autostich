@@ -105,11 +105,12 @@ describe("Blitz-Rework v0 — Engine-Integration", () => {
     expect(crit.lastTrick.isCrit).toBe(true);
     expect(crit.lightning.stauBonus).toBe(0);
   });
-  it("Kurzschluss: Sieg mit voller (5) Karte entlädt alle Stapel → +Ladung-Burst, Karte auf 0", () => {
+  it("Kurzschluss (Rework): Sieg mit voller (5) Karte → Score+Ladung-Burst, Stapel bleiben (kein Reset)", () => {
     const deck = constDeck(12).map((c, i) => (i === 0 ? { ...c, ionStacks: 5 } : c));
     const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_09"], deck, lightning: light() }), noCrit);
-    expect(s.deck[0].ionStacks).toBe(0);
-    expect(s.lightning.charge).toBe(5 * C.KURZSCHLUSS_CHARGE_PER_STACK);
+    expect(s.deck[0].ionStacks).toBe(C.ION_MAX_STACKS);                 // voll bleibt voll — kein Opfer
+    expect(s.lightning.charge).toBe(C.KURZSCHLUSS_CHARGE);              // Ladungs-Burst
+    expect(s.lastTrick.breakdown.lightDirect).toBe(C.KURZSCHLUSS_SCORE); // Direkt-Score-Burst (post-stack)
   });
   it("Blitzschlag: ein Crit ionisiert die gewonnene Karte (+1 Stapel)", () => {
     const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_15"], lightning: light() }), zero); // Crit aus den Blitz-Skills (rng 0)
