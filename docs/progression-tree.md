@@ -65,7 +65,7 @@ Vier thematische Äste, an den Spiel-Säulen ausgerichtet:
 3. **⚡🔥❄🌿 Fraktionen** — kleine, faire Fraktions-Startvorteile (je Fraktion 1 Knoten).
    - z. B. Blitz Start +1 Ladung · Feuer Start-Hitze · Eis 1 Gratis-Schicht · Pflanze 1 Setzling vorgewachsen.
 4. **👑 Meisterschaft** — Prestige/Skalierung (nimmt die heutigen Rang-Multiplikatoren auf: LegendMult, RareShift), jetzt als **wählbare** Knoten statt automatisch.
-   - *Legendär-Slot* — schaltet Runde 29 von Skill-Angebot auf legendären Skill um (siehe 3.6).
+   *(Legendär-Slot liegt NICHT hier — ist der Onboarding-Capstone, siehe 3.6/3.7.)*
 
 **Beschlossen (B): ~14 Knoten für v1** — genug für echte Wahl über vier Äste, klein genug zum sauberen Balancing; später erweiterbar. Grobe Verteilung: Architekt/Baufeld ~4 · Auftakt ~4 · Fraktionen 4 (je 1) · Meisterschaft ~2–3.
 
@@ -102,12 +102,35 @@ Reroll = an einer Entscheidung die angebotenen Optionen **einmal neu würfeln**.
 
 > Das ersetzt die heutige Basis (Reroll je Phase = 2). Neue Basis = 1, die +2 kommen ausschließlich über den Baum.
 
-### 3.6 Legendär-Slot (Runde 29) · **beschlossen: Werkstatt-Unlock**
+### 3.6 Legendär-Slot (Runde 29) · **beschlossen: Onboarding-Capstone**
 
-Der Legendär bei Runde 29 ist **kein Basis-Recht**, sondern ein Werkstatt-Reward:
+Der Legendär bei Runde 29 ist **kein Werkstatt-Knoten mehr**, sondern die **letzte Onboarding-Stufe** (siehe 3.7) — der Abschluss-Hook, der das Onboarding krönt:
 
-- **Ohne Legendär-Knoten:** Runde 29 ist ein normales **Skill-Angebot** (thematisch der sauberste Platzhalter — der Takt bleibt unangetastet, nur der Entscheidungs-*Typ* an einer Stelle ändert sich). Basis-Lauf hat damit **10 Skill-Angebote**.
-- **Mit Legendär-Knoten:** Runde 29 wandelt sich → **eine Skill-Auswahl weniger, dafür ein legendärer Skill** (9 Skills + 1 Legendär). Klarer Prestige-Payoff, kein Zusatz-Slot, kein Takt-Umbau.
+- **Vor dem Capstone:** Runde 29 ist ein normales **Skill-Angebot** (thematisch der sauberste Platzhalter — der Takt bleibt unangetastet, nur der Entscheidungs-*Typ* an einer Stelle ändert sich). Basis-Lauf hat damit **10 Skill-Angebote**.
+- **Nach dem Capstone:** Runde 29 wandelt sich in den **Legendär-Slot** → **eine Skill-Auswahl weniger, dafür ein legendärer Skill**. Das Angebot enthält **je einen legendären Skill pro aktivem Archetyp** (bis zu 3 zur Wahl). Klarer Prestige-Payoff, kein Zusatz-Slot, kein Takt-Umbau.
+
+### 3.7 Onboarding-Kette (frei, scriptgesteuert — vor der Werkstatt)
+
+Neuer Spieler → „Normales Spiel" → **Lauf-Vorbereitung** mit **3 Archetyp-Slots** oben. **Keine gespeicherten Decks** — es sind immer dieselben 3 Slots, die man belegt; Default ist die **letzte Archetyp-Auswahl aus dem vorigen Lauf**. Das Onboarding öffnet Schritt für Schritt, *was* in diese Slots darf und welche Rarität / Reroll / Legendär verfügbar ist. Erst wenn es durch ist, beginnt die **Münzen-/Werkstatt-Ökonomie**.
+
+| Stufe | Archetypen | Slots | Rarität (Perks + Gebäude) | Reroll | Legendär (R29) |
+|---|---|---|---|---|---|
+| **Start** | Blitz + Feuer | 2 (3. ausgegraut) | Grau + Grün | — | Skill-Angebot |
+| 1 | **+ Eis** (Slot antippen → Blitz/Feuer/Eis tauschen) | 2 | Grau + Grün | — | Skill |
+| 2 | Blitz/Feuer/Eis | 2 | Grau + Grün | **+1 Basis** | Skill |
+| 3 | Blitz/Feuer/Eis | 2 | **+ nächste Stufe** | 1 | Skill |
+| 4 | Blitz/Feuer/Eis | **+ 3. Slot** (3 mischbar) | + | 1 | Skill |
+| 5 | Blitz/Feuer/Eis | 3 | **+ übernächste Stufe** | 1 | Skill |
+| 6 | **+ Pflanze** → beliebige **3 von 4** | 3 | volle Basis-Rarität | 1 | Skill |
+| **7 · Capstone** | alle 4, 3 von 4 | 3 | voll | 1 | **Legendär-Slot** (je 1 leg. Skill pro aktivem Archetyp) |
+| **danach** | **Münzen → Werkstatt** (Baufeld-Erweiterung · +2 Rerolls · Fraktions-Startvorteile · Meisterschaft) | | | | |
+
+**Nahtstellen zur Werkstatt:**
+- Onboarding gibt **Reroll 1**; die **+2 Rerolls** sind Werkstatt-Knoten (setzen genau dort an, wo das Onboarding aufhört).
+- **Baufeld-Erweiterung** ist reiner Werkstatt-Stoff (KP), nie Onboarding.
+- **Legendär** ist der Onboarding-Capstone (Stufe 7), **nicht** mehr Werkstatt.
+
+**Vorrücken:** Stufe N nach **abgeschlossenem Lauf N** (garantierter Fortschritt, nie hängenbleiben) — *Annahme, bis anders entschieden;* Alternative wäre Score-Schwellen (koppelt an Meister-Ränge, bremst aber schwache Spieler).
 
 ---
 
@@ -183,7 +206,8 @@ Der **Tree-Screen** selbst (eigener Screen wie Kollektion/Bestenliste): Branch-S
 | D | Bestenlisten-Fairness | **zwei-stufig**: Fair-Modus (Basis, Tree ignoriert) + **Vollausbau-Liga** (freigeschaltet bei komplettem Baum, alle mit Max-Tree) |
 | E | Respec | **frei** (v1) |
 | F | Reroll-Ökonomie | **1 pro Phase (Basis)** + 2 Werkstatt-Knoten je **+1 für alle Phasen** (Sequenz), bis 3 · use-it-or-lose-it |
-| G | Legendär-Slot (R29) | **Werkstatt-Unlock**: Basis = Skill-Angebot, Knoten wandelt R29 → legendärer Skill (1 Skill-Auswahl weniger) |
+| G | Legendär-Slot (R29) | **Onboarding-Capstone** (nicht Werkstatt): Basis = Skill-Angebot, Capstone wandelt R29 → Legendär-Slot mit je 1 leg. Skill pro aktivem Archetyp |
+| H | Onboarding-Kette | **frei/scriptgesteuert vor der Werkstatt**: Archetypen (Blitz+Feuer → +Eis → +3.Slot → +Pflanze), Rarität (Grau+Grün → +2 Stufen), Reroll 1, Capstone Legendär · 3 Slots, keine gespeicherten Decks, Default = letzte Auswahl |
 
 ---
 
