@@ -27,8 +27,8 @@ export const posOf = (r, c) => r * COLS + c;
 /* ---- TUNING-Block (zentral, leicht editierbar) — Balance-Pass 1 (Ziel: Eigenbeitrag ~25–35 %, weniger spät-lastig).
        Vorher: TIER_FACTOR [1,1.6,2.4,3.5], HAEUSERZEILE 1,25 → Eigenbeitrag 42–51 %, 66–75 % Spät. Gedämpft:
        Stufen-Tail komprimiert + die breiten Multiplikatoren (Häuserzeile/Schatzkammer/Kathedrale/Grundstein) runter. ---- */
-export const TIER_FACTOR   = [0, 1, 1.4, 1.9, 2.5];      // numerischer Effekt = base × TIER_FACTOR[tier] (Index 1..4) [Pass1: Tail 2,4/3,5→1,9/2,5]
-export const FORM_TIER_BONUS = 0.1;                       // Formations-/Faktor-Effekte: je Stufe +0,1 auf den Faktor
+export const TIER_FACTOR   = [0, 1, 1.5, 2.2, 3.1];      // #282 Impact-Buff: Tail hoch (1,4/1,9/2,5 → 1,5/2,2/3,1) — tiefe Ausbauten (greedy zielt drauf) lohnen deutlich mehr
+export const FORM_TIER_BONUS = 0.13;                      // #282: 0,10 → 0,13
 // SIM-Rare-Buff-Hook (Rang-Reward-Messung): SIM_RARE_SHIFT=1/2 → seltene Baupläne häufiger. Default 0. Tabellen aus
 // rarity.js (Single Source, kein Drift). #217: der Grad-Reward reicht seinen rareShift zur Laufzeit an buildArchitectOffer.
 const _archRareShift = (typeof process !== "undefined" && process.env && Number(process.env.SIM_RARE_SHIFT)) || 0;
@@ -46,9 +46,13 @@ export const MAX_TIER = 4;                               // höchste Stufe (Lege
 export const MAX_COVER = Math.max(4, Math.min(N_POS, Number((typeof process !== "undefined" && process.env && process.env.ARCH_MAX_COVER) || 24)));
 // Struktur-Boni (kompoundieren: greifen AB Komplettierung jeden Durchlauf → früh schließen zahlt über die Restlaufzeit).
 // Zeile (5) mittel, Spalte (8 über alle Segmente) teuer→stark, 2×2-Viertel (4) billig→klein. Stapeln multiplikativ.
-export const HAEUSERZEILE_FACTOR = 1.20;                 // volle Segment-Zeile (5 Zellen), KONZENTRIERT (1 Segment) → Formations-Fraktionen [Pass3d: 1,24→1,20, Eis/Pflanze-Zuwachs auf ~30 %]
-export const SPALTE_FACTOR       = 1.40;                 // volle Spalte über alle 8 Segmente (8 Zellen), GESTREUT → Flach-Score-Fraktionen [Pass3c: 1,60→1,40]
-export const DIAGONALE_FACTOR    = 1.34;                 // volle Diagonale (5 Zellen, je 1 pro Segment UND Spalte) — maximal GESTREUT, quasi nie zufällig → Feuer/Blitz
+// #282 Impact-Buff — Framing „Schwierigkeit zahlt": der Struktur-Faktor skaliert mit der PLATZIER-Schwierigkeit.
+// Leichte 2×2-Viertel holt auch der Zufall → kein Faktor. Volle Zeile (konzentriert) mittel; volle Spalte (8, gestreut)
+// und Diagonale (quasi nie zufällig) sind die schwersten → höchster Lohn. Genau diese schließt nur der geschickte Bau →
+// die Schere random↔greedy geht auf, ohne den Boden (schludrig gebaut) zu heben.
+export const HAEUSERZEILE_FACTOR = 1.35;                 // volle Segment-Zeile (5), konzentriert [1,20 → 1,35]
+export const SPALTE_FACTOR       = 1.75;                 // volle Spalte (8), gestreut — schwer [1,40 → 1,75]
+export const DIAGONALE_FACTOR    = 1.62;                 // volle Diagonale (5, maximal gestreut) — am schwersten [1,34 → 1,62]
 
 // Stufen-Skalierung: numerischer Effekt (Wert/Score) gerundet; Faktor-Effekte additiv über FORM_TIER_BONUS.
 export const tierNum    = (base, tier) => (tier === "legendary" ? base : Math.round(base * (TIER_FACTOR[tier] || 1)));
