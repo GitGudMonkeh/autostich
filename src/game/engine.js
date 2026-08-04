@@ -509,6 +509,7 @@ export function resolveTrick(state, rng) {
     let plantDirect = 0; // Pflanze-Legendär-Reshape: DIREKTe, post-stack, gedeckelte Dividende aus den Fluten (unten zu `gained`)
     if ((activeArchetypes || []).includes("plant")) {
       const inFormation = positionHasFormation(posForm);
+      const plantCommit = Math.min(1, plantSkillCount(skills) / C.SKILL_SLOTS); // Bekenntnis-Skalierung (cross-health) für die post-stack Direkt-Dividenden (#270.2 + #Ceiling)
       // Wachstum: je Sieg +Zuwachs, GEGATET an die Pflanzen-Skill-Anzahl (Anti-Splash, v0.3): min(1, PflanzenSkills / SKILL_REF).
       // 1 Splash-Skill = 1/3 Speed, volle +1/Sieg erst ab SKILL_REF Skills → hohes Wachstum verlangt echtes Deck-Commitment.
       const prevG = newGrowth[pCard.id] || 0;
@@ -532,6 +533,11 @@ export function resolveTrick(state, rng) {
           let root = C.WURZELTIEFE_SCORE * (hasPfahlwurzel(skills) && inFormation ? C.PFAHLWURZEL_MULT : 1);
           if (hasJahresringe(skills)) root += Math.floor(g / C.JAHRESRINGE_PER_GROWTH) * C.JAHRESRINGE_SCORE;
           plantFlat += root; plantRoot += root; // #270.2: Wurzel-Score-Kanal
+          // #Ceiling Wurzel/TIEFE: superlinear (dreieckig) in der Wachstums-Tiefe der Siegkarte ÜBER dem Wert-Deckel —
+          // post-stack (plantDirect), gedeckelt, bekenntnis-skaliert. Zündet nur bei tiefen Bäumen → reines Ceiling.
+          const needRoot = Math.max(0, C.PLANT_VALUE_CAP - pCard.value) * C.WURZELSCHLAG_PER_GROWTH;
+          const depth = Math.min(Math.floor(g - needRoot), C.PLANT_ROOT_DEEP_CAP);
+          if (depth > 0) { const d = (depth * (depth + 1) / 2) * C.PLANT_ROOT_DEEP_K * plantCommit; plantDirect += d; plantRoot += d; }
           if (hasMutterbaum(skills) && g >= Math.max(1, ...Object.values(newGrowth))) { plantFlat += root; plantRoot += root; } // Mutterbaum (v0-Näherung): Segment-Streuung
         }
         // Wurzelschlag: grüne Karte wächst permanenten Wert an (+1 je N Wachstum, bis Deckel). Float-sicher (Wachstum ist
@@ -566,6 +572,17 @@ export function resolveTrick(state, rng) {
             plantFlat += b; plantBloom += b; // #270.2: Blüten-Score-Kanal
           }
         }
+        // #Ceiling Blüte/BREITE: superlinear (dreieckig) im VOLLEN grünen Feld — nur wenn das Feld überwuchert ist (≥ Schwelle
+        // grün; Ewiger Frühling senkt sie). Post-stack (plantDirect), gedeckelt, bekenntnis-skaliert → reines Ceiling für das
+        // committed all-green Board, Floor unberührt.
+        if (hasBluete(skills) && deck.length > 0) {
+          const thr = hasEwigerFruehling(skills) ? C.EWIGER_FRUEHLING_FIELD : C.UEBERWUCHERUNG_FIELD;
+          const gc = greenCount(deck);
+          if (gc / deck.length >= thr) {
+            const m = Math.min(gc, C.PLANT_BLOOM_FIELD_CAP);
+            const d = (m * (m + 1) / 2) * C.PLANT_BLOOM_FIELD_K * plantCommit; plantDirect += d; plantBloom += d;
+          }
+        }
         // Photosynthese: grüne Karte in Formation → ×PHOTOSYNTHESE_MULT (Formations-Faktor). [#230 N9: war „×1,15", ist 1,08]
         if (hasPhotosynthese(skills) && inFormation) plantFormMult *= C.PHOTOSYNTHESE_MULT;
         // Blätterdach: grüner Farbblock ab BLAETTERDACH_MIN Karten → +Score je Karte IM BLOCK (echte Lauflänge des
@@ -584,7 +601,7 @@ export function resolveTrick(state, rng) {
         //      am Multiplikator-Stack VORBEI (unten zu `gained`), hart gedeckelt (Plateau, kein Runaway), bekenntnis-
         //      skaliert (plantSkillCount/SKILL_SLOTS = cross-health). Nur Legendär-Halter → generisches Pflanze unberührt.
         if (hasWeltenbaum(skills) || hasMutterbaum(skills) || hasDornenkoenig(skills) || hasEwigerFruehling(skills)) {
-          const plantCommit = Math.min(1, plantSkillCount(skills) / C.SKILL_SLOTS);
+          // plantCommit ist oben (Plant-Section-Start) gehoben.
           // Überlauf-Wachstum = Wachstum ÜBER dem, was Wurzelschlag zum Wert-Deckel braucht (verschwendet, „alter Wald").
           if (hasWeltenbaum(skills) || hasMutterbaum(skills)) {
             let sumOv = 0, maxOv = 0;

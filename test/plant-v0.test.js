@@ -61,7 +61,8 @@ describe("Pflanze-Fraktion v0 — Engine-Integration", () => {
     expect(s.deck[0].green).toBeFalsy(); // grau bleibt grau — 1/3 < Schwelle
   });
   it("Wurzeltiefe: Sieg einer grünen Karte gibt Wurzeln-Score (Flat)", () => {
-    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_02"], deck: green0(12), growth: { X0: 4 } }), noCrit);
+    // growth 0 → keine Tiefe über dem Wert-Deckel → das superlineare Wurzel-Ceiling (#Ceiling) zündet nicht → reiner Flat.
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_02"], deck: green0(12), growth: { X0: 0 } }), noCrit);
     expect(s.lastTrick.scoreGain).toBeCloseTo((B + C.WURZELTIEFE_SCORE) * 1.02);
   });
   it("Aussaat: Sieg einer grünen Karte sät den (rechten) Nachbarn (+Wachstum)", () => {
@@ -95,10 +96,13 @@ describe("Pflanze-Legendär-Reshape — Fluten-Dividende (plantDirect)", () => {
   const sumOverflow = (deck, growth) => { let s = 0; for (const c of deck) if (c.green) { const ov = (growth[c.id] || 0) - Math.max(0, C.PLANT_VALUE_CAP - c.value) * C.WURZELSCHLAG_PER_GROWTH; if (ov > 0) s += ov; } return s; };
   const maxOverflow = (deck, growth) => { let m = 0; for (const c of deck) if (c.green) { const ov = (growth[c.id] || 0) - Math.max(0, C.PLANT_VALUE_CAP - c.value) * C.WURZELSCHLAG_PER_GROWTH; if (ov > m) m = ov; } return m; };
 
-  it("generisches Pflanze (ohne Legendäre): kein plantDirect trotz Überlauf-Wachstum + vollem grünen Feld", () => {
+  it("#Ceiling Wurzel/TIEFE: tiefe Bäume zahlen generisch einen superlinearen (dreieckigen) Direktscore", () => {
     const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_02"], deck: greenDeck(10), growth: growthMap(10, 40) }), noCrit);
     expect(s.lastTrick.result).toBe("win");
-    expect(s.lastTrick.breakdown.plantDirect || 0).toBe(0); // generisches Pflanze unberührt → bestätigte Balance geschützt
+    // Siegkarte: Wert=Deckel (need=0), Wachstum 40+Zuwachs → Tiefe am Deckel PLANT_ROOT_DEEP_CAP → dreieckig × K × Bekenntnis.
+    const g = 40 + Math.min(1, 1 / C.PLANT_GROWTH_SKILL_REF);
+    const depth = Math.min(Math.floor(g), C.PLANT_ROOT_DEEP_CAP);
+    expect(s.lastTrick.breakdown.plantDirect).toBeCloseTo((depth * (depth + 1) / 2) * C.PLANT_ROOT_DEEP_K * commit1);
   });
   it("Weltenbaum (BREITE): Σ Überlauf-Wachstum × WELTENBAUM_DIRECT je grünem Sieg (gedeckelt, bekenntnis-skaliert)", () => {
     const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L01"], deck: greenDeck(5), growth: growthMap(5, 30) }), noCrit);
