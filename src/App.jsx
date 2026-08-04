@@ -18,6 +18,7 @@ import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
+import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Phase (Runde 29)
 import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { ArchitectScreen } from "./ui/ArchitectScreen.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
@@ -446,6 +447,8 @@ export function Autostich() {
   // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
+  const pickLegendary = (legendaryId) => dispatch({ type: "PICK_LEGENDARY", legendaryId, rng: Math.random }); // #272 Legendär-Phase
+  const declineLegendary = () => dispatch({ type: "DECLINE_LEGENDARY", rng: Math.random });
   const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
   const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138: Perk-Angebot ablehnen → +Münze
   const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
@@ -688,6 +691,9 @@ export function Autostich() {
       )}
       {state.phase === "levelup" && state.skillOffer && (
         <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} />
+      )}
+      {state.phase === "legendary" && state.legendaryOffer && (
+        <LegendarySelect offer={state.legendaryOffer} onPick={pickLegendary} onDecline={declineLegendary} state={state} />
       )}
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
