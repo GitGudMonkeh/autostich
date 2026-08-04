@@ -35,10 +35,12 @@ function targetLabel(t, deck) {
   return null;
 }
 
-export function ChronikOverview({ state, onClose }) {
+export function ChronikOverview({ state, onClose, options = {}, onOption }) {
   const { deck = [], playerOrder = [], formations = [] } = state;
   const [selPos, setSelPos] = useState(null);
-  const [showArch, setShowArch] = useState(true); // #218: Architekt-Gebäude-Overlay auf dem Grid ein-/ausblenden (wie in der Aufstellung)
+  // #218/#278: Architekt-Gebäude-Overlay ein-/ausblenden — Zustand über die Optionen gemerkt (geteilt mit der Aufstellung), damit „aus" aus bleibt.
+  const [showArch, setShowArchState] = useState(options.archShowBuildings !== false);
+  const setShowArch = (v) => { const nv = typeof v === "function" ? v(showArch) : v; setShowArchState(nv); onOption?.({ archShowBuildings: nv }); };
   const [inspectBid, setInspectBid] = useState(null); // inspiziertes Gebäude: Liste ↔ Brett (Rahmen glüht), gesetzt per Karten-Tap ODER Listen-Klick
   const cards = playerOrder.map((di) => deck[di]);
   const selCard = selPos != null ? cards[selPos] : null; // #218: aktuell angetippte Karte (für die Elementar-Readouts)

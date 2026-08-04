@@ -4,32 +4,49 @@
 //   • Grün-Anteil des Feldes (grün + ausgewachsen / Gesamt) als Balken mit zwei Schwellenmarken — Ewiger Frühling
 //     (EWIGER_FRUEHLING_FIELD) und Überwucherung (UEBERWUCHERUNG_FIELD, ab hier alle Farbblöcke +Faktor). Werte aus
 //     dem Code (der pre-Rework-Issue nannte 33 %/66 % — der Ewiger-Frühling-Wert wurde inzwischen gebufft).
-//   • Setzling (wachsend, noch nicht reif) · Grün (reif, Wert < Deckel) · Ausgewachsen (Wert = Deckel) als Zähler.
+//   • #277 Reifezustand: „Nächste Reife" + Stufen-Histogramm (Setzling/Grün/Ausgewachsen mit Ø-Fortschritt) plus ein
+//     einklappbarer „Reifende Karten"-Strip (pro Karte ein Mini-Balken, default zu). Der zweistufige Ring an der Karte (Card.jsx) trägt das Signal am Objekt.
 //   • Ausläufer (kolonisierte Gegnerkarten) als eigene, getrennte Zeile — der Griff ins Gegnerdeck (Ernte/Dornenkönig).
 // Rein informativ, keine Engine-Kopplung (spiegelt state.deck/growth/colonized).
-import { IndicatorPanel, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
+import { IndicatorPanel, YieldMeter } from "./indicators/panelKit.jsx";
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
-import { PLANT_VALUE_CAP, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD } from "../game/constants.js";
-import { hasUeberwucherung, hasEwigerFruehling } from "../game/skills.js";
+import { PLANT_VALUE_CAP, PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD } from "../game/constants.js";
+import { hasUeberwucherung, hasEwigerFruehling, plantSkillCount } from "../game/skills.js";
 
 const SEED = "#9aa4a0"; // grauer Setzling (wachsend, noch nicht reif)
 const grp = (n) => Math.round(n).toLocaleString("de-DE");
+const fmtG = (g) => String(Math.round((g || 0) * 10) / 10).replace(".", ","); // Wachstum mit einer Nachkommastelle
 
 const BLOOM = "#e58fbf"; // Blüte (rosa) · Wurzel = PLANT (grün) · Ernte = PLANT_RIPE (hell)
 
 export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skills = [], growthTotal = 0,
-                          rootScore = 0, bloomScore = 0, harvestScore = 0 }) {
+                          rootScore = 0, bloomScore = 0, harvestScore = 0, options = {}, onOption }) {
   if (!active) return null;
   const total = deck.length || 0;
   let setzling = 0, gruen = 0, ausgewachsen = 0;
+  // #277: pro-Karte-Reifegrad — Setzling→Grün (growth/Schwelle) bzw. Grün→Ausgewachsen (value/Deckel). „maturing" =
+  // alle noch nicht ausgewachsenen, mit Fortschritt, sortiert nach Nähe zur nächsten Stufe (für den Detail-Strip A).
+  const maturing = [];
   for (const c of deck) {
     if (c.green) {
-      if (c.value >= PLANT_VALUE_CAP) ausgewachsen += 1; // ausgewachsen = reif am Wert-Deckel
-      else gruen += 1;                                    // grün/reif, Wert wächst noch
+      if (c.value >= PLANT_VALUE_CAP) { ausgewachsen += 1; }        // ausgewachsen = reif am Wert-Deckel
+      else { gruen += 1; maturing.push({ id: c.id, stage: "green", pct: Math.min(1, c.value / PLANT_VALUE_CAP), label: `Grün · W${c.value}` }); }
     } else if ((growth[c.id] || 0) > 0) {
-      setzling += 1;                                      // grauer Setzling (wächst, < Reife-Schwelle)
+      setzling += 1;
+      maturing.push({ id: c.id, stage: "seed", pct: Math.min(1, (growth[c.id] || 0) / PLANT_GREEN_THRESHOLD), remG: Math.max(0, PLANT_GREEN_THRESHOLD - (growth[c.id] || 0)), label: `Setzling ${fmtG(growth[c.id])}/${PLANT_GREEN_THRESHOLD}` });
     }
   }
+  maturing.sort((a, b) => b.pct - a.pct);                 // am nächsten an der nächsten Stufe zuerst
+  // Durchschnittlicher Fortschritt je Stufe (Balken im Histogramm C) + „Nächste Reife" (nächster Setzling → grün).
+  const seedList = maturing.filter((m) => m.stage === "seed");
+  const greenList = maturing.filter((m) => m.stage === "green");
+  const avg = (arr) => (arr.length ? arr.reduce((t, m) => t + m.pct, 0) / arr.length : 0);
+  const growInc = Math.min(1, PLANT_GROWTH_SKILL_REF > 0 ? plantSkillCount(skills) / PLANT_GROWTH_SKILL_REF : 1);
+  const nextRipe = (seedList.length && growInc > 0)
+    ? Math.max(1, Math.ceil(Math.min(...seedList.map((m) => m.remG)) / growInc))
+    : null;
+  // A einklappbar (default zu), Zustand über die Optionen gemerkt (wie StatusRail-Collapsibles).
+  const stripCollapsed = options.collapsePlantMaturing ?? true;
   const greenN = gruen + ausgewachsen;                    // Grün-Anteil zählt reif + ausgewachsen
   const pct = total ? (greenN / total) * 100 : 0;
   // #UI: Schwellen-Marken nur zeigen, wenn der zugehörige Skill gehalten wird — ohne Überwucherung greift der
@@ -83,18 +100,61 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
         </div>
       )}
 
-      {/* Setzling · Grün · Ausgewachsen — der Reifezustand des Feldes. */}
-      <div className="flex items-stretch gap-2 mt-2.5">
-        <CounterCell icon={<span style={{ color: SEED, fontSize: 13, lineHeight: 1 }}>🌱</span>}
-          value={setzling} label="Setzling" color={SEED} dim={setzling === 0}
-          title="Wachsende, noch nicht reife Karten (grau, unter der Reife-Schwelle)." />
-        <CounterCell icon={<span style={{ color: PLANT, fontSize: 13, lineHeight: 1, textShadow: `0 0 4px ${PLANT}` }}>🌿</span>}
-          value={gruen} label="Grün" color={PLANT} glow={gruen > 0} dim={gruen === 0}
-          title="Reife (grüne) Karten, Wert noch unter dem Deckel — zählen fürs Farbblock." />
-        <CounterCell icon={<span style={{ color: PLANT_RIPE, fontSize: 13, lineHeight: 1, textShadow: `0 0 5px ${PLANT}` }}>🌳</span>}
-          value={ausgewachsen} label="Ausgewachsen" color={PLANT_RIPE} glow={ausgewachsen > 0} dim={ausgewachsen === 0}
-          title={`Voll ausgewachsen (Wert ${PLANT_VALUE_CAP}, Auto-Sieg; weiteres Wachstum zahlt als Überlauf-Score).`} />
+      {/* #277 · C — Reifezustand: „Nächste Reife" + Stufen-Histogramm (Setzling/Grün/Ausgewachsen mit Fortschrittsbalken).
+          Ersetzt die alte flache Zählerzeile — gleiche drei Zahlen, jetzt mit Durchschnitts-Fortschritt je Stufe. */}
+      <div className="mt-2.5">
+        {nextRipe != null && (
+          <div className="flex items-baseline justify-between text-xs mb-1.5">
+            <span className="opacity-60">🌿 Nächste Reife</span>
+            <span className="font-bold tabular-nums" style={{ color: PLANT_RIPE }} title="Grobe Schätzung: nächster Setzling wird grün (aus Wachstumsrate × Restdistanz).">~{nextRipe} {nextRipe === 1 ? "Sieg" : "Siege"}</span>
+          </div>
+        )}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { n: setzling, lab: "Setzling", col: SEED, bar: avg(seedList), title: "Wachsende, noch nicht reife Karten (Balken = Ø Fortschritt zur Reife)." },
+            { n: gruen, lab: "Grün", col: PLANT, bar: avg(greenList), title: "Reife grüne Karten, Wert unter dem Deckel (Balken = Ø Fortschritt zum Wert-Deckel)." },
+            { n: ausgewachsen, lab: "Ausgewachsen", col: PLANT_FULL, bar: ausgewachsen > 0 ? 1 : 0, title: `Voll ausgewachsen (Wert ${PLANT_VALUE_CAP}).` },
+          ].map((s) => (
+            <div key={s.lab} className="rounded-lg px-2 py-1.5 text-center" title={s.title}
+              style={{ background: `${s.col}12`, border: `1px solid ${s.col}${s.n ? "44" : "22"}`, opacity: s.n ? 1 : 0.5 }}>
+              <div className="text-base font-bold tabular-nums leading-none" style={{ color: s.col }}>{s.n}</div>
+              <div className="text-[9px] uppercase tracking-wide opacity-55 mt-0.5">{s.lab}</div>
+              <div className="rounded-full overflow-hidden mt-1" style={{ height: 4, background: "#26262e" }}>
+                <div className="h-full rounded-full" style={{ width: `${Math.round(s.bar * 100)}%`, background: s.col }} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* #277 · A — einklappbarer Detail-Strip: pro reifender Karte ein Mini-Balken (default zu, Zustand gemerkt). */}
+      {maturing.length > 0 && (
+        <div className="mt-2 pt-2 border-t" style={{ borderColor: "#26262e" }}>
+          <button type="button" onClick={() => onOption && onOption({ collapsePlantMaturing: !stripCollapsed })} data-sfx="none"
+            className="w-full flex items-center gap-1 text-[10px] uppercase tracking-wide opacity-50 hover:opacity-80" style={{ background: "transparent" }} aria-expanded={!stripCollapsed}>
+            <span className="inline-block w-2 text-center" aria-hidden="true">{stripCollapsed ? "▸" : "▾"}</span>
+            <span>Reifende Karten · {maturing.length}</span>
+          </button>
+          {!stripCollapsed && (
+            <div className="flex flex-col gap-1 mt-1.5">
+              {maturing.slice(0, 8).map((m) => {
+                const col = m.stage === "seed" ? SEED : PLANT_RIPE;
+                return (
+                  <div key={m.id} className="grid items-center gap-2" style={{ gridTemplateColumns: "16px 84px 1fr auto" }}>
+                    <span className="text-[11px] text-center" style={{ color: col }}>{m.stage === "seed" ? "🌱" : "🌿"}</span>
+                    <span className="text-[10px] opacity-60 tabular-nums whitespace-nowrap">{m.label}</span>
+                    <div className="rounded-full overflow-hidden" style={{ height: 6, background: "#26262e" }}>
+                      <div className="h-full rounded-full" style={{ width: `${Math.round(m.pct * 100)}%`, background: m.stage === "seed" ? SEED : `linear-gradient(90deg, ${PLANT_RIPE}, ${PLANT_FULL})` }} />
+                    </div>
+                    <span className="text-[10px] tabular-nums" style={{ color: col }}>{Math.round(m.pct * 100)}%</span>
+                  </div>
+                );
+              })}
+              {maturing.length > 8 && <div className="text-[9px] opacity-40 mt-0.5">+{maturing.length - 8} weitere</div>}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Ausläufer (kolonisierte Gegnerkarten) — eigene, getrennte Zeile: der Griff ins Gegnerdeck (Ernte/Dornenkönig). */}
       {colonizedN > 0 && (

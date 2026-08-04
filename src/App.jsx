@@ -616,9 +616,11 @@ export function Autostich() {
           />
 
           {/* Mobil: dieselben Kopf-Stats als eigenes gerahmtes Panel an ZWEITER Stelle (direkt nach der
-              Controls-Leiste). Auf Desktop ausgeblendet (dort stehen sie im Header). */}
-          <div className="sm:hidden grid grid-cols-3 gap-x-3 gap-y-2 justify-items-center rounded-xl p-3 as-panel"
-            style={{ background: "#17171c", border: "1px solid #26262e" }}>
+              Controls-Leiste). Auf Desktop ausgeblendet (dort stehen sie im Header).
+              #280: klebt beim Runterscrollen oben fest (sticky, wie die Formationsstärke-Leiste) — deckender
+              Hintergrund + z-20 (unter Overlays/Modals bei z-30+), damit die Kennzahlen immer sichtbar bleiben. */}
+          <div className="sm:hidden sticky top-0 z-20 grid grid-cols-3 gap-x-3 gap-y-2 justify-items-center rounded-xl p-3 as-panel"
+            style={{ background: "#17171c", border: "1px solid #26262e", boxShadow: "0 6px 14px #0009" }}>
             {statCells}
           </div>
 
@@ -650,7 +652,8 @@ export function Autostich() {
                 colonized={state.colonized || {}}
                 skills={state.skills || []}
                 growthTotal={state.growthTotal || 0}
-                rootScore={state.plantRoot || 0} bloomScore={state.plantBloom || 0} harvestScore={state.plantHarvest || 0} />
+                rootScore={state.plantRoot || 0} bloomScore={state.plantBloom || 0} harvestScore={state.plantHarvest || 0}
+                options={options} onOption={changeOptions} />
             </div>
             {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
             <div className="order-2 lg:col-start-2 lg:row-start-1">
@@ -670,7 +673,7 @@ export function Autostich() {
       </div>
 
       {state.phase === "formation" && (
-        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} />
+        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} options={options} onOption={changeOptions} />
       )}
       {state.phase === "architect" && (
         <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}
@@ -685,7 +688,7 @@ export function Autostich() {
       {state.phase === "frost-select" && state.frostSelect && (
         <FrostSelect state={state} onToggle={frostToggle} onConfirm={frostConfirm} />
       )}
-      {showChronik && <ChronikOverview state={state} onClose={() => setShowChronik(false)} />}
+      {showChronik && <ChronikOverview state={state} onClose={() => setShowChronik(false)} options={options} onOption={changeOptions} />}
       {state.phase === "levelup" && state.offer && (
         <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} perks={state.perks} deck={state.deck} state={state} />
       )}

@@ -1,7 +1,7 @@
 import { memo } from "react";
-import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
+import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX, PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP } from "../game/constants.js";
 import { FrostOverlay } from "./FrostOverlay.jsx";
-import { plantNumberColor, PLANT } from "./indicators/vocab.js";
+import { plantNumberColor, PLANT, PLANT_RIPE } from "./indicators/vocab.js";
 
 // Eis (#210): Schicht-Eck-Kristalle — dezenter, gestapelter Hinweis „diese Karte ist geschichtet" (bewusst KEINE
 // Zahl auf der Karte). Mehr Schichten → mehr Kristalle; ab dem wirksamen Deckel (ICE_LAYER_MAX) leuchten obenauf
@@ -92,8 +92,19 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
   const numShadow = pt
     ? `0 0 ${Math.round(10 + 10 * pt.glow)}px ${pt.color}${pt.ripe ? "cc" : "88"}, 0 1px 3px #000c`
     : `0 0 12px ${color}77, 0 1px 3px #000c`;
-  const showGrowthRing = !green && (growth || 0) > 0;
-  const growthPct = Math.min(100, ((growth || 0) / PLANT_GREEN_THRESHOLD) * 100);
+  // Pflanze (#277): ZWEISTUFIGER Wachstumsring — Stufe 1 Setzling→Grün (grau→grün, growth/Schwelle), Stufe 2 Grün→
+  // Ausgewachsen (heller, value/Deckel). Bleibt sichtbar, bis die Karte ausgewachsen ist (dann trägt die hellste
+  // grüne Zahl das „fertig"-Signal). So sieht man je Karte, wie weit sie ist UND wann sie voll auswächst.
+  const fullyGrown = green && value >= PLANT_VALUE_CAP;
+  const growingStage2 = green && !fullyGrown;                        // grün, aber noch nicht am Wert-Deckel
+  const showGrowthRing = (!green && (growth || 0) > 0) || growingStage2;
+  const ringPct = growingStage2
+    ? Math.min(100, (value / PLANT_VALUE_CAP) * 100)
+    : Math.min(100, ((growth || 0) / PLANT_GREEN_THRESHOLD) * 100);
+  const ringColor = growingStage2 ? PLANT_RIPE : PLANT;             // Stufe 2 heller abgesetzt
+  const ringTitle = growingStage2
+    ? `Wert ${value} / ${PLANT_VALUE_CAP} → ausgewachsen`
+    : `Wachstum ${String(Math.round((growth || 0) * 10) / 10).replace(".", ",")} / ${PLANT_GREEN_THRESHOLD} → reif`;
   return (
     <div
       className="as-card as-card-holo relative rounded-xl overflow-hidden flex flex-col items-center justify-center select-none transition-all"
@@ -131,12 +142,12 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
       {frozen && (
         <div className="absolute bottom-1 text-[15px] leading-none" style={{ right: showGrowthRing ? 22 : 4, color: "#d6f2fc", textShadow: "0 0 8px #7fd4f0, 0 1px 2px #000a" }} title="Eingefroren">❄</div>
       )}
-      {/* Pflanze (#211): Wachstumsring unten-rechts — füllender Kreis 0 → Reife-Schwelle auf der EIGENEN, noch wachsenden
-          Karte; bei Reife ausgeblendet (dann trägt die grüne Zahl + 🌿 das Signal). Sitzt in vocab.CORNER.growthRing. */}
+      {/* Pflanze (#277): zweistufiger Wachstumsring unten-rechts — Stufe 1 grau→grün (Reife), Stufe 2 heller (Wert-Deckel/
+          ausgewachsen). Ausgeblendet erst, wenn die Karte ausgewachsen ist. Sitzt in vocab.CORNER.growthRing. */}
       {showGrowthRing && (
-        <div className="absolute bottom-1 right-1 rounded-full" title={`Wachstum ${String(Math.round(growth * 10) / 10).replace(".", ",")} / ${PLANT_GREEN_THRESHOLD} → reif`}
-          style={{ width: 16, height: 16, background: `conic-gradient(${PLANT} ${growthPct}%, #ffffff1f ${growthPct}%)`,
-                   border: `1px solid ${PLANT}66`, boxShadow: `0 0 4px ${PLANT}55` }}>
+        <div className="absolute bottom-1 right-1 rounded-full" title={ringTitle}
+          style={{ width: 16, height: 16, background: `conic-gradient(${ringColor} ${ringPct}%, #ffffff1f ${ringPct}%)`,
+                   border: `1px solid ${ringColor}66`, boxShadow: `0 0 4px ${ringColor}55` }}>
           <div className="absolute rounded-full" style={{ inset: 3, background: HOLO_BASE }} />
         </div>
       )}

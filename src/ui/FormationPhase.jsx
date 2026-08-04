@@ -23,13 +23,15 @@ const pctOf = (x) => Math.round(x * 100);
    Zwei Karten antippen = Tausch (1 Energie). Formationen werden nach jedem Tausch live neu berechnet
    (kommt aus state.formations, vom Reducer gefüllt). Undo/Zurücksetzen erstatten Energie.
    Desktop (#101): zweispaltig — Karten-Grid links, Info-Panel rechts; Mobil gestapelt. */
-export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
+export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, options = {}, onOption }) {
   const { playerOrder = [], deck = [], formations = [], formationEnergy = 0, formationSwaps = [] } = state;
   const [sel, setSel] = useState(null);
   // Architekt-Gebäude-Overlay (#202): zeigt in der Aufstellung, welche Positionen von welchem Gebäude gebufft werden —
   // die andere Seite der „platzieren (Architekt) → routen (Aufstellung)"-Schleife. Toggle-bar, Default an. Der Wert-Boost
   // je Zelle kommt aus der ECHTEN Engine (precomputeArchitect + architectValueBonus), spiegelt also die Sieg-Rechnung.
-  const [showArch, setShowArch] = useState(true);
+  // #278: Zustand über die Optionen gemerkt (wie showForms/collapse*) — „aus" bleibt aus, statt jedes Mal auf „an" zu springen.
+  const [showArch, setShowArchState] = useState(options.archShowBuildings !== false);
+  const setShowArch = (v) => { const nv = typeof v === "function" ? v(showArch) : v; setShowArchState(nv); onOption?.({ archShowBuildings: nv }); };
   const [inspectBid, setInspectBid] = useState(null); // inspiziertes Gebäude: Liste ↔ Brett (Rahmen glüht), gesetzt per Karten-Auswahl ODER Listen-Klick — wie in der Chronik
   const architect = state.architect;
   const archBuildings = (state.architectEnabled && architect && architect.buildings) || [];
