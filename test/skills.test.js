@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
-import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer, archetypeOf,
+import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryOffer,
+  isLegendarySkill, archetypeOf,
   offerArchetypes, archetypesWithSkills, decodeArchetypes,
   ionScoreFor, ionCritChance, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasSeriesCrit, hasStorm, chargeFloorFor } from "../src/game/skills.js";
@@ -101,30 +102,24 @@ describe("buildSkillOffer (3+3+3+3 über alle 4 Archetypen)", () => {
     expect(buildSkillOffer(ALL, [], makeRng(1), 4)).toEqual([]);
   });
 
-  // ---- Expliziter Legendär-Roll (Shop #107 S5c) ----
-  it("ohne Legendär-Chance (0) bleibt das Verhalten unverändert (kein rng-Drift)", () => {
+  // ---- #272: Legendäre kommen NICHT mehr im Skill-Angebot (nur über die Legendär-Phase, buildLegendaryOffer) ----
+  it("ohne Legendär-Chance (0) == Default (kein rng-Drift)", () => {
     expect(buildSkillOffer([], [], makeRng(1), 6, 0)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
   });
-  it("#247 Legendär je Archetyp: eigener Wurf, max EINER pro Archetyp, mehrere je Angebot möglich", () => {
-    // Chance 1 → jeder der 4 Archetypen bekommt genau EINEN Legendär (mehrere je Angebot, nie zwei im selben Archetyp).
-    for (let seed = 1; seed <= 20; seed++) {
-      const off = buildSkillOffer([], [], makeRng(seed), 12, 1);
-      expect(off).toHaveLength(12);
-      const legByArch = {};
-      for (const id of off) if (SKILL_DEFS[id].legendary) legByArch[archetypeOf(id)] = (legByArch[archetypeOf(id)] || 0) + 1;
-      expect(Object.values(legByArch).every((c) => c === 1)).toBe(true); // nie zwei Legendäre im selben Archetyp
-      expect(Object.keys(legByArch)).toHaveLength(4);                    // alle 4 würfeln unabhängig → 4 Legendäre bei Chance 1
-    }
-    // Determinismus bleibt: gleicher Seed → identisches Angebot (auch mit Per-Archetyp-Würfen).
-    expect(buildSkillOffer([], [], makeRng(7), 12, 0.5)).toEqual(buildSkillOffer([], [], makeRng(7), 12, 0.5));
-  });
-  it("Legendär-Roll erhält die 3+3+3+3-Archetyp-Balance (#129)", () => {
+  it("#272: bietet NIE einen Legendär an — auch mit Chance 1 und Garantie", () => {
     for (let seed = 1; seed <= 40; seed++) {
-      const off = buildSkillOffer([], [], makeRng(seed), 12, 1); // erzwungener Legendär (Chance 1)
+      for (const [chance, guar] of [[0, false], [0.5, false], [1, false], [1, true]]) {
+        const off = buildSkillOffer([], [], makeRng(seed), 12, chance, guar);
+        expect(off.some(isLegendarySkill)).toBe(false);
+      }
+    }
+  });
+  it("#272: 3+3+3+3-Archetyp-Balance bleibt (12 normale Skills, keine Legendäre)", () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const off = buildSkillOffer([], [], makeRng(seed), 12, 1, true);
       expect(off).toHaveLength(12);
       const byArch = {};
       for (const id of off) byArch[archetypeOf(id)] = (byArch[archetypeOf(id)] || 0) + 1;
-      // Alle 4 Archetypen, je 3 (einer davon legendär, ersetzt einen normalen SEINES Archetyps).
       const counts = Object.values(byArch);
       expect(counts).toHaveLength(4);
       expect(counts.every((c) => c === 3)).toBe(true);
@@ -138,6 +133,38 @@ describe("buildSkillOffer (3+3+3+3 über alle 4 Archetypen)", () => {
         expect(new Set(off).size).toBe(off.length);               // nie ein Duplikat
       }
     }
+  });
+});
+
+// #272 Legendär-Phase: 2 Legendäre NUR aus aktiven Fraktionen, deterministisch, verschieden, ohne gehaltene.
+describe("buildLegendaryOffer (#272 Legendär-Phase)", () => {
+  it("zieht Legendäre NUR aus den aktiven Archetypen", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const off = buildLegendaryOffer(["ice"], [], makeRng(seed), 2);
+      expect(off).toHaveLength(2);
+      expect(off.every((id) => isLegendarySkill(id) && archetypeOf(id) === "ice")).toBe(true);
+    }
+  });
+  it("bei mehreren aktiven Fraktionen aus deren Vereinigung; immer verschieden", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const off = buildLegendaryOffer(["fire", "plant"], [], makeRng(seed), 2);
+      expect(off).toHaveLength(2);
+      expect(new Set(off).size).toBe(2);
+      expect(off.every((id) => ["fire", "plant"].includes(archetypeOf(id)))).toBe(true);
+    }
+  });
+  it("schließt bereits gehaltene Legendäre aus (owned)", () => {
+    const off = buildLegendaryOffer(["ice"], ["SK_ICE_L01", "SK_ICE_L02"], makeRng(3), 2);
+    expect(off).not.toContain("SK_ICE_L01");
+    expect(off).not.toContain("SK_ICE_L02");
+    expect(off.every((id) => archetypeOf(id) === "ice")).toBe(true);
+  });
+  it("deterministisch: gleicher Seed → identisches Angebot", () => {
+    expect(buildLegendaryOffer(["lightning", "ice"], [], makeRng(9), 2))
+      .toEqual(buildLegendaryOffer(["lightning", "ice"], [], makeRng(9), 2));
+  });
+  it("keine aktiven Fraktionen → leeres Angebot", () => {
+    expect(buildLegendaryOffer([], [], makeRng(1), 2)).toEqual([]);
   });
 });
 

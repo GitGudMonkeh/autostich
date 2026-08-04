@@ -15,7 +15,7 @@ const envNum = (name, def) => {
 // SIM-Sweep-Haken: per ENV übersteuerbar (im Browser existiert `process` nicht → immer 45). `SIM_MAX_CYCLES=50
 // node sim/batch.js …` verlängert/verkürzt für Diagnose; für n ≤ 45 wird ein Prefix des 45-Plans gespielt, darüber
 // hinaus wächst DECISION_SCHEDULE über buildSchedule() via TAIL_BLOCK weiter.
-export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 45);     // #267: Run über so viele Deck-Durchläufe, danach Ende [TUNING · Sim-übersteuerbar]
+export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 50);     // #272: Run über so viele Deck-Durchläufe (45→50), danach Ende [TUNING · Sim-übersteuerbar]
 // Architekt (#202, Shop-Ersatz): Modul-Default-Schalter. Das Spiel startet den Lauf mit architect:true (START_RUN, App.jsx);
 // dieser Default greift nur, wenn keine Action-Flag gesetzt ist (Sim ohne A/B). Im Browser existiert `process` nicht → false.
 export const ARCHITECT_ENABLED = (typeof process !== "undefined" && process.env && (process.env.ARCHITECT === "1" || process.env.ARCHITECT === "true")) || false;
@@ -44,29 +44,30 @@ export const WIN_SOFTCAP_SLOPE = envNum("SIM_WIN_SOFTCAP_SLOPE", 0.25); // Rest-
 //  „Präzision" (siehe PRECISION_* unten) bzw. aus Blitz. Basis-Crit = 0. STAT_*_STEP/STREAK_STAT_CAP/STAT_CRIT_MULT_CAP
 //  sind damit obsolet und entfernt.)
 
-// Entscheidungsplan (#267): Typ der Entscheidung VOR Durchlauf n (1-indexiert) = DECISION_SCHEDULE[n-1].
-// Fester 45-Einträge-Plan (Commitment-Funnel Skill→Perk→Aufstellen→Architekt, vom Dev handgesetzt — löst den alten
-// 60-Plan ab). Engine liest DECISION_SCHEDULE[cycle] (nach cycle += 1); der Start-Entscheid (Index 0 = "skill",
+// Entscheidungsplan (#272): Typ der Entscheidung VOR Durchlauf n (1-indexiert) = DECISION_SCHEDULE[n-1].
+// Fester 50-Einträge-Plan (Commitment-Funnel Skill→Perk→Aufstellen→Architekt, vom Dev handgesetzt — löst den 45-Plan
+// #267 ab). Engine liest DECISION_SCHEDULE[cycle] (nach cycle += 1); der Start-Entscheid (Index 0 = "skill",
 // Runde 1) läuft über START_RUN. Bewusster Blind-Commit: das Deck ist noch vanilla, kein Infoverlust.
-// Verteilung: 8 Skill · 13 Perk · 12 Formation (Aufstellen) · 12 Shop (Architekt). Skills sind front-loaded
-// (Runden 1,5,9,13,17 in der Frühphase) und tapern aus; SKILL_SLOTS=6 → Skill-Runden ⑦ (Runde 31, mid) & ⑧
-// (Runde 41, end) sind Tausch-Fenster (bestehende Skill-Ersatz-Mechanik). Ein Block = Skill→Perk→Aufstellen→
-// Architekt: erst Brett stellen, dann das Gebäude drauf. Exakte Indizes sind sim-tunebarer Feinschliff.
+// Verteilung: 9 Skill · 13 Perk · 13 Formation (Aufstellen) · 14 Shop (Architekt) · 1 LEGENDÄR. Skills sind
+// front-loaded (Runden 1,5,9,13,17,22 füllen die 6 Slots) und tapern aus (31,40,48 = Tausch-Fenster).
+// #272 Legendär-Phase (Runde 29, spätes Mid-Game, build-defining): 2 Legendäre aus AKTIVEN Archetypen → fixer
+// 7. Slot (kein Tausch); ablehnen → normale Skill-Wahl. Legendäre kommen NUR hier, nicht mehr im Skill-Angebot.
+// Ein Block = Skill→Perk→Aufstellen→Architekt: erst Brett stellen, dann das Gebäude drauf. Indizes = sim-tunebar.
 const BASE_SCHEDULE = [
-  "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk",     //  1–10
-  "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", // 11–20
-  "perk", "skill", "formation", "shop", "perk", "formation", "shop", "perk", "formation", "shop",  // 21–30
-  "skill", "perk", "formation", "shop", "perk", "formation", "shop", "perk", "formation", "shop",  // 31–40
-  "skill", "perk", "formation", "shop", "perk",                                                     // 41–45
+  "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk",         //  1–10
+  "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop",     // 11–20
+  "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", "legendary", "perk",     // 21–30
+  "formation", "shop", "skill", "shop", "perk", "formation", "shop", "perk", "formation", "shop",      // 31–40
+  "skill", "perk", "formation", "shop", "perk", "formation", "shop", "perk", "formation", "shop",      // 41–50
 ];
-// Schwanz-Block für Runs ÜBER 45 Cycles hinaus (nur SIM_MAX_CYCLES > 45, reine Sweep-Diagnose). Hält grob das
-// 45er-Mix-Verhältnis, clustert nicht (nie zwei Shop/Skill hintereinander) und doppelt nicht an der 45/46-Grenze
-// (Cycle 45 = perk → Block-Start = formation).
+// Schwanz-Block für Runs ÜBER 50 Cycles hinaus (nur SIM_MAX_CYCLES > 50, reine Sweep-Diagnose). Hält grob das
+// 50er-Mix-Verhältnis (ohne Legendär — die eine Legendär-Phase steckt fest im Basis-Plan), clustert nicht
+// (nie zwei Shop/Skill hintereinander) und doppelt nicht an der 50/51-Grenze (Cycle 50 = perk → Block-Start = formation).
 const TAIL_BLOCK = [
   "formation", "shop", "skill", "perk", "formation", "shop", "perk", "skill", "formation", "shop", "perk", "formation",
 ];
-// Entscheidungsplan der Länge n: für n ≤ 60 ein exaktes Prefix des handgesetzten 60-Plans; darüber hinaus wird
-// TAIL_BLOCK wiederholt (nur für SIM_MAX_CYCLES-Sweeps > 60). Pur & testbar; die Engine liest ausschließlich
+// Entscheidungsplan der Länge n: für n ≤ 50 ein exaktes Prefix des handgesetzten 50-Plans; darüber hinaus wird
+// TAIL_BLOCK wiederholt (nur für SIM_MAX_CYCLES-Sweeps > 50). Pur & testbar; die Engine liest ausschließlich
 // das daraus gebaute DECISION_SCHEDULE.
 export function buildSchedule(n = MAX_CYCLES) {
   if (n <= BASE_SCHEDULE.length) return BASE_SCHEDULE.slice(0, n);

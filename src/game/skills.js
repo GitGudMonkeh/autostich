@@ -577,9 +577,11 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   for (const arch of chosen) {
     // Enabler-Gating (Anti-Pech): ein Verstärker-Skill (s.enabler) wird NUR angeboten, wenn seine Basis gehalten wird —
     // sonst ist er ein toter Pick (Variety-Befund: der schwache Tail sind fast durchweg ungegatete Verstärker).
+    // #272: Legendäre sind NIE Teil des normalen Skill-Angebots — sie kommen ausschließlich über die Legendär-Phase
+    // (buildLegendaryOffer, Runde 29). Daher hier hart rausgefiltert; die #247-Würfe unten laufen dadurch leer (legPoolByArch=[]).
     let pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)
-      && (!s.enabler || (owned || []).includes(s.enabler))).map((s) => s.id), rng);
-    if (gateLeg) { legPoolByArch[arch] = pool.filter(isLeg); pool = pool.filter((id) => !isLeg(id)); } // Legendäre nur über die Würfe
+      && !s.legendary && (!s.enabler || (owned || []).includes(s.enabler))).map((s) => s.id), rng);
+    if (gateLeg) { legPoolByArch[arch] = pool.filter(isLeg); pool = pool.filter((id) => !isLeg(id)); } // (#247, jetzt inert — Pool hat keine Legendäre mehr)
     // Garantierten Konsumenten dieses Archetyps nach vorne ziehen (deterministisch, kein zusätzlicher rng-Zug: die
     // Pool-Reihenfolge stammt schon aus dem Shuffle; perArch ≥ 1 → Slot 0 wird gewählt). Zwei Auslöser:
     //  · needsConsumer(arch): aktiver Archetyp ohne gehaltenen Konsumenten (Pro-Archetyp-Garantie, Runden 2+).
@@ -620,6 +622,16 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
     }
   }
   return offer;
+}
+
+// #272 Legendär-Phase (Runde 29, build-defining): `count` VERSCHIEDENE Legendäre, gezogen NUR aus den Fraktionen, in
+// denen der Spieler aktive Skills hält (activeArchetypes) — je Fraktion 4 Legendäre, also i. d. R. genug für 2 Optionen.
+// `owned` (die gehaltenen Skills, inkl. eines evtl. schon gewählten Legendärs) wird ausgeschlossen. Rein & testbar:
+// EIN gebündelter Legendär-Pool über alle aktiven Fraktionen, deterministisch geshuffelt, dann die ersten `count`.
+export function buildLegendaryOffer(activeArchetypes = [], owned = [], rng = Math.random, count = 2) {
+  const active = new Set(activeArchetypes || []);
+  const pool = SKILL_LIST.filter((s) => s.legendary && active.has(s.archetype) && !(owned || []).includes(s.id)).map((s) => s.id);
+  return shuffle(pool, rng).slice(0, count);
 }
 
 /* ---- Ionisierung (Stufe B, docs/blitz-archetyp.md Abschnitt 5/6) ---- */

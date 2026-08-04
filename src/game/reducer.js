@@ -120,7 +120,7 @@ export function initialState(rng = Math.random, seed = null) {
     // denselben Fluss später für Karten-Ziele (Rollen).
     familyTarget: null,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
-    skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
+    skills: [], skillOffer: null, legendaryOffer: null, activeArchetypes: [], lightning: initLightning(), // #272: legendaryOffer = Angebot der Legendär-Phase (Runde 29)
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     iceTemp: {}, frostbitePending: {}, frostbiteActive: {}, frostSwapsUsed: [], // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff / genutzte Frosttausche
     layers: {}, frostFormPrev: [], // Eis-Rework (v0): Schichten je Frostkarte (permanent) / Beständigkeits-Historie
@@ -451,10 +451,12 @@ export function reducer(state, action) {
       const active0 = state.activeArchetypes || [];
       if (arch && !active0.includes(arch) && active0.length >= C.MAX_ARCHETYPES) return state;
       let skills;
-      if (replaceId && state.skills.includes(replaceId)) {
-        // Gezieltes Ersetzen (volle Slots ODER Konsumenten-Ersatzdialog #93): tauscht genau diesen Slot.
+      // #272: Der Legendär im 7. Slot zählt NICHT gegen SKILL_SLOTS und wird nie durch einen normalen Pick ersetzt.
+      const normalCount = state.skills.filter((id) => !isLegendarySkill(id)).length;
+      if (replaceId && state.skills.includes(replaceId) && !isLegendarySkill(replaceId)) {
+        // Gezieltes Ersetzen (volle Slots ODER Konsumenten-Ersatzdialog #93): tauscht genau diesen (normalen) Slot.
         skills = state.skills.map((id) => (id === replaceId ? skillId : id));
-      } else if (state.skills.length < C.SKILL_SLOTS) {
+      } else if (normalCount < C.SKILL_SLOTS) {
         skills = [...state.skills, skillId];                       // freier Slot → hinzufügen
       } else {
         return state;                                              // volle Slots ohne gültiges Ersetzungsziel
@@ -531,6 +533,36 @@ export function reducer(state, action) {
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off, offerRerolls: 0 } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0)
         : { ...state, skillOffer: null, phase: "play" };             // Perk-Pool leer → weiterspielen
+    }
+
+    // #272 Legendär-Phase (Runde 29): EINEN der 2 angebotenen Legendäre in den fixen 7. Slot (kein Ersetzen, zählt
+    // nicht gegen SKILL_SLOTS). Der Archetyp ist bereits aktiv (Angebot nur aus aktiven Fraktionen) → seine Ressourcen
+    // bestehen; wir rechnen nur die legendär-abhängigen Aktivierungen nach (Donnergott: maxCharge, Eis: Frost-Ziel).
+    case "PICK_LEGENDARY": {
+      if (state.phase !== "legendary" || !state.legendaryOffer) return state;
+      const { legendaryId } = action;
+      if (!state.legendaryOffer.includes(legendaryId) || state.skills.includes(legendaryId) || !isLegendarySkill(legendaryId)) return state;
+      const arch = archetypeOf(legendaryId);
+      const skills = [...state.skills, legendaryId]; // 7. Slot — kein Cap-Check
+      let lightning = state.lightning, heat = state.heat, deck = state.deck;
+      if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15
+      if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
+      if (arch === "ice") { // Legendär könnte das Frost-Ziel heben → fehlende Karten automatisch einfrieren (kein Frost-Select in der Legendär-Phase)
+        const toFreeze = Math.max(0, frozenTargetFor(skills) - frozenCount(deck));
+        if (toFreeze > 0) deck = freezeCards(deck, toFreeze, rngFor(state, action, state.cycle, "freeze"), false);
+      }
+      const activeArchetypes = (state.activeArchetypes || []).includes(arch) ? state.activeArchetypes : [...(state.activeArchetypes || []), arch];
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, formations, phase: "play", legendaryOffer: null };
+    }
+
+    // #272 Legendär ablehnen → stattdessen normale Skill-Wahl (Nutzer-Wunsch), nie „verschwendet".
+    case "DECLINE_LEGENDARY": {
+      if (state.phase !== "legendary" || !state.legendaryOffer) return state;
+      const off = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", 0), C.SKILLS_OFFERED, 0, false);
+      return off.length > 0
+        ? { ...state, legendaryOffer: null, skillOffer: off, phase: "levelup", offerRerolls: 0 } // → normale Skill-Auswahl
+        : { ...state, legendaryOffer: null, phase: "play" };                                     // Skill-Pool leer → weiterspielen
     }
 
     // Perk-Angebot komplett ablehnen (#138): Angebot verworfen, weiter im Spiel — so ist eine Perk-Runde nie

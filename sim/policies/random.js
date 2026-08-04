@@ -9,7 +9,7 @@
 //  - Shop: gierig alle bezahlbaren Items OHNE Zielauswahl kaufen, dann verlassen.
 //    (Ziel-Items bleiben in S0 außen vor; das hält die shop-target-Phase draußen.)
 import { PERK_DEFS } from "../../src/game/perks.js";
-import { archetypeOf, heatConsumerCount, chargeConsumerCount } from "../../src/game/skills.js";
+import { archetypeOf, heatConsumerCount, chargeConsumerCount, isLegendarySkill } from "../../src/game/skills.js";
 import { SKILL_SLOTS, MAX_ARCHETYPES } from "../../src/game/constants.js";
 import { perkActionFor, familyTargetStep } from "../families-policy.js";
 import { architectStep } from "../architect-policy.js"; // #202: Architekt-Phase (random/greedy platzieren)
@@ -19,7 +19,7 @@ const pick = (arr, rng) => arr[Math.floor(rng() * arr.length)];
 // Kann dieser Skill in einen freien Slot? Spiegelt die Free-Slot-Bedingungen von PICK_SKILL.
 export function canAddSkill(s, id) {
   if (s.skills.includes(id)) return false;
-  if (s.skills.length >= SKILL_SLOTS) return false;
+  if (s.skills.filter((sid) => !isLegendarySkill(sid)).length >= SKILL_SLOTS) return false; // #272: der 7. Legendär-Slot zählt nicht gegen SKILL_SLOTS
   const a = archetypeOf(id);
   const active = s.activeArchetypes || [];
   if (a && !active.includes(a) && active.length >= MAX_ARCHETYPES) return false;
@@ -65,6 +65,13 @@ export function randomPolicy({ architectGreedy = false } = {}) {
           }
           return { type: "FROST_SELECT_CONFIRM" };
         }
+
+        // #272 Legendär-Phase (Runde 29): einen der 2 angebotenen Legendäre in den 7. Slot (build-defining). Baseline:
+        // zufällig aus dem Angebot (das schon nur aus aktiven Fraktionen stammt); leer → ablehnen (→ normale Skill-Wahl).
+        case "legendary":
+          return s.legendaryOffer && s.legendaryOffer.length
+            ? { type: "PICK_LEGENDARY", legendaryId: pick(s.legendaryOffer, rng), rng }
+            : { type: "DECLINE_LEGENDARY", rng };
 
         case "formation":
           return { type: "CONFIRM_FORMATION" }; // Baseline: Reihenfolge unangetastet lassen

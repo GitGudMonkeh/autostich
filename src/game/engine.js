@@ -3,7 +3,7 @@ import { shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult } from "./families.js";
-import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionCritChance, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
+import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryOffer, ionScoreFor, ionCritChance, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
   hasIonize, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
   hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasSeriesCrit, hasBlitzableiter, hasWetterleuchten, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
@@ -1010,6 +1010,7 @@ export function resolveTrick(state, rng) {
   let phase = "play";
   let newOffer = offer;
   let newSkillOffer = skillOffer;
+  let newLegendaryOffer = state.legendaryOffer || null; // #272 Legendär-Phase (Runde 29): 2 Legendäre aus aktiven Fraktionen
   let newFormationEnergy = formationEnergy;
   let newFormationSwaps = formationSwaps;
   let newMasteryLegGranted = state.masteryLegGranted || false; // #217 Grad V: 1×/Lauf garantierter Legendär — eingelöst-Flag
@@ -1169,6 +1170,16 @@ export function resolveTrick(state, rng) {
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
         formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
+      } else if (decision === "legendary") {
+        // #272 Legendär-Phase (Runde 29, build-defining): 2 Legendäre NUR aus aktiven Fraktionen → fixer 7. Slot.
+        // Kein Legendär verfügbar (keine aktive Fraktion / alle der aktiven Fraktionen bereits gehalten) → wie ein
+        // leerer Skill-Pool auf die normale Skill-Wahl ausweichen (Runde nicht verschwenden).
+        const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), 2);
+        if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
+        else {
+          const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false);
+          if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
+        }
       }
     }
   }
@@ -1206,7 +1217,7 @@ export function resolveTrick(state, rng) {
     zinsBonus, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, // Legendär-Perks-Rework (#203)
     richtfestBonus, // Gebäude-Legendäres Richtfest (Struktur-Dauerdividende)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
-    skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
+    skillOffer: newSkillOffer, legendaryOffer: newLegendaryOffer, lightning, // Skill-System / Blitz-Archetyp · #272 Legendär-Phase
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
     iceTemp: newIceTemp, frostbitePending: newFrostbitePending, frostbiteActive: newFrostbiteActive, // Eis (Kaltfront temp / Vergletscherung)
     layers: newLayers, frostFormPrev: newFrostFormPrev, // Eis-Rework (v0): Schichten (permanent) + Beständigkeits-Historie
