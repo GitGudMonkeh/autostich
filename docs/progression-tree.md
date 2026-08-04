@@ -130,7 +130,19 @@ Neuer Spieler → „Normales Spiel" → **Lauf-Vorbereitung** mit **3 Archetyp-
 - **Baufeld-Erweiterung** ist reiner Werkstatt-Stoff (KP), nie Onboarding.
 - **Legendär** ist der Onboarding-Capstone (Stufe 7), **nicht** mehr Werkstatt.
 
-**Vorrücken:** Stufe N nach **abgeschlossenem Lauf N** (garantierter Fortschritt, nie hängenbleiben) — *Annahme, bis anders entschieden;* Alternative wäre Score-Schwellen (koppelt an Meister-Ränge, bremst aber schwache Spieler).
+**Vorrücken — pro neu gewonnener Runde (Bestfortschritt), eins pro Runde:** Trigger ist die **weiteste je erreichte Runde** (persistent im Profil). Jede Runde, die man zum ersten Mal *richtig gewinnt*, schaltet das nächste Kettenglied frei — dichter Opening-Hook, fast jede frühe Runde ein neues Spielzeug. Wer früh verliert, macht im nächsten Lauf ab der Bestrunde weiter. Freigeschaltete Archetypen/Slots/Raritäten wirken auf die **nächste** Lauf-Vorbereitung.
+
+| Neue Bestrunde | Freischaltung |
+|---|---|
+| 1 | **+ Eis** (3. Archetyp wählbar) |
+| 2 | **Reroll** (Basis 1/Phase) |
+| 3 | **Rarität +1** (nächste Stufe) |
+| 4 | **+ 3. Slot** (3 Archetypen mischbar) |
+| 5 | **Rarität +1** (übernächste Stufe) |
+| 6 | **+ Pflanze** (beliebige 3 von 4) |
+| 7 | **Legendär-Capstone** (R29-Slot, je 1 leg. Skill pro aktivem Archetyp) |
+
+Ab Bestrunde 7 ist das Onboarding komplett → weitere Progression läuft über **Münzen/Werkstatt**. *(Reihenfolge/Rundenzahlen sim-/tunebar — die 7 Glieder liegen fest, die genauen Runden justieren wir am Playtest.)*
 
 ---
 
@@ -207,7 +219,7 @@ Der **Tree-Screen** selbst (eigener Screen wie Kollektion/Bestenliste): Branch-S
 | E | Respec | **frei** (v1) |
 | F | Reroll-Ökonomie | **1 pro Phase (Basis)** + 2 Werkstatt-Knoten je **+1 für alle Phasen** (Sequenz), bis 3 · use-it-or-lose-it |
 | G | Legendär-Slot (R29) | **Onboarding-Capstone** (nicht Werkstatt): Basis = Skill-Angebot, Capstone wandelt R29 → Legendär-Slot mit je 1 leg. Skill pro aktivem Archetyp |
-| H | Onboarding-Kette | **frei/scriptgesteuert vor der Werkstatt**: Archetypen (Blitz+Feuer → +Eis → +3.Slot → +Pflanze), Rarität (Grau+Grün → +2 Stufen), Reroll 1, Capstone Legendär · 3 Slots, keine gespeicherten Decks, Default = letzte Auswahl |
+| H | Onboarding-Kette | **frei vor der Werkstatt, Trigger = neu gewonnene Runde (Bestfortschritt), eins pro Runde**: Archetypen (Blitz+Feuer → +Eis → +3.Slot → +Pflanze), Rarität (Grau+Grün → +2 Stufen), Reroll 1, Capstone Legendär · 3 Slots, keine gespeicherten Decks, Default = letzte Auswahl |
 
 ---
 
