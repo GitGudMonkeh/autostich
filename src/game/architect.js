@@ -53,6 +53,11 @@ export const MAX_COVER = Math.max(4, Math.min(N_POS, Number((typeof process !== 
 export const HAEUSERZEILE_FACTOR = 1.35;                 // volle Segment-Zeile (5), konzentriert [1,20 → 1,35]
 export const SPALTE_FACTOR       = 1.75;                 // volle Spalte (8), gestreut — schwer [1,40 → 1,75]
 export const DIAGONALE_FACTOR    = 1.62;                 // volle Diagonale (5, maximal gestreut) — am schwersten [1,34 → 1,62]
+// #283 Distrikt-Bonus: Gebäude DERSELBEN Kategorie orthogonal aneinander bilden einen „Distrikt" → Score-Multiplikator
+// je Zelle, skaliert mit der Zahl verschiedener gleich-kategoriger Nachbargebäude (gedeckelt). Belohnt gezielt sinnvolles
+// Bauen (gleichartige Gebäude zusammenlegen). Multipliziert (wie die Struktur-Faktoren) über segFactor in den Score-Pfad.
+export const DISTRICT_BONUS = 0.08;   // je verschiedenem gleich-kategorigen Nachbargebäude +8 % auf die Zellen des Gebäudes
+export const DISTRICT_CAP   = 3;      // höchstens so viele Nachbarn zählen (Deckel gegen Ballungs-Runaway)
 
 // Stufen-Skalierung: numerischer Effekt (Wert/Score) gerundet; Faktor-Effekte additiv über FORM_TIER_BONUS.
 export const tierNum    = (base, tier) => (tier === "legendary" ? base : Math.round(base * (TIER_FACTOR[tier] || 1)));
@@ -391,6 +396,38 @@ export function structureFactorMap(coverSet) {
   return sf;
 }
 
+// #283 Distrikt-Faktor je Position: Gebäude mit ≥1 verschiedenem gleich-kategorigen Nachbargebäude bekommen auf ALLE
+// ihre Zellen einen Multiplikator 1 + DISTRICT_BONUS × min(gleich-kat. Nachbarn, DISTRICT_CAP). Rein geometrisch +
+// Kategorie (kein deck/order) → einmal pro Durchlauf. Belohnt das bewusste Zusammenlegen gleichartiger Gebäude.
+export function districtFactorMap(buildings = []) {
+  const df = new Array(N_POS).fill(1);
+  const owner = new Map();                                  // pos → { id, cat }
+  for (const b of buildings) { const fam = familyDef(b.familyId); if (!fam) continue; for (const p of b.footprint) owner.set(p, { id: b.id, cat: fam.category }); }
+  for (const b of buildings) {
+    const fam = familyDef(b.familyId); if (!fam) continue;
+    const sameCat = new Set();
+    for (const p of b.footprint) {
+      const r = rowOf(p), c = colOf(p);
+      const adj = [];
+      if (r > 0) adj.push(posOf(r - 1, c));
+      if (r < ROWS - 1) adj.push(posOf(r + 1, c));
+      if (c > 0) adj.push(posOf(r, c - 1));
+      if (c < COLS - 1) adj.push(posOf(r, c + 1));
+      for (const q of adj) { const o = owner.get(q); if (o && o.id !== b.id && o.cat === fam.category) sameCat.add(o.id); }
+    }
+    if (sameCat.size > 0) { const f = 1 + DISTRICT_BONUS * Math.min(sameCat.size, DISTRICT_CAP); for (const p of b.footprint) df[p] *= f; }
+  }
+  return df;
+}
+// Kombinierter Brett-Faktor je Position = Struktur (Zeile/Spalte/Diagonale) × Distrikt (gleiche Kategorie aneinander).
+// EINE Quelle für Engine (precompute→segFactor) UND UI-Anzeige, damit gezeigte und verrechnete Faktoren nie driften.
+export function boardFactorMap(buildings = []) {
+  const sf = structureFactorMap(occupiedCells(buildings));
+  const df = districtFactorMap(buildings);
+  for (let p = 0; p < N_POS; p++) sf[p] *= df[p];
+  return sf;
+}
+
 // Anzahl VOLLENDETER Strukturen (volle Zeilen + volle Spalten + volle Diagonalen) im Cover-Set — die Zähl-Variante
 // zu structureFactorMap (dort Faktor je Position). Quelle für das Gebäude-Legendäre „Richtfest" (Durchlauf-Ende).
 export function completedStructures(coverSet) {
@@ -453,9 +490,9 @@ export function precomputeArchitect(architect, order, deck) {
       if (fam.base.both && colOf(p) > 0) relayFlat[p - 1] += amt;             // Leuchtturm (legendär): auch nach links
     }
   }
-  // Struktur-Boni (Zeile/Spalte/Diagonale) — multiplikativ auf jede beteiligte Position.
+  // Struktur-Boni (Zeile/Spalte/Diagonale) × Distrikt (#283, gleiche Kategorie aneinander) — multiplikativ je Position.
   const coverSet = new Set(); for (let p = 0; p < N_POS; p++) if (cover[p]) coverSet.add(p);
-  const sf = structureFactorMap(coverSet);
+  const sf = boardFactorMap(buildings);
   for (let p = 0; p < N_POS; p++) segFactor[p] = sf[p];
   // #Pool: cover/coverCount für Gebäude-Perks (Eckstein liest cover[actualPos], Dichte Bebauung coverCount).
   // segFactor[p] > 1 markiert zusätzlich eine vollendete Struktur (Zeile/Spalte/Diagonale) an der Position.

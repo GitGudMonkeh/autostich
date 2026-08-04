@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import {
   familyDef, shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
-  occupiedCells, precomputeArchitect, architectValueBonus, structureFactorMap,
+  occupiedCells, precomputeArchitect, architectValueBonus, boardFactorMap,
   rowOf, colOf, posOf, ROWS, COLS, N_POS, tierNum, tierFactor, upgradeInfo, bindSpanFor,
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR,
 } from "../game/architect.js";
@@ -130,7 +130,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
   const effArch = useMemo(() => ({ ...architect, buildings }), [architect, buildings]);
   const pre = useMemo(() => (cards.length ? precomputeArchitect(effArch, order, deck) : null), [effArch, order, deck, cards.length]);
-  const structF = useMemo(() => structureFactorMap(occ), [occ]);
+  const structF = useMemo(() => boardFactorMap(buildings), [buildings]); // #283: Struktur × Distrikt (gleiche Quelle wie die Engine)
   // Struktur-Kombi-Bonus als Summe (#UI): Σ der Extra-Faktoren über alle Karten auf fertigen Strukturen
   // (Zeile/Spalte/Diagonale, multiplikativ gestapelt) → Gesamt-Punkte-Bonus in Prozent. Nicht beteiligte Zellen
   // haben Faktor 1 → (f−1)=0, tragen nichts bei.

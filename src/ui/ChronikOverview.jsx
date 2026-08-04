@@ -9,7 +9,7 @@ import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
 import { hasGletscher, plantRootScore, hasPfahlwurzel } from "../game/skills.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
-import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus, structureFactorMap } from "../game/architect.js";
+import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus, boardFactorMap } from "../game/architect.js";
 import FormIcon from "./FormIcon.jsx";
 import { architectEffectStrings } from "./archEffects.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
@@ -84,7 +84,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
   const structLitPos = useMemo(() => {
     if (!hasArch) return null;
     const set = new Set();
-    structureFactorMap(archOccupied(archBuildings)).forEach((f, pos) => { if (f > 1) set.add(pos); });
+    boardFactorMap(archBuildings).forEach((f, pos) => { if (f > 1) set.add(pos); });
     return set;
   }, [hasArch, archBuildings]);
 

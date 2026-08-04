@@ -5,6 +5,7 @@ import {
   buildArchitectOffer, initialArchitect, precomputeArchitect, architectValueBonus, architectScore,
   architectFormSpec, summarizeArchitect, tierNum, tierFactor, ARCHITECT_OFFER, MAX_TIER, HAEUSERZEILE_FACTOR,
   posOf, rowOf, colOf, N_POS,
+  districtFactorMap, boardFactorMap, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../src/game/architect.js";
 import { computeFormations } from "../src/game/formations.js";
 import { reducer } from "../src/game/reducer.js";
@@ -365,5 +366,43 @@ describe("Architekt — Voll-Run", () => {
     expect(sum.byCategory.value).toBe(1);
     expect(sum.byCategory.score).toBe(1);
     expect(sum.coverage).toBeCloseTo(6 / N_POS);
+  });
+});
+
+describe("#283 Distrikt-Bonus (gleiche Kategorie aneinander)", () => {
+  const V = (id, footprint) => ({ id, familyId: "A_STUETZE", footprint });   // value/domino-Familie als Kategorie-Träger
+  const S = (id, footprint) => ({ id, familyId: "A_ZOLLHAUS", footprint });   // score-Familie
+
+  it("zwei gleich-kategorige Gebäude aneinander → Faktor 1+BONUS auf beide", () => {
+    const df = districtFactorMap([V(1, [posOf(0, 0), posOf(0, 1)]), V(2, [posOf(1, 0), posOf(1, 1)])]); // vertikal benachbart
+    for (const p of [posOf(0, 0), posOf(0, 1), posOf(1, 0), posOf(1, 1)]) expect(df[p]).toBeCloseTo(1 + DISTRICT_BONUS);
+    expect(df[posOf(4, 4)]).toBe(1); // unbeteiligt
+  });
+
+  it("nicht benachbart → kein Distrikt-Faktor", () => {
+    const df = districtFactorMap([V(1, [posOf(0, 0)]), V(2, [posOf(6, 4)])]);
+    expect(df[posOf(0, 0)]).toBe(1);
+    expect(df[posOf(6, 4)]).toBe(1);
+  });
+
+  it("benachbart aber VERSCHIEDENE Kategorie → kein Distrikt-Faktor", () => {
+    const df = districtFactorMap([V(1, [posOf(0, 0)]), S(2, [posOf(1, 0)])]); // value neben score
+    expect(df[posOf(0, 0)]).toBe(1);
+    expect(df[posOf(1, 0)]).toBe(1);
+  });
+
+  it("mehr Nachbarn als DISTRICT_CAP → gedeckelt", () => {
+    const center = V(0, [posOf(2, 2)]);
+    const around = [V(1, [posOf(1, 2)]), V(2, [posOf(3, 2)]), V(3, [posOf(2, 1)]), V(4, [posOf(2, 3)])]; // 4 gleich-kat. Nachbarn
+    const df = districtFactorMap([center, ...around]);
+    expect(df[posOf(2, 2)]).toBeCloseTo(1 + DISTRICT_BONUS * DISTRICT_CAP); // 4 → auf CAP (3) gedeckelt
+  });
+
+  it("boardFactorMap = Struktur × Distrikt", () => {
+    // Volle Segment-Zeile aus zwei gleich-kategorigen Gebäuden (Struktur-Zeile UND Distrikt-Nachbarschaft).
+    const row = [V(1, [posOf(0, 0), posOf(0, 1), posOf(0, 2)]), V(2, [posOf(0, 3), posOf(0, 4)])];
+    const bf = boardFactorMap(row);
+    // Zeile komplett → HAEUSERZEILE_FACTOR; benachbart gleiche Kategorie → × (1+BONUS).
+    expect(bf[posOf(0, 0)]).toBeCloseTo(HAEUSERZEILE_FACTOR * (1 + DISTRICT_BONUS));
   });
 });
