@@ -3,7 +3,7 @@ import {
   familyDef, shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, boardFactorMap,
   rowOf, colOf, posOf, ROWS, COLS, N_POS, tierNum, tierFactor, upgradeInfo, bindSpanFor,
-  HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR,
+  HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { hasKaltfront } from "../game/skills.js"; // Kälteleitung: temporär vereiste Nachbarn markieren
@@ -451,7 +451,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
           <section className="rounded-xl p-3 order-2 md:order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
             <div className="flex items-center justify-between mb-2">
               <div className="text-[11px] font-mono uppercase tracking-wide flex items-baseline gap-1.5"
-                title="Score-Boost durch die Gebäude: Struktur-Kombis (volle Zeile/Spalte/Diagonale) + neu gegründete Formationen. Aktualisiert live beim Bauen/Verschieben.">
+                title="Score-Boost durch die Gebäude: Struktur-Kombis (volle Zeile/Spalte/Diagonale) + Distrikt (gleiche Kategorie aneinander) + neu gegründete Formationen. Aktualisiert live beim Bauen/Verschieben.">
                 <span className="opacity-50">Gebäude-Boost</span>
                 <span className="font-bold tabular-nums" style={{ color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct}%</span>
               </div>
@@ -613,13 +613,15 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. */}
               <div className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}>
-                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur-Kombis · ×Score je Durchlauf</div>
+                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur & Distrikt · ×Score je Durchlauf</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   <span>volle <b>Zeile</b> ×{fmt(HAEUSERZEILE_FACTOR)}</span>
                   <span>volle <b>Spalte</b> ×{fmt(SPALTE_FACTOR)}</span>
                   <span><b>Diagonale</b> ×{fmt(DIAGONALE_FACTOR)}</span>
+                  <span><b>Distrikt</b> +{Math.round(DISTRICT_BONUS * 100)} %/Nachbar</span>
                 </div>
                 <div className="opacity-60 mt-1">Jede Karte auf einer vollständigen Zeile/Spalte/Diagonale macht bei einem Sieg entsprechend mehr <b>Score</b>. Faktoren stapeln multiplikativ.</div>
+                <div className="opacity-60 mt-1"><b>Distrikt:</b> Gebäude <b>gleicher Farbe</b> (Kategorie) direkt aneinander geben je Nachbar +{Math.round(DISTRICT_BONUS * 100)} % Score auf ihre Felder (bis {DISTRICT_CAP} Nachbarn). Gleichartig zusammenbauen lohnt sich.</div>
               </div>
 
               {/* removeFor: kein Platz → Gebäude entfernen anbieten. #235: zweistufig (erst markieren, dann bestätigen).
