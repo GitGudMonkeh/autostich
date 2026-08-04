@@ -233,6 +233,24 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const fits = enumeratePlacements(fam.form, committed);
     return fits.length ? fits[0] : null;
   };
+  // Würde das Entfernen GENAU dieses Gebäudes Platz für `o` schaffen? Nur dann ist Ersetzen sinnvoll — sonst stünde der
+  // Spieler nach dem Abriss OHNE Platz da (müsste ein weiteres zerstören). Solche Gebäude bieten wir NICHT als Ziel an.
+  const fitWithout = (o, removeId) => {
+    const fam = familyDef(o.familyId); if (!fam) return null;
+    const rest = committed.filter((x) => x.id !== removeId);
+    const size = shapeRotations(fam.form)[0].length;
+    if (occupiedCells(rest).size + size > maxCover) return null;   // Baufeld-Deckel auch nach dem Abriss prüfen
+    const fits = enumeratePlacements(fam.form, rest);
+    return fits.length ? fits[0] : null;
+  };
+  // Ids der Gebäude, deren Abriss dem wartenden Bauplan (removeFor) EINEN gültigen Platz schafft. Leere Menge → Ersetzen
+  // ist nicht möglich (kein Ein-Gebäude-Abriss reicht) → die UI bietet dann gar keinen Abriss an.
+  const replaceableSet = useMemo(() => {
+    const s = new Set();
+    if (!removeFor) return s;
+    for (const b of committed) if (fitWithout(removeFor, b.id)) s.add(b.id);
+    return s;
+  }, [removeFor, committed, maxCover]); // eslint-disable-line react-hooks/exhaustive-deps
   // #261: Bauplan wählen = VERBINDLICH → das Gebäude wird SOFORT committet (kein „Bauen"-Button, kein Zurück ins
   // Auswahlfenster) und ist direkt Teil der einen kombinierten Platzier-/Verschiebe-Phase ("move"). Ein einziges
   // „Bestätigen" am Ende schließt ab. Kein Platz → Ersetzen-Menü (Skill-Stil, s. removeFor).
@@ -289,7 +307,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
   // ---- Tap je Phase ----
   const tapCell = (pos) => {
-    if (removeFor) { const cb = committedAt(pos); if (cb) setPendingDemolish(cb.id); return; } // #235: markieren statt sofort abreißen (Effekte zeigen, erst mit Bestätigen weg)
+    if (removeFor) { const cb = committedAt(pos); if (cb && replaceableSet.has(cb.id)) setPendingDemolish(cb.id); return; } // #235: markieren statt sofort abreißen; nur Gebäude, deren Abriss wirklich Platz schafft
     if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { setPendingUpgrade(cb.id); setUpgradeMsg(null); } else { setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: info.reason }); setPendingUpgrade(null); } } return; } // #237: markieren + Jetzt/Danach zeigen, Aufwertung erst über den Bestätigen-Knopf
     if (phase === "place") { const b = buildingAt(pos); if (b && b.id === PENDING_ID) setSelId(PENDING_ID); return; }
     if (phase === "move") { const b = buildingAt(pos); if (b) setSelId(b.id); return; }
@@ -480,7 +498,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const formLabels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
                 const sFac = structF[pos] || 1;
                 const cbHere = removeFor ? committedAt(pos) : null;
-                const isRemovable = !!removeFor && !!cbHere;
+                const isRemovable = !!removeFor && !!cbHere && replaceableSet.has(cbHere.id); // nur Gebäude, deren Abriss Platz schafft
                 const isMarkedDemolish = !!removeFor && pendingDemolish != null && !!cbHere && cbHere.id === pendingDemolish; // #235: markiertes Abriss-Ziel
                 // #237/#UI: Aufrüst-Phase = Spotlight — ALLES ausgegraut außer aufwertbaren Gebäuden (die werden hervorgehoben).
                 const upCan = phase === "upgrade" && b && !isPending && upgradeInfo(fam, b.tier).can; // aufwertbar → hervorheben (Ziel-Stufe am Gebäude, #232)
@@ -604,23 +622,34 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 return (
                   <div>
                     {!marked ? (
+                      replaceableSet.size === 0 ? (
+                        // Kein Ein-Gebäude-Abriss schafft Platz → Ersetzen ist nicht möglich. NICHTS anbieten (sonst reißt
+                        // der Spieler ein Gebäude ab und steht danach immer noch ohne Platz da).
+                        <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
+                          <div className="text-sm mb-2"><b>Kein Platz</b> für „{pendingFamName(removeFor)}“ — auch das Entfernen eines einzelnen Gebäudes schafft keinen gültigen Platz. Dieses Gebäude lässt sich gerade nicht bauen.</div>
+                          <button onClick={() => setRemoveFor(null)} className="w-full rounded-lg py-1.5 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
+                        </div>
+                      ) : (
                       <>
                         <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
-                          <b>Kein Platz</b> für „{pendingFamName(removeFor)}“. Welches Gebäude soll ersetzt werden? Wähle es unten — es wird am Brett hervorgehoben; abgerissen wird erst nach Bestätigen.
+                          <b>Kein Platz</b> für „{pendingFamName(removeFor)}“. Wähle unten ein Gebäude, dessen Abriss Platz schafft — es wird am Brett hervorgehoben; abgerissen wird erst nach Bestätigen.
                         </div>
-                        {/* #261: Ersetzen im Skill-Stil — Liste der bestehenden Gebäude; Auswahl markiert + hebt am Brett hervor (Board bleibt sichtbar). */}
+                        {/* #261: Ersetzen im Skill-Stil — nur Gebäude, deren Abriss dem Bauplan wirklich Platz schafft, sind wählbar; die anderen sind ausgegraut. */}
                         <div className="flex flex-col gap-1 mb-2">
                           {committed.map((b) => {
                             const bf = familyDef(b.familyId);
                             if (!bf) return null;
+                            const canRepl = replaceableSet.has(b.id);
                             return (
-                              <button key={b.id} onClick={() => setPendingDemolish(b.id)}
+                              <button key={b.id} onClick={() => canRepl && setPendingDemolish(b.id)} disabled={!canRepl}
+                                title={canRepl ? undefined : "Der Abriss dieses Gebäudes schafft keinen Platz für den Bauplan"}
                                 className="rounded-lg px-2.5 py-1.5 text-left text-[11px] font-mono leading-snug transition-all hover:brightness-110"
-                                style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>
-                                <span className="inline-flex items-center gap-1.5 align-middle">
+                                style={{ background: "#16232f", border: `1px solid ${canRepl ? "#2b3e4d" : "#22303a"}`, opacity: canRepl ? 1 : 0.4, cursor: canRepl ? "pointer" : "not-allowed" }}>
+                                <span className="inline-flex items-center gap-1.5 align-middle flex-wrap">
                                   <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[bf.category].color }} />
                                   <b>{bf.name}</b>
                                   <span className="opacity-55">{bf.legendary ? "Legendär" : `Stufe ${tierLabel(b.tier)}`}</span>
+                                  {!canRepl && <span className="opacity-45">· schafft keinen Platz</span>}
                                 </span>
                                 <span className="opacity-75"> — {famEff(bf, b)}</span>
                               </button>
@@ -628,6 +657,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                           })}
                         </div>
                       </>
+                      )
                     ) : (
                       <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #ff6a4d" }}>
                         <div className="text-sm mb-1">Dieses Gebäude abreißen, um „{pendingFamName(removeFor)}“ zu bauen?</div>
