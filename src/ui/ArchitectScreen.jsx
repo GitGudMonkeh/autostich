@@ -10,6 +10,7 @@ import { hasKaltfront } from "../game/skills.js"; // Kälteleitung: temporär ve
 import { SUIT_ORDER, PLANT_VALUE_CAP } from "../game/constants.js";
 import { ARCH_CAT as CAT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { tierColor } from "../game/rarity.js";
+import FormIcon from "./FormIcon.jsx";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
@@ -648,7 +649,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                             className="rounded-lg px-2.5 py-1.5 text-left text-[11px] font-mono leading-snug transition-all hover:brightness-110"
                             style={{ background: marked ? "#2a1416" : "#16232f", border: `1px solid ${marked ? "#d1462f" : "#2b3e4d"}` }}>
                             <span className="inline-flex items-center gap-1.5 align-middle flex-wrap">
-                              <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[bf.category].color }} />
+                              <FormIcon form={bf.form} color={bf.legendary ? "#d4a63a" : CAT[bf.category].color} title={`${bf.name} · ${bf.form}`} />
                               <b>{bf.name}</b>
                               <span className="opacity-55">{bf.legendary ? "Legendär" : `Stufe ${tierLabel(b.tier)}`}</span>
                               {marked ? <span style={{ color: "#ff8a6d" }}>· markiert ✓</span> : (soloOk && <span className="opacity-45">· reicht allein</span>)}
