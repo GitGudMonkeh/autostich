@@ -39,7 +39,7 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, discharge: true },
   // Linie 2 — Konsumenten (volle Ladung → Payoff; max 1 im Build)
   SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionisierung", archetype: "lightning", keywords: ["charge", "ionize"],
-    desc: `Bei voller Ladung werden ${C.ION_BASE_COUNT} ungespielte Karten ionisiert; danach wird die Ladung verbraucht.`,
+    desc: `Bei voller Ladung werden ${C.ION_BASE_COUNT} ungespielte Karten ionisiert; danach wird die Ladung verbraucht. Ionisierte Karten geben bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und heben feldweit die Crit-Chance jeder Siegkarte um +${pct(C.ION_CRIT_PP_PER_STACK)} pp je Ionisierungsstapel (bis +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, onFullCharge: "ionize", ionizeCount: () => C.ION_BASE_COUNT },
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["crit", "streak"],
     desc: `Jeder Serienpunkt gibt +${pct(C.SERIESCRIT_STEP)} pp Crit-Chance (bis +${pct(C.SERIESCRIT_CAP)} pp). Verbraucht keine Ladung.`,
@@ -69,14 +69,14 @@ export const SKILL_DEFS = {
     desc: `Ein Crit auf oder direkt neben einer ionisierten Karte erzeugt +${C.UEBERSPANNUNG_CHARGE} Ladung.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, ueberspannung: true },
   SK_LIGHTNING_15: { id: "SK_LIGHTNING_15", name: "Blitzschlag", archetype: "lightning", keywords: ["crit", "ionize"],
-    desc: `Jeder Crit ionisiert die gewonnene Karte (+${C.BLITZSCHLAG_STACKS} Stapel).`,
+    desc: `Jeder Crit ionisiert die gewonnene Karte (+${C.BLITZSCHLAG_STACKS} Stapel). Ionisierte Karten geben bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und heben feldweit die Crit-Chance um +${pct(C.ION_CRIT_PP_PER_STACK)} pp je Stapel (bis +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, blitzschlag: true },
   // Linie 6 — Serie-Schnittstelle (Serie → Blitz-Währung)
   SK_LIGHTNING_16: { id: "SK_LIGHTNING_16", name: "Dauerstrom", archetype: "lightning", keywords: ["charge", "streak"],
     desc: `Jeder Sieg in Folge gibt +1 Ladung je ${C.DAUERSTROM_PER_STREAK} Serienpunkte (höchstens +${C.DAUERSTROM_MAX}/Sieg).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, dauerstrom: true },
   SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Wetterleuchten", archetype: "lightning", keywords: ["ionize", "streak"],
-    desc: `Bei jeder ${C.WETTERLEUCHTEN_THRESHOLD}. Serienstufe werden ${C.WETTERLEUCHTEN_COUNT} Karten ionisiert.`,
+    desc: `Bei jeder ${C.WETTERLEUCHTEN_THRESHOLD}. Serienstufe werden ${C.WETTERLEUCHTEN_COUNT} Karten ionisiert. Ionisierte Karten geben bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und heben feldweit die Crit-Chance um +${pct(C.ION_CRIT_PP_PER_STACK)} pp je Stapel (bis +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, wetterleuchten: true },
   // Legendäre (Verstärker, kein Motor)
   SK_LIGHTNING_L01: { id: "SK_LIGHTNING_L01", name: "Donnergott", archetype: "lightning", legendary: true, keywords: ["charge", "crit"],
