@@ -183,7 +183,7 @@ export const GLOSSARY = {
     text: "Eine seltene, besonders mächtige Skill-Stufe (mit ★ markiert). Ab Meisterrang V gibt es einen garantierten Legendär.",
     match: ["Legendärer Skill", "legendäre Skills"] },
   ueberlauf: { category: "frak", group: "gen", label: "Überlauf", icon: "≈", color: CLR.gold,
-    text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet — Eisschichten über ${C.ICE_LAYER_MAX}, Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über 100 % —, ist dieser Überlauf normalerweise verschwendet. Nur legendäre Skills verwandeln ihn in direkten Score (z. B. Permafrost, Gletscher, Weltenbaum, Weißglut).`,
+    text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet — Eisschichten über ${C.ICE_LAYER_MAX}, Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über 100 % —, sonst wäre er verschwendet. Eis und Feuer (Weißglut) zahlen daraus einen kleinen generischen Direkt-Score; die Legendären (Permafrost, Gletscher, Weltenbaum) verwandeln den großen Rest.`,
     match: ["Überlauf", "Überlauf-Schicht", "Überlauf-Schichten", "Überlauf-Wachstum", "Überlauf-Tiefe"] },
 
   /* ============ 4 · Feuer ============ */
@@ -225,7 +225,7 @@ export const GLOSSARY = {
     text: "Der kostenlose Tausch einer Frostkarte in der Aufstellungsphase — meißelt Formationen, ohne Energie zu kosten.",
     match: ["Frosttausch", "Frosttausche"] },
   schichten: { category: "frak", group: "ice", label: "Schichten", icon: "❖", color: CLR.ice,
-    text: `Eine Frostkarte sammelt Schichten (permanent, unverlierbar). Jeder Frost-Sieg zahlt Score aus ihren Schichten (dreieckig steigend, Plateau bei ${C.ICE_LAYER_SCORE_PLATEAU}), und jede Schicht gibt +${C.ICE_LAYER_VALUE} dauerhaften Kartenwert (bis ${C.ICE_LAYER_VALUE_CAP}). Eine tief geschichtete Frostkarte ist ein Pfeiler. Nur legendäre Eis-Skills nutzen den Überlauf über ${C.ICE_LAYER_MAX} Schichten hinaus.`,
+    text: `Eine Frostkarte sammelt Schichten (permanent, unverlierbar). Jeder Frost-Sieg zahlt Score aus ihren Schichten (dreieckig steigend, Plateau bei ${C.ICE_LAYER_SCORE_PLATEAU}), und jede Schicht gibt +${C.ICE_LAYER_VALUE} dauerhaften Kartenwert (bis ${C.ICE_LAYER_VALUE_CAP}). Eine tief geschichtete Frostkarte ist ein Pfeiler. Schichten über ${C.ICE_LAYER_MAX} (Überlauf) zahlen einen kleinen generischen Direkt-Score; die legendären Eis-Skills (Permafrost/Gletscher) machen daraus viel mehr.`,
     match: ["Schichten", "Schicht", "Pfeiler"] },
   bank: { category: "frak", group: "ice", label: "Ablagern", icon: "❄️", color: CLR.ice,
     text: "Machst du einen kostenlosen Frosttausch nicht, lagert er stattdessen eine Schicht ab — so wachsen deine Karten auch ohne zu tauschen. Auch andere Eis-Skills banken Schichten auf Frostkarten.",

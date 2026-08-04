@@ -390,6 +390,11 @@ export const GLETSCHER_DIRECT        = envNum("SIM_GLETSCHER_DIRECT", 68);      
 export const GLETSCHER_OVERFLOW_CAP  = envNum("SIM_GLETSCHER_OVERFLOW_CAP", 20); // … gedeckelte Pfeiler-Tiefe (Plateau — tieferer Pfeiler zahlt superlinear mehr, dann flach → kein Runaway)
 export const PERMAFROST_DIRECT       = envNum("SIM_PERMAFROST_DIRECT", 270);     // Permafrost: Score je Überlauf-Schicht — SUMME über alle Frostkarten (Breite — viele banken), je Frost-Sieg
 export const PERMAFROST_OVERFLOW_CAP = envNum("SIM_PERMAFROST_OVERFLOW_CAP", 60);// … gedeckelte Gesamt-Überlauf-Summe (Plateau)
+// #270 generische Eis-Überlauf-Dividende: JEDES Eis-Deck (ohne Legendär) bekommt einen KLEINEN Direkt-Score aus dem
+// Überlauf (Breite: Σ Überlauf über alle Frostkarten), je Frost-Sieg — analog Weißglut bei Feuer, damit Weiterfrosten
+// über 12 nie tot ist. Permafrost/Gletscher setzen additiv oben drauf (bleiben die großen Verstärker). [Sim-tunebar]
+export const ICE_OVERFLOW_DIRECT     = envNum("SIM_ICE_OVERFLOW_DIRECT", 40);    // generisch: Score je Überlauf-Schicht (Σ Breite) — klein vs. Permafrost (270)
+export const ICE_OVERFLOW_CAP        = envNum("SIM_ICE_OVERFLOW_CAP", 40);       // … gedeckelte Gesamt-Überlauf-Summe (Plateau, kein Runaway)
 export const VERGLETSCHERUNG_DIRECT  = envNum("SIM_VERGLETSCHERUNG_DIRECT", 130);// Vergletscherung: Bonus-Score je Punkt GESAMTER aktiver Gegner-Vergletscherung (Σ frostbiteActive), je Frost-Sieg [Sweep: →1,29×]
 export const VERGLETSCHERUNG_DEBUFF_CAP = envNum("SIM_VERGLETSCHERUNG_DEBUFF_CAP", 60); // … gedeckelte Debuff-Summe (Plateau)
 // Eis-Ceiling-Hebel (2026-07-30): Eis' Ceiling (p90 ~2,4× Feld) ist ZU 100 % `formBaseMult` — dichte Formations-

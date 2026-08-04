@@ -69,7 +69,7 @@ export function CrystalBar({ active, layers = {}, frostbite = {}, hasKristalline
           <CounterCell
             icon={<span style={{ color: OVER, fontSize: 12, lineHeight: 1, textShadow: `0 0 5px ${ICE}` }}>◆</span>}
             value={overflowTotal} label="Überlauf" color={ICE} glow={overflowTotal > 0} dim={overflowTotal === 0}
-            title="Überlauf-Tiefe (Schichten über dem Deckel) — Nahrung der Eis-Legendären: Direkt-Score je Frost-Sieg." />
+            title="Überlauf-Tiefe (Schichten über dem Deckel) — zahlt einen kleinen generischen Direkt-Score je Frost-Sieg; Permafrost/Gletscher machen daraus viel mehr." />
         </div>
       </div>
 

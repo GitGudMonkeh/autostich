@@ -460,27 +460,30 @@ export function resolveTrick(state, rng) {
           newFrostbitePending[id] = Math.max(newFrostbitePending[id] || 0, debuff);
         }
       }
-      // ---- Eis-Legendär-Reshape (2026-07-30): DIREKTE Dividende aus der ÜBERLAUF-Tiefe (Schichten über ICE_LAYER_MAX,
-      //      generisch verschwendet). Am Multiplikator-Stack VORBEI (unten zu `gained`), hart gedeckelt (Plateau, kein
-      //      Wachstum), bekenntnis-skaliert (cross-health). Nur Legendär-Halter → generisches Eis (Deckel 12) unberührt.
-      if (hasGletscher(skills) || hasPermafrost(skills)) {
+      // ---- Eis-Überlauf-Dividende (#270): Schichten über ICE_LAYER_MAX sind generisch verschwendet (layerScore plateaut
+      //      bei 12, Dauerwert cappt bei 10). Deshalb bekommt JEDES Eis-Deck daraus eine KLEINE, gedeckelte Direkt-
+      //      Dividende (Breite: Σ Überlauf über alle Frostkarten), je Frost-Sieg — analog Weißglut bei Feuer, damit
+      //      Weiterfrosten nie tot ist. Die Legendären Permafrost (Breite) & Gletscher (Tiefe) setzen ADDITIV oben drauf
+      //      und bleiben die großen Verstärker. Alles am Multiplikator-Stack VORBEI, hart gedeckelt (Plateau, kein
+      //      Wachstum), bekenntnis-skaliert (iceCommit, cross-health) → kein Runaway.
+      {
         const iceCommit = Math.min(1, iceSkillCount(skills) / C.SKILL_SLOTS);
-        // EIN Scan über alle Frostkarten: TIEFSTER Pfeiler (Gletscher, Konzentration) + SUMME (Permafrost, Breite).
-        // Wichtig: die Überlauf-Tiefe sitzt auf GEBANKTEN Karten (Ablage B bankt ungenutzte Frostkarten) — also gerade
-        // die, die NICHT gewinnen → eine Dividende auf die SIEGKARTE zündet kaum. Beide Legendäre lesen daher den
-        // BESTAND (nicht die Siegkarte) und zahlen je Frost-Sieg.
+        // EIN Scan über alle Frostkarten (BESTAND, nicht Siegkarte — der Überlauf sitzt auf gebankten Karten, die NICHT
+        // gewinnen): TIEFSTER Pfeiler (Gletscher, Konzentration) + SUMME (generisch + Permafrost, Breite). Je Frost-Sieg.
         let maxOv = 0, sumOv = 0;
         for (const c of deck) if (c.frozen) {
           const o = (layers[c.id] || 0) - C.ICE_LAYER_MAX;
           if (o > 0) { sumOv += o; if (o > maxOv) maxOv = o; }
         }
+        // Generisch (Breite, ohne Legendär): Σ Überlauf zahlt je Frost-Sieg — klein, damit die Legendären die großen Verstärker bleiben.
+        if (sumOv > 0) iceDirect += Math.min(sumOv, C.ICE_OVERFLOW_CAP) * C.ICE_OVERFLOW_DIRECT * iceCommit;
         // Gletscher (Konzentration, SUPERLINEAR): der EINE tiefste Pfeiler zahlt je Frost-Sieg — je tiefer, desto mehr
         // JEDE Schicht (dreieckig m(m+1)/2, via Deckel geplateaut). Das ist die „Gletscher wächst"-Fantasie, gebändigt.
         if (hasGletscher(skills) && maxOv > 0) {
           const m = Math.min(maxOv, C.GLETSCHER_OVERFLOW_CAP);
           iceDirect += (m * (m + 1) / 2) * C.GLETSCHER_DIRECT * iceCommit;
         }
-        // Permafrost (Breite/Motor): die SUMME der Überlauf-Tiefe über alle Frostkarten zahlt je Frost-Sieg (linear, gedeckelt).
+        // Permafrost (Breite-Verstärker): die SUMME der Überlauf-Tiefe zahlt ZUSÄTZLICH je Frost-Sieg (linear, gedeckelt).
         if (hasPermafrost(skills) && sumOv > 0)
           iceDirect += Math.min(sumOv, C.PERMAFROST_OVERFLOW_CAP) * C.PERMAFROST_DIRECT * iceCommit;
       }

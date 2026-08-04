@@ -80,9 +80,12 @@ describe("Eis-Rework #269 — Kern: Motor immer an + dreieckiger Schicht→Score
   it("Schicht→Score DREIECKIG und DIREKT (iceDirect), aus den Schichten VOR dem Sieg", () => {
     const s = resolveTrick(scen(flat(), 6, { skills: ["SK_ICE_15"], layers: { F0: 5 } }), noCrit);
     expect(s.lastTrick.breakdown.iceDirect).toBeCloseTo(layerScore(5)); // tri(5)*K
-    // Plateau: 20 Schichten zahlen wie P
+    // Plateau: 20 Schichten zahlen den dreieckigen Score wie P — PLUS die generische Überlauf-Dividende (#270) aus den
+    // 8 Überlauf-Schichten (20 − ICE_LAYER_MAX) der Siegkarte selbst.
     const sP = resolveTrick(scen(flat(), 6, { skills: ["SK_ICE_15"], layers: { F0: 20 } }), noCrit);
-    expect(sP.lastTrick.breakdown.iceDirect).toBeCloseTo(layerScore(C.ICE_LAYER_SCORE_PLATEAU));
+    const commit1 = Math.min(1, 1 / C.SKILL_SLOTS);
+    const genOv = Math.min(20 - C.ICE_LAYER_MAX, C.ICE_OVERFLOW_CAP) * C.ICE_OVERFLOW_DIRECT * commit1;
+    expect(sP.lastTrick.breakdown.iceDirect).toBeCloseTo(layerScore(C.ICE_LAYER_SCORE_PLATEAU) + genOv);
   });
   it("Schicht→Dauerwert: gedeckelt bei ICE_LAYER_VALUE_CAP", () => {
     const s = resolveTrick(scen(flat(), 10, { skills: ["SK_ICE_15"], layers: { F0: 3 } }), noCrit);
@@ -132,24 +135,27 @@ describe("Eis-Rework #269 — Skill-Reworks", () => {
 
 /* Eis-Legendär-Reshape — die ÜBERLAUF-Tiefe (Schichten über dem Plateau) zahlt für Legendär-Halter DIREKT, hart
    gedeckelt. Isoliert: die SIEGKARTE hat 0 Schichten (Basis-Score 0), eine SEPARATE tiefe Frostkarte hält den Überlauf. */
-describe("Eis-Legendär-Reshape — Überlauf-Dividende (iceDirect)", () => {
+describe("Eis-Überlauf-Dividende (iceDirect): generisch (#270) + Legendäre", () => {
   const commit1 = Math.min(1, 1 / C.SKILL_SLOTS);
-  it("generisches Eis (ohne Legendäre): kein iceDirect aus Überlauf-Tiefe (nur der dreieckige Basis-Score)", () => {
-    const s = resolveTrick(scen(flat([0, 2]), 6, { skills: ["SK_ICE_15"], layers: { F0: 0, F2: C.ICE_LAYER_MAX + 30 } }), noCrit);
-    expect(s.lastTrick.breakdown.iceDirect || 0).toBe(0); // Siegkarte F0 hat 0 Schichten → 0
+  const gen = (ov) => Math.min(ov, C.ICE_OVERFLOW_CAP) * C.ICE_OVERFLOW_DIRECT * commit1; // #270: generische Breiten-Dividende (immer, ohne Legendär)
+  it("generisches Eis (ohne Legendäre): Überlauf zahlt eine kleine generische Dividende (#270)", () => {
+    const ov = 30;
+    const s = resolveTrick(scen(flat([0, 2]), 6, { skills: ["SK_ICE_15"], layers: { F0: 0, F2: C.ICE_LAYER_MAX + ov } }), noCrit);
+    // Siegkarte F0 hat 0 Schichten (kein Basis-Score/Stillstand); der Überlauf sitzt auf F2 → nur die generische Dividende.
+    expect(s.lastTrick.breakdown.iceDirect).toBeCloseTo(gen(ov));
   });
-  it("Gletscher: Überlauf des TIEFSTEN Pfeilers → superlinearer iceDirect (Plateau-gedeckelt)", () => {
+  it("Gletscher: Überlauf des TIEFSTEN Pfeilers → superlinearer iceDirect (Plateau-gedeckelt) + generische Dividende", () => {
     const ov = 8;
     const s = resolveTrick(scen(flat([0, 2]), 6, { skills: ["SK_ICE_L02"], layers: { F0: 0, F2: C.ICE_LAYER_MAX + ov } }), noCrit);
-    expect(s.lastTrick.breakdown.iceDirect).toBeCloseTo(tri(ov) * C.GLETSCHER_DIRECT * commit1);
-    const cap = C.GLETSCHER_OVERFLOW_CAP;
-    const sCap = resolveTrick(scen(flat([0, 2]), 6, { skills: ["SK_ICE_L02"], layers: { F0: 0, F2: C.ICE_LAYER_MAX + cap + 25 } }), noCrit);
-    expect(sCap.lastTrick.breakdown.iceDirect).toBeCloseTo(tri(cap) * C.GLETSCHER_DIRECT * commit1);
+    expect(s.lastTrick.breakdown.iceDirect).toBeCloseTo(tri(ov) * C.GLETSCHER_DIRECT * commit1 + gen(ov));
+    const cap = C.GLETSCHER_OVERFLOW_CAP, ov2 = cap + 25;
+    const sCap = resolveTrick(scen(flat([0, 2]), 6, { skills: ["SK_ICE_L02"], layers: { F0: 0, F2: C.ICE_LAYER_MAX + ov2 } }), noCrit);
+    expect(sCap.lastTrick.breakdown.iceDirect).toBeCloseTo(tri(cap) * C.GLETSCHER_DIRECT * commit1 + gen(ov2));
   });
-  it("Permafrost: SUMME der Überlauf-Tiefe → linearer iceDirect", () => {
+  it("Permafrost: SUMME der Überlauf-Tiefe → linearer iceDirect + generische Dividende", () => {
     const ov = 8;
     const s = resolveTrick(scen(flat([0, 2]), 6, { skills: ["SK_ICE_L01"], layers: { F0: 0, F2: C.ICE_LAYER_MAX + ov } }), noCrit);
-    expect(s.lastTrick.breakdown.iceDirect).toBeCloseTo(Math.min(ov, C.PERMAFROST_OVERFLOW_CAP) * C.PERMAFROST_DIRECT * commit1);
+    expect(s.lastTrick.breakdown.iceDirect).toBeCloseTo(Math.min(ov, C.PERMAFROST_OVERFLOW_CAP) * C.PERMAFROST_DIRECT * commit1 + gen(ov));
   });
   it("Vergletscherung: markiert Gegnerkarten (−Wert ∝ Schichten) + Σ-Debuff-Dividende", () => {
     const mark = resolveTrick(scen(flat(), 6, { skills: ["SK_ICE_L03"], layers: { F0: 4 } }), noCrit);
