@@ -151,13 +151,14 @@ export const SKILL_DEFS = {
     desc: "Friert beim Aktivieren +2 weitere eigene Karten ein.", frostGrip: true },
   SK_ICE_02: { id: "SK_ICE_02", name: "Frostwahl", archetype: "ice", keywords: ["freeze"],
     desc: "Du wählst selbst, welche eigenen Karten einfrieren, statt sie dem Zufall zu überlassen.", frostwahl: true },
-  SK_ICE_03: { id: "SK_ICE_03", name: "Gleitfrost", archetype: "ice", keywords: ["freeze"],
-    desc: `Jede Frostkarte bekommt einen zweiten kostenlosen Frosttausch; jeder ungenutzte Tausch lagert +${C.ICE_UNUSED_SWAP_LAYER} Schicht ab.`, gleitfrost: true },
-  // Linie 2 — Architektur (Frosttausch meißelt Formationen → Permanenz)
-  SK_ICE_04: { id: "SK_ICE_04", name: "Gletscherschub", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Schafft ein Frosttausch am neuen Platz eine neue Formation, lagert die versetzte Karte sofort eine Schicht ab.", glacierPush: true },
-  SK_ICE_05: { id: "SK_ICE_05", name: "Verzahnung", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Bringt ein Frosttausch eine Frostkarte in eine zweite Formation (Überlappung), gibt es eine Bonus-Schicht.", verzahnung: true },
+  // #Überlauf-Konsum: Eiskalt wandelt den globalen Überlauf-Vorrat je Frost-Sieg in Crit-Chance und verbrennt ihn dabei.
+  SK_ICE_03: { id: "SK_ICE_03", name: "Eiskalt", archetype: "ice", keywords: ["freeze", "crit"],
+    desc: `Gewinnt eine Frostkarte einen Stich, gibt dein Überlauf-Vorrat (Schichten über ${C.ICE_LAYER_MAX}) ihr +${pct(C.EISKALT_CRIT_PER)} % Crit-Chance je Vorrats-Schicht (bis +${pct(C.EISKALT_CRIT_CAP)} %) — nur für diesen Stich. Jeder Frost-Sieg verbrennt dafür bis zu ${C.EISKALT_SPEND} Überlauf (tiefste Karten zuerst, nie unter ${C.ICE_LAYER_MAX}).`, eiskalt: true },
+  // Linie 2 — Frost-Crit-Payoff & Überlauf-Motoren (umgewidmete Frosttausch-Linie)
+  SK_ICE_04: { id: "SK_ICE_04", name: "Frostschlag", archetype: "ice", keywords: ["freeze", "crit"],
+    desc: `Ein Crit einer Frostkarte multipliziert zusätzlich ihren Eis-Direkt-Score dieses Stichs (Schicht-Score + Überlauf-Dividende) um +${pct(C.FROSTSCHLAG_DIRECT_MULT)} % — sonst trifft der Crit nur die Grundpunkte.`, frostschlag: true },
+  SK_ICE_05: { id: "SK_ICE_05", name: "Tiefenfrost", archetype: "ice", keywords: ["freeze"],
+    desc: `Gewinnt eine Frostkarte, die bereits ${C.ICE_LAYER_MAX}+ Schichten trägt, lagert sie +${C.UEBERLAUF_MOTOR_DEPTH} zusätzliche Schicht ab — vertieft deine Pfeiler und füttert den Überlauf-Vorrat.`, ueberlaufMotorDepth: true },
   SK_ICE_06: { id: "SK_ICE_06", name: "Kälteleitung", archetype: "ice", keywords: ["freeze"],
     desc: `Die direkten nicht-gefrorenen Nachbarn einer Frostkarte werden temporär vereist und bekommen ${pct(C.KALTFRONT_SHARE)} % des Schicht-Scores und Dauerwerts der Frostkarte — solange sie daneben liegen.`, kaltfront: true },
   // Linie 3 — Permanenz (Schichten ablagern — der Spine, verliert nie)
@@ -165,8 +166,8 @@ export const SKILL_DEFS = {
     desc: `Verliert eine Frostkarte, lagert sie trotzdem +${C.KAELTERESERVE_LAYER} Schicht ab.`, frostReserve: true },
   SK_ICE_08: { id: "SK_ICE_08", name: "Beständigkeit", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Siegt eine Frostkarte in einer Formation wie im Vordurchlauf, lagert sie eine zusätzliche Schicht ab.", bestaendigkeit: true },
-  SK_ICE_09: { id: "SK_ICE_09", name: "Verdichtung", archetype: "ice", keywords: ["freeze"],
-    desc: `Nicht eingelöste Frosttausche lagern die ${C.VERDICHTUNG_FACTOR}-fache Schicht ab (+${C.ICE_UNUSED_SWAP_LAYER * C.VERDICHTUNG_FACTOR} statt +${C.ICE_UNUSED_SWAP_LAYER}).`, verdichtung: true },
+  SK_ICE_09: { id: "SK_ICE_09", name: "Flächenfrost", archetype: "ice", keywords: ["freeze"],
+    desc: `Jeder Frost-Sieg lagert +${C.UEBERLAUF_MOTOR_BREADTH} zusätzliche Schicht ab — mehr Frostkarten erreichen den Überlauf und füllen den Vorrat in die Breite.`, ueberlaufMotorBreadth: true },
   // Linie 4 — Schicht-Schwellen (tiefe Schichten → großer Payout, kein Konsum)
   SK_ICE_10: { id: "SK_ICE_10", name: "Eisdruck", archetype: "ice", keywords: ["freeze", "formation"],
     desc: `Je Schicht einer Frostkarte +${pct(C.EISDRUCK_STEP)} % Formationsfaktor (wirksam bis ${C.ICE_LAYER_MAX} Schichten).`, eisdruck: true },
@@ -410,13 +411,13 @@ export const iceSkillCount = (skills) => (skills || []).filter((id) => SKILL_DEF
 // ---- Eis-Rework (v0): Flag-Prädikate (Engine/Reducer; Kristallform/Frostbrücke werden in formations.js gelesen). ----
 export const hasFrostGrip        = (skills) => iceFlag(skills, "frostGrip");
 export const hasFrostwahl        = (skills) => iceFlag(skills, "frostwahl");        // Einfrieren gezielt (niedrigste)
-export const hasGleitfrost       = (skills) => iceFlag(skills, "gleitfrost");       // 2. Frosttausch + mehr Bank
-export const hasGlacierPush      = (skills) => iceFlag(skills, "glacierPush");      // Tausch schafft Formation → Schicht
-export const hasVerzahnung       = (skills) => iceFlag(skills, "verzahnung");       // Tausch → Überlappung → Schicht
+export const hasEiskalt          = (skills) => iceFlag(skills, "eiskalt");          // Überlauf-Vorrat → Crit-Chance (verbraucht Überlauf)
+export const hasFrostschlag      = (skills) => iceFlag(skills, "frostschlag");      // Frost-Crit multipliziert auch iceDirect
+export const hasUeberlaufMotorDepth   = (skills) => iceFlag(skills, "ueberlaufMotorDepth");   // tiefe Karte (≥Plateau) → +1 Schicht (Tiefe)
 export const hasKaltfront        = (skills) => iceFlag(skills, "kaltfront");        // Platzierhilfe +temp Wert
 export const hasFrostReserve     = (skills) => iceFlag(skills, "frostReserve");     // Verlust → Schicht (Kältereserve)
 export const hasBestaendigkeit   = (skills) => iceFlag(skills, "bestaendigkeit");   // gleiche Formation wie Vordurchlauf → Schicht
-export const hasVerdichtung      = (skills) => iceFlag(skills, "verdichtung");      // Ablage-B ×2
+export const hasUeberlaufMotorBreadth = (skills) => iceFlag(skills, "ueberlaufMotorBreadth"); // jeder Frost-Sieg → +1 Schicht (Breite)
 export const hasEisdruck         = (skills) => iceFlag(skills, "eisdruck");         // Schichttiefe → Formationsfaktor
 export const hasKristallineMasse = (skills) => iceFlag(skills, "kristallineMasse"); // Summe Schichten → Wert
 export const hasIceAnchor        = (skills) => iceFlag(skills, "iceAnchor");        // Anker + garantierte Schicht

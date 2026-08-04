@@ -13,6 +13,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
   hasStandstill, hasFrostReserve, hasIceBloom, hasIceAnchor, hasPermafrost, iceSkillCount, // Eis-Rework (v0)
   layerValue, layerScore, kristallineBonus, totalLayers, hasGletscher, hasEisdruck, hasKristallineMasse, hasBestaendigkeit, hasVerschraenkung, hasKaltfront, // Eis-Rework (#269): Schicht-Engine
   hasVergletscherung, hasArchitekt, // Eis-Rework (v0): Legendäre
+  hasEiskalt, hasFrostschlag, hasUeberlaufMotorDepth, hasUeberlaufMotorBreadth, // Überlauf-Konsum: Crit aus Vorrat + Frost-Crit-Payoff + zwei Vorrats-Motoren
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
   hasWurzelschlag, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Tiefe/Breite
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
@@ -432,6 +433,9 @@ export function resolveTrick(state, rng) {
         if (hasPermafrost(skills)) addLayers += C.PERMAFROST_LAYER_BONUS;
         if (inFormation && hasBestaendigkeit(skills) && frostFormPrev.includes(pCard.id)) addLayers += C.BESTAENDIGKEIT_LAYER;
       }
+      // Überlauf-Motoren (umgewidmete Frosttausch-Skills): füttern den Überlauf-Vorrat, den Eiskalt verbrennt.
+      if (hasUeberlaufMotorBreadth(skills)) addLayers += C.UEBERLAUF_MOTOR_BREADTH;                       // Breite: jeder Frost-Sieg +1
+      if (hasUeberlaufMotorDepth(skills) && myLayers >= C.ICE_LAYER_MAX) addLayers += C.UEBERLAUF_MOTOR_DEPTH; // Tiefe: schon tiefe Karte +1
       if (inFormation) newFrostFormCur = [...newFrostFormCur, pCard.id];
       newLayers = { ...newLayers, [pCard.id]: myLayers + addLayers };
       // Eisblüte (#269 REWORK): Sieg in ≥2 Formationen → gefrorene Deck-Nachbarn banken einen ANTEIL der Schichten der
@@ -629,8 +633,16 @@ export function resolveTrick(state, rng) {
     // Karten-Kontext für die konditionalen Generatoren: Kartenwert / Kartenfarbe / #aktive Formationen der Siegposition /
     // gewählte Farben (Farbfokus, aus roles). Roh-Crit-Chance (ungeklemmt): Perk-Basis + Präzision + Blitz + Kritanker.
     const critFamCtx = { winValue: pValue, suit: pCard.suit, formCount: activeFormationCount(posForm), focusSuits: (roles && roles.P_COLORFOCUS) || [] };
+    // Eiskalt (#Überlauf-Konsum): ist die Siegkarte eine Frostkarte, gibt der globale Überlauf-Vorrat (Σ Schichten über
+    // Plateau, aus dem VOR-Sieg-Stand `layers`) gezielt dieser Karte Crit-Chance — skaliert mit „wie viel man hat", gedeckelt.
+    let iceOverflowSum = 0;
+    if (pCard.frozen && hasEiskalt(skills)) {
+      for (const c of deck) if (c.frozen) { const o = (layers[c.id] || 0) - C.ICE_LAYER_MAX; if (o > 0) iceOverflowSum += o; }
+    }
+    const eiskaltCrit = iceOverflowSum > 0 ? Math.min(C.EISKALT_CRIT_CAP, iceOverflowSum * C.EISKALT_CRIT_PER) : 0;
     const rawCrit = critChanceRawFor(perks, wctx) + familyCritChanceRaw(familyTiers, critFamCtx) + lightningCritRaw(lightning, skills, serieStreak)
                     + (lightning?.active ? ionCritChance(deck) : 0) // #271: feldweiter Ionisierungs-Crit (Breite); Überschuss >100 % → Überschlag→Ladung
+                    + eiskaltCrit // #Überlauf-Konsum: Eiskalt — gezielter Frost-Crit aus dem Überlauf-Vorrat (unten verbrannt)
                     + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
@@ -641,6 +653,25 @@ export function resolveTrick(state, rng) {
                    + (lightning?.durchschlagMult || 0)
                    + ((lightning && lightning.dischargeArmed) ? C.ENTLADUNG_CRIT_MULT : 0);
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = L10; reducedRepeat = Zeitsegment III
+    // Eiskalt-Verbrauch (#Überlauf-Konsum): der Frost-Sieg brennt bis zu EISKALT_SPEND Überlauf-Schichten ab — von den
+    // TIEFSTEN Frostkarten zuerst, NIE unter das Plateau (produktive Schichten bleiben permanent). Verbraucht wird UNABHÄNGIG
+    // vom Wurf-Ergebnis (die Chance wurde ja aus dem Vorrat gezogen). Trägt den Vorrat für Folge-Siege ab → gewollte Spannung
+    // mit Permafrost/Gletscher (dieselbe Ressource). Berücksichtigt schon diesen Sieg gebankte Schichten (newLayers).
+    if (pCard.frozen && hasEiskalt(skills) && iceOverflowSum > 0) {
+      // %-Verbrauch (Haupt-Hebel): brennt einen Anteil des Vorrats, mind. EISKALT_SPEND → bändigt flutenden Überlauf und
+      // konkurriert echt mit Permafrost/Gletscher (dieselbe Ressource). Der Vorrat pendelt sich bei Generation/Frac ein.
+      let toBurn = Math.max(C.EISKALT_SPEND, Math.round(iceOverflowSum * C.EISKALT_SPEND_FRAC));
+      const pillars = deck.filter((c) => c.frozen)
+        .map((c) => ({ id: c.id, cur: (newLayers[c.id] != null ? newLayers[c.id] : (layers[c.id] || 0)) }))
+        .filter((x) => x.cur > C.ICE_LAYER_MAX)
+        .sort((a, b) => b.cur - a.cur);
+      for (const p of pillars) {
+        if (toBurn <= 0) break;
+        const take = Math.min(p.cur - C.ICE_LAYER_MAX, toBurn);
+        newLayers = { ...newLayers, [p.id]: p.cur - take };
+        toBurn -= take;
+      }
+    }
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.
@@ -781,13 +812,16 @@ export function resolveTrick(state, rng) {
     const archStructMult = archPreNow ? (archPreNow.segFactor[actualPos] || 1) : 1;
     const fireStructMult = 1 + (archStructMult - 1) * C.FIRE_STRUCT_DIVIDEND_AMP; // Struktur-Hebel auf die Dividende verstärkt (Feuer-isoliert)
     const fireDirectApplied = fireDirect * fireStructMult;
-    gained += fireDirectApplied + iceDirect + lightDirect + plantDirect + perkDirect;
+    // Frostschlag (#Überlauf-Konsum): ein Crit einer Frostkarte multipliziert AUCH ihren Eis-Direkt-Score dieses Stichs
+    // (layerScore + Dividende), nicht nur die Grundbasis oben — sonst wäre der Eiskalt-Crit für reine Schicht-Builds fast wertlos.
+    const iceDirectApplied = (isCrit && pCard.frozen && hasFrostschlag(skills)) ? iceDirect * (1 + C.FROSTSCHLAG_DIRECT_MULT) : iceDirect;
+    gained += fireDirectApplied + iceDirectApplied + lightDirect + plantDirect + perkDirect;
     score += gained;
     // #270: post-stack Direkt-Dividenden zum Fraktions-Ertrag (die Flat-Anteile kamen bei scoreBase oben dazu). Statischer
     // Ladungs-Konsum-Score (unten, +CONSUME_SCORE) und der Weißglut-Überlauf-Burst (Durchlauf-Ende) kommen dort dazu.
     // Feuer-Glutdividende → Grund-Kanal; Pflanze-Legendär-Direkt wurde schon oben in Wurzel/Ernte gebucht.
-    fireBase += fireDirectApplied; iceYield += iceDirect; lightYield += lightDirect;
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, iceForm: iceFormMult, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, lightDirect, plantDirect, perkDirect, total: gained };
+    fireBase += fireDirectApplied; iceYield += iceDirectApplied; lightYield += lightDirect;
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, iceForm: iceFormMult, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect: iceDirectApplied, lightDirect, plantDirect, perkDirect, total: gained };
     // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
     if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
     // Blitz-Rework (v0): Ladungsgewinn — Blitzableiter (Crit +1) · Statische Aufladung (Nicht-Crit-Sieg +1) ·

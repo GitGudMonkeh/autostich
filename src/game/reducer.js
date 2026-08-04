@@ -4,7 +4,7 @@ import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js";
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
-  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront, hasGlacierPush, hasVerzahnung, hasGleitfrost, hasVerdichtung,
+  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront,
   hasSetzlingsbeet, hasDornenkoenig, buildSkillOffer } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, segmentGainedFormation, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
@@ -644,40 +644,18 @@ export function reducer(state, action) {
                  + formationEnergyBonus(state.familyTiers, state.cycle), // #179 Feinjustierung (Perk-Familie E_TUNING)
                formationSwaps: [], frostSwapsUsed: [] };
     }
-    // Bestätigen → Reihenfolge bleibt persistent. Eis-Rework: Gletscherschub/Verzahnung (Frosttausch schafft/überlappt
-    // Formation → Schicht), Ablage B (ungenutzte Tausche banken). (#269: Kaltfront ist zu „Kälteleitung" umgebaut — live
-    // in der Engine aus playerOrder berechnet, kein Swap-Zeit-Temp-Wert mehr.)
+    // Bestätigen → Reihenfolge bleibt persistent. Ablage B (Grundmechanik): jede Frostkarte, die ihren freien Frosttausch
+    // NICHT genutzt hat, bankt +ICE_UNUSED_SWAP_LAYER Schicht — ein ungenutzter Tausch ist kein verlorener Zug. (Die alten
+    // Frosttausch-Verstärker Gleitfrost/Gletscherschub/Verzahnung/Verdichtung sind zu Eiskalt/Frostschlag/Überlauf-Motoren
+    // umgewidmet — deren Wirkung läuft jetzt in der Engine, nicht mehr hier. #269: Kaltfront → „Kälteleitung" live in engine.)
     case "CONFIRM_FORMATION": {
       if (state.phase !== "formation") return state;
       let iceTemp = state.iceTemp || {};
       let layers = state.layers || {};
-      const skills = state.skills, usedFrost = state.frostSwapsUsed || [];
-      const anchors = state.shop?.anchors || [];
-      const posOfFrost = (fid) => state.playerOrder.findIndex((di) => state.deck[di].id === fid);
-      // Gletscherschub / Verzahnung: ein Frosttausch, der eine NEUE (bzw. zweite überlappende) Formation schafft, bankt eine Schicht.
-      if (usedFrost.length && (hasGlacierPush(skills) || hasVerzahnung(skills))) {
-        const finalForms = state.formations || computeFormations(state.playerOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers, archOf(state));
-        const origOrder = state.playerOrder.slice(); // Ausgangsreihenfolge = finale ohne alle Tausche dieser Phase
-        const swaps = state.formationSwaps || [];
-        for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [origOrder[i], origOrder[j]] = [origOrder[j], origOrder[i]]; }
-        const baseForms = computeFormations(origOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers, archOf(state));
-        layers = { ...layers };
-        for (const fid of usedFrost) {
-          const pos = posOfFrost(fid);
-          if (pos < 0) continue;
-          const segStart = Math.floor(pos / SEGMENT_SIZE) * SEGMENT_SIZE;
-          let add = 0;
-          if (hasGlacierPush(skills) && segmentGainedFormation(baseForms, finalForms, segStart)) add += C.GLACIER_PUSH_LAYER;
-          if (hasVerzahnung(skills) && baseFormationCount(finalForms[pos] || {}) >= 2) add += C.VERZAHNUNG_LAYER; // Überlappung
-          if (add > 0) layers[fid] = (layers[fid] || 0) + add;
-        }
-      }
-      // Ablage B: jede Frostkarte, die ihren freien Frosttausch NICHT genutzt hat, bankt Schicht-Fortschritt
-      // (Gleitfrost: mehr; Verdichtung: ×2). Grundmechanik — ein ungenutzter Tausch ist kein verlorener Zug.
+      const usedFrost = state.frostSwapsUsed || [];
       {
         const used = new Set(usedFrost);
-        const bankPer = (C.ICE_UNUSED_SWAP_LAYER + (hasGleitfrost(skills) ? C.GLEITFROST_EXTRA_SWAP * C.ICE_UNUSED_SWAP_LAYER : 0))
-                        * (hasVerdichtung(skills) ? C.VERDICHTUNG_FACTOR : 1);
+        const bankPer = C.ICE_UNUSED_SWAP_LAYER;
         const frozenUnused = state.deck.filter((c) => c.frozen && !used.has(c.id));
         if (bankPer > 0 && frozenUnused.length) {
           const nl = { ...layers };
