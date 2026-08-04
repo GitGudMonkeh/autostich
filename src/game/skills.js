@@ -153,12 +153,12 @@ export const SKILL_DEFS = {
     desc: "Du wählst selbst, welche eigenen Karten einfrieren, statt sie dem Zufall zu überlassen.", frostwahl: true },
   // #Überlauf-Konsum: Eiskalt wandelt den globalen Überlauf-Vorrat je Frost-Sieg in Crit-Chance und verbrennt ihn dabei.
   SK_ICE_03: { id: "SK_ICE_03", name: "Eiskalt", archetype: "ice", keywords: ["freeze", "crit"],
-    desc: `Gewinnt eine Frostkarte einen Stich, gibt dein Überlauf-Vorrat (Schichten über ${C.ICE_LAYER_MAX}) ihr +${pct(C.EISKALT_CRIT_PER)} % Crit-Chance je Vorrats-Schicht (bis +${pct(C.EISKALT_CRIT_CAP)} %) — nur für diesen Stich. Jeder Frost-Sieg verbrennt dafür bis zu ${C.EISKALT_SPEND} Überlauf (tiefste Karten zuerst, nie unter ${C.ICE_LAYER_MAX}).`, eiskalt: true },
+    desc: `Gewinnt eine Frostkarte einen Stich, gibt ihr dein Überlauf-Vorrat (Schichten über ${C.ICE_LAYER_MAX}) +${pct(C.EISKALT_CRIT_PER)} % Crit-Chance je Vorrats-Schicht (bis +${pct(C.EISKALT_CRIT_CAP)} %), nur für diesen Stich. Der Sieg verbrennt dabei ${pct(C.EISKALT_SPEND_FRAC)} % des Vorrats (tiefste Karten zuerst, nie unter ${C.ICE_LAYER_MAX}).`, eiskalt: true },
   // Linie 2 — Frost-Crit-Payoff & Überlauf-Motoren (umgewidmete Frosttausch-Linie)
   SK_ICE_04: { id: "SK_ICE_04", name: "Frostschlag", archetype: "ice", keywords: ["freeze", "crit"],
-    desc: `Ein Crit einer Frostkarte multipliziert zusätzlich ihren Eis-Direkt-Score dieses Stichs (Schicht-Score + Überlauf-Dividende) um +${pct(C.FROSTSCHLAG_DIRECT_MULT)} % — sonst trifft der Crit nur die Grundpunkte.`, frostschlag: true },
+    desc: `Ein Crit einer Frostkarte multipliziert zusätzlich ihren Eis-Direkt-Score dieses Stichs (Schicht-Score + Überlauf-Dividende) um +${pct(C.FROSTSCHLAG_DIRECT_MULT)} %.`, frostschlag: true },
   SK_ICE_05: { id: "SK_ICE_05", name: "Tiefenfrost", archetype: "ice", keywords: ["freeze"],
-    desc: `Gewinnt eine Frostkarte, die bereits ${C.ICE_LAYER_MAX}+ Schichten trägt, lagert sie +${C.UEBERLAUF_MOTOR_DEPTH} zusätzliche Schicht ab — vertieft deine Pfeiler und füttert den Überlauf-Vorrat.`, ueberlaufMotorDepth: true },
+    desc: `Gewinnt eine Frostkarte mit bereits ${C.ICE_LAYER_MAX}+ Schichten, lagert sie +${C.UEBERLAUF_MOTOR_DEPTH} zusätzliche Schicht ab (vertieft den Überlauf-Vorrat).`, ueberlaufMotorDepth: true },
   SK_ICE_06: { id: "SK_ICE_06", name: "Kälteleitung", archetype: "ice", keywords: ["freeze"],
     desc: `Die direkten nicht-gefrorenen Nachbarn einer Frostkarte werden temporär vereist und bekommen ${pct(C.KALTFRONT_SHARE)} % des Schicht-Scores und Dauerwerts der Frostkarte — solange sie daneben liegen.`, kaltfront: true },
   // Linie 3 — Permanenz (Schichten ablagern — der Spine, verliert nie)
@@ -167,7 +167,7 @@ export const SKILL_DEFS = {
   SK_ICE_08: { id: "SK_ICE_08", name: "Beständigkeit", archetype: "ice", keywords: ["freeze", "formation"],
     desc: "Siegt eine Frostkarte in einer Formation wie im Vordurchlauf, lagert sie eine zusätzliche Schicht ab.", bestaendigkeit: true },
   SK_ICE_09: { id: "SK_ICE_09", name: "Flächenfrost", archetype: "ice", keywords: ["freeze"],
-    desc: `Jeder Frost-Sieg lagert +${C.UEBERLAUF_MOTOR_BREADTH} zusätzliche Schicht ab — mehr Frostkarten erreichen den Überlauf und füllen den Vorrat in die Breite.`, ueberlaufMotorBreadth: true },
+    desc: `Jeder Frost-Sieg lagert +${C.UEBERLAUF_MOTOR_BREADTH} zusätzliche Schicht ab (bringt mehr Frostkarten in den Überlauf).`, ueberlaufMotorBreadth: true },
   // Linie 4 — Schicht-Schwellen (tiefe Schichten → großer Payout, kein Konsum)
   SK_ICE_10: { id: "SK_ICE_10", name: "Eisdruck", archetype: "ice", keywords: ["freeze", "formation"],
     desc: `Je Schicht einer Frostkarte +${pct(C.EISDRUCK_STEP)} % Formationsfaktor (wirksam bis ${C.ICE_LAYER_MAX} Schichten).`, eisdruck: true },
