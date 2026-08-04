@@ -211,7 +211,7 @@ export const GLOSSARY = {
     text: `Crits erzeugen Ladung (max ${C.LIGHTNING_MAX_CHARGE}). Bei voller Ladung lösen Blitz-Konsumenten ihren Effekt aus und verbrauchen sie.`,
     match: ["Ladung", "Ladungen"] },
   ionize: { category: "frak", group: "lightning", label: "Ionisierung", icon: "⚡", color: CLR.lightning,
-    text: `Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und erhält danach +1 Stapel (max ${C.ION_MAX_STACKS}).`,
+    text: `Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und erhält danach +1 Stapel (max ${C.ION_MAX_STACKS}). Zusätzlich lädt das ionisierte Feld die Luft auf: jeder Ionisierungsstapel im Deck hebt die Crit-Chance JEDER Siegkarte um +${pct(C.ION_CRIT_PP_PER_STACK)} pp (feldweit, bis +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp).`,
     match: ["Ionisierung", "ionisierte", "ionisierten", "ionisiert"] },
   kaskade: { category: "frak", group: "lightning", label: "Kaskade", icon: "🔗", color: CLR.lightning,
     text: "Ein Crit auf oder neben einer ionisierten Karte erzeugt zusätzliche Ladung — so lösen Treffer weitere Treffer aus.",

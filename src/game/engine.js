@@ -3,7 +3,7 @@ import { shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult } from "./families.js";
-import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
+import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionCritChance, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
   hasIonize, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
   hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasSeriesCrit, hasBlitzableiter, hasWetterleuchten, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
@@ -607,6 +607,7 @@ export function resolveTrick(state, rng) {
     // gewählte Farben (Farbfokus, aus roles). Roh-Crit-Chance (ungeklemmt): Perk-Basis + Präzision + Blitz + Kritanker.
     const critFamCtx = { winValue: pValue, suit: pCard.suit, formCount: activeFormationCount(posForm), focusSuits: (roles && roles.P_COLORFOCUS) || [] };
     const rawCrit = critChanceRawFor(perks, wctx) + familyCritChanceRaw(familyTiers, critFamCtx) + lightningCritRaw(lightning, skills, serieStreak)
+                    + (lightning?.active ? ionCritChance(deck) : 0) // #271: feldweiter Ionisierungs-Crit (Breite); Überschuss >100 % → Überschlag→Ladung
                     + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.

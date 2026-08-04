@@ -629,6 +629,16 @@ export function ionScoreFor(card) {
   return (card?.ionStacks || 0) * C.ION_SCORE_PER_STACK;
 }
 
+// #271: feldweiter Crit-Chance-Beitrag der Ionisierung — Σ aller Ionisierungsstapel im Deck (gedeckelt) × pp/Stapel.
+// „Ein ionisiertes Feld lädt die Luft auf": jeder Stapel hebt die Crit-Chance JEDER Siegkarte (Breite, verteilt).
+// Rein aus dem Deck ableitbar (Stapel existieren nur durch Ionisierung → implizit Blitz); die Engine gatet zusätzlich
+// auf lightning.active. Der Überschuss >100 % fließt via Überschlag als Ladung zurück (kein toter Wert).
+export function ionCritChance(deck) {
+  let sum = 0;
+  for (const c of deck || []) sum += c.ionStacks || 0;
+  return Math.min(sum, C.ION_CRIT_STACK_CAP) * C.ION_CRIT_PP_PER_STACK;
+}
+
 // Voll-Ladungs-Verbraucher (Abschnitt 6): seit Rework v0 nur noch Ionisierung (ionize). Ladungsserie
 // verbraucht keine Ladung mehr, sondern speist die Crit-Maschine (seriesCrit) — s. lightningCritRaw.
 export function hasIonize(skills)  { return (skills || []).some((id) => SKILL_DEFS[id]?.onFullCharge === "ionize"); }

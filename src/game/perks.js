@@ -1,7 +1,7 @@
 import * as C from "./constants.js";
 import { FAMILY_LIST, familyCritChanceRaw } from "./families.js";
 import { TIERS, TIER_WEIGHTS, tierWeightsForShift, canOfferFamilyTier, familyTierOf } from "./rarity.js";
-import { lightningCritRaw } from "./skills.js";
+import { lightningCritRaw, ionCritChance } from "./skills.js";
 
 // Deutsche Zahlformatierung (2.5 → „2,5") — Beschreibungszahlen aus den Konstanten interpolieren (kein Text↔Code-Drift).
 const de = (x) => String(x).replace(".", ",");
@@ -232,9 +232,10 @@ export function critChanceFor(perks, ctx) {
 // konditionalen Generatoren Zielsicherheit/Brennglas/Farbfokus bleiben im Live-Preview aus = ehrlicher Crit-Boden).
 // Der positionsabhängige Kritanker (§4.2) bleibt der Engine vorbehalten.
 export function totalCritChanceRaw(state = {}) {
-  const { perks = [], winStreak = 0, wins = 0, trickNo = 0, pos = 0, lightning, skills = [], familyTiers = {}, roles = {} } = state;
+  const { perks = [], winStreak = 0, wins = 0, trickNo = 0, pos = 0, lightning, skills = [], familyTiers = {}, roles = {}, deck = [] } = state;
   return critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos })
        + lightningCritRaw(lightning, skills, winStreak + 1)
+       + (lightning?.active ? ionCritChance(deck) : 0) // #271: feldweiter Ionisierungs-Crit (deckt HUD/StatusRail/PerkSelect)
        + familyCritChanceRaw(familyTiers, { winValue: 0, suit: null, formCount: 0, focusSuits: (roles || {}).P_COLORFOCUS || [] });
 }
 // Crit-Faktor: Basis (CRIT_BASE_MULT 1,5) + Perk-Crit-Mult-Boni (critMultBonus-Hook). #267: der Crit-Mult-Stat ist

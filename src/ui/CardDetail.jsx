@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX,
+import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK, ICE_LAYER_MAX,
          PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, WURZELSCHLAG_PER_GROWTH } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
@@ -86,6 +86,8 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
           <span className="opacity-45">Ionisierung:</span>
           <Chip c="#5ec8f0">⚡ {ion}/{ION_MAX_STACKS} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
+          {/* #271: jeder Stapel hebt die Crit-Chance des ganzen Decks (feldweit) — hier der Beitrag dieser Karte. */}
+          <Chip c="#8a7de0">+{Math.round(ion * ION_CRIT_PP_PER_STACK * 100)} pp Feld-Crit</Chip>
         </div>
       )}
       {/* Eis (#210): Schicht-Werte einer eingefrorenen Karte — nur in der Aufstellung (frostReadout). Hier stehen die

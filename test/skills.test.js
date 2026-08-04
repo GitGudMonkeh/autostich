@@ -2,9 +2,10 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer, archetypeOf,
   offerArchetypes, archetypesWithSkills, decodeArchetypes,
-  ionScoreFor, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
+  ionScoreFor, ionCritChance, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasSeriesCrit, hasStorm, chargeFloorFor } from "../src/game/skills.js";
-import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, MAX_ARCHETYPES } from "../src/game/constants.js";
+import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, MAX_ARCHETYPES,
+  ION_CRIT_PP_PER_STACK, ION_CRIT_STACK_CAP } from "../src/game/constants.js";
 
 const LR = "SK_LIGHTNING_01";
 const ALL = Object.keys(SKILL_DEFS);
@@ -219,6 +220,15 @@ describe("Ionisierung — Helfer (Stufe B)", () => {
     expect(ionScoreFor({ ionStacks: 0 })).toBe(0);
     expect(ionScoreFor({})).toBe(0);
     expect(ionScoreFor(null)).toBe(0);
+  });
+  it("ionCritChance (#271): Σ Feldstapel × pp, gedeckelt; 0 ohne Stapel", () => {
+    expect(ionCritChance(mkDeck([3, 2, 0, 5]))).toBeCloseTo(10 * ION_CRIT_PP_PER_STACK, 10); // Σ 10
+    expect(ionCritChance(mkDeck([0, 0, 0]))).toBe(0);
+    expect(ionCritChance([])).toBe(0);
+    expect(ionCritChance(undefined)).toBe(0);
+    // Deckel: Σ über dem Cap zählt nur bis zum Cap.
+    const many = mkDeck(Array(30).fill(5)); // Σ 150 ≫ Cap
+    expect(ionCritChance(many)).toBeCloseTo(ION_CRIT_STACK_CAP * ION_CRIT_PP_PER_STACK, 10);
   });
   it("consumesCharge nur mit Ionisierung; ionizeCountFor = 2 (+2 mit Kettenblitz)", () => {
     expect(consumesCharge([I])).toBe(true);

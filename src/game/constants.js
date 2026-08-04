@@ -190,6 +190,11 @@ export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0
 export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
 // Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
 export const ION_SCORE_PER_STACK  = envNum("SIM_ION_SCORE_PER_STACK", 25); // +Score je Ionisierungsstapel bei Sieg mit der Karte [SIM-Tuning]
+// #271: Ionisierung speist die Crit-Maschine (feldweit/Breite) — Σ Ionisierungsstapel im Deck heben die Crit-Chance
+// JEDER Siegkarte (gedeckelt, nur bei aktivem Blitz). Der Überschuss über 100 % fließt via Überschlag als Ladung zurück
+// → schließt den Sturm-Loop. Nur Ionisierung erzeugt Stapel → generisches Nicht-Blitz unberührt. [SIM-Tuning]
+export const ION_CRIT_PP_PER_STACK = envNum("SIM_ION_CRIT_PP_PER_STACK", 0.01); // +Crit-Chance je Feld-Ionisierungsstapel (0,01 = +1 pp)
+export const ION_CRIT_STACK_CAP    = envNum("SIM_ION_CRIT_STACK_CAP", 20);      // gedeckelte gezählte Σ-Feldstapel (→ max +20 pp bei v0)
 export const ION_MAX_STACKS       = 5;  // max Stapel je Karte [#165 Skills-Spec §5.1: 4→5]
 export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Verbrauch
 export const BLITZFAENGER_VALUE   = 2;  // Blitzfänger (#165): eine bereits volle Karte (5 Stapel) statt zu ionisieren +temp Wert (+ 1 Ladung)
