@@ -2,26 +2,26 @@
    Getrennt vom SFX-Web-Audio (audio.js): Menü & Victory = „Morning Deck"; im Run ein zufälliger Track
    aus dem harmonisierten Pool (mp3_norm). Autoplay-Gate: die erste User-Geste ruft unlock().
    Eigene Lautstärke (Optionen · Default 0,2); globaler „Ton stumm" mutet auch die Musik. */
-import morning_deck from "../assets/music/morning_deck.mp3";
-import card_momentum from "../assets/music/card_momentum.mp3";
-import deck_alignment from "../assets/music/deck_alignment.mp3";
-import glass_sequence from "../assets/music/glass_sequence.mp3";
-import neon_card_rush from "../assets/music/neon_card_rush.mp3";
-import neon_card_rush_2 from "../assets/music/neon_card_rush_2.mp3";
-import pulsing_cards from "../assets/music/pulsing_cards.mp3";
-import relay_of_multipliers from "../assets/music/relay_of_multipliers.mp3";
-import shuffle_pulse from "../assets/music/shuffle_pulse.mp3";
-import stacked_multipliers from "../assets/music/stacked_multipliers.mp3";
-import table_dust from "../assets/music/table_dust.mp3";
-import table_dust_2 from "../assets/music/table_dust_2.mp3";
+import morning_deck from "../assets/music/morning_deck.m4a";
+import card_momentum from "../assets/music/card_momentum.m4a";
+import deck_alignment from "../assets/music/deck_alignment.m4a";
+import glass_sequence from "../assets/music/glass_sequence.m4a";
+import neon_card_rush from "../assets/music/neon_card_rush.m4a";
+import neon_card_rush_2 from "../assets/music/neon_card_rush_2.m4a";
+import pulsing_cards from "../assets/music/pulsing_cards.m4a";
+import relay_of_multipliers from "../assets/music/relay_of_multipliers.m4a";
+import shuffle_pulse from "../assets/music/shuffle_pulse.m4a";
+import stacked_multipliers from "../assets/music/stacked_multipliers.m4a";
+import table_dust from "../assets/music/table_dust.m4a";
+import table_dust_2 from "../assets/music/table_dust_2.m4a";
 // #171: sechs neu normalisierte Tracks (EBU R128, −14 LUFS — wie der Bestand) zusätzlich in den Run-Pool.
 // Morning Deck (Menü/Victory) wurde nur als Asset durch die normalisierte Version ersetzt, bleibt aus dem Pool.
-import asymmetric_loop from "../assets/music/asymmetric_loop.mp3";
-import card_momentum_remastered from "../assets/music/card_momentum_remastered.mp3";
-import formation_shuffle from "../assets/music/formation_shuffle.mp3";
-import mutation_funk_drive from "../assets/music/mutation_funk_drive.mp3";
-import neon_static from "../assets/music/neon_static.mp3";
-import neon_static_remaster from "../assets/music/neon_static_remaster.mp3";
+import asymmetric_loop from "../assets/music/asymmetric_loop.m4a";
+import card_momentum_remastered from "../assets/music/card_momentum_remastered.m4a";
+import formation_shuffle from "../assets/music/formation_shuffle.m4a";
+import mutation_funk_drive from "../assets/music/mutation_funk_drive.m4a";
+import neon_static from "../assets/music/neon_static.m4a";
+import neon_static_remaster from "../assets/music/neon_static_remaster.m4a";
 
 const MENU_TRACK = { title: "Morning Deck", url: morning_deck };
 // Run-Zufallspool (17 harmonisierte Tracks). Titel = Anzeige im Musik-Panel.

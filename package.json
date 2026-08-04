@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "sim": "node sim/batch.js",
     "probe": "node sim/probe.js",
-    "gen:db": "node scripts/gen-db.mjs"
+    "gen:db": "node scripts/gen-db.mjs",
+    "compress:music": "node scripts/compress-music.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "ffmpeg-static": "^5.3.0",
     "tailwindcss": "^4.3.3",
     "vite": "^6.0.7",
     "vitest": "^2.1.8"
