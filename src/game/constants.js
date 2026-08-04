@@ -219,7 +219,7 @@ export const STATIC_CHARGE     = envNum("SIM_STATIC_CHARGE", 1); // Statische Au
 export const ENTLADUNG_CRIT_MULT      = 1.0;  // Entladung: nächster Crit nach vollem Verbrauch +1,0× Crit-Mult   // v0 — tunebar
 // Kurzschluss (Rework): eine VOLLE (5) Siegkarte gibt bei JEDEM Sieg einen Burst — OHNE die Stapel zu opfern (Payoff fürs
 // Maxen statt Sättigung entladen). Wiederkehrend, weil die Stapel bleiben → weiter Flat-Score + Feld-Crit (#271). [Sim-tunebar]
-export const KURZSCHLUSS_SCORE  = envNum("SIM_KURZSCHLUSS_SCORE", 200); // Direkt-Score-Burst (post-stack) je Sieg mit voller Karte
+export const KURZSCHLUSS_SCORE  = envNum("SIM_KURZSCHLUSS_SCORE", 250); // Direkt-Score-Burst (post-stack) je Sieg mit voller Karte [Sim: Blitz-Aggregat unempfindlich → Feel-Wert]
 export const KURZSCHLUSS_CHARGE = envNum("SIM_KURZSCHLUSS_CHARGE", 3);  // + Ladungs-Burst je Sieg mit voller Karte
 export const SPANNUNGSSTAU_STEP       = 0.05; // Spannungsstau: +5 pp Crit-Chance je Sieg ohne Crit (ein Crit resettet) // v0
 export const SPANNUNGSSTAU_CAP        = 0.50; // Spannungsstau: … bis +50 pp                                       // v0 — tunebar
