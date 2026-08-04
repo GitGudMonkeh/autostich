@@ -411,7 +411,10 @@ export function resolveTrick(state, rng) {
       // also kein Joker-Runaway). Zahlt bei JEDEM Frost-Sieg aus den (vor diesem Sieg) gebankten Schichten.
       if (myLayers > 0) iceDirect += layerScore(myLayers);
       // Stillstand (#269 RETUNE): Frost-Formations-Sieg → Direkt-Score ∝ Schichten der Karte (belohnt tiefe Pfeiler in Formation).
-      if (hasStandstill(skills) && inFormation) iceDirect += myLayers * C.STILLSTAND_PER_LAYER;
+      // FIX Ceiling-Runaway: am selben Plateau deckeln wie layerScore (min(m, P)) — sonst liest Stillstand die ROHE,
+      // ungedeckelte Schichtzahl, die über die Banker (Eisanker/Beständigkeit/Verdichtung/Eisblüte) unbegrenzt
+      // aufschaukelt (Sim-Seed 77: eine Karte ~890k Schichten → iceDirect 35M/Stich → 300M-Tail). Deckel = 12 × PER_LAYER.
+      if (hasStandstill(skills) && inFormation) iceDirect += Math.min(myLayers, C.ICE_LAYER_SCORE_PLATEAU) * C.STILLSTAND_PER_LAYER;
       // Verschränkung (#269 V-B „Tiefen-Leihe"): je Frost-Sieg zahlt ein Anteil der TIEFSTEN ANDEREN Frostkarte mit (Score,
       // keine neue Schicht) → gebankte tiefe Pfeiler scoren bei jedem Sieg mit.
       if (hasVerschraenkung(skills)) {
