@@ -12,6 +12,7 @@ const SRC = { button: buttonUrl, cardflip: cardflipUrl, buy: buyUrl, denied: den
 let ctx = null;
 let masterComp = null; // #196: persistenter Master-Kompressor — ALLE SFX laufen durch, fängt Clipping/Turbo-Überlappung ab.
 const buffers = {};
+let buffersLoaded = false; // #264: SFX-Puffer erst bei „hörbarem" Bedarf holen/dekodieren (nicht im Stumm-Start).
 let muted = false;
 let volume = 0.6;
 // Nicht-Stich-Sounds (Klick/Kauf/Verwehrt) etwas anheben → effektiv ~0,5 beim Default-Slider (0,4).
@@ -29,24 +30,33 @@ function ensureCtx() {
   masterComp.threshold.value = -10; masterComp.knee.value = 24; masterComp.ratio.value = 3;
   masterComp.attack.value = 0.003; masterComp.release.value = 0.12;
   masterComp.connect(ctx.destination);
+  return ctx; // #264: KEINE Puffer hier — erst bei hörbarem Bedarf (loadBuffers)
+}
+
+// #264: SFX-Puffer erst holen/dekodieren, wenn Ton hörbar ist. Idempotent (nur ein Ladelauf).
+function audibleSfx() { return !muted && volume > 0; }
+function loadBuffers() {
+  const c = ensureCtx();
+  if (!c || buffersLoaded) return;
+  buffersLoaded = true;
   for (const [name, url] of Object.entries(SRC)) {
-    fetch(url).then((r) => r.arrayBuffer()).then((ab) => ctx.decodeAudioData(ab))
+    fetch(url).then((r) => r.arrayBuffer()).then((ab) => c.decodeAudioData(ab))
       .then((buf) => { buffers[name] = buf; }).catch(() => {});
   }
-  return ctx;
 }
 
 export const audio = {
-  init() { ensureCtx(); },
+  init() { ensureCtx(); if (audibleSfx()) loadBuffers(); },
   // Beim ersten User-Klick aufrufen: entsperrt den (browserseitig blockierten) AudioContext.
-  unlock() { const c = ensureCtx(); if (c && c.state === "suspended") c.resume().catch(() => {}); },
-  setMuted(m) { muted = !!m; },
-  setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); },
+  unlock() { const c = ensureCtx(); if (c && c.state === "suspended") c.resume().catch(() => {}); if (audibleSfx()) loadBuffers(); },
+  setMuted(m) { muted = !!m; if (audibleSfx()) loadBuffers(); }, // #264: Unmute → Puffer jetzt (lazy) laden
+  setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); if (audibleSfx()) loadBuffers(); },
   /* Einen SFX abspielen. `rate` = playbackRate (Turbo-Kopplung Stich-Sound), `gain` = zusätzlicher Faktor,
      `bass` = Lowshelf-Anhebung in dB (#196, 0 = aus). Je Aufruf eine neue BufferSource → Überlappen erlaubt
      (dezenter „Maschinengewehr"-Effekt bei hohem Turbo). Kette: src → [lowshelf?] → gain → masterComp → destination. */
   play(name, { rate = 1, gain = SFX_GAIN, bass = 0 } = {}) {
     if (muted || volume <= 0) return;
+    loadBuffers(); // #264: hörbarer Bedarf → sicherstellen, dass die Puffer (lazy) geladen sind
     const c = ctx;
     if (!c || !buffers[name]) return;
     if (c.state === "suspended") c.resume().catch(() => {});

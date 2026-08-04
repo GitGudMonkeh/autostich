@@ -50,6 +50,7 @@ let volume = 0.2;
 let muted = false;
 let userPaused = false; // Pause-Knopf (#…) hält die Musik an — getrennt von „Ton stumm"
 let current = null;   // aktueller Track { title, url }
+let loadedUrl = null; // #264: URL, die aktuell auf dem <audio>-Element liegt (null = nichts geladen → 0 Bytes)
 let mode = null;      // "menu" | "run"
 let listeners = [];   // Titel-Abonnenten (UI)
 
@@ -58,21 +59,34 @@ function ensureEl() {
   el = new Audio();
   el.loop = true;
   el.preload = "none";
-  el.volume = muted ? 0 : volume;
+  el.volume = volume;
   return el;
 }
-function applyVol() { if (el) el.volume = muted ? 0 : volume; }
+// #264: „hörbar" = nicht stumm, Lautstärke > 0, nicht (spiel-)pausiert. Nur dann darf ein Track laden/streamen.
+function audible() { return !muted && volume > 0 && !userPaused; }
+// #264 Lazy-Gating: Wiedergabe an „hörbar" koppeln. Hörbar → den aktuellen Track ERST HIER laden (.src setzen) und
+// spielen; nicht hörbar → pausieren (stoppt den Netzwerk-Stream, nicht nur Volume 0). Der Puffer bleibt für schnellen
+// Resume erhalten; der Titel bleibt gesetzt, damit Unmute denselben Track fortsetzt. Stumm gestartet = 0 Musik-Bytes.
+function syncPlayback() {
+  const a = el;
+  if (!a) return;
+  if (audible() && current) {
+    if (loadedUrl !== current.url) { a.src = current.url; loadedUrl = current.url; } // erster Ladevorgang genau jetzt
+    a.volume = volume;
+    if (a.paused) a.play().catch(() => {}); // Autoplay-Gate: rejectet vor der ersten User-Geste (unschädlich)
+  } else if (!a.paused) {
+    a.pause(); // stumm/pausiert → Stream anhalten
+  }
+}
 function notify() { const t = current ? current.title : null; listeners.forEach((fn) => { try { fn(t); } catch (e) {} }); }
 
 function playTrack(track) {
   const a = ensureEl();
   if (!a || !track) return;
-  if (current && current.url === track.url) { if (a.paused && !userPaused) a.play().catch(() => {}); return; } // läuft schon
+  if (current && current.url === track.url) { syncPlayback(); return; } // schon gewählt → ggf. fortsetzen
   current = track;
-  a.src = track.url;
-  applyVol();
-  if (!userPaused) a.play().catch(() => {}); // Autoplay-Gate → startet erst nach der ersten User-Geste (unlock); nicht während Pause
-  notify();
+  notify();       // Titel immer anzeigen (Kontinuität — auch wenn gerade stumm)
+  syncPlayback(); // lädt/spielt nur, wenn hörbar — sonst wird nichts geladen
 }
 
 function randomPoolTrack() {
@@ -86,14 +100,9 @@ export const music = {
   menu() { mode = "menu"; playTrack(MENU_TRACK); },            // Menü + Victory
   enterRun() { mode = "run"; playTrack(randomPoolTrack()); },  // Run-Start → zufälliger Pool-Track
   next() { if (mode === "run") playTrack(randomPoolTrack()); }, // „Nächster Track"
-  setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); applyVol(); },
-  setMuted(m) { muted = !!m; applyVol(); },
-  setPaused(p) { // Spiel-Pause spiegeln: anhalten bzw. fortsetzen
-    userPaused = !!p;
-    if (!el) return;
-    if (userPaused) el.pause();
-    else if (current) el.play().catch(() => {});
-  },
-  unlock() { const a = ensureEl(); if (a && a.paused && current && !userPaused) a.play().catch(() => {}); }, // erste Geste (nicht während Pause)
+  setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); syncPlayback(); }, // #264: 0 → Stream stoppt, wieder >0 → lazy laden
+  setMuted(m) { muted = !!m; syncPlayback(); },                                       // #264: stumm → pause, hörbar → (lazy) starten
+  setPaused(p) { userPaused = !!p; syncPlayback(); },                                 // Spiel-Pause spiegeln
+  unlock() { ensureEl(); syncPlayback(); }, // erste User-Geste: startet den Track nur, wenn hörbar (sonst bleibt es stumm & ungeladen)
   subscribe(fn) { listeners.push(fn); fn(current ? current.title : null); return () => { listeners = listeners.filter((x) => x !== fn); }; },
 };
