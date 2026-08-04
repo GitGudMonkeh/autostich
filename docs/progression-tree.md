@@ -57,17 +57,57 @@ Vier thematische Äste, an den Spiel-Säulen ausgerichtet:
 
 1. **🏗 Architekt / Baufeld** — Bau-Ökonomie.
    - *Baufeld-Erweiterung* (3× +4 Zellen).
-   - *Gebäude-Reroll* (bis +2 Architekt-Rerolls).
    - *Fundamentplan* (Start mit 1 vorgebauten Basis-Gebäude / höhere Start-Stufe).
 2. **🎬 Auftakt / Start** — Lauf-Eröffnung.
-   - *Zusatz-Reroll* Perk/Skill (bis +2).
+   - *Reroll II & III* — 2 Knoten in Sequenz, je **+1 Reroll für alle drei Phasen** (Skill/Perk/Architekt), Basis 1 → bis 3 (siehe 3.5).
    - *Formations-Energie* Start +N.
    - *Frühere Skills* (Skill-Angebot 1 Runde früher).
 3. **⚡🔥❄🌿 Fraktionen** — kleine, faire Fraktions-Startvorteile (je Fraktion 1 Knoten).
    - z. B. Blitz Start +1 Ladung · Feuer Start-Hitze · Eis 1 Gratis-Schicht · Pflanze 1 Setzling vorgewachsen.
-4. **👑 Meisterschaft** — Prestige/Skalierung (nimmt die heutigen Rang-Multiplikatoren auf: LegendMult, RareShift, Legendär-Garantie), jetzt als **wählbare** Knoten statt automatisch.
+4. **👑 Meisterschaft** — Prestige/Skalierung (nimmt die heutigen Rang-Multiplikatoren auf: LegendMult, RareShift), jetzt als **wählbare** Knoten statt automatisch.
+   - *Legendär-Slot* — schaltet Runde 29 von Skill-Angebot auf legendären Skill um (siehe 3.6).
 
 **Beschlossen (B): ~14 Knoten für v1** — genug für echte Wahl über vier Äste, klein genug zum sauberen Balancing; später erweiterbar. Grobe Verteilung: Architekt/Baufeld ~4 · Auftakt ~4 · Fraktionen 4 (je 1) · Meisterschaft ~2–3.
+
+### 3.4 Der Spine (Entscheidungs-Takt eines Laufs)
+
+Ein Lauf hat **50 Zyklen** (`MAX_CYCLES = 50`, `constants.js`). Nach jedem Sieg liest die Engine `DECISION_SCHEDULE[cycle]` und legt den Entscheidungstyp fest. Der Grundtakt ist ein **Vierer-Beat**:
+
+```
+🎯 Skill  →  ⭐ Perk  →  🛡 Aufstellung  →  🏗 Architekt
+```
+
+Ein voller Block = 4 Siege; über den Lauf ~12,5 Blöcke, angereichert mit Sonderpunkten (Legendär-Slot, Architekt-Doppelschlag im Endgame). Aktuelle `BASE_SCHEDULE`:
+
+| Runden | Muster |
+|---|---|
+| 1–24 | **Aufbau:** stumpfer 4er-Beat Skill/Perk/Aufstellung/Architekt — Fundamente legen |
+| 25–34 | **Peak:** Skill-Zugang dünnt aus, **Legendär-Slot bei 29**, danach **Architekt-Doppelschlag (32 + 34)** — Score-Motor verdrahten |
+| 35–50 | **Endgame:** kein neuer Skill mehr (ab 41 nur noch selten), **Perk + Aufstellung + Architekt** rotieren — Feintuning & Skalierung |
+
+**Verteilung:** 🎯 Skill 9–10 · ⭐ Perk 13 · 🛡 Aufstellung 13 · 🏗 Architekt 14 · 👑 Legendär 0–1 — je ~alle 4 Runden, Architekt verdichtet zum Ende.
+
+### 3.5 Reroll-Ökonomie · **beschlossen**
+
+Reroll = an einer Entscheidung die angebotenen Optionen **einmal neu würfeln**. Bezug: **pro Phase, use-it-or-lose-it** (wie heute), getrennt für Skill / Perk / Architekt.
+
+- **Basis: 1 Reroll pro Phase.** Jede Skill-/Perk-/Architekt-Phase startet mit genau einem Neuwurf.
+- **Werkstatt: 2 Knoten, je +1 für alle drei Phasen** (Reroll II → Reroll III, in Sequenz). Voll ausgebaut → **3 Reroll pro Phase**.
+
+| Werkstatt-Stufe | Reroll/Phase | Effekt |
+|---|---|---|
+| Start | **1** | knapp — ein Fehlwurf pro Phase korrigierbar |
+| Reroll II (Knoten) | **2** | solides Sieben |
+| Reroll III (Folgeknoten) | **3** | hohe Konsistenz, Archetyp-Ziele planbar |
+
+> Das ersetzt die heutige Basis (Reroll je Phase = 2). Neue Basis = 1, die +2 kommen ausschließlich über den Baum.
+
+### 3.6 Legendär-Slot (Runde 29) · **beschlossen: Werkstatt-Unlock**
+
+Der Legendär bei Runde 29 ist **kein Basis-Recht**, sondern ein Werkstatt-Reward:
+
+- **Ohne Legendär-Knoten:** Runde 29 ist ein normales **Skill-Angebot** (thematisch der sauberste Platzhalter — der Takt bleibt unangetastet, nur der Entscheidungs-*Typ* an einer Stelle ändert sich). Basis-Lauf hat damit **10 Skill-Angebote**.
+- **Mit Legendär-Knoten:** Runde 29 wandelt sich → **eine Skill-Auswahl weniger, dafür ein legendärer Skill** (9 Skills + 1 Legendär). Klarer Prestige-Payoff, kein Zusatz-Slot, kein Takt-Umbau.
 
 ---
 
@@ -142,6 +182,8 @@ Der **Tree-Screen** selbst (eigener Screen wie Kollektion/Bestenliste): Branch-S
 | C | Rang-Rewards falten oder schichten? | **falten** (B1) — Auto-Rewards werden wählbare Knoten |
 | D | Bestenlisten-Fairness | **zwei-stufig**: Fair-Modus (Basis, Tree ignoriert) + **Vollausbau-Liga** (freigeschaltet bei komplettem Baum, alle mit Max-Tree) |
 | E | Respec | **frei** (v1) |
+| F | Reroll-Ökonomie | **1 pro Phase (Basis)** + 2 Werkstatt-Knoten je **+1 für alle Phasen** (Sequenz), bis 3 · use-it-or-lose-it |
+| G | Legendär-Slot (R29) | **Werkstatt-Unlock**: Basis = Skill-Angebot, Knoten wandelt R29 → legendärer Skill (1 Skill-Auswahl weniger) |
 
 ---
 
