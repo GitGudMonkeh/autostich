@@ -283,10 +283,10 @@ export const ARCHITECT_FAMILIES = {
   A_GEWOELBE:   { id: "A_GEWOELBE",   name: "Gewölbe",    category: "formation", form: "tetro_t",   base: { kind: "joker", types: ["wiederholung", "treppe"] } },
 
   /* ---- legendär (keine Stufen, kommen fertig; 2 je Kategorie) ---- */
-  A_FUNDAMENT:  { id: "A_FUNDAMENT",  name: "Fundamentplatte", category: "value",     form: "zeile",    base: { kind: "flat", value: 2 },   legendary: true },
-  A_BOLLWERK:   { id: "A_BOLLWERK",   name: "Bollwerk",        category: "value",     form: "block2x3", base: { kind: "flat", value: 2 },   legendary: true },
+  A_FUNDAMENT:  { id: "A_FUNDAMENT",  name: "Fundamentplatte", category: "value",     form: "zeile",    base: { kind: "flat", value: 5 },   legendary: true }, // #284: 2→5, damit es sich legendär anfühlt (+ füllt eine ganze Zeile → Struktur)
+  A_BOLLWERK:   { id: "A_BOLLWERK",   name: "Bollwerk",        category: "value",     form: "block2x3", base: { kind: "flat", value: 6 },   legendary: true }, // #284: 2→6 (keine Eigen-Zeile → höher als Fundamentplatte; 6-Zellen-Festung = viele sichere Siege)
   A_SCHATZ:     { id: "A_SCHATZ",     name: "Schatzkammer",    category: "score",     form: "block2x2", base: { kind: "mult", factor: 1.3 }, legendary: true },
-  A_PRUNKSAAL:  { id: "A_PRUNKSAAL",  name: "Prunksaal",       category: "score",     form: "zeile",    base: { kind: "flat", score: 100 },  legendary: true },
+  A_PRUNKSAAL:  { id: "A_PRUNKSAAL",  name: "Prunksaal",       category: "score",     form: "zeile",    base: { kind: "flat", score: 300 },  legendary: true }, // #284: 100→300, verlässlicher Top-Legendär (füllt eine ganze Zeile → ×Struktur)
   A_KATHEDRALE: { id: "A_KATHEDRALE", name: "Kathedrale",      category: "formation", form: "zeile",    base: { kind: "formMult", factor: 1.4 }, legendary: true },
   A_BASILIKA:   { id: "A_BASILIKA",   name: "Basilika",        category: "formation", form: "zeile",    base: { kind: "joker", types: ["wiederholung", "farbblock", "treppe", "wechsel"] }, legendary: true },
   // Prisma (Joker alle 4) war als normales Formations-Gebäude zu stark (schon nach dem 1. Lauf dominant) → in die
