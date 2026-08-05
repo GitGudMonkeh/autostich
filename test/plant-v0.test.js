@@ -153,11 +153,16 @@ describe("Pflanze-Legendär-Reshape — Fluten-Dividende (plantDirect)", () => {
     expect(s.lastTrick.result).toBe("win");
     expect(s.lastTrick.breakdown.plantDirect).toBeCloseTo(Math.min(maxOverflow(s.deck, s.growth), C.MUTTERBAUM_OVERFLOW_CAP) * C.MUTTERBAUM_DIRECT * commit1);
   });
-  it("Dornenkönig (KOLONIE): #kolonisierte Gegnerkarten × DORNENKOENIG_DIRECT je grünem Sieg (gedeckelt)", () => {
-    const colonized = Object.fromEntries(Array.from({ length: 20 }, (_, i) => [`X${i}`, true]));
-    const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L03"], deck: greenDeck(3), growth: growthMap(3, 10), colonized }), noCrit);
+  it("Baumreihe (WIEDERHOLUNG): voll ausgewachsene grüne Karten (Wert-Deckel) → positionsfreier Wiederholungs-Faktor", () => {
+    // 3 voll ausgewachsene grüne Karten an Pos 0/5/10 (nicht benachbart → keine Basis-Formation an der Siegposition 0).
+    const brDeck = Array.from({ length: 40 }, (_, i) => {
+      const eleven = i === 0 || i === 5 || i === 10;
+      return { id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: eleven ? C.PLANT_VALUE_CAP : 5, value: eleven ? C.PLANT_VALUE_CAP : 5, green: eleven };
+    });
+    const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L03"], deck: brDeck }), noCrit);
     expect(s.lastTrick.result).toBe("win");
-    expect(s.lastTrick.breakdown.plantDirect).toBeCloseTo(Math.min(Object.keys(s.colonized).length, C.DORNENKOENIG_COLON_CAP) * C.DORNENKOENIG_DIRECT * commit1);
+    // formMult = plantFormMult = Baumreihen-Faktor (n=3): BASE + (3−2)·STEP
+    expect(s.lastTrick.breakdown.formMult).toBeCloseTo(C.BAUMREIHE_BASE + (3 - 2) * C.BAUMREIHE_STEP);
   });
   it("Ewiger Frühling (GRÜN-FELD): #grüne Karten × EWIGER_FRUEHLING_DIRECT je grünem Sieg (gedeckelt)", () => {
     const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L04"], deck: greenDeck(12), growth: growthMap(12, 5) }), noCrit);

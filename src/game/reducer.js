@@ -5,7 +5,7 @@ import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js"
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront,
-  hasSetzlingsbeet, hasDornenkoenig, buildSkillOffer } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte
+  hasSetzlingsbeet, buildSkillOffer } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, segmentGainedFormation, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
@@ -508,7 +508,6 @@ export function reducer(state, action) {
           }
           growth = g;
         }
-        if (hasDornenkoenig(skills)) colonized = Object.fromEntries(state.oppDeck.map((c) => [c.id, true])); // Dornenkönig: ganzes Gegnerdeck kolonisiert
       }
       if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
       // #140: Verliert man durch Ersetzen den LETZTEN Skill eines Archetyps (0 Skills übrig), wird er deaktiviert

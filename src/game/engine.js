@@ -18,7 +18,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
   hasWurzelschlag, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Tiefe/Breite
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
-  hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasDornenkoenig, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
+  hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasBaumreihe, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, skillLegendaryChance, anchorAt } from "./shop.js";
@@ -536,13 +536,12 @@ export function resolveTrick(state, rng) {
       growthTotal += growInc; // #270: Motor-Zähler „Gewachsen" — Lauf-Summe des zugewachsenen Wachstums
       const cardGreen = pCard.green || growthRipe(g);
       if (growthRipe(g) && !pCard.green) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c));
-      // Ernte: geschlagene Gegnerkarte kolonisiert? → +Wachstum; Erntedank (reif), Rhizom (Nachbar), Dornenkönig (Marker verbraucht).
+      // Ernte: geschlagene Gegnerkarte kolonisiert? → +Wachstum; Erntedank (reif), Rhizom (Nachbar).
       if (newColonized[oCard.id]) {
         newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; growthTotal += C.AUSLAEUFER_HARVEST; // #270
         if (hasErntedank(skills) && cardGreen) { plantFlat += C.ERNTEDANK_SCORE; plantHarvest += C.ERNTEDANK_SCORE; } // #270.2: Ernte-Score-Kanal
         if (hasRhizom(skills)) { const oi = oppOrder[actualPos], nb = oi + 1 < oppDeck.length ? oi + 1 : oi - 1;
           if (nb >= 0 && newColonized[oppDeck[nb].id]) { newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; growthTotal += C.AUSLAEUFER_HARVEST; } } // #270
-        if (hasDornenkoenig(skills)) { const nc = { ...newColonized }; delete nc[oCard.id]; newColonized = nc; }
       }
       if (cardGreen) {
         // Wurzeltiefe: Flat-Score je Sieg (Pfahlwurzel ×2 in Formation) + Jahresringe (je 10 Wachstum). Mutterbaum streut aufs Segment.
@@ -604,6 +603,12 @@ export function resolveTrick(state, rng) {
         }
         // Photosynthese: grüne Karte in Formation → ×PHOTOSYNTHESE_MULT (Formations-Faktor). [#230 N9: war „×1,15", ist 1,08]
         if (hasPhotosynthese(skills) && inFormation) plantFormMult *= C.PHOTOSYNTHESE_MULT;
+        // Baumreihe (Legendär): voll ausgewachsene grüne Karten (Wert ≥ Deckel) zählen POSITIONSFREI als EINE gemeinsame
+        // Wiederholung — je solcher Karte auf dem Brett ein Faktor auf die Stiche DIESER Karte (gedeckelt; Position egal).
+        if (hasBaumreihe(skills) && pCard.green && pCard.value >= C.PLANT_VALUE_CAP) {
+          let n = 0; for (const c of deck) if (c.green && c.value >= C.PLANT_VALUE_CAP) n++;
+          if (n >= 2) plantFormMult *= Math.min(C.BAUMREIHE_CAP, C.BAUMREIHE_BASE + (n - 2) * C.BAUMREIHE_STEP);
+        }
         // Blätterdach: grüner Farbblock ab BLAETTERDACH_MIN Karten → +Score je Karte IM BLOCK (echte Lauflänge des
         // Farbblocks an der Siegposition, nicht die deckweite Grünzahl). Grün = eine gemeinsame Farbe „G" → der Lauf an
         // einer grünen Position besteht aus grünen Karten. Analog zur Blüte, die nur das Segment zählt. [#228 C2]
@@ -619,7 +624,7 @@ export function resolveTrick(state, rng) {
         // ---- Pflanze-Legendär-Reshape (2026-07-30): DIREKTE Dividende aus den verschwendeten FLUTEN je GRÜNEM Sieg —
         //      am Multiplikator-Stack VORBEI (unten zu `gained`), hart gedeckelt (Plateau, kein Runaway), bekenntnis-
         //      skaliert (plantSkillCount/SKILL_SLOTS = cross-health). Nur Legendär-Halter → generisches Pflanze unberührt.
-        if (hasWeltenbaum(skills) || hasMutterbaum(skills) || hasDornenkoenig(skills) || hasEwigerFruehling(skills)) {
+        if (hasWeltenbaum(skills) || hasMutterbaum(skills) || hasEwigerFruehling(skills)) {
           // plantCommit ist oben (Plant-Section-Start) gehoben.
           // Überlauf-Wachstum = Wachstum ÜBER dem, was Wurzelschlag zum Wert-Deckel braucht (verschwendet, „alter Wald").
           if (hasWeltenbaum(skills) || hasMutterbaum(skills)) {
@@ -634,10 +639,12 @@ export function resolveTrick(state, rng) {
             // Mutterbaum (TIEFE): der EINE tiefste Baum (max Überlauf) zahlt je grünem Sieg (Konzentration).
             if (hasMutterbaum(skills)) { const d = Math.min(maxOv, C.MUTTERBAUM_OVERFLOW_CAP) * C.MUTTERBAUM_DIRECT * plantCommit; plantDirect += d; plantRoot += d; } // #270.2: Wurzel-Kanal
           }
-          // Dornenkönig (KOLONIE): die kolonisierte Gegner-Breite zahlt je grünem Sieg (das Reich unter Kontrolle).
-          if (hasDornenkoenig(skills)) { const d = Math.min(Object.keys(newColonized).length, C.DORNENKOENIG_COLON_CAP) * C.DORNENKOENIG_DIRECT * plantCommit; plantDirect += d; plantHarvest += d; } // #270.2: Kolonie → Ernte-Kanal
-          // Ewiger Frühling (GRÜN-FELD): das ewige grüne Feld zahlt je grünem Sieg ∝ #grüne Karten.
-          if (hasEwigerFruehling(skills)) { const d = Math.min(greenCount(deck), C.EWIGER_FRUEHLING_FIELD_CAP) * C.EWIGER_FRUEHLING_DIRECT * plantCommit; plantDirect += d; plantRoot += d; } // #270.2: Grün-Feld → Wurzel-Kanal
+          // Ewiger Frühling (GRÜN-FELD): das ewige grüne Feld zahlt je grünem Sieg ∝ #grüne Karten; bei VOLL grünem Feld doppelt.
+          if (hasEwigerFruehling(skills)) {
+            const gc = greenCount(deck);
+            const fullMult = (deck.length > 0 && gc === deck.length) ? C.EWIGER_FRUEHLING_FULLGREEN_MULT : 1;
+            const d = Math.min(gc, C.EWIGER_FRUEHLING_FIELD_CAP) * C.EWIGER_FRUEHLING_DIRECT * fullMult * plantCommit; plantDirect += d; plantRoot += d; // #270.2: Grün-Feld → Wurzel-Kanal
+          }
         }
       }
     }

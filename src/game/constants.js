@@ -488,12 +488,17 @@ export const EWIGER_FRUEHLING_FIELD = envNum("SIM_EWIGER_FRUEHLING_FIELD", 0.25)
 // → generisches Pflanze (die eben bestätigte Balance) unberührt. Analog Eis-Überlauf-Dividende (Permafrost/Gletscher/…).
 export const WELTENBAUM_DIRECT       = envNum("SIM_WELTENBAUM_DIRECT", 6.5);  // Weltenbaum (BREITE): DIREKT je grünem Sieg × Σ Überlauf-Wachstum (der ganze alte Wald) [Legendär-Angleich: 2,6→6,5]
 export const WELTENBAUM_OVERFLOW_CAP = envNum("SIM_WELTENBAUM_OVERFLOW_CAP", 600); // … gedeckelte Waldgröße
-export const MUTTERBAUM_DIRECT       = envNum("SIM_MUTTERBAUM_DIRECT", 55);   // Mutterbaum (TIEFE): DIREKT je grünem Sieg × Überlauf-Wachstum des TIEFSTEN Baums (Konzentration) [reshape 1,36×]
+export const MUTTERBAUM_DIRECT       = envNum("SIM_MUTTERBAUM_DIRECT", 68);   // Mutterbaum (TIEFE): DIREKT je grünem Sieg × Überlauf-Wachstum des TIEFSTEN Baums (Konzentration) [sim-gelockt ins Band: 55→68 nach Floor-Buff]
 export const MUTTERBAUM_OVERFLOW_CAP = envNum("SIM_MUTTERBAUM_OVERFLOW_CAP", 60); // … gedeckelte Tiefe des einen Mutterbaums
-export const DORNENKOENIG_DIRECT     = envNum("SIM_DORNENKOENIG_DIRECT", 260);  // Dornenkönig (KOLONIE): DIREKT je grünem Sieg × #kolonisierte Gegnerkarten [Legendär-Angleich: 85→260]
-export const DORNENKOENIG_COLON_CAP  = envNum("SIM_DORNENKOENIG_COLON_CAP", 40); // … gedeckelte Kolonie-Breite (ganzes Gegnerdeck)
-export const EWIGER_FRUEHLING_DIRECT = envNum("SIM_EWIGER_FRUEHLING_DIRECT", 150); // Ewiger Frühling (GRÜN-FELD): DIREKT je grünem Sieg × #grüne Karten (das ewige Feld) [Legendär-Angleich: 54→150 — schlimmster Trap-Pick (−4 %) heben]
-export const EWIGER_FRUEHLING_FIELD_CAP = envNum("SIM_EWIGER_FRUEHLING_FIELD_CAP", 40); // … gedeckelte Feldgröße [Legendär-Angleich: 30→40]
+// Baumreihe (Dornenkönig umgewidmet — 4-Lane-Redesign): voll ausgewachsene grüne Karten (Wert PLANT_VALUE_CAP) bilden eine
+// POSITIONSFREIE Wiederholung — je 11er auf dem Brett ein Faktor auf die Stiche DIESER Karten (Position egal → Doppelnutzung
+// mit lokalen Formationen). Gedeckelt, weil positionsfrei + doppelt wirkend stark ist (anders als die ungedeckelte Normal-Wiederholung).
+export const BAUMREIHE_BASE = envNum("SIM_BAUMREIHE_BASE", 1.3);  // Faktor ab 2 voll ausgewachsenen grünen Karten [sim-gelockt ins +45 %-Band]
+export const BAUMREIHE_STEP = envNum("SIM_BAUMREIHE_STEP", 0.15); // + je weiterer voll ausgewachsener grüner Karte
+export const BAUMREIHE_CAP  = envNum("SIM_BAUMREIHE_CAP", 2.0);   // Deckel des Baumreihen-Faktors
+export const EWIGER_FRUEHLING_DIRECT = envNum("SIM_EWIGER_FRUEHLING_DIRECT", 80); // Ewiger Frühling (GRÜN-FELD): DIREKT je grünem Sieg × #grüne Karten (das ewige Feld) [Rework sim-gelockt: 150→80 wegen Full-Green-Double]
+export const EWIGER_FRUEHLING_FIELD_CAP = envNum("SIM_EWIGER_FRUEHLING_FIELD_CAP", 40); // … gedeckelte Feldgröße
+export const EWIGER_FRUEHLING_FULLGREEN_MULT = envNum("SIM_EWIGER_FRUEHLING_FULLGREEN_MULT", 1.5); // Rework: bei VOLL grünem Feld zählt der Feld-Bonus ×1,5 (der Schwellen-Rider war bei grünem Feld tot) [sim-gelockt]
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

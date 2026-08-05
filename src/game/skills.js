@@ -244,10 +244,10 @@ export const SKILL_DEFS = {
     desc: `Am Ende jedes Durchlaufs wächst der ganze Wald (+1 Wachstum je ${C.WELTENBAUM_PER_GREEN} grüne Karten im Feld). Zusätzlich gibt jeder grüne Sieg +${de(C.WELTENBAUM_DIRECT)} Score je Überlauf-Wachstum (Wachstum über dem Wert-Deckel), summiert über alle grünen Karten (bis ${C.WELTENBAUM_OVERFLOW_CAP}).`, weltenbaum: true },
   SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Mutterbaum", archetype: "plant", legendary: true, keywords: ["growth", "score"],
     desc: `Ist deine höchstgewachsene Karte am Zug, verdoppelt sie ihren Wurzel-Score. Zusätzlich gibt jeder grüne Sieg +${C.MUTTERBAUM_DIRECT} Score je Überlauf-Wachstum deines tiefsten Baums (bis ${C.MUTTERBAUM_OVERFLOW_CAP}).`, mutterbaum: true },
-  SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Dornenkönig", archetype: "plant", legendary: true, keywords: ["colonize"],
-    desc: `Das ganze Gegnerdeck startet kolonisiert; jede Ernte verbraucht ihren Marker. Zusätzlich gibt jeder grüne Sieg +${C.DORNENKOENIG_DIRECT} Score je kolonisierte Gegnerkarte (bis ${C.DORNENKOENIG_COLON_CAP}).`, dornenkoenig: true },
-  SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "formation", "overgrowth", "eternalSpring"],
-    desc: `Farbblock zählt Grün schon ab ${C.EWIGER_FRUEHLING_FARBBLOCK} Karten, Überwucherung schon ab ${pct(C.EWIGER_FRUEHLING_FIELD)} % Feld. Zusätzlich gibt jeder grüne Sieg +${C.EWIGER_FRUEHLING_DIRECT} Score je grüner Karte im Feld (bis ${C.EWIGER_FRUEHLING_FIELD_CAP}).`, ewigerFruehling: true },
+  SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Baumreihe", archetype: "plant", legendary: true, keywords: ["growth", "formation"],
+    desc: `Voll ausgewachsene grüne Karten (Wert ${C.PLANT_VALUE_CAP}) bilden eine positionsfreie Wiederholung: je solcher Karte auf dem Brett steigt der Faktor auf ihre Stiche (ab 2 ×${de(C.BAUMREIHE_BASE)}, je weitere +${de(C.BAUMREIHE_STEP)}, bis ×${de(C.BAUMREIHE_CAP)}) — egal wo sie liegen, jede darf zugleich lokal eine andere Formation füttern.`, baumreihe: true },
+  SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "overgrowth", "eternalSpring"],
+    desc: `Jeder grüne Sieg gibt +${C.EWIGER_FRUEHLING_DIRECT} Score je grüner Karte im Feld (bis ${C.EWIGER_FRUEHLING_FIELD_CAP}). Bei voll grünem Feld zählt jede grüne Karte ${de(C.EWIGER_FRUEHLING_FULLGREEN_MULT)}× (effektiv bis ${C.EWIGER_FRUEHLING_FIELD_CAP * C.EWIGER_FRUEHLING_FULLGREEN_MULT}).`, ewigerFruehling: true },
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
@@ -515,7 +515,7 @@ export const hasRhizom        = (skills) => plantFlag(skills, "rhizom");
 export const hasErntedank     = (skills) => plantFlag(skills, "erntedank");
 export const hasWeltenbaum    = (skills) => plantFlag(skills, "weltenbaum");
 export const hasMutterbaum    = (skills) => plantFlag(skills, "mutterbaum");
-export const hasDornenkoenig  = (skills) => plantFlag(skills, "dornenkoenig");
+export const hasBaumreihe     = (skills) => plantFlag(skills, "baumreihe");
 export const hasEwigerFruehling = (skills) => plantFlag(skills, "ewigerFruehling");
 
 // Roh-Crit-Beitrag des Blitz-Archetyps (Abschnitt 2a): Aktivierungs-Sockel + Σ Skill-critChance
