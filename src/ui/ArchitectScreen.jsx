@@ -73,7 +73,7 @@ function MiniShape({ form, color, rotIdx = 0 }) {
   );
 }
 
-export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onDemolish, onRecolor, onReroll, onDone }) {
+export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onMoveMulti, onDemolish, onRecolor, onReroll, onDone }) {
   useEscape(onDone);
   const architect = state.architect || { buildings: [], offers: [] };
   const committed = architect.buildings || [];
@@ -323,6 +323,33 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     if (phase === "choose") { const cb = committedAt(pos); if (cb) setInspectId((cur) => (cur === cb.id ? null : cb.id)); return; } // Brett-Tap → Beschreibung leuchtet (Liste ↔ Brett)
   };
 
+  // Drop über andere Gebäude: die getroffenen ausweichen lassen, wenn Platz ist (sauberer Swap in den alten Fußabdruck,
+  // wenn die Form passt; sonst nächstgelegener freier Platz). Board rechnet mit b bereits an fp → die Weichenden meiden fp.
+  // Gibt die Ausweich-Moves der GETROFFENEN zurück (b selbst nicht), oder null wenn kein Platz für alle da ist.
+  const relocationsForDrop = (b, fp, others) => {
+    const fpSet = new Set(fp);
+    const hit = others.filter((o) => o.footprint.some((p) => fpSet.has(p)));
+    if (!hit.length) return null;
+    const staying = others.filter((o) => !hit.includes(o));
+    const cen = (arr) => { let r = 0, c = 0; for (const p of arr) { r += rowOf(p); c += colOf(p); } return [r / arr.length, c / arr.length]; };
+    let board = [...staying, { ...b, footprint: fp }];
+    const moves = [];
+    for (const h of hit) {
+      const fam = familyDef(h.familyId); if (!fam) return null;
+      let spot;
+      if (hit.length === 1 && isValidFootprint(fam.form, b.footprint, board)) {
+        spot = [...b.footprint].sort((x, y) => x - y);                       // sauberer Swap in b's alten Platz
+      } else {
+        const fits = enumeratePlacements(fam.form, board);
+        if (!fits.length) return null;                                       // kein freier Platz → gesamter Swap scheitert
+        const [hr, hc] = cen(h.footprint);
+        spot = fits.reduce((best, f) => { const [fr, fc] = cen(f); const d = (fr - hr) ** 2 + (fc - hc) ** 2; return d < best.d ? { f, d } : best; }, { f: null, d: Infinity }).f;
+      }
+      moves.push({ buildingId: h.id, footprint: spot });
+      board = [...board, { ...h, footprint: spot }];
+    }
+    return moves;
+  };
   // ---- Drag & Drop (Vorschau-Gebäude in „place", bestehende in „move"); Griff überall am Fußabdruck ----
   const startDrag = (pos, b, e) => {
     const form = familyDef(b.familyId).form;
@@ -355,7 +382,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
       const key = fp ? fp.join(",") : "∅";
       if (key === lastKey) return; // Snap-Ziel unverändert → dragPrev (+ dragDelta/computeFormations) NICHT neu setzen
       lastKey = key;
-      setDragPrev(fp ? { footprint: fp, valid: !!isValidFootprint(form, fp, others), id: b.id } : { footprint: [], valid: false, id: b.id });
+      // valid = freier Platz ODER die getroffenen Gebäude können ausweichen (Swap/Verschieben) → grüne Vorschau statt rot.
+      const okDirect = !!fp && isValidFootprint(form, fp, others);
+      const okSwap = !!fp && !okDirect && !!relocationsForDrop(b, fp, others);
+      setDragPrev(fp ? { footprint: fp, valid: okDirect || okSwap, swap: okSwap, id: b.id } : { footprint: [], valid: false, id: b.id });
     };
     const move = (ev) => {
       const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0;
@@ -371,7 +401,21 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
       if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; } // ausstehenden Snap-Frame verwerfen
       const wasActive = g.active; dragRef.current = null;
       dragOffsetRef.current = { dx: 0, dy: 0 }; // Ghost loslassen → das Gebäude snappt auf die (gesnappte) Zielzelle
-      if (wasActive) { const target = cellPos(ev.clientX, ev.clientY), fp = target == null ? null : fpFor(target); if (fp && isValidFootprint(form, fp, others)) commit(fp); setDragPrev(null); }
+      if (wasActive) {
+        const target = cellPos(ev.clientX, ev.clientY), fp = target == null ? null : fpFor(target);
+        if (fp && isValidFootprint(form, fp, others)) {
+          commit(fp);                                                        // freier Platz → normal ablegen
+        } else if (fp) {
+          // Über ein anderes Gebäude gedroppt: getroffene Gebäude ausweichen lassen, wenn Platz ist (Verschieben/Swap).
+          const relo = relocationsForDrop(b, fp, others);
+          if (relo) {
+            const fpS = [...fp].sort((x, y) => x - y);
+            if (b.id === PENDING_ID) { onMoveMulti?.(relo); commit(fpS); }    // Vorschau-Gebäude: nur Committete atomar schieben, Pending separat setzen
+            else onMoveMulti?.([{ buildingId: b.id, footprint: fpS }, ...relo]); // committetes Gebäude: alles in EINEM atomaren Move
+          }
+        }
+        setDragPrev(null);
+      }
       else tapCell(pos);
     };
     window.addEventListener("pointermove", move, { passive: false }); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);

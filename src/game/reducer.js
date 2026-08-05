@@ -259,6 +259,26 @@ export function reducer(state, action) {
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, footprint } : x));
       return { ...state, architect: { ...a, buildings, moved: true } }; // moved-Flag bleibt (Telemetrie), deckelt aber nicht mehr
     }
+    case "ARCHITECT_MOVE_MULTI": { // atomarer Mehrfach-Move (Drop über ein Gebäude → getroffene weichen aus / Swap). Prüft die END-Lage.
+      if (state.phase !== "architect") return state;
+      const a = state.architect;
+      const moves = action.moves || []; // [{ buildingId, footprint }]
+      if (!moves.length) return state;
+      const newFp = {};
+      for (const m of moves) {
+        const b = a.buildings.find((x) => x.id === m.buildingId);
+        if (!b || !archFamily(b.familyId)) return state;
+        newFp[m.buildingId] = [...m.footprint].sort((x, y) => x - y);
+      }
+      const finalBuildings = a.buildings.map((x) => (newFp[x.id] ? { ...x, footprint: newFp[x.id] } : x));
+      // Jede verschobene Karte: gültige Formlage UND kein Overlap mit den übrigen END-Lagen (deckt Overlap/Gitter/Form ab).
+      for (const m of moves) {
+        const b = a.buildings.find((x) => x.id === m.buildingId), fam = archFamily(b.familyId);
+        const others = finalBuildings.filter((x) => x.id !== b.id);
+        if (!isValidFootprint(fam.form, newFp[b.id], others)) return state;
+      }
+      return { ...state, architect: { ...a, buildings: finalBuildings, moved: true } };
+    }
     case "ARCHITECT_RECOLOR": { // #261: Buff-Farbe eines colorLocked-Gebäudes anpassen — freie Anpassung bis zum Bestätigen (wie MOVE, kein actedMain)
       if (state.phase !== "architect") return state;
       const a = state.architect;

@@ -436,6 +436,36 @@ describe("ARCHITECT_RECOLOR (#261)", () => {
   });
 });
 
+// Drop über ein Gebäude → getroffene weichen aus/Swap: atomarer Mehrfach-Move, prüft die END-Lage.
+describe("ARCHITECT_MOVE_MULTI (Drop-Swap)", () => {
+  const twoState = () => ({
+    phase: "architect", architectEnabled: true,
+    architect: { buildings: [
+      { id: 1, familyId: "A_MEILENSTEIN", tier: 1, footprint: [0, 1, 5, 6], colorChoice: null },
+      { id: 2, familyId: "A_MEILENSTEIN", tier: 1, footprint: [2, 3, 7, 8], colorChoice: null },
+    ], nextId: 3, offers: [], winCounters: {}, maxCover: 40 },
+  });
+  it("atomarer Swap zweier Gebäude (gültige End-Lage) → beide getauscht", () => {
+    const s = reducer(twoState(), { type: "ARCHITECT_MOVE_MULTI", moves: [
+      { buildingId: 1, footprint: [2, 3, 7, 8] },
+      { buildingId: 2, footprint: [0, 1, 5, 6] },
+    ] });
+    expect(s.architect.buildings.find((b) => b.id === 1).footprint).toEqual([2, 3, 7, 8]);
+    expect(s.architect.buildings.find((b) => b.id === 2).footprint).toEqual([0, 1, 5, 6]);
+  });
+  it("überlappende End-Lage → No-op (State unverändert)", () => {
+    const st = twoState();
+    expect(reducer(st, { type: "ARCHITECT_MOVE_MULTI", moves: [
+      { buildingId: 1, footprint: [2, 3, 7, 8] },
+      { buildingId: 2, footprint: [2, 3, 7, 8] },
+    ] })).toBe(st);
+  });
+  it("außerhalb der architect-Phase → No-op", () => {
+    const st = { ...twoState(), phase: "play" };
+    expect(reducer(st, { type: "ARCHITECT_MOVE_MULTI", moves: [{ buildingId: 1, footprint: [2, 3, 7, 8] }] })).toBe(st);
+  });
+});
+
 // #263: REROLL_ARCHITECT — Architekt-Bauplan-Angebot neu würfeln über den eigenen Gebäude-Reroll-Pool.
 describe("REROLL_ARCHITECT (#263)", () => {
   const base = (over = {}) => ({
