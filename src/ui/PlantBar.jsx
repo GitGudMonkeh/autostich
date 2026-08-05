@@ -10,8 +10,9 @@
 // Rein informativ, keine Engine-Kopplung (spiegelt state.deck/growth/colonized).
 import { IndicatorPanel, YieldMeter } from "./indicators/panelKit.jsx";
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
-import { PLANT_VALUE_CAP, PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD, TRIM_STEP, TRIM_CAP } from "../game/constants.js";
-import { hasUeberwucherung, hasEwigerFruehling, plantSkillCount } from "../game/skills.js";
+import { PLANT_VALUE_CAP, PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD, TRIM_STEP, TRIM_CAP,
+         WURZELSCHLAG_PER_GROWTH, SKILL_SLOTS, MUTTERBAUM_DIRECT, MUTTERBAUM_OVERFLOW_CAP, WELTENBAUM_DIRECT, WELTENBAUM_OVERFLOW_CAP } from "../game/constants.js";
+import { hasUeberwucherung, hasEwigerFruehling, hasMutterbaum, hasWeltenbaum, plantSkillCount } from "../game/skills.js";
 
 const SEED = "#9aa4a0"; // grauer Setzling (wachsend, noch nicht reif)
 const grp = (n) => Math.round(n).toLocaleString("de-DE");
@@ -61,6 +62,22 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
   // wenn die Mechanik (Überwucherung) auch gehalten wird.
   const overgrown = hasUeb && pct >= (hasEfr ? efrPct : uebPct) - 0.001;
   const colonizedN = Object.keys(colonized || {}).length;
+  // Legendär-Live-Anzeigen (Mutterbaum/Weltenbaum): Überlauf-Wachstum = Wachstum ÜBER dem, was Wurzelschlag zum Wert-Deckel
+  // braucht (= „alter Wald"). Höchster/tiefster Baum + Wald-Summe, jeweils mit dem Score je grünem Sieg — wie die Engine.
+  const hasMb = hasMutterbaum(skills), hasWb = hasWeltenbaum(skills);
+  let sumOv = 0, maxOv = 0, deepTree = null, tallTree = null;
+  if (hasMb || hasWb) {
+    for (const c of deck) if (c.green) {
+      if (!tallTree || c.value > tallTree.value || (c.value === tallTree.value && (growth[c.id] || 0) > (growth[tallTree.id] || 0))) tallTree = c;
+      const need = Math.max(0, PLANT_VALUE_CAP - c.value) * WURZELSCHLAG_PER_GROWTH;
+      const ov = (growth[c.id] || 0) - need;
+      if (ov > 0) { sumOv += ov; if (ov > maxOv) { maxOv = ov; deepTree = c; } }
+    }
+  }
+  const plantCommit = Math.min(1, SKILL_SLOTS > 0 ? plantSkillCount(skills) / SKILL_SLOTS : 1);
+  const mbCard = deepTree || tallTree;
+  const mbScore = Math.round(Math.min(maxOv, MUTTERBAUM_OVERFLOW_CAP) * MUTTERBAUM_DIRECT * plantCommit);
+  const wbScore = Math.round(Math.min(sumOv, WELTENBAUM_OVERFLOW_CAP) * WELTENBAUM_DIRECT * plantCommit);
 
   const Mark = ({ atPct, label }) => (
     <div className="absolute inset-y-0" style={{ left: `${atPct}%`, width: 2, background: "#ffffff66" }} title={label} />
@@ -82,6 +99,18 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
         {trimCount > 0 && (
           <div className="text-[10px] opacity-70 mt-1" title="Trimmen (#288): jeder ersetzte Wachstums-Skill (Aussaat/Flugsamen/Setzlingsbeet/Zäher Halm) hebt dauerhaft den Wurzel- & Blüten-Score.">
             ✂ Getrimmt <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{trimCount}×</b> <span className="opacity-70">· Wurzel/Blüte</span> <b className="tabular-nums" style={{ color: BLOOM }}>×{trimMult.toFixed(2).replace(".", ",")}</b>
+          </div>
+        )}
+        {/* Mutterbaum (Legendär): der höchste Baum + was er je grünem Sieg an Direkt-Score zahlt (Überlauf-Wachstum × DIRECT). */}
+        {hasMb && mbCard && (
+          <div className="text-[10px] opacity-70 mt-1" title="Mutterbaum: der tiefste Baum (Überlauf-Wachstum über dem Wert-Deckel) zahlt je grünem Sieg — und verdoppelt seinen Wurzel-Score.">
+            🌳 Höchster Baum <b style={{ color: PLANT_FULL }}>Wert {mbCard.value}</b> <span className="opacity-70">· Überlauf</span> <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{fmtG(maxOv)}</b> → <b className="tabular-nums" style={{ color: PLANT_RIPE }}>+{grp(mbScore)}</b> <span className="opacity-70">Score/Sieg</span>
+          </div>
+        )}
+        {/* Weltenbaum (Legendär): das gesamte Überlauf-Wachstum des Waldes + der Direkt-Score je grünem Sieg. */}
+        {hasWb && (
+          <div className="text-[10px] opacity-70 mt-1" title="Weltenbaum: die Summe des Überlauf-Wachstums über alle grünen Karten zahlt je grünem Sieg (der ganze alte Wald).">
+            🌲 Wald <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{fmtG(sumOv)}</b> <span className="opacity-70">Überlauf-Wachstum</span> → <b className="tabular-nums" style={{ color: PLANT_RIPE }}>+{grp(wbScore)}</b> <span className="opacity-70">Score/Sieg</span>
           </div>
         )}
       </div>
