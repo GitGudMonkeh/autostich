@@ -211,13 +211,13 @@ export const SKILL_DEFS = {
     desc: `Verstärker: Je ${C.JAHRESRINGE_PER_GROWTH} Wachstum einer Karte +${C.JAHRESRINGE_SCORE} Wurzel-Score bei jedem Sieg — nur für diese Karte.`, enabler: "SK_PLANT_02", jahresringe: true },
   // Linie 2 — Aussaat (Breite: Wachstum verbreiten)
   SK_PLANT_05: { id: "SK_PLANT_05", name: "Aussaat", archetype: "plant", keywords: ["growth"],
-    desc: `Gewinnt eine grüne Karte, sät sie beide Nachbarn: +${C.AUSSAAT_GROWTH} Wachstum je Seite.`, aussaat: true, trimGrowth: true },
+    desc: `Gewinnt eine grüne Karte, sät sie beide Nachbarn: +${C.AUSSAAT_GROWTH} Wachstum je Seite. Trimmen: beim Ersetzen dauerhaft +${pct(C.TRIM_STEP)} % Wurzel-/Blüten-Score (bis +${pct(C.TRIM_CAP)} %).`, aussaat: true, trimGrowth: true },
   SK_PLANT_06: { id: "SK_PLANT_06", name: "Flugsamen", archetype: "plant", keywords: ["growth"],
-    desc: "Verstärker: Aussaat überspringt schon grüne Karten und sät die nächste noch-graue dahinter.", enabler: "SK_PLANT_05", flugsamen: true, trimGrowth: true },
+    desc: `Verstärker: Aussaat überspringt schon grüne Karten und sät die nächste noch-graue dahinter. Trimmen: beim Ersetzen dauerhaft +${pct(C.TRIM_STEP)} % Wurzel-/Blüten-Score (bis +${pct(C.TRIM_CAP)} %).`, enabler: "SK_PLANT_05", flugsamen: true, trimGrowth: true },
   SK_PLANT_07: { id: "SK_PLANT_07", name: "Setzlingsbeet", archetype: "plant", keywords: ["growth"],
-    desc: `Die niedrigste Karte je Segment startet den Lauf mit +${C.SETZLINGSBEET_GROWTH} Wachstum Vorsprung.`, setzlingsbeet: true, trimGrowth: true },
+    desc: `Die niedrigste Karte je Segment startet den Lauf mit +${C.SETZLINGSBEET_GROWTH} Wachstum Vorsprung. Trimmen: beim Ersetzen dauerhaft +${pct(C.TRIM_STEP)} % Wurzel-/Blüten-Score (bis +${pct(C.TRIM_CAP)} %).`, setzlingsbeet: true, trimGrowth: true },
   SK_PLANT_08: { id: "SK_PLANT_08", name: "Zäher Halm", archetype: "plant", keywords: ["growth"],
-    desc: "Unreife (graue) Karten wachsen auch bei Niederlage +1 — bis sie grün sind.", zaeherHalm: true, trimGrowth: true },
+    desc: `Unreife (graue) Karten wachsen auch bei Niederlage +1 — bis sie grün sind. Trimmen: beim Ersetzen dauerhaft +${pct(C.TRIM_STEP)} % Wurzel-/Blüten-Score (bis +${pct(C.TRIM_CAP)} %).`, zaeherHalm: true, trimGrowth: true },
   // Linie 3 — Ranken/Blüte (Grün verbreiten)
   SK_PLANT_09: { id: "SK_PLANT_09", name: "Ranken", archetype: "plant", keywords: ["green"],
     desc: "Gewinnt eine grüne Karte, färbt sie einen noch-grauen Nachbarn sofort grün.", ranken: true },
