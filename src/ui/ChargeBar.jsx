@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { chargeConsumerOf, ionCritChance } from "../game/skills.js";
-import { ION_MAX_STACKS } from "../game/constants.js";
+import { ION_MAX_STACKS, ION_SAT_BREADTH_FRAC, ION_SAT_DEPTH_FRAC, ION_SATURATION_VALUE } from "../game/constants.js";
 import { IndicatorPanel } from "./indicators/panelKit.jsx";
 import { LIGHTNING, CASCADE, CASCADE_BRIGHT } from "./indicators/vocab.js";
 
@@ -53,6 +53,29 @@ function StreakChain({ streak }) {
 }
 
 const grp = (n) => Math.round(n).toLocaleString("de-DE");
+const mlt = (x) => x.toFixed(2).replace(".", ",");
+
+// Sturm-Sättigung (v0.5): eine Stufe (Breite/Tiefe) mit Mini-Balken + „✓ Payoff aktiv", sobald die Schwelle erreicht ist.
+function SatRow({ label, cur, max, on, payoff }) {
+  const pct = max > 0 ? Math.min(100, (cur / max) * 100) : 0;
+  return (
+    <div>
+      <div className="flex justify-between text-[11px] mb-0.5">
+        <span className="opacity-55">{label} <span className="tabular-nums opacity-80">{Math.min(cur, max)}/{max}</span></span>
+        {on
+          ? <span className="font-semibold" style={{ color: CASCADE_BRIGHT }}>✓ {payoff}</span>
+          : <span className="opacity-35">{payoff}</span>}
+      </div>
+      <div className="w-full rounded-full overflow-hidden" style={{ background: "#26262e", height: 5 }}>
+        <div className="h-full rounded-full transition-all" style={{
+          width: `${pct}%`,
+          background: on ? CASCADE_BRIGHT : LIGHTNING,
+          boxShadow: on ? `0 0 6px ${CASCADE_BRIGHT}` : undefined,
+        }} />
+      </div>
+    </div>
+  );
+}
 
 export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 0, ionTotal = 0, yield: yieldScore = 0, deck = [] }) {
   if (!lightning || !lightning.active) return null;
@@ -63,6 +86,17 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
   const ionSum = deck.reduce((t, c) => t + (c.ionStacks || 0), 0);
   const ionFull = deck.reduce((t, c) => t + ((c.ionStacks || 0) >= ION_MAX_STACKS ? 1 : 0), 0);
   const ionCritPp = Math.round(ionCritChance(deck) * 100);
+  // Sturm-Sättigung (v0.5): Breite = Karten mit ≥1 Stapel gegen Schwelle · Tiefe = volle (5-Stapel-)Karten gegen Schwelle.
+  const breadthThresh = Math.ceil(deck.length * ION_SAT_BREADTH_FRAC);
+  const depthThresh = Math.ceil(deck.length * ION_SAT_DEPTH_FRAC);
+  const breadthOn = deck.length > 0 && ionN >= breadthThresh;
+  const depthOn = deck.length > 0 && ionFull >= depthThresh;
+  // Crit-Momentum + Motor-Zähler (v0.5): Gewitterfront (Crit-Chance-Momentum), Entladung (Crit-Mult-Momentum),
+  // Entladungen/Runde (Kern-Metrik) und abgefangene Serienbrüche.
+  const stormPp = Math.round((lightning.stormCritBonus || 0) * 100);
+  const entMult = lightning.entladungMult || 0;
+  const consumeCount = lightning.consumeCount || 0;
+  const shieldCount = lightning.serienschutzCount || 0;
   const full = charge >= maxCharge;
   const consumer = CONSUMER_LABEL[chargeConsumerOf(skills)]; // aktiver Konsument oder undefined
   const streak = winStreak || 0;
@@ -101,6 +135,14 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
             title="Feldweiter Crit-Beitrag der Ionisierung (#271): jeder Stapel im Deck hebt die Crit-Chance jeder Siegkarte (Σ gedeckelt).">+{ionCritPp} pp Crit</span>}
         </div>
       )}
+      {/* Sturm-Sättigung (v0.5): die zwei Stufen + ihre Payoffs live — das Herzstück des Reworks sichtbar. */}
+      {ionN > 0 && (
+        <div className="grid gap-1.5">
+          <div className="text-xs opacity-60">🌐 Sturm-Sättigung</div>
+          <SatRow label="Breite" cur={ionN} max={breadthThresh} on={breadthOn} payoff={`+${ION_SATURATION_VALUE} Wert / Karte`} />
+          <SatRow label="Tiefe" cur={ionFull} max={depthThresh} on={depthOn} payoff="Überschuss → Crit-Multi" />
+        </div>
+      )}
       {/* Ladung — Segment-Maximum (Cyan), glüht bei VOLL. */}
       <div>
         <div className="flex justify-between text-xs mb-1.5">
@@ -121,8 +163,26 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
         </div>
       </div>
 
+      {/* Entlade-Motor (v0.5): Entladungen/Runde (Kern-Metrik) + Crit-Momentum (Gewitterfront/Entladung). */}
+      {(consumeCount > 0 || stormPp > 0 || entMult > 0) && (
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[11px]">
+          <span className="opacity-60" title="Volle Ladungsverbräuche diesen Lauf — der Kern-Rhythmus des Sturms.">⚡ Entladungen <b className="tabular-nums" style={{ color: LIGHTNING }}>{consumeCount}</b></span>
+          {stormPp > 0 && <span className="opacity-60" title="Gewitterfront: Crit-Chance-Momentum je Entladung (uncapped, Überschlag ist das Ventil).">Gewitterfront <b style={{ color: CASCADE_BRIGHT }}>+{stormPp} pp</b></span>}
+          {entMult > 0 && <span className="opacity-60" title="Entladung: dauerhaftes Crit-Multiplikator-Momentum je Entladung.">Entladung <b style={{ color: CASCADE_BRIGHT }}>+{mlt(entMult)}×</b></span>}
+        </div>
+      )}
+
       {/* Serienkette (SERIE): reißt bei Niederlage, zählt bei 0 neu; kein Verfalls-Balken. */}
       <StreakChain streak={streak} />
+      {/* Serienschutz (v0.5): sichtbar, wenn ein Verlust die Serie gehalten hat (½ Ladung). */}
+      {shieldCount > 0 && (
+        <div className="flex">
+          <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold" title="Serienschutz: eine Niederlage mit genug Ladung hielt die Serie (½ Ladung verbraucht)."
+            style={{ background: `${CASCADE}22`, color: CASCADE_BRIGHT, border: `1px solid ${CASCADE}66` }}>
+            🛡 {shieldCount}× Serie gehalten
+          </span>
+        </div>
+      )}
 
       {/* Blitz-Intensität — Ladung + Serie + Crit-Chance auf einen Blick; ⚡ Overcharge ab 100 % Crit. */}
       <div>

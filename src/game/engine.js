@@ -909,6 +909,7 @@ export function resolveTrick(state, rng) {
             // Ladungsboden: Reststrom (3), sonst 0 (Endloser Sturm wurde im Rework durch Doppelentladung ersetzt).
             const floor = chargeFloorFor(skills);
             lightning = consumeCharge(lightning, floor);
+            lightning = { ...lightning, consumeCount: (lightning.consumeCount || 0) + 1 }; // v0.5-UI: Entladungen/Runde-Zähler
             // #165 Blitzfänger: die Fang-Ladungen entstehen NACH dem Verbrauch (sonst würde consumeCharge sie wieder auf den Boden setzen).
             if (blitzCatches > 0) lightning = addCharge(lightning, blitzCatches);
             // Entladung (v0.5): +Crit-Mult-Momentum je Verbrauch, dauerhaft, weicher Cap (kein Ventil für Multi).
@@ -1029,7 +1030,7 @@ export function resolveTrick(state, rng) {
     let serienschutzHeld = false;
     if (!anchorNoReset && hasSerienschutz(skills) && lightning && lightning.active) {
       const cost = Math.ceil(lightning.maxCharge * C.SERIENSCHUTZ_COST_FRAC);
-      if (lightning.charge >= cost) { lightning = { ...lightning, charge: lightning.charge - cost }; serienschutzHeld = true; }
+      if (lightning.charge >= cost) { lightning = { ...lightning, charge: lightning.charge - cost, serienschutzCount: (lightning.serienschutzCount || 0) + 1 }; serienschutzHeld = true; } // v0.5-UI: Zähler abgefangener Serienbrüche
     }
     const streakNoReset = anchorNoReset || serienschutzHeld;
     winStreak = streakNoReset ? winStreak : 0;

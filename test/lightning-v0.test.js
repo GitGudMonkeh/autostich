@@ -117,6 +117,18 @@ describe("Blitz-Rework v0 — Engine-Integration", () => {
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.deck[0].ionStacks).toBe(C.BLITZSCHLAG_STACKS);
   });
+  it("v0.5-UI: consumeCount zählt volle Verbräuche (Entladungen/Runde)", () => {
+    // Statische Aufladung (+1 Ladung je Nicht-Crit-Sieg) hebt 9→10 → Ionisierung-Konsument feuert → consumeCount +1.
+    const s = resolveTrick(scen(12, 0, { skills: [ION, "SK_LIGHTNING_08"], lightning: light({ charge: 9 }) }), noCrit);
+    expect(s.lightning.consumeCount).toBe(1);
+  });
+  it("v0.5-UI: serienschutzCount zählt gehaltene Serienbrüche; Serie hält, ½ Ladung weg", () => {
+    // Niederlage (0<12) mit Serienschutz + Ladung ≥ ⌈10·0,5⌉=5 → Serie hält, Ladung 6→1, Zähler +1.
+    const s = resolveTrick(scen(0, 12, { skills: ["SK_LIGHTNING_17"], lightning: light({ charge: 6 }), winStreak: 3 }), noCrit);
+    expect(s.lightning.serienschutzCount).toBe(1);
+    expect(s.lightning.charge).toBe(6 - Math.ceil(10 * C.SERIENSCHUTZ_COST_FRAC));
+    expect(s.winStreak).toBe(3); // Serie gehalten (kein Reset auf 0)
+  });
 });
 
 /* Blitz-Legendär-Reshape (2026-07-30) — die Ionisierung FLUTET (blitz-economy.mjs: alle Karten @Deckel 5, ~ganzes Deck ab

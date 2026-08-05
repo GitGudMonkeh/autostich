@@ -310,7 +310,8 @@ export function skillSum(skills, name, ctx) {
 // stauBonus = Spannungsstau-Rampe (Crit-Chance); durchschlagMult = Durchschlag-Dauer-Crit-Mult; dauerstromCritBonus = Dauerstrom-Verbrauchsrampe.
 export function initLightning() {
   return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, stormCritBonus: 0, stormScoreWinsRemaining: 0,
-    entladungMult: 0, stauBonus: 0, durchschlagMult: 0, dauerstromCritBonus: 0 };
+    entladungMult: 0, stauBonus: 0, durchschlagMult: 0, dauerstromCritBonus: 0,
+    consumeCount: 0, serienschutzCount: 0 }; // v0.5-UI: Entladungen/Runde + abgefangene Serienbrüche (Anzeige)
 }
 
 /* ---- Feuer-Archetyp (#93 F1) — Hitze-Substate + reine Helfer (testbar; Engine-Nutzung in resolveTrick) ---- */

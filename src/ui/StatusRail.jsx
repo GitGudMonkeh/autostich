@@ -4,7 +4,7 @@ import { summarizeFormations } from "../game/formations.js";
 import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
 import { hasCritPerk, critMultiplierFor, totalCritChanceRaw } from "../game/perks.js";
 import { hasCritFamily, familyCritMult, allianceGroups } from "../game/families.js";
-import { ionCritChance } from "../game/skills.js";
+import { ionCritChance, lightningCritMult } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
 
@@ -61,6 +61,13 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
   const critPct = Math.round(Math.max(0, critRaw) * 100);
   // #271: der feldweite Ionisierungs-Anteil an der Crit-Chance (im critPct oben enthalten) — separat ausgewiesen.
   const ionCritPct = lightning && lightning.active ? Math.round(ionCritChance(state.deck || []) * 100) : 0;
+  // Crit-Mult VOLLSTÄNDIG (wie die Engine, persistente Terme): Perk-Basis + Familien-Wucht + Blitz-Skills (inkl. Donnergott)
+  // + Durchschlag + Entladung-Momentum (v0.5). Ohne die situativen Terme (Frostkaskade/Überschlag-Graduierung), die nur
+  // im Crit selbst zünden. So sieht man den STAND des Crit-Multiplikators inkl. der neuen Blitz-Motoren.
+  const critMultTotal = critMultiplierFor(perks, { rawCrit: critRaw }) + familyCritMult(familyTiers)
+    + (lightning && lightning.active
+        ? lightningCritMult(state.skills || []) + (lightning.durchschlagMult || 0) + (lightning.entladungMult || 0)
+        : 0);
   // #123/#UI: Formations-Bonus der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
   // Formationsphase → kein Drift). Als SUMME aller Positionen in % (Σ(mult−1)·100) — nicht mehr max/aktuelle Position.
   const { count: formCount } = summarizeFormations(state.formations || []);
@@ -122,7 +129,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
       {showCrit && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
           <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span>{ionCritPct > 0 && <span className="opacity-45" title="Feldweiter Ionisierungs-Anteil (#271): Σ Stapel im Deck × pp, gedeckelt."> · +{ionCritPct} Ion.</span>}</span>
-          <span><span className="opacity-50">Crit </span><span style={{ color: perks.includes("L5") ? "#d4a63a" : "#e879f9" }}>×{fmtMult(critMultiplierFor(perks, { rawCrit: critRaw }) + familyCritMult(familyTiers))}</span>{perks.includes("L5") && <span style={{ color: "#d4a63a" }}> Jackpot</span>}</span>
+          <span><span className="opacity-50">Crit </span><span style={{ color: perks.includes("L5") ? "#d4a63a" : "#e879f9" }}>×{fmtMult(critMultTotal)}</span>{perks.includes("L5") && <span style={{ color: "#d4a63a" }}> Jackpot</span>}</span>
           <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
         </div>
       )}
