@@ -105,9 +105,11 @@ export const FORMATION_START_TRIES = 200;   // max Neumischungen; danach potenti
 // Basis-Siegesserie (#39): jede Serie hebt den Score-Mult leicht. [TUNING]
 export const STREAK_BASE_STEP = envNum("SIM_STREAK_BASE_STEP", 0.02); // +2 % je Serienstufe [TUNING]
 export const STREAK_BASE_CAP  = envNum("SIM_STREAK_BASE_CAP", 1.50);  // … gedeckelt bei +150 % (Cap ab Serie 75, #100) [TUNING]
-// Architekt-Serien-Score (Reihenhaus): der streak-Flat skaliert LINEAR mit der Serie und wird ab der Schwelle verdoppelt —
-// als einzige Serien-Quelle war er UNGEDECKELT, während die Basis-Serie bei Serie 75 kappt. Im Sustained-Streak-Snowball
-// (Pflanze-Paare, Serie 262) trieb er den Flat fünf-/sechsstellig, danach × Formation × Crit → Runaway. [Balance]
+// Architekt-Serien-Score (Reihenhaus): der streak-Flat skaliert LINEAR mit der Serie und wird ab der Schwelle
+// verdoppelt. Wurzelfix gegen den Runaway = KEIN Doppel-Dip: der streakFlat läuft in der Engine am globalen
+// Serien-Mult (streakBaseMult) VORBEI (sonst zählt die Serie zweimal → quadratisch). Dieser Cap ist die zusätzliche
+// Absicherung gegen pathologische Extremserien (Pflanze-Paare, Serie 262) und liegt auf der STREAK_BASE_CAP-Grenze
+// (Serie 75): normale Serienbuilds (Serie ≤ 75) bleiben voll linear/stark, nur der Extremtail wird gekappt. [Balance]
 export const ARCH_STREAK_CAP  = envNum("SIM_ARCH_STREAK_CAP", 75);
 // (#267: STREAK_STAT_CAP / STAT_CRIT_MULT_CAP entfernt — die Stat-Booster (Serien-Stat / Crit-Mult-Stat) sind mit der
 //  Stat-Phase weg. Serie skaliert nur noch über STREAK_BASE (oben) + Perks; Crit-Mult über Basis 1,5 + Präzision/Blitz.)

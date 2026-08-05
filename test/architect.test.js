@@ -206,16 +206,18 @@ describe("Architekt — score-Effekte", () => {
     const pre = precomputeArchitect({ buildings: [B("A_ZOLLHAUS", [0, 1], 2)] }, idOrder, deck);
     expect(architectScore(pre, 0, { isCrit: false, serieStreak: 3, suit: "R" }, {}).flat).toBe(tierNum(ARCHITECT_FAMILIES.A_ZOLLHAUS.base.score, 2));
   });
-  it("streak (Reihenhaus): +N × Serie", () => {
+  it("streak (Reihenhaus): +N × Serie im eigenen streakFlat-Kanal (nicht im flat → kein Doppel-Dip)", () => {
     const pre = precomputeArchitect({ buildings: [B("A_REIHENHAUS", [0, 1, 2, 3], 1)] }, idOrder, deck);
-    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 4, suit: "R" }, {}).flat).toBe(tierNum(ARCHITECT_FAMILIES.A_REIHENHAUS.base.score, 1) * 4);
+    const res = architectScore(pre, 0, { isCrit: false, serieStreak: 4, suit: "R" }, {});
+    expect(res.streakFlat).toBe(tierNum(ARCHITECT_FAMILIES.A_REIHENHAUS.base.score, 1) * 4);
+    expect(res.flat).toBe(0); // Serien-Score läuft NICHT über flat (der bekäme sonst den globalen Serien-Mult obendrauf)
   });
   it("streak (Reihenhaus): Serie ist bei ARCH_STREAK_CAP gedeckelt (kein Runaway)", () => {
-    // Tier 3 → streakDoubleFrom aktiv (×2 ab Serie 4). Über dem Cap darf der Flat nicht weiterwachsen.
+    // Tier 3 → streakDoubleFrom aktiv (×2 ab Serie 4). Über dem Cap darf der streakFlat nicht weiterwachsen.
     const pre = precomputeArchitect({ buildings: [B("A_REIHENHAUS", [0, 1, 2, 3], 3)] }, idOrder, deck);
     const amt = tierNum(ARCHITECT_FAMILIES.A_REIHENHAUS.base.score, 3);
-    const atCap = architectScore(pre, 0, { isCrit: false, serieStreak: ARCH_STREAK_CAP, suit: "R" }, {}).flat;
-    const overCap = architectScore(pre, 0, { isCrit: false, serieStreak: 262, suit: "R" }, {}).flat;
+    const atCap = architectScore(pre, 0, { isCrit: false, serieStreak: ARCH_STREAK_CAP, suit: "R" }, {}).streakFlat;
+    const overCap = architectScore(pre, 0, { isCrit: false, serieStreak: 262, suit: "R" }, {}).streakFlat;
     expect(atCap).toBe(amt * ARCH_STREAK_CAP * 2);
     expect(overCap).toBe(atCap); // Serie 262 zahlt nicht mehr als der Deckel
   });

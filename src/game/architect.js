@@ -568,6 +568,10 @@ export function architectValueBonus(pre, actualPos, pCard, alliance = []) {
 export function architectScore(pre, actualPos, ctx, counters, alliance = []) {
   // #Pool Batch 3: relayFlat (Staffel) fließt IMMER ein, wenn die Zielposition gewinnt — unabhängig vom eigenen Effekt hier.
   let flat = (pre && pre.relayFlat && pre.relayFlat[actualPos]) || 0, mult = pre ? (pre.segFactor[actualPos] || 1) : 1, bump = null;
+  // Serien-Flat (Reihenhaus) läuft über einen EIGENEN Kanal, weil er in der Engine BEWUSST am Serien-Mult vorbeiläuft
+  // (kein Doppel-Dip: die Serie ist schon SEIN Skalierungshebel; der globale streakMult darf ihn nicht ein zweites Mal
+  // multiplizieren, sonst quadratisches Wachstum). Formation/Crit/Perk gelten weiter (in der Engine).
+  let streakFlat = 0;
   const e = pre && pre.score[actualPos];
   if (e) {
     switch (e.kind) {
@@ -575,10 +579,10 @@ export function architectScore(pre, actualPos, ctx, counters, alliance = []) {
       case "flat":     flat += e.amount * (e.critFlatMult && ctx.isCrit ? e.critFlatMult : 1); if (e.mult) mult *= e.mult; break;
       // #Pool Batch 4: Crit-Wette — Jackpot bei Crit, sonst Abzug. Der Boden (nie < 0) sitzt in der Engine (scoreBase-Klemme).
       case "gamble":   flat += ctx.isCrit ? e.crit : -e.penalty; break;
-      // #Pool tierKick: streakDoubleFrom (Reihenhaus III) verdoppelt den Serien-Score ab der Schwelle.
-      // Serie GEDECKELT (ARCH_STREAK_CAP, Serie 75) — analog Basis-/Stat-Serie: sonst treibt der ungedeckelte
-      // Serien-Flat im Sustained-Streak-Snowball (Pflanze-Paare) den Score fünf-/sechsstellig (× Formation × Crit).
-      case "streak": { const s = Math.min(ctx.serieStreak || 0, ARCH_STREAK_CAP); flat += e.amount * s * (e.streakDoubleFrom && s >= e.streakDoubleFrom ? 2 : 1); break; }
+      // #Pool tierKick: streakDoubleFrom (Reihenhaus III) verdoppelt den Serien-Score ab der Schwelle. Der Betrag geht in
+      // den streakFlat-Kanal (kein Doppel-Dip, s. o.). Serie zusätzlich GEDECKELT (ARCH_STREAK_CAP, Serie 75) — analog
+      // Basis-/Stat-Serie — als Absicherung gegen pathologische Extremserien (Pflanze-Paare, Serie 262).
+      case "streak": { const s = Math.min(ctx.serieStreak || 0, ARCH_STREAK_CAP); streakFlat += e.amount * s * (e.streakDoubleFrom && s >= e.streakDoubleFrom ? 2 : 1); break; }
       case "crit":     if (ctx.isCrit) flat += e.amount; break;
       case "color":    if (colorsAllied(ctx.suit, e.colorChoice, alliance)) flat += e.amount; break; // #289: grün (ctx.suit ist bereits „G") + Farballianz
       case "target":   flat += e.amount; break;
@@ -592,7 +596,7 @@ export function architectScore(pre, actualPos, ctx, counters, alliance = []) {
       default: break;
     }
   }
-  return { flat, mult, bump };
+  return { flat, mult, bump, streakFlat };
 }
 
 /* ============================================================
