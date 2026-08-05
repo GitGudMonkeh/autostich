@@ -637,7 +637,7 @@ export function Autostich() {
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
-                ionTotal={state.ionTotal || 0} yield={state.lightYield || 0} />
+                ionTotal={state.ionTotal || 0} yield={state.lightYield || 0} deck={state.deck || []} />
               <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}}
                 ashBurned={state.ashBurned || 0} brandTotal={state.brandTotal || 0}
                 fireBase={state.fireBase || 0} fireWhite={state.fireWhite || 0} />

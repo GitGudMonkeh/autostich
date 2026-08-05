@@ -4,6 +4,7 @@ import { summarizeFormations } from "../game/formations.js";
 import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
 import { hasCritPerk, critMultiplierFor, totalCritChanceRaw } from "../game/perks.js";
 import { hasCritFamily, familyCritMult, allianceGroups } from "../game/families.js";
+import { ionCritChance } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
 
@@ -58,6 +59,8 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
   // Familie D „Überschusskrit"). Nur nach unten bei 0 begrenzen; KEIN Math.min(1, …) mehr (das war nur Anzeige;
   // der echte Wurf bleibt in der Engine bei engine.js:302 geklemmt).
   const critPct = Math.round(Math.max(0, critRaw) * 100);
+  // #271: der feldweite Ionisierungs-Anteil an der Crit-Chance (im critPct oben enthalten) — separat ausgewiesen.
+  const ionCritPct = lightning && lightning.active ? Math.round(ionCritChance(state.deck || []) * 100) : 0;
   // #123/#UI: Formations-Bonus der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
   // Formationsphase → kein Drift). Als SUMME aller Positionen in % (Σ(mult−1)·100) — nicht mehr max/aktuelle Position.
   const { count: formCount } = summarizeFormations(state.formations || []);
@@ -118,7 +121,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
           Crit-/Score-Hinweise folgen mit #166 UI. */}
       {showCrit && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
-          <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span></span>
+          <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span>{ionCritPct > 0 && <span className="opacity-45" title="Feldweiter Ionisierungs-Anteil (#271): Σ Stapel im Deck × pp, gedeckelt."> · +{ionCritPct} Ion.</span>}</span>
           <span><span className="opacity-50">Crit </span><span style={{ color: perks.includes("L5") ? "#d4a63a" : "#e879f9" }}>×{fmtMult(critMultiplierFor(perks, { rawCrit: critRaw }) + familyCritMult(familyTiers))}</span>{perks.includes("L5") && <span style={{ color: "#d4a63a" }}> Jackpot</span>}</span>
           <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
         </div>

@@ -1,5 +1,6 @@
 import { Fragment } from "react";
-import { chargeConsumerOf } from "../game/skills.js";
+import { chargeConsumerOf, ionCritChance } from "../game/skills.js";
+import { ION_MAX_STACKS } from "../game/constants.js";
 import { IndicatorPanel } from "./indicators/panelKit.jsx";
 import { LIGHTNING, CASCADE, CASCADE_BRIGHT } from "./indicators/vocab.js";
 
@@ -53,9 +54,15 @@ function StreakChain({ streak }) {
 
 const grp = (n) => Math.round(n).toLocaleString("de-DE");
 
-export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 0, ionTotal = 0, yield: yieldScore = 0 }) {
+export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 0, ionTotal = 0, yield: yieldScore = 0, deck = [] }) {
   if (!lightning || !lightning.active) return null;
   const { charge, maxCharge } = lightning;
+  // #271-UI: aktuelles ionisiertes FELD (nicht der Lauf-Zähler ionTotal): wie viele Karten gerade ionisiert sind, Σ Stapel,
+  // davon voll (5, für Kurzschluss/Durchschlag) und der feldweite Crit-Beitrag (Σ Stapel × pp, gedeckelt).
+  const ionN = deck.reduce((t, c) => t + ((c.ionStacks || 0) > 0 ? 1 : 0), 0);
+  const ionSum = deck.reduce((t, c) => t + (c.ionStacks || 0), 0);
+  const ionFull = deck.reduce((t, c) => t + ((c.ionStacks || 0) >= ION_MAX_STACKS ? 1 : 0), 0);
+  const ionCritPp = Math.round(ionCritChance(deck) * 100);
   const full = charge >= maxCharge;
   const consumer = CONSUMER_LABEL[chargeConsumerOf(skills)]; // aktiver Konsument oder undefined
   const streak = winStreak || 0;
@@ -79,6 +86,19 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
         <div className="flex items-baseline justify-between text-xs">
           <span className="opacity-60">⚡ Totale Ionisierung{ionTotal > 0 && <span className="font-bold tabular-nums" style={{ color: CASCADE_BRIGHT }}> {grp(ionTotal)}</span>}<span className="opacity-45"> Karten</span></span>
           {yieldScore > 0 && <span className="tabular-nums" style={{ color: LIGHTNING }} title="Roher Blitz-Eigen-Score (Ionisierung/Sturm/Ladungs-Direktscore), den der Multiplikator-Stack weiter verstärkt.">Ertrag ~{grp(yieldScore)}</span>}
+        </div>
+      )}
+      {/* #271: aktuelles ionisiertes Feld — wie viele Karten JETZT ionisiert sind (mit Σ Stapel + davon voll), plus der
+          feldweite Crit-Beitrag. Analog zum Pflanze-Feld-Panel; getrennt vom Lauf-Zähler „Totale Ionisierung" oben. */}
+      {ionN > 0 && (
+        <div className="flex items-baseline justify-between text-xs">
+          <span className="opacity-60">🧲 Ionisiertes Feld
+            <b className="tabular-nums" style={{ color: CASCADE_BRIGHT }}> {ionN}</b><span className="opacity-45"> Karten · </span>
+            <b className="tabular-nums" style={{ color: CASCADE_BRIGHT }}>{ionSum}</b><span className="opacity-45"> Stapel</span>
+            {ionFull > 0 && <span className="opacity-45"> · <b style={{ color: LIGHTNING }}>{ionFull}×</b> voll</span>}
+          </span>
+          {ionCritPp > 0 && <span className="tabular-nums font-bold" style={{ color: LIGHTNING }}
+            title="Feldweiter Crit-Beitrag der Ionisierung (#271): jeder Stapel im Deck hebt die Crit-Chance jeder Siegkarte (Σ gedeckelt).">+{ionCritPp} pp Crit</span>}
         </div>
       )}
       {/* Ladung — Segment-Maximum (Cyan), glüht bei VOLL. */}

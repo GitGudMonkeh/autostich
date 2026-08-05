@@ -195,7 +195,7 @@ export const ION_SCORE_PER_STACK  = envNum("SIM_ION_SCORE_PER_STACK", 12); // +S
 // JEDER Siegkarte (gedeckelt, nur bei aktivem Blitz). Der Überschuss über 100 % fließt via Überschlag als Ladung zurück
 // → schließt den Sturm-Loop. Nur Ionisierung erzeugt Stapel → generisches Nicht-Blitz unberührt. Werte aus Sim-Sweep
 // (Konfig D): leistungsneutral zum Alt-Blitz (Floor +0,5 %, p90 −1 %, Spread 1,18× = Baseline). [Sim-tunebar]
-export const ION_CRIT_PP_PER_STACK = envNum("SIM_ION_CRIT_PP_PER_STACK", 0.01); // +Crit-Chance je Feld-Ionisierungsstapel (0,01 = +1 pp)
+export const ION_CRIT_PP_PER_STACK = envNum("SIM_ION_CRIT_PP_PER_STACK", 0.02); // +Crit-Chance je Feld-Ionisierungsstapel (0,02 = +2 pp)
 export const ION_CRIT_STACK_CAP    = envNum("SIM_ION_CRIT_STACK_CAP", 12);      // gedeckelte gezählte Σ-Feldstapel (→ max +12 pp; zähmt den Heavy-Build-Tail)
 export const ION_MAX_STACKS       = 5;  // max Stapel je Karte [#165 Skills-Spec §5.1: 4→5]
 export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Verbrauch

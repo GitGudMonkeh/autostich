@@ -137,13 +137,14 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
         )}
       </div>
 
-      {/* #270.2 Brand — gebrandmarkte Gegnerkarten über den Lauf (Feuers Gegner-Debuff, analog Eis-Frostbiss). Eigene rote Zeile. */}
+      {/* #270.2 Brand — gebrandmarkte Gegnerkarten über den Lauf (Feuers Gegner-Debuff, analog Eis-Frostbiss). Eigene rote
+          Zeile. #UI: nur wenige 🔥 als Akzent (nicht je Brand eins → sonst umbricht die Leiste); die echte Zahl steht daneben. */}
       {brandTotal > 0 && (
         <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t" style={{ borderColor: `${BRAND}22` }}>
-          <span className="opacity-55 shrink-0">Brand · Gegnerkarten</span>
+          <span className="opacity-55 shrink-0">Brand · Gegner</span>
           <span className="tabular-nums font-bold shrink-0" style={{ color: BRAND }}>{grp(brandTotal)}</span>
-          <span className="inline-flex flex-wrap gap-0.5 min-w-0">
-            {Array.from({ length: Math.min(brandTotal, 12) }, (_, i) => (
+          <span className="inline-flex gap-0.5 shrink-0 overflow-hidden">
+            {Array.from({ length: Math.min(brandTotal, 6) }, (_, i) => (
               <span key={i} style={{ color: BRAND, textShadow: `0 0 4px ${BRAND}88`, fontSize: 11, lineHeight: 1 }}>🔥</span>
             ))}
           </span>
