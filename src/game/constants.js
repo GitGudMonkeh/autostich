@@ -440,6 +440,8 @@ export const PLANT_ANCHOR_VALUE    = 11;  // Alter Anker: Aktivierung startet 1 
 export const PLANT_GREEN_FARBBLOCK_CAP = 3;// Grün-Farbblock-Cap: der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt (v0.3: ganzes Feld grün → 40er-Block ×8+ war der Runaway) // tunebar
 // Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score)
 export const WURZELSCHLAG_PER_GROWTH = envNum("SIM_WURZELSCHLAG_PER_GROWTH", 4); // Wurzelschlag: +1 Dauerwert je N Wachstum (grüne Karte, bis Deckel) [Sim-tunebar: höher = Wert wächst langsamer → Auto-Sieg später] // v0
+export const WURZELSCHLAG_LOSS_EVERY = envNum("SIM_WURZELSCHLAG_LOSS_EVERY", 2); // Wurzelschlag-Buff: je N Niederlagen einer Karte wächst sie trotzdem +1 Zuwachs (Zähler je card.id) [Sim-tunebar: höher = seltener Trostwachstum] // v0.4
+export const WURZELSCHLAG_LOSS_MIN_SKILLS = envNum("SIM_WURZELSCHLAG_LOSS_MIN_SKILLS", 4); // Mono-Gate: Trost-Zuwachs erst ab N aktiven Pflanzen-Skills (von SKILL_SLOTS=6) [Sim-tunebar: niedriger = auch für Splash] // v0.4
 export const WURZELTIEFE_SCORE     = 12;  // Wurzeltiefe: Flat-Score je Sieg einer grünen Karte (Wurzeln-Score) // v0 — tunebar
 export const PFAHLWURZEL_MULT      = 2;   // Pfahlwurzel: Wurzeln-Score ×2 bei Formations-Sieg                  // v0
 export const JAHRESRINGE_PER_GROWTH = 10; // Jahresringe: je 10 Wachstum der Karte +Wurzeln-Score              // v0

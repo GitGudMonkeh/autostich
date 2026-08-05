@@ -126,7 +126,7 @@ export function initialState(rng = Math.random, seed = null) {
     iceTemp: {}, frostbitePending: {}, frostbiteActive: {}, frostSwapsUsed: [], // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff / genutzte Frosttausche
     layers: {}, frostFormPrev: [], // Eis-Rework (v0): Schichten je Frostkarte (permanent) / Beständigkeits-Historie
     frostSelect: null, // Frostwahl (#265): offene Kartenwahl beim Einfrieren { need, chosen } — null = keine offene Wahl
-    growth: {}, colonized: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green)
+    growth: {}, colonized: {}, plantLoss: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green) / Niederlagen-Zähler (Wurzelschlag-Buff v0.4)
     ash: 0, brandPending: {}, brandActive: {}, forged: {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     // #270 Fraktions-Panels: kumulative Lauf-Kennzahlen (nur Anzeige) — Direkt-Ertrag (Σ post-stack Direkt-Score) + Motor-Zähler.
     iceYield: 0, lightYield: 0, plantRoot: 0, plantBloom: 0, plantHarvest: 0, fireBase: 0, fireWhite: 0, // #270 Eigen-Score-Kanäle
@@ -521,11 +521,12 @@ export function reducer(state, action) {
         iceTemp = {}; frostSwapsUsed = [];
         frostbitePending = {}; frostbiteActive = {}; layers = {}; frostFormPrev = [];
       }
-      if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green ? { ...c, green: false } : c)); growth = {}; colonized = {}; } // Pflanze weg (Anker-Wert bleibt gebacken)
+      let plantLoss = state.plantLoss || {}; // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id
+      if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green ? { ...c, green: false } : c)); growth = {}; colonized = {}; plantLoss = {}; } // Pflanze weg (Anker-Wert bleibt gebacken)
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
       // #265: bei offener Frostwahl in die frost-select-Phase (Spieler wählt die einzufrierenden Karten), sonst direkt weiter.
-      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, layers, frostFormPrev, growth, colonized, ash, brandPending, brandActive, forged, formations,
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, layers, frostFormPrev, growth, colonized, plantLoss, ash, brandPending, brandActive, forged, formations,
                trimCount: (state.trimCount || 0) + (trimmed ? 1 : 0), // #288 Trimmen
                phase: pendingFrostSelect ? "frost-select" : "play", frostSelect: pendingFrostSelect, skillOffer: null };
     }

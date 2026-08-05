@@ -202,7 +202,7 @@ export const SKILL_DEFS = {
   //      Grundmechanik: Alter Anker (Aktivierung startet 1 reife Karte). Flags in engine/formations/reducer gelesen. ----
   // Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score)
   SK_PLANT_01: { id: "SK_PLANT_01", name: "Wurzelschlag", archetype: "plant", keywords: ["growth", "value"],
-    desc: `Gewinnt eine grüne Karte, erhält sie je ${C.WURZELSCHLAG_PER_GROWTH} angesammeltes Wachstum dauerhaft +1 Kartenwert (bis Wert ${C.PLANT_VALUE_CAP}).`, wurzelschlag: true },
+    desc: `Gewinnt eine grüne Karte, erhält sie je ${C.WURZELSCHLAG_PER_GROWTH} angesammeltes Wachstum dauerhaft +1 Kartenwert (bis Wert ${C.PLANT_VALUE_CAP}). Ab ${C.WURZELSCHLAG_LOSS_MIN_SKILLS} aktiven Pflanzen-Skills wächst eine Karte auch nach je ${C.WURZELSCHLAG_LOSS_EVERY} Niederlagen trotzdem +1 Wachstum.`, wurzelschlag: true },
   SK_PLANT_02: { id: "SK_PLANT_02", name: "Wurzeltiefe", archetype: "plant", keywords: ["growth", "score"],
     desc: `Jeder Sieg einer grünen Karte gibt zusätzlich +${C.WURZELTIEFE_SCORE} Wurzel-Score.`, wurzeltiefe: true },
   SK_PLANT_03: { id: "SK_PLANT_03", name: "Pfahlwurzel", archetype: "plant", keywords: ["growth", "score", "formation"],

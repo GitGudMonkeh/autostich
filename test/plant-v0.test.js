@@ -60,6 +60,32 @@ describe("Pflanze-Fraktion v0 — Engine-Integration", () => {
     expect(s.growth.X0).toBeCloseTo(1 / C.PLANT_GROWTH_SKILL_REF); // 1 Skill / 3 = 0,333
     expect(s.deck[0].green).toBeFalsy(); // grau bleibt grau — 1/3 < Schwelle
   });
+  // Mono-Bonus: erst ab WURZELSCHLAG_LOSS_MIN_SKILLS (=4) aktiven Pflanzen-Skills; growInc gedeckelt bei min(1, 4/3)=1.
+  const mono = ["SK_PLANT_01", "SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_09"]; // 4 Pflanzen-Skills, inkl. Wurzelschlag
+  it("Wurzelschlag-Buff (mono): je WURZELSCHLAG_LOSS_EVERY Niederlagen wächst die Karte trotzdem (+Zuwachs)", () => {
+    const s = resolveTrick(scen(6, 12, { skills: mono, growth: { X0: 5 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
+    expect(s.lastTrick.result).toBe("loss");
+    expect(s.growth.X0).toBe(6);      // +1 Zuwachs trotz Niederlage
+    expect(s.plantLoss.X0).toBe(0);   // Zähler zurückgesetzt
+  });
+  it("Wurzelschlag-Buff (mono): eine einzelne Niederlage tickt nur den Zähler, noch kein Wachstum", () => {
+    const s = resolveTrick(scen(6, 12, { skills: mono, growth: { X0: 5 }, plantLoss: {} }), noCrit);
+    expect(s.growth.X0 || 0).toBe(5); // unverändert
+    expect(s.plantLoss.X0).toBe(1);   // Zähler +1
+  });
+  it("Wurzelschlag-Buff: Mono-Gate — unter WURZELSCHLAG_LOSS_MIN_SKILLS kein Trostwachstum (Splash)", () => {
+    // Wurzelschlag aktiv, aber nur 3 Pflanzen-Skills (< 4) → Buff greift NICHT, Zähler bleibt unberührt.
+    const splash = ["SK_PLANT_01", "SK_PLANT_02", "SK_PLANT_05"];
+    const s = resolveTrick(scen(6, 12, { skills: splash, growth: { X0: 5 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
+    expect(s.growth.X0 || 0).toBe(5);
+    expect(s.plantLoss.X0 || 0).toBe(C.WURZELSCHLAG_LOSS_EVERY - 1); // unberührt
+  });
+  it("Wurzelschlag-Buff (mono): grüne Karte klettert beim Loss-Tick auch im Wert (Schwellen-Übertritt)", () => {
+    // prevG 3 → g 4 überschreitet die /4-Schwelle → +1 Wert (nur für grüne Karte, wie im Sieg).
+    const s = resolveTrick(scen(6, 12, { skills: mono, deck: green0(7), growth: { X0: 3 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
+    expect(s.growth.X0).toBe(4);
+    expect(s.deck[0].value).toBe(8); // 7 → 8 (Wurzelschlag-Wert bei Schwellen-Übertritt)
+  });
   it("Wurzeltiefe: Sieg einer grünen Karte gibt Wurzeln-Score (Flat)", () => {
     // growth 0 → keine Tiefe über dem Wert-Deckel → das superlineare Wurzel-Ceiling (#Ceiling) zündet nicht → reiner Flat.
     const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_02"], deck: green0(12), growth: { X0: 0 } }), noCrit);

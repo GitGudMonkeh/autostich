@@ -117,6 +117,8 @@ export function resolveTrick(state, rng) {
     layers = {}, frostFormPrev = [], // Eis-Rework (v0): Schichten je Frostkarte-id (permanent) / Frostkarten, die im Vordurchlauf in Formation siegten (Beständigkeit)
     ash = 0, brandPending = {}, brandActive = {}, forged = {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     growth = {}, colonized = {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green auf der Karte)
+    plantLoss = {}, // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id — je WURZELSCHLAG_LOSS_EVERY wächst die Karte trotzdem
+
     shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
     architect = null, architectEnabled = false, architectPre = null, // Architekt (#202, Shop-Ersatz): Gebäude-Overlay (8×5) + Durchlauf-Precompute
@@ -315,6 +317,7 @@ export function resolveTrick(state, rng) {
   // Pflanze-Fraktion (v0): Wachstum (immutabel fortgeschrieben) / kolonisierte Gegnerkarten. Grün = card.green (im deck gebacken).
   let newGrowth = growth;
   let newColonized = { ...colonized };
+  let newPlantLoss = plantLoss; // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id (immutabel fortgeschrieben)
   let architectBump = null; // Architekt Meilenstein (#202): Gebäude-id, dessen Sieg-Zähler nach diesem Stich hochzählt
 
   let won = false, lost = false, tieConverted = false;
@@ -1054,6 +1057,24 @@ export function resolveTrick(state, rng) {
       newGrowth = { ...newGrowth, [pCard.id]: g }; growthTotal += C.ZAEHER_HALM_GROWTH; // #270
       if (growthRipe(g)) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c)); // reif geworden → grün backen
     }
+    // Wurzelschlag-Buff (v0.4): MONO-Bonus — nur ab N aktiven Pflanzen-Skills wächst eine Karte auch nach je M Niederlagen
+    // trotzdem. Zähler je card.id; bei Erreichen der Schwelle → +Zuwachs (gleiche Skill-Gate-Rate wie ein Sieg) und Zähler
+    // zurück. Grün backen + Wert-Schwelle wie im Sieg.
+    if (hasWurzelschlag(skills) && plantSkillCount(skills) >= C.WURZELSCHLAG_LOSS_MIN_SKILLS) {
+      const losses = (newPlantLoss[pCard.id] || 0) + 1;
+      if (losses >= C.WURZELSCHLAG_LOSS_EVERY) {
+        newPlantLoss = { ...newPlantLoss, [pCard.id]: 0 };
+        const growInc = Math.min(1, C.PLANT_GROWTH_SKILL_REF > 0 ? plantSkillCount(skills) / C.PLANT_GROWTH_SKILL_REF : 1);
+        const prevG = newGrowth[pCard.id] || 0, g = prevG + growInc;
+        newGrowth = { ...newGrowth, [pCard.id]: g }; growthTotal += growInc; // #270 Motor-Zähler
+        const nowGreen = pCard.green || growthRipe(g); // grau creept Richtung Grün; grün klettert im Wert
+        if (growthRipe(g) && !pCard.green) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c)); // reif → grün
+        if (nowGreen && Math.floor(g / C.WURZELSCHLAG_PER_GROWTH) > Math.floor(prevG / C.WURZELSCHLAG_PER_GROWTH) && pCard.value < C.PLANT_VALUE_CAP)
+          deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: Math.min(C.PLANT_VALUE_CAP, c.value + 1) } : c)); // Wurzelschlag-Wert (nur grün, wie im Sieg)
+      } else {
+        newPlantLoss = { ...newPlantLoss, [pCard.id]: losses };
+      }
+    }
     lastResult = "loss";
   } else {
     ties += 1;
@@ -1299,7 +1320,7 @@ export function resolveTrick(state, rng) {
     iceTemp: newIceTemp, frostbitePending: newFrostbitePending, frostbiteActive: newFrostbiteActive, // Eis (Kaltfront temp / Vergletscherung)
     layers: newLayers, frostFormPrev: newFrostFormPrev, // Eis-Rework (v0): Schichten (permanent) + Beständigkeits-Historie
     ash: newAsh, brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer-Rework (v0)
-    growth: newGrowth, colonized: newColonized, // Pflanze-Fraktion (v0): Wachstum + Kolonisierung (grün = card.green im deck)
+    growth: newGrowth, colonized: newColonized, plantLoss: newPlantLoss, // Pflanze-Fraktion (v0): Wachstum + Kolonisierung + Niederlagen-Zähler (Wurzelschlag-Buff v0.4)
     shop, // hält nur noch die (inerten) Positionsanker (#229: Shop entfernt)
     lastTrick, phase,
   };
