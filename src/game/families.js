@@ -379,9 +379,11 @@ const bumpRandomWhere = (deck, pred, n, delta, rng) => {
 // Häufigkeit je AKTUELLEM Wert (A_CONDENSE — mehrfach vorkommende Wertgruppen).
 const valueCounts = (deck) => { const cnt = {}; for (const c of deck) cnt[c.value] = (cnt[c.value] || 0) + 1; return cnt; };
 // Farbduell: Gewinnerfarbe +up, Verliererfarbe +down (down negativ), alles auf >= 0 geklemmt.
+// #291: grün-bewusst über suitMatch (wie A_SUIT_BOOST) — pflanzen-grüne Karten zählen als „G" (sonst greift ein
+// grüner Gewinner nicht auf begrünte Karten). up gewinnt bei up===down (Reihenfolge im Ternär).
 const suitDuel = (deck, up, down, upDelta, downDelta) =>
-  deck.map((c) => (c.suit === up ? { ...c, value: Math.max(0, c.value + upDelta) }
-    : c.suit === down ? { ...c, value: Math.max(0, c.value + downDelta) } : c));
+  deck.map((c) => (suitMatch(c, up) ? { ...c, value: Math.max(0, c.value + upDelta) }
+    : suitMatch(c, down) ? { ...c, value: Math.max(0, c.value + downDelta) } : c));
 const randomSuit = (rng) => SUIT_ORDER[Math.floor(rng() * SUIT_ORDER.length)];
 // Farb-Prädikat für farbbasierte Wert-Boosts: „Grün" (Suit „G") umfasst auch pflanzen-grüne Karten (card.green) —
 // auf dem Board werden sie als grün angezeigt, also zählen sie auch als Grün. Alle anderen Farben: nur die Originalfarbe.
