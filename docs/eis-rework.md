@@ -107,14 +107,23 @@ Regel = **Bedingung → Effekt**. 12 Kern-Rollen + 5 Auffüller = **17 normale R
 
 ---
 
-## 7 · Offene Punkte (nächste Schritte)
+## 7 · Legendäre (je Linie eine Capstone)
+
+Jede zieht die Fantasie ihrer Linie ins Extrem. Mechanik-Ebene, Zahlen zuletzt.
+
+- **Firn → „Eiszeit"** — **alle deine Karten werden zu Gletschern** und starten mit Masse; permanenter Masse-Tick je Durchlauf. *(die Ansammlung wird total — jede Karte wird Berst-Material; Capstone des „Feld läuft von allein voll")*
+- **Eisschild → „Ewiges Schild"** — das **gesamte zusammenhängende Feld zählt als EIN Übergletscher**: alle poolen Masse, alle gelten füreinander als angrenzend, Kaskade rechnet mit voller Feldgröße. *(Verschmelzen/Eisbrücke ohne Grenze — **dauerhafter Zustand**, Herz des Breite-Builds ins Absolute)*
+- **Lawine → „Große Lawine"** — **brettweites Ketten-Bersten auf einen Schlag**: einmal ausgelöst birst jeder Gletscher und reißt der Reihe nach alle mit. *(Kettenbruch + Gletschersturz entfesselt — **einmaliger Entlade-Knall**, der reine Payoff-Capstone; hier wird der spätere harte Deckel am ehesten gebraucht)*
+- **Frostgriff → „Erstarrung"** — der **Gegner friert komplett ein**: über einen Durchlauf verliert jede vom Bersten getroffene Gegnerkarte garantiert ihren Stich; das Bersten greift über die 4 Nachbarn hinaus weiter ins Gegnerfeld. *(Einfrieren brettweit — der Kontroll-Capstone; bewusst kontroll- statt score-zentriert, Nische der Quer-Achse)*
+
+**Abgrenzung Schild vs. Lawine** (liegen nah): Schild = **Zustand** (alles ist jeden Durchlauf ein Cluster), Lawine = **Event** (einmaliger brettweiter Knall). Bewusst getrennt.
+
+---
+
+## 8 · Offene Punkte (nächste Schritte)
 
 1. ~~Dünne Linien auffüllen~~ **erledigt** — 5 Zusatzrollen gesetzt: Firn **+Verdichtung** (4), Eisschild **+Eiswall/+Verzahnung** (5), Lawine **+Rissbildung/+Gletschersturz** (5), Frostgriff bleibt 3. **17 normale Rollen.**
-2. **Legendäre** (~4, je Linie eine Capstone-Version der Fantasie):
-   - Firn → *„Eiszeit"* (das ganze Brett friert / Masse explodiert)
-   - Eisschild → *„Ewiges Schild"* (das gesamte Feld = ein zusammenhängender Übergletscher)
-   - Lawine → *„Große Lawine"* (brettweites Ketten-Bersten auf einen Schlag)
-   - Frostgriff → *„Erstarrung"* (der Gegner friert komplett ein)
+2. ~~Legendäre~~ **erledigt** — vier Capstones gesetzt (siehe §7): Eiszeit / Ewiges Schild / Große Lawine / Erstarrung.
 3. **Zahlen** — ganz zuletzt (Sim-tunebar).
 4. **2D-Formationen** — für später: Formationen, die die 4 Richtungen (Brett-Adjazenz) ansprechen, nicht nur die 1D-Reihe.
 5. **#288 (Trimmen) schließen**, sobald dieses Design es ablöst.
