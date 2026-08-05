@@ -323,7 +323,9 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   const farbMin = hasEwigerFruehling(skills) ? EWIGER_FRUEHLING_FARBBLOCK : 3;
   const greenField = n > 0 ? greenCount(cards) / n : 0;
   const uebThresh = hasEwigerFruehling(skills) ? EWIGER_FRUEHLING_FIELD : UEBERWUCHERUNG_FIELD;
-  const farbBase = FARBBLOCK_BASE + (hasUeberwucherung(skills) && greenField >= uebThresh ? UEBERWUCHERUNG_FACTOR : 0);
+  // #292: Farballianz IV hebt den Farbblock-Startfaktor (farbblockBonus, +0,20) — stapelt mit Überwucherung (Pflanze).
+  const farbBase = FARBBLOCK_BASE + (hasUeberwucherung(skills) && greenField >= uebThresh ? UEBERWUCHERUNG_FACTOR : 0)
+    + (eP("E_COLOR_ALLIANCE", "farbblockBonus", 0) || 0);
   // Grün-Farbblock-Cap (v0.3): grüne (card.green) Karten deckeln ihre Ordinalzahl → ein voll-grünes Feld gibt keinen ×8-Riesenblock mehr.
   const farbFactor = (pos, ord) => escalatingFactor(cards[pos].green ? Math.min(ord, PLANT_GREEN_FARBBLOCK_CAP) : ord, farbBase);
   // onRun: Grenz-Bonus melden (noteCross) UND die echte Lauflänge auf jedem Farbblock-Eintrag ablegen

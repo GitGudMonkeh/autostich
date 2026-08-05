@@ -60,10 +60,10 @@ describe("Familien-Registry — Struktur", () => {
     const withTarget = e.filter((f) => [1, 2, 3, 4].some((t) => f.tiers[t].pickTarget)).map((f) => f.id).sort();
     expect(withTarget).toEqual(["E_COLOR_ALLIANCE", "E_CORE"]);
     expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].pickTarget.suits).toBe(4);
-    expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].pairs).toBe(true);
-    // #195: monotone, distincte Farballianz-Leiter (I/II waren zuvor identisch suits:2) — 2/3/4/4, nur IV mit pairs.
+    expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].farbblockBonus).toBe(0.2); // #292: IV = alle vier als eine + Farbblock-Startbonus (früher „zwei Paare", mechanisch schwächer)
+    // Farballianz-Leiter: suits 2/3/4/4; III↔IV unterscheiden sich jetzt über den Farbblock-Startbonus (nicht mehr pairs).
     expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[t].pickTarget.suits)).toEqual([2, 3, 4, 4]);
-    expect([1, 2, 3].every((t) => !FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[t].pairs)).toBe(true);
+    expect([1, 2, 3, 4].every((t) => !FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[t].pairs)).toBe(true);
     expect(FAMILY_DEFS.E_CORE.tiers[1].pickTarget.formationType).toBe(true);
   });
 });

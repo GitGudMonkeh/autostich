@@ -792,14 +792,16 @@ const E_FAMILIES = {
     // allianceGroups zu Gruppen aufgelöst. Wirkbereich (#289): Farbblock-Formationen, Buntglas/Zunfthaus, Farbserie/
     // Monochrom, Farbfokus — alle über colorsAllied/colorMatches. AUSNAHME: die Pick-Zeit-Deck-Perks Farbverstärkung/
     // Farbduell (onPick) editieren das Deck dauerhaft und kennen die Allianz NICHT (nur rohe/grüne Farbe).
-    // `pairs` (IV) = die 4 Farben bilden ZWEI Allianzen (je zwei).
+    // #292: III = alle 4 als EINE Farbe (normaler Farbblock). IV = ebenfalls alle 4 als eine + `farbblockBonus`
+    // (Farbblock-Startfaktor +0,20, in formations.js gestapelt) → IV ist eindeutig stärker als III (früher „zwei
+    // Paare", was mechanisch SCHWÄCHER war: kürzere Blöcke, oft unter der ≥3-Schwelle). Kickt auch Pflanze (grün→Farbblock).
     // #195: monotone Leiter auf EINER Achse (Breite der Allianz) — I und II trugen zuvor beide suits:2 (mechanisch
     // identische Phantom-Stufe, wie E_RPM/E_SEGMENT/B_INITIATIVE). Jetzt 2 → 3 → 4 (alle als eine) → 4 (zwei Allianzen).
     tiers: {
       1: { desc: "Wähle 2 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 2 } },
       2: { desc: "Wähle 3 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 3 } },
       3: { desc: "Wähle 4 Farben: alle vier zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 } },
-      4: { desc: "Wähle 4 Farben: sie bilden zwei Allianzen (je zwei zählen als eine) — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 }, pairs: true },
+      4: { desc: "Wähle 4 Farben: alle vier zählen als dieselbe Farbe, Farbblöcke starten bei ×1,55 (statt ×1,35) — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 }, farbblockBonus: 0.20 },
     },
   },
   E_CORE: {
