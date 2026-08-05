@@ -13,7 +13,7 @@
    - formation: biegt computeFormations für abgedeckte Positionen (Sakralbau).
    Legendäre kommen fertig (keine Stufen). Alle Zahlen sind Platzhalter → per Sim tunen (TUNING-Block unten).
    ============================================================ */
-import { SUIT_ORDER } from "./constants.js";
+import { SUIT_ORDER, ARCH_STREAK_CAP } from "./constants.js";
 import { tierWeightsForShift } from "./rarity.js";
 import { colorMatches, colorsAllied } from "./color.js"; // #289: Farb-Match zentral (grün + Farballianz)
 
@@ -576,7 +576,9 @@ export function architectScore(pre, actualPos, ctx, counters, alliance = []) {
       // #Pool Batch 4: Crit-Wette — Jackpot bei Crit, sonst Abzug. Der Boden (nie < 0) sitzt in der Engine (scoreBase-Klemme).
       case "gamble":   flat += ctx.isCrit ? e.crit : -e.penalty; break;
       // #Pool tierKick: streakDoubleFrom (Reihenhaus III) verdoppelt den Serien-Score ab der Schwelle.
-      case "streak": { const s = ctx.serieStreak || 0; flat += e.amount * s * (e.streakDoubleFrom && s >= e.streakDoubleFrom ? 2 : 1); break; }
+      // Serie GEDECKELT (ARCH_STREAK_CAP, Serie 75) — analog Basis-/Stat-Serie: sonst treibt der ungedeckelte
+      // Serien-Flat im Sustained-Streak-Snowball (Pflanze-Paare) den Score fünf-/sechsstellig (× Formation × Crit).
+      case "streak": { const s = Math.min(ctx.serieStreak || 0, ARCH_STREAK_CAP); flat += e.amount * s * (e.streakDoubleFrom && s >= e.streakDoubleFrom ? 2 : 1); break; }
       case "crit":     if (ctx.isCrit) flat += e.amount; break;
       case "color":    if (colorsAllied(ctx.suit, e.colorChoice, alliance)) flat += e.amount; break; // #289: grün (ctx.suit ist bereits „G") + Farballianz
       case "target":   flat += e.amount; break;

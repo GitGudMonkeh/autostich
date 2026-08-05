@@ -7,6 +7,7 @@ import {
   posOf, rowOf, colOf, N_POS,
   districtFactorMap, boardFactorMap, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../src/game/architect.js";
+import { ARCH_STREAK_CAP } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -208,6 +209,15 @@ describe("Architekt — score-Effekte", () => {
   it("streak (Reihenhaus): +N × Serie", () => {
     const pre = precomputeArchitect({ buildings: [B("A_REIHENHAUS", [0, 1, 2, 3], 1)] }, idOrder, deck);
     expect(architectScore(pre, 0, { isCrit: false, serieStreak: 4, suit: "R" }, {}).flat).toBe(tierNum(ARCHITECT_FAMILIES.A_REIHENHAUS.base.score, 1) * 4);
+  });
+  it("streak (Reihenhaus): Serie ist bei ARCH_STREAK_CAP gedeckelt (kein Runaway)", () => {
+    // Tier 3 → streakDoubleFrom aktiv (×2 ab Serie 4). Über dem Cap darf der Flat nicht weiterwachsen.
+    const pre = precomputeArchitect({ buildings: [B("A_REIHENHAUS", [0, 1, 2, 3], 3)] }, idOrder, deck);
+    const amt = tierNum(ARCHITECT_FAMILIES.A_REIHENHAUS.base.score, 3);
+    const atCap = architectScore(pre, 0, { isCrit: false, serieStreak: ARCH_STREAK_CAP, suit: "R" }, {}).flat;
+    const overCap = architectScore(pre, 0, { isCrit: false, serieStreak: 262, suit: "R" }, {}).flat;
+    expect(atCap).toBe(amt * ARCH_STREAK_CAP * 2);
+    expect(overCap).toBe(atCap); // Serie 262 zahlt nicht mehr als der Deckel
   });
   it("crit (Zinne): nur bei Crit", () => {
     const pre = precomputeArchitect({ buildings: [B("A_ZINNE", [0, 1, 2, 3], 1)] }, idOrder, deck);
