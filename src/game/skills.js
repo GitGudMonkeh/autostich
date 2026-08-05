@@ -69,7 +69,7 @@ export const SKILL_DEFS = {
     desc: `Ein Crit auf oder direkt neben einer ionisierten Karte erzeugt +${C.UEBERSPANNUNG_CHARGE} Ladung.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, ueberspannung: true },
   SK_LIGHTNING_15: { id: "SK_LIGHTNING_15", name: "Blitzschlag", archetype: "lightning", keywords: ["crit", "ionize"],
-    desc: `Jeder Crit ionisiert die gewonnene Karte (+${C.BLITZSCHLAG_STACKS} Stapel). Ionisierte Karten geben bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und heben feldweit die Crit-Chance um +${pct(C.ION_CRIT_PP_PER_STACK)} pp je Stapel (bis +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp).`,
+    desc: `Jeder Crit ionisiert die gewonnene Karte (+${C.BLITZSCHLAG_STACKS} Stapel).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, blitzschlag: true },
   // Linie 6 — Serie-Schnittstelle (Serie → Blitz-Währung)
   SK_LIGHTNING_16: { id: "SK_LIGHTNING_16", name: "Dauerstrom", archetype: "lightning", keywords: ["charge", "streak"],
