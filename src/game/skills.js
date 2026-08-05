@@ -635,14 +635,25 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   return offer;
 }
 
-// #272 Legendär-Phase (Runde 29, build-defining): `count` VERSCHIEDENE Legendäre, gezogen NUR aus den Fraktionen, in
-// denen der Spieler aktive Skills hält (activeArchetypes) — je Fraktion 4 Legendäre, also i. d. R. genug für 2 Optionen.
-// `owned` (die gehaltenen Skills, inkl. eines evtl. schon gewählten Legendärs) wird ausgeschlossen. Rein & testbar:
-// EIN gebündelter Legendär-Pool über alle aktiven Fraktionen, deterministisch geshuffelt, dann die ersten `count`.
-export function buildLegendaryOffer(activeArchetypes = [], owned = [], rng = Math.random, count = 2) {
-  const active = new Set(activeArchetypes || []);
-  const pool = SKILL_LIST.filter((s) => s.legendary && active.has(s.archetype) && !(owned || []).includes(s.id)).map((s) => s.id);
-  return shuffle(pool, rng).slice(0, count);
+// #272 Legendär-Phase (Runde 29, build-defining). Die Angebotsgröße richtet sich nach der Build-Breite (Nutzer-Wunsch):
+//   Mono (1 aktive Fraktion)  → 3 Legendäre dieser Fraktion
+//   Duo  (2 aktive Fraktionen) → 2 je Fraktion (4)
+//   Trio (3 aktive Fraktionen) → 2 je Fraktion (6)
+// Je Fraktion werden VERSCHIEDENE Legendäre gezogen (je Fraktion 4 im Pool); bereits gehaltene (owned, inkl. eines evtl.
+// schon gewählten Legendärs) sind ausgeschlossen. Reicht der Pool einer Fraktion nicht fürs Soll, füllt sie mit dem, was
+// da ist. Nur Fraktionen MIT verfügbarem Legendär zählen für die Breite. Deterministisch (seed-stabil), rein & testbar.
+export const legendaryPerArch = (archCount) => (archCount <= 1 ? 3 : 2);
+export function buildLegendaryOffer(activeArchetypes = [], owned = [], rng = Math.random, perArch = null) {
+  const ownedSet = new Set(owned || []);
+  const legsOf = (arch) => SKILL_LIST.filter((s) => s.legendary && s.archetype === arch && !ownedSet.has(s.id)).map((s) => s.id);
+  const archs = [...new Set(activeArchetypes || [])].filter((a) => legsOf(a).length > 0);
+  const per = perArch ?? legendaryPerArch(archs.length);
+  const offer = [];
+  for (const arch of shuffle(archs, rng)) {
+    const pool = shuffle(legsOf(arch), rng);
+    for (let i = 0; i < per && pool.length; i++) offer.push(pool.shift());
+  }
+  return offer;
 }
 
 /* ---- Ionisierung (Stufe B, docs/blitz-archetyp.md Abschnitt 5/6) ---- */

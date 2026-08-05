@@ -138,33 +138,44 @@ describe("buildSkillOffer (3+3+3+3 über alle 4 Archetypen)", () => {
 
 // #272 Legendär-Phase: 2 Legendäre NUR aus aktiven Fraktionen, deterministisch, verschieden, ohne gehaltene.
 describe("buildLegendaryOffer (#272 Legendär-Phase)", () => {
-  it("zieht Legendäre NUR aus den aktiven Archetypen", () => {
+  it("Mono (1 aktive Fraktion): 3 verschiedene Legendäre dieser Fraktion", () => {
     for (let seed = 1; seed <= 30; seed++) {
-      const off = buildLegendaryOffer(["ice"], [], makeRng(seed), 2);
-      expect(off).toHaveLength(2);
+      const off = buildLegendaryOffer(["ice"], [], makeRng(seed));
+      expect(off).toHaveLength(3);
+      expect(new Set(off).size).toBe(3);
       expect(off.every((id) => isLegendarySkill(id) && archetypeOf(id) === "ice")).toBe(true);
     }
   });
-  it("bei mehreren aktiven Fraktionen aus deren Vereinigung; immer verschieden", () => {
+  it("Duo (2 aktive Fraktionen): 2 je Fraktion (4), immer verschieden", () => {
     for (let seed = 1; seed <= 30; seed++) {
-      const off = buildLegendaryOffer(["fire", "plant"], [], makeRng(seed), 2);
-      expect(off).toHaveLength(2);
-      expect(new Set(off).size).toBe(2);
-      expect(off.every((id) => ["fire", "plant"].includes(archetypeOf(id)))).toBe(true);
+      const off = buildLegendaryOffer(["fire", "plant"], [], makeRng(seed));
+      expect(off).toHaveLength(4);
+      expect(new Set(off).size).toBe(4);
+      expect(off.filter((id) => archetypeOf(id) === "fire")).toHaveLength(2);
+      expect(off.filter((id) => archetypeOf(id) === "plant")).toHaveLength(2);
     }
   });
-  it("schließt bereits gehaltene Legendäre aus (owned)", () => {
-    const off = buildLegendaryOffer(["ice"], ["SK_ICE_L01", "SK_ICE_L02"], makeRng(3), 2);
+  it("Trio (3 aktive Fraktionen): 2 je Fraktion (6)", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const off = buildLegendaryOffer(["fire", "plant", "ice"], [], makeRng(seed));
+      expect(off).toHaveLength(6);
+      expect(new Set(off).size).toBe(6);
+      for (const a of ["fire", "plant", "ice"]) expect(off.filter((id) => archetypeOf(id) === a)).toHaveLength(2);
+    }
+  });
+  it("schließt bereits gehaltene Legendäre aus (owned) — Rest der Fraktion füllt bis zum Soll", () => {
+    const off = buildLegendaryOffer(["ice"], ["SK_ICE_L01", "SK_ICE_L02"], makeRng(3));
     expect(off).not.toContain("SK_ICE_L01");
     expect(off).not.toContain("SK_ICE_L02");
+    expect(off).toHaveLength(2); // Mono-Soll 3, aber nur noch 2 verfügbar → füllt mit dem, was da ist
     expect(off.every((id) => archetypeOf(id) === "ice")).toBe(true);
   });
   it("deterministisch: gleicher Seed → identisches Angebot", () => {
-    expect(buildLegendaryOffer(["lightning", "ice"], [], makeRng(9), 2))
-      .toEqual(buildLegendaryOffer(["lightning", "ice"], [], makeRng(9), 2));
+    expect(buildLegendaryOffer(["lightning", "ice"], [], makeRng(9)))
+      .toEqual(buildLegendaryOffer(["lightning", "ice"], [], makeRng(9)));
   });
   it("keine aktiven Fraktionen → leeres Angebot", () => {
-    expect(buildLegendaryOffer([], [], makeRng(1), 2)).toEqual([]);
+    expect(buildLegendaryOffer([], [], makeRng(1))).toEqual([]);
   });
 });
 

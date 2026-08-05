@@ -1282,10 +1282,11 @@ export function resolveTrick(state, rng) {
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
         formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
       } else if (decision === "legendary") {
-        // #272 Legendär-Phase (Runde 29, build-defining): 2 Legendäre NUR aus aktiven Fraktionen → fixer 7. Slot.
+        // #272 Legendär-Phase (Runde 29, build-defining): Legendäre NUR aus aktiven Fraktionen → fixer 7. Slot.
+        // Angebotsgröße skaliert mit der Build-Breite (Mono 3 · Duo 2/Fraktion=4 · Trio 2/Fraktion=6).
         // Kein Legendär verfügbar (keine aktive Fraktion / alle der aktiven Fraktionen bereits gehalten) → wie ein
         // leerer Skill-Pool auf die normale Skill-Wahl ausweichen (Runde nicht verschwenden).
-        const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), 2);
+        const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0));
         if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
         else {
           const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, !skills.includes("SK_PLANT_01") && !state.wurzelschlagRerolled);

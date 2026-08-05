@@ -2,7 +2,8 @@ import { SKILL_DEFS, ARCHETYPE_META, archetypeOf } from "../game/skills.js";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 
-// #272 Legendär-Phase (Runde 29, build-defining): 2 Legendäre NUR aus aktiven Fraktionen → fixer 7. Slot (kein Tausch).
+// #272 Legendär-Phase (Runde 29, build-defining): Legendäre NUR aus aktiven Fraktionen → fixer 7. Slot (kein Tausch).
+// Angebotsgröße skaliert mit der Build-Breite (Mono 3 · Duo 2/Fraktion=4 · Trio 2/Fraktion=6).
 // Ablehnen → stattdessen normale Skill-Wahl (nie „verschwendet"). Gold-Theming wie die Legendär-Rarität sonst.
 const GOLD = "#d4a63a";
 const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Legendär", icon: "★", color: GOLD };
