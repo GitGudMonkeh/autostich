@@ -229,12 +229,12 @@ describe("Familien-Engine — Kategorie C (Rollen über resolveTrick, Schritt 2b
     // Stufe IV Basis (eine Formation) → +6.
     expect(resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 4 }, roles: { C_ECKPFEILER: ["X2"] }, pos: 2 }), rng).lastTrick.pValue).toBe(11);
   });
-  it("C_ECKSTEIN (Gebäude-Perk): Rollenkarte unter einem Gebäude erhält den Bonus", () => {
+  it("C_ECKSTEIN (Gebäude-Perk): Rollenkarte in einem Gebäude erhält den Bonus", () => {
     // Score-Gebäude (A_ZOLLHAUS) deckt Positionen 2,3 ab OHNE Wertbonus → isoliert den C_ECKSTEIN-Wert.
     const arch = { buildings: [{ id: "b1", familyId: "A_ZOLLHAUS", tier: 1, footprint: [2, 3] }], winCounters: {} };
     const pre = precomputeArchitect(arch, identity(), constDeck(5));
     const eck = (over) => scenario(5, 6, { architectPre: pre, ...over });
-    expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: { C_ECKSTEIN: ["X2"] }, pos: 2 }), rng).lastTrick.pValue).toBe(8); // 5 + 3 (unter Gebäude)
+    expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: { C_ECKSTEIN: ["X2"] }, pos: 2 }), rng).lastTrick.pValue).toBe(8); // 5 + 3 (in Gebäude)
     // ohne Rolle → kein Bonus.
     expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: {}, pos: 2 }), rng).lastTrick.pValue).toBe(5);
     // Rollenkarte auf unbedeckter Position (Pos 1) → kein Bonus.

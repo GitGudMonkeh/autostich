@@ -597,14 +597,14 @@ const C_FAMILIES = {
   },
   C_ECKSTEIN: {
     id: "C_ECKSTEIN", cat: "C", name: "Eckstein", upgradeType: ROLE, needsArchitect: true,
-    // Gebäude-Perk (Architekt): die Rollenkarte erhält ihren Bonus, solange sie UNTER einem Gebäude liegt
-    // (ctx.underBuilding). Pendant zu C_ECKPFEILER (Formation), nur eben für das Gebäude-Overlay. IV-Kicker,
-    // wenn die Position unter einer VOLLENDETEN Struktur liegt (Zeile/Spalte/Diagonale, ctx.underStructure).
+    // Gebäude-Perk (Architekt): die Rollenkarte erhält ihren Bonus, solange sie IN einem Gebäude liegt
+    // (ctx.underBuilding = Position vom Gebäude-Overlay abgedeckt). Pendant zu C_ECKPFEILER (Formation), nur
+    // fürs Gebäude-Overlay. IV-Kicker, wenn die Position IN einer VOLLENDETEN Struktur liegt (Zeile/Spalte/Diagonale).
     tiers: {
-      1: { desc: "Wähle 1 Karte: liegt sie unter einem Gebäude, +3 Stichwert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 3 : 0) },
-      2: { desc: "Wähle 2 Karten: unter einem Gebäude, +4 Stichwert.",           pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 4 : 0) },
-      3: { desc: "Wähle 3 Karten: unter einem Gebäude, +5 Stichwert.",           pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 5 : 0) },
-      4: { desc: "Wähle 4 Karten: unter einem Gebäude +6; unter einer vollendeten Struktur +9 Stichwert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? (c.underStructure ? 9 : 6) : 0) },
+      1: { desc: "Wähle 1 Karte: liegt sie in einem Gebäude, +3 Stichwert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 3 : 0) },
+      2: { desc: "Wähle 2 Karten: in einem Gebäude, +4 Stichwert.",           pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 4 : 0) },
+      3: { desc: "Wähle 3 Karten: in einem Gebäude, +5 Stichwert.",           pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 5 : 0) },
+      4: { desc: "Wähle 4 Karten: in einem Gebäude +6; in einer vollendeten Struktur +9 Stichwert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? (c.underStructure ? 9 : 6) : 0) },
     },
   },
   C_SURVIVOR: {
