@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
-import { SKILL_DEFS, isGreen, greenCount, growthRipe, plantSkillCount, ARCHETYPE_ORDER } from "../src/game/skills.js";
+import { SKILL_DEFS, isGreen, greenCount, growthRipe, plantSkillCount, isTrimmableSkill, ARCHETYPE_ORDER } from "../src/game/skills.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -29,6 +29,14 @@ describe("Pflanze-Fraktion v0 — Roster + Verdrahtung", () => {
       expect(SKILL_DEFS[id], `${id} fehlt im Registry`).toBeTruthy();
       expect(SKILL_DEFS[id].archetype).toBe("plant");
     }
+  });
+  it("#288 Trimmen: genau die 6 wachstums-stützenden Skills sind trimmbar (inkl. Ausläufer/Rhizom)", () => {
+    const trimmable = PLANT_IDS.filter(isTrimmableSkill).sort();
+    expect(trimmable).toEqual(["SK_PLANT_05", "SK_PLANT_06", "SK_PLANT_07", "SK_PLANT_08", "SK_PLANT_15", "SK_PLANT_16"]);
+    // Wachstum-LESENDE (nicht -stützende) Skills bleiben untrimmbar
+    expect(isTrimmableSkill("SK_PLANT_01")).toBe(false); // Wurzelschlag (Wachstum → Wert)
+    expect(isTrimmableSkill("SK_PLANT_04")).toBe(false); // Jahresringe (Wachstum → Score)
+    expect(isTrimmableSkill("SK_PLANT_L01")).toBe(false); // Weltenbaum (legendär)
   });
   it("4. Archetyp verdrahtet (ARCHETYPE_ORDER enthält plant)", () => {
     expect(ARCHETYPE_ORDER).toContain("plant");
