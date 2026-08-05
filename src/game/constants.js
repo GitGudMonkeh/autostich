@@ -187,7 +187,7 @@ export const SKILLS_OFFERED     = envNum("SIM_SKILLS_OFFERED", 12);   // Skills 
 export const MAX_ARCHETYPES     = envNum("SIM_MAX_ARCHETYPES", 4);    // gleichzeitig aktive Fraktionen [Default 4 = alle 4 mischbar; ENV-Sweep-Haken, z. B. =3 für den Sim-validierten 3-von-4-Stand (Cross-Vergleich)]
 // (vestigial entfernt: SKILL_EVERY_CYCLES — Skill-Runden kommen nicht mehr „jede 3.", sondern aus dem festen DECISION_SCHEDULE; siehe FIRST_SKILL_CYCLE)
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
-export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.10); // Blitz: je gehaltenem Blitz-Skill [Buff: 0,08→0,10 = +10 pp Crit je Blitz-Skill, SIM-Sweep-Haken]
+export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.08); // Blitz: je gehaltenem Blitz-Skill [v0.5 Rework-Tune: 0,10→0,08 fürs Pflanze-Band, SIM-Sweep-Haken]
 export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
 // Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
 export const ION_SCORE_PER_STACK  = envNum("SIM_ION_SCORE_PER_STACK", 12); // +Score je Ionisierungsstapel bei Sieg mit der Karte [#271: 25→12, Wert wandert in den Crit-Kanal · Sim-tunebar]
@@ -195,7 +195,7 @@ export const ION_SCORE_PER_STACK  = envNum("SIM_ION_SCORE_PER_STACK", 12); // +S
 // JEDER Siegkarte (gedeckelt, nur bei aktivem Blitz). Der Überschuss über 100 % fließt via Überschlag als Ladung zurück
 // → schließt den Sturm-Loop. Nur Ionisierung erzeugt Stapel → generisches Nicht-Blitz unberührt. Werte aus Sim-Sweep
 // (Konfig D): leistungsneutral zum Alt-Blitz (Floor +0,5 %, p90 −1 %, Spread 1,18× = Baseline). [Sim-tunebar]
-export const ION_CRIT_PP_PER_STACK = envNum("SIM_ION_CRIT_PP_PER_STACK", 0.02); // +Crit-Chance je Feld-Ionisierungsstapel (0,02 = +2 pp)
+export const ION_CRIT_PP_PER_STACK = envNum("SIM_ION_CRIT_PP_PER_STACK", 0.015); // +Crit-Chance je Feld-Ionisierungsstapel [v0.5 Rework-Tune: 0,02→0,015]
 export const ION_CRIT_STACK_CAP    = envNum("SIM_ION_CRIT_STACK_CAP", 12);      // gedeckelte gezählte Σ-Feldstapel (→ max +12 pp; zähmt den Heavy-Build-Tail)
 export const ION_MAX_STACKS       = 5;  // max Stapel je Karte [#165 Skills-Spec §5.1: 4→5]
 export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Verbrauch
@@ -204,7 +204,7 @@ export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Ver
 //   Tiefe   = Anteil Karten voll (ION_MAX_STACKS) ≥ FRAC → Crit-Überschuss (>100 %) kippt via Überschlag von Ladung auf Crit-Mult.
 export const ION_SAT_BREADTH_FRAC = envNum("SIM_ION_SAT_BREADTH_FRAC", 0.85); // Anteil ionisierter Karten für „Breite voll" [Sim-tunebar]
 export const ION_SAT_DEPTH_FRAC   = envNum("SIM_ION_SAT_DEPTH_FRAC", 0.85);   // Anteil voller (5-Stapel-)Karten für „Tiefe voll" [Sim-tunebar]
-export const ION_SATURATION_VALUE = envNum("SIM_ION_SATURATION_VALUE", 2);    // +Wert auf alle Karten solange Breite voll [Sim-tunebar]
+export const ION_SATURATION_VALUE = envNum("SIM_ION_SATURATION_VALUE", 1);    // +Wert auf alle Karten solange Breite voll [v0.5 Rework-Tune: 2→1, der Runaway-Fix · Sim-tunebar]
 export const UEBERSCHLAG_EXCESS_TO_MULT = envNum("SIM_UEBERSCHLAG_EXCESS_TO_MULT", 0.5); // ab Tiefe: Crit-Überschuss (je volle 100 %) → +Crit-Mult statt Ladung [Sim-tunebar]
 // Ionisierungs-Geschwindigkeit ∝ Blitz-Skills (Mono): Breite je Verbrauch steigt mit jedem Blitz-Skill über der Schwelle.
 export const ION_SPEED_MIN_SKILLS = envNum("SIM_ION_SPEED_MIN_SKILLS", 2);    // ab dieser Blitz-Skill-Zahl skaliert die Ionisierungs-Breite
@@ -214,7 +214,7 @@ export const KETTENBLITZ_COUNT    = 2;  // Kettenblitz: zusätzlich ionisierte K
 export const UEBERSPANNUNG_CHARGE = 3;  // Überspannung: Zusatzladung bei Crit mit ionisierter Karte
 // Reaktoren (Reststrom-Boden + Gewitterfront)
 export const REST_CHARGE_FLOOR = envNum("SIM_REST_CHARGE_FLOOR", 4);    // Reststrom: Ladungsboden nach jedem Verbrauch [v0.5: 3→4, Rapid-Fire-Hebel]
-export const STORM_CRIT_STEP   = envNum("SIM_STORM_CRIT_STEP", 0.02); // Gewitterfront: +Crit-Chance-Momentum je Verbrauch — UNCAPPED (Überschlag = Ventil) [v0.5 · Sim-tunebar]
+export const STORM_CRIT_STEP   = envNum("SIM_STORM_CRIT_STEP", 0.01); // Gewitterfront: +Crit-Chance-Momentum je Verbrauch — UNCAPPED (Überschlag = Ventil) [v0.5 Rework-Tune: 0,02→0,01 · Sim-tunebar]
 export const STORM_CRIT_CAP    = 0.20; // (vestigial v0.5: Gewitterfront ist entkappt; Konstante bleibt für Alt-Tests/Rollback)
 export const STORM_SCORE       = envNum("SIM_STORM_SCORE", 100);  // Gewitterfront nach Cap: +Score je Sieg … [SIM-Tuning]
 export const STORM_SCORE_WINS  = 3;    // …          … für so viele folgende Siege
@@ -229,7 +229,7 @@ export const STATIC_CHARGE     = envNum("SIM_STATIC_CHARGE", 1); // Statische Au
 // UEBERSPANNUNG_CHARGE (oben, =3) = Kaskade: Crit auf/neben ionisierter Karte → Zusatzladung (merge 04+09).
 export const ENTLADUNG_CRIT_MULT      = 1.0;  // (vestigial v0.5: alter „nächster Crit +1×"; Konstante bleibt für Rollback)
 export const ENTLADUNG_MULT_STEP      = envNum("SIM_ENTLADUNG_MULT_STEP", 0.10); // Entladung (v0.5): +Crit-Multiplikator-Momentum je vollem Verbrauch (dauerhaft) // Sim-tunebar
-export const ENTLADUNG_MULT_CAP       = envNum("SIM_ENTLADUNG_MULT_CAP", 2.0);   // Entladung (v0.5): weicher Deckel des Multi-Momentums (kein Ventil für Multi) // Sim-tunebar
+export const ENTLADUNG_MULT_CAP       = envNum("SIM_ENTLADUNG_MULT_CAP", 1.0);   // Entladung (v0.5): weicher Deckel des Multi-Momentums (kein Ventil für Multi) [Rework-Tune: 2,0→1,0] // Sim-tunebar
 // Kurzschluss (Rework): eine VOLLE (5) Siegkarte gibt bei JEDEM Sieg einen Burst — OHNE die Stapel zu opfern (Payoff fürs
 // Maxen statt Sättigung entladen). Wiederkehrend, weil die Stapel bleiben → weiter Flat-Score + Feld-Crit (#271). [Sim-tunebar]
 export const KURZSCHLUSS_SCORE  = envNum("SIM_KURZSCHLUSS_SCORE", 250); // Direkt-Score-Burst (post-stack) je Sieg mit voller Karte [Sim: Blitz-Aggregat unempfindlich → Feel-Wert]
