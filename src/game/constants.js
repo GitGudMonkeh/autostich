@@ -442,10 +442,10 @@ export const PLANT_GREEN_FARBBLOCK_CAP = 3;// Grün-Farbblock-Cap: der eskaliere
 export const WURZELSCHLAG_PER_GROWTH = envNum("SIM_WURZELSCHLAG_PER_GROWTH", 4); // Wurzelschlag: +1 Dauerwert je N Wachstum (grüne Karte, bis Deckel) [Sim-tunebar: höher = Wert wächst langsamer → Auto-Sieg später] // v0
 export const WURZELSCHLAG_LOSS_EVERY = envNum("SIM_WURZELSCHLAG_LOSS_EVERY", 2); // Wurzelschlag-Buff: je N Niederlagen einer Karte wächst sie trotzdem +1 Zuwachs (Zähler je card.id) [Sim-tunebar: höher = seltener Trostwachstum] // v0.4
 export const WURZELSCHLAG_LOSS_MIN_SKILLS = envNum("SIM_WURZELSCHLAG_LOSS_MIN_SKILLS", 4); // Mono-Gate: Trost-Zuwachs erst ab N aktiven Pflanzen-Skills (von SKILL_SLOTS=6) [Sim-tunebar: niedriger = auch für Splash] // v0.4
-export const WURZELTIEFE_SCORE     = 12;  // Wurzeltiefe: Flat-Score je Sieg einer grünen Karte (Wurzeln-Score) // v0 — tunebar
+export const WURZELTIEFE_SCORE     = envNum("SIM_WURZELTIEFE_SCORE", 15);  // Wurzeltiefe: Flat-Score je Sieg einer grünen Karte (Wurzeln-Score) [Pflanze-Buff: 12→15]
 export const PFAHLWURZEL_MULT      = 2;   // Pfahlwurzel: Wurzeln-Score ×2 bei Formations-Sieg                  // v0
 export const JAHRESRINGE_PER_GROWTH = 10; // Jahresringe: je 10 Wachstum der Karte +Wurzeln-Score              // v0
-export const JAHRESRINGE_SCORE     = 30;  // … so viel je 10er-Stufe                                            // v0 — tunebar
+export const JAHRESRINGE_SCORE     = envNum("SIM_JAHRESRINGE_SCORE", 35);  // … so viel je 10er-Stufe [Pflanze-Buff: 30→35]
 // #Ceiling-Buff (Pflanze): der strukturelle Grund fürs niedrige Ceiling ist, dass die generischen Payoffs LINEAR/flach
 // sind (anders als Eis' dreieckiger Schicht-Score). Beide Achsen bekommen daher einen SUPERLINEAREN (dreieckigen) High-
 // End-Anteil — additiv oben drauf, nur am oberen Rand → reines Ceiling, Floor unberührt, beide Skills bleiben Picks.
@@ -470,7 +470,7 @@ export const BLUETEZEIT_MULT       = 2;   // Blütezeit: Blüte-Score ×2 bei Fo
 // Linie 4 — Überwucherung (Mono-Grün-Payoff)
 export const PHOTOSYNTHESE_MULT    = 1.08;// Photosynthese: grüne Karte in Formation → ×1,08 Score              // v0 — tunebar
 export const BLAETTERDACH_MIN      = 4;   // Blätterdach: ab 4er-Grün-Farbblock …                               // v0
-export const BLAETTERDACH_SCORE    = envNum("SIM_BLAETTERDACH_SCORE", 4);  // … +Score je Karte im Block [Sim-tunebar] // v0 — tunebar
+export const BLAETTERDACH_SCORE    = envNum("SIM_BLAETTERDACH_SCORE", 8);  // … +Score je Karte im Block [Pflanze-Buff: 4→8]
 export const BLAETTERDACH_CARD_CAP = 10;  // Blätterdach: max so viele Karten im Block zählen (Deckel gegen Riesenblock) // v0
 export const UEBERWUCHERUNG_FIELD  = 0.66;// Überwucherung: ab 66 % Feld grün …                                 // v0 — tunebar
 export const UEBERWUCHERUNG_FACTOR = envNum("SIM_UEBERWUCHERUNG_FACTOR", 0.20);// … alle Farbblöcke +0,20 Faktor [Sim-tunebar: der feldweite multiplikative Compounder] // v0
