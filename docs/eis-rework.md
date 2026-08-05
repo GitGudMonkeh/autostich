@@ -56,24 +56,29 @@ Pipeline **Aufbauen → Verbinden → Bersten**, plus eine Kontroll-Achse quer d
 
 ---
 
-## 4 · Die 12 Rollen (Mechanik — noch ohne Zahlen)
+## 4 · Die Rollen (Mechanik — noch ohne Zahlen)
 
-Regel = **Bedingung → Effekt**.
+Regel = **Bedingung → Effekt**. 12 Kern-Rollen + 5 Auffüller = **17 normale Rollen** (Ziel wie Feuer). Verteilung: Firn 4 · Eisschild 5 · Lawine 5 · Frostgriff 3.
 
 ### Linie 1 · Firn — Masse-Motor
 - **Anfrieren** — Sieg → **mehr Masse**; Formations-Sieg → **extra**. *(zündet das Fundament, der Grundmotor — Aufbau über Siege UND Formationen)*
 - **Schneetreiben (Verwehung)** — gewinnt ein Gletscher, **verweht** er einen Teil Masse auf einen **Nachbarn**. *(sät das Feld nach außen; nur Siege verwehen → Verlust bleibt relevant; distinct von Anfrieren = nach innen)*
 - **Uraltes Eis** — Start mit **vorgeformter Masse** auf einigen Karten. *(Seed → Feld läuft früher an)*
+- **Verdichtung** — der **Gebäude-Bonusanteil** auf einer Gletscherkarte (Kartenwert/Stichwert) wird **nicht als Score ausgezahlt, sondern in Masse getankt**. *(die dritte Masse-Quelle — siegunabhängig, koppelt Architekt an Eis; die Karte spielt ihren Stich normal weiter, nur der Gebäude-Bonus kippt in Masse. Motor des „alles auf Gletscher stapeln"-Builds)*
 
 ### Linie 2 · Eisschild — Cluster/Dichte
 - **Verschmelzen** — angrenzende Gletscher **poolen ihre Masse** (der Große zieht die Nachbarn hoch). *(macht dichte Felder gleichmäßig mächtig)*
 - **Packeis** — ein Gletscher mit **vielen Gletscher-Nachbarn** bekommt Bonus-Masse/-Burst. *(belohnt die Mitte des Feldes)*
 - **Eisbrücke** — erweitert, was **„angrenzend"** zählt (Diagonale / über eine Lücke). *(verbindet zersplitterte Felder zu einem Cluster)*
+- **Eiswall** — eine **komplett gefrorene Reihe/Segment** (durchgehende Gletscher-Linie) **bufft alle ihre Gletscher**. *(belohnt geplante Vollreihen — Formations-Payoff, greift in die 2D-Formationen)*
+- **Verzahnung** — je **größer das verbundene Cluster**, desto schneller gewinnen **alle seine Gletscher** Masse. *(Cluster füttert sich selbst — **Runaway-Kandidat**, später hart zu deckeln)*
 
 ### Linie 3 · Lawine — Bersten/Kaskade
 - **Abbruchkante** — Burst-Score **skaliert steiler mit der Masse** des Gletschers. *(Größe = Wucht, belohnt Einzelriesen)*
 - **Kettenbruch** — das Bersten **triggert angrenzende Gletscher, selbst zu bersten** → die echte Kaskade rollt durchs Feld. *(der Payoff-Verstärker)*
 - **Zermalmen** — Kollision (Burst trifft Gletscher) → **Krit auf den Burst-Score**. *(Dichte gibt Krit)*
+- **Rissbildung** — *instabiles Eis*: der Gletscher **birst schon bei niedrigerer Masse-Schwelle** → häufigere, kleinere Bersten statt seltener Riesen. *(Tempo-Achse: schnellere Pulse, füttert Kaskaden früher)*
+- **Gletschersturz** — je **mehr Gletscher im selben Durchlauf bersten**, desto **stärker jedes einzelne Bersten**. *(brettweiter Kaskaden-Verstärker; belohnt das volle, gleichzeitig auslösende Feld)*
 
 ### Linie 4 · Frostgriff — Kontrolle/Duo
 - **Einfrieren** — birst ein Gletscher auf eine **Gegnerkarte**, verliert diese ihren **nächsten Stich garantiert**. *(harte Kontrolle nach außen)*
@@ -84,9 +89,10 @@ Regel = **Bedingung → Effekt**.
 
 ## 5 · Synergien
 
-- **Firn füttert alles** — ohne Masse kein Burst.
-- **Eisschild = Multiplikator-Linie:** Verschmelzen/Packeis/Eisbrücke bauen große, dichte Cluster → davon leben **Kaskade (Kettenbruch)** und **Krit (Zermalmen)**. Herz des „Breite"-Builds.
-- **Abbruchkante = Gegenpol:** wenige **Riesen** statt breitem Feld → alternativer Eis-Build (Tiefe im Einzelgletscher statt Fläche).
+- **Firn füttert alles** — ohne Masse kein Burst. Drei Masse-Quellen: Sieg (Anfrieren), Seed (Uraltes Eis), **Architektur (Verdichtung)** — letztere die einzige **siegunabhängige**.
+- **Verdichtung koppelt Architekt an Eis:** Gebäude-Bonuswert → Masse. Speist konzentriert **Abbruchkante** (steiler Masse-Skalierer) → der Motor des Riesen-Builds. Erst damit hat „alles auf wenige Gletscher stapeln" einen eigenen Antrieb.
+- **Eisschild = Multiplikator-Linie:** Verschmelzen/Packeis/Eisbrücke/Verzahnung bauen große, dichte Cluster → davon leben **Kaskade (Kettenbruch/Gletschersturz)** und **Krit (Zermalmen)**. Herz des „Breite"-Builds. **Eiswall** zahlt geplante Vollreihen aus.
+- **Abbruchkante = Gegenpol:** wenige **Riesen** statt breitem Feld → alternativer Eis-Build (Tiefe im Einzelgletscher statt Fläche). **Rissbildung** ist der Tempo-Gegenspieler (viele kleine statt weniger großer Bersten).
 - **Schneetreiben** baut Cluster **aktiv** auf (sät nach außen), Eisschild belohnt sie → greifen ineinander.
 - **Frostgriff** hängt quer: dieselbe Berst-Energie nach außen — Einfrieren (Tempo), Frostbund (Duo), Eispanzer (Consistency).
 
@@ -95,7 +101,7 @@ Regel = **Bedingung → Effekt**.
 ## 6 · Build-Möglichkeiten
 
 - **Mono „Lawine":** all-in aufs dichte Gletscherfeld — die Kaskade IST der ganze Score.
-- **Riesen (Abbruchkante):** wenige, sehr mächtige Gletscher — Tiefe statt Breite.
+- **Riesen (Abbruchkante + Verdichtung):** wenige, sehr mächtige Gletscher — Tiefe statt Breite. **Architekt-Eis**: die dicksten Gebäude auf die wenigen Gletscher, Verdichtung kippt den Bauwert in Masse, Abbruchkante zahlt ihn als Burst aus.
 - **Duo-Support (Frostbund):** Seed-Gletscher, deren Bersten die Nachbarn des 2. Archetyps buffen — Eis als räumlicher Verstärker.
 - **Positionier-Puzzle:** weil frei platziert wird, ist Eis die „ordne das Brett optimal an"-Fraktion — Skill-Ausdruck komplett im Layout.
 
@@ -103,7 +109,7 @@ Regel = **Bedingung → Effekt**.
 
 ## 7 · Offene Punkte (nächste Schritte)
 
-1. **Dünne Linien auffüllen** (~5 Zusatzrollen) — Gefühl: **Lawine** (Haupt-Payoff) und **Eisschild** (Dichte lebt von Varianten). Firn/Frostgriff mit je 3 vermutlich rund. Ziel-Größe ~17 normal (wie Feuer).
+1. ~~Dünne Linien auffüllen~~ **erledigt** — 5 Zusatzrollen gesetzt: Firn **+Verdichtung** (4), Eisschild **+Eiswall/+Verzahnung** (5), Lawine **+Rissbildung/+Gletschersturz** (5), Frostgriff bleibt 3. **17 normale Rollen.**
 2. **Legendäre** (~4, je Linie eine Capstone-Version der Fantasie):
    - Firn → *„Eiszeit"* (das ganze Brett friert / Masse explodiert)
    - Eisschild → *„Ewiges Schild"* (das gesamte Feld = ein zusammenhängender Übergletscher)
