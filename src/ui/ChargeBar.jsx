@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { chargeConsumerOf } from "../game/skills.js";
-import { ION_MAX_STACKS, ION_SAT_BREADTH_FRAC, ION_SAT_DEPTH_FRAC, ION_SATURATION_VALUE, CRIT_BASE_MULT } from "../game/constants.js";
+import { streakBaseMult } from "../game/perks.js";
+import { ION_MAX_STACKS, ION_SAT_BREADTH_FRAC, ION_SAT_DEPTH_FRAC, ION_SATURATION_VALUE, CRIT_BASE_MULT, STREAK_BASE_CAP } from "../game/constants.js";
 import { IndicatorPanel } from "./indicators/panelKit.jsx";
 import { LIGHTNING, CASCADE, CASCADE_BRIGHT } from "./indicators/vocab.js";
 
@@ -20,9 +21,12 @@ const mlt = (x) => x.toFixed(2).replace(".", ",");
 // Serienkette → Segment-Kette: VERBUNDENE Glieder (gefüllt = Serienstufen), leading edge glüht. Label UNTER der Kette (v0.5).
 function StreakChain({ streak }) {
   const filled = Math.min(streak, CHAIN_VISIBLE);
+  const full = streak >= CHAIN_VISIBLE;                                  // Kette voll → Glühen
+  const maxed = streakBaseMult(streak) >= 1 + STREAK_BASE_CAP - 1e-6;    // Serien-Mult am Deckel (×2,5) → Puls
+  const glowCls = maxed ? "as-streak-pulse" : full ? "as-streak-glow" : "";
   return (
     <div>
-      <div className="flex items-center">
+      <div className={`flex items-center rounded ${glowCls}`}>
         {Array.from({ length: CHAIN_VISIBLE }, (_, i) => {
           const on = i < filled;
           const prevOn = i > 0 && i - 1 < filled;

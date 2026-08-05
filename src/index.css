@@ -61,6 +61,11 @@ button { font-family: inherit; }
 @keyframes as-blitz-pulse { 0% { box-shadow: 0 0 0 0 rgba(155,140,255,0); } 22% { box-shadow: 0 0 16px 3px rgba(155,140,255,0.5); } 100% { box-shadow: 0 0 0 0 rgba(155,140,255,0); } }
 .as-blitz-pulse { animation: as-blitz-pulse 520ms ease-out; }
 @media (prefers-reduced-motion: reduce) { .as-blitz-pulse { animation: none; } }
+/* Serienkette: voll → statisches violettes Glühen; am Serien-Mult-Deckel (×2,5) → pulsendes Glühen. */
+.as-streak-glow { box-shadow: 0 0 8px 1px rgba(155,140,255,0.40); }
+@keyframes as-streak-pulse { 0%,100% { box-shadow: 0 0 6px 1px rgba(155,140,255,0.35); } 50% { box-shadow: 0 0 15px 3px rgba(155,140,255,0.75); } }
+.as-streak-pulse { animation: as-streak-pulse 1.15s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .as-streak-pulse { animation: none; box-shadow: 0 0 8px 1px rgba(155,140,255,0.4); } }
 /* Wie as-combo, aber HÄLT am Ende bei voller Opacity (forwards) — für den Formations-Multi-Float, damit er
    sichtbar bleibt, solange der Stich angezeigt wird (wie Banner/Aufschlüsselung), statt zu früh wegzufaden. */
 @keyframes as-combo-hold { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-6px) scale(1); } 100% { opacity:1; transform: translateY(-8px) scale(1); } }
