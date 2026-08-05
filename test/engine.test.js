@@ -5,7 +5,8 @@ import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
 import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
   HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ZINSESZINS_STEP, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
-  SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT, ION_SCORE_PER_STACK } from "../src/game/constants.js";
+  SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT, ION_SCORE_PER_STACK,
+  REST_CHARGE_FLOOR, STORM_CRIT_STEP, ENTLADUNG_MULT_STEP, ENTLADUNG_MULT_CAP } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
 import { streakBaseMult } from "../src/game/perks.js";
 import { initialShop } from "../src/game/shop.js";
@@ -563,26 +564,29 @@ describe("Ionisierung — Engine (Stufe B)", () => {
 
 describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)", () => {
   const LR = "SK_LIGHTNING_01", I = "SK_LIGHTNING_02", R = "SK_LIGHTNING_05", G = "SK_LIGHTNING_06", S = "SK_LIGHTNING_07",
-        ST = "SK_LIGHTNING_08", DA = "SK_LIGHTNING_16";
+        ST = "SK_LIGHTNING_08", DA = "SK_LIGHTNING_16", D10 = "SK_LIGHTNING_10";
   const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: 0, stormScoreWinsRemaining: 0, dauerstromCritBonus: 0, ...over });
 
-  it("Reststrom: Verbrauch lässt Ladung auf 3 statt 0 fallen", () => {
-    // Kein Blitzableiter → isolierter Reststrom-Boden (3); Blitzableiter würde +1 obendrauf geben (eigener Test).
+  it("Reststrom: Verbrauch lässt Ladung auf den Boden fallen (statt 0)", () => {
+    // Kein Blitzableiter → isolierter Reststrom-Boden; Blitzableiter würde +1 obendrauf geben (eigener Test).
     const s = resolveTrick(scenario(12, 0, { skills: [I, R], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
-    expect(s.lightning.charge).toBe(3);
+    expect(s.lightning.charge).toBe(REST_CHARGE_FLOOR);
   });
 
-  it("Gewitterfront: je Verbrauch +2 pp Crit dauerhaft (Cap 20 pp), danach +100 Score für 3 Siege", () => {
+  it("Gewitterfront (v0.5): je Verbrauch +Crit-Momentum, UNCAPPED (kein Score-Fallback mehr)", () => {
     const step = resolveTrick(scenario(12, 0, { skills: [LR, I, G], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
-    expect(step.lightning.stormCritBonus).toBeCloseTo(0.02);
-    const capped = resolveTrick(scenario(12, 0, { skills: [LR, I, G], lightning: lit({ charge: 9, stormCritBonus: 0.20 }) }), () => 0);
-    expect(capped.lightning.stormScoreWinsRemaining).toBe(3);
+    expect(step.lightning.stormCritBonus).toBeCloseTo(STORM_CRIT_STEP);
+    // Über dem alten Cap (0,20) rampt es einfach weiter — kein Umschalten auf Score.
+    const high = resolveTrick(scenario(12, 0, { skills: [LR, I, G], lightning: lit({ charge: 9, stormCritBonus: 0.50 }) }), () => 0);
+    expect(high.lightning.stormCritBonus).toBeCloseTo(0.50 + STORM_CRIT_STEP);
+    expect(high.lightning.stormScoreWinsRemaining || 0).toBe(0);
   });
 
-  it("Gewitterfront-Score: aktiver Stack gibt +100 in die Basis und wird je Sieg abgebaut", () => {
-    const s = resolveTrick(scenario(12, 0, { skills: [LR, G], lightning: lit({ stormScoreWinsRemaining: 2 }) }), () => 0.99);
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + 100) * 1.02); // (Basis+100) × streakBaseMult(1)=1,02
-    expect(s.lightning.stormScoreWinsRemaining).toBe(1);
+  it("Entladung (v0.5): je Verbrauch +Crit-Mult-Momentum, dauerhaft (weicher Cap)", () => {
+    const s = resolveTrick(scenario(12, 0, { skills: [LR, I, D10], lightning: lit({ charge: 9 }) }), () => 0);
+    expect(s.lightning.entladungMult).toBeCloseTo(ENTLADUNG_MULT_STEP);
+    const capped = resolveTrick(scenario(12, 0, { skills: [LR, I, D10], lightning: lit({ charge: 9, entladungMult: ENTLADUNG_MULT_CAP }) }), () => 0);
+    expect(capped.lightning.entladungMult).toBeCloseTo(ENTLADUNG_MULT_CAP); // Deckel hält
   });
 
   it("Ladungsserie: ist KEIN Verbraucher — volle Ladung ohne Ionisierung parkt (kein Verbrauch)", () => {

@@ -6,7 +6,7 @@ import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, build
   ionScoreFor, ionCritChance, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasSeriesCrit, hasStorm, chargeFloorFor } from "../src/game/skills.js";
 import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, MAX_ARCHETYPES,
-  ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK, ION_CRIT_STACK_CAP } from "../src/game/constants.js";
+  ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK, ION_CRIT_STACK_CAP, REST_CHARGE_FLOOR } from "../src/game/constants.js";
 
 const LR = "SK_LIGHTNING_01";
 const ALL = Object.keys(SKILL_DEFS);
@@ -294,8 +294,8 @@ describe("Reaktoren + Ladungsserie — Helfer (Stufe C)", () => {
     expect(consumesCharge([I])).toBe(true);   // Ionisierung verbraucht
     expect(consumesCharge([R])).toBe(false);  // Reststrom ist Reaktor, kein Verbraucher
   });
-  it("chargeFloorFor: Reststrom setzt Boden 3, sonst 0", () => {
-    expect(chargeFloorFor([R])).toBe(3);
+  it("chargeFloorFor: Reststrom setzt den Ladungsboden, sonst 0", () => {
+    expect(chargeFloorFor([R])).toBe(REST_CHARGE_FLOOR);
     expect(chargeFloorFor([])).toBe(0);
   });
   it("hasStorm nur mit Gewitterfront", () => {

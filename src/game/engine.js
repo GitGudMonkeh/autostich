@@ -678,10 +678,10 @@ export function resolveTrick(state, rng) {
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
     const critCtx = { ...wctx, rawCrit };
     // Basis 1,5 + Präzision „Wucht" (familyCritMult) + L6-Überschuss + Blitz + Donnergott + Durchschlag (dauerhaft)
-    // + Entladung (armierter Crit nach vollem Verbrauch, einmalig). #267: der Crit-Mult-Stat ist weg.
+    // + Entladung (Crit-Mult-Momentum je Verbrauch, dauerhaft, v0.5). #267: der Crit-Mult-Stat ist weg.
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers) + lightningCritMult(skills)
                    + (lightning?.durchschlagMult || 0)
-                   + ((lightning && lightning.dischargeArmed) ? C.ENTLADUNG_CRIT_MULT : 0);
+                   + (lightning?.entladungMult || 0);
     // Frostkaskade: Crit-Chance-Überschuss über 100 % (Eiskalt-Flut) geht nicht verloren → wird zu Crit-Multiplikator.
     if (pCard.frozen && hasFrostkaskade(skills) && rawCrit > 1) critMultiplier += (rawCrit - 1) * C.FLAECHE_EXCESS_TO_MULT;
     // Überschlag-Graduierung (v0.5): bei Voll-TIEFE geht der Crit-Überschuss (>100 %) in Crit-Multiplikator statt in Ladung.
@@ -712,9 +712,7 @@ export function resolveTrick(state, rng) {
     // Ionisierung: Score der gespielten Karte (Stapel VOR dem Zuwachs). Gewitterfront: +100 für die nächsten Siege.
     const stormScore = (lightning && (lightning.stormScoreWinsRemaining || 0) > 0) ? C.STORM_SCORE : 0;
     // (critCtx mit rawCrit ist oben — vor critMultiplier — gebildet; D6/D7/D8/D11/D15/D19 + Blitzableiter nutzen ihn.)
-    // Entladung (Rework v0): war der nächste Crit mit +Crit-Mult armiert (aus einem früheren vollen Verbrauch)?
-    // Der Crit-Mult-Bonus fließt oben in critMultiplier; hier nur die Armierung merken (unten entwaffnet).
-    const dischargeArmedBefore = !!(lightning && lightning.dischargeArmed);
+    // Entladung (v0.5): dauerhaftes Crit-Mult-Momentum (lightning.entladungMult, oben in critMultiplier) — kein Armieren mehr.
     // Architekt score-Gebäude (#202, Handelsbauten): Flat in die multiplizierte Basis; Mult (Schatzkammer/Struktur) als
     // eigener Faktor. Meilenstein-Zähler (bump) wird nach dem Stich fortgeschrieben. Bedingungen: Crit/Farbe/Serie/Ziel.
     const architectScoreRes = archPreNow
@@ -865,7 +863,6 @@ export function resolveTrick(state, rng) {
     // Kaskade Überspannung (Crit auf/neben Ionis.) · Überschlag (Crit-Chance-Überschuss) · Dauerstrom (Serie).
     const ionizedCard = (pCard.ionStacks || 0) > 0;
     if (lightning && lightning.active) {
-      if (isCrit && dischargeArmedBefore) lightning = { ...lightning, dischargeArmed: false }; // Entladung entwaffnen (Crit-Mult oben verrechnet)
       let gainedCharge = 0;
       if (isCrit) {
         gainedCharge += 1 + skillSum(skills, "chargeOnCrit", wctx);
@@ -912,21 +909,18 @@ export function resolveTrick(state, rng) {
             lightning = consumeCharge(lightning, floor);
             // #165 Blitzfänger: die Fang-Ladungen entstehen NACH dem Verbrauch (sonst würde consumeCharge sie wieder auf den Boden setzen).
             if (blitzCatches > 0) lightning = addCharge(lightning, blitzCatches);
-            if (hasDischarge(skills)) lightning = { ...lightning, dischargeArmed: true }; // Entladung: nächsten Crit armieren
+            // Entladung (v0.5): +Crit-Mult-Momentum je Verbrauch, dauerhaft, weicher Cap (kein Ventil für Multi).
+            if (hasDischarge(skills)) lightning = { ...lightning, entladungMult: Math.min(C.ENTLADUNG_MULT_CAP, (lightning.entladungMult || 0) + C.ENTLADUNG_MULT_STEP) };
             // On-Consume-Passives (Rework v0) — kleiner Payoff bei JEDEM vollen Verbrauch, hält die Kettenfantasie am Laufen:
             if (hasBlitzableiter(skills)) lightning = addCharge(lightning, C.BLITZABLEITER_CONSUME_CHARGE); // Blitzableiter: Ladung zurück
-            if (hasDauerstrom(skills)) // Dauerstrom: dauerhafte Crit-Chance-Rampe je Verbrauch (Cap)
-              lightning = { ...lightning, dauerstromCritBonus: Math.min(C.DAUERSTROM_CONSUME_CRIT_CAP, (lightning.dauerstromCritBonus || 0) + C.DAUERSTROM_CONSUME_CRIT) };
+            if (hasDauerstrom(skills)) // Dauerstrom (v0.5): dauerhafte Crit-Chance-Rampe je Verbrauch — UNCAPPED (3. Momentum-Zugang)
+              lightning = { ...lightning, dauerstromCritBonus: (lightning.dauerstromCritBonus || 0) + C.DAUERSTROM_CONSUME_CRIT };
             if (hasStaticCharge(skills)) { // Statische Aufladung: +Flat-Score bei jedem Verbrauch (Direkt-Score, nicht multipliziert)
               score += C.CONSUME_SCORE; gained += C.CONSUME_SCORE; lightYield += C.CONSUME_SCORE;
               breakdown.lightDirect = (breakdown.lightDirect || 0) + C.CONSUME_SCORE; breakdown.total = (breakdown.total || 0) + C.CONSUME_SCORE;
             }
-            if (hasStorm(skills)) { // Gewitterfront-Reaktor: erst Crit-Chance (Cap), danach Score für die nächsten Siege
-              const cur = lightning.stormCritBonus || 0;
-              lightning = cur < C.STORM_CRIT_CAP
-                ? { ...lightning, stormCritBonus: Math.min(C.STORM_CRIT_CAP, cur + C.STORM_CRIT_STEP) }
-                : { ...lightning, stormScoreWinsRemaining: C.STORM_SCORE_WINS };
-            }
+            // Gewitterfront (v0.5): Crit-Chance-Momentum je Verbrauch — UNCAPPED (Überschlag ist das Ventil; „ab Cap → Score" entfällt).
+            if (hasStorm(skills)) lightning = { ...lightning, stormCritBonus: (lightning.stormCritBonus || 0) + C.STORM_CRIT_STEP };
           }
         }
       }

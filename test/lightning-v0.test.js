@@ -46,7 +46,7 @@ describe("Blitz-Rework v0 — Roster", () => {
 
 describe("Blitz-Rework v0 — reine Helfer", () => {
   it("initLightning: frischer Substate inkl. neuer Kaskade-/Crit-Maschine-Felder", () => {
-    expect(initLightning()).toMatchObject({ active: false, charge: 0, dischargeArmed: false, stauBonus: 0, durchschlagMult: 0 });
+    expect(initLightning()).toMatchObject({ active: false, charge: 0, entladungMult: 0, stauBonus: 0, durchschlagMult: 0 });
   });
   it("lightningCritRaw: Sockel + je Skill + Sturm + Spannungsstau-Rampe", () => {
     const l = { active: true, stormCritBonus: 0.04, stauBonus: 0.1 };
