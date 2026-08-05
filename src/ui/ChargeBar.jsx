@@ -99,7 +99,9 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
   const critMultFrac = Math.min(1, Math.max(0, (critMult - CRIT_BASE_MULT) / CRIT_BASE_MULT));
 
   return (
-    <IndicatorPanel className="grid gap-3">
+    <IndicatorPanel className="relative grid gap-3">
+      {/* Blitzfrequenz-Puls (v0.5): violettes Rahmen-Glühen je Entladung (wie der Battlefield-Bloom); remount je consumeCount replayt die Animation. */}
+      <div key={consumeCount} className="as-blitz-pulse pointer-events-none absolute inset-0 rounded-xl" aria-hidden="true" />
       {/* Sturm-Sättigung (v0.5): die zwei Stufen + ihre Payoffs live — das Herzstück des Reworks. */}
       {ionN > 0 && (
         <div className="grid gap-1.5">
@@ -147,7 +149,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
             {overcharge ? `Crit ×${mlt(critMult)}` : `${critPct}%`}
           </span>
         </div>
-        <div key={consumeCount} className="as-blitz-pulse relative w-full rounded-full overflow-hidden" style={{ background: "#26262e", height: 9 }}>
+        <div className="relative w-full rounded-full overflow-hidden" style={{ background: "#26262e", height: 9 }}>
           <div className="h-full rounded-full transition-all" style={{
             width: `${Math.min(critPct, 100)}%`,
             background: `linear-gradient(90deg, ${LIGHTNING}, ${CASCADE}, ${CASCADE_BRIGHT})`,
@@ -155,8 +157,8 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
           {overcharge && (
             <div className="absolute inset-y-0 left-0 rounded-full transition-all" style={{
               width: `${Math.round(critMultFrac * 100)}%`,
-              background: `linear-gradient(90deg, ${CASCADE_BRIGHT}, #ffffff)`,
-              boxShadow: `0 0 8px ${CASCADE_BRIGHT}`,
+              background: "linear-gradient(90deg, #e9d67a, #fff4b8)", // leichtes Gelb = Crit-Multiplikator
+              boxShadow: "0 0 8px rgba(240,220,130,0.75)",
             }} />
           )}
         </div>
