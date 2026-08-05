@@ -213,7 +213,7 @@ export const STORM_SCORE_WINS  = 3;    // …          … für so viele folgend
    📈Serie) + 🔗Kaskade. Blitz BESITZT die Crit-Erzeugung. Werte v0, cross-archetype Sim-Pass. [v0 · tunebar]
    ============================================================ */
 export const LIGHTNING_MAX_CHARGE_THUNDER = 15;  // Donnergott (L): hebt das Ladungsmaximum 10 → 15
-export const THUNDER_CRIT_MULT = 1.0;  // Donnergott (L): dauerhafter +Crit-Multiplikator
+export const THUNDER_CRIT_MULT = envNum("SIM_THUNDER_CRIT_MULT", 1.4);  // Donnergott (L): dauerhafter +Crit-Multiplikator [Legendär-Angleich: 1,0→1,4]
 export const STATIC_CHARGE     = envNum("SIM_STATIC_CHARGE", 1); // Statische Aufladung: Ladung je Sieg OHNE Crit // v0
 // UEBERSPANNUNG_CHARGE (oben, =3) = Kaskade: Crit auf/neben ionisierter Karte → Zusatzladung (merge 04+09).
 export const ENTLADUNG_CRIT_MULT      = 1.0;  // Entladung: nächster Crit nach vollem Verbrauch +1,0× Crit-Mult   // v0 — tunebar
@@ -244,7 +244,7 @@ export const DURCHSCHLAG_MULT_CAP     = envNum("SIM_DURCHSCHLAG_MULT_CAP", 2.0);
 // → „mehr Ionis."-Legendäre (Doppelentladung/Flächenionisation) waren tot (1,01×/0,90×). Sie lesen jetzt den BESTAND des
 // gesättigten Feldes und zahlen je IONISIERTEM Sieg DIREKT (post-stack, hart gedeckelt = Plateau, bekenntnis-skaliert = cross-health).
 // Nur Legendär-Halter → generisches Blitz (ION_SCORE_PER_STACK) unberührt. Analog zur Eis-Überlauf-Dividende.
-export const FLAECHENION_DIRECT       = envNum("SIM_FLAECHENION_DIRECT", 70);  // Flächenionisation (Sturmzelle, BREITE): DIREKTer Score je ionisiertem Sieg × #ionisierte Karten [reshape 1,30×]
+export const FLAECHENION_DIRECT       = envNum("SIM_FLAECHENION_DIRECT", 130);  // Flächenionisation (Sturmzelle, BREITE): DIREKTer Score je ionisiertem Sieg × #ionisierte Karten [Legendär-Angleich: 70→130]
 export const FLAECHENION_FIELD_CAP    = envNum("SIM_FLAECHENION_FIELD_CAP", 30); // … gedeckelte Feldbreite (max gezählte ionisierte Karten)
 export const DOPPELENT_DIRECT         = envNum("SIM_DOPPELENT_DIRECT", 40);    // Doppelentladung (endloser Sturm, ENERGIE): DIREKTer Score je ionisiertem Sieg × Σ Stapel im Feld [Legendär-Angleich: 16→40 — Trap-Pick heben]
 export const DOPPELENT_FIELD_CAP      = envNum("SIM_DOPPELENT_FIELD_CAP", 120); // … gedeckelte Feldenergie (max gezählte Σ Stapel)
@@ -319,7 +319,7 @@ export const SCHMELZOFEN_BRAND_BONUS = 1;   // … Brände −1 extra Wert & +1 
 export const SCHMELZOFEN_FORGE_DISCOUNT = envNum("SIM_SCHMELZOFEN_FORGE_DISCOUNT", 0.25); // … Schmieden −25 % Kosten (FAKTOR, skaliert mit den Kosten: 20→15) [#268: flat 1 → Faktor]
 // Legendäre — UMGEFORMT (dauerhaft/compoundend/direkt statt situativ), vier verschiedene Achsen.
 // Sonnenzorn (L) — SCORE-Mult ∝ HÖCHSTER je gehaltener Hitze (heat.peak): dauerhafter Feuer-Score-Multiplikator.
-export const SUNWRATH_PEAK_STEP    = envNum("SIM_SUNWRATH_PEAK_STEP", 0.010); // +GESAMT-Score je Peak-Hitze-% (Peak 100 → ×2,0) [Legendär-Umbau]
+export const SUNWRATH_PEAK_STEP    = envNum("SIM_SUNWRATH_PEAK_STEP", 0.013); // +GESAMT-Score je Peak-Hitze-% (Peak 100 → ×2,3) [Legendär-Angleich: 0,010→0,013 — zaghaft (Sim unterschätzt Feuer)]
 // Sonnenkern (L) — WIN-CONDITION: endet ein Durchlauf mit hoher Hitze, brennt sie sich dauerhaft in ALLE Karten (+Wert).
 export const SONNENKERN_MIN_HEAT   = envNum("SIM_SONNENKERN_MIN_HEAT", 60);   // ab dieser End-Hitze brennt Sonnenkern ein [Legendär-Angleich: 70→60 — häufiger auslösen]
 export const SONNENKERN_VALUE      = envNum("SIM_SONNENKERN_VALUE", 2);       // +Dauerwert je heißem Durchlauf (auf Karten unter dem Deckel) [Legendär-Angleich: 1→2]
@@ -330,7 +330,7 @@ export const PHOENIX_REIGNITE      = envNum("SIM_PHOENIX_REIGNITE", 0.40);    //
 // Damaststahl (L) — DIREKT-SCORE: geschmiedete Siegkarte → direkter Score ∝ geschmiedetem Wert (am Stack vorbei); Deckel entfällt; Asche verfällt nie.
 export const DAMASCUS_MAX_FORGED   = envNum("SIM_DAMASCUS_MAX_FORGED", 4);    // Selbst-Schmiede deckelt auf so viele Karten (gegen 60-Runden-Compounding) [Legendär-Umbau]
 export const DAMASCUS_FORGE_GROWTH = envNum("SIM_DAMASCUS_FORGE_GROWTH", 0);  // geschmiedete Karten +Dauerwert je Durchlauf (0 = kein Compounding) [Legendär-Umbau]
-export const DAMASCUS_DIRECT       = envNum("SIM_DAMASCUS_DIRECT", 11);        // direkter Score je Punkt GESAMT-Schmiedewert, je Sieg (Damast-Dividende) [#268: 16→11 — FORGE_VALUE 2→3 lässt den Schmiedewert ~50 % schneller wachsen]
+export const DAMASCUS_DIRECT       = envNum("SIM_DAMASCUS_DIRECT", 14);        // direkter Score je Punkt GESAMT-Schmiedewert, je Sieg (Damast-Dividende) [Legendär-Angleich: 11→14 — zaghaft (Sim unterschätzt Feuer)]
 export const DAMASCUS_COMBAT       = envNum("SIM_DAMASCUS_COMBAT", 5);        // Underdog: geschmiedete Karten kämpfen mit +Wert (schlagen über ihrem Gewicht) [Legendär-Umbau]
 // (Sonnenzorns alte ≥MIN_HEAT-Verstärkungen ausgebaut → Glühende Klinge/Weißglut sind jetzt reine Nicht-Legendär-Skills.)
 
@@ -479,11 +479,11 @@ export const EWIGER_FRUEHLING_FIELD = envNum("SIM_EWIGER_FRUEHLING_FIELD", 0.25)
 // Legendären tot (0,86-1,00×). Sie lesen jetzt den verschwendeten BESTAND und zahlen je GRÜNEM Sieg DIREKT (post-stack,
 // floor-clean/ceiling-safe, hart gedeckelt = Plateau, bekenntnis-skaliert plantSkillCount/SKILL_SLOTS). Nur Legendär-Halter
 // → generisches Pflanze (die eben bestätigte Balance) unberührt. Analog Eis-Überlauf-Dividende (Permafrost/Gletscher/…).
-export const WELTENBAUM_DIRECT       = envNum("SIM_WELTENBAUM_DIRECT", 2.6);  // Weltenbaum (BREITE): DIREKT je grünem Sieg × Σ Überlauf-Wachstum (der ganze alte Wald) [reshape 1,35×]
+export const WELTENBAUM_DIRECT       = envNum("SIM_WELTENBAUM_DIRECT", 5.0);  // Weltenbaum (BREITE): DIREKT je grünem Sieg × Σ Überlauf-Wachstum (der ganze alte Wald) [Legendär-Angleich: 2,6→5,0]
 export const WELTENBAUM_OVERFLOW_CAP = envNum("SIM_WELTENBAUM_OVERFLOW_CAP", 600); // … gedeckelte Waldgröße
 export const MUTTERBAUM_DIRECT       = envNum("SIM_MUTTERBAUM_DIRECT", 55);   // Mutterbaum (TIEFE): DIREKT je grünem Sieg × Überlauf-Wachstum des TIEFSTEN Baums (Konzentration) [reshape 1,36×]
 export const MUTTERBAUM_OVERFLOW_CAP = envNum("SIM_MUTTERBAUM_OVERFLOW_CAP", 60); // … gedeckelte Tiefe des einen Mutterbaums
-export const DORNENKOENIG_DIRECT     = envNum("SIM_DORNENKOENIG_DIRECT", 85);  // Dornenkönig (KOLONIE): DIREKT je grünem Sieg × #kolonisierte Gegnerkarten (~konstante Flut → höherer Satz)
+export const DORNENKOENIG_DIRECT     = envNum("SIM_DORNENKOENIG_DIRECT", 170);  // Dornenkönig (KOLONIE): DIREKT je grünem Sieg × #kolonisierte Gegnerkarten [Legendär-Angleich: 85→170]
 export const DORNENKOENIG_COLON_CAP  = envNum("SIM_DORNENKOENIG_COLON_CAP", 40); // … gedeckelte Kolonie-Breite (ganzes Gegnerdeck)
 export const EWIGER_FRUEHLING_DIRECT = envNum("SIM_EWIGER_FRUEHLING_DIRECT", 150); // Ewiger Frühling (GRÜN-FELD): DIREKT je grünem Sieg × #grüne Karten (das ewige Feld) [Legendär-Angleich: 54→150 — schlimmster Trap-Pick (−4 %) heben]
 export const EWIGER_FRUEHLING_FIELD_CAP = envNum("SIM_EWIGER_FRUEHLING_FIELD_CAP", 40); // … gedeckelte Feldgröße [Legendär-Angleich: 30→40]
