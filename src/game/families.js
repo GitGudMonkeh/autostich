@@ -788,15 +788,18 @@ const E_FAMILIES = {
   },
   E_COLOR_ALLIANCE: {
     id: "E_COLOR_ALLIANCE", cat: "E", name: "Farballianz", upgradeType: REPLACEMENT,
-    // Farb-Ziel (pickTarget.suits): die gewählten Farben werden in roles["E_COLOR_ALLIANCE"] persistiert und in
-    // computeFormations zu linkedGroups aufgelöst. `pairs` (IV) = die 4 Farben bilden ZWEI Allianzen (je zwei).
+    // Farb-Ziel (pickTarget.suits): die gewählten Farben werden in roles["E_COLOR_ALLIANCE"] persistiert und über
+    // allianceGroups zu Gruppen aufgelöst. Wirkbereich (#289): Farbblock-Formationen, Buntglas/Zunfthaus, Farbserie/
+    // Monochrom, Farbfokus — alle über colorsAllied/colorMatches. AUSNAHME: die Pick-Zeit-Deck-Perks Farbverstärkung/
+    // Farbduell (onPick) editieren das Deck dauerhaft und kennen die Allianz NICHT (nur rohe/grüne Farbe).
+    // `pairs` (IV) = die 4 Farben bilden ZWEI Allianzen (je zwei).
     // #195: monotone Leiter auf EINER Achse (Breite der Allianz) — I und II trugen zuvor beide suits:2 (mechanisch
     // identische Phantom-Stufe, wie E_RPM/E_SEGMENT/B_INITIATIVE). Jetzt 2 → 3 → 4 (alle als eine) → 4 (zwei Allianzen).
     tiers: {
-      1: { desc: "Wähle 2 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 2 } },
-      2: { desc: "Wähle 3 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 3 } },
-      3: { desc: "Wähle 4 Farben: alle vier zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 4 } },
-      4: { desc: "Wähle 4 Farben: sie bilden zwei Allianzen (je zwei zählen als eine).", pickTarget: { suits: 4 }, pairs: true },
+      1: { desc: "Wähle 2 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 2 } },
+      2: { desc: "Wähle 3 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 3 } },
+      3: { desc: "Wähle 4 Farben: alle vier zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 } },
+      4: { desc: "Wähle 4 Farben: sie bilden zwei Allianzen (je zwei zählen als eine) — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 }, pairs: true },
     },
   },
   E_CORE: {
