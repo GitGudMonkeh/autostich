@@ -108,9 +108,9 @@ export const STREAK_BASE_CAP  = envNum("SIM_STREAK_BASE_CAP", 1.50);  // … ged
 // Architekt-Serien-Score (Reihenhaus): der streak-Flat skaliert LINEAR mit der Serie und wird ab der Schwelle
 // verdoppelt. Wurzelfix gegen den Runaway = KEIN Doppel-Dip: der streakFlat läuft in der Engine am globalen
 // Serien-Mult (streakBaseMult) VORBEI (sonst zählt die Serie zweimal → quadratisch). Dieser Cap ist die zusätzliche
-// Absicherung gegen pathologische Extremserien (Pflanze-Paare, Serie 262) und liegt auf der STREAK_BASE_CAP-Grenze
-// (Serie 75): normale Serienbuilds (Serie ≤ 75) bleiben voll linear/stark, nur der Extremtail wird gekappt. [Balance]
-export const ARCH_STREAK_CAP  = envNum("SIM_ARCH_STREAK_CAP", 75);
+// Absicherung gegen pathologische Extremserien (Pflanze-Paare, Serie 262). Cap = Serie 50: normale Serienbuilds
+// (Serie ≤ 50) bleiben voll linear/stark, nur der Extremtail wird gekappt. [Balance: 75 → 50]
+export const ARCH_STREAK_CAP  = envNum("SIM_ARCH_STREAK_CAP", 50);
 // (#267: STREAK_STAT_CAP / STAT_CRIT_MULT_CAP entfernt — die Stat-Booster (Serien-Stat / Crit-Mult-Stat) sind mit der
 //  Stat-Phase weg. Serie skaliert nur noch über STREAK_BASE (oben) + Perks; Crit-Mult über Basis 1,5 + Präzision/Blitz.)
 
