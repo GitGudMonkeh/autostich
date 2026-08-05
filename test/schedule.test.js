@@ -15,12 +15,13 @@ describe("buildSchedule", () => {
     expect(MAX_CYCLES).toBe(50);
   });
 
-  it("50-Plan-Verteilung = 9 Skill · 13 Perk · 13 Formation · 14 Shop · 1 Legendär (keine Stats)", () => {
+  it("50-Plan-Verteilung = 10 Skill · 13 Perk · 13 Formation · 13 Shop · 1 Legendär (keine Stats)", () => {
     const s = buildSchedule(50);
     expect(s).toHaveLength(50);
     expect(s[0]).toBe("skill"); // Start-Entscheid = Skill (Runde 1, Blind-Commit)
+    // #293: Endgame-Skill nach R39 gezogen + Skill bei R43 eingeschoben (schiebt den letzten Architekten raus) → Skill 9→10, Shop 14→13.
     expect([count(s, "skill"), count(s, "perk"), count(s, "formation"), count(s, "shop"), count(s, "legendary")])
-      .toEqual([9, 13, 13, 14, 1]);
+      .toEqual([10, 13, 13, 13, 1]);
     expect(count(s, "stat")).toBe(0); // die Stat-Phase ist entfernt
   });
 
@@ -30,17 +31,20 @@ describe("buildSchedule", () => {
     expect(legRounds).toEqual([29]);
   });
 
-  it("Design-Invariante: jede Formationsphase wird direkt vom Architekten (shop) gefangen", () => {
+  it("Design-Invariante: jede Formationsphase wird direkt vom Architekten (shop) gefangen (Ausnahme #293: R41)", () => {
     const s = buildSchedule(50);
+    // #293: Der Skill-Zug nach R39 macht R41 (Index 40) zu einer Aufstellung, die NICHT direkt von einem shop gefangen
+    // wird (R42 = Perk) — bewusste, dokumentierte Ausnahme. Alle anderen Formationsphasen behalten F→A.
+    const EXCEPT = new Set([40]);
     s.forEach((d, i) => {
-      if (d === "formation" && i + 1 < s.length) expect(s[i + 1]).toBe("shop"); // F→A: erst Brett, dann Gebäude
+      if (d === "formation" && i + 1 < s.length && !EXCEPT.has(i)) expect(s[i + 1]).toBe("shop"); // F→A: erst Brett, dann Gebäude
     });
   });
 
-  it("Skill-Runden: front-loaded (6 füllen die Slots), dann drei Tausch-Fenster", () => {
+  it("Skill-Runden (#293): front-loaded + zwei Endgame-Skills bei R39 & R43", () => {
     const s = buildSchedule(50);
     const skillRounds = s.map((d, i) => (d === "skill" ? i + 1 : null)).filter(Boolean);
-    expect(skillRounds).toEqual([1, 5, 9, 13, 17, 21, 25, 33, 41]);
+    expect(skillRounds).toEqual([1, 5, 9, 13, 17, 21, 25, 33, 39, 43]);
   });
 
   it("n < 50: exaktes Prefix des 50-Plans", () => {

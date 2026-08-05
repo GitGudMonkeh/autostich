@@ -57,8 +57,8 @@ const BASE_SCHEDULE = [
   "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk",         //  1–10
   "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop",     // 11–20
   "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", "legendary", "perk",     // 21–30
-  "formation", "shop", "skill", "shop", "perk", "formation", "shop", "perk", "formation", "shop",      // 31–40
-  "skill", "perk", "formation", "shop", "perk", "formation", "shop", "perk", "formation", "shop",      // 41–50
+  "formation", "shop", "skill", "shop", "perk", "formation", "shop", "perk", "skill", "shop",          // 31–40  (#293: R39 Aufstellung→Skill)
+  "formation", "perk", "skill", "formation", "shop", "perk", "formation", "shop", "perk", "formation", // 41–50  (#293: R43 Skill eingeschoben → alles ab 43 rutscht +1, alter R50-Architekt fällt hinten raus)
 ];
 // Schwanz-Block für Runs ÜBER 50 Cycles hinaus (nur SIM_MAX_CYCLES > 50, reine Sweep-Diagnose). Hält grob das
 // 50er-Mix-Verhältnis (ohne Legendär — die eine Legendär-Phase steckt fest im Basis-Plan), clustert nicht
