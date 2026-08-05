@@ -301,6 +301,67 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
   );
 }
 
+/* GOTTGLEICH-Prunk: bei der obersten Krit-Stufe (tier 4) berstet die Karte — zusätzlich zu ExplosionFx — in einen
+   dichten Schwarm deckkräftiger Weißgold-Partikel, die vom Panel-RAHMEN nach innen ABPRALLEN und hin- und herspringen
+   (Flipper-Look). Reine Kosmetik auf einem <canvas> über dem Feld: rAF-Physik mit Geschwindigkeit, Wand-Reflexion
+   (Restitution), leichtem Drag & Schwerkraft. Nur die oberste Stufe → bleibt selten & besonders; bei reduzierter
+   Bewegung wird gar nicht erst getriggert. Bounds = das Battlefield-Panel (panelRef); Ursprung = Mitte der zerstörten
+   Gegnerkarte (oppRef), sonst rechte Feldhälfte. */
+function BounceBurst({ trigger, panelRef, oppRef }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    if (!trigger || !panelRef?.current || !canvasRef.current) return undefined;
+    const panel = panelRef.current, canvas = canvasRef.current;
+    const pr = panel.getBoundingClientRect();
+    const W = pr.width, H = pr.height;
+    if (W < 4 || H < 4) return undefined;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return undefined;
+    ctx.scale(dpr, dpr);
+    // Ursprung = Mitte der Gegnerkarte (die zerstörte) in Panel-Koordinaten; Fallback: rechte Feldhälfte.
+    let ox = W * 0.68, oy = H * 0.42;
+    const orr = oppRef?.current?.getBoundingClientRect();
+    if (orr && orr.width) { ox = orr.left - pr.left + orr.width / 2; oy = orr.top - pr.top + orr.height / 2; }
+    const PAL = ["#fff0b0", "#ffd873", "#ffffff", "#ffc978"]; // Weißgold-Palette (GOTTGLEICH)
+    const N = 96; // „mehr Partikel"
+    const parts = [];
+    for (let i = 0; i < N; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 3.5 + Math.random() * 9.5;
+      parts.push({ x: ox, y: oy, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 3.5,
+                   r: 1.8 + Math.random() * 3.2, c: PAL[i % PAL.length] });
+    }
+    const REST = 0.82, DRAG = 0.992, G = 0.16, TTL = 1650, FADE = 0.28; // spät & kurz ausfaden → „weniger transparent"
+    let raf = 0, start = 0;
+    const step = (now) => {
+      if (!start) start = now;
+      const k = (now - start) / TTL;
+      ctx.clearRect(0, 0, W, H);
+      const alpha = k > 1 - FADE ? Math.max(0, (1 - k) / FADE) : 1;
+      ctx.globalAlpha = alpha;
+      for (const p of parts) {
+        p.vy += G; p.vx *= DRAG; p.vy *= DRAG;
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < p.r) { p.x = p.r; p.vx = -p.vx * REST; }
+        else if (p.x > W - p.r) { p.x = W - p.r; p.vx = -p.vx * REST; }
+        if (p.y < p.r) { p.y = p.r; p.vy = -p.vy * REST; }
+        else if (p.y > H - p.r) { p.y = H - p.r; p.vy = -p.vy * REST; }
+        ctx.fillStyle = p.c;
+        ctx.shadowBlur = 8; ctx.shadowColor = p.c;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      }
+      if (k < 1) raf = requestAnimationFrame(step);
+      else { ctx.globalAlpha = 1; ctx.clearRect(0, 0, W, H); }
+    };
+    raf = requestAnimationFrame(step);
+    return () => { cancelAnimationFrame(raf); ctx.clearRect(0, 0, W, H); };
+  }, [trigger?.id, panelRef, oppRef]);
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none rounded-xl" style={{ zIndex: 20 }} aria-hidden="true" />;
+}
+
 /* #177+/#186: Schnitt-/Explosions-Ghost-Pool für BEIDE Seiten. Verliert eine Karte (Spieler bei Niederlage,
    Gegner bei Sieg), wird sie in-place ausgeblendet und stattdessen ein entkoppelter Klon in diesem Layer
    (im jeweiligen Karten-Slot, absolute inset-0) gerendert: die Karte liegt erst kurz (rest), dann setzt der Schnitt
@@ -376,6 +437,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
   const reduced = useReducedFx(reducedFx);
+  // GOTTGLEICH-Prunk: Panel = Prallwand-Rahmen, oppSlot = Ursprung (zerstörte Gegnerkarte); burst triggert den Schwarm.
+  const panelRef = useRef(null);
+  const oppSlotRef = useRef(null);
+  const [burst, setBurst] = useState(null);
+  const burstSeq = useRef(0);
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -634,6 +700,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
     }, sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100); // Lebensdauer: Ruhe + längster FX-Teil (#188: um die skalierte Dauer verlängert)
     ghostTimers.current.push(tm);
+    // GOTTGLEICH-Krit (oberste Stufe): den abprallenden Partikel-Schwarm feuern, synchron zum Bersten nach dem Ruhe-Beat.
+    if (win && isCrit && fxTier >= 4 && !reduced) {
+      const bt = setTimeout(() => { burstSeq.current += 1; setBurst({ id: burstSeq.current }); }, sRest);
+      ghostTimers.current.push(bt); // gemeinsame Ghost-Timer-Aufräumung (unmount → clearTimeout)
+    }
   }, [t?.trickNo]);
   const playerGhosts = slashGhosts.filter((g) => g.side === "player");
   const oppGhosts    = slashGhosts.filter((g) => g.side === "opp");
@@ -715,7 +786,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
   return (
    <>
-    <div className="rounded-xl p-6 overflow-hidden as-panel relative"
+    <div ref={panelRef} className="rounded-xl p-6 overflow-hidden as-panel relative"
       style={{ background: "#17171c", border: panelBorder, boxShadow: outerGlow,
                // #188 v2 / #192: Screen-Shake bei großem Sieg — Panel jittert, Amplitude via --shake-amp nach Stufe.
                // Krit ab STARK, normaler Sieg ab BRUTAL (grün/gold Aura via outerGlow, kein Flash/Vignette).
@@ -779,6 +850,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           )}
         </div>
       )}
+      {/* GOTTGLEICH-Prunk: abprallender Weißgold-Schwarm über dem Feld (Bounds = Panel-Rahmen). Nur bei tier-4-Krit. */}
+      <BounceBurst trigger={burst} panelRef={panelRef} oppRef={oppSlotRef} />
       <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (
@@ -797,8 +870,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
         {/* #214: „vs"-Schwerter-Icon (#42) entfernt — die beiden Seiten stehen sich jetzt ohne Trenn-Icon gegenüber. */}
 
-        <Side label="Gegner" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg}
-              overlay={oppGhosts.length ? <SlashGhostLayer ghosts={oppGhosts} /> : null}>{oppCard}</Side>
+        <div ref={oppSlotRef} className="flex">
+          <Side label="Gegner" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg}
+                overlay={oppGhosts.length ? <SlashGhostLayer ghosts={oppGhosts} /> : null}>{oppCard}</Side>
+        </div>
 
         {/* Aufsteigende Zahlen (#49/#68): je Typ eigene Streuzone (Score links / Leben rechts) mit
             kleinem, deterministischem Jitter aus trickNo → gleiche Typen dicht, verschiedene getrennt,
