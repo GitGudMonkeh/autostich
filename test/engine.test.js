@@ -564,7 +564,7 @@ describe("Ionisierung — Engine (Stufe B)", () => {
 
 describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)", () => {
   const LR = "SK_LIGHTNING_01", I = "SK_LIGHTNING_02", R = "SK_LIGHTNING_05", G = "SK_LIGHTNING_06", S = "SK_LIGHTNING_07",
-        ST = "SK_LIGHTNING_08", DA = "SK_LIGHTNING_16", D10 = "SK_LIGHTNING_10";
+        ST = "SK_LIGHTNING_08", DA = "SK_LIGHTNING_16", D10 = "SK_LIGHTNING_10", SS = "SK_LIGHTNING_17", TG = "SK_LIGHTNING_L01";
   const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: 0, stormScoreWinsRemaining: 0, dauerstromCritBonus: 0, ...over });
 
   it("Reststrom: Verbrauch lässt Ladung auf den Boden fallen (statt 0)", () => {
@@ -587,6 +587,28 @@ describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)"
     expect(s.lightning.entladungMult).toBeCloseTo(ENTLADUNG_MULT_STEP);
     const capped = resolveTrick(scenario(12, 0, { skills: [LR, I, D10], lightning: lit({ charge: 9, entladungMult: ENTLADUNG_MULT_CAP }) }), () => 0);
     expect(capped.lightning.entladungMult).toBeCloseTo(ENTLADUNG_MULT_CAP); // Deckel hält
+  });
+
+  it("Serienschutz (v0.5): Niederlage mit ≥ halber Ladung hält die Serie und verbraucht die Ladung", () => {
+    // Niederlage (0<12), Serie 4 vorher, Ladung 8 ≥ halbe (5) → Serie hält, 5 Ladung weg.
+    const held = resolveTrick(scenario(0, 12, { skills: [SS], winStreak: 4, lightning: lit({ charge: 8 }) }), () => 0);
+    expect(held.lastTrick.result).toBe("loss");
+    expect(held.winStreak).toBe(4);                 // Serie gehalten
+    expect(held.lightning.charge).toBe(8 - Math.ceil(10 * 0.5)); // halbe Max-Ladung verbraucht → 3
+    // Zu wenig Ladung (4 < 5) → Serie bricht normal, Ladung unberührt.
+    const broke = resolveTrick(scenario(0, 12, { skills: [SS], winStreak: 4, lightning: lit({ charge: 4 }) }), () => 0);
+    expect(broke.winStreak).toBe(0);
+    expect(broke.lightning.charge).toBe(4);
+  });
+
+  it("Donnergott-Turbo (v0.5): Konsument löst schon bei 70 % Ladung aus (statt voll)", () => {
+    // maxCharge 10 → Schwelle ceil(7)=7. Ladung 6 + Blitz-Crit (+1) = 7 → Verbrauch feuert (Ionisierung), Ladung fällt auf Boden.
+    const turbo = resolveTrick(scenario(12, 0, { skills: [I, TG], lightning: lit({ charge: 6 }) }), () => 0);
+    expect(turbo.lightning.charge).toBeLessThan(6);       // Verbrauch ausgelöst → auf Boden gefallen
+    expect(turbo.deck.some((c) => (c.ionStacks || 0) > 0)).toBe(true); // ionisiert
+    // Ohne Donnergott feuert 7 < 10 nicht.
+    const noFire = resolveTrick(scenario(12, 0, { skills: [I], lightning: lit({ charge: 6 }) }), () => 0);
+    expect(noFire.lightning.charge).toBe(7);
   });
 
   it("Ladungsserie: ist KEIN Verbraucher — volle Ladung ohne Ionisierung parkt (kein Verbrauch)", () => {

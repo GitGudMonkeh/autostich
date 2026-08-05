@@ -63,9 +63,9 @@ describe("Blitz-Rework v0 — reine Helfer", () => {
     // Dauerstrom-Verbrauchsrampe (persistentes Feld) fließt additiv ein.
     expect(lightningCritRaw(light({ dauerstromCritBonus: 0.06 }), ["SK_LIGHTNING_01"], 0)).toBeCloseTo(base + 0.06, 6);
   });
-  it("maxChargeFor / lightningCritMult: Donnergott 10→15 & +1,0×", () => {
+  it("Donnergott-Turbo (v0.5): hebt das Ladungsdach NICHT mehr, gibt weiter +Crit-Mult", () => {
     expect(maxChargeFor([])).toBe(C.LIGHTNING_MAX_CHARGE);
-    expect(maxChargeFor(["SK_LIGHTNING_L01"])).toBe(C.LIGHTNING_MAX_CHARGE_THUNDER);
+    expect(maxChargeFor(["SK_LIGHTNING_L01"])).toBe(C.LIGHTNING_MAX_CHARGE); // v0.5: kein Dach-Heben mehr (Turbo = früherer Verbrauch)
     expect(lightningCritMult(["SK_LIGHTNING_L01"])).toBe(C.THUNDER_CRIT_MULT);
     expect(lightningCritMult([])).toBe(0);
   });

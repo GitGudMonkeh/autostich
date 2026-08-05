@@ -75,12 +75,12 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_16: { id: "SK_LIGHTNING_16", name: "Dauerstrom", archetype: "lightning", keywords: ["charge", "streak"],
     desc: `Jeder Sieg in Folge gibt +1 Ladung je ${C.DAUERSTROM_PER_STREAK} Serienpunkte (höchstens +${C.DAUERSTROM_MAX}/Sieg). Jeder volle Verbrauch gibt zudem dauerhaft +${pct(C.DAUERSTROM_CONSUME_CRIT)} pp Crit-Chance (ohne Deckel).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, dauerstrom: true },
-  SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Wetterleuchten", archetype: "lightning", keywords: ["ionize", "streak"],
-    desc: `Bei jeder ${C.WETTERLEUCHTEN_THRESHOLD}. Serienstufe werden ${C.WETTERLEUCHTEN_COUNT} Karten ionisiert. Ionisierte Karten geben bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und heben feldweit die Crit-Chance um +${pct(C.ION_CRIT_PP_PER_STACK)} pp je Stapel (bis +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp).`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, wetterleuchten: true },
+  SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Serienschutz", archetype: "lightning", keywords: ["charge", "streak"],
+    desc: `Verlierst du einen Stich, während du mindestens die halbe Ladung (${pct(C.SERIENSCHUTZ_COST_FRAC)} %) hast, bricht deine Serie nicht — dafür wird diese Ladung verbraucht.`,
+    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, serienschutz: true },
   // Legendäre (Verstärker, kein Motor)
   SK_LIGHTNING_L01: { id: "SK_LIGHTNING_L01", name: "Donnergott", archetype: "lightning", legendary: true, keywords: ["charge", "crit"],
-    desc: `Hebt die maximale Ladung ${C.LIGHTNING_MAX_CHARGE} → ${C.LIGHTNING_MAX_CHARGE_THUNDER} und gibt dauerhaft +${de(C.THUNDER_CRIT_MULT)}× Crit-Multiplikator. Konsumenten lösen erst bei voller ${C.LIGHTNING_MAX_CHARGE_THUNDER}er-Ladung aus.`,
+    desc: `Konsumenten lösen schon bei ${pct(C.DONNERGOTT_THRESHOLD_FRAC)} % Ladung aus (öfter entladen) und geben dauerhaft +${de(C.THUNDER_CRIT_MULT)}× Crit-Multiplikator.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, thunderGod: true },
   SK_LIGHTNING_L02: { id: "SK_LIGHTNING_L02", name: "Doppelentladung", archetype: "lightning", legendary: true, keywords: ["charge", "ionize"],
     desc: `Bei vollem Ladungsverbrauch ionisiert der Konsument ${C.DOPPELENTLADUNG_FACTOR}× so viele Karten. Zusätzlich gibt jeder Sieg mit einer ionisierten Karte +${C.DOPPELENT_DIRECT} Score je Ionisierungsstapel auf dem Feld (bis ${C.DOPPELENT_FIELD_CAP} Stapel).`,
@@ -696,8 +696,9 @@ export const hasDoubleDischarge = (skills) => lightFlag(skills, "doubleDischarge
 export const hasAreaIonize     = (skills) => lightFlag(skills, "areaIonize");     // L: ionis. Sieg → alle Nachbarn
 export const hasDurchschlag    = (skills) => lightFlag(skills, "durchschlag");    // L: volle Ionis.+Crit → dauerhaft Crit-Mult
 // Ladungsmaximum je Build (Donnergott → 15) & dessen dauerhafter Crit-Multiplikator-Bonus.
-export const maxChargeFor      = (skills) => (hasThunderGod(skills) ? C.LIGHTNING_MAX_CHARGE_THUNDER : C.LIGHTNING_MAX_CHARGE);
+export const maxChargeFor      = (skills) => C.LIGHTNING_MAX_CHARGE; // v0.5: Donnergott hebt das Dach NICHT mehr (Turbo statt Dach)
 export const lightningCritMult = (skills) => (hasThunderGod(skills) ? C.THUNDER_CRIT_MULT : 0);
+export const hasSerienschutz   = (skills) => lightFlag(skills, "serienschutz"); // v0.5 (ex-Wetterleuchten)
 // Anzahl gehaltener Ladungs-Konsumenten (nur noch Ionisierung); der Reducer blockt > 1.
 export const chargeConsumerCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.onFullCharge).length;
 // Aktiver Ladungs-Konsument (für HUD/Badge): "ionize" | null (Rework v0: nur noch Ionisierung).

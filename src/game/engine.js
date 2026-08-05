@@ -8,7 +8,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
   hasIonize, hasStorm, chargeFloorFor, fieldBreadthSaturated, fieldDepthSaturated, ionSpeedBonus, // Blitz-Rework v0.5: 2-Stufen-Sättigung + Speed
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
   hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasSeriesCrit, hasBlitzableiter, hasWetterleuchten, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
-  hasDoubleDischarge, hasAreaIonize, hasDurchschlag, activeLightningCount, // Blitz-Rework (v0): Legendäre + Bekenntnis-Skalierung
+  hasDoubleDischarge, hasAreaIonize, hasDurchschlag, activeLightningCount, hasThunderGod, hasSerienschutz, // Blitz-Rework (v0/v0.5): Legendäre + Serienschutz
   fireFlag, hasHeatConsumer, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, // Feuer-Rework (v0); #234: hasHeatConsumer statt heatConsumerOf (mehrere Hitze-Konsumenten je einzeln)
   glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
   hasStandstill, hasFrostReserve, hasIceBloom, hasIceAnchor, hasPermafrost, iceSkillCount, // Eis-Rework (v0)
@@ -879,7 +879,9 @@ export function resolveTrick(state, rng) {
       if (gainedCharge > 0) {
         lightning = addCharge(lightning, gainedCharge);
         // Volle Ladung → Konsument (Ionisierung; max 1, im Reducer erzwungen) auslösen; Reaktoren laufen bei JEDEM Verbrauch.
-        if (lightning.charge >= lightning.maxCharge) {
+        // Donnergott-Turbo (v0.5): löst schon bei DONNERGOTT_THRESHOLD_FRAC der Ladung aus (öfter entladen).
+        const consumeAt = hasThunderGod(skills) ? Math.ceil(lightning.maxCharge * C.DONNERGOTT_THRESHOLD_FRAC) : lightning.maxCharge;
+        if (lightning.charge >= consumeAt) {
           let consumed = false;
           let blitzCatches = 0; // #165 Blitzfänger: Anzahl voller Karten, die statt ionisiert +Ladung erzeugen
           if (hasIonize(skills)) {
@@ -961,13 +963,7 @@ export function resolveTrick(state, rng) {
         deck = deck.map((c, i) => (i === di ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
       }
     }
-    // Wetterleuchten (v0): Serie erreicht eine Schwelle → ionisiert Karten (Serie zündet Ionisierung).
-    if (hasWetterleuchten(skills) && serieStreak > 0 && serieStreak % C.WETTERLEUCHTEN_THRESHOLD === 0) {
-      const undrawnW = [...new Set(seq.slice(pos + 1).map((p) => playerOrder[p]))];
-      const ionBeforeW = deck.reduce((t, c) => t + (c.ionStacks || 0), 0);
-      deck = ionizeCards(deck, undrawnW, C.WETTERLEUCHTEN_COUNT, rngAtOr(cycle, "weather", pos));
-      ionTotal += Math.max(0, deck.reduce((t, c) => t + (c.ionStacks || 0), 0) - ionBeforeW); // #270: Wetterleuchten-Ionisierungen
-    }
+    // (Wetterleuchten v0.5 → Serienschutz, im Niederlagen-Zweig.)
     // Spannungsstau (v0): Nicht-Crit-Siege rampen die Crit-Chance (bis Cap); ein Crit entlädt & resettet.
     if (hasSpannungsstau(skills) && lightning && lightning.active) {
       lightning = { ...lightning, stauBonus: isCrit ? 0 : Math.min(C.SPANNUNGSSTAU_CAP, (lightning.stauBonus || 0) + C.SPANNUNGSSTAU_STEP) };
@@ -1028,7 +1024,14 @@ export function resolveTrick(state, rng) {
   } else if (lost) {
     losses += 1; cycleLosses += 1; // cycleLosses: Durchlauf-Bilanz für Zinseszins (#203)
     // Serienanker IV (§4.2): eine Niederlage auf dieser Position setzt die Serie NICHT zurück.
-    const streakNoReset = anchorType === "streak" && !!aParam("noReset");
+    const anchorNoReset = anchorType === "streak" && !!aParam("noReset");
+    // Serienschutz (v0.5, ex-Wetterleuchten): Niederlage mit ≥ halber Max-Ladung → Serie hält, die Ladung wird verbraucht.
+    let serienschutzHeld = false;
+    if (!anchorNoReset && hasSerienschutz(skills) && lightning && lightning.active) {
+      const cost = Math.ceil(lightning.maxCharge * C.SERIENSCHUTZ_COST_FRAC);
+      if (lightning.charge >= cost) { lightning = { ...lightning, charge: lightning.charge - cost }; serienschutzHeld = true; }
+    }
+    const streakNoReset = anchorNoReset || serienschutzHeld;
     winStreak = streakNoReset ? winStreak : 0;
     initiative = "opp";
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
@@ -1044,7 +1047,7 @@ export function resolveTrick(state, rng) {
     weaknessBig = weaknessBigDeficit != null && (oValue - pValue) >= weaknessBigDeficit;
     if (interplayStoreOnLoss) interplayStored += interplayStoreOnLoss; // D_INTERPLAY IV: Niederlage bankt Score für den nächsten Sieg
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie
-    serieStreak = 0;
+    serieStreak = streakNoReset ? winStreak : 0; // Serienschutz/Serienanker: effektive Serie hält
     // ---- Feuer-Rework (v0): Hitzeverlust (Glutbett), Feuerwalze zurücksetzen, Funkenflug halbieren, Rückstand merken.
     if (heat && heat.active) {
       const deficit = oValue - pValue;
