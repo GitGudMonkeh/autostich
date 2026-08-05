@@ -154,13 +154,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   }, [structF, formations, formationsNoArch]);
 
   // #UI: Gebäude-Kontur als durchgezogene SVG-Linie (wie in der Aufstellungsphase, archFrameLines) statt eines
-  // Raritäts-Rahmens JE ZELLE → ein mehrzelliges Gebäude liest sich als EINE Form. Farbe = Stufen-/Raritätsfarbe.
+  // Rahmens JE ZELLE → ein mehrzelliges Gebäude liest sich als EINE Form. Farbe = TYP-Farbe (Wert/Score/Formation); die Rarität zeigt die Stufen-Zahl in der Ecke.
   const archCover = useMemo(() => {
     const cover = {};
     for (const b of buildings) {
       const fam = familyDef(b.familyId);
       if (!fam) continue;
-      const color = fam.legendary ? GOLD : tierColor(b.tier);
+      const color = CAT[fam.category]?.color || tierColor(b.tier); // #UI: Rahmen = TYP-Farbe (nach Bonus-Typ bauen); Rarität zeigt die Stufen-Zahl
       for (const p of b.footprint) cover[p] = { bid: b.id, color, legendary: !!fam.legendary };
     }
     return cover;
@@ -199,7 +199,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const b = buildings.find((x) => x.id === dragPrev.id);
     if (!b) return null;
     const fam = familyDef(b.familyId);
-    const color = fam && fam.legendary ? GOLD : (fam ? tierColor(b.tier) : "#8a97a5");
+    const color = fam ? (CAT[fam.category]?.color || tierColor(b.tier)) : "#8a97a5"; // #UI: Ghost-Rahmen = Typ-Farbe (wie der Gebäude-Rahmen)
     return { footprint: b.footprint, color };
   })();
 
@@ -613,8 +613,16 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (
                       <span className="absolute bottom-[1px] left-[3px] text-[7px] font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
-                        {fam.name.slice(0, 3).toUpperCase()}{tierLabel(b.tier)}
+                        {fam.name.slice(0, 3).toUpperCase()}
                         {upCan && <span style={{ color: "#f0b429" }}>→{tierLabel(b.tier + 1)}</span>}
+                      </span>
+                    )}
+                    {/* #UI: Stufen-Zahl (I–IV / ★) unten rechts im Gebäude, in der SELTENHEITS-Farbe — der Rahmen zeigt jetzt den Typ. */}
+                    {b && !isDragOrig && pos === Math.max(...b.footprint) && (
+                      <span className="absolute bottom-[1px] right-[3px] text-[9px] font-extrabold leading-none"
+                        style={{ color: fam.legendary ? GOLD : tierColor(b.tier), textShadow: "0 1px 2px #000a" }}
+                        title={fam.legendary ? "legendär" : `Stufe ${ROMAN[b.tier]}`}>
+                        {fam.legendary ? "★" : ROMAN[b.tier]}
                       </span>
                     )}
                     {showForms && inForm && (
@@ -631,18 +639,19 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               }); })()}
             </div>
             {/* Legende */}
-            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[11px] font-mono opacity-80">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[11px] font-mono opacity-80">
+              <span className="opacity-70">Rahmen = Typ:</span>
               {Object.entries(CAT).map(([k, v]) => (
-                <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ background: v.color }} />{v.label}</span>
+                <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${v.color}` }} />{v.label}</span>
               ))}
             </div>
-            {/* Raritäts-Rahmen = Stufe des Gebäudes (Füllung = Kategorie). */}
+            {/* Stufe/Rarität = die Zahl (I–IV / ★) in der ECKE des Gebäudes; der Rahmen zeigt den Typ. */}
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-[10px] font-mono opacity-70">
-              <span className="opacity-70">Rahmen = Stufe:</span>
+              <span className="opacity-70">Stufe (Ecke):</span>
               {[1, 2, 3, 4].map((t) => (
-                <span key={t} className="inline-flex items-center gap-1"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${tierColor(t)}` }} />{ROMAN[t]}</span>
+                <span key={t} className="inline-flex items-center gap-1"><b className="tabular-nums" style={{ color: tierColor(t) }}>{ROMAN[t]}</b></span>
               ))}
-              <span className="inline-flex items-center gap-1"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${GOLD}` }} />★ legendär</span>
+              <span className="inline-flex items-center gap-1"><b style={{ color: GOLD }}>★</b> legendär</span>
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] font-mono opacity-60">
               <span>Ring = aktive Formation (×mult)</span>
