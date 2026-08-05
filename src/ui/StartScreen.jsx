@@ -6,7 +6,7 @@ import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügte
 import { fmtScore } from "./format.js";
 import logo from "../assets/logo.png";
 import { GlossaryPanel } from "./Glossary.jsx";
-import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel unten
+import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
 
 /* Startbildschirm (#4): Redesign „Richtung A — zentriert & entschlackt" (aus dem Startmenü-Redesign).
    Der Inhalt wird vertikal zentriert (füllt die frühere untere Leere) und bekommt eine klare Rangfolge:
@@ -56,7 +56,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             style={{ background: "#d4a63a", color: "#141419", boxShadow: "0 0 8px rgba(212,166,58,.6)", pointerEvents: "none" }}
             aria-hidden="true"
           >
-            v0.3
+            v{APP_VERSION}
           </span>
         </div>
         <p className="text-xs opacity-45 mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
