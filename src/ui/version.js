@@ -2,7 +2,7 @@
 // Major.Minor = Meilenstein (per Hand je Milestone gepflegt). Build-Nummer + kurze SHA + Umgebung werden zur BUILD-ZEIT
 // aus dem CI injiziert (VITE_BUILD_NUM = git rev-list --count HEAD, VITE_BUILD_SHA = git rev-parse --short HEAD,
 // VITE_ENV = test|main). Im Dev-Build sind sie leer → Fallback „dev". Vite exponiert VITE_*-Env automatisch (wie VITE_PREVIEW).
-export const APP_VERSION = "0.4";
+export const APP_VERSION = "0.3";
 
 const rawNum = import.meta.env.VITE_BUILD_NUM;
 // Build-Nummer 3-stellig gepolstert (7 → „007"), analog zum gewünschten „0.3.001"-Stil.
