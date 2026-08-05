@@ -111,6 +111,7 @@ export function resolveTrick(state, rng) {
     plantRoot = 0, plantBloom = 0, plantHarvest = 0, // Pflanze: Wurzel- / Blüten- / Ernte-Score
     fireBase = 0, fireWhite = 0, // Feuer: Grund-Score / Weißglut-Score
     ionTotal = 0, growthTotal = 0, ashBurned = 0, brandTotal = 0, // Motor-Zähler: ionisierte Karten / Wachstum / verbrannte Asche / gebrandmarkte Gegnerkarten
+    trimCount = 0, // #288 Trimmen: ersetzte Wachstums-Skills → Wurzel-/Blüten-Multiplikator
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
     iceTemp = {}, frostbitePending = {}, frostbiteActive = {}, // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff (je oppCard.id → −Wert)
     layers = {}, frostFormPrev = [], // Eis-Rework (v0): Schichten je Frostkarte-id (permanent) / Frostkarten, die im Vordurchlauf in Formation siegten (Beständigkeit)
@@ -521,6 +522,8 @@ export function resolveTrick(state, rng) {
     if ((activeArchetypes || []).includes("plant")) {
       const inFormation = positionHasFormation(posForm);
       const plantCommit = Math.min(1, plantSkillCount(skills) / C.SKILL_SLOTS); // Bekenntnis-Skalierung (cross-health) für die post-stack Direkt-Dividenden (#270.2 + #Ceiling)
+      // #288 „Trimmen": dauerhafter Multiplikator auf Wurzel- & Blüten-Score, je ersetztem Wachstums-Skill höher (gedeckelt).
+      const trimMult = 1 + Math.min((trimCount || 0) * C.TRIM_STEP, C.TRIM_CAP);
       // Wachstum: je Sieg +Zuwachs, GEGATET an die Pflanzen-Skill-Anzahl (Anti-Splash, v0.3): min(1, PflanzenSkills / SKILL_REF).
       // 1 Splash-Skill = 1/3 Speed, volle +1/Sieg erst ab SKILL_REF Skills → hohes Wachstum verlangt echtes Deck-Commitment.
       const prevG = newGrowth[pCard.id] || 0;
@@ -543,12 +546,13 @@ export function resolveTrick(state, rng) {
         if (hasWurzeltiefe(skills)) {
           let root = C.WURZELTIEFE_SCORE * (hasPfahlwurzel(skills) && inFormation ? C.PFAHLWURZEL_MULT : 1);
           if (hasJahresringe(skills)) root += Math.floor(g / C.JAHRESRINGE_PER_GROWTH) * C.JAHRESRINGE_SCORE;
+          root = Math.round(root * trimMult); // #288 Trimmen: Wurzel-Score-Multiplikator
           plantFlat += root; plantRoot += root; // #270.2: Wurzel-Score-Kanal
           // #Ceiling Wurzel/TIEFE: superlinear (dreieckig) in der Wachstums-Tiefe der Siegkarte ÜBER dem Wert-Deckel —
-          // post-stack (plantDirect), gedeckelt, bekenntnis-skaliert. Zündet nur bei tiefen Bäumen → reines Ceiling.
+          // post-stack (plantDirect), gedeckelt, bekenntnis-skaliert (+ Trimm-Multiplikator #288). Zündet nur bei tiefen Bäumen → reines Ceiling.
           const needRoot = Math.max(0, C.PLANT_VALUE_CAP - pCard.value) * C.WURZELSCHLAG_PER_GROWTH;
           const depth = Math.min(Math.floor(g - needRoot), C.PLANT_ROOT_DEEP_CAP);
-          if (depth > 0) { const d = (depth * (depth + 1) / 2) * C.PLANT_ROOT_DEEP_K * plantCommit; plantDirect += d; plantRoot += d; }
+          if (depth > 0) { const d = (depth * (depth + 1) / 2) * C.PLANT_ROOT_DEEP_K * plantCommit * trimMult; plantDirect += d; plantRoot += d; }
           if (hasMutterbaum(skills) && g >= Math.max(1, ...Object.values(newGrowth))) { plantFlat += root; plantRoot += root; } // Mutterbaum (v0-Näherung): Segment-Streuung
         }
         // Wurzelschlag: grüne Karte wächst permanenten Wert an (+1 je N Wachstum, bis Deckel). Float-sicher (Wachstum ist
@@ -580,6 +584,7 @@ export function resolveTrick(state, rng) {
             const greenFieldRatio = deck.length > 0 ? greenCount(deck) / deck.length : 0;
             const uebThresh = hasEwigerFruehling(skills) ? C.EWIGER_FRUEHLING_FIELD : C.UEBERWUCHERUNG_FIELD;
             if (hasUeberwucherung(skills) && greenFieldRatio >= uebThresh) b *= 2;
+            b = Math.round(b * trimMult); // #288 Trimmen: Blüten-Score-Multiplikator
             plantFlat += b; plantBloom += b; // #270.2: Blüten-Score-Kanal
           }
         }
@@ -591,7 +596,7 @@ export function resolveTrick(state, rng) {
           const gc = greenCount(deck);
           if (gc / deck.length >= thr) {
             const m = Math.min(gc, C.PLANT_BLOOM_FIELD_CAP);
-            const d = (m * (m + 1) / 2) * C.PLANT_BLOOM_FIELD_K * plantCommit; plantDirect += d; plantBloom += d;
+            const d = (m * (m + 1) / 2) * C.PLANT_BLOOM_FIELD_K * plantCommit * trimMult; plantDirect += d; plantBloom += d;
           }
         }
         // Photosynthese: grüne Karte in Formation → ×PHOTOSYNTHESE_MULT (Formations-Faktor). [#230 N9: war „×1,15", ist 1,08]
@@ -601,7 +606,7 @@ export function resolveTrick(state, rng) {
         // einer grünen Position besteht aus grünen Karten. Analog zur Blüte, die nur das Segment zählt. [#228 C2]
         const fbEntry = (posForm.formations || []).find((f) => f.type === "farbblock");
         const fbLen = fbEntry ? (fbEntry.len || 0) : 0;
-        if (hasBlaetterdach(skills) && fbLen >= C.BLAETTERDACH_MIN) { const bd = C.BLAETTERDACH_SCORE * Math.min(fbLen, C.BLAETTERDACH_CARD_CAP); plantFlat += bd; plantRoot += bd; } // #270.2: Blätterdach → Wurzel-Kanal (Feld-Score)
+        if (hasBlaetterdach(skills) && fbLen >= C.BLAETTERDACH_MIN) { const bd = Math.round(C.BLAETTERDACH_SCORE * Math.min(fbLen, C.BLAETTERDACH_CARD_CAP) * trimMult); plantFlat += bd; plantRoot += bd; } // #270.2: Blätterdach → Wurzel-Kanal (Feld-Score) · #288 Trimm-Mult
         // Ausläufer: die niedrigste noch nicht kolonisierte Gegnerkarte kolonisieren.
         if (hasAuslaeufer(skills)) {
           let lowId = null, lowV = Infinity;

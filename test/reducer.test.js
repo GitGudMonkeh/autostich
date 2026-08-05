@@ -139,6 +139,16 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     expect(s.phase).toBe("play");
   });
 
+  it("#288 Trimmen: Ersetzen eines Wachstums-Skills erhöht trimCount; ein anderer Skill nicht", () => {
+    const six = ["SK_PLANT_01", "SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_10", "SK_PLANT_12", "SK_PLANT_13"]; // SK_PLANT_05 = Aussaat (trimmbar)
+    const NEW = "SK_PLANT_14"; // Überwucherung — nicht gehalten, kein Enabler
+    const base = skillState({ skills: six, skillOffer: [NEW], activeArchetypes: ["plant"] });
+    // Wachstums-Skill (Aussaat) ersetzt → Trimmung
+    expect(reducer(base, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_PLANT_05", rng }).trimCount).toBe(1);
+    // Nicht-Wachstums-Skill (Wurzeltiefe) ersetzt → keine Trimmung
+    expect(reducer(base, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_PLANT_02", rng }).trimCount || 0).toBe(0);
+  });
+
   it("#234 PICK_SKILL erlaubt einen ZWEITEN Hitze-Konsumenten (Feuer nicht mehr exklusiv)", () => {
     // Flächenbrand (SK_FIRE_11, conflagration) schon gehalten; Schmelzpunkt (SK_FIRE_12, melt) im Angebot.
     const st = skillState({

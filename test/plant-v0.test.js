@@ -65,6 +65,11 @@ describe("Pflanze-Fraktion v0 — Engine-Integration", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_02"], deck: green0(12), growth: { X0: 0 } }), noCrit);
     expect(s.lastTrick.scoreGain).toBeCloseTo((B + C.WURZELTIEFE_SCORE) * 1.02);
   });
+  it("#288 Trimmen: trimCount hebt den Wurzel-Score (Multiplikator, gedeckelt)", () => {
+    const trimMult = 1 + Math.min(2 * C.TRIM_STEP, C.TRIM_CAP);
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_02"], deck: green0(12), growth: { X0: 0 }, trimCount: 2 }), noCrit);
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + Math.round(C.WURZELTIEFE_SCORE * trimMult)) * 1.02); // Wurzel × Trimm-Mult
+  });
   it("Aussaat: Sieg einer grünen Karte sät den (rechten) Nachbarn (+Wachstum)", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_05"], deck: green0(12) }), noCrit);
     expect(s.growth.X1).toBe(C.AUSSAAT_GROWTH);

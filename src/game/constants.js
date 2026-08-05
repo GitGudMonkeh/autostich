@@ -453,6 +453,11 @@ export const PLANT_ROOT_DEEP_CAP   = envNum("SIM_PLANT_ROOT_DEEP_CAP", 25); // g
 // Blüte/BREITE: dreieckig im vollen grünen Feld (greenCount). Nur mit Blüte UND wenn das Feld überwuchert ist (Gating wie Überwucherung).
 export const PLANT_BLOOM_FIELD_K   = envNum("SIM_PLANT_BLOOM_FIELD_K", 5);   // Score je Dreiecks-Einheit m(m+1)/2 der Feldgröße [Sim-tunebar]
 export const PLANT_BLOOM_FIELD_CAP = envNum("SIM_PLANT_BLOOM_FIELD_CAP", 25); // gedeckelte gezählte Feldgröße (Plateau)
+// #288 „Trimmen": der Grow→Ernte-Pivot. Wird ein WACHSTUMS-stützender Skill (Aussaat/Flugsamen/Setzlingsbeet/Zäher Halm)
+// ERSETZT, zählt das global als Trimmung → dauerhafter Multiplikator auf Wurzel- & Blüten-Score, je mehr Trimmungen desto
+// höher (gedeckelt). Wachstums-Skills sterben so nicht, sie veredeln die Payoff-Phase. [Sim-tunebar]
+export const TRIM_STEP = envNum("SIM_TRIM_STEP", 0.15); // +Anteil Wurzel-/Blüten-Score je Trimmung (0,15 = +15 %)
+export const TRIM_CAP  = envNum("SIM_TRIM_CAP", 1.0);   // Deckel des Trimm-Multiplikator-Bonus (+100 % → max ×2)
 // Linie 2 — Aussaat (Breite: Wachstum verbreiten)
 export const AUSSAAT_GROWTH        = 1;   // Aussaat: +Wachstum je Nachbar bei Sieg einer grünen Karte          // v0
 export const SETZLINGSBEET_GROWTH  = 3;   // Setzlingsbeet: niedrigste Karte je Segment startet +3 Wachstum     // v0

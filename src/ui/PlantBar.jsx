@@ -10,7 +10,7 @@
 // Rein informativ, keine Engine-Kopplung (spiegelt state.deck/growth/colonized).
 import { IndicatorPanel, YieldMeter } from "./indicators/panelKit.jsx";
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
-import { PLANT_VALUE_CAP, PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD } from "../game/constants.js";
+import { PLANT_VALUE_CAP, PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD, TRIM_STEP, TRIM_CAP } from "../game/constants.js";
 import { hasUeberwucherung, hasEwigerFruehling, plantSkillCount } from "../game/skills.js";
 
 const SEED = "#9aa4a0"; // grauer Setzling (wachsend, noch nicht reif)
@@ -20,8 +20,9 @@ const fmtG = (g) => String(Math.round((g || 0) * 10) / 10).replace(".", ","); //
 const BLOOM = "#e58fbf"; // Blüte (rosa) · Wurzel = PLANT (grün) · Ernte = PLANT_RIPE (hell)
 
 export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skills = [], growthTotal = 0,
-                          rootScore = 0, bloomScore = 0, harvestScore = 0, options = {}, onOption }) {
+                          rootScore = 0, bloomScore = 0, harvestScore = 0, trimCount = 0, options = {}, onOption }) {
   if (!active) return null;
+  const trimMult = 1 + Math.min((trimCount || 0) * TRIM_STEP, TRIM_CAP); // #288 Trimmen: Wurzel-/Blüten-Multiplikator
   const total = deck.length || 0;
   let setzling = 0, gruen = 0, ausgewachsen = 0;
   // #277: pro-Karte-Reifegrad — Setzling→Grün (growth/Schwelle) bzw. Grün→Ausgewachsen (value/Deckel). „maturing" =
@@ -76,6 +77,12 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
         ]} />
         {growthTotal > 0 && (
           <div className="text-[10px] opacity-55 mt-1">🌱 Gewachsen <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{grp(growthTotal)}</b> <span className="opacity-70">Wachstum gesamt</span></div>
+        )}
+        {/* #288 Trimmen: ersetzte Wachstums-Skills → Wurzel-/Blüten-Multiplikator. */}
+        {trimCount > 0 && (
+          <div className="text-[10px] opacity-70 mt-1" title="Trimmen (#288): jeder ersetzte Wachstums-Skill (Aussaat/Flugsamen/Setzlingsbeet/Zäher Halm) hebt dauerhaft den Wurzel- & Blüten-Score.">
+            ✂ Getrimmt <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{trimCount}×</b> <span className="opacity-70">· Wurzel/Blüte</span> <b className="tabular-nums" style={{ color: BLOOM }}>×{trimMult.toFixed(2).replace(".", ",")}</b>
+          </div>
         )}
       </div>
       {/* Grün-Anteil (Hauptelement): Balken bis 100 %, zwei Schwellenmarken. */}

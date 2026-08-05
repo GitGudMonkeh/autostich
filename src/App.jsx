@@ -653,6 +653,7 @@ export function Autostich() {
                 skills={state.skills || []}
                 growthTotal={state.growthTotal || 0}
                 rootScore={state.plantRoot || 0} bloomScore={state.plantBloom || 0} harvestScore={state.plantHarvest || 0}
+                trimCount={state.trimCount || 0}
                 options={options} onOption={changeOptions} />
             </div>
             {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}

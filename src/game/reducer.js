@@ -12,7 +12,7 @@ import { initialShop, perkLegendaryChance, skillLegendaryChance } from "./shop.j
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
-import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
+import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { masteryRerollBonus, masteryCoverBonus, masteryLegendMult, masteryRareShift, masteryLegendGuaranteed, difficultyForGrade, MASTERY_MAX_GRADE } from "./mastery.js"; // #217 Meistergrade / #226 Großmeister
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
@@ -131,6 +131,7 @@ export function initialState(rng = Math.random, seed = null) {
     // #270 Fraktions-Panels: kumulative Lauf-Kennzahlen (nur Anzeige) — Direkt-Ertrag (Σ post-stack Direkt-Score) + Motor-Zähler.
     iceYield: 0, lightYield: 0, plantRoot: 0, plantBloom: 0, plantHarvest: 0, fireBase: 0, fireWhite: 0, // #270 Eigen-Score-Kanäle
     ionTotal: 0, growthTotal: 0, ashBurned: 0, brandTotal: 0, // #270 Motor-Zähler
+    trimCount: 0, // #288 Trimmen: Anzahl ersetzter Wachstums-Skills → Wurzel-/Blüten-Multiplikator
     tieArmed: false,
     shop: initialShop(), // hält nur noch die (inerten) Positionsanker — der Shop ist entfernt (#229)
     architectEnabled: false,       // Architekt (#202): Flag — bei true öffnet sich die Architekt-Phase (im Spiel via START_RUN true; false = Sim-Baseline ohne Architekt)
@@ -452,11 +453,13 @@ export function reducer(state, action) {
       const active0 = state.activeArchetypes || [];
       if (arch && !active0.includes(arch) && active0.length >= C.MAX_ARCHETYPES) return state;
       let skills;
+      let trimmed = false; // #288: wurde ein wachstums-stützender Skill ersetzt? → Trimmung
       // #272: Der Legendär im 7. Slot zählt NICHT gegen SKILL_SLOTS und wird nie durch einen normalen Pick ersetzt.
       const normalCount = state.skills.filter((id) => !isLegendarySkill(id)).length;
       if (replaceId && state.skills.includes(replaceId) && !isLegendarySkill(replaceId)) {
         // Gezieltes Ersetzen (volle Slots ODER Konsumenten-Ersatzdialog #93): tauscht genau diesen (normalen) Slot.
         skills = state.skills.map((id) => (id === replaceId ? skillId : id));
+        if (isTrimmableSkill(replaceId)) trimmed = true; // #288 Trimmen: Wachstums-Skill rausgetauscht
       } else if (normalCount < C.SKILL_SLOTS) {
         skills = [...state.skills, skillId];                       // freier Slot → hinzufügen
       } else {
@@ -523,6 +526,7 @@ export function reducer(state, action) {
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
       // #265: bei offener Frostwahl in die frost-select-Phase (Spieler wählt die einzufrierenden Karten), sonst direkt weiter.
       return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, layers, frostFormPrev, growth, colonized, ash, brandPending, brandActive, forged, formations,
+               trimCount: (state.trimCount || 0) + (trimmed ? 1 : 0), // #288 Trimmen
                phase: pendingFrostSelect ? "frost-select" : "play", frostSelect: pendingFrostSelect, skillOffer: null };
     }
 
