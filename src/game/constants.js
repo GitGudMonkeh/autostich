@@ -238,15 +238,15 @@ export const DAUERSTROM_CONSUME_CRIT_CAP = 0.20; // Dauerstrom: … gedeckelt be
 export const WETTERLEUCHTEN_THRESHOLD = 5;    // Wetterleuchten: bei jeder 5. Serienstufe ionisieren                // v0
 export const WETTERLEUCHTEN_COUNT     = 2;    // Wetterleuchten: … so viele Karten                                  // v0 — tunebar
 export const DOPPELENTLADUNG_FACTOR   = envNum("SIM_DOPPELENTLADUNG_FACTOR", 3);    // Doppelentladung (L): Konsumenten feuern FACTOR-fach (Ionisierungs-Anzahl x FACTOR) [Legendaer-Buff v1: 2->3]
-export const DURCHSCHLAG_CRIT_MULT    = 0.25; // Durchschlag (L): volle Ionis. (5) + Crit → dauerhaft +0,25× Crit-Mult // v0 — tunebar
-export const DURCHSCHLAG_MULT_CAP     = 2.0;  // Durchschlag: Deckel des dauerhaften Crit-Mult-Bonus (Anti-Runaway v0.1: uncapped → +100× im Smoke)
+export const DURCHSCHLAG_CRIT_MULT    = envNum("SIM_DURCHSCHLAG_CRIT_MULT", 0.18); // Durchschlag (L): volle Ionis. (5) + Crit → dauerhaft +Crit-Mult [Legendär-Angleich: 0,25→0,18 — Spitze kappen, Sim unterschätzt Crit]
+export const DURCHSCHLAG_MULT_CAP     = envNum("SIM_DURCHSCHLAG_MULT_CAP", 2.0);  // Durchschlag: Deckel des dauerhaften Crit-Mult-Bonus (Anti-Runaway v0.1: uncapped → +100× im Smoke)
 // Blitz-Legendär-Reshape (2026-07-30): die Ionisierung FLUTET (blitz-economy.mjs: alle Karten @Deckel 5, ~ganzes Deck ab Cycle 20)
 // → „mehr Ionis."-Legendäre (Doppelentladung/Flächenionisation) waren tot (1,01×/0,90×). Sie lesen jetzt den BESTAND des
 // gesättigten Feldes und zahlen je IONISIERTEM Sieg DIREKT (post-stack, hart gedeckelt = Plateau, bekenntnis-skaliert = cross-health).
 // Nur Legendär-Halter → generisches Blitz (ION_SCORE_PER_STACK) unberührt. Analog zur Eis-Überlauf-Dividende.
 export const FLAECHENION_DIRECT       = envNum("SIM_FLAECHENION_DIRECT", 70);  // Flächenionisation (Sturmzelle, BREITE): DIREKTer Score je ionisiertem Sieg × #ionisierte Karten [reshape 1,30×]
 export const FLAECHENION_FIELD_CAP    = envNum("SIM_FLAECHENION_FIELD_CAP", 30); // … gedeckelte Feldbreite (max gezählte ionisierte Karten)
-export const DOPPELENT_DIRECT         = envNum("SIM_DOPPELENT_DIRECT", 16);    // Doppelentladung (endloser Sturm, ENERGIE): DIREKTer Score je ionisiertem Sieg × Σ Stapel im Feld [reshape ~1,28×]
+export const DOPPELENT_DIRECT         = envNum("SIM_DOPPELENT_DIRECT", 40);    // Doppelentladung (endloser Sturm, ENERGIE): DIREKTer Score je ionisiertem Sieg × Σ Stapel im Feld [Legendär-Angleich: 16→40 — Trap-Pick heben]
 export const DOPPELENT_FIELD_CAP      = envNum("SIM_DOPPELENT_FIELD_CAP", 120); // … gedeckelte Feldenergie (max gezählte Σ Stapel)
 
 /* ============================================================
@@ -321,9 +321,9 @@ export const SCHMELZOFEN_FORGE_DISCOUNT = envNum("SIM_SCHMELZOFEN_FORGE_DISCOUNT
 // Sonnenzorn (L) — SCORE-Mult ∝ HÖCHSTER je gehaltener Hitze (heat.peak): dauerhafter Feuer-Score-Multiplikator.
 export const SUNWRATH_PEAK_STEP    = envNum("SIM_SUNWRATH_PEAK_STEP", 0.010); // +GESAMT-Score je Peak-Hitze-% (Peak 100 → ×2,0) [Legendär-Umbau]
 // Sonnenkern (L) — WIN-CONDITION: endet ein Durchlauf mit hoher Hitze, brennt sie sich dauerhaft in ALLE Karten (+Wert).
-export const SONNENKERN_MIN_HEAT   = envNum("SIM_SONNENKERN_MIN_HEAT", 70);   // ab dieser End-Hitze brennt Sonnenkern ein [Legendär-Umbau]
-export const SONNENKERN_VALUE      = envNum("SIM_SONNENKERN_VALUE", 1);       // +Dauerwert je heißem Durchlauf (auf Karten unter dem Deckel) [Legendär-Umbau]
-export const SONNENKERN_CARD_CAP   = envNum("SIM_SONNENKERN_CARD_CAP", 7);    // nur Karten UNTER diesem Wert brennen ein → hebt den Deck-BODEN (selbst-limitierend, kein Auto-Sieg) [Legendär-Umbau]
+export const SONNENKERN_MIN_HEAT   = envNum("SIM_SONNENKERN_MIN_HEAT", 60);   // ab dieser End-Hitze brennt Sonnenkern ein [Legendär-Angleich: 70→60 — häufiger auslösen]
+export const SONNENKERN_VALUE      = envNum("SIM_SONNENKERN_VALUE", 2);       // +Dauerwert je heißem Durchlauf (auf Karten unter dem Deckel) [Legendär-Angleich: 1→2]
+export const SONNENKERN_CARD_CAP   = envNum("SIM_SONNENKERN_CARD_CAP", 9);    // nur Karten UNTER diesem Wert brennen ein → hebt den Deck-BODEN [Legendär-Angleich: 7→9 — mehr Karten]
 // Phönixfeuer (L) — KONSISTENZ: Niederlagen GEBEN Hitze (+je Rückstandspunkt) statt sie zu nehmen; + Reignite bei Konsum-0.
 export const PHOENIX_LOSS_HEAT     = envNum("SIM_PHOENIX_LOSS_HEAT", 8);      // +Hitze je Rückstandspunkt bei Niederlage (statt Verlust) [Legendär-Umbau]
 export const PHOENIX_REIGNITE      = envNum("SIM_PHOENIX_REIGNITE", 0.40);    // verbrauchte Hitze entzündet neu (Anteil zurück), 1×/Durchlauf
@@ -379,14 +379,14 @@ export const STILLSTAND_PER_LAYER = envNum("SIM_STILLSTAND_PER_LAYER", 40); // S
 // Legendäre (Gletscher / Vergletscherung / Architekt)
 export const VERGLETSCHERUNG_COUNT     = 2; // Vergletscherung: so viele Gegnerkarten je Frost-Sieg          // v0
 export const VERGLETSCHERUNG_PER_LAYER = 1; // … −Wert je Schicht der Siegkarte (min 1)                      // v0 — tunebar
-export const ARCHITEKT_STEP    = envNum("SIM_ARCHITEKT_STEP", 0.55); // Architekt (L): +% je zusätzlicher Frostkarte in derselben Spalte (pos%5) [Legendär-Reshape: 0,35→0,55 — die einzige Geometrie-Legendäre (nicht deckel-limitiert), hebt 1,14→Band]
+export const ARCHITEKT_STEP    = envNum("SIM_ARCHITEKT_STEP", 0.85); // Architekt (L): +% je zusätzlicher Frostkarte in derselben Spalte (pos%5) [Legendär-Angleich: 0,55→0,85 — Trap-Pick heben (triggert im Greedy selten)]
 // ── Legendär-Reshape (2026-07-30): Tiefe über die Legendären wiederbeleben. Die ÜBERLAUF-Tiefe (Schichten über
 //    ICE_LAYER_MAX) ist generisch verschwendet (~58 von 70/Karte). Gletscher/Permafrost verwandeln sie in DIREKTEN,
 //    post-stack, HART gedeckelten Score (Damaststahl-Lektion: permanente Akkumulation über 60 Runden = Plateau, kein
 //    Wachstum). Nur Legendär-Halter → generisches Eis (Deckel 12, #1-Floor) bleibt unberührt. Bekenntnis-skaliert (cross-health).
 export const GLETSCHER_DIRECT        = envNum("SIM_GLETSCHER_DIRECT", 68);       // Gletscher: Score je DREIECKS-Einheit m(m+1)/2 der Tiefe des TIEFSTEN Pfeilers (superlinear, Konzentration), je Frost-Sieg [Sweep: →1,32×]
 export const GLETSCHER_OVERFLOW_CAP  = envNum("SIM_GLETSCHER_OVERFLOW_CAP", 20); // … gedeckelte Pfeiler-Tiefe (Plateau — tieferer Pfeiler zahlt superlinear mehr, dann flach → kein Runaway)
-export const PERMAFROST_DIRECT       = envNum("SIM_PERMAFROST_DIRECT", 270);     // Permafrost: Score je Überlauf-Schicht — SUMME über alle Frostkarten (Breite — viele banken), je Frost-Sieg
+export const PERMAFROST_DIRECT       = envNum("SIM_PERMAFROST_DIRECT", 185);     // Permafrost: Score je Überlauf-Schicht — SUMME über alle Frostkarten (Breite — viele banken), je Frost-Sieg [Legendär-Angleich: 270→185 — Spitze kappen]
 export const PERMAFROST_OVERFLOW_CAP = envNum("SIM_PERMAFROST_OVERFLOW_CAP", 60);// … gedeckelte Gesamt-Überlauf-Summe (Plateau)
 // #270 generische Eis-Überlauf-Dividende: JEDES Eis-Deck (ohne Legendär) bekommt einen KLEINEN Direkt-Score aus dem
 // Überlauf (Breite: Σ Überlauf über alle Frostkarten), je Frost-Sieg — analog Weißglut bei Feuer, damit Weiterfrosten
@@ -485,8 +485,8 @@ export const MUTTERBAUM_DIRECT       = envNum("SIM_MUTTERBAUM_DIRECT", 55);   //
 export const MUTTERBAUM_OVERFLOW_CAP = envNum("SIM_MUTTERBAUM_OVERFLOW_CAP", 60); // … gedeckelte Tiefe des einen Mutterbaums
 export const DORNENKOENIG_DIRECT     = envNum("SIM_DORNENKOENIG_DIRECT", 85);  // Dornenkönig (KOLONIE): DIREKT je grünem Sieg × #kolonisierte Gegnerkarten (~konstante Flut → höherer Satz)
 export const DORNENKOENIG_COLON_CAP  = envNum("SIM_DORNENKOENIG_COLON_CAP", 40); // … gedeckelte Kolonie-Breite (ganzes Gegnerdeck)
-export const EWIGER_FRUEHLING_DIRECT = envNum("SIM_EWIGER_FRUEHLING_DIRECT", 54); // Ewiger Frühling (GRÜN-FELD): DIREKT je grünem Sieg × #grüne Karten (das ewige Feld) [reshape 1,26×]
-export const EWIGER_FRUEHLING_FIELD_CAP = envNum("SIM_EWIGER_FRUEHLING_FIELD_CAP", 30); // … gedeckelte Feldgröße
+export const EWIGER_FRUEHLING_DIRECT = envNum("SIM_EWIGER_FRUEHLING_DIRECT", 150); // Ewiger Frühling (GRÜN-FELD): DIREKT je grünem Sieg × #grüne Karten (das ewige Feld) [Legendär-Angleich: 54→150 — schlimmster Trap-Pick (−4 %) heben]
+export const EWIGER_FRUEHLING_FIELD_CAP = envNum("SIM_EWIGER_FRUEHLING_FIELD_CAP", 40); // … gedeckelte Feldgröße [Legendär-Angleich: 30→40]
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
