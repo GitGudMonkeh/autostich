@@ -39,7 +39,7 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, discharge: true },
   // Linie 2 — Konsumenten (volle Ladung → Payoff; max 1 im Build)
   SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionisierung", archetype: "lightning", keywords: ["charge", "ionize"],
-    desc: `Bei voller Ladung werden ${C.ION_BASE_COUNT} ungespielte Karten ionisiert; danach wird die Ladung verbraucht. Ionisierte Karten geben bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und heben feldweit die Crit-Chance jeder Siegkarte um +${pct(C.ION_CRIT_PP_PER_STACK)} pp je Ionisierungsstapel (bis +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp).`,
+    desc: `Bei voller Ladung werden ${C.ION_BASE_COUNT} ungespielte Karten ionisiert (je Blitz-Skill über ${C.ION_SPEED_MIN_SKILLS} +${C.ION_SPEED_PER_SKILL} weitere); danach wird die Ladung verbraucht. Ionisierte Karten geben bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und heben feldweit die Crit-Chance um +${pct(C.ION_CRIT_PP_PER_STACK)} pp je Ionisierungsstapel (bis +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp). Ist das Feld voll ionisiert (Breite), zählen alle Karten +${C.ION_SATURATION_VALUE} Wert; sind alle voll (Tiefe), fließt Crit-Überschuss in Crit-Multiplikator.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, onFullCharge: "ionize", ionizeCount: () => C.ION_BASE_COUNT },
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["crit", "streak"],
     desc: `Jeder Serienpunkt gibt +${pct(C.SERIESCRIT_STEP)} pp Crit-Chance (bis +${pct(C.SERIESCRIT_CAP)} pp). Verbraucht keine Ladung.`,
@@ -48,8 +48,8 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_03: { id: "SK_LIGHTNING_03", name: "Kettenblitz", archetype: "lightning", keywords: ["ionize"],
     desc: `Jede Ionisierung erfasst +${C.KETTENBLITZ_COUNT} weitere Karten.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, enabler: "SK_LIGHTNING_02", ionizeCount: () => C.KETTENBLITZ_COUNT },
-  SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Spannungsbogen", archetype: "lightning", keywords: ["ionize"],
-    desc: "Gewinnt eine ionisierte Karte, springt ein Ionisierungsstapel auf ihren nächsten noch nicht vollen Nachfolger.",
+  SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Breitenbeschleuniger", archetype: "lightning", keywords: ["ionize"],
+    desc: "Gewinnt eine ionisierte Karte, springt ein Ionisierungsstapel bevorzugt auf eine noch nicht ionisierte Karte (0 Stapel) — treibt die Breite Richtung Voll-Ionisierung. Gibt es keine, auf den nächsten nicht-vollen Nachfolger.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, voltageArc: true },
   SK_LIGHTNING_11: { id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning", keywords: ["ionize", "charge"],
     desc: `Trifft eine Ionisierung eine bereits volle Karte (${C.ION_MAX_STACKS} Stapel), verpufft sie sonst. Mit Blitzfänger gibt sie stattdessen +${C.BLITZFAENGER_VALUE} Stichwert (nur beim nächsten Auftauchen) und +1 Ladung.`,
@@ -62,7 +62,7 @@ export const SKILL_DEFS = {
     desc: `Jeder Sieg ohne Crit gibt +${pct(C.SPANNUNGSSTAU_STEP)} pp Crit-Chance für den nächsten Sieg (bis +${pct(C.SPANNUNGSSTAU_CAP)} pp); ein Crit entlädt den Stau und setzt ihn zurück.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, spannungsstau: true },
   SK_LIGHTNING_14: { id: "SK_LIGHTNING_14", name: "Überschlag", archetype: "lightning", keywords: ["crit", "charge"],
-    desc: "Crit-Chance über 100 % verfällt nicht, sondern wird in Ladung umgewandelt.",
+    desc: "Crit-Chance über 100 % verfällt nicht: vor Voll-Tiefe wird sie in Ladung umgewandelt (Sturm-Loop), ab Voll-Tiefe stattdessen in Crit-Multiplikator.",
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, ueberschlag: true },
   // Linie 5 — Kaskade (Verkabelung — Ereignis zündet Ereignis)
   SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Überspannung", archetype: "lightning", keywords: ["charge", "ionize", "crit"],

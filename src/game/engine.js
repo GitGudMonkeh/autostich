@@ -942,15 +942,14 @@ export function resolveTrick(state, rng) {
     if (isCrit && hasDurchschlag(skills) && (pCard.ionStacks || 0) >= C.ION_MAX_STACKS && lightning && lightning.active) {
       lightning = { ...lightning, durchschlagMult: Math.min(C.DURCHSCHLAG_MULT_CAP, (lightning.durchschlagMult || 0) + C.DURCHSCHLAG_CRIT_MULT) };
     }
-    // Spannungsbogen (§5.2): Sieg mit ionisierter Karte → erster ungespielter, nicht-voller Nachfolger +1 Stapel.
+    // Breitenbeschleuniger (v0.5, ex-Spannungsbogen): Sieg mit ionisierter Karte → +1 Stapel, BEVORZUGT auf eine noch
+    // nicht ionisierte (0-Stapel) Karte (treibt die Breite); gibt es keine, auf den nächsten nicht-vollen Nachfolger.
     if (ionizedCard && hasVoltageArc(skills)) {
-      const played = new Set(seq.slice(0, pos + 1)); // in diesem Durchlauf bereits gespielte Deckpositionen (Zeitsegment-tauglich)
-      for (let k = actualPos + 1; k < playerOrder.length; k++) {
-        const di = playerOrder[k];
-        if (played.has(k) || (deck[di].ionStacks || 0) >= C.ION_MAX_STACKS) continue; // gespielt oder voll → überspringen
-        deck = deck.map((c, i) => (i === di ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
-        break;
-      }
+      const played = new Set(seq.slice(0, pos + 1)); // bereits gespielte Deckpositionen (Zeitsegment-tauglich)
+      const pick = (pred) => { for (let k = actualPos + 1; k < playerOrder.length; k++) { const di = playerOrder[k]; if (played.has(k)) continue; if (pred(deck[di])) return di; } return -1; };
+      let di = pick((c) => (c.ionStacks || 0) === 0);                        // 1. Wahl: 0-Stapel-Karte → Breite +1
+      if (di < 0) di = pick((c) => (c.ionStacks || 0) < C.ION_MAX_STACKS);   // sonst: nächste nicht-volle
+      if (di >= 0) deck = deck.map((c, i) => (i === di ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
     }
     // Flächenionisation (L, v0): Sieg mit ionisierter Karte → ALLE ungespielten Deck-Nachbarn +1 Stapel (statt nur einer).
     if (ionizedCard && hasAreaIonize(skills)) {
