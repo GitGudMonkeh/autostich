@@ -5,7 +5,7 @@ import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakB
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
 import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryOffer, ionScoreFor, ionCritChance, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
-  hasIonize, hasStorm, chargeFloorFor,
+  hasIonize, hasStorm, chargeFloorFor, fieldBreadthSaturated, fieldDepthSaturated, ionSpeedBonus, // Blitz-Rework v0.5: 2-Stufen-Sättigung + Speed
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
   hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasSeriesCrit, hasBlitzableiter, hasWetterleuchten, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
   hasDoubleDischarge, hasAreaIonize, hasDurchschlag, activeLightningCount, // Blitz-Rework (v0): Legendäre + Bekenntnis-Skalierung
@@ -294,7 +294,12 @@ export function resolveTrick(state, rng) {
   const alliance = allianceGroups(familyTiers, roles);
   // Architekt value-Gebäude (#202, Tragwerk): +temp Wert VOR dem Vergleich (an dieser Position, Bedingung je Familie).
   const architectValue = archPreNow ? architectValueBonus(archPreNow, actualPos, pCard, alliance) : 0;
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + damascusCombat;
+  // Sturm-Sättigung (Blitz-Rework v0.5, global, nur bei aktivem Blitz; Stand VOR diesem Stich):
+  //   Breite → alle Karten +ION_SATURATION_VALUE Wert (bedingt). Tiefe → Überschlag-Graduierung (unten).
+  const lightBreadth = !!(lightning && lightning.active && fieldBreadthSaturated(deck));
+  const lightDepth   = !!(lightning && lightning.active && fieldDepthSaturated(deck));
+  const satValueBonus = lightBreadth ? C.ION_SATURATION_VALUE : 0;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + damascusCombat + satValueBonus;
   // #226 Großmeister: Gegner-Aufschlag = flacher oppValue + mitwachsender Ramp (+1 Wert alle oppRampEvery Durchläufe),
   // additiv VOR den Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, byte-identisch.
   const rampMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
@@ -679,6 +684,8 @@ export function resolveTrick(state, rng) {
                    + ((lightning && lightning.dischargeArmed) ? C.ENTLADUNG_CRIT_MULT : 0);
     // Frostkaskade: Crit-Chance-Überschuss über 100 % (Eiskalt-Flut) geht nicht verloren → wird zu Crit-Multiplikator.
     if (pCard.frozen && hasFrostkaskade(skills) && rawCrit > 1) critMultiplier += (rawCrit - 1) * C.FLAECHE_EXCESS_TO_MULT;
+    // Überschlag-Graduierung (v0.5): bei Voll-TIEFE geht der Crit-Überschuss (>100 %) in Crit-Multiplikator statt in Ladung.
+    if (hasUeberschlag(skills) && lightDepth && rawCrit > 1) critMultiplier += (rawCrit - 1) * C.UEBERSCHLAG_EXCESS_TO_MULT;
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = L10; reducedRepeat = Zeitsegment III
     // Eiskalt-Verbrauch (#Überlauf-Konsum): der Frost-Sieg brennt bis zu EISKALT_SPEND Überlauf-Schichten ab — von den
     // TIEFSTEN Frostkarten zuerst, NIE unter das Plateau (produktive Schichten bleiben permanent). Verbraucht wird UNABHÄNGIG
@@ -870,7 +877,7 @@ export function resolveTrick(state, rng) {
         gainedCharge += C.STATIC_CHARGE; // Statische Aufladung: Sieg ohne Crit → 1 Ladung
       }
       // Überschlag: Crit-Chance-Überschuss über 100 % → Ladung (jeder Sieg). Dauerstrom: Serie → Ladung (skaliert mit Länge).
-      if (hasUeberschlag(skills) && rawCrit > 1) gainedCharge += Math.floor((rawCrit - 1) * C.UEBERSCHLAG_PER);
+      if (hasUeberschlag(skills) && rawCrit > 1 && !lightDepth) gainedCharge += Math.floor((rawCrit - 1) * C.UEBERSCHLAG_PER); // vor Tiefe → Ladung; ab Tiefe → Crit-Mult (Graduierung v0.5)
       if (hasDauerstrom(skills)) gainedCharge += Math.min(Math.floor(serieStreak / C.DAUERSTROM_PER_STREAK), C.DAUERSTROM_MAX);
       if (gainedCharge > 0) {
         lightning = addCharge(lightning, gainedCharge);
@@ -884,7 +891,8 @@ export function resolveTrick(state, rng) {
             // Deck-Indizes doppelt nennt). Ohne Zeitsegment ist seq die Identität → identisch zu playerOrder.slice.
             const undrawn = [...new Set(seq.slice(pos + 1).map((p) => playerOrder[p]))]; // Deck-Indizes der noch kommenden Karten
             // Doppelentladung (L, v0): der volle Verbrauch feuert den Ionisierungs-Konsumenten zweimal (Anzahl ×2).
-            const ionN = ionizeCountFor(skills) * (hasDoubleDischarge(skills) ? C.DOPPELENTLADUNG_FACTOR : 1);
+            // Ionisierungs-Speed (v0.5): +Breite je Blitz-Skill über der Schwelle → Mono sättigt in weit weniger Verbräuchen.
+            const ionN = (ionizeCountFor(skills) + ionSpeedBonus(skills)) * (hasDoubleDischarge(skills) ? C.DOPPELENTLADUNG_FACTOR : 1);
             const ionBefore = deck.reduce((t, c) => t + (c.ionStacks || 0), 0); // #270: Motor-Zähler (tatsächlich neu ionisierte Stapel = Diff)
             if (hasBlitzcatcher(skills)) {
               // Blitzfänger: volle Karten (5 Stapel) werden nicht ionisiert → je +2 temp Wert (nächstes Auftauchen) & +1 Ladung.

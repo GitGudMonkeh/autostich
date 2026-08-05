@@ -710,6 +710,20 @@ export const chargeConsumerOf = (skills) => {
 export function ionizeCountFor(skills) {
   return skillSum(skills, "ionizeCount", {});
 }
+// Sturm-Sättigung (Blitz-Rework v0.5): zwei Stufen über den Deck-Zustand.
+//   Breite = Anteil Karten mit ≥1 Stapel ≥ FRAC · Tiefe = Anteil voller (ION_MAX_STACKS) Karten ≥ FRAC.
+export const fieldBreadthSaturated = (deck, frac = C.ION_SAT_BREADTH_FRAC) => {
+  const n = (deck || []).length; if (n === 0) return false;
+  let ion = 0; for (const c of deck) if ((c.ionStacks || 0) > 0) ion++;
+  return ion >= Math.ceil(n * frac);
+};
+export const fieldDepthSaturated = (deck, frac = C.ION_SAT_DEPTH_FRAC) => {
+  const n = (deck || []).length; if (n === 0) return false;
+  let full = 0; for (const c of deck) if ((c.ionStacks || 0) >= C.ION_MAX_STACKS) full++;
+  return full >= Math.ceil(n * frac);
+};
+// Ionisierungs-Speed ∝ Blitz-Skills (Mono): +Breite je Verbrauch je Blitz-Skill über der Schwelle.
+export const ionSpeedBonus = (skills) => Math.max(0, activeLightningCount(skills) - C.ION_SPEED_MIN_SKILLS) * C.ION_SPEED_PER_SKILL;
 
 // Ladung verbrauchen → auf den Boden (Stufe C: Reststrom hebt ihn; Default 0).
 export function consumeCharge(lightning, floor = 0) {

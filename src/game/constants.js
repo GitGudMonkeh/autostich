@@ -199,6 +199,16 @@ export const ION_CRIT_PP_PER_STACK = envNum("SIM_ION_CRIT_PP_PER_STACK", 0.02); 
 export const ION_CRIT_STACK_CAP    = envNum("SIM_ION_CRIT_STACK_CAP", 12);      // gedeckelte gezählte Σ-Feldstapel (→ max +12 pp; zähmt den Heavy-Build-Tail)
 export const ION_MAX_STACKS       = 5;  // max Stapel je Karte [#165 Skills-Spec §5.1: 4→5]
 export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Verbrauch
+// Sturm-Sättigung (Blitz-Rework v0.5) — zwei Stufen als Board-Zustand (global, bedingt, nur bei aktivem Blitz):
+//   Breite  = Anteil Karten mit ≥1 Stapel ≥ FRAC → alle Karten zählen +ION_SATURATION_VALUE Wert.
+//   Tiefe   = Anteil Karten voll (ION_MAX_STACKS) ≥ FRAC → Crit-Überschuss (>100 %) kippt via Überschlag von Ladung auf Crit-Mult.
+export const ION_SAT_BREADTH_FRAC = envNum("SIM_ION_SAT_BREADTH_FRAC", 0.85); // Anteil ionisierter Karten für „Breite voll" [Sim-tunebar]
+export const ION_SAT_DEPTH_FRAC   = envNum("SIM_ION_SAT_DEPTH_FRAC", 0.85);   // Anteil voller (5-Stapel-)Karten für „Tiefe voll" [Sim-tunebar]
+export const ION_SATURATION_VALUE = envNum("SIM_ION_SATURATION_VALUE", 2);    // +Wert auf alle Karten solange Breite voll [Sim-tunebar]
+export const UEBERSCHLAG_EXCESS_TO_MULT = envNum("SIM_UEBERSCHLAG_EXCESS_TO_MULT", 0.5); // ab Tiefe: Crit-Überschuss (je volle 100 %) → +Crit-Mult statt Ladung [Sim-tunebar]
+// Ionisierungs-Geschwindigkeit ∝ Blitz-Skills (Mono): Breite je Verbrauch steigt mit jedem Blitz-Skill über der Schwelle.
+export const ION_SPEED_MIN_SKILLS = envNum("SIM_ION_SPEED_MIN_SKILLS", 2);    // ab dieser Blitz-Skill-Zahl skaliert die Ionisierungs-Breite
+export const ION_SPEED_PER_SKILL  = envNum("SIM_ION_SPEED_PER_SKILL", 1);     // +ionisierte Karten je Verbrauch je Blitz-Skill über der Schwelle
 export const BLITZFAENGER_VALUE   = 2;  // Blitzfänger (#165): eine bereits volle Karte (5 Stapel) statt zu ionisieren +temp Wert (+ 1 Ladung)
 export const KETTENBLITZ_COUNT    = 2;  // Kettenblitz: zusätzlich ionisierte Karten (nur mit Ionisierung)
 export const UEBERSPANNUNG_CHARGE = 3;  // Überspannung: Zusatzladung bei Crit mit ionisierter Karte
