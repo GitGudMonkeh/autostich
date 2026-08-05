@@ -214,7 +214,7 @@ export const KETTENBLITZ_COUNT    = 2;  // Kettenblitz: zusätzlich ionisierte K
 export const UEBERSPANNUNG_CHARGE = 3;  // Überspannung: Zusatzladung bei Crit mit ionisierter Karte
 // Reaktoren (Reststrom-Boden + Gewitterfront)
 export const REST_CHARGE_FLOOR = envNum("SIM_REST_CHARGE_FLOOR", 4);    // Reststrom: Ladungsboden nach jedem Verbrauch [v0.5: 3→4, Rapid-Fire-Hebel]
-export const STORM_CRIT_STEP   = 0.02; // Gewitterfront: +Crit-Chance-Momentum je Verbrauch — UNCAPPED (Überschlag = Ventil) [v0.5]
+export const STORM_CRIT_STEP   = envNum("SIM_STORM_CRIT_STEP", 0.02); // Gewitterfront: +Crit-Chance-Momentum je Verbrauch — UNCAPPED (Überschlag = Ventil) [v0.5 · Sim-tunebar]
 export const STORM_CRIT_CAP    = 0.20; // (vestigial v0.5: Gewitterfront ist entkappt; Konstante bleibt für Alt-Tests/Rollback)
 export const STORM_SCORE       = envNum("SIM_STORM_SCORE", 100);  // Gewitterfront nach Cap: +Score je Sieg … [SIM-Tuning]
 export const STORM_SCORE_WINS  = 3;    // …          … für so viele folgende Siege
@@ -236,7 +236,7 @@ export const KURZSCHLUSS_SCORE  = envNum("SIM_KURZSCHLUSS_SCORE", 250); // Direk
 export const KURZSCHLUSS_CHARGE = envNum("SIM_KURZSCHLUSS_CHARGE", 3);  // + Ladungs-Burst je Sieg mit voller Karte
 export const SPANNUNGSSTAU_STEP       = 0.05; // Spannungsstau: +5 pp Crit-Chance je Sieg ohne Crit (ein Crit resettet) // v0
 export const SPANNUNGSSTAU_CAP        = 0.50; // Spannungsstau: … bis +50 pp                                       // v0 — tunebar
-export const UEBERSCHLAG_PER          = 10;   // Überschlag: Crit-Chance-Überschuss (>100 %) ×10 → Ladung (0,3 → +3) // v0
+export const UEBERSCHLAG_PER          = envNum("SIM_UEBERSCHLAG_PER", 10);   // Überschlag: Crit-Chance-Überschuss (>100 %) ×N → Ladung // v0 · Sim-tunebar
 export const BLITZSCHLAG_STACKS       = 1;    // Blitzschlag: ein Crit ionisiert die Siegkarte (+1 Stapel)          // v0
 export const DAUERSTROM_PER_STREAK    = 3;    // Dauerstrom: je 3 Serienpunkte +1 Ladung je Sieg in Folge           // v0
 export const DAUERSTROM_MAX           = 3;    // Dauerstrom: … höchstens +3 Ladung/Sieg                             // v0 — tunebar
