@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import { reducer, initialState, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
-import { baseScoreMultFor, totalCritChanceRaw } from "./game/perks.js";
+import { baseScoreMultFor, totalCritChanceRaw, totalCritMult } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
@@ -638,7 +638,7 @@ export function Autostich() {
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
-                ionTotal={state.ionTotal || 0} yield={state.lightYield || 0} deck={state.deck || []} />
+                critMult={totalCritMult(state)} deck={state.deck || []} />
               <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}}
                 ashBurned={state.ashBurned || 0} brandTotal={state.brandTotal || 0}
                 fireBase={state.fireBase || 0} fireWhite={state.fireWhite || 0} />
