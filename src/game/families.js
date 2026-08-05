@@ -708,11 +708,12 @@ const E_FAMILIES = {
   },
   E_PENDULUM: {
     id: "E_PENDULUM", cat: "E", name: "Pendelwerk", upgradeType: REPLACEMENT,
+    // #285: „von → nach" gegenüber dem Standard-Wechsel (ab 3 Karten, Differenz ≥4) → die Erleichterung ist sofort sichtbar.
     tiers: {
-      1: { desc: "Wechsel bilden sich ab 3 Karten (Mindestdifferenz 3).",                       wMinLen: 3, wMinDiff: 3 },
-      2: { desc: "Wechsel bilden sich ab 2 Karten (Mindestdifferenz 4).",                        wMinLen: 2, wMinDiff: 4 },
-      3: { desc: "Wechsel bilden sich ab 2 Karten (Mindestdifferenz 3).",                        wMinLen: 2, wMinDiff: 3 },
-      4: { desc: "Wechsel bilden sich ab 2 Karten (Mindestdifferenz 2); der Faktor startet bei ×1,35.", wMinLen: 2, wMinDiff: 2, wFactorStart: 1.35 },
+      1: { desc: "Wechsel-Differenz ≥4 → ≥3 (weiterhin ab 3 Karten).",                 wMinLen: 3, wMinDiff: 3 },
+      2: { desc: "Wechsel ab 3 → 2 Karten (Differenz ≥4).",                             wMinLen: 2, wMinDiff: 4 },
+      3: { desc: "Wechsel ab 3 → 2 Karten · Differenz ≥4 → ≥3.",                        wMinLen: 2, wMinDiff: 3 },
+      4: { desc: "Wechsel ab 3 → 2 Karten · Differenz ≥4 → ≥2; 2er-Wechsel ab ×1,35.",  wMinLen: 2, wMinDiff: 2, wFactorStart: 1.35 },
     },
   },
   E_RPM: {
