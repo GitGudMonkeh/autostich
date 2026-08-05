@@ -2,6 +2,7 @@ import { UPGRADE_TYPES, withFamilyTier } from "./rarity.js";
 import { shuffle } from "./deck.js";
 import { SUIT_ORDER } from "./constants.js";
 import * as C from "./constants.js";
+import { colorsAllied } from "./color.js"; // #289: Farbfokus grün-/allianz-bewusst
 
 /* ============================================================
    FAMILIEN-REGISTRY (Rarität-Umbau #163, Spec docs/rarity-system.md §3.2).
@@ -880,10 +881,10 @@ const P_FAMILIES = {
     // statt höherer pp eine ZWEITE wählbare Farbe (beide auf Stufe-III-Wert). Ziel-Fluss über pickTarget.suits
     // (REPLACEMENT mit Ziel → applyFamilyPick persistiert roles["P_COLORFOCUS"]); die Engine gibt focusSuits durch.
     tiers: {
-      1: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[0])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).includes(c.suit) ? cSc(C.PRECISION_COLOR_PP[0]) : 0) },
-      2: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[1])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).includes(c.suit) ? cSc(C.PRECISION_COLOR_PP[1]) : 0) },
-      3: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[2])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).includes(c.suit) ? cSc(C.PRECISION_COLOR_PP[2]) : 0) },
-      4: { desc: `Wähle ZWEI Farben: Karten dieser Farben je +${ppP(C.PRECISION_COLOR_PP[3])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 2 }, critChance: (c) => ((c.focusSuits || []).includes(c.suit) ? cSc(C.PRECISION_COLOR_PP[3]) : 0) },
+      1: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[0])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).some((fs) => colorsAllied(c.suit, fs, c.alliance)) ? cSc(C.PRECISION_COLOR_PP[0]) : 0) },
+      2: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[1])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).some((fs) => colorsAllied(c.suit, fs, c.alliance)) ? cSc(C.PRECISION_COLOR_PP[1]) : 0) },
+      3: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[2])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).some((fs) => colorsAllied(c.suit, fs, c.alliance)) ? cSc(C.PRECISION_COLOR_PP[2]) : 0) },
+      4: { desc: `Wähle ZWEI Farben: Karten dieser Farben je +${ppP(C.PRECISION_COLOR_PP[3])} Prozentpunkte Crit-Chance.`, pickTarget: { suits: 2 }, critChance: (c) => ((c.focusSuits || []).some((fs) => colorsAllied(c.suit, fs, c.alliance)) ? cSc(C.PRECISION_COLOR_PP[3]) : 0) },
     },
   },
 };

@@ -2,7 +2,8 @@ import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
-import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult } from "./families.js";
+import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
+import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryOffer, ionScoreFor, ionCritChance, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
   hasIonize, hasStorm, chargeFloorFor,
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
@@ -286,8 +287,10 @@ export function resolveTrick(state, rng) {
   const familyValueBonus = familySumHook(familyTiers, "cardBonus", { ...ctx, pValueBase: pCard.value });
   // Damaststahl (L, Underdog): geschmiedete Karten kämpfen mit +Wert → die tiefen Schmiede-Karten schlagen über ihrem Gewicht.
   const damascusCombat = (fireFlag(skills, "damascus") && (forged[pCard.id] || 0) > 0) ? C.DAMASCUS_COMBAT : 0;
+  // #289: Farballianz-Gruppen einmal je Stich — an ALLE Farb-Verbraucher (Architekt/Farbserie/Farbfokus) gereicht.
+  const alliance = allianceGroups(familyTiers, roles);
   // Architekt value-Gebäude (#202, Tragwerk): +temp Wert VOR dem Vergleich (an dieser Position, Bedingung je Familie).
-  const architectValue = archPreNow ? architectValueBonus(archPreNow, actualPos, pCard) : 0;
+  const architectValue = archPreNow ? architectValueBonus(archPreNow, actualPos, pCard, alliance) : 0;
   const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + damascusCombat;
   // #226 Großmeister: Gegner-Aufschlag = flacher oppValue + mitwachsender Ramp (+1 Wert alle oppRampEvery Durchläufe),
   // additiv VOR den Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, byte-identisch.
@@ -338,7 +341,8 @@ export function resolveTrick(state, rng) {
     // Effektive Farbe: pflanzen-grüne Karten (card.green) zählen als „Grün" („G") — auf dem Board grün angezeigt, also
     // auch für die Farbserie dieselbe Farbe (konsistent zu Farbverstärkung). Ein Lauf grüner Karten hält so die Serie.
     const eSuit = pCard.green ? "G" : pCard.suit;
-    const suitStreak = eSuit === winSuit ? winSuitStreak + 1
+    // #289: verbündete Farben (Farballianz) zählen als dieselbe Farbe → sie SETZEN die Farbserie fort statt sie zu brechen.
+    const suitStreak = colorsAllied(eSuit, winSuit, alliance) ? winSuitStreak + 1
                      : (suitHalveOnSwitch ? Math.max(1, Math.floor(winSuitStreak / 2)) : 1);
     // #195: posInCycle = actualPos (Deckposition), NICHT pos (Stich-Index) — muss zum segmentWins-Reset oben
     // (actualPos % SEGMENT_SIZE) passen. Sonst divergieren bei partieller Zeitsegment-Wiederholung Gate (D_FULL_HOUSE
@@ -635,7 +639,7 @@ export function resolveTrick(state, rng) {
     // #267: die Crit-Chance kommt jetzt aus der Perk-FAMILIE „Präzision" (RNG-gegatet, Stat-Ersatz) statt aus dem Stat.
     // Karten-Kontext für die konditionalen Generatoren: Kartenwert / Kartenfarbe / #aktive Formationen der Siegposition /
     // gewählte Farben (Farbfokus, aus roles). Roh-Crit-Chance (ungeklemmt): Perk-Basis + Präzision + Blitz + Kritanker.
-    const critFamCtx = { winValue: pValue, suit: pCard.suit, formCount: activeFormationCount(posForm), focusSuits: (roles && roles.P_COLORFOCUS) || [] };
+    const critFamCtx = { winValue: pValue, suit: pCard.green ? "G" : pCard.suit, formCount: activeFormationCount(posForm), focusSuits: (roles && roles.P_COLORFOCUS) || [], alliance }; // #289: grün-bewusste Suit + Farballianz für Farbfokus
     // Eiskalt (#Überlauf-Konsum): ist die Siegkarte eine Frostkarte, gibt der globale Überlauf-Vorrat (Σ Schichten über
     // Plateau, aus dem VOR-Sieg-Stand `layers`) gezielt dieser Karte Crit-Chance — skaliert mit „wie viel man hat", gedeckelt.
     let iceOverflowSum = 0;
@@ -692,7 +696,7 @@ export function resolveTrick(state, rng) {
     // Architekt score-Gebäude (#202, Handelsbauten): Flat in die multiplizierte Basis; Mult (Schatzkammer/Struktur) als
     // eigener Faktor. Meilenstein-Zähler (bump) wird nach dem Stich fortgeschrieben. Bedingungen: Crit/Farbe/Serie/Ziel.
     const architectScoreRes = archPreNow
-      ? architectScore(archPreNow, actualPos, { isCrit, serieStreak, suit: pCard.green ? "G" : pCard.suit }, (architect && architect.winCounters) || {}) // Pflanze: grün → Farbe „G" (konsistent zum Farbblock)
+      ? architectScore(archPreNow, actualPos, { isCrit, serieStreak, suit: pCard.green ? "G" : pCard.suit }, (architect && architect.winCounters) || {}, alliance) // #289: grün → „G" + Farballianz (Zunfthaus)
       : { flat: 0, mult: 1, bump: null };
     architectBump = architectScoreRes.bump;
     const architectMult = architectScoreRes.mult;

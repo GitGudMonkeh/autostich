@@ -15,6 +15,7 @@
    ============================================================ */
 import { SUIT_ORDER } from "./constants.js";
 import { tierWeightsForShift } from "./rarity.js";
+import { colorMatches, colorsAllied } from "./color.js"; // #289: Farb-Match zentral (grün + Farballianz)
 
 // Brett-Geometrie (fix; NICHT aus formations.js importiert, um den Import-Zyklus formations↔architect zu vermeiden).
 export const COLS = 5;                    // Spalten je Segment (= SEGMENT_SIZE)
@@ -552,20 +553,19 @@ function resolveNumEffect(fam, b, cat, order, deck, cardVal, boardCtx = {}) {
 
 /* ---- Effekt-Anwendung (Engine, resolveTrick) ---- */
 // value: +temp Wert VOR dem Vergleich (an actualPos). pCard liefert Wert/Farbe für die Bedingungen.
-export function architectValueBonus(pre, actualPos, pCard) {
+export function architectValueBonus(pre, actualPos, pCard, alliance = []) {
   const e = pre && pre.value[actualPos];
   if (!e) return 0;
   if (e.kind === "flat") return e.amount;
   if (e.kind === "lowValue") return pCard.value <= e.threshold ? e.amount : 0;
-  // Pflanze (v0): grüne Karten zählen als Farbe „G" (wie im Farbblock, formations.js) — ein Farb-Gebäude bufft die
-  // sichtbar grüne Karte, nicht mehr ihre Ursprungsfarbe. Sonst zeigte der Architekt bei begrüntem Deck falsche Werte.
-  if (e.kind === "color") return (pCard.green ? "G" : pCard.suit) === e.colorChoice ? e.amount : 0;
+  // #289: Farb-Match zentral (colorMatches) → respektiert Pflanze-Grün („G") UND Farballianz (verbündete Farben zählen).
+  if (e.kind === "color") return colorMatches(pCard, e.colorChoice, alliance) ? e.amount : 0;
   if (e.kind === "target") return e.amount; // Effekt liegt nur auf der Zielposition
   return 0;
 }
 // score: bei Sieg an actualPos → { flat (in scoreBase), mult (eigener Faktor), bump (Gebäude-id für Meilenstein-Zähler) }.
 // Häuserzeile fließt IMMER als Mult (segFactor). `ctx` = { isCrit, serieStreak, suit }; `counters` = winCounters (Lesen).
-export function architectScore(pre, actualPos, ctx, counters) {
+export function architectScore(pre, actualPos, ctx, counters, alliance = []) {
   // #Pool Batch 3: relayFlat (Staffel) fließt IMMER ein, wenn die Zielposition gewinnt — unabhängig vom eigenen Effekt hier.
   let flat = (pre && pre.relayFlat && pre.relayFlat[actualPos]) || 0, mult = pre ? (pre.segFactor[actualPos] || 1) : 1, bump = null;
   const e = pre && pre.score[actualPos];
@@ -578,7 +578,7 @@ export function architectScore(pre, actualPos, ctx, counters) {
       // #Pool tierKick: streakDoubleFrom (Reihenhaus III) verdoppelt den Serien-Score ab der Schwelle.
       case "streak": { const s = ctx.serieStreak || 0; flat += e.amount * s * (e.streakDoubleFrom && s >= e.streakDoubleFrom ? 2 : 1); break; }
       case "crit":     if (ctx.isCrit) flat += e.amount; break;
-      case "color":    if (ctx.suit === e.colorChoice) flat += e.amount; break;
+      case "color":    if (colorsAllied(ctx.suit, e.colorChoice, alliance)) flat += e.amount; break; // #289: grün (ctx.suit ist bereits „G") + Farballianz
       case "target":   flat += e.amount; break;
       case "mult":     mult *= e.factor; break;
       case "milestone": {

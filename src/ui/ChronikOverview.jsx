@@ -66,6 +66,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
   const architectCover = useMemo(() => { // [#229 T8] nur bei Änderung neu berechnen (lief zuvor bei jeder Render, auch bei showArch=false)
     if (!hasArch) return null;
     const pre = precomputeArchitect(state.architect, playerOrder, deck);
+    const alliance = allianceGroups(state.familyTiers, state.roles); // #289: Badge grün-/allianz-bewusst
     const cover = {};
     for (const b of archBuildings) {
       const fam = archFamily(b.familyId);
@@ -73,9 +74,9 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
       const cat = ARCH_CAT[fam.category];
       for (const pos of b.footprint) {
         const card = deck[playerOrder[pos]];
-        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card) : 0;
+        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card, alliance) : 0;
         const badgeSuit = fam.colorLocked ? (b.colorChoice || null) : null; // [#229 N1] Wert-Badge in Kartenfarbe (sonst grau) — wie in der Aufstellung
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, tier: b.tier, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier) };
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, tier: b.tier, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier, alliance) };
       }
     }
     return cover;

@@ -3,7 +3,7 @@ import { cycleLenFor } from "../game/shop.js";
 import { summarizeFormations } from "../game/formations.js";
 import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
 import { hasCritPerk, critMultiplierFor, totalCritChanceRaw } from "../game/perks.js";
-import { hasCritFamily, familyCritMult } from "../game/families.js";
+import { hasCritFamily, familyCritMult, allianceGroups } from "../game/families.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
 
@@ -71,10 +71,11 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
     if (!(state.architectEnabled && architect && (architect.buildings || []).length)) return 0;
     const order = state.playerOrder || [], deck = state.deck || [];
     const pre = precomputeArchitect(architect, order, deck);
+    const alliance = allianceGroups(state.familyTiers, state.roles); // #289
     let boost = 0, base = 0, multSum = 0;
     for (let p = 0; p < order.length; p++) {
       const card = deck[order[p]];
-      if (card) { const b = architectValueBonus(pre, p, card); if (b > 0) { boost += b; base += card.value; } }
+      if (card) { const b = architectValueBonus(pre, p, card, alliance); if (b > 0) { boost += b; base += card.value; } }
       const sc = pre.score[p];
       const m = (pre.segFactor[p] || 1) * (sc && sc.kind === "mult" ? sc.factor : 1);
       if (m > 1) multSum += m - 1;

@@ -49,6 +49,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   const architectCover = useMemo(() => { // [#229 T7] nur neu berechnen, wenn Aufstellung/Architekt sich ändern (nicht bei jeder Kachel-Auswahl)
     if (!hasArch) return null;
     const pre = precomputeArchitect(architect, playerOrder, deck);
+    const alliance = allianceGroups(state.familyTiers, state.roles); // #289: Badge grün-/allianz-bewusst
     const cover = {};
     for (const b of architect.buildings) {
       const fam = archFamilyDef(b.familyId);
@@ -56,11 +57,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
       const cat = ARCH_CAT[fam.category];
       for (const pos of b.footprint) {
         const card = deck[playerOrder[pos]];
-        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card) : 0;
+        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card, alliance) : 0;
         // #UI: badgeSuit = die Karten-Farbe, für die das Gebäude den Wert-Bonus gibt (colorLocked → colorChoice),
         // sonst null → grau. Speist die „+N"-Badge-Farbe im CardGrid.
         const badgeSuit = fam.colorLocked ? (b.colorChoice || null) : null;
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, tier: b.tier, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier) };
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, tier: b.tier, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier, alliance) };
       }
     }
     return cover;

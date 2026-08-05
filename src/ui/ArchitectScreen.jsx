@@ -6,6 +6,7 @@ import {
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
+import { allianceGroups } from "../game/families.js"; // #289: Farballianz für Wert-Boost-Anzeige
 import { hasKaltfront } from "../game/skills.js"; // Kälteleitung: temporär vereiste Nachbarn markieren
 import { SUIT_ORDER, PLANT_VALUE_CAP } from "../game/constants.js";
 import { ARCH_CAT as CAT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
@@ -131,6 +132,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const effArch = useMemo(() => ({ ...architect, buildings }), [architect, buildings]);
   const pre = useMemo(() => (cards.length ? precomputeArchitect(effArch, order, deck) : null), [effArch, order, deck, cards.length]);
   const structF = useMemo(() => boardFactorMap(buildings), [buildings]); // #283: Struktur × Distrikt (gleiche Quelle wie die Engine)
+  const alliance = useMemo(() => allianceGroups(state.familyTiers, state.roles), [state.familyTiers, state.roles]); // #289: Farb-Match grün-/allianz-bewusst
   // Struktur-Kombi-Bonus als Summe (#UI): Σ der Extra-Faktoren über alle Karten auf fertigen Strukturen
   // (Zeile/Spalte/Diagonale, multiplikativ gestapelt) → Gesamt-Punkte-Bonus in Prozent. Nicht beteiligte Zellen
   // haben Faktor 1 → (f−1)=0, tragen nichts bei.
@@ -206,7 +208,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const effValueAt = (pos) => {
     const card = cards[pos];
     if (!card) return 0;
-    const bonus = pre ? architectValueBonus(pre, pos, card) : 0;
+    const bonus = pre ? architectValueBonus(pre, pos, card, alliance) : 0;
     return card.value + bonus;
   };
   const sumValue = cards.reduce((t, _c, p) => t + effValueAt(p), 0);
@@ -406,7 +408,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const previewBuildings = buildings.map((x) => (x.id === dragPrev.id ? { ...x, footprint: [...dragPrev.footprint].sort((m, n) => m - n) } : x));
     const previewArch = { ...architect, buildings: previewBuildings };
     const p2 = precomputeArchitect(previewArch, order, deck);
-    const val2 = cards.reduce((t, c, p) => t + c.value + (architectValueBonus(p2, p, c) || 0), 0);
+    const val2 = cards.reduce((t, c, p) => t + c.value + (architectValueBonus(p2, p, c, alliance) || 0), 0);
     const form2 = summarizeFormations(computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, previewArch)).count;
     return { dVal: val2 - sumValue, dForm: form2 - formCount, valid: dragPrev.valid };
   }, [dragPrev]); // eslint-disable-line react-hooks/exhaustive-deps

@@ -7,6 +7,7 @@
    { cat, color, icon, boost, legendary, name, badgeSuit, bid, effects }. `boost` = echter Wert-Bonus der dort
    stehenden Karte (nur value-Gebäude, konditional wie in der Engine); `badgeSuit` = die gebufte Farbe oder null. */
 import { precomputeArchitect, architectValueBonus, familyDef } from "../game/architect.js";
+import { allianceGroups } from "../game/families.js"; // #289: Farballianz für die Badge-Anzeige
 import { architectEffectStrings } from "./archEffects.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 
@@ -17,6 +18,7 @@ export function architectCoverFor(state) {
   const deck = state.deck || [];
   const order = state.playerOrder || [];
   const pre = precomputeArchitect(architect, order, deck);
+  const alliance = allianceGroups(state.familyTiers, state.roles); // #289
   const cover = {};
   for (const b of buildings) {
     const fam = familyDef(b.familyId);
@@ -24,9 +26,9 @@ export function architectCoverFor(state) {
     const cat = ARCH_CAT[fam.category];
     for (const pos of b.footprint) {
       const card = deck[order[pos]];
-      const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card) : 0;
+      const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card, alliance) : 0;
       const badgeSuit = fam.colorLocked ? (b.colorChoice || null) : null;
-      cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier) };
+      cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier, alliance) };
     }
   }
   return cover;
