@@ -1240,7 +1240,8 @@ export function resolveTrick(state, rng) {
         // guaranteeOne-Parameter — NICHT mehr Chance 1, das würde bei der Per-Archetyp-Ziehung in JEDEM Archetyp einen setzen).
         const guarantee = masteryLegendGuaranteed(mGrade) && !newMasteryLegGranted;
         const skillLeg = skillLegendaryChance(shop) * mLegMult; // #247: Per-Archetyp-Chance (Basis × Meisterrang-Mult)
-        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLeg, guarantee);
+        const guaranteeWurzel = !skills.includes("SK_PLANT_01") && !state.wurzelschlagRerolled; // Pflanze-Kern-Garantie
+        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLeg, guarantee, guaranteeWurzel);
         if (soff.length > 0) {
           phase = "levelup"; newSkillOffer = soff;
           if (guarantee && soff.some(isLegendarySkill)) newMasteryLegGranted = true; // Garantie eingelöst, sobald ein Legendär tatsächlich im Angebot ist
@@ -1275,7 +1276,7 @@ export function resolveTrick(state, rng) {
         const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), 2);
         if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
         else {
-          const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false);
+          const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, !skills.includes("SK_PLANT_01") && !state.wurzelschlagRerolled);
           if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
         }
       }

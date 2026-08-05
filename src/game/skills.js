@@ -551,7 +551,7 @@ export function ownsConsumerFor(arch, skills) {
 // #217 Meistergrade: ob eine Skill-id ein Legendär ist (Garantie-Erkennung bei Grad V). Rein & node-testbar.
 export const isLegendarySkill = (id) => !!SKILL_DEFS[id]?.legendary;
 
-export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0, guaranteeOne = false) {
+export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0, guaranteeOne = false, guaranteeWurzelschlag = false) {
   const available = archetypesWithSkills(owned);
   const chosen = offerArchetypes(activeArchetypes || [], available, rng);
   if (!chosen.length) return [];
@@ -593,6 +593,13 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
       const ci = pool.findIndex(isConsumerSkill);
       if (ci > 0) pool.unshift(pool.splice(ci, 1)[0]);
       if (ci >= 0) guaranteed.add(pool[0]);
+    }
+    // Pflanze-Kern-Garantie: Wurzelschlag wird angeboten, solange nicht gehalten UND nicht rerolled — Pflanze hat keinen
+    // Konsumenten, deshalb sichert dieser Kern-Skill den Einstieg (analog zur Konsumenten-Garantie). Reroll cancelt sie.
+    if (arch === "plant" && guaranteeWurzelschlag) {
+      const wi = pool.indexOf("SK_PLANT_01");
+      if (wi > 0) pool.unshift(pool.splice(wi, 1)[0]);
+      if (wi >= 0) guaranteed.add("SK_PLANT_01");
     }
     for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
     rest.push(...pool); // Reste des Archetyps für die Auffüllung
