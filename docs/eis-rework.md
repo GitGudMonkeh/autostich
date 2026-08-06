@@ -160,6 +160,34 @@ Regel = **Bedingung → Effekt**. 12 Kern-Rollen + 5 Auffüller = **17 normale R
 1. ✔ **Dünne Linien aufgefüllt** — 17 normale Rollen (Firn 4 / Eisschild 5 / Lawine 5 / Frostgriff 3).
 2. ✔ **Legendäre** — Eiszeit / Ewiges Schild / Große Lawine / Erstarrung.
 3. **Zahlen** — ganz zuletzt (Sim + Playtest). Offen v.a.: Stufen-Werte 4/8/12 + Überlinearität + Überlauf-Rate, Masse-Raten der Motoren, Kaskade/Kollision-Faktoren, Eispanzer-Umwandlung, Eiszeit-Flutrate, Große-Lawine-Trigger (Finisher).
-4. **2D-Formationen** — als **unique Deck-Passiv gesetzt** (§2.7); die einzelnen Geometrien + Payoffs noch zu designen (→ §9).
+4. ✔ **2D-Formationen** — unique Deck-Passiv (§2.7), Geometrien designt (§9). Zahlen der Payoffs am Sim.
 5. **#288 (Trimmen) schließen**, sobald dieses Design es in Code ablöst.
 6. **Deckel/Runaway-Leitplanken** — aufgeschoben bis Design + Werte stehen (Verzahnung, Große Lawine, Kaskade).
+
+---
+
+## 9 · 2D-Geometrie-Formationen (unique Deck-Passiv, §2.7)
+
+Andere Decks bilden Formationen **1D** (eine Reihe). Eis bildet **2D-Formen** aus **fixierten Gletschern** (§2.1) auf dem Raster. Jede Geometrie bedient eine **andere Fundament-Größe** → „welche Form baue ich" ist eine Build-Entscheidung. Faustregel: **schwerer zu bauen = größerer Payoff.**
+
+**Brett-Fakten (verifiziert `architect.js`):** 8 Zeilen × 5 Spalten = 40 Zellen. Max-Längen: **Spalte 8** (senkrecht), **Reihe 5** (waagerecht), **Diagonale 5** (kürzere Achse). → Diagonale ist zu kurz/fummelig für eine eigene Form.
+
+### Das Set (vier Formen)
+| Form | Aussehen | Max | Payoff-Achse | Fantasie / Rolle |
+|---|---|---|---|---|
+| **Block** | 2×2-Quadrat | — | **Kaskade-Sockel** (Dichte) | Kompakte Kraftform, max. Nachbarschaft auf kleinstem Raum. Einstieg ins Cluster. |
+| **Kreuz / Plus** | Zentrum + 4 orthogonale Nachbarn | — | **Kollision / Krit** | Detonator-Knoten: Zentrum bricht in **4 Gletscher** zugleich → perfekte Kollision. |
+| **Linie** | volle Reihe (5) **oder** Spalte (8) | 8 | **linienweiter Buff** | Die Wall-Form in **beiden** Achsen. Heimat von **Eiswall**. Spalte (8) > Reihe (5). |
+| **Große Fläche** | gefülltes Rechteck (z.B. 3×3) | — | **brettweite Kaskade** | Endgame-Mega-Cluster: alles verbunden → speist **Kettenbruch** & **Große Lawine**. Teuerste Form, größter Knall. |
+
+**Diagonale gestrichen** — zu kurz (≤5) und schwer zu bauen. Der diagonale Gedanke lebt bei **Eisbrücke** (schaltet Diagonal-Adjazenz frei → macht Block/Kreuz/Fläche **lückentolerant**), nicht als eigene magere 5er-Form.
+
+### Rollen-Verzahnung
+- **Packeis** liebt **Block/Kreuz** (viele Nachbarn). · **Eiswall** = die **Linie**. · **Eisbrücke** macht alle Formen lückentolerant (Diagonal-Adjazenz). · **Kettenbruch / Gletschersturz** leben von der **Großen Fläche**.
+
+### Progressions-Bogen
+**Block** (früh, günstig, Dichte) → **Kreuz** (Kollision) → **Linie** (Buff) → **Fläche** (Endgame). Jede Form ein anderer Hebel.
+
+### Offen (Zahlen)
+- **Größen-Skalierung:** natürlich (2×2-Block < 3×3-Fläche, 3er-Linie < 8er-Spalte) — genaue Stufen/Payoffs am Sim.
+- Payoff-Höhen je Form, Verhältnis Aufwand↔Ertrag.
