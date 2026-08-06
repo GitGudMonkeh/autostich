@@ -157,8 +157,15 @@ Regel = **Bedingung → Effekt**. 12 Kern-Rollen + 5 Auffüller = **17 normale R
 
 ## 8 · Offene Punkte (nächste Schritte)
 
-1. ✔ **Dünne Linien aufgefüllt** — 17 normale Rollen (Firn 4 / Eisschild 5 / Lawine 5 / Frostgriff 3).
-2. ✔ **Legendäre** — Eiszeit / Ewiges Schild / Große Lawine / Erstarrung.
+> **Umsetzungsstand (Code):** Die gesamte Mechanik ist **isoliert in `src/game/glacier.js`** gebaut und getestet, gegatet
+> über `activeArchetypes "glacier"` (Baseline byte-identisch, keine Kollision mit der Parallel-Ice-Session). Fertig:
+> Fundament (Fixierung/Firn-Boden/Stufen/Snapshot→Auszahlung/Teil-Reset/Überlauf), Fraktions-Passiv (Ewiger Frost),
+> **alle 17 Rollen**, **2D-Geometrie-Formationen**, **alle 4 Legendären**, Pick/Lock (`GLACIER_LOCK`). Zahlen sind
+> Platzhalter im zentralen TUNING-Block. **Offen:** Surfacing (Skill-Registrierung + „glacier" in den Eis-Slot + UI —
+> **kollidiert mit der Parallel-Session, braucht Koordination**) und Sim-Tuning der Werte.
+
+1. ✔ **Dünne Linien aufgefüllt** — 17 normale Rollen (Firn 4 / Eisschild 5 / Lawine 5 / Frostgriff 3). *(implementiert)*
+2. ✔ **Legendäre** — Eiszeit / Ewiges Schild / Große Lawine / Erstarrung. *(implementiert)*
 3. **Zahlen** — ganz zuletzt (Sim + Playtest). Offen v.a.: Stufen-Werte 4/8/12 + Überlinearität + Überlauf-Rate, Masse-Raten der Motoren, Kaskade/Kollision-Faktoren, Eispanzer-Umwandlung, Eiszeit-Flutrate, Große-Lawine-Trigger (Finisher).
 4. ✔ **2D-Formationen** — unique Deck-Passiv (§2.7), Geometrien designt (§9). Zahlen der Payoffs am Sim.
 5. **#288 (Trimmen) schließen**, sobald dieses Design es in Code ablöst.
