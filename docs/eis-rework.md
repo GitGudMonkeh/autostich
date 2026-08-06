@@ -64,6 +64,12 @@ Zweiphasig (analog zu `precomputeArchitect`: vorab rechnen, während des Durchla
 - **Design-Prinzip:** ein Eis-Skill darf **„Verlieren" nicht bedeutungslos** machen (kein „Gletscher können nicht verlieren"-Zustand).
 - **Deckel/Leitplanken:** bewusst **noch nicht** — erst wenn Design + Werte stehen (v.a. Verzahnung, Große Lawine, Kaskade).
 
+### 2.6 · Fraktions-Passiv: **Ewiger Frost**
+Das eine „immer an"-Signature, das für **jede Eiskarte** gilt (Pendant zu Feuers Hitze, Pflanzes Wachstum) — **quer zu den 4 Linien**, kein fünfter Motor.
+- **Jeder Gletscher gewinnt jede Runde etwas Masse — bedingungslos**, egal ob Sieg oder Niederlage.
+- **Rolle:** der bedingungslose **Grundsockel** der Ansammlung. Die Skills *verstärken* Akkumulation (Anfrieren bei Sieg, Dauerfrost am Boden …), der Passiv trägt sie darunter. Gibt Eis sein Signature-Gefühl: **Unaufhaltsamkeit** — der Gletscher *wird* irgendwann brechen.
+- **Muss klein bleiben:** ein bedingungsloser Tick weicht „Verlieren" leicht auf (Prinzip bleibt heil — der Gletscher kann weiter verlieren, es kostet die Stiche), also **Sockel, nicht Motor**. Konkreter Wert am Sim.
+
 ---
 
 ## 3 · Die vier Kategorien (Linien) & ihre Fantasien
