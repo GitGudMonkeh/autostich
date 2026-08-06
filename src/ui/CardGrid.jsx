@@ -18,7 +18,10 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
 // als Liniensegmente erzeugt: eine Kante gehört zur Kontur, wenn der Nachbar dahinter NICHT zum selben Gebäude (bid)
 // gehört. Die Rechtecke werden um exH/exV (halbe Raster-Lücke) geweitet → die Kanten benachbarter Gebäudezellen
 // treffen sich EXAKT in der Lückenmitte und die Kontur läuft über die Lücken hinweg durch. Rein & unit-testbar.
-export function archFrameLines(cover, cells, total, exH, exV) {
+// exVOut: separater AUSSEN-Outset oben/unten (Default = exV). Kleiner gewählt zieht die waagerechten Außenbanden
+// näher an die Karten, damit sie nicht auf den „Grenze offen"-Text in der Zeilenmitte fallen. Innere Nähte bleiben
+// bei der halben gemessenen Lücke (halfV) → Kontur schließt weiter lückenlos über die Segmentgrenze.
+export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
   const lines = [];
   if (!cover || !cells) return lines;
   for (const key of Object.keys(cover)) {
@@ -37,7 +40,7 @@ export function archFrameLines(cover, cells, total, exH, exV) {
     // SegmentBridge VERBREITERTE Segmentgrenze lückenlos. An Außenkanten die halbe Nominal-Lücke (exH/exV).
     const halfV = (p) => { const r = cells[p]; return r ? Math.max(0, (p < pos ? rect.top - r.bottom : r.top - rect.bottom) / 2) : exV; };
     const halfH = (p) => { const r = cells[p]; return r ? Math.max(0, (p < pos ? rect.left - r.right : r.left - rect.right) / 2) : exH; };
-    const exUp = sameUp ? halfV(up) : exV, exDown = sameDown ? halfV(down) : exV;
+    const exUp = sameUp ? halfV(up) : exVOut, exDown = sameDown ? halfV(down) : exVOut;
     const exLeft = sameLeft ? halfH(lft) : exH, exRight = sameRight ? halfH(rgt) : exH;
     const L = rect.left - exLeft, R = rect.right + exRight, T = rect.top - exUp, B = rect.bottom + exDown;
     if (!sameUp)    lines.push({ x1: L, y1: T, x2: R, y2: T, color, bid: a.bid }); // oben
@@ -202,7 +205,11 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
         if (a && b && b.top > a.bottom) minGapV = Math.min(minGapV, b.top - a.bottom);
       }
       if (Number.isFinite(minGapV)) exV = Math.max(0, minGapV / 2);
-      setArchFrame({ w: wr.width, h: wr.height, lines: archFrameLines(architectCover, cells, cards.length, exH, exV) });
+      // Außen-Outset oben/unten kleiner als die halbe Zeilenlücke: die waagerechten Außenbanden sollen die Karten
+      // umschließen, aber nicht bis in die Zeilenmitte reichen, wo der „Grenze offen"-Verbinder-Text sitzt. Auf den
+      // waagerechten Zellabstand (exH) gedeckelt → gleichmäßiger, enger Rahmen; innere Nähte bleiben bei halber Lücke.
+      const exVOut = Math.min(exV, exH);
+      setArchFrame({ w: wr.width, h: wr.height, lines: archFrameLines(architectCover, cells, cards.length, exH, exV, exVOut) });
     };
     measure();
     const ro = new ResizeObserver(measure);
