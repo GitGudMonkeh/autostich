@@ -1113,10 +1113,18 @@ export function resolveTrick(state, rng) {
   // #71 Volles Haus: Ergebnis-Fenster fortschreiben (letzte 4 Ergebnisse für den nächsten Stich).
   recentResults = [...recentResults, lastResult].slice(-4);
 
+  // Archetyp-„Treffer-Identität" dieses Siegs (nur Anzeige, für Score-Float-Farbe/-Icon in der Battlefield):
+  //   fire  = Sieg bei voller Hitze (Hitzeleiste 100 %) · plant = Sieg mit einer voll ausgewachsenen grünen Karte (Wert am Deckel).
+  // Blitz trägt seine Identität schon über isCrit (Lila); Eis folgt nach dem Eis-Rework. Krit übersteuert später nur die
+  // FARBE (Lila), das Icon bleibt (in der UI aufgelöst). Feuer hat Vorrang vor Pflanze, wenn beides zugleich zutrifft.
+  const heatFull = !!(state.heat && state.heat.active && (state.heat.value || 0) >= C.HEAT_MAX);
+  const hitType = won
+    ? (heatFull ? "fire" : (pCard.green && pCard.value >= C.PLANT_VALUE_CAP) ? "plant" : null)
+    : null;
   const lastTrick = {
     pCard, oCard, pValue, oValue,
     result: tieConverted ? "win_tie" : won ? "win" : lost ? "loss" : "tie",
-    gained, trickNo,
+    gained, trickNo, hitType,
     isCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
     // Formations-Multiplikator dieses Stichs (§22.7) + die beteiligten Formationen der Position (Anzeige/Float).
     formationMult: won ? formationMult : 1,

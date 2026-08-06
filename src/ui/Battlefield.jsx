@@ -40,6 +40,10 @@ const BANNER = {
   tie:     { text: "Gleichstand",         color: "#8a8a92" },
 };
 const CRIT_COLOR = "#e879f9";
+// Archetyp-„Treffer-Identität" des Score-Floats (engine liefert lastTrick.hitType): Feuer = roter Score + 🔥 bei
+// vollem-Hitze-Sieg · Pflanze = grüner Score + 🌿 bei Sieg mit voll ausgewachsener grüner Karte. (Eis folgt nach dem
+// Eis-Rework, Blitz nutzt weiterhin das Krit-Lila.) Bei Krit übersteuert das Lila die FARBE, das Icon bleibt aber stehen.
+const HIT_STYLE = { fire: { color: "#e0714a", icon: "🔥" }, plant: { color: "#5ab87a", icon: "🌿" } };
 
 // #68: vier Streuzonen — gleiche Float-Typen dicht beieinander, verschiedene getrennt. Basis-Lage je Zone.
 const FLOAT_ZONES = {
@@ -52,7 +56,7 @@ const FLOAT_ZONES = {
 // #169 FB-7: `size` = Peak-Zielgröße (px) je Stufe — höhere Stufe dominiert stärker. Der Render deckelt sie per
 // clamp() gegen die Viewport-Breite (mobil kein Überlauf) und zentriert echt (H+V) auf oberster Ebene.
 const BIG_SCORE_TIERS = [
-  { min: 500000, text: "Gottgleich", size: 104 },
+  { min: 500000, text: "Gottgleich", size: 104, epic: true }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß (dominiert die Gold-Stufen darunter)
   { min: 150000, text: "Irre",       size: 90 },
   { min: 50000,  text: "Brutal",     size: 78 },
   { min: 10000,  text: "Stark",      size: 68 },
@@ -616,7 +620,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       bass: w ? 4 + 1.5 * flipTier + (t.isCrit ? 4 : 0) : 0,
     });
     const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
-    const critC = t.isCrit ? CRIT_COLOR : "#d4a63a";
+    // Treffer-Identität (Feuer/Pflanze) → Score-Farbe + Icon. Krit übersteuert die FARBE (Lila), das Icon bleibt.
+    const hit = t.hitType ? HIT_STYLE[t.hitType] : null;
+    const critC = t.isCrit ? CRIT_COLOR : (hit ? hit.color : "#d4a63a");
     const entries = [];
     // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
     if (w && t.gained > 0) {
@@ -626,7 +632,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const declutter = floatCountRef.current >= FLOAT_DECLUTTER_MIN && t.gained < scale * FLOAT_MIN_RATIO;
       if (!declutter)
         entries.push({ id: `s${t.trickNo}`, zone: "score", dur, seed: t.trickNo * 2, value: t.gained,
-                       text: `+${fmtScore(t.gained)}`, color: critC }); // #184: Score ganzzahlig (floor), keine Nachkommastelle
+                       text: `+${fmtScore(t.gained)}`, color: critC, icon: hit ? hit.icon : null }); // #184: Score ganzzahlig (floor), keine Nachkommastelle
     }
     if (!entries.length) return;
     setFloats((cur) => { const next = [...cur, ...entries].slice(-6); floatCountRef.current = next.length; return next; }); // Pool gedeckelt — kein unbegrenztes Stapeln
@@ -888,7 +894,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             <div key={f.id} className="pointer-events-none absolute font-bold whitespace-nowrap"
               style={{ ...pos, color: f.color, fontSize: floatSize(f.value || 0), lineHeight: 1,
                        animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
-              {f.text}
+              {f.icon && <span className="mr-1" style={{ WebkitTextFillColor: "initial" }}>{f.icon}</span>}{f.text}
             </div>
           );
         })}
@@ -913,6 +919,21 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             Floats), zentriert mit Spur-Versatz (BIG_LANES, gegen Überlappung), Größe je Stufe (clamp deckelt mobil gegen
             Überlauf), Legendär-Gold. Aus dem entkoppelten Pool → volle Standzeit auch bei 4×/MAX. */}
         {bigFloats.map((b) => (
+          b.tier.epic ? (
+            /* GOTTGLEICH — Sonder-Ansage: als SVG skaliert das Wort exakt auf ~70 % der Panelbreite (textLength),
+               echt mittig (H+V, kein Spur-/Jitter-Versatz), in Weiß mit weißem Bloom → hebt sich klar von den
+               goldenen Stufen darunter ab. Gleiche Standzeit/Animation wie die anderen Groß-Ansagen. */
+            <svg key={b.id} aria-hidden="true" className="pointer-events-none absolute" viewBox="0 0 1000 210" preserveAspectRatio="xMidYMid meet"
+              style={{ left: "50%", top: "50%", width: "70%", zIndex: 31,
+                       filter: "drop-shadow(0 0 32px rgba(255,255,255,0.9)) drop-shadow(0 0 12px rgba(255,255,255,0.7)) drop-shadow(0 3px 8px rgba(0,0,0,0.55))",
+                       transform: reduced ? "translate(-50%, -50%)" : undefined,
+                       animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
+              <text x="500" y="170" textAnchor="middle" textLength="984" lengthAdjust="spacingAndGlyphs"
+                style={{ fontSize: "200px", fontWeight: 900, fill: "#ffffff", letterSpacing: "1px" }}>
+                {b.tier.text.toUpperCase()}
+              </text>
+            </svg>
+          ) : (
           <div key={b.id} className="pointer-events-none absolute font-extrabold whitespace-nowrap"
             style={{ left: `calc(50% + ${fjitter(b.seed * 3 + 2, 12)}px)`, top: `calc(50% + ${b.lane}px)`, zIndex: 30,
                      textTransform: "uppercase", // Q2/Loc: Groß-Score-Ansage-Caps zentral über CSS (Übersetzer liefert STARK/BRUTAL/… normal geschrieben)
@@ -921,6 +942,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                      animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
             {b.tier.text}
           </div>
+          )
         ))}
       </div>
 

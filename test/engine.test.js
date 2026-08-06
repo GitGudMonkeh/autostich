@@ -81,6 +81,31 @@ describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
     expect(resolveTrick(scenario(5, 5), rng).lastTrick.breakdown).toBe(null);
   });
 
+  // Treffer-Identität (nur Anzeige): Feuer bei vollem-Hitze-Sieg, Pflanze bei Sieg mit voll ausgewachsener grüner Karte.
+  describe("lastTrick.hitType — Score-Float-Identität (Feuer/Pflanze)", () => {
+    const greenDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `G${i}`, suit: "G", baseRank: v, value: v, green: true }));
+    it("Feuer: Sieg bei voller Hitze (100 %) → 'fire'", () => {
+      const s = resolveTrick(scenario(12, 0, { heat: { active: true, value: 100, max: 100 } }), rng);
+      expect(s.lastTrick.hitType).toBe("fire");
+    });
+    it("Pflanze: Sieg mit voll ausgewachsener grüner Karte (Wert am Deckel) → 'plant'", () => {
+      const s = resolveTrick(scenario(0, 0, { deck: greenDeck(11), oppDeck: constDeck(0) }), rng);
+      expect(s.lastTrick.result).toMatch(/^win/);
+      expect(s.lastTrick.hitType).toBe("plant");
+    });
+    it("normaler Sieg ohne volle Hitze / nicht voll gewachsen → null", () => {
+      expect(resolveTrick(scenario(12, 0), rng).lastTrick.hitType).toBe(null);
+      expect(resolveTrick(scenario(0, 0, { deck: greenDeck(10), oppDeck: constDeck(0) }), rng).lastTrick.hitType).toBe(null); // grün, aber unter dem Deckel (10 < 11)
+    });
+    it("Niederlage trägt nie eine Treffer-Identität", () => {
+      expect(resolveTrick(scenario(0, 12, { heat: { active: true, value: 100, max: 100 } }), rng).lastTrick.hitType).toBe(null);
+    });
+    it("Feuer hat Vorrang vor Pflanze, wenn beides zugleich zutrifft", () => {
+      const s = resolveTrick(scenario(0, 0, { deck: greenDeck(11), oppDeck: constDeck(0), heat: { active: true, value: 100, max: 100 } }), rng);
+      expect(s.lastTrick.hitType).toBe("fire");
+    });
+  });
+
   it("wins + losses + ties == trickNo (nichts geht verloren)", () => {
     let s = initialState(makeRng(42));
     for (let i = 0; i < 60 && s.phase !== "gameover"; i++) {
