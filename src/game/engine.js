@@ -23,6 +23,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, skillLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
+import { precomputeGlacier, ewigerFrostTick, WIN_MASS as GLACIER_WIN_MASS } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
@@ -122,6 +123,7 @@ export function resolveTrick(state, rng) {
     shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
     architect = null, architectEnabled = false, architectPre = null, // Architekt (#202, Shop-Ersatz): Gebäude-Overlay (8×5) + Durchlauf-Precompute
+    glacierMass = [], glacierLocked = [], glacierPre = null, glacierYield = 0, // Eis-Neudesign (glacier.js): Firn-Boden-Masse je Feld / Gletscher-Lock je Feld / Durchlauf-Snapshot / Eigen-Score-Kanal
     seed = null, offerRerolls = 0, // #205 Challenger Mode: Lauf-Seed (null = unseeded/Sim) + Reroll-Index des akt. Angebots
     difficulty = null, // #226 Großmeister: { oppRampEvery } — mitwachsender Gegner. null (Meister/Basis) = No-op, byte-identisch.
   } = state;
@@ -175,6 +177,16 @@ export function resolveTrick(state, rng) {
   if (pos === 0) {
     formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
     archPreNow = archState ? precomputeArchitect(archState, playerOrder, deck) : null;
+  }
+  // Eis-Neudesign (docs §2.4): Snapshot am Durchlauf-Start — der ganze Bruch wird auf dem statischen Brett vorab gerechnet
+  // (analog precomputeArchitect), pro Stich ausgezahlt. Der Teil-Reset (−1 Stufe) greift SOFORT auf die Arbeits-Masse;
+  // Siege dieses Durchlaufs addieren darauf, Ewiger Frost am Durchlauf-Ende. Isoliert über activeArchetypes "glacier".
+  const glacierActive = activeArchetypes.includes("glacier");
+  let glacierPreNow = glacierPre;
+  let newGlacierMass = Array.isArray(glacierMass) ? glacierMass.slice() : [];
+  if (glacierActive && pos === 0) {
+    glacierPreNow = precomputeGlacier(glacierMass, glacierLocked);
+    newGlacierMass = glacierPreNow.resetMass.slice();
   }
   // #161 FB-2: Peak gleichzeitig aktiver Formationen über den Run — zu Durchlaufbeginn, sobald das Layout feststeht.
   if (pos === 0) maxFormations = Math.max(maxFormations || 0, summarizeFormations(formations).count);
@@ -344,6 +356,8 @@ export function resolveTrick(state, rng) {
     segmentWins += 1; // #189 Volles Haus: Sieg im aktuellen Segment (recentWinCount trug oben den Stand DAVOR)
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     serieStreak = winStreak; // effektive Serie NACH diesem Sieg
+    // Eis-Neudesign (docs §2.2): Baseline-Masse-Quelle — gewinnt ein Gletscher, wächst die Masse SEINES Feldes.
+    if (glacierActive && glacierLocked[actualPos]) newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + GLACIER_WIN_MASS;
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
     // #71 Farbserie: Länge der Serie gewonnener Stiche gleicher Farbe INKL. dieses Siegs. D_SUIT_STREAK IV:
     // ein Farbwechsel HALBIERT die laufende Länge (min 1) statt sie auf 1 zurückzusetzen (suitHalveOnSwitch).
@@ -1110,6 +1124,14 @@ export function resolveTrick(state, rng) {
     // Serie & Initiative unverändert
   }
 
+  // Eis-Neudesign (docs §2.4, Phase B): Bruch-Auszahlung dieses Stichs — pro Position genau einmal je Durchlauf, UNABHÄNGIG
+  // von Sieg/Niederlage (Bruch hängt an der Masse-Schwelle, nicht am Stich-Ausgang). Post-stack (kein Formation/Serie/Crit-Mult).
+  const glacierDirect = glacierPreNow ? (glacierPreNow.payout[actualPos] || 0) : 0;
+  if (glacierDirect) {
+    score += glacierDirect; gained += glacierDirect; glacierYield += glacierDirect;
+    if (breakdown) { breakdown.glacierDirect = glacierDirect; breakdown.total += glacierDirect; }
+  }
+
   // #71 Volles Haus: Ergebnis-Fenster fortschreiben (letzte 4 Ergebnisse für den nächsten Stich).
   recentResults = [...recentResults, lastResult].slice(-4);
 
@@ -1152,6 +1174,8 @@ export function resolveTrick(state, rng) {
   const newArchitectPre = archPreNow;
   if (pos >= cycleLen) { // Zeitsegment (§8 A-L1): Durchlauf endet nach cycleLen Stichen (40, mit Zeitsegment 45)
     cycle += 1;
+    // Eis-Neudesign (docs §2.6): Ewiger Frost — bedingungsloser Masse-Tick je Durchlauf auf jeden Gletscher (nach Auszahlung).
+    if (glacierActive) newGlacierMass = ewigerFrostTick(newGlacierMass, glacierLocked);
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf
     //      attribuiert). Zinseszins — positive Durchlauf-Bilanz (mehr Siege als Niederlagen) stapelt eine FLACHE Dauer-
     //      Dividende (kein Mult), die jeden Durchlauf ausgezahlt wird (compoundet über den Lauf). Echo — der beste Stich
@@ -1344,6 +1368,8 @@ export function resolveTrick(state, rng) {
     winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     architect: newArchitect, architectEnabled, architectPre: newArchitectPre, // Architekt (#202, ersetzt den Shop)
+    glacierMass: newGlacierMass, glacierLocked, glacierPre: glacierPreNow, glacierYield, // Eis-Neudesign (glacier.js): Firn-Boden-Masse / Lock / Snapshot / Eigen-Score
+
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)

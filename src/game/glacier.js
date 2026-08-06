@@ -65,7 +65,7 @@ export function precomputeGlacier(mass, locked, opts = {}) {
 
   for (let p = 0; p < N_POS; p++) {
     if (!isG(p)) continue;
-    const m0 = resetMass[p];
+    const m0 = resetMass[p] || 0;
     const ov = Math.max(0, m0 - top);
     if (ov > 0) payout[p] += ov;                        // Überlauf → Score (jede Runde)
     const mCap = m0 - ov;                               // gedeckelt auf höchste Stufe
@@ -91,6 +91,6 @@ export function precomputeGlacier(mass, locked, opts = {}) {
 export function ewigerFrostTick(mass, locked, amount = EWIGER_FROST) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
-  for (let p = 0; p < N_POS; p++) if (isG(p)) out[p] += amount;
+  for (let p = 0; p < N_POS; p++) if (isG(p)) out[p] = (out[p] || 0) + amount;
   return out;
 }
