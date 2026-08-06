@@ -4,8 +4,7 @@ import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js";
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
-  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront,
-  hasSetzlingsbeet, buildSkillOffer, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf
+  unfreezeAll, hasSetzlingsbeet, buildSkillOffer, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf · #140: unfreezeAll (Deaktivierungs-Reset)
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, segmentGainedFormation, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
@@ -437,28 +436,6 @@ export function reducer(state, action) {
       // Rollen/Deck können die Formationserkennung ändern (C_JOKER/C_BRIDGE, C_SACRIFICE-Deckmod) → neu berechnen (wie CONFIRM_TARGET).
       const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers);
       return { ...state, familyTiers, deck, roles, formations, phase: "play", familyTarget: null };
-    }
-
-    // Frostwahl (#265): der Spieler wählt selbst, welche eigenen Karten einfrieren. TOGGLE wählt/entwählt (bis `need`),
-    // CONFIRM friert die gewählten ein und geht in play. Nur nicht-gefrorene eigene Karten sind wählbar.
-    case "FROST_SELECT_TOGGLE": {
-      if (state.phase !== "frost-select" || !state.frostSelect) return state;
-      const fs = state.frostSelect;
-      const card = state.deck.find((c) => c.id === action.cardId);
-      if (!card || card.frozen) return state;                                    // nur nicht-gefrorene eigene Karten
-      let chosen = fs.chosen.slice();
-      if (chosen.includes(action.cardId)) chosen = chosen.filter((x) => x !== action.cardId); // abwählen
-      else if (chosen.length < fs.need) chosen.push(action.cardId);                            // hinzufügen (bis need)
-      return { ...state, frostSelect: { ...fs, chosen } };
-    }
-    case "FROST_SELECT_CONFIRM": {
-      if (state.phase !== "frost-select" || !state.frostSelect) return state;
-      const fs = state.frostSelect;
-      if (!fs.chosen.length) return state;                                       // mindestens eine Karte wählen
-      const ids = new Set(fs.chosen);
-      const deck = state.deck.map((c) => (ids.has(c.id) ? { ...c, frozen: true } : c));
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
-      return { ...state, deck, formations, phase: "play", frostSelect: null };
     }
 
     // Zielauswahl bestätigen (V2 §22.6): genau needsTarget Karten → Rolle setzen bzw. dauerhafte Wertmod (L1/L9).

@@ -416,75 +416,13 @@ export function forgeCostFor(skills, heatValue = 0) {
   return Math.max(1, Math.round(c));
 }
 
-/* ---- Eis-Archetyp (#93 F3) — eingefrorene Karten (blau, an card.id) + reine Helfer ---- */
+/* ---- Eis-Archetyp — Formations-Wildcard-Flag (Kristallform/Frostbrücke, in formations.js gelesen)
+       + Deaktivierungs-Reset. Der Gletscher-Kern (Masse/Rollen) liegt in glacier.js. ---- */
 
-export const frozenCount = (deck) => (deck || []).filter((c) => c.frozen).length;
-// Ein Eis-Flag/Prädikat + Anzahl gehaltener Eis-Skills (Grundmechanik zählt nicht).
+// Generisches Skill-Flag-Prädikat (in formations.js für die Eis-Formations-Wildcards genutzt).
 export const iceFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
-export const iceSkillCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "ice").length;
-// ---- Eis-Rework (v0): Flag-Prädikate (Engine/Reducer; Kristallform/Frostbrücke werden in formations.js gelesen). ----
-export const hasFrostGrip        = (skills) => iceFlag(skills, "frostGrip");
-export const hasFrostwahl        = (skills) => iceFlag(skills, "frostwahl");        // Einfrieren gezielt (niedrigste)
-export const hasEiskalt          = (skills) => iceFlag(skills, "eiskalt");          // Überlauf-Vorrat → Crit-Chance (verbraucht Überlauf)
-export const hasFrostschlag      = (skills) => iceFlag(skills, "frostschlag");      // Frost-Crit multipliziert auch iceDirect
-export const hasUeberlaufMotorDepth   = (skills) => iceFlag(skills, "ueberlaufMotorDepth");   // tiefe Karte (≥Plateau) → +1 Schicht (Tiefe)
-export const hasKaltfront        = (skills) => iceFlag(skills, "kaltfront");        // Platzierhilfe +temp Wert
-export const hasFrostReserve     = (skills) => iceFlag(skills, "frostReserve");     // Verlust → Schicht (Kältereserve)
-export const hasBestaendigkeit   = (skills) => iceFlag(skills, "bestaendigkeit");   // gleiche Formation wie Vordurchlauf → Schicht
-export const hasFrostkaskade     = (skills) => iceFlag(skills, "flaechenkaskade");   // Frost-Crit → Crit-Chance-Kette + Überschuss→Mult
-export const hasEisdruck         = (skills) => iceFlag(skills, "eisdruck");         // Schichttiefe → Formationsfaktor
-export const hasKristallineMasse = (skills) => iceFlag(skills, "kristallineMasse"); // Summe Schichten → Wert
-export const hasIceAnchor        = (skills) => iceFlag(skills, "iceAnchor");        // Anker + garantierte Schicht
-export const hasStandstill       = (skills) => iceFlag(skills, "standstill");       // Formations-Sieg → Flat
-export const hasIceBloom         = (skills) => iceFlag(skills, "iceBloom");         // ≥2 Formationen → Nachbarn banken
-export const hasVerschraenkung   = (skills) => iceFlag(skills, "verschraenkung");   // ≥3 Formationen → Multi-Schicht
-export const hasPermafrost       = (skills) => iceFlag(skills, "permafrost");       // +1 Schicht je Ablage
-export const hasGletscher        = (skills) => iceFlag(skills, "gletscher");        // Schicht-Dauerwert superlinear
-export const hasVergletscherung  = (skills) => iceFlag(skills, "vergletscherung");  // Gegner-Debuff ∝ Schichten
-export const hasArchitekt        = (skills) => iceFlag(skills, "architekt");        // vertikale Formationen (Spalte pos%5)
-// Dauerwert einer Frostkarte aus ihren Schichten (#269: linear, gedeckelt bei ICE_LAYER_VALUE_CAP ~10; Gletscher wirkt
-// jetzt auf den SCORE, nicht den Wert).
-export function layerValue(layers) {
-  return Math.min(layers || 0, C.ICE_LAYER_VALUE_CAP) * C.ICE_LAYER_VALUE;
-}
-// Schicht→Score DREIECKIG (#269, der Payoff-Motor): je Frost-Sieg m(m+1)/2 × K, m = min(Schichten, Plateau P). DIREKT
-// (am Multiplikator-Stack/Joker vorbei) → der Payoff läuft durch den gedeckelten Schicht-Pfad, nicht über formBaseMult.
-export function layerScore(layers) {
-  const m = Math.min(layers || 0, C.ICE_LAYER_SCORE_PLATEAU);
-  return m > 0 ? (m * (m + 1) / 2) * C.ICE_LAYER_SCORE_K : 0;
-}
-// Kristalline Masse (#269): skalierender Wertbonus je Frostkarte aus der Σ-Schichtenzahl (je KRISTALLINE_STEP +1, gedeckelt).
-export function kristallineBonus(totalLayers) {
-  return Math.min(Math.floor((totalLayers || 0) / C.KRISTALLINE_STEP), C.KRISTALLINE_MAX_VALUE);
-}
-// Summe aller Schichten (für Kristalline Masse).
-export const totalLayers = (layers) => Object.values(layers || {}).reduce((t, v) => t + (v || 0), 0);
-// Zielanzahl eingefrorener Karten: erster Eis-Skill = ICE_BASE_FREEZE, je weiterer +1, Frostgriff +2. 0 ohne Eis-Skill.
-export function frozenTargetFor(skills) {
-  const n = iceSkillCount(skills);
-  if (n === 0) return 0;
-  return C.ICE_BASE_FREEZE + (n - 1) + (hasFrostGrip(skills) ? C.FROST_GRIP_BONUS : 0);
-}
-// `count` noch nicht eingefrorene eigene Karten einfrieren (immutabel, deterministisch).
-// preferLowest (Frostwahl): die niedrigsten Karten wählen (statt zufällig) — der Meißel beginnt beim Einfrieren.
-export function freezeCards(deck, count, rng, preferLowest = false) {
-  const pool = (deck || []).map((_, i) => i).filter((i) => !deck[i].frozen);
-  const chosen = new Set();
-  let remaining = count;
-  if (preferLowest) {
-    pool.sort((a, b) => deck[a].value - deck[b].value || a - b);
-    while (remaining > 0 && pool.length > 0) { chosen.add(pool.shift()); remaining -= 1; }
-  } else {
-    while (remaining > 0 && pool.length > 0) {
-      const j = Math.floor(rng() * pool.length);
-      chosen.add(pool.splice(j, 1)[0]);
-      remaining -= 1;
-    }
-  }
-  return (deck || []).map((c, i) => (chosen.has(i) ? { ...c, frozen: true } : c));
-}
-// Alle eigenen Karten auftauen (immutabel) — Gegenstück zu freezeCards. Genutzt, wenn der Eis-Archetyp
-// deaktiviert wird (letzter Eis-Skill ersetzt, #140): das frozen-Flag verschwindet von allen Karten.
+// Alle eigenen Karten auftauen (immutabel). Genutzt, wenn der Eis-Archetyp deaktiviert wird (letzter Eis-Skill
+// ersetzt, #140): ein evtl. gesetztes frozen-Flag verschwindet von allen Karten.
 export function unfreezeAll(deck) {
   return (deck || []).map((c) => (c.frozen ? { ...c, frozen: false } : c));
 }

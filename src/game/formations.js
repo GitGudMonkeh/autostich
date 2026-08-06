@@ -18,9 +18,9 @@
    E3 Treppe darf 1× gleich · E4 Treppe darf 1× Rückschritt · E5 Wechsel schon ab 2 Karten ·
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
-import { EISANKER_FACTOR, CRYSTAL_OFFSET, ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR,
+import { CRYSTAL_OFFSET, ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR,
   UEBERWUCHERUNG_FIELD, UEBERWUCHERUNG_FACTOR, EWIGER_FRUEHLING_FARBBLOCK, EWIGER_FRUEHLING_FIELD, PLANT_GREEN_FARBBLOCK_CAP } from "./constants.js";
-import { iceFlag, hasIceAnchor, hasEwigerFruehling, hasUeberwucherung, greenCount } from "./skills.js";
+import { iceFlag, hasEwigerFruehling, hasUeberwucherung, greenCount } from "./skills.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 import { architectFormSpec } from "./architect.js";
 
@@ -352,8 +352,6 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   for (const { def } of activeFamilyEntries(familyTiers)) if (def.anchor)
     for (let pos = 0; pos < n; pos++)
       if (def.anchor.at(pos, n) && !out[pos].formations.some((f) => f.type === "anker")) add(pos, "anker", 1, def.anchor.factor);
-  // Eisanker (#93 F3): jede eingefrorene Karte zählt auf ihrer Position als Anker ×1,25 (zählt als Formation).
-  if (hasIceAnchor(skills)) for (let pos = 0; pos < n; pos++) if (frozen[pos] && !out[pos].formations.some((f) => f.type === "anker")) add(pos, "anker", 1, EISANKER_FACTOR);
   // Formationsanker (Shop §4.2, #164): jede Anker-Position zählt als Anker mit dem Stufen-Faktor (a.factor, 1,15…1,60),
   // falls dort noch kein Anker liegt (E7/E8/Eisanker). IV (×1,60) überlappt mit natürlichen Formationen (multipliziert dazu).
   for (const a of anchors) if (a.type === "formation" && a.position < n && !out[a.position].formations.some((f) => f.type === "anker")) add(a.position, "anker", 1, a.factor || ANCHOR_FORM_FACTOR);
