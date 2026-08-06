@@ -1135,18 +1135,25 @@ export function resolveTrick(state, rng) {
   // #71 Volles Haus: Ergebnis-Fenster fortschreiben (letzte 4 Ergebnisse für den nächsten Stich).
   recentResults = [...recentResults, lastResult].slice(-4);
 
-  // Archetyp-„Treffer-Identität" dieses Siegs (nur Anzeige, für Score-Float-Farbe/-Icon in der Battlefield):
-  //   fire  = Sieg bei voller Hitze (Hitzeleiste 100 %) · plant = Sieg mit einer voll ausgewachsenen grünen Karte (Wert am Deckel).
-  // Blitz trägt seine Identität schon über isCrit (Lila); Eis folgt nach dem Eis-Rework. Krit übersteuert später nur die
-  // FARBE (Lila), das Icon bleibt (in der UI aufgelöst). Feuer hat Vorrang vor Pflanze, wenn beides zugleich zutrifft.
+  // Archetyp-„Treffer-Identitäten" dieses Siegs (nur Anzeige, für Score-Float-Farbe/-Icons in der Battlefield). Ein
+  // einzelner Sieg kann MEHRERE zugleich tragen (bis zu alle vier) → als Liste geführt, die UI zeigt alle Icons und
+  // wählt die Score-Farbe nach Priorität (Krit-Lila zuerst). Bedingungen:
+  //   fire      = Sieg bei voller Hitze (Hitzeleiste 100 %)
+  //   plant     = Sieg mit einer voll ausgewachsenen grünen Karte (Wert am Deckel)
+  //   lightning = Sieg mit einer voll ionisierten Karte (ION_MAX_STACKS Stapel) — Krit trägt weiterhin das Lila der Farbe
+  //   ice       = folgt nach dem Eis-Rework (noch keine Bedingung)
   const heatFull = !!(state.heat && state.heat.active && (state.heat.value || 0) >= C.HEAT_MAX);
-  const hitType = won
-    ? (heatFull ? "fire" : (pCard.green && pCard.value >= C.PLANT_VALUE_CAP) ? "plant" : null)
-    : null;
+  const hitTypes = won
+    ? [
+        heatFull && "fire",
+        (pCard.green && pCard.value >= C.PLANT_VALUE_CAP) && "plant",
+        ((pCard.ionStacks || 0) >= C.ION_MAX_STACKS) && "lightning",
+      ].filter(Boolean)
+    : [];
   const lastTrick = {
     pCard, oCard, pValue, oValue,
     result: tieConverted ? "win_tie" : won ? "win" : lost ? "loss" : "tie",
-    gained, trickNo, hitType,
+    gained, trickNo, hitTypes,
     isCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
     // Formations-Multiplikator dieses Stichs (§22.7) + die beteiligten Formationen der Position (Anzeige/Float).
     formationMult: won ? formationMult : 1,

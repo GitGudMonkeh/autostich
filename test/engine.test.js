@@ -81,28 +81,36 @@ describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
     expect(resolveTrick(scenario(5, 5), rng).lastTrick.breakdown).toBe(null);
   });
 
-  // Treffer-Identität (nur Anzeige): Feuer bei vollem-Hitze-Sieg, Pflanze bei Sieg mit voll ausgewachsener grüner Karte.
-  describe("lastTrick.hitType — Score-Float-Identität (Feuer/Pflanze)", () => {
+  // Treffer-Identitäten (nur Anzeige): Feuer (100 % Hitze), Pflanze (voll gewachsene grüne Karte), Blitz (5-Stapel-Ion).
+  // Mehrere zugleich möglich → als Liste geführt.
+  describe("lastTrick.hitTypes — Score-Float-Identitäten (mehrfach möglich)", () => {
     const greenDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `G${i}`, suit: "G", baseRank: v, value: v, green: true }));
-    it("Feuer: Sieg bei voller Hitze (100 %) → 'fire'", () => {
+    const ionDeck = (v, stacks) => Array.from({ length: 40 }, (_, i) => ({ id: `I${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v, ionStacks: stacks }));
+    it("Feuer: Sieg bei voller Hitze (100 %)", () => {
       const s = resolveTrick(scenario(12, 0, { heat: { active: true, value: 100, max: 100 } }), rng);
-      expect(s.lastTrick.hitType).toBe("fire");
+      expect(s.lastTrick.hitTypes).toEqual(["fire"]);
     });
-    it("Pflanze: Sieg mit voll ausgewachsener grüner Karte (Wert am Deckel) → 'plant'", () => {
+    it("Pflanze: Sieg mit voll ausgewachsener grüner Karte (Wert am Deckel)", () => {
       const s = resolveTrick(scenario(0, 0, { deck: greenDeck(11), oppDeck: constDeck(0) }), rng);
       expect(s.lastTrick.result).toMatch(/^win/);
-      expect(s.lastTrick.hitType).toBe("plant");
+      expect(s.lastTrick.hitTypes).toEqual(["plant"]);
     });
-    it("normaler Sieg ohne volle Hitze / nicht voll gewachsen → null", () => {
-      expect(resolveTrick(scenario(12, 0), rng).lastTrick.hitType).toBe(null);
-      expect(resolveTrick(scenario(0, 0, { deck: greenDeck(10), oppDeck: constDeck(0) }), rng).lastTrick.hitType).toBe(null); // grün, aber unter dem Deckel (10 < 11)
+    it("Blitz: Sieg mit voll ionisierter Karte (5 Stapel)", () => {
+      const s = resolveTrick(scenario(0, 0, { deck: ionDeck(12, 5), oppDeck: constDeck(0) }), rng);
+      expect(s.lastTrick.hitTypes).toEqual(["lightning"]);
+    });
+    it("normaler Sieg ohne Auslöser → leer; unter den Schwellen auch leer", () => {
+      expect(resolveTrick(scenario(12, 0), rng).lastTrick.hitTypes).toEqual([]);
+      expect(resolveTrick(scenario(0, 0, { deck: greenDeck(10), oppDeck: constDeck(0) }), rng).lastTrick.hitTypes).toEqual([]); // grün, aber unter dem Deckel (10 < 11)
+      expect(resolveTrick(scenario(0, 0, { deck: ionDeck(12, 4), oppDeck: constDeck(0) }), rng).lastTrick.hitTypes).toEqual([]); // 4 < 5 Stapel
     });
     it("Niederlage trägt nie eine Treffer-Identität", () => {
-      expect(resolveTrick(scenario(0, 12, { heat: { active: true, value: 100, max: 100 } }), rng).lastTrick.hitType).toBe(null);
+      expect(resolveTrick(scenario(0, 12, { heat: { active: true, value: 100, max: 100 } }), rng).lastTrick.hitTypes).toEqual([]);
     });
-    it("Feuer hat Vorrang vor Pflanze, wenn beides zugleich zutrifft", () => {
-      const s = resolveTrick(scenario(0, 0, { deck: greenDeck(11), oppDeck: constDeck(0), heat: { active: true, value: 100, max: 100 } }), rng);
-      expect(s.lastTrick.hitType).toBe("fire");
+    it("mehrere zugleich: voll gewachsene grüne, voll ionisierte Karte bei voller Hitze → alle drei", () => {
+      const deck = Array.from({ length: 40 }, (_, i) => ({ id: `M${i}`, suit: "G", baseRank: 11, value: 11, green: true, ionStacks: 5 }));
+      const s = resolveTrick(scenario(0, 0, { deck, oppDeck: constDeck(0), heat: { active: true, value: 100, max: 100 } }), rng);
+      expect(s.lastTrick.hitTypes).toEqual(["fire", "plant", "lightning"]);
     });
   });
 

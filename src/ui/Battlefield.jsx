@@ -40,10 +40,19 @@ const BANNER = {
   tie:     { text: "Gleichstand",         color: "#8a8a92" },
 };
 const CRIT_COLOR = "#e879f9";
-// Archetyp-„Treffer-Identität" des Score-Floats (engine liefert lastTrick.hitType): Feuer = roter Score + 🔥 bei
-// vollem-Hitze-Sieg · Pflanze = grüner Score + 🌿 bei Sieg mit voll ausgewachsener grüner Karte. (Eis folgt nach dem
-// Eis-Rework, Blitz nutzt weiterhin das Krit-Lila.) Bei Krit übersteuert das Lila die FARBE, das Icon bleibt aber stehen.
-const HIT_STYLE = { fire: { color: "#e0714a", icon: "🔥" }, plant: { color: "#5ab87a", icon: "🌿" } };
+// Archetyp-„Treffer-Identitäten" des Score-Floats (engine liefert lastTrick.hitTypes[]): EIN Sieg kann mehrere zugleich
+// tragen (bis zu alle vier) → alle Icons werden gezeigt. Bedingungen (in der engine): Feuer = voller-Hitze-Sieg (100 %) ·
+// Pflanze = Sieg mit voll ausgewachsener grüner Karte · Blitz = Sieg mit voll ionisierter Karte (5 Stapel) · Eis folgt.
+// Score-FARBE nach Priorität: Krit-Lila zuerst, dann HIT_COLOR_ORDER (Blitz teilt sich das Lila mit dem Krit). Die Icons
+// bleiben unabhängig von der Farbe immer stehen — auch bei Krit.
+const HIT_STYLE = {
+  fire:      { color: "#e0714a", icon: "🔥" },
+  plant:     { color: "#5ab87a", icon: "🌿" },
+  ice:       { color: "#5ec8f0", icon: "❄️" },
+  lightning: { color: CRIT_COLOR, icon: "⚡" },
+};
+const HIT_ICON_ORDER  = ["fire", "plant", "ice", "lightning"]; // feste Reihenfolge der gezeigten Icons
+const HIT_COLOR_ORDER = ["fire", "plant", "ice", "lightning"]; // erste zutreffende bestimmt die Score-Farbe (nach dem Krit-Lila)
 
 // #68: vier Streuzonen — gleiche Float-Typen dicht beieinander, verschiedene getrennt. Basis-Lage je Zone.
 const FLOAT_ZONES = {
@@ -620,9 +629,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       bass: w ? 4 + 1.5 * flipTier + (t.isCrit ? 4 : 0) : 0,
     });
     const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
-    // Treffer-Identität (Feuer/Pflanze) → Score-Farbe + Icon. Krit übersteuert die FARBE (Lila), das Icon bleibt.
-    const hit = t.hitType ? HIT_STYLE[t.hitType] : null;
-    const critC = t.isCrit ? CRIT_COLOR : (hit ? hit.color : "#d4a63a");
+    // Treffer-Identitäten (Feuer/Pflanze/Eis/Blitz, mehrere zugleich möglich) → alle Icons + Score-Farbe.
+    // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst Gold. Icons bleiben immer.
+    const hits = t.hitTypes || [];
+    const hitIcons = HIT_ICON_ORDER.filter((k) => hits.includes(k)).map((k) => HIT_STYLE[k].icon);
+    const hitColorKey = HIT_COLOR_ORDER.find((k) => hits.includes(k));
+    const critC = t.isCrit ? CRIT_COLOR : (hitColorKey ? HIT_STYLE[hitColorKey].color : "#d4a63a");
     const entries = [];
     // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
     if (w && t.gained > 0) {
@@ -632,7 +644,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const declutter = floatCountRef.current >= FLOAT_DECLUTTER_MIN && t.gained < scale * FLOAT_MIN_RATIO;
       if (!declutter)
         entries.push({ id: `s${t.trickNo}`, zone: "score", dur, seed: t.trickNo * 2, value: t.gained,
-                       text: `+${fmtScore(t.gained)}`, color: critC, icon: hit ? hit.icon : null }); // #184: Score ganzzahlig (floor), keine Nachkommastelle
+                       text: `+${fmtScore(t.gained)}`, color: critC, icons: hitIcons }); // #184: Score ganzzahlig (floor), keine Nachkommastelle
     }
     if (!entries.length) return;
     setFloats((cur) => { const next = [...cur, ...entries].slice(-6); floatCountRef.current = next.length; return next; }); // Pool gedeckelt — kein unbegrenztes Stapeln
@@ -894,7 +906,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             <div key={f.id} className="pointer-events-none absolute font-bold whitespace-nowrap"
               style={{ ...pos, color: f.color, fontSize: floatSize(f.value || 0), lineHeight: 1,
                        animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
-              {f.icon && <span className="mr-1" style={{ WebkitTextFillColor: "initial" }}>{f.icon}</span>}{f.text}
+              {f.icons && f.icons.length > 0 && <span className="mr-1" style={{ WebkitTextFillColor: "initial" }}>{f.icons.join("")}</span>}{f.text}
             </div>
           );
         })}
