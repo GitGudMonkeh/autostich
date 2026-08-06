@@ -72,6 +72,7 @@ export function Autostich() {
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [glossaryOpen, setGlossaryOpen] = useState(false);        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
+  const [confirmRestart, setConfirmRestart] = useState(false);    // Komfort: Rückfrage „Wirklich neustarten?" (Neustart-Button) — kein Ein-Tap-Verlust bei Fettfingern
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/6× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
@@ -110,7 +111,7 @@ export function Autostich() {
   // Aufstellung) — nur Menü/Gameover stehen außerhalb. So schätzt die Zeit die echte Rundendauer, statt nur die
   // reine Stichspiel-Zeit. Echte Unterbrechungen (Pause, Optionen-/Chronik-/Glossar-Overlay) frieren weiterhin ein.
   const inRun = state.phase !== "menu" && state.phase !== "gameover";
-  const active = inRun && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort;
+  const active = inRun && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart;
   stateRef.current = state; // Snapshot-Handler lesen immer den aktuellen State (kein Re-Registrieren je Stich)
   // Effektive Lauflänge — spiegelt die Engine-Endbedingung (engine.js): Dev-Run (state.maxCycles) ODER
   // Großmeister IV/V (difficulty.maxCycles 57/54) ODER Basis (MAX_CYCLES 60). HUD-Nenner + Completion-Check lesen DIES.
@@ -193,6 +194,7 @@ export function Autostich() {
     if (showCustomize) { setShowCustomize(false); return true; }
     if (showLeaderboard) { setShowLeaderboard(false); return true; }
     if (showMasterSelect) { setShowMasterSelect(false); return true; }
+    if (confirmRestart) { setConfirmRestart(false); return true; } // offene Neustart-Rückfrage → schließen
     if (confirmAbort) { setConfirmAbort(false); return true; }   // offene Rückfrage → abbrechen (schließen)
     if (inRun) { setConfirmAbort(true); return true; }            // aktiver Lauf → erst fragen, nichts verlieren
     return false;                                                 // Menü/Gameover, nichts offen → Standard-Zurück
@@ -251,14 +253,14 @@ export function Autostich() {
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
-    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || !visible) return; // #254: Abbruch-Rückfrage friert den Lauf ein (wie ein Overlay) · !visible: Hintergrund-Tab hält den Lauf an (Akku/Hitze)
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || !visible) return; // #254: Abbruch-/Neustart-Rückfrage friert den Lauf ein (wie ein Overlay) · !visible: Hintergrund-Tab hält den Lauf an (Akku/Hitze)
     // #188 v2: nach einem großen Krit-Sieg um hitStopMs verzögert (kurzer „Hit-Stop"/Slow-Mo), sonst normaler Takt.
     const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs + hitStopMs);
     return () => clearTimeout(id);
     // #56: flipMs direkt (statt seiner Einzel-Eingaben speedPct/speedMult) → Deps veralten nicht,
     // falls flipMs künftig von weiteren Variablen abhängt.
     // #148: showChronik friert den Lauf ein (wie showOptions) — Tricks laufen nicht mehr hinter dem Overlay weiter.
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, visible, flipMs, hitStopMs]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, flipMs, hitStopMs]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -619,7 +621,7 @@ export function Autostich() {
           <Controls
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
-            onRestart={restartRun} onAbort={() => setConfirmAbort(true)} onOptions={() => setShowOptions(true)}
+            onRestart={() => setConfirmRestart(true)} onAbort={() => setConfirmAbort(true)} onOptions={() => setShowOptions(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
 
@@ -763,6 +765,21 @@ export function Autostich() {
                 <button onClick={() => setConfirmAbort(false)} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#16161c", border: "1px solid #33333e" }}>Weiterspielen</button>
                 <button onClick={() => { setConfirmAbort(false); endRun(); }} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#e0605a", color: "#fff" }}>Beenden</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Komfort: Neustart-Rückfrage — der laufende Lauf ist noch nicht gewertet; kein Ein-Tap-Verlust bei Fettfingern. */}
+      {confirmRestart && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
+          onClick={() => setConfirmRestart(false)}>
+          <div className="w-full max-w-xs rounded-2xl p-5" style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
+            <div className="text-base font-bold">Wirklich neustarten?</div>
+            <div className="text-sm opacity-70 mt-1.5">Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.</div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setConfirmRestart(false)} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#16161c", border: "1px solid #33333e" }}>Weiterspielen</button>
+              <button onClick={() => { setConfirmRestart(false); restartRun(); }} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#e0605a", color: "#fff" }}>Neustarten</button>
             </div>
           </div>
         </div>
