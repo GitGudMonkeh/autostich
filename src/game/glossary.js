@@ -183,8 +183,8 @@ export const GLOSSARY = {
     text: "Eine seltene, besonders mächtige Skill-Stufe (mit ★ markiert). Ab Meisterrang V gibt es einen garantierten Legendär.",
     match: ["Legendärer Skill", "legendäre Skills"] },
   ueberlauf: { category: "frak", group: "gen", label: "Überlauf", icon: "≈", color: CLR.gold,
-    text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet — Eisschichten über ${C.ICE_LAYER_MAX}, Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über 100 % —, sonst wäre er verschwendet. Eis und Feuer (Weißglut) zahlen daraus einen kleinen generischen Direkt-Score; die Legendären (Permafrost, Gletscher, Weltenbaum) verwandeln den großen Rest.`,
-    match: ["Überlauf", "Überlauf-Schicht", "Überlauf-Schichten", "Überlauf-Wachstum", "Überlauf-Tiefe"] },
+    text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet — Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über 100 % —, sonst wäre er verschwendet. Feuer (Weißglut) zahlt daraus einen kleinen generischen Direkt-Score; die Legendären (Weltenbaum/Mutterbaum) verwandeln den großen Rest.`,
+    match: ["Überlauf", "Überlauf-Wachstum"] },
 
   /* ============ 4 · Feuer ============ */
   heat: { category: "frak", group: "fire", label: "Hitze", icon: "🔥", color: CLR.fire,

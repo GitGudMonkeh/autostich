@@ -365,8 +365,7 @@ export const DAMASCUS_COMBAT       = envNum("SIM_DAMASCUS_COMBAT", 5);        //
    ============================================================ */
 // HINWEIS: Der alte Schicht-/Frost-Spine (ICE_BASE_FREEZE, ICE_LAYER_*, KRISTALLINE_*, EISKALT_*, GLETSCHER_*,
 // PERMAFROST_*, VERGLETSCHERUNG_*, ARCHITEKT_STEP, EISBLUETE/STILLSTAND/EISDRUCK/… ) wurde entfernt — der Eis-Archetyp
-// läuft jetzt über glacier.js (Masse/Rollen). Es bleiben nur die noch aktiv gelesenen Konstanten:
-export const ICE_LAYER_MAX     = 12;   // Überlauf-Referenz (Glossar „Überlauf": Schichten/Wachstum/Hitze über dem Nutzen)
+// läuft jetzt vollständig über glacier.js (Masse/Rollen). Keine Alt-Eis-Konstanten mehr nötig.
 
 /* ============================================================
    PFLANZE-FRAKTION v0 — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend) →
