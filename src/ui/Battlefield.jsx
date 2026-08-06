@@ -52,7 +52,9 @@ const HIT_STYLE = {
   lightning: { color: CRIT_COLOR, icon: "⚡" },
 };
 const HIT_ICON_ORDER  = ["fire", "plant", "ice", "lightning"]; // feste Reihenfolge der gezeigten Icons
-const HIT_COLOR_ORDER = ["fire", "plant", "ice", "lightning"]; // erste zutreffende bestimmt die Score-Farbe (nach dem Krit-Lila)
+// Score-FARBE: erste zutreffende bestimmt sie (nach dem Krit-Lila). Blitz ist bewusst NICHT dabei — reines Lila bleibt
+// exklusiv dem Krit vorbehalten; ein nicht-kritischer 5-Stapel-Sieg zeigt nur das ⚡-Icon, die Farbe bleibt Gold/Element.
+const HIT_COLOR_ORDER = ["fire", "plant", "ice"];
 
 // #68: vier Streuzonen — gleiche Float-Typen dicht beieinander, verschiedene getrennt. Basis-Lage je Zone.
 const FLOAT_ZONES = {
