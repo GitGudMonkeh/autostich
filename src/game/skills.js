@@ -144,58 +144,56 @@ export const SKILL_DEFS = {
   SK_FIRE_L04: { id: "SK_FIRE_L04", name: "Damaststahl", archetype: "fire", legendary: true, keywords: ["heat", "forge", "ash"],
     desc: `Schmiedet ohne Asche jeden Durchlauf deine niedrigste Karte (+${C.FORGE_VALUE} Wert, bis ${C.DAMASCUS_MAX_FORGED} Karten). Geschmiedete Karten kämpfen mit +${C.DAMASCUS_COMBAT} Wert. Jeder Sieg gibt +${C.DAMASCUS_DIRECT} Score je Punkt Gesamt-Schmiedewert. Kein Ascheverbrauch.`, damascus: true },
 
-  // ---- Eis-Rework (v0) — „Gletscher: Architektur × Permanenz." Spine = SCHICHTEN je Frostkarte (permanent,
-  //      unverlierbar). Kein Konsument. Flags in engine.js/reducer.js/formations.js gelesen. 21 Skills auf 7 Linien.
-  // Linie 1 — Zugang (mehr Anker · Meißel · Bank)
-  SK_ICE_01: { id: "SK_ICE_01", name: "Frostgriff", archetype: "ice", keywords: ["freeze"],
-    desc: "Friert beim Aktivieren +2 weitere eigene Karten ein.", frostGrip: true },
-  SK_ICE_02: { id: "SK_ICE_02", name: "Frostwahl", archetype: "ice", keywords: ["freeze"],
-    desc: "Du wählst selbst, welche eigenen Karten einfrieren, statt sie dem Zufall zu überlassen.", frostwahl: true },
-  // #Überlauf-Konsum: Eiskalt wandelt den globalen Überlauf-Vorrat je Frost-Sieg in Crit-Chance und verbrennt ihn dabei.
-  SK_ICE_03: { id: "SK_ICE_03", name: "Eiskalt", archetype: "ice", keywords: ["freeze", "crit"],
-    desc: `Gewinnt eine Frostkarte einen Stich, gibt ihr dein Überlauf-Vorrat +${pct(C.EISKALT_CRIT_PER)} % Crit-Chance je Vorrats-Schicht (bis +${pct(C.EISKALT_CRIT_CAP)} %), nur für diesen Stich. Der Sieg verbrennt dabei ${pct(C.EISKALT_SPEND_FRAC)} % des Vorrats (tiefste Karten zuerst, nie unter ${C.ICE_LAYER_MAX}).`, eiskalt: true },
-  // Linie 2 — Frost-Crit-Payoff & Überlauf-Motoren (umgewidmete Frosttausch-Linie)
-  SK_ICE_04: { id: "SK_ICE_04", name: "Frostschlag", archetype: "ice", keywords: ["freeze", "crit"],
-    desc: `Ein Crit einer Frostkarte multipliziert zusätzlich ihren Eis-Direkt-Score dieses Stichs um +${pct(C.FROSTSCHLAG_DIRECT_MULT)} %.`, frostschlag: true },
-  SK_ICE_05: { id: "SK_ICE_05", name: "Tiefenfrost", archetype: "ice", keywords: ["freeze"],
-    desc: `Gewinnt eine Frostkarte mit bereits ${C.ICE_LAYER_MAX}+ Schichten, lagert sie +${C.UEBERLAUF_MOTOR_DEPTH} zusätzliche Schicht ab.`, ueberlaufMotorDepth: true },
-  SK_ICE_06: { id: "SK_ICE_06", name: "Kälteleitung", archetype: "ice", keywords: ["freeze"],
-    desc: `Die direkten nicht-gefrorenen Nachbarn einer Frostkarte werden temporär vereist und bekommen ${pct(C.KALTFRONT_SHARE)} % des Schicht-Scores und Dauerwerts der Frostkarte — solange sie daneben liegen.`, kaltfront: true },
-  // Linie 3 — Permanenz (Schichten ablagern — der Spine, verliert nie)
-  SK_ICE_07: { id: "SK_ICE_07", name: "Kältereserve", archetype: "ice", keywords: ["freeze"],
-    desc: `Verliert eine Frostkarte, lagert sie trotzdem +${C.KAELTERESERVE_LAYER} Schicht ab.`, frostReserve: true },
-  SK_ICE_08: { id: "SK_ICE_08", name: "Beständigkeit", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: "Siegt eine Frostkarte in einer Formation wie im Vordurchlauf, lagert sie eine zusätzliche Schicht ab.", bestaendigkeit: true },
-  SK_ICE_09: { id: "SK_ICE_09", name: "Frostkaskade", archetype: "ice", keywords: ["freeze", "crit"],
-    desc: `Crittet eine Frostkarte, bekommt der nächste Frost-Sieg +${pct(C.FLAECHE_CARRY_SHARE)} % ihrer Crit-Chance dazu. Steht die Crit-Chance schon bei 100 %, wird der Überschuss stattdessen zu Crit-Multiplikator (+${de(C.FLAECHE_EXCESS_TO_MULT)} je 100 %).`, flaechenkaskade: true },
-  // Linie 4 — Schicht-Schwellen (tiefe Schichten → großer Payout, kein Konsum)
-  SK_ICE_10: { id: "SK_ICE_10", name: "Eisdruck", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: `Je Schicht einer Frostkarte +${pct(C.EISDRUCK_STEP)} % Formationsfaktor (wirksam bis ${C.ICE_LAYER_MAX} Schichten).`, eisdruck: true },
-  SK_ICE_11: { id: "SK_ICE_11", name: "Kristalline Masse", archetype: "ice", keywords: ["freeze"],
-    desc: `Je ${C.KRISTALLINE_STEP} Schichten insgesamt (über alle Frostkarten) erhalten alle Frostkarten +1 Stichwert (bis +${C.KRISTALLINE_MAX_VALUE}).`, kristallineMasse: true },
-  // Linie 5 — Formations-Interface (Joker & Segment-Brücke)
-  SK_ICE_12: { id: "SK_ICE_12", name: "Kristallform", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: `Eine Frostkarte springt als Joker in Formationen ein (±${C.CRYSTAL_OFFSET} Wert-Flex) — sie festigt das Eis (voller Schicht-Gewinn), trägt aber nur ${pct(C.ICE_JOKER_FORMSCORE_SHARE)} % zum Formations-Score bei.`, kristallform: true },
-  SK_ICE_13: { id: "SK_ICE_13", name: "Frostbrücke", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: `Eine Frostkarte am Segmentrand spannt eine Eisbrücke ins nächste Segment. Die Brücke trägt Schichten (voller Schicht-Gewinn), aber der Stich darüber zählt nur ${pct(C.ICE_JOKER_FORMSCORE_SHARE)} % Formations-Score.`, frostbridge: true },
-  // Linie 6 — Überlappung / Anker (stehende Formationen zahlen)
-  SK_ICE_14: { id: "SK_ICE_14", name: "Eisanker", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: `Eine Frostkarte kann als Anker stehen (×${de(C.EISANKER_FACTOR)}) und lagert dabei garantiert eine Schicht ab — auch ohne volle Formation.`, iceAnchor: true },
-  SK_ICE_15: { id: "SK_ICE_15", name: "Stillstand", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: `Siegt eine Frostkarte in ≥1 Formation, gibt es +${C.STILLSTAND_PER_LAYER} Direkt-Score je Schicht der Karte (belohnt tiefe Pfeiler in Formation).`, standstill: true },
-  SK_ICE_16: { id: "SK_ICE_16", name: "Eisblüte", archetype: "ice", keywords: ["freeze", "formation"],
-    desc: `Siegt eine Frostkarte in ≥2 Formationen, banken ihre direkten (gefrorenen) Nachbarn je ${pct(C.EISBLUETE_SHARE)} % ihrer Schichten (mindestens 1, dauerhaft).`, iceBloom: true },
-  SK_ICE_17: { id: "SK_ICE_17", name: "Verschränkung", archetype: "ice", keywords: ["freeze"],
-    desc: `Gewinnt eine Frostkarte, zählt sie ${pct(C.VERSCHRAENKUNG_SHARE)} % der Schichten deiner tiefsten anderen Frostkarte zu ihrer Score-Auszahlung hinzu — gebankte tiefe Pfeiler zahlen bei jedem Frost-Sieg mit.`, verschraenkung: true },
-  // Legendäre (vier Seiten des Spine — verwandeln die tiefen Schichten in DIREKTEN Score)
-  SK_ICE_L01: { id: "SK_ICE_L01", name: "Permafrost", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: `Jede Ablage lagert +${C.PERMAFROST_LAYER_BONUS} zusätzliche Schichten ab. Jeder Frost-Sieg gibt +${C.PERMAFROST_DIRECT} Score je Überlauf-Schicht (Schichten über ${C.ICE_LAYER_MAX}), summiert über alle Frostkarten (bis ${C.PERMAFROST_OVERFLOW_CAP}).`, permafrost: true },
-  SK_ICE_L02: { id: "SK_ICE_L02", name: "Gletscher", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: `Deine tiefste Frostkarte zählt alle ihre Schichten über ${C.ICE_LAYER_MAX} (bis max. ${C.GLETSCHER_OVERFLOW_CAP}). Jeder Frost-Sieg gibt daraus +${C.GLETSCHER_DIRECT} Bonus je Tiefenstufe, aufsummiert.`, gletscher: true },
-  SK_ICE_L03: { id: "SK_ICE_L03", name: "Vergletscherung", archetype: "ice", legendary: true, keywords: ["freeze"],
-    desc: `Jeder Frost-Sieg friert ${C.VERGLETSCHERUNG_COUNT} Gegnerkarten proportional zu den Schichten der Siegkarte ein (−Wert). Zusätzlich +${C.VERGLETSCHERUNG_DIRECT} Score je Punkt, den deine Vereisung Gegnern gerade abzieht (alle −Wert-Marken zusammen, bis ${C.VERGLETSCHERUNG_DEBUFF_CAP}).`, vergletscherung: true },
-  SK_ICE_L04: { id: "SK_ICE_L04", name: "Architekt", archetype: "ice", legendary: true, keywords: ["freeze", "formation"],
-    desc: `Schaltet vertikale Formationen frei: Frostkarten in derselben Spalte bilden Formationen über Segmente hinweg — je zusätzliche Frostkarte in der Spalte +${Math.round(C.ARCHITEKT_STEP * 100)} % Formationsfaktor.`, architekt: true },
+  // ---- Eis-Neudesign — „Gletscher, Brechen & Kaskade." (docs/eis-rework.md) Spine = MASSE auf dem Brettfeld (Firn-Boden),
+  //      Gletscher halten & brechen gewaltig. Jeder Skill trägt ein `role: G_…` (Mechanik in glacier.js). Gate = archetype
+  //      "ice" → activeArchetypes "ice" aktiviert den Gletscher-Block; PICK_SKILL seedet state.glacierRoles aus den `role`s.
+  // Linie 1 — Firn (Masse-Motor)
+  SK_ICE_01: { id: "SK_ICE_01", name: "Anfrieren", archetype: "ice", keywords: ["glacier"], role: "G_ANFRIEREN",
+    desc: "Gewinnt ein Gletscher einen Stich, wächst die Masse seines Feldes zusätzlich. Formations-Siege frieren doppelt an." },
+  SK_ICE_02: { id: "SK_ICE_02", name: "Schneetreiben", archetype: "ice", keywords: ["glacier"], role: "G_SCHNEETREIBEN",
+    desc: "Gewinnt ein Gletscher, verweht er einen Teil seiner Masse auf ein angrenzendes Feld (Firn-Boden) — bereitet den Boden neben Gletschern vor." },
+  SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier"], role: "G_DAUERFROST",
+    desc: "Ab dem Pick friert der Boden zu: ungefrorene Felder sammeln passiv Masse — offener Boden am tiefsten, direkt neben Gletschern kaum." },
+  SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "architect"], role: "G_VERDICHTUNG",
+    desc: "Der Gebäude-Wertbonus auf einem Gletscher wird nicht ausgespielt, sondern in Masse getankt (koppelt Architekt an Eis)." },
+  // Linie 2 — Eisschild (Cluster/Dichte)
+  SK_ICE_05: { id: "SK_ICE_05", name: "Verschmelzen", archetype: "ice", keywords: ["glacier"], role: "G_VERSCHMELZEN",
+    desc: "Zu Durchlauf-Beginn heben angrenzende Gletscher einander auf den Cluster-Durchschnitt (nie fallend)." },
+  SK_ICE_06: { id: "SK_ICE_06", name: "Packeis", archetype: "ice", keywords: ["glacier"], role: "G_PACKEIS",
+    desc: "Ein Gletscher mit vielen Gletscher-Nachbarn gewinnt Bonus-Masse pro Durchlauf — belohnt die Mitte des Feldes." },
+  SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE",
+    desc: "Erweitert die Nachbarschaft um die vier Diagonalen (8-Nachbarschaft) — verbindet zersplitterte Felder zu einem Cluster." },
+  SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL",
+    desc: "Eine komplett gefrorene, durchgehende Gletscher-Reihe oder -Spalte verstärkt alle ihre Gletscher." },
+  SK_ICE_09: { id: "SK_ICE_09", name: "Verzahnung", archetype: "ice", keywords: ["glacier"], role: "G_VERZAHNUNG",
+    desc: "Je größer das verbundene Cluster, desto schneller gewinnt jeder seiner Gletscher Masse." },
+  // Linie 3 — Lawine (Brechen/Kaskade)
+  SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE",
+    desc: "Der Burst-Score belohnt das Erreichen hoher Stufen noch steiler — für wenige, mächtige Einzelgletscher." },
+  SK_ICE_11: { id: "SK_ICE_11", name: "Kettenbruch", archetype: "ice", keywords: ["glacier"], role: "G_KETTENBRUCH",
+    desc: "Bricht ein Gletscher, zwingt er angrenzende Gletscher, sofort mitzubrechen — die echte Kaskade rollt durchs Feld." },
+  SK_ICE_12: { id: "SK_ICE_12", name: "Zermalmen", archetype: "ice", keywords: ["glacier", "crit"], role: "G_ZERMALMEN",
+    desc: "Trifft ein Bruch einen Gletscher-Nachbarn (Kollision), wird daraus ein Krit statt eines normalen Treffers." },
+  SK_ICE_13: { id: "SK_ICE_13", name: "Rissbildung", archetype: "ice", keywords: ["glacier"], role: "G_RISSBILDUNG",
+    desc: "Instabiles Eis: senkt die Berst-Schwelle → bricht früher & häufiger, kleinere Brüche (Tempo-Gegenpol)." },
+  SK_ICE_14: { id: "SK_ICE_14", name: "Gletschersturz", archetype: "ice", keywords: ["glacier"], role: "G_GLETSCHERSTURZ",
+    desc: "Je mehr Gletscher im selben Durchlauf brechen, desto stärker jeder einzelne Bruch." },
+  // Linie 4 — Frostgriff (Kontrolle/Duo)
+  SK_ICE_15: { id: "SK_ICE_15", name: "Einfrieren", archetype: "ice", keywords: ["glacier"], role: "G_EINFRIEREN",
+    desc: "Bricht ein Gletscher auf eine Gegnerkarte, verliert diese ihren nächsten Stich garantiert." },
+  SK_ICE_16: { id: "SK_ICE_16", name: "Frostbund", archetype: "ice", keywords: ["glacier"], role: "G_FROSTBUND",
+    desc: "Bricht ein Gletscher auf einen Nicht-Eis-Nachbarn (2. Archetyp), bufft er ihn offensiv (+Stichwert)." },
+  SK_ICE_17: { id: "SK_ICE_17", name: "Eispanzer", archetype: "ice", keywords: ["glacier"], role: "G_EISPANZER",
+    desc: "Eine Niederlage neben einem Gletscher ist folgenlos (Serie hält) und füttert stattdessen Masse in den Gletscher." },
+  // Legendäre (je Linie eine Capstone)
+  SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_EISZEIT",
+    desc: "Die kriechende Eiszeit: das ganze Brett flutet jede Runde mit Boden-Masse, und deine Karten frieren nach und nach zu Gletschern ein." },
+  SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
+    desc: "Das gesamte zusammenhängende Feld zählt als EIN Übergletscher: alle poolen Masse, alle gelten füreinander als angrenzend, Kaskade rechnet volle Feldgröße." },
+  SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",
+    desc: "Ein einmaliger Finisher: das ganze Brett bricht auf einen Schlag (Schwellen ignoriert, volle Stufe) — der größtmögliche Score-Moment." },
+  SK_ICE_L04: { id: "SK_ICE_L04", name: "Erstarrung", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_ERSTARRUNG",
+    desc: "Der Gegner friert komplett ein: jede vom Bruch getroffene Gegnerkarte verliert ihren Stich; der Bruch greift über die Nachbarn hinaus weiter ins Gegnerfeld." },
 
   // ---- Pflanze-Fraktion (v0) — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend)
   //      → Reife (grün) → Farbblock → Score. Grün = Farbe, nicht Kraft; Wert nur über Wurzeln (Deckel 11).
@@ -252,6 +250,8 @@ export const SKILL_DEFS = {
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
 export const archetypeOf = (id) => SKILL_DEFS[id]?.archetype || null;
+// Eis-Neudesign: aktive Gletscher-Rollen (glacier.js ROLES) aus den gehaltenen Skill-`role`-Feldern.
+export const glacierRolesOf = (skills = []) => (skills || []).map((id) => SKILL_DEFS[id]?.role).filter(Boolean);
 // #288 „Trimmen": ist der Skill wachstums-stützend? (Aussaat/Flugsamen/Setzlingsbeet/Zäher Halm + Ausläufer/Rhizom) — Ersetzen zählt als Trimmung.
 export const isTrimmableSkill = (id) => !!SKILL_DEFS[id]?.trimGrowth;
 

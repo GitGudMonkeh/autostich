@@ -5,7 +5,7 @@ import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js"
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
   frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront,
-  hasSetzlingsbeet, buildSkillOffer } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte
+  hasSetzlingsbeet, buildSkillOffer, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, segmentGainedFormation, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
@@ -518,17 +518,9 @@ export function reducer(state, action) {
       let growth = state.growth || {}, colonized = state.colonized || {}; // Pflanze-Fraktion (v0): Wachstum / Kolonisierung
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15 (#93 F2)
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
-      // Eis (#93 F3): dieser Pick friert so viele NEUE eigene Karten ein, dass das Ziel (frozenTargetFor) erreicht ist.
-      // #265 Frostwahl-Fix: MIT Frostwahl wählt der Spieler die Karten SELBST (frost-select-Phase, unten), statt Auto-
-      // Einfrieren. OHNE Frostwahl frieren wie bisher zufällige Karten ein.
+      // Eis-Neudesign: der neue Eis-Archetyp friert KEINE Karten mehr ein (kein frozen/Schichten/frost-select). Seine
+      // Mechanik läuft über Masse/Gletscher (glacier.js), getrieben von state.glacierRoles (unten aus den Skill-`role`s).
       let pendingFrostSelect = null;
-      if (arch === "ice") {
-        const toFreeze = Math.max(0, frozenTargetFor(skills) - frozenCount(deck));
-        if (toFreeze > 0) {
-          if (hasFrostwahl(skills)) pendingFrostSelect = { need: toFreeze, chosen: [] };
-          else deck = freezeCards(deck, toFreeze, rngFor(state, action, state.cycle, "freeze"), false);
-        }
-      }
       // Pflanze (v0): erster Pflanze-Skill → Alter Anker (1 Karte reif: grün, Wert 11) + Setzlingsbeet/Dornenkönig.
       if (arch === "plant" && !(state.activeArchetypes || []).includes("plant")) {
         deck = deck.map((c, i) => (i === 0 ? { ...c, green: true, value: C.PLANT_ANCHOR_VALUE } : c)); // Alter Anker (Zündfunke ab Durchlauf 1)
@@ -559,10 +551,20 @@ export function reducer(state, action) {
       }
       let plantLoss = state.plantLoss || {}; // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id
       if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green ? { ...c, green: false } : c)); growth = {}; colonized = {}; plantLoss = {}; } // Pflanze weg (Anker-Wert bleibt gebacken)
+      // Eis-Neudesign: aktive Gletscher-Rollen aus den gehaltenen Skill-`role`s; bei Deaktivierung Gletscher-State leeren.
+      let glacierRoles = glacierRolesOf(skills);
+      let glacierMass = state.glacierMass, glacierLocked = state.glacierLocked, glacierYield = state.glacierYield,
+        frozenOppPending = state.frozenOppPending, frozenOppActive = state.frozenOppActive,
+        glacierBuffPending = state.glacierBuffPending, glacierBuffActive = state.glacierBuffActive, grosseLawineFired = state.grosseLawineFired;
+      if (!stillActive.has("ice")) {
+        glacierRoles = []; glacierMass = new Array(40).fill(0); glacierLocked = new Array(40).fill(false); glacierYield = 0;
+        frozenOppPending = {}; frozenOppActive = {}; glacierBuffPending = {}; glacierBuffActive = {}; grosseLawineFired = false;
+      }
       // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
       // #265: bei offener Frostwahl in die frost-select-Phase (Spieler wählt die einzufrierenden Karten), sonst direkt weiter.
       return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, layers, frostFormPrev, growth, colonized, plantLoss, ash, brandPending, brandActive, forged, formations,
+               glacierRoles, glacierMass, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, grosseLawineFired, // Eis-Neudesign
                trimCount: (state.trimCount || 0) + (trimmed ? 1 : 0), // #288 Trimmen
                phase: pendingFrostSelect ? "frost-select" : "play", frostSelect: pendingFrostSelect, skillOffer: null };
     }
@@ -589,13 +591,10 @@ export function reducer(state, action) {
       let lightning = state.lightning, heat = state.heat, deck = state.deck;
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
-      if (arch === "ice") { // Legendär könnte das Frost-Ziel heben → fehlende Karten automatisch einfrieren (kein Frost-Select in der Legendär-Phase)
-        const toFreeze = Math.max(0, frozenTargetFor(skills) - frozenCount(deck));
-        if (toFreeze > 0) deck = freezeCards(deck, toFreeze, rngFor(state, action, state.cycle, "freeze"), false);
-      }
+      // Eis-Neudesign: der legendäre Eis-Skill fügt nur seine Rolle hinzu (kein Einfrieren) → glacierRoles nachziehen.
       const activeArchetypes = (state.activeArchetypes || []).includes(arch) ? state.activeArchetypes : [...(state.activeArchetypes || []), arch];
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
-      return { ...state, skills, activeArchetypes, lightning, heat, deck, formations, phase: "play", legendaryOffer: null };
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, formations, glacierRoles: glacierRolesOf(skills), phase: "play", legendaryOffer: null };
     }
 
     // #272 Legendär ablehnen → stattdessen normale Skill-Wahl (Nutzer-Wunsch), nie „verschwendet".
@@ -671,7 +670,7 @@ export function reducer(state, action) {
     // bewusst permanent (kein Unlock). Nur in der Formationsphase & bei aktivem Gletscher-Archetyp. Idempotent.
     case "GLACIER_LOCK": {
       if (state.phase !== "formation") return state;
-      if (!(state.activeArchetypes || []).includes("glacier")) return state;
+      if (!(state.activeArchetypes || []).includes("ice")) return state;
       const p = action.pos;
       if (p == null || p < 0 || p >= state.playerOrder.length) return state;
       if (state.glacierLocked && state.glacierLocked[p]) return state; // schon gefroren → No-op

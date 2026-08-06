@@ -8,7 +8,7 @@ const identity = () => Array.from({ length: 40 }, (_, i) => i);
 const flat = () => Array.from({ length: 40 }, (_, i) => ({ id: `F${i}`, suit: i % 2 ? "B" : "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
 const formState = (over = {}) => ({
   ...initialState(makeRng(1)),
-  phase: "formation", activeArchetypes: ["glacier"], deck: flat(), playerOrder: identity(),
+  phase: "formation", activeArchetypes: ["ice"], deck: flat(), playerOrder: identity(),
   formationEnergy: 5, formationSwaps: [], glacierLocked: new Array(40).fill(false), ...over,
 });
 

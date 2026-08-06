@@ -49,7 +49,7 @@ describe("Engine-Verdrahtung (L1)", () => {
   const noCrit = () => 0.99;
   const scen = (over) => ({
     ...initialState(makeRng(1)), deck: flat(), oppDeck: oppOf(1), playerOrder: identity(), oppOrder: identity(),
-    activeArchetypes: ["glacier"], glacierMass: zeros(), glacierLocked: falses(), glacierRoles: [], ...over,
+    activeArchetypes: ["ice"], glacierMass: zeros(), glacierLocked: falses(), glacierRoles: [], ...over,
   });
   it("Ewiges Schild poolt im Snapshot: ein leerer Gletscher neben einem vollen bricht", () => {
     const glacierLocked = lockAt(0, posOf(7, 4)); const glacierMass = withMass([[posOf(7, 4), 24]]); // pos0 leer, weit weg voll → Pool-Schnitt 12

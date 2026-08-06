@@ -48,7 +48,7 @@ describe("Engine — Eiswall verstärkt die Linie", () => {
   const rowMass = () => { const m = zeros(); for (const p of [0, 1, 2, 3, 4]) m[p] = 12; return m; };
   const scen = (over) => ({
     ...initialState(makeRng(1)), deck: flat(), oppDeck: oppOf(1), playerOrder: identity(), oppOrder: identity(),
-    activeArchetypes: ["glacier"], glacierMass: rowMass(), glacierLocked: lockAt(0, 1, 2, 3, 4), glacierRoles: [], ...over,
+    activeArchetypes: ["ice"], glacierMass: rowMass(), glacierLocked: lockAt(0, 1, 2, 3, 4), glacierRoles: [], ...over,
   });
   it("volle Reihe: mit Eiswall bricht pos0 stärker als ohne", () => {
     const base = resolveTrick(scen({}), noCrit);

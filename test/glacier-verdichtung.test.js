@@ -20,7 +20,7 @@ const withArch = () => ({ ...initialArchitect(), buildings: [B("A_STUETZE", [0, 
 const scen = (over = {}) => ({
   ...initialState(makeRng(1)),
   deck: flat(), oppDeck: oppOf(1), playerOrder: identity(), oppOrder: identity(),
-  activeArchetypes: ["glacier"], glacierMass: zeros(), glacierLocked: lockAt(0), glacierRoles: [],
+  activeArchetypes: ["ice"], glacierMass: zeros(), glacierLocked: lockAt(0), glacierRoles: [],
   architectEnabled: true, architect: withArch(), ...over,
 });
 

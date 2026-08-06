@@ -54,7 +54,7 @@ describe("Engine-Verdrahtung — glacierOpts erreicht precompute", () => {
   it("Kettenbruch über glacierRoles: der erzwungene Nachbar zahlt an seinem Stich aus", () => {
     let s = {
       ...initialState(makeRng(1)), deck: flat(), oppDeck: oppOf(1), playerOrder: identity(), oppOrder: identity(),
-      activeArchetypes: ["glacier"], glacierMass: withMass([[0, 12], [1, 2]]), glacierLocked: lockAt(0, 1), glacierRoles: [ROLES.KETTENBRUCH],
+      activeArchetypes: ["ice"], glacierMass: withMass([[0, 12], [1, 2]]), glacierLocked: lockAt(0, 1), glacierRoles: [ROLES.KETTENBRUCH],
     };
     s = resolveTrick(s, noCrit); // pos0 bricht
     s = resolveTrick(s, noCrit); // pos1 — erzwungener Bruch

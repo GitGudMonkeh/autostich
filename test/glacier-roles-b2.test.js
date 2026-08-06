@@ -16,7 +16,7 @@ const noCrit = () => 0.99;
 const scen = (over = {}) => ({
   ...initialState(makeRng(1)),
   deck: flat(), oppDeck: oppMixed(), playerOrder: identity(), oppOrder: identity(),
-  activeArchetypes: ["glacier"], glacierMass: new Array(40).fill(0), glacierLocked: falses(), glacierRoles: [], ...over,
+  activeArchetypes: ["ice"], glacierMass: new Array(40).fill(0), glacierLocked: falses(), glacierRoles: [], ...over,
 });
 // pos0 spielen (Sieg → Serie 1), dann pos1 (Niederlage).
 const winThenLose = (over) => { let s = resolveTrick(scen(over), noCrit); s = resolveTrick(s, noCrit); return s; };

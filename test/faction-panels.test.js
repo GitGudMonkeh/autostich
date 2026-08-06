@@ -27,7 +27,7 @@ function agg(target, keys, seeds = [1, 2, 3, 4]) {
   return out;
 }
 
-const YIELD = ["iceYield", "lightYield", "plantRoot", "plantBloom", "plantHarvest", "fireBase", "fireWhite"];
+const YIELD = ["glacierYield", "lightYield", "plantRoot", "plantBloom", "plantHarvest", "fireBase", "fireWhite"];
 const MOTOR = ["ionTotal", "growthTotal", "ashBurned", "brandTotal"];
 const ALL = [...YIELD, ...MOTOR];
 const plantYield = (a) => a.plantRoot + a.plantBloom + a.plantHarvest;
@@ -42,7 +42,7 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
     const a = agg("lightning", ALL);
     expect(a.ionTotal).toBeGreaterThan(0);
     expect(a.lightYield).toBeGreaterThan(0);
-    expect(plantYield(a) + a.fireBase + a.fireWhite + a.iceYield).toBe(0); // Isolation
+    expect(plantYield(a) + a.fireBase + a.fireWhite + a.glacierYield).toBe(0); // Isolation
     expect(a.growthTotal + a.ashBurned + a.brandTotal).toBe(0);
   });
 
@@ -51,20 +51,20 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
     expect(a.growthTotal).toBeGreaterThan(0);
     expect(a.plantRoot).toBeGreaterThan(0);      // Wurzeltiefe ist der verlässliche Grund-Kanal
     expect(plantYield(a)).toBeGreaterThan(0);
-    expect(a.lightYield + a.fireBase + a.fireWhite + a.iceYield).toBe(0);
+    expect(a.lightYield + a.fireBase + a.fireWhite + a.glacierYield).toBe(0);
     expect(a.ionTotal + a.ashBurned + a.brandTotal).toBe(0);
   });
 
   it("Feuer-Lauf treibt den Feuer-Grund-Score (Feuers Kern); keine Fremd-Fraktions-Kennzahl", () => {
     const a = agg("fire", ALL);
     expect(a.fireBase).toBeGreaterThan(0);
-    expect(a.lightYield + plantYield(a) + a.iceYield).toBe(0);
+    expect(a.lightYield + plantYield(a) + a.glacierYield).toBe(0);
     expect(a.ionTotal + a.growthTotal).toBe(0);
   });
 
-  it("Eis-Lauf treibt den Frost-Ertrag (Schicht→Score-Motor); keine Fremd-Fraktions-Kennzahl", () => {
+  it("Eis-Lauf treibt den Gletscher-Ertrag (Masse→Bruch→Score); keine Fremd-Fraktions-Kennzahl", () => {
     const a = agg("ice", ALL);
-    expect(a.iceYield).toBeGreaterThan(0);
+    expect(a.glacierYield).toBeGreaterThan(0);
     expect(a.lightYield + plantYield(a) + a.fireBase + a.fireWhite).toBe(0);
     expect(a.ionTotal + a.growthTotal + a.ashBurned + a.brandTotal).toBe(0);
   });
@@ -78,8 +78,8 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
       if (++guard > 100000) break;
       if (s.phase === "play") s = reducer(s, { type: "RESOLVE_TRICK", rng });
       else s = reducer(s, pol.act(s, rng));
-      expect(s.iceYield).toBeGreaterThanOrEqual(prev);
-      prev = s.iceYield;
+      expect(s.glacierYield).toBeGreaterThanOrEqual(prev);
+      prev = s.glacierYield;
     }
     expect(prev).toBeGreaterThan(0);
   });

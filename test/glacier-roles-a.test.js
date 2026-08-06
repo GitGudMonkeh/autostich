@@ -15,7 +15,7 @@ const noCrit = () => 0.99;
 const scen = (over = {}) => ({
   ...initialState(makeRng(1)),
   deck: flat(), oppDeck: oppOf(1), playerOrder: identity(), oppOrder: identity(),
-  activeArchetypes: ["glacier"], glacierMass: zeros(), glacierLocked: falses(), glacierRoles: [], ...over,
+  activeArchetypes: ["ice"], glacierMass: zeros(), glacierLocked: falses(), glacierRoles: [], ...over,
 });
 
 describe("glacierOpts — Rollen → Snapshot-opts", () => {

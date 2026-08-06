@@ -16,7 +16,7 @@ const noCrit = () => 0.99;
 const scen = (over = {}) => ({
   ...initialState(makeRng(1)),
   deck: flat(), oppDeck: oppOf(5), playerOrder: identity(), oppOrder: identity(),
-  activeArchetypes: ["glacier"], glacierMass: zeros(), glacierLocked: falses(), ...over,
+  activeArchetypes: ["ice"], glacierMass: zeros(), glacierLocked: falses(), ...over,
 });
 // Ganzen Durchlauf (40 Stiche) fahren, State zurückführen.
 const runCycle = (s0) => { let s = s0; for (let i = 0; i < 40; i++) s = resolveTrick(s, noCrit); return s; };
