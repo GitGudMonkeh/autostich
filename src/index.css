@@ -212,31 +212,14 @@ button { font-family: inherit; }
   100% { opacity: 0; }
 }
 
-/* #136 Eis-Schimmer: wandernder Glanzstreif („Sweep-Shine") über eingefrorenen Karten. Nur auf der aktiven
-   Battlefield-Karte (Board bleibt ruhig = Frostglas ohne Sweep). screen-Blend. reduced-motion global unten. */
-@keyframes as-frost-sweep { 0% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
-.as-frost-sweep {
-  background: linear-gradient(105deg, transparent 38%, rgba(224,247,255,0.55) 50%, transparent 62%);
-  background-size: 260% 100%;
-  animation: as-frost-sweep 3.4s ease-in-out infinite;
-  will-change: background-position;
-}
-/* Raureif-Körnung: feine eisfarbene Turbulenz, sehr dezent (screen-geblendet in FrostOverlay). */
-.as-frost-grain {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
-  background-size: 90px 90px;
-}
-
-/* Archetyp-Ambiente am Battlefield (#142 Feuer / #143 Blitz / #144 Eis): sanfte Pulse an der jeweiligen
-   Ober-/Untergrenze (nahe voller Hitze / voller Ladung / 5 Eis-Karten). Die Keyframes RUHEN bei 0%/100%
+/* Archetyp-Ambiente am Battlefield (#142 Feuer / #143 Blitz): sanfte Pulse an der jeweiligen
+   Ober-/Untergrenze (nahe voller Hitze / voller Ladung). Die Keyframes RUHEN bei 0%/100%
    auf dem hellen Basiszustand → unter reduced-motion (global unten auf ~0ms gesetzt) bleibt der Glow
    einfach statisch hell (kein Puls), genau wie in den Issues gewünscht. */
 @keyframes as-heat-pulse   { 0%, 100% { opacity: 1; } 50% { opacity: .82; } }
 @keyframes as-charge-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6;  } }
-@keyframes as-frost-pulse  { 0%, 100% { opacity: 1; } 50% { opacity: .78; } }
 .as-heat-pulse   { animation: as-heat-pulse   2.4s ease-in-out infinite; }
 .as-charge-pulse { animation: as-charge-pulse 1.1s ease-in-out infinite; }
-.as-frost-pulse  { animation: as-frost-pulse  2.8s ease-in-out infinite; }
 
 /* Blitz-Motor (#208): Energie „fließt" die aktiven Verbinder entlang (bewegter Farbverlauf). Der Verbinder trägt
    `background-size: 220%`; die Animation schiebt die Position → ein wandernder Lichtpuls. Ruht implizit unter

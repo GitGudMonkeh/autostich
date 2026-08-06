@@ -222,20 +222,8 @@ export const GLOSSARY = {
 
   /* ============ 4 · Eis ============ */
   freeze: { category: "frak", group: "ice", label: "Eingefroren", icon: "❄️", color: CLR.ice,
-    text: `Eis friert eigene Karten dauerhaft ein (blau): ${C.ICE_BASE_FREEZE} beim ersten Eis-Skill, +1 je weiterem (Frostgriff: +${C.FROST_GRIP_BONUS}). Frostkarten sammeln Schichten (Dauerwert), helfen beim Bilden von Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden.`,
+    text: "Eis ist der Gletscher-Archetyp: über Masse und Rollen (glacier.js) friert es Felder ein und lässt sie wachsen. Frostkarten bilden zusammenhängende Gletscher und helfen beim Bilden von Formationen.",
     match: ["Eingefroren", "Frost", "Frostkarte", "Frostkarten"] },
-  frosttausch: { category: "frak", group: "ice", label: "Frosttausch", icon: "❄️", color: CLR.ice,
-    text: "Der kostenlose Tausch einer Frostkarte in der Aufstellungsphase — meißelt Formationen, ohne Energie zu kosten.",
-    match: ["Frosttausch", "Frosttausche"] },
-  schichten: { category: "frak", group: "ice", label: "Schichten", icon: "❖", color: CLR.ice,
-    text: `Eine Frostkarte sammelt Schichten (permanent, unverlierbar). Jeder Frost-Sieg zahlt Score aus ihren Schichten (dreieckig steigend, Plateau bei ${C.ICE_LAYER_SCORE_PLATEAU}), und jede Schicht gibt +${C.ICE_LAYER_VALUE} dauerhaften Kartenwert (bis ${C.ICE_LAYER_VALUE_CAP}). Eine tief geschichtete Frostkarte ist ein Pfeiler. Schichten über ${C.ICE_LAYER_MAX} (Überlauf) zahlen einen kleinen generischen Direkt-Score; die legendären Eis-Skills (Permafrost/Gletscher) machen daraus viel mehr.`,
-    match: ["Schichten", "Schicht", "Pfeiler"] },
-  bank: { category: "frak", group: "ice", label: "Ablagern", icon: "❄️", color: CLR.ice,
-    text: "Machst du einen kostenlosen Frosttausch nicht, lagert er stattdessen eine Schicht ab — so wachsen deine Karten auch ohne zu tauschen. Auch andere Eis-Skills banken Schichten auf Frostkarten.",
-    match: ["Ablagern", "ablagern", "abgelagert", "Ablage", "banken", "bankt", "gebankt", "gebankte"] },
-  eisanker: { category: "frak", group: "ice", label: "Eisanker", icon: "❄️", color: CLR.ice,
-    text: `Eine Frostkarte zählt allein auf ihrem Platz als Anker (×${de(C.EISANKER_FACTOR)} Score) und bekommt dabei sicher eine Schicht dazu — auch wenn keine echte Formation entsteht.`,
-    match: ["Eisanker"] },
 
   /* ============ 4 · Pflanze ============ */
   growth: { category: "frak", group: "plant", label: "Wachstum", icon: "🌿", color: CLR.plant,

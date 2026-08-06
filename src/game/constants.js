@@ -363,93 +363,16 @@ export const DAMASCUS_COMBAT       = envNum("SIM_DAMASCUS_COMBAT", 5);        //
    EIS-REWORK v0 — „Was du richtig stellst, erstarrt für immer und wächst." Gletscher: Architektur × Permanenz.
    Spine: SCHICHTEN je Frostkarte (permanent, unverlierbar). KEINE Konsumenten. Werte v0, cross-archetype Sim-Pass.
    ============================================================ */
-// Grundmechanik / Zugang
-export const ICE_BASE_FREEZE   = 2;    // erster Eis-Skill friert so viele eigene Karten ein
-export const FROST_GRIP_BONUS  = 2;    // Frostgriff: +2 eingefrorene Karten
-// Schichten (der Spine) — der PAYOFF-MOTOR (#269). Motor IMMER AN: jeder Frost-Sieg → +1 Schicht (nicht mehr
-// formations-gegated). Schicht→Score DREIECKIG und DIREKT (am Multiplikator-Stack/Joker VORBEI → der Payoff läuft durch
-// den gedeckelten Schicht-Pfad, nicht über formBaseMult → kein Ceiling-Runaway), plateaut bei P.
-export const ICE_WIN_LAYER     = envNum("SIM_ICE_WIN_LAYER", 1);      // Motor: JEDER Frost-Sieg lagert +1 Schicht ab [#269]
-export const ICE_ABLAGE_A_LAYER = 1;   // Formation-Bonus: Frost-Sieg in ≥1 Formation → +1 Schicht ZUSÄTZLICH (obendrauf) [#269]
-export const ICE_LAYER_SCORE_K = envNum("SIM_ICE_LAYER_SCORE_K", 26); // Schicht→Score dreieckig: je Frost-Sieg m(m+1)/2 × K (m = min(Schichten, Plateau)) [#269 · Haupt-Floor-Hebel; Ceiling läuft über ICE_JOKER_FORMSCORE_SHARE]
-export const ICE_LAYER_SCORE_PLATEAU = envNum("SIM_ICE_LAYER_SCORE_PLATEAU", 12); // Plateau P der dreieckigen Auszahlung (12-Schicht-Karte ≈ +2.340/Sieg) [#269]
-export const ICE_LAYER_VALUE   = 1;    // Schicht→Dauerwert: +1 je Schicht (damit Frostkarten weiter gewinnen) // v0 — tunebar
-export const ICE_LAYER_VALUE_CAP = envNum("SIM_ICE_LAYER_VALUE_CAP", 10); // Deckel wirksamer Schichten für den DAUERWERT [#269: ~10]
-export const ICE_LAYER_MAX     = 12;   // Plateau-Referenz für Legendär-Überlauf (Schichten über P) + Eisdruck-Deckel
-export const PERMAFROST_LAYER_BONUS = envNum("SIM_PERMAFROST_LAYER_BONUS", 2); // Permafrost (L): +Schichten je Ablage
-export const BESTAENDIGKEIT_LAYER = 1; // Beständigkeit: Sieg in Formation wie im Vordurchlauf → +1 Schicht
-export const KAELTERESERVE_LAYER = 1;  // Kältereserve: Frostkarte verliert → +1 Schicht (bankt)           // v0
-// Eisblüte (#269 REWORK): gefrorene Nachbarn einer ≥2-Formations-Siegkarte banken einen prozentualen ANTEIL ihrer
-// Schichten (permanent, skaliert mit Tiefe) — statt fix +1.
-export const EISBLUETE_SHARE   = envNum("SIM_EISBLUETE_SHARE", 0.25); // Anteil der Siegkarten-Schichten (min 1) je gefrorenem Nachbarn [#269]
-// Verschränkung (#269 REWORK → V-B „Tiefen-Leihe"): je Frost-Sieg zahlt ein Anteil der TIEFSTEN ANDEREN Frostkarte mit
-// (Score, keine neue Schicht) → gebankte tiefe Pfeiler scoren bei jedem Frost-Sieg mit.
-export const VERSCHRAENKUNG_SHARE = envNum("SIM_VERSCHRAENKUNG_SHARE", 0.5); // Anteil der Schichten der tiefsten ANDEREN Frostkarte → Score (× K je geliehener Schicht) [#269]
-// Kaltfront (#269 REWORK → „Kälteleitung"): direkte NICHT-gefrorene Nachbarn einer Frostkarte werden temporär vereist
-// und bekommen einen Anteil von Schicht-Score UND +Dauerwert der Frostkarte — solange sie daneben liegen (per Durchlauf
-// aus playerOrder, KEINE permanenten Schichten). Belohnt Clustering neben schwache Karten.
-export const KALTFRONT_SHARE   = envNum("SIM_KALTFRONT_SHARE", 0.5); // Anteil (Schicht-Score + Dauerwert) für konduzierte Nachbarn [#269]
-// Ablage B (Bank) — ungenutzte Frosttausche (Basis-Mechanik, bleibt)
-export const ICE_UNUSED_SWAP_LAYER = 1;// ungenutzter Frosttausch → +1 Schicht                            // v0
-// Schicht-Schwellen
-export const EISDRUCK_STEP     = envNum("SIM_EISDRUCK_STEP", 0.05); // Eisdruck: +% Formationsfaktor je Schicht der Siegkarte [Sim-tunebar]
-// Kristalline Masse (#269 REWORK): SKALIERENDE Schwelle — je KRISTALLINE_STEP Σ-Schichten (über alle Frostkarten) alle
-// Frostkarten +1 Wert (wiederholend, gedeckelt), statt einmalig +2 ab fester Schwelle.
-export const KRISTALLINE_STEP  = envNum("SIM_KRISTALLINE_STEP", 10); // je so viele Σ-Schichten +1 Wert [#269]
-export const KRISTALLINE_MAX_VALUE = envNum("SIM_KRISTALLINE_MAX_VALUE", 8); // Deckel des Kristalline-Wertbonus [#269]
-// Formations-Interface / Anker
-export const CRYSTAL_OFFSET    = envNum("SIM_CRYSTAL_OFFSET", 1);    // Kristallform: ±N Wert-Flex (Joker) [Sim-tunebar] // v0
-export const EISANKER_FACTOR   = 1.25; // Eisanker: Frostkarte als Anker ×1,25 (+ garantierte Schicht)      // v0
-export const STILLSTAND_PER_LAYER = envNum("SIM_STILLSTAND_PER_LAYER", 40); // Stillstand (#269 RETUNE): Frost-Formations-Sieg → +Score ∝ Schichten der Karte (belohnt tiefe Pfeiler in Formation) statt flach +200
-// Legendäre (Gletscher / Vergletscherung / Architekt)
-export const VERGLETSCHERUNG_COUNT     = 2; // Vergletscherung: so viele Gegnerkarten je Frost-Sieg          // v0
-export const VERGLETSCHERUNG_PER_LAYER = 1; // … −Wert je Schicht der Siegkarte (min 1)                      // v0 — tunebar
-export const ARCHITEKT_STEP    = envNum("SIM_ARCHITEKT_STEP", 0.85); // Architekt (L): +% je zusätzlicher Frostkarte in derselben Spalte (pos%5) [Legendär-Angleich: 0,55→0,85 — Trap-Pick heben (triggert im Greedy selten)]
-// ── Legendär-Reshape (2026-07-30): Tiefe über die Legendären wiederbeleben. Die ÜBERLAUF-Tiefe (Schichten über
-//    ICE_LAYER_MAX) ist generisch verschwendet (~58 von 70/Karte). Gletscher/Permafrost verwandeln sie in DIREKTEN,
-//    post-stack, HART gedeckelten Score (Damaststahl-Lektion: permanente Akkumulation über 60 Runden = Plateau, kein
-//    Wachstum). Nur Legendär-Halter → generisches Eis (Deckel 12, #1-Floor) bleibt unberührt. Bekenntnis-skaliert (cross-health).
-export const GLETSCHER_DIRECT        = envNum("SIM_GLETSCHER_DIRECT", 68);       // Gletscher: Score je DREIECKS-Einheit m(m+1)/2 der Tiefe des TIEFSTEN Pfeilers (superlinear, Konzentration), je Frost-Sieg [Sweep: →1,32×]
-export const GLETSCHER_OVERFLOW_CAP  = envNum("SIM_GLETSCHER_OVERFLOW_CAP", 20); // … gedeckelte Pfeiler-Tiefe (Plateau — tieferer Pfeiler zahlt superlinear mehr, dann flach → kein Runaway)
-export const PERMAFROST_DIRECT       = envNum("SIM_PERMAFROST_DIRECT", 185);     // Permafrost: Score je Überlauf-Schicht — SUMME über alle Frostkarten (Breite — viele banken), je Frost-Sieg [Legendär-Angleich: 270→185 — Spitze kappen]
-export const PERMAFROST_OVERFLOW_CAP = envNum("SIM_PERMAFROST_OVERFLOW_CAP", 60);// … gedeckelte Gesamt-Überlauf-Summe (Plateau)
-// #270 generische Eis-Überlauf-Dividende: JEDES Eis-Deck (ohne Legendär) bekommt einen KLEINEN Direkt-Score aus dem
-// Überlauf (Breite: Σ Überlauf über alle Frostkarten), je Frost-Sieg — analog Weißglut bei Feuer, damit Weiterfrosten
-// über 12 nie tot ist. Permafrost/Gletscher setzen additiv oben drauf (bleiben die großen Verstärker). [Sim-tunebar]
-export const ICE_OVERFLOW_DIRECT     = envNum("SIM_ICE_OVERFLOW_DIRECT", 20);    // generisch: Score je Überlauf-Schicht (Σ Breite) — klein vs. Permafrost (270) [Sim-Konfig L1: Floor +6 %, Spread 1,17× = Baseline]
-export const ICE_OVERFLOW_CAP        = envNum("SIM_ICE_OVERFLOW_CAP", 40);       // … gedeckelte Gesamt-Überlauf-Summe (Plateau, kein Runaway)
-// ── Eiskalt / Frostschlag / Überlauf-Motoren (2026-08: die 4 kaum genutzten Frosttausch-Skills umgewidmet). Überlauf
-//    (Schichten über ICE_LAYER_MAX) wird jetzt AKTIV VERBRAUCHT statt nur passiv ausgezahlt: Eiskalt wandelt den globalen
-//    Überlauf-Vorrat je Frost-Sieg in Crit-Chance (gezielt auf die Frost-Siegkarte) und BRENNT ihn dabei ab. Frostschlag
-//    lässt einen Frost-Sieg-Crit auch den Eis-DIREKT-Score (layerScore + Dividende) dieses Stichs multiplizieren — sonst
-//    trifft der Crit nur die schwache 400er-Basis. Die zwei Motoren füttern den Vorrat (Tiefe/Breite). Alle sim-tunebar.
-export const EISKALT_CRIT_PER   = envNum("SIM_EISKALT_CRIT_PER", 0.05);  // Crit-Chance je Überlauf-Schicht im globalen Vorrat (skaliert mit „wie viel man hat")
-export const EISKALT_CRIT_CAP   = envNum("SIM_EISKALT_CRIT_CAP", 0.60);  // Deckel der Eiskalt-Crit-Chance je Frost-Sieg (verhindert Auto-100 %)
-export const EISKALT_SPEND      = envNum("SIM_EISKALT_SPEND", 4);        // MINDEST-Verbrauch (Boden) je Frost-Sieg, falls der %-Anteil kleiner ist
-export const EISKALT_SPEND_FRAC = envNum("SIM_EISKALT_SPEND_FRAC", 0.25);// HAUPT-Hebel: %-Anteil des Vorrats, der je Frost-Sieg verbrannt wird → hält den Vorrat gebändigt (echte Konkurrenz zur Dividende)
-export const FROSTSCHLAG_DIRECT_MULT = envNum("SIM_FROSTSCHLAG_DIRECT_MULT", 0.60); // Frost-Sieg-Crit hebt den iceDirect dieses Stichs um +60 % (nur mit Frostschlag)
-export const UEBERLAUF_MOTOR_DEPTH   = envNum("SIM_UEBERLAUF_MOTOR_DEPTH", 1);   // Tiefen-Motor (Verzahnung umgewidmet): Frost-Sieg einer Karte ≥ Plateau lagert +1 extra Schicht ab (vertieft Pfeiler → Vorrat)
-// Frostkaskade (Verdichtung umgewidmet → Crit-Momentum): crittet eine Frostkarte, trägt sie einen Anteil ihrer Crit-Chance
-// auf den nächsten Frost-Sieg (Kette). Steht die Chance schon bei 100 % (Eiskalt-Flut), fängt der Überschuss als Crit-Mult
-// auf, statt verloren zu gehen — analog Blitz' Überschlag. Kein Generator (Überlauf flutet ohnehin). Alle sim-tunebar.
-export const FLAECHE_CARRY_SHARE     = envNum("SIM_FLAECHE_CARRY_SHARE", 0.5);   // Anteil der Crit-Chance eines Frost-Crits, der auf den nächsten Frost-Sieg wandert
-export const FLAECHE_EXCESS_TO_MULT  = envNum("SIM_FLAECHE_EXCESS_TO_MULT", 0.5);// Crit-Chance-Überschuss über 100 % → +Crit-Multiplikator (je volle 100 % Überschuss)
-export const VERGLETSCHERUNG_DIRECT  = envNum("SIM_VERGLETSCHERUNG_DIRECT", 130);// Vergletscherung: Bonus-Score je Punkt GESAMTER aktiver Gegner-Vergletscherung (Σ frostbiteActive), je Frost-Sieg [Sweep: →1,29×]
-export const VERGLETSCHERUNG_DEBUFF_CAP = envNum("SIM_VERGLETSCHERUNG_DEBUFF_CAP", 60); // … gedeckelte Debuff-Summe (Plateau)
-// Eis-Ceiling-Hebel (2026-07-30): Eis' Ceiling (p90 ~2,4× Feld) ist ZU 100 % `formBaseMult` — dichte Formations-
-// Überlappung (Kristallform-Joker + Frostbrücke) treibt den Frost-Sieg-formBase auf 4-6 (Autopsie Top5% 4,39 vs
-// Median 2,32; formStat/iceForm/streak/crit alle flach). Weicher Deckel NUR für Frostkarten, NUR ÜBER der Schwelle:
-// Median (formBase < Schwelle) und generisches Nicht-Eis bleiben unberührt → Floor gehalten, nur die Spitze glatt.
-// Sweep (60c, N=250): Floor & Ceiling teilen sich dieselbe Formations-Engine → ein Ceiling-Schnitt kostet Floor.
-// User-Ziel: Eis auf das Niveau der anderen bringen, nur ein klein wenig darüber. 2,0/0,3 landet Eis-Floor 4,17M
-// (Pflanze 4,01M +4 %, klar aber knapp #1), Ceiling p90 12,4M→7,98M (Spread 2,39×→1,54×), Winrates unverändert.
-export const ICE_FORMBASE_SOFTCAP = envNum("SIM_ICE_FORMBASE_SOFTCAP", 1.5);  // Schwelle: ab hier greifen Diminishing Returns (0 = aus) [#269: 2,0→1,5 — Joker-Score weicher, da der Payoff jetzt direkt läuft]
-export const ICE_FORMBASE_SLOPE   = envNum("SIM_ICE_FORMBASE_SLOPE", 0.2);    // Anteil des Überschusses über der Schwelle, der noch zählt [#269: 0,3→0,2]
-// Joker-Formations-Score-Anteil (#269 Option 1): Formationen, die eine Frostkarte tragen und wo der Build Kristallform/
-// Frostbrücke hält, zählen VOLL für den Schicht-Motor, aber nur zu diesem Anteil für den Formations-SCORE (formBaseMult).
-// So füttern die Joker den Schicht-Payoff, ohne den Score-Ceiling zu treiben. 1 = wie früher, 0 = Joker gibt gar keinen
-// Score-Mult. Der zentrale Ceiling-Hebel für Eis. [#269 · Sim-tunebar]
-export const ICE_JOKER_FORMSCORE_SHARE = envNum("SIM_ICE_JOKER_FORMSCORE_SHARE", 0.3);
+// HINWEIS: Der alte Schicht-/Frost-Spine (ICE_BASE_FREEZE, ICE_LAYER_*, KRISTALLINE_*, EISKALT_*, GLETSCHER_*,
+// PERMAFROST_*, VERGLETSCHERUNG_*, ARCHITEKT_STEP, EISBLUETE/STILLSTAND/EISDRUCK/… ) wurde entfernt — der Eis-Archetyp
+// läuft jetzt über glacier.js (Masse/Rollen). Es bleiben nur die noch aktiv gelesenen Konstanten:
+export const ICE_LAYER_MAX     = 12;   // Überlauf-Referenz (Glossar „Überlauf": Schichten/Wachstum/Hitze über dem Nutzen)
+export const ICE_UNUSED_SWAP_LAYER = 1;// ungenutzter Aufstellungs-Tausch → +1 (Reducer CONFIRM_FORMATION-Banking)
+// Formations-Wildcards (Kristallform-Joker/Frostbrücke, in formations.js gelesen) + deren weicher Score-Deckel (engine.js).
+export const CRYSTAL_OFFSET    = envNum("SIM_CRYSTAL_OFFSET", 1);    // Kristallform: ±N Wert-Flex (Joker) [Sim-tunebar]
+export const ICE_FORMBASE_SOFTCAP = envNum("SIM_ICE_FORMBASE_SOFTCAP", 1.5);  // weicher Deckel des Frost-Formations-formBase (nur über der Schwelle)
+export const ICE_FORMBASE_SLOPE   = envNum("SIM_ICE_FORMBASE_SLOPE", 0.2);    // Anteil des Überschusses über der Schwelle, der noch zählt
+export const ICE_JOKER_FORMSCORE_SHARE = envNum("SIM_ICE_JOKER_FORMSCORE_SHARE", 0.3); // Joker-Formationen: voller Schicht-Motor, gedämpfter Formations-SCORE
 
 /* ============================================================
    PFLANZE-FRAKTION v0 — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend) →
