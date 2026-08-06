@@ -9,7 +9,7 @@ import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
 import { hasGletscher, plantRootScore, hasPfahlwurzel } from "../game/skills.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
-import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus, boardFactorMap } from "../game/architect.js";
+import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus, structureFactorMap, districtFactorMap } from "../game/architect.js";
 import FormIcon from "./FormIcon.jsx";
 import { architectEffectStrings } from "./archEffects.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
@@ -81,11 +81,18 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
     }
     return cover;
   }, [hasArch, state.architect, playerOrder, deck, archBuildings]);
-  // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) → goldener Schimmer-Rahmen wie im Architekt-Screen.
+  // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) → rote Fläche · Distrikt (gleiche Kategorie aneinander) →
+  // Typ-Farb-Glow. Getrennte Quellen (wie im Architekt-Screen), damit beide Boni auf einen Blick unterscheidbar sind.
   const structLitPos = useMemo(() => {
     if (!hasArch) return null;
     const set = new Set();
-    boardFactorMap(archBuildings).forEach((f, pos) => { if (f > 1) set.add(pos); });
+    structureFactorMap(archOccupied(archBuildings)).forEach((f, pos) => { if (f > 1) set.add(pos); });
+    return set;
+  }, [hasArch, archBuildings]);
+  const distrLitPos = useMemo(() => {
+    if (!hasArch) return null;
+    const set = new Set();
+    districtFactorMap(archBuildings).forEach((f, pos) => { if (f > 1) set.add(pos); });
     return set;
   }, [hasArch, archBuildings]);
 
@@ -125,6 +132,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
               openSegments={openSegmentInfo(state.familyTiers)}
               architectCover={hasArch && showArch ? architectCover : null}
               structPos={hasArch && showArch ? structLitPos : null}
+              distrPos={hasArch && showArch ? distrLitPos : null}
               glowBid={hasArch && showArch ? inspectBid : null}
               selectedPos={selPos} onTilePick={(pos) => { const ns = selPos === pos ? null : pos; setSelPos(ns); setInspectBid(ns != null && architectCover ? (architectCover[ns]?.bid ?? null) : null); }} />
           </div>

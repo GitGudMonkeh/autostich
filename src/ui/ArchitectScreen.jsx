@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import {
   familyDef, shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
-  occupiedCells, precomputeArchitect, architectValueBonus, boardFactorMap,
+  occupiedCells, precomputeArchitect, architectValueBonus, boardFactorMap, structureFactorMap, districtFactorMap,
   rowOf, colOf, posOf, ROWS, COLS, N_POS, tierNum, tierFactor, upgradeInfo, bindSpanFor,
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../game/architect.js";
@@ -132,6 +132,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const effArch = useMemo(() => ({ ...architect, buildings }), [architect, buildings]);
   const pre = useMemo(() => (cards.length ? precomputeArchitect(effArch, order, deck) : null), [effArch, order, deck, cards.length]);
   const structF = useMemo(() => boardFactorMap(buildings), [buildings]); // #283: Struktur × Distrikt (gleiche Quelle wie die Engine)
+  // #UI: Kombi-Anzeige getrennt — Struktur (volle Zeile/Spalte/Diagonale) → rote Fläche · Distrikt (gleiche Kategorie
+  // aneinander) → Typ-Farb-Glow. Gleiche Quellen wie die Engine, nur einzeln statt kombiniert.
+  const comboF    = useMemo(() => structureFactorMap(occupiedCells(buildings)), [buildings]);
+  const districtF = useMemo(() => districtFactorMap(buildings), [buildings]);
   const alliance = useMemo(() => allianceGroups(state.familyTiers, state.roles), [state.familyTiers, state.roles]); // #289: Farb-Match grün-/allianz-bewusst
   // Struktur-Kombi-Bonus als Summe (#UI): Σ der Extra-Faktoren über alle Karten auf fertigen Strukturen
   // (Zeile/Spalte/Diagonale, multiplikativ gestapelt) → Gesamt-Punkte-Bonus in Prozent. Nicht beteiligte Zellen
@@ -457,7 +461,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     return { dVal: val2 - sumValue, dForm: form2 - formCount, valid: dragPrev.valid };
   }, [dragPrev]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const structLit = (pos) => (structF[pos] || 1) > 1;
+  const comboLit  = (pos) => (comboF[pos] || 1) > 1;    // #UI: Struktur-Kombi (Zeile/Spalte/Diagonale) → rote Fläche
+  const distrLit  = (pos) => (districtF[pos] || 1) > 1; // #UI: Distrikt (gleiche Kategorie aneinander) → Typ-Farb-Glow
   // #262: Eine Form ist nur drehbar, wenn sie mehr als eine distinkte Lage hat. `zeile` (Legendäre) sowie `single`/`block2x2`
   // stehen in NO_ROTATE (architect.js) → shapeRotations liefert genau eine Lage → „⟳ Drehen" wäre wirkungslos.
   const rotatableForm = (form) => shapeRotations(form).length > 1;
@@ -568,7 +573,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const isDragOrig = draggingId != null && b && b.id === draggingId;
                 return (
                   <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
-                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}`}
+                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}${showCombos && !dragPrev && b && comboLit(pos) ? " arch-struct-lit" : ""}`}
                     style={{
                       // #UI: Gebäude-Füllung/-Rand einheitlich (Typ-Farbe raus); die Stufe/Rarität zeigt der Ring (boxShadow) unten.
                       // #UI: Origin-Zellen des gezogenen Gebäudes zeigen sich als LEERES Feld (Gebäude „aufgehoben"); die
@@ -596,10 +601,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       cursor: "pointer",
                     }}
                     title={title}>
-                    {/* #UI: Kombi-Fläche — Zellen auf fertiger Struktur bekommen eine leicht transparente rote Fläche (Toggle „Kombis"). */}
-                    {showCombos && !dragPrev && structLit(pos) && b && (() => {
-                      const glow = CAT[fam?.category]?.color || "#d1462f"; // Kombi/Distrikt-Bonus → Rahmen glüht in Typ-Farbe (gleiche Typen glühen einheitlich)
-                      return <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ boxShadow: `0 0 10px 1px ${glow}aa, inset 0 0 6px ${glow}55, inset 0 0 0 1px ${glow}` }} />;
+                    {/* #UI: Struktur-Kombi (volle Zeile/Spalte/Diagonale) → rote Fläche via `arch-struct-lit` (Klasse oben,
+                        identisch zum Aufstellboard). Distrikt-Bonus (gleiche Kategorie aneinander) → Rahmen glüht in Typ-Farbe. */}
+                    {showCombos && !dragPrev && distrLit(pos) && b && (() => {
+                      const glow = CAT[fam?.category]?.color || "#5a8ade"; // Distrikt → Typ-Farb-Glow (etwas kräftiger)
+                      return <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ boxShadow: `0 0 16px 2px ${glow}cc, inset 0 0 9px ${glow}66, inset 0 0 0 1px ${glow}` }} />;
                     })()}
                     {/* #UI: gesperrte Fläche beim Ziehen — Diagonal-Schraffur + Rim, damit „hier nicht ablegbar" klar heraussticht. */}
                     {isBlocked && (
