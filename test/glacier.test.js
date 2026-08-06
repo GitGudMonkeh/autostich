@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   neighbors4, tierOf, dropAfterBreak, overflowOf, precomputeGlacier, ewigerFrostTick,
-  THRESHOLDS, TOP, EWIGER_FROST,
+  THRESHOLDS, TOP, EWIGER_FROST, RESET_TO,
 } from "../src/game/glacier.js";
 import { N_POS, posOf } from "../src/game/architect.js";
 
@@ -51,11 +51,11 @@ describe("precomputeGlacier — Snapshot", () => {
     expect(resetMass[10]).toBe(3);
   });
 
-  it("ab Schwelle: bricht, zahlt aus, fällt eine Stufe runter", () => {
-    const { payout, resetMass, breaks } = precomputeGlacier(withMass([[10, 8]]), lockedSet(10));
+  it("ab Berst-Schwelle: bricht, zahlt aus, kalbt zurück auf RESET_TO", () => {
+    const { payout, resetMass, breaks } = precomputeGlacier(withMass([[10, 12]]), lockedSet(10));
     expect(breaks).toHaveLength(1);
     expect(payout[10]).toBeGreaterThan(0);
-    expect(resetMass[10]).toBe(dropAfterBreak(tierOf(8))); // 8er (Stufe 2) → 4
+    expect(resetMass[10]).toBe(RESET_TO); // abgekalbt (baut wieder von unten auf)
   });
 
   it("nicht-gefrorene Felder brechen nie, auch mit Masse", () => {
@@ -65,40 +65,40 @@ describe("precomputeGlacier — Snapshot", () => {
   });
 
   it("Kaskade: mehr Gletscher-Nachbarn → größerer Burst (gleiche Masse)", () => {
-    // isoliertes Feld vs. Feld mit einem Gletscher-Nachbarn, beide Masse 8
-    const solo = precomputeGlacier(withMass([[posOf(0, 0), 8]]), lockedSet(posOf(0, 0)));
+    // isoliertes Feld vs. Feld mit einem Gletscher-Nachbarn, beide reif (Masse 12)
+    const solo = precomputeGlacier(withMass([[posOf(0, 0), 12]]), lockedSet(posOf(0, 0)));
     const paired = precomputeGlacier(
-      withMass([[posOf(0, 0), 8], [posOf(0, 1), 8]]),
+      withMass([[posOf(0, 0), 12], [posOf(0, 1), 12]]),
       lockedSet(posOf(0, 0), posOf(0, 1)));
     expect(paired.payout[posOf(0, 0)]).toBeGreaterThan(solo.payout[posOf(0, 0)]);
   });
 
-  it("höhere Stufe → überlinear mehr Burst pro Masse-Einheit", () => {
-    const t1 = precomputeGlacier(withMass([[10, 4]]), lockedSet(10)); // Stufe 1
-    const t2 = precomputeGlacier(withMass([[10, 8]]), lockedSet(10)); // Stufe 2
-    const per1 = t1.payout[10] / 4;
-    const per2 = t2.payout[10] / 8;
-    expect(per2).toBeGreaterThan(per1); // Anhäufen lohnt sich
+  it("hält unter der Berst-Schwelle, bricht erst ab ihr (selten + gewaltig)", () => {
+    const below = precomputeGlacier(withMass([[10, 11]]), lockedSet(10));
+    const at = precomputeGlacier(withMass([[10, 12]]), lockedSet(10));
+    expect(below.breaks).toHaveLength(0);          // Masse 11 < 12: hält & wächst weiter
+    expect(at.breaks).toHaveLength(1);             // Masse 12: bricht
+    expect(at.payout[10]).toBeGreaterThan(0);
   });
 
-  it("Überlauf: Masse über der höchsten Stufe fließt als Payout, Reset bleibt gedeckelt", () => {
+  it("Überlauf: Masse über der höchsten Stufe fließt als Payout, danach abgekalbt", () => {
     const { payout, resetMass } = precomputeGlacier(withMass([[10, TOP + 6]]), lockedSet(10));
     expect(payout[10]).toBeGreaterThanOrEqual(6);        // mind. der Überlauf
-    expect(resetMass[10]).toBe(dropAfterBreak(3));        // Stufe 3 bricht → 8, nicht 18
+    expect(resetMass[10]).toBe(RESET_TO);                // abgekalbt, nicht 18
   });
 
   it("Immutabilität: Eingabe-Array wird nicht mutiert", () => {
-    const m = withMass([[10, 8]]);
+    const m = withMass([[10, 12]]);
     const snapshot = m.slice();
     precomputeGlacier(m, lockedSet(10));
     expect(m).toEqual(snapshot);
   });
 
-  it("opts überschreiben Tuning (Rissbildung: erste Schwelle runter → bricht früher)", () => {
-    const base = precomputeGlacier(withMass([[10, 2]]), lockedSet(10));
-    const riss = precomputeGlacier(withMass([[10, 2]]), lockedSet(10), { thresholds: [2, 8, 12] });
-    expect(base.breaks).toHaveLength(0);   // Masse 2 < 4: kein Bruch
-    expect(riss.breaks).toHaveLength(1);   // mit gesenkter Schwelle: bricht
+  it("opts überschreiben Tuning (Rissbildung: senkt die Berst-Schwelle → bricht früher)", () => {
+    const base = precomputeGlacier(withMass([[10, 6]]), lockedSet(10));
+    const riss = precomputeGlacier(withMass([[10, 6]]), lockedSet(10), { burstAt: 6 });
+    expect(base.breaks).toHaveLength(0);   // Masse 6 < 12: hält
+    expect(riss.breaks).toHaveLength(1);   // mit gesenkter Berst-Schwelle: bricht früh
   });
 });
 

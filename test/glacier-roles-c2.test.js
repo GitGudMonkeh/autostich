@@ -12,7 +12,7 @@ const set = (...ps) => new Set(ps);
 
 describe("Kettenbruch — Bruch reißt Nachbarn mit", () => {
   it("ein brechender Gletscher zwingt einen angrenzenden Unter-Schwelle-Gletscher mitzubrechen", () => {
-    const mass = withMass([[0, 8], [1, 2]]);          // pos0 bricht (Stufe 2), pos1 (Masse 2) läge unter der Schwelle
+    const mass = withMass([[0, 12], [1, 2]]);          // pos0 bricht (Stufe 2), pos1 (Masse 2) läge unter der Schwelle
     const base = precomputeGlacier(mass, set(0, 1));
     const kette = precomputeGlacier(mass, set(0, 1), glacierOpts([ROLES.KETTENBRUCH]));
     expect(base.payout[1]).toBe(0);                    // allein bricht pos1 nicht
@@ -23,21 +23,21 @@ describe("Kettenbruch — Bruch reißt Nachbarn mit", () => {
 
 describe("Gletschersturz — je mehr brechen, desto stärker jeder Bruch", () => {
   it("zwei gleichzeitig brechende Gletscher verstärken sich mit Gletschersturz", () => {
-    const mass = withMass([[0, 8], [1, 8]]);
+    const mass = withMass([[0, 12], [1, 12]]);
     const base = precomputeGlacier(mass, set(0, 1));
     const sturz = precomputeGlacier(mass, set(0, 1), glacierOpts([ROLES.GLETSCHERSTURZ]));
     expect(sturz.payout[0]).toBeGreaterThan(base.payout[0]);
   });
   it("mehr gleichzeitige Brüche → stärkere Amp (3 vs 1)", () => {
-    const one = precomputeGlacier(withMass([[0, 8]]), set(0), glacierOpts([ROLES.GLETSCHERSTURZ]));
-    const three = precomputeGlacier(withMass([[0, 8], [1, 8], [2, 8]]), set(0, 1, 2), glacierOpts([ROLES.GLETSCHERSTURZ]));
+    const one = precomputeGlacier(withMass([[0, 12]]), set(0), glacierOpts([ROLES.GLETSCHERSTURZ]));
+    const three = precomputeGlacier(withMass([[0, 12], [1, 12], [2, 12]]), set(0, 1, 2), glacierOpts([ROLES.GLETSCHERSTURZ]));
     expect(three.payout[0] / 8).toBeGreaterThan(one.payout[0] / 8); // pro Masse-Einheit stärker
   });
 });
 
 describe("Eisbrücke — Diagonalen zählen für die Kaskade", () => {
   it("diagonal benachbarte Gletscher verstärken den Burst nur mit Eisbrücke", () => {
-    const mass = withMass([[0, 8], [posOf(1, 1), 8]]);  // pos0 und pos(1,1) diagonal
+    const mass = withMass([[0, 12], [posOf(1, 1), 12]]);  // pos0 und pos(1,1) diagonal
     const base = precomputeGlacier(mass, set(0, posOf(1, 1)));
     const bridge = precomputeGlacier(mass, set(0, posOf(1, 1)), glacierOpts([ROLES.EISBRUECKE]));
     expect(bridge.payout[0]).toBeGreaterThan(base.payout[0]); // Diagonale zählt → Kaskade greift
@@ -54,7 +54,7 @@ describe("Engine-Verdrahtung — glacierOpts erreicht precompute", () => {
   it("Kettenbruch über glacierRoles: der erzwungene Nachbar zahlt an seinem Stich aus", () => {
     let s = {
       ...initialState(makeRng(1)), deck: flat(), oppDeck: oppOf(1), playerOrder: identity(), oppOrder: identity(),
-      activeArchetypes: ["glacier"], glacierMass: withMass([[0, 8], [1, 2]]), glacierLocked: lockAt(0, 1), glacierRoles: [ROLES.KETTENBRUCH],
+      activeArchetypes: ["glacier"], glacierMass: withMass([[0, 12], [1, 2]]), glacierLocked: lockAt(0, 1), glacierRoles: [ROLES.KETTENBRUCH],
     };
     s = resolveTrick(s, noCrit); // pos0 bricht
     s = resolveTrick(s, noCrit); // pos1 — erzwungener Bruch

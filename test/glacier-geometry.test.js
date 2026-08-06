@@ -45,7 +45,7 @@ describe("Engine — Eiswall verstärkt die Linie", () => {
   const oppOf = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: v, value: v }));
   const zeros = () => new Array(40).fill(0);
   const noCrit = () => 0.99;
-  const rowMass = () => { const m = zeros(); for (const p of [0, 1, 2, 3, 4]) m[p] = 8; return m; };
+  const rowMass = () => { const m = zeros(); for (const p of [0, 1, 2, 3, 4]) m[p] = 12; return m; };
   const scen = (over) => ({
     ...initialState(makeRng(1)), deck: flat(), oppDeck: oppOf(1), playerOrder: identity(), oppOrder: identity(),
     activeArchetypes: ["glacier"], glacierMass: rowMass(), glacierLocked: lockAt(0, 1, 2, 3, 4), glacierRoles: [], ...over,

@@ -22,11 +22,11 @@ const scen = (over = {}) => ({
 
 describe("Einfrieren — Markierung beim Bruch", () => {
   it("ein brechender Gletscher friert die an seiner Position getroffene Gegnerkarte ein (pending)", () => {
-    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 8]]), glacierRoles: [ROLES.EINFRIEREN] }), noCrit);
+    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 12]]), glacierRoles: [ROLES.EINFRIEREN] }), noCrit);
     expect(s.frozenOppPending["O0"]).toBe(true); // oCard an pos0 = O0
   });
   it("ohne Einfrieren wird nicht markiert", () => {
-    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 8]]) }), noCrit);
+    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 12]]) }), noCrit);
     expect(s.frozenOppPending["O0"]).toBeUndefined();
   });
   it("ein Gletscher, der NICHT bricht, friert nichts ein", () => {

@@ -29,7 +29,7 @@ describe("Ewiges Schild — das ganze Feld als ein Übergletscher", () => {
   });
   it("Kaskade rechnet mit der vollen Feldgröße (auch bei nicht benachbarten Gletschern)", () => {
     // zwei WEIT getrennte Gletscher, gleiche Masse — ohne Schild kein Kaskade-Bonus, mit Schild schon.
-    const mass = withMass([[0, 8], [posOf(7, 4), 8]]);
+    const mass = withMass([[0, 12], [posOf(7, 4), 12]]);
     const locked = set(0, posOf(7, 4));
     const base = precomputeGlacier(mass, locked);
     const schild = precomputeGlacier(mass, locked, glacierOpts([ROLES.L_SCHILD]));
@@ -49,7 +49,7 @@ describe("Engine-Verdrahtung (L1)", () => {
     activeArchetypes: ["glacier"], glacierMass: zeros(), glacierLocked: falses(), glacierRoles: [], ...over,
   });
   it("Ewiges Schild poolt im Snapshot: ein leerer Gletscher neben einem vollen bricht", () => {
-    const glacierLocked = lockAt(0, posOf(7, 4)); const glacierMass = withMass([[posOf(7, 4), 12]]); // pos0 leer, weit weg voll
+    const glacierLocked = lockAt(0, posOf(7, 4)); const glacierMass = withMass([[posOf(7, 4), 24]]); // pos0 leer, weit weg voll → Pool-Schnitt 12
     const base = resolveTrick(scen({ glacierLocked, glacierMass }), noCrit);
     const schild = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.L_SCHILD] }), noCrit);
     expect(base.lastTrick.breakdown?.glacierDirect ?? 0).toBe(0);        // pos0 leer → kein Bruch

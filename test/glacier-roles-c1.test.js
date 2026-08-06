@@ -48,7 +48,7 @@ describe("Verschmelzen — auf Cluster-Durchschnitt heben (nie fallend)", () => 
     expect(out[1]).toBe(8); // nie fallend
   });
   it("Engine: gepoolter Nachbar bricht, der sonst unter der Schwelle bliebe", () => {
-    const glacierLocked = lockAt(0, 1); const glacierMass = withMass([[1, 8]]); // pos0=0, pos1=8
+    const glacierLocked = lockAt(0, 1); const glacierMass = withMass([[1, 24]]); // pos0=0, pos1=24 → Pool-Schnitt 12
     const base = resolveTrick(scen({ glacierLocked, glacierMass }), noCrit);
     const versch = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.VERSCHMELZEN] }), noCrit);
     expect(base.lastTrick.breakdown?.glacierDirect ?? 0).toBe(0);           // pos0 Masse 0 → kein Bruch

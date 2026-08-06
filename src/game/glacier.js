@@ -23,6 +23,11 @@ export const EWIGER_FROST = 1;                 // Fraktions-Passiv: bedingungslo
 export const WIN_MASS = 1;                     // Baseline: Sieg eines Gletschers → +Masse (docs §2.2)
 export const GLETSCHERSTURZ_PER = 0.05;        // Gletschersturz: +5 % je gleichzeitig brechendem Gletscher (Amp)
 export const TOP = THRESHOLDS[THRESHOLDS.length - 1]; // höchste Stufe (Überlauf-Grenze)
+// Berst-Kadenz (docs §2.3, „einzelne massive Hits"): ein Gletscher HÄLT & wächst, bis er die höchste Schwelle erreicht,
+// dann bricht er gewaltig (volle Stufe) und kalbt zurück. Selten + eskalierend statt häufig+klein.
+export const BURST_AT = TOP;                    // natürliche Berst-Schwelle = höchste Stufe (12)
+export const RESET_TO = 0;                      // nach dem Bruch abgekalbt → baut wieder von unten auf
+export const RISSBILDUNG_BURST = 6;            // Rissbildung: bricht schon bei niedriger Masse (Tempo-Gegenpol, kleine häufige Brüche)
 
 /* ---- Geometrie: 4 orthogonale Nachbarn (links/rechts/oben/unten) auf dem 8×5-Brett ---------------- */
 export function neighbors4(p) {
@@ -66,9 +71,9 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   const formFactor = opts.formFactor || null;           // 2D-Geometrie-Formationen: Burst-Faktor je Feld (docs §9)
   const grosseLawine = !!opts.grosseLawine;             // Legendär: ALLES bricht (Schwellen ignoriert)
   const ewigesSchild = !!opts.ewigesSchild;             // Legendär: das ganze Feld gilt als EIN Übergletscher (Kaskade = volle Feldgröße)
+  const burstAt = opts.burstAt ?? BURST_AT;             // natürliche Berst-Schwelle (Rissbildung senkt sie)
   const tOf = (m) => { let t = 0; for (const th of thresholds) if (m >= th) t++; return t; };
   const top = thresholds[thresholds.length - 1];
-  const dropTo = (t) => (t >= 2 ? thresholds[t - 2] : 0); // Teil-Reset: eine Stufe runter
 
   const payout = new Array(N_POS).fill(0);
   const resetMass = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
@@ -86,11 +91,12 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     natTier[p] = tOf(mCap[p]);
   }
 
-  // Breaker bestimmen: natürliche (Stufe ≥ 1) + Große Lawine (alles) + optional Kettenbruch-Flood auf angrenzende Gletscher.
+  // Breaker bestimmen: NATÜRLICH bricht nur, wer die Berst-Schwelle erreicht hat (halten & wachsen, dann gewaltig).
+  // Große Lawine zwingt ALLE (auch nicht-reife), Kettenbruch flutet auf angrenzende Gletscher.
   const isBreaker = new Array(N_POS).fill(false), forced = new Array(N_POS).fill(false), queue = [];
   for (let p = 0; p < N_POS; p++) if (isG(p)) {
-    if (natTier[p] >= 1) { isBreaker[p] = true; queue.push(p); }
-    else if (grosseLawine) { isBreaker[p] = true; forced[p] = true; } // Große Lawine: auch Unter-Schwelle bricht
+    if (mCap[p] >= burstAt) { isBreaker[p] = true; queue.push(p); }
+    else if (grosseLawine) { isBreaker[p] = true; forced[p] = true; } // Große Lawine: auch unreife brechen
   }
   if (kettenbruch) {
     while (queue.length) {
@@ -116,7 +122,7 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     const geoFactor = formFactor ? (formFactor[p] || 1) : 1; // 2D-Geometrie (Block/Kreuz/Linie/Fläche)
     const burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * BURST_SCALE;
     payout[p] += burst;
-    resetMass[p] = dropTo(effTier);
+    resetMass[p] = RESET_TO;                             // abgekalbt: baut wieder von unten auf (selten + gewaltig)
     breaks.push({ pos: p, tier: effTier, burst, glacierNeighbors: gN, forced: forced[p] });
   }
   return { payout, resetMass, breaks };
@@ -284,7 +290,6 @@ export const ROLES = {
 };
 export const FROSTBUND_BUFF = 3;  // Frostbund: Wert-Buff auf die getroffene Nicht-Eis-Nachbarkarte (nächster Durchlauf)
 export const VERDICHTUNG_RATE = 0.25; // Verdichtung: je 4 Gebäude-Bonuswert → +1 Masse (docs §4 Firn)
-export const RISSBILDUNG_THRESHOLDS = [2, 8, 12];       // erste Schwelle 4→2
 export const ZERMALMEN_KOLLISION = 2;                   // Kollision 1,5→2
 export const ABBRUCHKANTE_TIER_MULT = [0, 1, 1.8, 3.0]; // steiler als Baseline [0,1,1.5,2.2]
 
@@ -292,7 +297,7 @@ export const ABBRUCHKANTE_TIER_MULT = [0, 1, 1.8, 3.0]; // steiler als Baseline 
 export function glacierOpts(roles = []) {
   const has = (r) => roles.includes(r);
   const opts = {};
-  if (has(ROLES.RISSBILDUNG)) opts.thresholds = RISSBILDUNG_THRESHOLDS;
+  if (has(ROLES.RISSBILDUNG)) opts.burstAt = RISSBILDUNG_BURST;   // bricht schon bei niedriger Masse (Tempo)
   if (has(ROLES.ABBRUCHKANTE)) opts.tierMult = ABBRUCHKANTE_TIER_MULT;
   if (has(ROLES.ZERMALMEN)) opts.kollisionMult = ZERMALMEN_KOLLISION;
   if (has(ROLES.EISBRUECKE)) opts.neighborFn = neighbors8;   // Kaskade/Kollision/Kette über 8-Nachbarschaft

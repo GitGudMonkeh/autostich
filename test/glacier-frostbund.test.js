@@ -22,12 +22,12 @@ const scen = (over = {}) => ({
 
 describe("Frostbund — Markierung beim Bruch", () => {
   it("bufft die Nicht-Eis-Nachbarn eines brechenden Gletschers (pending)", () => {
-    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 8]]), glacierRoles: [ROLES.FROSTBUND] }), noCrit);
+    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 12]]), glacierRoles: [ROLES.FROSTBUND] }), noCrit);
     expect(s.glacierBuffPending["F1"]).toBe(FROSTBUND_BUFF); // pos1 (rechts) — Nicht-Eis-Nachbar
     expect(s.glacierBuffPending["F5"]).toBe(FROSTBUND_BUFF); // pos5 (unten) — Nicht-Eis-Nachbar
   });
   it("Gletscher-Nachbarn werden NICHT gebufft (nur Nicht-Eis)", () => {
-    const s = resolveTrick(scen({ glacierLocked: lockAt(0, 1), glacierMass: withMass([[0, 8]]), glacierRoles: [ROLES.FROSTBUND] }), noCrit);
+    const s = resolveTrick(scen({ glacierLocked: lockAt(0, 1), glacierMass: withMass([[0, 12]]), glacierRoles: [ROLES.FROSTBUND] }), noCrit);
     expect(s.glacierBuffPending["F1"]).toBeUndefined(); // pos1 ist selbst Gletscher
     expect(s.glacierBuffPending["F5"]).toBe(FROSTBUND_BUFF);
   });

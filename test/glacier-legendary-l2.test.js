@@ -40,7 +40,7 @@ describe("Eiszeit — Engine", () => {
 
 describe("Erstarrung — Gegner einfrieren mit Reichweite", () => {
   it("ein brechender Gletscher friert die getroffene Gegnerkarte UND die Nachbar-Gegnerkarten ein", () => {
-    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 8]]), glacierRoles: [ROLES.L_ERSTARRUNG] }), noCrit);
+    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 12]]), glacierRoles: [ROLES.L_ERSTARRUNG] }), noCrit);
     expect(s.frozenOppPending["O0"]).toBe(true); // die an pos0 getroffene Karte
     expect(s.frozenOppPending["O1"]).toBe(true); // Nachbar pos1 (Reichweite +1)
     expect(s.frozenOppPending["O5"]).toBe(true); // Nachbar pos5 (Reichweite +1)
