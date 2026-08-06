@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo } from "react";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
-import { SKILL_DEFS, hasGletscher, hasArchitekt, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
+import { SKILL_DEFS, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
 import { precomputeArchitect, architectValueBonus, familyDef as archFamilyDef, occupiedCells, structureFactorMap, districtFactorMap } from "../game/architect.js";
 import { architectEffectStrings } from "./archEffects.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
@@ -82,37 +82,15 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
     districtFactorMap(archBuildings).forEach((f, pos) => { if (f > 1) set.add(pos); });
     return set;
   }, [hasArch, archBuildings]);
-  // Eis (#93 F3): eingefrorene Karten mit noch freiem Frosttausch machen einen Tausch KOSTENLOS (auch bei 0 Energie).
-  const frostSwapsUsed = state.frostSwapsUsed || [];
-  const frozenCards = cards.filter((c) => c.frozen);
-  const freeFrostLeft = frozenCards.filter((c) => !frostSwapsUsed.includes(c.id)).length;
-  // Eis-Architekt (#210, Legendär): bei aktivem Architekt vereist der Aufstellungsrahmen und die TRAGENDE Spalte
-  // (Position % SEGMENT_SIZE) aus Frostkarten wird als senkrechte Formation (Pfeiler) hervorgehoben. Gewählt wird die
-  // Spalte mit den meisten Frostkarten (≥2 — die Engine gibt den Architekt-Faktor erst ab 2 in derselben Spalte); bei
-  // Gleichstand die linkere. Rein anzeige-seitig, spiegelt die Engine-Spaltenlogik (engine.js: p % SEGMENT_SIZE).
-  const architektOn = hasArchitekt(state.skills || []);
   // Pflanze (#211): Klick-Detail-Readout nur, wenn ein Pflanzen-Skill gehalten wird (sonst irrelevant).
   const plantHeld = plantSkillCount(state.skills || []) > 0;
-  const frostPillar = (() => {
-    if (!architektOn) return { col: -1, positions: [] };
-    const byCol = Array.from({ length: SEGMENT_SIZE }, () => []);
-    cards.forEach((c, pos) => { if (c.frozen) byCol[pos % SEGMENT_SIZE].push(pos); });
-    let best = -1;
-    for (let col = 0; col < SEGMENT_SIZE; col++)
-      if (byCol[col].length >= 2 && (best < 0 || byCol[col].length > byCol[best].length)) best = col;
-    return { col: best, positions: best >= 0 ? byCol[best] : [] };
-  })();
-  const canFree = (a, b) => {
-    const ca = cards[a], cb = cards[b];
-    return (ca?.frozen && !frostSwapsUsed.includes(ca.id)) || (cb?.frozen && !frostSwapsUsed.includes(cb.id));
-  };
 
   const clickPos = (pos) => {
     if (sel === null) { setSel(pos); setInspectBid(architectCover ? (architectCover[pos]?.bid ?? null) : null); return; }  // erste Karte wählen — Gebäude-Rahmen leuchtet
     if (sel === pos) { setSel(null); setInspectBid(null); return; }  // Abwählen — still
     // #132: erfolgreicher Tausch klingt wie ein Kartendreh (cardflip), nicht wie ein Button-Klick.
-    if (formationEnergy > 0 || canFree(sel, pos)) { onSwap(sel, pos); audio.play("cardflip", { gain: 0.9 }); }
-    else { audio.play("denied"); haptics.denied(); } // #110/#207: Tausch ohne Energie (und kein Frost-Freitausch) → verwehrt-Sound + distinkte Haptik
+    if (formationEnergy > 0) { onSwap(sel, pos); audio.play("cardflip", { gain: 0.9 }); }
+    else { audio.play("denied"); haptics.denied(); } // #110/#207: Tausch ohne Energie → verwehrt-Sound + distinkte Haptik
     setSel(null); setInspectBid(null);
   };
 
@@ -149,12 +127,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       <div className="w-full max-w-4xl">
-        {/* Eis-Architekt (#210): der Aufstellungsrahmen vereist — icy Border + Inset-Rim + äußerer Frost-Glow (liegt auf
-            der Border-Box, scrollt also nicht mit dem Inhalt). Nur bei gehaltenem Architekt (legendär). */}
         <div className="w-full rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card"
-          style={{ background: "#15151b",
-                   border: architektOn ? "1px solid #5ec8f077" : "1px solid #33333e",
-                   boxShadow: architektOn ? "inset 0 0 0 1px rgba(191,233,247,0.22), inset 0 0 26px rgba(94,200,240,0.12), 0 0 30px rgba(94,200,240,0.16)" : undefined }}>
+          style={{ background: "#15151b", border: "1px solid #33333e" }}>
         {/* Kopf */}
         <div className="flex items-center justify-between mb-2">
           <div className="min-w-0">
@@ -207,19 +181,6 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             ? <> — <span style={{ color: "#8be0a8" }}><b>Segmentarbeit:</b> alle Grenzen offen, Formationen laufen segmentübergreifend</span></>
             : <> — <span style={{ color: "#8be0a8" }}><b>Segmentarbeit:</b> die mit <b>⇕</b> markierten Grenzen dürfen überschritten werden</span></>)}.
         </p>
-        {frozenCards.length > 0 && (
-          <p className="text-xs mb-3" style={{ color: "#7fd4f0" }}>
-            ❄ <b>{freeFrostLeft}</b> von {frozenCards.length} eingefrorenen Karten haben noch einen <b>kostenlosen Frosttausch</b> (ohne Energie).
-          </p>
-        )}
-        {/* Eis-Architekt (#210): Hinweis auf die vereiste, hervorgehobene Spalte (senkrechte Formation). Nur wenn aktiv. */}
-        {architektOn && (
-          <p className="text-xs mb-3" style={{ color: "#bfe9f7" }}>
-            ❄ <b>Architekt</b> — {frostPillar.col >= 0
-              ? <>Spalte <b>{frostPillar.col + 1}</b> aus <b>{frostPillar.positions.length}</b> Frostkarten bildet eine <b>senkrechte Formation</b> (Pfeiler, je weitere Frostkarte in der Spalte mehr Multiplikator).</>
-              : <>stelle <b>≥2 Frostkarten</b> in dieselbe Spalte (gleiche Position je Segment), um eine <b>senkrechte Formation</b> zu meißeln.</>}
-          </p>
-        )}
 
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
@@ -239,14 +200,13 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                 ))}
               </div>
             )}
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} frostPillarPos={frostPillar.positions} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null} />
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
           <div className="md:flex-1 md:min-w-0 mt-5 md:mt-0 grid gap-3 content-start">
             <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} familyTiers={state.familyTiers}
               arch={sel != null && architectCover ? architectCover[sel] : null}
-              frostReadout frostLayers={sel != null && cards[sel] ? (state.layers?.[cards[sel].id] || 0) : 0} frostGletscher={hasGletscher(state.skills || [])}
               plantReadout={plantHeld}
               plantGrowth={sel != null && cards[sel] ? (state.growth?.[cards[sel].id] || 0) : 0}
               plantRoots={sel != null && cards[sel] ? plantRootScore(state.skills || [], state.growth?.[cards[sel].id] || 0) : 0}

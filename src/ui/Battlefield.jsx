@@ -391,8 +391,8 @@ function SlashGhostLayer({ ghosts }) {
       {ghosts.map((g) => {
         const cardEl = (
           <Card suit={g.suit} value={g.value} baseRank={g.baseRank} stichBonus={g.stichBonus}
-            ionStacks={g.ionStacks} frozen={g.frozen} frostbitten={g.frostbitten} green={g.green}
-            forged={g.forged || 0} branded={g.branded || 0} frostLayers={g.frostLayers || 0} growth={g.growth || 0} colonized={g.colonized || 0} frostAnimated
+            ionStacks={g.ionStacks} green={g.green}
+            forged={g.forged || 0} branded={g.branded || 0} growth={g.growth || 0} colonized={g.colonized || 0}
             allyColor={g.allyColor} frontImage={g.frontImage} />
         );
         // Reihenfolge (Wunsch): Karte liegt (rest) → Slice/Explosion IN PLACE (delay = g.rest) → DANACH floatet der
@@ -439,11 +439,9 @@ function CritScreenFx({ tier, color }) {
   );
 }
 
-export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, frozen = 0, oppDeck = "stat",
+export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, oppDeck = "stat",
   // Feuer-Rework (#206): geschmiedete Dauerwerte (eigene Karten) + aktive Brandmarken (Gegnerkarten) für die Karten-Indikatoren.
   forged = {}, brandActive = {},
-  // Eis-Rework (#210): Schichten je Frostkarte-id → Schicht-Eck-Kristalle auf der eigenen (eingefrorenen) Karte.
-  layers = {},
   // Pflanze-Rework (#211): Wachstum je eigener Karte-id (Wachstumsring + grüne Zahl) + kolonisierte Gegnerkarten (Ausläufer-Marker).
   growth = {}, colonized = {},
   // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
@@ -539,13 +537,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const pCardEl = t && (
     <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
           stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-          ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} frostLayers={layers[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} frostAnimated allyColor={allyColorFor(t.pCard.suit)}
+          ionStacks={t.pCard.ionStacks || 0} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} allyColor={allyColorFor(t.pCard.suit)}
           frontImage={deckFront} />
   );
   // #186: die Gegnerkarte trägt den Skin-Front-Rahmen der kommenden Auswahl (Holo entfällt); Zahl/Effekte darüber.
   const oCardEl = t && (
     <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
-          frostbitten={t.oFrostbitten} green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
+          green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
   );
 
   // Sieger kippt an (as-slice-winner); im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
@@ -702,14 +700,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       spawned.push({ ...base, id: `pg${t.trickNo}-${ghostSeq.current++}`, side: "player", fx: "slice",
         color: suitColor(t.pCard.suit), seed: t.trickNo * 2 + 7,
         suit: t.pCard.suit, value: t.pCard.value, baseRank: t.pCard.baseRank, stichBonus: t.pValue - t.pCard.value,
-        ionStacks: t.pCard.ionStacks || 0, frozen: t.pFrozen, frostbitten: false, green: !!t.pCard.green,
-        forged: forged[t.pCard.id] || 0, frostLayers: layers[t.pCard.id] || 0, growth: growth[t.pCard.id] || 0, allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
+        ionStacks: t.pCard.ionStacks || 0, green: !!t.pCard.green,
+        forged: forged[t.pCard.id] || 0, growth: growth[t.pCard.id] || 0, allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
     }
     if (win) {   // Gegnerkarte verliert → Schnitt- (normal) bzw. Explosions-Ghost (Krit) auf der Gegnerseite
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp", fx: isCrit ? "explode" : "slice",
         color: isCrit ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
-        ionStacks: 0, frozen: false, frostbitten: t.oFrostbitten, green: !!t.oCard.green,
+        ionStacks: 0, green: !!t.oCard.green,
         branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
     }
     if (!spawned.length) return;
@@ -782,9 +780,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const chargeR    = clamp(charge / maxCharge, 0, 1);
   const lightOn    = !!lightning?.active && charge >= 2;   // Blitz-Rahmen erst ab Ladung 2 (#143)
   const chargeFull = lightOn && charge >= maxCharge;
-  const frostN     = clamp(Math.round(frozen || 0), 0, 5);
-  const frostOn    = frostN >= 2;                          // Eis-Rahmen ab 2 Karten, Maximum bei 5 (#144)
-  const frostF     = frostOn ? (frostN - 1) / 4 : 0;       // Stufen-Meter: 2→0,25 · 3→0,5 · 4→0,75 · 5→1,0
   // Panel-Rand: bei aktivem Blitz elektrisch blau (voll: violett), sonst Standard.
   const panelBorder = chargeFull ? "1px solid rgba(138,125,224,0.75)"
     : lightOn ? `1px solid rgba(94,200,240,${(0.35 + 0.5 * chargeR).toFixed(2)})`
@@ -832,24 +827,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           style={{ zIndex: 0, opacity: heatRatio,
                    background: "radial-gradient(135% 95% at 50% 122%, #f0a83a55 0%, #e0714a44 34%, transparent 68%)",
                    boxShadow: "inset 0 -28px 66px -10px #e0714a99, inset 0 0 54px #e0714a2e" }} />
-      )}
-      {/* Eis-Frost (#144): weicher Frost-Rand (Inset-Glow als Stufen-Meter) + super-soft geblurrte Ecken.
-          Über der Feuer-Glut (z-1), unter den Karten. Schimmer bei 5. */}
-      {frostOn && (
-        <div aria-hidden="true"
-          className={`absolute inset-0 rounded-xl pointer-events-none${frostN >= 5 && !reduced ? " as-frost-pulse" : ""}`}
-          style={{ zIndex: 1, boxShadow: `inset 0 0 ${Math.round(6 + 26 * frostF)}px ${Math.round(1 + 7 * frostF)}px rgba(191,233,247,${(0.2 + 0.55 * frostF).toFixed(2)})` }}>
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 120" preserveAspectRatio="none"
-            style={{ opacity: 0.35 + 0.55 * frostF }}>
-            <defs><filter id="as-frostblur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5.5" /></filter></defs>
-            <g fill="#dff3fb" filter="url(#as-frostblur)">
-              <polygon points="0,0 48,0 30,11 41,21 22,27 11,41 0,31" />
-              <polygon points="200,0 152,0 171,10 159,21 181,26 191,41 200,32" />
-              <polygon points="0,120 45,120 28,109 43,99 21,94 9,81 0,90" />
-              <polygon points="200,120 155,120 173,110 157,99 183,95 192,82 200,91" />
-            </g>
-          </svg>
-        </div>
       )}
       {/* Blitz-Rahmen (#143): innerer blauer Glow, Intensität = Ladung (ab 2). Voll → violetter Akzent + Puls. */}
       {lightOn && (

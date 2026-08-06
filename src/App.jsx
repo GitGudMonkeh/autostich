@@ -23,14 +23,12 @@ import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { ArchitectScreen } from "./ui/ArchitectScreen.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { FamilyTargetSelect } from "./ui/FamilyTargetSelect.jsx";
-import { FrostSelect } from "./ui/FrostSelect.jsx";
 import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
-import { CrystalBar } from "./ui/CrystalBar.jsx";
 import { PlantBar } from "./ui/PlantBar.jsx";
 import { MasteryBar } from "./ui/MasteryBar.jsx";
-import { frozenCount, archetypeOf, hasKristallineMasse } from "./game/skills.js";
+import { archetypeOf } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
@@ -450,9 +448,6 @@ export function Autostich() {
   const familyTargetCard = (cardId) => dispatch({ type: "FAMILY_TARGET_CARD", cardId });
   const familyTargetFormationType = (formationType) => dispatch({ type: "FAMILY_TARGET_FORMATION_TYPE", formationType }); // #179 E_CORE
   const familyTargetConfirm = () => dispatch({ type: "FAMILY_TARGET_CONFIRM", rng: Math.random });
-  // Frostwahl (#265): Karten zum Einfrieren wählen/bestätigen.
-  const frostToggle = (cardId) => dispatch({ type: "FROST_SELECT_TOGGLE", cardId });
-  const frostConfirm = () => dispatch({ type: "FROST_SELECT_CONFIRM" });
   // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
@@ -640,8 +635,8 @@ export function Autostich() {
             <div className="grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
               {state.masterRun && <MasteryBar grade={profile.masteryGrade || 0} score={state.score} />}
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
-                heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)}
-                forged={state.forged || {}} brandActive={state.brandActive || {}} layers={state.layers || {}}
+                heat={state.heat} lightning={state.lightning}
+                forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
                 reducedFx={options.reducedFx}
@@ -651,11 +646,6 @@ export function Autostich() {
               <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}}
                 ashBurned={state.ashBurned || 0} brandTotal={state.brandTotal || 0}
                 fireBase={state.fireBase || 0} fireWhite={state.fireWhite || 0} />
-              <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
-                layers={state.layers || {}}
-                frostbite={state.frostbiteActive || {}}
-                hasKristalline={hasKristallineMasse(state.skills || [])}
-                yield={state.iceYield || 0} />
               <PlantBar active={(state.activeArchetypes || []).includes("plant")}
                 deck={state.deck || []}
                 growth={state.growth || {}}
@@ -695,9 +685,6 @@ export function Autostich() {
       )}
       {state.phase === "family-target" && (
         <FamilyTargetSelect state={state} onSuit={familyTargetSuit} onCard={familyTargetCard} onFormationType={familyTargetFormationType} onConfirm={familyTargetConfirm} />
-      )}
-      {state.phase === "frost-select" && state.frostSelect && (
-        <FrostSelect state={state} onToggle={frostToggle} onConfirm={frostConfirm} />
       )}
       {showChronik && <ChronikOverview state={state} onClose={() => setShowChronik(false)} options={options} onOption={changeOptions} />}
       {state.phase === "levelup" && state.offer && (

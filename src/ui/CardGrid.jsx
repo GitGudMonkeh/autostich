@@ -6,7 +6,6 @@ import { SEGMENT_SIZE } from "../game/formations.js";
 import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
-import { FrostOverlay } from "./FrostOverlay.jsx";
 import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
@@ -59,7 +58,7 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
 // #259: eine von bis zu 40 Grid-Kacheln → React.memo überspringt Re-Render bei unveränderten Props (bes. in
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
 const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
-                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, pillar = false, dimmed = false, arch = null, structLit = false, distrLit = false }) {
+                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -79,9 +78,6 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
   // inneren Auswahl-/Formationsrahmen und dessen Glow, damit beide gleichzeitig lesbar bleiben.
   // #182: `ring` markiert Positionen ohne Anker mit demselben Silberring (z. B. die von Zeitraffer/L11 gekoppelten 20 & 40).
   const anchorRing = (anchorType || ring) ? { outline: "2.5px solid #cdd6e0", outlineOffset: "2px" } : null;
-  // Eis-Architekt (#210): eine hervorgehobene Frost-Spalte (senkrechte Formation) → eisiger Inset-Rim + Cyan-Glow.
-  // Stapelt sich unter dem Auswahl-/Formations-Glow, damit beide lesbar bleiben (Pfeiler quer über die Segment-Zeilen).
-  const pillarShadow = pillar ? "inset 0 0 0 1.5px rgba(191,233,247,0.60), 0 0 12px rgba(94,200,240,0.50)" : null;
   // Architekt-Gebäude-Overlay (#202/#UI): der RAHMEN in Gebäude-Form wird jetzt als durchgezogene SVG-Kontur ÜBER dem
   // Grid gezeichnet (CardGrid, archFrameLines) — nicht mehr als Kasten je Karte. Die Kachel selbst bekommt nur noch
   // einen sehr dezenten Kategorie-Farbwash, damit man abgedeckte Zellen auch als Fläche erkennt (Legendär = Gold).
@@ -102,9 +98,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
                // selected(weiß) haben Vorrang und bleiben voll sichtbar; disabled (0,45) sticht durch.
                opacity: disabled ? 0.45 : (dimmed && !selected && !picked ? 0.55 : 1), cursor: !onClick ? "default" : (disabled ? "not-allowed" : "pointer"),
                ...(anchorRing || {}),
-               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, pillarShadow, distrShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
-      {/* #136 Frostglas: ruhiger Eis-Layer (Tint + Körnung, KEIN Sweep) für eingefrorene Board-Karten. */}
-      {card.frozen && <FrostOverlay animated={false} radius="0.5rem" />}
+               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, distrShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
       {/* Architekt-Gebäude-Badge (#202/#224.7): nur der echte Wert-Boost „+X" mittig an der oberen Kante (kein Icon mehr —
           die Kategorie liest man am Rahmen/Ring + Tooltip). Nur bei value-Gebäuden (boost > 0); score/formation zeigt nur den Ring.
@@ -116,10 +110,9 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
           +{arch.boost}
         </span>
       )}
-      {((card.ionStacks || 0) > 0 || card.frozen || ripe) && (
+      {((card.ionStacks || 0) > 0 || ripe) && (
         <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">
           {(card.ionStacks || 0) > 0 && <span style={{ color: "#5ec8f0" }}>⚡{card.ionStacks}</span>}
-          {card.frozen && <span style={{ color: "#bfe9f7", textShadow: "0 0 3px #7fd4f0" }} title="Eingefroren">❄</span>}
           {ripe && <span style={{ textShadow: "0 0 3px #5ab87a" }} title="Grün (reif) — zählt fürs Farbblock">🌿</span>}
         </span>
       )}
@@ -168,14 +161,13 @@ function SegmentBridge({ segA, segB }) {
 
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
-                          highlightPos = [], highlightTitle = null, openSegments = null, frostPillarPos = [], swappedIds = new Set(),
+                          highlightPos = [], highlightTitle = null, openSegments = null, swappedIds = new Set(),
                           segStrength = [], segDelta = [], architectCover = null, structPos = null, distrPos = null, glowBid = null }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const pickedSet = new Set(pickedIds || []);
   const disabledSet = new Set(disabledPos || []);
   const highlightSet = new Set(highlightPos || []); // #182: Positionen mit Silberring ohne Anker (z. B. Zeitraffer 20 & 40)
-  const pillarSet = new Set(frostPillarPos || []);  // #210 Eis-Architekt: Positionen der hervorgehobenen Frost-Spalte (Pfeiler)
   const nSeg = Math.ceil(cards.length / SEGMENT_SIZE);
   // #FB: offene Segmentgrenzen (E_SEGMENT). Grenze g liegt zwischen Zeile g und g+1; nur zeichnen, wenn Werkzeug aktiv.
   const segOpen = openSegments && openSegments.active ? openSegments : null;
@@ -263,7 +255,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                   anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
                   disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
-                  ring={highlightSet.has(pos)} ringTitle={highlightTitle} pillar={pillarSet.has(pos)}
+                  ring={highlightSet.has(pos)} ringTitle={highlightTitle}
                   dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
                   structLit={structPos ? structPos.has(pos) : false} distrLit={distrPos ? distrPos.has(pos) : false}
                   onClick={disabled || !onTilePick ? undefined : () => onTilePick(pos, c)} />;

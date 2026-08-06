@@ -7,7 +7,7 @@ import { suitName, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { FORMATION_TYPE_LABELS, openSegmentInfo, summarizeFormations } from "../game/formations.js";
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
-import { hasGletscher, plantRootScore, hasPfahlwurzel } from "../game/skills.js";
+import { plantRootScore, hasPfahlwurzel } from "../game/skills.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
 import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus, structureFactorMap, districtFactorMap } from "../game/architect.js";
 import FormIcon from "./FormIcon.jsx";
@@ -143,7 +143,6 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
                 genau wie in der Aufstellung (FormationPhase). selCard = die aktuell angetippte Karte. */}
             <CardDetail card={selCard} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} familyTiers={state.familyTiers}
               arch={selPos != null && architectCover ? architectCover[selPos] : null}
-              frostReadout frostLayers={selCard ? (state.layers?.[selCard.id] || 0) : 0} frostGletscher={hasGletscher(state.skills || [])}
               plantReadout plantGrowth={selCard ? (state.growth?.[selCard.id] || 0) : 0}
               plantRoots={selCard ? plantRootScore(state.skills || [], state.growth?.[selCard.id] || 0) : 0}
               plantPfahl={hasPfahlwurzel(state.skills || [])}

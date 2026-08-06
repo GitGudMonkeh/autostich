@@ -7,7 +7,6 @@ import {
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js"; // #289: Farballianz für Wert-Boost-Anzeige
-import { hasKaltfront } from "../game/skills.js"; // Kälteleitung: temporär vereiste Nachbarn markieren
 import { SUIT_ORDER, PLANT_VALUE_CAP } from "../game/constants.js";
 import { ARCH_CAT as CAT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { tierColor } from "../game/rarity.js";
@@ -84,18 +83,6 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const order = state.playerOrder || [];
   const deck = state.deck || [];
   const cards = order.map((di) => deck[di]).filter(Boolean);
-  // Kälteleitung (#269): nicht-gefrorene Karten mit direktem gefrorenen Reihenfolge-Nachbarn (pos±1) sind temporär vereist
-  // (leihen Schicht-Score/-Wert). Genau die Nachbar-Bedingung der Engine → am Brett dezent markieren.
-  const kaltfront = hasKaltfront(state.skills || []);
-  const conductedSet = useMemo(() => {
-    const s = new Set();
-    if (!kaltfront) return s;
-    for (let p = 0; p < cards.length; p++) {
-      if (cards[p].frozen) continue;
-      if ((cards[p - 1] && cards[p - 1].frozen) || (cards[p + 1] && cards[p + 1].frozen)) s.add(p);
-    }
-    return s;
-  }, [kaltfront, cards]);
 
   // Ablauf-Zustand.
   const [phase, setPhase] = useState("choose");            // choose | place | upgrade | after | move
@@ -612,10 +599,6 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(8,12,18,0.62) 3.5px, rgba(8,12,18,0.62) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(134,153,168,0.45)" }} />
                     )}
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
-                    {/* #UI: eingefrorene (Eis-)Karte auch am Bau-Brett markieren — ❄ in der freien oberen rechten Ecke. */}
-                    {card.frozen && <span aria-hidden className="absolute top-[1px] right-[3px] text-[8px] leading-none" title="eingefroren (Frost)" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0cc" }}>❄</span>}
-                    {/* #UI: Kälteleitung — temporär vereister Nachbar einer Frostkarte, dezenter als echtes Frost (kleiner, blasser, kein Glow). */}
-                    {!card.frozen && conductedSet.has(pos) && <span aria-hidden className="absolute top-[1px] right-[2px] text-[6px] leading-none" title="Kälteleitung: temporär vereist (Nachbar einer Frostkarte)" style={{ color: "#5ec8f0", opacity: 0.45 }}>❄</span>}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
                     <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (
