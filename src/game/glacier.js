@@ -18,6 +18,7 @@ export const KASKADE_PER_NEIGHBOR = 0.25;      // Berst-Faktor = 1 + 0,25 × Gle
 export const KOLLISION_MULT = 1.5;             // Treffer auf Gletscher-Nachbarn (anteilig, docs §2.3)
 export const EWIGER_FROST = 1;                 // Fraktions-Passiv: bedingungsloser Masse-Tick je Durchlauf (docs §2.6)
 export const WIN_MASS = 1;                     // Baseline: Sieg eines Gletschers → +Masse (docs §2.2)
+export const GLETSCHERSTURZ_PER = 0.05;        // Gletschersturz: +5 % je gleichzeitig brechendem Gletscher (Amp)
 export const TOP = THRESHOLDS[THRESHOLDS.length - 1]; // höchste Stufe (Überlauf-Grenze)
 
 /* ---- Geometrie: 4 orthogonale Nachbarn (links/rechts/oben/unten) auf dem 8×5-Brett ---------------- */
@@ -56,32 +57,55 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   const tierMult = opts.tierMult || TIER_MULT;
   const kaskade = opts.kaskadePerNeighbor ?? KASKADE_PER_NEIGHBOR;
   const kollision = opts.kollisionMult ?? KOLLISION_MULT;
+  const neighborFn = opts.neighborFn || neighbors4;     // Eisbrücke → 8-Nachbarschaft (Kaskade/Kollision/Kette)
+  const kettenbruch = !!opts.kettenbruch;               // Bruch zwingt Nachbar-Gletscher mitzubrechen
+  const gletschersturzPer = opts.gletschersturz ? (opts.gletschersturzPer ?? GLETSCHERSTURZ_PER) : 0; // Amp ∝ Bruch-Zahl
   const tOf = (m) => { let t = 0; for (const th of thresholds) if (m >= th) t++; return t; };
   const top = thresholds[thresholds.length - 1];
+  const dropTo = (t) => (t >= 2 ? thresholds[t - 2] : 0); // Teil-Reset: eine Stufe runter
 
   const payout = new Array(N_POS).fill(0);
   const resetMass = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
-  const breaks = [];
 
+  // Vorbereitung: Überlauf auszahlen, Masse deckeln, natürliche Stufe je Gletscher.
+  const mCap = new Array(N_POS).fill(0), natTier = new Array(N_POS).fill(0);
   for (let p = 0; p < N_POS; p++) {
     if (!isG(p)) continue;
     const m0 = resetMass[p] || 0;
     const ov = Math.max(0, m0 - top);
     if (ov > 0) payout[p] += ov;                        // Überlauf → Score (jede Runde)
-    const mCap = m0 - ov;                               // gedeckelt auf höchste Stufe
-    const tier = tOf(mCap);
-    if (tier < 1) { resetMass[p] = mCap; continue; }    // unter erster Schwelle: kein Bruch, Masse bleibt
+    mCap[p] = m0 - ov;
+    natTier[p] = tOf(mCap[p]);
+  }
 
-    const nb = neighbors4(p);
-    const gN = nb.filter(isG).length;                   // angrenzende Gletscher
+  // Breaker bestimmen: natürliche (Stufe ≥ 1) + optional Kettenbruch-Flood auf angrenzende Gletscher.
+  const isBreaker = new Array(N_POS).fill(false), forced = new Array(N_POS).fill(false), queue = [];
+  for (let p = 0; p < N_POS; p++) if (isG(p) && natTier[p] >= 1) { isBreaker[p] = true; queue.push(p); }
+  if (kettenbruch) {
+    while (queue.length) {
+      const q = queue.pop();
+      for (const n of neighborFn(q)) if (isG(n) && !isBreaker[n]) { isBreaker[n] = true; forced[n] = true; queue.push(n); }
+    }
+  }
+  let breakCount = 0;
+  for (let p = 0; p < N_POS; p++) if (isBreaker[p]) breakCount++;
+  const sturzFactor = 1 + gletschersturzPer * breakCount; // Gletschersturz: je mehr brechen, desto stärker JEDER Bruch
+
+  // Bruch-Scores + Teil-Reset.
+  const breaks = [];
+  for (let p = 0; p < N_POS; p++) {
+    if (!isG(p)) continue;
+    if (!isBreaker[p]) { resetMass[p] = mCap[p]; continue; } // kein Bruch: gedeckelte Masse bleibt
+    const effTier = forced[p] ? Math.max(1, natTier[p]) : natTier[p]; // Kettenbruch: erzwungene brechen mind. auf Stufe 1
+    const nb = neighborFn(p);
+    const gN = nb.filter(isG).length;
     const berstFaktor = 1 + kaskade * gN;               // Kaskade (Dichte)
-    const kollFrac = nb.length ? gN / nb.length : 0;    // Anteil der Nachbarrichtungen, die Gletscher treffen
-    const kollFaktor = 1 + (kollision - 1) * kollFrac;  // Kollision (anteilig, docs §2.3)
-    const burst = mCap * tierMult[tier] * berstFaktor * kollFaktor;
-
+    const kollFrac = nb.length ? gN / nb.length : 0;
+    const kollFaktor = 1 + (kollision - 1) * kollFrac;  // Kollision (anteilig)
+    const burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor;
     payout[p] += burst;
-    resetMass[p] = tier >= 2 ? thresholds[tier - 2] : 0; // Teil-Reset: eine Stufe runter (respektiert opts.thresholds)
-    breaks.push({ pos: p, tier, burst, glacierNeighbors: gN });
+    resetMass[p] = dropTo(effTier);
+    breaks.push({ pos: p, tier: effTier, burst, glacierNeighbors: gN, forced: forced[p] });
   }
   return { payout, resetMass, breaks };
 }
@@ -167,6 +191,8 @@ export const ROLES = {
   VERSCHMELZEN: "G_VERSCHMELZEN", // Eisschild: angrenzende Gletscher poolen → jeder auf den Cluster-Durchschnitt (nie fallend)
   VERZAHNUNG: "G_VERZAHNUNG",     // Eisschild: je größer das Cluster, desto schneller wächst jeder Gletscher (Runaway-Kandidat)
   EISBRUECKE: "G_EISBRUECKE",     // Eisschild: erweitert „angrenzend" um die 4 Diagonalen (8-Nachbarschaft)
+  KETTENBRUCH: "G_KETTENBRUCH",   // Lawine: Bruch zwingt angrenzende Gletscher mitzubrechen (die echte Kaskade)
+  GLETSCHERSTURZ: "G_GLETSCHERSTURZ", // Lawine: je mehr Gletscher im Durchlauf brechen, desto stärker jeder Bruch
 };
 export const RISSBILDUNG_THRESHOLDS = [2, 8, 12];       // erste Schwelle 4→2
 export const ZERMALMEN_KOLLISION = 2;                   // Kollision 1,5→2
@@ -179,6 +205,9 @@ export function glacierOpts(roles = []) {
   if (has(ROLES.RISSBILDUNG)) opts.thresholds = RISSBILDUNG_THRESHOLDS;
   if (has(ROLES.ABBRUCHKANTE)) opts.tierMult = ABBRUCHKANTE_TIER_MULT;
   if (has(ROLES.ZERMALMEN)) opts.kollisionMult = ZERMALMEN_KOLLISION;
+  if (has(ROLES.EISBRUECKE)) opts.neighborFn = neighbors8;   // Kaskade/Kollision/Kette über 8-Nachbarschaft
+  if (has(ROLES.KETTENBRUCH)) opts.kettenbruch = true;
+  if (has(ROLES.GLETSCHERSTURZ)) opts.gletschersturz = true;
   return opts;
 }
 
