@@ -442,6 +442,7 @@ export function Autostich() {
   const undoSwap = () => dispatch({ type: "UNDO_SWAP" });
   const resetFormation = () => dispatch({ type: "RESET_FORMATION" });
   const confirmFormation = () => dispatch({ type: "CONFIRM_FORMATION" });
+  const lockGlacier = (pos) => dispatch({ type: "GLACIER_LOCK", pos }); // Eis-Neudesign: Karte als Gletscher festfrieren (starr)
   const confirmTarget = (cardIds) => dispatch({ type: "CONFIRM_TARGET", cardIds });
   // Familien-Ziel-Auswahl (Rarität #167): Farbe(n) (Kat. A) bzw. Karten (Kat. C Rollen) für pickTarget-Stufen wählen.
   const familyTargetSuit = (suit) => dispatch({ type: "FAMILY_TARGET_SUIT", suit });
@@ -674,7 +675,7 @@ export function Autostich() {
       </div>
 
       {state.phase === "formation" && (
-        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} options={options} onOption={changeOptions} />
+        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} onFreeze={lockGlacier} options={options} onOption={changeOptions} />
       )}
       {state.phase === "architect" && (
         <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}

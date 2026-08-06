@@ -23,9 +23,14 @@ const pctOf = (x) => Math.round(x * 100);
    Zwei Karten antippen = Tausch (1 Energie). Formationen werden nach jedem Tausch live neu berechnet
    (kommt aus state.formations, vom Reducer gefüllt). Undo/Zurücksetzen erstatten Energie.
    Desktop (#101): zweispaltig — Karten-Grid links, Info-Panel rechts; Mobil gestapelt. */
-export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, options = {}, onOption }) {
+export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onFreeze, options = {}, onOption }) {
   const { playerOrder = [], deck = [], formations = [], formationEnergy = 0, formationSwaps = [] } = state;
   const [sel, setSel] = useState(null);
+  // Eis-Neudesign: der Gletscher-Build friert Karten als Gletscher fest (starr). Marker/Masse am Brett + Freeze-Button.
+  const iceActive = (state.activeArchetypes || []).includes("ice");
+  const glacierLocked = state.glacierLocked || [];
+  const glacierMass = state.glacierMass || [];
+  const glacierPos = useMemo(() => { const s = new Set(); glacierLocked.forEach((v, i) => { if (v) s.add(i); }); return s; }, [glacierLocked]);
   // Architekt-Gebäude-Overlay (#202): zeigt in der Aufstellung, welche Positionen von welchem Gebäude gebufft werden —
   // die andere Seite der „platzieren (Architekt) → routen (Aufstellung)"-Schleife. Toggle-bar, Default an. Der Wert-Boost
   // je Zelle kommt aus der ECHTEN Engine (precomputeArchitect + architectValueBonus), spiegelt also die Sieg-Rechnung.
@@ -200,7 +205,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                 ))}
               </div>
             )}
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null} />
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
+              glacierPos={iceActive ? glacierPos : null} glacierMassByPos={iceActive ? glacierMass : null} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
@@ -211,6 +217,24 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
               plantGrowth={sel != null && cards[sel] ? (state.growth?.[cards[sel].id] || 0) : 0}
               plantRoots={sel != null && cards[sel] ? plantRootScore(state.skills || [], state.growth?.[cards[sel].id] || 0) : 0}
               plantPfahl={hasPfahlwurzel(state.skills || [])} />
+            {/* Eis-Neudesign: Gletscher festfrieren. Wähle eine Karte → friere sie starr fest (Position vs. Wert). */}
+            {iceActive && (
+              <div className="rounded-lg p-2.5" style={{ background: "#12222b", border: "1px solid #2b6b82" }}>
+                <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#7fd4f0" }}>❄ Gletscher ({glacierPos.size})</div>
+                <div className="text-[10px] opacity-55 mb-1.5">Friere Karten als Gletscher fest — sie werden <b>starr</b> (nicht mehr verschiebbar) und sammeln Masse, bis sie brechen. Entscheide zwischen Position und Wert.</div>
+                {sel == null ? (
+                  <div className="text-xs opacity-60">Tippe eine Karte, um sie festzufrieren.</div>
+                ) : glacierLocked[sel] ? (
+                  <div className="text-xs" style={{ color: "#8be6ff" }}>❄ Position {sel + 1} ist ein Gletscher · Masse {Math.round(glacierMass[sel] || 0)} · <span className="opacity-60">starr</span></div>
+                ) : (
+                  <button onClick={() => { onFreeze?.(sel); audio.play("cardflip", { gain: 0.9 }); haptics.tick?.(); setSel(null); }}
+                    className="w-full px-3 py-2 rounded-lg text-sm font-bold transition-all hover:brightness-110"
+                    style={{ background: "#1c4a5c", border: "1px solid #5ec8f0", color: "#cdeffb" }}>
+                    ❄ Karte {sel + 1} als Gletscher festfrieren
+                  </button>
+                )}
+              </div>
+            )}
             {/* Gebäude-Liste (wie in der Chronik): antippen lässt den Gebäude-Rahmen am Brett cyan leuchten — und
                 umgekehrt markiert das Antippen einer Karte im Gebäude hier den Eintrag. Nur bei aktivem Overlay sichtbar-verlinkt. */}
             {hasArch && (

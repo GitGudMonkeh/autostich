@@ -58,7 +58,8 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
 // #259: eine von bis zu 40 Grid-Kacheln → React.memo überspringt Re-Render bei unveränderten Props (bes. in
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
 const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
-                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false }) {
+                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false,
+                   glacier = false, glacierMass = 0 }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -69,8 +70,8 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
   const numCol = ripe ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : col;
   const labels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
   const fb = formationBorder(pf);
-  // #112: „picked" (gold) hat Vorrang vor „selected" (weiß) vor Formations-/Farbrand.
-  const borderColor = picked ? "#d4a63a" : selected ? "#ffffff" : fb.color || col + "55";
+  // #112: „picked" (gold) hat Vorrang vor „selected" (weiß) vor Gletscher-Cyan vor Formations-/Farbrand.
+  const borderColor = picked ? "#d4a63a" : selected ? "#ffffff" : glacier ? "#5ec8f0" : fb.color || col + "55";
   const borderStyle = fb.dashed && !selected && !picked ? "dashed" : "solid";
   // Rollen-Label: flacher Perk (PERK_DEFS) ODER Familie (FAMILY_DEFS, Rarität #167 Kat. C) → sonst die rohe id.
   const roleTitle = roleIds.length ? roleIds.map((p) => PERK_DEFS[p]?.label || familyDef(p)?.name || p).join(", ") : undefined;
@@ -98,7 +99,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
                // selected(weiß) haben Vorrang und bleiben voll sichtbar; disabled (0,45) sticht durch.
                opacity: disabled ? 0.45 : (dimmed && !selected && !picked ? 0.55 : 1), cursor: !onClick ? "default" : (disabled ? "not-allowed" : "pointer"),
                ...(anchorRing || {}),
-               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, distrShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
+               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : glacier ? "0 0 8px #5ec8f066" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, distrShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
       {/* Architekt-Gebäude-Badge (#202/#224.7): nur der echte Wert-Boost „+X" mittig an der oberen Kante (kein Icon mehr —
           die Kategorie liest man am Rahmen/Ring + Tooltip). Nur bei value-Gebäuden (boost > 0); score/formation zeigt nur den Ring.
@@ -127,6 +128,8 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
         </span>
       )}
       {labels && <span className="absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
+      {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
+      {glacier && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}`}>❄{Math.round(glacierMass)}</span>}
       {roleIds.length > 0 && <span className="absolute bottom-0.5 left-1 text-[8px] sm:text-xs leading-none" style={{ color: "#d4a63a" }} title={roleTitle}>●</span>}
     </button>
   );
@@ -162,7 +165,8 @@ function SegmentBridge({ segA, segB }) {
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
                           highlightPos = [], highlightTitle = null, openSegments = null, swappedIds = new Set(),
-                          segStrength = [], segDelta = [], architectCover = null, structPos = null, distrPos = null, glowBid = null }) {
+                          segStrength = [], segDelta = [], architectCover = null, structPos = null, distrPos = null, glowBid = null,
+                          glacierPos = null, glacierMassByPos = null }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   const pickedSet = new Set(pickedIds || []);
@@ -258,6 +262,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle}
                   dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
                   structLit={structPos ? structPos.has(pos) : false} distrLit={distrPos ? distrPos.has(pos) : false}
+                  glacier={glacierPos ? glacierPos.has(pos) : false} glacierMass={glacierMassByPos ? (glacierMassByPos[pos] || 0) : 0}
                   onClick={disabled || !onTilePick ? undefined : () => onTilePick(pos, c)} />;
               })}
             </div>
