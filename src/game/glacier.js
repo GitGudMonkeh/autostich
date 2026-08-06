@@ -86,6 +86,72 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   return { payout, resetMass, breaks };
 }
 
+/* ---- Rollen-Gruppe C: Cluster/Dichte — Nachbar-/Cluster-Infrastruktur (docs §4 Eisschild) --------- */
+export const PACKEIS_PER_NEIGHBOR = 0.5;   // Packeis: +Masse/Durchlauf je Gletscher-Nachbar
+export const VERZAHNUNG_PER = 0.25;        // Verzahnung: +Masse/Durchlauf je Gletscher im verbundenen Cluster (skaliert mit Größe)
+
+// 8-Nachbarschaft (Eisbrücke): 4 orthogonal + 4 diagonal.
+export function neighbors8(p) {
+  const r = rowOf(p), c = colOf(p), out = [];
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    if (dr === 0 && dc === 0) continue;
+    const nr = r + dr, nc = c + dc;
+    if (nr >= 0 && nr < 8 && nc >= 0 && nc < 5) out.push(posOf(nr, nc));
+  }
+  return out;
+}
+// Aktive Nachbarschaftsfunktion: mit Eisbrücke die 8er, sonst die 4er.
+export const glacierNeighborFn = (roles = []) => (roles.includes(ROLES.EISBRUECKE) ? neighbors8 : neighbors4);
+
+// Cluster-Erkennung (Flood-Fill über verbundene Gletscher via aktiver Nachbarschaft) → Array von Clustern (je Array von pos).
+export function glacierClusters(locked, neighborFn = neighbors4) {
+  const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const seen = new Set(), clusters = [];
+  for (let p = 0; p < N_POS; p++) {
+    if (!isG(p) || seen.has(p)) continue;
+    const stack = [p], cl = []; seen.add(p);
+    while (stack.length) {
+      const q = stack.pop(); cl.push(q);
+      for (const n of neighborFn(q)) if (isG(n) && !seen.has(n)) { seen.add(n); stack.push(n); }
+    }
+    clusters.push(cl);
+  }
+  return clusters;
+}
+
+// Verschmelzen (docs §4): zu Durchlauf-Beginn heben angrenzende Gletscher einander auf den Cluster-Durchschnitt — NIE fallend.
+export function verschmelzenPool(mass, locked, neighborFn = neighbors4) {
+  const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
+  for (const cl of glacierClusters(locked, neighborFn)) {
+    if (cl.length < 2) continue;
+    const avg = cl.reduce((s, p) => s + (out[p] || 0), 0) / cl.length;
+    for (const p of cl) if ((out[p] || 0) < avg) out[p] = avg; // nur anheben
+  }
+  return out;
+}
+
+// Packeis (docs §4): am Durchlauf-Ende +Masse je Gletscher-Nachbar — belohnt die Mitte des Feldes.
+export function packeisTick(mass, locked, neighborFn = neighbors4, per = PACKEIS_PER_NEIGHBOR) {
+  const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
+  for (let p = 0; p < N_POS; p++) if (isG(p)) {
+    const gN = neighborFn(p).filter(isG).length;
+    if (gN) out[p] = (out[p] || 0) + per * gN;
+  }
+  return out;
+}
+
+// Verzahnung (docs §4): am Durchlauf-Ende gewinnt jeder Gletscher Masse ∝ seiner Cluster-Größe — großes Cluster füttert sich
+// schneller (Runaway-Kandidat, später deckeln).
+export function verzahnungTick(mass, locked, neighborFn = neighbors4, per = VERZAHNUNG_PER) {
+  const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
+  for (const cl of glacierClusters(locked, neighborFn)) {
+    const gain = per * cl.length;
+    for (const p of cl) out[p] = (out[p] || 0) + gain;
+  }
+  return out;
+}
+
 /* ---- Rollen → Snapshot-opts (Gruppe A, docs §4 Lawine) -------------------------------------------
    Rollen als Skills sind noch nicht im Angebots-Pool (kein 5.-Archetyp-Leak); getrieben über state.glacierRoles.
    ⚠ Werte Platzhalter. */
@@ -97,6 +163,10 @@ export const ROLES = {
   SCHNEETREIBEN: "G_SCHNEETREIBEN", // Firn: Verwehung — Sieg verweht Masse aufs Nachbarfeld (Boden säen, nah)
   DAUERFROST: "G_DAUERFROST",     // Firn: offener Boden friert am tiefsten — passiver Boden-Frost (fern)
   EISPANZER: "G_EISPANZER",       // Frostgriff: Niederlage neben Gletscher folgenlos + füttert Masse (der Gletscher frisst, was zerbricht)
+  PACKEIS: "G_PACKEIS",           // Eisschild: Gletscher mit vielen Gletscher-Nachbarn → Bonus-Masse (belohnt die Mitte)
+  VERSCHMELZEN: "G_VERSCHMELZEN", // Eisschild: angrenzende Gletscher poolen → jeder auf den Cluster-Durchschnitt (nie fallend)
+  VERZAHNUNG: "G_VERZAHNUNG",     // Eisschild: je größer das Cluster, desto schneller wächst jeder Gletscher (Runaway-Kandidat)
+  EISBRUECKE: "G_EISBRUECKE",     // Eisschild: erweitert „angrenzend" um die 4 Diagonalen (8-Nachbarschaft)
 };
 export const RISSBILDUNG_THRESHOLDS = [2, 8, 12];       // erste Schwelle 4→2
 export const ZERMALMEN_KOLLISION = 2;                   // Kollision 1,5→2

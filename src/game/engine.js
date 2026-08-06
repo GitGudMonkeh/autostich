@@ -24,7 +24,8 @@ import { computeFormations, positionHasFormation, activeFormationCount, summariz
 import { perkLegendaryChance, skillLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftTarget as glacierDriftTarget,
-  neighbors4 as glacierNeighbors4, ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
+  neighbors4 as glacierNeighbors4, glacierNeighborFn, verschmelzenPool, packeisTick, verzahnungTick,
+  ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
   ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_DRIFT as GLACIER_SCHNEETREIBEN_DRIFT,
   EISPANZER_MASS as GLACIER_EISPANZER_MASS } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
@@ -185,10 +186,13 @@ export function resolveTrick(state, rng) {
   // (analog precomputeArchitect), pro Stich ausgezahlt. Der Teil-Reset (−1 Stufe) greift SOFORT auf die Arbeits-Masse;
   // Siege dieses Durchlaufs addieren darauf, Ewiger Frost am Durchlauf-Ende. Isoliert über activeArchetypes "glacier".
   const glacierActive = activeArchetypes.includes("glacier");
+  const glacierNF = glacierActive ? glacierNeighborFn(glacierRoles) : null; // Eisbrücke → 8-Nachbarschaft, sonst 4
   let glacierPreNow = glacierPre;
   let newGlacierMass = Array.isArray(glacierMass) ? glacierMass.slice() : [];
   if (glacierActive && pos === 0) {
-    glacierPreNow = precomputeGlacier(glacierMass, glacierLocked, glacierOpts(glacierRoles)); // Rollen (Gruppe A) modifizieren den Snapshot
+    // Verschmelzen (docs §4): angrenzende Gletscher poolen VOR dem Bruch auf den Cluster-Durchschnitt (nie fallend).
+    const snapMass = glacierRoles.includes(GLACIER_ROLES.VERSCHMELZEN) ? verschmelzenPool(glacierMass, glacierLocked, glacierNF) : glacierMass;
+    glacierPreNow = precomputeGlacier(snapMass, glacierLocked, glacierOpts(glacierRoles)); // Rollen (Gruppe A) modifizieren den Snapshot
     newGlacierMass = glacierPreNow.resetMass.slice();
   }
   // #161 FB-2: Peak gleichzeitig aktiver Formationen über den Run — zu Durchlaufbeginn, sobald das Layout feststeht.
@@ -1207,6 +1211,9 @@ export function resolveTrick(state, rng) {
     if (glacierActive) newGlacierMass = ewigerFrostTick(newGlacierMass, glacierLocked);
     // Dauerfrost (docs §4 Firn): offener Boden friert am tiefsten — passiver Masse-Frost auf ungefrorene Felder.
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.DAUERFROST)) newGlacierMass = dauerfrostTick(newGlacierMass, glacierLocked);
+    // Packeis / Verzahnung (docs §4 Eisschild): Dichte-Bonus je Gletscher-Nachbar / Cluster-Größe (Eisbrücke-adjazenz-aware).
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.PACKEIS)) newGlacierMass = packeisTick(newGlacierMass, glacierLocked, glacierNF);
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.VERZAHNUNG)) newGlacierMass = verzahnungTick(newGlacierMass, glacierLocked, glacierNF);
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf
     //      attribuiert). Zinseszins — positive Durchlauf-Bilanz (mehr Siege als Niederlagen) stapelt eine FLACHE Dauer-
     //      Dividende (kein Mult), die jeden Durchlauf ausgezahlt wird (compoundet über den Lauf). Echo — der beste Stich
