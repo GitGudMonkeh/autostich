@@ -114,7 +114,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const [upgradeDone, setUpgradeDone] = useState(null);         // Erfolgs-Feedback: { name, from, to } — hervorgehobene Zeile im Platzieren-Screen, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen).
   const [inspectId, setInspectId] = useState(null);             // choose-Phase: welches bereits gebaute Gebäude gerade „inspiziert" wird (Liste ↔ Brett verlinkt, gegenseitiges Leuchten).
   // #243: Toggle-Stellung aus den Optionen (überlebt Runden + Sessions); onOption persistiert die Wahl.
-  const [showCombos, setShowCombos] = useState(options.archShowCombos !== false); // #UI: Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben
+  const [showCombos, setShowCombos] = useState(options.archShowCombos !== false); // #UI: Gebäude mit Struktur-/Distrikt-Bonus in ihrer Typ-Farbe glühen lassen
   const [showForms, setShowForms] = useState(options.archShowForms !== false);    // #UI: Formationsrahmen (Ring + Label) am Brett ein-/ausblenden
   const toggleCombos = () => { const v = !showCombos; setShowCombos(v); onOption?.({ archShowCombos: v }); };
   const toggleForms  = () => { const v = !showForms;  setShowForms(v);  onOption?.({ archShowForms: v }); };
@@ -503,8 +503,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               </div>
               <div className="flex items-center gap-1.5">
                 <button onClick={toggleCombos} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
-                  style={{ background: showCombos ? "#3a1c1a" : "#16232f", border: `1px solid ${showCombos ? "#d1462f" : "#2b3e4d"}`, color: showCombos ? "#e88a7f" : "#7d8a97" }}
-                  title="Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben">{showCombos ? "◉" : "○"} Kombis</button>
+                  style={{ background: showCombos ? "#2a2416" : "#16232f", border: `1px solid ${showCombos ? "#d4a63a" : "#2b3e4d"}`, color: showCombos ? "#e0c060" : "#7d8a97" }}
+                  title="Gebäude mit Struktur-/Distrikt-Bonus glühen in ihrer Typ-Farbe">{showCombos ? "◉" : "○"} Kombis</button>
                 <button onClick={toggleForms} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
                   style={{ background: showForms ? "#16283a" : "#16232f", border: `1px solid ${showForms ? "#3b7dbe" : "#2b3e4d"}`, color: showForms ? "#7db4e6" : "#7d8a97" }}
                   title="Formationsrahmen (Ring + Label) am Brett ein-/ausblenden">{showForms ? "◉" : "○"} Formationen</button>
@@ -597,9 +597,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     }}
                     title={title}>
                     {/* #UI: Kombi-Fläche — Zellen auf fertiger Struktur bekommen eine leicht transparente rote Fläche (Toggle „Kombis"). */}
-                    {showCombos && !dragPrev && structLit(pos) && (
-                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "#d1462f30", boxShadow: "inset 0 0 0 1px #d1462f66" }} />
-                    )}
+                    {showCombos && !dragPrev && structLit(pos) && b && (() => {
+                      const glow = CAT[fam?.category]?.color || "#d1462f"; // Kombi/Distrikt-Bonus → Rahmen glüht in Typ-Farbe (gleiche Typen glühen einheitlich)
+                      return <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ boxShadow: `0 0 10px 1px ${glow}aa, inset 0 0 6px ${glow}55, inset 0 0 0 1px ${glow}` }} />;
+                    })()}
                     {/* #UI: gesperrte Fläche beim Ziehen — Diagonal-Schraffur + Rim, damit „hier nicht ablegbar" klar heraussticht. */}
                     {isBlocked && (
                       <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(8,12,18,0.62) 3.5px, rgba(8,12,18,0.62) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(134,153,168,0.45)" }} />
