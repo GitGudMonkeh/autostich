@@ -367,7 +367,20 @@ export function reducer(state, action) {
       const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
       if (!pt) return applyNow();                                                          // kein Ziel → direkt anwenden
       // Farb-Ziel (A_SUIT_BOOST/A_SUIT_DUEL; #179 auch Farballianz E_COLOR_ALLIANCE): immer die volle Anzahl frisch wählen.
-      if (pt.suits) return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [], formationType: null } };
+      if (pt.suits) {
+        // Comfort: müssen ALLE Farben gewählt werden (Farballianz III/IV, suits:4 — einzige suits≥voll-Familie), ist die
+        // Auswahl erzwungen und die Reihenfolge irrelevant (die Allianz macht alle vier zu EINER Farbe, keine Paare) →
+        // Picker überspringen und direkt mit allen Farben anwenden (kein „4 von 4 antippen"-Leerlauf).
+        if (pt.suits >= C.SUIT_ORDER.length) {
+          const target = { suits: C.SUIT_ORDER.slice(), cards: [], formationType: null, order: state.playerOrder };
+          const { familyTiers, deck, roles } = applyFamilyPick(
+            familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
+          return { ...state, familyTiers, deck, roles,
+            formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers),
+            offer: null, phase: "play" };
+        }
+        return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [], formationType: null } };
+      }
       // Formationstyp-Ziel (#179, Formationskern E_CORE): genau einen der vier Basistypen wählen.
       if (pt.formationType) return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "formationType", need: 1, suits: [], cards: [], formationType: null } };
       // Karten-Ziel: ROLE wählt nur die ZUSÄTZLICHEN Ziele (Stufe-Ziel − bereits gehaltene, Spec §2.3);

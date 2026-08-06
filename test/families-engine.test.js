@@ -420,6 +420,23 @@ describe("Familien-Ziel-Fluss — pickTarget-Stufen (Rarität #167, Kat. A)", ()
     expect(reducer(play, { type: "FAMILY_TARGET_CONFIRM", rng })).toBe(play);
   });
 
+  it("Farballianz III/IV (alle Farben) überspringt den Picker und wendet direkt an (Comfort)", () => {
+    // suits:4 = alle Farben → Auswahl erzwungen, Reihenfolge egal → kein „4 von 4 antippen"-Leerlauf.
+    for (const tier of [3, 4]) {
+      const s = reducer(base({ familyId: "E_COLOR_ALLIANCE", tier }), { type: "PICK_FAMILY", familyId: "E_COLOR_ALLIANCE", tier, rng });
+      expect(s.phase).toBe("play");                 // NICHT family-target
+      expect(s.familyTarget).toBeFalsy();
+      expect(s.familyTiers).toEqual({ E_COLOR_ALLIANCE: tier });
+      expect((s.roles.E_COLOR_ALLIANCE || []).slice().sort()).toEqual(["B", "G", "R", "Y"]); // alle vier als Ziel
+    }
+  });
+
+  it("Farballianz I/II (Teilmenge) öffnet weiterhin den Picker", () => {
+    const s = reducer(base({ familyId: "E_COLOR_ALLIANCE", tier: 2 }), { type: "PICK_FAMILY", familyId: "E_COLOR_ALLIANCE", tier: 2, rng });
+    expect(s.phase).toBe("family-target");          // 3 von 4 wählen → echte Auswahl bleibt
+    expect(s.familyTarget.need).toBe(3);
+  });
+
   it("initialState trägt familyTarget = null", () => {
     expect(initialState(makeRng(1)).familyTarget).toBeNull();
   });
