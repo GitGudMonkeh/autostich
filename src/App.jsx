@@ -96,6 +96,9 @@ export function Autostich() {
   // Lifecycle-Handler (visibilitychange/pagehide) ohne ständiges Re-Registrieren snapshotten können.
   const [resumable, setResumable] = useState(() => loadActiveRun());
   const stateRef = useRef(state);
+  // Sichtbarkeit des Tabs — pausiert Clock-Tick und Auto-Play, solange der Tab im Hintergrund ist
+  // (Akku/Hitze: kein Weiterlaufen von Ticks/Re-Renders hinter einem unsichtbaren Tab). SSR-sicher.
+  const [visible, setVisible] = useState(() => typeof document === "undefined" || document.visibilityState !== "hidden");
 
   // RUN-TIMER (#10) — akkumulierte aktive Zeit; friert bei Pause / außerhalb „play" ein (#9)
   const timeBase = useRef(0);
@@ -214,7 +217,11 @@ export function Autostich() {
   // Mobile-zuverlässige Speicherpunkte: Tab in den Hintergrund (visibilitychange→hidden) ODER Seite entladen
   // (pagehide) → sofortiger Snapshot. beforeunload feuert auf Mobile NICHT verlässlich → DAS hier ist der eigentliche Fix.
   useEffect(() => {
-    const onVis = () => { if (document.visibilityState === "hidden") persistActiveRun(); };
+    const onVis = () => {
+      const hidden = document.visibilityState === "hidden";
+      if (hidden) persistActiveRun();
+      setVisible(!hidden); // pausiert/reaktiviert Clock-Tick + Auto-Play (Akku/Hitze im Hintergrund)
+    };
     window.addEventListener("pagehide", persistActiveRun);
     document.addEventListener("visibilitychange", onVis);
     return () => { window.removeEventListener("pagehide", persistActiveRun); document.removeEventListener("visibilitychange", onVis); };
@@ -235,23 +242,23 @@ export function Autostich() {
       segStart.current = null;
     }
   }, [active]);
-  // Anzeige ticken lassen, solange der Lauf aktiv ist.
+  // Anzeige ticken lassen, solange der Lauf aktiv UND der Tab sichtbar ist (Hintergrund → kein Tick, Akku/Hitze).
   useEffect(() => {
-    if (!active) return;
+    if (!active || !visible) return;
     const id = setInterval(() => setClock((c) => c + 1), 250);
     return () => clearInterval(id);
-  }, [active]);
+  }, [active, visible]);
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
-    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort) return; // #254: Abbruch-Rückfrage friert den Lauf ein (wie ein Overlay)
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || !visible) return; // #254: Abbruch-Rückfrage friert den Lauf ein (wie ein Overlay) · !visible: Hintergrund-Tab hält den Lauf an (Akku/Hitze)
     // #188 v2: nach einem großen Krit-Sieg um hitStopMs verzögert (kurzer „Hit-Stop"/Slow-Mo), sonst normaler Takt.
     const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs + hitStopMs);
     return () => clearTimeout(id);
     // #56: flipMs direkt (statt seiner Einzel-Eingaben speedPct/speedMult) → Deps veralten nicht,
     // falls flipMs künftig von weiteren Variablen abhängt.
     // #148: showChronik friert den Lauf ein (wie showOptions) — Tricks laufen nicht mehr hinter dem Overlay weiter.
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, flipMs, hitStopMs]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, visible, flipMs, hitStopMs]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
