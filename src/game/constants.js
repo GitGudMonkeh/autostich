@@ -369,7 +369,6 @@ export const DAMASCUS_COMBAT       = envNum("SIM_DAMASCUS_COMBAT", 5);        //
 export const ICE_LAYER_MAX     = 12;   // Überlauf-Referenz (Glossar „Überlauf": Schichten/Wachstum/Hitze über dem Nutzen)
 export const ICE_UNUSED_SWAP_LAYER = 1;// ungenutzter Aufstellungs-Tausch → +1 (Reducer CONFIRM_FORMATION-Banking)
 // Formations-Wildcards (Kristallform-Joker/Frostbrücke, in formations.js gelesen) + deren weicher Score-Deckel (engine.js).
-export const CRYSTAL_OFFSET    = envNum("SIM_CRYSTAL_OFFSET", 1);    // Kristallform: ±N Wert-Flex (Joker) [Sim-tunebar]
 export const ICE_FORMBASE_SOFTCAP = envNum("SIM_ICE_FORMBASE_SOFTCAP", 1.5);  // weicher Deckel des Frost-Formations-formBase (nur über der Schwelle)
 export const ICE_FORMBASE_SLOPE   = envNum("SIM_ICE_FORMBASE_SLOPE", 0.2);    // Anteil des Überschusses über der Schwelle, der noch zählt
 export const ICE_JOKER_FORMSCORE_SHARE = envNum("SIM_ICE_JOKER_FORMSCORE_SHARE", 0.3); // Joker-Formationen: voller Schicht-Motor, gedämpfter Formations-SCORE

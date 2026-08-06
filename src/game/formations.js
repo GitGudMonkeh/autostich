@@ -18,9 +18,9 @@
    E3 Treppe darf 1× gleich · E4 Treppe darf 1× Rückschritt · E5 Wechsel schon ab 2 Karten ·
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
-import { CRYSTAL_OFFSET, ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR,
+import { ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR,
   UEBERWUCHERUNG_FIELD, UEBERWUCHERUNG_FACTOR, EWIGER_FRUEHLING_FARBBLOCK, EWIGER_FRUEHLING_FIELD, PLANT_GREEN_FARBBLOCK_CAP } from "./constants.js";
-import { iceFlag, hasEwigerFruehling, hasUeberwucherung, greenCount } from "./skills.js";
+import { hasEwigerFruehling, hasUeberwucherung, greenCount } from "./skills.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 import { architectFormSpec } from "./architect.js";
 
@@ -201,12 +201,6 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   //      Parameter liest der eP()-Block unten (E_STRONG_REP/E_AFTERGLOW/E_CORE) bzw. roles (E_COLOR_ALLIANCE/E_CORE).
   //      Die drei Duplikat-Familien (Enger Wechsel/Abstieg/Offene Grenze) entfielen ersatzlos → E_PENDULUM/E_BIGSTEP/
   //      E_SEGMENT decken sie ab. `pe` (ehem. shop.permanentEffects) wird nicht mehr gelesen (vestigial in der Signatur). ----
-  // ---- Eis-Rework (v0): Formations-Wildcards nur auf eingefrorenen Karten. Kristallform = Joker (±CRYSTAL_OFFSET Wert-Flex + [#230 N12: war „±2", ist 1]
-  //      Vorgängerwert für Wiederholung/Treppe/Wechsel — merge Kalte Präzision/Eisschritt/alt-Kristallform);
-  //      Frostbrücke = Segment-Brücke. Schicht-DAUERWERT wirkt im KAMPF (engine.js), nicht in der Erkennung (v0). ----
-  const frozen = cards.map((c) => !!c.frozen);
-  const kristallform = iceFlag(skills, "kristallform"); // Joker: ±CRYSTAL_OFFSET (v0.3: 1) + Vorgängerwert (Wiederholung/Treppe/Wechsel)
-  const frostbridge  = iceFlag(skills, "frostbridge");  // Segment-Brücke: Formation darf an einer Frostkarte die Segmentgrenze queren
   const val = cards.map((c) => c.value);
   // Familien-Rollen (Rarität #167 Kat. C): Joker (C_JOKER) + Bindeglied (C_BRIDGE) aus den gehaltenen Familien-Stufen.
   // §10-Näherung Joker: jokerMode "pred" (I/II) = Vorgängerfarbe wie flach C8; "predOrSucc"/"free" (III/IV) = Farbblock-
@@ -231,7 +225,6 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // Bindeglied (C10, ±1) + Eis: Eisschritt/Kristallform geben ±1, Permafrost-Joker passt überall (großer Flex).
   const bind = cards.map((c, k) => {
     let b = famBridgeSpan[c.id] || 0; // Familie C_BRIDGE: Span je Stufe (1/2/99); flache C10 ist zu #167 migriert
-    if (frozen[k] && kristallform) b = Math.max(b, CRYSTAL_OFFSET); // Kristallform: ±CRYSTAL_OFFSET Treppen-Flex (Joker)
     if (af && af.bind[k]) b = Math.max(b, af.bind[k]); // Architekt Kreuzgang: Treppen-Bindeglied ±Span
     return b;
   });
@@ -255,9 +248,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // Grenze NACH Position k existiert nur, wenn (k+1)%SEGMENT_SIZE===0; ihr 0-basierter Grenz-Index ist (k+1)/SIZE−1.
   const segInfo = openSegmentInfo(familyTiers);
   const crossSeg = segInfo.all;
-  // Frostbrücke (v0, Eis): eine Frostkarte am Segmentrand öffnet die Grenze — die Formation darf ins nächste Segment laufen.
   const canExtendSeg = (k) => ((k + 1) % SEGMENT_SIZE !== 0) || segInfo.isOpen((k + 1) / SEGMENT_SIZE - 1)
-    || (frostbridge && (frozen[k] || frozen[k + 1]))
     || (af && af.crossSeg.has(Math.floor(k / SEGMENT_SIZE))); // Architekt Pfeiler: Segmentgrenze der berührten Zeile offen
   // #179 E_SEGMENT IV Grenz-Bonus: Karten in einer Formation, die eine (frühere) Segmentgrenze überschreitet,
   // geben zusätzlich ×crossBonus. noteCross sammelt die Mitglieds-Positionen kreuzender Läufe (nur aktiv bei Stufe IV).
@@ -281,20 +272,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
     if (factor > 1) out[pos].mult *= factor;
     out[pos].formations.push({ type, ordinal, factor });
   };
-  // #269 Option 1: Formationen, die eine Frostkarte tragen UND wo der Build den Joker (Kristallform) bzw. die Brücke
-  // (Frostbrücke) hält, gelten als „joker-gestützt": sie zählen VOLL für den Schicht-Motor (baseFormationCount, Bonus-
-  // Schicht, Eisdruck …), aber die Engine dämpft ihren Formations-SCORE über `jokerFactor` (× ICE_JOKER_FORMSCORE_SHARE).
-  // So füttern Joker/Brücke den Schicht-Payoff, treiben aber nicht mehr den Score-Runaway. `jokerFactor` = Produkt der
-  // Faktoren joker-gestützter Formationen an der Position (die Engine rechnet sie heraus und dämpft neu).
-  const jokerActive = kristallform || frostbridge;
-  const tagJoker = (members, type) => {
-    if (!jokerActive || !members.some((p) => frozen[p])) return;
-    for (const p of members) {
-      const fe = out[p].formations.find((f) => f.type === type && !f.viaJoker);
-      if (fe && fe.factor > 1) { fe.viaJoker = true; out[p].jokerFactor *= fe.factor; }
-    }
-  };
-  const onRunJoker = (type) => (mem) => { if (noteCross) noteCross(mem); tagJoker(mem, type); };
+  const onRunJoker = () => (mem) => { if (noteCross) noteCross(mem); };
   // F6 Nachhall: bester (höchster) Endfaktor je Endposition eines Basislaufs (Wiederholung/Farbblock/Treppe/Wechsel).
   // Der Empfänger ist die direkt folgende Karte; Anker zählen NICHT als Ursprung.
   const endBest = {}; // pos(letztes Mitglied) → { factor, type }
@@ -302,14 +280,9 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
     if (factor > 1 && (!endBest[pos] || factor > endBest[pos].factor)) endBest[pos] = { factor, type };
   };
 
-  // Wiederholung: Wert-Mengen je Karte (Kristallform ±1, Kalte Präzision = Vorgängerwert); Permafrost-Joker matcht alles.
-  const valSetWied = cards.map((c, k) => {
-    const s = new Set([val[k]]);
-    if (frozen[k] && kristallform) { s.add(val[k] - CRYSTAL_OFFSET); s.add(val[k] + CRYSTAL_OFFSET); if (k > 0) s.add(val[k - 1]); } // Kristallform: ±CRYSTAL_OFFSET + Vorgängerwert
-    return s;
-  });
-  const jokerAll = frozen.map(() => false); // (Permafrost-Farbblock-Joker im Rework entfernt — Kristallform ist kein Farbblock-Joker)
-  const matchWied = (a, b) => jokerAll[a] || jokerAll[b] || [...valSetWied[a]].some((v) => valSetWied[b].has(v));
+  // Wiederholung: Wert-Menge je Karte (genau ihr eigener Wert).
+  const valSetWied = val.map((v) => new Set([v]));
+  const matchWied = (a, b) => [...valSetWied[a]].some((v) => valSetWied[b].has(v));
   const wiedFactor = (ord) => wiederholungFactor(ord, repBonus, repThird, repMult);
   markRuns(n, 2, matchWied, wiedGap, canExtendSeg,
     (pos, ord) => add(pos, "wiederholung", ord, wiedFactor(ord)), () => false,
@@ -317,7 +290,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
 
   // Farbblock: Permafrost-Joker + freie Familien-Joker (C_JOKER III/IV) matchen jede Farbe; Frostbrücke macht
   // eingefrorene Karten transparent (kein Mitglied).
-  const matchSuit = (a, b) => jokerAll[a] || jokerAll[b] || famJokerFree.has(cards[a].id) || famJokerFree.has(cards[b].id) || effSuit[a] === effSuit[b];
+  const matchSuit = (a, b) => famJokerFree.has(cards[a].id) || famJokerFree.has(cards[b].id) || effSuit[a] === effSuit[b];
   const farbSkip = (k) => !!(af && af.transparentFarb.has(k)); // Architekt Arkade: abgedeckte Karte unterbricht den Farbblock nicht (transparent)
   // Pflanze (v0): Ewiger Frühling zählt Farbblock schon ab 2 Karten; Überwucherung (Feld genug grün) → alle Farbblöcke +0,20.
   const farbMin = hasEwigerFruehling(skills) ? EWIGER_FRUEHLING_FARBBLOCK : 3;
@@ -333,15 +306,14 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   markRuns(n, farbMin, matchSuit, suitGap, canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, farbFactor(pos, ord)), farbSkip,
     (last, ord) => recordEnd(last, "farbblock", farbFactor(last, ord)), isJF,
-    (mem) => { if (noteCross) noteCross(mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) fe.len = mem.length; } tagJoker(mem, "farbblock"); });
+    (mem) => { if (noteCross) noteCross(mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) fe.len = mem.length; } });
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));
   markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, treppeEnd, isJT, onRunJoker("treppe"));
   // (Fallende Treppen „Abstieg" entfielen #179 — E_BIGSTEP deckt Rückschritte/Richtungswechsel innerhalb der Treppe ab.)
-  // Wechsel: Kristallform gibt eingefrorenen Karten ±CRYSTAL_OFFSET-Wertoptionen (#165; Permafrost/Eisschritt gelten hier NICHT).
   // E_PENDULUM IV: wFactorStart hebt den Wechsel-Faktor bereits ab Länge 2 auf ×1,35 (sonst erst ab der 3. Karte).
-  const valSetWechsel = cards.map((c, k) => (frozen[k] && kristallform ? [val[k] - CRYSTAL_OFFSET, val[k], val[k] + CRYSTAL_OFFSET] : [val[k]]));
+  const valSetWechsel = val.map((v) => [v]);
   const wechselFactor = (ord) => Math.max(escalatingFactor(ord, WECHSEL_BASE), ord >= 2 && wFactorStart ? wFactorStart : 1);
   markWechsel(val, valSetWechsel, n, wMinLen, canExtendSeg,
     (pos, ord) => add(pos, "wechsel", ord, wechselFactor(ord)), wMinDiff,
@@ -373,9 +345,6 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
     out[pos].mult *= segCrossBonus;
     out[pos].formations.push({ type: "grenzbonus", ordinal: 1, factor: segCrossBonus });
   }
-
-  // (Eis-Rework v0: der alte Kristallform-Zusatzbonus ×1,15 entfällt — Kristallform ist jetzt ein reiner ±CRYSTAL_OFFSET-Joker;
-  //  der Schicht-Payoff läuft über die Schichten/Eisdruck in der Engine, nicht über einen Extra-Formationsfaktor.)
 
   // Architekt Kathedrale (#202): „Formationen ×2" — abgedeckte Positionen mit einer aktiven Formation (mult > 1) skalieren.
   // NACH der Überlappung, VOR baseMult → fließt in den Formations-Score, zählt aber nicht in die Überlappungs-Anzahl.

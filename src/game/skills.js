@@ -416,11 +416,8 @@ export function forgeCostFor(skills, heatValue = 0) {
   return Math.max(1, Math.round(c));
 }
 
-/* ---- Eis-Archetyp — Formations-Wildcard-Flag (Kristallform/Frostbrücke, in formations.js gelesen)
-       + Deaktivierungs-Reset. Der Gletscher-Kern (Masse/Rollen) liegt in glacier.js. ---- */
+/* ---- Eis-Archetyp — Deaktivierungs-Reset (Alt-System). Der Gletscher-Kern (Masse/Rollen) liegt in glacier.js. ---- */
 
-// Generisches Skill-Flag-Prädikat (in formations.js für die Eis-Formations-Wildcards genutzt).
-export const iceFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
 // Alle eigenen Karten auftauen (immutabel). Genutzt, wenn der Eis-Archetyp deaktiviert wird (letzter Eis-Skill
 // ersetzt, #140): ein evtl. gesetztes frozen-Flag verschwindet von allen Karten.
 export function unfreezeAll(deck) {
