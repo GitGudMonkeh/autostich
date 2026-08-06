@@ -303,8 +303,9 @@ export function glacierOpts(roles = []) {
   if (has(ROLES.EISBRUECKE)) opts.neighborFn = neighbors8;   // Kaskade/Kollision/Kette über 8-Nachbarschaft
   if (has(ROLES.KETTENBRUCH)) opts.kettenbruch = true;
   if (has(ROLES.GLETSCHERSTURZ)) opts.gletschersturz = true;
-  if (has(ROLES.L_LAWINE)) opts.grosseLawine = true;         // Legendär: alles bricht
-  if (has(ROLES.L_SCHILD)) opts.ewigesSchild = true;         // Legendär: Übergletscher
+  // L_LAWINE (Große Lawine) wird NICHT hier als Dauer-Flag gesetzt — sie ist ein EINMALIGER Finisher (One-Shot),
+  // die Engine setzt opts.grosseLawine nur im ersten aktiven Durchlauf (sonst würde sie das Horten verhindern).
+  if (has(ROLES.L_SCHILD)) opts.ewigesSchild = true;         // Legendär: Übergletscher (Dauer-Zustand)
   return opts;
 }
 

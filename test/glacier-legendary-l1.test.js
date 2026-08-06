@@ -10,14 +10,17 @@ const zeros = () => new Array(N_POS).fill(0);
 const withMass = (pairs) => { const m = zeros(); for (const [p, v] of pairs) m[p] = v; return m; };
 const set = (...ps) => new Set(ps);
 
-describe("Große Lawine — alles bricht auf einen Schlag", () => {
-  it("auch Unter-Schwelle-Gletscher brechen (Schwellen ignoriert)", () => {
-    const mass = withMass([[0, 2], [1, 3], [2, 1]]); // alle unter Schwelle 4
+describe("Große Lawine — alles bricht auf einen Schlag (One-Shot)", () => {
+  it("mit grosseLawine-opt brechen auch Unter-Schwelle-Gletscher (Schwellen ignoriert)", () => {
+    const mass = withMass([[0, 2], [1, 3], [2, 1]]); // alle unter der Berst-Schwelle
     const base = precomputeGlacier(mass, set(0, 1, 2));
-    const lawine = precomputeGlacier(mass, set(0, 1, 2), glacierOpts([ROLES.L_LAWINE]));
+    const lawine = precomputeGlacier(mass, set(0, 1, 2), { grosseLawine: true });
     expect(base.breaks).toHaveLength(0);
     expect(lawine.breaks).toHaveLength(3);
     for (const p of [0, 1, 2]) expect(lawine.payout[p]).toBeGreaterThan(0);
+  });
+  it("glacierOpts setzt grosseLawine NICHT als Dauer-Flag (One-Shot läuft über die Engine)", () => {
+    expect(glacierOpts([ROLES.L_LAWINE]).grosseLawine).toBeUndefined();
   });
 });
 
@@ -54,5 +57,16 @@ describe("Engine-Verdrahtung (L1)", () => {
     const schild = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.L_SCHILD] }), noCrit);
     expect(base.lastTrick.breakdown?.glacierDirect ?? 0).toBe(0);        // pos0 leer → kein Bruch
     expect(schild.lastTrick.breakdown.glacierDirect).toBeGreaterThan(0); // auf 6 gepoolt → bricht
+  });
+  it("Große Lawine ist ein One-Shot: feuert im 1. Durchlauf (Unter-Schwelle bricht), dann inert", () => {
+    const cycle = (s0) => { let s = s0; for (let i = 0; i < 40; i++) s = resolveTrick(s, noCrit); return s; };
+    // Unter-Schwelle-Masse, alle verlieren (nur Ewiger Frost akkumuliert) → ohne Lawine bräche nichts.
+    let s = scen({ glacierLocked: lockAt(0, 1, 2), glacierMass: withMass([[0, 5], [1, 5], [2, 5]]), glacierRoles: [ROLES.L_LAWINE], oppDeck: oppOf(99) });
+    s = cycle(s);                                    // Durchlauf 1: Große Lawine feuert
+    expect(s.glacierYield).toBeGreaterThan(0);       // Unter-Schwelle-Gletscher sind gebrochen
+    expect(s.grosseLawineFired).toBe(true);
+    const yieldAfter1 = s.glacierYield;
+    s = cycle(s);                                    // Durchlauf 2: inert (Masse wieder niedrig → kein Bruch)
+    expect(s.glacierYield).toBe(yieldAfter1);        // kein neuer Bruch
   });
 });
