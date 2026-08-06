@@ -248,7 +248,7 @@ export const GLOSSARY = {
     text: `Grüne Karten sind dauerhaft und bilden einen gemeinsamen Farbblock — je größer der Block, desto mehr Score. Grün ist Farbe, nicht Kraft; Kartenwert wächst nur über Wurzeln (Deckel ${C.PLANT_VALUE_CAP}).`,
     match: ["Grün", "grüne", "grünen", "grüner", "Reife", "reif"] },
   wurzeln: { category: "frak", group: "plant", label: "Wurzeln", icon: "🌿", color: CLR.plant,
-    text: `Der einzige Weg, den Kartenwert grüner Karten zu erhöhen (bis zum Deckel ${C.PLANT_VALUE_CAP}). Ist der Deckel erreicht, geben weitere Wurzeln stattdessen Score.`,
+    text: `Kartenwert grüner Karten steigt über die Mono-Fraktions-Passive (nur mit reinen Pflanze-Skills): je ${C.WURZELSCHLAG_PER_GROWTH} Wachstum ein grüner Sieg +1 Kartenwert (bis Deckel ${C.PLANT_VALUE_CAP}); ab ${C.WURZELSCHLAG_LOSS_MIN_SKILLS} Skills auch je ${C.WURZELSCHLAG_LOSS_EVERY} Niederlagen einer Karte. Wachstum wird dabei NICHT verbraucht — es speist parallel weiter Wurzel-Score & Legendäre.`,
     match: ["Wurzeln", "Wurzel-Score", "Wurzeln-Score"] },
   bluete: { category: "frak", group: "plant", label: "Blüte", icon: "🌸", color: CLR.plant,
     text: `Ein Grün-Payoff: Siegt eine grüne Karte mit grünen Nachbarn, gibt sie +${C.BLUETE_SCORE} Blüte-Score je grüner Karte im Segment (Blütezeit ×${C.BLUETEZEIT_MULT} in Formation, Überwucherung nochmals ×2).`,

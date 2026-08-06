@@ -16,7 +16,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
   hasVergletscherung, hasArchitekt, // Eis-Rework (v0): Legendäre
   hasEiskalt, hasFrostschlag, hasUeberlaufMotorDepth, hasFrostkaskade, // Überlauf-Konsum: Crit aus Vorrat + Frost-Crit-Payoff + Tiefen-Motor + Crit-Momentum
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
-  hasWurzelschlag, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Tiefe/Breite
+  isMonoPlant, hasKernholz, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Fraktions-Passive (Mono) / Kernholz / Tiefe / Breite
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
   hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasBaumreihe, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
@@ -601,10 +601,15 @@ export function resolveTrick(state, rng) {
           if (depth > 0) { const d = (depth * (depth + 1) / 2) * C.PLANT_ROOT_DEEP_K * plantCommit * trimMult; plantDirect += d; plantRoot += d; }
           if (hasMutterbaum(skills) && g >= Math.max(1, ...Object.values(newGrowth))) { plantFlat += root; plantRoot += root; } // Mutterbaum (v0-Näherung): Segment-Streuung
         }
-        // Wurzelschlag: grüne Karte wächst permanenten Wert an (+1 je N Wachstum, bis Deckel). Float-sicher (Wachstum ist
-        // seit dem Grün-Gate gebrochen): +1 Wert, wenn dieser Sieg eine neue N-Schwelle überschreitet.
-        if (hasWurzelschlag(skills) && Math.floor(g / C.WURZELSCHLAG_PER_GROWTH) > Math.floor(prevG / C.WURZELSCHLAG_PER_GROWTH) && pCard.value < C.PLANT_VALUE_CAP)
+        // Fraktions-Passive (Mono): grüne Karte leitet permanenten Wert aus Wachstum ab (+1 je N Wachstum, bis Deckel).
+        // Wachstum wird NICHT verbraucht (speist parallel Jahresringe/Feldtiefe/Legendäre). Nur solange Mono-Pflanze.
+        if (isMonoPlant(skills) && Math.floor(g / C.WURZELSCHLAG_PER_GROWTH) > Math.floor(prevG / C.WURZELSCHLAG_PER_GROWTH) && pCard.value < C.PLANT_VALUE_CAP)
           deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: Math.min(C.PLANT_VALUE_CAP, c.value + 1) } : c));
+        // Kernholz (L4): erntet den aufgebauten Wert — +Score je Kartenwert-Punkt über dem Startwert (baseRank). Nur grün.
+        if (hasKernholz(skills) && cardGreen) {
+          const over = Math.max(0, pCard.value - (pCard.baseRank || 0));
+          if (over > 0) { const kh = over * C.KERNHOLZ_SCORE_PER_VALUE; plantFlat += kh; plantRoot += kh; }
+        }
         // Aussaat: beide Nachbarn +1 Wachstum (Flugsamen: grüne überspringen, nächste graue säen).
         if (hasAussaat(skills)) {
           for (const dir of [-1, 1]) {
@@ -1124,10 +1129,10 @@ export function resolveTrick(state, rng) {
       newGrowth = { ...newGrowth, [pCard.id]: g }; growthTotal += C.ZAEHER_HALM_GROWTH; // #270
       if (growthRipe(g)) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c)); // reif geworden → grün backen
     }
-    // Wurzelschlag-Buff (v0.4): MONO-Bonus — nur ab N aktiven Pflanzen-Skills wächst eine Karte auch nach je M Niederlagen
-    // trotzdem. Zähler je card.id; bei Erreichen der Schwelle → +Zuwachs (gleiche Skill-Gate-Rate wie ein Sieg) und Zähler
-    // zurück. Grün backen + Wert-Schwelle wie im Sieg.
-    if (hasWurzelschlag(skills) && plantSkillCount(skills) >= C.WURZELSCHLAG_LOSS_MIN_SKILLS) {
+    // Fraktions-Passive — Niederlage-Klausel: nur Mono-Pflanze UND ab N Pflanzen-Skills wächst eine Karte auch nach je M
+    // Niederlagen trotzdem. Zähler je card.id; bei Erreichen der Schwelle → +Zuwachs (gleiche Skill-Gate-Rate wie ein Sieg)
+    // und Zähler zurück. Grün backen + Wert-Schwelle wie im Sieg.
+    if (isMonoPlant(skills) && plantSkillCount(skills) >= C.WURZELSCHLAG_LOSS_MIN_SKILLS) {
       const losses = (newPlantLoss[pCard.id] || 0) + 1;
       if (losses >= C.WURZELSCHLAG_LOSS_EVERY) {
         newPlantLoss = { ...newPlantLoss, [pCard.id]: 0 };
@@ -1337,8 +1342,7 @@ export function resolveTrick(state, rng) {
         // guaranteeOne-Parameter — NICHT mehr Chance 1, das würde bei der Per-Archetyp-Ziehung in JEDEM Archetyp einen setzen).
         const guarantee = masteryLegendGuaranteed(mGrade) && !newMasteryLegGranted;
         const skillLeg = skillLegendaryChance(shop) * mLegMult; // #247: Per-Archetyp-Chance (Basis × Meisterrang-Mult)
-        const guaranteeWurzel = !skills.includes("SK_PLANT_01") && !state.wurzelschlagRerolled; // Pflanze-Kern-Garantie
-        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLeg, guarantee, guaranteeWurzel);
+        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLeg, guarantee);
         if (soff.length > 0) {
           phase = "levelup"; newSkillOffer = soff;
           if (guarantee && soff.some(isLegendarySkill)) newMasteryLegGranted = true; // Garantie eingelöst, sobald ein Legendär tatsächlich im Angebot ist
@@ -1374,7 +1378,7 @@ export function resolveTrick(state, rng) {
         const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0));
         if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
         else {
-          const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, !skills.includes("SK_PLANT_01") && !state.wurzelschlagRerolled);
+          const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false);
           if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
         }
       }

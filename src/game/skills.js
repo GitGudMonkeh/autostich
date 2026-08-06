@@ -200,9 +200,7 @@ export const SKILL_DEFS = {
   // ---- Pflanze-Fraktion (v0) — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend)
   //      → Reife (grün) → Farbblock → Score. Grün = Farbe, nicht Kraft; Wert nur über Wurzeln (Deckel 11).
   //      Grundmechanik: Alter Anker (Aktivierung startet 1 reife Karte). Flags in engine/formations/reducer gelesen. ----
-  // Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score)
-  SK_PLANT_01: { id: "SK_PLANT_01", name: "Wurzelschlag", archetype: "plant", keywords: ["growth", "value"],
-    desc: `Gewinnt eine grüne Karte, erhält sie je ${C.WURZELSCHLAG_PER_GROWTH} angesammeltes Wachstum dauerhaft +1 Kartenwert (bis Wert ${C.PLANT_VALUE_CAP}). Ab ${C.WURZELSCHLAG_LOSS_MIN_SKILLS} aktiven Pflanzen-Skills wächst eine Karte auch nach je ${C.WURZELSCHLAG_LOSS_EVERY} Niederlagen trotzdem +1 Wachstum.`, wurzelschlag: true },
+  // Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score) — die Wert-aus-Wachstum-Mechanik ist jetzt die MONO-Fraktions-Passive (s. u.), kein Skill mehr.
   SK_PLANT_02: { id: "SK_PLANT_02", name: "Wurzeltiefe", archetype: "plant", keywords: ["growth", "score"],
     desc: `Jeder Sieg einer grünen Karte gibt +${C.WURZELTIEFE_SCORE} Wurzel-Score, dazu einen Bonus, der mit dem Gesamtwachstum des Feldes steigt (max. +${C.WURZELTIEFE_FIELD_CAP} bei ~${grp(Math.round((C.WURZELTIEFE_FIELD_CAP / C.WURZELTIEFE_FIELD_K) ** 2 / 1000) * 1000)} Wachstum).`, wurzeltiefe: true },
   SK_PLANT_03: { id: "SK_PLANT_03", name: "Pfahlwurzel", archetype: "plant", keywords: ["growth", "score", "formation"],
@@ -232,6 +230,8 @@ export const SKILL_DEFS = {
     desc: `In einem grünen Farbblock ab ${C.BLAETTERDACH_MIN} Karten gibt jede grüne Karte bei Sieg zusätzlich +${C.BLAETTERDACH_SCORE} Score je Karte im Block (bis ${C.BLAETTERDACH_CARD_CAP}).`, blaetterdach: true },
   SK_PLANT_14: { id: "SK_PLANT_14", name: "Überwucherung", archetype: "plant", keywords: ["green", "formation", "overgrowth"],
     desc: `Ist das Feld ≥${pct(C.UEBERWUCHERUNG_FIELD)} % grün, werden alle Farbblöcke stärker (+${de(C.UEBERWUCHERUNG_FACTOR)} Faktor) und Blüte zählt doppelt.`, ueberwucherung: true },
+  SK_PLANT_18: { id: "SK_PLANT_18", name: "Kernholz", archetype: "plant", keywords: ["value", "score"],
+    desc: `Gewinnt eine grüne Karte, gibt sie +${C.KERNHOLZ_SCORE_PER_VALUE} Score je Kartenwert-Punkt über ihrem Startwert (den die Fraktions-Passive aus Wachstum aufbaut).`, kernholz: true },
   // Linie 5 — Ausläufer (Gegnerdeck: kolonisieren & ernten)
   SK_PLANT_15: { id: "SK_PLANT_15", name: "Ausläufer", archetype: "plant", keywords: ["green", "colonize"],
     desc: `Gewinnt eine grüne Karte, kolonisiert sie die niedrigste Gegnerkarte. Besiegst du eine kolonisierte Karte, erntest du +${C.AUSLAEUFER_HARVEST} Wachstum. Trimmen: beim Ersetzen dauerhaft +${pct(C.TRIM_STEP)} % Wurzel-/Blüten-Score (bis +${pct(C.TRIM_CAP)} %).`, auslaeufer: true, trimGrowth: true },
@@ -509,7 +509,10 @@ export const plantRootScore = (skills, growth) => {
   return r;
 };
 // Flag-Prädikate (in engine/formations/reducer gelesen).
-export const hasWurzelschlag  = (skills) => plantFlag(skills, "wurzelschlag");
+// Pflanze-Fraktions-Passive „Wurzelschlag" (v0.5): MONO-Gate — nur aktiv, solange AUSSCHLIESSLICH Pflanzen-Skills
+// gehalten werden (mind. 1). Steuert die Wert-aus-Wachstum-Ableitung (Sieg) + die Niederlage-Klausel.
+export const isMonoPlant      = (skills) => (skills || []).length > 0 && plantSkillCount(skills) === (skills || []).length;
+export const hasKernholz      = (skills) => plantFlag(skills, "kernholz");
 export const hasWurzeltiefe   = (skills) => plantFlag(skills, "wurzeltiefe");
 export const hasPfahlwurzel   = (skills) => plantFlag(skills, "pfahlwurzel");
 export const hasJahresringe   = (skills) => plantFlag(skills, "jahresringe");
@@ -564,7 +567,7 @@ export function ownsConsumerFor(arch, skills) {
 // #217 Meistergrade: ob eine Skill-id ein Legendär ist (Garantie-Erkennung bei Grad V). Rein & node-testbar.
 export const isLegendarySkill = (id) => !!SKILL_DEFS[id]?.legendary;
 
-export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0, guaranteeOne = false, guaranteeWurzelschlag = false) {
+export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0, guaranteeOne = false) {
   const available = archetypesWithSkills(owned);
   const chosen = offerArchetypes(activeArchetypes || [], available, rng);
   if (!chosen.length) return [];
@@ -607,13 +610,7 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
       if (ci > 0) pool.unshift(pool.splice(ci, 1)[0]);
       if (ci >= 0) guaranteed.add(pool[0]);
     }
-    // Pflanze-Kern-Garantie: Wurzelschlag wird angeboten, solange nicht gehalten UND nicht rerolled — Pflanze hat keinen
-    // Konsumenten, deshalb sichert dieser Kern-Skill den Einstieg (analog zur Konsumenten-Garantie). Reroll cancelt sie.
-    if (arch === "plant" && guaranteeWurzelschlag) {
-      const wi = pool.indexOf("SK_PLANT_01");
-      if (wi > 0) pool.unshift(pool.splice(wi, 1)[0]);
-      if (wi >= 0) guaranteed.add("SK_PLANT_01");
-    }
+    // (v0.5: keine Pflanze-Kern-Garantie mehr — die Wert-aus-Wachstum-Mechanik ist jetzt die immer-aktive Mono-Passive.)
     for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
     rest.push(...pool); // Reste des Archetyps für die Auffüllung
     // #247: eigener Legendär-Wurf für DIESEN Archetyp — genau EIN rng()-Zug je Archetyp (nur wenn er Legendäre hat),

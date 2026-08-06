@@ -15,10 +15,10 @@ const green0 = (v) => constDeck(v).map((c, i) => (i === 0 ? { ...c, green: true 
 const noCrit = () => 0.99;
 const B = C.SCORE_PER_WIN;
 const PLANT_IDS = [
-  "SK_PLANT_01", "SK_PLANT_02", "SK_PLANT_03", "SK_PLANT_04", "SK_PLANT_05", "SK_PLANT_06", "SK_PLANT_07",
+  "SK_PLANT_02", "SK_PLANT_03", "SK_PLANT_04", "SK_PLANT_05", "SK_PLANT_06", "SK_PLANT_07",
   "SK_PLANT_08", "SK_PLANT_09", "SK_PLANT_10", "SK_PLANT_11", "SK_PLANT_12", "SK_PLANT_13", "SK_PLANT_14",
-  "SK_PLANT_15", "SK_PLANT_16", "SK_PLANT_17", "SK_PLANT_L01", "SK_PLANT_L02", "SK_PLANT_L03", "SK_PLANT_L04",
-];
+  "SK_PLANT_15", "SK_PLANT_16", "SK_PLANT_17", "SK_PLANT_18", "SK_PLANT_L01", "SK_PLANT_L02", "SK_PLANT_L03", "SK_PLANT_L04",
+]; // v0.5: SK_PLANT_01 (Wurzelschlag) → Mono-Fraktions-Passive; SK_PLANT_18 (Kernholz) neu in L4
 
 describe("Pflanze-Fraktion v0 — Roster + Verdrahtung", () => {
   it("21 Pflanze-Skills: 17 normal + 4 legendär, alle archetype=plant, alle registriert", () => {
@@ -33,8 +33,8 @@ describe("Pflanze-Fraktion v0 — Roster + Verdrahtung", () => {
   it("#288 Trimmen: genau die 6 wachstums-stützenden Skills sind trimmbar (inkl. Ausläufer/Rhizom)", () => {
     const trimmable = PLANT_IDS.filter(isTrimmableSkill).sort();
     expect(trimmable).toEqual(["SK_PLANT_05", "SK_PLANT_06", "SK_PLANT_07", "SK_PLANT_08", "SK_PLANT_15", "SK_PLANT_16"]);
-    // Wachstum-LESENDE (nicht -stützende) Skills bleiben untrimmbar
-    expect(isTrimmableSkill("SK_PLANT_01")).toBe(false); // Wurzelschlag (Wachstum → Wert)
+    // Wachstum-/Wert-LESENDE (nicht -stützende) Skills bleiben untrimmbar
+    expect(isTrimmableSkill("SK_PLANT_18")).toBe(false); // Kernholz (Wert → Score)
     expect(isTrimmableSkill("SK_PLANT_04")).toBe(false); // Jahresringe (Wachstum → Score)
     expect(isTrimmableSkill("SK_PLANT_L01")).toBe(false); // Weltenbaum (legendär)
   });
@@ -59,7 +59,7 @@ describe("Pflanze-Fraktion v0 — reine Helfer", () => {
 describe("Pflanze-Fraktion v0 — Engine-Integration", () => {
   it("Wachstum: ab SKILL_REF Pflanzen-Skills gibt Sieg +1; an der Reife-Schwelle wird die Karte grün", () => {
     // Skill-Gate: Win-Wachstum = min(1, PflanzenSkills/REF). Ab REF Skills volle +1 → Schwelle → grün.
-    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_01", "SK_PLANT_02", "SK_PLANT_05"], growth: { X0: C.PLANT_GREEN_THRESHOLD - 1 } }), noCrit);
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_09", "SK_PLANT_02", "SK_PLANT_05"], growth: { X0: C.PLANT_GREEN_THRESHOLD - 1 } }), noCrit);
     expect(s.growth.X0).toBe(C.PLANT_GREEN_THRESHOLD);
     expect(s.deck[0].green).toBe(true);
   });
@@ -68,31 +68,57 @@ describe("Pflanze-Fraktion v0 — Engine-Integration", () => {
     expect(s.growth.X0).toBeCloseTo(1 / C.PLANT_GROWTH_SKILL_REF); // 1 Skill / 3 = 0,333
     expect(s.deck[0].green).toBeFalsy(); // grau bleibt grau — 1/3 < Schwelle
   });
-  // Mono-Bonus: erst ab WURZELSCHLAG_LOSS_MIN_SKILLS (=4) aktiven Pflanzen-Skills; growInc gedeckelt bei min(1, 4/3)=1.
-  const mono = ["SK_PLANT_01", "SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_09"]; // 4 Pflanzen-Skills, inkl. Wurzelschlag
-  it("Wurzelschlag-Buff (mono): je WURZELSCHLAG_LOSS_EVERY Niederlagen wächst die Karte trotzdem (+Zuwachs)", () => {
+  // Fraktions-Passive (Mono): Niederlage-Klausel erst ab WURZELSCHLAG_LOSS_MIN_SKILLS (=4) Pflanzen-Skills; growInc min(1,4/3)=1.
+  const mono = ["SK_PLANT_10", "SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_09"]; // 4 Pflanzen-Skills → Mono aktiv
+  it("Passive (mono): je WURZELSCHLAG_LOSS_EVERY Niederlagen wächst die Karte trotzdem (+Zuwachs)", () => {
     const s = resolveTrick(scen(6, 12, { skills: mono, growth: { X0: 5 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
     expect(s.lastTrick.result).toBe("loss");
     expect(s.growth.X0).toBe(6);      // +1 Zuwachs trotz Niederlage
     expect(s.plantLoss.X0).toBe(0);   // Zähler zurückgesetzt
   });
-  it("Wurzelschlag-Buff (mono): eine einzelne Niederlage tickt nur den Zähler, noch kein Wachstum", () => {
+  it("Passive (mono): eine einzelne Niederlage tickt nur den Zähler, noch kein Wachstum", () => {
     const s = resolveTrick(scen(6, 12, { skills: mono, growth: { X0: 5 }, plantLoss: {} }), noCrit);
     expect(s.growth.X0 || 0).toBe(5); // unverändert
     expect(s.plantLoss.X0).toBe(1);   // Zähler +1
   });
-  it("Wurzelschlag-Buff: Mono-Gate — unter WURZELSCHLAG_LOSS_MIN_SKILLS kein Trostwachstum (Splash)", () => {
-    // Wurzelschlag aktiv, aber nur 3 Pflanzen-Skills (< 4) → Buff greift NICHT, Zähler bleibt unberührt.
-    const splash = ["SK_PLANT_01", "SK_PLANT_02", "SK_PLANT_05"];
-    const s = resolveTrick(scen(6, 12, { skills: splash, growth: { X0: 5 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
+  it("Passive: Niederlage-Klausel — unter WURZELSCHLAG_LOSS_MIN_SKILLS kein Trostwachstum", () => {
+    // Mono, aber nur 3 Pflanzen-Skills (< 4) → Niederlage-Klausel greift NICHT, Zähler bleibt unberührt.
+    const few = ["SK_PLANT_09", "SK_PLANT_02", "SK_PLANT_05"];
+    const s = resolveTrick(scen(6, 12, { skills: few, growth: { X0: 5 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
     expect(s.growth.X0 || 0).toBe(5);
     expect(s.plantLoss.X0 || 0).toBe(C.WURZELSCHLAG_LOSS_EVERY - 1); // unberührt
   });
-  it("Wurzelschlag-Buff (mono): grüne Karte klettert beim Loss-Tick auch im Wert (Schwellen-Übertritt)", () => {
+  it("Passive: MONO-Gate — ein einziger Fremd-Skill schaltet die Passive ab (kein Trostwachstum trotz 4+ Skills)", () => {
+    // 4 Skills, aber einer ist Blitz → nicht mono → Passive aus: weder Wert-Ableitung noch Niederlage-Klausel.
+    const mixed = ["SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_09", "SK_LIGHTNING_01"];
+    const s = resolveTrick(scen(6, 12, { skills: mixed, growth: { X0: 5 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
+    expect(s.growth.X0 || 0).toBe(5);                                  // kein Trostwachstum
+    expect(s.plantLoss.X0 || 0).toBe(C.WURZELSCHLAG_LOSS_EVERY - 1);   // Zähler unberührt (Klausel lief nicht)
+  });
+  it("Passive (mono): grüne Karte klettert beim Loss-Tick auch im Wert (Schwellen-Übertritt)", () => {
     // prevG 3 → g 4 überschreitet die /4-Schwelle → +1 Wert (nur für grüne Karte, wie im Sieg).
     const s = resolveTrick(scen(6, 12, { skills: mono, deck: green0(7), growth: { X0: 3 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
     expect(s.growth.X0).toBe(4);
-    expect(s.deck[0].value).toBe(8); // 7 → 8 (Wurzelschlag-Wert bei Schwellen-Übertritt)
+    expect(s.deck[0].value).toBe(8); // 7 → 8 (Passive-Wert bei Schwellen-Übertritt)
+  });
+  it("Passive (mono): grüner Sieg leitet Wert aus Wachstum ab (Schwellen-Übertritt), Wachstum bleibt", () => {
+    // grüne Karte Wert 7, growth 3 → Sieg gibt +1 Wachstum (mono, 4 Skills → growInc 1) → g 4 überschreitet /4 → +1 Wert.
+    const s = resolveTrick(scen(12, 6, { skills: mono, deck: green0(7), growth: { X0: 3 } }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.growth.X0).toBe(4);        // Wachstum NICHT verbraucht
+    expect(s.deck[0].value).toBe(8);    // 7 → 8 abgeleitet
+  });
+  it("Passive: MONO-Gate im Sieg — mit Fremd-Skill keine Wert-Ableitung", () => {
+    const mixed = ["SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_09", "SK_LIGHTNING_01"];
+    const s = resolveTrick(scen(12, 6, { skills: mixed, deck: green0(7), growth: { X0: 3 } }), noCrit);
+    expect(s.deck[0].value).toBe(7);    // Wert unverändert (Passive aus)
+  });
+  it("Kernholz (L4): grüner Sieg gibt +KERNHOLZ_SCORE_PER_VALUE je Wert über Startwert (baseRank)", () => {
+    // grüne Karte value 9, baseRank 5 → 4 Punkte über Start → +4·K in den Pflanze-Score.
+    const deck = green0(9).map((c, i) => (i === 0 ? { ...c, baseRank: 5 } : c));
+    const withK = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_18", "SK_PLANT_02", "SK_PLANT_05"], deck, growth: { X0: 0 } }), noCrit);
+    const without = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_09", "SK_PLANT_02", "SK_PLANT_05"], deck, growth: { X0: 0 } }), noCrit);
+    expect(withK.lastTrick.scoreGain - without.lastTrick.scoreGain).toBeCloseTo((9 - 5) * C.KERNHOLZ_SCORE_PER_VALUE * 1.02, 3);
   });
   // Feldtiefe-Bonus (Buff): +K·√(Gesamtwachstum), gedeckelt. Hier wächst nur X0 → Feld-Wachstum = s.growth.X0.
   const fieldTerm = (fg) => Math.min(C.WURZELTIEFE_FIELD_CAP, Math.round(C.WURZELTIEFE_FIELD_K * Math.sqrt(fg || 0)));

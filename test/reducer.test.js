@@ -140,7 +140,7 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
   });
 
   it("#288 Trimmen: Ersetzen eines Wachstums-Skills erhöht trimCount; ein anderer Skill nicht", () => {
-    const six = ["SK_PLANT_01", "SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_10", "SK_PLANT_12", "SK_PLANT_13"]; // SK_PLANT_05 = Aussaat (trimmbar)
+    const six = ["SK_PLANT_09", "SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_10", "SK_PLANT_12", "SK_PLANT_13"]; // SK_PLANT_05 = Aussaat (trimmbar)
     const NEW = "SK_PLANT_14"; // Überwucherung — nicht gehalten, kein Enabler
     const base = skillState({ skills: six, skillOffer: [NEW], activeArchetypes: ["plant"] });
     // Wachstums-Skill (Aussaat) ersetzt → Trimmung

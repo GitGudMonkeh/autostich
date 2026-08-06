@@ -65,7 +65,7 @@ function startDecisionSetup(decision, s, seed, actionRng, grade, architectEnable
   }
   // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
   const guarantee = masteryLegendGuaranteed(grade);
-  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(s.shop) * mLegMult, guarantee, !s.wurzelschlagRerolled);
+  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(s.shop) * mLegMult, guarantee);
   if (soff.length) return { phase: "levelup", skillOffer: soff, masteryLegGranted: guarantee && !devMode && soff.some(isLegendarySkill) };
   const off = buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * mLegMult, mRareShift, architectEnabled);
   return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
@@ -132,7 +132,6 @@ export function initialState(rng = Math.random, seed = null) {
     iceYield: 0, lightYield: 0, plantRoot: 0, plantBloom: 0, plantHarvest: 0, fireBase: 0, fireWhite: 0, // #270 Eigen-Score-Kanäle
     ionTotal: 0, growthTotal: 0, ashBurned: 0, brandTotal: 0, // #270 Motor-Zähler
     trimCount: 0, // #288 Trimmen: Anzahl ersetzter Wachstums-Skills → Wurzel-/Blüten-Multiplikator
-    wurzelschlagRerolled: false, // Pflanze-Kern-Garantie: Wurzelschlag wird angeboten, bis genommen ODER rerolled (dann true)
     tieArmed: false,
     shop: initialShop(), // hält nur noch die (inerten) Positionsanker — der Shop ist entfernt (#229)
     architectEnabled: false,       // Architekt (#202): Flag — bei true öffnet sich die Architekt-Phase (im Spiel via START_RUN true; false = Sim-Baseline ohne Architekt)
@@ -188,7 +187,7 @@ export function reducer(state, action) {
           devSchedule, maxCycles: devRounds, devEnergy, devMode: true,
           difficulty: difficultyForGrade(grade),
           rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
-          skillOffer: null, offer: null, masteryLegGranted: false, wurzelschlagRerolled: false, ...patch };
+          skillOffer: null, offer: null, masteryLegGranted: false, ...patch };
       }
       // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
       // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
@@ -203,7 +202,7 @@ export function reducer(state, action) {
         rerollsPerk: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
         rerollsArch: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
         rerollsSkill: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
-        masteryLegGranted: false, wurzelschlagRerolled: false, ...startPatch };
+        masteryLegGranted: false, ...startPatch };
     }
 
     case "TO_MENU":     // laufenden Run verlassen (#5)
@@ -599,7 +598,7 @@ export function reducer(state, action) {
     // #272 Legendär ablehnen → stattdessen normale Skill-Wahl (Nutzer-Wunsch), nie „verschwendet".
     case "DECLINE_LEGENDARY": {
       if (state.phase !== "legendary" || !state.legendaryOffer) return state;
-      const off = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, !state.skills.includes("SK_PLANT_01") && !state.wurzelschlagRerolled);
+      const off = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", 0), C.SKILLS_OFFERED, 0, false);
       return off.length > 0
         ? { ...state, legendaryOffer: null, skillOffer: off, phase: "levelup", offerRerolls: 0 } // → normale Skill-Auswahl
         : { ...state, legendaryOffer: null, phase: "play" };                                     // Skill-Pool leer → weiterspielen
@@ -634,13 +633,10 @@ export function reducer(state, action) {
       // angeboten wurde; sonst Per-Archetyp-Chance × Meisterrang-Mult (nicht mehr Chance 1 = „in jedem Archetyp").
       const guarantee = masteryLegendGuaranteed(state.masteryGrade) && !state.masteryLegGranted;
       const skillLeg = skillLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade);
-      // Pflanze-Kern-Garantie: enthielt das rerollte Angebot Wurzelschlag, gilt er ab jetzt als abgelehnt → nicht mehr forcieren.
-      const wurzelschlagRerolled = state.wurzelschlagRerolled || (state.skillOffer || []).includes("SK_PLANT_01");
-      const guaranteeWurzel = !state.skills.includes("SK_PLANT_01") && !wurzelschlagRerolled;
-      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLeg, guarantee, guaranteeWurzel);
+      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLeg, guarantee);
       if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
       const masteryLegGranted = state.masteryLegGranted || (guarantee && offer.some(isLegendarySkill)); // Garantie eingelöst
-      return { ...state, skillOffer: offer, offerRerolls: idx, rerollsSkill: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1, masteryLegGranted, wurzelschlagRerolled };
+      return { ...state, skillOffer: offer, offerRerolls: idx, rerollsSkill: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1, masteryLegGranted };
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.

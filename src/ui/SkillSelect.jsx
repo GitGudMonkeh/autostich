@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../game/skills.js";
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL, LIGHTNING_MAX_CHARGE,
-         PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF } from "../game/constants.js";
+         PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
+         WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY } from "../game/constants.js";
 import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
@@ -81,8 +82,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         ? "Schaltet das Einfrieren frei: eigene Karten werden blau, biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden. Jeder weitere Eis-Skill friert eine weitere Karte ein."
         : "Jeder weitere Eis-Skill friert eine weitere eigene Karte ein und erweitert deine Aufstellungs-Optionen.";
       case "plant": return first
-        ? `Schaltet das Wachstum frei: eigene Karten wachsen bei Siegen — je mehr Pflanze-Skills, desto schneller (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Skills). Eine wachsende, noch nicht reife Karte ist ein Setzling; ab ${PLANT_GREEN_THRESHOLD} Wachstum wird sie grün und bildet einen Farbblock, der Score gibt.`
-        : `Jeder weitere Pflanze-Skill beschleunigt das Wachstum (volles Tempo ab ${PLANT_GROWTH_SKILL_REF}) — mehr grüne Karten, größerer Farbblock. Wachstum und Grün sind bereits aktiv.`;
+        ? `Schaltet das Wachstum frei: eigene Karten wachsen bei Siegen — je mehr Pflanze-Skills, desto schneller (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Skills). Eine wachsende, noch nicht reife Karte ist ein Setzling; ab ${PLANT_GREEN_THRESHOLD} Wachstum wird sie grün und bildet einen Farbblock, der Score gibt. Mono-Passive (nur mit reinen Pflanze-Skills): grüne Siege bauen je ${WURZELSCHLAG_PER_GROWTH} Wachstum +1 Kartenwert auf (bis ${PLANT_VALUE_CAP}).`
+        : `Jeder weitere Pflanze-Skill beschleunigt das Wachstum (volles Tempo ab ${PLANT_GROWTH_SKILL_REF}) — mehr grüne Karten, größerer Farbblock. Rein gespielt (Mono): grüne Siege wandeln je ${WURZELSCHLAG_PER_GROWTH} Wachstum in +1 Kartenwert (bis ${PLANT_VALUE_CAP}); ab ${WURZELSCHLAG_LOSS_MIN_SKILLS} Skills auch je ${WURZELSCHLAG_LOSS_EVERY} Niederlagen einer Karte.`;
       default: return "";
     }
   };

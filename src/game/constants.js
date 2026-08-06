@@ -463,10 +463,14 @@ export const PLANT_GROWTH_SKILL_REF = envNum("SIM_PLANT_GROWTH_SKILL_REF", 3);
 export const PLANT_VALUE_CAP       = envNum("SIM_PLANT_VALUE_CAP", 11);  // Wert-Deckel grüner Karten (Auto-Sieg; Tiefe zahlt dann in Score) [Sim-tunebar: 10 = kein Auto-Sieg mehr] // v0
 export const PLANT_ANCHOR_VALUE    = 11;  // Alter Anker: Aktivierung startet 1 Karte reif (grün, Wert 11)      // v0
 export const PLANT_GREEN_FARBBLOCK_CAP = 3;// Grün-Farbblock-Cap: der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt (v0.3: ganzes Feld grün → 40er-Block ×8+ war der Runaway) // tunebar
-// Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score)
-export const WURZELSCHLAG_PER_GROWTH = envNum("SIM_WURZELSCHLAG_PER_GROWTH", 4); // Wurzelschlag: +1 Dauerwert je N Wachstum (grüne Karte, bis Deckel) [Sim-tunebar: höher = Wert wächst langsamer → Auto-Sieg später] // v0
-export const WURZELSCHLAG_LOSS_EVERY = envNum("SIM_WURZELSCHLAG_LOSS_EVERY", 2); // Wurzelschlag-Buff: je N Niederlagen einer Karte wächst sie trotzdem +1 Zuwachs (Zähler je card.id) [Sim-tunebar: höher = seltener Trostwachstum] // v0.4
-export const WURZELSCHLAG_LOSS_MIN_SKILLS = envNum("SIM_WURZELSCHLAG_LOSS_MIN_SKILLS", 4); // Mono-Gate: Trost-Zuwachs erst ab N aktiven Pflanzen-Skills (von SKILL_SLOTS=6) [Sim-tunebar: niedriger = auch für Splash] // v0.4
+// Pflanze-Fraktions-Passive „Wurzelschlag" (v0.5: vom Skill zur MONO-gegateten Archetyp-Passive — nur aktiv, solange
+// ausschließlich Pflanzen-Skills gehalten werden). Wert wird aus Wachstum ABGELEITET (nicht verbraucht): +1 je N-Schwelle.
+export const WURZELSCHLAG_PER_GROWTH = envNum("SIM_WURZELSCHLAG_PER_GROWTH", 4); // Passive: +1 Dauerwert je N abgeleitetem Wachstum (grüne Karte, bis Deckel) [Sim-tunebar: höher = Wert wächst langsamer → Auto-Sieg später]
+export const WURZELSCHLAG_LOSS_EVERY = envNum("SIM_WURZELSCHLAG_LOSS_EVERY", 2); // Passive: je N Niederlagen einer Karte wächst sie trotzdem +1 Zuwachs (Zähler je card.id) [Sim-tunebar: höher = seltener Trostwachstum]
+export const WURZELSCHLAG_LOSS_MIN_SKILLS = envNum("SIM_WURZELSCHLAG_LOSS_MIN_SKILLS", 4); // Niederlage-Klausel erst ab N gehaltenen Pflanzen-Skills [Sim-tunebar]
+// Linie 4 — „Kernholz" (Mono-Grün-Payoff): grüner Sieg → +Score je Kartenwert-Punkt ÜBER dem Startwert (baseRank).
+// Schließt den Loop Wachstum→Wert→Score (die Passive baut Wert, Kernholz erntet ihn). [Sim-tunebar]
+export const KERNHOLZ_SCORE_PER_VALUE = envNum("SIM_KERNHOLZ_SCORE_PER_VALUE", 20);
 export const WURZELTIEFE_SCORE     = envNum("SIM_WURZELTIEFE_SCORE", 15);  // Wurzeltiefe: Flat-Score je Sieg einer grünen Karte (Wurzeln-Score) [Pflanze-Buff: 12→15]
 // Wurzeltiefe-Feldtiefe (Buff): Bonus je grünem Sieg, der mit dem GESAMTWACHSTUM des Feldes skaliert — aber mit
 // √-Kennlinie (abnehmender Ertrag) und Deckel, damit tiefe Wälder nicht durchdrehen (Anti-Runaway). Bonus = K·√(ΣWachstum), gedeckelt.
