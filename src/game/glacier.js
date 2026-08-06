@@ -175,6 +175,24 @@ export function uebergletscherPool(mass, locked) {
   return out;
 }
 
+// Eiszeit (Legendär, docs §7): Dauerfrost im Overdrive — am Durchlauf-Ende flutet das GANZE Brett (alle ungefrorenen
+// Felder, flach, ohne Nachbar-Dämpfung), und das höchste ungefrorene Feld friert zum Gletscher ein (Karten frieren nach
+// und nach über die Restrunden). Gibt { mass, locked } zurück. ⚠ Flutrate Platzhalter.
+export const EISZEIT_FLOOD = 3;
+export function eiszeitTick(mass, locked, base = EISZEIT_FLOOD) {
+  const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const m = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
+  for (let p = 0; p < N_POS; p++) if (!isG(p)) m[p] = (m[p] || 0) + base; // brettweite Flut
+  let best = -1, bestV = -Infinity;
+  for (let p = 0; p < N_POS; p++) if (!isG(p) && (m[p] || 0) > bestV) { bestV = m[p] || 0; best = p; }
+  let newLocked = locked;
+  if (best >= 0) {
+    if (locked instanceof Set) { newLocked = new Set(locked); newLocked.add(best); }
+    else { newLocked = (locked ? locked.slice() : new Array(N_POS).fill(false)); newLocked[best] = true; }
+  }
+  return { mass: m, locked: newLocked };
+}
+
 // Packeis (docs §4): am Durchlauf-Ende +Masse je Gletscher-Nachbar — belohnt die Mitte des Feldes.
 export function packeisTick(mass, locked, neighborFn = neighbors4, per = PACKEIS_PER_NEIGHBOR) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
