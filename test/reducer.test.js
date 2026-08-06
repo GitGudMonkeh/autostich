@@ -193,25 +193,18 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     expect(s.lightning.active).toBe(true);
   });
 
-  it("#140 letzter Eis-Skill ersetzt → eigene Karten auftauen, Gegner-Frostbiss + Frost-Marker weg", () => {
+  it("#140 letzter Eis-Skill ersetzt → Eis deaktiviert (Gletscher-State + Blitzfänger-Temp geleert)", () => {
     const base = initialState(makeRng(1));
-    const deck = base.deck.map((c, i) => (i < 3 ? { ...c, frozen: true } : c));
     const st = { ...base, phase: "levelup",
       skills: ["SK_ICE_01", "SK_LIGHTNING_01", "SK_LIGHTNING_03", "SK_LIGHTNING_04"],
       skillOffer: ["SK_LIGHTNING_05"], activeArchetypes: ["ice", "lightning"],
       lightning: { active: true, charge: 2, maxCharge: 10 },
-      deck, iceTemp: { x: 3 }, frostSwapsUsed: ["a"], frostbitePending: { oX: 3 }, frostbiteActive: { oY: 3 },
-      layers: { c1: 4 }, frostFormPrev: ["c1"] }; // Eis-Rework (v0): Vergletscherung als Map, Schichten + Beständigkeits-Historie
+      iceTemp: { x: 3 }, glacierRoles: ["G_ANFRIEREN"] };
     const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_05", replaceId: "SK_ICE_01", rng });
     expect(s.skills).not.toContain("SK_ICE_01");
-    expect(s.deck.some((c) => c.frozen)).toBe(false);
-    expect(s.frostbitePending).toEqual({});
-    expect(s.frostbiteActive).toEqual({});
-    expect(s.iceTemp).toEqual({});
-    expect(s.frostSwapsUsed).toEqual([]);
-    expect(s.layers).toEqual({});          // Schichten weg
-    expect(s.frostFormPrev).toEqual([]);   // Beständigkeits-Historie weg
     expect(s.activeArchetypes).toEqual(["lightning"]);
+    expect(s.iceTemp).toEqual({});         // Blitzfänger-Temp beim Eis-Deaktivieren geleert
+    expect(s.glacierRoles).toEqual([]);    // Gletscher-Rollen weg
   });
 
   it("#140 letzter Blitz-Skill ersetzt → Ladungsleiste zurückgesetzt/inaktiv", () => {
@@ -307,7 +300,7 @@ describe("Formationsphase — SWAP/UNDO/RESET/CONFIRM (V2 §22.8)", () => {
     const s = reducer(formState(), { type: "SWAP_CARDS", i: 1, j: 2 });
     expect(s.playerOrder).toEqual([0, 2, 1, 3, 4]);      // Werte jetzt 5,5,8,2,3
     expect(s.formationEnergy).toBe(3);
-    expect(s.formationSwaps).toEqual([{ i: 1, j: 2, free: false, frozenId: null, idA: "b", idB: "c" }]); // #93 F3: Frost-Info · #201.4: getauschte Karten-IDs
+    expect(s.formationSwaps).toEqual([{ i: 1, j: 2, idA: "b", idB: "c" }]); // #201.4: getauschte Karten-IDs
     expect(s.formations[1].mult).toBeCloseTo(1.25);      // 2. Karte des neuen Wiederholungspaars
   });
   it("SWAP_CARDS ohne Energie oder mit i==j ist wirkungslos", () => {

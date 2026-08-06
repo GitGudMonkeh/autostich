@@ -267,7 +267,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
         isJF = (k) => jokerFarbblock.has(k) || !!(af && af.jokerF.has(k)),
         isJX = (k) => jokerWechsel.has(k) || !!(af && af.jokerX.has(k));
 
-  const out = Array.from({ length: n }, () => ({ mult: 1, baseMult: 1, jokerFactor: 1, afterglowFactor: 1, coreFactor: 1, formations: [] }));
+  const out = Array.from({ length: n }, () => ({ mult: 1, baseMult: 1, afterglowFactor: 1, coreFactor: 1, formations: [] }));
   const add = (pos, type, ordinal, factor) => {
     if (factor > 1) out[pos].mult *= factor;
     out[pos].formations.push({ type, ordinal, factor });

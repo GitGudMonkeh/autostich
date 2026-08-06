@@ -657,15 +657,7 @@ export function resolveTrick(state, rng) {
     // (#267: der Formations-Stat-Booster obendrauf ist weg — Formations-Builds skalieren über Perks/Familien statt Stat.)
     // Eis-Ceiling-Hebel: dichte Formations-Überlappung (formBaseMult) ist der EINZIGE Eis-Ceiling-Treiber. Weicher
     // Deckel NUR für Frostkarten, NUR über der Schwelle → Median-Frost-Siege (formBase < Schwelle) & Nicht-Eis unberührt.
-    let formBaseEff = formBaseMult;
-    // #269 Option 1 (Joker-Score-Dämpfung): joker-gestützte Formationen (Kristallform/Frostbrücke an einer Frostkarte)
-    // zählen VOLL für den Schicht-Motor, aber ihr Formations-SCORE wird gedämpft — der rohe Joker-Faktor (posForm.jokerFactor)
-    // wird herausgerechnet und mit ICE_JOKER_FORMSCORE_SHARE neu angesetzt. So treiben die Joker den Ceiling nicht mehr.
-    const jokerFactor = posForm.jokerFactor || 1;
-    if (jokerFactor > 1 && C.ICE_JOKER_FORMSCORE_SHARE < 1)
-      formBaseEff = (formBaseEff / jokerFactor) * (1 + (jokerFactor - 1) * C.ICE_JOKER_FORMSCORE_SHARE);
-    if (pCard.frozen && C.ICE_FORMBASE_SOFTCAP > 0 && formBaseEff > C.ICE_FORMBASE_SOFTCAP)
-      formBaseEff = C.ICE_FORMBASE_SOFTCAP + (formBaseEff - C.ICE_FORMBASE_SOFTCAP) * C.ICE_FORMBASE_SLOPE;
+    const formBaseEff = formBaseMult;
     // Brennpunkt (#203, Formations-Tiefe): Sieg in ≥ BRENNPUNKT_MIN_FORMS gleichzeitigen Formationen → ×BRENNPUNKT_MULT.
     const brennpunktMult = (ownsFlag(perks, "brennpunkt") && activeFormationCount(posForm) >= C.BRENNPUNKT_MIN_FORMS) ? C.BRENNPUNKT_MULT : 1;
     // Sammler (#203, Formationsvielfalt): +SAMMLER_STEP je distinct Formationsart, die diesen Durchlauf SCHON gesammelt

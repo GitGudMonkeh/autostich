@@ -416,13 +416,6 @@ export function forgeCostFor(skills, heatValue = 0) {
   return Math.max(1, Math.round(c));
 }
 
-/* ---- Eis-Archetyp — Deaktivierungs-Reset (Alt-System). Der Gletscher-Kern (Masse/Rollen) liegt in glacier.js. ---- */
-
-// Alle eigenen Karten auftauen (immutabel). Genutzt, wenn der Eis-Archetyp deaktiviert wird (letzter Eis-Skill
-// ersetzt, #140): ein evtl. gesetztes frozen-Flag verschwindet von allen Karten.
-export function unfreezeAll(deck) {
-  return (deck || []).map((c) => (c.frozen ? { ...c, frozen: false } : c));
-}
 
 /* ---- Pflanze-Fraktion (v0) — Wachstum (nur steigend) → Reife (grün) → Farbblock → Score. Reine Helfer. ---- */
 export const plantFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
