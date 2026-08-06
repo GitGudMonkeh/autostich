@@ -6,6 +6,7 @@
 //   • Durchlauf-Kern: Gletscher-Ertrag · Kaskade (Brüche diesen Durchlauf) · größtes Cluster (Dichte treibt die Kaskade).
 //   • Kontext (nur wenn relevant): Firn-Boden lädt · Gegner eingefroren · Duo-Buff · Große Lawine bereit/verbraucht.
 // Rein informativ, keine Engine-Kopplung (spiegelt state.glacier*).
+import { useRef, useEffect, useState } from "react";
 import { IndicatorPanel } from "./indicators/panelKit.jsx";
 import { glacierClusters, glacierNeighborFn, THRESHOLDS, ROLES } from "../game/glacier.js";
 import glacierIcon from "./assets/glacier.webp";
@@ -36,7 +37,7 @@ function Glacier({ mass }) {
       position: "relative", background: "#20202a", border: `1px solid ${krit ? FROST : "#2a2a34"}`,
       borderRadius: 8, padding: "5px 4px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, width: 46,
       boxShadow: krit ? `0 0 12px ${FROST}44, inset 0 0 14px ${FROST}10` : undefined,
-    }} title={`Gletscher · Masse ${mass} · Stufe ${mass >= T3 ? 3 : mass >= T2 ? 2 : mass >= T1 ? 1 : 0}`}>
+    }} className={krit ? "as-glacier-shiver" : undefined} title={`Gletscher · Masse ${mass} · Stufe ${mass >= T3 ? 3 : mass >= T2 ? 2 : mass >= T1 ? 1 : 0}`}>
       {krit && <span style={{
         position: "absolute", top: -7, left: "50%", transform: "translateX(-50%)", fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)",
         fontSize: 7.5, letterSpacing: ".04em", textTransform: "uppercase", color: "#071016", background: FROST_BRIGHT, borderRadius: 4, padding: "0 3px", whiteSpace: "nowrap",
@@ -69,6 +70,30 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
   const duo = new Set([...Object.keys(glacierBuffActive || {}), ...Object.keys(glacierBuffPending || {})]).size;
   const hasLawine = (glacierRoles || []).includes(ROLES.L_LAWINE);
 
+  // Brech-Moment: fällt eine hohe Gletschermasse stark ab (Bruch) ODER springt der Ertrag, blitzt ein transienter
+  // „Bruch"-Burst auf (aufsteigende Ertrags-Zahl + Frost-Puls). Erkennung per Vergleich zum vorigen Render.
+  const prev = useRef(null);
+  const keyRef = useRef(0);
+  const [burst, setBurst] = useState(null); // { gain, key }
+  useEffect(() => {
+    if (prev.current) {
+      const pm = prev.current.mass;
+      let dropped = false;
+      for (let i = 0; i < glacierMass.length; i++) {
+        const before = pm[i] || 0, now = glacierMass[i] || 0;
+        if (before >= 10 && now <= before - 4) { dropped = true; break; } // hohe Masse → Bruch
+      }
+      const gain = Math.round((glacierYield || 0) - prev.current.yield);
+      if (dropped || gain > 0) { keyRef.current += 1; setBurst({ gain: Math.max(0, gain), key: keyRef.current }); }
+    }
+    prev.current = { mass: (glacierMass || []).slice(), yield: glacierYield || 0 };
+  }, [glacierMass, glacierYield]);
+  useEffect(() => {
+    if (!burst) return;
+    const t = setTimeout(() => setBurst(null), 950);
+    return () => clearTimeout(t);
+  }, [burst]);
+
   const stat = (k, v, sub) => (
     <div style={{ background: "#191922", border: "1px solid #2a2a34", borderRadius: 8, padding: "6px 9px", flex: sub ? "1.3" : "1", minWidth: 0 }}>
       <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".07em", color: "#6a7a86" }}>{k}</div>
@@ -84,7 +109,15 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
   );
 
   return (
-    <IndicatorPanel>
+    <IndicatorPanel className="relative">
+      {burst && <div key={burst.key} className="as-frost-pulse" style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none" }} />}
+      {burst && burst.gain > 0 && (
+        <div key={"g" + burst.key} className="as-glacier-gain" style={{ position: "absolute", left: "50%", top: 26, pointerEvents: "none", zIndex: 3,
+          fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)", fontWeight: 700, fontSize: 20, color: FROST_BRIGHT, textShadow: `0 0 14px ${FROST}`, whiteSpace: "nowrap",
+          padding: "3px 12px", borderRadius: 999, background: "rgba(7,16,22,.82)", border: `1px solid ${FROST}88`, boxShadow: `0 0 18px ${FROST}55` }}>
+          ❄ +{nfmt(burst.gain)}
+        </div>
+      )}
       <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
         <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".03em", color: FROST_BRIGHT, display: "inline-flex", alignItems: "center", gap: 5 }}>
           <span style={{ filter: `drop-shadow(0 0 5px ${FROST})` }}>❄</span> Gletscherfeld

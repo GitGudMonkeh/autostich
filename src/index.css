@@ -437,3 +437,13 @@ button { font-family: inherit; }
 .gloss-chip-on { background: #241f42; border-color: #4a3f78; color: #e5e0ff; }
 .gloss-chip:focus-visible { outline: 2px solid #8a7de0; outline-offset: 2px; }
 .gloss-term-row:hover { background: #1a1a22; }
+
+/* ❄ Gletscher-Bruch (GlacierBar): der Zahltag als Moment — Ertrags-Zahl steigt auf und verblasst,
+   das Panel bekommt einen kurzen Frost-Puls, kritische Gletscher zittern kurz vor dem Bruch. */
+@keyframes as-glacier-gain { 0% { opacity: 0; transform: translate(-50%, 6px) scale(.8); } 22% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -22px) scale(1); } }
+@keyframes as-frost-pulse  { 0% { box-shadow: inset 0 0 0 0 #5ec8f000; } 30% { box-shadow: inset 0 0 26px 2px #5ec8f055; } 100% { box-shadow: inset 0 0 0 0 #5ec8f000; } }
+@keyframes as-glacier-shiver { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-1.2px); } 40% { transform: translateX(1.2px); } 60% { transform: translateX(-.8px); } 80% { transform: translateX(.8px); } }
+.as-glacier-gain  { animation: as-glacier-gain .95s ease-out forwards; }
+.as-frost-pulse   { animation: as-frost-pulse .9s ease-out; }
+.as-glacier-shiver { animation: as-glacier-shiver 2.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .as-glacier-gain, .as-frost-pulse, .as-glacier-shiver { animation: none !important; } }

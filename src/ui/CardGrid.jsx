@@ -7,6 +7,7 @@ import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
+import glacierIcon from "./assets/glacier.webp";
 
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
 const ANCHOR_LABEL = { power: "Kraft", score: "Score", crit: "Crit", streak: "Serie", formation: "Formation", joker: "Joker" };
@@ -129,7 +130,12 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       )}
       {labels && <span className="absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
       {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
-      {glacier && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}`}>❄{Math.round(glacierMass)}</span>}
+      {glacier && (
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}`}>
+          <img src={glacierIcon} alt="" aria-hidden="true" className="w-[10px] h-[10px] sm:w-3 sm:h-3 object-contain" style={{ filter: "drop-shadow(0 0 3px #5ec8f0)" }} />
+          {Math.round(glacierMass)}
+        </span>
+      )}
       {roleIds.length > 0 && <span className="absolute bottom-0.5 left-1 text-[8px] sm:text-xs leading-none" style={{ color: "#d4a63a" }} title={roleTitle}>●</span>}
     </button>
   );
