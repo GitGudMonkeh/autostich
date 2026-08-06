@@ -23,7 +23,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, skillLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
-import { precomputeGlacier, ewigerFrostTick, WIN_MASS as GLACIER_WIN_MASS } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
+import { precomputeGlacier, ewigerFrostTick, glacierOpts, WIN_MASS as GLACIER_WIN_MASS } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
@@ -123,7 +123,7 @@ export function resolveTrick(state, rng) {
     shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
     architect = null, architectEnabled = false, architectPre = null, // Architekt (#202, Shop-Ersatz): Gebäude-Overlay (8×5) + Durchlauf-Precompute
-    glacierMass = [], glacierLocked = [], glacierPre = null, glacierYield = 0, // Eis-Neudesign (glacier.js): Firn-Boden-Masse je Feld / Gletscher-Lock je Feld / Durchlauf-Snapshot / Eigen-Score-Kanal
+    glacierMass = [], glacierLocked = [], glacierPre = null, glacierYield = 0, glacierRoles = [], // Eis-Neudesign (glacier.js): Firn-Boden-Masse / Lock / Snapshot / Eigen-Score / aktive Rollen (Fundament-Modifikatoren)
     seed = null, offerRerolls = 0, // #205 Challenger Mode: Lauf-Seed (null = unseeded/Sim) + Reroll-Index des akt. Angebots
     difficulty = null, // #226 Großmeister: { oppRampEvery } — mitwachsender Gegner. null (Meister/Basis) = No-op, byte-identisch.
   } = state;
@@ -185,7 +185,7 @@ export function resolveTrick(state, rng) {
   let glacierPreNow = glacierPre;
   let newGlacierMass = Array.isArray(glacierMass) ? glacierMass.slice() : [];
   if (glacierActive && pos === 0) {
-    glacierPreNow = precomputeGlacier(glacierMass, glacierLocked);
+    glacierPreNow = precomputeGlacier(glacierMass, glacierLocked, glacierOpts(glacierRoles)); // Rollen (Gruppe A) modifizieren den Snapshot
     newGlacierMass = glacierPreNow.resetMass.slice();
   }
   // #161 FB-2: Peak gleichzeitig aktiver Formationen über den Run — zu Durchlaufbeginn, sobald das Layout feststeht.
@@ -1375,7 +1375,8 @@ export function resolveTrick(state, rng) {
     winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     architect: newArchitect, architectEnabled, architectPre: newArchitectPre, // Architekt (#202, ersetzt den Shop)
-    glacierMass: newGlacierMass, glacierLocked, glacierPre: glacierPreNow, glacierYield, // Eis-Neudesign (glacier.js): Firn-Boden-Masse / Lock / Snapshot / Eigen-Score
+    glacierMass: newGlacierMass, glacierLocked, glacierPre: glacierPreNow, glacierYield, glacierRoles, // Eis-Neudesign (glacier.js): Firn-Boden-Masse / Lock / Snapshot / Eigen-Score / Rollen
+
 
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung

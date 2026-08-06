@@ -80,10 +80,32 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     const burst = mCap * tierMult[tier] * berstFaktor * kollFaktor;
 
     payout[p] += burst;
-    resetMass[p] = dropAfterBreak(tier);                // Teil-Reset: eine Stufe runter
+    resetMass[p] = tier >= 2 ? thresholds[tier - 2] : 0; // Teil-Reset: eine Stufe runter (respektiert opts.thresholds)
     breaks.push({ pos: p, tier, burst, glacierNeighbors: gN });
   }
   return { payout, resetMass, breaks };
+}
+
+/* ---- Rollen → Snapshot-opts (Gruppe A, docs §4 Lawine) -------------------------------------------
+   Rollen als Skills sind noch nicht im Angebots-Pool (kein 5.-Archetyp-Leak); getrieben über state.glacierRoles.
+   ⚠ Werte Platzhalter. */
+export const ROLES = {
+  RISSBILDUNG: "G_RISSBILDUNG",   // instabiles Eis: erste Schwelle runter → bricht früh & oft
+  ZERMALMEN: "G_ZERMALMEN",       // Kollision (Treffer auf Gletscher-Nachbarn) → Krit
+  ABBRUCHKANTE: "G_ABBRUCHKANTE", // belohnt hohe Stufen noch steiler (Riesen)
+};
+export const RISSBILDUNG_THRESHOLDS = [2, 8, 12];       // erste Schwelle 4→2
+export const ZERMALMEN_KOLLISION = 2;                   // Kollision 1,5→2
+export const ABBRUCHKANTE_TIER_MULT = [0, 1, 1.8, 3.0]; // steiler als Baseline [0,1,1.5,2.2]
+
+// Baut das opts-Objekt für precomputeGlacier aus den aktiven Rollen (Gruppe A). Mehrere Rollen komponieren additiv.
+export function glacierOpts(roles = []) {
+  const has = (r) => roles.includes(r);
+  const opts = {};
+  if (has(ROLES.RISSBILDUNG)) opts.thresholds = RISSBILDUNG_THRESHOLDS;
+  if (has(ROLES.ABBRUCHKANTE)) opts.tierMult = ABBRUCHKANTE_TIER_MULT;
+  if (has(ROLES.ZERMALMEN)) opts.kollisionMult = ZERMALMEN_KOLLISION;
+  return opts;
 }
 
 /* ---- Ewiger Frost: bedingungsloser Masse-Tick je Durchlauf (Fraktions-Passiv, docs §2.6) ----------
