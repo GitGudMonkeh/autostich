@@ -78,7 +78,7 @@ export const GLOSSARY = {
     text: "Der effektive Wert einer Karte im Stich: Kartenwert plus alle Stichwert-Boni. Der höhere gewinnt.",
     match: ["Kampfwert"] },
   crit: { category: "grund", label: "Crit", icon: "⚡", color: CLR.lightning,
-    text: `Kritischer Treffer: der Sieg zählt mit dem Crit-Multiplikator (Basis ×${de(C.CRIT_BASE_MULT)}). Der Basis-Crit ist 0 — Crit-Chance kommt aus den Präzision-Familien und aus Blitz-Skills.`,
+    text: `Kritischer Treffer: der Sieg zählt mit dem Crit-Multiplikator (Basis ×${de(C.CRIT_BASE_MULT)}). Der Basis-Crit ist 0 — Crit-Chance kommt aus den Präzision-Familien und aus Blitz-Skills. Jeder Blitz-Skill hebt zudem den Crit-Multiplikator um +${de(C.LIGHTNING_CRIT_MULT_PER_SKILL)}×.`,
     match: ["Crit", "Crits", "kritischer Treffer", "kritischen Treffer"] },
   breakdown: { category: "grund", label: "Score-Aufschlüsselung", icon: "∑", color: CLR.grund,
     text: "Die Score-Kette eines Siegs: Basis × Serie × Perk-Mult × Formation × Crit — jeder Faktor wird einzeln ausgewiesen.",

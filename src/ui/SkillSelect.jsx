@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../game/skills.js";
-import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE,
+import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL, LIGHTNING_MAX_CHARGE,
          PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF } from "../game/constants.js";
 import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
@@ -21,6 +21,7 @@ const ARCH_LOSS = {
 
 const SOCKET_PCT = Math.round(LIGHTNING_CRIT_BASE * 100);         // einmaliger Aktivierungs-Sockel (5 %)
 const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // je Blitz-Skill (8 %)
+const PER_SKILL_MULT = String(LIGHTNING_CRIT_MULT_PER_SKILL).replace(".", ","); // +Crit-Multiplikator je Blitz-Skill (0,1)
 
 // Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
 const LIGHT = "#8a7de0";
@@ -71,8 +72,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
     const first = isFirstPick[arch];
     switch (arch) {
       case "lightning": return first
-        ? `Schaltet den Blitz-Archetyp frei: Ladung (Crits erzeugen Ladung, max ${LIGHTNING_MAX_CHARGE}) und eine Crit-Basis von +${SOCKET_PCT + PER_SKILL_PCT} % (Sockel +${SOCKET_PCT} % plus +${PER_SKILL_PCT} % je Blitz-Skill).`
-        : `Jeder weitere Blitz-Skill gibt +${PER_SKILL_PCT} % Crit-Chance. Ladung und Crit-Basis sind bereits aktiv.`;
+        ? `Schaltet den Blitz-Archetyp frei: Ladung (Crits erzeugen Ladung, max ${LIGHTNING_MAX_CHARGE}) und eine Crit-Basis von +${SOCKET_PCT + PER_SKILL_PCT} % (Sockel +${SOCKET_PCT} % plus +${PER_SKILL_PCT} % je Blitz-Skill). Jeder Blitz-Skill gibt zudem +${PER_SKILL_MULT}× Crit-Multiplikator.`
+        : `Jeder weitere Blitz-Skill gibt +${PER_SKILL_PCT} % Crit-Chance und +${PER_SKILL_MULT}× Crit-Multiplikator. Ladung und Crit-Basis sind bereits aktiv.`;
       case "fire": return first
         ? "Schaltet die Hitzeleiste frei (0–100 %): Siege mit klarem Wertvorsprung heizen auf und geben Feuer-Score, klare Niederlagen kühlen ab."
         : "Jeder weitere Feuer-Skill erhöht den Feuer-Score je Vorsprungspunkt. Die Hitzeleiste ist bereits aktiv.";

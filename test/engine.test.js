@@ -3,7 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
-import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
+import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
   HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ZINSESZINS_STEP, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
   SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT, ION_SCORE_PER_STACK,
   REST_CHARGE_FLOOR, STORM_CRIT_STEP, ENTLADUNG_MULT_STEP, ENTLADUNG_MULT_CAP } from "../src/game/constants.js";
@@ -442,12 +442,13 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
   });
 
   it("Crit mit Blitzableiter: +2 Ladung (Basis 1 + Skill 1), kein Crit-Flat mehr (+50 im Rework gestrippt)", () => {
-    // scoreBase = Basis × streakBaseMult(1)=1,02, ×1,5 (Crit-Basis). Blitzableiter gibt NUR Ladung.
+    // scoreBase = Basis × streakBaseMult(1)=1,02, ×Crit-Mult. Blitzableiter gibt NUR Ladung;
+    // als 1 gehaltener Blitz-Skill hebt er den Crit-Mult um +LIGHTNING_CRIT_MULT_PER_SKILL.
     const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit() }), () => 0); // Crit aus den Blitz-Skills selbst (rng 0)
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(2);
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(B * 1.02);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * CRIT_BASE_MULT);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * (CRIT_BASE_MULT + LIGHTNING_CRIT_MULT_PER_SKILL));
   });
 
   it("ohne Crit: keine Ladung, kein Crit-Flat", () => {
@@ -670,8 +671,10 @@ describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)"
   });
 
   it("On-Consume: Statische Aufladung gibt bei jedem vollen Verbrauch +CONSUME_SCORE Flat-Score", () => {
+    // Beide Builds halten 2 Blitz-Skills → identischer Crit-Mult (je +LIGHTNING_CRIT_MULT_PER_SKILL/Skill).
+    // Serienschutz (SS) ist auf einem gewonnenen Crit-Stich wirkungslos → isoliert CONSUME_SCORE sauber.
     const withSt = resolveTrick(scenario(12, 0, { skills: [I, ST], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
-    const without = resolveTrick(scenario(12, 0, { skills: [I],     lightning: lit({ charge: 9 }) }), () => 0);
+    const without = resolveTrick(scenario(12, 0, { skills: [I, SS], lightning: lit({ charge: 9 }) }), () => 0);
     expect(withSt.lastTrick.scoreGain - without.lastTrick.scoreGain).toBeCloseTo(CONSUME_SCORE, 6);
   });
 

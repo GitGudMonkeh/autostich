@@ -66,8 +66,14 @@ describe("Blitz-Rework v0 — reine Helfer", () => {
   it("Donnergott-Turbo (v0.5): hebt das Ladungsdach NICHT mehr, gibt weiter +Crit-Mult", () => {
     expect(maxChargeFor([])).toBe(C.LIGHTNING_MAX_CHARGE);
     expect(maxChargeFor(["SK_LIGHTNING_L01"])).toBe(C.LIGHTNING_MAX_CHARGE); // v0.5: kein Dach-Heben mehr (Turbo = früherer Verbrauch)
-    expect(lightningCritMult(["SK_LIGHTNING_L01"])).toBe(C.THUNDER_CRIT_MULT);
+    // v0.5-Tune: je gehaltenem Blitz-Skill +LIGHTNING_CRIT_MULT_PER_SKILL, plus Donnergott-Bonus (L).
+    expect(lightningCritMult(["SK_LIGHTNING_L01"])).toBeCloseTo(C.LIGHTNING_CRIT_MULT_PER_SKILL + C.THUNDER_CRIT_MULT, 6);
     expect(lightningCritMult([])).toBe(0);
+  });
+  it("lightningCritMult: +LIGHTNING_CRIT_MULT_PER_SKILL je gehaltenem Blitz-Skill (additiv, ohne Donnergott)", () => {
+    expect(lightningCritMult(["SK_LIGHTNING_01"])).toBeCloseTo(C.LIGHTNING_CRIT_MULT_PER_SKILL, 6);
+    expect(lightningCritMult(["SK_LIGHTNING_01", "SK_LIGHTNING_08", "SK_LIGHTNING_05"]))
+      .toBeCloseTo(3 * C.LIGHTNING_CRIT_MULT_PER_SKILL, 6);
   });
   it("ionizeCountFor: Ionisierung 2 + Kettenblitz +2", () => {
     expect(ionizeCountFor(["SK_LIGHTNING_02"])).toBe(C.ION_BASE_COUNT);

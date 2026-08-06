@@ -194,6 +194,7 @@ export const MAX_ARCHETYPES     = envNum("SIM_MAX_ARCHETYPES", 4);    // gleichz
 // (vestigial entfernt: SKILL_EVERY_CYCLES — Skill-Runden kommen nicht mehr „jede 3.", sondern aus dem festen DECISION_SCHEDULE; siehe FIRST_SKILL_CYCLE)
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
 export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.08); // Blitz: je gehaltenem Blitz-Skill [v0.5 Rework-Tune: 0,10→0,08 fürs Pflanze-Band, SIM-Sweep-Haken]
+export const LIGHTNING_CRIT_MULT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_MULT_PER_SKILL", 0.1); // Blitz: +Crit-Multiplikator je gehaltenem Blitz-Skill (additiv, dauerhaft; kein Deckel) [SIM-Sweep-Haken]
 export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
 // Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
 export const ION_SCORE_PER_STACK  = envNum("SIM_ION_SCORE_PER_STACK", 12); // +Score je Ionisierungsstapel bei Sieg mit der Karte [#271: 25→12, Wert wandert in den Crit-Kanal · Sim-tunebar]

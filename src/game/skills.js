@@ -710,7 +710,11 @@ export const hasAreaIonize     = (skills) => lightFlag(skills, "areaIonize");   
 export const hasDurchschlag    = (skills) => lightFlag(skills, "durchschlag");    // L: volle Ionis.+Crit → dauerhaft Crit-Mult
 // Ladungsmaximum je Build (Donnergott → 15) & dessen dauerhafter Crit-Multiplikator-Bonus.
 export const maxChargeFor      = (skills) => C.LIGHTNING_MAX_CHARGE; // v0.5: Donnergott hebt das Dach NICHT mehr (Turbo statt Dach)
-export const lightningCritMult = (skills) => (hasThunderGod(skills) ? C.THUNDER_CRIT_MULT : 0);
+// Blitz-Crit-Multiplikator (dauerhaft, additiv): +LIGHTNING_CRIT_MULT_PER_SKILL je gehaltenem Blitz-Skill
+// + Donnergott-Bonus (Legendär). Kein Deckel — fließt in engine.js (critMultiplier) und totalCritMult (Anzeige).
+export const lightningCritMult = (skills) =>
+  activeLightningCount(skills) * C.LIGHTNING_CRIT_MULT_PER_SKILL
+  + (hasThunderGod(skills) ? C.THUNDER_CRIT_MULT : 0);
 export const hasSerienschutz   = (skills) => lightFlag(skills, "serienschutz"); // v0.5 (ex-Wetterleuchten)
 // Anzahl gehaltener Ladungs-Konsumenten (nur noch Ionisierung); der Reducer blockt > 1.
 export const chargeConsumerCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.onFullCharge).length;
