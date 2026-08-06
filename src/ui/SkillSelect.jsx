@@ -5,7 +5,7 @@ import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_C
          WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
          FIRE_MARGIN_OFFSET, FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, FIRE_SCORE_SQRT_K,
          HEAT_MIN_MARGIN, HEAT_PER_POINT, HEAT_LOSS_MAX, HEAT_LOSS_PCT } from "../game/constants.js";
-import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
+import { GLOSSARY } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
@@ -35,6 +35,9 @@ const FIRE_MIN_SCORE = fireScoreAt(HEAT_MIN_MARGIN);       // Score bei Mindest-
 const FIRE_EX_HEAT = fireHeatAt(FIRE_EX_MARGIN);           // Hitze beim Beispiel
 const FIRE_EX_SCORE = fireScoreAt(FIRE_EX_MARGIN);         // Score beim Beispiel
 const FIRE_LOSS_PCT = Math.round(HEAT_LOSS_PCT * 100);     // Abkühl-Anteil der aktuellen Hitze je Niederlage
+// Kuratierte Schlüsselbegriffe je Archetyp-Passive — der Aufklapper zeigt AUSSCHLIESSLICH diese (nicht mehr die aus den
+// angebotenen Skills abgeleiteten). Pflanze: nur „Grün (reif)" (grün → Farbblock → Score, inkl. Grün-Cap ×1,35).
+const PASSIVE_KEYWORDS = { plant: ["green"], lightning: ["charge", "ionize"] };
 
 // Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
 const LIGHT = "#8a7de0";
@@ -203,7 +206,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         <div className="mt-5 grid gap-4">
           {groups.map((g) => {
             const detailOpen = openArch === g.arch;
-            const groupKws = glossaryKeywords(g.ids, SKILL_DEFS);
+            const groupKws = PASSIVE_KEYWORDS[g.arch] || []; // nur kuratierte Passive-Begriffe (kein automatisches Ableiten aus den Skills mehr)
             const groupOpen = devMode ? openGroup === g.arch : true; // Dev-Run: Skills erst nach Klick sichtbar
             return (
             <div key={g.arch}>
