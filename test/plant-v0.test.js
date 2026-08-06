@@ -94,15 +94,17 @@ describe("Pflanze-Fraktion v0 — Engine-Integration", () => {
     expect(s.growth.X0).toBe(4);
     expect(s.deck[0].value).toBe(8); // 7 → 8 (Wurzelschlag-Wert bei Schwellen-Übertritt)
   });
-  it("Wurzeltiefe: Sieg einer grünen Karte gibt Wurzeln-Score (Flat)", () => {
-    // growth 0 → keine Tiefe über dem Wert-Deckel → das superlineare Wurzel-Ceiling (#Ceiling) zündet nicht → reiner Flat.
+  // Feldtiefe-Bonus (Buff): +K·√(Gesamtwachstum), gedeckelt. Hier wächst nur X0 → Feld-Wachstum = s.growth.X0.
+  const fieldTerm = (fg) => Math.min(C.WURZELTIEFE_FIELD_CAP, Math.round(C.WURZELTIEFE_FIELD_K * Math.sqrt(fg || 0)));
+  it("Wurzeltiefe: Sieg einer grünen Karte gibt Wurzeln-Score (Flat + Feldtiefe)", () => {
+    // growth 0 → keine Tiefe über dem Wert-Deckel → das superlineare Wurzel-Ceiling (#Ceiling) zündet nicht → Flat + Feldtiefe.
     const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_02"], deck: green0(12), growth: { X0: 0 } }), noCrit);
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + C.WURZELTIEFE_SCORE) * 1.02);
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + C.WURZELTIEFE_SCORE + fieldTerm(s.growth.X0)) * 1.02);
   });
   it("#288 Trimmen: trimCount hebt den Wurzel-Score (Multiplikator, gedeckelt)", () => {
     const trimMult = 1 + Math.min(2 * C.TRIM_STEP, C.TRIM_CAP);
     const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_02"], deck: green0(12), growth: { X0: 0 }, trimCount: 2 }), noCrit);
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + Math.round(C.WURZELTIEFE_SCORE * trimMult)) * 1.02); // Wurzel × Trimm-Mult
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + Math.round((C.WURZELTIEFE_SCORE + fieldTerm(s.growth.X0)) * trimMult)) * 1.02); // (Wurzel + Feldtiefe) × Trimm-Mult
   });
   it("Aussaat: Sieg einer grünen Karte sät den (rechten) Nachbarn (+Wachstum)", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_05"], deck: green0(12) }), noCrit);

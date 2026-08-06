@@ -463,6 +463,10 @@ export const WURZELSCHLAG_PER_GROWTH = envNum("SIM_WURZELSCHLAG_PER_GROWTH", 4);
 export const WURZELSCHLAG_LOSS_EVERY = envNum("SIM_WURZELSCHLAG_LOSS_EVERY", 2); // Wurzelschlag-Buff: je N Niederlagen einer Karte wächst sie trotzdem +1 Zuwachs (Zähler je card.id) [Sim-tunebar: höher = seltener Trostwachstum] // v0.4
 export const WURZELSCHLAG_LOSS_MIN_SKILLS = envNum("SIM_WURZELSCHLAG_LOSS_MIN_SKILLS", 4); // Mono-Gate: Trost-Zuwachs erst ab N aktiven Pflanzen-Skills (von SKILL_SLOTS=6) [Sim-tunebar: niedriger = auch für Splash] // v0.4
 export const WURZELTIEFE_SCORE     = envNum("SIM_WURZELTIEFE_SCORE", 15);  // Wurzeltiefe: Flat-Score je Sieg einer grünen Karte (Wurzeln-Score) [Pflanze-Buff: 12→15]
+// Wurzeltiefe-Feldtiefe (Buff): Bonus je grünem Sieg, der mit dem GESAMTWACHSTUM des Feldes skaliert — aber mit
+// √-Kennlinie (abnehmender Ertrag) und Deckel, damit tiefe Wälder nicht durchdrehen (Anti-Runaway). Bonus = K·√(ΣWachstum), gedeckelt.
+export const WURZELTIEFE_FIELD_K   = envNum("SIM_WURZELTIEFE_FIELD_K", 1.05);  // Skalar auf √(Gesamtwachstum) [gespreizt: Deckel erst am Top-Peak ~Σ13k statt früh]
+export const WURZELTIEFE_FIELD_CAP = envNum("SIM_WURZELTIEFE_FIELD_CAP", 120); // Deckel des Feldtiefe-Terms je Sieg
 export const PFAHLWURZEL_MULT      = 2;   // Pfahlwurzel: Wurzeln-Score ×2 bei Formations-Sieg                  // v0
 export const JAHRESRINGE_PER_GROWTH = 10; // Jahresringe: je 10 Wachstum der Karte +Wurzeln-Score              // v0
 export const JAHRESRINGE_SCORE     = envNum("SIM_JAHRESRINGE_SCORE", 35);  // … so viel je 10er-Stufe [Pflanze-Buff: 30→35]

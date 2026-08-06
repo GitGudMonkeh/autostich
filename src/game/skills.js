@@ -204,11 +204,11 @@ export const SKILL_DEFS = {
   SK_PLANT_01: { id: "SK_PLANT_01", name: "Wurzelschlag", archetype: "plant", keywords: ["growth", "value"],
     desc: `Gewinnt eine grüne Karte, erhält sie je ${C.WURZELSCHLAG_PER_GROWTH} angesammeltes Wachstum dauerhaft +1 Kartenwert (bis Wert ${C.PLANT_VALUE_CAP}). Ab ${C.WURZELSCHLAG_LOSS_MIN_SKILLS} aktiven Pflanzen-Skills wächst eine Karte auch nach je ${C.WURZELSCHLAG_LOSS_EVERY} Niederlagen trotzdem +1 Wachstum.`, wurzelschlag: true },
   SK_PLANT_02: { id: "SK_PLANT_02", name: "Wurzeltiefe", archetype: "plant", keywords: ["growth", "score"],
-    desc: `Jeder Sieg einer grünen Karte gibt zusätzlich +${C.WURZELTIEFE_SCORE} Wurzel-Score.`, wurzeltiefe: true },
+    desc: `Jeder Sieg einer grünen Karte gibt +${C.WURZELTIEFE_SCORE} Wurzel-Score, dazu einen Bonus, der mit dem Gesamtwachstum des Feldes steigt (max. +${C.WURZELTIEFE_FIELD_CAP} bei ~${grp(Math.round((C.WURZELTIEFE_FIELD_CAP / C.WURZELTIEFE_FIELD_K) ** 2 / 1000) * 1000)} Wachstum).`, wurzeltiefe: true },
   SK_PLANT_03: { id: "SK_PLANT_03", name: "Pfahlwurzel", archetype: "plant", keywords: ["growth", "score", "formation"],
     desc: `Verstärker: Wurzel-Score ×${C.PFAHLWURZEL_MULT}, wenn die grüne Karte in einer Formation gewinnt.`, enabler: "SK_PLANT_02", pfahlwurzel: true },
   SK_PLANT_04: { id: "SK_PLANT_04", name: "Jahresringe", archetype: "plant", keywords: ["growth", "score"],
-    desc: `Verstärker: Je ${C.JAHRESRINGE_PER_GROWTH} Wachstum einer Karte +${C.JAHRESRINGE_SCORE} Wurzel-Score bei jedem Sieg — nur für diese Karte.`, enabler: "SK_PLANT_02", jahresringe: true },
+    desc: `Verstärker: Je volle ${C.JAHRESRINGE_PER_GROWTH} eigenes Wachstum gibt eine grüne Karte bei ihrem Sieg +${C.JAHRESRINGE_SCORE} Wurzel-Score extra.`, enabler: "SK_PLANT_02", jahresringe: true },
   // Linie 2 — Aussaat (Breite: Wachstum verbreiten)
   SK_PLANT_05: { id: "SK_PLANT_05", name: "Aussaat", archetype: "plant", keywords: ["growth"],
     desc: `Gewinnt eine grüne Karte, sät sie beide Nachbarn: +${C.AUSSAAT_GROWTH} Wachstum je Seite. Trimmen: beim Ersetzen dauerhaft +${pct(C.TRIM_STEP)} % Wurzel-/Blüten-Score (bis +${pct(C.TRIM_CAP)} %).`, aussaat: true, trimGrowth: true },
@@ -489,7 +489,8 @@ export const greenCount = (deck) => (deck || []).filter((c) => c.green).length;
 export const growthRipe = (growth) => (growth || 0) >= C.PLANT_GREEN_THRESHOLD;
 // Wurzeln-Score je Sieg einer grünen Karte (Anzeige-Helfer für CardDetail #211): BASIS-Flat aus Wurzeltiefe +
 // Jahresringe (je 10 Wachstum). Spiegelt engine.js (Wurzeltiefe/Jahresringe); der Pfahlwurzel-Faktor (×2 in Formation)
-// wird in der UI separat vermerkt, damit die Basiszahl stabil bleibt.
+// wird in der UI separat vermerkt, damit die Basiszahl stabil bleibt. Der feldweite Feldtiefe-Bonus (√Gesamtwachstum)
+// hängt NICHT an einer Einzelkarte und ist hier bewusst nicht enthalten (er fließt nur in den echten Score der Engine).
 export const plantRootScore = (skills, growth) => {
   if (!hasWurzeltiefe(skills)) return 0;
   let r = C.WURZELTIEFE_SCORE;

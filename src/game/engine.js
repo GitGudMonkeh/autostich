@@ -553,6 +553,9 @@ export function resolveTrick(state, rng) {
         if (hasWurzeltiefe(skills)) {
           let root = C.WURZELTIEFE_SCORE * (hasPfahlwurzel(skills) && inFormation ? C.PFAHLWURZEL_MULT : 1);
           if (hasJahresringe(skills)) root += Math.floor(g / C.JAHRESRINGE_PER_GROWTH) * C.JAHRESRINGE_SCORE;
+          // Feldtiefe (Buff): Bonus je grünem Sieg ∝ √(GESAMTWACHSTUM des Feldes) — abnehmender Ertrag + Deckel gegen Runaway.
+          let fieldGrowth = 0; for (const gid in newGrowth) fieldGrowth += newGrowth[gid];
+          if (fieldGrowth > 0) root += Math.min(C.WURZELTIEFE_FIELD_CAP, Math.round(C.WURZELTIEFE_FIELD_K * Math.sqrt(fieldGrowth)));
           root = Math.round(root * trimMult); // #288 Trimmen: Wurzel-Score-Multiplikator
           plantFlat += root; plantRoot += root; // #270.2: Wurzel-Score-Kanal
           // #Ceiling Wurzel/TIEFE: superlinear (dreieckig) in der Wachstums-Tiefe der Siegkarte ÜBER dem Wert-Deckel —
