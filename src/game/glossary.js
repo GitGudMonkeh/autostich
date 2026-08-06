@@ -188,7 +188,7 @@ export const GLOSSARY = {
 
   /* ============ 4 · Feuer ============ */
   heat: { category: "frak", group: "fire", label: "Hitze", icon: "🔥", color: CLR.fire,
-    text: `Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Score = (Vorsprung − ${C.FIRE_MARGIN_OFFSET}) × ${C.FIRE_SCORE_BASE} (+${C.FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill); klare Niederlagen kühlen sie ab.`,
+    text: `Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Score = (Vorsprung − ${C.FIRE_MARGIN_OFFSET}) × ${C.FIRE_SCORE_BASE} (+${C.FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill), plus ein √-Bonus für großen Vorsprung — mehr Vorsprung zahlt weiter, ohne Deckel (abnehmender Zuwachs). Auch der Hitzegewinn folgt oberhalb ${C.HEAT_MARGIN_CAP} Vorsprung dieser √-Kurve statt eines harten Deckels; klare Niederlagen kühlen ab.`,
     match: ["Hitze", "Hitzeleiste"] },
   glutdividende: { category: "frak", group: "fire", label: "Glutdividende", icon: "🔥", color: CLR.fire,
     text: "Zusätzlicher Score bei jedem Feuer-Sieg, der direkt zählt (ohne Serie/Crit/Formation zu durchlaufen). Je mehr Hitze du hältst, desto mehr — bis zu einem Deckel. Stark im frühen Spiel.",

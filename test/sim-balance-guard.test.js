@@ -28,8 +28,10 @@ describe("sim balance guard", () => {
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ~3,44M. Obergrenze fängt einen Runaway (Mean ginge bei echtem Tail-Blowup deutlich höher).
+    // Ist-Wert ~4,32M nach dem Feuer-Margen-√-Buff (uncapped Diminishing-Returns auf Score+Hitze): ABSICHTLICHER
+    // Ceiling-Buff — der Median (tail-robust) bleibt ~3,47M unverändert, der tail-sensitive Mean steigt ~3,44M→4,32M.
+    // Obergrenze neu zentriert; sie fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
     expect(mean).toBeGreaterThan(2_400_000);
-    expect(mean).toBeLessThan(4_300_000);
+    expect(mean).toBeLessThan(5_000_000);
   });
 });

@@ -279,12 +279,16 @@ export const DOPPELENT_FIELD_CAP      = envNum("SIM_DOPPELENT_FIELD_CAP", 120); 
 export const HEAT_MAX          = 100;  // Hitzemaximum (fix)
 export const HEAT_MIN_MARGIN   = envNum("SIM_HEAT_MIN_MARGIN", 3);    // Mindest-Wertvorsprung für margen-basierten Hitzegewinn & Feuer-Score [Sim-tunebar]
 export const HEAT_PER_POINT    = envNum("SIM_HEAT_PER_POINT", 1);    // % Hitze je (Vorsprung−2) [Sim-tunebar]
-export const HEAT_MARGIN_CAP   = envNum("SIM_HEAT_MARGIN_CAP", 8);    // Deckel des effektiven Vorsprungs im Hitzegewinn [Sim-tunebar]
+export const HEAT_MARGIN_CAP   = envNum("SIM_HEAT_MARGIN_CAP", 8);    // WEICHES KNIE des margen-Hitzegewinns: bis hier linear, darüber √-Schwanz (kein harter Deckel mehr) [Sim-tunebar]
+export const HEAT_MARGIN_TAIL_K = envNum("SIM_HEAT_MARGIN_TAIL_K", 1.5); // Skalar des √-Schwanzes über dem Knie: Margen-Hitze = (Knie−2) + K·√(Marge−Knie), uncapped/diminishing (wie Wurzeltiefe) [Sim-tunebar]
 export const HEAT_LOSS_MAX     = envNum("SIM_HEAT_LOSS_MAX", 10);   // max Hitzeverlust je Niederlage (%) [Sim-tunebar: Kühlung fürs Halte-Playstyle]
 export const HEAT_LOSS_PCT     = envNum("SIM_HEAT_LOSS_PCT", 0.25); // zusätzl. Hitzeverlust je Niederlage = Anteil der AKTUELLEN Hitze — hält hohe Hitze nicht-trivial (beißt NUR bei hoher Hitze → Konsum-Builds unberührt; Halte-Playstyle muss Hitze durch Siege halten) [Fire-Heat-Fix]
 export const FIRE_SCORE_BASE   = envNum("SIM_FIRE_SCORE_BASE", 25);   // Feuer-Flat-Score je Punkt (erster Feuer-Skill) [Sim-tunebar]
 export const FIRE_SCORE_PER_SKILL = 5; // +Feuer-Flat je Punkt je weiterem Feuer-Skill    // v0 — tunebar
 export const FIRE_MARGIN_OFFSET = envNum("SIM_FIRE_MARGIN_OFFSET", 2); // Feuer-Score-Offset: s = (Vorsprung − OFFSET) × Basis; kleiner = knappe Siege zahlen (Floor-Hebel) [Sim-tunebar]
+// Feuer-Score √-Bonus (wie Wurzeltiefe): additiv oben auf die lineare Linie, Basis·K·√(Vorsprung−OFFSET). Uncapped,
+// abnehmender Ertrag → großer Wertvorsprung bringt weiter mehr, ohne Deckel; kleine Margen bleiben ungestraft. [Sim-tunebar]
+export const FIRE_SCORE_SQRT_K  = envNum("SIM_FIRE_SCORE_SQRT_K", 1.0);
 // GLUTDIVIDENDE (Feuer-Rework, FLOOR-Hebel): ein DIREKTER Score je Feuer-Sieg, der NICHT durch den Serien/Crit/
 // Formations-Stack multipliziert wird (er zählt flach NACH der Multiplikation). Damit hebt er den Median (kleine
 // Mults → der flache Aufschlag ist relativ groß) deutlich stärker als das Ceiling (riesige Mults → der Aufschlag

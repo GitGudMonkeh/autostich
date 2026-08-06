@@ -342,14 +342,22 @@ export const heatConsumerCount = (skills) => (skills || []).filter((id) => SKILL
 export const hasHeatConsumer = (skills, kind) => (skills || []).some((id) => SKILL_DEFS[id]?.heatConsumer === kind);
 
 // Hitzegewinn bei Sieg (%). ctx = { winStreak, lostLast, deficit } für Serie/Rückzündung.
-//  · Marge (ab HEAT_MIN_MARGIN): (min(Vorsprung, CAP)−2)×PER_POINT, Glut ×1,5 (kaufm. gerundet)
+//  · Marge (ab HEAT_MIN_MARGIN): marginHeatPoints(Vorsprung)×PER_POINT (linear bis Knie, √-Schwanz darüber), Glut ×1,5 (kaufm. gerundet)
 //  · Zunder: +2 % flach, AUCH bei knappen Siegen unter der Marge-Schwelle
 //  · Feuersturm: +1 % je Serienstufe (bis +5 %)
 //  · Rückzündung: nach einer Niederlage +1 % je Wert-Rückstand des Vorstichs
+// Margen-Hitzepunkte: linear bis zum weichen Knie (HEAT_MARGIN_CAP), darüber √-Schwanz (uncapped, abnehmender
+// Ertrag — wie Wurzeltiefe). Ersetzt den früheren HARTEN Deckel: großer Vorsprung generiert weiter Hitze.
+export function marginHeatPoints(margin) {
+  const knee = C.HEAT_MARGIN_CAP;
+  const lin = Math.min(margin, knee) - C.FIRE_MARGIN_OFFSET; // linear bis zum Knie (wie bisher)
+  if (margin <= knee) return lin;
+  return lin + C.HEAT_MARGIN_TAIL_K * Math.sqrt(margin - knee); // √-Schwanz über dem Knie
+}
 export function heatGainFor(margin, skills, ctx = {}) {
   let g = 0;
   if (margin >= C.HEAT_MIN_MARGIN) {
-    let base = (Math.min(margin, C.HEAT_MARGIN_CAP) - 2) * C.HEAT_PER_POINT;
+    let base = Math.round(marginHeatPoints(margin) * C.HEAT_PER_POINT); // ganzzahlige Hitze (√-Schwanz gerundet)
     if (fireFlag(skills, "emberBoost")) base = Math.round(base * C.EMBER_MULT);
     g += base;
   }
@@ -374,12 +382,15 @@ export function verbrennungMult(margin) {
   if (margin >= C.VERBRENNUNG_T1_MARGIN) return C.VERBRENNUNG_T1_MULT;
   return 1;
 }
-// Feuer-Flat-Score bei Sieg: (Vorsprung−FIRE_MARGIN_OFFSET) × (25 + 5×(FeuerSkills−1)), dann Verbrennung (×1,5/×2).
+// Feuer-Flat-Score bei Sieg: (Vorsprung−FIRE_MARGIN_OFFSET) × (25 + 5×(FeuerSkills−1)) + additiver √-Bonus (Basis·K·√Vorsprung, uncapped), dann Verbrennung (×1,5/×2).
 // 0 ohne Feuer-Skill. (Sonnenzorn wirkt jetzt als peak-hitze-Multiplikator in der Engine, nicht mehr hier.)
 export function fireScoreFor(margin, skills, heatValue = 0) {
   const n = activeFireCount(skills);
   if (n === 0 || margin < C.HEAT_MIN_MARGIN) return 0;
-  let s = (margin - C.FIRE_MARGIN_OFFSET) * (C.FIRE_SCORE_BASE + C.FIRE_SCORE_PER_SKILL * (n - 1));
+  const base = C.FIRE_SCORE_BASE + C.FIRE_SCORE_PER_SKILL * (n - 1);
+  const over = Math.max(0, margin - C.FIRE_MARGIN_OFFSET);
+  // lineare Linie (wie bisher) + additiver √-Bonus (Wurzeltiefe-Muster): großer Vorsprung zahlt weiter mehr, uncapped.
+  let s = over * base + base * C.FIRE_SCORE_SQRT_K * Math.sqrt(over);
   if (fireFlag(skills, "verbrennung")) s *= verbrennungMult(margin);
   return Math.round(s);
 }
