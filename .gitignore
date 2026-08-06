@@ -41,3 +41,6 @@ Thumbs.db
 
 # Sim-Scratch (WIP-Messungen, nicht committen)
 *.scratch.*
+
+# Temporäre Agent-Worktrees (nicht versionieren)
+.claude/worktrees/
