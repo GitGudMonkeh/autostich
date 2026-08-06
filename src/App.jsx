@@ -26,6 +26,7 @@ import { FamilyTargetSelect } from "./ui/FamilyTargetSelect.jsx";
 import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
+import { GlacierBar } from "./ui/GlacierBar.jsx";
 import { PlantBar } from "./ui/PlantBar.jsx";
 import { MasteryBar } from "./ui/MasteryBar.jsx";
 import { archetypeOf } from "./game/skills.js";
@@ -656,6 +657,13 @@ export function Autostich() {
                 rootScore={state.plantRoot || 0} bloomScore={state.plantBloom || 0} harvestScore={state.plantHarvest || 0}
                 trimCount={state.trimCount || 0}
                 options={options} onOption={changeOptions} />
+              <GlacierBar active={(state.activeArchetypes || []).includes("ice")}
+                glacierLocked={state.glacierLocked || []} glacierMass={state.glacierMass || []}
+                glacierYield={state.glacierYield || 0} glacierRoles={state.glacierRoles || []}
+                glacierPre={state.glacierPre}
+                frozenOppPending={state.frozenOppPending || {}} frozenOppActive={state.frozenOppActive || {}}
+                glacierBuffPending={state.glacierBuffPending || {}} glacierBuffActive={state.glacierBuffActive || {}}
+                grosseLawineFired={state.grosseLawineFired} />
             </div>
             {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
             <div className="order-2 lg:col-start-2 lg:row-start-1">
