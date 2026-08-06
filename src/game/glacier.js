@@ -61,6 +61,8 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   const kettenbruch = !!opts.kettenbruch;               // Bruch zwingt Nachbar-Gletscher mitzubrechen
   const gletschersturzPer = opts.gletschersturz ? (opts.gletschersturzPer ?? GLETSCHERSTURZ_PER) : 0; // Amp ∝ Bruch-Zahl
   const formFactor = opts.formFactor || null;           // 2D-Geometrie-Formationen: Burst-Faktor je Feld (docs §9)
+  const grosseLawine = !!opts.grosseLawine;             // Legendär: ALLES bricht (Schwellen ignoriert)
+  const ewigesSchild = !!opts.ewigesSchild;             // Legendär: das ganze Feld gilt als EIN Übergletscher (Kaskade = volle Feldgröße)
   const tOf = (m) => { let t = 0; for (const th of thresholds) if (m >= th) t++; return t; };
   const top = thresholds[thresholds.length - 1];
   const dropTo = (t) => (t >= 2 ? thresholds[t - 2] : 0); // Teil-Reset: eine Stufe runter
@@ -70,8 +72,10 @@ export function precomputeGlacier(mass, locked, opts = {}) {
 
   // Vorbereitung: Überlauf auszahlen, Masse deckeln, natürliche Stufe je Gletscher.
   const mCap = new Array(N_POS).fill(0), natTier = new Array(N_POS).fill(0);
+  let totalG = 0;
   for (let p = 0; p < N_POS; p++) {
     if (!isG(p)) continue;
+    totalG++;
     const m0 = resetMass[p] || 0;
     const ov = Math.max(0, m0 - top);
     if (ov > 0) payout[p] += ov;                        // Überlauf → Score (jede Runde)
@@ -79,9 +83,12 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     natTier[p] = tOf(mCap[p]);
   }
 
-  // Breaker bestimmen: natürliche (Stufe ≥ 1) + optional Kettenbruch-Flood auf angrenzende Gletscher.
+  // Breaker bestimmen: natürliche (Stufe ≥ 1) + Große Lawine (alles) + optional Kettenbruch-Flood auf angrenzende Gletscher.
   const isBreaker = new Array(N_POS).fill(false), forced = new Array(N_POS).fill(false), queue = [];
-  for (let p = 0; p < N_POS; p++) if (isG(p) && natTier[p] >= 1) { isBreaker[p] = true; queue.push(p); }
+  for (let p = 0; p < N_POS; p++) if (isG(p)) {
+    if (natTier[p] >= 1) { isBreaker[p] = true; queue.push(p); }
+    else if (grosseLawine) { isBreaker[p] = true; forced[p] = true; } // Große Lawine: auch Unter-Schwelle bricht
+  }
   if (kettenbruch) {
     while (queue.length) {
       const q = queue.pop();
@@ -99,9 +106,9 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     if (!isBreaker[p]) { resetMass[p] = mCap[p]; continue; } // kein Bruch: gedeckelte Masse bleibt
     const effTier = forced[p] ? Math.max(1, natTier[p]) : natTier[p]; // Kettenbruch: erzwungene brechen mind. auf Stufe 1
     const nb = neighborFn(p);
-    const gN = nb.filter(isG).length;
+    const gN = ewigesSchild ? Math.max(0, totalG - 1) : nb.filter(isG).length; // Ewiges Schild: ganzes Feld gilt als angrenzend
     const berstFaktor = 1 + kaskade * gN;               // Kaskade (Dichte)
-    const kollFrac = nb.length ? gN / nb.length : 0;
+    const kollFrac = ewigesSchild ? 1 : (nb.length ? gN / nb.length : 0);
     const kollFaktor = 1 + (kollision - 1) * kollFrac;  // Kollision (anteilig)
     const geoFactor = formFactor ? (formFactor[p] || 1) : 1; // 2D-Geometrie (Block/Kreuz/Linie/Fläche)
     const burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor;
@@ -153,6 +160,18 @@ export function verschmelzenPool(mass, locked, neighborFn = neighbors4) {
     const avg = cl.reduce((s, p) => s + (out[p] || 0), 0) / cl.length;
     for (const p of cl) if ((out[p] || 0) < avg) out[p] = avg; // nur anheben
   }
+  return out;
+}
+
+// Ewiges Schild (Legendär, docs §7): das GESAMTE Feld poolt als ein Übergletscher — alle Gletscher auf den globalen
+// Durchschnitt heben (nie fallend), unabhängig von Nachbarschaft.
+export function uebergletscherPool(mass, locked) {
+  const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
+  const gs = []; for (let p = 0; p < N_POS; p++) if (isG(p)) gs.push(p);
+  if (gs.length < 2) return out;
+  const avg = gs.reduce((s, p) => s + (out[p] || 0), 0) / gs.length;
+  for (const p of gs) if ((out[p] || 0) < avg) out[p] = avg;
   return out;
 }
 
@@ -236,6 +255,11 @@ export const ROLES = {
   EINFRIEREN: "G_EINFRIEREN",     // Frostgriff: bricht ein Gletscher, verliert die getroffene Gegnerkarte ihren nächsten Stich garantiert
   FROSTBUND: "G_FROSTBUND",       // Frostgriff: bricht ein Gletscher auf einen Nicht-Eis-Nachbarn (2. Archetyp) → bufft ihn (+Stichwert)
   VERDICHTUNG: "G_VERDICHTUNG",   // Firn: der Gebäude-Wertbonus auf einem Gletscher wird nicht ausgespielt, sondern in Masse getankt
+  // Legendäre (Capstones, docs §7):
+  L_LAWINE: "G_L_LAWINE",         // Große Lawine: ein Snapshot, in dem ALLES bricht (Schwellen ignoriert, volle Stufe)
+  L_SCHILD: "G_L_SCHILD",         // Ewiges Schild: das ganze zusammenhängende Feld zählt als EIN Übergletscher
+  L_EISZEIT: "G_L_EISZEIT",       // Eiszeit: Dauerfrost im Overdrive — das Brett flutet, Karten frieren nach und nach ein
+  L_ERSTARRUNG: "G_L_ERSTARRUNG", // Erstarrung: jede vom Bruch getroffene Gegnerkarte verliert ihren Stich; Reichweite +1 ins Gegnerfeld
 };
 export const FROSTBUND_BUFF = 3;  // Frostbund: Wert-Buff auf die getroffene Nicht-Eis-Nachbarkarte (nächster Durchlauf)
 export const VERDICHTUNG_RATE = 0.25; // Verdichtung: je 4 Gebäude-Bonuswert → +1 Masse (docs §4 Firn)
@@ -253,6 +277,8 @@ export function glacierOpts(roles = []) {
   if (has(ROLES.EISBRUECKE)) opts.neighborFn = neighbors8;   // Kaskade/Kollision/Kette über 8-Nachbarschaft
   if (has(ROLES.KETTENBRUCH)) opts.kettenbruch = true;
   if (has(ROLES.GLETSCHERSTURZ)) opts.gletschersturz = true;
+  if (has(ROLES.L_LAWINE)) opts.grosseLawine = true;         // Legendär: alles bricht
+  if (has(ROLES.L_SCHILD)) opts.ewigesSchild = true;         // Legendär: Übergletscher
   return opts;
 }
 
