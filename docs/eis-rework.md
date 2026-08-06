@@ -70,6 +70,11 @@ Das eine „immer an"-Signature, das für **jede Eiskarte** gilt (Pendant zu Feu
 - **Rolle:** der bedingungslose **Grundsockel** der Ansammlung. Die Skills *verstärken* Akkumulation (Anfrieren bei Sieg, Dauerfrost am Boden …), der Passiv trägt sie darunter. Gibt Eis sein Signature-Gefühl: **Unaufhaltsamkeit** — der Gletscher *wird* irgendwann brechen.
 - **Muss klein bleiben:** ein bedingungsloser Tick weicht „Verlieren" leicht auf (Prinzip bleibt heil — der Gletscher kann weiter verlieren, es kostet die Stiche), also **Sockel, nicht Motor**. Konkreter Wert am Sim.
 
+### 2.7 · Unique Deck-Mechanik: **2D-Geometrie-Formationen**
+Eis ist das **einzige Deck, das Formationen in 2D bildet** — geometrische Formen auf dem Brettraster (über die 4-Nachbarschaft), nicht nur die 1D-Reihe der anderen Decks. **Das Freischalten dieser Geometrien ist ein inhärenter Passiv des Eisdecks** — eine unique Mechanik, kein Skill und kein Kauf.
+- Möglich, **weil der Gletscher-Pick Karten fixiert** (§2.1): stabile Anker → man baut bewusst Formen.
+- Die einzelnen Geometrien (Block / Kreuz / Linie / Diagonale / Fläche …) und ihre Payoffs: siehe §9.
+
 ---
 
 ## 3 · Die vier Kategorien (Linien) & ihre Fantasien
@@ -155,6 +160,6 @@ Regel = **Bedingung → Effekt**. 12 Kern-Rollen + 5 Auffüller = **17 normale R
 1. ✔ **Dünne Linien aufgefüllt** — 17 normale Rollen (Firn 4 / Eisschild 5 / Lawine 5 / Frostgriff 3).
 2. ✔ **Legendäre** — Eiszeit / Ewiges Schild / Große Lawine / Erstarrung.
 3. **Zahlen** — ganz zuletzt (Sim + Playtest). Offen v.a.: Stufen-Werte 4/8/12 + Überlinearität + Überlauf-Rate, Masse-Raten der Motoren, Kaskade/Kollision-Faktoren, Eispanzer-Umwandlung, Eiszeit-Flutrate, Große-Lawine-Trigger (Finisher).
-4. **2D-Formationen** — Formationen, die die 4 Brett-Richtungen ansprechen (dockt an §2.1: Umbauen um fixe Anker).
+4. **2D-Formationen** — als **unique Deck-Passiv gesetzt** (§2.7); die einzelnen Geometrien + Payoffs noch zu designen (→ §9).
 5. **#288 (Trimmen) schließen**, sobald dieses Design es in Code ablöst.
 6. **Deckel/Runaway-Leitplanken** — aufgeschoben bis Design + Werte stehen (Verzahnung, Große Lawine, Kaskade).
