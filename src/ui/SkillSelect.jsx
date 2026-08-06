@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../game/skills.js";
-import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL, LIGHTNING_MAX_CHARGE,
-         PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
-         WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY } from "../game/constants.js";
+import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf, marginHeatPoints } from "../game/skills.js";
+import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
+         PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
+         WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
+         FIRE_MARGIN_OFFSET, FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, FIRE_SCORE_SQRT_K,
+         HEAT_MIN_MARGIN, HEAT_PER_POINT, HEAT_LOSS_MAX, HEAT_LOSS_PCT } from "../game/constants.js";
 import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
@@ -22,7 +24,17 @@ const ARCH_LOSS = {
 
 const SOCKET_PCT = Math.round(LIGHTNING_CRIT_BASE * 100);         // einmaliger Aktivierungs-Sockel (5 %)
 const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // je Blitz-Skill (8 %)
+const FIRST_CRIT_PCT = SOCKET_PCT + PER_SKILL_PCT;               // Crit-Chance nach dem ERSTEN Blitz-Skill (Sockel + 1×)
 const PER_SKILL_MULT = String(LIGHTNING_CRIT_MULT_PER_SKILL).replace(".", ","); // +Crit-Multiplikator je Blitz-Skill (0,1)
+// Feuer-Passive: konkrete Zahlen (erster Feuer-Skill). Score = lineare Linie + √-Bonus; Hitze = marginHeatPoints (√-Schwanz).
+const fireScoreAt = (m) => Math.round((m - FIRE_MARGIN_OFFSET) * FIRE_SCORE_BASE + FIRE_SCORE_BASE * FIRE_SCORE_SQRT_K * Math.sqrt(m - FIRE_MARGIN_OFFSET));
+const fireHeatAt  = (m) => Math.round(marginHeatPoints(m) * HEAT_PER_POINT);
+const FIRE_EX_MARGIN = 15;                                 // großer-Vorsprung-Beispiel
+const FIRE_MIN_HEAT = fireHeatAt(HEAT_MIN_MARGIN);         // Hitze bei Mindest-Vorsprung
+const FIRE_MIN_SCORE = fireScoreAt(HEAT_MIN_MARGIN);       // Score bei Mindest-Vorsprung
+const FIRE_EX_HEAT = fireHeatAt(FIRE_EX_MARGIN);           // Hitze beim Beispiel
+const FIRE_EX_SCORE = fireScoreAt(FIRE_EX_MARGIN);         // Score beim Beispiel
+const FIRE_LOSS_PCT = Math.round(HEAT_LOSS_PCT * 100);     // Abkühl-Anteil der aktuellen Hitze je Niederlage
 
 // Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
 const LIGHT = "#8a7de0";
@@ -60,30 +72,18 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const [openGroup, setOpenGroup] = useState(null); // Dev-Run: welcher Archetyp gerade seine Skills zeigt
   const [pendingConsumer, setPendingConsumer] = useState(null); // #93: Konsumenten-Ersatzdialog { id, replace, type }
 
-  // Ist der jeweilige Archetyp beim Spieler noch inaktiv → DIESER Skill schaltet ihn frei (erster Pick).
-  const isFirstPick = {
-    lightning: !(state.lightning && state.lightning.active),
-    fire: !(state.heat && state.heat.active),
-    ice: !(state.activeArchetypes || []).includes("ice"),
-    plant: !(state.activeArchetypes || []).includes("plant"),
-  };
-  // Kurze Passiv-Erklärung je Archetyp (erster Pick = „schaltet frei", sonst = „vertieft"). Style-Guide: knapp,
-  // Wirkung vor Bedingung. Ergänzt im Aufklapper durch die Glossar-Einträge der angebotenen Schlüsselbegriffe.
+  // Passiv-Beschreibung je Archetyp — EIN Text, unabhängig davon, ob es der freischaltende oder ein weiterer Pick ist.
+  // Beschreibt NUR die Passive (Deck-Mechanik lebt in der Deck-Erklärung). Ergänzt im Aufklapper durch die Glossar-Einträge.
   const unlockLine = (arch) => {
-    const first = isFirstPick[arch];
     switch (arch) {
-      case "lightning": return first
-        ? `Schaltet den Blitz-Archetyp frei: Ladung (Crits erzeugen Ladung, max ${LIGHTNING_MAX_CHARGE}) und eine Crit-Basis von +${SOCKET_PCT + PER_SKILL_PCT} % (Sockel +${SOCKET_PCT} % plus +${PER_SKILL_PCT} % je Blitz-Skill). Jeder Blitz-Skill gibt zudem +${PER_SKILL_MULT}× Crit-Multiplikator.`
-        : `Jeder weitere Blitz-Skill gibt +${PER_SKILL_PCT} % Crit-Chance und +${PER_SKILL_MULT}× Crit-Multiplikator. Ladung und Crit-Basis sind bereits aktiv.`;
-      case "fire": return first
-        ? "Schaltet die Hitzeleiste frei (0–100 %): Siege mit klarem Wertvorsprung heizen auf und geben Feuer-Score, klare Niederlagen kühlen ab."
-        : "Jeder weitere Feuer-Skill erhöht den Feuer-Score je Vorsprungspunkt. Die Hitzeleiste ist bereits aktiv.";
-      case "ice": return first
-        ? "Schaltet das Einfrieren frei: eigene Karten werden blau, biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden. Jeder weitere Eis-Skill friert eine weitere Karte ein."
-        : "Jeder weitere Eis-Skill friert eine weitere eigene Karte ein und erweitert deine Aufstellungs-Optionen.";
-      case "plant": return first
-        ? `Schaltet das Wachstum frei: eigene Karten wachsen bei Siegen — je mehr Pflanze-Skills, desto schneller (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Skills). Eine wachsende, noch nicht reife Karte ist ein Setzling; ab ${PLANT_GREEN_THRESHOLD} Wachstum wird sie grün und bildet einen Farbblock, der Score gibt. Solange du nur Pflanzen-Skills hältst, machen grüne Siege die Karte auch wertvoller: je ${WURZELSCHLAG_PER_GROWTH} Wachstum +1 Kartenwert (bis ${PLANT_VALUE_CAP}), ab ${WURZELSCHLAG_LOSS_MIN_SKILLS} Skills auch bei jeder ${WURZELSCHLAG_LOSS_EVERY}. Niederlage.`
-        : `Jeder weitere Pflanze-Skill lässt das Wachstum schneller reifen (volles Tempo ab ${PLANT_GROWTH_SKILL_REF}) — mehr grüne Karten, größerer Farbblock. Solange du nur Pflanzen-Skills hältst, machen grüne Siege die Karte wertvoller: je ${WURZELSCHLAG_PER_GROWTH} Wachstum +1 Kartenwert (bis ${PLANT_VALUE_CAP}), ab ${WURZELSCHLAG_LOSS_MIN_SKILLS} Skills auch bei jeder ${WURZELSCHLAG_LOSS_EVERY}. Niederlage.`;
+      case "lightning":
+        return `Der erste Blitz-Skill gibt +${FIRST_CRIT_PCT} % Crit-Chance, jeder weitere +${PER_SKILL_PCT} %. Dazu +${PER_SKILL_MULT}× Crit-Multiplikator je Blitz-Skill.`;
+      case "fire":
+        return `Jeder Sieg mit mindestens ${HEAT_MIN_MARGIN} Wertvorsprung heizt die Hitze um ${FIRE_MIN_HEAT} % auf und gibt +${FIRE_MIN_SCORE} Feuer-Score — je größer der Vorsprung, desto mehr (Beispiel ${FIRE_EX_MARGIN} Vorsprung: +${FIRE_EX_HEAT} % Hitze und +${FIRE_EX_SCORE} Score). Niederlagen kühlen die Hitze um ${FIRE_LOSS_PCT} % der aktuellen Hitze ab (plus Wert-Rückstand, bis ${HEAT_LOSS_MAX}). Jeder weitere Feuer-Skill gibt +${FIRE_SCORE_PER_SKILL} Feuer-Score je Vorsprungspunkt.`;
+      case "ice":
+        return "Jeder Eis-Skill friert eine eigene Karte ein — sie wird blau, biegt Formationen und darf 1× je Aufstellungsphase gratis getauscht werden.";
+      case "plant":
+        return `Jeder Sieg gibt der Karte bis zu +1 Wachstum (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Pflanze-Skills). Ab ${PLANT_GREEN_THRESHOLD} Wachstum wird die Karte grün. Solange du nur Pflanzen-Skills hältst: je ${WURZELSCHLAG_PER_GROWTH} Wachstum +1 Kartenwert (bis ${PLANT_VALUE_CAP}, danach ist sie voll ausgewachsen), ab ${WURZELSCHLAG_LOSS_MIN_SKILLS} Pflanzen-Skills auch bei jeder ${WURZELSCHLAG_LOSS_EVERY}. Niederlage.`;
       default: return "";
     }
   };
