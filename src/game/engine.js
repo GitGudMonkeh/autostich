@@ -23,7 +23,9 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, skillLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
-import { precomputeGlacier, ewigerFrostTick, glacierOpts, WIN_MASS as GLACIER_WIN_MASS } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
+import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftTarget as glacierDriftTarget,
+  ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
+  ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_DRIFT as GLACIER_SCHNEETREIBEN_DRIFT } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
@@ -356,8 +358,21 @@ export function resolveTrick(state, rng) {
     segmentWins += 1; // #189 Volles Haus: Sieg im aktuellen Segment (recentWinCount trug oben den Stand DAVOR)
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     serieStreak = winStreak; // effektive Serie NACH diesem Sieg
-    // Eis-Neudesign (docs §2.2): Baseline-Masse-Quelle — gewinnt ein Gletscher, wächst die Masse SEINES Feldes.
-    if (glacierActive && glacierLocked[actualPos]) newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + GLACIER_WIN_MASS;
+    // Eis-Neudesign (docs §2.2 / §4 Firn): Sieg eines Gletschers → +Masse auf seinem Feld (Baseline + Rollen).
+    if (glacierActive && glacierLocked[actualPos]) {
+      let add = GLACIER_WIN_MASS;
+      // Anfrieren: Sieg extra, Formations-Sieg zusätzlich obendrauf.
+      if (glacierRoles.includes(GLACIER_ROLES.ANFRIEREN)) add += GLACIER_ANFRIEREN_WIN + (hasFormation ? GLACIER_ANFRIEREN_FORM : 0);
+      newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + add;
+      // Schneetreiben (Verwehung): einen Teil der Masse auf ein Nachbarfeld verwehen — sät den Boden nach außen (nah).
+      if (glacierRoles.includes(GLACIER_ROLES.SCHNEETREIBEN)) {
+        const tgt = glacierDriftTarget(actualPos, glacierLocked);
+        if (tgt != null) {
+          const drift = Math.min(GLACIER_SCHNEETREIBEN_DRIFT, newGlacierMass[actualPos] || 0);
+          if (drift > 0) { newGlacierMass[actualPos] -= drift; newGlacierMass[tgt] = (newGlacierMass[tgt] || 0) + drift; }
+        }
+      }
+    }
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
     // #71 Farbserie: Länge der Serie gewonnener Stiche gleicher Farbe INKL. dieses Siegs. D_SUIT_STREAK IV:
     // ein Farbwechsel HALBIERT die laufende Länge (min 1) statt sie auf 1 zurückzusetzen (suitHalveOnSwitch).
@@ -1183,6 +1198,8 @@ export function resolveTrick(state, rng) {
     cycle += 1;
     // Eis-Neudesign (docs §2.6): Ewiger Frost — bedingungsloser Masse-Tick je Durchlauf auf jeden Gletscher (nach Auszahlung).
     if (glacierActive) newGlacierMass = ewigerFrostTick(newGlacierMass, glacierLocked);
+    // Dauerfrost (docs §4 Firn): offener Boden friert am tiefsten — passiver Masse-Frost auf ungefrorene Felder.
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.DAUERFROST)) newGlacierMass = dauerfrostTick(newGlacierMass, glacierLocked);
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf
     //      attribuiert). Zinseszins — positive Durchlauf-Bilanz (mehr Siege als Niederlagen) stapelt eine FLACHE Dauer-
     //      Dividende (kein Mult), die jeden Durchlauf ausgezahlt wird (compoundet über den Lauf). Echo — der beste Stich

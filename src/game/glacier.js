@@ -93,6 +93,9 @@ export const ROLES = {
   RISSBILDUNG: "G_RISSBILDUNG",   // instabiles Eis: erste Schwelle runter → bricht früh & oft
   ZERMALMEN: "G_ZERMALMEN",       // Kollision (Treffer auf Gletscher-Nachbarn) → Krit
   ABBRUCHKANTE: "G_ABBRUCHKANTE", // belohnt hohe Stufen noch steiler (Riesen)
+  ANFRIEREN: "G_ANFRIEREN",       // Firn: Sieg → +Masse extra; Formations-Sieg → doppelt
+  SCHNEETREIBEN: "G_SCHNEETREIBEN", // Firn: Verwehung — Sieg verweht Masse aufs Nachbarfeld (Boden säen, nah)
+  DAUERFROST: "G_DAUERFROST",     // Firn: offener Boden friert am tiefsten — passiver Boden-Frost (fern)
 };
 export const RISSBILDUNG_THRESHOLDS = [2, 8, 12];       // erste Schwelle 4→2
 export const ZERMALMEN_KOLLISION = 2;                   // Kollision 1,5→2
@@ -114,5 +117,36 @@ export function ewigerFrostTick(mass, locked, amount = EWIGER_FROST) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
   for (let p = 0; p < N_POS; p++) if (isG(p)) out[p] = (out[p] || 0) + amount;
+  return out;
+}
+
+/* ---- Rollen-Gruppe B: Masse-Quellen (docs §4 Firn) ----------------------------------------------- */
+export const ANFRIEREN_WIN = 1;        // Sieg → +Masse extra (zusätzlich zur Baseline WIN_MASS)
+export const ANFRIEREN_FORM = 2;       // Formations-Sieg → doppelt anfrieren (extra oben drauf)
+export const SCHNEETREIBEN_DRIFT = 1;  // Verwehung: Masse vom Gletscher auf ein Nachbarfeld
+export const DAUERFROST_BASE = 1;      // offener Boden: +Masse/Durchlauf auf Feld OHNE Gletscher-Nachbarn (skaliert runter)
+
+// Schneetreiben (Verwehung, docs §4): Zielfeld für die Verwehung — bevorzugt ein NICHT-Gletscher-Nachbarfeld (Boden säen),
+// sonst irgendein Nachbar. Deterministisch (niedrigster Index in der neighbors4-Reihenfolge). null, wenn keine Nachbarn.
+export function driftTarget(pos, locked) {
+  const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const nb = neighbors4(pos);
+  const open = nb.filter((p) => !isG(p));
+  if (open.length) return open[0];
+  return nb.length ? nb[0] : null;
+}
+
+// Dauerfrost (docs §4 Firn, „offener Boden friert am tiefsten"): am Durchlauf-ENDE sammeln UNGEFRORENE Felder Masse —
+// aber gedämpft durch Gletscher-Nachbarn (0 Nachbarn = voller Frost, ganz von Gletschern umgeben = 0). Nur Firn-Boden.
+export function dauerfrostTick(mass, locked, base = DAUERFROST_BASE) {
+  const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
+  for (let p = 0; p < N_POS; p++) {
+    if (isG(p)) continue;                                 // nur ungefrorene Felder (Gletscher laden über Anfrieren/Ewiger Frost)
+    const nb = neighbors4(p);
+    const gN = nb.filter(isG).length;
+    const openness = nb.length ? Math.max(0, 1 - gN / nb.length) : 1; // je mehr Gletscher-Nachbarn, desto weniger Boden-Frost
+    if (openness > 0) out[p] = (out[p] || 0) + base * openness;
+  }
   return out;
 }
