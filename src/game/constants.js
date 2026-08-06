@@ -470,7 +470,7 @@ export const WURZELSCHLAG_LOSS_EVERY = envNum("SIM_WURZELSCHLAG_LOSS_EVERY", 2);
 export const WURZELSCHLAG_LOSS_MIN_SKILLS = envNum("SIM_WURZELSCHLAG_LOSS_MIN_SKILLS", 4); // Niederlage-Klausel erst ab N gehaltenen Pflanzen-Skills [Sim-tunebar]
 // Linie 4 — „Kernholz" (Mono-Grün-Payoff): grüner Sieg → +Score je Kartenwert-Punkt ÜBER dem Startwert (baseRank).
 // Schließt den Loop Wachstum→Wert→Score (die Passive baut Wert, Kernholz erntet ihn). [Sim-tunebar]
-export const KERNHOLZ_SCORE_PER_VALUE = envNum("SIM_KERNHOLZ_SCORE_PER_VALUE", 20);
+export const KERNHOLZ_SCORE_PER_VALUE = envNum("SIM_KERNHOLZ_SCORE_PER_VALUE", 15);
 export const WURZELTIEFE_SCORE     = envNum("SIM_WURZELTIEFE_SCORE", 15);  // Wurzeltiefe: Flat-Score je Sieg einer grünen Karte (Wurzeln-Score) [Pflanze-Buff: 12→15]
 // Wurzeltiefe-Feldtiefe (Buff): Bonus je grünem Sieg, der mit dem GESAMTWACHSTUM des Feldes skaliert — aber mit
 // √-Kennlinie (abnehmender Ertrag) und Deckel, damit tiefe Wälder nicht durchdrehen (Anti-Runaway). Bonus = K·√(ΣWachstum), gedeckelt.
@@ -491,7 +491,7 @@ export const PLANT_BLOOM_FIELD_CAP = envNum("SIM_PLANT_BLOOM_FIELD_CAP", 25); //
 // #288 „Trimmen": der Grow→Ernte-Pivot. Wird ein WACHSTUMS-stützender Skill (Aussaat/Flugsamen/Setzlingsbeet/Zäher Halm)
 // ERSETZT, zählt das global als Trimmung → dauerhafter Multiplikator auf Wurzel- & Blüten-Score, je mehr Trimmungen desto
 // höher (gedeckelt). Wachstums-Skills sterben so nicht, sie veredeln die Payoff-Phase. [Sim-tunebar]
-export const TRIM_STEP = envNum("SIM_TRIM_STEP", 0.25); // +Anteil Wurzel-/Blüten-Score je Trimmung [Pflanze-Tune: 20→25 % = +25 %/Trimmung]
+export const TRIM_STEP = envNum("SIM_TRIM_STEP", 0.20); // +Anteil Wurzel-/Blüten-Score je Trimmung [Pflanze-Tune: zurück auf 20 %/Trimmung (25→20) im v0.5-Rework]
 export const TRIM_CAP  = envNum("SIM_TRIM_CAP", 1.5);   // Deckel des Trimm-Multiplikator-Bonus [Pflanze-Buff: 1,0→1,5 = max +150 % → ×2,5]
 // Linie 2 — Aussaat (Breite: Wachstum verbreiten)
 export const AUSSAAT_GROWTH        = 1;   // Aussaat: +Wachstum je Nachbar bei Sieg einer grünen Karte          // v0
