@@ -651,6 +651,8 @@ export function reducer(state, action) {
       const { i, j } = action;
       if (i === j) return state;
       if (i < 0 || j < 0 || i >= state.playerOrder.length || j >= state.playerOrder.length) return state;
+      // Eis-Neudesign (docs §2.1): ein gefrorener Gletscher ist STARR — seine Brett-Position darf nicht getauscht werden.
+      if (state.glacierLocked && (state.glacierLocked[i] || state.glacierLocked[j])) return state;
       const cardA = state.deck[state.playerOrder[i]], cardB = state.deck[state.playerOrder[j]];
       const used = state.frostSwapsUsed || [];
       let freeFrozenId = null;
@@ -664,6 +666,19 @@ export function reducer(state, action) {
                formationEnergy: isFree ? state.formationEnergy : state.formationEnergy - 1,
                formationSwaps: [...(state.formationSwaps || []), { i, j, free: isFree, frozenId: freeFrozenId, idA: cardA.id, idB: cardB.id }],
                frostSwapsUsed: isFree ? [...used, freeFrozenId] : used };
+    }
+    // Eis-Neudesign (docs §2.1): eine Karte als Gletscher picken → sie friert auf IHRER aktuellen Brett-Zelle fest und ist
+    // ab dann STARR (unverschiebbar in künftigen Aufstellungen). Kern-Entscheidung Position vs. Wert; die Fixierung ist
+    // bewusst permanent (kein Unlock). Nur in der Formationsphase & bei aktivem Gletscher-Archetyp. Idempotent.
+    case "GLACIER_LOCK": {
+      if (state.phase !== "formation") return state;
+      if (!(state.activeArchetypes || []).includes("glacier")) return state;
+      const p = action.pos;
+      if (p == null || p < 0 || p >= state.playerOrder.length) return state;
+      if (state.glacierLocked && state.glacierLocked[p]) return state; // schon gefroren → No-op
+      const glacierLocked = (state.glacierLocked || new Array(state.playerOrder.length).fill(false)).slice();
+      glacierLocked[p] = true;
+      return { ...state, glacierLocked };
     }
     // Letzten Tausch rückgängig machen → bezahlter Tausch erstattet Energie, freier Frosttausch wird zurückgegeben.
     case "UNDO_SWAP": {
