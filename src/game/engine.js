@@ -27,7 +27,8 @@ import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftT
   neighbors4 as glacierNeighbors4, glacierNeighborFn, verschmelzenPool, packeisTick, verzahnungTick, glacierGeometry,
   ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
   ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_DRIFT as GLACIER_SCHNEETREIBEN_DRIFT,
-  EISPANZER_MASS as GLACIER_EISPANZER_MASS, FROSTBUND_BUFF as GLACIER_FROSTBUND_BUFF } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
+  EISPANZER_MASS as GLACIER_EISPANZER_MASS, FROSTBUND_BUFF as GLACIER_FROSTBUND_BUFF,
+  VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
@@ -323,7 +324,11 @@ export function resolveTrick(state, rng) {
   const lightDepth   = !!(lightning && lightning.active && fieldDepthSaturated(deck));
   const satValueBonus = lightBreadth ? C.ION_SATURATION_VALUE : 0;
   const glacierBuff = glacierActive ? (glacierBuffActive[pCard.id] || 0) : 0; // Frostbund: Wert-Buff auf gebuffte Nicht-Eis-Nachbarkarte
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + damascusCombat + satValueBonus + glacierBuff;
+  // Verdichtung (docs §4 Firn): auf einem Gletscher wird der Gebäude-Wertbonus NICHT ausgespielt, sondern in Masse getankt
+  // (unten im Auszahlungs-Block). Hier: im Kampf unterdrücken, damit er nicht doppelt (Wert + Masse) zählt.
+  const verdichtung = glacierActive && glacierRoles.includes(GLACIER_ROLES.VERDICHTUNG) && !!glacierLocked[actualPos];
+  const architectValueEff = verdichtung ? 0 : architectValue;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + damascusCombat + satValueBonus + glacierBuff;
   // #226 Großmeister: Gegner-Aufschlag = flacher oppValue + mitwachsender Ramp (+1 Wert alle oppRampEvery Durchläufe),
   // additiv VOR den Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, byte-identisch.
   const rampMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
@@ -1183,6 +1188,8 @@ export function resolveTrick(state, rng) {
       const id = deck[playerOrder[nb]].id;
       newGlacierBuffPending[id] = Math.max(newGlacierBuffPending[id] || 0, GLACIER_FROSTBUND_BUFF);
     }
+  // Verdichtung (docs §4 Firn): der auf diesem Gletscher unterdrückte Gebäude-Wertbonus wird in Masse getankt.
+  if (verdichtung && architectValue > 0) newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + architectValue * GLACIER_VERDICHTUNG_RATE;
 
   // #71 Volles Haus: Ergebnis-Fenster fortschreiben (letzte 4 Ergebnisse für den nächsten Stich).
   recentResults = [...recentResults, lastResult].slice(-4);
