@@ -60,6 +60,7 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   const neighborFn = opts.neighborFn || neighbors4;     // Eisbrücke → 8-Nachbarschaft (Kaskade/Kollision/Kette)
   const kettenbruch = !!opts.kettenbruch;               // Bruch zwingt Nachbar-Gletscher mitzubrechen
   const gletschersturzPer = opts.gletschersturz ? (opts.gletschersturzPer ?? GLETSCHERSTURZ_PER) : 0; // Amp ∝ Bruch-Zahl
+  const formFactor = opts.formFactor || null;           // 2D-Geometrie-Formationen: Burst-Faktor je Feld (docs §9)
   const tOf = (m) => { let t = 0; for (const th of thresholds) if (m >= th) t++; return t; };
   const top = thresholds[thresholds.length - 1];
   const dropTo = (t) => (t >= 2 ? thresholds[t - 2] : 0); // Teil-Reset: eine Stufe runter
@@ -102,7 +103,8 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     const berstFaktor = 1 + kaskade * gN;               // Kaskade (Dichte)
     const kollFrac = nb.length ? gN / nb.length : 0;
     const kollFaktor = 1 + (kollision - 1) * kollFrac;  // Kollision (anteilig)
-    const burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor;
+    const geoFactor = formFactor ? (formFactor[p] || 1) : 1; // 2D-Geometrie (Block/Kreuz/Linie/Fläche)
+    const burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor;
     payout[p] += burst;
     resetMass[p] = dropTo(effTier);
     breaks.push({ pos: p, tier: effTier, burst, glacierNeighbors: gN, forced: forced[p] });
@@ -176,6 +178,43 @@ export function verzahnungTick(mass, locked, neighborFn = neighbors4, per = VERZ
   return out;
 }
 
+/* ---- 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7 & §9) --------------------------------
+   Erkennt geometrische Formen aus GEFRORENEN Gletschern und gibt einen Burst-Faktor je Feld zurück (überlappende
+   Formen stapeln multiplikativ). Immer an, wenn Gletscher aktiv. Eiswall verstärkt die „Linie". ⚠ Werte Platzhalter. */
+export const GEO_BLOCK = 1.15;    // 2×2-Quadrat (Dichte-Sockel)
+export const GEO_KREUZ = 1.25;    // Zentrum + 4 orthogonale (Kollisions-Knoten)
+export const GEO_LINIE = 1.30;    // volle Reihe (5) oder Spalte (8)
+export const GEO_FLAECHE = 1.50;  // gefülltes 3×3 (Endgame-Mega-Cluster)
+export const EISWALL_LINIE = 1.60; // Eiswall hebt die Linie an
+
+export function glacierGeometry(locked, opts = {}) {
+  const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const f = new Array(N_POS).fill(1);
+  const mark = (p, factor) => { f[p] *= factor; };
+  const linieFactor = opts.eiswall ? EISWALL_LINIE : GEO_LINIE;
+  // Linie: volle Reihe (5 Spalten)
+  for (let r = 0; r < 8; r++) { let full = true; for (let c = 0; c < 5; c++) if (!isG(posOf(r, c))) { full = false; break; } if (full) for (let c = 0; c < 5; c++) mark(posOf(r, c), linieFactor); }
+  // Linie: volle Spalte (8 Zeilen)
+  for (let c = 0; c < 5; c++) { let full = true; for (let r = 0; r < 8; r++) if (!isG(posOf(r, c))) { full = false; break; } if (full) for (let r = 0; r < 8; r++) mark(posOf(r, c), linieFactor); }
+  // Block: gefülltes 2×2
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 4; c++)
+    if (isG(posOf(r, c)) && isG(posOf(r, c + 1)) && isG(posOf(r + 1, c)) && isG(posOf(r + 1, c + 1)))
+      for (const p of [posOf(r, c), posOf(r, c + 1), posOf(r + 1, c), posOf(r + 1, c + 1)]) mark(p, GEO_BLOCK);
+  // Kreuz: Zentrum + 4 orthogonale Nachbarn
+  for (let r = 1; r < 7; r++) for (let c = 1; c < 4; c++) {
+    const ctr = posOf(r, c);
+    if (isG(ctr) && isG(posOf(r - 1, c)) && isG(posOf(r + 1, c)) && isG(posOf(r, c - 1)) && isG(posOf(r, c + 1)))
+      for (const p of [ctr, posOf(r - 1, c), posOf(r + 1, c), posOf(r, c - 1), posOf(r, c + 1)]) mark(p, GEO_KREUZ);
+  }
+  // Große Fläche: gefülltes 3×3
+  for (let r = 0; r < 6; r++) for (let c = 0; c < 3; c++) {
+    let full = true;
+    for (let dr = 0; dr < 3 && full; dr++) for (let dc = 0; dc < 3; dc++) if (!isG(posOf(r + dr, c + dc))) { full = false; break; }
+    if (full) for (let dr = 0; dr < 3; dr++) for (let dc = 0; dc < 3; dc++) mark(posOf(r + dr, c + dc), GEO_FLAECHE);
+  }
+  return f;
+}
+
 /* ---- Rollen → Snapshot-opts (Gruppe A, docs §4 Lawine) -------------------------------------------
    Rollen als Skills sind noch nicht im Angebots-Pool (kein 5.-Archetyp-Leak); getrieben über state.glacierRoles.
    ⚠ Werte Platzhalter. */
@@ -193,6 +232,7 @@ export const ROLES = {
   EISBRUECKE: "G_EISBRUECKE",     // Eisschild: erweitert „angrenzend" um die 4 Diagonalen (8-Nachbarschaft)
   KETTENBRUCH: "G_KETTENBRUCH",   // Lawine: Bruch zwingt angrenzende Gletscher mitzubrechen (die echte Kaskade)
   GLETSCHERSTURZ: "G_GLETSCHERSTURZ", // Lawine: je mehr Gletscher im Durchlauf brechen, desto stärker jeder Bruch
+  EISWALL: "G_EISWALL",           // Eisschild: komplett gefrorene Reihe/Spalte (die „Linie") → verstärkt alle ihre Gletscher
 };
 export const RISSBILDUNG_THRESHOLDS = [2, 8, 12];       // erste Schwelle 4→2
 export const ZERMALMEN_KOLLISION = 2;                   // Kollision 1,5→2

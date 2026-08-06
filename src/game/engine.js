@@ -24,7 +24,7 @@ import { computeFormations, positionHasFormation, activeFormationCount, summariz
 import { perkLegendaryChance, skillLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftTarget as glacierDriftTarget,
-  neighbors4 as glacierNeighbors4, glacierNeighborFn, verschmelzenPool, packeisTick, verzahnungTick,
+  neighbors4 as glacierNeighbors4, glacierNeighborFn, verschmelzenPool, packeisTick, verzahnungTick, glacierGeometry,
   ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
   ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_DRIFT as GLACIER_SCHNEETREIBEN_DRIFT,
   EISPANZER_MASS as GLACIER_EISPANZER_MASS } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
@@ -192,7 +192,9 @@ export function resolveTrick(state, rng) {
   if (glacierActive && pos === 0) {
     // Verschmelzen (docs §4): angrenzende Gletscher poolen VOR dem Bruch auf den Cluster-Durchschnitt (nie fallend).
     const snapMass = glacierRoles.includes(GLACIER_ROLES.VERSCHMELZEN) ? verschmelzenPool(glacierMass, glacierLocked, glacierNF) : glacierMass;
-    glacierPreNow = precomputeGlacier(snapMass, glacierLocked, glacierOpts(glacierRoles)); // Rollen (Gruppe A) modifizieren den Snapshot
+    // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld; Eiswall hebt die Linie.
+    const glacierGeo = glacierGeometry(glacierLocked, { eiswall: glacierRoles.includes(GLACIER_ROLES.EISWALL) });
+    glacierPreNow = precomputeGlacier(snapMass, glacierLocked, { ...glacierOpts(glacierRoles), formFactor: glacierGeo });
     newGlacierMass = glacierPreNow.resetMass.slice();
   }
   // #161 FB-2: Peak gleichzeitig aktiver Formationen über den Run — zu Durchlaufbeginn, sobald das Layout feststeht.
