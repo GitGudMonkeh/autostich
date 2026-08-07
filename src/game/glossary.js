@@ -236,7 +236,7 @@ export const GLOSSARY = {
     text: `Erreicht ein Gletscher ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse, bricht er: Burst-Score aus Masse × Stufen-Wucht (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er auf 0 ab und baut neu auf.`,
     match: ["Bersten", "bricht", "brechen", "Berst-Schwelle", "Berst-Faktor"] },
   eisformation: { category: "frak", group: "ice", label: "Eis-Formationen", icon: "❄️", color: CLR.ice,
-    text: `Eis ist das einzige Deck mit Eis-Formationen: geometrische Formen aus festgefrorenen Gletschern verstärken deren Bersten — Block 2×2 (×${de(G_BLOCK)}), Kreuz (×${de(G_KREUZ)}), volle Reihe/Spalte (×${de(G_LINIE)}), 3×3-Fläche (×${de(G_FLAECHE)}). Überlappende Formen stapeln.`,
+    text: `Eis ist das einzige Deck mit Eis-Formationen: geometrische Formen aus festgefrorenen Gletschern verstärken deren Bersten — Block = 2×2 (4 Gletscher, ×${de(G_BLOCK)}), Kreuz = Zentrum + 4 Nachbarn (5, ×${de(G_KREUZ)}), Linie = volle Reihe (5) oder Spalte (8) (×${de(G_LINIE)}), Große Fläche = 3×3 (9, ×${de(G_FLAECHE)}). Überlappende Formen stapeln.`,
     match: ["Eis-Formationen", "Eis-Formation"] },
   // id `freeze` bleibt als Backcompat-Token erhalten (glossary.test.js). Umgewidmet auf „Firn-Boden" — vorerst
   // Platzhalter mit knapper, korrekter Aussage (KEIN Auto-Laden ungefrorener Felder — das kommt aus Skills);

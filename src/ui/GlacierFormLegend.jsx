@@ -12,10 +12,10 @@ export function GlacierFormLegend({ state = {}, compact = false }) {
   const eiswall = (state.glacierRoles || []).includes(ROLES.EISWALL);
   const linie = eiswall ? EISWALL_LINIE : GEO_LINIE;
   const rows = [
-    ["Block", GEO_BLOCK, "2×2-Quadrat aus Gletschern"],
-    ["Kreuz", GEO_KREUZ, "Zentrum + 4 orthogonale Nachbarn"],
+    ["Block", GEO_BLOCK, "2×2-Quadrat (4 Gletscher)"],
+    ["Kreuz", GEO_KREUZ, "Zentrum + 4 Nachbarn (5 Gletscher)"],
     ["Linie", linie, `volle Reihe (5) oder Spalte (8)${eiswall ? " · Eiswall" : ""}`],
-    ["Große Fläche", GEO_FLAECHE, "gefülltes 3×3-Feld"],
+    ["Große Fläche", GEO_FLAECHE, "gefülltes 3×3 (9 Gletscher)"],
   ];
   if (compact) {
     // Chronik-Stil: eine kompakte Zeile mit Chips.
