@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { RESET_TO } from "../src/game/glacier.js";
+import { RESET_TO, ROLES } from "../src/game/glacier.js";
 
 // Eis-Neudesign: Stufen-Verbrauch pro Stich. Die Masse eines Gletschers bleibt VOLL sichtbar, bis SEIN Stich dran ist,
 // und fällt erst dann auf den Nachbruch-Wert — nicht mehr für alle Gletscher gleichzeitig zu Durchlauf-Beginn (pos 0).
@@ -52,5 +52,17 @@ describe("Gletscher — Stufen-Verbrauch genau beim Stich (nicht zu Durchlauf-Be
 
     s = resolveTrick(s, noCrit); // pos 3 zahlt den Bruch von Feld 3 → Ertrag steigt
     expect(s.glacierYield).toBeGreaterThan(yield0);
+  });
+});
+
+describe("Verschmelzen — angehobene Gletscher sind SOFORT sichtbar (nicht erst beim eigenen Stich)", () => {
+  it("das schwächere Nachbarfeld steht schon nach dem ersten Stich auf dem Cluster-Durchschnitt", () => {
+    // pos 0 (0,0) und pos 1 (0,1) sind Nachbarn → ein Cluster. Massen 10 & 2 → Durchschnitt 6, „nur anheben": pos1 → 6.
+    const glacierLocked = falses(); glacierLocked[0] = true; glacierLocked[1] = true;
+    const gm = zeros(); gm[0] = 10; gm[1] = 2;
+    // Stich pos 0: pos 1 ist noch NICHT dran, muss aber schon hochgezogen sein (Pooling ist ein Durchlauf-Beginn-Buff).
+    const s = resolveTrick(scen({ glacierMass: gm, glacierLocked, glacierRoles: [ROLES.VERSCHMELZEN] }), noCrit);
+    expect(s.glacierMass[1]).toBe(6);   // sofort auf den Cluster-Durchschnitt gehoben
+    expect(s.glacierMass[0]).toBe(10);  // der stärkere bleibt (nur anheben, nie fallend)
   });
 });
