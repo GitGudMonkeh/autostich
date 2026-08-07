@@ -179,7 +179,7 @@ export const SKILL_DEFS = {
     desc: `Höhere Stufen bersten steiler: Stufen-Wucht ×${de(G_ABBRUCH_TIER[2])} / ×${de(G_ABBRUCH_TIER[3])} auf Stufe 2 / 3 (statt ×${de(G_TIER_MULT[2])} / ×${de(G_TIER_MULT[3])}).` },
   SK_ICE_11: { id: "SK_ICE_11", name: "Kettenbruch", archetype: "ice", keywords: ["glacier"], role: "G_KETTENBRUCH",
     desc: "Bricht ein Gletscher, zwingt er angrenzende Gletscher, sofort mitzubrechen — auch wenn sie die Schwelle nicht erreicht hätten." },
-  SK_ICE_12: { id: "SK_ICE_12", name: "Zermalmen", archetype: "ice", keywords: ["glacier", "crit"], role: "G_ZERMALMEN",
+  SK_ICE_12: { id: "SK_ICE_12", name: "Zermalmen", archetype: "ice", keywords: ["glacier"], role: "G_ZERMALMEN",
     desc: `Trifft ein Bruch einen Gletscher-Nachbarn, zählt die Kollision stärker: Faktor ×${de(G_ZERMALMEN_KOLL)} statt ×${de(G_KOLLISION)}.` },
   SK_ICE_13: { id: "SK_ICE_13", name: "Rissbildung", archetype: "ice", keywords: ["glacier"], role: "G_RISSBILDUNG",
     desc: `Instabiles Eis: ein Gletscher bricht schon ab ${de(G_RISSBILDUNG_BURST)} Masse (statt ${de(G_THRESHOLDS[G_THRESHOLDS.length - 1])}).` },
