@@ -120,6 +120,7 @@ export function Autostich() {
   // +2 % je in DIESEM Durchlauf gewonnenem Stich → sichtbare Eskalation zum Rundenende, Reset je Durchlauf.
   // Rein Anzeige/Ablauf (score-neutral wie der Turbo). cycleWins = Siege seit Durchlauf-Beginn.
   const cycleStartWins = useRef(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   useEffect(() => { cycleStartWins.current = state.wins || 0; }, [state.cycle]);
   const cycleWins = Math.max(0, (state.wins || 0) - cycleStartWins.current);
   const dynamicSpeed = 1 + 0.02 * cycleWins;
@@ -264,6 +265,7 @@ export function Autostich() {
   useEffect(() => {
     if (!state.trickNo) return;
     currentTraj.current[Math.floor(state.trickNo / GHOST_STEP)] = Math.floor(state.score);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [state.trickNo]);
 
   // Aktuellen Lauf werten: Highscore + Geist sichern (idempotent via recorded-Ref).
@@ -352,6 +354,7 @@ export function Autostich() {
   // Bei Game-Over automatisch werten + den Resume-Snapshot löschen (Lauf ist beendet → kein Fortsetzen mehr).
   useEffect(() => {
     if (state.phase === "gameover") { saveRun(); clearActiveRun(); setResumable(null); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [state.phase]);
 
   // #190: aktive Skins aus den Optionen (defensiver Fallback auf "default", falls (noch) gesperrt/unbekannt).

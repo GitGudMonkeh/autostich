@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  FAMILY_DEFS, FAMILY_LIST, familyDef,
+  FAMILY_DEFS, FAMILY_LIST,
   activeTierDef, activeTierDefs, familySumHook, familyProdHook, hasCritFamily,
   isLayoutFamily, layoutFamilies,
 } from "../src/game/families.js";

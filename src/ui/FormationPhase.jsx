@@ -29,6 +29,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   const [sel, setSel] = useState(null);
   // Eis-Neudesign: der Gletscher-Build friert Karten als Gletscher fest (starr). Marker/Masse am Brett + Freeze-Button.
   const iceActive = (state.activeArchetypes || []).includes("ice");
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const glacierLocked = state.glacierLocked || [];
   const glacierMass = state.glacierMass || [];
   const glacierPos = useMemo(() => { const s = new Set(); glacierLocked.forEach((v, i) => { if (v) s.add(i); }); return s; }, [glacierLocked]);
@@ -40,6 +41,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   const setShowArch = (v) => { const nv = typeof v === "function" ? v(showArch) : v; setShowArchState(nv); onOption?.({ archShowBuildings: nv }); };
   const [inspectBid, setInspectBid] = useState(null); // inspiziertes Gebäude: Liste ↔ Brett (Rahmen glüht), gesetzt per Karten-Auswahl ODER Listen-Klick — wie in der Chronik
   const architect = state.architect;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const archBuildings = (state.architectEnabled && architect && architect.buildings) || [];
   const hasArch = archBuildings.length > 0;
   // Gehaltene Eis-Skills, die die Formationserkennung beeinflussen (Keyword „formation") → im Formationsfenster
@@ -71,6 +73,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
       }
     }
     return cover;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [hasArch, architect, playerOrder, deck]);
   // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) — dieselben Positionen wie im Architekt-Screen bekommen
   // den roten Kombi-Wash (arch-struct-lit, wie im Architekt-Screen). Nur Geometrie (Gebäude-Abdeckung), unabhängig von Karten/Tauschen.

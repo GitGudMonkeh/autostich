@@ -3,7 +3,7 @@ import {
   ARCHITECT_FAMILIES, familyDef, shapeRotations, enumeratePlacements, isValidFootprint, occupiedCells,
   nextRotationFootprint, currentRotationIndex, ROWS, COLS,
   buildArchitectOffer, initialArchitect, precomputeArchitect, architectValueBonus, architectScore,
-  architectFormSpec, summarizeArchitect, tierNum, tierFactor, ARCHITECT_OFFER, MAX_TIER, HAEUSERZEILE_FACTOR,
+  architectFormSpec, summarizeArchitect, tierNum, ARCHITECT_OFFER, HAEUSERZEILE_FACTOR,
   posOf, rowOf, colOf, N_POS,
   districtFactorMap, boardFactorMap, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../src/game/architect.js";

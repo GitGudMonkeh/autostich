@@ -72,6 +72,7 @@ export function GlossaryOverlay({ onClose }) {
       }
       return { cat, items, groups };
     }).filter(Boolean);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [entries, query]);
 
   const jump = (catId) => {

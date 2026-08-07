@@ -12,7 +12,7 @@ import { perkOptionId, perkActionFor } from "../families-policy.js";
 // der Formations-Solver ist O(n²)·computeFormations je Formationsphase und für Massenläufe zu teuer
 // (~0,3 s/Run statt ~ms). Opt-in via Batch-Flags (--formations/--shop) für fokussierte, kleinere Läufe.
 // Bei Ablation MÜSSEN full und dropped dieselben Opts nutzen (faire, gepaarte Umgebung).
-export function fixedPolicy(priority, { drop = null, solveFormations = false, buyShop = false } = {}) {
+export function fixedPolicy(priority, { drop = null, solveFormations = false } = {}) {
   const base = randomPolicy();
   const rank = new Map(priority.map((id, i) => [id, i]));
   const bestOf = (ids) => {

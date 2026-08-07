@@ -43,6 +43,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
   const formByType = {};
   for (const pf of formations) for (const f of ((pf && pf.formations) || [])) if (f.factor > 1) formByType[f.type] = Math.max(formByType[f.type] || 0, f.factor);
   // #218: Architekt-Zusammenfassung — nur wenn der Architekt aktiv ist UND Gebäude stehen (#202). Zahl · Abdeckung · Kategorien.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const archBuildings = (state.architectEnabled && state.architect && state.architect.buildings) ? state.architect.buildings : [];
   const archOcc = archOccupied(archBuildings).size;
   const archMax = (state.architect && state.architect.maxCover) || 0;
@@ -68,6 +69,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
       }
     }
     return cover;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [hasArch, state.architect, playerOrder, deck, archBuildings]);
   // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) → rote Fläche · Distrikt (gleiche Kategorie aneinander) →
   // Typ-Farb-Glow. Getrennte Quellen (wie im Architekt-Screen), damit beide Boni auf einen Blick unterscheidbar sind.

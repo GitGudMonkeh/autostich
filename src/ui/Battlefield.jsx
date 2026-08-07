@@ -376,6 +376,7 @@ function BounceBurst({ trigger, panelRef, oppRef }) {
     };
     raf = requestAnimationFrame(step);
     return () => { cancelAnimationFrame(raf); ctx.clearRect(0, 0, W, H); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [trigger?.id, panelRef, oppRef]);
   return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none rounded-xl" style={{ zIndex: 20 }} aria-hidden="true" />;
 }
@@ -658,6 +659,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       floatTimers.current = floatTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen → kein unbegrenztes Wachstum über einen langen Lauf
     }, dur);
     floatTimers.current.push(tm);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
 
   // #FB: Groß-Ansage-Pool („wie stark") — entkoppelt vom Stich-Takt (wie der Score-Float-Pool). Jeder Eintrag lebt
@@ -686,6 +688,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       bigTimers.current = bigTimers.current.filter((x) => x !== tm);
     }, BIG_ANNOUNCE_MS + 80);
     bigTimers.current.push(tm);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
 
   // #177+/#186: Schnitt-/Explosions-Ghost-Pool — entkoppelt vom Stich-Takt (wie der Score-Float-Pool), damit die
@@ -732,6 +735,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const bt = setTimeout(() => { burstSeq.current += 1; setBurst({ id: burstSeq.current }); }, sRest);
       ghostTimers.current.push(bt); // gemeinsame Ghost-Timer-Aufräumung (unmount → clearTimeout)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
   const playerGhosts = slashGhosts.filter((g) => g.side === "player");
   const oppGhosts    = slashGhosts.filter((g) => g.side === "opp");
@@ -757,6 +761,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         screenFxTimer.current = setTimeout(() => setScreenFx(null), 700);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
   // Shake-Parameter je Stufe (leicht → stark). Amplitude als CSS-Var ans Panel; Keyframe-Name wechselt je Sieg (a/b).
   const shakeAmp  = screenFx ? [0, 3, 6, 9, 13][screenFx.tier] : 0;
@@ -773,6 +778,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   useEffect(() => {
     if (!t) { setFormFloat(null); return; }
     if (showFormation) setFormFloat({ key: t.trickNo, label: formLabel, mult: formationStr, color: formColor, peak: formPeak });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo, showFormation, formLabel, formationStr, formColor, formPeak]);
   // „Verlässt gerade": der Float gehört zu einem früheren Stich als dem aktuell gezeigten Formations-Sieg.
   const formLeaving = !!formFloat && formFloat.key !== (t ? t.trickNo : null);

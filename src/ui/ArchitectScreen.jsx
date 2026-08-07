@@ -76,13 +76,17 @@ function MiniShape({ form, color, rotIdx = 0 }) {
 
 export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onMoveMulti, onDemolish, onRecolor, onReroll, onDone }) {
   useEscape(onDone);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const architect = state.architect || { buildings: [], offers: [] };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const committed = architect.buildings || [];
   const offers = architect.offers || [];
   const maxCover = architect.maxCover ?? N_POS;
   const round = (state.cycle || 0) + 1;
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const order = state.playerOrder || [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const deck = state.deck || [];
   const cards = order.map((di) => deck[di]).filter(Boolean);
   // Eis: Gletscher-/Firn-Marker (gleicher Positionsraum wie das Brett) — nur befüllt, wenn Eis aktiv ist.
@@ -114,6 +118,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const pendingBuilding = pending
     ? { id: PENDING_ID, familyId: pending.familyId, tier: pending.tier, legendary: pending.legendary, footprint: pending.footprint, colorChoice: pending.colorChoice }
     : null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const buildings = (phase === "place" && pendingBuilding) ? [...committed, pendingBuilding] : committed;
 
   const occ = useMemo(() => occupiedCells(buildings), [buildings]);
@@ -135,9 +140,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const formations = useMemo(() => {
     if (!cards.length) return [];
     return computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, effArch);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [effArch, order, deck, state.roles, state.perks, state.skills, state.familyTiers]);
   const formCount = useMemo(() => summarizeFormations(formations).count, [formations]);
   // #UI: Formationen OHNE Architekt — Referenz, um die NEU durch Gebäude gegründeten Formationen zu isolieren.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   const formationsNoArch = useMemo(() => (cards.length ? computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, null) : []), [order, deck, state.roles, state.perks, state.skills, state.familyTiers]);
   // #UI: Gebäude-Score-Boost in % — was die Platzierung dem Score bringt: Struktur-Kombis (Σ structF−1) PLUS die neu
   // durch Gebäude gegründeten Formationen (Formations-Stärke mit − ohne Architekt). Live beim Bauen/Verschieben.

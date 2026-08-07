@@ -9,7 +9,6 @@ import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCOR
   REST_CHARGE_FLOOR, STORM_CRIT_STEP, ENTLADUNG_MULT_STEP, ENTLADUNG_MULT_CAP } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
 import { streakBaseMult } from "../src/game/perks.js";
-import { initialShop } from "../src/game/shop.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
 // Farben zyklisch (R/B/G/Y) → gleicher Wert bildet nur eine Wiederholung (1 Formation), KEINEN Farbblock,
@@ -32,9 +31,7 @@ const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Si
 
 // Formationsneutrales Spielerdeck (Werte 12/11 abwechselnd, Farbe R/B abwechselnd): gewinnt immer gegen
 // Wert 0, bildet aber über die Positionen KEINE Formation → isoliert Score-Mechaniken in Multi-Stich-Tests.
-const flatDeck = () => Array.from({ length: 40 }, (_, i) => ({ id: `F${i}`, suit: i % 2 ? "B" : "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
 // Gleiche Farbe (R), aber abwechselnde Werte → Farbserie zählt, ohne Wiederholung/Farbblock (bei ≤2 Karten).
-const sameSuitDeck = () => Array.from({ length: 40 }, (_, i) => ({ id: `S${i}`, suit: "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
 // #267: der entfernte Crit-Stat wird als reine Crit-CHANCE-Quelle über den Blitz-Spannungsstau ersetzt. Ein blank
 // aktiver Blitz OHNE Skills/ionisierte Karten trägt exakt 0,05 (Sockel) + stauBonus zur rawCrit bei — sonst NICHTS
 // (kein Score, kein Crit-Mult, keine Ladung). litCrit(V) hebt die rawCrit damit auf genau V → Drop-in für den alten

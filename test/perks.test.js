@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { buildDeck } from "../src/game/deck.js";
 import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks } from "../src/game/perks.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 import { UNAUFHALTSAM_VALUE, KRITMASSE_VALUE, MONOCHROM_STEP, MONOCHROM_CAP } from "../src/game/constants.js";

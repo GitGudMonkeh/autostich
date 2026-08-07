@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import { makeRng, buildDeck } from "../src/game/deck.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { initialShop } from "../src/game/shop.js";
 import { applyFamilyPick, FAMILY_DEFS } from "../src/game/families.js";
 import { computeFormations } from "../src/game/formations.js";
 import { precomputeArchitect } from "../src/game/architect.js";

@@ -73,6 +73,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
       merged.push(r);
     }
     return merged.sort((a, b) => (b.score || 0) - (a.score || 0) || (b.ts || 0) - (a.ts || 0));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [highscores, reloadToken]);
 
   const myTop = useMemo(() => allRuns.slice(0, TOP_N), [allRuns]);

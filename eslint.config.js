@@ -7,7 +7,7 @@ import react from "eslint-plugin-react";
 // genau der Ballast, der bei den Reworks anfällt. Bewusst minimal: recommended + React-Hooks, keine Style-Regeln
 // (kein Prettier-Zwang). Zahlen/Verhalten prüfen weiterhin die Tests, ESLint nur die Code-Hygiene.
 export default [
-  { ignores: ["dist/**", "node_modules/**", "sim/out/**", "coverage/**", ".claude/**"] },
+  { ignores: ["dist/**", "node_modules/**", "sim/out/**", "coverage/**", ".claude/**", "**/*.scratch.mjs"] },
   js.configs.recommended,
   {
     files: ["**/*.{js,jsx,mjs}"],
@@ -26,7 +26,7 @@ export default [
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
       // Der Kern-Nutzen: toten/ungenutzten Code melden. `_`-Präfix erlaubt bewusst Ungenutztes; caughtErrors aus.
-      "no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" }],
+      "no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none", ignoreRestSiblings: true }],
       "no-empty": ["warn", { allowEmptyCatch: true }],
     },
   },

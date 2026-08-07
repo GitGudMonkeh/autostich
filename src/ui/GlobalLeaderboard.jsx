@@ -53,6 +53,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
       .then((data) => { if (alive) setRows(Array.isArray(data) ? data : []); })
       .catch(() => { if (alive) setError(true); });
     return () => { alive = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [limit, reloadToken, masterGrade]);
 
   if (!leaderboardConfigured) return null; // ohne Config: Block entfällt komplett
