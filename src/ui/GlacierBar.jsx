@@ -7,7 +7,7 @@
 //   • Kontext (nur wenn relevant): Firn-Boden lädt · Gegner eingefroren · Duo-Buff · Große Lawine bereit/verbraucht.
 // Rein informativ, keine Engine-Kopplung (spiegelt state.glacier*).
 import { useRef, useEffect, useState } from "react";
-import { IndicatorPanel } from "./indicators/panelKit.jsx";
+import { FactionShell } from "./indicators/panelKit.jsx";
 import { glacierClusters, glacierNeighborFn, glacierFormations, GLACIER_FORM_LABEL, THRESHOLDS, ROLES } from "../game/glacier.js";
 import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
 import glacierIcon from "./assets/glacier.webp";
@@ -60,7 +60,8 @@ function Glacier({ mass }) {
 }
 
 export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glacierYield = 0, glacierRoles = [], glacierPre = null,
-                            frozenOppPending = {}, frozenOppActive = {}, glacierBuffPending = {}, glacierBuffActive = {}, grosseLawineFired = false }) {
+                            frozenOppPending = {}, frozenOppActive = {}, glacierBuffPending = {}, glacierBuffActive = {}, grosseLawineFired = false,
+                            options = {}, onOption, manyActive = false }) {
   // Hinweis: KEIN early-return vor den Hooks (React rules-of-hooks) — der `!active`-Ausstieg steht unten vor dem JSX.
   const glaciers = [];
   for (let i = 0; i < glacierLocked.length; i++) if (glacierLocked[i]) glaciers.push(Math.round(glacierMass[i] || 0));
@@ -120,8 +121,15 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
 
   if (!active) return null; // Ausstieg NACH den Hooks (rules-of-hooks): sonst wechselt die Hook-Zahl je Render.
 
+  // Phase-3-Headline: „gleich knallt's"-Zustand (ein Gletscher an der Bruch-Schwelle) für die einklappbare Fraktions-Zeile.
+  const readyBreak = glaciers.some((m) => m >= THRESHOLDS[2]);
+  const collapsed = options.collapseFacIce ?? manyActive;
+  const onToggle = () => onOption && onOption({ collapseFacIce: !collapsed });
+  const stateText = readyBreak ? "❄ Bruch bereit" : `${glaciers.length} Gletscher`;
+
   return (
-    <IndicatorPanel className="relative">
+    <FactionShell className="relative" icon="❄" name="Eis" color={FROST_BRIGHT}
+      stateText={stateText} stateOn={readyBreak} collapsed={collapsed} onToggle={onToggle}>
       {burst && <div key={burst.key} className="as-frost-pulse" style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none" }} />}
       {burst && burst.gain > 0 && (
         <div key={"g" + burst.key} className="as-glacier-gain" style={{ position: "absolute", left: "50%", top: 26, pointerEvents: "none", zIndex: 3,
@@ -130,14 +138,7 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
           ❄ +{fmtScoreShort(burst.gain)}
         </div>
       )}
-      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".03em", color: FROST_BRIGHT, display: "inline-flex", alignItems: "center", gap: 5 }}>
-          <span style={{ filter: `drop-shadow(0 0 5px ${FROST})` }}>❄</span> Gletscherfeld
-        </span>
-        <span style={{ fontSize: 10.5, color: "#6a7a86" }}>{glaciers.length} Gletscher</span>
-      </div>
-
-      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+      <div style={{ display: "flex", gap: 6 }}>
         {stat("Gletscher-Ertrag", fmtScoreShort(glacierYield), true, fmtScore(glacierYield))}
         {stat("Kaskade", <span>{cascade} <span style={{ fontSize: 10, color: "#6a7a86" }}>brechen</span></span>)}
         {stat("Größtes Cluster", biggest)}
@@ -167,6 +168,6 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
           {hasLawine && chip(grosseLawineFired ? "Große Lawine · verbraucht" : "Große Lawine · bereit", null, "#d4a63a", grosseLawineFired)}
         </div>
       )}
-    </IndicatorPanel>
+    </FactionShell>
   );
 }
