@@ -40,8 +40,6 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
   // Gameplay-Neu-Aufbau: Serie/Siegquote/Deck-Position/Stiche stehen jetzt in der StatusBar. Die Sidebar zeigt die
   // stehenden Multiplikatoren (Formation/Gebäude/Crit), eine kleine Bilanz und die (einklappbare) Analyse.
   const { wins, losses, trickNo, perks, crits, lightning, familyTiers = {} } = state;
-  const decided = wins + losses;
-  const winPct = decided > 0 ? Math.round((wins / decided) * 100) : null; // Siegquote wandert aus der StatusBar hierher
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   const showCrit = hasCritPerk(perks) || hasCritFamily(familyTiers) || (crits || 0) > 0 || !!(lightning && lightning.active);
   // Live-Crit-Chance des NÄCHSTEN Siegs: analog zum echten Wurf (#19). #267: die Crit-Chance kommt aus der Blitz-Basis
@@ -96,13 +94,12 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
         </div>
       </div>
 
-      {/* Bilanz — Siege/Verluste/Siegquote/Stiche (+ Crits, wenn relevant). Siegquote steht seit dem StatusBar-Umbau hier. */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs pt-2 border-t" style={{ borderColor: "#26262e" }}>
-        <span><span className="opacity-50">Siege </span><b style={{ color: "#5ab87a" }}>{wins}</b></span>
-        <span><span className="opacity-50">Verl. </span><b style={{ color: "#e0605a" }}>{losses}</b></span>
-        <span><span className="opacity-50">Quote </span><b style={{ color: winPct == null ? "#e8e8ea" : winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct == null ? "–" : `${winPct}%`}</b></span>
-        <span><span className="opacity-50">Stiche </span><b>{trickNo}</b></span>
-        {showCrit && <span><span className="opacity-50">Crits </span><b style={{ color: "#e879f9" }}>{crits || 0}</b></span>}
+      {/* Bilanz — Siege/Verluste/Stiche (+ Crits, wenn relevant). */}
+      <div className="grid grid-cols-4 gap-2 text-xs pt-2 border-t" style={{ borderColor: "#26262e" }}>
+        <div><div className="opacity-50">Siege</div><div className="font-bold" style={{ color: "#5ab87a" }}>{wins}</div></div>
+        <div><div className="opacity-50">Verl.</div><div className="font-bold" style={{ color: "#e0605a" }}>{losses}</div></div>
+        <div><div className="opacity-50">Stiche</div><div className="font-bold">{trickNo}</div></div>
+        {showCrit && <div><div className="opacity-50">Crits</div><div className="font-bold" style={{ color: "#e879f9" }}>{crits || 0}</div></div>}
       </div>
 
       {/* Analyse — Bester Score + einklappbare Score-Herkunft/Verlauf (default eingeklappt, Zustand über Runs gemerkt). */}

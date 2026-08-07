@@ -557,13 +557,13 @@ export function Autostich() {
           {/* Gameplay-Neu-Aufbau: schlanker Kopf — Wortmarke/Seed links, das Glossar-ⓘ groß oben rechts.
               Die Sekundär-Controls stehen als eigene, über die Breite verteilte Reihe darunter; die Vitalwerte +
               Pause/Tempo in der schwebenden StatusBar. */}
-          <header className="flex items-center justify-between gap-2">
-            {/* Wortmarke + Seed in EINER Zeile (spart eine Zeile) — Seed ist jederzeit kopierbar zum Teilen/Herausfordern (#205). */}
-            <div className="flex items-center gap-3 flex-wrap min-w-0">
+          <header className="flex items-start justify-between gap-2">
+            <div>
               <h1 className="text-2xl font-bold tracking-tight font-pixel crt-title as-wordmark-header">
                 AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
               </h1>
-              {state.seed != null && <SeedChip code={formatSeed(state.seed)} />}
+              {/* #205: Seed dieses Laufs — jederzeit kopierbar zum Teilen/Herausfordern. */}
+              {state.seed != null && <div className="mt-1"><SeedChip code={formatSeed(state.seed)} /></div>}
             </div>
             <GlossaryPanel onOpenChange={setGlossaryOpen} className="shrink-0" style={{ width: 36, height: 36, fontSize: "1.05rem" }} />
           </header>
@@ -581,6 +581,7 @@ export function Autostich() {
             timeStr={fmtDuration(elapsedMs)} paused={paused}
             winStreak={state.winStreak || 0} bestStreak={state.bestStreak || 0}
             cycle={state.cycle} totalCycles={totalCycles} pos={state.pos} cycleLen={cycleLenFor(state.shop)}
+            winPct={(state.wins + state.losses) > 0 ? Math.round((state.wins / (state.wins + state.losses)) * 100) : null}
             onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onChronik={() => setShowChronik(true)} deckBack={deckSkin.back}

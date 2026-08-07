@@ -29,7 +29,7 @@ function Cell({ label, children, align = "left", big = false }) {
 
 export function StatusBar({
   score, ghost = {}, mult, timeStr, paused, winStreak = 0, bestStreak = 0,
-  cycle = 0, totalCycles = 1, pos = 0, cycleLen = 1,
+  cycle = 0, totalCycles = 1, pos = 0, cycleLen = 1, winPct = null,
   onTogglePause, speedMult = 1, onSpeed, onChronik, deckBack,
 }) {
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
@@ -92,6 +92,12 @@ export function StatusBar({
         </Cell>
 
         <div className="flex-1" style={{ minWidth: 8 }} />
+        {winPct != null && (
+          <>
+            <div className="hidden sm:block" style={{ borderLeft: "1px solid #26262e" }} />
+            <Cell label="Siegquote" align="right"><span style={{ color: winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct}%</span></Cell>
+          </>
+        )}
         <div style={{ borderLeft: "1px solid #26262e" }} />
         <Cell label="Zeit" align="right"><span>{timeStr}{paused ? " ⏸" : ""}</span></Cell>
       </div>
