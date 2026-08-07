@@ -17,6 +17,11 @@ export const TIER_MULT = [0, 1, 1.5, 2.2];     // überlineare Wucht je Stufe (S
 // Globaler Burst-Skalierer: die Gletscher SIND der Hauptscore (nicht das Deck) — einzelne, massive Hits. Frequenz bleibt
 // (kein schnelleres Bersten), nur die Wucht je Bruch. Am Sim kalibriert, damit der Gletscher-Ertrag das Deck dominiert.
 export const BURST_SCALE = 600;
+// Weicher Deckel je EINZELBRUCH (Sim-Balance): der Burst-Stack ist voll multiplikativ (Masse×Stufe×Kaskade×Kollision×
+// Sturz×Geo) → große Cluster/Fläche/Eiszeit detonieren unbegrenzt. Über BURST_SOFTCAP zählt nur noch BURST_SOFTSLOPE
+// des Überschusses → komprimiert das Ceiling, lässt Median-Bursts (unter dem Deckel) unberührt. (Platzhalter, Sim-tunebar.)
+export const BURST_SOFTCAP = 55000;
+export const BURST_SOFTSLOPE = 0.06;
 export const KASKADE_PER_NEIGHBOR = 0.25;      // Berst-Faktor = 1 + 0,25 × Gletscher-Nachbarn (Dichte)
 export const KOLLISION_MULT = 1.5;             // Treffer auf Gletscher-Nachbarn (anteilig, docs §2.3)
 export const EWIGER_FROST = 1;                 // Fraktions-Passiv: bedingungsloser Masse-Tick je Durchlauf (docs §2.6)
@@ -120,7 +125,8 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     const kollFrac = ewigesSchild ? 1 : (nb.length ? gN / nb.length : 0);
     const kollFaktor = 1 + (kollision - 1) * kollFrac;  // Kollision (anteilig)
     const geoFactor = formFactor ? (formFactor[p] || 1) : 1; // 2D-Geometrie (Block/Kreuz/Linie/Fläche)
-    const burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * BURST_SCALE;
+    let burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * BURST_SCALE;
+    if (burst > BURST_SOFTCAP) burst = BURST_SOFTCAP + (burst - BURST_SOFTCAP) * BURST_SOFTSLOPE; // weicher Deckel (Ceiling-Kompression)
     payout[p] += burst;
     resetMass[p] = RESET_TO;                             // abgekalbt: baut wieder von unten auf (selten + gewaltig)
     breaks.push({ pos: p, tier: effTier, burst, glacierNeighbors: gN, forced: forced[p] });
