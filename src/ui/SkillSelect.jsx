@@ -124,7 +124,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
-        <div className="relative w-full rounded-2xl px-6 pb-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
+        <div className="relative w-full rounded-2xl px-4 pb-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1 pt-6">
           <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Durchlauf {(state.cycle || 0) + 1}</div>
@@ -142,7 +142,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
 
         {/* Reroll + Ablehnen: direkt unter dem Leitfaden, nebeneinander & STICKY → schweben beim Scrollen mit, damit man
             zum Neuwürfeln/Ablehnen nicht ans Ende der Skill-Liste scrollen muss. Voller Hintergrund maskiert durchscrollende Karten. */}
-        <div className="sticky top-0 z-20 -mx-6 px-6 pt-1.5 pb-2 mb-1 flex items-stretch gap-2" style={{ background: "#181820" }}>
+        <div className="sticky top-0 z-20 -mx-4 px-4 pt-1.5 pb-2 mb-1 flex items-stretch gap-2" style={{ background: "#181820" }}>
           {!devMode && canReroll && (
             <button onClick={onReroll}
               className="flex-1 text-xs px-3 py-2 rounded-lg font-bold transition-all hover:brightness-110"
@@ -292,7 +292,9 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                         {sel && <span className="text-[10px] font-bold" style={{ color: col }}>✓ ausgewählt</span>}
                       </div>
                       <div className="font-bold text-[15px]" style={{ color: col }}>{s.name}</div>
-                      <div className="text-xs opacity-75 leading-snug"><GlossaryText text={s.desc} /></div>
+                      {/* Beschreibungstext wieder auf Ausgangsgröße (text-sm) — die kompaktere Karte bleibt (weniger
+                          Padding + schmalerer Seitenrand des Panels), aber der Text ist gut lesbar. */}
+                      <div className="text-sm opacity-75 leading-snug"><GlossaryText text={s.desc} /></div>
                     </button>
                   );
                 })}
