@@ -199,7 +199,7 @@ export const SKILL_DEFS = {
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
     desc: `Das ganze Feld wird zu EINEM Übergletscher. Jeden Durchlauf ziehen alle deine Gletscher auf die Masse des stärksten hoch und bekommen +${G_SCHILD_BONUS} Masse obendrauf (nie fallend). Beim Bruch gilt jeder Gletscher als Nachbar aller anderen — volle Kaskade und Kollision, egal wo sie liegen. Anordnung wird bedeutungslos, nur die stärkste Masse zählt.` },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",
-    desc: "Ein einmaliger Finisher: das ganze Brett bricht auf einen Schlag — Schwellen ignoriert, jeder Gletscher auf voller Stufe. Der größtmögliche Bruch-Moment." },
+    desc: "Im letzten Durchlauf bricht das ganze Brett auf einen Schlag — Schwellen ignoriert, jeder Gletscher auf voller Stufe. Der einmalige, größtmögliche Bruch-Moment." },
   SK_ICE_L04: { id: "SK_ICE_L04", name: "Erstarrung", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_ERSTARRUNG",
     desc: `Der Gegner erstarrt: jede vom Bruch getroffene Gegnerkarte verliert ihren Stich, und der Bruch greift über die vier Nachbarn hinaus weiter ins Gegnerfeld. Dazu zählt jeder Bruch ×${de(1 + G_ERSTARRUNG_FRAC)} Score.` },
 
