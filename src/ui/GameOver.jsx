@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Sparkline } from "./Sparkline.jsx";
 import { RunStatCells, RunBuildChips } from "./RunStats.jsx"; // Victory-Redesign: Kennzahlen (Stats-Sektion) + Build-Chips (Build-Sektion) getrennt platziert
 import { RunGraphs, ScoreHerkunft } from "./RunGraphs.jsx"; // #251/Victory-Redesign: Fraktions-Herkunft + Durchlauf-Graph
@@ -9,9 +8,6 @@ import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js"; // #190: Fr
 import { computeFormations } from "../game/formations.js"; // #201.8: finale Aufstellung + Rahmen
 import { allianceGroups } from "../game/families.js";
 import { architectCoverFor } from "./architectCover.js"; // #UI: Gebäude-Rahmen auch im Victory-Screen (wie Chronik)
-import { familyDef as archFamily } from "../game/architect.js"; // Gebäude-Liste (Name/Form/Stufe) in der Aufstellung
-import { ARCH_CAT } from "./indicators/vocab.js";
-import FormIcon from "./FormIcon.jsx";
 
 // Highscore-Listen (lokal + global) bewusst NICHT hier — sie stehen auf dem Startbildschirm und
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
@@ -40,13 +36,6 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   pushM(arch.includes("lightning"), "Ionisierungen", Math.round(state.ionTotal || 0), "#8a7de0");
   pushM(arch.includes("fire"), "Asche verbrannt", Math.round(state.ashBurned || 0), "#ff7a3c");
   pushM(arch.includes("fire"), "Brände", Math.round(state.brandTotal || 0), "#ff7a3c");
-
-  // Architekt-Gebäude in der finalen Aufstellung — ein-/ausblendbar + Liste (Name · Form · Stufe), wie in der Chronik.
-  const archBuildings = (state.architectEnabled && state.architect && state.architect.buildings) || [];
-  const hasArch = archBuildings.length > 0;
-  const architectCover = hasArch ? architectCoverFor(state) : null;
-  const [showArch, setShowArch] = useState(true);        // Gebäude-Overlay auf dem Brett an/aus
-  const [inspectBid, setInspectBid] = useState(null);    // Liste ↔ Brett: angetipptes Gebäude glüht am Grid
 
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
@@ -157,54 +146,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           <details className="mt-5 rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">Finale Aufstellung ansehen</summary>
             <div className="p-3 pt-0">
-              {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie in der Chronik/Aufstellung. */}
-              {hasArch && (
-                <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
-                  <button onClick={() => setShowArch((v) => !v)} className="px-2 py-1 rounded-lg font-bold"
-                    style={showArch ? { background: `${ARCH_CAT.value.color}22`, border: `1px solid ${ARCH_CAT.value.color}`, color: "#cfe3f5" }
-                                    : { background: "#20202a", border: "1px solid #3a3a46", color: "#8a8a92" }}>
-                    🏗 Gebäude {showArch ? "an" : "aus"}
-                  </button>
-                  {showArch && Object.entries(ARCH_CAT).map(([k, v]) => (
-                    <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
-                      <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
-                    </span>
-                  ))}
-                </div>
-              )}
               <CardGrid cards={finalCards} formations={finalForms} roles={state.roles} {...glacierGridProps(state)} anchors={state.shop?.anchors || []}
-                pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
-                architectCover={hasArch && showArch ? architectCover : null}
-                glowBid={hasArch && showArch ? inspectBid : null} quietTiles />
-
-              {/* Gebäude-Liste: welche Gebäude auf welcher Stufe. Antippen lässt den Rahmen am Brett cyan leuchten. */}
-              {hasArch && (
-                <div className="mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
-                  <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Deine Gebäude ({archBuildings.length})</div>
-                  <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt.</div>
-                  <div className="grid gap-1">
-                    {archBuildings.map((b) => {
-                      const fam = archFamily(b.familyId); if (!fam) return null;
-                      const anchor = Math.min(...b.footprint);
-                      const eff = architectCover?.[anchor]?.effects?.join(" · ") || "";
-                      const meta = ARCH_CAT?.[fam.category] || {};
-                      const on = inspectBid === b.id;
-                      return (
-                        <button key={b.id} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
-                          className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
-                          style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
-                          <span className="inline-flex items-center gap-1.5 flex-wrap">
-                            <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
-                            <b>{fam.name}</b>
-                            <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
-                          </span>
-                          {eff && <span className="opacity-75">{eff}</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} architectCover={architectCoverFor(state)} quietTiles />
             </div>
           </details>
         )}
