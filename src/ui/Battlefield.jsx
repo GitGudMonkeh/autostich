@@ -76,6 +76,9 @@ const BIG_SCORE_TIERS = [
 const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
 // Große Lawine (Legendär): der Finisher-Bruch zeigt statt der Score-Stufe („Gottgleich" …) das Wort „Lawine" in Eis-Blau.
 const LAWINE_TIER = { text: "Lawine", size: 104, epic: true, color: "#5ec8f0" };
+// Serien-Meilenstein: ab einer Siegesserie von STREAK_GOENN feuert einmalig eine epische „Gönn dir"-Ansage (Gottgleich-Stil, festliches Gold).
+const STREAK_GOENN = 200;
+const GOENNDIR_TIER = { text: "Gönn dir", size: 104, epic: true, color: "#ffd24a" };
 // #FB: Groß-Ansage („wie stark"). Sie hing bislang am Stich-Takt (key=trickNo) und wurde vom Folgestich sofort
 // ersetzt → bei 4×/MAX (flipMs ~160–440 ms) nur einen Wimpernschlag sichtbar. Jetzt entkoppelt in einem eigenen
 // Pool mit fester, langer Standzeit, damit sie ihre Animation IMMER voll ausspielt (auch bei Turbo).
@@ -589,7 +592,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #105: großes „Wow"-Wort mittig ab hohem Einzelstich-Score (nur bei Sieg). Höchste erfüllte Stufe.
   // Große-Lawine-Bruch (Finisher) → „Lawine" in Blau statt der Score-Stufe; sonst die normale Stufe nach Score.
   const baseBigTier = win && t && t.gained > 0 ? bigScoreTier(t.gained) : null;
-  const bigScore = baseBigTier && t && t.grosseLawine ? LAWINE_TIER : baseBigTier;
+  // Serien-Meilenstein hat Vorrang: eine 200er-Serie feiert „Gönn dir" (unabhängig vom Stich-Score), sonst Lawine bzw. Score-Stufe.
+  const goennMilestone = win && t && (t.winStreak || 0) >= STREAK_GOENN;
+  const bigScore = goennMilestone ? GOENNDIR_TIER : (baseBigTier && t && t.grosseLawine ? LAWINE_TIER : baseBigTier);
 
   // Ergebnis-Aufschlüsselung (§17): kompakte Faktorenkette (Basis → Flats → Serie → Perks → Formation → Crit)
   // aus der Engine-breakdown — exakt die Faktoren der Score-Formel (kein Drift). Nur bei nennenswerten Treffern.
@@ -670,10 +675,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const bigTimers = useRef([]);
   const bigSeq = useRef(0);
   const lawineShown = useRef(false); // Große Lawine feuert 1×/Lauf → nur der ERSTE Finale-Bruch zeigt „LAWINE" (kein Schwarm)
+  const goennShown = useRef(false);  // „Gönn dir" nur EINMAL je 200er-Serie → Ref scharf, sobald die Serie wieder unter die Schwelle fällt
   useEffect(() => () => bigTimers.current.forEach(clearTimeout), []);
   useEffect(() => {
-    if (!t) { setBigFloats([]); lawineShown.current = false; return; }   // Menü/neuer Lauf → Pool leeren + Lawine-Merker zurücksetzen
+    if (!t) { setBigFloats([]); lawineShown.current = false; goennShown.current = false; return; }   // Menü/neuer Lauf → Pool leeren + Merker zurücksetzen
+    if ((t.winStreak || 0) < STREAK_GOENN) goennShown.current = false;  // Serie unter der Schwelle (z. B. Niederlage) → nächster 200er darf wieder feiern
     if (!bigScore) return;                   // nur bei einem großen Sieg-Stich
+    if (bigScore === GOENNDIR_TIER) {        // Serien-Meilenstein: die Ansage nur EINMAL je 200er-Serie
+      if (goennShown.current) return;
+      goennShown.current = true;
+    }
     if (bigScore === LAWINE_TIER) {          // Große Lawine: die Groß-Ansage nur EINMAL pro Finale, danach still weiterzählen
       if (lawineShown.current) return;
       lawineShown.current = true;
