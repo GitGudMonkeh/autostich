@@ -41,6 +41,23 @@ const tierLabel = (t) => (t === "legendary" ? "★" : ROMAN[t] || "");
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 const PENDING_ID = "__pending__"; // synthetische id des noch-nicht-gebauten Vorschau-Gebäudes
 
+// #UI: einklappbarer Hinweis/Info-Block im Architekten — Kopf (immer sichtbar, klickbar) + „mehr/weniger"-Affordanz;
+// der Inhalt (Details/Anleitung) klappt auf/zu. Default eingeklappt, damit die langen Erklärungen keinen Platz fressen.
+function ArchCollapse({ head, children, defaultOpen = false, className = "", style }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={className} style={style}>
+      <button type="button" onClick={() => setOpen((o) => !o)} data-sfx="none" aria-expanded={open}
+        className="w-full flex items-center gap-2 text-left">
+        <span className="min-w-0">{head}</span>
+        <span className="flex-1" />
+        <span className="text-[10px] opacity-60 shrink-0 whitespace-nowrap">{open ? "▾ weniger" : "▸ mehr"}</span>
+      </button>
+      {open && <div className="mt-1.5">{children}</div>}
+    </div>
+  );
+}
+
 // Footprint einer Form bei (anchor, rotIdx) — im Gitter, sonst null.
 function footprintAt(form, rotIdx, anchor) {
   const rots = shapeRotations(form);
@@ -679,9 +696,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 schwebenden Leiste darunter (#UI „nur Buttons"). */}
             <div className="rounded-xl p-3 order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
 
-              {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. */}
-              <div className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}>
-                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur & Distrikt · ×Score je Durchlauf</div>
+              {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. Einklappbar (default zu). */}
+              <ArchCollapse className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}
+                head={<span className="uppercase tracking-wide opacity-55">Struktur & Distrikt · ×Score je Durchlauf</span>}>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   <span>volle <b>Zeile</b> ×{fmt(HAEUSERZEILE_FACTOR)}</span>
                   <span>volle <b>Spalte</b> ×{fmt(SPALTE_FACTOR)}</span>
@@ -690,7 +707,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 </div>
                 <div className="opacity-60 mt-1">Jede Karte auf einer vollständigen Zeile/Spalte/Diagonale macht bei einem Sieg entsprechend mehr <b>Score</b>. Faktoren stapeln multiplikativ.</div>
                 <div className="opacity-60 mt-1"><b>Distrikt:</b> Gebäude <b>gleicher Farbe</b> (Kategorie) direkt aneinander geben je Nachbar +{Math.round(DISTRICT_BONUS * 100)} % Score auf ihre Felder (bis {DISTRICT_CAP} Nachbarn). Gleichartig zusammenbauen lohnt sich.</div>
-              </div>
+              </ArchCollapse>
 
               {/* removeFor: kein Platz → Gebäude entfernen anbieten. #235: zweistufig (erst markieren, dann bestätigen).
                   #281: MEHRFACH-Abriss — reicht ein Abriss nicht (großes Legendär), kann man weitere markieren, bis Platz reicht. */}
@@ -824,9 +841,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       </div>
                     ) : (
                       <>
-                        <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
-                          <b>Aufwerten:</b> wähle unten ein Gebäude (oder tippe es am Brett an) — es wird gold markiert, du siehst aktuellen und nächsten Effekt und bestätigst unten. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
-                        </div>
+                        <ArchCollapse className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
+                          head={<b>Aufwerten</b>}>
+                          <div className="opacity-85 leading-snug">wähle unten ein Gebäude (oder tippe es am Brett an) — es wird gold markiert, du siehst aktuellen und nächsten Effekt und bestätigst unten. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.</div>
+                        </ArchCollapse>
                         {upgradeMsg && (
                           <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
                             <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : upgradeMsg.reason === "acted" ? "in dieser Bauphase ist die Hauptaktion (Bauen ODER Aufwerten) schon verbraucht" : "nicht aufwertbar"}.
@@ -873,9 +891,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         <span className="font-mono" style={{ color: "#f0b429" }}>Stufe {tierLabel(upgradeDone.from)} → {tierLabel(upgradeDone.to)}</span>
                       </div>
                     )}
-                    <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}>
-                      <b>Platzieren & Verschieben:</b> zieh Gebäude am Brett an ihren Platz (Griff überall, <b>⟳ Drehen</b> oben) — beliebig oft. Unten <b>Bestätigen</b> startet den Durchlauf.
-                    </div>
+                    <ArchCollapse className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
+                      head={<b>Platzieren & Verschieben</b>}>
+                      <div className="opacity-85 leading-snug">zieh Gebäude am Brett an ihren Platz (Griff überall, <b>⟳ Drehen</b> oben) — beliebig oft. Unten <b>Bestätigen</b> startet den Durchlauf.</div>
+                    </ArchCollapse>
                     {/* #261: Buff-Farbe eines gewählten colorLocked-Gebäudes (Buntglas/Zunfthaus) hier anpassen (onRecolor). */}
                     {selB && selFam && selFam.colorLocked && (
                       <div className="flex items-center gap-1.5 mb-2 text-[11px] font-mono">
