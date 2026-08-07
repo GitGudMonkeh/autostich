@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf, marginHeatPoints } from "../game/skills.js";
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
          PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
@@ -75,9 +75,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const full = skills.length >= SKILL_SLOTS;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
   const [openArch, setOpenArch] = useState(null);   // Archetyp, dessen Passiv-Beschreibung aufgeklappt ist (#201 P9)
-  const devMode = !!state.devMode;                  // Dev-Run: Archetyp-Gruppen eingeklappt, Klick öffnet die Skills
-  const [openGroup, setOpenGroup] = useState(null); // Dev-Run: welcher Archetyp gerade seine Skills zeigt
+  const devMode = !!state.devMode;                  // Dev-Run: Reroll aus, „Runde überspringen"
   const [pendingConsumer, setPendingConsumer] = useState(null); // #93: Konsumenten-Ersatzdialog { id, replace, type }
+  // Swipe-Pager (#12): die Archetyp-Kategorien sind horizontale Seiten; `page` = aktuelle Seite, `tx` merkt den Touch-Start.
+  const [pageState, setPageState] = useState(0);
+  const tx = useRef(0);
 
   // Passiv-Beschreibung je Archetyp — EIN Text, unabhängig davon, ob es der freischaltende oder ein weiterer Pick ist.
   // Beschreibt NUR die Passive (Deck-Mechanik lebt in der Deck-Erklärung). Ergänzt im Aufklapper durch die Glossar-Einträge.
@@ -101,6 +103,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
     .map((arch) => ({ arch, meta: ARCHETYPE_META[arch], ids: offer.filter((id) => archetypeOf(id) === arch && !skills.includes(id)) }))
     .filter((g) => g.ids.length);
   const showFormations = groups.some((g) => g.arch === "ice") || (skills || []).some((id) => archetypeOf(id) === "ice"); // #161 FB-1: Formations-Panel bei Eis-Relevanz
+
+  // Swipe-Pager (#12): eine Seite je angebotenem Archetyp; `page` geklemmt (Angebot kann sich durch Neuwurf ändern).
+  const nPages = groups.length;
+  const page = Math.min(pageState, Math.max(0, nPages - 1));
+  const curG = groups[page], prevG = groups[page - 1], nextG = groups[page + 1];
+  const go = (d) => setPageState(Math.max(0, Math.min(nPages - 1, page + d)));
 
   // Konsumenten-Typ eines Skills (#93): Hitze („heat") / Ladung („charge") / kein Konsument (null).
   const consumerTypeOf = (id) => (SKILL_DEFS[id]?.heatConsumer ? "heat" : SKILL_DEFS[id]?.onFullCharge ? "charge" : null);
@@ -142,19 +150,51 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
 
         {/* Reroll + Ablehnen: direkt unter dem Leitfaden, nebeneinander & STICKY → schweben beim Scrollen mit, damit man
             zum Neuwürfeln/Ablehnen nicht ans Ende der Skill-Liste scrollen muss. Voller Hintergrund maskiert durchscrollende Karten. */}
-        <div className="sticky top-0 z-20 -mx-4 px-4 pt-1.5 pb-2 mb-1 flex items-stretch gap-2" style={{ background: "#181820" }}>
-          {!devMode && canReroll && (
-            <button onClick={onReroll}
-              className="flex-1 text-xs px-3 py-2 rounded-lg font-bold transition-all hover:brightness-110"
-              style={{ background: "#20202a", color: "#d4a63a", border: "1px solid #d4a63a66" }}>
-              🎲 Neu würfeln · {rerollTokens}
+        <div className="sticky top-0 z-20 -mx-4 px-4 pt-1.5 pb-2 mb-1" style={{ background: "#181820" }}>
+          <div className="flex items-stretch gap-2">
+            {!devMode && canReroll && (
+              <button onClick={onReroll}
+                className="flex-1 text-xs px-3 py-2 rounded-lg font-bold transition-all hover:brightness-110"
+                style={{ background: "#20202a", color: "#d4a63a", border: "1px solid #d4a63a66" }}>
+                🎲 Neu würfeln · {rerollTokens}
+              </button>
+            )}
+            <button onClick={onDecline}
+              className="flex-1 text-xs px-3 py-2 rounded-lg transition-all hover:opacity-80"
+              style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
+              {devMode ? "Runde überspringen" : "Ablehnen → Perk"}
             </button>
+          </div>
+
+          {/* Archetyp-Navi (Indikator): aktueller Typ mittig, Nachbarn links/rechts, Punkte für die Position (#12). */}
+          {nPages > 0 && curG && (
+            <div className="mt-2">
+              <div className="grid items-center gap-2" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
+                <button type="button" onClick={() => go(-1)} disabled={page === 0}
+                  className="flex items-center gap-1.5 min-w-0 text-left disabled:opacity-25 transition-all" title="vorheriger Typ">
+                  <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>‹</span>
+                  {prevG && <><span className="text-sm">{prevG.meta.icon}</span><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{prevG.meta.label}</span></>}
+                </button>
+                <span className="inline-flex items-center gap-1.5 font-bold text-sm px-3 py-1 rounded-full whitespace-nowrap"
+                  style={{ color: curG.meta.color, background: `${curG.meta.color}1f`, border: `1px solid ${curG.meta.color}55` }}>
+                  {curG.meta.icon} {curG.meta.label}
+                </span>
+                <button type="button" onClick={() => go(1)} disabled={page === nPages - 1}
+                  className="flex items-center justify-end gap-1.5 min-w-0 text-right disabled:opacity-25 transition-all" title="nächster Typ">
+                  {nextG && <><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{nextG.meta.label}</span><span className="text-sm">{nextG.meta.icon}</span></>}
+                  <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>›</span>
+                </button>
+              </div>
+              {nPages > 1 && (
+                <div className="flex justify-center gap-2 mt-2">
+                  {groups.map((g, i) => (
+                    <button key={g.arch} type="button" onClick={() => setPageState(i)} title={g.meta.label}
+                      className="h-1.5 rounded-full transition-all" style={{ width: i === page ? 22 : 16, background: i === page ? g.meta.color : "#31313c" }} />
+                  ))}
+                </div>
+              )}
+            </div>
           )}
-          <button onClick={onDecline}
-            className="flex-1 text-xs px-3 py-2 rounded-lg transition-all hover:opacity-80"
-            style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
-            {devMode ? "Runde überspringen" : "Ablehnen → Perk"}
-          </button>
         </div>
 
         {/* Konsumenten-Ersatzdialog (#93): zweiter Konsument desselben Typs ersetzt den bestehenden. */}
@@ -227,83 +267,80 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           </div>
         )}
 
-        {/* Angebot nach Archetyp gruppiert. Der Header ist tappbar (#201 P9): er klappt die Passiv-Beschreibung
-            des Archetyps + die Erklärung seiner Schlüsselbegriffe auf — das Angebot selbst bleibt kompakt. */}
-        <div className="mt-5 grid gap-4">
-          {groups.map((g) => {
-            const detailOpen = openArch === g.arch;
-            const groupKws = PASSIVE_KEYWORDS[g.arch] || []; // nur kuratierte Passive-Begriffe (kein automatisches Ableiten aus den Skills mehr)
-            const groupOpen = devMode ? openGroup === g.arch : true; // Dev-Run: Skills erst nach Klick sichtbar
-            return (
-            <div key={g.arch}>
-              <button type="button"
-                onClick={() => devMode ? setOpenGroup(groupOpen ? null : g.arch) : setOpenArch(detailOpen ? null : g.arch)}
-                className="w-full flex items-center gap-2 mb-2 text-left"
-                title={devMode ? `${g.meta.label}: Skills ${groupOpen ? "einklappen" : "ausklappen"}` : `${g.meta.label}: Passiv ${detailOpen ? "einklappen" : "ausklappen"}`}
-                aria-expanded={devMode ? groupOpen : detailOpen}>
-                <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: g.meta.color }}>{g.meta.icon} {g.meta.label}</span>
-                {/* #UI: dezenter, aber klar tappbarer „ausklappen"-Hinweis — kleiner Chip mit rotierendem Chevron.
-                    Normal: klappt die Passiv-Beschreibung auf. Dev-Run: klappt die Skill-Liste des Archetyps auf. */}
-                <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
-                  style={{ color: g.meta.color, background: `${g.meta.color}14`, border: `1px solid ${g.meta.color}3a` }}>
-                  <span className="transition-transform" style={{ display: "inline-block", transform: (devMode ? groupOpen : detailOpen) ? "rotate(90deg)" : "none" }}>▸</span>
-                  {devMode ? `${g.ids.length} Skills` : "Passiv"}
-                </span>
-                {!devMode && !detailOpen && <span className="text-[10px] whitespace-nowrap shrink-0" style={{ color: "#6b6b76" }}>klicken für mehr Details</span>}
-                <div className="flex-1 h-px" style={{ background: `${g.meta.color}33` }} />
-              </button>
-              {!devMode && detailOpen && (
-                <div className="mb-3 rounded-lg px-3 py-2 text-xs leading-snug"
-                  style={{ background: `${g.meta.color}14`, border: `1px solid ${g.meta.color}44` }}>
-                  <div className="opacity-90">{unlockLine(g.arch)}</div>
-                  <KeywordGlossary tokens={groupKws} />
+        {/* #12: Archetypen als horizontale Swipe-Seiten (statt langem Scroll). Wischen (Touch) · Chevrons/Punkte ·
+            ◀▶-Pfeiltasten wechseln die Seite. Pro Seite: einklappbarer Passiv-Text + die Skill-Karten dieses Archetyps. */}
+        {nPages > 0 && (
+          <div className="mt-4 overflow-hidden" tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "ArrowLeft") { go(-1); e.preventDefault(); } else if (e.key === "ArrowRight") { go(1); e.preventDefault(); } }}
+            onTouchStart={(e) => { tx.current = e.touches[0].clientX; }}
+            onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - tx.current; if (Math.abs(dx) > 45) go(dx < 0 ? 1 : -1); }}>
+            <div className="flex" style={{ transform: `translateX(-${page * 100}%)`, transition: "transform .28s cubic-bezier(.22,.61,.36,1)" }}>
+              {groups.map((g) => {
+                const detailOpen = openArch === g.arch;
+                const groupKws = PASSIVE_KEYWORDS[g.arch] || [];
+                return (
+                <div key={g.arch} className="min-w-full px-0.5">
+                  {/* Passiv-Beschreibung — einklappbar (default zu). */}
+                  <button type="button" onClick={() => setOpenArch(detailOpen ? null : g.arch)}
+                    className="w-full flex items-center gap-2 mb-2 text-left" aria-expanded={detailOpen}
+                    title={`${g.meta.label}: Passiv ${detailOpen ? "einklappen" : "ausklappen"}`}>
+                    <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: g.meta.color }}>{g.meta.icon} {g.meta.label} · Passiv</span>
+                    <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
+                      style={{ color: g.meta.color, background: `${g.meta.color}14`, border: `1px solid ${g.meta.color}3a` }}>
+                      <span className="transition-transform" style={{ display: "inline-block", transform: detailOpen ? "rotate(90deg)" : "none" }}>▸</span>
+                      {detailOpen ? "weniger" : "mehr"}
+                    </span>
+                    <div className="flex-1 h-px" style={{ background: `${g.meta.color}33` }} />
+                  </button>
+                  {detailOpen && (
+                    <div className="mb-3 rounded-lg px-3 py-2 text-xs leading-snug"
+                      style={{ background: `${g.meta.color}14`, border: `1px solid ${g.meta.color}44` }}>
+                      <div className="opacity-90">{unlockLine(g.arch)}</div>
+                      <KeywordGlossary tokens={groupKws} />
+                    </div>
+                  )}
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {g.ids.map((id) => {
+                      const s = SKILL_DEFS[id];
+                      const sel = pending === id;
+                      const col = g.meta.color;
+                      return (
+                        <button key={id} onClick={() => clickSkill(id)}
+                          className={`text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
+                          style={{ background: sel ? "#2a2740" : "#20202a",
+                                   border: `1px solid ${s.legendary ? "#d4a63a" : (sel ? col : col + "88")}`,
+                                   boxShadow: s.legendary ? undefined : (sel ? `0 0 16px ${col}88` : `0 0 14px ${col}33`) }}>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                              style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
+                              {g.meta.icon} {g.meta.label.toUpperCase()}
+                            </span>
+                            {(s.heatConsumer || s.onFullCharge) && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                                style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
+                                KONSUMENT
+                              </span>
+                            )}
+                            {s.legendary && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                                style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>
+                                ★ LEGENDÄR
+                              </span>
+                            )}
+                            {sel && <span className="text-[10px] font-bold" style={{ color: col }}>✓ ausgewählt</span>}
+                          </div>
+                          <div className="font-bold text-[15px]" style={{ color: col }}>{s.name}</div>
+                          <div className="text-sm opacity-75 leading-snug"><GlossaryText text={s.desc} /></div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
-              {groupOpen && (
-              <div className="grid sm:grid-cols-2 gap-2">
-                {g.ids.map((id) => {
-                  const s = SKILL_DEFS[id];
-                  const sel = pending === id;
-                  const col = g.meta.color;
-                  return (
-                    <button key={id} onClick={() => clickSkill(id)}
-                      className={`text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
-                      style={{ background: sel ? "#2a2740" : "#20202a",
-                               // Legendär: einheitlicher Gold-Rahmen (Border + animierter Glanz via .as-legendary, #201.3) statt archetyp-farbigem Glow.
-                               border: `1px solid ${s.legendary ? "#d4a63a" : (sel ? col : col + "88")}`,
-                               boxShadow: s.legendary ? undefined : (sel ? `0 0 16px ${col}88` : `0 0 14px ${col}33`) }}>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
-                          style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
-                          {g.meta.icon} {g.meta.label.toUpperCase()}
-                        </span>
-                        {(s.heatConsumer || s.onFullCharge) && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
-                            style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
-                            KONSUMENT
-                          </span>
-                        )}
-                        {s.legendary && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
-                            style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>
-                            ★ LEGENDÄR
-                          </span>
-                        )}
-                        {sel && <span className="text-[10px] font-bold" style={{ color: col }}>✓ ausgewählt</span>}
-                      </div>
-                      <div className="font-bold text-[15px]" style={{ color: col }}>{s.name}</div>
-                      {/* Beschreibungstext wieder auf Ausgangsgröße (text-sm) — die kompaktere Karte bleibt (weniger
-                          Padding + schmalerer Seitenrand des Panels), aber der Text ist gut lesbar. */}
-                      <div className="text-sm opacity-75 leading-snug"><GlossaryText text={s.desc} /></div>
-                    </button>
-                  );
-                })}
-              </div>
-              )}
+                );
+              })}
             </div>
-            );
-          })}
-        </div>
+          </div>
+        )}
 
         {held.length > 0 && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
