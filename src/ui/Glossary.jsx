@@ -15,11 +15,15 @@ import { useEscape } from "./useEscape.js";
    ============================================================ */
 
 // Beschreibungstext mit fett markierten Glossar-Begriffen (nicht klickbar).
+// whitespace-pre-line: Zeilenumbrüche (\n) im Beschreibungstext werden als echte Umbrüche gerendert — so lassen sich
+// lange Beschreibungen (z. B. Ionisierung) in kurze, strukturierte Zeilen gliedern statt als Textwand zu erscheinen.
+// Normale einzeilige Beschreibungen bleiben unberührt (pre-line bewahrt nur Umbrüche, kollabiert Mehrfach-Leerraum).
 export function GlossaryText({ text, className }) {
   const parts = useMemo(() => tokenizeGlossary(text), [text]);
-  if (!parts.length) return text ? <span className={className}>{text}</span> : null;
+  const cls = `whitespace-pre-line${className ? ` ${className}` : ""}`;
+  if (!parts.length) return text ? <span className={cls}>{text}</span> : null;
   return (
-    <span className={className}>
+    <span className={cls}>
       {parts.map((p, i) => (p.bold ? <strong key={i} className="gloss-term">{p.text}</strong> : <span key={i}>{p.text}</span>))}
     </span>
   );
