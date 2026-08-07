@@ -1030,13 +1030,14 @@ export function resolveTrick(state, rng) {
   //   fire      = Sieg bei voller Hitze (Hitzeleiste 100 %)
   //   plant     = Sieg mit einer voll ausgewachsenen grünen Karte (Wert am Deckel)
   //   lightning = Sieg mit einer voll ionisierten Karte (ION_MAX_STACKS Stapel) — Krit trägt weiterhin das Lila der Farbe
-  //   ice       = folgt nach dem Eis-Rework (noch keine Bedingung)
+  //   ice       = Sieg eines Gletschers (Siegkarte steht auf einem festgefrorenen Gletscher-Feld)
   const heatFull = !!(state.heat && state.heat.active && (state.heat.value || 0) >= C.HEAT_MAX);
   const hitTypes = won
     ? [
         heatFull && "fire",
         (pCard.green && pCard.value >= C.PLANT_VALUE_CAP) && "plant",
         ((pCard.ionStacks || 0) >= C.ION_MAX_STACKS) && "lightning",
+        (glacierActive && !!glacierLocked[actualPos]) && "ice",
       ].filter(Boolean)
     : [];
   const lastTrick = {

@@ -8,6 +8,7 @@ import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useReducedFx } from "./useReducedFx.js";
 import { fmtScore } from "./format.js";
+import glacierIcon from "./assets/glacier.webp"; // Eis-Treffer-Identität: das echte Gletscher-Asset im Score-Float
 import cardBackImg  from "../assets/cards/card-back.png";  // (#180) Spieler-Deck: Schwerter-Rücken
 import cardFrontImg from "../assets/cards/card-front.png"; // (#180) Spieler-Deck: Rahmen-Front (Zahl/Effekte darüber)
 // (#186/#214) Gegner-Deck: je Auswahl-Typ ein eigenes Deck (Cover = Rücken, Front = Rahmen). Der Gegner spielt jede
@@ -48,13 +49,13 @@ const CRIT_COLOR = "#e879f9";
 const HIT_STYLE = {
   fire:      { color: "#e0714a", icon: "🔥" },
   plant:     { color: "#5ab87a", icon: "🌿" },
-  ice:       { color: "#5ec8f0", icon: "❄️" },
+  ice:       { color: "#5ec8f0", icon: "img" }, // Eis nutzt das echte Gletscher-Asset (glacier.webp) statt eines Emojis
   lightning: { color: CRIT_COLOR, icon: "⚡" },
 };
-const HIT_ICON_ORDER  = ["fire", "plant", "ice", "lightning"]; // feste Reihenfolge der gezeigten Icons
-// Score-FARBE: erste zutreffende bestimmt sie (nach dem Krit-Lila). Blitz ist bewusst NICHT dabei — reines Lila bleibt
-// exklusiv dem Krit vorbehalten; ein nicht-kritischer 5-Stapel-Sieg zeigt nur das ⚡-Icon, die Farbe bleibt Gold/Element.
-const HIT_COLOR_ORDER = ["fire", "plant", "ice"];
+const HIT_ICON_ORDER  = ["fire", "plant", "ice", "lightning"]; // gezeigte Icons (Reihenfolge egal — reine Anzeige)
+// Score-FARBE: erste zutreffende bestimmt sie (nach dem Krit-Lila). EIS/Blau hat Vorrang (direkt nach Krit) — sonst egal.
+// Blitz ist bewusst NICHT dabei: reines Lila bleibt exklusiv dem Krit; ein nicht-kritischer 5-Stapel-Sieg zeigt nur das ⚡.
+const HIT_COLOR_ORDER = ["ice", "fire", "plant"];
 
 // #68: vier Streuzonen — gleiche Float-Typen dicht beieinander, verschiedene getrennt. Basis-Lage je Zone.
 const FLOAT_ZONES = {
@@ -632,7 +633,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Treffer-Identitäten (Feuer/Pflanze/Eis/Blitz, mehrere zugleich möglich) → alle Icons + Score-Farbe.
     // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst Gold. Icons bleiben immer.
     const hits = t.hitTypes || [];
-    const hitIcons = HIT_ICON_ORDER.filter((k) => hits.includes(k)).map((k) => HIT_STYLE[k].icon);
+    const hitIcons = HIT_ICON_ORDER.filter((k) => hits.includes(k)); // Icon-KEYS (Eis rendert als Bild, Rest als Emoji)
     const hitColorKey = HIT_COLOR_ORDER.find((k) => hits.includes(k));
     const critC = t.isCrit ? CRIT_COLOR : (hitColorKey ? HIT_STYLE[hitColorKey].color : "#d4a63a");
     const entries = [];
@@ -885,7 +886,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             <div key={f.id} className="pointer-events-none absolute font-bold whitespace-nowrap"
               style={{ ...pos, color: f.color, fontSize: floatSize(f.value || 0), lineHeight: 1,
                        animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
-              {f.icons && f.icons.length > 0 && <span className="mr-1" style={{ WebkitTextFillColor: "initial" }}>{f.icons.join("")}</span>}{f.text}
+              {f.icons && f.icons.length > 0 && (
+                <span className="mr-1 inline-flex items-center gap-0.5 align-middle" style={{ WebkitTextFillColor: "initial" }}>
+                  {f.icons.map((k) => k === "ice"
+                    ? <img key={k} src={glacierIcon} alt="" aria-hidden="true" className="inline-block object-contain" style={{ width: "0.85em", height: "0.85em", filter: "drop-shadow(0 0 3px #5ec8f0)" }} />
+                    : <span key={k}>{HIT_STYLE[k].icon}</span>)}
+                </span>
+              )}{f.text}
             </div>
           );
         })}

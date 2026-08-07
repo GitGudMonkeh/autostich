@@ -99,6 +99,14 @@ describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
       const s = resolveTrick(scenario(0, 0, { deck: ionDeck(12, 5), oppDeck: constDeck(0) }), rng);
       expect(s.lastTrick.hitTypes).toEqual(["lightning"]);
     });
+    it("Eis: Sieg eines Gletschers (Siegkarte auf festgefrorenem Gletscher-Feld)", () => {
+      const lockedAt0 = Array.from({ length: 40 }, (_, i) => i === 0);
+      const s = resolveTrick(scenario(12, 0, { activeArchetypes: ["ice"], glacierLocked: lockedAt0, glacierMass: Array(40).fill(0), glacierRoles: [] }), rng);
+      expect(s.lastTrick.hitTypes).toEqual(["ice"]);
+      // Sieg auf einem NICHT-Gletscher-Feld trägt kein Eis
+      const s2 = resolveTrick(scenario(12, 0, { activeArchetypes: ["ice"], glacierLocked: Array(40).fill(false), glacierMass: Array(40).fill(0), glacierRoles: [] }), rng);
+      expect(s2.lastTrick.hitTypes).toEqual([]);
+    });
     it("normaler Sieg ohne Auslöser → leer; unter den Schwellen auch leer", () => {
       expect(resolveTrick(scenario(12, 0), rng).lastTrick.hitTypes).toEqual([]);
       expect(resolveTrick(scenario(0, 0, { deck: greenDeck(10), oppDeck: constDeck(0) }), rng).lastTrick.hitTypes).toEqual([]); // grün, aber unter dem Deckel (10 < 11)
