@@ -10,6 +10,7 @@ import { GLOSSARY } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { GuideOverlay } from "./GuideOverlay.jsx";
+import { firstSentence } from "./LegendarySelect.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
@@ -67,7 +68,7 @@ function KeywordGlossary({ tokens }) {
    Bei vollen Slots: neuen Skill wählen → dann den zu ersetzenden Skill antippen (übergibt replaceId).
    #201 P9: Angebot bleibt kompakt (nur Name + Kurztext). Die ausführliche Passiv-Beschreibung des
    Archetyps (inkl. Schlüsselbegriffe) klappt per Tap/Klick auf den Archetyp-Header auf. */
-export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {} }) {
+export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {}, options = {}, onOption }) {
   const held = skills.map((id) => SKILL_DEFS[id]).filter(Boolean);
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
   const rerollTokens = state.rerollsSkill || 0;
@@ -78,7 +79,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const devMode = !!state.devMode;                  // Dev-Run: Reroll aus, „Runde überspringen"
   const [pendingConsumer, setPendingConsumer] = useState(null); // #93: Konsumenten-Ersatzdialog { id, replace, type }
   // Swipe-Pager (#12): die Archetyp-Kategorien sind horizontale Seiten; `page` = aktuelle Seite, `tx` merkt den Touch-Start.
-  const [pageState, setPageState] = useState(0);
+  // Startwert null → die Startseite folgt dem zuletzt gewählten Skill-Typ (options.lastSkillArch); erst ein Swipe setzt eine Zahl.
+  const [pageState, setPageState] = useState(null);
   const tx = useRef(0);
   const dir = useRef(1); // Richtung des letzten Seitenwechsels (−1 zurück / +1 vor) → steuert die Slide-in-Animation
   const [guideArch, setGuideArch] = useState(null); // offener Leitfaden (Archetyp) — vom i-Chip geöffnet, direkt auf der passenden Seite
@@ -111,7 +113,10 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   // ans Ende geswipt geht es vorne weiter — die Nachbar-Anzeige (‹ … › + Punkte) folgt dem Ring, zeigt also immer
   // korrekt, was als Nächstes kommt. `page` ist stets normalisiert (Angebot kann sich durch Neuwurf ändern).
   const nPages = groups.length;
-  const page = nPages > 0 ? (((pageState % nPages) + nPages) % nPages) : 0;
+  // #UI: Startseite = die Kategorie des zuletzt gewählten Skills (falls sie im Angebot ist), sonst die erste.
+  const savedIdx = groups.findIndex((g) => g.arch === options.lastSkillArch);
+  const initPage = savedIdx >= 0 ? savedIdx : 0;
+  const page = nPages > 0 ? (pageState == null ? initPage : (((pageState % nPages) + nPages) % nPages)) : 0;
   const curG = groups[page];
   const prevG = nPages > 1 ? groups[(page - 1 + nPages) % nPages] : null;
   const nextG = nPages > 1 ? groups[(page + 1) % nPages] : null;
@@ -127,6 +132,9 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   // Freier Slot → direkt wählen. Volle Slots → neuen Skill vormerken → Ersetzen-Fenster (#234).
   // #234: Nur Blitz-LADUNGS-Konsumenten sind exklusiv (max 1) → Ersatzdialog beim zweiten. Feuer-HITZE-Konsumenten
   // dürfen mehrere gleichzeitig (heben sich nicht auf) → wie normale Skills behandeln.
+  // #UI: gewählten Skill übernehmen UND seinen Archetyp merken, damit die nächste Skill-Auswahl auf dieser Seite startet.
+  const pick = (id, replaceId) => { onOption?.({ lastSkillArch: archetypeOf(id) }); onPick(id, replaceId); };
+
   const clickSkill = (id) => {
     if (consumerTypeOf(id) === "charge" && !skills.includes(id)) {
       const existing = skills.find((s) => consumerTypeOf(s) === "charge");
@@ -135,7 +143,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         return;
       }
     }
-    if (!full) { onPick(id); return; }
+    if (!full) { pick(id); return; }
     setPending((cur) => (cur === id ? null : id)); // volle Slots → Ersetzen-Fenster öffnet über `pending`
   };
 
@@ -220,7 +228,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               (höchstens 1 {CONSUMER_LABEL[pendingConsumer.type]}-Konsument). Deine aktuelle Ressource bleibt erhalten.
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { onPick(pendingConsumer.id, pendingConsumer.replace); setPendingConsumer(null); }}
+              <button onClick={() => { pick(pendingConsumer.id, pendingConsumer.replace); setPendingConsumer(null); }}
                 className="px-3 py-1.5 rounded font-bold transition-all hover:brightness-110" style={{ background: "#d4a63a", color: "#0c0c10" }}>Ersetzen</button>
               <button onClick={() => setPendingConsumer(null)}
                 className="px-3 py-1.5 rounded transition-all hover:opacity-80" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#e8e8ea" }}>Abbrechen</button>
@@ -254,7 +262,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   const deactivates = !!arch && ARCH_LOSS[arch] && archetypeOf(pending) !== arch
                     && held.filter((h) => archetypeOf(h.id) === arch).length === 1;
                   return (
-                  <button key={s.id} onClick={() => { onPick(pending, s.id); setPending(null); }}
+                  <button key={s.id} onClick={() => { pick(pending, s.id); setPending(null); }}
                     className="text-left rounded-xl p-3 flex flex-col gap-1 transition-all hover:brightness-110"
                     style={{ background: "#20202a", border: `1px solid ${deactivates ? "#d1462f" : ac(s.id).color + "66"}` }}>
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -340,7 +348,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                         {sel && <span className="text-[10px] font-bold" style={{ color: col }}>✓ ausgewählt</span>}
                       </div>
                       <div className="font-bold text-[15px]" style={{ color: col }}>{s.name}</div>
-                      <div className="text-sm opacity-75 leading-snug"><GlossaryText text={s.desc} /></div>
+                      {/* #UI: Legendäre Beschreibungen sind lang → im Angebot nur der erste Satz. */}
+                      <div className="text-sm opacity-75 leading-snug"><GlossaryText text={s.legendary ? firstSentence(s.desc) : s.desc} /></div>
                     </button>
                   );
                 })}

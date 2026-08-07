@@ -288,6 +288,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const newId = architect.nextId;                      // Reducer vergibt genau diese id an das neue Gebäude
     onBuild?.({ familyId: o.familyId, tier: o.tier, footprint: fp, colorChoice: fam.colorLocked ? colorPick : null });
     setSelId(newId); setPhase("move");
+    // #UI: nach der Bauplan-Wahl automatisch zum Brett scrollen — das eben platzierte Gebäude ist sofort sichtbar und
+    // greifbar (auf Mobil liegt das Brett unter der Steuerung, sonst müsste man erst manuell runterscrollen).
+    if (typeof requestAnimationFrame !== "undefined") requestAnimationFrame(() => boardRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }));
   };
   // Sobald durch Entfernen Platz frei wird, den wartenden Bauplan automatisch bauen (und in die Verschiebe-Phase).
   useEffect(() => {
@@ -913,7 +916,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             {/* #UI „nur Buttons": schmale, schwebende Aktions-Leiste (mobil oben angeheftet) — nur die Phasen-Buttons,
                 damit sie beim Ziehen am Brett erreichbar bleiben. Anleitung/Referenz/Farbwahl bleiben im Panel drüber.
                 Desktop: normale Leiste (md:static). */}
-            <div className="order-1 sticky top-0 z-20 md:static rounded-xl p-2" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
+            <div className="order-1 sticky top-0 z-20 md:static rounded-xl p-2 -mt-2 md:mt-0" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
               {/* #248: Rotieren in der schwebenden Leiste — nur bei ausgewähltem Gebäude in place/move; beim Ziehen ohne Scrollen erreichbar. */}
               {showRotate && (selRotatable ? (
                 <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>

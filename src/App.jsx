@@ -658,7 +658,7 @@ export function Autostich() {
         <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} perks={state.perks} deck={state.deck} state={state} />
       )}
       {state.phase === "levelup" && state.skillOffer && (
-        <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} />
+        <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} options={options} onOption={changeOptions} />
       )}
       {state.phase === "legendary" && state.legendaryOffer && (
         <LegendarySelect offer={state.legendaryOffer} onPick={pickLegendary} onDecline={declineLegendary} state={state} />

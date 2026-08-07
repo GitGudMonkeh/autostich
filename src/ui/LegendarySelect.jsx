@@ -7,6 +7,9 @@ import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 // Ablehnen → stattdessen normale Skill-Wahl (nie „verschwendet"). Gold-Theming wie die Legendär-Rarität sonst.
 const GOLD = "#d4a63a";
 const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Legendär", icon: "★", color: GOLD };
+// #UI: Legendäre Beschreibungen sind lang — im Angebot nur der erste Satz (bis zum ersten Satzende-Zeichen), damit die
+// Karten kompakt bleiben. Der volle Text steht später beim gehaltenen Skill / im Glossar.
+export const firstSentence = (t) => { const m = String(t || "").match(/^.*?[.!?](?=\s|$)/); return m ? m[0] : String(t || ""); };
 
 export function LegendarySelect({ offer = [], onPick, onDecline, state = {} }) {
   const legs = offer.map((id) => SKILL_DEFS[id]).filter(Boolean);
@@ -35,7 +38,7 @@ export function LegendarySelect({ offer = [], onPick, onDecline, state = {} }) {
                     <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap"
                       style={{ background: `${meta.color}22`, color: meta.color, border: `1px solid ${meta.color}66` }}>{meta.label}</span>
                   </div>
-                  <div className="text-sm leading-snug opacity-90"><GlossaryText text={s.desc} /></div>
+                  <div className="text-sm leading-snug opacity-90"><GlossaryText text={firstSentence(s.desc)} /></div>
                 </button>
               );
             })}

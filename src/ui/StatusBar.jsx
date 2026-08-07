@@ -2,9 +2,11 @@ import { fmtScore } from "./format.js";
 import { fmtDuration } from "../game/deck.js";
 
 /* Gameplay-Neu-Aufbau (docs/gameplay-redesign.md, Phase 1): die schwebende Kompakt-Leiste — die „Vitalwerte" des Laufs
-   in EINER glanzbaren, oben klebenden Zeile, samt Ablauf-Steuerung (Pause/Tempo/Karten). Ersetzt die früheren Kopf-
-   Stat-Zellen (Desktop-Header + mobiles Sticky-Panel) und übernimmt Pause/Tempo aus der Controls-Leiste.
-   Rein präsentational — Score/Mult/Serie/Fortschritt/Zeit werden fertig berechnet hereingereicht (kein Drift). */
+   in einer oben klebenden Karte, samt Ablauf-Steuerung (Pause/Tempo/Karten). Ersetzt die früheren Kopf-Stat-Zellen.
+   Rein präsentational — Score/Mult/Serie/Runde/Zeit werden fertig berechnet hereingereicht (kein Drift).
+
+   #UI-Layout: zwei Zeilen. Oben Steuerung + Runde + Zeit (Sekundärwerte, rechts neben dem Karten-Icon). Unten der
+   Score über die volle Breite (Platz bis 999.999.999, nie abgeschnitten) mit Serie und Mult rechts daneben. */
 
 function Pill({ active, onClick, tone = "#8a7de0", title, children }) {
   return (
@@ -17,31 +19,42 @@ function Pill({ active, onClick, tone = "#8a7de0", title, children }) {
   );
 }
 
-function Cell({ label, children, align = "left", big = false, className = "" }) {
+// Sekundärwert-Zelle (Zeile 1: Runde/Zeit) — kompakt, kleiner als die Score-Nachbarn.
+function MiniCell({ label, children, className = "" }) {
   return (
-    <div className={`flex flex-col justify-center gap-1 px-1.5 py-2 min-w-0 ${className}`} style={{ textAlign: align }}>
+    <div className={`flex flex-col justify-center px-2 leading-none ${className}`} style={{ textAlign: "right" }}>
+      <span className="text-[9px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
+      <span className="font-pixel-dense mt-0.5 whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: 15 }}>{children}</span>
+    </div>
+  );
+}
+
+// Nachbar-Zelle des Scores (Zeile 2: Serie/Mult) — rechtsbündig, feste Grundschrift.
+function Cell({ label, children, className = "" }) {
+  return (
+    <div className={`flex flex-col justify-center gap-1 px-2.5 py-2 ${className}`} style={{ textAlign: "right" }}>
       <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
-      <span className="font-pixel-dense leading-none whitespace-nowrap overflow-hidden text-ellipsis"
-        style={{ fontVariantNumeric: "tabular-nums", fontSize: big ? 25 : 18 }}>{children}</span>
+      <span className="font-pixel-dense leading-none whitespace-nowrap"
+        style={{ fontVariantNumeric: "tabular-nums", fontSize: 18 }}>{children}</span>
     </div>
   );
 }
 
 export function StatusBar({
   score, ghost = {}, mult, timeStr, paused, winStreak = 0, bestStreak = 0,
-  cycle = 0, totalCycles = 1, pos = 0, cycleLen = 1,
+  cycle = 0, totalCycles = 1,
   onTogglePause, speedMult = 1, onSpeed, onChronik, deckBack,
 }) {
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   const cyc = Math.min(cycle + 1, totalCycles);
   return (
     <div className="sticky top-0 z-20 -mx-1">
-      <div className="as-statusbar flex items-stretch flex-wrap gap-y-1 rounded-xl overflow-hidden as-panel"
+      <div className="as-statusbar flex flex-col rounded-xl overflow-hidden as-panel"
         style={{ background: "#1a1a22f2", border: "1px solid #33333e", backdropFilter: "blur(6px)", boxShadow: "0 8px 20px -8px #000" }}>
-        {/* Ablauf-Steuerung: Pause · Tempo · Karten */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderRight: "1px solid #26262e" }}>
-          {/* Pause/Weiter — dauerhaft in der Layout-Akzentfarbe (Violett) getönt, bei Pause gefüllt. Hebt den meistgenutzten
-              Knopf ab, ohne mit dem ablenkenden Orange zu schreien; passt zum violetten Panel-Akzent. */}
+
+        {/* Zeile 1: Ablauf-Steuerung (Pause · Tempo · Karten) — links; Runde + Zeit rechts neben dem Karten-Icon. */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderBottom: "1px solid #26262e" }}>
+          {/* Pause/Weiter — dauerhaft violett getönt, bei Pause gefüllt (Layout-Akzent, kein ablenkendes Orange). */}
           <button type="button" onClick={onTogglePause} title={paused ? "Weiter" : "Pause"}
             className="font-mono text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap"
             style={paused
@@ -62,24 +75,34 @@ export function StatusBar({
               <span className="hidden sm:inline">Karten</span>
             </button>
           )}
+          {/* Runde (nur der Durchlauf, keine Karten-Angabe mehr) + Zeit — rechts neben dem Karten-Icon. */}
+          <div className="ml-auto flex items-stretch">
+            <MiniCell label="Runde"><span>{cyc}<span className="text-[10px] opacity-45">/{totalCycles}</span></span></MiniCell>
+            <MiniCell label="Zeit" className="border-l border-[#26262e]"><span>{timeStr}{paused ? " ⏸" : ""}</span></MiniCell>
+          </div>
         </div>
 
-        {/* Score = wichtigster Wert. Das Rekord-Delta sitzt OBEN RECHTS neben dem Label (eigene Zeile), damit die große
-            Score-Zahl die volle Breite hat und beim Wachsen nicht verrutscht. Mindestbreite hält die Zelle stabil. */}
-        <div className="flex flex-col justify-center gap-1 px-3.5 py-2 min-w-0" style={{ minWidth: 150 }}>
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Score</span>
-            {ghost.hasGhost && (ghost.passed
-              ? <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: "#8a7de0" }}>⚑ Rekord</span>
-              : ghost.delta != null
-                ? <span className="text-[10px] font-bold whitespace-nowrap tabular-nums" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>{ghost.delta >= 0 ? "▲ +" : "▼ "}{fmtScore(ghost.delta)}</span>
-                : null)}
+        {/* Zeile 2: Score = wichtigster Wert, volle Breite (Platz bis 999.999.999, nie abgeschnitten). Das Rekord-Delta
+            steht in der Label-Zeile darüber, damit die große Zahl beim Wachsen nicht verrutscht. Serie + Mult rechts. */}
+        <div className="flex items-stretch">
+          <div className="flex-1 flex flex-col justify-center gap-1 px-3.5 py-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Score</span>
+              {ghost.hasGhost && (ghost.passed
+                ? <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: "#8a7de0" }}>⚑ Rekord</span>
+                : ghost.delta != null
+                  ? <span className="text-[10px] font-bold whitespace-nowrap tabular-nums" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>{ghost.delta >= 0 ? "▲ +" : "▼ "}{fmtScore(ghost.delta)}</span>
+                  : null)}
+            </div>
+            <span className="font-pixel-dense leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: "#d4a63a" }}>{fmtScore(score)}</span>
           </div>
-          <span className="font-pixel-dense leading-none whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: "#d4a63a" }}>{fmtScore(score)}</span>
-        </div>
-        {/* Mult · Serie · Fortschritt · Zeit — gleichmäßig über die restliche Breite verteilt (gleich breite Zellen). */}
-        <div className="flex-1 flex items-stretch" style={{ minWidth: 240 }}>
-          <Cell label="Mult" className="flex-1 border-l border-[#26262e]">
+          {/* Serie — kann in den Tausenderbereich gehen; rechtsbündig neben dem Score. */}
+          <Cell label="Serie" className="border-l border-[#26262e]">
+            <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
+            <span className="text-[9px] opacity-45 ml-1">best {bestStreak}</span>
+          </Cell>
+          {/* Mult — ganz rechts. */}
+          <Cell label="Mult" className="border-l border-[#26262e]">
             <span className={mult?.shakeClass || ""}>
               <span key={mult?.pulseKey} className="inline-block rounded px-1.5 py-0.5 font-pixel-dense"
                 style={{ fontVariantNumeric: "tabular-nums", fontSize: 18,
@@ -90,17 +113,6 @@ export function StatusBar({
               </span>
             </span>
           </Cell>
-          {/* Serie bekommt mehr Grundbreite (flex 1.6) — die Siegesserie kann in den Tausenderbereich gehen; die festen
-              Flex-Verhältnisse halten Fortschritt/Zeit dabei an ihrer Position (kein Verrutschen). */}
-          <Cell label="Serie" className="flex-[1.3] border-l border-[#26262e]">
-            <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
-            <span className="text-[9px] opacity-45 ml-1">best {bestStreak}</span>
-          </Cell>
-          <Cell label="Fortschritt" className="flex-[1.9] border-l border-[#26262e]">
-            <span>{cyc}<span className="text-[11px] opacity-45">/{totalCycles}</span></span>
-            <span className="text-[9px] opacity-45 ml-1.5">K{pos}/{cycleLen}</span>
-          </Cell>
-          <Cell label="Zeit" className="flex-[1.1] border-l border-[#26262e]"><span>{timeStr}{paused ? " ⏸" : ""}</span></Cell>
         </div>
       </div>
     </div>
