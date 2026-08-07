@@ -1,5 +1,5 @@
 import { Sparkline } from "./Sparkline.jsx";
-import { RunStats } from "./RunStats.jsx";
+import { RunStatCells, RunBuildChips } from "./RunStats.jsx"; // Victory-Redesign: Kennzahlen (Stats-Sektion) + Build-Chips (Build-Sektion) getrennt platziert
 import { RunGraphs, ScoreHerkunft } from "./RunGraphs.jsx"; // #251/Victory-Redesign: Fraktions-Herkunft + Durchlauf-Graph
 import { CardGrid } from "./CardGrid.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
@@ -90,47 +90,56 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           </div>
         )}
 
-        <div className="mt-5">
-          <RunStats entry={{
-            bestStreak: state.bestStreak, perks: state.perks, skills: state.skills || [],
-            maxFormations: state.maxFormations, formationScore: state.formationScore, buildingScore: state.buildingScore,
-            crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
-          }} />
-        </div>
-
-        {/* Victory-Redesign: Motor-Kennzahlen je aktiver Fraktion — die „Engine-Story" des Runs (nur Zähler > 0). */}
-        {motor.length > 0 && (
-          <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Motor-Kennzahlen</div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {motor.map((m) => (
-                <div key={m.label} className="rounded-lg px-3 py-2 min-w-0" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
-                  <div className="opacity-50 text-[11px] truncate" title={m.label}>{m.label}</div>
-                  <div className="font-bold tabular-nums leading-tight whitespace-nowrap overflow-hidden text-ellipsis" title={m.value.toLocaleString("de-DE")} style={{ color: m.color }}>{fmtScoreShort(m.value)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Punkteverlauf: aktueller Lauf vs. (vorheriger) Rekord (#35). recordTraj ist der Snapshot
-            VOR dem saveRun-Überschreiben → bei neuem Rekord liegt die Lauf-Linie sichtbar darüber. */}
-        {currentTraj.length >= 2 && (
+        {/* Victory-Redesign · BUILD-Sektion: Archetyp-Zusammenfassung + Perk-/Skill-Chips, darunter die Motor-Kennzahlen
+            je aktiver Fraktion (die „Engine-Story" des Runs, nur Zähler > 0). */}
+        {((state.skills && state.skills.length) || (state.perks && state.perks.length) || motor.length > 0) && (
           <div className="mt-5">
-            <div className="flex items-center justify-between text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              <span>Score-Verlauf</span>
-              <span className="flex gap-2 normal-case tracking-normal">
-                <span style={{ color: "#d4a63a" }}>Lauf</span>
-                {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>Rekord</span> : <span className="opacity-40">erster Lauf</span>}
-              </span>
-            </div>
-            <Sparkline current={currentTraj} record={recordTraj} height={110} />
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Build</div>
+            <RunBuildChips entry={{ perks: state.perks, skills: state.skills || [] }} />
+            {motor.length > 0 && (
+              <>
+                <div className="text-[10px] uppercase tracking-wide opacity-40 mt-4 mb-2">Motor-Kennzahlen</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {motor.map((m) => (
+                    <div key={m.label} className="rounded-lg px-3 py-2 min-w-0" style={{ background: "#141419", border: `1px solid #2a2a34`, borderLeft: `3px solid ${m.color}` }}>
+                      <div className="opacity-50 text-[10px] uppercase tracking-wide truncate" title={m.label}>{m.label}</div>
+                      <div className="font-bold tabular-nums leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-[15px] mt-0.5" title={m.value.toLocaleString("de-DE")} style={{ color: m.color }}>{fmtScoreShort(m.value)}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
-        {/* #251/Victory-Redesign: der generische Score-Quellen-Balken ist durch den Fraktions-Breakdown (ScoreHerkunft, oben)
-            ersetzt → sourceBar={false}; hier bleibt nur der Durchlauf-Graph (Score je Stich, Sieg/Niederlage). */}
-        <RunGraphs state={state} sourceBar={false} />
+        {/* Victory-Redesign · STATS & VERLAUF-Sektion: schlanke Kern-Kennzahlen (Score-Anteile stehen bereits in der
+            Score-Herkunft → sourceCells={false}) + Score-Verlauf + Durchlauf-Graph. */}
+        <div className="mt-5">
+          <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Stats &amp; Verlauf</div>
+          <RunStatCells entry={{
+            bestStreak: state.bestStreak, crits: state.crits, wins: state.wins,
+            bestTrickScore: state.bestTrickScore, tricks: state.trickNo,
+          }} sourceCells={false} />
+
+          {/* Punkteverlauf: aktueller Lauf vs. (vorheriger) Rekord (#35). recordTraj ist der Snapshot
+              VOR dem saveRun-Überschreiben → bei neuem Rekord liegt die Lauf-Linie sichtbar darüber. */}
+          {currentTraj.length >= 2 && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-[11px] uppercase tracking-wide opacity-50 mb-2">
+                <span>Score-Verlauf</span>
+                <span className="flex gap-2 normal-case tracking-normal">
+                  <span style={{ color: "#d4a63a" }}>Lauf</span>
+                  {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>Rekord</span> : <span className="opacity-40">erster Lauf</span>}
+                </span>
+              </div>
+              <Sparkline current={currentTraj} record={recordTraj} height={110} />
+            </div>
+          )}
+
+          {/* #251/Victory-Redesign: der generische Score-Quellen-Balken ist durch den Fraktions-Breakdown (ScoreHerkunft, oben)
+              ersetzt → sourceBar={false}; hier bleibt nur der Durchlauf-Graph (Score je Stich, Sieg/Niederlage). */}
+          <RunGraphs state={state} sourceBar={false} />
+        </div>
 
         {/* #201.8 Stufe A: finale Deck-Aufstellung schreibgeschützt — bestehendes CardGrid (rendert Formationsrahmen). Aufklappbar, um den Screen kurz zu halten. */}
         {finalOrder.length > 0 && (
