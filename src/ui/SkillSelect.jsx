@@ -8,6 +8,7 @@ import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_C
 import { GLOSSARY } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
+import { GuidePanel } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
@@ -121,6 +122,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
         <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
+        <GuidePanel className="absolute top-3 left-3 z-10" />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Durchlauf {(state.cycle || 0) + 1}</div>
