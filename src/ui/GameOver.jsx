@@ -2,6 +2,7 @@ import { Sparkline } from "./Sparkline.jsx";
 import { RunStats } from "./RunStats.jsx";
 import { RunGraphs } from "./RunGraphs.jsx"; // #251: Score-Quellen-Balken + Durchlauf-Graph (Score je Stich, Sieg/Niederlage)
 import { CardGrid } from "./CardGrid.jsx";
+import { glacierGridProps } from "./glacierBoard.js";
 import { fmtScore } from "./format.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js"; // #190: Freischalt-Vorschau
 import { computeFormations } from "../game/formations.js"; // #201.8: finale Aufstellung + Rahmen
@@ -83,7 +84,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           <details className="mt-5 rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">Finale Aufstellung ansehen</summary>
             <div className="p-3 pt-0">
-              <CardGrid cards={finalCards} formations={finalForms} roles={state.roles} anchors={state.shop?.anchors || []}
+              <CardGrid cards={finalCards} formations={finalForms} roles={state.roles} {...glacierGridProps(state)} anchors={state.shop?.anchors || []}
                 pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} architectCover={architectCoverFor(state)} quietTiles />
             </div>
           </details>

@@ -8,18 +8,21 @@
 // Rein informativ, keine Engine-Kopplung (spiegelt state.glacier*).
 import { useRef, useEffect, useState } from "react";
 import { IndicatorPanel } from "./indicators/panelKit.jsx";
-import { glacierClusters, glacierNeighborFn, THRESHOLDS, ROLES } from "../game/glacier.js";
+import { glacierClusters, glacierNeighborFn, glacierFormations, GLACIER_FORM_LABEL, THRESHOLDS, ROLES } from "../game/glacier.js";
 import glacierIcon from "./assets/glacier.webp";
 
 const FROST = "#5ec8f0", FROST_BRIGHT = "#8be6ff", DEEP = "#1c4a5c";
 const nfmt = (n) => Math.round(n).toLocaleString("de-DE");
+const dfmt = (x) => String(x).replace(".", ","); // Dezimal-Komma (1.5 → 1,5)
 const KRIT_FROM = 9; // ab dieser Masse gilt ein Gletscher als „kritisch" (kurz vor Stufe 3 / Bruch bei 12)
 
 // Ein Gletscher-Chip: Icon (Größe = Stufe) + Masse + drei diskrete Stufen-Segmente.
 function Glacier({ mass }) {
   const [T1, T2, T3] = THRESHOLDS;
   const scale = 0.5 + 0.5 * Math.min(1, mass / T3);
-  const krit = mass >= KRIT_FROM && mass < T3;
+  const bricht = mass >= T3;                  // Bruch-bereit: höchste Stufe (12) erreicht → bricht
+  const krit = mass >= KRIT_FROM && !bricht;  // kurz davor
+  const alert = bricht || krit;
   const seg = (thr, i) => {
     const on = mass >= thr;
     const next = !on && (i === 0 || mass >= THRESHOLDS[i - 1]);
@@ -34,19 +37,20 @@ function Glacier({ mass }) {
   };
   return (
     <div style={{
-      position: "relative", background: "#20202a", border: `1px solid ${krit ? FROST : "#2a2a34"}`,
+      position: "relative", background: "#20202a", border: `1px solid ${alert ? FROST : "#2a2a34"}`,
       borderRadius: 8, padding: "5px 4px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, width: 46,
-      boxShadow: krit ? `0 0 12px ${FROST}44, inset 0 0 14px ${FROST}10` : undefined,
-    }} className={krit ? "as-glacier-shiver" : undefined} title={`Gletscher · Masse ${mass} · Stufe ${mass >= T3 ? 3 : mass >= T2 ? 2 : mass >= T1 ? 1 : 0}`}>
-      {krit && <span style={{
+      boxShadow: bricht ? `0 0 16px ${FROST}77, inset 0 0 16px ${FROST}18` : krit ? `0 0 12px ${FROST}44, inset 0 0 14px ${FROST}10` : undefined,
+    }} className={alert ? "as-glacier-shiver" : undefined} title={`Gletscher · Masse ${mass} · Stufe ${mass >= T3 ? 3 : mass >= T2 ? 2 : mass >= T1 ? 1 : 0}${bricht ? " · BRICHT" : ""}`}>
+      {alert && <span style={{
         position: "absolute", top: -7, left: "50%", transform: "translateX(-50%)", fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)",
-        fontSize: 7.5, letterSpacing: ".04em", textTransform: "uppercase", color: "#071016", background: FROST_BRIGHT, borderRadius: 4, padding: "0 3px", whiteSpace: "nowrap",
-      }}>kritisch</span>}
+        fontSize: 7.5, letterSpacing: ".04em", textTransform: "uppercase", color: "#071016", background: bricht ? "#eafaff" : FROST_BRIGHT, borderRadius: 4, padding: "0 3px", whiteSpace: "nowrap",
+        fontWeight: bricht ? 700 : 400, boxShadow: bricht ? `0 0 8px ${FROST}` : undefined,
+      }}>{bricht ? "Bricht" : "kritisch"}</span>}
       <div style={{ height: 34, display: "grid", placeItems: "end center", width: "100%" }}>
         <div style={{
           height: "100%", aspectRatio: "1", backgroundImage: `url(${glacierIcon})`, backgroundSize: "contain",
           backgroundPosition: "center bottom", backgroundRepeat: "no-repeat", transformOrigin: "bottom center", transform: `scale(${scale})`,
-          filter: krit ? `saturate(1.15) brightness(1.18) drop-shadow(0 0 9px ${FROST})` : "saturate(.85) brightness(.85) drop-shadow(0 2px 4px #0007)",
+          filter: alert ? `saturate(1.15) brightness(1.18) drop-shadow(0 0 ${bricht ? 12 : 9}px ${FROST})` : "saturate(.85) brightness(.85) drop-shadow(0 2px 4px #0007)",
         }} />
       </div>
       <span style={{ fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)", fontWeight: 700, fontSize: 13, color: FROST_BRIGHT, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{mass}</span>
@@ -69,6 +73,11 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
   const frozenOpp = new Set([...Object.keys(frozenOppActive || {}), ...Object.keys(frozenOppPending || {})]).size;
   const duo = new Set([...Object.keys(glacierBuffActive || {}), ...Object.keys(glacierBuffPending || {})]).size;
   const hasLawine = (glacierRoles || []).includes(ROLES.L_LAWINE);
+  // Aktive 2D-Gletscher-Formationen (Block/Kreuz/Linie/Fläche) + ihr Burst-Multiplikator — je Typ der höchste Faktor.
+  const eiswall = (glacierRoles || []).includes(ROLES.EISWALL);
+  const formByType = {};
+  for (const gf of glacierFormations(glacierLocked, { eiswall }).forms) formByType[gf.type] = Math.max(formByType[gf.type] || 0, gf.factor);
+  const activeForms = Object.entries(formByType).sort((a, b) => b[1] - a[1]);
 
   // Brech-Moment: fällt eine hohe Gletschermasse stark ab (Bruch) ODER springt der Ertrag, blitzt ein transienter
   // „Bruch"-Burst auf (aufsteigende Ertrags-Zahl + Frost-Puls). Erkennung per Vergleich zum vorigen Render.
@@ -138,6 +147,12 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
       ) : (
         <div style={{ fontSize: 11.5, color: "#6a7a86", textAlign: "center", padding: "6px 0" }}>
           Noch keine Gletscher — friere in der Aufstellung Karten fest.
+        </div>
+      )}
+
+      {activeForms.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10, justifyContent: "center" }}>
+          {activeForms.map(([t, f]) => chip(GLACIER_FORM_LABEL[t] || t, "×" + dfmt(f), FROST))}
         </div>
       )}
 

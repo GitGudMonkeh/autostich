@@ -253,33 +253,40 @@ export const GEO_LINIE = 1.30;    // volle Reihe (5) oder Spalte (8)
 export const GEO_FLAECHE = 1.50;  // gefülltes 3×3 (Endgame-Mega-Cluster)
 export const EISWALL_LINIE = 1.60; // Eiswall hebt die Linie an
 
-export function glacierGeometry(locked, opts = {}) {
+// Detail-Variante (für UI: Karten-Badge, Formationsbeschreibung, HUD-Multiplikator): liefert
+//   { factor:[40] (wie glacierGeometry), forms:[{type,factor,positions}] (aktive benannte Formen), formPos:Set<pos> }.
+export function glacierFormations(locked, opts = {}) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const f = new Array(N_POS).fill(1);
-  const mark = (p, factor) => { f[p] *= factor; };
+  const forms = [], formPos = new Set();
+  const addForm = (type, factor, positions) => { forms.push({ type, factor, positions }); for (const p of positions) { f[p] *= factor; formPos.add(p); } };
   const linieFactor = opts.eiswall ? EISWALL_LINIE : GEO_LINIE;
   // Linie: volle Reihe (5 Spalten)
-  for (let r = 0; r < 8; r++) { let full = true; for (let c = 0; c < 5; c++) if (!isG(posOf(r, c))) { full = false; break; } if (full) for (let c = 0; c < 5; c++) mark(posOf(r, c), linieFactor); }
+  for (let r = 0; r < 8; r++) { let full = true; for (let c = 0; c < 5; c++) if (!isG(posOf(r, c))) { full = false; break; } if (full) addForm("linie", linieFactor, Array.from({ length: 5 }, (_, c) => posOf(r, c))); }
   // Linie: volle Spalte (8 Zeilen)
-  for (let c = 0; c < 5; c++) { let full = true; for (let r = 0; r < 8; r++) if (!isG(posOf(r, c))) { full = false; break; } if (full) for (let r = 0; r < 8; r++) mark(posOf(r, c), linieFactor); }
+  for (let c = 0; c < 5; c++) { let full = true; for (let r = 0; r < 8; r++) if (!isG(posOf(r, c))) { full = false; break; } if (full) addForm("linie", linieFactor, Array.from({ length: 8 }, (_, r) => posOf(r, c))); }
   // Block: gefülltes 2×2
   for (let r = 0; r < 7; r++) for (let c = 0; c < 4; c++)
     if (isG(posOf(r, c)) && isG(posOf(r, c + 1)) && isG(posOf(r + 1, c)) && isG(posOf(r + 1, c + 1)))
-      for (const p of [posOf(r, c), posOf(r, c + 1), posOf(r + 1, c), posOf(r + 1, c + 1)]) mark(p, GEO_BLOCK);
+      addForm("block", GEO_BLOCK, [posOf(r, c), posOf(r, c + 1), posOf(r + 1, c), posOf(r + 1, c + 1)]);
   // Kreuz: Zentrum + 4 orthogonale Nachbarn
   for (let r = 1; r < 7; r++) for (let c = 1; c < 4; c++) {
     const ctr = posOf(r, c);
     if (isG(ctr) && isG(posOf(r - 1, c)) && isG(posOf(r + 1, c)) && isG(posOf(r, c - 1)) && isG(posOf(r, c + 1)))
-      for (const p of [ctr, posOf(r - 1, c), posOf(r + 1, c), posOf(r, c - 1), posOf(r, c + 1)]) mark(p, GEO_KREUZ);
+      addForm("kreuz", GEO_KREUZ, [ctr, posOf(r - 1, c), posOf(r + 1, c), posOf(r, c - 1), posOf(r, c + 1)]);
   }
   // Große Fläche: gefülltes 3×3
   for (let r = 0; r < 6; r++) for (let c = 0; c < 3; c++) {
     let full = true;
     for (let dr = 0; dr < 3 && full; dr++) for (let dc = 0; dc < 3; dc++) if (!isG(posOf(r + dr, c + dc))) { full = false; break; }
-    if (full) for (let dr = 0; dr < 3; dr++) for (let dc = 0; dc < 3; dc++) mark(posOf(r + dr, c + dc), GEO_FLAECHE);
+    if (full) { const ps = []; for (let dr = 0; dr < 3; dr++) for (let dc = 0; dc < 3; dc++) ps.push(posOf(r + dr, c + dc)); addForm("flaeche", GEO_FLAECHE, ps); }
   }
-  return f;
+  return { factor: f, forms, formPos };
 }
+// Engine-Pfad (Burst-Faktor je Feld): nur das Faktor-Array.
+export const glacierGeometry = (locked, opts = {}) => glacierFormations(locked, opts).factor;
+// Anzeigenamen der 2D-Gletscher-Formen (UI).
+export const GLACIER_FORM_LABEL = { block: "Block", kreuz: "Kreuz", linie: "Linie", flaeche: "Große Fläche" };
 
 /* ---- Rollen → Snapshot-opts (Gruppe A, docs §4 Lawine) -------------------------------------------
    Rollen als Skills sind noch nicht im Angebots-Pool (kein 5.-Archetyp-Leak); getrieben über state.glacierRoles.

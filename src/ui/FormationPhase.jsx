@@ -10,6 +10,7 @@ import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
+import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
 import { audio } from "./audio.js";
 import { haptics } from "./haptics.js";
 
@@ -260,6 +261,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
               <div style={{ color: "#d4a63a" }}>⧉ Überlappung — mehr Formationen = mehr Multi: 2 ×1,5 · 3 ×2 · 4 ×3</div>
               <div style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr Rahmen = mehr Multi · gestrichelt = ohne Multiplikator</div>
             </div>
+            {/* Eis-Neudesign: 2D-Gletscher-Formationen in Blau erklärt (nur bei aktivem Eis). */}
+            <GlacierFormLegend state={state} />
             {/* Gehaltene Eis-Effekte auf die Formationserkennung — nur wenn welche gehalten werden (desc aus SKILL_DEFS). */}
             {iceFormSkills.length > 0 && (
               <div className="grid gap-0.5 text-xs sm:text-[13px] leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>

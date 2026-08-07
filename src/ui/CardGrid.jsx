@@ -7,6 +7,7 @@ import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
+import { glacierFormations } from "../game/glacier.js";
 import glacierIcon from "./assets/glacier.webp";
 
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
@@ -60,7 +61,7 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
 const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
                    picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false,
-                   glacier = false, glacierMass = 0 }) {
+                   glacier = false, glacierMass = 0, glacierForm = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -115,8 +116,9 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
           +{arch.boost}
         </span>
       )}
-      {((card.ionStacks || 0) > 0 || ripe) && (
+      {((card.ionStacks || 0) > 0 || ripe || glacierForm) && (
         <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">
+          {glacierForm && <span className="font-bold" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0" }} title="Teil einer aktiven Gletscher-Formation (2D)">G</span>}
           {(card.ionStacks || 0) > 0 && <span style={{ color: "#5ec8f0" }}>⚡{card.ionStacks}</span>}
           {ripe && <span style={{ textShadow: "0 0 3px #5ab87a" }} title="Grün (reif) — zählt fürs Farbblock">🌿</span>}
         </span>
@@ -184,6 +186,8 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                           glacierPos = null, glacierMassByPos = null }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
+  // Eis-Neudesign: Positionen, die Teil einer aktiven 2D-Gletscher-Formation sind (Block/Kreuz/Linie/Fläche) → blaues „G" auf der Karte.
+  const glacierFormPos = glacierPos ? glacierFormations(glacierPos).formPos : null;
   const pickedSet = new Set(pickedIds || []);
   const disabledSet = new Set(disabledPos || []);
   const highlightSet = new Set(highlightPos || []); // #182: Positionen mit Silberring ohne Anker (z. B. Zeitraffer 20 & 40)
@@ -278,6 +282,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                   dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
                   structLit={structPos ? structPos.has(pos) : false} distrLit={distrPos ? distrPos.has(pos) : false}
                   glacier={glacierPos ? glacierPos.has(pos) : false} glacierMass={glacierMassByPos ? (glacierMassByPos[pos] || 0) : 0}
+                  glacierForm={glacierFormPos ? glacierFormPos.has(pos) : false}
                   onClick={disabled || !onTilePick ? undefined : () => onTilePick(pos, c)} />;
               })}
             </div>

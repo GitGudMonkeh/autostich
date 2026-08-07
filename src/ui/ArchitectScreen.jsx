@@ -16,6 +16,8 @@ import { formationAbbr } from "./formationLabels.js";
 import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel } from "./Glossary.jsx";
+import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Marker auch am Architekt-Brett
+import glacierIcon from "./assets/glacier.webp";
 import { useEscape } from "./useEscape.js";
 
 /* ============================================================
@@ -83,6 +85,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const order = state.playerOrder || [];
   const deck = state.deck || [];
   const cards = order.map((di) => deck[di]).filter(Boolean);
+  // Eis: Gletscher-/Firn-Marker (gleicher Positionsraum wie das Brett) — nur befüllt, wenn Eis aktiv ist.
+  const { glacierPos = null, glacierMassByPos = null } = glacierGridProps(state);
 
   // Ablauf-Zustand.
   const [phase, setPhase] = useState("choose");            // choose | place | upgrade | after | move
@@ -535,6 +539,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const boost = ev - card.value;
                 // Pflanze (#211): reife (grüne) Karte → Zahl leuchtet grün (voll ausgewachsen am hellsten), wie am Aufstellungs-Brett.
                 const numCol = card.green ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : SUIT_COLOR[card.suit];
+                const isGlacier = glacierPos ? glacierPos.has(pos) : false;                       // festgefrorener Gletscher
+                const gMass = glacierMassByPos ? Math.round(glacierMassByPos[pos] || 0) : 0;       // angesammelte Masse
+                const isFirn = !isGlacier && gMass >= 1;                                           // Firn-Boden (Masse, noch kein Gletscher)
                 const anchorCell = b ? Math.min(...b.footprint) : -1;
                 const isSel = b && b.id === selId;
                 const pf = formations[pos] || { mult: 1, formations: [] };
@@ -599,6 +606,16 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(8,12,18,0.62) 3.5px, rgba(8,12,18,0.62) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(134,153,168,0.45)" }} />
                     )}
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
+                    {/* Eis: Gletscher-Marker (Icon + Masse) bzw. Firn-Boden (dezenter ❄ + Masse) oben rechts. */}
+                    {isGlacier && (
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={`Gletscher · Masse ${gMass}`}>
+                        <img src={glacierIcon} alt="" aria-hidden="true" className="w-[9px] h-[9px] object-contain" style={{ filter: "drop-shadow(0 0 2px #5ec8f0)" }} />
+                        {gMass}
+                      </span>
+                    )}
+                    {isFirn && (
+                      <span className="absolute top-[1px] right-[2px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · gespeicherte Masse ${gMass}`}>❄{gMass}</span>
+                    )}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
                     <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (

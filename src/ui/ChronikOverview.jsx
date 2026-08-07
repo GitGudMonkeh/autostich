@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { CardGrid } from "./CardGrid.jsx";
+import { glacierGridProps } from "./glacierBoard.js";
+import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
@@ -127,7 +129,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
                 ))}
               </div>
             )}
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+            <CardGrid cards={cards} formations={formations} roles={state.roles} {...glacierGridProps(state)} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               highlightPos={highlightPos} highlightTitle="⏱ Zeitraffer · gekoppelte Position (20 & 40)"
               openSegments={openSegmentInfo(state.familyTiers)}
               architectCover={hasArch && showArch ? architectCover : null}
@@ -196,6 +198,9 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
               <span style={{ color: "#d4a63a" }}>● Rolle</span>
               <span style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr = mehr Multi (Überlappung ×1,5/×2/×3) · gestrichelt = ohne ×</span>
             </div>
+            {/* Eis-Neudesign: 2D-Gletscher-Formationen in Blau erklärt (nur bei aktivem Eis). */}
+            <GlacierFormLegend state={state} compact />
+
           </div>
         </div>
 
