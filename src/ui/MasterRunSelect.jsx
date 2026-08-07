@@ -29,7 +29,8 @@ export function MasterRunSelect({ profile, onPlay, onClose }) {
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-2xl rounded-2xl p-5 sm:p-6 my-auto overlay-card"
         style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between gap-3">
+        {/* #UI: Kopf mit Schließen-Knopf STICKY → beim Scrollen oben rechts erreichbar. */}
+        <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 flex items-center justify-between gap-3" style={{ background: "#181820" }}>
           <h2 className="text-lg font-bold flex items-center gap-2">
             Meister-Lauf
             <span className="px-1 rounded text-[9px] font-bold font-pixel leading-tight"

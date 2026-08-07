@@ -51,6 +51,20 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
+        {/* #UI: Aktions-Leiste (Menü · Neuer Lauf) nach oben und STICKY → schwebt beim Scrollen mit, damit man den
+            Lauf sofort neu starten kann, ohne bis ans Ende zu scrollen. */}
+        <div className="sticky top-0 z-20 -mx-6 -mt-6 px-6 pt-6 pb-4 mb-6 flex gap-2" style={{ background: "#181820" }}>
+          {onMenu && (
+            <button onClick={onMenu} className="py-2.5 px-4 rounded-lg font-bold transition-all"
+              style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
+              Menü
+            </button>
+          )}
+          <button onClick={onRestart} className="flex-1 py-2.5 rounded-lg font-bold transition-all"
+            style={{ background: "#5ab87a", color: "#141419" }}>
+            Neuer Lauf
+          </button>
+        </div>
         <div className="text-center">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>Lauf beendet</div>
           {/* #253/Victory-Redesign: kompakt abgekürzt (Mio./Mrd.) gegen Overflow bei großen Scores; voller Wert im Tooltip. */}
@@ -209,24 +223,6 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           </details>
         )}
 
-        <div className="flex gap-2 mt-6">
-          {onMenu && (
-            <button
-              onClick={onMenu}
-              className="py-2.5 px-4 rounded-lg font-bold transition-all"
-              style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
-            >
-              Menü
-            </button>
-          )}
-          <button
-            onClick={onRestart}
-            className="flex-1 py-2.5 rounded-lg font-bold transition-all"
-            style={{ background: "#5ab87a", color: "#141419" }}
-          >
-            Neuer Lauf
-          </button>
-        </div>
       </div>
     </div>
   );

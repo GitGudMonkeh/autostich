@@ -32,7 +32,8 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
       style={{ background: "#0c0c10", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-md rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card"
         style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between gap-3">
+        {/* #UI: Kopf mit Schließen-Knopf STICKY → bleibt beim Scrollen oben rechts erreichbar. */}
+        <div className="sticky top-0 z-20 -mx-6 -mt-6 px-6 pt-6 pb-3 mb-1 flex items-start justify-between gap-3" style={{ background: "#181820" }}>
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Lauf-Details{rank != null ? ` · #${rank}` : ""}</div>
             {name && <div className="text-lg font-bold mt-0.5 truncate">{name}</div>}

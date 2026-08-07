@@ -91,7 +91,8 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
       onClick={onClose}>
       <div className="w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={{ background: "#15151b", border: "1px solid #33333e" }}
         onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-3">
+        {/* #UI: Kopf mit Schließen-Knopf STICKY → beim Scrollen der Übersicht oben rechts erreichbar. */}
+        <div className="sticky top-0 z-20 -mx-5 -mt-5 px-5 pt-5 pb-3 mb-3 flex items-center justify-between" style={{ background: "#15151b" }}>
           <div>
             <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Chronik</div>
             <h2 className="text-xl font-bold">Kartenübersicht</h2>
