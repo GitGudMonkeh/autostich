@@ -18,7 +18,6 @@ const toRunEntry = (r) => ({
   skills: r.skills !== undefined ? (r.skills || "").split(",").filter(Boolean) : undefined,
   maxFormations: r.max_formations, formationScore: r.formation_score,
   crits: r.crits, wins: r.wins, critBonusScore: r.crit_bonus_score, bestTrickScore: r.best_trick_score,
-  tricks: r.tricks, // Victory-Redesign: Winrate-Nenner (Siege / gespielte Stiche) auch in der globalen Detailansicht
   // #217/#201 P8-C: finale Aufstellung (nur bei Meister-Läufen befüllt) → RunDetail zeigt sie NUR für die eigene
   // Zeile (Anti-Copy #205 blendet sie bei anonymized aus).
   deckSnapshot: r.deck_snapshot,
