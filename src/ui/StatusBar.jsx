@@ -1,0 +1,103 @@
+import { fmtScore } from "./format.js";
+import { fmtDuration } from "../game/deck.js";
+
+/* Gameplay-Neu-Aufbau (docs/gameplay-redesign.md, Phase 1): die schwebende Kompakt-Leiste — die „Vitalwerte" des Laufs
+   in EINER glanzbaren, oben klebenden Zeile, samt Ablauf-Steuerung (Pause/Tempo/Karten). Ersetzt die früheren Kopf-
+   Stat-Zellen (Desktop-Header + mobiles Sticky-Panel) und übernimmt Pause/Tempo aus der Controls-Leiste.
+   Rein präsentational — Score/Mult/Serie/Fortschritt/Zeit werden fertig berechnet hereingereicht (kein Drift). */
+
+function Pill({ active, onClick, tone = "#8a7de0", title, children }) {
+  return (
+    <button type="button" onClick={onClick} title={title}
+      className="font-mono text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap"
+      style={{ background: active ? tone : "#20202a", color: active ? "#141419" : "#c8c8d0",
+               border: `1px solid ${active ? tone : "#33333e"}` }}>
+      {children}
+    </button>
+  );
+}
+
+function Cell({ label, children, align = "left", extra }) {
+  return (
+    <div className="flex flex-col justify-center gap-0.5 px-3 py-1.5 min-w-0" style={{ textAlign: align }}>
+      <span className="text-[9px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
+      <span className="font-pixel-dense leading-none whitespace-nowrap overflow-hidden text-ellipsis"
+        style={{ fontVariantNumeric: "tabular-nums", fontSize: 16 }}>{children}{extra}</span>
+    </div>
+  );
+}
+
+export function StatusBar({
+  score, ghost = {}, mult, timeStr, paused, winStreak = 0, bestStreak = 0,
+  cycle = 0, totalCycles = 1, pos = 0, cycleLen = 1, winPct = null,
+  onTogglePause, speedMult = 1, onSpeed, onChronik, deckBack,
+}) {
+  const fmtMult = (x) => x.toFixed(2).replace(".", ",");
+  const cyc = Math.min(cycle + 1, totalCycles);
+  return (
+    <div className="sticky top-0 z-20 -mx-1">
+      <div className="flex items-stretch flex-wrap gap-y-1 rounded-xl overflow-hidden as-panel"
+        style={{ background: "#1a1a22f2", border: "1px solid #33333e", backdropFilter: "blur(6px)", boxShadow: "0 8px 20px -8px #000" }}>
+        {/* Ablauf-Steuerung: Pause · Tempo · Karten */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderRight: "1px solid #26262e" }}>
+          <Pill active={paused} onClick={onTogglePause} tone="#d4a63a" title={paused ? "Weiter" : "Pause"}>{paused ? "▶" : "⏸"}</Pill>
+          <Pill active={speedMult === 2} onClick={() => onSpeed(2)} title="Tempo ×2">X2</Pill>
+          <Pill active={speedMult === 4} onClick={() => onSpeed(4)} title="Tempo ×4">X4</Pill>
+          <Pill active={speedMult === 6} onClick={() => onSpeed(6)} title="Tempo maximal">MAX</Pill>
+          {onChronik && (
+            <button type="button" onClick={onChronik} title="Kartenübersicht öffnen"
+              className="flex items-center gap-1 font-mono text-xs font-bold px-2 py-1.5 rounded-lg transition-all hover:brightness-125 whitespace-nowrap"
+              style={{ background: "#20202a", color: "#c8c8d0", border: "1px solid #33333e" }}>
+              {deckBack
+                ? <img src={deckBack} alt="" draggable="false" className="h-4 w-auto rounded-[2px] object-cover" style={{ border: "1px solid #ffffff22" }} />
+                : <span>🎴</span>}
+              <span className="hidden sm:inline">Karten</span>
+            </button>
+          )}
+        </div>
+
+        {/* Vitalwerte */}
+        <Cell label="Score">
+          <span style={{ color: "#d4a63a" }}>{fmtScore(score)}</span>
+          {ghost.hasGhost && (ghost.passed
+            ? <span className="text-[11px] ml-1.5" style={{ color: "#8a7de0" }}>⚑</span>
+            : ghost.delta != null
+              ? <span className="text-[11px] ml-1.5" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>{ghost.delta >= 0 ? "▲+" : "▼"}{fmtScore(ghost.delta)}</span>
+              : null)}
+        </Cell>
+        <div style={{ borderLeft: "1px solid #26262e" }} />
+        <Cell label="Mult">
+          <span className={mult?.shakeClass || ""}>
+            <span key={mult?.pulseKey} className="inline-block rounded px-1.5 py-0.5 font-pixel-dense"
+              style={{ fontVariantNumeric: "tabular-nums", fontSize: 15,
+                       background: mult?.hot ? `${mult.color}22` : "#ffffff0f",
+                       color: mult?.hot ? mult.color : "#8a8a92",
+                       animation: mult?.pulseKey > 0 ? "as-multpulse 420ms ease-out" : undefined }}>
+              ×{fmtMult(mult?.value ?? 1)}
+            </span>
+          </span>
+        </Cell>
+        <div style={{ borderLeft: "1px solid #26262e" }} />
+        <Cell label="Serie">
+          <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
+          <span className="text-[10px] opacity-45 ml-1">best {bestStreak}</span>
+        </Cell>
+        <div style={{ borderLeft: "1px solid #26262e" }} />
+        <Cell label="Fortschritt">
+          <span>{cyc}<span className="text-[11px] opacity-45">/{totalCycles}</span></span>
+          <span className="text-[10px] opacity-45 ml-1.5">K{pos}/{cycleLen}</span>
+        </Cell>
+
+        <div className="flex-1" style={{ minWidth: 8 }} />
+        {winPct != null && (
+          <>
+            <div className="hidden sm:block" style={{ borderLeft: "1px solid #26262e" }} />
+            <Cell label="Siegquote" align="right"><span style={{ color: winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct}%</span></Cell>
+          </>
+        )}
+        <div style={{ borderLeft: "1px solid #26262e" }} />
+        <Cell label="Zeit" align="right"><span>{timeStr}{paused ? " ⏸" : ""}</span></Cell>
+      </div>
+    </div>
+  );
+}
