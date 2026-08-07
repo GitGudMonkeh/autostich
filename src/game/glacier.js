@@ -20,7 +20,7 @@ export const BURST_SCALE = 440;
 // Weicher Deckel je EINZELBRUCH (Sim-Balance): der Burst-Stack ist voll multiplikativ (Masse×Stufe×Kaskade×Kollision×
 // Sturz×Geo) → große Cluster/Fläche/Eiszeit detonieren unbegrenzt. Über BURST_SOFTCAP zählt nur noch BURST_SOFTSLOPE
 // des Überschusses → komprimiert das Ceiling, lässt Median-Bursts (unter dem Deckel) unberührt. (Platzhalter, Sim-tunebar.)
-export const BURST_SOFTCAP = 55000;
+export const BURST_SOFTCAP = 40000;
 export const BURST_SOFTSLOPE = 0.06;
 // Legendär-Verstärker (Sim-tunebar): Große Lawine feuert erst am LAUFENDE (nichts wird vorzeitig verschwendet), bricht
 // alles auf voller Stufe, ist vom Soft-Cap ausgenommen und ×GROSSE_LAWINE_MULT → der eine echte Riesen-Score-Moment.
