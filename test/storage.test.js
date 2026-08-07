@@ -17,7 +17,7 @@ function mockLS() {
     clear: () => m.clear(),
   };
 }
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "auto", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true };
+const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true };
 
 describe("rankHighscores", () => {
   it("sortiert nach Score↓ und behält die Top 20", () => {
@@ -108,7 +108,7 @@ describe("Optionen-Merge, Highscores & Flags (#152)", () => {
     expect(o.skin).toBe("crt");   // fehlender Default aufgefüllt
     expect(o.sfxVol).toBe(0.4);
     expect(o.musicVol).toBe(0.2);
-    expect(o.reducedFx).toBe("auto"); // #200: Alt-Optionen ohne den Schlüssel bekommen den Default
+    expect(o.reducedFx).toBe("aus"); // #200: Alt-Optionen ohne den Schlüssel bekommen den Default (jetzt „aus" = volle Effekte)
     expect(o.haptics).toBe(true);     // #207: dito für den Haptik-Schlüssel
   });
   it("loadOptions: korrupter JSON → reine Defaults", () => {
