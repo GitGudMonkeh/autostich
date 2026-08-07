@@ -88,7 +88,9 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
     }
     const valueFrac = base > 0 ? boost / base : 0;
     return Math.round((valueFrac + multSum) * 100);
-  }, [state.architect, state.architectEnabled, state.playerOrder, state.deck]);
+    // state.roles/familyTiers gehören dazu: allianceGroups liest roles.E_COLOR_ALLIANCE → ein Farballianz-Pick ändert
+    // den Gebäude-Wert-Bonus, ohne die anderen Deps zu berühren (sonst zeigte der HUD-Prozentwert veraltet).
+  }, [state.architect, state.architectEnabled, state.playerOrder, state.deck, state.roles, state.familyTiers]);
   return (
     <div className="rounded-xl p-4 grid gap-3 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       {/* Kennzahlen */}
