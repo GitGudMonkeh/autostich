@@ -136,7 +136,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       <div className="w-full max-w-4xl">
-        <div className="w-full rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card"
+        <div className="w-full rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card as-panel"
           style={{ background: "#15151b", border: "1px solid #33333e" }}>
         {/* Kopf */}
         <div className="flex items-center justify-between mb-2">

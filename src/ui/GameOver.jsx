@@ -50,10 +50,10 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
-        {/* #UI: Aktions-Leiste (Menü · Neuer Lauf) nach oben und STICKY → schwebt beim Scrollen mit, damit man den
-            Lauf sofort neu starten kann, ohne bis ans Ende zu scrollen. */}
-        <div className="sticky top-0 z-20 -mx-6 -mt-6 px-6 pt-6 pb-4 mb-6 flex gap-2" style={{ background: "#181820" }}>
+      <div className="w-full max-w-lg rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel" style={{ background: "#181820", border: "1px solid #33333e" }}>
+        {/* #UI: Aktions-Leiste (Menü · Neuer Lauf) nach oben und STICKY → schwebt beim Scrollen mit. Abstand opak im
+            Balken (pt/pb), kein negativer Margin/keine transparente Lücke → kein Durchscheinen der Kopfzeile. */}
+        <div className="sticky top-0 z-20 -mx-6 px-6 pt-6 pb-6 flex gap-2" style={{ background: "#181820" }}>
           {onMenu && (
             <button onClick={onMenu} className="py-2.5 px-4 rounded-lg font-bold transition-all"
               style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>

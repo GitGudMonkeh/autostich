@@ -17,7 +17,7 @@ export function AnleitungModal({ onClose }) {
   useEscape(onClose); // #58: Escape schließt (Backdrop unten)
   return (
     <div onClick={onClose} className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel" style={{ background: "#181820", border: "1px solid #33333e" }}>
         <div className="text-center mb-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Anleitung</div>
           <h2 className="text-xl font-bold mt-1">So funktioniert Autostich</h2>

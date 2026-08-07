@@ -77,9 +77,9 @@ export function DevRunSetup({ onStart, onClose }) {
   return (
     <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto p-4"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
-      <div className="w-full max-w-lg my-6 rounded-2xl p-5 flex flex-col gap-4" style={panel} onClick={(e) => e.stopPropagation()}>
-        {/* #UI: Kopf mit ✕ STICKY → beim Scrollen der Konfiguration oben rechts erreichbar. */}
-        <div className="sticky top-0 z-20 -mx-5 -mt-5 px-5 pt-5 pb-3 flex items-center justify-between" style={{ background: "#17171c" }}>
+      <div className="w-full max-w-lg my-6 rounded-2xl px-5 pb-5 flex flex-col gap-4 as-panel" style={panel} onClick={(e) => e.stopPropagation()}>
+        {/* #UI: Kopf mit ✕ STICKY → beim Scrollen der Konfiguration oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
+        <div className="sticky top-0 z-20 -mx-5 px-5 pt-5 pb-3 flex items-center justify-between" style={{ background: "#17171c" }}>
           <div>
             <h2 className="text-lg font-bold font-pixel" style={{ color: "#d4a63a" }}>DEV RUN</h2>
             <p className="text-xs opacity-55">Frei konfigurierbarer Testlauf — nur für Devs.</p>

@@ -89,10 +89,11 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
       onClick={onClose}>
-      <div className="w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={{ background: "#15151b", border: "1px solid #33333e" }}
+      <div className="w-full max-w-4xl rounded-2xl px-5 pb-5 max-h-[95dvh] overflow-y-auto overlay-card as-panel" style={{ background: "#15151b", border: "1px solid #33333e" }}
         onClick={(e) => e.stopPropagation()}>
-        {/* #UI: Kopf mit Schließen-Knopf STICKY → beim Scrollen der Übersicht oben rechts erreichbar. */}
-        <div className="sticky top-0 z-20 -mx-5 -mt-5 px-5 pt-5 pb-3 mb-3 flex items-center justify-between" style={{ background: "#15151b" }}>
+        {/* #UI: Kopf mit Schließen-Knopf STICKY → beim Scrollen der Übersicht oben rechts erreichbar. Der Abstand liegt im
+            Header (pt/pb, opak), NICHT als negativer Margin → keine Überlappung der ersten Kartenreihe. */}
+        <div className="sticky top-0 z-20 -mx-5 px-5 pt-5 pb-4 flex items-center justify-between" style={{ background: "#15151b" }}>
           <div>
             <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Chronik</div>
             <h2 className="text-xl font-bold">Kartenübersicht</h2>

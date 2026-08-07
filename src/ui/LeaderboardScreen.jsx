@@ -83,7 +83,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
     <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* Feste Kartenhöhe → das Fenster bleibt beim Tab-Wechsel gleich groß & an gleicher Stelle; nur die Liste scrollt intern. */}
-      <div className="w-full max-w-2xl rounded-2xl p-5 sm:p-6 overlay-card flex flex-col"
+      <div className="w-full max-w-2xl rounded-2xl p-5 sm:p-6 overlay-card as-panel flex flex-col"
         style={{ background: "#181820", border: "1px solid #33333e", height: "min(85vh, 720px)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
           <h2 className="text-lg font-bold flex items-center gap-2">🏆 Bestenliste</h2>
