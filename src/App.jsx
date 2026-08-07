@@ -282,6 +282,7 @@ export function Autostich() {
       bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
       maxFormations: state.maxFormations, formationScore: state.formationScore, buildingScore: state.buildingScore,
       crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
+      bestGlacierTrickScore: state.bestGlacierTrickScore || 0, // bester Gletscher-Stich (nur wenn Eis gespielt) → separate KPI in Victory/Statistik
       // Victory/Stats-Redesign: Fraktions-Score-Kanäle mitspeichern → die feine Score-Herkunft (Gletscher/Pflanze/
       // Blitz/Feuer + Serie) steht ab jetzt auch in der Statistik (Bestes Build). Alt-Läufe ohne die Felder degradieren
       // sauber aufs grobe Modell (factionShares klemmt fehlende Kanäle auf 0 → „Sonstige").

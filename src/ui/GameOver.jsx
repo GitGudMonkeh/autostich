@@ -143,7 +143,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Stats &amp; Verlauf</div>
           <RunStatCells entry={{
             bestStreak: state.bestStreak, crits: state.crits, wins: state.wins,
-            bestTrickScore: state.bestTrickScore, tricks: state.trickNo,
+            bestTrickScore: state.bestTrickScore, bestGlacierTrickScore: state.bestGlacierTrickScore,
+            tricks: state.trickNo,
           }} sourceCells={false} />
 
           {/* Punkteverlauf: aktueller Lauf vs. (vorheriger) Rekord (#35). recordTraj ist der Snapshot

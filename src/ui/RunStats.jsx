@@ -49,6 +49,7 @@ export function RunStatCells({ entry = {}, sourceCells = true }) {
   const wins = num(entry.wins);
   const critBonusScore = num(entry.critBonusScore);
   const bestTrickScore = num(entry.bestTrickScore);
+  const bestGlacierTrickScore = num(entry.bestGlacierTrickScore); // bester Gletscher-Stich (Bruch) — nur bei Eis-Läufen > 0
   const tricks = num(entry.tricks); // Gesamtzahl gespielter Stiche → Winrate-Nenner (auch im gespeicherten Eintrag vorhanden)
 
   const winrate = wins != null && tricks != null && tricks > 0 ? `${Math.round((wins / tricks) * 100)} %` : null;
@@ -65,6 +66,15 @@ export function RunStatCells({ entry = {}, sourceCells = true }) {
         <StatCard label="Bester Stich" value={shortOrNull(bestTrickScore)} title={fullTitle("Höchster Score aus einem Stich", bestTrickScore)} color="#d4a63a" />
         <StatCard label="Crit-Quote" value={critQuote} title="Anteil Stiche mit kritischem Treffer" color="#e879f9" />
       </div>
+
+      {/* #UI: Gletscher-Stich hat seine EIGENE Bestmarke (der Bruch-Score fließt nicht in „Bester Stich"). Nur zeigen,
+          wenn im Lauf überhaupt ein Gletscher brach (> 0) → bei Nicht-Eis-Läufen bleibt die Kachel aus. */}
+      {bestGlacierTrickScore != null && bestGlacierTrickScore > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+          <StatCard label="Bester Gletscherstich" value={shortOrNull(bestGlacierTrickScore)}
+            title={fullTitle("Höchster Score aus einem Gletscher-Stich (Bruch)", bestGlacierTrickScore)} color="#5ec8f0" />
+        </div>
+      )}
 
       {/* Score-Anteil-Kacheln — nur in der Detailansicht (im Victory-Screen deckt die Score-Herkunft das ab). */}
       {sourceCells && (
