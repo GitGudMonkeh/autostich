@@ -26,9 +26,9 @@ const gameSrc = (p) => readFileSync(new URL(`../src/game/${p}`, import.meta.url)
 
 // Consumer-Quellen: hier werden Marker/Hooks tatsächlich ausgelesen (Engine, Formationen, Reducer, Helfer).
 const CONSUMER_FILES = [
-  "engine.js", "formations.js", "reducer.js", "stats.js", "runStats.js",
+  "engine.js", "formations.js", "reducer.js", "runStats.js",
   "shop.js", "perks.js", "skills.js", "families.js", "deck.js",
-];
+]; // (#267: stats.js entfernt — die Stat-Phase ist weg.)
 const CONSUMER_SRC = CONSUMER_FILES.map(gameSrc).join("\n");
 
 // Strukturelle/Meta-Keys — beschreiben KEINEN Effekt, brauchen also keinen Consumer.
@@ -109,6 +109,8 @@ const BATTERY = (() => {
       triumphActive: r() < 0.5, secondLastResult: pick(["win", "loss", null]),
       segmentLowRank: int(-1, 2), segmentIndex: int(0, 7), trickNo: int(1, 45),
       coverCount: int(0, 24), underBuilding: r() < 0.5, underStructure: r() < 0.5, // Gebäude-Perks (Architekt)
+      // #267 Präzision (Kat. P): Karten-Kontext der konditionalen Crit-Generatoren (Zielsicherheit/Brennglas/Farbfokus).
+      formCount: int(0, 4), suit: pick(["R", "B", "G", "Y"]), focusSuits: [pick(["R", "B", "G", "Y"])],
     };
   });
 })();

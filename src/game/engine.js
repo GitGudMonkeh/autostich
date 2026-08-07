@@ -2,28 +2,36 @@ import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
-import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus } from "./families.js";
-import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, ionScoreFor, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
-  hasIonize, hasStorm, chargeFloorFor,
+import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
+import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
+import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryOffer, ionScoreFor, ionCritChance, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
+  hasIonize, hasStorm, chargeFloorFor, fieldBreadthSaturated, fieldDepthSaturated, ionSpeedBonus, // Blitz-Rework v0.5: 2-Stufen-Sättigung + Speed
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
-  hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasSeriesCrit, hasBlitzableiter, hasWetterleuchten, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
-  hasDoubleDischarge, hasAreaIonize, hasDurchschlag, activeLightningCount, // Blitz-Rework (v0): Legendäre + Bekenntnis-Skalierung
+  hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasBlitzableiter, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
+  hasDoubleDischarge, hasAreaIonize, hasDurchschlag, activeLightningCount, hasThunderGod, hasSerienschutz, // Blitz-Rework (v0/v0.5): Legendäre + Serienschutz
   fireFlag, hasHeatConsumer, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, // Feuer-Rework (v0); #234: hasHeatConsumer statt heatConsumerOf (mehrere Hitze-Konsumenten je einzeln)
   glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
-  hasStandstill, hasFrostReserve, hasIceBloom, hasIceAnchor, hasPermafrost, iceSkillCount, // Eis-Rework (v0)
-  layerValue, totalLayers, hasGletscher, hasEisdruck, hasKristallineMasse, hasBestaendigkeit, hasVerschraenkung, // Eis-Rework (v0): Schicht-Engine
-  hasVergletscherung, hasArchitekt, // Eis-Rework (v0): Legendäre
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
-  hasWurzelschlag, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Tiefe/Breite
+  plantPassiveActive, hasKernholz, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Fraktions-Passive (Mono/Schwellen-Knick) / Kernholz / Tiefe / Breite
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
-  hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasDornenkoenig, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
-import { STAT_IDS, statStreakFactor, statFormFactor } from "./stats.js";
-import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
+  hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasBaumreihe, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
+// (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
+import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, skillLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
+import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftTarget as glacierDriftTarget,
+  neighbors4 as glacierNeighbors4, glacierNeighborFn, verschmelzenPool, uebergletscherPool, packeisTick, verzahnungTick, eiszeitTick, glacierGeometry,
+  ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
+  ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as GLACIER_SCHNEETREIBEN_SEED,
+  EISPANZER_MASS as GLACIER_EISPANZER_MASS, FROSTBUND_BUFF as GLACIER_FROSTBUND_BUFF,
+  VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE, ERSTARRUNG_FRAC as GLACIER_ERSTARRUNG_FRAC } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
+
+// ERKUNDUNG Hebel 7: Commitment-Scaler mit Konvexitäts-Exponent. commitScale(count) = min(1, count/SKILL_SLOTS)^COMMIT_EXP.
+// COMMIT_EXP=1 (Default) → linear = bisheriges Verhalten (neutral). >1 → konvex (Verdünnung kostet superlinear).
+const commitScale = (count) => Math.pow(Math.min(1, count / C.SKILL_SLOTS), C.COMMIT_EXP);
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -90,7 +98,7 @@ export function resolveTrick(state, rng) {
     winSuit = null, winSuitStreak = 0, // #71 Farbserie: gleicher-Farbe-Siegesserie
     recentResults = [], // #71 Volles Haus: die letzten (bis zu 4) Ergebnisse VOR diesem Stich (für secondLastResult, C_GUARD IV)
     segmentWins = 0, // #189 Volles Haus: Siege im AKTUELLEN Segment vor diesem Stich (segment-genau, ersetzt das rollende Fenster)
-    statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0, statOffer = null, // Stat-System (V2 §22.3)
+    // (#267: Stat-System entfernt — statCrit*/statForm*/statStreak*/statOffer sind weg; Crit kommt aus Präzision-Familien + Blitz.)
     formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
@@ -99,15 +107,30 @@ export function resolveTrick(state, rng) {
     vabanquePaid = 0, // Vabanque (#203): Zahl der Eröffnungs-Wetten, die dieser Lauf schon ausgezahlt hat (Lauf-Deckel gegen Front-Load-Exploit)
     crits, critBonusScore, bestTrickScore,
     maxFormations = 0, formationScore = 0, buildingScore = 0, streakScore = 0, // #161 FB-2 + #251: Score-Anteile (Formation / Architekt-Gebäude / Serie)
+    // #270 Fraktions-Panels: kumulative Fantasie-Kennzahlen je Fraktion (nur Anzeige). Ertrag = ROHER Eigen-Score, den die
+    // Fraktions-Mechanik erzeugt hat: ihre Flats (VOR dem geteilten Multiplikator-Stack) + ihre post-stack Direkt-Dividenden.
+    // Bewusst der Roh-Beitrag (nicht mit Formation/Serie/Crit multipliziert) → ehrliche, nicht aufgeblähte Zahl je Fraktion.
+    // Getrennte Sub-Kanäle je namentlicher Fantasie (#270.2): Pflanze Wurzel/Blüte/Ernte · Feuer Grund/Weißglut. Eis/Blitz
+    // bleiben je EIN kohärenter Kanal (Eis = „Schichten zahlen", Blitz = Ionisierung; Blitz-Crit steht global in der Rail).
+    lightYield = 0, // Blitz-Eigen-Score (Kanal)
+    plantRoot = 0, plantBloom = 0, plantHarvest = 0, // Pflanze: Wurzel- / Blüten- / Ernte-Score
+    fireBase = 0, fireWhite = 0, // Feuer: Grund-Score / Weißglut-Score
+    ionTotal = 0, growthTotal = 0, ashBurned = 0, brandTotal = 0, // Motor-Zähler: ionisierte Karten / Wachstum / verbrannte Asche / gebrandmarkte Gegnerkarten
+    trimCount = 0, // #288 Trimmen: ersetzte Wachstums-Skills → Wurzel-/Blüten-Multiplikator
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
-    iceTemp = {}, frostbitePending = {}, frostbiteActive = {}, // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff (je oppCard.id → −Wert)
-    layers = {}, frostFormPrev = [], // Eis-Rework (v0): Schichten je Frostkarte-id (permanent) / Frostkarten, die im Vordurchlauf in Formation siegten (Beständigkeit)
+    iceTemp = {}, // temporärer Wertbonus je card.id (Blitzfänger — an gefangenen Karten; #93)
     ash = 0, brandPending = {}, brandActive = {}, forged = {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
     growth = {}, colonized = {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green auf der Karte)
+    plantLoss = {}, // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id — je WURZELSCHLAG_LOSS_EVERY wächst die Karte trotzdem
+
     shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
     architect = null, architectEnabled = false, architectPre = null, // Architekt (#202, Shop-Ersatz): Gebäude-Overlay (8×5) + Durchlauf-Precompute
-    seed = null, offerRerolls = 0, // #205 Challenger Mode: Lauf-Seed (null = unseeded/Sim) + Reroll-Index des akt. Angebots
+    glacierMass = [], glacierLocked = [], glacierPre = null, glacierYield = 0, glacierRoles = [], // Eis-Neudesign (glacier.js): Firn-Boden-Masse / Lock / Snapshot / Eigen-Score / aktive Rollen (Fundament-Modifikatoren)
+    grosseLawineFired = false, // Eis-Neudesign (Große Lawine): One-Shot-Finisher — feuert genau einmal, danach inert
+    frozenOppPending = {}, frozenOppActive = {}, // Eis-Neudesign (Einfrieren): Gegnerkarten, die im nächsten Durchlauf ihren Stich garantiert verlieren (je oppCard.id)
+    glacierBuffPending = {}, glacierBuffActive = {}, // Eis-Neudesign (Frostbund): Wert-Buff auf eigene Nicht-Eis-Nachbarkarten (je card.id, nächster Durchlauf)
+    seed = null, // #205 Challenger Mode: Lauf-Seed (null = unseeded/Sim) + Reroll-Index des akt. Angebots
     difficulty = null, // #226 Großmeister: { oppRampEvery } — mitwachsender Gegner. null (Meister/Basis) = No-op, byte-identisch.
   } = state;
 
@@ -160,6 +183,43 @@ export function resolveTrick(state, rng) {
   if (pos === 0) {
     formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
     archPreNow = archState ? precomputeArchitect(archState, playerOrder, deck) : null;
+  }
+  // Eis-Neudesign (docs §2.4): Snapshot am Durchlauf-Start — der ganze Bruch wird auf dem statischen Brett vorab gerechnet
+  // (analog precomputeArchitect), pro Stich ausgezahlt. Der Teil-Reset (−1 Stufe) greift SOFORT auf die Arbeits-Masse;
+  // Siege dieses Durchlaufs addieren darauf, Ewiger Frost am Durchlauf-Ende. Isoliert über activeArchetypes "glacier".
+  const glacierActive = activeArchetypes.includes("ice"); // Eis-Neudesign: der Eis-Archetyp IST der Gletscher
+  const glacierNF = glacierActive ? glacierNeighborFn(glacierRoles) : null; // Eisbrücke → 8-Nachbarschaft, sonst 4
+  let glacierPreNow = glacierPre;
+  let newGlacierMass = Array.isArray(glacierMass) ? glacierMass.slice() : [];
+  let newGlacierLocked = glacierLocked; // wird nur von Eiszeit (Auto-Lock) verändert; sonst durchgereicht
+  let newGrosseLawineFired = grosseLawineFired; // Große Lawine: nach dem ersten aktiven Durchlauf verbraucht
+  if (glacierActive && pos === 0) {
+    // Pooling vor dem Bruch: Ewiges Schild (Legendär) poolt das GANZE Feld, sonst Verschmelzen den Cluster (nie fallend).
+    const snapMass = glacierRoles.includes(GLACIER_ROLES.L_SCHILD) ? uebergletscherPool(glacierMass, glacierLocked)
+      : glacierRoles.includes(GLACIER_ROLES.VERSCHMELZEN) ? verschmelzenPool(glacierMass, glacierLocked, glacierNF)
+      : glacierMass;
+    // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld; Eiswall hebt die Linie.
+    const glacierGeo = glacierGeometry(glacierLocked, { eiswall: glacierRoles.includes(GLACIER_ROLES.EISWALL) });
+    const glacierO = glacierOpts(glacierRoles);
+    // Große Lawine (Legendär): einmaliger Finisher — feuert erst im LETZTEN Durchlauf (Masse maximal angesammelt, kein
+    // vorzeitiges Abkalben). Bricht dann alles auf voller Stufe, ungedeckelt & ×GROSSE_LAWINE_MULT (glacier.js).
+    const effMaxCycles = state.maxCycles || (difficulty && difficulty.maxCycles) || C.MAX_CYCLES;
+    if (glacierRoles.includes(GLACIER_ROLES.L_LAWINE) && !grosseLawineFired && cycle >= effMaxCycles - 1) {
+      glacierO.grosseLawine = true; newGrosseLawineFired = true;
+    }
+    glacierPreNow = precomputeGlacier(snapMass, glacierLocked, { ...glacierO, formFactor: glacierGeo });
+    // Anzeige-Basis dieses Durchlaufs ist snapMass — das POOLING (Verschmelzen → Cluster-Ø, Ewiges Schild → Feld-Max
+    // +Bonus) ist ein Durchlauf-BEGINN-Buff und soll SOFORT sichtbar sein (alle Gletscher gleich hochgezogen), nicht
+    // erst Stich für Stich. Nur der Bruch-ABFALL wird pro Stich verbraucht: `burn` = snapMass − resetMass (immer ≥ 0),
+    // je Feld genau EINMAL abgezogen (consumed-Guard). Der Netto-Akkumulator/Score bleibt identisch — nur das Timing/HUD ändert sich.
+    newGlacierMass = snapMass.slice();
+    const burn = glacierPreNow.resetMass.map((rm, p) => glacierLocked[p] ? ((snapMass[p] || 0) - (rm || 0)) : 0);
+    glacierPreNow = { ...glacierPreNow, burn, consumed: {} };
+  }
+  // Verbrauch für das Feld DIESES Stichs: genau einmal je Feld/Durchlauf den Bruch-Abfall abziehen (Rest-Gewinne bleiben).
+  if (glacierActive && glacierPreNow && glacierPreNow.burn && glacierLocked[actualPos] && !(glacierPreNow.consumed && glacierPreNow.consumed[actualPos])) {
+    newGlacierMass[actualPos] = Math.max(0, (newGlacierMass[actualPos] || 0) - (glacierPreNow.burn[actualPos] || 0));
+    glacierPreNow = { ...glacierPreNow, consumed: { ...(glacierPreNow.consumed || {}), [actualPos]: true } };
   }
   // #161 FB-2: Peak gleichzeitig aktiver Formationen über den Run — zu Durchlaufbeginn, sobald das Layout feststeht.
   if (pos === 0) maxFormations = Math.max(maxFormations || 0, summarizeFormations(formations).count);
@@ -246,13 +306,9 @@ export function resolveTrick(state, rng) {
   }
   // Rückzündung: nach einer Niederlage bekommt die Karte +2 Wert (hilft, den Konter zu gewinnen).
   if (fireFlag(skills, "rueckzuendung") && lastResult === "loss") fireValueBonus += C.RUECKZUENDUNG_VALUE;
-  // ---- Eis (#93 F3): temp. Wertbonus (Kältereserve/Kaltfront/Frostspur, an card.id) + Permafrost +2 (Dauerwert eingefroren).
-  // Eis-Rework (v0): Schicht-Dauerwert der Frostkarte (Gletscher superlinear) + Kristalline Masse (Summe ≥ Schwelle).
-  const iceGletscher = hasGletscher(skills);
-  const iceTotalLayers = totalLayers(layers);
-  const iceValueBonus = (iceTemp[pCard.id] || 0)
-    + (pCard.frozen ? layerValue(layers[pCard.id] || 0, iceGletscher) : 0)
-    + (pCard.frozen && hasKristallineMasse(skills) && iceTotalLayers >= C.KRISTALLINE_THRESHOLD ? C.KRISTALLINE_VALUE : 0);
+  // Temporärer Wertbonus an card.id (Blitzfänger #93): eine per Ionisierung „gefangene" Karte trägt bis zu ihrem
+  // Auftauchen einen temp. Wert. Mit dem Auftauchen verbraucht (unten aus newIceTemp gelöscht).
+  const iceValueBonus = (iceTemp[pCard.id] || 0);
   const anchorPowerBonus = anchorType === "power" ? (aParam("power") || 0) : 0; // Kraftanker (§4.2, Stärke = Stufe)
   // E_QUICKSHOT IV (Rarität #167 Kat. E, Spec §3.2 E8 IV): jede Anker-Position (jede fünfte) erhält zusätzlich +2 Wert.
   // Der Anker-FAKTOR selbst läuft über computeFormations; hier nur der Stufe-IV-Wertbonus (anchor.value auf Anker-Positionen).
@@ -263,23 +319,34 @@ export function resolveTrick(state, rng) {
   const familyValueBonus = familySumHook(familyTiers, "cardBonus", { ...ctx, pValueBase: pCard.value });
   // Damaststahl (L, Underdog): geschmiedete Karten kämpfen mit +Wert → die tiefen Schmiede-Karten schlagen über ihrem Gewicht.
   const damascusCombat = (fireFlag(skills, "damascus") && (forged[pCard.id] || 0) > 0) ? C.DAMASCUS_COMBAT : 0;
+  // #289: Farballianz-Gruppen einmal je Stich — an ALLE Farb-Verbraucher (Architekt/Farbserie/Farbfokus) gereicht.
+  const alliance = allianceGroups(familyTiers, roles);
   // Architekt value-Gebäude (#202, Tragwerk): +temp Wert VOR dem Vergleich (an dieser Position, Bedingung je Familie).
-  const architectValue = archPreNow ? architectValueBonus(archPreNow, actualPos, pCard) : 0;
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + damascusCombat;
+  const architectValue = archPreNow ? architectValueBonus(archPreNow, actualPos, pCard, alliance) : 0;
+  // Sturm-Sättigung (Blitz-Rework v0.5, global, nur bei aktivem Blitz; Stand VOR diesem Stich):
+  //   Breite → alle Karten +ION_SATURATION_VALUE Wert (bedingt). Tiefe → Überschlag-Graduierung (unten).
+  const lightBreadth = !!(lightning && lightning.active && fieldBreadthSaturated(deck));
+  const lightDepth   = !!(lightning && lightning.active && fieldDepthSaturated(deck));
+  const satValueBonus = lightBreadth ? C.ION_SATURATION_VALUE : 0;
+  const glacierBuff = glacierActive ? (glacierBuffActive[pCard.id] || 0) : 0; // Frostbund: Wert-Buff auf gebuffte Nicht-Eis-Nachbarkarte
+  // Verdichtung (docs §4 Firn): auf einem Gletscher wird der Gebäude-Wertbonus NICHT ausgespielt, sondern in Masse getankt
+  // (unten im Auszahlungs-Block). Hier: im Kampf unterdrücken, damit er nicht doppelt (Wert + Masse) zählt.
+  const verdichtung = glacierActive && glacierRoles.includes(GLACIER_ROLES.VERDICHTUNG) && !!glacierLocked[actualPos];
+  const architectValueEff = verdichtung ? 0 : architectValue;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + damascusCombat + satValueBonus + glacierBuff;
   // #226 Großmeister: Gegner-Aufschlag = flacher oppValue + mitwachsender Ramp (+1 Wert alle oppRampEvery Durchläufe),
   // additiv VOR den Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, byte-identisch.
   const rampMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
   const oppValueMod = difficulty ? (difficulty.oppValue || 0) + rampMod : 0;
-  // Frostbiss (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −3 Wert (nie < 0); sonst neutral (§12).
-  const oValue = Math.max(0, oCard.value + oppValueMod - (frostbiteActive[oCard.id] || 0) - (brandActive[oCard.id] || 0)); // Vergletscherung (Eis, ∝ Schichten) + Brand (Feuer)
-  // Eis: der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht.
+  // Brand (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −Wert (nie < 0); sonst neutral (§12).
+  const oValue = Math.max(0, oCard.value + oppValueMod - (brandActive[oCard.id] || 0)); // Brand (Feuer)
+  // Der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht (Blitzfänger).
   let newIceTemp = { ...iceTemp };
   delete newIceTemp[pCard.id];
-  let newFrostbitePending = { ...frostbitePending }; // Vergletscherung: im laufenden Durchlauf markierte Gegnerkarten {oppId: −Wert} (für den nächsten)
-  let newFrostbiteActive = frostbiteActive;          // in diesem Durchlauf aktive Marken (am Durchlauf-Ende ausgetauscht)
-  let newLayers = layers;                            // Eis-Schichten (permanent; immutabel fortgeschrieben)
-  let newFrostFormPrev = frostFormPrev;              // Beständigkeit: Frostkarten, die im Vordurchlauf in Formation siegten
-  let newFrostFormCur = [];                          // dieser Durchlauf: Frostkarten, die in Formation siegen (wird am Ende zu prev)
+  let newFrozenOppPending = { ...frozenOppPending };  // Einfrieren: in diesem Durchlauf gesetzte Gegner-Marken (für den nächsten)
+  let newFrozenOppActive = frozenOppActive;           // Einfrieren: in diesem Durchlauf aktive Marken (Gegnerkarte verliert)
+  let newGlacierBuffPending = { ...glacierBuffPending }; // Frostbund: in diesem Durchlauf gebufften Nachbarkarten (für den nächsten)
+  let newGlacierBuffActive = glacierBuffActive;         // Frostbund: in diesem Durchlauf aktive Wert-Buffs
   // Feuer-Rework (v0): Asche-Zuwachs / Brand-Marker für den NÄCHSTEN Durchlauf (brandActive wird am Durchlauf-Ende getauscht).
   let newAsh = ash;
   let newBrandPending = { ...brandPending };
@@ -288,10 +355,14 @@ export function resolveTrick(state, rng) {
   // Pflanze-Fraktion (v0): Wachstum (immutabel fortgeschrieben) / kolonisierte Gegnerkarten. Grün = card.green (im deck gebacken).
   let newGrowth = growth;
   let newColonized = { ...colonized };
+  let newPlantLoss = plantLoss; // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id (immutabel fortgeschrieben)
   let architectBump = null; // Architekt Meilenstein (#202): Gebäude-id, dessen Sieg-Zähler nach diesem Stich hochzählt
 
   let won = false, lost = false, tieConverted = false;
-  if (pValue > oValue) won = true;
+  // Eis-Neudesign (Einfrieren): eine eingefrorene Gegnerkarte verliert diesen Stich garantiert (unabhängig vom Wert).
+  const oppFrozen = glacierActive && !!frozenOppActive[oCard.id];
+  if (oppFrozen) won = true;
+  else if (pValue > oValue) won = true;
   else if (pValue < oValue) lost = true;
   // Gleichstand → Sieg nur via B5 „Initiative" (tieArmed).
   else if (tieArmed) { won = true; tieConverted = true; }
@@ -302,6 +373,10 @@ export function resolveTrick(state, rng) {
 
   let gained = 0;
   let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
+  // Eis-Neudesign: der Gletscher-Bruch profitiert vom VOLLEN Sieg-Stack, WENN die Gletscher-Karte ihren Stich gewinnt
+  // (Serie × Perk/Familie × Formation × Nachhall × Kern × Sonnenzorn × Architekt × Crit). Bei Niederlage bleibt es ×1
+  // (Basis-Burst). So hat der Rest des Spiels Hebel auf den Gletscher-Score, statt dass nur Gletscher-Skills zählen.
+  let glacierWinMult = 1;
   let breakdown = null; // Ergebnis-Aufschlüsselung eines Siegs (§17): exakt die Faktoren der Score-Formel
 
   if (won) {
@@ -309,10 +384,35 @@ export function resolveTrick(state, rng) {
     segmentWins += 1; // #189 Volles Haus: Sieg im aktuellen Segment (recentWinCount trug oben den Stand DAVOR)
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     serieStreak = winStreak; // effektive Serie NACH diesem Sieg
+    // Eis-Neudesign (docs §2.2 / §4 Firn): Sieg eines Gletschers → +Masse auf seinem Feld (Baseline + Rollen).
+    if (glacierActive && glacierLocked[actualPos]) {
+      const preMass = newGlacierMass[actualPos] || 0;   // Masse VOR dem Sieg (Schneetreibens 0-Sonderfall)
+      let add = GLACIER_WIN_MASS;
+      // Anfrieren: Sieg extra, Formations-Sieg zusätzlich obendrauf.
+      if (glacierRoles.includes(GLACIER_ROLES.ANFRIEREN)) add += GLACIER_ANFRIEREN_WIN + (hasFormation ? GLACIER_ANFRIEREN_FORM : 0);
+      newGlacierMass[actualPos] = preMass + add;
+      // Schneetreiben (Verwehung): ADDITIV +SEED aufs Nachbarfeld (der Gletscher behält seine volle Sieg-Masse). Hatte er
+      // vor dem Sieg 0 Masse, gibt er stattdessen seine Sieg-Masse ab (Transfer). Deterministisch, bevorzugt offenen Boden, 4-Nb.
+      if (glacierRoles.includes(GLACIER_ROLES.SCHNEETREIBEN)) {
+        const tgt = glacierDriftTarget(actualPos, glacierLocked);
+        if (tgt != null) {
+          if (preMass > 0) {
+            newGlacierMass[tgt] = (newGlacierMass[tgt] || 0) + GLACIER_SCHNEETREIBEN_SEED;
+          } else {
+            const give = Math.min(GLACIER_WIN_MASS, newGlacierMass[actualPos] || 0);
+            newGlacierMass[actualPos] -= give; newGlacierMass[tgt] = (newGlacierMass[tgt] || 0) + give;
+          }
+        }
+      }
+    }
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich.
     // #71 Farbserie: Länge der Serie gewonnener Stiche gleicher Farbe INKL. dieses Siegs. D_SUIT_STREAK IV:
     // ein Farbwechsel HALBIERT die laufende Länge (min 1) statt sie auf 1 zurückzusetzen (suitHalveOnSwitch).
-    const suitStreak = pCard.suit === winSuit ? winSuitStreak + 1
+    // Effektive Farbe: pflanzen-grüne Karten (card.green) zählen als „Grün" („G") — auf dem Board grün angezeigt, also
+    // auch für die Farbserie dieselbe Farbe (konsistent zu Farbverstärkung). Ein Lauf grüner Karten hält so die Serie.
+    const eSuit = pCard.green ? "G" : pCard.suit;
+    // #289: verbündete Farben (Farballianz) zählen als dieselbe Farbe → sie SETZEN die Farbserie fort statt sie zu brechen.
+    const suitStreak = colorsAllied(eSuit, winSuit, alliance) ? winSuitStreak + 1
                      : (suitHalveOnSwitch ? Math.max(1, Math.floor(winSuitStreak / 2)) : 1);
     // #195: posInCycle = actualPos (Deckposition), NICHT pos (Stich-Index) — muss zum segmentWins-Reset oben
     // (actualPos % SEGMENT_SIZE) passen. Sonst divergieren bei partieller Zeitsegment-Wiederholung Gate (D_FULL_HOUSE
@@ -324,9 +424,10 @@ export function resolveTrick(state, rng) {
                    baseValue: pCard.value, // Basiswert der gespielten Karte
                    coverCount: archPreNow ? (archPreNow.coverCount || 0) : 0, // Gebäude-Perk Dichte Bebauung (D_BEBAUUNG): abgedeckte Positionen
                    hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung (D15)
-    winSuit = pCard.suit; winSuitStreak = suitStreak; // Farbserie fortschreiben
+    winSuit = eSuit; winSuitStreak = suitStreak; // Farbserie fortschreiben (effektive Farbe: grün = „G")
     // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überlauf), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
     let fireFlat = meltScore; // Schmelzpunkt-Drip (im Vor-Stich verbrauchte Hitze) zahlt sich hier als Flat aus (nur bei Sieg)
+    let fireWhiteWin = 0;     // #270.2: Weißglut-Anteil DIESES Siegs (Rest von fireFlat = Feuer-Grund-Score)
     let fireDividendHeat = 0;  // gehaltene Hitze beim Sieg (vor evtl. Flächenbrand-Verbrauch) → Glutdividende (direkter Score, s. u.)
     if (heat && heat.active) {
       const fmargin = pValue - oValue;
@@ -335,7 +436,7 @@ export function resolveTrick(state, rng) {
       const raw = heat.value + gain;
       // Weißglut: der über HEAT_MAX hinaus überlaufende Hitzeanteil wird zu Score (Sonnenzorn ×2).
       const overflow = Math.max(0, raw - heat.max);
-      if (overflow > 0) fireFlat += whiteHeatScore(overflow, skills, heat.max);
+      if (overflow > 0) { const wh = whiteHeatScore(overflow, skills, heat.max); fireFlat += wh; fireWhiteWin += wh; } // #270.2: Weißglut-Kanal
       heat = { ...heat, value: Math.min(heat.max, raw), peak: Math.max(heat.peak || 0, Math.min(heat.max, raw)) }; // peak = Sonnenzorn
       fireDividendHeat = heat.value; // gehaltene Hitze NACH diesem Sieg, VOR evtl. Flächenbrand-Verbrauch → Glutdividende
       // Feuer-Score (Grund-Payoff): (Vorsprung−OFFSET)×Basis, ×Verbrennung (≥8/≥12), ×Sonnenzorn (≥80 %). Basis für Funkenflug.
@@ -364,103 +465,14 @@ export function resolveTrick(state, rng) {
       const hot = !!(heat && heat.active && heat.value >= C.SCHMELZOFEN_MIN_HEAT && fireFlag(skills, "schmelzofen"));
       const brandBonus = hot ? C.SCHMELZOFEN_BRAND_BONUS : 0;
       newBrandPending[oCard.id] = Math.max(newBrandPending[oCard.id] || 0, C.BRAND_VALUE + brandBonus);
-      newAsh += C.BRAND_ASH + brandBonus;
+      newAsh += C.BRAND_ASH + brandBonus; brandTotal += 1; // #270.2: Motor-Zähler „gebrandmarkte Gegnerkarten"
       if (fireFlag(skills, "lauffeuer")) {
         const oi = oppOrder[actualPos];                     // Index der Gegnerkarte im oppDeck-Array
         const nb = oi + 1 < oppDeck.length ? oi + 1 : oi - 1; // Deck-Nachbar (kein Wrap; Rand → linker Nachbar)
         if (nb >= 0) {
           newBrandPending[oppDeck[nb].id] = Math.max(newBrandPending[oppDeck[nb].id] || 0, C.BRAND_SPREAD_VALUE + brandBonus);
-          newAsh += C.BRAND_ASH + brandBonus;
+          newAsh += C.BRAND_ASH + brandBonus; brandTotal += 1; // #270.2: Lauffeuer-Übergriff zählt mit
         }
-      }
-    }
-    // ---- Eis (#93 F3): Stillstand-Flat + Frostbiss-Markierung (Sieg mit einer eingefrorenen Karte).
-    // ---- Eis-Rework (v0): Ablage A (Sieg in ≥1 Formation → Schicht), Stillstand, Eisblüte, Verschränkung, Beständigkeit,
-    //      Eisanker-Schicht, Eisdruck/Architekt (Formations-Faktor), Vergletscherung (Gegner-Debuff ∝ Schichten).
-    let iceFlat = 0;
-    let iceDirect = 0;   // Eis-Legendär-Reshape: DIREKTE, post-stack, hart gedeckelte Dividende aus der Überlauf-Tiefe (unten zu `gained`)
-    let iceFormMult = 1; // Eisdruck/Architekt: zusätzlicher Formations-Faktor der Frostkarte (unten in formMult)
-    if (pCard.frozen) {
-      const nForms = baseFormationCount(posForm);
-      const inFormation = positionHasFormation(posForm);
-      const myLayers = layers[pCard.id] || 0;
-      const capLayers = Math.min(myLayers, C.ICE_LAYER_MAX); // Anti-Runaway v0.1: wirksame Schichten für Eisdruck/Vergletscherung gedeckelt
-      // Stillstand: Frostkarte siegt in ≥1 Formation → +200 Flat (flacher Früh-Support).
-      if (hasStandstill(skills) && inFormation) iceFlat += C.STILLSTAND_SCORE;
-      // Eis-Score-Hebel (v0.1): tiefe Schichten zahlen bei JEDEM Frost-Sieg in Score — „tiefe Pfeiler scoren groß".
-      // NICHT formations-gebunden: Eis friert niedrige Karten (Frostwahl), die selten in Formation siegen; die Schichten
-      // machen sie stark genug zum Siegen, DANN zahlen sie. Alle Eis-Builds profitieren.
-      if (capLayers > 0) iceFlat += capLayers * C.ICE_ABLAGE_SCORE_PER_LAYER;
-      // Ablage A: Sieg in ≥1 Formation → +1 Schicht (+Permafrost/+Beständigkeit/+Verschränkung). Eisanker garantiert eine auch ohne volle Formation.
-      let addLayers = 0;
-      if (inFormation) {
-        addLayers += C.ICE_ABLAGE_A_LAYER;
-        if (hasPermafrost(skills)) addLayers += C.PERMAFROST_LAYER_BONUS;
-        if (hasBestaendigkeit(skills) && frostFormPrev.includes(pCard.id)) addLayers += C.BESTAENDIGKEIT_LAYER;
-        if (hasVerschraenkung(skills) && nForms >= 3) addLayers += C.VERSCHRAENKUNG_LAYERS;
-        newFrostFormCur = [...newFrostFormCur, pCard.id];
-      } else if (hasIceAnchor(skills)) {
-        addLayers += C.ICE_ABLAGE_A_LAYER + (hasPermafrost(skills) ? C.PERMAFROST_LAYER_BONUS : 0);
-      }
-      if (addLayers > 0) newLayers = { ...newLayers, [pCard.id]: myLayers + addLayers };
-      // Eisblüte: Sieg in ≥2 Formationen → gefrorene Deck-Nachbarn banken eine Schicht.
-      if (hasIceBloom(skills) && nForms >= 2) {
-        for (const nb of [actualPos - 1, actualPos + 1]) {
-          if (nb < 0 || nb >= playerOrder.length) continue;
-          const nc = deck[playerOrder[nb]];
-          if (nc.frozen) newLayers = { ...newLayers, [nc.id]: (newLayers[nc.id] != null ? newLayers[nc.id] : (layers[nc.id] || 0)) + C.EISBLUETE_LAYER };
-        }
-      }
-      // Eisdruck: Formationsfaktor skaliert mit den Schichten der Frostkarte.
-      if (hasEisdruck(skills) && inFormation && capLayers > 0) iceFormMult *= 1 + capLayers * C.EISDRUCK_STEP;
-      // Architekt: vertikale Formation — je weitere Frostkarte in derselben Spalte (pos%5) ein zusätzlicher Faktor.
-      if (hasArchitekt(skills)) {
-        const col = actualPos % SEGMENT_SIZE;
-        let colFrost = 0;
-        for (let p = 0; p < playerOrder.length; p++) if (p % SEGMENT_SIZE === col && deck[playerOrder[p]].frozen) colFrost += 1;
-        if (colFrost >= 2) iceFormMult *= 1 + (colFrost - 1) * C.ARCHITEKT_STEP;
-      }
-      // Vergletscherung: markiert Gegnerkarten für den NÄCHSTEN Durchlauf, −Wert ∝ Schichten der Siegkarte (min 1).
-      if (hasVergletscherung(skills)) {
-        const debuff = Math.max(1, capLayers * C.VERGLETSCHERUNG_PER_LAYER);
-        const pool = oppDeck.map((c) => c.id).filter((id) => !(id in newFrostbitePending));
-        const glaciateRng = rngAtOr(cycle, "glaciate", pos); // #205: eigener Sub-Strom je Stich
-        for (let k = 0; k < C.VERGLETSCHERUNG_COUNT && pool.length; k++) {
-          const id = pool.splice(Math.floor(glaciateRng() * pool.length), 1)[0];
-          newFrostbitePending[id] = Math.max(newFrostbitePending[id] || 0, debuff);
-        }
-      }
-      // ---- Eis-Legendär-Reshape (2026-07-30): DIREKTE Dividende aus der ÜBERLAUF-Tiefe (Schichten über ICE_LAYER_MAX,
-      //      generisch verschwendet). Am Multiplikator-Stack VORBEI (unten zu `gained`), hart gedeckelt (Plateau, kein
-      //      Wachstum), bekenntnis-skaliert (cross-health). Nur Legendär-Halter → generisches Eis (Deckel 12) unberührt.
-      if (hasGletscher(skills) || hasPermafrost(skills)) {
-        const iceCommit = Math.min(1, iceSkillCount(skills) / C.SKILL_SLOTS);
-        // EIN Scan über alle Frostkarten: TIEFSTER Pfeiler (Gletscher, Konzentration) + SUMME (Permafrost, Breite).
-        // Wichtig: die Überlauf-Tiefe sitzt auf GEBANKTEN Karten (Ablage B bankt ungenutzte Frostkarten) — also gerade
-        // die, die NICHT gewinnen → eine Dividende auf die SIEGKARTE zündet kaum. Beide Legendäre lesen daher den
-        // BESTAND (nicht die Siegkarte) und zahlen je Frost-Sieg.
-        let maxOv = 0, sumOv = 0;
-        for (const c of deck) if (c.frozen) {
-          const o = (layers[c.id] || 0) - C.ICE_LAYER_MAX;
-          if (o > 0) { sumOv += o; if (o > maxOv) maxOv = o; }
-        }
-        // Gletscher (Konzentration, SUPERLINEAR): der EINE tiefste Pfeiler zahlt je Frost-Sieg — je tiefer, desto mehr
-        // JEDE Schicht (dreieckig m(m+1)/2, via Deckel geplateaut). Das ist die „Gletscher wächst"-Fantasie, gebändigt.
-        if (hasGletscher(skills) && maxOv > 0) {
-          const m = Math.min(maxOv, C.GLETSCHER_OVERFLOW_CAP);
-          iceDirect += (m * (m + 1) / 2) * C.GLETSCHER_DIRECT * iceCommit;
-        }
-        // Permafrost (Breite/Motor): die SUMME der Überlauf-Tiefe über alle Frostkarten zahlt je Frost-Sieg (linear, gedeckelt).
-        if (hasPermafrost(skills) && sumOv > 0)
-          iceDirect += Math.min(sumOv, C.PERMAFROST_OVERFLOW_CAP) * C.PERMAFROST_DIRECT * iceCommit;
-      }
-      // Vergletscherung (Reshape): je Frost-Sieg Bonus-Score ∝ GESAMTER aktiver Gegner-Vergletscherung (Σ frostbiteActive,
-      // gedeckelt) — je tiefer der Gegner glaziert, desto mehr scort jeder Sieg. Zuverlässig (jeder Frost-Sieg), statt der
-      // engen „schlage eine markierte Karte"-Bedingung (die bei starken Builds kaum zündete → 1,0×).
-      if (hasVergletscherung(skills)) {
-        let totDebuff = 0;
-        for (const id in frostbiteActive) totDebuff += frostbiteActive[id];
-        if (totDebuff > 0) iceDirect += Math.min(totDebuff, C.VERGLETSCHERUNG_DEBUFF_CAP) * C.VERGLETSCHERUNG_DIRECT * Math.min(1, iceSkillCount(skills) / C.SKILL_SLOTS);
       }
     }
     // ---- Pflanze-Fraktion (v0): Wachstum (Sieg → +1), Reife-Recolor, Wurzeln (Score/Wert), Aussaat/Ranken (Breite/Grün),
@@ -470,40 +482,57 @@ export function resolveTrick(state, rng) {
     let plantDirect = 0; // Pflanze-Legendär-Reshape: DIREKTe, post-stack, gedeckelte Dividende aus den Fluten (unten zu `gained`)
     if ((activeArchetypes || []).includes("plant")) {
       const inFormation = positionHasFormation(posForm);
+      const plantCommit = commitScale(plantSkillCount(skills)); // Bekenntnis-Skalierung (cross-health) für die post-stack Direkt-Dividenden (#270.2 + #Ceiling)
+      // #288 „Trimmen": dauerhafter Multiplikator auf Wurzel- & Blüten-Score, je ersetztem Wachstums-Skill höher (gedeckelt).
+      const trimMult = 1 + Math.min((trimCount || 0) * C.TRIM_STEP, C.TRIM_CAP);
       // Wachstum: je Sieg +Zuwachs, GEGATET an die Pflanzen-Skill-Anzahl (Anti-Splash, v0.3): min(1, PflanzenSkills / SKILL_REF).
       // 1 Splash-Skill = 1/3 Speed, volle +1/Sieg erst ab SKILL_REF Skills → hohes Wachstum verlangt echtes Deck-Commitment.
       const prevG = newGrowth[pCard.id] || 0;
       const growInc = Math.min(1, C.PLANT_GROWTH_SKILL_REF > 0 ? plantSkillCount(skills) / C.PLANT_GROWTH_SKILL_REF : 1);
       const g = prevG + growInc;
       newGrowth = { ...newGrowth, [pCard.id]: g };
+      growthTotal += growInc; // #270: Motor-Zähler „Gewachsen" — Lauf-Summe des zugewachsenen Wachstums
       const cardGreen = pCard.green || growthRipe(g);
       if (growthRipe(g) && !pCard.green) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c));
-      // Ernte: geschlagene Gegnerkarte kolonisiert? → +Wachstum; Erntedank (reif), Rhizom (Nachbar), Dornenkönig (Marker verbraucht).
+      // Ernte: geschlagene Gegnerkarte kolonisiert? → +Wachstum; Erntedank (reif), Rhizom (Nachbar).
       if (newColonized[oCard.id]) {
-        newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST };
-        if (hasErntedank(skills) && cardGreen) plantFlat += C.ERNTEDANK_SCORE;
+        newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; growthTotal += C.AUSLAEUFER_HARVEST; // #270
+        if (hasErntedank(skills) && cardGreen) { plantFlat += C.ERNTEDANK_SCORE; plantHarvest += C.ERNTEDANK_SCORE; } // #270.2: Ernte-Score-Kanal
         if (hasRhizom(skills)) { const oi = oppOrder[actualPos], nb = oi + 1 < oppDeck.length ? oi + 1 : oi - 1;
-          if (nb >= 0 && newColonized[oppDeck[nb].id]) newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; }
-        if (hasDornenkoenig(skills)) { const nc = { ...newColonized }; delete nc[oCard.id]; newColonized = nc; }
+          if (nb >= 0 && newColonized[oppDeck[nb].id]) { newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; growthTotal += C.AUSLAEUFER_HARVEST; } } // #270
       }
       if (cardGreen) {
         // Wurzeltiefe: Flat-Score je Sieg (Pfahlwurzel ×2 in Formation) + Jahresringe (je 10 Wachstum). Mutterbaum streut aufs Segment.
         if (hasWurzeltiefe(skills)) {
           let root = C.WURZELTIEFE_SCORE * (hasPfahlwurzel(skills) && inFormation ? C.PFAHLWURZEL_MULT : 1);
           if (hasJahresringe(skills)) root += Math.floor(g / C.JAHRESRINGE_PER_GROWTH) * C.JAHRESRINGE_SCORE;
-          plantFlat += root;
-          if (hasMutterbaum(skills) && g >= Math.max(1, ...Object.values(newGrowth))) plantFlat += root; // Mutterbaum (v0-Näherung): Segment-Streuung
+          // Feldtiefe (Buff): Bonus je grünem Sieg ∝ √(GESAMTWACHSTUM des Feldes) — abnehmender Ertrag + Deckel gegen Runaway.
+          let fieldGrowth = 0; for (const gid in newGrowth) fieldGrowth += newGrowth[gid];
+          if (fieldGrowth > 0) root += Math.min(C.WURZELTIEFE_FIELD_CAP, Math.round(C.WURZELTIEFE_FIELD_K * Math.sqrt(fieldGrowth)));
+          root = Math.round(root * trimMult); // #288 Trimmen: Wurzel-Score-Multiplikator
+          plantFlat += root; plantRoot += root; // #270.2: Wurzel-Score-Kanal
+          // #Ceiling Wurzel/TIEFE: superlinear (dreieckig) in der Wachstums-Tiefe der Siegkarte ÜBER dem Wert-Deckel —
+          // post-stack (plantDirect), gedeckelt, bekenntnis-skaliert (+ Trimm-Multiplikator #288). Zündet nur bei tiefen Bäumen → reines Ceiling.
+          const needRoot = Math.max(0, C.PLANT_VALUE_CAP - pCard.value) * C.WURZELSCHLAG_PER_GROWTH;
+          const depth = Math.min(Math.floor(g - needRoot), C.PLANT_ROOT_DEEP_CAP);
+          if (depth > 0) { const d = (depth * (depth + 1) / 2) * C.PLANT_ROOT_DEEP_K * plantCommit * trimMult; plantDirect += d; plantRoot += d; }
+          if (hasMutterbaum(skills) && g >= Math.max(1, ...Object.values(newGrowth))) { plantFlat += root; plantRoot += root; } // Mutterbaum (v0-Näherung): Segment-Streuung
         }
-        // Wurzelschlag: grüne Karte wächst permanenten Wert an (+1 je N Wachstum, bis Deckel). Float-sicher (Wachstum ist
-        // seit dem Grün-Gate gebrochen): +1 Wert, wenn dieser Sieg eine neue N-Schwelle überschreitet.
-        if (hasWurzelschlag(skills) && Math.floor(g / C.WURZELSCHLAG_PER_GROWTH) > Math.floor(prevG / C.WURZELSCHLAG_PER_GROWTH) && pCard.value < C.PLANT_VALUE_CAP)
+        // Fraktions-Passive (Mono): grüne Karte leitet permanenten Wert aus Wachstum ab (+1 je N Wachstum, bis Deckel).
+        // Wachstum wird NICHT verbraucht (speist parallel Jahresringe/Feldtiefe/Legendäre). Nur solange Mono-Pflanze.
+        if (plantPassiveActive(skills) && Math.floor(g / C.WURZELSCHLAG_PER_GROWTH) > Math.floor(prevG / C.WURZELSCHLAG_PER_GROWTH) && pCard.value < C.PLANT_VALUE_CAP)
           deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: Math.min(C.PLANT_VALUE_CAP, c.value + 1) } : c));
+        // Kernholz (L4): erntet den aufgebauten Wert — +Score je Kartenwert-Punkt über dem Startwert (baseRank). Nur grün.
+        if (hasKernholz(skills) && cardGreen) {
+          const over = Math.max(0, pCard.value - (pCard.baseRank || 0));
+          if (over > 0) { const kh = over * C.KERNHOLZ_SCORE_PER_VALUE; plantFlat += kh; plantRoot += kh; }
+        }
         // Aussaat: beide Nachbarn +1 Wachstum (Flugsamen: grüne überspringen, nächste graue säen).
         if (hasAussaat(skills)) {
           for (const dir of [-1, 1]) {
             let nb = actualPos + dir;
             if (hasFlugsamen(skills)) while (nb >= 0 && nb < playerOrder.length && deck[playerOrder[nb]].green) nb += dir;
-            if (nb >= 0 && nb < playerOrder.length) { const nid = deck[playerOrder[nb]].id; newGrowth = { ...newGrowth, [nid]: (newGrowth[nid] || 0) + C.AUSSAAT_GROWTH }; }
+            if (nb >= 0 && nb < playerOrder.length) { const nid = deck[playerOrder[nb]].id; newGrowth = { ...newGrowth, [nid]: (newGrowth[nid] || 0) + C.AUSSAAT_GROWTH }; growthTotal += C.AUSSAAT_GROWTH; } // #270
           }
         }
         // Ranken: einen noch-grauen Nachbarn sofort grün färben.
@@ -523,17 +552,35 @@ export function resolveTrick(state, rng) {
             const greenFieldRatio = deck.length > 0 ? greenCount(deck) / deck.length : 0;
             const uebThresh = hasEwigerFruehling(skills) ? C.EWIGER_FRUEHLING_FIELD : C.UEBERWUCHERUNG_FIELD;
             if (hasUeberwucherung(skills) && greenFieldRatio >= uebThresh) b *= 2;
-            plantFlat += b;
+            b = Math.round(b * trimMult); // #288 Trimmen: Blüten-Score-Multiplikator
+            plantFlat += b; plantBloom += b; // #270.2: Blüten-Score-Kanal
+          }
+        }
+        // #Ceiling Blüte/BREITE: superlinear (dreieckig) im VOLLEN grünen Feld — nur wenn das Feld überwuchert ist (≥ Schwelle
+        // grün; Ewiger Frühling senkt sie). Post-stack (plantDirect), gedeckelt, bekenntnis-skaliert → reines Ceiling für das
+        // committed all-green Board, Floor unberührt.
+        if (hasBluete(skills) && deck.length > 0) {
+          const thr = hasEwigerFruehling(skills) ? C.EWIGER_FRUEHLING_FIELD : C.UEBERWUCHERUNG_FIELD;
+          const gc = greenCount(deck);
+          if (gc / deck.length >= thr) {
+            const m = Math.min(gc, C.PLANT_BLOOM_FIELD_CAP);
+            const d = (m * (m + 1) / 2) * C.PLANT_BLOOM_FIELD_K * plantCommit * trimMult; plantDirect += d; plantBloom += d;
           }
         }
         // Photosynthese: grüne Karte in Formation → ×PHOTOSYNTHESE_MULT (Formations-Faktor). [#230 N9: war „×1,15", ist 1,08]
         if (hasPhotosynthese(skills) && inFormation) plantFormMult *= C.PHOTOSYNTHESE_MULT;
+        // Baumreihe (Legendär): voll ausgewachsene grüne Karten (Wert ≥ Deckel) zählen POSITIONSFREI als EINE gemeinsame
+        // Wiederholung — je solcher Karte auf dem Brett ein Faktor auf die Stiche DIESER Karte (gedeckelt; Position egal).
+        if (hasBaumreihe(skills) && pCard.green && pCard.value >= C.PLANT_VALUE_CAP) {
+          let n = 0; for (const c of deck) if (c.green && c.value >= C.PLANT_VALUE_CAP) n++;
+          if (n >= 2) plantFormMult *= Math.min(C.BAUMREIHE_CAP, C.BAUMREIHE_BASE + (n - 2) * C.BAUMREIHE_STEP);
+        }
         // Blätterdach: grüner Farbblock ab BLAETTERDACH_MIN Karten → +Score je Karte IM BLOCK (echte Lauflänge des
         // Farbblocks an der Siegposition, nicht die deckweite Grünzahl). Grün = eine gemeinsame Farbe „G" → der Lauf an
         // einer grünen Position besteht aus grünen Karten. Analog zur Blüte, die nur das Segment zählt. [#228 C2]
         const fbEntry = (posForm.formations || []).find((f) => f.type === "farbblock");
         const fbLen = fbEntry ? (fbEntry.len || 0) : 0;
-        if (hasBlaetterdach(skills) && fbLen >= C.BLAETTERDACH_MIN) plantFlat += C.BLAETTERDACH_SCORE * Math.min(fbLen, C.BLAETTERDACH_CARD_CAP);
+        if (hasBlaetterdach(skills) && fbLen >= C.BLAETTERDACH_MIN) { const bd = Math.round(C.BLAETTERDACH_SCORE * Math.min(fbLen, C.BLAETTERDACH_CARD_CAP) * trimMult); plantFlat += bd; plantRoot += bd; } // #270.2: Blätterdach → Wurzel-Kanal (Feld-Score) · #288 Trimm-Mult
         // Ausläufer: die niedrigste noch nicht kolonisierte Gegnerkarte kolonisieren.
         if (hasAuslaeufer(skills)) {
           let lowId = null, lowV = Infinity;
@@ -543,8 +590,8 @@ export function resolveTrick(state, rng) {
         // ---- Pflanze-Legendär-Reshape (2026-07-30): DIREKTE Dividende aus den verschwendeten FLUTEN je GRÜNEM Sieg —
         //      am Multiplikator-Stack VORBEI (unten zu `gained`), hart gedeckelt (Plateau, kein Runaway), bekenntnis-
         //      skaliert (plantSkillCount/SKILL_SLOTS = cross-health). Nur Legendär-Halter → generisches Pflanze unberührt.
-        if (hasWeltenbaum(skills) || hasMutterbaum(skills) || hasDornenkoenig(skills) || hasEwigerFruehling(skills)) {
-          const plantCommit = Math.min(1, plantSkillCount(skills) / C.SKILL_SLOTS);
+        if (hasWeltenbaum(skills) || hasMutterbaum(skills) || hasEwigerFruehling(skills)) {
+          // plantCommit ist oben (Plant-Section-Start) gehoben.
           // Überlauf-Wachstum = Wachstum ÜBER dem, was Wurzelschlag zum Wert-Deckel braucht (verschwendet, „alter Wald").
           if (hasWeltenbaum(skills) || hasMutterbaum(skills)) {
             let sumOv = 0, maxOv = 0;
@@ -554,48 +601,56 @@ export function resolveTrick(state, rng) {
               if (ov > 0) { sumOv += ov; if (ov > maxOv) maxOv = ov; }
             }
             // Weltenbaum (BREITE): die SUMME des Überlauf-Wachstums über den ganzen Wald zahlt je grünem Sieg.
-            if (hasWeltenbaum(skills)) plantDirect += Math.min(sumOv, C.WELTENBAUM_OVERFLOW_CAP) * C.WELTENBAUM_DIRECT * plantCommit;
+            if (hasWeltenbaum(skills)) { const d = Math.min(sumOv, C.WELTENBAUM_OVERFLOW_CAP) * C.WELTENBAUM_DIRECT * plantCommit; plantDirect += d; plantRoot += d; } // #270.2: alter Wald → Wurzel-Kanal
             // Mutterbaum (TIEFE): der EINE tiefste Baum (max Überlauf) zahlt je grünem Sieg (Konzentration).
-            if (hasMutterbaum(skills)) plantDirect += Math.min(maxOv, C.MUTTERBAUM_OVERFLOW_CAP) * C.MUTTERBAUM_DIRECT * plantCommit;
+            if (hasMutterbaum(skills)) { const d = Math.min(maxOv, C.MUTTERBAUM_OVERFLOW_CAP) * C.MUTTERBAUM_DIRECT * plantCommit; plantDirect += d; plantRoot += d; } // #270.2: Wurzel-Kanal
           }
-          // Dornenkönig (KOLONIE): die kolonisierte Gegner-Breite zahlt je grünem Sieg (das Reich unter Kontrolle).
-          if (hasDornenkoenig(skills)) plantDirect += Math.min(Object.keys(newColonized).length, C.DORNENKOENIG_COLON_CAP) * C.DORNENKOENIG_DIRECT * plantCommit;
-          // Ewiger Frühling (GRÜN-FELD): das ewige grüne Feld zahlt je grünem Sieg ∝ #grüne Karten.
-          if (hasEwigerFruehling(skills)) plantDirect += Math.min(greenCount(deck), C.EWIGER_FRUEHLING_FIELD_CAP) * C.EWIGER_FRUEHLING_DIRECT * plantCommit;
+          // Ewiger Frühling (GRÜN-FELD): das ewige grüne Feld zahlt je grünem Sieg ∝ #grüne Karten; bei VOLL grünem Feld doppelt.
+          if (hasEwigerFruehling(skills)) {
+            const gc = greenCount(deck);
+            const fullMult = (deck.length > 0 && gc === deck.length) ? C.EWIGER_FRUEHLING_FULLGREEN_MULT : 1;
+            const d = Math.min(gc, C.EWIGER_FRUEHLING_FIELD_CAP) * C.EWIGER_FRUEHLING_DIRECT * fullMult * plantCommit; plantDirect += d; plantRoot += d; // #270.2: Grün-Feld → Wurzel-Kanal
+          }
         }
       }
     }
     // Crit ZUERST bestimmen — die Blitz-Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis.
     // Der Crit-Wurf verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift).
     // Blitz-Crit-Basis (Abschnitt 2a) wird additiv zugerechnet, unabhängig von L5-critChanceMult.
-    // Crit-Chance-Stat (V2 §22.3) fließt additiv in die Roh-Chance (mit Perk-/Blitz-Basis); ungeklemmt (Überschusskrit).
-    // Roh-Crit-Chance (ungeklemmt): Perk-/Blitz-Basis + Crit-Chance-Stat. D-Crit-Flats sehen rawCrit (critCtx).
-    const rawCrit = critChanceRawFor(perks, wctx) + lightningCritRaw(lightning, skills, serieStreak) + statCritChance
+    // #267: die Crit-Chance kommt jetzt aus der Perk-FAMILIE „Präzision" (RNG-gegatet, Stat-Ersatz) statt aus dem Stat.
+    // Karten-Kontext für die konditionalen Generatoren: Kartenwert / Kartenfarbe / #aktive Formationen der Siegposition /
+    // gewählte Farben (Farbfokus, aus roles). Roh-Crit-Chance (ungeklemmt): Perk-Basis + Präzision + Blitz + Kritanker.
+    const critFamCtx = { winValue: pValue, suit: pCard.green ? "G" : pCard.suit, formCount: activeFormationCount(posForm), focusSuits: (roles && roles.P_COLORFOCUS) || [], alliance }; // #289: grün-bewusste Suit + Farballianz für Farbfokus
+    const rawCrit = critChanceRawFor(perks, wctx) + familyCritChanceRaw(familyTiers, critFamCtx) + lightningCritRaw(lightning, skills, serieStreak)
+                    + (lightning?.active ? ionCritChance(deck) : 0) // #271: feldweiter Ionisierungs-Crit (Breite); Überschuss >100 % → Überschlag→Ladung
                     + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
     const critCtx = { ...wctx, rawCrit };
-    // Basis 1,5 + Crit-Mult-Stat + L6-Überschuss + Donnergott + Durchschlag (dauerhaft) + Entladung (armierter Crit nach vollem Verbrauch, einmalig).
-    critMultiplier = critMultiplierFor(perks, critCtx, statCritMult) + lightningCritMult(skills)
+    // Basis 1,5 + Präzision „Wucht" (familyCritMult) + L6-Überschuss + Blitz + Donnergott + Durchschlag (dauerhaft)
+    // + Entladung (Crit-Mult-Momentum je Verbrauch, dauerhaft, v0.5). #267: der Crit-Mult-Stat ist weg.
+    critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers) + lightningCritMult(skills)
                    + (lightning?.durchschlagMult || 0)
-                   + ((lightning && lightning.dischargeArmed) ? C.ENTLADUNG_CRIT_MULT : 0);
+                   + (lightning?.entladungMult || 0);
+    // Überschlag-Graduierung (v0.5): bei Voll-TIEFE geht der Crit-Überschuss (>100 %) in Crit-Multiplikator statt in Ladung.
+    if (hasUeberschlag(skills) && lightDepth && rawCrit > 1) critMultiplier += (rawCrit - 1) * C.UEBERSCHLAG_EXCESS_TO_MULT;
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = L10; reducedRepeat = Zeitsegment III
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.
-    // Ionisierung: Score der gespielten Karte (Stapel VOR dem Zuwachs). Gewitterfront: +100 für die nächsten Siege.
-    const stormScore = (lightning && (lightning.stormScoreWinsRemaining || 0) > 0) ? C.STORM_SCORE : 0;
+    // Ionisierung: Score der gespielten Karte (Stapel VOR dem Zuwachs).
     // (critCtx mit rawCrit ist oben — vor critMultiplier — gebildet; D6/D7/D8/D11/D15/D19 + Blitzableiter nutzen ihn.)
-    // Entladung (Rework v0): war der nächste Crit mit +Crit-Mult armiert (aus einem früheren vollen Verbrauch)?
-    // Der Crit-Mult-Bonus fließt oben in critMultiplier; hier nur die Armierung merken (unten entwaffnet).
-    const dischargeArmedBefore = !!(lightning && lightning.dischargeArmed);
+    // Entladung (v0.5): dauerhaftes Crit-Mult-Momentum (lightning.entladungMult, oben in critMultiplier) — kein Armieren mehr.
     // Architekt score-Gebäude (#202, Handelsbauten): Flat in die multiplizierte Basis; Mult (Schatzkammer/Struktur) als
     // eigener Faktor. Meilenstein-Zähler (bump) wird nach dem Stich fortgeschrieben. Bedingungen: Crit/Farbe/Serie/Ziel.
     const architectScoreRes = archPreNow
-      ? architectScore(archPreNow, actualPos, { isCrit, serieStreak, suit: pCard.suit }, (architect && architect.winCounters) || {})
+      ? architectScore(archPreNow, actualPos, { isCrit, serieStreak, suit: pCard.green ? "G" : pCard.suit }, (architect && architect.winCounters) || {}, alliance) // #289: grün → „G" + Farballianz (Zunfthaus)
       : { flat: 0, mult: 1, bump: null };
     architectBump = architectScoreRes.bump;
     const architectMult = architectScoreRes.mult;
+    // Serien-Flat (Reihenhaus): läuft am globalen Serien-Mult VORBEI (kein Doppel-Dip — die Serie skaliert diesen Flat
+    // bereits im Gebäude selbst). Formation/Perk/Crit gelten weiter (unten in den Stack addiert, nicht in scoreBase).
+    const architectStreakFlat = architectScoreRes.streakFlat || 0;
     // Familien-Score-Flats (Rarität-Umbau #167, Kat. D) laufen ADDITIV neben den flachen Perk-Flats: nur die
     // gehaltene Familien-Stufe zählt (activeTierDefs) → kein Doppel-Trigger über Stufen (Spec §2.3/§9).
     const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx) + familySumHook(familyTiers, "scoreFlat", wctx)
@@ -603,16 +658,20 @@ export function resolveTrick(state, rng) {
                                   + familySumHook(familyTiers, "scoreFlatOnCrit", critCtx)
                                   + (critFollowArmed ? critFollowCritBonus : 0) // D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist
                                   + (anchorType === "crit" ? (aParam("critScore") || 0) : 0) : 0) // Kritanker IV: Crit dort +250 Score
-                      + ionScoreFor(pCard) + stormScore + fireFlat + iceFlat + plantFlat
+                      + ionScoreFor(pCard) + fireFlat + plantFlat
                       + (anchorType === "score" ? (aParam("score") || 0) : 0) // Punkteanker (§4.2, Stärke = Stufe)
                       + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
                       + architectScoreRes.flat // Architekt Handelsbauten (#202): Flat-Score, s. o.
                       + interplayStored; // D_INTERPLAY IV: der in Niederlagen gebankte Score wird mit diesem Sieg als Flat ausgezahlt
+    // #270: Fraktions-Flat-Anteile zum Ertrag (Roh-Score VOR dem Multiplikator-Stack). Blitz EIN Kanal; Feuer in
+    // Grund/Weißglut gespalten (Pflanze-Kanäle Wurzel/Blüte/Ernte wurden schon an ihren Quellen oben akkumuliert).
+    lightYield += ionScoreFor(pCard);
+    fireWhite += fireWhiteWin; fireBase += fireFlat - fireWhiteWin;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
     // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
-    const flats = scoreBase - C.SCORE_PER_WIN;                                         // additive Boni (Perk-/Crit-Flats, Ion, Storm, L5-Jackpot)
-    const streakMult = streakBaseMult(serieStreak) * statStreakFactor(statStreakMult, serieStreak); // Serie (#39 + Serien-Stat)
+    const flats = scoreBase - C.SCORE_PER_WIN;                                         // additive Boni (Perk-/Crit-Flats, Ion, L5-Jackpot)
+    const streakMult = streakBaseMult(serieStreak); // Serie (#39). #267: der Serien-Stat-Booster ist weg — nur noch das Basis-System.
     // Legendär-Perks-Rework (#203) — der ×-Multiplikator-Raum ist die family-free Legendär-Lane. Henker (Score, Kat. D)
     // faltet in perkMult; Brennpunkt/Sammler (Formation, Kat. E) falten unten in formMult → §17-Breakdown bleibt exakt.
     const henkerMult = (ownsFlag(perks, "henker") && actualPos >= C.HENKER_ZONE_START) ? C.HENKER_MULT : 1; // Segment-Finale ×
@@ -623,26 +682,29 @@ export function resolveTrick(state, rng) {
     const afterglowMult = posForm.afterglowFactor || 1;                                // F6 Nachhall
     const coreMult = posForm.coreFactor || 1;                                          // F-L1 Formationskern
     const formBaseMult = (posForm.baseMult != null ? posForm.baseMult : formationMult); // echte Formationen (inkl. Überlappung)
-    const formStatFactor = statFormFactor(statFormMult, activeFormationCount(posForm)); // Formations-Stat × Anzahl AKTIVER Formationen an der Siegposition
+    // (#267: der Formations-Stat-Booster obendrauf ist weg — Formations-Builds skalieren über Perks/Familien statt Stat.)
     // Eis-Ceiling-Hebel: dichte Formations-Überlappung (formBaseMult) ist der EINZIGE Eis-Ceiling-Treiber. Weicher
     // Deckel NUR für Frostkarten, NUR über der Schwelle → Median-Frost-Siege (formBase < Schwelle) & Nicht-Eis unberührt.
-    let formBaseEff = formBaseMult;
-    if (pCard.frozen && C.ICE_FORMBASE_SOFTCAP > 0 && formBaseEff > C.ICE_FORMBASE_SOFTCAP)
-      formBaseEff = C.ICE_FORMBASE_SOFTCAP + (formBaseEff - C.ICE_FORMBASE_SOFTCAP) * C.ICE_FORMBASE_SLOPE;
+    const formBaseEff = formBaseMult;
     // Brennpunkt (#203, Formations-Tiefe): Sieg in ≥ BRENNPUNKT_MIN_FORMS gleichzeitigen Formationen → ×BRENNPUNKT_MULT.
     const brennpunktMult = (ownsFlag(perks, "brennpunkt") && activeFormationCount(posForm) >= C.BRENNPUNKT_MIN_FORMS) ? C.BRENNPUNKT_MULT : 1;
     // Sammler (#203, Formationsvielfalt): +SAMMLER_STEP je distinct Formationsart, die diesen Durchlauf SCHON gesammelt
     // wurde (Stand VOR diesem Sieg → wächst über den Durchlauf; „für den restlichen Durchlauf"), max SAMMLER_MAX.
     const sammlerMult = ownsFlag(perks, "sammler") ? 1 + C.SAMMLER_STEP * Math.min(sammlerTypes.length, C.SAMMLER_MAX) : 1;
-    const formMult = formBaseEff * formStatFactor * iceFormMult * plantFormMult * brennpunktMult * sammlerMult; // + Eisdruck/Architekt (iceFormMult) + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203)
+    const formMult = formBaseEff * plantFormMult * brennpunktMult * sammlerMult; // + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203)
     // Sonnenzorn (L): dauerhafter Score-Multiplikator ∝ HÖCHSTER je gehaltener Hitze (heat.peak) — auf den GESAMTEN Sieg-Score
     // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
     const sunwrathMult = (fireFlag(skills, "sunwrath") && heat && heat.active) ? (1 + (heat.peak || 0) * C.SUNWRATH_PEAK_STEP) : 1;
     // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
     // #Pool Batch 4 (gamble/Risiko): Boden — der Architekt-Abzug (negativer Flat) darf den Stich höchstens auf 0 drücken,
     // nie ins Minus (sonst kippen die nachgelagerten Multiplikatoren). Bei Basis 400 praktisch immer ein No-op.
-    scoreBeforeCrit = Math.max(0, scoreBase) * streakMult * perkMult * formMult * afterglowMult * coreMult * sunwrathMult * architectMult;
+    // Serien-Flat (Reihenhaus) wird NEBEN der serien-multiplizierten Basis addiert → er bekommt Perk/Formation/Crit,
+    // aber NICHT den globalen Serien-Mult (kein Doppel-Dip). Rest des Stacks unverändert.
+    const streakMuldBase = Math.max(0, scoreBase) * streakMult;
+    scoreBeforeCrit = (streakMuldBase + architectStreakFlat) * perkMult * formMult * afterglowMult * coreMult * sunwrathMult * architectMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
+    // Eis: derselbe multiplikative Stack (ohne additive Flats) skaliert auch den Gletscher-Bruch dieses Stichs (unten).
+    glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * sunwrathMult * architectMult * (isCrit ? critMultiplier : 1);
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
     // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
     // [#229 T5] WIN_SOFTCAP ist ein Sim-Hook (Default 0). Ist er aktiv, wird `gained` geklemmt, die Einzelfaktoren im
@@ -651,23 +713,27 @@ export function resolveTrick(state, rng) {
     critBonus = gained - scoreBeforeCrit;
     // #161 FB-2: additiver Score-Anteil der Formations-Faktoren (echte Formationen + Formations-Stat + Nachhall + Kern).
     // Auf dem MULTIPLIZIERTEN Score, VOR der Glutdividende (die läuft am Stack vorbei und zählt nicht als Formations-Score).
-    // [#229 T4] Bekannte Attributions-Ungenauigkeit (nur Anzeige, kein Gameplay): formMult bündelt auch iceFormMult/
+    // [#229 T4] Bekannte Attributions-Ungenauigkeit (nur Anzeige, kein Gameplay): formMult bündelt auch
     // plantFormMult/brennpunktMult/sammlerMult → dieser Anteil wird hier der Formation zugeschlagen statt seinen echten Quellen.
     const formFactorTotal = formMult * afterglowMult * coreMult;
     if (formFactorTotal > 1) formationScore += gained * (1 - 1 / formFactorTotal);
     // #251: Serien-Anteil — der Serien-Multiplikator als Faktor-Anteil an `gained` (analog formationScore; Näherung, da die Faktoren multiplikativ ineinandergreifen).
-    if (streakMult > 1) streakScore += gained * (1 - 1 / streakMult);
+    // Nur der serien-multiplizierte Teil zählt: der Reihenhaus-streakFlat läuft am Serien-Mult vorbei (kein Doppel-Dip) → sein Anteil bleibt hier ausgeklammert.
+    const streakStackTotal = streakMuldBase + architectStreakFlat;
+    if (streakMult > 1 && streakStackTotal > 0) streakScore += gained * (streakMuldBase / streakStackTotal) * (1 - 1 / streakMult);
     // #UI: Gebäude-Score-Anteil — analog zu formationScore. Architekt-Score-Mult (Struktur/Schatzkammer) als
     // Faktor-Anteil an `gained`, plus der Handelsbauten-Flat mit seinem Beitrag OHNE den (separat gezählten)
     // architectMult → kein Doppelzählen. Nur Architekt-Score-Bauten; der Wert-Bonus (Basis) bleibt unattribuiert.
     if (architectMult > 1) buildingScore += gained * (1 - 1 / architectMult);
     if (architectScoreRes.flat > 0 && scoreBase > 0) buildingScore += (gained / architectMult) * (architectScoreRes.flat / scoreBase);
+    // Serien-Flat (Reihenhaus) läuft am Serien-Mult vorbei → sein gained-Anteil = streakFlat / (serien-mult. Basis + streakFlat), analog zum flachen Handelsbau-Flat (architectMult separat gezählt).
+    if (architectStreakFlat > 0 && streakStackTotal > 0) buildingScore += (gained / architectMult) * (architectStreakFlat / streakStackTotal);
     // Glutdividende (Feuer-Rework, Floor-Hebel): DIREKTER Score je Feuer-Sieg (∝ gehaltener Hitze, gedeckelt bei
     // FIRE_DIVIDEND_HEAT_CAP), NICHT durch Serie/Crit/Form multipliziert → flach NACH dem Stack. Hebt den Median
     // (kleine Mults) relativ stärker als das Ceiling (große Mults) = Feuers fehlende „Immer-an-Engine". Skaliert mit
     // dem FEUER-BEKENNTNIS (Anteil Feuer-Skills an den Slots), damit ein 2-Skill-Splash die Dividende nicht in
     // High-Winrate-Kombis (Eis/Pflanze) trägt → hält Spezialisieren ≈ Mischen (cross-health).
-    const fireCommit = Math.min(1, activeFireCount(skills) / C.SKILL_SLOTS);
+    const fireCommit = commitScale(activeFireCount(skills));
     let fireDirect = C.FIRE_HEAT_DIVIDEND > 0 && fireDividendHeat > 0 && fireCommit > 0
       ? Math.min(fireDividendHeat, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * fireCommit : 0;
     // Damaststahl (L): DIREKTER Score je Sieg ∝ GESAMTEM geschmiedeten Wert im Deck (am Stack vorbei) — eine „Damast-
@@ -676,10 +742,8 @@ export function resolveTrick(state, rng) {
       const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
       if (totalForged > 0) fireDirect += totalForged * C.DAMASCUS_DIRECT;
     }
-    // Asche-Dividende (v0.3): gehaltene Asche gibt einen kleinen DIREKTen Score je Feuer-Sieg (post-stack, gedeckelt,
-    // bekenntnis-skaliert) → toter Asche-Stapel (Schmieden ist gedeckelt) fühlt sich nicht mehr verschwendet an.
-    if (C.ASH_DIVIDEND > 0 && newAsh > 0 && fireCommit > 0)
-      fireDirect += Math.min(newAsh, C.ASH_DIVIDEND_CAP) * C.ASH_DIVIDEND * fireCommit;
+    // (#268: die per-Sieg-Asche-Dividende ist entfernt — ungenutzte Asche wird jetzt am Durchlauf-Ende über den
+    //  Weißglut-Überlauf vollständig in Score verbrannt, statt als kleiner Dauer-Drip je Sieg zu tropfen.)
     // Blitz-Legendär-Reshape (2026-07-30): DIREKTE Dividende aus dem GESÄTTIGTEN Ionisierungsfeld. Die Ionisierung flutet
     // (blitz-economy.mjs: alle Karten @Deckel 5, ~ganzes Deck ab Cycle 20) → „mehr Ionis."-Legendäre waren tot (1,01×/0,90×).
     // Sie lesen jetzt den BESTAND des Feldes (Stand VOR dem +1 der Siegkarte) und zahlen je IONISIERTEM Sieg DIREKT — am
@@ -687,7 +751,7 @@ export function resolveTrick(state, rng) {
     // (activeLightningCount/SKILL_SLOTS = cross-health). Nur Legendär-Halter → generisches Blitz (ION_SCORE_PER_STACK) unberührt.
     let lightDirect = 0;
     if ((pCard.ionStacks || 0) > 0 && (hasAreaIonize(skills) || hasDoubleDischarge(skills))) {
-      const lightCommit = Math.min(1, activeLightningCount(skills) / C.SKILL_SLOTS);
+      const lightCommit = commitScale(activeLightningCount(skills));
       let nIon = 0, sumIon = 0;                                        // EIN Scan: Breite (# ionisierte Karten) + Energie (Σ Stapel)
       for (const c of deck) { const st = c.ionStacks || 0; if (st > 0) { nIon++; sumIon += st; } }
       // Flächenionisation (Sturmzelle, BREITE): je breiter das ionisierte Feld, desto größer jeder Treffer.
@@ -695,6 +759,9 @@ export function resolveTrick(state, rng) {
       // Doppelentladung (endloser Sturm, ENERGIE): jeder Treffer detoniert die gesamte Ladung des Feldes (Σ Stapel).
       if (hasDoubleDischarge(skills)) lightDirect += Math.min(sumIon, C.DOPPELENT_FIELD_CAP) * C.DOPPELENT_DIRECT * lightCommit;
     }
+    // Kurzschluss (Rework): eine VOLLE (5) Siegkarte „kurzschließt" bei JEDEM Sieg → Direkt-Score-Burst (post-stack),
+    // OHNE die Stapel zu opfern. Wiederkehrender Payoff fürs Maxen (Stapel bleiben → weiter Flat-Score + Feld-Crit #271).
+    if (hasKurzschluss(skills) && (pCard.ionStacks || 0) >= C.ION_MAX_STACKS) lightDirect += C.KURZSCHLUSS_SCORE;
     // Vabanque (#203, Eröffnungs-Wette): die ersten VABANQUE_TRICKS Stiche eines DURCHLAUFS in Folge gewonnen →
     // +VABANQUE_SCORE DIREKT (post-stack). pos = Stich-Index im Durchlauf (VOR pos+=1); cycleWins zählt die Siege inkl.
     // dieses → am TRICKS-ten Stich (pos = TRICKS−1) sind alle Eröffnungsstiche gewonnen ⟺ cycleWins === TRICKS.
@@ -711,16 +778,18 @@ export function resolveTrick(state, rng) {
     // Struktur-Faktor (segFactor), NICHT Schatzkammer/Score-Bauten.
     const archStructMult = archPreNow ? (archPreNow.segFactor[actualPos] || 1) : 1;
     const fireStructMult = 1 + (archStructMult - 1) * C.FIRE_STRUCT_DIVIDEND_AMP; // Struktur-Hebel auf die Dividende verstärkt (Feuer-isoliert)
-    gained += fireDirect * fireStructMult + iceDirect + lightDirect + plantDirect + perkDirect;
+    const fireDirectApplied = fireDirect * fireStructMult;
+    gained += fireDirectApplied + lightDirect + plantDirect + perkDirect;
     score += gained;
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, formStat: formStatFactor, iceForm: iceFormMult, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, fireDirect, iceDirect, lightDirect, plantDirect, perkDirect, total: gained };
-    // Gewitterfront: der genutzte Score-Stack ist verbraucht (nur Siege verbrauchen).
-    if (stormScore > 0) lightning = { ...lightning, stormScoreWinsRemaining: lightning.stormScoreWinsRemaining - 1 };
+    // #270: post-stack Direkt-Dividenden zum Fraktions-Ertrag (die Flat-Anteile kamen bei scoreBase oben dazu). Statischer
+    // Ladungs-Konsum-Score (unten, +CONSUME_SCORE) und der Weißglut-Überlauf-Burst (Durchlauf-Ende) kommen dort dazu.
+    // Feuer-Glutdividende → Grund-Kanal; Pflanze-Legendär-Direkt wurde schon oben in Wurzel/Ernte gebucht.
+    fireBase += fireDirectApplied; lightYield += lightDirect;
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, fireDirect, lightDirect, plantDirect, perkDirect, total: gained };
     // Blitz-Rework (v0): Ladungsgewinn — Blitzableiter (Crit +1) · Statische Aufladung (Nicht-Crit-Sieg +1) ·
     // Kaskade Überspannung (Crit auf/neben Ionis.) · Überschlag (Crit-Chance-Überschuss) · Dauerstrom (Serie).
     const ionizedCard = (pCard.ionStacks || 0) > 0;
     if (lightning && lightning.active) {
-      if (isCrit && dischargeArmedBefore) lightning = { ...lightning, dischargeArmed: false }; // Entladung entwaffnen (Crit-Mult oben verrechnet)
       let gainedCharge = 0;
       if (isCrit) {
         gainedCharge += 1 + skillSum(skills, "chargeOnCrit", wctx);
@@ -732,12 +801,14 @@ export function resolveTrick(state, rng) {
         gainedCharge += C.STATIC_CHARGE; // Statische Aufladung: Sieg ohne Crit → 1 Ladung
       }
       // Überschlag: Crit-Chance-Überschuss über 100 % → Ladung (jeder Sieg). Dauerstrom: Serie → Ladung (skaliert mit Länge).
-      if (hasUeberschlag(skills) && rawCrit > 1) gainedCharge += Math.floor((rawCrit - 1) * C.UEBERSCHLAG_PER);
+      if (hasUeberschlag(skills) && rawCrit > 1 && !lightDepth) gainedCharge += Math.floor((rawCrit - 1) * C.UEBERSCHLAG_PER); // vor Tiefe → Ladung; ab Tiefe → Crit-Mult (Graduierung v0.5)
       if (hasDauerstrom(skills)) gainedCharge += Math.min(Math.floor(serieStreak / C.DAUERSTROM_PER_STREAK), C.DAUERSTROM_MAX);
       if (gainedCharge > 0) {
         lightning = addCharge(lightning, gainedCharge);
         // Volle Ladung → Konsument (Ionisierung; max 1, im Reducer erzwungen) auslösen; Reaktoren laufen bei JEDEM Verbrauch.
-        if (lightning.charge >= lightning.maxCharge) {
+        // Donnergott-Turbo (v0.5): löst schon bei DONNERGOTT_THRESHOLD_FRAC der Ladung aus (öfter entladen).
+        const consumeAt = hasThunderGod(skills) ? Math.ceil(lightning.maxCharge * C.DONNERGOTT_THRESHOLD_FRAC) : lightning.maxCharge;
+        if (lightning.charge >= consumeAt) {
           let consumed = false;
           let blitzCatches = 0; // #165 Blitzfänger: Anzahl voller Karten, die statt ionisiert +Ladung erzeugen
           if (hasIonize(skills)) {
@@ -746,7 +817,9 @@ export function resolveTrick(state, rng) {
             // Deck-Indizes doppelt nennt). Ohne Zeitsegment ist seq die Identität → identisch zu playerOrder.slice.
             const undrawn = [...new Set(seq.slice(pos + 1).map((p) => playerOrder[p]))]; // Deck-Indizes der noch kommenden Karten
             // Doppelentladung (L, v0): der volle Verbrauch feuert den Ionisierungs-Konsumenten zweimal (Anzahl ×2).
-            const ionN = ionizeCountFor(skills) * (hasDoubleDischarge(skills) ? C.DOPPELENTLADUNG_FACTOR : 1);
+            // Ionisierungs-Speed (v0.5): +Breite je Blitz-Skill über der Schwelle → Mono sättigt in weit weniger Verbräuchen.
+            const ionN = (ionizeCountFor(skills) + ionSpeedBonus(skills)) * (hasDoubleDischarge(skills) ? C.DOPPELENTLADUNG_FACTOR : 1);
+            const ionBefore = deck.reduce((t, c) => t + (c.ionStacks || 0), 0); // #270: Motor-Zähler (tatsächlich neu ionisierte Stapel = Diff)
             if (hasBlitzcatcher(skills)) {
               // Blitzfänger: volle Karten (5 Stapel) werden nicht ionisiert → je +2 temp Wert (nächstes Auftauchen) & +1 Ladung.
               const res = ionizeCardsWithCatch(deck, undrawn, ionN, rngAtOr(cycle, "ion", pos));
@@ -756,43 +829,40 @@ export function resolveTrick(state, rng) {
             } else {
               deck = ionizeCards(deck, undrawn, ionN, rngAtOr(cycle, "ion", pos));
             }
+            ionTotal += Math.max(0, deck.reduce((t, c) => t + (c.ionStacks || 0), 0) - ionBefore); // #270: durch den Konsumenten ionisierte Karten
             consumed = true;
           }
           if (consumed) {
             // Ladungsboden: Reststrom (3), sonst 0 (Endloser Sturm wurde im Rework durch Doppelentladung ersetzt).
             const floor = chargeFloorFor(skills);
             lightning = consumeCharge(lightning, floor);
+            lightning = { ...lightning, consumeCount: (lightning.consumeCount || 0) + 1 }; // v0.5-UI: Entladungen/Runde-Zähler
             // #165 Blitzfänger: die Fang-Ladungen entstehen NACH dem Verbrauch (sonst würde consumeCharge sie wieder auf den Boden setzen).
             if (blitzCatches > 0) lightning = addCharge(lightning, blitzCatches);
-            if (hasDischarge(skills)) lightning = { ...lightning, dischargeArmed: true }; // Entladung: nächsten Crit armieren
+            // Entladung (v0.5): +Crit-Mult-Momentum je Verbrauch, dauerhaft, weicher Cap (kein Ventil für Multi).
+            if (hasDischarge(skills)) lightning = { ...lightning, entladungMult: Math.min(C.ENTLADUNG_MULT_CAP, (lightning.entladungMult || 0) + C.ENTLADUNG_MULT_STEP) };
             // On-Consume-Passives (Rework v0) — kleiner Payoff bei JEDEM vollen Verbrauch, hält die Kettenfantasie am Laufen:
             if (hasBlitzableiter(skills)) lightning = addCharge(lightning, C.BLITZABLEITER_CONSUME_CHARGE); // Blitzableiter: Ladung zurück
-            if (hasDauerstrom(skills)) // Dauerstrom: dauerhafte Crit-Chance-Rampe je Verbrauch (Cap)
-              lightning = { ...lightning, dauerstromCritBonus: Math.min(C.DAUERSTROM_CONSUME_CRIT_CAP, (lightning.dauerstromCritBonus || 0) + C.DAUERSTROM_CONSUME_CRIT) };
+            if (hasDauerstrom(skills)) // Dauerstrom (v0.5): dauerhafte Crit-Chance-Rampe je Verbrauch — UNCAPPED (3. Momentum-Zugang)
+              lightning = { ...lightning, dauerstromCritBonus: (lightning.dauerstromCritBonus || 0) + C.DAUERSTROM_CONSUME_CRIT };
             if (hasStaticCharge(skills)) { // Statische Aufladung: +Flat-Score bei jedem Verbrauch (Direkt-Score, nicht multipliziert)
-              score += C.CONSUME_SCORE; gained += C.CONSUME_SCORE;
+              score += C.CONSUME_SCORE; gained += C.CONSUME_SCORE; lightYield += C.CONSUME_SCORE;
               breakdown.lightDirect = (breakdown.lightDirect || 0) + C.CONSUME_SCORE; breakdown.total = (breakdown.total || 0) + C.CONSUME_SCORE;
             }
-            if (hasStorm(skills)) { // Gewitterfront-Reaktor: erst Crit-Chance (Cap), danach Score für die nächsten Siege
-              const cur = lightning.stormCritBonus || 0;
-              lightning = cur < C.STORM_CRIT_CAP
-                ? { ...lightning, stormCritBonus: Math.min(C.STORM_CRIT_CAP, cur + C.STORM_CRIT_STEP) }
-                : { ...lightning, stormScoreWinsRemaining: C.STORM_SCORE_WINS };
-            }
+            // Gewitterfront (v0.5): Crit-Chance-Momentum je Verbrauch — UNCAPPED (Überschlag ist das Ventil; „ab Cap → Score" entfällt).
+            if (hasStorm(skills)) lightning = { ...lightning, stormCritBonus: (lightning.stormCritBonus || 0) + C.STORM_CRIT_STEP };
           }
         }
       }
     }
-    // Ionisierte Siegkarte: normalerweise +1 Stapel. Kurzschluss (v0): eine VOLLE (5) Karte entlädt stattdessen alle
-    // Stapel → Ladung-Burst, Karte auf 0 (Zyklus statt Sättigung). Der Ion-Score wurde oben VORHER gewertet.
+    // Ionisierte Siegkarte: +1 Stapel (voll bleibt voll — kein Reset mehr). Kurzschluss (Rework): eine VOLLE Karte gibt
+    // zusätzlich einen Ladungs-Burst je Sieg — Stapel bleiben (Payoff statt Sättigung entladen; der Score-Burst läuft
+    // oben über lightDirect).
     if (ionizedCard) {
       const stacks = pCard.ionStacks || 0;
-      if (hasKurzschluss(skills) && stacks >= C.ION_MAX_STACKS) {
-        deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: 0 } : c));
-        if (lightning && lightning.active) lightning = addCharge(lightning, stacks * C.KURZSCHLUSS_CHARGE_PER_STACK);
-      } else {
-        deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, stacks + 1) } : c));
-      }
+      deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, stacks + 1) } : c));
+      if (hasKurzschluss(skills) && stacks >= C.ION_MAX_STACKS && lightning && lightning.active)
+        lightning = addCharge(lightning, C.KURZSCHLUSS_CHARGE);
     }
     // Blitzschlag (v0, Kaskade): ein Crit ionisiert die gewonnene Karte (+1 Stapel) — schließt die Selbstspeisung.
     if (isCrit && hasBlitzschlag(skills)) {
@@ -802,15 +872,14 @@ export function resolveTrick(state, rng) {
     if (isCrit && hasDurchschlag(skills) && (pCard.ionStacks || 0) >= C.ION_MAX_STACKS && lightning && lightning.active) {
       lightning = { ...lightning, durchschlagMult: Math.min(C.DURCHSCHLAG_MULT_CAP, (lightning.durchschlagMult || 0) + C.DURCHSCHLAG_CRIT_MULT) };
     }
-    // Spannungsbogen (§5.2): Sieg mit ionisierter Karte → erster ungespielter, nicht-voller Nachfolger +1 Stapel.
+    // Breitenbeschleuniger (v0.5, ex-Spannungsbogen): Sieg mit ionisierter Karte → +1 Stapel, BEVORZUGT auf eine noch
+    // nicht ionisierte (0-Stapel) Karte (treibt die Breite); gibt es keine, auf den nächsten nicht-vollen Nachfolger.
     if (ionizedCard && hasVoltageArc(skills)) {
-      const played = new Set(seq.slice(0, pos + 1)); // in diesem Durchlauf bereits gespielte Deckpositionen (Zeitsegment-tauglich)
-      for (let k = actualPos + 1; k < playerOrder.length; k++) {
-        const di = playerOrder[k];
-        if (played.has(k) || (deck[di].ionStacks || 0) >= C.ION_MAX_STACKS) continue; // gespielt oder voll → überspringen
-        deck = deck.map((c, i) => (i === di ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
-        break;
-      }
+      const played = new Set(seq.slice(0, pos + 1)); // bereits gespielte Deckpositionen (Zeitsegment-tauglich)
+      const pick = (pred) => { for (let k = actualPos + 1; k < playerOrder.length; k++) { const di = playerOrder[k]; if (played.has(k)) continue; if (pred(deck[di])) return di; } return -1; };
+      let di = pick((c) => (c.ionStacks || 0) === 0);                        // 1. Wahl: 0-Stapel-Karte → Breite +1
+      if (di < 0) di = pick((c) => (c.ionStacks || 0) < C.ION_MAX_STACKS);   // sonst: nächste nicht-volle
+      if (di >= 0) deck = deck.map((c, i) => (i === di ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
     }
     // Flächenionisation (L, v0): Sieg mit ionisierter Karte → ALLE ungespielten Deck-Nachbarn +1 Stapel (statt nur einer).
     if (ionizedCard && hasAreaIonize(skills)) {
@@ -822,11 +891,7 @@ export function resolveTrick(state, rng) {
         deck = deck.map((c, i) => (i === di ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + 1) } : c));
       }
     }
-    // Wetterleuchten (v0): Serie erreicht eine Schwelle → ionisiert Karten (Serie zündet Ionisierung).
-    if (hasWetterleuchten(skills) && serieStreak > 0 && serieStreak % C.WETTERLEUCHTEN_THRESHOLD === 0) {
-      const undrawnW = [...new Set(seq.slice(pos + 1).map((p) => playerOrder[p]))];
-      deck = ionizeCards(deck, undrawnW, C.WETTERLEUCHTEN_COUNT, rngAtOr(cycle, "weather", pos));
-    }
+    // (Wetterleuchten v0.5 → Serienschutz, im Niederlagen-Zweig.)
     // Spannungsstau (v0): Nicht-Crit-Siege rampen die Crit-Chance (bis Cap); ein Crit entlädt & resettet.
     if (hasSpannungsstau(skills) && lightning && lightning.active) {
       lightning = { ...lightning, stauBonus: isCrit ? 0 : Math.min(C.SPANNUNGSSTAU_CAP, (lightning.stauBonus || 0) + C.SPANNUNGSSTAU_STEP) };
@@ -885,7 +950,20 @@ export function resolveTrick(state, rng) {
   } else if (lost) {
     losses += 1; cycleLosses += 1; // cycleLosses: Durchlauf-Bilanz für Zinseszins (#203)
     // Serienanker IV (§4.2): eine Niederlage auf dieser Position setzt die Serie NICHT zurück.
-    const streakNoReset = anchorType === "streak" && !!aParam("noReset");
+    const anchorNoReset = anchorType === "streak" && !!aParam("noReset");
+    // Serienschutz (v0.5, ex-Wetterleuchten): Niederlage mit ≥ halber Max-Ladung → Serie hält, die Ladung wird verbraucht.
+    let serienschutzHeld = false;
+    if (!anchorNoReset && hasSerienschutz(skills) && lightning && lightning.active) {
+      const cost = Math.ceil(lightning.maxCharge * C.SERIENSCHUTZ_COST_FRAC);
+      if (lightning.charge >= cost) { lightning = { ...lightning, charge: lightning.charge - cost, serienschutzCount: (lightning.serienschutzCount || 0) + 1 }; serienschutzHeld = true; } // v0.5-UI: Zähler abgefangener Serienbrüche
+    }
+    // Eis-Neudesign (docs §4 Frostgriff — Eispanzer): eine Niederlage NEBEN einem Gletscher ist folgenlos (Serie hält)
+    // UND füttert Masse in die angrenzenden Gletscher — der Gletscher frisst, was an ihm zerbricht. Prinzip heil: die Karte
+    // verliert weiter (kostet den Stich), nur die Folgen (Serienbruch) sind abgeschirmt.
+    const glacierShield = glacierActive && glacierRoles.includes(GLACIER_ROLES.EISPANZER)
+      && glacierNeighbors4(actualPos).some((p) => glacierLocked[p]);
+    if (glacierShield) for (const nb of glacierNeighbors4(actualPos)) if (glacierLocked[nb]) newGlacierMass[nb] = (newGlacierMass[nb] || 0) + GLACIER_EISPANZER_MASS;
+    const streakNoReset = anchorNoReset || serienschutzHeld || glacierShield;
     winStreak = streakNoReset ? winStreak : 0;
     initiative = "opp";
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
@@ -901,7 +979,7 @@ export function resolveTrick(state, rng) {
     weaknessBig = weaknessBigDeficit != null && (oValue - pValue) >= weaknessBigDeficit;
     if (interplayStoreOnLoss) interplayStored += interplayStoreOnLoss; // D_INTERPLAY IV: Niederlage bankt Score für den nächsten Sieg
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie
-    serieStreak = 0;
+    serieStreak = streakNoReset ? winStreak : 0; // Serienschutz/Serienanker: effektive Serie hält
     // ---- Feuer-Rework (v0): Hitzeverlust (Glutbett), Feuerwalze zurücksetzen, Funkenflug halbieren, Rückstand merken.
     if (heat && heat.active) {
       const deficit = oValue - pValue;
@@ -913,14 +991,29 @@ export function resolveTrick(state, rng) {
                sparkStore: Math.floor((heat.sparkStore || 0) * C.SPARKFLIGHT_LOSS_KEEP), // Funkenflug: Niederlage halbiert
                lastLossDeficit: deficit }; // Rückzündung: Rückstand für den nächsten Sieg merken
     }
-    // Kältereserve (v0): Frostkarte verliert → bankt trotzdem +1 Schicht (der Gletscher wächst auch in der Niederlage).
-    if (hasFrostReserve(skills) && pCard.frozen)
-      newLayers = { ...newLayers, [pCard.id]: (newLayers[pCard.id] != null ? newLayers[pCard.id] : (layers[pCard.id] || 0)) + C.KAELTERESERVE_LAYER };
     // Zäher Halm (Pflanze v0): unreife (graue) Karten wachsen auch bei Niederlage +1 — bis sie grün sind.
     if (hasZaeherHalm(skills) && !pCard.green) {
       const g = (newGrowth[pCard.id] || 0) + C.ZAEHER_HALM_GROWTH;
-      newGrowth = { ...newGrowth, [pCard.id]: g };
+      newGrowth = { ...newGrowth, [pCard.id]: g }; growthTotal += C.ZAEHER_HALM_GROWTH; // #270
       if (growthRipe(g)) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c)); // reif geworden → grün backen
+    }
+    // Fraktions-Passive — Niederlage-Klausel: nur Mono-Pflanze UND ab N Pflanzen-Skills wächst eine Karte auch nach je M
+    // Niederlagen trotzdem. Zähler je card.id; bei Erreichen der Schwelle → +Zuwachs (gleiche Skill-Gate-Rate wie ein Sieg)
+    // und Zähler zurück. Grün backen + Wert-Schwelle wie im Sieg.
+    if (plantPassiveActive(skills) && plantSkillCount(skills) >= C.WURZELSCHLAG_LOSS_MIN_SKILLS) {
+      const losses = (newPlantLoss[pCard.id] || 0) + 1;
+      if (losses >= C.WURZELSCHLAG_LOSS_EVERY) {
+        newPlantLoss = { ...newPlantLoss, [pCard.id]: 0 };
+        const growInc = Math.min(1, C.PLANT_GROWTH_SKILL_REF > 0 ? plantSkillCount(skills) / C.PLANT_GROWTH_SKILL_REF : 1);
+        const prevG = newGrowth[pCard.id] || 0, g = prevG + growInc;
+        newGrowth = { ...newGrowth, [pCard.id]: g }; growthTotal += growInc; // #270 Motor-Zähler
+        const nowGreen = pCard.green || growthRipe(g); // grau creept Richtung Grün; grün klettert im Wert
+        if (growthRipe(g) && !pCard.green) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c)); // reif → grün
+        if (nowGreen && Math.floor(g / C.WURZELSCHLAG_PER_GROWTH) > Math.floor(prevG / C.WURZELSCHLAG_PER_GROWTH) && pCard.value < C.PLANT_VALUE_CAP)
+          deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: Math.min(C.PLANT_VALUE_CAP, c.value + 1) } : c)); // Wurzelschlag-Wert (nur grün, wie im Sieg)
+      } else {
+        newPlantLoss = { ...newPlantLoss, [pCard.id]: losses };
+      }
     }
     lastResult = "loss";
   } else {
@@ -932,19 +1025,68 @@ export function resolveTrick(state, rng) {
     // Serie & Initiative unverändert
   }
 
+  // Eis-Neudesign (docs §2.4, Phase B): Bruch-Auszahlung dieses Stichs — pro Position genau einmal je Durchlauf, UNABHÄNGIG
+  // von Sieg/Niederlage (Bruch hängt an der Masse-Schwelle, nicht am Stich-Ausgang). Der Basis-Burst kommt aus der
+  // Precompute (inkl. Gletscher-Geometrie/Kaskade/Kollision + Soft-Cap); GEWINNT die Gletscher-Karte ihren Stich, skaliert
+  // zusätzlich der volle Sieg-Stack (glacierWinMult: Serie/Perk/Formation/Crit/Architekt/…) → der Rest des Spiels hebelt mit.
+  const glacierDirect = (glacierPreNow ? (glacierPreNow.payout[actualPos] || 0) : 0) * glacierWinMult;
+  if (glacierDirect) {
+    score += glacierDirect; gained += glacierDirect; glacierYield += glacierDirect;
+    if (breakdown) { breakdown.glacierDirect = glacierDirect; breakdown.total += glacierDirect; }
+  }
+  // Einfrieren (docs §4 Frostgriff): bricht dieser Gletscher, verliert die hier getroffene Gegnerkarte ihren NÄCHSTEN Stich.
+  if (glacierActive && glacierRoles.includes(GLACIER_ROLES.EINFRIEREN) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
+    newFrozenOppPending[oCard.id] = true;
+  // Erstarrung (Legendär): jeder brechende Gletscher friert die getroffene Gegnerkarte ein — plus Reichweite +1 ins Gegnerfeld.
+  // Dazu ein Bonus-Score je Bruch = ANTEIL des Burst-Scores dieses Bruchs (glacierDirect, bereits × Sieg-Stack). Skaliert so
+  // automatisch mit Masse/Geometrie/Kaskade und der Build-Qualität und erbt den Burst-Soft-Cap — Erstarrung ist damit der
+  // „heimliche Best-Pick" (etwas über den anderen Legendären), ohne am Burst vorbei auszureißen. Kern bleibt die Duo-Kontrolle.
+  if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_ERSTARRUNG) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos)) {
+    newFrozenOppPending[oCard.id] = true;
+    for (const nb of glacierNeighbors4(actualPos)) newFrozenOppPending[oppDeck[oppOrder[nb]].id] = true;
+    const erstarrungScore = glacierDirect * GLACIER_ERSTARRUNG_FRAC;
+    score += erstarrungScore; gained += erstarrungScore; glacierYield += erstarrungScore;
+    if (breakdown) { breakdown.glacierDirect = (breakdown.glacierDirect || 0) + erstarrungScore; breakdown.total += erstarrungScore; }
+  }
+  // Frostbund (docs §4 Frostgriff): bricht dieser Gletscher, bufft er seine NICHT-Gletscher-Nachbarn (2. Archetyp) → +Stichwert.
+  if (glacierActive && glacierRoles.includes(GLACIER_ROLES.FROSTBUND) && glacierNF && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
+    for (const nb of glacierNF(actualPos)) if (!glacierLocked[nb]) {
+      const id = deck[playerOrder[nb]].id;
+      newGlacierBuffPending[id] = Math.max(newGlacierBuffPending[id] || 0, GLACIER_FROSTBUND_BUFF);
+    }
+  // Verdichtung (docs §4 Firn): der auf diesem Gletscher unterdrückte Gebäude-Wertbonus wird in Masse getankt.
+  if (verdichtung && architectValue > 0) newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + architectValue * GLACIER_VERDICHTUNG_RATE;
+
   // #71 Volles Haus: Ergebnis-Fenster fortschreiben (letzte 4 Ergebnisse für den nächsten Stich).
   recentResults = [...recentResults, lastResult].slice(-4);
 
+  // Archetyp-„Treffer-Identitäten" dieses Siegs (nur Anzeige, für Score-Float-Farbe/-Icons in der Battlefield). Ein
+  // einzelner Sieg kann MEHRERE zugleich tragen (bis zu alle vier) → als Liste geführt, die UI zeigt alle Icons und
+  // wählt die Score-Farbe nach Priorität (Krit-Lila zuerst). Bedingungen:
+  //   fire      = Sieg bei voller Hitze (Hitzeleiste 100 %)
+  //   plant     = Sieg mit einer voll ausgewachsenen grünen Karte (Wert am Deckel)
+  //   lightning = Sieg mit einer voll ionisierten Karte (ION_MAX_STACKS Stapel) — Krit trägt weiterhin das Lila der Farbe
+  //   ice       = Sieg eines Gletschers (Siegkarte steht auf einem festgefrorenen Gletscher-Feld)
+  const heatFull = !!(state.heat && state.heat.active && (state.heat.value || 0) >= C.HEAT_MAX);
+  const hitTypes = won
+    ? [
+        heatFull && "fire",
+        (pCard.green && pCard.value >= C.PLANT_VALUE_CAP) && "plant",
+        ((pCard.ionStacks || 0) >= C.ION_MAX_STACKS) && "lightning",
+        (glacierActive && !!glacierLocked[actualPos]) && "ice",
+      ].filter(Boolean)
+    : [];
   const lastTrick = {
     pCard, oCard, pValue, oValue,
     result: tieConverted ? "win_tie" : won ? "win" : lost ? "loss" : "tie",
-    gained, trickNo,
+    gained, trickNo, hitTypes,
     isCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
     // Formations-Multiplikator dieses Stichs (§22.7) + die beteiligten Formationen der Position (Anzeige/Float).
     formationMult: won ? formationMult : 1,
     formations: posForm.formations,
-    oFrostbitten: (frostbiteActive[oCard.id] || 0) > 0, // Vergletscherung (Eis): erst JETZT (im Kampf) sichtbar
-    pFrozen: !!pCard.frozen,
+    // Große Lawine: brach dieser Gletscher als Teil des Finishers? → HUD zeigt „Lawine" statt der Score-Stufe („Gottgleich").
+    grosseLawine: !!(glacierPreNow && glacierPreNow.grosseLawine && glacierPreNow.breaks.some((b) => b.pos === actualPos)),
+    winStreak, // aktuelle Siegesserie NACH diesem Stich (0 bei Niederlage) — Battlefield feiert Meilensteine (Serie 200 → „Gönn dir")
     isRepeatedSegmentTrick: isRepeat, originalPosition: actualPos, segmentIndex: timeSeg, // Zeitsegment (§8 A-L1 / §13)
     breakdown, // Ergebnis-Aufschlüsselung (§17): { base, flats, streakMult, perkMult, formMult, critMult, total } bei Sieg, sonst null
   };
@@ -955,7 +1097,7 @@ export function resolveTrick(state, rng) {
   let phase = "play";
   let newOffer = offer;
   let newSkillOffer = skillOffer;
-  let newStatOffer = statOffer;
+  let newLegendaryOffer = state.legendaryOffer || null; // #272 Legendär-Phase (Runde 29): 2 Legendäre aus aktiven Fraktionen
   let newFormationEnergy = formationEnergy;
   let newFormationSwaps = formationSwaps;
   let newMasteryLegGranted = state.masteryLegGranted || false; // #217 Grad V: 1×/Lauf garantierter Legendär — eingelöst-Flag
@@ -966,6 +1108,18 @@ export function resolveTrick(state, rng) {
   const newArchitectPre = archPreNow;
   if (pos >= cycleLen) { // Zeitsegment (§8 A-L1): Durchlauf endet nach cycleLen Stichen (40, mit Zeitsegment 45)
     cycle += 1;
+    // Eis-Neudesign (docs §2.6): Ewiger Frost — bedingungsloser Masse-Tick je Durchlauf auf jeden Gletscher (nach Auszahlung).
+    if (glacierActive) newGlacierMass = ewigerFrostTick(newGlacierMass, glacierLocked);
+    // Dauerfrost (docs §4 Firn): offener Boden friert am tiefsten — passiver Masse-Frost auf ungefrorene Felder.
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.DAUERFROST)) newGlacierMass = dauerfrostTick(newGlacierMass, glacierLocked);
+    // Packeis / Verzahnung (docs §4 Eisschild): Dichte-Bonus je Gletscher-Nachbar / Cluster-Größe (Eisbrücke-adjazenz-aware).
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.PACKEIS)) newGlacierMass = packeisTick(newGlacierMass, glacierLocked, glacierNF);
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.VERZAHNUNG)) newGlacierMass = verzahnungTick(newGlacierMass, glacierLocked, glacierNF);
+    // Eiszeit (Legendär): brettweite Flut + das höchste ungefrorene Feld friert zum Gletscher ein (Karten frieren nach und nach).
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_EISZEIT)) {
+      const ez = eiszeitTick(newGlacierMass, newGlacierLocked);
+      newGlacierMass = ez.mass; newGlacierLocked = ez.locked;
+    }
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf
     //      attribuiert). Zinseszins — positive Durchlauf-Bilanz (mehr Siege als Niederlagen) stapelt eine FLACHE Dauer-
     //      Dividende (kein Mult), die jeden Durchlauf ausgezahlt wird (compoundet über den Lauf). Echo — der beste Stich
@@ -995,10 +1149,11 @@ export function resolveTrick(state, rng) {
       // die tiefen Karten, da nach jedem Schmieden neu die tiefste gesucht wird). Schmelzofen senkt die Kosten ab 50 % Hitze.
       if (fireFlag(skills, "ascheschmiede")) {
         const cost = forgeCostFor(skills, heat.value);
+        // Stufe 1 (permanent, gedeckelt): solange Asche & eine schmiedbare Karte da ist, die aktuell niedrigste Karte
+        // dauerhaft +FORGE_VALUE. Boden-Heber (wenige tiefe Karten), kein Ganz-Deck-Buff.
         let guardF = 0;
         while (newAsh >= cost && guardF++ < deck.length) {
-          // niedrigste schmiedbare Karte: unter dem Per-Karte-Deckel UND (schon geschmiedet ODER noch Platz unter
-          // FORGE_MAX_CARDS). So bleibt Ascheschmiede ein Boden-Heber (wenige tiefe Karten), kein Ganz-Deck-Buff.
+          // niedrigste schmiedbare Karte: unter dem Per-Karte-Deckel UND (schon geschmiedet ODER noch Platz unter FORGE_MAX_CARDS).
           const forgedCount = Object.keys(newForged).length;
           let lowId = null, lowV = Infinity;
           for (const c of deck) {
@@ -1006,10 +1161,20 @@ export function resolveTrick(state, rng) {
             if (!(newForged[c.id] > 0) && forgedCount >= C.FORGE_MAX_CARDS) continue;    // keine NEUE Karte über dem Kartendeckel
             if (c.value < lowV) { lowV = c.value; lowId = c.id; }
           }
-          if (lowId == null) break; // nichts mehr schmiedbar → Asche bleibt erhalten
-          newAsh -= cost;
+          if (lowId == null) break; // Kapazität voll → raus aus Stufe 1 (Rest-Asche geht in den Weißglut-Überlauf)
+          newAsh -= cost; ashBurned += cost; // #270: Motor-Zähler „Asche verbrannt"
           deck = deck.map((c) => (c.id === lowId ? { ...c, value: c.value + C.FORGE_VALUE } : c));
           newForged = { ...newForged, [lowId]: (newForged[lowId] || 0) + C.FORGE_VALUE };
+        }
+        // Stufe 2 — Weißglut-Überlauf (#268): ist die Kapazität voll und liegt noch Asche ≥ Kosten, „glüht die Schmiede
+        // weiß" → je FORGE_COST-Portion +FORGE_OVERFLOW_SCORE (sichtbarer Score-Burst). Asche wird so auf < Kosten
+        // heruntergefahren (vollständig ausgegeben). Post-stack-Flat (am Sieg-Multiplikator vorbei), dem Schluss-Stich gutgeschrieben.
+        if (C.FORGE_OVERFLOW_SCORE > 0 && newAsh >= cost) {
+          const portions = Math.floor(newAsh / cost);
+          const burst = portions * C.FORGE_OVERFLOW_SCORE;
+          newAsh -= portions * cost; ashBurned += portions * cost; // #270: verbrannte Asche (Weißglut-Überlauf)
+          score += burst; fireWhite += burst; // #270.2: Weißglut-Überlauf-Burst → Weißglut-Kanal
+          if (lastTrick) { lastTrick.gained += burst; lastTrick.scoreGain += burst; } // Per-Karte-Ledger konsistent halten
         }
       }
       // Damaststahl (L): SELBST-Schmiede (braucht Ascheschmiede/Asche NICHT) — nimmt je Durchlauf die niedrigste noch
@@ -1055,12 +1220,12 @@ export function resolveTrick(state, rng) {
       // Neuer Durchlauf: NUR das Gegnerdeck neu mischen; Spieler-Reihenfolge bleibt (persistent). pos zurück.
       oppOrder = shuffledOrder(oppDeck.length, rngAtOr(cycle, "oppdeal")); // #205: Gegner-Neumischung adressiert je (neuem) cycle
       pos = 0;
-      // Vergletscherung (v0): die im gerade beendeten Durchlauf gesetzten Gegner-Marken {id: −Wert} werden jetzt aktiv.
-      newFrostbiteActive = newFrostbitePending;
-      newFrostbitePending = {};
-      // Beständigkeit (v0): die Frostkarten, die diesen Durchlauf in Formation siegten, sind der Vergleich für den nächsten.
-      newFrostFormPrev = [...new Set(newFrostFormCur)];
-      newFrostFormCur = [];
+      // Einfrieren (v0): die diesen Durchlauf gesetzten Gegner-Marken werden jetzt aktiv (verlieren ihren nächsten Stich).
+      newFrozenOppActive = newFrozenOppPending;
+      newFrozenOppPending = {};
+      // Frostbund (v0): die diesen Durchlauf gesetzten Nachbar-Buffs werden jetzt aktiv (+Stichwert im nächsten Durchlauf).
+      newGlacierBuffActive = newGlacierBuffPending;
+      newGlacierBuffPending = {};
       // Feuer-Brand (v0): analog — die im gerade beendeten Durchlauf gesetzten Brandmarken werden jetzt aktiv (−Wert).
       newBrandActive = newBrandPending;
       newBrandPending = {};
@@ -1071,9 +1236,7 @@ export function resolveTrick(state, rng) {
       // #217 Meistergrade — Reward-Ableitungen (Grad 0 = No-op: Mult ×1, Shift 0, keine Garantie → byte-identisch).
       const mGrade = state.masteryGrade || 0;
       const mLegMult = masteryLegendMult(mGrade), mRareShift = masteryRareShift(mGrade);
-      if (decision === "stat") {
-        phase = "levelup"; newStatOffer = STAT_IDS; // immer alle Stats (Shop-Spec §4.3: fünf inkl. Einkommen)
-      } else if (decision === "skill") {
+      if (decision === "skill") {
         // Grad V: solange dieser Lauf noch kein garantiertes Legendär bekam, mind. EINEN forcieren (#247: als eigener
         // guaranteeOne-Parameter — NICHT mehr Chance 1, das würde bei der Per-Archetyp-Ziehung in JEDEM Archetyp einen setzen).
         const guarantee = masteryLegendGuaranteed(mGrade) && !newMasteryLegGranted;
@@ -1106,6 +1269,17 @@ export function resolveTrick(state, rng) {
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
         formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
+      } else if (decision === "legendary") {
+        // #272 Legendär-Phase (Runde 29, build-defining): Legendäre NUR aus aktiven Fraktionen → fixer 7. Slot.
+        // Angebotsgröße skaliert mit der Build-Breite (Mono 3 · Duo 2/Fraktion=4 · Trio 2/Fraktion=6).
+        // Kein Legendär verfügbar (keine aktive Fraktion / alle der aktiven Fraktionen bereits gehalten) → wie ein
+        // leerer Skill-Pool auf die normale Skill-Wahl ausweichen (Runde nicht verschwenden).
+        const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0));
+        if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
+        else {
+          const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false);
+          if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
+        }
       }
     }
   }
@@ -1128,6 +1302,8 @@ export function resolveTrick(state, rng) {
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 
     crits, critBonusScore, bestTrickScore, maxFormations, formationScore, buildingScore, streakScore, // #161 FB-2 / #UI / #251: Run-Rückblick (+ Gebäude-/Serien-Score)
+    lightYield, plantRoot, plantBloom, plantHarvest, fireBase, fireWhite, // #270: Fraktions-Eigen-Score (Kanäle je Fantasie)
+    ionTotal, growthTotal, ashBurned, brandTotal, // #270: Motor-Zähler
     trickLog: nextTrickLog, // #251: Score je Stich (+ Sieg/Niederlage), nach Durchlauf gebucket → Durchlauf-Graph
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     masteryLegGranted: newMasteryLegGranted, // #217 Grad V: garantierter Legendär je Lauf eingelöst? (masteryGrade selbst läuft über ...state)
@@ -1135,19 +1311,22 @@ export function resolveTrick(state, rng) {
     winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     architect: newArchitect, architectEnabled, architectPre: newArchitectPre, // Architekt (#202, ersetzt den Shop)
+    glacierMass: newGlacierMass, glacierLocked: newGlacierLocked, glacierPre: glacierPreNow, glacierYield, glacierRoles, grosseLawineFired: newGrosseLawineFired, // Eis-Neudesign (glacier.js): Firn-Boden-Masse / Lock / Snapshot / Eigen-Score / Rollen / Große-Lawine-One-Shot
+    frozenOppPending: newFrozenOppPending, frozenOppActive: newFrozenOppActive, // Eis-Neudesign (Einfrieren): Gegner-Marken (verlieren nächsten Stich)
+    glacierBuffPending: newGlacierBuffPending, glacierBuffActive: newGlacierBuffActive, // Eis-Neudesign (Frostbund): Nachbar-Wert-Buffs
+
+
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
     zinsBonus, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, // Legendär-Perks-Rework (#203)
     richtfestBonus, // Gebäude-Legendäres Richtfest (Struktur-Dauerdividende)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
-    statOffer: newStatOffer, // Stat-System (V2 §22.3)
-    skillOffer: newSkillOffer, lightning, // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md)
+    skillOffer: newSkillOffer, legendaryOffer: newLegendaryOffer, lightning, // Skill-System / Blitz-Archetyp · #272 Legendär-Phase
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
-    iceTemp: newIceTemp, frostbitePending: newFrostbitePending, frostbiteActive: newFrostbiteActive, // Eis (Kaltfront temp / Vergletscherung)
-    layers: newLayers, frostFormPrev: newFrostFormPrev, // Eis-Rework (v0): Schichten (permanent) + Beständigkeits-Historie
+    iceTemp: newIceTemp, // temporärer Wertbonus je card.id (Blitzfänger)
     ash: newAsh, brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer-Rework (v0)
-    growth: newGrowth, colonized: newColonized, // Pflanze-Fraktion (v0): Wachstum + Kolonisierung (grün = card.green im deck)
+    growth: newGrowth, colonized: newColonized, plantLoss: newPlantLoss, // Pflanze-Fraktion (v0): Wachstum + Kolonisierung + Niederlagen-Zähler (Wurzelschlag-Buff v0.4)
     shop, // hält nur noch die (inerten) Positionsanker (#229: Shop entfernt)
     lastTrick, phase,
   };

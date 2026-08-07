@@ -5,6 +5,7 @@ import { CATEGORIES } from "../game/perks.js";
 import { FORMATION_TYPES, FORMATION_TYPE_LABELS, computeFormations } from "../game/formations.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
 import { CardGrid } from "./CardGrid.jsx";
+import { glacierGridProps } from "./glacierBoard.js";
 import { architectCoverFor } from "./architectCover.js";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe (raritätsunabhängig)
@@ -58,7 +59,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
               Wähle {need} {need === 1 ? "Karte" : "Karten"}{heldIds.size > 0 ? ` (${heldIds.size} bereits als Rolle gebunden)` : ""}
             </div>
-            <CardGrid cards={cards} formations={state.formations} roles={state.roles}
+            <CardGrid cards={cards} formations={state.formations} roles={state.roles} {...glacierGridProps(state)}
               anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               architectCover={architectCover} pickedIds={sel} disabledPos={disabledPos} onTilePick={(pos, c) => onCard(c.id)} />
           </div>
@@ -80,7 +81,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
             {/* #UI: Deck mit aktuellen Formationen + Gebäuden — damit man sieht, welche Formationstypen man hat. */}
             <div className="mt-4">
               <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Dein Deck · aktuelle Formationen{architectCover ? " & Gebäude" : ""}</div>
-              <CardGrid cards={cards} formations={state.formations} roles={state.roles}
+              <CardGrid cards={cards} formations={state.formations} roles={state.roles} {...glacierGridProps(state)}
                 anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 architectCover={architectCover} onTilePick={() => {}} quietTiles />
             </div>
@@ -112,7 +113,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
             {/* #UI: Deck mit aktuellen Formationen + Gebäuden — für eine informierte Farbwahl. */}
             <div className="mt-4">
               <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Dein Deck · aktuelle Formationen{architectCover ? " & Gebäude" : ""}</div>
-              <CardGrid cards={cards} formations={state.formations} roles={state.roles}
+              <CardGrid cards={cards} formations={state.formations} roles={state.roles} {...glacierGridProps(state)}
                 anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 architectCover={architectCover} onTilePick={() => {}} quietTiles />
             </div>

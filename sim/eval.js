@@ -64,20 +64,20 @@ export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, top
   // Explore optimiert die Aufstellung mit, wenn env.solveFormations (faire Bewertung von Eis & Co.).
   const explorePol = ucbPolicy({ c, solveFormations: !!env.solveFormations });
   for (let i = 0; i < exploreRuns; i++) runOne(seed0 + i, explorePol, mem);
-  const bestById = new Map();
-  for (const kind of ["stat", "perk", "skill"]) {
+  // #267: die Arme sind je (kind, id, bucket) geführt → ein id verteilt sein n auf mehrere Buckets. Früher trugen die
+  // Stat-Arme (grober Bucket, jede Stat-Runde dieselben 4 ids) den hohen n; ohne Stats erreicht kein einzelner
+  // Perk-/Skill-Bucket mehr MIN_N. Daher n JE ID über die Buckets AGGREGIEREN (Gate), den besten Bucket-Mittelwert behalten.
+  const byId = new Map();
+  for (const kind of ["perk", "skill"]) {
     for (const r of mem.ranking(kind)) {
-      if (r.n < MIN_N || SENTINELS.has(r.id)) continue;
-      const cur = bestById.get(r.id);
-      if (!cur || r.mean > cur.mean) bestById.set(r.id, { id: r.id, kind, mean: r.mean, n: r.n });
+      if (SENTINELS.has(r.id)) continue;
+      const cur = byId.get(r.id);
+      if (!cur) byId.set(r.id, { id: r.id, kind, mean: r.mean, n: r.n });
+      else { cur.n += r.n; if (r.mean > cur.mean) cur.mean = r.mean; }
     }
   }
-  const ranked = [...bestById.values()].sort((a, b) => b.mean - a.mean);
+  const ranked = [...byId.values()].filter((x) => x.n >= MIN_N).sort((a, b) => b.mean - a.mean);
   const priority = ranked.map((x) => x.id);
-  // Ablations-Ziele: Top-K nach explore-mean PLUS ALLE gesehenen Stats (sie werden jede Stat-Runde gewählt,
-  // ranken aber unter den Feuer-Skills → würden sonst nie ablatiert; ihr Beitrag ist trotzdem wichtig).
-  const topSet = new Set(ranked.slice(0, topK).map((x) => x.id));
-  const statExtras = ranked.filter((x) => x.kind === "stat" && !topSet.has(x.id));
 
   // 2) EVAL auf frischen, disjunkten Seeds. full einmal, dann je Top-K-Option gepaart ablatieren.
   const evalSeed0 = seed0 + exploreRuns;
@@ -85,7 +85,7 @@ export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, top
   const fullScores = [];
   for (let i = 0; i < evalRuns; i++) fullScores.push(runOne(evalSeed0 + i, full).score);
 
-  const marginals = [...ranked.slice(0, topK), ...statExtras].map((t) => {
+  const marginals = ranked.slice(0, topK).map((t) => {
     const abl = fixedPolicy(priority, { ...env, drop: t.id });
     const deltas = [], ratios = [];
     for (let i = 0; i < evalRuns; i++) {

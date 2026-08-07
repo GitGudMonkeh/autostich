@@ -1,15 +1,17 @@
 import { useState, useMemo } from "react";
 import { CardGrid } from "./CardGrid.jsx";
+import { glacierGridProps } from "./glacierBoard.js";
+import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
-import { suitName, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { FORMATION_TYPE_LABELS, openSegmentInfo, summarizeFormations } from "../game/formations.js";
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
-import { hasGletscher, plantRootScore, hasPfahlwurzel } from "../game/skills.js";
+import { plantRootScore, hasPfahlwurzel } from "../game/skills.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
-import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus, structureFactorMap } from "../game/architect.js";
+import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus, structureFactorMap, districtFactorMap } from "../game/architect.js";
+import FormIcon from "./FormIcon.jsx";
 import { architectEffectStrings } from "./archEffects.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 
@@ -20,25 +22,14 @@ const fmtX = (x) => x.toFixed(2).replace(".", ","); // ×-Multiplikator-Format (
    Desktop (#101): zweispaltig — Karten-Grid links, Info-Panel rechts; Mobil gestapelt. */
 const ANCHOR_LABEL = { power: "Kraft", score: "Score", crit: "Crit", streak: "Serie", formation: "Formation", joker: "Joker" };
 // #127: Preisstufen-Label/Farbe (wie ShopScreen) für die Kauf-Übersicht.
-const TIER_LABEL = { cheap: { l: "Günstig", c: "#8a8a95" }, strong: { l: "Stark", c: "#5a8ade" }, premium: { l: "Premium", c: "#8a7de0" }, legendary: { l: "Legendär", c: "#d4a63a" } };
 // #127: kompakte Ziel-Beschriftung eines Kauf-Log-Eintrags (Position/Segment/Farbpaar/Grenze/Typ/Kategorie/Karten).
-function targetLabel(t, deck) {
-  if (!t) return null;
-  if (t.position != null) return `Pos ${t.position + 1}`;
-  if (t.segment != null) return `Segment ${t.segment + 1}`;
-  if ((t.colorPair || []).length === 2) return t.colorPair.map(suitName).join(" + ");
-  if (t.boundary != null) return `Grenze ${t.boundary + 1}|${t.boundary + 2}`;
-  if (t.formationType) return FORMATION_TYPE_LABELS[t.formationType] || t.formationType;
-  if (t.category) return SHOP_CATEGORY_LABELS[t.category] || t.category;
-  if ((t.cardIds || []).length) return t.cardIds.map((id) => { const c = (deck || []).find((x) => x.id === id); if (!c) return "?"; const nc = t.colors?.[id]; return `${c.value}${c.suit}${nc ? `→${nc}` : ""}`; }).join(", ");
-  if (t.offerId) return "reserviert";
-  return null;
-}
 
-export function ChronikOverview({ state, onClose }) {
+export function ChronikOverview({ state, onClose, options = {}, onOption }) {
   const { deck = [], playerOrder = [], formations = [] } = state;
   const [selPos, setSelPos] = useState(null);
-  const [showArch, setShowArch] = useState(true); // #218: Architekt-Gebäude-Overlay auf dem Grid ein-/ausblenden (wie in der Aufstellung)
+  // #218/#278: Architekt-Gebäude-Overlay ein-/ausblenden — Zustand über die Optionen gemerkt (geteilt mit der Aufstellung), damit „aus" aus bleibt.
+  const [showArch, setShowArchState] = useState(options.archShowBuildings !== false);
+  const setShowArch = (v) => { const nv = typeof v === "function" ? v(showArch) : v; setShowArchState(nv); onOption?.({ archShowBuildings: nv }); };
   const [inspectBid, setInspectBid] = useState(null); // inspiziertes Gebäude: Liste ↔ Brett (Rahmen glüht), gesetzt per Karten-Tap ODER Listen-Klick
   const cards = playerOrder.map((di) => deck[di]);
   const selCard = selPos != null ? cards[selPos] : null; // #218: aktuell angetippte Karte (für die Elementar-Readouts)
@@ -52,6 +43,7 @@ export function ChronikOverview({ state, onClose }) {
   const formByType = {};
   for (const pf of formations) for (const f of ((pf && pf.formations) || [])) if (f.factor > 1) formByType[f.type] = Math.max(formByType[f.type] || 0, f.factor);
   // #218: Architekt-Zusammenfassung — nur wenn der Architekt aktiv ist UND Gebäude stehen (#202). Zahl · Abdeckung · Kategorien.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const archBuildings = (state.architectEnabled && state.architect && state.architect.buildings) ? state.architect.buildings : [];
   const archOcc = archOccupied(archBuildings).size;
   const archMax = (state.architect && state.architect.maxCover) || 0;
@@ -63,6 +55,7 @@ export function ChronikOverview({ state, onClose }) {
   const architectCover = useMemo(() => { // [#229 T8] nur bei Änderung neu berechnen (lief zuvor bei jeder Render, auch bei showArch=false)
     if (!hasArch) return null;
     const pre = precomputeArchitect(state.architect, playerOrder, deck);
+    const alliance = allianceGroups(state.familyTiers, state.roles); // #289: Badge grün-/allianz-bewusst
     const cover = {};
     for (const b of archBuildings) {
       const fam = archFamily(b.familyId);
@@ -70,18 +63,26 @@ export function ChronikOverview({ state, onClose }) {
       const cat = ARCH_CAT[fam.category];
       for (const pos of b.footprint) {
         const card = deck[playerOrder[pos]];
-        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card) : 0;
+        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card, alliance) : 0;
         const badgeSuit = fam.colorLocked ? (b.colorChoice || null) : null; // [#229 N1] Wert-Badge in Kartenfarbe (sonst grau) — wie in der Aufstellung
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, tier: b.tier, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier) };
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, tier: b.tier, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier, alliance) };
       }
     }
     return cover;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [hasArch, state.architect, playerOrder, deck, archBuildings]);
-  // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) → goldener Schimmer-Rahmen wie im Architekt-Screen.
+  // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) → rote Fläche · Distrikt (gleiche Kategorie aneinander) →
+  // Typ-Farb-Glow. Getrennte Quellen (wie im Architekt-Screen), damit beide Boni auf einen Blick unterscheidbar sind.
   const structLitPos = useMemo(() => {
     if (!hasArch) return null;
     const set = new Set();
     structureFactorMap(archOccupied(archBuildings)).forEach((f, pos) => { if (f > 1) set.add(pos); });
+    return set;
+  }, [hasArch, archBuildings]);
+  const distrLitPos = useMemo(() => {
+    if (!hasArch) return null;
+    const set = new Set();
+    districtFactorMap(archBuildings).forEach((f, pos) => { if (f > 1) set.add(pos); });
     return set;
   }, [hasArch, archBuildings]);
 
@@ -116,11 +117,12 @@ export function ChronikOverview({ state, onClose }) {
                 ))}
               </div>
             )}
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+            <CardGrid cards={cards} formations={formations} roles={state.roles} {...glacierGridProps(state)} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               highlightPos={highlightPos} highlightTitle="⏱ Zeitraffer · gekoppelte Position (20 & 40)"
               openSegments={openSegmentInfo(state.familyTiers)}
               architectCover={hasArch && showArch ? architectCover : null}
               structPos={hasArch && showArch ? structLitPos : null}
+              distrPos={hasArch && showArch ? distrLitPos : null}
               glowBid={hasArch && showArch ? inspectBid : null}
               selectedPos={selPos} onTilePick={(pos) => { const ns = selPos === pos ? null : pos; setSelPos(ns); setInspectBid(ns != null && architectCover ? (architectCover[ns]?.bid ?? null) : null); }} />
           </div>
@@ -131,7 +133,6 @@ export function ChronikOverview({ state, onClose }) {
                 genau wie in der Aufstellung (FormationPhase). selCard = die aktuell angetippte Karte. */}
             <CardDetail card={selCard} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} familyTiers={state.familyTiers}
               arch={selPos != null && architectCover ? architectCover[selPos] : null}
-              frostReadout frostLayers={selCard ? (state.layers?.[selCard.id] || 0) : 0} frostGletscher={hasGletscher(state.skills || [])}
               plantReadout plantGrowth={selCard ? (state.growth?.[selCard.id] || 0) : 0}
               plantRoots={selCard ? plantRootScore(state.skills || [], state.growth?.[selCard.id] || 0) : 0}
               plantPfahl={hasPfahlwurzel(state.skills || [])}
@@ -154,7 +155,7 @@ export function ChronikOverview({ state, onClose }) {
                         className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
                         style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
                         <span className="inline-flex items-center gap-1.5 flex-wrap">
-                          <span className="w-[8px] h-[8px] rounded-[2px] inline-block" style={{ background: fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92") }} />
+                          <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
                           <b>{fam.name}</b>
                           <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
                         </span>
@@ -185,6 +186,9 @@ export function ChronikOverview({ state, onClose }) {
               <span style={{ color: "#d4a63a" }}>● Rolle</span>
               <span style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr = mehr Multi (Überlappung ×1,5/×2/×3) · gestrichelt = ohne ×</span>
             </div>
+            {/* Eis-Neudesign: 2D-Gletscher-Formationen in Blau erklärt (nur bei aktivem Eis). */}
+            <GlacierFormLegend state={state} compact />
+
           </div>
         </div>
 

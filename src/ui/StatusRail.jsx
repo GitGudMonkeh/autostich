@@ -2,8 +2,9 @@ import { useMemo } from "react";
 import { cycleLenFor } from "../game/shop.js";
 import { summarizeFormations } from "../game/formations.js";
 import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
-import { hasCritPerk, critMultiplierFor, totalCritChanceRaw } from "../game/perks.js";
-import { hasCritFamily } from "../game/families.js";
+import { hasCritPerk, totalCritChanceRaw, totalCritMult } from "../game/perks.js";
+import { hasCritFamily, allianceGroups } from "../game/families.js";
+import { ionCritChance } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
 
@@ -42,23 +43,27 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, currentTraj = [], recordTraj = [], options = {}, onOption }) {
-  const { wins, losses, ties, trickNo, winStreak, bestStreak, pos, perks, crits, lightning,
-          familyTiers = {}, statCritChance = 0, statCritMult = 0, statFormMult = 0, statStreakMult = 0 } = state;
+  const { wins, losses, trickNo, winStreak, bestStreak, pos, perks, crits, lightning,
+          familyTiers = {} } = state;
   const cycleLen = cycleLenFor(state.shop);  // 40, mit Zeitsegment 45 (§8 A-L1)
   // #UI: Stich-Siegesquote — Anteil gewonnener an den ENTSCHIEDENEN Stichen (Gleichstände zählen nicht). Ersetzt die
   // Durchlauf-Zelle (Durchlauf steht bereits im Kopf-Panel). Rot <50 %, grün ≥50 %.
   const decided = wins + losses;
   const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
-  const showCrit = hasCritPerk(perks) || hasCritFamily(familyTiers) || (crits || 0) > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
-  // Live-Crit-Chance des NÄCHSTEN Siegs: analog zum echten Wurf (#19). V2: Perks tragen keine Crit-Chance
-  // mehr bei — die Blitz-Crit-Basis (lightning) + der Crit-Chance-Stat fließen additiv ein, dieselbe Rechnung
-  // wie die Engine (kein Drift).
+  const showCrit = hasCritPerk(perks) || hasCritFamily(familyTiers) || (crits || 0) > 0 || !!(lightning && lightning.active);
+  // Live-Crit-Chance des NÄCHSTEN Siegs: analog zum echten Wurf (#19). #267: die Crit-Chance kommt aus der Blitz-Basis
+  // (lightning) + den Präzision-Familien (unkonditionale Schärfe im Live-Preview), dieselbe Rechnung wie die Engine.
   const critRaw = totalCritChanceRaw(state);
   // #181: Gesamt-Crit-Chance UNGEKLEMMT anzeigen (kann > 100 % sein — der Überschuss speist L6 „Raserei" und
   // Familie D „Überschusskrit"). Nur nach unten bei 0 begrenzen; KEIN Math.min(1, …) mehr (das war nur Anzeige;
   // der echte Wurf bleibt in der Engine bei engine.js:302 geklemmt).
   const critPct = Math.round(Math.max(0, critRaw) * 100);
+  // #271: der feldweite Ionisierungs-Anteil an der Crit-Chance (im critPct oben enthalten) — separat ausgewiesen.
+  const ionCritPct = lightning && lightning.active ? Math.round(ionCritChance(state.deck || []) * 100) : 0;
+  // Crit-Mult VOLLSTÄNDIG (geteilter Helfer): Perk-Basis + Familien-Wucht + Blitz (inkl. Donnergott) + Durchschlag
+  // + Entladung-Momentum (v0.5) — der STAND des Crit-Multiplikators inkl. der neuen Blitz-Motoren.
+  const critMultTotal = totalCritMult(state);
   // #123/#UI: Formations-Bonus der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
   // Formationsphase → kein Drift). Als SUMME aller Positionen in % (Σ(mult−1)·100) — nicht mehr max/aktuelle Position.
   const { count: formCount } = summarizeFormations(state.formations || []);
@@ -72,17 +77,20 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
     if (!(state.architectEnabled && architect && (architect.buildings || []).length)) return 0;
     const order = state.playerOrder || [], deck = state.deck || [];
     const pre = precomputeArchitect(architect, order, deck);
+    const alliance = allianceGroups(state.familyTiers, state.roles); // #289
     let boost = 0, base = 0, multSum = 0;
     for (let p = 0; p < order.length; p++) {
       const card = deck[order[p]];
-      if (card) { const b = architectValueBonus(pre, p, card); if (b > 0) { boost += b; base += card.value; } }
+      if (card) { const b = architectValueBonus(pre, p, card, alliance); if (b > 0) { boost += b; base += card.value; } }
       const sc = pre.score[p];
       const m = (pre.segFactor[p] || 1) * (sc && sc.kind === "mult" ? sc.factor : 1);
       if (m > 1) multSum += m - 1;
     }
     const valueFrac = base > 0 ? boost / base : 0;
     return Math.round((valueFrac + multSum) * 100);
-  }, [state.architect, state.architectEnabled, state.playerOrder, state.deck]);
+    // state.roles/familyTiers gehören dazu: allianceGroups liest roles.E_COLOR_ALLIANCE → ein Farballianz-Pick ändert
+    // den Gebäude-Wert-Bonus, ohne die anderen Deps zu berühren (sonst zeigte der HUD-Prozentwert veraltet).
+  }, [state.architect, state.architectEnabled, state.playerOrder, state.deck, state.roles, state.familyTiers]);
   return (
     <div className="rounded-xl p-4 grid gap-3 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
       {/* Kennzahlen */}
@@ -118,18 +126,12 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
           Crit-/Score-Hinweise folgen mit #166 UI. */}
       {showCrit && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
-          <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span></span>
-          <span><span className="opacity-50">Crit </span><span style={{ color: perks.includes("L5") ? "#d4a63a" : "#e879f9" }}>×{fmtMult(critMultiplierFor(perks, { rawCrit: critRaw }, statCritMult))}</span>{perks.includes("L5") && <span style={{ color: "#d4a63a" }}> Jackpot</span>}</span>
+          <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span>{ionCritPct > 0 && <span className="opacity-45" title="Feldweiter Ionisierungs-Anteil (#271): Σ Stapel im Deck × pp, gedeckelt."> · +{ionCritPct} Ion.</span>}</span>
+          <span><span className="opacity-50">Crit </span><span style={{ color: perks.includes("L5") ? "#d4a63a" : "#e879f9" }}>×{fmtMult(critMultTotal)}</span>{perks.includes("L5") && <span style={{ color: "#d4a63a" }}> Jackpot</span>}</span>
           <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
         </div>
       )}
-      {/* Score-Stats (V2 §22.3): Serien-/Formations-Stat, die nicht bereits über die Crit-Zeile sichtbar sind. */}
-      {(statStreakMult > 0 || statFormMult > 0) && (
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
-          {statStreakMult > 0 && <span title="Serien-Stat: +0,5 % Score je Pick pro aktuellem Serienpunkt"><span className="opacity-50">Serien-Stat </span><span style={{ color: "#5a8ade" }}>+{(statStreakMult * 100).toFixed(1).replace(".", ",")} %/Serie</span></span>}
-          {statFormMult > 0 && <span title="Formations-Stat: +5 % Score je Pick bei aktiver Formation (ab Phase mit Formationen wirksam)"><span className="opacity-50">Form-Stat </span><span style={{ color: "#5a8ade" }}>+{Math.round(statFormMult * 100)} %</span></span>}
-        </div>
-      )}
+      {/* (#267: Serien-/Formations-Stat-Readouts entfernt — die Stat-Phase ist weg.) */}
       {/* #252: Score-Quellen-Balken LIVE (geteilte Komponente mit dem Victory-Screen) — einklappbar, default eingeklappt,
           Zustand über Runs gemerkt. Nur zeigen, wenn schon Score da ist. */}
       {sourceShares(state).score > 0 && (

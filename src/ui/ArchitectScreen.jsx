@@ -1,19 +1,23 @@
 import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import {
   familyDef, shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
-  occupiedCells, precomputeArchitect, architectValueBonus, structureFactorMap,
+  occupiedCells, precomputeArchitect, architectValueBonus, boardFactorMap, structureFactorMap, districtFactorMap,
   rowOf, colOf, posOf, ROWS, COLS, N_POS, tierNum, tierFactor, upgradeInfo, bindSpanFor,
-  HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR,
+  HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
-import { SUIT_ORDER } from "../game/constants.js";
-import { ARCH_CAT as CAT } from "./indicators/vocab.js";
+import { allianceGroups } from "../game/families.js"; // #289: Farballianz für Wert-Boost-Anzeige
+import { SUIT_ORDER, PLANT_VALUE_CAP } from "../game/constants.js";
+import { ARCH_CAT as CAT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { tierColor } from "../game/rarity.js";
+import FormIcon from "./FormIcon.jsx";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel } from "./Glossary.jsx";
+import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Marker auch am Architekt-Brett
+import glacierIcon from "./assets/glacier.webp";
 import { useEscape } from "./useEscape.js";
 
 /* ============================================================
@@ -70,23 +74,29 @@ function MiniShape({ form, color, rotIdx = 0 }) {
   );
 }
 
-export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onDemolish, onRecolor, onReroll, onDone }) {
+export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onMoveMulti, onDemolish, onRecolor, onReroll, onDone }) {
   useEscape(onDone);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const architect = state.architect || { buildings: [], offers: [] };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const committed = architect.buildings || [];
   const offers = architect.offers || [];
   const maxCover = architect.maxCover ?? N_POS;
   const round = (state.cycle || 0) + 1;
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const order = state.playerOrder || [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const deck = state.deck || [];
   const cards = order.map((di) => deck[di]).filter(Boolean);
+  // Eis: Gletscher-/Firn-Marker (gleicher Positionsraum wie das Brett) — nur befüllt, wenn Eis aktiv ist.
+  const { glacierPos = null, glacierMassByPos = null } = glacierGridProps(state);
 
   // Ablauf-Zustand.
   const [phase, setPhase] = useState("choose");            // choose | place | upgrade | after | move
   const [pending, setPending] = useState(null);            // { familyId, tier, legendary, colorChoice, footprint }
   const [selId, setSelId] = useState(null);                // ausgewähltes Gebäude (⟳/Ziehen)
-  const [colorPick, setColorPick] = useState(SUIT_ORDER[0]);
+  const [colorPick] = useState(SUIT_ORDER[0]);
   const [removeFor, setRemoveFor] = useState(null);        // Bauplan wartet auf Platz → Gebäude entfernen anbieten
   const dragRef = useRef(null);
   const [dragPrev, setDragPrev] = useState(null);          // { footprint, valid, id } — GESNAPPTES Drop-Ziel (nur bei Zellwechsel neu → dragDelta bleibt billig)
@@ -94,12 +104,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const dragGhostRef = useRef(null);                       // DOM-Ref des Ghost-Rahmens; sein transform wird je pointermove DIREKT gesetzt (flüssig)
   const [upgradeMsg, setUpgradeMsg] = useState(null);      // { name, reason } — Meldung beim Antippen eines nicht-aufwertbaren Gebäudes (Aufrüsten-Phase)
   const [rotateMsg, setRotateMsg] = useState(null);        // #266: Hinweis „kein Platz zum Drehen" (statt still nichts zu tun), wenn keine andere Lage brettweit passt
-  const [pendingDemolish, setPendingDemolish] = useState(null); // #235: markiertes Abriss-Ziel (buildingId) — wird erst mit „Abreißen" wirklich entfernt (zweistufig)
+  const [demolishIds, setDemolishIds] = useState([]);      // #235/#281: markierte Abriss-Ziele (MEHRFACH) — erst mit „Abreißen" wirklich entfernt (zweistufig). Ein großes Legendär braucht evtl. >1 Abriss.
   const [pendingUpgrade, setPendingUpgrade] = useState(null);   // #237: markiertes Aufrüst-Ziel (buildingId) — zeigt Jetzt/Danach-Effekt, aufgewertet erst mit „Aufwerten bestätigen" (kein Sofort-Upgrade)
   const [upgradeDone, setUpgradeDone] = useState(null);         // Erfolgs-Feedback: { name, from, to } — hervorgehobene Zeile im Platzieren-Screen, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen).
   const [inspectId, setInspectId] = useState(null);             // choose-Phase: welches bereits gebaute Gebäude gerade „inspiziert" wird (Liste ↔ Brett verlinkt, gegenseitiges Leuchten).
   // #243: Toggle-Stellung aus den Optionen (überlebt Runden + Sessions); onOption persistiert die Wahl.
-  const [showCombos, setShowCombos] = useState(options.archShowCombos !== false); // #UI: Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben
+  const [showCombos, setShowCombos] = useState(options.archShowCombos !== false); // #UI: Gebäude mit Struktur-/Distrikt-Bonus in ihrer Typ-Farbe glühen lassen
   const [showForms, setShowForms] = useState(options.archShowForms !== false);    // #UI: Formationsrahmen (Ring + Label) am Brett ein-/ausblenden
   const toggleCombos = () => { const v = !showCombos; setShowCombos(v); onOption?.({ archShowCombos: v }); };
   const toggleForms  = () => { const v = !showForms;  setShowForms(v);  onOption?.({ archShowForms: v }); };
@@ -108,6 +118,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const pendingBuilding = pending
     ? { id: PENDING_ID, familyId: pending.familyId, tier: pending.tier, legendary: pending.legendary, footprint: pending.footprint, colorChoice: pending.colorChoice }
     : null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const buildings = (phase === "place" && pendingBuilding) ? [...committed, pendingBuilding] : committed;
 
   const occ = useMemo(() => occupiedCells(buildings), [buildings]);
@@ -116,7 +127,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
   const effArch = useMemo(() => ({ ...architect, buildings }), [architect, buildings]);
   const pre = useMemo(() => (cards.length ? precomputeArchitect(effArch, order, deck) : null), [effArch, order, deck, cards.length]);
-  const structF = useMemo(() => structureFactorMap(occ), [occ]);
+  const structF = useMemo(() => boardFactorMap(buildings), [buildings]); // #283: Struktur × Distrikt (gleiche Quelle wie die Engine)
+  // #UI: Kombi-Anzeige getrennt — Struktur (volle Zeile/Spalte/Diagonale) → rote Fläche · Distrikt (gleiche Kategorie
+  // aneinander) → Typ-Farb-Glow. Gleiche Quellen wie die Engine, nur einzeln statt kombiniert.
+  const comboF    = useMemo(() => structureFactorMap(occupiedCells(buildings)), [buildings]);
+  const districtF = useMemo(() => districtFactorMap(buildings), [buildings]);
+  const alliance = useMemo(() => allianceGroups(state.familyTiers, state.roles), [state.familyTiers, state.roles]); // #289: Farb-Match grün-/allianz-bewusst
   // Struktur-Kombi-Bonus als Summe (#UI): Σ der Extra-Faktoren über alle Karten auf fertigen Strukturen
   // (Zeile/Spalte/Diagonale, multiplikativ gestapelt) → Gesamt-Punkte-Bonus in Prozent. Nicht beteiligte Zellen
   // haben Faktor 1 → (f−1)=0, tragen nichts bei.
@@ -124,9 +140,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const formations = useMemo(() => {
     if (!cards.length) return [];
     return computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, effArch);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [effArch, order, deck, state.roles, state.perks, state.skills, state.familyTiers]);
   const formCount = useMemo(() => summarizeFormations(formations).count, [formations]);
   // #UI: Formationen OHNE Architekt — Referenz, um die NEU durch Gebäude gegründeten Formationen zu isolieren.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   const formationsNoArch = useMemo(() => (cards.length ? computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, null) : []), [order, deck, state.roles, state.perks, state.skills, state.familyTiers]);
   // #UI: Gebäude-Score-Boost in % — was die Platzierung dem Score bringt: Struktur-Kombis (Σ structF−1) PLUS die neu
   // durch Gebäude gegründeten Formationen (Formations-Stärke mit − ohne Architekt). Live beim Bauen/Verschieben.
@@ -138,13 +156,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   }, [structF, formations, formationsNoArch]);
 
   // #UI: Gebäude-Kontur als durchgezogene SVG-Linie (wie in der Aufstellungsphase, archFrameLines) statt eines
-  // Raritäts-Rahmens JE ZELLE → ein mehrzelliges Gebäude liest sich als EINE Form. Farbe = Stufen-/Raritätsfarbe.
+  // Rahmens JE ZELLE → ein mehrzelliges Gebäude liest sich als EINE Form. Farbe = TYP-Farbe (Wert/Score/Formation); die Rarität zeigt die Stufen-Zahl in der Ecke.
   const archCover = useMemo(() => {
     const cover = {};
     for (const b of buildings) {
       const fam = familyDef(b.familyId);
       if (!fam) continue;
-      const color = fam.legendary ? GOLD : tierColor(b.tier);
+      const color = CAT[fam.category]?.color || tierColor(b.tier); // #UI: Rahmen = TYP-Farbe (nach Bonus-Typ bauen); Rarität zeigt die Stufen-Zahl
       for (const p of b.footprint) cover[p] = { bid: b.id, color, legendary: !!fam.legendary };
     }
     return cover;
@@ -183,7 +201,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const b = buildings.find((x) => x.id === dragPrev.id);
     if (!b) return null;
     const fam = familyDef(b.familyId);
-    const color = fam && fam.legendary ? GOLD : (fam ? tierColor(b.tier) : "#8a97a5");
+    const color = fam ? (CAT[fam.category]?.color || tierColor(b.tier)) : "#8a97a5"; // #UI: Ghost-Rahmen = Typ-Farbe (wie der Gebäude-Rahmen)
     return { footprint: b.footprint, color };
   })();
 
@@ -192,7 +210,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const effValueAt = (pos) => {
     const card = cards[pos];
     if (!card) return 0;
-    const bonus = pre ? architectValueBonus(pre, pos, card) : 0;
+    const bonus = pre ? architectValueBonus(pre, pos, card, alliance) : 0;
     return card.value + bonus;
   };
   const sumValue = cards.reduce((t, _c, p) => t + effValueAt(p), 0);
@@ -222,22 +240,26 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   };
   // Würde das Entfernen GENAU dieses Gebäudes Platz für `o` schaffen? Nur dann ist Ersetzen sinnvoll — sonst stünde der
   // Spieler nach dem Abriss OHNE Platz da (müsste ein weiteres zerstören). Solche Gebäude bieten wir NICHT als Ziel an.
-  const fitWithout = (o, removeId) => {
+  // #281: Würde das Entfernen dieser Gebäude-MENGE dem Bauplan `o` Platz schaffen? Deckel UND Geometrie prüfen.
+  const fitWithoutSet = (o, removeIds) => {
     const fam = familyDef(o.familyId); if (!fam) return null;
-    const rest = committed.filter((x) => x.id !== removeId);
+    const rest = committed.filter((x) => !removeIds.includes(x.id));
     const size = shapeRotations(fam.form)[0].length;
     if (occupiedCells(rest).size + size > maxCover) return null;   // Baufeld-Deckel auch nach dem Abriss prüfen
     const fits = enumeratePlacements(fam.form, rest);
     return fits.length ? fits[0] : null;
   };
-  // Ids der Gebäude, deren Abriss dem wartenden Bauplan (removeFor) EINEN gültigen Platz schafft. Leere Menge → Ersetzen
-  // ist nicht möglich (kein Ein-Gebäude-Abriss reicht) → die UI bietet dann gar keinen Abriss an.
+  const fitWithout = (o, removeId) => fitWithoutSet(o, [removeId]);
+  // Ids der Gebäude, deren Abriss dem wartenden Bauplan (removeFor) ALLEIN einen gültigen Platz schafft → sanfter „reicht
+  // allein"-Hinweis. #281: Ist die Menge leer (großes Legendär), heißt das NICHT mehr „unmöglich" — man markiert mehrere.
   const replaceableSet = useMemo(() => {
     const s = new Set();
     if (!removeFor) return s;
     for (const b of committed) if (fitWithout(removeFor, b.id)) s.add(b.id);
     return s;
   }, [removeFor, committed, maxCover]); // eslint-disable-line react-hooks/exhaustive-deps
+  // #281: Reicht die aktuell markierte Abriss-Menge, um Platz zu schaffen? (Fußabdruck-Lage nach dem Abriss oder null.)
+  const demolishFit = useMemo(() => (removeFor && demolishIds.length ? fitWithoutSet(removeFor, demolishIds) : null), [removeFor, demolishIds, committed, maxCover]); // eslint-disable-line react-hooks/exhaustive-deps
   // #261: Bauplan wählen = VERBINDLICH → das Gebäude wird SOFORT committet (kein „Bauen"-Button, kein Zurück ins
   // Auswahlfenster) und ist direkt Teil der einen kombinierten Platzier-/Verschiebe-Phase ("move"). Ein einziges
   // „Bestätigen" am Ende schließt ab. Kein Platz → Ersetzen-Menü (Skill-Stil, s. removeFor).
@@ -258,9 +280,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
       const fam = familyDef(removeFor.familyId);
       const newId = architect.nextId;
       onBuild?.({ familyId: removeFor.familyId, tier: removeFor.tier, footprint: fp, colorChoice: fam.colorLocked ? colorPick : null });
-      setSelId(newId); setPhase("move"); setRemoveFor(null); setPendingDemolish(null);
+      setSelId(newId); setPhase("move"); setRemoveFor(null); setDemolishIds([]);
     }
   }, [committed, removeFor]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setDemolishIds([]); }, [removeFor]); // #281: neuer/geschlossener Ersetzen-Vorgang → Markierungen zurücksetzen
   // #235: markiertes Gebäude wirklich abreißen (danach platziert der removeFor-Effekt den wartenden Bauplan automatisch).
   // #266: Der Dreh-Hinweis verfällt, sobald ein anderes Gebäude gewählt oder die Phase gewechselt wird (er gilt genau
   // für die zuletzt versuchte Rotation an der aktuellen Lage).
@@ -272,7 +295,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const el = typeof document !== "undefined" && document.getElementById(`arch-inspect-${inspectId}`);
     if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [inspectId]);
-  const confirmDemolish = () => { if (pendingDemolish == null) return; onDemolish?.(pendingDemolish); setPendingDemolish(null); };
+  // #281: alle markierten Gebäude abreißen (nur wenn die Menge wirklich Platz schafft); der removeFor-Effekt baut danach automatisch.
+  const confirmDemolish = () => { if (!demolishIds.length || !demolishFit) return; demolishIds.forEach((id) => onDemolish?.(id)); setDemolishIds([]); };
   // #237: markiertes Gebäude wirklich aufwerten (erst nach „Aufwerten bestätigen" — nie durch einen Fehltipp).
   // Härtung: NUR weiterschalten, wenn das Upgrade wirklich anwendbar ist. Ist die Hauptaktion der Bauphase schon
   // verbraucht (actedMain) oder das Gebäude nicht (mehr) aufwertbar (Stufe IV/legendär/inert), lehnt der Reducer
@@ -294,13 +318,40 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
   // ---- Tap je Phase ----
   const tapCell = (pos) => {
-    if (removeFor) { const cb = committedAt(pos); if (cb && replaceableSet.has(cb.id)) setPendingDemolish(cb.id); return; } // #235: markieren statt sofort abreißen; nur Gebäude, deren Abriss wirklich Platz schafft
+    if (removeFor) { const cb = committedAt(pos); if (cb) setDemolishIds((cur) => cur.includes(cb.id) ? cur.filter((x) => x !== cb.id) : [...cur, cb.id]); return; } // #235/#281: markieren statt sofort abreißen; beliebiges Gebäude (de)markieren — Mehrfach-Abriss für große Legendäre
     if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { setPendingUpgrade(cb.id); setUpgradeMsg(null); } else { setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: info.reason }); setPendingUpgrade(null); } } return; } // #237: markieren + Jetzt/Danach zeigen, Aufwertung erst über den Bestätigen-Knopf
     if (phase === "place") { const b = buildingAt(pos); if (b && b.id === PENDING_ID) setSelId(PENDING_ID); return; }
     if (phase === "move") { const b = buildingAt(pos); if (b) setSelId(b.id); return; }
     if (phase === "choose") { const cb = committedAt(pos); if (cb) setInspectId((cur) => (cur === cb.id ? null : cb.id)); return; } // Brett-Tap → Beschreibung leuchtet (Liste ↔ Brett)
   };
 
+  // Drop über andere Gebäude: die getroffenen ausweichen lassen, wenn Platz ist (sauberer Swap in den alten Fußabdruck,
+  // wenn die Form passt; sonst nächstgelegener freier Platz). Board rechnet mit b bereits an fp → die Weichenden meiden fp.
+  // Gibt die Ausweich-Moves der GETROFFENEN zurück (b selbst nicht), oder null wenn kein Platz für alle da ist.
+  const relocationsForDrop = (b, fp, others) => {
+    const fpSet = new Set(fp);
+    const hit = others.filter((o) => o.footprint.some((p) => fpSet.has(p)));
+    if (!hit.length) return null;
+    const staying = others.filter((o) => !hit.includes(o));
+    const cen = (arr) => { let r = 0, c = 0; for (const p of arr) { r += rowOf(p); c += colOf(p); } return [r / arr.length, c / arr.length]; };
+    let board = [...staying, { ...b, footprint: fp }];
+    const moves = [];
+    for (const h of hit) {
+      const fam = familyDef(h.familyId); if (!fam) return null;
+      let spot;
+      if (hit.length === 1 && isValidFootprint(fam.form, b.footprint, board)) {
+        spot = [...b.footprint].sort((x, y) => x - y);                       // sauberer Swap in b's alten Platz
+      } else {
+        const fits = enumeratePlacements(fam.form, board);
+        if (!fits.length) return null;                                       // kein freier Platz → gesamter Swap scheitert
+        const [hr, hc] = cen(h.footprint);
+        spot = fits.reduce((best, f) => { const [fr, fc] = cen(f); const d = (fr - hr) ** 2 + (fc - hc) ** 2; return d < best.d ? { f, d } : best; }, { f: null, d: Infinity }).f;
+      }
+      moves.push({ buildingId: h.id, footprint: spot });
+      board = [...board, { ...h, footprint: spot }];
+    }
+    return moves;
+  };
   // ---- Drag & Drop (Vorschau-Gebäude in „place", bestehende in „move"); Griff überall am Fußabdruck ----
   const startDrag = (pos, b, e) => {
     const form = familyDef(b.familyId).form;
@@ -333,7 +384,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
       const key = fp ? fp.join(",") : "∅";
       if (key === lastKey) return; // Snap-Ziel unverändert → dragPrev (+ dragDelta/computeFormations) NICHT neu setzen
       lastKey = key;
-      setDragPrev(fp ? { footprint: fp, valid: !!isValidFootprint(form, fp, others), id: b.id } : { footprint: [], valid: false, id: b.id });
+      // valid = freier Platz ODER die getroffenen Gebäude können ausweichen (Swap/Verschieben) → grüne Vorschau statt rot.
+      const okDirect = !!fp && isValidFootprint(form, fp, others);
+      const okSwap = !!fp && !okDirect && !!relocationsForDrop(b, fp, others);
+      setDragPrev(fp ? { footprint: fp, valid: okDirect || okSwap, swap: okSwap, id: b.id } : { footprint: [], valid: false, id: b.id });
     };
     const move = (ev) => {
       const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0;
@@ -349,7 +403,21 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
       if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; } // ausstehenden Snap-Frame verwerfen
       const wasActive = g.active; dragRef.current = null;
       dragOffsetRef.current = { dx: 0, dy: 0 }; // Ghost loslassen → das Gebäude snappt auf die (gesnappte) Zielzelle
-      if (wasActive) { const target = cellPos(ev.clientX, ev.clientY), fp = target == null ? null : fpFor(target); if (fp && isValidFootprint(form, fp, others)) commit(fp); setDragPrev(null); }
+      if (wasActive) {
+        const target = cellPos(ev.clientX, ev.clientY), fp = target == null ? null : fpFor(target);
+        if (fp && isValidFootprint(form, fp, others)) {
+          commit(fp);                                                        // freier Platz → normal ablegen
+        } else if (fp) {
+          // Über ein anderes Gebäude gedroppt: getroffene Gebäude ausweichen lassen, wenn Platz ist (Verschieben/Swap).
+          const relo = relocationsForDrop(b, fp, others);
+          if (relo) {
+            const fpS = [...fp].sort((x, y) => x - y);
+            if (b.id === PENDING_ID) { onMoveMulti?.(relo); commit(fpS); }    // Vorschau-Gebäude: nur Committete atomar schieben, Pending separat setzen
+            else onMoveMulti?.([{ buildingId: b.id, footprint: fpS }, ...relo]); // committetes Gebäude: alles in EINEM atomaren Move
+          }
+        }
+        setDragPrev(null);
+      }
       else tapCell(pos);
     };
     window.addEventListener("pointermove", move, { passive: false }); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
@@ -386,19 +454,19 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const previewBuildings = buildings.map((x) => (x.id === dragPrev.id ? { ...x, footprint: [...dragPrev.footprint].sort((m, n) => m - n) } : x));
     const previewArch = { ...architect, buildings: previewBuildings };
     const p2 = precomputeArchitect(previewArch, order, deck);
-    const val2 = cards.reduce((t, c, p) => t + c.value + (architectValueBonus(p2, p, c) || 0), 0);
+    const val2 = cards.reduce((t, c, p) => t + c.value + (architectValueBonus(p2, p, c, alliance) || 0), 0);
     const form2 = summarizeFormations(computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, previewArch)).count;
     return { dVal: val2 - sumValue, dForm: form2 - formCount, valid: dragPrev.valid };
   }, [dragPrev]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const structLit = (pos) => (structF[pos] || 1) > 1;
+  const comboLit  = (pos) => (comboF[pos] || 1) > 1;    // #UI: Struktur-Kombi (Zeile/Spalte/Diagonale) → rote Fläche
+  const distrLit  = (pos) => (districtF[pos] || 1) > 1; // #UI: Distrikt (gleiche Kategorie aneinander) → Typ-Farb-Glow
   // #262: Eine Form ist nur drehbar, wenn sie mehr als eine distinkte Lage hat. `zeile` (Legendäre) sowie `single`/`block2x2`
   // stehen in NO_ROTATE (architect.js) → shapeRotations liefert genau eine Lage → „⟳ Drehen" wäre wirkungslos.
   const rotatableForm = (form) => shapeRotations(form).length > 1;
   const showRotate = selId != null && buildings.some((x) => x.id === selId) && (phase === "place" || phase === "move");
   const selBuilding = buildings.find((x) => x.id === selId);
   const selRotatable = !!selBuilding && rotatableForm(familyDef(selBuilding.familyId).form);
-  const pendingFam = pending ? familyDef(pending.familyId) : null;
 
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-start sm:items-center justify-center p-2 sm:p-4"
@@ -431,14 +499,14 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
           <section className="rounded-xl p-3 order-2 md:order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
             <div className="flex items-center justify-between mb-2">
               <div className="text-[11px] font-mono uppercase tracking-wide flex items-baseline gap-1.5"
-                title="Score-Boost durch die Gebäude: Struktur-Kombis (volle Zeile/Spalte/Diagonale) + neu gegründete Formationen. Aktualisiert live beim Bauen/Verschieben.">
+                title="Score-Boost durch die Gebäude: Struktur-Kombis (volle Zeile/Spalte/Diagonale) + Distrikt (gleiche Kategorie aneinander) + neu gegründete Formationen. Aktualisiert live beim Bauen/Verschieben.">
                 <span className="opacity-50">Gebäude-Boost</span>
                 <span className="font-bold tabular-nums" style={{ color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct}%</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <button onClick={toggleCombos} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
-                  style={{ background: showCombos ? "#3a1c1a" : "#16232f", border: `1px solid ${showCombos ? "#d1462f" : "#2b3e4d"}`, color: showCombos ? "#e88a7f" : "#7d8a97" }}
-                  title="Kombi-Zellen (volle Zeile/Spalte/Diagonale) rot hervorheben">{showCombos ? "◉" : "○"} Kombis</button>
+                  style={{ background: showCombos ? "#2a2416" : "#16232f", border: `1px solid ${showCombos ? "#d4a63a" : "#2b3e4d"}`, color: showCombos ? "#e0c060" : "#7d8a97" }}
+                  title="Gebäude mit Struktur-/Distrikt-Bonus glühen in ihrer Typ-Farbe">{showCombos ? "◉" : "○"} Kombis</button>
                 <button onClick={toggleForms} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
                   style={{ background: showForms ? "#16283a" : "#16232f", border: `1px solid ${showForms ? "#3b7dbe" : "#2b3e4d"}`, color: showForms ? "#7db4e6" : "#7d8a97" }}
                   title="Formationsrahmen (Ring + Label) am Brett ein-/ausblenden">{showForms ? "◉" : "○"} Formationen</button>
@@ -475,6 +543,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const tierCol = b ? (fam.legendary ? GOLD : tierColor(b.tier)) : null;
                 const ev = effValueAt(pos);
                 const boost = ev - card.value;
+                // Pflanze (#211): reife (grüne) Karte → Zahl leuchtet grün (voll ausgewachsen am hellsten), wie am Aufstellungs-Brett.
+                const numCol = card.green ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : SUIT_COLOR[card.suit];
+                const isGlacier = glacierPos ? glacierPos.has(pos) : false;                       // festgefrorener Gletscher
+                const gMass = glacierMassByPos ? Math.round(glacierMassByPos[pos] || 0) : 0;       // angesammelte Masse
+                const isFirn = !isGlacier && gMass >= 1;                                           // Firn-Boden (Masse, noch kein Gletscher)
                 const anchorCell = b ? Math.min(...b.footprint) : -1;
                 const isSel = b && b.id === selId;
                 const pf = formations[pos] || { mult: 1, formations: [] };
@@ -484,7 +557,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const sFac = structF[pos] || 1;
                 const cbHere = removeFor ? committedAt(pos) : null;
                 const isRemovable = !!removeFor && !!cbHere && replaceableSet.has(cbHere.id); // nur Gebäude, deren Abriss Platz schafft
-                const isMarkedDemolish = !!removeFor && pendingDemolish != null && !!cbHere && cbHere.id === pendingDemolish; // #235: markiertes Abriss-Ziel
+                const isMarkedDemolish = !!removeFor && !!cbHere && demolishIds.includes(cbHere.id); // #235/#281: markiertes Abriss-Ziel (Mehrfach)
                 // #237/#UI: Aufrüst-Phase = Spotlight — ALLES ausgegraut außer aufwertbaren Gebäuden (die werden hervorgehoben).
                 const upCan = phase === "upgrade" && b && !isPending && upgradeInfo(fam, b.tier).can; // aufwertbar → hervorheben (Ziel-Stufe am Gebäude, #232)
                 const isMarkedUpgrade = phase === "upgrade" && pendingUpgrade != null && b && b.id === pendingUpgrade; // #237: markiertes Aufrüst-Ziel (gold)
@@ -500,7 +573,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const isDragOrig = draggingId != null && b && b.id === draggingId;
                 return (
                   <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
-                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}`}
+                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}${showCombos && !dragPrev && b && comboLit(pos) ? " arch-struct-lit" : ""}`}
                     style={{
                       // #UI: Gebäude-Füllung/-Rand einheitlich (Typ-Farbe raus); die Stufe/Rarität zeigt der Ring (boxShadow) unten.
                       // #UI: Origin-Zellen des gezogenen Gebäudes zeigen sich als LEERES Feld (Gebäude „aufgehoben"); die
@@ -528,21 +601,41 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       cursor: "pointer",
                     }}
                     title={title}>
-                    {/* #UI: Kombi-Fläche — Zellen auf fertiger Struktur bekommen eine leicht transparente rote Fläche (Toggle „Kombis"). */}
-                    {showCombos && !dragPrev && structLit(pos) && (
-                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "#d1462f30", boxShadow: "inset 0 0 0 1px #d1462f66" }} />
-                    )}
+                    {/* #UI: Struktur-Kombi (volle Zeile/Spalte/Diagonale) → rote Fläche via `arch-struct-lit` (Klasse oben,
+                        identisch zum Aufstellboard). Distrikt-Bonus (gleiche Kategorie aneinander) → Rahmen glüht in Typ-Farbe. */}
+                    {showCombos && !dragPrev && distrLit(pos) && b && (() => {
+                      const glow = CAT[fam?.category]?.color || "#5a8ade"; // Distrikt → Typ-Farb-Glow (etwas kräftiger)
+                      return <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ boxShadow: `0 0 16px 2px ${glow}cc, inset 0 0 9px ${glow}66, inset 0 0 0 1px ${glow}` }} />;
+                    })()}
                     {/* #UI: gesperrte Fläche beim Ziehen — Diagonal-Schraffur + Rim, damit „hier nicht ablegbar" klar heraussticht. */}
                     {isBlocked && (
                       <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(8,12,18,0.62) 3.5px, rgba(8,12,18,0.62) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(134,153,168,0.45)" }} />
                     )}
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
+                    {/* Eis: Gletscher-Marker (Icon + Masse) bzw. Firn-Boden (dezenter ❄ + Masse) oben rechts. */}
+                    {isGlacier && (
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={`Gletscher · Masse ${gMass}`}>
+                        <img src={glacierIcon} alt="" aria-hidden="true" className="w-[9px] h-[9px] object-contain" style={{ filter: "drop-shadow(0 0 2px #5ec8f0)" }} />
+                        {gMass}
+                      </span>
+                    )}
+                    {isFirn && (
+                      <span className="absolute top-[1px] right-[2px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · gespeicherte Masse ${gMass}`}>❄{gMass}</span>
+                    )}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
-                    <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : SUIT_COLOR[card.suit], textShadow: (b && !isDragOrig) ? "0 1px 2px #000a" : undefined }}>{ev}</span>
+                    <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (
                       <span className="absolute bottom-[1px] left-[3px] text-[7px] font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
-                        {fam.name.slice(0, 3).toUpperCase()}{tierLabel(b.tier)}
+                        {fam.name.slice(0, 3).toUpperCase()}
                         {upCan && <span style={{ color: "#f0b429" }}>→{tierLabel(b.tier + 1)}</span>}
+                      </span>
+                    )}
+                    {/* #UI: Stufen-Zahl (I–IV / ★) unten rechts im Gebäude, in der SELTENHEITS-Farbe — der Rahmen zeigt jetzt den Typ. */}
+                    {b && !isDragOrig && pos === Math.max(...b.footprint) && (
+                      <span className="absolute bottom-[1px] right-[3px] text-[9px] font-extrabold leading-none"
+                        style={{ color: fam.legendary ? GOLD : tierColor(b.tier), textShadow: "0 1px 2px #000a" }}
+                        title={fam.legendary ? "legendär" : `Stufe ${ROMAN[b.tier]}`}>
+                        {fam.legendary ? "★" : ROMAN[b.tier]}
                       </span>
                     )}
                     {showForms && inForm && (
@@ -559,18 +652,19 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               }); })()}
             </div>
             {/* Legende */}
-            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[11px] font-mono opacity-80">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[11px] font-mono opacity-80">
+              <span className="opacity-70">Rahmen = Typ:</span>
               {Object.entries(CAT).map(([k, v]) => (
-                <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ background: v.color }} />{v.label}</span>
+                <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${v.color}` }} />{v.label}</span>
               ))}
             </div>
-            {/* Raritäts-Rahmen = Stufe des Gebäudes (Füllung = Kategorie). */}
+            {/* Stufe/Rarität = die Zahl (I–IV / ★) in der ECKE des Gebäudes; der Rahmen zeigt den Typ. */}
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-[10px] font-mono opacity-70">
-              <span className="opacity-70">Rahmen = Stufe:</span>
+              <span className="opacity-70">Stufe (Ecke):</span>
               {[1, 2, 3, 4].map((t) => (
-                <span key={t} className="inline-flex items-center gap-1"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${tierColor(t)}` }} />{ROMAN[t]}</span>
+                <span key={t} className="inline-flex items-center gap-1"><b className="tabular-nums" style={{ color: tierColor(t) }}>{ROMAN[t]}</b></span>
               ))}
-              <span className="inline-flex items-center gap-1"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${GOLD}` }} />★ legendär</span>
+              <span className="inline-flex items-center gap-1"><b style={{ color: GOLD }}>★</b> legendär</span>
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] font-mono opacity-60">
               <span>Ring = aktive Formation (×mult)</span>
@@ -587,76 +681,63 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. */}
               <div className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}>
-                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur-Kombis · ×Score je Durchlauf</div>
+                <div className="uppercase tracking-wide opacity-55 mb-1">Struktur & Distrikt · ×Score je Durchlauf</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   <span>volle <b>Zeile</b> ×{fmt(HAEUSERZEILE_FACTOR)}</span>
                   <span>volle <b>Spalte</b> ×{fmt(SPALTE_FACTOR)}</span>
                   <span><b>Diagonale</b> ×{fmt(DIAGONALE_FACTOR)}</span>
+                  <span><b>Distrikt</b> +{Math.round(DISTRICT_BONUS * 100)} %/Nachbar</span>
                 </div>
                 <div className="opacity-60 mt-1">Jede Karte auf einer vollständigen Zeile/Spalte/Diagonale macht bei einem Sieg entsprechend mehr <b>Score</b>. Faktoren stapeln multiplikativ.</div>
+                <div className="opacity-60 mt-1"><b>Distrikt:</b> Gebäude <b>gleicher Farbe</b> (Kategorie) direkt aneinander geben je Nachbar +{Math.round(DISTRICT_BONUS * 100)} % Score auf ihre Felder (bis {DISTRICT_CAP} Nachbarn). Gleichartig zusammenbauen lohnt sich.</div>
               </div>
 
-              {/* removeFor: kein Platz → Gebäude entfernen anbieten. #235: zweistufig — erst markieren (Effekte zeigen), dann bestätigen. */}
+              {/* removeFor: kein Platz → Gebäude entfernen anbieten. #235: zweistufig (erst markieren, dann bestätigen).
+                  #281: MEHRFACH-Abriss — reicht ein Abriss nicht (großes Legendär), kann man weitere markieren, bis Platz reicht. */}
               {removeFor && (() => {
-                const marked = pendingDemolish != null ? committed.find((x) => x.id === pendingDemolish) : null;
-                const mfam = marked ? familyDef(marked.familyId) : null;
+                const enough = !!demolishFit;
+                const n = demolishIds.length;
                 return (
                   <div>
-                    {!marked ? (
-                      replaceableSet.size === 0 ? (
-                        // Kein Ein-Gebäude-Abriss schafft Platz → Ersetzen ist nicht möglich. NICHTS anbieten (sonst reißt
-                        // der Spieler ein Gebäude ab und steht danach immer noch ohne Platz da).
-                        <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
-                          <div className="text-sm mb-2"><b>Kein Platz</b> für „{pendingFamName(removeFor)}“ — auch das Entfernen eines einzelnen Gebäudes schafft keinen gültigen Platz. Dieses Gebäude lässt sich gerade nicht bauen.</div>
-                          <button onClick={() => setRemoveFor(null)} className="w-full rounded-lg py-1.5 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
-                        </div>
-                      ) : (
-                      <>
-                        <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #d1462f" }}>
-                          <b>Kein Platz</b> für „{pendingFamName(removeFor)}“. Wähle unten ein Gebäude, dessen Abriss Platz schafft — es wird am Brett hervorgehoben; abgerissen wird erst nach Bestätigen.
-                        </div>
-                        {/* #261: Ersetzen im Skill-Stil — nur Gebäude, deren Abriss dem Bauplan wirklich Platz schafft, sind wählbar; die anderen sind ausgegraut. */}
-                        <div className="flex flex-col gap-1 mb-2">
-                          {committed.map((b) => {
-                            const bf = familyDef(b.familyId);
-                            if (!bf) return null;
-                            const canRepl = replaceableSet.has(b.id);
-                            return (
-                              <button key={b.id} onClick={() => canRepl && setPendingDemolish(b.id)} disabled={!canRepl}
-                                title={canRepl ? undefined : "Der Abriss dieses Gebäudes schafft keinen Platz für den Bauplan"}
-                                className="rounded-lg px-2.5 py-1.5 text-left text-[11px] font-mono leading-snug transition-all hover:brightness-110"
-                                style={{ background: "#16232f", border: `1px solid ${canRepl ? "#2b3e4d" : "#22303a"}`, opacity: canRepl ? 1 : 0.4, cursor: canRepl ? "pointer" : "not-allowed" }}>
-                                <span className="inline-flex items-center gap-1.5 align-middle flex-wrap">
-                                  <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[bf.category].color }} />
-                                  <b>{bf.name}</b>
-                                  <span className="opacity-55">{bf.legendary ? "Legendär" : `Stufe ${tierLabel(b.tier)}`}</span>
-                                  {!canRepl && <span className="opacity-45">· schafft keinen Platz</span>}
-                                </span>
-                                <span className="opacity-75"> — {famEff(bf, b)}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </>
-                      )
-                    ) : (
-                      <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: "3px solid #ff6a4d" }}>
-                        <div className="text-sm mb-1">Dieses Gebäude abreißen, um „{pendingFamName(removeFor)}“ zu bauen?</div>
-                        <div className="rounded-lg px-2.5 py-1.5 mb-2 text-[11px] font-mono leading-snug" style={{ background: "#2a1416", border: "1px solid #d1462f66" }}>
-                          <span className="inline-flex items-center gap-1.5 align-middle">
-                            <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: mfam ? CAT[mfam.category].color : "#d1462f" }} />
-                            <b>{mfam ? mfam.name : "Gebäude"}</b>
-                            <span className="opacity-55">{mfam && mfam.legendary ? "Legendär" : `Stufe ${tierLabel(marked.tier)}`}</span>
-                          </span>
-                          <span className="opacity-80"> — {mfam ? famEff(mfam, marked) : ""}</span>
-                          <div className="opacity-60 mt-0.5">Geht beim Abriss verloren.</div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => setPendingDemolish(null)} className="flex-1 rounded-lg py-1.5 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>
-                          <button onClick={confirmDemolish} className="flex-1 rounded-lg py-1.5 text-xs font-bold" style={{ background: "#d1462f", color: "#fff" }}>Abreißen ✓</button>
-                        </div>
-                      </div>
-                    )}
+                    <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: `3px solid ${enough ? "#ff6a4d" : "#d1462f"}` }}>
+                      <b>Kein Platz</b> für „{pendingFamName(removeFor)}“.{" "}
+                      {n === 0
+                        ? "Markiere ein Gebäude zum Abriss (am Brett oder unten) — bei einem großen Bauplan evtl. mehrere. Abgerissen wird erst nach Bestätigen."
+                        : enough
+                          ? `Abriss von ${n} Gebäude${n > 1 ? "n" : ""} schafft Platz. Bestätigen zum Bauen.`
+                          : "Abriss reicht noch nicht — markiere ein weiteres Gebäude."}
+                    </div>
+                    {/* #281: alle Gebäude als Umschalter — markieren/entmarkieren; „reicht allein" = ein Abriss würde genügen. */}
+                    <div className="flex flex-col gap-1 mb-2">
+                      {committed.map((b) => {
+                        const bf = familyDef(b.familyId);
+                        if (!bf) return null;
+                        const marked = demolishIds.includes(b.id);
+                        const soloOk = replaceableSet.has(b.id);
+                        return (
+                          <button key={b.id} onClick={() => setDemolishIds((cur) => cur.includes(b.id) ? cur.filter((x) => x !== b.id) : [...cur, b.id])}
+                            className="rounded-lg px-2.5 py-1.5 text-left text-[11px] font-mono leading-snug transition-all hover:brightness-110"
+                            style={{ background: marked ? "#2a1416" : "#16232f", border: `1px solid ${marked ? "#d1462f" : "#2b3e4d"}` }}>
+                            <span className="inline-flex items-center gap-1.5 align-middle flex-wrap">
+                              <FormIcon form={bf.form} color={bf.legendary ? "#d4a63a" : CAT[bf.category].color} title={`${bf.name} · ${bf.form}`} />
+                              <b>{bf.name}</b>
+                              <span className="opacity-55">{bf.legendary ? "Legendär" : `Stufe ${tierLabel(b.tier)}`}</span>
+                              {marked ? <span style={{ color: "#ff8a6d" }}>· markiert ✓</span> : (soloOk && <span className="opacity-45">· reicht allein</span>)}
+                            </span>
+                            <span className="opacity-75"> — {famEff(bf, b)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {n > 0 && <div className="text-[10px] opacity-55 mb-2">Markierte Gebäude gehen beim Abriss verloren.</div>}
+                    <div className="flex gap-2">
+                      <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="flex-1 rounded-lg py-1.5 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
+                      <button onClick={confirmDemolish} disabled={!enough}
+                        className="flex-1 rounded-lg py-1.5 text-xs font-bold"
+                        style={{ background: enough ? "#d1462f" : "#2a1c1c", color: enough ? "#fff" : "#7a5a55", opacity: enough ? 1 : 0.6, cursor: enough ? "pointer" : "not-allowed" }}>
+                        Abreißen{n > 0 ? ` (${n})` : ""} ✓
+                      </button>
+                    </div>
                   </div>
                 );
               })()}
@@ -764,7 +845,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                                   style={{ background: "#16232f", border: "1px solid #2f4150" }}>
                                   <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
                                   <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
-                                  <span className="opacity-70">{famEff(f, b)}</span>
+                                  {/* #UI: schon in der Liste zeigen, was die Aufwertung bringt (jetzt → danach), ohne erst klicken zu müssen. */}
+                                  <span className="opacity-55">{famEff(f, b)}</span>
+                                  <span style={{ color: "#8fe0a0" }}>→ {famEff(f, { tier: b.tier + 1 })}</span>
                                 </button>
                               );
                             })}
@@ -829,9 +912,18 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 </div>
               )}
               {removeFor ? (
-                <button onClick={() => { setRemoveFor(null); setPendingDemolish(null); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
+                <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
               ) : phase === "choose" ? (
-                <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Nichts bauen · Fortfahren →</button>
+                // #279: Umstellen muss auch möglich sein, wenn nichts (mehr) baubar ist. Sobald Gebäude stehen,
+                // führt „Gebäude umstellen" in die Verschiebe-Phase (dort ziehen/drehen, dann „Bestätigen").
+                committed.length > 0 ? (
+                  <div className="flex gap-2">
+                    <button onClick={() => { setInspectId(null); setSelId(null); setPhase("move"); }} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: `${CAT.value.color}22`, border: `1px solid ${CAT.value.color}`, color: "#cfe3f5" }}>↔ Gebäude umstellen</button>
+                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Nichts bauen · Fortfahren →</button>
+                  </div>
+                ) : (
+                  <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Nichts bauen · Fortfahren →</button>
+                )
               ) : phase === "upgrade" && pendingUpgrade != null ? (
                 <div className="flex gap-2">
                   <button onClick={() => setPendingUpgrade(null)} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>

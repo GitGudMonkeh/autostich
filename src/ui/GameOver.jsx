@@ -1,12 +1,17 @@
+import { useState } from "react";
 import { Sparkline } from "./Sparkline.jsx";
-import { RunStats } from "./RunStats.jsx";
-import { RunGraphs } from "./RunGraphs.jsx"; // #251: Score-Quellen-Balken + Durchlauf-Graph (Score je Stich, Sieg/Niederlage)
+import { RunStatCells, RunBuildChips } from "./RunStats.jsx"; // Victory-Redesign: Kennzahlen (Stats-Sektion) + Build-Chips (Build-Sektion) getrennt platziert
+import { RunGraphs, ScoreHerkunft } from "./RunGraphs.jsx"; // #251/Victory-Redesign: Fraktions-Herkunft + Durchlauf-Graph
 import { CardGrid } from "./CardGrid.jsx";
-import { fmtScore } from "./format.js";
+import { glacierGridProps } from "./glacierBoard.js";
+import { fmtScore, fmtScoreShort } from "./format.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js"; // #190: Freischalt-Vorschau
 import { computeFormations } from "../game/formations.js"; // #201.8: finale Aufstellung + Rahmen
 import { allianceGroups } from "../game/families.js";
 import { architectCoverFor } from "./architectCover.js"; // #UI: Gebäude-Rahmen auch im Victory-Screen (wie Chronik)
+import { familyDef as archFamily } from "../game/architect.js"; // Gebäude-Liste (Name/Form/Stufe) in der Aufstellung
+import { ARCH_CAT } from "./indicators/vocab.js";
+import FormIcon from "./FormIcon.jsx";
 
 // Highscore-Listen (lokal + global) bewusst NICHT hier — sie stehen auf dem Startbildschirm und
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
@@ -20,15 +25,59 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   const finalForms = finalOrder.length
     ? computeFormations(finalOrder, state.deck || [], state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {})
     : [];
+
+  // Delta zum vorherigen Rekord — recordTraj ist der Ghost VOR dem saveRun-Überschreiben (letzter Wert ≈ alter Rekord).
+  const prevBest = recordTraj.length >= 2 ? Math.floor(recordTraj[recordTraj.length - 1] || 0) : 0;
+  const deltaPct = prevBest > 0 ? Math.round(((score - prevBest) / prevBest) * 100) : null;
+  const cyclesDone = (state.cycle || 0) + 1;
+  const perTrick = state.trickNo ? Math.round(score / state.trickNo) : 0;
+
+  // Motor-Kennzahlen je aktiver Fraktion (nur Zähler > 0 werden gezeigt) — die „Engine-Story" des Runs.
+  const arch = state.activeArchetypes || [];
+  const motor = [];
+  const pushM = (cond, label, value, color) => { if (cond && value > 0) motor.push({ label, value, color }); };
+  pushM(arch.includes("plant"), "Gewachsen", Math.round(state.growthTotal || 0), "#69cf59");
+  pushM(arch.includes("lightning"), "Ionisierungen", Math.round(state.ionTotal || 0), "#8a7de0");
+  pushM(arch.includes("fire"), "Asche verbrannt", Math.round(state.ashBurned || 0), "#ff7a3c");
+  pushM(arch.includes("fire"), "Brände", Math.round(state.brandTotal || 0), "#ff7a3c");
+
+  // Architekt-Gebäude in der finalen Aufstellung — ein-/ausblendbar + Liste (Name · Form · Stufe), wie in der Chronik.
+  const archBuildings = (state.architectEnabled && state.architect && state.architect.buildings) || [];
+  const hasArch = archBuildings.length > 0;
+  const architectCover = hasArch ? architectCoverFor(state) : null;
+  const [showArch, setShowArch] = useState(true);        // Gebäude-Overlay auf dem Brett an/aus
+  const [inspectBid, setInspectBid] = useState(null);    // Liste ↔ Brett: angetipptes Gebäude glüht am Grid
+
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
         <div className="text-center">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>Lauf beendet</div>
-          <div className="text-4xl sm:text-5xl font-bold mt-2 tabular-nums leading-tight break-words" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>
-          <div className="text-sm opacity-60 mt-1">Score{timeStr ? ` · ${timeStr}` : ""}</div>
+          {/* #253/Victory-Redesign: kompakt abgekürzt (Mio./Mrd.) gegen Overflow bei großen Scores; voller Wert im Tooltip. */}
+          <div className="text-4xl sm:text-5xl font-bold mt-2 tabular-nums leading-tight" title={fmtScore(score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(score)}</div>
+          {/* Rekord-Zeile: neuer Rekord → Stern + Zuwachs; sonst Abstand zum Rekord. */}
+          <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
+            {isRecord ? (
+              <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-0.5 rounded-full" style={{ color: "#8a7de0", background: "#8a7de01f", border: "1px solid #8a7de055" }}>
+                ★ Neuer Rekord{deltaPct != null && deltaPct > 0 ? ` · +${deltaPct} %` : ""}
+              </span>
+            ) : deltaPct != null ? (
+              <span className="text-sm px-2.5 py-0.5 rounded-full" style={{ color: "#9a9aa6", background: "#ffffff0d", border: "1px solid #33333e" }}>
+                {deltaPct >= 0 ? "+" : ""}{deltaPct} % zum Rekord
+              </span>
+            ) : null}
+          </div>
           {/* #202: Münzen-Zeile entfernt — der Shop ist seit dem Architekt-Umbau dormant, Münzen sind obsolet. */}
-          {isRecord && <div className="mt-2 text-sm font-bold" style={{ color: "#8a7de0" }}>★ Neuer Rekord</div>}
+          <div className="text-xs opacity-55 mt-2 flex items-center justify-center gap-x-2 gap-y-0.5 flex-wrap">
+            {timeStr && <span>{timeStr}</span>}
+            {perTrick > 0 && <><span className="opacity-30">·</span><span title="Durchschnittlicher Score je Stich">Ø {fmtScoreShort(perTrick)}/Stich</span></>}
+            <span className="opacity-30">·</span><span>{cyclesDone} {cyclesDone === 1 ? "Durchlauf" : "Durchläufe"}</span>
+          </div>
+        </div>
+
+        {/* Victory-Redesign: Fraktions-Score-Herkunft direkt unter dem Hero — die für Spieler wichtigste Frage „welche Fraktion trägt den Score?". */}
+        <div className="mt-5">
+          <ScoreHerkunft state={state} />
         </div>
 
         {/* #190: in diesem Lauf frisch freigeschaltete Skins — kleine Vorschau + Hinweis aufs Deck-Menü. */}
@@ -52,39 +101,110 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           </div>
         )}
 
-        <div className="mt-5">
-          <RunStats entry={{
-            bestStreak: state.bestStreak, perks: state.perks, skills: state.skills || [],
-            maxFormations: state.maxFormations, formationScore: state.formationScore, buildingScore: state.buildingScore,
-            crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
-          }} />
-        </div>
-
-        {/* Punkteverlauf: aktueller Lauf vs. (vorheriger) Rekord (#35). recordTraj ist der Snapshot
-            VOR dem saveRun-Überschreiben → bei neuem Rekord liegt die Lauf-Linie sichtbar darüber. */}
-        {currentTraj.length >= 2 && (
+        {/* Victory-Redesign · BUILD-Sektion: Archetyp-Zusammenfassung + Perk-/Skill-Chips, darunter die Motor-Kennzahlen
+            je aktiver Fraktion (die „Engine-Story" des Runs, nur Zähler > 0). */}
+        {((state.skills && state.skills.length) || (state.perks && state.perks.length) || motor.length > 0) && (
           <div className="mt-5">
-            <div className="flex items-center justify-between text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              <span>Score-Verlauf</span>
-              <span className="flex gap-2 normal-case tracking-normal">
-                <span style={{ color: "#d4a63a" }}>Lauf</span>
-                {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>Rekord</span> : <span className="opacity-40">erster Lauf</span>}
-              </span>
-            </div>
-            <Sparkline current={currentTraj} record={recordTraj} height={110} />
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Build</div>
+            <RunBuildChips entry={{ perks: state.perks, skills: state.skills || [] }} />
+            {motor.length > 0 && (
+              <>
+                <div className="text-[10px] uppercase tracking-wide opacity-40 mt-4 mb-2">Motor-Kennzahlen</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {motor.map((m) => (
+                    <div key={m.label} className="rounded-lg px-3 py-2 min-w-0" style={{ background: "#141419", border: `1px solid #2a2a34`, borderLeft: `3px solid ${m.color}` }}>
+                      <div className="opacity-50 text-[10px] uppercase tracking-wide truncate" title={m.label}>{m.label}</div>
+                      <div className="font-bold tabular-nums leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-[15px] mt-0.5" title={m.value.toLocaleString("de-DE")} style={{ color: m.color }}>{fmtScoreShort(m.value)}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
-        {/* #251: Score-Quellen-Balken (Formation/Gebäude/Serie/Crit/Sonstige) + Durchlauf-Graph (Score je Stich, Sieg/Niederlage). */}
-        <RunGraphs state={state} />
+        {/* Victory-Redesign · STATS & VERLAUF-Sektion: schlanke Kern-Kennzahlen (Score-Anteile stehen bereits in der
+            Score-Herkunft → sourceCells={false}) + Score-Verlauf + Durchlauf-Graph. */}
+        <div className="mt-5">
+          <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Stats &amp; Verlauf</div>
+          <RunStatCells entry={{
+            bestStreak: state.bestStreak, crits: state.crits, wins: state.wins,
+            bestTrickScore: state.bestTrickScore, tricks: state.trickNo,
+          }} sourceCells={false} />
+
+          {/* Punkteverlauf: aktueller Lauf vs. (vorheriger) Rekord (#35). recordTraj ist der Snapshot
+              VOR dem saveRun-Überschreiben → bei neuem Rekord liegt die Lauf-Linie sichtbar darüber. */}
+          {currentTraj.length >= 2 && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-[11px] uppercase tracking-wide opacity-50 mb-2">
+                <span>Score-Verlauf</span>
+                <span className="flex gap-2 normal-case tracking-normal">
+                  <span style={{ color: "#d4a63a" }}>Lauf</span>
+                  {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>Rekord</span> : <span className="opacity-40">erster Lauf</span>}
+                </span>
+              </div>
+              <Sparkline current={currentTraj} record={recordTraj} height={110} />
+            </div>
+          )}
+
+          {/* #251/Victory-Redesign: der generische Score-Quellen-Balken ist durch den Fraktions-Breakdown (ScoreHerkunft, oben)
+              ersetzt → sourceBar={false}; hier bleibt nur der Durchlauf-Graph (Score je Stich, Sieg/Niederlage). */}
+          <RunGraphs state={state} sourceBar={false} />
+        </div>
 
         {/* #201.8 Stufe A: finale Deck-Aufstellung schreibgeschützt — bestehendes CardGrid (rendert Formationsrahmen). Aufklappbar, um den Screen kurz zu halten. */}
         {finalOrder.length > 0 && (
           <details className="mt-5 rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">Finale Aufstellung ansehen</summary>
             <div className="p-3 pt-0">
-              <CardGrid cards={finalCards} formations={finalForms} roles={state.roles} anchors={state.shop?.anchors || []}
-                pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} architectCover={architectCoverFor(state)} quietTiles />
+              {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie in der Chronik/Aufstellung. */}
+              {hasArch && (
+                <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
+                  <button onClick={() => setShowArch((v) => !v)} className="px-2 py-1 rounded-lg font-bold"
+                    style={showArch ? { background: `${ARCH_CAT.value.color}22`, border: `1px solid ${ARCH_CAT.value.color}`, color: "#cfe3f5" }
+                                    : { background: "#20202a", border: "1px solid #3a3a46", color: "#8a8a92" }}>
+                    🏗 Gebäude {showArch ? "an" : "aus"}
+                  </button>
+                  {showArch && Object.entries(ARCH_CAT).map(([k, v]) => (
+                    <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
+                      <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <CardGrid cards={finalCards} formations={finalForms} roles={state.roles} {...glacierGridProps(state)} anchors={state.shop?.anchors || []}
+                pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+                architectCover={hasArch && showArch ? architectCover : null}
+                glowBid={hasArch && showArch ? inspectBid : null} quietTiles />
+
+              {/* Gebäude-Liste: welche Gebäude auf welcher Stufe. Antippen lässt den Rahmen am Brett cyan leuchten. */}
+              {hasArch && (
+                <div className="mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
+                  <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Deine Gebäude ({archBuildings.length})</div>
+                  <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt.</div>
+                  <div className="grid gap-1">
+                    {archBuildings.map((b) => {
+                      const fam = archFamily(b.familyId); if (!fam) return null;
+                      const anchor = Math.min(...b.footprint);
+                      const eff = architectCover?.[anchor]?.effects?.join(" · ") || "";
+                      const meta = ARCH_CAT?.[fam.category] || {};
+                      const on = inspectBid === b.id;
+                      return (
+                        <button key={b.id} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
+                          className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
+                          style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
+                          <span className="inline-flex items-center gap-1.5 flex-wrap">
+                            <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
+                            <b>{fam.name}</b>
+                            <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
+                          </span>
+                          {eff && <span className="opacity-75">{eff}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </details>
         )}

@@ -11,9 +11,9 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
 // `fam`/`tier` optional (für Formations-Gebäude, die NICHT über pre.value/score laufen, sondern über die
 // Formationserkennung architectFormSpec). Wortlaut der Formations-Rollen gespiegelt aus ArchitectScreen.famEff
 // (driftsicher aus architect.js), damit Detail-Anzeige und Bauplan-Tooltip dieselbe Sprache sprechen.
-export function architectEffectStrings(pre, pos, card, fam = null, tier = 1) {
+export function architectEffectStrings(pre, pos, card, fam = null, tier = 1, alliance = []) {
   const out = [];
-  const vb = card ? architectValueBonus(pre, pos, card) : 0; // Wert-Boost (konditional wie in der Engine)
+  const vb = card ? architectValueBonus(pre, pos, card, alliance) : 0; // #289: Wert-Boost grün-/allianz-bewusst (wie Engine)
   if (vb > 0) out.push(`+${vb} Stichwert`);
   const sc = pre && pre.score && pre.score[pos];
   if (sc) {

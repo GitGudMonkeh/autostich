@@ -12,7 +12,6 @@ import { PERK_DEFS, CATEGORIES, RARITY_META, rarityOf } from "../src/game/perks.
 import { FAMILY_LIST } from "../src/game/families.js";
 import { ARCHITECT_FAMILIES } from "../src/game/architect.js";
 import { tierNum, tierFactor, bindSpanFor, TIER_INERT_KINDS } from "../src/game/architect.js";
-import { STAT_DEFS } from "../src/game/stats.js";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = process.env.DB_OUT_DIR || resolve(__dir, "../dist/db");
@@ -143,17 +142,7 @@ for (const fam of Object.values(ARCHITECT_FAMILIES)) {
   });
 }
 
-// ---- Stats ----
-for (const id of Object.keys(STAT_DEFS)) {
-  const st = STAT_DEFS[id];
-  entries.push({
-    kind: "Stat", id, name: st.label || id,
-    group: "Stat", groupColor: "#8a7de0", icon: "",
-    rarity: "Stat",
-    tags: ["Stat"],
-    lines: [{ label: "Effekt", text: st.desc || st.help || "" }],
-  });
-}
+// (#267: Stats entfernt — die Stat-Phase ist weg; Crit-Perks stecken jetzt in den Präzision-Familien.)
 
 // Suchtext je Eintrag vorberechnen (Name + id + tags + alle Effekt-Zeilen), lowercase.
 for (const e of entries) {

@@ -5,7 +5,7 @@ import {
   masteryGradeLabel, canChallenge, difficultyForGrade, isGrandmaster, rankRoman, MASTERY_REWARD_LABELS,
 } from "../src/game/mastery.js";
 
-const [T1, T2, T3, T4, T5] = MASTERY_THRESHOLDS;
+const [T1, _T2, _T3, T4, T5] = MASTERY_THRESHOLDS;
 
 describe("advanceGrade — sequentiell, ein Grad pro Lauf", () => {
   it("Grad 0 + Score unter T1 → bleibt 0 (No-op)", () => {

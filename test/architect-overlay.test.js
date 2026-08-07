@@ -39,6 +39,24 @@ describe("archFrameLines — Perimeter-Kontur in Gebäude-Form", () => {
     expect(lefts.some((l) => l.y2 === 105)).toBe(true);  // Z0 links endet bei 105
     expect(lefts.some((l) => l.y1 === 105)).toBe(true);  // Z5 links beginnt bei 105 → durchgehend
   });
+  it("exVOut zieht die AUSSEN-Banden oben/unten näher an die Karten, innere Naht bleibt bei halber Lücke", () => {
+    // Vertikales 2-Zellen-Gebäude über eine Zeilengrenze (10px Lücke). Voller exV=5 (Naht), exVOut=2 (Außenkante).
+    const cover = { 0: covCell("B1"), 5: covCell("B1") };
+    const cells = { 0: rect(0, 0, 100, 100), 5: rect(0, 110, 100, 210) };
+    const lines = archFrameLines(cover, cells, 10, 3, 5, 2);
+    const tops = lines.filter(horiz);
+    // Z0-oben (Außenkante) sitzt jetzt bei -2 statt -5 → näher an der Karte.
+    expect(tops.some((l) => l.y1 === -2)).toBe(true);
+    // Z5-unten (Außenkante) bei 210+2=212.
+    expect(tops.some((l) => l.y1 === 212)).toBe(true);
+    // Innere Naht unverändert bei halber gemessener Lücke (105) → Kontur schließt weiter durch.
+    const lefts = lines.filter((l) => vert(l) && l.x1 === -3);
+    expect(lefts.some((l) => l.y2 === 105)).toBe(true);   // Z0 links endet bei 105
+    expect(lefts.some((l) => l.y1 === 105)).toBe(true);   // Z5 links beginnt bei 105
+    // Default exVOut = exV bleibt kompatibel (5 Args → Außenkante bei -5 wie zuvor).
+    const legacy = archFrameLines(cover, cells, 10, 3, 5);
+    expect(legacy.filter(horiz).some((l) => l.y1 === -5)).toBe(true);
+  });
   it("zwei getrennte 1-Zellen-Gebäude: jede Zelle voll umrandet (4 Kanten)", () => {
     const cover = { 0: covCell("B1"), 1: covCell("B2") };
     const cells = { 0: rect(0, 0, 100, 100), 1: rect(106, 0, 206, 100) };

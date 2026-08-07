@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PERK_DEFS } from "../game/perks.js";
 import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
+import { glacierGridProps } from "./glacierBoard.js";
 import { architectCoverFor } from "./architectCover.js";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
@@ -32,7 +33,7 @@ export function TargetSelect({ state, onConfirm }) {
         </div>
 
         <div className="mt-4">
-          <CardGrid cards={cards} formations={formations} roles={roles}
+          <CardGrid cards={cards} formations={formations} roles={roles} {...glacierGridProps(state)}
             anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
             architectCover={architectCover} pickedIds={sel} onTilePick={(pos, c) => toggle(c.id)} />
         </div>

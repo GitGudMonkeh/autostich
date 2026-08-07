@@ -31,12 +31,7 @@ function finalize(s, seed, tel) {
       perks: [...s.perks].sort(),
       skills: [...s.skills].sort(),
       archetypes: [...(s.activeArchetypes || [])].sort(),
-      stats: {
-        critChance: s.statCritChance,
-        critMult: s.statCritMult,
-        formMult: s.statFormMult,
-        streakMult: s.statStreakMult,
-      },
+      familyTiers: { ...(s.familyTiers || {}) }, // #267: Familien-Stufen (inkl. Präzision P_*) ersetzen den entfernten Stat-Vektor
     },
     cards: summarizeCards(tel), // Per-Karte-Ledger (S1): Auftritte/Winrate/Crits/Score-Anteil
     formations: summarizeFormations(tel), // Formations-Häufigkeit je Typ (Präsenz-Rate)

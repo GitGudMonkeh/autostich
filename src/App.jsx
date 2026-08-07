@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useRef, useState } from "react";
-import { reducer, initialState, menuState } from "./game/reducer.js";
+import { reducer, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
-import { baseScoreMultFor, totalCritChanceRaw } from "./game/perks.js";
+import { baseScoreMultFor, totalCritChanceRaw, totalCritMult } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
@@ -12,24 +12,26 @@ import { fmtDuration } from "./game/deck.js";
 import { fmtScore } from "./ui/format.js";
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
+import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
 import { Battlefield } from "./ui/Battlefield.jsx";
 import { GlossaryPanel } from "./ui/Glossary.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
-import { StatSelect } from "./ui/StatSelect.jsx";
+import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Phase (Runde 29)
 import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { ArchitectScreen } from "./ui/ArchitectScreen.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
+import { GlacierPick } from "./ui/GlacierPick.jsx";
 import { FamilyTargetSelect } from "./ui/FamilyTargetSelect.jsx";
 import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
-import { CrystalBar } from "./ui/CrystalBar.jsx";
+import { GlacierBar } from "./ui/GlacierBar.jsx";
 import { PlantBar } from "./ui/PlantBar.jsx";
 import { MasteryBar } from "./ui/MasteryBar.jsx";
-import { frozenCount, archetypeOf, hasKristallineMasse } from "./game/skills.js";
+import { archetypeOf } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
@@ -71,6 +73,7 @@ export function Autostich() {
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [glossaryOpen, setGlossaryOpen] = useState(false);        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
+  const [confirmRestart, setConfirmRestart] = useState(false);    // Komfort: Rückfrage „Wirklich neustarten?" (Neustart-Button) — kein Ein-Tap-Verlust bei Fettfingern
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/6× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
@@ -95,6 +98,9 @@ export function Autostich() {
   // Lifecycle-Handler (visibilitychange/pagehide) ohne ständiges Re-Registrieren snapshotten können.
   const [resumable, setResumable] = useState(() => loadActiveRun());
   const stateRef = useRef(state);
+  // Sichtbarkeit des Tabs — pausiert Clock-Tick und Auto-Play, solange der Tab im Hintergrund ist
+  // (Akku/Hitze: kein Weiterlaufen von Ticks/Re-Renders hinter einem unsichtbaren Tab). SSR-sicher.
+  const [visible, setVisible] = useState(() => typeof document === "undefined" || document.visibilityState !== "hidden");
 
   // RUN-TIMER (#10) — akkumulierte aktive Zeit; friert bei Pause / außerhalb „play" ein (#9)
   const timeBase = useRef(0);
@@ -106,7 +112,7 @@ export function Autostich() {
   // Aufstellung) — nur Menü/Gameover stehen außerhalb. So schätzt die Zeit die echte Rundendauer, statt nur die
   // reine Stichspiel-Zeit. Echte Unterbrechungen (Pause, Optionen-/Chronik-/Glossar-Overlay) frieren weiterhin ein.
   const inRun = state.phase !== "menu" && state.phase !== "gameover";
-  const active = inRun && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort;
+  const active = inRun && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart;
   stateRef.current = state; // Snapshot-Handler lesen immer den aktuellen State (kein Re-Registrieren je Stich)
   // Effektive Lauflänge — spiegelt die Engine-Endbedingung (engine.js): Dev-Run (state.maxCycles) ODER
   // Großmeister IV/V (difficulty.maxCycles 57/54) ODER Basis (MAX_CYCLES 60). HUD-Nenner + Completion-Check lesen DIES.
@@ -115,6 +121,7 @@ export function Autostich() {
   // +2 % je in DIESEM Durchlauf gewonnenem Stich → sichtbare Eskalation zum Rundenende, Reset je Durchlauf.
   // Rein Anzeige/Ablauf (score-neutral wie der Turbo). cycleWins = Siege seit Durchlauf-Beginn.
   const cycleStartWins = useRef(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   useEffect(() => { cycleStartWins.current = state.wins || 0; }, [state.cycle]);
   const cycleWins = Math.max(0, (state.wins || 0) - cycleStartWins.current);
   const dynamicSpeed = 1 + 0.02 * cycleWins;
@@ -189,6 +196,7 @@ export function Autostich() {
     if (showCustomize) { setShowCustomize(false); return true; }
     if (showLeaderboard) { setShowLeaderboard(false); return true; }
     if (showMasterSelect) { setShowMasterSelect(false); return true; }
+    if (confirmRestart) { setConfirmRestart(false); return true; } // offene Neustart-Rückfrage → schließen
     if (confirmAbort) { setConfirmAbort(false); return true; }   // offene Rückfrage → abbrechen (schließen)
     if (inRun) { setConfirmAbort(true); return true; }            // aktiver Lauf → erst fragen, nichts verlieren
     return false;                                                 // Menü/Gameover, nichts offen → Standard-Zurück
@@ -213,17 +221,19 @@ export function Autostich() {
   // Mobile-zuverlässige Speicherpunkte: Tab in den Hintergrund (visibilitychange→hidden) ODER Seite entladen
   // (pagehide) → sofortiger Snapshot. beforeunload feuert auf Mobile NICHT verlässlich → DAS hier ist der eigentliche Fix.
   useEffect(() => {
-    const onVis = () => { if (document.visibilityState === "hidden") persistActiveRun(); };
+    const onVis = () => {
+      const hidden = document.visibilityState === "hidden";
+      if (hidden) persistActiveRun();
+      setVisible(!hidden); // pausiert/reaktiviert Clock-Tick + Auto-Play (Akku/Hitze im Hintergrund)
+    };
     window.addEventListener("pagehide", persistActiveRun);
     document.addEventListener("visibilitychange", onVis);
     return () => { window.removeEventListener("pagehide", persistActiveRun); document.removeEventListener("visibilitychange", onVis); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // Checkpoints im Lauf: bei jedem Durchlauf-Wechsel und jeder Entscheidungsphase (levelup/formation/architect/…)
   // sofort snapshotten — niederfrequent, deckt die üblichen Verlustpunkte ab (die feineren fängt visibilitychange).
   useEffect(() => {
     if (inRun) persistActiveRun();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.cycle, state.phase, inRun]);
 
   // Timer-Segmente: bei Wechsel aktiv <-> inaktiv die verstrichene Zeit verbuchen.
@@ -234,28 +244,29 @@ export function Autostich() {
       segStart.current = null;
     }
   }, [active]);
-  // Anzeige ticken lassen, solange der Lauf aktiv ist.
+  // Anzeige ticken lassen, solange der Lauf aktiv UND der Tab sichtbar ist (Hintergrund → kein Tick, Akku/Hitze).
   useEffect(() => {
-    if (!active) return;
+    if (!active || !visible) return;
     const id = setInterval(() => setClock((c) => c + 1), 250);
     return () => clearInterval(id);
-  }, [active]);
+  }, [active, visible]);
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
-    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort) return; // #254: Abbruch-Rückfrage friert den Lauf ein (wie ein Overlay)
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || !visible) return; // #254: Abbruch-/Neustart-Rückfrage friert den Lauf ein (wie ein Overlay) · !visible: Hintergrund-Tab hält den Lauf an (Akku/Hitze)
     // #188 v2: nach einem großen Krit-Sieg um hitStopMs verzögert (kurzer „Hit-Stop"/Slow-Mo), sonst normaler Takt.
     const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs + hitStopMs);
     return () => clearTimeout(id);
     // #56: flipMs direkt (statt seiner Einzel-Eingaben speedPct/speedMult) → Deps veralten nicht,
     // falls flipMs künftig von weiteren Variablen abhängt.
     // #148: showChronik friert den Lauf ein (wie showOptions) — Tricks laufen nicht mehr hinter dem Overlay weiter.
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, flipMs, hitStopMs]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, flipMs, hitStopMs]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
     if (!state.trickNo) return;
     currentTraj.current[Math.floor(state.trickNo / GHOST_STEP)] = Math.floor(state.score);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [state.trickNo]);
 
   // Aktuellen Lauf werten: Highscore + Geist sichern (idempotent via recorded-Ref).
@@ -270,6 +281,12 @@ export function Autostich() {
       bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
       maxFormations: state.maxFormations, formationScore: state.formationScore, buildingScore: state.buildingScore,
       crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
+      // Victory/Stats-Redesign: Fraktions-Score-Kanäle mitspeichern → die feine Score-Herkunft (Gletscher/Pflanze/
+      // Blitz/Feuer + Serie) steht ab jetzt auch in der Statistik (Bestes Build). Alt-Läufe ohne die Felder degradieren
+      // sauber aufs grobe Modell (factionShares klemmt fehlende Kanäle auf 0 → „Sonstige").
+      glacierYield: state.glacierYield || 0, streakScore: state.streakScore || 0, lightYield: state.lightYield || 0,
+      plantRoot: state.plantRoot || 0, plantBloom: state.plantBloom || 0, plantHarvest: state.plantHarvest || 0,
+      fireBase: state.fireBase || 0, fireWhite: state.fireWhite || 0,
       // #205: Lauf-Seed lokal mitspeichern (roh + teilbarer Code) → Nachspielen/Kopieren im Challenge-Reiter. Alt-Läufe
       // ohne Seed degradieren sauber (kein Challenge-Knopf). Global (gEntry) folgt mit dem Board-Umzug (Schicht B, #197).
       seed: state.seed ?? null, seedCode: state.seed != null ? formatSeed(state.seed) : null,
@@ -288,13 +305,19 @@ export function Autostich() {
     // Rohdaten für die Erkennung (Shop-Käufe im ganzen Lauf, gewählte Stats). Erkennung/Flags in storage.recordRun.
     const completed = state.cycle >= totalCycles;
     // #201.8 Stufe B: kompakte finale Aufstellung mitpersistieren (playerOrder ist bereits in Spielreihenfolge aufgelöst).
+    // Zusätzlich das Architekt-Gebäude-Overlay + die Gebäude-Liste (Positionen matchen die Snapshot-Karten-Reihenfolge),
+    // damit die Lauf-Details (RunDetail) die Gebäude ein-/austoggeln und Name·Stufe zeigen können — wie im Victory-Screen.
+    const archBuildingsSnap = ((state.architectEnabled && state.architect && state.architect.buildings) || [])
+      .map((b) => ({ id: b.id, familyId: b.familyId, tier: b.tier, footprint: b.footprint }));
     const deckSnapshot = {
-      cards: (state.playerOrder || []).map((di) => { const c = state.deck[di]; return { id: c.id, value: c.value, suit: c.suit, green: !!c.green, frozen: !!c.frozen }; }),
+      cards: (state.playerOrder || []).map((di) => { const c = state.deck[di]; return { id: c.id, value: c.value, suit: c.suit, green: !!c.green }; }),
       formations: computeFormations(state.playerOrder || [], state.deck || [], state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {}),
+      architectCover: architectCoverFor(state), // per-Position { name, tier, effects, … } oder null (kein Architekt/keine Gebäude)
+      buildings: archBuildingsSnap,
     };
     const { profile: nextProfile } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
       shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
-      statPicks: state.statPicks || [], completed, deckSnapshot });
+      completed, deckSnapshot });
     setProfile(nextProfile);
     // #190: in DIESEM Lauf frisch freigeschaltete Skins (Bedingung vorher NICHT erfüllt, jetzt schon) → Siegesscreen.
     const catalog = [
@@ -344,6 +367,7 @@ export function Autostich() {
   // Bei Game-Over automatisch werten + den Resume-Snapshot löschen (Lauf ist beendet → kein Fortsetzen mehr).
   useEffect(() => {
     if (state.phase === "gameover") { saveRun(); clearActiveRun(); setResumable(null); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [state.phase]);
 
   // #190: aktive Skins aus den Optionen (defensiver Fallback auf "default", falls (noch) gesperrt/unbekannt).
@@ -428,12 +452,13 @@ export function Autostich() {
   const pick = (entry) => (entry && typeof entry === "object" && entry.familyId)
     ? dispatch({ type: "PICK_FAMILY", familyId: entry.familyId, tier: entry.tier, rng: Math.random })
     : dispatch({ type: "PICK_PERK", perkId: entry, rng: Math.random });
-  const pickStat = (id) => dispatch({ type: "PICK_STAT", statId: id, rng: Math.random });
+  // (#267: pickStat entfernt — es gibt keine Stat-Phase mehr; Crit-Perks laufen über den Perk-Fluss (Präzision-Familien).)
   // Formationsphase (§22.8): Tausch / Undo / Zurücksetzen / Bestätigen.
   const swapCards = (i, j) => dispatch({ type: "SWAP_CARDS", i, j });
   const undoSwap = () => dispatch({ type: "UNDO_SWAP" });
   const resetFormation = () => dispatch({ type: "RESET_FORMATION" });
   const confirmFormation = () => dispatch({ type: "CONFIRM_FORMATION" });
+  const lockGlacier = (pos) => dispatch({ type: "GLACIER_LOCK", pos }); // Eis-Neudesign: Karte als Gletscher festfrieren (starr)
   const confirmTarget = (cardIds) => dispatch({ type: "CONFIRM_TARGET", cardIds });
   // Familien-Ziel-Auswahl (Rarität #167): Farbe(n) (Kat. A) bzw. Karten (Kat. C Rollen) für pickTarget-Stufen wählen.
   const familyTargetSuit = (suit) => dispatch({ type: "FAMILY_TARGET_SUIT", suit });
@@ -443,6 +468,8 @@ export function Autostich() {
   // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
+  const pickLegendary = (legendaryId) => dispatch({ type: "PICK_LEGENDARY", legendaryId, rng: Math.random }); // #272 Legendär-Phase
+  const declineLegendary = () => dispatch({ type: "DECLINE_LEGENDARY", rng: Math.random });
   const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
   const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138: Perk-Angebot ablehnen → +Münze
   const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
@@ -450,6 +477,7 @@ export function Autostich() {
   const architectBuild = ({ familyId, tier, footprint, colorChoice }) => dispatch({ type: "ARCHITECT_BUILD", familyId, tier, footprint, colorChoice });
   const architectUpgrade = (buildingId) => dispatch({ type: "ARCHITECT_UPGRADE", buildingId });
   const architectMove = ({ buildingId, footprint }) => dispatch({ type: "ARCHITECT_MOVE", buildingId, footprint });
+  const architectMoveMulti = (moves) => dispatch({ type: "ARCHITECT_MOVE_MULTI", moves });
   const architectDemolish = (buildingId) => dispatch({ type: "ARCHITECT_DEMOLISH", buildingId });
   const architectRecolor = ({ buildingId, colorChoice }) => dispatch({ type: "ARCHITECT_RECOLOR", buildingId, colorChoice });
   const architectDone = () => dispatch({ type: "ARCHITECT_DONE" });
@@ -559,15 +587,15 @@ export function Autostich() {
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
           sichtbar (CSS), klick-durchlässig. */}
       <div className="crt-overlay" aria-hidden="true" />
-      {/* Preview-Marker — nur im Testbranch-Build (/autostich/test/), damit man die
-          Test-Page nie mit der echten Seite verwechselt. Klick-durchlässig. */}
+      {/* Preview-Marker — nur im Preview-Build (Balancing-Zweig, /autostich/test/), damit man die
+          Balancing-Page nie mit der echten Seite verwechselt. Klick-durchlässig. */}
       {import.meta.env.VITE_PREVIEW === "1" && (
         <div
           className="fixed top-2 left-2 z-50 px-2 py-1 rounded text-[10px] font-bold font-pixel tracking-wide"
           style={{ background: "#d4a63a", color: "#141419", pointerEvents: "none", boxShadow: "0 0 8px rgba(212,166,58,.6)" }}
           aria-hidden="true"
         >
-          TESTBRANCH
+          BALANCING
         </div>
       )}
       {/* Ambient-Partikel — nur unter Skin und nur auf dem Hauptscreen (Menü): dort gibt es
@@ -605,14 +633,16 @@ export function Autostich() {
           <Controls
             paused={paused} onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
-            onRestart={restartRun} onAbort={() => setConfirmAbort(true)} onOptions={() => setShowOptions(true)}
+            onRestart={() => setConfirmRestart(true)} onAbort={() => setConfirmAbort(true)} onOptions={() => setShowOptions(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
 
           {/* Mobil: dieselben Kopf-Stats als eigenes gerahmtes Panel an ZWEITER Stelle (direkt nach der
-              Controls-Leiste). Auf Desktop ausgeblendet (dort stehen sie im Header). */}
-          <div className="sm:hidden grid grid-cols-3 gap-x-3 gap-y-2 justify-items-center rounded-xl p-3 as-panel"
-            style={{ background: "#17171c", border: "1px solid #26262e" }}>
+              Controls-Leiste). Auf Desktop ausgeblendet (dort stehen sie im Header).
+              #280: klebt beim Runterscrollen oben fest (sticky, wie die Formationsstärke-Leiste) — deckender
+              Hintergrund + z-20 (unter Overlays/Modals bei z-30+), damit die Kennzahlen immer sichtbar bleiben. */}
+          <div className="sm:hidden sticky top-0 z-20 grid grid-cols-3 gap-x-3 gap-y-2 justify-items-center rounded-xl p-3 as-panel"
+            style={{ background: "#17171c", border: "1px solid #26262e", boxShadow: "0 6px 14px #0009" }}>
             {statCells}
           </div>
 
@@ -622,23 +652,33 @@ export function Autostich() {
             <div className="grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
               {state.masterRun && <MasteryBar grade={profile.masteryGrade || 0} score={state.score} />}
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
-                heat={state.heat} lightning={state.lightning} frozen={frozenCount(state.deck)}
-                forged={state.forged || {}} brandActive={state.brandActive || {}} layers={state.layers || {}}
+                heat={state.heat} lightning={state.lightning}
+                forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
                 reducedFx={options.reducedFx}
-                oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "stat"} />
-              <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)} />
-              <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}} />
-              <CrystalBar active={(state.activeArchetypes || []).includes("ice")}
-                layers={state.layers || {}}
-                frostbite={state.frostbiteActive || {}}
-                hasKristalline={hasKristallineMasse(state.skills || [])} />
+                oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
+              <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
+                critMult={totalCritMult(state)} deck={state.deck || []} />
+              <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}}
+                ashBurned={state.ashBurned || 0} brandTotal={state.brandTotal || 0}
+                fireBase={state.fireBase || 0} fireWhite={state.fireWhite || 0} />
               <PlantBar active={(state.activeArchetypes || []).includes("plant")}
                 deck={state.deck || []}
                 growth={state.growth || {}}
                 colonized={state.colonized || {}}
-                skills={state.skills || []} />
+                skills={state.skills || []}
+                growthTotal={state.growthTotal || 0}
+                rootScore={state.plantRoot || 0} bloomScore={state.plantBloom || 0} harvestScore={state.plantHarvest || 0}
+                trimCount={state.trimCount || 0}
+                options={options} onOption={changeOptions} />
+              <GlacierBar active={(state.activeArchetypes || []).includes("ice")}
+                glacierLocked={state.glacierLocked || []} glacierMass={state.glacierMass || []}
+                glacierYield={state.glacierYield || 0} glacierRoles={state.glacierRoles || []}
+                glacierPre={state.glacierPre}
+                frozenOppPending={state.frozenOppPending || {}} frozenOppActive={state.frozenOppActive || {}}
+                glacierBuffPending={state.glacierBuffPending || {}} glacierBuffActive={state.glacierBuffActive || {}}
+                grosseLawineFired={state.grosseLawineFired} />
             </div>
             {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
             <div className="order-2 lg:col-start-2 lg:row-start-1">
@@ -658,11 +698,14 @@ export function Autostich() {
       </div>
 
       {state.phase === "formation" && (
-        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} />
+        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} options={options} onOption={changeOptions} />
+      )}
+      {state.phase === "glacier-target" && (
+        <GlacierPick state={state} onConfirm={lockGlacier} />
       )}
       {state.phase === "architect" && (
         <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}
-          onMove={architectMove} onDemolish={architectDemolish} onRecolor={architectRecolor} onReroll={rerollArchitect} onDone={architectDone} />
+          onMove={architectMove} onMoveMulti={architectMoveMulti} onDemolish={architectDemolish} onRecolor={architectRecolor} onReroll={rerollArchitect} onDone={architectDone} />
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />
@@ -670,15 +713,15 @@ export function Autostich() {
       {state.phase === "family-target" && (
         <FamilyTargetSelect state={state} onSuit={familyTargetSuit} onCard={familyTargetCard} onFormationType={familyTargetFormationType} onConfirm={familyTargetConfirm} />
       )}
-      {showChronik && <ChronikOverview state={state} onClose={() => setShowChronik(false)} />}
-      {state.phase === "levelup" && state.statOffer && (
-        <StatSelect offer={state.statOffer} onPick={pickStat} state={state} />
-      )}
+      {showChronik && <ChronikOverview state={state} onClose={() => setShowChronik(false)} options={options} onOption={changeOptions} />}
       {state.phase === "levelup" && state.offer && (
         <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} perks={state.perks} deck={state.deck} state={state} />
       )}
       {state.phase === "levelup" && state.skillOffer && (
         <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} />
+      )}
+      {state.phase === "legendary" && state.legendaryOffer && (
+        <LegendarySelect offer={state.legendaryOffer} onPick={pickLegendary} onDecline={declineLegendary} state={state} />
       )}
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
@@ -736,6 +779,21 @@ export function Autostich() {
                 <button onClick={() => setConfirmAbort(false)} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#16161c", border: "1px solid #33333e" }}>Weiterspielen</button>
                 <button onClick={() => { setConfirmAbort(false); endRun(); }} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#e0605a", color: "#fff" }}>Beenden</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Komfort: Neustart-Rückfrage — der laufende Lauf ist noch nicht gewertet; kein Ein-Tap-Verlust bei Fettfingern. */}
+      {confirmRestart && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
+          onClick={() => setConfirmRestart(false)}>
+          <div className="w-full max-w-xs rounded-2xl p-5" style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
+            <div className="text-base font-bold">Wirklich neustarten?</div>
+            <div className="text-sm opacity-70 mt-1.5">Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.</div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setConfirmRestart(false)} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#16161c", border: "1px solid #33333e" }}>Weiterspielen</button>
+              <button onClick={() => { setConfirmRestart(false); restartRun(); }} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#e0605a", color: "#fff" }}>Neustarten</button>
             </div>
           </div>
         </div>

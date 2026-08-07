@@ -85,7 +85,7 @@ export function loadRunHistory() {
 export const PROFILE_SCHEMA_VERSION = 1;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
-  hadMonoStatRun: false, hadNoRerollRun: false, // #190/#214: sticky Challenge-Flags (einmal true → bleiben); noReroll = Sparfuchs deck_c3
+  hadNoRerollRun: false, // #214: sticky Challenge-Flag (einmal true → bleibt); noReroll = Sparfuchs deck_c3. (#267: hadMonoStatRun entfernt — die Stat-Phase ist weg.)
   monoArchetypeRuns: {}, hadAllArchetypesRun: false, // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
   masteryGrade: 0 }; // #217: laufübergreifender Meistergrad (0..5), sequentiell freigeschaltet über Score-Schwellen
 
@@ -102,7 +102,6 @@ export function migrateProfile(p) {
     // Felder füllt loadProfile über DEFAULT_PROFILE. Hier ist nur die Versions-Markierung nötig, keine Transformation.
     v = 1;
   }
-  // if (v < 2) { /* v1 → v2: konkrete Transformation von out.* */ v = 2; }
   out.schemaVersion = v;
   return out;
 }
@@ -128,18 +127,11 @@ const n0 = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 0);
 
 /* #190 Challenge-Erkennung — reine Funktionen, arbeiten NUR auf dem Run-Record (kein localStorage), unit-testbar.
    `completed` (in App.saveRun gesetzt) = nur ein NATÜRLICH abgeschlossener Lauf (cycle === MAX_CYCLES); ein
-   freiwilliges Beenden zählt NICHT.
-   - monoStatRun: kompletter Lauf, in dem IMMER derselbe Stat gewählt wurde (alle record.statPicks identisch). */
-export const MONO_STAT_MIN = 5; // Mindestzahl Stat-Picks, damit „immer derselbe" zählt (ein voller Lauf hat 11)
+   freiwilliges Beenden zählt NICHT. (#267: monoStatRun entfernt — die Stat-Phase ist weg.) */
 // #229 T12: isNoBuyRun/hadNoBuyRun entfernt — Shop ist seit #202 (Architekt) dormant, kein Deck nutzt noBuyRun mehr.
 // #214 Sparfuchs (deck_c3): natürlicher Abschluss OHNE einen benutzten Reroll (record.rerollsUsed === 0).
 export function isNoRerollRun(record) {
   return !!record && record.completed === true && n0(record.rerollsUsed) === 0;
-}
-export function isMonoStatRun(record) {
-  if (!record || record.completed !== true) return false;
-  const picks = Array.isArray(record.statPicks) ? record.statPicks : [];
-  return picks.length >= MONO_STAT_MIN && picks.every((s) => s === picks[0]);
 }
 /* #215 Archetyp-Decks — auf record.archetypes (Set der im Lauf gehaltenen Skill-Archetypen, App.jsx:196), nur bei
    natürlichem Abschluss (completed).
@@ -178,8 +170,7 @@ export function recordRun(record) {
     maxCrits: Math.max(p.maxCrits, n0(record.crits)),
     archetypesEver: [...arch],
     firstTs: p.firstTs || n0(record.ts),
-    // #190/#214: sticky Challenge-Flags — einmal erfüllt, bleiben sie true. noReroll schaltet deck_c3 „Sparfuchs" frei.
-    hadMonoStatRun: !!p.hadMonoStatRun || isMonoStatRun(record),
+    // #214: sticky Challenge-Flag — einmal erfüllt, bleibt es true. noReroll schaltet deck_c3 „Sparfuchs" frei.
     hadNoRerollRun: !!p.hadNoRerollRun || isNoRerollRun(record),
     // #215: Archetyp-Decks — Mono-Läufe je Fraktion (deck_c5..c8) + Element-Bund (alle vier, deck_c9).
     monoArchetypeRuns,

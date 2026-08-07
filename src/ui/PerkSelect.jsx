@@ -41,13 +41,13 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
   const rerollTokens = state.rerollsPerk || 0;
   const canReroll = !!onReroll && rerollTokens > 0;
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
-  const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning, statCritChance = 0, statCritMult = 0 } = state;
-  // Crit inkl. Blitz-Basis (lightning) + Crit-Chance-Stat — dieselbe geteilte Quelle wie Engine/StatusRail (kein Drift).
+  const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning } = state;
+  // Crit inkl. Blitz-Basis (lightning) + Präzision-Familien — dieselbe geteilte Quelle wie Engine/StatusRail (kein Drift).
   // #181: ungeklemmt anzeigen (Gesamt-Crit kann > 100 % sein → speist L6 „Raserei" / Familie D „Überschusskrit").
   const critRaw = totalCritChanceRaw(state);
   const critPct = Math.round(Math.max(0, critRaw) * 100);
   const scoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos });
-  const showCrit = hasCritPerk(perks) || hasCritFamily(state.familyTiers) || crits > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
+  const showCrit = hasCritPerk(perks) || hasCritFamily(state.familyTiers) || crits > 0 || !!(lightning && lightning.active);
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">

@@ -3,9 +3,11 @@ import {
   ARCHITECT_FAMILIES, familyDef, shapeRotations, enumeratePlacements, isValidFootprint, occupiedCells,
   nextRotationFootprint, currentRotationIndex, ROWS, COLS,
   buildArchitectOffer, initialArchitect, precomputeArchitect, architectValueBonus, architectScore,
-  architectFormSpec, summarizeArchitect, tierNum, tierFactor, ARCHITECT_OFFER, MAX_TIER, HAEUSERZEILE_FACTOR,
+  architectFormSpec, summarizeArchitect, tierNum, ARCHITECT_OFFER, HAEUSERZEILE_FACTOR,
   posOf, rowOf, colOf, N_POS,
+  districtFactorMap, boardFactorMap, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../src/game/architect.js";
+import { ARCH_STREAK_CAP } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -173,6 +175,21 @@ describe("Architekt — value-Effekte (Precompute + Anwendung)", () => {
     expect(architectValueBonus(pre, 1, deck[1])).toBe(0);             // B != choice
   });
 
+  it("color (Buntglas) + Pflanze: grüne Karte zählt als Farbe G, nicht als Ursprungsfarbe", () => {
+    // Bug: der Architekt matchte die URSPRUNGSFARBE. Grün (card.green) überschreibt die Farbe zu „G" (wie im Farbblock),
+    // also bufft ein G-Gebäude die sichtbar grüne Karte — und ein Ursprungsfarb-Gebäude bufft sie nicht mehr.
+    const deck = fakeDeck(() => 5, (i) => (i === 2 ? "G" : "R")); // pos0/1 = R, pos2 = native G
+    const amt = tierNum(ARCHITECT_FAMILIES.A_BUNTGLAS.base.value, 1);
+    const g = precomputeArchitect({ buildings: [B("A_BUNTGLAS", [0, 1, 2, 3], 1, { colorChoice: "G" })] }, idOrder, deck);
+    expect(architectValueBonus(g, 0, deck[0])).toBe(0);                          // R, nicht grün → kein G-Buff
+    expect(architectValueBonus(g, 1, { ...deck[1], green: true })).toBe(amt);    // ursprünglich R, aber grün → als G gebufft (der Fix)
+    expect(architectValueBonus(g, 2, deck[2])).toBe(amt);                        // native G-Karte
+    // Umkehrung: ein R-Gebäude bufft die jetzt grüne (ursprünglich R) Karte NICHT mehr.
+    const r = precomputeArchitect({ buildings: [B("A_BUNTGLAS", [0, 1], 1, { colorChoice: "R" })] }, idOrder, deck);
+    expect(architectValueBonus(r, 0, { ...deck[0], green: true })).toBe(0);      // grün → nicht mehr R
+    expect(architectValueBonus(r, 0, deck[0])).toBe(amt);                        // nicht grün → weiterhin R
+  });
+
   it("target highest/lowest: Effekt liegt nur auf der Ziel-Position", () => {
     const deck = fakeDeck((i) => [2, 9, 4, 7][i] ?? 0); // Werte an 0..3
     const hi = precomputeArchitect({ buildings: [B("A_FIRST", [0, 1, 2, 3], 1)] }, idOrder, deck);
@@ -189,9 +206,20 @@ describe("Architekt — score-Effekte", () => {
     const pre = precomputeArchitect({ buildings: [B("A_ZOLLHAUS", [0, 1], 2)] }, idOrder, deck);
     expect(architectScore(pre, 0, { isCrit: false, serieStreak: 3, suit: "R" }, {}).flat).toBe(tierNum(ARCHITECT_FAMILIES.A_ZOLLHAUS.base.score, 2));
   });
-  it("streak (Reihenhaus): +N × Serie", () => {
+  it("streak (Reihenhaus): +N × Serie im eigenen streakFlat-Kanal (nicht im flat → kein Doppel-Dip)", () => {
     const pre = precomputeArchitect({ buildings: [B("A_REIHENHAUS", [0, 1, 2, 3], 1)] }, idOrder, deck);
-    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 4, suit: "R" }, {}).flat).toBe(tierNum(ARCHITECT_FAMILIES.A_REIHENHAUS.base.score, 1) * 4);
+    const res = architectScore(pre, 0, { isCrit: false, serieStreak: 4, suit: "R" }, {});
+    expect(res.streakFlat).toBe(tierNum(ARCHITECT_FAMILIES.A_REIHENHAUS.base.score, 1) * 4);
+    expect(res.flat).toBe(0); // Serien-Score läuft NICHT über flat (der bekäme sonst den globalen Serien-Mult obendrauf)
+  });
+  it("streak (Reihenhaus): Serie ist bei ARCH_STREAK_CAP gedeckelt (kein Runaway)", () => {
+    // Tier 3 → streakDoubleFrom aktiv (×2 ab Serie 4). Über dem Cap darf der streakFlat nicht weiterwachsen.
+    const pre = precomputeArchitect({ buildings: [B("A_REIHENHAUS", [0, 1, 2, 3], 3)] }, idOrder, deck);
+    const amt = tierNum(ARCHITECT_FAMILIES.A_REIHENHAUS.base.score, 3);
+    const atCap = architectScore(pre, 0, { isCrit: false, serieStreak: ARCH_STREAK_CAP, suit: "R" }, {}).streakFlat;
+    const overCap = architectScore(pre, 0, { isCrit: false, serieStreak: 262, suit: "R" }, {}).streakFlat;
+    expect(atCap).toBe(amt * ARCH_STREAK_CAP * 2);
+    expect(overCap).toBe(atCap); // Serie 262 zahlt nicht mehr als der Deckel
   });
   it("crit (Zinne): nur bei Crit", () => {
     const pre = precomputeArchitect({ buildings: [B("A_ZINNE", [0, 1, 2, 3], 1)] }, idOrder, deck);
@@ -350,5 +378,43 @@ describe("Architekt — Voll-Run", () => {
     expect(sum.byCategory.value).toBe(1);
     expect(sum.byCategory.score).toBe(1);
     expect(sum.coverage).toBeCloseTo(6 / N_POS);
+  });
+});
+
+describe("#283 Distrikt-Bonus (gleiche Kategorie aneinander)", () => {
+  const V = (id, footprint) => ({ id, familyId: "A_STUETZE", footprint });   // value/domino-Familie als Kategorie-Träger
+  const S = (id, footprint) => ({ id, familyId: "A_ZOLLHAUS", footprint });   // score-Familie
+
+  it("zwei gleich-kategorige Gebäude aneinander → Faktor 1+BONUS auf beide", () => {
+    const df = districtFactorMap([V(1, [posOf(0, 0), posOf(0, 1)]), V(2, [posOf(1, 0), posOf(1, 1)])]); // vertikal benachbart
+    for (const p of [posOf(0, 0), posOf(0, 1), posOf(1, 0), posOf(1, 1)]) expect(df[p]).toBeCloseTo(1 + DISTRICT_BONUS);
+    expect(df[posOf(4, 4)]).toBe(1); // unbeteiligt
+  });
+
+  it("nicht benachbart → kein Distrikt-Faktor", () => {
+    const df = districtFactorMap([V(1, [posOf(0, 0)]), V(2, [posOf(6, 4)])]);
+    expect(df[posOf(0, 0)]).toBe(1);
+    expect(df[posOf(6, 4)]).toBe(1);
+  });
+
+  it("benachbart aber VERSCHIEDENE Kategorie → kein Distrikt-Faktor", () => {
+    const df = districtFactorMap([V(1, [posOf(0, 0)]), S(2, [posOf(1, 0)])]); // value neben score
+    expect(df[posOf(0, 0)]).toBe(1);
+    expect(df[posOf(1, 0)]).toBe(1);
+  });
+
+  it("mehr Nachbarn als DISTRICT_CAP → gedeckelt", () => {
+    const center = V(0, [posOf(2, 2)]);
+    const around = [V(1, [posOf(1, 2)]), V(2, [posOf(3, 2)]), V(3, [posOf(2, 1)]), V(4, [posOf(2, 3)])]; // 4 gleich-kat. Nachbarn
+    const df = districtFactorMap([center, ...around]);
+    expect(df[posOf(2, 2)]).toBeCloseTo(1 + DISTRICT_BONUS * DISTRICT_CAP); // 4 → auf CAP (3) gedeckelt
+  });
+
+  it("boardFactorMap = Struktur × Distrikt", () => {
+    // Volle Segment-Zeile aus zwei gleich-kategorigen Gebäuden (Struktur-Zeile UND Distrikt-Nachbarschaft).
+    const row = [V(1, [posOf(0, 0), posOf(0, 1), posOf(0, 2)]), V(2, [posOf(0, 3), posOf(0, 4)])];
+    const bf = boardFactorMap(row);
+    // Zeile komplett → HAEUSERZEILE_FACTOR; benachbart gleiche Kategorie → × (1+BONUS).
+    expect(bf[posOf(0, 0)]).toBeCloseTo(HAEUSERZEILE_FACTOR * (1 + DISTRICT_BONUS));
   });
 });

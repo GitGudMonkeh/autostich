@@ -16,6 +16,11 @@ export function FormationPanel({ state = {}, title = "Deine aktiven Formationen"
   const cards = order.map((di) => deck[di]);
   if (cards.length === 0) return null;
   const { count, maxMult } = summarizeFormations(formations);
+  // Eis-Neudesign: Gletscher/Firn-Boden auch im Referenz-Panel zeigen (z. B. Skill-Auswahl), damit man beim Entscheiden
+  // die eigene Eis-Lage sieht.
+  const iceActive = (state.activeArchetypes || []).includes("ice");
+  const glacierPos = iceActive && state.glacierLocked
+    ? new Set(state.glacierLocked.map((v, i) => (v ? i : -1)).filter((i) => i >= 0)) : null;
   return (
     <div className={className}>
       <div className="flex items-center justify-between mb-2">
@@ -24,6 +29,7 @@ export function FormationPanel({ state = {}, title = "Deine aktiven Formationen"
       </div>
       <CardGrid cards={cards} formations={formations} roles={state.roles || {}}
         anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+        glacierPos={glacierPos} glacierMassByPos={iceActive ? (state.glacierMass || []) : null}
         pickedIds={pickedIds} pickedPos={pickedPos} onTilePick={() => {}} quietTiles />
     </div>
   );

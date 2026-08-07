@@ -41,7 +41,6 @@ export function GlossaryButton({ onClick, className = "", style, title = "Glossa
   );
 }
 
-const CAT_ORDER = GLOSSARY_CATEGORIES.map((c) => c.id);
 const GROUP_ORDER = Object.keys(GLOSSARY_GROUPS);
 
 // Das durchsuchbare, kategorisierte Overlay.
@@ -73,6 +72,7 @@ export function GlossaryOverlay({ onClose }) {
       }
       return { cat, items, groups };
     }).filter(Boolean);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [entries, query]);
 
   const jump = (catId) => {

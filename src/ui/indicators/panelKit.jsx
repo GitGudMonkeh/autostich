@@ -13,6 +13,52 @@ export function IndicatorPanel({ children, className = "" }) {
   );
 }
 
+// #270.2 Ertrag-Meter: der Eigen-Score eines Archetyps, aufgeschlüsselt nach seinen NAMENTLICHEN Fantasien (Kanälen).
+// „Auf einen Blick, wie mein Motor läuft": ein gestapelter Anteils-Balken zeigt, WELCHE Fantasie gerade trägt, die
+// Summe die Größenordnung. NUR aktive Kanäle (value > 0) erscheinen — leere Fantasien bleiben aus (kein überfülltes
+// Panel). Gibt null zurück, solange der Archetyp noch nichts eingespielt hat. `channels`: [{ label, value, color }].
+const nfmt = (n) => Math.round(n).toLocaleString("de-DE");
+export function YieldMeter({ title, channels = [], accent = "#e8e8ea" }) {
+  const active = channels.filter((c) => c.value > 0);
+  const total = active.reduce((t, c) => t + c.value, 0);
+  if (total <= 0) return null;
+  const single = active.length === 1;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between text-xs mb-1.5">
+        <span className="opacity-60">{title}</span>
+        <span className="font-bold tabular-nums" style={{ color: accent }}>~{nfmt(total)}</span>
+      </div>
+      {/* Gestapelter Anteils-Balken — Segmentbreite = Anteil des Kanals am Eigen-Score (nur bei ≥2 Kanälen aussagekräftig).
+          Jeder aktive Kanal bekommt eine MINDESTBREITE (Sichtbarkeit kleiner Kanäle wie Weißglut); der Boden wird den
+          großen Segmenten anteilig abgezogen, Summe bleibt 100 %. Der WAHRE Anteil steht exakt im Tooltip + der Legende. */}
+      {!single && (() => {
+        const MIN_SEG = 0.06; // 6 % Mindestbreite je Kanal
+        const floor = active.length * MIN_SEG < 1 ? MIN_SEG : 0; // Schutz bei sehr vielen Kanälen (dann kein Boden)
+        const pctOf = (c) => (floor + (c.value / total) * (1 - active.length * floor)) * 100;
+        return (
+          <div className="flex w-full rounded-sm overflow-hidden" style={{ height: 10, background: "#26262e" }}>
+            {active.map((c) => (
+              <div key={c.label} title={`${c.label}: ${nfmt(c.value)} (${Math.round((100 * c.value) / total)} %)`}
+                style={{ width: `${pctOf(c)}%`, background: c.color }} />
+            ))}
+          </div>
+        );
+      })()}
+      {/* Legende: nur aktive Kanäle, Punkt + Name + Zahl. */}
+      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px]">
+        {active.map((c) => (
+          <span key={c.label} className="inline-flex items-center gap-1">
+            <span className="w-[8px] h-[8px] rounded-[2px] shrink-0" style={{ background: c.color }} />
+            <span className="opacity-65">{c.label}</span>
+            <b className="tabular-nums" style={{ color: c.color }}>{nfmt(c.value)}</b>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Kompakte Zähler-Zelle: Icon + Zahl (+ optionales Label). Für Sekundär-Ressourcen, die als
 // simpler hochzählender Wert dargestellt werden (kein Balken). `glow` = weicher Innen-/Icon-Schein.
 export function CounterCell({ icon, value, label, color, glow = false, dim = false, title }) {

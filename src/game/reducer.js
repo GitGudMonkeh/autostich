@@ -4,15 +4,15 @@ import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js";
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
-  frozenTargetFor, frozenCount, freezeCards, unfreezeAll, hasFrostwahl, hasKaltfront, hasGlacierPush, hasVerzahnung, hasGleitfrost, hasVerdichtung,
-  hasSetzlingsbeet, hasDornenkoenig, buildSkillOffer } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte
-import { STAT_DEFS, STAT_IDS } from "./stats.js";
-import { computeFormations, formationPotential, segmentGainedFormation, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
+  hasSetzlingsbeet, buildSkillOffer, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf
+// (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
+import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
-import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
+import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
+import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
 import { masteryRerollBonus, masteryCoverBonus, masteryLegendMult, masteryRareShift, masteryLegendGuaranteed, difficultyForGrade, MASTERY_MAX_GRADE } from "./mastery.js"; // #217 Meistergrade / #226 Großmeister
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
@@ -49,7 +49,7 @@ function startOrderInBand(deck, rng) {
 function startDecisionSetup(decision, s, seed, actionRng, grade, architectEnabled, devEnergy, devMode = false) {
   const mLegMult = masteryLegendMult(grade), mRareShift = masteryRareShift(grade);
   const rngAtOr = (...parts) => (seed != null ? rngAt(seed, 0, ...parts) : actionRng);
-  if (decision === "stat") return { phase: "levelup", statOffer: STAT_IDS };
+  // (#267: „stat"-Zweig entfernt — es gibt keine Stat-Phase mehr.)
   if (decision === "perk") {
     const off = devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * mLegMult, mRareShift, architectEnabled);
     return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
@@ -103,11 +103,10 @@ export function initialState(rng = Math.random, seed = null) {
     weaknessBig: false, // Rarität #167: D_WEAKNESS IV — rüstende Niederlage mit großem Abstand (→ +900 statt +600)
     interplayStored: 0, // Rarität #167: D_INTERPLAY IV — in Niederlagen gebankter Score, beim nächsten Sieg als Flat ausgezahlt
     misfireScore: 0, // V2 §22.6 D15: Score-Ladung (Fehlzündung)
+    iceCritCarry: 0, // Frostkaskade: getragene Crit-Chance vom letzten Frost-Crit
     winSuit: null, winSuitStreak: 0, recentResults: [], // #71 Historie: Farbserie / Volles Haus (recentResults → secondLastResult)
     segmentWins: 0, // #189 Volles Haus: segment-genauer Sieg-Zähler (ersetzt das rollende Fenster)
-    // Stat-System (V2 §22.3): akkumulierte Summen, additiv/ohne Caps.
-    statCritChance: 0, statCritMult: 0, statFormMult: 0, statStreakMult: 0, statOffer: null,
-    statPicks: [], // #190: Reihenfolge der gewählten Stats dieses Laufs (für die Mono-Stat-Challenge deck_c4)
+    // (#267: Stat-System entfernt — keine statCrit*/statForm*/statStreak*/statOffer/statPicks mehr.)
     formations: [], // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, von der Engine je Durchlauf gefüllt
     formationEnergy: 0, formationSwaps: [], // Formationsphase (V2 §22.8): Energie + Undo-Historie der aktuellen Phase
     roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
@@ -122,17 +121,25 @@ export function initialState(rng = Math.random, seed = null) {
     // denselben Fluss später für Karten-Ziele (Rollen).
     familyTarget: null,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
-    skills: [], skillOffer: null, activeArchetypes: [], lightning: initLightning(),
+    skills: [], skillOffer: null, legendaryOffer: null, activeArchetypes: [], lightning: initLightning(), // #272: legendaryOffer = Angebot der Legendär-Phase (Runde 29)
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
-    iceTemp: {}, frostbitePending: {}, frostbiteActive: {}, frostSwapsUsed: [], // Eis-Rework (v0): temp Wert (Kaltfront) / Vergletscherung-Gegner-Debuff / genutzte Frosttausche
-    layers: {}, frostFormPrev: [], // Eis-Rework (v0): Schichten je Frostkarte (permanent) / Beständigkeits-Historie
-    growth: {}, colonized: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green)
+    iceTemp: {}, // temporärer Wertbonus je card.id (Blitzfänger — Blitz-Archetyp, in engine.js gelesen)
+    growth: {}, colonized: {}, plantLoss: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green) / Niederlagen-Zähler (Wurzelschlag-Buff v0.4)
     ash: 0, brandPending: {}, brandActive: {}, forged: {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
+    // #270 Fraktions-Panels: kumulative Lauf-Kennzahlen (nur Anzeige) — Direkt-Ertrag (Σ post-stack Direkt-Score) + Motor-Zähler.
+    iceYield: 0, lightYield: 0, plantRoot: 0, plantBloom: 0, plantHarvest: 0, fireBase: 0, fireWhite: 0, // #270 Eigen-Score-Kanäle
+    ionTotal: 0, growthTotal: 0, ashBurned: 0, brandTotal: 0, // #270 Motor-Zähler
+    trimCount: 0, // #288 Trimmen: Anzahl ersetzter Wachstums-Skills → Wurzel-/Blüten-Multiplikator
     tieArmed: false,
     shop: initialShop(), // hält nur noch die (inerten) Positionsanker — der Shop ist entfernt (#229)
     architectEnabled: false,       // Architekt (#202): Flag — bei true öffnet sich die Architekt-Phase (im Spiel via START_RUN true; false = Sim-Baseline ohne Architekt)
     architect: { ...initialArchitect(), maxCover: ARCH_MAX_COVER }, // Gebäude-Overlay (8×5) + Angebot + Meilenstein-Zähler; maxCover als #217-Seam (Rang-Bonus: base + Grad×N) run-geseedet
     architectPre: null,            // Precompute je Durchlauf (von der Engine gefüllt)
+    glacierMass: new Array(40).fill(0), glacierLocked: new Array(40).fill(false), glacierPre: null, glacierYield: 0, glacierRoles: [], // Eis-Neudesign (glacier.js): Firn-Boden-Masse / Gletscher-Lock / Durchlauf-Snapshot / Eigen-Score / aktive Rollen
+    frozenOppPending: {}, frozenOppActive: {}, // Eis-Neudesign (Einfrieren): Gegner-Marken (Gegnerkarte verliert nächsten Stich)
+    glacierBuffPending: {}, glacierBuffActive: {}, // Eis-Neudesign (Frostbund): Wert-Buff auf Nicht-Eis-Nachbarkarten
+    grosseLawineFired: false, // Eis-Neudesign (Große Lawine): One-Shot-Finisher-Flag
+    pendingPerkOffer: null, // Eis-Neudesign: geparktes Perk-Angebot, wenn das Ablehnen bei vollen Eis-Slots zuerst eine Gletscher-Wahl öffnet
     // Dev-Run (nur Preview): pro-Lauf-Overrides. null/false → Bestandsverhalten (globaler Plan, C.MAX_CYCLES,
     // C.FORMATION_ENERGY, Zufallsangebote). Von START_RUN mit action.dev gesetzt; die Engine liest sie im Übergang.
     devSchedule: null, maxCycles: null, devEnergy: null, devMode: false,
@@ -174,17 +181,22 @@ export function reducer(state, action) {
       if (dev) {
         const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
         const devSchedule = Array.from({ length: devRounds }, (_, i) => (Array.isArray(dev.schedule) && dev.schedule[i]) || C.DECISION_SCHEDULE[i] || "perk");
-        const devCover = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.cover) ?? 0)));
-        const devEnergy = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.energy) ?? 0)));
+        const devCover = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.cover) || 0)));
+        const devEnergy = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.energy) || 0)));
         const sBase = { ...s, architect: { ...s.architect, maxCover: devCover } };
         const patch = startDecisionSetup(devSchedule[0], sBase, seed, action.rng, grade, true, devEnergy, true);
         return { ...sBase, architectEnabled: true, masteryGrade: grade, masterRun,
           devSchedule, maxCycles: devRounds, devEnergy, devMode: true,
           difficulty: difficultyForGrade(grade),
           rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
-          skillOffer: null, offer: null, statOffer: null, masteryLegGranted: false, ...patch };
+          skillOffer: null, offer: null, masteryLegGranted: false, ...patch };
       }
-      return { ...s, phase: "levelup", statOffer: STAT_IDS, architectEnabled,
+      // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
+      // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
+      const architectStart = { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) }; // Baufeld +2/Grad ab II
+      const sBase = { ...s, architect: architectStart, architectEnabled };
+      const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, grade, architectEnabled, undefined, false);
+      return { ...sBase, architectEnabled,
         masteryGrade: grade, masterRun,
         difficulty: difficultyForGrade(grade), // #226 Großmeister: Ramp je Rang (Meister → null = No-op)
         // #263: drei getrennte Reroll-Pools. Normal-Lauf je BASE_REROLLS (2/2/2). Meister-Lauf zieht je Pool weiter
@@ -192,7 +204,7 @@ export function reducer(state, action) {
         rerollsPerk: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
         rerollsArch: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
         rerollsSkill: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
-        architect: { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) } }; // Baufeld +2/Grad ab II
+        masteryLegGranted: false, ...startPatch };
     }
 
     case "TO_MENU":     // laufenden Run verlassen (#5)
@@ -249,6 +261,26 @@ export function reducer(state, action) {
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, footprint } : x));
       return { ...state, architect: { ...a, buildings, moved: true } }; // moved-Flag bleibt (Telemetrie), deckelt aber nicht mehr
     }
+    case "ARCHITECT_MOVE_MULTI": { // atomarer Mehrfach-Move (Drop über ein Gebäude → getroffene weichen aus / Swap). Prüft die END-Lage.
+      if (state.phase !== "architect") return state;
+      const a = state.architect;
+      const moves = action.moves || []; // [{ buildingId, footprint }]
+      if (!moves.length) return state;
+      const newFp = {};
+      for (const m of moves) {
+        const b = a.buildings.find((x) => x.id === m.buildingId);
+        if (!b || !archFamily(b.familyId)) return state;
+        newFp[m.buildingId] = [...m.footprint].sort((x, y) => x - y);
+      }
+      const finalBuildings = a.buildings.map((x) => (newFp[x.id] ? { ...x, footprint: newFp[x.id] } : x));
+      // Jede verschobene Karte: gültige Formlage UND kein Overlap mit den übrigen END-Lagen (deckt Overlap/Gitter/Form ab).
+      for (const m of moves) {
+        const b = a.buildings.find((x) => x.id === m.buildingId), fam = archFamily(b.familyId);
+        const others = finalBuildings.filter((x) => x.id !== b.id);
+        if (!isValidFootprint(fam.form, newFp[b.id], others)) return state;
+      }
+      return { ...state, architect: { ...a, buildings: finalBuildings, moved: true } };
+    }
     case "ARCHITECT_RECOLOR": { // #261: Buff-Farbe eines colorLocked-Gebäudes anpassen — freie Anpassung bis zum Bestätigen (wie MOVE, kein actedMain)
       if (state.phase !== "architect") return state;
       const a = state.architect;
@@ -287,7 +319,7 @@ export function reducer(state, action) {
 
     case "PICK_PERK": {
       if (state.phase !== "levelup") return state;
-      const { perkId, rng } = action;
+      const { perkId } = action;
       if (!state.offer || !state.offer.includes(perkId)) return state;
       const def = PERK_DEFS[perkId];
       if (!def) return state; // Sicherheitsnetz (v. a. Dev-Voll-Katalog): unbekannte perkId → No-Op statt Crash
@@ -321,7 +353,7 @@ export function reducer(state, action) {
     // (Familie+Stufe im Angebot, Ziel-Flow bei ROLE) folgt mit buildFamilyOffer (#163 Schritt 3).
     case "PICK_FAMILY": {
       if (state.phase !== "levelup") return state;
-      const { familyId, tier, rng } = action;
+      const { familyId, tier } = action;
       const fam = familyDef(familyId);
       if (!fam || !tier) return state;
       // Angebotsvalidierung (Spec §2.4): die Familie+Zielstufe muss im aktuellen Angebot stehen (analog PICK_PERK).
@@ -337,7 +369,20 @@ export function reducer(state, action) {
       const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
       if (!pt) return applyNow();                                                          // kein Ziel → direkt anwenden
       // Farb-Ziel (A_SUIT_BOOST/A_SUIT_DUEL; #179 auch Farballianz E_COLOR_ALLIANCE): immer die volle Anzahl frisch wählen.
-      if (pt.suits) return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [], formationType: null } };
+      if (pt.suits) {
+        // Comfort: müssen ALLE Farben gewählt werden (Farballianz III/IV, suits:4 — einzige suits≥voll-Familie), ist die
+        // Auswahl erzwungen und die Reihenfolge irrelevant (die Allianz macht alle vier zu EINER Farbe, keine Paare) →
+        // Picker überspringen und direkt mit allen Farben anwenden (kein „4 von 4 antippen"-Leerlauf).
+        if (pt.suits >= C.SUIT_ORDER.length) {
+          const target = { suits: C.SUIT_ORDER.slice(), cards: [], formationType: null, order: state.playerOrder };
+          const { familyTiers, deck, roles } = applyFamilyPick(
+            familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
+          return { ...state, familyTiers, deck, roles,
+            formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers),
+            offer: null, phase: "play" };
+        }
+        return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [], formationType: null } };
+      }
       // Formationstyp-Ziel (#179, Formationskern E_CORE): genau einen der vier Basistypen wählen.
       if (pt.formationType) return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "formationType", need: 1, suits: [], cards: [], formationType: null } };
       // Karten-Ziel: ROLE wählt nur die ZUSÄTZLICHEN Ziele (Stufe-Ziel − bereits gehaltene, Spec §2.3);
@@ -409,14 +454,7 @@ export function reducer(state, action) {
       return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers), phase: "play", targetPerk: null };
     }
 
-    // Stat-Auswahl (V2 §22.3): der gewählte Stat addiert seinen Step auf das zugehörige Summenfeld.
-    case "PICK_STAT": {
-      if (state.phase !== "levelup" || !state.statOffer) return state;
-      const def = STAT_DEFS[action.statId];
-      if (!def) return state;
-      return { ...state, [def.field]: (state[def.field] || 0) + def.step, phase: "play", statOffer: null,
-               statPicks: [...(state.statPicks || []), action.statId] }; // #190: Mono-Stat-Challenge-Tracking
-    }
+    // (#267: PICK_STAT entfernt — es gibt keine Stat-Phase mehr.)
 
     // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE). Hinzufügen oder — bei vollen Slots — ersetzen.
     // Der erste Skill eines Archetyps schaltet dessen System frei (lightning.active).
@@ -429,10 +467,14 @@ export function reducer(state, action) {
       const active0 = state.activeArchetypes || [];
       if (arch && !active0.includes(arch) && active0.length >= C.MAX_ARCHETYPES) return state;
       let skills;
-      if (replaceId && state.skills.includes(replaceId)) {
-        // Gezieltes Ersetzen (volle Slots ODER Konsumenten-Ersatzdialog #93): tauscht genau diesen Slot.
+      let trimmed = false; // #288: wurde ein wachstums-stützender Skill ersetzt? → Trimmung
+      // #272: Der Legendär im 7. Slot zählt NICHT gegen SKILL_SLOTS und wird nie durch einen normalen Pick ersetzt.
+      const normalCount = state.skills.filter((id) => !isLegendarySkill(id)).length;
+      if (replaceId && state.skills.includes(replaceId) && !isLegendarySkill(replaceId)) {
+        // Gezieltes Ersetzen (volle Slots ODER Konsumenten-Ersatzdialog #93): tauscht genau diesen (normalen) Slot.
         skills = state.skills.map((id) => (id === replaceId ? skillId : id));
-      } else if (state.skills.length < C.SKILL_SLOTS) {
+        if (isTrimmableSkill(replaceId)) trimmed = true; // #288 Trimmen: Wachstums-Skill rausgetauscht
+      } else if (normalCount < C.SKILL_SLOTS) {
         skills = [...state.skills, skillId];                       // freier Slot → hinzufügen
       } else {
         return state;                                              // volle Slots ohne gültiges Ersetzungsziel
@@ -446,18 +488,13 @@ export function reducer(state, action) {
       let deck = state.deck;
       // Feuer-Rework (v0): Asche / Brand-Marker / geschmiedete Werte (beim Deaktivieren des Feuer-Archetyps zurückgesetzt).
       let ash = state.ash || 0, brandPending = state.brandPending || {}, brandActive = state.brandActive || {}, forged = state.forged || {};
-      // Eis-Zustand (wird beim Deaktivieren des Eis-Archetyps zurückgesetzt, #140).
-      let iceTemp = state.iceTemp, frostSwapsUsed = state.frostSwapsUsed;
-      let frostbitePending = state.frostbitePending, frostbiteActive = state.frostbiteActive;
-      let layers = state.layers || {}, frostFormPrev = state.frostFormPrev || []; // Eis-Rework (v0): Schichten + Beständigkeits-Historie
+      // Blitzfänger-Temp (iceTemp, Blitz-Archetyp) — beim Eis-Deaktivieren aus Alt-Verhalten geleert (#140).
+      let iceTemp = state.iceTemp;
       let growth = state.growth || {}, colonized = state.colonized || {}; // Pflanze-Fraktion (v0): Wachstum / Kolonisierung
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15 (#93 F2)
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
-      // Eis (#93 F3): dieser Pick friert so viele NEUE eigene Karten ein, dass das Ziel (frozenTargetFor) erreicht ist.
-      if (arch === "ice") {
-        const toFreeze = Math.max(0, frozenTargetFor(skills) - frozenCount(deck));
-        if (toFreeze > 0) deck = freezeCards(deck, toFreeze, rngFor(state, action, state.cycle, "freeze"), hasFrostwahl(skills)); // Frostwahl: niedrigste Karten gezielt
-      }
+      // Eis-Neudesign: der neue Eis-Archetyp friert KEINE Karten mehr ein — die Mechanik läuft über Masse/Gletscher
+      // (glacier.js), getrieben von state.glacierRoles (unten aus den Skill-`role`s).
       // Pflanze (v0): erster Pflanze-Skill → Alter Anker (1 Karte reif: grün, Wert 11) + Setzlingsbeet/Dornenkönig.
       if (arch === "plant" && !(state.activeArchetypes || []).includes("plant")) {
         deck = deck.map((c, i) => (i === 0 ? { ...c, green: true, value: C.PLANT_ANCHOR_VALUE } : c)); // Alter Anker (Zündfunke ab Durchlauf 1)
@@ -473,7 +510,6 @@ export function reducer(state, action) {
           }
           growth = g;
         }
-        if (hasDornenkoenig(skills)) colonized = Object.fromEntries(state.oppDeck.map((c) => [c.id, true])); // Dornenkönig: ganzes Gegnerdeck kolonisiert
       }
       if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
       // #140: Verliert man durch Ersetzen den LETZTEN Skill eines Archetyps (0 Skills übrig), wird er deaktiviert
@@ -482,15 +518,26 @@ export function reducer(state, action) {
       activeArchetypes = activeArchetypes.filter((a) => stillActive.has(a));
       if (!stillActive.has("lightning")) lightning = initLightning();               // Ladungsleiste weg
       if (!stillActive.has("fire")) { heat = null; ash = 0; brandPending = {}; brandActive = {}; forged = {}; } // Hitze/Asche/Brand/Schmiede weg (geschmiedete Dauerwerte bleiben gebacken)
-      if (!stillActive.has("ice")) {                                                 // Frostkarten auftauen + Schichten/Vergletscherung löschen
-        deck = unfreezeAll(deck);
-        iceTemp = {}; frostSwapsUsed = [];
-        frostbitePending = {}; frostbiteActive = {}; layers = {}; frostFormPrev = [];
+      if (!stillActive.has("ice")) iceTemp = {};                                     // Blitzfänger-Temp beim Eis-Deaktivieren leeren (Alt-Verhalten)
+      let plantLoss = state.plantLoss || {}; // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id
+      if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green ? { ...c, green: false } : c)); growth = {}; colonized = {}; plantLoss = {}; } // Pflanze weg (Anker-Wert bleibt gebacken)
+      // Eis-Neudesign: aktive Gletscher-Rollen aus den gehaltenen Skill-`role`s; bei Deaktivierung Gletscher-State leeren.
+      let glacierRoles = glacierRolesOf(skills);
+      let glacierMass = state.glacierMass, glacierLocked = state.glacierLocked, glacierYield = state.glacierYield,
+        frozenOppPending = state.frozenOppPending, frozenOppActive = state.frozenOppActive,
+        glacierBuffPending = state.glacierBuffPending, glacierBuffActive = state.glacierBuffActive, grosseLawineFired = state.grosseLawineFired;
+      if (!stillActive.has("ice")) {
+        glacierRoles = []; glacierMass = new Array(40).fill(0); glacierLocked = new Array(40).fill(false); glacierYield = 0;
+        frozenOppPending = {}; frozenOppActive = {}; glacierBuffPending = {}; glacierBuffActive = {}; grosseLawineFired = false;
       }
-      if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green ? { ...c, green: false } : c)); growth = {}; colonized = {}; } // Pflanze weg (Anker-Wert bleibt gebacken)
-      // Formationen neu berechnen: eingefrorene Karten + Eis-Skills beeinflussen die Erkennung (Wildcards/Anker).
+      // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
-      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, frostSwapsUsed, frostbitePending, frostbiteActive, layers, frostFormPrev, growth, colonized, ash, brandPending, brandActive, forged, formations, phase: "play", skillOffer: null };
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, growth, colonized, plantLoss, ash, brandPending, brandActive, forged, formations,
+               glacierRoles, glacierMass, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, grosseLawineFired, // Eis-Neudesign
+               trimCount: (state.trimCount || 0) + (trimmed ? 1 : 0), // #288 Trimmen
+               // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (genau 1 Karte festfrieren, Pflicht) —
+               // analog zum Perk-Ziel-Flow. Andere Archetypen gehen direkt weiter.
+               phase: arch === "ice" ? "glacier-target" : "play", skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
@@ -498,9 +545,45 @@ export function reducer(state, action) {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
       if (state.devMode) return { ...state, skillOffer: null, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
       const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade), state.architectEnabled); // #217: Grad-Rewards
+      // Eis-Neudesign: bei VOLLEN Eis-Slots (SKILL_SLOTS Eis-Skills) friert das Ablehnen trotzdem einen Gletscher fest —
+      // Ausgleich dafür, dass kein weiterer Eis-Skill mehr in die Slots passt (analog: ein Tausch bei vollen Slots gibt
+      // ebenfalls einen). Der Perk bleibt: das Perk-Angebot wird geparkt (pendingPerkOffer) und nach der Gletscher-Wahl
+      // (GLACIER_LOCK) wieder aufgemacht. Nur, wenn überhaupt ein freies Feld zum Einfrieren da ist.
+      const iceSkillCount = state.skills.filter((id) => archetypeOf(id) === "ice" && !isLegendarySkill(id)).length;
+      const hasFreeField = (state.playerOrder || []).some((_, i) => !(state.glacierLocked && state.glacierLocked[i]));
+      if ((state.activeArchetypes || []).includes("ice") && iceSkillCount >= G_DECLINE_MIN_SKILLS && hasFreeField) {
+        return { ...state, skillOffer: null, phase: "glacier-target", pendingPerkOffer: off.length > 0 ? off : null };
+      }
       return off.length > 0
         ? { ...state, skillOffer: null, offer: off, offerRerolls: 0 } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0)
         : { ...state, skillOffer: null, phase: "play" };             // Perk-Pool leer → weiterspielen
+    }
+
+    // #272 Legendär-Phase (Runde 29): EINEN der 2 angebotenen Legendäre in den fixen 7. Slot (kein Ersetzen, zählt
+    // nicht gegen SKILL_SLOTS). Der Archetyp ist bereits aktiv (Angebot nur aus aktiven Fraktionen) → seine Ressourcen
+    // bestehen; wir rechnen nur die legendär-abhängigen Aktivierungen nach (Donnergott: maxCharge, Eis: Frost-Ziel).
+    case "PICK_LEGENDARY": {
+      if (state.phase !== "legendary" || !state.legendaryOffer) return state;
+      const { legendaryId } = action;
+      if (!state.legendaryOffer.includes(legendaryId) || state.skills.includes(legendaryId) || !isLegendarySkill(legendaryId)) return state;
+      const arch = archetypeOf(legendaryId);
+      const skills = [...state.skills, legendaryId]; // 7. Slot — kein Cap-Check
+      let lightning = state.lightning, heat = state.heat, deck = state.deck;
+      if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15
+      if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
+      // Eis-Neudesign: der legendäre Eis-Skill fügt nur seine Rolle hinzu (kein Einfrieren) → glacierRoles nachziehen.
+      const activeArchetypes = (state.activeArchetypes || []).includes(arch) ? state.activeArchetypes : [...(state.activeArchetypes || []), arch];
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
+      return { ...state, skills, activeArchetypes, lightning, heat, deck, formations, glacierRoles: glacierRolesOf(skills), phase: "play", legendaryOffer: null };
+    }
+
+    // #272 Legendär ablehnen → stattdessen normale Skill-Wahl (Nutzer-Wunsch), nie „verschwendet".
+    case "DECLINE_LEGENDARY": {
+      if (state.phase !== "legendary" || !state.legendaryOffer) return state;
+      const off = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", 0), C.SKILLS_OFFERED, 0, false);
+      return off.length > 0
+        ? { ...state, legendaryOffer: null, skillOffer: off, phase: "levelup", offerRerolls: 0 } // → normale Skill-Auswahl
+        : { ...state, legendaryOffer: null, phase: "play" };                                     // Skill-Pool leer → weiterspielen
     }
 
     // Perk-Angebot komplett ablehnen (#138): Angebot verworfen, weiter im Spiel — so ist eine Perk-Runde nie
@@ -539,39 +622,49 @@ export function reducer(state, action) {
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.
-    // Tausch. Eis (#93 F3): ist eine eingefrorene Karte mit noch freiem Frosttausch beteiligt, ist der Tausch
-    // KOSTENLOS (keine Energie) und verbraucht deren Frosttausch; sonst kostet er wie gehabt 1 Energie.
     case "SWAP_CARDS": {
       if (state.phase !== "formation") return state;
       const { i, j } = action;
       if (i === j) return state;
       if (i < 0 || j < 0 || i >= state.playerOrder.length || j >= state.playerOrder.length) return state;
+      // Eis-Neudesign (docs §2.1): ein gefrorener Gletscher ist STARR — seine Brett-Position darf nicht getauscht werden.
+      if (state.glacierLocked && (state.glacierLocked[i] || state.glacierLocked[j])) return state;
+      if ((state.formationEnergy || 0) <= 0) return state; // Tausch braucht Energie
       const cardA = state.deck[state.playerOrder[i]], cardB = state.deck[state.playerOrder[j]];
-      const used = state.frostSwapsUsed || [];
-      let freeFrozenId = null;
-      if (cardA.frozen && !used.includes(cardA.id)) freeFrozenId = cardA.id;
-      else if (cardB.frozen && !used.includes(cardB.id)) freeFrozenId = cardB.id;
-      const isFree = freeFrozenId !== null;
-      if (!isFree && (state.formationEnergy || 0) <= 0) return state; // bezahlter Tausch braucht Energie
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
       return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state)),
-               formationEnergy: isFree ? state.formationEnergy : state.formationEnergy - 1,
-               formationSwaps: [...(state.formationSwaps || []), { i, j, free: isFree, frozenId: freeFrozenId, idA: cardA.id, idB: cardB.id }],
-               frostSwapsUsed: isFree ? [...used, freeFrozenId] : used };
+               formationEnergy: state.formationEnergy - 1,
+               formationSwaps: [...(state.formationSwaps || []), { i, j, idA: cardA.id, idB: cardB.id }] };
     }
-    // Letzten Tausch rückgängig machen → bezahlter Tausch erstattet Energie, freier Frosttausch wird zurückgegeben.
+    // Eis-Neudesign (docs §2.1): Gletscher-Wahl BESTÄTIGEN — die gewählte Karte friert auf IHRER aktuellen Brett-Zelle fest
+    // und ist ab dann STARR (unverschiebbar in künftigen Aufstellungen). Kern-Entscheidung Position vs. Wert; permanent
+    // (kein Unlock). Läuft im „glacier-target"-Schritt nach jedem Eis-Skill-Pick (Pflicht, genau 1) → danach weiter zu „play".
+    case "GLACIER_LOCK": {
+      if (state.phase !== "glacier-target") return state;
+      if (!(state.activeArchetypes || []).includes("ice")) return state;
+      const p = action.pos;
+      if (p == null || p < 0 || p >= state.playerOrder.length) return state;
+      if (state.glacierLocked && state.glacierLocked[p]) return state; // schon gefroren → ungültige Wahl
+      const glacierLocked = (state.glacierLocked || new Array(state.playerOrder.length).fill(false)).slice();
+      glacierLocked[p] = true;
+      // Kam die Gletscher-Wahl aus dem Ablehnen bei vollen Eis-Slots, wartet noch ein geparktes Perk-Angebot → jetzt
+      // aufmachen (Perk bleibt erhalten). Sonst wie gehabt zurück ins Spiel.
+      if (state.pendingPerkOffer && state.pendingPerkOffer.length > 0)
+        return { ...state, glacierLocked, phase: "levelup", offer: state.pendingPerkOffer, offerRerolls: 0, pendingPerkOffer: null };
+      return { ...state, glacierLocked, phase: "play", pendingPerkOffer: null }; // Pick bestätigt → zurück ins Spiel
+    }
+    // Letzten Tausch rückgängig machen → Energie erstatten.
     case "UNDO_SWAP": {
       if (state.phase !== "formation" || !(state.formationSwaps || []).length) return state;
       const swaps = state.formationSwaps.slice();
       const last = swaps.pop();
       const order = state.playerOrder.slice();
       [order[last.i], order[last.j]] = [order[last.j], order[last.i]];
-      const frostSwapsUsed = last.free ? (state.frostSwapsUsed || []).filter((id) => id !== last.frozenId) : (state.frostSwapsUsed || []);
       return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state)),
-               formationEnergy: last.free ? state.formationEnergy : state.formationEnergy + 1, formationSwaps: swaps, frostSwapsUsed };
+               formationEnergy: state.formationEnergy + 1, formationSwaps: swaps };
     }
-    // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie + freie Frosttausche zurück.
+    // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie.
     case "RESET_FORMATION": {
       if (state.phase !== "formation") return state;
       const order = state.playerOrder.slice();
@@ -580,62 +673,12 @@ export function reducer(state, action) {
       return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state)),
                formationEnergy: C.FORMATION_ENERGY + (state.perks || []).reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
                  + formationEnergyBonus(state.familyTiers, state.cycle), // #179 Feinjustierung (Perk-Familie E_TUNING)
-               formationSwaps: [], frostSwapsUsed: [] };
+               formationSwaps: [] };
     }
-    // Bestätigen → Reihenfolge bleibt persistent. Eis-Rework (v0): Kaltfront (Platzierhilfe temp Wert),
-    // Gletscherschub/Verzahnung (Frosttausch schafft/überlappt Formation → Schicht), Ablage B (ungenutzte Tausche banken).
+    // Bestätigen → Reihenfolge bleibt persistent, Übergang in die Kampfphase.
     case "CONFIRM_FORMATION": {
       if (state.phase !== "formation") return state;
-      let iceTemp = state.iceTemp || {};
-      let layers = state.layers || {};
-      const skills = state.skills, usedFrost = state.frostSwapsUsed || [];
-      const anchors = state.shop?.anchors || [];
-      const posOfFrost = (fid) => state.playerOrder.findIndex((di) => state.deck[di].id === fid);
-      // Kaltfront: getauschte Frostkarte + neuer Nachbar +3 temp Wert (Platzierhilfe für den nächsten Durchlauf).
-      if (usedFrost.length && hasKaltfront(skills)) {
-        iceTemp = { ...iceTemp };
-        for (const fid of usedFrost) {
-          const pos = posOfFrost(fid);
-          if (pos < 0) continue;
-          iceTemp[fid] = C.KALTFRONT_VALUE;
-          if (pos + 1 < state.playerOrder.length) {
-            const nid = state.deck[state.playerOrder[pos + 1]].id;
-            iceTemp[nid] = Math.max(iceTemp[nid] || 0, C.KALTFRONT_VALUE);
-          }
-        }
-      }
-      // Gletscherschub / Verzahnung: ein Frosttausch, der eine NEUE (bzw. zweite überlappende) Formation schafft, bankt eine Schicht.
-      if (usedFrost.length && (hasGlacierPush(skills) || hasVerzahnung(skills))) {
-        const finalForms = state.formations || computeFormations(state.playerOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers, archOf(state));
-        const origOrder = state.playerOrder.slice(); // Ausgangsreihenfolge = finale ohne alle Tausche dieser Phase
-        const swaps = state.formationSwaps || [];
-        for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [origOrder[i], origOrder[j]] = [origOrder[j], origOrder[i]]; }
-        const baseForms = computeFormations(origOrder, state.deck, state.roles, state.perks, skills, anchors, state.familyTiers, archOf(state));
-        layers = { ...layers };
-        for (const fid of usedFrost) {
-          const pos = posOfFrost(fid);
-          if (pos < 0) continue;
-          const segStart = Math.floor(pos / SEGMENT_SIZE) * SEGMENT_SIZE;
-          let add = 0;
-          if (hasGlacierPush(skills) && segmentGainedFormation(baseForms, finalForms, segStart)) add += C.GLACIER_PUSH_LAYER;
-          if (hasVerzahnung(skills) && baseFormationCount(finalForms[pos] || {}) >= 2) add += C.VERZAHNUNG_LAYER; // Überlappung
-          if (add > 0) layers[fid] = (layers[fid] || 0) + add;
-        }
-      }
-      // Ablage B: jede Frostkarte, die ihren freien Frosttausch NICHT genutzt hat, bankt Schicht-Fortschritt
-      // (Gleitfrost: mehr; Verdichtung: ×2). Grundmechanik — ein ungenutzter Tausch ist kein verlorener Zug.
-      {
-        const used = new Set(usedFrost);
-        const bankPer = (C.ICE_UNUSED_SWAP_LAYER + (hasGleitfrost(skills) ? C.GLEITFROST_EXTRA_SWAP * C.ICE_UNUSED_SWAP_LAYER : 0))
-                        * (hasVerdichtung(skills) ? C.VERDICHTUNG_FACTOR : 1);
-        const frozenUnused = state.deck.filter((c) => c.frozen && !used.has(c.id));
-        if (bankPer > 0 && frozenUnused.length) {
-          const nl = { ...layers };
-          for (const c of frozenUnused) nl[c.id] = (nl[c.id] || 0) + bankPer;
-          layers = nl;
-        }
-      }
-      return { ...state, phase: "play", formationEnergy: 0, formationSwaps: [], frostSwapsUsed: [], iceTemp, layers };
+      return { ...state, phase: "play", formationEnergy: 0, formationSwaps: [] };
     }
 
     default:

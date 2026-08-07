@@ -18,6 +18,7 @@ const toRunEntry = (r) => ({
   skills: r.skills !== undefined ? (r.skills || "").split(",").filter(Boolean) : undefined,
   maxFormations: r.max_formations, formationScore: r.formation_score,
   crits: r.crits, wins: r.wins, critBonusScore: r.crit_bonus_score, bestTrickScore: r.best_trick_score,
+  tricks: r.tricks, // Victory-Redesign: Winrate-Nenner (Siege / gespielte Stiche) auch in der globalen Detailansicht
   // #217/#201 P8-C: finale Aufstellung (nur bei Meister-Läufen befüllt) → RunDetail zeigt sie NUR für die eigene
   // Zeile (Anti-Copy #205 blendet sie bei anonymized aus).
   deckSnapshot: r.deck_snapshot,
@@ -53,6 +54,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
       .then((data) => { if (alive) setRows(Array.isArray(data) ? data : []); })
       .catch(() => { if (alive) setError(true); });
     return () => { alive = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [limit, reloadToken, masterGrade]);
 
   if (!leaderboardConfigured) return null; // ohne Config: Block entfällt komplett

@@ -7,7 +7,7 @@
 //
 // Rein deterministisch über den injizierten rng (nur der random-Modus nutzt ihn). Gleicher Seed + Policy → gleicher Run.
 import {
-  familyDef, enumeratePlacements, rowOf, ROWS, COLS, posOf, MAX_TIER, occupiedCells, MAX_COVER, structureFactorMap,
+  familyDef, enumeratePlacements, ROWS, COLS, posOf, MAX_TIER, occupiedCells, MAX_COVER, structureFactorMap,
 } from "../src/game/architect.js";
 import { SUIT_ORDER } from "../src/game/constants.js";
 

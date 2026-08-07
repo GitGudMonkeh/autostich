@@ -1,10 +1,15 @@
 import { useState } from "react";
-import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf } from "../game/skills.js";
-import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE,
-         PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF } from "../game/constants.js";
-import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
+import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf, marginHeatPoints } from "../game/skills.js";
+import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
+         PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
+         WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
+         FIRE_MARGIN_OFFSET, FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, FIRE_SCORE_SQRT_K,
+         HEAT_MIN_MARGIN, HEAT_PER_POINT, HEAT_LOSS_MAX, HEAT_LOSS_PCT } from "../game/constants.js";
+import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
+import { GLOSSARY } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
+import { GuidePanel } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
@@ -14,13 +19,29 @@ const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "�
 // Bereits in die Karten gebackener Wert (geschmiedet/gewachsen) bleibt erhalten → Zusatz nur bei Feuer/Pflanze.
 const ARCH_LOSS = {
   plant:     { text: "alle grünen Karten & das Wachstum gehen verloren", baked: true },
-  ice:       { text: "Frostkarten tauen auf, alle Schichten gehen verloren", baked: false },
+  ice:       { text: "alle Gletscher tauen auf, die angesammelte Masse geht verloren", baked: false },
   fire:      { text: "Hitze & Asche gehen verloren", baked: true },
   lightning: { text: "die Ladung geht verloren", baked: false },
 };
 
 const SOCKET_PCT = Math.round(LIGHTNING_CRIT_BASE * 100);         // einmaliger Aktivierungs-Sockel (5 %)
 const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // je Blitz-Skill (8 %)
+const FIRST_CRIT_PCT = SOCKET_PCT + PER_SKILL_PCT;               // Crit-Chance nach dem ERSTEN Blitz-Skill (Sockel + 1×)
+const PER_SKILL_MULT = String(LIGHTNING_CRIT_MULT_PER_SKILL).replace(".", ","); // +Crit-Multiplikator je Blitz-Skill (0,1)
+// Feuer-Passive: konkrete Zahlen (erster Feuer-Skill). Score = lineare Linie + √-Bonus; Hitze = marginHeatPoints (√-Schwanz).
+const fireScoreAt = (m) => Math.round((m - FIRE_MARGIN_OFFSET) * FIRE_SCORE_BASE + FIRE_SCORE_BASE * FIRE_SCORE_SQRT_K * Math.sqrt(m - FIRE_MARGIN_OFFSET));
+const fireHeatAt  = (m) => Math.round(marginHeatPoints(m) * HEAT_PER_POINT);
+const FIRE_MIN_HEAT = fireHeatAt(HEAT_MIN_MARGIN);         // Hitze bei Mindest-Vorsprung
+const FIRE_MIN_SCORE = fireScoreAt(HEAT_MIN_MARGIN);       // Score bei Mindest-Vorsprung
+const FIRE_LOSS_PCT = Math.round(HEAT_LOSS_PCT * 100);     // Abkühl-Anteil der aktuellen Hitze je Niederlage
+// Kuratierte Schlüsselbegriffe je Archetyp-Passive — der Aufklapper zeigt AUSSCHLIESSLICH diese als kleine Unterkategorien
+// (Icon + Begriff + Kurztext aus dem Glossar), damit alle vier Passive gleich schön lesbar sind statt einer Textwand.
+const PASSIVE_KEYWORDS = {
+  lightning: ["charge", "ionize"],
+  fire:      ["glutdividende", "ash"],
+  ice:       ["masse", "bersten", "eisformation"],
+  plant:     ["green"],
+};
 
 // Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
 const LIGHT = "#8a7de0";
@@ -53,36 +74,23 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const canReroll = !!onReroll && rerollTokens > 0;
   const full = skills.length >= SKILL_SLOTS;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
-  const [openSkill, setOpenSkill] = useState(null); // gehaltener Skill, dessen Beschreibung aufgeklappt ist
   const [openArch, setOpenArch] = useState(null);   // Archetyp, dessen Passiv-Beschreibung aufgeklappt ist (#201 P9)
   const devMode = !!state.devMode;                  // Dev-Run: Archetyp-Gruppen eingeklappt, Klick öffnet die Skills
   const [openGroup, setOpenGroup] = useState(null); // Dev-Run: welcher Archetyp gerade seine Skills zeigt
   const [pendingConsumer, setPendingConsumer] = useState(null); // #93: Konsumenten-Ersatzdialog { id, replace, type }
 
-  // Ist der jeweilige Archetyp beim Spieler noch inaktiv → DIESER Skill schaltet ihn frei (erster Pick).
-  const isFirstPick = {
-    lightning: !(state.lightning && state.lightning.active),
-    fire: !(state.heat && state.heat.active),
-    ice: !(state.activeArchetypes || []).includes("ice"),
-    plant: !(state.activeArchetypes || []).includes("plant"),
-  };
-  // Kurze Passiv-Erklärung je Archetyp (erster Pick = „schaltet frei", sonst = „vertieft"). Style-Guide: knapp,
-  // Wirkung vor Bedingung. Ergänzt im Aufklapper durch die Glossar-Einträge der angebotenen Schlüsselbegriffe.
+  // Passiv-Beschreibung je Archetyp — EIN Text, unabhängig davon, ob es der freischaltende oder ein weiterer Pick ist.
+  // Beschreibt NUR die Passive (Deck-Mechanik lebt in der Deck-Erklärung). Ergänzt im Aufklapper durch die Glossar-Einträge.
   const unlockLine = (arch) => {
-    const first = isFirstPick[arch];
     switch (arch) {
-      case "lightning": return first
-        ? `Schaltet den Blitz-Archetyp frei: Ladung (Crits erzeugen Ladung, max ${LIGHTNING_MAX_CHARGE}) und eine Crit-Basis von +${SOCKET_PCT + PER_SKILL_PCT} % (Sockel +${SOCKET_PCT} % plus +${PER_SKILL_PCT} % je Blitz-Skill).`
-        : `Jeder weitere Blitz-Skill gibt +${PER_SKILL_PCT} % Crit-Chance. Ladung und Crit-Basis sind bereits aktiv.`;
-      case "fire": return first
-        ? "Schaltet die Hitzeleiste frei (0–100 %): Siege mit klarem Wertvorsprung heizen auf und geben Feuer-Score, klare Niederlagen kühlen ab."
-        : "Jeder weitere Feuer-Skill erhöht den Feuer-Score je Vorsprungspunkt. Die Hitzeleiste ist bereits aktiv.";
-      case "ice": return first
-        ? "Schaltet das Einfrieren frei: eigene Karten werden blau, biegen Formationen und dürfen 1× je Aufstellungsphase kostenlos getauscht werden. Jeder weitere Eis-Skill friert eine weitere Karte ein."
-        : "Jeder weitere Eis-Skill friert eine weitere eigene Karte ein und erweitert deine Aufstellungs-Optionen.";
-      case "plant": return first
-        ? `Schaltet das Wachstum frei: eigene Karten wachsen bei Siegen — je mehr Pflanze-Skills, desto schneller (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Skills). Eine wachsende, noch nicht reife Karte ist ein Setzling; ab ${PLANT_GREEN_THRESHOLD} Wachstum wird sie grün und bildet einen Farbblock, der Score gibt.`
-        : `Jeder weitere Pflanze-Skill beschleunigt das Wachstum (volles Tempo ab ${PLANT_GROWTH_SKILL_REF}) — mehr grüne Karten, größerer Farbblock. Wachstum und Grün sind bereits aktiv.`;
+      case "lightning":
+        return `Der erste Blitz-Skill gibt +${FIRST_CRIT_PCT} % Crit-Chance, jeder weitere +${PER_SKILL_PCT} %. Dazu +${PER_SKILL_MULT}× Crit-Multiplikator je Blitz-Skill.`;
+      case "fire":
+        return `Jeder Sieg mit mindestens ${HEAT_MIN_MARGIN} Wertvorsprung heizt die Hitze um ${FIRE_MIN_HEAT} % auf und gibt +${FIRE_MIN_SCORE} Feuer-Score — je größer der Vorsprung, desto mehr. Niederlagen kühlen die Hitze um ${FIRE_LOSS_PCT} % ab (plus Wert-Rückstand, bis ${HEAT_LOSS_MAX}). Jeder weitere Feuer-Skill gibt +${FIRE_SCORE_PER_SKILL} Feuer-Score je Vorsprungspunkt.`;
+      case "ice":
+        return `Jeder Eis-Skill friert eine eigene Karte als Gletscher fest — sie wird starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber jede Runde Masse und bricht schließlich gewaltig über ihre Nachbarn. Jeder Pick friert einen neuen Gletscher (auch ein Tausch bei vollen Slots); ab ${G_DECLINE_MIN_SKILLS} gehaltenen Eis-Skills friert selbst das Ablehnen eines Angebots noch einen — so kannst du mehr Gletscher haben als Skill-Slots.`;
+      case "plant":
+        return `Jeder Sieg gibt der Karte bis zu +1 Wachstum (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Pflanze-Skills). Ab ${PLANT_GREEN_THRESHOLD} Wachstum wird die Karte grün. Solange du nur Pflanzen-Skills hältst: je ${WURZELSCHLAG_PER_GROWTH} Wachstum +1 Kartenwert (bis ${PLANT_VALUE_CAP}, danach ist sie voll ausgewachsen), ab ${WURZELSCHLAG_LOSS_MIN_SKILLS} Pflanzen-Skills auch bei jeder ${WURZELSCHLAG_LOSS_EVERY}. Niederlage.`;
       default: return "";
     }
   };
@@ -116,15 +124,37 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
-        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
+        <div className="relative w-full rounded-2xl px-4 pb-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
-        <div className="text-center mb-1">
+        <div className="text-center mb-1 pt-6">
           <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Durchlauf {(state.cycle || 0) + 1}</div>
           <h2 className="text-xl font-bold mt-1">Wähle einen Skill</h2>
           <p className="text-xs opacity-55 mt-1">
             Skills sind seltene, regelverändernde Motoren — {skills.length}/{SKILL_SLOTS} Slots belegt.
           </p>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
+        </div>
+
+        {/* Leitfaden zentriert zwischen „Slots belegt" und dem ersten Archetyp — gelb hervorgehoben, damit gut sichtbar. */}
+        <div className="flex justify-center mt-3 mb-1">
+          <GuidePanel style={{ background: "#d4a63a", border: "1px solid #e0b845", color: "#0c0c10", fontWeight: 700, boxShadow: "0 0 14px -2px #d4a63a88" }} />
+        </div>
+
+        {/* Reroll + Ablehnen: direkt unter dem Leitfaden, nebeneinander & STICKY → schweben beim Scrollen mit, damit man
+            zum Neuwürfeln/Ablehnen nicht ans Ende der Skill-Liste scrollen muss. Voller Hintergrund maskiert durchscrollende Karten. */}
+        <div className="sticky top-0 z-20 -mx-4 px-4 pt-1.5 pb-2 mb-1 flex items-stretch gap-2" style={{ background: "#181820" }}>
+          {!devMode && canReroll && (
+            <button onClick={onReroll}
+              className="flex-1 text-xs px-3 py-2 rounded-lg font-bold transition-all hover:brightness-110"
+              style={{ background: "#20202a", color: "#d4a63a", border: "1px solid #d4a63a66" }}>
+              🎲 Neu würfeln · {rerollTokens}
+            </button>
+          )}
+          <button onClick={onDecline}
+            className="flex-1 text-xs px-3 py-2 rounded-lg transition-all hover:opacity-80"
+            style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
+            {devMode ? "Runde überspringen" : "Ablehnen → Perk"}
+          </button>
         </div>
 
         {/* Konsumenten-Ersatzdialog (#93): zweiter Konsument desselben Typs ersetzt den bestehenden. */}
@@ -202,7 +232,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         <div className="mt-5 grid gap-4">
           {groups.map((g) => {
             const detailOpen = openArch === g.arch;
-            const groupKws = glossaryKeywords(g.ids, SKILL_DEFS);
+            const groupKws = PASSIVE_KEYWORDS[g.arch] || []; // nur kuratierte Passive-Begriffe (kein automatisches Ableiten aus den Skills mehr)
             const groupOpen = devMode ? openGroup === g.arch : true; // Dev-Run: Skills erst nach Klick sichtbar
             return (
             <div key={g.arch}>
@@ -230,14 +260,14 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 </div>
               )}
               {groupOpen && (
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className="grid sm:grid-cols-2 gap-2">
                 {g.ids.map((id) => {
                   const s = SKILL_DEFS[id];
                   const sel = pending === id;
                   const col = g.meta.color;
                   return (
                     <button key={id} onClick={() => clickSkill(id)}
-                      className={`text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
+                      className={`text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
                       style={{ background: sel ? "#2a2740" : "#20202a",
                                // Legendär: einheitlicher Gold-Rahmen (Border + animierter Glanz via .as-legendary, #201.3) statt archetyp-farbigem Glow.
                                border: `1px solid ${s.legendary ? "#d4a63a" : (sel ? col : col + "88")}`,
@@ -261,7 +291,9 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                         )}
                         {sel && <span className="text-[10px] font-bold" style={{ color: col }}>✓ ausgewählt</span>}
                       </div>
-                      <div className="font-bold" style={{ color: col }}>{s.name}</div>
+                      <div className="font-bold text-[15px]" style={{ color: col }}>{s.name}</div>
+                      {/* Beschreibungstext wieder auf Ausgangsgröße (text-sm) — die kompaktere Karte bleibt (weniger
+                          Padding + schmalerer Seitenrand des Panels), aber der Text ist gut lesbar. */}
                       <div className="text-sm opacity-75 leading-snug"><GlossaryText text={s.desc} /></div>
                     </button>
                   );
@@ -273,49 +305,26 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           })}
         </div>
 
-        <div className="text-center mt-5 flex flex-wrap items-center justify-center gap-2">
-          {/* Dev-Run: Reroll entfällt (Voll-Katalog), und statt „Ablehnen → Perk" gibt es ein neutrales „Runde überspringen". */}
-          {!devMode && canReroll && (
-            <button onClick={onReroll}
-              className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
-              style={{ background: "#20202a", color: "#d4a63a", border: "1px solid #d4a63a66" }}>
-              🎲 Angebot neu würfeln · {rerollTokens} übrig
-            </button>
-          )}
-          <button
-            onClick={onDecline}
-            className="text-xs px-4 py-2 rounded-lg transition-all hover:opacity-80"
-            style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}
-          >
-            {devMode ? "Runde überspringen" : "Ablehnen → stattdessen ein Perk"}
-          </button>
-        </div>
-
         {held.length > 0 && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              Deine Skills — {held.length}/{SKILL_SLOTS} · bereits gehalten · antippen für Beschreibung
+              Deine Skills — {held.length}/{SKILL_SLOTS} · bereits gehalten
             </div>
-            <div className="flex flex-wrap gap-2">
-              {/* #118: gehaltene Skills NEUTRAL (grau) — sonst wirken sie wie ein wählbares Angebot.
-                  #234: Ersetzen läuft jetzt übers Modal (bei vollen Slots), nicht mehr übers Antippen hier. */}
+            {/* #201 P1 / #UI: gehaltene Skills zeigen ihre Beschreibung DIREKT (kein Antippen mehr) — man kann seinen
+                Build auf einen Blick lesen. NEUTRAL (grau), damit sie nicht wie ein wählbares Angebot wirken. */}
+            <div className="flex flex-col gap-2">
               {held.map((s) => (
-                <button key={s.id} onClick={() => setOpenSkill(openSkill === s.id ? null : s.id)} title={s.desc}
-                  className="text-xs px-2 py-1 rounded transition-all"
-                  style={{ background: openSkill === s.id ? "#2a2a33" : "#1c1c22", color: "#9a9aa4",
-                           border: `1px solid ${openSkill === s.id ? "#4a4a55" : "#33333e"}` }}>
-                  {ac(s.id).icon} {s.name} <span className="opacity-55">✓ gehalten</span> <span className="opacity-40">{openSkill === s.id ? "▾" : "▸"}</span>
-                </button>
+                <div key={s.id} className="text-xs px-2.5 py-2 rounded leading-snug"
+                  style={{ background: "#1c1c22", border: "1px solid #33333e" }}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span style={{ color: ac(s.id).color }}>{ac(s.id).icon}</span>
+                    <b style={{ color: "#c8c8d0" }}>{s.name}</b>
+                    <span className="opacity-40 text-[11px]">✓ gehalten</span>
+                  </div>
+                  <div className="opacity-70" style={{ color: "#cfcad8" }}><GlossaryText text={s.desc} /></div>
+                </div>
               ))}
             </div>
-            {/* #201 P1: die aufgeklappte Beschreibung eines gehaltenen Skills erklärt gleich seine Schlüsselbegriffe
-                mit — abrufbar unabhängig davon, ob der Begriff gerade im Angebot vorkommt. */}
-            {openSkill && SKILL_DEFS[openSkill] && (
-              <div className="text-[11px] mt-2 px-2 py-2 rounded leading-snug" style={{ background: `${ac(openSkill).color}14`, color: "#d8d0f0" }}>
-                <div>{SKILL_DEFS[openSkill].desc}</div>
-                <KeywordGlossary tokens={glossaryKeywords([openSkill], SKILL_DEFS)} />
-              </div>
-            )}
           </div>
         )}
 

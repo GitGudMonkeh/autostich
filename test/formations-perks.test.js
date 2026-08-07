@@ -67,12 +67,17 @@ describe("#179 E_COLOR_ALLIANCE (Farballianz) — Farben zählen als eine", () =
     const on = withFam(ord(3), deck, { E_COLOR_ALLIANCE: 1 }, { E_COLOR_ALLIANCE: ["R", "B"] });
     expect(hasType(on, 0, "farbblock")).toBe(true);
   });
-  it("Stufe IV (pairs): R+B verschmelzen, R+G (andere Allianz) NICHT", () => {
-    const rolesPairs = { E_COLOR_ALLIANCE: ["R", "B", "G", "Y"] }, ft = { E_COLOR_ALLIANCE: 4 };
-    const deckRB = [card("a", 5, "R"), card("b", 3, "B"), card("c", 9, "R")];
-    const deckRG = [card("a", 5, "R"), card("b", 3, "G"), card("c", 9, "R")]; // R,G in verschiedenen Paaren
-    expect(hasType(withFam(ord(3), deckRB, ft, rolesPairs), 0, "farbblock")).toBe(true);
-    expect(hasType(withFam(ord(3), deckRG, ft, rolesPairs), 0, "farbblock")).toBe(false);
+  it("Stufe IV (#292): alle vier verschmelzen (wie III) UND höherer Farbblock-Startfaktor (×1,55 statt ×1,35)", () => {
+    const roles4 = { E_COLOR_ALLIANCE: ["R", "B", "G", "Y"] };
+    const mixed = [card("a", 5, "R"), card("b", 3, "G"), card("c", 9, "B")]; // drei VERSCHIEDENE Farben
+    // III: alle vier als eine → Farbblock über alle drei, Startfaktor ×1,35
+    const t3 = withFam(ord(3), mixed, { E_COLOR_ALLIANCE: 3 }, roles4);
+    expect(hasType(t3, 2, "farbblock")).toBe(true);
+    expect(facOf(t3, 2, "farbblock")).toBeCloseTo(1.35);
+    // IV: ebenfalls Farbblock über alle drei, aber Startfaktor ×1,55 (+0,20) — der Kicker, der IV > III macht
+    const t4 = withFam(ord(3), mixed, { E_COLOR_ALLIANCE: 4 }, roles4);
+    expect(hasType(t4, 2, "farbblock")).toBe(true);
+    expect(facOf(t4, 2, "farbblock")).toBeCloseTo(1.55);
   });
 });
 

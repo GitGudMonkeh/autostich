@@ -10,6 +10,19 @@ export default defineConfig(({ command }) => ({
   // Base per DEPLOY_BASE (→ /autostich/test/), damit die Preview-Page als Unterpfad läuft.
   base: command === "build" ? (process.env.DEPLOY_BASE || "/autostich/") : "/",
   plugins: [react(), tailwindcss()],
+  build: {
+    rollupOptions: {
+      output: {
+        // #292 §3: Bundle-Splitting — statt eines ~644-KB-Chunks eigene Chunks. `vendor` (React & Co.) ändert sich
+        // selten → besser cachebar; die reine Spiel-Logik (game/) getrennt von der UI. Reduziert den größten Chunk
+        // unter die Vite-Warnschwelle, ohne Lazy-Loading (kein Suspense-Flackern beim Overlay-Öffnen).
+        manualChunks(id) {
+          if (id.includes("node_modules")) return "vendor";
+          if (id.includes("/src/game/")) return "game";
+        },
+      },
+    },
+  },
   test: {
     // Engine/Reducer sind reine Logik → schnelle Node-Umgebung reicht.
     environment: "node",

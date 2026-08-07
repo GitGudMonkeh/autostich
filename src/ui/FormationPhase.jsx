@@ -1,8 +1,8 @@
 import { useState, useRef, useMemo } from "react";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
-import { SKILL_DEFS, hasGletscher, hasArchitekt, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
-import { precomputeArchitect, architectValueBonus, familyDef as archFamilyDef, occupiedCells, structureFactorMap } from "../game/architect.js";
+import { SKILL_DEFS, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
+import { precomputeArchitect, architectValueBonus, familyDef as archFamilyDef, occupiedCells, structureFactorMap, districtFactorMap } from "../game/architect.js";
 import { architectEffectStrings } from "./archEffects.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 import { CardGrid } from "./CardGrid.jsx";
@@ -10,6 +10,7 @@ import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
+import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
 import { audio } from "./audio.js";
 import { haptics } from "./haptics.js";
 
@@ -23,15 +24,24 @@ const pctOf = (x) => Math.round(x * 100);
    Zwei Karten antippen = Tausch (1 Energie). Formationen werden nach jedem Tausch live neu berechnet
    (kommt aus state.formations, vom Reducer gefüllt). Undo/Zurücksetzen erstatten Energie.
    Desktop (#101): zweispaltig — Karten-Grid links, Info-Panel rechts; Mobil gestapelt. */
-export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
+export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, options = {}, onOption }) {
   const { playerOrder = [], deck = [], formations = [], formationEnergy = 0, formationSwaps = [] } = state;
   const [sel, setSel] = useState(null);
+  // Eis-Neudesign: der Gletscher-Build friert Karten als Gletscher fest (starr). Marker/Masse am Brett + Freeze-Button.
+  const iceActive = (state.activeArchetypes || []).includes("ice");
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
+  const glacierLocked = state.glacierLocked || [];
+  const glacierMass = state.glacierMass || [];
+  const glacierPos = useMemo(() => { const s = new Set(); glacierLocked.forEach((v, i) => { if (v) s.add(i); }); return s; }, [glacierLocked]);
   // Architekt-Gebäude-Overlay (#202): zeigt in der Aufstellung, welche Positionen von welchem Gebäude gebufft werden —
   // die andere Seite der „platzieren (Architekt) → routen (Aufstellung)"-Schleife. Toggle-bar, Default an. Der Wert-Boost
   // je Zelle kommt aus der ECHTEN Engine (precomputeArchitect + architectValueBonus), spiegelt also die Sieg-Rechnung.
-  const [showArch, setShowArch] = useState(true);
+  // #278: Zustand über die Optionen gemerkt (wie showForms/collapse*) — „aus" bleibt aus, statt jedes Mal auf „an" zu springen.
+  const [showArch, setShowArchState] = useState(options.archShowBuildings !== false);
+  const setShowArch = (v) => { const nv = typeof v === "function" ? v(showArch) : v; setShowArchState(nv); onOption?.({ archShowBuildings: nv }); };
   const [inspectBid, setInspectBid] = useState(null); // inspiziertes Gebäude: Liste ↔ Brett (Rahmen glüht), gesetzt per Karten-Auswahl ODER Listen-Klick — wie in der Chronik
   const architect = state.architect;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const archBuildings = (state.architectEnabled && architect && architect.buildings) || [];
   const hasArch = archBuildings.length > 0;
   // Gehaltene Eis-Skills, die die Formationserkennung beeinflussen (Keyword „formation") → im Formationsfenster
@@ -47,6 +57,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   const architectCover = useMemo(() => { // [#229 T7] nur neu berechnen, wenn Aufstellung/Architekt sich ändern (nicht bei jeder Kachel-Auswahl)
     if (!hasArch) return null;
     const pre = precomputeArchitect(architect, playerOrder, deck);
+    const alliance = allianceGroups(state.familyTiers, state.roles); // #289: Badge grün-/allianz-bewusst
     const cover = {};
     for (const b of architect.buildings) {
       const fam = archFamilyDef(b.familyId);
@@ -54,14 +65,15 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
       const cat = ARCH_CAT[fam.category];
       for (const pos of b.footprint) {
         const card = deck[playerOrder[pos]];
-        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card) : 0;
+        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card, alliance) : 0;
         // #UI: badgeSuit = die Karten-Farbe, für die das Gebäude den Wert-Bonus gibt (colorLocked → colorChoice),
         // sonst null → grau. Speist die „+N"-Badge-Farbe im CardGrid.
         const badgeSuit = fam.colorLocked ? (b.colorChoice || null) : null;
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, tier: b.tier, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier) };
+        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, tier: b.tier, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier, alliance) };
       }
     }
     return cover;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [hasArch, architect, playerOrder, deck]);
   // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) — dieselben Positionen wie im Architekt-Screen bekommen
   // den roten Kombi-Wash (arch-struct-lit, wie im Architekt-Screen). Nur Geometrie (Gebäude-Abdeckung), unabhängig von Karten/Tauschen.
@@ -71,37 +83,23 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
     structureFactorMap(occupiedCells(archBuildings)).forEach((f, pos) => { if (f > 1) set.add(pos); });
     return set;
   }, [hasArch, archBuildings]);
-  // Eis (#93 F3): eingefrorene Karten mit noch freiem Frosttausch machen einen Tausch KOSTENLOS (auch bei 0 Energie).
-  const frostSwapsUsed = state.frostSwapsUsed || [];
-  const frozenCards = cards.filter((c) => c.frozen);
-  const freeFrostLeft = frozenCards.filter((c) => !frostSwapsUsed.includes(c.id)).length;
-  // Eis-Architekt (#210, Legendär): bei aktivem Architekt vereist der Aufstellungsrahmen und die TRAGENDE Spalte
-  // (Position % SEGMENT_SIZE) aus Frostkarten wird als senkrechte Formation (Pfeiler) hervorgehoben. Gewählt wird die
-  // Spalte mit den meisten Frostkarten (≥2 — die Engine gibt den Architekt-Faktor erst ab 2 in derselben Spalte); bei
-  // Gleichstand die linkere. Rein anzeige-seitig, spiegelt die Engine-Spaltenlogik (engine.js: p % SEGMENT_SIZE).
-  const architektOn = hasArchitekt(state.skills || []);
+  // #UI: Distrikt-Positionen (gleiche Kategorie aneinander) — bekommen den Typ-Farb-Glow (wie im Architekt-Screen),
+  // getrennt vom roten Struktur-Kombi-Wash. Nur Geometrie (Gebäude-Nachbarschaft), unabhängig von Karten/Tauschen.
+  const distrLitPos = useMemo(() => {
+    if (!hasArch) return null;
+    const set = new Set();
+    districtFactorMap(archBuildings).forEach((f, pos) => { if (f > 1) set.add(pos); });
+    return set;
+  }, [hasArch, archBuildings]);
   // Pflanze (#211): Klick-Detail-Readout nur, wenn ein Pflanzen-Skill gehalten wird (sonst irrelevant).
   const plantHeld = plantSkillCount(state.skills || []) > 0;
-  const frostPillar = (() => {
-    if (!architektOn) return { col: -1, positions: [] };
-    const byCol = Array.from({ length: SEGMENT_SIZE }, () => []);
-    cards.forEach((c, pos) => { if (c.frozen) byCol[pos % SEGMENT_SIZE].push(pos); });
-    let best = -1;
-    for (let col = 0; col < SEGMENT_SIZE; col++)
-      if (byCol[col].length >= 2 && (best < 0 || byCol[col].length > byCol[best].length)) best = col;
-    return { col: best, positions: best >= 0 ? byCol[best] : [] };
-  })();
-  const canFree = (a, b) => {
-    const ca = cards[a], cb = cards[b];
-    return (ca?.frozen && !frostSwapsUsed.includes(ca.id)) || (cb?.frozen && !frostSwapsUsed.includes(cb.id));
-  };
 
   const clickPos = (pos) => {
     if (sel === null) { setSel(pos); setInspectBid(architectCover ? (architectCover[pos]?.bid ?? null) : null); return; }  // erste Karte wählen — Gebäude-Rahmen leuchtet
     if (sel === pos) { setSel(null); setInspectBid(null); return; }  // Abwählen — still
     // #132: erfolgreicher Tausch klingt wie ein Kartendreh (cardflip), nicht wie ein Button-Klick.
-    if (formationEnergy > 0 || canFree(sel, pos)) { onSwap(sel, pos); audio.play("cardflip", { gain: 0.9 }); }
-    else { audio.play("denied"); haptics.denied(); } // #110/#207: Tausch ohne Energie (und kein Frost-Freitausch) → verwehrt-Sound + distinkte Haptik
+    if (formationEnergy > 0) { onSwap(sel, pos); audio.play("cardflip", { gain: 0.9 }); }
+    else { audio.play("denied"); haptics.denied(); } // #110/#207: Tausch ohne Energie → verwehrt-Sound + distinkte Haptik
     setSel(null); setInspectBid(null);
   };
 
@@ -138,12 +136,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       <div className="w-full max-w-4xl">
-        {/* Eis-Architekt (#210): der Aufstellungsrahmen vereist — icy Border + Inset-Rim + äußerer Frost-Glow (liegt auf
-            der Border-Box, scrollt also nicht mit dem Inhalt). Nur bei gehaltenem Architekt (legendär). */}
         <div className="w-full rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card"
-          style={{ background: "#15151b",
-                   border: architektOn ? "1px solid #5ec8f077" : "1px solid #33333e",
-                   boxShadow: architektOn ? "inset 0 0 0 1px rgba(191,233,247,0.22), inset 0 0 26px rgba(94,200,240,0.12), 0 0 30px rgba(94,200,240,0.16)" : undefined }}>
+          style={{ background: "#15151b", border: "1px solid #33333e" }}>
         {/* Kopf */}
         <div className="flex items-center justify-between mb-2">
           <div className="min-w-0">
@@ -196,19 +190,6 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
             ? <> — <span style={{ color: "#8be0a8" }}><b>Segmentarbeit:</b> alle Grenzen offen, Formationen laufen segmentübergreifend</span></>
             : <> — <span style={{ color: "#8be0a8" }}><b>Segmentarbeit:</b> die mit <b>⇕</b> markierten Grenzen dürfen überschritten werden</span></>)}.
         </p>
-        {frozenCards.length > 0 && (
-          <p className="text-xs mb-3" style={{ color: "#7fd4f0" }}>
-            ❄ <b>{freeFrostLeft}</b> von {frozenCards.length} eingefrorenen Karten haben noch einen <b>kostenlosen Frosttausch</b> (ohne Energie).
-          </p>
-        )}
-        {/* Eis-Architekt (#210): Hinweis auf die vereiste, hervorgehobene Spalte (senkrechte Formation). Nur wenn aktiv. */}
-        {architektOn && (
-          <p className="text-xs mb-3" style={{ color: "#bfe9f7" }}>
-            ❄ <b>Architekt</b> — {frostPillar.col >= 0
-              ? <>Spalte <b>{frostPillar.col + 1}</b> aus <b>{frostPillar.positions.length}</b> Frostkarten bildet eine <b>senkrechte Formation</b> (Pfeiler, je weitere Frostkarte in der Spalte mehr Multiplikator).</>
-              : <>stelle <b>≥2 Frostkarten</b> in dieselbe Spalte (gleiche Position je Segment), um eine <b>senkrechte Formation</b> zu meißeln.</>}
-          </p>
-        )}
 
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
@@ -228,18 +209,20 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
                 ))}
               </div>
             )}
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} frostPillarPos={frostPillar.positions} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} glowBid={hasArch && showArch ? inspectBid : null} />
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
+              glacierPos={iceActive ? glacierPos : null} glacierMassByPos={iceActive ? glacierMass : null} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}
           <div className="md:flex-1 md:min-w-0 mt-5 md:mt-0 grid gap-3 content-start">
             <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} familyTiers={state.familyTiers}
               arch={sel != null && architectCover ? architectCover[sel] : null}
-              frostReadout frostLayers={sel != null && cards[sel] ? (state.layers?.[cards[sel].id] || 0) : 0} frostGletscher={hasGletscher(state.skills || [])}
               plantReadout={plantHeld}
               plantGrowth={sel != null && cards[sel] ? (state.growth?.[cards[sel].id] || 0) : 0}
               plantRoots={sel != null && cards[sel] ? plantRootScore(state.skills || [], state.growth?.[cards[sel].id] || 0) : 0}
               plantPfahl={hasPfahlwurzel(state.skills || [])} />
+            {/* Eis-Neudesign: das Festfrieren läuft jetzt direkt nach dem Eis-Skill-Pick (GlacierPick-Overlay), nicht mehr hier.
+                Gefrorene Gletscher erscheinen in der Aufstellung nur noch als starre Marker (Board oben). */}
             {/* Gebäude-Liste (wie in der Chronik): antippen lässt den Gebäude-Rahmen am Brett cyan leuchten — und
                 umgekehrt markiert das Antippen einer Karte im Gebäude hier den Eintrag. Nur bei aktivem Overlay sichtbar-verlinkt. */}
             {hasArch && (
@@ -281,6 +264,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm }) {
               <div style={{ color: "#d4a63a" }}>⧉ Überlappung — mehr Formationen = mehr Multi: 2 ×1,5 · 3 ×2 · 4 ×3</div>
               <div style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr Rahmen = mehr Multi · gestrichelt = ohne Multiplikator</div>
             </div>
+            {/* Eis-Neudesign: 2D-Gletscher-Formationen in Blau erklärt (nur bei aktivem Eis). */}
+            <GlacierFormLegend state={state} />
             {/* Gehaltene Eis-Effekte auf die Formationserkennung — nur wenn welche gehalten werden (desc aus SKILL_DEFS). */}
             {iceFormSkills.length > 0 && (
               <div className="grid gap-0.5 text-xs sm:text-[13px] leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>

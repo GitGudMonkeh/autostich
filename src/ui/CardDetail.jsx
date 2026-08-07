@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX, ICE_ABLAGE_SCORE_PER_LAYER,
+import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, WURZELSCHLAG_PER_GROWTH } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
-import { layerValue } from "../game/skills.js";
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { formationLabel } from "./formationLabels.js";
 import { formationBorder } from "./formationStyle.js"; // Rahmenfarbe = Anzahl Formationen (grau/grün/blau/lila/gold), wie die Kacheln
@@ -15,7 +14,7 @@ const fmt1 = (x) => String(Math.round(x * 10) / 10).replace(".", ",");
 /* Detailanzeige einer angetippten Karte (Issue #95, Punkt 5): Rolle(n) und alle aktiven
    Modifikatoren. Wird unter der Kachelfläche in Chronik-Übersicht UND Formationsphase genutzt.
    Rollen-Chips sind anklickbar → klappen die Perk-Beschreibung auf (touch-tauglich, plus Hover-Titel). */
-export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostReadout = false, frostLayers = 0, frostGletscher = false,
+export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
                             plantReadout = false, plantGrowth = 0, plantRoots = 0, plantPfahl = false, forgedValue = 0, arch = null }) {
   const [openRole, setOpenRole] = useState(null); // aktuell aufgeklappte Rolle (perkId)
   useEffect(() => { setOpenRole(null); }, [card?.id]); // Karte gewechselt → Beschreibung schließen
@@ -86,32 +85,10 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {}, frostR
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
           <span className="opacity-45">Ionisierung:</span>
           <Chip c="#5ec8f0">⚡ {ion}/{ION_MAX_STACKS} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
+          {/* #271: jeder Stapel hebt die Crit-Chance des ganzen Decks (feldweit) — hier der Beitrag dieser Karte. */}
+          <Chip c="#8a7de0">+{Math.round(ion * ION_CRIT_PP_PER_STACK * 100)} pp Feld-Crit</Chip>
         </div>
       )}
-      {/* Eis (#210): Schicht-Werte einer eingefrorenen Karte — nur in der Aufstellung (frostReadout). Hier stehen die
-          konkreten Zahlen, die die Eck-Kristalle auf der Karte bewusst NICHT zeigen: Schichten, Dauerwert (Gletscher =
-          superlinear n(n+1)/2, sonst linear), Flat je Frost-Sieg (gedeckelt ≤12) und die Überlauf-Tiefe (Nahrung der Legendären). */}
-      {frostReadout && card.frozen && (() => {
-        const val = layerValue(frostLayers, frostGletscher);
-        const flat = ICE_ABLAGE_SCORE_PER_LAYER * Math.min(frostLayers, ICE_LAYER_MAX);
-        const over = Math.max(0, frostLayers - ICE_LAYER_MAX);
-        return (
-          <div className="flex flex-wrap gap-1.5 items-center mt-1">
-            <span className="opacity-45">❄ Schichten:</span>
-            <Chip c="#8fcfe6">{frostLayers}{frostGletscher ? " · Gletscher" : ""}</Chip>
-            {val > 0 && <Chip c="#8fcfe6">+{val} Stichwert</Chip>}
-            {flat > 0 && <Chip c="#8fcfe6">+{flat} je Frost-Sieg</Chip>}
-            {over > 0 && <Chip c="#e6f7ff">Überlauf {over}</Chip>}
-            {/* #219.2 (korrigiert): Der Schicht-Wert ist ein STICHWERT — er wird bei jedem Frost-Sieg auf den Stich
-                addiert (iceValueBonus in engine.js: pValue), NICHT dauerhaft in den Kartenwert geschrieben. */}
-            {val > 0 && (
-              <div className="w-full text-[10px] opacity-55 leading-snug mt-0.5">
-                Stichwert = aus {frostLayers} Eisschicht{frostLayers === 1 ? "" : "en"}: jeder Frost-Sieg zählt +{val} auf den Stichwert (nicht dauerhaft im Kartenwert {card.value}).
-              </div>
-            )}
-          </div>
-        );
-      })()}
       {/* Pflanze (#211): Wachstums-/Reife-Werte in der Aufstellung — Zustand, Wachstum, Wert (bis Deckel), Wurzeln-Score
           je Sieg (Wurzeltiefe + Jahresringe, Pfahlwurzel ×2 in Formation) und die Überlauf-Tiefe (Wachstum über dem, was
           Wurzelschlag zum Wert-Deckel braucht = Nahrung der Pflanze-Legendären). Nur für Pflanzen-Karten (reif ODER wachsend). */}

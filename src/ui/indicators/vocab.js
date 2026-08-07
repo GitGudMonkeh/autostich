@@ -26,11 +26,6 @@ export const CASCADE_BRIGHT = "#e7e0ff"; // helles Ende der Kette (voll/aktiv au
 export const THUNDER = "#8a7de0"; // Donnergott (Legendär) — der bestehende Blitz-Violett-Akzent
 
 // ---- Eis-Unterfarben (#210) ----
-// Der Frost teilt sich das ICE-Cyan (❄ + Kanten-Rim). Die SCHICHTEN (der Spine) bekommen einen eigenen, ruhigeren
-// Kristallton, damit ein geschichteter Frost von einem bloß „eingefrorenen" unterscheidbar ist; die ÜBERLAUF-Tiefe
-// (Schichten über dem wirksamen Deckel 12 — die Nahrung der Legendären) leuchtet heller aus dem Stapel heraus.
-export const CRYSTAL = "#8fcfe6"; // Schicht-Kristall (gedämpft, im Deckel-Bereich ≤12)
-export const CRYSTAL_OVER = "#e6f7ff"; // Überlauf-Kristall — hell (Tiefe > Deckel = Direkt-Score der Legendären)
 export const GLACIER = "#bfe9f7"; // Architekt-Pfeiler / „Masse-Schwelle erreicht" — heller Eis-Akzent
 
 // ---- Pflanze-Unterfarben (#211) ----
@@ -62,8 +57,6 @@ export const CORNER = {
   //                    frühere untere linke Ecke ist damit GERÄUMT und für Eis/Pflanze reserviert (siehe unten).
   frost: "bottom-right", //  ❄ Eis: eingefroren (eigen) / Frostbiss (Gegner) (bestehend)
   brandMark: "bottom-right", //  🔥 Feuer-Brand auf GEGNERkarte — links neben ❄ versetzt
-  frostLayers: "bottom-left", //  ❖ Eis-Schichten (#210): dezente, gestapelte Eck-Kristalle (grobes „geschichtet"), heller ab
-  //                    Überlauf (12). Sitzt in der durch den Ion-Umzug (#208) geräumten unteren linken Ecke.
   growthRing: "bottom-right", //  🌱 Pflanze-Wachstumsring (#211): füllender Kreis auf der EIGENEN, noch wachsenden Karte (< Reife),
   //                    bei Reife ausgeblendet. Teilt sich die Ecke mit ❄ (frozen, eigene Karte) → bei beidem wird das ❄ nach
   //                    LINKS versetzt (wie 🔥 bei Frostbiss). Kollisionsfrei mit den GEGNER-Ecken (bottom-right dort ❄/🔥).

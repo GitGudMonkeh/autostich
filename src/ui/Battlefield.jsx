@@ -8,6 +8,7 @@ import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useReducedFx } from "./useReducedFx.js";
 import { fmtScore } from "./format.js";
+import glacierIcon from "./assets/glacier.webp"; // Eis-Treffer-Identität: das echte Gletscher-Asset im Score-Float
 import cardBackImg  from "../assets/cards/card-back.png";  // (#180) Spieler-Deck: Schwerter-Rücken
 import cardFrontImg from "../assets/cards/card-front.png"; // (#180) Spieler-Deck: Rahmen-Front (Zahl/Effekte darüber)
 // (#186/#214) Gegner-Deck: je Auswahl-Typ ein eigenes Deck (Cover = Rücken, Front = Rahmen). Der Gegner spielt jede
@@ -40,6 +41,21 @@ const BANNER = {
   tie:     { text: "Gleichstand",         color: "#8a8a92" },
 };
 const CRIT_COLOR = "#e879f9";
+// Archetyp-„Treffer-Identitäten" des Score-Floats (engine liefert lastTrick.hitTypes[]): EIN Sieg kann mehrere zugleich
+// tragen (bis zu alle vier) → alle Icons werden gezeigt. Bedingungen (in der engine): Feuer = voller-Hitze-Sieg (100 %) ·
+// Pflanze = Sieg mit voll ausgewachsener grüner Karte · Blitz = Sieg mit voll ionisierter Karte (5 Stapel) · Eis folgt.
+// Score-FARBE nach Priorität: Krit-Lila zuerst, dann HIT_COLOR_ORDER (Blitz teilt sich das Lila mit dem Krit). Die Icons
+// bleiben unabhängig von der Farbe immer stehen — auch bei Krit.
+const HIT_STYLE = {
+  fire:      { color: "#e0714a", icon: "🔥" },
+  plant:     { color: "#5ab87a", icon: "🌿" },
+  ice:       { color: "#5ec8f0", icon: "img" }, // Eis nutzt das echte Gletscher-Asset (glacier.webp) statt eines Emojis
+  lightning: { color: CRIT_COLOR, icon: "⚡" },
+};
+const HIT_ICON_ORDER  = ["fire", "plant", "ice", "lightning"]; // gezeigte Icons (Reihenfolge egal — reine Anzeige)
+// Score-FARBE: erste zutreffende bestimmt sie (nach dem Krit-Lila). EIS/Blau hat Vorrang (direkt nach Krit) — sonst egal.
+// Blitz ist bewusst NICHT dabei: reines Lila bleibt exklusiv dem Krit; ein nicht-kritischer 5-Stapel-Sieg zeigt nur das ⚡.
+const HIT_COLOR_ORDER = ["ice", "fire", "plant"];
 
 // #68: vier Streuzonen — gleiche Float-Typen dicht beieinander, verschiedene getrennt. Basis-Lage je Zone.
 const FLOAT_ZONES = {
@@ -52,12 +68,17 @@ const FLOAT_ZONES = {
 // #169 FB-7: `size` = Peak-Zielgröße (px) je Stufe — höhere Stufe dominiert stärker. Der Render deckelt sie per
 // clamp() gegen die Viewport-Breite (mobil kein Überlauf) und zentriert echt (H+V) auf oberster Ebene.
 const BIG_SCORE_TIERS = [
-  { min: 500000, text: "Gottgleich", size: 104 },
+  { min: 500000, text: "Gottgleich", size: 104, epic: true }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß (dominiert die Gold-Stufen darunter)
   { min: 150000, text: "Irre",       size: 90 },
   { min: 50000,  text: "Brutal",     size: 78 },
   { min: 10000,  text: "Stark",      size: 68 },
 ];
 const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
+// Große Lawine (Legendär): der Finisher-Bruch zeigt statt der Score-Stufe („Gottgleich" …) das Wort „Lawine" in Eis-Blau.
+const LAWINE_TIER = { text: "Lawine", size: 104, epic: true, color: "#5ec8f0" };
+// Serien-Meilenstein: ab einer Siegesserie von STREAK_GOENN feuert einmalig eine epische „Gönn dir"-Ansage (Gottgleich-Stil, festliches Gold).
+const STREAK_GOENN = 200;
+const GOENNDIR_TIER = { text: "Gönn dir", size: 104, epic: true, color: "#ffd24a" };
 // #FB: Groß-Ansage („wie stark"). Sie hing bislang am Stich-Takt (key=trickNo) und wurde vom Folgestich sofort
 // ersetzt → bei 4×/MAX (flipMs ~160–440 ms) nur einen Wimpernschlag sichtbar. Jetzt entkoppelt in einem eigenen
 // Pool mit fester, langer Standzeit, damit sie ihre Animation IMMER voll ausspielt (auch bei Turbo).
@@ -85,6 +106,13 @@ const CRIT_TIER_COLORS = ["#e879f9", "#e879f9", "#f472d0", "#ffc978", "#fff0b0"]
 const WIN_TIER_COLORS = ["#5ab87a", "#5ab87a", "#5ab87a", "#8fce6a", "#d4a63a"];
 const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflow-hidden, nichts läuft raus
 const FORM_LINGER_MS = 1500; // Formations-Float bleibt ~1,5 s länger stehen (über den nächsten Stich hinaus) und klingt dann aus
+// Entzerrung bei Ballung: spät in einem guten Lauf spannen die Stich-Gewinne mehrere Größenordnungen
+// (ein Stich +5 Mio, der nächste +8.000) → die kleinen Score-Floats sind nur Rauschen und überlappen alles.
+// Regel: NUR wenn viele Floats gleichzeitig leben („zu voll") UND ein Gewinn winzig gegenüber dem laufenden
+// Größenmaßstab ist, wird sein Float unterdrückt. Der Score selbst zählt unverändert weiter — nur das Popup entfällt.
+const FLOAT_DECLUTTER_MIN = 3;    // erst ab so vielen aktiven Score-Floats wird ausgedünnt
+const FLOAT_MIN_RATIO     = 0.08; // Float nur zeigen, wenn Gewinn ≥ 8 % des laufenden Maßstabs
+const FLOAT_SCALE_DECAY   = 0.9;  // Maßstab = max(Gewinn, Maßstab·DECAY) → folgt der jüngsten Größenordnung, vergisst Einmal-Spitzen langsam
 // #110: Karten-Aufdeck-Sound — DEZENTE Turbo-Kopplung der Abspielrate (leicht justierbar). Rate>1 = kürzer/schneller.
 const CARDFLIP_RATE_REF = 700;  // ms-Referenz: unter diesem Stich-Takt wird der Sound schneller (bei ~1× bleibt Rate 1)
 const CARDFLIP_RATE_CAP = 1.6;  // Deckel bewusst niedrig → bei MAX-Turbo bleibt ein leichtes Überlappen („MG"), wie gewünscht
@@ -294,6 +322,68 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
   );
 }
 
+/* GOTTGLEICH-Prunk: bei der obersten Krit-Stufe (tier 4) berstet die Karte — zusätzlich zu ExplosionFx — in einen
+   dichten Schwarm deckkräftiger Weißgold-Partikel, die vom Panel-RAHMEN nach innen ABPRALLEN und hin- und herspringen
+   (Flipper-Look). Reine Kosmetik auf einem <canvas> über dem Feld: rAF-Physik mit Geschwindigkeit, Wand-Reflexion
+   (Restitution), leichtem Drag & Schwerkraft. Nur die oberste Stufe → bleibt selten & besonders; bei reduzierter
+   Bewegung wird gar nicht erst getriggert. Bounds = das Battlefield-Panel (panelRef); Ursprung = Mitte der zerstörten
+   Gegnerkarte (oppRef), sonst rechte Feldhälfte. */
+function BounceBurst({ trigger, panelRef, oppRef }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    if (!trigger || !panelRef?.current || !canvasRef.current) return undefined;
+    const panel = panelRef.current, canvas = canvasRef.current;
+    const pr = panel.getBoundingClientRect();
+    const W = pr.width, H = pr.height;
+    if (W < 4 || H < 4) return undefined;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return undefined;
+    ctx.scale(dpr, dpr);
+    // Ursprung = Mitte der Gegnerkarte (die zerstörte) in Panel-Koordinaten; Fallback: rechte Feldhälfte.
+    let ox = W * 0.68, oy = H * 0.42;
+    const orr = oppRef?.current?.getBoundingClientRect();
+    if (orr && orr.width) { ox = orr.left - pr.left + orr.width / 2; oy = orr.top - pr.top + orr.height / 2; }
+    const PAL = ["#fff0b0", "#ffd873", "#ffffff", "#ffc978"]; // Weißgold-Palette (GOTTGLEICH)
+    const N = 96; // „mehr Partikel"
+    const parts = [];
+    for (let i = 0; i < N; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 3.5 + Math.random() * 9.5;
+      parts.push({ x: ox, y: oy, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 3.5,
+                   r: 1.8 + Math.random() * 3.2, c: PAL[i % PAL.length] });
+    }
+    const REST = 0.82, DRAG = 0.992, G = 0.16, TTL = 1650, FADE = 0.28; // spät & kurz ausfaden → „weniger transparent"
+    let raf = 0, start = 0;
+    const step = (now) => {
+      if (!start) start = now;
+      const k = (now - start) / TTL;
+      ctx.clearRect(0, 0, W, H);
+      const alpha = k > 1 - FADE ? Math.max(0, (1 - k) / FADE) : 1;
+      ctx.globalAlpha = alpha;
+      for (const p of parts) {
+        p.vy += G; p.vx *= DRAG; p.vy *= DRAG;
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < p.r) { p.x = p.r; p.vx = -p.vx * REST; }
+        else if (p.x > W - p.r) { p.x = W - p.r; p.vx = -p.vx * REST; }
+        if (p.y < p.r) { p.y = p.r; p.vy = -p.vy * REST; }
+        else if (p.y > H - p.r) { p.y = H - p.r; p.vy = -p.vy * REST; }
+        ctx.fillStyle = p.c;
+        ctx.shadowBlur = 8; ctx.shadowColor = p.c;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      }
+      if (k < 1) raf = requestAnimationFrame(step);
+      else { ctx.globalAlpha = 1; ctx.clearRect(0, 0, W, H); }
+    };
+    raf = requestAnimationFrame(step);
+    return () => { cancelAnimationFrame(raf); ctx.clearRect(0, 0, W, H); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
+  }, [trigger?.id, panelRef, oppRef]);
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none rounded-xl" style={{ zIndex: 20 }} aria-hidden="true" />;
+}
+
 /* #177+/#186: Schnitt-/Explosions-Ghost-Pool für BEIDE Seiten. Verliert eine Karte (Spieler bei Niederlage,
    Gegner bei Sieg), wird sie in-place ausgeblendet und stattdessen ein entkoppelter Klon in diesem Layer
    (im jeweiligen Karten-Slot, absolute inset-0) gerendert: die Karte liegt erst kurz (rest), dann setzt der Schnitt
@@ -308,8 +398,8 @@ function SlashGhostLayer({ ghosts }) {
       {ghosts.map((g) => {
         const cardEl = (
           <Card suit={g.suit} value={g.value} baseRank={g.baseRank} stichBonus={g.stichBonus}
-            ionStacks={g.ionStacks} frozen={g.frozen} frostbitten={g.frostbitten} green={g.green}
-            forged={g.forged || 0} branded={g.branded || 0} frostLayers={g.frostLayers || 0} growth={g.growth || 0} colonized={g.colonized || 0} frostAnimated
+            ionStacks={g.ionStacks} green={g.green}
+            forged={g.forged || 0} branded={g.branded || 0} growth={g.growth || 0} colonized={g.colonized || 0}
             allyColor={g.allyColor} frontImage={g.frontImage} />
         );
         // Reihenfolge (Wunsch): Karte liegt (rest) → Slice/Explosion IN PLACE (delay = g.rest) → DANACH floatet der
@@ -356,11 +446,9 @@ function CritScreenFx({ tier, color }) {
   );
 }
 
-export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, frozen = 0, oppDeck = "stat",
+export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, oppDeck = "stat",
   // Feuer-Rework (#206): geschmiedete Dauerwerte (eigene Karten) + aktive Brandmarken (Gegnerkarten) für die Karten-Indikatoren.
   forged = {}, brandActive = {},
-  // Eis-Rework (#210): Schichten je Frostkarte-id → Schicht-Eck-Kristalle auf der eigenen (eingefrorenen) Karte.
-  layers = {},
   // Pflanze-Rework (#211): Wachstum je eigener Karte-id (Wachstumsring + grüne Zahl) + kolonisierte Gegnerkarten (Ausläufer-Marker).
   growth = {}, colonized = {},
   // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
@@ -369,6 +457,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
   const reduced = useReducedFx(reducedFx);
+  // GOTTGLEICH-Prunk: Panel = Prallwand-Rahmen, oppSlot = Ursprung (zerstörte Gegnerkarte); burst triggert den Schwarm.
+  const panelRef = useRef(null);
+  const oppSlotRef = useRef(null);
+  const [burst, setBurst] = useState(null);
+  const burstSeq = useRef(0);
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -427,7 +520,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
   const sFloat   = clamp(flipMs * 0.55, 220, 820);   // Float-Away NACH dem Slice: Ghost driftet in Zufallsrichtung (#187)
   // Suit-Farbe der GESCHNITTENEN (Verlierer-)Karte → Schnittlinie + Funken. Sieg: Gegnerkarte · Niederlage: Spielerkarte.
-  const loserColor = sliceOn ? suitColor(win ? t.oCard.suit : t.pCard.suit) : null;
   // Sieg: Gegnerkarte wird in-place geschnitten, Spielerkarte kippt an. Niederlage: Spielerkarte wird NICHT in-place
   // geschnitten, sondern als entkoppelter Ghost (floaten → schneiden, überlappt bei Turbo, s. slashGhosts unten) —
   // in-place bleibt sie nur unsichtbarer Platzhalter; Gegnerkarte (Sieger) kippt an.
@@ -451,13 +543,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const pCardEl = t && (
     <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
           stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-          ionStacks={t.pCard.ionStacks || 0} frozen={t.pFrozen} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} frostLayers={layers[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} frostAnimated allyColor={allyColorFor(t.pCard.suit)}
+          ionStacks={t.pCard.ionStacks || 0} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} allyColor={allyColorFor(t.pCard.suit)}
           frontImage={deckFront} />
   );
   // #186: die Gegnerkarte trägt den Skin-Front-Rahmen der kommenden Auswahl (Holo entfällt); Zahl/Effekte darüber.
   const oCardEl = t && (
     <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
-          frostbitten={t.oFrostbitten} green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
+          green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
   );
 
   // Sieger kippt an (as-slice-winner); im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
@@ -498,7 +590,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #128: Float-Farbe = Rahmenfarbe der Übersicht — Tier nach Formations-Anzahl (formationBorder, kein Drift).
   const formColor = formationBorder({ mult: formMult, formations: (t && t.formations) || [] }).color || "#5ab87a";
   // #105: großes „Wow"-Wort mittig ab hohem Einzelstich-Score (nur bei Sieg). Höchste erfüllte Stufe.
-  const bigScore = win && t && t.gained > 0 ? bigScoreTier(t.gained) : null;
+  // Große-Lawine-Bruch (Finisher) → „Lawine" in Blau statt der Score-Stufe; sonst die normale Stufe nach Score.
+  const baseBigTier = win && t && t.gained > 0 ? bigScoreTier(t.gained) : null;
+  // Serien-Meilenstein hat Vorrang: eine 200er-Serie feiert „Gönn dir" (unabhängig vom Stich-Score), sonst Lawine bzw. Score-Stufe.
+  const goennMilestone = win && t && (t.winStreak || 0) >= STREAK_GOENN;
+  const bigScore = goennMilestone ? GOENNDIR_TIER : (baseBigTier && t && t.grosseLawine ? LAWINE_TIER : baseBigTier);
 
   // Ergebnis-Aufschlüsselung (§17): kompakte Faktorenkette (Basis → Flats → Serie → Perks → Formation → Crit)
   // aus der Engine-breakdown — exakt die Faktoren der Score-Formel (kein Drift). Nur bei nennenswerten Treffern.
@@ -524,9 +620,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const [floats, setFloats] = useState([]);
   const seenTrick = useRef(-1);
   const floatTimers = useRef([]);
+  const floatScaleRef = useRef(0);  // laufender Größenmaßstab der Gewinne (decaying max, für die Entzerrung)
+  const floatCountRef = useRef(0);  // aktuell aktive Score-Floats (für die „zu voll"-Schwelle)
   useEffect(() => () => floatTimers.current.forEach(clearTimeout), []); // Timer bei Unmount aufräumen
   useEffect(() => {
-    if (!t) { seenTrick.current = -1; setFloats([]); return; }      // Menü/neuer Lauf → Pool leeren
+    if (!t) { seenTrick.current = -1; floatScaleRef.current = 0; floatCountRef.current = 0; setFloats([]); return; } // Menü/neuer Lauf → Pool + Maßstab leeren
     if (t.trickNo === seenTrick.current) return;
     seenTrick.current = t.trickNo;
     // #110/#196: Karten-Aufdeck-Sound je Stich — startet zeitgleich mit der Flip-Animation (Ergebnis steht bei
@@ -541,20 +639,32 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       bass: w ? 4 + 1.5 * flipTier + (t.isCrit ? 4 : 0) : 0,
     });
     const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
-    const critC = t.isCrit ? CRIT_COLOR : "#d4a63a";
+    // Treffer-Identitäten (Feuer/Pflanze/Eis/Blitz, mehrere zugleich möglich) → alle Icons + Score-Farbe.
+    // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst Gold. Icons bleiben immer.
+    const hits = t.hitTypes || [];
+    const hitIcons = HIT_ICON_ORDER.filter((k) => hits.includes(k)); // Icon-KEYS (Eis rendert als Bild, Rest als Emoji)
+    const hitColorKey = HIT_COLOR_ORDER.find((k) => hits.includes(k));
+    const critC = t.isCrit ? CRIT_COLOR : (hitColorKey ? HIT_STYLE[hitColorKey].color : "#d4a63a");
     const entries = [];
     // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
-    if (w && t.gained > 0)
-      entries.push({ id: `s${t.trickNo}`, zone: "score", dur, seed: t.trickNo * 2, value: t.gained,
-                     text: `+${fmtScore(t.gained)}`, color: critC }); // #184: Score ganzzahlig (floor), keine Nachkommastelle
+    if (w && t.gained > 0) {
+      // Größenmaßstab fortschreiben (folgt der jüngsten Gewinn-Größenordnung, vergisst Spitzen langsam).
+      const scale = floatScaleRef.current = Math.max(t.gained, floatScaleRef.current * FLOAT_SCALE_DECAY);
+      // Entzerrung: bei Ballung („zu voll") winzige Gewinne (relativ zum Maßstab) NICHT als Float zeigen — Score zählt trotzdem.
+      const declutter = floatCountRef.current >= FLOAT_DECLUTTER_MIN && t.gained < scale * FLOAT_MIN_RATIO;
+      if (!declutter)
+        entries.push({ id: `s${t.trickNo}`, zone: "score", dur, seed: t.trickNo * 2, value: t.gained,
+                       text: `+${fmtScore(t.gained)}`, color: critC, icons: hitIcons }); // #184: Score ganzzahlig (floor), keine Nachkommastelle
+    }
     if (!entries.length) return;
-    setFloats((cur) => [...cur, ...entries].slice(-6)); // Pool gedeckelt — kein unbegrenztes Stapeln
+    setFloats((cur) => { const next = [...cur, ...entries].slice(-6); floatCountRef.current = next.length; return next; }); // Pool gedeckelt — kein unbegrenztes Stapeln
     const ids = entries.map((e) => e.id);
     const tm = setTimeout(() => {
-      setFloats((cur) => cur.filter((f) => !ids.includes(f.id)));
+      setFloats((cur) => { const next = cur.filter((f) => !ids.includes(f.id)); floatCountRef.current = next.length; return next; });
       floatTimers.current = floatTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen → kein unbegrenztes Wachstum über einen langen Lauf
     }, dur);
     floatTimers.current.push(tm);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
 
   // #FB: Groß-Ansage-Pool („wie stark") — entkoppelt vom Stich-Takt (wie der Score-Float-Pool). Jeder Eintrag lebt
@@ -564,10 +674,21 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const [bigFloats, setBigFloats] = useState([]);
   const bigTimers = useRef([]);
   const bigSeq = useRef(0);
+  const lawineShown = useRef(false); // Große Lawine feuert 1×/Lauf → nur der ERSTE Finale-Bruch zeigt „LAWINE" (kein Schwarm)
+  const goennShown = useRef(false);  // „Gönn dir" nur EINMAL je 200er-Serie → Ref scharf, sobald die Serie wieder unter die Schwelle fällt
   useEffect(() => () => bigTimers.current.forEach(clearTimeout), []);
   useEffect(() => {
-    if (!t) { setBigFloats([]); return; }   // Menü/neuer Lauf → Pool leeren
+    if (!t) { setBigFloats([]); lawineShown.current = false; goennShown.current = false; return; }   // Menü/neuer Lauf → Pool leeren + Merker zurücksetzen
+    if ((t.winStreak || 0) < STREAK_GOENN) goennShown.current = false;  // Serie unter der Schwelle (z. B. Niederlage) → nächster 200er darf wieder feiern
     if (!bigScore) return;                   // nur bei einem großen Sieg-Stich
+    if (bigScore === GOENNDIR_TIER) {        // Serien-Meilenstein: die Ansage nur EINMAL je 200er-Serie
+      if (goennShown.current) return;
+      goennShown.current = true;
+    }
+    if (bigScore === LAWINE_TIER) {          // Große Lawine: die Groß-Ansage nur EINMAL pro Finale, danach still weiterzählen
+      if (lawineShown.current) return;
+      lawineShown.current = true;
+    }
     const lane = BIG_LANES[bigSeq.current % BIG_LANES.length];
     bigSeq.current += 1;
     // #Fix: id global eindeutig über den monotonen bigSeq (nicht nur trickNo) → keine duplicate-key-Kollision.
@@ -578,6 +699,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       bigTimers.current = bigTimers.current.filter((x) => x !== tm);
     }, BIG_ANNOUNCE_MS + 80);
     bigTimers.current.push(tm);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
 
   // #177+/#186: Schnitt-/Explosions-Ghost-Pool — entkoppelt vom Stich-Takt (wie der Score-Float-Pool), damit die
@@ -601,14 +723,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       spawned.push({ ...base, id: `pg${t.trickNo}-${ghostSeq.current++}`, side: "player", fx: "slice",
         color: suitColor(t.pCard.suit), seed: t.trickNo * 2 + 7,
         suit: t.pCard.suit, value: t.pCard.value, baseRank: t.pCard.baseRank, stichBonus: t.pValue - t.pCard.value,
-        ionStacks: t.pCard.ionStacks || 0, frozen: t.pFrozen, frostbitten: false, green: !!t.pCard.green,
-        forged: forged[t.pCard.id] || 0, frostLayers: layers[t.pCard.id] || 0, growth: growth[t.pCard.id] || 0, allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
+        ionStacks: t.pCard.ionStacks || 0, green: !!t.pCard.green,
+        forged: forged[t.pCard.id] || 0, growth: growth[t.pCard.id] || 0, allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
     }
     if (win) {   // Gegnerkarte verliert → Schnitt- (normal) bzw. Explosions-Ghost (Krit) auf der Gegnerseite
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp", fx: isCrit ? "explode" : "slice",
         color: isCrit ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
-        ionStacks: 0, frozen: false, frostbitten: t.oFrostbitten, green: !!t.oCard.green,
+        ionStacks: 0, green: !!t.oCard.green,
         branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
     }
     if (!spawned.length) return;
@@ -619,6 +741,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
     }, sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100); // Lebensdauer: Ruhe + längster FX-Teil (#188: um die skalierte Dauer verlängert)
     ghostTimers.current.push(tm);
+    // GOTTGLEICH-Krit (oberste Stufe): den abprallenden Partikel-Schwarm feuern, synchron zum Bersten nach dem Ruhe-Beat.
+    if (win && isCrit && fxTier >= 4 && !reduced) {
+      const bt = setTimeout(() => { burstSeq.current += 1; setBurst({ id: burstSeq.current }); }, sRest);
+      ghostTimers.current.push(bt); // gemeinsame Ghost-Timer-Aufräumung (unmount → clearTimeout)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
   const playerGhosts = slashGhosts.filter((g) => g.side === "player");
   const oppGhosts    = slashGhosts.filter((g) => g.side === "opp");
@@ -644,6 +772,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         screenFxTimer.current = setTimeout(() => setScreenFx(null), 700);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
   // Shake-Parameter je Stufe (leicht → stark). Amplitude als CSS-Var ans Panel; Keyframe-Name wechselt je Sieg (a/b).
   const shakeAmp  = screenFx ? [0, 3, 6, 9, 13][screenFx.tier] : 0;
@@ -660,6 +789,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   useEffect(() => {
     if (!t) { setFormFloat(null); return; }
     if (showFormation) setFormFloat({ key: t.trickNo, label: formLabel, mult: formationStr, color: formColor, peak: formPeak });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo, showFormation, formLabel, formationStr, formColor, formPeak]);
   // „Verlässt gerade": der Float gehört zu einem früheren Stich als dem aktuell gezeigten Formations-Sieg.
   const formLeaving = !!formFloat && formFloat.key !== (t ? t.trickNo : null);
@@ -676,9 +806,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const chargeR    = clamp(charge / maxCharge, 0, 1);
   const lightOn    = !!lightning?.active && charge >= 2;   // Blitz-Rahmen erst ab Ladung 2 (#143)
   const chargeFull = lightOn && charge >= maxCharge;
-  const frostN     = clamp(Math.round(frozen || 0), 0, 5);
-  const frostOn    = frostN >= 2;                          // Eis-Rahmen ab 2 Karten, Maximum bei 5 (#144)
-  const frostF     = frostOn ? (frostN - 1) / 4 : 0;       // Stufen-Meter: 2→0,25 · 3→0,5 · 4→0,75 · 5→1,0
   // Panel-Rand: bei aktivem Blitz elektrisch blau (voll: violett), sonst Standard.
   const panelBorder = chargeFull ? "1px solid rgba(138,125,224,0.75)"
     : lightOn ? `1px solid rgba(94,200,240,${(0.35 + 0.5 * chargeR).toFixed(2)})`
@@ -700,7 +827,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
   return (
    <>
-    <div className="rounded-xl p-6 overflow-hidden as-panel relative"
+    <div ref={panelRef} className="rounded-xl p-6 overflow-hidden as-panel relative"
       style={{ background: "#17171c", border: panelBorder, boxShadow: outerGlow,
                // #188 v2 / #192: Screen-Shake bei großem Sieg — Panel jittert, Amplitude via --shake-amp nach Stufe.
                // Krit ab STARK, normaler Sieg ab BRUTAL (grün/gold Aura via outerGlow, kein Flash/Vignette).
@@ -727,24 +854,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                    background: "radial-gradient(135% 95% at 50% 122%, #f0a83a55 0%, #e0714a44 34%, transparent 68%)",
                    boxShadow: "inset 0 -28px 66px -10px #e0714a99, inset 0 0 54px #e0714a2e" }} />
       )}
-      {/* Eis-Frost (#144): weicher Frost-Rand (Inset-Glow als Stufen-Meter) + super-soft geblurrte Ecken.
-          Über der Feuer-Glut (z-1), unter den Karten. Schimmer bei 5. */}
-      {frostOn && (
-        <div aria-hidden="true"
-          className={`absolute inset-0 rounded-xl pointer-events-none${frostN >= 5 && !reduced ? " as-frost-pulse" : ""}`}
-          style={{ zIndex: 1, boxShadow: `inset 0 0 ${Math.round(6 + 26 * frostF)}px ${Math.round(1 + 7 * frostF)}px rgba(191,233,247,${(0.2 + 0.55 * frostF).toFixed(2)})` }}>
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 120" preserveAspectRatio="none"
-            style={{ opacity: 0.35 + 0.55 * frostF }}>
-            <defs><filter id="as-frostblur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5.5" /></filter></defs>
-            <g fill="#dff3fb" filter="url(#as-frostblur)">
-              <polygon points="0,0 48,0 30,11 41,21 22,27 11,41 0,31" />
-              <polygon points="200,0 152,0 171,10 159,21 181,26 191,41 200,32" />
-              <polygon points="0,120 45,120 28,109 43,99 21,94 9,81 0,90" />
-              <polygon points="200,120 155,120 173,110 157,99 183,95 192,82 200,91" />
-            </g>
-          </svg>
-        </div>
-      )}
       {/* Blitz-Rahmen (#143): innerer blauer Glow, Intensität = Ladung (ab 2). Voll → violetter Akzent + Puls. */}
       {lightOn && (
         <div aria-hidden="true"
@@ -764,6 +873,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           )}
         </div>
       )}
+      {/* GOTTGLEICH-Prunk: abprallender Weißgold-Schwarm über dem Feld (Bounds = Panel-Rahmen). Nur bei tier-4-Krit. */}
+      <BounceBurst trigger={burst} panelRef={panelRef} oppRef={oppSlotRef} />
       <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (
@@ -782,8 +893,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
         {/* #214: „vs"-Schwerter-Icon (#42) entfernt — die beiden Seiten stehen sich jetzt ohne Trenn-Icon gegenüber. */}
 
-        <Side label="Gegner" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg}
-              overlay={oppGhosts.length ? <SlashGhostLayer ghosts={oppGhosts} /> : null}>{oppCard}</Side>
+        <div ref={oppSlotRef} className="flex">
+          <Side label="Gegner" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg}
+                overlay={oppGhosts.length ? <SlashGhostLayer ghosts={oppGhosts} /> : null}>{oppCard}</Side>
+        </div>
 
         {/* Aufsteigende Zahlen (#49/#68): je Typ eigene Streuzone (Score links / Leben rechts) mit
             kleinem, deterministischem Jitter aus trickNo → gleiche Typen dicht, verschiedene getrennt,
@@ -798,7 +911,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             <div key={f.id} className="pointer-events-none absolute font-bold whitespace-nowrap"
               style={{ ...pos, color: f.color, fontSize: floatSize(f.value || 0), lineHeight: 1,
                        animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
-              {f.text}
+              {f.icons && f.icons.length > 0 && (
+                <span className="mr-1 inline-flex items-center gap-0.5 align-middle" style={{ WebkitTextFillColor: "initial" }}>
+                  {f.icons.map((k) => k === "ice"
+                    ? <img key={k} src={glacierIcon} alt="" aria-hidden="true" className="inline-block object-contain" style={{ width: "0.85em", height: "0.85em", filter: "drop-shadow(0 0 3px #5ec8f0)" }} />
+                    : <span key={k}>{HIT_STYLE[k].icon}</span>)}
+                </span>
+              )}{f.text}
             </div>
           );
         })}
@@ -823,6 +942,23 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             Floats), zentriert mit Spur-Versatz (BIG_LANES, gegen Überlappung), Größe je Stufe (clamp deckelt mobil gegen
             Überlauf), Legendär-Gold. Aus dem entkoppelten Pool → volle Standzeit auch bei 4×/MAX. */}
         {bigFloats.map((b) => (
+          b.tier.epic ? (
+            /* GOTTGLEICH — Sonder-Ansage: als SVG skaliert das Wort exakt auf ~70 % der Panelbreite (textLength),
+               echt mittig (H+V, kein Spur-/Jitter-Versatz), in Weiß mit weißem Bloom → hebt sich klar von den
+               goldenen Stufen darunter ab. Gleiche Standzeit/Animation wie die anderen Groß-Ansagen. */
+            <svg key={b.id} aria-hidden="true" className="pointer-events-none absolute" viewBox="0 0 1000 210" preserveAspectRatio="xMidYMid meet"
+              style={{ left: "50%", top: "50%", width: "70%", zIndex: 31,
+                       filter: b.tier.color
+                         ? `drop-shadow(0 0 32px ${b.tier.color}) drop-shadow(0 0 12px ${b.tier.color}) drop-shadow(0 3px 8px rgba(0,0,0,0.55))`
+                         : "drop-shadow(0 0 32px rgba(255,255,255,0.9)) drop-shadow(0 0 12px rgba(255,255,255,0.7)) drop-shadow(0 3px 8px rgba(0,0,0,0.55))",
+                       transform: reduced ? "translate(-50%, -50%)" : undefined,
+                       animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
+              <text x="500" y="170" textAnchor="middle" textLength="984" lengthAdjust="spacingAndGlyphs"
+                style={{ fontSize: "200px", fontWeight: 900, fill: b.tier.color || "#ffffff", letterSpacing: "1px" }}>
+                {b.tier.text.toUpperCase()}
+              </text>
+            </svg>
+          ) : (
           <div key={b.id} className="pointer-events-none absolute font-extrabold whitespace-nowrap"
             style={{ left: `calc(50% + ${fjitter(b.seed * 3 + 2, 12)}px)`, top: `calc(50% + ${b.lane}px)`, zIndex: 30,
                      textTransform: "uppercase", // Q2/Loc: Groß-Score-Ansage-Caps zentral über CSS (Übersetzer liefert STARK/BRUTAL/… normal geschrieben)
@@ -831,6 +967,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                      animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
             {b.tier.text}
           </div>
+          )
         ))}
       </div>
 

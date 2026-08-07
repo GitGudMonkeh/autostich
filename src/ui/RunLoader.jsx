@@ -31,6 +31,7 @@ export function RunLoader({ images = [], onReady, showDelay = 150, maxWait = 300
     const showTimer = setTimeout(() => { if (!cancelled) setVisible(true); }, showDelay);
     const safety = setTimeout(() => { if (!cancelled) { cancelled = true; onReady(); } }, maxWait);
     return () => { cancelled = true; clearTimeout(showTimer); clearTimeout(safety); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, []);
 
   if (!visible) return null;

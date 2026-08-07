@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
-import { SKILL_DEFS, isGreen, greenCount, growthRipe, plantSkillCount, ARCHETYPE_ORDER } from "../src/game/skills.js";
+import { SKILL_DEFS, isGreen, greenCount, growthRipe, plantSkillCount, isTrimmableSkill, ARCHETYPE_ORDER } from "../src/game/skills.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -15,10 +15,10 @@ const green0 = (v) => constDeck(v).map((c, i) => (i === 0 ? { ...c, green: true 
 const noCrit = () => 0.99;
 const B = C.SCORE_PER_WIN;
 const PLANT_IDS = [
-  "SK_PLANT_01", "SK_PLANT_02", "SK_PLANT_03", "SK_PLANT_04", "SK_PLANT_05", "SK_PLANT_06", "SK_PLANT_07",
+  "SK_PLANT_02", "SK_PLANT_03", "SK_PLANT_04", "SK_PLANT_05", "SK_PLANT_06", "SK_PLANT_07",
   "SK_PLANT_08", "SK_PLANT_09", "SK_PLANT_10", "SK_PLANT_11", "SK_PLANT_12", "SK_PLANT_13", "SK_PLANT_14",
-  "SK_PLANT_15", "SK_PLANT_16", "SK_PLANT_17", "SK_PLANT_L01", "SK_PLANT_L02", "SK_PLANT_L03", "SK_PLANT_L04",
-];
+  "SK_PLANT_15", "SK_PLANT_16", "SK_PLANT_17", "SK_PLANT_18", "SK_PLANT_L01", "SK_PLANT_L02", "SK_PLANT_L03", "SK_PLANT_L04",
+]; // v0.5: SK_PLANT_01 (Wurzelschlag) → Mono-Fraktions-Passive; SK_PLANT_18 (Kernholz) neu in L4
 
 describe("Pflanze-Fraktion v0 — Roster + Verdrahtung", () => {
   it("21 Pflanze-Skills: 17 normal + 4 legendär, alle archetype=plant, alle registriert", () => {
@@ -29,6 +29,14 @@ describe("Pflanze-Fraktion v0 — Roster + Verdrahtung", () => {
       expect(SKILL_DEFS[id], `${id} fehlt im Registry`).toBeTruthy();
       expect(SKILL_DEFS[id].archetype).toBe("plant");
     }
+  });
+  it("#288 Trimmen: genau die 6 wachstums-stützenden Skills sind trimmbar (inkl. Ausläufer/Rhizom)", () => {
+    const trimmable = PLANT_IDS.filter(isTrimmableSkill).sort();
+    expect(trimmable).toEqual(["SK_PLANT_05", "SK_PLANT_06", "SK_PLANT_07", "SK_PLANT_08", "SK_PLANT_15", "SK_PLANT_16"]);
+    // Wachstum-/Wert-LESENDE (nicht -stützende) Skills bleiben untrimmbar
+    expect(isTrimmableSkill("SK_PLANT_18")).toBe(false); // Kernholz (Wert → Score)
+    expect(isTrimmableSkill("SK_PLANT_04")).toBe(false); // Jahresringe (Wachstum → Score)
+    expect(isTrimmableSkill("SK_PLANT_L01")).toBe(false); // Weltenbaum (legendär)
   });
   it("4. Archetyp verdrahtet (ARCHETYPE_ORDER enthält plant)", () => {
     expect(ARCHETYPE_ORDER).toContain("plant");
@@ -51,7 +59,7 @@ describe("Pflanze-Fraktion v0 — reine Helfer", () => {
 describe("Pflanze-Fraktion v0 — Engine-Integration", () => {
   it("Wachstum: ab SKILL_REF Pflanzen-Skills gibt Sieg +1; an der Reife-Schwelle wird die Karte grün", () => {
     // Skill-Gate: Win-Wachstum = min(1, PflanzenSkills/REF). Ab REF Skills volle +1 → Schwelle → grün.
-    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_01", "SK_PLANT_02", "SK_PLANT_05"], growth: { X0: C.PLANT_GREEN_THRESHOLD - 1 } }), noCrit);
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_09", "SK_PLANT_02", "SK_PLANT_05"], growth: { X0: C.PLANT_GREEN_THRESHOLD - 1 } }), noCrit);
     expect(s.growth.X0).toBe(C.PLANT_GREEN_THRESHOLD);
     expect(s.deck[0].green).toBe(true);
   });
@@ -60,9 +68,69 @@ describe("Pflanze-Fraktion v0 — Engine-Integration", () => {
     expect(s.growth.X0).toBeCloseTo(1 / C.PLANT_GROWTH_SKILL_REF); // 1 Skill / 3 = 0,333
     expect(s.deck[0].green).toBeFalsy(); // grau bleibt grau — 1/3 < Schwelle
   });
-  it("Wurzeltiefe: Sieg einer grünen Karte gibt Wurzeln-Score (Flat)", () => {
-    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_02"], deck: green0(12), growth: { X0: 4 } }), noCrit);
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + C.WURZELTIEFE_SCORE) * 1.02);
+  // Fraktions-Passive (Mono): Niederlage-Klausel erst ab WURZELSCHLAG_LOSS_MIN_SKILLS (=4) Pflanzen-Skills; growInc min(1,4/3)=1.
+  const mono = ["SK_PLANT_10", "SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_09"]; // 4 Pflanzen-Skills → Mono aktiv
+  it("Passive (mono): je WURZELSCHLAG_LOSS_EVERY Niederlagen wächst die Karte trotzdem (+Zuwachs)", () => {
+    const s = resolveTrick(scen(6, 12, { skills: mono, growth: { X0: 5 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
+    expect(s.lastTrick.result).toBe("loss");
+    expect(s.growth.X0).toBe(6);      // +1 Zuwachs trotz Niederlage
+    expect(s.plantLoss.X0).toBe(0);   // Zähler zurückgesetzt
+  });
+  it("Passive (mono): eine einzelne Niederlage tickt nur den Zähler, noch kein Wachstum", () => {
+    const s = resolveTrick(scen(6, 12, { skills: mono, growth: { X0: 5 }, plantLoss: {} }), noCrit);
+    expect(s.growth.X0 || 0).toBe(5); // unverändert
+    expect(s.plantLoss.X0).toBe(1);   // Zähler +1
+  });
+  it("Passive: Niederlage-Klausel — unter WURZELSCHLAG_LOSS_MIN_SKILLS kein Trostwachstum", () => {
+    // Mono, aber nur 3 Pflanzen-Skills (< 4) → Niederlage-Klausel greift NICHT, Zähler bleibt unberührt.
+    const few = ["SK_PLANT_09", "SK_PLANT_02", "SK_PLANT_05"];
+    const s = resolveTrick(scen(6, 12, { skills: few, growth: { X0: 5 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
+    expect(s.growth.X0 || 0).toBe(5);
+    expect(s.plantLoss.X0 || 0).toBe(C.WURZELSCHLAG_LOSS_EVERY - 1); // unberührt
+  });
+  it("Passive: MONO-Gate — ein einziger Fremd-Skill schaltet die Passive ab (kein Trostwachstum trotz 4+ Skills)", () => {
+    // 4 Skills, aber einer ist Blitz → nicht mono → Passive aus: weder Wert-Ableitung noch Niederlage-Klausel.
+    const mixed = ["SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_09", "SK_LIGHTNING_01"];
+    const s = resolveTrick(scen(6, 12, { skills: mixed, growth: { X0: 5 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
+    expect(s.growth.X0 || 0).toBe(5);                                  // kein Trostwachstum
+    expect(s.plantLoss.X0 || 0).toBe(C.WURZELSCHLAG_LOSS_EVERY - 1);   // Zähler unberührt (Klausel lief nicht)
+  });
+  it("Passive (mono): grüne Karte klettert beim Loss-Tick auch im Wert (Schwellen-Übertritt)", () => {
+    // prevG 3 → g 4 überschreitet die /4-Schwelle → +1 Wert (nur für grüne Karte, wie im Sieg).
+    const s = resolveTrick(scen(6, 12, { skills: mono, deck: green0(7), growth: { X0: 3 }, plantLoss: { X0: C.WURZELSCHLAG_LOSS_EVERY - 1 } }), noCrit);
+    expect(s.growth.X0).toBe(4);
+    expect(s.deck[0].value).toBe(8); // 7 → 8 (Passive-Wert bei Schwellen-Übertritt)
+  });
+  it("Passive (mono): grüner Sieg leitet Wert aus Wachstum ab (Schwellen-Übertritt), Wachstum bleibt", () => {
+    // grüne Karte Wert 7, growth 3 → Sieg gibt +1 Wachstum (mono, 4 Skills → growInc 1) → g 4 überschreitet /4 → +1 Wert.
+    const s = resolveTrick(scen(12, 6, { skills: mono, deck: green0(7), growth: { X0: 3 } }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.growth.X0).toBe(4);        // Wachstum NICHT verbraucht
+    expect(s.deck[0].value).toBe(8);    // 7 → 8 abgeleitet
+  });
+  it("Passive: MONO-Gate im Sieg — mit Fremd-Skill keine Wert-Ableitung", () => {
+    const mixed = ["SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_09", "SK_LIGHTNING_01"];
+    const s = resolveTrick(scen(12, 6, { skills: mixed, deck: green0(7), growth: { X0: 3 } }), noCrit);
+    expect(s.deck[0].value).toBe(7);    // Wert unverändert (Passive aus)
+  });
+  it("Kernholz (L4): grüner Sieg gibt +KERNHOLZ_SCORE_PER_VALUE je Wert über Startwert (baseRank)", () => {
+    // grüne Karte value 9, baseRank 5 → 4 Punkte über Start → +4·K in den Pflanze-Score.
+    const deck = green0(9).map((c, i) => (i === 0 ? { ...c, baseRank: 5 } : c));
+    const withK = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_18", "SK_PLANT_02", "SK_PLANT_05"], deck, growth: { X0: 0 } }), noCrit);
+    const without = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_09", "SK_PLANT_02", "SK_PLANT_05"], deck, growth: { X0: 0 } }), noCrit);
+    expect(withK.lastTrick.scoreGain - without.lastTrick.scoreGain).toBeCloseTo((9 - 5) * C.KERNHOLZ_SCORE_PER_VALUE * 1.02, 3);
+  });
+  // Feldtiefe-Bonus (Buff): +K·√(Gesamtwachstum), gedeckelt. Hier wächst nur X0 → Feld-Wachstum = s.growth.X0.
+  const fieldTerm = (fg) => Math.min(C.WURZELTIEFE_FIELD_CAP, Math.round(C.WURZELTIEFE_FIELD_K * Math.sqrt(fg || 0)));
+  it("Wurzeltiefe: Sieg einer grünen Karte gibt Wurzeln-Score (Flat + Feldtiefe)", () => {
+    // growth 0 → keine Tiefe über dem Wert-Deckel → das superlineare Wurzel-Ceiling (#Ceiling) zündet nicht → Flat + Feldtiefe.
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_02"], deck: green0(12), growth: { X0: 0 } }), noCrit);
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + C.WURZELTIEFE_SCORE + fieldTerm(s.growth.X0)) * 1.02);
+  });
+  it("#288 Trimmen: trimCount hebt den Wurzel-Score (Multiplikator, gedeckelt)", () => {
+    const trimMult = 1 + Math.min(2 * C.TRIM_STEP, C.TRIM_CAP);
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_02"], deck: green0(12), growth: { X0: 0 }, trimCount: 2 }), noCrit);
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + Math.round((C.WURZELTIEFE_SCORE + fieldTerm(s.growth.X0)) * trimMult)) * 1.02); // (Wurzel + Feldtiefe) × Trimm-Mult
   });
   it("Aussaat: Sieg einer grünen Karte sät den (rechten) Nachbarn (+Wachstum)", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_PLANT_05"], deck: green0(12) }), noCrit);
@@ -95,10 +163,13 @@ describe("Pflanze-Legendär-Reshape — Fluten-Dividende (plantDirect)", () => {
   const sumOverflow = (deck, growth) => { let s = 0; for (const c of deck) if (c.green) { const ov = (growth[c.id] || 0) - Math.max(0, C.PLANT_VALUE_CAP - c.value) * C.WURZELSCHLAG_PER_GROWTH; if (ov > 0) s += ov; } return s; };
   const maxOverflow = (deck, growth) => { let m = 0; for (const c of deck) if (c.green) { const ov = (growth[c.id] || 0) - Math.max(0, C.PLANT_VALUE_CAP - c.value) * C.WURZELSCHLAG_PER_GROWTH; if (ov > m) m = ov; } return m; };
 
-  it("generisches Pflanze (ohne Legendäre): kein plantDirect trotz Überlauf-Wachstum + vollem grünen Feld", () => {
+  it("#Ceiling Wurzel/TIEFE: tiefe Bäume zahlen generisch einen superlinearen (dreieckigen) Direktscore", () => {
     const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_02"], deck: greenDeck(10), growth: growthMap(10, 40) }), noCrit);
     expect(s.lastTrick.result).toBe("win");
-    expect(s.lastTrick.breakdown.plantDirect || 0).toBe(0); // generisches Pflanze unberührt → bestätigte Balance geschützt
+    // Siegkarte: Wert=Deckel (need=0), Wachstum 40+Zuwachs → Tiefe am Deckel PLANT_ROOT_DEEP_CAP → dreieckig × K × Bekenntnis.
+    const g = 40 + Math.min(1, 1 / C.PLANT_GROWTH_SKILL_REF);
+    const depth = Math.min(Math.floor(g), C.PLANT_ROOT_DEEP_CAP);
+    expect(s.lastTrick.breakdown.plantDirect).toBeCloseTo((depth * (depth + 1) / 2) * C.PLANT_ROOT_DEEP_K * commit1);
   });
   it("Weltenbaum (BREITE): Σ Überlauf-Wachstum × WELTENBAUM_DIRECT je grünem Sieg (gedeckelt, bekenntnis-skaliert)", () => {
     const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L01"], deck: greenDeck(5), growth: growthMap(5, 30) }), noCrit);
@@ -110,11 +181,16 @@ describe("Pflanze-Legendär-Reshape — Fluten-Dividende (plantDirect)", () => {
     expect(s.lastTrick.result).toBe("win");
     expect(s.lastTrick.breakdown.plantDirect).toBeCloseTo(Math.min(maxOverflow(s.deck, s.growth), C.MUTTERBAUM_OVERFLOW_CAP) * C.MUTTERBAUM_DIRECT * commit1);
   });
-  it("Dornenkönig (KOLONIE): #kolonisierte Gegnerkarten × DORNENKOENIG_DIRECT je grünem Sieg (gedeckelt)", () => {
-    const colonized = Object.fromEntries(Array.from({ length: 20 }, (_, i) => [`X${i}`, true]));
-    const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L03"], deck: greenDeck(3), growth: growthMap(3, 10), colonized }), noCrit);
+  it("Baumreihe (WIEDERHOLUNG): voll ausgewachsene grüne Karten (Wert-Deckel) → positionsfreier Wiederholungs-Faktor", () => {
+    // 3 voll ausgewachsene grüne Karten an Pos 0/5/10 (nicht benachbart → keine Basis-Formation an der Siegposition 0).
+    const brDeck = Array.from({ length: 40 }, (_, i) => {
+      const eleven = i === 0 || i === 5 || i === 10;
+      return { id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: eleven ? C.PLANT_VALUE_CAP : 5, value: eleven ? C.PLANT_VALUE_CAP : 5, green: eleven };
+    });
+    const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L03"], deck: brDeck }), noCrit);
     expect(s.lastTrick.result).toBe("win");
-    expect(s.lastTrick.breakdown.plantDirect).toBeCloseTo(Math.min(Object.keys(s.colonized).length, C.DORNENKOENIG_COLON_CAP) * C.DORNENKOENIG_DIRECT * commit1);
+    // formMult = plantFormMult = Baumreihen-Faktor (n=3): BASE + (3−2)·STEP
+    expect(s.lastTrick.breakdown.formMult).toBeCloseTo(C.BAUMREIHE_BASE + (3 - 2) * C.BAUMREIHE_STEP);
   });
   it("Ewiger Frühling (GRÜN-FELD): #grüne Karten × EWIGER_FRUEHLING_DIRECT je grünem Sieg (gedeckelt)", () => {
     const s = resolveTrick(scen(C.PLANT_VALUE_CAP, 0, { skills: ["SK_PLANT_L04"], deck: greenDeck(12), growth: growthMap(12, 5) }), noCrit);

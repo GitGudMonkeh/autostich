@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { STAT_IDS } from "../src/game/stats.js";
+// (#267: STAT_IDS/stats.js entfernt — die Stat-Phase ist weg; Runde 1 ist ein Skill.)
 import { computeFormations, formationPotential } from "../src/game/formations.js";
 import { FORMATION_START_MIN, FORMATION_START_MAX } from "../src/game/constants.js";
 
@@ -49,20 +49,22 @@ describe("Reducer", () => {
     expect(s.deck).toHaveLength(deckLen);                     // KEINE Karte entfernt
   });
 
-  it("RESET beginnt einen frischen Lauf mit Start-Pick = Stat (V2 §22.2)", () => {
+  it("RESET beginnt einen frischen Lauf mit Start-Pick = Skill (#267, Runde 1 Blind-Commit)", () => {
     const dirty = { ...initialState(makeRng(1)), score: 999, perks: ["L2", "L4"] };
     const fresh = reducer(dirty, { type: "RESET", rng });
     expect(fresh.score).toBe(0);
     expect(fresh.perks).toEqual([]);
-    expect(fresh.phase).toBe("levelup"); // Start-Entscheidung (Durchlauf 0) = Stat
-    expect(fresh.statOffer).toEqual(STAT_IDS);
+    expect(fresh.phase).toBe("levelup"); // Start-Entscheidung (Runde 1) = Skill
+    expect(Array.isArray(fresh.skillOffer)).toBe(true);
+    expect(fresh.skillOffer.length).toBeGreaterThan(0);
     expect(fresh.offer).toBeNull();
   });
 
-  it("START_RUN startet aus dem Menü einen frischen Lauf mit Start-Pick = Stat", () => {
+  it("START_RUN startet aus dem Menü einen frischen Lauf mit Start-Pick = Skill", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng });
     expect(s.phase).toBe("levelup");
-    expect(s.statOffer).toEqual(STAT_IDS);
+    expect(Array.isArray(s.skillOffer)).toBe(true);
+    expect(s.skillOffer.length).toBeGreaterThan(0);
     expect(s.offer).toBeNull();
     expect(s.trickNo).toBe(0);
     expect(s.perks).toEqual([]);
@@ -99,34 +101,8 @@ describe("END_RUN — Beenden → Endscreen", () => {
   });
 });
 
-describe("Stat-Auswahl — PICK_STAT (V2 §22.3)", () => {
-  const statState = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", statOffer: STAT_IDS, ...over });
-
-  it("addiert den Step aufs Summenfeld und kehrt in play zurück", () => {
-    const s = reducer(statState(), { type: "PICK_STAT", statId: "critChance", rng });
-    expect(s.phase).toBe("play");
-    expect(s.statOffer).toBeNull();
-    expect(s.statCritChance).toBeCloseTo(0.07); // #94/#161 FB-6: +7 pp je Pick
-  });
-  it("stapelt additiv über mehrere Picks", () => {
-    const s = reducer(statState({ statStreakMult: 0.02 }), { type: "PICK_STAT", statId: "streakMult", rng });
-    expect(s.statStreakMult).toBeCloseTo(0.04); // #94: +2 %/Pick, zweiter Pick → 0,04
-  });
-  it("ignoriert unbekannte Stats und Picks außerhalb der Stat-Auswahl", () => {
-    const s0 = statState();
-    expect(reducer(s0, { type: "PICK_STAT", statId: "nope", rng })).toBe(s0);
-    const play = initialState(makeRng(1)); // phase play, kein statOffer
-    expect(reducer(play, { type: "PICK_STAT", statId: "critChance", rng })).toBe(play);
-  });
-  it("#190: hängt den gewählten Stat an statPicks an (Mono-Stat-Challenge-Tracking)", () => {
-    expect(initialState(makeRng(1)).statPicks).toEqual([]); // frischer Lauf startet leer
-    const s1 = reducer(statState(), { type: "PICK_STAT", statId: "critChance", rng });
-    expect(s1.statPicks).toEqual(["critChance"]);
-    const s2 = reducer({ ...s1, phase: "levelup", statOffer: STAT_IDS }, { type: "PICK_STAT", statId: "critChance", rng });
-    const s3 = reducer({ ...s2, phase: "levelup", statOffer: STAT_IDS }, { type: "PICK_STAT", statId: "formMult", rng });
-    expect(s3.statPicks).toEqual(["critChance", "critChance", "formMult"]); // Reihenfolge bleibt erhalten
-  });
-});
+// (#267: „Stat-Auswahl — PICK_STAT"-Suite entfernt — es gibt keine Stat-Phase mehr. Crit-Perks (Präzision-Familien)
+//  laufen über den normalen PICK_FAMILY-Fluss und sind in families(-engine).test.js abgedeckt.)
 
 describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
   const LR = "SK_LIGHTNING_01";
@@ -161,6 +137,16 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     const s = reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_04", rng });
     expect(s.skills).toEqual(["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", NEW, "SK_LIGHTNING_05", "SK_LIGHTNING_06"]);
     expect(s.phase).toBe("play");
+  });
+
+  it("#288 Trimmen: Ersetzen eines Wachstums-Skills erhöht trimCount; ein anderer Skill nicht", () => {
+    const six = ["SK_PLANT_09", "SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_10", "SK_PLANT_12", "SK_PLANT_13"]; // SK_PLANT_05 = Aussaat (trimmbar)
+    const NEW = "SK_PLANT_14"; // Überwucherung — nicht gehalten, kein Enabler
+    const base = skillState({ skills: six, skillOffer: [NEW], activeArchetypes: ["plant"] });
+    // Wachstums-Skill (Aussaat) ersetzt → Trimmung
+    expect(reducer(base, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_PLANT_05", rng }).trimCount).toBe(1);
+    // Nicht-Wachstums-Skill (Wurzeltiefe) ersetzt → keine Trimmung
+    expect(reducer(base, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_PLANT_02", rng }).trimCount || 0).toBe(0);
   });
 
   it("#234 PICK_SKILL erlaubt einen ZWEITEN Hitze-Konsumenten (Feuer nicht mehr exklusiv)", () => {
@@ -207,25 +193,18 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     expect(s.lightning.active).toBe(true);
   });
 
-  it("#140 letzter Eis-Skill ersetzt → eigene Karten auftauen, Gegner-Frostbiss + Frost-Marker weg", () => {
+  it("#140 letzter Eis-Skill ersetzt → Eis deaktiviert (Gletscher-State + Blitzfänger-Temp geleert)", () => {
     const base = initialState(makeRng(1));
-    const deck = base.deck.map((c, i) => (i < 3 ? { ...c, frozen: true } : c));
     const st = { ...base, phase: "levelup",
       skills: ["SK_ICE_01", "SK_LIGHTNING_01", "SK_LIGHTNING_03", "SK_LIGHTNING_04"],
       skillOffer: ["SK_LIGHTNING_05"], activeArchetypes: ["ice", "lightning"],
       lightning: { active: true, charge: 2, maxCharge: 10 },
-      deck, iceTemp: { x: 3 }, frostSwapsUsed: ["a"], frostbitePending: { oX: 3 }, frostbiteActive: { oY: 3 },
-      layers: { c1: 4 }, frostFormPrev: ["c1"] }; // Eis-Rework (v0): Vergletscherung als Map, Schichten + Beständigkeits-Historie
+      iceTemp: { x: 3 }, glacierRoles: ["G_ANFRIEREN"] };
     const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_05", replaceId: "SK_ICE_01", rng });
     expect(s.skills).not.toContain("SK_ICE_01");
-    expect(s.deck.some((c) => c.frozen)).toBe(false);
-    expect(s.frostbitePending).toEqual({});
-    expect(s.frostbiteActive).toEqual({});
-    expect(s.iceTemp).toEqual({});
-    expect(s.frostSwapsUsed).toEqual([]);
-    expect(s.layers).toEqual({});          // Schichten weg
-    expect(s.frostFormPrev).toEqual([]);   // Beständigkeits-Historie weg
     expect(s.activeArchetypes).toEqual(["lightning"]);
+    expect(s.iceTemp).toEqual({});         // Blitzfänger-Temp beim Eis-Deaktivieren geleert
+    expect(s.glacierRoles).toEqual([]);    // Gletscher-Rollen weg
   });
 
   it("#140 letzter Blitz-Skill ersetzt → Ladungsleiste zurückgesetzt/inaktiv", () => {
@@ -264,6 +243,18 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     const play = initialState(makeRng(1)); // phase play, kein skillOffer
     expect(reducer(play, { type: "PICK_SKILL", skillId: LR, rng })).toBe(play);
     expect(reducer(play, { type: "DECLINE_SKILL", rng })).toBe(play);
+  });
+});
+
+// Eis-Neudesign: Frostwahl/frost-select-Fluss entfernt — der neue Eis-Archetyp friert keine Karten mehr ein
+// (Mechanik über Masse/Gletscher). PICK_SKILL eines Eis-Skills seedet stattdessen state.glacierRoles (siehe engine/glacier).
+describe("Eis-Neudesign — PICK_SKILL seedet glacierRoles", () => {
+  it("ein Eis-Skill aktiviert den Eis-Archetyp und trägt seine Rolle in glacierRoles", () => {
+    const s = reducer({ ...initialState(makeRng(1)), phase: "levelup", skillOffer: ["SK_ICE_01"] }, { type: "PICK_SKILL", skillId: "SK_ICE_01", rng });
+    expect(s.phase).toBe("glacier-target"); // Eis-Skill-Pick öffnet die Gletscher-Wahl
+    expect(s.activeArchetypes).toContain("ice");
+    expect(s.glacierRoles).toContain("G_ANFRIEREN"); // SK_ICE_01 = Anfrieren
+    expect(s.deck.some((c) => c.frozen)).toBe(false); // KEIN Einfrieren mehr
   });
 });
 
@@ -309,7 +300,7 @@ describe("Formationsphase — SWAP/UNDO/RESET/CONFIRM (V2 §22.8)", () => {
     const s = reducer(formState(), { type: "SWAP_CARDS", i: 1, j: 2 });
     expect(s.playerOrder).toEqual([0, 2, 1, 3, 4]);      // Werte jetzt 5,5,8,2,3
     expect(s.formationEnergy).toBe(3);
-    expect(s.formationSwaps).toEqual([{ i: 1, j: 2, free: false, frozenId: null, idA: "b", idB: "c" }]); // #93 F3: Frost-Info · #201.4: getauschte Karten-IDs
+    expect(s.formationSwaps).toEqual([{ i: 1, j: 2, idA: "b", idB: "c" }]); // #201.4: getauschte Karten-IDs
     expect(s.formations[1].mult).toBeCloseTo(1.25);      // 2. Karte des neuen Wiederholungspaars
   });
   it("SWAP_CARDS ohne Energie oder mit i==j ist wirkungslos", () => {
@@ -370,18 +361,7 @@ describe("RESOLVE_TRICK — Reducer-Dispatch (#158)", () => {
   });
 });
 
-describe("PICK_STAT — Formations-/Crit-Mult-Felder (#158)", () => {
-  const statState = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", statOffer: STAT_IDS, ...over });
-  it("formMult addiert den Step aufs statFormMult-Feld", () => {
-    const s = reducer(statState(), { type: "PICK_STAT", statId: "formMult", rng });
-    expect(s.statFormMult).toBeCloseTo(0.05); // STAT_FORM_MULT_STEP
-    expect(s.phase).toBe("play");
-  });
-  it("critMult addiert (stapelnd) aufs statCritMult-Feld", () => {
-    const s = reducer(statState({ statCritMult: 0.25 }), { type: "PICK_STAT", statId: "critMult", rng });
-    expect(s.statCritMult).toBeCloseTo(0.5); // 0,25 + STAT_CRIT_MULT_STEP (0,25)
-  });
-});
+// (#267: „PICK_STAT — Formations-/Crit-Mult-Felder"-Suite entfernt — die Stat-Phase ist weg.)
 
 // #261: ARCHITECT_RECOLOR — Buff-Farbe eines colorLocked-Gebäudes in der Arrange-Phase anpassen (wie MOVE, kein actedMain).
 describe("ARCHITECT_RECOLOR (#261)", () => {
@@ -405,6 +385,36 @@ describe("ARCHITECT_RECOLOR (#261)", () => {
   it("außerhalb der architect-Phase → No-op", () => {
     const st = { ...archState({ id: 1, familyId: "A_BUNTGLAS", tier: 1, footprint: [0], colorChoice: "R" }), phase: "play" };
     expect(reducer(st, { type: "ARCHITECT_RECOLOR", buildingId: 1, colorChoice: "B" })).toBe(st);
+  });
+});
+
+// Drop über ein Gebäude → getroffene weichen aus/Swap: atomarer Mehrfach-Move, prüft die END-Lage.
+describe("ARCHITECT_MOVE_MULTI (Drop-Swap)", () => {
+  const twoState = () => ({
+    phase: "architect", architectEnabled: true,
+    architect: { buildings: [
+      { id: 1, familyId: "A_MEILENSTEIN", tier: 1, footprint: [0, 1, 5, 6], colorChoice: null },
+      { id: 2, familyId: "A_MEILENSTEIN", tier: 1, footprint: [2, 3, 7, 8], colorChoice: null },
+    ], nextId: 3, offers: [], winCounters: {}, maxCover: 40 },
+  });
+  it("atomarer Swap zweier Gebäude (gültige End-Lage) → beide getauscht", () => {
+    const s = reducer(twoState(), { type: "ARCHITECT_MOVE_MULTI", moves: [
+      { buildingId: 1, footprint: [2, 3, 7, 8] },
+      { buildingId: 2, footprint: [0, 1, 5, 6] },
+    ] });
+    expect(s.architect.buildings.find((b) => b.id === 1).footprint).toEqual([2, 3, 7, 8]);
+    expect(s.architect.buildings.find((b) => b.id === 2).footprint).toEqual([0, 1, 5, 6]);
+  });
+  it("überlappende End-Lage → No-op (State unverändert)", () => {
+    const st = twoState();
+    expect(reducer(st, { type: "ARCHITECT_MOVE_MULTI", moves: [
+      { buildingId: 1, footprint: [2, 3, 7, 8] },
+      { buildingId: 2, footprint: [2, 3, 7, 8] },
+    ] })).toBe(st);
+  });
+  it("außerhalb der architect-Phase → No-op", () => {
+    const st = { ...twoState(), phase: "play" };
+    expect(reducer(st, { type: "ARCHITECT_MOVE_MULTI", moves: [{ buildingId: 1, footprint: [2, 3, 7, 8] }] })).toBe(st);
   });
 });
 
