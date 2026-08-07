@@ -304,6 +304,13 @@ button { font-family: inherit; }
   font-family: "VT323", ui-monospace, monospace;
   letter-spacing: 0.5px;
 }
+/* Gameplay-StatusBar: die Vitalwerte behalten AUCH unter dem CRT-Skin die kräftige System-Mono (statt VT323) —
+   gleiche Schriftgröße & gleiches Panel-Layout in beiden Skins, wie vom Spieler gewünscht (VT323 rendert schmaler/kleiner). */
+[data-skin="crt"] .as-statusbar .font-pixel-dense {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0;
+  text-shadow: none;
+}
 
 /* Gradient-Titel (weiss->violett) + Glow fuer die AUTOSTICH-Wortmarke.
    Der `*`-Teil zieht auch farbige Inner-Spans (z. B. STICH) in den transparenten

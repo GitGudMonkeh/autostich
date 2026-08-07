@@ -19,7 +19,7 @@ function Pill({ active, onClick, tone = "#8a7de0", title, children }) {
 
 function Cell({ label, children, align = "left", big = false, className = "" }) {
   return (
-    <div className={`flex flex-col justify-center gap-1 px-3.5 py-2 min-w-0 ${className}`} style={{ textAlign: align }}>
+    <div className={`flex flex-col justify-center gap-1 px-1.5 py-2 min-w-0 ${className}`} style={{ textAlign: align }}>
       <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
       <span className="font-pixel-dense leading-none whitespace-nowrap overflow-hidden text-ellipsis"
         style={{ fontVariantNumeric: "tabular-nums", fontSize: big ? 25 : 18 }}>{children}</span>
@@ -36,7 +36,7 @@ export function StatusBar({
   const cyc = Math.min(cycle + 1, totalCycles);
   return (
     <div className="sticky top-0 z-20 -mx-1">
-      <div className="flex items-stretch flex-wrap gap-y-1 rounded-xl overflow-hidden as-panel"
+      <div className="as-statusbar flex items-stretch flex-wrap gap-y-1 rounded-xl overflow-hidden as-panel"
         style={{ background: "#1a1a22f2", border: "1px solid #33333e", backdropFilter: "blur(6px)", boxShadow: "0 8px 20px -8px #000" }}>
         {/* Ablauf-Steuerung: Pause · Tempo · Karten */}
         <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderRight: "1px solid #26262e" }}>
@@ -92,15 +92,15 @@ export function StatusBar({
           </Cell>
           {/* Serie bekommt mehr Grundbreite (flex 1.6) — die Siegesserie kann in den Tausenderbereich gehen; die festen
               Flex-Verhältnisse halten Fortschritt/Zeit dabei an ihrer Position (kein Verrutschen). */}
-          <Cell label="Serie" className="flex-[1.6] border-l border-[#26262e]">
+          <Cell label="Serie" className="flex-[1.3] border-l border-[#26262e]">
             <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
-            <span className="text-[10px] opacity-45 ml-1">best {bestStreak}</span>
+            <span className="text-[9px] opacity-45 ml-1">best {bestStreak}</span>
           </Cell>
-          <Cell label="Fortschritt" className="flex-1 border-l border-[#26262e]">
+          <Cell label="Fortschritt" className="flex-[1.9] border-l border-[#26262e]">
             <span>{cyc}<span className="text-[11px] opacity-45">/{totalCycles}</span></span>
-            <span className="text-[10px] opacity-45 ml-1.5">K{pos}/{cycleLen}</span>
+            <span className="text-[9px] opacity-45 ml-1.5">K{pos}/{cycleLen}</span>
           </Cell>
-          <Cell label="Zeit" className="flex-1 border-l border-[#26262e]"><span>{timeStr}{paused ? " ⏸" : ""}</span></Cell>
+          <Cell label="Zeit" className="flex-[1.1] border-l border-[#26262e]"><span>{timeStr}{paused ? " ⏸" : ""}</span></Cell>
         </div>
       </div>
     </div>
