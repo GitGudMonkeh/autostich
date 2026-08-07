@@ -16,12 +16,12 @@ export const THRESHOLDS = [4, 8, 12];          // Schwellen-Stufen; Stufe = #Sch
 export const TIER_MULT = [0, 1, 1.5, 2.2];     // überlineare Wucht je Stufe (Stufe 0 bricht nicht)
 // Globaler Burst-Skalierer: die Gletscher SIND der Hauptscore (nicht das Deck) — einzelne, massive Hits. Frequenz bleibt
 // (kein schnelleres Bersten), nur die Wucht je Bruch. Am Sim kalibriert, damit der Gletscher-Ertrag das Deck dominiert.
-export const BURST_SCALE = 440;
+const BURST_SCALE = 440;
 // Weicher Deckel je EINZELBRUCH (Sim-Balance): der Burst-Stack ist voll multiplikativ (Masse×Stufe×Kaskade×Kollision×
 // Sturz×Geo) → große Cluster/Fläche/Eiszeit detonieren unbegrenzt. Über BURST_SOFTCAP zählt nur noch BURST_SOFTSLOPE
 // des Überschusses → komprimiert das Ceiling, lässt Median-Bursts (unter dem Deckel) unberührt. (Platzhalter, Sim-tunebar.)
-export const BURST_SOFTCAP = 40000;
-export const BURST_SOFTSLOPE = 0.06;
+const BURST_SOFTCAP = 40000;
+const BURST_SOFTSLOPE = 0.06;
 // Legendär-Verstärker (Sim-tunebar): Große Lawine feuert erst am LAUFENDE (nichts wird vorzeitig verschwendet), bricht
 // alles auf voller Stufe, ist vom Soft-Cap ausgenommen und ×GROSSE_LAWINE_MULT → der eine echte Riesen-Score-Moment.
 export const GROSSE_LAWINE_MULT = 6;
@@ -58,18 +58,6 @@ export function neighbors4(p) {
   if (c < 4) out.push(posOf(r, c + 1));                 // rechts
   return out;
 }
-
-/* ---- Masse → Stufe / Reset / Überlauf ------------------------------------------------------------- */
-// Stufe = Anzahl erreichter Schwellen (Masse 3→0, 4→1, 8→2, 12→3).
-export const tierOf = (mass) => {
-  let t = 0;
-  for (const th of THRESHOLDS) if (mass >= th) t++;
-  return t;
-};
-// Teil-Reset nach dem Bruch: eine Stufe runter (12→8, 8→4, 4→0). docs §2.3.
-export const dropAfterBreak = (tier) => (tier >= 2 ? THRESHOLDS[tier - 2] : 0);
-// Überlauf über die höchste Stufe → wird jede Runde als Score ausgeschüttet, nicht gehortet. docs §2.3.
-export const overflowOf = (mass) => Math.max(0, mass - TOP);
 
 /* ---- Snapshot: der ganze Bruch auf dem statischen Brett (docs §2.4, Phase A) ----------------------
    @param mass   length-40: Masse je Brettfeld (Firn-Boden)

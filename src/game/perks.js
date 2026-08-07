@@ -215,9 +215,9 @@ export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, 
   return chosen;
 }
 
-// Perk-Beitrag zur Roh-Crit-Chance (Σ critChance-Perks). V2: kein Perk trägt Crit-Chance → aktuell
-// stets 0; Crit-Chance kommt aus Stat + Blitz (in der Engine addiert). Bleibt als Aggregations-/
-// Anzeige-Quelle (#25): Engine (rawCrit) und PerkSelect/StatusRail summieren darauf. UNGEKLEMMT (>1 möglich).
+// Perk-Beitrag zur Roh-Crit-Chance (Σ critChance-Perks). Aktuell trägt L6 „Raserei" Crit-Chance
+// (je Serienpunkt); der Rest der Crit-Chance kommt aus Stat + Blitz (in der Engine addiert). Gemeinsame
+// Aggregations-/Anzeige-Quelle (#25): Engine (rawCrit) und PerkSelect/StatusRail summieren darauf. UNGEKLEMMT (>1 möglich).
 export function critChanceRawFor(perks, ctx) {
   let raw = 0;
   for (const id of perks) { const f = PERK_DEFS[id].critChance; if (f) raw += f(ctx); }

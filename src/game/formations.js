@@ -216,7 +216,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // Joker: effektive Farbe = die des direkten Vorgängers (verkettet).
   const effSuit = cards.map((c) => c.suit);
   for (let k = 1; k < n; k++) if (jokerIds.has(cards[k].id)) effSuit[k] = effSuit[k - 1];
-  // Farballianz (#179, Perk-Familie E_COLOR_ALLIANCE): verlinkte Farbgruppen (roles + pairs-Flag, allianceGroups).
+  // Farballianz (#179, Perk-Familie E_COLOR_ALLIANCE): verlinkte Farbgruppen (roles, allianceGroups).
   // Jede Gruppe wird für Farbblöcke auf ihre erste Farbe gemappt → zählt als eine Farbe.
   const linkedGroups = allianceGroups(familyTiers, roles);
   for (const g of linkedGroups) { const ref = g[0]; for (const su of g) if (su !== ref) for (let k = 0; k < n; k++) if (effSuit[k] === su) effSuit[k] = ref; }

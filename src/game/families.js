@@ -1020,14 +1020,13 @@ export function formationEnergyBonus(familyTiers = {}, cycle = 0) {
   return def.energyBonus || 0;
 }
 
-// Farballianz (#179, E_COLOR_ALLIANCE): die verlinkten Farbgruppen aus roles + `pairs`-Flag der gehaltenen Stufe.
-// Eine gemeinsame Quelle für computeFormations (Farbblock-Verschmelzung) UND die UI (diagonaler Zweifarben-Split).
-// [] = keine Allianz; [[a,b]] = eine Gruppe (2/3 Farben); [[a,b],[c,d]] = zwei Paare (Stufe IV).
+// Farballianz (#179, E_COLOR_ALLIANCE): die verlinkten Farbgruppen aus roles.
+// Eine gemeinsame Quelle für computeFormations (Farbblock-Verschmelzung) UND die UI.
+// [] = keine Allianz; [[a,b,…]] = EINE Gruppe aus allen verlinkten Farben (#292: alle als eine Farbe, kein Paar-Split mehr).
 export function allianceGroups(familyTiers = {}, roles = {}) {
   const suits = (roles || {}).E_COLOR_ALLIANCE || [];
   if (suits.length < 2) return [];
-  const pairs = !!familyTierParam(familyTiers, "E_COLOR_ALLIANCE", "pairs");
-  return (pairs && suits.length === 4) ? [[suits[0], suits[1]], [suits[2], suits[3]]] : [suits.slice()];
+  return [suits.slice()];
 }
 
 // Belohnt eine gehaltene Familie Crits? (steuert die UI-Sichtbarkeit der Crit-Anzeigen, analog perks.hasCritPerk — #166).
@@ -1039,7 +1038,7 @@ export function hasCritFamily(familyTiers) {
 // Familien, deren Wirkung von Position/Reihenfolge/Nachbarschaft/Formation abhängt — für die Aufstellungshilfe (#166,
 // analog perks.LAYOUT_EXTRA). Kuratiert: die positions-/nachbarschafts-/segment-/formationsbezogenen C-/B-/D-Familien;
 // ALLE E-Formationswerkzeuge kommen über cat==="E" dazu.
-export const LAYOUT_FAMILY_IDS = new Set([
+const LAYOUT_FAMILY_IDS = new Set([
   "C_VANGUARD", "C_GUARD", "C_RELAY", "C_LEADER", "C_FINISHER", "C_SURVIVOR", "C_JOKER", "C_BRIDGE", "C_ECKPFEILER", "C_ECKSTEIN", // Rollen an Position/Nachbar/Segment/Formation/Gebäude
   "B_OPENING", "B_FINALE", "B_TENTH_STRIKE", "B_TIGHT", "B_PERFECT", "B_SUPERIOR",                    // positions-/formationsbezogene Stich-Familien
   "D_FORMATION_BONUS", "D_CRIT_HARVEST", "D_FULL_HOUSE",                                              // formations-/segmentbezogene Score-Familien

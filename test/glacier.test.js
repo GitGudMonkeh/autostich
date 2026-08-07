@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  neighbors4, tierOf, dropAfterBreak, overflowOf, precomputeGlacier, ewigerFrostTick,
-  THRESHOLDS, TOP, EWIGER_FROST, RESET_TO,
+  neighbors4, precomputeGlacier, ewigerFrostTick,
+  TOP, EWIGER_FROST, RESET_TO,
 } from "../src/game/glacier.js";
 import { N_POS, posOf } from "../src/game/architect.js";
 
@@ -24,22 +24,6 @@ describe("Geometrie — neighbors4 (4 orthogonal auf 8×5)", () => {
   it("keine Diagonalen", () => {
     expect(neighbors4(posOf(3, 2))).not.toContain(posOf(2, 1));
     expect(neighbors4(posOf(3, 2))).not.toContain(posOf(4, 3));
-  });
-});
-
-describe("Stufen / Reset / Überlauf", () => {
-  it("tierOf: 3→0, 4→1, 8→2, 12→3", () => {
-    expect([3, 4, 7, 8, 11, 12, 20].map(tierOf)).toEqual([0, 1, 1, 2, 2, 3, 3]);
-  });
-  it("dropAfterBreak: 12→8, 8→4, 4→0 (eine Stufe runter)", () => {
-    expect(dropAfterBreak(3)).toBe(THRESHOLDS[1]); // 8
-    expect(dropAfterBreak(2)).toBe(THRESHOLDS[0]); // 4
-    expect(dropAfterBreak(1)).toBe(0);
-  });
-  it("overflowOf: nur über der höchsten Stufe", () => {
-    expect(overflowOf(TOP)).toBe(0);
-    expect(overflowOf(TOP + 5)).toBe(5);
-    expect(overflowOf(3)).toBe(0);
   });
 });
 

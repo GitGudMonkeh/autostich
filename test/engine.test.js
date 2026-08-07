@@ -607,7 +607,7 @@ describe("Ionisierung — Engine (Stufe B)", () => {
 describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)", () => {
   const LR = "SK_LIGHTNING_01", I = "SK_LIGHTNING_02", R = "SK_LIGHTNING_05", G = "SK_LIGHTNING_06", S = "SK_LIGHTNING_07",
         ST = "SK_LIGHTNING_08", DA = "SK_LIGHTNING_16", D10 = "SK_LIGHTNING_10", SS = "SK_LIGHTNING_17", TG = "SK_LIGHTNING_L01";
-  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: 0, stormScoreWinsRemaining: 0, dauerstromCritBonus: 0, ...over });
+  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: 0, dauerstromCritBonus: 0, ...over });
 
   it("Reststrom: Verbrauch lässt Ladung auf den Boden fallen (statt 0)", () => {
     // Kein Blitzableiter → isolierter Reststrom-Boden; Blitzableiter würde +1 obendrauf geben (eigener Test).
@@ -621,7 +621,6 @@ describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)"
     // Über dem alten Cap (0,20) rampt es einfach weiter — kein Umschalten auf Score.
     const high = resolveTrick(scenario(12, 0, { skills: [LR, I, G], lightning: lit({ charge: 9, stormCritBonus: 0.50 }) }), () => 0);
     expect(high.lightning.stormCritBonus).toBeCloseTo(0.50 + STORM_CRIT_STEP);
-    expect(high.lightning.stormScoreWinsRemaining || 0).toBe(0);
   });
 
   it("Entladung (v0.5): je Verbrauch +Crit-Mult-Momentum, dauerhaft (weicher Cap)", () => {

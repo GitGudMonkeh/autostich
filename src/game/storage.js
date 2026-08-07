@@ -102,7 +102,6 @@ export function migrateProfile(p) {
     // Felder füllt loadProfile über DEFAULT_PROFILE. Hier ist nur die Versions-Markierung nötig, keine Transformation.
     v = 1;
   }
-  // if (v < 2) { /* v1 → v2: konkrete Transformation von out.* */ v = 2; }
   out.schemaVersion = v;
   return out;
 }

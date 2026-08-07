@@ -228,19 +228,14 @@ export const UEBERSPANNUNG_CHARGE = 3;  // Überspannung: Zusatzladung bei Crit 
 // Reaktoren (Reststrom-Boden + Gewitterfront)
 export const REST_CHARGE_FLOOR = envNum("SIM_REST_CHARGE_FLOOR", 4);    // Reststrom: Ladungsboden nach jedem Verbrauch [v0.5: 3→4, Rapid-Fire-Hebel]
 export const STORM_CRIT_STEP   = envNum("SIM_STORM_CRIT_STEP", 0.01); // Gewitterfront: +Crit-Chance-Momentum je Verbrauch — UNCAPPED (Überschlag = Ventil) [v0.5 Rework-Tune: 0,02→0,01 · Sim-tunebar]
-export const STORM_CRIT_CAP    = 0.20; // (vestigial v0.5: Gewitterfront ist entkappt; Konstante bleibt für Alt-Tests/Rollback)
-export const STORM_SCORE       = envNum("SIM_STORM_SCORE", 100);  // Gewitterfront nach Cap: +Score je Sieg … [SIM-Tuning]
-export const STORM_SCORE_WINS  = 3;    // …          … für so viele folgende Siege
 /* ============================================================
    BLITZ-REWORK v0 — „Der Sturm, der sich selbst nährt." 4 Währungen (⚡Crit · 🔋Ladung · 🧲Ionisierung ·
    📈Serie) + 🔗Kaskade. Blitz BESITZT die Crit-Erzeugung. Werte v0, cross-archetype Sim-Pass. [v0 · tunebar]
    ============================================================ */
-export const LIGHTNING_MAX_CHARGE_THUNDER = 15;  // (vestigial v0.5: Donnergott hebt das Dach NICHT mehr — Turbo statt Dach)
 export const THUNDER_CRIT_MULT = envNum("SIM_THUNDER_CRIT_MULT", 0.4);  // Donnergott (L, v0.5 Turbo): dauerhafter +Crit-Multiplikator [1,4→0,4, dafür Frequenz-Turbo]
 export const DONNERGOTT_THRESHOLD_FRAC = envNum("SIM_DONNERGOTT_THRESHOLD_FRAC", 0.7); // Donnergott (L, v0.5 Turbo): Konsumenten lösen schon bei diesem Anteil der Ladung aus (öfter entladen)
 export const STATIC_CHARGE     = envNum("SIM_STATIC_CHARGE", 1); // Statische Aufladung: Ladung je Sieg OHNE Crit // v0
 // UEBERSPANNUNG_CHARGE (oben, =3) = Kaskade: Crit auf/neben ionisierter Karte → Zusatzladung (merge 04+09).
-export const ENTLADUNG_CRIT_MULT      = 1.0;  // (vestigial v0.5: alter „nächster Crit +1×"; Konstante bleibt für Rollback)
 export const ENTLADUNG_MULT_STEP      = envNum("SIM_ENTLADUNG_MULT_STEP", 0.10); // Entladung (v0.5): +Crit-Multiplikator-Momentum je vollem Verbrauch (dauerhaft) // Sim-tunebar
 export const ENTLADUNG_MULT_CAP       = envNum("SIM_ENTLADUNG_MULT_CAP", 1.0);   // Entladung (v0.5): weicher Deckel des Multi-Momentums (kein Ventil für Multi) [Rework-Tune: 2,0→1,0] // Sim-tunebar
 // Kurzschluss (Rework): eine VOLLE (5) Siegkarte gibt bei JEDEM Sieg einen Burst — OHNE die Stapel zu opfern (Payoff fürs
@@ -259,10 +254,7 @@ export const SERIESCRIT_CAP           = 0.30; // Ladungsserie: … bis +30 pp   
 // On-Consume-Passives (jeder volle Ladungsverbrauch): Statische Aufladung (Flat-Score), Blitzableiter (Ladung zurück), Dauerstrom (Crit-Rampe).
 export const CONSUME_SCORE            = 40;   // Statische Aufladung: +Score bei jedem vollen Ladungsverbrauch      // v0 — tunebar
 export const BLITZABLEITER_CONSUME_CHARGE = 1;// Blitzableiter: +Ladung zurück bei jedem vollen Verbrauch           // v0 — tunebar
-export const DAUERSTROM_CONSUME_CRIT  = 0.02; // Dauerstrom: +2 pp Crit-Chance je vollem Verbrauch (dauerhaft)      // v0 — tunebar
-export const DAUERSTROM_CONSUME_CRIT_CAP = 0.20; // Dauerstrom: … gedeckelt bei +20 pp                              // v0 — tunebar
-export const WETTERLEUCHTEN_THRESHOLD = 5;    // (vestigial v0.5: Wetterleuchten → Serienschutz)
-export const WETTERLEUCHTEN_COUNT     = 2;    // (vestigial v0.5)
+export const DAUERSTROM_CONSUME_CRIT  = 0.02; // Dauerstrom: +2 pp Crit-Chance je vollem Verbrauch (dauerhaft, ohne Deckel) // v0 — tunebar
 export const SERIENSCHUTZ_COST_FRAC   = envNum("SIM_SERIENSCHUTZ_COST_FRAC", 0.5); // Serienschutz (v0.5, ex-Wetterleuchten): Niederlage mit ≥ diesem Anteil der Max-Ladung → Serie hält, Anteil verbraucht // Sim-tunebar
 export const DOPPELENTLADUNG_FACTOR   = envNum("SIM_DOPPELENTLADUNG_FACTOR", 3);    // Doppelentladung (L): Konsumenten feuern FACTOR-fach (Ionisierungs-Anzahl x FACTOR) [Legendaer-Buff v1: 2->3]
 export const DURCHSCHLAG_CRIT_MULT    = envNum("SIM_DURCHSCHLAG_CRIT_MULT", 0.18); // Durchschlag (L): volle Ionis. (5) + Crit → dauerhaft +Crit-Mult [Legendär-Angleich: 0,25→0,18 — Spitze kappen, Sim unterschätzt Crit]

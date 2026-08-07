@@ -317,7 +317,7 @@ export function skillSum(skills, name, ctx) {
 // storm* = Gewitterfront (Crit-Chance-Momentum, v0.5 uncapped); entladungMult = Entladung (Crit-Mult-Momentum, v0.5);
 // stauBonus = Spannungsstau-Rampe (Crit-Chance); durchschlagMult = Durchschlag-Dauer-Crit-Mult; dauerstromCritBonus = Dauerstrom-Verbrauchsrampe.
 export function initLightning() {
-  return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, stormCritBonus: 0, stormScoreWinsRemaining: 0,
+  return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, stormCritBonus: 0,
     entladungMult: 0, stauBonus: 0, durchschlagMult: 0, dauerstromCritBonus: 0,
     consumeCount: 0, serienschutzCount: 0 }; // v0.5-UI: Entladungen/Runde + abgefangene Serienbrüche (Anzeige)
 }
@@ -426,7 +426,7 @@ export function forgeCostFor(skills, heatValue = 0) {
 
 
 /* ---- Pflanze-Fraktion (v0) — Wachstum (nur steigend) → Reife (grün) → Farbblock → Score. Reine Helfer. ---- */
-export const plantFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
+const plantFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
 export const plantSkillCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "plant").length;
 // Reife: grün ist ein KARTEN-Flag (card.green) — gebacken bei Erreichen der Wachstums-Schwelle
 // ODER per Recolor (Alter Anker/Ranken). So liest die Formations-Erkennung Grün direkt von der Karte (Farbblock).
@@ -492,10 +492,10 @@ export function addCharge(lightning, gained) {
 
 // Ein Skill ist ein „Konsument", wenn er eine verbrauchbare Ressource auslöst: Feuer-Hitze-Konsument
 // (heatConsumer: Flächenbrand/Schmelzpunkt) oder Blitz-Ladungs-Konsument (onFullCharge: Ionisierung).
-export const isConsumerSkill = (id) => { const d = SKILL_DEFS[id]; return !!(d && (d.heatConsumer || d.onFullCharge)); };
+const isConsumerSkill = (id) => { const d = SKILL_DEFS[id]; return !!(d && (d.heatConsumer || d.onFullCharge)); };
 // Hält der Build für diesen Archetyp bereits einen Konsumenten? Eis kennt keine → gilt als „hat einen" (nie erzwingen).
 // (heatConsumerCount/chargeConsumerCount stehen weiter unten im Modul — zur Laufzeit längst initialisiert.)
-export function ownsConsumerFor(arch, skills) {
+function ownsConsumerFor(arch, skills) {
   if (arch === "fire") return heatConsumerCount(skills) > 0;
   if (arch === "lightning") return chargeConsumerCount(skills) > 0;
   return true;
@@ -591,7 +591,7 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
 // Je Fraktion werden VERSCHIEDENE Legendäre gezogen (je Fraktion 4 im Pool); bereits gehaltene (owned, inkl. eines evtl.
 // schon gewählten Legendärs) sind ausgeschlossen. Reicht der Pool einer Fraktion nicht fürs Soll, füllt sie mit dem, was
 // da ist. Nur Fraktionen MIT verfügbarem Legendär zählen für die Breite. Deterministisch (seed-stabil), rein & testbar.
-export const legendaryPerArch = (archCount) => (archCount <= 1 ? 3 : 2);
+const legendaryPerArch = (archCount) => (archCount <= 1 ? 3 : 2);
 export function buildLegendaryOffer(activeArchetypes = [], owned = [], rng = Math.random, perArch = null) {
   const ownedSet = new Set(owned || []);
   const legsOf = (arch) => SKILL_LIST.filter((s) => s.legendary && s.archetype === arch && !ownedSet.has(s.id)).map((s) => s.id);
