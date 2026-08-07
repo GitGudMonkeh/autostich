@@ -13,6 +13,30 @@ export function IndicatorPanel({ children, className = "" }) {
   );
 }
 
+// Gameplay-Neu-Aufbau Phase 3: einklappbare Fraktions-„Headline". Immer sichtbar: Icon · Name · Zustands-Chip
+// (der „gleich knallt's"-Blick, glüht wenn `stateOn`) · Chevron. Das Detail (children) klappt auf/zu — so wird aus
+// vier großen Bars je eine schlanke Zeile, deren Tiefe on demand kommt. Kollaps-Zustand hält der Aufrufer (Optionen).
+export function FactionShell({ icon, name, color, stateText, stateOn = false, collapsed = false, onToggle, className = "", children }) {
+  return (
+    <div className={`rounded-xl p-3 as-panel ${className}`} style={PANEL_STYLE}>
+      <button type="button" onClick={onToggle} data-sfx="none" aria-expanded={!collapsed}
+        className="w-full flex items-center gap-2 text-left">
+        <span style={{ fontSize: 15, lineHeight: 1 }} aria-hidden="true">{icon}</span>
+        <span className="font-bold text-sm" style={{ color }}>{name}</span>
+        {stateText && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold whitespace-nowrap"
+            style={{ background: stateOn ? `${color}22` : "#20202a", color: stateOn ? color : "#8a8a92",
+                     border: `1px solid ${stateOn ? `${color}66` : "#33333e"}` }}>{stateText}</span>
+        )}
+        <span className="flex-1 h-px" style={{ background: `${color}22`, minWidth: 6 }} />
+        <span className="text-[11px] shrink-0" aria-hidden="true"
+          style={{ color: "#6d7288", display: "inline-block", transition: "transform .15s", transform: collapsed ? "none" : "rotate(90deg)" }}>▸</span>
+      </button>
+      {!collapsed && <div className="grid gap-3 mt-2.5">{children}</div>}
+    </div>
+  );
+}
+
 // #270.2 Ertrag-Meter: der Eigen-Score eines Archetyps, aufgeschlüsselt nach seinen NAMENTLICHEN Fantasien (Kanälen).
 // „Auf einen Blick, wie mein Motor läuft": ein gestapelter Anteils-Balken zeigt, WELCHE Fantasie gerade trägt, die
 // Summe die Größenordnung. NUR aktive Kanäle (value > 0) erscheinen — leere Fantasien bleiben aus (kein überfülltes
