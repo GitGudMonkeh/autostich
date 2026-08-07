@@ -181,8 +181,8 @@ export function reducer(state, action) {
       if (dev) {
         const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
         const devSchedule = Array.from({ length: devRounds }, (_, i) => (Array.isArray(dev.schedule) && dev.schedule[i]) || C.DECISION_SCHEDULE[i] || "perk");
-        const devCover = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.cover) ?? 0)));
-        const devEnergy = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.energy) ?? 0)));
+        const devCover = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.cover) || 0)));
+        const devEnergy = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.energy) || 0)));
         const sBase = { ...s, architect: { ...s.architect, maxCover: devCover } };
         const patch = startDecisionSetup(devSchedule[0], sBase, seed, action.rng, grade, true, devEnergy, true);
         return { ...sBase, architectEnabled: true, masteryGrade: grade, masterRun,

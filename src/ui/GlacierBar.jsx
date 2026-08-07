@@ -61,7 +61,7 @@ function Glacier({ mass }) {
 
 export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glacierYield = 0, glacierRoles = [], glacierPre = null,
                             frozenOppPending = {}, frozenOppActive = {}, glacierBuffPending = {}, glacierBuffActive = {}, grosseLawineFired = false }) {
-  if (!active) return null;
+  // Hinweis: KEIN early-return vor den Hooks (React rules-of-hooks) — der `!active`-Ausstieg steht unten vor dem JSX.
   const glaciers = [];
   for (let i = 0; i < glacierLocked.length; i++) if (glacierLocked[i]) glaciers.push(Math.round(glacierMass[i] || 0));
   glaciers.sort((a, b) => b - a); // die vollsten zuerst — der nächste Bruch steht vorn
@@ -117,6 +117,8 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
       {label} {val != null && <b style={{ fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)", color: dim ? "#93a9ba" : "#e4eef4", fontVariantNumeric: "tabular-nums" }}>{val}</b>}
     </span>
   );
+
+  if (!active) return null; // Ausstieg NACH den Hooks (rules-of-hooks): sonst wechselt die Hook-Zahl je Render.
 
   return (
     <IndicatorPanel className="relative">
