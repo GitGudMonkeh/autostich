@@ -280,12 +280,6 @@ export function Autostich() {
       bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
       maxFormations: state.maxFormations, formationScore: state.formationScore, buildingScore: state.buildingScore,
       crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
-      // Victory/Stats-Redesign: Fraktions-Score-Kanäle mitspeichern → die feine Score-Herkunft (Gletscher/Pflanze/
-      // Blitz/Feuer + Serie) steht ab jetzt auch in der Statistik (Bestes Build). Alt-Läufe ohne die Felder degradieren
-      // sauber aufs grobe Modell (factionShares klemmt fehlende Kanäle auf 0 → „Sonstige").
-      glacierYield: state.glacierYield || 0, streakScore: state.streakScore || 0, lightYield: state.lightYield || 0,
-      plantRoot: state.plantRoot || 0, plantBloom: state.plantBloom || 0, plantHarvest: state.plantHarvest || 0,
-      fireBase: state.fireBase || 0, fireWhite: state.fireWhite || 0,
       // #205: Lauf-Seed lokal mitspeichern (roh + teilbarer Code) → Nachspielen/Kopieren im Challenge-Reiter. Alt-Läufe
       // ohne Seed degradieren sauber (kein Challenge-Knopf). Global (gEntry) folgt mit dem Board-Umzug (Schicht B, #197).
       seed: state.seed ?? null, seedCode: state.seed != null ? formatSeed(state.seed) : null,
