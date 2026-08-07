@@ -92,7 +92,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const [phase, setPhase] = useState("choose");            // choose | place | upgrade | after | move
   const [pending, setPending] = useState(null);            // { familyId, tier, legendary, colorChoice, footprint }
   const [selId, setSelId] = useState(null);                // ausgewähltes Gebäude (⟳/Ziehen)
-  const [colorPick, setColorPick] = useState(SUIT_ORDER[0]);
+  const [colorPick] = useState(SUIT_ORDER[0]);
   const [removeFor, setRemoveFor] = useState(null);        // Bauplan wartet auf Platz → Gebäude entfernen anbieten
   const dragRef = useRef(null);
   const [dragPrev, setDragPrev] = useState(null);          // { footprint, valid, id } — GESNAPPTES Drop-Ziel (nur bei Zellwechsel neu → dragDelta bleibt billig)
@@ -460,7 +460,6 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const showRotate = selId != null && buildings.some((x) => x.id === selId) && (phase === "place" || phase === "move");
   const selBuilding = buildings.find((x) => x.id === selId);
   const selRotatable = !!selBuilding && rotatableForm(familyDef(selBuilding.familyId).form);
-  const pendingFam = pending ? familyDef(pending.familyId) : null;
 
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-start sm:items-center justify-center p-2 sm:p-4"

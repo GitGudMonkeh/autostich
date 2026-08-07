@@ -13,7 +13,7 @@
    - formation: biegt computeFormations für abgedeckte Positionen (Sakralbau).
    Legendäre kommen fertig (keine Stufen). Alle Zahlen sind Platzhalter → per Sim tunen (TUNING-Block unten).
    ============================================================ */
-import { SUIT_ORDER, ARCH_STREAK_CAP } from "./constants.js";
+import { ARCH_STREAK_CAP } from "./constants.js";
 import { tierWeightsForShift } from "./rarity.js";
 import { colorMatches, colorsAllied } from "./color.js"; // #289: Farb-Match zentral (grün + Farballianz)
 
@@ -604,7 +604,7 @@ export function architectScore(pre, actualPos, ctx, counters, alliance = []) {
    biegen. Rein aus den Gebäuden + der aktuellen Reihenfolge/Deck abgeleitet (deck reserviert für spätere,
    wert-abhängige Direktiven).
    ============================================================ */
-export function architectFormSpec(architect, order, deck) {
+export function architectFormSpec(architect, _order, _deck) {
   const jokerW = new Set(), jokerF = new Set(), jokerT = new Set(), jokerX = new Set();
   const transparentFarb = new Set();
   const crossSeg = new Set();

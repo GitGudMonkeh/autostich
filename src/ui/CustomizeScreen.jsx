@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useEscape } from "./useEscape.js";
 import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress, resolveSkinId } from "../game/cosmetics.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";

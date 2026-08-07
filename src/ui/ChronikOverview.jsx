@@ -5,7 +5,6 @@ import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
-import { suitName, SHOP_CATEGORY_LABELS } from "../game/constants.js";
 import { FORMATION_TYPE_LABELS, openSegmentInfo, summarizeFormations } from "../game/formations.js";
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
@@ -23,20 +22,7 @@ const fmtX = (x) => x.toFixed(2).replace(".", ","); // ×-Multiplikator-Format (
    Desktop (#101): zweispaltig — Karten-Grid links, Info-Panel rechts; Mobil gestapelt. */
 const ANCHOR_LABEL = { power: "Kraft", score: "Score", crit: "Crit", streak: "Serie", formation: "Formation", joker: "Joker" };
 // #127: Preisstufen-Label/Farbe (wie ShopScreen) für die Kauf-Übersicht.
-const TIER_LABEL = { cheap: { l: "Günstig", c: "#8a8a95" }, strong: { l: "Stark", c: "#5a8ade" }, premium: { l: "Premium", c: "#8a7de0" }, legendary: { l: "Legendär", c: "#d4a63a" } };
 // #127: kompakte Ziel-Beschriftung eines Kauf-Log-Eintrags (Position/Segment/Farbpaar/Grenze/Typ/Kategorie/Karten).
-function targetLabel(t, deck) {
-  if (!t) return null;
-  if (t.position != null) return `Pos ${t.position + 1}`;
-  if (t.segment != null) return `Segment ${t.segment + 1}`;
-  if ((t.colorPair || []).length === 2) return t.colorPair.map(suitName).join(" + ");
-  if (t.boundary != null) return `Grenze ${t.boundary + 1}|${t.boundary + 2}`;
-  if (t.formationType) return FORMATION_TYPE_LABELS[t.formationType] || t.formationType;
-  if (t.category) return SHOP_CATEGORY_LABELS[t.category] || t.category;
-  if ((t.cardIds || []).length) return t.cardIds.map((id) => { const c = (deck || []).find((x) => x.id === id); if (!c) return "?"; const nc = t.colors?.[id]; return `${c.value}${c.suit}${nc ? `→${nc}` : ""}`; }).join(", ");
-  if (t.offerId) return "reserviert";
-  return null;
-}
 
 export function ChronikOverview({ state, onClose, options = {}, onOption }) {
   const { deck = [], playerOrder = [], formations = [] } = state;

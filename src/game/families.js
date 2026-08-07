@@ -1023,7 +1023,7 @@ export function formationEnergyBonus(familyTiers = {}, cycle = 0) {
 // Farballianz (#179, E_COLOR_ALLIANCE): die verlinkten Farbgruppen aus roles.
 // Eine gemeinsame Quelle für computeFormations (Farbblock-Verschmelzung) UND die UI.
 // [] = keine Allianz; [[a,b,…]] = EINE Gruppe aus allen verlinkten Farben (#292: alle als eine Farbe, kein Paar-Split mehr).
-export function allianceGroups(familyTiers = {}, roles = {}) {
+export function allianceGroups(_familyTiers = {}, roles = {}) {
   const suits = (roles || {}).E_COLOR_ALLIANCE || [];
   if (suits.length < 2) return [];
   return [suits.slice()];

@@ -6,7 +6,7 @@ import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
   hasSetzlingsbeet, buildSkillOffer, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
-import { computeFormations, formationPotential, segmentGainedFormation, baseFormationCount, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
+import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
 import { resolveTrick } from "./engine.js";
 import { PERKS_OFFERED } from "./constants.js";
@@ -319,7 +319,7 @@ export function reducer(state, action) {
 
     case "PICK_PERK": {
       if (state.phase !== "levelup") return state;
-      const { perkId, rng } = action;
+      const { perkId } = action;
       if (!state.offer || !state.offer.includes(perkId)) return state;
       const def = PERK_DEFS[perkId];
       if (!def) return state; // Sicherheitsnetz (v. a. Dev-Voll-Katalog): unbekannte perkId → No-Op statt Crash
@@ -353,7 +353,7 @@ export function reducer(state, action) {
     // (Familie+Stufe im Angebot, Ziel-Flow bei ROLE) folgt mit buildFamilyOffer (#163 Schritt 3).
     case "PICK_FAMILY": {
       if (state.phase !== "levelup") return state;
-      const { familyId, tier, rng } = action;
+      const { familyId, tier } = action;
       const fam = familyDef(familyId);
       if (!fam || !tier) return state;
       // Angebotsvalidierung (Spec §2.4): die Familie+Zielstufe muss im aktuellen Angebot stehen (analog PICK_PERK).

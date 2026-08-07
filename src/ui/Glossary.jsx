@@ -41,7 +41,6 @@ export function GlossaryButton({ onClick, className = "", style, title = "Glossa
   );
 }
 
-const CAT_ORDER = GLOSSARY_CATEGORIES.map((c) => c.id);
 const GROUP_ORDER = Object.keys(GLOSSARY_GROUPS);
 
 // Das durchsuchbare, kategorisierte Overlay.

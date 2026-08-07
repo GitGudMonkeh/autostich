@@ -43,7 +43,7 @@ function Stat({ label, value, tone }) {
 }
 
 export function StatusRail({ state, currentTraj = [], recordTraj = [], options = {}, onOption }) {
-  const { wins, losses, ties, trickNo, winStreak, bestStreak, pos, perks, crits, lightning,
+  const { wins, losses, trickNo, winStreak, bestStreak, pos, perks, crits, lightning,
           familyTiers = {} } = state;
   const cycleLen = cycleLenFor(state.shop);  // 40, mit Zeitsegment 45 (§8 A-L1)
   // #UI: Stich-Siegesquote — Anteil gewonnener an den ENTSCHIEDENEN Stichen (Gleichstände zählen nicht). Ersetzt die

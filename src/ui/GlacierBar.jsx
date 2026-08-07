@@ -12,7 +12,7 @@ import { glacierClusters, glacierNeighborFn, glacierFormations, GLACIER_FORM_LAB
 import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
 import glacierIcon from "./assets/glacier.webp";
 
-const FROST = "#5ec8f0", FROST_BRIGHT = "#8be6ff", DEEP = "#1c4a5c";
+const FROST = "#5ec8f0", FROST_BRIGHT = "#8be6ff";
 const dfmt = (x) => String(x).replace(".", ","); // Dezimal-Komma (1.5 → 1,5)
 const KRIT_FROM = 9; // ab dieser Masse gilt ein Gletscher als „kritisch" (kurz vor Stufe 3 / Bruch bei 12)
 

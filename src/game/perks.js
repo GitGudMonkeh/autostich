@@ -1,6 +1,6 @@
 import * as C from "./constants.js";
 import { FAMILY_LIST, familyCritChanceRaw, familyCritMult } from "./families.js";
-import { TIERS, TIER_WEIGHTS, tierWeightsForShift, canOfferFamilyTier, familyTierOf } from "./rarity.js";
+import { TIERS, tierWeightsForShift, canOfferFamilyTier, familyTierOf } from "./rarity.js";
 import { lightningCritRaw, ionCritChance, lightningCritMult } from "./skills.js";
 
 // Deutsche Zahlformatierung (2.5 → „2,5") — Beschreibungszahlen aus den Konstanten interpolieren (kein Text↔Code-Drift).

@@ -392,7 +392,7 @@ export function verbrennungMult(margin) {
 }
 // Feuer-Flat-Score bei Sieg: (Vorsprung−FIRE_MARGIN_OFFSET) × (25 + 5×(FeuerSkills−1)) + additiver √-Bonus (Basis·K·√Vorsprung, uncapped), dann Verbrennung (×1,5/×2).
 // 0 ohne Feuer-Skill. (Sonnenzorn wirkt jetzt als peak-hitze-Multiplikator in der Engine, nicht mehr hier.)
-export function fireScoreFor(margin, skills, heatValue = 0) {
+export function fireScoreFor(margin, skills, _heatValue = 0) {
   const n = activeFireCount(skills);
   if (n === 0 || margin < C.HEAT_MIN_MARGIN) return 0;
   const base = C.FIRE_SCORE_BASE + C.FIRE_SCORE_PER_SKILL * (n - 1);
@@ -412,7 +412,7 @@ export function glowingValueFor(heatValue, skills) {
   return v;
 }
 // Weißglut-Score aus Hitze-Überlauf: überlaufende Punkte × 10. Reiner Nicht-Legendär-Skill.
-export function whiteHeatScore(overflow, skills, heatValue = 0) {
+export function whiteHeatScore(overflow, skills, _heatValue = 0) {
   if (overflow <= 0 || !fireFlag(skills, "whiteHeat")) return 0;
   return overflow * C.WHITEHEAT_PER_POINT;
 }
@@ -657,7 +657,7 @@ export const hasDoubleDischarge = (skills) => lightFlag(skills, "doubleDischarge
 export const hasAreaIonize     = (skills) => lightFlag(skills, "areaIonize");     // L: ionis. Sieg → alle Nachbarn
 export const hasDurchschlag    = (skills) => lightFlag(skills, "durchschlag");    // L: volle Ionis.+Crit → dauerhaft Crit-Mult
 // Ladungsmaximum je Build (Donnergott → 15) & dessen dauerhafter Crit-Multiplikator-Bonus.
-export const maxChargeFor      = (skills) => C.LIGHTNING_MAX_CHARGE; // v0.5: Donnergott hebt das Dach NICHT mehr (Turbo statt Dach)
+export const maxChargeFor      = (_skills) => C.LIGHTNING_MAX_CHARGE; // v0.5: Donnergott hebt das Dach NICHT mehr (Turbo statt Dach)
 // Blitz-Crit-Multiplikator (dauerhaft, additiv): +LIGHTNING_CRIT_MULT_PER_SKILL je gehaltenem Blitz-Skill
 // + Donnergott-Bonus (Legendär). Kein Deckel — fließt in engine.js (critMultiplier) und totalCritMult (Anzeige).
 export const lightningCritMult = (skills) =>

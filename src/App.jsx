@@ -1,5 +1,5 @@
 import { useReducer, useEffect, useRef, useState } from "react";
-import { reducer, initialState, menuState } from "./game/reducer.js";
+import { reducer, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
 import { baseScoreMultFor, totalCritChanceRaw, totalCritMult } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
@@ -227,13 +227,11 @@ export function Autostich() {
     window.addEventListener("pagehide", persistActiveRun);
     document.addEventListener("visibilitychange", onVis);
     return () => { window.removeEventListener("pagehide", persistActiveRun); document.removeEventListener("visibilitychange", onVis); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // Checkpoints im Lauf: bei jedem Durchlauf-Wechsel und jeder Entscheidungsphase (levelup/formation/architect/…)
   // sofort snapshotten — niederfrequent, deckt die üblichen Verlustpunkte ab (die feineren fängt visibilitychange).
   useEffect(() => {
     if (inRun) persistActiveRun();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.cycle, state.phase, inRun]);
 
   // Timer-Segmente: bei Wechsel aktiv <-> inaktiv die verstrichene Zeit verbuchen.

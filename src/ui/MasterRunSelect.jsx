@@ -5,7 +5,7 @@
 import { Fragment } from "react";
 import { useEscape } from "./useEscape.js";
 import {
-  MASTERY_THRESHOLDS, MASTERY_ROMAN, MASTERY_REWARD_LABELS, MASTERY_MAX_GRADE, MASTERY_MEISTER_MAX,
+  MASTERY_THRESHOLDS, MASTERY_REWARD_LABELS, MASTERY_MEISTER_MAX,
   thresholdForGrade, isGrandmaster, rankRoman,
 } from "../game/mastery.js";
 import { DECK_DEFS } from "../game/cosmetics.js";
