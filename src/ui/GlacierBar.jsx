@@ -9,10 +9,10 @@
 import { useRef, useEffect, useState } from "react";
 import { IndicatorPanel } from "./indicators/panelKit.jsx";
 import { glacierClusters, glacierNeighborFn, glacierFormations, GLACIER_FORM_LABEL, THRESHOLDS, ROLES } from "../game/glacier.js";
+import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
 import glacierIcon from "./assets/glacier.webp";
 
 const FROST = "#5ec8f0", FROST_BRIGHT = "#8be6ff", DEEP = "#1c4a5c";
-const nfmt = (n) => Math.round(n).toLocaleString("de-DE");
 const dfmt = (x) => String(x).replace(".", ","); // Dezimal-Komma (1.5 → 1,5)
 const KRIT_FROM = 9; // ab dieser Masse gilt ein Gletscher als „kritisch" (kurz vor Stufe 3 / Bruch bei 12)
 
@@ -103,10 +103,11 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
     return () => clearTimeout(t);
   }, [burst]);
 
-  const stat = (k, v, sub) => (
-    <div style={{ background: "#191922", border: "1px solid #2a2a34", borderRadius: 8, padding: "6px 9px", flex: sub ? "1.3" : "1", minWidth: 0 }}>
+  const stat = (k, v, sub, title) => (
+    <div title={title} style={{ background: "#191922", border: "1px solid #2a2a34", borderRadius: 8, padding: "6px 9px", flex: sub ? "1.3" : "1", minWidth: 0 }}>
       <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".07em", color: "#6a7a86" }}>{k}</div>
-      <div style={{ fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)", fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1.05, marginTop: 2, ...(sub ? { fontSize: 22, color: FROST_BRIGHT, textShadow: `0 0 12px ${FROST}55` } : { fontSize: 17, color: "#e4eef4" }) }}>{v}</div>
+      {/* #253: nowrap + overflow-hidden hält große Werte in der Kachel (Gletscher-Ertrag wird kompakt abgekürzt, s. u.) */}
+      <div style={{ fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)", fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1.05, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...(sub ? { fontSize: 22, color: FROST_BRIGHT, textShadow: `0 0 12px ${FROST}55` } : { fontSize: 17, color: "#e4eef4" }) }}>{v}</div>
     </div>
   );
   const chip = (label, val, color, dim) => (
@@ -124,7 +125,7 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
         <div key={"g" + burst.key} className="as-glacier-gain" style={{ position: "absolute", left: "50%", top: 26, pointerEvents: "none", zIndex: 3,
           fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)", fontWeight: 700, fontSize: 20, color: FROST_BRIGHT, textShadow: `0 0 14px ${FROST}`, whiteSpace: "nowrap",
           padding: "3px 12px", borderRadius: 999, background: "rgba(7,16,22,.82)", border: `1px solid ${FROST}88`, boxShadow: `0 0 18px ${FROST}55` }}>
-          ❄ +{nfmt(burst.gain)}
+          ❄ +{fmtScoreShort(burst.gain)}
         </div>
       )}
       <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
@@ -135,7 +136,7 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
       </div>
 
       <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-        {stat("Gletscher-Ertrag", nfmt(glacierYield), true)}
+        {stat("Gletscher-Ertrag", fmtScoreShort(glacierYield), true, fmtScore(glacierYield))}
         {stat("Kaskade", <span>{cascade} <span style={{ fontSize: 10, color: "#6a7a86" }}>brechen</span></span>)}
         {stat("Größtes Cluster", biggest)}
       </div>
