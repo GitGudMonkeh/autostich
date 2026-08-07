@@ -7,7 +7,7 @@ import { ANFRIEREN_WIN as G_ANFRIEREN_WIN, ANFRIEREN_FORM as G_ANFRIEREN_FORM, S
   TIER_MULT as G_TIER_MULT, ABBRUCHKANTE_TIER_MULT as G_ABBRUCH_TIER, ZERMALMEN_KOLLISION as G_ZERMALMEN_KOLL, KOLLISION_MULT as G_KOLLISION,
   RISSBILDUNG_BURST as G_RISSBILDUNG_BURST, THRESHOLDS as G_THRESHOLDS, GLETSCHERSTURZ_PER as G_GLETSCHERSTURZ_PER,
   FROSTBUND_BUFF as G_FROSTBUND_BUFF, EISPANZER_MASS as G_EISPANZER_MASS, EISZEIT_FLOOD as G_EISZEIT_FLOOD,
-  SCHILD_BONUS as G_SCHILD_BONUS, ERSTARRUNG_FRAC as G_ERSTARRUNG_FRAC } from "./glacier.js";
+  EISZEIT_MAX_GLACIERS as G_EISZEIT_MAX, SCHILD_BONUS as G_SCHILD_BONUS, ERSTARRUNG_FRAC as G_ERSTARRUNG_FRAC } from "./glacier.js";
 
 // Deutsche Zahlformatierung (1.08 → „1,08") — driftgefährdete Beschreibungszahlen aus den Konstanten interpolieren.
 const de = (x) => String(x).replace(".", ",");
@@ -195,7 +195,7 @@ export const SKILL_DEFS = {
     desc: `Eine Niederlage neben einem Gletscher bricht deine Serie nicht — und füttert stattdessen +${de(G_EISPANZER_MASS)} Masse je angrenzendem Gletscher.` },
   // Legendäre (je Linie eine Capstone)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_EISZEIT",
-    desc: `Die kriechende Eiszeit: jede Runde flutet das ganze Brett mit +${de(G_EISZEIT_FLOOD)} Boden-Masse auf jedes ungefrorene Feld, und das stärkste offene Feld friert zum Gletscher ein — dein Feld füllt sich über die Restrunden.` },
+    desc: `Jede Runde: +${de(G_EISZEIT_FLOOD)} Masse auf jedes ungefrorene Feld, dann friert das massereichste davon zum Gletscher ein — bis zu ${G_EISZEIT_MAX} Gletscher.` },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
     desc: `Das ganze Feld wird zu EINEM Übergletscher. Jeden Durchlauf ziehen alle deine Gletscher auf die Masse des stärksten hoch und bekommen +${G_SCHILD_BONUS} Masse obendrauf (nie fallend). Beim Bruch gilt jeder Gletscher als Nachbar aller anderen — volle Kaskade und Kollision, egal wo sie liegen. Anordnung wird bedeutungslos, nur die stärkste Masse zählt.` },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",
