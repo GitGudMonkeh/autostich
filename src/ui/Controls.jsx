@@ -18,14 +18,14 @@ function Btn({ active, onClick, disabled, children, tone = "#5a8ade" }) {
 }
 
 /* Sekundär-Steuerung (Gameplay-Neu-Aufbau): Pause & Tempo sind in die schwebende StatusBar gewandert; hier bleiben
-   die selteneren Aktionen (Ton · Optionen · Beenden · Neustart) als kompakte Gruppe im Kopf. */
+   die selteneren Aktionen als eigene, gleichmäßig über die Breite verteilte Reihe: Optionen · Neustart · Beenden · Ton. */
 export function Controls({ onRestart, onAbort, onOptions, muted, onToggleMute }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex items-center justify-between gap-2 flex-wrap">
+      {onOptions && <Btn onClick={onOptions} tone="#8a7de0" aria-label="Optionen">⚙ Optionen</Btn>}
+      <Btn onClick={onRestart} tone="#8a7de0">Neustart</Btn>
+      {onAbort && <Btn onClick={onAbort} tone="#8a7de0">Beenden</Btn>}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} />}
-      {onOptions && <Btn onClick={onOptions} tone="#8a7de0" aria-label="Optionen">⚙</Btn>}
-      {onAbort && <Btn onClick={onAbort} tone="#8a8a92">Beenden</Btn>}
-      <Btn onClick={onRestart} tone="#e0605a">Neustart</Btn>
     </div>
   );
 }
