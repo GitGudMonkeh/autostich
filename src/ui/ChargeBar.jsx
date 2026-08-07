@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { chargeConsumerOf } from "../game/skills.js";
 import { streakBaseMult } from "../game/perks.js";
 import { ION_MAX_STACKS, ION_SAT_BREADTH_FRAC, ION_SAT_DEPTH_FRAC, ION_SATURATION_VALUE, CRIT_BASE_MULT, STREAK_BASE_CAP } from "../game/constants.js";
-import { FactionShell } from "./indicators/panelKit.jsx";
+import { IndicatorPanel } from "./indicators/panelKit.jsx";
 import { LIGHTNING, CASCADE, CASCADE_BRIGHT } from "./indicators/vocab.js";
 
 // ⚡ Blitz-Motor (Blitz-Archetyp) — eigener Block, nur sichtbar bei aktivem Blitz (lightning.active). v0.5:
@@ -77,7 +77,7 @@ function SatRow({ label, cur, max, on, payoff }) {
   );
 }
 
-export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 0, critMult = CRIT_BASE_MULT, deck = [], options = {}, onOption, manyActive = false }) {
+export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 0, critMult = CRIT_BASE_MULT, deck = [] }) {
   if (!lightning || !lightning.active) return null;
   const { charge, maxCharge } = lightning;
   // Sturm-Sättigung: Sturmgröße = Karten mit ≥1 Stapel gegen Schwelle · Sturmintensität = volle (5-Stapel-)Karten gegen Schwelle.
@@ -102,15 +102,8 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
   // Overlay-Füllung: wie weit der Crit-Mult über der Basis liegt (Basis = leer, 2×Basis = voll) — grobe Visualisierung; die Zahl ist exakt.
   const critMultFrac = Math.min(1, Math.max(0, (critMult - CRIT_BASE_MULT) / CRIT_BASE_MULT));
 
-  // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
-  const collapsed = options.collapseFacLightning ?? manyActive;
-  const onToggle = () => onOption && onOption({ collapseFacLightning: !collapsed });
-  const stateText = full ? "⚡ Voll geladen" : overcharge ? `Crit ×${mlt(critMult)}` : `Ladung ${charge}/${maxCharge}`;
-  const stateOn = full || overcharge;
-
   return (
-    <FactionShell className="relative" icon="⚡" name="Blitz" color={LIGHTNING}
-      stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}>
+    <IndicatorPanel className="relative grid gap-3">
       {/* Blitzfrequenz-Puls (v0.5): violettes Rahmen-Glühen je Entladung (wie der Battlefield-Bloom); remount je consumeCount replayt die Animation. */}
       <div key={consumeCount} className="as-blitz-pulse pointer-events-none absolute inset-0 rounded-xl" aria-hidden="true" />
       {/* Sturm-Sättigung (v0.5): die zwei Stufen + ihre Payoffs live — das Herzstück des Reworks. */}
@@ -200,6 +193,6 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
           ⚡ Voll — ohne Konsument verpufft die Ladung. Wähle <b>Ionisierung</b>, um sie zu verbrauchen.
         </div>
       ) : null}
-    </FactionShell>
+    </IndicatorPanel>
   );
 }

@@ -8,7 +8,7 @@
 //     einklappbarer „Reifende Karten"-Strip (pro Karte ein Mini-Balken, default zu). Der zweistufige Ring an der Karte (Card.jsx) trägt das Signal am Objekt.
 //   • Ausläufer (kolonisierte Gegnerkarten) als eigene, getrennte Zeile — der Griff ins Gegnerdeck (Ernte/Dornenkönig).
 // Rein informativ, keine Engine-Kopplung (spiegelt state.deck/growth/colonized).
-import { FactionShell, YieldMeter } from "./indicators/panelKit.jsx";
+import { IndicatorPanel, YieldMeter } from "./indicators/panelKit.jsx";
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { PLANT_VALUE_CAP, PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD, TRIM_STEP, TRIM_CAP,
          WURZELSCHLAG_PER_GROWTH, SKILL_SLOTS, MUTTERBAUM_DIRECT, MUTTERBAUM_OVERFLOW_CAP, WELTENBAUM_DIRECT, WELTENBAUM_OVERFLOW_CAP } from "../game/constants.js";
@@ -21,7 +21,7 @@ const fmtG = (g) => String(Math.round((g || 0) * 10) / 10).replace(".", ","); //
 const BLOOM = "#e58fbf"; // Blüte (rosa) · Wurzel = PLANT (grün) · Ernte = PLANT_RIPE (hell)
 
 export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skills = [], growthTotal = 0,
-                          rootScore = 0, bloomScore = 0, harvestScore = 0, trimCount = 0, options = {}, onOption, manyActive = false }) {
+                          rootScore = 0, bloomScore = 0, harvestScore = 0, trimCount = 0, options = {}, onOption }) {
   if (!active) return null;
   const trimMult = 1 + Math.min((trimCount || 0) * TRIM_STEP, TRIM_CAP); // #288 Trimmen: Wurzel-/Blüten-Multiplikator
   const total = deck.length || 0;
@@ -83,13 +83,8 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
     <div className="absolute inset-y-0" style={{ left: `${atPct}%`, width: 2, background: "#ffffff66" }} title={label} />
   );
 
-  // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
-  const collapsed = options.collapseFacPlant ?? manyActive;
-  const onToggle = () => onOption && onOption({ collapseFacPlant: !collapsed });
-  const stateText = overgrown ? "🌿 Überwuchert" : `Grün ${Math.round(pct)} %`;
-
   return (
-    <FactionShell icon="🌿" name="Pflanze" color={PLANT} stateText={stateText} stateOn={overgrown} collapsed={collapsed} onToggle={onToggle}>
+    <IndicatorPanel>
       {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Wurzel/Blüte/Ernte) + Gewachsen (Lauf-Zähler). */}
       <div className="mb-2">
         <YieldMeter title="🌿 Garten-Ertrag" accent={PLANT_RIPE} channels={[
@@ -209,6 +204,6 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
           </span>
         </div>
       )}
-    </FactionShell>
+    </IndicatorPanel>
   );
 }

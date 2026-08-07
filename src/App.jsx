@@ -514,13 +514,12 @@ export function Autostich() {
     prevMult.current = baseScoreMult;
   }, [baseScoreMult]);
 
+  // Die sechs Kopf-Stat-Zellen einmal definiert, damit sie ohne Logik-Duplikat an zwei Stellen gerendert
+  // werden können: Desktop im Header-Row (rechts neben der Wortmarke), Mobil als eigenes gerahmtes Panel
+  // NACH der Controls-Leiste (#UI). text-right ist auf Mobil (justify-items-center → inhaltsbreite Zellen) egal.
   // (Gameplay-Neu-Aufbau) Die früheren Kopf-Stat-Zellen sind in die schwebende StatusBar gewandert; „Bester Score" steht
   // jetzt in der Analyse-Ecke der Sidebar (StatusRail). Die Rohwerte (elapsedMs, ghost, baseScoreMult & Co.) werden von
   // hier direkt an die StatusBar durchgereicht.
-  // Phase 3: Anzahl aktiver Fraktionen → bei mehreren klappen die Fraktions-Headlines standardmäßig ein (schlanker Mix-Run),
-  // bei genau einer aktiven Fraktion bleibt sie offen (voller Detail wie bisher im Mono-Run).
-  const manyFac = [state.lightning?.active, state.heat?.active,
-    (state.activeArchetypes || []).includes("plant"), (state.activeArchetypes || []).includes("ice")].filter(Boolean).length > 1;
 
   return (
     <div className="min-h-screen w-full flex justify-center px-4 py-6">
@@ -599,10 +598,10 @@ export function Autostich() {
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
-                critMult={totalCritMult(state)} deck={state.deck || []} options={options} onOption={changeOptions} manyActive={manyFac} />
+                critMult={totalCritMult(state)} deck={state.deck || []} />
               <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}}
                 ashBurned={state.ashBurned || 0} brandTotal={state.brandTotal || 0}
-                fireBase={state.fireBase || 0} fireWhite={state.fireWhite || 0} options={options} onOption={changeOptions} manyActive={manyFac} />
+                fireBase={state.fireBase || 0} fireWhite={state.fireWhite || 0} />
               <PlantBar active={(state.activeArchetypes || []).includes("plant")}
                 deck={state.deck || []}
                 growth={state.growth || {}}
@@ -611,14 +610,14 @@ export function Autostich() {
                 growthTotal={state.growthTotal || 0}
                 rootScore={state.plantRoot || 0} bloomScore={state.plantBloom || 0} harvestScore={state.plantHarvest || 0}
                 trimCount={state.trimCount || 0}
-                options={options} onOption={changeOptions} manyActive={manyFac} />
+                options={options} onOption={changeOptions} />
               <GlacierBar active={(state.activeArchetypes || []).includes("ice")}
                 glacierLocked={state.glacierLocked || []} glacierMass={state.glacierMass || []}
                 glacierYield={state.glacierYield || 0} glacierRoles={state.glacierRoles || []}
                 glacierPre={state.glacierPre}
                 frozenOppPending={state.frozenOppPending || {}} frozenOppActive={state.frozenOppActive || {}}
                 glacierBuffPending={state.glacierBuffPending || {}} glacierBuffActive={state.glacierBuffActive || {}}
-                grosseLawineFired={state.grosseLawineFired} options={options} onOption={changeOptions} manyActive={manyFac} />
+                grosseLawineFired={state.grosseLawineFired} />
             </div>
             {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
             <div className="order-2 lg:col-start-2 lg:row-start-1">

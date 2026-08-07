@@ -1,7 +1,7 @@
 import { fireFlag, hasHeatConsumer, glowingValueFor } from "../game/skills.js";
 import { GLOWING_T1_HEAT, GLOWING_T2_HEAT } from "../game/constants.js";
 import { GLOSSARY } from "../game/glossary.js";
-import { FactionShell, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
+import { IndicatorPanel, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FIRE, FIRE_HOT, ASH, FORGE, WHITE_HEAT } from "./indicators/vocab.js";
 
 const BRAND = "#e0605a"; // Brandmal am Gegner (Debuff, App-Rotton)
@@ -37,7 +37,7 @@ function AnvilIcon() {
 
 const grp = (n) => Math.round(n).toLocaleString("de-DE");
 
-export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0, brandTotal = 0, fireBase = 0, fireWhite = 0, options = {}, onOption, manyActive = false }) {
+export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0, brandTotal = 0, fireBase = 0, fireWhite = 0 }) {
   if (!heat || !heat.active) return null;
   const { value, max } = heat;
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
@@ -69,14 +69,8 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
     badges.push({ k: "gk", t: gv > 0 ? `Glühende Klinge +${gv}` : "Glühende Klinge", c: HOT, dim: gv === 0 });
   }
 
-  // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
-  const collapsed = options.collapseFacFire ?? manyActive;
-  const onToggle = () => onOption && onOption({ collapseFacFire: !collapsed });
-  const stateText = conflagReady ? "🔥 Flächenbrand bereit" : whiteGlow ? "Weißglut" : `Hitze ${Math.round(value)}/${max}`;
-  const stateOn = conflagReady || whiteGlow || hot;
-
   return (
-    <FactionShell icon="🔥" name="Feuer" color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}>
+    <IndicatorPanel>
       {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Feuer-Grund / Weißglut) + verbrannte Asche (Lauf-Zähler). */}
       <div className="mb-2">
         <YieldMeter title="🔥 Feuer-Ertrag" accent={HOT} channels={[
@@ -156,6 +150,6 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
           </span>
         </div>
       )}
-    </FactionShell>
+    </IndicatorPanel>
   );
 }
