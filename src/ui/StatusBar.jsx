@@ -17,9 +17,9 @@ function Pill({ active, onClick, tone = "#8a7de0", title, children }) {
   );
 }
 
-function Cell({ label, children, align = "left", big = false }) {
+function Cell({ label, children, align = "left", big = false, className = "" }) {
   return (
-    <div className="flex flex-col justify-center gap-1 px-3.5 py-2 min-w-0" style={{ textAlign: align }}>
+    <div className={`flex flex-col justify-center gap-1 px-3.5 py-2 min-w-0 ${className}`} style={{ textAlign: align }}>
       <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
       <span className="font-pixel-dense leading-none whitespace-nowrap overflow-hidden text-ellipsis"
         style={{ fontVariantNumeric: "tabular-nums", fontSize: big ? 25 : 18 }}>{children}</span>
@@ -68,32 +68,29 @@ export function StatusBar({
                 : null)}
           </span>
         </div>
-        <div style={{ borderLeft: "1px solid #26262e" }} />
-        <Cell label="Mult">
-          <span className={mult?.shakeClass || ""}>
-            <span key={mult?.pulseKey} className="inline-block rounded px-1.5 py-0.5 font-pixel-dense"
-              style={{ fontVariantNumeric: "tabular-nums", fontSize: 18,
-                       background: mult?.hot ? `${mult.color}22` : "#ffffff0f",
-                       color: mult?.hot ? mult.color : "#8a8a92",
-                       animation: mult?.pulseKey > 0 ? "as-multpulse 420ms ease-out" : undefined }}>
-              ×{fmtMult(mult?.value ?? 1)}
+        {/* Mult · Serie · Fortschritt · Zeit — gleichmäßig über die restliche Breite verteilt (gleich breite Zellen). */}
+        <div className="flex-1 flex items-stretch" style={{ minWidth: 240 }}>
+          <Cell label="Mult" className="flex-1 border-l border-[#26262e]">
+            <span className={mult?.shakeClass || ""}>
+              <span key={mult?.pulseKey} className="inline-block rounded px-1.5 py-0.5 font-pixel-dense"
+                style={{ fontVariantNumeric: "tabular-nums", fontSize: 18,
+                         background: mult?.hot ? `${mult.color}22` : "#ffffff0f",
+                         color: mult?.hot ? mult.color : "#8a8a92",
+                         animation: mult?.pulseKey > 0 ? "as-multpulse 420ms ease-out" : undefined }}>
+                ×{fmtMult(mult?.value ?? 1)}
+              </span>
             </span>
-          </span>
-        </Cell>
-        <div style={{ borderLeft: "1px solid #26262e" }} />
-        <Cell label="Serie">
-          <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
-          <span className="text-[10px] opacity-45 ml-1">best {bestStreak}</span>
-        </Cell>
-        <div style={{ borderLeft: "1px solid #26262e" }} />
-        <Cell label="Fortschritt">
-          <span>{cyc}<span className="text-[11px] opacity-45">/{totalCycles}</span></span>
-          <span className="text-[10px] opacity-45 ml-1.5">K{pos}/{cycleLen}</span>
-        </Cell>
-
-        <div className="flex-1" style={{ minWidth: 8 }} />
-        <div style={{ borderLeft: "1px solid #26262e" }} />
-        <Cell label="Zeit" align="right"><span>{timeStr}{paused ? " ⏸" : ""}</span></Cell>
+          </Cell>
+          <Cell label="Serie" className="flex-1 border-l border-[#26262e]">
+            <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
+            <span className="text-[10px] opacity-45 ml-1">best {bestStreak}</span>
+          </Cell>
+          <Cell label="Fortschritt" className="flex-1 border-l border-[#26262e]">
+            <span>{cyc}<span className="text-[11px] opacity-45">/{totalCycles}</span></span>
+            <span className="text-[10px] opacity-45 ml-1.5">K{pos}/{cycleLen}</span>
+          </Cell>
+          <Cell label="Zeit" className="flex-1 border-l border-[#26262e]"><span>{timeStr}{paused ? " ⏸" : ""}</span></Cell>
+        </div>
       </div>
     </div>
   );
