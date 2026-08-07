@@ -204,7 +204,19 @@ export function resolveTrick(state, rng) {
       glacierO.grosseLawine = true; newGrosseLawineFired = true;
     }
     glacierPreNow = precomputeGlacier(snapMass, glacierLocked, { ...glacierO, formFactor: glacierGeo });
-    newGlacierMass = glacierPreNow.resetMass.slice();
+    // Stufen-Verbrauch pro Stich (statt alles zu Durchlauf-Beginn): die volle Masse bleibt sichtbar, bis der Stich
+    // DIESES Gletschers dran ist, und fällt erst dann auf den Nachbruch-Wert. `burn` = der Abfall je Feld (Vorbruch-Masse
+    // − resetMass); wird pro Feld genau EINMAL abgezogen (consumed-Guard, überlebt Zeitsegment-Wiederholungen). Der
+    // Netto-Akkumulator für den nächsten Durchlauf bleibt identisch — nur das Timing/HUD ändert sich, nicht der Score.
+    // burn ist VORZEICHENBEHAFTET: Pooling (Ewiges Schild/Verschmelzen) kann resetMass ÜBER die gespeicherte Masse heben —
+    // dann ist burn negativ und der Abzug hebt das Feld (netto-Gewinn wie im alten Design, das resetMass direkt schrieb).
+    const burn = glacierPreNow.resetMass.map((rm, p) => glacierLocked[p] ? ((glacierMass[p] || 0) - (rm || 0)) : 0);
+    glacierPreNow = { ...glacierPreNow, burn, consumed: {} };
+  }
+  // Verbrauch für das Feld DIESES Stichs: genau einmal je Feld/Durchlauf den Bruch-Abfall abziehen (Rest-Gewinne bleiben).
+  if (glacierActive && glacierPreNow && glacierPreNow.burn && glacierLocked[actualPos] && !(glacierPreNow.consumed && glacierPreNow.consumed[actualPos])) {
+    newGlacierMass[actualPos] = Math.max(0, (newGlacierMass[actualPos] || 0) - (glacierPreNow.burn[actualPos] || 0));
+    glacierPreNow = { ...glacierPreNow, consumed: { ...(glacierPreNow.consumed || {}), [actualPos]: true } };
   }
   // #161 FB-2: Peak gleichzeitig aktiver Formationen über den Run — zu Durchlaufbeginn, sobald das Layout feststeht.
   if (pos === 0) maxFormations = Math.max(maxFormations || 0, summarizeFormations(formations).count);
