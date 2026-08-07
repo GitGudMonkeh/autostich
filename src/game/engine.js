@@ -24,7 +24,7 @@ import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftT
   ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
   ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as GLACIER_SCHNEETREIBEN_SEED,
   EISPANZER_MASS as GLACIER_EISPANZER_MASS, FROSTBUND_BUFF as GLACIER_FROSTBUND_BUFF,
-  VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
+  VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE, ERSTARRUNG_SCORE as GLACIER_ERSTARRUNG_SCORE } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
@@ -197,8 +197,12 @@ export function resolveTrick(state, rng) {
     // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld; Eiswall hebt die Linie.
     const glacierGeo = glacierGeometry(glacierLocked, { eiswall: glacierRoles.includes(GLACIER_ROLES.EISWALL) });
     const glacierO = glacierOpts(glacierRoles);
-    // Große Lawine (Legendär): einmaliger Finisher — feuert nur im ersten aktiven Durchlauf (alles bricht auf einen Schlag).
-    if (glacierRoles.includes(GLACIER_ROLES.L_LAWINE) && !grosseLawineFired) glacierO.grosseLawine = true;
+    // Große Lawine (Legendär): einmaliger Finisher — feuert erst im LETZTEN Durchlauf (Masse maximal angesammelt, kein
+    // vorzeitiges Abkalben). Bricht dann alles auf voller Stufe, ungedeckelt & ×GROSSE_LAWINE_MULT (glacier.js).
+    const effMaxCycles = state.maxCycles || (difficulty && difficulty.maxCycles) || C.MAX_CYCLES;
+    if (glacierRoles.includes(GLACIER_ROLES.L_LAWINE) && !grosseLawineFired && cycle >= effMaxCycles - 1) {
+      glacierO.grosseLawine = true; newGrosseLawineFired = true;
+    }
     glacierPreNow = precomputeGlacier(snapMass, glacierLocked, { ...glacierO, formFactor: glacierGeo });
     newGlacierMass = glacierPreNow.resetMass.slice();
   }
@@ -1014,9 +1018,12 @@ export function resolveTrick(state, rng) {
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.EINFRIEREN) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
     newFrozenOppPending[oCard.id] = true;
   // Erstarrung (Legendär): jeder brechende Gletscher friert die getroffene Gegnerkarte ein — plus Reichweite +1 ins Gegnerfeld.
+  // Dazu ein MODERATER Direkt-Score je Bruch, damit die Capstone im Mono nicht tot ist (Kern-Wert bleibt die Duo-Kontrolle).
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_ERSTARRUNG) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos)) {
     newFrozenOppPending[oCard.id] = true;
     for (const nb of glacierNeighbors4(actualPos)) newFrozenOppPending[oppDeck[oppOrder[nb]].id] = true;
+    score += GLACIER_ERSTARRUNG_SCORE; gained += GLACIER_ERSTARRUNG_SCORE; glacierYield += GLACIER_ERSTARRUNG_SCORE;
+    if (breakdown) { breakdown.glacierDirect = (breakdown.glacierDirect || 0) + GLACIER_ERSTARRUNG_SCORE; breakdown.total += GLACIER_ERSTARRUNG_SCORE; }
   }
   // Frostbund (docs §4 Frostgriff): bricht dieser Gletscher, bufft er seine NICHT-Gletscher-Nachbarn (2. Archetyp) → +Stichwert.
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.FROSTBUND) && glacierNF && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
@@ -1087,8 +1094,6 @@ export function resolveTrick(state, rng) {
       const ez = eiszeitTick(newGlacierMass, newGlacierLocked);
       newGlacierMass = ez.mass; newGlacierLocked = ez.locked;
     }
-    // Große Lawine: nach dem ersten aktiven Durchlauf verbraucht (One-Shot-Finisher).
-    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_LAWINE)) newGrosseLawineFired = true;
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf
     //      attribuiert). Zinseszins — positive Durchlauf-Bilanz (mehr Siege als Niederlagen) stapelt eine FLACHE Dauer-
     //      Dividende (kein Mult), die jeden Durchlauf ausgezahlt wird (compoundet über den Lauf). Echo — der beste Stich

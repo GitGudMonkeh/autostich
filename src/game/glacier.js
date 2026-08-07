@@ -22,6 +22,13 @@ export const BURST_SCALE = 600;
 // des Überschusses → komprimiert das Ceiling, lässt Median-Bursts (unter dem Deckel) unberührt. (Platzhalter, Sim-tunebar.)
 export const BURST_SOFTCAP = 55000;
 export const BURST_SOFTSLOPE = 0.06;
+// Legendär-Verstärker (Sim-tunebar): Große Lawine feuert erst am LAUFENDE (nichts wird vorzeitig verschwendet), bricht
+// alles auf voller Stufe, ist vom Soft-Cap ausgenommen und ×GROSSE_LAWINE_MULT → der eine echte Riesen-Score-Moment.
+export const GROSSE_LAWINE_MULT = 6;
+// Ewiges Schild: additiver Feld-Bonus je Durchlauf (echter Netto-Massegewinn fürs ganze verbundene Feld, zusätzlich zum Max-Pool).
+export const SCHILD_BONUS = 3;
+// Erstarrung (Kombi-Legendär): kleiner Direkt-Score je Bruch mit Erstarrung — bewusst MODERAT (Kern-Wert ist die Kontrolle im Duo, nicht Mono-Score).
+export const ERSTARRUNG_SCORE = 2000;
 export const KASKADE_PER_NEIGHBOR = 0.25;      // Berst-Faktor = 1 + 0,25 × Gletscher-Nachbarn (Dichte)
 export const KOLLISION_MULT = 1.5;             // Treffer auf Gletscher-Nachbarn (anteilig, docs §2.3)
 export const EWIGER_FROST = 1;                 // Fraktions-Passiv: bedingungsloser Masse-Tick je Durchlauf (docs §2.6)
@@ -118,7 +125,8 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   for (let p = 0; p < N_POS; p++) {
     if (!isG(p)) continue;
     if (!isBreaker[p]) { resetMass[p] = mCap[p]; continue; } // kein Bruch: gedeckelte Masse bleibt
-    const effTier = forced[p] ? Math.max(1, natTier[p]) : natTier[p]; // Kettenbruch: erzwungene brechen mind. auf Stufe 1
+    // Große Lawine bricht ALLES auf voller Stufe (echter Finisher); Kettenbruch-erzwungene mind. Stufe 1; sonst natürliche Stufe.
+    const effTier = grosseLawine ? (tierMult.length - 1) : (forced[p] ? Math.max(1, natTier[p]) : natTier[p]);
     const nb = neighborFn(p);
     const gN = ewigesSchild ? Math.max(0, totalG - 1) : nb.filter(isG).length; // Ewiges Schild: ganzes Feld gilt als angrenzend
     const berstFaktor = 1 + kaskade * gN;               // Kaskade (Dichte)
@@ -126,7 +134,8 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     const kollFaktor = 1 + (kollision - 1) * kollFrac;  // Kollision (anteilig)
     const geoFactor = formFactor ? (formFactor[p] || 1) : 1; // 2D-Geometrie (Block/Kreuz/Linie/Fläche)
     let burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * BURST_SCALE;
-    if (burst > BURST_SOFTCAP) burst = BURST_SOFTCAP + (burst - BURST_SOFTCAP) * BURST_SOFTSLOPE; // weicher Deckel (Ceiling-Kompression)
+    if (grosseLawine) burst *= GROSSE_LAWINE_MULT;        // Finisher-Verstärker (One-Shot am Laufende)
+    else if (burst > BURST_SOFTCAP) burst = BURST_SOFTCAP + (burst - BURST_SOFTCAP) * BURST_SOFTSLOPE; // weicher Deckel (Große Lawine ausgenommen)
     payout[p] += burst;
     resetMass[p] = RESET_TO;                             // abgekalbt: baut wieder von unten auf (selten + gewaltig)
     breaks.push({ pos: p, tier: effTier, burst, glacierNeighbors: gN, forced: forced[p] });
@@ -178,15 +187,16 @@ export function verschmelzenPool(mass, locked, neighborFn = neighbors4) {
   return out;
 }
 
-// Ewiges Schild (Legendär, docs §7): das GESAMTE Feld poolt als ein Übergletscher — alle Gletscher auf den globalen
-// Durchschnitt heben (nie fallend), unabhängig von Nachbarschaft.
+// Ewiges Schild (Legendär, docs §7): das GESAMTE Feld poolt als ein Übergletscher — alle Gletscher aufs MAXIMUM heben
+// (nie fallend), unabhängig von Nachbarschaft. Echter Netto-Gewinn (das ganze Feld auf voller Stärke des Stärksten),
+// statt netto-neutralem Durchschnitt → macht die Capstone zum echten Feld-Verstärker (Sim: Durchschnitt war zu schwach).
 export function uebergletscherPool(mass, locked) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
   const gs = []; for (let p = 0; p < N_POS; p++) if (isG(p)) gs.push(p);
   if (gs.length < 2) return out;
-  const avg = gs.reduce((s, p) => s + (out[p] || 0), 0) / gs.length;
-  for (const p of gs) if ((out[p] || 0) < avg) out[p] = avg;
+  const mx = gs.reduce((m, p) => Math.max(m, out[p] || 0), 0);
+  for (const p of gs) out[p] = Math.max(out[p] || 0, mx) + SCHILD_BONUS; // aufs Max heben + additiver Feld-Bonus (Netto-Gewinn)
   return out;
 }
 
@@ -194,16 +204,20 @@ export function uebergletscherPool(mass, locked) {
 // Felder, flach, ohne Nachbar-Dämpfung), und das höchste ungefrorene Feld friert zum Gletscher ein (Karten frieren nach
 // und nach über die Restrunden). Gibt { mass, locked } zurück. ⚠ Flutrate Platzhalter.
 export const EISZEIT_FLOOD = 3;
-export function eiszeitTick(mass, locked, base = EISZEIT_FLOOD) {
+export const EISZEIT_MAX_GLACIERS = 16; // Runaway-Deckel: Eiszeit friert nur bis zu dieser Gesamt-Gletscherzahl ein (sonst füllte sie das Brett → 2×-Ausreißer). Die Flut läuft weiter.
+export function eiszeitTick(mass, locked, base = EISZEIT_FLOOD, maxGlaciers = EISZEIT_MAX_GLACIERS) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const m = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
-  for (let p = 0; p < N_POS; p++) if (!isG(p)) m[p] = (m[p] || 0) + base; // brettweite Flut
-  let best = -1, bestV = -Infinity;
-  for (let p = 0; p < N_POS; p++) if (!isG(p) && (m[p] || 0) > bestV) { bestV = m[p] || 0; best = p; }
+  let count = 0;
+  for (let p = 0; p < N_POS; p++) { if (isG(p)) count++; else m[p] = (m[p] || 0) + base; } // brettweite Flut + Gletscher zählen
   let newLocked = locked;
-  if (best >= 0) {
-    if (locked instanceof Set) { newLocked = new Set(locked); newLocked.add(best); }
-    else { newLocked = (locked ? locked.slice() : new Array(N_POS).fill(false)); newLocked[best] = true; }
+  if (count < maxGlaciers) { // Auto-Freeze nur unter dem Deckel: das höchste offene Feld friert ein
+    let best = -1, bestV = -Infinity;
+    for (let p = 0; p < N_POS; p++) if (!isG(p) && (m[p] || 0) > bestV) { bestV = m[p] || 0; best = p; }
+    if (best >= 0) {
+      if (locked instanceof Set) { newLocked = new Set(locked); newLocked.add(best); }
+      else { newLocked = (locked ? locked.slice() : new Array(N_POS).fill(false)); newLocked[best] = true; }
+    }
   }
   return { mass: m, locked: newLocked };
 }
