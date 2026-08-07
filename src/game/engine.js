@@ -24,7 +24,7 @@ import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftT
   ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
   ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as GLACIER_SCHNEETREIBEN_SEED,
   EISPANZER_MASS as GLACIER_EISPANZER_MASS, FROSTBUND_BUFF as GLACIER_FROSTBUND_BUFF,
-  VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE, ERSTARRUNG_SCORE as GLACIER_ERSTARRUNG_SCORE } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
+  VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE, ERSTARRUNG_FRAC as GLACIER_ERSTARRUNG_FRAC } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
@@ -1041,13 +1041,13 @@ export function resolveTrick(state, rng) {
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.EINFRIEREN) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
     newFrozenOppPending[oCard.id] = true;
   // Erstarrung (Legendär): jeder brechende Gletscher friert die getroffene Gegnerkarte ein — plus Reichweite +1 ins Gegnerfeld.
-  // Dazu ein Direkt-Score je Bruch, damit die Capstone im Mono nicht tot ist (Kern-Wert bleibt die Duo-Kontrolle). Wie der
-  // Bruch selbst nimmt auch dieser Kontroll-Score den vollen Sieg-Stack mit (glacierWinMult), wenn die Gletscher-Karte
-  // gewinnt — sonst würde Erstarrung vom Multiplikator-Rework abgehängt und im Score-Rennen nicht mehr gepickt.
+  // Dazu ein Bonus-Score je Bruch = ANTEIL des Burst-Scores dieses Bruchs (glacierDirect, bereits × Sieg-Stack). Skaliert so
+  // automatisch mit Masse/Geometrie/Kaskade und der Build-Qualität und erbt den Burst-Soft-Cap — Erstarrung ist damit der
+  // „heimliche Best-Pick" (etwas über den anderen Legendären), ohne am Burst vorbei auszureißen. Kern bleibt die Duo-Kontrolle.
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_ERSTARRUNG) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos)) {
     newFrozenOppPending[oCard.id] = true;
     for (const nb of glacierNeighbors4(actualPos)) newFrozenOppPending[oppDeck[oppOrder[nb]].id] = true;
-    const erstarrungScore = GLACIER_ERSTARRUNG_SCORE * glacierWinMult;
+    const erstarrungScore = glacierDirect * GLACIER_ERSTARRUNG_FRAC;
     score += erstarrungScore; gained += erstarrungScore; glacierYield += erstarrungScore;
     if (breakdown) { breakdown.glacierDirect = (breakdown.glacierDirect || 0) + erstarrungScore; breakdown.total += erstarrungScore; }
   }
