@@ -5,7 +5,7 @@ import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_C
          WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
          FIRE_MARGIN_OFFSET, FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, FIRE_SCORE_SQRT_K,
          HEAT_MIN_MARGIN, HEAT_PER_POINT, HEAT_LOSS_MAX, HEAT_LOSS_PCT } from "../game/constants.js";
-import { THRESHOLDS as G_THRESHOLDS, DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Berst-Schwelle + Ablehn-Gletscher-Schwelle für den Passiv-Text
+import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
 import { GLOSSARY } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
@@ -31,15 +31,17 @@ const PER_SKILL_MULT = String(LIGHTNING_CRIT_MULT_PER_SKILL).replace(".", ","); 
 // Feuer-Passive: konkrete Zahlen (erster Feuer-Skill). Score = lineare Linie + √-Bonus; Hitze = marginHeatPoints (√-Schwanz).
 const fireScoreAt = (m) => Math.round((m - FIRE_MARGIN_OFFSET) * FIRE_SCORE_BASE + FIRE_SCORE_BASE * FIRE_SCORE_SQRT_K * Math.sqrt(m - FIRE_MARGIN_OFFSET));
 const fireHeatAt  = (m) => Math.round(marginHeatPoints(m) * HEAT_PER_POINT);
-const FIRE_EX_MARGIN = 15;                                 // großer-Vorsprung-Beispiel
 const FIRE_MIN_HEAT = fireHeatAt(HEAT_MIN_MARGIN);         // Hitze bei Mindest-Vorsprung
 const FIRE_MIN_SCORE = fireScoreAt(HEAT_MIN_MARGIN);       // Score bei Mindest-Vorsprung
-const FIRE_EX_HEAT = fireHeatAt(FIRE_EX_MARGIN);           // Hitze beim Beispiel
-const FIRE_EX_SCORE = fireScoreAt(FIRE_EX_MARGIN);         // Score beim Beispiel
 const FIRE_LOSS_PCT = Math.round(HEAT_LOSS_PCT * 100);     // Abkühl-Anteil der aktuellen Hitze je Niederlage
-// Kuratierte Schlüsselbegriffe je Archetyp-Passive — der Aufklapper zeigt AUSSCHLIESSLICH diese (nicht mehr die aus den
-// angebotenen Skills abgeleiteten). Pflanze: nur „Grün (reif)" (grün → Farbblock → Score, inkl. Grün-Cap ×1,35).
-const PASSIVE_KEYWORDS = { plant: ["green"], lightning: ["charge", "ionize"] };
+// Kuratierte Schlüsselbegriffe je Archetyp-Passive — der Aufklapper zeigt AUSSCHLIESSLICH diese als kleine Unterkategorien
+// (Icon + Begriff + Kurztext aus dem Glossar), damit alle vier Passive gleich schön lesbar sind statt einer Textwand.
+const PASSIVE_KEYWORDS = {
+  lightning: ["charge", "ionize"],
+  fire:      ["glutdividende", "ash"],
+  ice:       ["masse", "bersten", "eisformation"],
+  plant:     ["green"],
+};
 
 // Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
 const LIGHT = "#8a7de0";
@@ -84,9 +86,9 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
       case "lightning":
         return `Der erste Blitz-Skill gibt +${FIRST_CRIT_PCT} % Crit-Chance, jeder weitere +${PER_SKILL_PCT} %. Dazu +${PER_SKILL_MULT}× Crit-Multiplikator je Blitz-Skill.`;
       case "fire":
-        return `Jeder Sieg mit mindestens ${HEAT_MIN_MARGIN} Wertvorsprung heizt die Hitze um ${FIRE_MIN_HEAT} % auf und gibt +${FIRE_MIN_SCORE} Feuer-Score — je größer der Vorsprung, desto mehr (Beispiel ${FIRE_EX_MARGIN} Vorsprung: +${FIRE_EX_HEAT} % Hitze und +${FIRE_EX_SCORE} Score). Niederlagen kühlen die Hitze um ${FIRE_LOSS_PCT} % der aktuellen Hitze ab (plus Wert-Rückstand, bis ${HEAT_LOSS_MAX}). Jeder weitere Feuer-Skill gibt +${FIRE_SCORE_PER_SKILL} Feuer-Score je Vorsprungspunkt.`;
+        return `Jeder Sieg mit mindestens ${HEAT_MIN_MARGIN} Wertvorsprung heizt die Hitze um ${FIRE_MIN_HEAT} % auf und gibt +${FIRE_MIN_SCORE} Feuer-Score — je größer der Vorsprung, desto mehr. Niederlagen kühlen die Hitze um ${FIRE_LOSS_PCT} % ab (plus Wert-Rückstand, bis ${HEAT_LOSS_MAX}). Jeder weitere Feuer-Skill gibt +${FIRE_SCORE_PER_SKILL} Feuer-Score je Vorsprungspunkt.`;
       case "ice":
-        return `Jeder Eis-Skill friert eine eigene Karte als Gletscher fest: sie wird starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt aber jede Runde Masse und bricht ab ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse gewaltig über ihre Nachbarn. Jeder Eis-Skill-Pick friert einen neuen Gletscher — auch ein Tausch bei vollen Slots; ab ${G_DECLINE_MIN_SKILLS} gehaltenen Eis-Skills friert selbst das Ablehnen eines Angebots noch einen (du bekommst Perk UND Gletscher). So kannst du mehr Gletscher haben als Skill-Slots. Festgefrorene Gletscher bilden zudem 2D-Formationen (Block/Kreuz/Linie/Fläche), die das Bersten verstärken.`;
+        return `Jeder Eis-Skill friert eine eigene Karte als Gletscher fest — sie wird starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber jede Runde Masse und bricht schließlich gewaltig über ihre Nachbarn. Jeder Pick friert einen neuen Gletscher (auch ein Tausch bei vollen Slots); ab ${G_DECLINE_MIN_SKILLS} gehaltenen Eis-Skills friert selbst das Ablehnen eines Angebots noch einen — so kannst du mehr Gletscher haben als Skill-Slots.`;
       case "plant":
         return `Jeder Sieg gibt der Karte bis zu +1 Wachstum (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Pflanze-Skills). Ab ${PLANT_GREEN_THRESHOLD} Wachstum wird die Karte grün. Solange du nur Pflanzen-Skills hältst: je ${WURZELSCHLAG_PER_GROWTH} Wachstum +1 Kartenwert (bis ${PLANT_VALUE_CAP}, danach ist sie voll ausgewachsen), ab ${WURZELSCHLAG_LOSS_MIN_SKILLS} Pflanzen-Skills auch bei jeder ${WURZELSCHLAG_LOSS_EVERY}. Niederlage.`;
       default: return "";
