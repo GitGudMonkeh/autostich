@@ -52,6 +52,7 @@ function firstPerkOffer(seed, skillIdx) {
   let s = reducer(null, { type: "START_RUN", rng, seed });
   const skillId = s.skillOffer[Math.min(skillIdx, s.skillOffer.length - 1)];
   s = reducer(s, { type: "PICK_SKILL", skillId, rng });
+  if (s.phase === "glacier-target") s = reducer(s, { type: "GLACIER_LOCK", pos: 0 }); // Eis-Skill → Gletscher-Wahl bestätigen
   let guard = 0;
   while (s.phase === "play") { if (++guard > 100000) throw new Error("kein Perk-Angebot"); s = reducer(s, { type: "RESOLVE_TRICK", rng }); }
   expect(s.phase).toBe("levelup");

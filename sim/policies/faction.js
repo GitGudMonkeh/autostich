@@ -43,18 +43,16 @@ export function factionPolicy(target, { architectGreedy = true } = {}) {
         const prec = s.offer.filter(isPrecisionOffer);
         if (prec.length) return perkActionFor(prec[Math.floor(rng() * prec.length)], rng);
       }
-      // Eis-Neudesign: der Gletscher-Build friert Karten als Gletscher fest (GLACIER_LOCK) — ohne Locks produziert Eis
-      // keinen Score. Ein 3×3-Cluster wird über mehrere Formations-Schritte gelockt, dann bestätigt (gelockte Felder
-      // sind unverschiebbar → kein Greedy-Swap auf ihnen). Andere Fraktionen lösen die Aufstellung greedy.
-      if (s.phase === "formation") {
-        if ((s.activeArchetypes || []).includes("ice")) {
-          const cluster = [0, 1, 2, 5, 6, 7, 10, 11, 12];
-          const next = cluster.find((p) => !(s.glacierLocked && s.glacierLocked[p]));
-          if (next != null) return { type: "GLACIER_LOCK", pos: next };
-          return { type: "CONFIRM_FORMATION" };
-        }
-        return greedyFormationStep(s);
+      // Eis-Neudesign: nach jedem Eis-Skill-Pick friert genau 1 Karte fest (Phase "glacier-target"). Der Gletscher-Build
+      // zielt auf einen 3×3-Cluster — über die (bis zu 7) Eis-Skill-Picks wird er der Reihe nach aufgebaut; ist der Cluster
+      // voll/erschöpft, das erste freie Feld. Die Aufstellung läuft dann greedy (gelockte Felder sind unverschiebbar).
+      if (s.phase === "glacier-target") {
+        const cluster = [0, 1, 2, 5, 6, 7, 10, 11, 12];
+        const next = cluster.find((p) => !(s.glacierLocked && s.glacierLocked[p]));
+        const pos = next != null ? next : (s.glacierLocked || []).findIndex((v) => !v);
+        return { type: "GLACIER_LOCK", pos: pos < 0 ? 0 : pos };
       }
+      if (s.phase === "formation") return greedyFormationStep(s);
       // Skill-Ablehnung, Ziel, family-target (inkl. P_COLORFOCUS-Farbwahl), Architekt/Shop → Random-Baseline.
       return base.act(s, rng, mem);
     },

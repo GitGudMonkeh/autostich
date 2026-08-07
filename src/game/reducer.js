@@ -533,7 +533,9 @@ export function reducer(state, action) {
       return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, growth, colonized, plantLoss, ash, brandPending, brandActive, forged, formations,
                glacierRoles, glacierMass, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, grosseLawineFired, // Eis-Neudesign
                trimCount: (state.trimCount || 0) + (trimmed ? 1 : 0), // #288 Trimmen
-               phase: "play", skillOffer: null };
+               // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (genau 1 Karte festfrieren, Pflicht) —
+               // analog zum Perk-Ziel-Flow. Andere Archetypen gehen direkt weiter.
+               phase: arch === "ice" ? "glacier-target" : "play", skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
@@ -624,18 +626,18 @@ export function reducer(state, action) {
                formationEnergy: state.formationEnergy - 1,
                formationSwaps: [...(state.formationSwaps || []), { i, j, idA: cardA.id, idB: cardB.id }] };
     }
-    // Eis-Neudesign (docs §2.1): eine Karte als Gletscher picken → sie friert auf IHRER aktuellen Brett-Zelle fest und ist
-    // ab dann STARR (unverschiebbar in künftigen Aufstellungen). Kern-Entscheidung Position vs. Wert; die Fixierung ist
-    // bewusst permanent (kein Unlock). Nur in der Formationsphase & bei aktivem Gletscher-Archetyp. Idempotent.
+    // Eis-Neudesign (docs §2.1): Gletscher-Wahl BESTÄTIGEN — die gewählte Karte friert auf IHRER aktuellen Brett-Zelle fest
+    // und ist ab dann STARR (unverschiebbar in künftigen Aufstellungen). Kern-Entscheidung Position vs. Wert; permanent
+    // (kein Unlock). Läuft im „glacier-target"-Schritt nach jedem Eis-Skill-Pick (Pflicht, genau 1) → danach weiter zu „play".
     case "GLACIER_LOCK": {
-      if (state.phase !== "formation") return state;
+      if (state.phase !== "glacier-target") return state;
       if (!(state.activeArchetypes || []).includes("ice")) return state;
       const p = action.pos;
       if (p == null || p < 0 || p >= state.playerOrder.length) return state;
-      if (state.glacierLocked && state.glacierLocked[p]) return state; // schon gefroren → No-op
+      if (state.glacierLocked && state.glacierLocked[p]) return state; // schon gefroren → ungültige Wahl
       const glacierLocked = (state.glacierLocked || new Array(state.playerOrder.length).fill(false)).slice();
       glacierLocked[p] = true;
-      return { ...state, glacierLocked };
+      return { ...state, glacierLocked, phase: "play" }; // Pick bestätigt → zurück ins Spiel
     }
     // Letzten Tausch rückgängig machen → Energie erstatten.
     case "UNDO_SWAP": {

@@ -79,6 +79,14 @@ export function randomPolicy({ architectGreedy = false } = {}) {
         case "architect": // Architekt-Phase (#202, ersetzt den Shop): random oder greedy platzieren, dann fertig.
           return architectStep(s, rng, { greedy: architectGreedy });
 
+        // Eis-Neudesign: nach jedem Eis-Skill-Pick genau 1 Karte als Gletscher festfrieren (Pflicht). Baseline:
+        // erstes freies Feld (deterministisch); bei ≤7 Locks immer < Feldgröße.
+        case "glacier-target": {
+          const locked = s.glacierLocked || [];
+          let pos = 0; while (pos < s.playerOrder.length && locked[pos]) pos++;
+          return { type: "GLACIER_LOCK", pos };
+        }
+
         default:
           return null; // runOne bricht mit klarer Meldung ab
       }

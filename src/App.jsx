@@ -22,6 +22,7 @@ import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Ph
 import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { ArchitectScreen } from "./ui/ArchitectScreen.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
+import { GlacierPick } from "./ui/GlacierPick.jsx";
 import { FamilyTargetSelect } from "./ui/FamilyTargetSelect.jsx";
 import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
@@ -683,7 +684,10 @@ export function Autostich() {
       </div>
 
       {state.phase === "formation" && (
-        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} onFreeze={lockGlacier} options={options} onOption={changeOptions} />
+        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} options={options} onOption={changeOptions} />
+      )}
+      {state.phase === "glacier-target" && (
+        <GlacierPick state={state} onConfirm={lockGlacier} />
       )}
       {state.phase === "architect" && (
         <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}

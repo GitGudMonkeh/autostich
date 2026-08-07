@@ -251,7 +251,7 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
 describe("Eis-Neudesign — PICK_SKILL seedet glacierRoles", () => {
   it("ein Eis-Skill aktiviert den Eis-Archetyp und trägt seine Rolle in glacierRoles", () => {
     const s = reducer({ ...initialState(makeRng(1)), phase: "levelup", skillOffer: ["SK_ICE_01"] }, { type: "PICK_SKILL", skillId: "SK_ICE_01", rng });
-    expect(s.phase).toBe("play");
+    expect(s.phase).toBe("glacier-target"); // Eis-Skill-Pick öffnet die Gletscher-Wahl
     expect(s.activeArchetypes).toContain("ice");
     expect(s.glacierRoles).toContain("G_ANFRIEREN"); // SK_ICE_01 = Anfrieren
     expect(s.deck.some((c) => c.frozen)).toBe(false); // KEIN Einfrieren mehr
