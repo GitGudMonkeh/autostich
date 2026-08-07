@@ -71,6 +71,9 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
   const numCol = ripe ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : col;
   const labels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
   const fb = formationBorder(pf);
+  // Eis-Neudesign: Firn-Boden = ungefrorenes Feld mit angesammelter Masse (noch kein Gletscher). Dezent (nur leichter
+  // Blau-Schimmer + ❄-Marker), damit man es klar von einem echten Gletscher (Cyan-Rahmen/Glow/Icon) unterscheidet.
+  const firn = !glacier && glacierMass >= 0.5;
   // #112: „picked" (gold) hat Vorrang vor „selected" (weiß) vor Gletscher-Cyan vor Formations-/Farbrand.
   const borderColor = picked ? "#d4a63a" : selected ? "#ffffff" : glacier ? "#5ec8f0" : fb.color || col + "55";
   const borderStyle = fb.dashed && !selected && !picked ? "dashed" : "solid";
@@ -96,11 +99,11 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       title={anchorType ? `⚓ Anker · ${ANCHOR_LABEL[anchorType] || anchorType}` : ring ? (ringTitle || undefined) : undefined}
       className={`as-tile relative rounded-lg flex flex-col items-center justify-center transition-all${structLit ? " arch-struct-lit" : ""}`}
       style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
-               // #201.4: schon getauschte Karte dezent ausgrauen (rein kosmetisch, bleibt klickbar). picked(gold)/
-               // selected(weiß) haben Vorrang und bleiben voll sichtbar; disabled (0,45) sticht durch.
-               opacity: disabled ? 0.45 : (dimmed && !selected && !picked ? 0.55 : 1), cursor: !onClick ? "default" : (disabled ? "not-allowed" : "pointer"),
+               // #201.4: getauschte Karte dezent ausgrauen (rein kosmetisch, bleibt klickbar). Eis-Neudesign: Gletscher
+               // ebenso ausgrauen → Signal „starr, nicht tauschbar". picked(gold)/selected(weiß) haben Vorrang; disabled (0,45) sticht durch.
+               opacity: disabled ? 0.45 : ((dimmed || glacier) && !selected && !picked ? 0.55 : 1), cursor: !onClick ? "default" : (disabled ? "not-allowed" : "pointer"),
                ...(anchorRing || {}),
-               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : glacier ? "0 0 8px #5ec8f066" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, distrShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
+               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : glacier ? "0 0 8px #5ec8f066" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, firn ? "inset 0 0 0 9999px #5ec8f014" : null, distrShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
       {/* Architekt-Gebäude-Badge (#202/#224.7): nur der echte Wert-Boost „+X" mittig an der oberen Kante (kein Icon mehr —
           die Kategorie liest man am Rahmen/Ring + Tooltip). Nur bei value-Gebäuden (boost > 0); score/formation zeigt nur den Ring.
@@ -134,6 +137,12 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
         <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}`}>
           <img src={glacierIcon} alt="" aria-hidden="true" className="w-[10px] h-[10px] sm:w-3 sm:h-3 object-contain" style={{ filter: "drop-shadow(0 0 3px #5ec8f0)" }} />
           {Math.round(glacierMass)}
+        </span>
+      )}
+      {/* Firn-Boden-Marker: dezenter ❄ + Masse (kein Icon/Glow), klar abgesetzt vom Gletscher-Marker. */}
+      {firn && (
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · gespeicherte Masse ${Math.round(glacierMass)}`}>
+          ❄{Math.round(glacierMass)}
         </span>
       )}
       {roleIds.length > 0 && <span className="absolute bottom-0.5 left-1 text-[8px] sm:text-xs leading-none" style={{ color: "#d4a63a" }} title={roleTitle}>●</span>}
