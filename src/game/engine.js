@@ -12,7 +12,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
   fireFlag, hasHeatConsumer, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, // Feuer-Rework (v0); #234: hasHeatConsumer statt heatConsumerOf (mehrere Hitze-Konsumenten je einzeln)
   glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
-  isMonoPlant, hasKernholz, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Fraktions-Passive (Mono) / Kernholz / Tiefe / Breite
+  isMonoPlant, plantPassiveActive, hasKernholz, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Fraktions-Passive (Mono/Schwellen-Knick) / Kernholz / Tiefe / Breite
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
   hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasBaumreihe, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
@@ -28,6 +28,10 @@ import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftT
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { masteryLegendMult, masteryRareShift, masteryLegendGuaranteed } from "./mastery.js"; // #217 Meistergrade: Reward-Ableitungen
+
+// ERKUNDUNG Hebel 7: Commitment-Scaler mit Konvexitäts-Exponent. commitScale(count) = min(1, count/SKILL_SLOTS)^COMMIT_EXP.
+// COMMIT_EXP=1 (Default) → linear = bisheriges Verhalten (neutral). >1 → konvex (Verdünnung kostet superlinear).
+const commitScale = (count) => Math.pow(Math.min(1, count / C.SKILL_SLOTS), C.COMMIT_EXP);
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -478,7 +482,7 @@ export function resolveTrick(state, rng) {
     let plantDirect = 0; // Pflanze-Legendär-Reshape: DIREKTe, post-stack, gedeckelte Dividende aus den Fluten (unten zu `gained`)
     if ((activeArchetypes || []).includes("plant")) {
       const inFormation = positionHasFormation(posForm);
-      const plantCommit = Math.min(1, plantSkillCount(skills) / C.SKILL_SLOTS); // Bekenntnis-Skalierung (cross-health) für die post-stack Direkt-Dividenden (#270.2 + #Ceiling)
+      const plantCommit = commitScale(plantSkillCount(skills)); // Bekenntnis-Skalierung (cross-health) für die post-stack Direkt-Dividenden (#270.2 + #Ceiling)
       // #288 „Trimmen": dauerhafter Multiplikator auf Wurzel- & Blüten-Score, je ersetztem Wachstums-Skill höher (gedeckelt).
       const trimMult = 1 + Math.min((trimCount || 0) * C.TRIM_STEP, C.TRIM_CAP);
       // Wachstum: je Sieg +Zuwachs, GEGATET an die Pflanzen-Skill-Anzahl (Anti-Splash, v0.3): min(1, PflanzenSkills / SKILL_REF).
@@ -516,7 +520,7 @@ export function resolveTrick(state, rng) {
         }
         // Fraktions-Passive (Mono): grüne Karte leitet permanenten Wert aus Wachstum ab (+1 je N Wachstum, bis Deckel).
         // Wachstum wird NICHT verbraucht (speist parallel Jahresringe/Feldtiefe/Legendäre). Nur solange Mono-Pflanze.
-        if (isMonoPlant(skills) && Math.floor(g / C.WURZELSCHLAG_PER_GROWTH) > Math.floor(prevG / C.WURZELSCHLAG_PER_GROWTH) && pCard.value < C.PLANT_VALUE_CAP)
+        if (plantPassiveActive(skills) && Math.floor(g / C.WURZELSCHLAG_PER_GROWTH) > Math.floor(prevG / C.WURZELSCHLAG_PER_GROWTH) && pCard.value < C.PLANT_VALUE_CAP)
           deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: Math.min(C.PLANT_VALUE_CAP, c.value + 1) } : c));
         // Kernholz (L4): erntet den aufgebauten Wert — +Score je Kartenwert-Punkt über dem Startwert (baseRank). Nur grün.
         if (hasKernholz(skills) && cardGreen) {
@@ -730,7 +734,7 @@ export function resolveTrick(state, rng) {
     // (kleine Mults) relativ stärker als das Ceiling (große Mults) = Feuers fehlende „Immer-an-Engine". Skaliert mit
     // dem FEUER-BEKENNTNIS (Anteil Feuer-Skills an den Slots), damit ein 2-Skill-Splash die Dividende nicht in
     // High-Winrate-Kombis (Eis/Pflanze) trägt → hält Spezialisieren ≈ Mischen (cross-health).
-    const fireCommit = Math.min(1, activeFireCount(skills) / C.SKILL_SLOTS);
+    const fireCommit = commitScale(activeFireCount(skills));
     let fireDirect = C.FIRE_HEAT_DIVIDEND > 0 && fireDividendHeat > 0 && fireCommit > 0
       ? Math.min(fireDividendHeat, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * fireCommit : 0;
     // Damaststahl (L): DIREKTER Score je Sieg ∝ GESAMTEM geschmiedeten Wert im Deck (am Stack vorbei) — eine „Damast-
@@ -748,7 +752,7 @@ export function resolveTrick(state, rng) {
     // (activeLightningCount/SKILL_SLOTS = cross-health). Nur Legendär-Halter → generisches Blitz (ION_SCORE_PER_STACK) unberührt.
     let lightDirect = 0;
     if ((pCard.ionStacks || 0) > 0 && (hasAreaIonize(skills) || hasDoubleDischarge(skills))) {
-      const lightCommit = Math.min(1, activeLightningCount(skills) / C.SKILL_SLOTS);
+      const lightCommit = commitScale(activeLightningCount(skills));
       let nIon = 0, sumIon = 0;                                        // EIN Scan: Breite (# ionisierte Karten) + Energie (Σ Stapel)
       for (const c of deck) { const st = c.ionStacks || 0; if (st > 0) { nIon++; sumIon += st; } }
       // Flächenionisation (Sturmzelle, BREITE): je breiter das ionisierte Feld, desto größer jeder Treffer.
@@ -999,7 +1003,7 @@ export function resolveTrick(state, rng) {
     // Fraktions-Passive — Niederlage-Klausel: nur Mono-Pflanze UND ab N Pflanzen-Skills wächst eine Karte auch nach je M
     // Niederlagen trotzdem. Zähler je card.id; bei Erreichen der Schwelle → +Zuwachs (gleiche Skill-Gate-Rate wie ein Sieg)
     // und Zähler zurück. Grün backen + Wert-Schwelle wie im Sieg.
-    if (isMonoPlant(skills) && plantSkillCount(skills) >= C.WURZELSCHLAG_LOSS_MIN_SKILLS) {
+    if (plantPassiveActive(skills) && plantSkillCount(skills) >= C.WURZELSCHLAG_LOSS_MIN_SKILLS) {
       const losses = (newPlantLoss[pCard.id] || 0) + 1;
       if (losses >= C.WURZELSCHLAG_LOSS_EVERY) {
         newPlantLoss = { ...newPlantLoss, [pCard.id]: 0 };

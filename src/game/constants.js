@@ -191,6 +191,12 @@ export const BAUHUETTE_COVER     = envNum("SIM_BAUHUETTE_COVER", 8);      // Bau
 export const SKILL_SLOTS       = envNum("SIM_SKILL_SLOTS", 6);    // max gleichzeitig gehaltene Skills [Default 6 = echtes Spiel (Autostich_Test); ENV-Sweep-Haken SIM_SKILL_SLOTS z. B. =4 für den alten main-Stand]
 export const SKILLS_OFFERED     = envNum("SIM_SKILLS_OFFERED", 12);   // Skills je Skill-Runde [Default 12 = 3+3+3+3 (je 3 pro Fraktion, alle 4 im Angebot); ENV-Sweep-Haken, z. B. =6 für den alten 2+2+2-Stand]
 export const MAX_ARCHETYPES     = envNum("SIM_MAX_ARCHETYPES", 4);    // gleichzeitig aktive Fraktionen [Default 4 = alle 4 mischbar; ENV-Sweep-Haken, z. B. =3 für den Sim-validierten 3-von-4-Stand (Cross-Vergleich)]
+// ERKUNDUNG (Cross-Balance): Hebel 7 — Exponent auf die Commitment-Scaler (plant/fire/lightCommit = min(1, count/SKILL_SLOTS)^EXP).
+// 1 = linear (aktuell, neutral); >1 = konvex → Verdünnung kostet superlinear (naives Mischen ≤ Mono deutlicher). [ENV-Sweep-Haken]
+export const COMMIT_EXP        = envNum("SIM_COMMIT_EXP", 1);
+// ERKUNDUNG: Hebel 3c — Pflanze-Wert-Passive-Gate. 0 = Mono-Gate (aktuell, neutral: nur reine Pflanze); >0 = Schwellen-Knick:
+// Passive aktiv ab dieser Pflanzen-Skill-Zahl, UNABHÄNGIG von Fremd-Skills (belohnt Deep-Split statt Reinheit). [ENV-Sweep-Haken]
+export const PLANT_PASSIVE_MIN_SKILLS = envNum("SIM_PLANT_PASSIVE_MIN_SKILLS", 0);
 // (vestigial entfernt: SKILL_EVERY_CYCLES — Skill-Runden kommen nicht mehr „jede 3.", sondern aus dem festen DECISION_SCHEDULE; siehe FIRST_SKILL_CYCLE)
 export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
 export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.08); // Blitz: je gehaltenem Blitz-Skill [v0.5 Rework-Tune: 0,10→0,08 fürs Pflanze-Band, SIM-Sweep-Haken]

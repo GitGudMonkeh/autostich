@@ -448,6 +448,10 @@ export const plantRootScore = (skills, growth) => {
 // Pflanze-Fraktions-Passive „Wurzelschlag" (v0.5): MONO-Gate — nur aktiv, solange AUSSCHLIESSLICH Pflanzen-Skills
 // gehalten werden (mind. 1). Steuert die Wert-aus-Wachstum-Ableitung (Sieg) + die Niederlage-Klausel.
 export const isMonoPlant      = (skills) => (skills || []).length > 0 && plantSkillCount(skills) === (skills || []).length;
+// ERKUNDUNG Hebel 3c: Gate der Wert-Passive. Default (PLANT_PASSIVE_MIN_SKILLS=0) = hartes Mono-Gate (isMonoPlant, neutral).
+// >0 = Schwellen-Knick: aktiv ab N Pflanzen-Skills, egal ob Fremd-Skills dabei (Commitment-Tiefe statt Reinheit).
+export const plantPassiveActive = (skills) =>
+  isMonoPlant(skills) || (C.PLANT_PASSIVE_MIN_SKILLS > 0 && plantSkillCount(skills) >= C.PLANT_PASSIVE_MIN_SKILLS);
 export const hasKernholz      = (skills) => plantFlag(skills, "kernholz");
 export const hasWurzeltiefe   = (skills) => plantFlag(skills, "wurzeltiefe");
 export const hasPfahlwurzel   = (skills) => plantFlag(skills, "pfahlwurzel");
