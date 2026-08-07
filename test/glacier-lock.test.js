@@ -61,15 +61,15 @@ describe("GLACIER_LOCK — Gletscher-Wahl bestätigen", () => {
   });
 });
 
-describe("DECLINE_SKILL — Ablehnen bei vollen Eis-Slots friert trotzdem einen Gletscher", () => {
+describe("DECLINE_SKILL — Ablehnen ab genug Eis-Skills friert trotzdem einen Gletscher", () => {
   const ice6 = ["SK_ICE_01", "SK_ICE_02", "SK_ICE_03", "SK_ICE_04", "SK_ICE_05", "SK_ICE_06"];
   const levelupIce = (skills, over = {}) => ({
     ...initialState(makeRng(1)),
     phase: "levelup", activeArchetypes: ["ice"], deck: flat(), playerOrder: identity(),
     skills, skillOffer: ["SK_ICE_10"], glacierLocked: new Array(40).fill(false), ...over,
   });
-  it("6 Eis-Skills: Ablehnen öffnet die Gletscher-Wahl, danach kommt das Perk-Angebot", () => {
-    let s = reducer(levelupIce(ice6), { type: "DECLINE_SKILL", rng: makeRng(2) });
+  it("ab der Schwelle (4 Eis-Skills): Ablehnen öffnet die Gletscher-Wahl, danach kommt das Perk-Angebot", () => {
+    let s = reducer(levelupIce(ice6.slice(0, 4)), { type: "DECLINE_SKILL", rng: makeRng(2) });
     expect(s.phase).toBe("glacier-target");
     expect(s.pendingPerkOffer).toBeTruthy();          // Perk geparkt
     s = reducer(s, { type: "GLACIER_LOCK", pos: 0 });
@@ -78,7 +78,7 @@ describe("DECLINE_SKILL — Ablehnen bei vollen Eis-Slots friert trotzdem einen 
     expect(s.offer).toBeTruthy();
     expect(s.pendingPerkOffer).toBeNull();            // geparktes Angebot verbraucht
   });
-  it("weniger als 6 Eis-Skills: Ablehnen gibt nur ein Perk, keinen Gletscher", () => {
+  it("unter der Schwelle (3 Eis-Skills): Ablehnen gibt nur ein Perk, keinen Gletscher", () => {
     const s = reducer(levelupIce(ice6.slice(0, 3)), { type: "DECLINE_SKILL", rng: makeRng(2) });
     expect(s.phase).not.toBe("glacier-target");
     expect((s.glacierLocked || []).filter(Boolean).length).toBe(0);

@@ -5,7 +5,7 @@ import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_C
          WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
          FIRE_MARGIN_OFFSET, FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, FIRE_SCORE_SQRT_K,
          HEAT_MIN_MARGIN, HEAT_PER_POINT, HEAT_LOSS_MAX, HEAT_LOSS_PCT } from "../game/constants.js";
-import { THRESHOLDS as G_THRESHOLDS } from "../game/glacier.js"; // Eis-Neudesign: Berst-Schwelle für den Passiv-Text
+import { THRESHOLDS as G_THRESHOLDS, DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Berst-Schwelle + Ablehn-Gletscher-Schwelle für den Passiv-Text
 import { GLOSSARY } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
@@ -86,7 +86,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
       case "fire":
         return `Jeder Sieg mit mindestens ${HEAT_MIN_MARGIN} Wertvorsprung heizt die Hitze um ${FIRE_MIN_HEAT} % auf und gibt +${FIRE_MIN_SCORE} Feuer-Score — je größer der Vorsprung, desto mehr (Beispiel ${FIRE_EX_MARGIN} Vorsprung: +${FIRE_EX_HEAT} % Hitze und +${FIRE_EX_SCORE} Score). Niederlagen kühlen die Hitze um ${FIRE_LOSS_PCT} % der aktuellen Hitze ab (plus Wert-Rückstand, bis ${HEAT_LOSS_MAX}). Jeder weitere Feuer-Skill gibt +${FIRE_SCORE_PER_SKILL} Feuer-Score je Vorsprungspunkt.`;
       case "ice":
-        return `Jeder Eis-Skill friert eine eigene Karte als Gletscher fest: sie wird starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt aber jede Runde Masse und bricht ab ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse gewaltig über ihre Nachbarn. Jeder Eis-Skill-Pick friert einen neuen Gletscher — auch ein Tausch bei vollen Slots; hältst du ${SKILL_SLOTS} Eis-Skills, friert selbst das Ablehnen noch einen (du bekommst Perk UND Gletscher). So kannst du mehr Gletscher haben als Skill-Slots. Festgefrorene Gletscher bilden zudem 2D-Formationen (Block/Kreuz/Linie/Fläche), die das Bersten verstärken.`;
+        return `Jeder Eis-Skill friert eine eigene Karte als Gletscher fest: sie wird starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt aber jede Runde Masse und bricht ab ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse gewaltig über ihre Nachbarn. Jeder Eis-Skill-Pick friert einen neuen Gletscher — auch ein Tausch bei vollen Slots; ab ${G_DECLINE_MIN_SKILLS} gehaltenen Eis-Skills friert selbst das Ablehnen eines Angebots noch einen (du bekommst Perk UND Gletscher). So kannst du mehr Gletscher haben als Skill-Slots. Festgefrorene Gletscher bilden zudem 2D-Formationen (Block/Kreuz/Linie/Fläche), die das Bersten verstärken.`;
       case "plant":
         return `Jeder Sieg gibt der Karte bis zu +1 Wachstum (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Pflanze-Skills). Ab ${PLANT_GREEN_THRESHOLD} Wachstum wird die Karte grün. Solange du nur Pflanzen-Skills hältst: je ${WURZELSCHLAG_PER_GROWTH} Wachstum +1 Kartenwert (bis ${PLANT_VALUE_CAP}, danach ist sie voll ausgewachsen), ab ${WURZELSCHLAG_LOSS_MIN_SKILLS} Pflanzen-Skills auch bei jeder ${WURZELSCHLAG_LOSS_EVERY}. Niederlage.`;
       default: return "";

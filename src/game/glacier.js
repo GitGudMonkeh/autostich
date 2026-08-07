@@ -29,6 +29,9 @@ export const GROSSE_LAWINE_MULT = 6;
 export const SCHILD_BONUS = 3;
 // Erstarrung (Kombi-Legendär): kleiner Direkt-Score je Bruch mit Erstarrung — bewusst MODERAT (Kern-Wert ist die Kontrolle im Duo, nicht Mono-Score).
 export const ERSTARRUNG_SCORE = 2000;
+// Ablehn-Gletscher (Sim-tunebar): ab so vielen gehaltenen Eis-Skills friert auch das Ablehnen eines Skill-Angebots einen
+// Gletscher (statt nur der Skill-Pick/Tausch). Entkoppelt „mehr Gletscher" vom Tauschen guter Skills.
+export const DECLINE_MIN_SKILLS = 4;
 export const KASKADE_PER_NEIGHBOR = 0.25;      // Berst-Faktor = 1 + 0,25 × Gletscher-Nachbarn (Dichte)
 export const KOLLISION_MULT = 1.5;             // Treffer auf Gletscher-Nachbarn (anteilig, docs §2.3)
 export const EWIGER_FROST = 1;                 // Fraktions-Passiv: bedingungsloser Masse-Tick je Durchlauf (docs §2.6)
