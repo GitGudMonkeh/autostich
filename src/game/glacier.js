@@ -29,7 +29,10 @@ export const GROSSE_LAWINE_MULT = 6;
 export const SCHILD_BONUS = 3;
 // Erstarrung (Legendär): Bonus-Score je Bruch = ANTEIL des Burst-Scores dieses Bruchs (statt fester Zahl). Skaliert damit
 // automatisch mit Masse/Geometrie/Kaskade UND dem Sieg-Stack (glacierDirect ist bereits multipliziert) und erbt dessen
-// Soft-Cap → kann nicht am Burst vorbei ausreißen. Bewusst hoch: Erstarrung soll der „heimliche Best-Pick" sein (Sim-tunebar).
+// Soft-Cap → kann nicht am Burst vorbei ausreißen. Auf 2,0 getunt: hebt Erstarrung im Mono vom toten Wert (Lift 0,58) auf
+// einen Muss-Pick (~1,10) — zusammen mit dem (in der Mono-Sim unsichtbaren) Duo-Kontrollwert der „heimliche Best-Pick".
+// Höher würde v. a. die ganze Eis-Fraktion aufblähen (Balance-Guard: Eis-Median 11,0 → 12,2 M bei 2,0), ohne Erstarrung
+// sauber an die Spitze zu bringen (Lift-Confound: sie bläht ihren eigenen Nenner). (Sim-tunebar.)
 export const ERSTARRUNG_FRAC = 2.0;
 // Ablehn-Gletscher (Sim-tunebar): ab so vielen gehaltenen Eis-Skills friert auch das Ablehnen eines Skill-Angebots einen
 // Gletscher (statt nur der Skill-Pick/Tausch). Entkoppelt „mehr Gletscher" vom Tauschen guter Skills.
