@@ -1,4 +1,4 @@
-import { fmtScore, fmtScoreShort } from "./format.js";
+import { fmtScore } from "./format.js";
 
 /* #251: Zwei Lauf-Auswertungen aus dem Live-state (nur der aktuelle Lauf — kein Storage nötig):
    (1) Verhältnis-Balken „woraus kommt der Score" — Formation / Gebäude / Serie / Crit / Sonstige.
@@ -18,68 +18,6 @@ const SRC = [
 ];
 
 const WIN = "#5ab87a", LOSS = "#c0504a";
-
-/* Victory-Redesign: FRAKTIONS-Score-Herkunft. Priorität: erst die Eigen-Score-Kanäle je Fraktion (was die Engine
-   direkt der Fraktion gutschreibt), dann die generischen Multiplikator-Quellen (Formation/Crit/Serie/Gebäude), Rest
-   = Sonstige. Wie sourceShares sequentiell gegen den Gesamtscore geklemmt (die Kanäle greifen multiplikativ ineinander
-   → die Aufteilung ist bewusst eine Näherung, priorisiert aber die für Spieler wichtigste Frage: „welche Fraktion?"). */
-const FACTION_SRC = [
-  { key: "glacier",   label: "Gletscher-Ertrag", color: "#5ec8f0", srcs: ["glacierYield"] },
-  { key: "plant",     label: "Wurzel + Blüte",   color: "#69cf59", srcs: ["plantRoot", "plantBloom", "plantHarvest"] },
-  { key: "light",     label: "Blitz-Ertrag",     color: "#8a7de0", srcs: ["lightYield"] },
-  { key: "fire",      label: "Feuer-Score",      color: "#ff7a3c", srcs: ["fireBase", "fireWhite"] },
-  { key: "formation", label: "Formation",        color: "#5a8ade", srcs: ["formationScore"] },
-  { key: "crit",      label: "Crit-Bonus",       color: "#b47cff", srcs: ["critBonusScore"] },
-  { key: "serie",     label: "Serie",            color: "#e0b34a", srcs: ["streakScore"] },
-  { key: "building",  label: "Gebäude",          color: "#8f93a6", srcs: ["buildingScore"] },
-  { key: "rest",      label: "Sonstige",         color: "#6b6b76", srcs: null },
-];
-export function factionShares(state) {
-  const score = Math.max(0, Math.floor(state.score || 0));
-  const c0 = (x) => Math.max(0, Math.round(x || 0));
-  let rem = score;
-  const rows = [];
-  for (const s of FACTION_SRC) {
-    let v;
-    if (s.srcs == null) { v = Math.max(0, rem); rem = 0; }
-    else { const raw = s.srcs.reduce((a, k) => a + c0(state[k]), 0); v = Math.min(rem, raw); rem -= v; }
-    if (v > 0) rows.push({ ...s, value: v });
-  }
-  rows.sort((a, b) => b.value - a.value);
-  return { score, rows };
-}
-
-/* Victory-Redesign: „Score-Herkunft" nach Fraktion — gestapelter Balken + Rangliste (absolute Werte + %). */
-export function ScoreHerkunft({ state }) {
-  const { score, rows } = factionShares(state);
-  if (!score || !rows.length) return null;
-  const pct = (v) => Math.round((v / score) * 100);
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] uppercase tracking-wide opacity-50">Score-Herkunft</span>
-        <span className="text-[11px] font-mono opacity-40" title={fmtScore(score)}>Σ {fmtScoreShort(score)}</span>
-      </div>
-      <div className="flex w-full h-[13px] rounded overflow-hidden" style={{ background: "#0c0d14", border: "1px solid #2a2a34" }}>
-        {rows.map((r) => (
-          <div key={r.key} title={`${r.label}: ${fmtScore(r.value)} (${pct(r.value)} %)`} style={{ width: `${(r.value / score) * 100}%`, background: r.color }} />
-        ))}
-      </div>
-      <div className="flex flex-col gap-0.5 mt-3">
-        {rows.map((r) => (
-          <div key={r.key} className="grid items-center gap-2.5 px-2 py-1.5 rounded-lg" style={{ gridTemplateColumns: "11px 1fr auto" }}>
-            <span className="w-[9px] h-[9px] rounded-[3px]" style={{ background: r.color }} />
-            <span className="text-[13px] font-medium truncate">{r.label}</span>
-            <span className="text-right whitespace-nowrap" title={fmtScore(r.value)}>
-              <b className="font-mono tabular-nums text-[13px]" style={{ color: r.color }}>{fmtScoreShort(r.value)}</b>
-              <span className="font-mono text-[11px] opacity-40 ml-1.5">{pct(r.value)} %</span>
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function sourceShares(state) {
   const score = Math.max(0, Math.floor(state.score || 0));
@@ -121,17 +59,16 @@ export function ScoreSourceBar({ state, showTitle = true }) {
   );
 }
 
-export function RunGraphs({ state, sourceBar = true }) {
+export function RunGraphs({ state }) {
   const sh = sourceShares(state);
   const log = Array.isArray(state.trickLog) ? state.trickLog : [];
   const hasGraph = log.some((c) => c && c.length);
-  if ((!sourceBar || !sh.score) && !hasGraph) return null;
+  if (!sh.score && !hasGraph) return null;
 
   return (
     <div className="mt-5">
-      {/* (1) Verhältnis-Balken: woraus kommt der Score (geteilte Komponente, auch live in der StatusRail #252).
-             Im Victory-Redesign ersetzt der Fraktions-Breakdown (ScoreHerkunft) diesen generischen Balken → sourceBar={false}. */}
-      {sourceBar && <ScoreSourceBar state={state} showTitle />}
+      {/* (1) Verhältnis-Balken: woraus kommt der Score (geteilte Komponente, auch live in der StatusRail #252) */}
+      <ScoreSourceBar state={state} showTitle />
 
       {/* (2) Durchlauf-Graph: Score je Stich, je Durchlauf getrennt (eigene Skala = „Reset je Durchlauf"). */}
       {hasGraph && (
@@ -159,7 +96,7 @@ export function RunGraphs({ state, sourceBar = true }) {
                       );
                     })}
                   </div>
-                  <span className="text-[9px] font-mono opacity-45 w-14 shrink-0 text-right tabular-nums truncate" title={fmtScore(cycleScore)}>{fmtScoreShort(cycleScore)}</span>
+                  <span className="text-[9px] font-mono opacity-45 w-14 shrink-0 text-right tabular-nums">{fmtScore(cycleScore)}</span>
                 </div>
               );
             })}
