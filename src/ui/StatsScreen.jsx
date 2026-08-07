@@ -31,22 +31,14 @@ const archColor = (a) => (ARCHETYPE_META[a] || {}).color || "#8a8a95";
 const pct = (x) => `${Math.round((x || 0) * 100)}%`;
 
 // #253/Stats-Redesign: nowrap+truncate + optionaler Tooltip → große Score-Werte (fmtScoreShort am Aufrufer) sprengen die Kachel nicht.
-// `className` erlaubt Spalten-Spans (mobil bekommen die Score-Kacheln eine ganze halbe Reihe, damit „Mio." nicht abgeschnitten wird).
-function Kpi({ label, value, color, title, className = "" }) {
+function Kpi({ label, value, color, title }) {
   return (
-    <div title={title} className={`rounded-lg px-3 py-2 text-center min-w-0 ${className}`} style={{ background: "#141419", border: "1px solid #26262e" }}>
+    <div title={title} className="rounded-lg px-3 py-2 text-center min-w-0" style={{ background: "#141419", border: "1px solid #26262e" }}>
       <div className="opacity-50 text-[11px] truncate">{label}</div>
       <div className="font-bold text-lg tabular-nums whitespace-nowrap overflow-hidden text-ellipsis" style={color ? { color } : undefined}>{value}</div>
     </div>
   );
 }
-
-// Gesamt-Spielzeit in Stunden+Minuten (z. B. „6h 57m") — lesbarer als die Roh-MM:SS-Ausgabe von fmtDuration bei langen Spielzeiten.
-const fmtHours = (ms) => {
-  const totalMin = Math.floor(Math.max(0, ms) / 60000);
-  const h = Math.floor(totalMin / 60), m = totalMin % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-};
 
 function Section({ title, hint, children }) {
   return (
@@ -102,16 +94,13 @@ function BarRow({ label, color, frac, right }) {
   );
 }
 
-// Stats-Redesign: „Was am besten läuft"-Zeile — zweizeilig: Tag oben als Label, darunter Aussage + optionaler Zahlenwert
-// rechts. So bleibt es auch auf schmalen Screens sauber lesbar (statt Tag/Text/Wert in einer engen Zeile zu quetschen).
+// Stats-Redesign: kompakte „Was am besten läuft"-Zeile — Tag links, Aussage, optional ein Zahlenwert rechts.
 function WinRow({ tag, children, val }) {
   return (
-    <div className="rounded-lg px-3 py-2 text-xs" style={{ background: "#141419", border: "1px solid #26262e" }}>
-      <div className="text-[10px] font-bold uppercase tracking-wide opacity-45 mb-1">{tag}</div>
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0">{children}</span>
-        {val && <span className="tabular-nums font-bold whitespace-nowrap shrink-0" style={{ color: "#5ab87a" }}>{val}</span>}
-      </div>
+    <div className="rounded-lg px-3 py-2.5 flex items-center gap-3 text-xs" style={{ background: "#141419", border: "1px solid #26262e" }}>
+      <span className="text-[10px] font-bold uppercase tracking-wide opacity-45 shrink-0">{tag}</span>
+      <span className="flex-1 min-w-0">{children}</span>
+      {val && <span className="tabular-nums font-bold whitespace-nowrap shrink-0" style={{ color: "#5ab87a" }}>{val}</span>}
     </div>
   );
 }
@@ -356,15 +345,13 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
         ) : (
           <>
             {/* KPI-Band + Score-Verlauf. Score-Kacheln kompakt abgekürzt (fmtScoreShort) + voller Wert im Tooltip → kein Overflow. */}
-            {/* KPI-Band: mobil 2 breite Score-Kacheln oben (damit „Mio." reinpasst) + Zeit·Spiele·Beste Serie darunter;
-                Desktop alle fünf in einer Reihe. 6-Spalten-Raster mobil (3+3 / 2+2+2), 5 Spalten ab sm. */}
             <Section title="Übersicht">
-              <div className="grid grid-cols-6 sm:grid-cols-5 gap-2">
-                <Kpi className="col-span-3 sm:col-span-1" label="Bestscore" value={fmtScoreShort(profile.bestScore)} title={fmtScore(profile.bestScore)} color="#d4a63a" />
-                <Kpi className="col-span-3 sm:col-span-1" label="Ø-Score" value={fmtScoreShort(avgScore)} title={fmtScore(avgScore)} />
-                <Kpi className="col-span-2 sm:col-span-1" label="Spielzeit" value={fmtHours(profile.totalDurationMs)} title={fmtDuration(profile.totalDurationMs)} />
-                <Kpi className="col-span-2 sm:col-span-1" label="Spiele" value={games} />
-                <Kpi className="col-span-2 sm:col-span-1" label="Beste Serie" value={`${profile.bestStreak || 0}×`} />
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                <Kpi label="Spiele" value={games} />
+                <Kpi label="Bestscore" value={fmtScoreShort(profile.bestScore)} title={fmtScore(profile.bestScore)} color="#d4a63a" />
+                <Kpi label="Ø-Score" value={fmtScoreShort(avgScore)} title={fmtScore(avgScore)} />
+                <Kpi label="Spielzeit" value={fmtDuration(profile.totalDurationMs)} />
+                <Kpi label="Beste Serie" value={`${profile.bestStreak || 0}×`} />
               </div>
               <div className="mt-3 rounded-lg px-3 py-2" style={{ background: "#141419", border: "1px solid #26262e" }}>
                 <div className="text-[11px] opacity-50 mb-1">Score-Verlauf · letzte {trend.length} Läufe</div>
