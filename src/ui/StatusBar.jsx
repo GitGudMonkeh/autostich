@@ -17,12 +17,12 @@ function Pill({ active, onClick, tone = "#8a7de0", title, children }) {
   );
 }
 
-function Cell({ label, children, align = "left", big = false }) {
+function Cell({ label, children, align = "left", extra }) {
   return (
-    <div className="flex flex-col justify-center gap-1 px-3.5 py-2 min-w-0" style={{ textAlign: align }}>
-      <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
+    <div className="flex flex-col justify-center gap-0.5 px-3 py-1.5 min-w-0" style={{ textAlign: align }}>
+      <span className="text-[9px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
       <span className="font-pixel-dense leading-none whitespace-nowrap overflow-hidden text-ellipsis"
-        style={{ fontVariantNumeric: "tabular-nums", fontSize: big ? 25 : 18 }}>{children}</span>
+        style={{ fontVariantNumeric: "tabular-nums", fontSize: 16 }}>{children}{extra}</span>
     </div>
   );
 }
@@ -40,7 +40,7 @@ export function StatusBar({
         style={{ background: "#1a1a22f2", border: "1px solid #33333e", backdropFilter: "blur(6px)", boxShadow: "0 8px 20px -8px #000" }}>
         {/* Ablauf-Steuerung: Pause · Tempo · Karten */}
         <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderRight: "1px solid #26262e" }}>
-          <Pill active={paused} onClick={onTogglePause} title={paused ? "Weiter" : "Pause"}>{paused ? "▶" : "⏸"}</Pill>
+          <Pill active={paused} onClick={onTogglePause} tone="#d4a63a" title={paused ? "Weiter" : "Pause"}>{paused ? "▶" : "⏸"}</Pill>
           <Pill active={speedMult === 2} onClick={() => onSpeed(2)} title="Tempo ×2">X2</Pill>
           <Pill active={speedMult === 4} onClick={() => onSpeed(4)} title="Tempo ×4">X4</Pill>
           <Pill active={speedMult === 6} onClick={() => onSpeed(6)} title="Tempo maximal">MAX</Pill>
@@ -56,23 +56,20 @@ export function StatusBar({
           )}
         </div>
 
-        {/* Vitalwerte — Score ist der wichtigste Wert (big) und bekommt eine Mindestbreite, damit er nie schrumpft. */}
-        <div className="flex flex-col justify-center gap-1 px-3.5 py-2 min-w-0" style={{ minWidth: 128 }}>
-          <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Score</span>
-          <span className="font-pixel-dense leading-none whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25 }}>
-            <span style={{ color: "#d4a63a" }}>{fmtScore(score)}</span>
-            {ghost.hasGhost && (ghost.passed
-              ? <span className="text-xs ml-1.5" style={{ color: "#8a7de0" }}>⚑</span>
-              : ghost.delta != null
-                ? <span className="text-xs ml-1.5" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>{ghost.delta >= 0 ? "▲+" : "▼"}{fmtScore(ghost.delta)}</span>
-                : null)}
-          </span>
-        </div>
+        {/* Vitalwerte */}
+        <Cell label="Score">
+          <span style={{ color: "#d4a63a" }}>{fmtScore(score)}</span>
+          {ghost.hasGhost && (ghost.passed
+            ? <span className="text-[11px] ml-1.5" style={{ color: "#8a7de0" }}>⚑</span>
+            : ghost.delta != null
+              ? <span className="text-[11px] ml-1.5" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>{ghost.delta >= 0 ? "▲+" : "▼"}{fmtScore(ghost.delta)}</span>
+              : null)}
+        </Cell>
         <div style={{ borderLeft: "1px solid #26262e" }} />
         <Cell label="Mult">
           <span className={mult?.shakeClass || ""}>
             <span key={mult?.pulseKey} className="inline-block rounded px-1.5 py-0.5 font-pixel-dense"
-              style={{ fontVariantNumeric: "tabular-nums", fontSize: 18,
+              style={{ fontVariantNumeric: "tabular-nums", fontSize: 15,
                        background: mult?.hot ? `${mult.color}22` : "#ffffff0f",
                        color: mult?.hot ? mult.color : "#8a8a92",
                        animation: mult?.pulseKey > 0 ? "as-multpulse 420ms ease-out" : undefined }}>

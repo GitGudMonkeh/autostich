@@ -523,7 +523,7 @@ export function Autostich() {
     (state.activeArchetypes || []).includes("plant"), (state.activeArchetypes || []).includes("ice")].filter(Boolean).length > 1;
 
   return (
-    <div className="relative min-h-screen w-full flex justify-center px-4 py-6">
+    <div className="min-h-screen w-full flex justify-center px-4 py-6">
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
           sichtbar (CSS), klick-durchlässig. */}
       <div className="crt-overlay" aria-hidden="true" />
@@ -533,7 +533,7 @@ export function Autostich() {
           Klick-durchlässig. */}
       {import.meta.env.VITE_PREVIEW === "1" && (
         <div
-          className="absolute top-2 left-2 z-50 px-2 py-1 rounded text-[10px] font-bold font-pixel tracking-wide"
+          className="fixed top-2 left-2 z-50 px-2 py-1 rounded text-[10px] font-bold font-pixel tracking-wide"
           style={{ background: "#d4a63a", color: "#141419", pointerEvents: "none", boxShadow: "0 0 8px rgba(212,166,58,.6)" }}
           aria-hidden="true"
         >
@@ -554,10 +554,9 @@ export function Autostich() {
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} />
         ) : (<>
-          {/* Gameplay-Neu-Aufbau: schlanker Kopf — Wortmarke/Seed links, das Glossar-ⓘ groß oben rechts.
-              Die Sekundär-Controls stehen als eigene, über die Breite verteilte Reihe darunter; die Vitalwerte +
-              Pause/Tempo in der schwebenden StatusBar. */}
-          <header className="flex items-start justify-between gap-2">
+          {/* Gameplay-Neu-Aufbau: schlanker Kopf — Wortmarke/Seed links, Glossar-ⓘ + Sekundär-Controls rechts.
+              Die Vitalwerte + Pause/Tempo stehen jetzt in der schwebenden StatusBar direkt darunter. */}
+          <header className="flex items-end justify-between flex-wrap gap-2">
             <div>
               <h1 className="text-2xl font-bold tracking-tight font-pixel crt-title as-wordmark-header">
                 AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
@@ -565,14 +564,14 @@ export function Autostich() {
               {/* #205: Seed dieses Laufs — jederzeit kopierbar zum Teilen/Herausfordern. */}
               {state.seed != null && <div className="mt-1"><SeedChip code={formatSeed(state.seed)} /></div>}
             </div>
-            <GlossaryPanel onOpenChange={setGlossaryOpen} className="shrink-0" style={{ width: 36, height: 36, fontSize: "1.05rem" }} />
+            <div className="flex items-start gap-3">
+              <GlossaryPanel onOpenChange={setGlossaryOpen} />
+              <Controls
+                onRestart={() => setConfirmRestart(true)} onAbort={() => setConfirmAbort(true)} onOptions={() => setShowOptions(true)}
+                muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
+              />
+            </div>
           </header>
-
-          {/* Sekundär-Controls als eigene Reihe, gleichmäßig über die Breite verteilt: Optionen · Neustart · Beenden · Ton. */}
-          <Controls
-            onRestart={() => setConfirmRestart(true)} onAbort={() => setConfirmAbort(true)} onOptions={() => setShowOptions(true)}
-            muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
-          />
 
           {/* Phase 1: schwebende Kompakt-Leiste — Vitalwerte (Score+Δ · Mult · Serie · Fortschritt · Zeit) + Pause/Tempo/Karten. */}
           <StatusBar
