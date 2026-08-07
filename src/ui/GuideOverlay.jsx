@@ -35,7 +35,7 @@ function SecLabel({ children, color }) {
 // Der Kreislauf-Ring (4 Knoten + wandernder Funke), datengesteuert je Archetyp.
 function LoopRing({ color, nodes, center }) {
   return (
-    <svg viewBox="-20 0 240 200" className="w-full h-auto block" role="img"
+    <svg viewBox="-38 0 276 200" className="w-full h-auto block" role="img"
          aria-label={`Kreislauf: ${nodes.join(" → ")}`}>
       <circle cx="100" cy="100" r="72" fill="none" stroke="#2a2a33" strokeWidth="12" />
       <circle cx="100" cy="100" r="72" fill="none" stroke={color} strokeWidth="2.5" opacity="0.5" />
@@ -48,11 +48,13 @@ function LoopRing({ color, nodes, center }) {
         <path d="M28 100 l7 5 v-10 z" />
         <path d="M100 28 l-5 7 h10 z" />
       </g>
-      <g textAnchor="middle" fill="#e8e8ea" fontSize="11" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-        <text x="100" y="20">{nodes[0]}</text>
-        <text x="182" y="104" fontSize="10">{nodes[1]}</text>
-        <text x="100" y="190">{nodes[2]}</text>
-        <text x="18" y="104" fontSize="10">{nodes[3]}</text>
+      {/* Knoten-Labels bewusst AUSSERHALB des Kreises (r=72 → Rand bei 28/172): oben/unten mittig darüber/darunter,
+          links rechtsbündig links vom Rand, rechts linksbündig rechts vom Rand — so überlappt kein Text die Linie. */}
+      <g fill="#e8e8ea" fontSize="11" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
+        <text x="100" y="18" textAnchor="middle">{nodes[0]}</text>
+        <text x="180" y="104" textAnchor="start" fontSize="10">{nodes[1]}</text>
+        <text x="100" y="193" textAnchor="middle">{nodes[2]}</text>
+        <text x="20" y="104" textAnchor="end" fontSize="10">{nodes[3]}</text>
       </g>
       <text x="100" y="97" textAnchor="middle" fill={color} fontSize="11" letterSpacing="0.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{center[0]}</text>
       <text x="100" y="112" textAnchor="middle" fill="#71717c" fontSize="8" letterSpacing="1" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{center[1]}</text>
