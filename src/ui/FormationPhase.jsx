@@ -20,6 +20,26 @@ const strengthOf = (fs) => (fs || []).reduce((s, pf) => s + ((pf.mult || 1) - 1)
 // #UI: Formations-Stärke als Bonus in % (statt Σ-Summe) — Σ(mult−1)·100.
 const pctOf = (x) => Math.round(x * 100);
 
+// #UI Aufstellung-Redesign: einklappbare Sektion (Referenz-Legende / Details) — gleiches Muster wie der Passiv-Toggle
+// in der Skill-Auswahl. Default zu, damit die Aufstellung nicht von Referenztexten zugestellt wird.
+function FormCollapse({ label, chipWord = "mehr", color = "#8a7de0", open, onToggle, children }) {
+  return (
+    <div>
+      <button type="button" onClick={onToggle} aria-expanded={open}
+        className="w-full flex items-center gap-2 text-left" title={`${label} ${open ? "einklappen" : "ausklappen"}`}>
+        <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color }}>{label}</span>
+        <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
+          style={{ color, background: `${color}14`, border: `1px solid ${color}3a` }}>
+          <span className="transition-transform" style={{ display: "inline-block", transform: open ? "rotate(90deg)" : "none" }}>▸</span>
+          {open ? "weniger" : chipWord}
+        </span>
+        <div className="flex-1 h-px" style={{ background: `${color}33` }} />
+      </button>
+      {open && <div className="mt-2 grid gap-3 content-start">{children}</div>}
+    </div>
+  );
+}
+
 /* Formationsphase (V2 §22.8): pausiert den Run und öffnet die Deck-Aufstellung.
    Zwei Karten antippen = Tausch (1 Energie). Formationen werden nach jedem Tausch live neu berechnet
    (kommt aus state.formations, vom Reducer gefüllt). Undo/Zurücksetzen erstatten Energie.
@@ -40,6 +60,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   const [showArch, setShowArchState] = useState(options.archShowBuildings !== false);
   const setShowArch = (v) => { const nv = typeof v === "function" ? v(showArch) : v; setShowArchState(nv); onOption?.({ archShowBuildings: nv }); };
   const [inspectBid, setInspectBid] = useState(null); // inspiziertes Gebäude: Liste ↔ Brett (Rahmen glüht), gesetzt per Karten-Auswahl ODER Listen-Klick — wie in der Chronik
+  const [openLegend, setOpenLegend] = useState(false);   // #UI Aufstellung-Redesign: Referenz-Legende (Formationen & Rahmenfarben) einklappbar, default zu
+  const [openDetails, setOpenDetails] = useState(false);  // #UI Aufstellung-Redesign: Gebäude · Perks · Eis-Effekte einklappbar, default zu
   const architect = state.architect;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const archBuildings = (state.architectEnabled && architect && architect.buildings) || [];
@@ -138,56 +160,55 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
       <div className="w-full max-w-4xl">
         <div className="w-full rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card as-panel"
           style={{ background: "#15151b", border: "1px solid #33333e" }}>
-        {/* Kopf */}
-        <div className="flex items-center justify-between mb-2">
+        {/* Kopf (#UI Aufstellung-Redesign): Titel + Glossar, Durchlauf-Score direkt darunter. */}
+        <div className="flex items-center gap-2 min-w-0">
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>Aufstellung · Durchlauf {(state.cycle || 0) + 1}</div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold">Deck aufstellen</h2>
-              <GlossaryPanel />
-            </div>
+            <h2 className="text-xl font-bold">Deck aufstellen</h2>
           </div>
-          <div className="text-right shrink-0">
-            <div className="text-[10px] uppercase tracking-wide opacity-50">Energie</div>
-            <div className="text-2xl font-bold font-pixel-dense leading-none" style={{ color: formationEnergy > 0 ? "#d4a63a" : "#8a8a92" }}>{formationEnergy}</div>
-            {/* #95.6/#193: Im Kopf steht nur noch die Gesamtsumme Σ. Das reaktive Delta wandert neben
-                „Zurücksetzen" in die Sticky-Leiste (es gehört inhaltlich zur Reset-Aktion). */}
-            <div className="mt-1.5 leading-tight">
-              <div className="text-[10px] uppercase tracking-wide opacity-50">Formations-Bonus</div>
-              <div className="font-pixel-dense text-base">
-                <span className="opacity-85">+{pctOf(curStrength)} %</span>
-              </div>
+          <div className="ml-auto shrink-0"><GlossaryPanel /></div>
+        </div>
+        {state.lastCycleScore != null && <div className="mt-2"><RoundScoreBadge state={state} /></div>}
+
+        {/* Hero-Stat-Leiste: der Formations-Bonus ist das, was der Spieler durch Tauschen maximiert → groß in Gold mit
+            live-Δ oben rechts (wie der Score in der Gameplay-Leiste). Energie & Formationszahl als kompakte Nebenzellen. */}
+        <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={{ border: "1px solid #26262e", background: "#1a1a22" }}>
+          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Formations-Bonus</span>
+              <span className="text-[11px] font-bold whitespace-nowrap font-pixel-dense" style={{ color: deltaColor }}
+                title="Formations-Differenz seit Durchlaufbeginn (was ein Zurücksetzen rückgängig macht)">
+                {delta > 0.001 ? "▲ " : delta < -0.001 ? "▼ " : ""}{deltaStr}
+              </span>
             </div>
+            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 26, color: "#d4a63a" }}>+{pctOf(curStrength)} %</span>
+          </div>
+          <div className="flex flex-col justify-center gap-1 px-3 py-2.5 text-right border-l" style={{ borderColor: "#26262e" }}>
+            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Energie</span>
+            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: formationEnergy > 0 ? "#d4a63a" : "#8a8a92" }}>{formationEnergy}</span>
+          </div>
+          <div className="flex flex-col justify-center gap-1 px-3 py-2.5 text-right border-l" style={{ borderColor: "#26262e" }}>
+            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Formationen</span>
+            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
           </div>
         </div>
-        {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig. */}
-        <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mb-3 flex items-center justify-center gap-2 flex-wrap"
+        {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig.
+            #UI-Redesign: entschlackt — Δ steht jetzt im Hero-Wert, der Fortfahren-Untertitel entfällt (Energie/Formationen
+            stehen oben in der Leiste). */}
+        <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mt-3 mb-3 flex flex-wrap items-center gap-2"
              style={{ background: "#15151b", borderBottom: "1px solid #2a2a34" }}>
-          <div className="flex gap-2 items-center">
-            <button onClick={onUndo} disabled={!hasSwaps} className="px-3 py-2 rounded-lg text-sm font-bold"
-              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>↶ Rückgängig</button>
-            <button onClick={onReset} disabled={!hasSwaps} className="px-3 py-2 rounded-lg text-sm"
-              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
-            {/* #193: Differenz neben „Zurücksetzen" — zeigt, was ein Reset rückgängig machen würde
-                (bestehende Farbcodierung grün/rot/grau; Σ bleibt oben im Kopf). */}
-            <span className="font-pixel-dense text-sm whitespace-nowrap ml-0.5" title="Formations-Differenz seit Durchlaufbeginn (was ein Zurücksetzen rückgängig macht)">
-              <span className="opacity-45 mr-0.5">Δ</span>
-              <span className="font-bold" style={{ color: deltaColor }}>{deltaStr}</span>
-            </span>
-          </div>
-          <button onClick={onConfirm} className="px-5 py-2.5 rounded-lg text-sm transition-all hover:brightness-110 flex flex-col items-center leading-tight"
-            style={{ background: GOLD, color: "#141419" }}>
-            <span className="font-bold">Fortfahren</span>
-            {/* #UI: „max ×…" raus — stattdessen die restliche Energie (formationEnergy) + Formationszahl,
-                zweizeilig unter „Fortfahren", einzeilig & zentriert. Der Energie-Wert steht zusätzlich oben im Kopf. */}
-            <span className="font-normal opacity-80 whitespace-nowrap">{count} Formationen · noch {formationEnergy} Energie</span>
-          </button>
+          <button onClick={onUndo} disabled={!hasSwaps} className="shrink-0 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
+            style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>↶ Rückgängig</button>
+          <button onClick={onReset} disabled={!hasSwaps} className="shrink-0 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
+            style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
+          {/* flex-1 + basis: passt inline, wenn Platz ist; sonst bricht „Fortfahren" gefällig in eine eigene volle Zeile um. */}
+          <button onClick={onConfirm} className="flex-1 basis-[132px] px-4 py-2.5 rounded-lg text-sm font-bold whitespace-nowrap transition-all hover:brightness-110"
+            style={{ background: GOLD, color: "#141419" }}>Fortfahren</button>
         </div>
-        {state.lastCycleScore != null && <div className="mb-2"><RoundScoreBadge state={state} /></div>}
         <p className="text-xs opacity-55 mb-2">
-          Tippe zwei Karten, um sie zu tauschen (1 Energie). Formationen entstehen nur <b>innerhalb</b> der {SEGMENT_SIZE}er-Segmente
+          Tippe zwei Karten zum Tauschen (1 Energie) · Formationen entstehen nur <b>innerhalb</b> der {SEGMENT_SIZE}er-Segmente
           {segInfo.active && (segInfo.all
-            ? <> — <span style={{ color: "#8be0a8" }}><b>Segmentarbeit:</b> alle Grenzen offen, Formationen laufen segmentübergreifend</span></>
+            ? <> — <span style={{ color: "#8be0a8" }}><b>Segmentarbeit:</b> alle Grenzen offen, segmentübergreifend</span></>
             : <> — <span style={{ color: "#8be0a8" }}><b>Segmentarbeit:</b> die mit <b>⇕</b> markierten Grenzen dürfen überschritten werden</span></>)}.
         </p>
 
@@ -221,62 +242,69 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
               plantGrowth={sel != null && cards[sel] ? (state.growth?.[cards[sel].id] || 0) : 0}
               plantRoots={sel != null && cards[sel] ? plantRootScore(state.skills || [], state.growth?.[cards[sel].id] || 0) : 0}
               plantPfahl={hasPfahlwurzel(state.skills || [])} />
-            {/* Eis-Neudesign: das Festfrieren läuft jetzt direkt nach dem Eis-Skill-Pick (GlacierPick-Overlay), nicht mehr hier.
-                Gefrorene Gletscher erscheinen in der Aufstellung nur noch als starre Marker (Board oben). */}
-            {/* Gebäude-Liste (wie in der Chronik): antippen lässt den Gebäude-Rahmen am Brett cyan leuchten — und
-                umgekehrt markiert das Antippen einer Karte im Gebäude hier den Eintrag. Nur bei aktivem Overlay sichtbar-verlinkt. */}
-            {hasArch && (
-              <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
-                <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Deine Gebäude ({archBuildings.length})</div>
-                <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
-                <div className="grid gap-1">
-                  {archBuildings.map((b) => {
-                    const fam = archFamilyDef(b.familyId); if (!fam) return null;
-                    const anchor = Math.min(...b.footprint);
-                    const eff = architectCover?.[anchor]?.effects?.join(" · ") || "";
-                    const meta = ARCH_CAT[fam.category] || {};
-                    const on = inspectBid === b.id;
-                    return (
-                      <button key={b.id} id={`form-bld-${b.id}`} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
-                        className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
-                        style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
-                        <span className="inline-flex items-center gap-1.5 flex-wrap">
-                          <span className="w-[8px] h-[8px] rounded-[2px] inline-block" style={{ background: fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92") }} />
-                          <b>{fam.name}</b>
-                          <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
-                        </span>
-                        {eff && <span className="opacity-75">{eff}</span>}
-                      </button>
-                    );
-                  })}
-                </div>
+            {/* #UI-Redesign: Referenz-Legende (Formationen & Rahmenfarben) einklappbar — default zu, damit die
+                Aufstellung nicht von der 7-zeiligen Textwand zugestellt wird. Wer's kennt, sieht sie nie. */}
+            <FormCollapse label="Formationen & Rahmenfarben" chipWord="Legende" color="#5ab87a"
+              open={openLegend} onToggle={() => setOpenLegend((o) => !o)}>
+              <div className="grid grid-cols-1 gap-y-0.5 text-xs sm:text-[13px] leading-snug font-medium">
+                <div><b style={{ color: "#8be0a8" }}>W</b> <span style={{ color: "#6fc48f" }}>Wiederholung</span> — ≥2 gleiche Werte (×1,25 / ×1,50 / ×1,80, dann +0,40 je weitere)</div>
+                <div><b style={{ color: "#8be0a8" }}>F</b> <span style={{ color: "#6fc48f" }}>Farbblock</span> — ≥3 gleiche Farbe (ab ×1,35, +0,20 je weitere)</div>
+                <div><b style={{ color: "#8be0a8" }}>T</b> <span style={{ color: "#6fc48f" }}>Treppe</span> — ≥3 streng steigend, Schritt ≤4 (ab ×1,35, +0,20 je weitere)</div>
+                <div><b style={{ color: "#8be0a8" }}>Z</b> <span style={{ color: "#6fc48f" }}>Wechsel</span> — ≥3 Zick-Zack, Diff ≥4 (ab ×1,40, +0,20 je weitere)</div>
+                <div><b style={{ color: "#8be0a8" }}>A</b> <span style={{ color: "#6fc48f" }}>Anker</span> — Einzelposition ×1,25</div>
+                <div style={{ color: "#d4a63a" }}>⧉ Überlappung — mehr Formationen = mehr Multi: 2 ×1,5 · 3 ×2 · 4 ×3</div>
+                <div style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr Rahmen = mehr Multi · gestrichelt = ohne Multiplikator</div>
               </div>
-            )}
-            <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
-            {/* Kurz-Erklärung der Formationen mit Kürzel (#95.7). #103: nur Kürzel + Name grün,
-                Beschreibung (nach dem „—") in Standard-Textfarbe → bessere Lesbarkeit. */}
-            <div className="grid grid-cols-1 gap-y-0.5 text-xs sm:text-[13px] leading-snug font-medium">
-              <div><b style={{ color: "#8be0a8" }}>W</b> <span style={{ color: "#6fc48f" }}>Wiederholung</span> — ≥2 gleiche Werte (×1,25 / ×1,50 / ×1,80, dann +0,40 je weitere)</div>
-              <div><b style={{ color: "#8be0a8" }}>F</b> <span style={{ color: "#6fc48f" }}>Farbblock</span> — ≥3 gleiche Farbe (ab ×1,35, +0,20 je weitere)</div>
-              <div><b style={{ color: "#8be0a8" }}>T</b> <span style={{ color: "#6fc48f" }}>Treppe</span> — ≥3 streng steigend, Schritt ≤4 (ab ×1,35, +0,20 je weitere)</div>
-              <div><b style={{ color: "#8be0a8" }}>Z</b> <span style={{ color: "#6fc48f" }}>Wechsel</span> — ≥3 Zick-Zack, Diff ≥4 (ab ×1,40, +0,20 je weitere)</div>
-              <div><b style={{ color: "#8be0a8" }}>A</b> <span style={{ color: "#6fc48f" }}>Anker</span> — Einzelposition ×1,25</div>
-              <div style={{ color: "#d4a63a" }}>⧉ Überlappung — mehr Formationen = mehr Multi: 2 ×1,5 · 3 ×2 · 4 ×3</div>
-              <div style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr Rahmen = mehr Multi · gestrichelt = ohne Multiplikator</div>
-            </div>
-            {/* Eis-Neudesign: 2D-Gletscher-Formationen in Blau erklärt (nur bei aktivem Eis). */}
-            <GlacierFormLegend state={state} />
-            {/* Gehaltene Eis-Effekte auf die Formationserkennung — nur wenn welche gehalten werden (desc aus SKILL_DEFS). */}
-            {iceFormSkills.length > 0 && (
-              <div className="grid gap-0.5 text-xs sm:text-[13px] leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
-                <div className="font-bold" style={{ color: "#7fd4f0" }}>❄ Eis-Effekte auf Formationen</div>
-                {iceFormSkills.map((id) => (
-                  <div key={id}>
-                    <b style={{ color: "#8be0f8" }}>{SKILL_DEFS[id].name}</b>
-                    <span> — <GlossaryText text={SKILL_DEFS[id].desc} /></span>
+              {/* Eis-Neudesign: 2D-Gletscher-Formationen in Blau erklärt (nur bei aktivem Eis). */}
+              <GlacierFormLegend state={state} />
+            </FormCollapse>
+
+            {/* #UI-Redesign: Gebäude · Perks · Eis-Effekte einklappbar — default zu; nur zeigen, wenn es überhaupt Inhalt gibt. */}
+            {(hasArch || (state.perks || []).length > 0 || iceFormSkills.length > 0) && (
+              <FormCollapse label={hasArch ? `🏗 Deine Gebäude (${archBuildings.length}) · Perks` : "Perks & Effekte"} chipWord="mehr" color="#8a7de0"
+                open={openDetails} onToggle={() => setOpenDetails((o) => !o)}>
+                {/* Gebäude-Liste (wie in der Chronik): antippen lässt den Gebäude-Rahmen am Brett cyan leuchten — und umgekehrt. */}
+                {hasArch && (
+                  <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
+                    <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Deine Gebäude ({archBuildings.length})</div>
+                    <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
+                    <div className="grid gap-1">
+                      {archBuildings.map((b) => {
+                        const fam = archFamilyDef(b.familyId); if (!fam) return null;
+                        const anchor = Math.min(...b.footprint);
+                        const eff = architectCover?.[anchor]?.effects?.join(" · ") || "";
+                        const meta = ARCH_CAT[fam.category] || {};
+                        const on = inspectBid === b.id;
+                        return (
+                          <button key={b.id} id={`form-bld-${b.id}`} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
+                            className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
+                            style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
+                            <span className="inline-flex items-center gap-1.5 flex-wrap">
+                              <span className="w-[8px] h-[8px] rounded-[2px] inline-block" style={{ background: fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92") }} />
+                              <b>{fam.name}</b>
+                              <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
+                            </span>
+                            {eff && <span className="opacity-75">{eff}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                ))}
-              </div>
+                )}
+                <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
+                {/* Gehaltene Eis-Effekte auf die Formationserkennung — nur wenn welche gehalten werden (desc aus SKILL_DEFS). */}
+                {iceFormSkills.length > 0 && (
+                  <div className="grid gap-0.5 text-xs sm:text-[13px] leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
+                    <div className="font-bold" style={{ color: "#7fd4f0" }}>❄ Eis-Effekte auf Formationen</div>
+                    {iceFormSkills.map((id) => (
+                      <div key={id}>
+                        <b style={{ color: "#8be0f8" }}>{SKILL_DEFS[id].name}</b>
+                        <span> — <GlossaryText text={SKILL_DEFS[id].desc} /></span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </FormCollapse>
             )}
           </div>
         </div>
