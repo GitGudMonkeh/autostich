@@ -43,7 +43,8 @@ export function RunStats({ entry = {}, anonymized = false }) {
 
   const cell = (label, value, title, color) => (
     <div title={title} className="min-w-0"><div className="opacity-50 text-xs">{label}</div>
-      <div className="font-bold tabular-nums leading-tight" style={color ? { color } : undefined}>{value == null ? "–" : value}</div></div>
+      {/* #253: nowrap+truncate hält große Werte in der Kachel (Score-Kacheln sind zusätzlich via fmtScoreShort abgekürzt). */}
+      <div className="font-bold tabular-nums leading-tight whitespace-nowrap overflow-hidden text-ellipsis" style={color ? { color } : undefined}>{value == null ? "–" : value}</div></div>
   );
   // #253: Score-Kachel — kompakt abgekürzt (Mio./Mrd.) gegen Kollisionen bei hohen Scores; voller Wert im Tooltip.
   const scoreCell = (label, val, desc, color) => cell(
