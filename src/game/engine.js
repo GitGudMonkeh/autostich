@@ -22,7 +22,7 @@ import { precomputeArchitect, architectValueBonus, architectScore, buildArchitec
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftTarget as glacierDriftTarget,
   neighbors4 as glacierNeighbors4, glacierNeighborFn, verschmelzenPool, uebergletscherPool, packeisTick, verzahnungTick, eiszeitTick, glacierGeometry,
   ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
-  ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_DRIFT as GLACIER_SCHNEETREIBEN_DRIFT,
+  ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as GLACIER_SCHNEETREIBEN_SEED,
   EISPANZER_MASS as GLACIER_EISPANZER_MASS, FROSTBUND_BUFF as GLACIER_FROSTBUND_BUFF,
   VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
@@ -363,16 +363,22 @@ export function resolveTrick(state, rng) {
     serieStreak = winStreak; // effektive Serie NACH diesem Sieg
     // Eis-Neudesign (docs §2.2 / §4 Firn): Sieg eines Gletschers → +Masse auf seinem Feld (Baseline + Rollen).
     if (glacierActive && glacierLocked[actualPos]) {
+      const preMass = newGlacierMass[actualPos] || 0;   // Masse VOR dem Sieg (Schneetreibens 0-Sonderfall)
       let add = GLACIER_WIN_MASS;
       // Anfrieren: Sieg extra, Formations-Sieg zusätzlich obendrauf.
       if (glacierRoles.includes(GLACIER_ROLES.ANFRIEREN)) add += GLACIER_ANFRIEREN_WIN + (hasFormation ? GLACIER_ANFRIEREN_FORM : 0);
-      newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + add;
-      // Schneetreiben (Verwehung): einen Teil der Masse auf ein Nachbarfeld verwehen — sät den Boden nach außen (nah).
+      newGlacierMass[actualPos] = preMass + add;
+      // Schneetreiben (Verwehung): ADDITIV +SEED aufs Nachbarfeld (der Gletscher behält seine volle Sieg-Masse). Hatte er
+      // vor dem Sieg 0 Masse, gibt er stattdessen seine Sieg-Masse ab (Transfer). Deterministisch, bevorzugt offenen Boden, 4-Nb.
       if (glacierRoles.includes(GLACIER_ROLES.SCHNEETREIBEN)) {
         const tgt = glacierDriftTarget(actualPos, glacierLocked);
         if (tgt != null) {
-          const drift = Math.min(GLACIER_SCHNEETREIBEN_DRIFT, newGlacierMass[actualPos] || 0);
-          if (drift > 0) { newGlacierMass[actualPos] -= drift; newGlacierMass[tgt] = (newGlacierMass[tgt] || 0) + drift; }
+          if (preMass > 0) {
+            newGlacierMass[tgt] = (newGlacierMass[tgt] || 0) + GLACIER_SCHNEETREIBEN_SEED;
+          } else {
+            const give = Math.min(GLACIER_WIN_MASS, newGlacierMass[actualPos] || 0);
+            newGlacierMass[actualPos] -= give; newGlacierMass[tgt] = (newGlacierMass[tgt] || 0) + give;
+          }
         }
       }
     }

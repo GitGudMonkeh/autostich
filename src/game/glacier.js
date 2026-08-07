@@ -321,8 +321,9 @@ export function ewigerFrostTick(mass, locked, amount = EWIGER_FROST) {
 /* ---- Rollen-Gruppe B: Masse-Quellen (docs §4 Firn) ----------------------------------------------- */
 export const ANFRIEREN_WIN = 1;        // Sieg → +Masse extra (zusätzlich zur Baseline WIN_MASS)
 export const ANFRIEREN_FORM = 2;       // Formations-Sieg → doppelt anfrieren (extra oben drauf)
-export const SCHNEETREIBEN_DRIFT = 1;  // Verwehung: Masse vom Gletscher auf ein Nachbarfeld
-export const DAUERFROST_BASE = 1;      // offener Boden: +Masse/Durchlauf auf Feld OHNE Gletscher-Nachbarn (skaliert runter)
+export const SCHNEETREIBEN_SEED = 2;   // Verwehung: ADDITIV +Masse aufs Nachbarfeld (Gletscher behält seine Sieg-Masse); nur bei 0 eigener Masse gibt er stattdessen die Sieg-Masse ab
+export const DAUERFROST_NEAR = 1;      // Dauerfrost: Feld mit Abstand 2 zum nächsten Gletscher → +Masse/Durchlauf
+export const DAUERFROST_FAR = 2;       // Dauerfrost: Feld mit Abstand ≥3 (oder kein Gletscher) → +Masse/Durchlauf
 export const EISPANZER_MASS = 1;       // Eispanzer: abgeschirmte Nachbar-Niederlage → +Masse je angrenzendem Gletscher
 
 // Schneetreiben (Verwehung, docs §4): Zielfeld für die Verwehung — bevorzugt ein NICHT-Gletscher-Nachbarfeld (Boden säen),
@@ -335,17 +336,23 @@ export function driftTarget(pos, locked) {
   return nb.length ? nb[0] : null;
 }
 
-// Dauerfrost (docs §4 Firn, „offener Boden friert am tiefsten"): am Durchlauf-ENDE sammeln UNGEFRORENE Felder Masse —
-// aber gedämpft durch Gletscher-Nachbarn (0 Nachbarn = voller Frost, ganz von Gletschern umgeben = 0). Nur Firn-Boden.
-export function dauerfrostTick(mass, locked, base = DAUERFROST_BASE) {
+// Dauerfrost (docs §4 Firn): am Durchlauf-ENDE frosten UNGEFRORENE Felder nach ABSTAND zum nächsten Gletscher
+// (King-Move/Chebyshev, weil „die 8 direkt um einen Gletscher"): Abstand 1 (der 8er-Ring) → 0, Abstand 2 → NEAR,
+// Abstand ≥3 (oder gar kein Gletscher) → FAR. Bewusst einfache Bänder statt Bruch-Skalierung. Nur Firn-Boden.
+export function dauerfrostTick(mass, locked) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const glaciers = [];
+  for (let p = 0; p < N_POS; p++) if (isG(p)) glaciers.push(p);
   const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
   for (let p = 0; p < N_POS; p++) {
     if (isG(p)) continue;                                 // nur ungefrorene Felder (Gletscher laden über Anfrieren/Ewiger Frost)
-    const nb = neighbors4(p);
-    const gN = nb.filter(isG).length;
-    const openness = nb.length ? Math.max(0, 1 - gN / nb.length) : 1; // je mehr Gletscher-Nachbarn, desto weniger Boden-Frost
-    if (openness > 0) out[p] = (out[p] || 0) + base * openness;
+    let dist = Infinity;
+    for (const g of glaciers) {
+      const cd = Math.max(Math.abs(rowOf(p) - rowOf(g)), Math.abs(colOf(p) - colOf(g)));
+      if (cd < dist) { dist = cd; if (dist <= 1) break; }
+    }
+    const add = dist <= 1 ? 0 : (dist === 2 ? DAUERFROST_NEAR : DAUERFROST_FAR);
+    if (add > 0) out[p] = (out[p] || 0) + add;
   }
   return out;
 }

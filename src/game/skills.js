@@ -1,5 +1,12 @@
 import * as C from "./constants.js";
 import { shuffle } from "./deck.js";
+// Eis-Neudesign: Gletscher-Tuning-Zahlen (Single Source glacier.js, Sim-tunebar) für driftfreie Eis-Skill-Descs.
+import { ANFRIEREN_WIN as G_ANFRIEREN_WIN, ANFRIEREN_FORM as G_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as G_SCHNEETREIBEN_SEED,
+  DAUERFROST_NEAR as G_DAUERFROST_NEAR, DAUERFROST_FAR as G_DAUERFROST_FAR, VERDICHTUNG_RATE as G_VERDICHTUNG_RATE,
+  PACKEIS_PER_NEIGHBOR as G_PACKEIS_PER, VERZAHNUNG_PER as G_VERZAHNUNG_PER, GEO_LINIE as G_GEO_LINIE, EISWALL_LINIE as G_EISWALL_LINIE,
+  TIER_MULT as G_TIER_MULT, ABBRUCHKANTE_TIER_MULT as G_ABBRUCH_TIER, ZERMALMEN_KOLLISION as G_ZERMALMEN_KOLL, KOLLISION_MULT as G_KOLLISION,
+  RISSBILDUNG_BURST as G_RISSBILDUNG_BURST, THRESHOLDS as G_THRESHOLDS, GLETSCHERSTURZ_PER as G_GLETSCHERSTURZ_PER,
+  FROSTBUND_BUFF as G_FROSTBUND_BUFF, EISPANZER_MASS as G_EISPANZER_MASS, EISZEIT_FLOOD as G_EISZEIT_FLOOD } from "./glacier.js";
 
 // Deutsche Zahlformatierung (1.08 → „1,08") — driftgefährdete Beschreibungszahlen aus den Konstanten interpolieren.
 const de = (x) => String(x).replace(".", ",");
@@ -149,51 +156,51 @@ export const SKILL_DEFS = {
   //      "ice" → activeArchetypes "ice" aktiviert den Gletscher-Block; PICK_SKILL seedet state.glacierRoles aus den `role`s.
   // Linie 1 — Firn (Masse-Motor)
   SK_ICE_01: { id: "SK_ICE_01", name: "Anfrieren", archetype: "ice", keywords: ["glacier"], role: "G_ANFRIEREN",
-    desc: "Gewinnt ein Gletscher einen Stich, wächst die Masse seines Feldes zusätzlich. Formations-Siege frieren doppelt an." },
+    desc: `Ein Gletscher-Sieg gibt +${de(G_ANFRIEREN_WIN)} Masse extra; siegt der Gletscher in einer Formation, zusätzlich +${de(G_ANFRIEREN_FORM)}.` },
   SK_ICE_02: { id: "SK_ICE_02", name: "Schneetreiben", archetype: "ice", keywords: ["glacier"], role: "G_SCHNEETREIBEN",
-    desc: "Gewinnt ein Gletscher, verweht er einen Teil seiner Masse auf ein angrenzendes Feld (Firn-Boden) — bereitet den Boden neben Gletschern vor." },
+    desc: `Gewinnt ein Gletscher, sät er +${de(G_SCHNEETREIBEN_SEED)} Masse auf ein angrenzendes Feld (bevorzugt offenen Boden) — zusätzlich, ohne eigene Masse abzugeben; nur bei 0 eigener Masse gibt er stattdessen seine Sieg-Masse ab. Nur die 4 direkten Nachbarn, Eisbrücke zählt hier nicht.` },
   SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier"], role: "G_DAUERFROST",
-    desc: "Ab dem Pick friert der Boden zu: ungefrorene Felder sammeln passiv Masse — offener Boden am tiefsten, direkt neben Gletschern kaum." },
+    desc: `Jede Runde frostet offener Boden zu: ungefrorene Felder sammeln Masse nach Abstand zum nächsten Gletscher — +${de(G_DAUERFROST_NEAR)} bei 2 Feldern Abstand, +${de(G_DAUERFROST_FAR)} ab 3. Die 8 Felder direkt um einen Gletscher bleiben leer.` },
   SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "architect"], role: "G_VERDICHTUNG",
-    desc: "Der Gebäude-Wertbonus auf einem Gletscher wird nicht ausgespielt, sondern in Masse getankt (koppelt Architekt an Eis)." },
+    desc: `Erhöht ein Gebäude die Kartenstärke einer Gletscher-Karte, wird dieser Wert-Bonus nicht ausgespielt (die Karte kämpft ohne ihn), sondern in Masse getankt: +${de(G_VERDICHTUNG_RATE)} Masse je Punkt. Score-Gebäude bleiben unberührt.` },
   // Linie 2 — Eisschild (Cluster/Dichte)
   SK_ICE_05: { id: "SK_ICE_05", name: "Verschmelzen", archetype: "ice", keywords: ["glacier"], role: "G_VERSCHMELZEN",
-    desc: "Zu Durchlauf-Beginn heben angrenzende Gletscher einander auf den Cluster-Durchschnitt (nie fallend)." },
+    desc: "Zu Durchlauf-Beginn heben angrenzende Gletscher einander auf den Masse-Durchschnitt ihres Clusters — nur anhebend, nie fallend." },
   SK_ICE_06: { id: "SK_ICE_06", name: "Packeis", archetype: "ice", keywords: ["glacier"], role: "G_PACKEIS",
-    desc: "Ein Gletscher mit vielen Gletscher-Nachbarn gewinnt Bonus-Masse pro Durchlauf — belohnt die Mitte des Feldes." },
+    desc: `Jede Runde gewinnt ein Gletscher +${de(G_PACKEIS_PER)} Masse je Gletscher-Nachbar.` },
   SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE",
-    desc: "Erweitert die Nachbarschaft um die vier Diagonalen (8-Nachbarschaft) — verbindet zersplitterte Felder zu einem Cluster." },
+    desc: "Zählt auch die vier Diagonalen als angrenzend (8-Nachbarschaft) — verbindet zersplitterte Felder zu einem Cluster (wirkt auf Bruch, Kollision und Cluster-Größe)." },
   SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL",
-    desc: "Eine komplett gefrorene, durchgehende Gletscher-Reihe oder -Spalte verstärkt alle ihre Gletscher." },
+    desc: `Eine komplett gefrorene Reihe oder Spalte (die Linien-Formation) verstärkt das Bersten aller ihrer Gletscher: ×${de(G_EISWALL_LINIE)} statt ×${de(G_GEO_LINIE)}.` },
   SK_ICE_09: { id: "SK_ICE_09", name: "Verzahnung", archetype: "ice", keywords: ["glacier"], role: "G_VERZAHNUNG",
-    desc: "Je größer das verbundene Cluster, desto schneller gewinnt jeder seiner Gletscher Masse." },
+    desc: `Jede Runde gewinnt jeder Gletscher +${de(G_VERZAHNUNG_PER)} Masse je Gletscher im verbundenen Cluster.` },
   // Linie 3 — Lawine (Brechen/Kaskade)
   SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE",
-    desc: "Der Burst-Score belohnt das Erreichen hoher Stufen noch steiler — für wenige, mächtige Einzelgletscher." },
+    desc: `Höhere Stufen bersten steiler: Stufen-Wucht ×${de(G_ABBRUCH_TIER[2])} / ×${de(G_ABBRUCH_TIER[3])} auf Stufe 2 / 3 (statt ×${de(G_TIER_MULT[2])} / ×${de(G_TIER_MULT[3])}).` },
   SK_ICE_11: { id: "SK_ICE_11", name: "Kettenbruch", archetype: "ice", keywords: ["glacier"], role: "G_KETTENBRUCH",
-    desc: "Bricht ein Gletscher, zwingt er angrenzende Gletscher, sofort mitzubrechen — die echte Kaskade rollt durchs Feld." },
+    desc: "Bricht ein Gletscher, zwingt er angrenzende Gletscher, sofort mitzubrechen — auch wenn sie die Schwelle nicht erreicht hätten." },
   SK_ICE_12: { id: "SK_ICE_12", name: "Zermalmen", archetype: "ice", keywords: ["glacier", "crit"], role: "G_ZERMALMEN",
-    desc: "Trifft ein Bruch einen Gletscher-Nachbarn (Kollision), wird daraus ein Krit statt eines normalen Treffers." },
+    desc: `Trifft ein Bruch einen Gletscher-Nachbarn, zählt die Kollision stärker: Faktor ×${de(G_ZERMALMEN_KOLL)} statt ×${de(G_KOLLISION)}.` },
   SK_ICE_13: { id: "SK_ICE_13", name: "Rissbildung", archetype: "ice", keywords: ["glacier"], role: "G_RISSBILDUNG",
-    desc: "Instabiles Eis: senkt die Berst-Schwelle → bricht früher & häufiger, kleinere Brüche (Tempo-Gegenpol)." },
+    desc: `Instabiles Eis: ein Gletscher bricht schon ab ${de(G_RISSBILDUNG_BURST)} Masse (statt ${de(G_THRESHOLDS[G_THRESHOLDS.length - 1])}).` },
   SK_ICE_14: { id: "SK_ICE_14", name: "Gletschersturz", archetype: "ice", keywords: ["glacier"], role: "G_GLETSCHERSTURZ",
-    desc: "Je mehr Gletscher im selben Durchlauf brechen, desto stärker jeder einzelne Bruch." },
+    desc: `Je mehr Gletscher im selben Durchlauf brechen, desto stärker jeder Bruch: +${pct(G_GLETSCHERSTURZ_PER)} % je brechendem Gletscher.` },
   // Linie 4 — Frostgriff (Kontrolle/Duo)
   SK_ICE_15: { id: "SK_ICE_15", name: "Einfrieren", archetype: "ice", keywords: ["glacier"], role: "G_EINFRIEREN",
-    desc: "Bricht ein Gletscher auf eine Gegnerkarte, verliert diese ihren nächsten Stich garantiert." },
+    desc: "Bricht ein Gletscher auf eine Gegnerkarte, verliert diese ihren Stich im nächsten Durchlauf." },
   SK_ICE_16: { id: "SK_ICE_16", name: "Frostbund", archetype: "ice", keywords: ["glacier"], role: "G_FROSTBUND",
-    desc: "Bricht ein Gletscher auf einen Nicht-Eis-Nachbarn (2. Archetyp), bufft er ihn offensiv (+Stichwert)." },
+    desc: `Bricht ein Gletscher, werden seine direkten Nicht-Eis-Nachbarn verstärkt: +${de(G_FROSTBUND_BUFF)} Stichwert im nächsten Durchlauf.` },
   SK_ICE_17: { id: "SK_ICE_17", name: "Eispanzer", archetype: "ice", keywords: ["glacier"], role: "G_EISPANZER",
-    desc: "Eine Niederlage neben einem Gletscher ist folgenlos (Serie hält) und füttert stattdessen Masse in den Gletscher." },
+    desc: `Eine Niederlage neben einem Gletscher bricht deine Serie nicht — und füttert stattdessen +${de(G_EISPANZER_MASS)} Masse je angrenzendem Gletscher.` },
   // Legendäre (je Linie eine Capstone)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_EISZEIT",
-    desc: "Die kriechende Eiszeit: das ganze Brett flutet jede Runde mit Boden-Masse, und deine Karten frieren nach und nach zu Gletschern ein." },
+    desc: `Die kriechende Eiszeit: jede Runde flutet das ganze Brett mit +${de(G_EISZEIT_FLOOD)} Boden-Masse auf jedes ungefrorene Feld, und das stärkste offene Feld friert zum Gletscher ein — dein Feld füllt sich über die Restrunden.` },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
-    desc: "Das gesamte zusammenhängende Feld zählt als EIN Übergletscher: alle poolen Masse, alle gelten füreinander als angrenzend, Kaskade rechnet volle Feldgröße." },
+    desc: "Das gesamte Feld zählt als EIN Übergletscher: alle Gletscher poolen ihre Masse und gelten füreinander als angrenzend — der Bruch rechnet mit voller Feldgröße." },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",
-    desc: "Ein einmaliger Finisher: das ganze Brett bricht auf einen Schlag (Schwellen ignoriert, volle Stufe) — der größtmögliche Score-Moment." },
+    desc: "Ein einmaliger Finisher: das ganze Brett bricht auf einen Schlag — Schwellen ignoriert, jeder Gletscher auf voller Stufe. Der größtmögliche Bruch-Moment." },
   SK_ICE_L04: { id: "SK_ICE_L04", name: "Erstarrung", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_ERSTARRUNG",
-    desc: "Der Gegner friert komplett ein: jede vom Bruch getroffene Gegnerkarte verliert ihren Stich; der Bruch greift über die Nachbarn hinaus weiter ins Gegnerfeld." },
+    desc: "Der Gegner erstarrt: jede vom Bruch getroffene Gegnerkarte verliert ihren Stich, und der Bruch greift über die vier Nachbarn hinaus weiter ins Gegnerfeld." },
 
   // ---- Pflanze-Fraktion (v0) — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend)
   //      → Reife (grün) → Farbblock → Score. Grün = Farbe, nicht Kraft; Wert nur über Wurzeln (Deckel 11).
