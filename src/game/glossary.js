@@ -3,7 +3,7 @@ import * as C from "./constants.js";
 // die Eis-Glossartexte driftfrei mitlaufen. Kein Import-Zyklus (glacier.js → architect.js, keins importiert glossary.js).
 import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G_THRESHOLDS,
   KASKADE_PER_NEIGHBOR as G_KASKADE, GEO_BLOCK as G_BLOCK, GEO_KREUZ as G_KREUZ, GEO_LINIE as G_LINIE,
-  GEO_FLAECHE as G_FLAECHE, EISWALL_LINIE as G_EISWALL_LINIE } from "./glacier.js";
+  GEO_FLAECHE as G_FLAECHE } from "./glacier.js";
 
 /* ============================================================
    GLOSSAR — die EINZIGE Quelle für die Erklärungen der Spielbegriffe (#212 / #201 P1+P9 / Glossar-Rework).
@@ -227,24 +227,23 @@ export const GLOSSARY = {
 
   /* ============ 4 · Eis ============ */
   glacier: { category: "frak", group: "ice", label: "Gletscher", icon: "❄️", color: CLR.ice,
-    text: `Eis ist der Gletscher-Archetyp: du frierst eine Karte auf ihrem Brettfeld fest — ab dann ist sie starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber Masse an. Genug Masse, und der Gletscher birst über seine Nachbarn.`,
+    text: `Eis ist der Gletscher-Archetyp: du frierst eine Karte auf ihrem Brettfeld fest — ab dann ist sie starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber Masse an. Genug Masse, und der Gletscher bricht über seine Nachbarn.`,
     match: ["Gletscher", "Gletschern"] },
   masse: { category: "frak", group: "ice", label: "Masse", icon: "❄️", color: CLR.ice,
-    text: `Die Eis-Ressource: Masse liegt auf dem Brettfeld, nicht auf der Karte, und steigt nur. Ein Gletscher gewinnt +${de(G_WIN_MASS)} Masse je Sieg; erreicht seine Masse die höchste Schwelle, birst er.`,
+    text: `Die Eis-Ressource: Masse liegt auf dem Brettfeld. Jeder Gletscher gewinnt jede Runde +${de(G_EWIGER_FROST)} Masse — bedingungslos, ob Sieg oder Niederlage; ein Sieg bringt +${de(G_WIN_MASS)} Masse zusätzlich.`,
     match: ["Masse"] },
-  // id `freeze` bleibt erhalten (Backcompat-Token, glossary.test.js) — im Eis-Neudesign umgewidmet auf „Firn-Boden".
-  freeze: { category: "frak", group: "ice", label: "Firn-Boden", icon: "❄️", color: CLR.ice,
-    text: `Auch ein ungefrorenes Feld sammelt Masse (Firn-Boden). Frierst du später dort einen Gletscher fest, erbt er die angesammelte Masse — so bereitest du das Brett für künftige Gletscher vor (startet nicht bei 0).`,
-    match: ["Firn-Boden", "Firn", "Eingefroren", "Frost"] },
-  ewigerfrost: { category: "frak", group: "ice", label: "Ewiger Frost", icon: "❄️", color: CLR.ice,
-    text: `Jeder Gletscher gewinnt jede Runde +${de(G_EWIGER_FROST)} Masse — bedingungslos, ob Sieg oder Niederlage. Der Sockel, der jeden Gletscher unaufhaltsam Richtung Bersten trägt.`,
-    match: ["Ewiger Frost"] },
   bersten: { category: "frak", group: "ice", label: "Bersten", icon: "❄️", color: CLR.ice,
-    text: `Erreicht ein Gletscher ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse, birst er: Burst-Score aus Masse × Stufen-Wucht (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und um Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach kalbt er auf 0 ab und baut neu auf — selten, aber gewaltig.`,
-    match: ["Bersten", "birst", "Berst-Schwelle", "Berst-Faktor"] },
-  eisformation: { category: "frak", group: "ice", label: "Eis-Formationen (2D)", icon: "❄️", color: CLR.ice,
-    text: `Eis ist das einzige Deck mit 2D-Formationen: geometrische Formen aus festgefrorenen Gletschern verstärken deren Bersten — Block 2×2 (×${de(G_BLOCK)}), Kreuz (×${de(G_KREUZ)}), volle Reihe/Spalte (×${de(G_LINIE)}, mit Eiswall ×${de(G_EISWALL_LINIE)}), 3×3-Fläche (×${de(G_FLAECHE)}). Überlappende Formen stapeln.`,
-    match: ["Eis-Formationen", "2D-Formationen", "2D-Formation"] },
+    text: `Erreicht ein Gletscher ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse, bricht er: Burst-Score aus Masse × Stufen-Wucht (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er auf 0 ab und baut neu auf.`,
+    match: ["Bersten", "bricht", "brechen", "Berst-Schwelle", "Berst-Faktor"] },
+  eisformation: { category: "frak", group: "ice", label: "Eis-Formationen", icon: "❄️", color: CLR.ice,
+    text: `Eis ist das einzige Deck mit Eis-Formationen: geometrische Formen aus festgefrorenen Gletschern verstärken deren Bersten — Block 2×2 (×${de(G_BLOCK)}), Kreuz (×${de(G_KREUZ)}), volle Reihe/Spalte (×${de(G_LINIE)}), 3×3-Fläche (×${de(G_FLAECHE)}). Überlappende Formen stapeln.`,
+    match: ["Eis-Formationen", "Eis-Formation"] },
+  // id `freeze` bleibt als Backcompat-Token erhalten (glossary.test.js). Umgewidmet auf „Firn-Boden" — vorerst
+  // Platzhalter mit knapper, korrekter Aussage (KEIN Auto-Laden ungefrorener Felder — das kommt aus Skills);
+  // wird beim formalen Firn-Boden-Schritt final ausformuliert.
+  freeze: { category: "frak", group: "ice", label: "Firn-Boden", icon: "❄️", color: CLR.ice,
+    text: `Masse liegt auf dem Brettfeld: pickst du einen Gletscher auf ein bereits aufgeladenes Feld (Firn-Boden), erbt er dessen Masse — er startet nicht bei 0.`,
+    match: ["Firn-Boden", "Firn"] },
 
   /* ============ 4 · Pflanze ============ */
   growth: { category: "frak", group: "plant", label: "Wachstum", icon: "🌿", color: CLR.plant,

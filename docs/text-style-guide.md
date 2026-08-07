@@ -19,8 +19,9 @@ gehaltene Skills, Build-Ansicht).
 | **Crit** | Kritischer Treffer* | Sieg mit Crit-Multiplikator (*Langform ok im Fließtext) |
 | **Formation** | Muster | Wiederholung/Treppe/Farbblock/Wechsel |
 | **Anker** | — | Positions-Verstärker (×-Faktor je Sieg) |
-| **Schicht** | Layer | Eis-Permanenz je Frostkarte |
-| **Frostkarte** | eingefrorene Karte* | eingefrorene eigene Karte (*Langform ok) |
+| **Masse** | Tiefe, Schicht | Eis-Ansammelwert auf dem Brettfeld (Gletscher) |
+| **Gletscher** | Frostkarte, eingefrorene Karte | auf ihr Brettfeld festgefrorene Karte |
+| **Bersten** (Subst.) / **bricht**, **brechen** (Verb) | birst, bersten (als Verb) | der Eis-Payoff-Event (Gletscher bricht über seine Nachbarn) |
 | **Asche** | — | Feuer-Schmiede-Rohstoff |
 | **Brandmal** | — | −Wert-Markierung auf Gegnerkarte |
 | **Wachstum** | — | Pflanze, nur steigend |
