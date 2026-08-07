@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { cycleLenFor } from "../game/shop.js";
 import { summarizeFormations } from "../game/formations.js";
 import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
 import { hasCritPerk, totalCritChanceRaw, totalCritMult } from "../game/perks.js";
@@ -6,7 +7,6 @@ import { hasCritFamily, allianceGroups } from "../game/families.js";
 import { ionCritChance } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
-import { fmtScore, fmtScoreShort } from "./format.js"; // Gameplay-Neu-Aufbau: „Bester Score" in der Analyse-Ecke
 
 // #252: einklappbarer Panel-Abschnitt (Kopf mit ▸/▾ togglet; Inhalt nur bei !collapsed). Der Zustand kommt aus den
 // Optionen (über Runs gemerkt) — der Kopf ruft onToggle, das die Option persistiert.
@@ -24,22 +24,32 @@ function Collapsible({ title, collapsed, onToggle, children }) {
   );
 }
 
-// Gameplay-Neu-Aufbau: Kennzahl-Kachel im Karten-Stil für den Multiplikator-Cluster (Formation/Gebäude/Crit).
-function MCell({ label, value, tone, sub }) {
+function Bar({ value, max, color, height = 8 }) {
+  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
-    <div className="rounded-lg px-2.5 py-1.5 min-w-0" style={{ background: "#141419", border: "1px solid #26262e" }}>
-      <div className="text-[9px] uppercase tracking-wide opacity-50 truncate">{label}</div>
-      <div className="font-bold text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: tone || "#e8e8ea" }}>
-        {value}{sub && <span className="text-[10px] opacity-45 ml-1">{sub}</span>}
-      </div>
+    <div className="w-full rounded-full overflow-hidden" style={{ background: "#26262e", height }}>
+      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
     </div>
   );
 }
 
-export function StatusRail({ state, currentTraj = [], recordTraj = [], options = {}, onOption, best = 0 }) {
-  // Gameplay-Neu-Aufbau: Serie/Siegquote/Deck-Position/Stiche stehen jetzt in der StatusBar. Die Sidebar zeigt die
-  // stehenden Multiplikatoren (Formation/Gebäude/Crit), eine kleine Bilanz und die (einklappbare) Analyse.
-  const { wins, losses, trickNo, perks, crits, lightning, familyTiers = {} } = state;
+function Stat({ label, value, tone }) {
+  return (
+    <div className="flex flex-col">
+      <div className="text-[10px] uppercase tracking-wide opacity-50">{label}</div>
+      <div className="text-lg font-bold" style={{ color: tone || "#e8e8ea" }}>{value}</div>
+    </div>
+  );
+}
+
+export function StatusRail({ state, currentTraj = [], recordTraj = [], options = {}, onOption }) {
+  const { wins, losses, trickNo, winStreak, bestStreak, pos, perks, crits, lightning,
+          familyTiers = {} } = state;
+  const cycleLen = cycleLenFor(state.shop);  // 40, mit Zeitsegment 45 (§8 A-L1)
+  // #UI: Stich-Siegesquote — Anteil gewonnener an den ENTSCHIEDENEN Stichen (Gleichstände zählen nicht). Ersetzt die
+  // Durchlauf-Zelle (Durchlauf steht bereits im Kopf-Panel). Rot <50 %, grün ≥50 %.
+  const decided = wins + losses;
+  const winPct = decided > 0 ? Math.round((wins / decided) * 100) : 0;
   const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   const showCrit = hasCritPerk(perks) || hasCritFamily(familyTiers) || (crits || 0) > 0 || !!(lightning && lightning.active);
   // Live-Crit-Chance des NÄCHSTEN Siegs: analog zum echten Wurf (#19). #267: die Crit-Chance kommt aus der Blitz-Basis
@@ -83,50 +93,66 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
   }, [state.architect, state.architectEnabled, state.playerOrder, state.deck, state.roles, state.familyTiers]);
   return (
     <div className="rounded-xl p-4 grid gap-3 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-      {/* Multiplikatoren — die stehenden Score-Treiber (Formation/Gebäude/Crit) dauerhaft sichtbar. */}
+      {/* Kennzahlen */}
+      <div className="grid grid-cols-3 gap-3">
+        <Stat label="Serie" tone={winStreak >= 3 ? "#e0605a" : undefined}
+          value={<span>{winStreak > 0 ? `${winStreak}×` : "–"}<span className="text-xs opacity-45 ml-1">best {bestStreak}×</span></span>} />
+        <Stat label="Stiche" value={trickNo} />
+        <Stat label="Siegquote" tone={decided === 0 ? undefined : (winPct >= 50 ? "#5ab87a" : "#e0605a")} value={decided > 0 ? `${winPct}%` : "–"} />
+      </div>
+      {/* #225.2: „Quote"-Zeile entfernt — nur Siege/Verluste bleiben (Grid auf 2 Spalten angepasst). */}
+      <div className="grid grid-cols-2 gap-3 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
+        <div><span className="opacity-50">Siege </span><span style={{ color: "#5ab87a" }}>{wins}</span></div>
+        <div><span className="opacity-50">Verl. </span><span style={{ color: "#e0605a" }}>{losses}</span></div>
+      </div>
+      {/* Deck-Position im laufenden Durchlauf (#193): Balken FÜLLT sich (0 → voll) und die Zahl
+          zählt HOCH — gleiche Richtung wie die Deck-Zahl unter dem Deck im Battlefield (#6). */}
       <div>
-        <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2">Multiplikatoren</div>
-        <div className="grid grid-cols-2 gap-2">
-          <MCell label="Formation" tone="#5ab87a" value={formCount > 0 ? `${formCount} · +${formBonusPct} %` : "–"} />
-          <MCell label="Gebäude" tone="#d4a63a" value={buildBonusPct > 0 ? `+${buildBonusPct} %` : "–"} />
-          {showCrit && <MCell label="Crit-Chance" tone="#e879f9" value={`${critPct} %`} sub={ionCritPct > 0 ? `+${ionCritPct} Ion.` : null} />}
-          {showCrit && <MCell label="Crit-Mult" tone={perks.includes("L5") ? "#d4a63a" : "#e879f9"} value={`×${fmtMult(critMultTotal)}`} sub={perks.includes("L5") ? "Jackpot" : null} />}
+        <div className="flex justify-between text-xs mb-1">
+          <span className="opacity-60">Deck-Position</span>
+          <span className="opacity-80">{pos} / {cycleLen}</span>
         </div>
+        <Bar value={pos} max={cycleLen} color="#8a7de0" height={6} />
       </div>
-
-      {/* Bilanz — Siege/Verluste/Stiche (+ Crits, wenn relevant). */}
-      <div className="grid grid-cols-4 gap-2 text-xs pt-2 border-t" style={{ borderColor: "#26262e" }}>
-        <div><div className="opacity-50">Siege</div><div className="font-bold" style={{ color: "#5ab87a" }}>{wins}</div></div>
-        <div><div className="opacity-50">Verl.</div><div className="font-bold" style={{ color: "#e0605a" }}>{losses}</div></div>
-        <div><div className="opacity-50">Stiche</div><div className="font-bold">{trickNo}</div></div>
-        {showCrit && <div><div className="opacity-50">Crits</div><div className="font-bold" style={{ color: "#e879f9" }}>{crits || 0}</div></div>}
-      </div>
-
-      {/* Analyse — Bester Score + einklappbare Score-Herkunft/Verlauf (default eingeklappt, Zustand über Runs gemerkt). */}
-      <div className="pt-2 border-t grid gap-1" style={{ borderColor: "#26262e" }}>
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] uppercase tracking-wide opacity-50">Analyse</span>
-          <span className="text-xs" title={fmtScore(best)}><span className="opacity-50">Bester </span><b style={{ color: "#d4a63a" }}>{fmtScoreShort(best)}</b></span>
+      {/* Formations-/Gebäude-Bonus als SUMME in % (#123/#UI) — dauerhaft sichtbar, nicht nur transient im Battlefield. */}
+      {(formCount > 0 || buildBonusPct > 0) && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
+          {formCount > 0 && <span><span className="opacity-50">Formation </span><span style={{ color: "#5ab87a" }}>{formCount} · +{formBonusPct} %</span></span>}
+          {buildBonusPct > 0 && <span title="Summe aller Gebäude-Boni in %: Wert-Boosts (relativ zum Kartenwert) + Struktur-/Schatzkammer-Multiplikatoren"><span className="opacity-50">Gebäude </span><span style={{ color: "#d4a63a" }}>+{buildBonusPct} %</span></span>}
         </div>
-        {sourceShares(state).score > 0 && (
-          <Collapsible title="Score-Herkunft"
-            collapsed={options.collapseScoreSource ?? true}
-            onToggle={() => onOption && onOption({ collapseScoreSource: !(options.collapseScoreSource ?? true) })}>
-            <ScoreSourceBar state={state} showTitle={false} />
-          </Collapsible>
-        )}
-        <Collapsible title="Score-Verlauf"
-          collapsed={options.collapseScoreTrend ?? true}
-          onToggle={() => onOption && onOption({ collapseScoreTrend: !(options.collapseScoreTrend ?? true) })}>
-          <div className="flex items-center justify-end text-[10px] normal-case tracking-normal opacity-60 mb-1">
-            <span className="flex gap-2">
-              <span style={{ color: "#d4a63a" }}>Lauf</span>
-              {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>Rekord</span> : <span className="opacity-40">erster Lauf</span>}
-            </span>
-          </div>
-          <Sparkline current={currentTraj} record={recordTraj} />
+      )}
+      {/* Crit (#19/#46). Der Gesamt-Score-Mult steht dauerhaft im Header-Chip (#37).
+          Frühere D4/D7-Hinweise sind mit der Score-Familien-Migration (#167) entfernt; familienspezifische
+          Crit-/Score-Hinweise folgen mit #166 UI. */}
+      {showCrit && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-1 border-t" style={{ borderColor: "#26262e" }}>
+          <span><span className="opacity-50">Crit-Chance </span><span style={{ color: "#e879f9" }}>{critPct}%</span>{ionCritPct > 0 && <span className="opacity-45" title="Feldweiter Ionisierungs-Anteil (#271): Σ Stapel im Deck × pp, gedeckelt."> · +{ionCritPct} Ion.</span>}</span>
+          <span><span className="opacity-50">Crit </span><span style={{ color: perks.includes("L5") ? "#d4a63a" : "#e879f9" }}>×{fmtMult(critMultTotal)}</span>{perks.includes("L5") && <span style={{ color: "#d4a63a" }}> Jackpot</span>}</span>
+          <span><span className="opacity-50">Crits </span><span style={{ color: "#e879f9" }}>{crits || 0}</span></span>
+        </div>
+      )}
+      {/* (#267: Serien-/Formations-Stat-Readouts entfernt — die Stat-Phase ist weg.) */}
+      {/* #252: Score-Quellen-Balken LIVE (geteilte Komponente mit dem Victory-Screen) — einklappbar, default eingeklappt,
+          Zustand über Runs gemerkt. Nur zeigen, wenn schon Score da ist. */}
+      {sourceShares(state).score > 0 && (
+        <Collapsible title="Score-Herkunft"
+          collapsed={options.collapseScoreSource ?? true}
+          onToggle={() => onOption && onOption({ collapseScoreSource: !(options.collapseScoreSource ?? true) })}>
+          <ScoreSourceBar state={state} showTitle={false} />
         </Collapsible>
-      </div>
+      )}
+      {/* Score-Verlauf: aktueller Lauf vs. Rekord/Geist (#30) — einklappbar, default eingeklappt (#252). */}
+      <Collapsible title="Score-Verlauf"
+        collapsed={options.collapseScoreTrend ?? true}
+        onToggle={() => onOption && onOption({ collapseScoreTrend: !(options.collapseScoreTrend ?? true) })}>
+        <div className="flex items-center justify-end text-[10px] normal-case tracking-normal opacity-60 mb-1">
+          <span className="flex gap-2">
+            <span style={{ color: "#d4a63a" }}>Lauf</span>
+            {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>Rekord</span> : <span className="opacity-40">erster Lauf</span>}
+          </span>
+        </div>
+        <Sparkline current={currentTraj} record={recordTraj} />
+      </Collapsible>
     </div>
   );
 }

@@ -12,7 +12,6 @@ import { fmtDuration } from "./game/deck.js";
 import { fmtScore } from "./ui/format.js";
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
-import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
 import { Battlefield } from "./ui/Battlefield.jsx";
 import { GlossaryPanel } from "./ui/Glossary.jsx";
@@ -508,6 +507,7 @@ export function Autostich() {
   // #106: Idle-Zittern des Chips ab Blau-Tier (Level 2), stärker je höher. grau/grün → kein Zittern.
   const multShakeLevel = Math.max(0, multTierLevel(baseScoreMult) - 1); // 0 | 1 leicht | 2 mittel | 3 stark
   const multShakeClass = multShakeLevel > 0 ? `as-shake-${multShakeLevel}` : "";
+  const fmtMult = (x) => x.toFixed(2).replace(".", ",");
   // Dezenter Scale-Puls NUR bei Anstieg (v. a. D2-Kombo). Reduced-motion → global via CSS neutralisiert.
   useEffect(() => {
     if (baseScoreMult > prevMult.current + 1e-9) setMultPulse((n) => n + 1);
@@ -517,9 +517,70 @@ export function Autostich() {
   // Die sechs Kopf-Stat-Zellen einmal definiert, damit sie ohne Logik-Duplikat an zwei Stellen gerendert
   // werden können: Desktop im Header-Row (rechts neben der Wortmarke), Mobil als eigenes gerahmtes Panel
   // NACH der Controls-Leiste (#UI). text-right ist auf Mobil (justify-items-center → inhaltsbreite Zellen) egal.
-  // (Gameplay-Neu-Aufbau) Die früheren Kopf-Stat-Zellen sind in die schwebende StatusBar gewandert; „Bester Score" steht
-  // jetzt in der Analyse-Ecke der Sidebar (StatusRail). Die Rohwerte (elapsedMs, ghost, baseScoreMult & Co.) werden von
-  // hier direkt an die StatusBar durchgereicht.
+  const statCells = (
+    <>
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Zeit{paused ? " ⏸" : ""}</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtDuration(elapsedMs)}</div>
+      </div>
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Score</div>
+        <div className="text-xl font-bold font-pixel-dense leading-none" style={{ color: "#d4a63a" }}>
+          {fmtScore(state.score)}
+        </div>
+        {/* #113: zweite Zeile IMMER reserviert (feste Höhe) → Geist-Delta/Rekord ändert die Zellenhöhe nie. */}
+        <div className="text-xs font-normal leading-tight h-4 mt-0.5 whitespace-nowrap">
+          {ghost.hasGhost && (ghost.passed ? (
+            <span style={{ color: "#8a7de0" }}>⚑ Rekord</span>
+          ) : ghost.delta != null ? (
+            <span style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>
+              {ghost.delta >= 0 ? "▲ +" : "▼ "}{fmtScore(ghost.delta)}
+            </span>
+          ) : null)}
+        </div>
+      </div>
+      {/* Score-Multiplikator-Chip (#37): immer sichtbar, ×1,00 gedämpft, ab >1 Gold; Puls bei Anstieg. */}
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Mult</div>
+        <div className="text-xl font-bold leading-none pt-0.5">
+          <span className={multShakeClass}>
+          <span key={multPulse} className="inline-block rounded px-1.5 py-0.5 text-base font-pixel-dense"
+            title="Score-Multiplikator: Siegesserie (Basis, +2 %/Stufe bis +150 %) × Perk-Mult — Farbe steigt mit der Höhe (grau/grün/blau/lila/gold)"
+            style={{ fontVariantNumeric: "tabular-nums",
+                     background: multHot ? `${multColor}22` : "#ffffff0f",
+                     color: multHot ? multColor : "#8a8a92",
+                     animation: multPulse > 0 ? "as-multpulse 420ms ease-out" : undefined }}>
+            ×{fmtMult(baseScoreMult)}
+          </span>
+          </span>
+        </div>
+      </div>
+      {/* #UI: Durchlauf-Zelle direkt nach „Mult" → landet im Mobil-3er-Grid unter „Zeit" (linke Spalte). */}
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Durchlauf</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ fontVariantNumeric: "tabular-nums" }}>
+          {Math.min(state.cycle + 1, totalCycles)}<span className="text-xs opacity-45"> / {totalCycles}</span>
+        </div>
+      </div>
+      {/* #225.1: Münzanzeige entfernt (#202). #UI: „Bester Score" unter den aktuellen Score (mittlere Mobil-Spalte). */}
+      <div className="text-right">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Bester Score</div>
+        <div className="text-xl font-bold font-pixel-dense" style={{ color: "#d4a63a" }}>{fmtScore(best)}</div>
+      </div>
+      {/* #218/#UI: Kartenübersicht — als LETZTE Kopf-Zelle, damit sie im Mobil-3er-Grid unten rechts landet
+          (Daumen-Reichweite). Icon = Mini-Kartenrücken des aktiven Decks (matcht den Spiel-Look statt Emoji),
+          Label auf „Karten" gekürzt (passt zur Breite der übrigen Labels). */}
+      <button onClick={() => setShowChronik(true)} title="Kartenübersicht öffnen"
+        className="text-right cursor-pointer transition-all hover:brightness-125">
+        <div className="text-[10px] uppercase tracking-wide opacity-50">Karten</div>
+        <div className="flex justify-end pt-0.5">
+          <img src={deckSkin.back} alt="Kartenübersicht" draggable="false"
+            className="h-7 w-auto rounded-[3px] object-cover"
+            style={{ border: "1px solid #ffffff22", boxShadow: "0 1px 3px #0006" }} />
+        </div>
+      </button>
+    </>
+  );
 
   return (
     <div className="min-h-screen w-full flex justify-center px-4 py-6">
@@ -553,37 +614,39 @@ export function Autostich() {
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} />
         ) : (<>
-          {/* Gameplay-Neu-Aufbau: schlanker Kopf — Wortmarke/Seed links, Glossar-ⓘ + Sekundär-Controls rechts.
-              Die Vitalwerte + Pause/Tempo stehen jetzt in der schwebenden StatusBar direkt darunter. */}
           <header className="flex items-end justify-between flex-wrap gap-2">
             <div>
               <h1 className="text-2xl font-bold tracking-tight font-pixel crt-title as-wordmark-header">
                 AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
               </h1>
+              <p className="text-xs opacity-45">Roguelite-Autobattler-Stechspiel · Prototyp</p>
               {/* #205: Seed dieses Laufs — jederzeit kopierbar zum Teilen/Herausfordern. */}
               {state.seed != null && <div className="mt-1"><SeedChip code={formatSeed(state.seed)} /></div>}
             </div>
+            {/* Desktop: Kopf-Stats rechts neben der Wortmarke (eine Zeile). Auf Mobil stehen dieselben Zellen
+                als eigenes gerahmtes Panel NACH der Controls-Leiste (s. u.) → hier nur ab sm sichtbar. */}
+            {/* Kopf-Stats (Desktop) + das Glossar-ⓘ als ruhige Utility-Gruppe rechts; ⓘ bleibt auch mobil sichtbar. */}
             <div className="flex items-start gap-3">
               <GlossaryPanel onOpenChange={setGlossaryOpen} />
-              <Controls
-                onRestart={() => setConfirmRestart(true)} onAbort={() => setConfirmAbort(true)} onOptions={() => setShowOptions(true)}
-                muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
-              />
+              <div className="hidden sm:flex sm:items-start sm:gap-5">{statCells}</div>
             </div>
           </header>
 
-          {/* Phase 1: schwebende Kompakt-Leiste — Vitalwerte (Score+Δ · Mult · Serie · Fortschritt · Zeit) + Pause/Tempo/Karten. */}
-          <StatusBar
-            score={state.score} ghost={ghost}
-            mult={{ value: baseScoreMult, color: multColor, hot: multHot, shakeClass: multShakeClass, pulseKey: multPulse }}
-            timeStr={fmtDuration(elapsedMs)} paused={paused}
-            winStreak={state.winStreak || 0} bestStreak={state.bestStreak || 0}
-            cycle={state.cycle} totalCycles={totalCycles} pos={state.pos} cycleLen={cycleLenFor(state.shop)}
-            winPct={(state.wins + state.losses) > 0 ? Math.round((state.wins / (state.wins + state.losses)) * 100) : null}
-            onTogglePause={() => setPaused((p) => !p)}
+          <Controls
+            paused={paused} onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
-            onChronik={() => setShowChronik(true)} deckBack={deckSkin.back}
+            onRestart={() => setConfirmRestart(true)} onAbort={() => setConfirmAbort(true)} onOptions={() => setShowOptions(true)}
+            muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
+
+          {/* Mobil: dieselben Kopf-Stats als eigenes gerahmtes Panel an ZWEITER Stelle (direkt nach der
+              Controls-Leiste). Auf Desktop ausgeblendet (dort stehen sie im Header).
+              #280: klebt beim Runterscrollen oben fest (sticky, wie die Formationsstärke-Leiste) — deckender
+              Hintergrund + z-20 (unter Overlays/Modals bei z-30+), damit die Kennzahlen immer sichtbar bleiben. */}
+          <div className="sm:hidden sticky top-0 z-20 grid grid-cols-3 gap-x-3 gap-y-2 justify-items-center rounded-xl p-3 as-panel"
+            style={{ background: "#17171c", border: "1px solid #26262e", boxShadow: "0 6px 14px #0009" }}>
+            {statCells}
+          </div>
 
           {/* #UI: Mobil-Reihenfolge Battlefield → Stats → Perks (order-1/2/3). Desktop bleibt 2-spaltig via
               explizite lg-Grid-Platzierung: Battlefield+Bars (links oben) + Perks (links unten), Stats-Sidebar rechts. */}
@@ -621,7 +684,7 @@ export function Autostich() {
             </div>
             {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
             <div className="order-2 lg:col-start-2 lg:row-start-1">
-              <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} options={options} onOption={changeOptions} best={best} />
+              <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} options={options} onOption={changeOptions} />
             </div>
             {/* Perks/Skills — Mobil unter den Stats (order-3), Desktop links unter dem Battlefield. */}
             <div className="order-3 lg:col-start-1 lg:row-start-2">
