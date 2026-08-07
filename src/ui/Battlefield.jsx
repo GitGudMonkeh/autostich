@@ -668,10 +668,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const [bigFloats, setBigFloats] = useState([]);
   const bigTimers = useRef([]);
   const bigSeq = useRef(0);
+  const lawineShown = useRef(false); // Große Lawine feuert 1×/Lauf → nur der ERSTE Finale-Bruch zeigt „LAWINE" (kein Schwarm)
   useEffect(() => () => bigTimers.current.forEach(clearTimeout), []);
   useEffect(() => {
-    if (!t) { setBigFloats([]); return; }   // Menü/neuer Lauf → Pool leeren
+    if (!t) { setBigFloats([]); lawineShown.current = false; return; }   // Menü/neuer Lauf → Pool leeren + Lawine-Merker zurücksetzen
     if (!bigScore) return;                   // nur bei einem großen Sieg-Stich
+    if (bigScore === LAWINE_TIER) {          // Große Lawine: die Groß-Ansage nur EINMAL pro Finale, danach still weiterzählen
+      if (lawineShown.current) return;
+      lawineShown.current = true;
+    }
     const lane = BIG_LANES[bigSeq.current % BIG_LANES.length];
     bigSeq.current += 1;
     // #Fix: id global eindeutig über den monotonen bigSeq (nicht nur trickNo) → keine duplicate-key-Kollision.
