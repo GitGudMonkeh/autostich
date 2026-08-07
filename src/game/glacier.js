@@ -30,7 +30,7 @@ export const SCHILD_BONUS = 3;
 // Erstarrung (Legendär): Bonus-Score je Bruch = ANTEIL des Burst-Scores dieses Bruchs (statt fester Zahl). Skaliert damit
 // automatisch mit Masse/Geometrie/Kaskade UND dem Sieg-Stack (glacierDirect ist bereits multipliziert) und erbt dessen
 // Soft-Cap → kann nicht am Burst vorbei ausreißen. Bewusst hoch: Erstarrung soll der „heimliche Best-Pick" sein (Sim-tunebar).
-export const ERSTARRUNG_FRAC = 0.25;
+export const ERSTARRUNG_FRAC = 1.5;
 // Ablehn-Gletscher (Sim-tunebar): ab so vielen gehaltenen Eis-Skills friert auch das Ablehnen eines Skill-Angebots einen
 // Gletscher (statt nur der Skill-Pick/Tausch). Entkoppelt „mehr Gletscher" vom Tauschen guter Skills.
 export const DECLINE_MIN_SKILLS = 4;
