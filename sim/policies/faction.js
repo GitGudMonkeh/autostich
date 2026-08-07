@@ -7,7 +7,7 @@
 //   factionPolicy("fire")           → reine Fraktion (wie bisher)
 //   factionPolicy(["fire","ice"])   → Kombi mit SLOT-SPLIT: bevorzugt beim Pick das Ziel mit den WENIGSTEN
 //                                     aktuell gehaltenen Skills → balanciert (6 Slots: 2 Ziele → 3+3, 3 → 2+2+2).
-import { archetypeOf } from "../../src/game/skills.js";
+import { archetypeOf, isLegendarySkill } from "../../src/game/skills.js";
 import { randomPolicy, canAddSkill } from "./random.js";
 import { greedyFormationStep } from "../formation.js";
 import { isFamilyOffer, perkActionFor } from "../families-policy.js";
@@ -28,7 +28,20 @@ export function factionPolicy(target, { architectGreedy = true } = {}) {
       if (s.phase === "levelup" && s.skillOffer) {
         // Nur Ziel-Archetyp-Skills, die in einen freien Slot passen (NIE einen Fremd-Archetyp aufnehmen).
         const addable = s.skillOffer.filter((id) => canAddSkill(s, id) && targets.includes(archetypeOf(id)));
-        if (!addable.length) return { type: "DECLINE_SKILL", rng };
+        if (!addable.length) {
+          // Eis-Neudesign: JEDER Eis-Skill-Pick (auch ERSETZEN) öffnet die Gletscher-Wahl → ein Eis-Spieler tauscht bei
+          // vollen Slots weiter Eis-Skills, um mehr Gletscher zu sammeln. Für treue Eis-Balance modelliert (sonst
+          // unterschätzt die Sim die echte Eis-Decke). Nur Eis; andere Fraktionen gewinnen durch Tauschen nichts → ablehnen.
+          if (targets.includes("ice")) {
+            const iceOffered = s.skillOffer.filter((id) => archetypeOf(id) === "ice" && !s.skills.includes(id));
+            const iceHeld = s.skills.filter((id) => archetypeOf(id) === "ice" && !isLegendarySkill(id));
+            if (iceOffered.length && iceHeld.length) {
+              const drop = iceHeld[Math.floor(rng() * iceHeld.length)];
+              return { type: "PICK_SKILL", skillId: iceOffered[Math.floor(rng() * iceOffered.length)], replaceId: drop, rng };
+            }
+          }
+          return { type: "DECLINE_SKILL", rng };
+        }
         // Slot-Split: das Ziel mit den wenigsten bereits gehaltenen Skills bevorzugen → balancierte Kombi.
         const held = Object.fromEntries(targets.map((t) => [t, s.skills.filter((id) => archetypeOf(id) === t).length]));
         const minHeld = Math.min(...addable.map((id) => held[archetypeOf(id)]));
