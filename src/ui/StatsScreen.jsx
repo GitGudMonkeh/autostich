@@ -320,7 +320,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
     .reduce((a, k) => a + (Number(r[k]) || 0), 0) > 0);
 
   return (
-    <div className={`fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 ${detail ? "overflow-hidden" : "overflow-y-auto"}`}
+    <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-2xl rounded-2xl p-5 sm:p-6 my-auto overlay-card"
         style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>

@@ -28,8 +28,8 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
   const archBuildings = snap && Array.isArray(snap.buildings) ? snap.buildings : [];
   const hasArch = archBuildings.length > 0 && !!archCover;
   return (
-    <div className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
-      style={{ background: "#0c0c10", backdropFilter: "blur(3px)" }} onClick={onClose}>
+    <div className="fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
+      style={{ background: "#0c0c10dd", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-md rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card"
         style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3">

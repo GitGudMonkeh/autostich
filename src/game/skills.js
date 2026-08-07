@@ -47,10 +47,7 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, discharge: true },
   // Linie 2 — Konsumenten (volle Ladung → Payoff; max 1 im Build)
   SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionisierung", archetype: "lightning", keywords: ["charge", "ionize"],
-    desc: `Bei voller Ladung: ${C.ION_BASE_COUNT} ungespielte Karten ionisieren (+${C.ION_SPEED_PER_SKILL} je Blitz-Skill über ${C.ION_SPEED_MIN_SKILLS}), dann Ladung verbraucht.
-▸ Ionisierte Karten: bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel · feldweit +${pct(C.ION_CRIT_PP_PER_STACK)} pp Crit-Chance je Stapel (max +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp).
-▸ Breite (~${pct(C.ION_SAT_BREADTH_FRAC)} % ionisiert): alle Karten +${C.ION_SATURATION_VALUE} Wert.
-▸ Tiefe (~${pct(C.ION_SAT_DEPTH_FRAC)} % voll): Überschlag lenkt den Crit-Überschuss in Crit-Multiplikator statt in Ladung.`,
+    desc: `Bei voller Ladung werden ${C.ION_BASE_COUNT} ungespielte Karten ionisiert (je Blitz-Skill über ${C.ION_SPEED_MIN_SKILLS} +${C.ION_SPEED_PER_SKILL} weitere); danach wird die Ladung verbraucht. Ionisierte Karten geben bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und heben feldweit die Crit-Chance um +${pct(C.ION_CRIT_PP_PER_STACK)} pp je Ionisierungsstapel (bis +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp). Ist das Feld überwiegend ionisiert (Breite, ~${pct(C.ION_SAT_BREADTH_FRAC)} % der Karten), zählen alle Karten +${C.ION_SATURATION_VALUE} Wert; sind fast alle voll (Tiefe, ~${pct(C.ION_SAT_DEPTH_FRAC)} %), lenkt Überschlag den Crit-Überschuss in Crit-Multiplikator statt in Ladung.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, onFullCharge: "ionize", ionizeCount: () => C.ION_BASE_COUNT },
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["crit", "streak"],
     desc: `Jeder Serienpunkt gibt +${pct(C.SERIESCRIT_STEP)} pp Crit-Chance (bis +${pct(C.SERIESCRIT_CAP)} pp). Verbraucht keine Ladung.`,

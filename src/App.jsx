@@ -587,17 +587,15 @@ export function Autostich() {
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
           sichtbar (CSS), klick-durchlässig. */}
       <div className="crt-overlay" aria-hidden="true" />
-      {/* Preview-Marker — nur im Preview-Build (Balancing-/Test-Zweig unter /autostich/balancing/ bzw. /test/),
-          damit man die Preview nie mit der echten Seite verwechselt. Label kommt aus VITE_ENV (vom Deploy-Workflow je
-          Branch gesetzt: „balancing" bzw. „test") → identische Quelle auf beiden Branches, kein Merge-Clobbering.
-          Klick-durchlässig. */}
+      {/* Preview-Marker — nur im Preview-Build (Balancing-Zweig, /autostich/test/), damit man die
+          Balancing-Page nie mit der echten Seite verwechselt. Klick-durchlässig. */}
       {import.meta.env.VITE_PREVIEW === "1" && (
         <div
           className="fixed top-2 left-2 z-50 px-2 py-1 rounded text-[10px] font-bold font-pixel tracking-wide"
           style={{ background: "#d4a63a", color: "#141419", pointerEvents: "none", boxShadow: "0 0 8px rgba(212,166,58,.6)" }}
           aria-hidden="true"
         >
-          {(import.meta.env.VITE_ENV || "preview").toUpperCase()}
+          BALANCING
         </div>
       )}
       {/* Ambient-Partikel — nur unter Skin und nur auf dem Hauptscreen (Menü): dort gibt es
