@@ -369,6 +369,10 @@ export function resolveTrick(state, rng) {
 
   let gained = 0;
   let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
+  // Eis-Neudesign: der Gletscher-Bruch profitiert vom VOLLEN Sieg-Stack, WENN die Gletscher-Karte ihren Stich gewinnt
+  // (Serie × Perk/Familie × Formation × Nachhall × Kern × Sonnenzorn × Architekt × Crit). Bei Niederlage bleibt es ×1
+  // (Basis-Burst). So hat der Rest des Spiels Hebel auf den Gletscher-Score, statt dass nur Gletscher-Skills zählen.
+  let glacierWinMult = 1;
   let breakdown = null; // Ergebnis-Aufschlüsselung eines Siegs (§17): exakt die Faktoren der Score-Formel
 
   if (won) {
@@ -696,6 +700,8 @@ export function resolveTrick(state, rng) {
     const streakMuldBase = Math.max(0, scoreBase) * streakMult;
     scoreBeforeCrit = (streakMuldBase + architectStreakFlat) * perkMult * formMult * afterglowMult * coreMult * sunwrathMult * architectMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
+    // Eis: derselbe multiplikative Stack (ohne additive Flats) skaliert auch den Gletscher-Bruch dieses Stichs (unten).
+    glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * sunwrathMult * architectMult * (isCrit ? critMultiplier : 1);
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
     // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
     // [#229 T5] WIN_SOFTCAP ist ein Sim-Hook (Default 0). Ist er aktiv, wird `gained` geklemmt, die Einzelfaktoren im
@@ -1019,8 +1025,10 @@ export function resolveTrick(state, rng) {
   }
 
   // Eis-Neudesign (docs §2.4, Phase B): Bruch-Auszahlung dieses Stichs — pro Position genau einmal je Durchlauf, UNABHÄNGIG
-  // von Sieg/Niederlage (Bruch hängt an der Masse-Schwelle, nicht am Stich-Ausgang). Post-stack (kein Formation/Serie/Crit-Mult).
-  const glacierDirect = glacierPreNow ? (glacierPreNow.payout[actualPos] || 0) : 0;
+  // von Sieg/Niederlage (Bruch hängt an der Masse-Schwelle, nicht am Stich-Ausgang). Der Basis-Burst kommt aus der
+  // Precompute (inkl. Gletscher-Geometrie/Kaskade/Kollision + Soft-Cap); GEWINNT die Gletscher-Karte ihren Stich, skaliert
+  // zusätzlich der volle Sieg-Stack (glacierWinMult: Serie/Perk/Formation/Crit/Architekt/…) → der Rest des Spiels hebelt mit.
+  const glacierDirect = (glacierPreNow ? (glacierPreNow.payout[actualPos] || 0) : 0) * glacierWinMult;
   if (glacierDirect) {
     score += glacierDirect; gained += glacierDirect; glacierYield += glacierDirect;
     if (breakdown) { breakdown.glacierDirect = glacierDirect; breakdown.total += glacierDirect; }
