@@ -122,7 +122,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
         <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: `1px solid ${LIGHT}66`, boxShadow: `0 0 26px ${LIGHT}22` }}>
-        <GuidePanel className="absolute top-3 left-3 z-10" />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Durchlauf {(state.cycle || 0) + 1}</div>
@@ -131,6 +130,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             Skills sind seltene, regelverändernde Motoren — {skills.length}/{SKILL_SLOTS} Slots belegt.
           </p>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
+        </div>
+
+        {/* Leitfaden zentriert zwischen „Slots belegt" und dem ersten Archetyp — gelb hervorgehoben, damit gut sichtbar. */}
+        <div className="flex justify-center mt-3 mb-1">
+          <GuidePanel style={{ background: "#d4a63a", border: "1px solid #e0b845", color: "#0c0c10", fontWeight: 700, boxShadow: "0 0 14px -2px #d4a63a88" }} />
         </div>
 
         {/* Konsumenten-Ersatzdialog (#93): zweiter Konsument desselben Typs ersetzt den bestehenden. */}
