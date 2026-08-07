@@ -148,7 +148,7 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     resetMass[p] = RESET_TO;                             // abgekalbt: baut wieder von unten auf (selten + gewaltig)
     breaks.push({ pos: p, tier: effTier, burst, glacierNeighbors: gN, forced: forced[p] });
   }
-  return { payout, resetMass, breaks };
+  return { payout, resetMass, breaks, grosseLawine }; // grosseLawine: dieser Durchlauf ist der Große-Lawine-Finisher (HUD zeigt „Lawine")
 }
 
 /* ---- Rollen-Gruppe C: Cluster/Dichte — Nachbar-/Cluster-Infrastruktur (docs §4 Eisschild) --------- */

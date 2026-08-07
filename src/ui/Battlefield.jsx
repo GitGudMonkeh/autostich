@@ -74,6 +74,8 @@ const BIG_SCORE_TIERS = [
   { min: 10000,  text: "Stark",      size: 68 },
 ];
 const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
+// Große Lawine (Legendär): der Finisher-Bruch zeigt statt der Score-Stufe („Gottgleich" …) das Wort „Lawine" in Eis-Blau.
+const LAWINE_TIER = { text: "Lawine", size: 104, epic: true, color: "#5ec8f0" };
 // #FB: Groß-Ansage („wie stark"). Sie hing bislang am Stich-Takt (key=trickNo) und wurde vom Folgestich sofort
 // ersetzt → bei 4×/MAX (flipMs ~160–440 ms) nur einen Wimpernschlag sichtbar. Jetzt entkoppelt in einem eigenen
 // Pool mit fester, langer Standzeit, damit sie ihre Animation IMMER voll ausspielt (auch bei Turbo).
@@ -585,7 +587,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #128: Float-Farbe = Rahmenfarbe der Übersicht — Tier nach Formations-Anzahl (formationBorder, kein Drift).
   const formColor = formationBorder({ mult: formMult, formations: (t && t.formations) || [] }).color || "#5ab87a";
   // #105: großes „Wow"-Wort mittig ab hohem Einzelstich-Score (nur bei Sieg). Höchste erfüllte Stufe.
-  const bigScore = win && t && t.gained > 0 ? bigScoreTier(t.gained) : null;
+  // Große-Lawine-Bruch (Finisher) → „Lawine" in Blau statt der Score-Stufe; sonst die normale Stufe nach Score.
+  const baseBigTier = win && t && t.gained > 0 ? bigScoreTier(t.gained) : null;
+  const bigScore = baseBigTier && t && t.grosseLawine ? LAWINE_TIER : baseBigTier;
 
   // Ergebnis-Aufschlüsselung (§17): kompakte Faktorenkette (Basis → Flats → Serie → Perks → Formation → Crit)
   // aus der Engine-breakdown — exakt die Faktoren der Score-Formel (kein Drift). Nur bei nennenswerten Treffern.
@@ -923,11 +927,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                goldenen Stufen darunter ab. Gleiche Standzeit/Animation wie die anderen Groß-Ansagen. */
             <svg key={b.id} aria-hidden="true" className="pointer-events-none absolute" viewBox="0 0 1000 210" preserveAspectRatio="xMidYMid meet"
               style={{ left: "50%", top: "50%", width: "70%", zIndex: 31,
-                       filter: "drop-shadow(0 0 32px rgba(255,255,255,0.9)) drop-shadow(0 0 12px rgba(255,255,255,0.7)) drop-shadow(0 3px 8px rgba(0,0,0,0.55))",
+                       filter: b.tier.color
+                         ? `drop-shadow(0 0 32px ${b.tier.color}) drop-shadow(0 0 12px ${b.tier.color}) drop-shadow(0 3px 8px rgba(0,0,0,0.55))`
+                         : "drop-shadow(0 0 32px rgba(255,255,255,0.9)) drop-shadow(0 0 12px rgba(255,255,255,0.7)) drop-shadow(0 3px 8px rgba(0,0,0,0.55))",
                        transform: reduced ? "translate(-50%, -50%)" : undefined,
                        animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
               <text x="500" y="170" textAnchor="middle" textLength="984" lengthAdjust="spacingAndGlyphs"
-                style={{ fontSize: "200px", fontWeight: 900, fill: "#ffffff", letterSpacing: "1px" }}>
+                style={{ fontSize: "200px", fontWeight: 900, fill: b.tier.color || "#ffffff", letterSpacing: "1px" }}>
                 {b.tier.text.toUpperCase()}
               </text>
             </svg>

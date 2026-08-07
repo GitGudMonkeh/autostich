@@ -1087,6 +1087,8 @@ export function resolveTrick(state, rng) {
     // Formations-Multiplikator dieses Stichs (§22.7) + die beteiligten Formationen der Position (Anzeige/Float).
     formationMult: won ? formationMult : 1,
     formations: posForm.formations,
+    // Große Lawine: brach dieser Gletscher als Teil des Finishers? → HUD zeigt „Lawine" statt der Score-Stufe („Gottgleich").
+    grosseLawine: !!(glacierPreNow && glacierPreNow.grosseLawine && glacierPreNow.breaks.some((b) => b.pos === actualPos)),
     isRepeatedSegmentTrick: isRepeat, originalPosition: actualPos, segmentIndex: timeSeg, // Zeitsegment (§8 A-L1 / §13)
     breakdown, // Ergebnis-Aufschlüsselung (§17): { base, flats, streakMult, perkMult, formMult, critMult, total } bei Sieg, sonst null
   };
