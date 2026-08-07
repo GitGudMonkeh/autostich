@@ -1041,12 +1041,15 @@ export function resolveTrick(state, rng) {
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.EINFRIEREN) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
     newFrozenOppPending[oCard.id] = true;
   // Erstarrung (Legendär): jeder brechende Gletscher friert die getroffene Gegnerkarte ein — plus Reichweite +1 ins Gegnerfeld.
-  // Dazu ein MODERATER Direkt-Score je Bruch, damit die Capstone im Mono nicht tot ist (Kern-Wert bleibt die Duo-Kontrolle).
+  // Dazu ein Direkt-Score je Bruch, damit die Capstone im Mono nicht tot ist (Kern-Wert bleibt die Duo-Kontrolle). Wie der
+  // Bruch selbst nimmt auch dieser Kontroll-Score den vollen Sieg-Stack mit (glacierWinMult), wenn die Gletscher-Karte
+  // gewinnt — sonst würde Erstarrung vom Multiplikator-Rework abgehängt und im Score-Rennen nicht mehr gepickt.
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_ERSTARRUNG) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos)) {
     newFrozenOppPending[oCard.id] = true;
     for (const nb of glacierNeighbors4(actualPos)) newFrozenOppPending[oppDeck[oppOrder[nb]].id] = true;
-    score += GLACIER_ERSTARRUNG_SCORE; gained += GLACIER_ERSTARRUNG_SCORE; glacierYield += GLACIER_ERSTARRUNG_SCORE;
-    if (breakdown) { breakdown.glacierDirect = (breakdown.glacierDirect || 0) + GLACIER_ERSTARRUNG_SCORE; breakdown.total += GLACIER_ERSTARRUNG_SCORE; }
+    const erstarrungScore = GLACIER_ERSTARRUNG_SCORE * glacierWinMult;
+    score += erstarrungScore; gained += erstarrungScore; glacierYield += erstarrungScore;
+    if (breakdown) { breakdown.glacierDirect = (breakdown.glacierDirect || 0) + erstarrungScore; breakdown.total += erstarrungScore; }
   }
   // Frostbund (docs §4 Frostgriff): bricht dieser Gletscher, bufft er seine NICHT-Gletscher-Nachbarn (2. Archetyp) → +Stichwert.
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.FROSTBUND) && glacierNF && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
