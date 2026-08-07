@@ -12,7 +12,6 @@ import { fmtDuration } from "./game/deck.js";
 import { fmtScore } from "./ui/format.js";
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
-import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
 import { Battlefield } from "./ui/Battlefield.jsx";
 import { GlossaryPanel } from "./ui/Glossary.jsx";
 import { Controls } from "./ui/Controls.jsx";
@@ -305,15 +304,9 @@ export function Autostich() {
     // Rohdaten für die Erkennung (Shop-Käufe im ganzen Lauf, gewählte Stats). Erkennung/Flags in storage.recordRun.
     const completed = state.cycle >= totalCycles;
     // #201.8 Stufe B: kompakte finale Aufstellung mitpersistieren (playerOrder ist bereits in Spielreihenfolge aufgelöst).
-    // Zusätzlich das Architekt-Gebäude-Overlay + die Gebäude-Liste (Positionen matchen die Snapshot-Karten-Reihenfolge),
-    // damit die Lauf-Details (RunDetail) die Gebäude ein-/austoggeln und Name·Stufe zeigen können — wie im Victory-Screen.
-    const archBuildingsSnap = ((state.architectEnabled && state.architect && state.architect.buildings) || [])
-      .map((b) => ({ id: b.id, familyId: b.familyId, tier: b.tier, footprint: b.footprint }));
     const deckSnapshot = {
       cards: (state.playerOrder || []).map((di) => { const c = state.deck[di]; return { id: c.id, value: c.value, suit: c.suit, green: !!c.green }; }),
       formations: computeFormations(state.playerOrder || [], state.deck || [], state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {}),
-      architectCover: architectCoverFor(state), // per-Position { name, tier, effects, … } oder null (kein Architekt/keine Gebäude)
-      buildings: archBuildingsSnap,
     };
     const { profile: nextProfile } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
       shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
