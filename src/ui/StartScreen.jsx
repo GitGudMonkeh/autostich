@@ -87,12 +87,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {/* Glossar jederzeit erreichbar — oben links (die obere rechte Ecke belegt der Mute-Knopf). */}
       <GlossaryPanel className="absolute top-0 left-0" />
 
-      {/* Neon-Wortmarke (ersetzt Text-Logo + altes Element-PNG). Schwarzer Bild-Hintergrund verschwindet
-          per mix-blend-mode:screen ins dunkle Menü; die Neon-Kanten glühen additiv auf den Grund. */}
+      {/* Neon-Wortmarke (ersetzt Text-Logo + altes Element-PNG). Echter Alpha-Kanal (dunkel → transparent),
+          daher kein Rechteck-Rahmen mehr — blendet sauber auf jeden Grund (auch CRT-Skin). */}
       <div className="relative inline-block mt-1">
         <img src={logo} alt="AUTOSTICH" draggable="false"
-          className="w-full max-w-[340px] h-auto select-none"
-          style={{ mixBlendMode: "screen" }} />
+          className="w-full max-w-[340px] h-auto select-none" />
         {/* Versions-Banner unten rechts an der Marke — Gold/Amber aus dem Logo. */}
         <span
           className="absolute -bottom-1 right-1 px-1.5 py-0.5 rounded text-[10px] font-bold font-pixel tracking-wide"
