@@ -271,7 +271,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                       {s.legendary && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>★ LEGENDÄR</span>}
                     </div>
                     <div className="font-bold text-sm" style={{ color: ac(s.id).color }}>{s.name}</div>
-                    <div className="text-xs opacity-75 leading-snug"><GlossaryText text={s.desc} /></div>
+                    <div className="text-xs opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
                     <div className="text-[10px] font-bold mt-0.5" style={{ color: "#e0605a" }}>↔ diesen ersetzen</div>
                     {/* #238b: gezielte Warnung — nur wenn dieses Ersetzen den letzten Skill des Archetyps entfernt. */}
                     {deactivates && (
@@ -349,7 +349,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                       </div>
                       <div className="font-bold text-[15px]" style={{ color: col }}>{s.name}</div>
                       {/* #UI: Legendäre Beschreibungen sind lang → im Angebot nur der erste Satz. */}
-                      <div className="text-sm opacity-75 leading-snug"><GlossaryText text={s.legendary ? firstSentence(s.desc) : s.desc} /></div>
+                      <div className="text-sm opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.legendary ? firstSentence(s.desc) : s.desc} /></div>
                     </button>
                   );
                 })}
@@ -374,7 +374,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     <b style={{ color: "#c8c8d0" }}>{s.name}</b>
                     <span className="opacity-40 text-[11px]">✓ gehalten</span>
                   </div>
-                  <div className="opacity-70" style={{ color: "#cfcad8" }}><GlossaryText text={s.desc} /></div>
+                  <div className="opacity-70 leading-snug whitespace-pre-line" style={{ color: "#cfcad8" }}><GlossaryText text={s.desc} /></div>
                 </div>
               ))}
             </div>
