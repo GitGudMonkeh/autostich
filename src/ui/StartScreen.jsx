@@ -142,7 +142,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           <div className="flex flex-col gap-2.5">
             <div className={onDevRun ? "grid grid-cols-2 gap-2.5" : ""}>
               <button onClick={onStart}
-                className="w-full rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
+                className="as-guide-glow w-full rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
                 style={{ background: "#12151f", border: `1px solid ${BLUE}88`, color: "#93b4f2" }}>Normal</button>
               {onDevRun && (
                 <button onClick={onDevRun}
