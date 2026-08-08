@@ -73,7 +73,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const normalStyle = hasResume ? normalGhost : normalFill;
 
   return (
-    <div className="relative isolate flex flex-col items-center gap-6 pt-8 pb-10">
+    <div className="relative isolate flex flex-col items-center gap-2 pt-4 pb-4">
       {/* Ambient-Glow hinter dem Logo — spiegelt den Logo-Verlauf (Cyan links · Violett Mitte · Amber rechts).
           Verankert die ganze Kopfzone farblich im Logo, ohne laute Flächen. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[360px] -z-10"
@@ -91,7 +91,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           daher kein Rechteck-Rahmen mehr — blendet sauber auf jeden Grund (auch CRT-Skin). */}
       <div className="relative inline-block mt-1">
         <img src={logo} alt="AUTOSTICH" draggable="false"
-          className="w-full max-w-[340px] h-auto select-none" />
+          className="w-full max-w-[288px] h-auto select-none" />
         {/* Versions-Banner unten rechts an der Marke — Gold/Amber aus dem Logo. */}
         <span
           className="absolute -bottom-1 right-1 px-1.5 py-0.5 rounded text-[10px] font-bold font-pixel tracking-wide"
@@ -101,10 +101,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           v{APP_VERSION}
         </span>
       </div>
-      <p className="text-xs opacity-45 -mt-2">Roguelite-Autobattler-Stechspiel · Prototyp</p>
+      <p className="text-xs opacity-45 -mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
 
       {/* Bonus-Stichpunkte-Leiste (Vorschau) — je 10 abgeschlossene Läufe → +5 SP. */}
-      <div className="w-full max-w-sm rounded-xl px-4 py-3 flex flex-col gap-2"
+      <div className="w-full max-w-sm rounded-xl px-4 py-2.5 flex flex-col gap-1.5"
         style={{ background: "#17171c", border: "1px solid #26262e" }}>
         <div className="flex items-center justify-between gap-3">
           <span className="text-[12.5px] font-semibold opacity-90" style={{ color: SP }}>💠 Bonus-SP · nächste +5</span>
@@ -117,11 +117,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* Play-Gruppe — Fortsetzen + Normaler Lauf. Normaler Lauf klappt Normal (+ Dev Run) und das
           Seed-Feld auf → weniger Dauer-sichtbares im Haupt-Stapel. */}
-      <div className="w-full max-w-sm flex flex-col gap-2.5">
+      <div className="w-full max-w-sm flex flex-col gap-2">
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
-            className="w-full px-5 py-4 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
+            className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
             style={{ background: "#5fe0f7", color: "#052730", boxShadow: "0 0 20px rgba(95,224,247,.65)" }}>
             <span className="text-[19px]">▶ Lauf fortsetzen</span>
             <span className="text-[11px] font-mono font-semibold opacity-80">
@@ -133,7 +133,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* Normaler Lauf — Aufklapper: Normal (+ Dev Run im Preview) + Seed-Feld. Gefüllt, wenn kein
             Resume läuft (= Held); mit Resume ruhiger Cyan-Outline. */}
         <button onClick={() => setNormalOpen((o) => !o)}
-          className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+          className="w-full px-5 py-2.5 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
           style={normalStyle}>
           Normaler Lauf
           <span className="text-[13px] transition-transform" style={{ transform: normalOpen ? "rotate(90deg)" : "none" }}>›</span>
@@ -142,11 +142,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           <div className="flex flex-col gap-2.5">
             <div className={onDevRun ? "grid grid-cols-2 gap-2.5" : ""}>
               <button onClick={onStart}
-                className="as-guide-glow w-full rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
+                className="as-guide-glow w-full rounded-lg px-4 py-2.5 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
                 style={{ background: "#12151f", border: `1px solid ${BLUE}88`, color: "#93b4f2" }}>Normal</button>
               {onDevRun && (
                 <button onClick={onDevRun}
-                  className="rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
+                  className="rounded-lg px-4 py-2.5 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
                   style={{ background: "#1c1a14", border: `1px solid ${AM}66`, color: AM }}>⚙ Dev Run</button>
               )}
             </div>
@@ -178,9 +178,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {/* Ranglisten-Gruppe — eigener Block (Weißraum trennt „mein Spiel" vom Wettbewerb). Ruhiger
           Violett-Outline statt Vollfläche → Farbe sparsam, nur eine gefüllte Aktion oben. */}
       {onMasterRun && (
-        <div className="w-full max-w-sm flex flex-col gap-2.5">
+        <div className="w-full max-w-sm flex flex-col gap-2">
           <button onClick={() => setRankedOpen((o) => !o)}
-            className="relative w-full px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            className="relative w-full px-5 py-2 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}>
             Ranglisten-Lauf
             <span className="text-[13px] transition-transform" style={{ transform: rankedOpen ? "rotate(90deg)" : "none" }}>›</span>
@@ -223,7 +223,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       <div className="w-full max-w-sm rounded-2xl relative overflow-hidden"
         style={{ background: "linear-gradient(180deg,#1b1a24,#161620)", border: "1px solid #2c2a3a" }}>
         <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${CY}, ${VI}, ${AM})`, opacity: .85 }} />
-        <div className="p-4">
+        <div className="p-3">
           <div className="flex items-center justify-between gap-3 relative">
             <div className="flex items-center gap-2">
               <b className="text-[14.5px] tracking-tight">Upgrades</b>
@@ -241,9 +241,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </div>
 
           {/* Äste: nur Name + Kreise (gekauft / kaufbar / gesperrt), keine Icons. Farben = Logo-Verlauf. */}
-          <div className="grid grid-cols-4 gap-2 mt-3">
+          <div className="grid grid-cols-4 gap-2 mt-2.5">
             {STUB.branches.map((b) => (
-              <div key={b.name} className="rounded-lg px-1.5 py-2.5 flex flex-col items-center gap-2"
+              <div key={b.name} className="rounded-lg px-1.5 py-2 flex flex-col items-center gap-1.5"
                 style={{ background: "#12121a", border: "1px solid #26262e" }}>
                 <span className="flex gap-1">
                   {Array.from({ length: b.total }).map((_, i) => {
@@ -264,7 +264,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             ))}
           </div>
 
-          <div className="flex items-center justify-between gap-3 mt-3">
+          <div className="flex items-center justify-between gap-3 mt-2.5">
             <span className="text-[11.5px] opacity-60 tabular-nums"><b className="opacity-95">{STUB.owned} / {STUB.total}</b> · Meister-Liga bei {STUB.total}/{STUB.total}</span>
             <button onClick={onUpgrades || undefined}
               className="border-none font-extrabold text-[12.5px] px-3 py-2 rounded-lg cursor-pointer transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
