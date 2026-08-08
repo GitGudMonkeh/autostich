@@ -3,7 +3,7 @@ import { AnleitungModal } from "./AnleitungModal.jsx";
 import { MuteButton } from "./MuteButton.jsx";
 import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
-import { matchSecretSeed } from "../game/progression.js"; // Test-Codes „unlock"/„reset" im Seed-Feld (nur Preview)
+import { matchSecretSeed, ownedCount, nodeState, treeComplete, NODES, BRANCHES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
 import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
@@ -24,28 +24,31 @@ const VI = "#9b82f0";   // Logo Mitte (Violett) — Ranglisten
 const AM = "#f2a83a";   // Logo rechts (Amber/Gold) — Upgrades / SP-Währung
 const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
 
-// Platzhalter-Progressionsstand (Vorschau, bis Backend steht).
-const STUB = {
-  sp: 14,
-  buyable: 3,
-  bonusRuns: 7, bonusGoal: 10, // Bonus-Stichpunkte-Drip: je 10 Läufe +5 SP
-  owned: 4, total: 13,
-  meisterUnlocked: false,      // wird true, sobald alle Upgrades gekauft sind → Meister-Liga frei
-  branches: [
-    { name: "Baufeld", own: 1, buy: 1, total: 3, col: CY },
-    { name: "Auftakt", own: 1, buy: 1, total: 2, col: BLUE },
-    { name: "Rarität", own: 1, buy: 0, total: 3, col: VI },
-    { name: "Meister", own: 1, buy: 1, total: 5, col: AM },
-  ],
-};
+// Ast-Farben für die Hub-Progressionsanzeige (Knotendaten kommen aus progression.js).
+const BR_COLOR = { bau: CY, auf: BLUE, rar: VI, mei: AM };
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onMasterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onMasterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
   const [normalOpen, setNormalOpen] = useState(false);
   const [rankedOpen, setRankedOpen] = useState(false);
+
+  // Echte Progressionsanzeige aus dem Profil (progression.js). Leeres Profil = frischer Spieler.
+  const prof = profile || {};
+  const progSp = Math.max(0, Math.floor(Number(prof.stichPoints) || 0));
+  const progOwned = ownedCount(prof);
+  const progBuyable = NODES.filter((n) => nodeState(prof, n.id) === "buy").length;
+  const progLigaFree = treeComplete(prof);
+  const onbStep = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(Number(prof.onboarding) || 0)));
+  const onbDone = onbStep >= ONBOARDING_LINKS;
+  const spRuns = Math.max(0, Math.floor(Number(prof.spRuns) || 0));
+  const dripInto = SP_LOYALTY_EVERY > 0 ? (spRuns % SP_LOYALTY_EVERY) : 0; // Läufe seit letztem Treue-+5
+  const branchViews = BRANCHES.map((b) => ({
+    name: b.name, col: BR_COLOR[b.key],
+    states: NODES.filter((n) => n.branch === b.key).map((n) => nodeState(prof, n.id)),
+  }));
   const tryPlaySeed = () => {
     // Test-Codes „unlock"/„reset" VOR parseSeed abfangen (beide würden sonst als gültiger Seed durchgehen).
     // onSecretSeed ist nur im Preview-Build gesetzt → im Live-Spiel sind die Codes wirkungslos.
@@ -114,15 +117,23 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       </div>
       <p className="text-xs opacity-45 -mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
 
-      {/* Bonus-Stichpunkte-Leiste (Vorschau) — je 10 abgeschlossene Läufe → +5 SP. */}
+      {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip. */}
       <div className="w-full max-w-sm rounded-xl px-4 py-2.5 flex flex-col gap-1.5"
         style={{ background: "#17171c", border: "1px solid #26262e" }}>
         <div className="flex items-center justify-between gap-3">
-          <span className="text-[12.5px] font-semibold opacity-90" style={{ color: SP }}>💠 Bonus-SP · nächste +5</span>
-          <span className="text-[11.5px] opacity-55 font-mono tabular-nums">{STUB.bonusRuns} / {STUB.bonusGoal} Läufe</span>
+          {onbDone ? (
+            <span className="text-[12.5px] font-semibold opacity-90" style={{ color: SP }}>💠 Bonus-SP · nächste +5</span>
+          ) : (
+            <span className="text-[12.5px] font-semibold opacity-90" style={{ color: VI }}>🎓 Onboarding</span>
+          )}
+          <span className="text-[11.5px] opacity-55 font-mono tabular-nums">
+            {onbDone ? `${dripInto} / ${SP_LOYALTY_EVERY} Läufe` : `${onbStep} / ${ONBOARDING_LINKS}`}
+          </span>
         </div>
         <div className="h-[7px] rounded-full overflow-hidden" style={{ background: "#0e0e13", border: "1px solid #26262e" }}>
-          <div className="h-full rounded-full" style={{ width: `${STUB.bonusRuns / STUB.bonusGoal * 100}%`, background: `linear-gradient(90deg,#b87d1f,${SP})`, boxShadow: `0 0 8px rgba(242,168,58,.5)` }} />
+          <div className="h-full rounded-full" style={onbDone
+            ? { width: `${dripInto / SP_LOYALTY_EVERY * 100}%`, background: `linear-gradient(90deg,#b87d1f,${SP})`, boxShadow: `0 0 8px rgba(242,168,58,.5)` }
+            : { width: `${onbStep / ONBOARDING_LINKS * 100}%`, background: `linear-gradient(90deg,#6a5fb0,${VI})`, boxShadow: `0 0 8px rgba(155,130,240,.5)` }} />
         </div>
       </div>
 
@@ -239,14 +250,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           <div className="flex items-center justify-between gap-3 relative">
             <div className="flex items-center gap-2">
               <b className="text-[14.5px] tracking-tight">Upgrades</b>
-              <span className="text-[9.5px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
-                style={{ background: "#26262e", color: "#a6a6b0" }}>Vorschau</span>
             </div>
             <div className="flex items-center gap-2.5">
-              <span className="inline-flex items-center text-[11px] font-extrabold px-2.5 py-1 rounded-full"
-                style={{ background: "transparent", border: `1px solid ${AM}66`, color: AM }}>{STUB.buyable} kaufbar</span>
+              {progBuyable > 0 && (
+                <span className="inline-flex items-center text-[11px] font-extrabold px-2.5 py-1 rounded-full"
+                  style={{ background: "transparent", border: `1px solid ${AM}66`, color: AM }}>{progBuyable} kaufbar</span>
+              )}
               <span className="flex items-baseline gap-1">
-                <span className="text-[19px] font-extrabold tabular-nums" style={{ color: SP, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{STUB.sp}</span>
+                <span className="text-[19px] font-extrabold tabular-nums" style={{ color: SP, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progSp}</span>
                 <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: SP }}>SP</span>
               </span>
             </div>
@@ -254,22 +265,18 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
           {/* Äste: nur Name + Kreise (gekauft / kaufbar / gesperrt), keine Icons. Farben = Logo-Verlauf. */}
           <div className="grid grid-cols-4 gap-2 mt-2.5">
-            {STUB.branches.map((b) => (
+            {branchViews.map((b) => (
               <div key={b.name} className="rounded-lg px-1.5 py-2 flex flex-col items-center gap-1.5"
                 style={{ background: "#12121a", border: "1px solid #26262e" }}>
                 <span className="flex gap-1">
-                  {Array.from({ length: b.total }).map((_, i) => {
-                    const owned = i < b.own;
-                    const buy = i >= b.own && i < b.own + b.buy;
-                    return (
-                      <i key={i} className="w-2 h-2 rounded-full"
-                        style={owned
-                          ? { background: b.col, border: `1px solid ${b.col}`, boxShadow: `0 0 6px ${b.col}` }
-                          : buy
-                            ? { background: "transparent", border: `1px solid ${SP}`, boxShadow: `0 0 5px rgba(242,168,58,.6)` }
-                            : { background: "#2a2a33", border: "1px solid #3a3a45" }} />
-                    );
-                  })}
+                  {b.states.map((st, i) => (
+                    <i key={i} className="w-2 h-2 rounded-full"
+                      style={st === "owned"
+                        ? { background: b.col, border: `1px solid ${b.col}`, boxShadow: `0 0 6px ${b.col}` }
+                        : st === "buy"
+                          ? { background: "transparent", border: `1px solid ${AM}`, boxShadow: `0 0 5px rgba(242,168,58,.6)` }
+                          : { background: "#2a2a33", border: "1px solid #3a3a45" }} />
+                  ))}
                 </span>
                 <span className="text-[10px] font-bold tracking-tight opacity-60">{b.name}</span>
               </div>
@@ -277,7 +284,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </div>
 
           <div className="flex items-center justify-between gap-3 mt-2.5">
-            <span className="text-[11.5px] opacity-60 tabular-nums"><b className="opacity-95">{STUB.owned} / {STUB.total}</b> · Meister-Liga bei {STUB.total}/{STUB.total}</span>
+            <span className="text-[11.5px] opacity-60 tabular-nums"><b className="opacity-95">{progOwned} / {TOTAL_NODES}</b> · Meister-Liga {progLigaFree ? <b style={{ color: AM }}>frei</b> : `bei ${TOTAL_NODES}/${TOTAL_NODES}`}</span>
             <button onClick={onUpgrades || undefined}
               className="border-none font-extrabold text-[12.5px] px-3 py-2 rounded-lg cursor-pointer transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
               style={{ background: AM, color: "#141419" }} title="Upgrade-Screen (Vorschau)">

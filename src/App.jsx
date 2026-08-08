@@ -562,7 +562,7 @@ export function Autostich() {
             onResume={resumable ? resumeRun : null}
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score, masterRun: !!resumable.state.masterRun, grade: resumable.state.masteryGrade || 0 } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
-            onUpgrades={() => setShowUpgrades(true)}
+            onUpgrades={() => setShowUpgrades(true)} profile={profile}
             onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} />
@@ -698,7 +698,7 @@ export function Autostich() {
         <DevRunSetup onStart={(cfg) => { setShowDevSetup(false); startDevRun(cfg); }} onClose={() => setShowDevSetup(false)} />
       )}
 
-      {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} />}
+      {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} profile={profile} onProfileChange={(np) => setProfile(saveProfile(np))} />}
       {showLeaderboard && (
         <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best}
           masteryGrade={profile.masteryGrade || 0}
