@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useEscape } from "./useEscape.js";
+import { MODAL_CARD, ModalHairline } from "./modalStyle.jsx";
 
 /* Lokaler Nickname (#14): dient der Ersteinrichtung (beim ersten Start) und dem
    späteren Ändern. Minimal validiert — nur Trim + Länge 1–20; keine Eindeutigkeit,
@@ -15,8 +16,10 @@ export function UsernameModal({ initial = "", firstTime = false, onSave, onClose
   return (
     <div onClick={onClose} className="fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs rounded-2xl p-6"
-        style={{ background: "#181820", border: "1px solid #33333e" }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs rounded-2xl overflow-hidden"
+        style={MODAL_CARD}>
+        <ModalHairline />
+        <div className="p-6">
         <div className="text-center mb-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>
             {firstTime ? "Willkommen" : "Name ändern"}
@@ -49,6 +52,7 @@ export function UsernameModal({ initial = "", firstTime = false, onSave, onClose
               cursor: trimmed ? "pointer" : "not-allowed" }}>
             Speichern
           </button>
+        </div>
         </div>
       </div>
     </div>

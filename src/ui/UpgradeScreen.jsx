@@ -1,4 +1,5 @@
 import { useEscape } from "./useEscape.js";
+import { MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import {
   NODES, BRANCHES, NODE_BY_ID, TOTAL_NODES,
   emptyProfile, nodeState, buyNode, respec, ownedCount, treeComplete,
@@ -40,10 +41,11 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
     <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-xl rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel"
-        style={{ background: "#161620", border: "1px solid #2c2a3a" }} onClick={(e) => e.stopPropagation()}>
+        style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
 
         {/* Sticky-Kopf: Titel + SP-Guthaben + Respec + Schließen. */}
-        <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 flex items-center justify-between gap-3" style={{ background: "#161620" }}>
+        <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 flex items-center justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
+          <TopHairline />
           <h2 className="text-lg font-bold">Upgrades</h2>
           <div className="flex items-center gap-2.5">
             <span className="flex items-baseline gap-1">

@@ -14,6 +14,7 @@ import { leaderboardConfigured, fetchBoardTop } from "../game/leaderboard.js";
 import { currentWeek, pastWeeks, msUntilWeekEnd } from "../game/weeklySeed.js";
 import { formatSeed } from "../game/rng.js";
 import { treeComplete } from "../game/progression.js";
+import { MODAL_CARD, ModalHairline } from "./modalStyle.jsx";
 
 const TOP_N = 20;
 const CHAMP_WEEKS = 10; // so viele abgelaufene Wochen zeigen wir im Champions-Archiv
@@ -148,9 +149,8 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* Feste Kartenhöhe → das Fenster bleibt beim Tab-Wechsel gleich groß & an gleicher Stelle; nur die Liste scrollt intern. */}
       <div className="w-full max-w-lg rounded-2xl overlay-card as-panel flex flex-col overflow-hidden"
-        style={{ background: "linear-gradient(180deg,#1b1a24,#15141c)", border: "1px solid #2c2a3a", maxHeight: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
-        {/* Logo-Gradient-Haarlinie oben — bindet den Screen ans Hub-Farbsystem (wie die Start-Karten). */}
-        <div className="h-[3px] w-full shrink-0" style={{ background: `linear-gradient(90deg, ${CY}, ${LILA}, ${AM})`, opacity: .85 }} />
+        style={{ ...MODAL_CARD, maxHeight: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
+        <ModalHairline />
         <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1">
           <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
             <h2 className="text-lg font-extrabold flex items-center gap-2">🏆 Bestenliste</h2>

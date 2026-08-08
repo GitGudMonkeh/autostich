@@ -1,4 +1,5 @@
 import { useEscape } from "./useEscape.js";
+import { MODAL_CARD, ModalHairline } from "./modalStyle.jsx";
 
 /* Optionen-Overlay (#41): erreichbar aus dem Menü UND im laufenden Run (dort pausiert
    der Lauf, solange offen). Bewusst erweiterbar — künftig Sound, Tempo-Default etc.
@@ -66,9 +67,8 @@ export function OptionsModal({ options, onChange, onClose }) {
   useEscape(onClose); // #58: Escape schließt (Backdrop unten)
   return (
     <div onClick={onClose} className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel flex flex-col" style={{ background: "linear-gradient(180deg,#1b1a24,#15141c)", border: "1px solid #2c2a3a" }}>
-        {/* Logo-Gradient-Haarlinie oben — verbindende Bildsprache des Hubs (wie Start-Karten / Bestenliste). */}
-        <div className="h-[3px] w-full shrink-0" style={{ background: "linear-gradient(90deg,#26c6e6,#9b82f0,#f2a83a)", opacity: .85 }} />
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel flex flex-col" style={MODAL_CARD}>
+        <ModalHairline />
         <div className="p-6 overflow-y-auto">
         <div className="text-center mb-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Optionen</div>

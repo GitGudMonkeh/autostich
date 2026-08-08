@@ -3,6 +3,7 @@ import { useEscape } from "./useEscape.js";
 import { RunStats } from "./RunStats.jsx";
 import { CardGrid } from "./CardGrid.jsx"; // #201.8 Stufe B: finale Aufstellung aus dem Snapshot (schreibgeschützt)
 import { SeedChip } from "./SeedChip.jsx"; // #205 Challenger Mode: Seed kopieren / nachspielen
+import { MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
 import { familyDef as archFamily } from "../game/architect.js"; // Gebäude-Liste (Name/Form/Stufe) in den Lauf-Details
 import { ARCH_CAT } from "./indicators/vocab.js";
@@ -31,9 +32,10 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
     <div className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
       style={{ background: "#0c0c10", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-md rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel"
-        style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
+        style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
         {/* #UI: Kopf mit Schließen-Knopf STICKY → bleibt beim Scrollen oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
-        <div className="sticky top-0 z-20 -mx-6 px-6 pt-6 pb-4 flex items-start justify-between gap-3" style={{ background: "#181820" }}>
+        <div className="sticky top-0 z-20 -mx-6 px-6 pt-6 pb-4 flex items-start justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
+          <TopHairline />
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Lauf-Details{rank != null ? ` · #${rank}` : ""}</div>
             {name && <div className="text-lg font-bold mt-0.5 truncate">{name}</div>}

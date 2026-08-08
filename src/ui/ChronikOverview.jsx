@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { CardGrid } from "./CardGrid.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
 import { CardDetail } from "./CardDetail.jsx";
@@ -61,11 +62,12 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
       onClick={onClose}>
-      <div className="w-full max-w-4xl rounded-2xl px-5 pb-5 max-h-[95dvh] overflow-y-auto overlay-card as-panel" style={{ background: "#15151b", border: "1px solid #33333e" }}
+      <div className="w-full max-w-4xl rounded-2xl px-5 pb-5 max-h-[95dvh] overflow-y-auto overlay-card as-panel" style={MODAL_CARD}
         onClick={(e) => e.stopPropagation()}>
         {/* #UI: Kopf mit Schließen-Knopf STICKY → beim Scrollen der Übersicht oben rechts erreichbar. Der Abstand liegt im
             Header (pt/pb, opak), NICHT als negativer Margin → keine Überlappung der ersten Kartenreihe. */}
-        <div className="sticky top-0 z-20 -mx-5 px-5 pt-5 pb-4 flex items-center justify-between" style={{ background: "#15151b" }}>
+        <div className="sticky top-0 z-20 -mx-5 px-5 pt-5 pb-4 flex items-center justify-between relative" style={{ background: STICKY_HEAD_BG }}>
+          <TopHairline />
           <div>
             <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Chronik</div>
             <h2 className="text-xl font-bold">Kartenübersicht</h2>

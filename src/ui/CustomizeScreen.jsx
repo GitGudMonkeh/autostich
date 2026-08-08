@@ -1,4 +1,5 @@
 import { useEscape } from "./useEscape.js";
+import { MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress, resolveSkinId } from "../game/cosmetics.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { fmtScore } from "./format.js";
@@ -90,9 +91,10 @@ export function CustomizeScreen({ options, profile, onChoose, onClose }) {
     <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-3xl rounded-2xl px-5 pb-5 sm:px-6 sm:pb-6 my-auto overlay-card as-panel"
-        style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
+        style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
         {/* #UI: Kopf mit Schließen-Knopf STICKY → beim Scrollen oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
-        <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 flex items-center justify-between gap-3" style={{ background: "#181820" }}>
+        <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 flex items-center justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
+          <TopHairline />
           <h2 className="text-lg font-bold">Deck &amp; Battlefield</h2>
           <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm"
             style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
