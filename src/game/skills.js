@@ -597,11 +597,13 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
 // schon gewählten Legendärs) sind ausgeschlossen. Reicht der Pool einer Fraktion nicht fürs Soll, füllt sie mit dem, was
 // da ist. Nur Fraktionen MIT verfügbarem Legendär zählen für die Breite. Deterministisch (seed-stabil), rein & testbar.
 const legendaryPerArch = (archCount) => (archCount <= 1 ? 3 : 2);
-export function buildLegendaryOffer(activeArchetypes = [], owned = [], rng = Math.random, perArch = null) {
+// perArchBonus (Progression M2): +N Kandidaten JE aktivem Archetyp im Angebot — reine „mehr Auswahl", der Pick
+// bleibt einer. 0 = Bestand (byte-identisch). Nur im Normal-Lauf mit gekauftem M2 > 0.
+export function buildLegendaryOffer(activeArchetypes = [], owned = [], rng = Math.random, perArch = null, perArchBonus = 0) {
   const ownedSet = new Set(owned || []);
   const legsOf = (arch) => SKILL_LIST.filter((s) => s.legendary && s.archetype === arch && !ownedSet.has(s.id)).map((s) => s.id);
   const archs = [...new Set(activeArchetypes || [])].filter((a) => legsOf(a).length > 0);
-  const per = perArch ?? legendaryPerArch(archs.length);
+  const per = (perArch ?? legendaryPerArch(archs.length)) + Math.max(0, perArchBonus);
   const offer = [];
   for (const arch of shuffle(archs, rng)) {
     const pool = shuffle(legsOf(arch), rng);

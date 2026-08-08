@@ -1281,7 +1281,7 @@ export function resolveTrick(state, rng) {
         // Angebotsgröße skaliert mit der Build-Breite (Mono 3 · Duo 2/Fraktion=4 · Trio 2/Fraktion=6).
         // Kein Legendär verfügbar (keine aktive Fraktion / alle der aktiven Fraktionen bereits gehalten) → wie ein
         // leerer Skill-Pool auf die normale Skill-Wahl ausweichen (Runde nicht verschwenden).
-        const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0));
+        const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), null, state.legOfferBonus || 0); // M2: +Kandidaten je Archetyp
         if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
         else {
           const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false);

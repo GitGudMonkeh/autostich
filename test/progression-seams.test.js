@@ -3,7 +3,7 @@ import { reducer } from "../src/game/reducer.js";
 import { tierWeightsForShift } from "../src/game/rarity.js";
 import { buildArchitectOffer } from "../src/game/architect.js";
 import { buildPerkOffer, isLegendary } from "../src/game/perks.js";
-import { buildLegendaryOffer } from "../src/game/skills.js";
+import { buildLegendaryOffer, isLegendarySkill } from "../src/game/skills.js";
 import { perkPhaseAt, LEG_PERK2_PHASE } from "../src/game/constants.js";
 import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force } from "../src/game/progression.js";
 
@@ -156,5 +156,24 @@ describe("M1: Reroll fürs R29-Legendär-Angebot", () => {
   it("außerhalb der Legendär-Phase → No-op", () => {
     const s0 = { ...legState(), phase: "play" };
     expect(reducer(s0, { type: "REROLL_LEGENDARY", rng: Math.random })).toBe(s0);
+  });
+});
+
+describe("M2: mehr Auswahl im R29-Angebot (Pick bleibt einer)", () => {
+  const rng = () => 0.3;
+  it("buildLegendaryOffer perArchBonus vergrößert das Angebot je Archetyp", () => {
+    const base = buildLegendaryOffer(["fire", "ice"], [], rng);            // Duo: 2/Fraktion
+    const boost = buildLegendaryOffer(["fire", "ice"], [], rng, null, 1);  // +1/Fraktion
+    expect(boost.length).toBeGreaterThan(base.length);
+    expect(new Set(boost).size).toBe(boost.length); // verschiedene
+    expect(boost.every((id) => isLegendarySkill(id))).toBe(true);
+  });
+  it("perArchBonus 0 = Bestand (byte-identisch)", () => {
+    expect(buildLegendaryOffer(["fire"], [], rng, null, 0)).toEqual(buildLegendaryOffer(["fire"], [], rng));
+  });
+  it("START_RUN: legOfferBonus = 1 mit M2, sonst 0 (Meister gegatet)", () => {
+    expect(start({ profile: withNodes([...NONMEI, "M1", "M2"]) }).legOfferBonus).toBe(1);
+    expect(start().legOfferBonus || 0).toBe(0);
+    expect(start({ masterRun: true, masteryGrade: 2, profile: unlockAllProfile(emptyProfile(0)) }).legOfferBonus || 0).toBe(0);
   });
 });
