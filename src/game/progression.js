@@ -137,6 +137,10 @@ export function nodeEffects(profile) {
   return { treeCoverBonus, treeRerollBonus, treeRareShift, ...flags };
 }
 
+// M4/M5: Anzahl garantierter Legendärer in der 2. Perk-Phase — M5 „3 zur Wahl" (3) schlägt M4 „+1 garantiert" (1),
+// sonst 0. Nimmt das nodeEffects-Objekt (kann null sein → 0).
+export const legPerk2Force = (eff) => (!eff ? 0 : eff.legChoose3Perk2 ? 3 : eff.legGuaranteedPerk2 ? 1 : 0);
+
 // Einzel-Ableiter (spiegeln die Reducer-Nähte treeX(profile), analog masteryX(grade)).
 export const treeCoverBonus = (profile) => nodeEffects(profile).treeCoverBonus;
 export const treeRerollBonus = (profile) => nodeEffects(profile).treeRerollBonus;

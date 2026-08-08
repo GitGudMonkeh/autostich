@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { reducer } from "../src/game/reducer.js";
 import { tierWeightsForShift } from "../src/game/rarity.js";
 import { buildArchitectOffer } from "../src/game/architect.js";
-import { emptyProfile, buyNode, unlockAllProfile } from "../src/game/progression.js";
+import { buildPerkOffer, isLegendary } from "../src/game/perks.js";
+import { perkPhaseAt, LEG_PERK2_PHASE } from "../src/game/constants.js";
+import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force } from "../src/game/progression.js";
 
 // Skript-RNG: liefert die vorgegebenen Werte, danach 0.5. Erster rng()-Zug in buildArchitectOffer = Legendär-Check.
 const seqRng = (vals) => { let i = 0; return () => (i < vals.length ? vals[i++] : 0.5); };
@@ -83,5 +85,43 @@ describe("M3 legDropDouble: Legendär-Drop ×2 (Perks & Gebäude)", () => {
     // rng-Erstwert 0.05 liegt zwischen 0.03 (×1) und 0.06 (×2): ×1 → kein Legendär, ×2 → Legendär.
     expect(legend(buildArchitectOffer(arch, seqRng([0.05]), 0, 1))).toBe(false);
     expect(legend(buildArchitectOffer(arch, seqRng([0.05]), 0, 2))).toBe(true);
+  });
+});
+
+describe("M4/M5: garantierte Legendäre in der 2. Perk-Phase", () => {
+  const withM4 = withNodes([...NONMEI, "M1", "M2", "M3", "M4"]); // M4, nicht M5
+  const legCount = (offer) => offer.filter((o) => typeof o === "string" && isLegendary(o)).length;
+
+  it("legPerk2Force: 0 / M4→1 / M5→3", () => {
+    expect(legPerk2Force(nodeEffects(emptyProfile(0)))).toBe(0);
+    expect(legPerk2Force(nodeEffects(withM4))).toBe(1);
+    expect(legPerk2Force(nodeEffects(unlockAllProfile(emptyProfile(0))))).toBe(3);
+    expect(legPerk2Force(null)).toBe(0);
+  });
+  it("perkPhaseAt erkennt die 2. Perk-Phase; Default LEG_PERK2_PHASE = 2", () => {
+    const sched = ["skill", "perk", "formation", "shop", "skill", "perk", "formation"];
+    expect(perkPhaseAt(sched, 1)).toBe(1);
+    expect(perkPhaseAt(sched, 5)).toBe(2);
+    expect(perkPhaseAt(sched, 2)).toBe(0); // formation
+    expect(LEG_PERK2_PHASE).toBe(2);
+  });
+  it("buildPerkOffer legForce: 1 → 1 Legendär + 2 Perks; 3 → 3 Legendäre", () => {
+    const off1 = buildPerkOffer([], {}, () => 0.4, 3, 0, 0, false, 1);
+    expect(off1.length).toBe(3);
+    expect(legCount(off1)).toBe(1);
+    const off3 = buildPerkOffer([], {}, () => 0.4, 3, 0, 0, false, 3);
+    expect(off3.length).toBe(3);
+    expect(legCount(off3)).toBe(3);
+  });
+  it("legForce liefert VERSCHIEDENE Legendäre (keine Doppel)", () => {
+    const off3 = buildPerkOffer([], {}, () => 0.4, 3, 0, 0, false, 3);
+    const legs = off3.filter((o) => typeof o === "string" && isLegendary(o));
+    expect(new Set(legs).size).toBe(legs.length);
+  });
+  it("START_RUN: treeLegForce2 = 1 (M4) / 3 (M5) / 0 (frisch, Meister)", () => {
+    expect(start({ profile: withM4 }).treeLegForce2).toBe(1);
+    expect(start({ profile: unlockAllProfile(emptyProfile(0)) }).treeLegForce2).toBe(3);
+    expect(start().treeLegForce2 || 0).toBe(0);
+    expect(start({ masterRun: true, masteryGrade: 5, profile: unlockAllProfile(emptyProfile(0)) }).treeLegForce2 || 0).toBe(0);
   });
 });

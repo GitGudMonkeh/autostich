@@ -154,7 +154,7 @@ export function isMigratedPerk(p) {
    (Familie auf einer anbietbaren Zielstufe). Familien-Stufen sind nach TIER_WEIGHTS gewichtet, flache Perks nach
    RARITY_WEIGHTS; der explizite Legendär-Wurf (P5) bleibt wie in buildOffer. Deterministisch über den injizierten
    rng. `owned` = flache Perk-ids; `familyTiers` = aktueller Rang je Familie. */
-export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0, rareShift = 0, architectEnabled = false) {
+export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0, rareShift = 0, architectEnabled = false, legForce = 0) {
   // #217 Meistergrade: Rarität-Shift (0 = Basis) verschiebt die Familien-Stufengewichte zu Selten/Rar. rareShift 0
   // liefert die Basistabelle → byte-identisch zum bisherigen Verhalten (Grad-0 / Sim / Bestandstests unberührt).
   const tierWeights = tierWeightsForShift(rareShift);
@@ -164,9 +164,20 @@ export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, 
     && !(p.needsArchitect && !architectEnabled));
   const chosen = [];
   let legendaries = 0;
-  // Expliziter Legendär-Wurf (Shop-Spec §10 P5) — identisch zu buildOffer: nur bei übergebener Chance, dann genau
-  // eines aus dem gewichteten Zug ausgeschlossen. Ohne Chance bleibt das Gewichtsmodell (Legendäre gewichtet im Pool).
-  if (legendaryChance > 0) {
+  // M4/M5 (2. Perk-Phase): `legForce` GARANTIERTE, verschiedene Legendäre vorne — dann füllt der Pool mit normalen
+  // Perks auf (M4: legForce 1 → 1 Leg + 2 Perks; M5: legForce 3 → 3 Leg). Legendäre aus dem Weiter-Pool ausschließen.
+  // legForce 0 (Default/Bestand) → unveränderter Pfad unten (byte-identisch).
+  if (legForce > 0) {
+    const legs = flat.filter((p) => p.rarity === "legendary");
+    flat = flat.filter((p) => p.rarity !== "legendary");
+    const avail = legs.slice();
+    for (let i = 0; i < legForce && avail.length && chosen.length < count; i++) {
+      const idx = Math.floor(rng() * avail.length);
+      chosen.push(avail[idx].id); avail.splice(idx, 1); legendaries += 1;
+    }
+  } else if (legendaryChance > 0) {
+    // Expliziter Legendär-Wurf (Shop-Spec §10 P5) — identisch zu buildOffer: nur bei übergebener Chance, dann genau
+    // eines aus dem gewichteten Zug ausgeschlossen. Ohne Chance bleibt das Gewichtsmodell (Legendäre gewichtet im Pool).
     const legs = flat.filter((p) => p.rarity === "legendary");
     flat = flat.filter((p) => p.rarity !== "legendary");
     if (legs.length && count > 0 && rng() < legendaryChance) {
