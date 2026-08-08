@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { CardGrid } from "./CardGrid.jsx";
 import { summarizeFormations } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
+import { architectBuildings, architectCoverMap, structLitPosOf, distrLitPosOf } from "./archCover.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
@@ -8,12 +10,17 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
    Überall gleich einsetzbar (Shop-Ziel-, Perk- und Eis-Skill-Auswahl) → der Spieler sieht seine
    Formationen direkt beim Entscheiden, statt nur in Formationsphase/Chronik. Rein anzeige-orientiert:
    nutzt das geteilte CardGrid mit state.formations (vom Reducer/Engine gehalten, kein Neuberechnen hier).
-   Optional `pickedIds`/`pickedPos`, um eine laufende Auswahl im Kontext der Formationen zu markieren. */
-export function FormationPanel({ state = {}, title = "Deine aktiven Formationen", pickedIds = [], pickedPos, className = "" }) {
+   Optional `pickedIds`/`pickedPos`, um eine laufende Auswahl im Kontext der Formationen zu markieren.
+   #UI: `collapsible` macht die Kopfzeile zum Ein-/Ausklapp-Trigger. Der 🏗 Gebäude-Toggle blendet — wie in der
+   Aufstellungsphase — die platzierten Architekt-Bauten als Rahmen über dem Brett ein (nur wenn Bauten vorhanden). */
+export function FormationPanel({ state = {}, title = "Deine aktiven Formationen", pickedIds = [], pickedPos, className = "", collapsible = false, defaultOpen = true }) {
   const deck = state.deck || [];
   const order = state.playerOrder || [];
   const formations = state.formations || [];
   const cards = order.map((di) => deck[di]);
+  const hasArch = architectBuildings(state).length > 0;
+  const [open, setOpen] = useState(defaultOpen);
+  const [showArch, setShowArch] = useState(true);
   if (cards.length === 0) return null;
   const { count, maxMult } = summarizeFormations(formations);
   // Eis-Neudesign: Gletscher/Firn-Boden auch im Referenz-Panel zeigen (z. B. Skill-Auswahl), damit man beim Entscheiden
@@ -21,16 +28,38 @@ export function FormationPanel({ state = {}, title = "Deine aktiven Formationen"
   const iceActive = (state.activeArchetypes || []).includes("ice");
   const glacierPos = iceActive && state.glacierLocked
     ? new Set(state.glacierLocked.map((v, i) => (v ? i : -1)).filter((i) => i >= 0)) : null;
+  // #UI: Architekt-Bauten als Rahmen einblenden (Gebäude-Toggle), wie in der Aufstellungsphase.
+  const archOn = hasArch && showArch;
+  const cover = archOn ? architectCoverMap(state) : null;
+  const structPos = archOn ? structLitPosOf(state) : null;
+  const distrPos = archOn ? distrLitPosOf(state) : null;
+  const bodyOpen = collapsible ? open : true;
   return (
     <div className={className}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] uppercase tracking-wide opacity-50">{title}</span>
-        <span className="text-[11px] font-bold" style={{ color: "#5ab87a" }}>{count} Formationen · max ×{fmt(maxMult)}</span>
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <button type="button" onClick={collapsible ? () => setOpen((o) => !o) : undefined}
+          aria-expanded={collapsible ? open : undefined}
+          className="flex items-center gap-1.5 min-w-0" style={{ cursor: collapsible ? "pointer" : "default" }}>
+          {collapsible && <span className="text-[10px] opacity-50 transition-transform" style={{ display: "inline-block", transform: open ? "rotate(90deg)" : "none" }}>▸</span>}
+          <span className="text-[11px] uppercase tracking-wide opacity-50 truncate">{title}</span>
+        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[11px] font-bold" style={{ color: "#5ab87a" }}>{count} · max ×{fmt(maxMult)}</span>
+          {hasArch && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); setShowArch((v) => !v); }}
+              className="text-[10px] font-bold px-2 py-0.5 rounded-md transition-all hover:brightness-110"
+              style={showArch ? { background: "#16283a", color: "#7db4e6", border: "1px solid #3b7dbe" } : { background: "#16232f", color: "#7d8a97", border: "1px solid #2b3e4d" }}
+              title="Platzierte Architekt-Gebäude als Rahmen über dem Brett anzeigen">🏗 Gebäude</button>
+          )}
+        </div>
       </div>
-      <CardGrid cards={cards} formations={formations} roles={state.roles || {}}
-        anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
-        glacierPos={glacierPos} glacierMassByPos={iceActive ? (state.glacierMass || []) : null}
-        pickedIds={pickedIds} pickedPos={pickedPos} onTilePick={() => {}} quietTiles />
+      {bodyOpen && (
+        <CardGrid cards={cards} formations={formations} roles={state.roles || {}}
+          anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+          glacierPos={glacierPos} glacierMassByPos={iceActive ? (state.glacierMass || []) : null}
+          architectCover={cover} structPos={structPos} distrPos={distrPos}
+          pickedIds={pickedIds} pickedPos={pickedPos} onTilePick={() => {}} quietTiles />
+      )}
     </div>
   );
 }

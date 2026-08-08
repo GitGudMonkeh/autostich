@@ -182,3 +182,42 @@ export function DeckHistogram({ deck }) {
     </div>
   );
 }
+
+/* #UI: Kompakte Deck-Stärke je Farbe — ein Balken je Farbe (= Durchschnittswert), violettes End-Segment + ◆-Badge =
+   Anzahl unschlagbarer Karten (Wert > 10, überbietet jede Gegnerkarte). Ersetzt das platzintensive 4×11-Histogramm
+   in der Perk-Auswahl: zeigt Farb-Stärke und Auto-Siege auf einen Blick. */
+const UNBEAT = "#8a7de0";
+export function DeckStrength({ deck = [] }) {
+  const bySuit = {};
+  for (const c of deck) (bySuit[c.suit] ||= []).push(c.value);
+  return (
+    <div>
+      <div className="grid gap-2">
+        {SUIT_ORDER.map((su) => {
+          const vals = bySuit[su] || [];
+          const n = vals.length;
+          const avg = n ? vals.reduce((a, b) => a + b, 0) / n : 0;
+          const unbeat = vals.filter((v) => v > 10).length;
+          const col = suitColor(su);
+          const fillPct = Math.min(100, (avg / 11) * 100);       // Ø-Wert auf 1..11-Skala
+          const overPct = n ? Math.min(100 - fillPct, (unbeat / n) * 100) : 0; // Anteil unschlagbarer Karten als violettes Ende
+          return (
+            <div key={su} className="flex items-center gap-2 text-xs">
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: col }} />
+              <span className="w-8 shrink-0 font-bold leading-none" style={{ color: col }}>{suitName(su)}</span>
+              <span className="flex-1 rounded-full overflow-hidden flex" style={{ height: 9, background: "#111119" }}>
+                <span style={{ width: `${fillPct}%`, background: col }} />
+                {overPct > 0 && <span style={{ width: `${overPct}%`, background: UNBEAT }} />}
+              </span>
+              <span className="shrink-0 w-9 text-right tabular-nums opacity-70">⌀{avg.toFixed(1).replace(".", ",")}</span>
+              <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded leading-none"
+                style={unbeat > 0 ? { background: `${UNBEAT}22`, color: UNBEAT, border: `1px solid ${UNBEAT}55` }
+                                  : { background: "#1a1a22", color: "#55555f", border: "1px solid #2a2a33" }}>◆{unbeat}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-[10px] opacity-40 mt-2">Balken = Ø-Wert · violett ◆ = unschlagbar (&gt;10, überbietet jede Gegnerkarte).</div>
+    </div>
+  );
+}

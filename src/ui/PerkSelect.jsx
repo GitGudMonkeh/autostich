@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
 import { familyDef, hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
-import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
+import { PerkList, DeckStrength } from "./BuildSummary.jsx";
 import { DevPerkCatalog } from "./DevPerkCatalog.jsx"; // Dev-Run: Voll-Katalog statt Zufallsangebot
 import { FormationPanel } from "./FormationPanel.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
@@ -10,6 +11,24 @@ import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
 const fmtMult = (x) => x.toFixed(2).replace(".", ",");
+
+// #UI: Einklappbares Build-Kontext-Panel (wie in Skill-Auswahl/Aufstellphase) — Kopf mit Titel + optionaler Meta-Anzeige
+// rechts + Chevron, Body ein-/ausklappbar. Hält die sekundären Infos kompakt, ohne die Perk-Wahl zuzustellen.
+function InfoPanel({ title, meta = null, defaultOpen = true, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="mt-3 rounded-xl overflow-hidden" style={{ border: "1px solid #2a2a33" }}>
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left" style={{ background: "#161620" }}>
+        <span className="text-[11px] uppercase tracking-wide font-bold opacity-60">{title}</span>
+        <span className="flex items-center gap-2 shrink-0">{meta}
+          <span className="text-[10px] opacity-50 transition-transform" style={{ display: "inline-block", transform: open ? "none" : "rotate(-90deg)" }}>▾</span>
+        </span>
+      </button>
+      {open && <div className="px-3 py-3" style={{ borderTop: "1px solid #2a2a33" }}>{children}</div>}
+    </div>
+  );
+}
 
 /* Ein Angebotseintrag → einheitliches Anzeige-Modell (Rarität #167 §8). Familie {familyId,tier} zeigt den
    Familiennamen mit römischer Stufe, die Stufenfarbe (grau/grün/blau/lila) und — bei bereits gehaltener
@@ -70,7 +89,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         {state.devMode ? (
           <DevPerkCatalog offer={offer} onPick={onPick} onDecline={onDecline} />
         ) : (
-        <div className="grid sm:grid-cols-3 gap-3 mt-5">
+        <div className="grid sm:grid-cols-3 gap-2.5 mt-4">
           {offer.map((entry) => {
             const v = offerView(entry, state.familyTiers);
             const cat = v.cat;
@@ -78,7 +97,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
               <button
                 key={v.key}
                 onClick={() => onPick(v.entry)}
-                className={`text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
+                className={`text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
                 style={{ background: "#20202a",
                          // Familie: Rahmen = Stufenfarbe (grau/grün/blau/lila). Flach: Seltenheit (grau/grün/gold).
                          border: `1px solid ${v.accent}${(v.isFamily ? v.tier === 1 : v.rar === "common") ? "55" : ""}`,
@@ -115,7 +134,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                   )}
                 </div>
                 <div className="font-bold" style={{ color: (!v.isFamily && v.leg) ? LEG_GOLD : v.isFamily ? v.accent : cat.color }}>{v.name}</div>
-                <div className="text-sm opacity-75 leading-snug"><GlossaryText text={v.desc} /></div>
+                <div className="text-[13px] opacity-75 leading-snug"><GlossaryText text={v.desc} /></div>
               </button>
             );
           })}
@@ -128,19 +147,20 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         </div>
         )}
 
-        {/* #138: Neu würfeln (falls verfügbar) + „Alle ablehnen" — eine Perk-Runde ist nie „verschwendet" (keine Münzen mehr, #225.1). Im Dev-Modus hat der Katalog sein eigenes „Überspringen". */}
-        {!state.devMode && (
-        <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+        {/* #138: Neu würfeln (links) + „Alle ablehnen" (rechts) nebeneinander über die Breite — eine Perk-Runde ist nie
+            „verschwendet" (keine Münzen mehr, #225.1). Im Dev-Modus hat der Katalog sein eigenes „Überspringen". */}
+        {!state.devMode && (onDecline || canReroll) && (
+        <div className="flex items-stretch gap-2 mt-3">
           {canReroll && (
             <button onClick={onReroll}
-              className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
+              className="flex-1 text-xs px-4 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
               style={{ background: "#20202a", color: LEG_GOLD, border: `1px solid ${LEG_GOLD}66` }}>
-              🎲 Angebot neu würfeln · {rerollTokens} übrig
+              🎲 Neu würfeln · {rerollTokens}
             </button>
           )}
           {onDecline && (
             <button onClick={onDecline}
-              className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
+              className="flex-1 text-xs px-4 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
               style={{ background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }}>
               Alle ablehnen
             </button>
@@ -148,24 +168,20 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         </div>
         )}
 
-        {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). */}
-        <div className="mt-5 pt-4 border-t grid sm:grid-cols-2 gap-4" style={{ borderColor: "#2a2a33" }}>
-          <div>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              {(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((t) => t > 0).length;
-                return `Dein Build — ${n} Perk${n === 1 ? "" : "s"}`; })()}
-            </div>
+        {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). Einklappbare Panels wie in
+            Skill-Auswahl/Aufstellphase, damit die Perk-Wahl die primäre Aktion bleibt. */}
+        <div className="mt-4">
+          <InfoPanel title={(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((t) => t > 0).length;
+            return `Dein Build — ${n} Perk${n === 1 ? "" : "s"}`; })()}>
             <PerkList perks={perks} familyTiers={state.familyTiers} zinsBonus={state.zinsBonus} empty="Noch keine Perks gewählt." />
+          </InfoPanel>
+          <InfoPanel title="Deck-Stärke je Farbe">
+            <DeckStrength deck={deck} />
+          </InfoPanel>
+          {/* #161 FB-1: aktive Formationen als Kontext (v. a. für Deck-/Formations-Perks) — mit 🏗 Gebäude-Toggle. */}
+          <div className="mt-3 rounded-xl px-3 py-3" style={{ border: "1px solid #2a2a33" }}>
+            <FormationPanel state={state} title="Formationen" collapsible defaultOpen={false} />
           </div>
-          <div>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte je Farbe</div>
-            <DeckHistogram deck={deck} />
-          </div>
-        </div>
-
-        {/* #161 FB-1: aktive Formationen des Layouts als Kontext (v. a. für A-Deck-/Formations-Perks). */}
-        <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
-          <FormationPanel state={state} />
         </div>
         </div>
       </div>
