@@ -67,12 +67,12 @@ describe("#229 T11 — Profil-Schema-Version + Migration", () => {
   afterEach(() => { delete global.localStorage; });
 
   it("migrateProfile stempelt ein unversioniertes Alt-Profil auf die aktuelle Version, ohne Felder zu verlieren", () => {
-    const legacy = { games: 3, bestScore: 500, masteryGrade: 2, monoArchetypeRuns: { fire: true } };
+    const legacy = { games: 3, bestScore: 500, bestStreak: 7, monoArchetypeRuns: { fire: true } };
     const m = migrateProfile(legacy);
     expect(m.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
     expect(m.games).toBe(3);
     expect(m.bestScore).toBe(500);
-    expect(m.masteryGrade).toBe(2);
+    expect(m.bestStreak).toBe(7);
     expect(m.monoArchetypeRuns).toEqual({ fire: true });
   });
   it("migrateProfile ist idempotent (aktuelles Profil bleibt unverändert)", () => {
@@ -89,7 +89,7 @@ describe("#229 T11 — Profil-Schema-Version + Migration", () => {
     expect(p.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
     expect(p.games).toBe(7);
     expect(p.bestScore).toBe(900);
-    expect(p.masteryGrade).toBe(0);          // fehlendes Feld aus DEFAULT_PROFILE ergänzt
+    expect(p.bestStreak).toBe(0);            // fehlendes Feld aus DEFAULT_PROFILE ergänzt
     expect(p.monoArchetypeRuns).toEqual({});
   });
   it("recordRun persistiert die Schema-Version im Profil", () => {
@@ -116,11 +116,11 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
   });
 
   it("Migration v1 → v2 seedet die neuen Felder ohne Altfelder zu verlieren", () => {
-    const v1 = { schemaVersion: 1, games: 4, bestScore: 700, masteryGrade: 1 };
+    const v1 = { schemaVersion: 1, games: 4, bestScore: 700, bestStreak: 5 };
     const m = migrateProfile(v1);
     expect(m.schemaVersion).toBe(2);
     expect(m.games).toBe(4);
-    expect(m.masteryGrade).toBe(1);       // Altfeld erhalten
+    expect(m.bestStreak).toBe(5);         // Altfeld erhalten
     expect(m.stichPoints).toBe(0);
     expect(m.nodes).toEqual({});
     expect(m.onboarding).toBe(0);
@@ -332,21 +332,6 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
       global.localStorage = mockLS(); // frisches Profil
       const later = recordRun({ score: 100, ts: 2, completed: true, rerollsUsed: 3, statPicks: [] });
       expect(later.profile.hadNoRerollRun).toBe(false);
-    });
-
-    it("#217 Rang-Leiter: nur Meister-Läufe schalten den nächsten Rang frei (sequentiell)", () => {
-      // Normaler Lauf mit riesigem Score → Rang bleibt 0 (zählt nicht).
-      let p = recordRun({ score: 999_000_000, ts: 1, completed: true, statPicks: [] }).profile;
-      expect(p.masteryGrade).toBe(0);
-      // Meister-Lauf ≥ Rang-I-Schwelle → Rang 1 (nur EIN Rang trotz riesigem Score).
-      p = recordRun({ score: 999_000_000, ts: 2, completed: true, statPicks: [], masterRun: true }).profile;
-      expect(p.masteryGrade).toBe(1);
-      // Normaler Lauf dazwischen ändert den Rang NICHT.
-      p = recordRun({ score: 999_000_000, ts: 3, completed: true, statPicks: [] }).profile;
-      expect(p.masteryGrade).toBe(1);
-      // Nächster Meister-Lauf → Rang 2.
-      p = recordRun({ score: 999_000_000, ts: 4, completed: true, statPicks: [], masterRun: true }).profile;
-      expect(p.masteryGrade).toBe(2);
     });
 
     it("Flag bleibt sticky — ein späterer Lauf, der die Bedingung NICHT erfüllt, setzt es nicht zurück", () => {

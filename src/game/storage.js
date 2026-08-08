@@ -1,5 +1,4 @@
 import { GHOST_STEP } from "./constants.js";
-import { advanceGrade } from "./mastery.js";
 import { onboardingAfter, spForRun, isSpRun } from "./progression.js";
 
 /* Preview-Build (Testbranch auf /autostich/test/) teilt sich die Origin mit der echten
@@ -79,7 +78,7 @@ export function loadRunHistory() {
   return [];
 }
 
-// #229 T11: Schema-Version des Profil-Blobs — der schema-fragilste Persistenz-Teil (masteryGrade-Skala,
+// #229 T11: Schema-Version des Profil-Blobs — der schema-fragilste Persistenz-Teil (Baum-Knoten-Form,
 // monoArchetypeRuns-Form). Bei einem breaking change hochzählen UND einen Migrations-Block in migrateProfile
 // anhängen. Andere Keys (Ghost/Highscores/Optionen) degradieren weiter rein additiv über Merge-über-Default
 // und brauchen keine Versionierung.
@@ -90,7 +89,6 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
   hadNoRerollRun: false, // #214: sticky Challenge-Flag (einmal true → bleibt); noReroll = Sparfuchs deck_c3. (#267: hadMonoStatRun entfernt — die Stat-Phase ist weg.)
   monoArchetypeRuns: {}, hadAllArchetypesRun: false, // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
-  masteryGrade: 0, // #217: laufübergreifender Meistergrad (0..5), sequentiell freigeschaltet über Score-Schwellen
   // Progression/Upgrades (docs §1/§4/§6): SP-Guthaben + ausgegeben (Respec/Anzeige), gekaufte Baum-Knoten
   // ({[id]: level}), weiteste Onboarding-Stufe (0..6) und Zähler der SP-Läufe (Treue-Drip-Basis).
   stichPoints: 0, stichSpent: 0, nodes: {}, onboarding: 0, spRuns: 0 };
@@ -218,12 +216,6 @@ export function recordRun(record) {
     // #215: Archetyp-Decks — Mono-Läufe je Fraktion (deck_c5..c8) + Element-Bund (alle vier, deck_c9).
     monoArchetypeRuns,
     hadAllArchetypesRun: !!p.hadAllArchetypesRun || isAllArchetypesRun(record),
-    // #217: Rang-Leiter — NUR Meister-Läufe (record.masterRun) schalten den nächsten Rang frei (eigener Modus). Ein
-    // Meister-Lauf schaltet höchstens den NÄCHSTEN Rang frei (advanceGrade prüft gegen die Rang+1-Schwelle; kein
-    // Multi-Sprung; Score zählt, kein completed-Zwang). Normale Läufe lassen den Rang unverändert.
-    // #226 Großmeister: der gespielte Rang (record.masteryGrade) gatet den Aufstieg — ab Meister V zählt nur ein Lauf
-    // AUF dem aktuellen Max-Rang (sonst ließe sich die 50-M-Schwelle auf leichterem Ramp farmen).
-    masteryGrade: record.masterRun ? advanceGrade(p.masteryGrade, n0(record.score), record.masteryGrade) : (p.masteryGrade || 0),
     // Progression/Upgrades: Guthaben wächst um den Lauf-Ertrag; ausgegebene SP + gekaufte Knoten bleiben unverändert.
     stichPoints: n0(p.stichPoints) + gainedSp,
     stichSpent: n0(p.stichSpent),

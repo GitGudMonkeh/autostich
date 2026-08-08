@@ -31,7 +31,7 @@ const BR_COLOR = { bau: CY, auf: BLUE, rar: VI, mei: AM };
 // Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
 const ONB_REWARDS = ["Reroll +1", "Pflanze 🌿 frei", "Rarität: Blau", "Eis ❄ frei", "Rarität: Violett", "Legendär ⭐ (R29)"];
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onMasterRun = null, onStandardRun = null, onMeisterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onStandardRun = null, onMeisterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
@@ -158,7 +158,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             style={{ background: "#5fe0f7", color: "#052730", boxShadow: "0 0 20px rgba(95,224,247,.65)" }}>
             <span className="text-[19px]">▶ Lauf fortsetzen</span>
             <span className="text-[11px] font-mono font-semibold opacity-80">
-              Durchlauf {Math.min((resume.cycle || 0) + 1, resume.totalCycles)}/{resume.totalCycles} · Score {Math.round(resume.score || 0).toLocaleString("de-DE")}{resume.masterRun ? ` · Meister ${resume.grade || 0}` : ""}
+              Durchlauf {Math.min((resume.cycle || 0) + 1, resume.totalCycles)}/{resume.totalCycles} · Score {Math.round(resume.score || 0).toLocaleString("de-DE")}
             </span>
           </button>
         )}
@@ -211,7 +211,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* Ranglisten-Gruppe — eigener Block (Weißraum trennt „mein Spiel" vom Wettbewerb). Ruhiger
           Violett-Outline statt Vollfläche → Farbe sparsam, nur eine gefüllte Aktion oben. */}
-      {onMasterRun && (
+      {(onStandardRun || onMeisterRun) && (
         <div className="w-full max-w-sm flex flex-col gap-2.5">
           {!onbDone ? (
             /* (Schritt 4d) Rangliste erst NACH dem Onboarding — bis dahin gesperrt mit Countdown. */
@@ -236,7 +236,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               </button>
               {rankedOpen && (
                 <div className="grid grid-cols-2 gap-2.5">
-                  <button onClick={onStandardRun || onMasterRun}
+                  <button onClick={onStandardRun}
                     className="rounded-lg p-3 text-left flex flex-col gap-1 transition-all hover:-translate-y-0.5"
                     style={{ background: "#1c1c23", border: "1px solid #30303a" }}>
                     <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Ranglisten-Lauf</span>
@@ -244,7 +244,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                     <span className="text-[11px] leading-snug opacity-60">Upgrades ignoriert — feste Basiswerte für alle (2 Rerolls).</span>
                   </button>
                   {progLigaFree ? (
-                    <button onClick={onMeisterRun || onMasterRun}
+                    <button onClick={onMeisterRun}
                       className="rounded-lg p-3 text-left flex flex-col gap-1 transition-all hover:-translate-y-0.5"
                       style={{ background: "#1c1c23", border: `1px solid ${AM}55` }}>
                       <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Ranglisten-Lauf</span>
@@ -255,7 +255,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                     <div className="relative rounded-lg p-3 text-left flex flex-col gap-1 opacity-70 cursor-default"
                       style={{ background: "#1c1c23", border: "1px solid #30303a" }} title="Frei, sobald alle Upgrades gekauft sind">
                       <span className="absolute top-2.5 right-2.5 text-[12px] opacity-70">🔒</span>
-                      <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
+                      <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Ranglisten-Lauf</span>
                       <span className="text-[14px] font-extrabold" style={{ color: AM }}>Meister</span>
                       <span className="text-[11px] leading-snug opacity-60">Alle Upgrades nötig.</span>
                     </div>

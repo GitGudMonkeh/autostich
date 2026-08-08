@@ -13,7 +13,6 @@ import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
-import { masteryRerollBonus, masteryCoverBonus, masteryLegendMult, masteryRareShift, masteryLegendGuaranteed, difficultyForGrade, MASTERY_MAX_GRADE } from "./mastery.js"; // #217 Meistergrade / #226 Großmeister
 import { nodeEffects, legPerk2Force, rerollBase, unlockedArchetypes, maxRarityTier, legendaryPhaseUnlocked, unlockAllProfile } from "./progression.js"; // Progression-Baum (Schritt 3) · (Schritt 4) Reroll-Basis + Archetyp-Gatung + Rarität-Deckel + R29-Capstone · §7 Meister = voller Baum
 
 // §7 (Schritt 6): der Meister-Ranglisten-Lauf spielt mit dem VOLLEN Baum — unabhängig vom echten Profil. Ein einmalig
@@ -51,9 +50,9 @@ function startOrderInBand(deck, rng) {
 // Dev-Run (nur Preview): Erst-Angebot/-Phase eines Laufs für die Start-Entscheidung schedule[0] (frischer Build →
 // perks/skills/familyTiers leer). Spiegelt die Angebots-Erzeugung der Engine; im devMode kommt der Voll-Katalog.
 // Wird NUR vom Dev-Run genutzt — der normale Lauf startet unverändert über den Stat-Pfad in START_RUN.
-function startDecisionSetup(decision, s, seed, actionRng, grade, architectEnabled, devEnergy, devMode = false) {
-  const mLegMult = masteryLegendMult(grade), mRareShift = Math.max(masteryRareShift(grade), s.treeRareShift || 0); // Rang (Meister) ∪ Baum (Normal-Lauf)
-  const legMultPerk = mLegMult * (s.treeLegMult || 1);  // M3: Perk-Legendär ×2 (Baum) — Skills bleiben bei mLegMult
+function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devEnergy, devMode = false) {
+  const mRareShift = s.treeRareShift || 0;              // Baum-RareShift (Normal-Lauf; Standard/Sim = 0)
+  const legMultPerk = s.treeLegMult || 1;               // M3: Perk-/Gebäude-Legendär ×2 (Baum)
   const legChanceMult = s.treeLegMult || 1;             // M3: Gebäude-Legendär-Chance ×2 (Baum)
   const rngAtOr = (...parts) => (seed != null ? rngAt(seed, 0, ...parts) : actionRng);
   // (#267: „stat"-Zweig entfernt — es gibt keine Stat-Phase mehr.)
@@ -72,9 +71,8 @@ function startDecisionSetup(decision, s, seed, actionRng, grade, architectEnable
     return { phase: "formation", formationEnergy: (devEnergy ?? C.FORMATION_ENERGY), formationSwaps: [], formations };
   }
   // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
-  const guarantee = masteryLegendGuaranteed(grade);
-  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(s.shop) * mLegMult, guarantee, s.unlockedArchetypes); // §4b: Archetyp-Gatung
-  if (soff.length) return { phase: "levelup", skillOffer: soff, masteryLegGranted: guarantee && !devMode && soff.some(isLegendarySkill) };
+  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(s.shop), false, s.unlockedArchetypes); // §4b: Archetyp-Gatung
+  if (soff.length) return { phase: "levelup", skillOffer: soff };
   const off = buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap);
   return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
 }
@@ -156,9 +154,6 @@ export function initialState(rng = Math.random, seed = null) {
     rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
     rerollsUsed: 0,                // #214/#263: Zähler benutzter Rerolls über ALLE Kategorien → Sparfuchs-Challenge (deck_c3 „noRerollRun")
     offerRerolls: 0,               // #205: Reroll-Index des AKTUELLEN Angebots (Original = 0) → adressiert `(seed,cycle,kind,offerRerolls)`; von der Engine bei jedem frischen Angebot auf 0 gesetzt
-    masteryGrade: 0,               // #217: gewählter Rang dieses Laufs (0..5) — von START_RUN gesetzt; 0 = Basiswerte (No-op)
-    masterRun: false,              // #217: ist dies ein Meister-Lauf? Nur dann Rang-Balken + Rang-Leiter (normaler Lauf = false)
-    masteryLegGranted: false,      // #217 Rang V: wurde der garantierte Legendär in diesem Lauf schon angeboten? (1×/Lauf)
     lastTrick: null,
   };
 }
@@ -179,37 +174,31 @@ export function reducer(state, action) {
       // Architekt-Flag (#202): das Spiel startet mit architect:true (Shop-Ersatz); der Sim übersteuert per Action (A/B),
       // sonst greift der Modul-Default (env ARCHITECT). shopDisabled = Sim-Null-Baseline „ohne".
       const architectEnabled = action.architect != null ? !!action.architect : !!C.ARCHITECT_ENABLED; // #229: false = Sim-Baseline (kein Architekt, direkt in den Durchlauf)
-      // #217 Meistergrade: den run-übergreifenden Grad (aus dem Profil, via App) in die Lauf-Rewards übersetzen.
-      // Grad 0 (frischer Spieler / Sim ohne masteryGrade) = Basiswerte → alles byte-identisch zum bisherigen Start.
-      const grade = Math.max(0, Math.min(MASTERY_MAX_GRADE, Math.floor(Number(action.masteryGrade) || 0)));
-      const masterRun = !!action.masterRun; // #217: Meister-Lauf? Steuert die Rang-Leiter — UND den Neuwurf-Pool.
       // Dev-Run (nur Preview): action.dev = { rounds, schedule, cover, energy } konfiguriert einen frei einstellbaren Lauf.
       // Nur dieser Zweig weicht ab; ohne action.dev bleibt der normale Lauf-Start UNVERÄNDERT (Start = Stat).
       const dev = action.dev && typeof action.dev === "object" ? action.dev : null;
-      // Progression-Baum (Schritt 3): Effekte NUR im normalen Lauf (kein Meister-Lauf, kein Dev-Run) — dort ist
-      // grade 0, der Baum ist also die einzige Quelle. Meister/Dev/frisches Profil/Sim → 0 = No-op (byte-identisch).
       // §7 (Schritt 6): zwei Ranglisten-Varianten über den `ranked`-Flag, beide über DIESELBE Tree-Maschinerie:
       //  · 'standard' = tree-UNABHÄNGIGE Baseline (kein Baum → fix 2 Rerolls, alle Archetypen, R29 an) = Referenzwert.
       //  · 'meister'  = VOLLER Baum (unabhängig vom echten Profil).
       // Sonst zählt das echte Profil (Normal-Lauf). effProfile null → treeEff null (Baseline/Sim/profil-los).
       const ranked = action.ranked || null;
       const effProfile = ranked === "meister" ? FULL_MEISTER_PROFILE : (ranked === "standard" ? null : action.profile);
-      const treeEff = (!masterRun && !dev && effProfile) ? nodeEffects(effProfile) : null;
+      const treeEff = (!dev && effProfile) ? nodeEffects(effProfile) : null;
       const treeCover = treeEff ? treeEff.treeCoverBonus : 0;      // +Baufeld-Zellen (0..4)
       const treeRareShift = treeEff ? treeEff.treeRareShift : 0;   // RareShift-Stufe (0..3)
       const treeLegMult = treeEff && treeEff.legDropDouble ? 2 : 1; // M3: Legendär-Drop ×2 (Perks & Gebäude) [TUNING]
       const treeLegForce2 = legPerk2Force(treeEff); // M4/M5: garantierte Legendäre in der 2. Perk-Phase (1 bzw. 3)
       const treeLegSlotReroll = treeEff && treeEff.legSlotReroll ? 1 : 0; // M1: 1 Reroll fürs R29-Legendär-Angebot [TUNING]
       const legOfferBonus = treeEff && treeEff.legTwoPerArch ? C.LEG_OFFER_PER_ARCH_BONUS : 0; // M2: +Kandidaten je Archetyp (mehr Auswahl)
-      // (Schritt 4) Reroll-Basis je Pool: Meister → Rang; Normal-Lauf mit Profil → Onboarding-Basis + A1/A2 (Cap 3);
+      // (Schritt 4) Reroll-Basis je Pool: Normal-Lauf/Meister mit Profil → Onboarding-Basis + A1/A2 (Cap 3);
       // profil-los (Sim/Standard) → C.BASE_REROLLS (kein Baseline-Shift, Bestandstests byte-identisch).
-      const normalRerolls = masterRun ? masteryRerollBonus(grade) : (effProfile ? rerollBase(effProfile) : C.BASE_REROLLS);
-      // (Schritt 4b) Archetyp-Allowlist aus dem Onboarding — nur Normal-Lauf mit Profil (treeEff≠null); sonst null
-      // = keine Gatung (Sim/Standard/Meister/Dev → alle 4, byte-identisch).
+      const normalRerolls = effProfile ? rerollBase(effProfile) : C.BASE_REROLLS;
+      // (Schritt 4b) Archetyp-Allowlist aus dem Onboarding — nur mit Profil (treeEff≠null); sonst null
+      // = keine Gatung (Sim/Standard/Dev → alle 4, byte-identisch).
       const unlockedArch = treeEff ? unlockedArchetypes(Number(effProfile.onboarding) || 0) : null;
-      // (Schritt 4c) Onboarding-Rarität-Deckel: nur Normal-Lauf mit Profil; sonst 4 = kein Deckel (Sim/Meister/Dev).
+      // (Schritt 4c) Onboarding-Rarität-Deckel: nur mit Profil; sonst 4 = kein Deckel (Sim/Standard/Dev).
       const rareCap = treeEff ? maxRarityTier(Number(effProfile.onboarding) || 0) : 4;
-      // (Schritt 4f) R29-Legendär-Capstone: Normal-Lauf erst ab Onboarding 6; profil-los/Meister/Dev = an (wie bisher).
+      // (Schritt 4f) R29-Legendär-Capstone: Normal-Lauf erst ab Onboarding 6; profil-los/Standard/Dev = an (wie bisher).
       const legPhaseEnabled = treeEff ? legendaryPhaseUnlocked(Number(effProfile.onboarding) || 0) : true;
       if (dev) {
         const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
@@ -217,28 +206,26 @@ export function reducer(state, action) {
         const devCover = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.cover) || 0)));
         const devEnergy = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.energy) || 0)));
         const sBase = { ...s, architect: { ...s.architect, maxCover: devCover } };
-        const patch = startDecisionSetup(devSchedule[0], sBase, seed, action.rng, grade, true, devEnergy, true);
-        return { ...sBase, architectEnabled: true, masteryGrade: grade, masterRun,
+        const patch = startDecisionSetup(devSchedule[0], sBase, seed, action.rng, true, devEnergy, true);
+        return { ...sBase, architectEnabled: true,
           devSchedule, maxCycles: devRounds, devEnergy, devMode: true,
-          difficulty: difficultyForGrade(grade),
+          difficulty: null,
           rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
-          skillOffer: null, offer: null, masteryLegGranted: false, ...patch };
+          skillOffer: null, offer: null, ...patch };
       }
       // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
       // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
-      const architectStart = { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) + treeCover }; // Baufeld: Rang (Meister) + Baum (Normal-Lauf)
+      const architectStart = { ...s.architect, maxCover: s.architect.maxCover + treeCover }; // Baufeld: Baum-Bonus (Normal-/Meister-Lauf)
       const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift, treeLegMult, treeLegForce2, rerollsLeg: treeLegSlotReroll, legOfferBonus, unlockedArchetypes: unlockedArch, rareCap, legPhaseEnabled, ranked };
-      const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, grade, architectEnabled, undefined, false);
+      const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
       return { ...sBase, architectEnabled,
-        masteryGrade: grade, masterRun,
-        difficulty: difficultyForGrade(grade), // #226 Großmeister: Ramp je Rang (Meister → null = No-op)
-        // #263: drei getrennte Reroll-Pools. Meister-Lauf zieht je Pool ALLEIN aus dem Rang (masteryRerollBonus).
-        // (Schritt 4) Normal-Lauf MIT Profil: Basis 1 aus Onboarding-Glied 1 + A1/A2 (rerollBase, Cap 3) — erster
-        // Lauf = 0. OHNE Profil (Sim/Standard) bleibt es C.BASE_REROLLS (2/2/2) → kein Baseline-Shift.
+        difficulty: null,
+        // #263: drei getrennte Reroll-Pools. (Schritt 4) Normal-/Meister-Lauf MIT Profil: Basis 1 aus Onboarding-Glied 1
+        // + A1/A2 (rerollBase, Cap 3) — erster Lauf = 0. OHNE Profil (Sim/Standard) bleibt es C.BASE_REROLLS (2/2/2).
         rerollsPerk: normalRerolls,
         rerollsArch: normalRerolls,
         rerollsSkill: normalRerolls,
-        masteryLegGranted: false, ...startPatch };
+        ...startPatch };
     }
 
     case "TO_MENU":     // laufenden Run verlassen (#5)
@@ -340,7 +327,7 @@ export function reducer(state, action) {
       const tokens = state.rerollsArch || 0;
       if (tokens <= 0) return state;
       const idx = (state.offerRerolls || 0) + 1;                      // #205: frischer adressierter Strom (seed,cycle,"arch",idx)
-      const offers = buildArchitectOffer(a, rngFor(state, action, state.cycle, "arch", idx), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0), state.treeLegMult || 1, state.rareCap || 4);
+      const offers = buildArchitectOffer(a, rngFor(state, action, state.cycle, "arch", idx), state.treeRareShift || 0, state.treeLegMult || 1, state.rareCap || 4);
       return { ...state, architect: { ...a, offers }, offerRerolls: idx, rerollsArch: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
     case "ARCHITECT_DONE": { // Architekt-Phase verlassen → zugehöriger Durchlauf startet (Angebot leeren).
@@ -578,7 +565,7 @@ export function reducer(state, action) {
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
       if (state.devMode) return { ...state, skillOffer: null, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
-      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade) * (state.treeLegMult || 1), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0), state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4); // #217 · M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel
+      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * (state.treeLegMult || 1), state.treeRareShift || 0, state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4); // M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel
       // Eis-Neudesign: bei VOLLEN Eis-Slots (SKILL_SLOTS Eis-Skills) friert das Ablehnen trotzdem einen Gletscher fest —
       // Ausgleich dafür, dass kein weiterer Eis-Skill mehr in die Slots passt (analog: ein Tausch bei vollen Slots gibt
       // ebenfalls einen). Der Perk bleibt: das Perk-Angebot wird geparkt (pendingPerkOffer) und nach der Gletscher-Wahl
@@ -647,7 +634,7 @@ export function reducer(state, action) {
       const tokens = state.rerollsPerk || 0;                         // #263: eigener Perk-Pool
       if (tokens <= 0) return state;                                 // keine Ressource → wirkungslos
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade) * (state.treeLegMult || 1), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0), state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4); // #217 · M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel
+      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * (state.treeLegMult || 1), state.treeRareShift || 0, state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4); // M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel
       return { ...state, offer, offerRerolls: idx, rerollsPerk: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 
@@ -658,14 +645,9 @@ export function reducer(state, action) {
       const tokens = state.rerollsSkill || 0;                        // #263: eigener Skill-Pool
       if (tokens <= 0) return state;
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      // #217/#247: Grad-V-Garantie greift auch beim Neuwurf (mind. EINER via guaranteeOne), solange noch kein Legendär
-      // angeboten wurde; sonst Per-Archetyp-Chance × Meisterrang-Mult (nicht mehr Chance 1 = „in jedem Archetyp").
-      const guarantee = masteryLegendGuaranteed(state.masteryGrade) && !state.masteryLegGranted;
-      const skillLeg = skillLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade);
-      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLeg, guarantee, state.unlockedArchetypes); // §4b: Archetyp-Gatung
+      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLegendaryChance(state.shop), false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
       if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
-      const masteryLegGranted = state.masteryLegGranted || (guarantee && offer.some(isLegendarySkill)); // Garantie eingelöst
-      return { ...state, skillOffer: offer, offerRerolls: idx, rerollsSkill: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1, masteryLegGranted };
+      return { ...state, skillOffer: offer, offerRerolls: idx, rerollsSkill: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.

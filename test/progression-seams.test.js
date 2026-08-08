@@ -58,15 +58,9 @@ describe("START_RUN: Rarität-Shift aus dem Baum (Normal-Lauf)", () => {
   });
 });
 
-describe("Gating: Meister-Lauf & Dev-Run ignorieren den Baum (kein Doppel-Bonus)", () => {
-  it("Meister-Lauf mit Vollausbau-Profil → Baum aus (treeRareShift 0)", () => {
-    const full = unlockAllProfile(emptyProfile(0));
-    const s = start({ masterRun: true, masteryGrade: 3, profile: full });
-    expect(s.treeRareShift || 0).toBe(0); // Baum gegatet → nur der Rang wirkt
-  });
-  it("Normal-Lauf mit Profil, aber grade 0 → nur der Baum wirkt", () => {
+describe("Gating: Normal-Lauf mit Profil zieht den Baum", () => {
+  it("Normal-Lauf mit Profil → der Baum wirkt (treeRareShift + Baufeld)", () => {
     const s = start({ profile: withNodes(["B1", "B2", "B3", "R1", "R2", "R3"]) });
-    expect(s.masteryGrade).toBe(0);
     expect(s.treeRareShift).toBe(3);
     expect(s.architect.maxCover).toBe(start().architect.maxCover + 4);
   });
@@ -79,9 +73,6 @@ describe("M3 legDropDouble: Legendär-Drop ×2 (Perks & Gebäude)", () => {
     expect(start({ profile: withM3 }).treeLegMult).toBe(2);
     expect(start().treeLegMult || 1).toBe(1);                                   // frisch
     expect(start({ profile: withNodes([...NONMEI, "M1", "M2"]) }).treeLegMult).toBe(1); // ohne M3
-  });
-  it("Gating: Meister-Lauf ignoriert M3 (treeLegMult 1)", () => {
-    expect(start({ masterRun: true, masteryGrade: 4, profile: unlockAllProfile(emptyProfile(0)) }).treeLegMult || 1).toBe(1);
   });
   it("buildArchitectOffer: legChanceMult verdoppelt die Legendär-Chance (0.03→0.06)", () => {
     const arch = { buildings: [] };
@@ -122,19 +113,17 @@ describe("M4/M5: garantierte Legendäre in der 2. Perk-Phase", () => {
     const legs = off3.filter((o) => typeof o === "string" && isLegendary(o));
     expect(new Set(legs).size).toBe(legs.length);
   });
-  it("START_RUN: treeLegForce2 = 1 (M4) / 3 (M5) / 0 (frisch, Meister)", () => {
+  it("START_RUN: treeLegForce2 = 1 (M4) / 3 (M5) / 0 (frisch)", () => {
     expect(start({ profile: withM4 }).treeLegForce2).toBe(1);
     expect(start({ profile: unlockAllProfile(emptyProfile(0)) }).treeLegForce2).toBe(3);
     expect(start().treeLegForce2 || 0).toBe(0);
-    expect(start({ masterRun: true, masteryGrade: 5, profile: unlockAllProfile(emptyProfile(0)) }).treeLegForce2 || 0).toBe(0);
   });
 });
 
 describe("M1: Reroll fürs R29-Legendär-Angebot", () => {
-  it("START_RUN: rerollsLeg = 1 mit M1, sonst 0 (Meister gegatet)", () => {
+  it("START_RUN: rerollsLeg = 1 mit M1, sonst 0", () => {
     expect(start({ profile: withNodes(["M1"]) }).rerollsLeg).toBe(1);
     expect(start().rerollsLeg || 0).toBe(0);
-    expect(start({ masterRun: true, masteryGrade: 1, profile: withNodes(["M1"]) }).rerollsLeg || 0).toBe(0);
   });
 
   const legState = () => {
@@ -186,11 +175,6 @@ describe("(Schritt 4a) Reroll-Basis: Onboarding-Glied 1 + A1/A2, Cap 3", () => {
     const full = start({ profile: withOnb(6, ["A1", "A2"]) });
     expect([full.rerollsPerk, full.rerollsArch, full.rerollsSkill]).toEqual([3, 3, 3]);
   });
-  it("START_RUN: Meister-Lauf unberührt (Rang-Rerolls, nicht Onboarding)", () => {
-    // masterRun → masteryRerollBonus(grade); Profil (auch Onboarding) wird ignoriert.
-    const s = start({ masterRun: true, masteryGrade: 2, profile: withOnb(0) });
-    expect(s.rerollsPerk).toBe(2); // masteryRerollBonus(2) = 2, NICHT 0
-  });
 });
 
 describe("(Schritt 6) Ranglisten-Standard = tree-unabhängige Baseline (§7/§8)", () => {
@@ -237,11 +221,10 @@ describe("(Schritt 4f) R29-Legendär-Capstone (Onboarding-Glied 6)", () => {
     expect([0, 1, 2, 3, 4, 5].map(legendaryPhaseUnlocked)).toEqual([false, false, false, false, false, false]);
     expect(legendaryPhaseUnlocked(6)).toBe(true);
   });
-  it("START_RUN: legPhaseEnabled — Normal <6 aus, ≥6 an; Sim/Meister an", () => {
+  it("START_RUN: legPhaseEnabled — Normal <6 aus, ≥6 an; Sim/Standard an", () => {
     expect(start({ profile: { ...emptyProfile(0), onboarding: 5 } }).legPhaseEnabled).toBe(false);
     expect(start({ profile: { ...emptyProfile(0), onboarding: 6 } }).legPhaseEnabled).toBe(true);
     expect(start().legPhaseEnabled).toBe(true); // profil-los (Sim/Standard-Rangliste)
-    expect(start({ masterRun: true, masteryGrade: 1, profile: { ...emptyProfile(0), onboarding: 0 } }).legPhaseEnabled).toBe(true);
   });
   it("R29 MIT Freischaltung → Legendär-Pick-Phase (wie Standard-Rangliste)", () => {
     const s = driveToR29(true);
@@ -292,7 +275,6 @@ describe("(Schritt 4c) Onboarding-Rarität-Deckel (grau/grün → +blau → +vio
     expect(start({ profile: { ...emptyProfile(0), onboarding: 3 } }).rareCap).toBe(3);
     expect(start({ profile: { ...emptyProfile(0), onboarding: 5 } }).rareCap).toBe(4);
     expect(start().rareCap).toBe(4); // profil-los (Sim/Standard)
-    expect(start({ masterRun: true, masteryGrade: 2, profile: { ...emptyProfile(0), onboarding: 0 } }).rareCap).toBe(4); // Meister ungedeckelt
   });
 });
 
@@ -314,11 +296,10 @@ describe("(Schritt 4b) Archetyp-Freischaltung über Onboarding", () => {
     // ohne Allowlist (null) = keine Gatung → Bestand
     expect(buildSkillOffer([], [], () => 0.3, 12, 0, false, null)).toEqual(buildSkillOffer([], [], () => 0.3, 12, 0, false));
   });
-  it("START_RUN: state.unlockedArchetypes je Onboarding; null für Sim/Meister", () => {
+  it("START_RUN: state.unlockedArchetypes je Onboarding; null für Sim/Standard", () => {
     expect(start({ profile: { ...emptyProfile(0), onboarding: 0 } }).unlockedArchetypes).toEqual(["lightning", "fire"]);
     expect(start({ profile: { ...emptyProfile(0), onboarding: 6 } }).unlockedArchetypes.sort()).toEqual(["fire", "ice", "lightning", "plant"]);
     expect(start().unlockedArchetypes).toBe(null); // profil-los (Sim/Standard)
-    expect(start({ masterRun: true, masteryGrade: 1, profile: { ...emptyProfile(0), onboarding: 0 } }).unlockedArchetypes).toBe(null); // Meister ungegatet
   });
   it("Erst-Angebot eines frischen Onboarding-Laufs zeigt nur Blitz/Feuer", () => {
     const s = start({ profile: { ...emptyProfile(0), onboarding: 0 } });
@@ -340,9 +321,8 @@ describe("M2: mehr Auswahl im R29-Angebot (Pick bleibt einer)", () => {
   it("perArchBonus 0 = Bestand (byte-identisch)", () => {
     expect(buildLegendaryOffer(["fire"], [], rng, null, 0)).toEqual(buildLegendaryOffer(["fire"], [], rng));
   });
-  it("START_RUN: legOfferBonus = 1 mit M2, sonst 0 (Meister gegatet)", () => {
+  it("START_RUN: legOfferBonus = 1 mit M2, sonst 0", () => {
     expect(start({ profile: withNodes([...NONMEI, "M1", "M2"]) }).legOfferBonus).toBe(1);
     expect(start().legOfferBonus || 0).toBe(0);
-    expect(start({ masterRun: true, masteryGrade: 2, profile: unlockAllProfile(emptyProfile(0)) }).legOfferBonus || 0).toBe(0);
   });
 });

@@ -1,7 +1,7 @@
 /* ============================================================
    UPGRADES / PROGRESSION-BAUM — laufübergreifende Meta-Progression über Stichpunkte (SP).
 
-   PUR & node-testbar (Analogon zu mastery.js/rarity.js): hält NUR die Knoten-Defs (data-driven),
+   PUR & node-testbar (Analogon zu rarity.js): hält NUR die Knoten-Defs (data-driven),
    die Kauf-/Voraussetzungs-/Gate-/Respec-Logik und die Effekt-Ableitungen. KEINE UI-/Asset-Importe,
    KEINE localStorage-Zugriffe, KEIN RNG/Date — die Persistenz lebt in storage.js (Profil), die
    Anwendung im reducer, die Anzeige in der UI. So bleibt das Modul in `environment: "node"` prüfbar
@@ -234,9 +234,8 @@ export const ownedCount = (profile) => NODE_IDS.reduce((c, id) => (owns(profile,
 /* ============================================================
    SP-ÖKONOMIE & ONBOARDING — Ernte pro Lauf (docs/progression-decisions.md §4–§6).
 
-   REINE Regeln (kein RNG/Date/localStorage); storage.recordRun importiert und wendet sie an — exakt das
-   Muster mastery.advanceGrade ↔ storage. Der Sim läuft profil-los → diese Regeln berühren die Engine-
-   Baseline NICHT (keine neuen RNG-Ströme, keine Reducer-Naht).
+   REINE Regeln (kein RNG/Date/localStorage); storage.recordRun importiert und wendet sie an. Der Sim läuft
+   profil-los → diese Regeln berühren die Engine-Baseline NICHT (keine neuen RNG-Ströme, keine Reducer-Naht).
    ============================================================ */
 
 // SP-Quellen (envNum-tunebar). Grundstock je abgeschlossenem SP-Lauf + kumulative Score-Meilensteine +

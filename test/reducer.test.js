@@ -421,7 +421,7 @@ describe("ARCHITECT_MOVE_MULTI (Drop-Swap)", () => {
 // #263: REROLL_ARCHITECT — Architekt-Bauplan-Angebot neu würfeln über den eigenen Gebäude-Reroll-Pool.
 describe("REROLL_ARCHITECT (#263)", () => {
   const base = (over = {}) => ({
-    phase: "architect", architectEnabled: true, seed: 12345, cycle: 0, offerRerolls: 0, masteryGrade: 0,
+    phase: "architect", architectEnabled: true, seed: 12345, cycle: 0, offerRerolls: 0,
     rerollsArch: 2, rerollsUsed: 0,
     architect: { buildings: [], offers: [{ familyId: "seed", tier: 1, used: false }], actedMain: false, moved: false },
     ...over,

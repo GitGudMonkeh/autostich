@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useEscape } from "./useEscape.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { RunDetail } from "./RunDetail.jsx";
@@ -14,8 +14,6 @@ import {
 } from "../game/runStats.js";
 import { fmtScore, fmtScoreShort } from "./format.js";
 import { fmtDuration } from "../game/deck.js";
-import { MASTERY_THRESHOLDS, MASTERY_REWARD_LABELS, MASTERY_MAX_GRADE, MASTERY_MEISTER_MAX, isGrandmaster, rankRoman, masteryGradeLabel } from "../game/mastery.js"; // #217/#226 Meister- & Großmeisterränge
-import { DECK_DEFS } from "../game/cosmetics.js"; // #217: Grad-Deck-Namen
 
 /* #172 FB-10 — Statistik-Hub (Hauptmenü). Rein lokal aus der Lauf-Historie (storage.loadRunHistory)
    + Profil-Totals (loadProfile), aggregiert über game/runStats.js. Wiederverwendung: Sparkline (Score-Trend),
@@ -199,94 +197,6 @@ function ChallengesPanel({ seeds, onPlaySeed }) {
   );
 }
 
-// #217/#226 Meister- & Großmeisterränge — Master-Reiter: 10 Ränge als Balatro-Decks-Reihe. Bedingung = Score-Schwelle,
-// Reward nur GROB (Kurzlabels, keine Prozente). Der aktuelle Rang ist hervorgehoben, der nächste als Ziel markiert.
-// Sequentiell: ein Lauf schaltet höchstens den nächsten frei. Meister I–V (violett) geben Rewards; Großmeister I–V (gold)
-// steigern nur die Schwierigkeit (Ramp), Ziel bleibt 50 M. Deck-Namen aus der Kosmetik-Registry (deck_rank_* / deck_gm_*).
-const RANK_DECK_ID = {
-  1: "deck_rank_bronze", 2: "deck_rank_silber", 3: "deck_rank_gold", 4: "deck_rank_platin", 5: "deck_rank_diamond",
-  6: "deck_gm_rot", 7: "deck_gm_blau", 8: "deck_gm_gruen", 9: "deck_gm_lila", 10: "deck_gm_marco", // #226 Großmeister-Decks
-};
-const MASTER_ACCENT = "#8a7de0";
-const GM_ACCENT = "#d4a63a"; // Gold — Großmeister-Tier abgesetzt vom Meister-Violett
-
-function MasterPanel({ profile, best }) {
-  const grade = profile.masteryGrade || 0;
-  const pbScore = Math.max(profile.bestScore || 0, best ? Math.floor(best.score || 0) : 0);
-  const next = grade < MASTERY_MAX_GRADE ? grade + 1 : null;
-  const gmActive = isGrandmaster(grade);
-  return (
-    <>
-      <Section title="Meisterränge" hint="experimentell">
-        <div className="flex items-center gap-3 flex-wrap mb-1">
-          <Kpi label="Aktueller Rang" value={grade >= 1 ? masteryGradeLabel(grade) : "Kein Rang"} color={grade >= 1 ? (gmActive ? GM_ACCENT : MASTER_ACCENT) : undefined} />
-          <Kpi label="Bester Score" value={fmtScore(pbScore)} color="#d4a63a" />
-        </div>
-        <div className="text-[11px] opacity-45 leading-relaxed mb-1">
-          Nur <b>Meister-Läufe</b> schalten Ränge frei — einer pro Lauf, der Reihe nach. Meister I–V geben dauerhafte Vorteile (nur grob gezeigt); ab <b style={{ color: GM_ACCENT }}>Großmeister</b> wächst nur der Gegner mit, das Ziel bleibt 50 M. Je Rang ein Deck.
-        </div>
-      </Section>
-      <div className="grid gap-1.5 mt-2">
-        {MASTERY_THRESHOLDS.map((thr, i) => {
-          const n = i + 1;
-          const gm = isGrandmaster(n);                 // Großmeister-Tier (Ränge 6–10)?
-          const acc = gm ? GM_ACCENT : MASTER_ACCENT;
-          const unlocked = grade >= n;
-          const isNext = n === next;
-          const roman = rankRoman(n);                  // I..V je Tier (Meister ODER Großmeister)
-          const deckName = DECK_DEFS[RANK_DECK_ID[n]]?.name || "";
-          const rewards = gm ? [] : (MASTERY_REWARD_LABELS[n] || []); // Großmeister bringt keine neuen Rewards
-          return (
-            <Fragment key={n}>
-              {/* Trenner + Tier-Label vor dem ersten Großmeister-Rang. */}
-              {n === MASTERY_MEISTER_MAX + 1 && (
-                <div className="flex items-center gap-2 mt-2 mb-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: GM_ACCENT }}>Großmeister</span>
-                  <span className="flex-1 h-px" style={{ background: `${GM_ACCENT}44` }} />
-                  <span className="text-[10px] opacity-45">nur die Schwierigkeit steigt · Ziel bleibt {fmtScore(thr)}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-3 px-3 py-2 rounded-lg"
-                style={{
-                  background: isNext ? "#1c1a26" : "#141419",
-                  border: `1px solid ${unlocked ? `${acc}66` : isNext ? `${acc}44` : "#26262e"}`,
-                  opacity: unlocked || isNext ? 1 : 0.6,
-                }}>
-                {/* Rang-Ziffer */}
-                <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-pixel text-sm"
-                  style={{ background: unlocked ? acc : "#20202a", color: unlocked ? "#141419" : "#7a7a88", border: unlocked ? "none" : "1px solid #33333e" }}>
-                  {roman}
-                </div>
-                {/* Reward (Meister) bzw. Schwierigkeits-Hinweis (Großmeister) + Deck */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {gm ? (
-                      <span className="text-[11px] px-1.5 py-0.5 rounded font-semibold" style={{ background: `${GM_ACCENT}22`, color: "#e6c766", border: `1px solid ${GM_ACCENT}55` }}>härterer Gegner</span>
-                    ) : rewards.map((r) => (
-                      <span key={r} className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: "#20202a", color: "#c8c8d0" }}>{r}</span>
-                    ))}
-                  </div>
-                  <div className="text-[11px] opacity-45 mt-0.5">Deck: {deckName}</div>
-                </div>
-                {/* Bedingung / Status */}
-                <div className="shrink-0 text-right">
-                  <div className="text-xs font-bold tabular-nums" style={{ color: unlocked ? acc : "#c8c8d0" }}>{fmtScore(thr)}</div>
-                  <div className="text-[10px] font-semibold" style={{ color: unlocked ? acc : isNext ? "#b3a8f5" : "#7a7a88" }}>
-                    {unlocked ? "✓ frei" : isNext ? "nächstes Ziel" : "gesperrt"}
-                  </div>
-                </div>
-              </div>
-            </Fragment>
-          );
-        })}
-      </div>
-      <div className="text-[11px] opacity-40 mt-3 leading-relaxed">
-        Experimentell. Ab <b style={{ color: GM_ACCENT }}>Großmeister</b> (über Rang V) wächst nur der Gegner mit — das Ziel bleibt 50 M, neue Belohnungen gibt es nicht.
-      </div>
-    </>
-  );
-}
-
 export function StatsScreen({ onClose, onPlaySeed = null }) {
   useEscape(onClose);
   const [detail, setDetail] = useState(null); // { entry, rank } | null
@@ -330,27 +240,18 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
           <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
         </div>
 
-        {/* #205/#217: Reiter — Übersicht · Master (Meistergrade) · Challenges (Seeds nachspielen). */}
+        {/* #205: Reiter — Übersicht · Challenges (Seeds nachspielen). */}
         <div className="flex gap-1 mt-4" role="tablist">
-          {[["overview", "Übersicht"], ["master", "Master"], ["challenges", "Challenges"]].map(([id, label]) => (
+          {[["overview", "Übersicht"], ["challenges", "Challenges"]].map(([id, label]) => (
             <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
               className="relative px-3 py-1.5 rounded-lg text-sm font-semibold transition-all"
               style={tab === id ? { background: "#8a7de0", color: "#141419" } : { background: "#20202a", color: "#c8c8d0", border: "1px solid #30303a" }}>
               {label}
-              {/* #217: „Experimentell"-Marker am Master-Reiter — Stil wie der TESTBRANCH-Marker (Gold-Pill, font-pixel), am Button verankert. */}
-              {id === "master" && (
-                <span className="absolute -top-1.5 -right-1.5 px-1 rounded text-[8px] font-bold font-pixel leading-tight"
-                  style={{ background: "#d4a63a", color: "#141419", boxShadow: "0 0 6px rgba(212,166,58,.6)" }} aria-label="experimentell">
-                  exp
-                </span>
-              )}
             </button>
           ))}
         </div>
 
-        {tab === "master" ? (
-          <MasterPanel profile={profile} best={best} />
-        ) : tab === "challenges" ? (
+        {tab === "challenges" ? (
           <ChallengesPanel seeds={seeds} onPlaySeed={onPlaySeed} />
         ) : empty ? (
           <div className="text-center opacity-50 py-12">Noch keine Läufe — spiel einen Run, dann erscheinen hier deine Statistiken.</div>

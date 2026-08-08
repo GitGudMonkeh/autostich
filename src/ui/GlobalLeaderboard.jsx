@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { leaderboardConfigured, fetchGlobalTop, fetchMasterTop } from "../game/leaderboard.js";
+import { leaderboardConfigured, fetchGlobalTop } from "../game/leaderboard.js";
 import { ARCHETYPE_META, decodeArchetypes } from "../game/skills.js";
 import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
@@ -36,26 +36,23 @@ const toRunEntry = (r) => ({
    mine        — der eigene, gerade gepostete Lauf → wird in der Liste hervorgehoben.
    reloadToken — neu laden, sobald er sich ändert (nach dem Submit, damit der eigene
                  Lauf enthalten ist).
-   framed      — eigener Panel-Rahmen (StartScreen). Ohne: schlichte Sektion (Game-Over).
-   masterGrade — #217: gesetzt (0..10) → zeigt das Master-Board GENAU dieses Rangs (fetchMasterTop) statt des
-                 normalen Boards. Die Rang-Auswahl passiert außen (LeaderboardScreen). */
-export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, masterGrade = null, onPlaySeed = null }) {
+   framed      — eigener Panel-Rahmen (StartScreen). Ohne: schlichte Sektion (Game-Over). */
+export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, onPlaySeed = null }) {
   const [rows, setRows] = useState(null);   // null = lädt · [] = leer · [...] = Daten
   const [error, setError] = useState(false);
   const [detail, setDetail] = useState(null); // #169 FB-8: gewählte Zeile → RunDetail-Overlay
-  const isMaster = masterGrade != null;
 
   useEffect(() => {
     if (!leaderboardConfigured) return;
     let alive = true;
     setError(false);
     setRows(null);
-    (isMaster ? fetchMasterTop(masterGrade, limit) : fetchGlobalTop(limit))
+    fetchGlobalTop(limit)
       .then((data) => { if (alive) setRows(Array.isArray(data) ? data : []); })
       .catch(() => { if (alive) setError(true); });
     return () => { alive = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [limit, reloadToken, masterGrade]);
+  }, [limit, reloadToken]);
 
   if (!leaderboardConfigured) return null; // ohne Config: Block entfällt komplett
 
@@ -76,13 +73,13 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
 
   const body = (
     <>
-      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{isMaster ? "Master" : "Global"} — Top {limit}</div>
+      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Global — Top {limit}</div>
       {error ? (
         <div className="text-xs opacity-40 text-center py-3">Global nicht verfügbar.</div>
       ) : rows === null ? (
         <div className="text-xs opacity-40 text-center py-3">Lädt globale Bestenliste …</div>
       ) : rows.length === 0 ? (
-        <div className="text-xs opacity-40 text-center py-3">{isMaster ? "Noch keine Einträge auf diesem Rang." : "Noch keine globalen Einträge — sei die/der Erste."}</div>
+        <div className="text-xs opacity-40 text-center py-3">Noch keine globalen Einträge — sei die/der Erste.</div>
       ) : (
         <div className="grid gap-1">
           {rows.map((r, i) => {

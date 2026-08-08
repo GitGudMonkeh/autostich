@@ -19,39 +19,25 @@ const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 //    FB-8-Spalten noch fehlen.
 //  - COLS_BASE: ganz ohne Zusatzspalten (Ur-Tabelle).
 const FB8_COLS = "best_streak,perks,skills,max_formations,formation_score,crits,wins,crit_bonus_score,best_trick_score";
-// #217 Master-Board: mastery_grade (gespielter Rang; NULL = normaler Lauf) + deck_snapshot (finale Aufstellung, nur Meister-Läufe).
-const MASTER_COLS = "mastery_grade,deck_snapshot";
 // #229 N2: `id` mitselektieren → die Eigen-Zeile lässt sich im Board EINDEUTIG markieren (statt per name+score-Heuristik).
 // #205: `seed` mitselektieren → Board-Einträge sind nachspielbar (Challenge) + Challenge-Board (Top-3 pro Seed).
-const COLS_FULL = `id,name,score,level,tricks,cycles,archetypes,${FB8_COLS},${MASTER_COLS},seed,created_at`;
+const COLS_FULL = `id,name,score,level,tricks,cycles,archetypes,${FB8_COLS},seed,created_at`;
 const COLS_ARCH = "id,name,score,level,tricks,cycles,archetypes,created_at";
 const COLS_BASE = "id,name,score,level,tricks,cycles,created_at";
 // Payload-Felder, die es in COLS_FULL, aber nicht in COLS_ARCH gibt (zum Stripen beim publish, falls die Spalten fehlen):
-// #169 FB-8-Detailfelder + #217 Master-Felder (mastery_grade/deck_snapshot) + #205 seed.
-const EXTRA_FIELDS = ["best_streak", "perks", "skills", "max_formations", "formation_score", "crits", "wins", "crit_bonus_score", "best_trick_score", "mastery_grade", "deck_snapshot", "seed"];
+// #169 FB-8-Detailfelder + #205 seed.
+const EXTRA_FIELDS = ["best_streak", "perks", "skills", "max_formations", "formation_score", "crits", "wins", "crit_bonus_score", "best_trick_score", "seed"];
 const omit = (obj, keys) => { const o = { ...obj }; for (const kk of keys) delete o[kk]; return o; };
 
-// Top-N global (NORMALES Board): Score↓, bei Gleichstand mehr Stiche, dann jünger. Fallback-Kaskade bei fehlenden
-// Spalten. #217: zeigt NUR normale Läufe (mastery_grade is null) — Meister-Läufe leben im Master-Board (fetchMasterTop).
+// Top-N global: Score↓, bei Gleichstand mehr Stiche, dann jünger. Fallback-Kaskade bei fehlenden Spalten.
 export async function fetchGlobalTop(limit = 10) {
-  const url = (cols) => `${REST}?select=${cols}&mastery_grade=is.null&order=score.desc,tricks.desc,created_at.desc&limit=${limit}`;
+  const url = (cols) => `${REST}?select=${cols}&order=score.desc,tricks.desc,created_at.desc&limit=${limit}`;
   let res;
   for (const cols of [COLS_FULL, COLS_ARCH, COLS_BASE]) {
     res = await fetch(url(cols), { headers });
     if (res.status !== 400) break; // 400 = Spalte fehlt (Migration steht aus) → nächste Stufe
   }
   if (!res.ok) throw new Error(`fetchGlobalTop ${res.status}`);
-  return res.json();
-}
-
-// #217 Master-Board (getrennte Boards je Rang): Top-N der Meister-Läufe auf GENAU diesem Rang (mastery_grade = grade),
-// Score↓. Nutzt COLS_FULL (inkl. deck_snapshot → die eigene finale Aufstellung; fremde bleiben per Anti-Copy verdeckt).
-// Kein Kaskaden-Fallback: die Master-Spalten existieren erst nach der Migration (docs/supabase-schema.sql) — Aufrufer
-// fängt den Fehler ab und zeigt „nicht verfügbar".
-export async function fetchMasterTop(grade, limit = 10) {
-  const g = Math.max(0, Math.floor(Number(grade) || 0));
-  const res = await fetch(`${REST}?select=${COLS_FULL}&mastery_grade=eq.${g}&order=score.desc,tricks.desc,created_at.desc&limit=${limit}`, { headers });
-  if (!res.ok) throw new Error(`fetchMasterTop ${res.status}`);
   return res.json();
 }
 
