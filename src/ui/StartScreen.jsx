@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
-import { AnleitungModal } from "./AnleitungModal.jsx";
+import { useState } from "react";
 import { MuteButton } from "./MuteButton.jsx";
-import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
 import { matchSecretSeed, ownedCount, nodeState, treeComplete, NODES, BRANCHES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import logo from "../assets/logo-wordmark.png";
@@ -33,7 +31,6 @@ const BR_COLOR = { bau: CY, auf: BLUE, rar: VI, mei: AM };
 const ONB_REWARDS = ["Reroll +1", "Pflanze 🌿 frei", "Rarität: Blau", "Eis ❄ frei", "Rarität: Violett", "Legendär ⭐ (R29)"];
 
 export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onStandardRun = null, onMeisterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
-  const [showGuide, setShowGuide] = useState(false);
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
@@ -70,14 +67,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
     onPlaySeed(s);
   };
 
-  // Beim allerersten Start die Anleitung einmal automatisch zeigen (#12).
-  useEffect(() => {
-    if (!loadSeenGuide()) setShowGuide(true);
-  }, []);
-  const closeGuide = () => {
-    setShowGuide(false);
-    saveSeenGuide();
-  };
 
   // Sekundär-Navigation als ruhige Chip-Reihe — kompakter Pillen-Stil (dunkel, sekundär), einheitlich.
   const chipCls = "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all hover:-translate-y-0.5";
@@ -344,7 +333,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {onStats && <button onClick={onStats} className={chipCls} style={chipSty}>Statistiken</button>}
         {onCustomize && <button onClick={onCustomize} className={chipCls} style={chipSty}>Deck</button>}
         {onOptions && <button onClick={onOptions} aria-label="Optionen" className={chipCls} style={chipSty}>Optionen</button>}
-        <button onClick={() => setShowGuide(true)} className={chipCls} style={chipSty}>Anleitung</button>
       </div>
 
       {/* Lokaler Nickname (#14). */}
@@ -361,8 +349,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* #250 Versions-/Build-Stempel unten — nach jedem Push sichtbar, ob er gelandet ist (+ Umgebung + kurze SHA). */}
       <div className="text-[10px] font-mono opacity-40 tracking-wide select-text" title="Version · Umgebung · Commit">{VERSION_FULL}</div>
-
-      {showGuide && <AnleitungModal onClose={closeGuide} />}
     </div>
   );
 }

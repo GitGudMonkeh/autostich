@@ -2,9 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useEscape } from "./useEscape.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { RunDetail } from "./RunDetail.jsx";
-import { SeedChip } from "./SeedChip.jsx"; // #205 Challenger Mode: kopierbarer Seed + Nachspielen
 import { factionShares } from "./RunGraphs.jsx"; // Stats-Redesign: dieselbe Fraktions-Score-Herkunft wie im Victory-Screen
-import { fetchSeedTop, leaderboardConfigured } from "../game/leaderboard.js"; // #205 Schicht B: globaler Top-3-pro-Seed
 import { loadRunHistory, loadProfile } from "../game/storage.js";
 import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
 import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
@@ -114,98 +112,13 @@ function WinRow({ tag, children, val }) {
   );
 }
 
-// #205: Lauf-Historie nach Seed gruppieren (nur Läufe MIT Seed). Je Seed: bester lokaler Score, Anzahl Läufe,
-// jüngste Aktivität. Sortiert nach jüngster Aktivität (Challenge-Reiter „was du zuletzt herausgefordert hast").
-function challengeSeeds(history) {
-  const by = new Map();
-  for (const r of history) {
-    const code = r.seedCode;
-    if (!code) continue;
-    const g = by.get(code) || { code, seed: r.seed, best: 0, plays: 0, lastTs: 0 };
-    g.best = Math.max(g.best, Math.floor(r.score || 0));
-    g.plays += 1;
-    g.lastTs = Math.max(g.lastTs, r.ts || 0);
-    by.set(code, g);
-  }
-  return [...by.values()].sort((a, b) => b.lastTs - a.lastTs);
-}
-
-// #205 Schicht B: globaler Top-3 auf GENAU diesem Seed (lazy — fetcht erst beim Aufklappen, nicht für alle Seeds auf
-// einmal). Degradiert lautlos (Board nicht verfügbar / kein Eintrag). Score-Herkunft = dieselbe Tabelle wie das Board.
-function SeedGlobalTop3({ seed }) {
-  const [rows, setRows] = useState(null); // null = lädt · [] = leer · [...] = Daten
-  const [error, setError] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    setError(false); setRows(null);
-    fetchSeedTop(seed, 3)
-      .then((d) => { if (alive) setRows(Array.isArray(d) ? d : []); })
-      .catch(() => { if (alive) setError(true); });
-    return () => { alive = false; };
-  }, [seed]);
-  if (error) return <div className="text-[11px] opacity-40 px-1 py-1.5">Global nicht verfügbar.</div>;
-  if (rows === null) return <div className="text-[11px] opacity-40 px-1 py-1.5">Lädt globale Top 3 …</div>;
-  if (rows.length === 0) return <div className="text-[11px] opacity-40 px-1 py-1.5">Noch keine globalen Läufe auf diesem Seed.</div>;
-  return (
-    <div className="grid gap-0.5 px-1 py-1.5">
-      {rows.map((r, i) => (
-        <div key={r.id ?? i} className="flex items-center gap-2 text-xs">
-          <span className="opacity-50 w-4 shrink-0 tabular-nums">#{i + 1}</span>
-          <span className="flex-1 truncate opacity-85">{r.name || "—"}</span>
-          <span className="font-bold tabular-nums shrink-0" style={{ color: "#d4a63a" }}>{fmtScore(r.score)}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// #205 Challenges-Reiter: eigene Seeds mit bestem LOKALEM Score + „↻ Nachspielen" / „⧉ kopieren"; je Seed aufklappbar
-// der globale Top-3-Vergleich (Schicht B, aus derselben Board-Tabelle).
-function ChallengesPanel({ seeds, onPlaySeed }) {
-  if (!seeds || seeds.length === 0) {
-    return (
-      <div className="text-center opacity-55 py-10 text-sm leading-relaxed">
-        Noch keine Seeds. Jeder Lauf bekommt jetzt einen teilbaren Seed — spiel einen Run,
-        oder füg auf der Startseite einen fremden Seed ein und nimm die Challenge an.
-      </div>
-    );
-  }
-  return (
-    <Section title="Deine Seeds" hint="zuletzt gespielt zuerst">
-      <div className="grid gap-1.5">
-        {seeds.map((g) => (
-          <div key={g.code} className="rounded-lg overflow-hidden" style={{ background: "#141419", border: "1px solid #26262e" }}>
-            <div className="flex items-center gap-2 flex-wrap px-3 py-2">
-              <SeedChip code={g.code} onReplay={onPlaySeed ? () => onPlaySeed(g.seed) : null} />
-              <span className="ml-auto text-xs opacity-55 tabular-nums">{g.plays}× gespielt</span>
-              <span className="font-bold tabular-nums" style={{ color: "#d4a63a" }}>{fmtScore(g.best)}</span>
-            </div>
-            {/* #205 Schicht B: globaler Top-3 auf diesem Seed — lazy erst beim Aufklappen. */}
-            {leaderboardConfigured && (
-              <details style={{ borderTop: "1px solid #26262e" }}>
-                <summary className="cursor-pointer select-none text-[11px] uppercase tracking-wide opacity-60 px-3 py-1.5">🌐 Top 3 global</summary>
-                <div className="px-2 pb-1"><SeedGlobalTop3 seed={g.seed} /></div>
-              </details>
-            )}
-          </div>
-        ))}
-      </div>
-      <div className="text-[11px] opacity-40 mt-3 leading-relaxed">
-        Bestwert = dein bester lokaler Lauf auf diesem Seed. „Top 3 global“ vergleicht mit den besten Läufen anderer auf demselben Seed.
-      </div>
-    </Section>
-  );
-}
-
 export function StatsScreen({ onClose, onPlaySeed = null }) {
   useEscape(onClose);
   const [detail, setDetail] = useState(null); // { entry, rank } | null
-  const [tab, setTab] = useState("overview"); // #205: „overview" (bestehende Statistik) | „challenges"
 
   // Beim Öffnen einmal frisch laden (nach jedem Lauf aktuell).
   const history = useMemo(() => loadRunHistory(), []);
   const profile = useMemo(() => loadProfile(), []);
-  const seeds = useMemo(() => challengeSeeds(history), [history]);
 
   const empty = history.length === 0;
   const games = profile.games || 0;
@@ -240,20 +153,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
           <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
         </div>
 
-        {/* #205: Reiter — Übersicht · Challenges (Seeds nachspielen). */}
-        <div className="flex gap-1 mt-4" role="tablist">
-          {[["overview", "Übersicht"], ["challenges", "Challenges"]].map(([id, label]) => (
-            <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-              className="relative px-3 py-1.5 rounded-lg text-sm font-semibold transition-all"
-              style={tab === id ? { background: "#8a7de0", color: "#141419" } : { background: "#20202a", color: "#c8c8d0", border: "1px solid #30303a" }}>
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {tab === "challenges" ? (
-          <ChallengesPanel seeds={seeds} onPlaySeed={onPlaySeed} />
-        ) : empty ? (
+        {empty ? (
           <div className="text-center opacity-50 py-12">Noch keine Läufe — spiel einen Run, dann erscheinen hier deine Statistiken.</div>
         ) : (
           <>
