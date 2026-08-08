@@ -17,16 +17,17 @@ import { treeComplete } from "../game/progression.js";
 
 const TOP_N = 20;
 const CHAMP_WEEKS = 10; // so viele abgelaufene Wochen zeigen wir im Champions-Archiv
-const TABS = [
-  { id: "mine",       label: "Meine Runs" },
-  { id: "standard",   label: "Standard" },
-  { id: "meister",    label: "Meister" },
-  { id: "champions",  label: "🏆 Champions" },
-];
 const GOLD = "#d4a63a";
 const LILA = "#8a7de0";
 const CY = "#26c6e6";   // Standard-Akzent (Spaß-Modus)
 const AM = "#f2a83a";   // Meister-Akzent (Wochen-Challenge)
+// Reiter mit eigener Akzentfarbe (aktiver Zustand) — folgt dem Logo-Farbsystem des Hubs.
+const TABS = [
+  { id: "mine",       label: "Meine Runs", accent: LILA },
+  { id: "standard",   label: "Standard",   accent: CY },
+  { id: "meister",    label: "Meister",    accent: AM },
+  { id: "champions",  label: "🏆 Champions", accent: GOLD },
+];
 
 const fmtDate = (ts) => {
   if (!ts) return "";
@@ -146,75 +147,88 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
     <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* Feste Kartenhöhe → das Fenster bleibt beim Tab-Wechsel gleich groß & an gleicher Stelle; nur die Liste scrollt intern. */}
-      <div className="w-full max-w-2xl rounded-2xl p-5 sm:p-6 overlay-card as-panel flex flex-col"
-        style={{ background: "#181820", border: "1px solid #33333e", height: "min(85vh, 720px)" }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
-          <h2 className="text-lg font-bold flex items-center gap-2">🏆 Bestenliste</h2>
-          <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
-        </div>
+      <div className="w-full max-w-lg rounded-2xl overlay-card as-panel flex flex-col overflow-hidden"
+        style={{ background: "linear-gradient(180deg,#1b1a24,#15141c)", border: "1px solid #2c2a3a", maxHeight: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
+        {/* Logo-Gradient-Haarlinie oben — bindet den Screen ans Hub-Farbsystem (wie die Start-Karten). */}
+        <div className="h-[3px] w-full shrink-0" style={{ background: `linear-gradient(90deg, ${CY}, ${LILA}, ${AM})`, opacity: .85 }} />
+        <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1">
+          <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
+            <h2 className="text-lg font-extrabold flex items-center gap-2">🏆 Bestenliste</h2>
+            <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
+          </div>
 
-        {/* Reiter */}
-        <div className="flex gap-1 mb-4 shrink-0 flex-wrap" role="tablist">
-          {TABS.map(({ id, label }) => (
-            <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-              className="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all"
-              style={tab === id ? { background: LILA, color: "#141419" } : { background: "#20202a", color: "#c8c8d0", border: "1px solid #30303a" }}>
-              {label}
-            </button>
-          ))}
-        </div>
+          {/* Reiter — eine Zeile (bei Bedarf horizontal scrollbar), aktiver Reiter in seiner Akzentfarbe. */}
+          <div className="flex gap-1.5 mb-4 shrink-0 overflow-x-auto -mx-1 px-1" role="tablist" style={{ scrollbarWidth: "none" }}>
+            {TABS.map(({ id, label, accent }) => {
+              const on = tab === id;
+              return (
+                <button key={id} role="tab" aria-selected={on} onClick={() => setTab(id)}
+                  className="shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all"
+                  style={on
+                    ? { background: accent, color: "#141419", boxShadow: `0 0 12px ${accent}44` }
+                    : { background: "#1c1c23", color: "#c8c8d0", border: "1px solid #2c2c36" }}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
 
-        <div className="rounded-xl p-4 as-panel flex-1 min-h-0 overflow-y-auto" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-          {tab === "mine" && (
-            <>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] uppercase tracking-wide opacity-50">Meine Runs — Top {TOP_N}</span>
-                <span className="text-sm font-bold" style={{ color: GOLD }}>Rekord {fmtScore(best)}</span>
-              </div>
-              <LocalRunList runs={myTop} empty="Noch keine Läufe — leg los." onPick={setDetail} />
-            </>
-          )}
-
-          {tab === "standard" && (
-            leaderboardConfigured ? (
+          <div className="rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "#141419", border: "1px solid #26262e" }}>
+            {tab === "mine" && (
               <>
-                <div className="text-[11px] opacity-55 leading-relaxed mb-3">
-                  <b style={{ color: CY }}>Standard</b> · Allzeit-Highscores — zufällige Seeds, Upgrades ignoriert, für alle gleich. Just for fun.
+                <div className="flex items-baseline justify-between gap-2 mb-3">
+                  <span className="text-[13px] font-extrabold" style={{ color: LILA }}>Meine Runs</span>
+                  <span className="text-[12px] opacity-70">Rekord <b style={{ color: GOLD }}>{fmtScore(best)}</b></span>
                 </div>
-                <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="standard" onPlaySeed={onPlaySeed} />
+                <LocalRunList runs={myTop} empty="Noch keine Läufe — leg los." onPick={setDetail} />
               </>
-            ) : <div className="text-sm opacity-40 text-center py-6">Bestenliste ist nicht verfügbar.</div>
-          )}
+            )}
 
-          {tab === "meister" && (
-            leaderboardConfigured ? (
-              <>
-                {/* Kopf: aktuelle Woche + Live-Countdown bis Reset (So 23:59 UTC). */}
-                <div className="flex items-baseline justify-between gap-2 mb-2">
-                  <span className="text-[13px] font-bold" style={{ color: AM }}>{week.label}</span>
-                  <span className="text-[11px] opacity-60 tabular-nums">Reset in {fmtCountdown(msUntilWeekEnd(new Date(now)))}</span>
-                </div>
-                {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). */}
-                <div className="flex items-center gap-2.5 flex-wrap px-3 py-2.5 rounded-xl mb-3"
-                  style={{ background: "#1c1810", border: `1px solid ${AM}44` }}>
-                  <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">Seed der Woche</span>
-                  <span className="font-mono font-bold text-[14px] px-2 py-0.5 rounded" style={{ color: AM, background: "#241d10", border: `1px solid ${AM}55` }}>{prettySeed(week.seed)}</span>
-                  {canPlayMeister ? (
-                    <button onClick={onPlayMeister || undefined}
-                      className="ml-auto border-none rounded-lg font-extrabold text-[13px] px-4 py-2 cursor-pointer transition-transform hover:-translate-y-0.5"
-                      style={{ background: AM, color: "#141419" }}>▶ Spielen</button>
-                  ) : (
-                    <span className="ml-auto text-[11px] font-semibold flex items-center gap-1.5" style={{ color: "#8a8a95" }}>
-                      🔒 Teilnahme frei bei 13/13 Upgrades
-                    </span>
-                  )}
-                </div>
-                <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="meister" seed={week.seed} onPlaySeed={onPlaySeed} />
-              </>
-            ) : <div className="text-sm opacity-40 text-center py-6">Bestenliste ist nicht verfügbar.</div>
-          )}
+            {tab === "standard" && (
+              leaderboardConfigured ? (
+                <>
+                  <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                    <span className="text-[13px] font-extrabold" style={{ color: CY }}>Standard</span>
+                    <span className="text-[11px] opacity-50">Allzeit · Top {TOP_N}</span>
+                  </div>
+                  <div className="text-[11.5px] opacity-55 leading-relaxed mb-3">Zufällige Seeds, Upgrades ignoriert — für alle gleich. Just for fun.</div>
+                  <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="standard" onPlaySeed={onPlaySeed} hideHeader />
+                </>
+              ) : <div className="text-sm opacity-40 text-center py-8">Bestenliste ist nicht verfügbar.</div>
+            )}
 
-          {tab === "champions" && <ChampionsList reloadToken={reloadToken} />}
+            {tab === "meister" && (
+              leaderboardConfigured ? (
+                <>
+                  {/* Kopf: aktuelle Woche + Live-Countdown bis Reset (So 23:59 UTC). */}
+                  <div className="flex items-baseline justify-between gap-2 mb-2.5">
+                    <span className="text-[14px] font-extrabold" style={{ color: AM }}>{week.label}</span>
+                    <span className="text-[11px] opacity-60 tabular-nums">Reset in {fmtCountdown(msUntilWeekEnd(new Date(now)))}</span>
+                  </div>
+                  {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). */}
+                  <div className="rounded-xl px-3.5 py-3 mb-3" style={{ background: "linear-gradient(180deg,#221b0f,#1b1610)", border: `1px solid ${AM}44` }}>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">Seed der Woche</span>
+                      <span className="font-mono font-bold text-[15px] px-2.5 py-0.5 rounded tracking-wider" style={{ color: AM, background: "#2a2110", border: `1px solid ${AM}66` }}>{prettySeed(week.seed)}</span>
+                      {canPlayMeister && (
+                        <button onClick={onPlayMeister || undefined}
+                          className="ml-auto border-none rounded-lg font-extrabold text-[13px] px-4 py-2 cursor-pointer transition-transform hover:-translate-y-0.5"
+                          style={{ background: AM, color: "#141419", boxShadow: `0 0 14px ${AM}44` }}>▶ Spielen</button>
+                      )}
+                    </div>
+                    {!canPlayMeister && (
+                      <div className="text-[11px] font-semibold mt-2 flex items-center gap-1.5" style={{ color: "#c9b98a" }}>
+                        🔒 Teilnahme frei bei 13/13 Upgrades · ansehen jederzeit
+                      </div>
+                    )}
+                  </div>
+                  <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="meister" seed={week.seed} onPlaySeed={onPlaySeed} hideHeader />
+                </>
+              ) : <div className="text-sm opacity-40 text-center py-8">Bestenliste ist nicht verfügbar.</div>
+            )}
+
+            {tab === "champions" && <ChampionsList reloadToken={reloadToken} />}
+          </div>
         </div>
 
         {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} onPlaySeed={onPlaySeed} />}

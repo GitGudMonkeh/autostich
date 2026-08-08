@@ -39,7 +39,7 @@ const toRunEntry = (r) => ({
    framed      — eigener Panel-Rahmen (StartScreen). Ohne: schlichte Sektion (Game-Over).
    board       — §7: gesetzt ('standard'|'meister') → getrenntes Ranglisten-Board (fetchBoardTop) statt des
                  ungefilterten Global-Boards (fetchGlobalTop, alle Läufe). */
-export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, board = null, seed = null, onPlaySeed = null }) {
+export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, board = null, seed = null, hideHeader = false, onPlaySeed = null }) {
   const [rows, setRows] = useState(null);   // null = lädt · [] = leer · [...] = Daten
   const [error, setError] = useState(false);
   const [detail, setDetail] = useState(null); // #169 FB-8: gewählte Zeile → RunDetail-Overlay
@@ -77,7 +77,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
 
   const body = (
     <>
-      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{boardLabel} — Top {limit}</div>
+      {!hideHeader && <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{boardLabel} — Top {limit}</div>}
       {error ? (
         <div className="text-xs opacity-40 text-center py-3">{boardLabel} nicht verfügbar.</div>
       ) : rows === null ? (
