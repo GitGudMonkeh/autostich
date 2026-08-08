@@ -270,12 +270,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {/* Upgrades-Card (Vorschau) — SP-Guthaben, Äste als Kreise, Öffnen. Kern des künftigen Hubs.
           Dünne Logo-Verlaufs-Haarlinie oben bindet die Card an die Wortmarke. */}
       <div className="w-full max-w-sm rounded-2xl relative overflow-hidden"
-        style={{ background: "linear-gradient(180deg,#1b1a24,#161620)", border: "1px solid #2c2a3a" }}>
+        style={{ background: "linear-gradient(180deg,#1b1a24,#161620)", border: "1px solid #2c2a3a", opacity: onbDone ? 1 : 0.6 }}>
         <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${CY}, ${VI}, ${AM})`, opacity: .85 }} />
         <div className="p-3">
           <div className="flex items-center justify-between gap-3 relative">
             <div className="flex items-center gap-2">
               <b className="text-[14.5px] tracking-tight">Upgrades</b>
+              {!onbDone && <span className="text-[12px] opacity-70" title="Frei nach Abschluss des Onboardings" aria-label="gesperrt">🔒</span>}
             </div>
             <div className="flex items-center gap-2.5">
               {progBuyable > 0 && (
@@ -311,11 +312,20 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
           <div className="flex items-center justify-between gap-3 mt-2.5">
             <span className="text-[11.5px] opacity-60 tabular-nums"><b className="opacity-95">{progOwned} / {TOTAL_NODES}</b> · Meister-Liga {progLigaFree ? <b style={{ color: AM }}>frei</b> : `bei ${TOTAL_NODES}/${TOTAL_NODES}`}</span>
-            <button onClick={onUpgrades || undefined}
-              className="border-none font-extrabold text-[12.5px] px-3 py-2 rounded-lg cursor-pointer transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
-              style={{ background: AM, color: "#141419" }} title="Upgrade-Screen (Vorschau)">
-              Öffnen <span>›</span>
-            </button>
+            {onbDone ? (
+              <button onClick={onUpgrades || undefined}
+                className="border-none font-extrabold text-[12.5px] px-3 py-2 rounded-lg cursor-pointer transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
+                style={{ background: AM, color: "#141419" }} title="Upgrade-Screen (Vorschau)">
+                Öffnen <span>›</span>
+              </button>
+            ) : (
+              /* Gesperrt bis Onboarding-Ende — leicht ausgegraut + Lock + Countdown (wie der Ranglisten-Lock). */
+              <span className="text-[11px] font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 cursor-default whitespace-nowrap"
+                style={{ background: "#20202a", border: "1px solid #33333e", color: "#8a8a95" }}
+                title="Frei nach Abschluss des Onboardings">
+                🔒 noch {ONBOARDING_LINKS - onbStep} {ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}
+              </span>
+            )}
           </div>
         </div>
       </div>
