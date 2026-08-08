@@ -14,7 +14,7 @@ import FormIcon from "./FormIcon.jsx";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
-import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { fmtScore } from "./format.js";
 import { GlossaryPanel } from "./Glossary.jsx";
 import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Marker auch am Architekt-Brett
 import glacierIcon from "./assets/glacier.webp";
@@ -488,41 +488,55 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const selBuilding = buildings.find((x) => x.id === selId);
   const selRotatable = !!selBuilding && rotatableForm(familyDef(selBuilding.familyId).form);
 
+  // #UI-Redesign: Durchlauf-Score + %-Differenz zur Vorrunde für die Hero-Leiste (dieselbe Logik wie RoundScoreBadge).
+  const scoreHasDiff = state.prevCycleScore != null && state.prevCycleScore !== 0;
+  const scorePctDiff = scoreHasDiff ? Math.round(((state.lastCycleScore - state.prevCycleScore) / state.prevCycleScore) * 100) : 0;
+  const scoreDiffColor = scorePctDiff > 0 ? "#5ab87a" : scorePctDiff < 0 ? "#e0605a" : "#8a8a92";
+  const scoreDiffStr = `${scorePctDiff > 0 ? "+" : scorePctDiff < 0 ? "−" : "±"}${Math.abs(scorePctDiff)} %`;
+
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-start sm:items-center justify-center p-2 sm:p-4"
       style={{ background: "#0c1017dd", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-5xl rounded-2xl p-4 sm:p-6 max-h-[96dvh] overflow-y-auto overlay-card"
+      <div className="w-full max-w-5xl rounded-2xl p-4 sm:p-6 max-h-[96dvh] overflow-y-auto overlay-card as-panel-arch"
         style={{ background: "#111c27", border: `1px solid ${CAT.value.color}55`, color: "#e7eef5" }}>
 
-        {/* Kopf: Runde + Baufeld */}
-        <div className="flex items-start justify-between gap-4 mb-3">
+        {/* Kopf (#UI-Redesign): Titel + Glossar; die Kennzahlen wandern in die Hero-Leiste darunter. */}
+        <div className="flex items-center gap-2 min-w-0">
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-[0.18em] font-mono opacity-60" style={{ color: CAT.value.color }}>Architekt · Bauphase</div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <h2 className="text-xl font-bold">🏗 Der Architekt</h2>
-              <GlossaryPanel />
-            </div>
+            <div className="text-[10px] uppercase tracking-[0.18em] font-mono opacity-60" style={{ color: CAT.value.color }}>Architekt · Bauphase · Durchlauf {round}</div>
+            <h2 className="text-xl font-bold mt-0.5">Der Architekt</h2>
           </div>
-          <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wide opacity-50">Durchlauf {round}</div>
-            <div className="text-[10px] uppercase tracking-wide opacity-50 mt-0.5">Baufeld frei</div>
-            <div className="font-pixel-dense font-bold leading-none" style={{ color: GOLD, fontSize: 22 }}>
-              {Math.max(0, maxCover - coverCount)}<span className="text-xs opacity-70 font-mono"> / {maxCover}</span>
-            </div>
-            <div className="text-[11px] font-mono opacity-55">{coverCount} belegt · {Math.round(coverCount / maxCover * 100)}%</div>
-          </div>
+          <div className="ml-auto shrink-0"><GlossaryPanel /></div>
         </div>
-        {state.lastCycleScore != null && <div className="mb-3"><RoundScoreBadge state={state} /></div>}
+        {/* Hero-Stat-Leiste: der Gebäude-Boost ist das, was man beim Bauen maximiert → Hero-Wert (grün). Baufeld & Durchlauf-
+            Score als Nebenzellen (ersetzt den verstreuten Kopf-Cluster + das separate Score-Badge). Gleicher Bau wie die
+            Hero-Leiste der Aufstellphase. */}
+        <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={{ border: "1px solid #20303d", background: "#0e1a24" }}>
+          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5"
+            title="Score-Boost durch die Gebäude: Struktur-Kombis (volle Zeile/Spalte/Diagonale) + Distrikt (gleiche Kategorie aneinander) + neu gegründete Formationen. Aktualisiert live beim Bauen/Verschieben.">
+            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>Gebäude-Boost</span>
+            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct} %</span>
+          </div>
+          <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "#20303d" }}>
+            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>Baufeld</span>
+            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-xs opacity-60"> / {maxCover}</span></span>
+            <span className="text-[9px] font-mono opacity-45">{coverCount} belegt · {Math.round(coverCount / maxCover * 100)}%</span>
+          </div>
+          {state.lastCycleScore != null && (
+            <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "#20303d" }}>
+              <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>Durchlauf-Score</span>
+              <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{fmtScore(state.lastCycleScore)}</span>
+              {scoreHasDiff && <span className="text-[10px] font-bold" style={{ color: scoreDiffColor }}>{scoreDiffStr}</span>}
+            </div>
+          )}
+        </div>
 
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] items-start">
           {/* ---- Brett 8×5 — Mobil in der Mitte (order-2): Phase-Panel drüber, Vorschau drunter; Desktop links (md:order-1). ---- */}
           <section className="rounded-xl p-3 order-2 md:order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
             <div className="flex items-center justify-between mb-2">
-              <div className="text-[11px] font-mono uppercase tracking-wide flex items-baseline gap-1.5"
-                title="Score-Boost durch die Gebäude: Struktur-Kombis (volle Zeile/Spalte/Diagonale) + Distrikt (gleiche Kategorie aneinander) + neu gegründete Formationen. Aktualisiert live beim Bauen/Verschieben.">
-                <span className="opacity-50">Gebäude-Boost</span>
-                <span className="font-bold tabular-nums" style={{ color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct}%</span>
-              </div>
+              {/* Gebäude-Boost steht jetzt oben in der Hero-Leiste — hier nur noch die Overlay-Toggles. */}
+              <span className="text-[11px] font-mono uppercase tracking-wide opacity-40">Bau-Brett</span>
               <div className="flex items-center gap-1.5">
                 <button onClick={toggleCombos} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
                   style={{ background: showCombos ? "#2a2416" : "#16232f", border: `1px solid ${showCombos ? "#d4a63a" : "#2b3e4d"}`, color: showCombos ? "#e0c060" : "#7d8a97" }}
@@ -781,7 +795,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       return (
                         <button key={idx} onClick={() => chooseOffer(o)} disabled={o.used}
                           className="rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110"
-                          style={{ background: "#16232f", border: `1px solid ${tierCol}`, opacity: o.used ? 0.4 : 1, cursor: o.used ? "not-allowed" : "pointer" }}>
+                          style={{ background: "#16232f", border: `1px solid ${tierCol}`, borderLeft: `3px solid ${cat.color}`, opacity: o.used ? 0.4 : 1, cursor: o.used ? "not-allowed" : "pointer" }}>
                           <div className="flex items-center justify-between gap-1">
                             <div className="p-1 rounded" style={{ background: "#0e1822" }}><MiniShape form={fam.form} color={cat.color} /></div>
                             <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
@@ -793,7 +807,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                             <span className="w-[9px] h-[9px] rounded-full inline-block shrink-0" style={{ background: cat.color }} />{fam.name}
                           </div>
                           <div className="text-[10px] font-mono opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
-                          {!rotatableForm(fam.form) && <span className="text-[9px] font-mono" style={{ color: "#8a97a5" }} title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch).">nicht drehbar</span>}
+                          {!rotatableForm(fam.form) && <span className="self-start text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ color: "#8a97a5", background: "#1a2732", border: "1px solid #2b3e4d" }} title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch).">⟳ nicht drehbar</span>}
                           {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>kein Platz → ersetzen</span>}
                         </button>
                       );
@@ -917,11 +931,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 damit sie beim Ziehen am Brett erreichbar bleiben. Anleitung/Referenz/Farbwahl bleiben im Panel drüber.
                 Desktop: normale Leiste (md:static). */}
             <div className="order-1 sticky top-0 z-20 md:static rounded-xl p-2 -mt-2 md:mt-0" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
-              {/* #248: Rotieren in der schwebenden Leiste — nur bei ausgewähltem Gebäude in place/move; beim Ziehen ohne Scrollen erreichbar. */}
-              {showRotate && (selRotatable ? (
+              {/* #248/#UI: Rotieren in der schwebenden Leiste. In der Verschiebe-Phase steht „Drehen" KOMPAKT neben
+                  „Bestätigen" (unten) — kein voll-breiter Balken mehr. Außerhalb (place) bleibt es die eigene Zeile. */}
+              {showRotate && phase !== "move" && (selRotatable ? (
                 <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
               ) : (
-                // #262: nicht drehbare Form (zeilengebundene Legendäre / symmetrisch) → Button ausgegraut statt wirkungslos.
                 <button type="button" disabled aria-disabled="true"
                   title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch)."
                   className="w-full mb-2 rounded-lg py-2 text-sm font-bold cursor-not-allowed"
@@ -954,7 +968,16 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               ) : phase === "upgrade" ? (
                 <button onClick={() => { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
               ) : phase === "move" ? (
-                <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>✓ Bestätigen · Durchlauf starten</button>
+                <div className="flex flex-wrap gap-2">
+                  {/* Drehen kompakt (nur wenn ein Gebäude gewählt ist); Bestätigen bleibt der prominente Knopf. */}
+                  {showRotate && (selRotatable ? (
+                    <button onClick={rotateSelected} className="shrink-0 px-3.5 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
+                  ) : (
+                    <button type="button" disabled aria-disabled="true" title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch)."
+                      className="shrink-0 px-3 rounded-lg py-2 text-sm font-bold cursor-not-allowed" style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>⟳ nicht drehbar</button>
+                  ))}
+                  <button onClick={() => onDone?.()} className="flex-1 basis-[170px] rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>✓ Bestätigen · Durchlauf starten</button>
+                </div>
               ) : null}
               {/* #UI: Effekt des gerade platzierten (place) bzw. gewählten (move) Gebäudes — floatet mit der Leiste. */}
               {(() => {
