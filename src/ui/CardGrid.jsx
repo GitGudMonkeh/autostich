@@ -41,7 +41,13 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
     // SegmentBridge VERBREITERTE Segmentgrenze lückenlos. An Außenkanten die halbe Nominal-Lücke (exH/exV).
     const halfV = (p) => { const r = cells[p]; return r ? Math.max(0, (p < pos ? rect.top - r.bottom : r.top - rect.bottom) / 2) : exV; };
     const halfH = (p) => { const r = cells[p]; return r ? Math.max(0, (p < pos ? rect.left - r.right : r.left - rect.right) / 2) : exH; };
-    const exUp = sameUp ? halfV(up) : exVOut, exDown = sameDown ? halfV(down) : exVOut;
+    // #UI: An einer REENTRANTEN Ecke (ein Diagonal-Nachbar ist dasselbe Gebäude, der direkte H/V-Nachbar aber nicht —
+    // z. B. die Innenkerbe eines L/T/S/Plus) muss die AUSSEN-Kante bis zur Nahtmitte (halfV) reichen, damit ihr Ende
+    // die bis zur Nahtmitte laufende Seitenkante der Diagonalzelle trifft. Sonst blieb dort eine 2px-Lücke (Ecke „offen").
+    // Ohne Reentranz weiter das enge exVOut, damit die waagerechten Außenbanden nicht in den „Grenze offen"-Text reichen.
+    const reentUp   = !sameUp   && (same(up - 1,   up >= 0 && col > 0) || same(up + 1,   up >= 0 && col < SEGMENT_SIZE - 1));
+    const reentDown = !sameDown && (same(down - 1, down < total && col > 0) || same(down + 1, down < total && col < SEGMENT_SIZE - 1));
+    const exUp = sameUp ? halfV(up) : (reentUp ? halfV(up) : exVOut), exDown = sameDown ? halfV(down) : (reentDown ? halfV(down) : exVOut);
     const exLeft = sameLeft ? halfH(lft) : exH, exRight = sameRight ? halfH(rgt) : exH;
     const L = rect.left - exLeft, R = rect.right + exRight, T = rect.top - exUp, B = rect.bottom + exDown;
     if (!sameUp)    lines.push({ x1: L, y1: T, x2: R, y2: T, color, bid: a.bid }); // oben

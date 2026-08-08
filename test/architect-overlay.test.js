@@ -57,6 +57,26 @@ describe("archFrameLines — Perimeter-Kontur in Gebäude-Form", () => {
     const legacy = archFrameLines(cover, cells, 10, 3, 5);
     expect(legacy.filter(horiz).some((l) => l.y1 === -5)).toBe(true);
   });
+  it("reentrante Ecke (L-Form): Außenkante der Kerbe reicht bis zur Nahtmitte → Ecke geschlossen (kein 2px-Riss)", () => {
+    // L-Tromino: Zelle 0 (oben-links), 5 (unten-links), 6 (unten-rechts). Kerbe an Position 1 (oben-rechts leer).
+    // Reentrante Innenecke: rechte Kante von Z0 trifft obere Kante von Z6. Spalten-Lücke 6px, Zeilen-Lücke 10px.
+    const cover = { 0: covCell("B1"), 5: covCell("B1"), 6: covCell("B1") };
+    const cells = { 0: rect(0, 0, 100, 100), 1: rect(106, 0, 206, 100), 5: rect(0, 110, 100, 210), 6: rect(106, 110, 206, 210) };
+    const lines = archFrameLines(cover, cells, 10, 3, 5, 2); // exVOut=2 (eng) — die reentrante Kante MUSS trotzdem bis 105 reichen
+    const rgt0 = lines.find((l) => vert(l) && l.x1 === 103 && l.y1 < 50);   // rechte Kante von Z0
+    const top6 = lines.find((l) => horiz(l) && l.x1 === 103 && l.y1 > 100); // obere Kante von Z6 (linkes Ende)
+    expect(rgt0).toBeTruthy();
+    expect(top6).toBeTruthy();
+    expect(rgt0.y2).toBe(105);   // Z0-rechts endet an der Nahtmitte (nicht bei 102 wie mit flachem exVOut)
+    expect(top6.y1).toBe(105);   // Z6-oben liegt an derselben Nahtmitte → Ecke geschlossen
+  });
+  it("gerade Außenkante ohne Reentranz: bleibt beim engen exVOut (Banden nah an der Karte)", () => {
+    // Vertikales 2-Zellen-Gebäude: die Außen-Oberkante hat KEINE reentrante Diagonale → weiter exVOut.
+    const cover = { 0: covCell("B1"), 5: covCell("B1") };
+    const cells = { 0: rect(0, 0, 100, 100), 5: rect(0, 110, 100, 210) };
+    const lines = archFrameLines(cover, cells, 10, 3, 5, 2);
+    expect(lines.filter(horiz).some((l) => l.y1 === -2)).toBe(true);  // Oberkante weiterhin eng bei -2
+  });
   it("zwei getrennte 1-Zellen-Gebäude: jede Zelle voll umrandet (4 Kanten)", () => {
     const cover = { 0: covCell("B1"), 1: covCell("B2") };
     const cells = { 0: rect(0, 0, 100, 100), 1: rect(106, 0, 206, 100) };
