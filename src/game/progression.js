@@ -101,6 +101,18 @@ export const onboardingDone = (profile) => {
 };
 export const ONBOARDING_LINKS = 6; // Länge der Onboarding-Kette (docs §4); Feld folgt in Schritt 2.
 
+// Archetyp-Freischaltung über das Onboarding (docs §4): Blitz+Feuer von Anfang an; Pflanze ab Glied 2,
+// Eis ab Glied 4. Rein & testbar; die Reducer-Naht reicht die Allowlist an buildSkillOffer (Default = alle → No-op).
+export const ARCHETYPES_BASE = ["lightning", "fire"];               // von Beginn an frei
+export const ONBOARDING_ARCH_UNLOCK = { plant: 2, ice: 4 };         // Glied, ab dem der Archetyp frei ist [TUNING]
+export function unlockedArchetypes(onboarding) {
+  const onb = Math.max(0, Math.floor(Number(onboarding) || 0));
+  const out = [...ARCHETYPES_BASE];
+  if (onb >= ONBOARDING_ARCH_UNLOCK.plant) out.push("plant");
+  if (onb >= ONBOARDING_ARCH_UNLOCK.ice) out.push("ice");
+  return out;
+}
+
 // Erfüllt der Knoten sein Gate? (Nicht-Meister-Knoten haben keins → true.)
 export function gateMet(profile, node) {
   const g = node && node.gate;

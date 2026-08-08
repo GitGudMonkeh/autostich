@@ -512,8 +512,11 @@ function ownsConsumerFor(arch, skills) {
 // #217 Meistergrade: ob eine Skill-id ein Legendär ist (Garantie-Erkennung bei Grad V). Rein & node-testbar.
 export const isLegendarySkill = (id) => !!SKILL_DEFS[id]?.legendary;
 
-export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0, guaranteeOne = false) {
-  const available = archetypesWithSkills(owned);
+// unlockedArchetypes (Progression §4): Allowlist der im Lauf anbietbaren Archetypen (Onboarding-Gatung).
+// null/undefined = keine Gatung (Sim/Standard/Meister → alle 4, byte-identisch).
+export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0, guaranteeOne = false, unlockedArchetypes = null) {
+  let available = archetypesWithSkills(owned);
+  if (unlockedArchetypes) available = available.filter((a) => unlockedArchetypes.includes(a));
   const chosen = offerArchetypes(activeArchetypes || [], available, rng);
   if (!chosen.length) return [];
   // #247: Legendäre laufen über einen eigenen Wurf JE ARCHETYP (nicht mehr EIN globaler Roll). Bei gateLeg werden sie

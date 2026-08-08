@@ -14,7 +14,7 @@ import * as C from "./constants.js";
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
 import { masteryRerollBonus, masteryCoverBonus, masteryLegendMult, masteryRareShift, masteryLegendGuaranteed, difficultyForGrade, MASTERY_MAX_GRADE } from "./mastery.js"; // #217 Meistergrade / #226 Großmeister
-import { nodeEffects, legPerk2Force, rerollBase } from "./progression.js"; // Progression-Baum (Schritt 3): Cover/RareShift/Legendär · (Schritt 4) Reroll-Basis
+import { nodeEffects, legPerk2Force, rerollBase, unlockedArchetypes } from "./progression.js"; // Progression-Baum (Schritt 3) · (Schritt 4) Reroll-Basis + Archetyp-Gatung
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
 
@@ -68,7 +68,7 @@ function startDecisionSetup(decision, s, seed, actionRng, grade, architectEnable
   }
   // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
   const guarantee = masteryLegendGuaranteed(grade);
-  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(s.shop) * mLegMult, guarantee);
+  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(s.shop) * mLegMult, guarantee, s.unlockedArchetypes); // §4b: Archetyp-Gatung
   if (soff.length) return { phase: "levelup", skillOffer: soff, masteryLegGranted: guarantee && !devMode && soff.some(isLegendarySkill) };
   const off = buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled);
   return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
@@ -193,6 +193,9 @@ export function reducer(state, action) {
       // (Schritt 4) Reroll-Basis je Pool: Meister → Rang; Normal-Lauf mit Profil → Onboarding-Basis + A1/A2 (Cap 3);
       // profil-los (Sim/Standard) → C.BASE_REROLLS (kein Baseline-Shift, Bestandstests byte-identisch).
       const normalRerolls = masterRun ? masteryRerollBonus(grade) : (action.profile ? rerollBase(action.profile) : C.BASE_REROLLS);
+      // (Schritt 4b) Archetyp-Allowlist aus dem Onboarding — nur Normal-Lauf mit Profil (treeEff≠null); sonst null
+      // = keine Gatung (Sim/Standard/Meister/Dev → alle 4, byte-identisch).
+      const unlockedArch = treeEff ? unlockedArchetypes(Number(action.profile.onboarding) || 0) : null;
       if (dev) {
         const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
         const devSchedule = Array.from({ length: devRounds }, (_, i) => (Array.isArray(dev.schedule) && dev.schedule[i]) || C.DECISION_SCHEDULE[i] || "perk");
@@ -209,7 +212,7 @@ export function reducer(state, action) {
       // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
       // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
       const architectStart = { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) + treeCover }; // Baufeld: Rang (Meister) + Baum (Normal-Lauf)
-      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift, treeLegMult, treeLegForce2, rerollsLeg: treeLegSlotReroll, legOfferBonus };
+      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift, treeLegMult, treeLegForce2, rerollsLeg: treeLegSlotReroll, legOfferBonus, unlockedArchetypes: unlockedArch };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, grade, architectEnabled, undefined, false);
       return { ...sBase, architectEnabled,
         masteryGrade: grade, masterRun,
@@ -596,7 +599,7 @@ export function reducer(state, action) {
     // #272 Legendär ablehnen → stattdessen normale Skill-Wahl (Nutzer-Wunsch), nie „verschwendet".
     case "DECLINE_LEGENDARY": {
       if (state.phase !== "legendary" || !state.legendaryOffer) return state;
-      const off = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", 0), C.SKILLS_OFFERED, 0, false);
+      const off = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
       return off.length > 0
         ? { ...state, legendaryOffer: null, skillOffer: off, phase: "levelup", offerRerolls: 0 } // → normale Skill-Auswahl
         : { ...state, legendaryOffer: null, phase: "play" };                                     // Skill-Pool leer → weiterspielen
@@ -644,7 +647,7 @@ export function reducer(state, action) {
       // angeboten wurde; sonst Per-Archetyp-Chance × Meisterrang-Mult (nicht mehr Chance 1 = „in jedem Archetyp").
       const guarantee = masteryLegendGuaranteed(state.masteryGrade) && !state.masteryLegGranted;
       const skillLeg = skillLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade);
-      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLeg, guarantee);
+      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLeg, guarantee, state.unlockedArchetypes); // §4b: Archetyp-Gatung
       if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
       const masteryLegGranted = state.masteryLegGranted || (guarantee && offer.some(isLegendarySkill)); // Garantie eingelöst
       return { ...state, skillOffer: offer, offerRerolls: idx, rerollsSkill: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1, masteryLegGranted };

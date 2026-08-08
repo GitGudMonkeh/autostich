@@ -3,7 +3,8 @@ import { reducer } from "../src/game/reducer.js";
 import { tierWeightsForShift } from "../src/game/rarity.js";
 import { buildArchitectOffer } from "../src/game/architect.js";
 import { buildPerkOffer, isLegendary } from "../src/game/perks.js";
-import { buildLegendaryOffer, isLegendarySkill } from "../src/game/skills.js";
+import { buildLegendaryOffer, isLegendarySkill, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
+import { unlockedArchetypes } from "../src/game/progression.js";
 import { perkPhaseAt, LEG_PERK2_PHASE } from "../src/game/constants.js";
 import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force, rerollBase, REROLL_CAP } from "../src/game/progression.js";
 import { BASE_REROLLS } from "../src/game/constants.js";
@@ -188,6 +189,38 @@ describe("(Schritt 4a) Reroll-Basis: Onboarding-Glied 1 + A1/A2, Cap 3", () => {
     // masterRun → masteryRerollBonus(grade); Profil (auch Onboarding) wird ignoriert.
     const s = start({ masterRun: true, masteryGrade: 2, profile: withOnb(0) });
     expect(s.rerollsPerk).toBe(2); // masteryRerollBonus(2) = 2, NICHT 0
+  });
+});
+
+describe("(Schritt 4b) Archetyp-Freischaltung über Onboarding", () => {
+  const offerArchs = (offer) => [...new Set(offer.map((id) => archetypeOf(id)).filter(Boolean))];
+
+  it("unlockedArchetypes: Blitz+Feuer ab 0; +Pflanze ab Glied 2; +Eis ab Glied 4", () => {
+    expect(unlockedArchetypes(0)).toEqual(["lightning", "fire"]);
+    expect(unlockedArchetypes(1)).toEqual(["lightning", "fire"]);
+    expect(unlockedArchetypes(2)).toEqual(["lightning", "fire", "plant"]);
+    expect(unlockedArchetypes(3)).toEqual(["lightning", "fire", "plant"]);
+    expect(unlockedArchetypes(4).sort()).toEqual(["fire", "ice", "lightning", "plant"]);
+    expect(unlockedArchetypes(6).sort()).toEqual(["fire", "ice", "lightning", "plant"]);
+  });
+  it("buildSkillOffer respektiert die Allowlist (kein Eis/Pflanze bei [Blitz,Feuer])", () => {
+    const off = buildSkillOffer([], [], () => 0.3, 12, 0, false, ["lightning", "fire"]);
+    expect(off.length).toBeGreaterThan(0);
+    expect(offerArchs(off).every((a) => ["lightning", "fire"].includes(a))).toBe(true);
+    // ohne Allowlist (null) = keine Gatung → Bestand
+    expect(buildSkillOffer([], [], () => 0.3, 12, 0, false, null)).toEqual(buildSkillOffer([], [], () => 0.3, 12, 0, false));
+  });
+  it("START_RUN: state.unlockedArchetypes je Onboarding; null für Sim/Meister", () => {
+    expect(start({ profile: { ...emptyProfile(0), onboarding: 0 } }).unlockedArchetypes).toEqual(["lightning", "fire"]);
+    expect(start({ profile: { ...emptyProfile(0), onboarding: 6 } }).unlockedArchetypes.sort()).toEqual(["fire", "ice", "lightning", "plant"]);
+    expect(start().unlockedArchetypes).toBe(null); // profil-los (Sim/Standard)
+    expect(start({ masterRun: true, masteryGrade: 1, profile: { ...emptyProfile(0), onboarding: 0 } }).unlockedArchetypes).toBe(null); // Meister ungegatet
+  });
+  it("Erst-Angebot eines frischen Onboarding-Laufs zeigt nur Blitz/Feuer", () => {
+    const s = start({ profile: { ...emptyProfile(0), onboarding: 0 } });
+    if (s.skillOffer && s.skillOffer.length) {
+      expect(offerArchs(s.skillOffer).every((a) => ["lightning", "fire"].includes(a))).toBe(true);
+    }
   });
 });
 
