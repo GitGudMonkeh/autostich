@@ -11,8 +11,9 @@ const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Legendär", icon
 // Karten kompakt bleiben. Der volle Text steht später beim gehaltenen Skill / im Glossar.
 export const firstSentence = (t) => { const m = String(t || "").match(/^.*?[.!?](?=\s|$)/); return m ? m[0] : String(t || ""); };
 
-export function LegendarySelect({ offer = [], onPick, onDecline, state = {} }) {
+export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null, state = {} }) {
   const legs = offer.map((id) => SKILL_DEFS[id]).filter(Boolean);
+  const rerollsLeg = state.rerollsLeg || 0; // M1: dedizierter R29-Reroll-Token
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-2xl">
@@ -43,7 +44,13 @@ export function LegendarySelect({ offer = [], onPick, onDecline, state = {} }) {
               );
             })}
           </div>
-          <button onClick={onDecline} className="w-full mt-4 rounded-lg py-2.5 text-sm font-bold"
+          {onReroll && rerollsLeg > 0 && (
+            <button onClick={onReroll} className="w-full mt-4 rounded-lg py-2.5 text-sm font-bold transition-all hover:brightness-110"
+              style={{ background: `${GOLD}1f`, border: `1px solid ${GOLD}`, color: GOLD }}>
+              ↻ Neu würfeln <span className="opacity-70">({rerollsLeg})</span>
+            </button>
+          )}
+          <button onClick={onDecline} className="w-full mt-3 rounded-lg py-2.5 text-sm font-bold"
             style={{ background: "#20202a", border: "1px solid #3a3a48", color: "#aeb4c2" }}>
             Keinen Legendär — stattdessen einen Skill wählen
           </button>

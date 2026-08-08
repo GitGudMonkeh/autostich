@@ -3,6 +3,7 @@ import { reducer } from "../src/game/reducer.js";
 import { tierWeightsForShift } from "../src/game/rarity.js";
 import { buildArchitectOffer } from "../src/game/architect.js";
 import { buildPerkOffer, isLegendary } from "../src/game/perks.js";
+import { buildLegendaryOffer } from "../src/game/skills.js";
 import { perkPhaseAt, LEG_PERK2_PHASE } from "../src/game/constants.js";
 import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force } from "../src/game/progression.js";
 
@@ -123,5 +124,37 @@ describe("M4/M5: garantierte Legendäre in der 2. Perk-Phase", () => {
     expect(start({ profile: unlockAllProfile(emptyProfile(0)) }).treeLegForce2).toBe(3);
     expect(start().treeLegForce2 || 0).toBe(0);
     expect(start({ masterRun: true, masteryGrade: 5, profile: unlockAllProfile(emptyProfile(0)) }).treeLegForce2 || 0).toBe(0);
+  });
+});
+
+describe("M1: Reroll fürs R29-Legendär-Angebot", () => {
+  it("START_RUN: rerollsLeg = 1 mit M1, sonst 0 (Meister gegatet)", () => {
+    expect(start({ profile: withNodes(["M1"]) }).rerollsLeg).toBe(1);
+    expect(start().rerollsLeg || 0).toBe(0);
+    expect(start({ masterRun: true, masteryGrade: 1, profile: withNodes(["M1"]) }).rerollsLeg || 0).toBe(0);
+  });
+
+  const legState = () => {
+    const offer = buildLegendaryOffer(["fire", "ice"], [], () => 0.3);
+    return { phase: "legendary", legendaryOffer: offer, activeArchetypes: ["fire", "ice"], skills: [],
+      cycle: 28, seed: 12345, offerRerolls: 0, rerollsUsed: 0, rerollsLeg: 1 };
+  };
+
+  it("REROLL_LEGENDARY: neues Angebot, Token −1, rerollsUsed +1, offerRerolls +1", () => {
+    const s0 = legState();
+    expect(s0.legendaryOffer.length).toBeGreaterThan(0);
+    const s1 = reducer(s0, { type: "REROLL_LEGENDARY", rng: Math.random });
+    expect(s1.rerollsLeg).toBe(0);
+    expect(s1.rerollsUsed).toBe(1);
+    expect(s1.offerRerolls).toBe(1);
+    expect(s1.legendaryOffer.length).toBeGreaterThan(0);
+  });
+  it("ohne Token → No-op (gleiche Referenz)", () => {
+    const s0 = { ...legState(), rerollsLeg: 0 };
+    expect(reducer(s0, { type: "REROLL_LEGENDARY", rng: Math.random })).toBe(s0);
+  });
+  it("außerhalb der Legendär-Phase → No-op", () => {
+    const s0 = { ...legState(), phase: "play" };
+    expect(reducer(s0, { type: "REROLL_LEGENDARY", rng: Math.random })).toBe(s0);
   });
 });

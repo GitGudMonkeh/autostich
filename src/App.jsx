@@ -483,6 +483,7 @@ export function Autostich() {
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
   const pickLegendary = (legendaryId) => dispatch({ type: "PICK_LEGENDARY", legendaryId, rng: Math.random }); // #272 Legendär-Phase
   const declineLegendary = () => dispatch({ type: "DECLINE_LEGENDARY", rng: Math.random });
+  const rerollLegendary = () => dispatch({ type: "REROLL_LEGENDARY", rng: Math.random }); // M1: R29-Legendär-Reroll
   const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
   const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138: Perk-Angebot ablehnen → +Münze
   const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
@@ -675,7 +676,7 @@ export function Autostich() {
         <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} options={options} onOption={changeOptions} />
       )}
       {state.phase === "legendary" && state.legendaryOffer && (
-        <LegendarySelect offer={state.legendaryOffer} onPick={pickLegendary} onDecline={declineLegendary} state={state} />
+        <LegendarySelect offer={state.legendaryOffer} onPick={pickLegendary} onDecline={declineLegendary} onReroll={rerollLegendary} state={state} />
       )}
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}

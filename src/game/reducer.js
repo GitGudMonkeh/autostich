@@ -4,7 +4,7 @@ import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js";
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
-  hasSetzlingsbeet, buildSkillOffer, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf
+  hasSetzlingsbeet, buildSkillOffer, buildLegendaryOffer, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf · M1: R29-Reroll
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
@@ -188,6 +188,7 @@ export function reducer(state, action) {
       const treeRareShift = treeEff ? treeEff.treeRareShift : 0;   // RareShift-Stufe (0..3)
       const treeLegMult = treeEff && treeEff.legDropDouble ? 2 : 1; // M3: Legendär-Drop ×2 (Perks & Gebäude) [TUNING]
       const treeLegForce2 = legPerk2Force(treeEff); // M4/M5: garantierte Legendäre in der 2. Perk-Phase (1 bzw. 3)
+      const treeLegSlotReroll = treeEff && treeEff.legSlotReroll ? 1 : 0; // M1: 1 Reroll fürs R29-Legendär-Angebot [TUNING]
       if (dev) {
         const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
         const devSchedule = Array.from({ length: devRounds }, (_, i) => (Array.isArray(dev.schedule) && dev.schedule[i]) || C.DECISION_SCHEDULE[i] || "perk");
@@ -204,7 +205,7 @@ export function reducer(state, action) {
       // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
       // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
       const architectStart = { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) + treeCover }; // Baufeld: Rang (Meister) + Baum (Normal-Lauf)
-      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift, treeLegMult, treeLegForce2 };
+      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift, treeLegMult, treeLegForce2, rerollsLeg: treeLegSlotReroll };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, grade, architectEnabled, undefined, false);
       return { ...sBase, architectEnabled,
         masteryGrade: grade, masterRun,
@@ -594,6 +595,19 @@ export function reducer(state, action) {
       return off.length > 0
         ? { ...state, legendaryOffer: null, skillOffer: off, phase: "levelup", offerRerolls: 0 } // → normale Skill-Auswahl
         : { ...state, legendaryOffer: null, phase: "play" };                                     // Skill-Pool leer → weiterspielen
+    }
+
+    // M1 (legSlotReroll): das R29-Legendär-Angebot einmal neu würfeln — dedizierter Token (rerollsLeg), getrennt
+    // von den Perk/Gebäude/Skill-Pools. Adressierter Strom (seed,cycle,"legendary",idx). Leeres Neu-Angebot →
+    // Token NICHT verbrauchen (Angebot bleibt). Nur im Normal-Lauf mit gekauftem M1 überhaupt > 0.
+    case "REROLL_LEGENDARY": {
+      if (state.phase !== "legendary" || !state.legendaryOffer) return state;
+      const tokens = state.rerollsLeg || 0;
+      if (tokens <= 0) return state;
+      const idx = (state.offerRerolls || 0) + 1;
+      const legOff = buildLegendaryOffer(state.activeArchetypes || [], state.skills || [], rngFor(state, action, state.cycle, "legendary", idx));
+      if (!legOff.length) return state;
+      return { ...state, legendaryOffer: legOff, offerRerolls: idx, rerollsLeg: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 
     // Perk-Angebot komplett ablehnen (#138): Angebot verworfen, weiter im Spiel — so ist eine Perk-Runde nie
