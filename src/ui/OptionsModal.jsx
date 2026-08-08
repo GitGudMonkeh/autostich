@@ -66,7 +66,10 @@ export function OptionsModal({ options, onChange, onClose }) {
   useEscape(onClose); // #58: Escape schließt (Backdrop unten)
   return (
     <div onClick={onClose} className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl p-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel" style={{ background: "#181820", border: "1px solid #33333e" }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel flex flex-col" style={{ background: "linear-gradient(180deg,#1b1a24,#15141c)", border: "1px solid #2c2a3a" }}>
+        {/* Logo-Gradient-Haarlinie oben — verbindende Bildsprache des Hubs (wie Start-Karten / Bestenliste). */}
+        <div className="h-[3px] w-full shrink-0" style={{ background: "linear-gradient(90deg,#26c6e6,#9b82f0,#f2a83a)", opacity: .85 }} />
+        <div className="p-6 overflow-y-auto">
         <div className="text-center mb-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Optionen</div>
           <h2 className="text-xl font-bold mt-1 font-pixel crt-title">Einstellungen</h2>
@@ -114,6 +117,7 @@ export function OptionsModal({ options, onChange, onClose }) {
         <button onClick={onClose} className="w-full mt-5 py-2.5 rounded-lg font-bold transition-all" style={{ background: "#5ab87a", color: "#141419" }}>
           Schließen
         </button>
+        </div>
       </div>
     </div>
   );
