@@ -123,9 +123,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       </div>
       <p className="text-xs opacity-45 -mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
 
-      {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip. */}
+      {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
+          Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
+          harter Kante) + Hairline-Border + Backdrop-Blur (Text bleibt scharf). */}
       <div className="w-full max-w-sm rounded-xl px-4 py-2.5 flex flex-col gap-1.5"
-        style={{ background: "#17171c", border: "1px solid #26262e" }}>
+        style={{ background: "rgba(23,23,28,0.5)", border: "1px solid rgba(150,150,170,0.10)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
         <div className="flex items-center justify-between gap-3">
           {onbDone ? (
             <span className="text-[12.5px] font-semibold opacity-90" style={{ color: SP }}>💠 Bonus-SP · nächste +5</span>
