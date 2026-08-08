@@ -102,10 +102,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           "radial-gradient(320px 180px at 50% 24%, rgba(155,130,240,.18), transparent 70%)," +
           "radial-gradient(320px 170px at 72% 30%, rgba(242,168,58,.14), transparent 70%)" }} />
 
-      {/* #133: Schnell-Mute jederzeit sichtbar oben rechts — togglet dasselbe options.muted wie die Optionen. */}
-      {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-0 right-0" />}
-      {/* Glossar jederzeit erreichbar — oben links (die obere rechte Ecke belegt der Mute-Knopf). */}
-      <GlossaryPanel className="absolute top-0 left-0" />
+      {/* Ecken-Buttons als konsistentes Paar: Schnell-Mute oben LINKS, Glossar (Info) oben RECHTS — beide
+          gleich gestylte dunkle Rounded-Pills, mit Rahmen-Inset (top-2 / left-2·right-2) statt in die Ecke gedrängt.
+          Der Info-Button überschreibt den Kreis-Default (gloss-i-btn) auf denselben Pill-Look wie Mute. */}
+      {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-2 left-2" />}
+      <GlossaryPanel className="absolute top-2 right-2"
+        style={{ width: "auto", height: "auto", borderRadius: "0.5rem", padding: "0.375rem 0.75rem",
+          background: "#20202a", border: "1px solid #30303a", color: "#b3a8ff",
+          fontFamily: "inherit", fontStyle: "normal", fontWeight: 700, fontSize: "0.9rem", lineHeight: 1 }} />
 
       {/* Neon-Wortmarke (ersetzt Text-Logo + altes Element-PNG). Echter Alpha-Kanal (dunkel → transparent),
           daher kein Rechteck-Rahmen mehr — blendet sauber auf jeden Grund (auch CRT-Skin). */}

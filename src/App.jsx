@@ -534,7 +534,7 @@ export function Autostich() {
           Klick-durchlässig. */}
       {import.meta.env.VITE_PREVIEW === "1" && (
         <div
-          className="absolute top-2 left-2 z-50 px-2 py-1 rounded text-[10px] font-bold font-pixel tracking-wide"
+          className="absolute top-2 left-1/2 -translate-x-1/2 z-50 px-2 py-1 rounded text-[10px] font-bold font-pixel tracking-wide"
           style={{ background: "#d4a63a", color: "#141419", pointerEvents: "none", boxShadow: "0 0 8px rgba(212,166,58,.6)" }}
           aria-hidden="true"
         >
