@@ -39,7 +39,7 @@ const toRunEntry = (r) => ({
    framed      — eigener Panel-Rahmen (StartScreen). Ohne: schlichte Sektion (Game-Over).
    board       — §7: gesetzt ('standard'|'meister') → getrenntes Ranglisten-Board (fetchBoardTop) statt des
                  ungefilterten Global-Boards (fetchGlobalTop, alle Läufe). */
-export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, board = null, onPlaySeed = null }) {
+export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, board = null, seed = null, onPlaySeed = null }) {
   const [rows, setRows] = useState(null);   // null = lädt · [] = leer · [...] = Daten
   const [error, setError] = useState(false);
   const [detail, setDetail] = useState(null); // #169 FB-8: gewählte Zeile → RunDetail-Overlay
@@ -49,12 +49,12 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
     let alive = true;
     setError(false);
     setRows(null);
-    (board ? fetchBoardTop(board, limit) : fetchGlobalTop(limit))
+    (board ? fetchBoardTop(board, limit, seed) : fetchGlobalTop(limit))
       .then((data) => { if (alive) setRows(Array.isArray(data) ? data : []); })
       .catch(() => { if (alive) setError(true); });
     return () => { alive = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [limit, reloadToken, board]);
+  }, [limit, reloadToken, board, seed]);
 
   if (!leaderboardConfigured) return null; // ohne Config: Block entfällt komplett
 
@@ -89,13 +89,14 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
           {rows.map((r, i) => {
             const mineRow = isMine(r);
             const icons = archetypeIcons(r.archetypes); // #139: ein Icon je Skill (leer bei Alt-Einträgen)
+            const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null; // Medaillen für die Top 3
             return (
               // #169 FB-8: Zeile klickbar → Detailansicht (RunStats). Alt-Einträge degradieren.
               <button key={i} onClick={() => setDetail({ entry: toRunEntry(r), rank: i + 1, anonymized: !mineRow })} title="Details anzeigen"
                 className="flex items-center gap-2 text-sm px-2 py-1 rounded text-left w-full transition-all hover:brightness-125"
                 style={{ background: mineRow ? "#5ab87a22" : "#20202a",
                   border: `1px solid ${mineRow ? "#5ab87a66" : "transparent"}` }}>
-                <span className="opacity-50 w-6 shrink-0">#{i + 1}</span>
+                <span className="w-6 shrink-0 text-center tabular-nums" style={medal ? { fontSize: "14px" } : { opacity: 0.5 }}>{medal || `#${i + 1}`}</span>
                 <span className="flex-1 truncate" style={{ color: mineRow ? "#5ab87a" : "#e8e8ea" }}>
                   {r.name || "—"}{mineRow && <span className="opacity-60 text-xs"> · du</span>}
                 </span>

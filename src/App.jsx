@@ -691,8 +691,9 @@ export function Autostich() {
 
       {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} profile={profile} onProfileChange={(np) => setProfile(saveProfile(np))} />}
       {showLeaderboard && (
-        <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best}
+        <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best} profile={profile}
           onPlaySeed={(seed) => { setShowLeaderboard(false); startRun(seed); }}
+          onPlayMeister={() => { setShowLeaderboard(false); startMeisterRun(); }}
           onClose={() => setShowLeaderboard(false)} />
       )}
 
