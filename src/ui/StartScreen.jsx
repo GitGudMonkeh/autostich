@@ -64,6 +64,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const chipCls = "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all hover:-translate-y-0.5";
   const chipSty = { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
 
+  // Farb-Hierarchie: nur EINE gefüllte Primär-Aktion, der Rest als Outline (weniger Farbwände, luftiger).
+  // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Normaler Lauf" wird zum Cyan-Outline.
+  const hasResume = !!(onResume && resume);
+  const cyFill  = { background: CY, color: "#0d1418", boxShadow: "0 0 12px rgba(38,198,230,.3)" };
+  const cyGhost = { background: "#141a1c", border: `1px solid ${CY}66`, color: CY };
+  const normalStyle = hasResume ? cyGhost : cyFill;
+
   return (
     <div className="relative isolate flex flex-col items-center gap-5 pt-8 pb-10">
       {/* Ambient-Glow hinter dem Logo — spiegelt den Logo-Verlauf (Cyan links · Violett Mitte · Amber rechts).
@@ -114,7 +121,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {onResume && resume && (
           <button onClick={onResume}
             className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
-            style={{ background: CY, color: "#0d1418", boxShadow: "0 0 10px rgba(38,198,230,.45)" }}>
+            style={{ background: "#5fe0f7", color: "#052730", boxShadow: "0 0 18px rgba(95,224,247,.6)" }}>
             <span>▶ Lauf fortsetzen</span>
             <span className="text-[11px] font-mono font-semibold opacity-80">
               Durchlauf {Math.min((resume.cycle || 0) + 1, resume.totalCycles)}/{resume.totalCycles} · Score {Math.round(resume.score || 0).toLocaleString("de-DE")}{resume.masterRun ? ` · Meister ${resume.grade || 0}` : ""}
@@ -128,7 +135,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           <>
             <button onClick={() => setNormalOpen((o) => !o)}
               className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-              style={{ background: CY, color: "#0d1418", boxShadow: "0 0 12px rgba(38,198,230,.3)" }}>
+              style={normalStyle}>
               Normaler Lauf
               <span className="text-[13px] transition-transform" style={{ transform: normalOpen ? "rotate(90deg)" : "none" }}>›</span>
             </button>
@@ -136,7 +143,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               <div className="grid grid-cols-2 gap-2.5">
                 <button onClick={onStart}
                   className="rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
-                  style={{ background: CY, color: "#0d1418" }}>Normal</button>
+                  style={{ background: "#141a1c", border: `1px solid ${CY}66`, color: CY }}>Normal</button>
                 <button onClick={onDevRun}
                   className="rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
                   style={{ background: "#1c1c23", border: `1px solid ${AM}66`, color: AM }}>⚙ Dev Run</button>
@@ -146,7 +153,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         ) : (
           <button onClick={onStart}
             className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
-            style={{ background: CY, color: "#0d1418", boxShadow: "0 0 12px rgba(38,198,230,.3)" }}>
+            style={normalStyle}>
             Normaler Lauf
           </button>
         )}
@@ -179,7 +186,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             <button onClick={() => setRankedOpen((o) => !o)}
               className="relative w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
               style={{ background: VI, color: "#141419", boxShadow: "0 0 12px rgba(155,130,240,.3)" }}>
-              🏆 Ranglisten-Lauf
+              Ranglisten-Lauf
               <span className="text-[13px] transition-transform" style={{ transform: rankedOpen ? "rotate(90deg)" : "none" }}>›</span>
               <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
                 style={{ background: "#141419", color: VI }} aria-label="Vorschau">exp</span>
