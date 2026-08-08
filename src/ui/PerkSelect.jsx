@@ -152,15 +152,16 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         {!state.devMode && (onDecline || canReroll) && (
         <div className="flex items-stretch gap-2 mt-3">
           {canReroll && (
+            // #UI: Reroll etwas breiter (flex-[1.5]) + nowrap → „· 2" bricht nicht mehr um.
             <button onClick={onReroll}
-              className="flex-1 text-xs px-4 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
+              className="flex-[1.5] whitespace-nowrap text-xs px-3 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
               style={{ background: "#20202a", color: LEG_GOLD, border: `1px solid ${LEG_GOLD}66` }}>
               🎲 Neu würfeln · {rerollTokens}
             </button>
           )}
           {onDecline && (
             <button onClick={onDecline}
-              className="flex-1 text-xs px-4 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
+              className="flex-1 whitespace-nowrap text-xs px-3 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
               style={{ background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }}>
               Alle ablehnen
             </button>
