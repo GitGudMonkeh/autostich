@@ -73,7 +73,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const normalStyle = hasResume ? normalGhost : normalFill;
 
   return (
-    <div className="relative isolate flex flex-col items-center gap-2 pt-4 pb-4">
+    <div className="relative isolate flex flex-col items-center gap-3.5 pt-5 pb-5">
       {/* Ambient-Glow hinter dem Logo — spiegelt den Logo-Verlauf (Cyan links · Violett Mitte · Amber rechts).
           Verankert die ganze Kopfzone farblich im Logo, ohne laute Flächen. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[360px] -z-10"
@@ -117,7 +117,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* Play-Gruppe — Fortsetzen + Normaler Lauf. Normaler Lauf klappt Normal (+ Dev Run) und das
           Seed-Feld auf → weniger Dauer-sichtbares im Haupt-Stapel. */}
-      <div className="w-full max-w-sm flex flex-col gap-2">
+      <div className="w-full max-w-sm flex flex-col gap-2.5">
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
@@ -133,7 +133,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* Normaler Lauf — Aufklapper: Normal (+ Dev Run im Preview) + Seed-Feld. Gefüllt, wenn kein
             Resume läuft (= Held); mit Resume ruhiger Cyan-Outline. */}
         <button onClick={() => setNormalOpen((o) => !o)}
-          className="w-full px-5 py-2.5 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+          className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
           style={normalStyle}>
           Normaler Lauf
           <span className="text-[13px] transition-transform" style={{ transform: normalOpen ? "rotate(90deg)" : "none" }}>›</span>
@@ -178,9 +178,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {/* Ranglisten-Gruppe — eigener Block (Weißraum trennt „mein Spiel" vom Wettbewerb). Ruhiger
           Violett-Outline statt Vollfläche → Farbe sparsam, nur eine gefüllte Aktion oben. */}
       {onMasterRun && (
-        <div className="w-full max-w-sm flex flex-col gap-2">
+        <div className="w-full max-w-sm flex flex-col gap-2.5">
           <button onClick={() => setRankedOpen((o) => !o)}
-            className="relative w-full px-5 py-2 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            className="relative w-full px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}>
             Ranglisten-Lauf
             <span className="text-[13px] transition-transform" style={{ transform: rankedOpen ? "rotate(90deg)" : "none" }}>›</span>
