@@ -141,6 +141,17 @@ export function nodeEffects(profile) {
 // sonst 0. Nimmt das nodeEffects-Objekt (kann null sein → 0).
 export const legPerk2Force = (eff) => (!eff ? 0 : eff.legChoose3Perk2 ? 3 : eff.legGuaranteedPerk2 ? 1 : 0);
 
+// Reroll-Basis im Normal-Lauf (docs §4/§8): Basis 1 aus Onboarding-Glied 1 + A1/A2 (treeRerollBonus 0..2),
+// gedeckelt bei REROLL_CAP. Der ALLERERSTE Lauf (onboarding 0) hat bewusst 0 Rerolls. Reine Ableitung —
+// der profil-lose Sim/Standard nutzt weiter C.BASE_REROLLS (kein Baseline-Shift), Meister den Rang.
+export const REROLL_ONBOARD_BASE = envNum("PROG_REROLL_ONBOARD_BASE", 1); // Basis-Reroll aus Onboarding-Glied 1
+export const REROLL_CAP = envNum("PROG_REROLL_CAP", 3);                    // max Rerolls/Phase (Basis 1 + A1 + A2)
+export function rerollBase(profile) {
+  const onb = Math.max(0, Math.floor(Number(profile && profile.onboarding) || 0));
+  const base = onb >= 1 ? REROLL_ONBOARD_BASE : 0;
+  return Math.max(0, Math.min(REROLL_CAP, base + nodeEffects(profile).treeRerollBonus));
+}
+
 // Einzel-Ableiter (spiegeln die Reducer-Nähte treeX(profile), analog masteryX(grade)).
 export const treeCoverBonus = (profile) => nodeEffects(profile).treeCoverBonus;
 export const treeRerollBonus = (profile) => nodeEffects(profile).treeRerollBonus;

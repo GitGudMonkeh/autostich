@@ -14,7 +14,7 @@ import * as C from "./constants.js";
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
 import { masteryRerollBonus, masteryCoverBonus, masteryLegendMult, masteryRareShift, masteryLegendGuaranteed, difficultyForGrade, MASTERY_MAX_GRADE } from "./mastery.js"; // #217 Meistergrade / #226 Großmeister
-import { nodeEffects, legPerk2Force } from "./progression.js"; // Progression-Baum (Schritt 3): Cover/RareShift/Legendär im Normal-Lauf
+import { nodeEffects, legPerk2Force, rerollBase } from "./progression.js"; // Progression-Baum (Schritt 3): Cover/RareShift/Legendär · (Schritt 4) Reroll-Basis
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
 
@@ -190,6 +190,9 @@ export function reducer(state, action) {
       const treeLegForce2 = legPerk2Force(treeEff); // M4/M5: garantierte Legendäre in der 2. Perk-Phase (1 bzw. 3)
       const treeLegSlotReroll = treeEff && treeEff.legSlotReroll ? 1 : 0; // M1: 1 Reroll fürs R29-Legendär-Angebot [TUNING]
       const legOfferBonus = treeEff && treeEff.legTwoPerArch ? C.LEG_OFFER_PER_ARCH_BONUS : 0; // M2: +Kandidaten je Archetyp (mehr Auswahl)
+      // (Schritt 4) Reroll-Basis je Pool: Meister → Rang; Normal-Lauf mit Profil → Onboarding-Basis + A1/A2 (Cap 3);
+      // profil-los (Sim/Standard) → C.BASE_REROLLS (kein Baseline-Shift, Bestandstests byte-identisch).
+      const normalRerolls = masterRun ? masteryRerollBonus(grade) : (action.profile ? rerollBase(action.profile) : C.BASE_REROLLS);
       if (dev) {
         const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
         const devSchedule = Array.from({ length: devRounds }, (_, i) => (Array.isArray(dev.schedule) && dev.schedule[i]) || C.DECISION_SCHEDULE[i] || "perk");
@@ -211,11 +214,12 @@ export function reducer(state, action) {
       return { ...sBase, architectEnabled,
         masteryGrade: grade, masterRun,
         difficulty: difficultyForGrade(grade), // #226 Großmeister: Ramp je Rang (Meister → null = No-op)
-        // #263: drei getrennte Reroll-Pools. Normal-Lauf je BASE_REROLLS (2/2/2). Meister-Lauf zieht je Pool weiter
-        // ALLEIN aus dem Rang (masteryRerollBonus 0/1/2/3/3/3) — der Reroll-Vorrat kommt beim Meister aus der Rang-Leiter.
-        rerollsPerk: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
-        rerollsArch: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
-        rerollsSkill: masterRun ? masteryRerollBonus(grade) : C.BASE_REROLLS,
+        // #263: drei getrennte Reroll-Pools. Meister-Lauf zieht je Pool ALLEIN aus dem Rang (masteryRerollBonus).
+        // (Schritt 4) Normal-Lauf MIT Profil: Basis 1 aus Onboarding-Glied 1 + A1/A2 (rerollBase, Cap 3) — erster
+        // Lauf = 0. OHNE Profil (Sim/Standard) bleibt es C.BASE_REROLLS (2/2/2) → kein Baseline-Shift.
+        rerollsPerk: normalRerolls,
+        rerollsArch: normalRerolls,
+        rerollsSkill: normalRerolls,
         masteryLegGranted: false, ...startPatch };
     }
 

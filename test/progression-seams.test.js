@@ -5,7 +5,8 @@ import { buildArchitectOffer } from "../src/game/architect.js";
 import { buildPerkOffer, isLegendary } from "../src/game/perks.js";
 import { buildLegendaryOffer, isLegendarySkill } from "../src/game/skills.js";
 import { perkPhaseAt, LEG_PERK2_PHASE } from "../src/game/constants.js";
-import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force } from "../src/game/progression.js";
+import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force, rerollBase, REROLL_CAP } from "../src/game/progression.js";
+import { BASE_REROLLS } from "../src/game/constants.js";
 
 // Skript-RNG: liefert die vorgegebenen Werte, danach 0.5. Erster rng()-Zug in buildArchitectOffer = Legendär-Check.
 const seqRng = (vals) => { let i = 0; return () => (i < vals.length ? vals[i++] : 0.5); };
@@ -156,6 +157,37 @@ describe("M1: Reroll fürs R29-Legendär-Angebot", () => {
   it("außerhalb der Legendär-Phase → No-op", () => {
     const s0 = { ...legState(), phase: "play" };
     expect(reducer(s0, { type: "REROLL_LEGENDARY", rng: Math.random })).toBe(s0);
+  });
+});
+
+describe("(Schritt 4a) Reroll-Basis: Onboarding-Glied 1 + A1/A2, Cap 3", () => {
+  const withOnb = (onb, ids = []) => ({ ...ids.reduce((p, id) => buyNode(p, id), emptyProfile(1000)), onboarding: onb });
+
+  it("rerollBase (rein): erster Lauf 0, ab Glied 1 = 1, + A1/A2, Cap 3", () => {
+    expect(rerollBase(withOnb(0))).toBe(0);            // erster Lauf: 0 (bewusst)
+    expect(rerollBase(withOnb(1))).toBe(1);            // Onboarding-Basis
+    expect(rerollBase(withOnb(6))).toBe(1);            // ohne Auftakt-Knoten bleibt 1
+    expect(rerollBase(withOnb(1, ["A1"]))).toBe(2);    // +A1
+    expect(rerollBase(withOnb(1, ["A1", "A2"]))).toBe(3); // +A1+A2 = Cap
+    expect(rerollBase(withOnb(6, ["A1", "A2"]))).toBe(REROLL_CAP);
+    expect(rerollBase(withOnb(0, ["A1", "A2"]))).toBe(2); // Basis 0 + 2 Knoten
+  });
+  it("START_RUN: profil-los = BASE_REROLLS (Sim/Standard, kein Shift)", () => {
+    const s = start(); // kein Profil
+    expect(s.rerollsPerk).toBe(BASE_REROLLS);
+    expect(s.rerollsArch).toBe(BASE_REROLLS);
+    expect(s.rerollsSkill).toBe(BASE_REROLLS);
+  });
+  it("START_RUN: Normal-Lauf mit Profil folgt rerollBase (alle drei Pools)", () => {
+    expect(start({ profile: withOnb(0) }).rerollsPerk).toBe(0);       // erster Lauf
+    expect(start({ profile: withOnb(1) }).rerollsSkill).toBe(1);
+    const full = start({ profile: withOnb(6, ["A1", "A2"]) });
+    expect([full.rerollsPerk, full.rerollsArch, full.rerollsSkill]).toEqual([3, 3, 3]);
+  });
+  it("START_RUN: Meister-Lauf unberührt (Rang-Rerolls, nicht Onboarding)", () => {
+    // masterRun → masteryRerollBonus(grade); Profil (auch Onboarding) wird ignoriert.
+    const s = start({ masterRun: true, masteryGrade: 2, profile: withOnb(0) });
+    expect(s.rerollsPerk).toBe(2); // masteryRerollBonus(2) = 2, NICHT 0
   });
 });
 
