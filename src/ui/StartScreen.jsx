@@ -67,9 +67,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   // Farb-Hierarchie: nur EINE gefüllte Primär-Aktion, der Rest als Outline (weniger Farbwände, luftiger).
   // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Normaler Lauf" wird zum Cyan-Outline.
   const hasResume = !!(onResume && resume);
-  const cyFill  = { background: CY, color: "#0d1418", boxShadow: "0 0 12px rgba(38,198,230,.3)" };
-  const cyGhost = { background: "#141a1c", border: `1px solid ${CY}66`, color: CY };
-  const normalStyle = hasResume ? cyGhost : cyFill;
+  // „Normaler Lauf" im ruhigeren Auftakt-Blau (dunkler als das helle Resume-Cyan).
+  const normalFill  = { background: BLUE, color: "#0b1220", boxShadow: "0 0 12px rgba(90,138,222,.3)" };
+  const normalGhost = { background: "#12151f", border: `1px solid ${BLUE}88`, color: "#93b4f2" };
+  const normalStyle = hasResume ? normalGhost : normalFill;
 
   return (
     <div className="relative isolate flex flex-col items-center gap-6 pt-8 pb-10">
@@ -143,7 +144,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             <div className={onDevRun ? "grid grid-cols-2 gap-2.5" : ""}>
               <button onClick={onStart}
                 className="w-full rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
-                style={{ background: "#141a1c", border: `1px solid ${CY}66`, color: CY }}>Normal</button>
+                style={{ background: "#12151f", border: `1px solid ${BLUE}88`, color: "#93b4f2" }}>Normal</button>
               {onDevRun && (
                 <button onClick={onDevRun}
                   className="rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
