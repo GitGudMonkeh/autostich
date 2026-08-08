@@ -42,6 +42,7 @@ import { SeedChip } from "./ui/SeedChip.jsx"; // #205 Challenger Mode: Seed im H
 import { CustomizeScreen } from "./ui/CustomizeScreen.jsx";
 import { DevRunSetup } from "./ui/DevRunSetup.jsx"; // Dev-Run (nur Preview-Build)
 import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale Bestenliste als eigener Screen
+import { UpgradeScreen } from "./ui/UpgradeScreen.jsx"; // Progression-Vorschau: Upgrade-Baum-Screen
 import { MasterRunSelect } from "./ui/MasterRunSelect.jsx"; // #217: Rang-Auswahl für den Meister-Lauf
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
@@ -63,6 +64,7 @@ export function Autostich() {
   const [showStats, setShowStats] = useState(false);              // #172 FB-10: Statistik-Hub (nur im Menü)
   const [showCustomize, setShowCustomize] = useState(false);      // #190: Kollektion (Deck/Battlefield, nur im Menü)
   const [showLeaderboard, setShowLeaderboard] = useState(false);  // #217: globale Bestenliste zog vom Startbildschirm in einen eigenen Screen
+  const [showUpgrades, setShowUpgrades] = useState(false);        // Progression-Vorschau: Upgrade-Baum-Screen
   const [profile, setProfile] = useState(loadProfile);            // #190: Profil (Freischalt-Status) — nach jedem Lauf aktualisiert
   const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
@@ -197,6 +199,7 @@ export function Autostich() {
     if (showStats) { setShowStats(false); return true; }
     if (showCustomize) { setShowCustomize(false); return true; }
     if (showLeaderboard) { setShowLeaderboard(false); return true; }
+    if (showUpgrades) { setShowUpgrades(false); return true; }
     if (showMasterSelect) { setShowMasterSelect(false); return true; }
     if (confirmRestart) { setConfirmRestart(false); return true; } // offene Neustart-Rückfrage → schließen
     if (confirmAbort) { setConfirmAbort(false); return true; }   // offene Rückfrage → abbrechen (schließen)
@@ -552,6 +555,7 @@ export function Autostich() {
             onResume={resumable ? resumeRun : null}
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score, masterRun: !!resumable.state.masterRun, grade: resumable.state.masteryGrade || 0 } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
+            onUpgrades={() => setShowUpgrades(true)}
             onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} />
@@ -687,6 +691,7 @@ export function Autostich() {
         <DevRunSetup onStart={(cfg) => { setShowDevSetup(false); startDevRun(cfg); }} onClose={() => setShowDevSetup(false)} />
       )}
 
+      {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} />}
       {showLeaderboard && (
         <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best}
           masteryGrade={profile.masteryGrade || 0}

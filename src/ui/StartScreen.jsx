@@ -38,7 +38,7 @@ const STUB = {
   ],
 };
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onMasterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onMasterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
@@ -267,9 +267,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
           <div className="flex items-center justify-between gap-3 mt-3">
             <span className="text-[11.5px] opacity-60 tabular-nums"><b className="opacity-95">{STUB.owned} / {STUB.total}</b> · Meister-Liga bei {STUB.total}/{STUB.total}</span>
-            <button
+            <button onClick={onUpgrades || undefined}
               className="border-none font-extrabold text-[12.5px] px-3 py-2 rounded-lg cursor-pointer transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
-              style={{ background: AM, color: "#141419" }} title="Upgrade-Screen — folgt mit dem Progression-Backend">
+              style={{ background: AM, color: "#141419" }} title="Upgrade-Screen (Vorschau)">
               Öffnen <span>›</span>
             </button>
           </div>
