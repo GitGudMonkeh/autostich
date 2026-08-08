@@ -7,6 +7,7 @@ import { matchSecretSeed, ownedCount, nodeState, treeComplete, NODES, BRANCHES, 
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
 import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
+import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
 
 /* Startbildschirm — Hub-Redesign (Progression-System, Design-Doc docs/progression-decisions.md).
    Farbsystem aus dem Neon-Logo abgeleitet (Verlauf Cyan → Violett → Amber): Cyan = Start/SP/Energie,
@@ -347,6 +348,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             : <>Namen festlegen für den globalen Highscore</>}
         </button>
       )}
+
+      {/* PWA · „Zum Startbildschirm hinzufügen" — kleiner Link zwischen Nickname und Versionsstempel (nur wenn relevant). */}
+      <PwaInstall />
 
       {/* #250 Versions-/Build-Stempel unten — nach jedem Push sichtbar, ob er gelandet ist (+ Umgebung + kurze SHA). */}
       <div className="text-[10px] font-mono opacity-40 tracking-wide select-text" title="Version · Umgebung · Commit">{VERSION_FULL}</div>
