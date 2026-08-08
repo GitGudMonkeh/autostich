@@ -26,7 +26,7 @@ const BR = [
   { key: "mei", name: "Meister", desc: "Legendäre / Prestige", color: AM, nodes: [
     { id: "M1", rom: "I",   eff: "Reroll f. Leg.-Slot", det: "Runde 29",        cost: 4,  gate: { type: "onb" } },
     { id: "M2", rom: "II",  eff: "2 Leg. je Archetyp",  det: "Skill-Slot",      cost: 9,  gate: { type: "pct", need: 17 } },
-    { id: "M3", rom: "III", eff: "Leg.-Perk-Drop ×2",   det: "Perks & Gebäude", cost: 13, gate: { type: "pct", need: 34 } },
+    { id: "M3", rom: "III", eff: "Leg. Drop-Rate ×2",   det: "Perks & Gebäude", cost: 13, gate: { type: "pct", need: 34 } },
     { id: "M4", rom: "IV",  eff: "Garant. Leg.-Perk",   det: "2. Perk-Phase",   cost: 18, gate: { type: "pct", need: 51 } },
     { id: "M5", rom: "V",   eff: "Wahl aus 3 Leg.",     det: "2. Perk-Phase",   cost: 22, gate: { type: "all" } },
   ]},
