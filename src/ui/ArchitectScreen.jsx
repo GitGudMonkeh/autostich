@@ -475,8 +475,15 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const previewArch = { ...architect, buildings: previewBuildings };
     const p2 = precomputeArchitect(previewArch, order, deck);
     const val2 = cards.reduce((t, c, p) => t + c.value + (architectValueBonus(p2, p, c, alliance) || 0), 0);
-    const form2 = summarizeFormations(computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, previewArch)).count;
-    return { dVal: val2 - sumValue, dForm: form2 - formCount, valid: dragPrev.valid };
+    const previewForms = computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, previewArch);
+    const form2 = summarizeFormations(previewForms).count;
+    // #UI: Boost-Vorschau — dieselbe Formel wie archBoostPct (Struktur-Kombis Σ(f−1) + neu gegründete Formationen), aber
+    // mit den Vorschau-Gebäuden. dBoost = Vorschau − aktuell → Live-Differenz des Gebäude-Boosts im Brett-Kopf.
+    const sumStr = (fs) => (fs || []).reduce((s, pf) => s + ((pf.mult || 1) - 1), 0);
+    const pStructBonus = boardFactorMap(previewBuildings).reduce((t, f) => t + (f - 1), 0);
+    const pFormGain = Math.max(0, sumStr(previewForms) - sumStr(formationsNoArch));
+    const previewBoost = Math.round((pStructBonus + pFormGain) * 100);
+    return { dVal: val2 - sumValue, dForm: form2 - formCount, dBoost: previewBoost - archBoostPct, valid: dragPrev.valid };
   }, [dragPrev]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const comboLit  = (pos) => (comboF[pos] || 1) > 1;    // #UI: Struktur-Kombi (Zeile/Spalte/Diagonale) → rote Fläche
@@ -534,10 +541,35 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] items-start">
           {/* ---- Brett 8×5 — Mobil in der Mitte (order-2): Phase-Panel drüber, Vorschau drunter; Desktop links (md:order-1). ---- */}
           <section className="rounded-xl p-3 order-2 md:order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
-            <div className="flex items-center justify-between mb-2">
-              {/* Gebäude-Boost steht jetzt oben in der Hero-Leiste — hier nur noch die Overlay-Toggles. */}
+            {/* #UI: Farbauswahl (colorLocked-Gebäude: Buntglas/Zunfthaus) sitzt jetzt DIREKT über dem Brett — zwischen der
+                Bestätigen-Leiste (mobil darüber) und dem Brett. Eigener Rahmen + Abstand nach unten, damit man beim Tippen
+                der Farbe nicht versehentlich Bestätigen trifft (vorher lag sie weit oben im Panel → hochscrollen nötig). */}
+            {selBuilding && phase === "move" && familyDef(selBuilding.familyId)?.colorLocked && (
+              <div className="mb-3 rounded-lg px-3 py-2.5 flex items-center gap-3 flex-wrap" style={{ background: "#141f29", border: "1px solid #d97a3a66", boxShadow: "0 0 10px #d97a3a1f" }}>
+                <span className="text-[11px] font-mono uppercase tracking-wide font-bold" style={{ color: "#e0894a" }}>🎨 Bufft Farbe</span>
+                <div className="flex gap-2.5">
+                  {SUIT_ORDER.map((s) => (
+                    <button key={s} onClick={() => onRecolor?.({ buildingId: selBuilding.id, colorChoice: s })}
+                      className="w-7 h-7 rounded-full transition-transform hover:scale-110" title={s}
+                      style={{ background: SUIT_COLOR[s], outline: selBuilding.colorChoice === s ? "2px solid #fff" : "none", outlineOffset: 2 }} />
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-2 mb-2">
+              {/* Gebäude-Boost steht oben in der Hero-Leiste — hier nur die Overlay-Toggles + der Live-Δ beim Verschieben. */}
               <span className="text-[11px] font-mono uppercase tracking-wide opacity-40">Bau-Brett</span>
-              <div className="flex items-center gap-1.5">
+              {/* #UI: interaktiver Boost-Δ — beim Ziehen/Verschieben die Änderung des Gebäude-Boosts sofort sehen. */}
+              {dragDelta && (
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+                  style={{ color: dragDelta.dBoost > 0 ? "#5fce86" : dragDelta.dBoost < 0 ? "#e0705a" : "#8a97a5",
+                           background: dragDelta.dBoost > 0 ? "#155e3126" : dragDelta.dBoost < 0 ? "#8a1e1e26" : "#ffffff0c",
+                           border: `1px solid ${dragDelta.dBoost > 0 ? "#2f9d5566" : dragDelta.dBoost < 0 ? "#d1462f66" : "#2b3e4d"}` }}
+                  title="Änderung des Gebäude-Boosts an dieser Vorschau-Position">
+                  Boost {dragDelta.dBoost > 0 ? "▲ +" : dragDelta.dBoost < 0 ? "▼ " : "±"}{dragDelta.dBoost} %
+                </span>
+              )}
+              <div className="flex items-center gap-1.5 ml-auto">
                 <button onClick={toggleCombos} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
                   style={{ background: showCombos ? "#2a2416" : "#16232f", border: `1px solid ${showCombos ? "#d4a63a" : "#2b3e4d"}`, color: showCombos ? "#e0c060" : "#7d8a97" }}
                   title="Gebäude mit Struktur-/Distrikt-Bonus glühen in ihrer Typ-Farbe">{showCombos ? "◉" : "○"} Kombis</button>
@@ -896,35 +928,22 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
               {/* #261: EINE kombinierte Platzier-/Verschiebe-Phase — alle Gebäude (inkl. des eben gewählten) sind frei
                   ziehbar/drehbar; ein einziges „Bestätigen" unten schließt ab. */}
-              {!removeFor && phase === "move" && (() => {
-                const selB = selId != null ? committed.find((x) => x.id === selId) : null;
-                const selFam = selB ? familyDef(selB.familyId) : null;
-                return (
-                  <div>
-                    {/* Erfolgs-Feedback: hervorgehobene Zeile, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen — die Ziffer am Gebäude ist winzig). */}
-                    {upgradeDone && (
-                      <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2 flex items-center gap-1.5 flex-wrap" style={{ background: "#15291a", borderLeft: "3px solid #f0b429", color: "#d7f0c8" }}>
-                        <span aria-hidden="true">⬆</span> <b>„{upgradeDone.name}"</b> aufgewertet:
-                        <span className="font-mono" style={{ color: "#f0b429" }}>Stufe {tierLabel(upgradeDone.from)} → {tierLabel(upgradeDone.to)}</span>
-                      </div>
-                    )}
-                    <ArchCollapse className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
-                      head={<b>Platzieren & Verschieben</b>}>
-                      <div className="opacity-85 leading-snug">zieh Gebäude am Brett an ihren Platz (Griff überall, <b>⟳ Drehen</b> oben) — beliebig oft. Unten <b>Bestätigen</b> startet den Durchlauf.</div>
-                    </ArchCollapse>
-                    {/* #261: Buff-Farbe eines gewählten colorLocked-Gebäudes (Buntglas/Zunfthaus) hier anpassen (onRecolor). */}
-                    {selB && selFam && selFam.colorLocked && (
-                      <div className="flex items-center gap-1.5 mb-2 text-[11px] font-mono">
-                        <span className="opacity-60">bufft Farbe:</span>
-                        {SUIT_ORDER.map((s) => (
-                          <button key={s} onClick={() => onRecolor?.({ buildingId: selB.id, colorChoice: s })} className="w-5 h-5 rounded-full"
-                            style={{ background: SUIT_COLOR[s], outline: selB.colorChoice === s ? "2px solid #fff" : "none", outlineOffset: 1 }} title={s} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+              {!removeFor && phase === "move" && (
+                <div>
+                  {/* Erfolgs-Feedback: hervorgehobene Zeile, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen — die Ziffer am Gebäude ist winzig). */}
+                  {upgradeDone && (
+                    <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2 flex items-center gap-1.5 flex-wrap" style={{ background: "#15291a", borderLeft: "3px solid #f0b429", color: "#d7f0c8" }}>
+                      <span aria-hidden="true">⬆</span> <b>„{upgradeDone.name}"</b> aufgewertet:
+                      <span className="font-mono" style={{ color: "#f0b429" }}>Stufe {tierLabel(upgradeDone.from)} → {tierLabel(upgradeDone.to)}</span>
+                    </div>
+                  )}
+                  {/* #UI: Die Farbauswahl (colorLocked-Gebäude) liegt jetzt direkt über dem Brett, nicht mehr hier. */}
+                  <ArchCollapse className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
+                    head={<b>Platzieren & Verschieben</b>}>
+                    <div className="opacity-85 leading-snug">zieh Gebäude am Brett an ihren Platz (Griff überall, <b>⟳ Drehen</b> oben) — beliebig oft. Unten <b>Bestätigen</b> startet den Durchlauf.</div>
+                  </ArchCollapse>
+                </div>
+              )}
             </div>
 
             {/* #UI „nur Buttons": schmale, schwebende Aktions-Leiste (mobil oben angeheftet) — nur die Phasen-Buttons,
