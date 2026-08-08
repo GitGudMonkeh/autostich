@@ -171,6 +171,15 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const formGain = Math.max(0, sum(formations) - sum(formationsNoArch));
     return Math.round((structBonus + formGain) * 100);
   }, [structF, formations, formationsNoArch]);
+  // #UI: In der Aufwerten-Phase behalten ALLE Gebäude ihre durchgezogene TYP-Kontur (kein Stufen-Farb-Rahmen mehr —
+  // die Stufe zeigt das Ecken-Symbol + das Infopanel). Nur die Kontur der NICHT-aufwertbaren Gebäude wird gedimmt
+  // (Spotlight auf das Aufwertbare), statt die ganze Kontur zu dimmen und je Zelle einen Rahmen zu ziehen (der rechts riss).
+  const upgradeableBids = useMemo(() => {
+    const s = new Set();
+    if (phase !== "upgrade") return s;
+    for (const b of buildings) { const f = familyDef(b.familyId); if (f && upgradeInfo(f, b.tier).can) s.add(b.id); }
+    return s;
+  }, [phase, buildings]);
 
   // #UI: Gebäude-Kontur als durchgezogene SVG-Linie (wie in der Aufstellungsphase, archFrameLines) statt eines
   // Rahmens JE ZELLE → ein mehrzelliges Gebäude liest sich als EINE Form. Farbe = TYP-Farbe (Wert/Score/Formation); die Rarität zeigt die Stufen-Zahl in der Ecke.
@@ -583,9 +592,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               {/* #UI: durchgezogene Gebäude-Kontur (SVG) über dem Brett — eine Linie je Gebäude in seiner Form (wie Aufstellung).
                   Während eines Drags ausgeblendet (das Gebäude schwebt frei) → snappt beim Loslassen wieder an seine neue Form. */}
               {archFrame && archFrame.lines.length > 0 && !dragPrev && (
-                <svg className="absolute left-0 top-0 pointer-events-none" width={archFrame.w} height={archFrame.h} style={{ overflow: "visible", zIndex: 5, opacity: phase === "upgrade" ? 0.28 : 1 }} aria-hidden="true">
+                <svg className="absolute left-0 top-0 pointer-events-none" width={archFrame.w} height={archFrame.h} style={{ overflow: "visible", zIndex: 5 }} aria-hidden="true">
                   {archFrame.lines.map((l, i) => (
-                    <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.color} strokeWidth="2.5" strokeLinecap="square" />
+                    // Aufwerten-Phase: Kontur der nicht-aufwertbaren Gebäude dimmen (Spotlight) — die aufwertbaren bleiben hell.
+                    // Typ-Farbe (l.color) bleibt in ALLEN Phasen erhalten und die Linie durchgängig.
+                    <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.color} strokeWidth="2.5" strokeLinecap="square"
+                      opacity={phase === "upgrade" && !upgradeableBids.has(l.bid) ? 0.28 : 1} />
                   ))}
                 </svg>
               )}
@@ -654,8 +666,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         isMarkedDemolish ? "inset 0 0 0 2px #ff6a4d, inset 0 0 16px #ff3b1e66" : null,     // #235: markiertes Abriss-Ziel rot hervorheben
                         isMarkedUpgrade ? "inset 0 0 0 2px #f0b429, inset 0 0 16px #f0b42966" : null,      // #237: markiertes Aufrüst-Ziel gold hervorheben
                         isInspected ? "inset 0 0 0 2px #5ec8f0, 0 0 14px #5ec8f0aa, inset 0 0 16px #5ec8f055" : null, // choose: inspiziertes Gebäude cyan leuchten lassen (wo liegt es?)
-                        upCan && !isMarkedUpgrade ? `0 0 10px ${tierCol}66` : null,                        // #249: aufwertbares Gebäude dezent in SEINER Stufenfarbe leuchten (kein Gold) — Gold erst beim ausgewählten
-                        upCan && !isMarkedUpgrade ? `inset 0 0 0 2px ${tierCol}` : null,                   // #249: Rahmen in Stufenfarbe (der SVG-Contour ist im Aufrüst-Spotlight gedimmt)
+                        // #UI: aufwertbares Gebäude dezent glühen lassen — in der TYP-Farbe (nicht Stufenfarbe). Der Rahmen
+                        // ist jetzt die durchgezogene Typ-Kontur (oben, ungedimmt für Aufwertbare); der Stufen-Farb-Zellrahmen entfällt.
+                        upCan && !isMarkedUpgrade ? `0 0 10px ${CAT[fam?.category]?.color || tierCol}55` : null,
                         inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
                         isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,                              // ausgewählt (weiß)
                         // #UI: Raritäts-Rahmen JE ZELLE entfällt — die durchgezogene SVG-Kontur (oben) zeichnet ihn jetzt
