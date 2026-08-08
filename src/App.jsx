@@ -38,7 +38,6 @@ import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { StatsScreen } from "./ui/StatsScreen.jsx";
-import { SeedChip } from "./ui/SeedChip.jsx"; // #205 Challenger Mode: Seed im HUD kopierbar
 import { CustomizeScreen } from "./ui/CustomizeScreen.jsx";
 import { DevRunSetup } from "./ui/DevRunSetup.jsx"; // Dev-Run (nur Preview-Build)
 import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale Bestenliste als eigener Screen
@@ -570,7 +569,7 @@ export function Autostich() {
                   verschwindet per mix-blend-mode:screen im dunklen Run-Kopf. */}
               <img src={logo} alt="AUTOSTICH" draggable="false"
                 className="h-14 w-auto select-none shrink-0" style={{ mixBlendMode: "screen" }} />
-              {state.seed != null && <SeedChip code={formatSeed(state.seed)} />}
+              {/* Seed-Chip entfällt hier — der Seed steht in der Statistik & im Endscreen. */}
             </div>
             <GlossaryPanel onOpenChange={setGlossaryOpen} className="shrink-0" style={{ width: 36, height: 36, fontSize: "1.05rem" }} />
           </header>
