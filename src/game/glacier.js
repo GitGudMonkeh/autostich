@@ -16,7 +16,7 @@ export const THRESHOLDS = [4, 8, 12];          // Schwellen-Stufen; Stufe = #Sch
 export const TIER_MULT = [0, 1, 1.5, 2.2];     // überlineare Wucht je Stufe (Stufe 0 bricht nicht)
 // Globaler Burst-Skalierer: die Gletscher SIND der Hauptscore (nicht das Deck) — einzelne, massive Hits. Frequenz bleibt
 // (kein schnelleres Bersten), nur die Wucht je Bruch. Am Sim kalibriert, damit der Gletscher-Ertrag das Deck dominiert.
-const BURST_SCALE = 400;
+const BURST_SCALE = 340;
 // Weicher Deckel je EINZELBRUCH (Sim-Balance): der Burst-Stack ist voll multiplikativ (Masse×Stufe×Kaskade×Kollision×
 // Sturz×Geo) → große Cluster/Fläche/Eiszeit detonieren unbegrenzt. Über BURST_SOFTCAP zählt nur noch BURST_SOFTSLOPE
 // des Überschusses → komprimiert das Ceiling, lässt Median-Bursts (unter dem Deckel) unberührt. (Platzhalter, Sim-tunebar.)
