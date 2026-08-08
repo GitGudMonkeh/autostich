@@ -7,7 +7,8 @@ import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Dec
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import logo from "./assets/logo-wordmark.png"; // #UI: Neon-Wortmarke (wie StartScreen) — ersetzt das Text-Logo im Run-Kopf
-import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveActiveRun, loadActiveRun, clearActiveRun } from "./game/storage.js";
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun } from "./game/storage.js";
+import { unlockAllProfile } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / reset (Wipe)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
 import { fmtScore } from "./ui/format.js";
@@ -422,6 +423,13 @@ export function Autostich() {
   }
   // #217: Normaler Lauf (Rang 0, keine Rewards, zählt nicht) — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
   function startRun(seed) { launchRun({ seed: (typeof seed === "number" && Number.isFinite(seed)) ? seed : null, master: false }); }
+  // Test-Codes im Seed-Feld (nur Preview, StartScreen fängt sie ab): `unlock` = Onboarding fertig + alle
+  // Upgrades + SP-Polster (Profil-Update, kein Reload). `reset` = ganzes Profil wipen → Reload gibt den
+  // sauberen Erstbesuch-Zustand (kein manuelles Nachsynchronisieren von Highscores/Geist/Verlauf nötig).
+  function handleSecretSeed(kind) {
+    if (kind === "unlock") { setProfile(saveProfile(unlockAllProfile(loadProfile()))); return; }
+    if (kind === "reset") { wipeProfileStorage(); try { window.location.reload(); } catch (e) {} }
+  }
   // #217: Meister-Lauf auf gewähltem Rang (0 = ranglos). Nur diese zählen für die Rang-Leiter.
   function startMasterRun(grade = 0) { launchRun({ master: true, grade: grade | 0 }); }
   // #217: Neustart behält die Lauf-Art (ein Meister-Lauf startet als Meister-Lauf auf demselben Rang neu).
@@ -550,7 +558,7 @@ export function Autostich() {
       {options.skin === "crt" && state.phase === "menu" && <CrtParticles />}
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
-          <StartScreen onStart={startRun} onPlaySeed={startRun} onMasterRun={() => setShowMasterSelect(true)} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+          <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onMasterRun={() => setShowMasterSelect(true)} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onResume={resumable ? resumeRun : null}
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score, masterRun: !!resumable.state.masterRun, grade: resumable.state.masteryGrade || 0 } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}

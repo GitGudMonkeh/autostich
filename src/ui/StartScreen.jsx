@@ -3,6 +3,7 @@ import { AnleitungModal } from "./AnleitungModal.jsx";
 import { MuteButton } from "./MuteButton.jsx";
 import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
+import { matchSecretSeed } from "../game/progression.js"; // Test-Codes „unlock"/„reset" im Seed-Feld (nur Preview)
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
 import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
@@ -38,16 +39,26 @@ const STUB = {
   ],
 };
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onMasterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onMasterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
+  const [secretMsg, setSecretMsg] = useState("");
   const [normalOpen, setNormalOpen] = useState(false);
   const [rankedOpen, setRankedOpen] = useState(false);
   const tryPlaySeed = () => {
+    // Test-Codes „unlock"/„reset" VOR parseSeed abfangen (beide würden sonst als gültiger Seed durchgehen).
+    // onSecretSeed ist nur im Preview-Build gesetzt → im Live-Spiel sind die Codes wirkungslos.
+    const secret = onSecretSeed && matchSecretSeed(seedInput);
+    if (secret) {
+      setSeedError(false); setSeedInput("");
+      setSecretMsg(secret === "unlock" ? "🔓 Alles freigeschaltet." : "🔄 Profil wird zurückgesetzt …");
+      onSecretSeed(secret);
+      return;
+    }
     const s = parseSeed(seedInput);
     if (s == null) { setSeedError(true); return; }
-    setSeedError(false);
+    setSeedError(false); setSecretMsg("");
     onPlaySeed(s);
   };
 
@@ -169,6 +180,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                   </button>
                 </form>
                 {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>Kein gültiger Seed — prüf den Code und versuch es erneut.</div>}
+                {secretMsg && <div className="text-xs mt-1" style={{ color: "#6ad39f" }}>{secretMsg}</div>}
               </div>
             )}
           </div>

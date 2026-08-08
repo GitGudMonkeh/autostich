@@ -7,6 +7,8 @@ import {
   nodeState, canBuy, buyNode, respec, treeComplete, ownedCount,
   SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP,
   onboardingAfter, spMilestones, isSpRun, spForRun,
+  SECRET_SEEDS, UNLOCK_SP_CUSHION, matchSecretSeed, unlockAllProfile,
+  TOTAL_COST,
 } from "../src/game/progression.js";
 import { ONBOARDING_LINKS } from "../src/game/progression.js";
 
@@ -313,5 +315,45 @@ describe("SP-Ernte pro Lauf (docs §5/§6) — nach Onboarding gegated", () => {
   });
   it("unfertiger Lauf gibt nie SP, auch mit riesigem Score", () => {
     expect(spForRun({ completed: false, score: 999_000_000 }, 6, 9)).toBe(0);
+  });
+});
+
+describe("Test-Codes — matchSecretSeed / unlockAllProfile", () => {
+  it("erkennt unlock/reset case-insensitiv & getrimmt, sonst null", () => {
+    expect(matchSecretSeed("unlock")).toBe("unlock");
+    expect(matchSecretSeed("  UNLOCK ")).toBe("unlock");
+    expect(matchSecretSeed("Reset")).toBe("reset");
+    expect(matchSecretSeed("etwas anderes")).toBe(null);
+    expect(matchSecretSeed("")).toBe(null);
+    expect(matchSecretSeed(null)).toBe(null);
+    expect(matchSecretSeed(undefined)).toBe(null);
+    expect(SECRET_SEEDS).toEqual({ unlock: "unlock", reset: "reset" });
+  });
+  it("unlockAllProfile: Onboarding 6, alle 13 Knoten, stichSpent = TOTAL_COST, SP-Polster", () => {
+    const p = unlockAllProfile(emptyProfile(0));
+    expect(p.onboarding).toBe(6);
+    expect(ownedCount(p)).toBe(13);
+    expect(treeComplete(p)).toBe(true);
+    expect(p.stichSpent).toBe(TOTAL_COST);
+    expect(p.stichPoints).toBe(UNLOCK_SP_CUSHION);
+    // Voll aktivierte Effekte — Max-Boni + alle Meister-Flags.
+    expect(nodeEffects(p)).toEqual({
+      treeCoverBonus: 4, treeRerollBonus: 2, treeRareShift: 3,
+      legSlotReroll: true, legTwoPerArch: true, legDropDouble: true,
+      legGuaranteedPerk2: true, legChoose3Perk2: true,
+    });
+  });
+  it("unlockAllProfile bewahrt fremde Profil-Felder + lässt das Original unberührt", () => {
+    const src = { stichPoints: 3, stichSpent: 0, nodes: {}, games: 42, bestScore: 999 };
+    const p = unlockAllProfile(src);
+    expect(p.games).toBe(42);
+    expect(p.bestScore).toBe(999);
+    expect(src.nodes).toEqual({});   // Original nicht mutiert
+    expect(src.onboarding).toBeUndefined();
+  });
+  it("nach unlock → respec gibt TOTAL_COST + Polster als Guthaben zurück (Kauf-Flow testbar)", () => {
+    const r = respec(unlockAllProfile(emptyProfile(0)));
+    expect(r.stichPoints).toBe(UNLOCK_SP_CUSHION + TOTAL_COST);
+    expect(ownedCount(r)).toBe(0);
   });
 });

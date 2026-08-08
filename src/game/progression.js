@@ -235,3 +235,40 @@ export function spForRun(record, onboardingBefore, spRunsBefore) {
   if (SP_LOYALTY_EVERY > 0 && c % SP_LOYALTY_EVERY === 0) sp += SP_LOYALTY_SP;
   return sp;
 }
+
+/* ============================================================
+   TEST-/DEV-CHEATS — geheime Seed-Codes (schnelles Onboarding-Testen zu zweit).
+
+   REIN: nur Profil-Transformation + Code-Erkennung. Der Live-/Sim-Build wird NICHT berührt — die UI fängt
+   die Codes nur im Preview-Build ab (sonst ließe sich per `unlock`/treeComplete die Meister-Liga aushebeln)
+   und storage/App wenden das Ergebnis an. Alles-freigeschaltet leitet sich aus onboarding + nodes ab —
+   KEINE separaten „unlocked"-Flags (dieselbe Wahrheit, die Reducer/Onboarding-Gates in Schritt 3/4 lesen).
+   ============================================================ */
+
+// SP-Polster, das `unlock` gutschreibt, damit man nach einem Respec (Erstattung = TOTAL_COST) bequem den
+// Kauf-/Gate-Flow durchtesten kann. envNum-tunebar.
+export const UNLOCK_SP_CUSHION = envNum("PROG_UNLOCK_SP_CUSHION", 500);
+
+// Geheime Seed-Codes (Kleinbuchstaben, exakt) — in der UI VOR parseSeed abgefangen (beide würden sonst als
+// gültige Seeds durchgehen). "unlock" = skippen & alles frei; "reset" = ganzes Profil wipen (in storage.js).
+export const SECRET_SEEDS = { unlock: "unlock", reset: "reset" };
+
+// Erkennt einen geheimen Code in der Seed-Eingabe → "unlock" | "reset" | null (case-insensitiv, getrimmt).
+export function matchSecretSeed(input) {
+  const s = String(input == null ? "" : input).trim().toLowerCase();
+  if (s === SECRET_SEEDS.unlock) return "unlock";
+  if (s === SECRET_SEEDS.reset) return "reset";
+  return null;
+}
+
+// `unlock`: NEUES Profil — Onboarding fertig (6/6), alle 13 Knoten gekauft (stichSpent = TOTAL_COST) plus
+// SP-Polster. Übrige Profil-Felder (Stats/Flags/Cosmetics) bleiben unangetastet.
+export function unlockAllProfile(profile) {
+  return {
+    ...profile,
+    onboarding: ONBOARDING_LINKS,
+    nodes: Object.fromEntries(NODE_IDS.map((id) => [id, 1])),
+    stichSpent: TOTAL_COST,
+    stichPoints: UNLOCK_SP_CUSHION,
+  };
+}

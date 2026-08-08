@@ -4,7 +4,7 @@ import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   recordRun, loadProfile, isNoRerollRun,
   monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION,
   saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA,
-  saveProfile } from "../src/game/storage.js";
+  saveProfile, wipeProfileStorage, saveOptions } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
 import { ONBOARDING_LINKS } from "../src/game/progression.js";
 
@@ -206,6 +206,29 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.stichPoints).toBe(20);
     expect(p.nodes).toEqual({ A1: 1 });
     expect(p.onboarding).toBe(6);
+  });
+
+  it("wipeProfileStorage (Test-Code `reset`): löscht Fortschritt → Erstbesuch, behält Präferenzen", () => {
+    // Fortschritt + Präferenzen anlegen.
+    saveProfile({ stichPoints: 50, nodes: { B1: 1 }, onboarding: 6 });
+    recordHighscore({ score: 500, level: 1, tricks: 9, cycles: 0, ts: 1 });
+    saveGhost([10, 20], 200);
+    saveSeenGuide();
+    saveOptions({ ...DEFAULT_OPTIONS, musicVol: 0.9 });
+    saveUsername("Bruder");
+
+    wipeProfileStorage();
+
+    // Fortschritt weg → Defaults.
+    expect(loadProfile().onboarding).toBe(0);
+    expect(loadProfile().stichPoints).toBe(0);
+    expect(loadProfile().nodes).toEqual({});
+    expect(loadHighscores()).toEqual([]);
+    expect(loadGhost().total).toBe(0);
+    expect(loadSeenGuide()).toBe(false); // Anleitung erscheint wieder
+    // Präferenzen bleiben bewusst erhalten.
+    expect(loadOptions().musicVol).toBe(0.9);
+    expect(loadUsername()).toBe("Bruder");
   });
 });
 

@@ -148,6 +148,18 @@ export function saveProfile(profile) {
   return out;
 }
 
+// Test-/Dev-Reset (geheimer Seed-Code `reset`): löscht Profil + Lauf-Fortschritt → Erstbesuch-Zustand,
+// Onboarding startet neu. Betroffen: Profil (Progression/Stats/Freischalt-Flags), Highscores, Geist-Rekord,
+// Lauf-Verlauf, aktiver Lauf und „Anleitung gesehen". Präferenzen (Optionen/Lautstärke/Skin-Wahl, Name)
+// bleiben bewusst erhalten — nicht-freigeschaltete Skins fallen in der UI ohnehin auf „default" zurück.
+// Nur im Preview-Build von der UI aufrufbar.
+export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_seen_guide"];
+export function wipeProfileStorage() {
+  for (const key of RESET_KEYS) {
+    try { localStorage.removeItem(k(key)); } catch (e) {}
+  }
+}
+
 const n0 = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 0);
 
 /* #190 Challenge-Erkennung — reine Funktionen, arbeiten NUR auf dem Run-Record (kein localStorage), unit-testbar.
