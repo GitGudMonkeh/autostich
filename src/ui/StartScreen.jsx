@@ -86,8 +86,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   // Farb-Hierarchie: nur EINE gefüllte Primär-Aktion, der Rest als Outline (weniger Farbwände, luftiger).
   // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Normaler Lauf" wird zum Cyan-Outline.
   const hasResume = !!(onResume && resume);
-  // „Normaler Lauf" im ruhigeren Auftakt-Blau (dunkler als das helle Resume-Cyan).
-  const normalFill  = { background: BLUE, color: "#0b1220", boxShadow: "0 0 12px rgba(90,138,222,.3)" };
+  // „Normaler Lauf": getönter Glas-Fill statt Vollblock — halbtransparentes Blau (lässt den Grund leicht
+  // durchscheinen → weniger „Farbblock"), definierender Rand hält die Form, helle Schrift bleibt lesbar.
+  const normalFill  = { background: "rgba(90,138,222,0.55)", border: "1px solid rgba(122,162,235,0.75)", color: "#eef4ff", boxShadow: "0 0 14px rgba(90,138,222,.2)" };
   const normalGhost = { background: "#12151f", border: `1px solid ${BLUE}88`, color: "#93b4f2" };
   const normalStyle = hasResume ? normalGhost : normalFill;
 
