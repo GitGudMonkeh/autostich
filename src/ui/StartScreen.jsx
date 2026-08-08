@@ -16,12 +16,12 @@ import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Bui
    Upgrades-Card und Ranglisten-Gabel laufen mit festen Platzhalter-Werten (mit „Vorschau"-Markierung),
    damit Layout/Feel im echten Build sichtbar sind. Nur auf Autostich_Test. */
 
-// Logo-Farben (aus dem Wortmarken-Verlauf gesampelt) — als UI-taugliche Töne.
-const CY = "#26c6e6";   // Logo links (Cyan) — Start / SP / Energie
+// Logo-Farben (aus dem Wortmarken-Verlauf gesampelt) — Rollen folgen dem Logo-Verlauf links→rechts:
+const CY = "#26c6e6";   // Logo links (Cyan) — Start / Normaler Lauf
 const BLUE = "#5a8ade";  // Logo-Übergang Cyan→Violett
-const VI = "#9b82f0";   // Logo Mitte (Violett) — Marke / Upgrades
-const AM = "#f2a83a";   // Logo rechts (Amber/Gold) — Prestige / Ranglisten
-const SP = CY;
+const VI = "#9b82f0";   // Logo Mitte (Violett) — Ranglisten
+const AM = "#f2a83a";   // Logo rechts (Amber/Gold) — Upgrades / SP-Währung
+const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
 
 // Platzhalter-Progressionsstand (Vorschau, bis Backend steht).
 const STUB = {
@@ -104,7 +104,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           <span className="text-[11.5px] opacity-55 font-mono tabular-nums">{STUB.bonusRuns} / {STUB.bonusGoal} Läufe</span>
         </div>
         <div className="h-[7px] rounded-full overflow-hidden" style={{ background: "#0e0e13", border: "1px solid #26262e" }}>
-          <div className="h-full rounded-full" style={{ width: `${STUB.bonusRuns / STUB.bonusGoal * 100}%`, background: `linear-gradient(90deg,#1f9fba,${SP})`, boxShadow: `0 0 8px rgba(38,198,230,.5)` }} />
+          <div className="h-full rounded-full" style={{ width: `${STUB.bonusRuns / STUB.bonusGoal * 100}%`, background: `linear-gradient(90deg,#b87d1f,${SP})`, boxShadow: `0 0 8px rgba(242,168,58,.5)` }} />
         </div>
       </div>
 
@@ -114,7 +114,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {onResume && resume && (
           <button onClick={onResume}
             className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
-            style={{ background: AM, color: "#141419", boxShadow: "0 0 10px rgba(242,168,58,.45)" }}>
+            style={{ background: CY, color: "#0d1418", boxShadow: "0 0 10px rgba(38,198,230,.45)" }}>
             <span>▶ Lauf fortsetzen</span>
             <span className="text-[11px] font-mono font-semibold opacity-80">
               Durchlauf {Math.min((resume.cycle || 0) + 1, resume.totalCycles)}/{resume.totalCycles} · Score {Math.round(resume.score || 0).toLocaleString("de-DE")}{resume.masterRun ? ` · Meister ${resume.grade || 0}` : ""}
@@ -178,11 +178,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           <>
             <button onClick={() => setRankedOpen((o) => !o)}
               className="relative w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-              style={{ background: AM, color: "#141419", boxShadow: "0 0 12px rgba(242,168,58,.3)" }}>
+              style={{ background: VI, color: "#141419", boxShadow: "0 0 12px rgba(155,130,240,.3)" }}>
               🏆 Ranglisten-Lauf
               <span className="text-[13px] transition-transform" style={{ transform: rankedOpen ? "rotate(90deg)" : "none" }}>›</span>
               <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
-                style={{ background: "#141419", color: AM }} aria-label="Vorschau">exp</span>
+                style={{ background: "#141419", color: VI }} aria-label="Vorschau">exp</span>
             </button>
             {rankedOpen && (
               <div className="grid grid-cols-2 gap-2.5">
@@ -232,7 +232,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               <span className="inline-flex items-center text-[11px] font-extrabold px-2.5 py-1 rounded-full"
                 style={{ background: SP, color: "#0d1418" }}>{STUB.buyable} kaufbar</span>
               <span className="flex items-baseline gap-1">
-                <span className="text-[19px] font-extrabold tabular-nums" style={{ color: SP, textShadow: "0 0 12px rgba(38,198,230,.45)" }}>{STUB.sp}</span>
+                <span className="text-[19px] font-extrabold tabular-nums" style={{ color: SP, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{STUB.sp}</span>
                 <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: SP }}>SP</span>
               </span>
             </div>
@@ -252,7 +252,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                         style={owned
                           ? { background: b.col, border: `1px solid ${b.col}`, boxShadow: `0 0 6px ${b.col}` }
                           : buy
-                            ? { background: "transparent", border: `1px solid ${SP}`, boxShadow: `0 0 5px rgba(38,198,230,.6)` }
+                            ? { background: "transparent", border: `1px solid ${SP}`, boxShadow: `0 0 5px rgba(242,168,58,.6)` }
                             : { background: "#2a2a33", border: "1px solid #3a3a45" }} />
                     );
                   })}
@@ -266,7 +266,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             <span className="text-[11.5px] opacity-60 tabular-nums"><b className="opacity-95">{STUB.owned} / {STUB.total}</b> · Meister-Liga bei {STUB.total}/{STUB.total}</span>
             <button
               className="border-none font-extrabold text-[12.5px] px-3 py-2 rounded-lg cursor-pointer transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
-              style={{ background: VI, color: "#141419" }} title="Upgrade-Screen — folgt mit dem Progression-Backend">
+              style={{ background: AM, color: "#141419" }} title="Upgrade-Screen — folgt mit dem Progression-Backend">
               Öffnen <span>›</span>
             </button>
           </div>
