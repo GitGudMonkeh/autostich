@@ -1250,15 +1250,15 @@ export function resolveTrick(state, rng) {
         if (soff.length > 0) {
           phase = "levelup"; newSkillOffer = soff;
           if (guarantee && soff.some(isLegendarySkill)) newMasteryLegGranted = true; // Garantie eingelöst, sobald ein Legendär tatsächlich im Angebot ist
-        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift, architectEnabled); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk
+        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult * (state.treeLegMult || 1), mRareShift, architectEnabled); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk
       } else if (decision === "perk") {
-        const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult, mRareShift, architectEnabled);
+        const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult * (state.treeLegMult || 1), mRareShift, architectEnabled); // M3: Perk-Legendär ×2 (Baum)
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "shop" && architectEnabled) {
         // Architekt-Phase (#202, ersetzt den Shop): frisches Bauplan-Angebot ziehen (deterministisch über rng) und die
         // Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen. #217: rareShift durchreichen. Dev-Run → voller Katalog.
         phase = "architect";
-        const archOffers = state.devMode ? fullArchitectOffer() : buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch"), mRareShift);
+        const archOffers = state.devMode ? fullArchitectOffer() : buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch"), mRareShift, state.treeLegMult || 1); // M3: Gebäude-Legendär ×2 (Baum)
         newArchitect = { ...(newArchitect || architect), offers: archOffers, actedMain: false, moved: false };
       } else if (decision === "shop") {
         // #229: Shop entfernt — ohne aktiven Architekten (Sim-Baseline / architect:false) ist die 'shop'-Entscheidung

@@ -335,13 +335,14 @@ function weightedTier(rng, rareShift = _archRareShift) {
   return Number(entries[entries.length - 1][0]);
 }
 // #217: rareShift default = Env-Hook (Sim). Der Grad-Reward reicht zur Laufzeit masteryRareShift(grade) durch (Grad 0 = 0 = Basis).
-export function buildArchitectOffer(architect, rng, rareShift = _archRareShift) {
+export function buildArchitectOffer(architect, rng, rareShift = _archRareShift, legChanceMult = 1) {
   const builtLeg = new Set((architect.buildings || []).filter((b) => familyDef(b.familyId)?.legendary).map((b) => b.familyId));
   const offers = [], usedFam = new Set();
   // Legendär-Slot (höchstens einer): expliziter Wurf, dann eine noch nicht errichtete legendäre Familie ziehen.
+  // #M3: legChanceMult (Progression-Baum, Normal-Lauf) skaliert die Legendär-Chance (×2), gedeckelt bei 1.
   const catOk = (f) => !ONLY_CAT || f.category === ONLY_CAT;
   const legPool = Object.values(ARCHITECT_FAMILIES).filter((f) => f.legendary && !builtLeg.has(f.id) && catOk(f));
-  if (rng() < ARCHITECT_LEGENDARY_CHANCE && legPool.length) {
+  if (rng() < Math.min(1, ARCHITECT_LEGENDARY_CHANCE * legChanceMult) && legPool.length) {
     const f = legPool[Math.floor(rng() * legPool.length)];
     offers.push({ familyId: f.id, tier: "legendary", legendary: true, used: false });
     usedFam.add(f.id);

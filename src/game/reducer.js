@@ -49,15 +49,17 @@ function startOrderInBand(deck, rng) {
 // Wird NUR vom Dev-Run genutzt — der normale Lauf startet unverändert über den Stat-Pfad in START_RUN.
 function startDecisionSetup(decision, s, seed, actionRng, grade, architectEnabled, devEnergy, devMode = false) {
   const mLegMult = masteryLegendMult(grade), mRareShift = Math.max(masteryRareShift(grade), s.treeRareShift || 0); // Rang (Meister) ∪ Baum (Normal-Lauf)
+  const legMultPerk = mLegMult * (s.treeLegMult || 1);  // M3: Perk-Legendär ×2 (Baum) — Skills bleiben bei mLegMult
+  const legChanceMult = s.treeLegMult || 1;             // M3: Gebäude-Legendär-Chance ×2 (Baum)
   const rngAtOr = (...parts) => (seed != null ? rngAt(seed, 0, ...parts) : actionRng);
   // (#267: „stat"-Zweig entfernt — es gibt keine Stat-Phase mehr.)
   if (decision === "perk") {
-    const off = devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * mLegMult, mRareShift, architectEnabled);
+    const off = devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled);
     return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
   }
   if (decision === "shop") {
     if (!architectEnabled) return { phase: "play" };
-    const offers = devMode ? fullArchitectOffer() : buildArchitectOffer(s.architect, rngAtOr("arch"), mRareShift);
+    const offers = devMode ? fullArchitectOffer() : buildArchitectOffer(s.architect, rngAtOr("arch"), mRareShift, legChanceMult);
     return { phase: "architect", architect: { ...s.architect, offers, actedMain: false, moved: false } };
   }
   if (decision === "formation") {
@@ -68,7 +70,7 @@ function startDecisionSetup(decision, s, seed, actionRng, grade, architectEnable
   const guarantee = masteryLegendGuaranteed(grade);
   const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(s.shop) * mLegMult, guarantee);
   if (soff.length) return { phase: "levelup", skillOffer: soff, masteryLegGranted: guarantee && !devMode && soff.some(isLegendarySkill) };
-  const off = buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * mLegMult, mRareShift, architectEnabled);
+  const off = buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled);
   return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
 }
 
@@ -184,6 +186,7 @@ export function reducer(state, action) {
       const treeEff = (!masterRun && !dev && action.profile) ? nodeEffects(action.profile) : null;
       const treeCover = treeEff ? treeEff.treeCoverBonus : 0;      // +Baufeld-Zellen (0..4)
       const treeRareShift = treeEff ? treeEff.treeRareShift : 0;   // RareShift-Stufe (0..3)
+      const treeLegMult = treeEff && treeEff.legDropDouble ? 2 : 1; // M3: Legendär-Drop ×2 (Perks & Gebäude) [TUNING]
       if (dev) {
         const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
         const devSchedule = Array.from({ length: devRounds }, (_, i) => (Array.isArray(dev.schedule) && dev.schedule[i]) || C.DECISION_SCHEDULE[i] || "perk");
@@ -200,7 +203,7 @@ export function reducer(state, action) {
       // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
       // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
       const architectStart = { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) + treeCover }; // Baufeld: Rang (Meister) + Baum (Normal-Lauf)
-      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift };
+      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift, treeLegMult };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, grade, architectEnabled, undefined, false);
       return { ...sBase, architectEnabled,
         masteryGrade: grade, masterRun,
@@ -312,7 +315,7 @@ export function reducer(state, action) {
       const tokens = state.rerollsArch || 0;
       if (tokens <= 0) return state;
       const idx = (state.offerRerolls || 0) + 1;                      // #205: frischer adressierter Strom (seed,cycle,"arch",idx)
-      const offers = buildArchitectOffer(a, rngFor(state, action, state.cycle, "arch", idx), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0));
+      const offers = buildArchitectOffer(a, rngFor(state, action, state.cycle, "arch", idx), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0), state.treeLegMult || 1);
       return { ...state, architect: { ...a, offers }, offerRerolls: idx, rerollsArch: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
     case "ARCHITECT_DONE": { // Architekt-Phase verlassen → zugehöriger Durchlauf startet (Angebot leeren).
@@ -550,7 +553,7 @@ export function reducer(state, action) {
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
       if (state.devMode) return { ...state, skillOffer: null, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
-      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0), state.architectEnabled); // #217: Grad-Rewards
+      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade) * (state.treeLegMult || 1), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0), state.architectEnabled); // #217: Grad-Rewards
       // Eis-Neudesign: bei VOLLEN Eis-Slots (SKILL_SLOTS Eis-Skills) friert das Ablehnen trotzdem einen Gletscher fest —
       // Ausgleich dafür, dass kein weiterer Eis-Skill mehr in die Slots passt (analog: ein Tausch bei vollen Slots gibt
       // ebenfalls einen). Der Perk bleibt: das Perk-Angebot wird geparkt (pendingPerkOffer) und nach der Gletscher-Wahl
@@ -606,7 +609,7 @@ export function reducer(state, action) {
       const tokens = state.rerollsPerk || 0;                         // #263: eigener Perk-Pool
       if (tokens <= 0) return state;                                 // keine Ressource → wirkungslos
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0), state.architectEnabled); // #217: Grad-Rewards
+      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade) * (state.treeLegMult || 1), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0), state.architectEnabled); // #217: Grad-Rewards
       return { ...state, offer, offerRerolls: idx, rerollsPerk: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 

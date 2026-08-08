@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { reducer } from "../src/game/reducer.js";
 import { tierWeightsForShift } from "../src/game/rarity.js";
+import { buildArchitectOffer } from "../src/game/architect.js";
 import { emptyProfile, buyNode, unlockAllProfile } from "../src/game/progression.js";
+
+// Skript-RNG: liefert die vorgegebenen Werte, danach 0.5. Erster rng()-Zug in buildArchitectOffer = Legendär-Check.
+const seqRng = (vals) => { let i = 0; return () => (i < vals.length ? vals[i++] : 0.5); };
+const NONMEI = ["B1", "B2", "B3", "A1", "A2", "R1", "R2", "R3"];
 
 /* Schritt 3a — Progression-Baum an den Reducer-/Engine-Nähten (Baufeld-Cover + Rarität-Shift).
    Prinzip: Effekte NUR im Normal-Lauf (kein Meister/Dev), additiv, No-op für frische Profile & Sim. */
@@ -58,5 +63,25 @@ describe("Gating: Meister-Lauf & Dev-Run ignorieren den Baum (kein Doppel-Bonus)
     expect(s.masteryGrade).toBe(0);
     expect(s.treeRareShift).toBe(3);
     expect(s.architect.maxCover).toBe(start().architect.maxCover + 4);
+  });
+});
+
+describe("M3 legDropDouble: Legendär-Drop ×2 (Perks & Gebäude)", () => {
+  const withM3 = withNodes([...NONMEI, "M1", "M2", "M3"]); // isoliert M3 (kein M4/M5)
+
+  it("treeLegMult = 2 im Normal-Lauf mit M3, sonst 1", () => {
+    expect(start({ profile: withM3 }).treeLegMult).toBe(2);
+    expect(start().treeLegMult || 1).toBe(1);                                   // frisch
+    expect(start({ profile: withNodes([...NONMEI, "M1", "M2"]) }).treeLegMult).toBe(1); // ohne M3
+  });
+  it("Gating: Meister-Lauf ignoriert M3 (treeLegMult 1)", () => {
+    expect(start({ masterRun: true, masteryGrade: 4, profile: unlockAllProfile(emptyProfile(0)) }).treeLegMult || 1).toBe(1);
+  });
+  it("buildArchitectOffer: legChanceMult verdoppelt die Legendär-Chance (0.03→0.06)", () => {
+    const arch = { buildings: [] };
+    const legend = (offers) => offers.some((o) => o.legendary);
+    // rng-Erstwert 0.05 liegt zwischen 0.03 (×1) und 0.06 (×2): ×1 → kein Legendär, ×2 → Legendär.
+    expect(legend(buildArchitectOffer(arch, seqRng([0.05]), 0, 1))).toBe(false);
+    expect(legend(buildArchitectOffer(arch, seqRng([0.05]), 0, 2))).toBe(true);
   });
 });
