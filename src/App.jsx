@@ -6,6 +6,7 @@ import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
+import logo from "./assets/logo-wordmark.png"; // #UI: Neon-Wortmarke (wie StartScreen) — ersetzt das Text-Logo im Run-Kopf
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveActiveRun, loadActiveRun, clearActiveRun } from "./game/storage.js";
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
@@ -561,9 +562,10 @@ export function Autostich() {
           <header className="flex items-center justify-between gap-2">
             {/* Wortmarke + Seed in EINER Zeile (spart eine Zeile) — Seed ist jederzeit kopierbar zum Teilen/Herausfordern (#205). */}
             <div className="flex items-center gap-3 flex-wrap min-w-0">
-              <h1 className="text-2xl font-bold tracking-tight font-pixel crt-title as-wordmark-header">
-                AUTO<span style={{ color: "#8a7de0" }}>STICH</span>
-              </h1>
+              {/* #UI: Neon-Wortmarke als Bild (wie StartScreen) — ersetzt das alte Text-Logo. Schwarzer Bild-Hintergrund
+                  verschwindet per mix-blend-mode:screen im dunklen Run-Kopf. */}
+              <img src={logo} alt="AUTOSTICH" draggable="false"
+                className="h-8 w-auto select-none shrink-0" style={{ mixBlendMode: "screen" }} />
               {state.seed != null && <SeedChip code={formatSeed(state.seed)} />}
             </div>
             <GlossaryPanel onOpenChange={setGlossaryOpen} className="shrink-0" style={{ width: 36, height: 36, fontSize: "1.05rem" }} />
