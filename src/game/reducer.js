@@ -14,7 +14,11 @@ import * as C from "./constants.js";
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
 import { masteryRerollBonus, masteryCoverBonus, masteryLegendMult, masteryRareShift, masteryLegendGuaranteed, difficultyForGrade, MASTERY_MAX_GRADE } from "./mastery.js"; // #217 Meistergrade / #226 Großmeister
-import { nodeEffects, legPerk2Force, rerollBase, unlockedArchetypes, maxRarityTier, legendaryPhaseUnlocked } from "./progression.js"; // Progression-Baum (Schritt 3) · (Schritt 4) Reroll-Basis + Archetyp-Gatung + Rarität-Deckel + R29-Capstone
+import { nodeEffects, legPerk2Force, rerollBase, unlockedArchetypes, maxRarityTier, legendaryPhaseUnlocked, unlockAllProfile } from "./progression.js"; // Progression-Baum (Schritt 3) · (Schritt 4) Reroll-Basis + Archetyp-Gatung + Rarität-Deckel + R29-Capstone · §7 Meister = voller Baum
+
+// §7 (Schritt 6): der Meister-Ranglisten-Lauf spielt mit dem VOLLEN Baum — unabhängig vom echten Profil. Ein einmalig
+// gebautes Voll-Profil (alle Knoten + Onboarding 6) speist dieselbe Tree-Maschinerie wie ein Normal-Lauf.
+const FULL_MEISTER_PROFILE = unlockAllProfile({});
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
 
@@ -184,11 +188,13 @@ export function reducer(state, action) {
       const dev = action.dev && typeof action.dev === "object" ? action.dev : null;
       // Progression-Baum (Schritt 3): Effekte NUR im normalen Lauf (kein Meister-Lauf, kein Dev-Run) — dort ist
       // grade 0, der Baum ist also die einzige Quelle. Meister/Dev/frisches Profil/Sim → 0 = No-op (byte-identisch).
-      // §7 (Schritt 6): Ranglisten-Standard = tree-UNABHÄNGIGE Baseline (fix 2 Rerolls, alle Archetypen, R29 an, normale
-      // Drops) — für alle gleich = der Balance-Referenzwert. Umsetzung: wie ein profil-loser Lauf → treeEff null (kein
-      // Cover/RareShift/Reroll-Bonus/Archetyp-Gate/Rarität-Deckel/M-Knoten), rerolls = C.BASE_REROLLS.
+      // §7 (Schritt 6): zwei Ranglisten-Varianten über den `ranked`-Flag, beide über DIESELBE Tree-Maschinerie:
+      //  · 'standard' = tree-UNABHÄNGIGE Baseline (kein Baum → fix 2 Rerolls, alle Archetypen, R29 an) = Referenzwert.
+      //  · 'meister'  = VOLLER Baum (unabhängig vom echten Profil).
+      // Sonst zählt das echte Profil (Normal-Lauf). effProfile null → treeEff null (Baseline/Sim/profil-los).
       const ranked = action.ranked || null;
-      const treeEff = (!masterRun && !dev && !ranked && action.profile) ? nodeEffects(action.profile) : null;
+      const effProfile = ranked === "meister" ? FULL_MEISTER_PROFILE : (ranked === "standard" ? null : action.profile);
+      const treeEff = (!masterRun && !dev && effProfile) ? nodeEffects(effProfile) : null;
       const treeCover = treeEff ? treeEff.treeCoverBonus : 0;      // +Baufeld-Zellen (0..4)
       const treeRareShift = treeEff ? treeEff.treeRareShift : 0;   // RareShift-Stufe (0..3)
       const treeLegMult = treeEff && treeEff.legDropDouble ? 2 : 1; // M3: Legendär-Drop ×2 (Perks & Gebäude) [TUNING]
@@ -197,14 +203,14 @@ export function reducer(state, action) {
       const legOfferBonus = treeEff && treeEff.legTwoPerArch ? C.LEG_OFFER_PER_ARCH_BONUS : 0; // M2: +Kandidaten je Archetyp (mehr Auswahl)
       // (Schritt 4) Reroll-Basis je Pool: Meister → Rang; Normal-Lauf mit Profil → Onboarding-Basis + A1/A2 (Cap 3);
       // profil-los (Sim/Standard) → C.BASE_REROLLS (kein Baseline-Shift, Bestandstests byte-identisch).
-      const normalRerolls = masterRun ? masteryRerollBonus(grade) : ((action.profile && !ranked) ? rerollBase(action.profile) : C.BASE_REROLLS);
+      const normalRerolls = masterRun ? masteryRerollBonus(grade) : (effProfile ? rerollBase(effProfile) : C.BASE_REROLLS);
       // (Schritt 4b) Archetyp-Allowlist aus dem Onboarding — nur Normal-Lauf mit Profil (treeEff≠null); sonst null
       // = keine Gatung (Sim/Standard/Meister/Dev → alle 4, byte-identisch).
-      const unlockedArch = treeEff ? unlockedArchetypes(Number(action.profile.onboarding) || 0) : null;
+      const unlockedArch = treeEff ? unlockedArchetypes(Number(effProfile.onboarding) || 0) : null;
       // (Schritt 4c) Onboarding-Rarität-Deckel: nur Normal-Lauf mit Profil; sonst 4 = kein Deckel (Sim/Meister/Dev).
-      const rareCap = treeEff ? maxRarityTier(Number(action.profile.onboarding) || 0) : 4;
+      const rareCap = treeEff ? maxRarityTier(Number(effProfile.onboarding) || 0) : 4;
       // (Schritt 4f) R29-Legendär-Capstone: Normal-Lauf erst ab Onboarding 6; profil-los/Meister/Dev = an (wie bisher).
-      const legPhaseEnabled = treeEff ? legendaryPhaseUnlocked(Number(action.profile.onboarding) || 0) : true;
+      const legPhaseEnabled = treeEff ? legendaryPhaseUnlocked(Number(effProfile.onboarding) || 0) : true;
       if (dev) {
         const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
         const devSchedule = Array.from({ length: devRounds }, (_, i) => (Array.isArray(dev.schedule) && dev.schedule[i]) || C.DECISION_SCHEDULE[i] || "perk");

@@ -31,7 +31,7 @@ const BR_COLOR = { bau: CY, auf: BLUE, rar: VI, mei: AM };
 // Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
 const ONB_REWARDS = ["Reroll +1", "Pflanze 🌿 frei", "Rarität: Blau", "Eis ❄ frei", "Rarität: Violett", "Legendär ⭐ (R29)"];
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onMasterRun = null, onStandardRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onMasterRun = null, onStandardRun = null, onMeisterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
@@ -244,12 +244,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                     <span className="text-[11px] leading-snug opacity-60">Upgrades ignoriert — feste Basiswerte für alle (2 Rerolls).</span>
                   </button>
                   {progLigaFree ? (
-                    <button onClick={onMasterRun}
+                    <button onClick={onMeisterRun || onMasterRun}
                       className="rounded-lg p-3 text-left flex flex-col gap-1 transition-all hover:-translate-y-0.5"
                       style={{ background: "#1c1c23", border: `1px solid ${AM}55` }}>
-                      <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
+                      <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Ranglisten-Lauf</span>
                       <span className="text-[14px] font-extrabold" style={{ color: AM }}>Meister</span>
-                      <span className="text-[11px] leading-snug opacity-60">Alle Upgrades aktiv.</span>
+                      <span className="text-[11px] leading-snug opacity-60">Voller Baum — alle Upgrades aktiv.</span>
                     </button>
                   ) : (
                     <div className="relative rounded-lg p-3 text-left flex flex-col gap-1 opacity-70 cursor-default"

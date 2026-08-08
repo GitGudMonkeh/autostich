@@ -438,6 +438,8 @@ export function Autostich() {
   function startMasterRun(grade = 0) { launchRun({ master: true, grade: grade | 0 }); }
   // §7 (Schritt 6): Ranglisten-Standard — tree-unabhängige Baseline (fix 2 Rerolls, alle Archetypen, R29 an; für alle gleich).
   function startStandardRun() { launchRun({ ranked: "standard" }); }
+  // §7 (Schritt 6): Ranglisten-Meister — spielt mit dem VOLLEN Baum (freigeschaltet, wenn alle Upgrades gekauft sind).
+  function startMeisterRun() { launchRun({ ranked: "meister" }); }
   // #217: Neustart behält die Lauf-Art (Meister → Meister; Ranglisten-Standard → Standard; sonst normal).
   function restartRun() { launchRun({ master: !!state.masterRun, grade: state.masteryGrade || 0, ranked: state.ranked || null }); }
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
@@ -565,7 +567,7 @@ export function Autostich() {
       {options.skin === "crt" && state.phase === "menu" && <CrtParticles />}
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
-          <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onMasterRun={() => setShowMasterSelect(true)} onStandardRun={startStandardRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+          <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onMasterRun={() => setShowMasterSelect(true)} onStandardRun={startStandardRun} onMeisterRun={startMeisterRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onResume={resumable ? resumeRun : null}
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score, masterRun: !!resumable.state.masterRun, grade: resumable.state.masteryGrade || 0 } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}

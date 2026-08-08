@@ -211,6 +211,15 @@ describe("(Schritt 6) Ranglisten-Standard = tree-unabhängige Baseline (§7/§8)
     expect(n.treeRareShift).toBe(3);     // R3
     expect(n.ranked).toBe(null);
   });
+  it("Meister-Lauf spielt den VOLLEN Baum — unabhängig vom (fehlenden) Profil", () => {
+    const s = start({ ranked: "meister" }); // KEIN Profil übergeben
+    expect([s.rerollsPerk, s.rerollsArch, s.rerollsSkill]).toEqual([3, 3, 3]); // voller Baum: 1 + A1 + A2
+    expect(s.treeRareShift).toBe(3);   // R3
+    expect(s.rareCap).toBe(4);
+    expect(s.legPhaseEnabled).toBe(true);
+    expect(s.treeLegForce2).toBe(3);   // M5: 3 Legendäre zur Wahl in der 2. Perk-Phase
+    expect(s.ranked).toBe("meister");
+  });
 });
 
 describe("(Schritt 4f) R29-Legendär-Capstone (Onboarding-Glied 6)", () => {
