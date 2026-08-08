@@ -1240,7 +1240,7 @@ export function resolveTrick(state, rng) {
       const decision = (state.devSchedule || C.DECISION_SCHEDULE)[cycle];
       // #217 Meistergrade — Reward-Ableitungen (Grad 0 = No-op: Mult ×1, Shift 0, keine Garantie → byte-identisch).
       const mGrade = state.masteryGrade || 0;
-      const mLegMult = masteryLegendMult(mGrade), mRareShift = masteryRareShift(mGrade);
+      const mLegMult = masteryLegendMult(mGrade), mRareShift = Math.max(masteryRareShift(mGrade), state.treeRareShift || 0); // Rang (Meister) ∪ Baum (Normal-Lauf)
       if (decision === "skill") {
         // Grad V: solange dieser Lauf noch kein garantiertes Legendär bekam, mind. EINEN forcieren (#247: als eigener
         // guaranteeOne-Parameter — NICHT mehr Chance 1, das würde bei der Per-Archetyp-Ziehung in JEDEM Archetyp einen setzen).

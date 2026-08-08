@@ -14,6 +14,7 @@ import * as C from "./constants.js";
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
 import { masteryRerollBonus, masteryCoverBonus, masteryLegendMult, masteryRareShift, masteryLegendGuaranteed, difficultyForGrade, MASTERY_MAX_GRADE } from "./mastery.js"; // #217 Meistergrade / #226 Großmeister
+import { nodeEffects } from "./progression.js"; // Progression-Baum (Schritt 3): Cover/RareShift im Normal-Lauf
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
 
@@ -47,7 +48,7 @@ function startOrderInBand(deck, rng) {
 // perks/skills/familyTiers leer). Spiegelt die Angebots-Erzeugung der Engine; im devMode kommt der Voll-Katalog.
 // Wird NUR vom Dev-Run genutzt — der normale Lauf startet unverändert über den Stat-Pfad in START_RUN.
 function startDecisionSetup(decision, s, seed, actionRng, grade, architectEnabled, devEnergy, devMode = false) {
-  const mLegMult = masteryLegendMult(grade), mRareShift = masteryRareShift(grade);
+  const mLegMult = masteryLegendMult(grade), mRareShift = Math.max(masteryRareShift(grade), s.treeRareShift || 0); // Rang (Meister) ∪ Baum (Normal-Lauf)
   const rngAtOr = (...parts) => (seed != null ? rngAt(seed, 0, ...parts) : actionRng);
   // (#267: „stat"-Zweig entfernt — es gibt keine Stat-Phase mehr.)
   if (decision === "perk") {
@@ -178,6 +179,11 @@ export function reducer(state, action) {
       // Dev-Run (nur Preview): action.dev = { rounds, schedule, cover, energy } konfiguriert einen frei einstellbaren Lauf.
       // Nur dieser Zweig weicht ab; ohne action.dev bleibt der normale Lauf-Start UNVERÄNDERT (Start = Stat).
       const dev = action.dev && typeof action.dev === "object" ? action.dev : null;
+      // Progression-Baum (Schritt 3): Effekte NUR im normalen Lauf (kein Meister-Lauf, kein Dev-Run) — dort ist
+      // grade 0, der Baum ist also die einzige Quelle. Meister/Dev/frisches Profil/Sim → 0 = No-op (byte-identisch).
+      const treeEff = (!masterRun && !dev && action.profile) ? nodeEffects(action.profile) : null;
+      const treeCover = treeEff ? treeEff.treeCoverBonus : 0;      // +Baufeld-Zellen (0..4)
+      const treeRareShift = treeEff ? treeEff.treeRareShift : 0;   // RareShift-Stufe (0..3)
       if (dev) {
         const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
         const devSchedule = Array.from({ length: devRounds }, (_, i) => (Array.isArray(dev.schedule) && dev.schedule[i]) || C.DECISION_SCHEDULE[i] || "perk");
@@ -193,8 +199,8 @@ export function reducer(state, action) {
       }
       // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
       // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
-      const architectStart = { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) }; // Baufeld +2/Grad ab II
-      const sBase = { ...s, architect: architectStart, architectEnabled };
+      const architectStart = { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) + treeCover }; // Baufeld: Rang (Meister) + Baum (Normal-Lauf)
+      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, grade, architectEnabled, undefined, false);
       return { ...sBase, architectEnabled,
         masteryGrade: grade, masterRun,
@@ -306,7 +312,7 @@ export function reducer(state, action) {
       const tokens = state.rerollsArch || 0;
       if (tokens <= 0) return state;
       const idx = (state.offerRerolls || 0) + 1;                      // #205: frischer adressierter Strom (seed,cycle,"arch",idx)
-      const offers = buildArchitectOffer(a, rngFor(state, action, state.cycle, "arch", idx), masteryRareShift(state.masteryGrade));
+      const offers = buildArchitectOffer(a, rngFor(state, action, state.cycle, "arch", idx), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0));
       return { ...state, architect: { ...a, offers }, offerRerolls: idx, rerollsArch: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
     case "ARCHITECT_DONE": { // Architekt-Phase verlassen → zugehöriger Durchlauf startet (Angebot leeren).
@@ -544,7 +550,7 @@ export function reducer(state, action) {
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
       if (state.devMode) return { ...state, skillOffer: null, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
-      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade), state.architectEnabled); // #217: Grad-Rewards
+      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0), state.architectEnabled); // #217: Grad-Rewards
       // Eis-Neudesign: bei VOLLEN Eis-Slots (SKILL_SLOTS Eis-Skills) friert das Ablehnen trotzdem einen Gletscher fest —
       // Ausgleich dafür, dass kein weiterer Eis-Skill mehr in die Slots passt (analog: ein Tausch bei vollen Slots gibt
       // ebenfalls einen). Der Perk bleibt: das Perk-Angebot wird geparkt (pendingPerkOffer) und nach der Gletscher-Wahl
@@ -600,7 +606,7 @@ export function reducer(state, action) {
       const tokens = state.rerollsPerk || 0;                         // #263: eigener Perk-Pool
       if (tokens <= 0) return state;                                 // keine Ressource → wirkungslos
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), masteryRareShift(state.masteryGrade), state.architectEnabled); // #217: Grad-Rewards
+      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * masteryLegendMult(state.masteryGrade), Math.max(masteryRareShift(state.masteryGrade), state.treeRareShift || 0), state.architectEnabled); // #217: Grad-Rewards
       return { ...state, offer, offerRerolls: idx, rerollsPerk: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 

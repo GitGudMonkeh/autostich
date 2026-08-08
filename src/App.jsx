@@ -407,7 +407,7 @@ export function Autostich() {
     const grade = masterRun ? Math.max(0, Math.min(profile.masteryGrade || 0, pendingGrade.current | 0)) : 0;
     pendingMaster.current = false; pendingGrade.current = 0;
     const dev = pendingDev.current; pendingDev.current = null; // Dev-Run-Config (Test-Layout) für DIESEN Lauf, dann zurücksetzen
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, masteryGrade: grade, masterRun, dev }); // #202 Architekt · #205 Seed · #217 Meister-Lauf · Dev-Run
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, masteryGrade: grade, masterRun, dev, profile }); // #202 Architekt · #205 Seed · #217 Meister-Lauf · Dev-Run · Progression-Baum (Schritt 3)
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.

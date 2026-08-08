@@ -33,10 +33,12 @@ export const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 // #217 Meistergrade — Rarität-Shift: höhere Grade verschieben Gewicht zu Selten/Rar. shift 0 = Basis,
 // 1 (Grad III) / 2 (Grad IV+). Tabellen IDENTISCH zu architect.js (Single Source hier → kein Drift; der
 // Sim-Env-Hook SIM_RARE_SHIFT und der Grad-Reward greifen auf dieselbe Skala zu).
+// shift 3 (Progression-Baum Rarität III, R3): weiterer Schub zu Rar/Legendär. [TUNING — Playtest-justierbar]
 const TIER_WEIGHTS_BY_SHIFT = {
   0: { 1: 60, 2: 25, 3: 12, 4: 3 },
   1: { 1: 52, 2: 25, 3: 16, 4: 7 },
   2: { 1: 40, 2: 23, 3: 25, 4: 12 },
+  3: { 1: 30, 2: 20, 3: 30, 4: 20 },
 };
 export const tierWeightsForShift = (shift) => TIER_WEIGHTS_BY_SHIFT[shift] || TIER_WEIGHTS_BY_SHIFT[0];
 export const TIER_WEIGHTS = TIER_WEIGHTS_BY_SHIFT[0]; // Basis (shift 0) — unveränderte Bestandssemantik
