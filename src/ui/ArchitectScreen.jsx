@@ -566,12 +566,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               </div>
             )}
             <div className="flex items-center gap-2 mb-2">
-              {/* Gebäude-Boost steht oben in der Hero-Leiste — hier nur die Overlay-Toggles + der Live-Δ beim Verschieben. */}
-              <span className="text-[11px] font-mono uppercase tracking-wide opacity-40">Bau-Brett</span>
-              {/* #UI: interaktiver Boost-Δ — beim Ziehen/Verschieben die Änderung des Gebäude-Boosts sofort sehen. */}
+              {/* #UI: „Bau-Brett"-Label entfällt — der Boost-Δ (beim Verschieben) hätte die Zeile sonst umgebrochen und das
+                  Brett verrutschen/„zittern" lassen. Der Δ-Chip hat feste Breite (tabular-nums + minWidth), damit er beim
+                  Ziehen nicht in der Breite flackert; die Toggles bleiben rechts (ml-auto) unverrückt. */}
               {dragDelta && (
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
-                  style={{ color: dragDelta.dBoost > 0 ? "#5fce86" : dragDelta.dBoost < 0 ? "#e0705a" : "#8a97a5",
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap inline-flex items-center justify-center"
+                  style={{ fontVariantNumeric: "tabular-nums", minWidth: 92,
+                           color: dragDelta.dBoost > 0 ? "#5fce86" : dragDelta.dBoost < 0 ? "#e0705a" : "#8a97a5",
                            background: dragDelta.dBoost > 0 ? "#155e3126" : dragDelta.dBoost < 0 ? "#8a1e1e26" : "#ffffff0c",
                            border: `1px solid ${dragDelta.dBoost > 0 ? "#2f9d5566" : dragDelta.dBoost < 0 ? "#d1462f66" : "#2b3e4d"}` }}
                   title="Änderung des Gebäude-Boosts an dieser Vorschau-Position">
