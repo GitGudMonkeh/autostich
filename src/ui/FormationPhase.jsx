@@ -142,8 +142,9 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
     baseStrength.current = { cycle: state.cycle, base: curStrength };
   const base = baseStrength.current.base;
   const delta = base === null ? 0 : curStrength - base;
-  const deltaColor = delta > 0.001 ? "#5ab87a" : delta < -0.001 ? "#e0605a" : "#8a8a92";
   const deltaStr = `${delta >= 0 ? "+" : "−"}${pctOf(Math.abs(delta))} %`;
+  // #UI: dunkle Δ-Tönung, die AUF Gold lesbar bleibt (grün/rot/neutral) — für den Fortfahren-Knopf (Live-Feedback beim Tauschen).
+  const deltaOnGold = delta > 0.001 ? "#155e31" : delta < -0.001 ? "#8a1e1e" : "#141419";
 
   // #201.5: Pro-Segment-Stärke + Verbesserungs-Highlight. Analog zur Gesamt-Baseline oben, aber je 5er-Segment:
   // jedes Segment zeigt seine eigene Formations-Stärke am Bereichs-Label; ein seit Phasenbeginn stärker gewordenes
@@ -170,24 +171,14 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
         </div>
         {state.lastCycleScore != null && <div className="mt-2"><RoundScoreBadge state={state} /></div>}
 
-        {/* Hero-Stat-Leiste: der Formations-Bonus ist das, was der Spieler durch Tauschen maximiert → groß in Gold mit
-            live-Δ oben rechts (wie der Score in der Gameplay-Leiste). Energie & Formationszahl als kompakte Nebenzellen. */}
+        {/* Hero-Stat-Leiste: der Formations-Bonus ist das, was der Spieler durch Tauschen maximiert → groß in Gold.
+            Energie & das live-Δ wandern auf den (immer sichtbaren) Fortfahren-Knopf → direktes Feedback bei jedem Tausch. */}
         <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={{ border: "1px solid #26262e", background: "#1a1a22" }}>
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Formations-Bonus</span>
-              <span className="text-[11px] font-bold whitespace-nowrap font-pixel-dense" style={{ color: deltaColor }}
-                title="Formations-Differenz seit Durchlaufbeginn (was ein Zurücksetzen rückgängig macht)">
-                {delta > 0.001 ? "▲ " : delta < -0.001 ? "▼ " : ""}{deltaStr}
-              </span>
-            </div>
+            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Formations-Bonus</span>
             <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 26, color: "#d4a63a" }}>+{pctOf(curStrength)} %</span>
           </div>
-          <div className="flex flex-col justify-center gap-1 px-3 py-2.5 text-right border-l" style={{ borderColor: "#26262e" }}>
-            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Energie</span>
-            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: formationEnergy > 0 ? "#d4a63a" : "#8a8a92" }}>{formationEnergy}</span>
-          </div>
-          <div className="flex flex-col justify-center gap-1 px-3 py-2.5 text-right border-l" style={{ borderColor: "#26262e" }}>
+          <div className="flex flex-col justify-center gap-1 px-4 py-2.5 text-right border-l" style={{ borderColor: "#26262e" }}>
             <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Formationen</span>
             <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
           </div>
@@ -195,15 +186,25 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
         {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig.
             #UI-Redesign: entschlackt — Δ steht jetzt im Hero-Wert, der Fortfahren-Untertitel entfällt (Energie/Formationen
             stehen oben in der Leiste). */}
-        <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mt-3 mb-3 flex flex-wrap items-center gap-2"
+        <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mt-3 mb-3 flex flex-col gap-2"
              style={{ background: "#15151b", borderBottom: "1px solid #2a2a34" }}>
-          <button onClick={onUndo} disabled={!hasSwaps} className="shrink-0 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
-            style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>↶ Rückgängig</button>
-          <button onClick={onReset} disabled={!hasSwaps} className="shrink-0 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
-            style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
-          {/* flex-1 + basis: passt inline, wenn Platz ist; sonst bricht „Fortfahren" gefällig in eine eigene volle Zeile um. */}
-          <button onClick={onConfirm} className="flex-1 basis-[132px] px-4 py-2.5 rounded-lg text-sm font-bold whitespace-nowrap transition-all hover:brightness-110"
-            style={{ background: GOLD, color: "#141419" }}>Fortfahren</button>
+          {/* Rückgängig + Zurücksetzen teilen sich die volle Breite. */}
+          <div className="flex gap-2">
+            <button onClick={onUndo} disabled={!hasSwaps} className="flex-1 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
+              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>↶ Rückgängig</button>
+            <button onClick={onReset} disabled={!hasSwaps} className="flex-1 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
+              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
+          </div>
+          {/* Fortfahren voll-breit — trägt das Live-Feedback (Differenz seit Durchlaufbeginn + Restenergie), damit man es
+              bei jedem Tausch direkt sieht (der Knopf klebt oben, im Gegensatz zum scrollenden Hero-Wert). */}
+          <button onClick={onConfirm} className="w-full px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110 flex flex-col items-center leading-tight"
+            style={{ background: GOLD, color: "#141419" }}>
+            <span className="text-sm">Fortfahren</span>
+            <span className="text-[11px] mt-0.5" title="Formations-Differenz seit Durchlaufbeginn · verbleibende Tausch-Energie">
+              <span className="font-bold" style={{ color: deltaOnGold }}>Δ {deltaStr}</span>
+              <span style={{ opacity: 0.55 }}> · noch {formationEnergy} Energie</span>
+            </span>
+          </button>
         </div>
         <p className="text-xs opacity-55 mb-2">
           Tippe zwei Karten zum Tauschen (1 Energie) · Formationen entstehen nur <b>innerhalb</b> der {SEGMENT_SIZE}er-Segmente
