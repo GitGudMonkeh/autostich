@@ -47,9 +47,12 @@ export async function fetchGlobalTop(limit = 10) {
 //   hier NIE auf (§7 „kein Leaderboard-Zwang"). Robust fürs Main-Merge: fehlt die `board`-Spalte noch (Schema nicht
 //   migriert), antworten ALLE Kaskadenstufen mit 400 (der board=eq-Filter braucht die Spalte) → [] statt Fehler, das
 //   Board zeigt schlicht „noch keine Einträge", bis die Spalte existiert + getaggte Läufe eintreffen.
-export async function fetchBoardTop(board, limit = 10) {
+// `seed` (optional) grenzt zusätzlich auf GENAU diesen Lauf-Seed ein → das Meister-Wochen-Board
+// (board=meister + seed=<Wochen-Seed>). Ohne seed = das ganze Board (Standard = Allzeit über alle Seeds).
+export async function fetchBoardTop(board, limit = 10, seed = null) {
   const b = encodeURIComponent(String(board));
-  const url = (cols) => `${REST}?select=${cols}&board=eq.${b}&order=score.desc,tricks.desc,created_at.desc&limit=${limit}`;
+  const seedFilter = (seed != null && Number.isFinite(Number(seed))) ? `&seed=eq.${Number(seed) >>> 0}` : "";
+  const url = (cols) => `${REST}?select=${cols}&board=eq.${b}${seedFilter}&order=score.desc,tricks.desc,created_at.desc&limit=${limit}`;
   let res;
   for (const cols of [COLS_FULL, COLS_ARCH, COLS_BASE]) {
     res = await fetch(url(cols), { headers });

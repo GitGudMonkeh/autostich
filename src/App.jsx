@@ -9,6 +9,7 @@ import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (
 import logo from "./assets/logo-wordmark.png"; // #UI: Neon-Wortmarke (wie StartScreen) — ersetzt das Text-Logo im Run-Kopf
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun } from "./game/storage.js";
 import { unlockAllProfile, ONBOARDING_LINKS } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / reset (Wipe) · §6 Meilenstein-Balken-Gate
+import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
 import { fmtScore } from "./ui/format.js";
@@ -419,9 +420,9 @@ export function Autostich() {
   // §7 (Schritt 6): Ranglisten-Standard — tree-unabhängige Baseline (fix 2 Rerolls, alle Archetypen, R29 an; für alle gleich).
   function startStandardRun() { launchRun({ ranked: "standard" }); }
   // §7 (Schritt 6): Ranglisten-Meister — spielt mit dem VOLLEN Baum (freigeschaltet, wenn alle Upgrades gekauft sind).
-  function startMeisterRun() { launchRun({ ranked: "meister" }); }
+  function startMeisterRun() { launchRun({ ranked: "meister", seed: currentWeek(new Date()).seed }); } // §7: alle spielen den Wochen-Seed
   // Neustart behält die Lauf-Art (Ranglisten-Standard/Meister → gleicher Modus; sonst normal).
-  function restartRun() { launchRun({ ranked: state.ranked || null }); }
+  function restartRun() { launchRun({ ranked: state.ranked || null, seed: state.ranked === "meister" ? currentWeek(new Date()).seed : null }); } // Meister-Neustart bleibt auf dem Wochen-Seed
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
   function startDevRun(dev) { launchRun({ dev }); }
   const toMenu = () => { saveRun(); clearActiveRun(); setResumable(null); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
