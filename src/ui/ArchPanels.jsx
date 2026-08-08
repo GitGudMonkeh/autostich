@@ -1,0 +1,61 @@
+import { familyDef as archFamily } from "../game/architect.js";
+import { ARCH_CAT } from "./indicators/vocab.js";
+import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
+import FormIcon from "./FormIcon.jsx";
+
+// #UI: Geteilte Bausteine für Aufstellphase UND Chronik (eine Quelle → keine getrennte Pflege).
+const TIER_ROMAN = ["", "I", "II", "III", "IV"];
+
+/* Gebäude-Liste „🏗 Deine Gebäude": antippen lässt den Gebäude-Rahmen am Brett cyan leuchten (inspectBid) — und
+   umgekehrt markiert das Antippen einer Karte im Gebäude den Eintrag. Geteilt von FormationPhase & ChronikOverview.
+   `onInspect(nextBid)` bekommt die neue Auswahl (oder null); der Aufrufer blendet dabei die Gebäude ein (showArch). */
+export function ArchBuildingList({ buildings = [], cover = null, inspectBid = null, onInspect }) {
+  if (!buildings.length) return null;
+  return (
+    <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
+      <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Deine Gebäude ({buildings.length})</div>
+      <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
+      <div className="grid gap-1">
+        {buildings.map((b) => {
+          const fam = archFamily(b.familyId); if (!fam) return null;
+          const anchor = Math.min(...b.footprint);
+          const eff = cover?.[anchor]?.effects?.join(" · ") || "";
+          const meta = ARCH_CAT[fam.category] || {};
+          const on = inspectBid === b.id;
+          return (
+            <button key={b.id} id={`arch-bld-${b.id}`} onClick={() => onInspect?.(on ? null : b.id)}
+              className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
+              style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
+              <span className="inline-flex items-center gap-1.5 flex-wrap">
+                <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
+                <b>{fam.name}</b>
+                <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${TIER_ROMAN[b.tier] || b.tier}`}</span>
+              </span>
+              {eff && <span className="opacity-75">{eff}</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* Referenz-Legende „Formationen & Rahmenfarben" — die ausführliche Fassung aus der Aufstellphase, jetzt geteilt mit der
+   Chronik (statt einer eigenen Kurzfassung), damit beide dieselbe Erklärung zeigen. Eis-Legende hängt automatisch dran. */
+export function FormationLegend({ state = {}, className = "" }) {
+  return (
+    <div className={className}>
+      <div className="grid grid-cols-1 gap-y-0.5 text-xs sm:text-[13px] leading-snug font-medium">
+        <div><b style={{ color: "#8be0a8" }}>W</b> <span style={{ color: "#6fc48f" }}>Wiederholung</span> — ≥2 gleiche Werte (×1,25 / ×1,50 / ×1,80, dann +0,40 je weitere)</div>
+        <div><b style={{ color: "#8be0a8" }}>F</b> <span style={{ color: "#6fc48f" }}>Farbblock</span> — ≥3 gleiche Farbe (ab ×1,35, +0,20 je weitere)</div>
+        <div><b style={{ color: "#8be0a8" }}>T</b> <span style={{ color: "#6fc48f" }}>Treppe</span> — ≥3 streng steigend, Schritt ≤4 (ab ×1,35, +0,20 je weitere)</div>
+        <div><b style={{ color: "#8be0a8" }}>Z</b> <span style={{ color: "#6fc48f" }}>Wechsel</span> — ≥3 Zick-Zack, Diff ≥4 (ab ×1,40, +0,20 je weitere)</div>
+        <div><b style={{ color: "#8be0a8" }}>A</b> <span style={{ color: "#6fc48f" }}>Anker</span> — Einzelposition ×1,25</div>
+        <div style={{ color: "#d4a63a" }}>● Rolle — Ziel eines Perks/einer Familie an dieser Karte</div>
+        <div style={{ color: "#d4a63a" }}>⧉ Überlappung — mehr Formationen = mehr Multi: 2 ×1,5 · 3 ×2 · 4 ×3</div>
+        <div style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr Rahmen = mehr Multi · gestrichelt = ohne Multiplikator</div>
+      </div>
+      <GlacierFormLegend state={state} />
+    </div>
+  );
+}

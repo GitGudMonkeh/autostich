@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { CardGrid } from "./CardGrid.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
-import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
@@ -9,11 +8,12 @@ import { FORMATION_TYPE_LABELS, openSegmentInfo, summarizeFormations } from "../
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
 import { plantRootScore, hasPfahlwurzel } from "../game/skills.js";
-import { DeckHistogram } from "./BuildSummary.jsx";
-import { occupiedCells as archOccupied, familyDef as archFamily, precomputeArchitect, architectValueBonus, structureFactorMap, districtFactorMap } from "../game/architect.js";
-import FormIcon from "./FormIcon.jsx";
-import { architectEffectStrings } from "./archEffects.js";
+import { DeckStrength } from "./BuildSummary.jsx";
+import { occupiedCells as archOccupied, familyDef as archFamily } from "../game/architect.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
+// #UI: geteilte Architekt-/Formations-Bausteine (eine Quelle mit der Aufstellphase → keine getrennte Pflege).
+import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
+import { ArchBuildingList, FormationLegend } from "./ArchPanels.jsx";
 
 const fmtX = (x) => x.toFixed(2).replace(".", ","); // ×-Multiplikator-Format (1,50)
 
@@ -49,42 +49,13 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
   const archMax = (state.architect && state.architect.maxCover) || 0;
   const archByCat = {};
   for (const b of archBuildings) { const cat = archFamily(b.familyId)?.category; if (cat) archByCat[cat] = (archByCat[cat] || 0) + 1; }
-  // #218: Gebäude-Abdeckung je Position { cat, color, icon, boost, legendary, name } — 1:1 wie in der Aufstellung
-  // (precomputeArchitect + architectValueBonus, echte Engine-Werte). Auf dem Grid ein-/ausblendbar (showArch).
   const hasArch = archBuildings.length > 0;
-  const architectCover = useMemo(() => { // [#229 T8] nur bei Änderung neu berechnen (lief zuvor bei jeder Render, auch bei showArch=false)
-    if (!hasArch) return null;
-    const pre = precomputeArchitect(state.architect, playerOrder, deck);
-    const alliance = allianceGroups(state.familyTiers, state.roles); // #289: Badge grün-/allianz-bewusst
-    const cover = {};
-    for (const b of archBuildings) {
-      const fam = archFamily(b.familyId);
-      if (!fam) continue;
-      const cat = ARCH_CAT[fam.category];
-      for (const pos of b.footprint) {
-        const card = deck[playerOrder[pos]];
-        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card, alliance) : 0;
-        const badgeSuit = fam.colorLocked ? (b.colorChoice || null) : null; // [#229 N1] Wert-Badge in Kartenfarbe (sonst grau) — wie in der Aufstellung
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, tier: b.tier, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier, alliance) };
-      }
-    }
-    return cover;
+  // #UI: Gebäude-Overlay + Struktur-/Distrikt-Positionen aus der geteilten Quelle (architectCover.js, identisch zur
+  // Aufstellphase). [#229 T8] weiter memoisiert, damit die Berechnung nicht bei jeder Render (auch showArch=false) läuft.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [hasArch, state.architect, playerOrder, deck, archBuildings]);
-  // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) → rote Fläche · Distrikt (gleiche Kategorie aneinander) →
-  // Typ-Farb-Glow. Getrennte Quellen (wie im Architekt-Screen), damit beide Boni auf einen Blick unterscheidbar sind.
-  const structLitPos = useMemo(() => {
-    if (!hasArch) return null;
-    const set = new Set();
-    structureFactorMap(archOccupied(archBuildings)).forEach((f, pos) => { if (f > 1) set.add(pos); });
-    return set;
-  }, [hasArch, archBuildings]);
-  const distrLitPos = useMemo(() => {
-    if (!hasArch) return null;
-    const set = new Set();
-    districtFactorMap(archBuildings).forEach((f, pos) => { if (f > 1) set.add(pos); });
-    return set;
-  }, [hasArch, archBuildings]);
+  const architectCover = useMemo(() => (hasArch ? architectCoverFor(state) : null), [hasArch, state.architect, playerOrder, deck, archBuildings]);
+  const structLitPos = useMemo(() => structLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps
+  const distrLitPos = useMemo(() => distrLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
@@ -139,34 +110,10 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
               plantRoots={selCard ? plantRootScore(state.skills || [], state.growth?.[selCard.id] || 0) : 0}
               plantPfahl={hasPfahlwurzel(state.skills || [])}
               forgedValue={selCard ? (state.forged?.[selCard.id] || 0) : 0} />
-            {/* Gebäude-Liste (wie in der Aufstellphase): antippen lässt den Gebäude-Rahmen am Brett cyan leuchten — und
-                umgekehrt markiert das Antippen einer Karte im Gebäude hier den Eintrag. Direkt unter dem Kartendetail. */}
+            {/* #UI: geteilte Gebäude-Liste (ArchPanels) — identisch in Aufstellphase & Chronik. */}
             {hasArch && (
-              <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
-                <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Deine Gebäude ({archBuildings.length})</div>
-                <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
-                <div className="grid gap-1">
-                  {archBuildings.map((b) => {
-                    const fam = archFamily(b.familyId); if (!fam) return null;
-                    const anchor = Math.min(...b.footprint);
-                    const eff = architectCover?.[anchor]?.effects?.join(" · ") || "";
-                    const meta = ARCH_CAT?.[fam.category] || {};
-                    const on = inspectBid === b.id;
-                    return (
-                      <button key={b.id} id={`chr-bld-${b.id}`} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
-                        className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
-                        style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
-                        <span className="inline-flex items-center gap-1.5 flex-wrap">
-                          <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
-                          <b>{fam.name}</b>
-                          <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
-                        </span>
-                        {eff && <span className="opacity-75">{eff}</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <ArchBuildingList buildings={archBuildings} cover={architectCover} inspectBid={inspectBid}
+                onInspect={(nb) => { if (nb != null) setShowArch(true); setInspectBid(nb); }} />
             )}
             <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
             {anchors.length > 0 && (
@@ -179,27 +126,19 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
                 </div>
               </div>
             )}
-            <div className="text-[11px] flex flex-wrap gap-x-3 gap-y-0.5 font-medium">
-              <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>W</b> Wiederholung</span>
-              <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>F</b> Farbblock</span>
-              <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>T</b> Treppe</span>
-              <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>Z</b> Wechsel</span>
-              <span style={{ color: "#6fc48f" }}><b style={{ color: "#8be0a8" }}>A</b> Anker</span>
-              <span style={{ color: "#d4a63a" }}>● Rolle</span>
-              <span style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr = mehr Multi (Überlappung ×1,5/×2/×3) · gestrichelt = ohne ×</span>
-            </div>
-            {/* Eis-Neudesign: 2D-Gletscher-Formationen in Blau erklärt (nur bei aktivem Eis). */}
-            <GlacierFormLegend state={state} compact />
+            {/* #UI: geteilte Referenz-Legende (ArchPanels) — dieselbe ausführliche Erklärung wie in der Aufstellphase
+                (inkl. Eis-Formationen), statt einer eigenen Kurzfassung. */}
+            <FormationLegend state={state} />
 
           </div>
         </div>
 
         {/* #218: globale Zusatz-Infos unter Karten-Grid & Detail — Verteilung, aktive Formationen, Architektenphase. */}
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {/* Verteilung — das frühere Live-Histogramm, jetzt als Kurzstatistik hier. */}
+          {/* #UI: kompakte Deck-Stärke je Farbe (DeckStrength) — dieselbe Ansicht wie in der Perk-Auswahl. */}
           <div className="rounded-lg p-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Verteilung · Deck-Werte je Farbe</div>
-            <DeckHistogram deck={deck} />
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Stärke je Farbe</div>
+            <DeckStrength deck={deck} />
           </div>
 
           {/* Aktuelle Formationen — kompakt (aktive Typen + Höchst-Multiplikator), ohne zweites Karten-Grid. */}

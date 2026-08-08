@@ -2,15 +2,14 @@ import { useState, useRef, useMemo } from "react";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { SKILL_DEFS, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
-import { precomputeArchitect, architectValueBonus, familyDef as archFamilyDef, occupiedCells, structureFactorMap, districtFactorMap } from "../game/architect.js";
-import { architectEffectStrings } from "./archEffects.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
+import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
-import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
+import { ArchBuildingList, FormationLegend } from "./ArchPanels.jsx";
 import { audio } from "./audio.js";
 import { haptics } from "./haptics.js";
 
@@ -74,45 +73,13 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   });
 
   const cards = playerOrder.map((di) => deck[di]);
-  // Architekt-Abdeckung je Position: { cat, color, icon, boost, legendary, name }. boost = echter Wert-Bonus der Karte,
-  // die dort im Stich steht (nur value-Gebäude; konditional wie in der Engine). Neu berechnet je Aufstellung (folgt Tauschen).
-  const architectCover = useMemo(() => { // [#229 T7] nur neu berechnen, wenn Aufstellung/Architekt sich ändern (nicht bei jeder Kachel-Auswahl)
-    if (!hasArch) return null;
-    const pre = precomputeArchitect(architect, playerOrder, deck);
-    const alliance = allianceGroups(state.familyTiers, state.roles); // #289: Badge grün-/allianz-bewusst
-    const cover = {};
-    for (const b of architect.buildings) {
-      const fam = archFamilyDef(b.familyId);
-      if (!fam) continue;
-      const cat = ARCH_CAT[fam.category];
-      for (const pos of b.footprint) {
-        const card = deck[playerOrder[pos]];
-        const boost = fam.category === "value" && card ? architectValueBonus(pre, pos, card, alliance) : 0;
-        // #UI: badgeSuit = die Karten-Farbe, für die das Gebäude den Wert-Bonus gibt (colorLocked → colorChoice),
-        // sonst null → grau. Speist die „+N"-Badge-Farbe im CardGrid.
-        const badgeSuit = fam.colorLocked ? (b.colorChoice || null) : null;
-        cover[pos] = { cat: fam.category, color: cat.color, icon: cat.icon, boost, legendary: !!fam.legendary, name: fam.name, tier: b.tier, badgeSuit, bid: b.id, effects: architectEffectStrings(pre, pos, card, fam, b.tier, alliance) };
-      }
-    }
-    return cover;
+  // #UI: Gebäude-Overlay (Abdeckung je Position) + Struktur-/Distrikt-Positionen aus der GETEILTEN Quelle
+  // (architectCover.js — identisch in Chronik/Victory/Ziel-Auswahlen), damit alle Ansichten dieselbe Rechnung zeigen.
+  // [#229 T7] weiter memoisiert, damit nicht bei jeder Kachel-Auswahl neu gerechnet wird.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [hasArch, architect, playerOrder, deck]);
-  // #UI: erfüllte Struktur-Kombis (Zeile/Spalte/Diagonale) — dieselben Positionen wie im Architekt-Screen bekommen
-  // den roten Kombi-Wash (arch-struct-lit, wie im Architekt-Screen). Nur Geometrie (Gebäude-Abdeckung), unabhängig von Karten/Tauschen.
-  const structLitPos = useMemo(() => {
-    if (!hasArch) return null;
-    const set = new Set();
-    structureFactorMap(occupiedCells(archBuildings)).forEach((f, pos) => { if (f > 1) set.add(pos); });
-    return set;
-  }, [hasArch, archBuildings]);
-  // #UI: Distrikt-Positionen (gleiche Kategorie aneinander) — bekommen den Typ-Farb-Glow (wie im Architekt-Screen),
-  // getrennt vom roten Struktur-Kombi-Wash. Nur Geometrie (Gebäude-Nachbarschaft), unabhängig von Karten/Tauschen.
-  const distrLitPos = useMemo(() => {
-    if (!hasArch) return null;
-    const set = new Set();
-    districtFactorMap(archBuildings).forEach((f, pos) => { if (f > 1) set.add(pos); });
-    return set;
-  }, [hasArch, archBuildings]);
+  const architectCover = useMemo(() => (hasArch ? architectCoverFor(state) : null), [hasArch, architect, playerOrder, deck]);
+  const structLitPos = useMemo(() => structLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps
+  const distrLitPos = useMemo(() => distrLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps
   // Pflanze (#211): Klick-Detail-Readout nur, wenn ein Pflanzen-Skill gehalten wird (sonst irrelevant).
   const plantHeld = plantSkillCount(state.skills || []) > 0;
 
@@ -247,50 +214,18 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                 Aufstellung nicht von der 7-zeiligen Textwand zugestellt wird. Wer's kennt, sieht sie nie. */}
             <FormCollapse label="Formationen & Rahmenfarben" chipWord="Legende" color="#5ab87a"
               open={openLegend} onToggle={() => setOpenLegend((o) => !o)}>
-              <div className="grid grid-cols-1 gap-y-0.5 text-xs sm:text-[13px] leading-snug font-medium">
-                <div><b style={{ color: "#8be0a8" }}>W</b> <span style={{ color: "#6fc48f" }}>Wiederholung</span> — ≥2 gleiche Werte (×1,25 / ×1,50 / ×1,80, dann +0,40 je weitere)</div>
-                <div><b style={{ color: "#8be0a8" }}>F</b> <span style={{ color: "#6fc48f" }}>Farbblock</span> — ≥3 gleiche Farbe (ab ×1,35, +0,20 je weitere)</div>
-                <div><b style={{ color: "#8be0a8" }}>T</b> <span style={{ color: "#6fc48f" }}>Treppe</span> — ≥3 streng steigend, Schritt ≤4 (ab ×1,35, +0,20 je weitere)</div>
-                <div><b style={{ color: "#8be0a8" }}>Z</b> <span style={{ color: "#6fc48f" }}>Wechsel</span> — ≥3 Zick-Zack, Diff ≥4 (ab ×1,40, +0,20 je weitere)</div>
-                <div><b style={{ color: "#8be0a8" }}>A</b> <span style={{ color: "#6fc48f" }}>Anker</span> — Einzelposition ×1,25</div>
-                <div style={{ color: "#d4a63a" }}>⧉ Überlappung — mehr Formationen = mehr Multi: 2 ×1,5 · 3 ×2 · 4 ×3</div>
-                <div style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr Rahmen = mehr Multi · gestrichelt = ohne Multiplikator</div>
-              </div>
-              {/* Eis-Neudesign: 2D-Gletscher-Formationen in Blau erklärt (nur bei aktivem Eis). */}
-              <GlacierFormLegend state={state} />
+              {/* #UI: geteilte Legende (ArchPanels) — dieselbe Erklärung in Aufstellphase & Chronik. */}
+              <FormationLegend state={state} />
             </FormCollapse>
 
             {/* #UI-Redesign: Gebäude · Perks · Eis-Effekte einklappbar — default zu; nur zeigen, wenn es überhaupt Inhalt gibt. */}
             {(hasArch || (state.perks || []).length > 0 || iceFormSkills.length > 0) && (
               <FormCollapse label={hasArch ? `🏗 Deine Gebäude (${archBuildings.length}) · Perks` : "Perks & Effekte"} chipWord="mehr" color="#8a7de0"
                 open={openDetails} onToggle={() => setOpenDetails((o) => !o)}>
-                {/* Gebäude-Liste (wie in der Chronik): antippen lässt den Gebäude-Rahmen am Brett cyan leuchten — und umgekehrt. */}
+                {/* #UI: geteilte Gebäude-Liste (ArchPanels) — identisch in Aufstellphase & Chronik. */}
                 {hasArch && (
-                  <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
-                    <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Deine Gebäude ({archBuildings.length})</div>
-                    <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
-                    <div className="grid gap-1">
-                      {archBuildings.map((b) => {
-                        const fam = archFamilyDef(b.familyId); if (!fam) return null;
-                        const anchor = Math.min(...b.footprint);
-                        const eff = architectCover?.[anchor]?.effects?.join(" · ") || "";
-                        const meta = ARCH_CAT[fam.category] || {};
-                        const on = inspectBid === b.id;
-                        return (
-                          <button key={b.id} id={`form-bld-${b.id}`} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
-                            className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
-                            style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
-                            <span className="inline-flex items-center gap-1.5 flex-wrap">
-                              <span className="w-[8px] h-[8px] rounded-[2px] inline-block" style={{ background: fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92") }} />
-                              <b>{fam.name}</b>
-                              <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
-                            </span>
-                            {eff && <span className="opacity-75">{eff}</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <ArchBuildingList buildings={archBuildings} cover={architectCover} inspectBid={inspectBid}
+                    onInspect={(nb) => { if (nb != null) setShowArch(true); setInspectBid(nb); }} />
                 )}
                 <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
                 {/* Gehaltene Eis-Effekte auf die Formationserkennung — nur wenn welche gehalten werden (desc aus SKILL_DEFS). */}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CardGrid } from "./CardGrid.jsx";
 import { summarizeFormations } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
-import { architectBuildings, architectCoverMap, structLitPosOf, distrLitPosOf } from "./archCover.js";
+import { architectBuildings, architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
@@ -30,7 +30,7 @@ export function FormationPanel({ state = {}, title = "Deine aktiven Formationen"
     ? new Set(state.glacierLocked.map((v, i) => (v ? i : -1)).filter((i) => i >= 0)) : null;
   // #UI: Architekt-Bauten als Rahmen einblenden (Gebäude-Toggle), wie in der Aufstellungsphase.
   const archOn = hasArch && showArch;
-  const cover = archOn ? architectCoverMap(state) : null;
+  const cover = archOn ? architectCoverFor(state) : null;
   const structPos = archOn ? structLitPosOf(state) : null;
   const distrPos = archOn ? distrLitPosOf(state) : null;
   const bodyOpen = collapsible ? open : true;
