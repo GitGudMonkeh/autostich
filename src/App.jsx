@@ -565,7 +565,7 @@ export function Autostich() {
               {/* #UI: Neon-Wortmarke als Bild (wie StartScreen) — ersetzt das alte Text-Logo. Schwarzer Bild-Hintergrund
                   verschwindet per mix-blend-mode:screen im dunklen Run-Kopf. */}
               <img src={logo} alt="AUTOSTICH" draggable="false"
-                className="h-8 w-auto select-none shrink-0" style={{ mixBlendMode: "screen" }} />
+                className="h-14 w-auto select-none shrink-0" style={{ mixBlendMode: "screen" }} />
               {state.seed != null && <SeedChip code={formatSeed(state.seed)} />}
             </div>
             <GlossaryPanel onOpenChange={setGlossaryOpen} className="shrink-0" style={{ width: 36, height: 36, fontSize: "1.05rem" }} />
