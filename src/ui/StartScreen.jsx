@@ -3,20 +3,19 @@ import { AnleitungModal } from "./AnleitungModal.jsx";
 import { MuteButton } from "./MuteButton.jsx";
 import { loadSeenGuide, saveSeenGuide } from "../game/storage.js";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
-import { fmtScore } from "./format.js";
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
 import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
 
 /* Startbildschirm — Hub-Redesign (Progression-System, Design-Doc docs/progression-decisions.md).
-   Der Start-Screen wird zum Hub: Neon-Wortmarke → Bonus-Stichpunkte-Leiste → Startmodi (Normaler
-   Lauf · Ranglisten-Lauf mit Standard/Meister-Gabel) → Progression-Hub-Card (SP-Guthaben, Baum-
-   Vorschau, Öffnen) → demotierte Seed-Zeile → Sekundär-Chips → Rekord-Fuß.
+   Der Start-Screen wird zum Hub: Neon-Wortmarke → Bonus-Stichpunkte-Leiste → Normaler Lauf
+   (klappt in Normal/Dev Run auf) + Seed-Feld → Ranglisten-Lauf (Standard/Meister-Gabel) →
+   Upgrades-Card (SP-Guthaben + Aeste als Kreise) → Sekundär-Chips.
 
-   HINWEIS: Progression-Backend (SP, Upgrade-Baum, Ranglisten-Modi) ist noch NICHT gebaut. Die
-   Bonus-Leiste, die Progression-Card und die Ranglisten-Gabel laufen hier mit festen
-   Platzhalter-Werten (mit „Vorschau"-Markierung), damit Layout/Feel im echten Build sichtbar sind.
-   Verdrahtet wird nach dem Mockup-Schritt. */
+   HINWEIS: Progression-Backend (SP, Upgrades, Ranglisten-Modi) ist noch NICHT gebaut. Die
+   Bonus-Leiste, die Upgrades-Card und die Ranglisten-Gabel laufen mit festen Platzhalter-Werten
+   (mit „Vorschau"-Markierung), damit Layout/Feel im echten Build sichtbar sind. Verdrahtet wird
+   nach dem Mockup-Schritt. Nur auf Autostich_Test. */
 
 // SP-Währungsfarbe (Stichpunkte) — eigene Cyan-Identität, getrennt von Gold (Score) und Lila (Marke).
 const SP = "#48cfe0";
@@ -27,12 +26,13 @@ const STUB = {
   sp: 14,
   buyable: 3,
   bonusRuns: 7, bonusGoal: 10, // Bonus-Stichpunkte-Drip: je 10 Läufe +5 SP
-  treeOwned: 4, treeTotal: 13,
+  owned: 4, total: 13,
+  meisterUnlocked: false,      // wird true, sobald alle Upgrades gekauft sind → Meister-Liga frei
   branches: [
-    { icon: "🏗", name: "Baufeld", own: 1, buy: 1, total: 3, col: "#d4a63a" },
-    { icon: "🎬", name: "Auftakt", own: 1, buy: 1, total: 2, col: "#5ab87a" },
-    { icon: "✨", name: "Rarität", own: 1, buy: 0, total: 3, col: "#5a8ade" },
-    { icon: "👑", name: "Meister", own: 1, buy: 1, total: 5, col: "#a855f7" },
+    { name: "Baufeld", own: 1, buy: 1, total: 3, col: "#d4a63a" },
+    { name: "Auftakt", own: 1, buy: 1, total: 2, col: "#5ab87a" },
+    { name: "Rarität", own: 1, buy: 0, total: 3, col: "#5a8ade" },
+    { name: "Meister", own: 1, buy: 1, total: 5, col: "#a855f7" },
   ],
 };
 
@@ -40,6 +40,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const [showGuide, setShowGuide] = useState(false);
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
+  const [normalOpen, setNormalOpen] = useState(false);
   const [rankedOpen, setRankedOpen] = useState(false);
   const tryPlaySeed = () => {
     const s = parseSeed(seedInput);
@@ -89,7 +90,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       <div className="w-full max-w-sm rounded-xl px-4 py-3 flex flex-col gap-2"
         style={{ background: "#17171c", border: "1px solid #26262e" }}>
         <div className="flex items-center justify-between gap-3">
-          <span className="text-[12.5px] font-semibold opacity-85" style={{ color: SP }}>💠 Bonus Stichpunkte · nächste +5 SP</span>
+          <span className="text-[12.5px] font-semibold opacity-85" style={{ color: SP }}>💠 Bonus-SP · nächste +5</span>
           <span className="text-[11.5px] opacity-55 font-mono tabular-nums">{STUB.bonusRuns} / {STUB.bonusGoal} Läufe</span>
         </div>
         <div className="h-[7px] rounded-full overflow-hidden" style={{ background: "#0e0e13", border: "1px solid #26262e" }}>
@@ -97,7 +98,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         </div>
       </div>
 
-      {/* Startmodi (Blickfang) */}
+      {/* Startmodi */}
       <div className="w-full max-w-sm flex flex-col gap-2.5">
         {/* Resume (#Auto-Save): gespeicherter laufender Run → prominent oben. Erscheint nur, wenn ein Snapshot vorliegt. */}
         {onResume && resume && (
@@ -110,14 +111,59 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             </span>
           </button>
         )}
-        <button onClick={onStart}
-          className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
-          style={{ background: "#5ab87a", color: "#141419" }}>
-          Normaler Lauf
-        </button>
 
-        {/* Ranglisten-Lauf — gabelt in Standard / Meister (Vorschau: Standard nutzt den bestehenden
-            Meister-Run-Einstieg als Platzhalter, Meister ist bis zum Vollausbau gesperrt). */}
+        {/* Normaler Lauf — klappt in Normal (links) / Dev Run (rechts) auf, wenn Dev Run verfügbar ist
+            (Preview-/Test-Build). Ohne Dev Run startet der Button direkt. */}
+        {onDevRun ? (
+          <>
+            <button onClick={() => setNormalOpen((o) => !o)}
+              className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+              style={{ background: "#5ab87a", color: "#141419" }}>
+              Normaler Lauf
+              <span className="text-[13px] transition-transform" style={{ transform: normalOpen ? "rotate(90deg)" : "none" }}>›</span>
+            </button>
+            {normalOpen && (
+              <div className="grid grid-cols-2 gap-2.5">
+                <button onClick={onStart}
+                  className="rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
+                  style={{ background: "#5ab87a", color: "#141419" }}>Normal</button>
+                <button onClick={onDevRun}
+                  className="rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
+                  style={{ background: "#d4a63a", color: "#141419" }}>⚙ Dev Run</button>
+              </div>
+            )}
+          </>
+        ) : (
+          <button onClick={onStart}
+            className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
+            style={{ background: "#5ab87a", color: "#141419" }}>
+            Normaler Lauf
+          </button>
+        )}
+
+        {/* #205: Seed einfügen & spielen — direkt unter dem Normalmodus (ruhiger, sekundärer Stil). */}
+        {onPlaySeed && (
+          <div>
+            <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
+              <input
+                value={seedInput}
+                onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
+                placeholder="Seed einfügen"
+                aria-label="Seed einfügen und spielen"
+                className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono tracking-wide"
+                style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
+              />
+              <button type="submit" disabled={!seedInput.trim()}
+                className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
+                style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
+                ↻ Spielen
+              </button>
+            </form>
+            {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>Kein gültiger Seed — prüf den Code und versuch es erneut.</div>}
+          </div>
+        )}
+
+        {/* Ranglisten-Lauf — gabelt in Standard / Meister. */}
         {onMasterRun && (
           <>
             <button onClick={() => setRankedOpen((o) => !o)}
@@ -135,37 +181,36 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                   style={{ background: "#1c1c23", border: "1px solid #30303a" }}>
                   <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
                   <span className="text-[14px] font-extrabold" style={{ color: "#cdc6f4" }}>Standard</span>
-                  <span className="text-[11px] leading-snug opacity-60">Baum ignoriert — Basiswerte für alle.</span>
+                  <span className="text-[11px] leading-snug opacity-60">Upgrades ignoriert — Basiswerte für alle.</span>
                 </button>
-                <div
-                  className="relative rounded-lg p-3 text-left flex flex-col gap-1 opacity-70 cursor-default"
-                  style={{ background: "#1c1c23", border: "1px solid #30303a" }} title="Frei bei komplettem Baum">
-                  <span className="absolute top-2.5 right-2.5 text-[12px] opacity-70">🔒</span>
-                  <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
-                  <span className="text-[14px] font-extrabold" style={{ color: "#d4a63a" }}>Meister</span>
-                  <span className="text-[11px] leading-snug opacity-60">Voll-Baum als Norm. Frei bei komplettem Baum.</span>
-                </div>
+                {STUB.meisterUnlocked ? (
+                  <button onClick={onMasterRun}
+                    className="rounded-lg p-3 text-left flex flex-col gap-1 transition-all hover:-translate-y-0.5"
+                    style={{ background: "#1c1c23", border: "1px solid #30303a" }}>
+                    <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
+                    <span className="text-[14px] font-extrabold" style={{ color: "#d4a63a" }}>Meister</span>
+                    <span className="text-[11px] leading-snug opacity-60">Alle Upgrades aktiv.</span>
+                  </button>
+                ) : (
+                  <div className="relative rounded-lg p-3 text-left flex flex-col gap-1 opacity-70 cursor-default"
+                    style={{ background: "#1c1c23", border: "1px solid #30303a" }} title="Frei, sobald alle Upgrades gekauft sind">
+                    <span className="absolute top-2.5 right-2.5 text-[12px] opacity-70">🔒</span>
+                    <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
+                    <span className="text-[14px] font-extrabold" style={{ color: "#d4a63a" }}>Meister</span>
+                    <span className="text-[11px] leading-snug opacity-60">Alle Upgrades nötig.</span>
+                  </div>
+                )}
               </div>
             )}
           </>
         )}
-
-        {/* Dev Run (Test-Layout, nur Preview-Build) — frei konfigurierbarer Testlauf. Gold-Stil wie der Preview-Marker. */}
-        {onDevRun && (
-          <button onClick={onDevRun}
-            className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
-            style={{ background: "#d4a63a", color: "#141419" }}>
-            ⚙ Dev Run
-          </button>
-        )}
       </div>
 
-      {/* Progression-Hub-Card (Vorschau) — SP-Guthaben, Baum-Fortschritt, Öffnen. Kern des künftigen Hubs. */}
+      {/* Upgrades-Card (Vorschau) — SP-Guthaben, Äste als Kreise, Öffnen. Kern des künftigen Hubs. */}
       <div className="w-full max-w-sm rounded-2xl p-4 relative overflow-hidden"
         style={{ background: "linear-gradient(180deg,#1b1a24,#161620)", border: "1px solid #2c2a3a" }}>
         <div className="flex items-center justify-between gap-3 relative">
           <div className="flex items-center gap-2">
-            <span className="text-[15px]">🌳</span>
             <b className="text-[14.5px] tracking-tight">Upgrades</b>
             <span className="text-[9.5px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
               style={{ background: "#26262e", color: "#a6a6b0" }}>Vorschau</span>
@@ -180,12 +225,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </div>
         </div>
 
-        {/* Mini-Baum-Vorschau: 4 Äste mit gekauft / kaufbar / gesperrt-Punkten. */}
+        {/* Äste: nur Name + Kreise (gekauft / kaufbar / gesperrt), keine Icons. */}
         <div className="grid grid-cols-4 gap-2 mt-3">
           {STUB.branches.map((b) => (
-            <div key={b.name} className="rounded-lg px-1.5 py-2 flex flex-col items-center gap-1.5"
+            <div key={b.name} className="rounded-lg px-1.5 py-2.5 flex flex-col items-center gap-2"
               style={{ background: "#12121a", border: "1px solid #26262e" }}>
-              <span className="text-[15px]">{b.icon}</span>
               <span className="flex gap-1">
                 {Array.from({ length: b.total }).map((_, i) => {
                   const owned = i < b.own;
@@ -200,13 +244,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                   );
                 })}
               </span>
-              <span className="text-[9px] font-bold tracking-tight opacity-50">{b.name}</span>
+              <span className="text-[10px] font-bold tracking-tight opacity-60">{b.name}</span>
             </div>
           ))}
         </div>
 
         <div className="flex items-center justify-between gap-3 mt-3">
-          <span className="text-[11.5px] opacity-60 tabular-nums">Baum <b className="opacity-95">{STUB.treeOwned} / {STUB.treeTotal}</b> · Meister-Liga bei {STUB.treeTotal}/{STUB.treeTotal}</span>
+          <span className="text-[11.5px] opacity-60 tabular-nums"><b className="opacity-95">{STUB.owned} / {STUB.total}</b> · Meister-Liga bei {STUB.total}/{STUB.total}</span>
           <button
             className="border-none font-extrabold text-[12.5px] px-3 py-2 rounded-lg cursor-pointer transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
             style={{ background: BRAND, color: "#141419" }} title="Upgrade-Screen — folgt mit dem Progression-Backend">
@@ -214,28 +258,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </button>
         </div>
       </div>
-
-      {/* #205: Seed einfügen & spielen — bewusst unter die Startmodi demotiert (ruhiger, sekundärer Stil). */}
-      {onPlaySeed && (
-        <div className="w-full max-w-sm">
-          <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
-            <input
-              value={seedInput}
-              onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
-              placeholder="Seed einfügen & frei spielen …"
-              aria-label="Seed einfügen und spielen"
-              className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono tracking-wide"
-              style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
-            />
-            <button type="submit" disabled={!seedInput.trim()}
-              className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
-              style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
-              ↻ Spielen
-            </button>
-          </form>
-          {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>Kein gültiger Seed — prüf den Code und versuch es erneut.</div>}
-        </div>
-      )}
 
       {/* Sekundär-Navigation — ruhige Chip-Reihe statt fünf gleich breiter Balken. */}
       <div className="flex flex-wrap justify-center gap-2 max-w-xs sm:max-w-md">
@@ -246,33 +268,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         <button onClick={() => setShowGuide(true)} className={chipCls} style={chipSty}>Anleitung</button>
       </div>
 
-      {/* Rekord-Fuß — schlank & zentriert; die volle Liste (deine Läufe + global) liegt hinter „Bestenliste". */}
-      <div className="w-full max-w-sm flex flex-col items-center gap-2">
-        <button onClick={onLeaderboard || undefined} disabled={!onLeaderboard}
-          className="w-full rounded-xl px-4 py-2.5 as-panel flex items-center justify-between gap-3 text-left transition-all enabled:hover:-translate-y-0.5 disabled:cursor-default"
-          style={{ background: "#17171c", border: "1px solid #26262e" }}>
-          <span className="flex items-baseline gap-2 min-w-0">
-            <span className="text-[11px] uppercase tracking-wide opacity-50 shrink-0">Rekord</span>
-            <span className="text-lg font-bold truncate" style={{ color: "#d4a63a" }}>{fmtScore(best)}</span>
-          </span>
-          {highscores.length > 0 ? (
-            <span className="text-[12px] opacity-55 shrink-0">
-              {highscores.length} {highscores.length === 1 ? "Lauf" : "Läufe"}{onLeaderboard ? " ›" : ""}
-            </span>
-          ) : (
-            <span className="text-[12px] opacity-40 shrink-0">Noch keine Läufe</span>
-          )}
+      {/* Lokaler Nickname (#14). */}
+      {onEditName && (
+        <button onClick={onEditName} className="text-xs opacity-60 hover:opacity-100 transition-opacity px-1">
+          {username
+            ? <>Angemeldet als <b style={{ color: "#5ab87a" }}>{username}</b> · Name ändern</>
+            : <>Namen festlegen für den globalen Highscore</>}
         </button>
-
-        {/* Lokaler Nickname (#14). */}
-        {onEditName && (
-          <button onClick={onEditName} className="text-xs opacity-60 hover:opacity-100 transition-opacity px-1">
-            {username
-              ? <>Angemeldet als <b style={{ color: "#5ab87a" }}>{username}</b> · Name ändern</>
-              : <>Namen festlegen für den globalen Highscore</>}
-          </button>
-        )}
-      </div>
+      )}
 
       {/* #250 Versions-/Build-Stempel unten — nach jedem Push sichtbar, ob er gelandet ist (+ Umgebung + kurze SHA). */}
       <div className="text-[10px] font-mono opacity-40 tracking-wide select-text" title="Version · Umgebung · Commit">{VERSION_FULL}</div>
