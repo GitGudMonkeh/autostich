@@ -352,8 +352,9 @@ button { font-family: inherit; }
 [data-skin="crt"] .as-wordmark-hero   { font-size: 1.9rem; line-height: 1.35; }
 [data-skin="crt"] .as-banner          { font-size: 0.9rem; letter-spacing: 0; }
 
-/* Scanline-/Vignette-Overlay — global ueber allem, aber klick-durchlaessig.
-   Immer im DOM (in App gerendert), nur unter Skin sichtbar. */
+/* Vignette-Overlay — global ueber allem, aber klick-durchlaessig.
+   Immer im DOM (in App gerendert), nur unter Skin sichtbar.
+   (Scanline-Layer entfernt — der CRT-Skin behaelt Pixelschrift + Neon-Glow, aber keine Scanlines.) */
 .crt-overlay { display: none; }
 [data-skin="crt"] .crt-overlay {
   display: block;
@@ -361,7 +362,6 @@ button { font-family: inherit; }
   pointer-events: none;
   z-index: 9999;
   background:
-    repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.22) 3px, rgba(0,0,0,0) 4px),
     radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.5) 100%);
 }
 
@@ -413,7 +413,7 @@ button { font-family: inherit; }
 /* Ambient-Partikel unter Skin (#41-Nachzug). Wird nur gerendert, wenn der Skin an
    ist (App) und keine reduzierte Bewegung gilt (CrtParticles.jsx). pointer-events:none.
    z-index:-1 → HINTER Panels/Text (nur in den Lücken/Rändern über dem dunklen Body-BG
-   sichtbar) statt davor; Overlays/Modals/Scanlines liegen weiterhin darüber. */
+   sichtbar) statt davor; Overlays/Modals/Vignette liegen weiterhin darüber. */
 .crt-particles { position: fixed; inset: 0; pointer-events: none; z-index: -1; overflow: hidden; }
 .crt-particles span {
   position: absolute; bottom: -10px;

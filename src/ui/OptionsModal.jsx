@@ -73,7 +73,7 @@ export function OptionsModal({ options, onChange, onClose }) {
         </div>
 
         <div className="grid gap-2.5">
-          <Row title="Retro-Skin (CRT)" desc="Pixel-Schrift, Scanlines, Neon-Glow. Rein optisch — Layout & Spiel bleiben gleich.">
+          <Row title="Retro-Skin (CRT)" desc="Pixel-Schrift, Neon-Glow. Rein optisch — Layout & Spiel bleiben gleich.">
             <Toggle on={crtOn} onClick={() => onChange({ skin: crtOn ? "off" : "crt" })} />
           </Row>
           {/* #110 Sound: Mute-Toggle + Lautstärke-Slider (persistiert über die Optionen). */}
