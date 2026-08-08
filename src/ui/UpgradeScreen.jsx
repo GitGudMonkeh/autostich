@@ -19,9 +19,9 @@ const BR = [
     { id: "A2", rom: "II", eff: "Reroll III", det: "+1 / Phase", cost: 12 },
   ]},
   { key: "rar", name: "Rarität", desc: "Angebots-Qualität", color: VI, nodes: [
-    { id: "R1", rom: "I",   eff: "Seltenheitsschub", det: "bessere Chancen", cost: 6 },
-    { id: "R2", rom: "II",  eff: "Seltenheitsschub", det: "bessere Chancen", cost: 10 },
-    { id: "R3", rom: "III", eff: "Seltenheitsschub", det: "bessere Chancen", cost: 18 },
+    { id: "R1", rom: "I",   eff: "Seltenheit", det: "bessere Chancen", cost: 6 },
+    { id: "R2", rom: "II",  eff: "Seltenheit", det: "bessere Chancen", cost: 10 },
+    { id: "R3", rom: "III", eff: "Seltenheit", det: "bessere Chancen", cost: 18 },
   ]},
   { key: "mei", name: "Meister", desc: "Legendäre / Prestige", color: AM, nodes: [
     { id: "M1", rom: "I",   eff: "Reroll f. Leg.-Slot", det: "Runde 29",        cost: 4,  gate: { type: "onb" } },
