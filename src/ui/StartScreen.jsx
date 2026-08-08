@@ -72,7 +72,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const normalStyle = hasResume ? cyGhost : cyFill;
 
   return (
-    <div className="relative isolate flex flex-col items-center gap-5 pt-8 pb-10">
+    <div className="relative isolate flex flex-col items-center gap-6 pt-8 pb-10">
       {/* Ambient-Glow hinter dem Logo — spiegelt den Logo-Verlauf (Cyan links · Violett Mitte · Amber rechts).
           Verankert die ganze Kopfzone farblich im Logo, ohne laute Flächen. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[360px] -z-10"
@@ -115,9 +115,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         </div>
       </div>
 
-      {/* Startmodi */}
+      {/* Play-Gruppe — Fortsetzen + Normaler Lauf. Normaler Lauf klappt Normal (+ Dev Run) und das
+          Seed-Feld auf → weniger Dauer-sichtbares im Haupt-Stapel. */}
       <div className="w-full max-w-sm flex flex-col gap-2.5">
-        {/* Resume (#Auto-Save): gespeicherter laufender Run → prominent oben. Erscheint nur, wenn ein Snapshot vorliegt. */}
+        {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
             className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
@@ -129,99 +130,93 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </button>
         )}
 
-        {/* Normaler Lauf (Cyan = Start) — klappt in Normal / Dev Run auf, wenn Dev Run verfügbar ist
-            (Preview-/Test-Build). Ohne Dev Run startet der Button direkt. */}
-        {onDevRun ? (
-          <>
-            <button onClick={() => setNormalOpen((o) => !o)}
-              className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-              style={normalStyle}>
-              Normaler Lauf
-              <span className="text-[13px] transition-transform" style={{ transform: normalOpen ? "rotate(90deg)" : "none" }}>›</span>
-            </button>
-            {normalOpen && (
-              <div className="grid grid-cols-2 gap-2.5">
-                <button onClick={onStart}
-                  className="rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
-                  style={{ background: "#141a1c", border: `1px solid ${CY}66`, color: CY }}>Normal</button>
+        {/* Normaler Lauf — Aufklapper: Normal (+ Dev Run im Preview) + Seed-Feld. Gefüllt, wenn kein
+            Resume läuft (= Held); mit Resume ruhiger Cyan-Outline. */}
+        <button onClick={() => setNormalOpen((o) => !o)}
+          className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+          style={normalStyle}>
+          Normaler Lauf
+          <span className="text-[13px] transition-transform" style={{ transform: normalOpen ? "rotate(90deg)" : "none" }}>›</span>
+        </button>
+        {normalOpen && (
+          <div className="flex flex-col gap-2.5">
+            <div className={onDevRun ? "grid grid-cols-2 gap-2.5" : ""}>
+              <button onClick={onStart}
+                className="w-full rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
+                style={{ background: "#141a1c", border: `1px solid ${CY}66`, color: CY }}>Normal</button>
+              {onDevRun && (
                 <button onClick={onDevRun}
                   className="rounded-lg px-4 py-3 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
-                  style={{ background: "#1c1c23", border: `1px solid ${AM}66`, color: AM }}>⚙ Dev Run</button>
+                  style={{ background: "#1c1a14", border: `1px solid ${AM}66`, color: AM }}>⚙ Dev Run</button>
+              )}
+            </div>
+            {/* #205: Seed einfügen — jetzt im Normaler-Lauf-Aufklapper unter Normal/Dev. */}
+            {onPlaySeed && (
+              <div>
+                <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
+                  <input
+                    value={seedInput}
+                    onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
+                    placeholder="Seed einfügen"
+                    aria-label="Seed einfügen und spielen"
+                    className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono tracking-wide"
+                    style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
+                  />
+                  <button type="submit" disabled={!seedInput.trim()}
+                    className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
+                    style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
+                    ↻ Spielen
+                  </button>
+                </form>
+                {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>Kein gültiger Seed — prüf den Code und versuch es erneut.</div>}
               </div>
             )}
-          </>
-        ) : (
-          <button onClick={onStart}
-            className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
-            style={normalStyle}>
-            Normaler Lauf
-          </button>
-        )}
-
-        {/* #205: Seed einfügen & spielen — direkt unter dem Normalmodus (ruhiger, sekundärer Stil). */}
-        {onPlaySeed && (
-          <div>
-            <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
-              <input
-                value={seedInput}
-                onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
-                placeholder="Seed einfügen"
-                aria-label="Seed einfügen und spielen"
-                className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono tracking-wide"
-                style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
-              />
-              <button type="submit" disabled={!seedInput.trim()}
-                className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
-                style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
-                ↻ Spielen
-              </button>
-            </form>
-            {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>Kein gültiger Seed — prüf den Code und versuch es erneut.</div>}
           </div>
         )}
+      </div>
 
-        {/* Ranglisten-Lauf (Amber/Gold = Prestige) — gabelt in Standard / Meister. */}
-        {onMasterRun && (
-          <>
-            <button onClick={() => setRankedOpen((o) => !o)}
-              className="relative w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-              style={{ background: VI, color: "#141419", boxShadow: "0 0 12px rgba(155,130,240,.3)" }}>
-              Ranglisten-Lauf
-              <span className="text-[13px] transition-transform" style={{ transform: rankedOpen ? "rotate(90deg)" : "none" }}>›</span>
-              <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
-                style={{ background: "#141419", color: VI }} aria-label="Vorschau">exp</span>
-            </button>
-            {rankedOpen && (
-              <div className="grid grid-cols-2 gap-2.5">
+      {/* Ranglisten-Gruppe — eigener Block (Weißraum trennt „mein Spiel" vom Wettbewerb). Ruhiger
+          Violett-Outline statt Vollfläche → Farbe sparsam, nur eine gefüllte Aktion oben. */}
+      {onMasterRun && (
+        <div className="w-full max-w-sm flex flex-col gap-2.5">
+          <button onClick={() => setRankedOpen((o) => !o)}
+            className="relative w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}>
+            Ranglisten-Lauf
+            <span className="text-[13px] transition-transform" style={{ transform: rankedOpen ? "rotate(90deg)" : "none" }}>›</span>
+            <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
+              style={{ background: "#241d3a", color: VI }} aria-label="Vorschau">exp</span>
+          </button>
+          {rankedOpen && (
+            <div className="grid grid-cols-2 gap-2.5">
+              <button onClick={onMasterRun}
+                className="rounded-lg p-3 text-left flex flex-col gap-1 transition-all hover:-translate-y-0.5"
+                style={{ background: "#1c1c23", border: "1px solid #30303a" }}>
+                <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
+                <span className="text-[14px] font-extrabold" style={{ color: CY }}>Standard</span>
+                <span className="text-[11px] leading-snug opacity-60">Upgrades ignoriert — Basiswerte für alle.</span>
+              </button>
+              {STUB.meisterUnlocked ? (
                 <button onClick={onMasterRun}
                   className="rounded-lg p-3 text-left flex flex-col gap-1 transition-all hover:-translate-y-0.5"
-                  style={{ background: "#1c1c23", border: "1px solid #30303a" }}>
+                  style={{ background: "#1c1c23", border: `1px solid ${AM}55` }}>
                   <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
-                  <span className="text-[14px] font-extrabold" style={{ color: CY }}>Standard</span>
-                  <span className="text-[11px] leading-snug opacity-60">Upgrades ignoriert — Basiswerte für alle.</span>
+                  <span className="text-[14px] font-extrabold" style={{ color: AM }}>Meister</span>
+                  <span className="text-[11px] leading-snug opacity-60">Alle Upgrades aktiv.</span>
                 </button>
-                {STUB.meisterUnlocked ? (
-                  <button onClick={onMasterRun}
-                    className="rounded-lg p-3 text-left flex flex-col gap-1 transition-all hover:-translate-y-0.5"
-                    style={{ background: "#1c1c23", border: `1px solid ${AM}55` }}>
-                    <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
-                    <span className="text-[14px] font-extrabold" style={{ color: AM }}>Meister</span>
-                    <span className="text-[11px] leading-snug opacity-60">Alle Upgrades aktiv.</span>
-                  </button>
-                ) : (
-                  <div className="relative rounded-lg p-3 text-left flex flex-col gap-1 opacity-70 cursor-default"
-                    style={{ background: "#1c1c23", border: "1px solid #30303a" }} title="Frei, sobald alle Upgrades gekauft sind">
-                    <span className="absolute top-2.5 right-2.5 text-[12px] opacity-70">🔒</span>
-                    <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
-                    <span className="text-[14px] font-extrabold" style={{ color: AM }}>Meister</span>
-                    <span className="text-[11px] leading-snug opacity-60">Alle Upgrades nötig.</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+              ) : (
+                <div className="relative rounded-lg p-3 text-left flex flex-col gap-1 opacity-70 cursor-default"
+                  style={{ background: "#1c1c23", border: "1px solid #30303a" }} title="Frei, sobald alle Upgrades gekauft sind">
+                  <span className="absolute top-2.5 right-2.5 text-[12px] opacity-70">🔒</span>
+                  <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
+                  <span className="text-[14px] font-extrabold" style={{ color: AM }}>Meister</span>
+                  <span className="text-[11px] leading-snug opacity-60">Alle Upgrades nötig.</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Upgrades-Card (Vorschau) — SP-Guthaben, Äste als Kreise, Öffnen. Kern des künftigen Hubs.
           Dünne Logo-Verlaufs-Haarlinie oben bindet die Card an die Wortmarke. */}
@@ -237,7 +232,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             </div>
             <div className="flex items-center gap-2.5">
               <span className="inline-flex items-center text-[11px] font-extrabold px-2.5 py-1 rounded-full"
-                style={{ background: SP, color: "#0d1418" }}>{STUB.buyable} kaufbar</span>
+                style={{ background: "transparent", border: `1px solid ${AM}66`, color: AM }}>{STUB.buyable} kaufbar</span>
               <span className="flex items-baseline gap-1">
                 <span className="text-[19px] font-extrabold tabular-nums" style={{ color: SP, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{STUB.sp}</span>
                 <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: SP }}>SP</span>
