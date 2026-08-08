@@ -27,6 +27,10 @@ const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
 // Ast-Farben für die Hub-Progressionsanzeige (Knotendaten kommen aus progression.js).
 const BR_COLOR = { bau: CY, auf: BLUE, rar: VI, mei: AM };
 
+// (Schritt 4e) Onboarding-Kette (docs §4): Reward je Glied — Index i = Belohnung fürs Erreichen von Glied i+1.
+// Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
+const ONB_REWARDS = ["Reroll +1", "Pflanze 🌿 frei", "Rarität +1", "Eis ❄ frei", "Rarität +1", "Legendär ⭐ (R29)"];
+
 export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onMasterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [showGuide, setShowGuide] = useState(false);
   const [seedInput, setSeedInput] = useState("");
@@ -135,6 +139,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             ? { width: `${dripInto / SP_LOYALTY_EVERY * 100}%`, background: `linear-gradient(90deg,#b87d1f,${SP})`, boxShadow: `0 0 8px rgba(242,168,58,.5)` }
             : { width: `${onbStep / ONBOARDING_LINKS * 100}%`, background: `linear-gradient(90deg,#6a5fb0,${VI})`, boxShadow: `0 0 8px rgba(155,130,240,.5)` }} />
         </div>
+        {/* (Schritt 4e) Nächste Freischaltung — nur während des Onboardings; danach übernimmt die SP-Drip-Zeile oben. */}
+        {!onbDone && ONB_REWARDS[onbStep] && (
+          <div className="flex items-center gap-1.5 text-[11px] -mb-0.5">
+            <span className="opacity-50">Nächste Freischaltung:</span>
+            <b style={{ color: VI }}>{ONB_REWARDS[onbStep]}</b>
+          </div>
+        )}
       </div>
 
       {/* Play-Gruppe — Fortsetzen + Normaler Lauf. Normaler Lauf klappt Normal (+ Dev Run) und das
@@ -202,41 +213,56 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           Violett-Outline statt Vollfläche → Farbe sparsam, nur eine gefüllte Aktion oben. */}
       {onMasterRun && (
         <div className="w-full max-w-sm flex flex-col gap-2.5">
-          <button onClick={() => setRankedOpen((o) => !o)}
-            className="relative w-full px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-            style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}>
-            Ranglisten-Lauf
-            <span className="text-[13px] transition-transform" style={{ transform: rankedOpen ? "rotate(90deg)" : "none" }}>›</span>
-            <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
-              style={{ background: "#241d3a", color: VI }} aria-label="Vorschau">exp</span>
-          </button>
-          {rankedOpen && (
-            <div className="grid grid-cols-2 gap-2.5">
-              <button onClick={onMasterRun}
-                className="rounded-lg p-3 text-left flex flex-col gap-1 transition-all hover:-translate-y-0.5"
-                style={{ background: "#1c1c23", border: "1px solid #30303a" }}>
-                <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
-                <span className="text-[14px] font-extrabold" style={{ color: CY }}>Standard</span>
-                <span className="text-[11px] leading-snug opacity-60">Upgrades ignoriert — Basiswerte für alle.</span>
+          {!onbDone ? (
+            /* (Schritt 4d) Rangliste erst NACH dem Onboarding — bis dahin gesperrt mit Countdown. */
+            <div className="w-full px-4 py-2.5 rounded-lg text-[14px] font-bold flex items-center justify-between gap-2 opacity-80 cursor-default"
+              style={{ background: "#161320", border: `1px solid ${VI}33`, color: VI }}
+              title="Ranglisten-Läufe werden nach Abschluss des Onboardings frei">
+              <span className="flex items-center gap-2"><span className="opacity-70">🔒</span> Ranglisten-Lauf</span>
+              <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
+                style={{ background: "#241d3a", color: VI }}>
+                noch {ONBOARDING_LINKS - onbStep} {ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}
+              </span>
+            </div>
+          ) : (
+            <>
+              <button onClick={() => setRankedOpen((o) => !o)}
+                className="relative w-full px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}>
+                Ranglisten-Lauf
+                <span className="text-[13px] transition-transform" style={{ transform: rankedOpen ? "rotate(90deg)" : "none" }}>›</span>
+                <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
+                  style={{ background: "#241d3a", color: VI }} aria-label="Vorschau">exp</span>
               </button>
-              {STUB.meisterUnlocked ? (
-                <button onClick={onMasterRun}
-                  className="rounded-lg p-3 text-left flex flex-col gap-1 transition-all hover:-translate-y-0.5"
-                  style={{ background: "#1c1c23", border: `1px solid ${AM}55` }}>
-                  <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
-                  <span className="text-[14px] font-extrabold" style={{ color: AM }}>Meister</span>
-                  <span className="text-[11px] leading-snug opacity-60">Alle Upgrades aktiv.</span>
-                </button>
-              ) : (
-                <div className="relative rounded-lg p-3 text-left flex flex-col gap-1 opacity-70 cursor-default"
-                  style={{ background: "#1c1c23", border: "1px solid #30303a" }} title="Frei, sobald alle Upgrades gekauft sind">
-                  <span className="absolute top-2.5 right-2.5 text-[12px] opacity-70">🔒</span>
-                  <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
-                  <span className="text-[14px] font-extrabold" style={{ color: AM }}>Meister</span>
-                  <span className="text-[11px] leading-snug opacity-60">Alle Upgrades nötig.</span>
+              {rankedOpen && (
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button onClick={onMasterRun}
+                    className="rounded-lg p-3 text-left flex flex-col gap-1 transition-all hover:-translate-y-0.5"
+                    style={{ background: "#1c1c23", border: "1px solid #30303a" }}>
+                    <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
+                    <span className="text-[14px] font-extrabold" style={{ color: CY }}>Standard</span>
+                    <span className="text-[11px] leading-snug opacity-60">Upgrades ignoriert — Basiswerte für alle.</span>
+                  </button>
+                  {progLigaFree ? (
+                    <button onClick={onMasterRun}
+                      className="rounded-lg p-3 text-left flex flex-col gap-1 transition-all hover:-translate-y-0.5"
+                      style={{ background: "#1c1c23", border: `1px solid ${AM}55` }}>
+                      <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
+                      <span className="text-[14px] font-extrabold" style={{ color: AM }}>Meister</span>
+                      <span className="text-[11px] leading-snug opacity-60">Alle Upgrades aktiv.</span>
+                    </button>
+                  ) : (
+                    <div className="relative rounded-lg p-3 text-left flex flex-col gap-1 opacity-70 cursor-default"
+                      style={{ background: "#1c1c23", border: "1px solid #30303a" }} title="Frei, sobald alle Upgrades gekauft sind">
+                      <span className="absolute top-2.5 right-2.5 text-[12px] opacity-70">🔒</span>
+                      <span className="text-[9.5px] font-bold uppercase tracking-wide opacity-45">Seed der Woche</span>
+                      <span className="text-[14px] font-extrabold" style={{ color: AM }}>Meister</span>
+                      <span className="text-[11px] leading-snug opacity-60">Alle Upgrades nötig.</span>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       )}
