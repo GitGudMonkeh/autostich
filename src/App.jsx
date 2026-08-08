@@ -73,6 +73,7 @@ export function Autostich() {
   const pendingMaster = useRef(false);                            // #217: nächster Lauf = Meister-Lauf? (nur diese zählen für die Rang-Leiter)
   const pendingGrade = useRef(0);                                 // #217: gewählter Rang für den nächsten Meister-Lauf (0 = ranglos)
   const pendingDev = useRef(null);                                // Dev-Run: Config { rounds, schedule, cover, energy } für den nächsten Lauf (null = normaler Lauf)
+  const pendingRanked = useRef(null);                             // §7 (Schritt 6): nächster Lauf = Ranglisten-Standard? ('standard' = tree-unabhängige Baseline)
   const [showDevSetup, setShowDevSetup] = useState(false);        // Dev-Run-Setup-Overlay (nur Preview-Build)
   const [showMasterSelect, setShowMasterSelect] = useState(false); // #217: Rang-Auswahl-Overlay (Meister-Lauf starten)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
@@ -408,18 +409,20 @@ export function Autostich() {
     const grade = masterRun ? Math.max(0, Math.min(profile.masteryGrade || 0, pendingGrade.current | 0)) : 0;
     pendingMaster.current = false; pendingGrade.current = 0;
     const dev = pendingDev.current; pendingDev.current = null; // Dev-Run-Config (Test-Layout) für DIESEN Lauf, dann zurücksetzen
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, masteryGrade: grade, masterRun, dev, profile }); // #202 Architekt · #205 Seed · #217 Meister-Lauf · Dev-Run · Progression-Baum (Schritt 3)
+    const ranked = pendingRanked.current; pendingRanked.current = null; // §7: Ranglisten-Standard = tree-unabhängige Baseline
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, masteryGrade: grade, masterRun, dev, ranked, profile }); // #202 Architekt · #205 Seed · #217 Meister-Lauf · Dev-Run · Progression-Baum · §7 Rangliste-Standard
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
   // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
   // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
   // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
-  function launchRun({ seed = null, master = false, grade = 0, dev = null } = {}) {
+  function launchRun({ seed = null, master = false, grade = 0, dev = null, ranked = null } = {}) {
     pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
     pendingMaster.current = !!master;
     pendingGrade.current = grade | 0;
     pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
+    pendingRanked.current = ranked; // §7: 'standard' = Ranglisten-Standard-Lauf (tree-unabhängig)
     setPendingRun([deckSkin.front, deckSkin.back, ...(bfSkin ? [bfSkin.desktop, bfSkin.mobile] : [])]);
   }
   // #217: Normaler Lauf (Rang 0, keine Rewards, zählt nicht) — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
@@ -433,8 +436,10 @@ export function Autostich() {
   }
   // #217: Meister-Lauf auf gewähltem Rang (0 = ranglos). Nur diese zählen für die Rang-Leiter.
   function startMasterRun(grade = 0) { launchRun({ master: true, grade: grade | 0 }); }
-  // #217: Neustart behält die Lauf-Art (ein Meister-Lauf startet als Meister-Lauf auf demselben Rang neu).
-  function restartRun() { launchRun({ master: !!state.masterRun, grade: state.masteryGrade || 0 }); }
+  // §7 (Schritt 6): Ranglisten-Standard — tree-unabhängige Baseline (fix 2 Rerolls, alle Archetypen, R29 an; für alle gleich).
+  function startStandardRun() { launchRun({ ranked: "standard" }); }
+  // #217: Neustart behält die Lauf-Art (Meister → Meister; Ranglisten-Standard → Standard; sonst normal).
+  function restartRun() { launchRun({ master: !!state.masterRun, grade: state.masteryGrade || 0, ranked: state.ranked || null }); }
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
   function startDevRun(dev) { launchRun({ dev }); }
   const toMenu = () => { saveRun(); clearActiveRun(); setResumable(null); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
@@ -560,7 +565,7 @@ export function Autostich() {
       {options.skin === "crt" && state.phase === "menu" && <CrtParticles />}
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
-          <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onMasterRun={() => setShowMasterSelect(true)} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+          <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onMasterRun={() => setShowMasterSelect(true)} onStandardRun={startStandardRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onResume={resumable ? resumeRun : null}
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score, masterRun: !!resumable.state.masterRun, grade: resumable.state.masteryGrade || 0 } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}

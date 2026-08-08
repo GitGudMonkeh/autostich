@@ -193,6 +193,26 @@ describe("(Schritt 4a) Reroll-Basis: Onboarding-Glied 1 + A1/A2, Cap 3", () => {
   });
 });
 
+describe("(Schritt 6) Ranglisten-Standard = tree-unabhängige Baseline (§7/§8)", () => {
+  const maxed = unlockAllProfile(emptyProfile(1000)); // alle Knoten + Onboarding 6
+
+  it("Standard-Lauf ignoriert den Baum trotz VOLLEM Profil (fix 2 Rerolls, kein Shift/Deckel/Gate)", () => {
+    const s = start({ profile: maxed, ranked: "standard" });
+    expect([s.rerollsPerk, s.rerollsArch, s.rerollsSkill]).toEqual([2, 2, 2]); // fix BASE_REROLLS, nicht rerollBase
+    expect(s.treeRareShift).toBe(0);          // kein Baum-RareShift
+    expect(s.rareCap).toBe(4);                // kein Deckel (alle Stufen)
+    expect(s.unlockedArchetypes).toBe(null);  // alle Archetypen, keine Onboarding-Gatung
+    expect(s.legPhaseEnabled).toBe(true);     // R29 an
+    expect(s.ranked).toBe("standard");
+  });
+  it("Gegenprobe: derselbe Profil-Stand als NORMAL-Lauf zieht die Baum-Boni", () => {
+    const n = start({ profile: maxed }); // kein ranked
+    expect(n.rerollsPerk).toBe(3);       // Onboarding-Basis 1 + A1 + A2
+    expect(n.treeRareShift).toBe(3);     // R3
+    expect(n.ranked).toBe(null);
+  });
+});
+
 describe("(Schritt 4f) R29-Legendär-Capstone (Onboarding-Glied 6)", () => {
   // Treibt einen echten Lauf ab cycle 27 (nächster Runden-Endpunkt → cycle 28 = R29-Decision) bis zum Phasenwechsel.
   const driveToR29 = (legPhaseEnabled) => {

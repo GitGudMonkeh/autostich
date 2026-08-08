@@ -184,7 +184,11 @@ export function reducer(state, action) {
       const dev = action.dev && typeof action.dev === "object" ? action.dev : null;
       // Progression-Baum (Schritt 3): Effekte NUR im normalen Lauf (kein Meister-Lauf, kein Dev-Run) — dort ist
       // grade 0, der Baum ist also die einzige Quelle. Meister/Dev/frisches Profil/Sim → 0 = No-op (byte-identisch).
-      const treeEff = (!masterRun && !dev && action.profile) ? nodeEffects(action.profile) : null;
+      // §7 (Schritt 6): Ranglisten-Standard = tree-UNABHÄNGIGE Baseline (fix 2 Rerolls, alle Archetypen, R29 an, normale
+      // Drops) — für alle gleich = der Balance-Referenzwert. Umsetzung: wie ein profil-loser Lauf → treeEff null (kein
+      // Cover/RareShift/Reroll-Bonus/Archetyp-Gate/Rarität-Deckel/M-Knoten), rerolls = C.BASE_REROLLS.
+      const ranked = action.ranked || null;
+      const treeEff = (!masterRun && !dev && !ranked && action.profile) ? nodeEffects(action.profile) : null;
       const treeCover = treeEff ? treeEff.treeCoverBonus : 0;      // +Baufeld-Zellen (0..4)
       const treeRareShift = treeEff ? treeEff.treeRareShift : 0;   // RareShift-Stufe (0..3)
       const treeLegMult = treeEff && treeEff.legDropDouble ? 2 : 1; // M3: Legendär-Drop ×2 (Perks & Gebäude) [TUNING]
@@ -193,7 +197,7 @@ export function reducer(state, action) {
       const legOfferBonus = treeEff && treeEff.legTwoPerArch ? C.LEG_OFFER_PER_ARCH_BONUS : 0; // M2: +Kandidaten je Archetyp (mehr Auswahl)
       // (Schritt 4) Reroll-Basis je Pool: Meister → Rang; Normal-Lauf mit Profil → Onboarding-Basis + A1/A2 (Cap 3);
       // profil-los (Sim/Standard) → C.BASE_REROLLS (kein Baseline-Shift, Bestandstests byte-identisch).
-      const normalRerolls = masterRun ? masteryRerollBonus(grade) : (action.profile ? rerollBase(action.profile) : C.BASE_REROLLS);
+      const normalRerolls = masterRun ? masteryRerollBonus(grade) : ((action.profile && !ranked) ? rerollBase(action.profile) : C.BASE_REROLLS);
       // (Schritt 4b) Archetyp-Allowlist aus dem Onboarding — nur Normal-Lauf mit Profil (treeEff≠null); sonst null
       // = keine Gatung (Sim/Standard/Meister/Dev → alle 4, byte-identisch).
       const unlockedArch = treeEff ? unlockedArchetypes(Number(action.profile.onboarding) || 0) : null;
@@ -217,7 +221,7 @@ export function reducer(state, action) {
       // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
       // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
       const architectStart = { ...s.architect, maxCover: s.architect.maxCover + masteryCoverBonus(grade) + treeCover }; // Baufeld: Rang (Meister) + Baum (Normal-Lauf)
-      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift, treeLegMult, treeLegForce2, rerollsLeg: treeLegSlotReroll, legOfferBonus, unlockedArchetypes: unlockedArch, rareCap, legPhaseEnabled };
+      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift, treeLegMult, treeLegForce2, rerollsLeg: treeLegSlotReroll, legOfferBonus, unlockedArchetypes: unlockedArch, rareCap, legPhaseEnabled, ranked };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, grade, architectEnabled, undefined, false);
       return { ...sBase, architectEnabled,
         masteryGrade: grade, masterRun,
