@@ -6,8 +6,9 @@ import { buildPerkOffer, isLegendary } from "../src/game/perks.js";
 import { buildLegendaryOffer, isLegendarySkill, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
 import { unlockedArchetypes } from "../src/game/progression.js";
 import { perkPhaseAt, LEG_PERK2_PHASE } from "../src/game/constants.js";
-import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force, rerollBase, REROLL_CAP, maxRarityTier } from "../src/game/progression.js";
+import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force, rerollBase, REROLL_CAP, maxRarityTier, legendaryPhaseUnlocked } from "../src/game/progression.js";
 import { BASE_REROLLS } from "../src/game/constants.js";
+import { makeRng } from "../src/game/deck.js";
 
 // Skript-RNG: liefert die vorgegebenen Werte, danach 0.5. Erster rng()-Zug in buildArchitectOffer = Legendär-Check.
 const seqRng = (vals) => { let i = 0; return () => (i < vals.length ? vals[i++] : 0.5); };
@@ -189,6 +190,40 @@ describe("(Schritt 4a) Reroll-Basis: Onboarding-Glied 1 + A1/A2, Cap 3", () => {
     // masterRun → masteryRerollBonus(grade); Profil (auch Onboarding) wird ignoriert.
     const s = start({ masterRun: true, masteryGrade: 2, profile: withOnb(0) });
     expect(s.rerollsPerk).toBe(2); // masteryRerollBonus(2) = 2, NICHT 0
+  });
+});
+
+describe("(Schritt 4f) R29-Legendär-Capstone (Onboarding-Glied 6)", () => {
+  // Treibt einen echten Lauf ab cycle 27 (nächster Runden-Endpunkt → cycle 28 = R29-Decision) bis zum Phasenwechsel.
+  const driveToR29 = (legPhaseEnabled) => {
+    const base = start();
+    let s = { ...base, phase: "play", cycle: 27, pos: 0, skills: [], activeArchetypes: ["fire"], skillOffer: null, offer: null, legendaryOffer: null, legPhaseEnabled };
+    const rng = makeRng(9);
+    let guard = 0;
+    while (s.phase === "play") { if (++guard > 3000) throw new Error("kein R29-Übergang"); s = reducer(s, { type: "RESOLVE_TRICK", rng }); }
+    return s;
+  };
+
+  it("legendaryPhaseUnlocked (rein): erst ab Glied 6", () => {
+    expect([0, 1, 2, 3, 4, 5].map(legendaryPhaseUnlocked)).toEqual([false, false, false, false, false, false]);
+    expect(legendaryPhaseUnlocked(6)).toBe(true);
+  });
+  it("START_RUN: legPhaseEnabled — Normal <6 aus, ≥6 an; Sim/Meister an", () => {
+    expect(start({ profile: { ...emptyProfile(0), onboarding: 5 } }).legPhaseEnabled).toBe(false);
+    expect(start({ profile: { ...emptyProfile(0), onboarding: 6 } }).legPhaseEnabled).toBe(true);
+    expect(start().legPhaseEnabled).toBe(true); // profil-los (Sim/Standard-Rangliste)
+    expect(start({ masterRun: true, masteryGrade: 1, profile: { ...emptyProfile(0), onboarding: 0 } }).legPhaseEnabled).toBe(true);
+  });
+  it("R29 MIT Freischaltung → Legendär-Pick-Phase (wie Standard-Rangliste)", () => {
+    const s = driveToR29(true);
+    expect(s.phase).toBe("legendary");
+    expect(s.legendaryOffer.length).toBeGreaterThan(0);
+  });
+  it("R29 OHNE Freischaltung (Onboarding < 6) → normale Perk-Phase, keine Legendär-Phase", () => {
+    const s = driveToR29(false);
+    expect(s.phase).toBe("levelup");
+    expect(s.legendaryOffer).toBeNull();
+    expect(s.offer.length).toBeGreaterThan(0); // Perk-Angebot statt Legendär
   });
 });
 

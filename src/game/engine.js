@@ -1278,15 +1278,24 @@ export function resolveTrick(state, rng) {
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
         formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
       } else if (decision === "legendary") {
-        // #272 Legendär-Phase (Runde 29, build-defining): Legendäre NUR aus aktiven Fraktionen → fixer 7. Slot.
-        // Angebotsgröße skaliert mit der Build-Breite (Mono 3 · Duo 2/Fraktion=4 · Trio 2/Fraktion=6).
-        // Kein Legendär verfügbar (keine aktive Fraktion / alle der aktiven Fraktionen bereits gehalten) → wie ein
-        // leerer Skill-Pool auf die normale Skill-Wahl ausweichen (Runde nicht verschwenden).
-        const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), null, state.legOfferBonus || 0); // M2: +Kandidaten je Archetyp
-        if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
-        else {
-          const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
-          if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
+        // (Schritt 4f) Legendär-Capstone (docs §4, Glied 6): die R29-Legendär-PICK-Phase ist im Normal-Lauf ERST ab
+        // Onboarding 6 aktiv. Profil-los (Sim/Standard-Rangliste)/Meister/Dev = an (state.legPhaseEnabled fehlt → true =
+        // Bestandsverhalten, byte-identisch). Vor der Freischaltung ist Runde 29 eine GANZ NORMALE Perk-Phase.
+        if (state.legPhaseEnabled ?? true) {
+          // #272 Legendär-Phase (Runde 29, build-defining): Legendäre NUR aus aktiven Fraktionen → fixer 7. Slot.
+          // Angebotsgröße skaliert mit der Build-Breite (Mono 3 · Duo 2/Fraktion=4 · Trio 2/Fraktion=6).
+          // Kein Legendär verfügbar (keine aktive Fraktion / alle der aktiven Fraktionen bereits gehalten) → wie ein
+          // leerer Skill-Pool auf die normale Skill-Wahl ausweichen (Runde nicht verschwenden).
+          const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), null, state.legOfferBonus || 0); // M2: +Kandidaten je Archetyp
+          if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
+          else {
+            const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
+            if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
+          }
+        } else {
+          // Capstone noch gesperrt (Onboarding < 6): Runde 29 = normale Perk-Phase (identisch zum "perk"-Zweig, legForce 0).
+          const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * mLegMult * (state.treeLegMult || 1), mRareShift, architectEnabled, 0, mRareCap);
+          if (off.length > 0) { phase = "levelup"; newOffer = off; }
         }
       }
     }

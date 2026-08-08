@@ -127,6 +127,11 @@ export function maxRarityTier(onboarding) {
   return cap;
 }
 
+// Legendär-Capstone (docs §4, Glied 6): die R29-Legendär-PICK-Phase im Normal-Lauf ist erst ab dem letzten
+// Onboarding-Glied frei. Davor ist Runde 29 eine GANZ NORMALE Perk-Phase (die Naht in engine.js entscheidet).
+// Rein & testbar; profil-los/Meister/Dev sind hiervon unberührt (Reducer setzt dort legPhaseEnabled = true).
+export const legendaryPhaseUnlocked = (onboarding) => Math.max(0, Math.floor(Number(onboarding) || 0)) >= ONBOARDING_LINKS;
+
 // Erfüllt der Knoten sein Gate? (Nicht-Meister-Knoten haben keins → true.)
 export function gateMet(profile, node) {
   const g = node && node.gate;
