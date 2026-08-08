@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PANEL_BG } from "./modalStyle.jsx";
 import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { architectCoverFor } from "./architectCover.js";
@@ -22,7 +23,7 @@ export function GlacierPick({ state, onConfirm }) {
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
-      <div className="w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={{ background: "#15151b", border: "1px solid #33333e" }}>
+      <div className="w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={{ background: PANEL_BG, border: "1px solid #33333e" }}>
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: ICE }}>❄ Gletscher</div>
           <h2 className="text-xl font-bold mt-1">Wähle eine Karte als Gletscher</h2>

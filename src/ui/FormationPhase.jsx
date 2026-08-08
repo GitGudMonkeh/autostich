@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo } from "react";
+import { PANEL_BG } from "./modalStyle.jsx";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { SKILL_DEFS, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
@@ -127,7 +128,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       <div className="w-full max-w-4xl">
         <div className="w-full rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card as-panel"
-          style={{ background: "#15151b", border: "1px solid #33333e" }}>
+          style={{ background: PANEL_BG, border: "1px solid #33333e" }}>
         {/* Kopf (#UI Aufstellung-Redesign): Titel + Glossar, Durchlauf-Score direkt darunter. */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="min-w-0">
@@ -154,7 +155,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             #UI-Redesign: entschlackt — Δ steht jetzt im Hero-Wert, der Fortfahren-Untertitel entfällt (Energie/Formationen
             stehen oben in der Leiste). */}
         <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mt-3 mb-3 flex flex-col gap-2"
-             style={{ background: "#15151b", borderBottom: "1px solid #2a2a34" }}>
+             style={{ background: PANEL_BG, borderBottom: "1px solid #2a2a34" }}>
           {/* Rückgängig + Zurücksetzen teilen sich die volle Breite. */}
           <div className="flex gap-2">
             <button onClick={onUndo} disabled={!hasSwaps} className="flex-1 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
