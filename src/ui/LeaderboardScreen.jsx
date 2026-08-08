@@ -9,9 +9,13 @@ import { loadRunHistory } from "../game/storage.js";
 import { leaderboardConfigured } from "../game/leaderboard.js";
 
 const TOP_N = 20;
+// §7 (Schritt 6): getrennte Ranglisten-Boards. „Standard" (feste Baseline) + „Meister" (voller Baum) = die
+// Wettbewerbs-Boards; „Global" = alle Läufe ungefiltert (Überblick), „Meine Runs" = lokal.
 const TABS = [
-  { id: "mine",   label: "Meine Runs" },
-  { id: "global", label: "Global" },
+  { id: "mine",     label: "Meine Runs" },
+  { id: "standard", label: "Standard" },
+  { id: "meister",  label: "Meister" },
+  { id: "global",   label: "Global" },
 ];
 const GOLD = "#d4a63a";
 const LILA = "#8a7de0";
@@ -93,6 +97,12 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
               </div>
               <LocalRunList runs={myTop} empty="Noch keine Läufe — leg los." onPick={setDetail} />
             </>
+          )}
+
+          {(tab === "standard" || tab === "meister") && (
+            leaderboardConfigured
+              ? <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board={tab} onPlaySeed={onPlaySeed} />
+              : <div className="text-sm opacity-40 text-center py-6">Bestenliste ist nicht verfügbar.</div>
           )}
 
           {tab === "global" && (

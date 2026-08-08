@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { leaderboardConfigured, fetchGlobalTop } from "../game/leaderboard.js";
+import { leaderboardConfigured, fetchGlobalTop, fetchBoardTop } from "../game/leaderboard.js";
 import { ARCHETYPE_META, decodeArchetypes } from "../game/skills.js";
 import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
@@ -36,8 +36,10 @@ const toRunEntry = (r) => ({
    mine        — der eigene, gerade gepostete Lauf → wird in der Liste hervorgehoben.
    reloadToken — neu laden, sobald er sich ändert (nach dem Submit, damit der eigene
                  Lauf enthalten ist).
-   framed      — eigener Panel-Rahmen (StartScreen). Ohne: schlichte Sektion (Game-Over). */
-export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, onPlaySeed = null }) {
+   framed      — eigener Panel-Rahmen (StartScreen). Ohne: schlichte Sektion (Game-Over).
+   board       — §7: gesetzt ('standard'|'meister') → getrenntes Ranglisten-Board (fetchBoardTop) statt des
+                 ungefilterten Global-Boards (fetchGlobalTop, alle Läufe). */
+export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, board = null, onPlaySeed = null }) {
   const [rows, setRows] = useState(null);   // null = lädt · [] = leer · [...] = Daten
   const [error, setError] = useState(false);
   const [detail, setDetail] = useState(null); // #169 FB-8: gewählte Zeile → RunDetail-Overlay
@@ -47,14 +49,16 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
     let alive = true;
     setError(false);
     setRows(null);
-    fetchGlobalTop(limit)
+    (board ? fetchBoardTop(board, limit) : fetchGlobalTop(limit))
       .then((data) => { if (alive) setRows(Array.isArray(data) ? data : []); })
       .catch(() => { if (alive) setError(true); });
     return () => { alive = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [limit, reloadToken]);
+  }, [limit, reloadToken, board]);
 
   if (!leaderboardConfigured) return null; // ohne Config: Block entfällt komplett
+
+  const boardLabel = board === "standard" ? "Standard" : board === "meister" ? "Meister" : "Global";
 
   // Eigenen Lauf genau einmal hervorheben (erste Übereinstimmung).
   // #229 N2: bevorzugt per eindeutiger id (das Board vergibt sie, publishRun reicht sie in myEntry nach) → trifft
@@ -73,13 +77,13 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
 
   const body = (
     <>
-      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Global — Top {limit}</div>
+      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{boardLabel} — Top {limit}</div>
       {error ? (
-        <div className="text-xs opacity-40 text-center py-3">Global nicht verfügbar.</div>
+        <div className="text-xs opacity-40 text-center py-3">{boardLabel} nicht verfügbar.</div>
       ) : rows === null ? (
-        <div className="text-xs opacity-40 text-center py-3">Lädt globale Bestenliste …</div>
+        <div className="text-xs opacity-40 text-center py-3">Lädt Bestenliste …</div>
       ) : rows.length === 0 ? (
-        <div className="text-xs opacity-40 text-center py-3">Noch keine globalen Einträge — sei die/der Erste.</div>
+        <div className="text-xs opacity-40 text-center py-3">Noch keine Einträge — sei die/der Erste.</div>
       ) : (
         <div className="grid gap-1">
           {rows.map((r, i) => {

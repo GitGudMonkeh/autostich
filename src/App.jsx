@@ -342,7 +342,10 @@ export function Autostich() {
       // publishRun stript sie per Fallback-Kaskade, falls die Spalten noch nicht migriert sind.
       best_streak: state.bestStreak, perks: (state.perks || []).join(","), skills: (state.skills || []).join(","),
       max_formations: state.maxFormations, formation_score: state.formationScore,
-      crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore };
+      crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore,
+      // §7 (Schritt 6): Ranglisten-Läufe tragen ihr Board (standard/meister) → getrennte Boards. Casual-Läufe posten
+      // OHNE board (→ NULL) und tauchen so auf keinem Wettbewerbs-Board auf (§7 „kein Leaderboard-Zwang").
+      ...(state.ranked === "standard" ? { board: "standard" } : state.ranked === "meister" ? { board: "meister" } : {}) };
     setMyEntry(gEntry);
     if (leaderboardConfigured && name) {
       publishRun(gEntry).then((saved) => {

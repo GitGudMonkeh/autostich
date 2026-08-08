@@ -78,6 +78,29 @@ describe("fetchSeedTop — Challenge-Board (Top-N pro Seed, #205)", () => {
   });
 });
 
+describe("fetchBoardTop — getrennte Ranglisten-Boards (§7)", () => {
+  it("fragt genau das Board ab (board=eq.<board>), Score-sortiert + limit", async () => {
+    const { fetchBoardTop } = await loadBoard();
+    let url;
+    global.fetch = vi.fn(async (u) => { url = u; return { status: 200, ok: true, json: async () => [{ id: 1, name: "S", score: 9 }] }; });
+    const rows = await fetchBoardTop("standard", 7);
+    expect(rows).toEqual([{ id: 1, name: "S", score: 9 }]);
+    expect(url).toContain("board=eq.standard");
+    expect(url).toContain("order=score.desc");
+    expect(url).toContain("limit=7");
+  });
+  it("degradiert graceful: fehlt die `board`-Spalte (400 auf allen Stufen) → [] statt Fehler", async () => {
+    const { fetchBoardTop } = await loadBoard();
+    global.fetch = vi.fn(async () => ({ status: 400, ok: false }));
+    expect(await fetchBoardTop("meister")).toEqual([]);
+  });
+  it("wirft bei echtem Serverfehler (5xx, kein Schema-Problem)", async () => {
+    const { fetchBoardTop } = await loadBoard();
+    global.fetch = vi.fn(async () => ({ status: 500, ok: false }));
+    await expect(fetchBoardTop("standard")).rejects.toThrow(/500/);
+  });
+});
+
 describe("publishRun — PREVIEW-Short-Circuit + archetypes-Strip (#154)", () => {
   it("PREVIEW=1 schreibt NIE ins echte Board (Short-Circuit vor fetch)", async () => {
     const { publishRun } = await loadBoard({ preview: true });
@@ -173,11 +196,13 @@ describe("publishRun — PREVIEW-Short-Circuit + archetypes-Strip (#154)", () =>
       return bodies.length === 1 ? { status: 400, ok: false } : { status: 201, ok: true };
     });
     await publishRun({ name: "M", score: 9, level: 1, tricks: 1, cycles: 1, archetypes: "fire",
-      best_streak: 3, seed: 42 });
+      best_streak: 3, seed: 42, board: "standard" });
     expect(bodies).toHaveLength(2);
     expect(bodies[0].best_streak).toBe(3);             // Stufe 1: voll (mit FB-8)
     expect(bodies[0].seed).toBe(42);                   // ... inkl. #205 seed
+    expect(bodies[0].board).toBe("standard");          // ... inkl. §7 board
     expect(bodies[1].seed).toBeUndefined();            // Stufe 2: seed gestript
+    expect(bodies[1].board).toBeUndefined();           // §7 board ebenfalls gestript (Spalte fehlt)
     expect(bodies[1].best_streak).toBeUndefined();     // FB-8 ebenfalls gestript
     expect(bodies[1].archetypes).toBe("fire");         // archetypes bleibt (Icons)
   });
