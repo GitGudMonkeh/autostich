@@ -327,15 +327,17 @@ export function initialArchitect() {
 // So lässt sich der Eigenbeitrag JE KATEGORIE messen (welche Kategorie treibt den Score/die Spät-Lastigkeit?).
 const ONLY_CAT = (typeof process !== "undefined" && process.env && process.env.ARCH_ONLY_CAT) || null;
 
-function weightedTier(rng, rareShift = _archRareShift) {
-  const entries = Object.entries(tierWeightsForShift(rareShift));
+// (Schritt 4c) maxTier = Onboarding-Rarität-Deckel (4 = kein Deckel): Stufen darüber haben Gewicht 0. Der rng()-Zug
+// wird IMMER identisch gezogen (Determinismus) — nur das Ergebnis mappt auf eine erlaubte Stufe.
+function weightedTier(rng, rareShift = _archRareShift, maxTier = 4) {
+  const entries = Object.entries(tierWeightsForShift(rareShift, maxTier));
   const total = entries.reduce((a, [, w]) => a + w, 0);
   let r = rng() * total;
   for (const [t, w] of entries) { if (r < w) return Number(t); r -= w; }
   return Number(entries[entries.length - 1][0]);
 }
 // #217: rareShift default = Env-Hook (Sim). Der Grad-Reward reicht zur Laufzeit masteryRareShift(grade) durch (Grad 0 = 0 = Basis).
-export function buildArchitectOffer(architect, rng, rareShift = _archRareShift, legChanceMult = 1) {
+export function buildArchitectOffer(architect, rng, rareShift = _archRareShift, legChanceMult = 1, maxTier = 4) {
   const builtLeg = new Set((architect.buildings || []).filter((b) => familyDef(b.familyId)?.legendary).map((b) => b.familyId));
   const offers = [], usedFam = new Set();
   // Legendär-Slot (höchstens einer): expliziter Wurf, dann eine noch nicht errichtete legendäre Familie ziehen.
@@ -361,7 +363,7 @@ export function buildArchitectOffer(architect, rng, rareShift = _archRareShift, 
     // mit `tier` — Aufrüsten ist dort ohnehin ein No-op (upgradeInfo → reason "inert"). Sie dürfen dann auch nicht
     // mit höherem Raritätsrahmen als „Stufe III/IV" angeboten werden → auf Stufe 1 pinnen. Der weightedTier-rng-Zug
     // wird TROTZDEM immer gezogen (auch wenn verworfen), damit der Zufallsstrom identisch bleibt (Determinismus/Seed).
-    const t = weightedTier(rng, rareShift);
+    const t = weightedTier(rng, rareShift, maxTier);
     const inert = TIER_INERT_KINDS.has(f.base && f.base.kind);
     // Inert ohne Kick → auf Stufe 1 pinnen (Aufrüsten ist No-op). Inert MIT Kick → bis zur Kick-Stufe `at` erlauben.
     const tier = inert ? (f.tierKick ? Math.min(t, f.tierKick.at) : 1) : t;

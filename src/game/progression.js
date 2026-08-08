@@ -113,6 +113,20 @@ export function unlockedArchetypes(onboarding) {
   return out;
 }
 
+// Rarität-Obergrenze aus dem Onboarding (docs §4): Start = nur Stufe I+II (grau/grün); Glied 3 schaltet III (blau)
+// frei, Glied 5 die IV (violett/Rar). KEIN Verteilungs-Shift — der Baum-R-Ast (treeRareShift) verschiebt die
+// Gewichte orthogonal INNERHALB des freigeschalteten Rahmens. Rein & testbar; 4 = kein Deckel.
+export const RARITY_TIER_BASE = 2;                          // grau + grün von Beginn an
+export const ONBOARDING_RARITY_UNLOCK = { 3: 3, 5: 4 };     // Glied → ab da freigeschaltete Max-Stufe [TUNING]
+export function maxRarityTier(onboarding) {
+  const onb = Math.max(0, Math.floor(Number(onboarding) || 0));
+  let cap = RARITY_TIER_BASE;
+  for (const link of Object.keys(ONBOARDING_RARITY_UNLOCK)) {
+    if (onb >= Number(link)) cap = Math.max(cap, ONBOARDING_RARITY_UNLOCK[link]);
+  }
+  return cap;
+}
+
 // Erfüllt der Knoten sein Gate? (Nicht-Meister-Knoten haben keins → true.)
 export function gateMet(profile, node) {
   const g = node && node.gate;

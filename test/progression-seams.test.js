@@ -6,7 +6,7 @@ import { buildPerkOffer, isLegendary } from "../src/game/perks.js";
 import { buildLegendaryOffer, isLegendarySkill, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
 import { unlockedArchetypes } from "../src/game/progression.js";
 import { perkPhaseAt, LEG_PERK2_PHASE } from "../src/game/constants.js";
-import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force, rerollBase, REROLL_CAP } from "../src/game/progression.js";
+import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force, rerollBase, REROLL_CAP, maxRarityTier } from "../src/game/progression.js";
 import { BASE_REROLLS } from "../src/game/constants.js";
 
 // Skript-RNG: liefert die vorgegebenen Werte, danach 0.5. Erster rng()-Zug in buildArchitectOffer = Legendär-Check.
@@ -189,6 +189,46 @@ describe("(Schritt 4a) Reroll-Basis: Onboarding-Glied 1 + A1/A2, Cap 3", () => {
     // masterRun → masteryRerollBonus(grade); Profil (auch Onboarding) wird ignoriert.
     const s = start({ masterRun: true, masteryGrade: 2, profile: withOnb(0) });
     expect(s.rerollsPerk).toBe(2); // masteryRerollBonus(2) = 2, NICHT 0
+  });
+});
+
+describe("(Schritt 4c) Onboarding-Rarität-Deckel (grau/grün → +blau → +violett)", () => {
+  // mulberry32 — deterministischer Sampler für Angebots-Ziehungen über viele Seeds
+  const mulberry = (a) => () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+
+  it("maxRarityTier: Start II (grau/grün); Glied 3 → III (blau); Glied 5 → IV (violett)", () => {
+    expect([0, 1, 2].map(maxRarityTier)).toEqual([2, 2, 2]);
+    expect([3, 4].map(maxRarityTier)).toEqual([3, 3]);
+    expect([5, 6].map(maxRarityTier)).toEqual([4, 4]);
+  });
+  it("tierWeightsForShift: Deckel nullt höhere Stufen; 4 = Identität (kein Drift)", () => {
+    expect(tierWeightsForShift(0, 4)).toBe(tierWeightsForShift(0)); // dieselbe Referenz = byte-identisch
+    expect(tierWeightsForShift(3, 2)).toEqual({ 1: 30, 2: 20, 3: 0, 4: 0 });
+    expect(tierWeightsForShift(3, 3)).toEqual({ 1: 30, 2: 20, 3: 30, 4: 0 });
+  });
+  it("buildPerkOffer: Deckel 2 bietet nie Familien-Stufe III/IV (auch bei starkem Shift)", () => {
+    for (let s = 1; s <= 40; s++) {
+      const offer = buildPerkOffer([], {}, mulberry(s), 6, 0, 3 /*starker Shift zu III/IV*/, true, 0, 2 /*Deckel II*/);
+      for (const o of offer) if (o && typeof o === "object" && o.tier) expect(o.tier).toBeLessThanOrEqual(2);
+    }
+  });
+  it("buildPerkOffer: ohne Deckel (4) byte-identisch zum Aufruf ohne Param", () => {
+    for (let s = 1; s <= 20; s++) {
+      expect(buildPerkOffer([], {}, mulberry(s), 6, 0, 3, true, 0, 4)).toEqual(buildPerkOffer([], {}, mulberry(s), 6, 0, 3, true, 0));
+    }
+  });
+  it("buildArchitectOffer: Deckel 2 bietet nie Gebäude-Stufe III/IV (numerische Stufen)", () => {
+    for (let s = 1; s <= 40; s++) {
+      const offers = buildArchitectOffer({ buildings: [] }, mulberry(s), 3 /*Shift*/, 1, 2 /*Deckel II*/);
+      for (const o of offers) if (typeof o.tier === "number") expect(o.tier).toBeLessThanOrEqual(2);
+    }
+  });
+  it("START_RUN: state.rareCap je Onboarding; 4 (kein Deckel) für Sim/Meister", () => {
+    expect(start({ profile: { ...emptyProfile(0), onboarding: 0 } }).rareCap).toBe(2);
+    expect(start({ profile: { ...emptyProfile(0), onboarding: 3 } }).rareCap).toBe(3);
+    expect(start({ profile: { ...emptyProfile(0), onboarding: 5 } }).rareCap).toBe(4);
+    expect(start().rareCap).toBe(4); // profil-los (Sim/Standard)
+    expect(start({ masterRun: true, masteryGrade: 2, profile: { ...emptyProfile(0), onboarding: 0 } }).rareCap).toBe(4); // Meister ungedeckelt
   });
 });
 
