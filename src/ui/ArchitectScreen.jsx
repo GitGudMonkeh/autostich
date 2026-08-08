@@ -840,7 +840,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       return (
                         <button key={idx} onClick={() => chooseOffer(o)} disabled={o.used}
                           className="rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110"
-                          style={{ background: "#16232f", border: `1px solid ${tierCol}`, borderLeft: `3px solid ${cat.color}`, opacity: o.used ? 0.4 : 1, cursor: o.used ? "not-allowed" : "pointer" }}>
+                          style={{ background: "#16232f", border: `1.5px solid ${tierCol}`, boxShadow: o.used ? undefined : `0 0 8px ${tierCol}40`, opacity: o.used ? 0.4 : 1, cursor: o.used ? "not-allowed" : "pointer" }}>
                           <div className="flex items-center justify-between gap-1">
                             <div className="p-1 rounded" style={{ background: "#0e1822" }}><MiniShape form={fam.form} color={cat.color} /></div>
                             <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
