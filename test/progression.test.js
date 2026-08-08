@@ -6,7 +6,7 @@ import {
   nodeEffects, treeCoverBonus, treeRerollBonus, treeRareShift,
   nodeState, canBuy, buyNode, respec, treeComplete, ownedCount,
   SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP,
-  onboardingAfter, spMilestones, isSpRun, spForRun,
+  onboardingAfter, spMilestones, isSpRun, spForRun, milestoneBarState,
   SECRET_SEEDS, UNLOCK_SP_CUSHION, matchSecretSeed, unlockAllProfile,
   TOTAL_COST,
 } from "../src/game/progression.js";
@@ -287,6 +287,28 @@ describe("SP-Meilensteine (docs §6, kumulativ)", () => {
     expect(spMilestones(99_999_999)).toBe(3);
     expect(spMilestones(100_000_000)).toBe(5); // 1+1+1+2
     expect(spMilestones(500_000_000)).toBe(5); // gedeckelt (keine weiteren Schwellen)
+  });
+});
+
+describe("milestoneBarState (docs §6, Balken überm Battlefield)", () => {
+  it("erreichte Meilensteine, nicht-lineare Füllung, nächstes Ziel", () => {
+    const s0 = milestoneBarState(0);
+    expect(s0.reached).toBe(0); expect(s0.total).toBe(4); expect(s0.fill).toBe(0);
+    expect(s0.atMax).toBe(false); expect(s0.spSoFar).toBe(0); expect(s0.next.at).toBe(25_000_000);
+    // Halber Weg zum 1. Meilenstein → 0.5/4 = 0.125 (jeder Meilenstein = ein Viertel)
+    expect(milestoneBarState(12_500_000).fill).toBeCloseTo(0.125, 5);
+    // Genau am 1. Meilenstein: reached 1, fill 0.25, SP 1, nächstes Ziel 50 Mio
+    const s1 = milestoneBarState(25_000_000);
+    expect(s1.reached).toBe(1); expect(s1.fill).toBeCloseTo(0.25, 5); expect(s1.spSoFar).toBe(1); expect(s1.next.at).toBe(50_000_000);
+    // 60 Mio: 2 erreicht + 40 % ins 3. Segment (50→75) → (2+0.4)/4 = 0.6
+    const s2 = milestoneBarState(60_000_000);
+    expect(s2.reached).toBe(2); expect(s2.fill).toBeCloseTo(0.6, 5); expect(s2.spSoFar).toBe(2);
+  });
+  it("bei/über 100 Mio: Maximum (voll, +5 SP, kein nächstes Ziel)", () => {
+    for (const sc of [100_000_000, 250_000_000]) {
+      const m = milestoneBarState(sc);
+      expect(m.atMax).toBe(true); expect(m.fill).toBe(1); expect(m.reached).toBe(4); expect(m.spSoFar).toBe(5); expect(m.next).toBe(null);
+    }
   });
 });
 

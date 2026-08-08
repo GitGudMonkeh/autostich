@@ -267,6 +267,25 @@ export function spMilestones(score) {
   return SP_MILESTONES.reduce((sum, m) => (s >= m.at ? sum + m.sp : sum), 0);
 }
 
+// Score-Meilenstein-Balken (docs §6) — reine Anzeige-Ableitung für die Leiste überm Battlefield. Liefert erreichte
+// Meilensteine, die NICHT-LINEARE Balken-Füllung (jeder Meilenstein = 1/N der Leiste, egal wie groß der Mio-Sprung
+// ist; innerhalb des aktuellen Segments proportional zum nächsten Ziel), die kumulativen SP sowie das nächste Ziel.
+export function milestoneBarState(score) {
+  const s = num0(score);
+  const total = SP_MILESTONES.length;
+  const reached = SP_MILESTONES.reduce((k, m) => (s >= m.at ? k + 1 : k), 0);
+  const atMax = reached >= total;
+  let fill;
+  if (atMax) fill = 1;
+  else {
+    const prev = reached === 0 ? 0 : SP_MILESTONES[reached - 1].at;
+    const next = SP_MILESTONES[reached].at;
+    const frac = next > prev ? (s - prev) / (next - prev) : 0;
+    fill = (reached + Math.max(0, Math.min(1, frac))) / total;
+  }
+  return { reached, total, fill, atMax, spSoFar: spMilestones(s), next: atMax ? null : SP_MILESTONES[reached] };
+}
+
 // Zählt der Lauf für die SP-Ökonomie? Nur ein abgeschlossener Lauf NACH vollendetem Onboarding (docs §5:
 // die Leiste „kippt" erst bei 6/6 in den SP-Modus, davor ist die Upgrades-Kachel gesperrt → keine SP).
 export const isSpRun = (record, onboardingBefore) =>

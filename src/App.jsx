@@ -8,7 +8,7 @@ import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeig
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import logo from "./assets/logo-wordmark.png"; // #UI: Neon-Wortmarke (wie StartScreen) — ersetzt das Text-Logo im Run-Kopf
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun } from "./game/storage.js";
-import { unlockAllProfile } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / reset (Wipe)
+import { unlockAllProfile, ONBOARDING_LINKS } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / reset (Wipe) · §6 Meilenstein-Balken-Gate
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
 import { fmtScore } from "./ui/format.js";
@@ -34,6 +34,7 @@ import { HeatBar } from "./ui/HeatBar.jsx";
 import { GlacierBar } from "./ui/GlacierBar.jsx";
 import { PlantBar } from "./ui/PlantBar.jsx";
 import { MasteryBar } from "./ui/MasteryBar.jsx";
+import { ScoreMilestoneBar } from "./ui/ScoreMilestoneBar.jsx"; // §6: Score-Meilenstein-Balken (Normal-Lauf nach Onboarding)
 import { archetypeOf } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
@@ -606,6 +607,8 @@ export function Autostich() {
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
               {state.masterRun && <MasteryBar grade={profile.masteryGrade || 0} score={state.score} />}
+              {/* §6: Score-Meilenstein-Balken — nur im Normal-Lauf NACH dem Onboarding (dann greifen die SP-Meilensteine). */}
+              {!state.masterRun && (profile?.onboarding || 0) >= ONBOARDING_LINKS && <ScoreMilestoneBar score={state.score} />}
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 heat={state.heat} lightning={state.lightning}
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
