@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
 import { familyDef, hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
@@ -7,28 +6,11 @@ import { DevPerkCatalog } from "./DevPerkCatalog.jsx"; // Dev-Run: Voll-Katalog 
 import { FormationPanel } from "./FormationPanel.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
+import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes klappbares Feld (auch in der Chronik)
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
 const fmtMult = (x) => x.toFixed(2).replace(".", ",");
-
-// #UI: Einklappbares Build-Kontext-Panel (wie in Skill-Auswahl/Aufstellphase) — Kopf mit Titel + optionaler Meta-Anzeige
-// rechts + Chevron, Body ein-/ausklappbar. Hält die sekundären Infos kompakt, ohne die Perk-Wahl zuzustellen.
-function InfoPanel({ title, meta = null, defaultOpen = true, children }) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="mt-3 rounded-xl overflow-hidden" style={{ border: "1px solid #2a2a33" }}>
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left" style={{ background: "#161620" }}>
-        <span className="text-[11px] uppercase tracking-wide font-bold opacity-60">{title}</span>
-        <span className="flex items-center gap-2 shrink-0">{meta}
-          <span className="text-[10px] opacity-50 transition-transform" style={{ display: "inline-block", transform: open ? "none" : "rotate(-90deg)" }}>▾</span>
-        </span>
-      </button>
-      {open && <div className="px-3 py-3" style={{ borderTop: "1px solid #2a2a33" }}>{children}</div>}
-    </div>
-  );
-}
 
 /* Ein Angebotseintrag → einheitliches Anzeige-Modell (Rarität #167 §8). Familie {familyId,tier} zeigt den
    Familiennamen mit römischer Stufe, die Stufenfarbe (grau/grün/blau/lila) und — bei bereits gehaltener
@@ -171,18 +153,19 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
 
         {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). Einklappbare Panels wie in
             Skill-Auswahl/Aufstellphase, damit die Perk-Wahl die primäre Aktion bleibt. */}
+        {/* Reihenfolge: Deck-Stärke oben, dann Formationen, „Dein Build" ganz unten — alle als klappbare Felder. */}
         <div className="mt-4">
-          <InfoPanel title={(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((t) => t > 0).length;
-            return `Dein Build — ${n} Perk${n === 1 ? "" : "s"}`; })()}>
-            <PerkList perks={perks} familyTiers={state.familyTiers} zinsBonus={state.zinsBonus} empty="Noch keine Perks gewählt." />
-          </InfoPanel>
-          <InfoPanel title="Deck-Stärke je Farbe">
+          <CollapsibleField title="Deck-Stärke je Farbe">
             <DeckStrength deck={deck} />
-          </InfoPanel>
+          </CollapsibleField>
           {/* #161 FB-1: aktive Formationen als Kontext (v. a. für Deck-/Formations-Perks) — mit 🏗 Gebäude-Toggle. */}
           <div className="mt-3 rounded-xl px-3 py-3" style={{ border: "1px solid #2a2a33" }}>
             <FormationPanel state={state} title="Formationen" collapsible defaultOpen={false} />
           </div>
+          <CollapsibleField title={(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((t) => t > 0).length;
+            return `Dein Build — ${n} Perk${n === 1 ? "" : "s"}`; })()} defaultOpen={false}>
+            <PerkList perks={perks} familyTiers={state.familyTiers} zinsBonus={state.zinsBonus} empty="Noch keine Perks gewählt." />
+          </CollapsibleField>
         </div>
         </div>
       </div>

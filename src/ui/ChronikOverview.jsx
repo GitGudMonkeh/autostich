@@ -14,6 +14,7 @@ import { ARCH_CAT } from "./indicators/vocab.js";
 // #UI: geteilte Architekt-/Formations-Bausteine (eine Quelle mit der Aufstellphase → keine getrennte Pflege).
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 import { ArchBuildingList, FormationLegend } from "./ArchPanels.jsx";
+import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes klappbares Feld (wie Perk-Auswahl)
 
 const fmtX = (x) => x.toFixed(2).replace(".", ","); // ×-Multiplikator-Format (1,50)
 
@@ -126,21 +127,17 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
                 </div>
               </div>
             )}
-            {/* #UI: geteilte Referenz-Legende (ArchPanels) — dieselbe ausführliche Erklärung wie in der Aufstellphase
-                (inkl. Eis-Formationen), statt einer eigenen Kurzfassung. */}
-            <FormationLegend state={state} />
-
+            {/* Legende wandert ganz nach unten (eigenes klappbares Feld). */}
           </div>
         </div>
 
-        {/* #218: globale Zusatz-Infos unter Karten-Grid & Detail — Verteilung, aktive Formationen, Architektenphase. */}
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {/* #UI: kompakte Deck-Stärke je Farbe (DeckStrength) — dieselbe Ansicht wie in der Perk-Auswahl. */}
-          <div className="rounded-lg p-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Stärke je Farbe</div>
-            <DeckStrength deck={deck} />
-          </div>
+        {/* #UI: Deck-Stärke „hoch" — eigenes klappbares Feld über der Formations-/Architekt-Übersicht (wie Perk-Auswahl). */}
+        <CollapsibleField title="Deck-Stärke je Farbe" className="mt-4">
+          <DeckStrength deck={deck} />
+        </CollapsibleField>
 
+        {/* #218: globale Zusatz-Infos — aktive Formationen, Architektenphase. */}
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {/* Aktuelle Formationen — kompakt (aktive Typen + Höchst-Multiplikator), ohne zweites Karten-Grid. */}
           <div className="rounded-lg p-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
             <div className="flex items-center justify-between mb-2">
@@ -183,6 +180,11 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
             </div>
           )}
         </div>
+
+        {/* #UI: Referenz-Legende ganz nach unten, als klappbares Feld (default zu) — verstellt die Übersicht nicht mehr. */}
+        <CollapsibleField title="Formationen & Rahmenfarben" defaultOpen={false} className="mt-3">
+          <FormationLegend state={state} />
+        </CollapsibleField>
       </div>
     </div>
   );
