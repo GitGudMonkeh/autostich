@@ -5,7 +5,10 @@ import {
   emptyProfile, owns, nonMeisterSpent, gateNeed, gateMet, prereqMet, onboardingDone,
   nodeEffects, treeCoverBonus, treeRerollBonus, treeRareShift,
   nodeState, canBuy, buyNode, respec, treeComplete, ownedCount,
+  SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP,
+  onboardingAfter, spMilestones, isSpRun, spForRun,
 } from "../src/game/progression.js";
+import { ONBOARDING_LINKS } from "../src/game/progression.js";
 
 // Kauft eine Liste von Knoten der Reihe nach in ein frisches Profil mit reichlich SP. Wirft, wenn ein
 // Kauf nicht griff (deckt Sequenz-/Gate-Fehler in den Test-Fixtures selbst auf).
@@ -249,5 +252,66 @@ describe("Determinismus & Robustheit", () => {
     expect(nonMeisterSpent(undefined)).toBe(0);
     expect(owns(null, "B1")).toBe(false);
     expect(nodeState({ nodes: {} }, "unknown-id")).toBe("unknown");
+  });
+});
+
+describe("Onboarding-Fortschritt (docs §4)", () => {
+  it("natürlicher Abschluss rückt ein Glied vor, gedeckelt bei 6", () => {
+    expect(onboardingAfter(0, { completed: true })).toBe(1);
+    expect(onboardingAfter(5, { completed: true })).toBe(6);
+    expect(onboardingAfter(6, { completed: true })).toBe(6); // Deckel
+    expect(ONBOARDING_LINKS).toBe(6);
+  });
+  it("vorzeitiges Beenden zählt nicht", () => {
+    expect(onboardingAfter(2, { completed: false })).toBe(2);
+    expect(onboardingAfter(2, {})).toBe(2);
+    expect(onboardingAfter(2, null)).toBe(2);
+  });
+  it("robust gegen kaputten Stand", () => {
+    expect(onboardingAfter(undefined, { completed: true })).toBe(1);
+    expect(onboardingAfter(-3, { completed: true })).toBe(1);
+    expect(onboardingAfter(99, { completed: true })).toBe(6);
+  });
+});
+
+describe("SP-Meilensteine (docs §6, kumulativ)", () => {
+  it("jede überschrittene Schwelle addiert ihre SP", () => {
+    expect(spMilestones(0)).toBe(0);
+    expect(spMilestones(24_999_999)).toBe(0);
+    expect(spMilestones(25_000_000)).toBe(1);
+    expect(spMilestones(49_999_999)).toBe(1);
+    expect(spMilestones(50_000_000)).toBe(2);
+    expect(spMilestones(75_000_000)).toBe(3);
+    expect(spMilestones(99_999_999)).toBe(3);
+    expect(spMilestones(100_000_000)).toBe(5); // 1+1+1+2
+    expect(spMilestones(500_000_000)).toBe(5); // gedeckelt (keine weiteren Schwellen)
+  });
+});
+
+describe("SP-Ernte pro Lauf (docs §5/§6) — nach Onboarding gegated", () => {
+  it("isSpRun: nur abgeschlossener Lauf NACH vollendetem Onboarding", () => {
+    expect(isSpRun({ completed: true }, 6)).toBe(true);
+    expect(isSpRun({ completed: true }, 5)).toBe(false); // noch im Onboarding
+    expect(isSpRun({ completed: false }, 6)).toBe(false); // vorzeitig beendet
+    expect(isSpRun(null, 6)).toBe(false);
+  });
+  it("während des Onboardings gibt es NULL SP (Upgrades-Kachel gesperrt)", () => {
+    for (let ob = 0; ob < ONBOARDING_LINKS; ob++) {
+      expect(spForRun({ completed: true, score: 100_000_000 }, ob, 0)).toBe(0);
+    }
+  });
+  it("nach Onboarding: Grundstock + Score-Meilensteine", () => {
+    expect(spForRun({ completed: true, score: 0 }, 6, 0)).toBe(SP_PER_RUN);           // nur Grundstock
+    expect(spForRun({ completed: true, score: 25_000_000 }, 6, 0)).toBe(SP_PER_RUN + 1);
+    expect(spForRun({ completed: true, score: 100_000_000 }, 6, 0)).toBe(SP_PER_RUN + 5);
+  });
+  it("Treue-Drip: jeder 10. SP-Lauf gibt +5 extra", () => {
+    // spRunsBefore = 9 → dieser Lauf ist der 10. → +LOYALTY. spRunsBefore = 8 → kein Drip.
+    expect(spForRun({ completed: true, score: 0 }, 6, SP_LOYALTY_EVERY - 1)).toBe(SP_PER_RUN + SP_LOYALTY_SP);
+    expect(spForRun({ completed: true, score: 0 }, 6, SP_LOYALTY_EVERY - 2)).toBe(SP_PER_RUN);
+    expect(spForRun({ completed: true, score: 0 }, 6, 2 * SP_LOYALTY_EVERY - 1)).toBe(SP_PER_RUN + SP_LOYALTY_SP);
+  });
+  it("unfertiger Lauf gibt nie SP, auch mit riesigem Score", () => {
+    expect(spForRun({ completed: false, score: 999_000_000 }, 6, 9)).toBe(0);
   });
 });

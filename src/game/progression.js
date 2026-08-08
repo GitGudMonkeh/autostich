@@ -184,3 +184,54 @@ export const treeComplete = (profile) => NODE_IDS.every((id) => owns(profile, id
 
 // Anzahl gekaufter Knoten (für die „X / 13"-Leiste).
 export const ownedCount = (profile) => NODE_IDS.reduce((c, id) => (owns(profile, id) ? c + 1 : c), 0);
+
+/* ============================================================
+   SP-ÖKONOMIE & ONBOARDING — Ernte pro Lauf (docs/progression-decisions.md §4–§6).
+
+   REINE Regeln (kein RNG/Date/localStorage); storage.recordRun importiert und wendet sie an — exakt das
+   Muster mastery.advanceGrade ↔ storage. Der Sim läuft profil-los → diese Regeln berühren die Engine-
+   Baseline NICHT (keine neuen RNG-Ströme, keine Reducer-Naht).
+   ============================================================ */
+
+// SP-Quellen (envNum-tunebar). Grundstock je abgeschlossenem SP-Lauf + kumulative Score-Meilensteine +
+// Treue-Drip je N SP-Läufe. Defaults = docs §6: +1/Lauf; +1/+1/+1/+2 bei 25/50/75/100 Mio; +5 je 10.
+export const SP_PER_RUN = envNum("PROG_SP_PER_RUN", 1);
+export const SP_MILESTONES = [
+  { at: envNum("PROG_SP_MS1_AT", 25_000_000),  sp: envNum("PROG_SP_MS1_SP", 1) },
+  { at: envNum("PROG_SP_MS2_AT", 50_000_000),  sp: envNum("PROG_SP_MS2_SP", 1) },
+  { at: envNum("PROG_SP_MS3_AT", 75_000_000),  sp: envNum("PROG_SP_MS3_SP", 1) },
+  { at: envNum("PROG_SP_MS4_AT", 100_000_000), sp: envNum("PROG_SP_MS4_SP", 2) },
+];
+export const SP_LOYALTY_EVERY = envNum("PROG_SP_LOYALTY_EVERY", 10);
+export const SP_LOYALTY_SP    = envNum("PROG_SP_LOYALTY_SP", 5);
+
+const num0 = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : Number(v) || 0);
+
+// Onboarding-Fortschritt nach einem Lauf (docs §4): ein NATÜRLICH abgeschlossener Lauf (record.completed)
+// rückt genau ein Glied vor, gedeckelt bei ONBOARDING_LINKS (6). Vorzeitiges Beenden zählt nicht.
+export function onboardingAfter(current, record) {
+  const cur = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(num0(current))));
+  return (record && record.completed === true && cur < ONBOARDING_LINKS) ? cur + 1 : cur;
+}
+
+// Kumulative Score-Meilenstein-SP eines Laufs (jede überschrittene Schwelle addiert ihre SP;
+// 100 Mio → 1+1+1+2 = 5, 60 Mio → 1+1 = 2, < 25 Mio → 0).
+export function spMilestones(score) {
+  const s = num0(score);
+  return SP_MILESTONES.reduce((sum, m) => (s >= m.at ? sum + m.sp : sum), 0);
+}
+
+// Zählt der Lauf für die SP-Ökonomie? Nur ein abgeschlossener Lauf NACH vollendetem Onboarding (docs §5:
+// die Leiste „kippt" erst bei 6/6 in den SP-Modus, davor ist die Upgrades-Kachel gesperrt → keine SP).
+export const isSpRun = (record, onboardingBefore) =>
+  !!record && record.completed === true && num0(onboardingBefore) >= ONBOARDING_LINKS;
+
+// SP-Ertrag eines Laufs. onboardingBefore = Onboarding-Stand VOR dem Lauf; spRunsBefore = Anzahl bisheriger
+// SP-Läufe (Basis des Treue-Drips). Onboarding-Läufe & vorzeitig beendete Läufe → 0.
+export function spForRun(record, onboardingBefore, spRunsBefore) {
+  if (!isSpRun(record, onboardingBefore)) return 0;
+  let sp = SP_PER_RUN + spMilestones(record.score);
+  const c = num0(spRunsBefore) + 1;
+  if (SP_LOYALTY_EVERY > 0 && c % SP_LOYALTY_EVERY === 0) sp += SP_LOYALTY_SP;
+  return sp;
+}

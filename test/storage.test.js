@@ -3,8 +3,10 @@ import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   loadOptions, loadUsername, saveUsername, loadSeenGuide, saveSeenGuide,
   recordRun, loadProfile, isNoRerollRun,
   monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION,
-  saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA } from "../src/game/storage.js";
+  saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA,
+  saveProfile } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
+import { ONBOARDING_LINKS } from "../src/game/progression.js";
 
 // #152: node-Env hat kein localStorage → die Persistenz-Funktionen fielen bisher nur in ihre try/catch-Defaults
 // und blieben ungetestet. Minimaler Map-basierter Mock, den die bare-`localStorage`-Zugriffe in storage.js sehen.
@@ -94,6 +96,116 @@ describe("#229 T11 — Profil-Schema-Version + Migration", () => {
     const { profile } = recordRun({ score: 100, ts: 1, completed: true, statPicks: [] });
     expect(profile.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
     expect(loadProfile().schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
+  });
+});
+
+describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboarding (docs §1/§4/§6)", () => {
+  beforeEach(() => { global.localStorage = mockLS(); });
+  afterEach(() => { delete global.localStorage; });
+
+  const runRec = (over = {}) => ({ score: 0, ts: 1, completed: true, ...over });
+
+  it("frisches Profil trägt die neuen Felder mit Nullwerten", () => {
+    const p = loadProfile();
+    expect(p.stichPoints).toBe(0);
+    expect(p.stichSpent).toBe(0);
+    expect(p.nodes).toEqual({});
+    expect(p.onboarding).toBe(0);
+    expect(p.spRuns).toBe(0);
+    expect(p.schemaVersion).toBe(2);
+  });
+
+  it("Migration v1 → v2 seedet die neuen Felder ohne Altfelder zu verlieren", () => {
+    const v1 = { schemaVersion: 1, games: 4, bestScore: 700, masteryGrade: 1 };
+    const m = migrateProfile(v1);
+    expect(m.schemaVersion).toBe(2);
+    expect(m.games).toBe(4);
+    expect(m.masteryGrade).toBe(1);       // Altfeld erhalten
+    expect(m.stichPoints).toBe(0);
+    expect(m.nodes).toEqual({});
+    expect(m.onboarding).toBe(0);
+    expect(m.spRuns).toBe(0);
+  });
+
+  it("gespeicherte SP-/Baum-/Onboarding-Werte überleben migrateProfile (nicht überschrieben)", () => {
+    const v2 = { schemaVersion: 2, stichPoints: 12, stichSpent: 5, nodes: { B1: 1 }, onboarding: 6, spRuns: 3 };
+    const m = migrateProfile(v2);
+    expect(m.stichPoints).toBe(12);
+    expect(m.nodes).toEqual({ B1: 1 });
+    expect(m.onboarding).toBe(6);
+    expect(m.spRuns).toBe(3);
+  });
+
+  it("Leer-/Korrupt-Pfad liefert frische nodes-Referenz (kein geteilter Modul-Default)", () => {
+    const a = loadProfile();
+    a.nodes.HACK = 1; // mutiere die eine Instanz
+    delete global.localStorage;
+    const b = loadProfile();
+    expect(b.nodes).toEqual({}); // NICHT von a vergiftet
+  });
+
+  it("Onboarding rückt nur bei natürlichem Abschluss vor, gedeckelt bei 6", () => {
+    let p;
+    for (let i = 1; i <= ONBOARDING_LINKS; i++) {
+      p = recordRun(runRec({ ts: i })).profile;
+      expect(p.onboarding).toBe(i);
+    }
+    // 7. abgeschlossener Lauf → bleibt bei 6.
+    p = recordRun(runRec({ ts: 7 })).profile;
+    expect(p.onboarding).toBe(6);
+    // Vorzeitiges Beenden rückt nicht vor (frisches Profil).
+    global.localStorage = mockLS();
+    const q = recordRun(runRec({ completed: false })).profile;
+    expect(q.onboarding).toBe(0);
+    expect(q.games).toBe(1); // games zählt trotzdem
+  });
+
+  it("während des Onboardings gibt es NULL SP; danach Grundstock + Meilensteine", () => {
+    // 6 Onboarding-Läufe mit riesigem Score → immer noch 0 SP.
+    let p;
+    for (let i = 1; i <= ONBOARDING_LINKS; i++) p = recordRun(runRec({ ts: i, score: 100_000_000 })).profile;
+    expect(p.onboarding).toBe(6);
+    expect(p.stichPoints).toBe(0);
+    expect(p.spRuns).toBe(0);
+    // 1. Lauf NACH dem Onboarding: +1 Grundstock + 5 Meilenstein-SP (100 Mio) = 6.
+    p = recordRun(runRec({ ts: 7, score: 100_000_000 })).profile;
+    expect(p.stichPoints).toBe(6);
+    expect(p.spRuns).toBe(1);
+    // Nächster, kleiner Lauf: nur +1.
+    p = recordRun(runRec({ ts: 8, score: 10_000 })).profile;
+    expect(p.stichPoints).toBe(7);
+    expect(p.spRuns).toBe(2);
+  });
+
+  it("Treue-Drip: der 10. SP-Lauf gibt +5 extra", () => {
+    let p;
+    for (let i = 1; i <= ONBOARDING_LINKS; i++) p = recordRun(runRec({ ts: i })).profile; // Onboarding fertig
+    // 9 SP-Läufe à +1 → 9 SP.
+    for (let i = 0; i < 9; i++) p = recordRun(runRec({ ts: 100 + i })).profile;
+    expect(p.stichPoints).toBe(9);
+    expect(p.spRuns).toBe(9);
+    // 10. SP-Lauf → +1 Grundstock + 5 Drip = +6 → 15.
+    p = recordRun(runRec({ ts: 200 })).profile;
+    expect(p.spRuns).toBe(10);
+    expect(p.stichPoints).toBe(15);
+  });
+
+  it("recordRun lässt gekaufte Knoten + ausgegebene SP unangetastet (nur Kauf/Respec ändern sie)", () => {
+    // Profil mit einem gekauften Knoten + Onboarding fertig vorbereiten.
+    saveProfile({ ...loadProfile(), onboarding: 6, stichPoints: 3, stichSpent: 2, nodes: { B1: 1 } });
+    const p = recordRun(runRec({ ts: 1, score: 0 })).profile;
+    expect(p.nodes).toEqual({ B1: 1 }); // Knoten bleiben
+    expect(p.stichSpent).toBe(2);        // ausgegeben bleibt
+    expect(p.stichPoints).toBe(4);       // +1 Grundstock (Onboarding war fertig)
+  });
+
+  it("saveProfile rundet durch localStorage und stempelt die Schema-Version", () => {
+    const saved = saveProfile({ stichPoints: 20, nodes: { A1: 1 }, onboarding: 6 });
+    expect(saved.schemaVersion).toBe(2);
+    const p = loadProfile();
+    expect(p.stichPoints).toBe(20);
+    expect(p.nodes).toEqual({ A1: 1 });
+    expect(p.onboarding).toBe(6);
   });
 });
 

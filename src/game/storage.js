@@ -1,5 +1,6 @@
 import { GHOST_STEP } from "./constants.js";
 import { advanceGrade } from "./mastery.js";
+import { onboardingAfter, spForRun, isSpRun } from "./progression.js";
 
 /* Preview-Build (Testbranch auf /autostich/test/) teilt sich die Origin mit der echten
    Seite → derselbe localStorage. Ein Präfix trennt die Namespaces, damit Test-Runs den
@@ -80,14 +81,19 @@ export function loadRunHistory() {
 
 // #229 T11: Schema-Version des Profil-Blobs — der schema-fragilste Persistenz-Teil (masteryGrade-Skala,
 // monoArchetypeRuns-Form). Bei einem breaking change hochzählen UND einen Migrations-Block in migrateProfile
-// anhängen. Bislang keine breaking migration nötig → 1 (Baseline). Andere Keys (Ghost/Highscores/Optionen)
-// degradieren weiter rein additiv über Merge-über-Default und brauchen keine Versionierung.
-export const PROFILE_SCHEMA_VERSION = 1;
+// anhängen. Andere Keys (Ghost/Highscores/Optionen) degradieren weiter rein additiv über Merge-über-Default
+// und brauchen keine Versionierung.
+// v2 (Progression/Upgrades, docs §9): das Profil bekommt die SP-/Baum-/Onboarding-Felder. Rein additiv, aber
+// als eigene Schema-Epoche markiert (Migrations-Anker für spätere Baum-Umformungen).
+export const PROFILE_SCHEMA_VERSION = 2;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
   hadNoRerollRun: false, // #214: sticky Challenge-Flag (einmal true → bleibt); noReroll = Sparfuchs deck_c3. (#267: hadMonoStatRun entfernt — die Stat-Phase ist weg.)
   monoArchetypeRuns: {}, hadAllArchetypesRun: false, // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
-  masteryGrade: 0 }; // #217: laufübergreifender Meistergrad (0..5), sequentiell freigeschaltet über Score-Schwellen
+  masteryGrade: 0, // #217: laufübergreifender Meistergrad (0..5), sequentiell freigeschaltet über Score-Schwellen
+  // Progression/Upgrades (docs §1/§4/§6): SP-Guthaben + ausgegeben (Respec/Anzeige), gekaufte Baum-Knoten
+  // ({[id]: level}), weiteste Onboarding-Stufe (0..6) und Zähler der SP-Läufe (Treue-Drip-Basis).
+  stichPoints: 0, stichSpent: 0, nodes: {}, onboarding: 0, spRuns: 0 };
 
 /* #229 T11: reiner, stufenweiser Migrations-Switch für den Profil-Blob (kein localStorage → unit-testbar).
    Migriert von der gespeicherten Version hoch bis zur aktuellen; jeder Block transformiert v → v+1 und ist
@@ -102,6 +108,16 @@ export function migrateProfile(p) {
     // Felder füllt loadProfile über DEFAULT_PROFILE. Hier ist nur die Versions-Markierung nötig, keine Transformation.
     v = 1;
   }
+  if (v < 2) {
+    // v1 → v2 (Progression/Upgrades): SP-/Baum-/Onboarding-Felder ergänzen. Rein additiv — loadProfile füllt sie
+    // ohnehin über DEFAULT_PROFILE; hier explizit zu seeden macht ein frisch migriertes Profil selbst-konsistent.
+    if (typeof out.stichPoints !== "number") out.stichPoints = 0;
+    if (typeof out.stichSpent !== "number") out.stichSpent = 0;
+    if (!out.nodes || typeof out.nodes !== "object") out.nodes = {};
+    if (typeof out.onboarding !== "number") out.onboarding = 0;
+    if (typeof out.spRuns !== "number") out.spRuns = 0;
+    v = 2;
+  }
   out.schemaVersion = v;
   return out;
 }
@@ -114,13 +130,22 @@ export function loadProfile() {
         const p = migrateProfile(parsed); // erst hochmigrieren, dann über Default mergen (füllt fehlende Felder)
         return { ...DEFAULT_PROFILE, ...p,
           archetypesEver: Array.isArray(p.archetypesEver) ? p.archetypesEver : [],
-          monoArchetypeRuns: (p.monoArchetypeRuns && typeof p.monoArchetypeRuns === "object") ? p.monoArchetypeRuns : {} };
+          monoArchetypeRuns: (p.monoArchetypeRuns && typeof p.monoArchetypeRuns === "object") ? p.monoArchetypeRuns : {},
+          nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {} };
       }
     }
   } catch (e) {}
-  // #195: frisches archetypesEver-Array + #215 frische monoArchetypeRuns-Map, damit der Leer-/Korrupt-Pfad NICHT die
-  // mutablen Referenzen aus DEFAULT_PROFILE teilt (ein späterer push/Zuweisung würde sonst den Modul-Default vergiften).
-  return { ...DEFAULT_PROFILE, archetypesEver: [], monoArchetypeRuns: {} };
+  // #195: frisches archetypesEver-Array + #215 frische monoArchetypeRuns-Map + Baum-nodes, damit der Leer-/Korrupt-Pfad
+  // NICHT die mutablen Referenzen aus DEFAULT_PROFILE teilt (ein späterer push/Zuweisung würde sonst den Modul-Default vergiften).
+  return { ...DEFAULT_PROFILE, archetypesEver: [], monoArchetypeRuns: {}, nodes: {} };
+}
+
+// Profil-Blob persistieren (mit aktueller Schema-Version gestempelt). Für die Baum-Kauf-/Respec-Flows
+// (progression.buyNode/respec liefern ein neues Profil → hier speichern). recordRun schreibt separat.
+export function saveProfile(profile) {
+  const out = { ...profile, schemaVersion: PROFILE_SCHEMA_VERSION };
+  try { localStorage.setItem(k("as_profile"), JSON.stringify(out)); } catch (e) {}
+  return out;
 }
 
 const n0 = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 0);
@@ -160,6 +185,12 @@ export function recordRun(record) {
   const monoArchetypeRuns = { ...(p.monoArchetypeRuns || {}) };
   const monoArch = monoArchetypeOf(record);
   if (monoArch) monoArchetypeRuns[monoArch] = true;
+  // Progression/Upgrades (docs §4–§6): Onboarding rückt bei natürlichem Abschluss ein Glied vor; SP werden erst
+  // NACH vollendetem Onboarding geerntet (Grundstock + Score-Meilensteine + Treue-Drip). spRuns zählt nur SP-Läufe.
+  // Reine Regeln aus progression.js (Sim läuft profil-los → Baseline unberührt). stichSpent/nodes bleiben unangetastet
+  // (nur Kauf/Respec im Baum ändern sie).
+  const onboardingBefore = n0(p.onboarding);
+  const gainedSp = spForRun(record, onboardingBefore, n0(p.spRuns));
   const profile = {
     schemaVersion: PROFILE_SCHEMA_VERSION, // #229 T11: gespeicherte Profile tragen die Version (Migrations-Anker)
     games: p.games + 1,
@@ -181,6 +212,12 @@ export function recordRun(record) {
     // #226 Großmeister: der gespielte Rang (record.masteryGrade) gatet den Aufstieg — ab Meister V zählt nur ein Lauf
     // AUF dem aktuellen Max-Rang (sonst ließe sich die 50-M-Schwelle auf leichterem Ramp farmen).
     masteryGrade: record.masterRun ? advanceGrade(p.masteryGrade, n0(record.score), record.masteryGrade) : (p.masteryGrade || 0),
+    // Progression/Upgrades: Guthaben wächst um den Lauf-Ertrag; ausgegebene SP + gekaufte Knoten bleiben unverändert.
+    stichPoints: n0(p.stichPoints) + gainedSp,
+    stichSpent: n0(p.stichSpent),
+    nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
+    onboarding: onboardingAfter(onboardingBefore, record),
+    spRuns: n0(p.spRuns) + (isSpRun(record, onboardingBefore) ? 1 : 0),
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
   return { history, profile };
