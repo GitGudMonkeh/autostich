@@ -4,7 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Autostich — Prototyp</title>
-  <script type="module" crossorigin src="/autostich/test/assets/index-B7WWd3iz.js"></script>
+
+  <!-- PWA: „Zum Startbildschirm hinzufügen" → Vollbild (Android + iOS). /autostich/test/ respektiert den Deploy-Unterpfad. -->
+  <link rel="manifest" href="/autostich/test/manifest.webmanifest" />
+  <meta name="theme-color" content="#141419" />
+  <link rel="icon" type="image/png" href="/autostich/test/favicon-64.png" />
+
+  <!-- iOS: Standalone-Start (ohne Safari-Leisten) + Home-Screen-Icon. iOS nutzt diese Meta-Tags statt des Manifests. -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Autostich" />
+  <link rel="apple-touch-icon" href="/autostich/test/apple-touch-icon.png" />
+  <script type="module" crossorigin src="/autostich/test/assets/index-CVrHyd0o.js"></script>
   <link rel="modulepreload" crossorigin href="/autostich/test/assets/vendor-BVujZ77b.js">
   <link rel="modulepreload" crossorigin href="/autostich/test/assets/game-CsWuLq98.js">
   <link rel="stylesheet" crossorigin href="/autostich/test/assets/index-ClZSzzkI.css">
