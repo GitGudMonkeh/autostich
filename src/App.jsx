@@ -562,10 +562,10 @@ export function Autostich() {
           <header className="flex items-center justify-between gap-2">
             {/* Wortmarke + Seed in EINER Zeile (spart eine Zeile) — Seed ist jederzeit kopierbar zum Teilen/Herausfordern (#205). */}
             <div className="flex items-center gap-3 flex-wrap min-w-0">
-              {/* #UI: Neon-Wortmarke als Bild (wie StartScreen) — ersetzt das alte Text-Logo. Schwarzer Bild-Hintergrund
-                  verschwindet per mix-blend-mode:screen im dunklen Run-Kopf. */}
+              {/* #UI: Neon-Wortmarke als Bild (wie StartScreen). Das Logo hat einen echten Alpha-Kanal → ohne
+                  mix-blend-mode, blendet sauber auf den dunklen Run-Kopf. */}
               <img src={logo} alt="AUTOSTICH" draggable="false"
-                className="h-14 w-auto select-none shrink-0" style={{ mixBlendMode: "screen" }} />
+                className="h-14 w-auto select-none shrink-0" />
               {/* Seed-Chip entfällt hier — der Seed steht in der Statistik & im Endscreen. */}
             </div>
             <GlossaryPanel onOpenChange={setGlossaryOpen} className="shrink-0" style={{ width: 36, height: 36, fontSize: "1.05rem" }} />
