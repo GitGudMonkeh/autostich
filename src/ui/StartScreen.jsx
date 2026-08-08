@@ -122,9 +122,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
-            className="w-full px-5 py-3.5 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
-            style={{ background: "#5fe0f7", color: "#052730", boxShadow: "0 0 18px rgba(95,224,247,.6)" }}>
-            <span className="text-[17px]">▶ Lauf fortsetzen</span>
+            className="w-full px-5 py-4 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
+            style={{ background: "#5fe0f7", color: "#052730", boxShadow: "0 0 20px rgba(95,224,247,.65)" }}>
+            <span className="text-[19px]">▶ Lauf fortsetzen</span>
             <span className="text-[11px] font-mono font-semibold opacity-80">
               Durchlauf {Math.min((resume.cycle || 0) + 1, resume.totalCycles)}/{resume.totalCycles} · Score {Math.round(resume.score || 0).toLocaleString("de-DE")}{resume.masterRun ? ` · Meister ${resume.grade || 0}` : ""}
             </span>
@@ -181,7 +181,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {onMasterRun && (
         <div className="w-full max-w-sm flex flex-col gap-2.5">
           <button onClick={() => setRankedOpen((o) => !o)}
-            className="relative w-full px-5 py-2.5 rounded-lg text-[15px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            className="relative w-full px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}>
             Ranglisten-Lauf
             <span className="text-[13px] transition-transform" style={{ transform: rankedOpen ? "rotate(90deg)" : "none" }}>›</span>
