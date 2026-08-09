@@ -166,7 +166,7 @@ function FlipReveal({ front, backImage, dur }) {
    (≈40 % weiß / 60 % Suit-Farbe, ein paar „Konfetti"-Rechtecke). Deterministisch aus `seed` (kein Math.random
    im Render, #68). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen in den nächsten Stich.
    Elemente entfernen sich mit dem Karten-Remount des nächsten Stichs (key nach trickNo) → kein Stapeln. */
-function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, tier = 0, scale = 1, laser = false }) {
+export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, tier = 0, scale = 1, laser = false }) {
   // #188: score-skaliert. Kontinuierlich: Funkenzahl/-weite, Hälften-Distanz, Schnittlinien-Länge/Glow.
   // Unlocks: ab BRUTAL (tier≥2) ein zweiter Kreuzschnitt, ab IRRE (tier≥3) zerfällt die Karte in VIER Teile
   // statt zwei Hälften (optische Brücke zur Explosion). Screen-Effekte bleiben dem Crit vorbehalten (v2).
@@ -293,7 +293,7 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, 
    „berstet": ein heller Zentral-Flash blitzt auf, ein Schockwellen-Ring dehnt sich, die Karte skaliert kurz auf,
    überstrahlt und zerstiebt, während ~28 Partikel radial nach außen schießen. Farbe = Crit-Lila (passt zum
    KRITISCH-Text & Crit-Puls). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen. */
-function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay = 0, intensity = 0, tier = 0, scale = 1 }) {
+export function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay = 0, intensity = 0, tier = 0, scale = 1 }) {
   // Die Krit-Karte zerbirst in ein Raster kleiner PIXEL-SHARDS (clip-path-Klone der Karte): jedes Fragment fliegt
   // radial nach außen, tumbelt (rotate) & fadet — die Karte „zerplatzt in Pixel". Deterministisch aus `seed` (kein
   // Math.random, #68). Bis 0%/9% halten die Shards (fill-mode both + delay) den Ganz-Zustand → Karte liegt erst.
@@ -371,7 +371,7 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
    Mitte (as-bh-implode), ein leuchtender Ereignishorizont-Ring (deckfarben) pulsiert, eine Akkretions-Spirale saugt
    Partikel hinein, am Ende Kollaps-Flash + Schockwelle. Deterministisch aus `seed` (kein Math.random im Render).
    Dauern an den Flip-Takt gekoppelt (cardDur/burstDur), score-skaliert (intensity) → hält mit den anderen Findern mit. */
-function BlackholeFx({ cardEl, color, cardDur, starDur, seed, delay = 0, intensity = 0, scale = 1, streak = 0 }) {
+export function BlackholeFx({ cardEl, color, cardDur, starDur, seed, delay = 0, intensity = 0, scale = 1, streak = 0 }) {
   const durMul = 1 + intensity * 0.3;
   const cd = cardDur * durMul;          // Implosions-Fenster (Karte + Kern; skaliert mit dem Takt)
   const sd = (starDur || cardDur) * durMul; // Stern-Linger der Partikel (länger als der Sog → sichtbar als kleine Sterne)

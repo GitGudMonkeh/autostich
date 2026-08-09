@@ -9,7 +9,9 @@ import {
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
-import { startFinisher } from "./finisherFx.js";
+import { SliceFx, ExplosionFx, BlackholeFx } from "./Battlefield.jsx";
+import { Card } from "./Card.jsx";
+import { suitColor } from "../game/constants.js";
 
 /* Anzeige-Liste der Kategorie „Effekte": die kaufbaren GLOBAL_FX + eine synthetische „Standard"-Kachel
    (Gottgleicher Sieg OHNE Prunk) — immer aktiv, kein Kauf, nur zum Vergleichen. Wird direkt vor die
@@ -170,20 +172,33 @@ function GottgleichPreview({ variant, compact = false }) {
   );
 }
 
-// Karten-Finisher-Vorschau: Battlefield-Szene + Canvas-Effekt an einer Demo-Karte (Loop, container-skaliert).
-const FINISHER_COLOR = { laser: "#35e0ff", blackhole: "#35e0ff", shatter: "#e879f9" };
+/* Karten-Finisher-Vorschau: die ECHTEN In-Game-Komponenten (SliceFx/ExplosionFx/BlackholeFx) an einer Demo-Karte
+   im Loop — Vorschau = In-Game (keine separate Engine, kein Drift). Die Demo-Karte trägt die echte Neon-Zahl &
+   Holo-Optik wie im Spiel. Wird per `tick`/Remount neu gespielt; Demo-Dauern (fester Takt) sind gut sichtbar. */
+const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
+const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_HOLE = 460, FIN_HOLESTAR = 950;
 function FinisherScene({ variant }) {
-  const ref = useRef(null);
+  const [tick, setTick] = useState(0);
   const bf = battlefieldAssets("bf_kaiju");
   useEffect(() => {
-    if (!ref.current) return undefined;
-    return startFinisher(ref.current, { variant, color: FINISHER_COLOR[variant] || "#35e0ff", cardSrc: deckAssets("default").back, loop: true });
-  }, [variant]);
+    const id = setInterval(() => setTick((t) => t + 1), 2400); // Loop: Karte erscheint → wird zerstört → Pause
+    return () => clearInterval(id);
+  }, []);
+  const suitCol = suitColor(DEMO_SUIT);
+  const cardEl = <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
+  const seed = tick * 3 + 1;
+  let fx = null;
+  if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} laser />;
+  else if (variant === "shatter") fx = <ExplosionFx cardEl={cardEl} color="#e879f9" cardDur={FIN_HALVES} burstDur={FIN_SPARK} flashDur={200} seed={seed} delay={FIN_DELAY} intensity={0.6} tier={3} scale={1} />;
+  else fx = <BlackholeFx cardEl={cardEl} color={suitCol} cardDur={FIN_HOLE} starDur={FIN_HOLESTAR} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} streak={15} />;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      <canvas ref={ref} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true" />
+      {/* Demo-Karte im echten 104×144-Slot, zentriert; die Finisher-Komponente rendert die Karte + Effekt darin. */}
+      <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
+        <div key={tick} className="absolute inset-0">{fx}</div>
+      </div>
     </div>
   );
 }
