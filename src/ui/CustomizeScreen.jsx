@@ -15,6 +15,9 @@ import { suitColor } from "../game/constants.js";
 import { audio } from "./audio.js"; // #302b: Showcase-Panel spielt den passenden Finisher-Sound mit
 import { useBlackholeSfx } from "./finisherSfx.js"; // #298: Loch-Ton-Bett mit Hüllkurve (leiser Start → Anschwellen → schneller Kollaps), identisch zu In-Game
 
+// Standard-Backdrop für alle Effekt-/Finisher-Showcases: das Genesis-Battlefield (bf_onboarding), einheitlich neutral.
+const SHOWCASE_BF = "bf_onboarding";
+
 /* #deckshop — DECK-WERKSTATT (schlankes Modell): zwei Kategorien.
    • PACKS   = Karte (Front + Back) + Battlefield als EIN Kauf. Tap → Detail-Ansicht mit Vorschau
      (Karte vorne / Karte hinten / Hintergrund umschaltbar, ‹ ›/Swipe zwischen Packs). Kaufen aktiviert das
@@ -157,7 +160,7 @@ function PrunkCanvas({ variant }) {
    „GOTTGLEICH ×7"-Groß-Ansage) und legt den jeweiligen Prunk-Effekt darüber. variant "standard" zeigt den
    Basis-Look ohne Prunk → direkter Vergleich. compact = kleine Kachel (leichte CSS-Partikel); groß = Canvas-Wucht. */
 function GottgleichPreview({ variant, compact = false }) {
-  const bf = battlefieldAssets("bf_kaiju");
+  const bf = battlefieldAssets(SHOWCASE_BF);
   const cardImg = deckAssets("default").back;
   const hasPrunk = variant !== "standard";
   return (
@@ -192,7 +195,7 @@ const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LIN
 const FIN_SFX = { klinge: "fx_blade", laser: "fx_laser", lasergrid: "fx_laser" }; // shatter: (kein eigener SFX)
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
-  const bf = battlefieldAssets("bf_kaiju");
+  const bf = battlefieldAssets(SHOWCASE_BF);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 2400); // Loop: Karte erscheint → wird zerstört → Pause
     return () => clearInterval(id);
@@ -232,7 +235,7 @@ function BurnBeamPreview() {
   const [pulse, setPulse] = useState(null);
   const [bursts, setBursts] = useState([]);
   const [dormant, setDormant] = useState(true);
-  const bf = battlefieldAssets("bf_kaiju");
+  const bf = battlefieldAssets(SHOWCASE_BF);
   const suitCol = suitColor(DEMO_SUIT);
   const seqRef = useRef(0);
   useEffect(() => {
@@ -283,7 +286,7 @@ function BlackholePreview() {
   const panelRef = useRef(null), oppRef = useRef(null);
   const [pulse, setPulse] = useState(null);
   const [dormant, setDormant] = useState(true);
-  const bf = battlefieldAssets("bf_kaiju");
+  const bf = battlefieldAssets(SHOWCASE_BF);
   const suitCol = suitColor(DEMO_SUIT);
   useEffect(() => {
     // Synthetischer Serien-Loop: 1..8 Siege (Loch wächst + saugt Karten ein; der Serien-Mult klettert ÜBER ×2.0 →
@@ -328,14 +331,14 @@ function GlobalFxScenePreview({ fx }) {
       </div>
     );
   }
-  if (fx.preview === "hologrid") return <BfPreview bfId="bf_kaiju" a1={DEMO_C} fx="hologrid" className="w-full h-full" />;
+  if (fx.preview === "hologrid") return <BfPreview bfId={SHOWCASE_BF} a1={DEMO_C} fx="hologrid" className="w-full h-full" />;
   if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
   if (fx.preview === "blackhole") return <BlackholePreview />;
   if (fx.preview === "burnbeam") return <BurnBeamPreview />;
   if (["laser", "shatter", "klinge", "lasergrid"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
-  const bf = battlefieldAssets("bf_kaiju");
+  const bf = battlefieldAssets(SHOWCASE_BF);
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
