@@ -17,22 +17,23 @@ import p3Front from "../assets/cards/decks_player/deck_p3/front.png"; // #190 de
 import p3Back  from "../assets/cards/decks_player/deck_p3/back.png";
 import p4Front from "../assets/cards/decks_player/deck_p4/front.png"; // #190 deck_p4 „Mondpagode"
 import p4Back  from "../assets/cards/decks_player/deck_p4/back.png";
-import c1Front from "../assets/cards/decks_player/deck_c1/front.png"; // #190 deck_c1 „Endloskette" (Challenge: Serie 100)
-import c1Back  from "../assets/cards/decks_player/deck_c1/back.png";
-import c2Front from "../assets/cards/decks_player/deck_c2/front.png"; // #190 deck_c2 „Rekordhalter" (Challenge: Score 10M)
-import c2Back  from "../assets/cards/decks_player/deck_c2/back.png";
-import c3Front from "../assets/cards/decks_player/deck_c3/front.png"; // #190 deck_c3 „Sparfuchs" (Challenge: kein Shop-Kauf)
-import c3Back  from "../assets/cards/decks_player/deck_c3/back.png";
-import c5Front from "../assets/cards/decks_player/deck_c5/front.png"; // #215 deck_c5 „Reines Feuer" (Mono-Feuer-Lauf)
-import c5Back  from "../assets/cards/decks_player/deck_c5/back.png";
-import c6Front from "../assets/cards/decks_player/deck_c6/front.png"; // #215 deck_c6 „Reiner Blitz" (Mono-Blitz)
-import c6Back  from "../assets/cards/decks_player/deck_c6/back.png";
-import c7Front from "../assets/cards/decks_player/deck_c7/front.png"; // #215 deck_c7 „Reines Eis" (Mono-Eis)
-import c7Back  from "../assets/cards/decks_player/deck_c7/back.png";
-import c8Front from "../assets/cards/decks_player/deck_c8/front.png"; // #215 deck_c8 „Reine Pflanze" (Mono-Pflanze)
-import c8Back  from "../assets/cards/decks_player/deck_c8/back.png";
-import c9Front from "../assets/cards/decks_player/deck_c9/front.png"; // #215 deck_c9 „Element-Bund" (alle vier Fraktionen)
-import c9Back  from "../assets/cards/decks_player/deck_c9/back.png";
+// v0.4 Kauf-Packs — Deck-Paare (front = Rahmen, back = Motiv):
+import auraFront     from "../assets/cards/decks_player/deck_aura/front.png";       // Super Aura
+import auraBack      from "../assets/cards/decks_player/deck_aura/back.png";
+import beachFront    from "../assets/cards/decks_player/deck_beach/front.png";      // Malibu Wave
+import beachBack     from "../assets/cards/decks_player/deck_beach/back.png";
+import catFront      from "../assets/cards/decks_player/deck_cat/front.png";        // Aurora Whiskers
+import catBack       from "../assets/cards/decks_player/deck_cat/back.png";
+import mechaFront    from "../assets/cards/decks_player/deck_mecha/front.png";      // Mecha Ronin
+import mechaBack     from "../assets/cards/decks_player/deck_mecha/back.png";
+import ramenFront    from "../assets/cards/decks_player/deck_ramen/front.png";      // Slurp City
+import ramenBack     from "../assets/cards/decks_player/deck_ramen/back.png";
+import spacedogFront from "../assets/cards/decks_player/deck_spacedog/front.png";   // Star Pup
+import spacedogBack  from "../assets/cards/decks_player/deck_spacedog/back.png";
+import waleFront     from "../assets/cards/decks_player/deck_wale/front.png";       // Moonwhale
+import waleBack      from "../assets/cards/decks_player/deck_wale/back.png";
+import genesisFront  from "../assets/cards/decks_player/deck_onboarding/front.png"; // Genesis
+import genesisBack   from "../assets/cards/decks_player/deck_onboarding/back.png";
 import bf1Desktop from "../assets/battlefields/bf_1/desktop.jpg"; // #190 bf_1 „Neon-Boulevard" (ultrawide)
 import bf1Mobile  from "../assets/battlefields/bf_1/mobile.jpg";  // (4:3, schmalerer Viewport)
 import bf2Desktop from "../assets/battlefields/bf_2/desktop.jpg"; // #190 bf_2 „Nachttankstelle" (ultrawide)
@@ -54,6 +55,23 @@ import bfLofiDesktop   from "../assets/battlefields/bf_lofi/desktop.jpg";
 import bfLofiMobile    from "../assets/battlefields/bf_lofi/mobile.jpg";
 import bfKaijuDesktop  from "../assets/battlefields/bf_kaiju/desktop.jpg";
 import bfKaijuMobile   from "../assets/battlefields/bf_kaiju/mobile.jpg";
+// v0.4 Kauf-Packs — Battlefields (desktop 1600×640 / mobile 1080×810):
+import bfAuraDesktop     from "../assets/battlefields/bf_aura/desktop.jpg";
+import bfAuraMobile      from "../assets/battlefields/bf_aura/mobile.jpg";
+import bfBeachDesktop    from "../assets/battlefields/bf_beach/desktop.jpg";
+import bfBeachMobile     from "../assets/battlefields/bf_beach/mobile.jpg";
+import bfCatDesktop      from "../assets/battlefields/bf_cat/desktop.jpg";
+import bfCatMobile       from "../assets/battlefields/bf_cat/mobile.jpg";
+import bfMechaDesktop    from "../assets/battlefields/bf_mecha/desktop.jpg";
+import bfMechaMobile     from "../assets/battlefields/bf_mecha/mobile.jpg";
+import bfRamenDesktop    from "../assets/battlefields/bf_ramen/desktop.jpg";
+import bfRamenMobile     from "../assets/battlefields/bf_ramen/mobile.jpg";
+import bfSpacedogDesktop from "../assets/battlefields/bf_spacedog/desktop.jpg";
+import bfSpacedogMobile  from "../assets/battlefields/bf_spacedog/mobile.jpg";
+import bfWaleDesktop     from "../assets/battlefields/bf_wale/desktop.jpg";
+import bfWaleMobile      from "../assets/battlefields/bf_wale/mobile.jpg";
+import bfGenesisDesktop  from "../assets/battlefields/bf_onboarding/desktop.jpg";
+import bfGenesisMobile   from "../assets/battlefields/bf_onboarding/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -62,18 +80,19 @@ export const DECK_ASSETS = {
   deck_p2: { front: p2Front,     back: p2Back },
   deck_p3: { front: p3Front,     back: p3Back },
   deck_p4: { front: p4Front,     back: p4Back },
-  deck_c1: { front: c1Front,     back: c1Back },
-  deck_c2: { front: c2Front,     back: c2Back },
-  deck_c3: { front: c3Front,     back: c3Back },
-  deck_c5: { front: c5Front,     back: c5Back }, // #215 Archetyp-Decks
-  deck_c6: { front: c6Front,     back: c6Back },
-  deck_c7: { front: c7Front,     back: c7Back },
-  deck_c8: { front: c8Front,     back: c8Back },
-  deck_c9: { front: c9Front,     back: c9Back },
   // Deck-Werkstatt Starter-Themes (kaufbar):
   deck_sunset: { front: sunsetFront, back: sunsetBack },
   deck_lofi:   { front: lofiFront,   back: lofiBack },
   deck_kaiju:  { front: kaijuFront,  back: kaijuBack },
+  // v0.4 Kauf-Packs:
+  deck_aura:       { front: auraFront,     back: auraBack },
+  deck_beach:      { front: beachFront,    back: beachBack },
+  deck_cat:        { front: catFront,      back: catBack },
+  deck_mecha:      { front: mechaFront,    back: mechaBack },
+  deck_ramen:      { front: ramenFront,    back: ramenBack },
+  deck_spacedog:   { front: spacedogFront, back: spacedogBack },
+  deck_wale:       { front: waleFront,     back: waleBack },
+  deck_onboarding: { front: genesisFront,  back: genesisBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -88,6 +107,15 @@ export const BATTLEFIELD_ASSETS = {
   bf_sunset: { desktop: bfSunsetDesktop, mobile: bfSunsetMobile },
   bf_lofi:   { desktop: bfLofiDesktop,   mobile: bfLofiMobile },
   bf_kaiju:  { desktop: bfKaijuDesktop,  mobile: bfKaijuMobile },
+  // v0.4 Kauf-Packs:
+  bf_aura:       { desktop: bfAuraDesktop,     mobile: bfAuraMobile },
+  bf_beach:      { desktop: bfBeachDesktop,    mobile: bfBeachMobile },
+  bf_cat:        { desktop: bfCatDesktop,      mobile: bfCatMobile },
+  bf_mecha:      { desktop: bfMechaDesktop,    mobile: bfMechaMobile },
+  bf_ramen:      { desktop: bfRamenDesktop,    mobile: bfRamenMobile },
+  bf_spacedog:   { desktop: bfSpacedogDesktop, mobile: bfSpacedogMobile },
+  bf_wale:       { desktop: bfWaleDesktop,     mobile: bfWaleMobile },
+  bf_onboarding: { desktop: bfGenesisDesktop,  mobile: bfGenesisMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;

@@ -13,8 +13,8 @@ const prof = (o = {}) => ({ stichPoints: 0, stichSpent: 0, ownedCosmetics: {}, g
   hadNoRerollRun: false, monoArchetypeRuns: {}, hadAllArchetypesRun: false, ...o });
 
 describe("packs — Registry", () => {
-  it("drei kaufbare Packs (Deck + Battlefield) als EIN Kauf", () => {
-    for (const id of ["sunset", "lofi", "kaiju"]) {
+  it("Kauf-Packs (Deck + Battlefield) als EIN Kauf — inkl. v0.4-Packs", () => {
+    for (const id of ["sunset", "lofi", "kaiju", "aura", "beach", "cat", "mecha", "ramen", "spacedog", "wale", "genesis"]) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("buy");
       expect(t.els).toEqual(["deck", "bf"]);
@@ -30,10 +30,10 @@ describe("packs — Registry", () => {
     expect(packOwnKey(t)).toBe("pack:sunset");
     expect(packCond(t)).toEqual({ kind: "buy", ownKey: "pack:sunset" });
   });
-  it("Challenge-Packs bieten nur ein Deck und leihen die bestehende Bedingung", () => {
-    expect(THEME_DEFS.feuer.els).toEqual(["deck"]);
-    expect(hasBattlefield(THEME_DEFS.feuer)).toBe(false);
-    expect(packCond(THEME_DEFS.feuer)).toEqual({ kind: "monoArchetypeRun", archetype: "fire" });
+  it("v0.4: alte Challenge-Packs sind aus der Registry entfernt", () => {
+    for (const id of ["endlos", "rekord", "spar", "feuer", "blitz", "eis", "pflanze", "bund"]) {
+      expect(THEME_DEFS[id]).toBeUndefined();
+    }
   });
   it("Progressions-Packs bieten Deck + Battlefield; die Pack-Bedingung ist die Deck-Bedingung", () => {
     expect(THEME_DEFS.neon.els).toEqual(["deck", "bf"]);
@@ -53,13 +53,6 @@ describe("packs — Zustände & Besitz", () => {
     expect(packState(p, THEME_DEFS.sunset)).toBe("own");
     expect(packOwned(p, THEME_DEFS.sunset)).toBe(true);
   });
-  it("Challenge-Pack gesperrt = 'lock'; erfüllt = 'own'", () => {
-    const t = THEME_DEFS.feuer;
-    expect(packState(prof(), t)).toBe("lock");
-    expect(packPrice(t)).toBeNull();
-    const done = prof({ monoArchetypeRuns: { fire: true } });
-    expect(packState(done, t)).toBe("own");
-  });
   it("Progressions-Pack: nach 5 Läufen (Deck-Bedingung erfüllt) → 'own'", () => {
     const t = THEME_DEFS.neon;
     expect(packState(prof({ games: 4 }), t)).toBe("lock");
@@ -67,7 +60,6 @@ describe("packs — Zustände & Besitz", () => {
   });
   it("packUnlock liefert die Klartext-Bedingung eines Bedingungs-Packs", () => {
     expect(packUnlock(prof(), THEME_DEFS.neon).label).toContain("5");
-    expect(packUnlock(prof(), THEME_DEFS.feuer).label).toContain("Feuer");
   });
 });
 

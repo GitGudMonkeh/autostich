@@ -46,32 +46,18 @@ describe("cosmetics — Katalog", () => {
     expect(isUnlocked(DECK_DEFS.deck_p4, prof({ games: 35 }))).toBe(true);
     expect(isUnlocked(BATTLEFIELD_DEFS.bf_4, prof({ games: 40 }))).toBe(true);
   });
-  it("Challenge-Decks c1/c2/c3 haben die richtigen Bedingungen", () => {
-    expect(DECK_DEFS.deck_c1.unlock).toEqual({ kind: "streak", n: 100 });
-    expect(DECK_DEFS.deck_c2.unlock).toEqual({ kind: "score", n: 10_000_000 });
-    expect(DECK_DEFS.deck_c3.unlock).toEqual({ kind: "noRerollRun" }); // #214: löst noBuyRun ab
-    expect(isUnlocked(DECK_DEFS.deck_c1, prof({ bestStreak: 100 }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c2, prof({ bestScore: 10_000_000 }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c3, prof({ hadNoRerollRun: true }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c3, prof())).toBe(false);
-  });
-  it("Archetyp-Decks c5-c9 (#215): Mono-Archetyp je Fraktion + Element-Bund", () => {
-    expect(DECK_DEFS.deck_c5.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "fire" });
-    expect(DECK_DEFS.deck_c6.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "lightning" });
-    expect(DECK_DEFS.deck_c7.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "ice" });
-    expect(DECK_DEFS.deck_c8.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "plant" });
-    expect(DECK_DEFS.deck_c9.unlock).toEqual({ kind: "allArchetypesRun" });
-    // Mono: nur die passende Fraktion schaltet ihr Deck frei
-    expect(isUnlocked(DECK_DEFS.deck_c5, prof({ monoArchetypeRuns: { fire: true } }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c5, prof({ monoArchetypeRuns: { ice: true } }))).toBe(false);
-    expect(isUnlocked(DECK_DEFS.deck_c7, prof({ monoArchetypeRuns: { ice: true } }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c5, prof())).toBe(false); // ohne Flag gesperrt
-    // Bund: nur mit dem all-Flag
-    expect(isUnlocked(DECK_DEFS.deck_c9, prof({ hadAllArchetypesRun: true }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c9, prof())).toBe(false);
-    // unlockProgress liefert sprechende Labels
-    expect(unlockProgress(DECK_DEFS.deck_c8, prof()).label).toMatch(/Pflanze/);
-    expect(unlockProgress(DECK_DEFS.deck_c9, prof({ hadAllArchetypesRun: true })).done).toBe(true);
+  it("v0.4 Kauf-Pack-Decks haben eine buy-Bedingung; alte Challenge-Decks sind entfernt", () => {
+    for (const id of ["deck_aura", "deck_beach", "deck_cat", "deck_mecha", "deck_ramen", "deck_spacedog", "deck_wale", "deck_onboarding"]) {
+      const d = DECK_DEFS[id];
+      expect(d).toBeTruthy();
+      expect(d.unlock.kind).toBe("buy");
+      expect(isUnlocked(d, prof({ ownedCosmetics: { [d.unlock.ownKey]: true } }))).toBe(true);
+      expect(isUnlocked(d, prof())).toBe(false); // ohne Kauf gesperrt
+    }
+    // alte Challenge-/Archetyp-Decks sind raus (v0.4)
+    for (const id of ["deck_c1", "deck_c2", "deck_c3", "deck_c5", "deck_c6", "deck_c7", "deck_c8", "deck_c9"]) {
+      expect(DECK_DEFS[id]).toBeUndefined();
+    }
   });
   it("alle Progressions-Schwellen sind vollständig abgedeckt (Decks 5/15/25/35, BF 10/20/30/40)", () => {
     const deckGames = Object.values(DECK_DEFS).filter(d => d.unlock?.kind === "games").map(d => d.unlock.n).sort((a,b)=>a-b);

@@ -29,23 +29,22 @@ export const DECK_DEFS = {
   deck_p2: { id: "deck_p2", name: "Tankstopp",         unlock: { kind: "games", n: 15 } },
   deck_p3: { id: "deck_p3", name: "Megacity",          unlock: { kind: "games", n: 25 } },
   deck_p4: { id: "deck_p4", name: "Mondpagode",        unlock: { kind: "games", n: 35 } },
-  // Challenge-Decks (nur Decks, keine Battlefields):
-  deck_c1: { id: "deck_c1", name: "Endloskette",       unlock: { kind: "streak", n: 100 } },
-  deck_c2: { id: "deck_c2", name: "Rekordhalter",      unlock: { kind: "score",  n: 10_000_000 } },
-  deck_c3: { id: "deck_c3", name: "Sparfuchs",         unlock: { kind: "noRerollRun" } }, // #214: löst noBuyRun ab (Shop → Architekt, #202)
-  // (#267: deck_c4 (monoStatRun) gestrichen — die Stat-Phase ist entfernt.)
-  // Archetyp-Challenge-Decks (#215): Mono-Archetyp-Lauf je Fraktion + Element-Bund (alle vier).
-  deck_c5: { id: "deck_c5", name: "Reines Feuer",  unlock: { kind: "monoArchetypeRun", archetype: "fire" } },
-  deck_c6: { id: "deck_c6", name: "Reiner Blitz",  unlock: { kind: "monoArchetypeRun", archetype: "lightning" } },
-  deck_c7: { id: "deck_c7", name: "Reines Eis",    unlock: { kind: "monoArchetypeRun", archetype: "ice" } },
-  deck_c8: { id: "deck_c8", name: "Reine Pflanze", unlock: { kind: "monoArchetypeRun", archetype: "plant" } },
-  deck_c9: { id: "deck_c9", name: "Element-Bund",  unlock: { kind: "allArchetypesRun" } },
-  // (Rang/Großmeister-Decks entfernt mit dem Master-Rang-System — evtl. später neue Decks mit eigenem Design.)
+  // (v0.4: alte Challenge-Decks deck_c1/c2/c3 + Archetyp-Decks deck_c5–c9 entfernt. Die Freischalt-Kinds
+  //  streak/score/noRerollRun/monoArchetypeRun/allArchetypesRun bleiben vorerst dormant in isUnlocked.)
   // Deck-Werkstatt Kauf-Packs (#deckshop): als ganzes Pack mit SP kaufbar. „unlocked" = Pack im Besitz
   // (profile.ownedCosmetics["pack:<id>"]); die Pack-Registry (game/themes.js) treibt Kauf/Anzeige.
   deck_sunset: { id: "deck_sunset", name: "Sunset Rider", unlock: { kind: "buy", ownKey: "pack:sunset" } },
   deck_lofi:   { id: "deck_lofi",   name: "Lofi Nights",  unlock: { kind: "buy", ownKey: "pack:lofi" } },
   deck_kaiju:  { id: "deck_kaiju",  name: "Neon Kaiju",   unlock: { kind: "buy", ownKey: "pack:kaiju" } },
+  // v0.4 Kauf-Packs:
+  deck_aura:       { id: "deck_aura",       name: "Super Aura",      unlock: { kind: "buy", ownKey: "pack:aura" } },
+  deck_beach:      { id: "deck_beach",      name: "Malibu Wave",     unlock: { kind: "buy", ownKey: "pack:beach" } },
+  deck_cat:        { id: "deck_cat",        name: "Aurora Whiskers", unlock: { kind: "buy", ownKey: "pack:cat" } },
+  deck_mecha:      { id: "deck_mecha",      name: "Mecha Ronin",     unlock: { kind: "buy", ownKey: "pack:mecha" } },
+  deck_ramen:      { id: "deck_ramen",      name: "Slurp City",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
+  deck_spacedog:   { id: "deck_spacedog",   name: "Star Pup",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
+  deck_wale:       { id: "deck_wale",       name: "Moonwhale",       unlock: { kind: "buy", ownKey: "pack:wale" } },
+  deck_onboarding: { id: "deck_onboarding", name: "Genesis",         unlock: { kind: "buy", ownKey: "pack:genesis" } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -60,6 +59,15 @@ export const BATTLEFIELD_DEFS = {
   bf_sunset: { id: "bf_sunset", name: "Sunset Rider · Battlefield", unlock: { kind: "buy", ownKey: "pack:sunset" } },
   bf_lofi:   { id: "bf_lofi",   name: "Lofi Nights · Battlefield",  unlock: { kind: "buy", ownKey: "pack:lofi" } },
   bf_kaiju:  { id: "bf_kaiju",  name: "Neon Kaiju · Battlefield",   unlock: { kind: "buy", ownKey: "pack:kaiju" } },
+  // v0.4 Kauf-Packs (Battlefield = Teil des Packs, gleicher Besitz-Schlüssel):
+  bf_aura:       { id: "bf_aura",       name: "Super Aura · Battlefield",      unlock: { kind: "buy", ownKey: "pack:aura" } },
+  bf_beach:      { id: "bf_beach",      name: "Malibu Wave · Battlefield",     unlock: { kind: "buy", ownKey: "pack:beach" } },
+  bf_cat:        { id: "bf_cat",        name: "Aurora Whiskers · Battlefield", unlock: { kind: "buy", ownKey: "pack:cat" } },
+  bf_mecha:      { id: "bf_mecha",      name: "Mecha Ronin · Battlefield",     unlock: { kind: "buy", ownKey: "pack:mecha" } },
+  bf_ramen:      { id: "bf_ramen",      name: "Slurp City · Battlefield",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
+  bf_spacedog:   { id: "bf_spacedog",   name: "Star Pup · Battlefield",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
+  bf_wale:       { id: "bf_wale",       name: "Moonwhale · Battlefield",       unlock: { kind: "buy", ownKey: "pack:wale" } },
+  bf_onboarding: { id: "bf_onboarding", name: "Genesis · Battlefield",         unlock: { kind: "buy", ownKey: "pack:genesis" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

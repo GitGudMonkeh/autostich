@@ -96,6 +96,24 @@ export const THEME_DEFS = {
   kaiju:  { id: "kaiju",  name: "Neon Kaiju",   emblem: "🦖", kind: "buy", a1: "#3a7bff", a2: "#ff4dcb",
     deckId: "deck_kaiju", bfId: "bf_kaiju", els: ["deck", "bf"] },
 
+  // ---- v0.4 Kauf-Packs (1 Kauf = Deck + Battlefield, je PACK_COST SP) ----
+  aura:     { id: "aura",     name: "Super Aura",      emblem: "💥", kind: "buy", a1: "#ffb03a", a2: "#ff6a3a",
+    deckId: "deck_aura",       bfId: "bf_aura",       els: ["deck", "bf"] },
+  beach:    { id: "beach",    name: "Malibu Wave",     emblem: "🌴", kind: "buy", a1: "#ff5aa0", a2: "#35d0e0",
+    deckId: "deck_beach",      bfId: "bf_beach",      els: ["deck", "bf"] },
+  cat:      { id: "cat",      name: "Aurora Whiskers", emblem: "🐱", kind: "buy", a1: "#54e08a", a2: "#9b82f0",
+    deckId: "deck_cat",        bfId: "bf_cat",        els: ["deck", "bf"] },
+  mecha:    { id: "mecha",    name: "Mecha Ronin",     emblem: "🤖", kind: "buy", a1: "#3a7bff", a2: "#9b6cff",
+    deckId: "deck_mecha",      bfId: "bf_mecha",      els: ["deck", "bf"] },
+  ramen:    { id: "ramen",    name: "Slurp City",      emblem: "🍜", kind: "buy", a1: "#ff5a7a", a2: "#ffab3a",
+    deckId: "deck_ramen",      bfId: "bf_ramen",      els: ["deck", "bf"] },
+  spacedog: { id: "spacedog", name: "Star Pup",        emblem: "🐕", kind: "buy", a1: "#9b6cff", a2: "#ff4dcb",
+    deckId: "deck_spacedog",   bfId: "bf_spacedog",   els: ["deck", "bf"] },
+  wale:     { id: "wale",     name: "Moonwhale",       emblem: "🐋", kind: "buy", a1: "#35d0ff", a2: "#7fdcff",
+    deckId: "deck_wale",       bfId: "bf_wale",       els: ["deck", "bf"] },
+  genesis:  { id: "genesis",  name: "Genesis",         emblem: "🔷", kind: "buy", a1: "#26c6e6", a2: "#9b82f0",
+    deckId: "deck_onboarding", bfId: "bf_onboarding", els: ["deck", "bf"] },
+
   // ---- Progressions-Packs (Deck + Battlefield, über „Läufe" freigeschaltet) ----
   neon: { id: "neon", name: "Neonstadt", emblem: "🌆", kind: "cond", a1: "#26c6e6", a2: "#9b82f0",
     deckId: "deck_p1", bfId: "bf_1", els: ["deck", "bf"] },
@@ -105,16 +123,6 @@ export const THEME_DEFS = {
     deckId: "deck_p3", bfId: "bf_3", els: ["deck", "bf"] },
   mond: { id: "mond", name: "Mondpagode", emblem: "🌙", kind: "cond", a1: "#9b82f0", a2: "#26c6e6",
     deckId: "deck_p4", bfId: "bf_4", els: ["deck", "bf"] },
-
-  // ---- Challenge-Packs (nur Deck; über die Challenge freigeschaltet) ----
-  endlos:  { id: "endlos",  name: "Endloskette",  emblem: "♾️", kind: "cond", a1: "#f2c14a", a2: "#ff9d3a", deckId: "deck_c1", els: ["deck"] },
-  rekord:  { id: "rekord",  name: "Rekordhalter", emblem: "🏆", kind: "cond", a1: "#f2c14a", a2: "#f2a83a", deckId: "deck_c2", els: ["deck"] },
-  spar:    { id: "spar",    name: "Sparfuchs",    emblem: "🦊", kind: "cond", a1: "#54e08a", a2: "#26c6e6", deckId: "deck_c3", els: ["deck"] },
-  feuer:   { id: "feuer",   name: "Reines Feuer", emblem: "🔥", kind: "cond", a1: "#ff6a3a", a2: "#ffb03a", deckId: "deck_c5", els: ["deck"] },
-  blitz:   { id: "blitz",   name: "Reiner Blitz", emblem: "⚡", kind: "cond", a1: "#ffe14d", a2: "#3a7bff", deckId: "deck_c6", els: ["deck"] },
-  eis:     { id: "eis",     name: "Reines Eis",   emblem: "❄️", kind: "cond", a1: "#7fdcff", a2: "#26c6e6", deckId: "deck_c7", els: ["deck"] },
-  pflanze: { id: "pflanze", name: "Reine Pflanze", emblem: "🌿", kind: "cond", a1: "#54e08a", a2: "#9be15e", deckId: "deck_c8", els: ["deck"] },
-  bund:    { id: "bund",    name: "Element-Bund", emblem: "🧬", kind: "cond", a1: "#9b82f0", a2: "#ff4dcb", deckId: "deck_c9", els: ["deck"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);
