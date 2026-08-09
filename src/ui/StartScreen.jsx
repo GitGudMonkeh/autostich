@@ -173,7 +173,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             <div className={onDevRun ? "grid grid-cols-2 gap-2.5" : ""}>
               <button onClick={onStart}
                 className="as-guide-glow w-full rounded-lg px-4 py-2.5 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
-                style={{ background: "#12151f", border: `1px solid ${BLUE}88`, color: "#93b4f2" }}>Normal</button>
+                style={{ background: "#0e1b22", border: "1px solid #5fe0f7", color: "#a8ecf7" }}>Normal</button>
               {onDevRun && (
                 <button onClick={onDevRun}
                   className="rounded-lg px-4 py-2.5 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
@@ -264,12 +264,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         </div>
       )}
 
-      {/* Deck-Werkstatt — eigener Button zwischen Rangliste und Upgrades. Cyan (Logo-Verlauf links), damit er
-          sich vom violetten Ranglisten- und amber Upgrades-Button abhebt, aber zum selben Farbsystem gehört. */}
+      {/* Deck-Werkstatt — eigener Button zwischen Rangliste und Upgrades, im Amber des Logo-ENDES (rechts). */}
       {onCustomize && (
         <button onClick={onCustomize}
           className="w-full max-w-sm px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-          style={{ background: "#0f1e24", border: `1px solid ${CY}66`, color: CY }}>
+          style={{ background: "#1f1a10", border: `1px solid ${AM}66`, color: AM }}>
           Deck-Werkstatt
           <span className="text-[13px]">›</span>
         </button>

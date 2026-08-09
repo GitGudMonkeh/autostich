@@ -74,9 +74,9 @@ button { font-family: inherit; }
 .as-streak-pulse { animation: as-streak-pulse 1.15s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .as-streak-pulse { animation: none; box-shadow: 0 0 8px 1px rgba(155,140,255,0.4); } }
 /* Sanfter „Drück-mich"-Puls für die Primär-Aktion (z. B. „Normal" im aufgeklappten Normaler Lauf). Dezent. */
-@keyframes as-guide-glow { 0%,100% { box-shadow: 0 0 8px rgba(90,138,222,0.22); } 50% { box-shadow: 0 0 18px rgba(90,138,222,0.5); } }
+@keyframes as-guide-glow { 0%,100% { box-shadow: 0 0 9px rgba(95,224,247,0.28); } 50% { box-shadow: 0 0 20px rgba(95,224,247,0.6); } }
 .as-guide-glow { animation: as-guide-glow 2.2s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .as-guide-glow { animation: none; box-shadow: 0 0 12px rgba(90,138,222,0.35); } }
+@media (prefers-reduced-motion: reduce) { .as-guide-glow { animation: none; box-shadow: 0 0 14px rgba(95,224,247,0.4); } }
 /* Wie as-combo, aber HÄLT am Ende bei voller Opacity (forwards) — für den Formations-Multi-Float, damit er
    sichtbar bleibt, solange der Stich angezeigt wird (wie Banner/Aufschlüsselung), statt zu früh wegzufaden. */
 @keyframes as-combo-hold { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-6px) scale(1); } 100% { opacity:1; transform: translateY(-8px) scale(1); } }
