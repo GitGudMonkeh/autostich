@@ -6,7 +6,7 @@ import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA,
   saveProfile, wipeProfileStorage, saveOptions } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
-import { ONBOARDING_LINKS } from "../src/game/progression.js";
+import { ONBOARDING_LINKS, NODE_IDS } from "../src/game/progression.js";
 
 // #152: node-Env hat kein localStorage → die Persistenz-Funktionen fielen bisher nur in ihre try/catch-Defaults
 // und blieben ungetestet. Minimaler Map-basierter Mock, den die bare-`localStorage`-Zugriffe in storage.js sehen.
@@ -113,13 +113,13 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.onboarding).toBe(0);
     expect(p.spRuns).toBe(0);
     expect(p.ownedCosmetics).toEqual({});
-    expect(p.schemaVersion).toBe(3);
+    expect(p.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
   });
 
   it("Migration v1 → v3 seedet die neuen Felder ohne Altfelder zu verlieren", () => {
     const v1 = { schemaVersion: 1, games: 4, bestScore: 700, bestStreak: 5 };
     const m = migrateProfile(v1);
-    expect(m.schemaVersion).toBe(3);
+    expect(m.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
     expect(m.games).toBe(4);
     expect(m.bestStreak).toBe(5);         // Altfeld erhalten
     expect(m.stichPoints).toBe(0);
@@ -127,11 +127,13 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(m.onboarding).toBe(0);
     expect(m.spRuns).toBe(0);
     expect(m.ownedCosmetics).toEqual({}); // v2 → v3: Deck-Werkstatt-Besitz
+    expect(m.deckPoints).toBe(0);         // v3 → v4: DP-Ökonomie
+    expect(m.deckSpent).toBe(0);
   });
 
   it("Migration v2 → v3 ergänzt die Kosmetik-Besitz-Map", () => {
     const m = migrateProfile({ schemaVersion: 2, stichPoints: 7, nodes: { B1: 1 } });
-    expect(m.schemaVersion).toBe(3);
+    expect(m.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
     expect(m.stichPoints).toBe(7);        // Altfeld erhalten
     expect(m.nodes).toEqual({ B1: 1 });
     expect(m.ownedCosmetics).toEqual({});
@@ -200,6 +202,23 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.stichPoints).toBe(15);
   });
 
+  it("#299 DP: nach Onboarding native DP = floor(score/10M); SP laufen normal weiter", () => {
+    let p;
+    for (let i = 1; i <= ONBOARDING_LINKS; i++) p = recordRun(runRec({ ts: i })).profile; // Onboarding fertig
+    expect(p.deckPoints).toBe(0);
+    p = recordRun(runRec({ ts: 7, score: 55_000_000 })).profile;
+    expect(p.deckPoints).toBe(5);          // 55 Mio → 5 DP (native)
+    expect(p.stichPoints).toBe(1 + 2);     // SP weiter: +1 Grundstock + 2 Meilensteine (25M+50M)
+  });
+
+  it("#299 DP: bei vollem Baum zahlt die SP-Ökonomie DP statt SP (native DP zusätzlich)", () => {
+    const allNodes = Object.fromEntries(NODE_IDS.map((id) => [id, 1]));
+    saveProfile({ ...loadProfile(), onboarding: 6, nodes: allNodes, stichPoints: 100 });
+    const p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
+    expect(p.stichPoints).toBe(100);       // keine SP mehr gutgeschrieben (Baum komplett)
+    expect(p.deckPoints).toBe(10 + 6);     // native 10 + SP-Ökonomie (1 Grundstock + 5 Meilensteine) als DP
+  });
+
   it("recordRun lässt gekaufte Knoten + ausgegebene SP unangetastet (nur Kauf/Respec ändern sie)", () => {
     // Profil mit einem gekauften Knoten + Onboarding fertig vorbereiten.
     saveProfile({ ...loadProfile(), onboarding: 6, stichPoints: 3, stichSpent: 2, nodes: { B1: 1 } });
@@ -211,7 +230,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
 
   it("saveProfile rundet durch localStorage und stempelt die Schema-Version", () => {
     const saved = saveProfile({ stichPoints: 20, nodes: { A1: 1 }, onboarding: 6 });
-    expect(saved.schemaVersion).toBe(3);
+    expect(saved.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
     const p = loadProfile();
     expect(p.stichPoints).toBe(20);
     expect(p.nodes).toEqual({ A1: 1 });

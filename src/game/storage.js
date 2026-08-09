@@ -1,5 +1,5 @@
 import { GHOST_STEP } from "./constants.js";
-import { onboardingAfter, spForRun, isSpRun } from "./progression.js";
+import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete } from "./progression.js";
 
 /* Preview-Build (Testbranch auf /autostich/test/) teilt sich die Origin mit der echten
    Seite → derselbe localStorage. Ein Präfix trennt die Namespaces, damit Test-Runs den
@@ -84,7 +84,7 @@ export function loadRunHistory() {
 // und brauchen keine Versionierung.
 // v2 (Progression/Upgrades, docs §9): das Profil bekommt die SP-/Baum-/Onboarding-Felder. Rein additiv, aber
 // als eigene Schema-Epoche markiert (Migrations-Anker für spätere Baum-Umformungen).
-export const PROFILE_SCHEMA_VERSION = 3;
+export const PROFILE_SCHEMA_VERSION = 4;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
   hadNoRerollRun: false, // #214: sticky Challenge-Flag (einmal true → bleibt); noReroll = Sparfuchs deck_c3. (#267: hadMonoStatRun entfernt — die Stat-Phase ist weg.)
@@ -92,6 +92,8 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   // Progression/Upgrades (docs §1/§4/§6): SP-Guthaben + ausgegeben (Respec/Anzeige), gekaufte Baum-Knoten
   // ({[id]: level}), weiteste Onboarding-Stufe (0..6) und Zähler der SP-Läufe (Treue-Drip-Basis).
   stichPoints: 0, stichSpent: 0, nodes: {}, onboarding: 0, spRuns: 0,
+  // #299 Deckpunkte (DP): zweite Währung für die Werkstatt-Packs. Guthaben + ausgegeben (Anzeige/Respec-los).
+  deckPoints: 0, deckSpent: 0,
   // Deck-Werkstatt (#deckshop): mit SP gekaufte Kosmetik-Elemente als Map "theme:element" → true
   // (z. B. "sunset:deck", "lofi:frameGlow"). Rein additiv, sticky (einmal gekauft → bleibt).
   ownedCosmetics: {} };
@@ -124,6 +126,13 @@ export function migrateProfile(p) {
     // (loadProfile füllt sie ohnehin über DEFAULT_PROFILE; hier explizit für Selbst-Konsistenz).
     if (!out.ownedCosmetics || typeof out.ownedCosmetics !== "object") out.ownedCosmetics = {};
     v = 3;
+  }
+  if (v < 4) {
+    // v3 → v4 (#299 DP-Ökonomie): Deckpunkte-Felder ergänzen. Rein additiv — Guthaben startet bei 0
+    // (kein Umzug aus SP; die Werkstatt stellt gleichzeitig von SP auf DP um).
+    if (typeof out.deckPoints !== "number") out.deckPoints = 0;
+    if (typeof out.deckSpent !== "number") out.deckSpent = 0;
+    v = 4;
   }
   out.schemaVersion = v;
   return out;
@@ -210,7 +219,11 @@ export function recordRun(record) {
   // Reine Regeln aus progression.js (Sim läuft profil-los → Baseline unberührt). stichSpent/nodes bleiben unangetastet
   // (nur Kauf/Respec im Baum ändern sie).
   const onboardingBefore = n0(p.onboarding);
-  const gainedSp = spForRun(record, onboardingBefore, n0(p.spRuns));
+  // #299: SP werden gutgeschrieben, bis der Baum komplett ist (danach 0 → die SP-Ökonomie fließt als DP). DP kommen
+  // aus der nativen Formel (floor(score/10M)) und — bei vollem Baum — zusätzlich aus der SP-Ökonomie.
+  const treeDone = treeComplete(p);
+  const gainedSp = spCreditForRun(record, onboardingBefore, treeDone, n0(p.spRuns));
+  const gainedDp = dpForRun(record, onboardingBefore, treeDone, n0(p.spRuns));
   const profile = {
     schemaVersion: PROFILE_SCHEMA_VERSION, // #229 T11: gespeicherte Profile tragen die Version (Migrations-Anker)
     games: p.games + 1,
@@ -230,6 +243,9 @@ export function recordRun(record) {
     stichPoints: n0(p.stichPoints) + gainedSp,
     stichSpent: n0(p.stichSpent),
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
+    // #299 DP: Guthaben wächst um den DP-Ertrag; ausgegebene DP (Pack-Käufe) bleiben unverändert.
+    deckPoints: n0(p.deckPoints) + gainedDp,
+    deckSpent: n0(p.deckSpent),
     onboarding: onboardingAfter(onboardingBefore, record),
     spRuns: n0(p.spRuns) + (isSpRun(record, onboardingBefore) ? 1 : 0),
     // #deckshop: gekaufte Kosmetik bleibt über Läufe erhalten (recordRun baut das Profil neu → mittragen).
