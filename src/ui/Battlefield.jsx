@@ -252,13 +252,15 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
   // — erst DANN bersten die Stücke auseinander (vorher „bewegte sie sich schon, bevor sie getroffen wurde").
   if (laser) {
     const dist = 44 * sepMul;                               // Auswärts-Flug der Karten-Stücke nach dem Schnitt
-    // ZWEI PARALLELE Laser: beide teilen sich EINEN Winkel → sie kreuzen sich nie (Wunsch). Die Treffer-Punkte sind
-    // vertikal versetzt (oben/unten), damit beide Strahlen die Karte durchqueren → sie zerfällt in Streifen ENTLANG
-    // zweier paralleler Linien (kein „X" mehr über der Karte).
-    const beamAng = 30 + fjitter(seed * 3 + 1, 16);         // ~14..46° gemeinsamer Diagonal-Winkel (beide gleich)
+    // #298 ZWEI Laser aus UNTERSCHIEDLICHEN Richtungen: jeder Strahl bekommt einen eigenen, deutlich verschiedenen
+    // Winkel (eigene fjitter-Seeds). Gegenläufige Vorzeichen erzwingen eine Mindest-Winkeldifferenz (~44°), sodass sie
+    // nie zufällig parallel jittern: der obere Strahl fällt von oben-links nach unten-rechts (+), der untere
+    // gegenläufig von unten-links nach oben-rechts (−). Sie dürfen sich schneiden — kein „X" erzwungen.
+    const angTop = 34 + fjitter(seed * 3 + 1, 12);          // ~22..46°
+    const angBot = -34 + fjitter(seed * 11 + 5, 12);        // ~−46..−22°  (≥ ~44° Differenz → sichtbar nicht parallel)
     const lines = [
-      { px: clamp(0.5 + fjitter(seed * 7, 0.14), 0.30, 0.70), py: clamp(0.32 + fjitter(seed * 9, 0.08), 0.20, 0.44), ang: beamAng },
-      { px: clamp(0.5 + fjitter(seed * 13, 0.14), 0.30, 0.70), py: clamp(0.68 + fjitter(seed * 17, 0.08), 0.56, 0.80), ang: beamAng },
+      { px: clamp(0.5 + fjitter(seed * 7, 0.14), 0.30, 0.70), py: clamp(0.32 + fjitter(seed * 9, 0.08), 0.20, 0.44), ang: angTop },
+      { px: clamp(0.5 + fjitter(seed * 13, 0.14), 0.30, 0.70), py: clamp(0.68 + fjitter(seed * 17, 0.08), 0.56, 0.80), ang: angBot },
     ];
     const pieces = laserPieces(lines, 104, 144);            // Kartenbox 104×144 (echte Winkel-Ausrichtung)
     const cutMs = Math.round(cutDur);                       // Strahl-Durchzug; danach erst der Zerfall
