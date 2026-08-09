@@ -85,11 +85,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
     <div className="relative isolate flex flex-col items-center gap-3.5 pt-5 pb-5">
       {/* Ambient-Glow hinter dem Logo — spiegelt den Logo-Verlauf (Cyan links · Violett Mitte · Amber rechts).
           Verankert die ganze Kopfzone farblich im Logo, ohne laute Flächen. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[360px] -z-10"
-        style={{ background:
-          "radial-gradient(320px 170px at 28% 30%, rgba(38,198,230,.17), transparent 70%)," +
-          "radial-gradient(320px 180px at 50% 24%, rgba(155,130,240,.18), transparent 70%)," +
-          "radial-gradient(320px 170px at 72% 30%, rgba(242,168,58,.14), transparent 70%)" }} />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[380px] -z-10"
+        style={{ filter: "blur(30px)", background:
+          // Weicher Auslauf: sanfte Falloff-Kurve (Farbe → halb → 0) statt harter transparent-70%-Kante, plus
+          // blur(30px) → der Glow löst sich komplett kantenlos auf, ganz weich in den dunklen Grund.
+          "radial-gradient(400px 220px at 28% 30%, rgba(38,198,230,.16) 0%, rgba(38,198,230,.06) 45%, transparent 82%)," +
+          "radial-gradient(400px 230px at 50% 24%, rgba(155,130,240,.17) 0%, rgba(155,130,240,.06) 45%, transparent 82%)," +
+          "radial-gradient(400px 220px at 72% 30%, rgba(242,168,58,.13) 0%, rgba(242,168,58,.05) 45%, transparent 82%)" }} />
 
       {/* Ecken-Buttons als konsistentes Paar: Schnell-Mute oben LINKS, Glossar (Info) oben RECHTS — beide
           gleich gestylte dunkle Rounded-Pills, mit Rahmen-Inset (top-2 / left-2·right-2) statt in die Ecke gedrängt.
