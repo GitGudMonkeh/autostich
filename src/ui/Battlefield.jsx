@@ -172,7 +172,7 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, 
   const sepMul = 1 + intensity * 0.6;   // Hälften/Viertel fliegen weiter
   const radMul = 1 + intensity * 0.6;   // Funken streuen weiter
   const N = Math.max(6, Math.round((18 + intensity * 14) * scale)); // 18..32 Funken, turbo-ausgedünnt (#200 A, Boden 6)
-  const cutLen = Math.round((laser ? 172 : 120) * (1 + intensity * 0.4)); // Schnittlinie länger; Laser = längerer Strahl
+  const cutLen = Math.round(120 * (1 + intensity * 0.4)); // Schnittlinie länger
   const quarters = tier >= 3;           // IRRE+: vier Teile
   const crossCut = tier >= 2;           // BRUTAL+: zweiter Kreuzschnitt
   const sparks = Array.from({ length: N }, (_, i) => {
@@ -189,15 +189,51 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, 
   const ease = "cubic-bezier(0.3, 0.7, 0.3, 1)";
   // Schnittlinie (Winkel als CSS-Var → zweiter Kreuzschnitt nutzt dasselbe Keyframe mit anderem --cut-rot).
   const cutLine = (rot, key) => (
-    <div key={key} style={{ position: "absolute", left: "50%", top: "50%", width: cutLen, height: laser ? 2 : 3, marginLeft: -cutLen / 2, marginTop: laser ? -1 : -1.5,
-      // Laser: heller Strahl mit weiß-heißem Kern + starkem Glow (statt der flachen Klingen-Linie).
-      background: laser ? `linear-gradient(90deg, transparent, ${color} 12%, #ffffff 50%, ${color} 88%, transparent)` : color,
-      borderRadius: 2, transformOrigin: "center",
-      boxShadow: laser
-        ? `0 0 ${(9 + intensity * 8).toFixed(0)}px ${color}, 0 0 ${(22 + intensity * 12).toFixed(0)}px ${color}, 0 0 4px 1px #ffffffcc`
-        : `0 0 ${(6 + intensity * 6).toFixed(0)}px ${color}, 0 0 ${(14 + intensity * 10).toFixed(0)}px ${color}aa`,
+    <div key={key} style={{ position: "absolute", left: "50%", top: "50%", width: cutLen, height: 3, marginLeft: -cutLen / 2, marginTop: -1.5,
+      background: color, borderRadius: 2, transformOrigin: "center", boxShadow: `0 0 ${(6 + intensity * 6).toFixed(0)}px ${color}, 0 0 ${(14 + intensity * 10).toFixed(0)}px ${color}aa`,
       "--cut-rot": `${rot}deg`, animation: `as-cut-line ${cutDur}ms ease-out ${delay}ms both` }} />
   );
+
+  // LASER-SCHNITT (#deckshop, kaufbarer globaler Effekt): ZWEI Laser-Strahlen schießen (seed-zufällig ausgerichtet)
+  // über das Feld und kreuzen sich über der Karte; die Karte zerfällt an den Schnittlinien in vier Keile, die vom
+  // Kreuzungspunkt wegfliegen. Bewusst anders als die Klinge (die nur zwei Hälften trennt).
+  if (laser) {
+    const rot = fjitter(seed * 11, 18);                     // −18..18° zufällige Ausrichtung des Kreuzes
+    const dist = 64 * sepMul;                               // Wie weit die Keile auseinanderfliegen
+    const beamLen = Math.round(320 * (1 + intensity * 0.3)); // Strahl reicht weit über die Karte hinaus („übers Feld")
+    // Vier Keil-Klone (X-Teilung entlang der Karten-Diagonalen), fliegen nach oben/rechts/unten/links auseinander.
+    const wedges = [
+      { clip: "polygon(0 0, 100% 0, 50% 50%)",     dx: 0,  dy: -1 },
+      { clip: "polygon(100% 0, 100% 100%, 50% 50%)", dx: 1,  dy: 0 },
+      { clip: "polygon(100% 100%, 0 100%, 50% 50%)", dx: 0,  dy: 1 },
+      { clip: "polygon(0 100%, 0 0, 50% 50%)",     dx: -1, dy: 0 },
+    ];
+    const beam = (ang, key) => (
+      <div key={key} style={{ position: "absolute", left: "50%", top: "50%", width: beamLen, height: 2, marginLeft: -beamLen / 2, marginTop: -1,
+        background: `linear-gradient(90deg, transparent, ${color} 8%, #ffffff 50%, ${color} 92%, transparent)`,
+        boxShadow: `0 0 ${(10 + intensity * 8).toFixed(0)}px ${color}, 0 0 ${(26 + intensity * 12).toFixed(0)}px ${color}, 0 0 5px 1px #ffffffdd`,
+        transformOrigin: "center", "--cut-rot": `${ang}deg`, animation: `as-cut-line ${cutDur}ms ease-out ${delay}ms both` }} />
+    );
+    return (
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ transform: `rotate(${rot}deg)` }}>
+        {wedges.map((q, k) => (
+          <div key={`lw${k}`} className="absolute inset-0" style={{ clipPath: q.clip,
+            "--sx": `${(q.dx * dist).toFixed(1)}px`, "--sy": `${(q.dy * dist).toFixed(1)}px`, "--sr": `${fjitter(seed * 7 + k * 5, 12)}deg`,
+            animation: `as-boom-shard ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+        ))}
+        {/* Zwei Strahlen entlang der Karten-Diagonalen (104×144 → ±54°), kreuzen sich im Zentrum. */}
+        {beam(54, "lb1")}
+        {beam(-54, "lb2")}
+        {sparks.map((s) => (
+          <div key={s.i} style={{ position: "absolute", left: "50%", top: "50%",
+            width: s.confetti ? 6 : 4, height: s.confetti ? 3 : 4, borderRadius: s.confetti ? 1 : "50%",
+            background: s.white ? "#ffffff" : color, boxShadow: `0 0 5px ${s.white ? "#ffffff" : color}`,
+            "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
+            animation: `as-spark ${sparkDur}ms ease-out ${delay}ms both`, willChange: "transform, opacity" }} />
+        ))}
+      </div>
+    );
+  }
   // `delay` (ms = Ruhe-Beat) + fill-mode `both`: die Karte liegt erst still, dann setzt der Schnitt ein — während der
   // Wartezeit zeigen die Teile den 0 %-Zustand (Karte ganz), Schnittlinie/Funken bleiben unsichtbar. Das Wegfloaten
   // übernimmt der Wrapper (as-loss-drift-rand) mit eigenem, späterem Delay (erst NACH dem Schnitt).
@@ -581,7 +617,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     <div key={`p${t.trickNo}`} className="relative"
       style={flyAway ? { animation: `as-flyaway ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
            : flipOn ? undefined : dealStyle("as-deal-left")}>
-      {resultPulse(win ? (isCrit ? critColor : "#5ab87a") : null, isCrit)}
+      {/* Kein lila Krit-Puls mehr: auch ein Krit zeigt nur den normalen grünen Sieg-Puls (Krit-Wumms → Shatter/GOTTGLEICH). */}
+      {resultPulse(win ? "#5ab87a" : null, false)}
       {flipOn ? (
         <FlipReveal front={playerFront} backImage={deckBack} dur={flipDur} />   /* #180: Rücken → Front */
       ) : playerFront}   {/* Niederlage: eigene Karte fliegt (via as-flyaway am Wrapper) einfach weg — kein Schnitt */}

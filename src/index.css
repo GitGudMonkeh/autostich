@@ -178,6 +178,7 @@ button { font-family: inherit; }
    reduced-motion greift global (unten) UND ExplosionFx wird bei reduzierter Bewegung gar nicht gerendert. */
 @keyframes as-boom-shard {
   0%, 9% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  68%    { opacity: 1; }
   100%   { transform: translate(var(--sx, 0px), var(--sy, 0px)) rotate(var(--sr, 0deg)); opacity: 0; }
 }
 @keyframes as-boom-flash {
