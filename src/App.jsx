@@ -46,7 +46,7 @@ import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale
 import { UpgradeScreen } from "./ui/UpgradeScreen.jsx"; // Progression-Vorschau: Upgrade-Baum-Screen
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, elementOwned, laserSliceActive, blackholeActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
+import { THEMES, frameGlowActive, holoSwipeActive, hologridActive, laserSliceActive, blackholeActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
@@ -374,14 +374,14 @@ export function Autostich() {
   const activeBfId   = resolveSkinId(BATTLEFIELD_DEFS, options.battlefieldId, profile);
   const deckSkin = deckAssets(activeDeckId);
   const bfSkin   = battlefieldAssets(activeBfId);
-  // #deckshop: Deck-Werkstatt-Animationen — nur wirksam, wenn im aktiven Deck-Theme besessen UND per Option an.
-  const activeTheme = THEMES.find((t) => t.deckId === activeDeckId) || null;
-  const fxOwnOn = (fx, opt) => !!options[opt] && !!activeTheme && activeTheme.els.includes(fx) && elementOwned(profile, activeTheme, fx);
+  // #deckshop: Hauptfarbe (Hologrid-Gitter/Frame-Glow) aus dem aktiven Deck-Pack ableiten.
+  const activePack = THEMES.find((t) => t.deckId === activeDeckId) || null;
   const deckFx = {
-    deckA1: activeTheme?.a1 || null,
-    fxFrameGlow: fxOwnOn("frameGlow", "fxFrameGlow"),
-    fxHoloSwipe: fxOwnOn("holoSwipe", "fxHoloSwipe"),
-    fxHologrid:  fxOwnOn("hologrid",  "fxHologrid"),
+    deckA1: activePack?.a1 || null,
+    // Karten-Animationen sind jetzt GLOBAL: gekauft via ownedCosmetics["fx:frameGlow"…] UND per Option an.
+    fxFrameGlow: frameGlowActive(profile, options),
+    fxHoloSwipe: holoSwipeActive(profile, options),
+    fxHologrid:  hologridActive(profile, options),
     // Globale Effekte (nicht theme-gebunden): gekauft UND per Option an.
     fxLaserSlice: laserSliceActive(profile, options), // ersetzt die Klinge auf Gegnerkarten durch einen Laser
     fxBlackhole: blackholeActive(profile, options),   // Sieg-Finisher: Gegnerkarte implodiert (Vorrang vor Laser/Klinge)

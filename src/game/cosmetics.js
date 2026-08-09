@@ -41,11 +41,11 @@ export const DECK_DEFS = {
   deck_c8: { id: "deck_c8", name: "Reine Pflanze", unlock: { kind: "monoArchetypeRun", archetype: "plant" } },
   deck_c9: { id: "deck_c9", name: "Element-Bund",  unlock: { kind: "allArchetypesRun" } },
   // (Rang/Großmeister-Decks entfernt mit dem Master-Rang-System — evtl. später neue Decks mit eigenem Design.)
-  // Deck-Werkstatt Starter-Themes (#deckshop): pro Element mit SP kaufbar. „unlocked" = im Besitz
-  // (profile.ownedCosmetics[ownKey]); die Theme-Registry (game/themes.js) treibt Kauf/Anzeige.
-  deck_sunset: { id: "deck_sunset", name: "Sunset Rider", unlock: { kind: "buy", ownKey: "sunset:deck" } },
-  deck_lofi:   { id: "deck_lofi",   name: "Lofi Nights",  unlock: { kind: "buy", ownKey: "lofi:deck" } },
-  deck_kaiju:  { id: "deck_kaiju",  name: "Neon Kaiju",   unlock: { kind: "buy", ownKey: "kaiju:deck" } },
+  // Deck-Werkstatt Kauf-Packs (#deckshop): als ganzes Pack mit SP kaufbar. „unlocked" = Pack im Besitz
+  // (profile.ownedCosmetics["pack:<id>"]); die Pack-Registry (game/themes.js) treibt Kauf/Anzeige.
+  deck_sunset: { id: "deck_sunset", name: "Sunset Rider", unlock: { kind: "buy", ownKey: "pack:sunset" } },
+  deck_lofi:   { id: "deck_lofi",   name: "Lofi Nights",  unlock: { kind: "buy", ownKey: "pack:lofi" } },
+  deck_kaiju:  { id: "deck_kaiju",  name: "Neon Kaiju",   unlock: { kind: "buy", ownKey: "pack:kaiju" } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -56,10 +56,10 @@ export const BATTLEFIELD_DEFS = {
   bf_3:    { id: "bf_3",    name: "Neon City",       unlock: { kind: "games", n: 30 } },
   bf_4:    { id: "bf_4",    name: "Mondsee",         unlock: { kind: "games", n: 40 } },
   // Battlefields KOMPLETT (4 Progressionen + Default). Battlefields haben KEINE Challenge-Varianten (Issue #190).
-  // Deck-Werkstatt Starter-Themes (#deckshop): mit SP kaufbar, an das jeweilige Deck-Theme gekoppelt.
-  bf_sunset: { id: "bf_sunset", name: "Sunset Rider · Battlefield", unlock: { kind: "buy", ownKey: "sunset:bf" } },
-  bf_lofi:   { id: "bf_lofi",   name: "Lofi Nights · Battlefield",  unlock: { kind: "buy", ownKey: "lofi:bf" } },
-  bf_kaiju:  { id: "bf_kaiju",  name: "Neon Kaiju · Battlefield",   unlock: { kind: "buy", ownKey: "kaiju:bf" } },
+  // Deck-Werkstatt Kauf-Packs (#deckshop): das Battlefield ist Teil des Packs (ein Besitz-Schlüssel).
+  bf_sunset: { id: "bf_sunset", name: "Sunset Rider · Battlefield", unlock: { kind: "buy", ownKey: "pack:sunset" } },
+  bf_lofi:   { id: "bf_lofi",   name: "Lofi Nights · Battlefield",  unlock: { kind: "buy", ownKey: "pack:lofi" } },
+  bf_kaiju:  { id: "bf_kaiju",  name: "Neon Kaiju · Battlefield",   unlock: { kind: "buy", ownKey: "pack:kaiju" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
-  THEME_DEFS, THEMES, ELEMENT_DEFS, FX_KEYS, FX_OPTION_KEY, COST_PER_ELEMENT,
-  ownKey, elementCond, elementOwned, elementState, elementPrice, elementUnlock,
-  themeState, isBuyTheme, buyAllInfo, sharedUnlock,
-  canBuyElement, buyElement, buyAllForTheme,
+  THEME_DEFS, THEMES, PACKS, PACK_COST,
+  packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
+  canBuyPack, buyPack,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
+  frameGlowActive, holoSwipeActive, hologridActive,
   laserSliceActive, blackholeActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive,
 } from "../src/game/themes.js";
 
@@ -12,174 +12,106 @@ import {
 const prof = (o = {}) => ({ stichPoints: 0, stichSpent: 0, ownedCosmetics: {}, games: 0, bestStreak: 0, bestScore: 0,
   hadNoRerollRun: false, monoArchetypeRuns: {}, hadAllArchetypesRun: false, ...o });
 
-describe("themes — Registry", () => {
-  it("drei kaufbare Starter-Themes mit allen fünf Elementen", () => {
+describe("packs — Registry", () => {
+  it("drei kaufbare Packs (Deck + Battlefield) als EIN Kauf", () => {
     for (const id of ["sunset", "lofi", "kaiju"]) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("buy");
-      expect(t.els).toEqual(["deck", "bf", "frameGlow", "holoSwipe", "hologrid"]);
-      expect(isBuyTheme(t)).toBe(true);
+      expect(t.els).toEqual(["deck", "bf"]);
+      expect(isBuyPack(t)).toBe(true);
+      expect(hasBattlefield(t)).toBe(true);
     }
   });
-  it("Element-Katalog deckt genau die fünf Element-Keys ab; drei davon sind Animationen", () => {
-    expect(ELEMENT_DEFS.map((e) => e.key)).toEqual(["deck", "bf", "frameGlow", "holoSwipe", "hologrid"]);
-    expect(FX_KEYS).toEqual(["frameGlow", "holoSwipe", "hologrid"]);
-    expect(FX_OPTION_KEY.frameGlow).toBe("fxFrameGlow");
+  it("PACKS ist ein Alias auf THEMES", () => {
+    expect(PACKS).toBe(THEMES);
   });
-  it("Kauf-Theme koppelt Deck/BF-Bedingung an die ownedCosmetics-Schlüssel", () => {
+  it("Kauf-Pack: Bedingung ist der eigene Pack-Besitzschlüssel", () => {
     const t = THEME_DEFS.sunset;
-    expect(elementCond(t, "deck")).toEqual({ kind: "buy", ownKey: "sunset:deck" });
-    expect(elementCond(t, "bf")).toEqual({ kind: "buy", ownKey: "sunset:bf" });
-    expect(elementCond(t, "frameGlow")).toEqual({ kind: "buy", ownKey: ownKey("sunset", "frameGlow") });
+    expect(packOwnKey(t)).toBe("pack:sunset");
+    expect(packCond(t)).toEqual({ kind: "buy", ownKey: "pack:sunset" });
   });
-  it("Challenge-Themes bieten nur ein Deck und leihen die bestehende Bedingung", () => {
+  it("Challenge-Packs bieten nur ein Deck und leihen die bestehende Bedingung", () => {
     expect(THEME_DEFS.feuer.els).toEqual(["deck"]);
-    expect(elementCond(THEME_DEFS.feuer, "deck")).toEqual({ kind: "monoArchetypeRun", archetype: "fire" });
+    expect(hasBattlefield(THEME_DEFS.feuer)).toBe(false);
+    expect(packCond(THEME_DEFS.feuer)).toEqual({ kind: "monoArchetypeRun", archetype: "fire" });
   });
-  it("Progressions-Themes koppeln Deck+BF an ihre gestaffelten Läufe-Bedingungen", () => {
-    expect(elementCond(THEME_DEFS.neon, "deck")).toEqual({ kind: "games", n: 5 });
-    expect(elementCond(THEME_DEFS.neon, "bf")).toEqual({ kind: "games", n: 10 });
+  it("Progressions-Packs bieten Deck + Battlefield; die Pack-Bedingung ist die Deck-Bedingung", () => {
+    expect(THEME_DEFS.neon.els).toEqual(["deck", "bf"]);
+    expect(packCond(THEME_DEFS.neon)).toEqual({ kind: "games", n: 5 });
   });
 });
 
-describe("themes — Zustände & Besitz", () => {
-  it("frisches Profil: Kauf-Theme ist komplett 'buy', Zustand des Themes 'buy'", () => {
-    const p = prof();
+describe("packs — Zustände & Besitz", () => {
+  it("frisches Profil: Kauf-Pack ist 'buy'", () => {
     const t = THEME_DEFS.sunset;
-    for (const el of t.els) expect(elementState(p, t, el)).toBe("buy");
-    expect(themeState(p, t)).toBe("buy");
+    expect(packState(prof(), t)).toBe("buy");
+    expect(packOwned(prof(), t)).toBe(false);
+    expect(packPrice(t)).toBe(PACK_COST);
   });
-  it("gekauftes Deck-Element → 'own'; Theme wird 'mix'", () => {
-    const p = prof({ ownedCosmetics: { "sunset:deck": true } });
-    const t = THEME_DEFS.sunset;
-    expect(elementState(p, t, "deck")).toBe("own");
-    expect(elementState(p, t, "bf")).toBe("buy");
-    expect(themeState(p, t)).toBe("mix");
-    expect(elementOwned(p, t, "deck")).toBe(true);
+  it("gekauftes Pack → 'own'", () => {
+    const p = prof({ ownedCosmetics: { "pack:sunset": true } });
+    expect(packState(p, THEME_DEFS.sunset)).toBe("own");
+    expect(packOwned(p, THEME_DEFS.sunset)).toBe(true);
   });
-  it("alle fünf gekauft → Theme 'own'", () => {
-    const owned = {}; for (const el of THEME_DEFS.kaiju.els) owned[`kaiju:${el}`] = true;
-    expect(themeState(prof({ ownedCosmetics: owned }), THEME_DEFS.kaiju)).toBe("own");
-  });
-  it("Challenge-Theme gesperrt = 'lock'; erfüllt = 'own'", () => {
+  it("Challenge-Pack gesperrt = 'lock'; erfüllt = 'own'", () => {
     const t = THEME_DEFS.feuer;
-    expect(themeState(prof(), t)).toBe("lock");
-    expect(elementState(prof(), t, "deck")).toBe("lock");
+    expect(packState(prof(), t)).toBe("lock");
+    expect(packPrice(t)).toBeNull();
     const done = prof({ monoArchetypeRuns: { fire: true } });
-    expect(themeState(done, t)).toBe("own");
-    expect(elementState(done, t, "deck")).toBe("own");
+    expect(packState(done, t)).toBe("own");
   });
-  it("Progressions-Theme staffelt: nach 5 Läufen Deck frei, BF noch gesperrt → 'mix'", () => {
-    const p = prof({ games: 5 });
+  it("Progressions-Pack: nach 5 Läufen (Deck-Bedingung erfüllt) → 'own'", () => {
     const t = THEME_DEFS.neon;
-    expect(elementState(p, t, "deck")).toBe("own");
-    expect(elementState(p, t, "bf")).toBe("lock");
-    expect(themeState(p, t)).toBe("mix");
+    expect(packState(prof({ games: 4 }), t)).toBe("lock");
+    expect(packState(prof({ games: 5 }), t)).toBe("own");
   });
-  it("Preise: Kauf-Element = 1 SP, Bedingungs-Element = null", () => {
-    expect(elementPrice(THEME_DEFS.sunset, "deck")).toBe(COST_PER_ELEMENT);
-    expect(elementPrice(THEME_DEFS.sunset, "frameGlow")).toBe(1);
-    expect(elementPrice(THEME_DEFS.neon, "deck")).toBeNull();
-    expect(elementPrice(THEME_DEFS.feuer, "deck")).toBeNull();
+  it("packUnlock liefert die Klartext-Bedingung eines Bedingungs-Packs", () => {
+    expect(packUnlock(prof(), THEME_DEFS.neon).label).toContain("5");
+    expect(packUnlock(prof(), THEME_DEFS.feuer).label).toContain("Feuer");
   });
 });
 
-describe("themes — Kauf-Ökonomie", () => {
-  it("canBuyElement: nur mit genug SP und noch nicht im Besitz", () => {
+describe("packs — Kauf-Ökonomie", () => {
+  it("canBuyPack: nur Kauf-Pack, genug SP, noch nicht im Besitz", () => {
     const t = THEME_DEFS.sunset;
-    expect(canBuyElement(prof({ stichPoints: 0 }), t, "deck")).toBe(false);
-    expect(canBuyElement(prof({ stichPoints: 1 }), t, "deck")).toBe(true);
-    expect(canBuyElement(prof({ stichPoints: 5, ownedCosmetics: { "sunset:deck": true } }), t, "deck")).toBe(false);
-    // Bedingungs-Element ist niemals SP-kaufbar
-    expect(canBuyElement(prof({ stichPoints: 9 }), THEME_DEFS.neon, "deck")).toBe(false);
+    expect(canBuyPack(prof({ stichPoints: 0 }), t)).toBe(false);
+    expect(canBuyPack(prof({ stichPoints: 1 }), t)).toBe(true);
+    expect(canBuyPack(prof({ stichPoints: 5, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
+    // Bedingungs-Pack ist niemals SP-kaufbar
+    expect(canBuyPack(prof({ stichPoints: 9 }), THEME_DEFS.neon)).toBe(false);
   });
-  it("buyElement zieht 1 SP ab, bucht stichSpent und setzt Besitz", () => {
+  it("buyPack zieht PACK_COST ab, bucht stichSpent, setzt Besitz (rein)", () => {
     const p0 = prof({ stichPoints: 3, stichSpent: 2 });
-    const p1 = buyElement(p0, THEME_DEFS.sunset, "bf");
+    const p1 = buyPack(p0, THEME_DEFS.lofi);
     expect(p1.stichPoints).toBe(2);
     expect(p1.stichSpent).toBe(3);
-    expect(p1.ownedCosmetics["sunset:bf"]).toBe(true);
-    expect(p0.ownedCosmetics["sunset:bf"]).toBeUndefined(); // Eingabe unverändert (rein)
+    expect(p1.ownedCosmetics["pack:lofi"]).toBe(true);
+    expect(p0.ownedCosmetics["pack:lofi"]).toBeUndefined(); // Eingabe unverändert
   });
-  it("buyElement bei zu wenig SP = No-op (identische Referenz)", () => {
+  it("buyPack bei zu wenig SP = No-op (identische Referenz)", () => {
     const p0 = prof({ stichPoints: 0 });
-    expect(buyElement(p0, THEME_DEFS.sunset, "deck")).toBe(p0);
-  });
-  it("buyAllInfo: Rabatt durch bereits besessene Elemente", () => {
-    const p = prof({ stichPoints: 9, ownedCosmetics: { "lofi:deck": true, "lofi:bf": true } });
-    const info = buyAllInfo(p, THEME_DEFS.lofi);
-    expect(info.total).toBe(5);
-    expect(info.ownedCount).toBe(2);
-    expect(info.remainingCount).toBe(3);
-    expect(info.cost).toBe(3);
-  });
-  it("buyAllForTheme kauft alle offenen Elemente (alles-oder-nichts bei zu wenig SP)", () => {
-    const t = THEME_DEFS.sunset;
-    expect(buyAllForTheme(prof({ stichPoints: 4 }), t)).toEqual(expect.objectContaining({ stichPoints: 4 })); // 4 < 5 → No-op
-    const done = buyAllForTheme(prof({ stichPoints: 6 }), t);
-    expect(done.stichPoints).toBe(1);
-    for (const el of t.els) expect(done.ownedCosmetics[`sunset:${el}`]).toBe(true);
+    expect(buyPack(p0, THEME_DEFS.sunset)).toBe(p0);
   });
 });
 
-describe("themes — globale Effekte (Laser-Schnitt)", () => {
-  const laser = GLOBAL_FX_BY_KEY.laserSlice;
-  it("Registry: Laser-Schnitt mit ownKey + Options-Flagge", () => {
-    expect(GLOBAL_FX.map((f) => f.key)).toContain("laserSlice");
-    expect(laser.ownKey).toBe("fx:laserSlice");
-    expect(laser.option).toBe("fxLaserSlice");
-  });
-  it("kaufen zieht SP ab, bucht stichSpent, setzt globalen Besitz", () => {
-    const p0 = prof({ stichPoints: 2, stichSpent: 1 });
-    expect(globalFxOwned(p0, laser)).toBe(false);
-    expect(canBuyGlobalFx(p0, laser)).toBe(true);
-    const p1 = buyGlobalFx(p0, laser);
-    expect(p1.stichPoints).toBe(1);
-    expect(p1.stichSpent).toBe(2);
-    expect(globalFxOwned(p1, laser)).toBe(true);
-    expect(canBuyGlobalFx(p1, laser)).toBe(false); // schon im Besitz
-  });
-  it("kaufen bei zu wenig SP = No-op", () => {
-    const p0 = prof({ stichPoints: 0 });
-    expect(buyGlobalFx(p0, laser)).toBe(p0);
-  });
-  it("laserSliceActive nur wenn gekauft UND per Option an", () => {
-    const owned = prof({ ownedCosmetics: { "fx:laserSlice": true } });
-    expect(laserSliceActive(owned, { fxLaserSlice: true })).toBe(true);
-    expect(laserSliceActive(owned, { fxLaserSlice: false })).toBe(false);
-    expect(laserSliceActive(prof(), { fxLaserSlice: true })).toBe(false); // nicht gekauft
-  });
-  it("Laser-Schnitt kostet GLOBAL_FX_COST SP", () => {
-    expect(GLOBAL_FX_COST).toBe(1);
-  });
-  it("Shatter ist ein eigener globaler Effekt (Krit-Explosion), unabhängig kaufbar/aktivierbar", () => {
-    const shatter = GLOBAL_FX_BY_KEY.shatter;
-    expect(shatter.option).toBe("fxShatter");
-    const owned = prof({ ownedCosmetics: { "fx:shatter": true } });
-    expect(shatterActive(owned, { fxShatter: true })).toBe(true);
-    expect(shatterActive(owned, { fxShatter: false })).toBe(false);
-    expect(shatterActive(prof(), { fxShatter: true })).toBe(false); // nicht gekauft
-    // Laser und Shatter sind getrennte Käufe
-    expect(globalFxOwned(owned, GLOBAL_FX_BY_KEY.laserSlice)).toBe(false);
-  });
-});
-
-describe("themes — weitere globale Effekte (#293/#294)", () => {
-  it("Registry führt Blackhole-Finisher und das Gottgleich-Prunk-Trio", () => {
-    for (const k of ["blackhole", "fireworks", "goldRain", "prismaWave"]) {
-      expect(GLOBAL_FX_BY_KEY[k]).toBeTruthy();
-      expect(GLOBAL_FX_BY_KEY[k].ownKey).toBe(`fx:${k}`);
+describe("effekte — Karten-Animationen sind jetzt GLOBAL", () => {
+  it("Registry führt die drei Animationen als group 'anim' mit fx:-Besitz + Options-Flag", () => {
+    for (const key of ["frameGlow", "holoSwipe", "hologrid"]) {
+      const fx = GLOBAL_FX_BY_KEY[key];
+      expect(fx).toBeTruthy();
+      expect(fx.group).toBe("anim");
+      expect(fx.ownKey).toBe(`fx:${key}`);
+      expect(fx.preview).toBe(key);
     }
-    expect(GLOBAL_FX_BY_KEY.blackhole.group).toBe("finisher");
-    expect(GLOBAL_FX_BY_KEY.fireworks.group).toBe("gott");
-    expect(GLOBAL_FX_BY_KEY.gridTunnel).toBeUndefined(); // Grid-Tunnel wieder entfernt (kollidierte mit dem Grid-Puls)
+    expect(GLOBAL_FX_BY_KEY.frameGlow.option).toBe("fxFrameGlow");
+    expect(GLOBAL_FX_BY_KEY.holoSwipe.option).toBe("fxHoloSwipe");
+    expect(GLOBAL_FX_BY_KEY.hologrid.option).toBe("fxHologrid");
   });
-  it("jeder neue Effekt: eigener Kauf + eigenes Options-Flag, unabhängig aktivierbar", () => {
+  it("global gekauft + per Option an → aktiv (für alle Packs)", () => {
     const cases = [
-      ["blackhole", blackholeActive, "fxBlackhole"],
-      ["fireworks", fireworksActive, "fxFireworks"],
-      ["goldRain", goldRainActive, "fxGoldRain"],
-      ["prismaWave", prismaWaveActive, "fxPrismaWave"],
+      ["frameGlow", frameGlowActive, "fxFrameGlow"],
+      ["holoSwipe", holoSwipeActive, "fxHoloSwipe"],
+      ["hologrid", hologridActive, "fxHologrid"],
     ];
     for (const [key, activeFn, opt] of cases) {
       const owned = prof({ ownedCosmetics: { [`fx:${key}`]: true } });
@@ -188,28 +120,66 @@ describe("themes — weitere globale Effekte (#293/#294)", () => {
       expect(activeFn(prof(), { [opt]: true })).toBe(false); // nicht gekauft
     }
   });
-  it("Blackhole kaufen zieht 1 SP ab und ist von Laser/Shatter getrennt", () => {
-    const p1 = buyGlobalFx(prof({ stichPoints: 1 }), GLOBAL_FX_BY_KEY.blackhole);
+  it("kaufen zieht 1 SP ab und setzt den globalen Besitz", () => {
+    const p1 = buyGlobalFx(prof({ stichPoints: 1 }), GLOBAL_FX_BY_KEY.frameGlow);
     expect(p1.stichPoints).toBe(0);
+    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.frameGlow)).toBe(true);
+  });
+});
+
+describe("effekte — Finisher/Krit/Prunk", () => {
+  const laser = GLOBAL_FX_BY_KEY.laserSlice;
+  it("Laser-Schnitt: ownKey + Options-Flag + group finisher", () => {
+    expect(laser.ownKey).toBe("fx:laserSlice");
+    expect(laser.option).toBe("fxLaserSlice");
+    expect(laser.group).toBe("finisher");
+    expect(GLOBAL_FX_BY_KEY.blackhole.group).toBe("finisher");
+  });
+  it("kaufen zieht SP ab, bucht stichSpent, setzt globalen Besitz", () => {
+    const p0 = prof({ stichPoints: 2, stichSpent: 1 });
+    expect(canBuyGlobalFx(p0, laser)).toBe(true);
+    const p1 = buyGlobalFx(p0, laser);
+    expect(p1.stichPoints).toBe(1);
+    expect(p1.stichSpent).toBe(2);
+    expect(globalFxOwned(p1, laser)).toBe(true);
+    expect(canBuyGlobalFx(p1, laser)).toBe(false);
+  });
+  it("kaufen bei zu wenig SP = No-op", () => {
+    const p0 = prof({ stichPoints: 0 });
+    expect(buyGlobalFx(p0, laser)).toBe(p0);
+  });
+  it("*Active-Helfer: nur gekauft UND per Option an", () => {
+    const cases = [
+      ["laserSlice", laserSliceActive, "fxLaserSlice"],
+      ["blackhole", blackholeActive, "fxBlackhole"],
+      ["shatter", shatterActive, "fxShatter"],
+      ["fireworks", fireworksActive, "fxFireworks"],
+      ["goldRain", goldRainActive, "fxGoldRain"],
+      ["prismaWave", prismaWaveActive, "fxPrismaWave"],
+    ];
+    for (const [key, activeFn, opt] of cases) {
+      const owned = prof({ ownedCosmetics: { [`fx:${key}`]: true } });
+      expect(activeFn(owned, { [opt]: true })).toBe(true);
+      expect(activeFn(owned, { [opt]: false })).toBe(false);
+      expect(activeFn(prof(), { [opt]: true })).toBe(false);
+    }
+  });
+  it("Registry führt Blackhole (finisher), Shatter (crit) und das Gottgleich-Prunk-Trio (gott)", () => {
+    for (const k of ["blackhole", "shatter", "fireworks", "goldRain", "prismaWave"]) {
+      expect(GLOBAL_FX_BY_KEY[k]).toBeTruthy();
+      expect(GLOBAL_FX_BY_KEY[k].ownKey).toBe(`fx:${k}`);
+    }
+    expect(GLOBAL_FX_BY_KEY.shatter.group).toBe("crit");
+    expect(GLOBAL_FX_BY_KEY.fireworks.group).toBe("gott");
+    expect(GLOBAL_FX_BY_KEY.gridTunnel).toBeUndefined(); // Grid-Tunnel bleibt entfernt
+  });
+  it("Käufe sind voneinander getrennt", () => {
+    const p1 = buyGlobalFx(prof({ stichPoints: 1 }), GLOBAL_FX_BY_KEY.blackhole);
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.blackhole)).toBe(true);
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.laserSlice)).toBe(false);
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.shatter)).toBe(false);
   });
-});
-
-describe("themes — Freischalt-Beschreibung (Challenge)", () => {
-  it("Challenge-Theme liefert eine gemeinsame Bedingung (statt Einzelpreisen)", () => {
-    const u = sharedUnlock(prof(), THEME_DEFS.feuer);
-    expect(u).toBeTruthy();
-    expect(u.label).toContain("Feuer");
-  });
-  it("Kauf-Theme hat KEINE gemeinsame Bedingung (Einzelpreise gelten)", () => {
-    expect(sharedUnlock(prof(), THEME_DEFS.sunset)).toBeNull();
-  });
-  it("Progressions-Theme mit gestaffelten Bedingungen → keine gemeinsame Bedingung", () => {
-    expect(sharedUnlock(prof(), THEME_DEFS.neon)).toBeNull();
-    // aber die Einzel-Labels existieren
-    expect(elementUnlock(prof(), THEME_DEFS.neon, "deck").label).toContain("5");
-    expect(elementUnlock(prof(), THEME_DEFS.neon, "bf").label).toContain("10");
+  it("GLOBAL_FX_COST = 1", () => {
+    expect(GLOBAL_FX_COST).toBe(1);
   });
 });
