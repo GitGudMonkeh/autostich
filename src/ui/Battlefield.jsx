@@ -480,7 +480,9 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
   const body = Math.max(150, budget - delay);
   const hitAt = delay + Math.round(body * 0.22);          // kurzer Beat, dann zünden Loch/Funken/Disintegration
   const holeMs = Math.round(body * 0.66);                 // endet ~ mit dem Budget (vor dem nächsten Flip)
-  const disintDur = Math.round(body * 0.78);              // Fragment-Flug-/Fade-Dauer (Karte zerfällt)
+  // #302-Fix: Fragment-Flug-/Fade-Dauer MUSS mit hitAt (0.22·body) + Staffelung (0.12·disintDur) ins Budget passen,
+  // sonst zieht die Disintegration über den nächsten Stich (Ende bei hitAt + 1.12·disintDur ≤ body → disintDur ≤ 0.66·body).
+  const disintDur = Math.round(body * 0.60);              // Fragment-Flug-/Fade-Dauer (endet klar vor dem nächsten Flip)
   const holeMax = (1.4 + intensity * 0.5 + streakK * 0.5).toFixed(2); // kleineres, glühendes Loch (bei Serie etwas größer)
   // #302 Disintegrations-Fragmente: jedes Raster-Stück ist ein clip-path-Klon der ECHTEN Karte (inset auf seine Zelle),
   // driftet von der Kartenmitte weg (+ Schwerkraft = Asche fällt), schrumpft, rotiert leicht & fadet → die Karte selbst
@@ -500,7 +502,7 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
         dy: (dirY * spread + Math.abs(fjitter(seed * 2 + i * 11, 8)) + 12).toFixed(1),    // + Schwerkraft (Asche fällt)
         ds: (0.28 + Math.abs(fjitter(seed * 6 + i * 5, 0.22))).toFixed(2),                // Schrumpf-Endgröße 0.28..0.5
         dr: fjitter(seed * 7 + i * 9, 40).toFixed(0),                                     // −40..40° Rotation
-        d: hitAt + Math.round((i / NFRAG) * disintDur * 0.16),                            // leichte Staffelung
+        d: hitAt + Math.round((i / NFRAG) * disintDur * 0.12),                            // leichte Staffelung (im Budget)
       });
     }
   }
@@ -1342,7 +1344,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     const ids = spawned.map((g) => g.id);
     // #295 Brennstrahl löst innerhalb der Stich-Kadenz (flipMs) auf → Ghost wird passend dazu entfernt (liegt nie
     // hinter der neu geflippten Karte). Andere Finisher: Ruhe + längster FX-Teil (#188, skaliert).
-    const ghostLife = burnFinish ? Math.max(200, flipMs - 30) + 60 : sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100;
+    const ghostLife = burnFinish ? Math.max(200, flipMs - 30) + 20 : sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100;
     const tm = setTimeout(() => {
       setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
