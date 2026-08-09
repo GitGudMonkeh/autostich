@@ -238,6 +238,7 @@ function BurnBeamPreview() {
   const bf = battlefieldAssets(SHOWCASE_BF);
   const suitCol = suitColor(DEMO_SUIT);
   const seqRef = useRef(0);
+  const burnLoopRef = useRef(null);
   useEffect(() => {
     // 1..7 Siege (Strahl lit, Intensität + Funkendichte steigen) · 8 Niederlage (Strahl zieht sich zurück) · 9/10 Pause.
     let c = 0;
@@ -254,11 +255,18 @@ function BurnBeamPreview() {
     }, 780);
     return () => clearInterval(id);
   }, []);
-  // #302b: persistentes Brennstrahl-Loop-Bett, solange die Vorschau offen ist (wie in-game der persistente Strahl).
+  // #302b/#307: Brennstrahl-Loop-Bett an die Lit-Phase (Sieg-Puls) koppeln — IDENTISCH zu In-Game (Battlefield.jsx):
+  // der Ton startet erst mit dem herabfahrenden Strahl (erster Sieg), nicht schon beim Öffnen der Vorschau, und stoppt
+  // beim Serienabbruch. So läuft kein Laser-Sound, bevor der Laser sichtbar ist.
   useEffect(() => {
-    const h = audio.loop("fx_burnbeam", { gain: 0.5, bass: 3, loopStart: 0.1, loopEnd: 0.8 });
-    return () => { if (h) audio.stopLoop(h, { fade: 0.1 }); };
-  }, []);
+    const lit = pulse && pulse.kind === "win";
+    if (lit) {
+      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: 0.5, bass: 3, loopStart: 0.1, loopEnd: 0.8 });
+    } else if (burnLoopRef.current) {
+      audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;
+    }
+  }, [pulse]);
+  useEffect(() => () => { if (burnLoopRef.current) { audio.stopLoop(burnLoopRef.current, { fade: 0.1 }); burnLoopRef.current = null; } }, []);
   const demoCard = () => <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
