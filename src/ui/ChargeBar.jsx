@@ -108,9 +108,19 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
   const stateText = full ? "⚡ Voll geladen" : overcharge ? `Crit ×${mlt(critMult)}` : `Ladung ${charge}/${maxCharge}`;
   const stateOn = full || overcharge;
 
+  // #deckshop: Blitz-Glow wandert vom Battlefield ins eigene Panel — blaue Innen-Aura ab Ladung 2 (voll: violetter
+  // Akzent + Puls). Intensität = Ladungsgrad.
+  const chargeR = Math.max(0, Math.min(1, charge / (maxCharge || 1)));
+  const lit = charge >= 2;
+  const ambient = lit
+    ? `inset 0 0 ${Math.round(10 + 26 * chargeR)}px ${Math.round(2 + 5 * chargeR)}px rgba(94,200,240,${(0.14 + 0.4 * chargeR).toFixed(2)})${full ? ", inset 0 0 40px 6px rgba(138,125,224,0.4)" : ""}`
+    : null;
+  const ambientPulse = full ? "as-charge-pulse" : null;
+
   return (
     <FactionShell className="relative" icon="⚡" name="Blitz" color={LIGHTNING}
-      stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}>
+      stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
+      ambient={ambient} ambientPulse={ambientPulse}>
       {/* Blitzfrequenz-Puls (v0.5): violettes Rahmen-Glühen je Entladung (wie der Battlefield-Bloom); remount je consumeCount replayt die Animation. */}
       <div key={consumeCount} className="as-blitz-pulse pointer-events-none absolute inset-0 rounded-xl" aria-hidden="true" />
       {/* Sturm-Sättigung (v0.5): die zwei Stufen + ihre Payoffs live — das Herzstück des Reworks. */}

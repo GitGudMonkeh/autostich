@@ -75,8 +75,16 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
   const stateText = conflagReady ? "🔥 Flächenbrand bereit" : whiteGlow ? "Weißglut" : `Hitze ${Math.round(value)}/${max}`;
   const stateOn = conflagReady || whiteGlow || hot;
 
+  // #deckshop: Feuer-Glut wandert vom Battlefield ins eigene Panel — warme Innen-Aura, Deckkraft = Hitze; Puls nahe voll.
+  const heatRatio = Math.max(0, Math.min(1, value / max));
+  const ambient = heatRatio > 0.02
+    ? `inset 0 -22px 48px -14px rgba(224,113,74,${(0.55 * heatRatio).toFixed(2)}), inset 0 0 34px rgba(240,168,58,${(0.14 * heatRatio).toFixed(2)})`
+    : null;
+  const ambientPulse = heatRatio >= 0.9 ? "as-heat-pulse" : null;
+
   return (
-    <FactionShell icon="🔥" name="Feuer" color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}>
+    <FactionShell icon="🔥" name="Feuer" color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
+      ambient={ambient} ambientPulse={ambientPulse}>
       {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Feuer-Grund / Weißglut) + verbrannte Asche (Lauf-Zähler). */}
       <div className="mb-2">
         <YieldMeter title="🔥 Feuer-Ertrag" accent={HOT} channels={[

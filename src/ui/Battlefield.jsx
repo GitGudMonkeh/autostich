@@ -815,24 +815,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (formLeaving) formOutTimer.current = setTimeout(() => setFormFloat(null), FORM_LINGER_MS); // nach dem Ausklang entfernen
   }, [formLeaving, formFloat?.key]);
 
-  // --- Archetyp-Ambiente hinter den Karten (#142 Feuer / #143 Blitz / #144 Eis), rein kosmetisch ---
-  // Werte kommen aus dem State; ohne aktiven Archetyp bleibt alles unsichtbar (0 → kein Effekt).
-  const heatRatio  = heat?.active ? clamp((heat.value || 0) / (heat.max || 100), 0, 1) : 0;
-  const charge     = lightning?.active ? (lightning.charge || 0) : 0;
-  const maxCharge  = lightning?.maxCharge || 10;
-  const chargeR    = clamp(charge / maxCharge, 0, 1);
-  const lightOn    = !!lightning?.active && charge >= 2;   // Blitz-Rahmen erst ab Ladung 2 (#143)
-  const chargeFull = lightOn && charge >= maxCharge;
-  // Panel-Rand: bei aktivem Blitz elektrisch blau (voll: violett), sonst Standard.
-  const panelBorder = chargeFull ? "1px solid rgba(138,125,224,0.75)"
-    : lightOn ? `1px solid rgba(94,200,240,${(0.35 + 0.5 * chargeR).toFixed(2)})`
-    : "1px solid #26262e";
-  // Äußerer Bloom als panel-eigenes box-shadow (NICHT vom overflow-hidden geklippt): Feuer bei hoher Hitze,
-  // Blitz ab Ladung 2 (+ violetter Bloom bei voll). Leer → CRT-Skin-Glow bleibt unangetastet.
+  // --- Panel-Rahmen + äußerer Bloom ---
+  // Archetyp-Ambiente (Feuer-Glut / Blitz-Glow) ist zu den jeweiligen Fraktions-Panels gewandert (HeatBar/ChargeBar);
+  // das Battlefield bleibt neutral, nur die Sieg-/Krit-Aura des aktuellen Stich-Ergebnisses liegt noch am Panel.
+  const panelBorder = "1px solid #26262e";
   const outerParts = [];
-  if (heatRatio >= 0.55) outerParts.push(`0 0 ${Math.round(18 * heatRatio)}px ${Math.round(4 * heatRatio)}px rgba(224,113,74,${(0.22 * heatRatio).toFixed(2)})`);
-  if (lightOn)           outerParts.push(`0 0 ${Math.round(12 + 24 * chargeR)}px ${Math.round(chargeR * 4)}px rgba(94,200,240,${(0.14 + 0.34 * chargeR).toFixed(2)})`);
-  if (chargeFull)        outerParts.push("0 0 44px 8px rgba(138,125,224,0.32)");
   // #192: der Screen-Shake eines großen NORMALEN Siegs bekommt eine dezente grün/gold Panel-Aura (Sieg-Identität,
   // WIN_TIER_COLORS), damit die „grün/gold"-Wirkung sichtbar ist, ohne Flash/Vignette (die Crit-exklusiv bleiben).
   // Nur bei normalem Sieg (kein Crit) → der Crit-Look bleibt unverändert. Stärke wächst BRUTAL→GOTTGLEICH.
@@ -882,34 +869,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           </div>
         </div>
       )}
-      {/* Feuer-Glut (#142): warmer Radial-Verlauf von unten + innerer Glow, Deckkraft = Hitze-Verhältnis.
-          Puls ab ~90 %. Liegt zuunterst (z-0), hinter Eis und Karten. */}
-      {heatRatio > 0.001 && (
-        <div aria-hidden="true"
-          className={`absolute inset-0 rounded-xl pointer-events-none${heatRatio >= 0.9 && !reduced ? " as-heat-pulse" : ""}`}
-          style={{ zIndex: 0, opacity: heatRatio,
-                   background: "radial-gradient(135% 95% at 50% 122%, #f0a83a55 0%, #e0714a44 34%, transparent 68%)",
-                   boxShadow: "inset 0 -28px 66px -10px #e0714a99, inset 0 0 54px #e0714a2e" }} />
-      )}
-      {/* Blitz-Rahmen (#143): innerer blauer Glow, Intensität = Ladung (ab 2). Voll → violetter Akzent + Puls. */}
-      {lightOn && (
-        <div aria-hidden="true"
-          className={`absolute inset-0 rounded-xl pointer-events-none${chargeFull && !reduced ? " as-charge-pulse" : ""}`}
-          style={{ zIndex: 2, boxShadow: `inset 0 0 ${Math.round(8 + 22 * chargeR)}px ${Math.round(1 + 5 * chargeR)}px rgba(94,200,240,${(0.16 + 0.5 * chargeR).toFixed(2)})${chargeFull ? ", inset 0 0 40px 6px rgba(138,125,224,0.42)" : ""}` }} />
-      )}
-      {/* Ein Blitz ⚡ oben mittig am Rahmen (#143), Glow steigt mit der Ladung; voll → Puls + „VOLL GELADEN". */}
-      {lightOn && (
-        <div aria-hidden="true"
-          className={`absolute pointer-events-none${chargeFull && !reduced ? " as-charge-pulse" : ""}`}
-          style={{ left: "50%", top: 3, transform: "translateX(-50%)", zIndex: 3, fontSize: 20, lineHeight: 1,
-                   opacity: 0.5 + 0.5 * chargeR,
-                   filter: `drop-shadow(0 0 ${Math.round(4 + 8 * chargeR)}px #5ec8f0)${chargeFull ? " drop-shadow(0 0 10px #8a7de0)" : ""}` }}>
-          ⚡
-          {chargeFull && (
-            <div className="font-pixel-dense" style={{ position: "absolute", top: 21, left: "50%", transform: "translateX(-50%)", fontSize: 8, letterSpacing: 1, whiteSpace: "nowrap", color: "#bfe9f7", textTransform: "uppercase" }}>Voll geladen</div>
-          )}
-        </div>
-      )}
+      {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
+          (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin, Hologrid und das Stich-Juice reserviert. */}
       {/* GOTTGLEICH-Prunk: abprallender Weißgold-Schwarm über dem Feld (Bounds = Panel-Rahmen). Nur bei tier-4-Krit. */}
       <BounceBurst trigger={burst} panelRef={panelRef} oppRef={oppSlotRef} />
       <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-8">

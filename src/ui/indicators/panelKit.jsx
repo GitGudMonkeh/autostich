@@ -16,9 +16,18 @@ export function IndicatorPanel({ children, className = "" }) {
 // Gameplay-Neu-Aufbau Phase 3: einklappbare Fraktions-„Headline". Immer sichtbar: Icon · Name · Zustands-Chip
 // (der „gleich knallt's"-Blick, glüht wenn `stateOn`) · Chevron. Das Detail (children) klappt auf/zu — so wird aus
 // vier großen Bars je eine schlanke Zeile, deren Tiefe on demand kommt. Kollaps-Zustand hält der Aufrufer (Optionen).
-export function FactionShell({ icon, name, color, stateText, stateOn = false, collapsed = false, onToggle, className = "", children }) {
+// `ambient` (box-shadow-String) + `ambientPulse` (Klassenname) tragen das Archetyp-Eigen-Ambiente, das von der
+// Battlefield-Fläche zu den Fraktions-Panels gewandert ist (#deckshop): eine an die Ressource gekoppelte Innen-Aura
+// (Feuer warm / Blitz blau→violett), als eigene Ebene HINTER dem Inhalt (Puls beeinflusst den Text nicht).
+export function FactionShell({ icon, name, color, stateText, stateOn = false, collapsed = false, onToggle, ambient = null, ambientPulse = null, className = "", children }) {
   return (
-    <div className={`rounded-xl p-3 as-panel ${className}`} style={PANEL_STYLE}>
+    // isolation:isolate → eigener Stacking-Context, damit die negative-z Ambient-Ebene HINTER den Inhalt fällt,
+    // ohne dass der Inhalt (oder ein absoluter Kind-Effekt wie ChargeBars as-blitz-pulse) positioniert werden muss.
+    <div className={`rounded-xl p-3 as-panel relative overflow-hidden ${className}`} style={{ ...PANEL_STYLE, isolation: "isolate" }}>
+      {ambient && (
+        <div aria-hidden="true" className={`absolute inset-0 rounded-xl pointer-events-none${ambientPulse ? ` ${ambientPulse}` : ""}`}
+          style={{ zIndex: -1, boxShadow: ambient }} />
+      )}
       <button type="button" onClick={onToggle} data-sfx="none" aria-expanded={!collapsed}
         className="w-full flex items-center gap-2 text-left">
         <span style={{ fontSize: 15, lineHeight: 1 }} aria-hidden="true">{icon}</span>
