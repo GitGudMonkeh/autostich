@@ -249,7 +249,7 @@ button { font-family: inherit; }
 .as-deck-gridmove { animation: as-deck-gridmove 2.6s linear infinite; }
 /* Hologrid-Puls je Stich: eine helle Gitter-Zeile fährt von vorn nach hinten übers Feld und verblasst.
    Liegt in der Perspektiv-Ebene des Grids → wandert entlang der Fluchtlinien in die Tiefe. */
-@keyframes as-deck-sweep { 0% { bottom: -2%; opacity: 0; } 14% { opacity: 1; } 100% { bottom: 104%; opacity: 0; } }
+@keyframes as-deck-sweep { 0% { bottom: -2%; opacity: 0; } 10% { opacity: 1; } 72% { bottom: 100%; opacity: 1; } 100% { bottom: 112%; opacity: 0; } }
 .as-deck-sweep { animation: as-deck-sweep 900ms ease-out forwards; }
 /* Eigene Verlierer-Karte fliegt einfach weg (kein Klingenschnitt mehr) — driftet nach unten-außen, kippt & fadet. */
 @keyframes as-flyaway { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-12%, 68%) rotate(-16deg); opacity: 0; } }

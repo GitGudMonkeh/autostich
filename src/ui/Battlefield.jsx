@@ -534,7 +534,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // gekoppelt, aber mit hohem Boden (480 ms) → bei Max-Turbo nicht mehr zu schnell. Kommen Stiche schneller als
   // die Zeile fährt (4×/MAX), starten wir keine neue mitten hinein, sondern ÜBERSPRINGEN den Stich (Throttle) →
   // kein Abschneiden, kein Flackern. Bei 1×/2× bleibt es 1 Zeile je Stich.
-  const sweepDur = clamp(flipMs * 0.85, 480, 1100);
+  const sweepDur = clamp(flipMs * 1.0, 560, 1250);
   const [sweepId, setSweepId] = useState(0);
   const lastSweepAt = useRef(-1e9);
   const trickNo = lastTrick ? lastTrick.trickNo : null;
@@ -902,15 +902,23 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             backgroundImage: `linear-gradient(${deckA1} 1px,transparent 1px),linear-gradient(90deg,${deckA1} 1px,transparent 1px)`,
             backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.24 }}>
             {!reduced && sweepId > 0 && (
-              // Bei einem SIEG glüht die Linie sehr intensiv (dicker, viel stärkerer Glow, heißerer Kern);
-              // bei einer Niederlage bleibt sie wie gehabt.
-              <div key={sweepId} className="as-deck-sweep absolute left-0 right-0"
-                style={{ height: win ? 10 : 7,
-                         background: `linear-gradient(90deg, transparent, ${deckA1} 15%, #ffffff 50%, ${deckA1} 85%, transparent)`,
-                         boxShadow: win
-                           ? `0 0 40px 10px ${deckA1}, 0 0 96px 26px ${deckA1}, 0 0 16px 5px #ffffff`
-                           : `0 0 20px 4px ${deckA1}, 0 0 52px 12px ${deckA1}, 0 0 6px 2px #ffffff`,
-                         animationDuration: `${sweepDur}ms` }} />
+              // Bei einem SIEG glüht die Linie sehr intensiv; bei einer Niederlage dezent. Der Glow wird als
+              // GEFÜLLTES, weichgezeichnetes Band (statt box-shadow) gerendert — box-shadow wird von der
+              // perspective(160px)/rotateX(60°)-Verkürzung + dem Neon-Hintergrund verschluckt und wirkt im Run
+              // wie „nicht da". Ein blur()-Verlaufsband überlebt die Perspektive auf jedem Hintergrund.
+              <div key={sweepId} className="as-deck-sweep absolute left-0 right-0" style={{ height: 0, animationDuration: `${sweepDur}ms` }}>
+                {/* Weicher Glow-Halo (breit, verwaschen) */}
+                <div className="absolute left-0 right-0" style={{
+                  top: win ? -22 : -11, height: win ? 44 : 22,
+                  background: `linear-gradient(180deg, transparent, ${deckA1} 40%, ${deckA1} 60%, transparent)`,
+                  filter: `blur(${win ? 11 : 5}px)`, opacity: win ? 1 : 0.62 }} />
+                {/* Heißer Kern (dünne, helle Linie) */}
+                <div className="absolute left-0 right-0" style={{
+                  top: win ? -5 : -3.5, height: win ? 10 : 7,
+                  background: `linear-gradient(90deg, transparent, ${deckA1} 12%, #ffffff 50%, ${deckA1} 88%, transparent)`,
+                  boxShadow: win ? `0 0 16px 3px #ffffff` : `0 0 8px 2px #ffffffbb`,
+                  opacity: win ? 1 : 0.9 }} />
+              </div>
             )}
           </div>
         </div>
