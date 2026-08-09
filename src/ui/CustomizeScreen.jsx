@@ -200,7 +200,7 @@ function FinisherScene({ variant }) {
   if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} laser />;
   else if (variant === "shatter") fx = <ExplosionFx cardEl={cardEl} color="#e879f9" cardDur={FIN_HALVES} burstDur={FIN_SPARK} flashDur={200} seed={seed} delay={FIN_DELAY} intensity={0.6} tier={3} scale={1} />;
   else if (variant === "lasergrid") fx = <LaserGridFx cardEl={cardEl} color={suitCol} diceDur={FIN_HALVES} lineDur={FIN_LINE} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={1} scale={1} />;
-  else if (variant === "burnbeam") fx = <BurnBeamFx cardEl={cardEl} color={suitCol} beamDur={FIN_HALVES} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} />;
+  else if (variant === "burnbeam") fx = <BurnBeamFx cardEl={cardEl} color={suitCol} beamDur={FIN_HALVES} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} streak={8} />; // Serie 8 → zeigt persistenteren Strahl + mehr Funken
   else fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} />; // klinge (Default)
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>

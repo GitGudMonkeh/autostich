@@ -210,29 +210,27 @@ button { font-family: inherit; }
   100% { opacity: 0; transform: translate(-50%, -50%) scale(3.4); }
 }
 
-/* #295 Sieg-Finisher „Brennstrahl": ein Strahl fährt von oben herab (as-burn-beam, scaleY aus der Oberkante) und
-   brennt ein glühendes Loch in die EXAKTE Kartenmitte (as-burn-hole, wächst von 0 bis --hole-max); danach bricht
-   die Karte in zwei Hälften, die auseinanderkippen (as-burn-half-l/-r). Dauern kommen an den Flip-Takt gekoppelt rein. */
+/* #295 Sieg-Finisher „Brennstrahl": ein dünner Strahl fährt von oben herab (as-burn-beam, scaleY aus der Oberkante,
+   hält bei hoher Serie länger = persistenter) und brennt ein glühendes Loch in die EXAKTE Kartenmitte (as-burn-hole,
+   wächst von 0 bis --hole-max). Die Karte VERBLASST dabei (as-burn-fade) — kein Bruch. Aus dem Loch springen Funken
+   (as-spark), deren Zahl/Dauer mit der Serie wächst. Dauern kommen an den Flip-Takt gekoppelt rein. */
 @keyframes as-burn-beam {
   0%   { opacity: 0; transform: scaleY(0); }
   14%  { opacity: 1; }
-  46%  { opacity: 1; transform: scaleY(1); }
-  76%  { opacity: 1; transform: scaleY(1); }
+  40%  { opacity: 1; transform: scaleY(1); }
+  82%  { opacity: 1; transform: scaleY(1); }
   100% { opacity: 0; transform: scaleY(1); }
 }
 @keyframes as-burn-hole {
   0%   { opacity: 0; transform: translate(-50%, -50%) scale(0); }
   26%  { opacity: 1; }
   44%  { transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(var(--hole-max, 3.6)); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(var(--hole-max, 2.2)); }
 }
-@keyframes as-burn-half-l {
-  0%, 12% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
-  100%    { opacity: 0; transform: translate(var(--hx, -34px), var(--hy, 26px)) rotate(var(--hr, -14deg)); }
-}
-@keyframes as-burn-half-r {
-  0%, 12% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
-  100%    { opacity: 0; transform: translate(var(--hx, 34px), var(--hy, 30px)) rotate(var(--hr, 14deg)); }
+/* Karte „verblasst" (statt Bruch), während der Strahl das Loch durchbrennt. */
+@keyframes as-burn-fade {
+  0%, 10% { opacity: 1; }
+  100%    { opacity: 0; }
 }
 
 /* #188 v2: Screen-Shake bei großem Krit-Sieg (Crit-only). Amplitude über --shake-amp (nach Stufe). Zwei

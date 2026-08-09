@@ -470,50 +470,55 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
   );
 }
 
-/* #295 Sieg-Finisher „Brennstrahl": ein Neon-Strahl fährt von oben herab (scaleY aus der Oberkante) und brennt ein
-   glühendes Loch in die EXAKTE Kartenmitte — Einschlagpunkt = Loch-Zentrum = Kartenmitte (left/top 50 % des fixen
-   104×144-Slots, also aus der echten Kartenposition, nicht geschätzt). Dunkler Kern + heißer Ember-Rand, aufsteigende
-   Funken (Hitze-Akzent Orange + Deckfarbe); das Loch weitet sich, danach BRICHT die Karte in zwei Hälften, die
-   auseinanderkippen. Deterministisch aus `seed`. Nur bei normaler Bewegung (Aufrufer prüft `reduced`). */
-export function BurnBeamFx({ cardEl, color, beamDur, sparkDur, seed, delay = 0, intensity = 0, scale = 1 }) {
+/* #295 Sieg-Finisher „Brennstrahl": ein DÜNNER Neon-Strahl (liest als Laser) fährt von oben herab (scaleY aus der
+   Oberkante) und brennt ein glühendes Loch in die EXAKTE Kartenmitte — Einschlagpunkt = Loch-Zentrum = Kartenmitte
+   (left/top 50 % des fixen 104×144-Slots, also aus der echten Kartenposition, nicht geschätzt). Die Karte VERBLASST
+   dabei (kein Bruch). Aus dem Einbrennloch springen Funken (Hitze-Akzent Orange + Deckfarbe). #serie: mit steigender
+   Siegserie (`streak`) hält der Strahl LÄNGER (persistenter) und es springen IMMER MEHR Funken über ein längeres
+   Fenster aus dem Loch. Deterministisch aus `seed`. Nur bei normaler Bewegung (Aufrufer prüft `reduced`). */
+export function BurnBeamFx({ cardEl, color, beamDur, sparkDur, seed, delay = 0, intensity = 0, scale = 1, streak = 0 }) {
   const HOT = "#ff7a2f";                                  // Hitze-Akzent (Ember-Orange)
-  const beamMs = Math.round(beamDur);
-  const hitAt = delay + Math.round(beamMs * 0.46);        // Strahl erreicht die Mitte → Loch/Funken/Bruch zünden
-  const holeMs = Math.round(beamDur * 1.1);
-  const breakAt = hitAt + Math.round(beamDur * 0.30);     // Karte bricht NACH dem Einbrennen
-  const breakMs = Math.round(beamDur * 0.7);
-  const holeMax = (3.0 + intensity * 1.2).toFixed(2);     // Loch wächst weiter bei großen Treffern
-  const N = Math.max(8, Math.round((16 + intensity * 10) * scale)); // Ember-Funken, turbo-ausgedünnt
+  const streakK = clamp(streak / 12, 0, 1);               // 0..1: Serien-Eskalation
+  const beamMs = Math.round(beamDur * (1 + streakK * 0.55)); // Strahl hält mit der Serie länger → persistenter
+  const hitAt = delay + Math.round(beamMs * 0.36);        // Strahl erreicht die Mitte → Loch/Funken/Verblassen zünden
+  const holeMs = Math.round(beamMs * 0.9);
+  const fadeMs = Math.round(beamMs * 0.8);
+  const holeMax = (2.0 + intensity * 0.7).toFixed(2);     // Loch bleibt kompakt („nur Loch")
+  // Funken springen fortlaufend aus dem Loch — Zahl UND Streu-Fenster wachsen mit der Serie.
+  const N = Math.max(8, Math.round((12 + intensity * 8 + streakK * 34) * scale));
+  const sparkWin = Math.round(beamMs * 0.42 * streakK);   // 0 (keine Serie) … bis ~0.42·beamMs (hohe Serie)
+  const sparkAnim = Math.round(beamMs * 0.4);
   const embers = Array.from({ length: N }, (_, i) => {
-    const ang = -Math.PI / 2 + fjitter(seed * 3 + i * 7, 0.9);       // nach oben, leicht gestreut
-    const rad = 24 + Math.abs(fjitter(seed * 5 + i * 13, 46));
-    return { i, dx: (Math.cos(ang) * rad).toFixed(1), dy: (Math.sin(ang) * rad).toFixed(1),
-      c: i % 3 === 0 ? "#ffd36a" : i % 3 === 1 ? HOT : color, sz: (2 + Math.abs(fjitter(seed * 7 + i * 5, 3))).toFixed(1) };
+    const ang = -Math.PI / 2 + fjitter(seed * 3 + i * 7, 1.1);       // nach oben, gestreut
+    const rad = 20 + Math.abs(fjitter(seed * 5 + i * 13, 40 + streakK * 30));
+    return {
+      i,
+      dx: (Math.cos(ang) * rad).toFixed(1),
+      dy: (Math.sin(ang) * rad).toFixed(1),
+      c: i % 3 === 0 ? "#ffd36a" : i % 3 === 1 ? HOT : color,
+      sz: (1.5 + Math.abs(fjitter(seed * 7 + i * 5, 2.5))).toFixed(1),
+      d: hitAt + Math.round((i / N) * sparkWin),          // gestaffelt übers Fenster → springen fortlaufend heraus
+    };
   });
-  const ease = "cubic-bezier(0.3, 0.6, 0.2, 1)";
-  const halfClip = { l: "polygon(0 0, 50% 0, 46% 100%, 0 100%)", r: "polygon(50% 0, 100% 0, 100% 100%, 54% 100%)" };
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      {/* Ganze Karte, bis der Bruch einsetzt: zwei Hälften-Klone (zusammen = ganze Karte), die ab breakAt kippen. */}
-      <div className="absolute inset-0" style={{ clipPath: halfClip.l, "--hx": `${(-30 - intensity * 10).toFixed(0)}px`, "--hy": "26px", "--hr": "-14deg",
-        animation: `as-burn-half-l ${breakMs}ms ${ease} ${breakAt}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
-      <div className="absolute inset-0" style={{ clipPath: halfClip.r, "--hx": `${(30 + intensity * 10).toFixed(0)}px`, "--hy": "30px", "--hr": "14deg",
-        animation: `as-burn-half-r ${breakMs}ms ${ease} ${breakAt}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+      {/* Karte verblasst (kein Bruch) — sie „vergeht", während das Loch durchbrennt. */}
+      <div className="absolute inset-0" style={{ animation: `as-burn-fade ${fadeMs}ms ease-in ${hitAt}ms both`, willChange: "opacity" }}>{cardEl}</div>
       {/* Glühendes Loch in der EXAKTEN Kartenmitte (left/top 50 % des 104×144-Slots). */}
-      <div className="absolute" style={{ left: "50%", top: "50%", width: 16, height: 16, borderRadius: "50%", "--hole-max": holeMax,
-        background: `radial-gradient(circle, #05050a 44%, ${HOT} 60%, ${color} 72%, transparent 82%)`,
-        boxShadow: `0 0 16px 3px ${HOT}, inset 0 0 8px 2px #000`,
+      <div className="absolute" style={{ left: "50%", top: "50%", width: 14, height: 14, borderRadius: "50%", "--hole-max": holeMax,
+        background: `radial-gradient(circle, #05050a 42%, ${HOT} 58%, ${color} 72%, transparent 82%)`,
+        boxShadow: `0 0 14px 3px ${HOT}, inset 0 0 7px 2px #000`,
         animation: `as-burn-hole ${holeMs}ms ease-out ${hitAt}ms both`, willChange: "transform, opacity" }} />
-      {/* Strahl von oben auf die Kartenmitte (left 50 %), scaleY aus der Oberkante nach unten. */}
-      <div className="absolute" style={{ left: "50%", top: 0, width: 7, height: "52%", marginLeft: -3.5, borderRadius: 4, transformOrigin: "top center",
-        background: `linear-gradient(180deg, transparent, #ffffff 20%, ${HOT} 55%, ${color})`,
-        boxShadow: `0 0 14px 3px ${HOT}, 0 0 30px 8px ${HOT}88`,
+      {/* Dünner Strahl (liest als Laser): schmaler weißer Kern + Deck-/Hitze-Verlauf, fährt von oben auf die Mitte. */}
+      <div className="absolute" style={{ left: "50%", top: 0, width: 3, height: "52%", marginLeft: -1.5, borderRadius: 3, transformOrigin: "top center",
+        background: `linear-gradient(180deg, transparent, #ffffff 22%, ${HOT} 60%, ${color})`,
+        boxShadow: `0 0 5px 1px ${HOT}, 0 0 14px 3px ${HOT}55`,
         animation: `as-burn-beam ${beamMs}ms ease-in ${delay}ms both`, willChange: "transform, opacity" }} />
-      {/* Ember-Funken steigen aus der Mitte auf, zünden mit dem Treffer. */}
+      {/* Ember-Funken springen (gestaffelt) aus dem Loch — mehr & länger bei hoher Serie. */}
       {embers.map((s) => (
         <div key={`em${s.i}`} style={{ position: "absolute", left: "50%", top: "50%", width: +s.sz, height: +s.sz, borderRadius: "50%",
-          background: s.c, boxShadow: `0 0 6px ${s.c}`, "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
-          animation: `as-spark ${Math.round(sparkDur)}ms ease-out ${hitAt}ms both`, willChange: "transform, opacity" }} />
+          background: s.c, boxShadow: `0 0 5px ${s.c}`, "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
+          animation: `as-spark ${sparkAnim}ms ease-out ${s.d}ms both`, willChange: "transform, opacity" }} />
       ))}
     </div>
   );
@@ -864,7 +869,7 @@ function SlashGhostLayer({ ghosts }) {
               : isGrid
               ? <LaserGridFx cardEl={cardEl} color={g.color} diceDur={g.halves} lineDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
               : isBurn
-              ? <BurnBeamFx cardEl={cardEl} color={g.color} beamDur={g.halves} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} />
+              ? <BurnBeamFx cardEl={cardEl} color={g.color} beamDur={g.halves} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} streak={g.streak} />
               : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} laser={g.laser} />}
           </div>
         );
@@ -1224,7 +1229,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     const tm = setTimeout(() => {
       setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
-    }, sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100); // Lebensdauer: Ruhe + längster FX-Teil (#188: um die skalierte Dauer verlängert)
+      // #295 Brennstrahl: bei hoher Serie hält Strahl+Funken länger (persistenter) → Ghost-Lebensdauer entsprechend strecken.
+    }, sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100 + (burnFinish ? Math.round(Math.max(sHalves, sSpark) * clamp((t.winStreak || 0) / 12, 0, 1) * 0.9) : 0)); // Lebensdauer: Ruhe + längster FX-Teil (#188: um die skalierte Dauer verlängert)
     ghostTimers.current.push(tm);
     // GOTTGLEICH-Krit (oberste Stufe): der abprallende Partikel-Schwarm bleibt GOTTGLEICH-exklusiv — unabhängig vom
     // (kaufbaren) Shatter-Effekt. Feuert also bei jedem tier-4-Krit, ob die Karte nun zerbirst oder normal geschnitten wird.
