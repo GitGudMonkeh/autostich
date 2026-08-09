@@ -486,6 +486,20 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Effektdauern an den Flip-Takt koppeln; unter reduzierter Bewegung Animationen weglassen
   // (Element bleibt statisch sichtbar statt zu Ende-Opacity 0 zu springen).
   const anim = clamp(flipMs * 0.5, 120, 450);
+  // #deckshop Hologrid-Puls: die Zeile läuft IMMER vollständig durch (saubere Fahrt). Dauer an den Flip-Takt
+  // gekoppelt, aber mit hohem Boden (480 ms) → bei Max-Turbo nicht mehr zu schnell. Kommen Stiche schneller als
+  // die Zeile fährt (4×/MAX), starten wir keine neue mitten hinein, sondern ÜBERSPRINGEN den Stich (Throttle) →
+  // kein Abschneiden, kein Flackern. Bei 1×/2× bleibt es 1 Zeile je Stich.
+  const sweepDur = clamp(flipMs * 0.85, 480, 1100);
+  const [sweepId, setSweepId] = useState(0);
+  const lastSweepAt = useRef(-1e9);
+  const trickNo = lastTrick ? lastTrick.trickNo : null;
+  useEffect(() => {
+    if (!fxHologrid || reduced || trickNo == null) return;
+    const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
+    if (now - lastSweepAt.current >= sweepDur - 20) { lastSweepAt.current = now; setSweepId((k) => k + 1); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trickNo]);
   // #135: Ergebnis-Puls-Dauer an den Flip-Takt gekoppelt (wie die übrigen „Juice"-Animationen).
   const pulseDur = clamp(flipMs * 0.7, 300, 700);
   const fx = (a) => (reduced ? undefined : a);
@@ -858,12 +872,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             left: "-20%", right: "-20%", bottom: 0, height: "46%",
             backgroundImage: `linear-gradient(${deckA1} 1px,transparent 1px),linear-gradient(90deg,${deckA1} 1px,transparent 1px)`,
             backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.24 }}>
-            {!reduced && t && (
-              <div key={t.trickNo} className="as-deck-sweep absolute left-0 right-0"
+            {!reduced && sweepId > 0 && (
+              <div key={sweepId} className="as-deck-sweep absolute left-0 right-0"
                 style={{ height: 5,
                          background: `linear-gradient(90deg, transparent, ${deckA1} 18%, #ffffff 50%, ${deckA1} 82%, transparent)`,
                          boxShadow: `0 0 16px 3px ${deckA1}, 0 0 40px 8px ${deckA1}, 0 0 4px 1px #ffffffcc`,
-                         animationDuration: `${clamp(flipMs * 0.85, 380, 1100)}ms` }} />
+                         animationDuration: `${sweepDur}ms` }} />
             )}
           </div>
         </div>
