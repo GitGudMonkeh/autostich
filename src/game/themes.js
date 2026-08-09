@@ -46,6 +46,10 @@ export const GLOBAL_FX = [
     ownKey: "fx:lasergrid", option: "fxLasergrid", preview: "lasergrid", group: "finisher" },
   { key: "burnBeam", name: "Brennstrahl", desc: "Beim Sieg brennt ein dünner Neon-Strahl von oben ein glühendes Loch in die exakte Kartenmitte; die Karte zerfällt in kleine warme Funken/Asche. Bei Siegserie hält der Strahl länger & es springen immer mehr Funken aus dem Loch (statt Klinge/Laser).",
     ownKey: "fx:burnBeam", option: "fxBurnBeam", preview: "burnbeam", group: "finisher" },
+  { key: "overload", name: "Überladung", desc: "Beim Sieg schlägt ein prozeduraler Blitz von oben in die Gegnerkarte ein — je größer der Wertunterschied des Stichs, desto mehr/hellere Blitze mit Gabeln & Funken (statt Klinge/Laser).",
+    ownKey: "fx:overload", option: "fxOverload", preview: "overload", group: "finisher" },
+  { key: "disperse", name: "Zerstäubung", desc: "Beim Sieg löst sich die Gegnerkarte in ein Partikelgitter auf, das nach außen/oben streut & ausfadet — je größer der Wertunterschied des Stichs, desto heftiger der Streusturm (statt Klinge/Laser).",
+    ownKey: "fx:disperse", option: "fxDisperse", preview: "disperse", group: "finisher" },
   // Kritischer Treffer.
   { key: "shatter", name: "Shatter", desc: "Kritische Treffer zerbersten die Gegnerkarte in Scherben (sonst normaler Schnitt).",
     ownKey: "fx:shatter", option: "fxShatter", preview: "shatter", group: "crit" },
@@ -83,6 +87,8 @@ export const laserSliceActive = (profile, options) => globalFxActive(profile, op
 export const blackholeActive = (profile, options) => globalFxActive(profile, options, "blackhole");
 export const lasergridActive = (profile, options) => globalFxActive(profile, options, "lasergrid");
 export const burnBeamActive = (profile, options) => globalFxActive(profile, options, "burnBeam");
+export const overloadActive = (profile, options) => globalFxActive(profile, options, "overload");
+export const disperseActive = (profile, options) => globalFxActive(profile, options, "disperse");
 export const shatterActive = (profile, options) => globalFxActive(profile, options, "shatter");
 export const fireworksActive = (profile, options) => globalFxActive(profile, options, "fireworks");
 export const goldRainActive = (profile, options) => globalFxActive(profile, options, "goldRain");

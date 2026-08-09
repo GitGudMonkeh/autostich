@@ -611,6 +611,201 @@ export function BurnBeamPersist({ active, pulse = null, color = "#35e0ff", scale
   );
 }
 
+/* #300 Wertdifferenz-Stufe (1..4) für die diff-gekoppelten Finisher (Überladung/Zerstäubung). Erste Stufe ab Differenz 2;
+   Schwellen als Konstanten justierbar. Reine, deterministische Funktion. Kartenwerte wachsen über den Lauf → späte klare
+   Siege liegen bewusst auf Stufe 4 (entscheidende Siege sehen maximal aus). */
+const FX_DIFF_THRESH = [4, 8, 16]; // <4 → 1 · <8 → 2 · <16 → 3 · ≥16 → 4
+export function fxDiffTier(diff) {
+  const d = Math.max(0, diff | 0);
+  return d < FX_DIFF_THRESH[0] ? 1 : d < FX_DIFF_THRESH[1] ? 2 : d < FX_DIFF_THRESH[2] ? 3 : 4;
+}
+// Kleiner deterministischer PRNG (mulberry32) für die Canvas-Sims: gleicher seed → gleiche Sequenz (kein Math.random →
+// deterministisch wie fjitter). Wird pro Mount einmal geseedet; jeder Frame verbraucht die Sequenz → Flackern/Streuung.
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* #300 Sieg-Finisher „Überladung" — ein prozeduraler Blitz schlägt von oben in die Gegnerkarte ein (Midpoint-
+   Displacement-Pfad, je Frame neu gewürfelt = Flackern). Glow AUSSCHLIESSLICH additiv (globalCompositeOperation
+   'lighter' + mehrere breite transparente Pässe, KEIN shadowBlur → kein Lag). Stufe (diff) skaliert Zahl/Helligkeit
+   der Blitze, Gabeln (ab Stufe 3) und Funken. Danach glüht der Einschlag mit feinen additiven Funken-Streifen aus.
+   Budget an flipMs gekoppelt (löst vor dem nächsten Flip auf). Deterministisch aus seed (mulberry32). Reduced-safe (Aufrufer). */
+export function OverloadFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, tier = 1, scale = 1, delay = 0 }) {
+  const wrapRef = useRef(null), canvasRef = useRef(null);
+  const dur = Math.max(220, Math.round(((flipMs || 900) - 40)));   // Gesamt-Budget (vor dem nächsten Flip)
+  const strikeMs = Math.min(Math.round(dur * 0.5), 300);           // Blitz-/Flacker-Fenster
+  useEffect(() => {
+    const cv = canvasRef.current, wrap = wrapRef.current;
+    if (!cv || !wrap) return undefined;
+    const r0 = wrap.getBoundingClientRect();
+    const W0 = Math.max(40, Math.round(r0.width || 104)), H0 = Math.max(40, Math.round(r0.height || 144));
+    const CW = Math.round(W0 * 1.8), CH = Math.round(H0 * 1.7);     // größere Canvas → Blitz/Funken dürfen über die Karte hinaus
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = CW * dpr; cv.height = CH * dpr; cv.style.width = CW + "px"; cv.style.height = CH + "px";
+    const ctx = cv.getContext("2d");
+    const rng = mulberry32((seed * 2654435761) >>> 0);
+    const nBolts = tier >= 4 ? 3 : tier >= 3 ? 2 : 1;
+    const glare = tier >= 4 ? 1 : tier >= 2 ? 0.72 : 0.48;
+    const cx = CW / 2, cy = CH / 2 + H0 * 0.02;                     // Einschlag ~ Kartenmitte
+    const build = (x0, y0, x1, y1, disp, r) => {
+      let pts = [[x0, y0], [x1, y1]];
+      for (let it = 0; it < 5; it++) {
+        const np = [];
+        for (let i = 0; i < pts.length - 1; i++) {
+          const [ax, ay] = pts[i], [bx, by] = pts[i + 1];
+          const mx = (ax + bx) / 2, my = (ay + by) / 2;
+          let nx = -(by - ay), ny = bx - ax; const ln = Math.hypot(nx, ny) || 1; nx /= ln; ny /= ln;
+          const off = (r() - 0.5) * disp;
+          np.push([ax, ay], [mx + nx * off, my + ny * off]);
+        }
+        np.push(pts[pts.length - 1]); pts = np; disp *= 0.55;
+      }
+      return pts;
+    };
+    const stroke = (pts, w, col, alpha) => {
+      ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = col; ctx.globalAlpha = alpha;
+      ctx.lineWidth = w; ctx.lineJoin = "round"; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.stroke();
+    };
+    let start = null, raf = 0, stopped = false;
+    const frame = (ts) => {
+      if (stopped) return;
+      if (start == null) start = ts;
+      const el = ts - start - delay;                     // Karte liegt erst (delay), dann schlägt der Blitz ein
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, CW, CH);
+      if (el < 0) { raf = requestAnimationFrame(frame); return; }
+      if (el < strikeMs) {
+        const flick = 0.55 + rng() * 0.45;
+        for (let b = 0; b < nBolts; b++) {
+          const sx = CW * (0.25 + rng() * 0.5);
+          const pts = build(sx, -4, cx + (rng() - 0.5) * 10, cy, CW * 0.45, rng);
+          stroke(pts, 7 * glare, color, 0.11 * flick);            // breiter additiver Glow
+          stroke(pts, 3.4 * glare, color, 0.2 * flick);
+          stroke(pts, 1.5, "#ffffff", 0.92 * flick);              // heißer weißer Kern
+          if (tier >= 3) {                                        // Gabel-Verästelung
+            const gi = Math.min(4 + ((rng() * 3) | 0), pts.length - 2);
+            const [gx, gy] = pts[gi];
+            const fk = build(gx, gy, gx + (rng() - 0.5) * CW * 0.5, gy + CH * 0.22, CW * 0.28, rng);
+            stroke(fk, 2.2 * glare, color, 0.15 * flick);
+            stroke(fk, 1, "#ffffff", 0.7 * flick);
+          }
+        }
+        ctx.globalCompositeOperation = "lighter";                 // Einschlag-Glut
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 24 * glare);
+        g.addColorStop(0, "#ffffff"); g.addColorStop(0.4, color); g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.globalAlpha = 0.85 * flick; ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(cx, cy, 24 * glare, 0, Math.PI * 2); ctx.fill();
+      } else {
+        const p = Math.min(1, (el - strikeMs) / (dur - strikeMs)); // Funken glühen aus
+        const nS = 10 + tier * 7;
+        ctx.globalCompositeOperation = "lighter";
+        for (let i = 0; i < nS; i++) {
+          const a = rng() * Math.PI * 2, sp = (18 + rng() * 58) * (0.6 + tier * 0.18);
+          const x = cx + Math.cos(a) * sp * p, y = cy + Math.sin(a) * sp * p - p * 12;
+          const len = 3 + rng() * 6;
+          ctx.globalAlpha = (1 - p) * 0.8; ctx.strokeStyle = i % 3 ? color : "#ffffff"; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - Math.cos(a) * len, y - Math.sin(a) * len); ctx.stroke();
+        }
+      }
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+      if (el < dur) raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => { stopped = true; cancelAnimationFrame(raf); };
+  }, [seed, tier, flipMs, scale, color, dur, strikeMs, delay]);
+  return (
+    <div ref={wrapRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* Karte: kurzer heller Einschlag-Flash, dann ausblenden (Einschlag zerstört sie). */}
+      <div className="absolute inset-0" style={{ animation: `as-ovl-card ${dur}ms ease-out ${delay}ms both`, willChange: "opacity, filter" }}>{cardEl}</div>
+      <canvas ref={canvasRef} className="absolute" style={{ left: "50%", top: "50%", transform: "translate(-50%,-50%)" }} />
+    </div>
+  );
+}
+
+/* #300 Sieg-Finisher „Zerstäubung" — die Gegnerkarte löst sich in ein Partikelgitter auf, das nach außen/oben streut &
+   ausfadet. Partikel-Startpositionen = Rasterzellen über der Kartenfläche; jede driftet auswärts (+ leichter Auftrieb),
+   schrumpft & fadet. Glow AUSSCHLIESSLICH additiv ('lighter', KEIN shadowBlur pro Partikel), Partikelzahl gedeckelt
+   (DISPERSE_CAP). Stufe (diff) skaliert Streuweite/Turbulenz/Dichte. Budget an flipMs gekoppelt. Deterministisch aus seed. */
+const DISPERSE_CAP = 480;
+export function DisperseFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, tier = 1, scale = 1, delay = 0 }) {
+  const wrapRef = useRef(null), canvasRef = useRef(null);
+  const dur = Math.max(220, Math.round(((flipMs || 900) - 40)));
+  useEffect(() => {
+    const cv = canvasRef.current, wrap = wrapRef.current;
+    if (!cv || !wrap) return undefined;
+    const r0 = wrap.getBoundingClientRect();
+    const W0 = Math.max(40, Math.round(r0.width || 104)), H0 = Math.max(40, Math.round(r0.height || 144));
+    const CW = Math.round(W0 * 1.9), CH = Math.round(H0 * 1.8);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = CW * dpr; cv.height = CH * dpr; cv.style.width = CW + "px"; cv.style.height = CH + "px";
+    const ctx = cv.getContext("2d");
+    const rng = mulberry32((seed * 40503 + 12345) >>> 0);
+    // Rasterdichte + Streuung nach Stufe; Gesamtzahl auf DISPERSE_CAP gedeckelt.
+    const cols = tier >= 4 ? 18 : tier >= 3 ? 16 : tier >= 2 ? 14 : 12;
+    const rows = Math.round(cols * (H0 / W0));
+    const spread = (0.6 + tier * 0.4) * (W0 / 12);        // Auswärts-Streuweite wächst mit der Stufe
+    const ox = (CW - W0) / 2, oy = (CH - H0) / 2;          // Karten-Ursprung in der größeren Canvas
+    const cx = CW / 2, cy = CH / 2;
+    const parts = [];
+    for (let ry = 0; ry < rows; ry++) {
+      for (let rx = 0; rx < cols; rx++) {
+        if (parts.length >= DISPERSE_CAP) break;
+        const px = ox + (rx + 0.5) / cols * W0, py = oy + (ry + 0.5) / rows * H0;
+        const dirx = px - cx, diry = py - cy, dl = Math.hypot(dirx, diry) || 1;
+        const vmag = (spread * (0.5 + rng())) ;
+        parts.push({
+          x: px, y: py,
+          vx: (dirx / dl) * vmag + (rng() - 0.5) * spread * 0.5,
+          vy: (diry / dl) * vmag - (6 + rng() * 10) - tier * 2,   // Auftrieb nach oben
+          sz: 1 + rng() * 1.6,
+          c: rng() < 0.28 ? "#ffffff" : color,
+          ph: rng(),
+        });
+      }
+    }
+    let start = null, raf = 0, stopped = false;
+    const frame = (ts) => {
+      if (stopped) return;
+      if (start == null) start = ts;
+      const el = ts - start - delay;                        // Karte liegt erst (delay), dann zerstäubt sie
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, CW, CH);
+      if (el < 0) { raf = requestAnimationFrame(frame); return; }
+      const p = Math.min(1, el / dur);                      // 0..1 Fortschritt
+      ctx.globalCompositeOperation = "lighter";
+      const ease = p * (2 - p);                             // easeOut
+      for (let i = 0; i < parts.length; i++) {
+        const q = parts[i];
+        const x = q.x + q.vx * ease, y = q.y + q.vy * ease + 22 * p * p; // + leichte Schwerkraft spät
+        const a = (1 - p) * (0.85 - q.ph * 0.3);
+        if (a <= 0) continue;
+        const s = q.sz * (1 - p * 0.6);
+        ctx.globalAlpha = a; ctx.fillStyle = q.c;
+        ctx.beginPath(); ctx.arc(x, y, s, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+      if (el < dur) raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => { stopped = true; cancelAnimationFrame(raf); };
+  }, [seed, tier, flipMs, scale, color, dur, delay]);
+  return (
+    <div ref={wrapRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* Karte fadet schnell, während die Partikel emittieren (sie „zerstäubt"). */}
+      <div className="absolute inset-0" style={{ animation: `as-disp-card ${dur}ms ease-out ${delay}ms both`, willChange: "opacity" }}>{cardEl}</div>
+      <canvas ref={canvasRef} className="absolute" style={{ left: "50%", top: "50%", transform: "translate(-50%,-50%)" }} />
+    </div>
+  );
+}
+
 /* #296 Sieg-Finisher „Schwarzes Loch" — Serien-Wachstum. Statt pro Sieg einzeln zu implodieren + kollabieren, ist das
    Loch bei einer Siegserie EIN persistentes, wachsendes Objekt: der Ereignishorizont wächst mit `streak` (an die
    Feldhöhe gekoppelt, Max-Deckel; darf großzügig über den Karten liegen — bewusst keine Lesbarkeits-Deckelung), jede
@@ -941,7 +1136,9 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
         const isBoom = g.fx === "explode";
         const isGrid = g.fx === "lasergrid";   // #295 Lasergitter: Raster-Dicing
         const isBurn = g.fx === "burn";        // #295 Brennstrahl: Loch + Bruch
-        const inPlace = isBoom || isGrid || isBurn; // zerfällt/bricht an Ort und Stelle → kein Wrapper-Drift (Schwarzes Loch läuft im Panel-Canvas, nicht als Ghost)
+        const isOvl  = g.fx === "overload";    // #300 Überladung: Blitzeinschlag (Canvas)
+        const isDisp = g.fx === "disperse";    // #300 Zerstäubung: Partikelgitter (Canvas)
+        const inPlace = isBoom || isGrid || isBurn || isOvl || isDisp; // zerfällt/bricht an Ort und Stelle → kein Wrapper-Drift (Schwarzes Loch läuft im Panel-Canvas, nicht als Ghost)
         const dang = fjitter(g.seed * 3 + 2, Math.PI);                        // −π..π → volle 360° rundum
         // Laser-Treffer zerfallen NAH am Deck (wenig Drift); normaler Klingenschnitt driftet weiter ins Feld.
         const drad = inPlace ? 0 : g.laser ? 10 + Math.abs(fjitter(g.seed * 5 + 3, 12)) : 40 + Math.abs(fjitter(g.seed * 5 + 3, 26)); // Laser 10..22 · Klinge 40..66 px
@@ -957,6 +1154,10 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
               ? <LaserGridFx cardEl={cardEl} color={g.color} diceDur={g.halves} lineDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
               : isBurn
               ? <BurnBeamFx cardEl={cardEl} color={g.color} flipMs={g.flipMs} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} streak={g.streak} />
+              : isOvl
+              ? <OverloadFx cardEl={cardEl} color={g.color} flipMs={g.flipMs} seed={g.seed} tier={g.dtier} scale={g.scale} />
+              : isDisp
+              ? <DisperseFx cardEl={cardEl} color={g.color} flipMs={g.flipMs} seed={g.seed} tier={g.dtier} scale={g.scale} />
               : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} laser={g.laser} />}
           </div>
         );
@@ -996,7 +1197,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // Frame Glow (Karte) + Hologrid (Gitterlinien im Battlefield); Holo Swipe = Schimmer über die eigene Karte.
-  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false, fxBlackhole = false, fxLasergrid = false, fxBurnBeam = false, fxShatter = false,
+  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false, fxBlackhole = false, fxLasergrid = false, fxBurnBeam = false, fxOverload = false, fxDisperse = false, fxShatter = false,
   // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar).
   fxFireworks = false, fxGoldRain = false, fxPrismaWave = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
@@ -1099,6 +1300,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const holeFinish   = sliceOn && win && !explode && fxBlackhole;
   const gridFinish   = sliceOn && win && !explode && !fxBlackhole && fxLasergrid;                 // #295 Lasergitter
   const burnFinish   = sliceOn && win && !explode && !fxBlackhole && !fxLasergrid && fxBurnBeam;  // #295 Brennstrahl
+  const overloadFinish = sliceOn && win && !explode && !fxBlackhole && !fxLasergrid && !fxBurnBeam && fxOverload;                 // #300 Überladung (Blitz)
+  const disperseFinish = sliceOn && win && !explode && !fxBlackhole && !fxLasergrid && !fxBurnBeam && !fxOverload && fxDisperse;  // #300 Zerstäubung (Partikel)
+  // #300 Intensitäts-Stufe (1..4) aus dem absoluten Wertunterschied des Stichs (pValue−oValue). Rein „Juice", deterministisch.
+  const diffTier = t ? fxDiffTier(Math.max(0, Math.round((t.pValue || 0) - (t.oValue || 0)))) : 1;
   // #296: Ist der Blackhole-Finisher im Lauf aktiv? Dann läuft das persistente Panel-Loch (unabhängig vom Einzelstich).
   // Kein separater Ghost auf der Gegnerkarte mehr — der Sog/das Loch werden im Canvas gezeichnet.
   const holeActive   = !reduced && fxBlackhole && flipMs > 170 && !!t;
@@ -1225,6 +1430,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const fxRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
       if (holeFinish || burnFinish) { /* still — persistente Betten (Loop) decken diese Siege ab */ }
       else if (gridFinish)                audio.play("fx_laser", { rate: fxRate, gain: 1.1, bass: 2 }); // Lasergitter
+      else if (overloadFinish)            audio.play("fx_laser", { rate: fxRate * 0.9, gain: 1.0 + diffTier * 0.08, bass: 3 }); // #300 Überladung: schwererer Blitz-Crack, lauter bei großer Differenz
+      else if (disperseFinish)            audio.play("fx_laser", { rate: fxRate * 1.18, gain: 0.7 + diffTier * 0.05 });          // #300 Zerstäubung: luftiges Zerstäuben
       else if (oppSliced && fxLaserSlice) audio.play("fx_laser", { rate: fxRate, gain: 1.1 });          // globaler Laser-Schnitt
       else if (oppSliced)                 audio.play("fx_blade", { rate: fxRate, gain: 1.05 });          // Default-Klinge
     }
@@ -1340,7 +1547,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
     if (win && !holeFinish) {   // Gegnerkarte verliert → Schnitt (Standard, auch bei Krit) bzw. Shatter-Explosion (nur mit gekauftem Effekt)
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
-        fx: explode ? "explode" : gridFinish ? "lasergrid" : burnFinish ? "burn" : "slice",
+        fx: explode ? "explode" : gridFinish ? "lasergrid" : burnFinish ? "burn" : overloadFinish ? "overload" : disperseFinish ? "disperse" : "slice",
+        dtier: diffTier, // #300 Wertdifferenz-Stufe (Überladung/Zerstäubung)
         laser: fxLaserSlice, // globaler Laser-Schnitt (nur normaler Schnitt)
         color: explode ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
@@ -1352,7 +1560,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     const ids = spawned.map((g) => g.id);
     // #295 Brennstrahl löst innerhalb der Stich-Kadenz (flipMs) auf → Ghost wird passend dazu entfernt (liegt nie
     // hinter der neu geflippten Karte). Andere Finisher: Ruhe + längster FX-Teil (#188, skaliert).
-    const ghostLife = burnFinish ? Math.max(200, flipMs - 30) + 20 : sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100;
+    const ghostLife = burnFinish ? Math.max(200, flipMs - 30) + 20
+      : (overloadFinish || disperseFinish) ? Math.max(220, flipMs - 40) + 60   // #300 Canvas-Finisher lösen im flipMs-Budget auf
+      : sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100;
     const tm = setTimeout(() => {
       setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)

@@ -9,7 +9,7 @@ import {
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
-import { SliceFx, ExplosionFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist } from "./Battlefield.jsx";
+import { SliceFx, ExplosionFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx } from "./Battlefield.jsx";
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 import { audio } from "./audio.js"; // #302b: Showcase-Panel spielt den passenden Finisher-Sound mit
@@ -66,9 +66,10 @@ const fxGroupItems = (group) => {
 /* Sieg-Finisher sind untereinander exklusiv (genau EINER aktiv). Zentrale Wahrheit für Auswahl UND Anzeige,
    damit In-Übersicht (Radio) und Detail-Fenster nie auseinanderlaufen. „klinge" = alle Flags aus. */
 const finisherFlags = (key) => ({ fxLaserSlice: key === "laserSlice", fxBlackhole: key === "blackhole",
-  fxLasergrid: key === "lasergrid", fxBurnBeam: key === "burnBeam" });
+  fxLasergrid: key === "lasergrid", fxBurnBeam: key === "burnBeam", fxOverload: key === "overload", fxDisperse: key === "disperse" });
 const finisherSelOf = (options) => options?.fxBlackhole ? "blackhole" : options?.fxLasergrid ? "lasergrid"
-  : options?.fxBurnBeam ? "burnBeam" : options?.fxLaserSlice ? "laserSlice" : "klinge";
+  : options?.fxBurnBeam ? "burnBeam" : options?.fxOverload ? "overload" : options?.fxDisperse ? "disperse"
+  : options?.fxLaserSlice ? "laserSlice" : "klinge";
 
 // Gleiche Schwelle wie das In-Run-Battlefield (<picture media="(max-width: 640px)">): so zeigt die
 // Vorschau exakt die Version (mobile/desktop), mit der gerade auch gespielt wird.
@@ -192,7 +193,7 @@ function GottgleichPreview({ variant, compact = false }) {
 const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
 const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LINE = 220;
 // #302b Showcase-Sound je One-Shot-Finisher (persistente Loop-Effekte Burn/Blackhole laufen separat als Loop-Bett).
-const FIN_SFX = { klinge: "fx_blade", laser: "fx_laser", lasergrid: "fx_laser" }; // shatter: (kein eigener SFX)
+const FIN_SFX = { klinge: "fx_blade", laser: "fx_laser", lasergrid: "fx_laser", overload: "fx_laser", disperse: "fx_laser" }; // shatter: (kein eigener SFX)
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
   const bf = battlefieldAssets(SHOWCASE_BF);
@@ -210,10 +211,13 @@ function FinisherScene({ variant }) {
   const suitCol = suitColor(DEMO_SUIT);
   const cardEl = <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
   const seed = tick * 3 + 1;
+  const dTier = (tick % 4) + 1; // #300 Vorschau durchläuft die Wertdifferenz-Stufen 1→4 (zeigt die Intensitäts-Eskalation)
   let fx = null;
   if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} laser />;
   else if (variant === "shatter") fx = <ExplosionFx cardEl={cardEl} color="#e879f9" cardDur={FIN_HALVES} burstDur={FIN_SPARK} flashDur={200} seed={seed} delay={FIN_DELAY} intensity={0.6} tier={3} scale={1} />;
   else if (variant === "lasergrid") fx = <LaserGridFx cardEl={cardEl} color={suitCol} diceDur={FIN_HALVES} lineDur={FIN_LINE} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={1} scale={1} />;
+  else if (variant === "overload") fx = <OverloadFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
+  else if (variant === "disperse") fx = <DisperseFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
   else fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} />; // klinge (Default)
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
@@ -344,7 +348,7 @@ function GlobalFxScenePreview({ fx }) {
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
   if (fx.preview === "blackhole") return <BlackholePreview />;
   if (fx.preview === "burnbeam") return <BurnBeamPreview />;
-  if (["laser", "shatter", "klinge", "lasergrid"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
+  if (["laser", "shatter", "klinge", "lasergrid", "overload", "disperse"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
@@ -809,6 +813,27 @@ function MiniFx({ preview }) {
         <>
           {[["20%", "0s"], ["44%", "-.5s"], ["66%", "-.9s"], ["84%", "-1.3s"]].map(([l, d]) => (
             <span key={l} className="as-mini-fall absolute" style={{ left: l, top: 0, width: 2, height: 11, borderRadius: 2, background: "linear-gradient(#f2c14a,transparent)", boxShadow: "0 0 4px #f2c14a", animationDelay: d }} />
+          ))}
+        </>
+      );
+    case "overload":
+      // Gezackter Blitz fährt herab + heller Einschlag-Kern.
+      return box(
+        <>
+          <span className="as-mini-fall absolute" style={{ left: "50%", top: 0, width: 5, height: 22, marginLeft: -2.5,
+            background: `linear-gradient(#ffffff,${C})`, boxShadow: `0 0 6px ${C}`,
+            clipPath: "polygon(42% 0,60% 0,46% 42%,68% 42%,34% 100%,50% 52%,30% 52%)" }} />
+          <span className="as-mini-core" style={{ width: 8, height: 8, borderRadius: "50%", background: `radial-gradient(circle,#ffffff,${C} 60%,transparent)`, "--mc": C }} />
+        </>
+      );
+    case "disperse":
+      // Karte zerstäubt: Kern + auseinanderstiebende Partikel.
+      return box(
+        <>
+          {ring(C, 20, "50%", "50%", "0s")}
+          <span className="as-mini-core" style={{ width: 5, height: 5, borderRadius: "50%", background: C, "--mc": C }} />
+          {[["30%", "30%", "0s"], ["66%", "38%", "-.4s"], ["42%", "66%", "-.8s"], ["62%", "62%", "-1.2s"]].map(([l, t, d]) => (
+            <span key={l + t} className="as-mini-core absolute" style={{ left: l, top: t, width: 3, height: 3, borderRadius: "50%", background: "#ffffff", "--mc": C, animationDelay: d }} />
           ))}
         </>
       );

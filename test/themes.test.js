@@ -5,7 +5,7 @@ import {
   canBuyPack, buyPack, unlockAllCosmetics, packOwnKey,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
   frameGlowActive, holoSwipeActive, hologridActive,
-  laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive,
+  laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive,
 } from "../src/game/themes.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
@@ -133,6 +133,20 @@ describe("effekte — Finisher/Krit/Prunk", () => {
     expect(laser.group).toBe("finisher");
     expect(GLOBAL_FX_BY_KEY.blackhole.group).toBe("finisher");
   });
+  it("#300 Überladung + Zerstäubung: ownKey/option + group finisher, je 1 SP kaufbar & exklusiv-fähig", () => {
+    for (const [key, own, opt] of [["overload", "fx:overload", "fxOverload"], ["disperse", "fx:disperse", "fxDisperse"]]) {
+      const fx = GLOBAL_FX_BY_KEY[key];
+      expect(fx).toBeTruthy();
+      expect(fx.ownKey).toBe(own);
+      expect(fx.option).toBe(opt);
+      expect(fx.group).toBe("finisher");
+      const p0 = prof({ stichPoints: 1 });
+      expect(canBuyGlobalFx(p0, fx)).toBe(true);
+      const p1 = buyGlobalFx(p0, fx);
+      expect(globalFxOwned(p1, fx)).toBe(true);
+      expect(p1.stichPoints).toBe(0);
+    }
+  });
   it("kaufen zieht SP ab, bucht stichSpent, setzt globalen Besitz", () => {
     const p0 = prof({ stichPoints: 2, stichSpent: 1 });
     expect(canBuyGlobalFx(p0, laser)).toBe(true);
@@ -152,6 +166,8 @@ describe("effekte — Finisher/Krit/Prunk", () => {
       ["blackhole", blackholeActive, "fxBlackhole"],
       ["lasergrid", lasergridActive, "fxLasergrid"],
       ["burnBeam", burnBeamActive, "fxBurnBeam"],
+      ["overload", overloadActive, "fxOverload"],
+      ["disperse", disperseActive, "fxDisperse"],
       ["shatter", shatterActive, "fxShatter"],
       ["fireworks", fireworksActive, "fxFireworks"],
       ["goldRain", goldRainActive, "fxGoldRain"],

@@ -207,6 +207,21 @@ button { font-family: inherit; }
   60%  { opacity: 0.45; }                      /* Nachleuchten … */
   100% { opacity: 0; transform: scale(1); }    /* … glüht langsam aus */
 }
+/* #300 Sieg-Finisher „Überladung": Karte blitzt beim Einschlag kurz weiß auf (brightness-Peak) und wird dann ausgeblendet
+   (der Blitz zerstört sie). „Zerstäubung": Karte fadet zügig, während die Partikel emittieren (sie zerstäubt). */
+@keyframes as-ovl-card {
+  0%   { opacity: 1; filter: brightness(1); }
+  6%   { opacity: 1; filter: brightness(2.6); }   /* Einschlag-Flash */
+  22%  { opacity: 1; filter: brightness(1.15); }
+  70%  { opacity: 0.25; filter: brightness(1); }
+  100% { opacity: 0; filter: brightness(1); }
+}
+@keyframes as-disp-card {
+  0%   { opacity: 1; }
+  16%  { opacity: 0.72; }
+  55%  { opacity: 0.25; }
+  100% { opacity: 0; }
+}
 @keyframes as-lg-flash {
   0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
   20%  { opacity: 0.9; }

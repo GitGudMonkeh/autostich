@@ -46,7 +46,7 @@ import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale
 import { UpgradeScreen } from "./ui/UpgradeScreen.jsx"; // Progression-Vorschau: Upgrade-Baum-Screen
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, unlockAllCosmetics, frameGlowActive, holoSwipeActive, hologridActive, laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
+import { THEMES, unlockAllCosmetics, frameGlowActive, holoSwipeActive, hologridActive, laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
@@ -394,6 +394,8 @@ export function Autostich() {
     fxBlackhole: blackholeActive(profile, options),   // Sieg-Finisher: Gegnerkarte implodiert (Vorrang vor Laser/Klinge)
     fxLasergrid: lasergridActive(profile, options),   // Sieg-Finisher: Gegnerkarte zerfällt in ein Laser-Raster
     fxBurnBeam: burnBeamActive(profile, options),     // Sieg-Finisher: Brennstrahl brennt Loch + Karte bricht
+    fxOverload: overloadActive(profile, options),     // Sieg-Finisher: Blitzeinschlag (Stufe = Wertdifferenz)
+    fxDisperse: disperseActive(profile, options),     // Sieg-Finisher: Karte zerstäubt in ein Partikelgitter (Stufe = Wertdifferenz)
     fxShatter: shatterActive(profile, options),       // Krit zerbirst die Gegnerkarte (sonst normaler Schnitt)
     // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar).
     fxFireworks: fireworksActive(profile, options),
@@ -637,7 +639,7 @@ export function Autostich() {
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
-                deckA1={deckFx.deckA1} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxHologrid={deckFx.fxHologrid} fxLaserSlice={deckFx.fxLaserSlice} fxBlackhole={deckFx.fxBlackhole} fxLasergrid={deckFx.fxLasergrid} fxBurnBeam={deckFx.fxBurnBeam} fxShatter={deckFx.fxShatter}
+                deckA1={deckFx.deckA1} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxHologrid={deckFx.fxHologrid} fxLaserSlice={deckFx.fxLaserSlice} fxBlackhole={deckFx.fxBlackhole} fxLasergrid={deckFx.fxLasergrid} fxBurnBeam={deckFx.fxBurnBeam} fxOverload={deckFx.fxOverload} fxDisperse={deckFx.fxDisperse} fxShatter={deckFx.fxShatter}
                 fxFireworks={deckFx.fxFireworks} fxGoldRain={deckFx.fxGoldRain} fxPrismaWave={deckFx.fxPrismaWave}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
