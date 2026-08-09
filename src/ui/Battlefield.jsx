@@ -627,8 +627,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     <div key={`p${t.trickNo}`} className="relative"
       style={flyAway ? { animation: `as-flyaway ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
            : flipOn ? undefined : dealStyle("as-deal-left")}>
-      {/* Kein lila Krit-Puls mehr: auch ein Krit zeigt nur den normalen grünen Sieg-Puls (Krit-Wumms → Shatter/GOTTGLEICH). */}
-      {resultPulse(win ? "#5ab87a" : null, false)}
+      {/* Krits zeigen GAR keinen Ergebnis-Puls mehr — nur das Shatter/der Schnitt (+ GOTTGLEICH). Nur normale Siege pulsen (grün). */}
+      {resultPulse(win && !isCrit ? "#5ab87a" : null, false)}
       {flipOn ? (
         <FlipReveal front={playerFront} backImage={deckBack} dur={flipDur} />   /* #180: Rücken → Front */
       ) : playerFront}   {/* Niederlage: eigene Karte fliegt (via as-flyaway am Wrapper) einfach weg — kein Schnitt */}

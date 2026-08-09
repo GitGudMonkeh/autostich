@@ -490,8 +490,8 @@ function PreviewView({ p, onOpen, onOpenFx }) {
         <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{cat === 0 ? "tippen → Elemente einzeln kaufen" : cat === 1 ? "tippen → Freischaltung ansehen" : "global · einmal kaufen"}</span>
       </div>
 
-      {/* Feste Mindesthöhe → alle Kategorien (auch die kurze Effekte-Liste) füllen gleich viel Panel. */}
-      <div style={{ minHeight: 380 }}>
+      {/* Feste Mindesthöhe ~ Packs-Höhe → kein spürbarer Größensprung beim Wechsel Packs↔Effekte. */}
+      <div style={{ minHeight: 460 }}>
       {isEffekte ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           {GLOBAL_FX.map((fx) => {
