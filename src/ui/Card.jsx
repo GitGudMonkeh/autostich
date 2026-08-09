@@ -53,9 +53,11 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
   // solange die Karte wächst und NICHT reif ist (bei Reife übernimmt die grüne Zahl + 🌿 das Signal).
   const pt = plantNumberColor(color, growth, green, value);
   const numColor = pt ? pt.color : color;
+  // Neon-Tube-Zahl (#UI): mehrschichtiger Neon-Glow in Suit-/Pflanzenfarbe. Die Ziffer selbst ist hohl (transparente
+  // Füllung + farbige Kontur, siehe render), der Glow gibt die Leucht-Röhren-Optik. Pflanze moduliert die Stärke über pt.glow.
   const numShadow = pt
-    ? `0 0 ${Math.round(10 + 10 * pt.glow)}px ${pt.color}${pt.ripe ? "cc" : "88"}, 0 1px 3px #000c`
-    : `0 0 12px ${color}77, 0 1px 3px #000c`;
+    ? `0 0 ${Math.round(8 + 10 * pt.glow)}px ${pt.color}, 0 0 ${Math.round(20 + 16 * pt.glow)}px ${pt.color}${pt.ripe ? "aa" : "66"}, 0 0 40px ${pt.color}44`
+    : `0 0 8px ${color}, 0 0 20px ${color}99, 0 0 40px ${color}55`;
   // Pflanze (#277): ZWEISTUFIGER Wachstumsring — Stufe 1 Setzling→Grün (grau→grün, growth/Schwelle), Stufe 2 Grün→
   // Ausgewachsen (heller, value/Deckel). Bleibt sichtbar, bis die Karte ausgewachsen ist (dann trägt die hellste
   // grüne Zahl das „fertig"-Signal). So sieht man je Karte, wie weit sie ist UND wann sie voll auswächst.
@@ -107,7 +109,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
           ⚒+{forged}
         </div>
       )}
-      <div className="text-5xl font-bold card-num" style={{ color: numColor, textShadow: numShadow }}>{effective}</div>
+      <div className="text-5xl font-bold card-num" style={{ color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, textShadow: numShadow, fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "2.4rem", lineHeight: 1 }}>{effective}</div>
       {/* Pflanze (#277): zweistufiger Wachstumsring unten-rechts — Stufe 1 grau→grün (Reife), Stufe 2 heller (Wert-Deckel/
           ausgewachsen). Ausgeblendet erst, wenn die Karte ausgewachsen ist. Sitzt in vocab.CORNER.growthRing. */}
       {showGrowthRing && (
