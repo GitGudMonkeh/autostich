@@ -535,20 +535,20 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const sSpark   = clamp(flipMs * 0.5, 150, 520) + 800;    // Funken/Krit-Partikel
   const sBoom    = clamp(flipMs * 0.22, 90, 230);    // Krit-Zentral-Flash (kurz & hell)
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
-  const sFloat   = clamp(flipMs * 0.55, 220, 820);   // Float-Away NACH dem Slice: Ghost driftet in Zufallsrichtung (#187)
-  // Suit-Farbe der GESCHNITTENEN (Verlierer-)Karte → Schnittlinie + Funken. Sieg: Gegnerkarte · Niederlage: Spielerkarte.
-  // Sieg: Gegnerkarte wird in-place geschnitten, Spielerkarte kippt an. Niederlage: Spielerkarte wird NICHT in-place
-  // geschnitten, sondern als entkoppelter Ghost (floaten → schneiden, überlappt bei Turbo, s. slashGhosts unten) —
-  // in-place bleibt sie nur unsichtbarer Platzhalter; Gegnerkarte (Sieger) kippt an.
-  const lossGhost    = sliceOn && lost;            // Spielerkarte verliert → entkoppelter Drift-+-Slice-Ghost
+  const sFloat   = clamp(flipMs * 0.55, 220, 820);   // Float-Away NACH dem Slice (nur noch Gegnerseite, #187)
+  const flyDur   = clamp(flipMs * 0.7, 320, 900);    // Wegflug-Dauer der eigenen Verlierer-Karte (kein Schnitt mehr)
+  // Der Klingenschnitt trifft NUR die Gegnerkarte, und NUR wenn WIR gewinnen (Wunsch). Die eigene Karte wird nie
+  // geschnitten: bei einer Niederlage fliegt sie einfach weg (as-flyaway). Sieg: Gegnerkarte in-place geschnitten
+  // (Krit: Explosion), Spielerkarte kippt als Sieger an.
+  const flyAway      = sliceOn && lost;            // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
   const critBoom     = sliceOn && win && isCrit;   // Krit-Sieg → Gegnerkarte explodiert (statt Schnitt)
   const oppSliced    = sliceOn && win && !isCrit;  // normaler Sieg → Gegnerkarte in-place geschnitten
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
-  // #180 Flip-Reveal der Spielerkarte: nur bei normaler Bewegung, echtem Stich, nicht bei der Niederlage
-  // (dort übernimmt der entkoppelte Slice-Ghost) und nicht bei sehr hohem Turbo. Dauer an den Flip-Takt gekoppelt.
-  const flipOn = !reduced && !!t && !lossGhost && flipMs > 170;
+  // #180 Flip-Reveal der Spielerkarte: nur bei normaler Bewegung, echtem Stich, nicht beim Wegflug (Niederlage)
+  // und nicht bei sehr hohem Turbo. Dauer an den Flip-Takt gekoppelt.
+  const flipOn = !reduced && !!t && !flyAway && flipMs > 170;
   // #186 Flip-Reveal der Gegnerkarte: analog zur Spielerkarte, aber NICHT wenn die Gegnerkarte gerade geschnitten
   // wird/explodiert (dort übernimmt der entkoppelte Ghost). Bei Gegner-Sieg (oppWinner) darf sie flippen + ankippen.
   const oppFlipOn = !reduced && !!t && !(oppSliced || critBoom) && flipMs > 170;
@@ -572,13 +572,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Sieger kippt an (as-slice-winner); im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
   const playerFront = playerWinner ? <div style={winnerTilt(sWinner)}>{pCardEl}</div> : pCardEl;
   const playerCard = t ? (
-    <div key={`p${t.trickNo}`} className="relative" style={(lossGhost || flipOn) ? undefined : dealStyle("as-deal-left")}>
+    <div key={`p${t.trickNo}`} className="relative"
+      style={flyAway ? { animation: `as-flyaway ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
+           : flipOn ? undefined : dealStyle("as-deal-left")}>
       {resultPulse(win ? (isCrit ? critColor : "#5ab87a") : null, isCrit)}
-      {lossGhost ? (
-        <div style={{ opacity: 0 }} aria-hidden="true">{pCardEl}</div>   /* in-place unsichtbar — der entkoppelte Ghost (Side-overlay) floatet + schneidet */
-      ) : flipOn ? (
+      {flipOn ? (
         <FlipReveal front={playerFront} backImage={deckBack} dur={flipDur} />   /* #180: Rücken → Front */
-      ) : playerFront}
+      ) : playerFront}   {/* Niederlage: eigene Karte fliegt (via as-flyaway am Wrapper) einfach weg — kein Schnitt */}
     </div>
   ) : <div className="relative"><CardBack label="" image={deckBack} /></div>;
 
@@ -736,13 +736,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     const { p: fxP, tier: fxTier } = fxIntensity(t.gained || 0);
     const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, fxP, fxTier, scale: fxScale };
     const spawned = [];
-    if (lost) {  // Spielerkarte verliert → Schnitt-Ghost auf der Spielerseite
-      spawned.push({ ...base, id: `pg${t.trickNo}-${ghostSeq.current++}`, side: "player", fx: "slice",
-        color: suitColor(t.pCard.suit), seed: t.trickNo * 2 + 7,
-        suit: t.pCard.suit, value: t.pCard.value, baseRank: t.pCard.baseRank, stichBonus: t.pValue - t.pCard.value,
-        ionStacks: t.pCard.ionStacks || 0, green: !!t.pCard.green,
-        forged: forged[t.pCard.id] || 0, growth: growth[t.pCard.id] || 0, allyColor: allyColorFor(t.pCard.suit), frontImage: deckFront });
-    }
+    // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
     if (win) {   // Gegnerkarte verliert → Schnitt- (normal) bzw. Explosions-Ghost (Krit) auf der Gegnerseite
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp", fx: isCrit ? "explode" : "slice",
         color: isCrit ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,

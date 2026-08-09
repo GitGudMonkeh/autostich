@@ -245,6 +245,8 @@ button { font-family: inherit; }
    Liegt in der Perspektiv-Ebene des Grids → wandert entlang der Fluchtlinien in die Tiefe. */
 @keyframes as-deck-sweep { 0% { bottom: -2%; opacity: 0; } 14% { opacity: 1; } 100% { bottom: 104%; opacity: 0; } }
 .as-deck-sweep { animation: as-deck-sweep 900ms ease-out forwards; }
+/* Eigene Verlierer-Karte fliegt einfach weg (kein Klingenschnitt mehr) — driftet nach unten-außen, kippt & fadet. */
+@keyframes as-flyaway { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-12%, 68%) rotate(-16deg); opacity: 0; } }
 
 /* Blitz-Motor (#208): Energie „fließt" die aktiven Verbinder entlang (bewegter Farbverlauf). Der Verbinder trägt
    `background-size: 220%`; die Animation schiebt die Position → ein wandernder Lichtpuls. Ruht implizit unter
