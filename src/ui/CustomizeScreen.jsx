@@ -13,6 +13,7 @@ import { SliceFx, ExplosionFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBe
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 import { audio } from "./audio.js"; // #302b: Showcase-Panel spielt den passenden Finisher-Sound mit
+import { useBlackholeSfx } from "./finisherSfx.js"; // #298: Loch-Ton-Bett mit Hüllkurve (leiser Start → Anschwellen → schneller Kollaps), identisch zu In-Game
 
 /* #deckshop — DECK-WERKSTATT (schlankes Modell): zwei Kategorien.
    • PACKS   = Karte (Front + Back) + Battlefield als EIN Kauf. Tap → Detail-Ansicht mit Vorschau
@@ -297,11 +298,10 @@ function BlackholePreview() {
     }, 600);
     return () => clearInterval(id);
   }, [suitCol]);
-  // #302b: persistentes Schwarzloch-Loop-Bett, solange die Vorschau offen ist (wie in-game).
-  useEffect(() => {
-    const h = audio.loop("fx_blackhole", { gain: 0.6, bass: 5, loopStart: 0.25, loopEnd: 1.05 });
-    return () => { if (h) audio.stopLoop(h, { fade: 0.1 }); };
-  }, []);
+  // #298: Loch-Ton-Bett mit Hüllkurve, an denselben synthetischen Puls gekoppelt wie das Visual — leiser Start,
+  // Anschwellen über die Serie, schneller Kollaps. Identisch zu In-Game (geteilter Hook, kein Drift). Ersetzt das
+  // frühere #302b-Festpegel-Bett fürs Schwarze Loch (Burn/One-Shots bleiben unverändert).
+  useBlackholeSfx(true, pulse);
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}

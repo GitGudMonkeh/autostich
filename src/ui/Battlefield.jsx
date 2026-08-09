@@ -6,6 +6,7 @@ import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
+import { useBlackholeSfx } from "./finisherSfx.js"; // #298: Schwarzes-Loch-Ton-Bett (leiser Start → Anschwellen → schneller Kollaps), geteilt mit der Shop-Vorschau
 import { useReducedFx } from "./useReducedFx.js";
 import { startPrunk } from "./prunkFx.js";
 import { PhaseHairline } from "./modalStyle.jsx";
@@ -1003,7 +1004,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // eingesogen) an das Loch, das über die Serie hinweg wächst und beim Serienabbruch kollabiert.
   const [holePulse, setHolePulse] = useState(null);
   const [burnPulse, setBurnPulse] = useState(null); // #295 persistenter Brennstrahl: Sieg = lit + Level, Niederlage = zurückziehen
-  const holeLoopRef = useRef(null); // #296: Handle des persistenten „Schwarzes Loch"-Ton-Betts (Loop-SFX)
   const burnLoopRef = useRef(null); // #295: Handle des persistenten „Brennstrahl"-Ton-Betts (Loop-SFX, an burnPulse gekoppelt)
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
@@ -1247,16 +1247,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
 
-  // #296 „Schwarzes Loch": das persistente Panel-Loch (holeActive, durchgehend im Kampf sichtbar) bekommt ein tiefes
-  // Loop-Bett, das mit dem Loch startet und beim Ende (holeActive=false, z. B. Rundenende) sanft ausklingt. loopStart/
-  // End loopen nur die gleichförmige Drone-Mitte (Datei-Fades bleiben außen vor) → nahtlos. Genau EIN Loop je Loch.
-  useEffect(() => {
-    if (holeActive) {
-      if (!holeLoopRef.current) holeLoopRef.current = audio.loop("fx_blackhole", { gain: 0.6, bass: 5, loopStart: 0.25, loopEnd: 1.05 });
-    } else if (holeLoopRef.current) {
-      audio.stopLoop(holeLoopRef.current); holeLoopRef.current = null;
-    }
-  }, [holeActive]);
+  // #298 „Schwarzes Loch"-Ton-Bett: leiser Start beim ersten Sieg, Anschwellen mit dem Wachstum (Sieg-Pulse), schneller
+  // Ausklang beim Kollaps. Nur Ton, WÄHREND das Loch sichtbar ist & wächst (an holePulse gekoppelt, nicht bloß holeActive).
+  // Identische Logik wie die Shop-Vorschau (geteilter Hook → kein Drift).
+  useBlackholeSfx(holeActive, holePulse);
   // #295 „Brennstrahl": der persistente Strahl ist NUR lit, solange die Serie läuft (Sieg → lit, Niederlage → zieht sich
   // zurück). Das Loop-Bett folgt daher der Lit-Phase (burnPulse), nicht bloß burnActive: Sieg startet den Laser-Loop,
   // Niederlage/Rundenende stoppen ihn. loopStart/End loopen die gleichförmige Strahl-Mitte → nahtlos.
@@ -1268,9 +1262,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;
     }
   }, [burnActive, burnPulse]);
-  // Unmount → beide Ton-Betten sicher stoppen (kein weiterlaufender Loop nach Verlassen des Battlefields).
+  // Unmount → Brennstrahl-Bett sicher stoppen (das Schwarzes-Loch-Bett räumt sein eigener Hook auf).
   useEffect(() => () => {
-    if (holeLoopRef.current) { audio.stopLoop(holeLoopRef.current, { fade: 0.05 }); holeLoopRef.current = null; }
     if (burnLoopRef.current) { audio.stopLoop(burnLoopRef.current, { fade: 0.05 }); burnLoopRef.current = null; }
   }, []);
 

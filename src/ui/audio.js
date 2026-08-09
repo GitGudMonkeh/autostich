@@ -149,4 +149,11 @@ export const audio = {
       h.src.stop(now + fade + 0.03);
     } catch (e) { /* schon gestoppt o. Ä. — ignorieren */ }
   },
+  /* #298 Basis-Gain eines laufenden Loops sanft ändern (setTargetAtTime) — z. B. das „Schwarzes Loch"-Bett mit dem
+     Wachstum lauter ziehen. `ramp` = Zeitkonstante in s. Zieht via loopGain auch Volume/Mute korrekt mit. */
+  setLoopGain(h, base, { ramp = 0.4 } = {}) {
+    if (!h || !ctx) return;
+    h.base = Math.max(0, base);
+    try { h.g.gain.setTargetAtTime(loopGain(h), ctx.currentTime, ramp); } catch (e) { /* egal */ }
+  },
 };
