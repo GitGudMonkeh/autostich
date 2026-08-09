@@ -200,7 +200,6 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, 
   if (laser) {
     const rot = fjitter(seed * 11, 18);                     // −18..18° zufällige Ausrichtung des Kreuzes
     const dist = 64 * sepMul;                               // Wie weit die Keile auseinanderfliegen
-    const beamLen = Math.round(320 * (1 + intensity * 0.3)); // Strahl reicht weit über die Karte hinaus („übers Feld")
     // Vier Keil-Klone (X-Teilung entlang der Karten-Diagonalen), fliegen nach oben/rechts/unten/links auseinander.
     const wedges = [
       { clip: "polygon(0 0, 100% 0, 50% 50%)",     dx: 0,  dy: -1 },
@@ -208,9 +207,11 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, 
       { clip: "polygon(100% 100%, 0 100%, 50% 50%)", dx: 0,  dy: 1 },
       { clip: "polygon(0 100%, 0 0, 50% 50%)",     dx: -1, dy: 0 },
     ];
+    // Strahl spannt über das GANZE Feld (viewport-breit) → das overflow-hidden Panel klippt an seinen Rändern.
+    // Wächst per as-cut-line (scaleX) aus dem Kreuzungspunkt über der Karte nach beiden Seiten heraus.
     const beam = (ang, key) => (
-      <div key={key} style={{ position: "absolute", left: "50%", top: "50%", width: beamLen, height: 2, marginLeft: -beamLen / 2, marginTop: -1,
-        background: `linear-gradient(90deg, transparent, ${color} 8%, #ffffff 50%, ${color} 92%, transparent)`,
+      <div key={key} style={{ position: "absolute", left: "50%", top: "50%", width: "220vw", height: 2, marginLeft: "-110vw", marginTop: -1,
+        background: `linear-gradient(90deg, transparent 2%, ${color} 12%, ${color} 46%, #ffffff 50%, ${color} 54%, ${color} 88%, transparent 98%)`,
         boxShadow: `0 0 ${(10 + intensity * 8).toFixed(0)}px ${color}, 0 0 ${(26 + intensity * 12).toFixed(0)}px ${color}, 0 0 5px 1px #ffffffdd`,
         transformOrigin: "center", "--cut-rot": `${ang}deg`, animation: `as-cut-line ${cutDur}ms ease-out ${delay}ms both` }} />
     );
