@@ -419,7 +419,7 @@ const DISINT_COLS = 8, DISINT_ROWS = 11;
 // überhaupt zu sehen (die Karte wirkte, als würde sie nur „flippen"). Diese Untergrenze hält den Zerfall auch im Turbo
 // sichtbar; die Bursts überlappen dann bewusst leicht in den nächsten Stich → der Strahl „zerstört eine Karte nach der
 // anderen" (der Ghost lebt entsprechend länger, s. ghostLife). Reines Ausfaden von Fragmenten → kein Verdecken der Folgekarte.
-const BURN_DISINT_MIN = 540;
+const BURN_DISINT_MIN = 760;
 function burnDisintTiming(flipMs, delay) {
   const budget = Math.max(200, flipMs - 30);
   const body = Math.max(150, budget - delay);
