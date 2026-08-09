@@ -126,40 +126,52 @@ const CARDFLIP_GAIN = { win: 1.5, win_tie: 1.5, tie: 0.6, loss: 0.2 };
 // Deterministischer Jitter aus einem Integer-Seed (kein Math.random im Render, #68) → [-amp, +amp].
 const fjitter = (seed, amp) => { const s = Math.sin(seed * 127.1 + 311.7) * 43758.5; return +(((s - Math.floor(s)) * 2 - 1) * amp).toFixed(1); };
 
-/* #laser: Vier Sektor-Clips für den Laser-Schnitt. Aus dem Kreuzungspunkt (pxF,pyF als Bruchteil der Karte) und
-   zwei Schnittwinkeln (Grad, Screen-Koord: x→rechts, y→unten) — gerechnet im ECHTEN Karten-Pixelraum (W×H, nicht
-   normiert), damit die Schnittkanten VISUELL exakt auf den (echt-winkligen) Laserlinien liegen. Jeder Sektor läuft
-   vom Punkt entlang einer Halbgeraden zum Kartenrand, den Rand entlang (inkl. Ecken) zur nächsten Halbgeraden,
-   zurück zum Punkt. Die vier Sektoren kacheln die Karte lückenlos → in Ruhe wirkt sie ganz. Liefert clip + den
-   Auswärts-Bisektor (Flugrichtung des Keils). */
-function laserSectors(pxF, pyF, degA, degB, W, H) {
-  const norm = (d) => ((d % 360) + 360) % 360;
-  const rad = (d) => (d * Math.PI) / 180;
-  const px = pxF * W, py = pyF * H;
-  const rayBox = (a) => {
-    const dx = Math.cos(rad(a)), dy = Math.sin(rad(a));
-    let t = Infinity;
-    if (dx > 1e-6) t = Math.min(t, (W - px) / dx); else if (dx < -1e-6) t = Math.min(t, -px / dx);
-    if (dy > 1e-6) t = Math.min(t, (H - py) / dy); else if (dy < -1e-6) t = Math.min(t, -py / dy);
-    return { x: clamp(px + dx * t, 0, W), y: clamp(py + dy * t, 0, H) };
-  };
-  const rays = [degA, degA + 180, degB, degB + 180].map(norm).sort((a, b) => a - b);
-  const corners = [{ x: 0, y: 0 }, { x: W, y: 0 }, { x: W, y: H }, { x: 0, y: H }]
-    .map((c) => ({ ...c, a: norm((Math.atan2(c.y - py, c.x - px) * 180) / Math.PI) }));
-  const pc = (x, y) => `${((x / W) * 100).toFixed(2)}% ${((y / H) * 100).toFixed(2)}%`;
+/* #laser: Polygon an einer Halbebene clippen (Sutherland-Hodgman) — behält die Seite mit signed-distance ≥ 0
+   (Ebene durch (px,py), Normale (nx,ny)). Baustein fürs Zerteilen der Karte an einer Laserlinie. */
+function clipHalf(poly, px, py, nx, ny) {
   const out = [];
-  for (let i = 0; i < 4; i++) {
-    const a0 = rays[i], a1 = i === 3 ? rays[0] + 360 : rays[i + 1];
-    const e0 = rayBox(rays[i]), e1 = rayBox(rays[(i + 1) % 4]);
-    const cs = corners
-      .map((c) => ({ ...c, aa: c.a < a0 ? c.a + 360 : c.a }))
-      .filter((c) => c.aa > a0 + 1e-4 && c.aa < a1 - 1e-4)
-      .sort((u, v) => u.aa - v.aa);
-    const pts = [`${pc(px, py)}`, pc(e0.x, e0.y), ...cs.map((c) => pc(c.x, c.y)), pc(e1.x, e1.y)];
-    const mid = rad((a0 + a1) / 2);
-    out.push({ clip: `polygon(${pts.join(", ")})`, mx: Math.cos(mid), my: Math.sin(mid) });
+  const sd = (p) => (p[0] - px) * nx + (p[1] - py) * ny;
+  for (let i = 0; i < poly.length; i++) {
+    const A = poly[i], B = poly[(i + 1) % poly.length];
+    const da = sd(A), db = sd(B);
+    if (da >= 0) out.push(A);
+    if ((da >= 0) !== (db >= 0)) {
+      const t = da / (da - db);
+      out.push([A[0] + t * (B[0] - A[0]), A[1] + t * (B[1] - A[1])]);
+    }
   }
   return out;
+}
+
+/* #laser: ZWEI getrennte Laserlinien (je {px,py Bruchteil, ang Grad}) zerteilen die Karte. Die Kartenbox (W×H,
+   echter Pixelraum → Schnittkanten liegen visuell exakt auf den Lasern) wird nacheinander an beiden Linien in
+   Halbebenen geschnitten → 2–4 Stücke (kein gemeinsamer Kreuzungspunkt nötig). Liefert je Stück den clip-Polygon-
+   String + Auswärts-Flugrichtung (Schwerpunkt → weg von der Kartenmitte; Fallback-Jitter für ein mittiges Stück). */
+function laserPieces(lines, W, H) {
+  const rad = (d) => (d * Math.PI) / 180;
+  let polys = [[[0, 0], [W, 0], [W, H], [0, H]]];
+  for (const ln of lines) {
+    const nx = -Math.sin(rad(ln.ang)), ny = Math.cos(rad(ln.ang)); // Normale zur Laserlinie
+    const px = ln.px * W, py = ln.py * H;
+    const next = [];
+    for (const poly of polys) {
+      const a = clipHalf(poly, px, py, nx, ny);
+      const b = clipHalf(poly, px, py, -nx, -ny);
+      if (a.length >= 3) next.push(a);
+      if (b.length >= 3) next.push(b);
+    }
+    polys = next;
+  }
+  const cx = W / 2, cy = H / 2;
+  return polys.map((poly, k) => {
+    let sx = 0, sy = 0;
+    for (const p of poly) { sx += p[0]; sy += p[1]; }
+    const gx = sx / poly.length, gy = sy / poly.length;
+    let dx = gx - cx, dy = gy - cy, len = Math.hypot(dx, dy);
+    if (len < 8) { const a = rad(fjitter(k * 37 + 1, 180)); dx = Math.cos(a); dy = Math.sin(a); len = 1; }
+    const clip = "polygon(" + poly.map(([x, y]) => `${((x / W) * 100).toFixed(2)}% ${((y / H) * 100).toFixed(2)}%`).join(", ") + ")";
+    return { clip, mx: dx / len, my: dy / len };
+  });
 }
 
 /* Eine Seite: gespielte Karte MIT Nachziehstapel dahinter (ragt nur nach außen).
@@ -239,42 +251,43 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
   // exakt auf den Strahlen). Wichtig: die Karte bleibt INTAKT & STILL, bis die Strahlen durchgezogen sind (delay+cut)
   // — erst DANN bersten die Stücke auseinander (vorher „bewegte sie sich schon, bevor sie getroffen wurde").
   if (laser) {
-    const dist = 44 * sepMul;                               // Auswärts-Flug der Karten-Sektoren nach dem Schnitt
-    // Treffer-/Kreuzungspunkt AUF der Karte (mittig gejittert) + zwei unabhängige Strahlwinkel. Müssen sich nicht
-    // exakt kreuzen — sie schneiden die Karte dort, wo sie durchgehen.
-    const px = clamp(0.5 + fjitter(seed * 7, 0.16), 0.22, 0.78);
-    const py = clamp(0.5 + fjitter(seed * 9, 0.16), 0.22, 0.78);
-    const b1 = 52 + fjitter(seed * 3 + 1, 26), b2 = -52 + fjitter(seed * 5 + 2, 26);
-    const sectors = laserSectors(px, py, b1, b2, 104, 144); // Kartenbox 104×144 (echte Winkel-Ausrichtung)
+    const dist = 44 * sepMul;                               // Auswärts-Flug der Karten-Stücke nach dem Schnitt
+    // ZWEI getrennte Laser: je EIGENER Treffer-Punkt auf der Karte + eigener Winkel (kreuzen sich NICHT zwingend).
+    // Jeder schneidet die Karte dort, wo er durchgeht → Karte zerfällt in 2–4 Stücke entlang der beiden Linien.
+    const lines = [
+      { px: clamp(0.5 + fjitter(seed * 7, 0.26), 0.18, 0.82), py: clamp(0.40 + fjitter(seed * 9, 0.22), 0.14, 0.86), ang: 54 + fjitter(seed * 3 + 1, 30) },
+      { px: clamp(0.5 + fjitter(seed * 13, 0.26), 0.18, 0.82), py: clamp(0.60 + fjitter(seed * 17, 0.22), 0.14, 0.86), ang: -50 + fjitter(seed * 5 + 2, 30) },
+    ];
+    const pieces = laserPieces(lines, 104, 144);            // Kartenbox 104×144 (echte Winkel-Ausrichtung)
     const cutMs = Math.round(cutDur);                       // Strahl-Durchzug; danach erst der Zerfall
     // Strahl spannt über das GANZE Feld (viewport-breit) → das overflow-hidden Panel klippt an seinen Rändern.
-    // Wächst per as-cut-line (scaleX) aus dem Treffer-Punkt heraus, in seinem echten Winkel.
-    const beam = (ang, key) => (
-      <div key={key} style={{ position: "absolute", left: 0, top: 0, width: "220vw", height: 2, marginLeft: "-110vw", marginTop: -1,
-        background: `linear-gradient(90deg, transparent 2%, ${color} 12%, ${color} 46%, #ffffff 50%, ${color} 54%, ${color} 88%, transparent 98%)`,
-        boxShadow: `0 0 ${(10 + intensity * 8).toFixed(0)}px ${color}, 0 0 ${(26 + intensity * 12).toFixed(0)}px ${color}, 0 0 5px 1px #ffffffdd`,
-        transformOrigin: "center", "--cut-rot": `${ang}deg`, animation: `as-cut-line ${cutMs}ms ease-out ${delay}ms both` }} />
+    // Wächst per as-cut-line (scaleX) aus seinem Treffer-Punkt heraus, in seinem echten Winkel.
+    const beamAt = (ln, k) => (
+      <div key={`lb${k}`} className="absolute" style={{ left: `${(ln.px * 100).toFixed(1)}%`, top: `${(ln.py * 100).toFixed(1)}%` }}>
+        <div style={{ position: "absolute", left: 0, top: 0, width: "220vw", height: 2, marginLeft: "-110vw", marginTop: -1,
+          background: `linear-gradient(90deg, transparent 2%, ${color} 12%, ${color} 46%, #ffffff 50%, ${color} 54%, ${color} 88%, transparent 98%)`,
+          boxShadow: `0 0 ${(10 + intensity * 8).toFixed(0)}px ${color}, 0 0 ${(26 + intensity * 12).toFixed(0)}px ${color}, 0 0 5px 1px #ffffffdd`,
+          transformOrigin: "center", "--cut-rot": `${ln.ang}deg`, animation: `as-cut-line ${cutMs}ms ease-out ${delay}ms both` }} />
+        {/* Funken am Treffer-Punkt (halber Kranz je Laser), zünden mit dem Schnitt (delay+cut). */}
+        {sparks.filter((s) => s.i % 2 === k).map((s) => (
+          <div key={s.i} style={{ position: "absolute", left: 0, top: 0,
+            width: s.confetti ? 6 : 4, height: s.confetti ? 3 : 4, borderRadius: s.confetti ? 1 : "50%",
+            background: s.white ? "#ffffff" : color, boxShadow: `0 0 5px ${s.white ? "#ffffff" : color}`,
+            "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
+            animation: `as-spark ${sparkDur}ms ease-out ${delay + cutMs}ms both`, willChange: "transform, opacity" }} />
+        ))}
+      </div>
     );
     return (
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        {/* Karten-Sektoren entlang der Laserlinien — bleiben ganz & still bis delay+cut, dann bersten sie weg. */}
-        {sectors.map((s, k) => (
+        {/* Karten-Stücke entlang der beiden Laserlinien — bleiben ganz & still bis delay+cut, dann bersten sie weg. */}
+        {pieces.map((s, k) => (
           <div key={`lw${k}`} className="absolute inset-0" style={{ clipPath: s.clip,
             "--sx": `${(s.mx * dist).toFixed(1)}px`, "--sy": `${(s.my * dist).toFixed(1)}px`, "--sr": `${fjitter(seed * 7 + k * 5, 10)}deg`,
             animation: `as-laser-wedge ${(halvesDur * 0.72).toFixed(0)}ms ${ease} ${delay + cutMs}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
         ))}
-        {/* Zwei Strahlen + Funken am Treffer-Punkt (auf der Karte). Funken zünden mit dem Schnitt (delay+cut). */}
-        <div className="absolute" style={{ left: `${(px * 100).toFixed(1)}%`, top: `${(py * 100).toFixed(1)}%` }}>
-          {beam(b1, "lb1")}
-          {beam(b2, "lb2")}
-          {sparks.map((s) => (
-            <div key={s.i} style={{ position: "absolute", left: 0, top: 0,
-              width: s.confetti ? 6 : 4, height: s.confetti ? 3 : 4, borderRadius: s.confetti ? 1 : "50%",
-              background: s.white ? "#ffffff" : color, boxShadow: `0 0 5px ${s.white ? "#ffffff" : color}`,
-              "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
-              animation: `as-spark ${sparkDur}ms ease-out ${delay + cutMs}ms both`, willChange: "transform, opacity" }} />
-          ))}
-        </div>
+        {/* Zwei getrennte Laser (je eigener Treffer-Punkt + Winkel). */}
+        {lines.map((ln, k) => beamAt(ln, k))}
       </div>
     );
   }
