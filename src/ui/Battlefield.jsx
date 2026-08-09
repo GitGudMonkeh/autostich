@@ -198,8 +198,12 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, 
   // über das Feld und kreuzen sich über der Karte; die Karte zerfällt an den Schnittlinien in vier Keile, die vom
   // Kreuzungspunkt wegfliegen. Bewusst anders als die Klinge (die nur zwei Hälften trennt).
   if (laser) {
-    const rot = fjitter(seed * 11, 18);                     // −18..18° zufällige Ausrichtung des Kreuzes
+    const rot = fjitter(seed * 11, 20);                     // leichte Zufalls-Neigung der Karten-Keile
     const dist = 64 * sepMul;                               // Wie weit die Keile auseinanderfliegen
+    // Jedes Mal ZUFÄLLIG: Kreuzungspunkt (ox/oy, versetzt gegen die Kartenmitte) + beide Strahl-Winkel unabhängig →
+    // die zwei Laser schießen jeden Stich aus anderer Position/Richtung über das Feld.
+    const ox = fjitter(seed * 7, 42), oy = fjitter(seed * 9, 30);
+    const b1 = 52 + fjitter(seed * 3 + 1, 20), b2 = -52 + fjitter(seed * 5 + 2, 20);
     // Vier Keil-Klone (X-Teilung entlang der Karten-Diagonalen), fliegen nach oben/rechts/unten/links auseinander.
     const wedges = [
       { clip: "polygon(0 0, 100% 0, 50% 50%)",     dx: 0,  dy: -1 },
@@ -208,30 +212,35 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, 
       { clip: "polygon(0 100%, 0 0, 50% 50%)",     dx: -1, dy: 0 },
     ];
     // Strahl spannt über das GANZE Feld (viewport-breit) → das overflow-hidden Panel klippt an seinen Rändern.
-    // Wächst per as-cut-line (scaleX) aus dem Kreuzungspunkt über der Karte nach beiden Seiten heraus.
+    // Wächst per as-cut-line (scaleX) aus dem Kreuzungspunkt heraus (der per Gruppe zufällig versetzt ist).
     const beam = (ang, key) => (
-      <div key={key} style={{ position: "absolute", left: "50%", top: "50%", width: "220vw", height: 2, marginLeft: "-110vw", marginTop: -1,
+      <div key={key} style={{ position: "absolute", left: 0, top: 0, width: "220vw", height: 2, marginLeft: "-110vw", marginTop: -1,
         background: `linear-gradient(90deg, transparent 2%, ${color} 12%, ${color} 46%, #ffffff 50%, ${color} 54%, ${color} 88%, transparent 98%)`,
         boxShadow: `0 0 ${(10 + intensity * 8).toFixed(0)}px ${color}, 0 0 ${(26 + intensity * 12).toFixed(0)}px ${color}, 0 0 5px 1px #ffffffdd`,
         transformOrigin: "center", "--cut-rot": `${ang}deg`, animation: `as-cut-line ${cutDur}ms ease-out ${delay}ms both` }} />
     );
     return (
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ transform: `rotate(${rot}deg)` }}>
-        {wedges.map((q, k) => (
-          <div key={`lw${k}`} className="absolute inset-0" style={{ clipPath: q.clip,
-            "--sx": `${(q.dx * dist).toFixed(1)}px`, "--sy": `${(q.dy * dist).toFixed(1)}px`, "--sr": `${fjitter(seed * 7 + k * 5, 12)}deg`,
-            animation: `as-boom-shard ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
-        ))}
-        {/* Zwei Strahlen entlang der Karten-Diagonalen (104×144 → ±54°), kreuzen sich im Zentrum. */}
-        {beam(54, "lb1")}
-        {beam(-54, "lb2")}
-        {sparks.map((s) => (
-          <div key={s.i} style={{ position: "absolute", left: "50%", top: "50%",
-            width: s.confetti ? 6 : 4, height: s.confetti ? 3 : 4, borderRadius: s.confetti ? 1 : "50%",
-            background: s.white ? "#ffffff" : color, boxShadow: `0 0 5px ${s.white ? "#ffffff" : color}`,
-            "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
-            animation: `as-spark ${sparkDur}ms ease-out ${delay}ms both`, willChange: "transform, opacity" }} />
-        ))}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        {/* Karten-Keile (leicht zufällig geneigt), bersten vom Zentrum weg. */}
+        <div className="absolute inset-0" style={{ transform: `rotate(${rot}deg)` }}>
+          {wedges.map((q, k) => (
+            <div key={`lw${k}`} className="absolute inset-0" style={{ clipPath: q.clip,
+              "--sx": `${(q.dx * dist).toFixed(1)}px`, "--sy": `${(q.dy * dist).toFixed(1)}px`, "--sr": `${fjitter(seed * 7 + k * 5, 12)}deg`,
+              animation: `as-boom-shard ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+          ))}
+        </div>
+        {/* Zwei Strahlen + Funken am (zufällig versetzten) Kreuzungspunkt. */}
+        <div className="absolute" style={{ left: "50%", top: "50%", transform: `translate(${ox.toFixed(1)}px, ${oy.toFixed(1)}px)` }}>
+          {beam(b1, "lb1")}
+          {beam(b2, "lb2")}
+          {sparks.map((s) => (
+            <div key={s.i} style={{ position: "absolute", left: 0, top: 0,
+              width: s.confetti ? 6 : 4, height: s.confetti ? 3 : 4, borderRadius: s.confetti ? 1 : "50%",
+              background: s.white ? "#ffffff" : color, boxShadow: `0 0 5px ${s.white ? "#ffffff" : color}`,
+              "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
+              animation: `as-spark ${sparkDur}ms ease-out ${delay}ms both`, willChange: "transform, opacity" }} />
+          ))}
+        </div>
       </div>
     );
   }

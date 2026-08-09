@@ -41,13 +41,83 @@ const FX_CSS = `
 .ws-laserpulse{animation:ws-laserpulse 1.4s ease-in-out infinite}
 @keyframes ws-shard{0%{transform:translate(0,0) scale(1);opacity:0}16%{opacity:1}100%{transform:translate(var(--sx),var(--sy)) scale(.35);opacity:0}}
 .ws-shard{animation:ws-shard 1.3s ease-out infinite}
+/* Battlefield-Szenen-Loop im Effekt-Kauffenster: Laser-Strahl wächst + fadet, Keile/Scherben bersten + resetten,
+   Zentral-Flash. Alle mit gleicher Zyklusdauer (2.6s) → synchron. */
+@keyframes ws-beam{0%{transform:rotate(var(--a)) scaleX(0);opacity:0}16%{opacity:1}42%{transform:rotate(var(--a)) scaleX(1);opacity:1}66%{opacity:.85}100%{transform:rotate(var(--a)) scaleX(1);opacity:0}}
+.ws-beam{animation:ws-beam 2.6s ease-out infinite}
+@keyframes ws-wedge{0%,16%{transform:translate(0,0) rotate(0deg);opacity:1}66%{opacity:1}100%{transform:translate(var(--sx),var(--sy)) rotate(var(--sr));opacity:0}}
+.ws-wedge{animation:ws-wedge 2.6s ease-out infinite}
+@keyframes ws-piece{0%,14%{transform:translate(0,0) rotate(0deg);opacity:1}64%{opacity:1}100%{transform:translate(var(--sx),var(--sy)) rotate(var(--sr));opacity:0}}
+.ws-piece{animation:ws-piece 2.6s ease-out infinite}
+@keyframes ws-flash{0%,8%{transform:translate(-50%,-50%) scale(.3);opacity:0}22%{transform:translate(-50%,-50%) scale(1);opacity:1}55%{opacity:.4}100%{transform:translate(-50%,-50%) scale(2);opacity:0}}
+.ws-flash{animation:ws-flash 2.6s ease-out infinite}
 `;
 
-// Demo-Scherben für die Shatter-Vorschau (Richtung + Farbe; Krit-Palette warm/weiß).
+// Demo-Scherben für die kleine Kachel-Vorschau (Richtung + Farbe; Krit-Palette warm/weiß).
 const SHATTER_SHARDS = [
   { x: "-16px", y: "-12px", c: "#ffd36a" }, { x: "15px", y: "-14px", c: "#ff8a4d" }, { x: "18px", y: "9px", c: "#ffffff" },
   { x: "-14px", y: "13px", c: "#ff6a4d" }, { x: "7px", y: "18px", c: "#ffd36a" }, { x: "-7px", y: "-18px", c: "#ffffff" },
 ];
+
+// Szenen-Vorschau (Kauffenster): vier Keile der Laser-Teilung + neun Karten-Scherben der Shatter-Explosion.
+const SCENE_WEDGES = [
+  { clip: "polygon(0 0,100% 0,50% 50%)",     sx: "0px",   sy: "-40px", sr: "-10deg" },
+  { clip: "polygon(100% 0,100% 100%,50% 50%)", sx: "46px",  sy: "0px",   sr: "12deg" },
+  { clip: "polygon(100% 100%,0 100%,50% 50%)", sx: "0px",   sy: "40px",  sr: "8deg" },
+  { clip: "polygon(0 100%,0 0,50% 50%)",     sx: "-46px", sy: "0px",   sr: "-12deg" },
+];
+const SCENE_SHARDS = (() => {
+  const R = 3, C = 3, out = [];
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    const dx = (c + 0.5) / C - 0.5, dy = (r + 0.5) / R - 0.5;
+    out.push({
+      clip: `inset(${(r / R * 100).toFixed(1)}% ${((C - 1 - c) / C * 100).toFixed(1)}% ${((R - 1 - r) / R * 100).toFixed(1)}% ${(c / C * 100).toFixed(1)}%)`,
+      sx: `${(dx * 78).toFixed(0)}px`, sy: `${(dy * 78 + 8).toFixed(0)}px`, sr: `${((r * 3 + c) % 2 ? 1 : -1) * (8 + ((r + c) % 3) * 7)}deg`,
+    });
+  }
+  return out;
+})();
+
+// Battlefield-Szenen-Vorschau eines globalen Effekts im Kauffenster — läuft im Loop.
+function GlobalFxScenePreview({ fx }) {
+  const bf = battlefieldAssets("bf_kaiju");
+  const cardImg = deckAssets("default").back;
+  const LC = "#35e0ff"; // Demo-Farbe (in-game = Suit-Farbe der Gegnerkarte)
+  const cardBox = { position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: "24%", aspectRatio: CARD_RATIO };
+  return (
+    <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+      {fx.preview === "shatter" ? (
+        <>
+          <div style={cardBox}>
+            {SCENE_SHARDS.map((s, i) => (
+              <div key={i} className="ws-piece absolute inset-0" style={{ backgroundImage: `url(${cardImg})`, backgroundSize: "100% 100%",
+                clipPath: s.clip, "--sx": s.sx, "--sy": s.sy, "--sr": s.sr }} />
+            ))}
+          </div>
+          <div className="ws-flash absolute" style={{ left: "50%", top: "50%", width: 60, height: 60,
+            borderRadius: "50%", background: "radial-gradient(circle,#ffffff 0%,#ffd36a 45%,transparent 72%)" }} />
+        </>
+      ) : (
+        <>
+          <div style={cardBox}>
+            {SCENE_WEDGES.map((w, i) => (
+              <div key={i} className="ws-wedge absolute inset-0" style={{ backgroundImage: `url(${cardImg})`, backgroundSize: "100% 100%",
+                clipPath: w.clip, "--sx": w.sx, "--sy": w.sy, "--sr": w.sr }} />
+            ))}
+          </div>
+          {[54, -54].map((a, i) => (
+            <div key={i} className="ws-beam absolute" style={{ left: "50%", top: "50%", width: "200%", height: 2, marginLeft: "-100%", marginTop: -1,
+              transformOrigin: "center", "--a": `${a}deg`,
+              background: `linear-gradient(90deg,transparent 2%,${LC} 14%,${LC} 46%,#ffffff 50%,${LC} 54%,${LC} 86%,transparent 98%)`,
+              boxShadow: `0 0 10px ${LC}, 0 0 26px ${LC}, 0 0 5px 1px #ffffffdd` }} />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
 
 // Karten-Vorschau: illustrierter Deck-Rücken (Motiv), vollständig (object-contain) + optionaler Effekt.
 // Frame Glow = pulsierender Schein am Kartenrand (liegt bündig, egal wie der bemalte Rahmen sitzt).
@@ -358,9 +428,10 @@ function GlobalFxOverlay({ fx, p, spBal, onClose, onBuy }) {
             <span className="text-[15px] font-extrabold truncate">{fx.name}</span>
             <button onClick={onClose} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a97ab" }}>Schließen</button>
           </div>
-          <div className="flex justify-center py-1" style={{ height: 252 }}>
-            <div className="relative rounded-lg overflow-hidden" style={{ height: "100%", aspectRatio: CARD_RATIO, background: "#0b0a16" }}>
-              <GlobalFxPreview fx={fx} />
+          {/* Battlefield-Szene im Loop → zeigt, wie der Effekt im Spiel aussieht. */}
+          <div className="py-1">
+            <div className="relative w-full rounded-lg overflow-hidden" style={{ aspectRatio: "16 / 10", background: "#0b0a16" }}>
+              <GlobalFxScenePreview fx={fx} />
             </div>
           </div>
           <div className="text-center text-[11px] mt-2 leading-snug" style={{ color: "#9a97ab", minHeight: 32 }}>{fx.desc}</div>
