@@ -972,6 +972,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // eingesogen) an das Loch, das über die Serie hinweg wächst und beim Serienabbruch kollabiert.
   const [holePulse, setHolePulse] = useState(null);
   const [burnPulse, setBurnPulse] = useState(null); // #295 persistenter Brennstrahl: Sieg = lit + Level, Niederlage = zurückziehen
+  const holeLoopRef = useRef(null); // #296: Handle des persistenten „Schwarzes Loch"-Ton-Betts (Loop-SFX)
+  const burnLoopRef = useRef(null); // #295: Handle des persistenten „Brennstrahl"-Ton-Betts (Loop-SFX, an burnPulse gekoppelt)
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -1174,6 +1176,17 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       gain: (CARDFLIP_GAIN[t.result] ?? 1) * (w ? 1.2 : 1),
       bass: w ? 4 + 1.5 * flipTier + (t.isCrit ? 4 : 0) : 0,
     });
+    // #295/#296 Sieg-Finisher-SFX (Akzent AUF dem cardflip): Rate an flipMs gekoppelt (wie cardflip) → kein Überlaufen/
+    // Stapeln in den nächsten Stich. Priorität wie das Visual. Schwarzes Loch UND Brennstrahl sind PERSISTENT → kein
+    // One-Shot hier, sie laufen als Loop-Bett (holeActive-/burnPulse-Effect unten). Nur Lasergitter/Laser/Klinge sind
+    // Per-Stich-One-Shots. (Lasergitter teilt sich den Laser-Sound.)
+    if (w && flipMs > 170) {
+      const fxRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
+      if (holeFinish || burnFinish) { /* still — persistente Betten (Loop) decken diese Siege ab */ }
+      else if (gridFinish)                audio.play("fx_laser", { rate: fxRate, gain: 1.1, bass: 2 }); // Lasergitter
+      else if (oppSliced && fxLaserSlice) audio.play("fx_laser", { rate: fxRate, gain: 1.1 });          // globaler Laser-Schnitt
+      else if (oppSliced)                 audio.play("fx_blade", { rate: fxRate, gain: 1.05 });          // Default-Klinge
+    }
     const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
     // Treffer-Identitäten (Feuer/Pflanze/Eis/Blitz, mehrere zugleich möglich) → alle Icons + Score-Farbe.
     // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst Gold. Icons bleiben immer.
@@ -1202,6 +1215,33 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     floatTimers.current.push(tm);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
+
+  // #296 „Schwarzes Loch": das persistente Panel-Loch (holeActive, durchgehend im Kampf sichtbar) bekommt ein tiefes
+  // Loop-Bett, das mit dem Loch startet und beim Ende (holeActive=false, z. B. Rundenende) sanft ausklingt. loopStart/
+  // End loopen nur die gleichförmige Drone-Mitte (Datei-Fades bleiben außen vor) → nahtlos. Genau EIN Loop je Loch.
+  useEffect(() => {
+    if (holeActive) {
+      if (!holeLoopRef.current) holeLoopRef.current = audio.loop("fx_blackhole", { gain: 0.6, bass: 5, loopStart: 0.25, loopEnd: 1.05 });
+    } else if (holeLoopRef.current) {
+      audio.stopLoop(holeLoopRef.current); holeLoopRef.current = null;
+    }
+  }, [holeActive]);
+  // #295 „Brennstrahl": der persistente Strahl ist NUR lit, solange die Serie läuft (Sieg → lit, Niederlage → zieht sich
+  // zurück). Das Loop-Bett folgt daher der Lit-Phase (burnPulse), nicht bloß burnActive: Sieg startet den Laser-Loop,
+  // Niederlage/Rundenende stoppen ihn. loopStart/End loopen die gleichförmige Strahl-Mitte → nahtlos.
+  useEffect(() => {
+    const lit = burnActive && burnPulse && burnPulse.kind === "win";
+    if (lit) {
+      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: 0.5, bass: 3, loopStart: 0.1, loopEnd: 0.8 });
+    } else if (burnLoopRef.current) {
+      audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;
+    }
+  }, [burnActive, burnPulse]);
+  // Unmount → beide Ton-Betten sicher stoppen (kein weiterlaufender Loop nach Verlassen des Battlefields).
+  useEffect(() => () => {
+    if (holeLoopRef.current) { audio.stopLoop(holeLoopRef.current, { fade: 0.05 }); holeLoopRef.current = null; }
+    if (burnLoopRef.current) { audio.stopLoop(burnLoopRef.current, { fade: 0.05 }); burnLoopRef.current = null; }
+  }, []);
 
   // #FB: Groß-Ansage-Pool („wie stark") — entkoppelt vom Stich-Takt (wie der Score-Float-Pool). Jeder Eintrag lebt
   // BIG_ANNOUNCE_MS und entfernt sich selbst, unabhängig davon, wie schnell die Folgestiche kommen. So bleibt die

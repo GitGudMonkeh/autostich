@@ -6,13 +6,29 @@ import buttonUrl from "../assets/sounds/button_click.mp3";
 import cardflipUrl from "../assets/sounds/cardflip.wav";
 import buyUrl from "../assets/sounds/buy_cashout.mp3";
 import deniedUrl from "../assets/sounds/muted_click.wav";
+// #295/#296 Sieg-Finisher-SFX (aufbereitet, an den Bestand angeglichen). fx_laser deckt Laser-Schnitt UND Lasergitter
+// ab (ein geteilter Sound); fx_blackhole läuft als persistentes Loop-Bett (siehe loop/stopLoop), nicht als One-Shot.
+import bladeUrl from "../assets/sounds/fx_blade.mp3";
+import laserUrl from "../assets/sounds/fx_laser.mp3";
+import burnbeamUrl from "../assets/sounds/fx_burnbeam.mp3";
+import blackholeUrl from "../assets/sounds/fx_blackhole.mp3";
 
-const SRC = { button: buttonUrl, cardflip: cardflipUrl, buy: buyUrl, denied: deniedUrl };
+const SRC = { button: buttonUrl, cardflip: cardflipUrl, buy: buyUrl, denied: deniedUrl,
+              fx_blade: bladeUrl, fx_laser: laserUrl, fx_burnbeam: burnbeamUrl, fx_blackhole: blackholeUrl };
 
 let ctx = null;
 let masterComp = null; // #196: persistenter Master-Kompressor — ALLE SFX laufen durch, fängt Clipping/Turbo-Überlappung ab.
 const buffers = {};
 let buffersLoaded = false; // #264: SFX-Puffer erst bei „hörbarem" Bedarf holen/dekodieren (nicht im Stumm-Start).
+const activeLoops = new Set(); // #296: laufende Loop-SFX (persistentes „Schwarzes Loch"-Bett) — Gain zieht bei Volume/Mute mit.
+// #297 Turbo-Drossel gegen die „Klangwand" bei schnellen Stichen. Zwei Hebel, beide tunebar:
+//  (1) globaler Stimmen-Deckel mit Voice-Stealing (älteste One-Shot-Stimme weicht) — verhindert Runaway/Kompressor-Pumpen;
+//  (2) Mindestabstand je Sound-Name (Cooldown) — thint Finisher-Bursts. cardflip bewusst 0 → das gewollte „MG" bei
+//  MAX-Turbo bleibt (dort sind die Finisher via flipMs-Gate ohnehin aus). Loops (activeLoops) zählen NICHT mit.
+const SFX_MAX_VOICES = 6;                                                    // max. gleichzeitige One-Shot-Stimmen
+const SFX_COOLDOWN = { fx_blade: 0.08, fx_laser: 0.08, fx_burnbeam: 0.08 };  // s; nicht gelistet ⇒ 0 (kein Cooldown)
+const voices = [];                                                           // aktive One-Shots: { src, g, name, t } (t = Start, für Voice-Stealing)
+const lastPlayAt = {};                                                       // name → letzte Startzeit (für Cooldown)
 let muted = false;
 let volume = 0.6;
 // Nicht-Stich-Sounds (Klick/Kauf/Verwehrt) etwas anheben → effektiv ~0,5 beim Default-Slider (0,4).
@@ -45,12 +61,16 @@ function loadBuffers() {
   }
 }
 
+// #296: Loop-Gain = (stumm ? 0 : volume) × Basis-Gain. Live-Anpassung bei Volume/Mute (setTargetAtTime, sanft).
+function loopGain(h) { return (muted ? 0 : volume) * h.base; }
+function refreshLoops() { if (!ctx) return; const now = ctx.currentTime; for (const h of activeLoops) { try { h.g.gain.setTargetAtTime(loopGain(h), now, 0.05); } catch (e) {} } }
+
 export const audio = {
   init() { ensureCtx(); if (audibleSfx()) loadBuffers(); },
   // Beim ersten User-Klick aufrufen: entsperrt den (browserseitig blockierten) AudioContext.
   unlock() { const c = ensureCtx(); if (c && c.state === "suspended") c.resume().catch(() => {}); if (audibleSfx()) loadBuffers(); },
-  setMuted(m) { muted = !!m; if (audibleSfx()) loadBuffers(); }, // #264: Unmute → Puffer jetzt (lazy) laden
-  setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); if (audibleSfx()) loadBuffers(); },
+  setMuted(m) { muted = !!m; if (audibleSfx()) loadBuffers(); refreshLoops(); }, // #264: Unmute → Puffer jetzt (lazy) laden; #296: laufende Loops mitziehen
+  setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); if (audibleSfx()) loadBuffers(); refreshLoops(); },
   /* Einen SFX abspielen. `rate` = playbackRate (Turbo-Kopplung Stich-Sound), `gain` = zusätzlicher Faktor,
      `bass` = Lowshelf-Anhebung in dB (#196, 0 = aus). Je Aufruf eine neue BufferSource → Überlappen erlaubt
      (dezenter „Maschinengewehr"-Effekt bei hohem Turbo). Kette: src → [lowshelf?] → gain → masterComp → destination. */
@@ -60,6 +80,10 @@ export const audio = {
     const c = ctx;
     if (!c || !buffers[name]) return;
     if (c.state === "suspended") c.resume().catch(() => {});
+    const now = c.currentTime;
+    // #297 Cooldown: denselben Sound nicht dichter als SFX_COOLDOWN[name] auslösen (thint Finisher-Bursts; cardflip = 0).
+    const cd = SFX_COOLDOWN[name] || 0;
+    if (cd && lastPlayAt[name] != null && (now - lastPlayAt[name]) < cd) return;
     try {
       const src = c.createBufferSource();
       src.buffer = buffers[name];
@@ -73,7 +97,56 @@ export const audio = {
         node.connect(shelf); node = shelf;
       }
       node.connect(g).connect(masterComp || c.destination);
+      // #297 Voice-Tracking + Deckel: neue Stimme registrieren, älteste weicht bei Überlauf (sanfter 50-ms-Ausklang → kein Klick).
+      const v = { src, g, name, t: now };
+      voices.push(v);
+      lastPlayAt[name] = now;
+      src.onended = () => { const i = voices.indexOf(v); if (i >= 0) voices.splice(i, 1); };
+      while (voices.length > SFX_MAX_VOICES) {
+        const old = voices.shift();
+        if (old === v) break; // nie die gerade gestartete Stimme stehlen
+        try { old.g.gain.cancelScheduledValues(now); old.g.gain.setTargetAtTime(0.0001, now, 0.01); old.src.stop(now + 0.05); } catch (e) {}
+      }
       src.start();
     } catch (e) { /* Audio nie den Spielfluss stören */ }
+  },
+  /* #296 Persistenter Loop-SFX (Bett für persistente Finisher wie „Schwarzes Loch"). Gibt ein Handle zurück; via
+     stopLoop beenden. `loopStart`/`loopEnd` loopen nur die gleichförmige Mitte (unter Umgehung der Fades) → nahtlos.
+     Kette wie play(): src(loop) → [lowshelf?] → gain → masterComp → destination. Robust: bei Stumm/kein Puffer null. */
+  loop(name, { gain = SFX_GAIN, bass = 0, rate = 1, loopStart = null, loopEnd = null } = {}) {
+    if (muted || volume <= 0) return null;
+    loadBuffers();
+    const c = ctx;
+    if (!c || !buffers[name]) return null;
+    if (c.state === "suspended") c.resume().catch(() => {});
+    try {
+      const src = c.createBufferSource();
+      src.buffer = buffers[name];
+      src.loop = true;
+      if (loopStart != null) src.loopStart = loopStart;
+      if (loopEnd != null) src.loopEnd = loopEnd;
+      src.playbackRate.value = rate;
+      const g = c.createGain();
+      const h = { src, g, base: gain };
+      g.gain.value = loopGain(h);
+      let node = src;
+      if (bass > 0) { const shelf = c.createBiquadFilter(); shelf.type = "lowshelf"; shelf.frequency.value = 200; shelf.gain.value = bass; node.connect(shelf); node = shelf; }
+      node.connect(g).connect(masterComp || c.destination);
+      src.start();
+      activeLoops.add(h);
+      return h;
+    } catch (e) { return null; }
+  },
+  /* Einen Loop beenden: sanfter Gain-Ausklang (fade s), dann Quelle stoppen. Idempotent/robust gegen null. */
+  stopLoop(h, { fade = 0.2 } = {}) {
+    if (h) activeLoops.delete(h);
+    if (!h || !ctx) return;
+    try {
+      const now = ctx.currentTime;
+      h.g.gain.cancelScheduledValues(now);
+      h.g.gain.setValueAtTime(h.g.gain.value, now);
+      h.g.gain.linearRampToValueAtTime(0.0001, now + fade);
+      h.src.stop(now + fade + 0.03);
+    } catch (e) { /* schon gestoppt o. Ä. — ignorieren */ }
   },
 };
