@@ -24,7 +24,7 @@ export function SeedChip({ code, onReplay = null }) {
       {onReplay && (
         <button onClick={(e) => { e?.stopPropagation?.(); onReplay(); }} title="Diesen Seed nachspielen"
           className="px-2 py-0.5 rounded font-semibold transition-all hover:brightness-125"
-          style={{ background: "#5ab87a", color: "#141419" }}>
+          style={{ background: "#d4a63a", color: "#141419" }}>
           ↻ Nachspielen
         </button>
       )}

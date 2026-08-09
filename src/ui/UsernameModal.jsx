@@ -71,9 +71,9 @@ export function UsernameModal({ initial = "", firstTime = false, onSave, onClose
             </button>
           )}
           <button onClick={submit} disabled={!trimmed}
-            className="flex-1 py-2.5 rounded-lg font-bold transition-all"
-            style={{ background: trimmed ? "#5ab87a" : "#26262c", color: trimmed ? "#141419" : "#666",
-              boxShadow: trimmed ? "0 0 16px rgba(90,184,122,0.45)" : "none",
+            className="flex-1 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
+            style={{ background: trimmed ? "#d4a63a" : "#26262c", color: trimmed ? "#141419" : "#666",
+              boxShadow: trimmed ? "0 0 16px rgba(212,166,58,0.4)" : "none",
               cursor: trimmed ? "pointer" : "not-allowed" }}>
             Speichern
           </button>

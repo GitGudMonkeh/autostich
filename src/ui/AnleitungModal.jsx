@@ -39,7 +39,7 @@ export function AnleitungModal({ onClose }) {
           Kernidee: Aus einem neutralen Karten-Autobattler baust du mit vielen kleinen Entscheidungen (Stats, Perks, Aufstellung, Skills) eine immer stärkere Score-Maschine.
         </div>
 
-        <button onClick={onClose} className="w-full mt-5 py-2.5 rounded-lg font-bold transition-all" style={{ background: "#5ab87a", color: "#141419" }}>
+        <button onClick={onClose} className="w-full mt-5 py-2.5 rounded-lg font-bold transition-all hover:brightness-110" style={{ background: "#d4a63a", color: "#141419" }}>
           Verstanden
         </button>
       </div>
