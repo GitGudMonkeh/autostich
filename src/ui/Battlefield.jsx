@@ -661,13 +661,15 @@ export function OverloadFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, 
           // oben „schießt", sondern rundum wegspringt. Geschwindigkeit/Streuweite steigt spürbar mit der Stufe.
           const a = rng() * Math.PI * 2, sp = (24 + rng() * 74) * (0.7 + tier * 0.3);
           const x = ox + Math.cos(a) * sp * p, y = oy + Math.sin(a) * sp * p - p * 6;
-          // #: KLEINE Funken-PUNKTE (kein Streifen/„Konfetti-Stäbchen") — additiver Glow; Größe wächst mit der Stufe.
-          const r = 1.0 + rng() * 1.5 + tier * 0.35;
-          ctx.globalAlpha = (1 - p) * 0.95; ctx.fillStyle = i % 3 ? color : "#ffffff";
+          // #: KLEINE Funken-PUNKTE (winzig, wie echte Funken — KEINE „Bälle"). „Stärker je Stufe" kommt aus Anzahl +
+          // Geschwindigkeit + Helligkeit, NICHT aus dem Radius; ein kleiner additiver Glow gibt Leuchtkraft ohne Größe.
+          const r = 0.6 + rng() * 0.9;
+          ctx.globalAlpha = (1 - p) * (0.85 + tier * 0.04); ctx.fillStyle = i % 3 ? color : "#ffffff";
+          ctx.shadowBlur = 3 + tier; ctx.shadowColor = i % 3 ? color : "#ffffff";
           ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
         }
       }
-      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; ctx.shadowBlur = 0;
       if (el < dur) raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
@@ -978,6 +980,9 @@ function PrunkFx({ trigger, panelRef, oppRef, color }) {
     let ox = 0.5, oy = 0.5;
     const orr = oppRef?.current?.getBoundingClientRect();
     if (orr && orr.width) { ox = (orr.left - pr.left + orr.width / 2) / pr.width; oy = (orr.top - pr.top + orr.height / 2) / pr.height; }
+    // #: Tiefer Bass-Impact GENAU zum Start der Prunk-Animation (hier, nicht über einen separaten Timer) → Bass und
+    // Feuerwerk/Goldregen/Prisma-Welle fallen jeden Stich deckungsgleich zusammen, auch im zweiten Durchlauf.
+    audio.play("fx_bass", { rate: trigger.rate || 1, gain: 2.0, bass: 7 });
     return startPrunk(canvasRef.current, {
       fireworks: trigger.fireworks, goldRain: trigger.goldRain, prismaWave: trigger.prismaWave,
       color, originX: ox, originY: oy, loop: false });
@@ -1068,7 +1073,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const [holePulse, setHolePulse] = useState(null);
   const [burnPulse, setBurnPulse] = useState(null); // #295 persistenter Brennstrahl: Sieg = lit + Level, Niederlage = zurückziehen
   const burnLoopRef = useRef(null); // #295: Handle des persistenten „Brennstrahl"-Ton-Betts (Loop-SFX, an burnPulse gekoppelt)
-  const holeLitRef = useRef(false); // #: war das Loch überhaupt entzündet (mind. 1 Sieg)? Nur dann ist ein Kollaps-Bass fällig — nicht bei Niederlagen ohne laufende Serie
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -1287,9 +1291,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       // #300b/#: Bass-Impact-Layer auf großen Siegen — GUT HÖRBAR und an die Score-Stufe (STARK…GOTTGLEICH via flipTier)
       // gekoppelt. Feuert bei JEDEM Stufen-Sieg (unabhängig vom Finisher, auch Schwarzes Loch/Brennstrahl), damit die
       // Groß-Ansagen (Stark/Brutal/Irre/Gottgleich) ihren Bass bekommen. Überladung/Zerstäubung: + Wertdifferenz.
-      // #: Bei einem GOTTGLEICH-Prunk (Feuerwerk/Goldregen/Prisma-Welle) fällt der Bass HIER aus — er wird stattdessen
-      // exakt zum Animationsstart des Prunk-Overlays gespielt (s. Ghost-Effect), damit Bass und Effekt zusammenfallen.
-      const prunkComing = !isCrit && flipTier >= 4 && (fxFireworks || fxGoldRain || fxPrismaWave);
+      // #: Bei einem GOTTGLEICH-Prunk (Feuerwerk/Goldregen/Prisma-Welle) fällt der Bass HIER aus — PrunkFx spielt ihn
+      // stattdessen exakt zum Animationsstart. Unter reduced-motion feuert KEIN Prunk → dann bleibt der Bass hier (sonst weg).
+      const prunkComing = !isCrit && !reduced && flipTier >= 4 && (fxFireworks || fxGoldRain || fxPrismaWave);
       if (flipTier >= 1 && !prunkComing) {
         const bassGain = Math.min(2.0, 0.7 + flipTier * 0.4 + ((overloadFinish || disperseFinish) ? diffTier * 0.06 : 0));
         audio.play("fx_bass", { rate: fxRate * (disperseFinish ? 1.1 : 1), gain: bassGain, bass: 6 });
@@ -1426,14 +1430,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // #296 Schwarzes Loch: bei aktivem Blackhole-Finisher wird die Gegnerkarte NICHT mehr als eigener Ghost
     // geschnitten/implodiert, sondern als „Sieg-Puls" an das persistente Panel-Loch gemeldet (Sog + Wachstum im
     // Canvas + Serien-Mult für die ×2.0-Schwelle). Eine Niederlage meldet einen „loss-Puls" → Serienabbruch → Kollaps.
-    if (holeFinish) { setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: deckA1 || suitColor(t.oCard.suit), mult: bd ? bd.streakMult : 1 }); holeLitRef.current = true; }
-    else if (holeActive && lost) {
-      setHolePulse({ id: t.trickNo, kind: "loss" });
-      // #: der Bass-Impact gehört zum KOLLAPS eines gewachsenen Lochs — also nur, wenn das Loch tatsächlich entzündet war
-      // (mind. ein Sieg lief). Aufeinanderfolgende Niederlagen ohne laufende Serie kollabieren nichts → kein Bass mehr.
-      if (flipMs > 170 && holeLitRef.current) audio.play("fx_bass", { gain: 1.9, bass: 7 });
-      holeLitRef.current = false;
-    }
+    // #: Der Kollaps-Bass wird zentral im geteilten Hook useBlackholeSfx gespielt (gekoppelt an growth > 0 = „Loch war
+    // entzündet") → In-Game und Shop-Vorschau klingen identisch, und aufeinanderfolgende Niederlagen lösen keinen Bass aus.
+    if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: deckA1 || suitColor(t.oCard.suit), mult: bd ? bd.streakMult : 1 });
+    else if (holeActive && lost) setHolePulse({ id: t.trickNo, kind: "loss" });
     // #295 Brennstrahl: Sieg → Strahl lit + Intensität (Serie); Niederlage → Serienabbruch → Strahl zieht sich zurück.
     if (burnFinish) setBurnPulse({ id: t.trickNo, kind: "win", streak: t.winStreak || 0 });
     else if (burnActive && lost) setBurnPulse({ id: t.trickNo, kind: "loss" });
@@ -1470,13 +1470,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // (Die kaufbaren Custom-Finisher decken den Sieg-Look ab; die Prunk-Overlays für Nicht-Krit-GOTTGLEICH bleiben.)
     // #294 GOTTGLEICH-Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar) feuern ON TOP der Groß-Ansage.
     if (win && !isCrit && fxTier >= 4 && !reduced && (fxFireworks || fxGoldRain || fxPrismaWave)) {
+      // #: Der Prunk-Bass wird NICHT mehr hier über einen eigenen Timer gespielt (das driftete gegen die Animation, v. a.
+      // im zweiten Durchlauf). Stattdessen spielt PrunkFx den Bass EXAKT beim Mounten/Start seiner Canvas-Animation
+      // (trigger.rate trägt das Turbo-Tempo hinein) → Bass und Effekt fallen jeden Stich sicher zusammen.
+      const pRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
       const pt = setTimeout(() => {
         prunkSeq.current += 1;
-        setPrunk({ id: prunkSeq.current, fireworks: fxFireworks, goldRain: fxGoldRain, prismaWave: fxPrismaWave });
-        // #: der GOTTGLEICH-Prunk (Feuerwerk/Goldregen/Prisma-Welle) setzt mit einem tiefen Bass-Impact GENAU zum
-        // Animationsstart ein (gekoppelt an den Overlay-Start, nicht an die frühere Sieg-Erkennung) — wie in der Vorschau.
-        const pRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
-        audio.play("fx_bass", { rate: pRate, gain: 2.0, bass: 7 });
+        setPrunk({ id: prunkSeq.current, fireworks: fxFireworks, goldRain: fxGoldRain, prismaWave: fxPrismaWave, rate: pRate });
       }, sRest);
       ghostTimers.current.push(pt);
     }
