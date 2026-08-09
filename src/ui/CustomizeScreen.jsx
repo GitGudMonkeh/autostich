@@ -34,7 +34,8 @@ function useIsMobile() {
 const FX_CSS = `
 @keyframes ws-frameglow{0%,100%{box-shadow:0 0 10px -2px var(--a1),inset 0 0 14px -8px var(--a1)}50%{box-shadow:0 0 26px 2px var(--a1),inset 0 0 22px -4px var(--a1)}}
 @keyframes ws-swipe{0%{transform:translateX(-120%) rotate(18deg)}55%,100%{transform:translateX(320%) rotate(18deg)}}
-@keyframes ws-gridmove{to{background-position:0 16px}}
+@keyframes ws-sweep{0%{bottom:-4%;opacity:0}14%{opacity:1}100%{bottom:104%;opacity:0}}
+.ws-sweep{animation:ws-sweep 1.7s ease-out infinite}
 `;
 
 // Karten-Vorschau: illustrierter Deck-Rücken (Motiv), vollständig (object-contain) + optionaler Effekt.
@@ -73,11 +74,17 @@ function BfPreview({ bfId, a1, fx, className = "", showVersion = false }) {
           style={{ background: "#0b0a16cc", border: "1px solid #34333f", color: "#9a97ab" }}>{isMobile ? "MOBILE" : "DESKTOP"}</span>
       )}
       {fx === "hologrid" && (
+        // Ruhiges Gitter + durchfahrende Leucht-Linie (wie im Spiel je Stich; hier als Endlos-Demo).
         <div className="absolute pointer-events-none" style={{
           left: "-20%", right: "-20%", bottom: 0, height: "48%",
-          backgroundImage: `linear-gradient(${a1} 1px,transparent 1px),linear-gradient(90deg,${a1} 1px,transparent 1px)`,
-          backgroundSize: "16px 16px", transform: "perspective(140px) rotateX(60deg)", transformOrigin: "bottom",
-          opacity: 0.5, animation: "ws-gridmove 2.4s linear infinite" }} />
+          transform: "perspective(140px) rotateX(60deg)", transformOrigin: "bottom" }}>
+          <div className="absolute inset-0" style={{
+            backgroundImage: `linear-gradient(${a1} 1px,transparent 1px),linear-gradient(90deg,${a1} 1px,transparent 1px)`,
+            backgroundSize: "16px 16px", opacity: 0.24 }} />
+          <div className="ws-sweep absolute left-0 right-0" style={{ height: 4,
+            background: `linear-gradient(90deg,transparent,${a1} 18%,#ffffff 50%,${a1} 82%,transparent)`,
+            boxShadow: `0 0 12px 2px ${a1}, 0 0 30px 6px ${a1}, 0 0 3px 1px #ffffffcc` }} />
+        </div>
       )}
     </div>
   );
