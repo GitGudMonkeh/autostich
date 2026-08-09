@@ -180,6 +180,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 
       {ov && ovTheme && (
         <BuyOverlay theme={ovTheme} list={ov.list} idx={ov.idx} p={p} sel={sel} setSel={setSel} spBal={spBal}
+          deckId={deckId} bfId={bfId} options={options} onChoose={onChoose}
           onStep={stepOv} onClose={() => setOv(null)}
           onBuy={(el) => buy((pf) => buyElement(pf, ovTheme, el))}
           onBuyAll={() => buy((pf) => buyAllForTheme(pf, ovTheme))} />
@@ -293,7 +294,7 @@ function PreviewView({ p, onOpen }) {
       <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1 -mx-1 px-1">
         {PREVIEW_CATS.map((c, i) => (
           <button key={c.k} onClick={() => setCat(i)} className="flex-1 px-3 py-1.5 rounded-lg text-[12px] font-extrabold transition-colors"
-            style={{ background: i === cat ? "#9b82f0" : "#14131c", color: i === cat ? "#141419" : "#9a97ab", border: `1px solid ${i === cat ? "#9b82f0" : "#2a2836"}` }}>
+            style={{ background: i === cat ? "#26c6e6" : "#14131c", color: i === cat ? "#08181c" : "#9a97ab", border: `1px solid ${i === cat ? "#26c6e6" : "#2a2836"}` }}>
             {c.label}
           </button>
         ))}
@@ -350,8 +351,30 @@ function PreviewView({ p, onOpen }) {
   );
 }
 
+/* Besessenes Element im Kauffenster: direkt anlegen/aktivieren statt nur „Besitz".
+   Deck/Battlefield = Radio (nur eins aktiv) → „Anlegen" / „✓ Aktiv"; Animationen = An/Aus-Toggle (Option). */
+function OwnedAction({ el, theme, deckId, bfId, options, onChoose }) {
+  const stop = (fn) => (e) => { e.stopPropagation(); fn(); };
+  const btn = "text-[10px] font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap transition-colors";
+  if (el === "deck" || el === "bf") {
+    const active = el === "deck" ? deckId === theme.deckId : bfId === theme.bfId;
+    if (active) return <span className={btn} style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>✓ Aktiv</span>;
+    const apply = () => onChoose(el === "deck" ? { deckId: theme.deckId } : { battlefieldId: theme.bfId });
+    return <button type="button" onClick={stop(apply)} className={btn} style={{ background: "#211d33", color: "#b9a9f2", border: "1px solid #4a3f6e" }}>Anlegen</button>;
+  }
+  // Animation (frameGlow/holoSwipe/hologrid): globaler An/Aus-Toggle (wirkt auf das aktive Deck-Theme).
+  const key = FX_OPTION_KEY[el];
+  const on = !!options?.[key];
+  return (
+    <button type="button" onClick={stop(() => onChoose({ [key]: !on }))} className={btn}
+      style={on ? { background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" } : { background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
+      {on ? "✓ An" : "Aus"}
+    </button>
+  );
+}
+
 /* ---- Kauffenster (Element-Ebene) ---- */
-function BuyOverlay({ theme, list, idx, p, sel, setSel, spBal, onStep, onClose, onBuy, onBuyAll }) {
+function BuyOverlay({ theme, list, idx, p, sel, setSel, spBal, deckId, bfId, options, onChoose, onStep, onClose, onBuy, onBuyAll }) {
   const shared = sharedUnlock(p, theme);        // Challenge → gemeinsame Freischalt-Beschreibung (statt Preisen)
   const isChallenge = !!shared;
   const info = buyAllInfo(p, theme);
@@ -426,7 +449,7 @@ function BuyOverlay({ theme, list, idx, p, sel, setSel, spBal, onStep, onClose, 
                   <span className="shrink-0 rounded-md" style={{ width: 22, height: 22, background: `${theme.a1}22`, border: `1px solid ${theme.a1}66` }} />
                   <span className="flex-1 text-[12px] font-bold truncate">{def.name}</span>
                   {st === "own" ? (
-                    <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>✓ Besitz</span>
+                    <OwnedAction el={el} theme={theme} deckId={deckId} bfId={bfId} options={options} onChoose={onChoose} />
                   ) : st === "lock" ? (
                     <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
                       {isChallenge ? "im Paket" : elementUnlock(p, theme, el).label}
