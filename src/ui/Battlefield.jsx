@@ -252,11 +252,13 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
   // — erst DANN bersten die Stücke auseinander (vorher „bewegte sie sich schon, bevor sie getroffen wurde").
   if (laser) {
     const dist = 44 * sepMul;                               // Auswärts-Flug der Karten-Stücke nach dem Schnitt
-    // ZWEI getrennte Laser: je EIGENER Treffer-Punkt auf der Karte + eigener Winkel (kreuzen sich NICHT zwingend).
-    // Jeder schneidet die Karte dort, wo er durchgeht → Karte zerfällt in 2–4 Stücke entlang der beiden Linien.
+    // ZWEI PARALLELE Laser: beide teilen sich EINEN Winkel → sie kreuzen sich nie (Wunsch). Die Treffer-Punkte sind
+    // vertikal versetzt (oben/unten), damit beide Strahlen die Karte durchqueren → sie zerfällt in Streifen ENTLANG
+    // zweier paralleler Linien (kein „X" mehr über der Karte).
+    const beamAng = 30 + fjitter(seed * 3 + 1, 16);         // ~14..46° gemeinsamer Diagonal-Winkel (beide gleich)
     const lines = [
-      { px: clamp(0.5 + fjitter(seed * 7, 0.26), 0.18, 0.82), py: clamp(0.40 + fjitter(seed * 9, 0.22), 0.14, 0.86), ang: 54 + fjitter(seed * 3 + 1, 30) },
-      { px: clamp(0.5 + fjitter(seed * 13, 0.26), 0.18, 0.82), py: clamp(0.60 + fjitter(seed * 17, 0.22), 0.14, 0.86), ang: -50 + fjitter(seed * 5 + 2, 30) },
+      { px: clamp(0.5 + fjitter(seed * 7, 0.14), 0.30, 0.70), py: clamp(0.32 + fjitter(seed * 9, 0.08), 0.20, 0.44), ang: beamAng },
+      { px: clamp(0.5 + fjitter(seed * 13, 0.14), 0.30, 0.70), py: clamp(0.68 + fjitter(seed * 17, 0.08), 0.56, 0.80), ang: beamAng },
     ];
     const pieces = laserPieces(lines, 104, 144);            // Kartenbox 104×144 (echte Winkel-Ausrichtung)
     const cutMs = Math.round(cutDur);                       // Strahl-Durchzug; danach erst der Zerfall
