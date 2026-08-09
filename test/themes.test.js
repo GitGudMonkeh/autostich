@@ -5,7 +5,7 @@ import {
   canBuyPack, buyPack, unlockAllCosmetics, packOwnKey,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
   frameGlowActive, holoSwipeActive, hologridActive,
-  laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive,
+  laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, fireworksActive, goldRainActive, prismaWaveActive,
 } from "../src/game/themes.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
@@ -171,7 +171,6 @@ describe("effekte — Finisher/Krit/Prunk", () => {
       ["burnBeam", burnBeamActive, "fxBurnBeam"],
       ["overload", overloadActive, "fxOverload"],
       ["disperse", disperseActive, "fxDisperse"],
-      ["shatter", shatterActive, "fxShatter"],
       ["fireworks", fireworksActive, "fxFireworks"],
       ["goldRain", goldRainActive, "fxGoldRain"],
       ["prismaWave", prismaWaveActive, "fxPrismaWave"],
@@ -183,20 +182,21 @@ describe("effekte — Finisher/Krit/Prunk", () => {
       expect(activeFn(prof(), { [opt]: true })).toBe(false);
     }
   });
-  it("Registry führt Blackhole (finisher), Shatter (crit) und das Gottgleich-Prunk-Trio (gott)", () => {
-    for (const k of ["blackhole", "shatter", "fireworks", "goldRain", "prismaWave"]) {
+  it("Registry führt Blackhole (finisher) und das Gottgleich-Prunk-Trio (gott)", () => {
+    for (const k of ["blackhole", "fireworks", "goldRain", "prismaWave"]) {
       expect(GLOBAL_FX_BY_KEY[k]).toBeTruthy();
       expect(GLOBAL_FX_BY_KEY[k].ownKey).toBe(`fx:${k}`);
     }
-    expect(GLOBAL_FX_BY_KEY.shatter.group).toBe("crit");
+    expect(GLOBAL_FX_BY_KEY.blackhole.group).toBe("finisher");
     expect(GLOBAL_FX_BY_KEY.fireworks.group).toBe("gott");
+    expect(GLOBAL_FX_BY_KEY.shatter).toBeUndefined();   // #: Shatter (Krit) entfernt
     expect(GLOBAL_FX_BY_KEY.gridTunnel).toBeUndefined(); // Grid-Tunnel bleibt entfernt
   });
   it("Käufe sind voneinander getrennt", () => {
     const p1 = buyGlobalFx(prof({ stichPoints: 1 }), GLOBAL_FX_BY_KEY.blackhole);
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.blackhole)).toBe(true);
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.laserSlice)).toBe(false);
-    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.shatter)).toBe(false);
+    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.overload)).toBe(false);
   });
   it("GLOBAL_FX_COST = 1", () => {
     expect(GLOBAL_FX_COST).toBe(1);

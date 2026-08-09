@@ -346,83 +346,7 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
   );
 }
 
-/* Krit-Partikelexplosion (statt Klingenschnitt): dieselbe Funken-DNA wie SliceFx (deterministischer Kranz aus
-   `seed`, ~40 % weiß / Rest Farbe, ein paar Konfetti), nur größer & runder — kein Schnitt, sondern die Karte
-   „berstet": ein heller Zentral-Flash blitzt auf, ein Schockwellen-Ring dehnt sich, die Karte skaliert kurz auf,
-   überstrahlt und zerstiebt, während ~28 Partikel radial nach außen schießen. Farbe = Crit-Lila (passt zum
-   KRITISCH-Text & Crit-Puls). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen. */
-export function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay = 0, intensity = 0, tier = 0, scale = 1 }) {
-  // Die Krit-Karte zerbirst in ein Raster kleiner PIXEL-SHARDS (clip-path-Klone der Karte): jedes Fragment fliegt
-  // radial nach außen, tumbelt (rotate) & fadet — die Karte „zerplatzt in Pixel". Deterministisch aus `seed` (kein
-  // Math.random, #68). Bis 0%/9% halten die Shards (fill-mode both + delay) den Ganz-Zustand → Karte liegt erst.
-  // #188: score-skaliert. Kontinuierlich: Blast-Radius, Partikelzahl, Dauer. Unlocks je Stufe: 1/2/3 Schockwellen-
-  // Ringe + Farb-Shift Lila→Weißgold (CRIT_TIER_COLORS). Shard-Zahl bleibt ~konstant (Wumms kommt aus Radius/Ringen/
-  // Farbe/Dauer, nicht aus mehr Slivern). Screen-Effekte (Shake/Flash/Slow-Mo) folgen in v2 (Crit-only).
-  const shardMul = 1 + intensity * 0.6;   // Shards fliegen weiter (gedeckelt, sonst überm Panel)
-  const radMul   = 1 + intensity;         // Partikel/Flash/Ring: 1..2
-  const durMul   = 1 + intensity * 0.3;   // längeres Nachhängen bei großen Treffern (+0..30 %)
-  const cd = cardDur * durMul, bd = burstDur * durMul;
-  const amp = CRIT_TIER_COLORS[tier] || color;         // Farbe je Stufe (Lila → Weißgold)
-  const ringCount = tier >= 4 ? 3 : tier >= 2 ? 2 : 1; // BRUTAL: 2 · GOTTGLEICH: 3
-  const fsz = 26 * (1 + intensity * 0.6);              // Flash-Kerngröße
-  const ROWS = 7, COLS = 5; // 35 Fragmente → „kleine Pixel"
-  const shards = [];
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const i = r * COLS + c;
-      const dirX = (c + 0.5) / COLS - 0.5; // −0.5..0.5: Zellmitte relativ zur Kartenmitte (Ecken fliegen weiter)
-      const dirY = (r + 0.5) / ROWS - 0.5;
-      const spread = (150 + Math.abs(fjitter(seed * 5 + i * 13, 70))) * shardMul; // Streuweite × Intensität
-      shards.push({
-        i,
-        // clip-path inset(top right bottom left) blendet die Karte auf DIESE Rasterzelle aus (Klon zeigt nur sein Stück).
-        clip: `inset(${(r / ROWS * 100).toFixed(2)}% ${((COLS - 1 - c) / COLS * 100).toFixed(2)}% ${((ROWS - 1 - r) / ROWS * 100).toFixed(2)}% ${(c / COLS * 100).toFixed(2)}%)`,
-        sx: (dirX * spread + fjitter(seed * 3 + i * 7, 24)).toFixed(1),
-        sy: (dirY * spread + fjitter(seed * 2 + i * 11, 24) + 22).toFixed(1), // + leichte Schwerkraft nach unten
-        sr: fjitter(seed * 7 + i * 5, 70).toFixed(1),
-      });
-    }
-  }
-  const N = Math.max(8, Math.round((20 + intensity * 24) * scale)); // 20..44 lose Partikel, turbo-ausgedünnt (#200 A, Boden 8; das Shard-Raster 7×5 bleibt voll)
-  const parts = Array.from({ length: N }, (_, i) => {
-    const ang = (i / N) * Math.PI * 2 + fjitter(seed * 3 + i * 7, 0.45);  // gleichmäßiger Kranz + Jitter
-    const rad = (62 + Math.abs(fjitter(seed * 5 + i * 13, 92))) * radMul; // 62..154 px × Intensität
-    return {
-      i,
-      dx: (Math.cos(ang) * rad).toFixed(1),
-      dy: (Math.sin(ang) * rad).toFixed(1),
-      sz: (3 + Math.abs(fjitter(seed * 7 + i * 5, 4))).toFixed(1),        // 3..7 px, gemischte Größen
-      white: i % 5 < 2,         // ~40 % weiß, Rest Crit-/Stufen-Farbe
-      confetti: i % 5 === 0,    // ~4 kleine Konfetti-Rechtecke
-    };
-  });
-  const ease = "cubic-bezier(0.2, 0.7, 0.2, 1)";
-  return (
-    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      {/* Pixel-Shards: 35 clip-path-Fragmente der Karte, die nach dem Ruhe-Beat (delay) nach außen bersten. */}
-      {shards.map((s) => (
-        <div key={`sh${s.i}`} className="absolute inset-0" style={{
-          clipPath: s.clip,
-          "--sx": `${s.sx}px`, "--sy": `${s.sy}px`, "--sr": `${s.sr}deg`,
-          animation: `as-boom-shard ${cd}ms ${ease} ${delay}ms both`, willChange: "transform, opacity",
-        }}>{cardEl}</div>
-      ))}
-      {/* Zentral-Flash + Schockwellen-Ringe entfernt (Wunsch: „nur das Shatter"): die Karte zerbirst nur noch
-          in Scherben + lose Partikel, kein gelber Explosionsring/-blitz mehr. */}
-      {/* Lose Partikel aus dem Zentrum (zusätzlich zu den Karten-Shards). */}
-      {parts.map((s) => (
-        <div key={`pt${s.i}`} style={{
-          position: "absolute", left: "50%", top: "50%",
-          width: s.confetti ? +(s.sz) + 2 : +s.sz, height: s.confetti ? (+s.sz + 2) / 2 : +s.sz,
-          borderRadius: s.confetti ? 1 : "50%",
-          background: s.white ? "#ffffff" : amp, boxShadow: `0 0 6px ${s.white ? "#ffffff" : amp}`,
-          "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
-          animation: `as-spark ${bd}ms ease-out ${delay}ms both`, willChange: "transform, opacity",
-        }} />
-      ))}
-    </div>
-  );
-}
+// #: ExplosionFx (Krit-Partikelexplosion) entfernt — Krit-Finisher-Animationen raus.
 
 /* #295 Sieg-Finisher „Lasergitter": ein Neon-Gitter (R−1 horizontale + C−1 vertikale Linien) blitzt über die noch
    ganze Gegnerkarte, dann zerfällt sie ENTLANG der Linien in ein Raster aus R×C Stücken (clip-path inset — echter
@@ -1022,68 +946,6 @@ export function BlackholeFieldFx({ active, pulse = null, color = "#35e0ff", scal
   return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none rounded-xl" style={{ zIndex: 22 }} aria-hidden="true" />;
 }
 
-/* GOTTGLEICH-Prunk: bei der obersten Krit-Stufe (tier 4) berstet die Karte — zusätzlich zu ExplosionFx — in einen
-   dichten Schwarm deckkräftiger Weißgold-Partikel, die vom Panel-RAHMEN nach innen ABPRALLEN und hin- und herspringen
-   (Flipper-Look). Reine Kosmetik auf einem <canvas> über dem Feld: rAF-Physik mit Geschwindigkeit, Wand-Reflexion
-   (Restitution), leichtem Drag & Schwerkraft. Nur die oberste Stufe → bleibt selten & besonders; bei reduzierter
-   Bewegung wird gar nicht erst getriggert. Bounds = das Battlefield-Panel (panelRef); Ursprung = Mitte der zerstörten
-   Gegnerkarte (oppRef), sonst rechte Feldhälfte. */
-function BounceBurst({ trigger, panelRef, oppRef }) {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    if (!trigger || !panelRef?.current || !canvasRef.current) return undefined;
-    const panel = panelRef.current, canvas = canvasRef.current;
-    const pr = panel.getBoundingClientRect();
-    const W = pr.width, H = pr.height;
-    if (W < 4 || H < 4) return undefined;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-    canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return undefined;
-    ctx.scale(dpr, dpr);
-    // Ursprung = Mitte der Gegnerkarte (die zerstörte) in Panel-Koordinaten; Fallback: rechte Feldhälfte.
-    let ox = W * 0.68, oy = H * 0.42;
-    const orr = oppRef?.current?.getBoundingClientRect();
-    if (orr && orr.width) { ox = orr.left - pr.left + orr.width / 2; oy = orr.top - pr.top + orr.height / 2; }
-    const PAL = ["#fff0b0", "#ffd873", "#ffffff", "#ffc978"]; // Weißgold-Palette (GOTTGLEICH)
-    const N = 96; // „mehr Partikel"
-    const parts = [];
-    for (let i = 0; i < N; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const spd = 3.5 + Math.random() * 9.5;
-      parts.push({ x: ox, y: oy, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 3.5,
-                   r: 1.8 + Math.random() * 3.2, c: PAL[i % PAL.length] });
-    }
-    const REST = 0.82, DRAG = 0.992, G = 0.16, TTL = 1650, FADE = 0.28; // spät & kurz ausfaden → „weniger transparent"
-    let raf = 0, start = 0;
-    const step = (now) => {
-      if (!start) start = now;
-      const k = (now - start) / TTL;
-      ctx.clearRect(0, 0, W, H);
-      const alpha = k > 1 - FADE ? Math.max(0, (1 - k) / FADE) : 1;
-      ctx.globalAlpha = alpha;
-      for (const p of parts) {
-        p.vy += G; p.vx *= DRAG; p.vy *= DRAG;
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < p.r) { p.x = p.r; p.vx = -p.vx * REST; }
-        else if (p.x > W - p.r) { p.x = W - p.r; p.vx = -p.vx * REST; }
-        if (p.y < p.r) { p.y = p.r; p.vy = -p.vy * REST; }
-        else if (p.y > H - p.r) { p.y = H - p.r; p.vy = -p.vy * REST; }
-        ctx.fillStyle = p.c;
-        ctx.shadowBlur = 8; ctx.shadowColor = p.c;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
-      }
-      if (k < 1) raf = requestAnimationFrame(step);
-      else { ctx.globalAlpha = 1; ctx.clearRect(0, 0, W, H); }
-    };
-    raf = requestAnimationFrame(step);
-    return () => { cancelAnimationFrame(raf); ctx.clearRect(0, 0, W, H); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [trigger?.id, panelRef, oppRef]);
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none rounded-xl" style={{ zIndex: 20 }} aria-hidden="true" />;
-}
-
 /* #294 GOTTGLEICH-Prunk OHNE Krit: bei einem tier-4-Sieg ohne Kritischen Treffer feuern die (kaufbaren) Prunk-
    Overlays — stapelbar. Wie EpicFx/BounceBurst reine <canvas>-Kosmetik mit rAF-Physik über dem Feld (zIndex 20),
    auf die gleiche Wucht ausgelegt (Partikelmenge/Bloom/Dauer). Nur getriggert bei normaler Bewegung (Aufrufer
@@ -1131,12 +993,11 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
         // Ghost weg. #187: Slice driftet nach dem SCHNITT (driftDelay = rest + cut) in eine ZUFÄLLIGE Richtung
         // (rundum, deterministisch aus g.seed via fjitter, kein Neu-Würfeln bei Re-Render). Die Krit-Explosion
         // zerbirst an Ort und Stelle in Pixel-Shards (die Shards fliegen selbst nach außen) → kein Wrapper-Drift.
-        const isBoom = g.fx === "explode";
         const isGrid = g.fx === "lasergrid";   // #295 Lasergitter: Raster-Dicing
         const isBurn = g.fx === "burn";        // #295 Brennstrahl: Loch + Bruch
         const isOvl  = g.fx === "overload";    // #300 Überladung: Blitzeinschlag (Canvas)
         const isDisp = g.fx === "disperse";    // #300 Zerstäubung: Partikelgitter (Canvas)
-        const inPlace = isBoom || isGrid || isBurn || isOvl || isDisp; // zerfällt/bricht an Ort und Stelle → kein Wrapper-Drift (Schwarzes Loch läuft im Panel-Canvas, nicht als Ghost)
+        const inPlace = isGrid || isBurn || isOvl || isDisp; // zerfällt/bricht an Ort und Stelle → kein Wrapper-Drift (Schwarzes Loch läuft im Panel-Canvas, nicht als Ghost)
         const dang = fjitter(g.seed * 3 + 2, Math.PI);                        // −π..π → volle 360° rundum
         // Laser-Treffer zerfallen NAH am Deck (wenig Drift); normaler Klingenschnitt driftet weiter ins Feld.
         const drad = inPlace ? 0 : g.laser ? 10 + Math.abs(fjitter(g.seed * 5 + 3, 12)) : 40 + Math.abs(fjitter(g.seed * 5 + 3, 26)); // Laser 10..22 · Klinge 40..66 px
@@ -1146,9 +1007,7 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
           <div key={g.id} className="absolute inset-0 pointer-events-none" aria-hidden="true"
             style={{ animation: `as-loss-drift-rand ${g.float}ms cubic-bezier(0.2, 0.6, 0.3, 1) ${driftDelay}ms forwards`, willChange: "transform",
                      "--drx": `${(Math.cos(dang) * drad).toFixed(1)}px`, "--dry": `${(Math.sin(dang) * drad).toFixed(1)}px`, "--drot": `${drot}deg` }}>
-            {isBoom
-              ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
-              : isGrid
+            {isGrid
               ? <LaserGridFx cardEl={cardEl} color={g.color} diceDur={g.halves} lineDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
               : isBurn
               ? <BurnBeamFx cardEl={cardEl} color={g.color} flipMs={g.flipMs} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} streak={g.streak} />
@@ -1164,26 +1023,7 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
   );
 }
 
-/* #188 v2: Vollbild-Screen-Effekte bei großem Krit-Sieg (Crit-only). FIXED → viewport-weit; MUSS außerhalb des
-   shake-Panels liegen (ein Transform-Vorfahre würde `fixed` relativ zum Panel positionieren und mit-verschieben).
-   Vollbild-Flash ab IRRE (tier≥3), Vignette ab GOTTGLEICH (tier≥4). pointer-events-none, aria-hidden. Nur bei
-   normaler Bewegung gerendert (Aufrufer prüft `reduced`). */
-function CritScreenFx({ tier, color }) {
-  const flash = tier >= 3, vignette = tier >= 4;
-  const flashMax = tier >= 4 ? 0.42 : 0.28;
-  return (
-    <>
-      {flash && (
-        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ zIndex: 30,
-          background: color, mixBlendMode: "screen", "--flash-max": flashMax, animation: "as-crit-flash 360ms ease-out both" }} />
-      )}
-      {vignette && (
-        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ zIndex: 30,
-          background: `radial-gradient(120% 100% at 50% 50%, transparent 50%, ${color}55 100%)`, animation: "as-crit-vignette 520ms ease-out both" }} />
-      )}
-    </>
-  );
-}
+// #: CritScreenFx (Vollbild-Flash/Vignette bei Krit) entfernt — Krit-Finisher-Animationen raus.
 
 export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, oppDeck = "stat",
   // Feuer-Rework (#206): geschmiedete Dauerwerte (eigene Karten) + aktive Brandmarken (Gegnerkarten) für die Karten-Indikatoren.
@@ -1195,7 +1035,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // Frame Glow (Karte) + Hologrid (Gitterlinien im Battlefield); Holo Swipe = Schimmer über die eigene Karte.
-  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false, fxBlackhole = false, fxLasergrid = false, fxBurnBeam = false, fxOverload = false, fxDisperse = false, fxShatter = false,
+  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false, fxBlackhole = false, fxLasergrid = false, fxBurnBeam = false, fxOverload = false, fxDisperse = false,
   // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar).
   fxFireworks = false, fxGoldRain = false, fxPrismaWave = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
@@ -1289,26 +1129,22 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // geschnitten: bei einer Niederlage fliegt sie einfach weg (as-flyaway). Sieg: Gegnerkarte in-place geschnitten
   // (Krit: Explosion), Spielerkarte kippt als Sieger an.
   const flyAway      = sliceOn && lost;                       // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
-  // #: Krit-Finisher-Animationen entfernt — die (kaufbaren) Custom-Finisher übernehmen jetzt jeden Sieg (auch Krits).
+  // #: Krit-Finisher-Animationen entfernt — die (kaufbaren) Custom-Finisher übernehmen jetzt JEDEN Sieg (auch Krits).
   // Ein Krit spielt also denselben Finisher wie ein normaler Sieg; nur die „Kritisch!"-Anzeige + Lila bleiben.
-  const explode      = false;                                 // (früher: sliceOn && win && isCrit && fxShatter → Shatter-Zerbersten)
-  const critBoom     = explode;
-  void fxShatter;                                             // Shatter-Prop bleibt (Shop-Kompat), ist aber ohne Wirkung
   // #293/#295 Sieg-Finisher (untereinander exklusiv, feste Priorität): Schwarzes Loch › Lasergitter › Brennstrahl ›
-  // Laser-Schnitt/Klinge — aber NUR beim normalen (nicht-berstenden) Sieg; ein Krit-Shatter bleibt Shatter. Die
-  // UI-Einfachauswahl setzt ohnehin nur EINEN Flag; die Priorität ist nur der Sicherheits-Tiebreak.
-  const holeFinish   = sliceOn && win && !explode && fxBlackhole;
-  const gridFinish   = sliceOn && win && !explode && !fxBlackhole && fxLasergrid;                 // #295 Lasergitter
-  const burnFinish   = sliceOn && win && !explode && !fxBlackhole && !fxLasergrid && fxBurnBeam;  // #295 Brennstrahl
-  const overloadFinish = sliceOn && win && !explode && !fxBlackhole && !fxLasergrid && !fxBurnBeam && fxOverload;                 // #300 Überladung (Blitz)
-  const disperseFinish = sliceOn && win && !explode && !fxBlackhole && !fxLasergrid && !fxBurnBeam && !fxOverload && fxDisperse;  // #300 Zerstäubung (Partikel)
+  // Überladung › Zerstäubung › Laser-Schnitt/Klinge. Die UI-Einfachauswahl setzt ohnehin nur EINEN Flag.
+  const holeFinish   = sliceOn && win && fxBlackhole;
+  const gridFinish   = sliceOn && win && !fxBlackhole && fxLasergrid;                 // #295 Lasergitter
+  const burnFinish   = sliceOn && win && !fxBlackhole && !fxLasergrid && fxBurnBeam;  // #295 Brennstrahl
+  const overloadFinish = sliceOn && win && !fxBlackhole && !fxLasergrid && !fxBurnBeam && fxOverload;                 // #300 Überladung (Blitz)
+  const disperseFinish = sliceOn && win && !fxBlackhole && !fxLasergrid && !fxBurnBeam && !fxOverload && fxDisperse;  // #300 Zerstäubung (Partikel)
   // #300 Intensitäts-Stufe (1..4) aus dem absoluten Wertunterschied des Stichs (pValue−oValue). Rein „Juice", deterministisch.
   const diffTier = t ? fxDiffTier(Math.max(0, Math.round((t.pValue || 0) - (t.oValue || 0)))) : 1;
   // #296: Ist der Blackhole-Finisher im Lauf aktiv? Dann läuft das persistente Panel-Loch (unabhängig vom Einzelstich).
   // Kein separater Ghost auf der Gegnerkarte mehr — der Sog/das Loch werden im Canvas gezeichnet.
   const holeActive   = !reduced && fxBlackhole && flipMs > 170 && !!t;
   const burnActive   = !reduced && fxBurnBeam && flipMs > 170 && !!t; // #295 persistenter Brennstrahl im Lauf aktiv
-  const oppSliced    = sliceOn && win && !explode;            // sonst normaler Schnitt (auch bei Krit OHNE Shatter)
+  const oppSliced    = sliceOn && win;                        // Sieg → Gegnerkarte in-place vom Finisher-Ghost übernommen
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
@@ -1317,7 +1153,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const flipOn = !reduced && !!t && !flyAway && flipMs > 170;
   // #186 Flip-Reveal der Gegnerkarte: analog zur Spielerkarte, aber NICHT wenn die Gegnerkarte gerade geschnitten
   // wird/explodiert (dort übernimmt der entkoppelte Ghost). Bei Gegner-Sieg (oppWinner) darf sie flippen + ankippen.
-  const oppFlipOn = !reduced && !!t && !(oppSliced || critBoom) && flipMs > 170;
+  const oppFlipOn = !reduced && !!t && !oppSliced && flipMs > 170;
   const flipDur = clamp(flipMs * 0.55, 220, 460);
 
   // Kartenelemente einmal bauen — als sichtbare Karte, als (unsichtbarer) Größen-Platzhalter unter dem Slice und
@@ -1352,9 +1188,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Sieger kippt an; im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
   const oppFront = oppWinner ? <div style={winnerTilt(sWinner)}>{oCardEl}</div> : oCardEl;
   const oppCard = t ? (
-    <div key={`o${t.trickNo}`} className="relative" style={(oppSliced || critBoom || oppFlipOn) ? undefined : dealStyle("as-deal-right")}>
+    <div key={`o${t.trickNo}`} className="relative" style={(oppSliced || oppFlipOn) ? undefined : dealStyle("as-deal-right")}>
       {resultPulse(lost ? "#e0605a" : null, false)}
-      {(oppSliced || critBoom) ? (
+      {oppSliced ? (
         <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — der entkoppelte Ghost (Side-overlay) floatet + schneidet/berstet (#186) */
       ) : oppFlipOn ? (
         <FlipReveal front={oppFront} backImage={oppBackImg} dur={flipDur} />   /* #186: Cover → Front */
@@ -1578,12 +1414,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (burnFinish) setBurnPulse({ id: t.trickNo, kind: "win", streak: t.winStreak || 0 });
     else if (burnActive && lost) setBurnPulse({ id: t.trickNo, kind: "loss" });
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
-    if (win && !holeFinish) {   // Gegnerkarte verliert → Schnitt (Standard, auch bei Krit) bzw. Shatter-Explosion (nur mit gekauftem Effekt)
+    if (win && !holeFinish) {   // Gegnerkarte verliert → Finisher-Ghost (Klinge/Laser/Lasergitter/Brennstrahl/Überladung/Zerstäubung) — auch bei Krit
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
-        fx: explode ? "explode" : gridFinish ? "lasergrid" : burnFinish ? "burn" : overloadFinish ? "overload" : disperseFinish ? "disperse" : "slice",
+        fx: gridFinish ? "lasergrid" : burnFinish ? "burn" : overloadFinish ? "overload" : disperseFinish ? "disperse" : "slice",
         dtier: diffTier, // #300 Wertdifferenz-Stufe (Überladung/Zerstäubung)
         laser: fxLaserSlice, // globaler Laser-Schnitt (nur normaler Schnitt)
-        color: explode ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
+        color: suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, green: !!t.oCard.green,
         branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });

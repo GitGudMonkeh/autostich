@@ -50,9 +50,7 @@ export const GLOBAL_FX = [
     ownKey: "fx:overload", option: "fxOverload", preview: "overload", group: "finisher" },
   { key: "disperse", name: "Zerstäubung", desc: "Beim Sieg löst sich die Gegnerkarte in ein Partikelgitter auf, das nach außen/oben streut & ausfadet — je größer der Wertunterschied des Stichs, desto heftiger der Streusturm (statt Klinge/Laser).",
     ownKey: "fx:disperse", option: "fxDisperse", preview: "disperse", group: "finisher" },
-  // Kritischer Treffer.
-  { key: "shatter", name: "Shatter", desc: "Kritische Treffer zerbersten die Gegnerkarte in Scherben (sonst normaler Schnitt).",
-    ownKey: "fx:shatter", option: "fxShatter", preview: "shatter", group: "crit" },
+  // #: Krit-Effekt „Shatter" entfernt — die Custom-Finisher decken jetzt jeden Sieg (auch Krits) ab.
   // Gottgleich-Prunk (stapelbar).
   { key: "fireworks", name: "Neon-Feuerwerk", desc: "Gottgleicher Sieg ohne Krit: mehrere Feuerwerks-Bursts ploppen über dem Feld — in der Deckfarbe.",
     ownKey: "fx:fireworks", option: "fxFireworks", preview: "fireworks", group: "gott" },
@@ -89,7 +87,6 @@ export const lasergridActive = (profile, options) => globalFxActive(profile, opt
 export const burnBeamActive = (profile, options) => globalFxActive(profile, options, "burnBeam");
 export const overloadActive = (profile, options) => globalFxActive(profile, options, "overload");
 export const disperseActive = (profile, options) => globalFxActive(profile, options, "disperse");
-export const shatterActive = (profile, options) => globalFxActive(profile, options, "shatter");
 export const fireworksActive = (profile, options) => globalFxActive(profile, options, "fireworks");
 export const goldRainActive = (profile, options) => globalFxActive(profile, options, "goldRain");
 export const prismaWaveActive = (profile, options) => globalFxActive(profile, options, "prismaWave");

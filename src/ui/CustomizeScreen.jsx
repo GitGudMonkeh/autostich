@@ -9,7 +9,7 @@ import {
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
-import { SliceFx, ExplosionFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx } from "./Battlefield.jsx";
+import { SliceFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx } from "./Battlefield.jsx";
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 import { audio } from "./audio.js"; // #302b: Showcase-Panel spielt den passenden Finisher-Sound mit
@@ -52,7 +52,7 @@ const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", gro
 const FX_GROUPS = [
   { key: "anim",     title: "Karten-Animationen", hint: "einmal kaufen · für alle Packs", mode: "toggle" },
   { key: "finisher", title: "Sieg-Finisher",      hint: "nur einer aktiv",                mode: "finisher" },
-  { key: "crit",     title: "Krit-Treffer",       hint: "frei kombinierbar",              mode: "toggle" },
+  // #: Krit-Gruppe (Shatter) entfernt — Krit-Finisher-Animationen raus.
   { key: "gott",     title: "Gottgleich-Prunk",   hint: "frei kombinierbar",              mode: "toggle" },
 ];
 // Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe; die Gottgleich-Gruppe führt „Standard" voran.
@@ -230,7 +230,6 @@ function FinisherScene({ variant }) {
   const dTier = (tick % 4) + 1; // #300 Vorschau durchläuft die Wertdifferenz-Stufen 1→4 (zeigt die Intensitäts-Eskalation)
   let fx = null;
   if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} laser />;
-  else if (variant === "shatter") fx = <ExplosionFx cardEl={cardEl} color="#e879f9" cardDur={FIN_HALVES} burstDur={FIN_SPARK} flashDur={200} seed={seed} delay={FIN_DELAY} intensity={0.6} tier={3} scale={1} />;
   else if (variant === "lasergrid") fx = <LaserGridFx cardEl={cardEl} color={suitCol} diceDur={FIN_HALVES} lineDur={FIN_LINE} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={1} scale={1} />;
   else if (variant === "overload") fx = <OverloadFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
   else if (variant === "disperse") fx = <DisperseFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
@@ -363,7 +362,7 @@ function GlobalFxScenePreview({ fx }) {
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
   if (fx.preview === "blackhole") return <BlackholePreview />;
   if (fx.preview === "burnbeam") return <BurnBeamPreview />;
-  if (["laser", "shatter", "klinge", "lasergrid", "overload", "disperse"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
+  if (["laser", "klinge", "lasergrid", "overload", "disperse"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
@@ -814,9 +813,6 @@ function MiniFx({ preview }) {
           </span>
         </span>
       );
-    case "shatter":
-      // Zerberstende Scherben: nach außen fliegender Ring + Kern-Blitz.
-      return box(<>{ring("#e879f9", 20, "50%", "50%", "0s")}<span className="as-mini-core" style={{ width: 6, height: 6, borderRadius: "50%", background: "#e879f9", "--mc": "#e879f9" }} /></>);
     case "fireworks":
       return box(<>{ring(C, 16, "44%", "46%", "0s")}{ring("#f2c14a", 13, "60%", "58%", "-.8s")}</>);
     case "prismaWave":

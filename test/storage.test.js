@@ -19,7 +19,7 @@ function mockLS() {
     clear: () => m.clear(),
   };
 }
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxFrameGlow: false, fxHoloSwipe: false, fxHologrid: false, fxLaserSlice: false, fxBlackhole: false, fxLasergrid: false, fxBurnBeam: false, fxOverload: false, fxDisperse: false, fxShatter: false, fxFireworks: false, fxGoldRain: false, fxPrismaWave: false };
+const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxFrameGlow: false, fxHoloSwipe: false, fxHologrid: false, fxLaserSlice: false, fxBlackhole: false, fxLasergrid: false, fxBurnBeam: false, fxOverload: false, fxDisperse: false, fxFireworks: false, fxGoldRain: false, fxPrismaWave: false };
 
 describe("rankHighscores", () => {
   it("sortiert nach Score↓ und behält die Top 20", () => {
