@@ -18,19 +18,10 @@
    cosmeticAssets.js. Solange ein Bild-Asset noch nicht im Repo liegt, bleibt der Eintrag draußen
    (temporärer Umsetzungs-Zwischenstand); im fertigen Feature ist jeder Katalog-Eintrag sichtbar. */
 
-// Progressions-Schwellen (gespielte Läufe) — Issue #190.
-export const DECK_GAME_UNLOCKS = [5, 15, 25, 35];        // deck_p1..p4
-export const BATTLEFIELD_GAME_UNLOCKS = [10, 20, 30, 40]; // bf_1..bf_4
-
 export const DECK_DEFS = {
   default: { id: "default", name: "Standard",  unlock: null },
-  // Progression (5/15/25/35 Läufe):
-  deck_p1: { id: "deck_p1", name: "Neonstadt",         unlock: { kind: "games", n: 5 } },
-  deck_p2: { id: "deck_p2", name: "Tankstopp",         unlock: { kind: "games", n: 15 } },
-  deck_p3: { id: "deck_p3", name: "Megacity",          unlock: { kind: "games", n: 25 } },
-  deck_p4: { id: "deck_p4", name: "Mondpagode",        unlock: { kind: "games", n: 35 } },
-  // (v0.4: alte Challenge-Decks deck_c1/c2/c3 + Archetyp-Decks deck_c5–c9 entfernt. Die Freischalt-Kinds
-  //  streak/score/noRerollRun/monoArchetypeRun/allArchetypesRun bleiben vorerst dormant in isUnlocked.)
+  // #299: alte „Läufe"-Progressions-Decks (deck_p1–4) + Challenge-Decks entfernt — sauberer Neustart mit Standard
+  // (Prisma), Genesis und den kaufbaren DP-Packs. Die Freischalt-Kinds bleiben vorerst dormant in isUnlocked.
   // Deck-Werkstatt Kauf-Packs (#deckshop): als ganzes Pack mit SP kaufbar. „unlocked" = Pack im Besitz
   // (profile.ownedCosmetics["pack:<id>"]); die Pack-Registry (game/themes.js) treibt Kauf/Anzeige.
   deck_sunset: { id: "deck_sunset", name: "Sunset Rider", unlock: { kind: "buy", ownKey: "pack:sunset" } },
@@ -49,13 +40,8 @@ export const DECK_DEFS = {
 
 export const BATTLEFIELD_DEFS = {
   default: { id: "default", name: "Standard",       unlock: null },
-  // Progression (10/20/30/40 Läufe):
-  bf_1:    { id: "bf_1",    name: "Neon-Boulevard",  unlock: { kind: "games", n: 10 } },
-  bf_2:    { id: "bf_2",    name: "Nachttankstelle", unlock: { kind: "games", n: 20 } },
-  bf_3:    { id: "bf_3",    name: "Neon City",       unlock: { kind: "games", n: 30 } },
-  bf_4:    { id: "bf_4",    name: "Mondsee",         unlock: { kind: "games", n: 40 } },
-  // Battlefields KOMPLETT (4 Progressionen + Default). Battlefields haben KEINE Challenge-Varianten (Issue #190).
-  // Deck-Werkstatt Kauf-Packs (#deckshop): das Battlefield ist Teil des Packs (ein Besitz-Schlüssel).
+  // #299: alte „Läufe"-Progressions-Battlefields (bf_1–4) entfernt. Deck-Werkstatt Kauf-Packs (#deckshop):
+  // das Battlefield ist Teil des Packs (ein Besitz-Schlüssel).
   bf_sunset: { id: "bf_sunset", name: "Sunset Rider · Battlefield", unlock: { kind: "buy", ownKey: "pack:sunset" } },
   bf_lofi:   { id: "bf_lofi",   name: "Lofi Nights · Battlefield",  unlock: { kind: "buy", ownKey: "pack:lofi" } },
   bf_kaiju:  { id: "bf_kaiju",  name: "Neon Kaiju · Battlefield",   unlock: { kind: "buy", ownKey: "pack:kaiju" } },

@@ -479,11 +479,13 @@ function PacksView({ p, deckId, onOpen }) {
   const [filter, setFilter] = useState("alle"); // alle | besitz | kaufbar
   const chips = [["alle", "Alle"], ["besitz", "Besitz"], ["kaufbar", "Kaufbar"]];
   const stateOf = (pack) => (pack.kind === "std" ? "own" : packState(p, pack));
+  // #299 Reihenfolge: Standard (Prisma) Pos 1, aktives Pack Pos 2, Rest danach (stabil).
+  const rank = (pack) => (pack.kind === "std" ? 0 : deckId === pack.deckId ? 1 : 2);
   const list = PACK_LIST.filter((pack) => {
     if (filter === "besitz") return stateOf(pack) === "own";
     if (filter === "kaufbar") return stateOf(pack) === "buy";
     return true;
-  });
+  }).slice().sort((a, b) => rank(a) - rank(b));
 
   return (
     <>

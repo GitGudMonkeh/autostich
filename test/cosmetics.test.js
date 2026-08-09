@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress, resolveSkinId,
-  DECK_GAME_UNLOCKS, BATTLEFIELD_GAME_UNLOCKS,
 } from "../src/game/cosmetics.js";
 
 // Minimal-Profil-Helfer (nur die Felder, die die Freischalt-Logik liest).
@@ -12,39 +11,15 @@ describe("cosmetics — Katalog", () => {
     expect(DECK_DEFS.default.unlock).toBeNull();
     expect(BATTLEFIELD_DEFS.default.unlock).toBeNull();
   });
-  it("deck_p1 schaltet bei 5 Läufen frei (erste Progressionsstufe)", () => {
-    expect(DECK_DEFS.deck_p1.unlock).toEqual({ kind: "games", n: 5 });
-    expect(DECK_GAME_UNLOCKS[0]).toBe(5);
-    expect(BATTLEFIELD_GAME_UNLOCKS[0]).toBe(10);
+  it("#299: alte Progressions-Decks/-Battlefields (deck_p*/bf_*) sind entfernt", () => {
+    for (const id of ["deck_p1", "deck_p2", "deck_p3", "deck_p4"]) expect(DECK_DEFS[id]).toBeUndefined();
+    for (const id of ["bf_1", "bf_2", "bf_3", "bf_4"]) expect(BATTLEFIELD_DEFS[id]).toBeUndefined();
   });
-  it("deck_p2 schaltet bei 15 Läufen frei", () => {
-    expect(DECK_DEFS.deck_p2.unlock).toEqual({ kind: "games", n: 15 });
-    expect(isUnlocked(DECK_DEFS.deck_p2, prof({ games: 14 }))).toBe(false);
-    expect(isUnlocked(DECK_DEFS.deck_p2, prof({ games: 15 }))).toBe(true);
-  });
-  it("bf_1 schaltet bei 10 Läufen frei (erste Battlefield-Progression)", () => {
-    expect(BATTLEFIELD_DEFS.bf_1.unlock).toEqual({ kind: "games", n: 10 });
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_1, prof({ games: 9 }))).toBe(false);
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_1, prof({ games: 10 }))).toBe(true);
-  });
-  it("bf_2 schaltet bei 20 Läufen frei", () => {
-    expect(BATTLEFIELD_DEFS.bf_2.unlock).toEqual({ kind: "games", n: 20 });
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_2, prof({ games: 19 }))).toBe(false);
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_2, prof({ games: 20 }))).toBe(true);
-  });
-  it("deck_p3 (25) & bf_3 (30) schalten an ihren Schwellen frei", () => {
-    expect(DECK_DEFS.deck_p3.unlock).toEqual({ kind: "games", n: 25 });
-    expect(BATTLEFIELD_DEFS.bf_3.unlock).toEqual({ kind: "games", n: 30 });
-    expect(isUnlocked(DECK_DEFS.deck_p3, prof({ games: 24 }))).toBe(false);
-    expect(isUnlocked(DECK_DEFS.deck_p3, prof({ games: 25 }))).toBe(true);
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_3, prof({ games: 30 }))).toBe(true);
-  });
-  it("deck_p4 (35) & bf_4 (40) schließen die Progression ab", () => {
-    expect(DECK_DEFS.deck_p4.unlock).toEqual({ kind: "games", n: 35 });
-    expect(BATTLEFIELD_DEFS.bf_4.unlock).toEqual({ kind: "games", n: 40 });
-    expect(isUnlocked(DECK_DEFS.deck_p4, prof({ games: 34 }))).toBe(false);
-    expect(isUnlocked(DECK_DEFS.deck_p4, prof({ games: 35 }))).toBe(true);
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_4, prof({ games: 40 }))).toBe(true);
+  it("isUnlocked/unlockProgress verarbeiten die games-Bedingung weiterhin generisch", () => {
+    const def = { unlock: { kind: "games", n: 10 } };
+    expect(isUnlocked(def, prof({ games: 9 }))).toBe(false);
+    expect(isUnlocked(def, prof({ games: 10 }))).toBe(true);
+    expect(unlockProgress(def, prof({ games: 4 })).cur).toBe(4);
   });
   it("v0.4 Kauf-Pack-Decks haben eine buy-Bedingung; alte Challenge-Decks sind entfernt", () => {
     for (const id of ["deck_aura", "deck_beach", "deck_cat", "deck_mecha", "deck_ramen", "deck_spacedog", "deck_wale", "deck_onboarding"]) {
@@ -59,11 +34,11 @@ describe("cosmetics — Katalog", () => {
       expect(DECK_DEFS[id]).toBeUndefined();
     }
   });
-  it("alle Progressions-Schwellen sind vollständig abgedeckt (Decks 5/15/25/35, BF 10/20/30/40)", () => {
-    const deckGames = Object.values(DECK_DEFS).filter(d => d.unlock?.kind === "games").map(d => d.unlock.n).sort((a,b)=>a-b);
-    const bfGames   = Object.values(BATTLEFIELD_DEFS).filter(d => d.unlock?.kind === "games").map(d => d.unlock.n).sort((a,b)=>a-b);
-    expect(deckGames).toEqual([5, 15, 25, 35]);
-    expect(bfGames).toEqual([10, 20, 30, 40]);
+  it("#299: keine games-Progressions-Decks/-Battlefields mehr (nur Default + Kauf-Packs)", () => {
+    const deckGames = Object.values(DECK_DEFS).filter((d) => d.unlock?.kind === "games");
+    const bfGames   = Object.values(BATTLEFIELD_DEFS).filter((d) => d.unlock?.kind === "games");
+    expect(deckGames).toEqual([]);
+    expect(bfGames).toEqual([]);
   });
 });
 
@@ -74,7 +49,7 @@ describe("cosmetics — isUnlocked", () => {
   });
 
   it("games: erst ab der Schwelle frei", () => {
-    const d = DECK_DEFS.deck_p1; // n=5
+    const d = { unlock: { kind: "games", n: 5 } };
     expect(isUnlocked(d, prof({ games: 4 }))).toBe(false);
     expect(isUnlocked(d, prof({ games: 5 }))).toBe(true);
     expect(isUnlocked(d, prof({ games: 99 }))).toBe(true);
@@ -112,7 +87,7 @@ describe("cosmetics — unlockProgress", () => {
   });
 
   it("games: cur auf target gedeckelt, Klartext-Label", () => {
-    const d = DECK_DEFS.deck_p1;
+    const d = { unlock: { kind: "games", n: 5 } };
     expect(unlockProgress(d, prof({ games: 3 }))).toEqual({ done: false, cur: 3, target: 5, label: "Spiele 5 Läufe" });
     expect(unlockProgress(d, prof({ games: 8 }))).toEqual({ done: true, cur: 5, target: 5, label: "Spiele 5 Läufe" });
   });
@@ -140,13 +115,13 @@ describe("cosmetics — unlockProgress", () => {
 
 describe("cosmetics — resolveSkinId (defensiver Fallback)", () => {
   it("gibt die id zurück, wenn sie existiert UND frei ist", () => {
-    expect(resolveSkinId(DECK_DEFS, "deck_p1", prof({ games: 5 }))).toBe("deck_p1");
+    expect(resolveSkinId(DECK_DEFS, "deck_sunset", prof({ ownedCosmetics: { "pack:sunset": true } }))).toBe("deck_sunset");
     expect(resolveSkinId(DECK_DEFS, "default", prof())).toBe("default");
   });
   it("fällt auf default zurück bei unbekannter id", () => {
     expect(resolveSkinId(DECK_DEFS, "gibtsnicht", prof({ games: 99 }))).toBe("default");
   });
   it("fällt auf default zurück, wenn die id (noch) gesperrt ist", () => {
-    expect(resolveSkinId(DECK_DEFS, "deck_p1", prof({ games: 2 }))).toBe("default");
+    expect(resolveSkinId(DECK_DEFS, "deck_sunset", prof())).toBe("default"); // Kauf-Pack nicht im Besitz → gesperrt
   });
 });

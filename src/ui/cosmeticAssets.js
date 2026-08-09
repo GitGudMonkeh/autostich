@@ -9,14 +9,7 @@
      back  = Cover/Rückseite (voll illustriert)                  — entspricht card-back.png */
 import cardFrontImg from "../assets/cards/card-front.png"; // Default-Front (Rahmen)
 import cardBackImg  from "../assets/cards/card-back.png";  // Default-Back (Cover)
-import p1Front from "../assets/cards/decks_player/deck_p1/front.png"; // #190 deck_p1 „Neonstadt"
-import p1Back  from "../assets/cards/decks_player/deck_p1/back.png";
-import p2Front from "../assets/cards/decks_player/deck_p2/front.png"; // #190 deck_p2 „Tankstopp"
-import p2Back  from "../assets/cards/decks_player/deck_p2/back.png";
-import p3Front from "../assets/cards/decks_player/deck_p3/front.png"; // #190 deck_p3 „Megacity"
-import p3Back  from "../assets/cards/decks_player/deck_p3/back.png";
-import p4Front from "../assets/cards/decks_player/deck_p4/front.png"; // #190 deck_p4 „Mondpagode"
-import p4Back  from "../assets/cards/decks_player/deck_p4/back.png";
+// #299: alte Progressions-Decks (deck_p1–4) entfernt.
 // v0.4 Kauf-Packs — Deck-Paare (front = Rahmen, back = Motiv):
 import auraFront     from "../assets/cards/decks_player/deck_aura/front.png";       // Super Aura
 import auraBack      from "../assets/cards/decks_player/deck_aura/back.png";
@@ -34,14 +27,7 @@ import waleFront     from "../assets/cards/decks_player/deck_wale/front.png";   
 import waleBack      from "../assets/cards/decks_player/deck_wale/back.png";
 import genesisFront  from "../assets/cards/decks_player/deck_onboarding/front.png"; // Genesis
 import genesisBack   from "../assets/cards/decks_player/deck_onboarding/back.png";
-import bf1Desktop from "../assets/battlefields/bf_1/desktop.jpg"; // #190 bf_1 „Neon-Boulevard" (ultrawide)
-import bf1Mobile  from "../assets/battlefields/bf_1/mobile.jpg";  // (4:3, schmalerer Viewport)
-import bf2Desktop from "../assets/battlefields/bf_2/desktop.jpg"; // #190 bf_2 „Nachttankstelle" (ultrawide)
-import bf2Mobile  from "../assets/battlefields/bf_2/mobile.jpg";  // (4:3)
-import bf3Desktop from "../assets/battlefields/bf_3/desktop.jpg"; // #190 bf_3 „Neon City" (ultrawide)
-import bf3Mobile  from "../assets/battlefields/bf_3/mobile.jpg";  // (4:3)
-import bf4Desktop from "../assets/battlefields/bf_4/desktop.jpg"; // #190 bf_4 „Mondsee" (ultrawide)
-import bf4Mobile  from "../assets/battlefields/bf_4/mobile.jpg";  // (4:3)
+// #299: alte Progressions-Battlefields (bf_1–4) entfernt.
 // Deck-Werkstatt Starter-Themes (kaufbar, je Element 1 SP): jedes Theme = Deck-Paar + Battlefield.
 import sunsetFront from "../assets/cards/decks_player/deck_sunset/front.png"; // Sunset Rider
 import sunsetBack  from "../assets/cards/decks_player/deck_sunset/back.png";
@@ -76,10 +62,6 @@ import bfGenesisMobile   from "../assets/battlefields/bf_onboarding/mobile.jpg";
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
   default: { front: cardFrontImg, back: cardBackImg },
-  deck_p1: { front: p1Front,     back: p1Back },
-  deck_p2: { front: p2Front,     back: p2Back },
-  deck_p3: { front: p3Front,     back: p3Back },
-  deck_p4: { front: p4Front,     back: p4Back },
   // Deck-Werkstatt Starter-Themes (kaufbar):
   deck_sunset: { front: sunsetFront, back: sunsetBack },
   deck_lofi:   { front: lofiFront,   back: lofiBack },
@@ -99,10 +81,6 @@ export const DECK_ASSETS = {
 // Zusatz-Hintergrund). Das Rendering (responsive Auswahl mobile/desktop) folgt in einer eigenen Phase.
 export const BATTLEFIELD_ASSETS = {
   default: null,
-  bf_1: { desktop: bf1Desktop, mobile: bf1Mobile },
-  bf_2: { desktop: bf2Desktop, mobile: bf2Mobile },
-  bf_3: { desktop: bf3Desktop, mobile: bf3Mobile },
-  bf_4: { desktop: bf4Desktop, mobile: bf4Mobile },
   // Deck-Werkstatt Starter-Themes (kaufbar):
   bf_sunset: { desktop: bfSunsetDesktop, mobile: bfSunsetMobile },
   bf_lofi:   { desktop: bfLofiDesktop,   mobile: bfLofiMobile },

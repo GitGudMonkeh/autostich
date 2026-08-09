@@ -35,9 +35,9 @@ describe("packs — Registry", () => {
       expect(THEME_DEFS[id]).toBeUndefined();
     }
   });
-  it("Progressions-Packs bieten Deck + Battlefield; die Pack-Bedingung ist die Deck-Bedingung", () => {
-    expect(THEME_DEFS.neon.els).toEqual(["deck", "bf"]);
-    expect(packCond(THEME_DEFS.neon)).toEqual({ kind: "games", n: 5 });
+  it("Kauf-Packs bieten Deck + Battlefield; die Pack-Bedingung ist der Besitz-Schlüssel", () => {
+    expect(THEME_DEFS.kaiju.els).toEqual(["deck", "bf"]);
+    expect(packCond(THEME_DEFS.kaiju)).toEqual({ kind: "buy", ownKey: "pack:kaiju" });
   });
 });
 
@@ -53,13 +53,10 @@ describe("packs — Zustände & Besitz", () => {
     expect(packState(p, THEME_DEFS.sunset)).toBe("own");
     expect(packOwned(p, THEME_DEFS.sunset)).toBe(true);
   });
-  it("Progressions-Pack: nach 5 Läufen (Deck-Bedingung erfüllt) → 'own'", () => {
-    const t = THEME_DEFS.neon;
-    expect(packState(prof({ games: 4 }), t)).toBe("lock");
-    expect(packState(prof({ games: 5 }), t)).toBe("own");
-  });
-  it("packUnlock liefert die Klartext-Bedingung eines Bedingungs-Packs", () => {
-    expect(packUnlock(prof(), THEME_DEFS.neon).label).toContain("5");
+  it("#299: alte Progressions-/Bedingungs-Packs (neon/tank/mega/mond) sind entfernt", () => {
+    for (const id of ["neon", "tank", "mega", "mond"]) expect(THEME_DEFS[id]).toBeUndefined();
+    // Alle verbliebenen Packs sind Kauf-Packs (kind "buy") — keine „cond"-Packs mehr.
+    expect(THEMES.every((p) => p.kind === "buy")).toBe(true);
   });
 });
 
@@ -71,8 +68,8 @@ describe("packs — Kauf-Ökonomie (#299: DP)", () => {
     expect(canBuyPack(prof({ deckPoints: PACK_DP_COST, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
     // SP allein reichen nicht (Pack läuft über DP)
     expect(canBuyPack(prof({ stichPoints: 99, deckPoints: 0 }), t)).toBe(false);
-    // Bedingungs-Pack ist niemals kaufbar
-    expect(canBuyPack(prof({ deckPoints: 99 }), THEME_DEFS.neon)).toBe(false);
+    // Nicht-Kauf-Pack (synthetisch) ist niemals kaufbar
+    expect(canBuyPack(prof({ deckPoints: 99 }), { kind: "cond", deckId: "x" })).toBe(false);
   });
   it("buyPack zieht PACK_DP_COST DP ab, bucht deckSpent, setzt Besitz (rein)", () => {
     const p0 = prof({ deckPoints: PACK_DP_COST + 2, deckSpent: 2 });

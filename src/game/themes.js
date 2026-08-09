@@ -18,7 +18,7 @@
 import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress } from "./cosmetics.js";
 
 export const PACK_COST = 1;       // (veraltet) SP je Kauf-Pack — Pack-Käufe laufen jetzt über DP.
-export const PACK_DP_COST = 5;    // #299 DP (Deckpunkte) je Kauf-Pack. [TUNING] native DP = floor(score/10M)
+export const PACK_DP_COST = 10;   // #299 DP (Deckpunkte) je Kauf-Pack. [TUNING] native DP = floor(score/10M) → ~1 Pack je 100-Mio-Lauf
 
 /* GLOBALE Effekte (#deckshop, Kategorie „Effekte"): einmalig gekauft (nicht pro Pack), wirken laufweit.
    Kaufen kostet GLOBAL_FX_COST SP (Besitz in ownedCosmetics[ownKey]); ein An/Aus-Toggle (option) steuert sie.
@@ -120,16 +120,8 @@ export const THEME_DEFS = {
     deckId: "deck_wale",       bfId: "bf_wale",       els: ["deck", "bf"] },
   genesis:  { id: "genesis",  name: "Genesis",         emblem: "🔷", kind: "buy", a1: "#26c6e6", a2: "#9b82f0",
     deckId: "deck_onboarding", bfId: "bf_onboarding", els: ["deck", "bf"] },
-
-  // ---- Progressions-Packs (Deck + Battlefield, über „Läufe" freigeschaltet) ----
-  neon: { id: "neon", name: "Neonstadt", emblem: "🌆", kind: "cond", a1: "#26c6e6", a2: "#9b82f0",
-    deckId: "deck_p1", bfId: "bf_1", els: ["deck", "bf"] },
-  tank: { id: "tank", name: "Tankstopp", emblem: "⛽", kind: "cond", a1: "#ff9d3a", a2: "#ff5a4d",
-    deckId: "deck_p2", bfId: "bf_2", els: ["deck", "bf"] },
-  mega: { id: "mega", name: "Megacity",  emblem: "🏙️", kind: "cond", a1: "#3a7bff", a2: "#26c6e6",
-    deckId: "deck_p3", bfId: "bf_3", els: ["deck", "bf"] },
-  mond: { id: "mond", name: "Mondpagode", emblem: "🌙", kind: "cond", a1: "#9b82f0", a2: "#26c6e6",
-    deckId: "deck_p4", bfId: "bf_4", els: ["deck", "bf"] },
+  // #299: alte Progressions-/„Läufe"-Packs (neon/tank/mega/mond → deck_p1–4/bf_1–4) entfernt — sauberer Neustart
+  // mit Standard (Prisma), Genesis und den kaufbaren DP-Packs. Kein Migrationspfad.
 };
 
 export const THEMES = Object.values(THEME_DEFS);
