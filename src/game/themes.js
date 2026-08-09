@@ -37,7 +37,9 @@ export const FX_OPTION_KEY = { frameGlow: "fxFrameGlow", holoSwipe: "fxHoloSwipe
 export const GLOBAL_FX_COST = 1;
 export const GLOBAL_FX = [
   { key: "laserSlice", name: "Laser-Schnitt", desc: "Gegnerkarten werden beim Sieg vom Laser geteilt — statt der Klinge.",
-    ownKey: "fx:laserSlice", option: "fxLaserSlice" },
+    ownKey: "fx:laserSlice", option: "fxLaserSlice", preview: "laser" },
+  { key: "shatter", name: "Shatter", desc: "Kritische Treffer zerbersten die Gegnerkarte in Scherben (sonst normaler Schnitt).",
+    ownKey: "fx:shatter", option: "fxShatter", preview: "shatter" },
 ];
 export const GLOBAL_FX_BY_KEY = Object.fromEntries(GLOBAL_FX.map((f) => [f.key, f]));
 export const globalFxOwned = (profile, fx) => !!(profile && profile.ownedCosmetics && profile.ownedCosmetics[fx.ownKey]);
@@ -51,8 +53,13 @@ export function buyGlobalFx(profile, fx) {
     ownedCosmetics: { ...(profile && profile.ownedCosmetics), [fx.ownKey]: true },
   };
 }
-// laserSlice global aktiv? (gekauft UND per Option an) — die Reducer-/UI-Naht nutzt dieselbe Wahrheit.
-export const laserSliceActive = (profile, options) => globalFxOwned(profile, GLOBAL_FX_BY_KEY.laserSlice) && !!(options && options.fxLaserSlice);
+// Ein globaler Effekt aktiv? (gekauft UND per Option an) — die Reducer-/UI-Naht nutzt dieselbe Wahrheit.
+export const globalFxActive = (profile, options, key) => {
+  const fx = GLOBAL_FX_BY_KEY[key];
+  return !!fx && globalFxOwned(profile, fx) && !!(options && options[fx.option]);
+};
+export const laserSliceActive = (profile, options) => globalFxActive(profile, options, "laserSlice");
+export const shatterActive = (profile, options) => globalFxActive(profile, options, "shatter");
 
 /* THEME-Registry. kind:
      "buy"  → alle fünf Elemente einzeln mit SP kaufbar (Starter-Themes).

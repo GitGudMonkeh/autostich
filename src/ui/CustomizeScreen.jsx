@@ -39,7 +39,15 @@ const FX_CSS = `
 .ws-sweep{animation:ws-sweep 2.9s ease-in-out infinite}
 @keyframes ws-laserpulse{0%,100%{opacity:.5}50%{opacity:1}}
 .ws-laserpulse{animation:ws-laserpulse 1.4s ease-in-out infinite}
+@keyframes ws-shard{0%{transform:translate(0,0) scale(1);opacity:0}16%{opacity:1}100%{transform:translate(var(--sx),var(--sy)) scale(.35);opacity:0}}
+.ws-shard{animation:ws-shard 1.3s ease-out infinite}
 `;
+
+// Demo-Scherben für die Shatter-Vorschau (Richtung + Farbe; Krit-Palette warm/weiß).
+const SHATTER_SHARDS = [
+  { x: "-16px", y: "-12px", c: "#ffd36a" }, { x: "15px", y: "-14px", c: "#ff8a4d" }, { x: "18px", y: "9px", c: "#ffffff" },
+  { x: "-14px", y: "13px", c: "#ff6a4d" }, { x: "7px", y: "18px", c: "#ffd36a" }, { x: "-7px", y: "-18px", c: "#ffffff" },
+];
 
 // Karten-Vorschau: illustrierter Deck-Rücken (Motiv), vollständig (object-contain) + optionaler Effekt.
 // Frame Glow = pulsierender Schein am Kartenrand (liegt bündig, egal wie der bemalte Rahmen sitzt).
@@ -292,9 +300,19 @@ function GlobalFxCard({ fx, p, options, onChoose, onBuy }) {
     <div className="flex items-center gap-3 rounded-xl p-2.5" style={{ background: "#14131c", border: "1px solid #2a2836" }}>
       <div className="relative rounded-lg overflow-hidden shrink-0" style={{ width: 56, aspectRatio: CARD_RATIO, background: "#0b0a16" }}>
         <img src={deckAssets("default").back} alt="" className="absolute inset-0 w-full h-full object-contain" />
-        <div className="absolute pointer-events-none ws-laserpulse" style={{ left: "-12%", right: "-12%", top: "48%", height: 2, transform: "rotate(-20deg)",
-          background: `linear-gradient(90deg,transparent,${LC} 15%,#ffffff 50%,${LC} 85%,transparent)`,
-          boxShadow: `0 0 8px 2px ${LC}, 0 0 20px 5px ${LC}` }} />
+        {fx.preview === "shatter" ? (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-0 ws-laserpulse" style={{ background: "radial-gradient(circle at 50% 50%, rgba(255,255,255,.5), transparent 55%)" }} />
+            {SHATTER_SHARDS.map((s, i) => (
+              <span key={i} className="ws-shard absolute" style={{ left: "50%", top: "50%", width: 5, height: 5, marginLeft: -2.5, marginTop: -2.5,
+                background: s.c, boxShadow: `0 0 5px ${s.c}`, borderRadius: 1, "--sx": s.x, "--sy": s.y }} />
+            ))}
+          </div>
+        ) : (
+          <div className="absolute pointer-events-none ws-laserpulse" style={{ left: "-12%", right: "-12%", top: "48%", height: 2, transform: "rotate(-20deg)",
+            background: `linear-gradient(90deg,transparent,${LC} 15%,#ffffff 50%,${LC} 85%,transparent)`,
+            boxShadow: `0 0 8px 2px ${LC}, 0 0 20px 5px ${LC}` }} />
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-[12.5px] font-extrabold">{fx.name}</div>

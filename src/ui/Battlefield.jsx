@@ -461,7 +461,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // Frame Glow (Karte) + Hologrid (Gitterlinien im Battlefield); Holo Swipe = Schimmer über die eigene Karte.
-  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false,
+  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false, fxShatter = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
   const reduced = useReducedFx(reducedFx);
@@ -545,9 +545,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Der Klingenschnitt trifft NUR die Gegnerkarte, und NUR wenn WIR gewinnen (Wunsch). Die eigene Karte wird nie
   // geschnitten: bei einer Niederlage fliegt sie einfach weg (as-flyaway). Sieg: Gegnerkarte in-place geschnitten
   // (Krit: Explosion), Spielerkarte kippt als Sieger an.
-  const flyAway      = sliceOn && lost;            // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
-  const critBoom     = sliceOn && win && isCrit;   // Krit-Sieg → Gegnerkarte explodiert (statt Schnitt)
-  const oppSliced    = sliceOn && win && !isCrit;  // normaler Sieg → Gegnerkarte in-place geschnitten
+  const flyAway      = sliceOn && lost;                       // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
+  const explode      = sliceOn && win && isCrit && fxShatter; // Shatter-Effekt (opt-in): Krit zerbirst die Gegnerkarte
+  const critBoom     = explode;
+  const oppSliced    = sliceOn && win && !explode;            // sonst normaler Schnitt (auch bei Krit OHNE Shatter)
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
@@ -742,10 +743,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, fxP, fxTier, scale: fxScale };
     const spawned = [];
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
-    if (win) {   // Gegnerkarte verliert → Schnitt- (normal) bzw. Explosions-Ghost (Krit) auf der Gegnerseite
-      spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp", fx: isCrit ? "explode" : "slice",
+    if (win) {   // Gegnerkarte verliert → Schnitt (Standard, auch bei Krit) bzw. Shatter-Explosion (nur mit gekauftem Effekt)
+      spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp", fx: explode ? "explode" : "slice",
         laser: fxLaserSlice, // globaler Laser-Schnitt-Effekt: ersetzt die Klingen-Linie durch einen Laser-Strahl (nur normaler Schnitt)
-        color: isCrit ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
+        color: explode ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, green: !!t.oCard.green,
         branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
@@ -758,8 +759,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
     }, sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100); // Lebensdauer: Ruhe + längster FX-Teil (#188: um die skalierte Dauer verlängert)
     ghostTimers.current.push(tm);
-    // GOTTGLEICH-Krit (oberste Stufe): den abprallenden Partikel-Schwarm feuern, synchron zum Bersten nach dem Ruhe-Beat.
-    if (win && isCrit && fxTier >= 4 && !reduced) {
+    // GOTTGLEICH-Krit (oberste Stufe): der abprallende Partikel-Schwarm gehört zum Shatter-Effekt → nur mit gekauftem Shatter.
+    if (explode && fxTier >= 4 && !reduced) {
       const bt = setTimeout(() => { burstSeq.current += 1; setBurst({ id: burstSeq.current }); }, sRest);
       ghostTimers.current.push(bt); // gemeinsame Ghost-Timer-Aufräumung (unmount → clearTimeout)
     }

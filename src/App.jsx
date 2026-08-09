@@ -46,7 +46,7 @@ import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale
 import { UpgradeScreen } from "./ui/UpgradeScreen.jsx"; // Progression-Vorschau: Upgrade-Baum-Screen
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, elementOwned, laserSliceActive } from "./game/themes.js";
+import { THEMES, elementOwned, laserSliceActive, shatterActive } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
@@ -382,8 +382,9 @@ export function Autostich() {
     fxFrameGlow: fxOwnOn("frameGlow", "fxFrameGlow"),
     fxHoloSwipe: fxOwnOn("holoSwipe", "fxHoloSwipe"),
     fxHologrid:  fxOwnOn("hologrid",  "fxHologrid"),
-    // Globaler Laser-Schnitt (nicht theme-gebunden): gekauft UND per Option an → ersetzt die Klinge auf Gegnerkarten.
-    fxLaserSlice: laserSliceActive(profile, options),
+    // Globale Effekte (nicht theme-gebunden): gekauft UND per Option an.
+    fxLaserSlice: laserSliceActive(profile, options), // ersetzt die Klinge auf Gegnerkarten durch einen Laser
+    fxShatter: shatterActive(profile, options),       // Krit zerbirst die Gegnerkarte (sonst normaler Schnitt)
   };
 
   function beginRun() {
@@ -622,7 +623,7 @@ export function Autostich() {
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
-                deckA1={deckFx.deckA1} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxHologrid={deckFx.fxHologrid} fxLaserSlice={deckFx.fxLaserSlice}
+                deckA1={deckFx.deckA1} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxHologrid={deckFx.fxHologrid} fxLaserSlice={deckFx.fxLaserSlice} fxShatter={deckFx.fxShatter}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}

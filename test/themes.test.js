@@ -4,7 +4,7 @@ import {
   ownKey, elementCond, elementOwned, elementState, elementPrice, elementUnlock,
   themeState, isBuyTheme, buyAllInfo, sharedUnlock,
   canBuyElement, buyElement, buyAllForTheme,
-  GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx, laserSliceActive,
+  GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx, laserSliceActive, shatterActive,
 } from "../src/game/themes.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
@@ -150,6 +150,16 @@ describe("themes — globale Effekte (Laser-Schnitt)", () => {
   });
   it("Laser-Schnitt kostet GLOBAL_FX_COST SP", () => {
     expect(GLOBAL_FX_COST).toBe(1);
+  });
+  it("Shatter ist ein eigener globaler Effekt (Krit-Explosion), unabhängig kaufbar/aktivierbar", () => {
+    const shatter = GLOBAL_FX_BY_KEY.shatter;
+    expect(shatter.option).toBe("fxShatter");
+    const owned = prof({ ownedCosmetics: { "fx:shatter": true } });
+    expect(shatterActive(owned, { fxShatter: true })).toBe(true);
+    expect(shatterActive(owned, { fxShatter: false })).toBe(false);
+    expect(shatterActive(prof(), { fxShatter: true })).toBe(false); // nicht gekauft
+    // Laser und Shatter sind getrennte Käufe
+    expect(globalFxOwned(owned, GLOBAL_FX_BY_KEY.laserSlice)).toBe(false);
   });
 });
 
