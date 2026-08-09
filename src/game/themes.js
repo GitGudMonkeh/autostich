@@ -53,8 +53,6 @@ export const GLOBAL_FX = [
     ownKey: "fx:goldRain", option: "fxGoldRain", preview: "goldRain", group: "gott" },
   { key: "prismaWave", name: "Prisma-Welle", desc: "Gottgleicher Sieg ohne Krit: ein prismatischer Schockwellen-Ring läuft einmal über das ganze Board.",
     ownKey: "fx:prismaWave", option: "fxPrismaWave", preview: "prismaWave", group: "gott" },
-  { key: "gridTunnel", name: "Grid-Tunnel", desc: "Das Hologrid rast schneller, je länger die Siegesserie — bis zum Tunnel-Warp. (Braucht ein aktives Hologrid.)",
-    ownKey: "fx:gridTunnel", option: "fxGridTunnel", preview: "gridTunnel", group: "ambient" },
 ];
 export const GLOBAL_FX_BY_KEY = Object.fromEntries(GLOBAL_FX.map((f) => [f.key, f]));
 export const globalFxOwned = (profile, fx) => !!(profile && profile.ownedCosmetics && profile.ownedCosmetics[fx.ownKey]);
@@ -79,7 +77,6 @@ export const shatterActive = (profile, options) => globalFxActive(profile, optio
 export const fireworksActive = (profile, options) => globalFxActive(profile, options, "fireworks");
 export const goldRainActive = (profile, options) => globalFxActive(profile, options, "goldRain");
 export const prismaWaveActive = (profile, options) => globalFxActive(profile, options, "prismaWave");
-export const gridTunnelActive = (profile, options) => globalFxActive(profile, options, "gridTunnel");
 
 /* THEME-Registry. kind:
      "buy"  → alle fünf Elemente einzeln mit SP kaufbar (Starter-Themes).

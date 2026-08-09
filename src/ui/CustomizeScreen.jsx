@@ -79,9 +79,6 @@ const FX_CSS = `
 /* #294 Prisma-Welle: Regenbogen-Ring expandiert vom Zentrum. */
 @keyframes ws-wave{0%{transform:translate(-50%,-50%) scale(.05);opacity:0}14%{opacity:1}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
 .ws-wave{animation:ws-wave 2.6s ease-out infinite}
-/* #293 Grid-Tunnel: Perspektiv-Gitter rast auf den Betrachter zu (Scroll der Gitterzeilen). */
-@keyframes ws-gridrush{0%{background-position:0 0}100%{background-position:0 32px}}
-.ws-gridrush{animation:ws-gridrush .5s linear infinite}
 /* #294 Gottgleich-Event-Loop (Vorschau spielt das echte Ereignis nach): Aura-Flare + Karten-Pop + goldene
    Groß-Ansage, ~3.4s Zyklus. Die Prunk-Partikel laufen darüber. */
 @keyframes ws-gott-aura{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}12%{opacity:.9}42%{opacity:.5}72%{opacity:.14}100%{opacity:0;transform:translate(-50%,-50%) scale(1.55)}}
@@ -240,14 +237,6 @@ function GlobalFxScenePreview({ fx }) {
                 background: s.white ? "#ffffff" : LC, boxShadow: `0 0 6px ${s.white ? "#ffffff" : LC}` }} />
             </div>
           ))}
-        </div>
-      )}
-      {p === "gridTunnel" && (
-        <div className="absolute pointer-events-none" style={{ left: "-20%", right: "-20%", bottom: 0, height: "62%",
-          transform: "perspective(120px) rotateX(62deg)", transformOrigin: "bottom" }}>
-          <div className="ws-gridrush absolute inset-0" style={{
-            backgroundImage: `linear-gradient(${LC} 1px,transparent 1px),linear-gradient(90deg,${LC} 1px,transparent 1px)`,
-            backgroundSize: "16px 16px", opacity: 0.5, boxShadow: `inset 0 0 40px ${LC}` }} />
         </div>
       )}
     </div>
@@ -556,10 +545,9 @@ function GlobalFxPreview({ fx }) {
   // Gottgleich-Effekte (inkl. Standard) zeigen das Ereignis in kompakter Form.
   if (["fireworks", "goldRain", "prismaWave"].includes(p)) return <GottgleichPreview variant={p} compact />;
   if (p === "gottStandard") return <GottgleichPreview variant="standard" compact />;
-  const showCard = p !== "gridTunnel";
   return (
     <>
-      {showCard && <img src={deckAssets("default").back} alt="" className="absolute inset-0 w-full h-full object-contain" />}
+      <img src={deckAssets("default").back} alt="" className="absolute inset-0 w-full h-full object-contain" />
       {p === "shatter" && (
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 ws-laserpulse" style={{ background: "radial-gradient(circle at 50% 50%, rgba(255,255,255,.5), transparent 55%)" }} />
@@ -586,15 +574,6 @@ function GlobalFxPreview({ fx }) {
                 background: s.white ? "#ffffff" : LC, boxShadow: `0 0 5px ${s.white ? "#ffffff" : LC}` }} />
             </div>
           ))}
-        </div>
-      )}
-      {p === "gridTunnel" && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ background: "#0b0a16" }}>
-          <div className="absolute" style={{ left: "-20%", right: "-20%", bottom: 0, height: "80%", transform: "perspective(90px) rotateX(64deg)", transformOrigin: "bottom" }}>
-            <div className="ws-gridrush absolute inset-0" style={{
-              backgroundImage: `linear-gradient(${LC} 1px,transparent 1px),linear-gradient(90deg,${LC} 1px,transparent 1px)`,
-              backgroundSize: "14px 14px", opacity: 0.55 }} />
-          </div>
         </div>
       )}
     </>

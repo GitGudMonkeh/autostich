@@ -46,7 +46,7 @@ import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale
 import { UpgradeScreen } from "./ui/UpgradeScreen.jsx"; // Progression-Vorschau: Upgrade-Baum-Screen
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, elementOwned, laserSliceActive, blackholeActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive, gridTunnelActive } from "./game/themes.js";
+import { THEMES, elementOwned, laserSliceActive, blackholeActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
@@ -390,7 +390,6 @@ export function Autostich() {
     fxFireworks: fireworksActive(profile, options),
     fxGoldRain: goldRainActive(profile, options),
     fxPrismaWave: prismaWaveActive(profile, options),
-    fxGridTunnel: gridTunnelActive(profile, options), // Hologrid rast mit der Siegesserie (Tunnel-Warp)
   };
 
   function beginRun() {
@@ -630,7 +629,7 @@ export function Autostich() {
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
                 deckA1={deckFx.deckA1} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxHologrid={deckFx.fxHologrid} fxLaserSlice={deckFx.fxLaserSlice} fxBlackhole={deckFx.fxBlackhole} fxShatter={deckFx.fxShatter}
-                fxFireworks={deckFx.fxFireworks} fxGoldRain={deckFx.fxGoldRain} fxPrismaWave={deckFx.fxPrismaWave} fxGridTunnel={deckFx.fxGridTunnel}
+                fxFireworks={deckFx.fxFireworks} fxGoldRain={deckFx.fxGoldRain} fxPrismaWave={deckFx.fxPrismaWave}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}

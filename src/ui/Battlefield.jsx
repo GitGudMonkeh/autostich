@@ -370,10 +370,9 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
    Mitte (as-bh-implode), ein leuchtender Ereignishorizont-Ring (deckfarben) pulsiert, eine Akkretions-Spirale saugt
    Partikel hinein, am Ende Kollaps-Flash + Schockwelle. Deterministisch aus `seed` (kein Math.random im Render).
    Dauern an den Flip-Takt gekoppelt (cardDur/burstDur), score-skaliert (intensity) → hält mit den anderen Findern mit. */
-function BlackholeFx({ cardEl, color, cardDur, burstDur, seed, delay = 0, intensity = 0, scale = 1 }) {
+function BlackholeFx({ cardEl, color, cardDur, seed, delay = 0, intensity = 0, scale = 1 }) {
   const durMul = 1 + intensity * 0.3;
-  const cd = cardDur * durMul;          // Implosions-/Kollaps-Fenster
-  const bd = burstDur * durMul;         // Nachhall (Ring/Schockwelle)
+  const cd = cardDur * durMul;          // Implosions-Fenster (skaliert mit dem Takt)
   const N = Math.max(6, Math.round((12 + intensity * 8) * scale)); // Akkretions-Partikel (turbo-ausgedünnt)
   const parts = Array.from({ length: N }, (_, i) => {
     const ang = (i / N) * 360 + fjitter(seed * 3 + i * 7, 40);         // Startwinkel rundum
@@ -397,18 +396,12 @@ function BlackholeFx({ cardEl, color, cardDur, burstDur, seed, delay = 0, intens
             background: s.i % 4 === 0 ? "#ffffff" : color, boxShadow: `0 0 6px ${s.i % 4 === 0 ? "#ffffff" : color}` }} />
         </div>
       ))}
-      {/* Ereignishorizont: dunkle Scheibe mit leuchtendem, deckfarbenem Ring — wächst, hält, kollabiert. */}
+      {/* Ereignishorizont: dunkle Scheibe mit leuchtendem, deckfarbenem Ring — wächst, hält, kollabiert (wie in der
+          Vorschau). Der frühere Kollaps-Flash + der blaue Schockwellen-Ring sind entfernt (unschön, nicht in der Vorschau). */}
       <div className="absolute" style={{ left: "50%", top: "50%", width: 26, height: 26, marginLeft: -13, marginTop: -13,
         borderRadius: "50%", background: "radial-gradient(circle, #05050a 42%, transparent 72%)",
         boxShadow: `0 0 10px 2px ${color}, inset 0 0 8px 1px ${color}`, border: `1.5px solid ${color}`,
         animation: `as-bh-core ${cd}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }} />
-      {/* Kollaps-Flash + Schockwelle am Ende des Sogs. */}
-      <div className="absolute" style={{ left: "50%", top: "50%", width: 16, height: 16, marginLeft: -8, marginTop: -8,
-        borderRadius: "50%", background: "#ffffff", boxShadow: `0 0 22px 8px ${color}, 0 0 8px 3px #ffffff`,
-        animation: `as-bh-collapse ${bd}ms ease-out ${delay + cd * 0.72}ms both`, willChange: "transform, opacity" }} />
-      <div className="absolute" style={{ left: "50%", top: "50%", width: 20, height: 20, marginLeft: -10, marginTop: -10,
-        borderRadius: "50%", border: `2px solid ${color}`,
-        animation: `as-bh-shock ${bd}ms cubic-bezier(0.15,0.7,0.3,1) ${delay + cd * 0.72}ms both`, willChange: "transform, opacity" }} />
     </div>
   );
 }
@@ -634,7 +627,7 @@ function SlashGhostLayer({ ghosts }) {
             {isBoom
               ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
               : isHole
-              ? <BlackholeFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} />
+              ? <BlackholeFx cardEl={cardEl} color={g.color} cardDur={g.hole} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} />
               : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} laser={g.laser} />}
           </div>
         );
@@ -675,8 +668,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // Frame Glow (Karte) + Hologrid (Gitterlinien im Battlefield); Holo Swipe = Schimmer über die eigene Karte.
   deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false, fxBlackhole = false, fxShatter = false,
-  // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar). Grid-Tunnel = Hologrid-Tempo an Siegesserie.
-  fxFireworks = false, fxGoldRain = false, fxPrismaWave = false, fxGridTunnel = false,
+  // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar).
+  fxFireworks = false, fxGoldRain = false, fxPrismaWave = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
   const reduced = useReducedFx(reducedFx);
@@ -713,11 +706,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // gekoppelt, aber mit hohem Boden (480 ms) → bei Max-Turbo nicht mehr zu schnell. Kommen Stiche schneller als
   // die Zeile fährt (4×/MAX), starten wir keine neue mitten hinein, sondern ÜBERSPRINGEN den Stich (Throttle) →
   // kein Abschneiden, kein Flackern. Bei 1×/2× bleibt es 1 Zeile je Stich.
-  // #293 Grid-Tunnel: je länger die Siegesserie, desto schneller rast das Hologrid (bis zum Warp). Voller Warp ab
-  // Serie 30 → Sweep-Dauer sinkt auf 40 % und der Boden fällt (200 ms), das Gitter leuchtet kräftiger. Braucht ein
-  // aktives Hologrid (reiner Optik-Aufsatz darauf). Ohne den Effekt bleibt tunnelK 0 → Verhalten wie bisher.
-  const tunnelK = fxGridTunnel && fxHologrid ? clamp((t ? t.winStreak || 0 : 0) / 30, 0, 1) : 0;
-  const sweepDur = clamp(flipMs * (1 - 0.6 * tunnelK), 560 - 360 * tunnelK, 1250);
+  const sweepDur = clamp(flipMs * 1.0, 560, 1250);
   const [sweepId, setSweepId] = useState(0);
   const lastSweepAt = useRef(-1e9);
   const trickNo = lastTrick ? lastTrick.trickNo : null;
@@ -761,6 +750,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const sCut     = clamp(flipMs * 0.13, 55, 130);    // Schnittlinie wächst (~120 ms) & fadet
   const sSpark   = clamp(flipMs * 0.5, 150, 520) + 800;    // Funken/Krit-Partikel
   const sBoom    = clamp(flipMs * 0.22, 90, 230);    // Krit-Zentral-Flash (kurz & hell)
+  // #293 Schwarzes Loch: die Implosion skaliert mit dem Turbo wie der Klingen-/Laser-Schnitt (KEIN +800-Boden,
+  // niedriger Floor) → bei hoher Turbo schnappt sie zu, bei langsamem Takt läuft sie länger aus.
+  const sHole     = clamp(flipMs * 0.5, 160, 620);   // Sog-/Implosions-Fenster (skaliert mit dem Takt)
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
   const sFloat   = clamp(flipMs * 0.55, 220, 820);   // Float-Away NACH dem Slice (nur noch Gegnerseite, #187)
   const flyDur   = clamp(flipMs * 0.7, 320, 900);    // Wegflug-Dauer der eigenen Verlierer-Karte (kein Schnitt mehr)
@@ -966,7 +958,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (!sliceOn) return;                           // nur bei einem echten (animierten) Sieg/Niederlage-Stich
     // #188: Effekt-Intensität aus dem Per-Stich-Score. Niederlage → t.gained 0 → Base (kein Skalieren).
     const { p: fxP, tier: fxTier } = fxIntensity(t.gained || 0);
-    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, fxP, fxTier, scale: fxScale };
+    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, hole: sHole, fxP, fxTier, scale: fxScale };
     const spawned = [];
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
     if (win) {   // Gegnerkarte verliert → Schnitt (Standard, auch bei Krit) bzw. Shatter-Explosion (nur mit gekauftem Effekt)
@@ -1096,7 +1088,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           <div className="absolute" style={{
             left: "-20%", right: "-20%", bottom: 0, height: "46%",
             backgroundImage: `linear-gradient(${deckA1} 1px,transparent 1px),linear-gradient(90deg,${deckA1} 1px,transparent 1px)`,
-            backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.24 + 0.26 * tunnelK }}>
+            backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.24 }}>
             {!reduced && sweepId > 0 && (
               // Bei einem SIEG glüht die Linie sehr intensiv; bei einer Niederlage dezent. Der Glow wird als
               // GEFÜLLTES, weichgezeichnetes Band (statt box-shadow) gerendert — box-shadow wird von der

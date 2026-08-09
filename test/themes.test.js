@@ -5,7 +5,7 @@ import {
   themeState, isBuyTheme, buyAllInfo, sharedUnlock,
   canBuyElement, buyElement, buyAllForTheme,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
-  laserSliceActive, blackholeActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive, gridTunnelActive,
+  laserSliceActive, blackholeActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive,
 } from "../src/game/themes.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
@@ -165,14 +165,14 @@ describe("themes — globale Effekte (Laser-Schnitt)", () => {
 });
 
 describe("themes — weitere globale Effekte (#293/#294)", () => {
-  it("Registry führt Blackhole-Finisher, Gottgleich-Prunk-Trio und Grid-Tunnel", () => {
-    for (const k of ["blackhole", "fireworks", "goldRain", "prismaWave", "gridTunnel"]) {
+  it("Registry führt Blackhole-Finisher und das Gottgleich-Prunk-Trio", () => {
+    for (const k of ["blackhole", "fireworks", "goldRain", "prismaWave"]) {
       expect(GLOBAL_FX_BY_KEY[k]).toBeTruthy();
       expect(GLOBAL_FX_BY_KEY[k].ownKey).toBe(`fx:${k}`);
     }
     expect(GLOBAL_FX_BY_KEY.blackhole.group).toBe("finisher");
     expect(GLOBAL_FX_BY_KEY.fireworks.group).toBe("gott");
-    expect(GLOBAL_FX_BY_KEY.gridTunnel.group).toBe("ambient");
+    expect(GLOBAL_FX_BY_KEY.gridTunnel).toBeUndefined(); // Grid-Tunnel wieder entfernt (kollidierte mit dem Grid-Puls)
   });
   it("jeder neue Effekt: eigener Kauf + eigenes Options-Flag, unabhängig aktivierbar", () => {
     const cases = [
@@ -180,7 +180,6 @@ describe("themes — weitere globale Effekte (#293/#294)", () => {
       ["fireworks", fireworksActive, "fxFireworks"],
       ["goldRain", goldRainActive, "fxGoldRain"],
       ["prismaWave", prismaWaveActive, "fxPrismaWave"],
-      ["gridTunnel", gridTunnelActive, "fxGridTunnel"],
     ];
     for (const [key, activeFn, opt] of cases) {
       const owned = prof({ ownedCosmetics: { [`fx:${key}`]: true } });
