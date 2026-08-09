@@ -343,6 +343,21 @@ export function spCreditForRun(record, onboardingBefore, treeComplete, spRunsBef
 // frei? Rein & testbar → liefert Deskriptoren fürs Victory-Banner (Labels/Buttons baut die UI). `target` ∈
 // "workshop" | "upgrades" | "leaderboard" | undefined. Reihenfolge nach Glied. Beim letzten Glied (6/6) ist der
 // Onboarding-Abschluss dabei (schaltet Genesis-Pack + Werkstatt + Upgrades frei → target "workshop").
+// #304/#UI: Welche Freischaltung sitzt an einem bestimmten Onboarding-Glied? (für „nächste Freischaltung"/Fortschritt).
+// null = Glied ohne eigene Belohnung. Rein & testbar.
+export function onboardingRewardAt(link) {
+  const l = Math.floor(num0(link));
+  for (const [arch, ln] of Object.entries(ONBOARDING_ARCH_UNLOCK)) if (Number(ln) === l) return { type: "archetype", key: arch };
+  for (const [ln, tier] of Object.entries(ONBOARDING_RARITY_UNLOCK)) if (Number(ln) === l) return { type: "rarity", tier: Number(tier) };
+  if (l >= ONBOARDING_LINKS) return { type: "onboardingDone", target: "workshop" };
+  return null;
+}
+// Nächste noch ausstehende Belohnung ab (exkl.) `after` bis ONBOARDING_LINKS — { link, reward } oder null (alles erreicht).
+export function nextOnboardingReward(after) {
+  const a = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(num0(after))));
+  for (let l = a + 1; l <= ONBOARDING_LINKS; l++) { const r = onboardingRewardAt(l); if (r) return { link: l, reward: r }; }
+  return null;
+}
 export function onboardingUnlocks(before, after) {
   const b = Math.max(0, Math.floor(num0(before)));
   const a = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(num0(after))));

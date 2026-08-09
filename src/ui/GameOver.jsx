@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sparkline } from "./Sparkline.jsx";
 import { RunStatCells, RunBuildChips } from "./RunStats.jsx"; // Victory-Redesign: Kennzahlen (Stats-Sektion) + Build-Chips (Build-Sektion) getrennt platziert
 import { RunGraphs, ScoreHerkunft } from "./RunGraphs.jsx"; // #251/Victory-Redesign: Fraktions-Herkunft + Durchlauf-Graph
@@ -13,13 +13,72 @@ import { architectCoverFor } from "./architectCover.js"; // #UI: Gebäude-Rahmen
 import { familyDef as archFamily } from "../game/architect.js"; // Gebäude-Liste (Name/Form/Stufe) in der Aufstellung
 import { ARCH_CAT } from "./indicators/vocab.js";
 import FormIcon from "./FormIcon.jsx";
+import { milestoneBarState } from "../game/progression.js"; // #304 Verdienst-Rollup: Meilensteinbalken
+
+// #304 Count-up-/Rollup-Helfer (requestAnimationFrame, easeOutCubic; respektiert prefers-reduced-motion → Endwert sofort).
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+const prefersReduced = () => typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function useCountUp(target, dur = 1100, delay = 0) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    const to = Math.max(0, Math.round(Number(target) || 0));
+    if (prefersReduced() || to === 0) { setVal(to); return undefined; }
+    let raf = 0, start = null;
+    const step = (ts) => {
+      if (start == null) start = ts;
+      const el = ts - start - delay;
+      if (el < 0) { raf = requestAnimationFrame(step); return; }
+      const p = Math.min(1, el / dur);
+      setVal(Math.round(to * easeOutCubic(p)));
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, dur, delay]);
+  return val;
+}
+// DP-Rollup mit Challenge-Countdown: erst auf Brutto (bzw. direkt Netto, wenn kein Abzug) hoch; bei Abzug (raw<0) nach
+// kurzer Pause runter auf Netto (bei 0 gedeckelt) + rotes „Minus". Rückgabe { val, minus }.
+function useDpRollup({ gross = 0, net = 0, raw = 0 }) {
+  const [val, setVal] = useState(0);
+  const [minus, setMinus] = useState(false);
+  useEffect(() => {
+    const g = Math.max(0, Math.round(gross)), n = Math.max(0, Math.round(net));
+    if (prefersReduced()) { setVal(n); setMinus(raw < 0); return undefined; }
+    const peak = raw < 0 ? g : n;
+    const UP = 1100, PAUSE = 1300, DOWN = 800;
+    let raf = 0, start = null;
+    const step = (ts) => {
+      if (start == null) start = ts;
+      const el = ts - start;
+      if (el < UP) { setVal(Math.round(peak * easeOutCubic(el / UP))); raf = requestAnimationFrame(step); return; }
+      setVal(peak);
+      if (raw < 0) {
+        if (el < UP + PAUSE) { raf = requestAnimationFrame(step); return; }
+        setMinus(true);
+        const dp = Math.min(1, (el - UP - PAUSE) / DOWN);
+        setVal(Math.round(peak + (n - peak) * easeOutCubic(dp)));
+        if (dp < 1) raf = requestAnimationFrame(step);
+      }
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [gross, net, raw]);
+  return { val, minus };
+}
 
 // Highscore-Listen (lokal + global) bewusst NICHT hier — sie stehen auf dem Startbildschirm und
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
 // #169 FB-8: der Statblock (Serie/Perks/Formationen/Crits + Perk-/Skill-Chips) steckt jetzt in der
 // geteilten RunStats-Komponente — dieselbe Anzeige nutzt die Leaderboard-Detailansicht (RunDetail).
-export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [], progressUnlocks = [], challengeResult = null, onCustomize = null, onUpgrades = null, onLeaderboard = null }) {
+export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [], progressUnlocks = [], challengeResult = null, earn = null, onboarding = null, onCustomize = null, onUpgrades = null, onLeaderboard = null }) {
   const score = Math.floor(state.score); // Zahlenwert für Record-Vergleich; Anzeige über fmtScore
+  // #304 Verdienst-Rollup: Score/Meilensteinbalken/SP/DP animiert hochzählen (Challenge: Countdown Brutto→Netto).
+  const mb = milestoneBarState(score);
+  const scoreUp = useCountUp(score, 1100);
+  const barFill = useCountUp(Math.round((mb.fill || 0) * 1000), 850, 300) / 1000; // 0..1 (×1000 für ganzzahliges Count-up)
+  const spUp = useCountUp(earn ? earn.sp : 0, 1100, 200);
+  const dpRoll = useDpRollup({ gross: earn ? earn.dpGross : 0, net: earn ? earn.dpNet : 0, raw: earn ? earn.challengeRaw : 0 });
   // #201.8 Stufe A: finale Aufstellung aus dem Live-state; Formationen frisch berechnet (rein, matcht das Enddeck).
   const finalOrder = state.playerOrder || [];
   const finalCards = finalOrder.map((di) => state.deck[di]);
@@ -67,10 +126,10 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             Neuer Lauf
           </button>
         </div>
-        <div className="text-center">
+        <div className="text-center mt-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>Lauf beendet</div>
           {/* #253/Victory-Redesign: kompakt abgekürzt (Mio./Mrd.) gegen Overflow bei großen Scores; voller Wert im Tooltip. */}
-          <div className="text-4xl sm:text-5xl font-bold mt-2 tabular-nums leading-tight" title={fmtScore(score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(score)}</div>
+          <div className="text-4xl sm:text-5xl font-bold mt-2 tabular-nums leading-tight" title={fmtScore(score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(scoreUp)}</div>
           {/* Rekord-Zeile: neuer Rekord → Stern + Zuwachs; sonst Abstand zum Rekord. */}
           <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
             {isRecord ? (
@@ -90,6 +149,66 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             <span className="opacity-30">·</span><span>{cyclesDone} {cyclesDone === 1 ? "Durchlauf" : "Durchläufe"}</span>
           </div>
         </div>
+
+        {/* #304 Verdienst-Rollup (direkt unter dem Score-Hero, wo früher die Münzen-Zeile saß): Meilensteinbalken läuft
+            voll, SP (gold) & DP (cyan) zählen hoch; im Challenge zählt DP nach kurzer Pause auf Netto runter (rotes Minus).
+            Nur NACH dem Onboarding (davor gibt es keine SP/DP → dann zeigt unten das Onboarding-Banner den Fortschritt). */}
+        {!onboarding && earn && (earn.sp > 0 || earn.dpGross > 0 || earn.dpNet > 0 || score > 0) && (
+          <div className="mt-4">
+            <div className="rounded-xl px-3 py-2.5" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: "1px solid #2c2a3a" }}>
+              <div className="flex items-center justify-between mb-1.5 text-[11px] font-bold">
+                <span style={{ color: "#9a9aa6" }}>💠 Meilensteine {mb.reached}/{mb.total}</span>
+                <span style={{ color: "#8a8896" }}>{mb.atMax ? "Maximum" : `nächster bei ${Math.round(mb.next.at / 1_000_000)} Mio`}</span>
+              </div>
+              <div className="relative h-2 rounded-full overflow-hidden" style={{ background: "#0e0e13" }}>
+                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.round(barFill * 100)}%`, background: "linear-gradient(90deg,#26c6e6,#5fe0f7)" }} />
+                {Array.from({ length: mb.total - 1 }, (_, i) => (
+                  <i key={i} className="absolute inset-y-0" style={{ left: `${(i + 1) / mb.total * 100}%`, width: 1.5, background: "#0e0e13" }} />
+                ))}
+              </div>
+            </div>
+            {earn && (
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="rounded-xl px-3 py-2 flex items-center justify-between" style={{ background: "#1a1608", border: "1px solid #3a2f12" }}>
+                  <span className="text-[11px] font-bold" style={{ color: "#d4a63a" }}>Stichpunkte</span>
+                  <span className="font-mono text-[18px] font-extrabold tabular-nums" style={{ color: "#f2c14a" }}>+{spUp}</span>
+                </div>
+                <div className="relative rounded-xl px-3 py-2 flex items-center justify-between overflow-hidden" style={{ background: "#08171b", border: "1px solid #16323a" }}>
+                  <span className="text-[11px] font-bold" style={{ color: "#35c6e6" }}>Deck-Punkte</span>
+                  <span className="flex items-center gap-1.5">
+                    {dpRoll.minus && <span className="text-[10px] font-extrabold px-1 rounded" style={{ background: "#3a1214", color: "#ff9a9a" }}>−{Math.max(0, (earn.dpGross || 0) - (earn.dpNet || 0))}</span>}
+                    <span className="font-mono text-[18px] font-extrabold tabular-nums" style={{ color: "#5fe0f7" }}>+{dpRoll.val}</span>
+                  </span>
+                  {dpRoll.minus && <span aria-hidden className="absolute bottom-0 left-0 h-[3px]" style={{ width: "100%", background: "#e05555" }} />}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* #: Onboarding-Fortschritt — NACH JEDEM Onboarding-Lauf: golden funkelnder Rahmen mit dem Stand + gerade
+            freigeschalteter Belohnung (progressUnlocks) bzw. der nächsten Freischaltung. Nur während des Onboardings. */}
+        {onboarding && (
+          <div className="as-legendary mt-4 rounded-xl p-3" style={{ background: "#1a1608" }}>
+            <div className="text-xs uppercase tracking-widest text-center mb-2" style={{ color: "#f2c14a" }}>
+              ✦ Onboarding {onboarding.step}/{onboarding.links}
+            </div>
+            {progressUnlocks.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {progressUnlocks.map((u) => (
+                  <div key={u.id} className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-center" style={{ background: "#141019", border: "1px solid #3a2f12" }}>
+                    <span className="text-[12px] font-bold leading-snug" style={{ color: "#f0d27a" }}>✦ Freigeschaltet: {u.label}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[12px] text-center font-bold" style={{ color: "#f0d27a" }}>
+                {onboarding.advanced ? "Fortschritt gesichert" : "Lauf abgeschlossen"}
+                {onboarding.nextLabel ? ` · Nächste Freischaltung bei ${onboarding.nextAt}/${onboarding.links}: ${onboarding.nextLabel}` : ""}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Victory-Redesign: Fraktions-Score-Herkunft direkt unter dem Hero — die für Spieler wichtigste Frage „welche Fraktion trägt den Score?". */}
         <div className="mt-5">
@@ -118,8 +237,9 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         )}
 
         {/* #299 Meta-Freischaltungen dieses Laufs (Onboarding-Abschluss/Archetyp/Rarität) — funkelnder Gold-Rahmen
-            (as-legendary) + kontextpassender Ziel-Button je Freischaltung. */}
-        {progressUnlocks.length > 0 && (
+            (as-legendary) + kontextpassender Ziel-Button je Freischaltung. Während des Onboardings zeigt das
+            Onboarding-Banner oben die Freischaltungen (kein Ziel-Button nötig) → hier nur NACH dem Onboarding. */}
+        {!onboarding && progressUnlocks.length > 0 && (
           <div className="as-legendary mt-4 rounded-xl p-3" style={{ background: "#1a1608" }}>
             <div className="text-xs uppercase tracking-widest text-center mb-2" style={{ color: "#f2c14a" }}>✦ Freigeschaltet</div>
             <div className="flex flex-col gap-2">

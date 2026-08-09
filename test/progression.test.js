@@ -7,7 +7,7 @@ import {
   nodeState, canBuy, buyNode, respec, treeComplete, ownedCount,
   SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP,
   onboardingAfter, spMilestones, isSpRun, spForRun, milestoneBarState,
-  DP_PER_SCORE, dpNative, dpForRun, spCreditForRun, onboardingUnlocks,
+  DP_PER_SCORE, dpNative, dpForRun, spCreditForRun, onboardingUnlocks, onboardingRewardAt, nextOnboardingReward,
   SECRET_SEEDS, UNLOCK_SP_CUSHION, matchSecretSeed, unlockAllProfile,
 } from "../src/game/progression.js";
 import { ONBOARDING_LINKS } from "../src/game/progression.js";
@@ -503,5 +503,22 @@ describe("Test-Codes — matchSecretSeed / unlockAllProfile", () => {
     const r = respec(unlockAllProfile(emptyProfile(0)));
     expect(r.stichPoints).toBe(UNLOCK_SP_CUSHION + TOTAL_COST);
     expect(ownedCount(r)).toBe(0);
+  });
+});
+
+describe("onboardingRewardAt / nextOnboardingReward (#304)", () => {
+  it("Belohnung je Glied: Archetypen (2/4), Rarität (3/5), Abschluss (6); belohnungslose Glieder → null", () => {
+    expect(onboardingRewardAt(1)).toBeNull();
+    expect(onboardingRewardAt(2)).toEqual({ type: "archetype", key: "plant" });
+    expect(onboardingRewardAt(3)).toEqual({ type: "rarity", tier: 3 });
+    expect(onboardingRewardAt(4)).toEqual({ type: "archetype", key: "ice" });
+    expect(onboardingRewardAt(5)).toEqual({ type: "rarity", tier: 4 });
+    expect(onboardingRewardAt(6)).toEqual({ type: "onboardingDone", target: "workshop" });
+  });
+  it("nextOnboardingReward: nächste ausstehende Belohnung ab (exkl.) after", () => {
+    expect(nextOnboardingReward(0)).toEqual({ link: 2, reward: { type: "archetype", key: "plant" } });
+    expect(nextOnboardingReward(2)).toEqual({ link: 3, reward: { type: "rarity", tier: 3 } });
+    expect(nextOnboardingReward(5)).toEqual({ link: 6, reward: { type: "onboardingDone", target: "workshop" } });
+    expect(nextOnboardingReward(6)).toBeNull();
   });
 });

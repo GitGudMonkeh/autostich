@@ -113,6 +113,12 @@ const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflo
 // #: Score-Zahlen fächern vertikal in eine aufsteigende Spalte (statt sich auf demselben Punkt zu stapeln). Jede neue
 // Zahl rotiert durch diese Y-Versätze (px, um die Score-Zone) → deutlich weniger Overlap bei schnellen Stichen.
 const FLOAT_LANES = [0, -30, 30, -58, 58];
+// #: Treffer-Icons (Feuer/Pflanze/Eis/Blitz) an den Score-Floats vorerst STILLGELEGT — neue Icons kommen. Auf true zurück, sobald da.
+const SHOW_HIT_ICONS = false;
+// #: Gemeinsamer „Kartennummern"-Stil für ALLE Score-/Juice-Floats (durchsichtige Füllung + farbige Kontur + Glow) —
+// gilt für Score, Formation & Krit; die großen Stufen-Ansagen (Stark/Brutal/Irre/Gottgleich/Lawine) bleiben ausgenommen.
+const floatNumStyle = (color, stroke = 1.5) => ({ fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900,
+  WebkitTextFillColor: "transparent", WebkitTextStroke: `${stroke}px ${color}`, textShadow: `0 0 7px ${color}aa` });
 const FORM_LINGER_MS = 1500; // Formations-Float bleibt ~1,5 s länger stehen (über den nächsten Stich hinaus) und klingt dann aus
 // Entzerrung bei Ballung: spät in einem guten Lauf spannen die Stich-Gewinne mehrere Größenordnungen
 // (ein Stich +5 Mio, der nächste +8.000) → die kleinen Score-Floats sind nur Rauschen und überlappen alles.
@@ -127,6 +133,7 @@ const CARDFLIP_RATE_CAP = 1.6;  // Deckel bewusst niedrig → bei MAX-Turbo blei
 // Ergebnisabhängige Flip-Lautstärke (tunable): Sieg laut & erkennbar, Niederlage deutlich leiser → klarer
 // hörbarer Kontrast Sieg↔Niederlage. Effektiv = Gain × SFX-Lautstärke (Default 0,4 → Sieg 0,6 · Niederlage 0,08).
 const CARDFLIP_GAIN = { win: 1.5, win_tie: 1.5, tie: 0.6, loss: 0.2 };
+const CARDFLIP_GAIN_CONST = 0.9; // #: konstante Flip-Lautstärke bei JEDEM Flip (Mitte zwischen altem Sieg-/Niederlage-Pegel)
 // Deterministischer Jitter aus einem Integer-Seed (kein Math.random im Render, #68) → [-amp, +amp].
 const fjitter = (seed, amp) => { const s = Math.sin(seed * 127.1 + 311.7) * 43758.5; return +(((s - Math.floor(s)) * 2 - 1) * amp).toFixed(1); };
 
@@ -1403,10 +1410,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Niederlage/Gleichstand bleiben unverändert (kein Bass, kein Lautstärke-Boost).
     const w = t.result === "win" || t.result === "win_tie";
     const flipTier = fxIntensity(t.gained || 0).tier; // 0–4 (STARK…GOTTGLEICH); tier 0 (<10k) → nur Sieg-Basis
+    // #: Jetzt tragen die Stich-/Finisher-Sounds die Wucht → der Flip-Sound bekommt eine KONSTANTE Lautstärke bei jedem
+    // Flip (Mitte zwischen dem alten Sieg- und Niederlage-Pegel), damit er gleichmäßig „tickt" statt bei Sieg/Niederlage
+    // stark zu springen. Tempo (rate) bleibt an flipMs gekoppelt; ein moderater konstanter Bass gibt etwas Körper.
     audio.play("cardflip", {
       rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)),
-      gain: (CARDFLIP_GAIN[t.result] ?? 1) * (w ? 1.2 : 1),
-      bass: w ? 4 + 1.5 * flipTier + (t.isCrit ? 4 : 0) : 0,
+      gain: CARDFLIP_GAIN_CONST,
+      bass: 2,
     });
     // #295/#296 Sieg-Finisher-SFX (Akzent AUF dem cardflip): Rate an flipMs gekoppelt (wie cardflip) → kein Überlaufen/
     // Stapeln in den nächsten Stich. Priorität wie das Visual. Schwarzes Loch UND Brennstrahl sind PERSISTENT → kein
@@ -1738,7 +1748,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
             style={{ left: `calc(${FLOAT_ZONES.crit.left} + ${fjitter(t.trickNo * 5 + 2, JITTER_X)}px)`,
                      top:  `calc(${FLOAT_ZONES.crit.top} + ${fjitter(t.trickNo * 5 + 9, JITTER_Y)}px)`,
-                     fontSize: 26, color: critColor, textShadow: `0 0 12px ${critColor}aa`, textTransform: "uppercase", // Loc: Caps via CSS
+                     fontSize: 26, color: critColor, textTransform: "uppercase", // Loc: Caps via CSS
+                     ...floatNumStyle(critColor, 1.5), textShadow: `0 0 12px ${critColor}aa`, // #: Kartennummern-Stil (Kontur), stärkerer Krit-Glow
                      transform: reduced ? "translateX(-50%)" : undefined,
                      animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900) + 1000}ms ease-out forwards`) }}>
             {reduced ? `Kritisch ×${critMultStr}` : "Kritisch!"}
@@ -1771,7 +1782,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             <div key={f.id} className="pointer-events-none absolute font-bold whitespace-nowrap"
               style={{ ...pos, color: f.color, fontSize: floatSize(f.value || 0), lineHeight: 1,
                        animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
-              {f.icons && f.icons.length > 0 && (
+              {SHOW_HIT_ICONS && f.icons && f.icons.length > 0 && (
                 <span className="mr-1 inline-flex items-center gap-0.5 align-middle" style={{ WebkitTextFillColor: "initial" }}>
                   {f.icons.map((k) => k === "ice"
                     ? <img key={k} src={glacierIcon} alt="" aria-hidden="true" className="inline-block object-contain" style={{ width: "0.85em", height: "0.85em", filter: "drop-shadow(0 0 3px #5ec8f0)" }} />
@@ -1779,8 +1790,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                 </span>
               )}
               {/* #: Score-Zahlen im selben Stil wie die Kartennummern (durchsichtige Füllung + farbige Kontur + Glow). */}
-              <span className="card-num" style={{ fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900,
-                WebkitTextFillColor: "transparent", WebkitTextStroke: `1.5px ${f.color}`, textShadow: `0 0 7px ${f.color}aa` }}>{f.text}</span>
+              <span className="card-num" style={floatNumStyle(f.color)}>{f.text}</span>
             </div>
           );
         })}
@@ -1794,6 +1804,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                      fontSize: formFloat.peak === 2 ? 26 : formFloat.peak === 1 ? 21 : 17,
                      textTransform: "uppercase", // Loc: Formations-Label-Caps via CSS
                      color: formFloat.color,
+                     ...floatNumStyle(formFloat.color, formFloat.peak === 2 ? 1.6 : 1.4), // #: Kartennummern-Stil (Kontur)
                      textShadow: `0 0 ${formFloat.peak === 2 ? 16 : formFloat.peak === 1 ? 12 : 10}px ${formFloat.color}${formFloat.peak ? "cc" : "88"}`,
                      animation: fx(formLeaving
                        ? `as-combo-out ${FORM_LINGER_MS}ms ease-out forwards`

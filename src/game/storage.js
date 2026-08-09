@@ -271,7 +271,10 @@ export function recordRun(record) {
     ownedCosmetics,
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
-  return { history, profile, unlocks, challenge: chSettle };
+  // #304 Verdienst-Rollup (Victory-Screen): die Lauf-Erträge + Onboarding-Fortschritt fürs Count-up/Balken/Countdown.
+  const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, spSweep, challengeRaw: chSettle ? chSettle.raw : 0 };
+  const onboarding = { before: onboardingBefore, after: onbAfter, links: ONBOARDING_LINKS };
+  return { history, profile, unlocks, challenge: chSettle, earn, onboarding };
 }
 
 /* OPTIONEN (#41) — bewusst als erweiterbares Objekt (künftig Sound, Tempo-Default …).

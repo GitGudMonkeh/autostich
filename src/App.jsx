@@ -8,7 +8,7 @@ import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeig
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import logo from "./assets/logo-wordmark.png"; // #UI: Neon-Wortmarke (wie StartScreen) — ersetzt das Text-Logo im Run-Kopf
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun } from "./game/storage.js";
-import { unlockAllProfile, ONBOARDING_LINKS } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / reset (Wipe) · §6 Meilenstein-Balken-Gate
+import { unlockAllProfile, ONBOARDING_LINKS, nextOnboardingReward } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
@@ -71,6 +71,8 @@ export function Autostich() {
   const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
   const [progressUnlocks, setProgressUnlocks] = useState([]);     // #299: Onboarding-/Meta-Freischaltungen dieses Laufs → Victory-Banner
   const [challengeResult, setChallengeResult] = useState(null);   // #301: Challenge-Abrechnung dieses Laufs → Victory-Banner (null = kein Challenge-Lauf)
+  const [runEarn, setRunEarn] = useState(null);                   // #304: Lauf-Ertrag (SP/DP) für den Victory-Rollup
+  const [onboardingBanner, setOnboardingBanner] = useState(null); // #: Onboarding-Fortschritt/Belohnung fürs Victory-Banner
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
   const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
   const pendingDev = useRef(null);                                // Dev-Run: Config { rounds, schedule, cover, energy } für den nächsten Lauf (null = normaler Lauf)
@@ -319,19 +321,31 @@ export function Autostich() {
       buildings: archBuildingsSnap,
       challengeBlockForm: state.challengeBlockForm || [], // #301 C3: gesperrte Aufstell-Zellen → auch in der Chronik (RunDetail) rot markieren
     };
-    const { profile: nextProfile, unlocks: metaUnlocks, challenge: challengeResult } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
+    const { profile: nextProfile, unlocks: metaUnlocks, challenge: challengeResult, earn: runEarn, onboarding: onbInfo } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
       shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
       completed, deckSnapshot, challengeMods: state.challengeMods || [] }); // #301 Challenge-Modifikatoren → DP-Abrechnung
     setProfile(nextProfile);
     setChallengeResult(challengeResult || null); // #301 Challenge-Ergebnis fürs Victory-Banner (null = kein Challenge-Lauf)
+    setRunEarn(runEarn || null);                  // #304 Lauf-Ertrag (SP/DP-Rollup)
     // #299 Meta-Freischaltungen dieses Laufs (Onboarding-Glieder → Archetyp/Rarität/Abschluss) fürs Victory-Banner.
     const ARCH_DE = { plant: "Pflanze", ice: "Eis", fire: "Feuer", lightning: "Blitz" };
+    const RAR_DE = { 3: "Seltenheit III (Blau)", 4: "Seltenheit IV (Lila)" };
+    const rewardLabel = (r) => r == null ? null
+      : r.type === "onboardingDone" ? "Genesis-Pack · Werkstatt · Upgrades"
+      : r.type === "archetype" ? `Archetyp: ${ARCH_DE[r.key] || r.key}`
+      : r.type === "rarity" ? (RAR_DE[r.tier] || "Neue Seltenheitsstufe") : "Freischaltung";
     setProgressUnlocks((metaUnlocks || []).map((u) => {
       if (u.type === "onboardingDone") return { id: "onb-done", label: "Onboarding abgeschlossen — Genesis-Pack, Werkstatt & Upgrades frei", target: "workshop" };
       if (u.type === "archetype") return { id: `arch-${u.key}`, label: `Neuer Archetyp: ${ARCH_DE[u.key] || u.key}`, target: null };
       if (u.type === "rarity") return { id: `rar-${u.tier}`, label: "Neue Seltenheitsstufe freigeschaltet", target: null };
       return { id: `u-${u.link}`, label: "Freischaltung", target: null };
     }));
+    // #: Onboarding-Fortschritt fürs Victory-Banner — damit NACH JEDEM Onboarding-Lauf sichtbar ist, wo man steht und was
+    // als Nächstes/gerade freigeschaltet wird (golden funkelnder Rahmen). null, sobald das Onboarding durch ist.
+    const nextR = onbInfo ? nextOnboardingReward(onbInfo.after) : null;
+    setOnboardingBanner(onbInfo && onbInfo.after < onbInfo.links
+      ? { step: onbInfo.after, links: onbInfo.links, advanced: onbInfo.after > onbInfo.before, nextLabel: nextR ? rewardLabel(nextR.reward) : null, nextAt: nextR ? nextR.link : null }
+      : null);
     // #190: in DIESEM Lauf frisch freigeschaltete Skins (Bedingung vorher NICHT erfüllt, jetzt schon) → Siegesscreen.
     const catalog = [
       ...Object.values(DECK_DEFS).map((d) => ({ def: d, type: "deck" })),
@@ -721,7 +735,7 @@ export function Autostich() {
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
           currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu}
           myEntry={myEntry} pubToken={pubToken} hasUsername={!!(username || "").trim()} onEditName={() => setShowUsername(true)}
-          newUnlocks={newUnlocks} progressUnlocks={progressUnlocks} challengeResult={challengeResult}
+          newUnlocks={newUnlocks} progressUnlocks={progressUnlocks} challengeResult={challengeResult} earn={runEarn} onboarding={onboardingBanner}
           onCustomize={() => setShowCustomize(true)} onUpgrades={() => setShowUpgrades(true)} onLeaderboard={() => setShowLeaderboard(true)} />
       )}
 
