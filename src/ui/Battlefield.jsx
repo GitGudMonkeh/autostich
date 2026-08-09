@@ -472,10 +472,14 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
    dabei (kein Bruch). Aus dem Einbrennloch springen Funken (Hitze-Akzent Orange + Deckfarbe). #serie: mit steigender
    Siegserie (`streak`) hält der Strahl LÄNGER (persistenter) und es springen IMMER MEHR Funken über ein längeres
    Fenster aus dem Loch. Deterministisch aus `seed`. Nur bei normaler Bewegung (Aufrufer prüft `reduced`). */
-export function BurnBeamFx({ cardEl, color, beamDur, sparkDur, seed, delay = 0, intensity = 0, scale = 1, streak = 0, panelRef = null }) {
+export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, intensity = 0, scale = 1, streak = 0, panelRef = null }) {
   const HOT = "#ff7a2f";                                  // Hitze-Akzent (Ember-Orange)
   const streakK = clamp(streak / 12, 0, 1);               // 0..1: Serien-Eskalation
-  const turbo = clamp(scale, 0.45, 1);                    // fxScale: 1 = ruhig, 0.45 = max Turbo → Strahl/Loch/Funken schneller
+  // Gesamtbudget an die Stich-Kadenz (flipMs) koppeln: der Effekt MUSS vor dem nächsten Flip (~flipMs) fertig sein —
+  // sonst liegt der Strahl hinter der neu geflippten Karte. Alle Zeiten leiten sich aus `body` ab → passt sich
+  // zugleich dem Turbo an (kleiner flipMs = schneller). Serie erhöht nur die Funken-Dichte, nicht die Gesamtdauer.
+  const budget = Math.max(200, flipMs - 30);
+  const body = Math.max(150, budget - delay);
   // Der Strahl kommt von der BATTLEFIELD-Oberkante (nicht der Kartenkante): einmal die px-Distanz Panel-Oberkante →
   // Kartenmitte messen und den Strahl darüber spannen (transform-origin top → er fährt über die ganze Höhe herab).
   const rootRef = useRef(null);
@@ -489,15 +493,15 @@ export function BurnBeamFx({ cardEl, color, beamDur, sparkDur, seed, delay = 0, 
   const CC = 72;                                          // Kartenmitte im 104×144-Slot (Ziel des Strahls)
   const beamTop = topDist != null ? CC - topDist : 0;     // Strahl-Oberkante = Panel-Oberkante (Fallback: Kartenkante)
   const beamH = topDist != null ? topDist : 74;           // Länge: Panel-Oberkante → Kartenmitte
-  const beamMs = Math.round(beamDur * (1 + streakK * 0.55) * turbo); // Serie: länger · Turbo: kürzer (an die Spielgeschwindigkeit gekoppelt)
-  const hitAt = delay + Math.round(beamMs * 0.36);        // Strahl erreicht die Mitte → Loch/Funken/Verblassen zünden
-  const holeMs = Math.round(beamMs * 0.9);
-  const fadeMs = Math.round(beamMs * 0.8);
+  const beamMs = Math.round(body * 0.8);                  // Strahl-Descent (hält, dann fadet) — innerhalb des Budgets
+  const hitAt = delay + Math.round(beamMs * 0.4);         // Strahl erreicht die Mitte → Loch/Funken/Verblassen zünden
+  const holeMs = Math.round(body * 0.66);                 // endet ~ mit dem Budget (vor dem nächsten Flip)
+  const fadeMs = Math.round(body * 0.62);
   const holeMax = (2.0 + intensity * 0.7).toFixed(2);     // Loch bleibt kompakt („nur Loch")
-  // Funken springen fortlaufend aus dem Loch — Zahl UND Streu-Fenster wachsen mit der Serie.
+  // Funken springen fortlaufend aus dem Loch — Zahl UND Streu-Fenster wachsen mit der Serie (bleibt im Budget).
   const N = Math.max(8, Math.round((12 + intensity * 8 + streakK * 34) * scale));
-  const sparkWin = Math.round(beamMs * 0.42 * streakK);   // 0 (keine Serie) … bis ~0.42·beamMs (hohe Serie)
-  const sparkAnim = Math.round(beamMs * 0.4);
+  const sparkWin = Math.round(body * 0.3 * streakK);
+  const sparkAnim = Math.round(body * 0.3);
   const embers = Array.from({ length: N }, (_, i) => {
     const ang = -Math.PI / 2 + fjitter(seed * 3 + i * 7, 1.1);       // nach oben, gestreut
     const rad = 20 + Math.abs(fjitter(seed * 5 + i * 13, 40 + streakK * 30));
@@ -879,7 +883,7 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
               : isGrid
               ? <LaserGridFx cardEl={cardEl} color={g.color} diceDur={g.halves} lineDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
               : isBurn
-              ? <BurnBeamFx cardEl={cardEl} color={g.color} beamDur={g.halves} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} streak={g.streak} panelRef={panelRef} />
+              ? <BurnBeamFx cardEl={cardEl} color={g.color} flipMs={g.flipMs} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} streak={g.streak} panelRef={panelRef} />
               : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} laser={g.laser} />}
           </div>
         );
@@ -1216,7 +1220,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (!sliceOn) return;                           // nur bei einem echten (animierten) Sieg/Niederlage-Stich
     // #188: Effekt-Intensität aus dem Per-Stich-Score. Niederlage → t.gained 0 → Base (kein Skalieren).
     const { p: fxP, tier: fxTier } = fxIntensity(t.gained || 0);
-    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, streak: t.winStreak || 0, fxP, fxTier, scale: fxScale };
+    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, streak: t.winStreak || 0, fxP, fxTier, scale: fxScale, flipMs };
     const spawned = [];
     // #296 Schwarzes Loch: bei aktivem Blackhole-Finisher wird die Gegnerkarte NICHT mehr als eigener Ghost
     // geschnitten/implodiert, sondern als „Sieg-Puls" an das persistente Panel-Loch gemeldet (Sog + Wachstum im
@@ -1236,11 +1240,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (!spawned.length) return;
     setSlashGhosts((cur) => [...cur, ...spawned].slice(-ghostCap)); // Pool gedeckelt (turbo-abhängig, #200 A)
     const ids = spawned.map((g) => g.id);
+    // #295 Brennstrahl löst innerhalb der Stich-Kadenz (flipMs) auf → Ghost wird passend dazu entfernt (liegt nie
+    // hinter der neu geflippten Karte). Andere Finisher: Ruhe + längster FX-Teil (#188, skaliert).
+    const ghostLife = burnFinish ? Math.max(200, flipMs - 30) + 60 : sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100;
     const tm = setTimeout(() => {
       setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
-      // #295 Brennstrahl: bei hoher Serie hält Strahl+Funken länger (persistenter) → Ghost-Lebensdauer entsprechend strecken.
-    }, sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100 + (burnFinish ? Math.round(Math.max(sHalves, sSpark) * clamp((t.winStreak || 0) / 12, 0, 1) * 0.9) : 0)); // Lebensdauer: Ruhe + längster FX-Teil (#188: um die skalierte Dauer verlängert)
+    }, ghostLife);
     ghostTimers.current.push(tm);
     // GOTTGLEICH-Krit (oberste Stufe): der abprallende Partikel-Schwarm bleibt GOTTGLEICH-exklusiv — unabhängig vom
     // (kaufbaren) Shatter-Effekt. Feuert also bei jedem tier-4-Krit, ob die Karte nun zerbirst oder normal geschnitten wird.
