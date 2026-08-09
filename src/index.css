@@ -254,6 +254,10 @@ button { font-family: inherit; }
    schrumpfen, leicht rotieren & ausfaden → die Karte „zerstäubt". Start opacity 1 (fill-both, hält beim Einschlag). */
 @keyframes as-burn-disintegrate {
   0%, 8% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+  /* #: Die Bruchstücke bleiben während des Auseinanderstiebens klar SICHTBAR (halten die Opazität bis ~55 %), damit man
+     die Karte real zerspringen sieht — erst danach glühen sie als Asche aus. Sonst wirkte der Zerfall (v. a. im Turbo) wie
+     bloßes Ausblenden statt Zerstörung. */
+  55%    { opacity: 0.9; }
   100%   { opacity: 0; transform: translate(var(--dx, 0), var(--dy, 0)) scale(var(--ds, 0.5)) rotate(var(--dr, 0deg)); }
 }
 /* Persistenter Brennstrahl: feiner, schneller Flicker = Laser-Energie (Opazität pendelt leicht). */

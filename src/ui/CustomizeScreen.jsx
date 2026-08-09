@@ -12,6 +12,7 @@ import { startPrunk } from "./prunkFx.js";
 import { SliceFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx } from "./Battlefield.jsx";
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
+import { clamp } from "../game/deck.js"; // #: Serien-Kopplung des Brennstrahl-Loops (leiser Start → lauter/heißer)
 import { audio } from "./audio.js"; // #302b: Showcase-Panel spielt den passenden Finisher-Sound mit
 import { useBlackholeSfx } from "./finisherSfx.js"; // #298: Loch-Ton-Bett mit Hüllkurve (leiser Start → Anschwellen → schneller Kollaps), identisch zu In-Game
 
@@ -283,10 +284,22 @@ function BurnBeamPreview() {
   }, []);
   // #302b/#307: Brennstrahl-Loop-Bett an die Lit-Phase (Sieg-Puls) koppeln — IDENTISCH zu In-Game (Battlefield.jsx):
   // der Ton startet erst mit dem herabfahrenden Strahl (erster Sieg), nicht schon beim Öffnen der Vorschau, und stoppt
-  // beim Serienabbruch. So läuft kein Laser-Sound, bevor der Laser sichtbar ist.
-  // #: In der Effekt-AUSWAHL läuft der persistente Brennstrahl-Ton sonst DURCHGÄNGIG für die ganze Phase — das nervt.
-  // Daher ist das Loop-Bett in der Vorschau STILLGELEGT (nur der Sound; Musik + Visual bleiben). In-Game unverändert.
-  void burnLoopRef;
+  // beim Serienabbruch. So läuft kein Laser-Sound, bevor der Laser sichtbar ist. Leiser Start → mit der Serie lauter/heißer.
+  useEffect(() => {
+    const lit = !dormant && pulse && pulse.kind === "win";
+    if (lit) {
+      const sK = clamp((pulse.streak || 0) / 12, 0, 1);
+      const g = 0.3 + sK * 0.6;
+      const r = 1 + sK * 0.28;
+      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, bass: 3, loopStart: 0.1, loopEnd: 0.8 });
+      else { audio.setLoopGain(burnLoopRef.current, g); audio.setLoopRate(burnLoopRef.current, r); }
+    } else if (burnLoopRef.current) {
+      audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;
+    }
+  }, [dormant, pulse]);
+  useEffect(() => () => {
+    if (burnLoopRef.current) { audio.stopLoop(burnLoopRef.current, { fade: 0.05 }); burnLoopRef.current = null; }
+  }, []);
   const demoCard = () => <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
@@ -329,8 +342,8 @@ function BlackholePreview() {
     }, 600);
     return () => clearInterval(id);
   }, [suitCol]);
-  // #: In der Auswahl bliebe das Loch-Ton-Bett sonst durchgängig hörbar → in der Vorschau STILLGELEGT (nur Sound, Visual bleibt).
-  useBlackholeSfx(false, pulse);
+  // #: Loch-Ton-Bett identisch zu In-Game (leiser Start → Anschwellen mit dem Wachstum → hörbarer Bass-Kollaps beim Serienabbruch).
+  useBlackholeSfx(!dormant, pulse);
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}

@@ -415,16 +415,27 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
 // auseinanderstieben. Fein genug, dass die Karte sichtbar ZERFÄLLT (nicht nur „ein paar Punkte"), aber die spätere
 // „Zerstäuben"-Referenz nutzt ein noch dichteres Raster + weitere Streuung → Abstufung bleibt über diese Werte klar.
 const DISINT_COLS = 8, DISINT_ROWS = 11;
+// #: Sichtbarkeits-Untergrenze der Zerfalls-Animation. Im Turbo ist flipMs klein → body*0.60 wäre zu kurz, um den Zerfall
+// überhaupt zu sehen (die Karte wirkte, als würde sie nur „flippen"). Diese Untergrenze hält den Zerfall auch im Turbo
+// sichtbar; die Bursts überlappen dann bewusst leicht in den nächsten Stich → der Strahl „zerstört eine Karte nach der
+// anderen" (der Ghost lebt entsprechend länger, s. ghostLife). Reines Ausfaden von Fragmenten → kein Verdecken der Folgekarte.
+const BURN_DISINT_MIN = 360;
+function burnDisintTiming(flipMs, delay) {
+  const budget = Math.max(200, flipMs - 30);
+  const body = Math.max(150, budget - delay);
+  const hitAt = delay + Math.round(body * 0.22);
+  const disintDur = Math.max(BURN_DISINT_MIN, Math.round(body * 0.60));
+  return { body, hitAt, disintDur };
+}
+// #: Zerstäubungs-Dauer mit sichtbarem Boden (bei Max nicht zu schnell) — gemeinsam von DisperseFx (Animation) und
+// dem Parent (ghostLife) genutzt, damit der Ghost genau so lange lebt, wie der Zerfall sichtbar ist.
+const DISPERSE_MIN = 340;
+function disperseDur(flipMs) { return Math.max(DISPERSE_MIN, Math.min((flipMs || 900) - 30, 760)); }
 export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, intensity = 0, scale = 1, streak = 0 }) {
   const HOT = "#ff7a2f";                                  // Hitze-Akzent (Ember-Orange)
   const streakK = clamp(streak / 12, 0, 1);               // 0..1: Serien-Eskalation
-  const budget = Math.max(200, flipMs - 30);              // muss vor dem nächsten Flip fertig sein (Turbo-gekoppelt)
-  const body = Math.max(150, budget - delay);
-  const hitAt = delay + Math.round(body * 0.22);          // kurzer Beat, dann zünden Loch/Funken/Disintegration
+  const { body, hitAt, disintDur } = burnDisintTiming(flipMs, delay); // #: gemeinsame Turbo-sichere Zeitrechnung (mit Untergrenze)
   const holeMs = Math.round(body * 0.66);                 // endet ~ mit dem Budget (vor dem nächsten Flip)
-  // #302-Fix: Fragment-Flug-/Fade-Dauer MUSS mit hitAt (0.22·body) + Staffelung (0.12·disintDur) ins Budget passen,
-  // sonst zieht die Disintegration über den nächsten Stich (Ende bei hitAt + 1.12·disintDur ≤ body → disintDur ≤ 0.66·body).
-  const disintDur = Math.round(body * 0.60);              // Fragment-Flug-/Fade-Dauer (endet klar vor dem nächsten Flip)
   const holeMax = (1.8 + intensity * 0.5 + streakK * 0.7).toFixed(2); // #: glühend-rotes Loch wächst sichtbar (bei Serie mehr)
   // #302 Disintegrations-Fragmente: jedes Raster-Stück ist ein clip-path-Klon der ECHTEN Karte (inset auf seine Zelle),
   // driftet von der Kartenmitte weg (+ Schwerkraft = Asche fällt), schrumpft, rotiert leicht & fadet → die Karte selbst
@@ -639,17 +650,20 @@ export function OverloadFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, 
         ctx.beginPath(); ctx.arc(cx, cy, 24 * glare, 0, Math.PI * 2); ctx.fill();
       } else {
         const p = Math.min(1, (el - strikeMs) / (dur - strikeMs)); // Funken glühen aus
-        // #: etwas weniger Funken (ruhiger, weniger „hektisch"), skaliert mit der Stufe.
-        const nS = 9 + tier * 6;
+        // #: Funken sprühen in ALLE Richtungen (voll radial) und werden mit der Stufe deutlich MEHR und STÄRKER
+        // (Anzahl, Geschwindigkeit/Streuweite, Größe). tier 1..4.
+        const nS = 14 + tier * 12;
         ctx.globalCompositeOperation = "lighter";
         for (let i = 0; i < nS; i++) {
           // #300b: Funken entspringen ÜBER DIE GANZE Kartenfläche (nicht nur dem Einschlagpunkt) → die Karte „wird" zu Funken.
           const ox = cx + (rng() - 0.5) * W0, oy = cy + (rng() - 0.5) * H0;
-          const a = rng() * Math.PI * 2, sp = (18 + rng() * 58) * (0.6 + tier * 0.18);
-          const x = ox + Math.cos(a) * sp * p, y = oy + Math.sin(a) * sp * p - p * 16;
-          // #: KLEINE Funken-PUNKTE (kein Streifen/„Konfetti-Stäbchen") — additiver Glow.
-          const r = 0.8 + rng() * 1.2;
-          ctx.globalAlpha = (1 - p) * 0.9; ctx.fillStyle = i % 3 ? color : "#ffffff";
+          // Voll zufälliger Winkel (0..2π) → radial in alle Richtungen; nur ein winziger Auftrieb, damit es nicht nach
+          // oben „schießt", sondern rundum wegspringt. Geschwindigkeit/Streuweite steigt spürbar mit der Stufe.
+          const a = rng() * Math.PI * 2, sp = (24 + rng() * 74) * (0.7 + tier * 0.3);
+          const x = ox + Math.cos(a) * sp * p, y = oy + Math.sin(a) * sp * p - p * 6;
+          // #: KLEINE Funken-PUNKTE (kein Streifen/„Konfetti-Stäbchen") — additiver Glow; Größe wächst mit der Stufe.
+          const r = 1.0 + rng() * 1.5 + tier * 0.35;
+          ctx.globalAlpha = (1 - p) * 0.95; ctx.fillStyle = i % 3 ? color : "#ffffff";
           ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
         }
       }
@@ -707,9 +721,10 @@ const SHATTER_GRID = [[7, 10], [8, 11], [9, 13], [10, 14]]; // Stufe 1..4 → co
    stieben nach außen/oben, schrumpfen & faden (kein bloßes Ausblenden mehr). Dichte/Streuweite wachsen mit der Stufe
    (diff). Budget an flipMs gekoppelt. Deterministisch aus seed. Reduced-safe (Aufrufer). */
 export function DisperseFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, tier = 1, scale = 1, delay = 0 }) {
-  // #: Dauer PASST ins Stich-Budget (≤ flipMs−30 → wird im Turbo nicht vom nächsten Flip abgeschnitten), aber mit
-  // sichtbarem Boden. Vorher lief 0.6·body über die Kadenz → im Turbo unsichtbar.
-  const dur = Math.max(160, Math.min((flipMs || 900) - 30, 760));
+  // #: Sichtbarkeits-Boden. Bei ~4× war die Zerstäubung gut, bei MAX (kleinstes flipMs) rauschte sie zu schnell durch →
+  // deutlich höherer Boden (disperseDur), der den Zerfall auch bei Max sichtbar hält. Die Bursts überlappen dann bewusst
+  // leicht in den nächsten Stich (Ghost lebt entsprechend länger); die Stücke faden aus → verdecken die Folgekarte nicht.
+  const dur = disperseDur(flipMs);
   const [cols, rows] = SHATTER_GRID[Math.max(0, Math.min(3, tier - 1))];
   // #: Größere Sprünge je Stufe + weite RADIALE Streuung in ALLE Richtungen (nur minimaler Auftrieb, kein „nach oben").
   const spread = 58 + tier * 40;
@@ -1053,6 +1068,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const [holePulse, setHolePulse] = useState(null);
   const [burnPulse, setBurnPulse] = useState(null); // #295 persistenter Brennstrahl: Sieg = lit + Level, Niederlage = zurückziehen
   const burnLoopRef = useRef(null); // #295: Handle des persistenten „Brennstrahl"-Ton-Betts (Loop-SFX, an burnPulse gekoppelt)
+  const holeLitRef = useRef(false); // #: war das Loch überhaupt entzündet (mind. 1 Sieg)? Nur dann ist ein Kollaps-Bass fällig — nicht bei Niederlagen ohne laufende Serie
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -1271,7 +1287,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       // #300b/#: Bass-Impact-Layer auf großen Siegen — GUT HÖRBAR und an die Score-Stufe (STARK…GOTTGLEICH via flipTier)
       // gekoppelt. Feuert bei JEDEM Stufen-Sieg (unabhängig vom Finisher, auch Schwarzes Loch/Brennstrahl), damit die
       // Groß-Ansagen (Stark/Brutal/Irre/Gottgleich) ihren Bass bekommen. Überladung/Zerstäubung: + Wertdifferenz.
-      if (flipTier >= 1) {
+      // #: Bei einem GOTTGLEICH-Prunk (Feuerwerk/Goldregen/Prisma-Welle) fällt der Bass HIER aus — er wird stattdessen
+      // exakt zum Animationsstart des Prunk-Overlays gespielt (s. Ghost-Effect), damit Bass und Effekt zusammenfallen.
+      const prunkComing = !isCrit && flipTier >= 4 && (fxFireworks || fxGoldRain || fxPrismaWave);
+      if (flipTier >= 1 && !prunkComing) {
         const bassGain = Math.min(2.0, 0.7 + flipTier * 0.4 + ((overloadFinish || disperseFinish) ? diffTier * 0.06 : 0));
         audio.play("fx_bass", { rate: fxRate * (disperseFinish ? 1.1 : 1), gain: bassGain, bass: 6 });
       }
@@ -1281,8 +1300,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         // kurzer Attack glättet die Transiente, Release lässt ihn sanft ausklingen (statt hartem Abriss). Im Turbo mehr
         // Softening + etwas leiser → weniger „hart/hektisch".
         const turbo = clamp((fxRate - 1) / 0.6, 0, 1);
-        audio.play("fx_lightning", { rate: fxRate, gain: (0.8 + diffTier * 0.07) * (1 - turbo * 0.28),
-          soft: 6200 - turbo * 2800, attack: 0.006, release: 0.05 + turbo * 0.07 });
+        // #: Im Turbo/Max klingt der Blitz-Crack sonst zu ABRUPT ab. Zwei Hebel: (1) die playbackRate wird im Turbo leicht
+        // gedrosselt (×0,82 bei Max) → das Sample behält mehr Körper/Ausklang statt abgehackt schnell zu enden; (2) deutlich
+        // längeres Release-Nachklingen. Lowpass rundet die harte Höhe zusätzlich ab.
+        audio.play("fx_lightning", { rate: fxRate * (1 - turbo * 0.18), gain: (0.8 + diffTier * 0.07) * (1 - turbo * 0.22),
+          soft: 6000 - turbo * 2600, attack: 0.006, release: 0.09 + turbo * 0.22 });
       }
       else if (disperseFinish)            audio.play("fx_atomize", { rate: fxRate, gain: 0.85 + diffTier * 0.06 });   // #300 Zerstäubung: Partikel-Auflösung
       else if (oppSliced && fxLaserSlice) audio.play("fx_laser", { rate: fxRate, gain: 1.1 });          // globaler Laser-Schnitt
@@ -1404,11 +1426,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // #296 Schwarzes Loch: bei aktivem Blackhole-Finisher wird die Gegnerkarte NICHT mehr als eigener Ghost
     // geschnitten/implodiert, sondern als „Sieg-Puls" an das persistente Panel-Loch gemeldet (Sog + Wachstum im
     // Canvas + Serien-Mult für die ×2.0-Schwelle). Eine Niederlage meldet einen „loss-Puls" → Serienabbruch → Kollaps.
-    if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: deckA1 || suitColor(t.oCard.suit), mult: bd ? bd.streakMult : 1 });
+    if (holeFinish) { setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: deckA1 || suitColor(t.oCard.suit), mult: bd ? bd.streakMult : 1 }); holeLitRef.current = true; }
     else if (holeActive && lost) {
       setHolePulse({ id: t.trickNo, kind: "loss" });
-      // #300b/#: der Kollaps des Schwarzen Lochs (Serienabbruch) schlägt DEUTLICH hörbar mit einem tiefen Bass-Impact ein.
-      if (flipMs > 170) audio.play("fx_bass", { gain: 1.9, bass: 7 });
+      // #: der Bass-Impact gehört zum KOLLAPS eines gewachsenen Lochs — also nur, wenn das Loch tatsächlich entzündet war
+      // (mind. ein Sieg lief). Aufeinanderfolgende Niederlagen ohne laufende Serie kollabieren nichts → kein Bass mehr.
+      if (flipMs > 170 && holeLitRef.current) audio.play("fx_bass", { gain: 1.9, bass: 7 });
+      holeLitRef.current = false;
     }
     // #295 Brennstrahl: Sieg → Strahl lit + Intensität (Serie); Niederlage → Serienabbruch → Strahl zieht sich zurück.
     if (burnFinish) setBurnPulse({ id: t.trickNo, kind: "win", streak: t.winStreak || 0 });
@@ -1429,8 +1453,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     const ids = spawned.map((g) => g.id);
     // #295 Brennstrahl löst innerhalb der Stich-Kadenz (flipMs) auf → Ghost wird passend dazu entfernt (liegt nie
     // hinter der neu geflippten Karte). Andere Finisher: Ruhe + längster FX-Teil (#188, skaliert).
-    const ghostLife = burnFinish ? Math.max(200, flipMs - 30) + 20
-      : (overloadFinish || disperseFinish) ? Math.max(220, flipMs - 40) + 60   // #300 Canvas-Finisher lösen im flipMs-Budget auf
+    // #: Brennstrahl-Ghost lebt so lange, wie der Zerfall SICHTBAR ist (hitAt + gestaffelte Fragment-Dauer). Im Turbo ist
+    // das länger als flipMs → der Burst überlappt bewusst leicht den nächsten Stich, sodass „eine Karte nach der anderen"
+    // zerfällt statt bloß zu flippen. Fragmente faden aus (verdecken die Folgekarte nicht); Pool bleibt gedeckelt.
+    const burnT = burnFinish ? burnDisintTiming(flipMs, sRest) : null;
+    const ghostLife = burnFinish ? burnT.hitAt + Math.round(burnT.disintDur * 1.14) + 40
+      : disperseFinish ? Math.round(disperseDur(flipMs) * 1.12) + 40   // #: Zerstäubung mit Sichtbarkeits-Boden (bei Max nicht abgeschnitten)
+      : overloadFinish ? Math.max(220, flipMs - 40) + 60               // #300 Canvas-Finisher löst im flipMs-Budget auf
       : sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100;
     const tm = setTimeout(() => {
       setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
@@ -1444,6 +1473,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const pt = setTimeout(() => {
         prunkSeq.current += 1;
         setPrunk({ id: prunkSeq.current, fireworks: fxFireworks, goldRain: fxGoldRain, prismaWave: fxPrismaWave });
+        // #: der GOTTGLEICH-Prunk (Feuerwerk/Goldregen/Prisma-Welle) setzt mit einem tiefen Bass-Impact GENAU zum
+        // Animationsstart ein (gekoppelt an den Overlay-Start, nicht an die frühere Sieg-Erkennung) — wie in der Vorschau.
+        const pRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
+        audio.play("fx_bass", { rate: pRate, gain: 2.0, bass: 7 });
       }, sRest);
       ghostTimers.current.push(pt);
     }

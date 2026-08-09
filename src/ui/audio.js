@@ -111,7 +111,9 @@ export const audio = {
       const dur = (buffers[name].duration || 0) / Math.max(0.01, rate);
       if (attack > 0) { g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(peak, now + Math.min(attack, dur * 0.5)); }
       else g.gain.setValueAtTime(peak, now);
-      if (release > 0 && dur > 0) { const rs = Math.max(now + attack, now + dur - release); g.gain.setValueAtTime(peak, rs); g.gain.linearRampToValueAtTime(0.0001, now + dur); }
+      // #: Release-Ausklang auf höchstens ~65 % der (raten-abhängigen) Dauer begrenzen — sonst würde bei hoher playbackRate
+      // (kurze dur im Turbo) die ganze Stimme von Beginn an wegfaden (zu leise) statt nur am Ende sanft auszuklingen.
+      if (release > 0 && dur > 0) { const rel = Math.min(release, dur * 0.65); const rs = Math.max(now + attack, now + dur - rel); g.gain.setValueAtTime(peak, rs); g.gain.linearRampToValueAtTime(0.0001, now + dur); }
       node.connect(g).connect(masterComp || c.destination);
       // #297 Voice-Tracking + Deckel: neue Stimme registrieren, älteste weicht bei Überlauf (sanfter 50-ms-Ausklang → kein Klick).
       const v = { src, g, name, t: now };
