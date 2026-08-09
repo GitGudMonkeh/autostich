@@ -247,9 +247,6 @@ button { font-family: inherit; }
 .as-deck-sweep { animation: as-deck-sweep 900ms ease-out forwards; }
 /* Eigene Verlierer-Karte fliegt einfach weg (kein Klingenschnitt mehr) — driftet nach unten-außen, kippt & fadet. */
 @keyframes as-flyaway { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-12%, 68%) rotate(-16deg); opacity: 0; } }
-/* Laser-Scan (#deckshop, kaufbarer Effekt): scharfe helle Linie fährt von oben nach unten über die Karte, loopt. */
-@keyframes as-card-laser { 0% { top: -6%; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 106%; opacity: 0; } }
-.as-card-laser { animation: as-card-laser 1.9s linear infinite; }
 
 /* Blitz-Motor (#208): Energie „fließt" die aktiven Verbinder entlang (bewegter Farbverlauf). Der Verbinder trägt
    `background-size: 220%`; die Animation schiebt die Position → ein wandernder Lichtpuls. Ruht implizit unter

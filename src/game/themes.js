@@ -2,7 +2,8 @@
 
    PUR & node-testbar (wie cosmetics.js): hält NUR Metadaten + Logik, importiert KEINE Bild-Assets
    (die liegen UI-seitig in cosmeticAssets.js, gekeyed über die deck-/bf-id). Ein „Theme" bündelt ein
-   Deck (Karte front+back), ein Battlefield und Animationen (Frame Glow · Holo Swipe · Hologrid · Laser).
+   Deck (Karte front+back), ein Battlefield und drei Animationen (Frame Glow · Holo Swipe · Hologrid).
+   Zusätzlich gibt es GLOBALE Effekte (GLOBAL_FX, Kategorie „Effekte") — einmalig gekauft, laufweit wirksam.
 
    Jedes Element ist EINZELN erwerbbar. Es gibt zwei Erwerbsarten, pro Element aufgelöst:
      • Kauf (kind:"buy")  — kostet COST_PER_ELEMENT SP; Besitz in profile.ownedCosmetics["theme:element"].
@@ -23,13 +24,35 @@ export const ELEMENT_DEFS = [
   { key: "frameGlow", icon: "✦",  name: "Frame Glow",            desc: "Pulsierender Karten-Rahmen.",      fx: "frameGlow" },
   { key: "holoSwipe", icon: "🌫️", name: "Holo Swipe",            desc: "Holografischer Schimmer.",         fx: "holoSwipe" },
   { key: "hologrid",  icon: "▧",  name: "Hologrid",              desc: "Bewegtes Gitter im Battlefield.",  fx: "hologrid" },
-  { key: "laser",     icon: "／", name: "Laser",                 desc: "Laser-Scan über die eigene Karte in ihrer Farbe.", fx: "laser" },
 ];
 export const ELEMENT_BY_KEY = Object.fromEntries(ELEMENT_DEFS.map((e) => [e.key, e]));
-export const FX_KEYS = ["frameGlow", "holoSwipe", "hologrid", "laser"]; // die Animationen (reine Kauf-Elemente)
+export const FX_KEYS = ["frameGlow", "holoSwipe", "hologrid"]; // die Theme-Animationen (reine Kauf-Elemente)
 
 // Welche Options-Flagge steuert die In-Run-Animation (global an/aus).
-export const FX_OPTION_KEY = { frameGlow: "fxFrameGlow", holoSwipe: "fxHoloSwipe", hologrid: "fxHologrid", laser: "fxLaser" };
+export const FX_OPTION_KEY = { frameGlow: "fxFrameGlow", holoSwipe: "fxHoloSwipe", hologrid: "fxHologrid" };
+
+/* GLOBALE Effekte (#deckshop, Kategorie „Effekte"): einmalig gekauft (nicht pro Theme), wirken laufweit.
+   Kaufen kostet GLOBAL_FX_COST SP (Besitz in ownedCosmetics[ownKey]); ein An/Aus-Toggle (option) steuert sie.
+   laserSlice: ersetzt die Klingen-Schnitt-Animation der GEGNERkarte durch einen Laser-Schnitt (teilt die Karte). */
+export const GLOBAL_FX_COST = 1;
+export const GLOBAL_FX = [
+  { key: "laserSlice", name: "Laser-Schnitt", desc: "Gegnerkarten werden beim Sieg vom Laser geteilt — statt der Klinge.",
+    ownKey: "fx:laserSlice", option: "fxLaserSlice" },
+];
+export const GLOBAL_FX_BY_KEY = Object.fromEntries(GLOBAL_FX.map((f) => [f.key, f]));
+export const globalFxOwned = (profile, fx) => !!(profile && profile.ownedCosmetics && profile.ownedCosmetics[fx.ownKey]);
+export const canBuyGlobalFx = (profile, fx) => !globalFxOwned(profile, fx) && sp(profile) >= GLOBAL_FX_COST;
+export function buyGlobalFx(profile, fx) {
+  if (!canBuyGlobalFx(profile, fx)) return profile;
+  return {
+    ...profile,
+    stichPoints: sp(profile) - GLOBAL_FX_COST,
+    stichSpent: Math.max(0, Math.floor(Number(profile && profile.stichSpent) || 0)) + GLOBAL_FX_COST,
+    ownedCosmetics: { ...(profile && profile.ownedCosmetics), [fx.ownKey]: true },
+  };
+}
+// laserSlice global aktiv? (gekauft UND per Option an) — die Reducer-/UI-Naht nutzt dieselbe Wahrheit.
+export const laserSliceActive = (profile, options) => globalFxOwned(profile, GLOBAL_FX_BY_KEY.laserSlice) && !!(options && options.fxLaserSlice);
 
 /* THEME-Registry. kind:
      "buy"  → alle fünf Elemente einzeln mit SP kaufbar (Starter-Themes).
@@ -38,11 +61,11 @@ export const FX_OPTION_KEY = { frameGlow: "fxFrameGlow", holoSwipe: "fxHoloSwipe
 export const THEME_DEFS = {
   // ---- Kaufbare Starter-Themes (je Element 1 SP) ----
   sunset: { id: "sunset", name: "Sunset Rider", emblem: "🏍️", kind: "buy", a1: "#ff5a4d", a2: "#ffab3a",
-    deckId: "deck_sunset", bfId: "bf_sunset", els: ["deck", "bf", "frameGlow", "holoSwipe", "hologrid", "laser"] },
+    deckId: "deck_sunset", bfId: "bf_sunset", els: ["deck", "bf", "frameGlow", "holoSwipe", "hologrid"] },
   lofi:   { id: "lofi",   name: "Lofi Nights",  emblem: "🎧", kind: "buy", a1: "#9b6cff", a2: "#ff7ab0",
-    deckId: "deck_lofi",  bfId: "bf_lofi",  els: ["deck", "bf", "frameGlow", "holoSwipe", "hologrid", "laser"] },
+    deckId: "deck_lofi",  bfId: "bf_lofi",  els: ["deck", "bf", "frameGlow", "holoSwipe", "hologrid"] },
   kaiju:  { id: "kaiju",  name: "Neon Kaiju",   emblem: "🦖", kind: "buy", a1: "#3a7bff", a2: "#ff4dcb",
-    deckId: "deck_kaiju", bfId: "bf_kaiju", els: ["deck", "bf", "frameGlow", "holoSwipe", "hologrid", "laser"] },
+    deckId: "deck_kaiju", bfId: "bf_kaiju", els: ["deck", "bf", "frameGlow", "holoSwipe", "hologrid"] },
 
   // ---- Progressions-Themes (Deck + Battlefield, je über „Läufe" freigeschaltet) ----
   neon: { id: "neon", name: "Neonstadt", emblem: "🌆", kind: "cond", a1: "#26c6e6", a2: "#9b82f0",

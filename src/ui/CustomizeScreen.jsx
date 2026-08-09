@@ -5,6 +5,7 @@ import {
   THEMES, ELEMENT_DEFS, ELEMENT_BY_KEY, FX_KEYS, FX_OPTION_KEY,
   elementState, elementPrice, elementUnlock, elementOwned, themeState,
   buyAllInfo, sharedUnlock, canBuyElement, buyElement, buyAllForTheme,
+  GLOBAL_FX, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 
@@ -36,8 +37,8 @@ const FX_CSS = `
 @keyframes ws-swipe{0%{transform:translateX(-120%) rotate(18deg)}55%,100%{transform:translateX(320%) rotate(18deg)}}
 @keyframes ws-sweep{0%{bottom:-4%;opacity:0}18%{opacity:1}70%{opacity:1}100%{bottom:106%;opacity:0}}
 .ws-sweep{animation:ws-sweep 2.9s ease-in-out infinite}
-@keyframes ws-laser{0%{top:-6%;opacity:0}12%{opacity:1}88%{opacity:1}100%{top:106%;opacity:0}}
-.ws-laser{animation:ws-laser 1.9s linear infinite}
+@keyframes ws-laserpulse{0%,100%{opacity:.5}50%{opacity:1}}
+.ws-laserpulse{animation:ws-laserpulse 1.4s ease-in-out infinite}
 `;
 
 // Karten-Vorschau: illustrierter Deck-Rücken (Motiv), vollständig (object-contain) + optionaler Effekt.
@@ -54,13 +55,6 @@ function CardPreview({ deckId, a1, fx, className = "" }) {
           <div className="absolute" style={{ top: "-60%", left: 0, width: "40%", height: "220%",
             background: "linear-gradient(90deg,transparent,rgba(255,255,255,.28),rgba(120,220,255,.16),transparent)",
             animation: "ws-swipe 2.6s ease-in-out infinite" }} />
-        </div>
-      )}
-      {fx === "laser" && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
-          <div className="ws-laser absolute left-0 right-0" style={{ height: 2,
-            background: `linear-gradient(90deg,transparent,${a1} 12%,#ffffff 50%,${a1} 88%,transparent)`,
-            boxShadow: `0 0 10px 1px ${a1}, 0 0 3px 1px #ffffffcc` }} />
         </div>
       )}
     </div>
@@ -103,7 +97,7 @@ function BfPreview({ bfId, a1, fx, className = "", showVersion = false }) {
 // Wird in einer festen Höhe zentriert (BuyOverlay), damit der Rahmen beim Wechsel Karte↔BF nicht springt.
 function BigPreview({ theme, sel }) {
   if (sel === "bf" || sel === "hologrid") return <BfPreview bfId={theme.bfId} a1={theme.a1} fx={sel === "hologrid" ? "hologrid" : null} className="w-full" showVersion />;
-  const fx = sel === "frameGlow" || sel === "holoSwipe" || sel === "laser" ? sel : null;
+  const fx = sel === "frameGlow" || sel === "holoSwipe" ? sel : null;
   return (
     <div className="flex justify-center">
       <CardPreview deckId={theme.deckId} a1={theme.a1} fx={fx} className="h-[248px] max-h-[46vh]" />
@@ -190,7 +184,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           <MineView p={p} deckId={deckId} bfId={bfId} activeTheme={activeTheme} options={options}
             ownedDeckThemes={ownedDeckThemes} ownedBfThemes={ownedBfThemes} onChoose={onChoose} onBrowse={() => setMode("prev")} />
         ) : (
-          <PreviewView p={p} onOpen={openOv} />
+          <PreviewView p={p} onOpen={openOv} options={options} onChoose={onChoose}
+            onBuyGlobal={(fx) => buy((pf) => buyGlobalFx(pf, fx))} />
         )}
       </div>
 
@@ -287,20 +282,50 @@ function SelectRow({ active, onClick, thumb, title, sub }) {
   );
 }
 
+/* Globaler Effekt im „Effekte"-Tab: Vorschau (Demo-Karte mit Laser-Strahl) + Kaufen / An-Aus-Toggle. */
+function GlobalFxCard({ fx, p, options, onChoose, onBuy }) {
+  const owned = globalFxOwned(p, fx);
+  const on = owned && !!options?.[fx.option];
+  const canBuy = canBuyGlobalFx(p, fx);
+  const LC = "#35e0ff"; // Laser-Farbe der Vorschau (in-game = Suit-Farbe der Gegnerkarte)
+  return (
+    <div className="flex items-center gap-3 rounded-xl p-2.5" style={{ background: "#14131c", border: "1px solid #2a2836" }}>
+      <div className="relative rounded-lg overflow-hidden shrink-0" style={{ width: 56, aspectRatio: CARD_RATIO, background: "#0b0a16" }}>
+        <img src={deckAssets("default").back} alt="" className="absolute inset-0 w-full h-full object-contain" />
+        <div className="absolute pointer-events-none ws-laserpulse" style={{ left: "-12%", right: "-12%", top: "48%", height: 2, transform: "rotate(-20deg)",
+          background: `linear-gradient(90deg,transparent,${LC} 15%,#ffffff 50%,${LC} 85%,transparent)`,
+          boxShadow: `0 0 8px 2px ${LC}, 0 0 20px 5px ${LC}` }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[12.5px] font-extrabold">{fx.name}</div>
+        <div className="text-[10.5px] leading-snug" style={{ color: "#9a97ab" }}>{fx.desc}</div>
+      </div>
+      {owned ? (
+        <button type="button" onClick={() => onChoose({ [fx.option]: !on })} className="shrink-0 text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg"
+          style={on ? { background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" } : { background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>{on ? "✓ An" : "Aus"}</button>
+      ) : (
+        <button type="button" onClick={() => onBuy(fx)} disabled={!canBuy} className="shrink-0 text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg"
+          style={{ background: canBuy ? "#f2c14a" : "#3a2f12", color: "#141419", opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>Kaufen · {GLOBAL_FX_COST}</button>
+      )}
+    </div>
+  );
+}
+
 /* ---- „Vorschau · Alle": Kategorien (Packs · Challenges · Effekte), durchwischbar ----
    Packs = mit SP kaufbare Theme-Bündel; Challenges = über Läufe/Challenges freischaltbare Themes;
-   Effekte = einzelne Animationen (noch leer, folgt). */
+   Effekte = globale Effekte (einmal gekauft, laufweit — z. B. Laser-Schnitt der Gegnerkarten). */
 const PREVIEW_CATS = [
   { k: "packs",      label: "Packs",      filter: (t) => t.kind === "buy",  empty: null },
   { k: "challenges", label: "Challenges", filter: (t) => t.kind === "cond", empty: null },
-  { k: "effekte",    label: "Effekte",    filter: () => false,              empty: "Einzelne Animationen" },
+  { k: "effekte",    label: "Effekte",    filter: () => false,              empty: null },
 ];
 
-function PreviewView({ p, onOpen }) {
+function PreviewView({ p, onOpen, options, onChoose, onBuyGlobal }) {
   const [cat, setCat] = useState(0);
   const touch = useRef(0);
   const move = (d) => setCat((c) => Math.min(PREVIEW_CATS.length - 1, Math.max(0, c + d)));
   const active = PREVIEW_CATS[cat];
+  const isEffekte = active.k === "effekte";
   const list = THEMES.filter(active.filter);
 
   return (
@@ -318,10 +343,16 @@ function PreviewView({ p, onOpen }) {
 
       <div className={EYEBROW} style={{ color: "#9a97ab" }}>{active.label}
         <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
-        <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{cat === 0 ? "tippen → Elemente einzeln kaufen" : cat === 1 ? "tippen → Freischaltung ansehen" : "‹ wischen ›"}</span>
+        <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{cat === 0 ? "tippen → Elemente einzeln kaufen" : cat === 1 ? "tippen → Freischaltung ansehen" : "global · einmal kaufen"}</span>
       </div>
 
-      {list.length ? (
+      {isEffekte ? (
+        <div className="flex flex-col gap-2.5">
+          {GLOBAL_FX.map((fx) => (
+            <GlobalFxCard key={fx.key} fx={fx} p={p} options={options} onChoose={onChoose} onBuy={onBuyGlobal} />
+          ))}
+        </div>
+      ) : list.length ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           {list.map((t, i) => {
             const s = themeState(p, t);
@@ -361,7 +392,7 @@ function PreviewView({ p, onOpen }) {
           ? <>Ein <b>Pack</b> bündelt Karte · Battlefield · Animationen. Im Kauffenster hat jedes Element eine eigene Vorschau &amp; einen eigenen Kauf.</>
           : cat === 1
           ? <>Challenge-Themes schalten alle Elemente <b>auf einmal</b> frei — tippe ein Theme an, um die Bedingung zu sehen.</>
-          : <>Wische seitwärts zwischen <b>Packs · Challenges · Effekte</b>.</>}
+          : <><b>Globale</b> Effekte: einmal gekauft, laufweit wirksam (kein Per-Theme). Der Laser-Schnitt ersetzt die Klinge auf Gegnerkarten in deren Farbe.</>}
       </p>
     </div>
   );

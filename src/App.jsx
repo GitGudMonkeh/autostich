@@ -46,7 +46,7 @@ import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale
 import { UpgradeScreen } from "./ui/UpgradeScreen.jsx"; // Progression-Vorschau: Upgrade-Baum-Screen
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, elementOwned } from "./game/themes.js";
+import { THEMES, elementOwned, laserSliceActive } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
@@ -382,7 +382,8 @@ export function Autostich() {
     fxFrameGlow: fxOwnOn("frameGlow", "fxFrameGlow"),
     fxHoloSwipe: fxOwnOn("holoSwipe", "fxHoloSwipe"),
     fxHologrid:  fxOwnOn("hologrid",  "fxHologrid"),
-    fxLaser:     fxOwnOn("laser",     "fxLaser"),
+    // Globaler Laser-Schnitt (nicht theme-gebunden): gekauft UND per Option an → ersetzt die Klinge auf Gegnerkarten.
+    fxLaserSlice: laserSliceActive(profile, options),
   };
 
   function beginRun() {
@@ -621,7 +622,7 @@ export function Autostich() {
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
-                deckA1={deckFx.deckA1} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxHologrid={deckFx.fxHologrid} fxLaser={deckFx.fxLaser}
+                deckA1={deckFx.deckA1} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxHologrid={deckFx.fxHologrid} fxLaserSlice={deckFx.fxLaserSlice}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
