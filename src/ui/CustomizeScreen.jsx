@@ -164,6 +164,15 @@ function GottgleichPreview({ variant, compact = false }) {
   const bf = battlefieldAssets(SHOWCASE_BF);
   const cardImg = deckAssets("default").back;
   const hasPrunk = variant !== "standard";
+  // #300b: GOTTGLEICH ist die oberste Sieg-Stufe → voller Bass-Impact, loop-synchron zum „Pop" (≈ 8 % von 3,4 s). Nur in
+  // der großen Vorschau (nicht auf den Kachel-Previews), damit man den Bass wie in-game hört.
+  useEffect(() => {
+    if (compact) return undefined;
+    const play = () => audio.play("fx_bass", { gain: 0.8, bass: 4 });
+    const t0 = setTimeout(play, 260);
+    const id = setInterval(play, 3400);
+    return () => { clearTimeout(t0); clearInterval(id); };
+  }, [compact]);
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
@@ -232,6 +241,13 @@ function FinisherScene({ variant }) {
       <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
         <div key={tick} className="absolute inset-0">{fx}</div>
       </div>
+      {/* #300: Diff-gekoppelte Finisher — Stufe (1→4) einblenden, damit die Eskalation in der Vorschau lesbar ist. */}
+      {(variant === "overload" || variant === "disperse") && (
+        <div className="absolute top-1.5 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold font-pixel"
+          style={{ background: "#0c0c10cc", border: "1px solid #2a2836", color: "#cfccda" }}>
+          Stufe {dTier}/4
+        </div>
+      )}
     </div>
   );
 }

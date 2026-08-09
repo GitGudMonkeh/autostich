@@ -26,12 +26,10 @@ export const DECK_DEFS = {
   // (profile.ownedCosmetics["pack:<id>"]); die Pack-Registry (game/themes.js) treibt Kauf/Anzeige.
   deck_sunset: { id: "deck_sunset", name: "Sunset Rider", unlock: { kind: "buy", ownKey: "pack:sunset" } },
   deck_lofi:   { id: "deck_lofi",   name: "Lofi Nights",  unlock: { kind: "buy", ownKey: "pack:lofi" } },
-  deck_kaiju:  { id: "deck_kaiju",  name: "Neon Kaiju",   unlock: { kind: "buy", ownKey: "pack:kaiju" } },
+  // #IP: deck_kaiju / deck_aura / deck_mecha entfernt.
   // v0.4 Kauf-Packs:
-  deck_aura:       { id: "deck_aura",       name: "Super Aura",      unlock: { kind: "buy", ownKey: "pack:aura" } },
   deck_beach:      { id: "deck_beach",      name: "Malibu Wave",     unlock: { kind: "buy", ownKey: "pack:beach" } },
   deck_cat:        { id: "deck_cat",        name: "Aurora Whiskers", unlock: { kind: "buy", ownKey: "pack:cat" } },
-  deck_mecha:      { id: "deck_mecha",      name: "Mecha Ronin",     unlock: { kind: "buy", ownKey: "pack:mecha" } },
   deck_ramen:      { id: "deck_ramen",      name: "Slurp City",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
   deck_spacedog:   { id: "deck_spacedog",   name: "Star Pup",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   deck_wale:       { id: "deck_wale",       name: "Moonwhale",       unlock: { kind: "buy", ownKey: "pack:wale" } },
@@ -44,12 +42,10 @@ export const BATTLEFIELD_DEFS = {
   // das Battlefield ist Teil des Packs (ein Besitz-Schlüssel).
   bf_sunset: { id: "bf_sunset", name: "Sunset Rider · Battlefield", unlock: { kind: "buy", ownKey: "pack:sunset" } },
   bf_lofi:   { id: "bf_lofi",   name: "Lofi Nights · Battlefield",  unlock: { kind: "buy", ownKey: "pack:lofi" } },
-  bf_kaiju:  { id: "bf_kaiju",  name: "Neon Kaiju · Battlefield",   unlock: { kind: "buy", ownKey: "pack:kaiju" } },
+  // #IP: bf_kaiju / bf_aura / bf_mecha entfernt.
   // v0.4 Kauf-Packs (Battlefield = Teil des Packs, gleicher Besitz-Schlüssel):
-  bf_aura:       { id: "bf_aura",       name: "Super Aura · Battlefield",      unlock: { kind: "buy", ownKey: "pack:aura" } },
   bf_beach:      { id: "bf_beach",      name: "Malibu Wave · Battlefield",     unlock: { kind: "buy", ownKey: "pack:beach" } },
   bf_cat:        { id: "bf_cat",        name: "Aurora Whiskers · Battlefield", unlock: { kind: "buy", ownKey: "pack:cat" } },
-  bf_mecha:      { id: "bf_mecha",      name: "Mecha Ronin · Battlefield",     unlock: { kind: "buy", ownKey: "pack:mecha" } },
   bf_ramen:      { id: "bf_ramen",      name: "Slurp City · Battlefield",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
   bf_spacedog:   { id: "bf_spacedog",   name: "Star Pup · Battlefield",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   bf_wale:       { id: "bf_wale",       name: "Moonwhale · Battlefield",       unlock: { kind: "buy", ownKey: "pack:wale" } },

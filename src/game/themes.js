@@ -106,18 +106,13 @@ export const THEME_DEFS = {
     deckId: "deck_sunset", bfId: "bf_sunset", els: ["deck", "bf"] },
   lofi:   { id: "lofi",   name: "Lofi Nights",  emblem: "🎧", kind: "buy", a1: "#9b6cff", a2: "#ff7ab0",
     deckId: "deck_lofi",  bfId: "bf_lofi",  els: ["deck", "bf"] },
-  kaiju:  { id: "kaiju",  name: "Neon Kaiju",   emblem: "🦖", kind: "buy", a1: "#3a7bff", a2: "#ff4dcb",
-    deckId: "deck_kaiju", bfId: "bf_kaiju", els: ["deck", "bf"] },
+  // #IP: „Neon Kaiju" / „Super Aura" / „Mecha Ronin" wegen IP-Bedenken entfernt.
 
   // ---- v0.4 Kauf-Packs (1 Kauf = Deck + Battlefield, je PACK_COST SP) ----
-  aura:     { id: "aura",     name: "Super Aura",      emblem: "💥", kind: "buy", a1: "#ffb03a", a2: "#ff6a3a",
-    deckId: "deck_aura",       bfId: "bf_aura",       els: ["deck", "bf"] },
   beach:    { id: "beach",    name: "Malibu Wave",     emblem: "🌴", kind: "buy", a1: "#ff5aa0", a2: "#35d0e0",
     deckId: "deck_beach",      bfId: "bf_beach",      els: ["deck", "bf"] },
   cat:      { id: "cat",      name: "Aurora Whiskers", emblem: "🐱", kind: "buy", a1: "#54e08a", a2: "#9b82f0",
     deckId: "deck_cat",        bfId: "bf_cat",        els: ["deck", "bf"] },
-  mecha:    { id: "mecha",    name: "Mecha Ronin",     emblem: "🤖", kind: "buy", a1: "#3a7bff", a2: "#9b6cff",
-    deckId: "deck_mecha",      bfId: "bf_mecha",      els: ["deck", "bf"] },
   ramen:    { id: "ramen",    name: "Slurp City",      emblem: "🍜", kind: "buy", a1: "#ff5a7a", a2: "#ffab3a",
     deckId: "deck_ramen",      bfId: "bf_ramen",      els: ["deck", "bf"] },
   spacedog: { id: "spacedog", name: "Star Pup",        emblem: "🐕", kind: "buy", a1: "#9b6cff", a2: "#ff4dcb",

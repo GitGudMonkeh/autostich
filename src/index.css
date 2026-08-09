@@ -207,6 +207,12 @@ button { font-family: inherit; }
   60%  { opacity: 0.45; }                      /* Nachleuchten … */
   100% { opacity: 0; transform: scale(1); }    /* … glüht langsam aus */
 }
+/* #300b Karten-Zersplitterung (Überladung/Zerstäubung): jedes clip-path-Stück fliegt sofort (kein Halt) aus der
+   Kartenmitte weg (--dx/--dy), schrumpft (--ds), rotiert (--dr) & fadet → die Karte ZERSPRINGT sichtbar in Partikel. */
+@keyframes as-fx-shatter {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(var(--ds, 0.4)) rotate(var(--dr)); }
+}
 /* #300 Sieg-Finisher „Überladung": Karte blitzt beim Einschlag kurz weiß auf (brightness-Peak) und wird dann ausgeblendet
    (der Blitz zerstört sie). „Zerstäubung": Karte fadet zügig, während die Partikel emittieren (sie zerstäubt). */
 @keyframes as-ovl-card {

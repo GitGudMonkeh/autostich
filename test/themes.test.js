@@ -14,7 +14,7 @@ const prof = (o = {}) => ({ stichPoints: 0, stichSpent: 0, deckPoints: 0, deckSp
 
 describe("packs — Registry", () => {
   it("Kauf-Packs (Deck + Battlefield) als EIN Kauf — inkl. v0.4-Packs", () => {
-    for (const id of ["sunset", "lofi", "kaiju", "aura", "beach", "cat", "mecha", "ramen", "spacedog", "wale", "genesis"]) {
+    for (const id of ["sunset", "lofi", "beach", "cat", "ramen", "spacedog", "wale", "genesis"]) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("buy");
       expect(t.els).toEqual(["deck", "bf"]);
@@ -35,9 +35,12 @@ describe("packs — Registry", () => {
       expect(THEME_DEFS[id]).toBeUndefined();
     }
   });
+  it("#IP: Neon Kaiju / Super Aura / Mecha Ronin sind aus der Registry entfernt", () => {
+    for (const id of ["kaiju", "aura", "mecha"]) expect(THEME_DEFS[id]).toBeUndefined();
+  });
   it("Kauf-Packs bieten Deck + Battlefield; die Pack-Bedingung ist der Besitz-Schlüssel", () => {
-    expect(THEME_DEFS.kaiju.els).toEqual(["deck", "bf"]);
-    expect(packCond(THEME_DEFS.kaiju)).toEqual({ kind: "buy", ownKey: "pack:kaiju" });
+    expect(THEME_DEFS.sunset.els).toEqual(["deck", "bf"]);
+    expect(packCond(THEME_DEFS.sunset)).toEqual({ kind: "buy", ownKey: "pack:sunset" });
   });
 });
 

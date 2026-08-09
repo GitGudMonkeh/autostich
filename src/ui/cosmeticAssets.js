@@ -11,14 +11,11 @@ import cardFrontImg from "../assets/cards/card-front.png"; // Default-Front (Rah
 import cardBackImg  from "../assets/cards/card-back.png";  // Default-Back (Cover)
 // #299: alte Progressions-Decks (deck_p1–4) entfernt.
 // v0.4 Kauf-Packs — Deck-Paare (front = Rahmen, back = Motiv):
-import auraFront     from "../assets/cards/decks_player/deck_aura/front.png";       // Super Aura
-import auraBack      from "../assets/cards/decks_player/deck_aura/back.png";
+// #IP: deck_aura (Super Aura) / deck_mecha (Mecha Ronin) entfernt.
 import beachFront    from "../assets/cards/decks_player/deck_beach/front.png";      // Malibu Wave
 import beachBack     from "../assets/cards/decks_player/deck_beach/back.png";
 import catFront      from "../assets/cards/decks_player/deck_cat/front.png";        // Aurora Whiskers
 import catBack       from "../assets/cards/decks_player/deck_cat/back.png";
-import mechaFront    from "../assets/cards/decks_player/deck_mecha/front.png";      // Mecha Ronin
-import mechaBack     from "../assets/cards/decks_player/deck_mecha/back.png";
 import ramenFront    from "../assets/cards/decks_player/deck_ramen/front.png";      // Slurp City
 import ramenBack     from "../assets/cards/decks_player/deck_ramen/back.png";
 import spacedogFront from "../assets/cards/decks_player/deck_spacedog/front.png";   // Star Pup
@@ -33,23 +30,17 @@ import sunsetFront from "../assets/cards/decks_player/deck_sunset/front.png"; //
 import sunsetBack  from "../assets/cards/decks_player/deck_sunset/back.png";
 import lofiFront   from "../assets/cards/decks_player/deck_lofi/front.png";   // Lofi Nights
 import lofiBack    from "../assets/cards/decks_player/deck_lofi/back.png";
-import kaijuFront  from "../assets/cards/decks_player/deck_kaiju/front.png";  // Neon Kaiju
-import kaijuBack   from "../assets/cards/decks_player/deck_kaiju/back.png";
+// #IP: deck_kaiju (Neon Kaiju) entfernt.
 import bfSunsetDesktop from "../assets/battlefields/bf_sunset/desktop.jpg";
 import bfSunsetMobile  from "../assets/battlefields/bf_sunset/mobile.jpg";
 import bfLofiDesktop   from "../assets/battlefields/bf_lofi/desktop.jpg";
 import bfLofiMobile    from "../assets/battlefields/bf_lofi/mobile.jpg";
-import bfKaijuDesktop  from "../assets/battlefields/bf_kaiju/desktop.jpg";
-import bfKaijuMobile   from "../assets/battlefields/bf_kaiju/mobile.jpg";
+// #IP: bf_kaiju / bf_aura / bf_mecha entfernt.
 // v0.4 Kauf-Packs — Battlefields (desktop 1600×640 / mobile 1080×810):
-import bfAuraDesktop     from "../assets/battlefields/bf_aura/desktop.jpg";
-import bfAuraMobile      from "../assets/battlefields/bf_aura/mobile.jpg";
 import bfBeachDesktop    from "../assets/battlefields/bf_beach/desktop.jpg";
 import bfBeachMobile     from "../assets/battlefields/bf_beach/mobile.jpg";
 import bfCatDesktop      from "../assets/battlefields/bf_cat/desktop.jpg";
 import bfCatMobile       from "../assets/battlefields/bf_cat/mobile.jpg";
-import bfMechaDesktop    from "../assets/battlefields/bf_mecha/desktop.jpg";
-import bfMechaMobile     from "../assets/battlefields/bf_mecha/mobile.jpg";
 import bfRamenDesktop    from "../assets/battlefields/bf_ramen/desktop.jpg";
 import bfRamenMobile     from "../assets/battlefields/bf_ramen/mobile.jpg";
 import bfSpacedogDesktop from "../assets/battlefields/bf_spacedog/desktop.jpg";
@@ -65,12 +56,9 @@ export const DECK_ASSETS = {
   // Deck-Werkstatt Starter-Themes (kaufbar):
   deck_sunset: { front: sunsetFront, back: sunsetBack },
   deck_lofi:   { front: lofiFront,   back: lofiBack },
-  deck_kaiju:  { front: kaijuFront,  back: kaijuBack },
   // v0.4 Kauf-Packs:
-  deck_aura:       { front: auraFront,     back: auraBack },
   deck_beach:      { front: beachFront,    back: beachBack },
   deck_cat:        { front: catFront,      back: catBack },
-  deck_mecha:      { front: mechaFront,    back: mechaBack },
   deck_ramen:      { front: ramenFront,    back: ramenBack },
   deck_spacedog:   { front: spacedogFront, back: spacedogBack },
   deck_wale:       { front: waleFront,     back: waleBack },
@@ -84,12 +72,9 @@ export const BATTLEFIELD_ASSETS = {
   // Deck-Werkstatt Starter-Themes (kaufbar):
   bf_sunset: { desktop: bfSunsetDesktop, mobile: bfSunsetMobile },
   bf_lofi:   { desktop: bfLofiDesktop,   mobile: bfLofiMobile },
-  bf_kaiju:  { desktop: bfKaijuDesktop,  mobile: bfKaijuMobile },
   // v0.4 Kauf-Packs:
-  bf_aura:       { desktop: bfAuraDesktop,     mobile: bfAuraMobile },
   bf_beach:      { desktop: bfBeachDesktop,    mobile: bfBeachMobile },
   bf_cat:        { desktop: bfCatDesktop,      mobile: bfCatMobile },
-  bf_mecha:      { desktop: bfMechaDesktop,    mobile: bfMechaMobile },
   bf_ramen:      { desktop: bfRamenDesktop,    mobile: bfRamenMobile },
   bf_spacedog:   { desktop: bfSpacedogDesktop, mobile: bfSpacedogMobile },
   bf_wale:       { desktop: bfWaleDesktop,     mobile: bfWaleMobile },

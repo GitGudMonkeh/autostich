@@ -705,11 +705,13 @@ export function OverloadFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, 
         ctx.beginPath(); ctx.arc(cx, cy, 24 * glare, 0, Math.PI * 2); ctx.fill();
       } else {
         const p = Math.min(1, (el - strikeMs) / (dur - strikeMs)); // Funken glühen aus
-        const nS = 10 + tier * 7;
+        const nS = 14 + tier * 9;
         ctx.globalCompositeOperation = "lighter";
         for (let i = 0; i < nS; i++) {
+          // #300b: Funken entspringen ÜBER DIE GANZE Kartenfläche (nicht nur dem Einschlagpunkt) → die Karte „wird" zu Funken.
+          const ox = cx + (rng() - 0.5) * W0, oy = cy + (rng() - 0.5) * H0;
           const a = rng() * Math.PI * 2, sp = (18 + rng() * 58) * (0.6 + tier * 0.18);
-          const x = cx + Math.cos(a) * sp * p, y = cy + Math.sin(a) * sp * p - p * 12;
+          const x = ox + Math.cos(a) * sp * p, y = oy + Math.sin(a) * sp * p - p * 16;
           const len = 3 + rng() * 6;
           ctx.globalAlpha = (1 - p) * 0.8; ctx.strokeStyle = i % 3 ? color : "#ffffff"; ctx.lineWidth = 1.4;
           ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - Math.cos(a) * len, y - Math.sin(a) * len); ctx.stroke();
@@ -721,87 +723,67 @@ export function OverloadFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, 
     raf = requestAnimationFrame(frame);
     return () => { stopped = true; cancelAnimationFrame(raf); };
   }, [seed, tier, flipMs, scale, color, dur, strikeMs, delay]);
+  // #300b Karte ZERSPRINGT beim Einschlag in Funken-artige Stücke (starker Auftrieb, weite Streuung) — statt zu faden.
+  const [scols, srows] = SHATTER_GRID[Math.max(0, Math.min(3, tier - 1))];
+  const ofrags = cardShatterFrags({ cols: scols, rows: srows, seed: seed * 7 + 3, spread: 72 + tier * 24, upBias: 40 + tier * 12, sizeMin: 0.14, rot: 90 });
+  const ON = ofrags.length;
   return (
     <div ref={wrapRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      {/* Karte: kurzer heller Einschlag-Flash, dann ausblenden (Einschlag zerstört sie). */}
-      <div className="absolute inset-0" style={{ animation: `as-ovl-card ${dur}ms ease-out ${delay}ms both`, willChange: "opacity, filter" }}>{cardEl}</div>
+      {/* Karte zersplittert in die gleichen Funken, die der Blitz wirft (Zündung ≈ hitAt); die Stücke stieben auf & aus. */}
+      {ofrags.map((s) => (
+        <div key={`of${s.i}`} className="absolute inset-0" style={{ clipPath: s.clip,
+          "--dx": `${s.dx}px`, "--dy": `${s.dy}px`, "--ds": s.ds, "--dr": `${s.dr}deg`,
+          animation: `as-fx-shatter ${dur}ms cubic-bezier(0.12,0.7,0.3,1) ${delay + Math.round(strikeMs * 0.28) + Math.round((s.i / ON) * dur * 0.08)}ms both`,
+          willChange: "transform, opacity" }}>{cardEl}</div>
+      ))}
       <canvas ref={canvasRef} className="absolute" style={{ left: "50%", top: "50%", transform: "translate(-50%,-50%)" }} />
     </div>
   );
 }
 
-/* #300 Sieg-Finisher „Zerstäubung" — die Gegnerkarte löst sich in ein Partikelgitter auf, das nach außen/oben streut &
-   ausfadet. Partikel-Startpositionen = Rasterzellen über der Kartenfläche; jede driftet auswärts (+ leichter Auftrieb),
-   schrumpft & fadet. Glow AUSSCHLIESSLICH additiv ('lighter', KEIN shadowBlur pro Partikel), Partikelzahl gedeckelt
-   (DISPERSE_CAP). Stufe (diff) skaliert Streuweite/Turbulenz/Dichte. Budget an flipMs gekoppelt. Deterministisch aus seed. */
-const DISPERSE_CAP = 480;
-export function DisperseFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, tier = 1, scale = 1, delay = 0 }) {
-  const wrapRef = useRef(null), canvasRef = useRef(null);
-  const dur = Math.max(220, Math.round(((flipMs || 900) - 40)));
-  useEffect(() => {
-    const cv = canvasRef.current, wrap = wrapRef.current;
-    if (!cv || !wrap) return undefined;
-    const r0 = wrap.getBoundingClientRect();
-    const W0 = Math.max(40, Math.round(r0.width || 104)), H0 = Math.max(40, Math.round(r0.height || 144));
-    const CW = Math.round(W0 * 1.9), CH = Math.round(H0 * 1.8);
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    cv.width = CW * dpr; cv.height = CH * dpr; cv.style.width = CW + "px"; cv.style.height = CH + "px";
-    const ctx = cv.getContext("2d");
-    const rng = mulberry32((seed * 40503 + 12345) >>> 0);
-    // Rasterdichte + Streuung nach Stufe; Gesamtzahl auf DISPERSE_CAP gedeckelt.
-    const cols = tier >= 4 ? 18 : tier >= 3 ? 16 : tier >= 2 ? 14 : 12;
-    const rows = Math.round(cols * (H0 / W0));
-    const spread = (0.6 + tier * 0.4) * (W0 / 12);        // Auswärts-Streuweite wächst mit der Stufe
-    const ox = (CW - W0) / 2, oy = (CH - H0) / 2;          // Karten-Ursprung in der größeren Canvas
-    const cx = CW / 2, cy = CH / 2;
-    const parts = [];
-    for (let ry = 0; ry < rows; ry++) {
-      for (let rx = 0; rx < cols; rx++) {
-        if (parts.length >= DISPERSE_CAP) break;
-        const px = ox + (rx + 0.5) / cols * W0, py = oy + (ry + 0.5) / rows * H0;
-        const dirx = px - cx, diry = py - cy, dl = Math.hypot(dirx, diry) || 1;
-        const vmag = (spread * (0.5 + rng())) ;
-        parts.push({
-          x: px, y: py,
-          vx: (dirx / dl) * vmag + (rng() - 0.5) * spread * 0.5,
-          vy: (diry / dl) * vmag - (6 + rng() * 10) - tier * 2,   // Auftrieb nach oben
-          sz: 1 + rng() * 1.6,
-          c: rng() < 0.28 ? "#ffffff" : color,
-          ph: rng(),
-        });
-      }
+/* #300b Karten-Zersplitterungs-Raster: die Karte wird in cols×rows clip-path-Klone zerlegt (zusammen = ganze Karte),
+   die aus der Kartenmitte auseinanderstieben (--dx/--dy), schrumpfen (--ds), rotieren (--dr) & ausfaden (as-fx-shatter).
+   So ZERSPRINGT die Karte sichtbar in Partikel (statt zu faden). Deterministisch aus seed (fjitter). upBias = Auftrieb
+   nach oben, spread = Streuweite, sizeMin = Schrumpf-Endgröße. */
+function cardShatterFrags({ cols, rows, seed, spread, upBias = 0, sizeMin = 0.24, rot = 55 }) {
+  const frags = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const i = r * cols + c;
+      const dirX = (c + 0.5) / cols - 0.5, dirY = (r + 0.5) / rows - 0.5;   // Zellmitte relativ zur Kartenmitte
+      const sp = spread * 0.6 + Math.abs(fjitter(seed * 5 + i * 13, spread));
+      frags.push({
+        i,
+        clip: `inset(${((r / rows) * 100).toFixed(2)}% ${(((cols - 1 - c) / cols) * 100).toFixed(2)}% ${(((rows - 1 - r) / rows) * 100).toFixed(2)}% ${((c / cols) * 100).toFixed(2)}%)`,
+        dx: (dirX * sp + fjitter(seed * 3 + i * 7, 9)).toFixed(1),
+        dy: (dirY * sp - upBias + fjitter(seed * 2 + i * 11, 10)).toFixed(1), // Auswärts + Auftrieb (nach oben)
+        ds: (sizeMin + Math.abs(fjitter(seed * 6 + i * 5, 0.24))).toFixed(2),
+        dr: fjitter(seed * 7 + i * 9, rot).toFixed(0),
+      });
     }
-    let start = null, raf = 0, stopped = false;
-    const frame = (ts) => {
-      if (stopped) return;
-      if (start == null) start = ts;
-      const el = ts - start - delay;                        // Karte liegt erst (delay), dann zerstäubt sie
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, CW, CH);
-      if (el < 0) { raf = requestAnimationFrame(frame); return; }
-      const p = Math.min(1, el / dur);                      // 0..1 Fortschritt
-      ctx.globalCompositeOperation = "lighter";
-      const ease = p * (2 - p);                             // easeOut
-      for (let i = 0; i < parts.length; i++) {
-        const q = parts[i];
-        const x = q.x + q.vx * ease, y = q.y + q.vy * ease + 22 * p * p; // + leichte Schwerkraft spät
-        const a = (1 - p) * (0.85 - q.ph * 0.3);
-        if (a <= 0) continue;
-        const s = q.sz * (1 - p * 0.6);
-        ctx.globalAlpha = a; ctx.fillStyle = q.c;
-        ctx.beginPath(); ctx.arc(x, y, s, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
-      if (el < dur) raf = requestAnimationFrame(frame);
-    };
-    raf = requestAnimationFrame(frame);
-    return () => { stopped = true; cancelAnimationFrame(raf); };
-  }, [seed, tier, flipMs, scale, color, dur, delay]);
+  }
+  return frags;
+}
+// Zersplitterungs-Raster je Stufe (dichter bei höherer Stufe → mehr „Partikel"; Karten-Klon-Zahl bewusst gedeckelt).
+const SHATTER_GRID = [[7, 10], [8, 11], [9, 13], [10, 14]]; // Stufe 1..4 → cols×rows (dichter = mehr „Partikel")
+
+/* #300 Sieg-Finisher „Zerstäubung" — die Gegnerkarte ZERSPRINGT in ein Partikelgitter: clip-path-Stücke der ECHTEN Karte
+   stieben nach außen/oben, schrumpfen & faden (kein bloßes Ausblenden mehr). Dichte/Streuweite wachsen mit der Stufe
+   (diff). Budget an flipMs gekoppelt. Deterministisch aus seed. Reduced-safe (Aufrufer). */
+export function DisperseFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, tier = 1, scale = 1, delay = 0 }) {
+  const dur = Math.max(220, Math.round(((flipMs || 900) - 40)));
+  const [cols, rows] = SHATTER_GRID[Math.max(0, Math.min(3, tier - 1))];
+  const spread = 46 + tier * 20;                         // Streuweite wächst mit der Stufe
+  const frags = cardShatterFrags({ cols, rows, seed, spread, upBias: 14 + tier * 4, sizeMin: 0.22 });
+  const N = frags.length;
   return (
-    <div ref={wrapRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      {/* Karte fadet schnell, während die Partikel emittieren (sie „zerstäubt"). */}
-      <div className="absolute inset-0" style={{ animation: `as-disp-card ${dur}ms ease-out ${delay}ms both`, willChange: "opacity" }}>{cardEl}</div>
-      <canvas ref={canvasRef} className="absolute" style={{ left: "50%", top: "50%", transform: "translate(-50%,-50%)" }} />
+    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {frags.map((s) => (
+        <div key={`df${s.i}`} className="absolute inset-0" style={{ clipPath: s.clip,
+          "--dx": `${s.dx}px`, "--dy": `${s.dy}px`, "--ds": s.ds, "--dr": `${s.dr}deg`,
+          animation: `as-fx-shatter ${dur}ms cubic-bezier(0.15,0.6,0.3,1) ${delay + Math.round((s.i / N) * dur * 0.12)}ms both`,
+          willChange: "transform, opacity" }}>{cardEl}</div>
+      ))}
     </div>
   );
 }
@@ -1428,16 +1410,17 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Per-Stich-One-Shots. (Lasergitter teilt sich den Laser-Sound.)
     if (w && flipMs > 170) {
       const fxRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
+      // #300b Bass-Impact-Layer: JEDER Sieg-Finisher (außer den persistenten Schwarzes-Loch/Brennstrahl-Betten) bekommt
+      // den tiefen fx_bass-Layer — Lautstärke steigt mit der Score-Stufe (STARK…GOTTGLEICH via flipTier); bei
+      // Überladung/Zerstäubung zusätzlich mit der Wertdifferenz.
+      if (!holeFinish && !burnFinish) {
+        const bassGain = Math.min(1.05, 0.16 + flipTier * 0.14 + ((overloadFinish || disperseFinish) ? diffTier * 0.05 : 0));
+        audio.play("fx_bass", { rate: fxRate * (disperseFinish ? 1.1 : 1), gain: bassGain, bass: disperseFinish ? 2 : 3 });
+      }
       if (holeFinish || burnFinish) { /* still — persistente Betten (Loop) decken diese Siege ab */ }
       else if (gridFinish)                audio.play("fx_laser", { rate: fxRate, gain: 1.1, bass: 2 }); // Lasergitter
-      else if (overloadFinish) {          // #300 Überladung: Blitz-Crack (fx_lightning) + tiefer Impact-Layer (fx_bass), beide lauter bei großer Differenz
-        audio.play("fx_lightning", { rate: fxRate, gain: 0.9 + diffTier * 0.08 });
-        audio.play("fx_bass", { rate: fxRate, gain: 0.35 + diffTier * 0.12, bass: 3 });
-      }
-      else if (disperseFinish) {          // #300 Zerstäubung: Partikel-Auflösung (fx_atomize) + dezenter Bass-Impact
-        audio.play("fx_atomize", { rate: fxRate, gain: 0.85 + diffTier * 0.06 });
-        audio.play("fx_bass", { rate: fxRate * 1.1, gain: 0.22 + diffTier * 0.08, bass: 2 });
-      }
+      else if (overloadFinish)            audio.play("fx_lightning", { rate: fxRate, gain: 0.9 + diffTier * 0.08 }); // #300 Überladung: Blitz-Crack
+      else if (disperseFinish)            audio.play("fx_atomize", { rate: fxRate, gain: 0.85 + diffTier * 0.06 });   // #300 Zerstäubung: Partikel-Auflösung
       else if (oppSliced && fxLaserSlice) audio.play("fx_laser", { rate: fxRate, gain: 1.1 });          // globaler Laser-Schnitt
       else if (oppSliced)                 audio.play("fx_blade", { rate: fxRate, gain: 1.05 });          // Default-Klinge
     }
@@ -1546,7 +1529,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // geschnitten/implodiert, sondern als „Sieg-Puls" an das persistente Panel-Loch gemeldet (Sog + Wachstum im
     // Canvas + Serien-Mult für die ×2.0-Schwelle). Eine Niederlage meldet einen „loss-Puls" → Serienabbruch → Kollaps.
     if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: deckA1 || suitColor(t.oCard.suit), mult: bd ? bd.streakMult : 1 });
-    else if (holeActive && lost) setHolePulse({ id: t.trickNo, kind: "loss" });
+    else if (holeActive && lost) {
+      setHolePulse({ id: t.trickNo, kind: "loss" });
+      // #300b: der Kollaps des Schwarzen Lochs (Serienabbruch) schlägt hörbar mit einem tiefen Bass-Impact ein.
+      if (flipMs > 170) audio.play("fx_bass", { gain: 0.85, bass: 4 });
+    }
     // #295 Brennstrahl: Sieg → Strahl lit + Intensität (Serie); Niederlage → Serienabbruch → Strahl zieht sich zurück.
     if (burnFinish) setBurnPulse({ id: t.trickNo, kind: "win", streak: t.winStreak || 0 });
     else if (burnActive && lost) setBurnPulse({ id: t.trickNo, kind: "loss" });

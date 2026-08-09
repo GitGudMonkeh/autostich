@@ -40,6 +40,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   // Echte Progressionsanzeige aus dem Profil (progression.js). Leeres Profil = frischer Spieler.
   const prof = profile || {};
   const progSp = Math.max(0, Math.floor(Number(prof.stichPoints) || 0));
+  const progDp = Math.max(0, Math.floor(Number(prof.deckPoints) || 0)); // #299/#301: Deck-Punkte-Guthaben (Werkstatt-Währung)
   const progOwned = ownedCount(prof);
   const progBuyable = NODES.filter((n) => nodeState(prof, n.id) === "buy").length;
   const progLigaFree = treeComplete(prof);
@@ -283,10 +284,17 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           #299 §1: während des Onboardings (< 6/6) gesperrt + ausgegraut mit Countdown, ab 6/6 frei. */}
       {onCustomize && (onbDone ? (
         <button onClick={onCustomize}
-          className="w-full max-w-sm px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+          className="w-full max-w-sm px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-between gap-2"
           style={{ background: "#1f1a10", border: `1px solid ${AM}66`, color: AM }}>
-          Deck-Werkstatt
-          <span className="text-[13px]">›</span>
+          <span>Deck-Werkstatt</span>
+          {/* #301: DP-Guthaben am Button anzeigen — analog zur SP-Anzeige auf der Upgrades-Card. */}
+          <span className="flex items-center gap-2">
+            <span className="flex items-baseline gap-1">
+              <span className="text-[17px] font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progDp}</span>
+              <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: AM }}>DP</span>
+            </span>
+            <span className="text-[13px]">›</span>
+          </span>
         </button>
       ) : (
         <div className="w-full max-w-sm px-4 py-2.5 rounded-lg text-[14px] font-bold flex items-center justify-between gap-2 opacity-70 cursor-default"
