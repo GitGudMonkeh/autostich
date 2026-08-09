@@ -9,6 +9,18 @@ import {
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 
+/* Anzeige-Liste der Kategorie „Effekte": die kaufbaren GLOBAL_FX + eine synthetische „Standard"-Kachel
+   (Gottgleicher Sieg OHNE Prunk) — immer aktiv, kein Kauf, nur zum Vergleichen. Wird direkt vor die
+   Gottgleich-Prunk-Effekte eingefügt, damit man Standard ↔ Feuerwerk/Goldregen/Prisma nebeneinander sieht. */
+const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", group: "gott", standard: true, preview: "gottStandard",
+  desc: "So sieht ein Gottgleicher Sieg OHNE gekaufte Prunk-Effekte aus — die Basis zum Vergleichen (immer aktiv)." };
+const EFFEKTE_LIST = (() => {
+  const arr = [...GLOBAL_FX];
+  const i = arr.findIndex((f) => f.group === "gott");
+  arr.splice(i < 0 ? arr.length : i, 0, GOTT_STANDARD);
+  return arr;
+})();
+
 /* #deckshop — DECK-WERKSTATT: Themes (Deck · Battlefield · Animationen) einzeln kaufen & mischen.
    Zwei Modi: „Meine Sammlung" (Besessenes an/aus, Deck & Battlefield mischbar) und „Vorschau · Alle"
    (Kachel-Galerie → Kauffenster mit Element-Vorschau & Einzelkauf). Kauf spendet SP (onProfileChange),
@@ -70,6 +82,14 @@ const FX_CSS = `
 /* #293 Grid-Tunnel: Perspektiv-Gitter rast auf den Betrachter zu (Scroll der Gitterzeilen). */
 @keyframes ws-gridrush{0%{background-position:0 0}100%{background-position:0 32px}}
 .ws-gridrush{animation:ws-gridrush .5s linear infinite}
+/* #294 Gottgleich-Event-Loop (Vorschau spielt das echte Ereignis nach): Aura-Flare + Karten-Pop + goldene
+   Groß-Ansage, ~3.4s Zyklus. Die Prunk-Partikel laufen darüber. */
+@keyframes ws-gott-aura{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}12%{opacity:.9}42%{opacity:.5}72%{opacity:.14}100%{opacity:0;transform:translate(-50%,-50%) scale(1.55)}}
+.ws-gott-aura{animation:ws-gott-aura 3.4s ease-out infinite}
+@keyframes ws-gott-pop{0%{transform:translate(-50%,-50%) scale(.86);filter:brightness(.8)}8%{transform:translate(-50%,-50%) scale(1.08);filter:brightness(1.6)}20%{transform:translate(-50%,-50%) scale(1);filter:brightness(1.15)}100%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}}
+.ws-gott-pop{animation:ws-gott-pop 3.4s ease-out infinite}
+@keyframes ws-gott-ann{0%,3%{opacity:0;transform:translate(-50%,-50%) scale(.55)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.14)}22%{transform:translate(-50%,-50%) scale(1)}62%{opacity:1}82%{opacity:0;transform:translate(-50%,-50%) scale(1.05)}100%{opacity:0}}
+.ws-gott-ann{animation:ws-gott-ann 3.4s ease-out infinite}
 `;
 
 // Demo-Scherben für die kleine Kachel-Vorschau (Richtung + Farbe; Krit-Palette warm/weiß).
@@ -113,8 +133,64 @@ const RAIN_DROPS = Array.from({ length: 20 }, (_, i) => ({
 }));
 const PRISMA_RING = "conic-gradient(from 0deg,#ff4d4d,#ffa53a,#ffe14d,#54e08a,#35e0ff,#5a8ade,#9b82f0,#ff4dcb,#ff4d4d)";
 
+// Overlay-Partikel eines Gottgleich-Prunk-Effekts (über der Szene) — dieselben Demo-Daten wie sonst.
+function PrunkParticles({ variant, LC = "#35e0ff" }) {
+  if (variant === "fireworks") return FW_BURSTS.map((b, bi) => (
+    <div key={bi} className="absolute" style={{ left: b.cx, top: b.cy, width: 0, height: 0 }}>
+      {b.parts.map((pt, i) => (
+        <div key={i} className="ws-fw absolute" style={{ left: 0, top: 0, width: 4, height: 4, marginLeft: -2, marginTop: -2, borderRadius: "50%",
+          background: pt.white ? "#ffffff" : LC, boxShadow: `0 0 7px ${pt.white ? "#ffffff" : LC}`, "--dx": pt.dx, "--dy": pt.dy, animationDelay: `${b.dl}s` }} />
+      ))}
+    </div>
+  ));
+  if (variant === "goldRain") return RAIN_DROPS.map((d, i) => (
+    <div key={i} className="ws-rain absolute" style={{ left: d.x, top: "-6%", width: d.w, height: d.w * 2.4, borderRadius: 1,
+      background: d.c, boxShadow: `0 0 6px ${d.c}`, animationDelay: d.dl, animationDuration: d.dur }} />
+  ));
+  if (variant === "prismaWave") return [0, 1].map((r) => (
+    <div key={r} className="ws-wave absolute" style={{ left: "50%", top: "50%", width: "70%", aspectRatio: "1", borderRadius: "50%",
+      background: PRISMA_RING, animationDelay: `${r * 0.7}s`,
+      WebkitMaskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)",
+      maskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)" }} />
+  ));
+  return null; // "standard" → keine Prunk-Partikel
+}
+
+/* #294 Gottgleich-Vorschau: spielt das ECHTE Ereignis im Loop nach (Karten-Pop + Aura-Flare + goldene
+   „GOTTGLEICH ×7"-Groß-Ansage) und legt den jeweiligen Prunk-Effekt darüber. variant "standard" zeigt den
+   Basis-Look ohne Prunk → direkter Vergleich. compact = kleinere Kachel-Variante. */
+function GottgleichPreview({ variant, compact = false }) {
+  const bf = battlefieldAssets("bf_kaiju");
+  const cardImg = deckAssets("default").back;
+  return (
+    <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+      {/* Sieg-Aura (grün→gold) */}
+      <div className="ws-gott-aura absolute" style={{ left: "50%", top: "56%", width: "72%", aspectRatio: "1", borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(212,166,58,.55), rgba(90,184,122,.28) 46%, transparent 70%)" }} />
+      {/* Gewinnerkarte, ploppt an */}
+      <div className="ws-gott-pop absolute" style={{ left: "50%", top: "58%", width: compact ? "34%" : "20%", aspectRatio: CARD_RATIO }}>
+        <img src={cardImg} alt="" className="absolute inset-0 w-full h-full object-contain rounded" />
+      </div>
+      {/* Prunk-Overlay */}
+      <PrunkParticles variant={variant} />
+      {/* Goldene Groß-Ansage */}
+      <div className="ws-gott-ann absolute font-extrabold" style={{ left: "50%", top: "30%", whiteSpace: "nowrap",
+        fontSize: compact ? 13 : 22, letterSpacing: ".06em",
+        backgroundImage: "linear-gradient(180deg,#fff0b0,#ffd873 45%,#d4a63a)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
+        filter: "drop-shadow(0 0 10px rgba(212,166,58,.6))" }}>
+        GOTTGLEICH<span style={{ color: "#e879f9", WebkitTextFillColor: "#e879f9" }}> ×7</span>
+      </div>
+    </div>
+  );
+}
+
 // Battlefield-Szenen-Vorschau eines globalen Effekts im Kauffenster — läuft im Loop.
 function GlobalFxScenePreview({ fx }) {
+  // Gottgleich-Effekte (inkl. Standard) spielen das komplette Ereignis nach.
+  if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
+  if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
   const bf = battlefieldAssets("bf_kaiju");
   const cardImg = deckAssets("default").back;
   const LC = "#35e0ff"; // Demo-Farbe (in-game = Suit-Farbe der Gegnerkarte)
@@ -166,25 +242,6 @@ function GlobalFxScenePreview({ fx }) {
           ))}
         </div>
       )}
-      {p === "fireworks" && FW_BURSTS.map((b, bi) => (
-        <div key={bi} className="absolute" style={{ left: b.cx, top: b.cy, width: 0, height: 0 }}>
-          {b.parts.map((pt, i) => (
-            <div key={i} className="ws-fw absolute" style={{ left: 0, top: 0, width: 4, height: 4, marginLeft: -2, marginTop: -2, borderRadius: "50%",
-              background: pt.white ? "#ffffff" : LC, boxShadow: `0 0 7px ${pt.white ? "#ffffff" : LC}`,
-              "--dx": pt.dx, "--dy": pt.dy, animationDelay: `${b.dl}s` }} />
-          ))}
-        </div>
-      ))}
-      {p === "goldRain" && RAIN_DROPS.map((d, i) => (
-        <div key={i} className="ws-rain absolute" style={{ left: d.x, top: "-6%", width: d.w, height: d.w * 2.4, borderRadius: 1,
-          background: d.c, boxShadow: `0 0 6px ${d.c}`, animationDelay: d.dl, animationDuration: d.dur }} />
-      ))}
-      {p === "prismaWave" && [0, 1].map((r) => (
-        <div key={r} className="ws-wave absolute" style={{ left: "50%", top: "50%", width: "70%", aspectRatio: "1",
-          borderRadius: "50%", background: PRISMA_RING, animationDelay: `${r * 0.7}s`,
-          WebkitMaskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)",
-          maskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)" }} />
-      ))}
       {p === "gridTunnel" && (
         <div className="absolute pointer-events-none" style={{ left: "-20%", right: "-20%", bottom: 0, height: "62%",
           transform: "perspective(120px) rotateX(62deg)", transformOrigin: "bottom" }}>
@@ -309,8 +366,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const p = profile || {};
   const [mode, setMode] = useState("mine");   // "mine" | "prev"
   const [ov, setOv] = useState(null);          // Theme-Kauffenster: { list: theme[], idx } | null (kategorie-lokal)
-  const [ovFxIdx, setOvFxIdx] = useState(-1);  // globales-Effekt-Kauffenster: Index in GLOBAL_FX (-1 = zu)
-  const stepFx = (d) => setOvFxIdx((i) => (i + d + GLOBAL_FX.length) % GLOBAL_FX.length);
+  const [ovFxIdx, setOvFxIdx] = useState(-1);  // Effekt-Kauffenster: Index in EFFEKTE_LIST (-1 = zu)
+  const stepFx = (d) => setOvFxIdx((i) => (i + d + EFFEKTE_LIST.length) % EFFEKTE_LIST.length);
   const [sel, setSel] = useState("deck");      // gewähltes Element im Kauffenster
   const spBal = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
 
@@ -357,7 +414,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           <MineView p={p} deckId={deckId} bfId={bfId} activeTheme={activeTheme} options={options}
             ownedDeckThemes={ownedDeckThemes} ownedBfThemes={ownedBfThemes} onChoose={onChoose} onBrowse={() => setMode("prev")} />
         ) : (
-          <PreviewView p={p} onOpen={openOv} onOpenFx={(fx) => setOvFxIdx(GLOBAL_FX.indexOf(fx))} />
+          <PreviewView p={p} onOpen={openOv} onOpenFx={(fx) => setOvFxIdx(EFFEKTE_LIST.indexOf(fx))} />
         )}
       </div>
 
@@ -370,9 +427,9 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
       )}
 
       {ovFxIdx >= 0 && (
-        <GlobalFxOverlay fx={GLOBAL_FX[ovFxIdx]} idx={ovFxIdx} count={GLOBAL_FX.length} p={p} spBal={spBal}
+        <GlobalFxOverlay fx={EFFEKTE_LIST[ovFxIdx]} idx={ovFxIdx} count={EFFEKTE_LIST.length} p={p} spBal={spBal}
           onStep={stepFx} onClose={() => setOvFxIdx(-1)}
-          onBuy={() => buy((pf) => buyGlobalFx(pf, GLOBAL_FX[ovFxIdx]))} />
+          onBuy={() => { const fx = EFFEKTE_LIST[ovFxIdx]; if (!fx.standard) buy((pf) => buyGlobalFx(pf, fx)); }} />
       )}
     </div>
   );
@@ -496,7 +553,10 @@ function SelectRow({ active, onClick, thumb, title, sub }) {
 function GlobalFxPreview({ fx }) {
   const LC = "#35e0ff"; // Demo-Farbe (in-game = Deck-/Suit-Farbe)
   const p = fx.preview;
-  const showCard = p !== "fireworks" && p !== "goldRain" && p !== "prismaWave" && p !== "gridTunnel";
+  // Gottgleich-Effekte (inkl. Standard) zeigen das Ereignis in kompakter Form.
+  if (["fireworks", "goldRain", "prismaWave"].includes(p)) return <GottgleichPreview variant={p} compact />;
+  if (p === "gottStandard") return <GottgleichPreview variant="standard" compact />;
+  const showCard = p !== "gridTunnel";
   return (
     <>
       {showCard && <img src={deckAssets("default").back} alt="" className="absolute inset-0 w-full h-full object-contain" />}
@@ -528,37 +588,6 @@ function GlobalFxPreview({ fx }) {
           ))}
         </div>
       )}
-      {p === "fireworks" && (
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "#0b0a16" }}>
-          {FW_BURSTS.slice(0, 2).map((b, bi) => (
-            <div key={bi} className="absolute" style={{ left: bi ? "66%" : "34%", top: bi ? "38%" : "30%", width: 0, height: 0 }}>
-              {b.parts.map((pt, i) => (
-                <div key={i} className="ws-fw absolute" style={{ width: 3, height: 3, marginLeft: -1.5, marginTop: -1.5, borderRadius: "50%",
-                  background: pt.white ? "#ffffff" : LC, boxShadow: `0 0 6px ${pt.white ? "#ffffff" : LC}`,
-                  "--dx": pt.dx, "--dy": pt.dy, animationDelay: `${b.dl}s` }} />
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-      {p === "goldRain" && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ background: "#0b0a16" }}>
-          {RAIN_DROPS.slice(0, 12).map((d, i) => (
-            <div key={i} className="ws-rain absolute" style={{ left: d.x, top: "-8%", width: d.w, height: d.w * 2.4, borderRadius: 1,
-              background: d.c, boxShadow: `0 0 5px ${d.c}`, animationDelay: d.dl, animationDuration: d.dur }} />
-          ))}
-        </div>
-      )}
-      {p === "prismaWave" && (
-        <div className="absolute inset-0 pointer-events-none grid place-items-center overflow-hidden" style={{ background: "#0b0a16" }}>
-          {[0, 1].map((r) => (
-            <div key={r} className="ws-wave absolute" style={{ left: "50%", top: "50%", width: "88%", aspectRatio: "1", borderRadius: "50%",
-              background: PRISMA_RING, animationDelay: `${r * 0.7}s`,
-              WebkitMaskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)",
-              maskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)" }} />
-          ))}
-        </div>
-      )}
       {p === "gridTunnel" && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ background: "#0b0a16" }}>
           <div className="absolute" style={{ left: "-20%", right: "-20%", bottom: 0, height: "80%", transform: "perspective(90px) rotateX(64deg)", transformOrigin: "bottom" }}>
@@ -575,8 +604,8 @@ function GlobalFxPreview({ fx }) {
 /* Kauffenster eines globalen Effekts (analog zum Theme-Kauffenster): großes Preview + Kauf. Aktivieren
    passiert danach unter „Verfügbare Decks". */
 function GlobalFxOverlay({ fx, idx, count, p, spBal, onStep, onClose, onBuy }) {
-  const owned = globalFxOwned(p, fx);
-  const canBuy = canBuyGlobalFx(p, fx);
+  const owned = fx.standard || globalFxOwned(p, fx);
+  const canBuy = !fx.standard && canBuyGlobalFx(p, fx);
   const touch = useRef(0);
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto"
@@ -607,7 +636,11 @@ function GlobalFxOverlay({ fx, idx, count, p, spBal, onStep, onClose, onBuy }) {
           )}
           <div className="text-center text-[11px] mt-2 leading-snug" style={{ color: "#9a97ab", minHeight: 32 }}>{fx.desc}</div>
           <div className="mt-2.5">
-            {owned ? (
+            {fx.standard ? (
+              <div className="w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ background: "#1c2433", color: "#7fb4ff", border: "1px solid #33507a" }}>
+                Standard — immer aktiv, kein Kauf nötig
+              </div>
+            ) : owned ? (
               <div className="w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>
                 ✓ Im Besitz — unter „Verfügbare Decks" an/aus
               </div>
@@ -665,9 +698,11 @@ function PreviewView({ p, onOpen, onOpenFx }) {
       <div style={{ minHeight: 460 }}>
       {isEffekte ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-          {GLOBAL_FX.map((fx) => {
-            const owned = globalFxOwned(p, fx);
-            const badge = owned ? ["KOMPLETT", "#123a25", "#54e08a", "#2f7a4f"] : ["KAUFBAR", "#2e2410", "#f2c14a", "#6b5320"];
+          {EFFEKTE_LIST.map((fx) => {
+            const owned = fx.standard || globalFxOwned(p, fx);
+            const badge = fx.standard ? ["STANDARD", "#1c2433", "#7fb4ff", "#33507a"]
+              : owned ? ["KOMPLETT", "#123a25", "#54e08a", "#2f7a4f"] : ["KAUFBAR", "#2e2410", "#f2c14a", "#6b5320"];
+            const sub = fx.standard ? ["immer aktiv · Vergleich", "#7fb4ff"] : owned ? ["im Besitz", "#54e08a"] : ["global · kaufbar", "#f2c14a"];
             return (
               <button key={fx.key} type="button" onClick={() => onOpenFx(fx)} className="relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5"
                 style={{ background: "#14131c", border: "1px solid #2a2836" }}>
@@ -677,7 +712,7 @@ function PreviewView({ p, onOpen, onOpenFx }) {
                 </div>
                 <div className="px-2 py-1.5">
                   <span className="text-[12px] font-extrabold truncate block">{fx.name}</span>
-                  <span className="text-[10px]" style={{ color: owned ? "#54e08a" : "#f2c14a" }}>{owned ? "im Besitz" : "global · kaufbar"}</span>
+                  <span className="text-[10px]" style={{ color: sub[1] }}>{sub[0]}</span>
                 </div>
               </button>
             );
