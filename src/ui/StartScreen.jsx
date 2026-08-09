@@ -30,7 +30,7 @@ const BR_COLOR = { bau: CY, auf: BLUE, rar: VI, mei: AM };
 // Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
 const ONB_REWARDS = ["Reroll +1", "Pflanze 🌿 frei", "Rarität: Blau", "Eis ❄ frei", "Rarität: Violett", "Legendär ⭐ (R29)"];
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onStandardRun = null, onMeisterRun = null, onDevRun = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onStandardRun = null, onMeisterRun = null, onDevRun = null, onChallenge = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
@@ -178,12 +178,21 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               <button onClick={onStart}
                 className="as-guide-glow w-full rounded-lg px-4 py-2.5 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
                 style={{ background: "#0e1b22", border: "1px solid #5fe0f7", color: "#a8ecf7" }}>Normal</button>
-              {/* Challenge — noch gesperrt (Platzhalter, wird später mit Leben gefüllt). Ersetzt den Dev-Run-Button. */}
-              <button disabled aria-label="Challenge (gesperrt)" title="Bald verfügbar"
-                className="w-full rounded-lg px-4 py-2.5 text-[15px] font-extrabold flex items-center justify-center gap-1.5 cursor-not-allowed"
-                style={{ background: "#1c1012", border: "1px solid #e0555566", color: "#e07a7a", opacity: 0.7 }}>
-                <span aria-hidden="true">🔒</span> Challenge
-              </button>
+              {/* #301 Challenges — erst nach komplettem Upgrade-Baum spielbar (treeComplete), sonst gesperrt.
+                  Öffnet das Modifikator-Auswahl-Fenster (onChallenge). Ersetzt den Dev-Run-Button. */}
+              {progLigaFree && onChallenge ? (
+                <button onClick={onChallenge} aria-label="Challenges"
+                  className="w-full rounded-lg px-4 py-2.5 text-[15px] font-extrabold flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5"
+                  style={{ background: "#1c1012", border: "1px solid #e05555", color: "#ff9a9a", boxShadow: "0 0 14px rgba(224,85,85,.35)" }}>
+                  <span aria-hidden="true">⚔</span> Challenges
+                </button>
+              ) : (
+                <button disabled aria-label="Challenges (gesperrt — kompletter Upgrade-Baum nötig)" title="Erst mit komplettem Upgrade-Baum"
+                  className="w-full rounded-lg px-4 py-2.5 text-[15px] font-extrabold flex items-center justify-center gap-1.5 cursor-not-allowed"
+                  style={{ background: "#1c1012", border: "1px solid #e0555566", color: "#e07a7a", opacity: 0.7 }}>
+                  <span aria-hidden="true">🔒</span> Challenges
+                </button>
+              )}
             </div>
             {/* #205: Seed einfügen — jetzt im Normaler-Lauf-Aufklapper unter Normal/Dev. */}
             {onPlaySeed && (

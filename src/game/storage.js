@@ -1,5 +1,6 @@
 import { GHOST_STEP } from "./constants.js";
 import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete, onboardingUnlocks, ONBOARDING_LINKS } from "./progression.js";
+import { settleChallenges, normalizeActive } from "./challenges.js"; // #301 Challenge-Abrechnung (DP-Einsatz)
 
 /* Preview-Build (Testbranch auf /autostich/test/) teilt sich die Origin mit der echten
    Seite → derselbe localStorage. Ein Präfix trennt die Namespaces, damit Test-Runs den
@@ -224,6 +225,12 @@ export function recordRun(record) {
   const treeDone = treeComplete(p);
   const gainedSp = spCreditForRun(record, onboardingBefore, treeDone, n0(p.spRuns));
   const gainedDp = dpForRun(record, onboardingBefore, treeDone, n0(p.spRuns));
+  // #301 Challenge-Abrechnung: nur ein ABGESCHLOSSENER Challenge-Lauf wertet (Abbruch/Niederlage = neutral). Die
+  // Challenge-DP (±) kommen auf die native DP obendrauf; das Lauf-Netto (native + challenge) wird bei 0 gedeckelt →
+  // Abzüge fressen die Sieges-DP des Laufs, ziehen aber nie das DP-Guthaben ins Minus. runDp ersetzt gainedDp bei aktivem Lauf.
+  const chMods = normalizeActive(record.challengeMods);
+  const chSettle = (chMods.length && record.completed) ? settleChallenges(chMods, n0(record.score), gainedDp) : null;
+  const runDp = chSettle ? chSettle.runDp : gainedDp;
   // #299: bei komplettem Baum sind SP nutzlos → das übrige SP-Guthaben wird zu DP „gefegt" (idempotent: danach 0).
   const spBalance = n0(p.stichPoints) + gainedSp;
   const spSweep = treeDone ? spBalance : 0;
@@ -254,7 +261,8 @@ export function recordRun(record) {
     stichSpent: n0(p.stichSpent),
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
     // #299 DP: Guthaben wächst um den DP-Ertrag + das gefegte SP-Guthaben (bei vollem Baum); ausgegebene DP bleiben.
-    deckPoints: n0(p.deckPoints) + gainedDp + spSweep,
+    // #301: im Challenge-Lauf ersetzt runDp (native + Challenge-Netto, ≥ 0) die native DP.
+    deckPoints: n0(p.deckPoints) + runDp + spSweep,
     deckSpent: n0(p.deckSpent),
     onboarding: onbAfter,
     spRuns: n0(p.spRuns) + (isSpRun(record, onboardingBefore) ? 1 : 0),
@@ -263,7 +271,7 @@ export function recordRun(record) {
     ownedCosmetics,
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
-  return { history, profile, unlocks };
+  return { history, profile, unlocks, challenge: chSettle };
 }
 
 /* OPTIONEN (#41) — bewusst als erweiterbares Objekt (künftig Sound, Tempo-Default …).

@@ -20,6 +20,7 @@ import { nodeEffects, legPerk2Force, rerollBase, unlockedArchetypes, maxRarityTi
 const FULL_MEISTER_PROFILE = unlockAllProfile({});
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
+import { normalizeActive as normalizeChallenges } from "./challenges.js"; // #301 Challenge-Modifikatoren (Präfix-Normalisierung)
 
 /* Reiner Reducer — Determinismus-Invariante: kein Math.random / Date hier drin.
    Zufall kommt als Action-Payload (rng), siehe App.jsx. Phasen:
@@ -154,8 +155,21 @@ export function initialState(rng = Math.random, seed = null) {
     rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
     rerollsUsed: 0,                // #214/#263: Zähler benutzter Rerolls über ALLE Kategorien → Sparfuchs-Challenge (deck_c3 „noRerollRun")
     offerRerolls: 0,               // #205: Reroll-Index des AKTUELLEN Angebots (Original = 0) → adressiert `(seed,cycle,kind,offerRerolls)`; von der Engine bei jedem frischen Angebot auf 0 gesetzt
+    // #301 Challenge-Modus: aktive Modifikatoren (ids) + deterministisch gewählte gesperrte Felder (Positionen 0..39).
+    // Leer = kein Challenge-Lauf. Als Arrays gehalten (serialisierbar für RESTORE_RUN-Snapshots).
+    challengeMods: [], challengeBlockArch: [], challengeBlockForm: [],
     lastTrick: null,
   };
+}
+// #301 K verschiedene Positionen aus [0..n) deterministisch ziehen (Fisher-Yates mit einem rng-Strom).
+function pickCells(rng, n, k) {
+  const idx = Array.from({ length: n }, (_, i) => i);
+  const m = Math.min(k, n);
+  for (let i = 0; i < m; i++) {
+    const j = i + Math.floor(rng() * (n - i));
+    const t = idx[i]; idx[i] = idx[j]; idx[j] = t;
+  }
+  return idx.slice(0, m).sort((a, b) => a - b);
 }
 
 // Menü-/Startbildschirm (#4) — kein laufendes Spiel; App rendert hier nur den StartScreen.
@@ -216,15 +230,26 @@ export function reducer(state, action) {
       // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
       // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
       const architectStart = { ...s.architect, maxCover: s.architect.maxCover + treeCover }; // Baufeld: Baum-Bonus (Normal-/Meister-Lauf)
-      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift, treeLegMult, treeLegForce2, rerollsLeg: treeLegSlotReroll, legOfferBonus, unlockedArchetypes: unlockedArch, rareCap, legPhaseEnabled, ranked };
+      // #301 Challenge-Modus: aktive Modifikatoren (nur als gültiges Präfix c1..cN). Gesperrte Felder deterministisch
+      // aus dem Lauf-Seed ziehen (eigene Adress-Ströme → stören keine Deal-/Perk-/Skill-Ströme; gleicher Seed → gleiche
+      // Felder). C1 nullt alle Reroll-Pools (die Handler no-oppen bei ≤ 0).
+      const chMods = normalizeChallenges(action.challengeMods);
+      const chEff = new Set(chMods.map((c) => c.effect));
+      const chBlockArch = (chEff.has("archLock") && seed != null) ? pickCells(rngAt(seed, "challenge", "blockArch"), N_POS, 10) : [];
+      const chBlockForm = (chEff.has("formLock") && seed != null) ? pickCells(rngAt(seed, "challenge", "blockForm"), N_POS, 10) : [];
+      const chNoReroll = chEff.has("noRerolls");
+      const chReroll = chNoReroll ? 0 : normalRerolls;
+      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift, treeLegMult, treeLegForce2, rerollsLeg: chNoReroll ? 0 : treeLegSlotReroll, legOfferBonus, unlockedArchetypes: unlockedArch, rareCap, legPhaseEnabled, ranked,
+        challengeMods: chMods.map((c) => c.id), challengeBlockArch: chBlockArch, challengeBlockForm: chBlockForm };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
       return { ...sBase, architectEnabled,
         difficulty: null,
         // #263: drei getrennte Reroll-Pools. (Schritt 4) Normal-/Meister-Lauf MIT Profil: Basis 1 aus Onboarding-Glied 1
         // + A1/A2 (rerollBase, Cap 3) — erster Lauf = 0. OHNE Profil (Sim/Standard) bleibt es C.BASE_REROLLS (2/2/2).
-        rerollsPerk: normalRerolls,
-        rerollsArch: normalRerolls,
-        rerollsSkill: normalRerolls,
+        // #301 C1 (Keine Rerolls) nullt alle drei Pools.
+        rerollsPerk: chReroll,
+        rerollsArch: chReroll,
+        rerollsSkill: chReroll,
         ...startPatch };
     }
 
@@ -251,7 +276,7 @@ export function reducer(state, action) {
       if (!off) return state;                                          // Bauplan nicht (mehr) im Angebot
       const fam = archFamily(action.familyId);
       if (!fam) return state;
-      if (!isValidFootprint(fam.form, action.footprint, a.buildings)) return state; // Form/Gitter/Overlap
+      if (!isValidFootprint(fam.form, action.footprint, a.buildings, state.challengeBlockArch)) return state; // Form/Gitter/Overlap (+ #301 gesperrte Zellen)
       if (archOccupied(a.buildings).size + action.footprint.length > (a.maxCover ?? ARCH_MAX_COVER)) return state; // Baufeld-Deckel: keine neue Fläche über maxCover
       if (fam.colorLocked && !C.SUIT_ORDER.includes(action.colorChoice)) return state; // Buntglas/Zunfthaus brauchen eine Farbe
       const footprint = [...action.footprint].sort((x, y) => x - y);
@@ -277,7 +302,7 @@ export function reducer(state, action) {
       if (!b) return state;
       const fam = archFamily(b.familyId);
       const others = a.buildings.filter((x) => x.id !== b.id);
-      if (!fam || !isValidFootprint(fam.form, action.footprint, others)) return state;
+      if (!fam || !isValidFootprint(fam.form, action.footprint, others, state.challengeBlockArch)) return state;
       const footprint = [...action.footprint].sort((x, y) => x - y);
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, footprint } : x));
       return { ...state, architect: { ...a, buildings, moved: true } }; // moved-Flag bleibt (Telemetrie), deckelt aber nicht mehr
@@ -298,7 +323,7 @@ export function reducer(state, action) {
       for (const m of moves) {
         const b = a.buildings.find((x) => x.id === m.buildingId), fam = archFamily(b.familyId);
         const others = finalBuildings.filter((x) => x.id !== b.id);
-        if (!isValidFootprint(fam.form, newFp[b.id], others)) return state;
+        if (!isValidFootprint(fam.form, newFp[b.id], others, state.challengeBlockArch)) return state;
       }
       return { ...state, architect: { ...a, buildings: finalBuildings, moved: true } };
     }
@@ -658,6 +683,8 @@ export function reducer(state, action) {
       if (i < 0 || j < 0 || i >= state.playerOrder.length || j >= state.playerOrder.length) return state;
       // Eis-Neudesign (docs §2.1): ein gefrorener Gletscher ist STARR — seine Brett-Position darf nicht getauscht werden.
       if (state.glacierLocked && (state.glacierLocked[i] || state.glacierLocked[j])) return state;
+      // #301 C3: gesperrte Aufstell-Zellen sind fixiert — weder weg- noch hin-tauschbar (beide Endpunkte prüfen).
+      if (state.challengeBlockForm && (state.challengeBlockForm.includes(i) || state.challengeBlockForm.includes(j))) return state;
       if ((state.formationEnergy || 0) <= 0) return state; // Tausch braucht Energie
       const cardA = state.deck[state.playerOrder[i]], cardB = state.deck[state.playerOrder[j]];
       const order = state.playerOrder.slice();
@@ -675,6 +702,7 @@ export function reducer(state, action) {
       const p = action.pos;
       if (p == null || p < 0 || p >= state.playerOrder.length) return state;
       if (state.glacierLocked && state.glacierLocked[p]) return state; // schon gefroren → ungültige Wahl
+      if (state.challengeBlockForm && state.challengeBlockForm.includes(p)) return state; // #301 C3: gesperrte Zelle nicht einfrierbar
       const glacierLocked = (state.glacierLocked || new Array(state.playerOrder.length).fill(false)).slice();
       glacierLocked[p] = true;
       // Kam die Gletscher-Wahl aus dem Ablehnen bei vollen Eis-Slots, wartet noch ein geparktes Perk-Angebot → jetzt

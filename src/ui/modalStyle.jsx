@@ -49,6 +49,7 @@ export const PHASE_ACCENTS = {
   ice:    { c: "#7fdcff", rgb: "127,220,255" },
   gold:   { c: "#d4a63a", rgb: "212,166,58" },
   blue:   { c: "#3b7dbe", rgb: "59,125,190" },
+  red:    { c: "#e05555", rgb: "224,85,85" }, // #301 Challenge-Modus
 };
 // Schalen-Style: Akzent-Glow oben + Verlaufsfläche + Akzent-Rahmen + weicher Außenschein. `base` = Verlaufs-
 // Grundtöne (Default = Menü-Familienton; der Architekt reicht seinen blauen Grund durch).

@@ -53,6 +53,10 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   const glacierLocked = state.glacierLocked || [];
   const glacierMass = state.glacierMass || [];
   const glacierPos = useMemo(() => { const s = new Set(); glacierLocked.forEach((v, i) => { if (v) s.add(i); }); return s; }, [glacierLocked]);
+  // #301 C3: gesperrte Aufstell-Zellen — fixiert (nicht tauschbar). disabledPos greift Klick + Ausgrauen; die Karte zählt
+  // aber normal für Formationen (Scoring unverändert). Als Array für stabile Memo-Dep.
+  const chLockForm = state.challengeBlockForm || [];
+  const chLockFormSet = useMemo(() => new Set(chLockForm), [chLockForm.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
   // Architekt-Gebäude-Overlay (#202): zeigt in der Aufstellung, welche Positionen von welchem Gebäude gebufft werden —
   // die andere Seite der „platzieren (Architekt) → routen (Aufstellung)"-Schleife. Toggle-bar, Default an. Der Wert-Boost
   // je Zelle kommt aus der ECHTEN Engine (precomputeArchitect + architectValueBonus), spiegelt also die Sieg-Rechnung.
@@ -200,7 +204,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                 ))}
               </div>
             )}
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} disabledPos={chLockFormSet} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
               glacierPos={iceActive ? glacierPos : null} glacierMassByPos={iceActive ? glacierMass : null} />
           </div>
 

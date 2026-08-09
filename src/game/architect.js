@@ -153,8 +153,10 @@ export function neighborCounts(buildings = []) {
 const sameSet = (a, b) => a.length === b.length && (() => { const s = new Set(a); return b.every((x) => s.has(x)); })();
 
 // Alle gültigen Platzierungen einer Form (in-Gitter UND kein Overlap mit `buildings`). Dedupliziert nach Footprint.
-export function enumeratePlacements(form, buildings = []) {
+// #301 optionales `blocked` (gesperrte Challenge-Zellen) wird wie belegte Fläche behandelt → dort ist kein Bau möglich.
+export function enumeratePlacements(form, buildings = [], blocked = []) {
   const occ = occupiedCells(buildings);
+  for (const p of blocked) occ.add(p);
   const out = [], seenFp = new Set();
   for (const cells of shapeRotations(form)) {
     for (let anchor = 0; anchor < N_POS; anchor++) {
@@ -176,9 +178,10 @@ export function enumeratePlacements(form, buildings = []) {
   return out;
 }
 // Ist `footprint` eine gültige Platzierung von `form` (Form korrekt, in-Gitter, kein Overlap mit `buildings`)?
-export function isValidFootprint(form, footprint, buildings = []) {
+// #301 `blocked` (gesperrte Challenge-Zellen) sperren zusätzliche Zellen.
+export function isValidFootprint(form, footprint, buildings = [], blocked = []) {
   if (!Array.isArray(footprint) || !footprint.length) return false;
-  return enumeratePlacements(form, buildings).some((fp) => sameSet(fp, footprint));
+  return enumeratePlacements(form, buildings, blocked).some((fp) => sameSet(fp, footprint));
 }
 
 // Footprint einer Form bei (rotIdx, anchor) — im Gitter, sonst null.

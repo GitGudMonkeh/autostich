@@ -42,6 +42,7 @@ import { StartScreen } from "./ui/StartScreen.jsx";
 import { StatsScreen } from "./ui/StatsScreen.jsx";
 import { CustomizeScreen } from "./ui/CustomizeScreen.jsx";
 import { DevRunSetup } from "./ui/DevRunSetup.jsx"; // Dev-Run (nur Preview-Build)
+import { ChallengeModal } from "./ui/ChallengeModal.jsx"; // #301 Challenge-Auswahl-Fenster
 import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale Bestenliste als eigener Screen
 import { UpgradeScreen } from "./ui/UpgradeScreen.jsx"; // Progression-Vorschau: Upgrade-Baum-Screen
 import { RunLoader } from "./ui/RunLoader.jsx";
@@ -69,11 +70,14 @@ export function Autostich() {
   const [profile, setProfile] = useState(loadProfile);            // #190: Profil (Freischalt-Status) — nach jedem Lauf aktualisiert
   const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
   const [progressUnlocks, setProgressUnlocks] = useState([]);     // #299: Onboarding-/Meta-Freischaltungen dieses Laufs → Victory-Banner
+  const [challengeResult, setChallengeResult] = useState(null);   // #301: Challenge-Abrechnung dieses Laufs → Victory-Banner (null = kein Challenge-Lauf)
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
   const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
   const pendingDev = useRef(null);                                // Dev-Run: Config { rounds, schedule, cover, energy } für den nächsten Lauf (null = normaler Lauf)
   const pendingRanked = useRef(null);                             // §7 (Schritt 6): nächster Lauf = Ranglisten-Lauf? ('standard' = Baseline · 'meister' = voller Baum)
+  const pendingChallenge = useRef(null);                          // #301: aktive Challenge-Modifikatoren (ids) für den nächsten Lauf (null = kein Challenge-Lauf)
   const [showDevSetup, setShowDevSetup] = useState(false);        // Dev-Run-Setup-Overlay (nur Preview-Build)
+  const [showChallenge, setShowChallenge] = useState(false);      // #301 Challenge-Auswahl-Fenster
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [glossaryOpen, setGlossaryOpen] = useState(false);        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
@@ -314,10 +318,11 @@ export function Autostich() {
       architectCover: architectCoverFor(state), // per-Position { name, tier, effects, … } oder null (kein Architekt/keine Gebäude)
       buildings: archBuildingsSnap,
     };
-    const { profile: nextProfile, unlocks: metaUnlocks } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
+    const { profile: nextProfile, unlocks: metaUnlocks, challenge: challengeResult } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
       shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
-      completed, deckSnapshot });
+      completed, deckSnapshot, challengeMods: state.challengeMods || [] }); // #301 Challenge-Modifikatoren → DP-Abrechnung
     setProfile(nextProfile);
+    setChallengeResult(challengeResult || null); // #301 Challenge-Ergebnis fürs Victory-Banner (null = kein Challenge-Lauf)
     // #299 Meta-Freischaltungen dieses Laufs (Onboarding-Glieder → Archetyp/Rarität/Abschluss) fürs Victory-Banner.
     const ARCH_DE = { plant: "Pflanze", ice: "Eis", fire: "Feuer", lightning: "Blitz" };
     setProgressUnlocks((metaUnlocks || []).map((u) => {
@@ -424,17 +429,19 @@ export function Autostich() {
     setNewUnlocks([]); // #190: Freischalt-Hinweis des Vorlaufs zurücksetzen
     const dev = pendingDev.current; pendingDev.current = null; // Dev-Run-Config (Test-Layout) für DIESEN Lauf, dann zurücksetzen
     const ranked = pendingRanked.current; pendingRanked.current = null; // §7: Ranglisten-Lauf ('standard' = Baseline · 'meister' = voller Baum)
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked, profile }); // #202 Architekt · #205 Seed · Dev-Run · Progression-Baum · §7 Rangliste
+    const challengeMods = pendingChallenge.current; pendingChallenge.current = null; // #301: Challenge-Modifikatoren für DIESEN Lauf
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked, profile, challengeMods }); // #202 Architekt · #205 Seed · Dev-Run · Progression-Baum · §7 Rangliste · #301 Challenge
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
   // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
   // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
   // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
-  function launchRun({ seed = null, dev = null, ranked = null } = {}) {
+  function launchRun({ seed = null, dev = null, ranked = null, challenge = null } = {}) {
     pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
     pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
     pendingRanked.current = ranked; // §7: 'standard' = tree-unabhängige Baseline · 'meister' = voller Baum
+    pendingChallenge.current = (Array.isArray(challenge) && challenge.length) ? challenge : null; // #301: Challenge-Modifikatoren (null = kein Challenge-Lauf)
     setPendingRun([deckSkin.front, deckSkin.back, ...(bfSkin ? [bfSkin.desktop, bfSkin.mobile] : [])]);
   }
   // Normaler Lauf — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
@@ -582,6 +589,7 @@ export function Autostich() {
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
             onUpgrades={() => setShowUpgrades(true)} profile={profile}
+            onChallenge={() => setShowChallenge(true)}
             onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} />
@@ -712,7 +720,7 @@ export function Autostich() {
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
           currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu}
           myEntry={myEntry} pubToken={pubToken} hasUsername={!!(username || "").trim()} onEditName={() => setShowUsername(true)}
-          newUnlocks={newUnlocks} progressUnlocks={progressUnlocks}
+          newUnlocks={newUnlocks} progressUnlocks={progressUnlocks} challengeResult={challengeResult}
           onCustomize={() => setShowCustomize(true)} onUpgrades={() => setShowUpgrades(true)} onLeaderboard={() => setShowLeaderboard(true)} />
       )}
 
@@ -728,6 +736,11 @@ export function Autostich() {
 
       {showDevSetup && (
         <DevRunSetup onStart={(cfg) => { setShowDevSetup(false); startDevRun(cfg); }} onClose={() => setShowDevSetup(false)} />
+      )}
+
+      {showChallenge && (
+        <ChallengeModal onClose={() => setShowChallenge(false)}
+          onConfirm={(mods) => { setShowChallenge(false); launchRun({ challenge: mods }); }} />
       )}
 
       {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} profile={profile} onProfileChange={(np) => setProfile(saveProfile(np))} />}

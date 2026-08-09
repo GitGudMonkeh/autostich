@@ -201,15 +201,16 @@ export function uebergletscherPool(mass, locked) {
 // und nach über die Restrunden). Gibt { mass, locked } zurück. ⚠ Flutrate Platzhalter.
 export const EISZEIT_FLOOD = 3;
 export const EISZEIT_MAX_GLACIERS = 16; // Runaway-Deckel: Eiszeit friert nur bis zu dieser Gesamt-Gletscherzahl ein (sonst füllte sie das Brett → 2×-Ausreißer). Die Flut läuft weiter.
-export function eiszeitTick(mass, locked, base = EISZEIT_FLOOD, maxGlaciers = EISZEIT_MAX_GLACIERS) {
+export function eiszeitTick(mass, locked, base = EISZEIT_FLOOD, maxGlaciers = EISZEIT_MAX_GLACIERS, blocked = []) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const isBlocked = (p) => (blocked instanceof Set ? blocked.has(p) : Array.isArray(blocked) && blocked.includes(p)); // #301 C3: nie einfrierbar
   const m = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
   let count = 0;
   for (let p = 0; p < N_POS; p++) { if (isG(p)) count++; else m[p] = (m[p] || 0) + base; } // brettweite Flut + Gletscher zählen
   let newLocked = locked;
   if (count < maxGlaciers) { // Auto-Freeze nur unter dem Deckel: das höchste offene Feld friert ein
     let best = -1, bestV = -Infinity;
-    for (let p = 0; p < N_POS; p++) if (!isG(p) && (m[p] || 0) > bestV) { bestV = m[p] || 0; best = p; }
+    for (let p = 0; p < N_POS; p++) if (!isG(p) && !isBlocked(p) && (m[p] || 0) > bestV) { bestV = m[p] || 0; best = p; } // #301: gesperrte Zellen überspringen
     if (best >= 0) {
       if (locked instanceof Set) { newLocked = new Set(locked); newLocked.add(best); }
       else { newLocked = (locked ? locked.slice() : new Array(N_POS).fill(false)); newLocked[best] = true; }

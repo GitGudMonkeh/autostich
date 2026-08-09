@@ -101,6 +101,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const offers = architect.offers || [];
   const maxCover = architect.maxCover ?? N_POS;
   const round = (state.cycle || 0) + 1;
+  // #301 C2: gesperrte Bau-Zellen (Challenge) — als „belegt" für alle Platzierungs-Enumerationen und interaktions-/render-seitig geblockt.
+  const chLockArch = state.challengeBlockArch || [];
+  const chLockSet = new Set(chLockArch);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const order = state.playerOrder || [];
@@ -262,7 +265,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const fam = familyDef(o.familyId); if (!fam) return null;
     const size = shapeRotations(fam.form)[0].length;
     if (committedCover + size > maxCover) return null;   // Baufeld-Deckel
-    const fits = enumeratePlacements(fam.form, committed);
+    const fits = enumeratePlacements(fam.form, committed, chLockArch);
     return fits.length ? fits[0] : null;
   };
   // Würde das Entfernen GENAU dieses Gebäudes Platz für `o` schaffen? Nur dann ist Ersetzen sinnvoll — sonst stünde der
@@ -273,7 +276,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const rest = committed.filter((x) => !removeIds.includes(x.id));
     const size = shapeRotations(fam.form)[0].length;
     if (occupiedCells(rest).size + size > maxCover) return null;   // Baufeld-Deckel auch nach dem Abriss prüfen
-    const fits = enumeratePlacements(fam.form, rest);
+    const fits = enumeratePlacements(fam.form, rest, chLockArch);
     return fits.length ? fits[0] : null;
   };
   const fitWithout = (o, removeId) => fitWithoutSet(o, [removeId]);
@@ -348,6 +351,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
   // ---- Tap je Phase ----
   const tapCell = (pos) => {
+    if (chLockSet.has(pos)) return; // #301 C2: gesperrte Zelle — keine Interaktion
     if (removeFor) { const cb = committedAt(pos); if (cb) setDemolishIds((cur) => cur.includes(cb.id) ? cur.filter((x) => x !== cb.id) : [...cur, cb.id]); return; } // #235/#281: markieren statt sofort abreißen; beliebiges Gebäude (de)markieren — Mehrfach-Abriss für große Legendäre
     if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { setPendingUpgrade(cb.id); setUpgradeMsg(null); } else { setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: info.reason }); setPendingUpgrade(null); } } return; } // #237: markieren + Jetzt/Danach zeigen, Aufwertung erst über den Bestätigen-Knopf
     if (phase === "place") { const b = buildingAt(pos); if (b && b.id === PENDING_ID) setSelId(PENDING_ID); return; }
@@ -369,10 +373,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     for (const h of hit) {
       const fam = familyDef(h.familyId); if (!fam) return null;
       let spot;
-      if (hit.length === 1 && isValidFootprint(fam.form, b.footprint, board)) {
+      if (hit.length === 1 && isValidFootprint(fam.form, b.footprint, board, chLockArch)) {
         spot = [...b.footprint].sort((x, y) => x - y);                       // sauberer Swap in b's alten Platz
       } else {
-        const fits = enumeratePlacements(fam.form, board);
+        const fits = enumeratePlacements(fam.form, board, chLockArch);
         if (!fits.length) return null;                                       // kein freier Platz → gesamter Swap scheitert
         const [hr, hc] = cen(h.footprint);
         spot = fits.reduce((best, f) => { const [fr, fc] = cen(f); const d = (fr - hr) ** 2 + (fc - hc) ** 2; return d < best.d ? { f, d } : best; }, { f: null, d: Infinity }).f;
@@ -415,7 +419,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
       if (key === lastKey) return; // Snap-Ziel unverändert → dragPrev (+ dragDelta/computeFormations) NICHT neu setzen
       lastKey = key;
       // valid = freier Platz ODER die getroffenen Gebäude können ausweichen (Swap/Verschieben) → grüne Vorschau statt rot.
-      const okDirect = !!fp && isValidFootprint(form, fp, others);
+      const okDirect = !!fp && isValidFootprint(form, fp, others, chLockArch);
       const okSwap = !!fp && !okDirect && !!relocationsForDrop(b, fp, others);
       setDragPrev(fp ? { footprint: fp, valid: okDirect || okSwap, swap: okSwap, id: b.id } : { footprint: [], valid: false, id: b.id });
     };
@@ -435,7 +439,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
       dragOffsetRef.current = { dx: 0, dy: 0 }; // Ghost loslassen → das Gebäude snappt auf die (gesnappte) Zielzelle
       if (wasActive) {
         const target = cellPos(ev.clientX, ev.clientY), fp = target == null ? null : fpFor(target);
-        if (fp && isValidFootprint(form, fp, others)) {
+        if (fp && isValidFootprint(form, fp, others, chLockArch)) {
           commit(fp);                                                        // freier Platz → normal ablegen
         } else if (fp) {
           // Über ein anderes Gebäude gedroppt: getroffene Gebäude ausweichen lassen, wenn Platz ist (Verschieben/Swap).
@@ -453,6 +457,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     window.addEventListener("pointermove", move, { passive: false }); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
   };
   const onCellDown = (pos, e) => {
+    if (chLockSet.has(pos)) return; // #301 C2: gesperrte Zelle — kein Bauen/Ziehen/Tap
     const b = buildingAt(pos);
     const canDrag = !removeFor && ((phase === "place" && b && b.id === PENDING_ID) || (phase === "move" && b));
     if (canDrag) { startDrag(pos, b, e); return; }
@@ -646,6 +651,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const upgradeDim = phase === "upgrade" && !upCan && !isMarkedUpgrade; // nicht-aufwertbar (inkl. leere Zellen) → ausgrauen
                 // #UI: beim Ziehen belegte Fremdfläche → ausgrauen (kein Ablegen möglich), außer sie ist gerade Drag-Vorschau.
                 const isBlocked = !!blocked && blocked.has(pos) && !(dragCells && dragCells.has(pos));
+                const chLocked = chLockSet.has(pos); // #301 C2: dauerhaft gesperrte Bau-Zelle (rot/ausgegraut)
                 const title = b
                   ? `${fam.name} (${tierLabel(b.tier)})${isPending ? " · Vorschau" : ""} — ${famEff(fam, b)}${upCan ? ` → Stufe ${tierLabel(b.tier + 1)}: ${famEff(fam, { tier: b.tier + 1 })}` : ""}${inForm ? ` · Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`
                   : `Pos ${pos + 1}${inForm ? ` — Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`;
@@ -659,11 +665,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       // #UI: Gebäude-Füllung/-Rand einheitlich (Typ-Farbe raus); die Stufe/Rarität zeigt der Ring (boxShadow) unten.
                       // #UI: Origin-Zellen des gezogenen Gebäudes zeigen sich als LEERES Feld (Gebäude „aufgehoben"); die
                       // Karte darunter bleibt sichtbar. KEIN Transform → kein Mitziehen der Karte, keine Lücke. Der Rahmen wandert als Ghost.
-                      background: inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b && !isDragOrig ? "#233140" : "#16232f"),
+                      background: chLocked ? "#2a1214" : inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b && !isDragOrig ? "#233140" : "#16232f"),
                       color: (b && !isDragOrig) || inDragPrev ? "#fff" : "#adbecc",
-                      border: `1px solid ${inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b && !isDragOrig ? "#2a3a46" : "#20303d")}`,
-                      opacity: upgradeDim ? 0.28 : (isBlocked ? 0.5 : (isPending && !inDragPrev ? 0.82 : 1)),
-                      filter: upgradeDim ? "grayscale(0.75)" : (isBlocked ? "grayscale(0.55)" : undefined),
+                      border: `1px solid ${chLocked ? "#e0555588" : inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b && !isDragOrig ? "#2a3a46" : "#20303d")}`,
+                      opacity: chLocked ? 0.6 : (upgradeDim ? 0.28 : (isBlocked ? 0.5 : (isPending && !inDragPrev ? 0.82 : 1))),
+                      filter: chLocked ? "grayscale(0.5)" : (upgradeDim ? "grayscale(0.75)" : (isBlocked ? "grayscale(0.55)" : undefined)),
                       touchAction: canDragHere ? "none" : "pan-y",
                       boxShadow: [
                         isMarkedDemolish ? "inset 0 0 0 2px #ff6a4d, inset 0 0 16px #ff3b1e66" : null,     // #235: markiertes Abriss-Ziel rot hervorheben
@@ -689,6 +695,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       const glow = CAT[fam?.category]?.color || "#5a8ade"; // Distrikt → Typ-Farb-Glow (etwas kräftiger)
                       return <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ boxShadow: `0 0 16px 2px ${glow}cc, inset 0 0 9px ${glow}66, inset 0 0 0 1px ${glow}` }} />;
                     })()}
+                    {/* #301 C2: dauerhaft gesperrte Bau-Zelle — rote Diagonal-Schraffur + Rim + Schloss. */}
+                    {chLocked && (
+                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none grid place-items-center" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(224,85,85,0.28) 3.5px, rgba(224,85,85,0.28) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(224,85,85,0.5)", color: "#e07a7a", fontSize: 11 }}>🔒</span>
+                    )}
                     {/* #UI: gesperrte Fläche beim Ziehen — Diagonal-Schraffur + Rim, damit „hier nicht ablegbar" klar heraussticht. */}
                     {isBlocked && (
                       <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(8,12,18,0.62) 3.5px, rgba(8,12,18,0.62) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(134,153,168,0.45)" }} />
