@@ -677,8 +677,8 @@ function MiniFx({ preview }) {
     case "klinge":
       return box(slash("50%", "-32deg", C, "0s"));
     case "laser":
-      // Zwei Strahlen aus unterschiedlichen Richtungen (versch. Winkel + Farbe + Versatz).
-      return box(<>{slash("38%", "-42deg", C, "0s")}{slash("62%", "34deg", "#f2a83a", "-1.1s")}</>);
+      // Zwei Strahlen, leicht verschiedene Winkel (gleiches Vorzeichen) → nicht parallel, kreuzen sich aber nicht.
+      return box(<>{slash("40%", "-24deg", C, "0s")}{slash("60%", "-40deg", "#f2a83a", "-1.1s")}</>);
     case "blackhole":
       // Dunkle Scheibe mit atmendem Rand-Glow (kein nach außen laufender Puls) + zwei Orbs auf Umlaufbahn.
       return box(

@@ -246,21 +246,22 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
       "--cut-rot": `${rot}deg`, animation: `as-cut-line ${cutDur}ms ease-out ${delay}ms both` }} />
   );
 
-  // LASER-SCHNITT (#deckshop): ZWEI Laser schießen über das GANZE Feld und treffen die Gegnerkarte an einem Punkt;
+  // LASER-SCHNITT (#deckshop): ZWEI Laser schießen über das GANZE Feld und treffen die Gegnerkarte an zwei Punkten;
   // die Karte teilt sich ENTLANG der beiden Laserlinien (Sektoren im echten Karten-Pixelraum → Schnittkanten liegen
   // exakt auf den Strahlen). Wichtig: die Karte bleibt INTAKT & STILL, bis die Strahlen durchgezogen sind (delay+cut)
   // — erst DANN bersten die Stücke auseinander (vorher „bewegte sie sich schon, bevor sie getroffen wurde").
   if (laser) {
     const dist = 44 * sepMul;                               // Auswärts-Flug der Karten-Stücke nach dem Schnitt
-    // #298 ZWEI Laser aus UNTERSCHIEDLICHEN Richtungen: jeder Strahl bekommt einen eigenen, deutlich verschiedenen
-    // Winkel (eigene fjitter-Seeds). Gegenläufige Vorzeichen erzwingen eine Mindest-Winkeldifferenz (~44°), sodass sie
-    // nie zufällig parallel jittern: der obere Strahl fällt von oben-links nach unten-rechts (+), der untere
-    // gegenläufig von unten-links nach oben-rechts (−). Sie dürfen sich schneiden — kein „X" erzwungen.
-    const angTop = 34 + fjitter(seed * 3 + 1, 12);          // ~22..46°
-    const angBot = -34 + fjitter(seed * 11 + 5, 12);        // ~−46..−22°  (≥ ~44° Differenz → sichtbar nicht parallel)
+    // #298 ZWEI Laser aus leicht unterschiedlichen Richtungen — sichtbar NICHT parallel, aber sie kreuzen sich NIE
+    // über der Karte (kein „X"). Trick: beide Strahlen teilen dasselbe Winkel-Vorzeichen (fallen nach unten-rechts)
+    // und laufen durch die vertikale Kartenmitte (px 0.5), der obere flacher, der untere steiler. Zwei gleichläufige
+    // Linien mit ober/unten versetztem Anker schneiden sich damit garantiert weit LINKS außerhalb der Karte, während
+    // beide die Karte sicher mittig treffen (echte Schnitte). Winkel-Jitter hält sie variantenreich, aber nie parallel.
+    const base = 30 + fjitter(seed * 3 + 1, 7);             // ~23..37° gemeinsame Grundrichtung (unten-rechts)
+    const spread = 10 + fjitter(seed * 5 + 2, 4);           // ~6..14° pro Seite → ~12..28° Differenz (sichtbar nicht parallel)
     const lines = [
-      { px: clamp(0.5 + fjitter(seed * 7, 0.14), 0.30, 0.70), py: clamp(0.32 + fjitter(seed * 9, 0.08), 0.20, 0.44), ang: angTop },
-      { px: clamp(0.5 + fjitter(seed * 13, 0.14), 0.30, 0.70), py: clamp(0.68 + fjitter(seed * 17, 0.08), 0.56, 0.80), ang: angBot },
+      { px: 0.5, py: clamp(0.30 + fjitter(seed * 9, 0.05), 0.22, 0.38), ang: base - spread },   // oberer Strahl, flacher
+      { px: 0.5, py: clamp(0.70 + fjitter(seed * 17, 0.05), 0.62, 0.78), ang: base + spread },   // unterer Strahl, steiler
     ];
     const pieces = laserPieces(lines, 104, 144);            // Kartenbox 104×144 (echte Winkel-Ausrichtung)
     const cutMs = Math.round(cutDur);                       // Strahl-Durchzug; danach erst der Zerfall
