@@ -373,9 +373,12 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const openOv = (list, idx) => { setOv({ list, idx }); setSel(ELEMENT_DEFS[0].key); };
   const stepOv = (d) => { setOv((o) => (o ? { ...o, idx: (o.idx + d + o.list.length) % o.list.length } : o)); setSel("deck"); };
   const ovTheme = ov ? ov.list[ov.idx] : null;
+  // Ist ein Kauffenster offen (Theme oder Effekt), wird der Shop-Hintergrund NICHT mitgescrollt (kein Scroll-
+  // Durchgriff/„-chaining" auf iOS) — das Overlay scrollt nur sich selbst. Gilt für alle Kategorien gleich.
+  const anyOverlay = !!ov || ovFxIdx >= 0;
 
   return (
-    <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
+    <div className={`fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`}
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <style>{FX_CSS}</style>
       <div className="w-full max-w-xl rounded-2xl px-5 pb-5 sm:px-6 sm:pb-6 my-auto overlay-card as-panel"
@@ -587,7 +590,7 @@ function GlobalFxOverlay({ fx, idx, count, p, spBal, onStep, onClose, onBuy }) {
   const canBuy = !fx.standard && canBuyGlobalFx(p, fx);
   const touch = useRef(0);
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto"
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain"
       style={{ background: "#05050ad0", backdropFilter: "blur(4px)" }} onClick={onClose}>
       <div className="w-full max-w-sm rounded-2xl overflow-hidden my-auto" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
@@ -778,7 +781,7 @@ function BuyOverlay({ theme, list, idx, p, sel, setSel, spBal, deckId, bfId, opt
   const maxEls = Math.max(1, ...list.map((t) => t.els.length));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto"
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain"
       style={{ background: "#05050ad0", backdropFilter: "blur(4px)" }} onClick={onClose}>
       <div className="w-full max-w-sm rounded-2xl overflow-hidden my-auto" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
