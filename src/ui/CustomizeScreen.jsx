@@ -186,8 +186,10 @@ function GottgleichPreview({ variant, compact = false }) {
    im Loop — Vorschau = In-Game (keine separate Engine, kein Drift). */
 const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
 const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LINE = 220;
+const BURN_STAGES = [1, 5, 9, 13]; // #295 Brennstrahl-Vorschau durchläuft die Serien-Stufen (wie das Schwarze Loch)
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
+  const stageRef = useRef(null);   // = „Panel" der Vorschau → der Brennstrahl kommt von der Stage-Oberkante
   const bf = battlefieldAssets("bf_kaiju");
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 2400); // Loop: Karte erscheint → wird zerstört → Pause
@@ -200,10 +202,10 @@ function FinisherScene({ variant }) {
   if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} laser />;
   else if (variant === "shatter") fx = <ExplosionFx cardEl={cardEl} color="#e879f9" cardDur={FIN_HALVES} burstDur={FIN_SPARK} flashDur={200} seed={seed} delay={FIN_DELAY} intensity={0.6} tier={3} scale={1} />;
   else if (variant === "lasergrid") fx = <LaserGridFx cardEl={cardEl} color={suitCol} diceDur={FIN_HALVES} lineDur={FIN_LINE} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={1} scale={1} />;
-  else if (variant === "burnbeam") fx = <BurnBeamFx cardEl={cardEl} color={suitCol} beamDur={FIN_HALVES} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} streak={8} />; // Serie 8 → zeigt persistenteren Strahl + mehr Funken
+  else if (variant === "burnbeam") fx = <BurnBeamFx cardEl={cardEl} color={suitCol} beamDur={FIN_HALVES} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} streak={BURN_STAGES[tick % BURN_STAGES.length]} panelRef={stageRef} />; // Loop durchläuft die Serien-Stufen
   else fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} />; // klinge (Default)
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+    <div ref={stageRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {/* Demo-Karte im echten 104×144-Slot, zentriert; die Finisher-Komponente rendert die Karte + Effekt darin. */}
@@ -686,8 +688,8 @@ function MiniFx({ preview }) {
     case "klinge":
       return box(slash("50%", "-32deg", C, "0s"));
     case "laser":
-      // Zwei Strahlen, leicht verschiedene Winkel (gleiches Vorzeichen) → nicht parallel, kreuzen sich aber nicht.
-      return box(<>{slash("40%", "-24deg", C, "0s")}{slash("60%", "-40deg", "#f2a83a", "-1.1s")}</>);
+      // Ein Laser aus wechselnder Richtung übers Feld.
+      return box(slash("50%", "-28deg", C, "0s"));
     case "lasergrid":
       // Kartensilhouette mit pulsierendem Neon-Raster (3×3) — deutet das Dicing an.
       return box(<span className="as-mini-core absolute" style={{ inset: 6, borderRadius: 2, "--mc": C,

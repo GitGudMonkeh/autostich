@@ -37,7 +37,7 @@ export const GLOBAL_FX = [
   { key: "hologrid", name: "Hologrid", desc: "Ein Leucht-Gitter läuft über das Battlefield.",
     ownKey: "fx:hologrid", option: "fxHologrid", preview: "hologrid", group: "anim" },
   // Sieg-Finisher (exklusiv, UI-seitige Einfachauswahl mit „Klinge" als Default).
-  { key: "laserSlice", name: "Laser-Schnitt", desc: "Gegnerkarten werden beim Sieg vom Laser geteilt — statt der Klinge.",
+  { key: "laserSlice", name: "Laser-Schnitt", desc: "Gegnerkarten werden beim Sieg von einem Laser aus zufälliger Richtung (jeder Sieg anders) geteilt — statt der Klinge.",
     ownKey: "fx:laserSlice", option: "fxLaserSlice", preview: "laser", group: "finisher" },
   { key: "blackhole", name: "Schwarzes Loch", desc: "Bei einer Siegserie wächst EIN Schwarzes Loch, das jede weitere Gegnerkarte einsaugt (Orbs auf wachsender Bahn); Serienabbruch → Kollaps mit Flash & Schockwelle (statt Klinge/Laser).",
     ownKey: "fx:blackhole", option: "fxBlackhole", preview: "blackhole", group: "finisher" },

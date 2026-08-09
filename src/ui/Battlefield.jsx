@@ -246,23 +246,19 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
       "--cut-rot": `${rot}deg`, animation: `as-cut-line ${cutDur}ms ease-out ${delay}ms both` }} />
   );
 
-  // LASER-SCHNITT (#deckshop): ZWEI Laser schießen über das GANZE Feld und treffen die Gegnerkarte an zwei Punkten;
-  // die Karte teilt sich ENTLANG der beiden Laserlinien (Sektoren im echten Karten-Pixelraum → Schnittkanten liegen
-  // exakt auf den Strahlen). Wichtig: die Karte bleibt INTAKT & STILL, bis die Strahlen durchgezogen sind (delay+cut)
-  // — erst DANN bersten die Stücke auseinander (vorher „bewegte sie sich schon, bevor sie getroffen wurde").
+  // LASER-SCHNITT (#deckshop): EIN Laser schießt über das GANZE Feld und trifft die Gegnerkarte; er kommt bei jedem
+  // Sieg aus einer ANDEREN Richtung (volle 360°, deterministisch aus der Stich-Nr.). Die Karte teilt sich ENTLANG der
+  // Laserlinie (Sektoren im echten Karten-Pixelraum → Schnittkante liegt exakt auf dem Strahl). Wichtig: die Karte
+  // bleibt INTAKT & STILL, bis der Strahl durchgezogen ist (delay+cut) — erst DANN bersten die Stücke auseinander.
   if (laser) {
     const dist = 44 * sepMul;                               // Auswärts-Flug der Karten-Stücke nach dem Schnitt
-    // #298 ZWEI Laser aus leicht unterschiedlichen Richtungen — sichtbar NICHT parallel, aber sie kreuzen sich NIE
-    // über der Karte (kein „X"). Trick: beide Strahlen teilen dasselbe Winkel-Vorzeichen (fallen nach unten-rechts)
-    // und laufen durch die vertikale Kartenmitte (px 0.5), der obere flacher, der untere steiler. Zwei gleichläufige
-    // Linien mit ober/unten versetztem Anker schneiden sich damit garantiert weit LINKS außerhalb der Karte, während
-    // beide die Karte sicher mittig treffen (echte Schnitte). Winkel-Jitter hält sie variantenreich, aber nie parallel.
-    const base = 30 + fjitter(seed * 3 + 1, 7);             // ~23..37° gemeinsame Grundrichtung (unten-rechts)
-    const spread = 10 + fjitter(seed * 5 + 2, 4);           // ~6..14° pro Seite → ~12..28° Differenz (sichtbar nicht parallel)
-    const lines = [
-      { px: 0.5, py: clamp(0.30 + fjitter(seed * 9, 0.05), 0.22, 0.38), ang: base - spread },   // oberer Strahl, flacher
-      { px: 0.5, py: clamp(0.70 + fjitter(seed * 17, 0.05), 0.62, 0.78), ang: base + spread },   // unterer Strahl, steiler
-    ];
+    // EIN Laser, der bei jedem Sieg aus einer ANDEREN Richtung übers Battlefield kommt (volle 360°) und die Karte
+    // durchschneidet. Winkel & Durchlaufpunkt sind deterministisch aus `seed` (= Stich-Nr.) → jede Runde eine andere
+    // Position/Richtung, aber der Punkt liegt IN der Karte → sie wird immer sauber in zwei Stücke geteilt.
+    const ang = fjitter(seed * 3 + 1, 180);                                  // −180..180 → volle 360°
+    const px = clamp(0.5 + fjitter(seed * 7, 0.24), 0.26, 0.74);            // Durchlaufpunkt auf der Karte (variiert)
+    const py = clamp(0.5 + fjitter(seed * 11, 0.24), 0.26, 0.74);
+    const lines = [{ px, py, ang }];
     const pieces = laserPieces(lines, 104, 144);            // Kartenbox 104×144 (echte Winkel-Ausrichtung)
     const cutMs = Math.round(cutDur);                       // Strahl-Durchzug; danach erst der Zerfall
     // Strahl spannt über das GANZE Feld (viewport-breit) → das overflow-hidden Panel klippt an seinen Rändern.
@@ -273,8 +269,8 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
           background: `linear-gradient(90deg, transparent 2%, ${color} 12%, ${color} 46%, #ffffff 50%, ${color} 54%, ${color} 88%, transparent 98%)`,
           boxShadow: `0 0 ${(10 + intensity * 8).toFixed(0)}px ${color}, 0 0 ${(26 + intensity * 12).toFixed(0)}px ${color}, 0 0 5px 1px #ffffffdd`,
           transformOrigin: "center", "--cut-rot": `${ln.ang}deg`, animation: `as-cut-line ${cutMs}ms ease-out ${delay}ms both` }} />
-        {/* Funken am Treffer-Punkt (halber Kranz je Laser), zünden mit dem Schnitt (delay+cut). */}
-        {sparks.filter((s) => s.i % 2 === k).map((s) => (
+        {/* Funken am Treffer-Punkt (voller Kranz am einzelnen Laser), zünden mit dem Schnitt (delay+cut). */}
+        {sparks.filter((s) => s.i % lines.length === k).map((s) => (
           <div key={s.i} style={{ position: "absolute", left: 0, top: 0,
             width: s.confetti ? 6 : 4, height: s.confetti ? 3 : 4, borderRadius: s.confetti ? 1 : "50%",
             background: s.white ? "#ffffff" : color, boxShadow: `0 0 5px ${s.white ? "#ffffff" : color}`,
@@ -285,13 +281,13 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
     );
     return (
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        {/* Karten-Stücke entlang der beiden Laserlinien — bleiben ganz & still bis delay+cut, dann bersten sie weg. */}
+        {/* Karten-Stücke entlang der Laserlinie — bleiben ganz & still bis delay+cut, dann bersten sie weg. */}
         {pieces.map((s, k) => (
           <div key={`lw${k}`} className="absolute inset-0" style={{ clipPath: s.clip,
             "--sx": `${(s.mx * dist).toFixed(1)}px`, "--sy": `${(s.my * dist).toFixed(1)}px`, "--sr": `${fjitter(seed * 7 + k * 5, 10)}deg`,
             animation: `as-laser-wedge ${(halvesDur * 0.72).toFixed(0)}ms ${ease} ${delay + cutMs}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
         ))}
-        {/* Zwei getrennte Laser (je eigener Treffer-Punkt + Winkel). */}
+        {/* Ein Laser (zufällige Richtung/Position übers Feld). */}
         {lines.map((ln, k) => beamAt(ln, k))}
       </div>
     );
@@ -476,9 +472,22 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
    dabei (kein Bruch). Aus dem Einbrennloch springen Funken (Hitze-Akzent Orange + Deckfarbe). #serie: mit steigender
    Siegserie (`streak`) hält der Strahl LÄNGER (persistenter) und es springen IMMER MEHR Funken über ein längeres
    Fenster aus dem Loch. Deterministisch aus `seed`. Nur bei normaler Bewegung (Aufrufer prüft `reduced`). */
-export function BurnBeamFx({ cardEl, color, beamDur, sparkDur, seed, delay = 0, intensity = 0, scale = 1, streak = 0 }) {
+export function BurnBeamFx({ cardEl, color, beamDur, sparkDur, seed, delay = 0, intensity = 0, scale = 1, streak = 0, panelRef = null }) {
   const HOT = "#ff7a2f";                                  // Hitze-Akzent (Ember-Orange)
   const streakK = clamp(streak / 12, 0, 1);               // 0..1: Serien-Eskalation
+  // Der Strahl kommt von der BATTLEFIELD-Oberkante (nicht der Kartenkante): einmal die px-Distanz Panel-Oberkante →
+  // Kartenmitte messen und den Strahl darüber spannen (transform-origin top → er fährt über die ganze Höhe herab).
+  const rootRef = useRef(null);
+  const [topDist, setTopDist] = useState(null);
+  useEffect(() => {
+    const el = rootRef.current, panel = panelRef && panelRef.current;
+    if (!el || !panel) return;
+    const r = el.getBoundingClientRect(), p = panel.getBoundingClientRect();
+    setTopDist(Math.max(40, r.top + r.height / 2 - p.top));
+  }, [panelRef]);
+  const CC = 72;                                          // Kartenmitte im 104×144-Slot (Ziel des Strahls)
+  const beamTop = topDist != null ? CC - topDist : 0;     // Strahl-Oberkante = Panel-Oberkante (Fallback: Kartenkante)
+  const beamH = topDist != null ? topDist : 74;           // Länge: Panel-Oberkante → Kartenmitte
   const beamMs = Math.round(beamDur * (1 + streakK * 0.55)); // Strahl hält mit der Serie länger → persistenter
   const hitAt = delay + Math.round(beamMs * 0.36);        // Strahl erreicht die Mitte → Loch/Funken/Verblassen zünden
   const holeMs = Math.round(beamMs * 0.9);
@@ -501,7 +510,7 @@ export function BurnBeamFx({ cardEl, color, beamDur, sparkDur, seed, delay = 0, 
     };
   });
   return (
-    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+    <div ref={rootRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
       {/* Karte verblasst (kein Bruch) — sie „vergeht", während das Loch durchbrennt. */}
       <div className="absolute inset-0" style={{ animation: `as-burn-fade ${fadeMs}ms ease-in ${hitAt}ms both`, willChange: "opacity" }}>{cardEl}</div>
       {/* Glühendes Loch in der EXAKTEN Kartenmitte (left/top 50 % des 104×144-Slots). */}
@@ -509,9 +518,9 @@ export function BurnBeamFx({ cardEl, color, beamDur, sparkDur, seed, delay = 0, 
         background: `radial-gradient(circle, #05050a 42%, ${HOT} 58%, ${color} 72%, transparent 82%)`,
         boxShadow: `0 0 14px 3px ${HOT}, inset 0 0 7px 2px #000`,
         animation: `as-burn-hole ${holeMs}ms ease-out ${hitAt}ms both`, willChange: "transform, opacity" }} />
-      {/* Dünner Strahl (liest als Laser): schmaler weißer Kern + Deck-/Hitze-Verlauf, fährt von oben auf die Mitte. */}
-      <div className="absolute" style={{ left: "50%", top: 0, width: 3, height: "52%", marginLeft: -1.5, borderRadius: 3, transformOrigin: "top center",
-        background: `linear-gradient(180deg, transparent, #ffffff 22%, ${HOT} 60%, ${color})`,
+      {/* Dünner Strahl (liest als Laser), fährt von der BATTLEFIELD-Oberkante herab auf die exakte Kartenmitte. */}
+      <div className="absolute" style={{ left: "50%", top: beamTop, width: 3, height: beamH, marginLeft: -1.5, borderRadius: 3, transformOrigin: "top center",
+        background: `linear-gradient(180deg, ${color}00, ${color} 22%, #ffffff 86%, ${HOT})`,
         boxShadow: `0 0 5px 1px ${HOT}, 0 0 14px 3px ${HOT}55`,
         animation: `as-burn-beam ${beamMs}ms ease-in ${delay}ms both`, willChange: "transform, opacity" }} />
       {/* Ember-Funken springen (gestaffelt) aus dem Loch — mehr & länger bei hoher Serie. */}
@@ -837,7 +846,7 @@ function PrunkFx({ trigger, panelRef, oppRef, color }) {
    Pool NICHT pro Stich remountet, floatet der Ghost in voller Länge aus und überlappt bei hohem Turbo/vielen Siegen
    mit dem nächsten Stich — Spieler- UND Gegnerkarte fühlen sich damit gleich lang an (#186). Ghosts entfernen sich
    nach ihrer Lebensdauer selbst. */
-function SlashGhostLayer({ ghosts }) {
+function SlashGhostLayer({ ghosts, panelRef = null }) {
   return (
     <>
       {ghosts.map((g) => {
@@ -869,7 +878,7 @@ function SlashGhostLayer({ ghosts }) {
               : isGrid
               ? <LaserGridFx cardEl={cardEl} color={g.color} diceDur={g.halves} lineDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
               : isBurn
-              ? <BurnBeamFx cardEl={cardEl} color={g.color} beamDur={g.halves} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} streak={g.streak} />
+              ? <BurnBeamFx cardEl={cardEl} color={g.color} beamDur={g.halves} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} streak={g.streak} panelRef={panelRef} />
               : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} laser={g.laser} />}
           </div>
         );
@@ -1409,7 +1418,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
         <div ref={oppSlotRef} className="flex">
           <Side label="Gegner" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg}
-                overlay={oppGhosts.length ? <SlashGhostLayer ghosts={oppGhosts} /> : null}>{oppCard}</Side>
+                overlay={oppGhosts.length ? <SlashGhostLayer ghosts={oppGhosts} panelRef={panelRef} /> : null}>{oppCard}</Side>
         </div>
 
         {/* Aufsteigende Zahlen (#49/#68): je Typ eigene Streuzone (Score links / Leben rechts) mit

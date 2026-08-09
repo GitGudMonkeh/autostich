@@ -225,7 +225,8 @@ button { font-family: inherit; }
   0%   { opacity: 0; transform: translate(-50%, -50%) scale(0); }
   26%  { opacity: 1; }
   44%  { transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(var(--hole-max, 2.2)); }
+  86%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(var(--hole-max, 2.2)); }
 }
 /* Karte „verblasst" (statt Bruch), während der Strahl das Loch durchbrennt. */
 @keyframes as-burn-fade {
