@@ -9,7 +9,7 @@ import {
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
-import { SliceFx, ExplosionFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx } from "./Battlefield.jsx";
+import { SliceFx, ExplosionFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist } from "./Battlefield.jsx";
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 
@@ -186,10 +186,8 @@ function GottgleichPreview({ variant, compact = false }) {
    im Loop — Vorschau = In-Game (keine separate Engine, kein Drift). */
 const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
 const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LINE = 220;
-const BURN_STAGES = [1, 5, 9, 13]; // #295 Brennstrahl-Vorschau durchläuft die Serien-Stufen (wie das Schwarze Loch)
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
-  const stageRef = useRef(null);   // = „Panel" der Vorschau → der Brennstrahl kommt von der Stage-Oberkante
   const bf = battlefieldAssets("bf_kaiju");
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 2400); // Loop: Karte erscheint → wird zerstört → Pause
@@ -202,16 +200,62 @@ function FinisherScene({ variant }) {
   if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} laser />;
   else if (variant === "shatter") fx = <ExplosionFx cardEl={cardEl} color="#e879f9" cardDur={FIN_HALVES} burstDur={FIN_SPARK} flashDur={200} seed={seed} delay={FIN_DELAY} intensity={0.6} tier={3} scale={1} />;
   else if (variant === "lasergrid") fx = <LaserGridFx cardEl={cardEl} color={suitCol} diceDur={FIN_HALVES} lineDur={FIN_LINE} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={1} scale={1} />;
-  else if (variant === "burnbeam") fx = <BurnBeamFx cardEl={cardEl} color={suitCol} flipMs={1250} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} streak={BURN_STAGES[tick % BURN_STAGES.length]} panelRef={stageRef} />; // Loop durchläuft die Serien-Stufen (ruhige Vorschau-Kadenz)
   else fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} />; // klinge (Default)
   return (
-    <div ref={stageRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+    <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {/* Demo-Karte im echten 104×144-Slot, zentriert; die Finisher-Komponente rendert die Karte + Effekt darin. */}
       <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
         <div key={tick} className="absolute inset-0">{fx}</div>
       </div>
+    </div>
+  );
+}
+
+/* #295 Brennstrahl-Vorschau: der PERSISTENTE Strahl (BurnBeamPersist) über einem synthetischen Serien-Loop — der Laser
+   fährt beim ersten „Sieg" herab, bleibt über die Serie lit und wird intensiver, je Sieg ein Einschlag-Burst (BurnBeamFx:
+   Loch/Funken/Verblassen); die „Niederlage" zieht den Strahl zurück. Zeigt das persistente Verhalten wie das Schwarze Loch. */
+function BurnBeamPreview() {
+  const panelRef = useRef(null), oppRef = useRef(null);
+  const [pulse, setPulse] = useState(null);
+  const [bursts, setBursts] = useState([]);
+  const [dormant, setDormant] = useState(true);
+  const bf = battlefieldAssets("bf_kaiju");
+  const suitCol = suitColor(DEMO_SUIT);
+  const seqRef = useRef(0);
+  useEffect(() => {
+    // 1..7 Siege (Strahl lit, Intensität + Funkendichte steigen) · 8 Niederlage (Strahl zieht sich zurück) · 9/10 Pause.
+    let c = 0;
+    const id = setInterval(() => {
+      c = (c + 1) % 11;
+      if (c >= 1 && c <= 7) {
+        const streak = c * 1.8;
+        setDormant(false);
+        setPulse({ id: ++seqRef.current, kind: "win", streak });
+        const bid = seqRef.current;
+        setBursts((b) => [...b, { id: bid, streak }].slice(-2));
+        setTimeout(() => setBursts((b) => b.filter((x) => x.id !== bid)), 1000);
+      } else if (c === 8) { setPulse({ id: ++seqRef.current, kind: "loss" }); setDormant(true); }
+    }, 780);
+    return () => clearInterval(id);
+  }, []);
+  const demoCard = () => <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
+  return (
+    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
+      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+      {/* Gegner-Demokarte etwas unterhalb der Mitte (Strahl hat Platz, von der Stage-Oberkante herabzufahren). */}
+      <div ref={oppRef} className="absolute" style={{ left: "50%", top: "58%", width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
+        <div className="absolute inset-0" style={{ opacity: dormant ? 1 : 0, transition: "opacity 160ms" }}>{demoCard()}</div>
+      </div>
+      {/* Einschlag-Burst je Sieg (Loch/Funken/Verblassen) an der Kartenposition. */}
+      {bursts.map((bt) => (
+        <div key={bt.id} className="absolute" style={{ left: "50%", top: "58%", width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
+          <BurnBeamFx cardEl={demoCard()} color={suitCol} flipMs={1500} seed={bt.id * 3 + 1} delay={40} intensity={0.5} scale={1} streak={bt.streak} />
+        </div>
+      ))}
+      <BurnBeamPersist active pulse={pulse} color={suitCol} scale={1} panelRef={panelRef} oppRef={oppRef} reduced={false} />
     </div>
   );
 }
@@ -268,7 +312,8 @@ function GlobalFxScenePreview({ fx }) {
   if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
   if (fx.preview === "blackhole") return <BlackholePreview />;
-  if (["laser", "shatter", "klinge", "lasergrid", "burnbeam"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
+  if (fx.preview === "burnbeam") return <BurnBeamPreview />;
+  if (["laser", "shatter", "klinge", "lasergrid"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets("bf_kaiju");
   return (

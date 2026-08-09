@@ -458,43 +458,22 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
           ? { left: 0, right: 0, top: ln.pos, height: 2, marginTop: -1, background: lineGrad(true), boxShadow: `0 0 10px 2px ${color}, 0 0 24px 7px ${color}88`, transformOrigin: "center", animation: `as-lg-line ${lineMs}ms ease-out ${delay}ms both` }
           : { top: 0, bottom: 0, left: ln.pos, width: 2, marginLeft: -1, background: lineGrad(false), boxShadow: `0 0 10px 2px ${color}, 0 0 24px 7px ${color}88`, transformOrigin: "center", animation: `as-lg-line ${lineMs}ms ease-out ${delay}ms both` }} />
       ))}
-      {/* Heller Zentral-Flash im Moment des Zerfalls. */}
-      <div className="absolute" style={{ left: "50%", top: "50%", width: 52, height: 52, marginLeft: -26, marginTop: -26, borderRadius: "50%",
-        background: `radial-gradient(circle, #ffffff, ${color} 48%, transparent 74%)`, mixBlendMode: "screen",
-        animation: `as-lg-flash ${Math.round(diceMs * 0.55)}ms ease-out ${delay + lineMs}ms both`, willChange: "transform, opacity" }} />
     </div>
   );
 }
 
-/* #295 Sieg-Finisher „Brennstrahl": ein DÜNNER Neon-Strahl (liest als Laser) fährt von oben herab (scaleY aus der
-   Oberkante) und brennt ein glühendes Loch in die EXAKTE Kartenmitte — Einschlagpunkt = Loch-Zentrum = Kartenmitte
-   (left/top 50 % des fixen 104×144-Slots, also aus der echten Kartenposition, nicht geschätzt). Die Karte VERBLASST
-   dabei (kein Bruch). Aus dem Einbrennloch springen Funken (Hitze-Akzent Orange + Deckfarbe). #serie: mit steigender
-   Siegserie (`streak`) hält der Strahl LÄNGER (persistenter) und es springen IMMER MEHR Funken über ein längeres
-   Fenster aus dem Loch. Deterministisch aus `seed`. Nur bei normaler Bewegung (Aufrufer prüft `reduced`). */
-export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, intensity = 0, scale = 1, streak = 0, panelRef = null }) {
+/* #295 Sieg-Finisher „Brennstrahl" — PER-SIEG-BURST auf der Gegnerkarte: ein glühendes Loch brennt in die EXAKTE
+   Kartenmitte (left/top 50 % des fixen 104×144-Slots), die Karte VERBLASST, und aus dem Loch springen Funken (Hitze-
+   Akzent Orange + Deckfarbe). Der eigentliche STRAHL ist persistent (BurnBeamPersist, s. u.) und lebt über die Serie
+   hinweg auf Panel-Ebene — hier nur der Einschlag/Zerfall je Sieg. Dichte/Größe/Streuweite/Glow der Funken und die
+   Loch-Größe wachsen mit der Serie (`streak`). Budget an die Stich-Kadenz (flipMs) gekoppelt → löst vor dem nächsten
+   Flip auf. Deterministisch aus `seed`. Nur bei normaler Bewegung (Aufrufer prüft `reduced`). */
+export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, intensity = 0, scale = 1, streak = 0 }) {
   const HOT = "#ff7a2f";                                  // Hitze-Akzent (Ember-Orange)
   const streakK = clamp(streak / 12, 0, 1);               // 0..1: Serien-Eskalation
-  // Gesamtbudget an die Stich-Kadenz (flipMs) koppeln: der Effekt MUSS vor dem nächsten Flip (~flipMs) fertig sein —
-  // sonst liegt der Strahl hinter der neu geflippten Karte. Alle Zeiten leiten sich aus `body` ab → passt sich
-  // zugleich dem Turbo an (kleiner flipMs = schneller). Serie erhöht nur die Funken-Dichte, nicht die Gesamtdauer.
-  const budget = Math.max(200, flipMs - 30);
+  const budget = Math.max(200, flipMs - 30);              // muss vor dem nächsten Flip fertig sein (Turbo-gekoppelt)
   const body = Math.max(150, budget - delay);
-  // Der Strahl kommt von der BATTLEFIELD-Oberkante (nicht der Kartenkante): einmal die px-Distanz Panel-Oberkante →
-  // Kartenmitte messen und den Strahl darüber spannen (transform-origin top → er fährt über die ganze Höhe herab).
-  const rootRef = useRef(null);
-  const [topDist, setTopDist] = useState(null);
-  useEffect(() => {
-    const el = rootRef.current, panel = panelRef && panelRef.current;
-    if (!el || !panel) return;
-    const r = el.getBoundingClientRect(), p = panel.getBoundingClientRect();
-    setTopDist(Math.max(40, r.top + r.height / 2 - p.top));
-  }, [panelRef]);
-  const CC = 72;                                          // Kartenmitte im 104×144-Slot (Ziel des Strahls)
-  const beamTop = topDist != null ? CC - topDist : 0;     // Strahl-Oberkante = Panel-Oberkante (Fallback: Kartenkante)
-  const beamH = topDist != null ? topDist : 74;           // Länge: Panel-Oberkante → Kartenmitte
-  const beamMs = Math.round(body * 0.8);                  // Strahl-Descent (hält, dann fadet) — innerhalb des Budgets
-  const hitAt = delay + Math.round(beamMs * 0.4);         // Strahl erreicht die Mitte → Loch/Funken/Verblassen zünden
+  const hitAt = delay + Math.round(body * 0.22);          // kurzer Beat, dann zünden Loch/Funken/Verblassen
   const holeMs = Math.round(body * 0.66);                 // endet ~ mit dem Budget (vor dem nächsten Flip)
   const fadeMs = Math.round(body * 0.62);
   const holeMax = (1.4 + intensity * 0.5 + streakK * 0.5).toFixed(2); // kleineres, glühendes Loch (bei Serie etwas größer)
@@ -518,7 +497,7 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
     };
   });
   return (
-    <div ref={rootRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
+    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
       {/* Karte verblasst (kein Bruch) — sie „vergeht", während das Loch durchbrennt. */}
       <div className="absolute inset-0" style={{ animation: `as-burn-fade ${fadeMs}ms ease-in ${hitAt}ms both`, willChange: "opacity" }}>{cardEl}</div>
       {/* Glühendes Loch in der EXAKTEN Kartenmitte (left/top 50 % des 104×144-Slots): warmer Ember-Verlauf mit
@@ -527,17 +506,65 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
         background: `radial-gradient(circle, #2a0f02 20%, ${HOT} 44%, #ffcf6a 60%, ${color}00 80%)`,
         boxShadow: `0 0 ${(12 + streakK * 10).toFixed(0)}px ${(4 + streakK * 3).toFixed(0)}px ${HOT}, 0 0 ${(22 + streakK * 16).toFixed(0)}px ${(8 + streakK * 6).toFixed(0)}px ${HOT}55`,
         animation: `as-burn-hole ${holeMs}ms ease-out ${hitAt}ms both`, willChange: "transform, opacity" }} />
-      {/* Dünner Strahl (liest als Laser), fährt von der BATTLEFIELD-Oberkante herab auf die exakte Kartenmitte. */}
-      <div className="absolute" style={{ left: "50%", top: beamTop, width: 3, height: beamH, marginLeft: -1.5, borderRadius: 3, transformOrigin: "top center",
-        background: `linear-gradient(180deg, ${color}00, ${color} 22%, #ffffff 86%, ${HOT})`,
-        boxShadow: `0 0 5px 1px ${HOT}, 0 0 14px 3px ${HOT}55`,
-        animation: `as-burn-beam ${beamMs}ms ease-in ${delay}ms both`, willChange: "transform, opacity" }} />
       {/* Ember-Funken springen (gestaffelt) aus dem Loch — mehr, größer, weiter & heller bei hoher Serie. */}
       {embers.map((s) => (
         <div key={`em${s.i}`} style={{ position: "absolute", left: "50%", top: "50%", width: +s.sz, height: +s.sz, borderRadius: "50%",
           background: s.c, boxShadow: `0 0 ${emberGlow}px ${s.c}`, "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
           animation: `as-spark ${sparkAnim}ms ease-out ${s.d}ms both`, willChange: "transform, opacity" }} />
       ))}
+    </div>
+  );
+}
+
+/* #295 Sieg-Finisher „Brennstrahl" — PERSISTENTER Strahl (Panel-Ebene, analog Schwarzes Loch): sobald eine Siegserie
+   läuft, bleibt der dünne Laser von der Battlefield-Oberkante bis zur Gegnerkarten-Mitte LIT (fährt beim ersten Sieg
+   herab, hält über die Serie, wird bei jedem Sieg heller/intensiver) und zieht sich beim Serienabbruch (Niederlage)
+   zurück. Der Einschlag je Sieg (Loch/Funken/Verblassen) kommt vom Per-Sieg-Burst (BurnBeamFx). Position aus
+   panelRef+oppRef gemessen (echte Kartenposition). Reines DOM (transform/opacity/Flicker) → GPU-günstig, reduced-safe. */
+export function BurnBeamPersist({ active, pulse = null, color = "#35e0ff", scale = 1, panelRef, oppRef, reduced = false }) {
+  const HOT = "#ff7a2f";
+  const [geo, setGeo] = useState(null);   // { cx, cy } in Panel-Pixeln
+  const [on, setOn] = useState(false);    // Strahl lit?
+  const [lvl, setLvl] = useState(0);      // 0..1 Intensität (Serie)
+  useEffect(() => {
+    if (!active || reduced || !panelRef?.current) { setGeo(null); return undefined; }
+    const panel = panelRef.current;
+    const measure = () => {
+      const pr = panel.getBoundingClientRect();
+      if (pr.width < 4) return;
+      const orr = oppRef?.current?.getBoundingClientRect();
+      const cx = orr && orr.width ? orr.left - pr.left + orr.width / 2 : pr.width * 0.72;
+      const cy = orr && orr.width ? orr.top - pr.top + orr.height / 2 : pr.height * 0.5;
+      setGeo({ cx, cy });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [active, reduced, panelRef, oppRef]);
+  useEffect(() => {
+    if (!pulse) return;
+    if (pulse.kind === "win") { setOn(true); setLvl(clamp((pulse.streak || 1) / 12, 0.12, 1)); }
+    else if (pulse.kind === "loss") { setOn(false); setLvl(0); }
+  }, [pulse]);
+  if (!active || reduced || !geo) return null;
+  const beamH = geo.cy;                    // Panel-Oberkante → Kartenmitte
+  const glow = 5 + lvl * 10, tip = 5 + lvl * 8;
+  return (
+    <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ zIndex: 26 }}>
+      {/* Persistenter Strahl: fährt beim ersten Sieg herab (scaleY-Transition), bleibt über die Serie lit (innerer
+          Flicker = Laser-Energie); zieht sich beim Serienabbruch zurück. Außen-Wrapper gated on/off, innen flackert es. */}
+      <div style={{ position: "absolute", left: geo.cx, top: 0, height: beamH, width: 3, marginLeft: -1.5, transformOrigin: "top center",
+        transform: on ? "scaleY(1)" : "scaleY(0.02)", opacity: on ? 1 : 0, transition: "transform 280ms ease-in, opacity 260ms ease-out" }}>
+        <div className="as-burn-flicker" style={{ position: "absolute", inset: 0, borderRadius: 3,
+          background: `linear-gradient(180deg, ${color}00, ${color} 20%, #ffffff 86%, ${HOT})`,
+          boxShadow: `0 0 ${glow}px 1px ${HOT}, 0 0 ${glow * 2}px 3px ${HOT}55` }} />
+      </div>
+      {/* Heißer, pulsierender Strahl-Fußpunkt an der Kartenmitte (Einbrenn-Glut). */}
+      <div style={{ position: "absolute", left: geo.cx, top: geo.cy, width: tip, height: tip, marginLeft: -tip / 2, marginTop: -tip / 2,
+        opacity: on ? 1 : 0, transition: "opacity 240ms" }}>
+        <div className="as-burn-flicker" style={{ position: "absolute", inset: 0, borderRadius: "50%",
+          background: `radial-gradient(circle, #ffffff, ${HOT} 55%, transparent 78%)`, boxShadow: `0 0 ${glow}px ${(2 + lvl * 3).toFixed(0)}px ${HOT}` }} />
+      </div>
     </div>
   );
 }
@@ -887,7 +914,7 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
               : isGrid
               ? <LaserGridFx cardEl={cardEl} color={g.color} diceDur={g.halves} lineDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
               : isBurn
-              ? <BurnBeamFx cardEl={cardEl} color={g.color} flipMs={g.flipMs} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} streak={g.streak} panelRef={panelRef} />
+              ? <BurnBeamFx cardEl={cardEl} color={g.color} flipMs={g.flipMs} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} streak={g.streak} />
               : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} laser={g.laser} />}
           </div>
         );
@@ -944,6 +971,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #296 Schwarzes Loch (Serie): persistentes Panel-Loch. Jeder Blackhole-Sieg feuert einen „Puls" (Karte wird
   // eingesogen) an das Loch, das über die Serie hinweg wächst und beim Serienabbruch kollabiert.
   const [holePulse, setHolePulse] = useState(null);
+  const [burnPulse, setBurnPulse] = useState(null); // #295 persistenter Brennstrahl: Sieg = lit + Level, Niederlage = zurückziehen
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -1031,6 +1059,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #296: Ist der Blackhole-Finisher im Lauf aktiv? Dann läuft das persistente Panel-Loch (unabhängig vom Einzelstich).
   // Kein separater Ghost auf der Gegnerkarte mehr — der Sog/das Loch werden im Canvas gezeichnet.
   const holeActive   = !reduced && fxBlackhole && flipMs > 170 && !!t;
+  const burnActive   = !reduced && fxBurnBeam && flipMs > 170 && !!t; // #295 persistenter Brennstrahl im Lauf aktiv
   const oppSliced    = sliceOn && win && !explode;            // sonst normaler Schnitt (auch bei Krit OHNE Shatter)
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
@@ -1231,6 +1260,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Canvas + Serien-Mult für die ×2.0-Schwelle). Eine Niederlage meldet einen „loss-Puls" → Serienabbruch → Kollaps.
     if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: deckA1 || suitColor(t.oCard.suit), mult: bd ? bd.streakMult : 1 });
     else if (holeActive && lost) setHolePulse({ id: t.trickNo, kind: "loss" });
+    // #295 Brennstrahl: Sieg → Strahl lit + Intensität (Serie); Niederlage → Serienabbruch → Strahl zieht sich zurück.
+    if (burnFinish) setBurnPulse({ id: t.trickNo, kind: "win", streak: t.winStreak || 0 });
+    else if (burnActive && lost) setBurnPulse({ id: t.trickNo, kind: "loss" });
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
     if (win && !holeFinish) {   // Gegnerkarte verliert → Schnitt (Standard, auch bei Krit) bzw. Shatter-Explosion (nur mit gekauftem Effekt)
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
@@ -1409,6 +1441,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           Gegnerkarte (Puls) ein, Orbs auf wachsendem Bahnradius, Kollaps beim Serienabbruch. Turbo-Tempo via fxScale. */}
       <BlackholeFieldFx active={holeActive} pulse={holePulse}
         color={deckA1 || "#35e0ff"} scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} reduced={reduced} />
+      {/* #295 Brennstrahl (persistent): Strahl bleibt über die Serie lit, zieht sich beim Serienabbruch zurück; der
+          Einschlag je Sieg (Loch/Funken/Verblassen) kommt vom Per-Sieg-Burst (SlashGhostLayer). */}
+      <BurnBeamPersist active={burnActive} pulse={burnPulse}
+        color={deckA1 || "#ff9a3f"} scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} reduced={reduced} />
       <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (

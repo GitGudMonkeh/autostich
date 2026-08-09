@@ -233,6 +233,9 @@ button { font-family: inherit; }
   0%, 10% { opacity: 1; }
   100%    { opacity: 0; }
 }
+/* Persistenter Brennstrahl: feiner, schneller Flicker = Laser-Energie (Opazität pendelt leicht). */
+@keyframes as-burn-flicker { 0%, 100% { opacity: 1; } 45% { opacity: .78; } 70% { opacity: .93; } }
+.as-burn-flicker { animation: as-burn-flicker 190ms ease-in-out infinite; }
 
 /* #188 v2: Screen-Shake bei großem Krit-Sieg (Crit-only). Amplitude über --shake-amp (nach Stufe). Zwei
    IDENTISCHE Keyframes (a/b) — das Battlefield-Panel wechselt je Krit den Namen, damit die einmalige Animation
