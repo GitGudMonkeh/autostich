@@ -190,13 +190,16 @@ export function Autostich() {
   useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
   // Pause-Knopf hält auch die Musik an — nur im laufenden Stichspiel; in Menü/Gameover spielt sie normal weiter.
   useEffect(() => { music.setPaused(paused && state.phase === "play"); }, [paused, state.phase]);
-  // #: Persistente Finisher-Ton-Betten (Brennstrahl/Schwarzes Loch) pausieren, sobald der Lauf nicht aktiv im Stichspiel
-  // ist: Pause, Auswahl-/Perk-Fenster (Phase ≠ „play"), Options-/Chronik-/Glossar-/Abbruch-Overlay oder Hintergrund-Tab.
-  // Außerhalb eines Laufs (Menü/Werkstatt-Showcase) NICHT gedrosselt → die Vorschau-Betten bleiben hörbar.
+  // #: Persistente Finisher-Ton-Betten (Brennstrahl/Schwarzes Loch) dürfen NUR in zwei Zuständen klingen: (1) im aktiv
+  // laufenden Stichspiel und (2) in der Werkstatt-Vorschau (dort mounten die Preview-Betten). In JEDEM anderen Zustand
+  // — Pause, Auswahl-/Perk-Fenster (Phase ≠ „play"), Overlays, Hintergrund-Tab UND besonders der Victory-/Gameover-Screen
+  // (Lauf zu Ende, aber der letzte Sieg-Loop hängt noch) — werden sie verstummt. Positiv-Logik (statt inRun-gated), damit
+  // auch der Gameover-Zustand (inRun=false) sicher greift.
   useEffect(() => {
-    const suspend = inRun && (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || !visible);
-    audio.setLoopsSuspended(suspend);
-  }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible]);
+    const inActivePlay = inRun && state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart && visible;
+    const loopsAllowed = inActivePlay || showCustomize; // Werkstatt-Showcase = einziger Nicht-Spiel-Ort mit Loop-Betten
+    audio.setLoopsSuspended(!loopsAllowed);
+  }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, showCustomize]);
   const changeOptions = (patch) => setOptions((o) => saveOptions({ ...o, ...patch }));
 
   // #254: Zentrale Zurück-Behandlung (mobil, Swipe/Hardware/Browser). Priorität: oberstes abweisbares Overlay
