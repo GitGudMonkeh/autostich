@@ -145,7 +145,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   useEscape(onClose);
   const p = profile || {};
   const [mode, setMode] = useState("mine");   // "mine" | "prev"
-  const [ov, setOv] = useState(null);          // Kauffenster: { list: theme[], idx } | null (kategorie-lokal)
+  const [ov, setOv] = useState(null);          // Theme-Kauffenster: { list: theme[], idx } | null (kategorie-lokal)
+  const [ovFx, setOvFx] = useState(null);      // globales-Effekt-Kauffenster: GLOBAL_FX-Eintrag | null
   const [sel, setSel] = useState("deck");      // gewähltes Element im Kauffenster
   const spBal = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
 
@@ -192,8 +193,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           <MineView p={p} deckId={deckId} bfId={bfId} activeTheme={activeTheme} options={options}
             ownedDeckThemes={ownedDeckThemes} ownedBfThemes={ownedBfThemes} onChoose={onChoose} onBrowse={() => setMode("prev")} />
         ) : (
-          <PreviewView p={p} onOpen={openOv} options={options} onChoose={onChoose}
-            onBuyGlobal={(fx) => buy((pf) => buyGlobalFx(pf, fx))} />
+          <PreviewView p={p} onOpen={openOv} onOpenFx={(fx) => setOvFx(fx)} />
         )}
       </div>
 
@@ -204,6 +204,11 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           onBuy={(el) => buy((pf) => buyElement(pf, ovTheme, el))}
           onBuyAll={() => buy((pf) => buyAllForTheme(pf, ovTheme))} />
       )}
+
+      {ovFx && (
+        <GlobalFxOverlay fx={ovFx} p={p} spBal={spBal} onClose={() => setOvFx(null)}
+          onBuy={() => buy((pf) => buyGlobalFx(pf, ovFx))} />
+      )}
     </div>
   );
 }
@@ -211,6 +216,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 /* ---- „Meine Sammlung" ---- */
 function MineView({ p, deckId, bfId, activeTheme, options, ownedDeckThemes, ownedBfThemes, onChoose, onBrowse }) {
   const fxOwnedActive = (fx) => activeTheme && activeTheme.els.includes(fx) && elementOwned(p, activeTheme, fx);
+  const ownedGlobalFx = GLOBAL_FX.filter((fx) => globalFxOwned(p, fx));
   const isMobile = useIsMobile();
   const accent = activeTheme?.a1 || "#8a7de0";
   const stdThumb = <span className="shrink-0" style={{ width: 34, height: 44, borderRadius: 6, background: "#171622", border: "1px solid #2a2836" }} />;
@@ -268,8 +274,32 @@ function MineView({ p, deckId, bfId, activeTheme, options, ownedDeckThemes, owne
           );
         })}
       </div>
+
+      {/* Effekte (global gekaufte Effekte, laufweit — hier an/aus) */}
+      {ownedGlobalFx.length > 0 && (
+        <>
+          <div className={EYEBROW} style={{ color: "#9a97ab" }}>Effekte <span className="flex-1 h-px" style={{ background: "#2a2836" }} /><span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>global · laufweit</span></div>
+          <div className="flex flex-col gap-2">
+            {ownedGlobalFx.map((fx) => {
+              const on = !!options?.[fx.option];
+              return (
+                <button key={fx.key} type="button" onClick={() => onChoose({ [fx.option]: !on })}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-left" style={{ background: "#14131c", border: "1px solid #2a2836" }}>
+                  <span className="shrink-0 rounded-md" style={{ width: 30, height: 30, background: "#35e0ff22", border: "1px solid #35e0ff66" }} />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[12.5px] font-extrabold">{fx.name}</span>
+                    <span className="block text-[10.5px]" style={{ color: "#9a97ab" }}>{fx.desc}</span>
+                  </span>
+                  <Switch on={on} disabled={false} />
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
       <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
-        Animationen gehören zu den kaufbaren Themes und wirken auf das <b>aktive</b> Deck/Battlefield.
+        Animationen gehören zu den kaufbaren Themes und wirken auf das <b>aktive</b> Deck/Battlefield; globale Effekte laufweit.
         Fehlt dir etwas? <button onClick={onBrowse} className="underline font-semibold" style={{ color: "#26c6e6" }}>Alle Themes ansehen →</button>
       </p>
     </>
@@ -290,41 +320,66 @@ function SelectRow({ active, onClick, thumb, title, sub }) {
   );
 }
 
-/* Globaler Effekt im „Effekte"-Tab: Vorschau (Demo-Karte mit Laser-Strahl) + Kaufen / An-Aus-Toggle. */
-function GlobalFxCard({ fx, p, options, onChoose, onBuy }) {
-  const owned = globalFxOwned(p, fx);
-  const on = owned && !!options?.[fx.option];
-  const canBuy = canBuyGlobalFx(p, fx);
+// Vorschau eines globalen Effekts auf einer Demo-Karte (Laser-Strahl bzw. Shatter-Scherben). Füllt seinen Container.
+function GlobalFxPreview({ fx }) {
   const LC = "#35e0ff"; // Laser-Farbe der Vorschau (in-game = Suit-Farbe der Gegnerkarte)
   return (
-    <div className="flex items-center gap-3 rounded-xl p-2.5" style={{ background: "#14131c", border: "1px solid #2a2836" }}>
-      <div className="relative rounded-lg overflow-hidden shrink-0" style={{ width: 56, aspectRatio: CARD_RATIO, background: "#0b0a16" }}>
-        <img src={deckAssets("default").back} alt="" className="absolute inset-0 w-full h-full object-contain" />
-        {fx.preview === "shatter" ? (
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute inset-0 ws-laserpulse" style={{ background: "radial-gradient(circle at 50% 50%, rgba(255,255,255,.5), transparent 55%)" }} />
-            {SHATTER_SHARDS.map((s, i) => (
-              <span key={i} className="ws-shard absolute" style={{ left: "50%", top: "50%", width: 5, height: 5, marginLeft: -2.5, marginTop: -2.5,
-                background: s.c, boxShadow: `0 0 5px ${s.c}`, borderRadius: 1, "--sx": s.x, "--sy": s.y }} />
-            ))}
-          </div>
-        ) : (
-          <div className="absolute pointer-events-none ws-laserpulse" style={{ left: "-12%", right: "-12%", top: "48%", height: 2, transform: "rotate(-20deg)",
-            background: `linear-gradient(90deg,transparent,${LC} 15%,#ffffff 50%,${LC} 85%,transparent)`,
-            boxShadow: `0 0 8px 2px ${LC}, 0 0 20px 5px ${LC}` }} />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[12.5px] font-extrabold">{fx.name}</div>
-        <div className="text-[10.5px] leading-snug" style={{ color: "#9a97ab" }}>{fx.desc}</div>
-      </div>
-      {owned ? (
-        <button type="button" onClick={() => onChoose({ [fx.option]: !on })} className="shrink-0 text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg"
-          style={on ? { background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" } : { background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>{on ? "✓ An" : "Aus"}</button>
+    <>
+      <img src={deckAssets("default").back} alt="" className="absolute inset-0 w-full h-full object-contain" />
+      {fx.preview === "shatter" ? (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 ws-laserpulse" style={{ background: "radial-gradient(circle at 50% 50%, rgba(255,255,255,.5), transparent 55%)" }} />
+          {SHATTER_SHARDS.map((s, i) => (
+            <span key={i} className="ws-shard absolute" style={{ left: "50%", top: "50%", width: 6, height: 6, marginLeft: -3, marginTop: -3,
+              background: s.c, boxShadow: `0 0 6px ${s.c}`, borderRadius: 1, "--sx": s.x, "--sy": s.y }} />
+          ))}
+        </div>
       ) : (
-        <button type="button" onClick={() => onBuy(fx)} disabled={!canBuy} className="shrink-0 text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg"
-          style={{ background: canBuy ? "#f2c14a" : "#3a2f12", color: "#141419", opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>Kaufen · {GLOBAL_FX_COST}</button>
+        <div className="absolute pointer-events-none ws-laserpulse" style={{ left: "-12%", right: "-12%", top: "48%", height: 2, transform: "rotate(-20deg)",
+          background: `linear-gradient(90deg,transparent,${LC} 15%,#ffffff 50%,${LC} 85%,transparent)`,
+          boxShadow: `0 0 8px 2px ${LC}, 0 0 20px 5px ${LC}` }} />
       )}
+    </>
+  );
+}
+
+/* Kauffenster eines globalen Effekts (analog zum Theme-Kauffenster): großes Preview + Kauf. Aktivieren
+   passiert danach unter „Verfügbare Decks". */
+function GlobalFxOverlay({ fx, p, spBal, onClose, onBuy }) {
+  const owned = globalFxOwned(p, fx);
+  const canBuy = canBuyGlobalFx(p, fx);
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto"
+      style={{ background: "#05050ad0", backdropFilter: "blur(4px)" }} onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl overflow-hidden my-auto" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
+        <div className="h-[3px] w-full" style={HAIRLINE} aria-hidden="true" />
+        <div className="p-3.5">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-[15px] font-extrabold truncate">{fx.name}</span>
+            <button onClick={onClose} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a97ab" }}>Schließen</button>
+          </div>
+          <div className="flex justify-center py-1" style={{ height: 252 }}>
+            <div className="relative rounded-lg overflow-hidden" style={{ height: "100%", aspectRatio: CARD_RATIO, background: "#0b0a16" }}>
+              <GlobalFxPreview fx={fx} />
+            </div>
+          </div>
+          <div className="text-center text-[11px] mt-2 leading-snug" style={{ color: "#9a97ab", minHeight: 32 }}>{fx.desc}</div>
+          <div className="mt-2.5">
+            {owned ? (
+              <div className="w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>
+                ✓ Im Besitz — unter „Verfügbare Decks" an/aus
+              </div>
+            ) : (
+              <button onClick={onBuy} disabled={!canBuy}
+                className="w-full rounded-xl font-extrabold text-[12.5px] py-2.5 transition-opacity"
+                style={{ background: canBuy ? "linear-gradient(90deg,#f2c14a,#ffb84d)" : "#3a2f12", color: "#141419",
+                  boxShadow: canBuy ? "0 0 16px rgba(242,193,74,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
+                Kaufen · {GLOBAL_FX_COST} SP{!canBuy && spBal < GLOBAL_FX_COST ? " (zu wenig SP)" : ""}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -338,7 +393,7 @@ const PREVIEW_CATS = [
   { k: "effekte",    label: "Effekte",    filter: () => false,              empty: null },
 ];
 
-function PreviewView({ p, onOpen, options, onChoose, onBuyGlobal }) {
+function PreviewView({ p, onOpen, onOpenFx }) {
   const [cat, setCat] = useState(0);
   const touch = useRef(0);
   const move = (d) => setCat((c) => Math.min(PREVIEW_CATS.length - 1, Math.max(0, c + d)));
@@ -364,11 +419,27 @@ function PreviewView({ p, onOpen, options, onChoose, onBuyGlobal }) {
         <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{cat === 0 ? "tippen → Elemente einzeln kaufen" : cat === 1 ? "tippen → Freischaltung ansehen" : "global · einmal kaufen"}</span>
       </div>
 
+      {/* Feste Mindesthöhe → alle Kategorien (auch die kurze Effekte-Liste) füllen gleich viel Panel. */}
+      <div style={{ minHeight: 380 }}>
       {isEffekte ? (
-        <div className="flex flex-col gap-2.5">
-          {GLOBAL_FX.map((fx) => (
-            <GlobalFxCard key={fx.key} fx={fx} p={p} options={options} onChoose={onChoose} onBuy={onBuyGlobal} />
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          {GLOBAL_FX.map((fx) => {
+            const owned = globalFxOwned(p, fx);
+            const badge = owned ? ["KOMPLETT", "#123a25", "#54e08a", "#2f7a4f"] : ["KAUFBAR", "#2e2410", "#f2c14a", "#6b5320"];
+            return (
+              <button key={fx.key} type="button" onClick={() => onOpenFx(fx)} className="relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5"
+                style={{ background: "#14131c", border: "1px solid #2a2836" }}>
+                <div className="relative" style={{ aspectRatio: CARD_RATIO }}>
+                  <GlobalFxPreview fx={fx} />
+                  <span className="absolute top-1.5 right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: badge[1], color: badge[2], border: `1px solid ${badge[3]}` }}>{badge[0]}</span>
+                </div>
+                <div className="px-2 py-1.5">
+                  <span className="text-[12px] font-extrabold truncate block">{fx.name}</span>
+                  <span className="text-[10px]" style={{ color: owned ? "#54e08a" : "#f2c14a" }}>{owned ? "im Besitz" : "global · kaufbar"}</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       ) : list.length ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -404,6 +475,7 @@ function PreviewView({ p, onOpen, options, onChoose, onBuyGlobal }) {
           </div>
         </div>
       )}
+      </div>
 
       <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
         {cat === 0

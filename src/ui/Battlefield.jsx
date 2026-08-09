@@ -759,8 +759,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
     }, sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100); // Lebensdauer: Ruhe + längster FX-Teil (#188: um die skalierte Dauer verlängert)
     ghostTimers.current.push(tm);
-    // GOTTGLEICH-Krit (oberste Stufe): der abprallende Partikel-Schwarm gehört zum Shatter-Effekt → nur mit gekauftem Shatter.
-    if (explode && fxTier >= 4 && !reduced) {
+    // GOTTGLEICH-Krit (oberste Stufe): der abprallende Partikel-Schwarm bleibt GOTTGLEICH-exklusiv — unabhängig vom
+    // (kaufbaren) Shatter-Effekt. Feuert also bei jedem tier-4-Krit, ob die Karte nun zerbirst oder normal geschnitten wird.
+    if (win && isCrit && fxTier >= 4 && !reduced) {
       const bt = setTimeout(() => { burstSeq.current += 1; setBurst({ id: burstSeq.current }); }, sRest);
       ghostTimers.current.push(bt); // gemeinsame Ghost-Timer-Aufräumung (unmount → clearTimeout)
     }
