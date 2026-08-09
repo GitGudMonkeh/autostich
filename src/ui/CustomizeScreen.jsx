@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.jsx";
 import {
@@ -387,19 +388,22 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
         )}
       </div>
 
-      {ov && ovTheme && (
+      {/* Kauffenster via Portal an document.body: der Shop-Root trägt backdrop-filter und ist damit der
+          Containing-Block für `position:fixed` — genestet würde das Overlay am (gescrollten) Shop kleben statt am
+          Viewport. Das Portal löst es heraus → echtes Vollbild-Overlay, egal wie weit gescrollt ist. */}
+      {ov && ovTheme && createPortal(
         <BuyOverlay theme={ovTheme} list={ov.list} idx={ov.idx} p={p} sel={sel} setSel={setSel} spBal={spBal}
           deckId={deckId} bfId={bfId} options={options} onChoose={onChoose}
           onStep={stepOv} onClose={() => setOv(null)}
           onBuy={(el) => buy((pf) => buyElement(pf, ovTheme, el))}
-          onBuyAll={() => buy((pf) => buyAllForTheme(pf, ovTheme))} />
-      )}
+          onBuyAll={() => buy((pf) => buyAllForTheme(pf, ovTheme))} />,
+        document.body)}
 
-      {ovFxIdx >= 0 && (
+      {ovFxIdx >= 0 && createPortal(
         <GlobalFxOverlay fx={EFFEKTE_LIST[ovFxIdx]} idx={ovFxIdx} count={EFFEKTE_LIST.length} p={p} spBal={spBal}
           onStep={stepFx} onClose={() => setOvFxIdx(-1)}
-          onBuy={() => { const fx = EFFEKTE_LIST[ovFxIdx]; if (!fx.standard) buy((pf) => buyGlobalFx(pf, fx)); }} />
-      )}
+          onBuy={() => { const fx = EFFEKTE_LIST[ovFxIdx]; if (!fx.standard) buy((pf) => buyGlobalFx(pf, fx)); }} />,
+        document.body)}
     </div>
   );
 }
