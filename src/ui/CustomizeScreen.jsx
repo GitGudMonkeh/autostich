@@ -20,9 +20,9 @@ const FX_CSS = `
 @keyframes ws-gridmove{to{background-position:0 16px}}
 `;
 
-// Karten-Vorschau: echtes Deck-Front-Bild + optionaler Effekt-Overlay (frameGlow/holoSwipe).
+// Karten-Vorschau: illustrierter Deck-Rücken (Motiv) + optionaler Effekt-Overlay (frameGlow/holoSwipe).
 function CardPreview({ deckId, a1, fx, className = "" }) {
-  const img = deckAssets(deckId).front;
+  const img = deckAssets(deckId).back;
   return (
     <div className={`relative rounded-lg overflow-hidden ${className}`} style={{ aspectRatio: "3 / 4", background: "#0b0a16" }}>
       <img src={img} alt="" className="absolute inset-0 w-full h-full object-cover" />
