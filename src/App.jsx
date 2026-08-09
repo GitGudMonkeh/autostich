@@ -578,11 +578,13 @@ export function Autostich() {
                   mix-blend-mode, blendet sauber auf den dunklen Run-Kopf. Ambient-Glow dahinter wie am Mainscreen
                   (Cyan links · Violett Mitte · Amber rechts → spiegelt den Wortmarken-Verlauf). */}
               <div className="relative isolate shrink-0">
-                <div aria-hidden="true" className="pointer-events-none absolute -z-10" style={{ inset: "-45% -22%",
+                {/* Fläche großzügig größer als das Logo + früher Transparenz-Auslauf + Blur → weicher Übergang,
+                    kein harter Rechteck-Rand. */}
+                <div aria-hidden="true" className="pointer-events-none absolute -z-10" style={{ inset: "-150% -70%", filter: "blur(9px)",
                   background:
-                    "radial-gradient(140px 78px at 28% 45%, rgba(38,198,230,.22), transparent 70%)," +
-                    "radial-gradient(150px 84px at 50% 40%, rgba(155,130,240,.24), transparent 70%)," +
-                    "radial-gradient(140px 78px at 72% 45%, rgba(242,168,58,.18), transparent 70%)" }} />
+                    "radial-gradient(58% 62% at 30% 50%, rgba(38,198,230,.20), transparent 60%)," +
+                    "radial-gradient(60% 64% at 52% 46%, rgba(155,130,240,.22), transparent 60%)," +
+                    "radial-gradient(58% 62% at 74% 50%, rgba(242,168,58,.16), transparent 60%)" }} />
                 <img src={logo} alt="AUTOSTICH" draggable="false" className="h-14 w-auto select-none block" />
               </div>
               {/* Seed-Chip entfällt hier — der Seed steht in der Statistik & im Endscreen. */}
