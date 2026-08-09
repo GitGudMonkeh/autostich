@@ -72,7 +72,7 @@ export function OptionsModal({ options, onChange, onClose }) {
         <div className="p-6 overflow-y-auto">
         <div className="text-center mb-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Optionen</div>
-          <h2 className="text-xl font-bold mt-1 font-pixel crt-title">Einstellungen</h2>
+          <h2 className="text-xl font-bold mt-1">Einstellungen</h2>
         </div>
 
         <div className="grid gap-2.5">
