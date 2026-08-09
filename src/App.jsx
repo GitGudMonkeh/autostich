@@ -68,6 +68,7 @@ export function Autostich() {
   const [showUpgrades, setShowUpgrades] = useState(false);        // Progression-Vorschau: Upgrade-Baum-Screen
   const [profile, setProfile] = useState(loadProfile);            // #190: Profil (Freischalt-Status) — nach jedem Lauf aktualisiert
   const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
+  const [progressUnlocks, setProgressUnlocks] = useState([]);     // #299: Onboarding-/Meta-Freischaltungen dieses Laufs → Victory-Banner
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
   const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
   const pendingDev = useRef(null);                                // Dev-Run: Config { rounds, schedule, cover, energy } für den nächsten Lauf (null = normaler Lauf)
@@ -313,10 +314,18 @@ export function Autostich() {
       architectCover: architectCoverFor(state), // per-Position { name, tier, effects, … } oder null (kein Architekt/keine Gebäude)
       buildings: archBuildingsSnap,
     };
-    const { profile: nextProfile } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
+    const { profile: nextProfile, unlocks: metaUnlocks } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
       shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
       completed, deckSnapshot });
     setProfile(nextProfile);
+    // #299 Meta-Freischaltungen dieses Laufs (Onboarding-Glieder → Archetyp/Rarität/Abschluss) fürs Victory-Banner.
+    const ARCH_DE = { plant: "Pflanze", ice: "Eis", fire: "Feuer", lightning: "Blitz" };
+    setProgressUnlocks((metaUnlocks || []).map((u) => {
+      if (u.type === "onboardingDone") return { id: "onb-done", label: "Onboarding abgeschlossen — Genesis-Pack, Werkstatt & Upgrades frei", target: "workshop" };
+      if (u.type === "archetype") return { id: `arch-${u.key}`, label: `Neuer Archetyp: ${ARCH_DE[u.key] || u.key}`, target: null };
+      if (u.type === "rarity") return { id: `rar-${u.tier}`, label: "Neue Seltenheitsstufe freigeschaltet", target: null };
+      return { id: `u-${u.link}`, label: "Freischaltung", target: null };
+    }));
     // #190: in DIESEM Lauf frisch freigeschaltete Skins (Bedingung vorher NICHT erfüllt, jetzt schon) → Siegesscreen.
     const catalog = [
       ...Object.values(DECK_DEFS).map((d) => ({ def: d, type: "deck" })),
@@ -701,7 +710,8 @@ export function Autostich() {
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
           currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu}
           myEntry={myEntry} pubToken={pubToken} hasUsername={!!(username || "").trim()} onEditName={() => setShowUsername(true)}
-          newUnlocks={newUnlocks} />
+          newUnlocks={newUnlocks} progressUnlocks={progressUnlocks}
+          onCustomize={() => setShowCustomize(true)} onUpgrades={() => setShowUpgrades(true)} onLeaderboard={() => setShowLeaderboard(true)} />
       )}
 
       {showOptions && (

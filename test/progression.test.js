@@ -7,7 +7,7 @@ import {
   nodeState, canBuy, buyNode, respec, treeComplete, ownedCount,
   SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP,
   onboardingAfter, spMilestones, isSpRun, spForRun, milestoneBarState,
-  DP_PER_SCORE, dpNative, dpForRun, spCreditForRun,
+  DP_PER_SCORE, dpNative, dpForRun, spCreditForRun, onboardingUnlocks,
   SECRET_SEEDS, UNLOCK_SP_CUSHION, matchSecretSeed, unlockAllProfile,
   TOTAL_COST,
 } from "../src/game/progression.js";
@@ -368,6 +368,30 @@ describe("DP-Ökonomie (#299) — native Formel + Baum-komplett-Umstellung", () 
     expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(SP_PER_RUN + 5);
     expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(0); // voller Baum → keine SP mehr
     expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(spForRun({ completed: true, score: 100_000_000 }, 6, 0));
+  });
+});
+
+describe("onboardingUnlocks (#299) — Freischaltungs-Diff fürs Victory-Banner", () => {
+  it("kein Übertritt → leer", () => {
+    expect(onboardingUnlocks(6, 6)).toEqual([]);
+    expect(onboardingUnlocks(0, 0)).toEqual([]);
+  });
+  it("Glied 1→2 schaltet Pflanze frei", () => {
+    expect(onboardingUnlocks(1, 2)).toEqual([{ link: 2, type: "archetype", key: "plant" }]);
+  });
+  it("Glied 5→6 → nur Onboarding-Abschluss (target workshop)", () => {
+    const u = onboardingUnlocks(5, 6);
+    expect(u).toEqual([{ link: 6, type: "onboardingDone", target: "workshop" }]);
+  });
+  it("Glied 4→6 → Rarität (Glied 5) + Onboarding-Abschluss, sortiert (done zuletzt)", () => {
+    const u = onboardingUnlocks(4, 6);
+    expect(u.some((x) => x.type === "rarity")).toBe(true);
+    expect(u[u.length - 1].type).toBe("onboardingDone");
+  });
+  it("mehrere Glieder auf einmal (0→6) listet alle Übertritte sortiert", () => {
+    const u = onboardingUnlocks(0, 6);
+    expect(u.map((x) => x.link)).toEqual([...u.map((x) => x.link)].sort((a, b) => a - b));
+    expect(u.some((x) => x.type === "onboardingDone")).toBe(true);
   });
 });
 

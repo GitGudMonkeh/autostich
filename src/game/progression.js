@@ -333,6 +333,20 @@ export function spCreditForRun(record, onboardingBefore, treeComplete, spRunsBef
   return treeComplete ? 0 : spForRun(record, onboardingBefore, spRunsBefore);
 }
 
+// #299 Freischaltungs-Diff des Onboardings: welche Glieder wurden mit DIESEM Lauf überschritten und was schalten sie
+// frei? Rein & testbar → liefert Deskriptoren fürs Victory-Banner (Labels/Buttons baut die UI). `target` ∈
+// "workshop" | "upgrades" | "leaderboard" | undefined. Reihenfolge nach Glied. Beim letzten Glied (6/6) ist der
+// Onboarding-Abschluss dabei (schaltet Genesis-Pack + Werkstatt + Upgrades frei → target "workshop").
+export function onboardingUnlocks(before, after) {
+  const b = Math.max(0, Math.floor(num0(before)));
+  const a = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(num0(after))));
+  const items = [];
+  for (const [arch, link] of Object.entries(ONBOARDING_ARCH_UNLOCK)) items.push({ link: Number(link), type: "archetype", key: arch });
+  for (const [link, tier] of Object.entries(ONBOARDING_RARITY_UNLOCK)) items.push({ link: Number(link), type: "rarity", tier });
+  items.push({ link: ONBOARDING_LINKS, type: "onboardingDone", target: "workshop" });
+  return items.filter((it) => b < it.link && a >= it.link).sort((x, y) => x.link - y.link);
+}
+
 /* ============================================================
    TEST-/DEV-CHEATS — geheime Seed-Codes (schnelles Onboarding-Testen zu zweit).
 

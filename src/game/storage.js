@@ -1,5 +1,5 @@
 import { GHOST_STEP } from "./constants.js";
-import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete } from "./progression.js";
+import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete, onboardingUnlocks, ONBOARDING_LINKS } from "./progression.js";
 
 /* Preview-Build (Testbranch auf /autostich/test/) teilt sich die Origin mit der echten
    Seite → derselbe localStorage. Ein Präfix trennt die Namespaces, damit Test-Runs den
@@ -224,6 +224,12 @@ export function recordRun(record) {
   const treeDone = treeComplete(p);
   const gainedSp = spCreditForRun(record, onboardingBefore, treeDone, n0(p.spRuns));
   const gainedDp = dpForRun(record, onboardingBefore, treeDone, n0(p.spRuns));
+  // #299 Onboarding-Fortschritt + Freischaltungs-Diff fürs Victory-Banner; Abschluss (6/6) schenkt das Genesis-Pack.
+  const onbAfter = onboardingAfter(onboardingBefore, record);
+  const unlocks = onboardingUnlocks(onboardingBefore, onbAfter);
+  const baseCos = (p.ownedCosmetics && typeof p.ownedCosmetics === "object") ? p.ownedCosmetics : {};
+  const justCompletedOnb = onboardingBefore < ONBOARDING_LINKS && onbAfter >= ONBOARDING_LINKS;
+  const ownedCosmetics = justCompletedOnb ? { ...baseCos, "pack:genesis": true } : baseCos;
   const profile = {
     schemaVersion: PROFILE_SCHEMA_VERSION, // #229 T11: gespeicherte Profile tragen die Version (Migrations-Anker)
     games: p.games + 1,
@@ -246,13 +252,14 @@ export function recordRun(record) {
     // #299 DP: Guthaben wächst um den DP-Ertrag; ausgegebene DP (Pack-Käufe) bleiben unverändert.
     deckPoints: n0(p.deckPoints) + gainedDp,
     deckSpent: n0(p.deckSpent),
-    onboarding: onboardingAfter(onboardingBefore, record),
+    onboarding: onbAfter,
     spRuns: n0(p.spRuns) + (isSpRun(record, onboardingBefore) ? 1 : 0),
-    // #deckshop: gekaufte Kosmetik bleibt über Läufe erhalten (recordRun baut das Profil neu → mittragen).
-    ownedCosmetics: (p.ownedCosmetics && typeof p.ownedCosmetics === "object") ? p.ownedCosmetics : {},
+    // #deckshop: gekaufte Kosmetik bleibt über Läufe erhalten (recordRun baut das Profil neu → mittragen);
+    // #299: Onboarding-Abschluss (6/6) hat oben ggf. das Genesis-Pack ergänzt.
+    ownedCosmetics,
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
-  return { history, profile };
+  return { history, profile, unlocks };
 }
 
 /* OPTIONEN (#41) — bewusst als erweiterbares Objekt (künftig Sound, Tempo-Default …).

@@ -18,7 +18,7 @@ import FormIcon from "./FormIcon.jsx";
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
 // #169 FB-8: der Statblock (Serie/Perks/Formationen/Crits + Perk-/Skill-Chips) steckt jetzt in der
 // geteilten RunStats-Komponente — dieselbe Anzeige nutzt die Leaderboard-Detailansicht (RunDetail).
-export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [] }) {
+export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [], progressUnlocks = [], onCustomize = null, onUpgrades = null, onLeaderboard = null }) {
   const score = Math.floor(state.score); // Zahlenwert für Record-Vergleich; Anzeige über fmtScore
   // #201.8 Stufe A: finale Aufstellung aus dem Live-state; Formationen frisch berechnet (rein, matcht das Enddeck).
   const finalOrder = state.playerOrder || [];
@@ -114,6 +114,30 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
               })}
             </div>
             <div className="text-[10px] text-center opacity-50 mt-2">Auswählbar im Menü unter „Deck“.</div>
+          </div>
+        )}
+
+        {/* #299 Meta-Freischaltungen dieses Laufs (Onboarding-Abschluss/Archetyp/Rarität) — funkelnder Gold-Rahmen
+            (as-legendary) + kontextpassender Ziel-Button je Freischaltung. */}
+        {progressUnlocks.length > 0 && (
+          <div className="as-legendary mt-4 rounded-xl p-3" style={{ background: "#1a1608" }}>
+            <div className="text-xs uppercase tracking-widest text-center mb-2" style={{ color: "#f2c14a" }}>✦ Freigeschaltet</div>
+            <div className="flex flex-col gap-2">
+              {progressUnlocks.map((u) => {
+                const nav = u.target === "workshop" ? { fn: onCustomize, label: "Zur Werkstatt" }
+                  : u.target === "upgrades" ? { fn: onUpgrades, label: "Zu den Upgrades" }
+                  : u.target === "leaderboard" ? { fn: onLeaderboard, label: "Zur Rangliste" } : null;
+                return (
+                  <div key={u.id} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2" style={{ background: "#141019", border: "1px solid #3a2f12" }}>
+                    <span className="text-[12px] font-bold leading-snug" style={{ color: "#f0d27a" }}>✦ {u.label}</span>
+                    {nav && nav.fn && (
+                      <button onClick={nav.fn} className="shrink-0 text-[11px] font-extrabold px-3 py-1.5 rounded-lg whitespace-nowrap transition-transform hover:-translate-y-0.5"
+                        style={{ background: "#d4a63a", color: "#141419" }}>{nav.label} ›</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
