@@ -33,22 +33,22 @@ export const GATE_PCT_M4 = envNum("PROG_GATE_PCT_M4", 0.75);
    Feld  cover  = Baufeld-Zellen-Zuwachs des Knotens (nur Baufeld-Ast). Feld gate = Meister-Gate. */
 export const NODES = [
   // 🏗 Baufeld — Bau-Ökonomie (Zellen 24→28). cover summiert zu treeCoverBonus 0..4.
-  { id: "B1", branch: "bau", roman: "I",   label: "+1 Zelle",    detail: "24 → 25", cost: 2,  prereq: null, cover: 1 },
-  { id: "B2", branch: "bau", roman: "II",  label: "+1 Zelle",    detail: "25 → 26", cost: 5,  prereq: "B1", cover: 1 },
-  { id: "B3", branch: "bau", roman: "III", label: "+2 Zellen",   detail: "26 → 28", cost: 9,  prereq: "B2", cover: 2 },
+  { id: "B1", branch: "bau", roman: "I",   label: "+1 Bauplatz",  detail: "Baufeld 24 → 25 Zellen", cost: 2,  prereq: null, cover: 1 },
+  { id: "B2", branch: "bau", roman: "II",  label: "+1 Bauplatz",  detail: "Baufeld 25 → 26 Zellen", cost: 5,  prereq: "B1", cover: 1 },
+  { id: "B3", branch: "bau", roman: "III", label: "+2 Bauplätze", detail: "Baufeld 26 → 28 Zellen", cost: 9,  prereq: "B2", cover: 2 },
   // 🎬 Auftakt — Rerolls (+1 je Phase je Knoten). Anzahl gekaufter Knoten = treeRerollBonus 0..2.
-  { id: "A1", branch: "auf", roman: "I",   label: "Reroll II",   detail: "+1 / Phase", cost: 6,  prereq: null },
-  { id: "A2", branch: "auf", roman: "II",  label: "Reroll III",  detail: "+1 / Phase", cost: 12, prereq: "A1" },
+  { id: "A1", branch: "auf", roman: "I",   label: "+1 Reroll je Phase", detail: "Angebote öfter neu würfeln", cost: 6,  prereq: null },
+  { id: "A2", branch: "auf", roman: "II",  label: "+1 Reroll je Phase", detail: "stapelt mit Stufe I",        cost: 12, prereq: "A1" },
   // ✨ Rarität — Angebots-Qualität (RareShift-Stufe = höchster gekaufter Rang, 0..3).
-  { id: "R1", branch: "rar", roman: "I",   label: "Seltenheit",  detail: "bessere Chancen", cost: 6,  prereq: null, shift: 1 },
-  { id: "R2", branch: "rar", roman: "II",  label: "Seltenheit",  detail: "bessere Chancen", cost: 10, prereq: "R1", shift: 2 },
-  { id: "R3", branch: "rar", roman: "III", label: "Seltenheit",  detail: "bessere Chancen", cost: 18, prereq: "R2", shift: 3 },
+  { id: "R1", branch: "rar", roman: "I",   label: "Bessere Seltenheit", detail: "hochwertigere Angebote", cost: 6,  prereq: null, shift: 1 },
+  { id: "R2", branch: "rar", roman: "II",  label: "Bessere Seltenheit", detail: "hochwertigere Angebote", cost: 10, prereq: "R1", shift: 2 },
+  { id: "R3", branch: "rar", roman: "III", label: "Bessere Seltenheit", detail: "hochwertigere Angebote", cost: 18, prereq: "R2", shift: 3 },
   // 👑 Meister — Legendäre / Prestige. Zusätzlich zur Sequenz greifen die Gates (onb/pct/all).
-  { id: "M1", branch: "mei", roman: "I",   label: "Reroll f. Leg.-Slot", detail: "Runde 29",        cost: 4,  prereq: null, flag: "legSlotReroll",       gate: { type: "onb" } },
-  { id: "M2", branch: "mei", roman: "II",  label: "2 Leg. je Archetyp",  detail: "Skill-Slot",      cost: 9,  prereq: "M1", flag: "legTwoPerArch",       gate: { type: "pct", pct: GATE_PCT_M2 } },
-  { id: "M3", branch: "mei", roman: "III", label: "Leg. Drop-Rate ×2",   detail: "Perks & Gebäude", cost: 13, prereq: "M2", flag: "legDropDouble",       gate: { type: "pct", pct: GATE_PCT_M3 } },
-  { id: "M4", branch: "mei", roman: "IV",  label: "Garant. Leg.-Perk",   detail: "2. Perk-Phase",   cost: 18, prereq: "M3", flag: "legGuaranteedPerk2",  gate: { type: "pct", pct: GATE_PCT_M4 } },
-  { id: "M5", branch: "mei", roman: "V",   label: "Wahl aus 3 Leg.",     detail: "2. Perk-Phase",   cost: 22, prereq: "M4", flag: "legChoose3Perk2",     gate: { type: "all" } },
+  { id: "M1", branch: "mei", roman: "I",   label: "Reroll: Legendär-Angebot",   detail: "Runde 29",       cost: 4,  prereq: null, flag: "legSlotReroll",       gate: { type: "onb" } },
+  { id: "M2", branch: "mei", roman: "II",  label: "2 Legendäre je Archetyp",    detail: "größere Auswahl", cost: 9,  prereq: "M1", flag: "legTwoPerArch",       gate: { type: "pct", pct: GATE_PCT_M2 } },
+  { id: "M3", branch: "mei", roman: "III", label: "Legendär-Chance ×2",         detail: "Perks & Gebäude", cost: 13, prereq: "M2", flag: "legDropDouble",       gate: { type: "pct", pct: GATE_PCT_M3 } },
+  { id: "M4", branch: "mei", roman: "IV",  label: "Garantierter Legendär-Perk", detail: "2. Perk-Phase",   cost: 18, prereq: "M3", flag: "legGuaranteedPerk2",  gate: { type: "pct", pct: GATE_PCT_M4 } },
+  { id: "M5", branch: "mei", roman: "V",   label: "Wahl aus 3 Legendären",      detail: "2. Perk-Phase",   cost: 22, prereq: "M4", flag: "legChoose3Perk2",     gate: { type: "all" } },
 ];
 
 // Ast-Metadaten (Reihenfolge + Anzeige). Farben/Emoji leben in der UI; hier nur strukturelle Namen.
