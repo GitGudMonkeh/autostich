@@ -199,7 +199,7 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, 
   // Kreuzungspunkt wegfliegen. Bewusst anders als die Klinge (die nur zwei Hälften trennt).
   if (laser) {
     const rot = fjitter(seed * 11, 20);                     // leichte Zufalls-Neigung der Karten-Keile
-    const dist = 64 * sepMul;                               // Wie weit die Keile auseinanderfliegen
+    const dist = 42 * sepMul;                               // Keile bleiben nah beieinander (nah am Deck zerfallen)
     // Jedes Mal ZUFÄLLIG: Kreuzungspunkt (ox/oy, versetzt gegen die Kartenmitte) + beide Strahl-Winkel unabhängig →
     // die zwei Laser schießen jeden Stich aus anderer Position/Richtung über das Feld.
     const ox = fjitter(seed * 7, 42), oy = fjitter(seed * 9, 30);
@@ -459,7 +459,8 @@ function SlashGhostLayer({ ghosts }) {
         // zerbirst an Ort und Stelle in Pixel-Shards (die Shards fliegen selbst nach außen) → kein Wrapper-Drift.
         const isBoom = g.fx === "explode";
         const dang = fjitter(g.seed * 3 + 2, Math.PI);                        // −π..π → volle 360° rundum
-        const drad = isBoom ? 0 : 40 + Math.abs(fjitter(g.seed * 5 + 3, 26)); // Slice: 40..66 px Driftweite; Explosion: kein Drift
+        // Laser-Treffer zerfallen NAH am Deck (wenig Drift); normaler Klingenschnitt driftet weiter ins Feld.
+        const drad = isBoom ? 0 : g.laser ? 10 + Math.abs(fjitter(g.seed * 5 + 3, 12)) : 40 + Math.abs(fjitter(g.seed * 5 + 3, 26)); // Laser 10..22 · Klinge 40..66 px
         const drot = isBoom ? 0 : fjitter(g.seed * 7 + 5, 8);                 // −8..8° leichte Rotation (nur Slice)
         const driftDelay = g.rest + (isBoom ? 0 : g.cut);                     // Float-Away startet NACH dem Schnitt
         return (
