@@ -5,7 +5,7 @@ import {
   canBuyPack, buyPack,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
   frameGlowActive, holoSwipeActive, hologridActive,
-  laserSliceActive, blackholeActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive,
+  laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive,
 } from "../src/game/themes.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
@@ -144,6 +144,8 @@ describe("effekte — Finisher/Krit/Prunk", () => {
     const cases = [
       ["laserSlice", laserSliceActive, "fxLaserSlice"],
       ["blackhole", blackholeActive, "fxBlackhole"],
+      ["lasergrid", lasergridActive, "fxLasergrid"],
+      ["burnBeam", burnBeamActive, "fxBurnBeam"],
       ["shatter", shatterActive, "fxShatter"],
       ["fireworks", fireworksActive, "fxFireworks"],
       ["goldRain", goldRainActive, "fxGoldRain"],

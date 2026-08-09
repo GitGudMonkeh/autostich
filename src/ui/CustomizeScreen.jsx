@@ -9,7 +9,7 @@ import {
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
-import { SliceFx, ExplosionFx, BlackholeFieldFx } from "./Battlefield.jsx";
+import { SliceFx, ExplosionFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx } from "./Battlefield.jsx";
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 
@@ -57,6 +57,13 @@ const fxGroupItems = (group) => {
   if (group === "finisher") return [KLINGE, ...list]; // „Klinge" (Default) voran
   return list;
 };
+
+/* Sieg-Finisher sind untereinander exklusiv (genau EINER aktiv). Zentrale Wahrheit für Auswahl UND Anzeige,
+   damit In-Übersicht (Radio) und Detail-Fenster nie auseinanderlaufen. „klinge" = alle Flags aus. */
+const finisherFlags = (key) => ({ fxLaserSlice: key === "laserSlice", fxBlackhole: key === "blackhole",
+  fxLasergrid: key === "lasergrid", fxBurnBeam: key === "burnBeam" });
+const finisherSelOf = (options) => options?.fxBlackhole ? "blackhole" : options?.fxLasergrid ? "lasergrid"
+  : options?.fxBurnBeam ? "burnBeam" : options?.fxLaserSlice ? "laserSlice" : "klinge";
 
 // Gleiche Schwelle wie das In-Run-Battlefield (<picture media="(max-width: 640px)">): so zeigt die
 // Vorschau exakt die Version (mobile/desktop), mit der gerade auch gespielt wird.
@@ -178,7 +185,7 @@ function GottgleichPreview({ variant, compact = false }) {
 /* Karten-Finisher-Vorschau: die ECHTEN In-Game-Komponenten (SliceFx/ExplosionFx) an einer Demo-Karte
    im Loop — Vorschau = In-Game (keine separate Engine, kein Drift). */
 const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
-const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950;
+const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LINE = 220;
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
   const bf = battlefieldAssets("bf_kaiju");
@@ -192,6 +199,8 @@ function FinisherScene({ variant }) {
   let fx = null;
   if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} laser />;
   else if (variant === "shatter") fx = <ExplosionFx cardEl={cardEl} color="#e879f9" cardDur={FIN_HALVES} burstDur={FIN_SPARK} flashDur={200} seed={seed} delay={FIN_DELAY} intensity={0.6} tier={3} scale={1} />;
+  else if (variant === "lasergrid") fx = <LaserGridFx cardEl={cardEl} color={suitCol} diceDur={FIN_HALVES} lineDur={FIN_LINE} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={1} scale={1} />;
+  else if (variant === "burnbeam") fx = <BurnBeamFx cardEl={cardEl} color={suitCol} beamDur={FIN_HALVES} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} />;
   else fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} />; // klinge (Default)
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
@@ -257,7 +266,7 @@ function GlobalFxScenePreview({ fx }) {
   if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
   if (fx.preview === "blackhole") return <BlackholePreview />;
-  if (["laser", "shatter", "klinge"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
+  if (["laser", "shatter", "klinge", "lasergrid", "burnbeam"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets("bf_kaiju");
   return (
@@ -550,9 +559,9 @@ function PackDetail({ pack, idx, count, p, spBal, deckId, sel, setSel, onStep, o
 
 /* ============================ Effekte-Tab ============================ */
 function FxView({ p, options, onChoose, onOpenFx }) {
-  // Aktueller Finisher (exklusiv): Blackhole > Laser > Klinge (Default).
-  const finisherSel = options?.fxBlackhole ? "blackhole" : options?.fxLaserSlice ? "laserSlice" : "klinge";
-  const selectFinisher = (key) => onChoose({ fxLaserSlice: key === "laserSlice", fxBlackhole: key === "blackhole" });
+  // Aktueller Finisher (exklusiv): Blackhole > Lasergitter > Brennstrahl > Laser-Schnitt > Klinge (Default).
+  const finisherSel = finisherSelOf(options);
+  const selectFinisher = (key) => onChoose(finisherFlags(key));
 
   return (
     <>
@@ -679,6 +688,18 @@ function MiniFx({ preview }) {
     case "laser":
       // Zwei Strahlen, leicht verschiedene Winkel (gleiches Vorzeichen) → nicht parallel, kreuzen sich aber nicht.
       return box(<>{slash("40%", "-24deg", C, "0s")}{slash("60%", "-40deg", "#f2a83a", "-1.1s")}</>);
+    case "lasergrid":
+      // Kartensilhouette mit pulsierendem Neon-Raster (3×3) — deutet das Dicing an.
+      return box(<span className="as-mini-core absolute" style={{ inset: 6, borderRadius: 2, "--mc": C,
+        backgroundImage: `linear-gradient(${C}66 1px,transparent 1px),linear-gradient(90deg,${C}66 1px,transparent 1px)`, backgroundSize: "7px 7px" }} />);
+    case "burnbeam":
+      // Strahl fährt herab + glühendes Ember-Loch in der Mitte.
+      return box(
+        <>
+          <span className="as-mini-fall absolute" style={{ left: "50%", top: 0, width: 2, height: 15, marginLeft: -1, borderRadius: 2, background: "linear-gradient(#ffffff,#ff7a2f)", boxShadow: "0 0 5px #ff7a2f" }} />
+          <span className="as-mini-core" style={{ width: 9, height: 9, borderRadius: "50%", background: "radial-gradient(circle,#05050a 45%,#ff7a2f 70%,transparent 82%)", "--mc": "#ff7a2f" }} />
+        </>
+      );
     case "blackhole":
       // Dunkle Scheibe mit atmendem Rand-Glow (kein nach außen laufender Puls) + zwei Orbs auf Umlaufbahn.
       return box(
@@ -721,7 +742,7 @@ function FxDetail({ group, idx, p, spBal, options, onChoose, onStep, onClose, on
   const owned = fx.alwaysOwned || (!fx.standard && globalFxOwned(p, fx));
   const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const isFinisher = group === "finisher";
-  const finisherSel = options?.fxBlackhole ? "blackhole" : options?.fxLaserSlice ? "laserSlice" : "klinge";
+  const finisherSel = finisherSelOf(options);
   const on = !fx.standard && !!options?.[fx.option];
 
   return (
@@ -768,7 +789,7 @@ function FxDetail({ group, idx, p, spBal, options, onChoose, onStep, onClose, on
                 Kaufen · {GLOBAL_FX_COST} SP{!canBuy && spBal < GLOBAL_FX_COST ? " (zu wenig SP)" : ""}
               </button>
             ) : isFinisher ? (
-              <button onClick={() => onChoose({ fxLaserSlice: fx.key === "laserSlice", fxBlackhole: fx.key === "blackhole" })}
+              <button onClick={() => onChoose(finisherFlags(fx.key))}
                 className="w-full rounded-xl font-extrabold text-[12.5px] py-2.5"
                 style={finisherSel === fx.key
                   ? { background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }

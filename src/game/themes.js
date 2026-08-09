@@ -41,6 +41,10 @@ export const GLOBAL_FX = [
     ownKey: "fx:laserSlice", option: "fxLaserSlice", preview: "laser", group: "finisher" },
   { key: "blackhole", name: "Schwarzes Loch", desc: "Bei einer Siegserie wächst EIN Schwarzes Loch, das jede weitere Gegnerkarte einsaugt (Orbs auf wachsender Bahn); Serienabbruch → Kollaps mit Flash & Schockwelle (statt Klinge/Laser).",
     ownKey: "fx:blackhole", option: "fxBlackhole", preview: "blackhole", group: "finisher" },
+  { key: "lasergrid", name: "Lasergitter", desc: "Beim Sieg blitzt ein Neon-Gitter über die Gegnerkarte — sie zerfällt entlang der Linien in ein Raster aus Stücken, die auseinanderfliegen (statt Klinge/Laser).",
+    ownKey: "fx:lasergrid", option: "fxLasergrid", preview: "lasergrid", group: "finisher" },
+  { key: "burnBeam", name: "Brennstrahl", desc: "Beim Sieg brennt ein Neon-Strahl von oben ein glühendes Loch in die exakte Kartenmitte — die Karte bricht in zwei Hälften auseinander (statt Klinge/Laser).",
+    ownKey: "fx:burnBeam", option: "fxBurnBeam", preview: "burnbeam", group: "finisher" },
   // Kritischer Treffer.
   { key: "shatter", name: "Shatter", desc: "Kritische Treffer zerbersten die Gegnerkarte in Scherben (sonst normaler Schnitt).",
     ownKey: "fx:shatter", option: "fxShatter", preview: "shatter", group: "crit" },
@@ -76,6 +80,8 @@ export const hologridActive = (profile, options) => globalFxActive(profile, opti
 // Finisher / Krit / Gott.
 export const laserSliceActive = (profile, options) => globalFxActive(profile, options, "laserSlice");
 export const blackholeActive = (profile, options) => globalFxActive(profile, options, "blackhole");
+export const lasergridActive = (profile, options) => globalFxActive(profile, options, "lasergrid");
+export const burnBeamActive = (profile, options) => globalFxActive(profile, options, "burnBeam");
 export const shatterActive = (profile, options) => globalFxActive(profile, options, "shatter");
 export const fireworksActive = (profile, options) => globalFxActive(profile, options, "fireworks");
 export const goldRainActive = (profile, options) => globalFxActive(profile, options, "goldRain");

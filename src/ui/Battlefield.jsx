@@ -417,6 +417,108 @@ export function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, 
   );
 }
 
+/* #295 Sieg-Finisher „Lasergitter": ein Neon-Gitter (R−1 horizontale + C−1 vertikale Linien) blitzt über die noch
+   ganze Gegnerkarte, dann zerfällt sie ENTLANG der Linien in ein Raster aus R×C Stücken (clip-path inset — echter
+   Karten-Pixelraum), die radial nach außen bersten (as-boom-shard). Deterministisch aus `seed` (kein Math.random,
+   #68). Dichte skaliert mit dem Score/Crit-Tier: 3×4 (grob) bzw. 4×6 (fein ab tier≥2). Die Stücke halten (0%/9% +
+   fill both, delay = rest + Linien-Blitz) den Ganz-Zustand → die Karte liegt erst still, das Gitter blitzt, DANN
+   zerfällt sie. Deck-/Suit-farbige Linien & Stücke. Wird nur bei normaler Bewegung gerendert (Aufrufer prüft `reduced`). */
+export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, intensity = 0, tier = 0, scale = 1 }) {
+  const fine = tier >= 2;                                 // ab BRUTAL feiner (4×6), sonst 3×4
+  const ROWS = fine ? 4 : 3, COLS = fine ? 6 : 4;
+  const spreadMul = 1 + intensity * 0.6;                  // Stücke fliegen weiter bei großen Treffern
+  const lineMs = Math.round(lineDur);                     // Gitter-Blitz; danach erst der Zerfall
+  const diceMs = Math.round(diceDur);
+  const hLines = Array.from({ length: ROWS - 1 }, (_, r) => ({ k: `h${r}`, horizontal: true, pos: `${(((r + 1) / ROWS) * 100).toFixed(2)}%` }));
+  const vLines = Array.from({ length: COLS - 1 }, (_, c) => ({ k: `v${c}`, horizontal: false, pos: `${(((c + 1) / COLS) * 100).toFixed(2)}%` }));
+  const pieces = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const i = r * COLS + c;
+      const dirX = (c + 0.5) / COLS - 0.5, dirY = (r + 0.5) / ROWS - 0.5; // Zellmitte relativ zur Kartenmitte
+      const spread = (70 + Math.abs(fjitter(seed * 5 + i * 13, 44))) * spreadMul;
+      pieces.push({
+        i,
+        clip: `inset(${((r / ROWS) * 100).toFixed(2)}% ${(((COLS - 1 - c) / COLS) * 100).toFixed(2)}% ${(((ROWS - 1 - r) / ROWS) * 100).toFixed(2)}% ${((c / COLS) * 100).toFixed(2)}%)`,
+        sx: (dirX * spread + fjitter(seed * 3 + i * 7, 16)).toFixed(1),
+        sy: (dirY * spread + fjitter(seed * 2 + i * 11, 16) + 16).toFixed(1), // + leichte Schwerkraft nach unten
+        sr: (((r + c) % 2 ? 1 : -1) * (10 + ((r + c) % 3) * 8) + fjitter(seed * 7 + i * 5, 8)).toFixed(1),
+      });
+    }
+  }
+  const ease = "cubic-bezier(0.2, 0.7, 0.3, 1)";
+  const lineGrad = (h) => `linear-gradient(${h ? "90deg" : "0deg"}, transparent, #ffffff, ${color}, transparent)`;
+  return (
+    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* Raster-Stücke: halten bis delay+lineMs den Ganz-Zustand, dann bersten sie entlang der Linien nach außen. */}
+      {pieces.map((s) => (
+        <div key={`gp${s.i}`} className="absolute inset-0" style={{ clipPath: s.clip,
+          "--sx": `${s.sx}px`, "--sy": `${s.sy}px`, "--sr": `${s.sr}deg`,
+          animation: `as-boom-shard ${diceMs}ms ${ease} ${delay + lineMs}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+      ))}
+      {/* Gitterlinien-Blitz über der (noch ganzen) Karte. */}
+      {[...hLines, ...vLines].map((ln) => (
+        <div key={ln.k} className="absolute" style={ln.horizontal
+          ? { left: 0, right: 0, top: ln.pos, height: 2, marginTop: -1, background: lineGrad(true), boxShadow: `0 0 8px 1px ${color}`, transformOrigin: "center", animation: `as-lg-line ${lineMs}ms ease-out ${delay}ms both` }
+          : { top: 0, bottom: 0, left: ln.pos, width: 2, marginLeft: -1, background: lineGrad(false), boxShadow: `0 0 8px 1px ${color}`, transformOrigin: "center", animation: `as-lg-line ${lineMs}ms ease-out ${delay}ms both` }} />
+      ))}
+      {/* Kurzer Zentral-Flash, wenn die Karte zerfällt. */}
+      <div className="absolute" style={{ left: "50%", top: "50%", width: 40, height: 40, marginLeft: -20, marginTop: -20, borderRadius: "50%",
+        background: `radial-gradient(circle, #ffffff, ${color} 45%, transparent 72%)`, mixBlendMode: "screen",
+        animation: `as-lg-flash ${Math.round(diceMs * 0.5)}ms ease-out ${delay + lineMs}ms both`, willChange: "transform, opacity" }} />
+    </div>
+  );
+}
+
+/* #295 Sieg-Finisher „Brennstrahl": ein Neon-Strahl fährt von oben herab (scaleY aus der Oberkante) und brennt ein
+   glühendes Loch in die EXAKTE Kartenmitte — Einschlagpunkt = Loch-Zentrum = Kartenmitte (left/top 50 % des fixen
+   104×144-Slots, also aus der echten Kartenposition, nicht geschätzt). Dunkler Kern + heißer Ember-Rand, aufsteigende
+   Funken (Hitze-Akzent Orange + Deckfarbe); das Loch weitet sich, danach BRICHT die Karte in zwei Hälften, die
+   auseinanderkippen. Deterministisch aus `seed`. Nur bei normaler Bewegung (Aufrufer prüft `reduced`). */
+export function BurnBeamFx({ cardEl, color, beamDur, sparkDur, seed, delay = 0, intensity = 0, scale = 1 }) {
+  const HOT = "#ff7a2f";                                  // Hitze-Akzent (Ember-Orange)
+  const beamMs = Math.round(beamDur);
+  const hitAt = delay + Math.round(beamMs * 0.46);        // Strahl erreicht die Mitte → Loch/Funken/Bruch zünden
+  const holeMs = Math.round(beamDur * 1.1);
+  const breakAt = hitAt + Math.round(beamDur * 0.30);     // Karte bricht NACH dem Einbrennen
+  const breakMs = Math.round(beamDur * 0.7);
+  const holeMax = (3.0 + intensity * 1.2).toFixed(2);     // Loch wächst weiter bei großen Treffern
+  const N = Math.max(8, Math.round((16 + intensity * 10) * scale)); // Ember-Funken, turbo-ausgedünnt
+  const embers = Array.from({ length: N }, (_, i) => {
+    const ang = -Math.PI / 2 + fjitter(seed * 3 + i * 7, 0.9);       // nach oben, leicht gestreut
+    const rad = 24 + Math.abs(fjitter(seed * 5 + i * 13, 46));
+    return { i, dx: (Math.cos(ang) * rad).toFixed(1), dy: (Math.sin(ang) * rad).toFixed(1),
+      c: i % 3 === 0 ? "#ffd36a" : i % 3 === 1 ? HOT : color, sz: (2 + Math.abs(fjitter(seed * 7 + i * 5, 3))).toFixed(1) };
+  });
+  const ease = "cubic-bezier(0.3, 0.6, 0.2, 1)";
+  const halfClip = { l: "polygon(0 0, 50% 0, 46% 100%, 0 100%)", r: "polygon(50% 0, 100% 0, 100% 100%, 54% 100%)" };
+  return (
+    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* Ganze Karte, bis der Bruch einsetzt: zwei Hälften-Klone (zusammen = ganze Karte), die ab breakAt kippen. */}
+      <div className="absolute inset-0" style={{ clipPath: halfClip.l, "--hx": `${(-30 - intensity * 10).toFixed(0)}px`, "--hy": "26px", "--hr": "-14deg",
+        animation: `as-burn-half-l ${breakMs}ms ${ease} ${breakAt}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+      <div className="absolute inset-0" style={{ clipPath: halfClip.r, "--hx": `${(30 + intensity * 10).toFixed(0)}px`, "--hy": "30px", "--hr": "14deg",
+        animation: `as-burn-half-r ${breakMs}ms ${ease} ${breakAt}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+      {/* Glühendes Loch in der EXAKTEN Kartenmitte (left/top 50 % des 104×144-Slots). */}
+      <div className="absolute" style={{ left: "50%", top: "50%", width: 16, height: 16, borderRadius: "50%", "--hole-max": holeMax,
+        background: `radial-gradient(circle, #05050a 44%, ${HOT} 60%, ${color} 72%, transparent 82%)`,
+        boxShadow: `0 0 16px 3px ${HOT}, inset 0 0 8px 2px #000`,
+        animation: `as-burn-hole ${holeMs}ms ease-out ${hitAt}ms both`, willChange: "transform, opacity" }} />
+      {/* Strahl von oben auf die Kartenmitte (left 50 %), scaleY aus der Oberkante nach unten. */}
+      <div className="absolute" style={{ left: "50%", top: 0, width: 7, height: "52%", marginLeft: -3.5, borderRadius: 4, transformOrigin: "top center",
+        background: `linear-gradient(180deg, transparent, #ffffff 20%, ${HOT} 55%, ${color})`,
+        boxShadow: `0 0 14px 3px ${HOT}, 0 0 30px 8px ${HOT}88`,
+        animation: `as-burn-beam ${beamMs}ms ease-in ${delay}ms both`, willChange: "transform, opacity" }} />
+      {/* Ember-Funken steigen aus der Mitte auf, zünden mit dem Treffer. */}
+      {embers.map((s) => (
+        <div key={`em${s.i}`} style={{ position: "absolute", left: "50%", top: "50%", width: +s.sz, height: +s.sz, borderRadius: "50%",
+          background: s.c, boxShadow: `0 0 6px ${s.c}`, "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
+          animation: `as-spark ${Math.round(sparkDur)}ms ease-out ${hitAt}ms both`, willChange: "transform, opacity" }} />
+      ))}
+    </div>
+  );
+}
+
 /* #296 Sieg-Finisher „Schwarzes Loch" — Serien-Wachstum. Statt pro Sieg einzeln zu implodieren + kollabieren, ist das
    Loch bei einer Siegserie EIN persistentes, wachsendes Objekt: der Ereignishorizont wächst mit `streak` (an die
    Feldhöhe gekoppelt, Max-Deckel; darf großzügig über den Karten liegen — bewusst keine Lesbarkeits-Deckelung), jede
@@ -745,7 +847,9 @@ function SlashGhostLayer({ ghosts }) {
         // (rundum, deterministisch aus g.seed via fjitter, kein Neu-Würfeln bei Re-Render). Die Krit-Explosion
         // zerbirst an Ort und Stelle in Pixel-Shards (die Shards fliegen selbst nach außen) → kein Wrapper-Drift.
         const isBoom = g.fx === "explode";
-        const inPlace = isBoom; // zerbirst an Ort und Stelle → kein Wrapper-Drift (Schwarzes Loch läuft im Panel-Canvas, nicht als Ghost)
+        const isGrid = g.fx === "lasergrid";   // #295 Lasergitter: Raster-Dicing
+        const isBurn = g.fx === "burn";        // #295 Brennstrahl: Loch + Bruch
+        const inPlace = isBoom || isGrid || isBurn; // zerfällt/bricht an Ort und Stelle → kein Wrapper-Drift (Schwarzes Loch läuft im Panel-Canvas, nicht als Ghost)
         const dang = fjitter(g.seed * 3 + 2, Math.PI);                        // −π..π → volle 360° rundum
         // Laser-Treffer zerfallen NAH am Deck (wenig Drift); normaler Klingenschnitt driftet weiter ins Feld.
         const drad = inPlace ? 0 : g.laser ? 10 + Math.abs(fjitter(g.seed * 5 + 3, 12)) : 40 + Math.abs(fjitter(g.seed * 5 + 3, 26)); // Laser 10..22 · Klinge 40..66 px
@@ -757,6 +861,10 @@ function SlashGhostLayer({ ghosts }) {
                      "--drx": `${(Math.cos(dang) * drad).toFixed(1)}px`, "--dry": `${(Math.sin(dang) * drad).toFixed(1)}px`, "--drot": `${drot}deg` }}>
             {isBoom
               ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
+              : isGrid
+              ? <LaserGridFx cardEl={cardEl} color={g.color} diceDur={g.halves} lineDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
+              : isBurn
+              ? <BurnBeamFx cardEl={cardEl} color={g.color} beamDur={g.halves} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} />
               : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} laser={g.laser} />}
           </div>
         );
@@ -796,7 +904,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // Frame Glow (Karte) + Hologrid (Gitterlinien im Battlefield); Holo Swipe = Schimmer über die eigene Karte.
-  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false, fxBlackhole = false, fxShatter = false,
+  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false, fxBlackhole = false, fxLasergrid = false, fxBurnBeam = false, fxShatter = false,
   // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar).
   fxFireworks = false, fxGoldRain = false, fxPrismaWave = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
@@ -891,9 +999,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const flyAway      = sliceOn && lost;                       // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
   const explode      = sliceOn && win && isCrit && fxShatter; // Shatter-Effekt (opt-in): Krit zerbirst die Gegnerkarte
   const critBoom     = explode;
-  // #293 Sieg-Finisher: Schwarzes Loch hat Vorrang vor Laser/Klinge (untereinander exklusiv), aber NUR beim
-  // normalen (nicht-berstenden) Sieg — ein Krit-Shatter bleibt Shatter.
+  // #293/#295 Sieg-Finisher (untereinander exklusiv, feste Priorität): Schwarzes Loch › Lasergitter › Brennstrahl ›
+  // Laser-Schnitt/Klinge — aber NUR beim normalen (nicht-berstenden) Sieg; ein Krit-Shatter bleibt Shatter. Die
+  // UI-Einfachauswahl setzt ohnehin nur EINEN Flag; die Priorität ist nur der Sicherheits-Tiebreak.
   const holeFinish   = sliceOn && win && !explode && fxBlackhole;
+  const gridFinish   = sliceOn && win && !explode && !fxBlackhole && fxLasergrid;                 // #295 Lasergitter
+  const burnFinish   = sliceOn && win && !explode && !fxBlackhole && !fxLasergrid && fxBurnBeam;  // #295 Brennstrahl
   // #296: Ist der Blackhole-Finisher im Lauf aktiv? Dann läuft das persistente Panel-Loch (unabhängig vom Einzelstich).
   // Kein separater Ghost auf der Gegnerkarte mehr — der Sog/das Loch werden im Canvas gezeichnet.
   const holeActive   = !reduced && fxBlackhole && flipMs > 170 && !!t;
@@ -1100,7 +1211,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
     if (win && !holeFinish) {   // Gegnerkarte verliert → Schnitt (Standard, auch bei Krit) bzw. Shatter-Explosion (nur mit gekauftem Effekt)
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
-        fx: explode ? "explode" : "slice",
+        fx: explode ? "explode" : gridFinish ? "lasergrid" : burnFinish ? "burn" : "slice",
         laser: fxLaserSlice, // globaler Laser-Schnitt (nur normaler Schnitt)
         color: explode ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,

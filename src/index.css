@@ -197,6 +197,44 @@ button { font-family: inherit; }
   100% { transform: scale(5);   opacity: 0; }
 }
 
+/* #295 Sieg-Finisher „Lasergitter": Neon-Gitterlinien blitzen kurz über die (noch ganze) Karte (as-lg-line),
+   danach zerfällt sie entlang der Linien (Raster-Dicing per clip-path) mit as-boom-shard; kurzer Zentral-Flash. */
+@keyframes as-lg-line {
+  0%   { opacity: 0; transform: scale(0.35); }
+  35%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+@keyframes as-lg-flash {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  20%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(3.4); }
+}
+
+/* #295 Sieg-Finisher „Brennstrahl": ein Strahl fährt von oben herab (as-burn-beam, scaleY aus der Oberkante) und
+   brennt ein glühendes Loch in die EXAKTE Kartenmitte (as-burn-hole, wächst von 0 bis --hole-max); danach bricht
+   die Karte in zwei Hälften, die auseinanderkippen (as-burn-half-l/-r). Dauern kommen an den Flip-Takt gekoppelt rein. */
+@keyframes as-burn-beam {
+  0%   { opacity: 0; transform: scaleY(0); }
+  14%  { opacity: 1; }
+  46%  { opacity: 1; transform: scaleY(1); }
+  76%  { opacity: 1; transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(1); }
+}
+@keyframes as-burn-hole {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+  26%  { opacity: 1; }
+  44%  { transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(var(--hole-max, 3.6)); }
+}
+@keyframes as-burn-half-l {
+  0%, 12% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  100%    { opacity: 0; transform: translate(var(--hx, -34px), var(--hy, 26px)) rotate(var(--hr, -14deg)); }
+}
+@keyframes as-burn-half-r {
+  0%, 12% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  100%    { opacity: 0; transform: translate(var(--hx, 34px), var(--hy, 30px)) rotate(var(--hr, 14deg)); }
+}
+
 /* #188 v2: Screen-Shake bei großem Krit-Sieg (Crit-only). Amplitude über --shake-amp (nach Stufe). Zwei
    IDENTISCHE Keyframes (a/b) — das Battlefield-Panel wechselt je Krit den Namen, damit die einmalige Animation
    sicher neu startet (ohne Remount). reduced-motion greift global (unten) → dann kein Shake. */
