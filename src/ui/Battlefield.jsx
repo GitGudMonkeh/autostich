@@ -348,16 +348,8 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
           animation: `as-boom-shard ${cd}ms ${ease} ${delay}ms both`, willChange: "transform, opacity",
         }}>{cardEl}</div>
       ))}
-      {/* Zentral-Flash: heller Kern (weiß → Stufen-Farbe), dehnt sich und fadet. */}
-      <div style={{ position: "absolute", left: "50%", top: "50%", width: fsz, height: fsz, marginLeft: -fsz / 2, marginTop: -fsz / 2,
-        borderRadius: "50%", background: `radial-gradient(circle, #ffffff 0%, ${amp} 46%, transparent 72%)`,
-        animation: `as-boom-flash ${flashDur}ms ease-out ${delay}ms both`, willChange: "transform, opacity" }} />
-      {/* Schockwellen-Ringe: 1–3 dünne, glühende Ringe wachsen nach außen (gestaffelt je Stufe). */}
-      {Array.from({ length: ringCount }, (_, k) => k).map((k) => (
-        <div key={`rg${k}`} style={{ position: "absolute", left: "50%", top: "50%", width: 30, height: 30, marginLeft: -15, marginTop: -15,
-          borderRadius: "50%", border: `2px solid ${amp}`, boxShadow: `0 0 10px ${amp}, 0 0 4px #fff inset`,
-          animation: `as-boom-ring ${bd}ms ease-out ${delay + k * 90}ms both`, willChange: "transform, opacity" }} />
-      ))}
+      {/* Zentral-Flash + Schockwellen-Ringe entfernt (Wunsch: „nur das Shatter"): die Karte zerbirst nur noch
+          in Scherben + lose Partikel, kein gelber Explosionsring/-blitz mehr. */}
       {/* Lose Partikel aus dem Zentrum (zusätzlich zu den Karten-Shards). */}
       {parts.map((s) => (
         <div key={`pt${s.i}`} style={{

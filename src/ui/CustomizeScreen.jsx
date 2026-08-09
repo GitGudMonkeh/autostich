@@ -89,16 +89,12 @@ function GlobalFxScenePreview({ fx }) {
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {fx.preview === "shatter" ? (
-        <>
-          <div style={cardBox}>
-            {SCENE_SHARDS.map((s, i) => (
-              <div key={i} className="ws-piece absolute inset-0" style={{ backgroundImage: `url(${cardImg})`, backgroundSize: "100% 100%",
-                clipPath: s.clip, "--sx": s.sx, "--sy": s.sy, "--sr": s.sr }} />
-            ))}
-          </div>
-          <div className="ws-flash absolute" style={{ left: "50%", top: "50%", width: 60, height: 60,
-            borderRadius: "50%", background: "radial-gradient(circle,#ffffff 0%,#ffd36a 45%,transparent 72%)" }} />
-        </>
+        <div style={cardBox}>
+          {SCENE_SHARDS.map((s, i) => (
+            <div key={i} className="ws-piece absolute inset-0" style={{ backgroundImage: `url(${cardImg})`, backgroundSize: "100% 100%",
+              clipPath: s.clip, "--sx": s.sx, "--sy": s.sy, "--sr": s.sr }} />
+          ))}
+        </div>
       ) : (
         <>
           <div style={cardBox}>
