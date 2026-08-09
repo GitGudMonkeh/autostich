@@ -9,7 +9,7 @@ import { plantNumberColor, PLANT, PLANT_RIPE } from "./indicators/vocab.js";
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
 // #259: reiner Präsentations-Leaf mit teuren Bild-Layern → React.memo überspringt Re-Render bei unveränderten
 // (primitiven) Props. Beim Auto-Play/Timer-Takt rendern nur die tatsächlich wechselnden Karten neu, nicht alle.
-function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null, fxGlow = null, fxSwipe = false }) {
+function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null, fxGlow = null, fxSwipe = false, fxLaser = false }) {
   const color = suitColor(suit);
   // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
   // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
@@ -90,6 +90,14 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
         <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
           <div className="as-deck-swipe absolute" style={{ top: "-60%", left: 0, width: "38%", height: "220%",
             background: "linear-gradient(90deg,transparent,rgba(255,255,255,.22),rgba(120,220,255,.12),transparent)" }} />
+        </div>
+      )}
+      {/* Laser (#deckshop): scharfer, heller Laser-Scan über die eigene Karte in ihrer SUIT-Farbe (color). */}
+      {fxLaser && (
+        <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          <div className="as-card-laser absolute left-0 right-0" style={{ height: 2,
+            background: `linear-gradient(90deg,transparent,${color} 12%,#ffffff 50%,${color} 88%,transparent)`,
+            boxShadow: `0 0 9px 1px ${color}, 0 0 3px 1px #ffffffcc` }} />
         </div>
       )}
       {permBoost > 0 && (

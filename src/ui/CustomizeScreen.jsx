@@ -36,6 +36,8 @@ const FX_CSS = `
 @keyframes ws-swipe{0%{transform:translateX(-120%) rotate(18deg)}55%,100%{transform:translateX(320%) rotate(18deg)}}
 @keyframes ws-sweep{0%{bottom:-4%;opacity:0}18%{opacity:1}70%{opacity:1}100%{bottom:106%;opacity:0}}
 .ws-sweep{animation:ws-sweep 2.9s ease-in-out infinite}
+@keyframes ws-laser{0%{top:-6%;opacity:0}12%{opacity:1}88%{opacity:1}100%{top:106%;opacity:0}}
+.ws-laser{animation:ws-laser 1.9s linear infinite}
 `;
 
 // Karten-Vorschau: illustrierter Deck-Rücken (Motiv), vollständig (object-contain) + optionaler Effekt.
@@ -52,6 +54,13 @@ function CardPreview({ deckId, a1, fx, className = "" }) {
           <div className="absolute" style={{ top: "-60%", left: 0, width: "40%", height: "220%",
             background: "linear-gradient(90deg,transparent,rgba(255,255,255,.28),rgba(120,220,255,.16),transparent)",
             animation: "ws-swipe 2.6s ease-in-out infinite" }} />
+        </div>
+      )}
+      {fx === "laser" && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
+          <div className="ws-laser absolute left-0 right-0" style={{ height: 2,
+            background: `linear-gradient(90deg,transparent,${a1} 12%,#ffffff 50%,${a1} 88%,transparent)`,
+            boxShadow: `0 0 10px 1px ${a1}, 0 0 3px 1px #ffffffcc` }} />
         </div>
       )}
     </div>
@@ -94,7 +103,7 @@ function BfPreview({ bfId, a1, fx, className = "", showVersion = false }) {
 // Wird in einer festen Höhe zentriert (BuyOverlay), damit der Rahmen beim Wechsel Karte↔BF nicht springt.
 function BigPreview({ theme, sel }) {
   if (sel === "bf" || sel === "hologrid") return <BfPreview bfId={theme.bfId} a1={theme.a1} fx={sel === "hologrid" ? "hologrid" : null} className="w-full" showVersion />;
-  const fx = sel === "frameGlow" || sel === "holoSwipe" ? sel : null;
+  const fx = sel === "frameGlow" || sel === "holoSwipe" || sel === "laser" ? sel : null;
   return (
     <div className="flex justify-center">
       <CardPreview deckId={theme.deckId} a1={theme.a1} fx={fx} className="h-[248px] max-h-[46vh]" />

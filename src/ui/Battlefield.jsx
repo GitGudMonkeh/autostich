@@ -456,7 +456,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // Frame Glow (Karte) + Hologrid (Gitterlinien im Battlefield); Holo Swipe = Schimmer über die eigene Karte.
-  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false,
+  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaser = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
   const reduced = useReducedFx(reducedFx);
@@ -561,7 +561,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
           stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
           ionStacks={t.pCard.ionStacks || 0} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} allyColor={allyColorFor(t.pCard.suit)}
-          frontImage={deckFront} fxGlow={fxFrameGlow ? deckA1 : null} fxSwipe={fxHoloSwipe} />
+          frontImage={deckFront} fxGlow={fxFrameGlow ? deckA1 : null} fxSwipe={fxHoloSwipe} fxLaser={fxLaser} />
   );
   // #186: die Gegnerkarte trägt den Skin-Front-Rahmen der kommenden Auswahl (Holo entfällt); Zahl/Effekte darüber.
   const oCardEl = t && (
