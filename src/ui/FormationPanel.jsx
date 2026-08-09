@@ -56,6 +56,7 @@ export function FormationPanel({ state = {}, title = "Deine aktiven Formationen"
       {bodyOpen && (
         <CardGrid cards={cards} formations={formations} roles={state.roles || {}}
           anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+          lockedPos={state.challengeBlockForm || []}
           glacierPos={glacierPos} glacierMassByPos={iceActive ? (state.glacierMass || []) : null}
           architectCover={cover} structPos={structPos} distrPos={distrPos}
           pickedIds={pickedIds} pickedPos={pickedPos} onTilePick={() => {}} quietTiles />

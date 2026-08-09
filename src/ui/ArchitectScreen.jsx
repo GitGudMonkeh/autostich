@@ -198,6 +198,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     return cover;
   }, [buildings]);
   const boardRef = useRef(null);
+  const colorBarRef = useRef(null); // #: Farbauswahl-Leiste (colorLocked-Gebäude) — Ziel des Auto-Scrolls, damit sie sichtbar bleibt
   const [archFrame, setArchFrame] = useState(null);
   const archSig = Object.keys(archCover).map((p) => `${p}:${archCover[p].bid}:${archCover[p].color}`).join(",");
   useLayoutEffect(() => {
@@ -303,7 +304,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     setSelId(newId); setPhase("move");
     // #UI: nach der Bauplan-Wahl automatisch zum Brett scrollen — das eben platzierte Gebäude ist sofort sichtbar und
     // greifbar (auf Mobil liegt das Brett unter der Steuerung, sonst müsste man erst manuell runterscrollen).
-    if (typeof requestAnimationFrame !== "undefined") requestAnimationFrame(() => boardRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }));
+    // Bei colorLocked-Gebäuden (Buntglas/Zunfthaus) NUR so weit, dass die Farbauswahl-Leiste (über dem Brett) ganz
+    // sichtbar bleibt — statt das Brett zu zentrieren (was die Leiste nach oben aus dem Bild schöbe).
+    if (typeof requestAnimationFrame !== "undefined") requestAnimationFrame(() => {
+      if (fam.colorLocked && colorBarRef.current) colorBarRef.current.scrollIntoView({ block: "start", behavior: "smooth" });
+      else boardRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
   };
   // Sobald durch Entfernen Platz frei wird, den wartenden Bauplan automatisch bauen (und in die Verschiebe-Phase).
   useEffect(() => {
@@ -561,7 +567,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 Bestätigen-Leiste (mobil darüber) und dem Brett. Eigener Rahmen + Abstand nach unten, damit man beim Tippen
                 der Farbe nicht versehentlich Bestätigen trifft (vorher lag sie weit oben im Panel → hochscrollen nötig). */}
             {selBuilding && phase === "move" && familyDef(selBuilding.familyId)?.colorLocked && (
-              <div className="mb-3 rounded-lg px-3 py-2.5 flex items-center gap-3 flex-wrap" style={{ background: "#141f29", border: "1px solid #d97a3a66", boxShadow: "0 0 10px #d97a3a1f" }}>
+              <div ref={colorBarRef} className="mb-3 rounded-lg px-3 py-2.5 flex items-center gap-3 flex-wrap" style={{ background: "#141f29", border: "1px solid #d97a3a66", boxShadow: "0 0 10px #d97a3a1f", scrollMarginTop: "12px" }}>
                 <span className="text-[11px] font-mono uppercase tracking-wide font-bold" style={{ color: "#e0894a" }}>🎨 Bufft Farbe</span>
                 <div className="flex gap-2.5">
                   {SUIT_ORDER.map((s) => (

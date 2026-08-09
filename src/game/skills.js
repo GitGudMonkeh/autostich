@@ -535,7 +535,10 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   // insgesamt. Sonst zeigt das Erst-Angebot z. B. Blitz-Ladungsaufbau OHNE Blitz-Konsument (die Ladung „verpufft"),
   // wenn die chosen-Reihenfolge Feuer zuerst nimmt. Jede angebotene Engine ist so von Anfang an komplett sichtbar.
   const guaranteeAny = (activeArchetypes || []).length === 0;
-  const perArch = Math.max(1, Math.floor(count / chosen.length)); // 3 bei 4 Archetypen (count 12), count bei 1 Archetyp
+  // Immer HÖCHSTENS 3 Skills je Archetyp anbieten (das ganze Spiel, inkl. Onboarding). Bei wenigen freigeschalteten
+  // Archetypen (Onboarding) ergäbe count/chosen.length sonst 6 pro Archetyp — daher hart auf PER_ARCH_CAP gedeckelt.
+  const PER_ARCH_CAP = 3;
+  const perArch = Math.max(1, Math.min(PER_ARCH_CAP, Math.floor(count / chosen.length)));
   const offer = [];
   const rest = [];
   const guaranteed = new Set();  // garantierte Konsumenten-Slots — vor dem Legendär-Ersatz geschützt
@@ -568,8 +571,18 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
       archLegs[arch] = shuffle(legPoolByArch[arch], rng)[0];
     }
   }
-  const fill = shuffle(rest, rng); // auffüllen bis count, falls ein Archetyp zu wenige Skills hatte
-  while (offer.length < count && fill.length) offer.push(fill.shift());
+  // Auffüllen bis count aus den Resten — aber NIE über PER_ARCH_CAP je Archetyp (bei wenigen Archetypen bleibt das
+  // Angebot entsprechend kürzer: 3 je gezeigtem Archetyp). Sonst kämen im Onboarding wieder 6 desselben Archetyps.
+  const fill = shuffle(rest, rng);
+  const archCount = {};
+  for (const id of offer) archCount[archetypeOf(id)] = (archCount[archetypeOf(id)] || 0) + 1;
+  while (offer.length < count && fill.length) {
+    const id = fill.shift();
+    const a = archetypeOf(id);
+    if ((archCount[a] || 0) >= PER_ARCH_CAP) continue;
+    archCount[a] = (archCount[a] || 0) + 1;
+    offer.push(id);
+  }
   // #247: je getroffenem Archetyp den Legendär einsetzen — ersetzt einen normalen Skill DESSELBEN Archetyps (Balance je
   // Archetyp wahren: 3→2 normal + 1 legendär), garantierte Konsumenten überspringen. Kein ersetzbarer Slot dieses
   // Archetyps (alles garantiert/schon legendär) → auslassen; so bleiben Angebotslänge UND Konsument-Garantie erhalten.

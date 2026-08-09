@@ -1764,7 +1764,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                     ? <img key={k} src={glacierIcon} alt="" aria-hidden="true" className="inline-block object-contain" style={{ width: "0.85em", height: "0.85em", filter: "drop-shadow(0 0 3px #5ec8f0)" }} />
                     : <span key={k}>{HIT_STYLE[k].icon}</span>)}
                 </span>
-              )}{f.text}
+              )}
+              {/* #: Score-Zahlen im selben Stil wie die Kartennummern (durchsichtige Füllung + farbige Kontur + Glow). */}
+              <span className="card-num" style={{ fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900,
+                WebkitTextFillColor: "transparent", WebkitTextStroke: `1.5px ${f.color}`, textShadow: `0 0 7px ${f.color}aa` }}>{f.text}</span>
             </div>
           );
         })}

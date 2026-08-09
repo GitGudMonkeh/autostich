@@ -163,6 +163,11 @@ export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, 
   // Gebäude-Legendäre (needsArchitect) nur mit aktivem Architekten — sonst inert (kein Gebäude-Overlay).
   let flat = PERK_LIST.filter((p) => !owned.includes(p.id) && p.offerable !== false && !isMigratedPerk(p)
     && !(p.needsArchitect && !architectEnabled));
+  // Legendäre Perks sind an die Rarität gekoppelt: sie schalten ZUSAMMEN MIT „lila" (Stufe IV) frei. Solange der
+  // Onboarding-Deckel die IV noch nicht erlaubt (maxTier < 4), werden sie GAR NICHT angeboten — sonst leckten sie
+  // (bei legendaryChance 0) über den gewichteten Pool ins Angebot. Default maxTier 4 (Sim/Standard/Dev/Post-Onboarding)
+  // → unverändert. So kann im Onboarding kein legendärer Perk mehr erscheinen.
+  if (maxTier < 4) flat = flat.filter((p) => p.rarity !== "legendary");
   const chosen = [];
   let legendaries = 0;
   // M4/M5 (2. Perk-Phase): `legForce` GARANTIERTE, verschiedene Legendäre vorne — dann füllt der Pool mit normalen

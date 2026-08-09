@@ -75,7 +75,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
                 </div>
               )}
               <CardGrid cards={entry.deckSnapshot.cards} formations={entry.deckSnapshot.formations || []}
-                architectCover={hasArch && showArch ? archCover : null}
+                architectCover={hasArch && showArch ? archCover : null} lockedPos={entry.deckSnapshot.challengeBlockForm || []}
                 glowBid={hasArch && showArch ? inspectBid : null} quietTiles />
 
               {/* Gebäude-Liste: welche Gebäude auf welcher Stufe. Antippen lässt den Rahmen am Brett cyan leuchten. */}

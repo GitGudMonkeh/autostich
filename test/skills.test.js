@@ -340,3 +340,23 @@ describe("decodeArchetypes — Board-Icons (#139)", () => {
     expect(decodeArchetypes("bogus")).toEqual([]);
   });
 });
+
+describe("buildSkillOffer — max. 3 Skills pro Archetyp (#Onboarding-Fix)", () => {
+  const rng = makeRng(7);
+  const countPerArch = (offer) => offer.reduce((m, id) => { const a = archetypeOf(id); m[a] = (m[a] || 0) + 1; return m; }, {});
+  it("wenige freigeschaltete Archetypen: nie mehr als 3 desselben Archetyps (statt 6)", () => {
+    // count 12, aber nur 2 Archetypen freigeschaltet → früher 6 je Archetyp; jetzt gedeckelt auf 3.
+    const offer = buildSkillOffer([], [], rng, 12, 0, false, ["lightning", "ice"]);
+    const per = countPerArch(offer);
+    for (const a of Object.keys(per)) expect(per[a]).toBeLessThanOrEqual(3);
+  });
+  it("alle 4 Archetypen, count 12 → weiterhin 3 je Archetyp (unverändert)", () => {
+    const offer = buildSkillOffer([], [], makeRng(3), 12, 0, false, null);
+    const per = countPerArch(offer);
+    for (const a of Object.keys(per)) expect(per[a]).toBeLessThanOrEqual(3);
+  });
+  it("Mono (1 Archetyp) → höchstens 3 statt count", () => {
+    const offer = buildSkillOffer([], [], makeRng(9), 12, 0, false, ["lightning"]);
+    expect(offer.length).toBeLessThanOrEqual(3);
+  });
+});

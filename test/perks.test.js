@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks, buildPerkOffer } from "../src/game/perks.js";
+import { makeRng } from "../src/game/deck.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 import { UNAUFHALTSAM_VALUE, KRITMASSE_VALUE, MONOCHROM_STEP, MONOCHROM_CAP } from "../src/game/constants.js";
 
@@ -146,3 +147,23 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
 // Kartenrollen (Kat. C: Vorhut/Triumph/Leibwache/Staffelläufer/Anführer/Finisher/Überlebensvorteil/Joker/Opfergabe/
 // Bindeglied) sind zu Familien migriert (#167) — Stufeneffekte in families.test.js, Engine/Flow in families-engine.test.js.
 // B9 Perfekte Folge → Familie B_PERFECT (#167), Treppen-Ordinal-Tests ebenfalls in families.test.js.
+
+describe("buildPerkOffer — Legendäre koppeln an die Rarität (lila/Stufe IV) (#Onboarding-Fix)", () => {
+  const rng = () => 0.5; // deterministisch genug für die Poolzusammensetzung
+  it("maxTier < 4 (Onboarding-Deckel): KEIN legendärer Perk im Angebot", () => {
+    for (const mt of [2, 3]) {
+      for (let s = 0; s < 8; s++) {
+        const offer = buildPerkOffer([], {}, makeRng(s + 1), 5, 0, 0, false, 0, mt);
+        expect(offer.some((id) => isLegendary(id))).toBe(false);
+      }
+    }
+  });
+  it("maxTier = 4 (lila frei): Legendäre können wieder auftauchen (Standard/Post-Onboarding unverändert)", () => {
+    let sawLeg = false;
+    for (let s = 0; s < 40 && !sawLeg; s++) {
+      const offer = buildPerkOffer([], {}, makeRng(s + 1), 5, 0.5, 0, false, 0, 4);
+      if (offer.some((id) => isLegendary(id))) sawLeg = true;
+    }
+    expect(sawLeg).toBe(true);
+  });
+});
