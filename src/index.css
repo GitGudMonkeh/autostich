@@ -197,12 +197,15 @@ button { font-family: inherit; }
   100% { transform: scale(5);   opacity: 0; }
 }
 
-/* #295 Sieg-Finisher „Lasergitter": Neon-Gitterlinien blitzen kurz über die (noch ganze) Karte (as-lg-line),
-   danach zerfällt sie entlang der Linien (Raster-Dicing per clip-path) mit as-boom-shard; kurzer Zentral-Flash. */
+/* #295/#303 Sieg-Finisher „Lasergitter": Neon-Gitterlinien blitzen hell über die (noch ganze) Karte auf (as-lg-line),
+   HALTEN kurz voll hell und GLÜHEN dann über den Karten-Zerfall langsam aus (Nachleuchten) — so bleibt das Gitter
+   sichtbar/lesbar, statt sofort zu verschwinden. Danach zerfällt die Karte entlang der Linien (as-boom-shard). */
 @keyframes as-lg-line {
-  0%   { opacity: 0; transform: scale(0.35); }
-  35%  { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1); }
+  0%   { opacity: 0; transform: scale(0.4); }
+  10%  { opacity: 1; transform: scale(1); }   /* heller Aufblitz */
+  28%  { opacity: 1; transform: scale(1); }   /* kurz voll hell halten */
+  60%  { opacity: 0.45; }                      /* Nachleuchten … */
+  100% { opacity: 0; transform: scale(1); }    /* … glüht langsam aus */
 }
 @keyframes as-lg-flash {
   0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }

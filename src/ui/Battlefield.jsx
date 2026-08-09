@@ -444,7 +444,15 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
     }
   }
   const ease = "cubic-bezier(0.2, 0.7, 0.3, 1)";
-  const lineGrad = (h) => `linear-gradient(${h ? "90deg" : "0deg"}, transparent, #ffffff, ${color}, transparent)`;
+  // #303 Gitter deutlich sichtbarer: weiß-glühender Kern im Verlauf, dickere Linien, mehrlagiger Glow (skaliert mit dem
+  // Treffer), und ein NACHLEUCHTEN — die Linien blitzen zuerst hell auf (über lineMs) und glühen dann über den Zerfall
+  // (afterMs) langsam aus, statt sofort zu verschwinden. So bleibt das Gitter während des Karten-Zerfalls lesbar.
+  const glowK = 1 + intensity * 0.85 + (tier >= 2 ? 0.3 : 0);                     // Glow-Intensität (Treffer/Stufe)
+  const afterMs = Math.round(diceMs * 0.8);                                       // Nachleucht-Dauer (über den Zerfall)
+  const lineTotal = lineMs + afterMs;
+  const lineThick = fine ? 2.5 : 3;                                               // etwas dicker → besser erkennbar
+  const lineShadow = `0 0 ${(6 * glowK).toFixed(0)}px 1px #ffffff, 0 0 ${(16 * glowK).toFixed(0)}px ${(3 * glowK).toFixed(1)}px ${color}, 0 0 ${(34 * glowK).toFixed(0)}px ${(10 * glowK).toFixed(0)}px ${color}aa`;
+  const lineGrad = (h) => `linear-gradient(${h ? "90deg" : "0deg"}, transparent, ${color}, #ffffff, ${color}, transparent)`; // heißer Weiß-Kern
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
       {/* Raster-Stücke: halten bis delay+lineMs den Ganz-Zustand, dann bersten sie entlang der Linien nach außen. */}
@@ -453,11 +461,11 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
           "--sx": `${s.sx}px`, "--sy": `${s.sy}px`, "--sr": `${s.sr}deg`,
           animation: `as-boom-shard ${diceMs}ms ${ease} ${delay + lineMs}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
       ))}
-      {/* Gitterlinien-Blitz über der (noch ganzen) Karte. */}
+      {/* Gitterlinien: heller Aufblitz über der (noch ganzen) Karte, danach Nachleuchten über den Zerfall (as-lg-line). */}
       {[...hLines, ...vLines].map((ln) => (
         <div key={ln.k} className="absolute" style={ln.horizontal
-          ? { left: 0, right: 0, top: ln.pos, height: 2, marginTop: -1, background: lineGrad(true), boxShadow: `0 0 10px 2px ${color}, 0 0 24px 7px ${color}88`, transformOrigin: "center", animation: `as-lg-line ${lineMs}ms ease-out ${delay}ms both` }
-          : { top: 0, bottom: 0, left: ln.pos, width: 2, marginLeft: -1, background: lineGrad(false), boxShadow: `0 0 10px 2px ${color}, 0 0 24px 7px ${color}88`, transformOrigin: "center", animation: `as-lg-line ${lineMs}ms ease-out ${delay}ms both` }} />
+          ? { left: 0, right: 0, top: ln.pos, height: lineThick, marginTop: -lineThick / 2, background: lineGrad(true), boxShadow: lineShadow, transformOrigin: "center", animation: `as-lg-line ${lineTotal}ms ease-out ${delay}ms both` }
+          : { top: 0, bottom: 0, left: ln.pos, width: lineThick, marginLeft: -lineThick / 2, background: lineGrad(false), boxShadow: lineShadow, transformOrigin: "center", animation: `as-lg-line ${lineTotal}ms ease-out ${delay}ms both` }} />
       ))}
     </div>
   );
