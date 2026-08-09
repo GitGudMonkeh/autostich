@@ -207,32 +207,34 @@ function FinisherScene({ variant }) {
    Vorschau = In-Game (dieselbe Komponente, kein Drift). */
 function BlackholePreview() {
   const panelRef = useRef(null), oppRef = useRef(null);
-  const [streak, setStreak] = useState(0);
   const [pulse, setPulse] = useState(null);
+  const [dormant, setDormant] = useState(true);
   const bf = battlefieldAssets("bf_kaiju");
   const suitCol = suitColor(DEMO_SUIT);
   useEffect(() => {
-    // Zyklus: c=1..8 Siege (streak wächst, Karte wird eingesogen) · c=9 Serienabbruch (streak 0 → Kollaps) · c=10/11/0 Pause.
+    // Zyklus: 1..6 Siege (Loch wächst + saugt Karten ein) · 7/8/9 Niederlagen (kleiner, kleiner, lautloser Kollaps) ·
+    // 10/11 Pause (Loch weg). Genau das Serien-Verhalten aus dem Spiel — dieselbe Komponente, kein Drift.
     let c = 0, seq = 0;
     const id = setInterval(() => {
       c = (c + 1) % 12;
-      if (c >= 1 && c <= 8) { setStreak(c); setPulse({ id: ++seq, num: 2 + ((c * 3) % 9), col: suitCol }); }
-      else if (c === 9) setStreak(0); // Serienabbruch → Kollaps (Flash + Schockwelle)
-    }, 620);
+      if (c >= 1 && c <= 6) { setDormant(false); setPulse({ id: ++seq, kind: "win", num: 2 + ((c * 3) % 9), col: suitCol }); }
+      else if (c >= 7 && c <= 9) setPulse({ id: ++seq, kind: "loss" }); // 3 Niederlagen → schrumpfen + Kollaps
+      else if (c === 10) setDormant(true);
+    }, 640);
     return () => clearInterval(id);
   }, [suitCol]);
   return (
-    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {/* Ursprung des Sogs = Gegner-Demokarte (rechts der Mitte). Während der Serie „verschwindet" sie ins Loch
-          (der Flyer im Canvas zeigt den Sog); bei Serie 0 (Pause/Kollaps) liegt sie wieder ruhig da. */}
+          (der Flyer im Canvas zeigt den Sog); in der Pause liegt sie wieder ruhig da. */}
       <div ref={oppRef} className="absolute" style={{ left: "68%", top: "50%", width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
-        <div className="absolute inset-0" style={{ opacity: streak > 0 ? 0 : 1, transition: "opacity 120ms" }}>
+        <div className="absolute inset-0" style={{ opacity: dormant ? 1 : 0, transition: "opacity 120ms" }}>
           <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />
         </div>
       </div>
-      <BlackholeFieldFx active streak={streak} pulse={pulse} color={suitCol} scale={1} panelRef={panelRef} oppRef={oppRef} reduced={false} />
+      <BlackholeFieldFx active pulse={pulse} color={suitCol} scale={1} panelRef={panelRef} oppRef={oppRef} reduced={false} />
     </div>
   );
 }
