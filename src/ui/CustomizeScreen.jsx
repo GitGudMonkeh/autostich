@@ -12,6 +12,7 @@ import { startPrunk } from "./prunkFx.js";
 import { SliceFx, ExplosionFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist } from "./Battlefield.jsx";
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
+import { audio } from "./audio.js"; // #302b: Showcase-Panel spielt den passenden Finisher-Sound mit
 
 /* #deckshop — DECK-WERKSTATT (schlankes Modell): zwei Kategorien.
    • PACKS   = Karte (Front + Back) + Battlefield als EIN Kauf. Tap → Detail-Ansicht mit Vorschau
@@ -186,6 +187,8 @@ function GottgleichPreview({ variant, compact = false }) {
    im Loop — Vorschau = In-Game (keine separate Engine, kein Drift). */
 const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
 const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LINE = 220;
+// #302b Showcase-Sound je One-Shot-Finisher (persistente Loop-Effekte Burn/Blackhole laufen separat als Loop-Bett).
+const FIN_SFX = { klinge: "fx_blade", laser: "fx_laser", lasergrid: "fx_laser" }; // shatter: (kein eigener SFX)
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
   const bf = battlefieldAssets("bf_kaiju");
@@ -193,6 +196,13 @@ function FinisherScene({ variant }) {
     const id = setInterval(() => setTick((t) => t + 1), 2400); // Loop: Karte erscheint → wird zerstört → Pause
     return () => clearInterval(id);
   }, []);
+  // Sound synchron zum Einschlag (≈ FIN_DELAY nach jedem Remount) mitspielen; respektiert Mute/Volume via audio-System.
+  useEffect(() => {
+    const sfx = FIN_SFX[variant];
+    if (!sfx) return undefined;
+    const id = setTimeout(() => audio.play(sfx, { gain: variant === "klinge" ? 1.0 : 1.05 }), FIN_DELAY);
+    return () => clearTimeout(id);
+  }, [tick, variant]);
   const suitCol = suitColor(DEMO_SUIT);
   const cardEl = <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
   const seed = tick * 3 + 1;
@@ -240,6 +250,11 @@ function BurnBeamPreview() {
     }, 780);
     return () => clearInterval(id);
   }, []);
+  // #302b: persistentes Brennstrahl-Loop-Bett, solange die Vorschau offen ist (wie in-game der persistente Strahl).
+  useEffect(() => {
+    const h = audio.loop("fx_burnbeam", { gain: 0.5, bass: 3, loopStart: 0.1, loopEnd: 0.8 });
+    return () => { if (h) audio.stopLoop(h, { fade: 0.1 }); };
+  }, []);
   const demoCard = () => <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
@@ -282,6 +297,11 @@ function BlackholePreview() {
     }, 600);
     return () => clearInterval(id);
   }, [suitCol]);
+  // #302b: persistentes Schwarzloch-Loop-Bett, solange die Vorschau offen ist (wie in-game).
+  useEffect(() => {
+    const h = audio.loop("fx_blackhole", { gain: 0.6, bass: 5, loopStart: 0.25, loopEnd: 1.05 });
+    return () => { if (h) audio.stopLoop(h, { fade: 0.1 }); };
+  }, []);
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
