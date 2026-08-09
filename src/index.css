@@ -70,13 +70,27 @@ button { font-family: inherit; }
 @media (prefers-reduced-motion: reduce) { .guide-ring-spark { animation: none; } }
 /* Serienkette: voll → statisches violettes Glühen; am Serien-Mult-Deckel (×2,5) → pulsendes Glühen. */
 .as-streak-glow { box-shadow: 0 0 8px 1px rgba(155,140,255,0.40); }
-@keyframes as-streak-pulse { 0%,100% { box-shadow: 0 0 6px 1px rgba(155,140,255,0.35); } 50% { box-shadow: 0 0 15px 3px rgba(155,140,255,0.75); } }
-.as-streak-pulse { animation: as-streak-pulse 1.15s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .as-streak-pulse { animation: none; box-shadow: 0 0 8px 1px rgba(155,140,255,0.4); } }
+/* #305 2a: Der pulsende Glow animiert nicht mehr `box-shadow` (Repaint pro Frame), sondern die OPACITY eines
+   ::after-Overlays mit FESTEM (einmal gemaltem) Max-Glow → GPU-kompositiert, kein Repaint. Look ~1:1 (Min-Zustand als
+   Opacity-Anteil des Max-Glows: 0.35/0.75 ≈ 0.47). Overlay ist inset:0 + border-radius:inherit + pointer-events:none →
+   verdeckt/klickt nichts, fadet keine Kind-Elemente (Kettensegmente/Text bleiben opak). */
+.as-streak-pulse { position: relative; }
+.as-streak-pulse::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: 0 0 15px 3px rgba(155,140,255,0.75);
+  animation: as-glow-opacity 1.15s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) { .as-streak-pulse::after { animation: none; opacity: 0.53; } }
 /* Sanfter „Drück-mich"-Puls für die Primär-Aktion (z. B. „Normal" im aufgeklappten Normaler Lauf). Dezent. */
-@keyframes as-guide-glow { 0%,100% { box-shadow: 0 0 9px rgba(95,224,247,0.28); } 50% { box-shadow: 0 0 20px rgba(95,224,247,0.6); } }
-.as-guide-glow { animation: as-guide-glow 2.2s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .as-guide-glow { animation: none; box-shadow: 0 0 14px rgba(95,224,247,0.4); } }
+.as-guide-glow { position: relative; }
+.as-guide-glow::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: 0 0 20px rgba(95,224,247,0.6);
+  animation: as-glow-opacity 2.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) { .as-guide-glow::after { animation: none; opacity: 0.67; } }
+/* Gemeinsame Opacity-Hüllkurve (Min-Anteil ≈ 0.47 des Max-Glows) — von beiden Glows genutzt. */
+@keyframes as-glow-opacity { 0%, 100% { opacity: 0.47; } 50% { opacity: 1; } }
 /* Wie as-combo, aber HÄLT am Ende bei voller Opacity (forwards) — für den Formations-Multi-Float, damit er
    sichtbar bleibt, solange der Stich angezeigt wird (wie Banner/Aufschlüsselung), statt zu früh wegzufaden. */
 @keyframes as-combo-hold { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-6px) scale(1); } 100% { opacity:1; transform: translateY(-8px) scale(1); } }
@@ -297,8 +311,17 @@ button { font-family: inherit; }
 /* Deck-Werkstatt-Animationen (#deckshop): kosmetische Deck-Effekte, an das aktive Theme gekoppelt.
    Farbe kommt je Karte/Feld über --deck-a1 (Deck-Hauptfarbe). Alle ruhen unter reduced-motion (globale
    Regel unten setzt die Dauer ~0 → Frame Glow bleibt schwach statisch, Swipe/Grid stehen unsichtbar still). */
-@keyframes as-deck-frameglow { 0%, 100% { box-shadow: inset 0 0 0 1px var(--deck-a1), inset 0 0 9px -4px var(--deck-a1); } 50% { box-shadow: inset 0 0 0 1px var(--deck-a1), inset 0 0 16px -2px var(--deck-a1); } }
-.as-deck-frameglow { animation: as-deck-frameglow 2s ease-in-out infinite; }
+/* #305 2a: konstanter 1px-Innenrahmen bleibt statisch (fest), NUR der innere Glow pulst — als Opacity eines ::after-
+   Overlays mit festem Max-Inset-Glow (GPU-kompositiert, kein box-shadow-Repaint pro Frame). Inset-Shadow → wird von
+   `overflow-hidden` der Karte NICHT beschnitten. Min ≈ 9/16 ≈ 0.56 des Max-Glows. Der Overlay-Host (frameglow-div) ist
+   bereits `absolute` → positionierender Kontext fürs ::after; leeres Overlay → nichts wird verdeckt/gefadet. */
+.as-deck-frameglow { box-shadow: inset 0 0 0 1px var(--deck-a1); }
+.as-deck-frameglow::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 16px -2px var(--deck-a1);
+  animation: as-deck-frameglow-op 2s ease-in-out infinite;
+}
+@keyframes as-deck-frameglow-op { 0%, 100% { opacity: 0.56; } 50% { opacity: 1; } }
 @keyframes as-deck-swipe { 0% { transform: translateX(-170%) rotate(18deg); } 55%, 100% { transform: translateX(330%) rotate(18deg); } }
 .as-deck-swipe { animation: as-deck-swipe 3s ease-in-out infinite; }
 @keyframes as-deck-gridmove { to { background-position: 0 18px; } }
