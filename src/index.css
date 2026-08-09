@@ -213,6 +213,12 @@ button { font-family: inherit; }
   0%   { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
   100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(var(--ds, 0.4)) rotate(var(--dr)); }
 }
+/* #: Wie as-fx-shatter, aber die Stücke bleiben länger DECKEND (weniger transparent) → im Turbo klar sichtbar (Zerstäubung). */
+@keyframes as-fx-shatter-hold {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
+  60%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(var(--ds, 0.4)) rotate(var(--dr)); }
+}
 /* #300 Sieg-Finisher „Überladung": Karte blitzt beim Einschlag kurz weiß auf (brightness-Peak) und wird dann ausgeblendet
    (der Blitz zerstört sie). „Zerstäubung": Karte fadet zügig, während die Partikel emittieren (sie zerstäubt). */
 @keyframes as-ovl-card {

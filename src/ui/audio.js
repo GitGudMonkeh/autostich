@@ -79,7 +79,7 @@ export const audio = {
   /* Einen SFX abspielen. `rate` = playbackRate (Turbo-Kopplung Stich-Sound), `gain` = zusätzlicher Faktor,
      `bass` = Lowshelf-Anhebung in dB (#196, 0 = aus). Je Aufruf eine neue BufferSource → Überlappen erlaubt
      (dezenter „Maschinengewehr"-Effekt bei hohem Turbo). Kette: src → [lowshelf?] → gain → masterComp → destination. */
-  play(name, { rate = 1, gain = SFX_GAIN, bass = 0 } = {}) {
+  play(name, { rate = 1, gain = SFX_GAIN, bass = 0, soft = 0, attack = 0, release = 0 } = {}) {
     if (muted || volume <= 0) return;
     loadBuffers(); // #264: hörbarer Bedarf → sicherstellen, dass die Puffer (lazy) geladen sind
     const c = ctx;
@@ -93,14 +93,25 @@ export const audio = {
       const src = c.createBufferSource();
       src.buffer = buffers[name];
       src.playbackRate.value = rate;
+      const peak = volume * gain;
       const g = c.createGain();
-      g.gain.value = volume * gain;
       let node = src;
       if (bass > 0) { // #196: Bass-Anhebung (lowshelf ~200 Hz) — mehr Wucht bei Sieg/Crit/großer Effekt-Stufe.
         const shelf = c.createBiquadFilter();
         shelf.type = "lowshelf"; shelf.frequency.value = 200; shelf.gain.value = bass;
         node.connect(shelf); node = shelf;
       }
+      if (soft > 0) { // #: Lowpass rundet die harte/scharfe Höhen-Attacke ab (weicherer, weniger „harter" Sound).
+        const lp = c.createBiquadFilter();
+        lp.type = "lowpass"; lp.frequency.value = soft; lp.Q.value = 0.7;
+        node.connect(lp); node = lp;
+      }
+      // #: Hüllkurve — kurzer Attack (weiche Transiente statt harter Einsatz) + Release (sanftes Ausklingen statt hartem
+      // Abriss, z. B. im Turbo). Ohne attack/release identisch zum bisherigen Verhalten (Sofort-Pegel).
+      const dur = (buffers[name].duration || 0) / Math.max(0.01, rate);
+      if (attack > 0) { g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(peak, now + Math.min(attack, dur * 0.5)); }
+      else g.gain.setValueAtTime(peak, now);
+      if (release > 0 && dur > 0) { const rs = Math.max(now + attack, now + dur - release); g.gain.setValueAtTime(peak, rs); g.gain.linearRampToValueAtTime(0.0001, now + dur); }
       node.connect(g).connect(masterComp || c.destination);
       // #297 Voice-Tracking + Deckel: neue Stimme registrieren, älteste weicht bei Überlauf (sanfter 50-ms-Ausklang → kein Klick).
       const v = { src, g, name, t: now };
@@ -160,5 +171,10 @@ export const audio = {
     if (!h || !ctx) return;
     h.base = Math.max(0, base);
     try { h.g.gain.setTargetAtTime(loopGain(h), ctx.currentTime, ramp); } catch (e) { /* egal */ }
+  },
+  /* #: playbackRate eines laufenden Loops sanft ändern (z. B. Brennstrahl mit der Serie leicht schneller ziehen). */
+  setLoopRate(h, rate, { ramp = 0.4 } = {}) {
+    if (!h || !ctx) return;
+    try { h.src.playbackRate.setTargetAtTime(Math.max(0.25, rate), ctx.currentTime, ramp); } catch (e) { /* egal */ }
   },
 };

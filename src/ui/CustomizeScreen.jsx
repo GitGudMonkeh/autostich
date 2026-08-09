@@ -168,7 +168,7 @@ function GottgleichPreview({ variant, compact = false }) {
   // der großen Vorschau (nicht auf den Kachel-Previews), damit man den Bass wie in-game hört.
   useEffect(() => {
     if (compact) return undefined;
-    const play = () => audio.play("fx_bass", { gain: 0.8, bass: 4 });
+    const play = () => audio.play("fx_bass", { gain: 1.9, bass: 7 }); // #: deutlich hörbar zum Testen in der Vorschau
     const t0 = setTimeout(play, 260);
     const id = setInterval(play, 3400);
     return () => { clearTimeout(t0); clearInterval(id); };
@@ -215,9 +215,11 @@ function FinisherScene({ variant }) {
     const sfx = FIN_SFX[variant];
     if (!sfx) return undefined;
     const id = setTimeout(() => {
-      audio.play(sfx, { gain: variant === "klinge" ? 1.0 : 1.05 });
+      // #: Überladung weicher (Lowpass + Attack/Release), damit der Blitz-Sound nicht „hart" wirkt — auch in der Vorschau.
+      if (variant === "overload") audio.play(sfx, { gain: 0.95, soft: 6000, attack: 0.006, release: 0.06 });
+      else audio.play(sfx, { gain: variant === "klinge" ? 1.0 : 1.05 });
       // #300: Überladung/Zerstäubung bekommen — wie in-game — den tiefen Impact-Layer (fx_bass) dazu.
-      if (variant === "overload") audio.play("fx_bass", { gain: 0.5, bass: 3 });
+      if (variant === "overload") audio.play("fx_bass", { gain: 0.55, bass: 4 });
       else if (variant === "disperse") audio.play("fx_bass", { rate: 1.1, gain: 0.32, bass: 2 });
     }, FIN_DELAY);
     return () => clearTimeout(id);
@@ -283,15 +285,9 @@ function BurnBeamPreview() {
   // #302b/#307: Brennstrahl-Loop-Bett an die Lit-Phase (Sieg-Puls) koppeln — IDENTISCH zu In-Game (Battlefield.jsx):
   // der Ton startet erst mit dem herabfahrenden Strahl (erster Sieg), nicht schon beim Öffnen der Vorschau, und stoppt
   // beim Serienabbruch. So läuft kein Laser-Sound, bevor der Laser sichtbar ist.
-  useEffect(() => {
-    const lit = pulse && pulse.kind === "win";
-    if (lit) {
-      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: 0.5, bass: 3, loopStart: 0.1, loopEnd: 0.8 });
-    } else if (burnLoopRef.current) {
-      audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;
-    }
-  }, [pulse]);
-  useEffect(() => () => { if (burnLoopRef.current) { audio.stopLoop(burnLoopRef.current, { fade: 0.1 }); burnLoopRef.current = null; } }, []);
+  // #: In der Effekt-AUSWAHL läuft der persistente Brennstrahl-Ton sonst DURCHGÄNGIG für die ganze Phase — das nervt.
+  // Daher ist das Loop-Bett in der Vorschau STILLGELEGT (nur der Sound; Musik + Visual bleiben). In-Game unverändert.
+  void burnLoopRef;
   const demoCard = () => <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
@@ -334,10 +330,8 @@ function BlackholePreview() {
     }, 600);
     return () => clearInterval(id);
   }, [suitCol]);
-  // #298: Loch-Ton-Bett mit Hüllkurve, an denselben synthetischen Puls gekoppelt wie das Visual — leiser Start,
-  // Anschwellen über die Serie, schneller Kollaps. Identisch zu In-Game (geteilter Hook, kein Drift). Ersetzt das
-  // frühere #302b-Festpegel-Bett fürs Schwarze Loch (Burn/One-Shots bleiben unverändert).
-  useBlackholeSfx(true, pulse);
+  // #: In der Auswahl bliebe das Loch-Ton-Bett sonst durchgängig hörbar → in der Vorschau STILLGELEGT (nur Sound, Visual bleibt).
+  useBlackholeSfx(false, pulse);
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}

@@ -164,7 +164,7 @@ export function Autostich() {
       audio.unlock(); music.unlock(); // erste User-Geste entsperrt SFX UND Musik
       const btn = e.target.closest && e.target.closest("button");
       if (!btn || btn.dataset.sfx === "none") return;
-      audio.play("button");
+      audio.play("button", { gain: 0.55 }); // #: Klick-Sound leiser (dezenter, tritt nicht mehr in den Vordergrund)
       haptics.tick(); // #207: dezenter Haptik-Tick auf Mobile — spiegelt exakt den Klick-Sound (gleiches data-sfx="none"-Opt-out)
     };
     document.addEventListener("click", onClick, true);

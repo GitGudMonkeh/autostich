@@ -460,7 +460,7 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
   const glowK = 1 + intensity * 0.85 + (tier >= 2 ? 0.3 : 0);                     // Glow-Intensität (Treffer/Stufe)
   const afterMs = Math.round(diceMs * 0.8);                                       // Nachleucht-Dauer (über den Zerfall)
   const lineTotal = lineMs + afterMs;
-  const lineThick = fine ? 2.5 : 3;                                               // etwas dicker → besser erkennbar
+  const lineThick = fine ? 1.25 : 1.5;                                            // #: wieder fein/laser-artig (Glow + Nachhall bleiben)
   const lineShadow = `0 0 ${(6 * glowK).toFixed(0)}px 1px #ffffff, 0 0 ${(16 * glowK).toFixed(0)}px ${(3 * glowK).toFixed(1)}px ${color}, 0 0 ${(34 * glowK).toFixed(0)}px ${(10 * glowK).toFixed(0)}px ${color}aa`;
   const lineGrad = (h) => `linear-gradient(${h ? "90deg" : "0deg"}, transparent, ${color}, #ffffff, ${color}, transparent)`; // heißer Weiß-Kern
   return (
@@ -501,7 +501,7 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
   // #302-Fix: Fragment-Flug-/Fade-Dauer MUSS mit hitAt (0.22·body) + Staffelung (0.12·disintDur) ins Budget passen,
   // sonst zieht die Disintegration über den nächsten Stich (Ende bei hitAt + 1.12·disintDur ≤ body → disintDur ≤ 0.66·body).
   const disintDur = Math.round(body * 0.60);              // Fragment-Flug-/Fade-Dauer (endet klar vor dem nächsten Flip)
-  const holeMax = (1.4 + intensity * 0.5 + streakK * 0.5).toFixed(2); // kleineres, glühendes Loch (bei Serie etwas größer)
+  const holeMax = (1.8 + intensity * 0.5 + streakK * 0.7).toFixed(2); // #: glühend-rotes Loch wächst sichtbar (bei Serie mehr)
   // #302 Disintegrations-Fragmente: jedes Raster-Stück ist ein clip-path-Klon der ECHTEN Karte (inset auf seine Zelle),
   // driftet von der Kartenmitte weg (+ Schwerkraft = Asche fällt), schrumpft, rotiert leicht & fadet → die Karte selbst
   // zerfällt. Streuung mit der Serie leicht weiter. Ecken/Rand fliegen weiter als die Mitte (dirX/dirY-Skalierung).
@@ -511,7 +511,7 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
     for (let c = 0; c < DISINT_COLS; c++) {
       const i = r * DISINT_COLS + c;
       const dirX = (c + 0.5) / DISINT_COLS - 0.5, dirY = (r + 0.5) / DISINT_ROWS - 0.5; // Zellmitte relativ zur Kartenmitte
-      const spread = 26 + Math.abs(fjitter(seed * 5 + i * 13, 22 + streakK * 20));       // Auswärts-Flugweite
+      const spread = 42 + Math.abs(fjitter(seed * 5 + i * 13, 30 + streakK * 26));       // #: weiter → Karte löst sich klar in Einzelteile auf
       frags.push({
         i,
         // clip-path inset(top right bottom left) blendet die Karte auf DIESE Zelle aus (Klon zeigt nur sein Stück).
@@ -552,11 +552,11 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
           "--dx": `${s.dx}px`, "--dy": `${s.dy}px`, "--ds": s.ds, "--dr": `${s.dr}deg`,
           animation: `as-burn-disintegrate ${disintDur}ms cubic-bezier(0.2,0.6,0.3,1) ${s.d}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
       ))}
-      {/* Glühendes Loch in der EXAKTEN Kartenmitte (left/top 50 % des 104×144-Slots): warmer Ember-Verlauf mit
-          verglühtem Kern (kein harter schwarzer Kern/Ring) + weicher Außen-Glow, der mit der Serie mitwächst. */}
-      <div className="absolute" style={{ left: "50%", top: "50%", width: 10, height: 10, borderRadius: "50%", "--hole-max": holeMax,
-        background: `radial-gradient(circle, #2a0f02 20%, ${HOT} 44%, #ffcf6a 60%, ${color}00 80%)`,
-        boxShadow: `0 0 ${(12 + streakK * 10).toFixed(0)}px ${(4 + streakK * 3).toFixed(0)}px ${HOT}, 0 0 ${(22 + streakK * 16).toFixed(0)}px ${(8 + streakK * 6).toFixed(0)}px ${HOT}55`,
+      {/* #: Einbrenn-Loch am Eintrittspunkt (Kartenmitte) — GLÜHEND ROT, wächst sichtbar (mit der Serie etwas mehr),
+          heißer weiß-roter Kern + roter Außen-Glow. Bewusst „nicht zu sehr, aber sichtbar". */}
+      <div className="absolute" style={{ left: "50%", top: "50%", width: 12, height: 12, borderRadius: "50%", "--hole-max": holeMax,
+        background: `radial-gradient(circle, #fff0e0 8%, #ff3a12 34%, #e01808 58%, #e0180800 80%)`,
+        boxShadow: `0 0 ${(14 + streakK * 12).toFixed(0)}px ${(5 + streakK * 4).toFixed(0)}px #ff2a0a, 0 0 ${(26 + streakK * 20).toFixed(0)}px ${(9 + streakK * 7).toFixed(0)}px #e0180877`,
         animation: `as-burn-hole ${holeMs}ms ease-out ${hitAt}ms both`, willChange: "transform, opacity" }} />
       {/* Ember-Funken springen (gestaffelt) aus dem Loch — mehr, größer, weiter & heller bei hoher Serie. */}
       {embers.map((s) => (
@@ -715,16 +715,18 @@ export function OverloadFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, 
         ctx.beginPath(); ctx.arc(cx, cy, 24 * glare, 0, Math.PI * 2); ctx.fill();
       } else {
         const p = Math.min(1, (el - strikeMs) / (dur - strikeMs)); // Funken glühen aus
-        const nS = 14 + tier * 9;
+        // #: etwas weniger Funken (ruhiger, weniger „hektisch"), skaliert mit der Stufe.
+        const nS = 9 + tier * 6;
         ctx.globalCompositeOperation = "lighter";
         for (let i = 0; i < nS; i++) {
           // #300b: Funken entspringen ÜBER DIE GANZE Kartenfläche (nicht nur dem Einschlagpunkt) → die Karte „wird" zu Funken.
           const ox = cx + (rng() - 0.5) * W0, oy = cy + (rng() - 0.5) * H0;
           const a = rng() * Math.PI * 2, sp = (18 + rng() * 58) * (0.6 + tier * 0.18);
           const x = ox + Math.cos(a) * sp * p, y = oy + Math.sin(a) * sp * p - p * 16;
-          const len = 3 + rng() * 6;
-          ctx.globalAlpha = (1 - p) * 0.8; ctx.strokeStyle = i % 3 ? color : "#ffffff"; ctx.lineWidth = 1.4;
-          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - Math.cos(a) * len, y - Math.sin(a) * len); ctx.stroke();
+          // #: KLEINE Funken-PUNKTE (kein Streifen/„Konfetti-Stäbchen") — additiver Glow.
+          const r = 0.8 + rng() * 1.2;
+          ctx.globalAlpha = (1 - p) * 0.9; ctx.fillStyle = i % 3 ? color : "#ffffff";
+          ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
         }
       }
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
@@ -781,17 +783,21 @@ const SHATTER_GRID = [[7, 10], [8, 11], [9, 13], [10, 14]]; // Stufe 1..4 → co
    stieben nach außen/oben, schrumpfen & faden (kein bloßes Ausblenden mehr). Dichte/Streuweite wachsen mit der Stufe
    (diff). Budget an flipMs gekoppelt. Deterministisch aus seed. Reduced-safe (Aufrufer). */
 export function DisperseFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, tier = 1, scale = 1, delay = 0 }) {
-  const dur = Math.max(220, Math.round(((flipMs || 900) - 40)));
+  // #: Dauer PASST ins Stich-Budget (≤ flipMs−30 → wird im Turbo nicht vom nächsten Flip abgeschnitten), aber mit
+  // sichtbarem Boden. Vorher lief 0.6·body über die Kadenz → im Turbo unsichtbar.
+  const dur = Math.max(160, Math.min((flipMs || 900) - 30, 760));
   const [cols, rows] = SHATTER_GRID[Math.max(0, Math.min(3, tier - 1))];
-  const spread = 46 + tier * 20;                         // Streuweite wächst mit der Stufe
-  const frags = cardShatterFrags({ cols, rows, seed, spread, upBias: 14 + tier * 4, sizeMin: 0.22 });
+  // #: Größere Sprünge je Stufe + weite RADIALE Streuung in ALLE Richtungen (nur minimaler Auftrieb, kein „nach oben").
+  const spread = 58 + tier * 40;
+  const frags = cardShatterFrags({ cols, rows, seed, spread, upBias: 6, sizeMin: 0.24, rot: 75 });
   const N = frags.length;
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
       {frags.map((s) => (
         <div key={`df${s.i}`} className="absolute inset-0" style={{ clipPath: s.clip,
           "--dx": `${s.dx}px`, "--dy": `${s.dy}px`, "--ds": s.ds, "--dr": `${s.dr}deg`,
-          animation: `as-fx-shatter ${dur}ms cubic-bezier(0.15,0.6,0.3,1) ${delay + Math.round((s.i / N) * dur * 0.12)}ms both`,
+          // #: „…-hold" hält die Stücke länger deckend (weniger transparent), damit die Zerstäubung auch im Turbo klar sichtbar ist.
+          animation: `as-fx-shatter-hold ${dur}ms cubic-bezier(0.12,0.7,0.3,1) ${delay + Math.round((s.i / N) * dur * 0.1)}ms both`,
           willChange: "transform, opacity" }}>{cardEl}</div>
       ))}
     </div>
@@ -1198,8 +1204,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // GOTTGLEICH-Prunk: Panel = Prallwand-Rahmen, oppSlot = Ursprung (zerstörte Gegnerkarte); burst triggert den Schwarm.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
-  const [burst, setBurst] = useState(null);
-  const burstSeq = useRef(0);
+  // #: BounceBurst/Krit-Schwarm entfernt (Krit-Finisher-Animationen raus) → kein burst-Trigger mehr.
   // #294 Gottgleich-Prunk OHNE Krit: getrennter Trigger für die (stapelbaren) Prunk-Overlays.
   const [prunk, setPrunk] = useState(null);
   const prunkSeq = useRef(0);
@@ -1284,8 +1289,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // geschnitten: bei einer Niederlage fliegt sie einfach weg (as-flyaway). Sieg: Gegnerkarte in-place geschnitten
   // (Krit: Explosion), Spielerkarte kippt als Sieger an.
   const flyAway      = sliceOn && lost;                       // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
-  const explode      = sliceOn && win && isCrit && fxShatter; // Shatter-Effekt (opt-in): Krit zerbirst die Gegnerkarte
+  // #: Krit-Finisher-Animationen entfernt — die (kaufbaren) Custom-Finisher übernehmen jetzt jeden Sieg (auch Krits).
+  // Ein Krit spielt also denselben Finisher wie ein normaler Sieg; nur die „Kritisch!"-Anzeige + Lila bleiben.
+  const explode      = false;                                 // (früher: sliceOn && win && isCrit && fxShatter → Shatter-Zerbersten)
   const critBoom     = explode;
+  void fxShatter;                                             // Shatter-Prop bleibt (Shop-Kompat), ist aber ohne Wirkung
   // #293/#295 Sieg-Finisher (untereinander exklusiv, feste Priorität): Schwarzes Loch › Lasergitter › Brennstrahl ›
   // Laser-Schnitt/Klinge — aber NUR beim normalen (nicht-berstenden) Sieg; ein Krit-Shatter bleibt Shatter. Die
   // UI-Einfachauswahl setzt ohnehin nur EINEN Flag; die Priorität ist nur der Sicherheits-Tiebreak.
@@ -1424,16 +1432,22 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Per-Stich-One-Shots. (Lasergitter teilt sich den Laser-Sound.)
     if (w && flipMs > 170) {
       const fxRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
-      // #300b Bass-Impact-Layer: JEDER Sieg-Finisher (außer den persistenten Schwarzes-Loch/Brennstrahl-Betten) bekommt
-      // den tiefen fx_bass-Layer — Lautstärke steigt mit der Score-Stufe (STARK…GOTTGLEICH via flipTier); bei
-      // Überladung/Zerstäubung zusätzlich mit der Wertdifferenz.
-      if (!holeFinish && !burnFinish) {
-        const bassGain = Math.min(1.05, 0.16 + flipTier * 0.14 + ((overloadFinish || disperseFinish) ? diffTier * 0.05 : 0));
-        audio.play("fx_bass", { rate: fxRate * (disperseFinish ? 1.1 : 1), gain: bassGain, bass: disperseFinish ? 2 : 3 });
+      // #300b/#: Bass-Impact-Layer auf großen Siegen — GUT HÖRBAR und an die Score-Stufe (STARK…GOTTGLEICH via flipTier)
+      // gekoppelt. Feuert bei JEDEM Stufen-Sieg (unabhängig vom Finisher, auch Schwarzes Loch/Brennstrahl), damit die
+      // Groß-Ansagen (Stark/Brutal/Irre/Gottgleich) ihren Bass bekommen. Überladung/Zerstäubung: + Wertdifferenz.
+      if (flipTier >= 1) {
+        const bassGain = Math.min(2.0, 0.7 + flipTier * 0.4 + ((overloadFinish || disperseFinish) ? diffTier * 0.06 : 0));
+        audio.play("fx_bass", { rate: fxRate * (disperseFinish ? 1.1 : 1), gain: bassGain, bass: 6 });
       }
       if (holeFinish || burnFinish) { /* still — persistente Betten (Loop) decken diese Siege ab */ }
       else if (gridFinish)                audio.play("fx_laser", { rate: fxRate, gain: 1.1, bass: 2 }); // Lasergitter
-      else if (overloadFinish)            audio.play("fx_lightning", { rate: fxRate, gain: 0.9 + diffTier * 0.08 }); // #300 Überladung: Blitz-Crack
+      else if (overloadFinish) {          // #300/#: Überladung — Blitz-Crack, aber weicher: Lowpass rundet die harte Höhe ab,
+        // kurzer Attack glättet die Transiente, Release lässt ihn sanft ausklingen (statt hartem Abriss). Im Turbo mehr
+        // Softening + etwas leiser → weniger „hart/hektisch".
+        const turbo = clamp((fxRate - 1) / 0.6, 0, 1);
+        audio.play("fx_lightning", { rate: fxRate, gain: (0.8 + diffTier * 0.07) * (1 - turbo * 0.28),
+          soft: 6200 - turbo * 2800, attack: 0.006, release: 0.05 + turbo * 0.07 });
+      }
       else if (disperseFinish)            audio.play("fx_atomize", { rate: fxRate, gain: 0.85 + diffTier * 0.06 });   // #300 Zerstäubung: Partikel-Auflösung
       else if (oppSliced && fxLaserSlice) audio.play("fx_laser", { rate: fxRate, gain: 1.1 });          // globaler Laser-Schnitt
       else if (oppSliced)                 audio.play("fx_blade", { rate: fxRate, gain: 1.05 });          // Default-Klinge
@@ -1483,7 +1497,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   useEffect(() => {
     const lit = burnActive && burnPulse && burnPulse.kind === "win";
     if (lit) {
-      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: 0.5, bass: 3, loopStart: 0.1, loopEnd: 0.8 });
+      // #: Wie beim Schwarzen Loch — der Strahl-Ton startet LEISE und wird mit der Serie lauter; zusätzlich zieht die
+      // playbackRate mit der Serie leicht an (klingt „heißer"/schneller). streakK 0..1 aus burnPulse.streak.
+      const sK = clamp((burnPulse.streak || 0) / 12, 0, 1);
+      const g = 0.3 + sK * 0.6;   // leiser Start → deutlich lauter mit der Serie
+      const r = 1 + sK * 0.28;    // leicht schneller mit der Serie
+      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, bass: 3, loopStart: 0.1, loopEnd: 0.8 });
+      else { audio.setLoopGain(burnLoopRef.current, g); audio.setLoopRate(burnLoopRef.current, r); }
     } else if (burnLoopRef.current) {
       audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;
     }
@@ -1551,8 +1571,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: deckA1 || suitColor(t.oCard.suit), mult: bd ? bd.streakMult : 1 });
     else if (holeActive && lost) {
       setHolePulse({ id: t.trickNo, kind: "loss" });
-      // #300b: der Kollaps des Schwarzen Lochs (Serienabbruch) schlägt hörbar mit einem tiefen Bass-Impact ein.
-      if (flipMs > 170) audio.play("fx_bass", { gain: 0.85, bass: 4 });
+      // #300b/#: der Kollaps des Schwarzen Lochs (Serienabbruch) schlägt DEUTLICH hörbar mit einem tiefen Bass-Impact ein.
+      if (flipMs > 170) audio.play("fx_bass", { gain: 1.9, bass: 7 });
     }
     // #295 Brennstrahl: Sieg → Strahl lit + Intensität (Serie); Niederlage → Serienabbruch → Strahl zieht sich zurück.
     if (burnFinish) setBurnPulse({ id: t.trickNo, kind: "win", streak: t.winStreak || 0 });
@@ -1581,12 +1601,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
     }, ghostLife);
     ghostTimers.current.push(tm);
-    // GOTTGLEICH-Krit (oberste Stufe): der abprallende Partikel-Schwarm bleibt GOTTGLEICH-exklusiv — unabhängig vom
-    // (kaufbaren) Shatter-Effekt. Feuert also bei jedem tier-4-Krit, ob die Karte nun zerbirst oder normal geschnitten wird.
-    if (win && isCrit && fxTier >= 4 && !reduced) {
-      const bt = setTimeout(() => { burstSeq.current += 1; setBurst({ id: burstSeq.current }); }, sRest);
-      ghostTimers.current.push(bt); // gemeinsame Ghost-Timer-Aufräumung (unmount → clearTimeout)
-    }
+    // #: Krit-Finisher-Animation entfernt — der abprallende GOTTGLEICH-Partikel-Schwarm (BounceBurst) feuert nicht mehr.
+    // (Die kaufbaren Custom-Finisher decken den Sieg-Look ab; die Prunk-Overlays für Nicht-Krit-GOTTGLEICH bleiben.)
     // #294 GOTTGLEICH-Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar) feuern ON TOP der Groß-Ansage.
     if (win && !isCrit && fxTier >= 4 && !reduced && (fxFireworks || fxGoldRain || fxPrismaWave)) {
       const pt = setTimeout(() => {
@@ -1730,8 +1746,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       )}
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin, Hologrid und das Stich-Juice reserviert. */}
-      {/* GOTTGLEICH-Prunk: abprallender Weißgold-Schwarm über dem Feld (Bounds = Panel-Rahmen). Nur bei tier-4-Krit. */}
-      <BounceBurst trigger={burst} panelRef={panelRef} oppRef={oppSlotRef} />
+      {/* #: GOTTGLEICH-Krit-Partikel-Schwarm (BounceBurst) entfernt — Krit-Finisher-Animationen raus. */}
       {/* #294 Gottgleich OHNE Krit: kaufbare Prunk-Overlays (Feuerwerk/Goldregen/Prisma-Welle), stapelbar. */}
       <PrunkFx trigger={prunk} panelRef={panelRef} oppRef={oppSlotRef} color={deckA1} />
       {/* #296 Schwarzes Loch (Serien-Wachstum): persistentes Panel-Loch, wächst mit t.winStreak, saugt jede weitere
@@ -1869,9 +1884,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         )}
       </div>
     </div>
-    {/* #188 v2 / #192: Vollbild-Flash/Vignette NUR bei Krit (screenFx.isCrit) — normale Siege bekommen ausschließlich
-        den Shake (+ grün/gold Panel-Aura), erreichen Flash/Vignette also nie. key=n → Neustart je Sieg. */}
-    {screenFx && screenFx.isCrit && <CritScreenFx key={screenFx.n} tier={screenFx.tier} color={screenFx.color} />}
+    {/* #: Krit-Vollbild-Flash/Vignette (CritScreenFx) entfernt — Krit-Finisher-Animationen raus. Der Screen-Shake bleibt
+        (für große Siege, gemeinsam mit normalen Siegen); die „Kritisch!"-Anzeige + Lila bleiben unverändert. */}
    </>
   );
 }
