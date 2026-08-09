@@ -37,7 +37,7 @@ button { font-family: inherit; }
 @keyframes as-page-in-right { from { opacity:0; transform: translateX( 26px); } to { opacity:1; transform:none; } }
 @keyframes as-page-in-left  { from { opacity:0; transform: translateX(-26px); } to { opacity:1; transform:none; } }
 
-/* Flip-Reveal (#180): das Spieler-Deck deckt beim Aufdecken die oberste Karte auf — die Rückseite (Schwerter)
+/* Flip-Reveal (#180): das Spieler-Deck deckt beim Aufdecken die oberste Karte auf — die Rückseite (Prisma)
    dreht per rotateY in die Front (Rahmen + Zahl/Effekte). Dauer inline an den Flip-Takt gekoppelt. */
 .as-flip3d { position: relative; perspective: 700px; }
 .as-flip3d-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }

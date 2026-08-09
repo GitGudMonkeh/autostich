@@ -10,29 +10,31 @@ import { useReducedFx } from "./useReducedFx.js";
 import { startPrunk } from "./prunkFx.js";
 import { fmtScore } from "./format.js";
 import glacierIcon from "./assets/glacier.webp"; // Eis-Treffer-Identität: das echte Gletscher-Asset im Score-Float
-import cardBackImg  from "../assets/cards/card-back.png";  // (#180) Spieler-Deck: Schwerter-Rücken
-import cardFrontImg from "../assets/cards/card-front.png"; // (#180) Spieler-Deck: Rahmen-Front (Zahl/Effekte darüber)
-// (#186/#214) Gegner-Deck: je Auswahl-Typ ein eigenes Deck (Cover = Rücken, Front = Rahmen). Der Gegner spielt jede
-// Runde das Deck der KOMMENDEN Auswahl (DECISION_SCHEDULE) — die App reicht den Typ als `oppDeck` durch. #214: die
-// Gegner-Decks tragen jetzt die Archetyp-Motive (dieselbe Kunst wie die Spieler-Challenge-Decks #215, deck_c5–c9).
-import c5Front from "../assets/cards/decks_player/deck_c5/front.png"; // 🔥 Feuer  → stat
-import c5Back  from "../assets/cards/decks_player/deck_c5/back.png";
-import c6Front from "../assets/cards/decks_player/deck_c6/front.png"; // ⚡ Blitz  → shop/architekt
-import c6Back  from "../assets/cards/decks_player/deck_c6/back.png";
-import c7Front from "../assets/cards/decks_player/deck_c7/front.png"; // ❄️ Eis    → perk
-import c7Back  from "../assets/cards/decks_player/deck_c7/back.png";
-import c8Front from "../assets/cards/decks_player/deck_c8/front.png"; // 🌱 Pflanze → formation
-import c8Back  from "../assets/cards/decks_player/deck_c8/back.png";
-import c9Front from "../assets/cards/decks_player/deck_c9/front.png"; // 🎴 Mix    → skill
-import c9Back  from "../assets/cards/decks_player/deck_c9/back.png";
+import cardBackImg  from "../assets/cards/card-back.png";  // Default-Deck-Rücken: „Prisma" (v0.4, ersetzt den Schwerter-Rücken #180)
+import cardFrontImg from "../assets/cards/card-front.png"; // Default-Deck-Front: Rahmen (Zahl/Effekte rendern darüber)
+// (#186/#214/v0.4) Gegner-Deck: je Auswahl-Typ ein eigenes Deck (Cover = Rücken, Front = Rahmen). Der Gegner spielt
+// jede Runde das Deck der KOMMENDEN Auswahl (DECISION_SCHEDULE) — die App reicht den Typ als `oppDeck` durch. v0.4:
+// eigene, phasen-farbcodierte Gegner-Decks (grün Aufstellung · blau Architekt · orange Perk · lila Skill · Diamant Legendär).
+import oppFormationFront from "../assets/cards/decks_opponent/deck_opp_formation/front.png"; // 🟢 Aufstellung → formation
+import oppFormationBack  from "../assets/cards/decks_opponent/deck_opp_formation/back.png";
+import oppArchitektFront from "../assets/cards/decks_opponent/deck_opp_architekt/front.png"; // 🔵 Architekt   → shop
+import oppArchitektBack  from "../assets/cards/decks_opponent/deck_opp_architekt/back.png";
+import oppPerkFront      from "../assets/cards/decks_opponent/deck_opp_perk/front.png";      // 🟠 Perk        → perk
+import oppPerkBack       from "../assets/cards/decks_opponent/deck_opp_perk/back.png";
+import oppSkillFront     from "../assets/cards/decks_opponent/deck_opp_skill/front.png";     // 🟣 Skill       → skill (+ Default)
+import oppSkillBack      from "../assets/cards/decks_opponent/deck_opp_skill/back.png";
+import oppLegendaryFront from "../assets/cards/decks_opponent/deck_opp_legendary/front.png"; // 💎 Legendär    → legendary
+import oppLegendaryBack  from "../assets/cards/decks_opponent/deck_opp_legendary/back.png";
 
-// Auswahl-Typ → Gegner-Deck-Skin (Cover/Front) auf Archetyp-Motiv (#214). Fällt auf „stat" (Feuer) zurück.
+// Auswahl-Typ (DECISION_SCHEDULE) → Gegner-Deck-Skin (Cover/Front). Eigene, phasen-farbcodierte v0.4-Decks.
+// Fällt auf „stat" zurück = Skill/purple (die erste Runde ist immer Skill).
 const OPP_DECK_SKINS = {
-  stat:      { back: c5Back, front: c5Front }, // Feuer
-  perk:      { back: c7Back, front: c7Front }, // Eis
-  skill:     { back: c9Back, front: c9Front }, // Mix / Element-Bund
-  shop:      { back: c6Back, front: c6Front }, // Blitz (Auswahl-Typ „shop" = Architekt-Phase, #202)
-  formation: { back: c8Back, front: c8Front }, // Pflanze
+  formation: { back: oppFormationBack, front: oppFormationFront }, // 🟢 Aufstellungsphase
+  shop:      { back: oppArchitektBack, front: oppArchitektFront }, // 🔵 Architekt-Phase (Auswahl-Typ „shop", #202)
+  perk:      { back: oppPerkBack,      front: oppPerkFront },      // 🟠 Perk-Auswahl
+  skill:     { back: oppSkillBack,     front: oppSkillFront },     // 🟣 Skill-Auswahl
+  legendary: { back: oppLegendaryBack, front: oppLegendaryFront }, // 💎 Legendär-Auswahl (R29)
+  stat:      { back: oppSkillBack,     front: oppSkillFront },     // Fallback-Default = Skill (erste Runde ist immer Skill)
 };
 
 const BANNER = {
@@ -146,7 +148,7 @@ function Side({ label, remaining, position = 0, deckLen = 0, dealFrom, children,
   );
 }
 
-/* #180 Flip-Reveal: die aufgedeckte Spielerkarte dreht sich aus dem Deck-Rücken (Schwerter) in die Front
+/* #180 Flip-Reveal: die aufgedeckte Spielerkarte dreht sich aus dem Deck-Rücken (Prisma) in die Front
    (`front` = fertige Karte mit Zahl/Effekten). 3D-rotateY, Dauer an den Flip-Takt gekoppelt. Zwei Faces mit
    `backface-visibility: hidden`: erst die Rückseite, ab der Mitte die Front. Position:relative → malt (wie die
    Karte sonst) über die Ergebnis-Welle. Nur für die Spielerseite; bei reduzierter Bewegung nicht gerendert. */
