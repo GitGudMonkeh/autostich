@@ -84,7 +84,7 @@ export function Autostich() {
   const [glossaryOpen, setGlossaryOpen] = useState(false);        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
   const [confirmRestart, setConfirmRestart] = useState(false);    // Komfort: Rückfrage „Wirklich neustarten?" (Neustart-Button) — kein Ein-Tap-Verlust bei Fettfingern
-  const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/6× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
+  const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/5× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
@@ -135,7 +135,7 @@ export function Autostich() {
   useEffect(() => { cycleStartWins.current = state.wins || 0; }, [state.cycle]);
   const cycleWins = Math.max(0, (state.wins || 0) - cycleStartWins.current);
   const dynamicSpeed = 1 + 0.02 * cycleWins;
-  // Effektive Flip-Zeit: Basis / (Turbo intern 1×/2×/4×/6× — Buttons X2/X4/MAX — × dynamische Rundengeschwindigkeit).
+  // Effektive Flip-Zeit: Basis / (Turbo intern 1×/2×/4×/5× — Buttons X2/X4/MAX — × dynamische Rundengeschwindigkeit).
   const flipMs = BASE_FLIP_MS / (speedMult * dynamicSpeed);
   // #188 v2: Hit-Stop/Slow-Mo — nach einem GROSSEN Krit-Sieg den nächsten Stich kurz verzögern (Micro-Hit-Stop ab
   // IRRE ≥150k, längeres Slow-Mo ab GOTTGLEICH ≥500k). Nur bei nennenswertem Takt (kein Hit-Stop bei hohem Turbo,
@@ -190,6 +190,13 @@ export function Autostich() {
   useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
   // Pause-Knopf hält auch die Musik an — nur im laufenden Stichspiel; in Menü/Gameover spielt sie normal weiter.
   useEffect(() => { music.setPaused(paused && state.phase === "play"); }, [paused, state.phase]);
+  // #: Persistente Finisher-Ton-Betten (Brennstrahl/Schwarzes Loch) pausieren, sobald der Lauf nicht aktiv im Stichspiel
+  // ist: Pause, Auswahl-/Perk-Fenster (Phase ≠ „play"), Options-/Chronik-/Glossar-/Abbruch-Overlay oder Hintergrund-Tab.
+  // Außerhalb eines Laufs (Menü/Werkstatt-Showcase) NICHT gedrosselt → die Vorschau-Betten bleiben hörbar.
+  useEffect(() => {
+    const suspend = inRun && (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || !visible);
+    audio.setLoopsSuspended(suspend);
+  }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible]);
   const changeOptions = (patch) => setOptions((o) => saveOptions({ ...o, ...patch }));
 
   // #254: Zentrale Zurück-Behandlung (mobil, Swipe/Hardware/Browser). Priorität: oberstes abweisbares Overlay

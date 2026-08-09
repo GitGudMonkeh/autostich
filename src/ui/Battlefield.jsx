@@ -419,7 +419,7 @@ const DISINT_COLS = 8, DISINT_ROWS = 11;
 // überhaupt zu sehen (die Karte wirkte, als würde sie nur „flippen"). Diese Untergrenze hält den Zerfall auch im Turbo
 // sichtbar; die Bursts überlappen dann bewusst leicht in den nächsten Stich → der Strahl „zerstört eine Karte nach der
 // anderen" (der Ghost lebt entsprechend länger, s. ghostLife). Reines Ausfaden von Fragmenten → kein Verdecken der Folgekarte.
-const BURN_DISINT_MIN = 360;
+const BURN_DISINT_MIN = 540;
 function burnDisintTiming(flipMs, delay) {
   const budget = Math.max(200, flipMs - 30);
   const body = Math.max(150, budget - delay);
@@ -429,8 +429,8 @@ function burnDisintTiming(flipMs, delay) {
 }
 // #: Zerstäubungs-Dauer mit sichtbarem Boden (bei Max nicht zu schnell) — gemeinsam von DisperseFx (Animation) und
 // dem Parent (ghostLife) genutzt, damit der Ghost genau so lange lebt, wie der Zerfall sichtbar ist.
-const DISPERSE_MIN = 340;
-function disperseDur(flipMs) { return Math.max(DISPERSE_MIN, Math.min((flipMs || 900) - 30, 760)); }
+const DISPERSE_MIN = 540;
+function disperseDur(flipMs) { return Math.max(DISPERSE_MIN, Math.min((flipMs || 900) - 30, 820)); }
 export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, intensity = 0, scale = 1, streak = 0 }) {
   const HOT = "#ff7a2f";                                  // Hitze-Akzent (Ember-Orange)
   const streakK = clamp(streak / 12, 0, 1);               // 0..1: Serien-Eskalation
@@ -1114,7 +1114,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #200 A — Effekt-Budget: je schneller der Takt, desto weniger lose Partikel/Funken und desto flacher der Ghost-Pool.
   // flipMs ≥ 2× (875) = voll; 4× (~437) ≈ 0,5; MAX (~291) = Boden 0,45. Rein visuell (score-neutral wie der Turbo).
   const fxScale  = clamp(flipMs / 875, 0.45, 1);
-  const ghostCap = Math.max(2, Math.round(6 * fxScale)); // gleichzeitige Schnitt-/Explosions-Ghosts (ältester wird recycelt)
+  // #: Der Pool-Deckel darf im Turbo NICHT unter die Zahl gleichzeitig noch laufender Finisher fallen — sonst würde ein
+  // neuer Stich den vorigen Finisher-Ghost per slice() vorzeitig ABBRECHEN (statt ihn ausklingen zu lassen). Da Brennstrahl/
+  // Zerstäubung jetzt länger nachwirken (~540 ms) und im Turbo dicht getaktet sind, sichert ein fester Boden (6) das
+  // gewünschte ÜBERLAPPEN — die Ghosts entfernen sich ohnehin selbst über ihre Lebensdauer (ghostLife).
+  const ghostCap = Math.max(6, Math.round(6 * fxScale)); // gleichzeitige Finisher-/Schnitt-Ghosts (Selbst-Removal via ghostLife; Deckel nur Backstop)
   // #95: einheitliche Float-Dauer für Score- UND Formations-Float (letzterer war zuvor kürzer).
   const floatDur = clamp(flipMs * 0.7, 360, 760) + 1300;
   // #95: Float-Größe skaliert mit dem Gewinn — klein bleibt lesbar (20 px), groß gedeckelt (52 px).

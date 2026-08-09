@@ -147,48 +147,58 @@ function PrunkParticles({ variant, LC = "#35e0ff" }) {
 
 /* Canvas-Overlay = dieselbe In-Game-Wucht (startPrunk) im Loop. NUR für die große Vorschau (ein Canvas, nur
    solange das Fenster offen ist). */
-function PrunkCanvas({ variant }) {
+function PrunkCanvas({ variant, loop = true }) {
   const ref = useRef(null);
   useEffect(() => {
     if (!ref.current) return undefined;
     return startPrunk(ref.current, {
       fireworks: variant === "fireworks", goldRain: variant === "goldRain", prismaWave: variant === "prismaWave",
-      color: "#35e0ff", originX: 0.5, originY: 0.58, loop: true });
-  }, [variant]);
+      color: "#35e0ff", originX: 0.5, originY: 0.58, loop });
+  }, [variant, loop]);
   return <canvas ref={ref} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true" />;
 }
 
 /* #294 Gottgleich-Vorschau: spielt das ECHTE Ereignis im Loop nach (Karten-Pop + Aura-Flare + goldene
    „GOTTGLEICH ×7"-Groß-Ansage) und legt den jeweiligen Prunk-Effekt darüber. variant "standard" zeigt den
    Basis-Look ohne Prunk → direkter Vergleich. compact = kleine Kachel (leichte CSS-Partikel); groß = Canvas-Wucht. */
+const GOTT_CYCLE_MS = 3400;  // Länge eines Vorschau-Zyklus (= Dauer der ws-gott-*-Animationen)
+const GOTT_POP_MS = 272;     // „Pop"-Moment: 8 % von 3,4 s (Karten-Hit) → hier fällt der Bass hin
 function GottgleichPreview({ variant, compact = false }) {
   const bf = battlefieldAssets(SHOWCASE_BF);
   const cardImg = deckAssets("default").back;
   const hasPrunk = variant !== "standard";
-  // #300b: GOTTGLEICH ist die oberste Sieg-Stufe → voller Bass-Impact, loop-synchron zum „Pop" (≈ 8 % von 3,4 s). Nur in
-  // der großen Vorschau (nicht auf den Kachel-Previews), damit man den Bass wie in-game hört.
+  // #: Drift-Fix. Zuvor liefen die CSS-Animationen (3,4 s infinite), der Prunk-Canvas (interner Loop 2,25 s) und der
+  // Bass-setInterval auf DREI verschiedenen Uhren → nach dem ersten Zyklus liefen sie auseinander (Animation vor dem
+  // Puls/Bass). Jetzt treibt EIN Zyklus-Zähler alles: die Animationen + der Prunk werden je Zyklus über key={cycle} neu
+  // gestartet, der Bass fällt je Zyklus exakt auf den Pop-Moment → Animation, Puls und Bass bleiben dauerhaft synchron.
+  const [cycle, setCycle] = useState(0);
+  const [burst, setBurst] = useState(0); // zählt die „Pops" → Prunk-Canvas zündet je Pop (deckungsgleich mit Bass)
+  useEffect(() => {
+    if (compact) return undefined; // Kachel-Vorschau: schlichte Endlos-CSS ohne Ton (kein Sync nötig)
+    const id = setInterval(() => setCycle((c) => c + 1), GOTT_CYCLE_MS);
+    return () => clearInterval(id);
+  }, [compact]);
   useEffect(() => {
     if (compact) return undefined;
-    const play = () => audio.play("fx_bass", { gain: 1.9, bass: 7 }); // #: deutlich hörbar zum Testen in der Vorschau
-    const t0 = setTimeout(play, 260);
-    const id = setInterval(play, 3400);
-    return () => { clearTimeout(t0); clearInterval(id); };
-  }, [compact]);
+    // Auf den Pop (272 ms in den Zyklus): Bass spielen UND den Prunk zünden → Karten-Pop, Bass und Feuerwerk fallen zusammen.
+    const t = setTimeout(() => { audio.play("fx_bass", { gain: 1.9, bass: 7 }); setBurst((b) => b + 1); }, GOTT_POP_MS);
+    return () => clearTimeout(t);
+  }, [cycle, compact]);
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {/* Sieg-Aura (grün→gold) */}
-      <div className="ws-gott-aura absolute" style={{ left: "50%", top: "56%", width: "72%", aspectRatio: "1", borderRadius: "50%",
+      {/* Sieg-Aura (grün→gold) — key={cycle} startet sie je Zyklus synchron neu (nur große Vorschau; compact bleibt bei 0). */}
+      <div key={`au${cycle}`} className="ws-gott-aura absolute" style={{ left: "50%", top: "56%", width: "72%", aspectRatio: "1", borderRadius: "50%",
         background: "radial-gradient(circle, rgba(212,166,58,.55), rgba(90,184,122,.28) 46%, transparent 70%)" }} />
       {/* Gewinnerkarte, ploppt an */}
-      <div className="ws-gott-pop absolute" style={{ left: "50%", top: "58%", width: compact ? "34%" : "20%", aspectRatio: CARD_RATIO }}>
+      <div key={`po${cycle}`} className="ws-gott-pop absolute" style={{ left: "50%", top: "58%", width: compact ? "34%" : "20%", aspectRatio: CARD_RATIO }}>
         <img src={cardImg} alt="" className="absolute inset-0 w-full h-full object-contain rounded" />
       </div>
-      {/* Prunk-Overlay: große Vorschau = volle Canvas-Wucht, Kachel = leichte CSS-Partikel. */}
-      {hasPrunk && (compact ? <PrunkParticles variant={variant} /> : <PrunkCanvas variant={variant} />)}
+      {/* Prunk-Overlay: große Vorschau zündet je Pop 1× (loop=false + key={burst} → deckungsgleich mit Bass), Kachel = leichte CSS-Partikel. */}
+      {hasPrunk && (compact ? <PrunkParticles variant={variant} /> : (burst > 0 && <PrunkCanvas key={`pr${burst}`} variant={variant} loop={false} />))}
       {/* Goldene Groß-Ansage */}
-      <div className="ws-gott-ann absolute font-extrabold" style={{ left: "50%", top: "30%", whiteSpace: "nowrap",
+      <div key={`an${cycle}`} className="ws-gott-ann absolute font-extrabold" style={{ left: "50%", top: "30%", whiteSpace: "nowrap",
         fontSize: compact ? 13 : 22, letterSpacing: ".06em",
         backgroundImage: "linear-gradient(180deg,#fff0b0,#ffd873 45%,#d4a63a)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
         filter: "drop-shadow(0 0 10px rgba(212,166,58,.6))" }}>

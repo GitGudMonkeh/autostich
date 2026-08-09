@@ -36,6 +36,11 @@ const voices = [];                                                           // 
 const lastPlayAt = {};                                                       // name → letzte Startzeit (für Cooldown)
 let muted = false;
 let volume = 0.6;
+// #: Globaler „Loops aus"-Schalter. Persistente Finisher-Betten (Brennstrahl/Schwarzes Loch) sollen VERSTUMMEN, wenn der
+// Lauf nicht aktiv spielt — Pause, Auswahl-/Perk-Fenster (Phase ≠ „play"), Options-/Chronik-/Glossar-Overlay oder
+// Hintergrund-Tab. Getrennt von `muted` (Nutzer-Stumm), damit es der App-Zustand jederzeit setzen kann. One-Shots sind
+// nicht betroffen (die triggern nur bei aktivem Spiel ohnehin).
+let loopsSuspended = false;
 // Nicht-Stich-Sounds (Klick/Kauf/Verwehrt) etwas anheben → effektiv ~0,5 beim Default-Slider (0,4).
 // Der Stich-Sound (cardflip) übergibt stets seinen eigenen Gain und bleibt davon unberührt.
 const SFX_GAIN = 1.25;
@@ -67,7 +72,7 @@ function loadBuffers() {
 }
 
 // #296: Loop-Gain = (stumm ? 0 : volume) × Basis-Gain. Live-Anpassung bei Volume/Mute (setTargetAtTime, sanft).
-function loopGain(h) { return (muted ? 0 : volume) * h.base; }
+function loopGain(h) { return (muted || loopsSuspended ? 0 : volume) * h.base; }
 function refreshLoops() { if (!ctx) return; const now = ctx.currentTime; for (const h of activeLoops) { try { h.g.gain.setTargetAtTime(loopGain(h), now, 0.05); } catch (e) {} } }
 
 export const audio = {
@@ -76,6 +81,9 @@ export const audio = {
   unlock() { const c = ensureCtx(); if (c && c.state === "suspended") c.resume().catch(() => {}); if (audibleSfx()) loadBuffers(); },
   setMuted(m) { muted = !!m; if (audibleSfx()) loadBuffers(); refreshLoops(); }, // #264: Unmute → Puffer jetzt (lazy) laden; #296: laufende Loops mitziehen
   setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); if (audibleSfx()) loadBuffers(); refreshLoops(); },
+  // #: Persistente Loop-Betten global verstummen/wieder hörbar machen (Pause/Overlay/Nicht-„play"-Phase/Hintergrund-Tab).
+  // Verändert nur die Loop-Gains (sanft) — die Quellen laufen weiter, damit sie beim Fortsetzen nahtlos wieder da sind.
+  setLoopsSuspended(s) { const n = !!s; if (n === loopsSuspended) return; loopsSuspended = n; refreshLoops(); },
   /* Einen SFX abspielen. `rate` = playbackRate (Turbo-Kopplung Stich-Sound), `gain` = zusätzlicher Faktor,
      `bass` = Lowshelf-Anhebung in dB (#196, 0 = aus). Je Aufruf eine neue BufferSource → Überlappen erlaubt
      (dezenter „Maschinengewehr"-Effekt bei hohem Turbo). Kette: src → [lowshelf?] → gain → masterComp → destination. */

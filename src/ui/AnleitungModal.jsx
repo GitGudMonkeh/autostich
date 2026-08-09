@@ -10,7 +10,7 @@ const ITEMS = [
   ["✨", "Entscheidung vor jedem Durchlauf", "Reihum wählst du einen Stat, einen Perk, die Deck-Aufstellung oder einen Skill — dein Build wird dauerhaft stärker."],
   ["🧩", "Formationen & Aufstellung", "In der Formationsphase ordnest du dein Deck an: benachbarte Karten bilden Formationen (Wiederholung/Farbblock/Treppe/Wechsel) und geben bei Sieg Score-Multiplikatoren."],
   ["🔁", "Deck-Durchlauf", "Ein Durchlauf = alle 40 Karten. Danach mischt nur der Gegner neu — deine Reihenfolge und deine dauerhaften Kartenwerte bleiben erhalten."],
-  ["⏯️", "Steuerung", "Auto-Play läuft von allein. Mit Pause hältst du an; das Ablauf-Tempo stellst du mit 2×/4×/6× ein (rein Anzeige, kein Score-Effekt)."],
+  ["⏯️", "Steuerung", "Auto-Play läuft von allein. Mit Pause hältst du an; das Ablauf-Tempo stellst du mit 2×/4×/MAX ein (rein Anzeige, kein Score-Effekt)."],
 ];
 
 export function AnleitungModal({ onClose }) {

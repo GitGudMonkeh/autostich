@@ -64,7 +64,7 @@ export function StatusBar({
           </button>
           <Pill active={speedMult === 2} onClick={() => onSpeed(2)} title="Tempo ×2">X2</Pill>
           <Pill active={speedMult === 4} onClick={() => onSpeed(4)} title="Tempo ×4">X4</Pill>
-          <Pill active={speedMult === 6} onClick={() => onSpeed(6)} title="Tempo maximal">MAX</Pill>
+          <Pill active={speedMult === 5} onClick={() => onSpeed(5)} title="Tempo maximal">MAX</Pill>
           {onChronik && (
             <button type="button" onClick={onChronik} title="Kartenübersicht öffnen"
               className="flex items-center gap-1 font-mono text-xs font-bold px-2 py-1.5 rounded-lg transition-all hover:brightness-125 whitespace-nowrap"
