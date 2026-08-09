@@ -32,9 +32,10 @@ const DEMO_C = "#35e0ff";
 const STD_PACK = { id: "default", name: "Standard", kind: "std", a1: "#8a7de0", deckId: "default", bfId: "default", els: ["deck", "bf"] };
 const PACK_LIST = [STD_PACK, ...THEMES];
 
-// Emoji-Icon je Effekt (UI-Zierde; die pure Registry hält keine Icons).
-const FX_ICON = { frameGlow: "💡", holoSwipe: "✨", hologrid: "🔲", laserSlice: "🔺", blackhole: "🕳️",
-  shatter: "💥", fireworks: "🎆", goldRain: "✨", prismaWave: "🌈", klinge: "⚔️", gottStandard: "🏅" };
+/* Synthetische „Klinge"-Kachel: der Standard-Sieg-Finisher — immer im Besitz (kein Kauf), aber wählbar UND
+   vorschaubar wie die anderen Finisher. Wird der Sieg-Finisher-Gruppe vorangestellt (analog „Gottgleich · Standard"). */
+const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "klinge", alwaysOwned: true,
+  desc: "Gegnerkarte wird beim Sieg zerschnitten — der Standard-Finisher (immer verfügbar)." };
 
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
@@ -52,7 +53,9 @@ const FX_GROUPS = [
 // Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe; die Gottgleich-Gruppe führt „Standard" voran.
 const fxGroupItems = (group) => {
   const list = GLOBAL_FX.filter((f) => f.group === group);
-  return group === "gott" ? [GOTT_STANDARD, ...list] : list;
+  if (group === "gott") return [GOTT_STANDARD, ...list];
+  if (group === "finisher") return [KLINGE, ...list]; // „Klinge" (Default) voran
+  return list;
 };
 
 // Gleiche Schwelle wie das In-Run-Battlefield (<picture media="(max-width: 640px)">): so zeigt die
@@ -254,7 +257,7 @@ function GlobalFxScenePreview({ fx }) {
   if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
   if (fx.preview === "blackhole") return <BlackholePreview />;
-  if (["laser", "shatter"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
+  if (["laser", "shatter", "klinge"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets("bf_kaiju");
   return (
@@ -563,33 +566,25 @@ function FxView({ p, options, onChoose, onOpenFx }) {
               <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{g.hint}</span>
             </div>
             <div className="flex flex-col gap-2">
-              {g.mode === "finisher" && (
-                // „Klinge" (Default) — immer im Besitz, schaltet Laser/Blackhole aus.
-                <FxRow icon={FX_ICON.klinge} name="Klinge" desc="Gegnerkarte wird zerschnitten (Standard)" owned
-                  control={<Radio on={finisherSel === "klinge"} />} onClick={() => selectFinisher("klinge")} />
-              )}
               {items.map((fx, i) => {
-                // Gottgleich · Standard: reine Vorschau-Zeile (kein Kauf, kein Toggle).
+                const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
+                const open = () => onOpenFx(g.key, i);
+                let control;
                 if (fx.standard) {
-                  return <FxRow key={fx.key} icon={FX_ICON[fx.key]} name={fx.name} desc={fx.desc}
-                    control={<span className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap"
-                      style={{ background: "#1c2433", color: "#7fb4ff", border: "1px solid #33507a" }}>Vorschau ›</span>}
-                    onClick={() => onOpenFx(g.key, i)} />;
+                  // Gottgleich · Standard: reine Vorschau-Zeile (kein Kauf/Toggle).
+                  control = <PreviewPill label="Vorschau ›" onClick={open} />;
+                } else if (!owned) {
+                  // Noch nicht gekauft → Preis-Pill öffnet das Kauffenster (mit Vorschau).
+                  control = <PreviewPill label={`Vorschau · ${GLOBAL_FX_COST} SP ›`} buy onClick={open} />;
+                } else if (g.mode === "finisher") {
+                  // Exklusiv-Auswahl (Radio) — eigenes Tap-Ziel, öffnet NICHT die Vorschau.
+                  control = <ControlBtn label="Als Finisher wählen" onClick={() => selectFinisher(fx.key)}><Radio on={finisherSel === fx.key} /></ControlBtn>;
+                } else {
+                  // Kombinierbar (Toggle) — eigenes Tap-Ziel.
+                  const on = !!options?.[fx.option];
+                  control = <ControlBtn label="An/Aus" onClick={() => onChoose({ [fx.option]: !on })}><Switch on={on} /></ControlBtn>;
                 }
-                const owned = globalFxOwned(p, fx);
-                if (!owned) {
-                  return <FxRow key={fx.key} icon={FX_ICON[fx.key]} name={fx.name} desc={fx.desc}
-                    control={<span className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap"
-                      style={{ background: "#211f2e", color: "#b9a9f2", border: "1px solid #4a3f6e" }}>Vorschau · {GLOBAL_FX_COST} SP ›</span>}
-                    onClick={() => onOpenFx(g.key, i)} />;
-                }
-                if (g.mode === "finisher") {
-                  return <FxRow key={fx.key} icon={FX_ICON[fx.key]} name={fx.name} desc={fx.desc} owned
-                    control={<Radio on={finisherSel === fx.key} />} onClick={() => selectFinisher(fx.key)} />;
-                }
-                const on = !!options?.[fx.option];
-                return <FxRow key={fx.key} icon={FX_ICON[fx.key]} name={fx.name} desc={fx.desc} owned
-                  control={<Switch on={on} />} onClick={() => onChoose({ [fx.option]: !on })} />;
+                return <FxRow key={fx.key} fx={fx} owned={owned} control={control} onOpen={open} />;
               })}
             </div>
           </div>
@@ -602,18 +597,120 @@ function FxView({ p, options, onChoose, onOpenFx }) {
   );
 }
 
-function FxRow({ icon, name, desc, owned = false, control, onClick }) {
+/* Effekt-Zeile (#297): links läuft die Mini-Live-Vorschau (Effekt-Identität, kein Emoji-Icon), Text daneben.
+   Der Zeilenkörper ist ein eigenes Tap-Ziel (= anschauen: Vorschau bzw. Kauffenster); der Schalter/Radio/Preis
+   rechts ist ein SEPARATES Element daneben (= schalten/auswählen bzw. Kauf) → klare Gesten-Trennung ohne
+   verschachtelte Buttons. */
+function FxRow({ fx, owned = false, control, onOpen }) {
   return (
-    <button type="button" onClick={onClick} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors"
-      style={{ background: "#14131c", border: "1px solid #2a2836" }}>
-      <span className="shrink-0 grid place-items-center rounded-lg text-[18px]" style={{ width: 34, height: 34, border: "1px solid #2a2836", color: owned ? "#54e08a" : "#9b82f0" }}>{icon}</span>
-      <span className="flex-1 min-w-0">
-        <span className="block text-[12.5px] font-extrabold truncate">{name}</span>
-        <span className="block text-[10.5px]" style={{ color: "#9a97ab" }}>{owned ? desc : <><span style={{ color: "#f2c14a" }}>kaufbar</span> · {desc}</>}</span>
-      </span>
+    <div className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: "#14131c", border: "1px solid #2a2836" }}>
+      <button type="button" onClick={onOpen} className="flex items-center gap-3 flex-1 min-w-0 text-left transition-colors">
+        <MiniFx preview={fx.preview} />
+        <span className="flex-1 min-w-0">
+          <span className="block text-[12.5px] font-extrabold truncate">{fx.name}</span>
+          <span className="block text-[10.5px]" style={{ color: "#9a97ab" }}>{owned ? fx.desc : <><span style={{ color: "#f2c14a" }}>kaufbar</span> · {fx.desc}</>}</span>
+        </span>
+      </button>
       {control}
+    </div>
+  );
+}
+
+// Preis-/Vorschau-Pill (öffnet das Detail-/Kauffenster). buy=true → Kauf-Farbgebung (violett), sonst blau.
+function PreviewPill({ label, buy = false, onClick }) {
+  return (
+    <button type="button" onClick={onClick} className="shrink-0 text-[10px] font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap"
+      style={buy ? { background: "#211f2e", color: "#b9a9f2", border: "1px solid #4a3f6e" } : { background: "#1c2433", color: "#7fb4ff", border: "1px solid #33507a" }}>
+      {label}
     </button>
   );
+}
+
+// Schalt-Tap-Ziel für Switch/Radio (eigenes Element neben dem Zeilenkörper → öffnet nicht die Vorschau).
+function ControlBtn({ label, onClick, children }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} className="shrink-0 grid place-items-center rounded-lg" style={{ padding: 2 }}>
+      {children}
+    </button>
+  );
+}
+
+/* Mini-Live-Vorschau (#297): kleiner, dauerhaft loopender Ableger der Effekt-Identität — ersetzt das frühere
+   Emoji-Icon. GPU-günstig (nur transform/opacity/box-shadow/background-position, Klassen "as-mini-" und "as-deck-");
+   ruht automatisch unter der globalen reduced-motion-Regel (index.css). Farbe = Demo-Deckfarbe (bzw. Effektfarbe). */
+function MiniFx({ preview }) {
+  const C = preview === "goldRain" ? "#f2c14a" : DEMO_C;
+  const box = (inner) => (
+    <span className="shrink-0 relative overflow-hidden grid place-items-center rounded-lg"
+      style={{ width: 34, height: 34, border: "1px solid #2a2836", background: "#0b0a16", "--mc": C }}>
+      {inner}
+    </span>
+  );
+  const slash = (top, ang, col, delay) => (
+    <span key={ang} className="as-mini-slash absolute" style={{ left: 0, top, width: "150%", marginLeft: "-25%", height: 2,
+      background: `linear-gradient(90deg,transparent,${col},transparent)`, "--a": ang, animationDelay: delay }} />
+  );
+  const ring = (col, size, l, t, delay) => (
+    <span key={`${col}${delay}`} className="as-mini-ring absolute" style={{ left: l, top: t, width: size, height: size,
+      borderRadius: "50%", border: `1.5px solid ${col}`, animationDelay: delay }} />
+  );
+  switch (preview) {
+    case "frameGlow":
+    case "gottStandard":
+      // Karten-Silhouette mit atmendem Rahmen-Glow (nutzt den vorhandenen Deck-Frameglow-Keyframe).
+      return box(<span className="as-deck-frameglow" style={{ width: 15, height: 21, borderRadius: 3, background: "#141826", "--deck-a1": C }} />);
+    case "holoSwipe":
+      // Karte mit diagonal wanderndem Glanz (Deck-Swipe-Keyframe).
+      return box(
+        <span className="relative overflow-hidden" style={{ width: 15, height: 21, borderRadius: 3, background: "#141826", border: `1px solid ${C}55` }}>
+          <span className="as-deck-swipe absolute" style={{ left: 0, top: "-20%", width: 5, height: "140%", background: `linear-gradient(90deg,transparent,${C},transparent)` }} />
+        </span>
+      );
+    case "hologrid":
+      // Perspektiv-Gitter + heller Puls, der nach hinten läuft.
+      return box(
+        <>
+          <span className="as-mini-grid absolute inset-0" style={{ backgroundImage: `linear-gradient(${C}40 1px,transparent 1px),linear-gradient(90deg,${C}40 1px,transparent 1px)`, backgroundSize: "8px 8px" }} />
+          <span className="as-mini-rise absolute" style={{ left: "8%", right: "8%", height: 2, background: C, boxShadow: `0 0 6px ${C}` }} />
+        </>
+      );
+    case "klinge":
+      return box(slash("50%", "-32deg", C, "0s"));
+    case "laser":
+      // Zwei Strahlen aus unterschiedlichen Richtungen (versch. Winkel + Farbe + Versatz).
+      return box(<>{slash("38%", "-42deg", C, "0s")}{slash("62%", "34deg", "#f2a83a", "-1.1s")}</>);
+    case "blackhole":
+      // Dunkle Scheibe mit atmendem Rand-Glow (kein nach außen laufender Puls) + zwei Orbs auf Umlaufbahn.
+      return box(
+        <span className="relative grid place-items-center" style={{ width: "100%", height: "100%" }}>
+          <span className="as-mini-core absolute" style={{ left: "50%", top: "50%", width: 19, height: 19, borderRadius: "50%",
+            background: "radial-gradient(circle,#04040a 55%,transparent 74%)", transform: "translate(-50%,-50%)", "--mc": C }} />
+          <span className="as-mini-orbit absolute" style={{ left: "50%", top: "50%", width: 24, height: 24, marginLeft: -12, marginTop: -12 }}>
+            <span className="absolute" style={{ left: "50%", top: 0, width: 3, height: 3, borderRadius: "50%", background: C, boxShadow: `0 0 5px ${C}`, transform: "translateX(-50%)" }} />
+            <span className="absolute" style={{ left: "50%", bottom: 0, width: 2, height: 2, borderRadius: "50%", background: "#ffffff", transform: "translateX(-50%)" }} />
+          </span>
+        </span>
+      );
+    case "shatter":
+      // Zerberstende Scherben: nach außen fliegender Ring + Kern-Blitz.
+      return box(<>{ring("#e879f9", 20, "50%", "50%", "0s")}<span className="as-mini-core" style={{ width: 6, height: 6, borderRadius: "50%", background: "#e879f9", "--mc": "#e879f9" }} /></>);
+    case "fireworks":
+      return box(<>{ring(C, 16, "44%", "46%", "0s")}{ring("#f2c14a", 13, "60%", "58%", "-.8s")}</>);
+    case "prismaWave":
+      // Konzentrische Prisma-Ringe.
+      return box(<>{ring("#26c6e6", 22, "50%", "50%", "0s")}{ring("#9b82f0", 22, "50%", "50%", "-.55s")}{ring("#f2a83a", 22, "50%", "50%", "-1.1s")}</>);
+    case "goldRain":
+      // Fallende Goldstreifen.
+      return box(
+        <>
+          {[["20%", "0s"], ["44%", "-.5s"], ["66%", "-.9s"], ["84%", "-1.3s"]].map(([l, d]) => (
+            <span key={l} className="as-mini-fall absolute" style={{ left: l, top: 0, width: 2, height: 11, borderRadius: 2, background: "linear-gradient(#f2c14a,transparent)", boxShadow: "0 0 4px #f2c14a", animationDelay: d }} />
+          ))}
+        </>
+      );
+    default:
+      return box(<span className="as-mini-core" style={{ width: 8, height: 8, borderRadius: "50%", background: C, "--mc": C }} />);
+  }
 }
 
 /* Effekt-Kauffenster (Portal): echte In-Game-Vorschau + Kaufen (nur hier). ‹ ›/Swipe wechselt innerhalb der Gruppe. */
@@ -621,8 +718,8 @@ function FxDetail({ group, idx, p, spBal, options, onChoose, onStep, onClose, on
   const items = fxGroupItems(group);
   const fx = items[idx];
   const touch = useRef(0);
-  const owned = !fx.standard && globalFxOwned(p, fx);
-  const canBuy = !fx.standard && canBuyGlobalFx(p, fx);
+  const owned = fx.alwaysOwned || (!fx.standard && globalFxOwned(p, fx));
+  const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const isFinisher = group === "finisher";
   const finisherSel = options?.fxBlackhole ? "blackhole" : options?.fxLaserSlice ? "laserSlice" : "klinge";
   const on = !fx.standard && !!options?.[fx.option];

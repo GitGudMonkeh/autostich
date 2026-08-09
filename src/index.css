@@ -257,6 +257,24 @@ button { font-family: inherit; }
 /* #296 Sieg-Finisher „Schwarzes Loch": das persistente, mit der Serie wachsende Loch (Sog, Orbs, Kollaps) läuft jetzt
    im Panel-<canvas> (BlackholeFieldFx in Battlefield.jsx) — keine CSS-Keyframes mehr nötig. */
 
+/* #297 Effekte-Shop — Mini-Live-Vorschauen (34px) je Effekt-Zeile: kleine, dauerhaft loopende Ableger der Effekt-
+   Identität. GPU-günstig (nur transform/opacity/box-shadow/background-position); ruhen automatisch unter der globalen
+   reduced-motion-Regel weiter unten. Farbe je Kachel über --mc; frameGlow/holoSwipe nutzen die as-deck-*-Keyframes. */
+@keyframes as-mini-grid  { to { background-position: 0 8px; } }
+.as-mini-grid  { animation: as-mini-grid 2.2s linear infinite; }
+@keyframes as-mini-rise  { 0% { top: 96%; opacity: 0; } 18% { opacity: 1; } 82% { opacity: 1; } 100% { top: -12%; opacity: 0; } }
+.as-mini-rise  { animation: as-mini-rise 1.5s ease-out infinite; }
+@keyframes as-mini-fall  { 0% { transform: translateY(-140%); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(200%); opacity: 0; } }
+.as-mini-fall  { animation: as-mini-fall 1.4s linear infinite; }
+@keyframes as-mini-ring  { 0% { transform: translate(-50%,-50%) scale(.22); opacity: .9; } 100% { transform: translate(-50%,-50%) scale(1.18); opacity: 0; } }
+.as-mini-ring  { animation: as-mini-ring 1.7s ease-out infinite; }
+@keyframes as-mini-orbit { to { transform: rotate(360deg); } }
+.as-mini-orbit { animation: as-mini-orbit 2.6s linear infinite; }
+@keyframes as-mini-core  { 0%,100% { box-shadow: 0 0 0 1px var(--mc), 0 0 5px 0 var(--mc); } 50% { box-shadow: 0 0 0 1px #ffffff, 0 0 10px 1px var(--mc); } }
+.as-mini-core  { animation: as-mini-core 1.8s ease-in-out infinite; }
+@keyframes as-mini-slash { 0% { transform: translateX(-120%) rotate(var(--a)); opacity: 0; } 18% { opacity: 1; } 55% { opacity: 1; } 100% { transform: translateX(120%) rotate(var(--a)); opacity: 0; } }
+.as-mini-slash { animation: as-mini-slash 2.3s ease-in-out infinite; }
+
 /* Blitz-Motor (#208): Energie „fließt" die aktiven Verbinder entlang (bewegter Farbverlauf). Der Verbinder trägt
    `background-size: 220%`; die Animation schiebt die Position → ein wandernder Lichtpuls. Ruht implizit unter
    reduced-motion (globale Regel unten) → der Verbinder bleibt dann einfach statisch gefärbt. */
