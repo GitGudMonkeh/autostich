@@ -341,6 +341,26 @@ describe("SP-Ernte pro Lauf (docs §5/§6) — nach Onboarding gegated", () => {
   });
 });
 
+describe("#299 buyNode — letzter Knoten wandelt übrige SP zu DP", () => {
+  it("nur beim letzten Kauf (Baum wird komplett) → SP-Rest wird zu DP", () => {
+    // Fast fertiges Profil: alle Knoten außer M5 gekauft, genug SP für M5 + Rest.
+    const nodes = Object.fromEntries(NODE_IDS.filter((id) => id !== "M5").map((id) => [id, 1]));
+    const cost = NODE_BY_ID.M5.cost;
+    const p0 = { ...emptyProfile(cost + 7), nodes, deckPoints: 3 };
+    expect(treeComplete(p0)).toBe(false);
+    const p1 = buyNode(p0, "M5");
+    expect(treeComplete(p1)).toBe(true);
+    expect(p1.stichPoints).toBe(0);        // Rest-SP (7) abgeräumt
+    expect(p1.deckPoints).toBe(3 + 7);     // Rest-SP zu DP
+  });
+  it("nicht-letzter Kauf lässt SP/DP unangetastet (nur normaler Abzug)", () => {
+    const p0 = { ...emptyProfile(50), deckPoints: 2 };
+    const p1 = buyNode(p0, "B1"); // erster Knoten, Baum bleibt unvollständig
+    expect(p1.stichPoints).toBe(50 - NODE_BY_ID.B1.cost);
+    expect(p1.deckPoints).toBe(2);
+  });
+});
+
 describe("DP-Ökonomie (#299) — native Formel + Baum-komplett-Umstellung", () => {
   it("dpNative: linear floor(score / 10 Mio)", () => {
     expect(dpNative(0)).toBe(0);

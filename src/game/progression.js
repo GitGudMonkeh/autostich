@@ -210,12 +210,18 @@ export const canBuy = (profile, id) => nodeState(profile, id) === "buy";
 export function buyNode(profile, id) {
   if (!canBuy(profile, id)) return profile;
   const n = NODE_BY_ID[id];
-  return {
+  const next = {
     ...profile,
     stichPoints: points(profile) - n.cost,
     stichSpent: (Math.max(0, Math.floor(Number(profile && profile.stichSpent) || 0))) + n.cost,
     nodes: { ...(profile && profile.nodes), [id]: 1 },
   };
+  // #299: mit dem LETZTEN Knoten ist der Baum komplett → die übrigen SP werden zu DP (SP sind danach nutzlos).
+  if (!treeComplete(profile) && treeComplete(next)) {
+    const leftover = points(next);
+    return { ...next, stichPoints: 0, deckPoints: Math.max(0, Math.floor(Number(next.deckPoints) || 0)) + leftover };
+  }
+  return next;
 }
 
 // Respec → NEUES Profil: erstattet EXAKT die Kosten aller aktuell gekauften Knoten aufs Guthaben,

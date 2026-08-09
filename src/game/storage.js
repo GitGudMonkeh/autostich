@@ -224,6 +224,9 @@ export function recordRun(record) {
   const treeDone = treeComplete(p);
   const gainedSp = spCreditForRun(record, onboardingBefore, treeDone, n0(p.spRuns));
   const gainedDp = dpForRun(record, onboardingBefore, treeDone, n0(p.spRuns));
+  // #299: bei komplettem Baum sind SP nutzlos → das übrige SP-Guthaben wird zu DP „gefegt" (idempotent: danach 0).
+  const spBalance = n0(p.stichPoints) + gainedSp;
+  const spSweep = treeDone ? spBalance : 0;
   // #299 Onboarding-Fortschritt + Freischaltungs-Diff fürs Victory-Banner; Abschluss (6/6) schenkt das Genesis-Pack.
   const onbAfter = onboardingAfter(onboardingBefore, record);
   const unlocks = onboardingUnlocks(onboardingBefore, onbAfter);
@@ -246,11 +249,12 @@ export function recordRun(record) {
     monoArchetypeRuns,
     hadAllArchetypesRun: !!p.hadAllArchetypesRun || isAllArchetypesRun(record),
     // Progression/Upgrades: Guthaben wächst um den Lauf-Ertrag; ausgegebene SP + gekaufte Knoten bleiben unverändert.
-    stichPoints: n0(p.stichPoints) + gainedSp,
+    // Bei komplettem Baum wird das SP-Guthaben zu DP gefegt (spSweep) → stichPoints 0.
+    stichPoints: spBalance - spSweep,
     stichSpent: n0(p.stichSpent),
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
-    // #299 DP: Guthaben wächst um den DP-Ertrag; ausgegebene DP (Pack-Käufe) bleiben unverändert.
-    deckPoints: n0(p.deckPoints) + gainedDp,
+    // #299 DP: Guthaben wächst um den DP-Ertrag + das gefegte SP-Guthaben (bei vollem Baum); ausgegebene DP bleiben.
+    deckPoints: n0(p.deckPoints) + gainedDp + spSweep,
     deckSpent: n0(p.deckSpent),
     onboarding: onbAfter,
     spRuns: n0(p.spRuns) + (isSpRun(record, onboardingBefore) ? 1 : 0),

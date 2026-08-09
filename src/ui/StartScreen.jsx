@@ -127,7 +127,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         style={{ background: "rgba(23,23,28,0.5)", border: "1px solid rgba(150,150,170,0.10)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
         <div className="flex items-center justify-between gap-3">
           {onbDone ? (
-            <span className="text-[12.5px] font-semibold opacity-90" style={{ color: SP }}>💠 Bonus-SP · nächste +5</span>
+            <span className="text-[12.5px] font-semibold opacity-90" style={{ color: SP }}>💠 Bonus-{progLigaFree ? "DP" : "SP"} · nächste +5</span>
           ) : (
             <span className="text-[12.5px] font-semibold opacity-90" style={{ color: VI }}>🎓 Onboarding</span>
           )}
@@ -307,10 +307,15 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 <span className="inline-flex items-center text-[11px] font-extrabold px-2.5 py-1 rounded-full"
                   style={{ background: "transparent", border: `1px solid ${AM}66`, color: AM }}>{progBuyable} kaufbar</span>
               )}
-              <span className="flex items-baseline gap-1">
-                <span className="text-[19px] font-extrabold tabular-nums" style={{ color: SP, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progSp}</span>
-                <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: SP }}>SP</span>
-              </span>
+              {/* #299: bei komplettem Baum sind SP nutzlos (zu DP umgewandelt) → SP-Anzeige verschwindet, stattdessen „komplett". */}
+              {progLigaFree ? (
+                <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full" style={{ background: "transparent", border: `1px solid ${AM}66`, color: AM }}>✓ komplett</span>
+              ) : (
+                <span className="flex items-baseline gap-1">
+                  <span className="text-[19px] font-extrabold tabular-nums" style={{ color: SP, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progSp}</span>
+                  <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: SP }}>SP</span>
+                </span>
+              )}
             </div>
           </div>
 

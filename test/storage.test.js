@@ -223,12 +223,12 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.stichPoints).toBe(1 + 2);     // SP weiter: +1 Grundstock + 2 Meilensteine (25M+50M)
   });
 
-  it("#299 DP: bei vollem Baum zahlt die SP-Ökonomie DP statt SP (native DP zusätzlich)", () => {
+  it("#299 DP: bei vollem Baum zahlt die SP-Ökonomie DP statt SP; SP-Rest wird zu DP gefegt", () => {
     const allNodes = Object.fromEntries(NODE_IDS.map((id) => [id, 1]));
     saveProfile({ ...loadProfile(), onboarding: 6, nodes: allNodes, stichPoints: 100 });
     const p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
-    expect(p.stichPoints).toBe(100);       // keine SP mehr gutgeschrieben (Baum komplett)
-    expect(p.deckPoints).toBe(10 + 6);     // native 10 + SP-Ökonomie (1 Grundstock + 5 Meilensteine) als DP
+    expect(p.stichPoints).toBe(0);         // SP nutzlos → Rest zu DP gefegt
+    expect(p.deckPoints).toBe(100 + 10 + 6); // gefegte 100 SP + native 10 + SP-Ökonomie (1+5) als DP
   });
 
   it("recordRun lässt gekaufte Knoten + ausgegebene SP unangetastet (nur Kauf/Respec ändern sie)", () => {
