@@ -8,6 +8,7 @@ import {
   GLOBAL_FX, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
+import { startPrunk } from "./prunkFx.js";
 
 /* Anzeige-Liste der Kategorie „Effekte": die kaufbaren GLOBAL_FX + eine synthetische „Standard"-Kachel
    (Gottgleicher Sieg OHNE Prunk) — immer aktiv, kein Kauf, nur zum Vergleichen. Wird direkt vor die
@@ -153,12 +154,26 @@ function PrunkParticles({ variant, LC = "#35e0ff" }) {
   return null; // "standard" → keine Prunk-Partikel
 }
 
+/* Canvas-Overlay = dieselbe In-Game-Wucht (startPrunk) im Loop. NUR für die große Vorschau (ein Canvas, nur
+   solange das Fenster offen ist) — die kleinen Kacheln bleiben auf der leichten CSS-Variante (kein Dauer-rAF im Grid). */
+function PrunkCanvas({ variant }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return undefined;
+    return startPrunk(ref.current, {
+      fireworks: variant === "fireworks", goldRain: variant === "goldRain", prismaWave: variant === "prismaWave",
+      color: "#35e0ff", originX: 0.5, originY: 0.58, loop: true });
+  }, [variant]);
+  return <canvas ref={ref} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true" />;
+}
+
 /* #294 Gottgleich-Vorschau: spielt das ECHTE Ereignis im Loop nach (Karten-Pop + Aura-Flare + goldene
    „GOTTGLEICH ×7"-Groß-Ansage) und legt den jeweiligen Prunk-Effekt darüber. variant "standard" zeigt den
-   Basis-Look ohne Prunk → direkter Vergleich. compact = kleinere Kachel-Variante. */
+   Basis-Look ohne Prunk → direkter Vergleich. compact = kleine Kachel (leichte CSS-Partikel); groß = Canvas-Wucht. */
 function GottgleichPreview({ variant, compact = false }) {
   const bf = battlefieldAssets("bf_kaiju");
   const cardImg = deckAssets("default").back;
+  const hasPrunk = variant !== "standard";
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
@@ -170,8 +185,8 @@ function GottgleichPreview({ variant, compact = false }) {
       <div className="ws-gott-pop absolute" style={{ left: "50%", top: "58%", width: compact ? "34%" : "20%", aspectRatio: CARD_RATIO }}>
         <img src={cardImg} alt="" className="absolute inset-0 w-full h-full object-contain rounded" />
       </div>
-      {/* Prunk-Overlay */}
-      <PrunkParticles variant={variant} />
+      {/* Prunk-Overlay: große Vorschau = volle Canvas-Wucht, Kachel = leichte CSS-Partikel. */}
+      {hasPrunk && (compact ? <PrunkParticles variant={variant} /> : <PrunkCanvas variant={variant} />)}
       {/* Goldene Groß-Ansage */}
       <div className="ws-gott-ann absolute font-extrabold" style={{ left: "50%", top: "30%", whiteSpace: "nowrap",
         fontSize: compact ? 13 : 22, letterSpacing: ".06em",

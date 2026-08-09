@@ -7,6 +7,7 @@ import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useReducedFx } from "./useReducedFx.js";
+import { startPrunk } from "./prunkFx.js";
 import { fmtScore } from "./format.js";
 import glacierIcon from "./assets/glacier.webp"; // Eis-Treffer-Identität: das echte Gletscher-Asset im Score-Float
 import cardBackImg  from "../assets/cards/card-back.png";  // (#180) Spieler-Deck: Schwerter-Rücken
@@ -479,137 +480,15 @@ function PrunkFx({ trigger, panelRef, oppRef, color }) {
   const canvasRef = useRef(null);
   useEffect(() => {
     if (!trigger || !panelRef?.current || !canvasRef.current) return undefined;
-    const panel = panelRef.current, canvas = canvasRef.current;
-    const pr = panel.getBoundingClientRect();
-    const W = pr.width, H = pr.height;
-    if (W < 4 || H < 4) return undefined;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-    canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return undefined;
-    ctx.scale(dpr, dpr);
-    const deckC = color || "#5ab87a";
-    // Ursprung der Prisma-Welle = Mitte der Gegnerkarte, Fallback Feldmitte.
-    let cx = W * 0.5, cy = H * 0.5;
+    const pr = panelRef.current.getBoundingClientRect();
+    if (pr.width < 4 || pr.height < 4) return undefined;
+    // Ursprung (Impuls/Prisma) = Mitte der Gegnerkarte als Bruchteil des Panels; Fallback Feldmitte.
+    let ox = 0.5, oy = 0.5;
     const orr = oppRef?.current?.getBoundingClientRect();
-    if (orr && orr.width) { cx = orr.left - pr.left + orr.width / 2; cy = orr.top - pr.top + orr.height / 2; }
-
-    const PI2 = Math.PI * 2;
-    // --- Feuerwerk: mehrere gestaffelte Bursts. Jeder Partikel wird FRAMEWEISE integriert und prallt an den
-    //     Panel-Rändern ab (Restitution) — dichter „Flipper"-Wumms wie beim GOTTGLEICH-Krit-Schwarm (BounceBurst). ---
-    const GOLD = ["#fff0b0", "#ffd873", "#ffffff", "#ffc978"];
-    const bursts = [], fparts = [];
-    if (trigger.fireworks) {
-      const BURSTS = 9;
-      for (let b = 0; b < BURSTS; b++) {
-        const bx = W * (0.12 + Math.random() * 0.76), by = H * (0.12 + Math.random() * 0.5);
-        const t0 = 90 + b * 115 + Math.random() * 70; // gestaffelte Zündungen
-        bursts.push({ bx, by, t0 });
-        const PN = 42;
-        for (let i = 0; i < PN; i++) {
-          const ang = (i / PN) * PI2 + Math.random() * 0.22;
-          const spd = 3.4 + Math.random() * 7.6;
-          fparts.push({ bx, by, t0, x: bx, y: by, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
-            r: 1.9 + Math.random() * 3, c: i % 3 === 0 ? "#ffffff" : deckC, life: 780 + Math.random() * 380, born: false });
-        }
-      }
-    }
-    // --- Weißgold-Regen: dichter Funken-/Konfetti-Schauer von oben, Seitendrift + Twinkle (immer gold). ---
-    const rain = [];
-    if (trigger.goldRain) {
-      const RN = 150;
-      for (let i = 0; i < RN; i++) {
-        rain.push({ x: Math.random() * W, y: -Math.random() * H * 0.7 - 6,
-          vy: 1.8 + Math.random() * 3.2, drift: 0.5 + Math.random() * 1.1, ph: Math.random() * PI2,
-          r: 1.6 + Math.random() * 3, c: GOLD[i % GOLD.length], t0: Math.random() * 420, tw: 0.5 + Math.random(),
-          conf: i % 5 === 0 });
-      }
-    }
-    // --- Prisma-Wellen: drei kräftige, expandierende Regenbogen-Ringe (mit weißer Führungskante) vom Ursprung. ---
-    const waves = trigger.prismaWave ? [{ t0: 40 }, { t0: 240 }, { t0: 460 }] : [];
-    const maxR = Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) + 20;
-    const flashC = trigger.goldRain && !trigger.fireworks ? "#ffe6a0" : deckC; // Impuls-Farbe passend zum Effekt
-
-    const REST = 0.72, DRAG = 0.992, G = 0.15; // Wand-Reflexion + Drag + Schwerkraft (wie BounceBurst)
-    const TTL = 2250;
-    let raf = 0, start = 0;
-    const step = (now) => {
-      if (!start) start = now;
-      const el = now - start; // ms seit Trigger
-      ctx.clearRect(0, 0, W, H);
-      ctx.globalCompositeOperation = "lighter";
-      // Wumms-Impuls: heller Einschlag-Flash + Schockwelle am Ursprung (gibt allen Varianten den Anfangspunch).
-      if (el < 320) {
-        const fk = el / 320;
-        const rr = 10 + fk * Math.min(W, H) * 0.5;
-        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rr);
-        g.addColorStop(0, `rgba(255,255,255,${(1 - fk) * 0.9})`);
-        g.addColorStop(0.35, `${flashC}${Math.round((1 - fk) * 200).toString(16).padStart(2, "0")}`);
-        g.addColorStop(1, "transparent");
-        ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rr, 0, PI2); ctx.fill();
-      }
-      // Feuerwerk: frameweise Integration + Wand-Reflexion + Zünd-Flash je Burst.
-      for (const b of bursts) {
-        const lt = el - b.t0;
-        if (lt < 0 || lt > 220) continue;
-        const fk = lt / 220, rr = 6 + fk * 32;
-        const g = ctx.createRadialGradient(b.bx, b.by, 0, b.bx, b.by, rr);
-        g.addColorStop(0, `rgba(255,255,255,${(1 - fk) * 0.95})`); g.addColorStop(0.4, deckC); g.addColorStop(1, "transparent");
-        ctx.globalAlpha = 1 - fk; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.bx, b.by, rr, 0, PI2); ctx.fill();
-      }
-      for (const p of fparts) {
-        if (el < p.t0) continue;
-        if (!p.born) { p.born = true; p.x = p.bx; p.y = p.by; }
-        p.vy += G; p.vx *= DRAG; p.vy *= DRAG; p.x += p.vx; p.y += p.vy;
-        if (p.x < p.r) { p.x = p.r; p.vx = -p.vx * REST; } else if (p.x > W - p.r) { p.x = W - p.r; p.vx = -p.vx * REST; }
-        if (p.y < p.r) { p.y = p.r; p.vy = -p.vy * REST; } else if (p.y > H - p.r) { p.y = H - p.r; p.vy = -p.vy * REST; }
-        const k = (el - p.t0) / p.life;
-        if (k > 1) continue;
-        ctx.globalAlpha = Math.max(0, 1 - k);
-        ctx.fillStyle = p.c; ctx.shadowBlur = 14; ctx.shadowColor = p.c;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, PI2); ctx.fill();
-      }
-      // Weißgold-Regen
-      for (const d of rain) {
-        if (el < d.t0) continue;
-        const lt = el - d.t0;
-        const y = d.y + d.vy * lt * 0.15;
-        const x = d.x + Math.sin(d.ph + lt * 0.006) * d.drift * 9;
-        if (y > H + 6) continue;
-        const fade = el > TTL - 500 ? Math.max(0, (TTL - el) / 500) : 1;
-        ctx.globalAlpha = fade * (0.65 + 0.35 * Math.sin(d.ph + lt * 0.02 * d.tw)); // Twinkle
-        ctx.fillStyle = d.c; ctx.shadowBlur = 9; ctx.shadowColor = d.c;
-        if (d.conf) { ctx.fillRect(x - d.r, y - d.r * 0.6, d.r * 2, d.r * 1.2); }
-        else { ctx.beginPath(); ctx.arc(x, y, d.r, 0, PI2); ctx.fill(); }
-      }
-      // Prisma-Wellen (kräftiger: dicker, weiße Führungskante, mehr Segmente)
-      ctx.shadowBlur = 0;
-      for (const w of waves) {
-        const lt = el - w.t0;
-        if (lt < 0) continue;
-        const k = lt / 1050;
-        if (k > 1) continue;
-        const rad = maxR * k;
-        const a = Math.max(0, 1 - k);
-        ctx.globalAlpha = a * 0.95;
-        ctx.lineWidth = 5 + 9 * (1 - k);
-        const SEG = 48;
-        for (let s = 0; s < SEG; s++) {
-          const a0 = (s / SEG) * PI2, a1 = ((s + 1) / SEG) * PI2;
-          ctx.strokeStyle = `hsl(${(s / SEG * 360 + el * 0.5) % 360}, 100%, 62%)`;
-          ctx.beginPath(); ctx.arc(cx, cy, rad, a0, a1 + 0.02); ctx.stroke();
-        }
-        // weiße Führungskante (heller Vorderrand)
-        ctx.globalAlpha = a * 0.8; ctx.lineWidth = 2.5; ctx.strokeStyle = "#ffffff";
-        ctx.beginPath(); ctx.arc(cx, cy, rad + ctx.lineWidth, 0, PI2); ctx.stroke();
-      }
-      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; ctx.shadowBlur = 0;
-      if (el < TTL) raf = requestAnimationFrame(step);
-      else ctx.clearRect(0, 0, W, H);
-    };
-    raf = requestAnimationFrame(step);
-    return () => { cancelAnimationFrame(raf); ctx.clearRect(0, 0, W, H); };
+    if (orr && orr.width) { ox = (orr.left - pr.left + orr.width / 2) / pr.width; oy = (orr.top - pr.top + orr.height / 2) / pr.height; }
+    return startPrunk(canvasRef.current, {
+      fireworks: trigger.fireworks, goldRain: trigger.goldRain, prismaWave: trigger.prismaWave,
+      color, originX: ox, originY: oy, loop: false });
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps
   }, [trigger?.id, panelRef, oppRef]);
   return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none rounded-xl" style={{ zIndex: 21 }} aria-hidden="true" />;
