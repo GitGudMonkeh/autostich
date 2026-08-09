@@ -89,6 +89,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   const plantHeld = plantSkillCount(state.skills || []) > 0;
 
   const clickPos = (pos) => {
+    if (chLockFormSet.has(pos)) { audio.play("denied"); haptics.denied(); return; } // #301 C3: fixierte Zelle — nicht wählbar/tauschbar
     if (sel === null) { setSel(pos); setInspectBid(architectCover ? (architectCover[pos]?.bid ?? null) : null); return; }  // erste Karte wählen — Gebäude-Rahmen leuchtet
     if (sel === pos) { setSel(null); setInspectBid(null); return; }  // Abwählen — still
     // #132: erfolgreicher Tausch klingt wie ein Kartendreh (cardflip), nicht wie ein Button-Klick.
@@ -204,7 +205,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                 ))}
               </div>
             )}
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} disabledPos={chLockFormSet} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} lockedPos={chLockFormSet} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
               glacierPos={iceActive ? glacierPos : null} glacierMassByPos={iceActive ? glacierMass : null} />
           </div>
 

@@ -695,9 +695,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       const glow = CAT[fam?.category]?.color || "#5a8ade"; // Distrikt → Typ-Farb-Glow (etwas kräftiger)
                       return <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ boxShadow: `0 0 16px 2px ${glow}cc, inset 0 0 9px ${glow}66, inset 0 0 0 1px ${glow}` }} />;
                     })()}
-                    {/* #301 C2: dauerhaft gesperrte Bau-Zelle — rote Diagonal-Schraffur + Rim + Schloss. */}
+                    {/* #301 C2: dauerhaft gesperrte Bau-Zelle — rote Diagonal-Schraffur (Querbalken) + Rim, KEIN Schloss. */}
                     {chLocked && (
-                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none grid place-items-center" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(224,85,85,0.28) 3.5px, rgba(224,85,85,0.28) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(224,85,85,0.5)", color: "#e07a7a", fontSize: 11 }}>🔒</span>
+                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(224,85,85,0.28) 3.5px, rgba(224,85,85,0.28) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(224,85,85,0.5)" }} />
                     )}
                     {/* #UI: gesperrte Fläche beim Ziehen — Diagonal-Schraffur + Rim, damit „hier nicht ablegbar" klar heraussticht. */}
                     {isBlocked && (

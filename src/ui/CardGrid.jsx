@@ -67,7 +67,7 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
 const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
                    picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false,
-                   glacier = false, glacierMass = 0, glacierForm = false }) {
+                   glacier = false, glacierMass = 0, glacierForm = false, locked = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -112,6 +112,10 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
                ...(anchorRing || {}),
                boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : glacier ? "0 0 8px #5ec8f066" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, firn ? "inset 0 0 0 9999px #5ec8f014" : null, distrShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
+      {/* #301 C3: fixierte Aufstell-Zelle — rote Diagonal-Schraffur (Querbalken) + Rim, KEIN Schloss (wie beim Architekten). */}
+      {locked && (
+        <span aria-hidden className="absolute inset-0 rounded-lg pointer-events-none z-10" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(224,85,85,0.26) 3.5px, rgba(224,85,85,0.26) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(224,85,85,0.5)" }} />
+      )}
       {/* Architekt-Gebäude-Badge (#202/#224.7): nur der echte Wert-Boost „+X" mittig an der oberen Kante (kein Icon mehr —
           die Kategorie liest man am Rahmen/Ring + Tooltip). Nur bei value-Gebäuden (boost > 0); score/formation zeigt nur den Ring.
           #UI: Badge-Farbe = die Karten-Farbe, für die das Gebäude den Wert-Bonus gibt (arch.badgeSuit); farblos → grau (#888). */}
@@ -189,13 +193,14 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
                           highlightPos = [], highlightTitle = null, openSegments = null, swappedIds = new Set(),
                           segStrength = [], segDelta = [], architectCover = null, structPos = null, distrPos = null, glowBid = null,
-                          glacierPos = null, glacierMassByPos = null }) {
+                          glacierPos = null, glacierMassByPos = null, lockedPos = [] }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   // Eis-Neudesign: Positionen, die Teil einer aktiven 2D-Gletscher-Formation sind (Block/Kreuz/Linie/Fläche) → blaues „G" auf der Karte.
   const glacierFormPos = glacierPos ? glacierFormations(glacierPos).formPos : null;
   const pickedSet = new Set(pickedIds || []);
   const disabledSet = new Set(disabledPos || []);
+  const lockedSet = new Set(lockedPos || []); // #301 C3: fixierte Aufstell-Zellen (rote Querbalken)
   const highlightSet = new Set(highlightPos || []); // #182: Positionen mit Silberring ohne Anker (z. B. Zeitraffer 20 & 40)
   const nSeg = Math.ceil(cards.length / SEGMENT_SIZE);
   // #FB: offene Segmentgrenzen (E_SEGMENT). Grenze g liegt zwischen Zeile g und g+1; nur zeichnen, wenn Werkzeug aktiv.
@@ -289,6 +294,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                   structLit={structPos ? structPos.has(pos) : false} distrLit={distrPos ? distrPos.has(pos) : false}
                   glacier={glacierPos ? glacierPos.has(pos) : false} glacierMass={glacierMassByPos ? (glacierMassByPos[pos] || 0) : 0}
                   glacierForm={glacierFormPos ? glacierFormPos.has(pos) : false}
+                  locked={lockedSet.has(pos)}
                   onClick={disabled || !onTilePick ? undefined : () => onTilePick(pos, c)} />;
               })}
             </div>

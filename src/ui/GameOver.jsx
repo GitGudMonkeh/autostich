@@ -156,16 +156,16 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                     <span className="font-mono font-normal" style={{ color: "#6d6a80" }}>&gt; {Math.round(r.target / 1_000_000)} Mio</span>
                   </span>
                   <span className="shrink-0 font-mono text-[13px] font-extrabold" style={{ color: r.delta >= 0 ? "#5ab87a" : "#e07a7a" }}>
-                    {r.delta >= 0 ? `+${r.delta}` : r.delta} DP
+                    {r.delta >= 0 ? `+${r.delta}` : r.delta} Deck-Punkte
                   </span>
                 </div>
               ))}
             </div>
             <div className="mt-2 flex items-center justify-between rounded-lg px-3 py-2" style={{ background: "#1c0f11", border: "1px solid rgba(224,85,85,.35)" }}>
               <span className="text-[12px] font-bold" style={{ color: "#ffd0d0" }}>
-                Lauf-DP {challengeResult.raw >= 0 ? "" : "(Netto ≥ 0 gedeckelt)"}
+                Lauf-Deck-Punkte {challengeResult.raw >= 0 ? "" : "(Netto ≥ 0 gedeckelt)"}
               </span>
-              <span className="font-mono text-[14px] font-extrabold" style={{ color: "#ff9a9a" }}>{challengeResult.runDp} DP</span>
+              <span className="font-mono text-[14px] font-extrabold" style={{ color: "#ff9a9a" }}>{challengeResult.runDp} Deck-Punkte</span>
             </div>
           </div>
         )}

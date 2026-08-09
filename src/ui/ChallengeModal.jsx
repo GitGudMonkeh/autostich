@@ -26,9 +26,10 @@ export function ChallengeModal({ onConfirm, onClose }) {
             </h2>
             <button onClick={onClose} aria-label="Schließen" className="text-lg leading-none px-2 py-1 rounded hover:bg-white/5" style={{ color: "#9a97ab" }}>✕</button>
           </div>
-          <p className="text-[12px] mb-3" style={{ color: "#9a97ab" }}>
-            Modifikatoren nacheinander zuschalten. Jedes Ziel erfüllt = DP-Gewinn, verfehlt = DP-Abzug. Die normalen
-            Lauf-DP laufen zusätzlich; das Lauf-Netto fällt nie unter 0.
+          <p className="text-[12px] mb-3 leading-snug" style={{ color: "#9a97ab" }}>
+            Schalte Modifikatoren nacheinander zu. Jeder hat ein <b style={{ color: "#cfccda" }}>Score-Ziel</b> (50 / 75 / 100 Mio):
+            <b style={{ color: "#8fe0a8" }}> erreichst du es, gewinnst du Deck-Punkte</b> — <b style={{ color: "#e79a9a" }}>verfehlst du es, verlierst du Deck-Punkte</b>.
+            Die normalen Lauf-Deck-Punkte kommen zusätzlich; das Lauf-Netto fällt nie unter 0.
           </p>
 
           <div className="flex flex-col gap-2">
@@ -54,15 +55,15 @@ export function ChallengeModal({ onConfirm, onClose }) {
                       C{order} · {c.name}
                     </span>
                     <span className="font-mono text-[12px] font-bold whitespace-nowrap" style={{ color: active ? "#ffd0d0" : "#6d6a80" }}>
-                      &gt; {mio(c.target)}
+                      Ziel &gt; {mio(c.target)}
                     </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-2">
                     <span className="text-[11px] leading-snug" style={{ color: "#8b8898" }}>{c.desc}</span>
                     <span className="font-mono text-[11px] font-bold whitespace-nowrap">
-                      <span style={{ color: "#5ab87a" }}>+{c.gain}</span>
-                      <span style={{ color: "#6d6a80" }}> / </span>
-                      <span style={{ color: "#e07a7a" }}>−{c.loss}</span>
+                      <span style={{ color: "#5ab87a" }}>erreicht +{c.gain}</span>
+                      <span style={{ color: "#6d6a80" }}> · </span>
+                      <span style={{ color: "#e07a7a" }}>verfehlt −{c.loss}</span>
                     </span>
                   </div>
                 </button>
@@ -71,13 +72,14 @@ export function ChallengeModal({ onConfirm, onClose }) {
           </div>
 
           {/* Laufende Summe: max. Gewinn / max. Verlust der aktiven Modifikatoren. */}
-          <div className="mt-3 rounded-lg px-3 py-2 flex items-center justify-between text-[13px] font-bold"
+          <div className="mt-3 rounded-lg px-3 py-2 flex items-center justify-between gap-2 text-[12px] font-bold"
             style={{ background: "#141019", border: "1px solid #2a2836" }}>
             <span style={{ color: "#9a97ab" }}>Einsatz ({level}/3)</span>
-            <span className="font-mono">
-              <span style={{ color: "#5ab87a" }}>max +{stakes.maxGain} DP</span>
+            <span className="font-mono text-right leading-tight">
+              <span style={{ color: "#5ab87a" }}>max. Gewinn +{stakes.maxGain}</span>
               <span style={{ color: "#6d6a80" }}> · </span>
-              <span style={{ color: "#e07a7a" }}>max −{stakes.maxLoss} DP</span>
+              <span style={{ color: "#e07a7a" }}>max. Verlust −{stakes.maxLoss}</span>
+              <span style={{ color: "#9a97ab" }}> Deck-Punkte</span>
             </span>
           </div>
 

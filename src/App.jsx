@@ -641,7 +641,7 @@ export function Autostich() {
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
               {/* §6: Score-Meilenstein-Balken — NACH dem Onboarding (dann greifen die SP-Meilensteine). */}
-              {(profile?.onboarding || 0) >= ONBOARDING_LINKS && <ScoreMilestoneBar score={state.score} />}
+              {(profile?.onboarding || 0) >= ONBOARDING_LINKS && <ScoreMilestoneBar score={state.score} challengeMods={state.challengeMods || []} />}
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 heat={state.heat} lightning={state.lightning}
                 forged={state.forged || {}} brandActive={state.brandActive || {}}

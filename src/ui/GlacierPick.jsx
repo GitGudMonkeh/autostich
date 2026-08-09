@@ -41,7 +41,7 @@ export function GlacierPick({ state, onConfirm }) {
           <CardGrid cards={cards} formations={formations} roles={roles}
             anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
             architectCover={architectCover}
-            pickedIds={sel != null && cards[sel] ? [cards[sel].id] : []} disabledPos={disabledPos}
+            pickedIds={sel != null && cards[sel] ? [cards[sel].id] : []} disabledPos={disabledPos} lockedPos={chLock}
             glacierPos={glacierPos} glacierMassByPos={glacierMass}
             onTilePick={(pos) => pick(pos)} />
         </div>
