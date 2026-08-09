@@ -468,9 +468,10 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
    künftige „Zerstäuben"-Finisher, gemeinsamer Dichte-Parameter DISINT_DENSITY). Aus dem Loch springen zusätzlich
    Funken. Der eigentliche STRAHL ist persistent (BurnBeamPersist, s. u.). Dichte/Größe/Streuweite/Glow wachsen mit der
    Serie (`streak`). Budget an die Stich-Kadenz (flipMs) gekoppelt. Deterministisch aus `seed`. Reduced-safe (Aufrufer). */
-// Disintegrations-Dichte (Ursprungs-Raster über der Karte). BEWUSST niedrig — die spätere „Zerstäuben"-Referenz nutzt
-// ein dichteres Raster; über diesen Parameter bleibt die Abstufung klar.
-const DISINT_COLS = 6, DISINT_ROWS = 8;
+// #302 Disintegrations-Raster: die Karte wird in DISINT_COLS×DISINT_ROWS kleine clip-path-Stücke zerlegt, die
+// auseinanderstieben. Fein genug, dass die Karte sichtbar ZERFÄLLT (nicht nur „ein paar Punkte"), aber die spätere
+// „Zerstäuben"-Referenz nutzt ein noch dichteres Raster + weitere Streuung → Abstufung bleibt über diese Werte klar.
+const DISINT_COLS = 8, DISINT_ROWS = 11;
 export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, intensity = 0, scale = 1, streak = 0 }) {
   const HOT = "#ff7a2f";                                  // Hitze-Akzent (Ember-Orange)
   const streakK = clamp(streak / 12, 0, 1);               // 0..1: Serien-Eskalation
@@ -478,24 +479,27 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
   const body = Math.max(150, budget - delay);
   const hitAt = delay + Math.round(body * 0.22);          // kurzer Beat, dann zünden Loch/Funken/Disintegration
   const holeMs = Math.round(body * 0.66);                 // endet ~ mit dem Budget (vor dem nächsten Flip)
-  const fadeMs = Math.round(body * 0.42);                 // Karte vergeht schnell, während sie zu Asche zerfällt
-  const disintDur = Math.round(body * 0.72);              // Partikel-Flug-/Fade-Dauer
+  const disintDur = Math.round(body * 0.78);              // Fragment-Flug-/Fade-Dauer (Karte zerfällt)
   const holeMax = (1.4 + intensity * 0.5 + streakK * 0.5).toFixed(2); // kleineres, glühendes Loch (bei Serie etwas größer)
-  // #302 Disintegrations-Partikel: kleines Raster über der Kartenfläche; jedes Stück driftet von der Kartenmitte weg
-  // (+ Schwerkraft = Asche fällt), schrumpft & fadet. Überwiegend warm (Weiß-/Goldglut → Ember → Deckfarbe).
-  const dust = [];
+  // #302 Disintegrations-Fragmente: jedes Raster-Stück ist ein clip-path-Klon der ECHTEN Karte (inset auf seine Zelle),
+  // driftet von der Kartenmitte weg (+ Schwerkraft = Asche fällt), schrumpft, rotiert leicht & fadet → die Karte selbst
+  // zerfällt. Streuung mit der Serie leicht weiter. Ecken/Rand fliegen weiter als die Mitte (dirX/dirY-Skalierung).
+  const NFRAG = DISINT_ROWS * DISINT_COLS;
+  const frags = [];
   for (let r = 0; r < DISINT_ROWS; r++) {
     for (let c = 0; c < DISINT_COLS; c++) {
       const i = r * DISINT_COLS + c;
-      const px = (c + 0.5) / DISINT_COLS, py = (r + 0.5) / DISINT_ROWS;
-      const spread = 10 + Math.abs(fjitter(seed * 5 + i * 13, 22 + streakK * 18));
-      dust.push({
-        i, left: `${(px * 100).toFixed(1)}%`, top: `${(py * 100).toFixed(1)}%`,
-        dx: ((px - 0.5) * spread + fjitter(seed * 3 + i * 7, 7)).toFixed(1),
-        dy: ((py - 0.5) * spread + Math.abs(fjitter(seed * 2 + i * 11, 9)) + 9).toFixed(1), // + Schwerkraft (Asche fällt)
-        sz: (1.3 + Math.abs(fjitter(seed * 7 + i * 5, 1.5))).toFixed(1),                    // 1.3..2.8 px (klein)
-        c: i % 5 === 0 ? "#ffffff" : i % 5 === 1 ? "#ffd36a" : i % 5 < 4 ? HOT : color,
-        d: hitAt + Math.round((i / (DISINT_ROWS * DISINT_COLS)) * disintDur * 0.2),         // leichte Staffelung
+      const dirX = (c + 0.5) / DISINT_COLS - 0.5, dirY = (r + 0.5) / DISINT_ROWS - 0.5; // Zellmitte relativ zur Kartenmitte
+      const spread = 26 + Math.abs(fjitter(seed * 5 + i * 13, 22 + streakK * 20));       // Auswärts-Flugweite
+      frags.push({
+        i,
+        // clip-path inset(top right bottom left) blendet die Karte auf DIESE Zelle aus (Klon zeigt nur sein Stück).
+        clip: `inset(${((r / DISINT_ROWS) * 100).toFixed(2)}% ${(((DISINT_COLS - 1 - c) / DISINT_COLS) * 100).toFixed(2)}% ${(((DISINT_ROWS - 1 - r) / DISINT_ROWS) * 100).toFixed(2)}% ${((c / DISINT_COLS) * 100).toFixed(2)}%)`,
+        dx: (dirX * spread + fjitter(seed * 3 + i * 7, 8)).toFixed(1),
+        dy: (dirY * spread + Math.abs(fjitter(seed * 2 + i * 11, 8)) + 12).toFixed(1),    // + Schwerkraft (Asche fällt)
+        ds: (0.28 + Math.abs(fjitter(seed * 6 + i * 5, 0.22))).toFixed(2),                // Schrumpf-Endgröße 0.28..0.5
+        dr: fjitter(seed * 7 + i * 9, 40).toFixed(0),                                     // −40..40° Rotation
+        d: hitAt + Math.round((i / NFRAG) * disintDur * 0.16),                            // leichte Staffelung
       });
     }
   }
@@ -520,14 +524,12 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
   });
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      {/* #302 Karte zerfällt in Asche: sie vergeht schnell (as-burn-fade), während die Disintegrations-Partikel
-          (unten) aus ihrer Fläche stieben — statt eines reinen Auflösens. */}
-      <div className="absolute inset-0" style={{ animation: `as-burn-fade ${fadeMs}ms ease-in ${hitAt}ms both`, willChange: "opacity" }}>{cardEl}</div>
-      {/* #302 Disintegrations-Partikel (dezent): kleine warme Funken/Asche aus der Kartenfläche, driften weg + faden. */}
-      {dust.map((s) => (
-        <div key={`du${s.i}`} style={{ position: "absolute", left: s.left, top: s.top, width: +s.sz, height: +s.sz, borderRadius: "50%",
-          background: s.c, boxShadow: `0 0 3px ${s.c}`, "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
-          animation: `as-burn-dust ${disintDur}ms ease-out ${s.d}ms both`, willChange: "transform, opacity" }} />
+      {/* #302 Die Karte zerfällt in ihre Fragmente: R×C clip-path-Klone (zusammen = ganze Karte beim Einschlag),
+          die dann auseinanderstieben, schrumpfen, rotieren & ausfaden — die Karte „zerstäubt", statt zu verblassen. */}
+      {frags.map((s) => (
+        <div key={`fr${s.i}`} className="absolute inset-0" style={{ clipPath: s.clip,
+          "--dx": `${s.dx}px`, "--dy": `${s.dy}px`, "--ds": s.ds, "--dr": `${s.dr}deg`,
+          animation: `as-burn-disintegrate ${disintDur}ms cubic-bezier(0.2,0.6,0.3,1) ${s.d}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
       ))}
       {/* Glühendes Loch in der EXAKTEN Kartenmitte (left/top 50 % des 104×144-Slots): warmer Ember-Verlauf mit
           verglühtem Kern (kein harter schwarzer Kern/Ring) + weicher Außen-Glow, der mit der Serie mitwächst. */}

@@ -233,12 +233,12 @@ button { font-family: inherit; }
   0%, 10% { opacity: 1; }
   100%    { opacity: 0; }
 }
-/* #302 Brennstrahl-Disintegration: die Karte zerfällt in kleine warme Partikel (Funken/Asche), die aus der
-   Kartenfläche driften, schrumpfen & ausfaden. Start bei opacity 0 (fill-both) → vor dem Einschlag unsichtbar. */
-@keyframes as-burn-dust {
-  0%   { opacity: 0; transform: translate(0, 0) scale(1); }
-  14%  { opacity: 1; }
-  100% { opacity: 0; transform: translate(var(--dx, 0), var(--dy, 0)) scale(0.45); }
+/* #302 Brennstrahl-Disintegration: die Karte selbst zerfällt in ein feines Raster kleiner Stücke (clip-path-Klone
+   der echten Karte), die kurz am Platz halten (Karte noch ganz beim Einschlag), dann von der Kartenmitte weg driften,
+   schrumpfen, leicht rotieren & ausfaden → die Karte „zerstäubt". Start opacity 1 (fill-both, hält beim Einschlag). */
+@keyframes as-burn-disintegrate {
+  0%, 8% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+  100%   { opacity: 0; transform: translate(var(--dx, 0), var(--dy, 0)) scale(var(--ds, 0.5)) rotate(var(--dr, 0deg)); }
 }
 /* Persistenter Brennstrahl: feiner, schneller Flicker = Laser-Energie (Opazität pendelt leicht). */
 @keyframes as-burn-flicker { 0%, 100% { opacity: 1; } 45% { opacity: .78; } 70% { opacity: .93; } }
