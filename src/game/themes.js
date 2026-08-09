@@ -180,3 +180,12 @@ export function buyPack(profile, pack) {
     ownedCosmetics: { ...(profile && profile.ownedCosmetics), [packOwnKey(pack)]: true },
   };
 }
+
+// #299 Test-Code „unlock": schaltet ALLE Kauf-Packs + globalen Effekte frei (in ownedCosmetics). Rein additiv —
+// bestehender Besitz bleibt; ergänzt jedes Pack (pack:<id>) und jeden globalen Effekt (fx:<key>). Neues Profil.
+export function unlockAllCosmetics(profile) {
+  const owned = { ...(profile && profile.ownedCosmetics) };
+  for (const pack of PACKS) if (isBuyPack(pack)) owned[packOwnKey(pack)] = true;
+  for (const fx of GLOBAL_FX) owned[fx.ownKey] = true;
+  return { ...profile, ownedCosmetics: owned };
+}

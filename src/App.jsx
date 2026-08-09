@@ -46,7 +46,7 @@ import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale
 import { UpgradeScreen } from "./ui/UpgradeScreen.jsx"; // Progression-Vorschau: Upgrade-Baum-Screen
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, frameGlowActive, holoSwipeActive, hologridActive, laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
+import { THEMES, unlockAllCosmetics, frameGlowActive, holoSwipeActive, hologridActive, laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
@@ -441,7 +441,7 @@ export function Autostich() {
   // Upgrades + SP-Polster (Profil-Update, kein Reload). `reset` = ganzes Profil wipen → Reload gibt den
   // sauberen Erstbesuch-Zustand (kein manuelles Nachsynchronisieren von Highscores/Geist/Verlauf nötig).
   function handleSecretSeed(kind) {
-    if (kind === "unlock") { setProfile(saveProfile(unlockAllProfile(loadProfile()))); return; }
+    if (kind === "unlock") { setProfile(saveProfile(unlockAllCosmetics(unlockAllProfile(loadProfile())))); return; }
     if (kind === "reset") { wipeProfileStorage(); try { window.location.reload(); } catch (e) {} }
   }
   // §7 (Schritt 6): Ranglisten-Standard — tree-unabhängige Baseline (fix 2 Rerolls, alle Archetypen, R29 an; für alle gleich).

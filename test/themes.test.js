@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   THEME_DEFS, THEMES, PACKS, PACK_COST, PACK_DP_COST,
   packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
-  canBuyPack, buyPack,
+  canBuyPack, buyPack, unlockAllCosmetics, packOwnKey,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
   frameGlowActive, holoSwipeActive, hologridActive,
   laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive,
@@ -83,6 +83,12 @@ describe("packs — Kauf-Ökonomie (#299: DP)", () => {
   it("buyPack bei zu wenig DP = No-op (identische Referenz)", () => {
     const p0 = prof({ deckPoints: 0 });
     expect(buyPack(p0, THEME_DEFS.sunset)).toBe(p0);
+  });
+  it("unlockAllCosmetics schaltet ALLE Kauf-Packs + globalen Effekte frei (additiv)", () => {
+    const p = unlockAllCosmetics(prof({ ownedCosmetics: { existing: true } }));
+    expect(p.ownedCosmetics.existing).toBe(true); // Bestand bleibt
+    for (const pack of THEMES) if (isBuyPack(pack)) expect(p.ownedCosmetics[packOwnKey(pack)]).toBe(true);
+    for (const fx of GLOBAL_FX) expect(p.ownedCosmetics[fx.ownKey]).toBe(true);
   });
 });
 
