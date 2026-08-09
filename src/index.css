@@ -259,10 +259,15 @@ button { font-family: inherit; }
 @keyframes as-bh-implode { 0% { transform: scale(1) rotate(0deg); opacity: 1; } 70% { opacity: 1; } 100% { transform: scale(0.04) rotate(540deg); opacity: 0; } }
 /* Partikel sitzt auf einem Arm (Start: --a0 gedreht, --r0 nach außen versetzt) und fällt einwärts, während der
    Arm mit --spin rotiert → Einwärts-Spirale in den Punkt. */
+/* Partikel spiralt einwärts (bis ~46 %) und bleibt danach als kleiner Stern am Rest-Radius (--rEnd, Fallback 0)
+   ums Loch stehen — kreist weiter, funkelt (Opacity-Puls) und fadet erst am Ende aus. */
 @keyframes as-bh-spiral {
   0%   { transform: rotate(var(--a0)) translateX(var(--r0)) rotate(calc(-1 * var(--a0))); opacity: 0; }
-  14%  { opacity: 1; }
-  100% { transform: rotate(calc(var(--a0) + var(--spin))) translateX(0) rotate(calc(-1 * var(--a0) - var(--spin))); opacity: 0; }
+  12%  { opacity: 1; }
+  46%  { transform: rotate(calc(var(--a0) + var(--spin))) translateX(var(--rEnd, 0px)) rotate(calc(-1 * var(--a0) - var(--spin))); opacity: 1; }
+  62%  { opacity: 0.5; }
+  78%  { opacity: 1; }
+  100% { transform: rotate(calc(var(--a0) + var(--spin) + 120deg)) translateX(var(--rEnd, 0px)) rotate(calc(-1 * var(--a0) - var(--spin) - 120deg)); opacity: 0; }
 }
 @keyframes as-bh-core { 0% { transform: scale(0.2); opacity: 0; } 22% { transform: scale(1); opacity: 1; } 70% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(0.02); opacity: 0; } }
 

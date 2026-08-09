@@ -371,16 +371,21 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
    Mitte (as-bh-implode), ein leuchtender Ereignishorizont-Ring (deckfarben) pulsiert, eine Akkretions-Spirale saugt
    Partikel hinein, am Ende Kollaps-Flash + Schockwelle. Deterministisch aus `seed` (kein Math.random im Render).
    Dauern an den Flip-Takt gekoppelt (cardDur/burstDur), score-skaliert (intensity) → hält mit den anderen Findern mit. */
-function BlackholeFx({ cardEl, color, cardDur, seed, delay = 0, intensity = 0, scale = 1 }) {
+function BlackholeFx({ cardEl, color, cardDur, starDur, seed, delay = 0, intensity = 0, scale = 1, streak = 0 }) {
   const durMul = 1 + intensity * 0.3;
-  const cd = cardDur * durMul;          // Implosions-Fenster (skaliert mit dem Takt)
-  const N = Math.max(6, Math.round((12 + intensity * 8) * scale)); // Akkretions-Partikel (turbo-ausgedünnt)
+  const cd = cardDur * durMul;          // Implosions-Fenster (Karte + Kern; skaliert mit dem Takt)
+  const sd = (starDur || cardDur) * durMul; // Stern-Linger der Partikel (länger als der Sog → sichtbar als kleine Sterne)
+  const streakK = clamp(streak / 20, 0, 1);
+  // Mehr Sterne bei langer Siegesserie; kaum turbo-ausgedünnt (Wunsch: bei hoher Geschwindigkeit + vielen Siegen
+  // sollen die Sterne LÄNGER/mehr zu sehen sein). Gedeckelt für die Performance (überlappende Ghosts bei MAX).
+  const N = clamp(Math.round(10 + intensity * 8 + streakK * 12), 8, 28);
   const parts = Array.from({ length: N }, (_, i) => {
     const ang = (i / N) * 360 + fjitter(seed * 3 + i * 7, 40);         // Startwinkel rundum
     const rad = 44 + Math.abs(fjitter(seed * 5 + i * 13, 34));         // Startradius 44..78 px
     const rot = 220 + Math.abs(fjitter(seed * 7 + i * 5, 200));        // Einwärts-Spiral-Drall
+    const rEnd = 5 + Math.abs(fjitter(seed * 11 + i * 3, 9));          // Rest-Radius: kleine Sterne umkreisen das Loch
     const dl  = (i / N) * cd * 0.35;                                   // gestaffeltes Ansaugen
-    return { i, ang, rad, rot, dl, w: 2 + Math.abs(fjitter(seed * 9 + i * 3, 2.4)) };
+    return { i, ang, rad, rot, rEnd, dl, w: 1.4 + Math.abs(fjitter(seed * 9 + i * 3, 1.8)) };
   });
   const ease = "cubic-bezier(0.55, 0, 0.9, 0.35)"; // beschleunigt nach innen (Sog)
   return (
@@ -388,13 +393,14 @@ function BlackholeFx({ cardEl, color, cardDur, seed, delay = 0, intensity = 0, s
       {/* Karte wird spiralförmig auf null in den Punkt gezogen (implodiert). */}
       <div className="absolute inset-0" style={{
         animation: `as-bh-implode ${cd}ms ${ease} ${delay}ms both`, transformOrigin: "50% 50%", willChange: "transform, opacity" }}>{cardEl}</div>
-      {/* Akkretions-Spirale: jedes Partikel sitzt auf einem gedrehten Arm und fällt einwärts, während der Arm rotiert. */}
+      {/* Akkretions-Sterne: spiralen einwärts, bleiben dann als kleine funkelnde Sterne (Rest-Radius) ums Loch stehen
+          und faden über sd aus — länger als der Sog, damit sie bei MAX-Turbo/langer Serie sichtbar bleiben. */}
       {parts.map((s) => (
         <div key={`bh${s.i}`} className="absolute" style={{ left: "50%", top: "50%", width: 0, height: 0,
-          "--r0": `${s.rad}px`, "--a0": `${s.ang}deg`, "--spin": `${s.rot}deg`,
-          animation: `as-bh-spiral ${cd}ms ${ease} ${delay + s.dl}ms both`, willChange: "transform, opacity" }}>
+          "--r0": `${s.rad}px`, "--a0": `${s.ang}deg`, "--spin": `${s.rot}deg`, "--rEnd": `${s.rEnd}px`,
+          animation: `as-bh-spiral ${sd}ms ${ease} ${delay + s.dl}ms both`, willChange: "transform, opacity" }}>
           <div style={{ position: "absolute", left: -s.w / 2, top: -s.w / 2, width: s.w, height: s.w, borderRadius: "50%",
-            background: s.i % 4 === 0 ? "#ffffff" : color, boxShadow: `0 0 6px ${s.i % 4 === 0 ? "#ffffff" : color}` }} />
+            background: s.i % 3 === 0 ? "#ffffff" : color, boxShadow: `0 0 5px ${s.i % 3 === 0 ? "#ffffff" : color}, 0 0 2px #ffffff` }} />
         </div>
       ))}
       {/* Ereignishorizont: dunkle Scheibe mit leuchtendem, deckfarbenem Ring — wächst, hält, kollabiert (wie in der
@@ -531,7 +537,7 @@ function SlashGhostLayer({ ghosts }) {
             {isBoom
               ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
               : isHole
-              ? <BlackholeFx cardEl={cardEl} color={g.color} cardDur={g.hole} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} />
+              ? <BlackholeFx cardEl={cardEl} color={g.color} cardDur={g.hole} starDur={g.holeStar} streak={g.streak} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} />
               : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} laser={g.laser} />}
           </div>
         );
@@ -656,7 +662,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const sBoom    = clamp(flipMs * 0.22, 90, 230);    // Krit-Zentral-Flash (kurz & hell)
   // #293 Schwarzes Loch: die Implosion skaliert mit dem Turbo wie der Klingen-/Laser-Schnitt (KEIN +800-Boden,
   // niedriger Floor) → bei hoher Turbo schnappt sie zu, bei langsamem Takt läuft sie länger aus.
-  const sHole     = clamp(flipMs * 0.5, 160, 620);   // Sog-/Implosions-Fenster (skaliert mit dem Takt)
+  const sHole     = clamp(flipMs * 0.5, 160, 620);   // Sog-/Implosions-Fenster (Karte + Kern, skaliert mit dem Takt)
+  // Die Akkretions-Partikel lingern LÄNGER als der Sog — sie bleiben als kleine, funkelnde Sterne ums Loch stehen
+  // und faden dann aus. Bewusst mit hohem Boden, damit sie bei MAX-Turbo (Sog nur ~160 ms) trotzdem sichtbar bleiben.
+  const sHoleStar = clamp(flipMs * 0.95, 560, 1050);
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
   const sFloat   = clamp(flipMs * 0.55, 220, 820);   // Float-Away NACH dem Slice (nur noch Gegnerseite, #187)
   const flyDur   = clamp(flipMs * 0.7, 320, 900);    // Wegflug-Dauer der eigenen Verlierer-Karte (kein Schnitt mehr)
@@ -862,7 +871,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (!sliceOn) return;                           // nur bei einem echten (animierten) Sieg/Niederlage-Stich
     // #188: Effekt-Intensität aus dem Per-Stich-Score. Niederlage → t.gained 0 → Base (kein Skalieren).
     const { p: fxP, tier: fxTier } = fxIntensity(t.gained || 0);
-    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, hole: sHole, fxP, fxTier, scale: fxScale };
+    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, hole: sHole, holeStar: sHoleStar, streak: t.winStreak || 0, fxP, fxTier, scale: fxScale };
     const spawned = [];
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
     if (win) {   // Gegnerkarte verliert → Schnitt (Standard, auch bei Krit) bzw. Shatter-Explosion (nur mit gekauftem Effekt)

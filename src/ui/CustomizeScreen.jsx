@@ -67,7 +67,7 @@ const FX_CSS = `
 /* #293 Schwarzes Loch: Karte implodiert spiralig, Akkretions-Partikel fallen einwärts. */
 @keyframes ws-bh-implode{0%{transform:scale(1) rotate(0deg);opacity:1}55%{opacity:1}80%{transform:scale(.05) rotate(500deg);opacity:0}100%{transform:scale(.05) rotate(500deg);opacity:0}}
 .ws-bh-implode{animation:ws-bh-implode 2.6s ease-in infinite}
-@keyframes ws-bh-spiral{0%{transform:rotate(var(--a0)) translateX(var(--r0)) rotate(calc(-1*var(--a0)));opacity:0}12%{opacity:1}70%{opacity:1}100%{transform:rotate(calc(var(--a0) + var(--spin))) translateX(0) rotate(calc(-1*var(--a0) - var(--spin)));opacity:0}}
+@keyframes ws-bh-spiral{0%{transform:rotate(var(--a0)) translateX(var(--r0)) rotate(calc(-1*var(--a0)));opacity:0}12%{opacity:1}46%{transform:rotate(calc(var(--a0) + var(--spin))) translateX(var(--rEnd,0px)) rotate(calc(-1*var(--a0) - var(--spin)));opacity:1}62%{opacity:.5}78%{opacity:1}100%{transform:rotate(calc(var(--a0) + var(--spin) + 120deg)) translateX(var(--rEnd,0px)) rotate(calc(-1*var(--a0) - var(--spin) - 120deg));opacity:0}}
 .ws-bh-spiral{animation:ws-bh-spiral 2.6s cubic-bezier(.55,0,.9,.35) infinite}
 @keyframes ws-bh-core{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}20%{transform:translate(-50%,-50%) scale(1);opacity:1}70%{opacity:1}88%{transform:translate(-50%,-50%) scale(.02);opacity:0}100%{opacity:0}}
 .ws-bh-core{animation:ws-bh-core 2.6s ease-in infinite}
