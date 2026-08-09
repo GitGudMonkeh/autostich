@@ -574,9 +574,16 @@ export function Autostich() {
             {/* Wortmarke + Seed in EINER Zeile (spart eine Zeile) — Seed ist jederzeit kopierbar zum Teilen/Herausfordern (#205). */}
             <div className="flex items-center gap-3 flex-wrap min-w-0">
               {/* #UI: Neon-Wortmarke als Bild (wie StartScreen). Das Logo hat einen echten Alpha-Kanal → ohne
-                  mix-blend-mode, blendet sauber auf den dunklen Run-Kopf. */}
-              <img src={logo} alt="AUTOSTICH" draggable="false"
-                className="h-14 w-auto select-none shrink-0" />
+                  mix-blend-mode, blendet sauber auf den dunklen Run-Kopf. Ambient-Glow dahinter wie am Mainscreen
+                  (Cyan links · Violett Mitte · Amber rechts → spiegelt den Wortmarken-Verlauf). */}
+              <div className="relative isolate shrink-0">
+                <div aria-hidden="true" className="pointer-events-none absolute -z-10" style={{ inset: "-45% -22%",
+                  background:
+                    "radial-gradient(140px 78px at 28% 45%, rgba(38,198,230,.22), transparent 70%)," +
+                    "radial-gradient(150px 84px at 50% 40%, rgba(155,130,240,.24), transparent 70%)," +
+                    "radial-gradient(140px 78px at 72% 45%, rgba(242,168,58,.18), transparent 70%)" }} />
+                <img src={logo} alt="AUTOSTICH" draggable="false" className="h-14 w-auto select-none block" />
+              </div>
               {/* Seed-Chip entfällt hier — der Seed steht in der Statistik & im Endscreen. */}
             </div>
             <GlossaryPanel onOpenChange={setGlossaryOpen} className="shrink-0" style={{ width: 36, height: 36, fontSize: "1.05rem" }} />
