@@ -152,7 +152,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
         <div className="relative w-full rounded-2xl px-4 pb-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.violet)}>
-        <PhaseHairline padX={16} padY={0} />
+        <PhaseHairline />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1 pt-6">
           <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Durchlauf {(state.cycle || 0) + 1} · {skills.length}/{SKILL_SLOTS} Slots</div>
@@ -248,8 +248,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {/* #234: Ersetzen-Fenster bei vollen Slots — zeigt alle gehaltenen Skills MIT Beschreibung; gilt für ALLE Archetypen. */}
         {full && pending && (
           <div className="fixed inset-0 z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-            <div className="w-full max-w-md rounded-2xl p-5 max-h-[88dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.violet)}>
-              <PhaseHairline padX={20} padY={20} />
+            <div className="relative w-full max-w-md rounded-2xl p-5 max-h-[88dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.violet)}>
+              <PhaseHairline />
               <div className="text-center mb-3">
                 <div className="text-xs uppercase tracking-widest" style={{ color: "#d4a63a" }}>Slots voll</div>
                 <h3 className="text-lg font-bold mt-1">Welchen Skill ersetzen?</h3>

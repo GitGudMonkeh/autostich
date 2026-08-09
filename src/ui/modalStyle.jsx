@@ -54,12 +54,11 @@ export function phaseCard(accent, base = ["#1b1a24", "#141019"]) {
     boxShadow: `0 0 26px rgba(${rgb},.12), 0 14px 44px rgba(0,0,0,.42)`,
   };
 }
-// Tri-Color-Haarlinie als erstes Kind der (gepolsterten) Phasen-Karte: negative Ränder ziehen sie bündig an
-// die obere Kante über die volle Breite; die runden Kartenecken klippen sie sauber (overflow-y-auto ⇒ auch x).
-export function PhaseHairline({ padX = 24, padY = 24, className = "" }) {
-  // className-Variante (z. B. responsive Ränder via Tailwind: "-mt-4 -mx-4 sm:-mt-6 sm:-mx-6") übersteuert die
-  // Inline-Ränder — für Karten mit breakpoint-abhängigem Padding (Architekt).
-  const base = { height: 3, background: HAIRLINE.background, opacity: 0.9, borderTopLeftRadius: "1rem", borderTopRightRadius: "1rem" };
-  const style = className ? base : { ...base, margin: `-${padY}px -${padX}px 0` };
-  return <div aria-hidden="true" className={`shrink-0 ${className}`} style={style} />;
+// Tri-Color-Haarlinie bündig an der oberen Kante der Phasen-Karte. ABSOLUT positioniert (außerhalb des Flusses),
+// damit sie den Kopfinhalt NICHT nach oben zieht — die Karte behält ihr volles oberes Padding. Die Karte muss
+// `relative` sein; die runden Ecken klippen die Linie (overflow-y-auto ⇒ auch x). padX/padY werden nicht mehr
+// gebraucht (die Linie ankert an der Kante, unabhängig vom Padding).
+export function PhaseHairline({ className = "" }) {
+  return <div aria-hidden="true" className={`absolute top-0 left-0 right-0 z-20 ${className}`}
+    style={{ height: 3, background: HAIRLINE.background, opacity: 0.9, borderTopLeftRadius: "1rem", borderTopRightRadius: "1rem" }} />;
 }

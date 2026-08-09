@@ -26,8 +26,8 @@ export function TargetSelect({ state, onConfirm }) {
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
-      <div className="w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.green)}>
-        <PhaseHairline padX={20} padY={20} />
+      <div className="relative w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.green)}>
+        <PhaseHairline />
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>Rolle · {def.label}</div>
           <h2 className="text-xl font-bold mt-1">Wähle {need} {need === 1 ? "Karte" : "Karten"}</h2>

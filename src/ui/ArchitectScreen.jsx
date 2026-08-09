@@ -514,9 +514,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-start sm:items-center justify-center p-2 sm:p-4"
       style={{ background: "#0c1017dd", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-5xl rounded-2xl p-4 sm:p-6 max-h-[96dvh] overflow-y-auto overlay-card as-panel-arch"
+      <div className="relative w-full max-w-5xl rounded-2xl p-4 sm:p-6 max-h-[96dvh] overflow-y-auto overlay-card as-panel-arch"
         style={{ ...phaseCard(PHASE_ACCENTS.blue, ["#111c27", "#0d1720"]), color: "#e7eef5" }}>
-        <PhaseHairline className="-mt-4 -mx-4 sm:-mt-6 sm:-mx-6" />
+        <PhaseHairline />
 
         {/* Kopf (#UI-Redesign): Titel + Glossar; die Kennzahlen wandern in die Hero-Leiste darunter. */}
         <div className="flex items-center gap-2 min-w-0">
