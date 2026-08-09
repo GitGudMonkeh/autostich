@@ -65,47 +65,53 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           <b className="text-[#e8e8ea]">{owned}</b> / {TOTAL_NODES} Knoten · Meister-Liga {treeComplete(p) ? <b style={{ color: AM }}>frei</b> : `bei ${TOTAL_NODES}/${TOTAL_NODES}`}
         </div>
 
-        {/* Äste als Zeilen. */}
-        {GROUPS.map((b) => {
-          const nOwned = b.nodes.filter((n) => nodeState(p, n.id) === "owned").length;
-          return (
-            <div key={b.key} className="mt-5">
-              <div className="flex items-baseline gap-2 mb-2.5">
-                <span className="text-[15px] font-extrabold" style={{ color: b.color }}>{b.name}</span>
-                <span className="text-[11.5px]" style={{ color: "#a6a6b0" }}>{b.desc}</span>
-                <span className="ml-auto text-[11px] tabular-nums" style={{ color: "#a6a6b0" }}>{nOwned}/{b.nodes.length}</span>
-              </div>
-              <div className="flex items-stretch overflow-x-auto pb-2" style={{ color: b.color }}>
-                {b.nodes.map((n, i) => {
-                  const st = nodeState(p, n.id);
-                  const isOwned = st === "owned", isBuy = st === "buy";
-                  const right = isOwned ? "✓" : (isBuy || st === "lock-sp" ? `${n.cost} SP` : "🔒");
-                  const req = reqText(n, st);
-                  const nodeStyle = isOwned
-                    ? { border: `1px solid ${b.color}`, background: `${b.color}1f` }
-                    : isBuy
-                      ? { border: `1px solid ${AM}`, boxShadow: "0 0 0 1px rgba(242,168,58,.25), 0 0 12px rgba(242,168,58,.15)", cursor: "pointer" }
-                      : { border: "1px solid #26262e", opacity: .5 };
-                  return (
-                    <div key={n.id} className="flex items-stretch">
-                      {i > 0 && <div className="self-center w-4 h-0.5" style={{ background: nodeState(p, b.nodes[i - 1].id) === "owned" ? b.color : "#30303a", opacity: nodeState(p, b.nodes[i - 1].id) === "owned" ? .6 : 1 }} />}
-                      <div className="flex-none w-[120px] rounded-xl p-2.5 flex flex-col gap-1 transition-transform hover:-translate-y-0.5"
-                        style={nodeStyle} onClick={isBuy ? () => buy(n.id) : undefined}>
-                        <div className="flex items-center justify-between gap-1.5">
-                          <span className="text-[11px] font-extrabold tracking-wide" style={{ color: isOwned ? b.color : "#c8c8d0", opacity: isOwned ? 1 : .8 }}>{n.roman}</span>
-                          <span className="text-[11px] font-extrabold tabular-nums" style={{ color: isOwned ? b.color : (isBuy || st === "lock-sp") ? AM : "#a6a6b0" }}>{right}</span>
-                        </div>
-                        <div className="text-[11.5px] font-semibold leading-tight">{n.label}</div>
-                        <div className="text-[10px] leading-tight" style={{ color: "#a6a6b0" }}>{n.detail}</div>
-                        {req && <div className="text-[9.5px] leading-tight" style={{ color: "#a6a6b0" }}>{req}</div>}
+        {/* Äste als 2×2-Raster; Knoten vertikal gestapelt (kein Quer-Scroll, alles auf einer Seite). */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 items-start">
+          {GROUPS.map((b) => {
+            const nOwned = b.nodes.filter((n) => nodeState(p, n.id) === "owned").length;
+            return (
+              <div key={b.key} className="rounded-2xl p-3" style={{ background: "#15141d", border: "1px solid #26262e" }}>
+                <div className="flex items-baseline gap-2 mb-2.5">
+                  <span className="text-[14px] font-extrabold" style={{ color: b.color }}>{b.name}</span>
+                  <span className="text-[10.5px]" style={{ color: "#a6a6b0" }}>{b.desc}</span>
+                  <span className="ml-auto text-[10.5px] tabular-nums" style={{ color: "#a6a6b0" }}>{nOwned}/{b.nodes.length}</span>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {b.nodes.map((n) => {
+                    const st = nodeState(p, n.id);
+                    const isOwned = st === "owned", isBuy = st === "buy";
+                    const right = isOwned ? "✓" : (isBuy || st === "lock-sp" ? `${n.cost} SP` : "🔒");
+                    const req = reqText(n, st);
+                    const rowStyle = isOwned
+                      ? { border: `1px solid ${b.color}`, background: `${b.color}14` }
+                      : isBuy
+                        ? { border: `1px solid ${AM}`, boxShadow: "0 0 0 1px rgba(242,168,58,.2), 0 0 10px rgba(242,168,58,.12)", cursor: "pointer" }
+                        : { border: "1px solid #26262e", opacity: .5 };
+                    const badgeStyle = isOwned
+                      ? { background: `${b.color}33`, color: b.color }
+                      : isBuy
+                        ? { border: `1.5px solid ${AM}`, color: AM }
+                        : { border: "1px solid #2e2d38", color: "#5c5b66" };
+                    return (
+                      <div key={n.id} onClick={isBuy ? () => buy(n.id) : undefined}
+                        className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-transform hover:-translate-y-px"
+                        style={rowStyle}>
+                        <span className="flex-none grid place-items-center rounded-md text-[11px] font-extrabold tracking-wide"
+                          style={{ width: 24, height: 24, ...badgeStyle }}>{n.roman}</span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-[11.5px] font-semibold leading-tight">{n.label}</span>
+                          <span className="block text-[9.5px] leading-tight" style={{ color: "#a6a6b0" }}>{n.detail}{req ? ` · ${req}` : ""}</span>
+                        </span>
+                        <span className="flex-none text-[11px] font-extrabold tabular-nums"
+                          style={{ color: isOwned ? b.color : (isBuy || st === "lock-sp") ? AM : "#a6a6b0" }}>{right}</span>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
 
         {/* Legende. */}
         <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center mt-6 text-[11px]" style={{ color: "#a6a6b0" }}>
