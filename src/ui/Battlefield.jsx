@@ -475,6 +475,7 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
 export function BurnBeamFx({ cardEl, color, beamDur, sparkDur, seed, delay = 0, intensity = 0, scale = 1, streak = 0, panelRef = null }) {
   const HOT = "#ff7a2f";                                  // Hitze-Akzent (Ember-Orange)
   const streakK = clamp(streak / 12, 0, 1);               // 0..1: Serien-Eskalation
+  const turbo = clamp(scale, 0.45, 1);                    // fxScale: 1 = ruhig, 0.45 = max Turbo → Strahl/Loch/Funken schneller
   // Der Strahl kommt von der BATTLEFIELD-Oberkante (nicht der Kartenkante): einmal die px-Distanz Panel-Oberkante →
   // Kartenmitte messen und den Strahl darüber spannen (transform-origin top → er fährt über die ganze Höhe herab).
   const rootRef = useRef(null);
@@ -488,7 +489,7 @@ export function BurnBeamFx({ cardEl, color, beamDur, sparkDur, seed, delay = 0, 
   const CC = 72;                                          // Kartenmitte im 104×144-Slot (Ziel des Strahls)
   const beamTop = topDist != null ? CC - topDist : 0;     // Strahl-Oberkante = Panel-Oberkante (Fallback: Kartenkante)
   const beamH = topDist != null ? topDist : 74;           // Länge: Panel-Oberkante → Kartenmitte
-  const beamMs = Math.round(beamDur * (1 + streakK * 0.55)); // Strahl hält mit der Serie länger → persistenter
+  const beamMs = Math.round(beamDur * (1 + streakK * 0.55) * turbo); // Serie: länger · Turbo: kürzer (an die Spielgeschwindigkeit gekoppelt)
   const hitAt = delay + Math.round(beamMs * 0.36);        // Strahl erreicht die Mitte → Loch/Funken/Verblassen zünden
   const holeMs = Math.round(beamMs * 0.9);
   const fadeMs = Math.round(beamMs * 0.8);
