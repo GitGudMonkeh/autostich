@@ -110,13 +110,16 @@ const CRIT_TIER_COLORS = ["#e879f9", "#e879f9", "#f472d0", "#ffc978", "#fff0b0"]
 // Normale Siege erreichen nur tier≥2 (BRUTAL+); die unteren Einträge sind nur Fallback.
 const WIN_TIER_COLORS = ["#5ab87a", "#5ab87a", "#5ab87a", "#8fce6a", "#d4a63a"];
 const JITTER_X = 14, JITTER_Y = 10; // moderate Streuung (px); Panel ist overflow-hidden, nichts läuft raus
+// #: Score-Zahlen fächern vertikal in eine aufsteigende Spalte (statt sich auf demselben Punkt zu stapeln). Jede neue
+// Zahl rotiert durch diese Y-Versätze (px, um die Score-Zone) → deutlich weniger Overlap bei schnellen Stichen.
+const FLOAT_LANES = [0, -30, 30, -58, 58];
 const FORM_LINGER_MS = 1500; // Formations-Float bleibt ~1,5 s länger stehen (über den nächsten Stich hinaus) und klingt dann aus
 // Entzerrung bei Ballung: spät in einem guten Lauf spannen die Stich-Gewinne mehrere Größenordnungen
 // (ein Stich +5 Mio, der nächste +8.000) → die kleinen Score-Floats sind nur Rauschen und überlappen alles.
 // Regel: NUR wenn viele Floats gleichzeitig leben („zu voll") UND ein Gewinn winzig gegenüber dem laufenden
 // Größenmaßstab ist, wird sein Float unterdrückt. Der Score selbst zählt unverändert weiter — nur das Popup entfällt.
-const FLOAT_DECLUTTER_MIN = 3;    // erst ab so vielen aktiven Score-Floats wird ausgedünnt
-const FLOAT_MIN_RATIO     = 0.08; // Float nur zeigen, wenn Gewinn ≥ 8 % des laufenden Maßstabs
+const FLOAT_DECLUTTER_MIN = 2;    // erst ab so vielen aktiven Score-Floats wird ausgedünnt (#: früher 3 → früher entzerren)
+const FLOAT_MIN_RATIO     = 0.14; // Float nur zeigen, wenn Gewinn ≥ 14 % des laufenden Maßstabs (#: früher 8 % → mehr Mini-Gewinne raus)
 const FLOAT_SCALE_DECAY   = 0.9;  // Maßstab = max(Gewinn, Maßstab·DECAY) → folgt der jüngsten Größenordnung, vergisst Einmal-Spitzen langsam
 // #110: Karten-Aufdeck-Sound — DEZENTE Turbo-Kopplung der Abspielrate (leicht justierbar). Rate>1 = kürzer/schneller.
 const CARDFLIP_RATE_REF = 700;  // ms-Referenz: unter diesem Stich-Takt wird der Sound schneller (bei ~1× bleibt Rate 1)
@@ -1388,6 +1391,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const floatTimers = useRef([]);
   const floatScaleRef = useRef(0);  // laufender Größenmaßstab der Gewinne (decaying max, für die Entzerrung)
   const floatCountRef = useRef(0);  // aktuell aktive Score-Floats (für die „zu voll"-Schwelle)
+  const floatLaneSeq = useRef(0);   // #: rotierender Spur-Index für die vertikale Staffelung der Score-Zahlen
   useEffect(() => () => floatTimers.current.forEach(clearTimeout), []); // Timer bei Unmount aufräumen
   useEffect(() => {
     if (!t) { seenTrick.current = -1; floatScaleRef.current = 0; floatCountRef.current = 0; setFloats([]); return; } // Menü/neuer Lauf → Pool + Maßstab leeren
@@ -1438,17 +1442,23 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const scale = floatScaleRef.current = Math.max(t.gained, floatScaleRef.current * FLOAT_SCALE_DECAY);
       // Entzerrung: bei Ballung („zu voll") winzige Gewinne (relativ zum Maßstab) NICHT als Float zeigen — Score zählt trotzdem.
       const declutter = floatCountRef.current >= FLOAT_DECLUTTER_MIN && t.gained < scale * FLOAT_MIN_RATIO;
-      if (!declutter)
-        entries.push({ id: `s${t.trickNo}`, zone: "score", dur, seed: t.trickNo * 2, value: t.gained,
+      if (!declutter) {
+        // #: Score-Zahlen kürzer sichtbar als der Formations-Float (dur) — im Turbo enger an flipMs gekoppelt, damit sie
+        // schneller weg sind, wenn die Stiche schnell kommen (weniger gleichzeitig). Zusätzlich rotierende Spur (lane).
+        const scoreDur = Math.round(clamp(flipMs * 0.8, 340, 720) + clamp(flipMs * 1.6, 420, 1000));
+        entries.push({ id: `s${t.trickNo}`, zone: "score", dur: scoreDur, seed: t.trickNo * 2, value: t.gained,
+                       lane: (floatLaneSeq.current++) % FLOAT_LANES.length,
                        text: `+${fmtScore(t.gained)}`, color: critC, icons: hitIcons }); // #184: Score ganzzahlig (floor), keine Nachkommastelle
+      }
     }
     if (!entries.length) return;
-    setFloats((cur) => { const next = [...cur, ...entries].slice(-6); floatCountRef.current = next.length; return next; }); // Pool gedeckelt — kein unbegrenztes Stapeln
+    setFloats((cur) => { const next = [...cur, ...entries].slice(-4); floatCountRef.current = next.length; return next; }); // Pool gedeckelt (#: 6→4) — kein unbegrenztes Stapeln
     const ids = entries.map((e) => e.id);
+    const removeAfter = Math.max(...entries.map((e) => e.dur)); // #: nach der EIGENEN (kürzeren) Score-Dauer aufräumen → floatCount fällt schneller
     const tm = setTimeout(() => {
       setFloats((cur) => { const next = cur.filter((f) => !ids.includes(f.id)); floatCountRef.current = next.length; return next; });
       floatTimers.current = floatTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen → kein unbegrenztes Wachstum über einen langen Lauf
-    }, dur);
+    }, removeAfter);
     floatTimers.current.push(tm);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
@@ -1750,7 +1760,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             aufeinanderfolgende überlappen nur leicht statt exakt zu stapeln. Pool gedeckelt. */}
         {floats.map((f) => {
           const z = FLOAT_ZONES[f.zone];
-          const dx = fjitter(f.seed, JITTER_X), dy = fjitter(f.seed * 1.7 + 3, JITTER_Y);
+          // #: Score-Zahlen fächern über die Spur (lane) vertikal auf; nur noch kleiner Rest-Jitter (statt voller JITTER_Y),
+          // damit die aufsteigende Spalte sauber lesbar bleibt statt sich zu stapeln.
+          const laneY = f.lane != null ? FLOAT_LANES[f.lane] : 0;
+          const dx = fjitter(f.seed, JITTER_X), dy = laneY + fjitter(f.seed * 1.7 + 3, f.lane != null ? 4 : JITTER_Y);
           const pos = { top: `calc(${z.top} + ${dy}px)` };
           if (z.left != null)  pos.left  = `calc(${z.left} + ${dx}px)`;
           if (z.right != null) pos.right = `calc(${z.right} + ${dx}px)`;
