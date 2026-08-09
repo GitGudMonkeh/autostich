@@ -19,7 +19,7 @@ function mockLS() {
     clear: () => m.clear(),
   };
 }
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true };
+const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxFrameGlow: false, fxHoloSwipe: false, fxHologrid: false };
 
 describe("rankHighscores", () => {
   it("sortiert nach Score↓ und behält die Top 20", () => {
@@ -112,19 +112,29 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.nodes).toEqual({});
     expect(p.onboarding).toBe(0);
     expect(p.spRuns).toBe(0);
-    expect(p.schemaVersion).toBe(2);
+    expect(p.ownedCosmetics).toEqual({});
+    expect(p.schemaVersion).toBe(3);
   });
 
-  it("Migration v1 → v2 seedet die neuen Felder ohne Altfelder zu verlieren", () => {
+  it("Migration v1 → v3 seedet die neuen Felder ohne Altfelder zu verlieren", () => {
     const v1 = { schemaVersion: 1, games: 4, bestScore: 700, bestStreak: 5 };
     const m = migrateProfile(v1);
-    expect(m.schemaVersion).toBe(2);
+    expect(m.schemaVersion).toBe(3);
     expect(m.games).toBe(4);
     expect(m.bestStreak).toBe(5);         // Altfeld erhalten
     expect(m.stichPoints).toBe(0);
     expect(m.nodes).toEqual({});
     expect(m.onboarding).toBe(0);
     expect(m.spRuns).toBe(0);
+    expect(m.ownedCosmetics).toEqual({}); // v2 → v3: Deck-Werkstatt-Besitz
+  });
+
+  it("Migration v2 → v3 ergänzt die Kosmetik-Besitz-Map", () => {
+    const m = migrateProfile({ schemaVersion: 2, stichPoints: 7, nodes: { B1: 1 } });
+    expect(m.schemaVersion).toBe(3);
+    expect(m.stichPoints).toBe(7);        // Altfeld erhalten
+    expect(m.nodes).toEqual({ B1: 1 });
+    expect(m.ownedCosmetics).toEqual({});
   });
 
   it("gespeicherte SP-/Baum-/Onboarding-Werte überleben migrateProfile (nicht überschrieben)", () => {
@@ -201,7 +211,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
 
   it("saveProfile rundet durch localStorage und stempelt die Schema-Version", () => {
     const saved = saveProfile({ stichPoints: 20, nodes: { A1: 1 }, onboarding: 6 });
-    expect(saved.schemaVersion).toBe(2);
+    expect(saved.schemaVersion).toBe(3);
     const p = loadProfile();
     expect(p.stichPoints).toBe(20);
     expect(p.nodes).toEqual({ A1: 1 });

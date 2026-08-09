@@ -41,6 +41,19 @@ import bf3Desktop from "../assets/battlefields/bf_3/desktop.jpg"; // #190 bf_3 �
 import bf3Mobile  from "../assets/battlefields/bf_3/mobile.jpg";  // (4:3)
 import bf4Desktop from "../assets/battlefields/bf_4/desktop.jpg"; // #190 bf_4 „Mondsee" (ultrawide)
 import bf4Mobile  from "../assets/battlefields/bf_4/mobile.jpg";  // (4:3)
+// Deck-Werkstatt Starter-Themes (kaufbar, je Element 1 SP): jedes Theme = Deck-Paar + Battlefield.
+import sunsetFront from "../assets/cards/decks_player/deck_sunset/front.png"; // Sunset Rider
+import sunsetBack  from "../assets/cards/decks_player/deck_sunset/back.png";
+import lofiFront   from "../assets/cards/decks_player/deck_lofi/front.png";   // Lofi Nights
+import lofiBack    from "../assets/cards/decks_player/deck_lofi/back.png";
+import kaijuFront  from "../assets/cards/decks_player/deck_kaiju/front.png";  // Neon Kaiju
+import kaijuBack   from "../assets/cards/decks_player/deck_kaiju/back.png";
+import bfSunsetDesktop from "../assets/battlefields/bf_sunset/desktop.jpg";
+import bfSunsetMobile  from "../assets/battlefields/bf_sunset/mobile.jpg";
+import bfLofiDesktop   from "../assets/battlefields/bf_lofi/desktop.jpg";
+import bfLofiMobile    from "../assets/battlefields/bf_lofi/mobile.jpg";
+import bfKaijuDesktop  from "../assets/battlefields/bf_kaiju/desktop.jpg";
+import bfKaijuMobile   from "../assets/battlefields/bf_kaiju/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -57,6 +70,10 @@ export const DECK_ASSETS = {
   deck_c7: { front: c7Front,     back: c7Back },
   deck_c8: { front: c8Front,     back: c8Back },
   deck_c9: { front: c9Front,     back: c9Back },
+  // Deck-Werkstatt Starter-Themes (kaufbar):
+  deck_sunset: { front: sunsetFront, back: sunsetBack },
+  deck_lofi:   { front: lofiFront,   back: lofiBack },
+  deck_kaiju:  { front: kaijuFront,  back: kaijuBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -67,6 +84,10 @@ export const BATTLEFIELD_ASSETS = {
   bf_2: { desktop: bf2Desktop, mobile: bf2Mobile },
   bf_3: { desktop: bf3Desktop, mobile: bf3Mobile },
   bf_4: { desktop: bf4Desktop, mobile: bf4Mobile },
+  // Deck-Werkstatt Starter-Themes (kaufbar):
+  bf_sunset: { desktop: bfSunsetDesktop, mobile: bfSunsetMobile },
+  bf_lofi:   { desktop: bfLofiDesktop,   mobile: bfLofiMobile },
+  bf_kaiju:  { desktop: bfKaijuDesktop,  mobile: bfKaijuMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;

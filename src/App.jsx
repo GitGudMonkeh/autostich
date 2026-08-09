@@ -682,7 +682,7 @@ export function Autostich() {
       {showStats && <StatsScreen onClose={() => setShowStats(false)} onPlaySeed={(seed) => { setShowStats(false); startRun(seed); }} />}
 
       {showCustomize && (
-        <CustomizeScreen options={options} profile={profile} onChoose={changeOptions} onClose={() => setShowCustomize(false)} />
+        <CustomizeScreen options={options} profile={profile} onChoose={changeOptions} onProfileChange={(np) => setProfile(saveProfile(np))} onClose={() => setShowCustomize(false)} />
       )}
 
       {showDevSetup && (

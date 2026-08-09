@@ -84,14 +84,17 @@ export function loadRunHistory() {
 // und brauchen keine Versionierung.
 // v2 (Progression/Upgrades, docs §9): das Profil bekommt die SP-/Baum-/Onboarding-Felder. Rein additiv, aber
 // als eigene Schema-Epoche markiert (Migrations-Anker für spätere Baum-Umformungen).
-export const PROFILE_SCHEMA_VERSION = 2;
+export const PROFILE_SCHEMA_VERSION = 3;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
   hadNoRerollRun: false, // #214: sticky Challenge-Flag (einmal true → bleibt); noReroll = Sparfuchs deck_c3. (#267: hadMonoStatRun entfernt — die Stat-Phase ist weg.)
   monoArchetypeRuns: {}, hadAllArchetypesRun: false, // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
   // Progression/Upgrades (docs §1/§4/§6): SP-Guthaben + ausgegeben (Respec/Anzeige), gekaufte Baum-Knoten
   // ({[id]: level}), weiteste Onboarding-Stufe (0..6) und Zähler der SP-Läufe (Treue-Drip-Basis).
-  stichPoints: 0, stichSpent: 0, nodes: {}, onboarding: 0, spRuns: 0 };
+  stichPoints: 0, stichSpent: 0, nodes: {}, onboarding: 0, spRuns: 0,
+  // Deck-Werkstatt (#deckshop): mit SP gekaufte Kosmetik-Elemente als Map "theme:element" → true
+  // (z. B. "sunset:deck", "lofi:frameGlow"). Rein additiv, sticky (einmal gekauft → bleibt).
+  ownedCosmetics: {} };
 
 /* #229 T11: reiner, stufenweiser Migrations-Switch für den Profil-Blob (kein localStorage → unit-testbar).
    Migriert von der gespeicherten Version hoch bis zur aktuellen; jeder Block transformiert v → v+1 und ist
@@ -116,6 +119,12 @@ export function migrateProfile(p) {
     if (typeof out.spRuns !== "number") out.spRuns = 0;
     v = 2;
   }
+  if (v < 3) {
+    // v2 → v3 (Deck-Werkstatt): kaufbare Kosmetik-Elemente. Rein additiv — leere Besitz-Map ergänzen
+    // (loadProfile füllt sie ohnehin über DEFAULT_PROFILE; hier explizit für Selbst-Konsistenz).
+    if (!out.ownedCosmetics || typeof out.ownedCosmetics !== "object") out.ownedCosmetics = {};
+    v = 3;
+  }
   out.schemaVersion = v;
   return out;
 }
@@ -129,6 +138,7 @@ export function loadProfile() {
         return { ...DEFAULT_PROFILE, ...p,
           archetypesEver: Array.isArray(p.archetypesEver) ? p.archetypesEver : [],
           monoArchetypeRuns: (p.monoArchetypeRuns && typeof p.monoArchetypeRuns === "object") ? p.monoArchetypeRuns : {},
+          ownedCosmetics: (p.ownedCosmetics && typeof p.ownedCosmetics === "object") ? p.ownedCosmetics : {},
           nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {} };
       }
     }
@@ -222,6 +232,8 @@ export function recordRun(record) {
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
     onboarding: onboardingAfter(onboardingBefore, record),
     spRuns: n0(p.spRuns) + (isSpRun(record, onboardingBefore) ? 1 : 0),
+    // #deckshop: gekaufte Kosmetik bleibt über Läufe erhalten (recordRun baut das Profil neu → mittragen).
+    ownedCosmetics: (p.ownedCosmetics && typeof p.ownedCosmetics === "object") ? p.ownedCosmetics : {},
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
   return { history, profile };
@@ -234,7 +246,7 @@ export function recordRun(record) {
    `deckId`/`battlefieldId` (#190): gewähltes kosmetisches Deck-/Battlefield-Skin (Default = aktueller
    Look). Merge über Default degradiert Alt-Daten sauber; die UI fällt zusätzlich defensiv auf "default"
    zurück, falls ein gespeicherter Skin (noch) nicht existiert oder nicht mehr freigeschaltet ist. */
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true }; // #110/#111 Sound + #190 Kosmetik + #200 Effekte-reduziert (auto|an|aus) + #207 Haptik (nur Mobile) + #243 Baumodus-Toggles (Kombi-/Formations-Sicht) merken + #252 StatusRail-Panels (Score-Quellen/Score-Verlauf) default eingeklappt, über Runs gemerkt
+const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxFrameGlow: false, fxHoloSwipe: false, fxHologrid: false }; // #110/#111 Sound + #190 Kosmetik + #200 Effekte-reduziert (auto|an|aus) + #207 Haptik (nur Mobile) + #243 Baumodus-Toggles (Kombi-/Formations-Sicht) merken + #252 StatusRail-Panels (Score-Quellen/Score-Verlauf) default eingeklappt, über Runs gemerkt
 export function loadOptions() {
   try {
     const raw = localStorage.getItem(k("as_options"));

@@ -41,6 +41,11 @@ export const DECK_DEFS = {
   deck_c8: { id: "deck_c8", name: "Reine Pflanze", unlock: { kind: "monoArchetypeRun", archetype: "plant" } },
   deck_c9: { id: "deck_c9", name: "Element-Bund",  unlock: { kind: "allArchetypesRun" } },
   // (Rang/Großmeister-Decks entfernt mit dem Master-Rang-System — evtl. später neue Decks mit eigenem Design.)
+  // Deck-Werkstatt Starter-Themes (#deckshop): pro Element mit SP kaufbar. „unlocked" = im Besitz
+  // (profile.ownedCosmetics[ownKey]); die Theme-Registry (game/themes.js) treibt Kauf/Anzeige.
+  deck_sunset: { id: "deck_sunset", name: "Sunset Rider", unlock: { kind: "buy", ownKey: "sunset:deck" } },
+  deck_lofi:   { id: "deck_lofi",   name: "Lofi Nights",  unlock: { kind: "buy", ownKey: "lofi:deck" } },
+  deck_kaiju:  { id: "deck_kaiju",  name: "Neon Kaiju",   unlock: { kind: "buy", ownKey: "kaiju:deck" } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -51,6 +56,10 @@ export const BATTLEFIELD_DEFS = {
   bf_3:    { id: "bf_3",    name: "Neon City",       unlock: { kind: "games", n: 30 } },
   bf_4:    { id: "bf_4",    name: "Mondsee",         unlock: { kind: "games", n: 40 } },
   // Battlefields KOMPLETT (4 Progressionen + Default). Battlefields haben KEINE Challenge-Varianten (Issue #190).
+  // Deck-Werkstatt Starter-Themes (#deckshop): mit SP kaufbar, an das jeweilige Deck-Theme gekoppelt.
+  bf_sunset: { id: "bf_sunset", name: "Sunset Rider · Battlefield", unlock: { kind: "buy", ownKey: "sunset:bf" } },
+  bf_lofi:   { id: "bf_lofi",   name: "Lofi Nights · Battlefield",  unlock: { kind: "buy", ownKey: "lofi:bf" } },
+  bf_kaiju:  { id: "bf_kaiju",  name: "Neon Kaiju · Battlefield",   unlock: { kind: "buy", ownKey: "kaiju:bf" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".
@@ -71,6 +80,7 @@ export function isUnlocked(def, profile) {
     case "noRerollRun": return !!p.hadNoRerollRun; // #214 Sparfuchs
     case "monoArchetypeRun": return !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]); // #215: Lauf nur mit dieser Fraktion
     case "allArchetypesRun": return !!p.hadAllArchetypesRun;                                     // #215: Lauf mit allen vier
+    case "buy":         return !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);               // #deckshop: mit SP gekauft (im Besitz)
     default:            return true;
   }
 }
@@ -106,6 +116,10 @@ export function unlockProgress(def, profile) {
     case "allArchetypesRun": {
       const done = !!p.hadAllArchetypesRun;
       return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf mit allen vier Elementen ab" };
+    }
+    case "buy": {
+      const done = !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);
+      return { done, cur: done ? 1 : 0, target: 1, label: "In der Deck-Werkstatt kaufen (1 SP)" };
     }
     default:
       return { done: true, cur: 1, target: 1, label: "" };
