@@ -170,15 +170,16 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         </button>
         {normalOpen && (
           <div className="flex flex-col gap-2.5">
-            <div className={onDevRun ? "grid grid-cols-2 gap-2.5" : ""}>
+            <div className="grid grid-cols-2 gap-2.5">
               <button onClick={onStart}
                 className="as-guide-glow w-full rounded-lg px-4 py-2.5 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
                 style={{ background: "#0e1b22", border: "1px solid #5fe0f7", color: "#a8ecf7" }}>Normal</button>
-              {onDevRun && (
-                <button onClick={onDevRun}
-                  className="rounded-lg px-4 py-2.5 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
-                  style={{ background: "#1c1a14", border: `1px solid ${AM}66`, color: AM }}>⚙ Dev Run</button>
-              )}
+              {/* Challenge — noch gesperrt (Platzhalter, wird später mit Leben gefüllt). Ersetzt den Dev-Run-Button. */}
+              <button disabled aria-label="Challenge (gesperrt)" title="Bald verfügbar"
+                className="w-full rounded-lg px-4 py-2.5 text-[15px] font-extrabold flex items-center justify-center gap-1.5 cursor-not-allowed"
+                style={{ background: "#1c1012", border: "1px solid #e0555566", color: "#e07a7a", opacity: 0.7 }}>
+                <span aria-hidden="true">🔒</span> Challenge
+              </button>
             </div>
             {/* #205: Seed einfügen — jetzt im Normaler-Lauf-Aufklapper unter Normal/Dev. */}
             {onPlaySeed && (
