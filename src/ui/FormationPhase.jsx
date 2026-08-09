@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from "react";
-import { PANEL_BG } from "./modalStyle.jsx";
+import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { SKILL_DEFS, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
@@ -128,7 +128,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       <div className="w-full max-w-4xl">
         <div className="w-full rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card as-panel"
-          style={{ background: PANEL_BG, border: "1px solid #33333e" }}>
+          style={phaseCard(PHASE_ACCENTS.green)}>
+        <PhaseHairline padX={20} padY={20} />
         {/* Kopf (#UI Aufstellung-Redesign): Titel + Glossar, Durchlauf-Score direkt darunter. */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="min-w-0">

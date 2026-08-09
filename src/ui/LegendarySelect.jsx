@@ -1,5 +1,5 @@
 import { SKILL_DEFS, ARCHETYPE_META, archetypeOf } from "../game/skills.js";
-import { PANEL_BG } from "./modalStyle.jsx";
+import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 
@@ -18,7 +18,8 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-2xl">
-        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: PANEL_BG, border: `1px solid ${GOLD}77`, boxShadow: `0 0 30px ${GOLD}33` }}>
+        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.gold)}>
+          <PhaseHairline padX={24} padY={24} />
           <GlossaryPanel className="absolute top-3 right-3 z-10" />
           {state.lastCycleScore != null && <div className="mb-3"><RoundScoreBadge state={state} /></div>}
           <div className="text-[10px] uppercase tracking-[0.2em] font-mono mb-1" style={{ color: GOLD }}>Legendär · einmalige Wahl</div>

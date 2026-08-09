@@ -19,6 +19,7 @@ import { GlossaryPanel } from "./Glossary.jsx";
 import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Marker auch am Architekt-Brett
 import glacierIcon from "./assets/glacier.webp";
 import { useEscape } from "./useEscape.js";
+import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 
 /* ============================================================
    Der Architekt (#202) — Präsentations-Rework (#261): perk-artige Auswahl + EIN durchgehender Verschiebe-Flow.
@@ -514,7 +515,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     <div className="fixed inset-0 overlay-root z-20 flex items-start sm:items-center justify-center p-2 sm:p-4"
       style={{ background: "#0c1017dd", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-5xl rounded-2xl p-4 sm:p-6 max-h-[96dvh] overflow-y-auto overlay-card as-panel-arch"
-        style={{ background: "#111c27", border: `1px solid ${CAT.value.color}55`, color: "#e7eef5" }}>
+        style={{ ...phaseCard(PHASE_ACCENTS.blue, ["#111c27", "#0d1720"]), color: "#e7eef5" }}>
+        <PhaseHairline className="-mt-4 -mx-4 sm:-mt-6 sm:-mx-6" />
 
         {/* Kopf (#UI-Redesign): Titel + Glossar; die Kennzahlen wandern in die Hero-Leiste darunter. */}
         <div className="flex items-center gap-2 min-w-0">

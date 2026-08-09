@@ -29,3 +29,37 @@ export const STICKY_HEAD_BG = "#1b1a24";
 // In-Run-Overlays (Skill-/Perk-/Legendär-Wahl, Formation, Ziel-Auswahl …): NUR die flache Panel-Füllung auf einen
 // gemeinsamen Menü-Familien-Ton ziehen. KEIN Rahmen/Haarlinie/Glow, Ränder + Skill-/Perk-/Gebäude-/Kartenfarben bleiben.
 export const PANEL_BG = "#1b1a24";
+
+/* ---- Phasen-Schale (In-Run-Overlays an die Hub-Bildsprache angeglichen) ----
+   Die Phasen behalten ihre Farb-Identität (Perk/Skill violett, Aufstellung/Ziel grün, Gletscher eisblau,
+   Legendär gold, Architekt blau); der Skin macht sie zur Familie, ohne sie gleichzuschalten. NUR die Schale
+   (Hintergrund/Rahmen/Schein + gemeinsame Tri-Color-Haarlinie) kommt von hier — das Innenleben der Screens
+   (Grids, Karten, Buttons, Klappfelder) bleibt unverändert. */
+export const PHASE_ACCENTS = {
+  violet: { c: "#9b82f0", rgb: "155,130,240" },
+  green:  { c: "#5ab87a", rgb: "90,184,122" },
+  ice:    { c: "#7fdcff", rgb: "127,220,255" },
+  gold:   { c: "#d4a63a", rgb: "212,166,58" },
+  blue:   { c: "#3b7dbe", rgb: "59,125,190" },
+};
+// Schalen-Style: Akzent-Glow oben + Verlaufsfläche + Akzent-Rahmen + weicher Außenschein. `base` = Verlaufs-
+// Grundtöne (Default = Menü-Familienton; der Architekt reicht seinen blauen Grund durch).
+export function phaseCard(accent, base = ["#1b1a24", "#141019"]) {
+  const rgb = accent.rgb;
+  return {
+    background:
+      `radial-gradient(360px 150px at 50% 0%, rgba(${rgb},.14), transparent 70%),` +
+      `linear-gradient(180deg,${base[0]},${base[1]})`,
+    border: `1px solid rgba(${rgb},.42)`,
+    boxShadow: `0 0 26px rgba(${rgb},.12), 0 14px 44px rgba(0,0,0,.42)`,
+  };
+}
+// Tri-Color-Haarlinie als erstes Kind der (gepolsterten) Phasen-Karte: negative Ränder ziehen sie bündig an
+// die obere Kante über die volle Breite; die runden Kartenecken klippen sie sauber (overflow-y-auto ⇒ auch x).
+export function PhaseHairline({ padX = 24, padY = 24, className = "" }) {
+  // className-Variante (z. B. responsive Ränder via Tailwind: "-mt-4 -mx-4 sm:-mt-6 sm:-mx-6") übersteuert die
+  // Inline-Ränder — für Karten mit breakpoint-abhängigem Padding (Architekt).
+  const base = { height: 3, background: HAIRLINE.background, opacity: 0.9, borderTopLeftRadius: "1rem", borderTopRightRadius: "1rem" };
+  const style = className ? base : { ...base, margin: `-${padY}px -${padX}px 0` };
+  return <div aria-hidden="true" className={`shrink-0 ${className}`} style={style} />;
+}
