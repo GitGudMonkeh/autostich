@@ -46,6 +46,7 @@ import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale
 import { UpgradeScreen } from "./ui/UpgradeScreen.jsx"; // Progression-Vorschau: Upgrade-Baum-Screen
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
+import { THEMES, elementOwned } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
@@ -373,6 +374,15 @@ export function Autostich() {
   const activeBfId   = resolveSkinId(BATTLEFIELD_DEFS, options.battlefieldId, profile);
   const deckSkin = deckAssets(activeDeckId);
   const bfSkin   = battlefieldAssets(activeBfId);
+  // #deckshop: Deck-Werkstatt-Animationen — nur wirksam, wenn im aktiven Deck-Theme besessen UND per Option an.
+  const activeTheme = THEMES.find((t) => t.deckId === activeDeckId) || null;
+  const fxOwnOn = (fx, opt) => !!options[opt] && !!activeTheme && activeTheme.els.includes(fx) && elementOwned(profile, activeTheme, fx);
+  const deckFx = {
+    deckA1: activeTheme?.a1 || null,
+    fxFrameGlow: fxOwnOn("frameGlow", "fxFrameGlow"),
+    fxHoloSwipe: fxOwnOn("holoSwipe", "fxHoloSwipe"),
+    fxHologrid:  fxOwnOn("hologrid",  "fxHologrid"),
+  };
 
   function beginRun() {
     clearActiveRun(); setResumable(null); // frischer Lauf ersetzt einen evtl. gespeicherten Resume-Snapshot
@@ -601,6 +611,7 @@ export function Autostich() {
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
+                deckA1={deckFx.deckA1} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxHologrid={deckFx.fxHologrid}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}

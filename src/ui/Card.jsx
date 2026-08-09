@@ -9,7 +9,7 @@ import { plantNumberColor, PLANT, PLANT_RIPE } from "./indicators/vocab.js";
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
 // #259: reiner Präsentations-Leaf mit teuren Bild-Layern → React.memo überspringt Re-Render bei unveränderten
 // (primitiven) Props. Beim Auto-Play/Timer-Takt rendern nur die tatsächlich wechselnden Karten neu, nicht alle.
-function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null }) {
+function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null, fxGlow = null, fxSwipe = false }) {
   const color = suitColor(suit);
   // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
   // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
@@ -81,6 +81,17 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
         boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, greenGlow, forgedGlow, brandGlow, colonizedGlow, ambientEdge].filter(Boolean).join(", "),
       }}
     >
+      {/* Deck-Werkstatt (#deckshop): Frame Glow = pulsierender Innen-Rahmen in der Deck-Hauptfarbe; Holo Swipe =
+          diagonaler Schimmer. Rein kosmetisch, liegen unter Zahl/Markern (crisp lesbar), auf die eigene Karte gekoppelt. */}
+      {fxGlow && (
+        <div aria-hidden="true" className="as-deck-frameglow absolute inset-0 rounded-xl pointer-events-none" style={{ "--deck-a1": fxGlow }} />
+      )}
+      {fxSwipe && (
+        <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          <div className="as-deck-swipe absolute" style={{ top: "-60%", left: 0, width: "38%", height: "220%",
+            background: "linear-gradient(90deg,transparent,rgba(255,255,255,.22),rgba(120,220,255,.12),transparent)" }} />
+        </div>
+      )}
       {permBoost > 0 && (
         <div className="absolute top-1.5 right-2 text-[11px] font-bold px-1 rounded"
           style={{ color: "#8a7de0", background: "#8a7de022" }}

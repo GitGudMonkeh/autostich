@@ -454,6 +454,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
   // Defaults = bestehende Karten → ohne Auswahl identisches Verhalten (Gegner-Deck bleibt OPP_DECK_SKINS).
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
+  // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
+  // Frame Glow (Karte) + Hologrid (Gitterlinien im Battlefield); Holo Swipe = Schimmer über die eigene Karte.
+  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
   const reduced = useReducedFx(reducedFx);
@@ -544,7 +547,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
           stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
           ionStacks={t.pCard.ionStacks || 0} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} allyColor={allyColorFor(t.pCard.suit)}
-          frontImage={deckFront} />
+          frontImage={deckFront} fxGlow={fxFrameGlow ? deckA1 : null} fxSwipe={fxHoloSwipe} />
   );
   // #186: die Gegnerkarte trägt den Skin-Front-Rahmen der kommenden Auswahl (Holo entfällt); Zahl/Effekte darüber.
   const oCardEl = t && (
@@ -843,6 +846,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             <img src={battlefield.desktop} alt="" className="w-full h-full object-cover" />
           </picture>
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(12,12,16,0.55) 0%, rgba(12,12,16,0.38) 45%, rgba(12,12,16,0.62) 100%)" }} />
+        </div>
+      )}
+      {/* #deckshop Hologrid: animiertes Perspektiv-Gitter am unteren Feldrand in der Deck-Hauptfarbe (deckA1).
+          Liegt über dem Battlefield-Bild (z-1), aber hinter Glut/Frost/Blitz (z-0/2) und Karten (z-10). */}
+      {fxHologrid && deckA1 && (
+        <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>
+          <div className={reduced ? "absolute" : "as-deck-gridmove absolute"} style={{
+            left: "-20%", right: "-20%", bottom: 0, height: "46%",
+            backgroundImage: `linear-gradient(${deckA1} 1px,transparent 1px),linear-gradient(90deg,${deckA1} 1px,transparent 1px)`,
+            backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.4 }} />
         </div>
       )}
       {/* Feuer-Glut (#142): warmer Radial-Verlauf von unten + innerer Glow, Deckkraft = Hitze-Verhältnis.
