@@ -35,11 +35,26 @@ export const FX_OPTION_KEY = { frameGlow: "fxFrameGlow", holoSwipe: "fxHoloSwipe
    Kaufen kostet GLOBAL_FX_COST SP (Besitz in ownedCosmetics[ownKey]); ein An/Aus-Toggle (option) steuert sie.
    laserSlice: ersetzt die Klingen-Schnitt-Animation der GEGNERkarte durch einen Laser-Schnitt (teilt die Karte). */
 export const GLOBAL_FX_COST = 1;
+/* group ordnet die Effekte im Shop/Zweck:
+     "finisher" = Sieg-Abschluss auf der GEGNERkarte (Klinge/Laser/Schwarzes Loch — untereinander exklusiv, Blackhole > Laser).
+     "crit"     = kritischer Treffer (Shatter).
+     "gott"     = Gottgleicher Sieg OHNE Krit (Prunk-Overlays; stapelbar).
+     "ambient"  = laufende Battlefield-FX (Grid-Tunnel; stapelt frei). */
 export const GLOBAL_FX = [
   { key: "laserSlice", name: "Laser-Schnitt", desc: "Gegnerkarten werden beim Sieg vom Laser geteilt — statt der Klinge.",
-    ownKey: "fx:laserSlice", option: "fxLaserSlice", preview: "laser" },
+    ownKey: "fx:laserSlice", option: "fxLaserSlice", preview: "laser", group: "finisher" },
+  { key: "blackhole", name: "Schwarzes Loch", desc: "Beim Sieg implodiert die Gegnerkarte in ein Schwarzes Loch — Akkretions-Spirale, Kollaps-Flash & Schockwelle (statt Klinge/Laser).",
+    ownKey: "fx:blackhole", option: "fxBlackhole", preview: "blackhole", group: "finisher" },
   { key: "shatter", name: "Shatter", desc: "Kritische Treffer zerbersten die Gegnerkarte in Scherben (sonst normaler Schnitt).",
-    ownKey: "fx:shatter", option: "fxShatter", preview: "shatter" },
+    ownKey: "fx:shatter", option: "fxShatter", preview: "shatter", group: "crit" },
+  { key: "fireworks", name: "Neon-Feuerwerk", desc: "Gottgleicher Sieg ohne Krit: mehrere Feuerwerks-Bursts ploppen über dem Feld — in der Deckfarbe.",
+    ownKey: "fx:fireworks", option: "fxFireworks", preview: "fireworks", group: "gott" },
+  { key: "goldRain", name: "Weißgold-Regen", desc: "Gottgleicher Sieg ohne Krit: ein Schauer goldener Funken rieselt über das Feld — bleibt immer gold.",
+    ownKey: "fx:goldRain", option: "fxGoldRain", preview: "goldRain", group: "gott" },
+  { key: "prismaWave", name: "Prisma-Welle", desc: "Gottgleicher Sieg ohne Krit: ein prismatischer Schockwellen-Ring läuft einmal über das ganze Board.",
+    ownKey: "fx:prismaWave", option: "fxPrismaWave", preview: "prismaWave", group: "gott" },
+  { key: "gridTunnel", name: "Grid-Tunnel", desc: "Das Hologrid rast schneller, je länger die Siegesserie — bis zum Tunnel-Warp. (Braucht ein aktives Hologrid.)",
+    ownKey: "fx:gridTunnel", option: "fxGridTunnel", preview: "gridTunnel", group: "ambient" },
 ];
 export const GLOBAL_FX_BY_KEY = Object.fromEntries(GLOBAL_FX.map((f) => [f.key, f]));
 export const globalFxOwned = (profile, fx) => !!(profile && profile.ownedCosmetics && profile.ownedCosmetics[fx.ownKey]);
@@ -59,7 +74,12 @@ export const globalFxActive = (profile, options, key) => {
   return !!fx && globalFxOwned(profile, fx) && !!(options && options[fx.option]);
 };
 export const laserSliceActive = (profile, options) => globalFxActive(profile, options, "laserSlice");
+export const blackholeActive = (profile, options) => globalFxActive(profile, options, "blackhole");
 export const shatterActive = (profile, options) => globalFxActive(profile, options, "shatter");
+export const fireworksActive = (profile, options) => globalFxActive(profile, options, "fireworks");
+export const goldRainActive = (profile, options) => globalFxActive(profile, options, "goldRain");
+export const prismaWaveActive = (profile, options) => globalFxActive(profile, options, "prismaWave");
+export const gridTunnelActive = (profile, options) => globalFxActive(profile, options, "gridTunnel");
 
 /* THEME-Registry. kind:
      "buy"  → alle fünf Elemente einzeln mit SP kaufbar (Starter-Themes).

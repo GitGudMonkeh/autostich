@@ -4,7 +4,8 @@ import {
   ownKey, elementCond, elementOwned, elementState, elementPrice, elementUnlock,
   themeState, isBuyTheme, buyAllInfo, sharedUnlock,
   canBuyElement, buyElement, buyAllForTheme,
-  GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx, laserSliceActive, shatterActive,
+  GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
+  laserSliceActive, blackholeActive, shatterActive, fireworksActive, goldRainActive, prismaWaveActive, gridTunnelActive,
 } from "../src/game/themes.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
@@ -160,6 +161,40 @@ describe("themes — globale Effekte (Laser-Schnitt)", () => {
     expect(shatterActive(prof(), { fxShatter: true })).toBe(false); // nicht gekauft
     // Laser und Shatter sind getrennte Käufe
     expect(globalFxOwned(owned, GLOBAL_FX_BY_KEY.laserSlice)).toBe(false);
+  });
+});
+
+describe("themes — weitere globale Effekte (#293/#294)", () => {
+  it("Registry führt Blackhole-Finisher, Gottgleich-Prunk-Trio und Grid-Tunnel", () => {
+    for (const k of ["blackhole", "fireworks", "goldRain", "prismaWave", "gridTunnel"]) {
+      expect(GLOBAL_FX_BY_KEY[k]).toBeTruthy();
+      expect(GLOBAL_FX_BY_KEY[k].ownKey).toBe(`fx:${k}`);
+    }
+    expect(GLOBAL_FX_BY_KEY.blackhole.group).toBe("finisher");
+    expect(GLOBAL_FX_BY_KEY.fireworks.group).toBe("gott");
+    expect(GLOBAL_FX_BY_KEY.gridTunnel.group).toBe("ambient");
+  });
+  it("jeder neue Effekt: eigener Kauf + eigenes Options-Flag, unabhängig aktivierbar", () => {
+    const cases = [
+      ["blackhole", blackholeActive, "fxBlackhole"],
+      ["fireworks", fireworksActive, "fxFireworks"],
+      ["goldRain", goldRainActive, "fxGoldRain"],
+      ["prismaWave", prismaWaveActive, "fxPrismaWave"],
+      ["gridTunnel", gridTunnelActive, "fxGridTunnel"],
+    ];
+    for (const [key, activeFn, opt] of cases) {
+      const owned = prof({ ownedCosmetics: { [`fx:${key}`]: true } });
+      expect(activeFn(owned, { [opt]: true })).toBe(true);
+      expect(activeFn(owned, { [opt]: false })).toBe(false);
+      expect(activeFn(prof(), { [opt]: true })).toBe(false); // nicht gekauft
+    }
+  });
+  it("Blackhole kaufen zieht 1 SP ab und ist von Laser/Shatter getrennt", () => {
+    const p1 = buyGlobalFx(prof({ stichPoints: 1 }), GLOBAL_FX_BY_KEY.blackhole);
+    expect(p1.stichPoints).toBe(0);
+    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.blackhole)).toBe(true);
+    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.laserSlice)).toBe(false);
+    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.shatter)).toBe(false);
   });
 });
 

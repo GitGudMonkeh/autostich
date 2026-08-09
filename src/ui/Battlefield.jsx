@@ -365,6 +365,54 @@ function ExplosionFx({ cardEl, color, cardDur, burstDur, flashDur, seed, delay =
   );
 }
 
+/* #293 Sieg-Finisher „Schwarzes Loch": statt Klingenschnitt/Laser wird die Gegnerkarte in einen Kollaps-Punkt
+   gesogen. Reine CSS-Kosmetik (wie SliceFx/ExplosionFx) über der 104×144-Box: die Karte spiralt auf null in die
+   Mitte (as-bh-implode), ein leuchtender Ereignishorizont-Ring (deckfarben) pulsiert, eine Akkretions-Spirale saugt
+   Partikel hinein, am Ende Kollaps-Flash + Schockwelle. Deterministisch aus `seed` (kein Math.random im Render).
+   Dauern an den Flip-Takt gekoppelt (cardDur/burstDur), score-skaliert (intensity) → hält mit den anderen Findern mit. */
+function BlackholeFx({ cardEl, color, cardDur, burstDur, seed, delay = 0, intensity = 0, scale = 1 }) {
+  const durMul = 1 + intensity * 0.3;
+  const cd = cardDur * durMul;          // Implosions-/Kollaps-Fenster
+  const bd = burstDur * durMul;         // Nachhall (Ring/Schockwelle)
+  const N = Math.max(6, Math.round((12 + intensity * 8) * scale)); // Akkretions-Partikel (turbo-ausgedünnt)
+  const parts = Array.from({ length: N }, (_, i) => {
+    const ang = (i / N) * 360 + fjitter(seed * 3 + i * 7, 40);         // Startwinkel rundum
+    const rad = 44 + Math.abs(fjitter(seed * 5 + i * 13, 34));         // Startradius 44..78 px
+    const rot = 220 + Math.abs(fjitter(seed * 7 + i * 5, 200));        // Einwärts-Spiral-Drall
+    const dl  = (i / N) * cd * 0.35;                                   // gestaffeltes Ansaugen
+    return { i, ang, rad, rot, dl, w: 2 + Math.abs(fjitter(seed * 9 + i * 3, 2.4)) };
+  });
+  const ease = "cubic-bezier(0.55, 0, 0.9, 0.35)"; // beschleunigt nach innen (Sog)
+  return (
+    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* Karte wird spiralförmig auf null in den Punkt gezogen (implodiert). */}
+      <div className="absolute inset-0" style={{
+        animation: `as-bh-implode ${cd}ms ${ease} ${delay}ms both`, transformOrigin: "50% 50%", willChange: "transform, opacity" }}>{cardEl}</div>
+      {/* Akkretions-Spirale: jedes Partikel sitzt auf einem gedrehten Arm und fällt einwärts, während der Arm rotiert. */}
+      {parts.map((s) => (
+        <div key={`bh${s.i}`} className="absolute" style={{ left: "50%", top: "50%", width: 0, height: 0,
+          "--r0": `${s.rad}px`, "--a0": `${s.ang}deg`, "--spin": `${s.rot}deg`,
+          animation: `as-bh-spiral ${cd}ms ${ease} ${delay + s.dl}ms both`, willChange: "transform, opacity" }}>
+          <div style={{ position: "absolute", left: -s.w / 2, top: -s.w / 2, width: s.w, height: s.w, borderRadius: "50%",
+            background: s.i % 4 === 0 ? "#ffffff" : color, boxShadow: `0 0 6px ${s.i % 4 === 0 ? "#ffffff" : color}` }} />
+        </div>
+      ))}
+      {/* Ereignishorizont: dunkle Scheibe mit leuchtendem, deckfarbenem Ring — wächst, hält, kollabiert. */}
+      <div className="absolute" style={{ left: "50%", top: "50%", width: 26, height: 26, marginLeft: -13, marginTop: -13,
+        borderRadius: "50%", background: "radial-gradient(circle, #05050a 42%, transparent 72%)",
+        boxShadow: `0 0 10px 2px ${color}, inset 0 0 8px 1px ${color}`, border: `1.5px solid ${color}`,
+        animation: `as-bh-core ${cd}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }} />
+      {/* Kollaps-Flash + Schockwelle am Ende des Sogs. */}
+      <div className="absolute" style={{ left: "50%", top: "50%", width: 16, height: 16, marginLeft: -8, marginTop: -8,
+        borderRadius: "50%", background: "#ffffff", boxShadow: `0 0 22px 8px ${color}, 0 0 8px 3px #ffffff`,
+        animation: `as-bh-collapse ${bd}ms ease-out ${delay + cd * 0.72}ms both`, willChange: "transform, opacity" }} />
+      <div className="absolute" style={{ left: "50%", top: "50%", width: 20, height: 20, marginLeft: -10, marginTop: -10,
+        borderRadius: "50%", border: `2px solid ${color}`,
+        animation: `as-bh-shock ${bd}ms cubic-bezier(0.15,0.7,0.3,1) ${delay + cd * 0.72}ms both`, willChange: "transform, opacity" }} />
+    </div>
+  );
+}
+
 /* GOTTGLEICH-Prunk: bei der obersten Krit-Stufe (tier 4) berstet die Karte — zusätzlich zu ExplosionFx — in einen
    dichten Schwarm deckkräftiger Weißgold-Partikel, die vom Panel-RAHMEN nach innen ABPRALLEN und hin- und herspringen
    (Flipper-Look). Reine Kosmetik auf einem <canvas> über dem Feld: rAF-Physik mit Geschwindigkeit, Wand-Reflexion
@@ -427,6 +475,128 @@ function BounceBurst({ trigger, panelRef, oppRef }) {
   return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none rounded-xl" style={{ zIndex: 20 }} aria-hidden="true" />;
 }
 
+/* #294 GOTTGLEICH-Prunk OHNE Krit: bei einem tier-4-Sieg ohne Kritischen Treffer feuern die (kaufbaren) Prunk-
+   Overlays — stapelbar. Wie EpicFx/BounceBurst reine <canvas>-Kosmetik mit rAF-Physik über dem Feld (zIndex 20),
+   auf die gleiche Wucht ausgelegt (Partikelmenge/Bloom/Dauer). Nur getriggert bei normaler Bewegung (Aufrufer
+   prüft `reduced`). Drei Modi, per Flag zuschaltbar:
+     • fireworks  — mehrere Feuerwerks-Bursts über dem Board, radiale Partikel in der Deckfarbe (+ weiße Kerne).
+     • goldRain   — dichter Schauer goldener Funken rieselt von oben (bleibt IMMER gold, Gottgleich-Identität).
+     • prismaWave — prismatischer Schockwellen-Ring läuft einmal übers ganze Board (Regenbogen, Hue-Rotation). */
+function PrunkFx({ trigger, panelRef, oppRef, color }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    if (!trigger || !panelRef?.current || !canvasRef.current) return undefined;
+    const panel = panelRef.current, canvas = canvasRef.current;
+    const pr = panel.getBoundingClientRect();
+    const W = pr.width, H = pr.height;
+    if (W < 4 || H < 4) return undefined;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return undefined;
+    ctx.scale(dpr, dpr);
+    const deckC = color || "#5ab87a";
+    // Ursprung der Prisma-Welle = Mitte der Gegnerkarte, Fallback Feldmitte.
+    let cx = W * 0.5, cy = H * 0.5;
+    const orr = oppRef?.current?.getBoundingClientRect();
+    if (orr && orr.width) { cx = orr.left - pr.left + orr.width / 2; cy = orr.top - pr.top + orr.height / 2; }
+
+    // --- Feuerwerk: mehrere gestaffelte Bursts, jeder ein radialer Partikelkranz mit Schwerkraft & Fade. ---
+    const GOLD = ["#fff0b0", "#ffd873", "#ffffff", "#ffc978"];
+    const fireworks = [];
+    if (trigger.fireworks) {
+      const BURSTS = 6;
+      for (let b = 0; b < BURSTS; b++) {
+        const bx = W * (0.16 + Math.random() * 0.68);
+        const by = H * (0.14 + Math.random() * 0.42);
+        const t0 = 120 + b * 150 + Math.random() * 80; // gestaffelte Zündung (ms)
+        const parts = [];
+        const PN = 30;
+        for (let i = 0; i < PN; i++) {
+          const ang = (i / PN) * Math.PI * 2 + Math.random() * 0.3;
+          const spd = 2.4 + Math.random() * 5.2;
+          parts.push({ x: bx, y: by, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+            r: 1.6 + Math.random() * 2.4, c: i % 4 === 0 ? "#ffffff" : deckC, life: 620 + Math.random() * 260 });
+        }
+        fireworks.push({ t0, parts, bx, by });
+      }
+    }
+    // --- Weißgold-Regen: Funken von oben, leichte Seitendrift + Twinkle. ---
+    const rain = [];
+    if (trigger.goldRain) {
+      const RN = 90;
+      for (let i = 0; i < RN; i++) {
+        rain.push({ x: Math.random() * W, y: -Math.random() * H * 0.6 - 6,
+          vy: 1.6 + Math.random() * 2.6, drift: 0.4 + Math.random() * 0.9, ph: Math.random() * Math.PI * 2,
+          r: 1.3 + Math.random() * 2.2, c: GOLD[i % GOLD.length], t0: Math.random() * 500, tw: 0.5 + Math.random() });
+      }
+    }
+    // --- Prisma-Wellen: ein bis zwei expandierende Regenbogen-Ringe vom Ursprung. ---
+    const waves = trigger.prismaWave ? [{ t0: 60 }, { t0: 320 }] : [];
+    const maxR = Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) + 20;
+
+    const TTL = 1950;
+    let raf = 0, start = 0;
+    const step = (now) => {
+      if (!start) start = now;
+      const el = now - start; // ms seit Trigger
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalCompositeOperation = "lighter";
+      // Feuerwerk
+      for (const fw of fireworks) {
+        const lt = el - fw.t0;
+        if (lt < 0) continue;
+        for (const p of fw.parts) {
+          const k = lt / p.life;
+          if (k > 1) continue;
+          const px = p.x + p.vx * lt * 0.06;
+          const py = p.y + p.vy * lt * 0.06 + 0.0016 * lt * lt; // Schwerkraft
+          ctx.globalAlpha = Math.max(0, 1 - k);
+          ctx.fillStyle = p.c; ctx.shadowBlur = 10; ctx.shadowColor = p.c;
+          ctx.beginPath(); ctx.arc(px, py, p.r, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      // Weißgold-Regen
+      for (const d of rain) {
+        if (el < d.t0) continue;
+        const lt = el - d.t0;
+        const y = d.y + d.vy * lt * 0.14;
+        const x = d.x + Math.sin(d.ph + lt * 0.006) * d.drift * 8;
+        if (y > H + 6) continue;
+        const fade = el > TTL - 500 ? Math.max(0, (TTL - el) / 500) : 1;
+        ctx.globalAlpha = fade * (0.6 + 0.4 * Math.sin(d.ph + lt * 0.02 * d.tw)); // Twinkle
+        ctx.fillStyle = d.c; ctx.shadowBlur = 7; ctx.shadowColor = d.c;
+        ctx.beginPath(); ctx.arc(x, y, d.r, 0, Math.PI * 2); ctx.fill();
+      }
+      // Prisma-Wellen
+      ctx.shadowBlur = 0;
+      for (const w of waves) {
+        const lt = el - w.t0;
+        if (lt < 0) continue;
+        const k = lt / 1000;
+        if (k > 1) continue;
+        const rad = maxR * k;
+        ctx.globalAlpha = Math.max(0, 1 - k) * 0.9;
+        ctx.lineWidth = 4 + 6 * (1 - k);
+        const SEG = 36;
+        for (let s = 0; s < SEG; s++) {
+          const a0 = (s / SEG) * Math.PI * 2, a1 = ((s + 1) / SEG) * Math.PI * 2;
+          ctx.strokeStyle = `hsl(${(s / SEG * 360 + el * 0.5) % 360}, 100%, 62%)`;
+          ctx.beginPath(); ctx.arc(cx, cy, rad, a0, a1 + 0.02); ctx.stroke();
+        }
+      }
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; ctx.shadowBlur = 0;
+      if (el < TTL) raf = requestAnimationFrame(step);
+      else ctx.clearRect(0, 0, W, H);
+    };
+    raf = requestAnimationFrame(step);
+    return () => { cancelAnimationFrame(raf); ctx.clearRect(0, 0, W, H); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps
+  }, [trigger?.id, panelRef, oppRef]);
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none rounded-xl" style={{ zIndex: 21 }} aria-hidden="true" />;
+}
+
 /* #177+/#186: Schnitt-/Explosions-Ghost-Pool für BEIDE Seiten. Verliert eine Karte (Spieler bei Niederlage,
    Gegner bei Sieg), wird sie in-place ausgeblendet und stattdessen ein entkoppelter Klon in diesem Layer
    (im jeweiligen Karten-Slot, absolute inset-0) gerendert: die Karte liegt erst kurz (rest), dann setzt der Schnitt
@@ -450,17 +620,21 @@ function SlashGhostLayer({ ghosts }) {
         // (rundum, deterministisch aus g.seed via fjitter, kein Neu-Würfeln bei Re-Render). Die Krit-Explosion
         // zerbirst an Ort und Stelle in Pixel-Shards (die Shards fliegen selbst nach außen) → kein Wrapper-Drift.
         const isBoom = g.fx === "explode";
+        const isHole = g.fx === "blackhole";
+        const inPlace = isBoom || isHole; // zerbirst/implodiert an Ort und Stelle → kein Wrapper-Drift
         const dang = fjitter(g.seed * 3 + 2, Math.PI);                        // −π..π → volle 360° rundum
         // Laser-Treffer zerfallen NAH am Deck (wenig Drift); normaler Klingenschnitt driftet weiter ins Feld.
-        const drad = isBoom ? 0 : g.laser ? 10 + Math.abs(fjitter(g.seed * 5 + 3, 12)) : 40 + Math.abs(fjitter(g.seed * 5 + 3, 26)); // Laser 10..22 · Klinge 40..66 px
-        const drot = isBoom ? 0 : fjitter(g.seed * 7 + 5, 8);                 // −8..8° leichte Rotation (nur Slice)
-        const driftDelay = g.rest + (isBoom ? 0 : g.cut);                     // Float-Away startet NACH dem Schnitt
+        const drad = inPlace ? 0 : g.laser ? 10 + Math.abs(fjitter(g.seed * 5 + 3, 12)) : 40 + Math.abs(fjitter(g.seed * 5 + 3, 26)); // Laser 10..22 · Klinge 40..66 px
+        const drot = inPlace ? 0 : fjitter(g.seed * 7 + 5, 8);                // −8..8° leichte Rotation (nur Slice)
+        const driftDelay = g.rest + (inPlace ? 0 : g.cut);                    // Float-Away startet NACH dem Schnitt
         return (
           <div key={g.id} className="absolute inset-0 pointer-events-none" aria-hidden="true"
             style={{ animation: `as-loss-drift-rand ${g.float}ms cubic-bezier(0.2, 0.6, 0.3, 1) ${driftDelay}ms forwards`, willChange: "transform",
                      "--drx": `${(Math.cos(dang) * drad).toFixed(1)}px`, "--dry": `${(Math.sin(dang) * drad).toFixed(1)}px`, "--drot": `${drot}deg` }}>
             {isBoom
               ? <ExplosionFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} flashDur={g.boom} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} />
+              : isHole
+              ? <BlackholeFx cardEl={cardEl} color={g.color} cardDur={g.halves} burstDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} />
               : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} laser={g.laser} />}
           </div>
         );
@@ -500,7 +674,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // Frame Glow (Karte) + Hologrid (Gitterlinien im Battlefield); Holo Swipe = Schimmer über die eigene Karte.
-  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false, fxShatter = false,
+  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false, fxBlackhole = false, fxShatter = false,
+  // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar). Grid-Tunnel = Hologrid-Tempo an Siegesserie.
+  fxFireworks = false, fxGoldRain = false, fxPrismaWave = false, fxGridTunnel = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
   const reduced = useReducedFx(reducedFx);
@@ -509,6 +685,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oppSlotRef = useRef(null);
   const [burst, setBurst] = useState(null);
   const burstSeq = useRef(0);
+  // #294 Gottgleich-Prunk OHNE Krit: getrennter Trigger für die (stapelbaren) Prunk-Overlays.
+  const [prunk, setPrunk] = useState(null);
+  const prunkSeq = useRef(0);
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -534,7 +713,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // gekoppelt, aber mit hohem Boden (480 ms) → bei Max-Turbo nicht mehr zu schnell. Kommen Stiche schneller als
   // die Zeile fährt (4×/MAX), starten wir keine neue mitten hinein, sondern ÜBERSPRINGEN den Stich (Throttle) →
   // kein Abschneiden, kein Flackern. Bei 1×/2× bleibt es 1 Zeile je Stich.
-  const sweepDur = clamp(flipMs * 1.0, 560, 1250);
+  // #293 Grid-Tunnel: je länger die Siegesserie, desto schneller rast das Hologrid (bis zum Warp). Voller Warp ab
+  // Serie 30 → Sweep-Dauer sinkt auf 40 % und der Boden fällt (200 ms), das Gitter leuchtet kräftiger. Braucht ein
+  // aktives Hologrid (reiner Optik-Aufsatz darauf). Ohne den Effekt bleibt tunnelK 0 → Verhalten wie bisher.
+  const tunnelK = fxGridTunnel && fxHologrid ? clamp((t ? t.winStreak || 0 : 0) / 30, 0, 1) : 0;
+  const sweepDur = clamp(flipMs * (1 - 0.6 * tunnelK), 560 - 360 * tunnelK, 1250);
   const [sweepId, setSweepId] = useState(0);
   const lastSweepAt = useRef(-1e9);
   const trickNo = lastTrick ? lastTrick.trickNo : null;
@@ -587,6 +770,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const flyAway      = sliceOn && lost;                       // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
   const explode      = sliceOn && win && isCrit && fxShatter; // Shatter-Effekt (opt-in): Krit zerbirst die Gegnerkarte
   const critBoom     = explode;
+  // #293 Sieg-Finisher: Schwarzes Loch hat Vorrang vor Laser/Klinge (untereinander exklusiv), aber NUR beim
+  // normalen (nicht-berstenden) Sieg — ein Krit-Shatter bleibt Shatter.
+  const holeFinish   = sliceOn && win && !explode && fxBlackhole;
   const oppSliced    = sliceOn && win && !explode;            // sonst normaler Schnitt (auch bei Krit OHNE Shatter)
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
@@ -784,9 +970,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     const spawned = [];
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
     if (win) {   // Gegnerkarte verliert → Schnitt (Standard, auch bei Krit) bzw. Shatter-Explosion (nur mit gekauftem Effekt)
-      spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp", fx: explode ? "explode" : "slice",
-        laser: fxLaserSlice, // globaler Laser-Schnitt-Effekt: ersetzt die Klingen-Linie durch einen Laser-Strahl (nur normaler Schnitt)
-        color: explode ? critColor : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
+      spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
+        fx: explode ? "explode" : holeFinish ? "blackhole" : "slice",
+        laser: fxLaserSlice && !holeFinish, // globaler Laser-Schnitt (nur normaler Schnitt; Blackhole hat Vorrang)
+        // Blackhole: Ring/Spirale in Deckfarbe (Fallback Suit-Farbe). Sonst: Krit-Lila (Shatter) bzw. Suit-Farbe.
+        color: explode ? critColor : holeFinish ? (deckA1 || suitColor(t.oCard.suit)) : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, green: !!t.oCard.green,
         branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
@@ -804,6 +992,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (win && isCrit && fxTier >= 4 && !reduced) {
       const bt = setTimeout(() => { burstSeq.current += 1; setBurst({ id: burstSeq.current }); }, sRest);
       ghostTimers.current.push(bt); // gemeinsame Ghost-Timer-Aufräumung (unmount → clearTimeout)
+    }
+    // #294 GOTTGLEICH-Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar) feuern ON TOP der Groß-Ansage.
+    if (win && !isCrit && fxTier >= 4 && !reduced && (fxFireworks || fxGoldRain || fxPrismaWave)) {
+      const pt = setTimeout(() => {
+        prunkSeq.current += 1;
+        setPrunk({ id: prunkSeq.current, fireworks: fxFireworks, goldRain: fxGoldRain, prismaWave: fxPrismaWave });
+      }, sRest);
+      ghostTimers.current.push(pt);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
@@ -900,7 +1096,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           <div className="absolute" style={{
             left: "-20%", right: "-20%", bottom: 0, height: "46%",
             backgroundImage: `linear-gradient(${deckA1} 1px,transparent 1px),linear-gradient(90deg,${deckA1} 1px,transparent 1px)`,
-            backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.24 }}>
+            backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.24 + 0.26 * tunnelK }}>
             {!reduced && sweepId > 0 && (
               // Bei einem SIEG glüht die Linie sehr intensiv; bei einer Niederlage dezent. Der Glow wird als
               // GEFÜLLTES, weichgezeichnetes Band (statt box-shadow) gerendert — box-shadow wird von der
@@ -933,6 +1129,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin, Hologrid und das Stich-Juice reserviert. */}
       {/* GOTTGLEICH-Prunk: abprallender Weißgold-Schwarm über dem Feld (Bounds = Panel-Rahmen). Nur bei tier-4-Krit. */}
       <BounceBurst trigger={burst} panelRef={panelRef} oppRef={oppSlotRef} />
+      {/* #294 Gottgleich OHNE Krit: kaufbare Prunk-Overlays (Feuerwerk/Goldregen/Prisma-Welle), stapelbar. */}
+      <PrunkFx trigger={prunk} panelRef={panelRef} oppRef={oppSlotRef} color={deckA1} />
       <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (

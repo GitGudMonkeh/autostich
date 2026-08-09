@@ -51,6 +51,25 @@ const FX_CSS = `
 .ws-piece{animation:ws-piece 2.6s ease-out infinite}
 @keyframes ws-flash{0%,8%{transform:translate(-50%,-50%) scale(.3);opacity:0}22%{transform:translate(-50%,-50%) scale(1);opacity:1}55%{opacity:.4}100%{transform:translate(-50%,-50%) scale(2);opacity:0}}
 .ws-flash{animation:ws-flash 2.6s ease-out infinite}
+/* #293 Schwarzes Loch: Karte implodiert spiralig, Akkretions-Partikel fallen einwärts. */
+@keyframes ws-bh-implode{0%{transform:scale(1) rotate(0deg);opacity:1}55%{opacity:1}80%{transform:scale(.05) rotate(500deg);opacity:0}100%{transform:scale(.05) rotate(500deg);opacity:0}}
+.ws-bh-implode{animation:ws-bh-implode 2.6s ease-in infinite}
+@keyframes ws-bh-spiral{0%{transform:rotate(var(--a0)) translateX(var(--r0)) rotate(calc(-1*var(--a0)));opacity:0}12%{opacity:1}70%{opacity:1}100%{transform:rotate(calc(var(--a0) + var(--spin))) translateX(0) rotate(calc(-1*var(--a0) - var(--spin)));opacity:0}}
+.ws-bh-spiral{animation:ws-bh-spiral 2.6s cubic-bezier(.55,0,.9,.35) infinite}
+@keyframes ws-bh-core{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}20%{transform:translate(-50%,-50%) scale(1);opacity:1}70%{opacity:1}88%{transform:translate(-50%,-50%) scale(.02);opacity:0}100%{opacity:0}}
+.ws-bh-core{animation:ws-bh-core 2.6s ease-in infinite}
+/* #294 Feuerwerk: radiale Partikel aus einem Zündpunkt. --dx/--dy = Flugvektor. */
+@keyframes ws-fw{0%{transform:translate(0,0) scale(.6);opacity:0}8%{opacity:1}70%{opacity:.85}100%{transform:translate(var(--dx),calc(var(--dy) + 14px)) scale(1);opacity:0}}
+.ws-fw{animation:ws-fw 1.7s ease-out infinite}
+/* #294 Weißgold-Regen: Funken fallen von oben, leichtes Twinkle über die Deckkraft. */
+@keyframes ws-rain{0%{transform:translateY(-20%);opacity:0}8%{opacity:1}85%{opacity:1}100%{transform:translateY(360%);opacity:0}}
+.ws-rain{animation:ws-rain 2.2s linear infinite}
+/* #294 Prisma-Welle: Regenbogen-Ring expandiert vom Zentrum. */
+@keyframes ws-wave{0%{transform:translate(-50%,-50%) scale(.05);opacity:0}14%{opacity:1}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+.ws-wave{animation:ws-wave 2.6s ease-out infinite}
+/* #293 Grid-Tunnel: Perspektiv-Gitter rast auf den Betrachter zu (Scroll der Gitterzeilen). */
+@keyframes ws-gridrush{0%{background-position:0 0}100%{background-position:0 32px}}
+.ws-gridrush{animation:ws-gridrush .5s linear infinite}
 `;
 
 // Demo-Scherben für die kleine Kachel-Vorschau (Richtung + Farbe; Krit-Palette warm/weiß).
@@ -78,24 +97,42 @@ const SCENE_SHARDS = (() => {
   return out;
 })();
 
+// #293/#294 Demo-Daten der neuen Effekt-Vorschauen (deterministisch, kein Math.random im Render).
+const BH_SPIRAL = Array.from({ length: 11 }, (_, i) => ({
+  a0: `${(i / 11) * 360 + (i % 3) * 17}deg`, r0: `${28 + (i % 4) * 9}px`, spin: `${240 + (i % 3) * 80}deg`,
+  dl: `${(i / 11) * 0.9}s`, w: 3 + (i % 3), white: i % 4 === 0,
+}));
+const FW_BURSTS = [
+  { cx: "26%", cy: "28%", dl: 0 }, { cx: "62%", cy: "22%", dl: 0.5 }, { cx: "44%", cy: "40%", dl: 1.0 }, { cx: "78%", cy: "36%", dl: 0.75 },
+].map((b) => ({ ...b, parts: Array.from({ length: 14 }, (_, i) => {
+  const a = (i / 14) * Math.PI * 2; return { dx: `${(Math.cos(a) * 34).toFixed(0)}px`, dy: `${(Math.sin(a) * 34).toFixed(0)}px`, white: i % 4 === 0 };
+}) }));
+const RAIN_DROPS = Array.from({ length: 20 }, (_, i) => ({
+  x: `${((i * 53) % 100)}%`, dl: `${((i * 37) % 100) / 100 * 2.2}s`, w: 2 + (i % 3),
+  c: ["#fff0b0", "#ffd873", "#ffffff", "#ffc978"][i % 4], dur: `${1.8 + (i % 4) * 0.2}s`,
+}));
+const PRISMA_RING = "conic-gradient(from 0deg,#ff4d4d,#ffa53a,#ffe14d,#54e08a,#35e0ff,#5a8ade,#9b82f0,#ff4dcb,#ff4d4d)";
+
 // Battlefield-Szenen-Vorschau eines globalen Effekts im Kauffenster — läuft im Loop.
 function GlobalFxScenePreview({ fx }) {
   const bf = battlefieldAssets("bf_kaiju");
   const cardImg = deckAssets("default").back;
   const LC = "#35e0ff"; // Demo-Farbe (in-game = Suit-Farbe der Gegnerkarte)
   const cardBox = { position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: "24%", aspectRatio: CARD_RATIO };
+  const p = fx.preview;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {fx.preview === "shatter" ? (
+      {p === "shatter" && (
         <div style={cardBox}>
           {SCENE_SHARDS.map((s, i) => (
             <div key={i} className="ws-piece absolute inset-0" style={{ backgroundImage: `url(${cardImg})`, backgroundSize: "100% 100%",
               clipPath: s.clip, "--sx": s.sx, "--sy": s.sy, "--sr": s.sr }} />
           ))}
         </div>
-      ) : (
+      )}
+      {p === "laser" && (
         <>
           <div style={cardBox}>
             {SCENE_WEDGES.map((w, i) => (
@@ -110,6 +147,51 @@ function GlobalFxScenePreview({ fx }) {
               boxShadow: `0 0 10px ${LC}, 0 0 26px ${LC}, 0 0 5px 1px #ffffffdd` }} />
           ))}
         </>
+      )}
+      {p === "blackhole" && (
+        <div style={cardBox}>
+          {/* Karte implodiert in den Punkt */}
+          <div className="ws-bh-implode absolute inset-0" style={{ backgroundImage: `url(${cardImg})`, backgroundSize: "100% 100%", borderRadius: 4 }} />
+          {/* Ereignishorizont */}
+          <div className="ws-bh-core absolute" style={{ left: "50%", top: "50%", width: 22, height: 22, borderRadius: "50%",
+            background: "radial-gradient(circle,#05050a 42%,transparent 72%)", border: `1.5px solid ${LC}`,
+            boxShadow: `0 0 10px 2px ${LC}, inset 0 0 8px 1px ${LC}` }} />
+          {/* Akkretions-Spirale */}
+          {BH_SPIRAL.map((s, i) => (
+            <div key={i} className="ws-bh-spiral absolute" style={{ left: "50%", top: "50%", width: 0, height: 0,
+              "--a0": s.a0, "--r0": s.r0, "--spin": s.spin, animationDelay: s.dl }}>
+              <div style={{ position: "absolute", left: -s.w / 2, top: -s.w / 2, width: s.w, height: s.w, borderRadius: "50%",
+                background: s.white ? "#ffffff" : LC, boxShadow: `0 0 6px ${s.white ? "#ffffff" : LC}` }} />
+            </div>
+          ))}
+        </div>
+      )}
+      {p === "fireworks" && FW_BURSTS.map((b, bi) => (
+        <div key={bi} className="absolute" style={{ left: b.cx, top: b.cy, width: 0, height: 0 }}>
+          {b.parts.map((pt, i) => (
+            <div key={i} className="ws-fw absolute" style={{ left: 0, top: 0, width: 4, height: 4, marginLeft: -2, marginTop: -2, borderRadius: "50%",
+              background: pt.white ? "#ffffff" : LC, boxShadow: `0 0 7px ${pt.white ? "#ffffff" : LC}`,
+              "--dx": pt.dx, "--dy": pt.dy, animationDelay: `${b.dl}s` }} />
+          ))}
+        </div>
+      ))}
+      {p === "goldRain" && RAIN_DROPS.map((d, i) => (
+        <div key={i} className="ws-rain absolute" style={{ left: d.x, top: "-6%", width: d.w, height: d.w * 2.4, borderRadius: 1,
+          background: d.c, boxShadow: `0 0 6px ${d.c}`, animationDelay: d.dl, animationDuration: d.dur }} />
+      ))}
+      {p === "prismaWave" && [0, 1].map((r) => (
+        <div key={r} className="ws-wave absolute" style={{ left: "50%", top: "50%", width: "70%", aspectRatio: "1",
+          borderRadius: "50%", background: PRISMA_RING, animationDelay: `${r * 0.7}s`,
+          WebkitMaskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)",
+          maskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)" }} />
+      ))}
+      {p === "gridTunnel" && (
+        <div className="absolute pointer-events-none" style={{ left: "-20%", right: "-20%", bottom: 0, height: "62%",
+          transform: "perspective(120px) rotateX(62deg)", transformOrigin: "bottom" }}>
+          <div className="ws-gridrush absolute inset-0" style={{
+            backgroundImage: `linear-gradient(${LC} 1px,transparent 1px),linear-gradient(90deg,${LC} 1px,transparent 1px)`,
+            backgroundSize: "16px 16px", opacity: 0.5, boxShadow: `inset 0 0 40px ${LC}` }} />
+        </div>
       )}
     </div>
   );
@@ -410,13 +492,15 @@ function SelectRow({ active, onClick, thumb, title, sub }) {
   );
 }
 
-// Vorschau eines globalen Effekts auf einer Demo-Karte (Laser-Strahl bzw. Shatter-Scherben). Füllt seinen Container.
+// Kachel-Vorschau eines globalen Effekts (klein, im Effekte-Grid). Zeigt den Effekt-Charakter über einer Demo-Karte.
 function GlobalFxPreview({ fx }) {
-  const LC = "#35e0ff"; // Laser-Farbe der Vorschau (in-game = Suit-Farbe der Gegnerkarte)
+  const LC = "#35e0ff"; // Demo-Farbe (in-game = Deck-/Suit-Farbe)
+  const p = fx.preview;
+  const showCard = p !== "fireworks" && p !== "goldRain" && p !== "prismaWave" && p !== "gridTunnel";
   return (
     <>
-      <img src={deckAssets("default").back} alt="" className="absolute inset-0 w-full h-full object-contain" />
-      {fx.preview === "shatter" ? (
+      {showCard && <img src={deckAssets("default").back} alt="" className="absolute inset-0 w-full h-full object-contain" />}
+      {p === "shatter" && (
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 ws-laserpulse" style={{ background: "radial-gradient(circle at 50% 50%, rgba(255,255,255,.5), transparent 55%)" }} />
           {SHATTER_SHARDS.map((s, i) => (
@@ -424,10 +508,65 @@ function GlobalFxPreview({ fx }) {
               background: s.c, boxShadow: `0 0 6px ${s.c}`, borderRadius: 1, "--sx": s.x, "--sy": s.y }} />
           ))}
         </div>
-      ) : (
+      )}
+      {p === "laser" && (
         <div className="absolute pointer-events-none ws-laserpulse" style={{ left: "-12%", right: "-12%", top: "48%", height: 2, transform: "rotate(-20deg)",
           background: `linear-gradient(90deg,transparent,${LC} 15%,#ffffff 50%,${LC} 85%,transparent)`,
           boxShadow: `0 0 8px 2px ${LC}, 0 0 20px 5px ${LC}` }} />
+      )}
+      {p === "blackhole" && (
+        <div className="absolute inset-0 pointer-events-none grid place-items-center">
+          <div className="ws-bh-core" style={{ position: "relative", width: 20, height: 20, borderRadius: "50%",
+            background: "radial-gradient(circle,#05050a 42%,transparent 72%)", border: `1.5px solid ${LC}`,
+            boxShadow: `0 0 10px 2px ${LC}, inset 0 0 8px 1px ${LC}` }} />
+          {BH_SPIRAL.slice(0, 7).map((s, i) => (
+            <div key={i} className="ws-bh-spiral absolute" style={{ left: "50%", top: "50%", width: 0, height: 0,
+              "--a0": s.a0, "--r0": "22px", "--spin": s.spin, animationDelay: s.dl }}>
+              <div style={{ position: "absolute", left: -1.5, top: -1.5, width: 3, height: 3, borderRadius: "50%",
+                background: s.white ? "#ffffff" : LC, boxShadow: `0 0 5px ${s.white ? "#ffffff" : LC}` }} />
+            </div>
+          ))}
+        </div>
+      )}
+      {p === "fireworks" && (
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "#0b0a16" }}>
+          {FW_BURSTS.slice(0, 2).map((b, bi) => (
+            <div key={bi} className="absolute" style={{ left: bi ? "66%" : "34%", top: bi ? "38%" : "30%", width: 0, height: 0 }}>
+              {b.parts.map((pt, i) => (
+                <div key={i} className="ws-fw absolute" style={{ width: 3, height: 3, marginLeft: -1.5, marginTop: -1.5, borderRadius: "50%",
+                  background: pt.white ? "#ffffff" : LC, boxShadow: `0 0 6px ${pt.white ? "#ffffff" : LC}`,
+                  "--dx": pt.dx, "--dy": pt.dy, animationDelay: `${b.dl}s` }} />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+      {p === "goldRain" && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ background: "#0b0a16" }}>
+          {RAIN_DROPS.slice(0, 12).map((d, i) => (
+            <div key={i} className="ws-rain absolute" style={{ left: d.x, top: "-8%", width: d.w, height: d.w * 2.4, borderRadius: 1,
+              background: d.c, boxShadow: `0 0 5px ${d.c}`, animationDelay: d.dl, animationDuration: d.dur }} />
+          ))}
+        </div>
+      )}
+      {p === "prismaWave" && (
+        <div className="absolute inset-0 pointer-events-none grid place-items-center overflow-hidden" style={{ background: "#0b0a16" }}>
+          {[0, 1].map((r) => (
+            <div key={r} className="ws-wave absolute" style={{ left: "50%", top: "50%", width: "88%", aspectRatio: "1", borderRadius: "50%",
+              background: PRISMA_RING, animationDelay: `${r * 0.7}s`,
+              WebkitMaskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)",
+              maskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)" }} />
+          ))}
+        </div>
+      )}
+      {p === "gridTunnel" && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ background: "#0b0a16" }}>
+          <div className="absolute" style={{ left: "-20%", right: "-20%", bottom: 0, height: "80%", transform: "perspective(90px) rotateX(64deg)", transformOrigin: "bottom" }}>
+            <div className="ws-gridrush absolute inset-0" style={{
+              backgroundImage: `linear-gradient(${LC} 1px,transparent 1px),linear-gradient(90deg,${LC} 1px,transparent 1px)`,
+              backgroundSize: "14px 14px", opacity: 0.55 }} />
+          </div>
+        </div>
       )}
     </>
   );

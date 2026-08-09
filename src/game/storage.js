@@ -246,7 +246,7 @@ export function recordRun(record) {
    `deckId`/`battlefieldId` (#190): gewähltes kosmetisches Deck-/Battlefield-Skin (Default = aktueller
    Look). Merge über Default degradiert Alt-Daten sauber; die UI fällt zusätzlich defensiv auf "default"
    zurück, falls ein gespeicherter Skin (noch) nicht existiert oder nicht mehr freigeschaltet ist. */
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxFrameGlow: false, fxHoloSwipe: false, fxHologrid: false, fxLaserSlice: false, fxShatter: false }; // #110/#111 Sound + #190 Kosmetik + #200 Effekte-reduziert (auto|an|aus) + #207 Haptik (nur Mobile) + #243 Baumodus-Toggles (Kombi-/Formations-Sicht) merken + #252 StatusRail-Panels (Score-Quellen/Score-Verlauf) default eingeklappt, über Runs gemerkt
+const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxFrameGlow: false, fxHoloSwipe: false, fxHologrid: false, fxLaserSlice: false, fxBlackhole: false, fxShatter: false, fxFireworks: false, fxGoldRain: false, fxPrismaWave: false, fxGridTunnel: false }; // #110/#111 Sound + #190 Kosmetik + #200 Effekte-reduziert (auto|an|aus) + #207 Haptik (nur Mobile) + #243 Baumodus-Toggles (Kombi-/Formations-Sicht) merken + #252 StatusRail-Panels (Score-Quellen/Score-Verlauf) default eingeklappt, über Runs gemerkt
 export function loadOptions() {
   try {
     const raw = localStorage.getItem(k("as_options"));
