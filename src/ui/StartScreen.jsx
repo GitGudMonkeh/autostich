@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MuteButton } from "./MuteButton.jsx";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
-import { matchSecretSeed, ownedCount, nodeState, treeComplete, NODES, BRANCHES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
+import { matchSecretSeed, ownedCount, nodeState, treeComplete, owns, NODES, BRANCHES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
 import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
@@ -45,6 +45,8 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const progLigaFree = treeComplete(prof);
   const onbStep = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(Number(prof.onboarding) || 0)));
   const onbDone = onbStep >= ONBOARDING_LINKS;
+  // #299 Hub-Gates: Werkstatt/Upgrades ab 6/6; Rangliste normal ab Meister-Stufe II (M2), Meister ab vollem Baum.
+  const ranglisteNormalFree = owns(prof, "M2");
   const spRuns = Math.max(0, Math.floor(Number(prof.spRuns) || 0));
   const dripInto = SP_LOYALTY_EVERY > 0 ? (spRuns % SP_LOYALTY_EVERY) : 0; // Läufe seit letztem Treue-+5
   const branchViews = BRANCHES.map((b) => ({
@@ -213,15 +215,16 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           Violett-Outline statt Vollfläche → Farbe sparsam, nur eine gefüllte Aktion oben. */}
       {(onStandardRun || onMeisterRun) && (
         <div className="w-full max-w-sm flex flex-col gap-2.5">
-          {!onbDone ? (
-            /* (Schritt 4d) Rangliste erst NACH dem Onboarding — bis dahin gesperrt mit Countdown. */
+          {!ranglisteNormalFree ? (
+            /* #299 §5: Rangliste-Normal erst ab Meister-Stufe II (M2). Während des Onboardings zeigt der Lock den
+               Onboarding-Countdown, danach den Hinweis „ab Meister II". */
             <div className="w-full px-4 py-2.5 rounded-lg text-[14px] font-bold flex items-center justify-between gap-2 opacity-80 cursor-default"
               style={{ background: "#161320", border: `1px solid ${VI}33`, color: VI }}
-              title="Ranglisten-Läufe werden nach Abschluss des Onboardings frei">
+              title={onbDone ? "Rangliste wird ab Meister-Stufe II (M2) frei" : "Ranglisten-Läufe werden nach Abschluss des Onboardings frei"}>
               <span className="flex items-center gap-2"><span className="opacity-70">🔒</span> Ranglisten-Lauf</span>
               <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
                 style={{ background: "#241d3a", color: VI }}>
-                noch {ONBOARDING_LINKS - onbStep} {ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}
+                {onbDone ? "ab Meister II" : `noch ${ONBOARDING_LINKS - onbStep} ${ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}`}
               </span>
             </div>
           ) : (
@@ -267,15 +270,26 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         </div>
       )}
 
-      {/* Deck-Werkstatt — eigener Button zwischen Rangliste und Upgrades, im Amber des Logo-ENDES (rechts). */}
-      {onCustomize && (
+      {/* Deck-Werkstatt — eigener Button zwischen Rangliste und Upgrades, im Amber des Logo-ENDES (rechts).
+          #299 §1: während des Onboardings (< 6/6) gesperrt + ausgegraut mit Countdown, ab 6/6 frei. */}
+      {onCustomize && (onbDone ? (
         <button onClick={onCustomize}
           className="w-full max-w-sm px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
           style={{ background: "#1f1a10", border: `1px solid ${AM}66`, color: AM }}>
           Deck-Werkstatt
           <span className="text-[13px]">›</span>
         </button>
-      )}
+      ) : (
+        <div className="w-full max-w-sm px-4 py-2.5 rounded-lg text-[14px] font-bold flex items-center justify-between gap-2 opacity-70 cursor-default"
+          style={{ background: "#1a160e", border: `1px solid ${AM}33`, color: AM }}
+          title="Die Deck-Werkstatt wird nach Abschluss des Onboardings frei">
+          <span className="flex items-center gap-2"><span className="opacity-70">🔒</span> Deck-Werkstatt</span>
+          <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
+            style={{ background: "#2a2113", color: AM }}>
+            noch {ONBOARDING_LINKS - onbStep} {ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}
+          </span>
+        </div>
+      ))}
 
       {/* Upgrades-Card (Vorschau) — SP-Guthaben, Äste als Kreise, Öffnen. Kern des künftigen Hubs.
           Dünne Logo-Verlaufs-Haarlinie oben bindet die Card an die Wortmarke. */}
