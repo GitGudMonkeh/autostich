@@ -85,11 +85,14 @@ export function loadRunHistory() {
 // und brauchen keine Versionierung.
 // v2 (Progression/Upgrades, docs §9): das Profil bekommt die SP-/Baum-/Onboarding-Felder. Rein additiv, aber
 // als eigene Schema-Epoche markiert (Migrations-Anker für spätere Baum-Umformungen).
-export const PROFILE_SCHEMA_VERSION = 4;
+export const PROFILE_SCHEMA_VERSION = 5;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
   hadNoRerollRun: false, // #214: sticky Challenge-Flag (einmal true → bleibt); noReroll = Sparfuchs deck_c3. (#267: hadMonoStatRun entfernt — die Stat-Phase ist weg.)
   monoArchetypeRuns: {}, hadAllArchetypesRun: false, // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
+  // #303 Challenge-Decks — sticky Freischalt-Flags (einmal true → bleibt): Gottgleich (erstmals GOTTGLEICH-Stich),
+  // Sparfuchs (Meisterrang-Wochenlauf ohne Reroll), Meister (Platz 1 einer Wochen-Rangliste — Champion-Board, Trigger folgt).
+  hadGottgleichRun: false, hadMeisterNoRerollRun: false, hadChampionWeek: false,
   // Progression/Upgrades (docs §1/§4/§6): SP-Guthaben + ausgegeben (Respec/Anzeige), gekaufte Baum-Knoten
   // ({[id]: level}), weiteste Onboarding-Stufe (0..6) und Zähler der SP-Läufe (Treue-Drip-Basis).
   stichPoints: 0, stichSpent: 0, nodes: {}, onboarding: 0, spRuns: 0,
@@ -134,6 +137,14 @@ export function migrateProfile(p) {
     if (typeof out.deckPoints !== "number") out.deckPoints = 0;
     if (typeof out.deckSpent !== "number") out.deckSpent = 0;
     v = 4;
+  }
+  if (v < 5) {
+    // v4 → v5 (#303 Challenge-Decks): sticky Freischalt-Flags ergänzen. Rein additiv (loadProfile füllt sie ohnehin
+    // über DEFAULT_PROFILE; hier explizit für Selbst-Konsistenz). Bestehende Fortschritte bleiben unberührt.
+    if (typeof out.hadGottgleichRun !== "boolean") out.hadGottgleichRun = false;
+    if (typeof out.hadMeisterNoRerollRun !== "boolean") out.hadMeisterNoRerollRun = false;
+    if (typeof out.hadChampionWeek !== "boolean") out.hadChampionWeek = false;
+    v = 5;
   }
   out.schemaVersion = v;
   return out;
@@ -202,6 +213,19 @@ export function isAllArchetypesRun(record) {
   const a = Array.isArray(record.archetypes) ? record.archetypes : [];
   return new Set(a).size === 4;
 }
+/* #303 Challenge-Decks — Freischalt-Erkennung (reine Funktionen auf dem Run-Record).
+   - GOTTGLEICH-Stich = fxIntensity-Stufe 4 (bester Einzelstich record.bestTrickScore ≥ GOTTGLEICH_TRICK_MIN).
+     Bewusst OHNE `completed`-Gate: „das erste Mal Gottgleich getriggert" gilt auch in einem abgebrochenen Lauf
+     (wie die Serien-Meilensteine über bestStreak, die ebenfalls unabhängig vom Abschluss buchen).
+   - Sparfuchs = ABGESCHLOSSENER Meisterrang-Wochenlauf (record.ranked === "meister" ⇒ Wochen-Seed) OHNE einen
+     einzigen benutzten Reroll (record.rerollsUsed === 0). */
+export const GOTTGLEICH_TRICK_MIN = 500000; // = FX_TIER_MINS[3] (Battlefield.jsx): Stufe-4-Schwelle „Gottgleich"
+export function isGottgleichRun(record) {
+  return !!record && n0(record.bestTrickScore) >= GOTTGLEICH_TRICK_MIN;
+}
+export function isMeisterNoRerollRun(record) {
+  return !!record && record.completed === true && record.ranked === "meister" && n0(record.rerollsUsed) === 0;
+}
 
 // Einen abgeschlossenen Lauf in die Historie voranstellen (auf CAP gedeckelt) UND die kumulierten
 // Profil-Totals fortschreiben. Gibt { history, profile } für ein sofortiges UI-Update zurück.
@@ -255,6 +279,11 @@ export function recordRun(record) {
     // #215: Archetyp-Decks — Mono-Läufe je Fraktion (deck_c5..c8) + Element-Bund (alle vier, deck_c9).
     monoArchetypeRuns,
     hadAllArchetypesRun: !!p.hadAllArchetypesRun || isAllArchetypesRun(record),
+    // #303 Challenge-Decks — sticky (einmal true → bleibt). Gottgleich- & Sparfuchs-Flags werden hier gesetzt;
+    // hadChampionWeek bleibt vorerst nur erhalten (der Trigger folgt mit dem Champion-Board, s. #299/#303).
+    hadGottgleichRun: !!p.hadGottgleichRun || isGottgleichRun(record),
+    hadMeisterNoRerollRun: !!p.hadMeisterNoRerollRun || isMeisterNoRerollRun(record),
+    hadChampionWeek: !!p.hadChampionWeek,
     // Progression/Upgrades: Guthaben wächst um den Lauf-Ertrag; ausgegebene SP + gekaufte Knoten bleiben unverändert.
     // Bei komplettem Baum wird das SP-Guthaben zu DP gefegt (spSweep) → stichPoints 0.
     stichPoints: spBalance - spSweep,

@@ -13,6 +13,9 @@
      { kind: "noRerollRun" } → profile.hadNoRerollRun === true  (Lauf ohne benutzten Reroll, Sparfuchs deck_c3 · #214)
      { kind: "monoArchetypeRun", archetype } → profile.monoArchetypeRuns[archetype] (Lauf nur mit dieser Fraktion, #215 deck_c5..c8)
      { kind: "allArchetypesRun" }            → profile.hadAllArchetypesRun === true (Lauf mit allen vier Fraktionen, #215 deck_c9)
+     { kind: "gottgleichRun" }  → profile.hadGottgleichRun === true       (#303: erstmals einen GOTTGLEICH-Stich getriggert)
+     { kind: "meisterNoReroll" }→ profile.hadMeisterNoRerollRun === true  (#303 Sparfuchs: Meisterrang-Wochenlauf komplett ohne Reroll)
+     { kind: "championWeek" }   → profile.hadChampionWeek === true        (#303 Meister: Platz 1 einer Wochen-Rangliste — Champion-Board)
 
    Katalog wächst „Deck für Deck": ein neues Deck = ein Eintrag hier + sein Bild-Paar in
    cosmeticAssets.js. Solange ein Bild-Asset noch nicht im Repo liegt, bleibt der Eintrag draußen
@@ -34,6 +37,12 @@ export const DECK_DEFS = {
   deck_spacedog:   { id: "deck_spacedog",   name: "Star Pup",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   deck_wale:       { id: "deck_wale",       name: "Moonwhale",       unlock: { kind: "buy", ownKey: "pack:wale" } },
   deck_onboarding: { id: "deck_onboarding", name: "Genesis",         unlock: { kind: "buy", ownKey: "pack:genesis" } },
+  // #303 Challenge-Decks: NICHT kaufbar — je über eine Challenge freigeschaltet (das Deck definiert sein „cond"-Pack in themes.js).
+  deck_gottgleich: { id: "deck_gottgleich", name: "Gottgleich", unlock: { kind: "gottgleichRun" } },
+  deck_serie300:   { id: "deck_serie300",   name: "Serie 300",  unlock: { kind: "streak", n: 300 } },
+  deck_serie600:   { id: "deck_serie600",   name: "Serie 600",  unlock: { kind: "streak", n: 600 } },
+  deck_sparfuchs:  { id: "deck_sparfuchs",  name: "Sparfuchs",  unlock: { kind: "meisterNoReroll" } },
+  deck_meister:    { id: "deck_meister",    name: "Meister",    unlock: { kind: "championWeek" } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -50,6 +59,12 @@ export const BATTLEFIELD_DEFS = {
   bf_spacedog:   { id: "bf_spacedog",   name: "Star Pup · Battlefield",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   bf_wale:       { id: "bf_wale",       name: "Moonwhale · Battlefield",       unlock: { kind: "buy", ownKey: "pack:wale" } },
   bf_onboarding: { id: "bf_onboarding", name: "Genesis · Battlefield",         unlock: { kind: "buy", ownKey: "pack:genesis" } },
+  // #303 Challenge-Battlefields (Teil des jeweiligen Challenge-Packs, gleiche Bedingung wie das Deck).
+  bf_gottgleich: { id: "bf_gottgleich", name: "Gottgleich · Battlefield", unlock: { kind: "gottgleichRun" } },
+  bf_serie300:   { id: "bf_serie300",   name: "Serie 300 · Battlefield",  unlock: { kind: "streak", n: 300 } },
+  bf_serie600:   { id: "bf_serie600",   name: "Serie 600 · Battlefield",  unlock: { kind: "streak", n: 600 } },
+  bf_sparfuchs:  { id: "bf_sparfuchs",  name: "Sparfuchs · Battlefield",  unlock: { kind: "meisterNoReroll" } },
+  bf_meister:    { id: "bf_meister",    name: "Meister · Battlefield",    unlock: { kind: "championWeek" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".
@@ -70,6 +85,9 @@ export function isUnlocked(def, profile) {
     case "noRerollRun": return !!p.hadNoRerollRun; // #214 Sparfuchs
     case "monoArchetypeRun": return !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]); // #215: Lauf nur mit dieser Fraktion
     case "allArchetypesRun": return !!p.hadAllArchetypesRun;                                     // #215: Lauf mit allen vier
+    case "gottgleichRun":   return !!p.hadGottgleichRun;      // #303: erstmals einen GOTTGLEICH-Stich getriggert
+    case "meisterNoReroll": return !!p.hadMeisterNoRerollRun; // #303 Sparfuchs: Meisterrang-Wochenlauf ohne Reroll
+    case "championWeek":    return !!p.hadChampionWeek;       // #303 Meister: Platz 1 einer Wochen-Rangliste (Champion-Board)
     case "buy":         return !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);               // #deckshop: mit SP gekauft (im Besitz)
     default:            return true;
   }
@@ -106,6 +124,18 @@ export function unlockProgress(def, profile) {
     case "allArchetypesRun": {
       const done = !!p.hadAllArchetypesRun;
       return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf mit allen vier Elementen ab" };
+    }
+    case "gottgleichRun": {
+      const done = !!p.hadGottgleichRun;
+      return { done, cur: done ? 1 : 0, target: 1, label: "Triggere zum ersten Mal einen „Gottgleich“-Stich" };
+    }
+    case "meisterNoReroll": {
+      const done = !!p.hadMeisterNoRerollRun;
+      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Meisterrang-Wochenlauf ohne einen einzigen Reroll ab" };
+    }
+    case "championWeek": {
+      const done = !!p.hadChampionWeek;
+      return { done, cur: done ? 1 : 0, target: 1, label: "Beende eine Wochen-Rangliste auf Platz 1 (Champion-Board)" };
     }
     case "buy": {
       const done = !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);

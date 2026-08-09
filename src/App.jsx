@@ -330,6 +330,7 @@ export function Autostich() {
     };
     const { profile: nextProfile, unlocks: metaUnlocks, challenge: challengeResult, earn: runEarn, onboarding: onbInfo } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
       shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
+      ranked: state.ranked || null, // #303 Sparfuchs: „meister" ⇒ Meisterrang-Wochen-Seed (Freischalt-Bedingung)
       completed, deckSnapshot, challengeMods: state.challengeMods || [] }); // #301 Challenge-Modifikatoren → DP-Abrechnung
     setProfile(nextProfile);
     setChallengeResult(challengeResult || null); // #301 Challenge-Ergebnis fürs Victory-Banner (null = kein Challenge-Lauf)

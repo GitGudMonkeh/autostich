@@ -120,6 +120,18 @@ export const THEME_DEFS = {
     deckId: "deck_onboarding", bfId: "bf_onboarding", els: ["deck", "bf"] },
   // #299: alte Progressions-/„Läufe"-Packs (neon/tank/mega/mond → deck_p1–4/bf_1–4) entfernt — sauberer Neustart
   // mit Standard (Prisma), Genesis und den kaufbaren DP-Packs. Kein Migrationspfad.
+
+  // ---- #303 Challenge-Decks (kind:"cond") — NICHT kaufbar; über eine Challenge freigeschaltet (Bedingung aus DECK_DEFS). ----
+  gottgleich: { id: "gottgleich", name: "Gottgleich", emblem: "👑", kind: "cond", a1: "#d4a63a", a2: "#8fce6a",
+    deckId: "deck_gottgleich", bfId: "bf_gottgleich", els: ["deck", "bf"] },
+  serie300:   { id: "serie300",   name: "Serie 300",  emblem: "🔥", kind: "cond", a1: "#ff7a2f", a2: "#ffd36a",
+    deckId: "deck_serie300",   bfId: "bf_serie300",   els: ["deck", "bf"] },
+  serie600:   { id: "serie600",   name: "Serie 600",  emblem: "☄️", kind: "cond", a1: "#ff3a12", a2: "#ff9a3f",
+    deckId: "deck_serie600",   bfId: "bf_serie600",   els: ["deck", "bf"] },
+  sparfuchs:  { id: "sparfuchs",  name: "Sparfuchs",  emblem: "🦊", kind: "cond", a1: "#e0a44a", a2: "#7a5a2a",
+    deckId: "deck_sparfuchs",  bfId: "bf_sparfuchs",  els: ["deck", "bf"] },
+  meister:    { id: "meister",    name: "Meister",    emblem: "🏆", kind: "cond", a1: "#d4a63a", a2: "#cfd3e0",
+    deckId: "deck_meister",    bfId: "bf_meister",    els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);

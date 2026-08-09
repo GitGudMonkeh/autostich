@@ -58,8 +58,20 @@ describe("packs — Zustände & Besitz", () => {
   });
   it("#299: alte Progressions-/Bedingungs-Packs (neon/tank/mega/mond) sind entfernt", () => {
     for (const id of ["neon", "tank", "mega", "mond"]) expect(THEME_DEFS[id]).toBeUndefined();
-    // Alle verbliebenen Packs sind Kauf-Packs (kind "buy") — keine „cond"-Packs mehr.
-    expect(THEMES.every((p) => p.kind === "buy")).toBe(true);
+  });
+  it("#303: die Challenge-Packs sind kind 'cond' (nicht kaufbar); alle übrigen Packs sind 'buy'", () => {
+    const challenge = ["gottgleich", "serie300", "serie600", "sparfuchs", "meister"];
+    for (const id of challenge) {
+      const t = THEME_DEFS[id];
+      expect(t.kind).toBe("cond");
+      expect(t.els).toEqual(["deck", "bf"]);
+      expect(isBuyPack(t)).toBe(false);
+      expect(packPrice(t)).toBe(null); // cond-Packs kosten nichts
+    }
+    for (const pack of THEMES) {
+      if (challenge.includes(pack.id)) continue;
+      expect(pack.kind).toBe("buy");
+    }
   });
 });
 

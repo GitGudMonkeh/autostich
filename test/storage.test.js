@@ -3,6 +3,7 @@ import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   loadOptions, loadUsername, saveUsername, loadSeenGuide, saveSeenGuide,
   recordRun, loadProfile, isNoRerollRun,
   monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION,
+  isGottgleichRun, isMeisterNoRerollRun, GOTTGLEICH_TRICK_MIN,
   saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA,
   saveProfile, wipeProfileStorage, saveOptions } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
@@ -358,12 +359,56 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
     expect(isAllArchetypesRun({ completed: true })).toBe(false);
   });
 
+  // #303 Challenge-Decks
+  it("isGottgleichRun (#303): bester Einzelstich ≥ Stufe-4-Schwelle — auch ohne Abschluss", () => {
+    expect(isGottgleichRun({ bestTrickScore: GOTTGLEICH_TRICK_MIN })).toBe(true);          // genau an der Schwelle
+    expect(isGottgleichRun({ bestTrickScore: GOTTGLEICH_TRICK_MIN - 1 })).toBe(false);     // knapp darunter
+    expect(isGottgleichRun({ completed: false, bestTrickScore: GOTTGLEICH_TRICK_MIN + 9 })).toBe(true); // Abbruch zählt
+    expect(isGottgleichRun({ completed: true })).toBe(false);                               // bestTrickScore fehlt → 0
+    expect(isGottgleichRun(null)).toBe(false);
+  });
+  it("isMeisterNoRerollRun (#303 Sparfuchs): abgeschlossener Meisterrang-Lauf ohne Reroll", () => {
+    expect(isMeisterNoRerollRun({ completed: true, ranked: "meister", rerollsUsed: 0 })).toBe(true);
+    expect(isMeisterNoRerollRun({ completed: true, ranked: "meister", rerollsUsed: 1 })).toBe(false); // gererollt
+    expect(isMeisterNoRerollRun({ completed: true, ranked: "standard", rerollsUsed: 0 })).toBe(false); // nicht Meister
+    expect(isMeisterNoRerollRun({ completed: false, ranked: "meister", rerollsUsed: 0 })).toBe(false); // vorzeitig
+    expect(isMeisterNoRerollRun({ completed: true, ranked: "meister" })).toBe(true);        // rerollsUsed fehlt → 0
+    expect(isMeisterNoRerollRun(null)).toBe(false);
+  });
+
   describe("recordRun setzt + persistiert die sticky Flags", () => {
     beforeEach(() => { global.localStorage = mockLS(); });
     afterEach(() => { delete global.localStorage; });
 
     it("frisches Profil: Flags sind false", () => {
       expect(loadProfile().hadNoRerollRun).toBe(false); // #214
+      expect(loadProfile().hadGottgleichRun).toBe(false);       // #303
+      expect(loadProfile().hadMeisterNoRerollRun).toBe(false);  // #303
+      expect(loadProfile().hadChampionWeek).toBe(false);        // #303 (Trigger folgt mit dem Champion-Board)
+    });
+
+    it("#303: Gottgleich-Stich setzt hadGottgleichRun (sticky), auch bei abgebrochenem Lauf", () => {
+      const { profile } = recordRun({ score: 100, ts: 1, completed: false, bestTrickScore: GOTTGLEICH_TRICK_MIN });
+      expect(profile.hadGottgleichRun).toBe(true);
+      expect(loadProfile().hadGottgleichRun).toBe(true);
+      // bleibt sticky, auch wenn ein Folgelauf die Schwelle nicht erreicht
+      const later = recordRun({ score: 50, ts: 2, completed: true, bestTrickScore: 10 });
+      expect(later.profile.hadGottgleichRun).toBe(true);
+    });
+
+    it("#303 Sparfuchs: nur ein abgeschlossener Meisterrang-Lauf ohne Reroll setzt hadMeisterNoRerollRun", () => {
+      const a = recordRun({ score: 100, ts: 1, completed: true, ranked: "standard", rerollsUsed: 0 });
+      expect(a.profile.hadMeisterNoRerollRun).toBe(false); // kein Meister
+      const b = recordRun({ score: 100, ts: 2, completed: true, ranked: "meister", rerollsUsed: 2 });
+      expect(b.profile.hadMeisterNoRerollRun).toBe(false); // gererollt
+      const c = recordRun({ score: 100, ts: 3, completed: true, ranked: "meister", rerollsUsed: 0 });
+      expect(c.profile.hadMeisterNoRerollRun).toBe(true);
+      expect(loadProfile().hadMeisterNoRerollRun).toBe(true);
+    });
+
+    it("#303: hadChampionWeek bleibt (mangels Trigger) false und wird nicht versehentlich gesetzt", () => {
+      const { profile } = recordRun({ score: 999, ts: 1, completed: true, ranked: "meister", rerollsUsed: 0, bestTrickScore: GOTTGLEICH_TRICK_MIN });
+      expect(profile.hadChampionWeek).toBe(false);
     });
 
     it("#214: noReroll-Lauf setzt hadNoRerollRun (persistiert), ein Reroll-Lauf nicht", () => {

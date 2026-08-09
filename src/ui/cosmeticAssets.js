@@ -24,6 +24,17 @@ import waleFront     from "../assets/cards/decks_player/deck_wale/front.png";   
 import waleBack      from "../assets/cards/decks_player/deck_wale/back.png";
 import genesisFront  from "../assets/cards/decks_player/deck_onboarding/front.png"; // Genesis
 import genesisBack   from "../assets/cards/decks_player/deck_onboarding/back.png";
+// #303 Challenge-Decks (über eine Challenge freigeschaltet) — Deck-Paare:
+import gottgleichFront from "../assets/cards/decks_player/deck_gottgleich/front.png"; // Gottgleich
+import gottgleichBack  from "../assets/cards/decks_player/deck_gottgleich/back.png";
+import serie300Front   from "../assets/cards/decks_player/deck_serie300/front.png";   // Serie 300
+import serie300Back    from "../assets/cards/decks_player/deck_serie300/back.png";
+import serie600Front   from "../assets/cards/decks_player/deck_serie600/front.png";   // Serie 600
+import serie600Back    from "../assets/cards/decks_player/deck_serie600/back.png";
+import sparfuchsFront  from "../assets/cards/decks_player/deck_sparfuchs/front.png";  // Sparfuchs
+import sparfuchsBack   from "../assets/cards/decks_player/deck_sparfuchs/back.png";
+import meisterFront    from "../assets/cards/decks_player/deck_meister/front.png";    // Meister
+import meisterBack     from "../assets/cards/decks_player/deck_meister/back.png";
 // #299: alte Progressions-Battlefields (bf_1–4) entfernt.
 // Deck-Werkstatt Starter-Themes (kaufbar, je Element 1 SP): jedes Theme = Deck-Paar + Battlefield.
 import sunsetFront from "../assets/cards/decks_player/deck_sunset/front.png"; // Sunset Rider
@@ -49,6 +60,17 @@ import bfWaleDesktop     from "../assets/battlefields/bf_wale/desktop.jpg";
 import bfWaleMobile      from "../assets/battlefields/bf_wale/mobile.jpg";
 import bfGenesisDesktop  from "../assets/battlefields/bf_onboarding/desktop.jpg";
 import bfGenesisMobile   from "../assets/battlefields/bf_onboarding/mobile.jpg";
+// #303 Challenge-Battlefields:
+import bfGottgleichDesktop from "../assets/battlefields/bf_gottgleich/desktop.jpg";
+import bfGottgleichMobile  from "../assets/battlefields/bf_gottgleich/mobile.jpg";
+import bfSerie300Desktop   from "../assets/battlefields/bf_serie300/desktop.jpg";
+import bfSerie300Mobile    from "../assets/battlefields/bf_serie300/mobile.jpg";
+import bfSerie600Desktop   from "../assets/battlefields/bf_serie600/desktop.jpg";
+import bfSerie600Mobile    from "../assets/battlefields/bf_serie600/mobile.jpg";
+import bfSparfuchsDesktop  from "../assets/battlefields/bf_sparfuchs/desktop.jpg";
+import bfSparfuchsMobile   from "../assets/battlefields/bf_sparfuchs/mobile.jpg";
+import bfMeisterDesktop    from "../assets/battlefields/bf_meister/desktop.jpg";
+import bfMeisterMobile     from "../assets/battlefields/bf_meister/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -63,6 +85,12 @@ export const DECK_ASSETS = {
   deck_spacedog:   { front: spacedogFront, back: spacedogBack },
   deck_wale:       { front: waleFront,     back: waleBack },
   deck_onboarding: { front: genesisFront,  back: genesisBack },
+  // #303 Challenge-Decks:
+  deck_gottgleich: { front: gottgleichFront, back: gottgleichBack },
+  deck_serie300:   { front: serie300Front,   back: serie300Back },
+  deck_serie600:   { front: serie600Front,   back: serie600Back },
+  deck_sparfuchs:  { front: sparfuchsFront,   back: sparfuchsBack },
+  deck_meister:    { front: meisterFront,     back: meisterBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -79,6 +107,12 @@ export const BATTLEFIELD_ASSETS = {
   bf_spacedog:   { desktop: bfSpacedogDesktop, mobile: bfSpacedogMobile },
   bf_wale:       { desktop: bfWaleDesktop,     mobile: bfWaleMobile },
   bf_onboarding: { desktop: bfGenesisDesktop,  mobile: bfGenesisMobile },
+  // #303 Challenge-Battlefields:
+  bf_gottgleich: { desktop: bfGottgleichDesktop, mobile: bfGottgleichMobile },
+  bf_serie300:   { desktop: bfSerie300Desktop,   mobile: bfSerie300Mobile },
+  bf_serie600:   { desktop: bfSerie600Desktop,   mobile: bfSerie600Mobile },
+  bf_sparfuchs:  { desktop: bfSparfuchsDesktop,  mobile: bfSparfuchsMobile },
+  bf_meister:    { desktop: bfMeisterDesktop,    mobile: bfMeisterMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;
