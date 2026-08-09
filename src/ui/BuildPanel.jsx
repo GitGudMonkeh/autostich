@@ -7,7 +7,7 @@ import { FIRST_SKILL_CYCLE } from "../game/constants.js";
 export function BuildPanel({ perks, skills = [], familyTiers = {}, zinsBonus }) {
   const famCount = Object.values(familyTiers).filter((t) => t > 0).length;
   return (
-    <div className="rounded-xl p-4 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+    <div className="rounded-xl p-4 as-panel" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: "1px solid #2c2a3a" }}>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">

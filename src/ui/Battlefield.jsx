@@ -8,6 +8,7 @@ import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useReducedFx } from "./useReducedFx.js";
 import { startPrunk } from "./prunkFx.js";
+import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
 import glacierIcon from "./assets/glacier.webp"; // Eis-Treffer-Identität: das echte Gletscher-Asset im Score-Float
 import cardBackImg  from "../assets/cards/card-back.png";  // Default-Deck-Rücken: „Prisma" (v0.4, ersetzt den Schwerter-Rücken #180)
@@ -963,7 +964,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // --- Panel-Rahmen + äußerer Bloom ---
   // Archetyp-Ambiente (Feuer-Glut / Blitz-Glow) ist zu den jeweiligen Fraktions-Panels gewandert (HeatBar/ChargeBar);
   // das Battlefield bleibt neutral, nur die Sieg-/Krit-Aura des aktuellen Stich-Ergebnisses liegt noch am Panel.
-  const panelBorder = "1px solid #26262e";
+  const panelBorder = "1px solid #2c2a3a";
   const outerParts = [];
   // #192: der Screen-Shake eines großen NORMALEN Siegs bekommt eine dezente grün/gold Panel-Aura (Sieg-Identität,
   // WIN_TIER_COLORS), damit die „grün/gold"-Wirkung sichtbar ist, ohne Flash/Vignette (die Crit-exklusiv bleiben).
@@ -977,11 +978,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   return (
    <>
     <div ref={panelRef} className="rounded-xl p-6 overflow-hidden as-panel relative"
-      style={{ background: "#17171c", border: panelBorder, boxShadow: outerGlow,
+      style={{ background: "radial-gradient(360px 130px at 50% 0%, rgba(155,130,240,.10), transparent 70%), linear-gradient(180deg,#1b1a24,#141019)",
+               border: panelBorder, boxShadow: outerGlow,
                // #188 v2 / #192: Screen-Shake bei großem Sieg — Panel jittert, Amplitude via --shake-amp nach Stufe.
                // Krit ab STARK, normaler Sieg ab BRUTAL (grün/gold Aura via outerGlow, kein Flash/Vignette).
                animation: shakeName ? `${shakeName} ${shakeDur}ms ease-in-out` : undefined,
                ...(shakeAmp ? { "--shake-amp": `${shakeAmp}px` } : {}) }}>
+      {/* Battlefield = „Bühne" des Spielscreens: die gemeinsame Tri-Color-Haarlinie (Hub-Signet). Der dynamische
+          Sieg-/Krit-Schein liegt weiter über outerGlow — die Farbe kommt vom Spielausgang, nicht vom Skin. */}
+      <PhaseHairline />
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
           bei z-0 → überdeckt die opake Panelfläche, bleibt aber HINTER Feuer-Glut/Frost/Blitz (spätere z-0/1/2)
           und den Karten (z-10). Dunkler Scrim hält Karten/Text lesbar. Ohne Skin (null) → nichts, Standard bleibt. */}

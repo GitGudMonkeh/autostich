@@ -50,7 +50,7 @@ export function StatusBar({
   return (
     <div className="sticky top-0 z-20 -mx-1">
       <div className="as-statusbar flex flex-col rounded-xl overflow-hidden as-panel"
-        style={{ background: "#1a1a22f2", border: "1px solid #33333e", backdropFilter: "blur(6px)", boxShadow: "0 8px 20px -8px #000" }}>
+        style={{ background: "linear-gradient(180deg,#1b1a24f2,#141019f2)", border: "1px solid #2c2a3a", backdropFilter: "blur(6px)", boxShadow: "0 8px 20px -8px #000" }}>
 
         {/* Zeile 1: Ablauf-Steuerung (Pause · Tempo · Karten) — links; Runde + Zeit rechts neben dem Karten-Icon. */}
         <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderBottom: "1px solid #26262e" }}>

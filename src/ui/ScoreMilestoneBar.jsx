@@ -16,7 +16,7 @@ export function ScoreMilestoneBar({ score = 0 }) {
   const pct = Math.round(fill * 100);
 
   return (
-    <div className="rounded-xl px-3 py-2 as-panel" style={{ background: "#17171c", border: `1px solid ${acc}44` }}
+    <div className="rounded-xl px-3 py-2 as-panel" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${acc}44` }}
       title={atMax ? "Alle Score-Meilensteine erreicht" : `Nächster Meilenstein: ${mio(next.at)} (+${next.sp} SP)`}>
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-[11px] font-pixel tracking-wide" style={{ color: accHi }}>

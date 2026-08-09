@@ -30,6 +30,14 @@ export const STICKY_HEAD_BG = "#1b1a24";
 // gemeinsamen Menü-Familien-Ton ziehen. KEIN Rahmen/Haarlinie/Glow, Ränder + Skill-/Perk-/Gebäude-/Kartenfarben bleiben.
 export const PANEL_BG = "#1b1a24";
 
+/* Gemeinsame In-Run-Panel-Schale: StatusBar · Battlefield · Fraktions-Panels · Analyse · Build teilen dieselbe
+   Verlaufsfläche + denselben Rahmen, damit der Spielscreen als EIN System liest (statt flachem #17171c/#14131c-Mix
+   wie bisher). Akzent (Fraktionsfarbe) + dynamische Sieg-/Krit-Aura liegen weiterhin oben drauf. */
+export const PANEL_CARD = {
+  background: "linear-gradient(180deg,#1b1a24,#141019)",
+  border: "1px solid #2c2a3a",
+};
+
 /* ---- Phasen-Schale (In-Run-Overlays an die Hub-Bildsprache angeglichen) ----
    Die Phasen behalten ihre Farb-Identität (Perk/Skill violett, Aufstellung/Ziel grün, Gletscher eisblau,
    Legendär gold, Architekt blau); der Skin macht sie zur Familie, ohne sie gleichzuschalten. NUR die Schale

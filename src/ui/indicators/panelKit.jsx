@@ -2,7 +2,10 @@
 // Vereinheitlicht den bisher überall inline wiederholten Panel-Look (#17171c / #26262e) und
 // liefert eine kompakte Zähler-Zelle für Sekundär-Akkus (Asche/Schmieden; später Blitz/Eis/Pflanze).
 
-export const PANEL_STYLE = { background: "#17171c", border: "1px solid #26262e" };
+import { PANEL_CARD } from "../modalStyle.jsx";
+
+// Alle Fraktions-/Indikator-Panels teilen die gemeinsame In-Run-Schale (Verlaufsfläche + Rahmen).
+export const PANEL_STYLE = PANEL_CARD;
 
 // Gerahmtes Indikator-Panel (wie HeatBar/ChargeBar/CrystalBar es tragen).
 export function IndicatorPanel({ children, className = "" }) {
@@ -23,7 +26,8 @@ export function FactionShell({ icon, name, color, stateText, stateOn = false, co
   return (
     // isolation:isolate → eigener Stacking-Context, damit die negative-z Ambient-Ebene HINTER den Inhalt fällt,
     // ohne dass der Inhalt (oder ein absoluter Kind-Effekt wie ChargeBars as-blitz-pulse) positioniert werden muss.
-    <div className={`rounded-xl p-3 as-panel relative overflow-hidden ${className}`} style={{ ...PANEL_STYLE, isolation: "isolate" }}>
+    <div className={`rounded-xl p-3 as-panel relative overflow-hidden ${className}`}
+      style={{ ...PANEL_STYLE, border: `1px solid ${color}33`, isolation: "isolate" }}>
       {ambient && (
         <div aria-hidden="true" className={`absolute inset-0 rounded-xl pointer-events-none${ambientPulse ? ` ${ambientPulse}` : ""}`}
           style={{ zIndex: -1, boxShadow: ambient }} />
