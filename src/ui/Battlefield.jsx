@@ -902,10 +902,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             backgroundImage: `linear-gradient(${deckA1} 1px,transparent 1px),linear-gradient(90deg,${deckA1} 1px,transparent 1px)`,
             backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.24 }}>
             {!reduced && sweepId > 0 && (
+              // Bei einem SIEG glüht die Linie sehr intensiv (dicker, viel stärkerer Glow, heißerer Kern);
+              // bei einer Niederlage bleibt sie wie gehabt.
               <div key={sweepId} className="as-deck-sweep absolute left-0 right-0"
-                style={{ height: 7,
+                style={{ height: win ? 10 : 7,
                          background: `linear-gradient(90deg, transparent, ${deckA1} 15%, #ffffff 50%, ${deckA1} 85%, transparent)`,
-                         boxShadow: `0 0 20px 4px ${deckA1}, 0 0 52px 12px ${deckA1}, 0 0 6px 2px #ffffff`,
+                         boxShadow: win
+                           ? `0 0 40px 10px ${deckA1}, 0 0 96px 26px ${deckA1}, 0 0 16px 5px #ffffff`
+                           : `0 0 20px 4px ${deckA1}, 0 0 52px 12px ${deckA1}, 0 0 6px 2px #ffffff`,
                          animationDuration: `${sweepDur}ms` }} />
             )}
           </div>

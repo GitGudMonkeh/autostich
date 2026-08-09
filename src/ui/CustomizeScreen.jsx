@@ -303,9 +303,11 @@ function MineView({ p, deckId, bfId, activeTheme, options, ownedDeckThemes, owne
   const isMobile = useIsMobile();
   const accent = activeTheme?.a1 || "#8a7de0";
   const stdThumb = <span className="shrink-0" style={{ width: 34, height: 44, borderRadius: 6, background: "#171622", border: "1px solid #2a2836" }} />;
-  // Kategorien ein-/ausklappbar, standardmäßig offen.
-  const [open, setOpen] = useState({ deck: true, bf: true, anim: true, fx: true });
-  const toggle = (k) => setOpen((o) => ({ ...o, [k]: !o[k] }));
+  // Kategorien ein-/ausklappbar. Zustand in den Optionen gemerkt (fehlt = offen) → beim ersten Mal offen, danach
+  // bleibt die Einstellung, mit der man die Werkstatt verlassen hat.
+  const FOLD_KEY = { deck: "wsFoldDeck", bf: "wsFoldBf", anim: "wsFoldAnim", fx: "wsFoldFx" };
+  const open = { deck: options?.wsFoldDeck !== false, bf: options?.wsFoldBf !== false, anim: options?.wsFoldAnim !== false, fx: options?.wsFoldFx !== false };
+  const toggle = (k) => onChoose({ [FOLD_KEY[k]]: !open[k] });
   return (
     <>
       <p className="text-[11px] opacity-45 mt-2 leading-snug">
