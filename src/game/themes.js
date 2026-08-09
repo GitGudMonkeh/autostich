@@ -44,7 +44,7 @@ export const GLOBAL_FX = [
     ownKey: "fx:blackhole", option: "fxBlackhole", preview: "blackhole", group: "finisher" },
   { key: "lasergrid", name: "Lasergitter", desc: "Beim Sieg blitzt ein Neon-Gitter über die Gegnerkarte — sie zerfällt entlang der Linien in ein Raster aus Stücken, die auseinanderfliegen (statt Klinge/Laser).",
     ownKey: "fx:lasergrid", option: "fxLasergrid", preview: "lasergrid", group: "finisher" },
-  { key: "burnBeam", name: "Brennstrahl", desc: "Beim Sieg brennt ein dünner Neon-Strahl von oben ein glühendes Loch in die exakte Kartenmitte, die Karte verblasst; bei Siegserie hält der Strahl länger & es springen immer mehr Funken aus dem Loch (statt Klinge/Laser).",
+  { key: "burnBeam", name: "Brennstrahl", desc: "Beim Sieg brennt ein dünner Neon-Strahl von oben ein glühendes Loch in die exakte Kartenmitte; die Karte zerfällt in kleine warme Funken/Asche. Bei Siegserie hält der Strahl länger & es springen immer mehr Funken aus dem Loch (statt Klinge/Laser).",
     ownKey: "fx:burnBeam", option: "fxBurnBeam", preview: "burnbeam", group: "finisher" },
   // Kritischer Treffer.
   { key: "shatter", name: "Shatter", desc: "Kritische Treffer zerbersten die Gegnerkarte in Scherben (sonst normaler Schnitt).",

@@ -462,21 +462,43 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
   );
 }
 
-/* #295 Sieg-Finisher „Brennstrahl" — PER-SIEG-BURST auf der Gegnerkarte: ein glühendes Loch brennt in die EXAKTE
-   Kartenmitte (left/top 50 % des fixen 104×144-Slots), die Karte VERBLASST, und aus dem Loch springen Funken (Hitze-
-   Akzent Orange + Deckfarbe). Der eigentliche STRAHL ist persistent (BurnBeamPersist, s. u.) und lebt über die Serie
-   hinweg auf Panel-Ebene — hier nur der Einschlag/Zerfall je Sieg. Dichte/Größe/Streuweite/Glow der Funken und die
-   Loch-Größe wachsen mit der Serie (`streak`). Budget an die Stich-Kadenz (flipMs) gekoppelt → löst vor dem nächsten
-   Flip auf. Deterministisch aus `seed`. Nur bei normaler Bewegung (Aufrufer prüft `reduced`). */
+/* #295/#302 Sieg-Finisher „Brennstrahl" — PER-SIEG-BURST auf der Gegnerkarte: ein glühendes Loch brennt in die EXAKTE
+   Kartenmitte (left/top 50 % des fixen 104×144-Slots); die Karte DISINTEGRIERT dabei in viele KLEINE warme Partikel
+   (Funken/Asche), die aus der Kartenfläche driften, schrumpfen & ausfaden — bewusst DEZENT (weniger/kleiner als der
+   künftige „Zerstäuben"-Finisher, gemeinsamer Dichte-Parameter DISINT_DENSITY). Aus dem Loch springen zusätzlich
+   Funken. Der eigentliche STRAHL ist persistent (BurnBeamPersist, s. u.). Dichte/Größe/Streuweite/Glow wachsen mit der
+   Serie (`streak`). Budget an die Stich-Kadenz (flipMs) gekoppelt. Deterministisch aus `seed`. Reduced-safe (Aufrufer). */
+// Disintegrations-Dichte (Ursprungs-Raster über der Karte). BEWUSST niedrig — die spätere „Zerstäuben"-Referenz nutzt
+// ein dichteres Raster; über diesen Parameter bleibt die Abstufung klar.
+const DISINT_COLS = 6, DISINT_ROWS = 8;
 export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, intensity = 0, scale = 1, streak = 0 }) {
   const HOT = "#ff7a2f";                                  // Hitze-Akzent (Ember-Orange)
   const streakK = clamp(streak / 12, 0, 1);               // 0..1: Serien-Eskalation
   const budget = Math.max(200, flipMs - 30);              // muss vor dem nächsten Flip fertig sein (Turbo-gekoppelt)
   const body = Math.max(150, budget - delay);
-  const hitAt = delay + Math.round(body * 0.22);          // kurzer Beat, dann zünden Loch/Funken/Verblassen
+  const hitAt = delay + Math.round(body * 0.22);          // kurzer Beat, dann zünden Loch/Funken/Disintegration
   const holeMs = Math.round(body * 0.66);                 // endet ~ mit dem Budget (vor dem nächsten Flip)
-  const fadeMs = Math.round(body * 0.62);
+  const fadeMs = Math.round(body * 0.42);                 // Karte vergeht schnell, während sie zu Asche zerfällt
+  const disintDur = Math.round(body * 0.72);              // Partikel-Flug-/Fade-Dauer
   const holeMax = (1.4 + intensity * 0.5 + streakK * 0.5).toFixed(2); // kleineres, glühendes Loch (bei Serie etwas größer)
+  // #302 Disintegrations-Partikel: kleines Raster über der Kartenfläche; jedes Stück driftet von der Kartenmitte weg
+  // (+ Schwerkraft = Asche fällt), schrumpft & fadet. Überwiegend warm (Weiß-/Goldglut → Ember → Deckfarbe).
+  const dust = [];
+  for (let r = 0; r < DISINT_ROWS; r++) {
+    for (let c = 0; c < DISINT_COLS; c++) {
+      const i = r * DISINT_COLS + c;
+      const px = (c + 0.5) / DISINT_COLS, py = (r + 0.5) / DISINT_ROWS;
+      const spread = 10 + Math.abs(fjitter(seed * 5 + i * 13, 22 + streakK * 18));
+      dust.push({
+        i, left: `${(px * 100).toFixed(1)}%`, top: `${(py * 100).toFixed(1)}%`,
+        dx: ((px - 0.5) * spread + fjitter(seed * 3 + i * 7, 7)).toFixed(1),
+        dy: ((py - 0.5) * spread + Math.abs(fjitter(seed * 2 + i * 11, 9)) + 9).toFixed(1), // + Schwerkraft (Asche fällt)
+        sz: (1.3 + Math.abs(fjitter(seed * 7 + i * 5, 1.5))).toFixed(1),                    // 1.3..2.8 px (klein)
+        c: i % 5 === 0 ? "#ffffff" : i % 5 === 1 ? "#ffd36a" : i % 5 < 4 ? HOT : color,
+        d: hitAt + Math.round((i / (DISINT_ROWS * DISINT_COLS)) * disintDur * 0.2),         // leichte Staffelung
+      });
+    }
+  }
   // Funken springen fortlaufend aus dem Loch — Dichte (Zahl), Größe, Streuweite, Glow UND Streu-Fenster wachsen
   // deutlich mit der Serie (bleibt im Budget). streakK 0..1.
   const N = Math.max(10, Math.round((10 + intensity * 8 + streakK * 54) * scale)); // ~18 (keine Serie) … ~62 (hohe Serie)
@@ -498,8 +520,15 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
   });
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      {/* Karte verblasst (kein Bruch) — sie „vergeht", während das Loch durchbrennt. */}
+      {/* #302 Karte zerfällt in Asche: sie vergeht schnell (as-burn-fade), während die Disintegrations-Partikel
+          (unten) aus ihrer Fläche stieben — statt eines reinen Auflösens. */}
       <div className="absolute inset-0" style={{ animation: `as-burn-fade ${fadeMs}ms ease-in ${hitAt}ms both`, willChange: "opacity" }}>{cardEl}</div>
+      {/* #302 Disintegrations-Partikel (dezent): kleine warme Funken/Asche aus der Kartenfläche, driften weg + faden. */}
+      {dust.map((s) => (
+        <div key={`du${s.i}`} style={{ position: "absolute", left: s.left, top: s.top, width: +s.sz, height: +s.sz, borderRadius: "50%",
+          background: s.c, boxShadow: `0 0 3px ${s.c}`, "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
+          animation: `as-burn-dust ${disintDur}ms ease-out ${s.d}ms both`, willChange: "transform, opacity" }} />
+      ))}
       {/* Glühendes Loch in der EXAKTEN Kartenmitte (left/top 50 % des 104×144-Slots): warmer Ember-Verlauf mit
           verglühtem Kern (kein harter schwarzer Kern/Ring) + weicher Außen-Glow, der mit der Serie mitwächst. */}
       <div className="absolute" style={{ left: "50%", top: "50%", width: 10, height: 10, borderRadius: "50%", "--hole-max": holeMax,
