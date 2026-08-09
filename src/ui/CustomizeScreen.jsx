@@ -207,12 +207,28 @@ function Switch({ on, disabled }) {
 
 const EYEBROW = "flex items-center gap-2 text-[10px] font-extrabold tracking-[0.13em] uppercase mt-4 mb-2";
 
+// Ein-/ausklappbare Kategorie-Überschrift in „Verfügbare Decks" (Standard: offen). Klick auf den Kopf klappt zu/auf.
+function FoldSection({ title, hint, open, onToggle, children }) {
+  return (
+    <>
+      <button type="button" onClick={onToggle} className="w-full flex items-center gap-2 text-[10px] font-extrabold tracking-[0.13em] uppercase mt-4 mb-2 text-left" style={{ color: "#9a97ab" }}>
+        {title}
+        <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
+        {hint && <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{hint}</span>}
+        <span className="text-[11px] shrink-0" aria-hidden="true" style={{ color: "#6d7288", transition: "transform .15s", transform: open ? "rotate(90deg)" : "none" }}>›</span>
+      </button>
+      {open && children}
+    </>
+  );
+}
+
 export function CustomizeScreen({ options, profile, onChoose, onClose, onProfileChange }) {
   useEscape(onClose);
   const p = profile || {};
   const [mode, setMode] = useState("mine");   // "mine" | "prev"
   const [ov, setOv] = useState(null);          // Theme-Kauffenster: { list: theme[], idx } | null (kategorie-lokal)
-  const [ovFx, setOvFx] = useState(null);      // globales-Effekt-Kauffenster: GLOBAL_FX-Eintrag | null
+  const [ovFxIdx, setOvFxIdx] = useState(-1);  // globales-Effekt-Kauffenster: Index in GLOBAL_FX (-1 = zu)
+  const stepFx = (d) => setOvFxIdx((i) => (i + d + GLOBAL_FX.length) % GLOBAL_FX.length);
   const [sel, setSel] = useState("deck");      // gewähltes Element im Kauffenster
   const spBal = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
 
@@ -259,7 +275,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           <MineView p={p} deckId={deckId} bfId={bfId} activeTheme={activeTheme} options={options}
             ownedDeckThemes={ownedDeckThemes} ownedBfThemes={ownedBfThemes} onChoose={onChoose} onBrowse={() => setMode("prev")} />
         ) : (
-          <PreviewView p={p} onOpen={openOv} onOpenFx={(fx) => setOvFx(fx)} />
+          <PreviewView p={p} onOpen={openOv} onOpenFx={(fx) => setOvFxIdx(GLOBAL_FX.indexOf(fx))} />
         )}
       </div>
 
@@ -271,9 +287,10 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           onBuyAll={() => buy((pf) => buyAllForTheme(pf, ovTheme))} />
       )}
 
-      {ovFx && (
-        <GlobalFxOverlay fx={ovFx} p={p} spBal={spBal} onClose={() => setOvFx(null)}
-          onBuy={() => buy((pf) => buyGlobalFx(pf, ovFx))} />
+      {ovFxIdx >= 0 && (
+        <GlobalFxOverlay fx={GLOBAL_FX[ovFxIdx]} idx={ovFxIdx} count={GLOBAL_FX.length} p={p} spBal={spBal}
+          onStep={stepFx} onClose={() => setOvFxIdx(-1)}
+          onBuy={() => buy((pf) => buyGlobalFx(pf, GLOBAL_FX[ovFxIdx]))} />
       )}
     </div>
   );
@@ -286,6 +303,9 @@ function MineView({ p, deckId, bfId, activeTheme, options, ownedDeckThemes, owne
   const isMobile = useIsMobile();
   const accent = activeTheme?.a1 || "#8a7de0";
   const stdThumb = <span className="shrink-0" style={{ width: 34, height: 44, borderRadius: 6, background: "#171622", border: "1px solid #2a2836" }} />;
+  // Kategorien ein-/ausklappbar, standardmäßig offen.
+  const [open, setOpen] = useState({ deck: true, bf: true, anim: true, fx: true });
+  const toggle = (k) => setOpen((o) => ({ ...o, [k]: !o[k] }));
   return (
     <>
       <p className="text-[11px] opacity-45 mt-2 leading-snug">
@@ -293,58 +313,60 @@ function MineView({ p, deckId, bfId, activeTheme, options, ownedDeckThemes, owne
       </p>
 
       {/* Kartendeck */}
-      <div className={EYEBROW} style={{ color: "#9a97ab" }}>Kartendeck <span className="flex-1 h-px" style={{ background: "#2a2836" }} /><span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>nur eins aktiv</span></div>
-      <div className="flex flex-col gap-2">
-        <SelectRow active={deckId === "default"} onClick={() => onChoose({ deckId: "default" })}
-          thumb={stdThumb} title="Standard" sub="Grund-Deck" />
-        {ownedDeckThemes.map((t) => (
-          <SelectRow key={t.id} active={deckId === t.deckId} onClick={() => onChoose({ deckId: t.deckId })}
-            thumb={<DeckThumb deckId={t.deckId} className="rounded-md" style={{ width: 34, height: 44 }} />}
-            title={t.name} sub="Karte Front + Back" />
-        ))}
-      </div>
+      <FoldSection title="Kartendeck" hint="nur eins aktiv" open={open.deck} onToggle={() => toggle("deck")}>
+        <div className="flex flex-col gap-2">
+          <SelectRow active={deckId === "default"} onClick={() => onChoose({ deckId: "default" })}
+            thumb={stdThumb} title="Standard" sub="Grund-Deck" />
+          {ownedDeckThemes.map((t) => (
+            <SelectRow key={t.id} active={deckId === t.deckId} onClick={() => onChoose({ deckId: t.deckId })}
+              thumb={<DeckThumb deckId={t.deckId} className="rounded-md" style={{ width: 34, height: 44 }} />}
+              title={t.name} sub="Karte Front + Back" />
+          ))}
+        </div>
+      </FoldSection>
 
       {/* Battlefield */}
-      <div className={EYEBROW} style={{ color: "#9a97ab" }}>Battlefield <span className="flex-1 h-px" style={{ background: "#2a2836" }} /><span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>nur eins aktiv</span></div>
-      <div className="flex flex-col gap-2">
-        <SelectRow active={bfId === "default"} onClick={() => onChoose({ battlefieldId: "default" })}
-          thumb={stdThumb} title="Standard" sub="Schlichter Grund" />
-        {ownedBfThemes.map((t) => {
-          const a = battlefieldAssets(t.bfId);
-          return (
-            <SelectRow key={t.id} active={bfId === t.bfId} onClick={() => onChoose({ battlefieldId: t.bfId })}
-              thumb={<img src={isMobile ? a?.mobile : a?.desktop} alt="" className="object-cover rounded-md" style={{ width: 34, height: 44 }} />}
-              title={t.name} sub={`Neon-Szene · ${isMobile ? "Mobile" : "Desktop"}`} />
-          );
-        })}
-      </div>
+      <FoldSection title="Battlefield" hint="nur eins aktiv" open={open.bf} onToggle={() => toggle("bf")}>
+        <div className="flex flex-col gap-2">
+          <SelectRow active={bfId === "default"} onClick={() => onChoose({ battlefieldId: "default" })}
+            thumb={stdThumb} title="Standard" sub="Schlichter Grund" />
+          {ownedBfThemes.map((t) => {
+            const a = battlefieldAssets(t.bfId);
+            return (
+              <SelectRow key={t.id} active={bfId === t.bfId} onClick={() => onChoose({ battlefieldId: t.bfId })}
+                thumb={<img src={isMobile ? a?.mobile : a?.desktop} alt="" className="object-cover rounded-md" style={{ width: 34, height: 44 }} />}
+                title={t.name} sub={`Neon-Szene · ${isMobile ? "Mobile" : "Desktop"}`} />
+            );
+          })}
+        </div>
+      </FoldSection>
 
       {/* Animationen (global an/aus, an das aktive Theme gebunden) */}
-      <div className={EYEBROW} style={{ color: "#9a97ab" }}>Animationen <span className="flex-1 h-px" style={{ background: "#2a2836" }} /><span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>frei kombinierbar</span></div>
-      <div className="flex flex-col gap-2">
-        {FX_KEYS.map((fx) => {
-          const def = ELEMENT_BY_KEY[fx];
-          const owned = fxOwnedActive(fx);
-          const on = owned && !!options?.[FX_OPTION_KEY[fx]];
-          return (
-            <button key={fx} type="button" disabled={!owned}
-              onClick={owned ? () => onChoose({ [FX_OPTION_KEY[fx]]: !on }) : undefined}
-              className="flex items-center gap-3 rounded-xl px-3 py-2 text-left" style={{ background: "#14131c", border: "1px solid #2a2836", cursor: owned ? "pointer" : "default", opacity: owned ? 1 : 0.55 }}>
-              <span className="shrink-0 rounded-md" style={{ width: 30, height: 30, background: owned ? `${accent}22` : "#171622", border: `1px solid ${owned ? `${accent}66` : "#2a2836"}` }} />
-              <span className="flex-1 min-w-0">
-                <span className="block text-[12.5px] font-extrabold">{def.name}</span>
-                <span className="block text-[10.5px]" style={{ color: "#9a97ab" }}>{owned ? def.desc : "Im aktiven Theme nicht im Besitz"}</span>
-              </span>
-              <Switch on={on} disabled={!owned} />
-            </button>
-          );
-        })}
-      </div>
+      <FoldSection title="Animationen" hint="frei kombinierbar" open={open.anim} onToggle={() => toggle("anim")}>
+        <div className="flex flex-col gap-2">
+          {FX_KEYS.map((fx) => {
+            const def = ELEMENT_BY_KEY[fx];
+            const owned = fxOwnedActive(fx);
+            const on = owned && !!options?.[FX_OPTION_KEY[fx]];
+            return (
+              <button key={fx} type="button" disabled={!owned}
+                onClick={owned ? () => onChoose({ [FX_OPTION_KEY[fx]]: !on }) : undefined}
+                className="flex items-center gap-3 rounded-xl px-3 py-2 text-left" style={{ background: "#14131c", border: "1px solid #2a2836", cursor: owned ? "pointer" : "default", opacity: owned ? 1 : 0.55 }}>
+                <span className="shrink-0 rounded-md" style={{ width: 30, height: 30, background: owned ? `${accent}22` : "#171622", border: `1px solid ${owned ? `${accent}66` : "#2a2836"}` }} />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[12.5px] font-extrabold">{def.name}</span>
+                  <span className="block text-[10.5px]" style={{ color: "#9a97ab" }}>{owned ? def.desc : "Im aktiven Theme nicht im Besitz"}</span>
+                </span>
+                <Switch on={on} disabled={!owned} />
+              </button>
+            );
+          })}
+        </div>
+      </FoldSection>
 
       {/* Effekte (global gekaufte Effekte, laufweit — hier an/aus) */}
       {ownedGlobalFx.length > 0 && (
-        <>
-          <div className={EYEBROW} style={{ color: "#9a97ab" }}>Effekte <span className="flex-1 h-px" style={{ background: "#2a2836" }} /><span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>global · laufweit</span></div>
+        <FoldSection title="Effekte" hint="global · laufweit" open={open.fx} onToggle={() => toggle("fx")}>
           <div className="flex flex-col gap-2">
             {ownedGlobalFx.map((fx) => {
               const on = !!options?.[fx.option];
@@ -361,7 +383,7 @@ function MineView({ p, deckId, bfId, activeTheme, options, ownedDeckThemes, owne
               );
             })}
           </div>
-        </>
+        </FoldSection>
       )}
 
       <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
@@ -411,25 +433,37 @@ function GlobalFxPreview({ fx }) {
 
 /* Kauffenster eines globalen Effekts (analog zum Theme-Kauffenster): großes Preview + Kauf. Aktivieren
    passiert danach unter „Verfügbare Decks". */
-function GlobalFxOverlay({ fx, p, spBal, onClose, onBuy }) {
+function GlobalFxOverlay({ fx, idx, count, p, spBal, onStep, onClose, onBuy }) {
   const owned = globalFxOwned(p, fx);
   const canBuy = canBuyGlobalFx(p, fx);
+  const touch = useRef(0);
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto"
       style={{ background: "#05050ad0", backdropFilter: "blur(4px)" }} onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl overflow-hidden my-auto" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-sm rounded-2xl overflow-hidden my-auto" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
+        onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touch.current; if (count > 1 && Math.abs(dx) > 45) onStep(dx < 0 ? 1 : -1); }}>
         <div className="h-[3px] w-full" style={HAIRLINE} aria-hidden="true" />
         <div className="p-3.5">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[15px] font-extrabold truncate">{fx.name}</span>
             <button onClick={onClose} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a97ab" }}>Schließen</button>
           </div>
-          {/* Battlefield-Szene im Loop → zeigt, wie der Effekt im Spiel aussieht. */}
-          <div className="py-1">
-            <div className="relative w-full rounded-lg overflow-hidden" style={{ aspectRatio: "16 / 10", background: "#0b0a16" }}>
-              <GlobalFxScenePreview fx={fx} />
+          {/* Battlefield-Szene im Loop → zeigt, wie der Effekt im Spiel aussieht. ‹ › / Wischen zwischen Effekten. */}
+          <div className="flex items-center gap-2">
+            {count > 1 && <button onClick={() => onStep(-1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>‹</button>}
+            <div className="flex-1 min-w-0 py-1">
+              <div className="relative w-full rounded-lg overflow-hidden" style={{ aspectRatio: "16 / 10", background: "#0b0a16" }}>
+                <GlobalFxScenePreview fx={fx} />
+              </div>
             </div>
+            {count > 1 && <button onClick={() => onStep(1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>›</button>}
           </div>
+          {count > 1 && (
+            <div className="flex gap-1.5 justify-center mt-2">
+              {Array.from({ length: count }).map((_, i) => <span key={i} className="rounded-full transition-all" style={{ width: i === idx ? 16 : 6, height: 6, background: i === idx ? "#9b82f0" : "#3a3947" }} />)}
+            </div>
+          )}
           <div className="text-center text-[11px] mt-2 leading-snug" style={{ color: "#9a97ab", minHeight: 32 }}>{fx.desc}</div>
           <div className="mt-2.5">
             {owned ? (
