@@ -210,12 +210,12 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">Seed der Woche</span>
                       <span className="font-mono font-bold text-[15px] px-2.5 py-0.5 rounded tracking-wider" style={{ color: AM, background: "#2a2110", border: `1px solid ${AM}66` }}>{prettySeed(week.seed)}</span>
-                      {canPlayMeister && (
-                        <button onClick={onPlayMeister || undefined}
-                          className="ml-auto border-none rounded-lg font-extrabold text-[13px] px-4 py-2 cursor-pointer transition-transform hover:-translate-y-0.5"
-                          style={{ background: AM, color: "#141419", boxShadow: `0 0 14px ${AM}44` }}>▶ Spielen</button>
-                      )}
                     </div>
+                    {canPlayMeister && (
+                      <button onClick={onPlayMeister || undefined}
+                        className="w-full mt-3 border-none rounded-lg font-extrabold text-[13px] px-4 py-2.5 cursor-pointer transition-transform hover:-translate-y-0.5"
+                        style={{ background: AM, color: "#141419", boxShadow: `0 0 14px ${AM}44` }}>▶ Spielen</button>
+                    )}
                     {!canPlayMeister && (
                       <div className="text-[11px] font-semibold mt-2 flex items-center gap-1.5" style={{ color: "#c9b98a" }}>
                         🔒 Teilnahme frei bei 13/13 Upgrades · ansehen jederzeit

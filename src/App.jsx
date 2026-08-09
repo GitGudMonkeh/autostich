@@ -143,13 +143,11 @@ export function Autostich() {
     recordTotal.current = g.total;
   }, []);
 
-  // CRT-Skin (#41): data-skin am <html> spiegelt die Option → alle skin-gated CSS-Regeln
-  // greifen global (auch das fixed Scanline-Overlay). Default („off") = Attribut entfernt.
+  // CRT-Skin (#41): data-skin am <html> → alle skin-gated CSS-Regeln greifen global (auch das fixed Scanline-
+  // Overlay). Der CRT-Look ist jetzt der feste Default des Spiels — IMMER an, nicht mehr abwählbar (Option entfernt).
   useEffect(() => {
-    const root = document.documentElement;
-    if (options.skin === "crt") root.setAttribute("data-skin", "crt");
-    else root.removeAttribute("data-skin");
-  }, [options.skin]);
+    document.documentElement.setAttribute("data-skin", "crt");
+  }, []);
   // Sound (#110): SFX-Manager initialisieren + DELEGIERTER Klick-Sound (ein Listener deckt alle <button>
   // ab). data-sfx="none" schließt einzelne Buttons aus (z. B. Kauf-Abschluss → eigener Cashout-Sound).
   // Jeder Klick ist zugleich die User-Geste, die den AudioContext entsperrt (Autoplay-Gate).
@@ -563,7 +561,7 @@ export function Autostich() {
       {/* Ambient-Partikel — nur unter Skin und nur auf dem Hauptscreen (Menü): dort gibt es
           offene Fläche, sodass sie ohne durchscheinende Panels sichtbar sind. Im Run bleiben
           die Panels deckend. (reduced-motion-gated in der Komponente.) */}
-      {options.skin === "crt" && state.phase === "menu" && <CrtParticles />}
+      {state.phase === "menu" && <CrtParticles />}
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onStandardRun={startStandardRun} onMeisterRun={startMeisterRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}

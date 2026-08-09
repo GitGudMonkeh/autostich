@@ -63,7 +63,6 @@ function Row({ title, desc, children }) {
 }
 
 export function OptionsModal({ options, onChange, onClose }) {
-  const crtOn = options.skin === "crt";
   useEscape(onClose); // #58: Escape schließt (Backdrop unten)
   return (
     <div onClick={onClose} className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
@@ -76,9 +75,7 @@ export function OptionsModal({ options, onChange, onClose }) {
         </div>
 
         <div className="grid gap-2.5">
-          <Row title="Retro-Skin (CRT)" desc="Pixel-Schrift, Neon-Glow. Rein optisch — Layout & Spiel bleiben gleich.">
-            <Toggle on={crtOn} onClick={() => onChange({ skin: crtOn ? "off" : "crt" })} />
-          </Row>
+          {/* Retro-Skin (CRT) ist jetzt der feste Look des Spiels — immer an, kein Toggle mehr. */}
           {/* #110 Sound: Mute-Toggle + Lautstärke-Slider (persistiert über die Optionen). */}
           <Row title="Ton stumm" desc="Schaltet alle Klick- und Spiel-Sounds ab.">
             <Toggle on={!!options.muted} onClick={() => onChange({ muted: !options.muted })} />
