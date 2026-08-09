@@ -9,7 +9,6 @@ import {
   onboardingAfter, spMilestones, isSpRun, spForRun, milestoneBarState,
   DP_PER_SCORE, dpNative, dpForRun, spCreditForRun, onboardingUnlocks,
   SECRET_SEEDS, UNLOCK_SP_CUSHION, matchSecretSeed, unlockAllProfile,
-  TOTAL_COST,
 } from "../src/game/progression.js";
 import { ONBOARDING_LINKS } from "../src/game/progression.js";
 
@@ -388,6 +387,58 @@ describe("DP-Ökonomie (#299) — native Formel + Baum-komplett-Umstellung", () 
     expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(SP_PER_RUN + 5);
     expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(0); // voller Baum → keine SP mehr
     expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(spForRun({ completed: true, score: 100_000_000 }, 6, 0));
+  });
+});
+
+describe("DP-Doppelquelle (#299 AC4) — native Formel läuft ZUSÄTZLICH zur SP→DP-Umleitung", () => {
+  // Der erfahrungsgemäß lückenanfälligste Punkt: bei vollem Baum darf die native DP-Formel NICHT durch die
+  // SP→DP-Umleitung ersetzt werden — beide Quellen zählen. Als klare Gleichung festgezurrt.
+  const rec = (score) => ({ completed: true, score });
+  it("dpForRun(treeComplete) === dpNative(score) + spForRun(...) für mehrere Scores/Treue-Stände", () => {
+    const cases = [
+      [rec(0), 0], [rec(10_000_000), 0], [rec(37_000_000), 0], [rec(100_000_000), 0],
+      [rec(0), SP_LOYALTY_EVERY - 1], [rec(250_000_000), SP_LOYALTY_EVERY - 1],
+    ];
+    for (const [r, before] of cases) {
+      const native = dpNative(r.score);
+      const spEcon = spForRun(r, 6, before);
+      expect(spEcon).toBeGreaterThan(0);                       // die SP-Ökonomie trägt hier immer etwas bei
+      expect(dpForRun(r, 6, true, before)).toBe(native + spEcon);
+    }
+  });
+  it("Partition: bei vollem Baum wandert die SP-Ökonomie KOMPLETT in DP (SP-Gutschrift 0, native bleibt)", () => {
+    const r = rec(100_000_000);
+    expect(spCreditForRun(r, 6, true, 0)).toBe(0);             // keine SP mehr
+    // DP = native (10) + die exakt umgeleitete SP-Ökonomie — nichts geht verloren, nichts doppelt gezählt.
+    expect(dpForRun(r, 6, true, 0)).toBe(dpNative(r.score) + spCreditForRun(r, 6, false, 0));
+  });
+  it("ohne vollen Baum: DP = NUR native; die SP-Ökonomie bleibt als SP erhalten (keine Umleitung)", () => {
+    const r = rec(100_000_000);
+    expect(dpForRun(r, 6, false, 0)).toBe(dpNative(r.score));  // rein native
+    expect(spCreditForRun(r, 6, false, 0)).toBe(spForRun(r, 6, 0)); // volle SP-Ökonomie als SP
+  });
+});
+
+describe("Hub-Gates (#299 AC1/AC5) — die von StartScreen gelesenen Freischalt-Bedingungen", () => {
+  // StartScreen koppelt: Werkstatt/Upgrades ⇔ onboardingDone (6/6); Rangliste-Normal ⇔ owns(M2);
+  // Rangliste-Meister ⇔ treeComplete. Hier die exakten Schwellen an den exportierten Helfern festgezurrt.
+  // M2 ist ohne Onboarding-Feld kaufbar (onboardingDone() = true bei fehlendem Feld) + ≥17 Nicht-Meister-SP.
+  const withM2 = build(["B1", "B2", "B3", "A1", "M1", "M2"]); // 22 Nicht-Meister-SP ≥ 17 → M2 kaufbar
+  const full = build(NODE_IDS, 200);
+
+  it("Werkstatt/Upgrades: gesperrt < 6/6, frei ab 6/6", () => {
+    expect(onboardingDone({ onboarding: 5 })).toBe(false);
+    expect(onboardingDone({ onboarding: 6 })).toBe(true);
+  });
+  it("Rangliste-Normal: erst ab gekauftem M2", () => {
+    expect(owns(emptyProfile(0), "M2")).toBe(false);
+    expect(owns(build(["B1", "B2", "B3", "A1", "M1"]), "M2")).toBe(false); // M1, aber M2 noch nicht
+    expect(owns(withM2, "M2")).toBe(true);
+  });
+  it("Rangliste-Meister: erst bei komplettem Baum (echt später als M2)", () => {
+    expect(treeComplete(withM2)).toBe(false);   // M2 da, aber Baum unvollständig → Meister noch gesperrt
+    expect(treeComplete(full)).toBe(true);
+    expect(owns(full, "M2")).toBe(true);        // voller Baum impliziert M2 (Normal-Rangliste ebenfalls frei)
   });
 });
 
