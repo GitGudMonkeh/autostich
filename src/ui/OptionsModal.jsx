@@ -15,8 +15,8 @@ function Toggle({ on, onClick }) {
       className="relative rounded-full transition-all shrink-0"
       style={{
         width: 46, height: 26,
-        background: on ? "#5ab87a" : "#30303a",
-        border: `1px solid ${on ? "#5ab87a" : "#3a3a44"}`,
+        background: on ? "#d4a63a" : "#30303a",
+        border: `1px solid ${on ? "#d4a63a" : "#3a3a44"}`,
       }}
     >
       <span
@@ -40,7 +40,7 @@ function Segmented({ value, options, onChange }) {
         return (
           <button key={o.v} role="radio" aria-checked={on} onClick={() => onChange(o.v)}
             className="px-3 py-1.5 text-xs font-bold transition-all"
-            style={{ background: on ? "#5ab87a" : "#25252e", color: on ? "#141419" : "#c8c8d0" }}>
+            style={{ background: on ? "#d4a63a" : "#25252e", color: on ? "#141419" : "#c8c8d0" }}>
             {o.label}
           </button>
         );

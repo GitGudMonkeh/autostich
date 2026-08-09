@@ -491,8 +491,8 @@ function PackDetail({ pack, idx, count, p, spBal, deckId, sel, setSel, onStep, o
           ) : s === "buy" ? (
             <button onClick={() => { if (canBuy) { onBuy(pack); onClose(); } }} disabled={!canBuy}
               className="w-full rounded-xl font-extrabold text-[13px] py-3 transition-opacity"
-              style={{ background: canBuy ? "linear-gradient(90deg,#f2c14a,#ffb84d)" : "#3a2f12", color: "#141419",
-                boxShadow: canBuy ? "0 0 16px rgba(242,193,74,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
+              style={{ background: canBuy ? "#d4a63a" : "#3a2f12", color: "#141419",
+                boxShadow: canBuy ? "0 0 16px rgba(212,166,58,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
               Kaufen · {price} SP{!canBuy && spBal < price ? " (zu wenig SP)" : ""}
             </button>
           ) : (
@@ -628,8 +628,8 @@ function FxDetail({ group, idx, p, spBal, options, onChoose, onStep, onClose, on
             ) : !owned ? (
               <button onClick={() => { if (canBuy) { onBuy(fx); onClose(); } }} disabled={!canBuy}
                 className="w-full rounded-xl font-extrabold text-[12.5px] py-2.5 transition-opacity"
-                style={{ background: canBuy ? "linear-gradient(90deg,#f2c14a,#ffb84d)" : "#3a2f12", color: "#141419",
-                  boxShadow: canBuy ? "0 0 16px rgba(242,193,74,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
+                style={{ background: canBuy ? "#d4a63a" : "#3a2f12", color: "#141419",
+                  boxShadow: canBuy ? "0 0 16px rgba(212,166,58,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
                 Kaufen · {GLOBAL_FX_COST} SP{!canBuy && spBal < GLOBAL_FX_COST ? " (zu wenig SP)" : ""}
               </button>
             ) : isFinisher ? (
