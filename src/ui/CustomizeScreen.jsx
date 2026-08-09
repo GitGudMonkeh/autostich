@@ -9,7 +9,7 @@ import {
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
-import { SliceFx, ExplosionFx, BlackholeFx } from "./Battlefield.jsx";
+import { SliceFx, ExplosionFx, BlackholeFieldFx } from "./Battlefield.jsx";
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 
@@ -172,10 +172,10 @@ function GottgleichPreview({ variant, compact = false }) {
   );
 }
 
-/* Karten-Finisher-Vorschau: die ECHTEN In-Game-Komponenten (SliceFx/ExplosionFx/BlackholeFx) an einer Demo-Karte
+/* Karten-Finisher-Vorschau: die ECHTEN In-Game-Komponenten (SliceFx/ExplosionFx) an einer Demo-Karte
    im Loop — Vorschau = In-Game (keine separate Engine, kein Drift). */
 const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
-const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_HOLE = 460, FIN_HOLESTAR = 950;
+const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950;
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
   const bf = battlefieldAssets("bf_kaiju");
@@ -189,8 +189,7 @@ function FinisherScene({ variant }) {
   let fx = null;
   if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} laser />;
   else if (variant === "shatter") fx = <ExplosionFx cardEl={cardEl} color="#e879f9" cardDur={FIN_HALVES} burstDur={FIN_SPARK} flashDur={200} seed={seed} delay={FIN_DELAY} intensity={0.6} tier={3} scale={1} />;
-  else if (variant === "klinge") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} />;
-  else fx = <BlackholeFx cardEl={cardEl} color={suitCol} cardDur={FIN_HOLE} starDur={FIN_HOLESTAR} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} streak={15} />;
+  else fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} />; // klinge (Default)
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
@@ -199,6 +198,41 @@ function FinisherScene({ variant }) {
       <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
         <div key={tick} className="absolute inset-0">{fx}</div>
       </div>
+    </div>
+  );
+}
+
+/* #296 Schwarzes-Loch-Vorschau: die ECHTE In-Game-Komponente (BlackholeFieldFx) mit einem SYNTHETISCHEN Serien-Loop
+   (mehrere „Siege" hintereinander → Loch wächst + saugt Karten ein, dann Serienabbruch → Kollaps, danach Reset).
+   Vorschau = In-Game (dieselbe Komponente, kein Drift). */
+function BlackholePreview() {
+  const panelRef = useRef(null), oppRef = useRef(null);
+  const [streak, setStreak] = useState(0);
+  const [pulse, setPulse] = useState(null);
+  const bf = battlefieldAssets("bf_kaiju");
+  const suitCol = suitColor(DEMO_SUIT);
+  useEffect(() => {
+    // Zyklus: c=1..8 Siege (streak wächst, Karte wird eingesogen) · c=9 Serienabbruch (streak 0 → Kollaps) · c=10/11/0 Pause.
+    let c = 0, seq = 0;
+    const id = setInterval(() => {
+      c = (c + 1) % 12;
+      if (c >= 1 && c <= 8) { setStreak(c); setPulse({ id: ++seq, num: 2 + ((c * 3) % 9), col: suitCol }); }
+      else if (c === 9) setStreak(0); // Serienabbruch → Kollaps (Flash + Schockwelle)
+    }, 620);
+    return () => clearInterval(id);
+  }, [suitCol]);
+  return (
+    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+      {/* Ursprung des Sogs = Gegner-Demokarte (rechts der Mitte). Während der Serie „verschwindet" sie ins Loch
+          (der Flyer im Canvas zeigt den Sog); bei Serie 0 (Pause/Kollaps) liegt sie wieder ruhig da. */}
+      <div ref={oppRef} className="absolute" style={{ left: "68%", top: "50%", width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
+        <div className="absolute inset-0" style={{ opacity: streak > 0 ? 0 : 1, transition: "opacity 120ms" }}>
+          <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />
+        </div>
+      </div>
+      <BlackholeFieldFx active streak={streak} pulse={pulse} color={suitCol} scale={1} panelRef={panelRef} oppRef={oppRef} reduced={false} />
     </div>
   );
 }
@@ -216,7 +250,8 @@ function GlobalFxScenePreview({ fx }) {
   if (fx.preview === "hologrid") return <BfPreview bfId="bf_kaiju" a1={DEMO_C} fx="hologrid" className="w-full h-full" />;
   if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
-  if (["laser", "shatter", "blackhole"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
+  if (fx.preview === "blackhole") return <BlackholePreview />;
+  if (["laser", "shatter"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets("bf_kaiju");
   return (

@@ -254,22 +254,8 @@ button { font-family: inherit; }
 /* Eigene Verlierer-Karte fliegt einfach weg (kein Klingenschnitt mehr) — driftet nach unten-außen, kippt & fadet. */
 @keyframes as-flyaway { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-12%, 68%) rotate(-16deg); opacity: 0; } }
 
-/* #293 Sieg-Finisher „Schwarzes Loch": die Gegnerkarte wird spiralförmig auf null in den Kollaps-Punkt gesogen,
-   Akkretions-Partikel fallen einwärts, Ereignishorizont wächst→kollabiert, am Ende Flash + Schockwelle. */
-@keyframes as-bh-implode { 0% { transform: scale(1) rotate(0deg); opacity: 1; } 70% { opacity: 1; } 100% { transform: scale(0.04) rotate(540deg); opacity: 0; } }
-/* Partikel sitzt auf einem Arm (Start: --a0 gedreht, --r0 nach außen versetzt) und fällt einwärts, während der
-   Arm mit --spin rotiert → Einwärts-Spirale in den Punkt. */
-/* Partikel spiralt einwärts (bis ~46 %) und bleibt danach als kleiner Stern am Rest-Radius (--rEnd, Fallback 0)
-   ums Loch stehen — kreist weiter, funkelt (Opacity-Puls) und fadet erst am Ende aus. */
-@keyframes as-bh-spiral {
-  0%   { transform: rotate(var(--a0)) translateX(var(--r0)) rotate(calc(-1 * var(--a0))); opacity: 0; }
-  12%  { opacity: 1; }
-  46%  { transform: rotate(calc(var(--a0) + var(--spin))) translateX(var(--rEnd, 0px)) rotate(calc(-1 * var(--a0) - var(--spin))); opacity: 1; }
-  62%  { opacity: 0.5; }
-  78%  { opacity: 1; }
-  100% { transform: rotate(calc(var(--a0) + var(--spin) + 120deg)) translateX(var(--rEnd, 0px)) rotate(calc(-1 * var(--a0) - var(--spin) - 120deg)); opacity: 0; }
-}
-@keyframes as-bh-core { 0% { transform: scale(0.2); opacity: 0; } 22% { transform: scale(1); opacity: 1; } 70% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(0.02); opacity: 0; } }
+/* #296 Sieg-Finisher „Schwarzes Loch": das persistente, mit der Serie wachsende Loch (Sog, Orbs, Kollaps) läuft jetzt
+   im Panel-<canvas> (BlackholeFieldFx in Battlefield.jsx) — keine CSS-Keyframes mehr nötig. */
 
 /* Blitz-Motor (#208): Energie „fließt" die aktiven Verbinder entlang (bewegter Farbverlauf). Der Verbinder trägt
    `background-size: 220%`; die Animation schiebt die Position → ein wandernder Lichtpuls. Ruht implizit unter

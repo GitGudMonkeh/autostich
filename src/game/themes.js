@@ -39,7 +39,7 @@ export const GLOBAL_FX = [
   // Sieg-Finisher (exklusiv, UI-seitige Einfachauswahl mit „Klinge" als Default).
   { key: "laserSlice", name: "Laser-Schnitt", desc: "Gegnerkarten werden beim Sieg vom Laser geteilt — statt der Klinge.",
     ownKey: "fx:laserSlice", option: "fxLaserSlice", preview: "laser", group: "finisher" },
-  { key: "blackhole", name: "Schwarzes Loch", desc: "Beim Sieg implodiert die Gegnerkarte in ein Schwarzes Loch — Akkretions-Spirale, Kollaps-Flash & Schockwelle (statt Klinge/Laser).",
+  { key: "blackhole", name: "Schwarzes Loch", desc: "Bei einer Siegserie wächst EIN Schwarzes Loch, das jede weitere Gegnerkarte einsaugt (Orbs auf wachsender Bahn); Serienabbruch → Kollaps mit Flash & Schockwelle (statt Klinge/Laser).",
     ownKey: "fx:blackhole", option: "fxBlackhole", preview: "blackhole", group: "finisher" },
   // Kritischer Treffer.
   { key: "shatter", name: "Shatter", desc: "Kritische Treffer zerbersten die Gegnerkarte in Scherben (sonst normaler Schnitt).",
