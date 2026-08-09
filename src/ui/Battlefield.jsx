@@ -12,21 +12,21 @@ import { startPrunk } from "./prunkFx.js";
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
 import glacierIcon from "./assets/glacier.webp"; // Eis-Treffer-Identität: das echte Gletscher-Asset im Score-Float
-import cardBackImg  from "../assets/cards/card-back.png";  // Default-Deck-Rücken: „Prisma" (v0.4, ersetzt den Schwerter-Rücken #180)
-import cardFrontImg from "../assets/cards/card-front.png"; // Default-Deck-Front: Rahmen (Zahl/Effekte rendern darüber)
+import cardBackImg  from "../assets/cards/card-back.webp";  // Default-Deck-Rücken: „Prisma" (v0.4, ersetzt den Schwerter-Rücken #180)
+import cardFrontImg from "../assets/cards/card-front.webp"; // Default-Deck-Front: Rahmen (Zahl/Effekte rendern darüber)
 // (#186/#214/v0.4) Gegner-Deck: je Auswahl-Typ ein eigenes Deck (Cover = Rücken, Front = Rahmen). Der Gegner spielt
 // jede Runde das Deck der KOMMENDEN Auswahl (DECISION_SCHEDULE) — die App reicht den Typ als `oppDeck` durch. v0.4:
 // eigene, phasen-farbcodierte Gegner-Decks (grün Aufstellung · blau Architekt · orange Perk · lila Skill · Diamant Legendär).
-import oppFormationFront from "../assets/cards/decks_opponent/deck_opp_formation/front.png"; // 🟢 Aufstellung → formation
-import oppFormationBack  from "../assets/cards/decks_opponent/deck_opp_formation/back.png";
-import oppArchitektFront from "../assets/cards/decks_opponent/deck_opp_architekt/front.png"; // 🔵 Architekt   → shop
-import oppArchitektBack  from "../assets/cards/decks_opponent/deck_opp_architekt/back.png";
-import oppPerkFront      from "../assets/cards/decks_opponent/deck_opp_perk/front.png";      // 🟠 Perk        → perk
-import oppPerkBack       from "../assets/cards/decks_opponent/deck_opp_perk/back.png";
-import oppSkillFront     from "../assets/cards/decks_opponent/deck_opp_skill/front.png";     // 🟣 Skill       → skill (+ Default)
-import oppSkillBack      from "../assets/cards/decks_opponent/deck_opp_skill/back.png";
-import oppLegendaryFront from "../assets/cards/decks_opponent/deck_opp_legendary/front.png"; // 💎 Legendär    → legendary
-import oppLegendaryBack  from "../assets/cards/decks_opponent/deck_opp_legendary/back.png";
+import oppFormationFront from "../assets/cards/decks_opponent/deck_opp_formation/front.webp"; // 🟢 Aufstellung → formation
+import oppFormationBack  from "../assets/cards/decks_opponent/deck_opp_formation/back.webp";
+import oppArchitektFront from "../assets/cards/decks_opponent/deck_opp_architekt/front.webp"; // 🔵 Architekt   → shop
+import oppArchitektBack  from "../assets/cards/decks_opponent/deck_opp_architekt/back.webp";
+import oppPerkFront      from "../assets/cards/decks_opponent/deck_opp_perk/front.webp";      // 🟠 Perk        → perk
+import oppPerkBack       from "../assets/cards/decks_opponent/deck_opp_perk/back.webp";
+import oppSkillFront     from "../assets/cards/decks_opponent/deck_opp_skill/front.webp";     // 🟣 Skill       → skill (+ Default)
+import oppSkillBack      from "../assets/cards/decks_opponent/deck_opp_skill/back.webp";
+import oppLegendaryFront from "../assets/cards/decks_opponent/deck_opp_legendary/front.webp"; // 💎 Legendär    → legendary
+import oppLegendaryBack  from "../assets/cards/decks_opponent/deck_opp_legendary/back.webp";
 
 // Auswahl-Typ (DECISION_SCHEDULE) → Gegner-Deck-Skin (Cover/Front). Eigene, phasen-farbcodierte v0.4-Decks.
 // Fällt auf „stat" zurück = Skill/purple (die erste Runde ist immer Skill).

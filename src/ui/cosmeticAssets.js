@@ -7,40 +7,40 @@
    Deck-Skin = Paar { front, back }:
      front = Rahmen (leere Mitte; Zahl/Effekte rendern darüber) — entspricht card-front.png
      back  = Cover/Rückseite (voll illustriert)                  — entspricht card-back.png */
-import cardFrontImg from "../assets/cards/card-front.png"; // Default-Front (Rahmen)
-import cardBackImg  from "../assets/cards/card-back.png";  // Default-Back (Cover)
+import cardFrontImg from "../assets/cards/card-front.webp"; // Default-Front (Rahmen)
+import cardBackImg  from "../assets/cards/card-back.webp";  // Default-Back (Cover)
 // #299: alte Progressions-Decks (deck_p1–4) entfernt.
 // v0.4 Kauf-Packs — Deck-Paare (front = Rahmen, back = Motiv):
 // #IP: deck_aura (Super Aura) / deck_mecha (Mecha Ronin) entfernt.
-import beachFront    from "../assets/cards/decks_player/deck_beach/front.png";      // Malibu Wave
-import beachBack     from "../assets/cards/decks_player/deck_beach/back.png";
-import catFront      from "../assets/cards/decks_player/deck_cat/front.png";        // Aurora Whiskers
-import catBack       from "../assets/cards/decks_player/deck_cat/back.png";
-import ramenFront    from "../assets/cards/decks_player/deck_ramen/front.png";      // Slurp City
-import ramenBack     from "../assets/cards/decks_player/deck_ramen/back.png";
-import spacedogFront from "../assets/cards/decks_player/deck_spacedog/front.png";   // Star Pup
-import spacedogBack  from "../assets/cards/decks_player/deck_spacedog/back.png";
-import waleFront     from "../assets/cards/decks_player/deck_wale/front.png";       // Moonwhale
-import waleBack      from "../assets/cards/decks_player/deck_wale/back.png";
-import genesisFront  from "../assets/cards/decks_player/deck_onboarding/front.png"; // Genesis
-import genesisBack   from "../assets/cards/decks_player/deck_onboarding/back.png";
+import beachFront    from "../assets/cards/decks_player/deck_beach/front.webp";      // Malibu Wave
+import beachBack     from "../assets/cards/decks_player/deck_beach/back.webp";
+import catFront      from "../assets/cards/decks_player/deck_cat/front.webp";        // Aurora Whiskers
+import catBack       from "../assets/cards/decks_player/deck_cat/back.webp";
+import ramenFront    from "../assets/cards/decks_player/deck_ramen/front.webp";      // Slurp City
+import ramenBack     from "../assets/cards/decks_player/deck_ramen/back.webp";
+import spacedogFront from "../assets/cards/decks_player/deck_spacedog/front.webp";   // Star Pup
+import spacedogBack  from "../assets/cards/decks_player/deck_spacedog/back.webp";
+import waleFront     from "../assets/cards/decks_player/deck_wale/front.webp";       // Moonwhale
+import waleBack      from "../assets/cards/decks_player/deck_wale/back.webp";
+import genesisFront  from "../assets/cards/decks_player/deck_onboarding/front.webp"; // Genesis
+import genesisBack   from "../assets/cards/decks_player/deck_onboarding/back.webp";
 // #303 Challenge-Decks (über eine Challenge freigeschaltet) — Deck-Paare:
-import gottgleichFront from "../assets/cards/decks_player/deck_gottgleich/front.png"; // Gottgleich
-import gottgleichBack  from "../assets/cards/decks_player/deck_gottgleich/back.png";
-import serie300Front   from "../assets/cards/decks_player/deck_serie300/front.png";   // Serie 300
-import serie300Back    from "../assets/cards/decks_player/deck_serie300/back.png";
-import serie600Front   from "../assets/cards/decks_player/deck_serie600/front.png";   // Serie 600
-import serie600Back    from "../assets/cards/decks_player/deck_serie600/back.png";
-import sparfuchsFront  from "../assets/cards/decks_player/deck_sparfuchs/front.png";  // Sparfuchs
-import sparfuchsBack   from "../assets/cards/decks_player/deck_sparfuchs/back.png";
-import meisterFront    from "../assets/cards/decks_player/deck_meister/front.png";    // Meister
-import meisterBack     from "../assets/cards/decks_player/deck_meister/back.png";
+import gottgleichFront from "../assets/cards/decks_player/deck_gottgleich/front.webp"; // Gottgleich
+import gottgleichBack  from "../assets/cards/decks_player/deck_gottgleich/back.webp";
+import serie300Front   from "../assets/cards/decks_player/deck_serie300/front.webp";   // Serie 300
+import serie300Back    from "../assets/cards/decks_player/deck_serie300/back.webp";
+import serie600Front   from "../assets/cards/decks_player/deck_serie600/front.webp";   // Serie 600
+import serie600Back    from "../assets/cards/decks_player/deck_serie600/back.webp";
+import sparfuchsFront  from "../assets/cards/decks_player/deck_sparfuchs/front.webp";  // Sparfuchs
+import sparfuchsBack   from "../assets/cards/decks_player/deck_sparfuchs/back.webp";
+import meisterFront    from "../assets/cards/decks_player/deck_meister/front.webp";    // Meister
+import meisterBack     from "../assets/cards/decks_player/deck_meister/back.webp";
 // #299: alte Progressions-Battlefields (bf_1–4) entfernt.
 // Deck-Werkstatt Starter-Themes (kaufbar, je Element 1 SP): jedes Theme = Deck-Paar + Battlefield.
-import sunsetFront from "../assets/cards/decks_player/deck_sunset/front.png"; // Sunset Rider
-import sunsetBack  from "../assets/cards/decks_player/deck_sunset/back.png";
-import lofiFront   from "../assets/cards/decks_player/deck_lofi/front.png";   // Lofi Nights
-import lofiBack    from "../assets/cards/decks_player/deck_lofi/back.png";
+import sunsetFront from "../assets/cards/decks_player/deck_sunset/front.webp"; // Sunset Rider
+import sunsetBack  from "../assets/cards/decks_player/deck_sunset/back.webp";
+import lofiFront   from "../assets/cards/decks_player/deck_lofi/front.webp";   // Lofi Nights
+import lofiBack    from "../assets/cards/decks_player/deck_lofi/back.webp";
 // #IP: deck_kaiju (Neon Kaiju) entfernt.
 import bfSunsetDesktop from "../assets/battlefields/bf_sunset/desktop.jpg";
 import bfSunsetMobile  from "../assets/battlefields/bf_sunset/mobile.jpg";
