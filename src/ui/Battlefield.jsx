@@ -458,10 +458,6 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
           ? { left: 0, right: 0, top: ln.pos, height: 2, marginTop: -1, background: lineGrad(true), boxShadow: `0 0 10px 2px ${color}, 0 0 24px 7px ${color}88`, transformOrigin: "center", animation: `as-lg-line ${lineMs}ms ease-out ${delay}ms both` }
           : { top: 0, bottom: 0, left: ln.pos, width: 2, marginLeft: -1, background: lineGrad(false), boxShadow: `0 0 10px 2px ${color}, 0 0 24px 7px ${color}88`, transformOrigin: "center", animation: `as-lg-line ${lineMs}ms ease-out ${delay}ms both` }} />
       ))}
-      {/* Nachglühen: großer, weicher Deck-farbiger Bloom, der länger nachleuchtet, während die Stücke wegfliegen. */}
-      <div className="absolute" style={{ left: "50%", top: "50%", width: 92, height: 92, marginLeft: -46, marginTop: -46, borderRadius: "50%",
-        background: `radial-gradient(circle, ${color}66, ${color}33 42%, transparent 72%)`, mixBlendMode: "screen",
-        animation: `as-lg-flash ${Math.round(diceMs * 0.95)}ms ease-out ${delay + lineMs}ms both`, willChange: "transform, opacity" }} />
       {/* Heller Zentral-Flash im Moment des Zerfalls. */}
       <div className="absolute" style={{ left: "50%", top: "50%", width: 52, height: 52, marginLeft: -26, marginTop: -26, borderRadius: "50%",
         background: `radial-gradient(circle, #ffffff, ${color} 48%, transparent 74%)`, mixBlendMode: "screen",
