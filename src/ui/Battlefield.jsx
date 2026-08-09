@@ -226,7 +226,7 @@ function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, 
           {wedges.map((q, k) => (
             <div key={`lw${k}`} className="absolute inset-0" style={{ clipPath: q.clip,
               "--sx": `${(q.dx * dist).toFixed(1)}px`, "--sy": `${(q.dy * dist).toFixed(1)}px`, "--sr": `${fjitter(seed * 7 + k * 5, 12)}deg`,
-              animation: `as-boom-shard ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+              animation: `as-laser-wedge ${(halvesDur * 0.72).toFixed(0)}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
           ))}
         </div>
         {/* Zwei Strahlen + Funken am (zufällig versetzten) Kreuzungspunkt. */}

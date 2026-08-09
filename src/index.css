@@ -181,6 +181,11 @@ button { font-family: inherit; }
   68%    { opacity: 1; }
   100%   { transform: translate(var(--sx, 0px), var(--sy, 0px)) rotate(var(--sr, 0deg)); opacity: 0; }
 }
+/* Laser-Keile: verblassen frueher/gradueller als die Shatter-Scherben (kein langes Deckkraft-Halten). */
+@keyframes as-laser-wedge {
+  0%, 10% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100%    { transform: translate(var(--sx, 0px), var(--sy, 0px)) rotate(var(--sr, 0deg)); opacity: 0; }
+}
 @keyframes as-boom-flash {
   0%   { transform: scale(0.3); opacity: 0; }
   14%  { opacity: 1; }
