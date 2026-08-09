@@ -497,20 +497,23 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
   const hitAt = delay + Math.round(beamMs * 0.4);         // Strahl erreicht die Mitte → Loch/Funken/Verblassen zünden
   const holeMs = Math.round(body * 0.66);                 // endet ~ mit dem Budget (vor dem nächsten Flip)
   const fadeMs = Math.round(body * 0.62);
-  const holeMax = (2.0 + intensity * 0.7).toFixed(2);     // Loch bleibt kompakt („nur Loch")
-  // Funken springen fortlaufend aus dem Loch — Zahl UND Streu-Fenster wachsen mit der Serie (bleibt im Budget).
-  const N = Math.max(8, Math.round((12 + intensity * 8 + streakK * 34) * scale));
-  const sparkWin = Math.round(body * 0.3 * streakK);
-  const sparkAnim = Math.round(body * 0.3);
+  const holeMax = (1.4 + intensity * 0.5 + streakK * 0.5).toFixed(2); // kleineres, glühendes Loch (bei Serie etwas größer)
+  // Funken springen fortlaufend aus dem Loch — Dichte (Zahl), Größe, Streuweite, Glow UND Streu-Fenster wachsen
+  // deutlich mit der Serie (bleibt im Budget). streakK 0..1.
+  const N = Math.max(10, Math.round((10 + intensity * 8 + streakK * 54) * scale)); // ~18 (keine Serie) … ~62 (hohe Serie)
+  const sparkWin = Math.round(body * 0.34 * streakK);
+  const sparkAnim = Math.round(body * 0.32);
+  const emberGlow = (3 + streakK * 7).toFixed(1);         // Glow-Radius je Funke wächst mit der Serie
   const embers = Array.from({ length: N }, (_, i) => {
-    const ang = -Math.PI / 2 + fjitter(seed * 3 + i * 7, 1.1);       // nach oben, gestreut
-    const rad = 20 + Math.abs(fjitter(seed * 5 + i * 13, 40 + streakK * 30));
+    const ang = -Math.PI / 2 + fjitter(seed * 3 + i * 7, 1.2);       // nach oben, gestreut (bei Serie breiter)
+    const rad = 18 + Math.abs(fjitter(seed * 5 + i * 13, 34 + streakK * 72)); // Streuweite wächst mit der Serie
     return {
       i,
       dx: (Math.cos(ang) * rad).toFixed(1),
       dy: (Math.sin(ang) * rad).toFixed(1),
-      c: i % 3 === 0 ? "#ffd36a" : i % 3 === 1 ? HOT : color,
-      sz: (1.5 + Math.abs(fjitter(seed * 7 + i * 5, 2.5))).toFixed(1),
+      // heißere Mischung bei hoher Serie (mehr Weiß-/Goldglut), sonst Deck-/Ember-Farbe.
+      c: i % 4 === 0 ? "#ffffff" : i % 4 === 1 ? "#ffd36a" : i % 4 === 2 ? HOT : color,
+      sz: (1.4 + streakK * 1.6 + Math.abs(fjitter(seed * 7 + i * 5, 2.2))).toFixed(1), // größer mit der Serie
       d: hitAt + Math.round((i / N) * sparkWin),          // gestaffelt übers Fenster → springen fortlaufend heraus
     };
   });
@@ -518,20 +521,21 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
     <div ref={rootRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
       {/* Karte verblasst (kein Bruch) — sie „vergeht", während das Loch durchbrennt. */}
       <div className="absolute inset-0" style={{ animation: `as-burn-fade ${fadeMs}ms ease-in ${hitAt}ms both`, willChange: "opacity" }}>{cardEl}</div>
-      {/* Glühendes Loch in der EXAKTEN Kartenmitte (left/top 50 % des 104×144-Slots). */}
-      <div className="absolute" style={{ left: "50%", top: "50%", width: 14, height: 14, borderRadius: "50%", "--hole-max": holeMax,
-        background: `radial-gradient(circle, #05050a 42%, ${HOT} 58%, ${color} 72%, transparent 82%)`,
-        boxShadow: `0 0 14px 3px ${HOT}, inset 0 0 7px 2px #000`,
+      {/* Glühendes Loch in der EXAKTEN Kartenmitte (left/top 50 % des 104×144-Slots): warmer Ember-Verlauf mit
+          verglühtem Kern (kein harter schwarzer Kern/Ring) + weicher Außen-Glow, der mit der Serie mitwächst. */}
+      <div className="absolute" style={{ left: "50%", top: "50%", width: 10, height: 10, borderRadius: "50%", "--hole-max": holeMax,
+        background: `radial-gradient(circle, #2a0f02 20%, ${HOT} 44%, #ffcf6a 60%, ${color}00 80%)`,
+        boxShadow: `0 0 ${(12 + streakK * 10).toFixed(0)}px ${(4 + streakK * 3).toFixed(0)}px ${HOT}, 0 0 ${(22 + streakK * 16).toFixed(0)}px ${(8 + streakK * 6).toFixed(0)}px ${HOT}55`,
         animation: `as-burn-hole ${holeMs}ms ease-out ${hitAt}ms both`, willChange: "transform, opacity" }} />
       {/* Dünner Strahl (liest als Laser), fährt von der BATTLEFIELD-Oberkante herab auf die exakte Kartenmitte. */}
       <div className="absolute" style={{ left: "50%", top: beamTop, width: 3, height: beamH, marginLeft: -1.5, borderRadius: 3, transformOrigin: "top center",
         background: `linear-gradient(180deg, ${color}00, ${color} 22%, #ffffff 86%, ${HOT})`,
         boxShadow: `0 0 5px 1px ${HOT}, 0 0 14px 3px ${HOT}55`,
         animation: `as-burn-beam ${beamMs}ms ease-in ${delay}ms both`, willChange: "transform, opacity" }} />
-      {/* Ember-Funken springen (gestaffelt) aus dem Loch — mehr & länger bei hoher Serie. */}
+      {/* Ember-Funken springen (gestaffelt) aus dem Loch — mehr, größer, weiter & heller bei hoher Serie. */}
       {embers.map((s) => (
         <div key={`em${s.i}`} style={{ position: "absolute", left: "50%", top: "50%", width: +s.sz, height: +s.sz, borderRadius: "50%",
-          background: s.c, boxShadow: `0 0 5px ${s.c}`, "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
+          background: s.c, boxShadow: `0 0 ${emberGlow}px ${s.c}`, "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
           animation: `as-spark ${sparkAnim}ms ease-out ${s.d}ms both`, willChange: "transform, opacity" }} />
       ))}
     </div>
