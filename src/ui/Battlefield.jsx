@@ -848,14 +848,22 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(12,12,16,0.55) 0%, rgba(12,12,16,0.38) 45%, rgba(12,12,16,0.62) 100%)" }} />
         </div>
       )}
-      {/* #deckshop Hologrid: animiertes Perspektiv-Gitter am unteren Feldrand in der Deck-Hauptfarbe (deckA1).
-          Liegt über dem Battlefield-Bild (z-1), aber hinter Glut/Frost/Blitz (z-0/2) und Karten (z-10). */}
+      {/* #deckshop Hologrid: ruhiges Perspektiv-Gitter am unteren Feldrand in der Deck-Hauptfarbe (deckA1).
+          Je Stich fährt EINE helle Gitter-Zeile von vorn nach hinten in die Tiefe und verblasst (an t.trickNo
+          gekoppelt → startet pro Stich neu; Dauer an den Flip-Takt gekoppelt). Liegt über dem BF-Bild (z-1),
+          aber hinter Glut/Frost/Blitz (z-0/2) und Karten (z-10). Unter reduced-motion nur das statische Gitter. */}
       {fxHologrid && deckA1 && (
         <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>
-          <div className={reduced ? "absolute" : "as-deck-gridmove absolute"} style={{
+          <div className="absolute" style={{
             left: "-20%", right: "-20%", bottom: 0, height: "46%",
             backgroundImage: `linear-gradient(${deckA1} 1px,transparent 1px),linear-gradient(90deg,${deckA1} 1px,transparent 1px)`,
-            backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.4 }} />
+            backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.24 }}>
+            {!reduced && t && (
+              <div key={t.trickNo} className="as-deck-sweep absolute left-0 right-0"
+                style={{ height: 3, background: deckA1, boxShadow: `0 0 9px 1px ${deckA1}, 0 0 22px ${deckA1}`,
+                         animationDuration: `${clamp(flipMs * 0.85, 380, 1100)}ms` }} />
+            )}
+          </div>
         </div>
       )}
       {/* Feuer-Glut (#142): warmer Radial-Verlauf von unten + innerer Glow, Deckkraft = Hitze-Verhältnis.

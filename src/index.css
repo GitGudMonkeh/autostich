@@ -241,6 +241,10 @@ button { font-family: inherit; }
 .as-deck-swipe { animation: as-deck-swipe 3s ease-in-out infinite; }
 @keyframes as-deck-gridmove { to { background-position: 0 18px; } }
 .as-deck-gridmove { animation: as-deck-gridmove 2.6s linear infinite; }
+/* Hologrid-Puls je Stich: eine helle Gitter-Zeile fährt von vorn nach hinten übers Feld und verblasst.
+   Liegt in der Perspektiv-Ebene des Grids → wandert entlang der Fluchtlinien in die Tiefe. */
+@keyframes as-deck-sweep { 0% { bottom: -2%; opacity: 0; } 14% { opacity: 1; } 100% { bottom: 104%; opacity: 0; } }
+.as-deck-sweep { animation: as-deck-sweep 900ms ease-out forwards; }
 
 /* Blitz-Motor (#208): Energie „fließt" die aktiven Verbinder entlang (bewegter Farbverlauf). Der Verbinder trägt
    `background-size: 220%`; die Animation schiebt die Position → ein wandernder Lichtpuls. Ruht implizit unter
