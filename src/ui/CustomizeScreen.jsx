@@ -193,7 +193,7 @@ function GottgleichPreview({ variant, compact = false }) {
 const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
 const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LINE = 220;
 // #302b Showcase-Sound je One-Shot-Finisher (persistente Loop-Effekte Burn/Blackhole laufen separat als Loop-Bett).
-const FIN_SFX = { klinge: "fx_blade", laser: "fx_laser", lasergrid: "fx_laser", overload: "fx_laser", disperse: "fx_laser" }; // shatter: (kein eigener SFX)
+const FIN_SFX = { klinge: "fx_blade", laser: "fx_laser", lasergrid: "fx_laser", overload: "fx_lightning", disperse: "fx_atomize" }; // shatter: (kein eigener SFX)
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
   const bf = battlefieldAssets(SHOWCASE_BF);
@@ -205,7 +205,12 @@ function FinisherScene({ variant }) {
   useEffect(() => {
     const sfx = FIN_SFX[variant];
     if (!sfx) return undefined;
-    const id = setTimeout(() => audio.play(sfx, { gain: variant === "klinge" ? 1.0 : 1.05 }), FIN_DELAY);
+    const id = setTimeout(() => {
+      audio.play(sfx, { gain: variant === "klinge" ? 1.0 : 1.05 });
+      // #300: Überladung/Zerstäubung bekommen — wie in-game — den tiefen Impact-Layer (fx_bass) dazu.
+      if (variant === "overload") audio.play("fx_bass", { gain: 0.5, bass: 3 });
+      else if (variant === "disperse") audio.play("fx_bass", { rate: 1.1, gain: 0.32, bass: 2 });
+    }, FIN_DELAY);
     return () => clearTimeout(id);
   }, [tick, variant]);
   const suitCol = suitColor(DEMO_SUIT);

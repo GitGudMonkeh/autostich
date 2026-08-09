@@ -12,9 +12,14 @@ import bladeUrl from "../assets/sounds/fx_blade.mp3";
 import laserUrl from "../assets/sounds/fx_laser.mp3";
 import burnbeamUrl from "../assets/sounds/fx_burnbeam.mp3";
 import blackholeUrl from "../assets/sounds/fx_blackhole.mp3";
+// #300 Sieg-Finisher „Überladung" (Blitz) / „Zerstäubung" (Partikel) — eigene Sounds; fx_bass = tiefer Impact-Layer.
+import lightningUrl from "../assets/sounds/fx_lightning.mp3";
+import atomizeUrl from "../assets/sounds/fx_atomize.mp3";
+import bassUrl from "../assets/sounds/fx_bass.mp3";
 
 const SRC = { button: buttonUrl, cardflip: cardflipUrl, buy: buyUrl, denied: deniedUrl,
-              fx_blade: bladeUrl, fx_laser: laserUrl, fx_burnbeam: burnbeamUrl, fx_blackhole: blackholeUrl };
+              fx_blade: bladeUrl, fx_laser: laserUrl, fx_burnbeam: burnbeamUrl, fx_blackhole: blackholeUrl,
+              fx_lightning: lightningUrl, fx_atomize: atomizeUrl, fx_bass: bassUrl };
 
 let ctx = null;
 let masterComp = null; // #196: persistenter Master-Kompressor — ALLE SFX laufen durch, fängt Clipping/Turbo-Überlappung ab.
@@ -26,7 +31,7 @@ const activeLoops = new Set(); // #296: laufende Loop-SFX (persistentes „Schwa
 //  (2) Mindestabstand je Sound-Name (Cooldown) — thint Finisher-Bursts. cardflip bewusst 0 → das gewollte „MG" bei
 //  MAX-Turbo bleibt (dort sind die Finisher via flipMs-Gate ohnehin aus). Loops (activeLoops) zählen NICHT mit.
 const SFX_MAX_VOICES = 6;                                                    // max. gleichzeitige One-Shot-Stimmen
-const SFX_COOLDOWN = { fx_blade: 0.08, fx_laser: 0.08, fx_burnbeam: 0.08 };  // s; nicht gelistet ⇒ 0 (kein Cooldown)
+const SFX_COOLDOWN = { fx_blade: 0.08, fx_laser: 0.08, fx_burnbeam: 0.08, fx_lightning: 0.08, fx_atomize: 0.08, fx_bass: 0.08 };  // s; nicht gelistet ⇒ 0 (kein Cooldown)
 const voices = [];                                                           // aktive One-Shots: { src, g, name, t } (t = Start, für Voice-Stealing)
 const lastPlayAt = {};                                                       // name → letzte Startzeit (für Cooldown)
 let muted = false;

@@ -1430,8 +1430,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const fxRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
       if (holeFinish || burnFinish) { /* still — persistente Betten (Loop) decken diese Siege ab */ }
       else if (gridFinish)                audio.play("fx_laser", { rate: fxRate, gain: 1.1, bass: 2 }); // Lasergitter
-      else if (overloadFinish)            audio.play("fx_laser", { rate: fxRate * 0.9, gain: 1.0 + diffTier * 0.08, bass: 3 }); // #300 Überladung: schwererer Blitz-Crack, lauter bei großer Differenz
-      else if (disperseFinish)            audio.play("fx_laser", { rate: fxRate * 1.18, gain: 0.7 + diffTier * 0.05 });          // #300 Zerstäubung: luftiges Zerstäuben
+      else if (overloadFinish) {          // #300 Überladung: Blitz-Crack (fx_lightning) + tiefer Impact-Layer (fx_bass), beide lauter bei großer Differenz
+        audio.play("fx_lightning", { rate: fxRate, gain: 0.9 + diffTier * 0.08 });
+        audio.play("fx_bass", { rate: fxRate, gain: 0.35 + diffTier * 0.12, bass: 3 });
+      }
+      else if (disperseFinish) {          // #300 Zerstäubung: Partikel-Auflösung (fx_atomize) + dezenter Bass-Impact
+        audio.play("fx_atomize", { rate: fxRate, gain: 0.85 + diffTier * 0.06 });
+        audio.play("fx_bass", { rate: fxRate * 1.1, gain: 0.22 + diffTier * 0.08, bass: 2 });
+      }
       else if (oppSliced && fxLaserSlice) audio.play("fx_laser", { rate: fxRate, gain: 1.1 });          // globaler Laser-Schnitt
       else if (oppSliced)                 audio.play("fx_blade", { rate: fxRate, gain: 1.05 });          // Default-Klinge
     }
