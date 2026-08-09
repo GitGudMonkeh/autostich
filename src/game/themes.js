@@ -17,7 +17,8 @@
 
 import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress } from "./cosmetics.js";
 
-export const PACK_COST = 1; // SP je Kauf-Pack (Test-Branch: 1 SP genügt)
+export const PACK_COST = 1;       // (veraltet) SP je Kauf-Pack — Pack-Käufe laufen jetzt über DP.
+export const PACK_DP_COST = 5;    // #299 DP (Deckpunkte) je Kauf-Pack. [TUNING] native DP = floor(score/10M)
 
 /* GLOBALE Effekte (#deckshop, Kategorie „Effekte"): einmalig gekauft (nicht pro Pack), wirken laufweit.
    Kaufen kostet GLOBAL_FX_COST SP (Besitz in ownedCosmetics[ownKey]); ein An/Aus-Toggle (option) steuert sie.
@@ -136,6 +137,8 @@ export const PACKS = THEMES; // Sprechender Alias fürs neue Modell
 
 // SP-Guthaben robust lesen (spiegelt progression.points).
 const sp = (profile) => Math.max(0, Math.floor(Number(profile && profile.stichPoints) || 0));
+// DP-Guthaben (Deckpunkte) robust lesen — Währung der Werkstatt-Packs (#299).
+const dp = (profile) => Math.max(0, Math.floor(Number(profile && profile.deckPoints) || 0));
 
 // Besitz-Schlüssel eines Kauf-Packs.
 export const packOwnKey = (pack) => `pack:${pack.id}`;
@@ -163,25 +166,25 @@ export function packState(profile, pack) {
   return pack.kind === "buy" ? "buy" : "lock";
 }
 
-// Preis eines Packs in SP (nur Kauf-Packs; sonst null).
-export const packPrice = (pack) => (isBuyPack(pack) ? PACK_COST : null);
+// Preis eines Packs in DP (nur Kauf-Packs; sonst null). #299: Pack-Käufe laufen über DP statt SP.
+export const packPrice = (pack) => (isBuyPack(pack) ? PACK_DP_COST : null);
 
 // Klartext-Freischaltung eines (Bedingungs-)Packs — Label + Fortschritt (für die Sperr-Anzeige).
 export const packUnlock = (profile, pack) => unlockProgress({ unlock: packCond(pack) }, profile);
 
-// Kann dieses Pack gekauft werden? (Kauf-Pack, noch nicht im Besitz, genug SP.)
+// Kann dieses Pack gekauft werden? (Kauf-Pack, noch nicht im Besitz, genug DP.)
 export function canBuyPack(profile, pack) {
-  return isBuyPack(pack) && !packOwned(profile, pack) && sp(profile) >= PACK_COST;
+  return isBuyPack(pack) && !packOwned(profile, pack) && dp(profile) >= PACK_DP_COST;
 }
 
-// Ein Pack kaufen → neues Profil (PACK_COST SP abziehen, in stichSpent buchen, Besitz setzen). No-op bei
-// nicht kaufbar/zu wenig SP. Die Aktiv-Setzung (deckId/battlefieldId) macht die UI über onChoose.
+// Ein Pack kaufen → neues Profil (PACK_DP_COST DP abziehen, in deckSpent buchen, Besitz setzen). No-op bei
+// nicht kaufbar/zu wenig DP. Die Aktiv-Setzung (deckId/battlefieldId) macht die UI über onChoose.
 export function buyPack(profile, pack) {
   if (!canBuyPack(profile, pack)) return profile;
   return {
     ...profile,
-    stichPoints: sp(profile) - PACK_COST,
-    stichSpent: Math.max(0, Math.floor(Number(profile && profile.stichSpent) || 0)) + PACK_COST,
+    deckPoints: dp(profile) - PACK_DP_COST,
+    deckSpent: Math.max(0, Math.floor(Number(profile && profile.deckSpent) || 0)) + PACK_DP_COST,
     ownedCosmetics: { ...(profile && profile.ownedCosmetics), [packOwnKey(pack)]: true },
   };
 }

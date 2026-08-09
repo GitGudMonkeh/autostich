@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  THEME_DEFS, THEMES, PACKS, PACK_COST,
+  THEME_DEFS, THEMES, PACKS, PACK_COST, PACK_DP_COST,
   packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
   canBuyPack, buyPack,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
@@ -9,7 +9,7 @@ import {
 } from "../src/game/themes.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
-const prof = (o = {}) => ({ stichPoints: 0, stichSpent: 0, ownedCosmetics: {}, games: 0, bestStreak: 0, bestScore: 0,
+const prof = (o = {}) => ({ stichPoints: 0, stichSpent: 0, deckPoints: 0, deckSpent: 0, ownedCosmetics: {}, games: 0, bestStreak: 0, bestScore: 0,
   hadNoRerollRun: false, monoArchetypeRuns: {}, hadAllArchetypesRun: false, ...o });
 
 describe("packs — Registry", () => {
@@ -46,7 +46,7 @@ describe("packs — Zustände & Besitz", () => {
     const t = THEME_DEFS.sunset;
     expect(packState(prof(), t)).toBe("buy");
     expect(packOwned(prof(), t)).toBe(false);
-    expect(packPrice(t)).toBe(PACK_COST);
+    expect(packPrice(t)).toBe(PACK_DP_COST);   // #299: Packs kosten DP
   });
   it("gekauftes Pack → 'own'", () => {
     const p = prof({ ownedCosmetics: { "pack:sunset": true } });
@@ -63,25 +63,28 @@ describe("packs — Zustände & Besitz", () => {
   });
 });
 
-describe("packs — Kauf-Ökonomie", () => {
-  it("canBuyPack: nur Kauf-Pack, genug SP, noch nicht im Besitz", () => {
+describe("packs — Kauf-Ökonomie (#299: DP)", () => {
+  it("canBuyPack: nur Kauf-Pack, genug DP, noch nicht im Besitz", () => {
     const t = THEME_DEFS.sunset;
-    expect(canBuyPack(prof({ stichPoints: 0 }), t)).toBe(false);
-    expect(canBuyPack(prof({ stichPoints: 1 }), t)).toBe(true);
-    expect(canBuyPack(prof({ stichPoints: 5, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
-    // Bedingungs-Pack ist niemals SP-kaufbar
-    expect(canBuyPack(prof({ stichPoints: 9 }), THEME_DEFS.neon)).toBe(false);
+    expect(canBuyPack(prof({ deckPoints: PACK_DP_COST - 1 }), t)).toBe(false);
+    expect(canBuyPack(prof({ deckPoints: PACK_DP_COST }), t)).toBe(true);
+    expect(canBuyPack(prof({ deckPoints: PACK_DP_COST, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
+    // SP allein reichen nicht (Pack läuft über DP)
+    expect(canBuyPack(prof({ stichPoints: 99, deckPoints: 0 }), t)).toBe(false);
+    // Bedingungs-Pack ist niemals kaufbar
+    expect(canBuyPack(prof({ deckPoints: 99 }), THEME_DEFS.neon)).toBe(false);
   });
-  it("buyPack zieht PACK_COST ab, bucht stichSpent, setzt Besitz (rein)", () => {
-    const p0 = prof({ stichPoints: 3, stichSpent: 2 });
+  it("buyPack zieht PACK_DP_COST DP ab, bucht deckSpent, setzt Besitz (rein)", () => {
+    const p0 = prof({ deckPoints: PACK_DP_COST + 2, deckSpent: 2 });
     const p1 = buyPack(p0, THEME_DEFS.lofi);
-    expect(p1.stichPoints).toBe(2);
-    expect(p1.stichSpent).toBe(3);
+    expect(p1.deckPoints).toBe(2);
+    expect(p1.deckSpent).toBe(2 + PACK_DP_COST);
+    expect(p1.stichPoints).toBe(p0.stichPoints); // SP unberührt
     expect(p1.ownedCosmetics["pack:lofi"]).toBe(true);
     expect(p0.ownedCosmetics["pack:lofi"]).toBeUndefined(); // Eingabe unverändert
   });
-  it("buyPack bei zu wenig SP = No-op (identische Referenz)", () => {
-    const p0 = prof({ stichPoints: 0 });
+  it("buyPack bei zu wenig DP = No-op (identische Referenz)", () => {
+    const p0 = prof({ deckPoints: 0 });
     expect(buyPack(p0, THEME_DEFS.sunset)).toBe(p0);
   });
 });

@@ -411,6 +411,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const [packSel, setPackSel] = useState("front");   // "front" | "back" | "bg"
   const [fxOv, setFxOv] = useState(null);            // offenes Effekt-Kauffenster: { group, idx } | null
   const spBal = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
+  const dpBal = Math.max(0, Math.floor(Number(p.deckPoints) || 0)); // #299 Deckpunkte — Währung der Packs
 
   const deckId = options?.deckId || "default";
 
@@ -436,6 +437,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold">Deck-Werkstatt</h2>
             <div className="flex items-center gap-2">
+              {/* DP = Pack-Währung (#299), SP = Effekt-Währung. */}
+              <span className="text-xs font-bold px-2.5 py-1 rounded-lg" style={{ background: "#141320", border: "1px solid #4a3f6e", color: "#b9a9f2" }}>{dpBal} DP</span>
               <span className="text-xs font-bold px-2.5 py-1 rounded-lg" style={{ background: "#141320", border: "1px solid #34333f", color: "#f2c14a" }}>{spBal} SP</span>
               <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
             </div>
@@ -457,7 +460,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
       {/* Kauffenster via Portal an document.body: der Shop-Root trägt backdrop-filter und ist damit der
           Containing-Block für `position:fixed` — das Portal löst das Overlay heraus → echtes Vollbild-Overlay. */}
       {packIdx >= 0 && createPortal(
-        <PackDetail pack={PACK_LIST[packIdx]} idx={packIdx} count={PACK_LIST.length} p={p} spBal={spBal}
+        <PackDetail pack={PACK_LIST[packIdx]} idx={packIdx} count={PACK_LIST.length} p={p} dpBal={dpBal}
           deckId={deckId} sel={packSel} setSel={setPackSel} onStep={stepPack} onClose={() => setPackIdx(-1)}
           onActivate={activate} onBuy={(pack) => { buy((pf) => buyPack(pf, pack)); activate(pack); }} />,
         document.body)}
@@ -498,7 +501,7 @@ function PacksView({ p, deckId, onOpen }) {
           const active = deckId === pack.deckId;
           const locked = s === "lock";
           const badge = active ? ["AKTIV", "#123a25", "#54e08a", "#2f7a4f"]
-            : s === "buy" ? [`${packPrice(pack)} SP`, "#2e2410", "#f2c14a", "#6b5320"]
+            : s === "buy" ? [`${packPrice(pack)} DP`, "#211f2e", "#b9a9f2", "#4a3f6e"]
             : s === "lock" ? ["🔒", "#1c1b24", "#9a97ab", "#2e2d38"]
             : null;
           const sub = active ? ["aktiv", "#54e08a"]
@@ -530,7 +533,7 @@ function PacksView({ p, deckId, onOpen }) {
 }
 
 /* Pack-Detailansicht (Portal): Vorschau (Karte vorne/hinten/Hintergrund), ‹ ›/Swipe zwischen Packs, Kaufen/Aktivieren. */
-function PackDetail({ pack, idx, count, p, spBal, deckId, sel, setSel, onStep, onClose, onActivate, onBuy }) {
+function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, onClose, onActivate, onBuy }) {
   const touch = useRef(0);
   const hasBf = hasBattlefield(pack);
   const segs = hasBf ? [["front", "Karte vorne"], ["back", "Karte hinten"], ["bg", "Hintergrund"]]
@@ -590,7 +593,7 @@ function PackDetail({ pack, idx, count, p, spBal, deckId, sel, setSel, onStep, o
               className="w-full rounded-xl font-extrabold text-[13px] py-3 transition-opacity"
               style={{ background: canBuy ? "#d4a63a" : "#3a2f12", color: "#141419",
                 boxShadow: canBuy ? "0 0 16px rgba(212,166,58,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
-              Kaufen · {price} SP{!canBuy && spBal < price ? " (zu wenig SP)" : ""}
+              Kaufen · {price} DP{!canBuy && dpBal < price ? " (zu wenig DP)" : ""}
             </button>
           ) : (
             <div className="w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
