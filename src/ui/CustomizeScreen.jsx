@@ -9,6 +9,7 @@ import {
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
+import { startFinisher } from "./finisherFx.js";
 
 /* Anzeige-Liste der Kategorie „Effekte": die kaufbaren GLOBAL_FX + eine synthetische „Standard"-Kachel
    (Gottgleicher Sieg OHNE Prunk) — immer aktiv, kein Kauf, nur zum Vergleichen. Wird direkt vor die
@@ -54,16 +55,6 @@ const FX_CSS = `
 .ws-laserpulse{animation:ws-laserpulse 1.4s ease-in-out infinite}
 @keyframes ws-shard{0%{transform:translate(0,0) scale(1);opacity:0}16%{opacity:1}100%{transform:translate(var(--sx),var(--sy)) scale(.35);opacity:0}}
 .ws-shard{animation:ws-shard 1.3s ease-out infinite}
-/* Battlefield-Szenen-Loop im Effekt-Kauffenster: Laser-Strahl wächst + fadet, Keile/Scherben bersten + resetten,
-   Zentral-Flash. Alle mit gleicher Zyklusdauer (2.6s) → synchron. */
-@keyframes ws-beam{0%{transform:rotate(var(--a)) scaleX(0);opacity:0}16%{opacity:1}42%{transform:rotate(var(--a)) scaleX(1);opacity:1}66%{opacity:.85}100%{transform:rotate(var(--a)) scaleX(1);opacity:0}}
-.ws-beam{animation:ws-beam 2.6s ease-out infinite}
-@keyframes ws-wedge{0%,16%{transform:translate(0,0) rotate(0deg);opacity:1}66%{opacity:1}100%{transform:translate(var(--sx),var(--sy)) rotate(var(--sr));opacity:0}}
-.ws-wedge{animation:ws-wedge 2.6s ease-out infinite}
-@keyframes ws-piece{0%,14%{transform:translate(0,0) rotate(0deg);opacity:1}64%{opacity:1}100%{transform:translate(var(--sx),var(--sy)) rotate(var(--sr));opacity:0}}
-.ws-piece{animation:ws-piece 2.6s ease-out infinite}
-@keyframes ws-flash{0%,8%{transform:translate(-50%,-50%) scale(.3);opacity:0}22%{transform:translate(-50%,-50%) scale(1);opacity:1}55%{opacity:.4}100%{transform:translate(-50%,-50%) scale(2);opacity:0}}
-.ws-flash{animation:ws-flash 2.6s ease-out infinite}
 /* #293 Schwarzes Loch: Karte implodiert spiralig, Akkretions-Partikel fallen einwärts. */
 @keyframes ws-bh-implode{0%{transform:scale(1) rotate(0deg);opacity:1}55%{opacity:1}80%{transform:scale(.05) rotate(500deg);opacity:0}100%{transform:scale(.05) rotate(500deg);opacity:0}}
 .ws-bh-implode{animation:ws-bh-implode 2.6s ease-in infinite}
@@ -96,26 +87,7 @@ const SHATTER_SHARDS = [
   { x: "-14px", y: "13px", c: "#ff6a4d" }, { x: "7px", y: "18px", c: "#ffd36a" }, { x: "-7px", y: "-18px", c: "#ffffff" },
 ];
 
-// Szenen-Vorschau (Kauffenster): vier Keile der Laser-Teilung + neun Karten-Scherben der Shatter-Explosion.
-const SCENE_WEDGES = [
-  { clip: "polygon(0 0,100% 0,50% 50%)",     sx: "0px",   sy: "-40px", sr: "-10deg" },
-  { clip: "polygon(100% 0,100% 100%,50% 50%)", sx: "46px",  sy: "0px",   sr: "12deg" },
-  { clip: "polygon(100% 100%,0 100%,50% 50%)", sx: "0px",   sy: "40px",  sr: "8deg" },
-  { clip: "polygon(0 100%,0 0,50% 50%)",     sx: "-46px", sy: "0px",   sr: "-12deg" },
-];
-const SCENE_SHARDS = (() => {
-  const R = 3, C = 3, out = [];
-  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
-    const dx = (c + 0.5) / C - 0.5, dy = (r + 0.5) / R - 0.5;
-    out.push({
-      clip: `inset(${(r / R * 100).toFixed(1)}% ${((C - 1 - c) / C * 100).toFixed(1)}% ${((R - 1 - r) / R * 100).toFixed(1)}% ${(c / C * 100).toFixed(1)}%)`,
-      sx: `${(dx * 78).toFixed(0)}px`, sy: `${(dy * 78 + 8).toFixed(0)}px`, sr: `${((r * 3 + c) % 2 ? 1 : -1) * (8 + ((r + c) % 3) * 7)}deg`,
-    });
-  }
-  return out;
-})();
-
-// #293/#294 Demo-Daten der neuen Effekt-Vorschauen (deterministisch, kein Math.random im Render).
+// #293/#294 Demo-Daten der kleinen Kachel-Vorschauen (deterministisch, kein Math.random im Render).
 const BH_SPIRAL = Array.from({ length: 11 }, (_, i) => ({
   a0: `${(i / 11) * 360 + (i % 3) * 17}deg`, r0: `${28 + (i % 4) * 9}px`, spin: `${240 + (i % 3) * 80}deg`,
   dl: `${(i / 11) * 0.9}s`, w: 3 + (i % 3), white: i % 4 === 0,
@@ -198,62 +170,37 @@ function GottgleichPreview({ variant, compact = false }) {
   );
 }
 
+// Karten-Finisher-Vorschau: Battlefield-Szene + Canvas-Effekt an einer Demo-Karte (Loop, container-skaliert).
+const FINISHER_COLOR = { laser: "#35e0ff", blackhole: "#35e0ff", shatter: "#e879f9" };
+function FinisherScene({ variant }) {
+  const ref = useRef(null);
+  const bf = battlefieldAssets("bf_kaiju");
+  useEffect(() => {
+    if (!ref.current) return undefined;
+    return startFinisher(ref.current, { variant, color: FINISHER_COLOR[variant] || "#35e0ff", cardSrc: deckAssets("default").back, loop: true });
+  }, [variant]);
+  return (
+    <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+      <canvas ref={ref} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true" />
+    </div>
+  );
+}
+
 // Battlefield-Szenen-Vorschau eines globalen Effekts im Kauffenster — läuft im Loop.
 function GlobalFxScenePreview({ fx }) {
   // Gottgleich-Effekte (inkl. Standard) spielen das komplette Ereignis nach.
   if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
+  // Karten-Finisher: Canvas-Vorschau (wie Gottgleich).
+  if (["laser", "shatter", "blackhole"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
+  // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets("bf_kaiju");
-  const cardImg = deckAssets("default").back;
-  const LC = "#35e0ff"; // Demo-Farbe (in-game = Suit-Farbe der Gegnerkarte)
-  const cardBox = { position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: "24%", aspectRatio: CARD_RATIO };
-  const p = fx.preview;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {p === "shatter" && (
-        <div style={cardBox}>
-          {SCENE_SHARDS.map((s, i) => (
-            <div key={i} className="ws-piece absolute inset-0" style={{ backgroundImage: `url(${cardImg})`, backgroundSize: "100% 100%",
-              clipPath: s.clip, "--sx": s.sx, "--sy": s.sy, "--sr": s.sr }} />
-          ))}
-        </div>
-      )}
-      {p === "laser" && (
-        <>
-          <div style={cardBox}>
-            {SCENE_WEDGES.map((w, i) => (
-              <div key={i} className="ws-wedge absolute inset-0" style={{ backgroundImage: `url(${cardImg})`, backgroundSize: "100% 100%",
-                clipPath: w.clip, "--sx": w.sx, "--sy": w.sy, "--sr": w.sr }} />
-            ))}
-          </div>
-          {[54, -54].map((a, i) => (
-            <div key={i} className="ws-beam absolute" style={{ left: "50%", top: "50%", width: "200%", height: 2, marginLeft: "-100%", marginTop: -1,
-              transformOrigin: "center", "--a": `${a}deg`,
-              background: `linear-gradient(90deg,transparent 2%,${LC} 14%,${LC} 46%,#ffffff 50%,${LC} 54%,${LC} 86%,transparent 98%)`,
-              boxShadow: `0 0 10px ${LC}, 0 0 26px ${LC}, 0 0 5px 1px #ffffffdd` }} />
-          ))}
-        </>
-      )}
-      {p === "blackhole" && (
-        <div style={cardBox}>
-          {/* Karte implodiert in den Punkt */}
-          <div className="ws-bh-implode absolute inset-0" style={{ backgroundImage: `url(${cardImg})`, backgroundSize: "100% 100%", borderRadius: 4 }} />
-          {/* Ereignishorizont */}
-          <div className="ws-bh-core absolute" style={{ left: "50%", top: "50%", width: 22, height: 22, borderRadius: "50%",
-            background: "radial-gradient(circle,#05050a 42%,transparent 72%)", border: `1.5px solid ${LC}`,
-            boxShadow: `0 0 10px 2px ${LC}, inset 0 0 8px 1px ${LC}` }} />
-          {/* Akkretions-Spirale */}
-          {BH_SPIRAL.map((s, i) => (
-            <div key={i} className="ws-bh-spiral absolute" style={{ left: "50%", top: "50%", width: 0, height: 0,
-              "--a0": s.a0, "--r0": s.r0, "--spin": s.spin, animationDelay: s.dl }}>
-              <div style={{ position: "absolute", left: -s.w / 2, top: -s.w / 2, width: s.w, height: s.w, borderRadius: "50%",
-                background: s.white ? "#ffffff" : LC, boxShadow: `0 0 6px ${s.white ? "#ffffff" : LC}` }} />
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

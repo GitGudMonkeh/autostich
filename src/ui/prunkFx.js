@@ -23,33 +23,36 @@ export function startPrunk(canvas, { fireworks, goldRain, prismaWave, color, ori
   const cx = W * originX, cy = H * originY;
   const maxR = Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) + 20;
   const flashC = goldRain && !fireworks ? "#ffe6a0" : deckC;
+  // Feuerwerk & Weißgold-Regen bewusst wieder etwas zurückgedreht (weniger Dichte/Wucht); der Anfangs-Impuls-Flash
+  // wird bei ihnen kleiner. Prisma-Welle bleibt unangetastet.
+  const punch = (fireworks || goldRain) ? 0.55 : 1;
 
   let bursts, fparts, rain, waves;
   // (Neu-)Aufsetzen der Partikel — bei loop je Zyklus für Varianz neu gewürfelt.
   function seed() {
     bursts = []; fparts = []; rain = []; waves = [];
     if (fireworks) {
-      const BURSTS = 9;
+      const BURSTS = 6;
       for (let b = 0; b < BURSTS; b++) {
-        const bx = W * (0.12 + Math.random() * 0.76), by = H * (0.12 + Math.random() * 0.5);
-        const t0 = 90 + b * 115 + Math.random() * 70;
+        const bx = W * (0.14 + Math.random() * 0.72), by = H * (0.14 + Math.random() * 0.46);
+        const t0 = 100 + b * 150 + Math.random() * 80;
         bursts.push({ bx, by, t0 });
-        const PN = 42;
+        const PN = 28;
         for (let i = 0; i < PN; i++) {
-          const ang = (i / PN) * PI2 + Math.random() * 0.22;
-          const spd = 3.4 + Math.random() * 7.6;
+          const ang = (i / PN) * PI2 + Math.random() * 0.24;
+          const spd = 2.6 + Math.random() * 5.4;
           fparts.push({ bx, by, t0, x: bx, y: by, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
-            r: 1.9 + Math.random() * 3, c: i % 3 === 0 ? "#ffffff" : deckC, life: 780 + Math.random() * 380, born: false });
+            r: 1.5 + Math.random() * 2.3, c: i % 3 === 0 ? "#ffffff" : deckC, life: 660 + Math.random() * 300, born: false });
         }
       }
     }
     if (goldRain) {
-      const RN = 150;
+      const RN = 95;
       for (let i = 0; i < RN; i++) {
         rain.push({ x: Math.random() * W, y: -Math.random() * H * 0.7 - 6,
-          vy: 1.8 + Math.random() * 3.2, drift: 0.5 + Math.random() * 1.1, ph: Math.random() * PI2,
-          r: 1.6 + Math.random() * 3, c: GOLD[i % GOLD.length], t0: Math.random() * 420, tw: 0.5 + Math.random(),
-          conf: i % 5 === 0 });
+          vy: 1.6 + Math.random() * 2.8, drift: 0.5 + Math.random() * 1.0, ph: Math.random() * PI2,
+          r: 1.4 + Math.random() * 2.2, c: GOLD[i % GOLD.length], t0: Math.random() * 460, tw: 0.5 + Math.random(),
+          conf: i % 6 === 0 });
       }
     }
     if (prismaWave) waves = [{ t0: 40 }, { t0: 240 }, { t0: 460 }];
@@ -63,23 +66,23 @@ export function startPrunk(canvas, { fireworks, goldRain, prismaWave, color, ori
     if (loop && el >= TTL) { start = now; el = 0; seed(); } // Vorschau: nahtlos neu starten
     ctx.clearRect(0, 0, W, H);
     ctx.globalCompositeOperation = "lighter";
-    // Wumms-Impuls: heller Einschlag-Flash + Schockwelle am Ursprung (Anfangspunch für alle Varianten).
-    if (el < 320) {
-      const fk = el / 320;
-      const rr = 10 + fk * Math.min(W, H) * 0.5;
+    // Wumms-Impuls: heller Einschlag-Flash + Schockwelle am Ursprung. Bei Feuerwerk/Goldregen kleiner (punch).
+    if (el < 300) {
+      const fk = el / 300;
+      const rr = 10 + fk * Math.min(W, H) * 0.5 * punch;
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rr);
-      g.addColorStop(0, `rgba(255,255,255,${(1 - fk) * 0.9})`);
-      g.addColorStop(0.35, `${flashC}${Math.round((1 - fk) * 200).toString(16).padStart(2, "0")}`);
+      g.addColorStop(0, `rgba(255,255,255,${(1 - fk) * 0.9 * punch})`);
+      g.addColorStop(0.35, `${flashC}${Math.round((1 - fk) * 200 * punch).toString(16).padStart(2, "0")}`);
       g.addColorStop(1, "transparent");
       ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rr, 0, PI2); ctx.fill();
     }
-    // Feuerwerk: Zünd-Flash je Burst + frameweise Integration mit Wand-Reflexion.
+    // Feuerwerk: dezenter Zünd-Flash je Burst + frameweise Integration mit Wand-Reflexion.
     for (const b of bursts) {
       const lt = el - b.t0;
-      if (lt < 0 || lt > 220) continue;
-      const fk = lt / 220, rr = 6 + fk * 32;
+      if (lt < 0 || lt > 200) continue;
+      const fk = lt / 200, rr = 5 + fk * 20;
       const g = ctx.createRadialGradient(b.bx, b.by, 0, b.bx, b.by, rr);
-      g.addColorStop(0, `rgba(255,255,255,${(1 - fk) * 0.95})`); g.addColorStop(0.4, deckC); g.addColorStop(1, "transparent");
+      g.addColorStop(0, `rgba(255,255,255,${(1 - fk) * 0.8})`); g.addColorStop(0.4, deckC); g.addColorStop(1, "transparent");
       ctx.globalAlpha = 1 - fk; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.bx, b.by, rr, 0, PI2); ctx.fill();
     }
     for (const p of fparts) {
@@ -91,7 +94,7 @@ export function startPrunk(canvas, { fireworks, goldRain, prismaWave, color, ori
       const k = (el - p.t0) / p.life;
       if (k > 1) continue;
       ctx.globalAlpha = Math.max(0, 1 - k);
-      ctx.fillStyle = p.c; ctx.shadowBlur = 14; ctx.shadowColor = p.c;
+      ctx.fillStyle = p.c; ctx.shadowBlur = 10; ctx.shadowColor = p.c;
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, PI2); ctx.fill();
     }
     // Weißgold-Regen
@@ -102,8 +105,8 @@ export function startPrunk(canvas, { fireworks, goldRain, prismaWave, color, ori
       const x = d.x + Math.sin(d.ph + lt * 0.006) * d.drift * 9;
       if (y > H + 6) continue;
       const fade = el > TTL - 500 ? Math.max(0, (TTL - el) / 500) : 1;
-      ctx.globalAlpha = fade * (0.65 + 0.35 * Math.sin(d.ph + lt * 0.02 * d.tw)); // Twinkle
-      ctx.fillStyle = d.c; ctx.shadowBlur = 9; ctx.shadowColor = d.c;
+      ctx.globalAlpha = fade * (0.6 + 0.35 * Math.sin(d.ph + lt * 0.02 * d.tw)); // Twinkle
+      ctx.fillStyle = d.c; ctx.shadowBlur = 7; ctx.shadowColor = d.c;
       if (d.conf) { ctx.fillRect(x - d.r, y - d.r * 0.6, d.r * 2, d.r * 1.2); }
       else { ctx.beginPath(); ctx.arc(x, y, d.r, 0, PI2); ctx.fill(); }
     }
