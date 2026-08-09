@@ -13,24 +13,28 @@ import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
    (Kachel-Galerie → Kauffenster mit Element-Vorschau & Einzelkauf). Kauf spendet SP (onProfileChange),
    Aktiv-Wahl/Animations-Toggles schreiben in die Optionen (onChoose). Reine Kosmetik. */
 
+// Echtes Seitenverhältnis der Deck-Bilder (1066×1476) → object-contain zeigt die Karte vollständig
+// (kein Anschnitt oben/unten), der bemalte Neon-Rahmen bleibt intakt und der Frame-Glow sitzt bündig.
+const CARD_RATIO = "1066 / 1476";
+
 // Einmalig injizierte Keyframes für die Element-Vorschauen (Frame Glow / Holo Swipe / Hologrid).
 const FX_CSS = `
-@keyframes ws-frameglow{0%,100%{box-shadow:0 0 8px -2px var(--a1),inset 0 0 12px -6px var(--a1)}50%{box-shadow:0 0 22px 0 var(--a1),inset 0 0 20px -3px var(--a1)}}
+@keyframes ws-frameglow{0%,100%{box-shadow:0 0 10px -2px var(--a1),inset 0 0 14px -8px var(--a1)}50%{box-shadow:0 0 26px 2px var(--a1),inset 0 0 22px -4px var(--a1)}}
 @keyframes ws-swipe{0%{transform:translateX(-120%) rotate(18deg)}55%,100%{transform:translateX(320%) rotate(18deg)}}
 @keyframes ws-gridmove{to{background-position:0 16px}}
 `;
 
-// Karten-Vorschau: illustrierter Deck-Rücken (Motiv) + optionaler Effekt-Overlay (frameGlow/holoSwipe).
+// Karten-Vorschau: illustrierter Deck-Rücken (Motiv), vollständig (object-contain) + optionaler Effekt.
+// Frame Glow = pulsierender Schein am Kartenrand (liegt bündig, egal wie der bemalte Rahmen sitzt).
 function CardPreview({ deckId, a1, fx, className = "" }) {
   const img = deckAssets(deckId).back;
+  const glow = fx === "frameGlow";
   return (
-    <div className={`relative rounded-lg overflow-hidden ${className}`} style={{ aspectRatio: "3 / 4", background: "#0b0a16" }}>
-      <img src={img} alt="" className="absolute inset-0 w-full h-full object-cover" />
-      {fx === "frameGlow" && (
-        <div className="absolute rounded-md pointer-events-none" style={{ inset: 5, border: `1.5px solid ${a1}`, animation: "ws-frameglow 2s ease-in-out infinite" }} />
-      )}
+    <div className={`relative rounded-lg ${className}`}
+      style={{ aspectRatio: CARD_RATIO, background: "#0b0a16", "--a1": a1, animation: glow ? "ws-frameglow 2s ease-in-out infinite" : undefined }}>
+      <img src={img} alt="" className="absolute inset-0 w-full h-full object-contain rounded-lg" />
       {fx === "holoSwipe" && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
           <div className="absolute" style={{ top: "-60%", left: 0, width: "40%", height: "220%",
             background: "linear-gradient(90deg,transparent,rgba(255,255,255,.28),rgba(120,220,255,.16),transparent)",
             animation: "ws-swipe 2.6s ease-in-out infinite" }} />
@@ -60,19 +64,20 @@ function BfPreview({ bfId, a1, fx, className = "" }) {
 
 // Großes Vorschaufeld im Kauffenster — schaltet je nach gewähltem Element (Karte/BF/Animation).
 function BigPreview({ theme, sel }) {
-  if (sel === "bf" || sel === "hologrid") return <BfPreview bfId={theme.bfId} a1={theme.a1} fx={sel === "hologrid" ? "hologrid" : null} className="w-full max-h-[42vh]" />;
+  if (sel === "bf" || sel === "hologrid") return <BfPreview bfId={theme.bfId} a1={theme.a1} fx={sel === "hologrid" ? "hologrid" : null} className="w-full" />;
   const fx = sel === "frameGlow" || sel === "holoSwipe" ? sel : null;
   return (
-    <div className="flex justify-center">
-      <CardPreview deckId={theme.deckId} a1={theme.a1} fx={fx} className="max-h-[42vh]" />
+    <div className="flex justify-center py-1">
+      <CardPreview deckId={theme.deckId} a1={theme.a1} fx={fx} className="w-[190px] max-w-[62%] max-h-[46vh]" />
     </div>
   );
 }
 
-// Kleine Deck-Rücken-Miniatur (für Sammlungs-Zeilen & Kacheln).
+// Kleine Deck-Rücken-Miniatur (für Sammlungs-Zeilen & Kacheln). object-contain → nie angeschnitten
+// (der schwarze Kartengrund verschmilzt mit dem Panel-Hintergrund, Letterboxing bleibt unsichtbar).
 function DeckThumb({ deckId, className = "", face = "back", style }) {
   const img = deckAssets(deckId)[face];
-  return <img src={img} alt="" className={`object-cover ${className}`} style={{ aspectRatio: "3 / 4", background: "#0b0a16", ...style }} />;
+  return <img src={img} alt="" className={`object-contain ${className}`} style={{ aspectRatio: CARD_RATIO, background: "#0b0a16", ...style }} />;
 }
 
 // Radio-Punkt (Aktiv-Wahl).
@@ -238,40 +243,80 @@ function SelectRow({ active, onClick, thumb, title, sub }) {
   );
 }
 
-/* ---- „Vorschau · Alle" (Kachel-Galerie) ---- */
+/* ---- „Vorschau · Alle": Kategorien (Packs · Decks · Battlefields · Effekte), durchwischbar ---- */
+const PREVIEW_CATS = [
+  { k: "packs",        label: "Packs",        icon: "📦", empty: null },
+  { k: "decks",        label: "Decks",        icon: "🎴", empty: "Einzelne Karten-Decks" },
+  { k: "battlefields", label: "Battlefields", icon: "🏙️", empty: "Einzelne Battlefields" },
+  { k: "effekte",      label: "Effekte",      icon: "✦",  empty: "Einzelne Animationen" },
+];
+
 function PreviewView({ p, onOpen }) {
+  const [cat, setCat] = useState(0);
+  const touch = useRef(0);
+  const move = (d) => setCat((c) => Math.min(PREVIEW_CATS.length - 1, Math.max(0, c + d)));
+  const active = PREVIEW_CATS[cat];
+
   return (
-    <>
-      <div className={EYEBROW} style={{ color: "#9a97ab" }}>Alle Themes <span className="flex-1 h-px" style={{ background: "#2a2836" }} /><span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>tippen → Elemente einzeln kaufen</span></div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        {THEMES.map((t, i) => {
-          const s = themeState(p, t);
-          const locked = s === "lock";
-          const badge = s === "own" ? ["KOMPLETT", "#123a25", "#54e08a", "#2f7a4f"]
-            : s === "mix" ? ["TEILS", "#251a2e", "#ff4dcb", "#5a3a63"]
-            : s === "buy" ? ["KAUFBAR", "#2e2410", "#f2c14a", "#6b5320"] : null;
-          const state = s === "own" ? ["✓ alle Elemente", "#54e08a"] : s === "mix" ? ["teils im Besitz", "#54e08a"]
-            : s === "buy" ? ["Elemente kaufbar", "#f2c14a"] : ["🔒 Challenge", "#6d6a80"];
-          return (
-            <button key={t.id} type="button" onClick={() => onOpen(i)} className="relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5"
-              style={{ background: "#14131c", border: "1px solid #2a2836" }}>
-              <div className="relative" style={{ aspectRatio: "3 / 4" }}>
-                <DeckThumb deckId={t.deckId} className="absolute inset-0 w-full h-full" style={{ filter: locked ? "grayscale(.7) brightness(.5)" : undefined }} />
-                {locked && <div className="absolute inset-0 grid place-items-center text-2xl" style={{ textShadow: "0 1px 8px #000" }}>🔒</div>}
-                {badge && <span className="absolute top-1.5 right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: badge[1], color: badge[2], border: `1px solid ${badge[3]}` }}>{badge[0]}</span>}
-              </div>
-              <div className="px-2 py-1.5">
-                <span className="text-[12px] font-extrabold flex items-center gap-1 truncate">{t.emblem} {t.name}</span>
-                <span className="text-[10px]" style={{ color: state[1] }}>{state[0]}</span>
-              </div>
-            </button>
-          );
-        })}
+    <div onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
+      onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touch.current; if (Math.abs(dx) > 45) move(dx < 0 ? 1 : -1); }}>
+      {/* Kategorie-Tabs (wischbar) */}
+      <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1 -mx-1 px-1">
+        {PREVIEW_CATS.map((c, i) => (
+          <button key={c.k} onClick={() => setCat(i)} className="shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-extrabold transition-colors"
+            style={{ background: i === cat ? "#9b82f0" : "#14131c", color: i === cat ? "#141419" : "#9a97ab", border: `1px solid ${i === cat ? "#9b82f0" : "#2a2836"}` }}>
+            {c.icon} {c.label}
+          </button>
+        ))}
       </div>
+
+      <div className={EYEBROW} style={{ color: "#9a97ab" }}>{active.label}
+        <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
+        <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{cat === 0 ? "tippen → Elemente einzeln kaufen" : "‹ wischen ›"}</span>
+      </div>
+
+      {cat === 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          {THEMES.map((t, i) => {
+            const s = themeState(p, t);
+            const locked = s === "lock";
+            const badge = s === "own" ? ["KOMPLETT", "#123a25", "#54e08a", "#2f7a4f"]
+              : s === "mix" ? ["TEILS", "#251a2e", "#ff4dcb", "#5a3a63"]
+              : s === "buy" ? ["KAUFBAR", "#2e2410", "#f2c14a", "#6b5320"] : null;
+            const state = s === "own" ? ["✓ alle Elemente", "#54e08a"] : s === "mix" ? ["teils im Besitz", "#54e08a"]
+              : s === "buy" ? ["Elemente kaufbar", "#f2c14a"] : ["🔒 Challenge", "#6d6a80"];
+            return (
+              <button key={t.id} type="button" onClick={() => onOpen(i)} className="relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5"
+                style={{ background: "#14131c", border: "1px solid #2a2836" }}>
+                <div className="relative" style={{ aspectRatio: CARD_RATIO }}>
+                  <DeckThumb deckId={t.deckId} className="absolute inset-0 w-full h-full" style={{ filter: locked ? "grayscale(.7) brightness(.5)" : undefined }} />
+                  {locked && <div className="absolute inset-0 grid place-items-center text-2xl" style={{ textShadow: "0 1px 8px #000" }}>🔒</div>}
+                  {badge && <span className="absolute top-1.5 right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: badge[1], color: badge[2], border: `1px solid ${badge[3]}` }}>{badge[0]}</span>}
+                </div>
+                <div className="px-2 py-1.5">
+                  <span className="text-[12px] font-extrabold flex items-center gap-1 truncate">{t.emblem} {t.name}</span>
+                  <span className="text-[10px]" style={{ color: state[1] }}>{state[0]}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid place-items-center text-center rounded-2xl py-12 px-6" style={{ background: "#131219", border: "1px dashed #2e2d38" }}>
+          <div className="text-3xl mb-2 opacity-60">{active.icon}</div>
+          <div className="text-[13px] font-extrabold">{active.label} — noch leer</div>
+          <div className="text-[11px] mt-1 leading-snug" style={{ color: "#9a97ab", maxWidth: 260 }}>
+            {active.empty} kommen bald einzeln in den Shop. Bis dahin bekommst du sie als Teil der <b>Packs</b>.
+          </div>
+        </div>
+      )}
+
       <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
-        Im Kauffenster hat <b>jedes Element</b> (Karte · Battlefield · jede Animation) eine <b>eigene Vorschau</b> und einen eigenen Kauf. Per ‹ › / Wischen durch alle Themes.
+        {cat === 0
+          ? <>Ein <b>Pack</b> bündelt Karte · Battlefield · Animationen. Im Kauffenster hat jedes Element eine eigene Vorschau &amp; einen eigenen Kauf. Per ‹ › / Wischen durch alle Packs.</>
+          : <>Wische seitwärts zwischen <b>Packs · Decks · Battlefields · Effekte</b>.</>}
       </p>
-    </>
+    </div>
   );
 }
 
