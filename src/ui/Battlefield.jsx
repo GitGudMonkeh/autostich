@@ -907,17 +907,23 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
               // perspective(160px)/rotateX(60°)-Verkürzung + dem Neon-Hintergrund verschluckt und wirkt im Run
               // wie „nicht da". Ein blur()-Verlaufsband überlebt die Perspektive auf jedem Hintergrund.
               <div key={sweepId} className="as-deck-sweep absolute left-0 right-0" style={{ height: 0, animationDuration: `${sweepDur}ms` }}>
+                {/* SIEG glüht satt in der Deckfarbe (breit, intensiv). NIEDERLAGE bleibt farb-neutral
+                    (blasses Grau-Weiß) — so ist die Deckfarbe selbst das Unterscheidungsmerkmal auf dem Feld. */}
                 {/* Weicher Glow-Halo (breit, verwaschen) */}
                 <div className="absolute left-0 right-0" style={{
-                  top: win ? -22 : -11, height: win ? 44 : 22,
-                  background: `linear-gradient(180deg, transparent, ${deckA1} 40%, ${deckA1} 60%, transparent)`,
-                  filter: `blur(${win ? 11 : 5}px)`, opacity: win ? 1 : 0.62 }} />
-                {/* Heißer Kern (dünne, helle Linie) */}
+                  top: win ? -22 : -9, height: win ? 44 : 18,
+                  background: win
+                    ? `linear-gradient(180deg, transparent, ${deckA1} 38%, ${deckA1} 62%, transparent)`
+                    : `linear-gradient(180deg, transparent, rgba(200,205,220,0.9) 45%, transparent)`,
+                  filter: `blur(${win ? 12 : 4}px)`, opacity: win ? 1 : 0.5 }} />
+                {/* Heißer Kern (dünne Linie) — im Sieg deckfarben umrahmt, in der Niederlage schlicht weiß */}
                 <div className="absolute left-0 right-0" style={{
-                  top: win ? -5 : -3.5, height: win ? 10 : 7,
-                  background: `linear-gradient(90deg, transparent, ${deckA1} 12%, #ffffff 50%, ${deckA1} 88%, transparent)`,
-                  boxShadow: win ? `0 0 16px 3px #ffffff` : `0 0 8px 2px #ffffffbb`,
-                  opacity: win ? 1 : 0.9 }} />
+                  top: win ? -5 : -3, height: win ? 10 : 6,
+                  background: win
+                    ? `linear-gradient(90deg, transparent, ${deckA1} 12%, #ffffff 50%, ${deckA1} 88%, transparent)`
+                    : `linear-gradient(90deg, transparent, rgba(220,224,235,0.85) 50%, transparent)`,
+                  boxShadow: win ? `0 0 22px 5px ${deckA1}, 0 0 10px 2px #ffffff` : "none",
+                  opacity: win ? 1 : 0.85 }} />
               </div>
             )}
           </div>
