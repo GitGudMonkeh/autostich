@@ -34,8 +34,8 @@ function useIsMobile() {
 const FX_CSS = `
 @keyframes ws-frameglow{0%,100%{box-shadow:0 0 10px -2px var(--a1),inset 0 0 14px -8px var(--a1)}50%{box-shadow:0 0 26px 2px var(--a1),inset 0 0 22px -4px var(--a1)}}
 @keyframes ws-swipe{0%{transform:translateX(-120%) rotate(18deg)}55%,100%{transform:translateX(320%) rotate(18deg)}}
-@keyframes ws-sweep{0%{bottom:-4%;opacity:0}14%{opacity:1}100%{bottom:104%;opacity:0}}
-.ws-sweep{animation:ws-sweep 1.7s ease-out infinite}
+@keyframes ws-sweep{0%{bottom:-4%;opacity:0}18%{opacity:1}70%{opacity:1}100%{bottom:106%;opacity:0}}
+.ws-sweep{animation:ws-sweep 2.9s ease-in-out infinite}
 `;
 
 // Karten-Vorschau: illustrierter Deck-Rücken (Motiv), vollständig (object-contain) + optionaler Effekt.
@@ -80,10 +80,10 @@ function BfPreview({ bfId, a1, fx, className = "", showVersion = false }) {
           transform: "perspective(140px) rotateX(60deg)", transformOrigin: "bottom" }}>
           <div className="absolute inset-0" style={{
             backgroundImage: `linear-gradient(${a1} 1px,transparent 1px),linear-gradient(90deg,${a1} 1px,transparent 1px)`,
-            backgroundSize: "16px 16px", opacity: 0.24 }} />
-          <div className="ws-sweep absolute left-0 right-0" style={{ height: 4,
-            background: `linear-gradient(90deg,transparent,${a1} 18%,#ffffff 50%,${a1} 82%,transparent)`,
-            boxShadow: `0 0 12px 2px ${a1}, 0 0 30px 6px ${a1}, 0 0 3px 1px #ffffffcc` }} />
+            backgroundSize: "16px 16px", opacity: 0.26 }} />
+          <div className="ws-sweep absolute left-0 right-0" style={{ height: 7,
+            background: `linear-gradient(90deg,transparent,${a1} 15%,#ffffff 50%,${a1} 85%,transparent)`,
+            boxShadow: `0 0 20px 4px ${a1}, 0 0 52px 12px ${a1}, 0 0 6px 2px #ffffff` }} />
         </div>
       )}
     </div>
@@ -170,7 +170,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           </div>
           {/* Modus-Umschalter */}
           <div className="flex gap-1.5 mt-3 p-1 rounded-xl" style={{ background: "#131219", border: "1px solid #2a2836" }}>
-            {[["mine", "Meine Sammlung"], ["prev", "Vorschau · Alle"]].map(([m, label]) => (
+            {[["mine", "Verfügbare Decks"], ["prev", "Vorschau · Alle"]].map(([m, label]) => (
               <button key={m} onClick={() => setMode(m)} className="flex-1 py-2 rounded-lg text-[12.5px] font-extrabold transition-colors"
                 style={{ background: mode === m ? "#9b82f0" : "transparent", color: mode === m ? "#141419" : "#9a97ab" }}>{label}</button>
             ))}
