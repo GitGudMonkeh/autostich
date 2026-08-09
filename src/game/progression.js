@@ -301,6 +301,39 @@ export function spForRun(record, onboardingBefore, spRunsBefore) {
 }
 
 /* ============================================================
+   DP-ÖKONOMIE (Deckpunkte) — zweite Währung neben SP, für die Werkstatt-Packs (#299).
+
+   Zwei Quellen, beide REIN & testbar (kein RNG/Date/localStorage), dieselbe Lauf-Bedingung wie SP
+   (abgeschlossener Lauf NACH vollendetem Onboarding, isSpRun):
+     • NATIVE DP — läuft IMMER (nach Onboarding), unabhängig vom Baum:  DP = floor(runScore / DP_PER_SCORE)
+       (linear: je volle 10 Mio → +1 DP; 10M→1 … 100M→10).
+     • BAUM-KOMPLETT — sobald der GANZE Baum gekauft ist (treeComplete), fließt die komplette SP-Ökonomie
+       (Grundstock + Meilensteine + Treue) ZUSÄTZLICH als DP; SP werden dann nicht mehr gutgeschrieben.
+   Der Reducer nutzt spCreditForRun (0 bei vollem Baum) für SP und dpForRun für DP. */
+export const DP_PER_SCORE = envNum("PROG_DP_PER_SCORE", 10_000_000); // Score je 1 DP (native Formel)
+
+// Native DP eines Laufs: linear floor(score / DP_PER_SCORE) — reine Score-Ableitung (ohne Lauf-Gate).
+export function dpNative(score) {
+  return DP_PER_SCORE > 0 ? Math.floor(num0(score) / DP_PER_SCORE) : 0;
+}
+
+// DP-Ertrag eines Laufs. treeComplete = ganzer Baum gekauft (VOR/zum Zeitpunkt des Laufs). Native DP immer;
+// bei vollem Baum zusätzlich die komplette SP-Ökonomie als DP (bewusste Doppelquelle). Onboarding-/vorzeitige
+// Läufe → 0. spRunsBefore fließt (wie bei SP) in den Treue-Drip ein.
+export function dpForRun(record, onboardingBefore, treeComplete, spRunsBefore) {
+  if (!isSpRun(record, onboardingBefore)) return 0;
+  let dp = dpNative(record.score);
+  if (treeComplete) dp += spForRun(record, onboardingBefore, spRunsBefore);
+  return dp;
+}
+
+// Tatsächlich gutgeschriebene SP eines Laufs: die SP-Ökonomie — ABER 0, sobald der Baum komplett ist
+// (dann fließt sie als DP, SP sind nutzlos). Die Reducer-Naht schreibt genau diesen Wert den SP gut.
+export function spCreditForRun(record, onboardingBefore, treeComplete, spRunsBefore) {
+  return treeComplete ? 0 : spForRun(record, onboardingBefore, spRunsBefore);
+}
+
+/* ============================================================
    TEST-/DEV-CHEATS — geheime Seed-Codes (schnelles Onboarding-Testen zu zweit).
 
    REIN: nur Profil-Transformation + Code-Erkennung. Der Live-/Sim-Build wird NICHT berührt — die UI fängt

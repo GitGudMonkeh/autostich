@@ -7,6 +7,7 @@ import {
   nodeState, canBuy, buyNode, respec, treeComplete, ownedCount,
   SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP,
   onboardingAfter, spMilestones, isSpRun, spForRun, milestoneBarState,
+  DP_PER_SCORE, dpNative, dpForRun, spCreditForRun,
   SECRET_SEEDS, UNLOCK_SP_CUSHION, matchSecretSeed, unlockAllProfile,
   TOTAL_COST,
 } from "../src/game/progression.js";
@@ -337,6 +338,36 @@ describe("SP-Ernte pro Lauf (docs §5/§6) — nach Onboarding gegated", () => {
   });
   it("unfertiger Lauf gibt nie SP, auch mit riesigem Score", () => {
     expect(spForRun({ completed: false, score: 999_000_000 }, 6, 9)).toBe(0);
+  });
+});
+
+describe("DP-Ökonomie (#299) — native Formel + Baum-komplett-Umstellung", () => {
+  it("dpNative: linear floor(score / 10 Mio)", () => {
+    expect(dpNative(0)).toBe(0);
+    expect(dpNative(9_999_999)).toBe(0);
+    expect(dpNative(10_000_000)).toBe(1);
+    expect(dpNative(55_000_000)).toBe(5);
+    expect(dpNative(100_000_000)).toBe(10);
+    expect(DP_PER_SCORE).toBe(10_000_000);
+  });
+  it("dpForRun: native DP nur bei abgeschlossenem Lauf NACH Onboarding", () => {
+    expect(dpForRun({ completed: true, score: 55_000_000 }, 6, false, 0)).toBe(5); // native
+    expect(dpForRun({ completed: true, score: 55_000_000 }, 5, false, 0)).toBe(0); // noch im Onboarding
+    expect(dpForRun({ completed: false, score: 999_000_000 }, 6, false, 0)).toBe(0); // vorzeitig beendet
+    expect(dpForRun(null, 6, false, 0)).toBe(0);
+  });
+  it("dpForRun: bei vollem Baum fließt die SP-Ökonomie ZUSÄTZLICH als DP", () => {
+    // 100 Mio: native 10 + SP-Ökonomie (Grundstock + Meilensteine 1+1+1+2 = 5) = 10 + (SP_PER_RUN+5)
+    expect(dpForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(10 + SP_PER_RUN + 5);
+    // Treue-Drip zählt auch bei vollem Baum (jeder 10. Lauf): score 0 → native 0 + (SP_PER_RUN + LOYALTY)
+    expect(dpForRun({ completed: true, score: 0 }, 6, true, SP_LOYALTY_EVERY - 1)).toBe(SP_PER_RUN + SP_LOYALTY_SP);
+    // ohne vollen Baum: nur native (score 0 → 0)
+    expect(dpForRun({ completed: true, score: 0 }, 6, false, SP_LOYALTY_EVERY - 1)).toBe(0);
+  });
+  it("spCreditForRun: normale SP-Ökonomie, aber 0 sobald der Baum komplett ist", () => {
+    expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(SP_PER_RUN + 5);
+    expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(0); // voller Baum → keine SP mehr
+    expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(spForRun({ completed: true, score: 100_000_000 }, 6, 0));
   });
 });
 
