@@ -445,6 +445,12 @@ export function BlackholeFieldFx({ active, pulse = null, color = "#35e0ff", scal
       const r = parseInt(n.slice(0, 2), 16), g = parseInt(n.slice(2, 4), 16), b = parseInt(n.slice(4, 6), 16);
       return Number.isNaN(r + g + b) ? `rgba(53,224,255,${a})` : `rgba(${r},${g},${b},${a})`;
     };
+    // Hex→Hex-Interpolation (für den Rand-Farbpuls Cyan→Violett ab Serien-Mult ×2.0).
+    const lerpHex = (h1, h2, tt) => {
+      const p = (h) => { const n = h.replace("#", ""); return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16)]; };
+      const a = p(h1), b = p(h2), k = clamp(tt, 0, 1), m = (i) => Math.round(a[i] + (b[i] - a[i]) * k);
+      return `rgb(${m(0)},${m(1)},${m(2)})`;
+    };
     let W = 0, H = 0, dpr = 1, cx = 0, cy = 0, ox = 0, oy = 0;
     const cardW = 104, cardH = 144; // Battlefield-Kartenbox ist fix 104×144 (der Flyer bildet die Gegnerkarte ab)
     const measure = () => {
@@ -472,9 +478,9 @@ export function BlackholeFieldFx({ active, pulse = null, color = "#35e0ff", scal
     const stepR = () => H * 0.017;                 // „wächst langsam" je Sieg
     const maxLevel = () => (maxR() - baseR()) / stepR(); // ~14: Deckel in „Sieg-Schritten"
     // Größe rein EVENT-getrieben (kein Bezug mehr auf winStreak): jeder Sieg wächst das Loch (level+1) und saugt eine
-    // Karte ein; jede Niederlage lässt es schrumpfen; nach 3 Niederlagen in Folge fällt es LAUTLOS in sich zusammen
-    // (kein Flash/keine Schockwelle). Ein Sieg setzt den Niederlagen-Zähler zurück.
-    const sim = (simRef.current = { alive: false, R: 0, level: 0, lossCount: 0, orbs: [], flyers: [], sparks: [], pulseId: null });
+    // Karte ein; ab Serien-Mult ×2.0 zittert es + der Rand pulsiert farblich. Eine Niederlage = Serienabbruch → das
+    // Loch kollabiert (Flash + Schockwelle), danach dormant/Ausgangsgröße (unsichtbar bis zum nächsten Sieg).
+    const sim = (simRef.current = { alive: false, R: 0, level: 0, mult: 0, frame: 0, phase: 0, orbs: [], flyers: [], sparks: [], collapse: null, pulseId: null });
     const seedOrbs = () => {
       sim.orbs = [];
       const n = 7;
@@ -512,15 +518,17 @@ export function BlackholeFieldFx({ active, pulse = null, color = "#35e0ff", scal
         sim.pulseId = ctrl.pulse.id;
         const p = ctrl.pulse;
         if (p.kind === "loss") {
+          // #296 Serienabbruch → KOLLAPS (Flash + Schockwelle), danach dormant/Ausgangsgröße. Der Kollaps ist der
+          // EINZIGE nach außen laufende Ring; im laufenden Streak gibt es bewusst keine wandernden Pulse.
           if (sim.alive) {
-            sim.lossCount += 1;
-            if (sim.lossCount >= 3) { sim.alive = false; sim.level = 0; sim.orbs = []; } // lautlos in sich zusammenfallen
-            else sim.level *= 0.45;                                                       // jede Niederlage merklich kleiner
+            sim.alive = false; sim.level = 0; sim.mult = 0; sim.orbs = [];
+            sim.collapse = { t: 0, R0: Math.max(sim.R, baseR()), col: DC };
           }
         } else { // Sieg
           if (!sim.alive) { sim.alive = true; sim.level = 0; seedOrbs(); }
+          sim.collapse = null;                                 // ein Sieg lässt einen (theoretischen) Kollaps fallen
           sim.level = Math.min(maxLevel(), sim.level + 1);
-          sim.lossCount = 0;
+          sim.mult = p.mult || sim.mult || 0;                  // aktueller Serien-Mult → Schwelle Zittern/Randpuls ab ×2.0
           if (Math.round(sim.level) % 2 === 0 && sim.orbs.length < 16) sim.orbs.push({ ang: Math.random() * PI2,
             spd: 0.010 + Math.random() * 0.012, rf: 1.5 + Math.random() * 1.2, sz: 1.6 + Math.random() * 1.8, w: Math.random() < 0.3 });
           spawnFlyer(p);
@@ -533,8 +541,18 @@ export function BlackholeFieldFx({ active, pulse = null, color = "#35e0ff", scal
 
       const R = sim.R;
       ctx.clearRect(0, 0, W, H);
-      const busy = sim.alive || R > 0.5 || sim.flyers.length || sim.sparks.length;
+      // #296 Ab Serien-Mult ×2.0: das GANZE Loch zittert leicht + der Ereignishorizont-RING pulsiert farblich
+      // (Cyan→Violett + Glow-Atmung). KEINE nach außen laufenden Pulsringe — nur Rand-Farbe + Jitter. Der Jitter-
+      // Offset ist deterministisch über fjitter (kein Math.random); die Puls-Phase läuft über sdt → skaliert mit Turbo.
+      const trembling = sim.alive && sim.mult >= 2.0 && R > 0.5;
+      sim.frame += 1;
+      if (trembling) sim.phase += 0.06 * (sdt / 16);
+      const jAmp = trembling ? clamp(1 + R * 0.03, 1, 3) : 0;             // Zitter-Amplitude wächst leicht mit dem Loch
+      const jx = trembling ? fjitter(sim.frame, jAmp) : 0;
+      const jy = trembling ? fjitter(sim.frame * 1.7 + 13, jAmp) : 0;
+      const busy = sim.alive || R > 0.5 || sim.flyers.length || sim.sparks.length || sim.collapse;
       if (busy) {
+        ctx.save(); ctx.translate(jx, jy);                                // Zittern: das ganze Loch verschiebt sich minimal
         ctx.globalCompositeOperation = "lighter";
         // Akkretions-Aura (weicher Farbring hinter dem Loch)
         if (R > 0.5) {
@@ -567,9 +585,12 @@ export function BlackholeFieldFx({ active, pulse = null, color = "#35e0ff", scal
           ctx.fillStyle = col; ctx.shadowBlur = 8; ctx.shadowColor = col;
           ctx.beginPath(); ctx.arc(x, y, o.sz * orbScale, 0, PI2); ctx.fill(); }
         ctx.shadowBlur = 0;
-        // Ereignishorizont-Ring
+        // Ereignishorizont-Ring — ab ×2.0 pulsiert SEINE FARBE (Cyan→Violett) + Glow atmet; sonst Deckfarbe.
         if (R > 0.5) {
-          ctx.lineWidth = Math.max(1.5, R * 0.08); ctx.strokeStyle = DC; ctx.shadowBlur = 18; ctx.shadowColor = DC;
+          const br = trembling ? 0.5 + 0.5 * Math.sin(sim.phase) : 0;      // 0..1 Atem-Phase (nur Rand-Farbe, kein Ring nach außen)
+          const ringCol = trembling ? lerpHex("#35e0ff", "#a24bff", br) : DC;
+          const ringGlow = trembling ? 18 + br * 16 : 18;
+          ctx.lineWidth = Math.max(1.5, R * 0.08); ctx.strokeStyle = ringCol; ctx.shadowBlur = ringGlow; ctx.shadowColor = ringCol;
           ctx.beginPath(); ctx.arc(cx, cy, R, 0, PI2); ctx.stroke();
           ctx.lineWidth = 1.5; ctx.strokeStyle = "#ffffff"; ctx.globalAlpha = 0.7;
           ctx.beginPath(); ctx.arc(cx, cy, R * 0.96, 0, PI2); ctx.stroke(); ctx.globalAlpha = 1; ctx.shadowBlur = 0;
@@ -579,7 +600,26 @@ export function BlackholeFieldFx({ active, pulse = null, color = "#35e0ff", scal
           core.addColorStop(0, "#000000"); core.addColorStop(0.72, "#04040a"); core.addColorStop(1, "rgba(4,4,12,0)");
           ctx.fillStyle = core; ctx.beginPath(); ctx.arc(cx, cy, R, 0, PI2); ctx.fill();
         }
+        // #296 Kollaps-Sequenz (Serienabbruch): heller Flash + EINE Schockwelle nach außen (wie der frühere Einzel-
+        // Kollaps), danach ist das Loch weg (dormant). Tempo über sdt → skaliert mit Turbo (fxScale).
+        if (sim.collapse) {
+          const cc = sim.collapse; cc.t += sdt / 520;
+          if (cc.t >= 1) { sim.collapse = null; }
+          else {
+            const fade = 1 - cc.t;
+            ctx.globalCompositeOperation = "lighter";
+            const fr = cc.R0 * (1 + cc.t * 1.2);                          // Flash-Radius
+            const fg = ctx.createRadialGradient(cx, cy, 0, cx, cy, fr);
+            fg.addColorStop(0, hexA("#ffffff", 0.55 * fade)); fg.addColorStop(0.4, hexA(cc.col, 0.30 * fade)); fg.addColorStop(1, "transparent");
+            ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(cx, cy, fr, 0, PI2); ctx.fill();
+            const sw = cc.R0 * (0.6 + cc.t * 3.2);                        // Schockwellen-Ring (läuft nach außen)
+            ctx.globalAlpha = fade; ctx.lineWidth = Math.max(1.5, 4 * fade); ctx.strokeStyle = cc.col; ctx.shadowBlur = 20; ctx.shadowColor = cc.col;
+            ctx.beginPath(); ctx.arc(cx, cy, sw, 0, PI2); ctx.stroke();
+            ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+          }
+        }
         ctx.globalAlpha = 1; ctx.shadowBlur = 0; ctx.globalCompositeOperation = "source-over";
+        ctx.restore();
       }
       raf = requestAnimationFrame(step);
     };
@@ -1051,8 +1091,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     const spawned = [];
     // #296 Schwarzes Loch: bei aktivem Blackhole-Finisher wird die Gegnerkarte NICHT mehr als eigener Ghost
     // geschnitten/implodiert, sondern als „Sieg-Puls" an das persistente Panel-Loch gemeldet (Sog + Wachstum im
-    // Canvas). Eine Niederlage meldet einen „loss-Puls" → das Loch schrumpft (3× → lautloser Kollaps).
-    if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: deckA1 || suitColor(t.oCard.suit) });
+    // Canvas + Serien-Mult für die ×2.0-Schwelle). Eine Niederlage meldet einen „loss-Puls" → Serienabbruch → Kollaps.
+    if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: deckA1 || suitColor(t.oCard.suit), mult: bd ? bd.streakMult : 1 });
     else if (holeActive && lost) setHolePulse({ id: t.trickNo, kind: "loss" });
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
     if (win && !holeFinish) {   // Gegnerkarte verliert → Schnitt (Standard, auch bei Krit) bzw. Shatter-Explosion (nur mit gekauftem Effekt)

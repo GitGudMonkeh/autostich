@@ -212,15 +212,16 @@ function BlackholePreview() {
   const bf = battlefieldAssets("bf_kaiju");
   const suitCol = suitColor(DEMO_SUIT);
   useEffect(() => {
-    // Zyklus: 1..6 Siege (Loch wächst + saugt Karten ein) · 7/8/9 Niederlagen (kleiner, kleiner, lautloser Kollaps) ·
-    // 10/11 Pause (Loch weg). Genau das Serien-Verhalten aus dem Spiel — dieselbe Komponente, kein Drift.
+    // Synthetischer Serien-Loop: 1..8 Siege (Loch wächst + saugt Karten ein; der Serien-Mult klettert ÜBER ×2.0 →
+    // ab dann Zittern + Rand-Farbpuls sichtbar) · 9 Niederlage = Serienabbruch → Kollaps (Flash + Schockwelle) ·
+    // 10 dormant · 11/12 Pause. Genau das In-Game-Serien-Verhalten (dieselbe Komponente, kein Drift).
     let c = 0, seq = 0;
     const id = setInterval(() => {
       c = (c + 1) % 12;
-      if (c >= 1 && c <= 6) { setDormant(false); setPulse({ id: ++seq, kind: "win", num: 2 + ((c * 3) % 9), col: suitCol }); }
-      else if (c >= 7 && c <= 9) setPulse({ id: ++seq, kind: "loss" }); // 3 Niederlagen → schrumpfen + Kollaps
+      if (c >= 1 && c <= 8) { setDormant(false); setPulse({ id: ++seq, kind: "win", num: 2 + ((c * 3) % 9), col: suitCol, mult: 1 + c * 0.35 }); }
+      else if (c === 9) setPulse({ id: ++seq, kind: "loss" }); // Serienabbruch → Kollaps
       else if (c === 10) setDormant(true);
-    }, 640);
+    }, 600);
     return () => clearInterval(id);
   }, [suitCol]);
   return (
