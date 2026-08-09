@@ -1000,33 +1000,35 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           aber hinter Glut/Frost/Blitz (z-0/2) und Karten (z-10). Unter reduced-motion nur das statische Gitter. */}
       {fxHologrid && deckA1 && (
         <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>
+          {/* Perspektiv-Ebene OHNE Gruppen-Opazität → nur die Gitterlinien werden gedimmt, der Sweep NICHT. (Zuvor
+              lag die Opacity 0.24 auf dem Elternteil und drückte den Sweep-Glow auf 24 % — daher wirkte er im Run
+              blass/weiß, während er im Shop bei voller Opazität satt farbig leuchtet.) */}
           <div className="absolute" style={{
             left: "-20%", right: "-20%", bottom: 0, height: "46%",
-            backgroundImage: `linear-gradient(${deckA1} 1px,transparent 1px),linear-gradient(90deg,${deckA1} 1px,transparent 1px)`,
-            backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.24 }}>
+            transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom" }}>
+            {/* Ruhiges Gitter (gedimmt) */}
+            <div className="absolute inset-0" style={{
+              backgroundImage: `linear-gradient(${deckA1} 1px,transparent 1px),linear-gradient(90deg,${deckA1} 1px,transparent 1px)`,
+              backgroundSize: "18px 18px", opacity: 0.24 }} />
+            {/* Sweep bei VOLLER Opazität — SIEG glüht satt in der Deckfarbe (Shop-Look: kräftiger farbiger Bloom +
+                heißer weißer Kern). NIEDERLAGE bleibt farb-neutral & dezent → die Deckfarbe ist der Unterschied. */}
             {!reduced && sweepId > 0 && (
-              // Bei einem SIEG glüht die Linie sehr intensiv; bei einer Niederlage dezent. Der Glow wird als
-              // GEFÜLLTES, weichgezeichnetes Band (statt box-shadow) gerendert — box-shadow wird von der
-              // perspective(160px)/rotateX(60°)-Verkürzung + dem Neon-Hintergrund verschluckt und wirkt im Run
-              // wie „nicht da". Ein blur()-Verlaufsband überlebt die Perspektive auf jedem Hintergrund.
               <div key={sweepId} className="as-deck-sweep absolute left-0 right-0" style={{ height: 0, animationDuration: `${sweepDur}ms` }}>
-                {/* SIEG glüht satt in der Deckfarbe (breit, intensiv). NIEDERLAGE bleibt farb-neutral
-                    (blasses Grau-Weiß) — so ist die Deckfarbe selbst das Unterscheidungsmerkmal auf dem Feld. */}
-                {/* Weicher Glow-Halo (breit, verwaschen) */}
+                {/* Weicher farbiger Glow-Halo (gefülltes blur-Band → überlebt Perspektive/Neon-BG) */}
                 <div className="absolute left-0 right-0" style={{
-                  top: win ? -22 : -9, height: win ? 44 : 18,
+                  top: win ? -24 : -8, height: win ? 48 : 16,
                   background: win
-                    ? `linear-gradient(180deg, transparent, ${deckA1} 38%, ${deckA1} 62%, transparent)`
-                    : `linear-gradient(180deg, transparent, rgba(200,205,220,0.9) 45%, transparent)`,
-                  filter: `blur(${win ? 12 : 4}px)`, opacity: win ? 1 : 0.5 }} />
-                {/* Heißer Kern (dünne Linie) — im Sieg deckfarben umrahmt, in der Niederlage schlicht weiß */}
+                    ? `linear-gradient(180deg, transparent, ${deckA1} 34%, ${deckA1} 66%, transparent)`
+                    : `linear-gradient(180deg, transparent, rgba(200,205,220,0.85) 45%, transparent)`,
+                  filter: `blur(${win ? 10 : 4}px)`, opacity: win ? 0.95 : 0.4 }} />
+                {/* Heißer Kern mit kräftigem farbigem Glow (wie im Shop) — Kern schmal weiß, drumherum Deckfarbe */}
                 <div className="absolute left-0 right-0" style={{
-                  top: win ? -5 : -3, height: win ? 10 : 6,
+                  top: win ? -5 : -3, height: win ? 9 : 6,
                   background: win
-                    ? `linear-gradient(90deg, transparent, ${deckA1} 12%, #ffffff 50%, ${deckA1} 88%, transparent)`
-                    : `linear-gradient(90deg, transparent, rgba(220,224,235,0.85) 50%, transparent)`,
-                  boxShadow: win ? `0 0 22px 5px ${deckA1}, 0 0 10px 2px #ffffff` : "none",
-                  opacity: win ? 1 : 0.85 }} />
+                    ? `linear-gradient(90deg, transparent, ${deckA1} 12%, ${deckA1} 42%, #ffffff 50%, ${deckA1} 58%, ${deckA1} 88%, transparent)`
+                    : `linear-gradient(90deg, transparent, rgba(220,224,235,0.8) 50%, transparent)`,
+                  boxShadow: win ? `0 0 20px 4px ${deckA1}, 0 0 52px 12px ${deckA1}, 0 0 7px 2px #ffffff` : "none",
+                  opacity: win ? 1 : 0.55 }} />
               </div>
             )}
           </div>
