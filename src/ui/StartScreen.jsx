@@ -264,6 +264,17 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         </div>
       )}
 
+      {/* Deck-Werkstatt — eigener Button zwischen Rangliste und Upgrades. Cyan (Logo-Verlauf links), damit er
+          sich vom violetten Ranglisten- und amber Upgrades-Button abhebt, aber zum selben Farbsystem gehört. */}
+      {onCustomize && (
+        <button onClick={onCustomize}
+          className="w-full max-w-sm px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+          style={{ background: "#0f1e24", border: `1px solid ${CY}66`, color: CY }}>
+          Deck-Werkstatt
+          <span className="text-[13px]">›</span>
+        </button>
+      )}
+
       {/* Upgrades-Card (Vorschau) — SP-Guthaben, Äste als Kreise, Öffnen. Kern des künftigen Hubs.
           Dünne Logo-Verlaufs-Haarlinie oben bindet die Card an die Wortmarke. */}
       <div className="w-full max-w-sm rounded-2xl relative overflow-hidden"
@@ -331,7 +342,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       <div className="flex flex-wrap justify-center gap-2 max-w-xs sm:max-w-md">
         {onLeaderboard && <button onClick={onLeaderboard} className={chipCls} style={chipSty}>Bestenliste</button>}
         {onStats && <button onClick={onStats} className={chipCls} style={chipSty}>Statistiken</button>}
-        {onCustomize && <button onClick={onCustomize} className={chipCls} style={chipSty}>Deck</button>}
         {onOptions && <button onClick={onOptions} aria-label="Optionen" className={chipCls} style={chipSty}>Optionen</button>}
       </div>
 
