@@ -860,7 +860,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             backgroundSize: "18px 18px", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom", opacity: 0.24 }}>
             {!reduced && t && (
               <div key={t.trickNo} className="as-deck-sweep absolute left-0 right-0"
-                style={{ height: 3, background: deckA1, boxShadow: `0 0 9px 1px ${deckA1}, 0 0 22px ${deckA1}`,
+                style={{ height: 5,
+                         background: `linear-gradient(90deg, transparent, ${deckA1} 18%, #ffffff 50%, ${deckA1} 82%, transparent)`,
+                         boxShadow: `0 0 16px 3px ${deckA1}, 0 0 40px 8px ${deckA1}, 0 0 4px 1px #ffffffcc`,
                          animationDuration: `${clamp(flipMs * 0.85, 380, 1100)}ms` }} />
             )}
           </div>
