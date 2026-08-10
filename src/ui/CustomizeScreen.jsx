@@ -961,11 +961,20 @@ function MiniFx({ preview }) {
       return box(<span className="as-mini-core absolute" style={{ inset: 6, borderRadius: 2, "--mc": C,
         backgroundImage: `linear-gradient(${C}66 1px,transparent 1px),linear-gradient(90deg,${C}66 1px,transparent 1px)`, backgroundSize: "7px 7px" }} />);
     case "burnbeam":
-      // Strahl fährt herab + glühendes Ember-Loch in der Mitte.
+      // Dünner Strahl HÄLT von oben auf die Mitte (flackert) und brennt ein glühendes Ember-Loch; Funken springen heraus — wie der echte Brennstrahl.
       return box(
         <>
-          <span className="as-mini-fall absolute" style={{ left: "50%", top: 0, width: 2, height: 15, marginLeft: -1, borderRadius: 2, background: "linear-gradient(#ffffff,#ff7a2f)", boxShadow: "0 0 5px #ff7a2f" }} />
-          <span className="as-mini-core" style={{ width: 9, height: 9, borderRadius: "50%", background: "radial-gradient(circle,#05050a 45%,#ff7a2f 70%,transparent 82%)", "--mc": "#ff7a2f" }} />
+          {/* Persistenter, flackernder Strahl von der Oberkante bis zur Mitte */}
+          <span className="as-mini-hold absolute" style={{ left: "50%", top: 0, width: 2.5, height: "54%", marginLeft: -1.25, borderRadius: 2,
+            background: "linear-gradient(#ffffff,#ffd59a 42%,#ff7a2f)", boxShadow: "0 0 6px #ff7a2f, 0 0 3px #ffffff" }} />
+          {/* Glühendes Ember-Loch in der exakten Mitte */}
+          <span className="as-mini-core absolute" style={{ left: "50%", top: "52%", width: 10, height: 10, marginLeft: -5, marginTop: -5,
+            borderRadius: "50%", background: "radial-gradient(circle,#05050a 42%,#ff7a2f 72%,transparent 84%)", "--mc": "#ff7a2f" }} />
+          {/* Funken springen aus dem Loch nach oben */}
+          {[["42%", "-.1s"], ["50%", "-.55s"], ["58%", "-.9s"]].map(([l, d]) => (
+            <span key={l + d} className="as-mini-ember absolute" style={{ left: l, width: 2.5, height: 2.5, borderRadius: "50%",
+              background: "#ffd59a", boxShadow: "0 0 4px #ff7a2f", animationDelay: d }} />
+          ))}
         </>
       );
     case "blackhole":
@@ -995,26 +1004,39 @@ function MiniFx({ preview }) {
         </>
       );
     case "overload":
-      // Gezackter Blitz fährt herab + heller Einschlag-Kern.
+      // Blitz zuckt von oben in die Mitte ein (Flash + Gabel + heller Einschlag), kein Herabfallen — wie der echte Überladungs-Finisher.
       return box(
         <>
-          <span className="as-mini-fall absolute" style={{ left: "50%", top: 0, width: 5, height: 22, marginLeft: -2.5,
+          {/* Haupt-Blitz von der Oberkante bis zur Mitte */}
+          <span className="as-mini-strike absolute" style={{ left: "48%", top: "3%", width: 6, height: 20, marginLeft: -3,
             background: `linear-gradient(#ffffff,${C})`, boxShadow: `0 0 6px ${C}`,
-            clipPath: "polygon(42% 0,60% 0,46% 42%,68% 42%,34% 100%,50% 52%,30% 52%)" }} />
-          <span className="as-mini-core" style={{ width: 8, height: 8, borderRadius: "50%", background: `radial-gradient(circle,#ffffff,${C} 60%,transparent)`, "--mc": C }} />
+            clipPath: "polygon(46% 0,64% 0,50% 40%,70% 40%,34% 100%,52% 52%,32% 52%)" }} />
+          {/* Gabel (kleiner, seitlich versetzt, minimal später) */}
+          <span className="as-mini-strike absolute" style={{ left: "62%", top: "30%", width: 4, height: 12, marginLeft: -2,
+            background: `linear-gradient(#ffffff,${C})`, boxShadow: `0 0 5px ${C}`, animationDelay: "-.05s",
+            clipPath: "polygon(44% 0,66% 0,38% 100%,54% 44%,32% 44%)" }} />
+          {/* Heller Einschlag-Funke am Auftreffpunkt */}
+          <span className="as-mini-strike absolute" style={{ left: "50%", top: "60%", width: 10, height: 10, marginLeft: -5, marginTop: -5,
+            borderRadius: "50%", background: `radial-gradient(circle,#ffffff,${C} 55%,transparent 78%)`, animationDelay: "-.02s" }} />
         </>
       );
-    case "disperse":
-      // Karte zerstäubt: Kern + auseinanderstiebende Partikel.
+    case "disperse": {
+      // Karte löst sich auf → Partikelgitter stiebt nach außen/oben & fadet — wie der echte Zerstäuben-Finisher (kein Ring/Explosions-Look).
+      const scatter = [[-9, -7], [9, -8], [-11, -1], [11, -2], [-6, -12], [6, -11], [0, -14], [-3, 3], [4, 4]];
       return box(
         <>
-          {ring(C, 20, "50%", "50%", "0s")}
-          <span className="as-mini-core" style={{ width: 5, height: 5, borderRadius: "50%", background: C, "--mc": C }} />
-          {[["30%", "30%", "0s"], ["66%", "38%", "-.4s"], ["42%", "66%", "-.8s"], ["62%", "62%", "-1.2s"]].map(([l, t, d]) => (
-            <span key={l + t} className="as-mini-core absolute" style={{ left: l, top: t, width: 3, height: 3, borderRadius: "50%", background: "#ffffff", "--mc": C, animationDelay: d }} />
+          {/* Karten-Silhouette, die sich auflöst */}
+          <span className="as-mini-dissolve absolute" style={{ left: "50%", top: "50%", width: 14, height: 19, marginLeft: -7, marginTop: -9.5,
+            borderRadius: 3, background: "#141826", border: `1px solid ${C}66` }} />
+          {/* Partikel stieben nach außen/oben und faden */}
+          {scatter.map(([dx, dy], i) => (
+            <span key={i} className="as-mini-scatter absolute" style={{ left: "50%", top: "50%", width: 2.5, height: 2.5,
+              borderRadius: "50%", background: i % 3 === 0 ? "#ffffff" : C, boxShadow: `0 0 4px ${C}`,
+              "--dx": `${dx}px`, "--dy": `${dy}px`, animationDelay: `${-(i % 5) * 0.14}s` }} />
           ))}
         </>
       );
+    }
     default:
       return box(<span className="as-mini-core" style={{ width: 8, height: 8, borderRadius: "50%", background: C, "--mc": C }} />);
   }
