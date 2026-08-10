@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
-  THEME_DEFS, THEMES, PACKS, PACK_COST, PACK_DP_COST,
+  THEME_DEFS, THEMES, PACKS,
   packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
-  canBuyPack, buyPack, unlockAllCosmetics, packOwnKey,
-  GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
+  canBuyPack, buyPack, unlockAllCosmetics,
+  GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
   frameGlowActive, holoSwipeActive, hologridActive, activeFieldFx, starfieldActive, vignetteActive,
   laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, fireworksActive, goldRainActive, prismaWaveActive,
 } from "../src/game/themes.js";
@@ -49,7 +49,11 @@ describe("packs — Zustände & Besitz", () => {
     const t = THEME_DEFS.sunset;
     expect(packState(prof(), t)).toBe("buy");
     expect(packOwned(prof(), t)).toBe(false);
-    expect(packPrice(t)).toBe(PACK_DP_COST);   // #299: Packs kosten DP
+    expect(packPrice(t)).toBe(10);   // #307: Sunset Rider = 10 DP (je Pack eigener Preis)
+  });
+  it("#307: jedes Kauf-Pack trägt seinen DP-Preis (packPrice = pack.price)", () => {
+    const want = { lofi: 5, cat: 5, spacedog: 5, beach: 10, sunset: 10, ramen: 10, wale: 15, genesis: 0 };
+    for (const [id, dp] of Object.entries(want)) expect(packPrice(THEME_DEFS[id])).toBe(dp);
   });
   it("gekauftes Pack → 'own'", () => {
     const p = prof({ ownedCosmetics: { "pack:sunset": true } });
@@ -76,21 +80,22 @@ describe("packs — Zustände & Besitz", () => {
 });
 
 describe("packs — Kauf-Ökonomie (#299: DP)", () => {
-  it("canBuyPack: nur Kauf-Pack, genug DP, noch nicht im Besitz", () => {
-    const t = THEME_DEFS.sunset;
-    expect(canBuyPack(prof({ deckPoints: PACK_DP_COST - 1 }), t)).toBe(false);
-    expect(canBuyPack(prof({ deckPoints: PACK_DP_COST }), t)).toBe(true);
-    expect(canBuyPack(prof({ deckPoints: PACK_DP_COST, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
+  it("canBuyPack: nur Kauf-Pack, genug DP (Pack-Preis), noch nicht im Besitz", () => {
+    const t = THEME_DEFS.sunset; // 10 DP
+    expect(canBuyPack(prof({ deckPoints: 9 }), t)).toBe(false);
+    expect(canBuyPack(prof({ deckPoints: 10 }), t)).toBe(true);
+    expect(canBuyPack(prof({ deckPoints: 10, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
     // SP allein reichen nicht (Pack läuft über DP)
     expect(canBuyPack(prof({ stichPoints: 99, deckPoints: 0 }), t)).toBe(false);
     // Nicht-Kauf-Pack (synthetisch) ist niemals kaufbar
     expect(canBuyPack(prof({ deckPoints: 99 }), { kind: "cond", deckId: "x" })).toBe(false);
   });
-  it("buyPack zieht PACK_DP_COST DP ab, bucht deckSpent, setzt Besitz (rein)", () => {
-    const p0 = prof({ deckPoints: PACK_DP_COST + 2, deckSpent: 2 });
-    const p1 = buyPack(p0, THEME_DEFS.lofi);
+  it("buyPack zieht den Pack-Preis in DP ab, bucht deckSpent, setzt Besitz (rein)", () => {
+    const t = THEME_DEFS.lofi; // 5 DP
+    const p0 = prof({ deckPoints: 5 + 2, deckSpent: 2 });
+    const p1 = buyPack(p0, t);
     expect(p1.deckPoints).toBe(2);
-    expect(p1.deckSpent).toBe(2 + PACK_DP_COST);
+    expect(p1.deckSpent).toBe(2 + 5);
     expect(p1.stichPoints).toBe(p0.stichPoints); // SP unberührt
     expect(p1.ownedCosmetics["pack:lofi"]).toBe(true);
     expect(p0.ownedCosmetics["pack:lofi"]).toBeUndefined(); // Eingabe unverändert
@@ -156,10 +161,12 @@ describe("effekte — Karten-Animationen sind jetzt GLOBAL", () => {
       expect(activeFn(prof(), { [opt]: true })).toBe(false); // nicht gekauft
     }
   });
-  it("kaufen zieht 1 SP ab und setzt den globalen Besitz", () => {
-    const p1 = buyGlobalFx(prof({ stichPoints: 1 }), GLOBAL_FX_BY_KEY.frameGlow);
-    expect(p1.stichPoints).toBe(0);
-    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.frameGlow)).toBe(true);
+  it("#307: kaufen zieht den DP-Preis ab und setzt den globalen Besitz", () => {
+    const fx = GLOBAL_FX_BY_KEY.frameGlow; // 3 DP
+    expect(globalFxPrice(fx)).toBe(3);
+    const p1 = buyGlobalFx(prof({ deckPoints: 3 }), fx);
+    expect(p1.deckPoints).toBe(0);
+    expect(globalFxOwned(p1, fx)).toBe(true);
   });
 });
 
@@ -171,31 +178,33 @@ describe("effekte — Finisher/Krit/Prunk", () => {
     expect(laser.group).toBe("finisher");
     expect(GLOBAL_FX_BY_KEY.blackhole.group).toBe("finisher");
   });
-  it("#300 Überladung + Zerstäubung: ownKey/option + group finisher, je 1 SP kaufbar & exklusiv-fähig", () => {
+  it("#300/#307 Überladung + Zerstäubung: ownKey/option + group finisher, in DP kaufbar & exklusiv-fähig", () => {
     for (const [key, own, opt] of [["overload", "fx:overload", "fxOverload"], ["disperse", "fx:disperse", "fxDisperse"]]) {
       const fx = GLOBAL_FX_BY_KEY[key];
       expect(fx).toBeTruthy();
       expect(fx.ownKey).toBe(own);
       expect(fx.option).toBe(opt);
       expect(fx.group).toBe("finisher");
-      const p0 = prof({ stichPoints: 1 });
+      const p0 = prof({ deckPoints: globalFxPrice(fx) });
       expect(canBuyGlobalFx(p0, fx)).toBe(true);
       const p1 = buyGlobalFx(p0, fx);
       expect(globalFxOwned(p1, fx)).toBe(true);
-      expect(p1.stichPoints).toBe(0);
+      expect(p1.deckPoints).toBe(0);
     }
   });
-  it("kaufen zieht SP ab, bucht stichSpent, setzt globalen Besitz", () => {
-    const p0 = prof({ stichPoints: 2, stichSpent: 1 });
+  it("#307: kaufen zieht DP ab, bucht deckSpent, setzt globalen Besitz (SP unberührt)", () => {
+    const price = globalFxPrice(laser); // 3 DP
+    const p0 = prof({ deckPoints: price + 1, deckSpent: 1, stichPoints: 9 });
     expect(canBuyGlobalFx(p0, laser)).toBe(true);
     const p1 = buyGlobalFx(p0, laser);
-    expect(p1.stichPoints).toBe(1);
-    expect(p1.stichSpent).toBe(2);
+    expect(p1.deckPoints).toBe(1);
+    expect(p1.deckSpent).toBe(1 + price);
+    expect(p1.stichPoints).toBe(9); // SP unberührt
     expect(globalFxOwned(p1, laser)).toBe(true);
     expect(canBuyGlobalFx(p1, laser)).toBe(false);
   });
-  it("kaufen bei zu wenig SP = No-op", () => {
-    const p0 = prof({ stichPoints: 0 });
+  it("kaufen bei zu wenig DP = No-op", () => {
+    const p0 = prof({ deckPoints: 0, stichPoints: 99 });
     expect(buyGlobalFx(p0, laser)).toBe(p0);
   });
   it("*Active-Helfer: nur gekauft UND per Option an", () => {
@@ -228,12 +237,14 @@ describe("effekte — Finisher/Krit/Prunk", () => {
     expect(GLOBAL_FX_BY_KEY.gridTunnel).toBeUndefined(); // Grid-Tunnel bleibt entfernt
   });
   it("Käufe sind voneinander getrennt", () => {
-    const p1 = buyGlobalFx(prof({ stichPoints: 1 }), GLOBAL_FX_BY_KEY.blackhole);
+    const p1 = buyGlobalFx(prof({ deckPoints: 25 }), GLOBAL_FX_BY_KEY.blackhole);
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.blackhole)).toBe(true);
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.laserSlice)).toBe(false);
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.overload)).toBe(false);
   });
-  it("GLOBAL_FX_COST = 1", () => {
-    expect(GLOBAL_FX_COST).toBe(1);
+  it("#307: jeder Effekt trägt seinen DP-Preis (globalFxPrice = fx.price)", () => {
+    const want = { frameGlow: 3, holoSwipe: 5, hologrid: 5, starfield: 10, aurora: 10, embers: 8, dataRain: 8, scanline: 5, vignette: 5,
+      laserSlice: 3, lasergrid: 5, disperse: 10, overload: 15, burnBeam: 20, blackhole: 25, prismaWave: 5, goldRain: 10, fireworks: 15 };
+    for (const [key, dp] of Object.entries(want)) expect(globalFxPrice(GLOBAL_FX_BY_KEY[key])).toBe(dp);
   });
 });

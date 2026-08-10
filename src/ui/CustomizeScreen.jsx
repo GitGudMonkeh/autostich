@@ -5,7 +5,7 @@ import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.
 import {
   THEMES,
   packState, packPrice, packUnlock, canBuyPack, buyPack, hasBattlefield,
-  GLOBAL_FX, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
+  GLOBAL_FX, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
@@ -572,7 +572,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
         document.body)}
 
       {fxOv && createPortal(
-        <FxDetail group={fxOv.group} idx={fxOv.idx} p={p} spBal={spBal} options={options}
+        <FxDetail group={fxOv.group} idx={fxOv.idx} p={p} dpBal={dpBal} options={options}
           onChoose={onChoose} onStep={stepFx} onClose={() => setFxOv(null)}
           onBuy={(fx) => buy((pf) => buyGlobalFx(pf, fx))} />,
         document.body)}
@@ -745,7 +745,7 @@ function FxView({ p, options, onChoose, onOpenFx }) {
                   control = <PreviewPill label="Vorschau ›" onClick={open} />;
                 } else if (!owned) {
                   // Noch nicht gekauft → Preis-Pill öffnet das Kauffenster (mit Vorschau).
-                  control = <PreviewPill label={`Vorschau · ${GLOBAL_FX_COST} SP ›`} buy onClick={open} />;
+                  control = <PreviewPill label={`Vorschau · ${globalFxPrice(fx)} DP ›`} buy onClick={open} />;
                 } else if (g.mode === "finisher") {
                   // Exklusiv-Auswahl (Radio) — eigenes Tap-Ziel, öffnet NICHT die Vorschau.
                   control = <ControlBtn label="Als Finisher wählen" onClick={() => selectFinisher(fx.key)}><Radio on={finisherSel === fx.key} /></ControlBtn>;
@@ -960,7 +960,7 @@ function MiniFx({ preview }) {
 }
 
 /* Effekt-Kauffenster (Portal): echte In-Game-Vorschau + Kaufen (nur hier). ‹ ›/Swipe wechselt innerhalb der Gruppe. */
-function FxDetail({ group, idx, p, spBal, options, onChoose, onStep, onClose, onBuy }) {
+function FxDetail({ group, idx, p, dpBal, options, onChoose, onStep, onClose, onBuy }) {
   const items = fxGroupItems(group);
   const fx = items[idx];
   const touch = useRef(0);
@@ -1013,7 +1013,7 @@ function FxDetail({ group, idx, p, spBal, options, onChoose, onStep, onClose, on
                 className="w-full rounded-xl font-extrabold text-[12.5px] py-2.5 transition-opacity"
                 style={{ background: canBuy ? "#d4a63a" : "#3a2f12", color: "#141419",
                   boxShadow: canBuy ? "0 0 16px rgba(212,166,58,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
-                Kaufen · {GLOBAL_FX_COST} SP{!canBuy && spBal < GLOBAL_FX_COST ? " (zu wenig SP)" : ""}
+                Kaufen · {globalFxPrice(fx)} DP{!canBuy && dpBal < globalFxPrice(fx) ? " (zu wenig DP)" : ""}
               </button>
             ) : isFinisher ? (
               <button onClick={() => onChoose(finisherFlags(fx.key))}
