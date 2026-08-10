@@ -83,6 +83,18 @@ const fxGroupItems = (group) => {
   if (group === "field") return [FIELD_NONE, ...list]; // „Kein Feld-Effekt" (Default) voran
   return list;
 };
+// #: Der Standard-Key je einfach-exklusiver Gruppe (der Gratis-Aus-Zustand). Toggle-Gruppen (anim) haben keinen.
+const FX_STD_KEY = { finisher: "klinge", field: "none", gott: "gottStandard" };
+// #: Aktive Auswahl an die ERSTE Stelle rücken, direkt danach den „Standard" (falls die Gruppe einen hat), Rest folgt
+// in bisheriger Reihenfolge. Kein/Standard aktiv oder Toggle-Gruppe (kein stdKey) → Reihenfolge unverändert.
+function orderFxItems(items, selKey, stdKey) {
+  if (!stdKey || !selKey || selKey === stdKey) return items;
+  const active = items.find((it) => it.key === selKey);
+  if (!active) return items;
+  const std = items.find((it) => it.key === stdKey);
+  const rest = items.filter((it) => it !== active && it !== std);
+  return std ? [active, std, ...rest] : [active, ...rest];
+}
 
 /* Sieg-Finisher sind untereinander exklusiv (genau EINER aktiv). Zentrale Wahrheit für Auswahl UND Anzeige,
    damit In-Übersicht (Radio) und Detail-Fenster nie auseinanderlaufen. „klinge" = alle Flags aus. */
@@ -803,7 +815,9 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
       {/* Kategorien als horizontal wischbare Reihen. */}
       <div className="mt-3">
         {FX_GROUPS.map((g) => {
-          const items = fxGroupItems(g.key);
+          // #: aktiver Effekt zuerst, dann Standard (falls vorhanden) — „rutscht links an die erste Stelle".
+          const selKey = g.mode === "finisher" ? finisherSel : g.mode === "field" ? fieldSel : g.mode === "gott" ? gottSel : null;
+          const items = orderFxItems(fxGroupItems(g.key), selKey, FX_STD_KEY[g.key]);
           return (
             <div key={g.key} className="mb-1.5">
               <div className={EYEBROW} style={{ color: "#9a97ab" }}>
