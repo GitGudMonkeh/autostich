@@ -411,6 +411,9 @@ button { font-family: inherit; }
 @keyframes as-field-aurora-b { 0%,100% { transform: translateX(5%) scale(1.08); opacity: .45; } 50% { transform: translateX(-5%) scale(1.0); opacity: .62; } }
 .as-field-aurora-a { animation: as-field-aurora-a 11s ease-in-out infinite; }
 .as-field-aurora-b { animation: as-field-aurora-b 14s ease-in-out infinite; }
+/* Aurora-Sterne: dezentes Twinkeln (Opacity). Unter reduced-motion strippt A() die Klasse → Sterne stehen still. */
+@keyframes as-star-twinkle { 0%, 100% { opacity: .2; } 50% { opacity: .85; } }
+.as-star-twinkle { animation: as-star-twinkle 3.4s ease-in-out infinite; }
 @keyframes as-field-bloom { 0% { opacity: 0; } 22% { opacity: 1; } 60% { opacity: .7; } 100% { opacity: 0; } }
 .as-field-bloom { animation: as-field-bloom 900ms ease-out forwards; }
 /* Glutfunken: Partikel steigen auf (Höhe = --rise, Seitwärts-Spray = --rdx je Fontänen-Funke); Reaktion = Funken-Aufstoß

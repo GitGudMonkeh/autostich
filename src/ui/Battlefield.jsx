@@ -1097,7 +1097,9 @@ function emberFountainJets(score, sweepId, turbo = 1) {
 // #perf A2-lite: memoisiert — alle Props sind Primitive (effect/color/sweepId/sweepDur/reduced/win). Re-rendert das
 // Ambiente-DOM (Sternenfeld/Glutfunken/… — teils viele Knoten) NUR, wenn sich diese Werte ändern; bei sonstigen
 // Battlefield-Re-Renders (ohne Stich/Feld-Wechsel) bleibt die Ebene stehen. Kein visueller Unterschied (Desktop unverändert).
-const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepDur, reduced, win, score = 0 }) {
+// #: dezente Sterne für die Aurora (obere Feldhälfte). x/y in %, s = Größe (px), d = Twinkle-Versatz (s).
+const AURORA_STARS = [{ x: 12, y: 14, s: 2, d: 0 }, { x: 26, y: 24, s: 1.4, d: 0.8 }, { x: 43, y: 9, s: 2.2, d: 1.5 }, { x: 57, y: 20, s: 1.5, d: 0.5 }, { x: 71, y: 12, s: 2, d: 1.2 }, { x: 85, y: 27, s: 1.4, d: 0.9 }, { x: 36, y: 33, s: 1.5, d: 1.9 }, { x: 64, y: 34, s: 1.3, d: 0.3 }];
+const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, win, score = 0 }) {
   const react = !reduced && sweepId > 0; // per-Stich-Reaktion aktiv?
   const A = (c) => (reduced ? "" : c); // Ambiente-Animationsklasse nur ohne „Effekte reduziert" → sonst statisches Bild
   let inner = null;
@@ -1107,8 +1109,8 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepD
         <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(${color} 1px,transparent 1px),linear-gradient(90deg,${color} 1px,transparent 1px)`, backgroundSize: "18px 18px", opacity: 0.24 }} />
         {react && (
           <div key={sweepId} className="as-deck-sweep absolute left-0 right-0" style={{ height: 0, animationDuration: `${sweepDur}ms` }}>
-            <div className="absolute left-0 right-0" style={{ top: win ? -24 : -8, height: win ? 48 : 16, background: win ? `linear-gradient(180deg, transparent, ${color} 34%, ${color} 66%, transparent)` : "linear-gradient(180deg, transparent, rgba(200,205,220,0.85) 45%, transparent)", filter: `blur(${win ? 10 : 4}px)`, opacity: win ? 0.95 : 0.4 }} />
-            <div className="absolute left-0 right-0" style={{ top: win ? -5 : -3, height: win ? 9 : 6, background: win ? `linear-gradient(90deg, transparent, ${color} 12%, ${color} 42%, #ffffff 50%, ${color} 58%, ${color} 88%, transparent)` : "linear-gradient(90deg, transparent, rgba(220,224,235,0.8) 50%, transparent)", boxShadow: win ? `0 0 20px 4px ${color}, 0 0 52px 12px ${color}, 0 0 7px 2px #ffffff` : "none", opacity: win ? 1 : 0.55 }} />
+            <div className="absolute left-0 right-0" style={{ top: win ? -12 : -4, height: win ? 24 : 8, background: win ? `linear-gradient(180deg, transparent, ${color} 34%, ${color} 66%, transparent)` : "linear-gradient(180deg, transparent, rgba(200,205,220,0.85) 45%, transparent)", filter: `blur(${win ? 5 : 2}px)`, opacity: win ? 0.95 : 0.4 }} />
+            <div className="absolute left-0 right-0" style={{ top: win ? -2.5 : -1.5, height: win ? 5 : 3, background: win ? `linear-gradient(90deg, transparent, ${color} 12%, ${color} 42%, #ffffff 50%, ${color} 58%, ${color} 88%, transparent)` : "linear-gradient(90deg, transparent, rgba(220,224,235,0.8) 50%, transparent)", boxShadow: win ? `0 0 14px 2px ${color}, 0 0 36px 7px ${color}, 0 0 5px 1px #ffffff` : "none", opacity: win ? 1 : 0.55 }} />
           </div>
         )}
       </div>
@@ -1122,11 +1124,22 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepD
       </>
     );
   } else if (effect === "aurora") {
+    // #: Echte Aurora statt Mittel-Bloom — ein „umgedrehter Halbkreis" (Dome) hängt oben am Feld: zwei versetzte
+    // Farb-Bögen (Deckfarbe + zweite Farbe) mit weichem Glow, sanft undulierend, dazu ein paar dezente twinkelnde
+    // Sterne. Je Stich pulsiert der Bogen kurz heller. transformOrigin oben-mittig → der Bogen „atmet" vom oberen Rand.
+    const c2 = color2 || "#b06bff"; // zweite Aurora-Farbe (Deck-Sekundärfarbe, sonst sanftes Violett)
     inner = (
       <>
-        <div className={`${A("as-field-aurora-a")} absolute`} style={{ inset: "-25%", background: `radial-gradient(55% 40% at 32% 42%, ${color}55, transparent 72%)`, filter: "blur(20px)", opacity: 0.6 }} />
-        <div className={`${A("as-field-aurora-b")} absolute`} style={{ inset: "-25%", background: `radial-gradient(48% 34% at 68% 58%, ${color}44, transparent 72%)`, filter: "blur(26px)", opacity: 0.5 }} />
-        {react && <div key={sweepId} className="as-field-bloom absolute inset-0" style={{ background: `radial-gradient(65% 60% at 50% 55%, ${color}${win ? "88" : "55"}, transparent 75%)`, animationDuration: `${sweepDur}ms` }} />}
+        <div className={`${A("as-field-aurora-a")} absolute`} style={{ left: "-8%", right: "-8%", top: "-10%", height: "64%", transformOrigin: "50% 0%", mixBlendMode: "screen",
+          background: `radial-gradient(130% 82% at 50% 0%, ${color}99, ${color}33 34%, transparent 66%)`, filter: "blur(12px)", opacity: 0.75 }} />
+        <div className={`${A("as-field-aurora-b")} absolute`} style={{ left: "-8%", right: "-8%", top: "-6%", height: "60%", transformOrigin: "50% 0%", mixBlendMode: "screen",
+          background: `radial-gradient(118% 74% at 44% 0%, ${c2}77, transparent 60%)`, filter: "blur(18px)", opacity: 0.6 }} />
+        {AURORA_STARS.map((st, i) => (
+          <span key={i} className={A("as-star-twinkle")} style={{ position: "absolute", left: `${st.x}%`, top: `${st.y}%`, width: st.s, height: st.s,
+            borderRadius: "50%", background: "#ffffff", boxShadow: `0 0 ${(st.s * 2).toFixed(0)}px #ffffffcc`, opacity: 0.6, animationDelay: `${st.d}s` }} />
+        ))}
+        {react && <div key={sweepId} className="as-field-bloom absolute" style={{ left: "-8%", right: "-8%", top: "-10%", height: "66%", mixBlendMode: "screen",
+          background: `radial-gradient(130% 84% at 50% 0%, ${win ? color : c2}${win ? "aa" : "66"}, transparent 64%)`, animationDuration: `${sweepDur}ms` }} />}
       </>
     );
   } else if (effect === "embers") {
@@ -1757,7 +1770,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           immer in der Deck-Hauptfarbe. Ambiente läuft ruhig; die Reaktion je Stich (sweepId, Turbo-Throttle) läuft voll
           durch. reduced-motion → nur das statische Ambiente (kein Springen). */}
       {fxField && deckA1 && (
-        <FieldFxLayer effect={fxField} color={deckA1} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} win={win}
+        <FieldFxLayer effect={fxField} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} win={win}
           score={fxField === "embers" ? Math.round((score || 0) / 20000) * 20000 : 0} />
       )}
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
