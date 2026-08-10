@@ -1097,6 +1097,16 @@ function emberFountainJets(score, sweepId, turbo = 1) {
 // #perf A2-lite: memoisiert — alle Props sind Primitive (effect/color/sweepId/sweepDur/reduced/win). Re-rendert das
 // Ambiente-DOM (Sternenfeld/Glutfunken/… — teils viele Knoten) NUR, wenn sich diese Werte ändern; bei sonstigen
 // Battlefield-Re-Renders (ohne Stich/Feld-Wechsel) bleibt die Ebene stehen. Kein visueller Unterschied (Desktop unverändert).
+// #: Sternschnuppen-Pfade — je Stich (sweepId) ein anderer: Start (top/left), Flugwinkel (ang°) + Strecke (dist).
+// Gemischte Richtungen/Seiten (oben-links→unten-rechts, oben-rechts→unten-links, flach, steil) → nie „einfach gerade durch".
+const SHOOT_PATHS = [
+  { top: "6%", left: "-8%", ang: 26, dist: "360%" },    // oben-links → unten-rechts
+  { top: "-6%", left: "62%", ang: 124, dist: "360%" },  // oben-rechts → unten-links
+  { top: "24%", left: "-10%", ang: 9, dist: "380%" },   // flach, links → rechts
+  { top: "-8%", left: "34%", ang: 68, dist: "300%" },   // steil nach unten
+  { top: "14%", left: "72%", ang: 152, dist: "340%" },  // rechts → unten-links, flach
+  { top: "-6%", left: "12%", ang: 48, dist: "340%" },   // oben-links → unten-rechts, mittel
+];
 // #: dezente Sterne für die Aurora (obere Feldhälfte). x/y in %, s = Größe (px), d = Twinkle-Versatz (s).
 const AURORA_STARS = [{ x: 12, y: 14, s: 2, d: 0 }, { x: 26, y: 24, s: 1.4, d: 0.8 }, { x: 43, y: 9, s: 2.2, d: 1.5 }, { x: 57, y: 20, s: 1.5, d: 0.5 }, { x: 71, y: 12, s: 2, d: 1.2 }, { x: 85, y: 27, s: 1.4, d: 0.9 }, { x: 36, y: 33, s: 1.5, d: 1.9 }, { x: 64, y: 34, s: 1.3, d: 0.3 }];
 const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, win, score = 0 }) {
@@ -1120,7 +1130,20 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
       <>
         <div className={`${A("as-field-drift-a")} absolute inset-0`} style={{ backgroundImage: `radial-gradient(1.3px 1.3px at 15% 20%, ${color}, transparent 60%), radial-gradient(1px 1px at 70% 38%, ${color}cc, transparent 60%), radial-gradient(1.5px 1.5px at 40% 72%, ${color}, transparent 60%), radial-gradient(1px 1px at 86% 80%, ${color}aa, transparent 60%), radial-gradient(1px 1px at 55% 12%, ${color}, transparent 60%), radial-gradient(1.2px 1.2px at 25% 90%, ${color}bb, transparent 60%)`, opacity: 0.55 }} />
         <div className={`${A("as-field-drift-b")} absolute inset-0`} style={{ backgroundImage: `radial-gradient(1px 1px at 32% 55%, ${color}aa, transparent 60%), radial-gradient(1.6px 1.6px at 90% 22%, ${color}, transparent 60%), radial-gradient(1px 1px at 62% 88%, ${color}cc, transparent 60%), radial-gradient(1px 1px at 8% 45%, ${color}99, transparent 60%)`, opacity: 0.4 }} />
-        {react && <div key={sweepId} className="as-field-shoot absolute" style={{ top: "10%", left: "-15%", width: "45%", height: 2, background: `linear-gradient(90deg, transparent, ${win ? "#ffffff" : color}, transparent)`, boxShadow: `0 0 8px 1px ${color}`, opacity: win ? 1 : 0.7, animationDuration: `${sweepDur}ms` }} />}
+        {react && (() => {
+          const p = SHOOT_PATHS[sweepId % SHOOT_PATHS.length]; // je Stich ein anderer Pfad (Winkel/Start/Seite)
+          const head = win ? "#ffffff" : color;
+          return (
+            <div key={sweepId} className="as-field-shoot absolute" style={{ top: p.top, left: p.left, width: "30%", height: 2, borderRadius: 2,
+              transformOrigin: "center", "--ang": `${p.ang}deg`, "--dist": p.dist, animationDuration: `${sweepDur}ms`,
+              // Schweif: fadet vom Ende (transparent) zum Kopf (hell); Kopf-Punkt sitzt rechts am führenden Ende.
+              background: `linear-gradient(90deg, ${color}00, ${color}66 55%, ${color}, ${head})`,
+              boxShadow: `0 0 5px ${color}` }}>
+              <span style={{ position: "absolute", right: -1, top: "50%", width: 3.5, height: 3.5, marginTop: -1.75, borderRadius: "50%",
+                background: head, boxShadow: `0 0 9px 2px ${head}, 0 0 4px 1px ${color}` }} />
+            </div>
+          );
+        })()}
       </>
     );
   } else if (effect === "aurora") {
