@@ -63,6 +63,10 @@ export const DECK_DEFS = {
   // #311 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
   deck_sonne:  { id: "deck_sonne",  name: "Sonnenfinsternis", unlock: { kind: "buy", ownKey: "pack:sonne" } },
   deck_drache: { id: "deck_drache", name: "Goldener Drache",  unlock: { kind: "buy", ownKey: "pack:drache" } },
+  // #312 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
+  deck_arcade:     { id: "deck_arcade",     name: "Arcade",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
+  deck_polarlicht: { id: "deck_polarlicht", name: "Polarlicht", unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
+  deck_seedrache:  { id: "deck_seedrache",  name: "Seedrache",  unlock: { kind: "buy", ownKey: "pack:seedrache" } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -98,6 +102,10 @@ export const BATTLEFIELD_DEFS = {
   // #311 DP-Kauf-Packs:
   bf_sonne:  { id: "bf_sonne",  name: "Sonnenfinsternis · Battlefield", unlock: { kind: "buy", ownKey: "pack:sonne" } },
   bf_drache: { id: "bf_drache", name: "Goldener Drache · Battlefield",  unlock: { kind: "buy", ownKey: "pack:drache" } },
+  // #312 DP-Kauf-Packs:
+  bf_arcade:     { id: "bf_arcade",     name: "Arcade · Battlefield",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
+  bf_polarlicht: { id: "bf_polarlicht", name: "Polarlicht · Battlefield", unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
+  bf_seedrache:  { id: "bf_seedrache",  name: "Seedrache · Battlefield",  unlock: { kind: "buy", ownKey: "pack:seedrache" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

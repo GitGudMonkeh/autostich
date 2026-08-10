@@ -193,6 +193,14 @@ export const THEME_DEFS = {
     deckId: "deck_sonne",  bfId: "bf_sonne",  els: ["deck", "bf"] },
   drache: { id: "drache", name: "Goldener Drache",  emblem: "🐉", kind: "buy", price: 10, a1: "#ffcf5a", a2: "#ff5a2a",
     deckId: "deck_drache", bfId: "bf_drache", els: ["deck", "bf"] },
+
+  // ---- #312 DP-Kauf-Packs (je 10 DP): Arcade · Polarlicht · Seedrache ----
+  arcade:     { id: "arcade",     name: "Arcade",     emblem: "🕹️", kind: "buy", price: 10, a1: "#39e64d", a2: "#38c6e0",
+    deckId: "deck_arcade",     bfId: "bf_arcade",     els: ["deck", "bf"] },
+  polarlicht: { id: "polarlicht", name: "Polarlicht", emblem: "🌌", kind: "buy", price: 10, a1: "#7cc6ff", a2: "#4fe6b0",
+    deckId: "deck_polarlicht", bfId: "bf_polarlicht", els: ["deck", "bf"] },
+  seedrache:  { id: "seedrache",  name: "Seedrache",  emblem: "🌊", kind: "buy", price: 10, a1: "#38b0ff", a2: "#39d6b8",
+    deckId: "deck_seedrache",  bfId: "bf_seedrache",  els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);

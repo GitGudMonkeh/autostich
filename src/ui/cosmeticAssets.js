@@ -117,6 +117,19 @@ import bfSonneDesktop   from "../assets/battlefields/bf_sonne/desktop.jpg";
 import bfSonneMobile    from "../assets/battlefields/bf_sonne/mobile.jpg";
 import bfDracheDesktop  from "../assets/battlefields/bf_drache/desktop.jpg";
 import bfDracheMobile   from "../assets/battlefields/bf_drache/mobile.jpg";
+// #312 drei DP-Kauf-Packs (je 10 DP): Arcade + Polarlicht + Seedrache.
+import arcadeFront     from "../assets/cards/decks_player/deck_arcade/front.webp";     // Arcade
+import arcadeBack      from "../assets/cards/decks_player/deck_arcade/back.webp";
+import polarlichtFront from "../assets/cards/decks_player/deck_polarlicht/front.webp"; // Polarlicht
+import polarlichtBack  from "../assets/cards/decks_player/deck_polarlicht/back.webp";
+import seedracheFront  from "../assets/cards/decks_player/deck_seedrache/front.webp";  // Seedrache
+import seedracheBack   from "../assets/cards/decks_player/deck_seedrache/back.webp";
+import bfArcadeDesktop     from "../assets/battlefields/bf_arcade/desktop.jpg";
+import bfArcadeMobile      from "../assets/battlefields/bf_arcade/mobile.jpg";
+import bfPolarlichtDesktop from "../assets/battlefields/bf_polarlicht/desktop.jpg";
+import bfPolarlichtMobile  from "../assets/battlefields/bf_polarlicht/mobile.jpg";
+import bfSeedracheDesktop  from "../assets/battlefields/bf_seedrache/desktop.jpg";
+import bfSeedracheMobile   from "../assets/battlefields/bf_seedrache/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -150,6 +163,10 @@ export const DECK_ASSETS = {
   // #311 DP-Kauf-Packs:
   deck_sonne:  { front: sonneFront,  back: sonneBack },
   deck_drache: { front: dracheFront, back: dracheBack },
+  // #312 DP-Kauf-Packs:
+  deck_arcade:     { front: arcadeFront,     back: arcadeBack },
+  deck_polarlicht: { front: polarlichtFront, back: polarlichtBack },
+  deck_seedrache:  { front: seedracheFront,  back: seedracheBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -185,6 +202,10 @@ export const BATTLEFIELD_ASSETS = {
   // #311 DP-Kauf-Packs:
   bf_sonne:  { desktop: bfSonneDesktop,  mobile: bfSonneMobile },
   bf_drache: { desktop: bfDracheDesktop, mobile: bfDracheMobile },
+  // #312 DP-Kauf-Packs:
+  bf_arcade:     { desktop: bfArcadeDesktop,     mobile: bfArcadeMobile },
+  bf_polarlicht: { desktop: bfPolarlichtDesktop, mobile: bfPolarlichtMobile },
+  bf_seedrache:  { desktop: bfSeedracheDesktop,  mobile: bfSeedracheMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;
