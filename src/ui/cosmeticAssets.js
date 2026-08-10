@@ -108,6 +108,15 @@ import bfOniDesktop       from "../assets/battlefields/bf_oni/desktop.jpg";
 import bfOniMobile        from "../assets/battlefields/bf_oni/mobile.jpg";
 import bfGeoDesktop       from "../assets/battlefields/bf_geometrie/desktop.jpg";
 import bfGeoMobile        from "../assets/battlefields/bf_geometrie/mobile.jpg";
+// #311 zwei DP-Kauf-Packs (je 10 DP): Sonnenfinsternis + Goldener Drache.
+import sonneFront    from "../assets/cards/decks_player/deck_sonne/front.webp";     // Sonnenfinsternis
+import sonneBack     from "../assets/cards/decks_player/deck_sonne/back.webp";
+import dracheFront   from "../assets/cards/decks_player/deck_drache/front.webp";    // Goldener Drache
+import dracheBack    from "../assets/cards/decks_player/deck_drache/back.webp";
+import bfSonneDesktop   from "../assets/battlefields/bf_sonne/desktop.jpg";
+import bfSonneMobile    from "../assets/battlefields/bf_sonne/mobile.jpg";
+import bfDracheDesktop  from "../assets/battlefields/bf_drache/desktop.jpg";
+import bfDracheMobile   from "../assets/battlefields/bf_drache/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -138,6 +147,9 @@ export const DECK_ASSETS = {
   deck_kosmos:    { front: kosmosFront,    back: kosmosBack },
   deck_oni:       { front: oniFront,       back: oniBack },
   deck_geometrie: { front: geoFront,       back: geoBack },
+  // #311 DP-Kauf-Packs:
+  deck_sonne:  { front: sonneFront,  back: sonneBack },
+  deck_drache: { front: dracheFront, back: dracheBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -170,6 +182,9 @@ export const BATTLEFIELD_ASSETS = {
   bf_kosmos:    { desktop: bfKosmosDesktop,    mobile: bfKosmosMobile },
   bf_oni:       { desktop: bfOniDesktop,       mobile: bfOniMobile },
   bf_geometrie: { desktop: bfGeoDesktop,       mobile: bfGeoMobile },
+  // #311 DP-Kauf-Packs:
+  bf_sonne:  { desktop: bfSonneDesktop,  mobile: bfSonneMobile },
+  bf_drache: { desktop: bfDracheDesktop, mobile: bfDracheMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;

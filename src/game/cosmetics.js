@@ -60,6 +60,9 @@ export const DECK_DEFS = {
   deck_kosmos:    { id: "deck_kosmos",    name: "Schwarzes Loch", unlock: { kind: "buy", ownKey: "pack:kosmos" } },
   deck_oni:       { id: "deck_oni",       name: "Roter Oni",      unlock: { kind: "buy", ownKey: "pack:oni" } },
   deck_geometrie: { id: "deck_geometrie", name: "Metatron",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },
+  // #311 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
+  deck_sonne:  { id: "deck_sonne",  name: "Sonnenfinsternis", unlock: { kind: "buy", ownKey: "pack:sonne" } },
+  deck_drache: { id: "deck_drache", name: "Goldener Drache",  unlock: { kind: "buy", ownKey: "pack:drache" } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -92,6 +95,9 @@ export const BATTLEFIELD_DEFS = {
   bf_kosmos:    { id: "bf_kosmos",    name: "Schwarzes Loch · Battlefield", unlock: { kind: "buy", ownKey: "pack:kosmos" } },
   bf_oni:       { id: "bf_oni",       name: "Roter Oni · Battlefield",      unlock: { kind: "buy", ownKey: "pack:oni" } },
   bf_geometrie: { id: "bf_geometrie", name: "Metatron · Battlefield",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },
+  // #311 DP-Kauf-Packs:
+  bf_sonne:  { id: "bf_sonne",  name: "Sonnenfinsternis · Battlefield", unlock: { kind: "buy", ownKey: "pack:sonne" } },
+  bf_drache: { id: "bf_drache", name: "Goldener Drache · Battlefield",  unlock: { kind: "buy", ownKey: "pack:drache" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

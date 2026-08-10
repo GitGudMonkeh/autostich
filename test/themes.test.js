@@ -61,6 +61,17 @@ describe("packs — Zustände & Besitz", () => {
     expect(packPrice(THEME_DEFS.oni)).toBe(20);
     expect(packPrice(THEME_DEFS.geometrie)).toBe(5);
   });
+  it("#311: Sonnenfinsternis + Goldener Drache sind Kauf-Packs à 10 DP", () => {
+    for (const id of ["sonne", "drache"]) {
+      const t = THEME_DEFS[id];
+      expect(t.kind).toBe("buy");
+      expect(isBuyPack(t)).toBe(true);
+      expect(t.els).toEqual(["deck", "bf"]);
+      expect(packPrice(t)).toBe(10);
+    }
+    expect(canBuyPack(prof({ deckPoints: 9 }), THEME_DEFS.sonne)).toBe(false);
+    expect(canBuyPack(prof({ deckPoints: 10 }), THEME_DEFS.drache)).toBe(true);
+  });
   it("#310: canBuyPack/buyPack rechnen mit dem Pack-Preis (Roter Oni = 20 DP)", () => {
     const oni = THEME_DEFS.oni;
     expect(canBuyPack(prof({ deckPoints: 19 }), oni)).toBe(false);

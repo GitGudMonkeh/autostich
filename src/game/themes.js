@@ -190,6 +190,12 @@ export const THEME_DEFS = {
     deckId: "deck_oni",       bfId: "bf_oni",       els: ["deck", "bf"] },
   geometrie: { id: "geometrie", name: "Metatron",       emblem: "✴️", kind: "buy", price: 5,  a1: "#b48bff", a2: "#ffce5a",
     deckId: "deck_geometrie", bfId: "bf_geometrie", els: ["deck", "bf"] },
+
+  // ---- #311 DP-Kauf-Packs (je 10 DP) ----
+  sonne:  { id: "sonne",  name: "Sonnenfinsternis", emblem: "🌑", kind: "buy", price: 10, a1: "#ffb02a", a2: "#ff6a2a",
+    deckId: "deck_sonne",  bfId: "bf_sonne",  els: ["deck", "bf"] },
+  drache: { id: "drache", name: "Goldener Drache",  emblem: "🐉", kind: "buy", price: 10, a1: "#ffcf5a", a2: "#ff5a2a",
+    deckId: "deck_drache", bfId: "bf_drache", els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);
