@@ -17,10 +17,12 @@
      { kind: "gottgleichRun" }  → profile.hadGottgleichRun === true       (#303: erstmals einen GOTTGLEICH-Stich getriggert)
      { kind: "meisterNoReroll" }→ profile.hadMeisterNoRerollRun === true  (#303 Sparfuchs: Meisterrang-Wochenlauf komplett ohne Reroll)
      { kind: "championWeek" }   → profile.hadChampionWeek === true        (#303 Meister: Platz 1 einer Wochen-Rangliste — Champion-Board)
+     { kind: "onboardingDone" } → onboarding >= 6 (Genesis — Onboarding-Starter, frei nach abgeschlossenem Onboarding)
 
    Katalog wächst „Deck für Deck": ein neues Deck = ein Eintrag hier + sein Bild-Paar in
    cosmeticAssets.js. Solange ein Bild-Asset noch nicht im Repo liegt, bleibt der Eintrag draußen
    (temporärer Umsetzungs-Zwischenstand); im fertigen Feature ist jeder Katalog-Eintrag sichtbar. */
+import { onboardingDone } from "./progression.js"; // #: Genesis-Freischaltung koppelt an abgeschlossenes Onboarding (6/6)
 
 // #310: Element-Challenge-Decks verlangen N abgeschlossene Läufe mit reinem Mono-Build der Fraktion
 // (extends #215 „1 Lauf" → Zähler). Prisma (Element-Bund) = alle vier Element-Decks frei (quasi 4×N Läufe).
@@ -41,7 +43,7 @@ export const DECK_DEFS = {
   deck_ramen:      { id: "deck_ramen",      name: "Slurp City",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
   deck_spacedog:   { id: "deck_spacedog",   name: "Star Pup",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   deck_wale:       { id: "deck_wale",       name: "Moonwhale",       unlock: { kind: "buy", ownKey: "pack:wale" } },
-  deck_onboarding: { id: "deck_onboarding", name: "Genesis",         unlock: { kind: "buy", ownKey: "pack:genesis" } },
+  deck_onboarding: { id: "deck_onboarding", name: "Genesis",         unlock: { kind: "onboardingDone" } }, // #: Onboarding-Freischalt-Deck (NICHT kaufbar) — frei nach abgeschlossenem Onboarding
   // #303 Challenge-Decks: NICHT kaufbar — je über eine Challenge freigeschaltet (das Deck definiert sein „cond"-Pack in themes.js).
   deck_gottgleich: { id: "deck_gottgleich", name: "Gottgleich", unlock: { kind: "gottgleichRun" } },
   deck_serie300:   { id: "deck_serie300",   name: "Serie 300",  unlock: { kind: "streak", n: 300 } },
@@ -82,7 +84,7 @@ export const BATTLEFIELD_DEFS = {
   bf_ramen:      { id: "bf_ramen",      name: "Slurp City · Battlefield",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
   bf_spacedog:   { id: "bf_spacedog",   name: "Star Pup · Battlefield",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   bf_wale:       { id: "bf_wale",       name: "Moonwhale · Battlefield",       unlock: { kind: "buy", ownKey: "pack:wale" } },
-  bf_onboarding: { id: "bf_onboarding", name: "Genesis · Battlefield",         unlock: { kind: "buy", ownKey: "pack:genesis" } },
+  bf_onboarding: { id: "bf_onboarding", name: "Genesis · Battlefield",         unlock: { kind: "onboardingDone" } }, // #: wie deck_onboarding — via Onboarding-Abschluss frei
   // #303 Challenge-Battlefields (Teil des jeweiligen Challenge-Packs, gleiche Bedingung wie das Deck).
   bf_gottgleich: { id: "bf_gottgleich", name: "Gottgleich · Battlefield", unlock: { kind: "gottgleichRun" } },
   bf_serie300:   { id: "bf_serie300",   name: "Serie 300 · Battlefield",  unlock: { kind: "streak", n: 300 } },
@@ -138,6 +140,7 @@ export function isUnlocked(def, profile) {
     case "meisterNoReroll": return !!p.hadMeisterNoRerollRun; // #303 Sparfuchs: Meisterrang-Wochenlauf ohne Reroll
     case "championWeek":    return !!p.hadChampionWeek;       // #303 Meister: Platz 1 einer Wochen-Rangliste (Champion-Board)
     case "buy":         return !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);               // #deckshop: mit SP gekauft (im Besitz)
+    case "onboardingDone": return onboardingDone(p);                                             // #: Genesis — Onboarding abgeschlossen (6/6)
     default:            return true;
   }
 }
@@ -197,6 +200,10 @@ export function unlockProgress(def, profile) {
     case "buy": {
       const done = !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);
       return { done, cur: done ? 1 : 0, target: 1, label: "In der Deck-Werkstatt kaufen (1 SP)" };
+    }
+    case "onboardingDone": {
+      const done = onboardingDone(p);
+      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe das Onboarding ab" };
     }
     default:
       return { done: true, cur: 1, target: 1, label: "" };

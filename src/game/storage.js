@@ -179,14 +179,20 @@ export function saveProfile(profile) {
 
 // Test-/Dev-Reset (geheimer Seed-Code `reset`): löscht Profil + Lauf-Fortschritt → Erstbesuch-Zustand,
 // Onboarding startet neu. Betroffen: Profil (Progression/Stats/Freischalt-Flags), Highscores, Geist-Rekord,
-// Lauf-Verlauf, aktiver Lauf und „Anleitung gesehen". Präferenzen (Optionen/Lautstärke/Skin-Wahl, Name)
-// bleiben bewusst erhalten — nicht-freigeschaltete Skins fallen in der UI ohnehin auf „default" zurück.
-// Nur im Preview-Build von der UI aufrufbar.
+// Lauf-Verlauf, aktiver Lauf und „Anleitung gesehen" — PLUS die Kosmetik-AUSWAHL (Deck/Battlefield/Effekte) wird
+// deselektiert (auf Default). Übrige Präferenzen (Ton/Lautstärke/UI/Name) bleiben. Nur im Preview-Build aufrufbar.
 export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_seen_guide"];
 export function wipeProfileStorage() {
   for (const key of RESET_KEYS) {
     try { localStorage.removeItem(k(key)); } catch (e) {}
   }
+  // #: Auch die Kosmetik-AUSWAHL (gewähltes Deck/Battlefield + alle Effekt-Toggles) auf Default — nach dem Wipe ist
+  // nichts mehr freigeschaltet; ohne Reset bliebe das (nun gesperrte) Deck „ausgewählt" und erschiene als kaufbar.
+  try {
+    const o = loadOptions();
+    for (const key of COSMETIC_OPTION_KEYS) o[key] = DEFAULT_OPTIONS[key];
+    saveOptions(o);
+  } catch (e) {}
 }
 
 const n0 = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 0);
@@ -259,12 +265,11 @@ export function recordRun(record) {
   // #299: bei komplettem Baum sind SP nutzlos → das übrige SP-Guthaben wird zu DP „gefegt" (idempotent: danach 0).
   const spBalance = n0(p.stichPoints) + gainedSp;
   const spSweep = treeDone ? spBalance : 0;
-  // #299 Onboarding-Fortschritt + Freischaltungs-Diff fürs Victory-Banner; Abschluss (6/6) schenkt das Genesis-Pack.
+  // #299 Onboarding-Fortschritt + Freischaltungs-Diff fürs Victory-Banner. Genesis wird NICHT mehr als Pack
+  // geschenkt — es ist ein Onboarding-Freischalt-Deck (kind "cond"/onboardingDone), frei sobald onboarding 6/6.
   const onbAfter = onboardingAfter(onboardingBefore, record);
   const unlocks = onboardingUnlocks(onboardingBefore, onbAfter);
-  const baseCos = (p.ownedCosmetics && typeof p.ownedCosmetics === "object") ? p.ownedCosmetics : {};
-  const justCompletedOnb = onboardingBefore < ONBOARDING_LINKS && onbAfter >= ONBOARDING_LINKS;
-  const ownedCosmetics = justCompletedOnb ? { ...baseCos, "pack:genesis": true } : baseCos;
+  const ownedCosmetics = (p.ownedCosmetics && typeof p.ownedCosmetics === "object") ? p.ownedCosmetics : {};
   const profile = {
     schemaVersion: PROFILE_SCHEMA_VERSION, // #229 T11: gespeicherte Profile tragen die Version (Migrations-Anker)
     games: p.games + 1,
@@ -315,6 +320,9 @@ export function recordRun(record) {
    Look). Merge über Default degradiert Alt-Daten sauber; die UI fällt zusätzlich defensiv auf "default"
    zurück, falls ein gespeicherter Skin (noch) nicht existiert oder nicht mehr freigeschaltet ist. */
 const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxFrameGlow: false, fxHoloSwipe: false, fxAuroraVeil: false, fxGlitch: false, fxHologrid: false, fxStarfield: false, fxAurora: false, fxEmbers: false, fxScanline: false, fxVignette: false, fxLaserSlice: false, fxBlackhole: false, fxLasergrid: false, fxBurnBeam: false, fxOverload: false, fxDisperse: false, fxFireworks: false, fxGoldRain: false, fxPrismaWave: false }; // #110/#111 Sound + #190 Kosmetik + #200 Effekte-reduziert (auto|an|aus) + #207 Haptik (nur Mobile) + #243 Baumodus-Toggles (Kombi-/Formations-Sicht) merken + #252 StatusRail-Panels (Score-Quellen/Score-Verlauf) default eingeklappt, über Runs gemerkt
+// #: Kosmetik-AUSWAHL-Felder in den Optionen (equipped Deck/Battlefield + alle Effekt-Toggles) — beim Dev-Reset
+// auf Default zurückgesetzt (deselektiert). Restliche Options-Prefs (Ton/UI/Name) bleiben unberührt.
+export const COSMETIC_OPTION_KEYS = ["deckId", "battlefieldId", "fxFrameGlow", "fxHoloSwipe", "fxAuroraVeil", "fxGlitch", "fxHologrid", "fxStarfield", "fxAurora", "fxEmbers", "fxScanline", "fxVignette", "fxLaserSlice", "fxBlackhole", "fxLasergrid", "fxBurnBeam", "fxOverload", "fxDisperse", "fxFireworks", "fxGoldRain", "fxPrismaWave"];
 export function loadOptions() {
   try {
     const raw = localStorage.getItem(k("as_options"));

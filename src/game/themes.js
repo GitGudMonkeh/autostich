@@ -147,8 +147,9 @@ export const THEME_DEFS = {
     deckId: "deck_spacedog",   bfId: "bf_spacedog",   els: ["deck", "bf"] },
   wale:     { id: "wale",     name: "Moonwhale",       emblem: "🐋", kind: "buy", price: 15, a1: "#35d0ff", a2: "#7fdcff",
     deckId: "deck_wale",       bfId: "bf_wale",       els: ["deck", "bf"] },
-  // Genesis = Onboarding-Starter → gratis (wird beim Onboarding-Abschluss geschenkt; price 0 = „Gratis").
-  genesis:  { id: "genesis",  name: "Genesis",         emblem: "🔷", kind: "buy", price: 0, a1: "#26c6e6", a2: "#9b82f0",
+  // Genesis = Onboarding-Starter → Bedingungs-Pack (kind "cond"): NICHT kaufbar, frei nach abgeschlossenem
+  // Onboarding (6/6). Bedingung kommt via packCond aus deck_onboarding.unlock ({ kind: "onboardingDone" }).
+  genesis:  { id: "genesis",  name: "Genesis",         emblem: "🔷", kind: "cond", a1: "#26c6e6", a2: "#9b82f0",
     deckId: "deck_onboarding", bfId: "bf_onboarding", els: ["deck", "bf"] },
   // #299: alte Progressions-/„Läufe"-Packs (neon/tank/mega/mond → deck_p1–4/bf_1–4) entfernt — sauberer Neustart
   // mit Standard (Prisma), Genesis und den kaufbaren DP-Packs. Kein Migrationspfad.

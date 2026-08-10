@@ -203,13 +203,13 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.stichPoints).toBe(15);
   });
 
-  it("#299 §2: Onboarding-Abschluss (6/6) schenkt das Genesis-Pack + meldet unlocks", () => {
+  it("#299 §2: Onboarding-Abschluss (6/6) meldet unlocks; Genesis NICHT als Pack geschenkt (frei via onboardingDone)", () => {
     let res, p;
     for (let i = 1; i <= ONBOARDING_LINKS - 1; i++) p = recordRun(runRec({ ts: i })).profile; // 5/6
     expect(p.ownedCosmetics["pack:genesis"]).toBeUndefined();
     res = recordRun(runRec({ ts: 6 })); // 6/6 → Abschluss
     expect(res.profile.onboarding).toBe(6);
-    expect(res.profile.ownedCosmetics["pack:genesis"]).toBe(true);
+    expect(res.profile.ownedCosmetics["pack:genesis"]).toBeUndefined(); // kein Pack-Grant mehr — Genesis via onboardingDone frei
     expect(res.unlocks.some((u) => u.type === "onboardingDone" && u.target === "workshop")).toBe(true);
     // ein weiterer Lauf danach meldet keine neuen Onboarding-Unlocks mehr
     expect(recordRun(runRec({ ts: 7 })).unlocks).toEqual([]);

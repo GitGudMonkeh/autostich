@@ -22,7 +22,7 @@ describe("cosmetics — Katalog", () => {
     expect(unlockProgress(def, prof({ games: 4 })).cur).toBe(4);
   });
   it("v0.4 Kauf-Pack-Decks haben eine buy-Bedingung; alte Challenge-Decks sind entfernt", () => {
-    for (const id of ["deck_beach", "deck_cat", "deck_ramen", "deck_spacedog", "deck_wale", "deck_onboarding"]) {
+    for (const id of ["deck_beach", "deck_cat", "deck_ramen", "deck_spacedog", "deck_wale"]) {
       const d = DECK_DEFS[id];
       expect(d).toBeTruthy();
       expect(d.unlock.kind).toBe("buy");
@@ -32,6 +32,14 @@ describe("cosmetics — Katalog", () => {
     // alte Challenge-/Archetyp-Decks sind raus (v0.4)
     for (const id of ["deck_c1", "deck_c2", "deck_c3", "deck_c5", "deck_c6", "deck_c7", "deck_c8", "deck_c9"]) {
       expect(DECK_DEFS[id]).toBeUndefined();
+    }
+  });
+  it("Genesis (deck_onboarding/bf_onboarding) ist über abgeschlossenes Onboarding frei — nicht kaufbar", () => {
+    for (const def of [DECK_DEFS.deck_onboarding, BATTLEFIELD_DEFS.bf_onboarding]) {
+      expect(def.unlock).toEqual({ kind: "onboardingDone" });
+      expect(isUnlocked(def, prof({ onboarding: 5 }))).toBe(false);
+      expect(isUnlocked(def, prof({ onboarding: 6 }))).toBe(true);
+      expect(unlockProgress(def, prof({ onboarding: 6 })).done).toBe(true);
     }
   });
   it("#299: keine games-Progressions-Decks/-Battlefields mehr (nur Default + Kauf-Packs)", () => {
