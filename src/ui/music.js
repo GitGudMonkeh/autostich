@@ -53,6 +53,11 @@ const TIER_ORDER = ["calm", "mid", "hot", "overdrive"]; // aufsteigende Intensit
 // Runden-Grenzen (state.cycle): < calm → calm · < mid → mid · < hot → hot · sonst overdrive.
 // Plan: Runde 0–10 calm · 10–25 mid · 25–40 hot · 40+ overdrive.
 const TIER_ROUNDS = { calm: 10, mid: 25, hot: 40 };
+// #: Stufenwechsel-Politur — ein laufender Song wird NIE innerhalb seiner ersten SWITCH_MIN_PLAY Sekunden abgelöst
+// (er läuft aus → onEnded reiht den neuen-Stufen-Track). Lief er schon länger, wird weich (kurzer Fade) gewechselt.
+// Verhindert das „nur 5 s anspielen, dann Schnitt".
+const SWITCH_MIN_PLAY = 40; // s [TUNING]
+const TIER_FADE_MS = 320;   // ms je Fade-Halbwelle (aus/ein) beim weichen Stufenwechsel [TUNING]
 // Run-Zufallspool (35 Tracks, harmonisiert auf −14 LUFS). Titel = Anzeige im Musik-Panel.
 const POOL = [
   // calm
@@ -113,6 +118,7 @@ let loadedUrl = null; // #264: URL, die aktuell auf dem <audio>-Element liegt (n
 let mode = null;      // "menu" | "run"
 let listeners = [];   // Titel-Abonnenten (UI)
 let tier = "calm";    // aktive Intensitäts-Stufe im Run (aus dem Lauf-Fortschritt)
+let fadeTimer = null; // aktiv während eines weichen Stufenwechsels (Fade-Übergang)
 
 function ensureEl() {
   if (el || typeof Audio === "undefined") return el;
@@ -147,12 +153,41 @@ function syncPlayback() {
 function notify() { const t = current ? current.title : null; listeners.forEach((fn) => { try { fn(t); } catch (e) {} }); }
 
 function playTrack(track) {
+  stopFade(); // laufenden Fade-Übergang abbrechen — ein expliziter Track-Wechsel gewinnt
   const a = ensureEl();
   if (!a || !track) return;
   if (current && current.url === track.url) { syncPlayback(); return; } // schon gewählt → ggf. fortsetzen
   current = track;
   notify();       // Titel immer anzeigen (Kontinuität — auch wenn gerade stumm)
   syncPlayback(); // lädt/spielt nur, wenn hörbar — sonst wird nichts geladen
+}
+
+// #: Weicher Stufenwechsel — kurzer Fade-Übergang (Dip) auf DEMSELBEN <audio>-Element: aktuellen Track ausblenden,
+// Quelle tauschen, neuen einblenden. Nur bei einem Stufenwechsel eines schon länger laufenden Songs (setProgress).
+// Bricht ab, sobald nicht mehr hörbar (Mute/Pause) — dann übernimmt syncPlayback den Pegel.
+function stopFade() { if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; } }
+function rampVol(from, to, ms, done) {
+  const a = el;
+  if (!a) { if (done) done(); return; }
+  stopFade();
+  const steps = Math.max(1, Math.round(ms / 25));
+  let k = 0;
+  try { a.volume = from; } catch (e) {}
+  fadeTimer = setInterval(() => {
+    if (!audible()) { stopFade(); return; } // Mute/Pause während des Fades → abbrechen (syncPlayback regelt den Pegel)
+    k += 1;
+    try { a.volume = from + (to - from) * (k / steps); } catch (e) {}
+    if (k >= steps) { stopFade(); if (done) done(); }
+  }, 25);
+}
+function fadeSwitchTo(track) {
+  const a = ensureEl();
+  if (!a || !track || !audible()) { playTrack(track); return; } // nicht hörbar → einfach (lazy) umschalten
+  rampVol(volume, 0.0001, TIER_FADE_MS, () => {                  // ausblenden …
+    current = track; loadedUrl = track.url; a.src = track.url; a.loop = false; notify(); // … Quelle tauschen …
+    a.play().catch(() => {});
+    rampVol(0.0001, volume, TIER_FADE_MS);                       // … neuen Track einblenden
+  });
 }
 
 function tracksForTier(wantTier) {
@@ -178,18 +213,21 @@ export const music = {
   menu() { mode = "menu"; tier = "calm"; playTrack(MENU_TRACK); },                 // Menü + Victory
   enterRun() { mode = "run"; tier = "calm"; playTrack(randomPoolTrack(tier)); },   // Run-Start → ruhige Stufe
   next() { if (mode === "run") playTrack(randomPoolTrack(tier)); },                // „Nächster Track" (aus aktueller Stufe)
-  // Aktuelle Runde (state.cycle): bestimmt die Intensitäts-Stufe. Beim Stufenwechsel sofort auf einen Track der neuen
-  // Stufe schalten (hörbarer Tempo-Sprung); sonst läuft die aktuelle Stufe weiter.
+  // Aktuelle Runde (state.cycle): bestimmt die Intensitäts-Stufe. Ein FRISCHER Song (< SWITCH_MIN_PLAY s) wird nie
+  // angeschnitten — er läuft aus, dann reiht onEnded den neuen-Stufen-Track. Lief er schon länger, wird JETZT weich
+  // (Fade) auf einen Track der neuen Stufe gewechselt.
   setProgress(round) {
     if (mode !== "run") return;
     const next = tierForRound(round);
     if (next === tier) return;
-    tier = next;
-    playTrack(randomPoolTrack(tier));
+    tier = next; // Stufe merken — onEnded reiht am Songende ohnehin aus dieser Stufe
+    const played = el ? (el.currentTime || 0) : 0;
+    if (!audible() || played < SWITCH_MIN_PLAY) return; // frischer/leiser Song → ausspielen lassen (kein Anschneiden)
+    fadeSwitchTo(randomPoolTrack(tier));                // schon länger gelaufen → weich hochschalten
   },
-  setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); syncPlayback(); }, // #264: 0 → Stream stoppt, wieder >0 → lazy laden
-  setMuted(m) { muted = !!m; syncPlayback(); },                                       // #264: stumm → pause, hörbar → (lazy) starten
-  setPaused(p) { userPaused = !!p; syncPlayback(); },                                 // Spiel-Pause spiegeln
+  setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); stopFade(); syncPlayback(); }, // #264: 0 → Stream stoppt, wieder >0 → lazy laden
+  setMuted(m) { muted = !!m; stopFade(); syncPlayback(); },                                       // #264: stumm → pause, hörbar → (lazy) starten
+  setPaused(p) { userPaused = !!p; stopFade(); syncPlayback(); },                                 // Spiel-Pause spiegeln
   unlock() { ensureEl(); syncPlayback(); }, // erste User-Geste: startet den Track nur, wenn hörbar (sonst bleibt es stumm & ungeladen)
   subscribe(fn) { listeners.push(fn); fn(current ? current.title : null); return () => { listeners = listeners.filter((x) => x !== fn); }; },
 };

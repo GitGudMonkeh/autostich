@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 class FakeAudio {
   constructor() {
-    this._src = ""; this.loop = false; this.preload = ""; this.volume = 1;
+    this._src = ""; this.loop = false; this.preload = ""; this.volume = 1; this.currentTime = 0;
     this.paused = true; this.playCalls = 0; this.pauseCalls = 0; this.srcSets = [];
   }
   set src(v) { this._src = v; this.srcSets.push(v); }
@@ -67,5 +67,31 @@ describe("Musik Lazy-Gating (#264)", () => {
     music.setVolume(0); // wie stumm
     expect(el.paused, "Volume 0 pausiert den Stream").toBe(true);
     expect(el.pauseCalls).toBeGreaterThan(0);
+  });
+
+  it("Stufenwechsel: frischer Song wird NICHT angeschnitten; ab SWITCH_MIN_PLAY weicher Fade-Wechsel", async () => {
+    vi.resetModules();
+    vi.useFakeTimers();
+    try {
+      const { music } = await import("../src/ui/music.js");
+      music.setVolume(0.5);
+      music.enterRun();               // Run-Start → calm-Track (Runde 0)
+      const el = created[0];
+      const base = el.srcSets.length; // 1 (erster Track geladen)
+      expect(base).toBe(1);
+
+      // Frischer Song (5 s gelaufen) + Schwelle nach mid überschritten → NICHT anschneiden (kein neuer .src).
+      el.currentTime = 5;
+      music.setProgress(12);          // 12 → mid
+      expect(el.srcSets.length, "frischer Song bleibt ungeschnitten").toBe(base);
+
+      // Song lief inzwischen lange → nächster Stufenwechsel blendet weich auf einen neuen Track (genau ein Reload).
+      el.currentTime = 60;
+      music.setProgress(30);          // 30 → hot
+      vi.advanceTimersByTime(1000);   // Fade-Übergang durchlaufen (Swap am Ende der ersten Halbwelle)
+      expect(el.srcSets.length, "nach dem Fade genau ein neuer Track").toBe(base + 1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
