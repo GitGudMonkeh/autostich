@@ -31,7 +31,7 @@ const TUNE = {
   FLAME: 0.4,       // Flammen-Anteil relativ zu EMIT
   G_REF: 1750,      // Schwerkraft px/s² bei Referenzhöhe HREF
   HREF: 360,        // Referenz-Panelhöhe (Geschwindigkeiten/Höhe skalieren mit H/HREF)
-  GLOW: 2.6,        // Sprite-Halo-Faktor (ersetzt den Filter-Bloom → weicher Glow ohne Full-Screen-Pass)
+  GLOW: 1.85,       // Sprite-Halo-Faktor (ersetzt den Filter-Bloom → weicher Glow ohne Full-Screen-Pass; kleiner = knackiger, weniger Wash)
   CRUST_P: 0.18,    // Anteil dunkler Krusten-Brocken
   MAXGLOW: 1300, MAXCRUST: 340, MAXVENT: 10,   // MAXVENT = zugleich Obergrenze gleichzeitiger Vents (überlappende Stiche)
 };
@@ -46,16 +46,16 @@ function hexToRGB(hex) {
 }
 const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 
-// Vulkan-Hitze-Rampe 0..1 → 0xRRGGBB. Heißer Kern echte Lava; kühlster Schweif dezent in Deckfarbe getönt.
+// Deck-getönte Lava-Rampe 0..1 → 0xRRGGBB. Durchgängig Deck-Hue: zum Rand dunkel/kühl, zum Kern hell (leicht warm),
+// aber NICHT rein weiß im Kern → behält die Deckfarbe UND vermeidet das ausgewaschene Weiß-Blowout.
 function rampInt(h, deck) {
+  const warm = [255, 236, 205];
   const stops = [
-    [0.00, mix([70, 8, 5], deck, 0.30)],
-    [0.16, [150, 16, 8]],
-    [0.36, [210, 38, 10]],
-    [0.56, [246, 86, 20]],
-    [0.74, [255, 138, 42]],
-    [0.90, [255, 198, 96]],
-    [1.00, [255, 244, 214]],
+    [0.00, mix(deck, [16, 5, 5], 0.5)],        // dunkler, kühler Rand
+    [0.32, deck],                              // Deckfarbe
+    [0.60, mix(deck, warm, 0.42)],             // heller, leicht warm
+    [0.85, mix(deck, warm, 0.72)],
+    [1.00, mix(deck, [255, 255, 255], 0.68)],  // heißer Kern: hell, aber Deck-Ton bleibt
   ];
   let c = stops[stops.length - 1][1];
   for (let i = 0; i < stops.length - 1; i++) {
@@ -75,7 +75,7 @@ function makeRadial(stops) {
 }
 
 export function createEmberField(app) {
-  const glowTex   = makeRadial([[0, 1], [0.22, 1], [0.5, 0.35], [1, 0]]);   // Glut: kompakter Kern + Halo
+  const glowTex   = makeRadial([[0, 1], [0.32, 1], [0.54, 0.22], [1, 0]]);   // Glut: kompakter Kern + knapper Halo (weniger Wash)
   const crustTex  = makeRadial([[0, 1], [0.55, 0.9], [0.85, 0.35], [1, 0]]); // Brocken: kompakter, dunkel getönt
   const craterTex = makeRadial([[0, 0], [0.45, 0.85], [1, 0]]);              // Krater-Rand: dunkler Ring (Mitte offen)
 
@@ -171,6 +171,8 @@ export function createEmberField(app) {
     clock += dt;
     if (params.effect !== "embers") return;
     const W = app.screen.width, H = app.screen.height, sc = Math.max(0.4, H / TUNE.HREF), deck = params.deck;
+    const deckInt = ((deck[0] & 255) << 16) | ((deck[1] & 255) << 8) | (deck[2] & 255);   // Krater/Pool in Deckfarbe
+    const hotInt = rampInt(0.88, deck);
 
     // Vents: Ausstoß über den Burst + Flammen; danach Nachglühen bis der Pool erlischt.
     for (let vi = vents.length - 1; vi >= 0; vi--) {
@@ -198,9 +200,10 @@ export function createEmberField(app) {
       const bx = v.x * W, act = v.jetT > 0 ? 1 : v.glow;
       const fl = 0.72 + 0.28 * Math.sin(clock * 11 + bx * 0.06);
       const pr = (28 + v.stufe * 12) * act * fl * sc;
+      po.tint = deckInt; pi.tint = hotInt;   // Vent glüht in Deckfarbe (heißer Kern deck-getönt hell)
       cr.x = bx; cr.y = H; cr.width = (44 + v.stufe * 14) * 3 * sc; cr.height = (44 + v.stufe * 14) * 1.0 * sc; cr.alpha = 0.8 * act;
-      po.x = bx; po.y = H; po.width = pr * 4.8; po.height = pr * 1.9; po.alpha = 0.55 * act * pf;
-      pi.x = bx; pi.y = H; pi.width = pr * 2.5; pi.height = pr * 1.05; pi.alpha = 0.7 * act * pf;
+      po.x = bx; po.y = H; po.width = pr * 4.6; po.height = pr * 1.8; po.alpha = 0.42 * act * pf;
+      pi.x = bx; pi.y = H; pi.width = pr * 2.4; pi.height = pr * 1.0; pi.alpha = 0.55 * act * pf;
     }
 
     // Glut-Partikel (core/body/flame) — additiv, pro Partikel getönt

@@ -11,6 +11,8 @@ import { useFxLevel } from "./useReducedFx.js";
 // Pixi-Umbau Phase 0/1: koexistierende GPU-Bühne. LAZY geladen → Pixi (~200 KB) landet in einem eigenen Chunk,
 // der NUR im Preview/Dev geladen wird (der Mount ist env-gegatet). Produktion (main) zieht Pixi nie in den Bundle.
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
+import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
+const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import { startPrunk } from "./prunkFx.js";
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
@@ -1052,18 +1054,17 @@ function PrunkFx({ trigger, panelRef, oppRef, color }) {
 // #306 Battlefield-Ambiente-Layer (einfach-exklusiv): rendert genau EINEN Feld-Effekt als z-1-Overlay in der Deckfarbe
 // (color). Ambiente = ruhige Endlos-Animation; die Reaktion je Stich remountet über key={sweepId} (Turbo-Throttle sitzt
 // im Battlefield). reduced → nur statisches Ambiente. Nur transform/opacity/gradient/background-position (GPU-günstig).
-// Pixi-Umbau Phase 2: A/B-Umschalter für die Glutfunken (nur Preview/Dev — s. env-Gate am Mount). „pixi" = der neue
-// GPU-Emitter (PixiStage/embersPixi), „dom" = die alte DOM-Fassung. Erlaubt Vorher/Nachher-Messung mit dem
-// perfRecorder im SELBEN Build: ?embers=dom bzw. ?embers=pixi (oder localStorage as_embers). Standard: pixi.
-// Prod (main) ignoriert das komplett — Pixi wird dort nie geladen.
+// Pixi-Umbau: A/B-Umschalter für die Feld-Effekt-Render-Schicht (nur Preview/Dev — s. env-Gate am Mount). „pixi" = der
+// GPU-Emitter (PixiStage), „dom" = die alte DOM-Fassung. Erlaubt Vorher/Nachher-Messung im SELBEN Build:
+// ?fx=dom bzw. ?fx=pixi (oder localStorage as_fx). Standard: pixi. Prod (main) ignoriert das komplett.
 // Hinter dem env-Gate → in Prod faltet der Minifier `false ? (…) : "dom"` weg; der URL/localStorage-Leser landet
 // gar nicht erst im main-Bundle (die IIFE wird komplett entfernt).
-const EMBERS_RENDERER = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
+const FX_RENDERER = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
   ? (() => {
       try {
-        const q = new URLSearchParams(window.location.search).get("embers");
+        const q = new URLSearchParams(window.location.search).get("fx");
         if (q === "pixi" || q === "dom") return q;
-        const ls = window.localStorage?.getItem("as_embers");
+        const ls = window.localStorage?.getItem("as_fx");
         if (ls === "pixi" || ls === "dom") return ls;
       } catch { /* kein window (SSR/Test) → Standard */ }
       return "pixi";
@@ -1136,7 +1137,7 @@ const COMET_TRAIL = Array.from({ length: 14 }, (_, i) => {
 });
 // #: dezente Sterne für die Aurora (obere Feldhälfte). x/y in %, s = Größe (px), d = Twinkle-Versatz (s).
 const AURORA_STARS = [{ x: 12, y: 14, s: 2, d: 0 }, { x: 26, y: 24, s: 1.4, d: 0.8 }, { x: 43, y: 9, s: 2.2, d: 1.5 }, { x: 57, y: 20, s: 1.5, d: 0.5 }, { x: 71, y: 12, s: 2, d: 1.2 }, { x: 85, y: 27, s: 1.4, d: 0.9 }, { x: 36, y: 33, s: 1.5, d: 1.9 }, { x: 64, y: 34, s: 1.3, d: 0.3 }];
-const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, lite = false, win, score = 0, suppressEmbers = false }) {
+const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, lite = false, win, score = 0, suppressField = false }) {
   const react = !reduced && sweepId > 0; // per-Stich-Reaktion aktiv?
   const A = (c) => (reduced ? "" : c); // Ambiente-Animationsklasse nur ohne „Effekte reduziert" → sonst statisches Bild
   // #: Glutfunken-Stöße dürfen ÜBERLAPPEN — der vorige Funkenstrom läuft sanft aus, während der neue startet, statt
@@ -1144,13 +1145,15 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
   // Zeitpunkt des Stichs) → stabile Keys, Animationen laufen weiter; ältere fallen raus, sobald sie längst fertig sind.
   const [emberGen, setEmberGen] = useState([]);
   useEffect(() => {
-    if (effect !== "embers" || lite || suppressEmbers || !(sweepId > 0)) return; // #: Jet-Fontänen (bis 72 Nodes/Stich) sind der teure Schwarm → in „ausgewogen" (lite) UND minimal aus; das ruhige Ambiente (dots) bleibt. suppressEmbers → der GPU-Emitter (Pixi) übernimmt.
+    if (effect !== "embers" || lite || suppressField || !(sweepId > 0)) return; // #: Jet-Fontänen (bis 72 Nodes/Stich) sind der teure Schwarm → in „ausgewogen" (lite) UND minimal aus; das ruhige Ambiente (dots) bleibt. suppressField → der GPU-Emitter (Pixi) übernimmt.
     const turbo = clamp((sweepDur || 900) / 875, 0.45, 1);
     const snap = { id: sweepId, win, jetDur: Math.max(560, Math.round(sweepDur * 0.9)), jets: emberFountainJets(score, sweepId, turbo) };
     setEmberGen((g) => (g[g.length - 1]?.id === sweepId ? g : [...g, snap].slice(-3)));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur auf sweepId reagieren (Snapshot friert score/sweepDur/win ein)
   }, [sweepId, effect, lite]);
   useEffect(() => { if (effect !== "embers") setEmberGen([]); }, [effect]);
+  // Pixi-Umbau: übernimmt der GPU-Emitter diesen Feld-Effekt, rendert die DOM-Fassung KEINE Nodes (Hooks laufen oben).
+  if (suppressField) return null;
   let inner = null;
   if (effect === "hologrid") {
     inner = (
@@ -1207,9 +1210,6 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
           background: `radial-gradient(130% 84% at 50% 0%, ${win ? color : c2}${win ? "aa" : "66"}, transparent 64%)`, animationDuration: `${sweepDur}ms` }} />}
       </>
     );
-  } else if (effect === "embers" && suppressEmbers) {
-    // Pixi-Umbau Phase 2: der GPU-Emitter (PixiStage/embersPixi) zeichnet die Glutfunken → hier KEINE DOM-Nodes.
-    inner = null;
   } else if (effect === "embers") {
     // #: Fontänen (Score-gekoppelte Anzahl/Höhe). Ambiente-Funken + überlappende Per-Stich-Stöße (emberGen-Snapshots).
     const dots = emberFountainDots(score);
@@ -1317,11 +1317,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const fxLevel = useFxLevel(reducedFx);
   const reduced = fxLevel === "minimal";
   const lite    = fxLevel !== "full";
-  // Pixi-Umbau Phase 2: Übernimmt der GPU-Emitter die Glutfunken? Nur im Preview/Dev (env-Gate), wenn das aktive
-  // Feld-Ambiente „embers" ist, eine Deckfarbe existiert und der A/B-Umschalter auf „pixi" steht. Wenn ja, rendert
-  // die DOM-Fassung (FieldFxLayer) für „embers" keine Nodes (suppressEmbers) → der Effekt zieht komplett auf die GPU.
-  const pixiEmbers = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
-    && EMBERS_RENDERER === "pixi" && fxField === "embers" && !!deckA1;
+  // Pixi-Umbau: Übernimmt der GPU-Emitter das aktive Feld-Ambiente? Nur im Preview/Dev (env-Gate), wenn der aktive
+  // Feld-Effekt portiert ist (PIXI_FIELD), eine Deckfarbe existiert und der A/B-Umschalter auf „pixi" steht. Wenn ja,
+  // rendert die DOM-Fassung (FieldFxLayer) für diesen Effekt keine Nodes (suppressField) → er zieht komplett auf die GPU.
+  const pixiFx = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
+    && FX_RENDERER === "pixi" && PIXI_FIELD.has(fxField) && !!deckA1;
   // GOTTGLEICH-Prunk: Panel = Prallwand-Rahmen, oppSlot = Ursprung (zerstörte Gegnerkarte); burst triggert den Schwarm.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
@@ -1824,17 +1824,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {/* Battlefield = „Bühne" des Spielscreens: die gemeinsame Tri-Color-Haarlinie (Hub-Signet). Der dynamische
           Sieg-/Krit-Schein liegt weiter über outerGlow — die Farbe kommt vom Spielausgang, nicht vom Skin. */}
       <PhaseHairline />
-      {/* Pixi-Umbau Phase 2: GPU-Bühne als z-2-Overlay (über BF-Bild z-0 + Ambiente z-1, unter Karten z-10).
-          Transparent + pointer-events:none. Der erste echte Effekt hat angedockt: die Glutfunken laufen hier als
-          GPU-Partikel-Emitter (statt bis 72 DOM-Nodes/Stich), sobald das aktive Feld-Ambiente „embers" ist UND der
-          A/B-Umschalter auf „pixi" steht. Der Ticker pausiert im Hintergrund-Tab (visibilitychange in PixiStage).
-          Nur Preview/Test- oder Dev-Build — Produktion bleibt identisch (Pixi wird dort nie geladen). */}
+      {/* Pixi-Umbau: GPU-Bühne als z-2-Overlay (über BF-Bild z-0 + Ambiente z-1, unter Karten z-10). Transparent +
+          pointer-events:none. Baut je nach aktivem Feld-Effekt den passenden GPU-Emitter (embers, starfield, …),
+          sobald der Effekt portiert ist (PIXI_FIELD) UND der A/B-Umschalter auf „pixi" steht. Der Ticker pausiert im
+          Hintergrund-Tab. Nur Preview/Test- oder Dev-Build — Produktion bleibt identisch (Pixi wird dort nie geladen). */}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
         <Suspense fallback={null}>
           <PixiStage className="z-[2]"
-            effect={pixiEmbers ? "embers" : null}
+            effect={pixiFx ? fxField : null}
             color={deckA1 || "#ffffff"}
-            score={pixiEmbers ? Math.round((score || 0) / 20000) * 20000 : 0}
+            score={pixiFx ? Math.round((score || 0) / 20000) * 20000 : 0}
             reduced={reduced} lite={lite}
             sweepId={sweepId} sweepDur={sweepDur} win={win} />
         </Suspense>
@@ -1857,7 +1856,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           durch. reduced-motion → nur das statische Ambiente (kein Springen). */}
       {fxField && deckA1 && (
         <FieldFxLayer effect={fxField} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} lite={lite} win={win}
-          score={fxField === "embers" ? Math.round((score || 0) / 20000) * 20000 : 0} suppressEmbers={pixiEmbers} />
+          score={fxField === "embers" ? Math.round((score || 0) / 20000) * 20000 : 0} suppressField={pixiFx} />
       )}
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin, Hologrid und das Stich-Juice reserviert. */}

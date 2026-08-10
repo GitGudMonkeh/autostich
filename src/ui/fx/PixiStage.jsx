@@ -1,12 +1,19 @@
 import { useEffect, useRef, useCallback } from "react";
 import { Application } from "pixi.js";
 import { createEmberField } from "./embersPixi.js";
+import { createStarfield } from "./starfieldPixi.js";
+
+/* Registry der Feld-Effekt-Emitter: key → Factory(app) → { setParams, erupt?, destroy }. Muss zur pixi-freien
+   Key-Liste (fieldFxKeys.js) passen, die Battlefield fürs Gating nutzt. Neue Effekte docken hier an. */
+const FIELD_FX = {
+  embers: createEmberField,
+  starfield: createStarfield,
+};
 
 /* PixiStage (Pixi-Umbau) — eine GPU-Render-Bühne, die NEBEN React lebt: transparenter Hintergrund,
-   `pointer-events: none`, als absolutes Overlay im Battlefield-Panel. Phase 0/1 war reine Infrastruktur
-   (sauberer Lebenszyklus + Debug-Ring als Lebens-Beweis). Phase 2: der erste echte Effekt dockt an — die
-   Glutfunken (`effect="embers"`) laufen jetzt als GPU-Partikel-Emitter (embersPixi.js) statt als DOM-Nodes.
-   Der Debug-Ring ist damit weg. Die Spiel-Logik bleibt komplett unberührt.
+   `pointer-events: none`, als absolutes Overlay im Battlefield-Panel. Ab Phase 3 SWAPPABLE: je nach `effect`
+   baut die Bühne den passenden Feld-Emitter aus der Registry (embers, starfield, …). Wechselt der Effekt (Deck-
+   Wechsel), wird der alte Emitter zerstört und der neue gebaut. Die Spiel-Logik bleibt komplett unberührt.
 
    Sauberkeit, die hier zählt:
    - Pixi v8 initialisiert ASYNCHRON (`app.init`). Wird die Komponente vor Fertigstellung unmountet, darf keine
@@ -23,14 +30,24 @@ export function PixiStage({
   const hostRef   = useRef(null);
   const appRef    = useRef(null);
   const fieldRef  = useRef(null);
+  const builtRef  = useRef(null);   // welcher Effekt aktuell gebaut ist
   const activeRef = useRef(active);
   activeRef.current = active;
 
-  // Aktuelle Effekt-Parameter für die (async) Init spiegeln — beim Fertigstellen des Init sofort korrekt setzen,
-  // falls sich zwischen Mount und init-Auflösung schon etwas geändert hat.
+  // Aktuelle Effekt-Parameter für die (async) Init + spätere Rebuilds spiegeln.
   const paramsRef = useRef(null);
   paramsRef.current = { effect, color, score, reduced, lite };
   const lastSweep = useRef(0);
+
+  // Emitter für `eff` (neu) bauen: alten zerstören, neuen aus der Registry holen (oder keinen, wenn nicht portiert).
+  const buildFieldFor = useCallback((eff) => {
+    const app = appRef.current;
+    if (!app) return;
+    if (fieldRef.current) { try { fieldRef.current.destroy(); } catch { /* ignore */ } fieldRef.current = null; }
+    const make = FIELD_FX[eff];
+    if (make) { const f = make(app); f.setParams(paramsRef.current); fieldRef.current = f; }
+    builtRef.current = eff;
+  }, []);
 
   // Ticker-Lauf-Zustand aus (aktiv && sichtbar) ableiten — an EINER Stelle, damit Init, active-Wechsel und
   // visibilitychange nicht auseinanderlaufen (Race: der active-Effekt feuert evtl. vor dem async init).
@@ -63,10 +80,8 @@ export function PixiStage({
       canvas.style.height = "100%";
       canvas.style.display = "block";
       host.appendChild(canvas);
-      const field = createEmberField(app);
-      fieldRef.current = field;
-      field.setParams(paramsRef.current);  // Start-Parameter sofort setzen (Init lief evtl. „hinterher")
-      applyRunState();                      // sofort korrekt starten/stoppen (falls inaktiv/Hintergrund)
+      buildFieldFor(paramsRef.current.effect);   // Emitter für den aktuellen Effekt bauen (Init lief evtl. „hinterher")
+      applyRunState();                            // sofort korrekt starten/stoppen (falls inaktiv/Hintergrund)
     }).catch(() => { /* WebGL nicht verfügbar → Bühne bleibt leer, Spiel läuft normal weiter */ });
 
     const onVis = () => applyRunState();
@@ -82,14 +97,19 @@ export function PixiStage({
       appRef.current = null;
       if (a) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } }
     };
-  // Bühne EINMAL bauen; Parameter/active werden separat über Refs bzw. Effekte gespiegelt.
+  // Bühne EINMAL bauen; Effekt/Parameter/active werden separat über Refs bzw. Effekte gespiegelt.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Laufende Parameter (Effekt/Deckfarbe/Score/Modus) → Emitter spiegeln (ohne die App neu zu bauen).
+  // Effekt-Wechsel → passenden Emitter neu bauen (vor dem Parameter-Effekt definiert, damit dieser auf den NEUEN baut).
   useEffect(() => {
-    fieldRef.current?.setParams({ effect, color, score, reduced, lite });
-  }, [effect, color, score, reduced, lite]);
+    if (appRef.current && effect !== builtRef.current) buildFieldFor(effect);
+  }, [effect, buildFieldFor]);
+
+  // Laufende Parameter (Deckfarbe/Score/Modus) → Emitter spiegeln (effect kommt über den Rebuild, bleibt hier gemerged).
+  useEffect(() => {
+    fieldRef.current?.setParams({ color, score, reduced, lite });
+  }, [color, score, reduced, lite]);
 
   // Stich-Wechsel (sweepId) → eine Eruption auslösen. Nur bei echtem Wechsel und sweepId>0.
   useEffect(() => {
