@@ -44,6 +44,10 @@ let volume = 0.6;
 // Hintergrund-Tab. Getrennt von `muted` (Nutzer-Stumm), damit es der App-Zustand jederzeit setzen kann. One-Shots sind
 // nicht betroffen (die triggern nur bei aktivem Spiel ohnehin).
 let loopsSuspended = false;
+// #: App im Hintergrund/geschlossen (setSuspended). Hart: play()/loop() dürfen dann KEINE neuen Stimmen starten —
+// sonst weckt ihr c.resume() den (per setSuspended eingefrorenen) Context sofort wieder auf (z. B. Showcase-Timer,
+// die im Hintergrund weiterlaufen). Getrennt von loopsSuspended (nur Loop-Gains) und muted (Nutzer-Stumm).
+let bgSuspended = false;
 // Nicht-Stich-Sounds (Klick/Kauf/Verwehrt) etwas anheben → effektiv ~0,5 beim Default-Slider (0,4).
 // Der Stich-Sound (cardflip) übergibt stets seinen eigenen Gain und bleibt davon unberührt.
 const SFX_GAIN = 1.25;
@@ -91,6 +95,7 @@ export const audio = {
      Stimmen + Loops ein (kein Sound, kein CPU/Akku hinter dem gesperrten Bildschirm) und setzt beim Zurückkehren
      nahtlos fort. Robust/idempotent; vor dem ersten unlock() (ctx==null oder noch nie „running") ein No-Op. */
   setSuspended(s) {
+    bgSuspended = !!s; // #: merken → play()/loop() wecken den Context im Hintergrund NICHT wieder auf
     const c = ctx;
     if (!c) return;
     try {
@@ -102,7 +107,7 @@ export const audio = {
      `bass` = Lowshelf-Anhebung in dB (#196, 0 = aus). Je Aufruf eine neue BufferSource → Überlappen erlaubt
      (dezenter „Maschinengewehr"-Effekt bei hohem Turbo). Kette: src → [lowshelf?] → gain → masterComp → destination. */
   play(name, { rate = 1, gain = SFX_GAIN, bass = 0, soft = 0, attack = 0, release = 0 } = {}) {
-    if (muted || volume <= 0) return;
+    if (muted || volume <= 0 || bgSuspended) return; // #: Hintergrund → keine neuen One-Shots (weckt sonst den Context)
     loadBuffers(); // #264: hörbarer Bedarf → sicherstellen, dass die Puffer (lazy) geladen sind
     const c = ctx;
     if (!c || !buffers[name]) return;
@@ -154,7 +159,7 @@ export const audio = {
      stopLoop beenden. `loopStart`/`loopEnd` loopen nur die gleichförmige Mitte (unter Umgehung der Fades) → nahtlos.
      Kette wie play(): src(loop) → [lowshelf?] → gain → masterComp → destination. Robust: bei Stumm/kein Puffer null. */
   loop(name, { gain = SFX_GAIN, bass = 0, rate = 1, loopStart = null, loopEnd = null } = {}) {
-    if (muted || volume <= 0) return null;
+    if (muted || volume <= 0 || bgSuspended) return null; // #: Hintergrund → keine neuen Loops
     loadBuffers();
     const c = ctx;
     if (!c || !buffers[name]) return null;

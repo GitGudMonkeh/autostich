@@ -36,7 +36,7 @@ export function useBlackholeSfx(active, pulse) {
       // #: Der Kollaps eines GEWACHSENEN Lochs schlägt hörbar mit einem tiefen Bass-Impact ein — aber nur, wenn das Loch
       // überhaupt entzündet war (mind. 1 Sieg lief; growth > 0). So teilt sich der Kollaps-Bass zwischen In-Game und
       // Shop-Vorschau (kein Drift) und feuert NICHT bei aufeinanderfolgenden Niederlagen ohne laufende Serie.
-      if (growth.current > 0) audio.play("fx_bass", { gain: 1.9, bass: 7 });
+      if (growth.current > 0) audio.play("fx_bass", { gain: 1.0, bass: 4 }); // #: deutlich leiser (war 1.9/7 — war viel zu laut vs. den anderen Sounds)
       if (loopRef.current) { audio.stopLoop(loopRef.current, { fade: 0.22 }); loopRef.current = null; }
       growth.current = 0;
     }
