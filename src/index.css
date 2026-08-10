@@ -410,7 +410,7 @@ button { font-family: inherit; }
   0%   { transform: rotate(var(--ang, 20deg)) translateX(0); opacity: 0; }
   12%  { opacity: 1; }
   82%  { opacity: 1; }
-  100% { transform: rotate(var(--ang, 20deg)) translateX(var(--dist, 340%)); opacity: 0; }
+  100% { transform: rotate(var(--ang, 20deg)) translateX(var(--dist, 600px)); opacity: 0; }
 }
 .as-field-shoot { animation: as-field-shoot 900ms ease-out forwards; }
 /* Schweif-Partikel: leichtes Größen-Flackern (versetzt je Partikel) → lebendiger Partikelstrom statt statischem Schweif. */

@@ -1099,13 +1099,14 @@ function emberFountainJets(score, sweepId, turbo = 1) {
 // Battlefield-Re-Renders (ohne Stich/Feld-Wechsel) bleibt die Ebene stehen. Kein visueller Unterschied (Desktop unverändert).
 // #: Sternschnuppen-Pfade — je Stich (sweepId) ein anderer: Start (top/left), Flugwinkel (ang°) + Strecke (dist).
 // Gemischte Richtungen/Seiten (oben-links→unten-rechts, oben-rechts→unten-links, flach, steil) → nie „einfach gerade durch".
+// dist in PX (der Anker ist 0px breit → translateX-% wäre 0; px bewegt zuverlässig).
 const SHOOT_PATHS = [
-  { top: "6%", left: "-8%", ang: 26, dist: "360%" },    // oben-links → unten-rechts
-  { top: "-6%", left: "62%", ang: 124, dist: "360%" },  // oben-rechts → unten-links
-  { top: "24%", left: "-10%", ang: 9, dist: "380%" },   // flach, links → rechts
-  { top: "-8%", left: "34%", ang: 68, dist: "300%" },   // steil nach unten
-  { top: "14%", left: "72%", ang: 152, dist: "340%" },  // rechts → unten-links, flach
-  { top: "-6%", left: "12%", ang: 48, dist: "340%" },   // oben-links → unten-rechts, mittel
+  { top: "6%", left: "-8%", ang: 26, dist: "620px" },   // oben-links → unten-rechts
+  { top: "-6%", left: "62%", ang: 124, dist: "620px" }, // oben-rechts → unten-links
+  { top: "24%", left: "-10%", ang: 9, dist: "680px" },  // flach, links → rechts
+  { top: "-8%", left: "34%", ang: 68, dist: "460px" },  // steil nach unten
+  { top: "14%", left: "72%", ang: 152, dist: "600px" }, // rechts → unten-links, flach
+  { top: "-6%", left: "12%", ang: 48, dist: "560px" },  // oben-links → unten-rechts, mittel
 ];
 // #: Sternschnuppen-Schweif als echte PARTIKEL (statt statischem Farbverlauf): Punkte hinter dem Kopf (x = px entgegen
 // der Flugrichtung), nach hinten kleiner + blasser, mit leichtem Größen-Flackern (as-comet-p) → lebendiger Partikelstrom.
