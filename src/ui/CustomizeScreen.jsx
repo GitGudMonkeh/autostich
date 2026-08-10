@@ -793,7 +793,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
       </div>
 
       <p className="text-[11px] mt-2 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
-        Effekte sind <b>global</b> — einmal gekauft, für alle Packs. Tippe einen Effekt → er läuft oben groß; dort <b>kaufen</b> bzw. <b>an/aus</b> (Finisher &amp; Ambiente: auswählen).
+        Effekte sind <b>global</b> — einmal gekauft, für alle Packs. Tippe einen Effekt → er läuft oben groß; dort <b>kaufen</b> bzw. <b>an/aus</b> (Finisher &amp; Ambiente: auswählen). <b>Doppeltippen</b> auf einen aktiven Effekt schaltet ihn direkt aus.
       </p>
     </>
   );
@@ -869,9 +869,17 @@ function FxChip({ fx, selected, owned, active, onPick, onUnequip }) {
   const status = active ? { c: "#54e08a", label: "aktiv", dot: "#54e08a" }
     : !owned ? { c: "#f2c14a", label: `${globalFxPrice(fx)} DP`, dot: "#f2c14a" }
     : { c: "#6d6a80", label: "im Besitz", dot: null };
+  // #: Doppel-TIPP/-Klick rüstet einen aktiven Effekt aus. onDoubleClick (dblclick) feuert auf Touch NICHT → eigene
+  // Zeitmessung: zwei Klicks/Tipps innerhalb 320 ms = Doppel (funktioniert auf Maus UND Handy). Einzelklick wählt (onPick).
+  const lastTap = useRef(0);
+  const handleTap = () => {
+    onPick();
+    const now = Date.now();
+    if (now - lastTap.current < 320) { lastTap.current = 0; onUnequip && onUnequip(); }
+    else lastTap.current = now;
+  };
   return (
-    // #: Doppelklick auf einen (aktiven) Effekt rüstet ihn direkt aus — schneller Abwahl-Shortcut ohne Umweg über den Floater.
-    <button type="button" onClick={onPick} onDoubleClick={onUnequip} title={active ? "Doppelklick: abwählen" : undefined}
+    <button type="button" onClick={handleTap} title={active ? "Doppeltippen: abwählen" : undefined}
       className="shrink-0 relative overflow-hidden rounded-xl text-left transition-transform active:scale-95 flex flex-col justify-center"
       style={{ minWidth: 106, maxWidth: 138, padding: "9px 11px 9px 13px", scrollSnapAlign: "start",
         background: selected ? "#211f2e" : "#14131c",
