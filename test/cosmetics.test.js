@@ -140,6 +140,36 @@ describe("cosmetics — unlockProgress", () => {
   });
 });
 
+describe("cosmetics — #310 Element-Challenges & Prisma-Multi", () => {
+  const decks = { fire: "deck_feuer", ice: "deck_eis", lightning: "deck_blitz", plant: "deck_pflanze" };
+  it("Element-Decks: monoArchetypeRun mit n=5, frei erst ab 5 Mono-Läufen (Zähler)", () => {
+    for (const [arch, id] of Object.entries(decks)) {
+      const d = DECK_DEFS[id];
+      expect(d.unlock).toEqual({ kind: "monoArchetypeRun", archetype: arch, n: 5 });
+      expect(isUnlocked(d, prof({ monoArchetypeRuns: { [arch]: 4 } }))).toBe(false);
+      expect(isUnlocked(d, prof({ monoArchetypeRuns: { [arch]: 5 } }))).toBe(true);
+      expect(unlockProgress(d, prof({ monoArchetypeRuns: { [arch]: 2 } }))).toMatchObject({ cur: 2, target: 5, done: false });
+    }
+  });
+  it("Alt-Wert Boolean true zählt als 0 (nicht als 5 erfüllt)", () => {
+    expect(isUnlocked(DECK_DEFS.deck_feuer, prof({ monoArchetypeRuns: { fire: true } }))).toBe(false);
+  });
+  it("Prisma (deck_elementar): allMonoArchetypes — frei erst wenn alle vier ≥ 5", () => {
+    const d = DECK_DEFS.deck_elementar;
+    expect(d.unlock).toEqual({ kind: "allMonoArchetypes", n: 5 });
+    expect(isUnlocked(d, prof({ monoArchetypeRuns: { fire: 5, ice: 5, lightning: 5 } }))).toBe(false);
+    expect(isUnlocked(d, prof({ monoArchetypeRuns: { fire: 5, ice: 5, lightning: 5, plant: 5 } }))).toBe(true);
+    expect(unlockProgress(d, prof({ monoArchetypeRuns: { fire: 5, ice: 5 } }))).toMatchObject({ cur: 2, target: 4, done: false });
+  });
+  it("BF spiegeln die Deck-Bedingung; DP-Kauf-Decks tragen ihren ownKey", () => {
+    expect(BATTLEFIELD_DEFS.bf_eis.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "ice", n: 5 });
+    expect(BATTLEFIELD_DEFS.bf_elementar.unlock).toEqual({ kind: "allMonoArchetypes", n: 5 });
+    for (const [id, key] of [["deck_samurai", "pack:samurai"], ["deck_kosmos", "pack:kosmos"], ["deck_oni", "pack:oni"], ["deck_geometrie", "pack:geometrie"]]) {
+      expect(DECK_DEFS[id].unlock).toEqual({ kind: "buy", ownKey: key });
+    }
+  });
+});
+
 describe("cosmetics — resolveSkinId (defensiver Fallback)", () => {
   it("gibt die id zurück, wenn sie existiert UND frei ist", () => {
     expect(resolveSkinId(DECK_DEFS, "deck_sunset", prof({ ownedCosmetics: { "pack:sunset": true } }))).toBe("deck_sunset");

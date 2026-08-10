@@ -235,10 +235,11 @@ export function recordRun(record) {
   const p = loadProfile();
   const arch = new Set(p.archetypesEver);
   for (const a of (record.archetypes || [])) arch.add(a);
-  // #215: Mono-Archetyp-Läufe je Fraktion in einer sticky-Map sammeln (einmal erfüllt → bleibt).
+  // #215/#310: Mono-Archetyp-Läufe je Fraktion in einer sticky-Map ZÄHLEN (Element-Challenge braucht N Läufe;
+  // Alt-Werte Boolean true werden als 0 gelesen → zählen ab dem nächsten Mono-Lauf sauber hoch).
   const monoArchetypeRuns = { ...(p.monoArchetypeRuns || {}) };
   const monoArch = monoArchetypeOf(record);
-  if (monoArch) monoArchetypeRuns[monoArch] = true;
+  if (monoArch) monoArchetypeRuns[monoArch] = n0(monoArchetypeRuns[monoArch]) + 1;
   // Progression/Upgrades (docs §4–§6): Onboarding rückt bei natürlichem Abschluss ein Glied vor; SP werden erst
   // NACH vollendetem Onboarding geerntet (Grundstock + Score-Meilensteine + Treue-Drip). spRuns zählt nur SP-Läufe.
   // Reine Regeln aus progression.js (Sim läuft profil-los → Baseline unberührt). stichSpent/nodes bleiben unangetastet

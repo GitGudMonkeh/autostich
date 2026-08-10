@@ -427,13 +427,15 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
       expect(profile.games).toBe(2);
     });
 
-    it("#215: Mono-Map + Bund-Flag werden sticky fortgeschrieben (schaltet deck_c5..c9)", () => {
+    it("#215/#310: Mono-Map ZÄHLT je Fraktion + Bund-Flag sticky", () => {
       const base = { completed: true, score: 100, bestStreak: 1, crits: 0, durationMs: 1, ts: 1 };
-      recordRun({ ...base, archetypes: ["fire"] });                              // Mono-Feuer
-      expect(loadProfile().monoArchetypeRuns.fire).toBe(true);
+      recordRun({ ...base, archetypes: ["fire"] });                              // Mono-Feuer #1
+      expect(loadProfile().monoArchetypeRuns.fire).toBe(1);
       expect(loadProfile().hadAllArchetypesRun).toBe(false);
-      recordRun({ ...base, archetypes: ["fire", "lightning", "ice", "plant"] }); // Element-Bund
-      expect(loadProfile().monoArchetypeRuns.fire).toBe(true);                   // sticky: bleibt
+      recordRun({ ...base, archetypes: ["fire"] });                              // Mono-Feuer #2 → Zähler steigt
+      expect(loadProfile().monoArchetypeRuns.fire).toBe(2);
+      recordRun({ ...base, archetypes: ["fire", "lightning", "ice", "plant"] }); // Element-Bund (nicht mono)
+      expect(loadProfile().monoArchetypeRuns.fire).toBe(2);                      // sticky: bleibt bei 2
       expect(loadProfile().hadAllArchetypesRun).toBe(true);
     });
   });

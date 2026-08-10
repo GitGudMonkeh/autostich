@@ -11,8 +11,9 @@
      { kind: "streak", n }   → profile.bestStreak >= n
      { kind: "score",  n }   → profile.bestScore  >= n
      { kind: "noRerollRun" } → profile.hadNoRerollRun === true  (Lauf ohne benutzten Reroll, Sparfuchs deck_c3 · #214)
-     { kind: "monoArchetypeRun", archetype } → profile.monoArchetypeRuns[archetype] (Lauf nur mit dieser Fraktion, #215 deck_c5..c8)
-     { kind: "allArchetypesRun" }            → profile.hadAllArchetypesRun === true (Lauf mit allen vier Fraktionen, #215 deck_c9)
+     { kind: "monoArchetypeRun", archetype, n } → profile.monoArchetypeRuns[archetype] >= n (#310: n Mono-Läufe dieser Fraktion — deck_feuer/eis/blitz/pflanze)
+     { kind: "allMonoArchetypes", n }           → alle vier monoArchetypeRuns[*] >= n (#310: alle Element-Decks frei → Prisma-Multi deck_elementar)
+     { kind: "allArchetypesRun" }               → profile.hadAllArchetypesRun === true (EIN Lauf mit allen vier Fraktionen, #215)
      { kind: "gottgleichRun" }  → profile.hadGottgleichRun === true       (#303: erstmals einen GOTTGLEICH-Stich getriggert)
      { kind: "meisterNoReroll" }→ profile.hadMeisterNoRerollRun === true  (#303 Sparfuchs: Meisterrang-Wochenlauf komplett ohne Reroll)
      { kind: "championWeek" }   → profile.hadChampionWeek === true        (#303 Meister: Platz 1 einer Wochen-Rangliste — Champion-Board)
@@ -20,6 +21,10 @@
    Katalog wächst „Deck für Deck": ein neues Deck = ein Eintrag hier + sein Bild-Paar in
    cosmeticAssets.js. Solange ein Bild-Asset noch nicht im Repo liegt, bleibt der Eintrag draußen
    (temporärer Umsetzungs-Zwischenstand); im fertigen Feature ist jeder Katalog-Eintrag sichtbar. */
+
+// #310: Element-Challenge-Decks verlangen N abgeschlossene Läufe mit reinem Mono-Build der Fraktion
+// (extends #215 „1 Lauf" → Zähler). Prisma (Element-Bund) = alle vier Element-Decks frei (quasi 4×N Läufe).
+export const MONO_CHALLENGE_N = 5;
 
 export const DECK_DEFS = {
   default: { id: "default", name: "Standard",  unlock: null },
@@ -43,6 +48,18 @@ export const DECK_DEFS = {
   deck_serie600:   { id: "deck_serie600",   name: "Serie 600",  unlock: { kind: "streak", n: 600 } },
   deck_sparfuchs:  { id: "deck_sparfuchs",  name: "Sparfuchs",  unlock: { kind: "meisterNoReroll" } },
   deck_meister:    { id: "deck_meister",    name: "Meister",    unlock: { kind: "championWeek" } },
+  // #310 Element-Challenge-Decks (Freischalt via N Mono-Läufe je Fraktion):
+  deck_feuer:     { id: "deck_feuer",     name: "Feuer",   unlock: { kind: "monoArchetypeRun", archetype: "fire",      n: MONO_CHALLENGE_N } },
+  deck_eis:       { id: "deck_eis",       name: "Eis",     unlock: { kind: "monoArchetypeRun", archetype: "ice",       n: MONO_CHALLENGE_N } },
+  deck_blitz:     { id: "deck_blitz",     name: "Blitz",   unlock: { kind: "monoArchetypeRun", archetype: "lightning", n: MONO_CHALLENGE_N } },
+  deck_pflanze:   { id: "deck_pflanze",   name: "Pflanze", unlock: { kind: "monoArchetypeRun", archetype: "plant",     n: MONO_CHALLENGE_N } },
+  // #310 Prisma (Multi/Element-Bund): frei, sobald alle vier Element-Decks freigeschaltet sind.
+  deck_elementar: { id: "deck_elementar", name: "Prisma",  unlock: { kind: "allMonoArchetypes", n: MONO_CHALLENGE_N } },
+  // #310 DP-Kauf-Packs (Preis in themes.js):
+  deck_samurai:   { id: "deck_samurai",   name: "Samurai",        unlock: { kind: "buy", ownKey: "pack:samurai" } },
+  deck_kosmos:    { id: "deck_kosmos",    name: "Schwarzes Loch", unlock: { kind: "buy", ownKey: "pack:kosmos" } },
+  deck_oni:       { id: "deck_oni",       name: "Roter Oni",      unlock: { kind: "buy", ownKey: "pack:oni" } },
+  deck_geometrie: { id: "deck_geometrie", name: "Metatron",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -65,12 +82,29 @@ export const BATTLEFIELD_DEFS = {
   bf_serie600:   { id: "bf_serie600",   name: "Serie 600 · Battlefield",  unlock: { kind: "streak", n: 600 } },
   bf_sparfuchs:  { id: "bf_sparfuchs",  name: "Sparfuchs · Battlefield",  unlock: { kind: "meisterNoReroll" } },
   bf_meister:    { id: "bf_meister",    name: "Meister · Battlefield",    unlock: { kind: "championWeek" } },
+  // #310 Element-Challenge-Battlefields (gleiche Bedingung wie ihr Deck) + Prisma + DP-Kauf-Packs:
+  bf_feuer:     { id: "bf_feuer",     name: "Feuer · Battlefield",          unlock: { kind: "monoArchetypeRun", archetype: "fire",      n: MONO_CHALLENGE_N } },
+  bf_eis:       { id: "bf_eis",       name: "Eis · Battlefield",            unlock: { kind: "monoArchetypeRun", archetype: "ice",       n: MONO_CHALLENGE_N } },
+  bf_blitz:     { id: "bf_blitz",     name: "Blitz · Battlefield",          unlock: { kind: "monoArchetypeRun", archetype: "lightning", n: MONO_CHALLENGE_N } },
+  bf_pflanze:   { id: "bf_pflanze",   name: "Pflanze · Battlefield",        unlock: { kind: "monoArchetypeRun", archetype: "plant",     n: MONO_CHALLENGE_N } },
+  bf_elementar: { id: "bf_elementar", name: "Prisma · Battlefield",         unlock: { kind: "allMonoArchetypes", n: MONO_CHALLENGE_N } },
+  bf_samurai:   { id: "bf_samurai",   name: "Samurai · Battlefield",        unlock: { kind: "buy", ownKey: "pack:samurai" } },
+  bf_kosmos:    { id: "bf_kosmos",    name: "Schwarzes Loch · Battlefield", unlock: { kind: "buy", ownKey: "pack:kosmos" } },
+  bf_oni:       { id: "bf_oni",       name: "Roter Oni · Battlefield",      unlock: { kind: "buy", ownKey: "pack:oni" } },
+  bf_geometrie: { id: "bf_geometrie", name: "Metatron · Battlefield",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".
 const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 // #215: Anzeigenamen der Fraktionen für die Freischalt-Labels (Archetyp-Decks).
 const ARCH_LABEL = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze" };
+const ARCHS = Object.keys(ARCH_LABEL);
+// #310: robuster Mono-Lauf-Zähler je Fraktion. Toleriert Alt-Werte (Boolean true → 1) und fehlende Map.
+const monoCount = (p, a) => {
+  const m = p && p.monoArchetypeRuns;
+  const v = m ? Number(m[a]) : 0;
+  return Number.isFinite(v) && v > 0 ? v : 0;
+};
 
 // Reine Freischalt-Prüfung. Unbekannte kinds blockieren NICHT (defensiv: neuer kind ohne Code-Update
 // soll kein Deck unsichtbar-gesperrt lassen).
@@ -83,7 +117,8 @@ export function isUnlocked(def, profile) {
     case "streak":      return (p.bestStreak || 0) >= u.n;
     case "score":       return (p.bestScore  || 0) >= u.n;
     case "noRerollRun": return !!p.hadNoRerollRun; // #214 Sparfuchs
-    case "monoArchetypeRun": return !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]); // #215: Lauf nur mit dieser Fraktion
+    case "monoArchetypeRun": return monoCount(p, u.archetype) >= (u.n || 1);                     // #310: N Mono-Läufe dieser Fraktion
+    case "allMonoArchetypes": return ARCHS.every((a) => monoCount(p, a) >= (u.n || 1));           // #310: alle vier Element-Decks frei (Prisma-Multi)
     case "allArchetypesRun": return !!p.hadAllArchetypesRun;                                     // #215: Lauf mit allen vier
     case "gottgleichRun":   return !!p.hadGottgleichRun;      // #303: erstmals einen GOTTGLEICH-Stich getriggert
     case "meisterNoReroll": return !!p.hadMeisterNoRerollRun; // #303 Sparfuchs: Meisterrang-Wochenlauf ohne Reroll
@@ -118,8 +153,16 @@ export function unlockProgress(def, profile) {
       return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" };
     }
     case "monoArchetypeRun": {
-      const done = !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]);
-      return { done, cur: done ? 1 : 0, target: 1, label: `Schließe einen Lauf nur mit ${ARCH_LABEL[u.archetype] || u.archetype}-Skills ab` };
+      const need = u.n || 1;
+      const have = monoCount(p, u.archetype);
+      return { done: have >= need, cur: Math.min(have, need), target: need,
+        label: `Schließe ${need} Läufe nur mit ${ARCH_LABEL[u.archetype] || u.archetype}-Skills ab` };
+    }
+    case "allMonoArchetypes": {
+      const need = u.n || 1;
+      const have = ARCHS.reduce((acc, a) => acc + (monoCount(p, a) >= need ? 1 : 0), 0);
+      return { done: have >= ARCHS.length, cur: have, target: ARCHS.length,
+        label: `Schalte alle vier Element-Decks frei (je ${need} Mono-Läufe)` };
     }
     case "allArchetypesRun": {
       const done = !!p.hadAllArchetypesRun;

@@ -71,6 +71,43 @@ import bfSparfuchsDesktop  from "../assets/battlefields/bf_sparfuchs/desktop.jpg
 import bfSparfuchsMobile   from "../assets/battlefields/bf_sparfuchs/mobile.jpg";
 import bfMeisterDesktop    from "../assets/battlefields/bf_meister/desktop.jpg";
 import bfMeisterMobile     from "../assets/battlefields/bf_meister/mobile.jpg";
+// #310 Element-Challenge-Decks (Feuer/Eis/Blitz/Pflanze · Mono-Läufe) + Prisma (Element-Bund) + 4 DP-Kauf-Packs.
+import feuerFront     from "../assets/cards/decks_player/deck_feuer/front.webp";        // Feuer (Challenge · fire)
+import feuerBack      from "../assets/cards/decks_player/deck_feuer/back.webp";
+import eisFront       from "../assets/cards/decks_player/deck_eis/front.webp";          // Eis (Challenge · ice)
+import eisBack        from "../assets/cards/decks_player/deck_eis/back.webp";
+import blitzFront     from "../assets/cards/decks_player/deck_blitz/front.webp";        // Blitz (Challenge · lightning)
+import blitzBack      from "../assets/cards/decks_player/deck_blitz/back.webp";
+import pflanzeFront   from "../assets/cards/decks_player/deck_pflanze/front.webp";      // Pflanze (Challenge · plant)
+import pflanzeBack    from "../assets/cards/decks_player/deck_pflanze/back.webp";
+import elementarFront from "../assets/cards/decks_player/deck_elementar/front.webp";    // Prisma (Multi · Element-Bund)
+import elementarBack  from "../assets/cards/decks_player/deck_elementar/back.webp";
+import samuraiFront   from "../assets/cards/decks_player/deck_samurai/front.webp";      // Samurai (Kauf · 15 DP)
+import samuraiBack    from "../assets/cards/decks_player/deck_samurai/back.webp";
+import kosmosFront    from "../assets/cards/decks_player/deck_kosmos/front.webp";       // Schwarzes Loch (Kauf · 10 DP)
+import kosmosBack     from "../assets/cards/decks_player/deck_kosmos/back.webp";
+import oniFront       from "../assets/cards/decks_player/deck_oni/front.webp";          // Roter Oni (Kauf · 20 DP)
+import oniBack        from "../assets/cards/decks_player/deck_oni/back.webp";
+import geoFront       from "../assets/cards/decks_player/deck_geometrie/front.webp";    // Metatron (Kauf · 5 DP)
+import geoBack        from "../assets/cards/decks_player/deck_geometrie/back.webp";
+import bfFeuerDesktop     from "../assets/battlefields/bf_feuer/desktop.jpg";
+import bfFeuerMobile      from "../assets/battlefields/bf_feuer/mobile.jpg";
+import bfEisDesktop       from "../assets/battlefields/bf_eis/desktop.jpg";
+import bfEisMobile        from "../assets/battlefields/bf_eis/mobile.jpg";
+import bfBlitzDesktop     from "../assets/battlefields/bf_blitz/desktop.jpg";
+import bfBlitzMobile      from "../assets/battlefields/bf_blitz/mobile.jpg";
+import bfPflanzeDesktop   from "../assets/battlefields/bf_pflanze/desktop.jpg";
+import bfPflanzeMobile    from "../assets/battlefields/bf_pflanze/mobile.jpg";
+import bfElementarDesktop from "../assets/battlefields/bf_elementar/desktop.jpg";
+import bfElementarMobile  from "../assets/battlefields/bf_elementar/mobile.jpg";
+import bfSamuraiDesktop   from "../assets/battlefields/bf_samurai/desktop.jpg";
+import bfSamuraiMobile    from "../assets/battlefields/bf_samurai/mobile.jpg";
+import bfKosmosDesktop    from "../assets/battlefields/bf_kosmos/desktop.jpg";
+import bfKosmosMobile     from "../assets/battlefields/bf_kosmos/mobile.jpg";
+import bfOniDesktop       from "../assets/battlefields/bf_oni/desktop.jpg";
+import bfOniMobile        from "../assets/battlefields/bf_oni/mobile.jpg";
+import bfGeoDesktop       from "../assets/battlefields/bf_geometrie/desktop.jpg";
+import bfGeoMobile        from "../assets/battlefields/bf_geometrie/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -91,6 +128,16 @@ export const DECK_ASSETS = {
   deck_serie600:   { front: serie600Front,   back: serie600Back },
   deck_sparfuchs:  { front: sparfuchsFront,   back: sparfuchsBack },
   deck_meister:    { front: meisterFront,     back: meisterBack },
+  // #310 Element-Challenge-Decks + Prisma (Multi) + DP-Kauf-Packs:
+  deck_feuer:     { front: feuerFront,     back: feuerBack },
+  deck_eis:       { front: eisFront,       back: eisBack },
+  deck_blitz:     { front: blitzFront,     back: blitzBack },
+  deck_pflanze:   { front: pflanzeFront,   back: pflanzeBack },
+  deck_elementar: { front: elementarFront, back: elementarBack },
+  deck_samurai:   { front: samuraiFront,   back: samuraiBack },
+  deck_kosmos:    { front: kosmosFront,    back: kosmosBack },
+  deck_oni:       { front: oniFront,       back: oniBack },
+  deck_geometrie: { front: geoFront,       back: geoBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -113,6 +160,16 @@ export const BATTLEFIELD_ASSETS = {
   bf_serie600:   { desktop: bfSerie600Desktop,   mobile: bfSerie600Mobile },
   bf_sparfuchs:  { desktop: bfSparfuchsDesktop,  mobile: bfSparfuchsMobile },
   bf_meister:    { desktop: bfMeisterDesktop,    mobile: bfMeisterMobile },
+  // #310 Element-Challenge-Battlefields + Prisma + DP-Kauf-Packs:
+  bf_feuer:     { desktop: bfFeuerDesktop,     mobile: bfFeuerMobile },
+  bf_eis:       { desktop: bfEisDesktop,       mobile: bfEisMobile },
+  bf_blitz:     { desktop: bfBlitzDesktop,     mobile: bfBlitzMobile },
+  bf_pflanze:   { desktop: bfPflanzeDesktop,   mobile: bfPflanzeMobile },
+  bf_elementar: { desktop: bfElementarDesktop, mobile: bfElementarMobile },
+  bf_samurai:   { desktop: bfSamuraiDesktop,   mobile: bfSamuraiMobile },
+  bf_kosmos:    { desktop: bfKosmosDesktop,    mobile: bfKosmosMobile },
+  bf_oni:       { desktop: bfOniDesktop,       mobile: bfOniMobile },
+  bf_geometrie: { desktop: bfGeoDesktop,       mobile: bfGeoMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;

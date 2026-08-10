@@ -167,6 +167,29 @@ export const THEME_DEFS = {
     deckId: "deck_sparfuchs",  bfId: "bf_sparfuchs",  els: ["deck", "bf"] },
   meister:    { id: "meister",    name: "Meister",    emblem: "🏆", kind: "cond", a1: "#d4a63a", a2: "#cfd3e0",
     deckId: "deck_meister",    bfId: "bf_meister",    els: ["deck", "bf"] },
+
+  // ---- #310 Element-Challenge-Packs (kind "cond": kein Kauf; frei über N Mono-Läufe je Fraktion; Bedingung aus DECK_DEFS) ----
+  feuer:   { id: "feuer",   name: "Feuer",   emblem: "🔥", kind: "cond", a1: "#ff5a2a", a2: "#ffb03a",
+    deckId: "deck_feuer",   bfId: "bf_feuer",   els: ["deck", "bf"] },
+  eis:     { id: "eis",     name: "Eis",     emblem: "❄️", kind: "cond", a1: "#46c6ff", a2: "#9fe8ff",
+    deckId: "deck_eis",     bfId: "bf_eis",     els: ["deck", "bf"] },
+  blitz:   { id: "blitz",   name: "Blitz",   emblem: "⚡", kind: "cond", a1: "#9b6cff", a2: "#c77bff",
+    deckId: "deck_blitz",   bfId: "bf_blitz",   els: ["deck", "bf"] },
+  pflanze: { id: "pflanze", name: "Pflanze", emblem: "🌿", kind: "cond", a1: "#57e08a", a2: "#b6ff3a",
+    deckId: "deck_pflanze", bfId: "bf_pflanze", els: ["deck", "bf"] },
+  // Prisma (Element-Bund): frei, sobald alle vier Element-Decks frei sind.
+  elementar: { id: "elementar", name: "Prisma", emblem: "🌈", kind: "cond", a1: "#6cf0ff", a2: "#ff6ac0",
+    deckId: "deck_elementar", bfId: "bf_elementar", els: ["deck", "bf"] },
+
+  // ---- #310 DP-Kauf-Packs (kind "buy", eigener Preis via price) ----
+  samurai:   { id: "samurai",   name: "Samurai",        emblem: "🗡️", kind: "buy", price: 15, a1: "#ff3a5e", a2: "#ff86a0",
+    deckId: "deck_samurai",   bfId: "bf_samurai",   els: ["deck", "bf"] },
+  kosmos:    { id: "kosmos",    name: "Schwarzes Loch", emblem: "🕳️", kind: "buy", price: 10, a1: "#ff4dcb", a2: "#7b5cff",
+    deckId: "deck_kosmos",    bfId: "bf_kosmos",    els: ["deck", "bf"] },
+  oni:       { id: "oni",       name: "Roter Oni",      emblem: "👹", kind: "buy", price: 20, a1: "#ff2e3e", a2: "#ff7a3a",
+    deckId: "deck_oni",       bfId: "bf_oni",       els: ["deck", "bf"] },
+  geometrie: { id: "geometrie", name: "Metatron",       emblem: "✴️", kind: "buy", price: 5,  a1: "#b48bff", a2: "#ffce5a",
+    deckId: "deck_geometrie", bfId: "bf_geometrie", els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);

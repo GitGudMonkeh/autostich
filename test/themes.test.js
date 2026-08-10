@@ -31,7 +31,7 @@ describe("packs — Registry", () => {
     expect(packCond(t)).toEqual({ kind: "buy", ownKey: "pack:sunset" });
   });
   it("v0.4: alte Challenge-Packs sind aus der Registry entfernt", () => {
-    for (const id of ["endlos", "rekord", "spar", "feuer", "blitz", "eis", "pflanze", "bund"]) {
+    for (const id of ["endlos", "rekord", "spar", "bund"]) {
       expect(THEME_DEFS[id]).toBeUndefined();
     }
   });
@@ -55,6 +55,32 @@ describe("packs — Zustände & Besitz", () => {
     const want = { lofi: 5, cat: 5, spacedog: 5, beach: 10, sunset: 10, ramen: 10, wale: 15, genesis: 0 };
     for (const [id, dp] of Object.entries(want)) expect(packPrice(THEME_DEFS[id])).toBe(dp);
   });
+  it("#310: die vier DP-Kauf-Packs tragen ihre Einzelpreise", () => {
+    expect(packPrice(THEME_DEFS.samurai)).toBe(15);
+    expect(packPrice(THEME_DEFS.kosmos)).toBe(10);
+    expect(packPrice(THEME_DEFS.oni)).toBe(20);
+    expect(packPrice(THEME_DEFS.geometrie)).toBe(5);
+  });
+  it("#310: canBuyPack/buyPack rechnen mit dem Pack-Preis (Roter Oni = 20 DP)", () => {
+    const oni = THEME_DEFS.oni;
+    expect(canBuyPack(prof({ deckPoints: 19 }), oni)).toBe(false);
+    expect(canBuyPack(prof({ deckPoints: 20 }), oni)).toBe(true);
+    const p1 = buyPack(prof({ deckPoints: 25, deckSpent: 3 }), oni);
+    expect(p1.deckPoints).toBe(5);
+    expect(p1.deckSpent).toBe(23);
+    expect(p1.ownedCosmetics["pack:oni"]).toBe(true);
+  });
+  it("#310: Element-Challenge (cond) — frei erst nach 5 Mono-Läufen; Prisma erst wenn alle vier frei", () => {
+    const feuer = THEME_DEFS.feuer;
+    expect(packState(prof(), feuer)).toBe("lock");
+    expect(packOwned(prof({ monoArchetypeRuns: { fire: 4 } }), feuer)).toBe(false);
+    expect(packOwned(prof({ monoArchetypeRuns: { fire: 5 } }), feuer)).toBe(true);
+    expect(packUnlock(prof({ monoArchetypeRuns: { fire: 3 } }), feuer)).toMatchObject({ cur: 3, target: 5 });
+    const multi = THEME_DEFS.elementar;
+    expect(packOwned(prof({ monoArchetypeRuns: { fire: 5, ice: 5, lightning: 5 } }), multi)).toBe(false);
+    expect(packOwned(prof({ monoArchetypeRuns: { fire: 5, ice: 5, lightning: 5, plant: 5 } }), multi)).toBe(true);
+    expect(packUnlock(prof({ monoArchetypeRuns: { fire: 5, ice: 5 } }), multi)).toMatchObject({ cur: 2, target: 4 });
+  });
   it("gekauftes Pack → 'own'", () => {
     const p = prof({ ownedCosmetics: { "pack:sunset": true } });
     expect(packState(p, THEME_DEFS.sunset)).toBe("own");
@@ -64,7 +90,8 @@ describe("packs — Zustände & Besitz", () => {
     for (const id of ["neon", "tank", "mega", "mond"]) expect(THEME_DEFS[id]).toBeUndefined();
   });
   it("#303: die Challenge-Packs sind kind 'cond' (nicht kaufbar); alle übrigen Packs sind 'buy'", () => {
-    const challenge = ["gottgleich", "serie300", "serie600", "sparfuchs", "meister"];
+    const challenge = ["gottgleich", "serie300", "serie600", "sparfuchs", "meister",
+      "feuer", "eis", "blitz", "pflanze", "elementar"]; // #310 Element-Challenges + Prisma-Multi
     for (const id of challenge) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("cond");
