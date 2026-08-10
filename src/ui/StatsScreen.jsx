@@ -23,7 +23,6 @@ const perkLabel = (id) => PERK_DEFS[id]?.label || id;
 const skillLabel = (id) => SKILL_DEFS[id]?.name || id;
 const perkColor = (id) => CATEGORIES[PERK_DEFS[id]?.cat]?.color || "#8a8a95";
 const skillColor = (id) => (ARCHETYPE_META[SKILL_DEFS[id]?.archetype] || {}).color || "#8a8a95";
-const archIcon = (a) => (ARCHETYPE_META[a] || {}).icon || "";
 const archLabel = (a) => (ARCHETYPE_META[a] || {}).label || a;
 const archColor = (a) => (ARCHETYPE_META[a] || {}).color || "#8a8a95";
 const pct = (x) => `${Math.round((x || 0) * 100)}%`;

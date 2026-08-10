@@ -28,7 +28,7 @@ const BR_COLOR = { bau: CY, auf: BLUE, rar: VI, mei: AM };
 
 // (Schritt 4e) Onboarding-Kette (docs §4): Reward je Glied — Index i = Belohnung fürs Erreichen von Glied i+1.
 // Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
-const ONB_REWARDS = ["Reroll +1", "Pflanze 🌿 frei", "Rarität: Blau", "Eis ❄ frei", "Rarität: Violett", "Legendär ⭐ (R29)"];
+const ONB_REWARDS = ["Reroll +1", "Pflanze frei", "Rarität: Blau", "Eis frei", "Rarität: Violett", "Legendär ⭐ (R29)"];
 
 export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onStandardRun = null, onMeisterRun = null, onDevRun = null, onChallenge = null, highscores, best, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [seedInput, setSeedInput] = useState("");

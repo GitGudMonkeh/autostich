@@ -71,7 +71,7 @@ function Bar({ b }) {
     <div className="rounded-xl px-3.5 py-3" style={{ background: "#141419", border: "1px solid #2a2a33" }}>
       <div className="flex items-center justify-between gap-3 mb-2">
         <span className="text-[13px] tracking-wide" style={{ color: "#e2e0ee" }}>
-          <span className="mr-1.5" style={{ color: b.color }}>{b.glyph}</span>{b.name}
+          <span className="mr-1.5" style={{ color: b.color }}>{b.faction ? <FactionIcon type={b.faction} size={12} /> : b.glyph}</span>{b.name}
         </span>
         {!single && b.payoff && <span className="text-[11px] text-right" style={{ color: "#9a9aa6" }}><RT t={b.payoff} /></span>}
       </div>
@@ -181,7 +181,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
                 <div key={i} className="grid gap-3 items-start rounded-xl px-3.5 py-3"
                      style={{ gridTemplateColumns: "38px 1fr", background: "#141419", border: "1px solid #2a2a33" }}>
                   <div className="w-[38px] h-[38px] grid place-items-center rounded-lg text-lg"
-                       style={{ color: p.color, background: "#0e0e13", border: "1px solid #33333e", boxShadow: `0 0 14px -5px ${p.color}` }}>{p.glyph}</div>
+                       style={{ color: p.color, background: "#0e0e13", border: "1px solid #33333e", boxShadow: `0 0 14px -5px ${p.color}` }}>{p.faction ? <FactionIcon type={p.faction} size={18} /> : p.glyph}</div>
                   <div>
                     <div className="text-[14.5px] font-semibold" style={{ color: p.color }}>
                       {p.name}{p.sub && <span className="ml-1 text-[12px] font-normal" style={{ color: "#71717c" }}>{p.sub}</span>}

@@ -13,6 +13,7 @@ import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { ArchBuildingList, FormationLegend } from "./ArchPanels.jsx";
 import { audio } from "./audio.js";
 import { haptics } from "./haptics.js";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
@@ -238,7 +239,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                 {/* Gehaltene Eis-Effekte auf die Formationserkennung — nur wenn welche gehalten werden (desc aus SKILL_DEFS). */}
                 {iceFormSkills.length > 0 && (
                   <div className="grid gap-0.5 text-xs sm:text-[13px] leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
-                    <div className="font-bold" style={{ color: "#7fd4f0" }}>❄ Eis-Effekte auf Formationen</div>
+                    <div className="font-bold inline-flex items-center gap-1" style={{ color: "#7fd4f0" }}><FactionIcon type="ice" size={13} /> Eis-Effekte auf Formationen</div>
                     {iceFormSkills.map((id) => (
                       <div key={id}>
                         <b style={{ color: "#8be0f8" }}>{SKILL_DEFS[id].name}</b>

@@ -3,6 +3,7 @@ import {
   GLOSSARY_CATEGORIES, GLOSSARY_GROUPS, glossaryEntries, tokenizeGlossary,
 } from "../game/glossary.js";
 import { useEscape } from "./useEscape.js";
+import { FactionIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 
 /* ============================================================
    GLOSSAR-UI (Glossar-Rework) — drei Bausteine:
@@ -144,7 +145,7 @@ export function GlossaryOverlay({ onClose }) {
                   ? groups.map(({ g, meta, items: gi }) => (
                       <div key={g}>
                         <div className="mt-2 mb-0.5 text-[10px] tracking-[0.14em] uppercase flex items-center gap-1.5" style={{ color: "#7d7790" }}>
-                          <span className="text-xs">{meta.icon}</span>{meta.label}
+                          {FACTION_ICON_SRC[g] ? <FactionIcon type={g} size={13} /> : <span className="text-xs">{meta.icon}</span>}{meta.label}
                         </div>
                         {gi.map((e) => <TermRow key={e.id} e={e} />)}
                       </div>
@@ -172,7 +173,7 @@ function Chip({ label, dot, active, onClick }) {
 function TermRow({ e }) {
   return (
     <div className="flex gap-2.5 px-2 py-2 rounded-lg gloss-term-row">
-      <span className="flex-none text-center w-4 text-[15px] leading-6" style={{ color: e.color }}>{e.icon}</span>
+      <span className="flex-none text-center w-4 leading-6 inline-flex items-center justify-center" style={{ color: e.color }}>{FACTION_ICON_SRC[e.group] ? <FactionIcon type={e.group} size={14} /> : <span className="text-[15px]">{e.icon}</span>}</span>
       <div className="min-w-0">
         <div className="font-bold text-[13px] leading-tight" style={{ color: e.color }}>{e.label}</div>
         <div className="text-[11.5px] leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}>{e.text}</div>

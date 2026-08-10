@@ -23,7 +23,7 @@ export const GUIDES = {
     pillarsLabel: `Die drei Ressourcen`,
     pillars: [
       { glyph: "✦", color: "#e879f9", name: "Crit", text: `Dein Payoff — ein Crit vervielfacht den Sieg-Score. Blitz erzeugt sowohl die Crit-Chance als auch den Crit-Multiplikator **selbst**; beides wächst mit jedem gehaltenen Blitz-Skill.` },
-      { glyph: "⚡", color: "#5ec8f0", name: "Ladung", text: `Dein Treibstoff. Siege und Crits laden sie auf. Ist sie **voll**, feuert dein Konsument und die Ladung wird verbraucht.` },
+      { glyph: "⚡", faction: "lightning", color: "#5ec8f0", name: "Ladung", text: `Dein Treibstoff. Siege und Crits laden sie auf. Ist sie **voll**, feuert dein Konsument und die Ladung wird verbraucht.` },
       { glyph: "◈", color: "#8a7de0", name: "Ionisierung", sub: "· Stapel", text: `Dauerhafte Marken auf deinen Karten. Der Konsument (Ionisierung) verteilt sie auf noch ungespielte Karten. Jeder Stapel gibt bei einem Sieg mit der Karte extra Score — und **jeder Stapel im Deck hebt feldweit deine Crit-Chance**.` },
     ],
     loop: {
@@ -41,7 +41,7 @@ export const GUIDES = {
       label: `Wie weit ist dein Sturm?`,
       bars: [
         { name: "Sturmgröße", glyph: "🌐", fill: 72, color: "#8a7de0", payoff: `fast alle Karten ionisiert → **alle Karten stärker**` },
-        { name: "Sturmintensität", glyph: "⚡", fill: 38, color: "#5ec8f0", payoff: `fast alle Karten voll → **Überschuss → Crit-Multi**` },
+        { name: "Sturmintensität", glyph: "⚡", faction: "lightning", fill: 38, color: "#5ec8f0", payoff: `fast alle Karten voll → **Überschuss → Crit-Multi**` },
       ],
     },
     principle: [
@@ -59,7 +59,7 @@ export const GUIDES = {
     pillarsLabel: `Die drei Ressourcen`,
     pillars: [
       { glyph: "⚔", color: "#e85c3c", name: "Wertvorsprung", sub: "· die Marge", text: `Feuers eigentliche Währung. Nicht **ob** du gewinnst zählt, sondern **wie klar**. Ein knapper Sieg zahlt kaum, ein erdrückender zahlt massiv.` },
-      { glyph: "🔥", color: "#f0a63c", name: "Hitze", text: `Die Leiste (leer bis voll). Jeder Sieg heizt sie auf — vor allem mit Vorsprung —, klare Niederlagen kühlen sie ab. Hohe Hitze **macht deine Karten stärker** und ist zugleich ein Vorrat zum **Ausschütten**.` },
+      { glyph: "🔥", faction: "fire", color: "#f0a63c", name: "Hitze", text: `Die Leiste (leer bis voll). Jeder Sieg heizt sie auf — vor allem mit Vorsprung —, klare Niederlagen kühlen sie ab. Hohe Hitze **macht deine Karten stärker** und ist zugleich ein Vorrat zum **Ausschütten**.` },
       { glyph: "⚒", color: "#cca366", name: "Asche & Schmiede", text: `Die dauerhafte Investition. Brände senken Gegnerkarten und geben Asche; die Schmiede verwandelt Asche in **bleibenden Kartenwert**.` },
     ],
     loop: {
@@ -75,7 +75,7 @@ export const GUIDES = {
     status: {
       label: `Wie heiß bist du?`,
       bars: [
-        { name: "Hitze", glyph: "🔥", fill: 78, color: "#e0714a", ticks: [34, 58, 82], overflow: true, scale: ["kalt", "↑ Schwellen-Boni ↑", "voll → Weißglut"] },
+        { name: "Hitze", glyph: "🔥", faction: "fire", fill: 78, color: "#e0714a", ticks: [34, 58, 82], overflow: true, scale: ["kalt", "↑ Schwellen-Boni ↑", "voll → Weißglut"] },
       ],
     },
     principle: [
@@ -127,8 +127,8 @@ export const GUIDES = {
     kernidee: `Siege lassen deine Karten **wachsen**, bis sie dauerhaft grün werden und gemeinsam ein Feld bilden. Kein Sofort-Payoff — ein Garten, der langsam anschwillt und dann alles überwuchert.`,
     pillarsLabel: `Die drei Ressourcen`,
     pillars: [
-      { glyph: "🌱", color: "#85dc9d", name: "Wachstum", text: `Der Motor. Jeder Sieg lässt deine Karte wachsen — **nur aufwärts, nie zurück**. Genug Wachstum macht sie dauerhaft **grün (reif)**; je mehr Pflanzen-Skills, desto schneller.` },
-      { glyph: "🌿", color: "#5ab87a", name: "Grünes Feld", sub: "· Breite", text: `Reife grüne Karten teilen sich einen **Farbblock**. Je größer und grüner dein Feld, desto mehr Score — Blüte, Überwucherung.` },
+      { glyph: "🌱", faction: "plant", color: "#85dc9d", name: "Wachstum", text: `Der Motor. Jeder Sieg lässt deine Karte wachsen — **nur aufwärts, nie zurück**. Genug Wachstum macht sie dauerhaft **grün (reif)**; je mehr Pflanzen-Skills, desto schneller.` },
+      { glyph: "🌿", faction: "plant", color: "#5ab87a", name: "Grünes Feld", sub: "· Breite", text: `Reife grüne Karten teilen sich einen **Farbblock**. Je größer und grüner dein Feld, desto mehr Score — Blüte, Überwucherung.` },
       { glyph: "🌳", color: "#cca466", name: "Wurzeln", sub: "· Tiefe", text: `Im **reinen** Pflanzen-Build wird Wachstum zu dauerhaftem **Kartenwert**: grüne Karten werden echt stärker; am Deckel zahlt jede weitere Wurzel direkt Score.` },
     ],
     loop: {
@@ -145,7 +145,7 @@ export const GUIDES = {
     status: {
       label: `Wie steht dein Garten?`,
       bars: [
-        { name: "Breite", glyph: "🌿", fill: 64, color: "#5ab87a", payoff: `Feld voll grün → **Überwucherung**` },
+        { name: "Breite", glyph: "🌿", faction: "plant", fill: 64, color: "#5ab87a", payoff: `Feld voll grün → **Überwucherung**` },
         { name: "Tiefe", glyph: "🌳", fill: 80, color: "#cca466", payoff: `am Wert-Deckel → **Wurzel-Score**` },
       ],
     },

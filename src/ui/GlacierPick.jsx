@@ -3,6 +3,7 @@ import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { architectCoverFor } from "./architectCover.js";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 
 const GOLD = "#d4a63a"; // einheitliche Bestätigen-Farbe (wie TargetSelect)
 const ICE = "#7fd4f0";
@@ -29,7 +30,7 @@ export function GlacierPick({ state, onConfirm }) {
       <div className="relative w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.ice)}>
         <PhaseHairline />
         <div className="text-center mb-1">
-          <div className="text-xs uppercase tracking-widest" style={{ color: ICE }}>❄ Gletscher</div>
+          <div className="text-xs uppercase tracking-widest inline-flex items-center gap-1" style={{ color: ICE }}><FactionIcon type="ice" size={12} /> Gletscher</div>
           <h2 className="text-xl font-bold mt-1">Wähle eine Karte als Gletscher</h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">
             Sie friert auf ihrer Zelle fest — ab dann <b>starr</b> (nicht mehr verschiebbar) und sammelt Masse, bis sie bricht.

@@ -270,11 +270,12 @@ export const isTrimmableSkill = (id) => !!SKILL_DEFS[id]?.trimGrowth;
 
 /* Skill-Archetypen (#93). Metadaten (Theming/Label) — geteilte Quelle für SkillSelect & HUD.
    Alle drei Archetypen (Blitz/Feuer/Eis) sind vollständig ausgespielt (F0/F1/F3 abgeschlossen). */
+// #308: kein Emoji mehr hier — das Fraktions-Icon kommt zentral aus src/ui/FactionIcon.jsx (gekeyt über `key`).
 export const ARCHETYPE_META = {
-  lightning: { key: "lightning", label: "Blitz",  icon: "⚡", color: "#8a7de0" }, // violett/elektrisch
-  fire:      { key: "fire",      label: "Feuer",  icon: "🔥", color: "#e0714a" }, // warm/orange-rot
-  ice:       { key: "ice",       label: "Eis",    icon: "❄️", color: "#5ec8f0" }, // eis-blau
-  plant:     { key: "plant",     label: "Pflanze", icon: "🌿", color: "#5ab87a" }, // grün/wachsend (v0)
+  lightning: { key: "lightning", label: "Blitz",  color: "#8a7de0" }, // violett/elektrisch
+  fire:      { key: "fire",      label: "Feuer",  color: "#e0714a" }, // warm/orange-rot
+  ice:       { key: "ice",       label: "Eis",    color: "#5ec8f0" }, // eis-blau
+  plant:     { key: "plant",     label: "Pflanze", color: "#5ab87a" }, // grün/wachsend (v0)
 };
 export const ARCHETYPE_ORDER = ["lightning", "fire", "ice", "plant"];
 

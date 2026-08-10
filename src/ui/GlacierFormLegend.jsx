@@ -1,4 +1,5 @@
 import { GEO_BLOCK, GEO_KREUZ, GEO_LINIE, GEO_FLAECHE, EISWALL_LINIE, ROLES } from "../game/glacier.js";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 
 // Eis-Neudesign: erklärt die 2D-Gletscher-Formationen (Block/Kreuz/Linie/Große Fläche) in BLAU — analog zur
 // grünen Formations-Legende (W/F/T/Z/A). Gezeigt in der Aufstellung (FormationPhase) und der Chronik, sobald der
@@ -21,7 +22,7 @@ export function GlacierFormLegend({ state = {}, compact = false }) {
     // Chronik-Stil: eine kompakte Zeile mit Chips.
     return (
       <div className="text-[11px] flex flex-wrap gap-x-3 gap-y-0.5 font-medium pt-1.5 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
-        <span className="font-bold" style={{ color: FROST }}>❄ Gletscher-Formationen (2D):</span>
+        <span className="font-bold inline-flex items-center gap-1" style={{ color: FROST }}><FactionIcon type="ice" size={13} /> Gletscher-Formationen (2D):</span>
         {rows.map(([name, f]) => (
           <span key={name} style={{ color: FROST_TXT }}><b style={{ color: FROST }}>{name}</b> ×{dfmt(f)}</span>
         ))}
@@ -32,7 +33,7 @@ export function GlacierFormLegend({ state = {}, compact = false }) {
   // Aufstellungs-Stil: eine Zeile je Formation mit Beschreibung (wie die grüne W/F/T/Z/A-Liste).
   return (
     <div className="grid gap-0.5 text-xs sm:text-[13px] leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
-      <div className="font-bold" style={{ color: FROST }}>❄ Gletscher-Formationen (2D)</div>
+      <div className="font-bold inline-flex items-center gap-1" style={{ color: FROST }}><FactionIcon type="ice" size={13} /> Gletscher-Formationen (2D)</div>
       {rows.map(([name, f, desc]) => (
         <div key={name}><b style={{ color: FROST }}>{name}</b> <span style={{ color: FROST_TXT }}>×{dfmt(f)}</span> — {desc}</div>
       ))}

@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf, marginHeatPoints } from "../game/skills.js";
-import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
+import { FactionIcon, ArchIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
          PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
          WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
@@ -57,7 +57,7 @@ function KeywordGlossary({ tokens }) {
     <div className="grid gap-1.5 mt-2">
       {tokens.map((k) => (
         <div key={k} className="text-xs leading-snug">
-          <span className="font-bold" style={{ color: GLOSSARY[k].color }}>{GLOSSARY[k].icon} {GLOSSARY[k].label}</span>
+          <span className="font-bold inline-flex items-center gap-1" style={{ color: GLOSSARY[k].color }}>{FACTION_ICON_SRC[GLOSSARY[k].group] ? <FactionIcon type={GLOSSARY[k].group} size={12} /> : GLOSSARY[k].icon} {GLOSSARY[k].label}</span>
           <span className="opacity-70"> — {GLOSSARY[k].text}</span>
         </div>
       ))}
@@ -156,7 +156,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         <PhaseHairline />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1 pt-6">
-          <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>⚡ Skill · Durchlauf {(state.cycle || 0) + 1} · {skills.length}/{SKILL_SLOTS} Slots</div>
+          <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>Skill · Durchlauf {(state.cycle || 0) + 1} · {skills.length}/{SKILL_SLOTS} Slots</div>
           <h2 className="text-xl font-bold mt-1">Wähle einen Skill</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
@@ -391,7 +391,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <button type="button" onClick={() => setOpenForms((o) => !o)} aria-expanded={openForms}
               className="w-full flex items-center gap-2 text-left" title={`Aufstellfeld ${openForms ? "einklappen" : "ausklappen"}`}>
-              <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: "#7fd4f0" }}>❄ Deine aktiven Formationen</span>
+              <span className="text-[11px] font-bold uppercase tracking-wide inline-flex items-center gap-1" style={{ color: "#7fd4f0" }}><FactionIcon type="ice" size={12} /> Deine aktiven Formationen</span>
               <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
                 style={{ color: "#7fd4f0", background: "#7fd4f014", border: "1px solid #7fd4f03a" }}>
                 <span className="transition-transform" style={{ display: "inline-block", transform: openForms ? "rotate(90deg)" : "none" }}>▸</span>
