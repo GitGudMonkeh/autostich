@@ -7,7 +7,31 @@ import { startPerf, stopPerf, resetPerf, getLive, getReport, formatReport } from
    Buttons:
      ⧉ Report → volle Zusammenfassung in die Konsole + JSON in die Zwischenablage (auf dem Handy
                 per Remote-Debug/„Copy" teilbar). ↺ Reset → Messung neu starten.
+     Glut:PIXI/DOM → A/B-Umschalter für die Glutfunken-Render-Schicht (GPU-Emitter vs. DOM), setzt
+                localStorage as_embers + lädt neu → Vorher/Nachher direkt vergleichbar.
    Auto-Dump bei Game-Over macht App (formatReport-Aufruf), damit ein Lauf immer eine Bilanz hinterlässt. */
+
+// A/B-Umschalter für die Glutfunken (spiegelt EMBERS_RENDERER in Battlefield.jsx: URL-Param ?embers hat Vorrang,
+// dann localStorage as_embers, Standard "pixi"). Toggle schreibt localStorage + räumt einen fixen URL-Param auf
+// (sonst würde der den localStorage-Wert nach dem Reload überstimmen) und lädt neu.
+function readEmbersMode() {
+  try {
+    const q = new URLSearchParams(window.location.search).get("embers");
+    if (q === "pixi" || q === "dom") return q;
+    const ls = window.localStorage?.getItem("as_embers");
+    if (ls === "pixi" || ls === "dom") return ls;
+  } catch { /* kein window → Standard */ }
+  return "pixi";
+}
+function toggleEmbersMode() {
+  const next = readEmbersMode() === "pixi" ? "dom" : "pixi";
+  try {
+    window.localStorage?.setItem("as_embers", next);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("embers")) { url.searchParams.set("embers", next); window.location.href = url.toString(); return; }
+  } catch { /* localStorage/URL nicht verfügbar → einfacher Reload */ }
+  window.location.reload();
+}
 export function PerfOverlay() {
   const [live, setLive] = useState({ fps: 0, p95: 0, jank: 0 });
   const [copied, setCopied] = useState(false);
@@ -35,6 +59,8 @@ export function PerfOverlay() {
     pointerEvents: "auto", cursor: "pointer", background: "#1a1a21", color: "#c8c8d0",
     border: "1px solid #33333e", borderRadius: 4, padding: "1px 5px", font: "inherit",
   };
+  const embers = readEmbersMode();                       // aktueller Glutfunken-Renderer (pixi/dom)
+  const emberCol = embers === "pixi" ? "#35e0ff" : "#e0a35a";
   return (
     <div
       className="fixed top-2 right-2 z-50 flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold font-pixel tracking-wide"
@@ -45,6 +71,8 @@ export function PerfOverlay() {
       <span style={{ color: "#8a8a92" }}>· p95 {live.p95}ms · jank {live.jank}</span>
       <button style={btn} onClick={doReport} title="Report → Konsole + Zwischenablage">{copied ? "✓" : "⧉"}</button>
       <button style={btn} onClick={resetPerf} title="Messung zurücksetzen">↺</button>
+      <button style={{ ...btn, color: emberCol, borderColor: `${emberCol}66` }} onClick={toggleEmbersMode}
+        title="Glutfunken-Renderer umschalten (GPU-Emitter ↔ DOM) + neu laden">Glut:{embers === "pixi" ? "PIXI" : "DOM"}</button>
     </div>
   );
 }
