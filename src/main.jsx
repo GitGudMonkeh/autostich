@@ -14,6 +14,15 @@ if (typeof window !== "undefined") {
     window.__installPrompt = null;
     window.dispatchEvent(new Event("pwa-installed"));
   });
+
+  // #perf C1: Service Worker registrieren — nur im Production-Build (nicht im Dev-Server, wo Caching stört) und erst
+  // NACH `load`, damit weder der erste Paint noch die Desktop-Version negativ beeinflusst wird. Der SW cacht App-Shell +
+  // statische Assets (Offline + Instant-Repeat-Load); Ton-Streaming/Bestenliste rührt er bewusst nicht an (siehe sw.js).
+  if (import.meta.env.PROD && "serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => { /* SW nie kritisch */ });
+    });
+  }
 }
 
 createRoot(document.getElementById("root")).render(<Autostich />);
