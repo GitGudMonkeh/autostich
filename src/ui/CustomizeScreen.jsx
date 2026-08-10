@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.jsx";
@@ -9,7 +9,9 @@ import {
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
-import { SliceFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx, FieldFxLayer } from "./Battlefield.jsx";
+import { SliceFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx, FieldFxLayer, FX_RENDERER } from "./Battlefield.jsx";
+// Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
+const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 import { clamp } from "../game/deck.js"; // #: Serien-Kopplung des Brennstrahl-Loops (leiser Start → lauter/heißer)
@@ -446,34 +448,50 @@ function GlobalFxScenePreview({ fx }) {
 // #: Glutfunken sind an den Lauf-Score gekoppelt → die Vorschau rampt einen Demo-Score durch mehrere Stufen und blendet
 // eine Score-Anzeige ein, damit man sieht, wie die Fontänen bei welchem Score aussehen (mehr/höher je Score, bis 500k).
 const EMBER_DEMO_SCORES = [40000, 150000, 320000, 500000];
+// Hit-Tier-Leiter für die Glutfunken-Eskalations-Vorschau (Pixi): ab „Stark" eine große mittige Fontäne.
+const EMBER_TIER_LABELS = ["Schwach", "Stark", "Brutal", "Irre", "Gottgleich"];
+// Der GPU-Emitter zeigt die Glutfunken als Eskalation — nur im Preview/Dev-Build mit „pixi"-Renderer; sonst DOM-Fassung.
+const EMBER_PIXI_PREVIEW = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi";
 function FieldFxPreview({ effect }) {
   const bf = battlefieldAssets(SHOWCASE_BF);
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
   const [sweep, setSweep] = useState(1);
   const [emberStep, setEmberStep] = useState(0);
+  const [tierStep, setTierStep] = useState(0);
+  const pixiEmbers = effect === "embers" && EMBER_PIXI_PREVIEW;
   useEffect(() => {
     if (effect === "none") return undefined;
-    // #: Glutfunken — Score-Wechsel UND Funkenstoß aus EINEM Timer, sonst zeigt der Puls (1,5s) eine andere Stufe als
-    // das Score-Label (2,4s). Beide zusammen bumpen → der Stoß spiegelt immer den gerade angezeigten Score. Andere
-    // Effekte: nur der periodische Sweep-Puls.
+    // #: Glutfunken — Score-/Tier-Wechsel UND Funkenstoß aus EINEM Timer, damit Puls und Label immer zusammenpassen.
+    // Pixi-Vorschau: durch die Hit-Tier-Leiter eskalieren (Schwach → Gottgleich). DOM/andere: Score-Rampe bzw. Sweep-Puls.
     const isEmbers = effect === "embers";
     const id = setInterval(() => {
       setSweep((s) => s + 1);
-      if (isEmbers) setEmberStep((s) => (s + 1) % EMBER_DEMO_SCORES.length);
-    }, isEmbers ? 2000 : 1500);
+      if (pixiEmbers) setTierStep((s) => (s + 1) % EMBER_TIER_LABELS.length);
+      else if (isEmbers) setEmberStep((s) => (s + 1) % EMBER_DEMO_SCORES.length);
+    }, isEmbers ? (pixiEmbers ? 1600 : 2000) : 1500);
     return () => clearInterval(id);
-  }, [effect]);
+  }, [effect, pixiEmbers]);
   const demoScore = effect === "embers" ? EMBER_DEMO_SCORES[emberStep] : 0;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {effect !== "none" && <FieldFxLayer effect={effect} color={DEMO_C} color2="#b06bff" sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
+      {/* Glutfunken als GPU-Eskalation (Pixi) — sonst die DOM-Fassung; ambient-Effekte laufen weiter über FieldFxLayer. */}
+      {pixiEmbers && (
+        <Suspense fallback={null}>
+          <PixiStage className="absolute inset-0 z-[2]" effect="embers" color={DEMO_C}
+            score={250000} reduced={false} lite={false}
+            sweepId={sweep} sweepDur={1100} win hitTier={tierStep} />
+        </Suspense>
+      )}
+      {effect !== "none" && !pixiEmbers && <FieldFxLayer effect={effect} color={DEMO_C} color2="#b06bff" sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
       {effect === "embers" && (
         <div className="absolute right-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
           style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#ffd7b0" }}>
-          <span className="opacity-70">Score</span> {demoScore.toLocaleString("de-DE")}
+          {pixiEmbers
+            ? (<><span className="opacity-70">Tier</span> {EMBER_TIER_LABELS[tierStep]}</>)
+            : (<><span className="opacity-70">Score</span> {demoScore.toLocaleString("de-DE")}</>)}
         </div>
       )}
     </div>

@@ -1059,7 +1059,7 @@ function PrunkFx({ trigger, panelRef, oppRef, color }) {
 // ?fx=dom bzw. ?fx=pixi (oder localStorage as_fx). Standard: pixi. Prod (main) ignoriert das komplett.
 // Hinter dem env-Gate → in Prod faltet der Minifier `false ? (…) : "dom"` weg; der URL/localStorage-Leser landet
 // gar nicht erst im main-Bundle (die IIFE wird komplett entfernt).
-const FX_RENDERER = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
+export const FX_RENDERER = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
   ? (() => {
       try {
         const q = new URLSearchParams(window.location.search).get("fx");
@@ -1499,6 +1499,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #105: großes „Wow"-Wort mittig ab hohem Einzelstich-Score (nur bei Sieg). Höchste erfüllte Stufe.
   // Große-Lawine-Bruch (Finisher) → „Lawine" in Blau statt der Score-Stufe; sonst die normale Stufe nach Score.
   const baseBigTier = win && t && t.gained > 0 ? bigScoreTier(t.gained) : null;
+  // Pixi-Glutfunken: Hit-Tier des gewonnenen Stichs (0 Schwach · 1 Stark · 2 Brutal · 3 Irre · 4 Gottgleich) — ab Stark
+  // bündelt sich die Fontäne zu EINER großen mittigen (Eskalation). Die Groß-Ansage kommt weiterhin vom Spiel.
+  const hitTier = win && t && t.gained > 0 ? fxIntensity(t.gained).tier : 0;
   // Serien-Meilenstein hat Vorrang: eine 200er-Serie feiert „Gönn dir" (unabhängig vom Stich-Score), sonst Lawine bzw. Score-Stufe.
   const goennMilestone = win && t && (t.winStreak || 0) >= STREAK_GOENN;
   const bigScore = goennMilestone ? GOENNDIR_TIER : (baseBigTier && t && t.grosseLawine ? LAWINE_TIER : baseBigTier);
@@ -1835,7 +1838,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             color={deckA1 || "#ffffff"}
             score={pixiFx ? Math.round((score || 0) / 20000) * 20000 : 0}
             reduced={reduced} lite={lite}
-            sweepId={sweepId} sweepDur={sweepDur} win={win} />
+            sweepId={sweepId} sweepDur={sweepDur} win={win} hitTier={hitTier} />
         </Suspense>
       )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind

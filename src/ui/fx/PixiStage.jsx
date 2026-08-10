@@ -25,7 +25,7 @@ const FIELD_FX = {
 export function PixiStage({
   active = true, className,
   effect = null, color = "#ffffff", score = 0, reduced = false, lite = false,
-  sweepId = 0, sweepDur = 900, win = false,
+  sweepId = 0, sweepDur = 900, win = false, hitTier = 0,
 }) {
   const hostRef   = useRef(null);
   const appRef    = useRef(null);
@@ -115,8 +115,8 @@ export function PixiStage({
   useEffect(() => {
     if (sweepId === lastSweep.current) return;
     lastSweep.current = sweepId;
-    if (sweepId > 0) fieldRef.current?.erupt({ sweepId, sweepDur, win, score });
-  }, [sweepId, sweepDur, win, score]);
+    if (sweepId > 0) fieldRef.current?.erupt({ sweepId, sweepDur, win, score, tier: hitTier });
+  }, [sweepId, sweepDur, win, score, hitTier]);
 
   // active-Wechsel → Ticker-Zustand spiegeln (ohne die App neu zu bauen)
   useEffect(() => { applyRunState(); }, [active, applyRunState]);

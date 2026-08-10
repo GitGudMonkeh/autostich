@@ -33,10 +33,16 @@ const TUNE = {
   HREF: 360,        // Referenz-Panelhöhe (Geschwindigkeiten/Höhe skalieren mit H/HREF)
   GLOW: 0.65,       // Partikel-Footprint (= Showcase „Partikelgröße" 0.65; On-Screen-Größe mappt 1:1). Klein = knackig, wenig Wash.
   CRUST_P: 0.18,    // Anteil dunkler Krusten-Brocken
-  MAXGLOW: 1300, MAXCRUST: 340, MAXVENT: 10,   // MAXVENT = zugleich Obergrenze gleichzeitiger Vents (überlappende Stiche)
+  MAXGLOW: 2200, MAXCRUST: 560, MAXVENT: 10,   // Pools groß genug für die große Gottgleich-Fontäne. MAXVENT = Obergrenze gleichzeitiger Vents.
 };
 
 const TX = 64;   // Glut-Textur-Kantenlänge
+
+// Hit-Tier-Eskalation (0 Schwach · 1 Stark · 2 Brutal · 3 Irre · 4 Gottgleich). Ab „Stark" bündelt sich die Fontäne
+// zu EINER großen, mittigen (mehr Ausstoß=mult, höher=vscale, länger=burst), eskalierend mit dem Tier.
+const TIER_MULT   = [1, 3.0, 3.9, 5.0, 6.8];
+const TIER_VSCALE = [1, 1.16, 1.32, 1.52, 1.78];
+const TIER_BURST  = [0.6, 0.64, 0.72, 0.84, 1.0];
 
 function hexToRGB(hex) {
   const h = (hex || "#ff6a30").replace("#", "");
@@ -123,11 +129,11 @@ export function createEmberField(app) {
 
   function spawnDroplet(v, env, sc, W, fy) {
     const r = Math.random();
-    const x = v.x * W, y0 = fy - Math.random() * 3;
+    const x = v.x * W, y0 = fy - Math.random() * 3, vsc = v.vscale || 1, sp = v.spread || 1;
     if (r < TUNE.CRUST_P) {  // dunkler Krusten-Brocken
       const ang = -Math.PI / 2 + (Math.random() - 0.5) * 0.42 + v.side * 0.14;
-      const v0 = (320 + Math.pow(Math.random(), 1.7) * 430) * (1 + v.stufe * 0.1) * (0.72 + 0.28 * env) * sc;
-      const s = grabCrust(); s.x = x + (Math.random() - 0.5) * W * 0.05; s.y = y0;
+      const v0 = (320 + Math.pow(Math.random(), 1.7) * 430) * (1 + v.stufe * 0.1) * (0.72 + 0.28 * env) * sc * vsc;
+      const s = grabCrust(); s.x = x + (Math.random() - 0.5) * W * 0.05 * sp; s.y = y0;
       s.vx = Math.cos(ang) * v0; s.vy = Math.sin(ang) * v0; s.age = 0; s.life = 1.25 + Math.random() * 0.7;
       s.sz = 1.7 + Math.random() * 2.0; s.drag = 0.6; s.seed = Math.random() * 6.28; s.grav = 1.12;
       return;
@@ -136,32 +142,39 @@ export function createEmberField(app) {
     const s = grabGlow(); s.seed = Math.random() * 6.28;
     if (core) {  // schmale, schnelle Kernsäule → dünner heißer Kopf oben
       const ang = -Math.PI / 2 + (Math.random() - 0.5) * 0.12 + v.side * 0.10;
-      const v0 = (860 + Math.random() * 330) * (1 + v.stufe * 0.13) * (0.72 + 0.28 * env) * sc;
-      s.x = x + (Math.random() - 0.5) * W * 0.014; s.y = y0;
+      const v0 = (860 + Math.random() * 330) * (1 + v.stufe * 0.13) * (0.72 + 0.28 * env) * sc * vsc;
+      s.x = x + (Math.random() - 0.5) * W * 0.014 * sp; s.y = y0;
       s.vx = Math.cos(ang) * v0 + (Math.random() - 0.5) * 30 * sc; s.vy = Math.sin(ang) * v0;
       s.age = 0; s.life = 0.9 + Math.random() * 0.75; s.sz = 0.85 + Math.random() * 1.25; s.drag = 0.26; s.hot = 1.05; s.grav = 1;
     } else {     // viele, langsam (v0 nach unten gebogen), breit → fetter Sockel
       const ang = -Math.PI / 2 + (Math.random() - 0.5) * 0.36 + v.side * 0.14;
-      const v0 = (360 + Math.pow(Math.random(), 1.8) * 470) * (1 + v.stufe * 0.11) * (0.72 + 0.28 * env) * sc;
-      s.x = x + (Math.random() - 0.5) * W * 0.055; s.y = y0;
+      const v0 = (360 + Math.pow(Math.random(), 1.8) * 470) * (1 + v.stufe * 0.11) * (0.72 + 0.28 * env) * sc * vsc;
+      s.x = x + (Math.random() - 0.5) * W * 0.055 * sp; s.y = y0;
       s.vx = Math.cos(ang) * v0; s.vy = Math.sin(ang) * v0;
       s.age = 0; s.life = 1.15 + Math.random() * 0.8; s.sz = 1.0 + Math.random() * 1.55; s.drag = 0.5; s.hot = 0.94; s.grav = 1;
     }
   }
   function spawnFlame(v, sc, W, fy) {  // Flammen-Zunge am Austritt: niedrig, weich, orange, kurzlebig
     const s = grabGlow();
-    s.x = v.x * W + (Math.random() - 0.5) * W * 0.045; s.y = fy - Math.random() * 2;
+    s.x = v.x * W + (Math.random() - 0.5) * W * 0.045 * (v.spread || 1); s.y = fy - Math.random() * 2;
     s.vx = (Math.random() - 0.5) * 60 * sc; s.vy = -(120 + Math.random() * 180) * sc;
     s.age = 0; s.life = 0.4 + Math.random() * 0.45; s.sz = 2.3 + Math.random() * 2.5; s.drag = 0.82; s.seed = Math.random() * 6.28; s.hot = 0.84; s.grav = 1;
   }
 
-  function erupt({ sweepId, sweepDur, win, score }) {
+  function erupt({ sweepId, sweepDur, win, score, tier = 0 }) {
     // NUR bei gewonnenen Stichen feuern (nicht bei jedem Stich). Auch aus in „ausgewogen"/„minimal".
     if (params.effect !== "embers" || params.lite || params.reduced || !(sweepId > 0) || !win) return;
     const stufe = emberStufe(score);
-    const burst = clamp((sweepDur || 900) * 0.0009, 0.42, 0.9);       // Turbo → kürzerer Ausstoß
-    const x = emberFountainXs(sweepId * 7 + 1)[0];                     // NUR EINE Fontäne je gewonnenem Stich (Zufallsposition)
-    vents.push({ x, side: x - 0.5, jetT: burst, burst, stufe, acc: 0, flAcc: 0, glow: 1, win: !!win });
+    const t = clamp(tier | 0, 0, 4);
+    if (t >= 1) {
+      // ab „Stark": EINE große, mittige, gebündelte Fontäne (eskalierend mit dem Hit-Tier)
+      vents.push({ x: 0.5, side: 0, jetT: TIER_BURST[t], burst: TIER_BURST[t], stufe, mult: TIER_MULT[t], vscale: TIER_VSCALE[t], spread: 1.8, acc: 0, flAcc: 0, glow: 1, win: true });
+    } else {
+      // Schwach (normaler Sieg): EINE Fontäne an Zufallsposition
+      const burst = clamp((sweepDur || 900) * 0.0009, 0.42, 0.9);
+      const x = emberFountainXs(sweepId * 7 + 1)[0];
+      vents.push({ x, side: x - 0.5, jetT: burst, burst, stufe, mult: 1, vscale: 1, spread: 1, acc: 0, flAcc: 0, glow: 1, win: true });
+    }
     if (vents.length > TUNE.MAXVENT) vents.splice(0, vents.length - TUNE.MAXVENT);
   }
 
@@ -183,9 +196,9 @@ export function createEmberField(app) {
         v.jetT -= dt; v.glow = 1;
         const env = clamp((v.jetT / v.burst) * 1.25, 0, 1);
         const wf = v.win ? 1.12 : 1;
-        v.acc += TUNE.EMIT * (1 + v.stufe * 0.85) * env * wf * dt;
+        v.acc += TUNE.EMIT * (v.mult || 1) * (1 + v.stufe * 0.85) * env * wf * dt;   // mult = gebündelte Zentral-Fontäne (ab „Stark")
         while (v.acc >= 1) { v.acc--; spawnDroplet(v, env, sc, W, fy); }
-        v.flAcc += TUNE.EMIT * TUNE.FLAME * (1 + v.stufe * 0.5) * env * dt;
+        v.flAcc += TUNE.EMIT * TUNE.FLAME * Math.sqrt(v.mult || 1) * (1 + v.stufe * 0.5) * env * dt;
         while (v.flAcc >= 1) { v.flAcc--; spawnFlame(v, sc, W, fy); }
       } else {
         v.glow -= dt * 2.9;   // molten Pool kühlt schnell ab → kein großer Afterglow bei überlappenden Stichen
@@ -201,10 +214,11 @@ export function createEmberField(app) {
       if (!v) { cr.alpha = 0; po.alpha = 0; pi.alpha = 0; continue; }
       const bx = v.x * W, act = v.jetT > 0 ? 1 : v.glow;
       const fl = 0.72 + 0.28 * Math.sin(clock * 11 + bx * 0.06);
-      const pr = (28 + v.stufe * 12) * act * fl * sc;
+      const baseK = 0.55 + 0.45 * (v.spread || 1);   // größere Basis für die gebündelte Zentral-Fontäne
+      const pr = (28 + v.stufe * 12) * act * fl * sc * baseK;
       po.tint = deckInt; pi.tint = hotInt;   // Vent glüht in Deckfarbe (heißer Kern deck-getönt hell)
       // Boden kompakter/knackiger: kleinere Pools, geringere Alpha, dunklerer Krater-Rand (mehr Kontrast, weniger Wash).
-      cr.x = bx; cr.y = fy; cr.width = (44 + v.stufe * 14) * 2.6 * sc; cr.height = (44 + v.stufe * 14) * 0.9 * sc; cr.alpha = 0.23 * act;  // „Ring am Boden" 0.25
+      cr.x = bx; cr.y = fy; cr.width = (44 + v.stufe * 14) * 2.6 * sc * baseK; cr.height = (44 + v.stufe * 14) * 0.9 * sc; cr.alpha = 0.23 * act;  // „Ring am Boden" 0.25
       po.x = bx; po.y = fy; po.width = pr * 3.3; po.height = pr * 1.3; po.alpha = 0.28 * act * pf;
       pi.x = bx; pi.y = fy; pi.width = pr * 1.9; pi.height = pr * 0.82; pi.alpha = 0.42 * act * pf;
     }
