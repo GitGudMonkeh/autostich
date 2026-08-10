@@ -1097,7 +1097,7 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepD
     inner = (
       <>
         <div className={`${A("as-field-flicker")} absolute inset-0`} style={{ backgroundImage: `repeating-linear-gradient(0deg, ${color}1a 0 1px, transparent 1px 4px)`, opacity: 0.45 }} />
-        {react && <div key={sweepId} className="as-field-scan absolute left-0 right-0" style={{ height: 2, top: 0, background: `linear-gradient(90deg, transparent, ${win ? "#ffffff" : color}, transparent)`, boxShadow: `0 0 8px 1px ${color}`, opacity: win ? 1 : 0.7, animationDuration: `${sweepDur}ms` }} />}
+        {react && <div key={sweepId} className="as-field-scan absolute left-0 right-0" style={{ height: 1, top: 0, background: `linear-gradient(90deg, transparent, ${win ? "#ffffff" : color}, transparent)`, boxShadow: `0 0 6px 0 ${color}`, opacity: win ? 1 : 0.7, animationDuration: `${sweepDur}ms` }} />}
       </>
     );
   } else if (effect === "vignette") {
