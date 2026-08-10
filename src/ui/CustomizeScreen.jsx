@@ -123,6 +123,8 @@ const FX_CSS = `
 .ws-gott-pop{animation:ws-gott-pop 3.4s ease-out infinite}
 @keyframes ws-gott-ann{0%,3%{opacity:0;transform:translate(-50%,-50%) scale(.55)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.14)}22%{transform:translate(-50%,-50%) scale(1)}62%{opacity:1}82%{opacity:0;transform:translate(-50%,-50%) scale(1.05)}100%{opacity:0}}
 .ws-gott-ann{animation:ws-gott-ann 3.4s ease-out infinite}
+/* #fx-floater: horizontal wischbare Kategorie-Reihen ohne sichtbaren Scrollbalken. */
+.ws-hscroll::-webkit-scrollbar{display:none}
 `;
 
 // #294 Demo-Daten der leichten CSS-Prunk-Partikel (deterministisch, kein Math.random im Render).
@@ -506,24 +508,6 @@ function DeckThumb({ deckId, className = "", face = "back", style }) {
   return <img src={img} alt="" className={`object-contain ${className}`} style={{ aspectRatio: CARD_RATIO, background: "#0b0a16", ...style }} />;
 }
 
-// Radio-Punkt (Einfachauswahl).
-function Radio({ on }) {
-  return (
-    <span className="relative shrink-0 rounded-full" style={{ width: 20, height: 20, border: `2px solid ${on ? "#54e08a" : "#44424f"}` }}>
-      {on && <span className="absolute rounded-full" style={{ inset: 3, background: "#54e08a" }} />}
-    </span>
-  );
-}
-
-// Umschalter (Effekt an/aus).
-function Switch({ on }) {
-  return (
-    <span className="relative shrink-0 rounded-full transition-colors" style={{ width: 42, height: 23, background: on ? "#54e08a" : "#33323f" }}>
-      <span className="absolute rounded-full transition-all" style={{ top: 2, left: on ? 21 : 2, width: 19, height: 19, background: "#f2f2f6" }} />
-    </span>
-  );
-}
-
 const EYEBROW = "flex items-center gap-2 text-[10px] font-extrabold tracking-[0.13em] uppercase mt-4 mb-2";
 
 /* ============================ Haupt-Screen ============================ */
@@ -533,22 +517,33 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const [tab, setTab] = useState("packs");           // "packs" | "challenges" | "fx"
   const [packOv, setPackOv] = useState(null);        // offene Pack-Detailansicht: { cat, idx } | null
   const [packSel, setPackSel] = useState("front");   // "front" | "back" | "bg"
-  const [fxOv, setFxOv] = useState(null);            // offenes Effekt-Kauffenster: { group, idx } | null
   const catList = (cat) => (cat === "challenges" ? CHALLENGES_TAB : PACKS_TAB); // #Shop-Reorg: Detail navigiert innerhalb seiner Kategorie
   const spBal = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
   const dpBal = Math.max(0, Math.floor(Number(p.deckPoints) || 0)); // #299 Deckpunkte — Währung der Packs
 
   const deckId = options?.deckId || "default";
 
+  // #fx-floater: Höhe des Sticky-Kopfs messen → die Effekt-Vorschau klebt exakt darunter (mitlaufender Floater, kein Überlappen).
+  const headRef = useRef(null);
+  const [headH, setHeadH] = useState(116); // Startwert ≈ Kopfhöhe, vermeidet 1-Frame-Sprung vor der Messung
+  useEffect(() => {
+    const el = headRef.current;
+    if (!el) return undefined;
+    const measure = () => setHeadH(el.offsetHeight || 0);
+    measure();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    return () => ro?.disconnect();
+  }, [tab]);
+
   const buy = (fn) => { if (onProfileChange) onProfileChange(fn(p)); };
   const activate = (pack) => onChoose(hasBattlefield(pack) ? { deckId: pack.deckId, battlefieldId: pack.bfId } : { deckId: pack.deckId });
 
   const openPack = (cat, i) => { setPackOv({ cat, idx: i }); setPackSel("front"); };
   const stepPack = (d) => { setPackOv((o) => (o ? { ...o, idx: (o.idx + d + catList(o.cat).length) % catList(o.cat).length } : o)); setPackSel("front"); };
-  const stepFx = (d) => setFxOv((o) => { if (!o) return o; const list = fxGroupItems(o.group); return { ...o, idx: (o.idx + d + list.length) % list.length }; });
 
   // Ist ein Kauffenster offen, wird der Shop-Hintergrund NICHT mitgescrollt (kein Scroll-Durchgriff auf iOS).
-  const anyOverlay = !!packOv || !!fxOv;
+  const anyOverlay = !!packOv;
 
   return (
     <div className={`fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`}
@@ -557,7 +552,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
       <div className="w-full max-w-xl rounded-2xl px-5 pb-5 sm:px-6 sm:pb-6 my-auto overlay-card as-panel"
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
         {/* Sticky Kopf */}
-        <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
+        <div ref={headRef} className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold">Deck-Werkstatt</h2>
@@ -579,7 +574,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 
         {tab === "packs" ? <PacksView p={p} deckId={deckId} list={PACKS_TAB} cat="packs" onOpen={openPack} />
           : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={CHALLENGES_TAB} cat="challenges" onOpen={openPack} />
-          : <FxView p={p} options={options} onChoose={onChoose} onOpenFx={(group, idx) => setFxOv({ group, idx })} />}
+          : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} />}
       </div>
 
       {/* Kauffenster via Portal an document.body: der Shop-Root trägt backdrop-filter und ist damit der
@@ -588,12 +583,6 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
         <PackDetail pack={catList(packOv.cat)[packOv.idx]} idx={packOv.idx} count={catList(packOv.cat).length} p={p} dpBal={dpBal}
           deckId={deckId} sel={packSel} setSel={setPackSel} onStep={stepPack} onClose={() => setPackOv(null)}
           onActivate={activate} onBuy={(pack) => { buy((pf) => buyPack(pf, pack)); activate(pack); }} />,
-        document.body)}
-
-      {fxOv && createPortal(
-        <FxDetail group={fxOv.group} idx={fxOv.idx} p={p} dpBal={dpBal} options={options}
-          onChoose={onChoose} onStep={stepFx} onClose={() => setFxOv(null)}
-          onBuy={(fx) => buy((pf) => buyGlobalFx(pf, fx))} />,
         document.body)}
     </div>
   );
@@ -743,95 +732,131 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
   );
 }
 
-/* ============================ Effekte-Tab ============================ */
-function FxView({ p, options, onChoose, onOpenFx }) {
-  // Aktueller Finisher (exklusiv): Blackhole > Lasergitter > Brennstrahl > Laser-Schnitt > Klinge (Default).
+/* ============================ Effekte-Tab (#fx-floater) ============================ */
+/* Variante „Bühne + Liste": eine große, ECHTE In-Game-Vorschau klebt als Floater direkt unter dem Sticky-Kopf
+   (top = gemessene Kopfhöhe) und läuft beim Scrollen mit — so bleibt sie sichtbar, egal wie viele Kategorien
+   darunter kommen. Je Gruppe eine horizontal wischbare Reihe kompakter Chips (kleine Live-Vorschau + Kurzname +
+   Status-Marker). Tippen wählt den Effekt → der Floater zeigt ihn groß und bietet die passende Aktion (Kaufen /
+   An-Aus / Als Finisher·Ambiente wählen). Kein separates Kauffenster mehr — der Floater IST Vorschau und Kauf. */
+function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const finisherSel = finisherSelOf(options);
-  const selectFinisher = (key) => onChoose(finisherFlags(key));
-  // #306 Battlefield-Ambiente (einfach-exklusiv): aktives Feld-Ambiente (oder „none"); Auswahl schaltet die anderen aus.
   const fieldSel = fieldFxSelOf(options);
-  const selectField = (key) => onChoose(fieldFxFlags(key));
+  // Auswahl-Status des Floaters: { group, key }. Default = erster Effekt der ersten Gruppe (Karten-Animationen).
+  const [sel, setSel] = useState(() => { const g = FX_GROUPS[0]; return { group: g.key, key: fxGroupItems(g.key)[0].key }; });
+  const selGroup = FX_GROUPS.find((g) => g.key === sel.group) || FX_GROUPS[0];
+  const selItems = fxGroupItems(selGroup.key);
+  const selFx = selItems.find((f) => f.key === sel.key) || selItems[0];
+
+  // Ist ein Effekt in seiner Gruppe „aktiv"? (Toggle an / als Finisher·Ambiente gewählt). Zentrale Wahrheit → Chip-Marker + Floater-Aktion.
+  const isActive = (g, fx) => g.mode === "finisher" ? finisherSel === fx.key
+    : g.mode === "field" ? fieldSel === fx.key
+    : fx.standard ? false : !!options?.[fx.option];
 
   return (
     <>
-      {FX_GROUPS.map((g) => {
-        const items = fxGroupItems(g.key);
-        return (
-          <div key={g.key} className="mb-2">
-            <div className={EYEBROW} style={{ color: "#9a97ab" }}>
-              {g.title}
-              <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
-              <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{g.hint}</span>
+      {/* Mitlaufende Vorschau-Bühne (sticky unter dem Kopf). */}
+      <FxFloater fx={selFx} group={selGroup} p={p} active={isActive(selGroup, selFx)}
+        onChoose={onChoose} onBuyFx={onBuyFx} stickyTop={stickyTop} />
+
+      {/* Kategorien als horizontal wischbare Reihen. */}
+      <div className="mt-3">
+        {FX_GROUPS.map((g) => {
+          const items = fxGroupItems(g.key);
+          return (
+            <div key={g.key} className="mb-1.5">
+              <div className={EYEBROW} style={{ color: "#9a97ab" }}>
+                {g.title}
+                <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
+                <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{g.hint}</span>
+              </div>
+              <div className="ws-hscroll flex gap-2 overflow-x-auto pb-1.5 -mx-1 px-1"
+                style={{ scrollSnapType: "x proximity", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
+                {items.map((fx) => (
+                  <FxChip key={fx.key} fx={fx}
+                    selected={sel.group === g.key && sel.key === fx.key}
+                    owned={fx.standard || fx.alwaysOwned || globalFxOwned(p, fx)}
+                    active={isActive(g, fx)}
+                    onPick={() => setSel({ group: g.key, key: fx.key })} />
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col gap-2">
-              {items.map((fx, i) => {
-                const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
-                const open = () => onOpenFx(g.key, i);
-                let control;
-                if (fx.standard) {
-                  // Gottgleich · Standard: reine Vorschau-Zeile (kein Kauf/Toggle).
-                  control = <PreviewPill label="Vorschau ›" onClick={open} />;
-                } else if (!owned) {
-                  // Noch nicht gekauft → Preis-Pill öffnet das Kauffenster (mit Vorschau).
-                  control = <PreviewPill label={`Vorschau · ${globalFxPrice(fx)} DP ›`} buy onClick={open} />;
-                } else if (g.mode === "finisher") {
-                  // Exklusiv-Auswahl (Radio) — eigenes Tap-Ziel, öffnet NICHT die Vorschau.
-                  control = <ControlBtn label="Als Finisher wählen" onClick={() => selectFinisher(fx.key)}><Radio on={finisherSel === fx.key} /></ControlBtn>;
-                } else if (g.mode === "field") {
-                  // #306 Battlefield-Ambiente exklusiv (Radio; „Kein Feld-Effekt" = alle aus).
-                  control = <ControlBtn label="Als Ambiente wählen" onClick={() => selectField(fx.key)}><Radio on={fieldSel === fx.key} /></ControlBtn>;
-                } else {
-                  // Kombinierbar (Toggle) — eigenes Tap-Ziel.
-                  const on = !!options?.[fx.option];
-                  control = <ControlBtn label="An/Aus" onClick={() => onChoose({ [fx.option]: !on })}><Switch on={on} /></ControlBtn>;
-                }
-                return <FxRow key={fx.key} fx={fx} owned={owned} control={control} onOpen={open} />;
-              })}
-            </div>
-          </div>
-        );
-      })}
-      <p className="text-[11px] mt-3 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
-        Effekte sind <b>global</b> — einmal gekauft, für alle Packs. Noch nicht gekauft? Tippe die Zeile für <b>Vorschau &amp; Kauf</b>; danach hier an/aus (Finisher: auswählen).
+          );
+        })}
+      </div>
+
+      <p className="text-[11px] mt-2 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
+        Effekte sind <b>global</b> — einmal gekauft, für alle Packs. Tippe einen Effekt → er läuft oben groß; dort <b>kaufen</b> bzw. <b>an/aus</b> (Finisher &amp; Ambiente: auswählen).
       </p>
     </>
   );
 }
 
-/* Effekt-Zeile (#297): links läuft die Mini-Live-Vorschau (Effekt-Identität, kein Emoji-Icon), Text daneben.
-   Der Zeilenkörper ist ein eigenes Tap-Ziel (= anschauen: Vorschau bzw. Kauffenster); der Schalter/Radio/Preis
-   rechts ist ein SEPARATES Element daneben (= schalten/auswählen bzw. Kauf) → klare Gesten-Trennung ohne
-   verschachtelte Buttons. */
-function FxRow({ fx, owned = false, control, onOpen }) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: "#14131c", border: "1px solid #2a2836" }}>
-      <button type="button" onClick={onOpen} className="flex items-center gap-3 flex-1 min-w-0 text-left transition-colors">
-        <MiniFx preview={fx.preview} />
-        <span className="flex-1 min-w-0">
-          <span className="block text-[12.5px] font-extrabold truncate">{fx.name}</span>
-          <span className="block text-[10.5px]" style={{ color: "#9a97ab" }}>{owned ? fx.desc : <><span style={{ color: "#f2c14a" }}>kaufbar</span> · {fx.desc}</>}</span>
-        </span>
+/* #fx-floater: die große Vorschau-Bühne, die unter dem Sticky-Kopf klebt. Zeigt den gewählten Effekt als ECHTE
+   In-Game-Vorschau (GlobalFxScenePreview, key={fx.key} → sauberer Remount beim Wechsel, keine hängenden Loops) +
+   Gruppen-/Namensschild + die kontextabhängige Aktion (Logik/Optik wie zuvor das Kauffenster). */
+function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
+  const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
+  const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
+  const price = globalFxPrice(fx);
+  const dpBal = Math.max(0, Math.floor(Number(p?.deckPoints) || 0));
+  const actBtn = "w-full rounded-xl font-extrabold text-[12.5px] py-2.5";
+  const onStyle = { background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" };
+  const offStyle = { background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" };
+
+  let action;
+  if (fx.standard) {
+    action = <div className="w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ background: "#1c2433", color: "#7fb4ff", border: "1px solid #33507a" }}>Standard — immer aktiv, kein Kauf nötig</div>;
+  } else if (!owned) {
+    action = (
+      <button onClick={() => { if (canBuy) onBuyFx(fx); }} disabled={!canBuy}
+        className={`${actBtn} transition-opacity`}
+        style={{ background: canBuy ? "#d4a63a" : "#3a2f12", color: "#141419", boxShadow: canBuy ? "0 0 16px rgba(212,166,58,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
+        Kaufen · {price} DP{!canBuy && dpBal < price ? " (zu wenig DP)" : ""}
       </button>
-      {control}
+    );
+  } else if (group.mode === "finisher") {
+    action = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Finisher wählen"}</button>;
+  } else if (group.mode === "field") {
+    action = <button onClick={() => onChoose(fieldFxFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Ambiente wählen"}</button>;
+  } else {
+    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
+  }
+
+  return (
+    <div className="sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
+      <div className="relative w-full rounded-xl overflow-hidden" style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a", boxShadow: "0 0 22px -10px #35e0ff66" }}>
+        <GlobalFxScenePreview key={fx.key} fx={fx} />
+        {/* Gruppen-Schild oben links */}
+        <span className="absolute left-2 top-2 text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-md"
+          style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{group.title}</span>
+        {/* Status-Schild oben rechts: aktiv (grün) bzw. Preis (gold) bei noch nicht gekauft. */}
+        {active
+          ? <span className="absolute right-2 top-2 text-[9px] font-extrabold tracking-wide px-2 py-0.5 rounded-md" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>AKTIV</span>
+          : !owned ? <span className="absolute right-2 top-2 text-[9px] font-extrabold tracking-wide px-2 py-0.5 rounded-md" style={{ background: "#2e2410", color: "#f2c14a", border: "1px solid #6b5320" }}>{price} DP</span> : null}
+        {/* Name unten links */}
+        <span className="absolute left-2.5 bottom-2 text-[15px] font-extrabold" style={{ textShadow: "0 1px 8px #000, 0 0 3px #000" }}>{fx.name}</span>
+      </div>
+      <div className="text-[10.5px] leading-snug mt-1.5 mb-2 text-center" style={{ color: "#9a97ab", minHeight: 26 }}>{fx.desc}</div>
+      {action}
     </div>
   );
 }
 
-// Preis-/Vorschau-Pill (öffnet das Detail-/Kauffenster). buy=true → Kauf-Farbgebung (violett), sonst blau.
-function PreviewPill({ label, buy = false, onClick }) {
+/* #fx-floater: kompakter Chip einer Kategorie-Reihe (horizontal wischbar). Kleine Live-Vorschau (MiniFx, GPU-günstig,
+   hochskaliert) + Kurzname + Status-Marker (aktiv = grün, kaufbar = gold). Tippen wählt den Effekt → große Bühne oben. */
+function FxChip({ fx, selected, owned, active, onPick }) {
   return (
-    <button type="button" onClick={onClick} className="shrink-0 text-[10px] font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap"
-      style={buy ? { background: "#211f2e", color: "#b9a9f2", border: "1px solid #4a3f6e" } : { background: "#1c2433", color: "#7fb4ff", border: "1px solid #33507a" }}>
-      {label}
-    </button>
-  );
-}
-
-// Schalt-Tap-Ziel für Switch/Radio (eigenes Element neben dem Zeilenkörper → öffnet nicht die Vorschau).
-function ControlBtn({ label, onClick, children }) {
-  return (
-    <button type="button" onClick={onClick} aria-label={label} className="shrink-0 grid place-items-center rounded-lg" style={{ padding: 2 }}>
-      {children}
+    <button type="button" onClick={onPick}
+      className="shrink-0 rounded-xl p-1.5 text-center transition-transform active:scale-95"
+      style={{ width: 74, scrollSnapAlign: "start", background: selected ? "#211f2e" : "#14131c",
+        border: `1px solid ${selected ? "#9b82f0" : "#2a2836"}`, boxShadow: selected ? "0 0 0 1px #9b82f0, 0 0 14px #9b82f022" : undefined }}>
+      <div className="relative mx-auto rounded-lg overflow-hidden grid place-items-center" style={{ width: 58, height: 58, background: "#0b0a16", border: "1px solid #23222e" }}>
+        <div style={{ transform: "scale(1.62)", transformOrigin: "center" }}><MiniFx preview={fx.preview} /></div>
+        {active ? <span className="absolute top-1 right-1 rounded-full" style={{ width: 9, height: 9, background: "#54e08a", boxShadow: "0 0 6px #54e08a", border: "1px solid #0b0a16" }} />
+          : !owned ? <span className="absolute top-1 right-1 rounded-full" style={{ width: 9, height: 9, background: "#f2c14a", boxShadow: "0 0 6px #f2c14a99", border: "1px solid #0b0a16" }} /> : null}
+      </div>
+      <span className="block mt-1 text-[9px] font-bold leading-tight" style={{ color: selected ? "#e8e6ff" : "#9a97ab",
+        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: 22 }}>{fx.name}</span>
     </button>
   );
 }
@@ -995,88 +1020,3 @@ function MiniFx({ preview }) {
   }
 }
 
-/* Effekt-Kauffenster (Portal): echte In-Game-Vorschau + Kaufen (nur hier). ‹ ›/Swipe wechselt innerhalb der Gruppe. */
-function FxDetail({ group, idx, p, dpBal, options, onChoose, onStep, onClose, onBuy }) {
-  const items = fxGroupItems(group);
-  const fx = items[idx];
-  const touch = useRef(0);
-  const owned = fx.alwaysOwned || (!fx.standard && globalFxOwned(p, fx));
-  const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
-  const isFinisher = group === "finisher";
-  const finisherSel = finisherSelOf(options);
-  const isField = group === "field"; // #306 Battlefield-Ambiente (einfach-exklusiv)
-  const fieldSel = fieldFxSelOf(options);
-  const on = !fx.standard && !!options?.[fx.option];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain"
-      style={{ background: "#05050ad0", backdropFilter: "blur(4px)" }} onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl overflow-hidden my-auto" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}
-        onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
-        onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touch.current; if (items.length > 1 && Math.abs(dx) > 45) onStep(dx < 0 ? 1 : -1); }}>
-        <div className="h-[3px] w-full" style={HAIRLINE} aria-hidden="true" />
-        <div className="p-3.5">
-          <div className="flex items-center justify-between mb-2.5">
-            <span className="text-[15px] font-extrabold truncate">{fx.name}</span>
-            <button onClick={onClose} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a97ab" }}>Schließen</button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {items.length > 1 && <button onClick={() => onStep(-1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>‹</button>}
-            <div className="flex-1 min-w-0 py-1">
-              <div className="relative w-full rounded-lg overflow-hidden" style={{ aspectRatio: "16 / 10", background: "#0b0a16" }}>
-                <GlobalFxScenePreview fx={fx} />
-              </div>
-            </div>
-            {items.length > 1 && <button onClick={() => onStep(1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>›</button>}
-          </div>
-
-          {items.length > 1 && (
-            <div className="flex gap-1.5 justify-center mt-2">
-              {items.map((_, i) => <span key={i} className="rounded-full transition-all" style={{ width: i === idx ? 16 : 6, height: 6, background: i === idx ? "#9b82f0" : "#3a3947" }} />)}
-            </div>
-          )}
-
-          <div className="text-center text-[11px] mt-2 leading-snug" style={{ color: "#9a97ab", minHeight: 32 }}>{fx.desc}</div>
-
-          <div className="mt-2.5">
-            {fx.standard ? (
-              <div className="w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ background: "#1c2433", color: "#7fb4ff", border: "1px solid #33507a" }}>
-                Standard — immer aktiv, kein Kauf nötig
-              </div>
-            ) : !owned ? (
-              <button onClick={() => { if (canBuy) { onBuy(fx); onClose(); } }} disabled={!canBuy}
-                className="w-full rounded-xl font-extrabold text-[12.5px] py-2.5 transition-opacity"
-                style={{ background: canBuy ? "#d4a63a" : "#3a2f12", color: "#141419",
-                  boxShadow: canBuy ? "0 0 16px rgba(212,166,58,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
-                Kaufen · {globalFxPrice(fx)} DP{!canBuy && dpBal < globalFxPrice(fx) ? " (zu wenig DP)" : ""}
-              </button>
-            ) : isFinisher ? (
-              <button onClick={() => onChoose(finisherFlags(fx.key))}
-                className="w-full rounded-xl font-extrabold text-[12.5px] py-2.5"
-                style={finisherSel === fx.key
-                  ? { background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }
-                  : { background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>
-                {finisherSel === fx.key ? "✓ Ausgewählt" : "Als Finisher wählen"}
-              </button>
-            ) : isField ? (
-              <button onClick={() => onChoose(fieldFxFlags(fx.key))}
-                className="w-full rounded-xl font-extrabold text-[12.5px] py-2.5"
-                style={fieldSel === fx.key
-                  ? { background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }
-                  : { background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>
-                {fieldSel === fx.key ? "✓ Ausgewählt" : "Als Ambiente wählen"}
-              </button>
-            ) : (
-              <button onClick={() => onChoose({ [fx.option]: !on })}
-                className="w-full rounded-xl font-extrabold text-[12.5px] py-2.5"
-                style={on ? { background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" } : { background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>
-                {on ? "✓ An — tippen zum Ausschalten" : "Einschalten"}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
