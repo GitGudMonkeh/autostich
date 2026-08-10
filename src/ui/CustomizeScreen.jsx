@@ -484,9 +484,9 @@ function CardPreview({ deckId, a1, fx, face = "back", className = "", style }) {
           {/* Chromatische Aberration: zwei versetzte Magenta/Cyan-Klone des Kartenmotivs (contain, wie das <img>). */}
           <div className="as-glitch-chroma-a absolute inset-0" style={{ backgroundImage: `url(${img})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundColor: "#ff2bd6", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
           <div className="as-glitch-chroma-b absolute inset-0" style={{ backgroundImage: `url(${img})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundColor: "#20e5ff", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
-          <span className="as-glitch-bar" style={{ top: "24%", background: "linear-gradient(90deg,transparent,#ff2bd6,transparent)", animationDelay: "-0.2s" }} />
-          <span className="as-glitch-bar" style={{ top: "52%", height: 6, background: "linear-gradient(90deg,transparent,#20e5ff,transparent)", animationDelay: "-1.7s" }} />
-          <span className="as-glitch-bar" style={{ top: "76%", background: `linear-gradient(90deg,transparent,${a1},transparent)`, animationDelay: "-3.1s" }} />
+          <span className="as-glitch-bar" style={{ top: "24%", background: "linear-gradient(90deg,transparent,#ff2bd6,transparent)", filter: "drop-shadow(0 0 3px #ff2bd6)", animationDelay: "-0.2s" }} />
+          <span className="as-glitch-bar" style={{ top: "52%", background: "linear-gradient(90deg,transparent,#20e5ff,transparent)", filter: "drop-shadow(0 0 3px #20e5ff)", animationDelay: "-1.7s" }} />
+          <span className="as-glitch-bar" style={{ top: "76%", background: `linear-gradient(90deg,transparent,${a1},transparent)`, filter: `drop-shadow(0 0 3px ${a1})`, animationDelay: "-3.1s" }} />
           <div className="as-glitch-scan" />
         </div>
       )}

@@ -371,7 +371,7 @@ button { font-family: inherit; }
   48% { opacity: .85; transform: translateX(55%); } 49% { transform: translateX(-30%); } 50% { opacity: 0; }
   73% { opacity: .8; transform: translateX(-50%); } 74% { opacity: 0; }
 }
-.as-glitch-bar { position: absolute; left: 0; right: 0; height: 3px; mix-blend-mode: screen; animation: as-glitch-bar 4.3s linear infinite; }
+.as-glitch-bar { position: absolute; left: 0; right: 0; height: 1px; mix-blend-mode: screen; animation: as-glitch-bar 4.3s linear infinite; }
 /* Scanlines: dauerhaft dezent, im Burst kurz heller (Signalstörung). */
 @keyframes as-glitch-scan { 0%,100% { opacity: .1; } 6%,12%,48%,73% { opacity: .38; } 8%,50% { opacity: .06; } }
 .as-glitch-scan { position: absolute; inset: 0; mix-blend-mode: overlay; background-image: repeating-linear-gradient(0deg, #ffffff22 0 1px, transparent 1px 3px); animation: as-glitch-scan 4.3s linear infinite; }

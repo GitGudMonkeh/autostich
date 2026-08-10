@@ -128,9 +128,10 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
               <div className="as-glitch-chroma-b absolute inset-0" style={{ backgroundImage: `url(${frontImage})`, backgroundSize: "100% 100%", backgroundColor: "#20e5ff", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
             </>
           )}
-          <span className="as-glitch-bar" style={{ top: "22%", background: "linear-gradient(90deg,transparent,#ff2bd6,transparent)", animationDelay: "-0.2s" }} />
-          <span className="as-glitch-bar" style={{ top: "54%", height: 5, background: "linear-gradient(90deg,transparent,#20e5ff,transparent)", animationDelay: "-1.7s" }} />
-          <span className="as-glitch-bar" style={{ top: "78%", background: `linear-gradient(90deg,transparent,${numColor},transparent)`, animationDelay: "-3.1s" }} />
+          {/* dünne leuchtende Linien (1px) statt Balken — drop-shadow gibt den Glow entlang der hellen Linienmitte. */}
+          <span className="as-glitch-bar" style={{ top: "22%", background: "linear-gradient(90deg,transparent,#ff2bd6,transparent)", filter: "drop-shadow(0 0 3px #ff2bd6)", animationDelay: "-0.2s" }} />
+          <span className="as-glitch-bar" style={{ top: "54%", background: "linear-gradient(90deg,transparent,#20e5ff,transparent)", filter: "drop-shadow(0 0 3px #20e5ff)", animationDelay: "-1.7s" }} />
+          <span className="as-glitch-bar" style={{ top: "78%", background: `linear-gradient(90deg,transparent,${numColor},transparent)`, filter: `drop-shadow(0 0 3px ${numColor})`, animationDelay: "-3.1s" }} />
           <div className="as-glitch-scan" />
         </div>
       )}
