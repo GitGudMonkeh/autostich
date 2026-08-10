@@ -11,7 +11,7 @@ import { useReducedFx } from "./useReducedFx.js";
 import { startPrunk } from "./prunkFx.js";
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
-import glacierIcon from "./assets/glacier.webp"; // Eis-Treffer-Identität: das echte Gletscher-Asset im Score-Float
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Treffer-Identität im Score-Float)
 import cardBackImg  from "../assets/cards/card-back.webp";  // Default-Deck-Rücken: „Prisma" (v0.4, ersetzt den Schwerter-Rücken #180)
 import cardFrontImg from "../assets/cards/card-front.webp"; // Default-Deck-Front: Rahmen (Zahl/Effekte rendern darüber)
 // (#186/#214/v0.4) Gegner-Deck: je Auswahl-Typ ein eigenes Deck (Cover = Rücken, Front = Rahmen). Der Gegner spielt
@@ -51,11 +51,12 @@ const CRIT_COLOR = "#e879f9";
 // Pflanze = Sieg mit voll ausgewachsener grüner Karte · Blitz = Sieg mit voll ionisierter Karte (5 Stapel) · Eis folgt.
 // Score-FARBE nach Priorität: Krit-Lila zuerst, dann HIT_COLOR_ORDER (Blitz teilt sich das Lila mit dem Krit). Die Icons
 // bleiben unabhängig von der Farbe immer stehen — auch bei Krit.
+// #308: nur noch die Fraktions-FARBE hier; das Icon kommt zentral aus <FactionIcon type={faction} /> (kein Emoji/glacier.webp mehr).
 const HIT_STYLE = {
-  fire:      { color: "#e0714a", icon: "🔥" },
-  plant:     { color: "#5ab87a", icon: "🌿" },
-  ice:       { color: "#5ec8f0", icon: "img" }, // Eis nutzt das echte Gletscher-Asset (glacier.webp) statt eines Emojis
-  lightning: { color: CRIT_COLOR, icon: "⚡" },
+  fire:      { color: "#e0714a" },
+  plant:     { color: "#5ab87a" },
+  ice:       { color: "#5ec8f0" },
+  lightning: { color: CRIT_COLOR },
 };
 const HIT_ICON_ORDER  = ["fire", "plant", "ice", "lightning"]; // gezeigte Icons (Reihenfolge egal — reine Anzeige)
 // Score-FARBE: erste zutreffende bestimmt sie (nach dem Krit-Lila). EIS/Blau hat Vorrang (direkt nach Krit) — sonst egal.
@@ -1712,9 +1713,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                        animation: fx(`as-float ${f.dur}ms ease-out forwards`) }}>
               {SHOW_HIT_ICONS && f.icons && f.icons.length > 0 && (
                 <span className="mr-1 inline-flex items-center gap-0.5 align-middle" style={{ WebkitTextFillColor: "initial" }}>
-                  {f.icons.map((k) => k === "ice"
-                    ? <img key={k} src={glacierIcon} alt="" aria-hidden="true" className="inline-block object-contain" style={{ width: "0.85em", height: "0.85em", filter: "drop-shadow(0 0 3px #5ec8f0)" }} />
-                    : <span key={k}>{HIT_STYLE[k].icon}</span>)}
+                  {f.icons.map((k) => <FactionIcon key={k} type={k} style={{ width: "0.85em", height: "0.85em" }} />)}
                 </span>
               )}
               {/* #: Score-Zahlen im selben Stil wie die Kartennummern (durchsichtige Füllung + farbige Kontur + Glow). */}

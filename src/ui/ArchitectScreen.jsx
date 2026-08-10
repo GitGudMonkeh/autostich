@@ -17,7 +17,7 @@ import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-
 import { fmtScore } from "./format.js";
 import { GlossaryPanel } from "./Glossary.jsx";
 import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Marker auch am Architekt-Brett
-import glacierIcon from "./assets/glacier.webp";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
 import { useEscape } from "./useEscape.js";
 import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 
@@ -713,12 +713,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     {/* Eis: Gletscher-Marker (Icon + Masse) bzw. Firn-Boden (dezenter ❄ + Masse) oben rechts. */}
                     {isGlacier && (
                       <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={`Gletscher · Masse ${gMass}`}>
-                        <img src={glacierIcon} alt="" aria-hidden="true" className="w-[9px] h-[9px] object-contain" style={{ filter: "drop-shadow(0 0 2px #5ec8f0)" }} />
+                        <FactionIcon type="ice" size={9} />
                         {gMass}
                       </span>
                     )}
                     {isFirn && (
-                      <span className="absolute top-[1px] right-[2px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · gespeicherte Masse ${gMass}`}>❄{gMass}</span>
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · gespeicherte Masse ${gMass}`}><FactionIcon type="ice" size={8} glow={false} />{gMass}</span>
                     )}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
                     <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>

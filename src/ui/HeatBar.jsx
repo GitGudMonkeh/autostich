@@ -2,6 +2,7 @@ import { fireFlag, hasHeatConsumer, glowingValueFor } from "../game/skills.js";
 import { GLOWING_T1_HEAT, GLOWING_T2_HEAT } from "../game/constants.js";
 import { GLOSSARY } from "../game/glossary.js";
 import { FactionShell, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { FIRE, FIRE_HOT, ASH, FORGE, WHITE_HEAT } from "./indicators/vocab.js";
 
 const BRAND = "#e0605a"; // Brandmal am Gegner (Debuff, App-Rotton)
@@ -72,7 +73,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
   // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
   const collapsed = options.collapseFacFire ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacFire: !collapsed });
-  const stateText = conflagReady ? "🔥 Flächenbrand bereit" : whiteGlow ? "Weißglut" : `Hitze ${Math.round(value)}/${max}`;
+  const stateText = conflagReady ? "Flächenbrand bereit" : whiteGlow ? "Weißglut" : `Hitze ${Math.round(value)}/${max}`;
   const stateOn = conflagReady || whiteGlow || hot;
 
   // #deckshop: Feuer-Glut wandert vom Battlefield ins eigene Panel — warme Innen-Aura, Deckkraft = Hitze; Puls nahe voll.
@@ -83,23 +84,23 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
   const ambientPulse = heatRatio >= 0.9 ? "as-heat-pulse" : null;
 
   return (
-    <FactionShell icon="🔥" name="Feuer" color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
+    <FactionShell icon={<FactionIcon type="fire" size={15} />} name="Feuer" color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
       ambient={ambient} ambientPulse={ambientPulse}>
       {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Feuer-Grund / Weißglut) + verbrannte Asche (Lauf-Zähler). */}
       <div className="mb-2">
-        <YieldMeter title="🔥 Feuer-Ertrag" accent={HOT} channels={[
+        <YieldMeter title="Feuer-Ertrag" accent={HOT} channels={[
           { label: "Feuer-Score", value: fireBase, color: FIRE_HOT },
           { label: "Weißglut", value: fireWhite, color: WHITE_HEAT },
         ]} />
         {ashBurned > 0 && (
-          <div className="text-[10px] opacity-55 mt-1">🔥 Asche verbrannt <b className="tabular-nums" style={{ color: ASH }}>{grp(ashBurned)}</b> <span className="opacity-70">über den Lauf</span></div>
+          <div className="text-[10px] opacity-55 mt-1">Asche verbrannt <b className="tabular-nums" style={{ color: ASH }}>{grp(ashBurned)}</b> <span className="opacity-70">über den Lauf</span></div>
         )}
       </div>
       <div className="flex items-stretch gap-3">
         {/* Hitzeleiste (Hauptelement) */}
         <div className="flex-1 min-w-0">
           <div className="flex justify-between text-xs mb-1.5">
-            <span className="opacity-60">🔥 Hitze
+            <span className="opacity-60">Hitze
               {conflagReady && <span style={{ color: HOT }}> · FLÄCHENBRAND BEREIT</span>}
               {whiteGlow && <span style={{ color: WHITE_HEAT }}> · WEISSGLUT</span>}
             </span>
@@ -159,7 +160,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
           <span className="tabular-nums font-bold shrink-0" style={{ color: BRAND }}>{grp(brandTotal)}</span>
           <span className="inline-flex gap-0.5 shrink-0 overflow-hidden">
             {Array.from({ length: Math.min(brandTotal, 6) }, (_, i) => (
-              <span key={i} style={{ color: BRAND, textShadow: `0 0 4px ${BRAND}88`, fontSize: 11, lineHeight: 1 }}>🔥</span>
+              <FactionIcon key={i} type="fire" size={11} />
             ))}
           </span>
         </div>

@@ -8,7 +8,7 @@ import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { glacierFormations } from "../game/glacier.js";
-import glacierIcon from "./assets/glacier.webp";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
 
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
 const ANCHOR_LABEL = { power: "Kraft", score: "Score", crit: "Crit", streak: "Serie", formation: "Formation", joker: "Joker" };
@@ -129,8 +129,8 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       {((card.ionStacks || 0) > 0 || ripe || glacierForm) && (
         <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">
           {glacierForm && <span className="font-bold" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0" }} title="Teil einer aktiven Gletscher-Formation (2D)">G</span>}
-          {(card.ionStacks || 0) > 0 && <span style={{ color: "#5ec8f0" }}>⚡{card.ionStacks}</span>}
-          {ripe && <span style={{ textShadow: "0 0 3px #5ab87a" }} title="Grün (reif) — zählt fürs Farbblock">🌿</span>}
+          {(card.ionStacks || 0) > 0 && <span className="inline-flex items-center gap-0.5" style={{ color: "#5ec8f0" }}><FactionIcon type="lightning" size={9} />{card.ionStacks}</span>}
+          {ripe && <span title="Grün (reif) — zählt fürs Farbblock"><FactionIcon type="plant" size={9} /></span>}
         </span>
       )}
       {/* #201.6a: Wert lesbarer — am Handy größer (text-xl statt -lg) + Kontrast-Schatten für JEDE Suit (nicht nur reife),
@@ -147,14 +147,14 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
       {glacier && (
         <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}`}>
-          <img src={glacierIcon} alt="" aria-hidden="true" className="w-[10px] h-[10px] sm:w-3 sm:h-3 object-contain" style={{ filter: "drop-shadow(0 0 3px #5ec8f0)" }} />
+          <FactionIcon type="ice" size={11} />
           {Math.round(glacierMass)}
         </span>
       )}
       {/* Firn-Boden-Marker: dezenter ❄ + Masse (kein Icon/Glow), klar abgesetzt vom Gletscher-Marker. */}
       {firn && (
         <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · gespeicherte Masse ${Math.round(glacierMass)}`}>
-          ❄{Math.round(glacierMass)}
+          <FactionIcon type="ice" size={8} glow={false} />{Math.round(glacierMass)}
         </span>
       )}
       {roleIds.length > 0 && <span className="absolute bottom-0.5 left-1 text-[8px] sm:text-xs leading-none" style={{ color: "#d4a63a" }} title={roleTitle}>●</span>}

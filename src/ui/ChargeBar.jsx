@@ -3,6 +3,7 @@ import { chargeConsumerOf } from "../game/skills.js";
 import { streakBaseMult } from "../game/perks.js";
 import { ION_MAX_STACKS, ION_SAT_BREADTH_FRAC, ION_SAT_DEPTH_FRAC, ION_SATURATION_VALUE, CRIT_BASE_MULT, STREAK_BASE_CAP } from "../game/constants.js";
 import { FactionShell } from "./indicators/panelKit.jsx";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { LIGHTNING, CASCADE, CASCADE_BRIGHT } from "./indicators/vocab.js";
 
 // ⚡ Blitz-Motor (Blitz-Archetyp) — eigener Block, nur sichtbar bei aktivem Blitz (lightning.active). v0.5:
@@ -63,7 +64,7 @@ function SatRow({ label, cur, max, on, payoff }) {
       <div className="flex justify-between text-[11px] mb-0.5">
         <span className="opacity-55">{label} <span className="tabular-nums opacity-80">{pct}%</span></span>
         {on
-          ? <span className="font-semibold" style={{ color: CASCADE_BRIGHT }}>⚡ {payoff}</span>
+          ? <span className="font-semibold inline-flex items-center gap-0.5" style={{ color: CASCADE_BRIGHT }}><FactionIcon type="lightning" size={11} /> {payoff}</span>
           : <span className="opacity-35">{payoff}</span>}
       </div>
       <div className="w-full rounded-full overflow-hidden" style={{ background: "#26262e", height: 5 }}>
@@ -105,7 +106,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
   // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
   const collapsed = options.collapseFacLightning ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacLightning: !collapsed });
-  const stateText = full ? "⚡ Voll geladen" : overcharge ? `Crit ×${mlt(critMult)}` : `Ladung ${charge}/${maxCharge}`;
+  const stateText = full ? "Voll geladen" : overcharge ? `Crit ×${mlt(critMult)}` : `Ladung ${charge}/${maxCharge}`;
   const stateOn = full || overcharge;
 
   // #deckshop: Blitz-Glow wandert vom Battlefield ins eigene Panel — blaue Innen-Aura ab Ladung 2 (voll: violetter
@@ -118,7 +119,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
   const ambientPulse = full ? "as-charge-pulse" : null;
 
   return (
-    <FactionShell className="relative" icon="⚡" name="Blitz" color={LIGHTNING}
+    <FactionShell className="relative" icon={<FactionIcon type="lightning" size={15} />} name="Blitz" color={LIGHTNING}
       stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
       ambient={ambient} ambientPulse={ambientPulse}>
       {/* Blitzfrequenz-Puls (v0.5): violettes Rahmen-Glühen je Entladung (wie der Battlefield-Bloom); remount je consumeCount replayt die Animation. */}
@@ -135,7 +136,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
       {/* Ladung — Segment-Maximum (Cyan), glüht bei VOLL. */}
       <div>
         <div className="flex justify-between text-xs mb-1.5">
-          <span className="opacity-60">⚡ Ladung{full && <span style={{ color: LIGHTNING }}> · VOLL GELADEN</span>}</span>
+          <span className="opacity-60">Ladung{full && <span style={{ color: LIGHTNING }}> · VOLL GELADEN</span>}</span>
           <span className="font-bold tabular-nums" style={{ color: LIGHTNING }}>{charge} / {maxCharge}</span>
         </div>
         <div className="flex gap-1">
@@ -155,7 +156,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
       {/* Entlade-Motor (v0.5): Entladungen/Runde (Kern-Metrik) + Crit-Momentum (Gewitterfront/Entladung). */}
       {(consumeCount > 0 || stormPp > 0 || entMult > 0) && (
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[11px]">
-          <span className="opacity-60" title="Volle Ladungsverbräuche diesen Lauf — der Kern-Rhythmus des Sturms.">⚡ Entladungen <b className="tabular-nums" style={{ color: LIGHTNING }}>{consumeCount}</b></span>
+          <span className="opacity-60" title="Volle Ladungsverbräuche diesen Lauf — der Kern-Rhythmus des Sturms.">Entladungen <b className="tabular-nums" style={{ color: LIGHTNING }}>{consumeCount}</b></span>
           {stormPp > 0 && <span className="opacity-60" title="Gewitterfront: Crit-Chance-Momentum je Entladung (uncapped, Überschlag ist das Ventil).">Gewitterfront <b style={{ color: CASCADE_BRIGHT }}>+{stormPp} pp</b></span>}
           {entMult > 0 && <span className="opacity-60" title="Entladung: dauerhaftes Crit-Multiplikator-Momentum je Entladung.">Entladung <b style={{ color: CASCADE_BRIGHT }}>+{mlt(entMult)}×</b></span>}
         </div>
@@ -164,7 +165,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
       {/* Blitzfrequenz — Balken = Crit-Chance; ab 100 % überlagert der Crit-Multiplikator (von vorne). Pulst je Entladung. */}
       <div>
         <div className="flex justify-between text-xs mb-1">
-          <span className="opacity-60">⚡ Blitzfrequenz</span>
+          <span className="opacity-60">Blitzfrequenz</span>
           <span className="font-bold tabular-nums" style={{ color: overcharge ? CASCADE_BRIGHT : LIGHTNING }}
             title={overcharge ? "Crit voll — die Leiste zeigt jetzt den Crit-Multiplikator." : "Crit-Chance des nächsten Siegs."}>
             {overcharge ? `Crit ×${mlt(critMult)}` : `${critPct}%`}
@@ -207,7 +208,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
       ) : full ? (
         <div className="text-[11px] leading-snug rounded px-2 py-1.5"
           style={{ background: `${LIGHTNING}14`, color: LIGHTNING, border: `1px solid ${LIGHTNING}44` }}>
-          ⚡ Voll — ohne Konsument verpufft die Ladung. Wähle <b>Ionisierung</b>, um sie zu verbrauchen.
+          Voll — ohne Konsument verpufft die Ladung. Wähle <b>Ionisierung</b>, um sie zu verbrauchen.
         </div>
       ) : null}
     </FactionShell>

@@ -9,6 +9,7 @@
 //   • Ausläufer (kolonisierte Gegnerkarten) als eigene, getrennte Zeile — der Griff ins Gegnerdeck (Ernte/Dornenkönig).
 // Rein informativ, keine Engine-Kopplung (spiegelt state.deck/growth/colonized).
 import { FactionShell, YieldMeter } from "./indicators/panelKit.jsx";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { PLANT_VALUE_CAP, PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD, TRIM_STEP, TRIM_CAP,
          WURZELSCHLAG_PER_GROWTH, SKILL_SLOTS, MUTTERBAUM_DIRECT, MUTTERBAUM_OVERFLOW_CAP, WELTENBAUM_DIRECT, WELTENBAUM_OVERFLOW_CAP } from "../game/constants.js";
@@ -86,19 +87,19 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
   // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
   const collapsed = options.collapseFacPlant ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacPlant: !collapsed });
-  const stateText = overgrown ? "🌿 Überwuchert" : `Grün ${Math.round(pct)} %`;
+  const stateText = overgrown ? "Überwuchert" : `Grün ${Math.round(pct)} %`;
 
   return (
-    <FactionShell icon="🌿" name="Pflanze" color={PLANT} stateText={stateText} stateOn={overgrown} collapsed={collapsed} onToggle={onToggle}>
+    <FactionShell icon={<FactionIcon type="plant" size={15} />} name="Pflanze" color={PLANT} stateText={stateText} stateOn={overgrown} collapsed={collapsed} onToggle={onToggle}>
       {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Wurzel/Blüte/Ernte) + Gewachsen (Lauf-Zähler). */}
       <div className="mb-2">
-        <YieldMeter title="🌿 Garten-Ertrag" accent={PLANT_RIPE} channels={[
+        <YieldMeter title="Garten-Ertrag" accent={PLANT_RIPE} channels={[
           { label: "Wurzel", value: rootScore, color: PLANT },
           { label: "Blüte", value: bloomScore, color: BLOOM },
           { label: "Ernte", value: harvestScore, color: PLANT_RIPE },
         ]} />
         {growthTotal > 0 && (
-          <div className="text-[10px] opacity-55 mt-1">🌱 Gewachsen <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{grp(growthTotal)}</b> <span className="opacity-70">Wachstum gesamt</span></div>
+          <div className="text-[10px] opacity-55 mt-1">Gewachsen <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{grp(growthTotal)}</b> <span className="opacity-70">Wachstum gesamt</span></div>
         )}
         {/* #288 Trimmen: ersetzte Wachstums-Skills → Wurzel-/Blüten-Multiplikator. */}
         {trimCount > 0 && (
@@ -121,7 +122,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
       </div>
       {/* Grün-Anteil (Hauptelement): Balken bis 100 %, zwei Schwellenmarken. */}
       <div className="flex justify-between text-xs mb-1.5">
-        <span className="opacity-60">🌿 Grün-Anteil des Feldes
+        <span className="opacity-60">Grün-Anteil des Feldes
           {overgrown && <span style={{ color: PLANT_FULL }}> · ÜBERWUCHERT</span>}
         </span>
         <span className="font-bold tabular-nums" style={{ color: overgrown ? PLANT_FULL : PLANT_RIPE }}>{greenN} / {total} · {Math.round(pct)} %</span>
@@ -146,7 +147,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
       <div className="mt-2.5">
         {nextRipe != null && (
           <div className="flex items-baseline justify-between text-xs mb-1.5">
-            <span className="opacity-60">🌿 Nächste Reife</span>
+            <span className="opacity-60">Nächste Reife</span>
             <span className="font-bold tabular-nums" style={{ color: PLANT_RIPE }} title="Grobe Schätzung: nächster Setzling wird grün (aus Wachstumsrate × Restdistanz).">~{nextRipe} {nextRipe === 1 ? "Sieg" : "Siege"}</span>
           </div>
         )}
@@ -182,7 +183,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
                 const col = m.stage === "seed" ? SEED : PLANT_RIPE;
                 return (
                   <div key={m.id} className="grid items-center gap-2" style={{ gridTemplateColumns: "16px 84px 1fr auto" }}>
-                    <span className="text-[11px] text-center" style={{ color: col }}>{m.stage === "seed" ? "🌱" : "🌿"}</span>
+                    <span className="text-center inline-flex justify-center"><FactionIcon type="plant" size={11} /></span>
                     <span className="text-[10px] opacity-60 tabular-nums whitespace-nowrap">{m.label}</span>
                     <div className="rounded-full overflow-hidden" style={{ height: 6, background: "#26262e" }}>
                       <div className="h-full rounded-full" style={{ width: `${Math.round(m.pct * 100)}%`, background: m.stage === "seed" ? SEED : `linear-gradient(90deg, ${PLANT_RIPE}, ${PLANT_FULL})` }} />
@@ -204,7 +205,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
           <span className="tabular-nums font-bold shrink-0" style={{ color: PLANT_RIPE }}>{colonizedN}</span>
           <span className="inline-flex flex-wrap gap-0.5 min-w-0">
             {Array.from({ length: Math.min(colonizedN, 12) }, (_, i) => (
-              <span key={i} style={{ color: PLANT_RIPE, textShadow: `0 0 4px ${PLANT}88`, fontSize: 11, lineHeight: 1 }}>🌿</span>
+              <FactionIcon key={i} type="plant" size={11} />
             ))}
           </span>
         </div>

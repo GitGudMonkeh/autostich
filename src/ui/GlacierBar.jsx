@@ -10,7 +10,7 @@ import { useRef, useEffect, useState } from "react";
 import { FactionShell } from "./indicators/panelKit.jsx";
 import { glacierClusters, glacierNeighborFn, glacierFormations, GLACIER_FORM_LABEL, THRESHOLDS, ROLES } from "../game/glacier.js";
 import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
-import glacierIcon from "./assets/glacier.webp";
+import { FactionIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
 
 const FROST = "#5ec8f0", FROST_BRIGHT = "#8be6ff";
 const dfmt = (x) => String(x).replace(".", ","); // Dezimal-Komma (1.5 → 1,5)
@@ -48,7 +48,7 @@ function Glacier({ mass }) {
       }}>{bricht ? "Bricht" : "kritisch"}</span>}
       <div style={{ height: 34, display: "grid", placeItems: "end center", width: "100%" }}>
         <div style={{
-          height: "100%", aspectRatio: "1", backgroundImage: `url(${glacierIcon})`, backgroundSize: "contain",
+          height: "100%", aspectRatio: "1", backgroundImage: `url(${FACTION_ICON_SRC.ice})`, backgroundSize: "contain",
           backgroundPosition: "center bottom", backgroundRepeat: "no-repeat", transformOrigin: "bottom center", transform: `scale(${scale})`,
           filter: alert ? `saturate(1.15) brightness(1.18) drop-shadow(0 0 ${bricht ? 12 : 9}px ${FROST})` : "saturate(.85) brightness(.85) drop-shadow(0 2px 4px #0007)",
         }} />
@@ -125,17 +125,17 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
   const readyBreak = glaciers.some((m) => m >= THRESHOLDS[2]);
   const collapsed = options.collapseFacIce ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacIce: !collapsed });
-  const stateText = readyBreak ? "❄ Bruch bereit" : `${glaciers.length} Gletscher`;
+  const stateText = readyBreak ? "Bruch bereit" : `${glaciers.length} Gletscher`;
 
   return (
-    <FactionShell className="relative" icon="❄" name="Eis" color={FROST_BRIGHT}
+    <FactionShell className="relative" icon={<FactionIcon type="ice" size={15} />} name="Eis" color={FROST_BRIGHT}
       stateText={stateText} stateOn={readyBreak} collapsed={collapsed} onToggle={onToggle}>
       {burst && <div key={burst.key} className="as-frost-pulse" style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none" }} />}
       {burst && burst.gain > 0 && (
         <div key={"g" + burst.key} className="as-glacier-gain" style={{ position: "absolute", left: "50%", top: 26, pointerEvents: "none", zIndex: 3,
           fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)", fontWeight: 700, fontSize: 20, color: FROST_BRIGHT, textShadow: `0 0 14px ${FROST}`, whiteSpace: "nowrap",
-          padding: "3px 12px", borderRadius: 999, background: "rgba(7,16,22,.82)", border: `1px solid ${FROST}88`, boxShadow: `0 0 18px ${FROST}55` }}>
-          ❄ +{fmtScoreShort(burst.gain)}
+          padding: "3px 12px", borderRadius: 999, background: "rgba(7,16,22,.82)", border: `1px solid ${FROST}88`, boxShadow: `0 0 18px ${FROST}55`, display: "flex", alignItems: "center", gap: 4 }}>
+          <FactionIcon type="ice" size={16} /> +{fmtScoreShort(burst.gain)}
         </div>
       )}
       <div style={{ display: "flex", gap: 6 }}>

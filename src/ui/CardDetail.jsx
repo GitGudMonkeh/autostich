@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, WURZELSCHLAG_PER_GROWTH } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { familyDef } from "../game/families.js";
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { formationLabel } from "./formationLabels.js";
@@ -84,7 +85,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
       {ion > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
           <span className="opacity-45">Ionisierung:</span>
-          <Chip c="#5ec8f0">⚡ {ion}/{ION_MAX_STACKS} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
+          <Chip c="#5ec8f0"><FactionIcon type="lightning" size={11} /> {ion}/{ION_MAX_STACKS} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
           {/* #271: jeder Stapel hebt die Crit-Chance des ganzen Decks (feldweit) — hier der Beitrag dieser Karte. */}
           <Chip c="#8a7de0">+{Math.round(ion * ION_CRIT_PP_PER_STACK * 100)} pp Feld-Crit</Chip>
         </div>
@@ -101,7 +102,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
         const overflow = ripe ? Math.max(0, plantGrowth - need) : 0;                      // „alter Wald" (Direkt-Score der Legendären)
         return (
           <div className="flex flex-wrap gap-1.5 items-center mt-1">
-            <span className="opacity-45">🌿 Pflanze:</span>
+            <span className="opacity-45 inline-flex items-center gap-1"><FactionIcon type="plant" size={12} /> Pflanze:</span>
             <Chip c={stateCol}>{stateLabel}</Chip>
             <Chip c={PLANT}>Wachstum {fmt1(plantGrowth)}{ripe ? "" : ` / ${PLANT_GREEN_THRESHOLD}`}</Chip>
             <Chip c={PLANT}>Kartenwert {card.value} / {PLANT_VALUE_CAP}</Chip>
@@ -114,7 +115,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
           Spielerdecks (Brand liegt auf Gegnerkarten, Hitze/Asche/Weißglut sind global). ⚒ wie der Karten-Indikator (#206). */}
       {forgedValue > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
-          <span className="opacity-45">🔥 Feuer:</span>
+          <span className="opacity-45 inline-flex items-center gap-1"><FactionIcon type="fire" size={12} /> Feuer:</span>
           <Chip c="#e0714a">⚒ Geschmiedet +{forgedValue} Kartenwert</Chip>
         </div>
       )}
