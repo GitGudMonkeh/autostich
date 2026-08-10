@@ -8,7 +8,7 @@ import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeig
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import logo from "./assets/logo-wordmark.png"; // #UI: Neon-Wortmarke (wie StartScreen) — ersetzt das Text-Logo im Run-Kopf
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun } from "./game/storage.js";
-import { unlockAllProfile, ONBOARDING_LINKS, nextOnboardingReward } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
+import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
@@ -554,10 +554,11 @@ export function Autostich() {
   // Normaler Lauf — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
   function startRun(seed) { launchRun({ seed: (typeof seed === "number" && Number.isFinite(seed)) ? seed : null }); }
   // Test-Codes im Seed-Feld (nur Preview, StartScreen fängt sie ab): `unlock` = Onboarding fertig + alle
-  // Upgrades + SP-Polster (Profil-Update, kein Reload). `reset` = ganzes Profil wipen → Reload gibt den
-  // sauberen Erstbesuch-Zustand (kein manuelles Nachsynchronisieren von Highscores/Geist/Verlauf nötig).
+  // Upgrades + SP-Polster (Profil-Update, kein Reload). `onboarding` = nur Onboarding überspringen (6/6) +
+  // 10 SP / 50 DP. `reset` = ganzes Profil wipen → Reload gibt den sauberen Erstbesuch-Zustand.
   function handleSecretSeed(kind) {
     if (kind === "unlock") { setProfile(saveProfile(unlockAllCosmetics(unlockAllProfile(loadProfile())))); return; }
+    if (kind === "onboarding") { setProfile(saveProfile(skipOnboardingProfile(loadProfile()))); return; } // Onboarding skippen + 10 SP / 50 DP
     if (kind === "reset") { wipeProfileStorage(); try { window.location.reload(); } catch (e) {} }
   }
   // §7 (Schritt 6): Ranglisten-Standard — tree-unabhängige Baseline (fix 2 Rerolls, alle Archetypen, R29 an; für alle gleich).

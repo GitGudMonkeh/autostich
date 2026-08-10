@@ -60,7 +60,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
     const secret = onSecretSeed && matchSecretSeed(seedInput);
     if (secret) {
       setSeedError(false); setSeedInput("");
-      setSecretMsg(secret === "unlock" ? "🔓 Alles freigeschaltet." : "🔄 Profil wird zurückgesetzt …");
+      setSecretMsg(secret === "unlock" ? "🔓 Alles freigeschaltet."
+        : secret === "onboarding" ? "⏭️ Onboarding übersprungen · +10 SP · +50 DP"
+        : "🔄 Profil wird zurückgesetzt …");
       onSecretSeed(secret);
       return;
     }

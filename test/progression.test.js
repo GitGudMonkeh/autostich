@@ -8,7 +8,7 @@ import {
   SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP,
   onboardingAfter, spMilestones, isSpRun, spForRun, milestoneBarState,
   DP_PER_SCORE, dpNative, dpForRun, spCreditForRun, onboardingUnlocks, onboardingRewardAt, nextOnboardingReward,
-  SECRET_SEEDS, UNLOCK_SP_CUSHION, matchSecretSeed, unlockAllProfile,
+  SECRET_SEEDS, UNLOCK_SP_CUSHION, matchSecretSeed, unlockAllProfile, skipOnboardingProfile,
 } from "../src/game/progression.js";
 import { ONBOARDING_LINKS } from "../src/game/progression.js";
 
@@ -467,15 +467,24 @@ describe("onboardingUnlocks (#299) — Freischaltungs-Diff fürs Victory-Banner"
 });
 
 describe("Test-Codes — matchSecretSeed / unlockAllProfile", () => {
-  it("erkennt unlock/reset case-insensitiv & getrimmt, sonst null", () => {
+  it("erkennt unlock/reset/onboarding case-insensitiv & getrimmt, sonst null", () => {
     expect(matchSecretSeed("unlock")).toBe("unlock");
     expect(matchSecretSeed("  UNLOCK ")).toBe("unlock");
     expect(matchSecretSeed("Reset")).toBe("reset");
+    expect(matchSecretSeed("onboarding")).toBe("onboarding");
+    expect(matchSecretSeed("  Onboarding ")).toBe("onboarding");
     expect(matchSecretSeed("etwas anderes")).toBe(null);
     expect(matchSecretSeed("")).toBe(null);
     expect(matchSecretSeed(null)).toBe(null);
     expect(matchSecretSeed(undefined)).toBe(null);
-    expect(SECRET_SEEDS).toEqual({ unlock: "unlock", reset: "reset" });
+    expect(SECRET_SEEDS).toEqual({ unlock: "unlock", reset: "reset", onboarding: "onboarding" });
+  });
+  it("skipOnboardingProfile: Onboarding 6, +10 SP / +50 DP (additiv), Rest unangetastet", () => {
+    const p = skipOnboardingProfile({ ...emptyProfile(3), deckPoints: 5, nodes: { X: 1 } });
+    expect(p.onboarding).toBe(6);
+    expect(p.stichPoints).toBe(13);     // 3 + 10
+    expect(p.deckPoints).toBe(55);      // 5 + 50
+    expect(p.nodes).toEqual({ X: 1 });  // Baum/übrige Felder unangetastet
   });
   it("unlockAllProfile: Onboarding 6, alle 13 Knoten, stichSpent = TOTAL_COST, SP-Polster", () => {
     const p = unlockAllProfile(emptyProfile(0));

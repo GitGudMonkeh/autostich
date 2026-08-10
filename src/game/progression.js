@@ -381,15 +381,17 @@ export function onboardingUnlocks(before, after) {
 // Kauf-/Gate-Flow durchtesten kann. envNum-tunebar.
 export const UNLOCK_SP_CUSHION = envNum("PROG_UNLOCK_SP_CUSHION", 500);
 
-// Geheime Seed-Codes (Kleinbuchstaben, exakt) — in der UI VOR parseSeed abgefangen (beide würden sonst als
-// gültige Seeds durchgehen). "unlock" = skippen & alles frei; "reset" = ganzes Profil wipen (in storage.js).
-export const SECRET_SEEDS = { unlock: "unlock", reset: "reset" };
+// Geheime Seed-Codes (Kleinbuchstaben, exakt) — in der UI VOR parseSeed abgefangen (würden sonst als gültige
+// Seeds durchgehen). "unlock" = alles frei; "reset" = ganzes Profil wipen (storage.js); "onboarding" = nur das
+// Onboarding überspringen (6/6) + 10 SP + 50 DP gutschreiben (sonst nichts).
+export const SECRET_SEEDS = { unlock: "unlock", reset: "reset", onboarding: "onboarding" };
 
-// Erkennt einen geheimen Code in der Seed-Eingabe → "unlock" | "reset" | null (case-insensitiv, getrimmt).
+// Erkennt einen geheimen Code in der Seed-Eingabe → "unlock" | "reset" | "onboarding" | null (case-insensitiv, getrimmt).
 export function matchSecretSeed(input) {
   const s = String(input == null ? "" : input).trim().toLowerCase();
   if (s === SECRET_SEEDS.unlock) return "unlock";
   if (s === SECRET_SEEDS.reset) return "reset";
+  if (s === SECRET_SEEDS.onboarding) return "onboarding";
   return null;
 }
 
@@ -402,5 +404,17 @@ export function unlockAllProfile(profile) {
     nodes: Object.fromEntries(NODE_IDS.map((id) => [id, 1])),
     stichSpent: TOTAL_COST,
     stichPoints: UNLOCK_SP_CUSHION,
+  };
+}
+
+// `onboarding` (Test-Code): NUR das Onboarding überspringen (6/6) und 10 SP + 50 DP gutschreiben — kein Baum,
+// keine Cosmetics. Rein additiv auf ein bestehendes Profil; alle übrigen Felder bleiben unangetastet.
+export function skipOnboardingProfile(profile) {
+  const num = (x) => Math.max(0, Math.floor(Number(x) || 0));
+  return {
+    ...profile,
+    onboarding: ONBOARDING_LINKS,
+    stichPoints: num(profile && profile.stichPoints) + 10,
+    deckPoints: num(profile && profile.deckPoints) + 50,
   };
 }

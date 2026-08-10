@@ -13,6 +13,7 @@ class FakeAudio {
   get src() { return this._src; }
   play() { this.paused = false; this.playCalls++; return Promise.resolve(); }
   pause() { this.paused = true; this.pauseCalls++; }
+  addEventListener(type, fn) { this.handlers = this.handlers || {}; this.handlers[type] = fn; } // music.js hängt „ended" an (Tier-Weiterschaltung)
 }
 
 let created = [];
