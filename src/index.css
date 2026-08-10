@@ -343,10 +343,54 @@ button { font-family: inherit; }
   100% { transform: translate(-5%, -3%) scale(1.06); }
 }
 .as-aurora-drift { animation: as-aurora-drift 14s ease-in-out infinite; }
-@keyframes as-glitch-shift { 0%, 88%, 100% { transform: none; } 90% { transform: translateX(-3px) skewX(-4deg); } 92% { transform: translateX(3px); } 94% { transform: translateX(-2px); } }
-@keyframes as-glitch-split { 0%, 88%, 100% { text-shadow: var(--num-shadow); } 90% { text-shadow: -3px 0 #ff3ea5, 3px 0 #35d6f0; } 94% { text-shadow: 3px 0 #ff3ea5, -3px 0 #35d6f0; } }
-.as-glitch-num { animation: as-glitch-shift 3.2s linear infinite, as-glitch-split 3.2s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .as-aurora-drift { animation: none; } .as-glitch-num { animation: none; } }
+/* #glitch-rework: Cyberpunk-Digital-Glitch. Statt nur die Zahl zu wackeln: chromatische Aberration (RGB-Split der
+   GANZEN Kartenfront), horizontale Tear-/Slice-Bänder, Scanline-Flicker und UNREGELMÄSSIGES Stottern (mehrere uneven
+   Bursts je Schleife statt Metronom). Neon-Palette --gc1 (Magenta) / --gc2 (Cyan). Nur transform/opacity/text-shadow →
+   GPU-günstig; nur auf der aktiven Spielerkarte, unter reduced-motion komplett still. Gemeinsame 4.3s-Schleife. */
+:where(.as-glitch-wrap) { --gc1: #ff2bd6; --gc2: #20e5ff; }
+/* RGB-Split-Klone der Kartenfront: backgroundBlendMode multiply färbt das Motiv in den Kanal (inline), mixBlendMode
+   screen (inline) legt es additiv über die Karte. Ruhezustand deckungsgleich & unsichtbar; im Burst zucken sie auseinander. */
+@keyframes as-glitch-chroma-a {
+  0%, 5%, 15%, 45%, 54%, 71%, 100% { transform: translate(0,0); opacity: 0; }
+  6% { opacity: .9; transform: translate(-5px,-1px); } 9% { transform: translate(4px,1px); } 12% { transform: translateX(-3px); opacity: .6; }
+  47% { opacity: .85; transform: translateX(4px); } 50% { transform: translateX(-4px); }
+  72% { opacity: .7; transform: translate(-3px,1px); } 74% { transform: translateX(2px); }
+}
+@keyframes as-glitch-chroma-b {
+  0%, 5%, 15%, 45%, 54%, 71%, 100% { transform: translate(0,0); opacity: 0; }
+  6% { opacity: .9; transform: translate(5px,1px); } 9% { transform: translate(-4px,-1px); } 12% { transform: translateX(3px); opacity: .6; }
+  47% { opacity: .85; transform: translateX(-4px); } 50% { transform: translateX(4px); }
+  72% { opacity: .7; transform: translate(3px,-1px); } 74% { transform: translateX(-2px); }
+}
+.as-glitch-chroma-a { animation: as-glitch-chroma-a 4.3s linear infinite; }
+.as-glitch-chroma-b { animation: as-glitch-chroma-b 4.3s linear infinite; }
+/* Horizontale Tear-Bänder: schnelle Seitenversätze + Flackern an unterschiedlichen Höhen (top per inline var). */
+@keyframes as-glitch-bar {
+  0%, 100% { opacity: 0; transform: translateX(0); }
+  7% { opacity: .95; transform: translateX(-45%); } 8% { transform: translateX(35%); } 9% { opacity: 0; }
+  48% { opacity: .85; transform: translateX(55%); } 49% { transform: translateX(-30%); } 50% { opacity: 0; }
+  73% { opacity: .8; transform: translateX(-50%); } 74% { opacity: 0; }
+}
+.as-glitch-bar { position: absolute; left: 0; right: 0; height: 3px; mix-blend-mode: screen; animation: as-glitch-bar 4.3s linear infinite; }
+/* Scanlines: dauerhaft dezent, im Burst kurz heller (Signalstörung). */
+@keyframes as-glitch-scan { 0%,100% { opacity: .1; } 6%,12%,48%,73% { opacity: .38; } 8%,50% { opacity: .06; } }
+.as-glitch-scan { position: absolute; inset: 0; mix-blend-mode: overlay; background-image: repeating-linear-gradient(0deg, #ffffff22 0 1px, transparent 1px 3px); animation: as-glitch-scan 4.3s linear infinite; }
+/* Zahl: kräftiger 2-Kanal-Split + Slice-Sprünge (uneven, gleiche 4.3s-Schleife). Liest --num-shadow als Ruhezustand. */
+@keyframes as-glitch-num-shift {
+  0%, 5%, 15%, 45%, 54%, 71%, 100% { transform: none; }
+  6% { transform: translate(-3px,1px) skewX(-9deg); } 9% { transform: translate(3px,-1px) skewX(7deg); } 12% { transform: translateX(-2px); }
+  47% { transform: translateX(3px); } 50% { transform: translateX(-3px); } 73% { transform: translate(-2px,1px) skewX(5deg); }
+}
+@keyframes as-glitch-num-split {
+  0%, 5%, 15%, 45%, 54%, 71%, 100% { text-shadow: var(--num-shadow); }
+  6% { text-shadow: -4px 0 var(--gc1), 4px 0 var(--gc2), 0 0 7px var(--gc2); } 9% { text-shadow: 4px 0 var(--gc1), -4px 0 var(--gc2); }
+  47% { text-shadow: -3px 0 var(--gc1), 3px 0 var(--gc2); } 73% { text-shadow: 3px 0 var(--gc1), -3px 0 var(--gc2); }
+}
+.as-glitch-num { --gc1: #ff2bd6; --gc2: #20e5ff; animation: as-glitch-num-shift 4.3s linear infinite, as-glitch-num-split 4.3s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .as-aurora-drift, .as-glitch-num, .as-glitch-chroma-a, .as-glitch-chroma-b, .as-glitch-bar, .as-glitch-scan { animation: none; }
+  .as-glitch-chroma-a, .as-glitch-chroma-b, .as-glitch-bar { opacity: 0; }
+}
 /* Hologrid-Puls je Stich: eine helle Gitter-Zeile fährt von vorn nach hinten übers Feld und verblasst.
    Liegt in der Perspektiv-Ebene des Grids → wandert entlang der Fluchtlinien in die Tiefe. */
 @keyframes as-deck-sweep { 0% { bottom: -2%; opacity: 0; } 10% { opacity: 1; } 72% { bottom: 100%; opacity: 1; } 100% { bottom: 112%; opacity: 0; } }

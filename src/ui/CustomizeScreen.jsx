@@ -480,10 +480,14 @@ function CardPreview({ deckId, a1, fx, face = "back", className = "", style }) {
           backgroundImage: `radial-gradient(58% 44% at 30% 33%, ${a1}cc, transparent 70%), radial-gradient(54% 40% at 72% 66%, ${a2}bb, transparent 70%), radial-gradient(48% 50% at 50% 84%, ${a1}88, transparent 76%)` }} />
       )}
       {fx === "glitch" && (
-        <div className="absolute inset-0 grid place-items-center pointer-events-none">
-          <span className="as-glitch-num" style={{ color: a1, fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "3.4rem", lineHeight: 1,
-            WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${a1}`,
-            textShadow: `0 0 10px ${a1}`, "--num-shadow": `0 0 10px ${a1}` }}>9</span>
+        <div aria-hidden="true" className="as-glitch-wrap absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
+          {/* Chromatische Aberration: zwei versetzte Magenta/Cyan-Klone des Kartenmotivs (contain, wie das <img>). */}
+          <div className="as-glitch-chroma-a absolute inset-0" style={{ backgroundImage: `url(${img})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundColor: "#ff2bd6", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
+          <div className="as-glitch-chroma-b absolute inset-0" style={{ backgroundImage: `url(${img})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundColor: "#20e5ff", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
+          <span className="as-glitch-bar" style={{ top: "24%", background: "linear-gradient(90deg,transparent,#ff2bd6,transparent)", animationDelay: "-0.2s" }} />
+          <span className="as-glitch-bar" style={{ top: "52%", height: 6, background: "linear-gradient(90deg,transparent,#20e5ff,transparent)", animationDelay: "-1.7s" }} />
+          <span className="as-glitch-bar" style={{ top: "76%", background: `linear-gradient(90deg,transparent,${a1},transparent)`, animationDelay: "-3.1s" }} />
+          <div className="as-glitch-scan" />
         </div>
       )}
     </div>

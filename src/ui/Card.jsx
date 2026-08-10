@@ -117,8 +117,24 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
           ⚒+{forged}
         </div>
       )}
-      {/* #309 Glitch: getaktetes RGB-Zucken (~alle 3 s) auf der Zahl — Versatz (as-glitch-shift) + chromatischer Split
-          (as-glitch-split, liest --num-shadow als Ruhezustand). z-2 hält die Zahl über dem Aurora-Nebel. */}
+      {/* #glitch-rework: Cyberpunk-Digital-Glitch über dem Motiv (unter der Zahl, z-1). Chromatische Aberration = zwei
+          versetzte, in Magenta/Cyan gefärbte Klone der Kartenfront (nur skinned); dazu horizontale Tear-Bänder +
+          Scanline-Flicker. Unregelmäßiges Stottern kommt aus den Keyframes; reduced-motion stellt alles still. */}
+      {fxGlitch && (
+        <div aria-hidden="true" className="as-glitch-wrap absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>
+          {skinned && (
+            <>
+              <div className="as-glitch-chroma-a absolute inset-0" style={{ backgroundImage: `url(${frontImage})`, backgroundSize: "100% 100%", backgroundColor: "#ff2bd6", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
+              <div className="as-glitch-chroma-b absolute inset-0" style={{ backgroundImage: `url(${frontImage})`, backgroundSize: "100% 100%", backgroundColor: "#20e5ff", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
+            </>
+          )}
+          <span className="as-glitch-bar" style={{ top: "22%", background: "linear-gradient(90deg,transparent,#ff2bd6,transparent)", animationDelay: "-0.2s" }} />
+          <span className="as-glitch-bar" style={{ top: "54%", height: 5, background: "linear-gradient(90deg,transparent,#20e5ff,transparent)", animationDelay: "-1.7s" }} />
+          <span className="as-glitch-bar" style={{ top: "78%", background: `linear-gradient(90deg,transparent,${numColor},transparent)`, animationDelay: "-3.1s" }} />
+          <div className="as-glitch-scan" />
+        </div>
+      )}
+      {/* Zahl (z-2, über dem Glitch-Layer). Bei Glitch: kräftiger 2-Kanal-Split + Slice-Sprünge (as-glitch-num). */}
       <div className={`text-5xl font-bold card-num${fxGlitch ? " as-glitch-num" : ""}`} style={{ position: "relative", zIndex: 2, color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, textShadow: numShadow, "--num-shadow": numShadow, fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "2.4rem", lineHeight: 1 }}>{effective}</div>
       {/* Pflanze (#277): zweistufiger Wachstumsring unten-rechts — Stufe 1 grau→grün (Reife), Stufe 2 heller (Wert-Deckel/
           ausgewachsen). Ausgeblendet erst, wenn die Karte ausgewachsen ist. Sitzt in vocab.CORNER.growthRing. */}
