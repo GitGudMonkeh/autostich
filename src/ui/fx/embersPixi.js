@@ -31,7 +31,7 @@ const TUNE = {
   FLAME: 0.4,       // Flammen-Anteil relativ zu EMIT
   G_REF: 1750,      // Schwerkraft px/s² bei Referenzhöhe HREF
   HREF: 360,        // Referenz-Panelhöhe (Geschwindigkeiten/Höhe skalieren mit H/HREF)
-  GLOW: 1.85,       // Sprite-Halo-Faktor (ersetzt den Filter-Bloom → weicher Glow ohne Full-Screen-Pass; kleiner = knackiger, weniger Wash)
+  GLOW: 1.55,       // Sprite-Halo-Faktor (ersetzt den Filter-Bloom → weicher Glow ohne Full-Screen-Pass; kleiner = knackiger, weniger Wash)
   CRUST_P: 0.18,    // Anteil dunkler Krusten-Brocken
   MAXGLOW: 1300, MAXCRUST: 340, MAXVENT: 10,   // MAXVENT = zugleich Obergrenze gleichzeitiger Vents (überlappende Stiche)
 };
@@ -75,7 +75,7 @@ function makeRadial(stops) {
 }
 
 export function createEmberField(app) {
-  const glowTex   = makeRadial([[0, 1], [0.32, 1], [0.54, 0.22], [1, 0]]);   // Glut: kompakter Kern + knapper Halo (weniger Wash)
+  const glowTex   = makeRadial([[0, 1], [0.42, 1], [0.6, 0.16], [1, 0]]);    // Glut: größerer solider Kern + knapper Halo → knackig, wenig Wash
   const crustTex  = makeRadial([[0, 1], [0.55, 0.9], [0.85, 0.35], [1, 0]]); // Brocken: kompakter, dunkel getönt
   const craterTex = makeRadial([[0, 0], [0.45, 0.85], [1, 0]]);              // Krater-Rand: dunkler Ring (Mitte offen)
 
@@ -121,9 +121,9 @@ export function createEmberField(app) {
   function grabGlow() { const s = glow[gHead]; gHead = (gHead + 1) % TUNE.MAXGLOW; s.alive = true; return s; }
   function grabCrust() { const s = crust[cHead]; cHead = (cHead + 1) % TUNE.MAXCRUST; s.alive = true; return s; }
 
-  function spawnDroplet(v, env, sc, W, H) {
+  function spawnDroplet(v, env, sc, W, fy) {
     const r = Math.random();
-    const x = v.x * W, y0 = H - Math.random() * 3;
+    const x = v.x * W, y0 = fy - Math.random() * 3;
     if (r < TUNE.CRUST_P) {  // dunkler Krusten-Brocken
       const ang = -Math.PI / 2 + (Math.random() - 0.5) * 0.42 + v.side * 0.14;
       const v0 = (320 + Math.pow(Math.random(), 1.7) * 430) * (1 + v.stufe * 0.1) * (0.72 + 0.28 * env) * sc;
@@ -148,9 +148,9 @@ export function createEmberField(app) {
       s.age = 0; s.life = 1.15 + Math.random() * 0.8; s.sz = 1.0 + Math.random() * 1.55; s.drag = 0.5; s.hot = 0.94; s.grav = 1;
     }
   }
-  function spawnFlame(v, sc, W, H) {  // Flammen-Zunge am Austritt: niedrig, weich, orange, kurzlebig
+  function spawnFlame(v, sc, W, fy) {  // Flammen-Zunge am Austritt: niedrig, weich, orange, kurzlebig
     const s = grabGlow();
-    s.x = v.x * W + (Math.random() - 0.5) * W * 0.045; s.y = H - Math.random() * 2;
+    s.x = v.x * W + (Math.random() - 0.5) * W * 0.045; s.y = fy - Math.random() * 2;
     s.vx = (Math.random() - 0.5) * 60 * sc; s.vy = -(120 + Math.random() * 180) * sc;
     s.age = 0; s.life = 0.4 + Math.random() * 0.45; s.sz = 2.3 + Math.random() * 2.5; s.drag = 0.82; s.seed = Math.random() * 6.28; s.hot = 0.84; s.grav = 1;
   }
@@ -173,6 +173,7 @@ export function createEmberField(app) {
     const W = app.screen.width, H = app.screen.height, sc = Math.max(0.4, H / TUNE.HREF), deck = params.deck;
     const deckInt = ((deck[0] & 255) << 16) | ((deck[1] & 255) << 8) | (deck[2] & 255);   // Krater/Pool in Deckfarbe
     const hotInt = rampInt(0.88, deck);
+    const fy = H - Math.min(34, H * 0.06);   // Emissionslinie leicht über dem Rand → Fontäne steht auf dem Boden, klebt nicht am Rahmen
 
     // Vents: Ausstoß über den Burst + Flammen; danach Nachglühen bis der Pool erlischt.
     for (let vi = vents.length - 1; vi >= 0; vi--) {
@@ -182,9 +183,9 @@ export function createEmberField(app) {
         const env = clamp((v.jetT / v.burst) * 1.25, 0, 1);
         const wf = v.win ? 1.12 : 1;
         v.acc += TUNE.EMIT * (1 + v.stufe * 0.85) * env * wf * dt;
-        while (v.acc >= 1) { v.acc--; spawnDroplet(v, env, sc, W, H); }
+        while (v.acc >= 1) { v.acc--; spawnDroplet(v, env, sc, W, fy); }
         v.flAcc += TUNE.EMIT * TUNE.FLAME * (1 + v.stufe * 0.5) * env * dt;
-        while (v.flAcc >= 1) { v.flAcc--; spawnFlame(v, sc, W, H); }
+        while (v.flAcc >= 1) { v.flAcc--; spawnFlame(v, sc, W, fy); }
       } else {
         v.glow -= dt * 2.9;   // molten Pool kühlt schnell ab → kein großer Afterglow bei überlappenden Stichen
         if (v.glow <= 0) { vents.splice(vi, 1); }
@@ -201,9 +202,10 @@ export function createEmberField(app) {
       const fl = 0.72 + 0.28 * Math.sin(clock * 11 + bx * 0.06);
       const pr = (28 + v.stufe * 12) * act * fl * sc;
       po.tint = deckInt; pi.tint = hotInt;   // Vent glüht in Deckfarbe (heißer Kern deck-getönt hell)
-      cr.x = bx; cr.y = H; cr.width = (44 + v.stufe * 14) * 3 * sc; cr.height = (44 + v.stufe * 14) * 1.0 * sc; cr.alpha = 0.8 * act;
-      po.x = bx; po.y = H; po.width = pr * 4.6; po.height = pr * 1.8; po.alpha = 0.42 * act * pf;
-      pi.x = bx; pi.y = H; pi.width = pr * 2.4; pi.height = pr * 1.0; pi.alpha = 0.55 * act * pf;
+      // Boden kompakter/knackiger: kleinere Pools, geringere Alpha, dunklerer Krater-Rand (mehr Kontrast, weniger Wash).
+      cr.x = bx; cr.y = fy; cr.width = (44 + v.stufe * 14) * 2.6 * sc; cr.height = (44 + v.stufe * 14) * 0.9 * sc; cr.alpha = 0.92 * act;
+      po.x = bx; po.y = fy; po.width = pr * 3.3; po.height = pr * 1.3; po.alpha = 0.28 * act * pf;
+      pi.x = bx; pi.y = fy; pi.width = pr * 1.9; pi.height = pr * 0.82; pi.alpha = 0.42 * act * pf;
     }
 
     // Glut-Partikel (core/body/flame) — additiv, pro Partikel getönt
