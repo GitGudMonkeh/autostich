@@ -1,5 +1,5 @@
 /* Musik-Manager (#111, Sound Phase 2) — HTMLAudio (Streaming + Loop), KEIN game/-Bezug.
-   Getrennt vom SFX-Web-Audio (audio.js): Menü & Victory = „Morning Deck"; im Run ein zufälliger Track
+   Getrennt vom SFX-Web-Audio (audio.js): Menü & Victory = „Relay of Multipliers"; im Run ein zufälliger Track
    aus dem harmonisierten Pool (mp3_norm). Autoplay-Gate: die erste User-Geste ruft unlock().
    Eigene Lautstärke (Optionen · Default 0,2); globaler „Ton stumm" mutet auch die Musik. */
 import morning_deck from "../assets/music/morning_deck.m4a";
@@ -15,7 +15,7 @@ import stacked_multipliers from "../assets/music/stacked_multipliers.m4a";
 import table_dust from "../assets/music/table_dust.m4a";
 import table_dust_2 from "../assets/music/table_dust_2.m4a";
 // #171: sechs neu normalisierte Tracks (EBU R128, −14 LUFS — wie der Bestand) zusätzlich in den Run-Pool.
-// Morning Deck (Menü/Victory) wurde nur als Asset durch die normalisierte Version ersetzt, bleibt aus dem Pool.
+// Morning Deck ist seit #: ein Run-Track (calm); Main-Screen/Victory spielt jetzt „Relay of Multipliers".
 import asymmetric_loop from "../assets/music/asymmetric_loop.m4a";
 import card_momentum_remastered from "../assets/music/card_momentum_remastered.m4a";
 import formation_shuffle from "../assets/music/formation_shuffle.m4a";
@@ -42,7 +42,7 @@ import new_17_neon_final_showdown from "../assets/music/new_17_neon_final_showdo
 import new_18_neon_endgame_1 from "../assets/music/new_18_neon_endgame_1.m4a";
 import new_19_neon_endgame from "../assets/music/new_19_neon_endgame.m4a";
 
-const MENU_TRACK = { title: "Morning Deck", url: morning_deck };
+const MENU_TRACK = { title: "Relay of Multipliers", url: relay_of_multipliers }; // Main-Screen + Victory
 
 // Intensitäts-Stufen: jeder Run-Track trägt ein `tier`. Die aktuelle RUNDE (state.cycle) wählt die aktive Stufe;
 // innerhalb einer Stufe werden Tracks zufällig gereiht (ein Track endet → nächster gleicher Stufe). Beim
@@ -54,7 +54,7 @@ const TIER_ORDER = ["calm", "mid", "hot", "overdrive"]; // aufsteigende Intensit
 // Runden-Grenzen (state.cycle): < calm → calm · < mid → mid · < hot → hot · sonst overdrive.
 // Plan: Runde 0–10 calm · 10–25 mid · 25–40 hot · 40+ overdrive.
 const TIER_ROUNDS = { calm: 10, mid: 25, hot: 40 };
-// Run-Zufallspool (34 Tracks, harmonisiert auf −14 LUFS). Titel = Anzeige im Musik-Panel.
+// Run-Zufallspool (35 Tracks, harmonisiert auf −14 LUFS). Titel = Anzeige im Musik-Panel.
 const POOL = [
   // calm
   { title: "Table Dust", url: table_dust, tier: "calm" },
@@ -65,6 +65,7 @@ const POOL = [
   { title: "Neon Static (Remaster)", url: neon_static_remaster, tier: "calm" },  // #171
   { title: "Shuffle Pulse", url: shuffle_pulse, tier: "calm" },
   { title: "Stacked Multipliers", url: stacked_multipliers, tier: "calm" },
+  { title: "Morning Deck", url: morning_deck, tier: "calm" },                    // war Menü-Theme → jetzt Run-Track
   // mid
   { title: "Deck Alignment", url: deck_alignment, tier: "mid" },
   { title: "Asymmetric Loop", url: asymmetric_loop, tier: "mid" },               // #171
