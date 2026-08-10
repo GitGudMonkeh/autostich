@@ -27,11 +27,11 @@ function emberFountainXs(seed) {   // 3 x-Positionen (0..1), pro Stich neu (swee
 
 // ── TUNE ─────────────────────────────────────────────────────────────────────
 const TUNE = {
-  EMIT: 198,        // Basis-Ausstoßrate (Tröpfchen/s je Vent), skaliert mit Stufe (Dichte 1.20 aus dem Showcase)
+  EMIT: 289,        // Basis-Ausstoßrate (Tröpfchen/s je Vent), skaliert mit Stufe (Dichte 1.75)
   FLAME: 0.4,       // Flammen-Anteil relativ zu EMIT
   G_REF: 1750,      // Schwerkraft px/s² bei Referenzhöhe HREF
   HREF: 360,        // Referenz-Panelhöhe (Geschwindigkeiten/Höhe skalieren mit H/HREF)
-  GLOW: 0.55,       // Partikel-Footprint (= Showcase „Partikelgröße" 0.55; On-Screen-Größe mappt 1:1). Klein = knackig, wenig Wash.
+  GLOW: 0.65,       // Partikel-Footprint (= Showcase „Partikelgröße" 0.65; On-Screen-Größe mappt 1:1). Klein = knackig, wenig Wash.
   CRUST_P: 0.18,    // Anteil dunkler Krusten-Brocken
   MAXGLOW: 1300, MAXCRUST: 340, MAXVENT: 10,   // MAXVENT = zugleich Obergrenze gleichzeitiger Vents (überlappende Stiche)
 };
@@ -160,8 +160,8 @@ export function createEmberField(app) {
     if (params.effect !== "embers" || params.lite || params.reduced || !(sweepId > 0) || !win) return;
     const stufe = emberStufe(score);
     const burst = clamp((sweepDur || 900) * 0.0009, 0.42, 0.9);       // Turbo → kürzerer Ausstoß
-    const xs = emberFountainXs(sweepId * 7 + 1);                       // Zufallspositionen je Stich
-    for (const x of xs) vents.push({ x, side: x - 0.5, jetT: burst, burst, stufe, acc: 0, flAcc: 0, glow: 1, win: !!win });
+    const x = emberFountainXs(sweepId * 7 + 1)[0];                     // NUR EINE Fontäne je gewonnenem Stich (Zufallsposition)
+    vents.push({ x, side: x - 0.5, jetT: burst, burst, stufe, acc: 0, flAcc: 0, glow: 1, win: !!win });
     if (vents.length > TUNE.MAXVENT) vents.splice(0, vents.length - TUNE.MAXVENT);
   }
 
@@ -174,7 +174,7 @@ export function createEmberField(app) {
     const W = app.screen.width, H = app.screen.height, sc = Math.max(0.4, H / TUNE.HREF), deck = params.deck;
     const deckInt = ((deck[0] & 255) << 16) | ((deck[1] & 255) << 8) | (deck[2] & 255);   // Krater/Pool in Deckfarbe
     const hotInt = rampInt(0.88, deck);
-    const fy = H - Math.min(34, H * 0.06);   // Emissionslinie leicht über dem Rand → Fontäne steht auf dem Boden, klebt nicht am Rahmen
+    const fy = H - Math.min(22, H * 0.04);   // Emissionslinie leicht über dem Rand (näher am Boden) → steht auf dem Boden, nicht am Rahmen
 
     // Vents: Ausstoß über den Burst + Flammen; danach Nachglühen bis der Pool erlischt.
     for (let vi = vents.length - 1; vi >= 0; vi--) {
