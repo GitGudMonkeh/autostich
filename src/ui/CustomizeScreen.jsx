@@ -931,9 +931,9 @@ function FxChip({ fx, selected, owned, active, onPick, onToggle }) {
         background: selected ? "#211f2e" : "#14131c",
         border: `1px solid ${selected ? "#9b82f0" : "#2a2836"}`,
         boxShadow: selected ? "0 0 0 1px #9b82f0, 0 0 14px #9b82f022" : undefined }}>
-      {/* Signatur-Farbbalken links */}
-      <span aria-hidden="true" className="absolute left-0 top-0 bottom-0" style={{ width: 4, background: tint, boxShadow: `0 0 8px ${tint}66` }} />
-      <span className="block text-[11.5px] font-extrabold leading-tight" style={{ color: selected ? "#e8e6ff" : "#e3e1ec",
+      {/* Signatur-Farbbalken links — nicht besessene Effekte ausgegraut (wie die Pack-Kacheln): Balken entfärbt, Name gemutet. */}
+      <span aria-hidden="true" className="absolute left-0 top-0 bottom-0" style={{ width: 4, background: owned ? tint : "#3f3d4a", boxShadow: owned ? `0 0 8px ${tint}66` : undefined }} />
+      <span className="block text-[11.5px] font-extrabold leading-tight" style={{ color: selected ? "#e8e6ff" : owned ? "#e3e1ec" : "#7d7a8b",
         display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: 27 }}>{fx.name}</span>
       <span className="flex items-center gap-1.5 mt-1 text-[9.5px] font-bold" style={{ color: status.c }}>
         {status.dot && <span className="rounded-full shrink-0" style={{ width: 7, height: 7, background: status.dot, boxShadow: `0 0 6px ${status.dot}` }} />}
