@@ -4,6 +4,7 @@ import {
 } from "../game/glossary.js";
 import { useEscape } from "./useEscape.js";
 import { FactionIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
+import { MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx"; // gemeinsame Hub-Modal-Bildsprache
 
 /* ============================================================
    GLOSSAR-UI (Glossar-Rework) — drei Bausteine:
@@ -92,11 +93,12 @@ export function GlossaryOverlay({ onClose }) {
     <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label="Glossar">
       <div className="absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
       <div className="absolute inset-0 flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card"
-          style={{ maxHeight: "92dvh", background: "linear-gradient(180deg,#16131f 0%,#131318 42%)", border: "1px solid #2a2a33", boxShadow: "0 30px 80px -30px #000" }}>
+        <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card as-panel relative"
+          style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }}>
+          <TopHairline />
 
           {/* Kopf: Titel + Schließen + Suche */}
-          <div className="px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2a2a33", background: "#15121e" }}>
+          <div className="px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2c2a3a", background: STICKY_HEAD_BG }}>
             <div className="flex items-center gap-2.5">
               <span className="gloss-i-mark">i</span>
               <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>Glossar</h2>
@@ -119,7 +121,7 @@ export function GlossaryOverlay({ onClose }) {
           </div>
 
           {/* Kategorie-Chips (Sprungnavigation) */}
-          <div className="flex flex-nowrap sm:flex-wrap gap-1.5 px-4 py-2.5 flex-none overflow-x-auto sm:overflow-x-visible gloss-chiprow" style={{ borderBottom: "1px solid #2a2a33" }}>
+          <div className="flex flex-nowrap sm:flex-wrap gap-1.5 px-4 py-2.5 flex-none overflow-x-auto sm:overflow-x-visible gloss-chiprow" style={{ borderBottom: "1px solid #2c2a3a" }}>
             <Chip label="Alle" active={activeCat === "all"} onClick={() => jump("all")} />
             {GLOSSARY_CATEGORIES.map((c) => (
               <Chip key={c.id} label={c.label} dot={c.color} active={activeCat === c.id} onClick={() => jump(c.id)} />

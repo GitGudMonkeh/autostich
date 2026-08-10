@@ -167,7 +167,7 @@ export const SKILL_DEFS = {
     desc: `Gewinnt ein Gletscher, sät er +${de(G_SCHNEETREIBEN_SEED)} Masse auf ein angrenzendes Feld (bevorzugt offenen Boden) — zusätzlich, ohne eigene Masse abzugeben; nur bei 0 eigener Masse gibt er stattdessen seine Sieg-Masse ab. Nur die 4 direkten Nachbarn, Eisbrücke zählt hier nicht.` },
   SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier"], role: "G_DAUERFROST",
     desc: `Jede Runde frostet offener Boden zu: ungefrorene Felder sammeln Masse nach Abstand zum nächsten Gletscher — +${de(G_DAUERFROST_NEAR)} bei 2 Feldern Abstand, +${de(G_DAUERFROST_FAR)} ab 3. Die 8 Felder direkt um einen Gletscher bleiben leer.` },
-  SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "architect"], role: "G_VERDICHTUNG",
+  SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "bauphase"], role: "G_VERDICHTUNG",
     desc: `Erhöht ein Gebäude die Kartenstärke einer Gletscher-Karte, wird dieser Wert-Bonus nicht ausgespielt (die Karte kämpft ohne ihn), sondern in Masse getankt: +${de(G_VERDICHTUNG_RATE)} Masse je Punkt. Score-Gebäude bleiben unberührt.` },
   // Linie 2 — Eisschild (Cluster/Dichte)
   SK_ICE_05: { id: "SK_ICE_05", name: "Verschmelzen", archetype: "ice", keywords: ["glacier"], role: "G_VERSCHMELZEN",
