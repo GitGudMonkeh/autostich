@@ -197,8 +197,8 @@ function GottgleichPreview({ variant, compact = false }) {
   }, [compact]);
   useEffect(() => {
     if (compact) return undefined;
-    // Auf den Pop (272 ms in den Zyklus): Bass spielen UND den Prunk zünden → Karten-Pop, Bass und Feuerwerk fallen zusammen.
-    const t = setTimeout(() => { audio.play("fx_bass", { gain: 1.9, bass: 7 }); setBurst((b) => b + 1); }, GOTT_POP_MS);
+    // Auf den Pop (272 ms in den Zyklus) den Prunk zünden. #: Bass entfernt (nur „Schwarzes Loch" hat Bass) — Vorschau = In-Game.
+    const t = setTimeout(() => { setBurst((b) => b + 1); }, GOTT_POP_MS);
     return () => clearTimeout(t);
   }, [cycle, compact]);
   return (
@@ -246,9 +246,7 @@ function FinisherScene({ variant }) {
       // #: Überladung weicher (Lowpass + Attack/Release), damit der Blitz-Sound nicht „hart" wirkt — auch in der Vorschau.
       if (variant === "overload") audio.play(sfx, { gain: 0.95, soft: 6000, attack: 0.006, release: 0.06 });
       else audio.play(sfx, { gain: variant === "klinge" ? 1.0 : 1.05 });
-      // #300: Überladung/Zerstäubung bekommen — wie in-game — den tiefen Impact-Layer (fx_bass) dazu.
-      if (variant === "overload") audio.play("fx_bass", { gain: 0.55, bass: 4 });
-      else if (variant === "disperse") audio.play("fx_bass", { rate: 1.1, gain: 0.32, bass: 2 });
+      // #: Bass-Impact für Überladung/Zerstäubung entfernt (nur „Schwarzes Loch" hat Bass) — Vorschau = In-Game.
     }, FIN_DELAY);
     return () => clearTimeout(id);
   }, [tick, variant]);
@@ -318,7 +316,7 @@ function BurnBeamPreview() {
       const sK = clamp((pulse.streak || 0) / 12, 0, 1);
       const g = 0.3 + sK * 0.6;
       const r = 1 + sK * 0.28;
-      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, bass: 3, loopStart: 0.1, loopEnd: 0.8 });
+      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, loopStart: 0.1, loopEnd: 0.8 });
       else { audio.setLoopGain(burnLoopRef.current, g); audio.setLoopRate(burnLoopRef.current, r); }
     } else if (burnLoopRef.current) {
       audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;

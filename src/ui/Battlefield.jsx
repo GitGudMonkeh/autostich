@@ -440,12 +440,12 @@ const DISINT_COLS = 8, DISINT_ROWS = 11;
 // #: An „Zerstäuben" angeglichen (Wunsch): die Disintegration soll GENAUSO LANGE halten wie der Zerstäuben-Finisher —
 // vorher endete sie (v. a. im Turbo) viel zu früh. Höherer Boden + größerer Budget-Anteil → die Fragmente verweilen
 // deutlich länger; die Überlappung in den nächsten Stich ist bewusst gewollt (der Ghost lebt entsprechend, s. ghostLife).
-const BURN_DISINT_MIN = 1050;
+const BURN_DISINT_MIN = 760; // #: bewusst knapper/snappier (vorher 1050, an Zerstäuben angeglichen — lief zu lange)
 function burnDisintTiming(flipMs, delay) {
   const budget = Math.max(200, flipMs - 30);
   const body = Math.max(150, budget - delay);
-  const hitAt = delay + Math.round(body * 0.22);
-  const disintDur = Math.max(BURN_DISINT_MIN, Math.round(body * 0.85));
+  const hitAt = delay + Math.round(body * 0.13);                        // #: Einschlag landet früher/„snappier" auf der Karte (vorher 0.22)
+  const disintDur = Math.max(BURN_DISINT_MIN, Math.round(body * 0.70)); // #: kürzerer Zerfall (vorher 0.85)
   return { body, hitAt, disintDur };
 }
 // #: Zerstäubungs-Dauer mit sichtbarem Boden (bei Max nicht zu schnell) — gemeinsam von DisperseFx (Animation) und
@@ -531,7 +531,7 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
    herab, hält über die Serie, wird bei jedem Sieg heller/intensiver) und zieht sich beim Serienabbruch (Niederlage)
    zurück. Der Einschlag je Sieg (Loch/Funken/Verblassen) kommt vom Per-Sieg-Burst (BurnBeamFx). Position aus
    panelRef+oppRef gemessen (echte Kartenposition). Reines DOM (transform/opacity/Flicker) → GPU-günstig, reduced-safe. */
-export function BurnBeamPersist({ active, pulse = null, color = "#35e0ff", scale = 1, panelRef, oppRef, reduced = false }) {
+export function BurnBeamPersist({ active, pulse = null, color = "#35e0ff", scale = 1, flipMs = 900, panelRef, oppRef, reduced = false }) {
   const HOT = "#ff7a2f";
   const [geo, setGeo] = useState(null);   // { cx, cy } in Panel-Pixeln
   const [on, setOn] = useState(false);    // Strahl lit?
@@ -559,12 +559,14 @@ export function BurnBeamPersist({ active, pulse = null, color = "#35e0ff", scale
   if (!active || reduced || !geo) return null;
   const beamH = geo.cy;                    // Panel-Oberkante → Kartenmitte
   const glow = 5 + lvl * 10, tip = 5 + lvl * 8;
+  // #: Der Strahl fährt bei höherem Turbo (kleineres flipMs) schneller herab → „snappier" Erscheinen, im Takt der Stiche.
+  const descend = Math.round(clamp(flipMs * 0.34, 120, 280));
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ zIndex: 26 }}>
       {/* Persistenter Strahl: fährt beim ersten Sieg herab (scaleY-Transition), bleibt über die Serie lit (innerer
           Flicker = Laser-Energie); zieht sich beim Serienabbruch zurück. Außen-Wrapper gated on/off, innen flackert es. */}
       <div style={{ position: "absolute", left: geo.cx, top: 0, height: beamH, width: 3, marginLeft: -1.5, transformOrigin: "top center",
-        transform: on ? "scaleY(1)" : "scaleY(0.02)", opacity: on ? 1 : 0, transition: "transform 280ms ease-in, opacity 260ms ease-out" }}>
+        transform: on ? "scaleY(1)" : "scaleY(0.02)", opacity: on ? 1 : 0, transition: `transform ${descend}ms ease-in, opacity ${Math.round(descend * 0.92)}ms ease-out` }}>
         <div className="as-burn-flicker" style={{ position: "absolute", inset: 0, borderRadius: 3,
           background: `linear-gradient(180deg, ${color}00, ${color} 20%, #ffffff 86%, ${HOT})`,
           boxShadow: `0 0 ${glow}px 1px ${HOT}, 0 0 ${glow * 2}px 3px ${HOT}55` }} />
@@ -673,13 +675,12 @@ export function OverloadFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, 
         ctx.beginPath(); ctx.arc(cx, cy, 24 * glare, 0, Math.PI * 2); ctx.fill();
       } else {
         const p = Math.min(1, (el - strikeMs) / (dur - strikeMs)); // Funken glühen aus
-        // #: Funken sprühen in ALLE Richtungen (voll radial) und werden mit der Stufe deutlich MEHR und STÄRKER
-        // (Anzahl, Geschwindigkeit/Streuweite, Größe). tier 1..4.
-        const nS = 14 + tier * 12;
+        // #: Funken sprühen radial, mit der Stufe etwas mehr — aber bewusst DEZENT (deutlich weniger als zuvor).
+        const nS = 5 + tier * 4;
         ctx.globalCompositeOperation = "lighter";
         for (let i = 0; i < nS; i++) {
-          // #300b: Funken entspringen ÜBER DIE GANZE Kartenfläche (nicht nur dem Einschlagpunkt) → die Karte „wird" zu Funken.
-          const ox = cx + (rng() - 0.5) * W0, oy = cy + (rng() - 0.5) * H0;
+          // #: Funken entspringen konzentriert AUS DEM EINSCHLAGPUNKT (enger Ursprung ~20px) statt über die ganze Kartenfläche.
+          const ox = cx + (rng() - 0.5) * 20, oy = cy + (rng() - 0.5) * 20;
           // Voll zufälliger Winkel (0..2π) → radial in alle Richtungen; nur ein winziger Auftrieb, damit es nicht nach
           // oben „schießt", sondern rundum wegspringt. Geschwindigkeit/Streuweite steigt spürbar mit der Stufe.
           const a = rng() * Math.PI * 2, sp = (24 + rng() * 74) * (0.7 + tier * 0.3);
@@ -1003,9 +1004,7 @@ function PrunkFx({ trigger, panelRef, oppRef, color }) {
     let ox = 0.5, oy = 0.5;
     const orr = oppRef?.current?.getBoundingClientRect();
     if (orr && orr.width) { ox = (orr.left - pr.left + orr.width / 2) / pr.width; oy = (orr.top - pr.top + orr.height / 2) / pr.height; }
-    // #: Tiefer Bass-Impact GENAU zum Start der Prunk-Animation (hier, nicht über einen separaten Timer) → Bass und
-    // Feuerwerk/Goldregen/Prisma-Welle fallen jeden Stich deckungsgleich zusammen, auch im zweiten Durchlauf.
-    audio.play("fx_bass", { rate: trigger.rate || 1, gain: 2.0, bass: 7 });
+    // #: Bass-Impact hier ENTFERNT — nur noch „Schwarzes Loch" bekommt Bass. Die Prunk-Animation läuft ohne Bass-Layer.
     return startPrunk(canvasRef.current, {
       fireworks: trigger.fireworks, goldRain: trigger.goldRain, prismaWave: trigger.prismaWave,
       color, originX: ox, originY: oy, loop: false });
@@ -1097,8 +1096,8 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepD
   } else if (effect === "scanline") {
     inner = (
       <>
-        <div className={`${A("as-field-flicker")} absolute inset-0`} style={{ backgroundImage: `repeating-linear-gradient(0deg, ${color}22 0 1px, transparent 1px 3px)`, opacity: 0.5 }} />
-        {react && <div key={sweepId} className="as-field-scan absolute left-0 right-0" style={{ height: 3, top: 0, background: `linear-gradient(90deg, transparent, ${win ? "#ffffff" : color}, transparent)`, boxShadow: `0 0 12px 1px ${color}`, opacity: win ? 1 : 0.7, animationDuration: `${sweepDur}ms` }} />}
+        <div className={`${A("as-field-flicker")} absolute inset-0`} style={{ backgroundImage: `repeating-linear-gradient(0deg, ${color}1a 0 1px, transparent 1px 4px)`, opacity: 0.45 }} />
+        {react && <div key={sweepId} className="as-field-scan absolute left-0 right-0" style={{ height: 2, top: 0, background: `linear-gradient(90deg, transparent, ${win ? "#ffffff" : color}, transparent)`, boxShadow: `0 0 8px 1px ${color}`, opacity: win ? 1 : 0.7, animationDuration: `${sweepDur}ms` }} />}
       </>
     );
   } else if (effect === "vignette") {
@@ -1389,18 +1388,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (t.trickNo === seenTrick.current) return;
     seenTrick.current = t.trickNo;
     // #110/#196: Karten-Aufdeck-Sound je Stich — startet zeitgleich mit der Flip-Animation (Ergebnis steht bei
-    // RESOLVE_TRICK fest). Rate steigt dezent mit dem Turbo. #196: bei Sieg lauter (×1,2) + Bass-Anhebung, die mit
-    // Crit und der Effekt-Stufe (fxIntensity, 0–4) wächst → der Klang zieht mit der visuellen Wucht mit;
-    // Niederlage/Gleichstand bleiben unverändert (kein Bass, kein Lautstärke-Boost).
+    // RESOLVE_TRICK fest). Rate steigt dezent mit dem Turbo; Lautstärke bleibt konstant (die Stich-/Finisher-Sounds tragen
+    // die Wucht). #: Bass-Anhebung entfernt — Bass gibt es nur noch beim „Schwarzen Loch".
     const w = t.result === "win" || t.result === "win_tie";
-    const flipTier = fxIntensity(t.gained || 0).tier; // 0–4 (STARK…GOTTGLEICH); tier 0 (<10k) → nur Sieg-Basis
     // #: Jetzt tragen die Stich-/Finisher-Sounds die Wucht → der Flip-Sound bekommt eine KONSTANTE Lautstärke bei jedem
     // Flip (Mitte zwischen dem alten Sieg- und Niederlage-Pegel), damit er gleichmäßig „tickt" statt bei Sieg/Niederlage
-    // stark zu springen. Tempo (rate) bleibt an flipMs gekoppelt; ein moderater konstanter Bass gibt etwas Körper.
+    // stark zu springen. Tempo (rate) bleibt an flipMs gekoppelt. #: Bass entfernt — Bass gibt es nur noch beim „Schwarzen Loch".
     audio.play("cardflip", {
       rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)),
       gain: CARDFLIP_GAIN_CONST,
-      bass: 2,
     });
     // #295/#296 Sieg-Finisher-SFX (Akzent AUF dem cardflip): Rate an flipMs gekoppelt (wie cardflip) → kein Überlaufen/
     // Stapeln in den nächsten Stich. Priorität wie das Visual. Schwarzes Loch UND Brennstrahl sind PERSISTENT → kein
@@ -1408,18 +1404,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Per-Stich-One-Shots. (Lasergitter teilt sich den Laser-Sound.)
     if (w && flipMs > 170) {
       const fxRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
-      // #300b/#: Bass-Impact-Layer auf großen Siegen — GUT HÖRBAR und an die Score-Stufe (STARK…GOTTGLEICH via flipTier)
-      // gekoppelt. Feuert bei JEDEM Stufen-Sieg (unabhängig vom Finisher, auch Schwarzes Loch/Brennstrahl), damit die
-      // Groß-Ansagen (Stark/Brutal/Irre/Gottgleich) ihren Bass bekommen. Überladung/Zerstäubung: + Wertdifferenz.
-      // #: Bei einem GOTTGLEICH-Prunk (Feuerwerk/Goldregen/Prisma-Welle) fällt der Bass HIER aus — PrunkFx spielt ihn
-      // stattdessen exakt zum Animationsstart. Unter reduced-motion feuert KEIN Prunk → dann bleibt der Bass hier (sonst weg).
-      const prunkComing = !isCrit && !reduced && flipTier >= 4 && (fxFireworks || fxGoldRain || fxPrismaWave);
-      if (flipTier >= 1 && !prunkComing) {
-        const bassGain = Math.min(2.0, 0.7 + flipTier * 0.4 + ((overloadFinish || disperseFinish) ? diffTier * 0.06 : 0));
-        audio.play("fx_bass", { rate: fxRate * (disperseFinish ? 1.1 : 1), gain: bassGain, bass: 6 });
-      }
+      // #: Bass-Impact-Layer auf großen Siegen/Groß-Ansagen (Stark/Irre/Gottgleich) ENTFERNT — Bass gibt es nur noch beim
+      // „Schwarzen Loch". Die Finisher-Sounds unten bleiben, aber ohne Bass-Anhebung.
       if (holeFinish || burnFinish) { /* still — persistente Betten (Loop) decken diese Siege ab */ }
-      else if (gridFinish)                audio.play("fx_laser", { rate: fxRate, gain: 1.1, bass: 2 }); // Lasergitter
+      else if (gridFinish)                audio.play("fx_laser", { rate: fxRate, gain: 1.1 }); // Lasergitter
       else if (overloadFinish) {          // #300/#: Überladung — Blitz-Crack, aber weicher: Lowpass rundet die harte Höhe ab,
         // kurzer Attack glättet die Transiente, Release lässt ihn sanft ausklingen (statt hartem Abriss). Im Turbo mehr
         // Softening + etwas leiser → weniger „hart/hektisch".
@@ -1484,7 +1472,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const sK = clamp((burnPulse.streak || 0) / 12, 0, 1);
       const g = 0.3 + sK * 0.6;   // leiser Start → deutlich lauter mit der Serie
       const r = 1 + sK * 0.28;    // leicht schneller mit der Serie
-      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, bass: 3, loopStart: 0.1, loopEnd: 0.8 });
+      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, loopStart: 0.1, loopEnd: 0.8 });
       else { audio.setLoopGain(burnLoopRef.current, g); audio.setLoopRate(burnLoopRef.current, r); }
     } else if (burnLoopRef.current) {
       audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;
@@ -1563,7 +1551,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         fx: gridFinish ? "lasergrid" : burnFinish ? "burn" : overloadFinish ? "overload" : disperseFinish ? "disperse" : "slice",
         dtier: diffTier, // #300 Wertdifferenz-Stufe (Überladung/Zerstäubung)
         laser: fxLaserSlice, // globaler Laser-Schnitt (nur normaler Schnitt)
-        color: suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
+        // #: Überladung — der Blitz nimmt die DECKFARBE an (nicht die Gegner-Suit-Farbe); alle anderen Finisher bleiben Suit-farbig.
+        color: overloadFinish ? (deckA1 || suitColor(t.oCard.suit)) : suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, green: !!t.oCard.green,
         branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
@@ -1712,7 +1701,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {/* #295 Brennstrahl (persistent): Strahl bleibt über die Serie lit, zieht sich beim Serienabbruch zurück; der
           Einschlag je Sieg (Loch/Funken/Verblassen) kommt vom Per-Sieg-Burst (SlashGhostLayer). */}
       <BurnBeamPersist active={burnActive} pulse={burnPulse}
-        color={deckA1 || "#ff9a3f"} scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} reduced={reduced} />
+        color={deckA1 || "#ff9a3f"} scale={fxScale} flipMs={flipMs} panelRef={panelRef} oppRef={oppSlotRef} reduced={reduced} />
       <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (
