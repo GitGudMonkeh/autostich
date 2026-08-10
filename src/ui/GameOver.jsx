@@ -225,7 +225,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                 return (
                   <div key={u.id} className="flex flex-col items-center gap-1" style={{ width: 74 }}>
                     <div className="rounded-md overflow-hidden w-full" style={{ aspectRatio: u.type === "deck" ? "3 / 4" : "16 / 9", background: "#0c0c10", border: "1px solid #33333e" }}>
-                      {img && <img src={img} alt="" className={`w-full h-full ${u.type === "deck" ? "object-contain" : "object-cover"}`} />}
+                      {img && <img src={img} alt="" loading="lazy" decoding="async" className={`w-full h-full ${u.type === "deck" ? "object-contain" : "object-cover"}`} />}
                     </div>
                     <span className="text-[10px] text-center leading-tight opacity-90">{u.name}</span>
                   </div>

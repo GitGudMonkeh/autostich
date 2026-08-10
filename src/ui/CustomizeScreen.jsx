@@ -505,7 +505,10 @@ function BfPreview({ bfId, a1, fx, className = "", showVersion = false }) {
 // Kleine Deck-Rücken-Miniatur (für Pack-Kacheln). object-contain → nie angeschnitten.
 function DeckThumb({ deckId, className = "", face = "back", style }) {
   const img = deckAssets(deckId)[face];
-  return <img src={img} alt="" className={`object-contain ${className}`} style={{ aspectRatio: CARD_RATIO, background: "#0b0a16", ...style }} />;
+  // #perf C3: Der Shop rendert ein Raster aus ~15–20 Deck-Thumbnails. `loading="lazy"` lädt nur die sichtbaren Kacheln
+  // (Off-Screen erst beim Scrollen) → deutlich weniger Bytes beim Öffnen der Kollektion auf Mobile; `decoding="async"`
+  // hält das Bild-Decoding vom Main-Thread. Rein additive Attribute → kein visueller/Desktop-Unterschied.
+  return <img src={img} alt="" loading="lazy" decoding="async" className={`object-contain ${className}`} style={{ aspectRatio: CARD_RATIO, background: "#0b0a16", ...style }} />;
 }
 
 const EYEBROW = "flex items-center gap-2 text-[10px] font-extrabold tracking-[0.13em] uppercase mt-4 mb-2";
