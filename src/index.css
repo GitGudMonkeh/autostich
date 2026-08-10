@@ -438,8 +438,10 @@ button { font-family: inherit; }
 /* #: Datenregen via transform statt background-position — background-position animiert auf dem Main-Thread (Repaint der
    ganzen Feldfläche pro Frame), transform ist GPU-kompositiert. Die Ebene ragt oben+unten je eine Kachel (26px) über den
    (overflow-hidden) Container, damit der um genau eine Kachel wandernde Regen nahtlos loopt, ohne Rand-Lücken. */
-@keyframes as-field-datarain { to { transform: translateY(26px); } }
-.as-field-datarain { animation: as-field-datarain 1.3s linear infinite; will-change: transform; }
+/* Matrix-Datenregen: die Spalte fällt von oberhalb des Feldes bis darunter durch (transform → GPU), Endlos-Loop.
+   Die Streifenlänge variiert je Spalte; der Bereich −130%…320% (elementrelativ) trägt sie sicher durch + heraus. */
+@keyframes as-datarain-fall { from { transform: translateY(-130%); } to { transform: translateY(320%); } }
+.as-datarain-fall { animation: as-datarain-fall linear infinite; will-change: transform; }
 @keyframes as-field-drop { 0% { top: -24%; opacity: 0; } 12% { opacity: 1; } 84% { opacity: 1; } 100% { top: 104%; opacity: 0; } }
 .as-field-drop { animation: as-field-drop 900ms linear forwards; }
 /* Scanline-Puls: statische CRT-Zeilen flackern minimal; Reaktion = helle Zeile wandert oben→unten. */

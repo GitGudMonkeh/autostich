@@ -1114,6 +1114,13 @@ const COMET_TRAIL = Array.from({ length: 14 }, (_, i) => {
   const t = i / 13;
   return { x: 3 + i * 4.6, y: (i % 2 ? 1 : -1) * (0.5 + t * 2.4), s: +(3 - t * 2.1).toFixed(2), o: +(0.85 - t * 0.72).toFixed(2), d: +(i * 0.045).toFixed(2) };
 });
+// #: Datenregen als echte MATRIX-Spalten (vertikal fallend) statt Querstreifen. Je Spalte: x (%), Breite (px),
+// Streifenlänge h (%), Start-Offset top (%), Fallzeit dur (s), Versatz delay (s). Deterministisch (fjitter).
+const DATARAIN_COLS = Array.from({ length: 13 }, (_, i) => {
+  const s = i * 12.9;
+  return { x: 3 + i * 7.5, w: i % 4 === 0 ? 3 : 2, h: 40 + Math.abs(fjitter(s, 24)),
+    top: +Math.abs(fjitter(s + 3, 44)).toFixed(1), dur: +(1.5 + Math.abs(fjitter(s + 7, 1.8))).toFixed(2), delay: +Math.abs(fjitter(s + 11, 2.4)).toFixed(2) };
+});
 // #: dezente Sterne für die Aurora (obere Feldhälfte). x/y in %, s = Größe (px), d = Twinkle-Versatz (s).
 const AURORA_STARS = [{ x: 12, y: 14, s: 2, d: 0 }, { x: 26, y: 24, s: 1.4, d: 0.8 }, { x: 43, y: 9, s: 2.2, d: 1.5 }, { x: 57, y: 20, s: 1.5, d: 0.5 }, { x: 71, y: 12, s: 2, d: 1.2 }, { x: 85, y: 27, s: 1.4, d: 0.9 }, { x: 36, y: 33, s: 1.5, d: 1.9 }, { x: 64, y: 34, s: 1.3, d: 0.3 }];
 const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, win, score = 0 }) {
@@ -1208,10 +1215,22 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
       </>
     );
   } else if (effect === "dataRain") {
+    // #: Matrix-Regen — vertikale Spalten fallen herab; je Spalte ein gestrichelter (mask) Fade-Schweif + heller Kopf
+    // (das führende „Zeichen"). Verschiedene Geschwindigkeiten/Startphasen → dichter, unregelmäßiger Regen.
+    const dash = "repeating-linear-gradient(180deg, #000 0 3px, transparent 3px 6px)";
     inner = (
       <>
-        <div className={`${A("as-field-datarain")} absolute left-0 right-0`} style={{ top: "-26px", bottom: "-26px", backgroundImage: `repeating-linear-gradient(0deg, ${color}55 0 5px, transparent 5px 26px)`, backgroundSize: "14px 26px", opacity: 0.4 }} />
-        {react && <div key={sweepId} className="as-field-drop absolute" style={{ left: `${18 + (sweepId * 37) % 64}%`, top: "-24%", width: 3, height: "26%", background: `linear-gradient(180deg, transparent, ${win ? "#ffffff" : color}, transparent)`, boxShadow: `0 0 8px 1px ${color}`, opacity: win ? 1 : 0.7, animationDuration: `${sweepDur}ms` }} />}
+        {DATARAIN_COLS.map((c, i) => (
+          <div key={i} className={`${A("as-datarain-fall")} absolute`} style={{ left: `${c.x}%`, top: `${c.top}%`, width: c.w, height: `${c.h}%`,
+            animationDuration: `${c.dur}s`, animationDelay: `${c.delay}s` }}>
+            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent, ${color}00 8%, ${color}88 64%, ${color} 92%)`,
+              WebkitMaskImage: dash, maskImage: dash, boxShadow: `0 0 6px ${color}`, opacity: 0.85 }} />
+            <span className="absolute" style={{ left: 0, bottom: -2, width: c.w + 1, height: (c.w + 1) * 1.8, background: "#ffffff", boxShadow: `0 0 9px 2px ${color}, 0 0 3px #ffffff` }} />
+          </div>
+        ))}
+        {/* Per-Stich: eine helle, schnelle Spalte fällt zusätzlich (Highlight). */}
+        {react && <div key={sweepId} className="as-field-drop absolute" style={{ left: `${6 + (sweepId * 37) % 86}%`, top: "-24%", width: 4, height: "50%",
+          background: `linear-gradient(180deg, transparent, ${win ? "#ffffff" : color} 72%, #ffffff)`, boxShadow: `0 0 12px 2px ${win ? "#ffffff" : color}`, opacity: win ? 1 : 0.9, animationDuration: `${sweepDur}ms` }} />}
       </>
     );
   } else if (effect === "scanline") {
