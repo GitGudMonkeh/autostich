@@ -357,7 +357,9 @@ button { font-family: inherit; }
 /* Glutfunken: Partikel steigen auf (leichtes Seitwärts-Wiegen); Reaktion = Funken-Aufstoß von unten (--sx = Streuung). */
 @keyframes as-field-rise { 0% { transform: translateY(0) translateX(0); opacity: 0; } 12% { opacity: .8; } 80% { opacity: .7; } 100% { transform: translateY(-320%) translateX(8px); opacity: 0; } }
 .as-field-rise { animation: as-field-rise linear infinite; }
-@keyframes as-field-spark { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(var(--sx,0), -180%); opacity: 0; } }
+/* #: „Vulkan"-Funke — springt an seiner Startstelle (unten) real HOCH (--sy px, nicht mehr −180 % eines 3px-Punkts, was
+   quasi unsichtbar war), driftet leicht seitlich (--sx) und fadet oben aus. ease-out → schnell hoch, oben abbremsend. */
+@keyframes as-field-spark { 0% { transform: translate(0,0) scale(1); opacity: 1; } 12% { opacity: 1; } 100% { transform: translate(var(--sx,0), var(--sy,-80px)) scale(0.35); opacity: 0; } }
 .as-field-spark { animation: as-field-spark 700ms ease-out forwards; }
 /* Datenregen: Dash-Raster rieselt herab; Reaktion = eine helle Spalte fällt. */
 /* #: Datenregen via transform statt background-position — background-position animiert auf dem Main-Thread (Repaint der

@@ -391,8 +391,22 @@ export function LaserGridFx({ cardEl, color, diceDur, lineDur, seed, delay = 0, 
   const lineThick = fine ? 1.25 : 1.5;                                            // #: wieder fein/laser-artig (Glow + Nachhall bleiben)
   const lineShadow = `0 0 ${(6 * glowK).toFixed(0)}px 1px #ffffff, 0 0 ${(16 * glowK).toFixed(0)}px ${(3 * glowK).toFixed(1)}px ${color}, 0 0 ${(34 * glowK).toFixed(0)}px ${(10 * glowK).toFixed(0)}px ${color}aa`;
   const lineGrad = (h) => `linear-gradient(${h ? "90deg" : "0deg"}, transparent, ${color}, #ffffff, ${color}, transparent)`; // heißer Weiß-Kern
+  // #: Rahmen-Gradient BLEIBT an den Enden hell (kein transparent) → die vier Kanten verbinden sich an den Ecken zu
+  // einem geschlossenen Rahmen in Kartengröße; das Gitter sieht dadurch wie ein Laser-Gitter in Kartenform aus.
+  const frameGrad = (h) => `linear-gradient(${h ? "90deg" : "0deg"}, ${color}, #ffffff, ${color})`;
+  const frameLines = [
+    { k: "ft", h: true,  box: { left: 0, right: 0, top: 0, height: lineThick } },
+    { k: "fb", h: true,  box: { left: 0, right: 0, bottom: 0, height: lineThick } },
+    { k: "fl", h: false, box: { top: 0, bottom: 0, left: 0, width: lineThick } },
+    { k: "fr", h: false, box: { top: 0, bottom: 0, right: 0, width: lineThick } },
+  ];
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* #: Laser-Rahmen außen in Kartengröße — gleiche Blitz-/Nachleucht-Animation wie die Gitterlinien. */}
+      {frameLines.map((f) => (
+        <div key={f.k} className="absolute" style={{ ...f.box, background: frameGrad(f.h), boxShadow: lineShadow,
+          animation: `as-lg-line ${lineTotal}ms ease-out ${delay}ms both` }} />
+      ))}
       {/* Raster-Stücke: halten bis delay+lineMs den Ganz-Zustand, dann bersten sie entlang der Linien nach außen. */}
       {pieces.map((s) => (
         <div key={`gp${s.i}`} className="absolute inset-0" style={{ clipPath: s.clip,
@@ -1013,6 +1027,16 @@ function PrunkFx({ trigger, panelRef, oppRef, color }) {
 // im Battlefield). reduced → nur statisches Ambiente. Nur transform/opacity/gradient/background-position (GPU-günstig).
 const EMBER_DOTS = [{ l: 12, s: 2.4, d: 0, t: 9.5 }, { l: 24, s: 1.6, d: 1.1, t: 11 }, { l: 37, s: 2.0, d: 2.3, t: 8.5 }, { l: 49, s: 1.4, d: 0.6, t: 12 }, { l: 58, s: 2.6, d: 1.8, t: 10 }, { l: 68, s: 1.7, d: 3.0, t: 9 }, { l: 78, s: 2.1, d: 0.9, t: 11.5 }, { l: 88, s: 1.5, d: 2.0, t: 8.8 }, { l: 31, s: 1.3, d: 3.4, t: 10.5 }, { l: 63, s: 1.9, d: 1.4, t: 12.5 }];
 const SPARK_DIRS = [-46, -27, -9, 9, 27, 46];
+// #: „Vulkan"-Funkenstoß je Stich (Glutfunken): viele Funken springen an ZUFÄLLIGEN Stellen entlang der Unterkante
+// hoch — l = Startposition (%), jy = Sprunghöhe (px), dx = Seitendrift (px), d = Zeitversatz (ms). Deterministisch.
+const SPARK_JETS = [
+  { l: 8, jy: 66, dx: -10, d: 20 }, { l: 15, jy: 94, dx: 6, d: 0 }, { l: 22, jy: 76, dx: -4, d: 60 },
+  { l: 29, jy: 110, dx: 8, d: 30 }, { l: 36, jy: 84, dx: -8, d: 90 }, { l: 43, jy: 122, dx: 4, d: 10 },
+  { l: 50, jy: 100, dx: -2, d: 50 }, { l: 57, jy: 118, dx: 6, d: 20 }, { l: 64, jy: 80, dx: -6, d: 80 },
+  { l: 71, jy: 106, dx: 10, d: 40 }, { l: 78, jy: 88, dx: -4, d: 0 }, { l: 85, jy: 72, dx: 8, d: 70 },
+  { l: 92, jy: 92, dx: -8, d: 30 }, { l: 33, jy: 60, dx: 3, d: 120 }, { l: 47, jy: 64, dx: -5, d: 110 },
+  { l: 68, jy: 62, dx: 5, d: 130 },
+];
 // #perf A2-lite: memoisiert — alle Props sind Primitive (effect/color/sweepId/sweepDur/reduced/win). Re-rendert das
 // Ambiente-DOM (Sternenfeld/Glutfunken/… — teils viele Knoten) NUR, wenn sich diese Werte ändern; bei sonstigen
 // Battlefield-Re-Renders (ohne Stich/Feld-Wechsel) bleibt die Ebene stehen. Kein visueller Unterschied (Desktop unverändert).
@@ -1054,8 +1078,12 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepD
         {EMBER_DOTS.map((e, i) => (
           <span key={i} className={`${A("as-field-rise")} absolute rounded-full`} style={{ left: `${e.l}%`, bottom: reduced ? `${30 + e.l % 40}%` : "-6%", width: e.s, height: e.s, background: color, boxShadow: `0 0 ${(e.s * 2.5).toFixed(1)}px ${color}`, opacity: 0.7, animationDuration: `${e.t}s`, animationDelay: `${e.d}s` }} />
         ))}
-        {react && SPARK_DIRS.map((dx, i) => (
-          <span key={`${sweepId}-${i}`} className="as-field-spark absolute rounded-full" style={{ left: "50%", bottom: "1%", width: win ? 3 : 2, height: win ? 3 : 2, background: win ? "#ffffff" : color, boxShadow: `0 0 6px ${color}`, "--sx": `${dx}px`, animationDuration: `${sweepDur}ms` }} />
+        {react && SPARK_JETS.map((jt, i) => (
+          <span key={`${sweepId}-${i}`} className="as-field-spark absolute rounded-full" style={{
+            left: `${jt.l}%`, bottom: "0%", width: win ? 3.2 : 2.6, height: win ? 3.2 : 2.6,
+            background: i % 3 === 0 ? "#ffffff" : color, boxShadow: `0 0 6px ${color}`,
+            "--sx": `${jt.dx}px`, "--sy": `-${Math.round(jt.jy * (win ? 1.15 : 1))}px`,
+            animationDuration: `${Math.max(560, Math.round(sweepDur * 0.9))}ms`, animationDelay: `${jt.d}ms` }} />
         ))}
       </>
     );

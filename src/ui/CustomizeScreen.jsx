@@ -779,7 +779,14 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
                     selected={sel.group === g.key && sel.key === fx.key}
                     owned={fx.standard || fx.alwaysOwned || globalFxOwned(p, fx)}
                     active={isActive(g, fx)}
-                    onPick={() => setSel({ group: g.key, key: fx.key })} />
+                    onPick={() => setSel({ group: g.key, key: fx.key })}
+                    onUnequip={() => {
+                      // Doppelklick rüstet einen aktiven Effekt aus. Standard-Effekte sind immer aktiv → nicht abwählbar.
+                      if (fx.standard || !isActive(g, fx)) return;
+                      if (g.mode === "finisher") onChoose(finisherFlags("none"));
+                      else if (g.mode === "field") onChoose(fieldFxFlags("none"));
+                      else onChoose({ [fx.option]: false });
+                    }} />
                 ))}
               </div>
             </div>
@@ -859,13 +866,14 @@ const FX_TINT = {
 /* #fx-floater: Text-Chip einer Kategorie-Reihe (horizontal wischbar) — KEIN Grafik-Icon. Linker Signatur-Farbbalken
    + Name + Status (aktiv = grün · kaufbar = Preis gold · sonst „im Besitz"). Die echte Optik zeigt der Floater oben;
    der Chip ist ein reiner Wähler. Tippen wählt den Effekt. */
-function FxChip({ fx, selected, owned, active, onPick }) {
+function FxChip({ fx, selected, owned, active, onPick, onUnequip }) {
   const tint = FX_TINT[fx.preview] || "#35e0ff";
   const status = active ? { c: "#54e08a", label: "aktiv", dot: "#54e08a" }
     : !owned ? { c: "#f2c14a", label: `${globalFxPrice(fx)} DP`, dot: "#f2c14a" }
     : { c: "#6d6a80", label: "im Besitz", dot: null };
   return (
-    <button type="button" onClick={onPick}
+    // #: Doppelklick auf einen (aktiven) Effekt rüstet ihn direkt aus — schneller Abwahl-Shortcut ohne Umweg über den Floater.
+    <button type="button" onClick={onPick} onDoubleClick={onUnequip} title={active ? "Doppelklick: abwählen" : undefined}
       className="shrink-0 relative overflow-hidden rounded-xl text-left transition-transform active:scale-95 flex flex-col justify-center"
       style={{ minWidth: 106, maxWidth: 138, padding: "9px 11px 9px 13px", scrollSnapAlign: "start",
         background: selected ? "#211f2e" : "#14131c",
