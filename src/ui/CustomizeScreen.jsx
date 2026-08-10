@@ -36,7 +36,10 @@ const DEMO_C = "#35e0ff";
 
 // „Standard"-Pack (UI-seitig): aktiviert wieder das Grund-Deck/-Battlefield. kind:"std" → immer im Besitz.
 const STD_PACK = { id: "default", name: "Standard", kind: "std", a1: "#8a7de0", deckId: "default", bfId: "default", els: ["deck", "bf"] };
-const PACK_LIST = [STD_PACK, ...THEMES];
+// #307/#Shop-Reorg: eigene Kategorien. „Packs" = Standard + Kauf-Packs, nach DP-Preis aufsteigend (billig oben, teuer
+// unten; Standard immer zuoberst). „Challenges" = die freischaltbaren cond-Packs (#303), eigene Kategorie ganz separat.
+const PACKS_TAB = [STD_PACK, ...THEMES.filter((t) => t.kind === "buy").slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0))];
+const CHALLENGES_TAB = THEMES.filter((t) => t.kind === "cond");
 
 /* Synthetische „Klinge"-Kachel: der Standard-Sieg-Finisher — immer im Besitz (kein Kauf), aber wählbar UND
    vorschaubar wie die anderen Finisher. Wird der Sieg-Finisher-Gruppe vorangestellt (analog „Gottgleich · Standard"). */
@@ -61,9 +64,10 @@ const FX_GROUPS = [
    Battlefield-Ambiente-Gruppe — wählbar wie „Klinge" beim Finisher. */
 const FIELD_NONE = { key: "none", name: "Kein Feld-Effekt", group: "field", preview: "none", alwaysOwned: true,
   desc: "Kein Battlefield-Ambiente — nur das Battlefield-Bild (immer verfügbar)." };
-// Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe; „Standard"/„Kein …" wird vorangestellt.
+// Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe nach DP-Preis aufsteigend (billig oben, teuer unten);
+// der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxGroupItems = (group) => {
-  const list = GLOBAL_FX.filter((f) => f.group === group);
+  const list = GLOBAL_FX.filter((f) => f.group === group).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
   if (group === "gott") return [GOTT_STANDARD, ...list];
   if (group === "finisher") return [KLINGE, ...list]; // „Klinge" (Default) voran
   if (group === "field") return [FIELD_NONE, ...list]; // „Kein Feld-Effekt" (Default) voran
@@ -512,10 +516,11 @@ const EYEBROW = "flex items-center gap-2 text-[10px] font-extrabold tracking-[0.
 export function CustomizeScreen({ options, profile, onChoose, onClose, onProfileChange }) {
   useEscape(onClose);
   const p = profile || {};
-  const [tab, setTab] = useState("packs");           // "packs" | "fx"
-  const [packIdx, setPackIdx] = useState(-1);        // offene Pack-Detailansicht (-1 = zu)
+  const [tab, setTab] = useState("packs");           // "packs" | "challenges" | "fx"
+  const [packOv, setPackOv] = useState(null);        // offene Pack-Detailansicht: { cat, idx } | null
   const [packSel, setPackSel] = useState("front");   // "front" | "back" | "bg"
   const [fxOv, setFxOv] = useState(null);            // offenes Effekt-Kauffenster: { group, idx } | null
+  const catList = (cat) => (cat === "challenges" ? CHALLENGES_TAB : PACKS_TAB); // #Shop-Reorg: Detail navigiert innerhalb seiner Kategorie
   const spBal = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
   const dpBal = Math.max(0, Math.floor(Number(p.deckPoints) || 0)); // #299 Deckpunkte — Währung der Packs
 
@@ -524,12 +529,12 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const buy = (fn) => { if (onProfileChange) onProfileChange(fn(p)); };
   const activate = (pack) => onChoose(hasBattlefield(pack) ? { deckId: pack.deckId, battlefieldId: pack.bfId } : { deckId: pack.deckId });
 
-  const openPack = (i) => { setPackIdx(i); setPackSel("front"); };
-  const stepPack = (d) => { setPackIdx((i) => (i + d + PACK_LIST.length) % PACK_LIST.length); setPackSel("front"); };
+  const openPack = (cat, i) => { setPackOv({ cat, idx: i }); setPackSel("front"); };
+  const stepPack = (d) => { setPackOv((o) => (o ? { ...o, idx: (o.idx + d + catList(o.cat).length) % catList(o.cat).length } : o)); setPackSel("front"); };
   const stepFx = (d) => setFxOv((o) => { if (!o) return o; const list = fxGroupItems(o.group); return { ...o, idx: (o.idx + d + list.length) % list.length }; });
 
   // Ist ein Kauffenster offen, wird der Shop-Hintergrund NICHT mitgescrollt (kein Scroll-Durchgriff auf iOS).
-  const anyOverlay = packIdx >= 0 || !!fxOv;
+  const anyOverlay = !!packOv || !!fxOv;
 
   return (
     <div className={`fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`}
@@ -543,31 +548,31 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold">Deck-Werkstatt</h2>
             <div className="flex items-center gap-2">
-              {/* DP = Pack-Währung (#299), SP = Effekt-Währung. */}
+              {/* DP = Werkstatt-Währung (Packs UND Effekte, #307); SP-Guthaben nur zur Info (Upgrade-Baum). */}
               <span className="text-xs font-bold px-2.5 py-1 rounded-lg" style={{ background: "#141320", border: "1px solid #4a3f6e", color: "#b9a9f2" }}>{dpBal} DP</span>
               <span className="text-xs font-bold px-2.5 py-1 rounded-lg" style={{ background: "#141320", border: "1px solid #34333f", color: "#f2c14a" }}>{spBal} SP</span>
               <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
             </div>
           </div>
-          {/* Tab-Umschalter: Packs · Effekte */}
+          {/* Tab-Umschalter: Packs · Challenges · Effekte */}
           <div className="flex gap-1.5 mt-3 p-1 rounded-xl" style={{ background: "#131219", border: "1px solid #2a2836" }}>
-            {[["packs", "Packs"], ["fx", "Effekte"]].map(([m, label]) => (
+            {[["packs", "Packs"], ["challenges", "Challenges"], ["fx", "Effekte"]].map(([m, label]) => (
               <button key={m} onClick={() => setTab(m)} className="flex-1 py-2 rounded-lg text-[12.5px] font-extrabold transition-colors"
                 style={{ background: tab === m ? "#9b82f0" : "transparent", color: tab === m ? "#141419" : "#9a97ab" }}>{label}</button>
             ))}
           </div>
         </div>
 
-        {tab === "packs"
-          ? <PacksView p={p} deckId={deckId} onOpen={openPack} />
+        {tab === "packs" ? <PacksView p={p} deckId={deckId} list={PACKS_TAB} cat="packs" onOpen={openPack} />
+          : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={CHALLENGES_TAB} cat="challenges" onOpen={openPack} />
           : <FxView p={p} options={options} onChoose={onChoose} onOpenFx={(group, idx) => setFxOv({ group, idx })} />}
       </div>
 
       {/* Kauffenster via Portal an document.body: der Shop-Root trägt backdrop-filter und ist damit der
           Containing-Block für `position:fixed` — das Portal löst das Overlay heraus → echtes Vollbild-Overlay. */}
-      {packIdx >= 0 && createPortal(
-        <PackDetail pack={PACK_LIST[packIdx]} idx={packIdx} count={PACK_LIST.length} p={p} dpBal={dpBal}
-          deckId={deckId} sel={packSel} setSel={setPackSel} onStep={stepPack} onClose={() => setPackIdx(-1)}
+      {packOv && createPortal(
+        <PackDetail pack={catList(packOv.cat)[packOv.idx]} idx={packOv.idx} count={catList(packOv.cat).length} p={p} dpBal={dpBal}
+          deckId={deckId} sel={packSel} setSel={setPackSel} onStep={stepPack} onClose={() => setPackOv(null)}
           onActivate={activate} onBuy={(pack) => { buy((pf) => buyPack(pf, pack)); activate(pack); }} />,
         document.body)}
 
@@ -580,18 +585,21 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   );
 }
 
-/* ============================ Packs-Tab ============================ */
-function PacksView({ p, deckId, onOpen }) {
-  const [filter, setFilter] = useState("alle"); // alle | besitz | kaufbar
-  const chips = [["alle", "Alle"], ["besitz", "Besitz"], ["kaufbar", "Kaufbar"]];
+/* ============================ Packs- / Challenges-Tab ============================ */
+// #Shop-Reorg: geteilte Ansicht für „Packs" (Kauf-Packs, nach DP-Preis sortiert) und „Challenges" (freischaltbare
+// cond-Packs). `list` kommt vorsortiert rein; die Reihenfolge bleibt (kein erneutes Sortieren) → billig oben, teuer unten.
+function PacksView({ p, deckId, list, cat, onOpen }) {
+  const challenge = cat === "challenges";
+  const [filter, setFilter] = useState("alle");
+  const chips = challenge ? [["alle", "Alle"], ["besitz", "Frei"], ["gesperrt", "Gesperrt"]] : [["alle", "Alle"], ["besitz", "Besitz"], ["kaufbar", "Kaufbar"]];
   const stateOf = (pack) => (pack.kind === "std" ? "own" : packState(p, pack));
-  // #299 Reihenfolge: Standard (Prisma) Pos 1, aktives Pack Pos 2, Rest danach (stabil).
-  const rank = (pack) => (pack.kind === "std" ? 0 : deckId === pack.deckId ? 1 : 2);
-  const list = PACK_LIST.filter((pack) => {
-    if (filter === "besitz") return stateOf(pack) === "own";
-    if (filter === "kaufbar") return stateOf(pack) === "buy";
+  const shown = list.filter((pack) => {
+    const s = stateOf(pack);
+    if (filter === "besitz") return s === "own";
+    if (filter === "kaufbar") return s === "buy";
+    if (filter === "gesperrt") return s === "lock";
     return true;
-  }).slice().sort((a, b) => rank(a) - rank(b));
+  });
 
   return (
     <>
@@ -603,8 +611,8 @@ function PacksView({ p, deckId, onOpen }) {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-3">
-        {list.map((pack) => {
-          const gi = PACK_LIST.indexOf(pack);
+        {shown.map((pack) => {
+          const gi = list.indexOf(pack);
           const s = stateOf(pack);
           const active = deckId === pack.deckId;
           const locked = s === "lock";
@@ -617,7 +625,7 @@ function PacksView({ p, deckId, onOpen }) {
             : s === "buy" ? ["kaufbar", "#f2c14a"]
             : [packUnlock(p, pack).label, "#6d6a80"];
           return (
-            <button key={pack.id} type="button" onClick={() => onOpen(gi)}
+            <button key={pack.id} type="button" onClick={() => onOpen(cat, gi)}
               className="relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5"
               style={{ background: "#14131c", border: `1px solid ${active ? "#54e08a55" : "#2a2836"}`, boxShadow: active ? "0 0 0 1px #54e08a55, 0 0 16px #54e08a22" : undefined }}>
               <div className="relative" style={{ aspectRatio: CARD_RATIO }}>
@@ -633,8 +641,14 @@ function PacksView({ p, deckId, onOpen }) {
         })}
       </div>
 
+      {shown.length === 0 && (
+        <div className="text-center text-[12px] py-6" style={{ color: "#6d6a80" }}>Nichts in dieser Ansicht.</div>
+      )}
+
       <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
-        Ein <b>Pack</b> bündelt Karte (Front + Back) und Battlefield. Tippe ein Pack an → Detail-Ansicht mit Vorschau; <b>Kaufen aktiviert das Pack direkt</b>.
+        {challenge
+          ? <>Ein <b>Challenge-Deck</b> wird über eine Herausforderung <b>freigeschaltet</b> (kein Kauf). Tippe es an → Vorschau + Freischalt-Bedingung; sobald erfüllt, aktivierst du es direkt.</>
+          : <>Ein <b>Pack</b> bündelt Karte (Front + Back) und Battlefield. Tippe ein Pack an → Detail-Ansicht mit Vorschau; <b>Kaufen aktiviert das Pack direkt</b>.</>}
       </p>
     </>
   );
