@@ -271,7 +271,7 @@ button { font-family: inherit; }
   /* #: Die Bruchstücke bleiben während des Auseinanderstiebens lange klar SICHTBAR (halten die Opazität bis ~72 %), damit
      man die Karte real zerspringen sieht und die Asche noch nachglüht — erst zum Schluss faden sie sanft aus. Sonst wirkte
      der Zerfall (v. a. im Turbo) zu schnell/abrupt weg statt zu „verweilen". */
-  72%    { opacity: 0.82; }
+  80%    { opacity: 0.85; }
   100%   { opacity: 0; transform: translate(var(--dx, 0), var(--dy, 0)) scale(var(--ds, 0.5)) rotate(var(--dr, 0deg)); }
 }
 /* Persistenter Brennstrahl: feiner, schneller Flicker = Laser-Energie (Opazität pendelt leicht). */

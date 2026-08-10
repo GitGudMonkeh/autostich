@@ -420,12 +420,15 @@ const DISINT_COLS = 8, DISINT_ROWS = 11;
 // überhaupt zu sehen (die Karte wirkte, als würde sie nur „flippen"). Diese Untergrenze hält den Zerfall auch im Turbo
 // sichtbar; die Bursts überlappen dann bewusst leicht in den nächsten Stich → der Strahl „zerstört eine Karte nach der
 // anderen" (der Ghost lebt entsprechend länger, s. ghostLife). Reines Ausfaden von Fragmenten → kein Verdecken der Folgekarte.
-const BURN_DISINT_MIN = 760;
+// #: An „Zerstäuben" angeglichen (Wunsch): die Disintegration soll GENAUSO LANGE halten wie der Zerstäuben-Finisher —
+// vorher endete sie (v. a. im Turbo) viel zu früh. Höherer Boden + größerer Budget-Anteil → die Fragmente verweilen
+// deutlich länger; die Überlappung in den nächsten Stich ist bewusst gewollt (der Ghost lebt entsprechend, s. ghostLife).
+const BURN_DISINT_MIN = 900;
 function burnDisintTiming(flipMs, delay) {
   const budget = Math.max(200, flipMs - 30);
   const body = Math.max(150, budget - delay);
   const hitAt = delay + Math.round(body * 0.22);
-  const disintDur = Math.max(BURN_DISINT_MIN, Math.round(body * 0.60));
+  const disintDur = Math.max(BURN_DISINT_MIN, Math.round(body * 0.85));
   return { body, hitAt, disintDur };
 }
 // #: Zerstäubungs-Dauer mit sichtbarem Boden (bei Max nicht zu schnell) — gemeinsam von DisperseFx (Animation) und
@@ -447,7 +450,9 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
     for (let c = 0; c < DISINT_COLS; c++) {
       const i = r * DISINT_COLS + c;
       const dirX = (c + 0.5) / DISINT_COLS - 0.5, dirY = (r + 0.5) / DISINT_ROWS - 0.5; // Zellmitte relativ zur Kartenmitte
-      const spread = 42 + Math.abs(fjitter(seed * 5 + i * 13, 30 + streakK * 26));       // #: weiter → Karte löst sich klar in Einzelteile auf
+      // #: Streuweite an „Zerstäuben" angeglichen — die Fragmente fliegen radial deutlich weiter aus der Kartenmitte,
+      // damit sich der Zerfall genauso breit verteilt wie beim Zerstäuben-Finisher (Serie streut zusätzlich weiter).
+      const spread = 96 + Math.abs(fjitter(seed * 5 + i * 13, 60 + streakK * 44));
       frags.push({
         i,
         // clip-path inset(top right bottom left) blendet die Karte auf DIESE Zelle aus (Klon zeigt nur sein Stück).
