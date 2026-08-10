@@ -24,26 +24,49 @@ import neon_static from "../assets/music/neon_static.m4a";
 import neon_static_remaster from "../assets/music/neon_static_remaster.m4a";
 
 const MENU_TRACK = { title: "Morning Deck", url: morning_deck };
+
+// Intensitäts-Stufen: jeder Run-Track trägt ein `tier`. Die aktuelle RUNDE (state.cycle) wählt die aktive Stufe;
+// innerhalb einer Stufe werden Tracks zufällig gereiht (ein Track endet → nächster gleicher Stufe). Beim
+// Stufen-Sprung schaltet die Musik sofort hoch → hörbarer Tempo-Anstieg über den Lauf.
+//   calm = ruhig · mid = treibend · hot = schnell/fetzig · overdrive = maximal energetisch (Endphase)
+// TUNING: Die Zuordnung unten ist nach GEHÖR anpassbar — einfach das `tier` eines Tracks umtragen. Eine leere
+// Stufe fällt automatisch auf die nächstniedrigere Stufe mit Tracks zurück (z. B. overdrive → hot).
+const TIER_ORDER = ["calm", "mid", "hot", "overdrive"]; // aufsteigende Intensität (Reihenfolge = Fallback-Kette)
+// Runden-Grenzen (state.cycle): < calm → calm · < mid → mid · < hot → hot · sonst overdrive.
+// Plan: Runde 0–10 calm · 10–25 mid · 25–40 hot · 40+ overdrive.
+const TIER_ROUNDS = { calm: 10, mid: 25, hot: 40 };
 // Run-Zufallspool (17 harmonisierte Tracks). Titel = Anzeige im Musik-Panel.
 const POOL = [
-  { title: "Card Momentum", url: card_momentum },
-  { title: "Card Momentum (Remastered)", url: card_momentum_remastered }, // #171
-  { title: "Deck Alignment", url: deck_alignment },
-  { title: "Glass Sequence", url: glass_sequence },
-  { title: "Neon Card Rush", url: neon_card_rush },
-  { title: "Neon Card Rush 2", url: neon_card_rush_2 },
-  { title: "Neon Static", url: neon_static },                             // #171
-  { title: "Neon Static (Remaster)", url: neon_static_remaster },         // #171
-  { title: "Pulsing Cards", url: pulsing_cards },
-  { title: "Relay of Multipliers", url: relay_of_multipliers },
-  { title: "Shuffle Pulse", url: shuffle_pulse },
-  { title: "Stacked Multipliers", url: stacked_multipliers },
-  { title: "Table Dust", url: table_dust },
-  { title: "Table Dust 2", url: table_dust_2 },
-  { title: "Asymmetric Loop", url: asymmetric_loop },                     // #171
-  { title: "Formation Shuffle", url: formation_shuffle },                 // #171
-  { title: "Mutation Funk Drive", url: mutation_funk_drive },             // #171
+  // calm
+  { title: "Table Dust", url: table_dust, tier: "calm" },
+  { title: "Table Dust 2", url: table_dust_2, tier: "calm" },
+  { title: "Glass Sequence", url: glass_sequence, tier: "calm" },
+  { title: "Formation Shuffle", url: formation_shuffle, tier: "calm" },          // #171
+  { title: "Neon Static", url: neon_static, tier: "calm" },                      // #171
+  { title: "Neon Static (Remaster)", url: neon_static_remaster, tier: "calm" },  // #171
+  { title: "Shuffle Pulse", url: shuffle_pulse, tier: "calm" },
+  { title: "Stacked Multipliers", url: stacked_multipliers, tier: "calm" },
+  // mid
+  { title: "Deck Alignment", url: deck_alignment, tier: "mid" },
+  { title: "Asymmetric Loop", url: asymmetric_loop, tier: "mid" },               // #171
+  { title: "Relay of Multipliers", url: relay_of_multipliers, tier: "mid" },
+  { title: "Neon Card Rush", url: neon_card_rush, tier: "mid" },                 // ungetaggt → wie „Neon Card Rush 2" auf mid (anpassbar)
+  { title: "Neon Card Rush 2", url: neon_card_rush_2, tier: "mid" },
+  { title: "Pulsing Cards", url: pulsing_cards, tier: "mid" },
+  // hot
+  { title: "Mutation Funk Drive", url: mutation_funk_drive, tier: "hot" },       // #171
+  { title: "Card Momentum", url: card_momentum, tier: "hot" },
+  { title: "Card Momentum (Remastered)", url: card_momentum_remastered, tier: "hot" }, // #171
+  // overdrive: noch keine Tracks getaggt → fällt automatisch auf „hot" zurück (neue Overdrive-Tracks hier ergänzen)
 ];
+
+function tierForRound(round) {
+  const r = Math.max(0, Math.floor(Number(round) || 0));
+  if (r < TIER_ROUNDS.calm) return "calm";
+  if (r < TIER_ROUNDS.mid) return "mid";
+  if (r < TIER_ROUNDS.hot) return "hot";
+  return "overdrive";
+}
 
 let el = null;
 let volume = 0.2;
@@ -53,13 +76,19 @@ let current = null;   // aktueller Track { title, url }
 let loadedUrl = null; // #264: URL, die aktuell auf dem <audio>-Element liegt (null = nichts geladen → 0 Bytes)
 let mode = null;      // "menu" | "run"
 let listeners = [];   // Titel-Abonnenten (UI)
+let tier = "calm";    // aktive Intensitäts-Stufe im Run (aus dem Lauf-Fortschritt)
 
 function ensureEl() {
   if (el || typeof Audio === "undefined") return el;
   el = new Audio();
-  el.loop = true;
+  el.loop = true;     // Default; im Run wird pro Track auf false gesetzt (syncPlayback) → onEnded reiht den nächsten
   el.preload = "none";
   el.volume = volume;
+  // Track zu Ende → im Run den nächsten Zufallstitel der aktuellen Stufe (Menü loopt via a.loop, feuert kein „ended").
+  el.addEventListener("ended", () => {
+    if (mode !== "run" || userPaused) return;
+    playTrack(randomPoolTrack(tier)); // lädt/spielt via syncPlayback nur, wenn hörbar
+  });
   return el;
 }
 // #264: „hörbar" = nicht stumm, Lautstärke > 0, nicht (spiel-)pausiert. Nur dann darf ein Track laden/streamen.
@@ -70,6 +99,7 @@ function audible() { return !muted && volume > 0 && !userPaused; }
 function syncPlayback() {
   const a = el;
   if (!a) return;
+  a.loop = mode === "menu"; // Menü/Victory lückenlos loopen; im Run reiht onEnded den nächsten Track der Stufe
   if (audible() && current) {
     if (loadedUrl !== current.url) { a.src = current.url; loadedUrl = current.url; } // erster Ladevorgang genau jetzt
     a.volume = volume;
@@ -89,17 +119,38 @@ function playTrack(track) {
   syncPlayback(); // lädt/spielt nur, wenn hörbar — sonst wird nichts geladen
 }
 
-function randomPoolTrack() {
+function tracksForTier(wantTier) {
+  // Gewünschte Stufe; ist sie leer, entlang TIER_ORDER absteigend zur nächsten gefüllten Stufe (overdrive→hot→…).
+  let hit = POOL.filter((t) => t.tier === wantTier);
+  if (hit.length) return hit;
+  for (let i = TIER_ORDER.indexOf(wantTier) - 1; i >= 0; i--) {
+    hit = POOL.filter((t) => t.tier === TIER_ORDER[i]);
+    if (hit.length) return hit;
+  }
+  return POOL; // nie Stille
+}
+
+function randomPoolTrack(wantTier = null) {
   if (!POOL.length) return null;
-  let i = Math.floor(Math.random() * POOL.length); // UI-Layer: Math.random erlaubt (Audio ist Seiteneffekt)
-  if (current && POOL.length > 1) { let guard = 0; while (POOL[i].url === current.url && guard++ < 8) i = Math.floor(Math.random() * POOL.length); }
-  return POOL[i];
+  const pool = wantTier ? tracksForTier(wantTier) : POOL;
+  let i = Math.floor(Math.random() * pool.length); // UI-Layer: Math.random erlaubt (Audio ist Seiteneffekt)
+  if (current && pool.length > 1) { let guard = 0; while (pool[i].url === current.url && guard++ < 8) i = Math.floor(Math.random() * pool.length); }
+  return pool[i];
 }
 
 export const music = {
-  menu() { mode = "menu"; playTrack(MENU_TRACK); },            // Menü + Victory
-  enterRun() { mode = "run"; playTrack(randomPoolTrack()); },  // Run-Start → zufälliger Pool-Track
-  next() { if (mode === "run") playTrack(randomPoolTrack()); }, // „Nächster Track"
+  menu() { mode = "menu"; tier = "calm"; playTrack(MENU_TRACK); },                 // Menü + Victory
+  enterRun() { mode = "run"; tier = "calm"; playTrack(randomPoolTrack(tier)); },   // Run-Start → ruhige Stufe
+  next() { if (mode === "run") playTrack(randomPoolTrack(tier)); },                // „Nächster Track" (aus aktueller Stufe)
+  // Aktuelle Runde (state.cycle): bestimmt die Intensitäts-Stufe. Beim Stufenwechsel sofort auf einen Track der neuen
+  // Stufe schalten (hörbarer Tempo-Sprung); sonst läuft die aktuelle Stufe weiter.
+  setProgress(round) {
+    if (mode !== "run") return;
+    const next = tierForRound(round);
+    if (next === tier) return;
+    tier = next;
+    playTrack(randomPoolTrack(tier));
+  },
   setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); syncPlayback(); }, // #264: 0 → Stream stoppt, wieder >0 → lazy laden
   setMuted(m) { muted = !!m; syncPlayback(); },                                       // #264: stumm → pause, hörbar → (lazy) starten
   setPaused(p) { userPaused = !!p; syncPlayback(); },                                 // Spiel-Pause spiegeln

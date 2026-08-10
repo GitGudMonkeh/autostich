@@ -239,6 +239,8 @@ export function Autostich() {
   useEffect(() => music.subscribe(setMusicTitle), []);
   const musicHome = state.phase === "menu" || state.phase === "gameover";
   useEffect(() => { if (musicHome) music.menu(); else music.enterRun(); }, [musicHome]);
+  // Aktuelle Runde an die Musik: steuert die Intensitäts-Stufe (Runde 0–10 ruhig → 40+ Overdrive).
+  useEffect(() => { if (!musicHome) music.setProgress(state.cycle || 0); }, [state.cycle, musicHome]);
   useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
   // Pause-Knopf hält die Musik an (nur im laufenden Stichspiel; in Menü/Gameover spielt sie normal weiter) UND der
   // Hintergrund/geschlossen-Zustand (!visible) hält sie IMMER an — sonst läuft die BGM auf dem Handy hinter dem
