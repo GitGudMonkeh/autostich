@@ -478,7 +478,7 @@ export function Autostich() {
   useEffect(() => { if (glossaryOpen) perfMark("overlay:glossar"); }, [glossaryOpen]);
   // Auto-Dump bei Game-Over: jeder Lauf hinterlässt eine Perf-Bilanz in der Konsole (nur Preview).
   useEffect(() => {
-    if (import.meta.env.VITE_PREVIEW === "1" && state.phase === "gameover") {
+    if (import.meta.env.VITE_PREVIEW === "1" && options.perfHud && state.phase === "gameover") {
       // eslint-disable-next-line no-console
       console.log("%c" + formatReport(getReport()), "font-family:monospace");
     }
@@ -688,8 +688,10 @@ export function Autostich() {
           {(import.meta.env.VITE_ENV || "preview").toUpperCase()}
         </div>
       )}
-      {/* Perf-Recorder-HUD (FPS/p95/Jank + Report) — nur im Preview-Build, nie im echten Spiel. */}
-      {import.meta.env.VITE_PREVIEW === "1" && <PerfOverlay />}
+      {/* Perf-Recorder-HUD (FPS/p95/Jank + Report) — nur im Preview-Build UND nur wenn der Options-Toggle
+          „FPS-Zähler & Report" an ist. Mount startet die Aufzeichnung, Unmount stoppt sie → aus = keine
+          Messung und kein Panel. In „main" ist der Toggle ausgeblendet, das Overlay also nie aktiv. */}
+      {import.meta.env.VITE_PREVIEW === "1" && options.perfHud && <PerfOverlay />}
       {/* Ambient-Partikel — nur unter Skin und nur auf dem Hauptscreen (Menü): dort gibt es
           offene Fläche, sodass sie ohne durchscheinende Panels sichtbar sind. Im Run bleiben
           die Panels deckend. (reduced-motion-gated in der Komponente.) */}

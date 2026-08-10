@@ -105,6 +105,13 @@ export function OptionsModal({ options, onChange, onClose }) {
           <Row title="Haptik (Vibration)" desc="Kurzes Vibrieren bei Bestätigungen. Nur auf Touch-Geräten (Handy) spürbar; System-Einstellung „reduzierte Bewegung“ wird respektiert.">
             <Toggle on={options.haptics !== false} onClick={() => onChange({ haptics: options.haptics === false })} />
           </Row>
+          {/* Perf-HUD — NUR im Preview-/Testbranch-Build sichtbar (in „main“ ausgeblendet). Steuert das
+              FPS/Report-Overlay: aus = kein Overlay UND keine Aufzeichnung (Recorder mountet erst bei „an“). */}
+          {import.meta.env.VITE_PREVIEW === "1" && (
+            <Row title="FPS-Zähler & Report" desc="Blendet oben rechts FPS · p95 · Jank ein und zeichnet Perf-Daten auf (⧉ Report → Konsole + Zwischenablage). Nur im Testbranch. Aus = keine Anzeige und keine Messung.">
+              <Toggle on={!!options.perfHud} onClick={() => onChange({ perfHud: !options.perfHud })} />
+            </Row>
+          )}
         </div>
 
         <div className="rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "#8a7de022", color: "#c9c0f0" }}>
