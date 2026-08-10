@@ -490,7 +490,10 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
   }
   // Funken springen fortlaufend aus dem Loch — Dichte (Zahl), Größe, Streuweite, Glow UND Streu-Fenster wachsen
   // deutlich mit der Serie (bleibt im Budget). streakK 0..1.
-  const N = Math.max(10, Math.round((10 + intensity * 8 + streakK * 54) * scale)); // ~18 (keine Serie) … ~62 (hohe Serie)
+  // #perf: Ember-Funken bei hohem Turbo stärker kappen. Bei MAX (scale≈0.45) überlappen ~6 Brennstrahl-Ghosts → jeder
+  // mit vielen leuchtenden Ember-Spans (boxShadow-Glow) summiert sich zu Ruckeln. scale² (statt scale) dünnt die Funken
+  // genau dort aus, wo überlappt wird, lässt aber normales Tempo (scale=1 → ×1) unverändert. Bei MAX: ~×0.20 statt ×0.45.
+  const N = Math.max(6, Math.round((10 + intensity * 8 + streakK * 54) * scale * scale)); // normal ~18…62 · MAX ~6…14
   const sparkWin = Math.round(body * 0.34 * streakK);
   const sparkAnim = Math.round(body * 0.32);
   const emberGlow = (3 + streakK * 7).toFixed(1);         // Glow-Radius je Funke wächst mit der Serie
