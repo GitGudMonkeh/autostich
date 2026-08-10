@@ -111,14 +111,21 @@ export function Autostich() {
   // #perf A1: Der Timer tickt nicht mehr die ganze App (früher: setClock alle 250 ms → Full-Tree-Re-Render inkl.
   // Battlefield). Die Zeit rechnet ein stabiler Getter aus den Refs; das 250-ms-Ticken lebt jetzt allein im RunTimer-Leaf.
   const getElapsed = useCallback(() => timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0), []);
-  // #perf B1: die lazy Screens im Leerlauf nach dem Start vorladen (nicht render-blockierend), damit das erste Öffnen
-  // — v. a. auf dem Desktop — ohne spürbare Verzögerung ist. requestIdleCallback (Fallback: setTimeout) hält den Start frei.
+  // #perf B1: die lazy Screens im Leerlauf vorladen, damit das erste Öffnen ohne spürbare Verzögerung ist.
+  // WICHTIG (Fix „laggt im Spiel"): NUR im Menü/Gameover vorladen — NIE während eines laufenden Stichspiels. Sonst
+  // konnte der Chunk-Download/Parse (Main-Thread) in einem Idle-Slot MITTEN in die Animationsframes (Hologrid/Finisher)
+  // fallen und mehrere Frames blockieren. Zusätzlich gestaffelt (ein Modul pro Idle-Slot) → kein großer Parse-Burst.
+  const prefetchedRef = useRef(false);
   useEffect(() => {
+    if (prefetchedRef.current) return undefined;
+    if (state.phase !== "menu" && state.phase !== "gameover") return undefined; // im Lauf nichts vorladen
+    prefetchedRef.current = true;
     const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
-    const cancel = window.cancelIdleCallback || clearTimeout;
-    const id = idle(() => { LAZY_PREFETCH.forEach((f) => { try { f(); } catch (e) { /* Prefetch nie kritisch */ } }); });
-    return () => cancel(id);
-  }, []);
+    let i = 0;
+    const step = () => { if (i >= LAZY_PREFETCH.length) return; try { LAZY_PREFETCH[i++](); } catch (e) { /* Prefetch nie kritisch */ } idle(step); };
+    const id = idle(step);
+    return () => (window.cancelIdleCallback || clearTimeout)(id);
+  }, [state.phase]);
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
   // Globaler Highscore (#14): lokaler Nickname + Ersteinrichtungs-Modal.
