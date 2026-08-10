@@ -1030,22 +1030,41 @@ function PrunkFx({ trigger, panelRef, oppRef, color }) {
 // #306 Battlefield-Ambiente-Layer (einfach-exklusiv): rendert genau EINEN Feld-Effekt als z-1-Overlay in der Deckfarbe
 // (color). Ambiente = ruhige Endlos-Animation; die Reaktion je Stich remountet über key={sweepId} (Turbo-Throttle sitzt
 // im Battlefield). reduced → nur statisches Ambiente. Nur transform/opacity/gradient/background-position (GPU-günstig).
-const EMBER_DOTS = [{ l: 12, s: 2.4, d: 0, t: 9.5 }, { l: 24, s: 1.6, d: 1.1, t: 11 }, { l: 37, s: 2.0, d: 2.3, t: 8.5 }, { l: 49, s: 1.4, d: 0.6, t: 12 }, { l: 58, s: 2.6, d: 1.8, t: 10 }, { l: 68, s: 1.7, d: 3.0, t: 9 }, { l: 78, s: 2.1, d: 0.9, t: 11.5 }, { l: 88, s: 1.5, d: 2.0, t: 8.8 }, { l: 31, s: 1.3, d: 3.4, t: 10.5 }, { l: 63, s: 1.9, d: 1.4, t: 12.5 }];
-const SPARK_DIRS = [-46, -27, -9, 9, 27, 46];
-// #: „Vulkan"-Funkenstoß je Stich (Glutfunken): viele Funken springen an ZUFÄLLIGEN Stellen entlang der Unterkante
-// hoch — l = Startposition (%), jy = Sprunghöhe (px), dx = Seitendrift (px), d = Zeitversatz (ms). Deterministisch.
-const SPARK_JETS = [
-  { l: 8, jy: 66, dx: -10, d: 20 }, { l: 15, jy: 94, dx: 6, d: 0 }, { l: 22, jy: 76, dx: -4, d: 60 },
-  { l: 29, jy: 110, dx: 8, d: 30 }, { l: 36, jy: 84, dx: -8, d: 90 }, { l: 43, jy: 122, dx: 4, d: 10 },
-  { l: 50, jy: 100, dx: -2, d: 50 }, { l: 57, jy: 118, dx: 6, d: 20 }, { l: 64, jy: 80, dx: -6, d: 80 },
-  { l: 71, jy: 106, dx: 10, d: 40 }, { l: 78, jy: 88, dx: -4, d: 0 }, { l: 85, jy: 72, dx: 8, d: 70 },
-  { l: 92, jy: 92, dx: -8, d: 30 }, { l: 33, jy: 60, dx: 3, d: 120 }, { l: 47, jy: 64, dx: -5, d: 110 },
-  { l: 68, jy: 62, dx: 5, d: 130 },
-];
+// #: „Glutfunken" = 2–3 FONTÄNEN (feste X-Punkte) statt gleichmäßig übers Feld verteilter Funken. Anzahl UND Höhe der
+// Fontänen sind an den LAUF-SCORE gekoppelt (linear bis EMBER_MAX_SCORE) → je höher der Score, desto mehr/höhere Funken.
+// Die Höhe (rise) ist SLOT-FEST je Funke: mehr Slots (höherer Score) ⇒ höhere/vollere Fontäne, ohne dass bestehende
+// Funken beim Score-Anstieg springen (nur neue, höhere Slots kommen dazu). Deterministisch (fjitter, kein Math.random).
+const EMBER_FOUNTAINS = [24, 50, 76]; // x% der Fontänen
+const EMBER_MAX_SCORE = 500000;
+const emberNorm = (score) => clamp((score || 0) / EMBER_MAX_SCORE, 0, 1);
+// Ambiente: dauerhaft aufsteigende Funken je Fontäne (Endlos-Loop). Anzahl/Höhe wachsen mit dem Score.
+function emberFountainDots(score) {
+  const per = 3 + Math.round(emberNorm(score) * 9); // 3 … 12 Funken je Fontäne
+  const out = [];
+  for (let f = 0; f < EMBER_FOUNTAINS.length; f++) for (let s = 0; s < per; s++) {
+    const seed = f * 97 + s * 31;
+    out.push({ key: `f${f}s${s}`, l: EMBER_FOUNTAINS[f] + fjitter(seed, 3.4),
+      size: 1.3 + Math.abs(fjitter(seed + 5, 1.5)), rise: 130 + s * 20,
+      rdx: 5 + fjitter(seed + 9, 12), t: 8 + Math.abs(fjitter(seed + 3, 4)),
+      d: (s / per) * 8 + Math.abs(fjitter(seed + 7, 1.5)) });
+  }
+  return out;
+}
+// Per-Stich-Stoß („Vulkan"): je Fontäne ein kleiner Funkenstoß; Anzahl UND Höhe ebenfalls score-gekoppelt.
+function emberFountainJets(score) {
+  const per = 2 + Math.round(emberNorm(score) * 5); // 2 … 7 Jets je Fontäne je Stich
+  const out = [];
+  for (let f = 0; f < EMBER_FOUNTAINS.length; f++) for (let s = 0; s < per; s++) {
+    const seed = f * 61 + s * 19;
+    out.push({ key: `f${f}j${s}`, white: s % 3 === 0, l: EMBER_FOUNTAINS[f] + fjitter(seed, 4),
+      jy: 70 + s * 10 + Math.abs(fjitter(seed + 3, 20)), dx: fjitter(seed + 9, 12), d: Math.abs(fjitter(seed + 5, 130)) });
+  }
+  return out;
+}
 // #perf A2-lite: memoisiert — alle Props sind Primitive (effect/color/sweepId/sweepDur/reduced/win). Re-rendert das
 // Ambiente-DOM (Sternenfeld/Glutfunken/… — teils viele Knoten) NUR, wenn sich diese Werte ändern; bei sonstigen
 // Battlefield-Re-Renders (ohne Stich/Feld-Wechsel) bleibt die Ebene stehen. Kein visueller Unterschied (Desktop unverändert).
-const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepDur, reduced, win }) {
+const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepDur, reduced, win, score = 0 }) {
   const react = !reduced && sweepId > 0; // per-Stich-Reaktion aktiv?
   const A = (c) => (reduced ? "" : c); // Ambiente-Animationsklasse nur ohne „Effekte reduziert" → sonst statisches Bild
   let inner = null;
@@ -1078,15 +1097,21 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepD
       </>
     );
   } else if (effect === "embers") {
+    // #: 2–3 Fontänen statt gleichmäßiger Verteilung; Anzahl/Höhe an den Score gekoppelt (emberFountainDots/Jets).
+    const dots = emberFountainDots(score);
+    const jets = react ? emberFountainJets(score) : null;
     inner = (
       <>
-        {EMBER_DOTS.map((e, i) => (
-          <span key={i} className={`${A("as-field-rise")} absolute rounded-full`} style={{ left: `${e.l}%`, bottom: reduced ? `${30 + e.l % 40}%` : "-6%", width: e.s, height: e.s, background: color, boxShadow: `0 0 ${(e.s * 2.5).toFixed(1)}px ${color}`, opacity: 0.7, animationDuration: `${e.t}s`, animationDelay: `${e.d}s` }} />
+        {dots.map((e) => (
+          <span key={e.key} className={`${A("as-field-rise")} absolute rounded-full`} style={{
+            left: `${e.l}%`, bottom: reduced ? `${12 + e.rise / 8}%` : "-4%", width: e.size, height: e.size,
+            background: color, boxShadow: `0 0 ${(e.size * 2.5).toFixed(1)}px ${color}`, opacity: 0.7,
+            "--rise": `${e.rise}%`, "--rdx": `${e.rdx}px`, animationDuration: `${e.t}s`, animationDelay: `${e.d}s` }} />
         ))}
-        {react && SPARK_JETS.map((jt, i) => (
-          <span key={`${sweepId}-${i}`} className="as-field-spark absolute rounded-full" style={{
+        {jets && jets.map((jt) => (
+          <span key={`${sweepId}-${jt.key}`} className="as-field-spark absolute rounded-full" style={{
             left: `${jt.l}%`, bottom: "0%", width: win ? 3.2 : 2.6, height: win ? 3.2 : 2.6,
-            background: i % 3 === 0 ? "#ffffff" : color, boxShadow: `0 0 6px ${color}`,
+            background: jt.white ? "#ffffff" : color, boxShadow: `0 0 6px ${color}`,
             "--sx": `${jt.dx}px`, "--sy": `-${Math.round(jt.jy * (win ? 1.15 : 1))}px`,
             animationDuration: `${Math.max(560, Math.round(sweepDur * 0.9))}ms`, animationDelay: `${jt.d}ms` }} />
         ))}
@@ -1163,7 +1188,7 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
 
 // #: CritScreenFx (Vollbild-Flash/Vignette bei Krit) entfernt — Krit-Finisher-Animationen raus.
 
-export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, oppDeck = "stat",
+export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, oppDeck = "stat", score = 0,
   // Feuer-Rework (#206): geschmiedete Dauerwerte (eigene Karten) + aktive Brandmarken (Gegnerkarten) für die Karten-Indikatoren.
   forged = {}, brandActive = {},
   // Pflanze-Rework (#211): Wachstum je eigener Karte-id (Wachstumsring + grüne Zahl) + kolonisierte Gegnerkarten (Ausläufer-Marker).
@@ -1693,7 +1718,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           immer in der Deck-Hauptfarbe. Ambiente läuft ruhig; die Reaktion je Stich (sweepId, Turbo-Throttle) läuft voll
           durch. reduced-motion → nur das statische Ambiente (kein Springen). */}
       {fxField && deckA1 && (
-        <FieldFxLayer effect={fxField} color={deckA1} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} win={win} />
+        <FieldFxLayer effect={fxField} color={deckA1} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} win={win}
+          score={fxField === "embers" ? Math.round((score || 0) / 20000) * 20000 : 0} />
       )}
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin, Hologrid und das Stich-Juice reserviert. */}

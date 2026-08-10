@@ -415,21 +415,37 @@ function GlobalFxScenePreview({ fx }) {
 // #306 Battlefield-Ambiente-Vorschau: das echte BF-Bild (aktuell gespielte Version) + der ECHTE In-Game-Layer
 // (FieldFxLayer) in der Demo-Deckfarbe. Ein Intervall bumpt sweepId → periodische „Stich"-Reaktion wie im Spiel.
 // „none" zeigt nur das BF-Bild. Vorschau = In-Game (dieselbe Komponente, kein Drift).
+// #: Glutfunken sind an den Lauf-Score gekoppelt → die Vorschau rampt einen Demo-Score durch mehrere Stufen und blendet
+// eine Score-Anzeige ein, damit man sieht, wie die Fontänen bei welchem Score aussehen (mehr/höher je Score, bis 500k).
+const EMBER_DEMO_SCORES = [40000, 150000, 320000, 500000];
 function FieldFxPreview({ effect }) {
   const bf = battlefieldAssets(SHOWCASE_BF);
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
   const [sweep, setSweep] = useState(1);
+  const [emberStep, setEmberStep] = useState(0);
   useEffect(() => {
     if (effect === "none") return undefined;
     const id = setInterval(() => setSweep((s) => s + 1), 1500);
     return () => clearInterval(id);
   }, [effect]);
+  useEffect(() => {
+    if (effect !== "embers") return undefined;
+    const id = setInterval(() => setEmberStep((s) => (s + 1) % EMBER_DEMO_SCORES.length), 2400);
+    return () => clearInterval(id);
+  }, [effect]);
+  const demoScore = effect === "embers" ? EMBER_DEMO_SCORES[emberStep] : 0;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {effect !== "none" && <FieldFxLayer effect={effect} color={DEMO_C} sweepId={sweep} sweepDur={1100} reduced={false} win />}
+      {effect !== "none" && <FieldFxLayer effect={effect} color={DEMO_C} sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
+      {effect === "embers" && (
+        <div className="absolute right-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
+          style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#ffd7b0" }}>
+          <span className="opacity-70">Score</span> {demoScore.toLocaleString("de-DE")}
+        </div>
+      )}
     </div>
   );
 }

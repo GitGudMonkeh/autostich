@@ -354,8 +354,9 @@ button { font-family: inherit; }
 .as-field-aurora-b { animation: as-field-aurora-b 14s ease-in-out infinite; }
 @keyframes as-field-bloom { 0% { opacity: 0; } 22% { opacity: 1; } 60% { opacity: .7; } 100% { opacity: 0; } }
 .as-field-bloom { animation: as-field-bloom 900ms ease-out forwards; }
-/* Glutfunken: Partikel steigen auf (leichtes Seitwärts-Wiegen); Reaktion = Funken-Aufstoß von unten (--sx = Streuung). */
-@keyframes as-field-rise { 0% { transform: translateY(0) translateX(0); opacity: 0; } 12% { opacity: .8; } 80% { opacity: .7; } 100% { transform: translateY(-320%) translateX(8px); opacity: 0; } }
+/* Glutfunken: Partikel steigen auf (Höhe = --rise, Seitwärts-Spray = --rdx je Fontänen-Funke); Reaktion = Funken-Aufstoß
+   von unten (--sx = Streuung). --rise/--rdx sind score-gekoppelt (mehr/höher je Score) und werden inline gesetzt. */
+@keyframes as-field-rise { 0% { transform: translateY(0) translateX(0); opacity: 0; } 12% { opacity: .8; } 80% { opacity: .55; } 100% { transform: translateY(calc(-1 * var(--rise, 320%))) translateX(var(--rdx, 8px)); opacity: 0; } }
 .as-field-rise { animation: as-field-rise linear infinite; }
 /* #: „Vulkan"-Funke — springt an seiner Startstelle (unten) real HOCH (--sy px, nicht mehr −180 % eines 3px-Punkts, was
    quasi unsichtbar war), driftet leicht seitlich (--sx) und fadet oben aus. ease-out → schnell hoch, oben abbremsend. */
