@@ -412,7 +412,7 @@ function GlobalFxScenePreview({ fx }) {
     );
   }
   // #306 Battlefield-Ambiente (inkl. Hologrid + „Kein Feld-Effekt"): echte In-Game-Komponente (FieldFxLayer) über dem BF-Bild.
-  if (["hologrid", "starfield", "aurora", "embers", "dataRain", "scanline", "vignette", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} />;
+  if (["hologrid", "starfield", "aurora", "embers", "scanline", "vignette", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} />;
   if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
   if (fx.preview === "blackhole") return <BlackholePreview />;
@@ -900,7 +900,7 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
 const FX_TINT = {
   frameGlow: "#35e0ff", holoSwipe: "#35e0ff", auroraVeil: "#c86bff", glitch: "#35e0ff",
   none: "#4a4857", hologrid: "#35e0ff", starfield: "#7fb4ff", aurora: "#54e08a",
-  embers: "#ff7a2f", dataRain: "#35e0ff", scanline: "#35e0ff", vignette: "#c86bff",
+  embers: "#ff7a2f", scanline: "#35e0ff", vignette: "#c86bff",
   klinge: "#35e0ff", laser: "#35e0ff", lasergrid: "#35e0ff", disperse: "#8fd8ff",
   overload: "#9b82f0", burnbeam: "#ff7a2f", blackhole: "#35e0ff",
   gottStandard: "#7fb4ff", fireworks: "#ff5ad6", goldRain: "#f2c14a", prismaWave: "#c86bff",

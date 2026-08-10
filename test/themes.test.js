@@ -162,8 +162,8 @@ describe("effekte — Karten-Animationen sind jetzt GLOBAL", () => {
     expect(GLOBAL_FX_BY_KEY.frameGlow.option).toBe("fxFrameGlow");
     expect(GLOBAL_FX_BY_KEY.holoSwipe.option).toBe("fxHoloSwipe");
   });
-  it("#306: Hologrid + die 6 neuen Ambiente-Effekte sind group 'field' (Battlefield-Ambiente)", () => {
-    for (const key of ["hologrid", "starfield", "aurora", "embers", "dataRain", "scanline", "vignette"]) {
+  it("#306: Hologrid + die neuen Ambiente-Effekte sind group 'field' (Battlefield-Ambiente)", () => {
+    for (const key of ["hologrid", "starfield", "aurora", "embers", "scanline", "vignette"]) {
       const fx = GLOBAL_FX_BY_KEY[key];
       expect(fx).toBeTruthy();
       expect(fx.group).toBe("field");
@@ -281,7 +281,7 @@ describe("effekte — Finisher/Krit/Prunk", () => {
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.overload)).toBe(false);
   });
   it("#307: jeder Effekt trägt seinen DP-Preis (globalFxPrice = fx.price)", () => {
-    const want = { frameGlow: 3, holoSwipe: 5, hologrid: 5, starfield: 10, aurora: 10, embers: 8, dataRain: 8, scanline: 5, vignette: 5,
+    const want = { frameGlow: 3, holoSwipe: 5, hologrid: 5, starfield: 10, aurora: 10, embers: 8, scanline: 5, vignette: 5,
       laserSlice: 3, lasergrid: 5, disperse: 10, overload: 15, burnBeam: 20, blackhole: 25, prismaWave: 5, goldRain: 10, fireworks: 15 };
     for (const [key, dp] of Object.entries(want)) expect(globalFxPrice(GLOBAL_FX_BY_KEY[key])).toBe(dp);
   });

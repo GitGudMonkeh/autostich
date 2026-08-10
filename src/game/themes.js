@@ -21,7 +21,7 @@ import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress } from "./cosme
    DP, je Effekt ein eigener Preis (fx.price); Besitz in ownedCosmetics[ownKey]; ein An/Aus-Toggle (option) steuert sie.
    group ordnet die Effekte im Shop/Zweck:
      "anim"     = Karten-Animationen (Frame-Pulse/Holo-Swipe) — auf der Karte, frei kombinierbar.
-     "field"    = Battlefield-Ambiente (Hologrid + #306: Sternenfeld/Aurora/Glutfunken/Datenregen/Scanline/Vignette),
+     "field"    = Battlefield-Ambiente (Hologrid + #306: Sternenfeld/Aurora/Glutfunken/Scanline/Vignette),
                   feldweit hinter den Karten (z-1), in Deckfarbe; EINFACH-EXKLUSIV (nur eins aktiv, UI-seitige Auswahl).
      "finisher" = Sieg-Abschluss auf der GEGNERkarte (Laser/Schwarzes Loch — mit „Klinge" (Default) untereinander
                   EXKLUSIV; die Auswahl erfolgt UI-seitig als Einfachauswahl).
@@ -47,8 +47,6 @@ export const GLOBAL_FX = [
     ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "field" },
   { key: "embers", name: "Glutfunken", desc: "Schwebende Glutpartikel steigen langsam auf; je Stich ein Funken-Aufstoß von unten — in der Deckfarbe.",
     ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 8, group: "field" },
-  { key: "dataRain", name: "Datenregen", desc: "Feiner Datenregen rieselt übers Feld; je Stich fällt eine helle Spalte herab — in der Deckfarbe.",
-    ownKey: "fx:dataRain", option: "fxDataRain", preview: "dataRain", price: 8, group: "field" },
   { key: "scanline", name: "Scanline-Puls", desc: "CRT-Scanlines liegen übers Feld; je Stich wandert eine helle Zeile von oben nach unten — in der Deckfarbe.",
     ownKey: "fx:scanline", option: "fxScanline", preview: "scanline", price: 5, group: "field" },
   { key: "vignette", name: "Puls-Vignette", desc: "Der Feldrand atmet in der Deckfarbe; je Stich glüht das ganze Feld kurz auf.",
@@ -101,12 +99,11 @@ export const holoSwipeActive = (profile, options) => globalFxActive(profile, opt
 export const auroraVeilActive = (profile, options) => globalFxActive(profile, options, "auroraVeil"); // #309 Karten-Aurora-Schleier
 export const glitchActive = (profile, options) => globalFxActive(profile, options, "glitch");        // #309 Karten-Glitch
 // #306 Battlefield-Ambiente (einfach-exklusiv). Reihenfolge = Priorität, falls (defensiv) mehrere Flags an wären.
-export const FIELD_FX_KEYS = ["hologrid", "starfield", "aurora", "embers", "dataRain", "scanline", "vignette"];
+export const FIELD_FX_KEYS = ["hologrid", "starfield", "aurora", "embers", "scanline", "vignette"];
 export const hologridActive = (profile, options) => globalFxActive(profile, options, "hologrid");
 export const starfieldActive = (profile, options) => globalFxActive(profile, options, "starfield");
 export const auroraActive = (profile, options) => globalFxActive(profile, options, "aurora");
 export const embersActive = (profile, options) => globalFxActive(profile, options, "embers");
-export const dataRainActive = (profile, options) => globalFxActive(profile, options, "dataRain");
 export const scanlineActive = (profile, options) => globalFxActive(profile, options, "scanline");
 export const vignetteActive = (profile, options) => globalFxActive(profile, options, "vignette");
 // Aktiver Feld-Ambiente-Effekt (Key) oder null — der Battlefield-Layer rendert genau diesen einen.
