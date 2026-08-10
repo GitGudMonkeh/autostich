@@ -764,7 +764,11 @@ export function DisperseFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, 
   // deutlich höherer Boden (disperseDur), der den Zerfall auch bei Max sichtbar hält. Die Bursts überlappen dann bewusst
   // leicht in den nächsten Stich (Ghost lebt entsprechend länger); die Stücke faden aus → verdecken die Folgekarte nicht.
   const dur = disperseDur(flipMs);
-  const [cols, rows] = SHATTER_GRID[Math.max(0, Math.min(3, tier - 1))];
+  // #perf: wie beim Brennstrahl das Fragment-Raster ans Turbo-Tempo koppeln. Bei MAX (scale≈0.45) überlappen mehrere
+  // Zerstäubungs-Ghosts (ghostCap ~6), jeder mit bis zu 10×14 = 140 clip-path-Kartenklonen → >500 Ebenen = Ruckeln.
+  // Bei hohem Turbo ist die feine Zerlegung ohnehin nicht erkennbar → gröber rastern (min 5×6). Normal: volles Raster.
+  const [gCols, gRows] = SHATTER_GRID[Math.max(0, Math.min(3, tier - 1))];
+  const cols = Math.max(5, Math.round(gCols * scale)), rows = Math.max(6, Math.round(gRows * scale));
   // #: Größere Sprünge je Stufe + weite RADIALE Streuung in ALLE Richtungen (nur minimaler Auftrieb, kein „nach oben").
   // Stufe 4 = „größere Wucht" (weitere Streuung) UND die Stücke PRALLEN am Battlefield-Rahmen ab (Rückprall zur Mitte).
   const bounce = tier >= 4;
@@ -1079,8 +1083,8 @@ function emberFountainDots(score) {
 }
 // Per-Stich-Eruption („Vulkan"): Fontänen an ZUFÄLLIGEN Positionen (je Stich neu, aus sweepId). Die Partikelzahl je
 // Fontäne VERDOPPELT sich mit jeder Stufe (3·2^Stufe = 3/6/12/24); die Partikel werden mit mehr Wucht hochgeschossen.
-function emberFountainJets(score, sweepId) {
-  const per = 3 * Math.pow(2, emberStufe(score)); // 3, 6, 12, 24 je Fontäne
+function emberFountainJets(score, sweepId, turbo = 1) {
+  const per = Math.max(2, Math.round(3 * Math.pow(2, emberStufe(score)) * turbo)); // 3/6/12/24 je Fontäne, bei MAX ~×0.45
   const xs = emberFountainXs(sweepId * 7 + 1);
   const out = [];
   for (let f = 0; f < xs.length; f++) for (let s = 0; s < per; s++) {
@@ -1128,7 +1132,10 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepD
   } else if (effect === "embers") {
     // #: 2–3 Fontänen statt gleichmäßiger Verteilung; Anzahl/Höhe an den Score gekoppelt (emberFountainDots/Jets).
     const dots = emberFountainDots(score);
-    const jets = react ? emberFountainJets(score, sweepId) : null;
+    // #perf: bei hohem Turbo (kleines sweepDur) die Jet-Anzahl runterskalieren — sonst feuern bei MAX volle 3·2^Stufe
+    // Jets je Fontäne alle ~180ms → Ruckeln (analog Brennstrahl). turbo 0.45 (MAX) … 1 (normal).
+    const emberTurbo = clamp((sweepDur || 900) / 875, 0.45, 1);
+    const jets = react ? emberFountainJets(score, sweepId, emberTurbo) : null;
     inner = (
       <>
         {dots.map((e) => (
