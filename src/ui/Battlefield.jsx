@@ -1107,11 +1107,29 @@ const SHOOT_PATHS = [
   { top: "14%", left: "72%", ang: 152, dist: "340%" },  // rechts → unten-links, flach
   { top: "-6%", left: "12%", ang: 48, dist: "340%" },   // oben-links → unten-rechts, mittel
 ];
+// #: Sternschnuppen-Schweif als echte PARTIKEL (statt statischem Farbverlauf): Punkte hinter dem Kopf (x = px entgegen
+// der Flugrichtung), nach hinten kleiner + blasser, mit leichtem Größen-Flackern (as-comet-p) → lebendiger Partikelstrom.
+const COMET_TRAIL = Array.from({ length: 14 }, (_, i) => {
+  const t = i / 13;
+  return { x: 3 + i * 4.6, y: (i % 2 ? 1 : -1) * (0.5 + t * 2.4), s: +(3 - t * 2.1).toFixed(2), o: +(0.85 - t * 0.72).toFixed(2), d: +(i * 0.045).toFixed(2) };
+});
 // #: dezente Sterne für die Aurora (obere Feldhälfte). x/y in %, s = Größe (px), d = Twinkle-Versatz (s).
 const AURORA_STARS = [{ x: 12, y: 14, s: 2, d: 0 }, { x: 26, y: 24, s: 1.4, d: 0.8 }, { x: 43, y: 9, s: 2.2, d: 1.5 }, { x: 57, y: 20, s: 1.5, d: 0.5 }, { x: 71, y: 12, s: 2, d: 1.2 }, { x: 85, y: 27, s: 1.4, d: 0.9 }, { x: 36, y: 33, s: 1.5, d: 1.9 }, { x: 64, y: 34, s: 1.3, d: 0.3 }];
 const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, win, score = 0 }) {
   const react = !reduced && sweepId > 0; // per-Stich-Reaktion aktiv?
   const A = (c) => (reduced ? "" : c); // Ambiente-Animationsklasse nur ohne „Effekte reduziert" → sonst statisches Bild
+  // #: Glutfunken-Stöße dürfen ÜBERLAPPEN — der vorige Funkenstrom läuft sanft aus, während der neue startet, statt
+  // hart abgeschnitten zu werden. Wir halten die letzten 3 Generationen als eingefrorene Snapshots (jets/Dauer/win zum
+  // Zeitpunkt des Stichs) → stabile Keys, Animationen laufen weiter; ältere fallen raus, sobald sie längst fertig sind.
+  const [emberGen, setEmberGen] = useState([]);
+  useEffect(() => {
+    if (effect !== "embers" || reduced || !(sweepId > 0)) return;
+    const turbo = clamp((sweepDur || 900) / 875, 0.45, 1);
+    const snap = { id: sweepId, win, jetDur: Math.max(560, Math.round(sweepDur * 0.9)), jets: emberFountainJets(score, sweepId, turbo) };
+    setEmberGen((g) => (g[g.length - 1]?.id === sweepId ? g : [...g, snap].slice(-3)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur auf sweepId reagieren (Snapshot friert score/sweepDur/win ein)
+  }, [sweepId, effect, reduced]);
+  useEffect(() => { if (effect !== "embers") setEmberGen([]); }, [effect]);
   let inner = null;
   if (effect === "hologrid") {
     inner = (
@@ -1133,14 +1151,17 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
         {react && (() => {
           const p = SHOOT_PATHS[sweepId % SHOOT_PATHS.length]; // je Stich ein anderer Pfad (Winkel/Start/Seite)
           const head = win ? "#ffffff" : color;
+          // Null-großer Anker am Kopf; rotate(--ang)→translateX(--dist) trägt Kopf + Partikelschweif entlang der Richtung.
           return (
-            <div key={sweepId} className="as-field-shoot absolute" style={{ top: p.top, left: p.left, width: "30%", height: 2, borderRadius: 2,
-              transformOrigin: "center", "--ang": `${p.ang}deg`, "--dist": p.dist, animationDuration: `${sweepDur}ms`,
-              // Schweif: fadet vom Ende (transparent) zum Kopf (hell); Kopf-Punkt sitzt rechts am führenden Ende.
-              background: `linear-gradient(90deg, ${color}00, ${color}66 55%, ${color}, ${head})`,
-              boxShadow: `0 0 5px ${color}` }}>
-              <span style={{ position: "absolute", right: -1, top: "50%", width: 3.5, height: 3.5, marginTop: -1.75, borderRadius: "50%",
-                background: head, boxShadow: `0 0 9px 2px ${head}, 0 0 4px 1px ${color}` }} />
+            <div key={sweepId} className="as-field-shoot absolute" style={{ top: p.top, left: p.left, width: 0, height: 0,
+              transformOrigin: "center", "--ang": `${p.ang}deg`, "--dist": p.dist, animationDuration: `${sweepDur}ms` }}>
+              {COMET_TRAIL.map((tp, i) => (
+                <span key={i} className="as-comet-p" style={{ position: "absolute", left: -tp.x, top: tp.y, width: tp.s, height: tp.s,
+                  marginLeft: -tp.s / 2, marginTop: -tp.s / 2, borderRadius: "50%", background: i < 3 ? head : color,
+                  boxShadow: `0 0 ${(tp.s * 2.2).toFixed(1)}px ${color}`, opacity: tp.o, animationDelay: `${tp.d}s` }} />
+              ))}
+              <span style={{ position: "absolute", left: 0, top: 0, width: 4, height: 4, marginLeft: -2, marginTop: -2, borderRadius: "50%",
+                background: head, boxShadow: `0 0 10px 2px ${head}, 0 0 4px 1px ${color}` }} />
             </div>
           );
         })()}
@@ -1166,12 +1187,8 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
       </>
     );
   } else if (effect === "embers") {
-    // #: 2–3 Fontänen statt gleichmäßiger Verteilung; Anzahl/Höhe an den Score gekoppelt (emberFountainDots/Jets).
+    // #: Fontänen (Score-gekoppelte Anzahl/Höhe). Ambiente-Funken + überlappende Per-Stich-Stöße (emberGen-Snapshots).
     const dots = emberFountainDots(score);
-    // #perf: bei hohem Turbo (kleines sweepDur) die Jet-Anzahl runterskalieren — sonst feuern bei MAX volle 3·2^Stufe
-    // Jets je Fontäne alle ~180ms → Ruckeln (analog Brennstrahl). turbo 0.45 (MAX) … 1 (normal).
-    const emberTurbo = clamp((sweepDur || 900) / 875, 0.45, 1);
-    const jets = react ? emberFountainJets(score, sweepId, emberTurbo) : null;
     inner = (
       <>
         {dots.map((e) => (
@@ -1180,13 +1197,13 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
             background: color, boxShadow: `0 0 ${(e.size * 2.5).toFixed(1)}px ${color}`, opacity: 0.7,
             "--rise": `${e.rise}%`, "--rdx": `${e.rdx}px`, animationDuration: `${e.t}s`, animationDelay: `${e.d}s` }} />
         ))}
-        {jets && jets.map((jt) => (
-          <span key={`${sweepId}-${jt.key}`} className="as-field-spark absolute rounded-full" style={{
-            left: `${jt.l}%`, bottom: "0%", width: win ? 3.2 : 2.6, height: win ? 3.2 : 2.6,
+        {!reduced && emberGen.map((g) => g.jets.map((jt) => (
+          <span key={`${g.id}-${jt.key}`} className="as-field-spark absolute rounded-full" style={{
+            left: `${jt.l}%`, bottom: "0%", width: g.win ? 3.2 : 2.6, height: g.win ? 3.2 : 2.6,
             background: jt.white ? "#ffffff" : color, boxShadow: `0 0 6px ${color}`,
-            "--sx": `${jt.dx}px`, "--sy": `-${Math.round(jt.jy * (win ? 1.15 : 1))}px`,
-            animationDuration: `${Math.max(560, Math.round(sweepDur * 0.9))}ms`, animationDelay: `${jt.d}ms` }} />
-        ))}
+            "--sx": `${jt.dx}px`, "--sy": `-${Math.round(jt.jy * (g.win ? 1.15 : 1))}px`,
+            animationDuration: `${g.jetDur}ms`, animationDelay: `${jt.d}ms` }} />
+        )))}
       </>
     );
   } else if (effect === "dataRain") {

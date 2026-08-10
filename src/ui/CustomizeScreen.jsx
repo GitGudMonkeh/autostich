@@ -40,6 +40,16 @@ const STD_PACK = { id: "default", name: "Standard", kind: "std", a1: "#8a7de0", 
 // unten; Standard immer zuoberst). „Challenges" = die freischaltbaren cond-Packs (#303), eigene Kategorie ganz separat.
 const PACKS_TAB = [STD_PACK, ...THEMES.filter((t) => t.kind === "buy").slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0))];
 const CHALLENGES_TAB = THEMES.filter((t) => t.kind === "cond");
+// #: Aktives (gerade ausgerüstetes) Pack immer nach vorn — direkt hinter „Standard" (falls in der Liste), sonst ganz
+// vorn (Challenges haben kein Standard). Reine Umsortierung; Preise/Reihenfolge der übrigen bleiben.
+function orderPacks(list, deckId) {
+  const active = list.find((pk) => pk.kind !== "std" && pk.deckId === deckId);
+  if (!active) return list;
+  const rest = list.filter((pk) => pk !== active);
+  const stdFirst = rest[0] && rest[0].kind === "std";
+  rest.splice(stdFirst ? 1 : 0, 0, active); // hinter Standard bzw. ganz vorn
+  return rest;
+}
 
 /* Synthetische „Klinge"-Kachel: der Standard-Sieg-Finisher — immer im Besitz (kein Kauf), aber wählbar UND
    vorschaubar wie die anderen Finisher. Wird der Sieg-Finisher-Gruppe vorangestellt (analog „Gottgleich · Standard"). */
@@ -546,11 +556,11 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const [tab, setTab] = useState("packs");           // "packs" | "challenges" | "fx"
   const [packOv, setPackOv] = useState(null);        // offene Pack-Detailansicht: { cat, idx } | null
   const [packSel, setPackSel] = useState("back");   // "back" | "front" | "bg" — Cover (Rücken) zuerst, dann Front
-  const catList = (cat) => (cat === "challenges" ? CHALLENGES_TAB : PACKS_TAB); // #Shop-Reorg: Detail navigiert innerhalb seiner Kategorie
+  const deckId = options?.deckId || "default";
+  // #Shop-Reorg: Detail navigiert innerhalb seiner Kategorie; aktives Pack steht nach Standard vorn (orderPacks).
+  const catList = (cat) => orderPacks(cat === "challenges" ? CHALLENGES_TAB : PACKS_TAB, deckId);
   const spBal = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
   const dpBal = Math.max(0, Math.floor(Number(p.deckPoints) || 0)); // #299 Deckpunkte — Währung der Packs
-
-  const deckId = options?.deckId || "default";
 
   // #fx-floater: Höhe des Sticky-Kopfs messen → die Effekt-Vorschau klebt exakt darunter (mitlaufender Floater, kein Überlappen).
   const headRef = useRef(null);
@@ -601,8 +611,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           </div>
         </div>
 
-        {tab === "packs" ? <PacksView p={p} deckId={deckId} list={PACKS_TAB} cat="packs" onOpen={openPack} />
-          : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={CHALLENGES_TAB} cat="challenges" onOpen={openPack} />
+        {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} />
+          : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} />
           : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} />}
       </div>
 

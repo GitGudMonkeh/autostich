@@ -413,6 +413,9 @@ button { font-family: inherit; }
   100% { transform: rotate(var(--ang, 20deg)) translateX(var(--dist, 340%)); opacity: 0; }
 }
 .as-field-shoot { animation: as-field-shoot 900ms ease-out forwards; }
+/* Schweif-Partikel: leichtes Größen-Flackern (versetzt je Partikel) → lebendiger Partikelstrom statt statischem Schweif. */
+@keyframes as-comet-p { 0%, 100% { transform: scale(0.6); } 50% { transform: scale(1.25); } }
+.as-comet-p { animation: as-comet-p 460ms ease-in-out infinite; }
 /* Aurora: zwei weiche Schleier driften seitlich/atmen; Reaktion = sanfter Bloom-Puls (auch von der Vignette genutzt). */
 @keyframes as-field-aurora-a { 0%,100% { transform: translateX(-6%) scale(1.05); opacity: .5; } 50% { transform: translateX(6%) scale(1.12); opacity: .7; } }
 @keyframes as-field-aurora-b { 0%,100% { transform: translateX(5%) scale(1.08); opacity: .45; } 50% { transform: translateX(-5%) scale(1.0); opacity: .62; } }
