@@ -188,8 +188,14 @@ export function Autostich() {
   const musicHome = state.phase === "menu" || state.phase === "gameover";
   useEffect(() => { if (musicHome) music.menu(); else music.enterRun(); }, [musicHome]);
   useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
-  // Pause-Knopf hält auch die Musik an — nur im laufenden Stichspiel; in Menü/Gameover spielt sie normal weiter.
-  useEffect(() => { music.setPaused(paused && state.phase === "play"); }, [paused, state.phase]);
+  // Pause-Knopf hält die Musik an (nur im laufenden Stichspiel; in Menü/Gameover spielt sie normal weiter) UND der
+  // Hintergrund/geschlossen-Zustand (!visible) hält sie IMMER an — sonst läuft die BGM auf dem Handy hinter dem
+  // gesperrten Bildschirm/App-Wechsel weiter. Beim Zurückkehren (visible) wird der Zustand neu berechnet → Musik läuft weiter.
+  useEffect(() => { music.setPaused((paused && state.phase === "play") || !visible); }, [paused, state.phase, visible]);
+  // #: „Game komplett samt Musik pausieren", wenn die App in den Hintergrund geht/geschlossen wird (Handy sperren,
+  // App-Wechsel): zusätzlich zur BGM den GANZEN Sound-Context suspendieren (alle SFX/Finisher-Betten einfrieren,
+  // Akku sparen) — und beim Zurückkehren nahtlos fortsetzen. Der Lauf selbst friert bereits über `visible` ein.
+  useEffect(() => { audio.setSuspended(!visible); }, [visible]);
   // #: Persistente Finisher-Ton-Betten (Brennstrahl/Schwarzes Loch) dürfen NUR in zwei Zuständen klingen: (1) im aktiv
   // laufenden Stichspiel und (2) in der Werkstatt-Vorschau (dort mounten die Preview-Betten). In JEDEM anderen Zustand
   // — Pause, Auswahl-/Perk-Fenster (Phase ≠ „play"), Overlays, Hintergrund-Tab UND besonders der Victory-/Gameover-Screen

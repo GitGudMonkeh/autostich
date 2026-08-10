@@ -84,6 +84,17 @@ export const audio = {
   // #: Persistente Loop-Betten global verstummen/wieder hörbar machen (Pause/Overlay/Nicht-„play"-Phase/Hintergrund-Tab).
   // Verändert nur die Loop-Gains (sanft) — die Quellen laufen weiter, damit sie beim Fortsetzen nahtlos wieder da sind.
   setLoopsSuspended(s) { const n = !!s; if (n === loopsSuspended) return; loopsSuspended = n; refreshLoops(); },
+  /* #: App im Hintergrund / geschlossen (v. a. Mobile) → den GANZEN AudioContext hart suspendieren: friert ALLE
+     Stimmen + Loops ein (kein Sound, kein CPU/Akku hinter dem gesperrten Bildschirm) und setzt beim Zurückkehren
+     nahtlos fort. Robust/idempotent; vor dem ersten unlock() (ctx==null oder noch nie „running") ein No-Op. */
+  setSuspended(s) {
+    const c = ctx;
+    if (!c) return;
+    try {
+      if (s) { if (c.state === "running") c.suspend().catch(() => {}); }
+      else if (c.state === "suspended") c.resume().catch(() => {});
+    } catch (e) { /* egal — Audio nie den Spielfluss stören */ }
+  },
   /* Einen SFX abspielen. `rate` = playbackRate (Turbo-Kopplung Stich-Sound), `gain` = zusätzlicher Faktor,
      `bass` = Lowshelf-Anhebung in dB (#196, 0 = aus). Je Aufruf eine neue BufferSource → Überlappen erlaubt
      (dezenter „Maschinengewehr"-Effekt bei hohem Turbo). Kette: src → [lowshelf?] → gain → masterComp → destination. */
