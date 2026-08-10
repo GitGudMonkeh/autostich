@@ -1037,30 +1037,44 @@ function PrunkFx({ trigger, panelRef, oppRef, color }) {
 // Fontänen sind an den LAUF-SCORE gekoppelt (linear bis EMBER_MAX_SCORE) → je höher der Score, desto mehr/höhere Funken.
 // Die Höhe (rise) ist SLOT-FEST je Funke: mehr Slots (höherer Score) ⇒ höhere/vollere Fontäne, ohne dass bestehende
 // Funken beim Score-Anstieg springen (nur neue, höhere Slots kommen dazu). Deterministisch (fjitter, kein Math.random).
-const EMBER_FOUNTAINS = [24, 50, 76]; // x% der Fontänen
+const EMBER_FOUNTAINS_N = 3;    // Anzahl gleichzeitiger Fontänen
 const EMBER_MAX_SCORE = 500000;
+const EMBER_MAX_STUFE = 3;      // 0..3 → Partikel/Fontäne verdoppeln sich je Stufe
 const emberNorm = (score) => clamp((score || 0) / EMBER_MAX_SCORE, 0, 1);
-// Ambiente: dauerhaft aufsteigende Funken je Fontäne (Endlos-Loop). Anzahl/Höhe wachsen mit dem Score.
+// Score → Stufe (0..EMBER_MAX_STUFE): je Stufe verdoppelt sich die Partikelzahl pro Fontäne.
+const emberStufe = (score) => clamp(Math.floor(emberNorm(score) * (EMBER_MAX_STUFE + 1)), 0, EMBER_MAX_STUFE);
+// Zufällige Fontänen-Positionen (x %) am unteren Rand — deterministisch aus `seed`. Für die Ambiente-Funken ein FESTER
+// Seed (Positionen bleiben stabil), für den Per-Stich-Stoß ein sweepId-Seed (jede Eruption an anderen Stellen).
+function emberFountainXs(seed) {
+  const xs = [];
+  for (let f = 0; f < EMBER_FOUNTAINS_N; f++) xs.push(clamp(8 + Math.abs(fjitter(seed + f * 53, 84)), 6, 94));
+  return xs;
+}
+// Ambiente: dauerhaft aufsteigende Funken je Fontäne (Endlos-Loop). Positionen zufällig aber STABIL; Anzahl moderat
+// (läuft dauerhaft) mit der Stufe wachsend.
 function emberFountainDots(score) {
-  const per = 3 + Math.round(emberNorm(score) * 9); // 3 … 12 Funken je Fontäne
+  const per = 4 + emberStufe(score) * 2; // 4 … 10 je Fontäne (Ambiente bleibt ruhig)
+  const xs = emberFountainXs(7);
   const out = [];
-  for (let f = 0; f < EMBER_FOUNTAINS.length; f++) for (let s = 0; s < per; s++) {
+  for (let f = 0; f < xs.length; f++) for (let s = 0; s < per; s++) {
     const seed = f * 97 + s * 31;
-    out.push({ key: `f${f}s${s}`, l: EMBER_FOUNTAINS[f] + fjitter(seed, 3.4),
-      size: 1.3 + Math.abs(fjitter(seed + 5, 1.5)), rise: 130 + s * 20,
+    out.push({ key: `f${f}s${s}`, l: clamp(xs[f] + fjitter(seed, 3.4), 3, 97),
+      size: 1.3 + Math.abs(fjitter(seed + 5, 1.5)), rise: 150 + s * 20,
       rdx: 5 + fjitter(seed + 9, 12), t: 8 + Math.abs(fjitter(seed + 3, 4)),
       d: (s / per) * 8 + Math.abs(fjitter(seed + 7, 1.5)) });
   }
   return out;
 }
-// Per-Stich-Stoß („Vulkan"): je Fontäne ein kleiner Funkenstoß; Anzahl UND Höhe ebenfalls score-gekoppelt.
-function emberFountainJets(score) {
-  const per = 2 + Math.round(emberNorm(score) * 5); // 2 … 7 Jets je Fontäne je Stich
+// Per-Stich-Eruption („Vulkan"): Fontänen an ZUFÄLLIGEN Positionen (je Stich neu, aus sweepId). Die Partikelzahl je
+// Fontäne VERDOPPELT sich mit jeder Stufe (3·2^Stufe = 3/6/12/24); die Partikel werden mit mehr Wucht hochgeschossen.
+function emberFountainJets(score, sweepId) {
+  const per = 3 * Math.pow(2, emberStufe(score)); // 3, 6, 12, 24 je Fontäne
+  const xs = emberFountainXs(sweepId * 7 + 1);
   const out = [];
-  for (let f = 0; f < EMBER_FOUNTAINS.length; f++) for (let s = 0; s < per; s++) {
-    const seed = f * 61 + s * 19;
-    out.push({ key: `f${f}j${s}`, white: s % 3 === 0, l: EMBER_FOUNTAINS[f] + fjitter(seed, 4),
-      jy: 70 + s * 10 + Math.abs(fjitter(seed + 3, 20)), dx: fjitter(seed + 9, 12), d: Math.abs(fjitter(seed + 5, 130)) });
+  for (let f = 0; f < xs.length; f++) for (let s = 0; s < per; s++) {
+    const seed = sweepId * 131 + f * 61 + s * 19;
+    out.push({ key: `f${f}j${s}`, white: s % 3 === 0, l: clamp(xs[f] + fjitter(seed, 5), 3, 97),
+      jy: 118 + Math.abs(fjitter(seed + 3, 64)), dx: fjitter(seed + 9, 16), d: Math.abs(fjitter(seed + 5, 150)) });
   }
   return out;
 }
@@ -1102,7 +1116,7 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepD
   } else if (effect === "embers") {
     // #: 2–3 Fontänen statt gleichmäßiger Verteilung; Anzahl/Höhe an den Score gekoppelt (emberFountainDots/Jets).
     const dots = emberFountainDots(score);
-    const jets = react ? emberFountainJets(score) : null;
+    const jets = react ? emberFountainJets(score, sweepId) : null;
     inner = (
       <>
         {dots.map((e) => (
