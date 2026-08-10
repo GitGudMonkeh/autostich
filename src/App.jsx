@@ -17,7 +17,7 @@ import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
-import { Battlefield } from "./ui/Battlefield.jsx";
+import { Battlefield, OPP_SKIN_URLS } from "./ui/Battlefield.jsx";
 import { GlossaryPanel } from "./ui/Glossary.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
@@ -512,7 +512,12 @@ export function Autostich() {
     pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
     pendingRanked.current = ranked; // §7: 'standard' = tree-unabhängige Baseline · 'meister' = voller Baum
     pendingChallenge.current = (Array.isArray(challenge) && challenge.length) ? challenge : null; // #301: Challenge-Modifikatoren (null = kein Challenge-Lauf)
-    setPendingRun([deckSkin.front, deckSkin.back, ...(bfSkin ? [bfSkin.desktop, bfSkin.mobile] : [])]);
+    // #perf: den ArchitectScreen-Chunk (erscheint mitten im Lauf in der Architekt-Phase) schon jetzt anstoßen —
+    // nicht-blockierend, damit der Phasenübergang später ohne Nachlade-Hitch ist. Fehlschlag unkritisch (Suspense fängt).
+    try { importArchitect(); } catch (e) { /* egal */ }
+    // #perf: neben dem eigenen Deck/Battlefield jetzt auch die Gegner-Deck-Bilder vorladen → keine Bild-Dekodier-Hitches,
+    // wenn im Lauf erstmals eine Gegnerkarte eines neuen Auswahl-Typs erscheint. RunLoader dedupt + hat Timeout-Sicherheitsnetz.
+    setPendingRun([deckSkin.front, deckSkin.back, ...(bfSkin ? [bfSkin.desktop, bfSkin.mobile] : []), ...OPP_SKIN_URLS]);
   }
   // Normaler Lauf — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
   function startRun(seed) { launchRun({ seed: (typeof seed === "number" && Number.isFinite(seed)) ? seed : null }); }

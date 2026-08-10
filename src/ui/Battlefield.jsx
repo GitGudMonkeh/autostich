@@ -38,6 +38,9 @@ const OPP_DECK_SKINS = {
   legendary: { back: oppLegendaryBack, front: oppLegendaryFront }, // 💎 Legendär-Auswahl (R29)
   stat:      { back: oppSkillBack,     front: oppSkillFront },     // Fallback-Default = Skill (erste Runde ist immer Skill)
 };
+// #perf: alle (eindeutigen) Gegner-Deck-Bild-URLs — fürs Vorladen im Run-Start-Gate, damit die erste Gegnerkarte
+// eines neuen Auswahl-Typs (Perk/Skill/Formation/Architekt/Legendär) nicht erst mitten im Lauf sein Bild dekodiert.
+export const OPP_SKIN_URLS = [...new Set(Object.values(OPP_DECK_SKINS).flatMap((s) => [s.front, s.back]))];
 
 const BANNER = {
   win:     { text: "Gewonnen",            color: "#5ab87a" },
