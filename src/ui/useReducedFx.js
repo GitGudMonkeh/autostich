@@ -33,3 +33,22 @@ export function useReducedFx(option = "auto") {
   if (option === "aus") return prefersReduced;          // Override — OS-Bewegungswunsch bleibt trotzdem bindend
   return prefersReduced || coarsePointer;                // „auto": Mobile ODER reduzierte Bewegung
 }
+
+/* Dreistufige Auflösung — der Mittelweg zwischen „voll" und „tot". Trennt zwei Dinge, die vorher in EINEN
+   Boolean geworfen wurden und deshalb zusammen abgeschaltet wurden:
+     • „full"     → alles an.
+     • „balanced" → der BILLIGE Feel-Good-Layer bleibt an (3D-Kartenflip, Ambient-Hintergrund, Glows, Slice,
+                    Finisher), nur die TEUREN Dauer-/Schwarm-Layer fallen weg (Screen-Shake, Partikel-Fontänen,
+                    Overlay-Blur, Rahmen-/Titel-Sweep). Fühlt sich lebendig an, ruckelt aber nicht.
+     • „minimal"  → wie der alte reduced=true: auch der Feel-Good-Layer aus (max. Entlastung / Barrierefreiheit).
+   Optionen: „an"→minimal, „aus"→full (OS-Wunsch bleibt bindend), „ausgewogen"→balanced, „auto"→Mobile:balanced,
+   Desktop:full. prefers-reduced-motion erzwingt IMMER minimal (nie ein Rückschritt für Barrierefreiheit). */
+export function useFxLevel(option = "auto") {
+  const prefersReduced = useMediaMatch("(prefers-reduced-motion: reduce)");
+  const coarsePointer  = useMediaMatch("(pointer: coarse)");
+  if (prefersReduced) return "minimal";                  // Barrierefreiheit hat immer Vorrang
+  if (option === "an")         return "minimal";
+  if (option === "ausgewogen") return "balanced";
+  if (option === "aus")        return "full";            // Override: volle Effekte auch auf Mobile
+  return coarsePointer ? "balanced" : "full";            // „auto": Handy → ausgewogen, Desktop → voll
+}

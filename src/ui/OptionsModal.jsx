@@ -95,10 +95,10 @@ export function OptionsModal({ options, onChange, onClose }) {
               aria-label="Musik-Lautstärke"
               style={{ width: 120, accentColor: "#8a7de0", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
           </Row>
-          {/* #200: Effekte reduziert (auto/an/aus) — lässt teure „Juice"-Layer weg, für flüssigeres Spiel auf schwachen Geräten. */}
-          <Row title="Effekte reduziert" desc="Lässt teure Effekte weg (Schnitt/Explosion, Blitz-Flash, Screen-Shake) — flüssiger auf schwachen Geräten. „Auto“ erkennt Handy und System-Einstellung.">
+          {/* #200: Effekte reduziert (auto/an/mittel/aus) — dreistufig. „Mittel"=ausgewogen: Kartenflip + Ambiente + Finisher bleiben, nur Screen-Shake + Partikel-Fontänen fallen weg. */}
+          <Row title="Effekte reduziert" desc="„Aus“ = volle Effekte. „Mittel“ behält Kartenflip, Hintergrund & Finisher, lässt aber die teuren Ruckel-Treiber (Screen-Shake, Funken-Fontänen) weg. „An“ reduziert alles. „Auto“ wählt am Handy Mittel, am Desktop volle Effekte.">
             <Segmented value={options.reducedFx ?? "auto"}
-              options={[{ v: "auto", label: "Auto" }, { v: "an", label: "An" }, { v: "aus", label: "Aus" }]}
+              options={[{ v: "auto", label: "Auto" }, { v: "aus", label: "Aus" }, { v: "ausgewogen", label: "Mittel" }, { v: "an", label: "An" }]}
               onChange={(v) => onChange({ reducedFx: v })} />
           </Row>
           {/* #207: Haptik — kurzes Vibrations-Feedback bei Bestätigungen. Wirkt nur auf Touch-Geräten (Handy); System-„reduzierte Bewegung“ schaltet sie ohnehin ab. */}

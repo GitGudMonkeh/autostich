@@ -7,7 +7,7 @@ import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useBlackholeSfx } from "./finisherSfx.js"; // #298: Schwarzes-Loch-Ton-Bett (leiser Start → Anschwellen → schneller Kollaps), geteilt mit der Shop-Vorschau
-import { useReducedFx } from "./useReducedFx.js";
+import { useFxLevel } from "./useReducedFx.js";
 import { startPrunk } from "./prunkFx.js";
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
@@ -1116,7 +1116,7 @@ const COMET_TRAIL = Array.from({ length: 14 }, (_, i) => {
 });
 // #: dezente Sterne für die Aurora (obere Feldhälfte). x/y in %, s = Größe (px), d = Twinkle-Versatz (s).
 const AURORA_STARS = [{ x: 12, y: 14, s: 2, d: 0 }, { x: 26, y: 24, s: 1.4, d: 0.8 }, { x: 43, y: 9, s: 2.2, d: 1.5 }, { x: 57, y: 20, s: 1.5, d: 0.5 }, { x: 71, y: 12, s: 2, d: 1.2 }, { x: 85, y: 27, s: 1.4, d: 0.9 }, { x: 36, y: 33, s: 1.5, d: 1.9 }, { x: 64, y: 34, s: 1.3, d: 0.3 }];
-const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, win, score = 0 }) {
+const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, lite = false, win, score = 0 }) {
   const react = !reduced && sweepId > 0; // per-Stich-Reaktion aktiv?
   const A = (c) => (reduced ? "" : c); // Ambiente-Animationsklasse nur ohne „Effekte reduziert" → sonst statisches Bild
   // #: Glutfunken-Stöße dürfen ÜBERLAPPEN — der vorige Funkenstrom läuft sanft aus, während der neue startet, statt
@@ -1124,12 +1124,12 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
   // Zeitpunkt des Stichs) → stabile Keys, Animationen laufen weiter; ältere fallen raus, sobald sie längst fertig sind.
   const [emberGen, setEmberGen] = useState([]);
   useEffect(() => {
-    if (effect !== "embers" || reduced || !(sweepId > 0)) return;
+    if (effect !== "embers" || lite || !(sweepId > 0)) return; // #: Jet-Fontänen (bis 72 Nodes/Stich) sind der teure Schwarm → in „ausgewogen" (lite) UND minimal aus; das ruhige Ambiente (dots) bleibt
     const turbo = clamp((sweepDur || 900) / 875, 0.45, 1);
     const snap = { id: sweepId, win, jetDur: Math.max(560, Math.round(sweepDur * 0.9)), jets: emberFountainJets(score, sweepId, turbo) };
     setEmberGen((g) => (g[g.length - 1]?.id === sweepId ? g : [...g, snap].slice(-3)));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur auf sweepId reagieren (Snapshot friert score/sweepDur/win ein)
-  }, [sweepId, effect, reduced]);
+  }, [sweepId, effect, lite]);
   useEffect(() => { if (effect !== "embers") setEmberGen([]); }, [effect]);
   let inner = null;
   if (effect === "hologrid") {
@@ -1198,7 +1198,7 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
             background: color, boxShadow: `0 0 ${(e.size * 2.5).toFixed(1)}px ${color}`, opacity: 0.7,
             "--rise": `${e.rise}%`, "--rdx": `${e.rdx}px`, animationDuration: `${e.t}s`, animationDelay: `${e.d}s` }} />
         ))}
-        {!reduced && emberGen.map((g) => g.jets.map((jt) => (
+        {!lite && emberGen.map((g) => g.jets.map((jt) => (
           <span key={`${g.id}-${jt.key}`} className="as-field-spark absolute rounded-full" style={{
             left: `${jt.l}%`, bottom: "0%", width: g.win ? 3.2 : 2.6, height: g.win ? 3.2 : 2.6,
             background: jt.white ? "#ffffff" : color, boxShadow: `0 0 6px ${color}`,
@@ -1287,7 +1287,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   fxFireworks = false, fxGoldRain = false, fxPrismaWave = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
-  const reduced = useReducedFx(reducedFx);
+  // #: Dreistufig. `reduced` (minimal) behält EXAKT die alte Semantik → Kartenflip/Ambient/Finisher/Glows aus.
+  // `lite` (balanced ODER minimal) kappt zusätzlich nur die TEUREN Dauer-/Schwarm-Layer: Screen-Shake + die
+  // Glutfunken-Partikelfontänen (bis 72 DOM-Nodes/Stich). In „ausgewogen" ist reduced=false (Feel-Good bleibt),
+  // aber lite=true → die Ruckel-Treiber fallen weg. Finisher bleiben bewusst unangetastet (Nutzer-Wunsch).
+  const fxLevel = useFxLevel(reducedFx);
+  const reduced = fxLevel === "minimal";
+  const lite    = fxLevel !== "full";
   // GOTTGLEICH-Prunk: Panel = Prallwand-Rahmen, oppSlot = Ursprung (zerstörte Gegnerkarte); burst triggert den Schwarm.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
@@ -1724,7 +1730,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const screenFxTimer = useRef(null);
   useEffect(() => () => clearTimeout(screenFxTimer.current), []);
   useEffect(() => {
-    if (t && win && !reduced) {
+    if (t && win && !lite) {   // #: Screen-Shake ist ein Haupt-Ruckel-Treiber (wackelt den ganzen Teilbaum per transform → Dauer-Repaint) → in „ausgewogen" (lite) UND minimal aus
       const { tier } = fxIntensity(t.gained || 0);
       const minTier = isCrit ? 1 : 2; // Crit ab STARK (10k), normaler Sieg erst ab BRUTAL (50k)
       if (tier >= minTier) {
@@ -1807,7 +1813,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           immer in der Deck-Hauptfarbe. Ambiente läuft ruhig; die Reaktion je Stich (sweepId, Turbo-Throttle) läuft voll
           durch. reduced-motion → nur das statische Ambiente (kein Springen). */}
       {fxField && deckA1 && (
-        <FieldFxLayer effect={fxField} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} win={win}
+        <FieldFxLayer effect={fxField} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} lite={lite} win={win}
           score={fxField === "embers" ? Math.round((score || 0) / 20000) * 20000 : 0} />
       )}
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels

@@ -18,7 +18,7 @@ import { StatusRail } from "./ui/StatusRail.jsx";
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
 import { Battlefield, OPP_SKIN_URLS } from "./ui/Battlefield.jsx";
-import { useReducedFx } from "./ui/useReducedFx.js"; // Perf: löst reducedFx auf → schaltet teuren Overlay-Blur global ab
+import { useFxLevel } from "./ui/useReducedFx.js"; // Perf: löst reducedFx dreistufig auf (full/balanced/minimal) → steuert Overlay-Blur + Sweeps
 import { PerfOverlay } from "./ui/PerfOverlay.jsx"; // Perf-Recorder-HUD (nur Preview-Build)
 import { perfMark, getReport, formatReport } from "./ui/perfRecorder.js"; // Perf-Recorder (No-op außerhalb Preview)
 import { GlossaryPanel } from "./ui/Glossary.jsx";
@@ -92,11 +92,14 @@ export function Autostich() {
   // Eine zentrale CSS-Regel (index.css) schaltet damit den teuren Overlay-Blur (backdrop-filter) ab —
   // der wird hinter Gameplay-Overlays sonst pro Frame neu berechnet (laufende Puls-/Glow-Animationen).
   // Desktop-Look bleibt unverändert; nur dort greift die Reduktion, wo sie Stutter spart.
-  const reducedFxOn = useReducedFx(options.reducedFx);
+  // #: Ab „balanced" greift die reine Perf-Reduktion (Overlay-Blur + Rahmen-/Titel-Sweep aus) — das kostet keine
+  // sichtbare Optik, spart aber Dauer-Repaints. Der Feel-Good-Layer (Kartenflip/Ambient) hängt NICHT hier, sondern
+  // am Level im Battlefield → „ausgewogen" bleibt lebendig, nur die teuren Dauer-Layer fallen weg.
+  const fxLevel = useFxLevel(options.reducedFx);
   useEffect(() => {
     const el = document.documentElement;
-    if (reducedFxOn) el.dataset.reducedFx = "1"; else delete el.dataset.reducedFx;
-  }, [reducedFxOn]);
+    if (fxLevel !== "full") el.dataset.reducedFx = "1"; else delete el.dataset.reducedFx;
+  }, [fxLevel]);
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
   const [showStats, setShowStats] = useState(false);              // #172 FB-10: Statistik-Hub (nur im Menü)
   const [showCustomize, setShowCustomize] = useState(false);      // #190: Kollektion (Deck/Battlefield, nur im Menü)
