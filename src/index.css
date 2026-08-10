@@ -219,6 +219,13 @@ button { font-family: inherit; }
   60%  { opacity: 0.9; }
   100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(var(--ds, 0.4)) rotate(var(--dr)); }
 }
+/* #: Zerstäubung Stufe 4 — „größere Wucht": die Stücke schießen weit raus, PRALLEN am Battlefield-Rahmen ab und
+   federn zur Mitte zurück (--bx/--by = Rückprall-Versatz, Gegenrichtung/Teilbetrag), dann faden sie. */
+@keyframes as-fx-shatter-bounce {
+  0%   { opacity: 1;    transform: translate(0, 0) scale(1) rotate(0); }
+  52%  { opacity: 0.94; transform: translate(var(--dx), var(--dy)) scale(0.72) rotate(calc(var(--dr) * 0.7)); }
+  100% { opacity: 0;    transform: translate(calc(var(--dx) + var(--bx, 0px)), calc(var(--dy) + var(--by, 0px))) scale(var(--ds, 0.4)) rotate(var(--dr)); }
+}
 /* #300 Sieg-Finisher „Überladung": Karte blitzt beim Einschlag kurz weiß auf (brightness-Peak) und wird dann ausgeblendet
    (der Blitz zerstört sie). „Zerstäubung": Karte fadet zügig, während die Partikel emittieren (sie zerstäubt). */
 @keyframes as-ovl-card {
@@ -326,8 +333,16 @@ button { font-family: inherit; }
 .as-deck-swipe { animation: as-deck-swipe 3s ease-in-out infinite; }
 /* #309 Karten-Animationen (anim-FX): Aurora-Schleier = weicher driftender Neon-Nebel (Deck-Farben, screen-Blend, blur);
    Glitch = getaktetes chromatisches RGB-Zucken auf der Zahl (~alle 3 s), sonst ruhig. Nur transform/opacity/text-shadow. */
-@keyframes as-aurora-drift { 0% { transform: translate(-6%, -3%) scale(1.05); } 100% { transform: translate(6%, 4%) scale(1.12); } }
-.as-aurora-drift { animation: as-aurora-drift 9s ease-in-out infinite alternate; }
+/* #: Aurora-Schleier „wabert" smooth — organische Mehrpunkt-Undulation (Drift + leichtes Atem-Zoom) statt linearem
+   Hin/Her. Start=Ende → sanfte Endlosschleife (kein alternate-Ruck an den Umkehrpunkten). */
+@keyframes as-aurora-drift {
+  0%   { transform: translate(-5%, -3%) scale(1.06); }
+  25%  { transform: translate(4%, -1%) scale(1.11); }
+  50%  { transform: translate(6%, 4%) scale(1.13); }
+  75%  { transform: translate(-2%, 3%) scale(1.09); }
+  100% { transform: translate(-5%, -3%) scale(1.06); }
+}
+.as-aurora-drift { animation: as-aurora-drift 14s ease-in-out infinite; }
 @keyframes as-glitch-shift { 0%, 88%, 100% { transform: none; } 90% { transform: translateX(-3px) skewX(-4deg); } 92% { transform: translateX(3px); } 94% { transform: translateX(-2px); } }
 @keyframes as-glitch-split { 0%, 88%, 100% { text-shadow: var(--num-shadow); } 90% { text-shadow: -3px 0 #ff3ea5, 3px 0 #35d6f0; } 94% { text-shadow: 3px 0 #ff3ea5, -3px 0 #35d6f0; } }
 .as-glitch-num { animation: as-glitch-shift 3.2s linear infinite, as-glitch-split 3.2s linear infinite; }

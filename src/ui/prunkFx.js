@@ -17,12 +17,13 @@ export function startPrunk(canvas, { fireworks, goldRain, prismaWave, color, ori
   ctx.scale(dpr, dpr);
 
   const deckC = color || "#5ab87a";
-  const GOLD = ["#fff0b0", "#ffd873", "#ffffff", "#ffc978"];
+  // #: „Weißgold"-Regen läuft jetzt in der DECKFARBE (mit weißen Highlight-Kernen), nicht mehr fest gold.
+  const RAINCOL = [deckC, "#ffffff", deckC, deckC];
   const PI2 = Math.PI * 2;
   const REST = 0.72, DRAG = 0.992, G = 0.15, TTL = 2250;
   const cx = W * originX, cy = H * originY;
   const maxR = Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) + 20;
-  const flashC = goldRain && !fireworks ? "#ffe6a0" : deckC;
+  const flashC = deckC;
   // Feuerwerk & Weißgold-Regen bewusst wieder etwas zurückgedreht (weniger Dichte/Wucht); der Anfangs-Impuls-Flash
   // wird bei ihnen kleiner. Prisma-Welle bleibt unangetastet.
   const punch = (fireworks || goldRain) ? 0.55 : 1;
@@ -51,7 +52,7 @@ export function startPrunk(canvas, { fireworks, goldRain, prismaWave, color, ori
       for (let i = 0; i < RN; i++) {
         rain.push({ x: Math.random() * W, y: -Math.random() * H * 0.7 - 6,
           vy: 1.6 + Math.random() * 2.8, drift: 0.5 + Math.random() * 1.0, ph: Math.random() * PI2,
-          r: 1.4 + Math.random() * 2.2, c: GOLD[i % GOLD.length], t0: Math.random() * 460, tw: 0.5 + Math.random(),
+          r: 1.4 + Math.random() * 2.2, c: RAINCOL[i % RAINCOL.length], t0: Math.random() * 460, tw: 0.5 + Math.random(),
           conf: i % 6 === 0 });
       }
     }

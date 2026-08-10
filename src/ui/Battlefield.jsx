@@ -663,8 +663,11 @@ export function OverloadFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, 
       if (el < 0) { raf = requestAnimationFrame(frame); return; }
       if (el < strikeMs) {
         const flick = 0.55 + rng() * 0.45;
+        // #: Blitze schlagen von KLAR VERSCHIEDENEN Seiten von oben ein (Stufe III = 2 → links/rechts, Stufe IV = 3 →
+        // links/mitte/rechts) statt geclustert nahe der Mitte. Kleiner Jitter je Blitz, Einschlag bleibt Kartenmitte.
+        const boltX = nBolts >= 3 ? [0.16, 0.5, 0.84] : nBolts === 2 ? [0.2, 0.8] : [0.5];
         for (let b = 0; b < nBolts; b++) {
-          const sx = CW * (0.25 + rng() * 0.5);
+          const sx = CW * (boltX[b] + (rng() - 0.5) * 0.06);
           const pts = build(sx, -4, cx + (rng() - 0.5) * 10, cy, CW * 0.45, rng);
           stroke(pts, 7 * glare, color, 0.11 * flick);            // breiter additiver Glow
           stroke(pts, 3.4 * glare, color, 0.2 * flick);
@@ -684,8 +687,9 @@ export function OverloadFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, 
         ctx.beginPath(); ctx.arc(cx, cy, 24 * glare, 0, Math.PI * 2); ctx.fill();
       } else {
         const p = Math.min(1, (el - strikeMs) / (dur - strikeMs)); // Funken glühen aus
-        // #: Funken sprühen radial, mit der Stufe etwas mehr — aber bewusst DEZENT (deutlich weniger als zuvor).
-        const nS = 5 + tier * 4;
+        // #: Funken am Einschlag NOCHMALS stark reduziert (nur noch ein knapper radialer Spritzer). „Stärker je Stufe"
+        // kommt aus Geschwindigkeit/Helligkeit, nicht aus der Menge.
+        const nS = 2 + tier * 2;
         ctx.globalCompositeOperation = "lighter";
         for (let i = 0; i < nS; i++) {
           // #: Funken entspringen konzentriert AUS DEM EINSCHLAGPUNKT (enger Ursprung ~20px) statt über die ganze Kartenfläche.
@@ -762,18 +766,26 @@ export function DisperseFx({ cardEl, color = "#35e0ff", flipMs = 900, seed = 1, 
   const dur = disperseDur(flipMs);
   const [cols, rows] = SHATTER_GRID[Math.max(0, Math.min(3, tier - 1))];
   // #: Größere Sprünge je Stufe + weite RADIALE Streuung in ALLE Richtungen (nur minimaler Auftrieb, kein „nach oben").
-  const spread = 58 + tier * 40;
+  // Stufe 4 = „größere Wucht" (weitere Streuung) UND die Stücke PRALLEN am Battlefield-Rahmen ab (Rückprall zur Mitte).
+  const bounce = tier >= 4;
+  const spread = 58 + tier * 40 + (bounce ? 46 : 0);
   const frags = cardShatterFrags({ cols, rows, seed, spread, upBias: 6, sizeMin: 0.24, rot: 75 });
   const N = frags.length;
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      {frags.map((s) => (
-        <div key={`df${s.i}`} className="absolute inset-0" style={{ clipPath: s.clip,
-          "--dx": `${s.dx}px`, "--dy": `${s.dy}px`, "--ds": s.ds, "--dr": `${s.dr}deg`,
-          // #: „…-hold" hält die Stücke länger deckend (weniger transparent), damit die Zerstäubung auch im Turbo klar sichtbar ist.
-          animation: `as-fx-shatter-hold ${dur}ms cubic-bezier(0.12,0.7,0.3,1) ${delay + Math.round((s.i / N) * dur * 0.1)}ms both`,
-          willChange: "transform, opacity" }}>{cardEl}</div>
-      ))}
+      {frags.map((s) => {
+        // #: Rückprall nur Stufe 4: ~44 % des Auswärts-Vektors zurück zur Mitte (--bx/--by) → liest sich als „am Rahmen
+        // abgeprallt". Darunter (Stufe 1–3) bleibt die deckende „…-hold"-Variante (klar sichtbar auch im Turbo).
+        const bx = bounce ? (-parseFloat(s.dx) * 0.44).toFixed(1) : 0;
+        const by = bounce ? (-parseFloat(s.dy) * 0.44).toFixed(1) : 0;
+        return (
+          <div key={`df${s.i}`} className="absolute inset-0" style={{ clipPath: s.clip,
+            "--dx": `${s.dx}px`, "--dy": `${s.dy}px`, "--ds": s.ds, "--dr": `${s.dr}deg`,
+            "--bx": `${bx}px`, "--by": `${by}px`,
+            animation: `${bounce ? "as-fx-shatter-bounce" : "as-fx-shatter-hold"} ${dur}ms cubic-bezier(0.12,0.7,0.3,1) ${delay + Math.round((s.i / N) * dur * 0.1)}ms both`,
+            willChange: "transform, opacity" }}>{cardEl}</div>
+        );
+      })}
     </div>
   );
 }
@@ -1631,9 +1643,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       // im zweiten Durchlauf). Stattdessen spielt PrunkFx den Bass EXAKT beim Mounten/Start seiner Canvas-Animation
       // (trigger.rate trägt das Turbo-Tempo hinein) → Bass und Effekt fallen jeden Stich sicher zusammen.
       const pRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
+      // #: Gottgleich-Prunk ist EXKLUSIV — es feuert immer nur EIN Overlay (auch wenn ein Altstand mehrere Flags true
+      // hat). Fester Vorrang: Prisma > Goldregen > Feuerwerk. (Die Shop-Auswahl schreibt ohnehin nur eins.)
+      const pWin = fxPrismaWave ? "prismaWave" : fxGoldRain ? "goldRain" : "fireworks";
       const pt = setTimeout(() => {
         prunkSeq.current += 1;
-        setPrunk({ id: prunkSeq.current, fireworks: fxFireworks, goldRain: fxGoldRain, prismaWave: fxPrismaWave, rate: pRate });
+        setPrunk({ id: prunkSeq.current, fireworks: pWin === "fireworks", goldRain: pWin === "goldRain", prismaWave: pWin === "prismaWave", rate: pRate });
       }, sRest);
       ghostTimers.current.push(pt);
     }

@@ -48,8 +48,8 @@ const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "kli
 
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
-const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", group: "gott", standard: true, preview: "gottStandard",
-  desc: "So sieht ein Gottgleicher Sieg OHNE gekaufte Prunk-Effekte aus — die Basis zum Vergleichen (immer aktiv)." };
+const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", group: "gott", alwaysOwned: true, preview: "gottStandard",
+  desc: "Gottgleicher Sieg OHNE Prunk-Effekt — die Basis zum Vergleichen (Standard-Auswahl, kein Kauf)." };
 
 // Effekt-Gruppen des „Effekte"-Tabs. mode: "toggle" (frei kombinierbar) | "finisher" (Einfachauswahl, exklusiv,
 // inkl. „Klinge" als Default). Grid-Tunnel wurde entfernt → keine Ambience-Gruppe mehr.
@@ -58,7 +58,7 @@ const FX_GROUPS = [
   { key: "field",    title: "Battlefield-Ambiente", hint: "nur eins aktiv",               mode: "field" }, // #306
   { key: "finisher", title: "Sieg-Finisher",      hint: "nur einer aktiv",                mode: "finisher" },
   // #: Krit-Gruppe (Shatter) entfernt — Krit-Finisher-Animationen raus.
-  { key: "gott",     title: "Gottgleich-Prunk",   hint: "frei kombinierbar",              mode: "toggle" },
+  { key: "gott",     title: "Gottgleich-Prunk",   hint: "nur einer aktiv",                mode: "gott" }, // exklusiv
 ];
 /* #306 Synthetische „Kein Feld-Effekt"-Kachel (immer verfügbar, kein Kauf): der Aus-Zustand der einfach-exklusiven
    Battlefield-Ambiente-Gruppe — wählbar wie „Klinge" beim Finisher. */
@@ -86,6 +86,11 @@ const finisherSelOf = (options) => options?.fxBlackhole ? "blackhole" : options?
 const FIELD_FX = GLOBAL_FX.filter((f) => f.group === "field");
 const fieldFxFlags = (key) => Object.fromEntries(FIELD_FX.map((f) => [f.option, f.key === key]));
 const fieldFxSelOf = (options) => { for (const f of FIELD_FX) if (options?.[f.option]) return f.key; return "none"; };
+/* Gottgleich-Prunk einfach-exklusiv (genau EINER aktiv, oder „gottStandard" = kein Prunk). Datengetrieben aus der
+   „gott"-Gruppe: gottFlags(key) schreibt alle Prunk-Optionen in einem Rutsch (genau eine true, „gottStandard" = alle false). */
+const GOTT_FX = GLOBAL_FX.filter((f) => f.group === "gott");
+const gottFlags = (key) => Object.fromEntries(GOTT_FX.map((f) => [f.option, f.key === key]));
+const gottSelOf = (options) => { for (const f of GOTT_FX) if (options?.[f.option]) return f.key; return "gottStandard"; };
 
 // Gleiche Schwelle wie das In-Run-Battlefield (<picture media="(max-width: 640px)">): so zeigt die
 // Vorschau exakt die Version (mobile/desktop), mit der gerade auch gespielt wird.
@@ -292,19 +297,20 @@ function BurnBeamPreview() {
   const seqRef = useRef(0);
   const burnLoopRef = useRef(null);
   useEffect(() => {
-    // 1..7 Siege (Strahl lit, Intensität + Funkendichte steigen) · 8 Niederlage (Strahl zieht sich zurück) · 9/10 Pause.
+    // #: LÄNGERE Serie in der Vorschau, damit die Eskalation sichtbar wird: 1..11 Siege (Strahl lit, Intensität +
+    // Funkendichte steigen; ab ~Sieg 9 am Maximum → kurz gehalten) · 12 Niederlage (Strahl zieht sich zurück) · 13/14 Pause.
     let c = 0;
     const id = setInterval(() => {
-      c = (c + 1) % 11;
-      if (c >= 1 && c <= 7) {
-        const streak = c * 1.8;
+      c = (c + 1) % 15;
+      if (c >= 1 && c <= 11) {
+        const streak = c * 1.4; // wächst sichtbar über mehr Stufen; sK deckelt bei 12 → oberste Siege halten den vollen Strahl
         setDormant(false);
         setPulse({ id: ++seqRef.current, kind: "win", streak });
         const bid = seqRef.current;
         setBursts((b) => [...b, { id: bid, streak }].slice(-2));
         setTimeout(() => setBursts((b) => b.filter((x) => x.id !== bid)), 1000);
-      } else if (c === 8) { setPulse({ id: ++seqRef.current, kind: "loss" }); setDormant(true); }
-    }, 780);
+      } else if (c === 12) { setPulse({ id: ++seqRef.current, kind: "loss" }); setDormant(true); }
+    }, 820);
     return () => clearInterval(id);
   }, []);
   // #302b/#307: Brennstrahl-Loop-Bett an die Lit-Phase (Sieg-Puls) koppeln — IDENTISCH zu In-Game (Battlefield.jsx):
@@ -758,6 +764,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
 function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const finisherSel = finisherSelOf(options);
   const fieldSel = fieldFxSelOf(options);
+  const gottSel = gottSelOf(options);
   // Auswahl-Status des Floaters: { group, key }. Default = erster Effekt der ersten Gruppe (Karten-Animationen).
   const [sel, setSel] = useState(() => { const g = FX_GROUPS[0]; return { group: g.key, key: fxGroupItems(g.key)[0].key }; });
   const selGroup = FX_GROUPS.find((g) => g.key === sel.group) || FX_GROUPS[0];
@@ -767,6 +774,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   // Ist ein Effekt in seiner Gruppe „aktiv"? (Toggle an / als Finisher·Ambiente gewählt). Zentrale Wahrheit → Chip-Marker + Floater-Aktion.
   const isActive = (g, fx) => g.mode === "finisher" ? finisherSel === fx.key
     : g.mode === "field" ? fieldSel === fx.key
+    : g.mode === "gott" ? gottSel === fx.key
     : fx.standard ? false : !!options?.[fx.option];
 
   return (
@@ -799,6 +807,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
                       if (fx.standard || !isActive(g, fx)) return;
                       if (g.mode === "finisher") onChoose(finisherFlags("none"));
                       else if (g.mode === "field") onChoose(fieldFxFlags("none"));
+                      else if (g.mode === "gott") onChoose(gottFlags("gottStandard"));
                       else onChoose({ [fx.option]: false });
                     }} />
                 ))}
@@ -842,6 +851,8 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
     action = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Finisher wählen"}</button>;
   } else if (group.mode === "field") {
     action = <button onClick={() => onChoose(fieldFxFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Ambiente wählen"}</button>;
+  } else if (group.mode === "gott") {
+    action = <button onClick={() => onChoose(gottFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Prunk wählen"}</button>;
   } else {
     action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
   }
