@@ -47,7 +47,7 @@ import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale
 import { UpgradeScreen } from "./ui/UpgradeScreen.jsx"; // Progression-Vorschau: Upgrade-Baum-Screen
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, unlockAllCosmetics, frameGlowActive, holoSwipeActive, activeFieldFx, laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
+import { THEMES, unlockAllCosmetics, frameGlowActive, holoSwipeActive, auroraVeilActive, glitchActive, activeFieldFx, laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
@@ -416,9 +416,12 @@ export function Autostich() {
   const activePack = THEMES.find((t) => t.deckId === activeDeckId) || null;
   const deckFx = {
     deckA1: activePack?.a1 || null,
+    deckA2: activePack?.a2 || null, // #309 Aurora-Schleier nutzt beide Deck-Akzentfarben
     // Karten-Animationen sind jetzt GLOBAL: gekauft via ownedCosmetics["fx:frameGlow"…] UND per Option an.
     fxFrameGlow: frameGlowActive(profile, options),
     fxHoloSwipe: holoSwipeActive(profile, options),
+    fxAuroraVeil: auroraVeilActive(profile, options), // #309 Karten-Aurora-Schleier
+    fxGlitch: glitchActive(profile, options),          // #309 Karten-Glitch
     // #306 Battlefield-Ambiente (einfach-exklusiv): EIN Key ("hologrid"/"starfield"/… oder null) → Battlefield rendert genau diesen Feld-Layer.
     fxField: activeFieldFx(profile, options),
     // Globale Effekte (nicht theme-gebunden): gekauft UND per Option an.
@@ -673,7 +676,7 @@ export function Autostich() {
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
-                deckA1={deckFx.deckA1} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxField={deckFx.fxField} fxLaserSlice={deckFx.fxLaserSlice} fxBlackhole={deckFx.fxBlackhole} fxLasergrid={deckFx.fxLasergrid} fxBurnBeam={deckFx.fxBurnBeam} fxOverload={deckFx.fxOverload} fxDisperse={deckFx.fxDisperse}
+                deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxAuroraVeil={deckFx.fxAuroraVeil} fxGlitch={deckFx.fxGlitch} fxField={deckFx.fxField} fxLaserSlice={deckFx.fxLaserSlice} fxBlackhole={deckFx.fxBlackhole} fxLasergrid={deckFx.fxLasergrid} fxBurnBeam={deckFx.fxBurnBeam} fxOverload={deckFx.fxOverload} fxDisperse={deckFx.fxDisperse}
                 fxFireworks={deckFx.fxFireworks} fxGoldRain={deckFx.fxGoldRain} fxPrismaWave={deckFx.fxPrismaWave}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />

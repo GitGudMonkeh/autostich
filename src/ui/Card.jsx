@@ -10,7 +10,7 @@ import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Ico
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
 // #259: reiner Präsentations-Leaf mit teuren Bild-Layern → React.memo überspringt Re-Render bei unveränderten
 // (primitiven) Props. Beim Auto-Play/Timer-Takt rendern nur die tatsächlich wechselnden Karten neu, nicht alle.
-function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null, fxGlow = null, fxSwipe = false }) {
+function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null, fxGlow = null, fxSwipe = false, fxAurora = null, fxGlitch = false }) {
   const color = suitColor(suit);
   // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
   // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
@@ -95,6 +95,13 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
             background: "linear-gradient(90deg,transparent,rgba(255,255,255,.22),rgba(120,220,255,.12),transparent)" }} />
         </div>
       )}
+      {/* #309 Aurora-Schleier: weicher, driftender Neon-Nebel in den Deck-Farben (a1/a2), screen-geblendet über dem Motiv,
+          aber UNTER der Zahl (z-2) → Zahl bleibt lesbar. Reiner CSS-Loop; unter reduced-motion steht der Nebel still. */}
+      {fxAurora && (
+        <div aria-hidden="true" className="as-aurora-drift absolute inset-0 rounded-xl pointer-events-none" style={{
+          mixBlendMode: "screen", opacity: 0.5, filter: "blur(8px)",
+          backgroundImage: `radial-gradient(58% 44% at 30% 33%, ${fxAurora.a1}cc, transparent 70%), radial-gradient(54% 40% at 72% 66%, ${(fxAurora.a2 || fxAurora.a1)}bb, transparent 70%), radial-gradient(48% 50% at 50% 84%, ${fxAurora.a1}88, transparent 76%)` }} />
+      )}
       {permBoost > 0 && (
         <div className="absolute top-1.5 right-2 text-[11px] font-bold px-1 rounded"
           style={{ color: "#8a7de0", background: "#8a7de022" }}
@@ -110,7 +117,9 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
           ⚒+{forged}
         </div>
       )}
-      <div className="text-5xl font-bold card-num" style={{ color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, textShadow: numShadow, fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "2.4rem", lineHeight: 1 }}>{effective}</div>
+      {/* #309 Glitch: getaktetes RGB-Zucken (~alle 3 s) auf der Zahl — Versatz (as-glitch-shift) + chromatischer Split
+          (as-glitch-split, liest --num-shadow als Ruhezustand). z-2 hält die Zahl über dem Aurora-Nebel. */}
+      <div className={`text-5xl font-bold card-num${fxGlitch ? " as-glitch-num" : ""}`} style={{ position: "relative", zIndex: 2, color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, textShadow: numShadow, "--num-shadow": numShadow, fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "2.4rem", lineHeight: 1 }}>{effective}</div>
       {/* Pflanze (#277): zweistufiger Wachstumsring unten-rechts — Stufe 1 grau→grün (Reife), Stufe 2 heller (Wert-Deckel/
           ausgewachsen). Ausgeblendet erst, wenn die Karte ausgewachsen ist. Sitzt in vocab.CORNER.growthRing. */}
       {showGrowthRing && (

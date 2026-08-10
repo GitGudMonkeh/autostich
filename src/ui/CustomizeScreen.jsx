@@ -388,7 +388,7 @@ function BlackholePreview() {
 // Große In-Game-Vorschau eines Effekts im Kauffenster. Karten-Animationen → Karte/BF-Demo; Finisher/Krit →
 // echte In-Game-Komponente; Gottgleich (inkl. Standard) → das komplette Ereignis nachgespielt.
 function GlobalFxScenePreview({ fx }) {
-  if (fx.preview === "frameGlow" || fx.preview === "holoSwipe") {
+  if (fx.preview === "frameGlow" || fx.preview === "holoSwipe" || fx.preview === "auroraVeil" || fx.preview === "glitch") {
     return (
       <div className="w-full h-full grid place-items-center overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
         <CardPreview deckId="default" a1={DEMO_C} fx={fx.preview} className="max-h-full" style={{ height: "94%" }} />
@@ -439,8 +439,10 @@ function FieldFxPreview({ effect }) {
 function CardPreview({ deckId, a1, fx, face = "back", className = "", style }) {
   const img = deckAssets(deckId)[face] || deckAssets(deckId).back;
   const glow = fx === "frameGlow";
+  // #309 Demo-Farben für Aurora-Schleier (Deck-Haupt- + Kontrastfarbe).
+  const a2 = "#ff5ad6";
   return (
-    <div className={`relative rounded-lg ${className}`}
+    <div className={`relative rounded-lg overflow-hidden ${className}`}
       style={{ aspectRatio: CARD_RATIO, background: "#0b0a16", "--a1": a1, animation: glow ? "ws-frameglow 2s ease-in-out infinite" : undefined, ...style }}>
       <img src={img} alt="" className="absolute inset-0 w-full h-full object-contain rounded-lg" />
       {fx === "holoSwipe" && (
@@ -448,6 +450,18 @@ function CardPreview({ deckId, a1, fx, face = "back", className = "", style }) {
           <div className="absolute" style={{ top: "-60%", left: 0, width: "40%", height: "220%",
             background: "linear-gradient(90deg,transparent,rgba(255,255,255,.28),rgba(120,220,255,.16),transparent)",
             animation: "ws-swipe 2.6s ease-in-out infinite" }} />
+        </div>
+      )}
+      {fx === "auroraVeil" && (
+        <div aria-hidden="true" className="as-aurora-drift absolute inset-0 rounded-lg pointer-events-none" style={{
+          mixBlendMode: "screen", opacity: 0.55, filter: "blur(8px)",
+          backgroundImage: `radial-gradient(58% 44% at 30% 33%, ${a1}cc, transparent 70%), radial-gradient(54% 40% at 72% 66%, ${a2}bb, transparent 70%), radial-gradient(48% 50% at 50% 84%, ${a1}88, transparent 76%)` }} />
+      )}
+      {fx === "glitch" && (
+        <div className="absolute inset-0 grid place-items-center pointer-events-none">
+          <span className="as-glitch-num" style={{ color: a1, fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "3.4rem", lineHeight: 1,
+            WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${a1}`,
+            textShadow: `0 0 10px ${a1}`, "--num-shadow": `0 0 10px ${a1}` }}>9</span>
         </div>
       )}
     </div>
@@ -853,6 +867,14 @@ function MiniFx({ preview }) {
           <span className="as-deck-swipe absolute" style={{ left: 0, top: "-20%", width: 5, height: "140%", background: `linear-gradient(90deg,transparent,${C},transparent)` }} />
         </span>
       );
+    case "auroraVeil":
+      // #309 Weicher Neon-Nebel driftet in zwei Deck-Farben hinter dem Motiv.
+      return box(<span className="as-aurora-drift absolute" style={{ inset: -6, mixBlendMode: "screen", filter: "blur(4px)",
+        backgroundImage: `radial-gradient(58% 44% at 32% 34%, ${C}cc, transparent 70%), radial-gradient(54% 40% at 70% 66%, #ff5ad6bb, transparent 70%)` }} />);
+    case "glitch":
+      // #309 Zahl mit chromatischem RGB-Zucken.
+      return box(<span className="as-glitch-num" style={{ color: C, fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "1.35rem", lineHeight: 1,
+        WebkitTextFillColor: "transparent", WebkitTextStroke: `1.4px ${C}`, textShadow: `0 0 5px ${C}`, "--num-shadow": `0 0 5px ${C}` }}>9</span>);
     case "hologrid":
       // Perspektiv-Gitter + heller Puls, der nach hinten läuft.
       return box(

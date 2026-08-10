@@ -32,6 +32,12 @@ export const GLOBAL_FX = [
     ownKey: "fx:frameGlow", option: "fxFrameGlow", preview: "frameGlow", price: 3, group: "anim" },
   { key: "holoSwipe", name: "Holo-Swipe", desc: "Ein Glanz-Streifen wandert über die Karte.",
     ownKey: "fx:holoSwipe", option: "fxHoloSwipe", preview: "holoSwipe", price: 5, group: "anim" },
+  // #309 zwei neue Karten-Animationen (reine CSS-Loops, frei kombinierbar). „aurora"-Key ist bereits vom Feld-Ambiente
+  // belegt → das Karten-Aurora heißt intern auroraVeil (Anzeige „Aurora-Schleier").
+  { key: "auroraVeil", name: "Aurora-Schleier", desc: "Weicher Neon-Nebel driftet in den Deck-Farben hinter dem Motiv.",
+    ownKey: "fx:auroraVeil", option: "fxAuroraVeil", preview: "auroraVeil", price: 5, group: "anim" },
+  { key: "glitch", name: "Glitch", desc: "Kurzes chromatisches RGB-Zucken auf der Zahl alle paar Sekunden.",
+    ownKey: "fx:glitch", option: "fxGlitch", preview: "glitch", price: 5, group: "anim" },
   // #306 Battlefield-Ambiente (feldweit, z-1, in Deckfarbe; einfach-exklusiv). Reaktion je Stich (Turbo-Throttle).
   { key: "hologrid", name: "Hologrid", desc: "Ein Leucht-Gitter läuft über das Battlefield.",
     ownKey: "fx:hologrid", option: "fxHologrid", preview: "hologrid", price: 5, group: "field" },
@@ -92,6 +98,8 @@ export const globalFxActive = (profile, options, key) => {
 // Karten-Animationen (global).
 export const frameGlowActive = (profile, options) => globalFxActive(profile, options, "frameGlow");
 export const holoSwipeActive = (profile, options) => globalFxActive(profile, options, "holoSwipe");
+export const auroraVeilActive = (profile, options) => globalFxActive(profile, options, "auroraVeil"); // #309 Karten-Aurora-Schleier
+export const glitchActive = (profile, options) => globalFxActive(profile, options, "glitch");        // #309 Karten-Glitch
 // #306 Battlefield-Ambiente (einfach-exklusiv). Reihenfolge = Priorität, falls (defensiv) mehrere Flags an wären.
 export const FIELD_FX_KEYS = ["hologrid", "starfield", "aurora", "embers", "dataRain", "scanline", "vignette"];
 export const hologridActive = (profile, options) => globalFxActive(profile, options, "hologrid");
