@@ -521,7 +521,11 @@ button { font-family: inherit; }
 [data-skin="crt"] .font-pixel {
   font-family: "Press Start 2P", ui-monospace, monospace;
   letter-spacing: 0;
-  text-shadow: 0 0 6px currentColor, 0 0 14px currentColor; /* Neon-Glow, folgt der Textfarbe */
+  /* Neon-Glow, folgt der Textfarbe. Mehrstufig mit ENGEM Kern (1px/3px) + weichem Halo (8px):
+     der Kern hält die Glyphen-Kante scharf, egal wie breit die Engine den Blur malt. Wichtig gegen
+     iOS/Safari (WebKit), das text-shadow-Blur deutlich breiter zieht als Android/Chrome (Blink) und die
+     dünnen Press-Start-2P-Striche sonst zu unlesbarem Leucht-Matsch überstrahlt. */
+  text-shadow: 0 0 1px currentColor, 0 0 3px currentColor, 0 0 8px currentColor;
 }
 [data-skin="crt"] .font-pixel-dense {
   font-family: "VT323", ui-monospace, monospace;
@@ -556,7 +560,14 @@ button { font-family: inherit; }
 [data-skin="crt"] .card-num {
   font-family: "Press Start 2P", ui-monospace, monospace;
   font-size: 1.9rem; line-height: 1;
-  text-shadow: 0 0 8px currentColor;
+  text-shadow: 0 0 1px currentColor, 0 0 4px currentColor, 0 0 9px currentColor; /* enger Kern hält die Zahl scharf (WebKit-Blur) */
+}
+
+/* Touch/Handy: WebKit (iOS Safari) zieht den Halo am breitesten → dort den weichen Außen-Blur kappen,
+   damit die kleine Pixelschrift auch auf dem iPhone lesbar bleibt. Kern-Glow bleibt, nur die 8/9px-Schicht fällt weg. */
+@media (pointer: coarse) {
+  [data-skin="crt"] .font-pixel { text-shadow: 0 0 1px currentColor, 0 0 3px currentColor; }
+  [data-skin="crt"] .card-num   { text-shadow: 0 0 1px currentColor, 0 0 4px currentColor; }
 }
 
 /* Q2/Loc: Ergebnis-Banner-Großschrift zentral über CSS statt im String (Battlefield <span class="as-banner">).
@@ -704,4 +715,16 @@ button { font-family: inherit; }
 :root[data-reduced-fx="1"] [style*="backdrop-filter"] {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+/* Perf: die Dauer-Sweeps stehen bei reduzierten Effekten STILL. as-panel-sweep animiert `background-position`
+   auf JEDEM Panel-Rahmen (StatusBar, Meilenstein-Leiste, Battlefield-Rahmen, Indikator-Panels …) — das repaintet
+   pro Frame durchgehend große Rahmenflächen, auch wenn im Menü/Idle „nichts passiert". Genau diese Dauer-Last zieht
+   die Baseline-FPS auf Mobile runter (der Trick-Jank kommt oben drauf). Unter data-reduced-fx="1" (Mobile/auto/System)
+   frieren wir sie ein: der violette Verlaufsrahmen bleibt sichtbar, nur statisch — keine Optik geht verloren, der
+   Repaint-Dauerlauf schon. Gleiches für den Titel-Sweep. (useReducedFx setzt das Attribut in App.jsx.) */
+:root[data-reduced-fx="1"][data-skin="crt"] .as-panel,
+:root[data-reduced-fx="1"][data-skin="crt"] .as-panel-arch,
+:root[data-reduced-fx="1"][data-skin="crt"] .crt-title {
+  animation: none !important;
 }
