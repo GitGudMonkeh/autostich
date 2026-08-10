@@ -14,6 +14,7 @@ import { familyDef as archFamily } from "../game/architect.js"; // Gebäude-List
 import { ARCH_CAT } from "./indicators/vocab.js";
 import FormIcon from "./FormIcon.jsx";
 import { milestoneBarState } from "../game/progression.js"; // #304 Verdienst-Rollup: Meilensteinbalken
+import { GuideOverlay } from "./GuideOverlay.jsx"; // #: Leitfaden direkt auf der Fraktions-Seite eines Archetyp-Unlocks öffnen
 
 // #304 Count-up-/Rollup-Helfer (requestAnimationFrame, easeOutCubic; respektiert prefers-reduced-motion → Endwert sofort).
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
@@ -73,6 +74,7 @@ function useDpRollup({ gross = 0, net = 0, raw = 0 }) {
 // geteilten RunStats-Komponente — dieselbe Anzeige nutzt die Leaderboard-Detailansicht (RunDetail).
 export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [], progressUnlocks = [], challengeResult = null, earn = null, onboarding = null, onCustomize = null, onUpgrades = null, onLeaderboard = null }) {
   const score = Math.floor(state.score); // Zahlenwert für Record-Vergleich; Anzeige über fmtScore
+  const [guideArch, setGuideArch] = useState(null); // #: Leitfaden-Overlay aus einem Archetyp-Freischalt-Button (Onboarding)
   // #304 Verdienst-Rollup: Score/Meilensteinbalken/SP/DP animiert hochzählen (Challenge: Countdown Brutto→Netto).
   const mb = milestoneBarState(score);
   const scoreUp = useCountUp(score, 1100);
@@ -196,8 +198,15 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             {progressUnlocks.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {progressUnlocks.map((u) => (
-                  <div key={u.id} className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-center" style={{ background: "#141019", border: "1px solid #3a2f12" }}>
+                  <div key={u.id} className="flex flex-col items-center gap-2 rounded-lg px-3 py-2 text-center" style={{ background: "#141019", border: "1px solid #3a2f12" }}>
                     <span className="text-[12px] font-bold leading-snug" style={{ color: "#f0d27a" }}>✦ Freigeschaltet: {u.label}</span>
+                    {u.guide && (
+                      <button type="button" onClick={() => setGuideArch(u.guide)}
+                        className="rounded-full px-3 py-1 text-[12px] font-bold transition-all hover:-translate-y-0.5"
+                        style={{ background: "#241b34", color: "#e8d9ff", border: "1px solid #6b4fa0" }}>
+                        📖 Leitfaden: {u.guideName}
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -209,6 +218,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             )}
           </div>
         )}
+        {/* #: Leitfaden-Overlay — vom „📖 Leitfaden"-Button eines Archetyp-Unlocks geöffnet, direkt auf dessen Fraktions-Seite. */}
+        {guideArch && <GuideOverlay initial={guideArch} onClose={() => setGuideArch(null)} />}
 
         {/* Victory-Redesign: Fraktions-Score-Herkunft direkt unter dem Hero — die für Spieler wichtigste Frage „welche Fraktion trägt den Score?". */}
         <div className="mt-5">
