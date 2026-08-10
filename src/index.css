@@ -332,8 +332,6 @@ button { font-family: inherit; }
 @keyframes as-glitch-split { 0%, 88%, 100% { text-shadow: var(--num-shadow); } 90% { text-shadow: -3px 0 #ff3ea5, 3px 0 #35d6f0; } 94% { text-shadow: 3px 0 #ff3ea5, -3px 0 #35d6f0; } }
 .as-glitch-num { animation: as-glitch-shift 3.2s linear infinite, as-glitch-split 3.2s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .as-aurora-drift { animation: none; } .as-glitch-num { animation: none; } }
-@keyframes as-deck-gridmove { to { background-position: 0 18px; } }
-.as-deck-gridmove { animation: as-deck-gridmove 2.6s linear infinite; }
 /* Hologrid-Puls je Stich: eine helle Gitter-Zeile fährt von vorn nach hinten übers Feld und verblasst.
    Liegt in der Perspektiv-Ebene des Grids → wandert entlang der Fluchtlinien in die Tiefe. */
 @keyframes as-deck-sweep { 0% { bottom: -2%; opacity: 0; } 10% { opacity: 1; } 72% { bottom: 100%; opacity: 1; } 100% { bottom: 112%; opacity: 0; } }
@@ -362,8 +360,11 @@ button { font-family: inherit; }
 @keyframes as-field-spark { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(var(--sx,0), -180%); opacity: 0; } }
 .as-field-spark { animation: as-field-spark 700ms ease-out forwards; }
 /* Datenregen: Dash-Raster rieselt herab; Reaktion = eine helle Spalte fällt. */
-@keyframes as-field-datarain { to { background-position-y: 26px; } }
-.as-field-datarain { animation: as-field-datarain 1.3s linear infinite; }
+/* #: Datenregen via transform statt background-position — background-position animiert auf dem Main-Thread (Repaint der
+   ganzen Feldfläche pro Frame), transform ist GPU-kompositiert. Die Ebene ragt oben+unten je eine Kachel (26px) über den
+   (overflow-hidden) Container, damit der um genau eine Kachel wandernde Regen nahtlos loopt, ohne Rand-Lücken. */
+@keyframes as-field-datarain { to { transform: translateY(26px); } }
+.as-field-datarain { animation: as-field-datarain 1.3s linear infinite; will-change: transform; }
 @keyframes as-field-drop { 0% { top: -24%; opacity: 0; } 12% { opacity: 1; } 84% { opacity: 1; } 100% { top: 104%; opacity: 0; } }
 .as-field-drop { animation: as-field-drop 900ms linear forwards; }
 /* Scanline-Puls: statische CRT-Zeilen flackern minimal; Reaktion = helle Zeile wandert oben→unten. */

@@ -1056,7 +1056,7 @@ export function FieldFxLayer({ effect, color, sweepId, sweepDur, reduced, win })
   } else if (effect === "dataRain") {
     inner = (
       <>
-        <div className={`${A("as-field-datarain")} absolute inset-0`} style={{ backgroundImage: `repeating-linear-gradient(0deg, ${color}55 0 5px, transparent 5px 26px)`, backgroundSize: "14px 26px", opacity: 0.4 }} />
+        <div className={`${A("as-field-datarain")} absolute left-0 right-0`} style={{ top: "-26px", bottom: "-26px", backgroundImage: `repeating-linear-gradient(0deg, ${color}55 0 5px, transparent 5px 26px)`, backgroundSize: "14px 26px", opacity: 0.4 }} />
         {react && <div key={sweepId} className="as-field-drop absolute" style={{ left: `${18 + (sweepId * 37) % 64}%`, top: "-24%", width: 3, height: "26%", background: `linear-gradient(180deg, transparent, ${win ? "#ffffff" : color}, transparent)`, boxShadow: `0 0 8px 1px ${color}`, opacity: win ? 1 : 0.7, animationDuration: `${sweepDur}ms` }} />}
       </>
     );
