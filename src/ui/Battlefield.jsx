@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST } from "../game/constants.js";
@@ -1010,7 +1010,10 @@ function PrunkFx({ trigger, panelRef, oppRef, color }) {
 // im Battlefield). reduced → nur statisches Ambiente. Nur transform/opacity/gradient/background-position (GPU-günstig).
 const EMBER_DOTS = [{ l: 12, s: 2.4, d: 0, t: 9.5 }, { l: 24, s: 1.6, d: 1.1, t: 11 }, { l: 37, s: 2.0, d: 2.3, t: 8.5 }, { l: 49, s: 1.4, d: 0.6, t: 12 }, { l: 58, s: 2.6, d: 1.8, t: 10 }, { l: 68, s: 1.7, d: 3.0, t: 9 }, { l: 78, s: 2.1, d: 0.9, t: 11.5 }, { l: 88, s: 1.5, d: 2.0, t: 8.8 }, { l: 31, s: 1.3, d: 3.4, t: 10.5 }, { l: 63, s: 1.9, d: 1.4, t: 12.5 }];
 const SPARK_DIRS = [-46, -27, -9, 9, 27, 46];
-export function FieldFxLayer({ effect, color, sweepId, sweepDur, reduced, win }) {
+// #perf A2-lite: memoisiert — alle Props sind Primitive (effect/color/sweepId/sweepDur/reduced/win). Re-rendert das
+// Ambiente-DOM (Sternenfeld/Glutfunken/… — teils viele Knoten) NUR, wenn sich diese Werte ändern; bei sonstigen
+// Battlefield-Re-Renders (ohne Stich/Feld-Wechsel) bleibt die Ebene stehen. Kein visueller Unterschied (Desktop unverändert).
+const FieldFxLayerInner = function FieldFxLayer({ effect, color, sweepId, sweepDur, reduced, win }) {
   const react = !reduced && sweepId > 0; // per-Stich-Reaktion aktiv?
   const A = (c) => (reduced ? "" : c); // Ambiente-Animationsklasse nur ohne „Effekte reduziert" → sonst statisches Bild
   let inner = null;
@@ -1076,7 +1079,8 @@ export function FieldFxLayer({ effect, color, sweepId, sweepDur, reduced, win })
     );
   } else return null;
   return <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>{inner}</div>;
-}
+};
+export const FieldFxLayer = memo(FieldFxLayerInner);
 function SlashGhostLayer({ ghosts, panelRef = null }) {
   return (
     <>

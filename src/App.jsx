@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useRef, useState } from "react";
+import { useReducer, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { reducer, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
 import { baseScoreMultFor, totalCritChanceRaw, totalCritMult } from "./game/perks.js";
@@ -85,7 +85,9 @@ export function Autostich() {
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
   const [confirmRestart, setConfirmRestart] = useState(false);    // Komfort: Rückfrage „Wirklich neustarten?" (Neustart-Button) — kein Ein-Tap-Verlust bei Fettfingern
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/5× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
-  const [, setClock] = useState(0); // erzwingt Re-Render fürs Ticken des Timers
+  // #perf A1: Der Timer tickt nicht mehr die ganze App (früher: setClock alle 250 ms → Full-Tree-Re-Render inkl.
+  // Battlefield). Die Zeit rechnet ein stabiler Getter aus den Refs; das 250-ms-Ticken lebt jetzt allein im RunTimer-Leaf.
+  const getElapsed = useCallback(() => timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0), []);
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
   // Globaler Highscore (#14): lokaler Nickname + Ersteinrichtungs-Modal.
@@ -268,12 +270,7 @@ export function Autostich() {
       segStart.current = null;
     }
   }, [active]);
-  // Anzeige ticken lassen, solange der Lauf aktiv UND der Tab sichtbar ist (Hintergrund → kein Tick, Akku/Hitze).
-  useEffect(() => {
-    if (!active || !visible) return;
-    const id = setInterval(() => setClock((c) => c + 1), 250);
-    return () => clearInterval(id);
-  }, [active, visible]);
+  // #perf A1: Kein App-weiter 250-ms-Tick mehr — der RunTimer-Leaf tickt sich selbst (nur wenn `active && visible`).
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
@@ -595,6 +592,11 @@ export function Autostich() {
   const manyFac = [state.lightning?.active, state.heat?.active,
     (state.activeArchetypes || []).includes("plant"), (state.activeArchetypes || []).includes("ice")].filter(Boolean).length > 1;
 
+  // #perf A3: Alliance-Gruppierung + das an Battlefield gereichte `pe`-Objekt memoisieren — vorher wurde die Gruppierung
+  // pro Render neu berechnet und ein frisches Objekt erzeugt (bricht jede Memo-Chance darunter). Keine Verhaltensänderung.
+  const linkedGroups = useMemo(() => allianceGroups(state.familyTiers, state.roles), [state.familyTiers, state.roles]);
+  const bfPe = useMemo(() => ({ linkedGroups }), [linkedGroups]);
+
   return (
     <div className="relative min-h-screen w-full flex justify-center px-4 py-6">
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
@@ -663,7 +665,7 @@ export function Autostich() {
           <StatusBar
             score={state.score} ghost={ghost}
             mult={{ value: baseScoreMult, color: multColor, hot: multHot, shakeClass: multShakeClass, pulseKey: multPulse }}
-            timeStr={fmtDuration(elapsedMs)} paused={paused}
+            getElapsed={getElapsed} timerTicking={active && visible} paused={paused}
             winStreak={state.winStreak || 0} bestStreak={state.bestStreak || 0}
             cycle={state.cycle} totalCycles={totalCycles} pos={state.pos} cycleLen={cycleLenFor(state.shop)}
             onTogglePause={() => setPaused((p) => !p)}
@@ -677,7 +679,7 @@ export function Autostich() {
             <div className="grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
               {/* §6: Score-Meilenstein-Balken — NACH dem Onboarding (dann greifen die SP-Meilensteine). */}
               {(profile?.onboarding || 0) >= ONBOARDING_LINKS && <ScoreMilestoneBar score={state.score} challengeMods={state.challengeMods || []} />}
-              <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+              <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={bfPe}
                 heat={state.heat} lightning={state.lightning}
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}

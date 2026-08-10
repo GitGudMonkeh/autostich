@@ -1,5 +1,6 @@
 import { fmtScore } from "./format.js";
 import { fmtDuration } from "../game/deck.js";
+import { RunTimer } from "./RunTimer.jsx";
 
 /* Gameplay-Neu-Aufbau (docs/gameplay-redesign.md, Phase 1): die schwebende Kompakt-Leiste — die „Vitalwerte" des Laufs
    in einer oben klebenden Karte, samt Ablauf-Steuerung (Pause/Tempo/Karten). Ersetzt die früheren Kopf-Stat-Zellen.
@@ -41,7 +42,7 @@ function Cell({ label, children, className = "" }) {
 }
 
 export function StatusBar({
-  score, ghost = {}, mult, timeStr, paused, winStreak = 0, bestStreak = 0,
+  score, ghost = {}, mult, timeStr, getElapsed = null, timerTicking = false, paused, winStreak = 0, bestStreak = 0,
   cycle = 0, totalCycles = 1,
   onTogglePause, speedMult = 1, onSpeed, onChronik, deckBack,
 }) {
@@ -78,7 +79,12 @@ export function StatusBar({
           {/* Runde (nur der Durchlauf, keine Karten-Angabe mehr) + Zeit — rechts neben dem Karten-Icon. */}
           <div className="ml-auto flex items-stretch">
             <MiniCell label="Runde"><span>{cyc}<span className="text-[10px] opacity-45">/{totalCycles}</span></span></MiniCell>
-            <MiniCell label="Zeit" className="border-l border-[#26262e]"><span>{timeStr}{paused ? " ⏸" : ""}</span></MiniCell>
+            <MiniCell label="Zeit" className="border-l border-[#26262e]">
+              {/* #perf A1: selbst-tickender Timer-Leaf statt App-weitem 250-ms-Tick; Fallback = statischer timeStr. */}
+              {getElapsed
+                ? <RunTimer getElapsed={getElapsed} ticking={timerTicking} paused={paused} />
+                : <span>{timeStr}{paused ? " ⏸" : ""}</span>}
+            </MiniCell>
           </div>
         </div>
 
