@@ -27,11 +27,11 @@ function emberFountainXs(seed) {   // 3 x-Positionen (0..1), pro Stich neu (swee
 
 // ── TUNE ─────────────────────────────────────────────────────────────────────
 const TUNE = {
-  EMIT: 165,        // Basis-Ausstoßrate (Tröpfchen/s je Vent), skaliert mit Stufe
+  EMIT: 198,        // Basis-Ausstoßrate (Tröpfchen/s je Vent), skaliert mit Stufe (Dichte 1.20 aus dem Showcase)
   FLAME: 0.4,       // Flammen-Anteil relativ zu EMIT
   G_REF: 1750,      // Schwerkraft px/s² bei Referenzhöhe HREF
   HREF: 360,        // Referenz-Panelhöhe (Geschwindigkeiten/Höhe skalieren mit H/HREF)
-  GLOW: 1.55,       // Sprite-Halo-Faktor (ersetzt den Filter-Bloom → weicher Glow ohne Full-Screen-Pass; kleiner = knackiger, weniger Wash)
+  GLOW: 0.55,       // Partikel-Footprint (= Showcase „Partikelgröße" 0.55; On-Screen-Größe mappt 1:1). Klein = knackig, wenig Wash.
   CRUST_P: 0.18,    // Anteil dunkler Krusten-Brocken
   MAXGLOW: 1300, MAXCRUST: 340, MAXVENT: 10,   // MAXVENT = zugleich Obergrenze gleichzeitiger Vents (überlappende Stiche)
 };
@@ -156,7 +156,8 @@ export function createEmberField(app) {
   }
 
   function erupt({ sweepId, sweepDur, win, score }) {
-    if (params.effect !== "embers" || params.lite || params.reduced || !(sweepId > 0)) return;
+    // NUR bei gewonnenen Stichen feuern (nicht bei jedem Stich). Auch aus in „ausgewogen"/„minimal".
+    if (params.effect !== "embers" || params.lite || params.reduced || !(sweepId > 0) || !win) return;
     const stufe = emberStufe(score);
     const burst = clamp((sweepDur || 900) * 0.0009, 0.42, 0.9);       // Turbo → kürzerer Ausstoß
     const xs = emberFountainXs(sweepId * 7 + 1);                       // Zufallspositionen je Stich
@@ -203,7 +204,7 @@ export function createEmberField(app) {
       const pr = (28 + v.stufe * 12) * act * fl * sc;
       po.tint = deckInt; pi.tint = hotInt;   // Vent glüht in Deckfarbe (heißer Kern deck-getönt hell)
       // Boden kompakter/knackiger: kleinere Pools, geringere Alpha, dunklerer Krater-Rand (mehr Kontrast, weniger Wash).
-      cr.x = bx; cr.y = fy; cr.width = (44 + v.stufe * 14) * 2.6 * sc; cr.height = (44 + v.stufe * 14) * 0.9 * sc; cr.alpha = 0.92 * act;
+      cr.x = bx; cr.y = fy; cr.width = (44 + v.stufe * 14) * 2.6 * sc; cr.height = (44 + v.stufe * 14) * 0.9 * sc; cr.alpha = 0.23 * act;  // „Ring am Boden" 0.25
       po.x = bx; po.y = fy; po.width = pr * 3.3; po.height = pr * 1.3; po.alpha = 0.28 * act * pf;
       pi.x = bx; pi.y = fy; pi.width = pr * 1.9; pi.height = pr * 0.82; pi.alpha = 0.42 * act * pf;
     }
