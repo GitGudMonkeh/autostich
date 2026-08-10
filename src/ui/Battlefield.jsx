@@ -1168,11 +1168,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Effektdauern an den Flip-Takt koppeln; unter reduzierter Bewegung Animationen weglassen
   // (Element bleibt statisch sichtbar statt zu Ende-Opacity 0 zu springen).
   const anim = clamp(flipMs * 0.5, 120, 450);
-  // #deckshop/#306 Feld-Ambiente-Reaktion je Stich: die Reaktion läuft IMMER vollständig durch (saubere Fahrt). Dauer
-  // an den Flip-Takt gekoppelt, mit hohem Boden → bei Max-Turbo nicht zu schnell. Kommen Stiche schneller als die
-  // Reaktion (4×/MAX), starten wir keine neue mitten hinein, sondern ÜBERSPRINGEN den Stich (Throttle) → kein
-  // Abschneiden, kein Flackern. Da die Feld-Effekte einfach-exklusiv sind, treibt EIN sweepId alle (nur einer aktiv).
-  const sweepDur = clamp(flipMs * 1.0, 560, 1250);
+  // #deckshop/#306/#: Feld-Ambiente-Reaktion je Stich — GLEICHE Geschwindigkeit wie der Flip/Stich. Die Sweep-Dauer folgt
+  // direkt flipMs (eine Reaktion je Stich, exakt so lang wie der Stich dauert), damit die Zeile im Turbo synchron mit den
+  // Flips läuft statt hinterherzuhinken. (Früher deckelte ein Boden von 560 ms die Dauer → im Turbo lief die Reaktion
+  // langsamer als die Flips und der Throttle übersprang Stiche = „nicht synchron".) Weite Klammern binden praktisch nie.
+  // Da die Feld-Effekte einfach-exklusiv sind, treibt EIN sweepId alle (nur einer aktiv).
+  const sweepDur = clamp(flipMs, 150, 1800);
   const [sweepId, setSweepId] = useState(0);
   const lastSweepAt = useRef(-1e9);
   const trickNo = lastTrick ? lastTrick.trickNo : null;
