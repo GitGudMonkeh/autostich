@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useReducer, useEffect, useRef, useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { reducer, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
 import { baseScoreMultFor, totalCritChanceRaw, totalCritMult } from "./game/perks.js";
@@ -25,11 +25,9 @@ import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Phase (Runde 29)
 import { FormationPhase } from "./ui/FormationPhase.jsx";
-import { ArchitectScreen } from "./ui/ArchitectScreen.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { GlacierPick } from "./ui/GlacierPick.jsx";
 import { FamilyTargetSelect } from "./ui/FamilyTargetSelect.jsx";
-import { ChronikOverview } from "./ui/ChronikOverview.jsx";
 import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
 import { GlacierBar } from "./ui/GlacierBar.jsx";
@@ -39,17 +37,10 @@ import { archetypeOf } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
-import { StatsScreen } from "./ui/StatsScreen.jsx";
-import { CustomizeScreen } from "./ui/CustomizeScreen.jsx";
-import { DevRunSetup } from "./ui/DevRunSetup.jsx"; // Dev-Run (nur Preview-Build)
-import { ChallengeModal } from "./ui/ChallengeModal.jsx"; // #301 Challenge-Auswahl-Fenster
-import { LeaderboardScreen } from "./ui/LeaderboardScreen.jsx"; // #217: globale Bestenliste als eigener Screen
-import { UpgradeScreen } from "./ui/UpgradeScreen.jsx"; // Progression-Vorschau: Upgrade-Baum-Screen
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
 import { THEMES, unlockAllCosmetics, frameGlowActive, holoSwipeActive, auroraVeilActive, glitchActive, activeFieldFx, laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
-import { OptionsModal } from "./ui/OptionsModal.jsx";
 import { audio } from "./ui/audio.js";
 import { haptics } from "./ui/haptics.js";
 import { music } from "./ui/music.js";
@@ -57,6 +48,38 @@ import { MusicBar } from "./ui/MusicBar.jsx";
 import { UsernameModal } from "./ui/UsernameModal.jsx";
 import { CrtParticles } from "./ui/CrtParticles.jsx";
 import { multTierColor, multTierLevel } from "./ui/multTier.js";
+
+/* #perf B1: Selten geöffnete, schwere Screens (Menü/Settings/Architekt) werden per code-split lazy geladen — das
+   verkleinert den initialen JS-Chunk (schnellere Parse/Eval-Zeit, v. a. auf Mobile). WICHTIG für Desktop-Parität:
+   (1) die häufigen Gameplay-Overlays im Stich-Takt (Perk/Skill/Formation/Target/…) bleiben EAGER — kein Fallback-
+   Flackern mitten im Lauf; (2) ein Idle-Prefetch (unten) lädt alle Lazy-Module kurz nach dem Start im Hintergrund,
+   sodass das erste Öffnen auch auf dem Desktop ohne spürbare Verzögerung ist. Import-Factories extra, damit sie sowohl
+   React.lazy als auch der Prefetch nutzen kann. */
+const importArchitect   = () => import("./ui/ArchitectScreen.jsx");
+const importChronik     = () => import("./ui/ChronikOverview.jsx");
+const importStats       = () => import("./ui/StatsScreen.jsx");
+const importCustomize   = () => import("./ui/CustomizeScreen.jsx");
+const importDevSetup    = () => import("./ui/DevRunSetup.jsx");
+const importChallenge   = () => import("./ui/ChallengeModal.jsx");
+const importLeaderboard = () => import("./ui/LeaderboardScreen.jsx");
+const importUpgrade     = () => import("./ui/UpgradeScreen.jsx");
+const importOptions     = () => import("./ui/OptionsModal.jsx");
+const ArchitectScreen  = lazy(() => importArchitect().then((m) => ({ default: m.ArchitectScreen })));
+const ChronikOverview  = lazy(() => importChronik().then((m) => ({ default: m.ChronikOverview })));
+const StatsScreen      = lazy(() => importStats().then((m) => ({ default: m.StatsScreen })));
+const CustomizeScreen  = lazy(() => importCustomize().then((m) => ({ default: m.CustomizeScreen })));
+const DevRunSetup      = lazy(() => importDevSetup().then((m) => ({ default: m.DevRunSetup })));
+const ChallengeModal   = lazy(() => importChallenge().then((m) => ({ default: m.ChallengeModal })));
+const LeaderboardScreen = lazy(() => importLeaderboard().then((m) => ({ default: m.LeaderboardScreen })));
+const UpgradeScreen    = lazy(() => importUpgrade().then((m) => ({ default: m.UpgradeScreen })));
+const OptionsModal     = lazy(() => importOptions().then((m) => ({ default: m.OptionsModal })));
+const LAZY_PREFETCH = [importOptions, importStats, importLeaderboard, importUpgrade, importCustomize, importChronik, importChallenge, importDevSetup, importArchitect];
+
+// Suspense-Fallback = derselbe abgedunkelte Blur-Grund wie die Overlays selbst → beim (seltenen, weil vorgeladenen)
+// Nachladen kein weißer Blitz, sondern ein nahtloser Übergang. pointer-events blockt Klicks während des Ladens.
+function OverlayFallback() {
+  return <div className="fixed inset-0 z-40" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }} aria-hidden="true" />;
+}
 
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
@@ -88,6 +111,14 @@ export function Autostich() {
   // #perf A1: Der Timer tickt nicht mehr die ganze App (früher: setClock alle 250 ms → Full-Tree-Re-Render inkl.
   // Battlefield). Die Zeit rechnet ein stabiler Getter aus den Refs; das 250-ms-Ticken lebt jetzt allein im RunTimer-Leaf.
   const getElapsed = useCallback(() => timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0), []);
+  // #perf B1: die lazy Screens im Leerlauf nach dem Start vorladen (nicht render-blockierend), damit das erste Öffnen
+  // — v. a. auf dem Desktop — ohne spürbare Verzögerung ist. requestIdleCallback (Fallback: setTimeout) hält den Start frei.
+  useEffect(() => {
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
+    const cancel = window.cancelIdleCallback || clearTimeout;
+    const id = idle(() => { LAZY_PREFETCH.forEach((f) => { try { f(); } catch (e) { /* Prefetch nie kritisch */ } }); });
+    return () => cancel(id);
+  }, []);
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
   // Globaler Highscore (#14): lokaler Nickname + Ersteinrichtungs-Modal.
@@ -734,8 +765,10 @@ export function Autostich() {
         <GlacierPick state={state} onConfirm={lockGlacier} />
       )}
       {state.phase === "architect" && (
-        <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}
-          onMove={architectMove} onMoveMulti={architectMoveMulti} onDemolish={architectDemolish} onRecolor={architectRecolor} onReroll={rerollArchitect} onDone={architectDone} />
+        <Suspense fallback={<OverlayFallback />}>
+          <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}
+            onMove={architectMove} onMoveMulti={architectMoveMulti} onDemolish={architectDemolish} onRecolor={architectRecolor} onReroll={rerollArchitect} onDone={architectDone} />
+        </Suspense>
       )}
       {state.phase === "target" && (
         <TargetSelect state={state} onConfirm={confirmTarget} />
@@ -743,7 +776,7 @@ export function Autostich() {
       {state.phase === "family-target" && (
         <FamilyTargetSelect state={state} onSuit={familyTargetSuit} onCard={familyTargetCard} onFormationType={familyTargetFormationType} onConfirm={familyTargetConfirm} />
       )}
-      {showChronik && <ChronikOverview state={state} onClose={() => setShowChronik(false)} options={options} onOption={changeOptions} />}
+      {showChronik && <Suspense fallback={<OverlayFallback />}><ChronikOverview state={state} onClose={() => setShowChronik(false)} options={options} onOption={changeOptions} /></Suspense>}
       {state.phase === "levelup" && state.offer && (
         <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} perks={state.perks} deck={state.deck} state={state} />
       )}
@@ -761,32 +794,35 @@ export function Autostich() {
           onCustomize={() => setShowCustomize(true)} onUpgrades={() => setShowUpgrades(true)} onLeaderboard={() => setShowLeaderboard(true)} />
       )}
 
-      {showOptions && (
-        <OptionsModal options={options} onChange={changeOptions} onClose={() => setShowOptions(false)} />
-      )}
+      {/* #perf B1: gemeinsame Suspense-Grenze für die (sich gegenseitig ausschließenden) Menü-/Settings-Overlays. */}
+      <Suspense fallback={<OverlayFallback />}>
+        {showOptions && (
+          <OptionsModal options={options} onChange={changeOptions} onClose={() => setShowOptions(false)} />
+        )}
 
-      {showStats && <StatsScreen onClose={() => setShowStats(false)} onPlaySeed={(seed) => { setShowStats(false); startRun(seed); }} />}
+        {showStats && <StatsScreen onClose={() => setShowStats(false)} onPlaySeed={(seed) => { setShowStats(false); startRun(seed); }} />}
 
-      {showCustomize && (
-        <CustomizeScreen options={options} profile={profile} onChoose={changeOptions} onProfileChange={(np) => setProfile(saveProfile(np))} onClose={() => setShowCustomize(false)} />
-      )}
+        {showCustomize && (
+          <CustomizeScreen options={options} profile={profile} onChoose={changeOptions} onProfileChange={(np) => setProfile(saveProfile(np))} onClose={() => setShowCustomize(false)} />
+        )}
 
-      {showDevSetup && (
-        <DevRunSetup onStart={(cfg) => { setShowDevSetup(false); startDevRun(cfg); }} onClose={() => setShowDevSetup(false)} />
-      )}
+        {showDevSetup && (
+          <DevRunSetup onStart={(cfg) => { setShowDevSetup(false); startDevRun(cfg); }} onClose={() => setShowDevSetup(false)} />
+        )}
 
-      {showChallenge && (
-        <ChallengeModal onClose={() => setShowChallenge(false)}
-          onConfirm={(mods) => { setShowChallenge(false); launchRun({ challenge: mods }); }} />
-      )}
+        {showChallenge && (
+          <ChallengeModal onClose={() => setShowChallenge(false)}
+            onConfirm={(mods) => { setShowChallenge(false); launchRun({ challenge: mods }); }} />
+        )}
 
-      {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} profile={profile} onProfileChange={(np) => setProfile(saveProfile(np))} />}
-      {showLeaderboard && (
-        <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best} profile={profile}
-          onPlaySeed={(seed) => { setShowLeaderboard(false); startRun(seed); }}
-          onPlayMeister={() => { setShowLeaderboard(false); startMeisterRun(); }}
-          onClose={() => setShowLeaderboard(false)} />
-      )}
+        {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} profile={profile} onProfileChange={(np) => setProfile(saveProfile(np))} />}
+        {showLeaderboard && (
+          <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best} profile={profile}
+            onPlaySeed={(seed) => { setShowLeaderboard(false); startRun(seed); }}
+            onPlayMeister={() => { setShowLeaderboard(false); startMeisterRun(); }}
+            onClose={() => setShowLeaderboard(false)} />
+        )}
+      </Suspense>
 
       {/* #190: Vorlade-Balken beim Run-Start — lädt die aktiven Skins, dann startet der Lauf wirklich. */}
       {pendingRun && (
