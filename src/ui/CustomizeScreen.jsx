@@ -657,7 +657,8 @@ function PacksView({ p, deckId, list, cat, onOpen }) {
           const gi = list.indexOf(pack);
           const s = stateOf(pack);
           const active = deckId === pack.deckId;
-          const locked = s === "lock";
+          // Ausgegraut = noch nicht im Besitz (kaufbar ODER gesperrt) — einheitlich wie die Challenges. Nur besessene/aktive Packs bleiben farbig.
+          const owned = s === "own";
           const badge = active ? ["AKTIV", "#123a25", "#54e08a", "#2f7a4f"]
             : s === "buy" ? [`${packPrice(pack)} DP`, "#211f2e", "#b9a9f2", "#4a3f6e"]
             : s === "lock" ? ["🔒", "#1c1b24", "#9a97ab", "#2e2d38"]
@@ -671,7 +672,7 @@ function PacksView({ p, deckId, list, cat, onOpen }) {
               className="relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5"
               style={{ background: "#14131c", border: `1px solid ${active ? "#54e08a55" : "#2a2836"}`, boxShadow: active ? "0 0 0 1px #54e08a55, 0 0 16px #54e08a22" : undefined }}>
               <div className="relative" style={{ aspectRatio: CARD_RATIO }}>
-                <DeckThumb deckId={pack.deckId} className="absolute inset-0 w-full h-full" style={{ filter: locked ? "grayscale(.7) brightness(.5)" : undefined }} />
+                <DeckThumb deckId={pack.deckId} className="absolute inset-0 w-full h-full" style={{ filter: owned ? undefined : "grayscale(.7) brightness(.5)" }} />
                 {badge && <span className="absolute top-1.5 right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: badge[1], color: badge[2], border: `1px solid ${badge[3]}` }}>{badge[0]}</span>}
               </div>
               <div className="px-2 py-1.5">
