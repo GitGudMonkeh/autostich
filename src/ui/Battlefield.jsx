@@ -999,6 +999,78 @@ function PrunkFx({ trigger, panelRef, oppRef, color }) {
    Pool NICHT pro Stich remountet, floatet der Ghost in voller Länge aus und überlappt bei hohem Turbo/vielen Siegen
    mit dem nächsten Stich — Spieler- UND Gegnerkarte fühlen sich damit gleich lang an (#186). Ghosts entfernen sich
    nach ihrer Lebensdauer selbst. */
+// #306 Battlefield-Ambiente-Layer (einfach-exklusiv): rendert genau EINEN Feld-Effekt als z-1-Overlay in der Deckfarbe
+// (color). Ambiente = ruhige Endlos-Animation; die Reaktion je Stich remountet über key={sweepId} (Turbo-Throttle sitzt
+// im Battlefield). reduced → nur statisches Ambiente. Nur transform/opacity/gradient/background-position (GPU-günstig).
+const EMBER_DOTS = [{ l: 12, s: 2.4, d: 0, t: 9.5 }, { l: 24, s: 1.6, d: 1.1, t: 11 }, { l: 37, s: 2.0, d: 2.3, t: 8.5 }, { l: 49, s: 1.4, d: 0.6, t: 12 }, { l: 58, s: 2.6, d: 1.8, t: 10 }, { l: 68, s: 1.7, d: 3.0, t: 9 }, { l: 78, s: 2.1, d: 0.9, t: 11.5 }, { l: 88, s: 1.5, d: 2.0, t: 8.8 }, { l: 31, s: 1.3, d: 3.4, t: 10.5 }, { l: 63, s: 1.9, d: 1.4, t: 12.5 }];
+const SPARK_DIRS = [-46, -27, -9, 9, 27, 46];
+export function FieldFxLayer({ effect, color, sweepId, sweepDur, reduced, win }) {
+  const react = !reduced && sweepId > 0; // per-Stich-Reaktion aktiv?
+  const A = (c) => (reduced ? "" : c); // Ambiente-Animationsklasse nur ohne „Effekte reduziert" → sonst statisches Bild
+  let inner = null;
+  if (effect === "hologrid") {
+    inner = (
+      <div className="absolute" style={{ left: "-20%", right: "-20%", bottom: 0, height: "46%", transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom" }}>
+        <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(${color} 1px,transparent 1px),linear-gradient(90deg,${color} 1px,transparent 1px)`, backgroundSize: "18px 18px", opacity: 0.24 }} />
+        {react && (
+          <div key={sweepId} className="as-deck-sweep absolute left-0 right-0" style={{ height: 0, animationDuration: `${sweepDur}ms` }}>
+            <div className="absolute left-0 right-0" style={{ top: win ? -24 : -8, height: win ? 48 : 16, background: win ? `linear-gradient(180deg, transparent, ${color} 34%, ${color} 66%, transparent)` : "linear-gradient(180deg, transparent, rgba(200,205,220,0.85) 45%, transparent)", filter: `blur(${win ? 10 : 4}px)`, opacity: win ? 0.95 : 0.4 }} />
+            <div className="absolute left-0 right-0" style={{ top: win ? -5 : -3, height: win ? 9 : 6, background: win ? `linear-gradient(90deg, transparent, ${color} 12%, ${color} 42%, #ffffff 50%, ${color} 58%, ${color} 88%, transparent)` : "linear-gradient(90deg, transparent, rgba(220,224,235,0.8) 50%, transparent)", boxShadow: win ? `0 0 20px 4px ${color}, 0 0 52px 12px ${color}, 0 0 7px 2px #ffffff` : "none", opacity: win ? 1 : 0.55 }} />
+          </div>
+        )}
+      </div>
+    );
+  } else if (effect === "starfield") {
+    inner = (
+      <>
+        <div className={`${A("as-field-drift-a")} absolute inset-0`} style={{ backgroundImage: `radial-gradient(1.3px 1.3px at 15% 20%, ${color}, transparent 60%), radial-gradient(1px 1px at 70% 38%, ${color}cc, transparent 60%), radial-gradient(1.5px 1.5px at 40% 72%, ${color}, transparent 60%), radial-gradient(1px 1px at 86% 80%, ${color}aa, transparent 60%), radial-gradient(1px 1px at 55% 12%, ${color}, transparent 60%), radial-gradient(1.2px 1.2px at 25% 90%, ${color}bb, transparent 60%)`, opacity: 0.55 }} />
+        <div className={`${A("as-field-drift-b")} absolute inset-0`} style={{ backgroundImage: `radial-gradient(1px 1px at 32% 55%, ${color}aa, transparent 60%), radial-gradient(1.6px 1.6px at 90% 22%, ${color}, transparent 60%), radial-gradient(1px 1px at 62% 88%, ${color}cc, transparent 60%), radial-gradient(1px 1px at 8% 45%, ${color}99, transparent 60%)`, opacity: 0.4 }} />
+        {react && <div key={sweepId} className="as-field-shoot absolute" style={{ top: "10%", left: "-15%", width: "45%", height: 2, background: `linear-gradient(90deg, transparent, ${win ? "#ffffff" : color}, transparent)`, boxShadow: `0 0 8px 1px ${color}`, opacity: win ? 1 : 0.7, animationDuration: `${sweepDur}ms` }} />}
+      </>
+    );
+  } else if (effect === "aurora") {
+    inner = (
+      <>
+        <div className={`${A("as-field-aurora-a")} absolute`} style={{ inset: "-25%", background: `radial-gradient(55% 40% at 32% 42%, ${color}55, transparent 72%)`, filter: "blur(20px)", opacity: 0.6 }} />
+        <div className={`${A("as-field-aurora-b")} absolute`} style={{ inset: "-25%", background: `radial-gradient(48% 34% at 68% 58%, ${color}44, transparent 72%)`, filter: "blur(26px)", opacity: 0.5 }} />
+        {react && <div key={sweepId} className="as-field-bloom absolute inset-0" style={{ background: `radial-gradient(65% 60% at 50% 55%, ${color}${win ? "88" : "55"}, transparent 75%)`, animationDuration: `${sweepDur}ms` }} />}
+      </>
+    );
+  } else if (effect === "embers") {
+    inner = (
+      <>
+        {EMBER_DOTS.map((e, i) => (
+          <span key={i} className={`${A("as-field-rise")} absolute rounded-full`} style={{ left: `${e.l}%`, bottom: reduced ? `${30 + e.l % 40}%` : "-6%", width: e.s, height: e.s, background: color, boxShadow: `0 0 ${(e.s * 2.5).toFixed(1)}px ${color}`, opacity: 0.7, animationDuration: `${e.t}s`, animationDelay: `${e.d}s` }} />
+        ))}
+        {react && SPARK_DIRS.map((dx, i) => (
+          <span key={`${sweepId}-${i}`} className="as-field-spark absolute rounded-full" style={{ left: "50%", bottom: "1%", width: win ? 3 : 2, height: win ? 3 : 2, background: win ? "#ffffff" : color, boxShadow: `0 0 6px ${color}`, "--sx": `${dx}px`, animationDuration: `${sweepDur}ms` }} />
+        ))}
+      </>
+    );
+  } else if (effect === "dataRain") {
+    inner = (
+      <>
+        <div className={`${A("as-field-datarain")} absolute inset-0`} style={{ backgroundImage: `repeating-linear-gradient(0deg, ${color}55 0 5px, transparent 5px 26px)`, backgroundSize: "14px 26px", opacity: 0.4 }} />
+        {react && <div key={sweepId} className="as-field-drop absolute" style={{ left: `${18 + (sweepId * 37) % 64}%`, top: "-24%", width: 3, height: "26%", background: `linear-gradient(180deg, transparent, ${win ? "#ffffff" : color}, transparent)`, boxShadow: `0 0 8px 1px ${color}`, opacity: win ? 1 : 0.7, animationDuration: `${sweepDur}ms` }} />}
+      </>
+    );
+  } else if (effect === "scanline") {
+    inner = (
+      <>
+        <div className={`${A("as-field-flicker")} absolute inset-0`} style={{ backgroundImage: `repeating-linear-gradient(0deg, ${color}22 0 1px, transparent 1px 3px)`, opacity: 0.5 }} />
+        {react && <div key={sweepId} className="as-field-scan absolute left-0 right-0" style={{ height: 3, top: 0, background: `linear-gradient(90deg, transparent, ${win ? "#ffffff" : color}, transparent)`, boxShadow: `0 0 12px 1px ${color}`, opacity: win ? 1 : 0.7, animationDuration: `${sweepDur}ms` }} />}
+      </>
+    );
+  } else if (effect === "vignette") {
+    inner = (
+      <>
+        <div className={`${A("as-field-vignette")} absolute inset-0`} style={{ background: `radial-gradient(125% 125% at 50% 50%, transparent 52%, ${color}33 88%, ${color}55 100%)` }} />
+        {react && <div key={sweepId} className="as-field-bloom absolute inset-0" style={{ background: `radial-gradient(120% 120% at 50% 55%, ${color}${win ? "55" : "33"} 0%, transparent 68%)`, animationDuration: `${sweepDur}ms` }} />}
+      </>
+    );
+  } else return null;
+  return <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>{inner}</div>;
+}
 function SlashGhostLayer({ ghosts, panelRef = null }) {
   return (
     <>
@@ -1055,7 +1127,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // Frame Glow (Karte) + Hologrid (Gitterlinien im Battlefield); Holo Swipe = Schimmer über die eigene Karte.
-  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxHologrid = false, fxLaserSlice = false, fxBlackhole = false, fxLasergrid = false, fxBurnBeam = false, fxOverload = false, fxDisperse = false,
+  // #306 fxField = Key des aktiven Battlefield-Ambiente-Effekts ("hologrid"/"starfield"/… | null) — einfach-exklusiv.
+  deckA1 = null, fxFrameGlow = false, fxHoloSwipe = false, fxField = null, fxLaserSlice = false, fxBlackhole = false, fxLasergrid = false, fxBurnBeam = false, fxOverload = false, fxDisperse = false,
   // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar).
   fxFireworks = false, fxGoldRain = false, fxPrismaWave = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
@@ -1094,16 +1167,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Effektdauern an den Flip-Takt koppeln; unter reduzierter Bewegung Animationen weglassen
   // (Element bleibt statisch sichtbar statt zu Ende-Opacity 0 zu springen).
   const anim = clamp(flipMs * 0.5, 120, 450);
-  // #deckshop Hologrid-Puls: die Zeile läuft IMMER vollständig durch (saubere Fahrt). Dauer an den Flip-Takt
-  // gekoppelt, aber mit hohem Boden (480 ms) → bei Max-Turbo nicht mehr zu schnell. Kommen Stiche schneller als
-  // die Zeile fährt (4×/MAX), starten wir keine neue mitten hinein, sondern ÜBERSPRINGEN den Stich (Throttle) →
-  // kein Abschneiden, kein Flackern. Bei 1×/2× bleibt es 1 Zeile je Stich.
+  // #deckshop/#306 Feld-Ambiente-Reaktion je Stich: die Reaktion läuft IMMER vollständig durch (saubere Fahrt). Dauer
+  // an den Flip-Takt gekoppelt, mit hohem Boden → bei Max-Turbo nicht zu schnell. Kommen Stiche schneller als die
+  // Reaktion (4×/MAX), starten wir keine neue mitten hinein, sondern ÜBERSPRINGEN den Stich (Throttle) → kein
+  // Abschneiden, kein Flackern. Da die Feld-Effekte einfach-exklusiv sind, treibt EIN sweepId alle (nur einer aktiv).
   const sweepDur = clamp(flipMs * 1.0, 560, 1250);
   const [sweepId, setSweepId] = useState(0);
   const lastSweepAt = useRef(-1e9);
   const trickNo = lastTrick ? lastTrick.trickNo : null;
   useEffect(() => {
-    if (!fxHologrid || reduced || trickNo == null) return;
+    if (!fxField || reduced || trickNo == null) return;
     const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
     if (now - lastSweepAt.current >= sweepDur - 20) { lastSweepAt.current = now; setSweepId((k) => k + 1); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1577,45 +1650,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(12,12,16,0.55) 0%, rgba(12,12,16,0.38) 45%, rgba(12,12,16,0.62) 100%)" }} />
         </div>
       )}
-      {/* #deckshop Hologrid: ruhiges Perspektiv-Gitter am unteren Feldrand in der Deck-Hauptfarbe (deckA1).
-          Je Stich fährt EINE helle Gitter-Zeile von vorn nach hinten in die Tiefe und verblasst (an t.trickNo
-          gekoppelt → startet pro Stich neu; Dauer an den Flip-Takt gekoppelt). Liegt über dem BF-Bild (z-1),
-          aber hinter Glut/Frost/Blitz (z-0/2) und Karten (z-10). Unter reduced-motion nur das statische Gitter. */}
-      {fxHologrid && deckA1 && (
-        <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>
-          {/* Perspektiv-Ebene OHNE Gruppen-Opazität → nur die Gitterlinien werden gedimmt, der Sweep NICHT. (Zuvor
-              lag die Opacity 0.24 auf dem Elternteil und drückte den Sweep-Glow auf 24 % — daher wirkte er im Run
-              blass/weiß, während er im Shop bei voller Opazität satt farbig leuchtet.) */}
-          <div className="absolute" style={{
-            left: "-20%", right: "-20%", bottom: 0, height: "46%",
-            transform: "perspective(160px) rotateX(60deg)", transformOrigin: "bottom" }}>
-            {/* Ruhiges Gitter (gedimmt) */}
-            <div className="absolute inset-0" style={{
-              backgroundImage: `linear-gradient(${deckA1} 1px,transparent 1px),linear-gradient(90deg,${deckA1} 1px,transparent 1px)`,
-              backgroundSize: "18px 18px", opacity: 0.24 }} />
-            {/* Sweep bei VOLLER Opazität — SIEG glüht satt in der Deckfarbe (Shop-Look: kräftiger farbiger Bloom +
-                heißer weißer Kern). NIEDERLAGE bleibt farb-neutral & dezent → die Deckfarbe ist der Unterschied. */}
-            {!reduced && sweepId > 0 && (
-              <div key={sweepId} className="as-deck-sweep absolute left-0 right-0" style={{ height: 0, animationDuration: `${sweepDur}ms` }}>
-                {/* Weicher farbiger Glow-Halo (gefülltes blur-Band → überlebt Perspektive/Neon-BG) */}
-                <div className="absolute left-0 right-0" style={{
-                  top: win ? -24 : -8, height: win ? 48 : 16,
-                  background: win
-                    ? `linear-gradient(180deg, transparent, ${deckA1} 34%, ${deckA1} 66%, transparent)`
-                    : `linear-gradient(180deg, transparent, rgba(200,205,220,0.85) 45%, transparent)`,
-                  filter: `blur(${win ? 10 : 4}px)`, opacity: win ? 0.95 : 0.4 }} />
-                {/* Heißer Kern mit kräftigem farbigem Glow (wie im Shop) — Kern schmal weiß, drumherum Deckfarbe */}
-                <div className="absolute left-0 right-0" style={{
-                  top: win ? -5 : -3, height: win ? 9 : 6,
-                  background: win
-                    ? `linear-gradient(90deg, transparent, ${deckA1} 12%, ${deckA1} 42%, #ffffff 50%, ${deckA1} 58%, ${deckA1} 88%, transparent)`
-                    : `linear-gradient(90deg, transparent, rgba(220,224,235,0.8) 50%, transparent)`,
-                  boxShadow: win ? `0 0 20px 4px ${deckA1}, 0 0 52px 12px ${deckA1}, 0 0 7px 2px #ffffff` : "none",
-                  opacity: win ? 1 : 0.55 }} />
-              </div>
-            )}
-          </div>
-        </div>
+      {/* #306 Battlefield-Ambiente (einfach-exklusiv): genau EIN Feld-Effekt (Hologrid/Sternenfeld/Aurora/Glutfunken/
+          Datenregen/Scanline/Vignette) als z-1-Layer über dem BF-Bild, hinter Glut/Frost/Blitz (z-0/2) & Karten (z-10),
+          immer in der Deck-Hauptfarbe. Ambiente läuft ruhig; die Reaktion je Stich (sweepId, Turbo-Throttle) läuft voll
+          durch. reduced-motion → nur das statische Ambiente (kein Springen). */}
+      {fxField && deckA1 && (
+        <FieldFxLayer effect={fxField} color={deckA1} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} win={win} />
       )}
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin, Hologrid und das Stich-Juice reserviert. */}

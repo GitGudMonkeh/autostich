@@ -9,7 +9,7 @@ import {
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
-import { SliceFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx } from "./Battlefield.jsx";
+import { SliceFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx, FieldFxLayer } from "./Battlefield.jsx";
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 import { clamp } from "../game/deck.js"; // #: Serien-Kopplung des Brennstrahl-Loops (leiser Start → lauter/heißer)
@@ -52,15 +52,21 @@ const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", gro
 // inkl. „Klinge" als Default). Grid-Tunnel wurde entfernt → keine Ambience-Gruppe mehr.
 const FX_GROUPS = [
   { key: "anim",     title: "Karten-Animationen", hint: "einmal kaufen · für alle Packs", mode: "toggle" },
+  { key: "field",    title: "Battlefield-Ambiente", hint: "nur eins aktiv",               mode: "field" }, // #306
   { key: "finisher", title: "Sieg-Finisher",      hint: "nur einer aktiv",                mode: "finisher" },
   // #: Krit-Gruppe (Shatter) entfernt — Krit-Finisher-Animationen raus.
   { key: "gott",     title: "Gottgleich-Prunk",   hint: "frei kombinierbar",              mode: "toggle" },
 ];
-// Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe; die Gottgleich-Gruppe führt „Standard" voran.
+/* #306 Synthetische „Kein Feld-Effekt"-Kachel (immer verfügbar, kein Kauf): der Aus-Zustand der einfach-exklusiven
+   Battlefield-Ambiente-Gruppe — wählbar wie „Klinge" beim Finisher. */
+const FIELD_NONE = { key: "none", name: "Kein Feld-Effekt", group: "field", preview: "none", alwaysOwned: true,
+  desc: "Kein Battlefield-Ambiente — nur das Battlefield-Bild (immer verfügbar)." };
+// Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe; „Standard"/„Kein …" wird vorangestellt.
 const fxGroupItems = (group) => {
   const list = GLOBAL_FX.filter((f) => f.group === group);
   if (group === "gott") return [GOTT_STANDARD, ...list];
   if (group === "finisher") return [KLINGE, ...list]; // „Klinge" (Default) voran
+  if (group === "field") return [FIELD_NONE, ...list]; // „Kein Feld-Effekt" (Default) voran
   return list;
 };
 
@@ -71,6 +77,11 @@ const finisherFlags = (key) => ({ fxLaserSlice: key === "laserSlice", fxBlackhol
 const finisherSelOf = (options) => options?.fxBlackhole ? "blackhole" : options?.fxLasergrid ? "lasergrid"
   : options?.fxBurnBeam ? "burnBeam" : options?.fxOverload ? "overload" : options?.fxDisperse ? "disperse"
   : options?.fxLaserSlice ? "laserSlice" : "klinge";
+/* #306 Battlefield-Ambiente einfach-exklusiv (genau EINS aktiv, oder „none"). Datengetrieben aus der „field"-Gruppe:
+   fieldFxFlags(key) schreibt alle Feld-Optionen in einem Rutsch (genau eine true, „none" = alle false). */
+const FIELD_FX = GLOBAL_FX.filter((f) => f.group === "field");
+const fieldFxFlags = (key) => Object.fromEntries(FIELD_FX.map((f) => [f.option, f.key === key]));
+const fieldFxSelOf = (options) => { for (const f of FIELD_FX) if (options?.[f.option]) return f.key; return "none"; };
 
 // Gleiche Schwelle wie das In-Run-Battlefield (<picture media="(max-width: 640px)">): so zeigt die
 // Vorschau exakt die Version (mobile/desktop), mit der gerade auch gespielt wird.
@@ -380,7 +391,8 @@ function GlobalFxScenePreview({ fx }) {
       </div>
     );
   }
-  if (fx.preview === "hologrid") return <BfPreview bfId={SHOWCASE_BF} a1={DEMO_C} fx="hologrid" className="w-full h-full" />;
+  // #306 Battlefield-Ambiente (inkl. Hologrid + „Kein Feld-Effekt"): echte In-Game-Komponente (FieldFxLayer) über dem BF-Bild.
+  if (["hologrid", "starfield", "aurora", "embers", "dataRain", "scanline", "vignette", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} />;
   if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
   if (fx.preview === "blackhole") return <BlackholePreview />;
@@ -392,6 +404,28 @@ function GlobalFxScenePreview({ fx }) {
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+    </div>
+  );
+}
+
+// #306 Battlefield-Ambiente-Vorschau: das echte BF-Bild (aktuell gespielte Version) + der ECHTE In-Game-Layer
+// (FieldFxLayer) in der Demo-Deckfarbe. Ein Intervall bumpt sweepId → periodische „Stich"-Reaktion wie im Spiel.
+// „none" zeigt nur das BF-Bild. Vorschau = In-Game (dieselbe Komponente, kein Drift).
+function FieldFxPreview({ effect }) {
+  const bf = battlefieldAssets(SHOWCASE_BF);
+  const isMobile = useIsMobile();
+  const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
+  const [sweep, setSweep] = useState(1);
+  useEffect(() => {
+    if (effect === "none") return undefined;
+    const id = setInterval(() => setSweep((s) => s + 1), 1500);
+    return () => clearInterval(id);
+  }, [effect]);
+  return (
+    <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+      {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+      {effect !== "none" && <FieldFxLayer effect={effect} color={DEMO_C} sweepId={sweep} sweepDur={1100} reduced={false} win />}
     </div>
   );
 }
@@ -686,6 +720,9 @@ function FxView({ p, options, onChoose, onOpenFx }) {
   // Aktueller Finisher (exklusiv): Blackhole > Lasergitter > Brennstrahl > Laser-Schnitt > Klinge (Default).
   const finisherSel = finisherSelOf(options);
   const selectFinisher = (key) => onChoose(finisherFlags(key));
+  // #306 Battlefield-Ambiente (einfach-exklusiv): aktives Feld-Ambiente (oder „none"); Auswahl schaltet die anderen aus.
+  const fieldSel = fieldFxSelOf(options);
+  const selectField = (key) => onChoose(fieldFxFlags(key));
 
   return (
     <>
@@ -712,6 +749,9 @@ function FxView({ p, options, onChoose, onOpenFx }) {
                 } else if (g.mode === "finisher") {
                   // Exklusiv-Auswahl (Radio) — eigenes Tap-Ziel, öffnet NICHT die Vorschau.
                   control = <ControlBtn label="Als Finisher wählen" onClick={() => selectFinisher(fx.key)}><Radio on={finisherSel === fx.key} /></ControlBtn>;
+                } else if (g.mode === "field") {
+                  // #306 Battlefield-Ambiente exklusiv (Radio; „Kein Feld-Effekt" = alle aus).
+                  control = <ControlBtn label="Als Ambiente wählen" onClick={() => selectField(fx.key)}><Radio on={fieldSel === fx.key} /></ControlBtn>;
                 } else {
                   // Kombinierbar (Toggle) — eigenes Tap-Ziel.
                   const on = !!options?.[fx.option];
@@ -807,6 +847,49 @@ function MiniFx({ preview }) {
           <span className="as-mini-rise absolute" style={{ left: "8%", right: "8%", height: 2, background: C, boxShadow: `0 0 6px ${C}` }} />
         </>
       );
+    case "none":
+      // „Kein Feld-Effekt": leere Kachel mit dezentem Aus-Zeichen.
+      return box(<span style={{ color: "#5a5866", fontSize: 12, fontWeight: 800 }}>∅</span>);
+    case "starfield":
+      // Sternpunkte + durchziehende Sternschnuppe.
+      return box(
+        <>
+          <span className="absolute inset-0" style={{ backgroundImage: `radial-gradient(1px 1px at 20% 30%, ${C}, transparent 60%), radial-gradient(1px 1px at 70% 55%, ${C}cc, transparent 60%), radial-gradient(1px 1px at 45% 78%, ${C}, transparent 60%), radial-gradient(1px 1px at 85% 25%, ${C}aa, transparent 60%)`, opacity: 0.75 }} />
+          {slash("28%", "18deg", C, "0s")}
+        </>
+      );
+    case "aurora":
+      // Weicher, driftender Polarlicht-Schleier.
+      return box(<span className="as-field-aurora-a absolute" style={{ inset: -6, background: `radial-gradient(60% 50% at 40% 45%, ${C}77, transparent 70%)`, filter: "blur(4px)" }} />);
+    case "embers":
+      // Aufsteigende Glutpartikel.
+      return box(
+        <>
+          {[["30%", "0s"], ["55%", "-.5s"], ["72%", "-.9s"]].map(([l, d]) => (
+            <span key={l} className="as-mini-rise absolute" style={{ left: l, width: 3, height: 3, borderRadius: "50%", background: C, boxShadow: `0 0 5px ${C}`, animationDelay: d }} />
+          ))}
+        </>
+      );
+    case "dataRain":
+      // Feiner, fallender Datenregen (Deckfarbe).
+      return box(
+        <>
+          {[["25%", "0s"], ["50%", "-.4s"], ["75%", "-.8s"]].map(([l, d]) => (
+            <span key={l} className="as-mini-fall absolute" style={{ left: l, top: 0, width: 2, height: 8, background: `linear-gradient(${C},transparent)`, boxShadow: `0 0 4px ${C}`, animationDelay: d }} />
+          ))}
+        </>
+      );
+    case "scanline":
+      // CRT-Zeilen + wandernde helle Zeile.
+      return box(
+        <>
+          <span className="absolute inset-0" style={{ backgroundImage: `repeating-linear-gradient(0deg, ${C}33 0 1px, transparent 1px 3px)`, opacity: 0.6 }} />
+          <span className="as-mini-fall absolute left-0 right-0" style={{ top: 0, height: 2, background: `linear-gradient(90deg,transparent,${C},transparent)`, boxShadow: `0 0 5px ${C}` }} />
+        </>
+      );
+    case "vignette":
+      // Atmender Rand-Glow (Deckfarbe).
+      return box(<span className="as-field-vignette absolute inset-0" style={{ background: `radial-gradient(120% 120% at 50% 50%, transparent 45%, ${C}55 100%)` }} />);
     case "klinge":
       return box(slash("50%", "-32deg", C, "0s"));
     case "laser":
@@ -885,6 +968,8 @@ function FxDetail({ group, idx, p, spBal, options, onChoose, onStep, onClose, on
   const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const isFinisher = group === "finisher";
   const finisherSel = finisherSelOf(options);
+  const isField = group === "field"; // #306 Battlefield-Ambiente (einfach-exklusiv)
+  const fieldSel = fieldFxSelOf(options);
   const on = !fx.standard && !!options?.[fx.option];
 
   return (
@@ -937,6 +1022,14 @@ function FxDetail({ group, idx, p, spBal, options, onChoose, onStep, onClose, on
                   ? { background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }
                   : { background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>
                 {finisherSel === fx.key ? "✓ Ausgewählt" : "Als Finisher wählen"}
+              </button>
+            ) : isField ? (
+              <button onClick={() => onChoose(fieldFxFlags(fx.key))}
+                className="w-full rounded-xl font-extrabold text-[12.5px] py-2.5"
+                style={fieldSel === fx.key
+                  ? { background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }
+                  : { background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>
+                {fieldSel === fx.key ? "✓ Ausgewählt" : "Als Ambiente wählen"}
               </button>
             ) : (
               <button onClick={() => onChoose({ [fx.option]: !on })}

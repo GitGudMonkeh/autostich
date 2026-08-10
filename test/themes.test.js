@@ -4,7 +4,7 @@ import {
   packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
   canBuyPack, buyPack, unlockAllCosmetics, packOwnKey,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, GLOBAL_FX_COST, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
-  frameGlowActive, holoSwipeActive, hologridActive,
+  frameGlowActive, holoSwipeActive, hologridActive, activeFieldFx, starfieldActive, vignetteActive,
   laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, fireworksActive, goldRainActive, prismaWaveActive,
 } from "../src/game/themes.js";
 
@@ -108,8 +108,8 @@ describe("packs — Kauf-Ökonomie (#299: DP)", () => {
 });
 
 describe("effekte — Karten-Animationen sind jetzt GLOBAL", () => {
-  it("Registry führt die drei Animationen als group 'anim' mit fx:-Besitz + Options-Flag", () => {
-    for (const key of ["frameGlow", "holoSwipe", "hologrid"]) {
+  it("Karten-Animationen (frameGlow/holoSwipe) sind group 'anim' mit fx:-Besitz + Options-Flag", () => {
+    for (const key of ["frameGlow", "holoSwipe"]) {
       const fx = GLOBAL_FX_BY_KEY[key];
       expect(fx).toBeTruthy();
       expect(fx.group).toBe("anim");
@@ -118,7 +118,30 @@ describe("effekte — Karten-Animationen sind jetzt GLOBAL", () => {
     }
     expect(GLOBAL_FX_BY_KEY.frameGlow.option).toBe("fxFrameGlow");
     expect(GLOBAL_FX_BY_KEY.holoSwipe.option).toBe("fxHoloSwipe");
+  });
+  it("#306: Hologrid + die 6 neuen Ambiente-Effekte sind group 'field' (Battlefield-Ambiente)", () => {
+    for (const key of ["hologrid", "starfield", "aurora", "embers", "dataRain", "scanline", "vignette"]) {
+      const fx = GLOBAL_FX_BY_KEY[key];
+      expect(fx).toBeTruthy();
+      expect(fx.group).toBe("field");
+      expect(fx.ownKey).toBe(`fx:${key}`);
+      expect(fx.preview).toBe(key);
+    }
     expect(GLOBAL_FX_BY_KEY.hologrid.option).toBe("fxHologrid");
+    expect(GLOBAL_FX_BY_KEY.starfield.option).toBe("fxStarfield");
+    expect(GLOBAL_FX_BY_KEY.vignette.option).toBe("fxVignette");
+  });
+  it("#306 activeFieldFx: liefert den EINEN aktiven Feld-Effekt (gekauft + Option an), sonst null", () => {
+    expect(activeFieldFx(prof(), {})).toBe(null);
+    // Option an, aber nicht gekauft → nicht aktiv.
+    expect(activeFieldFx(prof(), { fxStarfield: true })).toBe(null);
+    const owned = prof({ ownedCosmetics: { "fx:starfield": true, "fx:vignette": true } });
+    expect(starfieldActive(owned, { fxStarfield: true })).toBe(true);
+    expect(vignetteActive(owned, { fxVignette: true })).toBe(true);
+    expect(activeFieldFx(owned, { fxStarfield: true })).toBe("starfield");
+    // Reihenfolge = Priorität (hologrid vor starfield vor …), falls defensiv mehrere Flags an wären.
+    const both = prof({ ownedCosmetics: { "fx:hologrid": true, "fx:starfield": true } });
+    expect(activeFieldFx(both, { fxHologrid: true, fxStarfield: true })).toBe("hologrid");
   });
   it("global gekauft + per Option an → aktiv (für alle Packs)", () => {
     const cases = [

@@ -23,20 +23,34 @@ export const PACK_DP_COST = 10;   // #299 DP (Deckpunkte) je Kauf-Pack. [TUNING]
 /* GLOBALE Effekte (#deckshop, Kategorie „Effekte"): einmalig gekauft (nicht pro Pack), wirken laufweit.
    Kaufen kostet GLOBAL_FX_COST SP (Besitz in ownedCosmetics[ownKey]); ein An/Aus-Toggle (option) steuert sie.
    group ordnet die Effekte im Shop/Zweck:
-     "anim"     = Karten-Animationen (Frame-Pulse/Holo-Swipe/Hologrid) — global für alle Packs, frei kombinierbar.
+     "anim"     = Karten-Animationen (Frame-Pulse/Holo-Swipe) — auf der Karte, frei kombinierbar.
+     "field"    = Battlefield-Ambiente (Hologrid + #306: Sternenfeld/Aurora/Glutfunken/Datenregen/Scanline/Vignette),
+                  feldweit hinter den Karten (z-1), in Deckfarbe; EINFACH-EXKLUSIV (nur eins aktiv, UI-seitige Auswahl).
      "finisher" = Sieg-Abschluss auf der GEGNERkarte (Laser/Schwarzes Loch — mit „Klinge" (Default) untereinander
                   EXKLUSIV; die Auswahl erfolgt UI-seitig als Einfachauswahl).
-     "crit"     = kritischer Treffer (Shatter).
      "gott"     = Gottgleicher Sieg OHNE Krit (Prunk-Overlays; stapelbar). */
 export const GLOBAL_FX_COST = 1;
 export const GLOBAL_FX = [
-  // Karten-Animationen (früher pro-Theme; jetzt global). Options-Keys bleiben fxFrameGlow/fxHoloSwipe/fxHologrid.
+  // Karten-Animationen (auf der Karte; frei kombinierbar). Options-Keys bleiben fxFrameGlow/fxHoloSwipe.
   { key: "frameGlow", name: "Frame-Pulse", desc: "Der Kartenrahmen pulsiert in der Deck-Farbe.",
     ownKey: "fx:frameGlow", option: "fxFrameGlow", preview: "frameGlow", group: "anim" },
   { key: "holoSwipe", name: "Holo-Swipe", desc: "Ein Glanz-Streifen wandert über die Karte.",
     ownKey: "fx:holoSwipe", option: "fxHoloSwipe", preview: "holoSwipe", group: "anim" },
+  // #306 Battlefield-Ambiente (feldweit, z-1, in Deckfarbe; einfach-exklusiv). Reaktion je Stich (Turbo-Throttle).
   { key: "hologrid", name: "Hologrid", desc: "Ein Leucht-Gitter läuft über das Battlefield.",
-    ownKey: "fx:hologrid", option: "fxHologrid", preview: "hologrid", group: "anim" },
+    ownKey: "fx:hologrid", option: "fxHologrid", preview: "hologrid", group: "field" },
+  { key: "starfield", name: "Sternenfeld", desc: "Ein Parallax-Sternenfeld driftet langsam übers Feld; je Stich zieht eine Sternschnuppe durch — in der Deckfarbe.",
+    ownKey: "fx:starfield", option: "fxStarfield", preview: "starfield", group: "field" },
+  { key: "aurora", name: "Aurora", desc: "Weiche Polarlicht-Schleier driften übers Feld; je Stich ein sanfter Bloom-Puls — in der Deckfarbe.",
+    ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", group: "field" },
+  { key: "embers", name: "Glutfunken", desc: "Schwebende Glutpartikel steigen langsam auf; je Stich ein Funken-Aufstoß von unten — in der Deckfarbe.",
+    ownKey: "fx:embers", option: "fxEmbers", preview: "embers", group: "field" },
+  { key: "dataRain", name: "Datenregen", desc: "Feiner Datenregen rieselt übers Feld; je Stich fällt eine helle Spalte herab — in der Deckfarbe.",
+    ownKey: "fx:dataRain", option: "fxDataRain", preview: "dataRain", group: "field" },
+  { key: "scanline", name: "Scanline-Puls", desc: "CRT-Scanlines liegen übers Feld; je Stich wandert eine helle Zeile von oben nach unten — in der Deckfarbe.",
+    ownKey: "fx:scanline", option: "fxScanline", preview: "scanline", group: "field" },
+  { key: "vignette", name: "Puls-Vignette", desc: "Der Feldrand atmet in der Deckfarbe; je Stich glüht das ganze Feld kurz auf.",
+    ownKey: "fx:vignette", option: "fxVignette", preview: "vignette", group: "field" },
   // Sieg-Finisher (exklusiv, UI-seitige Einfachauswahl mit „Klinge" als Default).
   { key: "laserSlice", name: "Laser-Schnitt", desc: "Gegnerkarten werden beim Sieg von einem Laser aus zufälliger Richtung (jeder Sieg anders) geteilt — statt der Klinge.",
     ownKey: "fx:laserSlice", option: "fxLaserSlice", preview: "laser", group: "finisher" },
@@ -79,7 +93,20 @@ export const globalFxActive = (profile, options, key) => {
 // Karten-Animationen (global).
 export const frameGlowActive = (profile, options) => globalFxActive(profile, options, "frameGlow");
 export const holoSwipeActive = (profile, options) => globalFxActive(profile, options, "holoSwipe");
+// #306 Battlefield-Ambiente (einfach-exklusiv). Reihenfolge = Priorität, falls (defensiv) mehrere Flags an wären.
+export const FIELD_FX_KEYS = ["hologrid", "starfield", "aurora", "embers", "dataRain", "scanline", "vignette"];
 export const hologridActive = (profile, options) => globalFxActive(profile, options, "hologrid");
+export const starfieldActive = (profile, options) => globalFxActive(profile, options, "starfield");
+export const auroraActive = (profile, options) => globalFxActive(profile, options, "aurora");
+export const embersActive = (profile, options) => globalFxActive(profile, options, "embers");
+export const dataRainActive = (profile, options) => globalFxActive(profile, options, "dataRain");
+export const scanlineActive = (profile, options) => globalFxActive(profile, options, "scanline");
+export const vignetteActive = (profile, options) => globalFxActive(profile, options, "vignette");
+// Aktiver Feld-Ambiente-Effekt (Key) oder null — der Battlefield-Layer rendert genau diesen einen.
+export function activeFieldFx(profile, options) {
+  for (const k of FIELD_FX_KEYS) if (globalFxActive(profile, options, k)) return k;
+  return null;
+}
 // Finisher / Krit / Gott.
 export const laserSliceActive = (profile, options) => globalFxActive(profile, options, "laserSlice");
 export const blackholeActive = (profile, options) => globalFxActive(profile, options, "blackhole");

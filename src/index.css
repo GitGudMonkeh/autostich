@@ -330,6 +330,42 @@ button { font-family: inherit; }
    Liegt in der Perspektiv-Ebene des Grids → wandert entlang der Fluchtlinien in die Tiefe. */
 @keyframes as-deck-sweep { 0% { bottom: -2%; opacity: 0; } 10% { opacity: 1; } 72% { bottom: 100%; opacity: 1; } 100% { bottom: 112%; opacity: 0; } }
 .as-deck-sweep { animation: as-deck-sweep 900ms ease-out forwards; }
+/* #306 Battlefield-Ambiente (In-Game FieldFxLayer): NUR transform/opacity/background-position (GPU-günstig). Ambiente =
+   ruhige Endlos-Loops; Reaktion je Stich läuft einmalig (forwards). Alle Farben kommen inline aus deckA1. Unter
+   „Effekte reduziert" wird die Animationsklasse komponentenseitig weggelassen (statisches Bild), plus die globale
+   reduced-motion-Regel unten. */
+/* Sternenfeld: zwei Parallax-Ebenen driften unterschiedlich schnell nach unten; Reaktion = Sternschnuppe quert. */
+@keyframes as-field-drift-a { from { transform: translateY(-6%); } to { transform: translateY(6%); } }
+@keyframes as-field-drift-b { from { transform: translateY(5%); } to { transform: translateY(-5%); } }
+.as-field-drift-a { animation: as-field-drift-a 26s ease-in-out infinite alternate; }
+.as-field-drift-b { animation: as-field-drift-b 38s ease-in-out infinite alternate; }
+@keyframes as-field-shoot { 0% { transform: translateX(0) rotate(19deg); opacity: 0; } 12% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateX(260%) rotate(19deg); opacity: 0; } }
+.as-field-shoot { animation: as-field-shoot 900ms ease-out forwards; }
+/* Aurora: zwei weiche Schleier driften seitlich/atmen; Reaktion = sanfter Bloom-Puls (auch von der Vignette genutzt). */
+@keyframes as-field-aurora-a { 0%,100% { transform: translateX(-6%) scale(1.05); opacity: .5; } 50% { transform: translateX(6%) scale(1.12); opacity: .7; } }
+@keyframes as-field-aurora-b { 0%,100% { transform: translateX(5%) scale(1.08); opacity: .45; } 50% { transform: translateX(-5%) scale(1.0); opacity: .62; } }
+.as-field-aurora-a { animation: as-field-aurora-a 11s ease-in-out infinite; }
+.as-field-aurora-b { animation: as-field-aurora-b 14s ease-in-out infinite; }
+@keyframes as-field-bloom { 0% { opacity: 0; } 22% { opacity: 1; } 60% { opacity: .7; } 100% { opacity: 0; } }
+.as-field-bloom { animation: as-field-bloom 900ms ease-out forwards; }
+/* Glutfunken: Partikel steigen auf (leichtes Seitwärts-Wiegen); Reaktion = Funken-Aufstoß von unten (--sx = Streuung). */
+@keyframes as-field-rise { 0% { transform: translateY(0) translateX(0); opacity: 0; } 12% { opacity: .8; } 80% { opacity: .7; } 100% { transform: translateY(-320%) translateX(8px); opacity: 0; } }
+.as-field-rise { animation: as-field-rise linear infinite; }
+@keyframes as-field-spark { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(var(--sx,0), -180%); opacity: 0; } }
+.as-field-spark { animation: as-field-spark 700ms ease-out forwards; }
+/* Datenregen: Dash-Raster rieselt herab; Reaktion = eine helle Spalte fällt. */
+@keyframes as-field-datarain { to { background-position-y: 26px; } }
+.as-field-datarain { animation: as-field-datarain 1.3s linear infinite; }
+@keyframes as-field-drop { 0% { top: -24%; opacity: 0; } 12% { opacity: 1; } 84% { opacity: 1; } 100% { top: 104%; opacity: 0; } }
+.as-field-drop { animation: as-field-drop 900ms linear forwards; }
+/* Scanline-Puls: statische CRT-Zeilen flackern minimal; Reaktion = helle Zeile wandert oben→unten. */
+@keyframes as-field-flicker { 0%,100% { opacity: .5; } 50% { opacity: .38; } }
+.as-field-flicker { animation: as-field-flicker 3.2s steps(2, jump-none) infinite; }
+@keyframes as-field-scan { 0% { top: -3%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+.as-field-scan { animation: as-field-scan 900ms linear forwards; }
+/* Puls-Vignette: Feldrand atmet in Deckfarbe; Reaktion = ganzes Feld glüht kurz auf (nutzt as-field-bloom). */
+@keyframes as-field-vignette { 0%,100% { opacity: .6; } 50% { opacity: 1; } }
+.as-field-vignette { animation: as-field-vignette 4.5s ease-in-out infinite; }
 /* Eigene Verlierer-Karte fliegt einfach weg (kein Klingenschnitt mehr) — driftet nach unten-außen, kippt & fadet. */
 @keyframes as-flyaway { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-12%, 68%) rotate(-16deg); opacity: 0; } }
 
