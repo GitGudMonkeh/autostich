@@ -22,25 +22,24 @@ import formation_shuffle from "../assets/music/formation_shuffle.m4a";
 import mutation_funk_drive from "../assets/music/mutation_funk_drive.m4a";
 import neon_static from "../assets/music/neon_static.m4a";
 import neon_static_remaster from "../assets/music/neon_static_remaster.m4a";
-// NEUE Tracks (mid/hot/overdrive) — TEMP-Namen, finale Song-Namen folgen gemeinsam.
-// Aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
-import new_01_neon_card_game from "../assets/music/new_01_neon_card_game.m4a";
-import new_02_neon_arcade_loop from "../assets/music/new_02_neon_arcade_loop.m4a";
-import new_03_neon_static_2 from "../assets/music/new_03_neon_static_2.m4a";
-import new_04_neon_static_1 from "../assets/music/new_04_neon_static_1.m4a";
-import new_05_neon_circuit_rush_1 from "../assets/music/new_05_neon_circuit_rush_1.m4a";
-import new_06_neon_circuit_rush from "../assets/music/new_06_neon_circuit_rush.m4a";
-import new_08_neon_static from "../assets/music/new_08_neon_static.m4a";
-import new_09_neon_rush from "../assets/music/new_09_neon_rush.m4a";
-import new_10_neon_horizon from "../assets/music/new_10_neon_horizon.m4a";
-import new_11_neon_circuit_rush_2 from "../assets/music/new_11_neon_circuit_rush_2.m4a";
-import new_12_neon_static_storm_2 from "../assets/music/new_12_neon_static_storm_2.m4a";
-import new_14_neon_static_rush from "../assets/music/new_14_neon_static_rush.m4a";
-import new_15_neon_overdrive from "../assets/music/new_15_neon_overdrive.m4a";
-import new_16_neon_final_showdown_1 from "../assets/music/new_16_neon_final_showdown_1.m4a";
-import new_17_neon_final_showdown from "../assets/music/new_17_neon_final_showdown.m4a";
-import new_18_neon_endgame_1 from "../assets/music/new_18_neon_endgame_1.m4a";
-import new_19_neon_endgame from "../assets/music/new_19_neon_endgame.m4a";
+// Neue Tracks (mid/hot/overdrive) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
+import neon_card_game from "../assets/music/neon_card_game.m4a";
+import neon_arcade_loop from "../assets/music/neon_arcade_loop.m4a";
+import static_charge from "../assets/music/static_charge.m4a";
+import static_surge from "../assets/music/static_surge.m4a";
+import circuit_rush from "../assets/music/circuit_rush.m4a";
+import circuit_breaker from "../assets/music/circuit_breaker.m4a";
+import live_wire from "../assets/music/live_wire.m4a";
+import full_tilt from "../assets/music/full_tilt.m4a";
+import event_horizon from "../assets/music/event_horizon.m4a";
+import circuit_overload from "../assets/music/circuit_overload.m4a";
+import static_storm from "../assets/music/static_storm.m4a";
+import power_surge from "../assets/music/power_surge.m4a";
+import overdrive from "../assets/music/overdrive.m4a";
+import final_showdown from "../assets/music/final_showdown.m4a";
+import last_stand from "../assets/music/last_stand.m4a";
+import endgame from "../assets/music/endgame.m4a";
+import no_limits from "../assets/music/no_limits.m4a";
 
 const MENU_TRACK = { title: "Relay of Multipliers", url: relay_of_multipliers }; // Main-Screen + Victory
 
@@ -73,28 +72,28 @@ const POOL = [
   { title: "Neon Card Rush", url: neon_card_rush, tier: "mid" },                 // ungetaggt → wie „Neon Card Rush 2" auf mid (anpassbar)
   { title: "Neon Card Rush 2", url: neon_card_rush_2, tier: "mid" },
   { title: "Pulsing Cards", url: pulsing_cards, tier: "mid" },
-  { title: "Neon Card Game", url: new_01_neon_card_game, tier: "mid" },          // NEU (TEMP-Name)
-  { title: "Neon Arcade Loop", url: new_02_neon_arcade_loop, tier: "mid" },      // NEU (TEMP-Name)
+  { title: "Neon Card Game", url: neon_card_game, tier: "mid" },
+  { title: "Neon Arcade Loop", url: neon_arcade_loop, tier: "mid" },
   // hot
   { title: "Mutation Funk Drive", url: mutation_funk_drive, tier: "hot" },       // #171
   { title: "Card Momentum", url: card_momentum, tier: "hot" },
   { title: "Card Momentum (Remastered)", url: card_momentum_remastered, tier: "hot" }, // #171
-  { title: "Neon Static 2", url: new_03_neon_static_2, tier: "hot" },            // NEU (TEMP-Name)
-  { title: "Neon Static 1", url: new_04_neon_static_1, tier: "hot" },            // NEU (TEMP-Name)
-  { title: "Neon Circuit Rush 1", url: new_05_neon_circuit_rush_1, tier: "hot" }, // NEU (TEMP-Name)
-  { title: "Neon Circuit Rush", url: new_06_neon_circuit_rush, tier: "hot" },    // NEU (TEMP-Name)
-  { title: "Neon Static (Neu)", url: new_08_neon_static, tier: "hot" },          // NEU (TEMP-Name; anderer Song als „Neon Static")
-  { title: "Neon Rush", url: new_09_neon_rush, tier: "hot" },                    // NEU (TEMP-Name)
+  { title: "Static Charge", url: static_charge, tier: "hot" },
+  { title: "Static Surge", url: static_surge, tier: "hot" },
+  { title: "Circuit Rush", url: circuit_rush, tier: "hot" },
+  { title: "Circuit Breaker", url: circuit_breaker, tier: "hot" },
+  { title: "Live Wire", url: live_wire, tier: "hot" },
+  { title: "Full Tilt", url: full_tilt, tier: "hot" },
   // overdrive
-  { title: "Neon Horizon", url: new_10_neon_horizon, tier: "overdrive" },               // NEU (TEMP-Name)
-  { title: "Neon Circuit Rush 2", url: new_11_neon_circuit_rush_2, tier: "overdrive" }, // NEU (TEMP-Name)
-  { title: "Neon Static Storm 2", url: new_12_neon_static_storm_2, tier: "overdrive" }, // NEU (TEMP-Name)
-  { title: "Neon Static Rush", url: new_14_neon_static_rush, tier: "overdrive" },        // NEU (TEMP-Name)
-  { title: "Neon Overdrive", url: new_15_neon_overdrive, tier: "overdrive" },            // NEU (TEMP-Name)
-  { title: "Neon Final Showdown 1", url: new_16_neon_final_showdown_1, tier: "overdrive" }, // NEU (TEMP-Name)
-  { title: "Neon Final Showdown", url: new_17_neon_final_showdown, tier: "overdrive" },  // NEU (TEMP-Name)
-  { title: "Neon Endgame 1", url: new_18_neon_endgame_1, tier: "overdrive" },            // NEU (TEMP-Name)
-  { title: "Neon Endgame", url: new_19_neon_endgame, tier: "overdrive" },                // NEU (TEMP-Name)
+  { title: "Event Horizon", url: event_horizon, tier: "overdrive" },
+  { title: "Circuit Overload", url: circuit_overload, tier: "overdrive" },
+  { title: "Static Storm", url: static_storm, tier: "overdrive" },
+  { title: "Power Surge", url: power_surge, tier: "overdrive" },
+  { title: "Overdrive", url: overdrive, tier: "overdrive" },
+  { title: "Final Showdown", url: final_showdown, tier: "overdrive" },
+  { title: "Last Stand", url: last_stand, tier: "overdrive" },
+  { title: "Endgame", url: endgame, tier: "overdrive" },
+  { title: "No Limits", url: no_limits, tier: "overdrive" },
 ];
 
 function tierForRound(round) {
