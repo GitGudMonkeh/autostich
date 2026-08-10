@@ -3,6 +3,7 @@ import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { SKILL_DEFS, ARCHETYPE_META, archetypeOf } from "../game/skills.js";
+import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
 import { SUIT_ORDER, suitColor, suitName } from "../game/constants.js";
 
@@ -114,7 +115,7 @@ export function SkillList({ skills = [], empty = "Noch keine Skills." }) {
               className="text-xs px-2 py-0.5 rounded transition-all"
               style={{ background: active ? `${c}33` : "#22222b", color: c,
                        outline: active ? `1px solid ${c}` : `1px solid ${c}66` }}>
-              {ac(id).icon} {s.name}
+              <ArchIcon meta={ac(id)} size={13} /> {s.name}
             </button>
           );
         })}
@@ -122,7 +123,7 @@ export function SkillList({ skills = [], empty = "Noch keine Skills." }) {
       {open && (
         <div className="mt-2 rounded-lg p-3 text-sm" style={{ background: "#1e1e26", border: `1px solid ${om.color}55` }}>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${om.color}22`, color: om.color }}>{om.icon} {om.label.toUpperCase()}</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${om.color}22`, color: om.color }}><ArchIcon meta={om} size={11} /> {om.label.toUpperCase()}</span>
             <span className="font-bold" style={{ color: om.color }}>{open.name}</span>
           </div>
           <div className="opacity-80 leading-snug">{open.desc}</div>

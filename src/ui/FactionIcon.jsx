@@ -28,3 +28,12 @@ export function FactionIcon({ type, size = 14, glow = true, className = "", styl
         filter: glow ? `drop-shadow(0 0 3px ${FACTION_GLOW[type]}bb)` : undefined, ...style }} />
   );
 }
+
+/* Icon eines Meta-Objekts (ARCHETYPE_META o. ä.): ist `meta.key` eine der vier Fraktionen → zentrales <FactionIcon>;
+   sonst (z. B. Legendär ★, generischer Skill •) fällt es auf das eigene `meta.icon`-Glyph zurück (das sind KEINE
+   Fraktions-Icons und bleiben wie gehabt). So ersetzt der Sweep nur echte Fraktions-Identitäts-Icons. */
+export function ArchIcon({ meta, size = 14, glow = true, className = "", style, title }) {
+  if (!meta) return null;
+  if (FACTION_ICON_SRC[meta.key]) return <FactionIcon type={meta.key} size={size} glow={glow} className={className} style={style} title={title || meta.label} />;
+  return <span className={className} style={style} title={title || meta.label}>{meta.icon}</span>;
+}

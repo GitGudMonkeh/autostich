@@ -1,4 +1,5 @@
 import { SKILL_DEFS, ARCHETYPE_META, archetypeOf } from "../game/skills.js";
+import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
@@ -36,7 +37,7 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
                   className="text-left rounded-xl p-4 transition-all hover:brightness-110 flex flex-col gap-2"
                   style={{ background: "#20202a", border: `1px solid ${GOLD}`, boxShadow: `0 0 12px ${GOLD}22` }}>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{meta.icon}</span>
+                    <ArchIcon meta={meta} size={18} />
                     <span className="font-bold text-lg leading-tight" style={{ color: GOLD }}>{s.name}</span>
                     <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap"
                       style={{ background: `${meta.color}22`, color: meta.color, border: `1px solid ${meta.color}66` }}>{meta.label}</span>

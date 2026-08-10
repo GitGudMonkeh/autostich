@@ -7,6 +7,7 @@ import { factionShares } from "./RunGraphs.jsx"; // Stats-Redesign: dieselbe Fra
 import { loadRunHistory, loadProfile } from "../game/storage.js";
 import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
 import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import {
   MIN_SAMPLE, hasEnoughData, pickRates,
   archetypeUsage, bestArchetype, scoreLift, bestRun,
@@ -187,7 +188,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                       <div className="text-3xl font-bold tabular-nums leading-none" title={fmtScore(best.score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(best.score)}</div>
                       {buildSubtitle(best) && <div className="text-[11px] opacity-50 mt-1.5 truncate">{buildSubtitle(best)}</div>}
                     </div>
-                    <div className="text-2xl shrink-0 leading-none">{(best.archetypes || []).map((a, i) => <span key={i}>{archIcon(a)}</span>)}</div>
+                    <div className="text-2xl shrink-0 leading-none">{(best.archetypes || []).map((a, i) => <FactionIcon key={i} type={a} size={20} />)}</div>
                   </div>
                   <BuildHerkunft run={best} />
                   {!hasFineOrigin(best) && (
@@ -215,7 +216,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                         <span className="hidden sm:inline opacity-55 shrink-0">{critPct == null ? "–" : `${critPct}%`}</span>
                       </span>
                       <span className="flex items-center gap-2.5 shrink-0">
-                        <span className="whitespace-nowrap">{(r.archetypes || []).map((a, k) => <span key={k}>{archIcon(a)}</span>)}</span>
+                        <span className="whitespace-nowrap">{(r.archetypes || []).map((a, k) => <FactionIcon key={k} type={a} size={13} />)}</span>
                         <span className="opacity-45 tabular-nums">{fmtDuration(r.durationMs || 0)}</span>
                       </span>
                     </button>
@@ -247,7 +248,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                   <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2.5">Archetyp-Nutzung</div>
                   <div className="grid gap-2.5">
                     {archUse.map((a) => (
-                      <BarRow key={a.arch} label={`${archIcon(a.arch)} ${archLabel(a.arch)}`} color={archColor(a.arch)} frac={a.rate}
+                      <BarRow key={a.arch} label={archLabel(a.arch)} color={archColor(a.arch)} frac={a.rate}
                         right={`${a.count}× · Ø ${fmtScoreShort(a.avgScore)}`} />
                     ))}
                   </div>
@@ -265,7 +266,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                 <div className="flex flex-col gap-2">
                   {bestArch[0] && (
                     <WinRow tag="Bester Archetyp">
-                      <b style={{ color: archColor(bestArch[0].arch) }}>{archIcon(bestArch[0].arch)} {archLabel(bestArch[0].arch)}</b>
+                      <b style={{ color: archColor(bestArch[0].arch) }}><FactionIcon type={bestArch[0].arch} size={13} /> {archLabel(bestArch[0].arch)}</b>
                       <span className="opacity-70"> — Ø {fmtScoreShort(bestArch[0].avgScore)} über {bestArch[0].count} Läufe</span>
                     </WinRow>
                   )}

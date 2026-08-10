@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ARCHETYPE_META, ARCHETYPE_ORDER } from "../game/skills.js";
+import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { GUIDES } from "./guides.js";
 import { useEscape } from "./useEscape.js";
 
@@ -154,7 +155,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
                     borderBottom: "none",
                     boxShadow: on ? `0 -2px 14px -8px ${m.color}` : "none",
                   }}>
-                  <span style={{ opacity: on ? 1 : 0.55 }}>{m.icon}</span>{m.label}
+                  <ArchIcon meta={m} size={14} className="mr-1" style={{ opacity: on ? 1 : 0.55 }} />{m.label}
                 </button>
               );
             })}
@@ -166,7 +167,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
             <div className="pt-4">
               <h1 className="text-3xl font-extrabold tracking-wide uppercase leading-none"
                   style={{ color: "#f4f2ff", textShadow: `0 0 22px ${color}66` }}>
-                <span className="mr-2">{meta.icon}</span>{meta.label}
+                <ArchIcon meta={meta} size={16} className="mr-2" />{meta.label}
               </h1>
               <p className="text-[13.5px] mt-2.5 leading-relaxed" style={{ color: "#a9a9b6", maxWidth: "56ch" }}>{g.subtitle}</p>
             </div>
@@ -227,7 +228,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
             </ul>
 
             <div className="mt-6 pt-3.5 text-[11px] font-mono flex items-center gap-2" style={{ borderTop: "1px solid #2a2a33", color: "#71717c" }}>
-              <span aria-hidden="true">{meta.icon}</span> {meta.label} · Archetyp {ARCHETYPE_ORDER.indexOf(active) + 1} von {ARCHETYPE_ORDER.length}
+              <ArchIcon meta={meta} size={14} /> {meta.label} · Archetyp {ARCHETYPE_ORDER.indexOf(active) + 1} von {ARCHETYPE_ORDER.length}
             </div>
           </div>
         </div>

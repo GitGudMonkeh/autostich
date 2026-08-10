@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
+import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { fmtScore, fmtScoreShort } from "./format.js";
 
 /* #169 FB-8: wiederverwendbarer Run-Statblock — dieselben Kennzahlen wie im GameOver-/Victory-Screen plus die
@@ -123,7 +124,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
           {archCounts.map((a) => (
             <span key={a.key} className="inline-flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-0.5 rounded-full"
               style={{ background: `${a.color}1f`, color: a.color, border: `1px solid ${a.color}55` }}>
-              {a.icon} {a.label} ×{a.n}
+              <ArchIcon meta={a} size={13} /> {a.label} ×{a.n}
             </span>
           ))}
         </div>
@@ -161,7 +162,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
                   <button key={id} onClick={() => toggle("skill", id)} title="Beschreibung anzeigen"
                     className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
                     style={{ background: `${am.color}22`, color: am.color, border: `1px solid ${on ? am.color : d.legendary ? "#d4a63a" : "transparent"}` }}>
-                    {am.icon} {d.legendary ? "★ " : ""}{d.name}
+                    <ArchIcon meta={am} size={13} /> {d.legendary ? "★ " : ""}{d.name}
                   </button>
                 );
               })}

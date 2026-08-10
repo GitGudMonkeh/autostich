@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { leaderboardConfigured, fetchGlobalTop, fetchBoardTop } from "../game/leaderboard.js";
 import { ARCHETYPE_META, decodeArchetypes } from "../game/skills.js";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
 import { formatSeed } from "../game/rng.js"; // #205: Seed der Board-Zeile → SeedChip/Nachspielen in RunDetail
@@ -102,7 +103,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                 </span>
                 {icons.length > 0 && (
                   <span className="flex items-center gap-0.5 shrink-0 text-xs leading-none">
-                    {icons.map((m, k) => <span key={k} title={m.label}>{m.icon}</span>)}
+                    {icons.map((m, k) => <FactionIcon key={k} type={m.key} size={12} title={m.label} />)}
                   </span>
                 )}
                 <span className="font-bold shrink-0" style={{ color: "#d4a63a" }}>{fmtScore(r.score)}</span>

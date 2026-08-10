@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf, marginHeatPoints } from "../game/skills.js";
+import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
          PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
          WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
@@ -187,12 +188,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   <button type="button" onClick={() => go(-1)}
                     className="flex items-center gap-1.5 min-w-0 text-left transition-all hover:brightness-125" title="vorheriger Typ">
                     <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>‹</span>
-                    {prevG && <><span className="text-sm">{prevG.meta.icon}</span><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{prevG.meta.label}</span></>}
+                    {prevG && <><ArchIcon meta={prevG.meta} size={14} /><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{prevG.meta.label}</span></>}
                   </button>
                 ) : <span />}
                 <span className="inline-flex items-center gap-1.5 font-bold text-sm px-3 py-1 rounded-full whitespace-nowrap"
                   style={{ color: curG.meta.color, background: `${curG.meta.color}1f`, border: `1px solid ${curG.meta.color}55` }}>
-                  {curG.meta.icon} {curG.meta.label}
+                  <ArchIcon meta={curG.meta} size={14} /> {curG.meta.label}
                   {/* i im Kreis → öffnet den Leitfaden direkt auf der Seite dieses Archetyps (#UI). */}
                   <button type="button" onClick={() => setGuideArch(curG.arch)}
                     title={`Leitfaden: ${curG.meta.label}`} aria-label={`Leitfaden ${curG.meta.label} öffnen`}
@@ -203,7 +204,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 {nPages > 1 ? (
                   <button type="button" onClick={() => go(1)}
                     className="flex items-center justify-end gap-1.5 min-w-0 text-right transition-all hover:brightness-125" title="nächster Typ">
-                    {nextG && <><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{nextG.meta.label}</span><span className="text-sm">{nextG.meta.icon}</span></>}
+                    {nextG && <><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{nextG.meta.label}</span><ArchIcon meta={nextG.meta} size={14} /></>}
                     <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>›</span>
                   </button>
                 ) : <span />}
@@ -254,7 +255,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 <div className="text-xs uppercase tracking-widest" style={{ color: "#d4a63a" }}>Slots voll</div>
                 <h3 className="text-lg font-bold mt-1">Welchen Skill ersetzen?</h3>
                 <p className="text-xs opacity-65 mt-1">
-                  Neu: <b style={{ color: ac(pending).color }}>{ac(pending).icon} {SKILL_DEFS[pending]?.name}</b>. Tippe den Skill, der weichen soll.
+                  Neu: <b style={{ color: ac(pending).color }}><ArchIcon meta={ac(pending)} size={13} /> {SKILL_DEFS[pending]?.name}</b>. Tippe den Skill, der weichen soll.
                 </p>
               </div>
               <div className="grid gap-2">
@@ -269,7 +270,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     className="text-left rounded-xl p-3 flex flex-col gap-1 transition-all hover:brightness-110"
                     style={{ background: "#20202a", border: `1px solid ${deactivates ? "#d1462f" : ac(s.id).color + "66"}` }}>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}>{ac(s.id).icon} {ac(s.id).label.toUpperCase()}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}><ArchIcon meta={ac(s.id)} size={11} /> {ac(s.id).label.toUpperCase()}</span>
                       {(s.heatConsumer || s.onFullCharge) && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>KONSUMENT</span>}
                       {s.legendary && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>★ LEGENDÄR</span>}
                     </div>
@@ -305,7 +306,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               <button type="button" onClick={() => setOpenArch(detailOpen ? null : curG.arch)}
                 className="w-full flex items-center gap-2 mb-2 text-left" aria-expanded={detailOpen}
                 title={`${curG.meta.label}: Passiv ${detailOpen ? "einklappen" : "ausklappen"}`}>
-                <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: curG.meta.color }}>{curG.meta.icon} {curG.meta.label} · Passiv</span>
+                <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: curG.meta.color }}><ArchIcon meta={curG.meta} size={12} /> {curG.meta.label} · Passiv</span>
                 <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
                   style={{ color: curG.meta.color, background: `${curG.meta.color}14`, border: `1px solid ${curG.meta.color}3a` }}>
                   <span className="transition-transform" style={{ display: "inline-block", transform: detailOpen ? "rotate(90deg)" : "none" }}>▸</span>
@@ -334,7 +335,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
-                          {curG.meta.icon} {curG.meta.label.toUpperCase()}
+                          <ArchIcon meta={curG.meta} size={12} /> {curG.meta.label.toUpperCase()}
                         </span>
                         {(s.heatConsumer || s.onFullCharge) && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
@@ -373,7 +374,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 <div key={s.id} className="text-xs px-2.5 py-2 rounded leading-snug"
                   style={{ background: "#1c1c22", border: "1px solid #33333e" }}>
                   <div className="flex items-center gap-1.5 mb-1">
-                    <span style={{ color: ac(s.id).color }}>{ac(s.id).icon}</span>
+                    <ArchIcon meta={ac(s.id)} size={13} />
                     <b style={{ color: "#c8c8d0" }}>{s.name}</b>
                     <span className="opacity-40 text-[11px]">✓ gehalten</span>
                   </div>
