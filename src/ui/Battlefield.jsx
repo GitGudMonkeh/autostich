@@ -1515,13 +1515,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // #295/#296 Sieg-Finisher-SFX (Akzent AUF dem cardflip): Rate an flipMs gekoppelt (wie cardflip) → kein Überlaufen/
     // Stapeln in den nächsten Stich. Priorität wie das Visual. Schwarzes Loch UND Brennstrahl sind PERSISTENT → kein
     // One-Shot hier, sie laufen als Loop-Bett (holeActive-/burnPulse-Effect unten). Nur Lasergitter/Laser/Klinge sind
-    // Per-Stich-One-Shots. (Lasergitter teilt sich den Laser-Sound.)
+    // Per-Stich-One-Shots. (Lasergitter hat einen eigenen Sound: fx_lasergrid.)
     if (w && flipMs > 170) {
       const fxRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
       // #: Bass-Impact-Layer auf großen Siegen/Groß-Ansagen (Stark/Irre/Gottgleich) ENTFERNT — Bass gibt es nur noch beim
       // „Schwarzen Loch". Die Finisher-Sounds unten bleiben, aber ohne Bass-Anhebung.
       if (holeFinish || burnFinish) { /* still — persistente Betten (Loop) decken diese Siege ab */ }
-      else if (gridFinish)                audio.play("fx_laser", { rate: fxRate, gain: 1.1 }); // Lasergitter
+      else if (gridFinish)                audio.play("fx_lasergrid", { rate: fxRate, gain: 1.1 }); // Lasergitter (eigener Sound)
       else if (overloadFinish) {          // #300/#: Überladung — Blitz-Crack, aber weicher: Lowpass rundet die harte Höhe ab,
         // kurzer Attack glättet die Transiente, Release lässt ihn sanft ausklingen (statt hartem Abriss). Im Turbo mehr
         // Softening + etwas leiser → weniger „hart/hektisch".
@@ -1586,7 +1586,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const sK = clamp((burnPulse.streak || 0) / 12, 0, 1);
       const g = 0.3 + sK * 0.6;   // leiser Start → deutlich lauter mit der Serie
       const r = 1 + sK * 0.28;    // leicht schneller mit der Serie
-      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, loopStart: 0.1, loopEnd: 0.8 });
+      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, loopStart: 0.5, loopEnd: 5.5 });
       else { audio.setLoopGain(burnLoopRef.current, g); audio.setLoopRate(burnLoopRef.current, r); }
     } else if (burnLoopRef.current) {
       audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;
@@ -1619,6 +1619,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       if (lawineShown.current) return;
       lawineShown.current = true;
     }
+    // #: „Gottgleich"-Bass-Drop — feuert MIT dem Wort bei den epischen Ansagen (Gottgleich ≥500k, „Gönn dir", „Lawine";
+    // alle drei tragen epic:true, Stark/Brutal/Irre nicht). Cooldown in audio.js verhindert Dröhnen bei dichten Stichen.
+    if (bigScore.epic) audio.play("fx_godlike", { gain: 1.5, bass: 4 });
     const lane = BIG_LANES[bigSeq.current % BIG_LANES.length];
     bigSeq.current += 1;
     // #Fix: id global eindeutig über den monotonen bigSeq (nicht nur trickNo) → keine duplicate-key-Kollision.

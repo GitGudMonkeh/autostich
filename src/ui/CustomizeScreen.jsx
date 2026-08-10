@@ -212,8 +212,8 @@ function GottgleichPreview({ variant, compact = false }) {
   }, [compact]);
   useEffect(() => {
     if (compact) return undefined;
-    // Auf den Pop (272 ms in den Zyklus) den Prunk zünden. #: Bass entfernt (nur „Schwarzes Loch" hat Bass) — Vorschau = In-Game.
-    const t = setTimeout(() => { setBurst((b) => b + 1); }, GOTT_POP_MS);
+    // Auf den Pop (272 ms in den Zyklus) den Prunk zünden + den „Gottgleich"-Bass-Drop (Vorschau = In-Game, deckungsgleich mit dem Pop).
+    const t = setTimeout(() => { setBurst((b) => b + 1); audio.play("fx_godlike", { gain: 1.5, bass: 4 }); }, GOTT_POP_MS);
     return () => clearTimeout(t);
   }, [cycle, compact]);
   return (
@@ -245,7 +245,7 @@ function GottgleichPreview({ variant, compact = false }) {
 const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
 const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LINE = 220;
 // #302b Showcase-Sound je One-Shot-Finisher (persistente Loop-Effekte Burn/Blackhole laufen separat als Loop-Bett).
-const FIN_SFX = { klinge: "fx_blade", laser: "fx_laser", lasergrid: "fx_laser", overload: "fx_lightning", disperse: "fx_atomize" }; // shatter: (kein eigener SFX)
+const FIN_SFX = { klinge: "fx_blade", laser: "fx_laser", lasergrid: "fx_lasergrid", overload: "fx_lightning", disperse: "fx_atomize" }; // shatter: (kein eigener SFX)
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
   const bf = battlefieldAssets(SHOWCASE_BF);
@@ -332,7 +332,7 @@ function BurnBeamPreview() {
       const sK = clamp((pulse.streak || 0) / 12, 0, 1);
       const g = 0.3 + sK * 0.6;
       const r = 1 + sK * 0.28;
-      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, loopStart: 0.1, loopEnd: 0.8 });
+      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, loopStart: 0.5, loopEnd: 5.5 });
       else { audio.setLoopGain(burnLoopRef.current, g); audio.setLoopRate(burnLoopRef.current, r); }
     } else if (burnLoopRef.current) {
       audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;

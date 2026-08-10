@@ -30,7 +30,7 @@ export function useBlackholeSfx(active, pulse) {
     if (pulse.kind === "win") {
       growth.current += 1;
       const target = Math.min(HOLE_GAIN_MAX, HOLE_GAIN_BASE + HOLE_GAIN_STEP * growth.current);
-      if (!loopRef.current) loopRef.current = audio.loop("fx_blackhole", { gain: HOLE_GAIN_BASE, bass: 5, loopStart: 0.25, loopEnd: 1.05 });
+      if (!loopRef.current) loopRef.current = audio.loop("fx_blackhole", { gain: HOLE_GAIN_BASE, bass: 5, loopStart: 2.5, loopEnd: 13.5 });
       audio.setLoopGain(loopRef.current, target); // sanft anschwellen
     } else if (pulse.kind === "loss") { // Kollaps → schnell abnehmend leiser
       // #: Der Kollaps eines GEWACHSENEN Lochs schlägt hörbar mit einem tiefen Bass-Impact ein — aber nur, wenn das Loch
