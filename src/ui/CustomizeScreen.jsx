@@ -519,7 +519,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const p = profile || {};
   const [tab, setTab] = useState("packs");           // "packs" | "challenges" | "fx"
   const [packOv, setPackOv] = useState(null);        // offene Pack-Detailansicht: { cat, idx } | null
-  const [packSel, setPackSel] = useState("front");   // "front" | "back" | "bg"
+  const [packSel, setPackSel] = useState("back");   // "back" | "front" | "bg" — Cover (Rücken) zuerst, dann Front
   const catList = (cat) => (cat === "challenges" ? CHALLENGES_TAB : PACKS_TAB); // #Shop-Reorg: Detail navigiert innerhalb seiner Kategorie
   const spBal = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
   const dpBal = Math.max(0, Math.floor(Number(p.deckPoints) || 0)); // #299 Deckpunkte — Währung der Packs
@@ -542,8 +542,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const buy = (fn) => { if (onProfileChange) onProfileChange(fn(p)); };
   const activate = (pack) => onChoose(hasBattlefield(pack) ? { deckId: pack.deckId, battlefieldId: pack.bfId } : { deckId: pack.deckId });
 
-  const openPack = (cat, i) => { setPackOv({ cat, idx: i }); setPackSel("front"); };
-  const stepPack = (d) => { setPackOv((o) => (o ? { ...o, idx: (o.idx + d + catList(o.cat).length) % catList(o.cat).length } : o)); setPackSel("front"); };
+  const openPack = (cat, i) => { setPackOv({ cat, idx: i }); setPackSel("back"); };
+  const stepPack = (d) => { setPackOv((o) => (o ? { ...o, idx: (o.idx + d + catList(o.cat).length) % catList(o.cat).length } : o)); setPackSel("back"); };
 
   // Ist ein Kauffenster offen, wird der Shop-Hintergrund NICHT mitgescrollt (kein Scroll-Durchgriff auf iOS).
   const anyOverlay = !!packOv;
@@ -664,9 +664,9 @@ function PacksView({ p, deckId, list, cat, onOpen }) {
 function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, onClose, onActivate, onBuy }) {
   const touch = useRef(0);
   const hasBf = hasBattlefield(pack);
-  const segs = hasBf ? [["front", "Karte vorne"], ["back", "Karte hinten"], ["bg", "Hintergrund"]]
-                     : [["front", "Karte vorne"], ["back", "Karte hinten"]];
-  const activeSel = (sel === "bg" && !hasBf) ? "front" : sel;
+  const segs = hasBf ? [["back", "Karte hinten"], ["front", "Karte vorne"], ["bg", "Hintergrund"]]
+                     : [["back", "Karte hinten"], ["front", "Karte vorne"]];
+  const activeSel = (sel === "bg" && !hasBf) ? "back" : sel;
 
   const s = pack.kind === "std" ? "own" : packState(p, pack);
   const active = deckId === pack.deckId;
