@@ -461,19 +461,25 @@ export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, inten
   // #302 Disintegrations-Fragmente: jedes Raster-Stück ist ein clip-path-Klon der ECHTEN Karte (inset auf seine Zelle),
   // driftet von der Kartenmitte weg (+ Schwerkraft = Asche fällt), schrumpft, rotiert leicht & fadet → die Karte selbst
   // zerfällt. Streuung mit der Serie leicht weiter. Ecken/Rand fliegen weiter als die Mitte (dirX/dirY-Skalierung).
-  const NFRAG = DISINT_ROWS * DISINT_COLS;
+  // #perf: Fragment-Raster an das Turbo-Tempo koppeln. Bei MAX (kleines flipMs → scale≈0.45) feuern die Stiche so
+  // schnell, dass sich mehrere Brennstrahl-Ghosts überlappen (ghostCap ~6). 6 × 88 clip-path-Kartenklone = >500
+  // gleichzeitige Kompositor-Ebenen → Ruckeln. Bei hohem Turbo ist die feine 8×11-Zerlegung ohnehin nicht erkennbar,
+  // also gröber rastern (min 5×7=35) → ~60 % weniger Knoten je Ghost, wo die Überlappung am größten ist. Normal: 8×11.
+  const DCOLS = Math.max(5, Math.round(DISINT_COLS * scale));
+  const DROWS = Math.max(7, Math.round(DISINT_ROWS * scale));
+  const NFRAG = DROWS * DCOLS;
   const frags = [];
-  for (let r = 0; r < DISINT_ROWS; r++) {
-    for (let c = 0; c < DISINT_COLS; c++) {
-      const i = r * DISINT_COLS + c;
-      const dirX = (c + 0.5) / DISINT_COLS - 0.5, dirY = (r + 0.5) / DISINT_ROWS - 0.5; // Zellmitte relativ zur Kartenmitte
+  for (let r = 0; r < DROWS; r++) {
+    for (let c = 0; c < DCOLS; c++) {
+      const i = r * DCOLS + c;
+      const dirX = (c + 0.5) / DCOLS - 0.5, dirY = (r + 0.5) / DROWS - 0.5; // Zellmitte relativ zur Kartenmitte
       // #: Streuweite an „Zerstäuben" angeglichen — die Fragmente fliegen radial deutlich weiter aus der Kartenmitte,
       // damit sich der Zerfall genauso breit verteilt wie beim Zerstäuben-Finisher (Serie streut zusätzlich weiter).
       const spread = 96 + Math.abs(fjitter(seed * 5 + i * 13, 60 + streakK * 44));
       frags.push({
         i,
         // clip-path inset(top right bottom left) blendet die Karte auf DIESE Zelle aus (Klon zeigt nur sein Stück).
-        clip: `inset(${((r / DISINT_ROWS) * 100).toFixed(2)}% ${(((DISINT_COLS - 1 - c) / DISINT_COLS) * 100).toFixed(2)}% ${(((DISINT_ROWS - 1 - r) / DISINT_ROWS) * 100).toFixed(2)}% ${((c / DISINT_COLS) * 100).toFixed(2)}%)`,
+        clip: `inset(${((r / DROWS) * 100).toFixed(2)}% ${(((DCOLS - 1 - c) / DCOLS) * 100).toFixed(2)}% ${(((DROWS - 1 - r) / DROWS) * 100).toFixed(2)}% ${((c / DCOLS) * 100).toFixed(2)}%)`,
         dx: (dirX * spread + fjitter(seed * 3 + i * 7, 8)).toFixed(1),
         dy: (dirY * spread + Math.abs(fjitter(seed * 2 + i * 11, 8)) + 12).toFixed(1),    // + Schwerkraft (Asche fällt)
         ds: (0.28 + Math.abs(fjitter(seed * 6 + i * 5, 0.22))).toFixed(2),                // Schrumpf-Endgröße 0.28..0.5
