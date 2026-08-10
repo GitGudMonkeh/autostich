@@ -10,7 +10,8 @@ import { useRef, useEffect, useState } from "react";
 import { FactionShell } from "./indicators/panelKit.jsx";
 import { glacierClusters, glacierNeighborFn, glacierFormations, GLACIER_FORM_LABEL, THRESHOLDS, ROLES } from "../game/glacier.js";
 import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
-import { FactionIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Header/Marker = Eis-Icon)
+import glacierIcon from "./assets/glacier.webp"; // #308b: das detaillierte Gletscher-Bild NUR für das wachsende Panel-Hero-Visual behalten
 
 const FROST = "#5ec8f0", FROST_BRIGHT = "#8be6ff";
 const dfmt = (x) => String(x).replace(".", ","); // Dezimal-Komma (1.5 → 1,5)
@@ -48,7 +49,7 @@ function Glacier({ mass }) {
       }}>{bricht ? "Bricht" : "kritisch"}</span>}
       <div style={{ height: 34, display: "grid", placeItems: "end center", width: "100%" }}>
         <div style={{
-          height: "100%", aspectRatio: "1", backgroundImage: `url(${FACTION_ICON_SRC.ice})`, backgroundSize: "contain",
+          height: "100%", aspectRatio: "1", backgroundImage: `url(${glacierIcon})`, backgroundSize: "contain",
           backgroundPosition: "center bottom", backgroundRepeat: "no-repeat", transformOrigin: "bottom center", transform: `scale(${scale})`,
           filter: alert ? `saturate(1.15) brightness(1.18) drop-shadow(0 0 ${bricht ? 12 : 9}px ${FROST})` : "saturate(.85) brightness(.85) drop-shadow(0 2px 4px #0007)",
         }} />
