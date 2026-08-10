@@ -842,203 +842,40 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
   );
 }
 
-/* #fx-floater: kompakter Chip einer Kategorie-Reihe (horizontal wischbar). Kleine Live-Vorschau (MiniFx, GPU-günstig,
-   hochskaliert) + Kurzname + Status-Marker (aktiv = grün, kaufbar = gold). Tippen wählt den Effekt → große Bühne oben. */
+/* #fx-floater/Text-Chips: Signatur-Farbe je Effekt (linker Farbbalken). Meist Deckfarben-Cyan; ein paar Effekte tragen
+   ihre eigene Identitätsfarbe (Feuer/Gold/Blitz/Aurora/Prisma), damit die Reihe auf einen Blick lesbar ist. Key = preview. */
+const FX_TINT = {
+  frameGlow: "#35e0ff", holoSwipe: "#35e0ff", auroraVeil: "#c86bff", glitch: "#35e0ff",
+  none: "#4a4857", hologrid: "#35e0ff", starfield: "#7fb4ff", aurora: "#54e08a",
+  embers: "#ff7a2f", dataRain: "#35e0ff", scanline: "#35e0ff", vignette: "#c86bff",
+  klinge: "#35e0ff", laser: "#35e0ff", lasergrid: "#35e0ff", disperse: "#8fd8ff",
+  overload: "#9b82f0", burnbeam: "#ff7a2f", blackhole: "#35e0ff",
+  gottStandard: "#7fb4ff", fireworks: "#ff5ad6", goldRain: "#f2c14a", prismaWave: "#c86bff",
+};
+
+/* #fx-floater: Text-Chip einer Kategorie-Reihe (horizontal wischbar) — KEIN Grafik-Icon. Linker Signatur-Farbbalken
+   + Name + Status (aktiv = grün · kaufbar = Preis gold · sonst „im Besitz"). Die echte Optik zeigt der Floater oben;
+   der Chip ist ein reiner Wähler. Tippen wählt den Effekt. */
 function FxChip({ fx, selected, owned, active, onPick }) {
+  const tint = FX_TINT[fx.preview] || "#35e0ff";
+  const status = active ? { c: "#54e08a", label: "aktiv", dot: "#54e08a" }
+    : !owned ? { c: "#f2c14a", label: `${globalFxPrice(fx)} DP`, dot: "#f2c14a" }
+    : { c: "#6d6a80", label: "im Besitz", dot: null };
   return (
     <button type="button" onClick={onPick}
-      className="shrink-0 rounded-xl p-1.5 text-center transition-transform active:scale-95"
-      style={{ width: 74, scrollSnapAlign: "start", background: selected ? "#211f2e" : "#14131c",
-        border: `1px solid ${selected ? "#9b82f0" : "#2a2836"}`, boxShadow: selected ? "0 0 0 1px #9b82f0, 0 0 14px #9b82f022" : undefined }}>
-      <div className="relative mx-auto rounded-lg overflow-hidden grid place-items-center" style={{ width: 58, height: 58, background: "#0b0a16", border: "1px solid #23222e" }}>
-        <div style={{ transform: "scale(1.62)", transformOrigin: "center" }}><MiniFx preview={fx.preview} /></div>
-        {active ? <span className="absolute top-1 right-1 rounded-full" style={{ width: 9, height: 9, background: "#54e08a", boxShadow: "0 0 6px #54e08a", border: "1px solid #0b0a16" }} />
-          : !owned ? <span className="absolute top-1 right-1 rounded-full" style={{ width: 9, height: 9, background: "#f2c14a", boxShadow: "0 0 6px #f2c14a99", border: "1px solid #0b0a16" }} /> : null}
-      </div>
-      <span className="block mt-1 text-[9px] font-bold leading-tight" style={{ color: selected ? "#e8e6ff" : "#9a97ab",
-        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: 22 }}>{fx.name}</span>
+      className="shrink-0 relative overflow-hidden rounded-xl text-left transition-transform active:scale-95 flex flex-col justify-center"
+      style={{ minWidth: 106, maxWidth: 138, padding: "9px 11px 9px 13px", scrollSnapAlign: "start",
+        background: selected ? "#211f2e" : "#14131c",
+        border: `1px solid ${selected ? "#9b82f0" : "#2a2836"}`,
+        boxShadow: selected ? "0 0 0 1px #9b82f0, 0 0 14px #9b82f022" : undefined }}>
+      {/* Signatur-Farbbalken links */}
+      <span aria-hidden="true" className="absolute left-0 top-0 bottom-0" style={{ width: 4, background: tint, boxShadow: `0 0 8px ${tint}66` }} />
+      <span className="block text-[11.5px] font-extrabold leading-tight" style={{ color: selected ? "#e8e6ff" : "#e3e1ec",
+        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: 27 }}>{fx.name}</span>
+      <span className="flex items-center gap-1.5 mt-1 text-[9.5px] font-bold" style={{ color: status.c }}>
+        {status.dot && <span className="rounded-full shrink-0" style={{ width: 7, height: 7, background: status.dot, boxShadow: `0 0 6px ${status.dot}` }} />}
+        {status.label}
+      </span>
     </button>
   );
 }
-
-/* Mini-Live-Vorschau (#297): kleiner, dauerhaft loopender Ableger der Effekt-Identität — ersetzt das frühere
-   Emoji-Icon. GPU-günstig (nur transform/opacity/box-shadow/background-position, Klassen "as-mini-" und "as-deck-");
-   ruht automatisch unter der globalen reduced-motion-Regel (index.css). Farbe = Demo-Deckfarbe (bzw. Effektfarbe). */
-function MiniFx({ preview }) {
-  const C = preview === "goldRain" ? "#f2c14a" : DEMO_C;
-  const box = (inner) => (
-    <span className="shrink-0 relative overflow-hidden grid place-items-center rounded-lg"
-      style={{ width: 34, height: 34, border: "1px solid #2a2836", background: "#0b0a16", "--mc": C }}>
-      {inner}
-    </span>
-  );
-  const slash = (top, ang, col, delay) => (
-    <span key={ang} className="as-mini-slash absolute" style={{ left: 0, top, width: "150%", marginLeft: "-25%", height: 2,
-      background: `linear-gradient(90deg,transparent,${col},transparent)`, "--a": ang, animationDelay: delay }} />
-  );
-  const ring = (col, size, l, t, delay) => (
-    <span key={`${col}${delay}`} className="as-mini-ring absolute" style={{ left: l, top: t, width: size, height: size,
-      borderRadius: "50%", border: `1.5px solid ${col}`, animationDelay: delay }} />
-  );
-  switch (preview) {
-    case "frameGlow":
-    case "gottStandard":
-      // Karten-Silhouette mit atmendem Rahmen-Glow (nutzt den vorhandenen Deck-Frameglow-Keyframe).
-      return box(<span className="as-deck-frameglow" style={{ width: 15, height: 21, borderRadius: 3, background: "#141826", "--deck-a1": C }} />);
-    case "holoSwipe":
-      // Karte mit diagonal wanderndem Glanz (Deck-Swipe-Keyframe).
-      return box(
-        <span className="relative overflow-hidden" style={{ width: 15, height: 21, borderRadius: 3, background: "#141826", border: `1px solid ${C}55` }}>
-          <span className="as-deck-swipe absolute" style={{ left: 0, top: "-20%", width: 5, height: "140%", background: `linear-gradient(90deg,transparent,${C},transparent)` }} />
-        </span>
-      );
-    case "auroraVeil":
-      // #309 Weicher Neon-Nebel driftet in zwei Deck-Farben hinter dem Motiv.
-      return box(<span className="as-aurora-drift absolute" style={{ inset: -6, mixBlendMode: "screen", filter: "blur(4px)",
-        backgroundImage: `radial-gradient(58% 44% at 32% 34%, ${C}cc, transparent 70%), radial-gradient(54% 40% at 70% 66%, #ff5ad6bb, transparent 70%)` }} />);
-    case "glitch":
-      // #309 Zahl mit chromatischem RGB-Zucken.
-      return box(<span className="as-glitch-num" style={{ color: C, fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "1.35rem", lineHeight: 1,
-        WebkitTextFillColor: "transparent", WebkitTextStroke: `1.4px ${C}`, textShadow: `0 0 5px ${C}`, "--num-shadow": `0 0 5px ${C}` }}>9</span>);
-    case "hologrid":
-      // Perspektiv-Gitter + heller Puls, der nach hinten läuft.
-      return box(
-        <>
-          <span className="as-mini-grid absolute inset-0" style={{ backgroundImage: `linear-gradient(${C}40 1px,transparent 1px),linear-gradient(90deg,${C}40 1px,transparent 1px)`, backgroundSize: "8px 8px" }} />
-          <span className="as-mini-rise absolute" style={{ left: "8%", right: "8%", height: 2, background: C, boxShadow: `0 0 6px ${C}` }} />
-        </>
-      );
-    case "none":
-      // „Kein Feld-Effekt": leere Kachel mit dezentem Aus-Zeichen.
-      return box(<span style={{ color: "#5a5866", fontSize: 12, fontWeight: 800 }}>∅</span>);
-    case "starfield":
-      // Sternpunkte + durchziehende Sternschnuppe.
-      return box(
-        <>
-          <span className="absolute inset-0" style={{ backgroundImage: `radial-gradient(1px 1px at 20% 30%, ${C}, transparent 60%), radial-gradient(1px 1px at 70% 55%, ${C}cc, transparent 60%), radial-gradient(1px 1px at 45% 78%, ${C}, transparent 60%), radial-gradient(1px 1px at 85% 25%, ${C}aa, transparent 60%)`, opacity: 0.75 }} />
-          {slash("28%", "18deg", C, "0s")}
-        </>
-      );
-    case "aurora":
-      // Weicher, driftender Polarlicht-Schleier.
-      return box(<span className="as-field-aurora-a absolute" style={{ inset: -6, background: `radial-gradient(60% 50% at 40% 45%, ${C}77, transparent 70%)`, filter: "blur(4px)" }} />);
-    case "embers":
-      // Aufsteigende Glutpartikel.
-      return box(
-        <>
-          {[["30%", "0s"], ["55%", "-.5s"], ["72%", "-.9s"]].map(([l, d]) => (
-            <span key={l} className="as-mini-rise absolute" style={{ left: l, width: 3, height: 3, borderRadius: "50%", background: C, boxShadow: `0 0 5px ${C}`, animationDelay: d }} />
-          ))}
-        </>
-      );
-    case "dataRain":
-      // Feiner, fallender Datenregen (Deckfarbe).
-      return box(
-        <>
-          {[["25%", "0s"], ["50%", "-.4s"], ["75%", "-.8s"]].map(([l, d]) => (
-            <span key={l} className="as-mini-fall absolute" style={{ left: l, top: 0, width: 2, height: 8, background: `linear-gradient(${C},transparent)`, boxShadow: `0 0 4px ${C}`, animationDelay: d }} />
-          ))}
-        </>
-      );
-    case "scanline":
-      // CRT-Zeilen + wandernde helle Zeile.
-      return box(
-        <>
-          <span className="absolute inset-0" style={{ backgroundImage: `repeating-linear-gradient(0deg, ${C}33 0 1px, transparent 1px 3px)`, opacity: 0.6 }} />
-          <span className="as-mini-fall absolute left-0 right-0" style={{ top: 0, height: 2, background: `linear-gradient(90deg,transparent,${C},transparent)`, boxShadow: `0 0 5px ${C}` }} />
-        </>
-      );
-    case "vignette":
-      // Atmender Rand-Glow (Deckfarbe).
-      return box(<span className="as-field-vignette absolute inset-0" style={{ background: `radial-gradient(120% 120% at 50% 50%, transparent 45%, ${C}55 100%)` }} />);
-    case "klinge":
-      return box(slash("50%", "-32deg", C, "0s"));
-    case "laser":
-      // Ein Laser aus wechselnder Richtung übers Feld.
-      return box(slash("50%", "-28deg", C, "0s"));
-    case "lasergrid":
-      // Kartensilhouette mit pulsierendem Neon-Raster (3×3) — deutet das Dicing an.
-      return box(<span className="as-mini-core absolute" style={{ inset: 6, borderRadius: 2, "--mc": C,
-        backgroundImage: `linear-gradient(${C}66 1px,transparent 1px),linear-gradient(90deg,${C}66 1px,transparent 1px)`, backgroundSize: "7px 7px" }} />);
-    case "burnbeam":
-      // Dünner Strahl HÄLT von oben auf die Mitte (flackert) und brennt ein glühendes Ember-Loch; Funken springen heraus — wie der echte Brennstrahl.
-      return box(
-        <>
-          {/* Persistenter, flackernder Strahl von der Oberkante bis zur Mitte */}
-          <span className="as-mini-hold absolute" style={{ left: "50%", top: 0, width: 2.5, height: "54%", marginLeft: -1.25, borderRadius: 2,
-            background: "linear-gradient(#ffffff,#ffd59a 42%,#ff7a2f)", boxShadow: "0 0 6px #ff7a2f, 0 0 3px #ffffff" }} />
-          {/* Glühendes Ember-Loch in der exakten Mitte */}
-          <span className="as-mini-core absolute" style={{ left: "50%", top: "52%", width: 10, height: 10, marginLeft: -5, marginTop: -5,
-            borderRadius: "50%", background: "radial-gradient(circle,#05050a 42%,#ff7a2f 72%,transparent 84%)", "--mc": "#ff7a2f" }} />
-          {/* Funken springen aus dem Loch nach oben */}
-          {[["42%", "-.1s"], ["50%", "-.55s"], ["58%", "-.9s"]].map(([l, d]) => (
-            <span key={l + d} className="as-mini-ember absolute" style={{ left: l, width: 2.5, height: 2.5, borderRadius: "50%",
-              background: "#ffd59a", boxShadow: "0 0 4px #ff7a2f", animationDelay: d }} />
-          ))}
-        </>
-      );
-    case "blackhole":
-      // Dunkle Scheibe mit atmendem Rand-Glow (kein nach außen laufender Puls) + zwei Orbs auf Umlaufbahn.
-      return box(
-        <span className="relative grid place-items-center" style={{ width: "100%", height: "100%" }}>
-          <span className="as-mini-core absolute" style={{ left: "50%", top: "50%", width: 19, height: 19, borderRadius: "50%",
-            background: "radial-gradient(circle,#04040a 55%,transparent 74%)", transform: "translate(-50%,-50%)", "--mc": C }} />
-          <span className="as-mini-orbit absolute" style={{ left: "50%", top: "50%", width: 24, height: 24, marginLeft: -12, marginTop: -12 }}>
-            <span className="absolute" style={{ left: "50%", top: 0, width: 3, height: 3, borderRadius: "50%", background: C, boxShadow: `0 0 5px ${C}`, transform: "translateX(-50%)" }} />
-            <span className="absolute" style={{ left: "50%", bottom: 0, width: 2, height: 2, borderRadius: "50%", background: "#ffffff", transform: "translateX(-50%)" }} />
-          </span>
-        </span>
-      );
-    case "fireworks":
-      return box(<>{ring(C, 16, "44%", "46%", "0s")}{ring("#f2c14a", 13, "60%", "58%", "-.8s")}</>);
-    case "prismaWave":
-      // Konzentrische Prisma-Ringe.
-      return box(<>{ring("#26c6e6", 22, "50%", "50%", "0s")}{ring("#9b82f0", 22, "50%", "50%", "-.55s")}{ring("#f2a83a", 22, "50%", "50%", "-1.1s")}</>);
-    case "goldRain":
-      // Fallende Goldstreifen.
-      return box(
-        <>
-          {[["20%", "0s"], ["44%", "-.5s"], ["66%", "-.9s"], ["84%", "-1.3s"]].map(([l, d]) => (
-            <span key={l} className="as-mini-fall absolute" style={{ left: l, top: 0, width: 2, height: 11, borderRadius: 2, background: "linear-gradient(#f2c14a,transparent)", boxShadow: "0 0 4px #f2c14a", animationDelay: d }} />
-          ))}
-        </>
-      );
-    case "overload":
-      // Blitz zuckt von oben in die Mitte ein (Flash + Gabel + heller Einschlag), kein Herabfallen — wie der echte Überladungs-Finisher.
-      return box(
-        <>
-          {/* Haupt-Blitz von der Oberkante bis zur Mitte */}
-          <span className="as-mini-strike absolute" style={{ left: "48%", top: "3%", width: 6, height: 20, marginLeft: -3,
-            background: `linear-gradient(#ffffff,${C})`, boxShadow: `0 0 6px ${C}`,
-            clipPath: "polygon(46% 0,64% 0,50% 40%,70% 40%,34% 100%,52% 52%,32% 52%)" }} />
-          {/* Gabel (kleiner, seitlich versetzt, minimal später) */}
-          <span className="as-mini-strike absolute" style={{ left: "62%", top: "30%", width: 4, height: 12, marginLeft: -2,
-            background: `linear-gradient(#ffffff,${C})`, boxShadow: `0 0 5px ${C}`, animationDelay: "-.05s",
-            clipPath: "polygon(44% 0,66% 0,38% 100%,54% 44%,32% 44%)" }} />
-          {/* Heller Einschlag-Funke am Auftreffpunkt */}
-          <span className="as-mini-strike absolute" style={{ left: "50%", top: "60%", width: 10, height: 10, marginLeft: -5, marginTop: -5,
-            borderRadius: "50%", background: `radial-gradient(circle,#ffffff,${C} 55%,transparent 78%)`, animationDelay: "-.02s" }} />
-        </>
-      );
-    case "disperse": {
-      // Karte löst sich auf → Partikelgitter stiebt nach außen/oben & fadet — wie der echte Zerstäuben-Finisher (kein Ring/Explosions-Look).
-      const scatter = [[-9, -7], [9, -8], [-11, -1], [11, -2], [-6, -12], [6, -11], [0, -14], [-3, 3], [4, 4]];
-      return box(
-        <>
-          {/* Karten-Silhouette, die sich auflöst */}
-          <span className="as-mini-dissolve absolute" style={{ left: "50%", top: "50%", width: 14, height: 19, marginLeft: -7, marginTop: -9.5,
-            borderRadius: 3, background: "#141826", border: `1px solid ${C}66` }} />
-          {/* Partikel stieben nach außen/oben und faden */}
-          {scatter.map(([dx, dy], i) => (
-            <span key={i} className="as-mini-scatter absolute" style={{ left: "50%", top: "50%", width: 2.5, height: 2.5,
-              borderRadius: "50%", background: i % 3 === 0 ? "#ffffff" : C, boxShadow: `0 0 4px ${C}`,
-              "--dx": `${dx}px`, "--dy": `${dy}px`, animationDelay: `${-(i % 5) * 0.14}s` }} />
-          ))}
-        </>
-      );
-    }
-    default:
-      return box(<span className="as-mini-core" style={{ width: 8, height: 8, borderRadius: "50%", background: C, "--mc": C }} />);
-  }
-}
-
