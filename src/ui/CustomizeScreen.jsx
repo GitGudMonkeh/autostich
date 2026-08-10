@@ -818,13 +818,15 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
                     owned={fx.standard || fx.alwaysOwned || globalFxOwned(p, fx)}
                     active={isActive(g, fx)}
                     onPick={() => setSel({ group: g.key, key: fx.key })}
-                    onUnequip={() => {
-                      // Doppelklick rüstet einen aktiven Effekt aus. Standard-Effekte sind immer aktiv → nicht abwählbar.
-                      if (fx.standard || !isActive(g, fx)) return;
-                      if (g.mode === "finisher") onChoose(finisherFlags("none"));
-                      else if (g.mode === "field") onChoose(fieldFxFlags("none"));
-                      else if (g.mode === "gott") onChoose(gottFlags("gottStandard"));
-                      else onChoose({ [fx.option]: false });
+                    onToggle={() => {
+                      // Doppeltippen schaltet um: aktiv → abwählen, im Besitz & inaktiv → auswählen/aktivieren.
+                      if (fx.standard) return;                                        // Standard ist immer aktiv
+                      const on = isActive(g, fx);
+                      if (!on && !(fx.alwaysOwned || globalFxOwned(p, fx))) return;   // nicht im Besitz → erst kaufen (Floater)
+                      if (g.mode === "finisher") onChoose(finisherFlags(on ? "none" : fx.key));
+                      else if (g.mode === "field") onChoose(fieldFxFlags(on ? "none" : fx.key));
+                      else if (g.mode === "gott") onChoose(gottFlags(on ? "gottStandard" : fx.key));
+                      else onChoose({ [fx.option]: !on });
                     }} />
                 ))}
               </div>
@@ -834,7 +836,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
       </div>
 
       <p className="text-[11px] mt-2 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
-        Effekte sind <b>global</b> — einmal gekauft, für alle Packs. Tippe einen Effekt → er läuft oben groß; dort <b>kaufen</b> bzw. <b>an/aus</b> (Finisher &amp; Ambiente: auswählen). <b>Doppeltippen</b> auf einen aktiven Effekt schaltet ihn direkt aus.
+        Effekte sind <b>global</b> — einmal gekauft, für alle Packs. Tippe einen Effekt → er läuft oben groß; dort <b>kaufen</b> bzw. <b>an/aus</b> (Finisher &amp; Ambiente: auswählen). <b>Doppeltippen</b> schaltet einen Effekt direkt um (auswählen bzw. abwählen).
       </p>
     </>
   );
@@ -907,22 +909,22 @@ const FX_TINT = {
 /* #fx-floater: Text-Chip einer Kategorie-Reihe (horizontal wischbar) — KEIN Grafik-Icon. Linker Signatur-Farbbalken
    + Name + Status (aktiv = grün · kaufbar = Preis gold · sonst „im Besitz"). Die echte Optik zeigt der Floater oben;
    der Chip ist ein reiner Wähler. Tippen wählt den Effekt. */
-function FxChip({ fx, selected, owned, active, onPick, onUnequip }) {
+function FxChip({ fx, selected, owned, active, onPick, onToggle }) {
   const tint = FX_TINT[fx.preview] || "#35e0ff";
   const status = active ? { c: "#54e08a", label: "aktiv", dot: "#54e08a" }
     : !owned ? { c: "#f2c14a", label: `${globalFxPrice(fx)} DP`, dot: "#f2c14a" }
     : { c: "#6d6a80", label: "im Besitz", dot: null };
-  // #: Doppel-TIPP/-Klick rüstet einen aktiven Effekt aus. onDoubleClick (dblclick) feuert auf Touch NICHT → eigene
-  // Zeitmessung: zwei Klicks/Tipps innerhalb 320 ms = Doppel (funktioniert auf Maus UND Handy). Einzelklick wählt (onPick).
+  // #: Doppel-TIPP/-Klick SCHALTET UM (aktiv→abwählen · im Besitz→auswählen). onDoubleClick (dblclick) feuert auf Touch
+  // NICHT → eigene Zeitmessung: zwei Klicks/Tipps innerhalb 320 ms = Doppel (Maus UND Handy). Einzelklick wählt (onPick).
   const lastTap = useRef(0);
   const handleTap = () => {
     onPick();
     const now = Date.now();
-    if (now - lastTap.current < 320) { lastTap.current = 0; onUnequip && onUnequip(); }
+    if (now - lastTap.current < 320) { lastTap.current = 0; onToggle && onToggle(); }
     else lastTap.current = now;
   };
   return (
-    <button type="button" onClick={handleTap} title={active ? "Doppeltippen: abwählen" : undefined}
+    <button type="button" onClick={handleTap} title={active ? "Doppeltippen: abwählen" : owned ? "Doppeltippen: auswählen" : undefined}
       className="shrink-0 relative overflow-hidden rounded-xl text-left transition-transform active:scale-95 flex flex-col justify-center"
       style={{ minWidth: 106, maxWidth: 138, padding: "9px 11px 9px 13px", scrollSnapAlign: "start",
         background: selected ? "#211f2e" : "#14131c",
