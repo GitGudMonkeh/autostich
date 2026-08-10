@@ -18,6 +18,9 @@ import { StatusRail } from "./ui/StatusRail.jsx";
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
 import { Battlefield, OPP_SKIN_URLS } from "./ui/Battlefield.jsx";
+import { useReducedFx } from "./ui/useReducedFx.js"; // Perf: löst reducedFx auf → schaltet teuren Overlay-Blur global ab
+import { PerfOverlay } from "./ui/PerfOverlay.jsx"; // Perf-Recorder-HUD (nur Preview-Build)
+import { perfMark, getReport, formatReport } from "./ui/perfRecorder.js"; // Perf-Recorder (No-op außerhalb Preview)
 import { GlossaryPanel } from "./ui/Glossary.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
@@ -85,6 +88,15 @@ export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
   const [paused, setPaused] = useState(false);
   const [options, setOptions] = useState(() => loadOptions());   // Optionen (#41): u. a. CRT-Skin
+  // Perf: reducedFx auflösen (Mobile/schwaches Gerät/System-Wunsch) und als data-Attribut ans Root hängen.
+  // Eine zentrale CSS-Regel (index.css) schaltet damit den teuren Overlay-Blur (backdrop-filter) ab —
+  // der wird hinter Gameplay-Overlays sonst pro Frame neu berechnet (laufende Puls-/Glow-Animationen).
+  // Desktop-Look bleibt unverändert; nur dort greift die Reduktion, wo sie Stutter spart.
+  const reducedFxOn = useReducedFx(options.reducedFx);
+  useEffect(() => {
+    const el = document.documentElement;
+    if (reducedFxOn) el.dataset.reducedFx = "1"; else delete el.dataset.reducedFx;
+  }, [reducedFxOn]);
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
   const [showStats, setShowStats] = useState(false);              // #172 FB-10: Statistik-Hub (nur im Menü)
   const [showCustomize, setShowCustomize] = useState(false);      // #190: Kollektion (Deck/Battlefield, nur im Menü)
@@ -453,6 +465,24 @@ export function Autostich() {
   const activeBfId   = resolveSkinId(BATTLEFIELD_DEFS, options.battlefieldId, profile);
   const deckSkin = deckAssets(activeDeckId);
   const bfSkin   = battlefieldAssets(activeBfId);
+
+  // Perf-Recorder: Spiel-Events markieren, damit Frame-Ruckler dem zugeordnet werden, WAS gerade
+  // passiert (perfMark ist außerhalb des Preview-Builds ein billiger No-op). Deck-Wechsel, laufender
+  // Stich-Takt, Overlays (Blur-Verdacht), Phasen/Durchläufe.
+  useEffect(() => { perfMark("phase:" + state.phase, { phase: state.phase }); }, [state.phase]);
+  useEffect(() => { if (state.trickNo) perfMark("trick", { trick: state.trickNo }); }, [state.trickNo]);
+  useEffect(() => { perfMark("cycle", { cycle: state.cycle }); }, [state.cycle]);
+  useEffect(() => { perfMark("deck-switch"); }, [deckSkin.front, deckSkin.back]);
+  useEffect(() => { if (showOptions) perfMark("overlay:options"); }, [showOptions]);
+  useEffect(() => { if (showChronik) perfMark("overlay:chronik"); }, [showChronik]);
+  useEffect(() => { if (glossaryOpen) perfMark("overlay:glossar"); }, [glossaryOpen]);
+  // Auto-Dump bei Game-Over: jeder Lauf hinterlässt eine Perf-Bilanz in der Konsole (nur Preview).
+  useEffect(() => {
+    if (import.meta.env.VITE_PREVIEW === "1" && state.phase === "gameover") {
+      // eslint-disable-next-line no-console
+      console.log("%c" + formatReport(getReport()), "font-family:monospace");
+    }
+  }, [state.phase]);
   // #deckshop: Hauptfarbe (Hologrid-Gitter/Frame-Glow) aus dem aktiven Deck-Pack ableiten.
   const activePack = THEMES.find((t) => t.deckId === activeDeckId) || null;
   const deckFx = {
@@ -658,6 +688,8 @@ export function Autostich() {
           {(import.meta.env.VITE_ENV || "preview").toUpperCase()}
         </div>
       )}
+      {/* Perf-Recorder-HUD (FPS/p95/Jank + Report) — nur im Preview-Build, nie im echten Spiel. */}
+      {import.meta.env.VITE_PREVIEW === "1" && <PerfOverlay />}
       {/* Ambient-Partikel — nur unter Skin und nur auf dem Hauptscreen (Menü): dort gibt es
           offene Fläche, sodass sie ohne durchscheinende Panels sichtbar sind. Im Run bleiben
           die Panels deckend. (reduced-motion-gated in der Komponente.) */}

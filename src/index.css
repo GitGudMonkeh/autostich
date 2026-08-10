@@ -692,3 +692,14 @@ button { font-family: inherit; }
 .as-frost-pulse   { animation: as-frost-pulse .9s ease-out; }
 .as-glacier-shiver { animation: as-glacier-shiver 2.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .as-glacier-gain, .as-frost-pulse, .as-glacier-shiver { animation: none !important; } }
+
+/* Perf: Overlay-Blur bei reduzierten Effekten global abschalten. Die Modal-Backdrops setzen den
+   Blur inline (style={{ backdropFilter: "blur(Npx)" }}); hinter Gameplay-Overlays laufen die
+   infinite-Puls-/Glow-Animationen weiter → der backdrop-filter wird pro Frame neu berechnet (teuer,
+   v. a. Mobile). Die Backdrops sind ohnehin 60–95 % deckend, der Blur also kaum sichtbar → gefahrlos
+   entfernbar. `!important` überstimmt die Inline-Styles; der Attribut-Selektor greift alle Backdrops
+   ohne jede Modal-Komponente einzeln anzufassen. `data-reduced-fx` wird in App aus useReducedFx gesetzt. */
+:root[data-reduced-fx="1"] [style*="backdrop-filter"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
