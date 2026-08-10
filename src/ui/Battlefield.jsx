@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useRef, memo, lazy, Suspense } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST } from "../game/constants.js";
@@ -8,6 +8,9 @@ import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useBlackholeSfx } from "./finisherSfx.js"; // #298: Schwarzes-Loch-Ton-Bett (leiser Start → Anschwellen → schneller Kollaps), geteilt mit der Shop-Vorschau
 import { useFxLevel } from "./useReducedFx.js";
+// Pixi-Umbau Phase 0/1: koexistierende GPU-Bühne. LAZY geladen → Pixi (~200 KB) landet in einem eigenen Chunk,
+// der NUR im Preview/Dev geladen wird (der Mount ist env-gegatet). Produktion (main) zieht Pixi nie in den Bundle.
+const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 import { startPrunk } from "./prunkFx.js";
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
@@ -1796,6 +1799,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {/* Battlefield = „Bühne" des Spielscreens: die gemeinsame Tri-Color-Haarlinie (Hub-Signet). Der dynamische
           Sieg-/Krit-Schein liegt weiter über outerGlow — die Farbe kommt vom Spielausgang, nicht vom Skin. */}
       <PhaseHairline />
+      {/* Pixi-Umbau Phase 0/1: GPU-Bühne als z-2-Overlay (über BF-Bild z-0 + Ambiente z-1, unter Karten z-10).
+          Transparent + pointer-events:none → ändert (noch) nichts am Look; nur Infrastruktur. Der Ticker pausiert im
+          Hintergrund-Tab (visibilitychange in PixiStage). Nur Preview/Test- oder Dev-Build — Produktion bleibt identisch. */}
+      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
+        <Suspense fallback={null}><PixiStage className="z-[2]" debug /></Suspense>
+      )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
           bei z-0 → überdeckt die opake Panelfläche, bleibt aber HINTER Feuer-Glut/Frost/Blitz (spätere z-0/1/2)
           und den Karten (z-10). Dunkler Scrim hält Karten/Text lesbar. Ohne Skin (null) → nichts, Standard bleibt. */}

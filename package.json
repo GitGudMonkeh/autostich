@@ -17,6 +17,7 @@
     "compress:music": "node scripts/compress-music.mjs"
   },
   "dependencies": {
+    "pixi.js": "^8.19.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

@@ -17,7 +17,13 @@ export default defineConfig(({ command }) => ({
         // selten → besser cachebar; die reine Spiel-Logik (game/) getrennt von der UI. Reduziert den größten Chunk
         // unter die Vite-Warnschwelle, ohne Lazy-Loading (kein Suspense-Flackern beim Overlay-Öffnen).
         manualChunks(id) {
-          if (id.includes("node_modules")) return "vendor";
+          if (id.includes("node_modules")) {
+            // Pixi (~570 KB) in einen EIGENEN Chunk. Er wird nur über den dynamischen Import der PixiStage erreicht
+            // (env-gegatet auf Preview/Dev) → bleibt async und lädt NIE auf main. `vendor` (React & Co.) bleibt schlank
+            // und eager cachebar. Sobald ein Pixi-Effekt bewusst live geht, wird der Chunk regulär mitgeladen.
+            if (id.includes("pixi")) return "pixi";
+            return "vendor";
+          }
           if (id.includes("/src/game/")) return "game";
         },
       },
