@@ -423,7 +423,7 @@ const DISINT_COLS = 8, DISINT_ROWS = 11;
 // #: An „Zerstäuben" angeglichen (Wunsch): die Disintegration soll GENAUSO LANGE halten wie der Zerstäuben-Finisher —
 // vorher endete sie (v. a. im Turbo) viel zu früh. Höherer Boden + größerer Budget-Anteil → die Fragmente verweilen
 // deutlich länger; die Überlappung in den nächsten Stich ist bewusst gewollt (der Ghost lebt entsprechend, s. ghostLife).
-const BURN_DISINT_MIN = 900;
+const BURN_DISINT_MIN = 1050;
 function burnDisintTiming(flipMs, delay) {
   const budget = Math.max(200, flipMs - 30);
   const body = Math.max(150, budget - delay);
@@ -433,8 +433,8 @@ function burnDisintTiming(flipMs, delay) {
 }
 // #: Zerstäubungs-Dauer mit sichtbarem Boden (bei Max nicht zu schnell) — gemeinsam von DisperseFx (Animation) und
 // dem Parent (ghostLife) genutzt, damit der Ghost genau so lange lebt, wie der Zerfall sichtbar ist.
-const DISPERSE_MIN = 540;
-function disperseDur(flipMs) { return Math.max(DISPERSE_MIN, Math.min((flipMs || 900) - 30, 820)); }
+const DISPERSE_MIN = 660;
+function disperseDur(flipMs) { return Math.max(DISPERSE_MIN, Math.min((flipMs || 900) - 30, 960)); }
 export function BurnBeamFx({ cardEl, color, flipMs = 900, seed, delay = 0, intensity = 0, scale = 1, streak = 0 }) {
   const HOT = "#ff7a2f";                                  // Hitze-Akzent (Ember-Orange)
   const streakK = clamp(streak / 12, 0, 1);               // 0..1: Serien-Eskalation
