@@ -2072,16 +2072,21 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         {/* #105/#169 FB-7 / #FB: Gestufte Groß-Score-Ansage — dominiert Peak-Momente: oberste Ebene (z-30, über allen
             Floats), zentriert mit Spur-Versatz (BIG_LANES, gegen Überlappung), Größe je Stufe (clamp deckelt mobil gegen
             Überlauf), Legendär-Gold. Aus dem entkoppelten Pool → volle Standzeit auch bei 4×/MAX. */}
-        {bigFloats.map((b) => (
-          b.tier.epic ? (
+        {bigFloats.map((b) => {
+          // #perf-B: Groß-Ansage-Glow auf Mobile (lite) enger ziehen. Die 32/34px-Blur-Radien sind teuer (Blur-
+          // Repaint über die 1,9-s-Animation) UND divergieren stark: WebKit (iPhone) malt sie deutlich breiter als
+          // Blink (Android) → auf dem iPhone „überzogen". Kleiner = günstiger + beide Geräte näher beieinander.
+          // Desktop/voll behält den vollen, dramatischen Bloom.
+          const gBig = lite ? 16 : 32, gMid = lite ? 8 : 12;
+          return b.tier.epic ? (
             /* GOTTGLEICH — Sonder-Ansage: als SVG skaliert das Wort exakt auf ~70 % der Panelbreite (textLength),
                echt mittig (H+V, kein Spur-/Jitter-Versatz), in Weiß mit weißem Bloom → hebt sich klar von den
                goldenen Stufen darunter ab. Gleiche Standzeit/Animation wie die anderen Groß-Ansagen. */
             <svg key={b.id} aria-hidden="true" className="pointer-events-none absolute" viewBox="0 0 1000 210" preserveAspectRatio="xMidYMid meet"
               style={{ left: "50%", top: "50%", width: "70%", zIndex: 31,
                        filter: b.tier.color
-                         ? `drop-shadow(0 0 32px ${b.tier.color}) drop-shadow(0 0 12px ${b.tier.color}) drop-shadow(0 3px 8px rgba(0,0,0,0.55))`
-                         : "drop-shadow(0 0 32px rgba(255,255,255,0.9)) drop-shadow(0 0 12px rgba(255,255,255,0.7)) drop-shadow(0 3px 8px rgba(0,0,0,0.55))",
+                         ? `drop-shadow(0 0 ${gBig}px ${b.tier.color}) drop-shadow(0 0 ${gMid}px ${b.tier.color}) drop-shadow(0 3px 8px rgba(0,0,0,0.55))`
+                         : `drop-shadow(0 0 ${gBig}px rgba(255,255,255,0.9)) drop-shadow(0 0 ${gMid}px rgba(255,255,255,0.7)) drop-shadow(0 3px 8px rgba(0,0,0,0.55))`,
                        transform: reduced ? "translate(-50%, -50%)" : undefined,
                        animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
               <text x="500" y="170" textAnchor="middle" textLength="984" lengthAdjust="spacingAndGlyphs"
@@ -2093,13 +2098,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           <div key={b.id} className="pointer-events-none absolute font-extrabold whitespace-nowrap"
             style={{ left: `calc(50% + ${fjitter(b.seed * 3 + 2, 12)}px)`, top: `calc(50% + ${b.lane}px)`, zIndex: 30,
                      textTransform: "uppercase", // Q2/Loc: Groß-Score-Ansage-Caps zentral über CSS (Übersetzer liefert STARK/BRUTAL/… normal geschrieben)
-                     fontSize: `clamp(40px, 10vw, ${b.tier.size}px)`, color: "#d4a63a", textShadow: "0 0 34px #d4a63add, 0 0 12px #d4a63a, 0 2px 4px #0009",
+                     fontSize: `clamp(40px, 10vw, ${b.tier.size}px)`, color: "#d4a63a", textShadow: `0 0 ${gBig}px #d4a63add, 0 0 ${gMid}px #d4a63a, 0 2px 4px #0009`,
                      transform: reduced ? "translate(-50%, -50%)" : undefined,
                      animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
             {b.tier.text}
           </div>
-          )
-        ))}
+          );
+        })}
       </div>
 
       <div className="relative z-10 h-8 mt-4 flex items-center justify-center">
