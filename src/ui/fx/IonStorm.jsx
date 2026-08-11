@@ -16,33 +16,33 @@ import { Application, Graphics } from "pixi.js";
 
 // ── TUNE ─────────────────────────────────────────────────────────────────────
 const TUNE = {
-  N_PERIM: 132,        // Perimeter-Stützpunkte (Auflösung des Rahmens)
-  INSET: 2,            // Rahmen leicht in die Karte gezogen (px), Jitter schlägt nach außen aus
-  CORNER: 12,          // Eck-Radius der Karte (rounded-xl ≈ 12px)
+  N_PERIM: 56,         // Perimeter-Stützpunkte (Auflösung des Rahmens)
+  INSET: 0,            // Rahmen leicht in die Karte gezogen (px), Jitter schlägt nach außen aus
+  CORNER: 13,          // Eck-Radius der Karte (rounded-xl ≈ 12px)
 
   RUNNERS: 3,          // wandernde Blitz-Bögen
-  RUN_SPAN: 0.17,      // Anteil des Perimeters je Runner
-  RUN_SPEED: 0.30,     // Perimeter-Umläufe pro Sekunde (Wander-Tempo)
-  RUN_SUB: 6,          // Teilstücke je Runner (für Kopf/Schwanz-Ausblendung)
+  RUN_SPAN: 0.4,       // Anteil des Perimeters je Runner
+  RUN_SPEED: 0,        // Perimeter-Umläufe pro Sekunde (Wander-Tempo; 0 = stehende Bögen)
+  RUN_SUB: 1,          // Teilstücke je Runner (für Kopf/Schwanz-Ausblendung)
 
-  JIT_AMP: 5.0,        // Zacken-Amplitude senkrecht zur Kante (px)
-  TAN_JIT: 2.0,        // Zacken entlang der Kante (px)
-  RESEED_MS: 62,       // Neuwürfel-Takt der Zacken (Knister-Frequenz)
+  JIT_AMP: 5.5,        // Zacken-Amplitude senkrecht zur Kante (px)
+  TAN_JIT: 3,          // Zacken entlang der Kante (px)
+  RESEED_MS: 50,       // Neuwürfel-Takt der Zacken (Knister-Frequenz)
 
-  HUM_AMP: 3.0,        // Amplitude des Dauer-Knisterns (ganze Kontur)
-  HUM_ALPHA: 0.16,     // Grund-Helligkeit des Knisterns
+  HUM_AMP: 0.5,        // Amplitude des Dauer-Knisterns (ganze Kontur)
+  HUM_ALPHA: 0.19,     // Grund-Helligkeit des Knisterns
   HUM_RESEED_MS: 120,
 
-  ARC_MIN_MS: 620,     // Cross-Arc: min/max Pause zwischen zwei Bögen
-  ARC_MAX_MS: 1500,
-  ARC_LIFE_MS: 175,    // Lebensdauer eines Cross-Arcs
+  ARC_MIN_MS: 380,     // Cross-Arc: min/max Pause zwischen zwei Bögen
+  ARC_MAX_MS: 1280,
+  ARC_LIFE_MS: 210,    // Lebensdauer eines Cross-Arcs
   ARC_SEGS: 15,        // Auflösung des Quer-Bogens
   ARC_AMP: 20,         // seitliche Auslenkung des Quer-Bogens (px)
   ARC_FLICK_MS: 42,    // Neuwürfel-Takt während der Arc-Lebensdauer (2–4 Flacker)
-  FORK_CHANCE: 0.4,    // Chance auf eine Gabelung
+  FORK_CHANCE: 1,      // Chance auf eine Gabelung
 
   // Strichbreiten (CSS-px; autoDensity skaliert auf DPR).
-  W_GLOW: 4.6, W_MID: 2.3, W_CORE: 1.0,
+  W_GLOW: 9.1, W_MID: 0.5, W_CORE: 0.6,
 };
 
 // Deterministischer 0..1-Hash und -1..1-Signjitter (wie fjitter der Render-Schicht, ohne Import).
