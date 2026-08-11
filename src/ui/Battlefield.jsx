@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo, lazy, Suspense } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
-import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS } from "../game/constants.js";
+import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
@@ -15,6 +15,11 @@ const IonStorm = lazy(() => import("./fx/IonStorm.jsx").then((m) => ({ default: 
 // Dev-Sicht: ?blitzframe=1 erzwingt den Ionensturm-Rahmen auf JEDER eigenen Karte (zum Designen; nur Preview/Dev).
 const BLITZ_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { return new URLSearchParams(window.location.search).get("blitzframe") === "1"; } catch { return false; } })();
+// Archetyp-Karteneffekt „Feuer" (Brand-Hitze am DECK-Stapel) — eigener Pixi-Layer HINTER den Karten, lazy wie oben.
+const FireBurn = lazy(() => import("./fx/FireBurn.jsx").then((m) => ({ default: m.FireBurn })));
+// Dev-Sicht: ?fireheat=<0..1> erzwingt eine feste Feuer-Hitze am eigenen Deck (zum Designen; nur Preview/Dev).
+const FIRE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
+  (() => { try { const v = new URLSearchParams(window.location.search).get("fireheat"); return v == null ? null : Math.max(0, Math.min(1, parseFloat(v) || 0)); } catch { return null; } })();
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
@@ -249,13 +254,14 @@ function laserPieces(lines, W, H) {
 /* Eine Seite: gespielte Karte MIT Nachziehstapel dahinter (ragt nur nach außen).
    `overlay` = entkoppelter Layer im Karten-Slot (z. B. Niederlage-Ghosts), der NICHT pro Stich remountet
    (steht nach `children`, also im selben `relative`-Slot, aber außerhalb des trickNo-gekeyten Karten-Wrappers). */
-function Side({ label, remaining, position = 0, deckLen = 0, dealFrom, children, overlay = null, backImage = null }) {
+function Side({ label, remaining, position = 0, deckLen = 0, dealFrom, children, overlay = null, backImage = null, slotRef = null }) {
   const dir = dealFrom === "left" ? -1 : 1;
   const behind = Math.min(3, Math.max(0, remaining - 1));
   return (
     <div className="flex flex-col items-center gap-2 shrink-0">
       <div className="text-[11px] uppercase tracking-wide opacity-55">{label}</div>
-      <div className="relative" style={{ width: 104, height: 144 }}>
+      {/* #feuer: slotRef misst die DECK-Box (Stapel + Kartenslot) → Mount-Ziel des Brand-Effekts (FireBurn). */}
+      <div ref={slotRef} className="relative" style={{ width: 104, height: 144 }}>
         {Array.from({ length: behind }, (_, i) => (
           <div key={i} className="absolute top-0" style={{ left: dir * (i + 1) * 3 }}>
             <CardBack label="" image={backImage} />
@@ -689,6 +695,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
   const playerCardRef = useRef(null); // #blitz: Box der eigenen Karte für den Ionensturm-Rahmen (IonStorm)
+  const playerDeckRef = useRef(null); // #feuer: Box des eigenen DECK-Stapels für den Brand-Effekt (FireBurn)
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -1174,6 +1181,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             color="#5ec8f0" reduced={reduced} />
         </Suspense>
       )}
+      {/* #feuer Archetyp-Karteneffekt — Brand-Hitze am eigenen DECK-Stapel: mit steigender Hitze lodert Feuer außen
+          an den Seiten hoch. Eigener Pixi-Layer HINTER den Karten (z-9) → Innere durch Karte/Deck-Rücken verdeckt
+          (bleibt frei). Hitze aus dem heat-Prop (Hitzeleiste 0–HEAT_MAX); ?fireheat=<0..1> erzwingt sie (Dev). */}
+      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
+        <Suspense fallback={null}>
+          <FireBurn
+            heat={FIRE_FORCE != null ? FIRE_FORCE : Math.max(0, Math.min(1, (Number(heat) || 0) / HEAT_MAX))}
+            panelRef={panelRef} deckRef={playerDeckRef} reduced={reduced} />
+        </Suspense>
+      )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
           bei z-0 → überdeckt die opake Panelfläche, bleibt aber HINTER Feuer-Glut/Frost/Blitz (spätere z-0/1/2)
           und den Karten (z-10). Dunkler Scrim hält Karten/Text lesbar. Ohne Skin (null) → nichts, Standard bleibt. */}
@@ -1214,7 +1231,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           </div>
         )}
 
-        <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack}
+        <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack} slotRef={playerDeckRef}
               overlay={playerGhosts.length ? <SlashGhostLayer ghosts={playerGhosts} /> : null}>{playerCard}</Side>
 
         {/* #214: „vs"-Schwerter-Icon (#42) entfernt — die beiden Seiten stehen sich jetzt ohne Trenn-Icon gegenüber. */}

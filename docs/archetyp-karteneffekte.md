@@ -123,8 +123,40 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
     pixel-identisch, bis Rollout entschieden ist).
 - **Status:** 🟢 v1 gebaut (Preview/Dev) — Feinschliff Look/Farbe nach Sichtung offen.
 
-### 5.2 Feuer 🔥 (`fire`) — Glow `#e0714a`
-- **Status:** ⚪ Noch nicht dran
+### 5.2 Feuer 🔥 (`fire`) — Glow `#e0714a` · Flamme `#ff3a1e` / Kern `#ffcf7a`
+
+**Effekt — „Brand-Hitze" (Deck lodert mit steigender Hitze)**
+
+- **Was:** Feuer lodert **AUSSEN an den Seiten nach oben bis über den Kopf** — **innen bleibt frei**
+  (harter Clip auf „Fläche MINUS Kartenform"). Realistische **additive Partikel-Flammen**
+  (heißer Kern gelb-weiß → rote Flamme → weiches Ausklingen), vertikal gestreckt, mit Flackern
+  (Sway) und **Neigung nach innen/oben zum Kopf** (`FLAME_LEAN`); dazu ein **dezentes Glühen** an
+  den Außenkanten. Der **Rahmen bleibt vorn** — das Feuer sitzt dahinter/außen.
+- **Wann:** Skaliert mit einer **Hitze** (0..1) — je heißer, desto höher lodert der Brand
+  (`REACH_MAX` > 100 % → über die Oberkante). **In-Game-Hitzequelle noch zu definieren** (welcher
+  Spiel-Zustand die Hitze treibt — Feuer-Gameplay: Schmieden/Brandmarke/Ofen-Hitze).
+- **⚠️ WICHTIG — Platzierung:** Am Ende brennt **NICHT die gespielte Karte**, sondern das **DECK
+  — der liegende Stapel, von dem die Karte umgedreht wird**. Mount-Ziel = **Deck-Stapel** (eigener
+  Slot/Ref), NICHT der Karten-Wrapper wie bei Blitz. (Zum Designen wurde der Effekt im Artifact auf
+  einer Karte gezeigt, real gehört er auf den Deckstapel.)
+- **Wo:** Eigener Pixi-`Application`-Layer, positioniert auf die **Deck-Box**. Getrennt vom
+  Blitz-Layer → beide (alle vier) Effekte laufen gleichzeitig, ohne sich zu stören. Feuer sitzt
+  **außen/hinter** der Kontur, Blitz-Rahmen auf der Kante (z11).
+- **Abgesegnete TUNE-Werte (2026-08-11, aus dem Feuer-Tuning-Board):**
+  ```
+  COLOR: "#ff3a1e", CORE: "#ffcf7a",
+  REACH_MAX: 1, HEAT_START: 0.04, EDGE_OFFSET: 0, FLAME_LEAN: 0.36,
+  GLOW_ALPHA: 0.24, GLOW_W: 10,
+  FLAME_RATE: 140, FLAME_RISE: 134, FLAME_SWAY: 1, FLAME_SIZE: 9, FLAME_LIFE_MS: 900, SPREAD: 8,
+  ```
+- **Reduced/Mobile:** analog Blitz — `reduced` → stark reduzierte/statische Glut (kein voller
+  Partikelsturm); Ticker nur bei Hitze > 0 & sichtbarem Tab; DPR ≤ 2; Partikel-Deckel auf Mobile.
+- **Umsetzungs-Notizen:** neue Komponente `src/ui/fx/FireBurn.jsx` (Pixi, additive Partikel via
+  Sprites/ParticleContainer oder Graphics), Clip auf Außenbereich der Deck-Box. Mount auf den
+  **Deck-Slot** (Ref am Deckstapel ergänzen). Dev-Sicht `?fireheat=<0..1>` zum Ansehen, Gate wie
+  IonStorm (Preview/Dev).
+- **Status:** 🟡 **Look + Werte abgesegnet.** Offen: (1) In-Game-**Hitzequelle** (Trigger),
+  (2) **Deck-Slot-Ref** im Battlefield, (3) Portierung Canvas→Pixi in `FireBurn.jsx`.
 
 ### 5.3 Eis ❄️ (`ice`) — Glow `#5ec8f0`
 - **Status:** ⚪ Noch nicht dran
