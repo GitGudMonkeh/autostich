@@ -80,11 +80,13 @@ const FLOAT_ZONES = {
 // Einzelstich-Score. Höchste erfüllte Stufe gewinnt; oberste bewusst hoch (500k) → „GOTTGLEICH" bleibt selten.
 // #169 FB-7: `size` = Peak-Zielgröße (px) je Stufe — höhere Stufe dominiert stärker. Der Render deckelt sie per
 // clamp() gegen die Viewport-Breite (mobil kein Überlauf) und zentriert echt (H+V) auf oberster Ebene.
+// #315: `cool` = Cooldown-Fenster (ms) je Groß-Ansage-Stufe gegen Spam/Clutter. „Stark" feuert am häufigsten → am
+// stärksten gedrosselt; nach oben hin lockerer. Epische Stufen (Gottgleich) sind NIE gedrosselt (kein `cool`).
 const BIG_SCORE_TIERS = [
   { min: 500000, text: "Gottgleich", size: 104, epic: true }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß (dominiert die Gold-Stufen darunter)
-  { min: 150000, text: "Irre",       size: 90 },
-  { min: 50000,  text: "Brutal",     size: 78 },
-  { min: 10000,  text: "Stark",      size: 68 },
+  { min: 150000, text: "Irre",       size: 90, cool: 1500 },
+  { min: 50000,  text: "Brutal",     size: 78, cool: 3000 },
+  { min: 10000,  text: "Stark",      size: 68, cool: 5000 },
 ];
 const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
 // Große Lawine (Legendär): der Finisher-Bruch zeigt statt der Score-Stufe („Gottgleich" …) das Wort „Lawine" in Eis-Blau.
@@ -902,7 +904,18 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       }
     }
     if (!entries.length) return;
-    setFloats((cur) => { const next = [...cur, ...entries].slice(-4); floatCountRef.current = next.length; return next; }); // Pool gedeckelt (#: 6→4) — kein unbegrenztes Stapeln
+    // #315: Score-Float-Deckel — bei Max-Tempo weniger gleichzeitige Floats (sonst Überlappungs-Cluster). Beim Deckeln
+    // werden die NIEDRIGSTEN Werte zuerst verworfen → die grossen, aussagekräftigen Gewinne bleiben stehen (niedrigste
+    // zuerst abgebaut). Ausserhalb von Max-Tempo bleibt es bei bis zu 4.
+    const floatCap = flipMs < 300 ? 2 : flipMs < 520 ? 3 : 4;
+    setFloats((cur) => {
+      const merged = [...cur, ...entries];
+      const next = merged.length <= floatCap
+        ? merged
+        : [...merged].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, floatCap);
+      floatCountRef.current = next.length;
+      return next;
+    });
     const ids = entries.map((e) => e.id);
     const removeAfter = Math.max(...entries.map((e) => e.dur)); // #: nach der EIGENEN (kürzeren) Score-Dauer aufräumen → floatCount fällt schneller
     const tm = setTimeout(() => {
@@ -922,9 +935,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const bigSeq = useRef(0);
   const lawineShown = useRef(false); // Große Lawine feuert 1×/Lauf → nur der ERSTE Finale-Bruch zeigt „LAWINE" (kein Schwarm)
   const goennShown = useRef(false);  // „Gönn dir" nur EINMAL je 200er-Serie → Ref scharf, sobald die Serie wieder unter die Schwelle fällt
+  const bigCoolRef = useRef({});     // #315: letzter Anzeige-Zeitpunkt (ms) je Ansage-Stufe (text → ts) für den Cooldown
   useEffect(() => () => bigTimers.current.forEach(clearTimeout), []);
   useEffect(() => {
-    if (!t) { setBigFloats([]); lawineShown.current = false; goennShown.current = false; return; }   // Menü/neuer Lauf → Pool leeren + Merker zurücksetzen
+    if (!t) { setBigFloats([]); lawineShown.current = false; goennShown.current = false; bigCoolRef.current = {}; return; }   // Menü/neuer Lauf → Pool leeren + Merker zurücksetzen
     if ((t.winStreak || 0) < STREAK_GOENN) goennShown.current = false;  // Serie unter der Schwelle (z. B. Niederlage) → nächster 200er darf wieder feiern
     if (!bigScore) return;                   // nur bei einem großen Sieg-Stich
     if (bigScore === GOENNDIR_TIER) {        // Serien-Meilenstein: die Ansage nur EINMAL je 200er-Serie
@@ -934,6 +948,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (bigScore === LAWINE_TIER) {          // Große Lawine: die Groß-Ansage nur EINMAL pro Finale, danach still weiterzählen
       if (lawineShown.current) return;
       lawineShown.current = true;
+    }
+    // #315: Gating der niedrigen Stufen (Stark/Brutal/Irre). Feuert eine Stufe innerhalb ihres Cooldown-Fensters erneut,
+    // wird die ANSAGE übersprungen (der Score zählt/floatet unverändert weiter). „Stark" ist am stärksten gedrosselt.
+    // Epische Stufen tragen kein `cool` → nie gedrosselt.
+    if (bigScore.cool > 0) {
+      const nowMs = Date.now();
+      if (nowMs - (bigCoolRef.current[bigScore.text] || 0) < bigScore.cool) return;
+      bigCoolRef.current[bigScore.text] = nowMs;
     }
     // #: „Gottgleich"-Bass-Drop — feuert MIT dem Wort bei den epischen Ansagen (Gottgleich ≥500k, „Gönn dir", „Lawine";
     // alle drei tragen epic:true, Stark/Brutal/Irre nicht). Cooldown in audio.js verhindert Dröhnen bei dichten Stichen.
