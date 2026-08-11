@@ -8,7 +8,6 @@ import {
   GLOBAL_FX, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
-import { startPrunk } from "./prunkFx.js";
 import { SliceFx, FieldFxLayer, FX_RENDERER } from "./Battlefield.jsx";
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
@@ -137,17 +136,8 @@ function useIsMobile() {
   return m;
 }
 
-// Einmalig injizierte Keyframes für die Gottgleich-Prunk-Vorschauen (Event-Loop).
+// Einmalig injizierte Keyframes für die Gottgleich-Standard-Vorschau (Event-Loop).
 const FX_CSS = `
-/* #294 Feuerwerk: radiale Partikel aus einem Zündpunkt. --dx/--dy = Flugvektor. */
-@keyframes ws-fw{0%{transform:translate(0,0) scale(.6);opacity:0}8%{opacity:1}70%{opacity:.85}100%{transform:translate(var(--dx),calc(var(--dy) + 14px)) scale(1);opacity:0}}
-.ws-fw{animation:ws-fw 1.7s ease-out infinite}
-/* #294 Weißgold-Regen: Funken fallen von oben. */
-@keyframes ws-rain{0%{transform:translateY(-20%);opacity:0}8%{opacity:1}85%{opacity:1}100%{transform:translateY(360%);opacity:0}}
-.ws-rain{animation:ws-rain 2.2s linear infinite}
-/* #294 Prisma-Welle: Regenbogen-Ring expandiert vom Zentrum. */
-@keyframes ws-wave{0%{transform:translate(-50%,-50%) scale(.05);opacity:0}14%{opacity:1}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
-.ws-wave{animation:ws-wave 2.6s ease-out infinite}
 /* #294 Gottgleich-Event-Loop (Vorschau spielt das echte Ereignis nach): Aura-Flare + Karten-Pop + goldene
    Groß-Ansage, ~3.4s Zyklus. Die Prunk-Partikel laufen darüber. */
 @keyframes ws-gott-aura{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}12%{opacity:.9}42%{opacity:.5}72%{opacity:.14}100%{opacity:0;transform:translate(-50%,-50%) scale(1.55)}}
@@ -160,69 +150,15 @@ const FX_CSS = `
 .ws-hscroll::-webkit-scrollbar{display:none}
 `;
 
-// #294 Demo-Daten der leichten CSS-Prunk-Partikel (deterministisch, kein Math.random im Render).
-const FW_BURSTS = [
-  { cx: "26%", cy: "28%", dl: 0 }, { cx: "62%", cy: "22%", dl: 0.5 }, { cx: "44%", cy: "40%", dl: 1.0 }, { cx: "78%", cy: "36%", dl: 0.75 },
-].map((b) => ({ ...b, parts: Array.from({ length: 14 }, (_, i) => {
-  const a = (i / 14) * Math.PI * 2; return { dx: `${(Math.cos(a) * 34).toFixed(0)}px`, dy: `${(Math.sin(a) * 34).toFixed(0)}px`, white: i % 4 === 0 };
-}) }));
-const RAIN_DROPS = Array.from({ length: 20 }, (_, i) => ({
-  x: `${((i * 53) % 100)}%`, dl: `${((i * 37) % 100) / 100 * 2.2}s`, w: 2 + (i % 3),
-  c: ["#fff0b0", "#ffd873", "#ffffff", "#ffc978"][i % 4], dur: `${1.8 + (i % 4) * 0.2}s`,
-}));
-const PRISMA_RING = "conic-gradient(from 0deg,#ff4d4d,#ffa53a,#ffe14d,#54e08a,#35e0ff,#5a8ade,#9b82f0,#ff4dcb,#ff4d4d)";
-
-// Overlay-Partikel eines Gottgleich-Prunk-Effekts (leichte CSS-Variante, für kompakte Vorschauen).
-function PrunkParticles({ variant, LC = "#35e0ff" }) {
-  if (variant === "fireworks") return FW_BURSTS.map((b, bi) => (
-    <div key={bi} className="absolute" style={{ left: b.cx, top: b.cy, width: 0, height: 0 }}>
-      {b.parts.map((pt, i) => (
-        <div key={i} className="ws-fw absolute" style={{ left: 0, top: 0, width: 4, height: 4, marginLeft: -2, marginTop: -2, borderRadius: "50%",
-          background: pt.white ? "#ffffff" : LC, boxShadow: `0 0 7px ${pt.white ? "#ffffff" : LC}`, "--dx": pt.dx, "--dy": pt.dy, animationDelay: `${b.dl}s` }} />
-      ))}
-    </div>
-  ));
-  if (variant === "goldRain") return RAIN_DROPS.map((d, i) => (
-    <div key={i} className="ws-rain absolute" style={{ left: d.x, top: "-6%", width: d.w, height: d.w * 2.4, borderRadius: 1,
-      background: d.c, boxShadow: `0 0 6px ${d.c}`, animationDelay: d.dl, animationDuration: d.dur }} />
-  ));
-  if (variant === "prismaWave") return [0, 1].map((r) => (
-    <div key={r} className="ws-wave absolute" style={{ left: "50%", top: "50%", width: "70%", aspectRatio: "1", borderRadius: "50%",
-      background: PRISMA_RING, animationDelay: `${r * 0.7}s`,
-      WebkitMaskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)",
-      maskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)" }} />
-  ));
-  return null; // "standard" → keine Prunk-Partikel
-}
-
-/* Canvas-Overlay = dieselbe In-Game-Wucht (startPrunk) im Loop. NUR für die große Vorschau (ein Canvas, nur
-   solange das Fenster offen ist). */
-function PrunkCanvas({ variant, loop = true }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!ref.current) return undefined;
-    return startPrunk(ref.current, {
-      fireworks: variant === "fireworks", goldRain: variant === "goldRain", prismaWave: variant === "prismaWave",
-      color: "#35e0ff", originX: 0.5, originY: 0.58, loop });
-  }, [variant, loop]);
-  return <canvas ref={ref} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true" />;
-}
-
-/* #294 Gottgleich-Vorschau: spielt das ECHTE Ereignis im Loop nach (Karten-Pop + Aura-Flare + goldene
-   „GOTTGLEICH ×7"-Groß-Ansage) und legt den jeweiligen Prunk-Effekt darüber. variant "standard" zeigt den
-   Basis-Look ohne Prunk → direkter Vergleich. compact = kleine Kachel (leichte CSS-Partikel); groß = Canvas-Wucht. */
+/* Gottgleich-Vorschau (nur noch „Standard"): spielt das ECHTE Ereignis im Loop nach — Karten-Pop + Aura-Flare +
+   goldene „GOTTGLEICH ×7"-Groß-Ansage + Bass-Drop. #cleanup: die aufgesetzten Prunk-Overlays (Feuerwerk/Goldregen/
+   Prisma-Welle) sind entfernt; die „gott"-Kategorie bleibt, hier kommt später neuer Prunk rein. */
 const GOTT_CYCLE_MS = 3400;  // Länge eines Vorschau-Zyklus (= Dauer der ws-gott-*-Animationen)
 const GOTT_POP_MS = 272;     // „Pop"-Moment: 8 % von 3,4 s (Karten-Hit) → hier fällt der Bass hin
-function GottgleichPreview({ variant, compact = false }) {
+function GottgleichPreview({ compact = false }) {
   const bf = battlefieldAssets(SHOWCASE_BF);
   const cardImg = deckAssets("default").back;
-  const hasPrunk = variant !== "standard";
-  // #: Drift-Fix. Zuvor liefen die CSS-Animationen (3,4 s infinite), der Prunk-Canvas (interner Loop 2,25 s) und der
-  // Bass-setInterval auf DREI verschiedenen Uhren → nach dem ersten Zyklus liefen sie auseinander (Animation vor dem
-  // Puls/Bass). Jetzt treibt EIN Zyklus-Zähler alles: die Animationen + der Prunk werden je Zyklus über key={cycle} neu
-  // gestartet, der Bass fällt je Zyklus exakt auf den Pop-Moment → Animation, Puls und Bass bleiben dauerhaft synchron.
   const [cycle, setCycle] = useState(0);
-  const [burst, setBurst] = useState(0); // zählt die „Pops" → Prunk-Canvas zündet je Pop (deckungsgleich mit Bass)
   useEffect(() => {
     if (compact) return undefined; // Kachel-Vorschau: schlichte Endlos-CSS ohne Ton (kein Sync nötig)
     const id = setInterval(() => setCycle((c) => c + 1), GOTT_CYCLE_MS);
@@ -230,8 +166,8 @@ function GottgleichPreview({ variant, compact = false }) {
   }, [compact]);
   useEffect(() => {
     if (compact) return undefined;
-    // Auf den Pop (272 ms in den Zyklus) den Prunk zünden + den „Gottgleich"-Bass-Drop (Vorschau = In-Game, deckungsgleich mit dem Pop).
-    const t = setTimeout(() => { setBurst((b) => b + 1); audio.play("fx_godlike", { gain: 1.5, bass: 4 }); }, GOTT_POP_MS);
+    // Auf den Pop (272 ms in den Zyklus) den „Gottgleich"-Bass-Drop (Vorschau = In-Game, deckungsgleich mit dem Pop).
+    const t = setTimeout(() => { audio.play("fx_godlike", { gain: 1.5, bass: 4 }); }, GOTT_POP_MS);
     return () => clearTimeout(t);
   }, [cycle, compact]);
   return (
@@ -245,8 +181,6 @@ function GottgleichPreview({ variant, compact = false }) {
       <div key={`po${cycle}`} className="ws-gott-pop absolute" style={{ left: "50%", top: "58%", width: compact ? "34%" : "20%", aspectRatio: CARD_RATIO }}>
         <img src={cardImg} alt="" className="absolute inset-0 w-full h-full object-contain rounded" />
       </div>
-      {/* Prunk-Overlay: große Vorschau zündet je Pop 1× (loop=false + key={burst} → deckungsgleich mit Bass), Kachel = leichte CSS-Partikel. */}
-      {hasPrunk && (compact ? <PrunkParticles variant={variant} /> : (burst > 0 && <PrunkCanvas key={`pr${burst}`} variant={variant} loop={false} />))}
       {/* Goldene Groß-Ansage */}
       <div key={`an${cycle}`} className="ws-gott-ann absolute font-extrabold" style={{ left: "50%", top: "30%", whiteSpace: "nowrap",
         fontSize: compact ? 13 : 22, letterSpacing: ".06em",
@@ -313,8 +247,7 @@ function GlobalFxScenePreview({ fx, deckTint = false }) {
   // #kategorien: Hintergrund-Effekt (Aurora) / Hintergrund-Finisher (Glutfunken) / „Kein Feld-Effekt": echte
   // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
   if (["aurora", "embers", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
-  if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
-  if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
+  if (fx.preview === "gottStandard") return <GottgleichPreview />;
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
@@ -801,7 +734,7 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
 const FX_TINT = {
   none: "#4a4857", aurora: "#54e08a", embers: "#ff7a2f",
   klinge: "#35e0ff",
-  gottStandard: "#7fb4ff", fireworks: "#ff5ad6", goldRain: "#f2c14a", prismaWave: "#c86bff",
+  gottStandard: "#7fb4ff",
 };
 
 /* #fx-floater: Text-Chip einer Kategorie-Reihe (horizontal wischbar) — KEIN Grafik-Icon. Linker Signatur-Farbbalken

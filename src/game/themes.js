@@ -28,20 +28,15 @@ import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress } from "./cosme
      "gott"     = Gottgleicher Sieg OHNE Krit (Prunk-Overlays; stapelbar). */
 export const GLOBAL_FX = [
   // #cleanup: Karten-Animationen (frameGlow/holoSwipe/auroraVeil/glitch), alle nicht-überarbeiteten Feld-Effekte
-  // (hologrid/starfield/scanline/vignette) und alle Sieg-Finisher außer der Klinge (laserSlice/blackhole/lasergrid/
-  // burnBeam/overload/disperse) wurden vollständig entfernt — sie werden ersetzt. Es bleiben: Hintergrund-Effekt
-  // „Aurora", Hintergrund-Finisher „Glutfunken", der synthetische Klinge-Finisher und der Gottgleich-Prunk.
+  // (hologrid/starfield/scanline/vignette), alle Sieg-Finisher außer der Klinge (laserSlice/blackhole/lasergrid/
+  // burnBeam/overload/disperse) UND der Gottgleich-Prunk (fireworks/goldRain/prismaWave) wurden vollständig entfernt —
+  // sie werden ersetzt. Es bleiben: Hintergrund-Effekt „Aurora", Hintergrund-Finisher „Glutfunken" und der
+  // synthetische Klinge-Finisher. Die Gottgleich-Kategorie (group "gott") bleibt (nur „Standard"), dort kommt später
+  // neuer Prunk rein.
   { key: "aurora", name: "Aurora", desc: "Weiche Polarlicht-Schleier driften übers Feld; je Stich ein sanfter Bloom-Puls — in der Deckfarbe.",
     ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "bgfx" }, // #kategorien: Hintergrund-Effekt (reiner BG, Pixi)
   { key: "embers", name: "Glutfunken", desc: "Schwebende Glutpartikel steigen langsam auf; je Stich ein Funken-Aufstoß von unten — in der Deckfarbe.",
     ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 8, group: "bgfin" }, // #kategorien: Hintergrund-Finisher (Stich-Interaktion, Pixi)
-  // Gottgleich-Prunk (stapelbar).
-  { key: "fireworks", name: "Neon-Feuerwerk", desc: "Gottgleicher Sieg ohne Krit: mehrere Feuerwerks-Bursts ploppen über dem Feld — in der Deckfarbe.",
-    ownKey: "fx:fireworks", option: "fxFireworks", preview: "fireworks", price: 15, group: "gott" },
-  { key: "goldRain", name: "Weißgold-Regen", desc: "Gottgleicher Sieg ohne Krit: ein Schauer goldener Funken rieselt über das Feld — bleibt immer gold.",
-    ownKey: "fx:goldRain", option: "fxGoldRain", preview: "goldRain", price: 10, group: "gott" },
-  { key: "prismaWave", name: "Prisma-Welle", desc: "Gottgleicher Sieg ohne Krit: ein prismatischer Schockwellen-Ring läuft einmal über das ganze Board.",
-    ownKey: "fx:prismaWave", option: "fxPrismaWave", preview: "prismaWave", price: 5, group: "gott" },
 ];
 export const GLOBAL_FX_BY_KEY = Object.fromEntries(GLOBAL_FX.map((f) => [f.key, f]));
 export const globalFxOwned = (profile, fx) => !!(profile && profile.ownedCosmetics && profile.ownedCosmetics[fx.ownKey]);
@@ -78,10 +73,6 @@ export function activeBgFinisher(profile, options) {
   for (const k of BG_FIN_KEYS) if (globalFxActive(profile, options, k)) return k;
   return null;
 }
-// Gott-Prunk.
-export const fireworksActive = (profile, options) => globalFxActive(profile, options, "fireworks");
-export const goldRainActive = (profile, options) => globalFxActive(profile, options, "goldRain");
-export const prismaWaveActive = (profile, options) => globalFxActive(profile, options, "prismaWave");
 
 /* PACK-Registry. kind:
      "buy"  → EIN Kauf (Deck + Battlefield zusammen) für pack.price DP (#307). Besitz: ownedCosmetics["pack:<id>"].

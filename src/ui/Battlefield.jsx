@@ -13,7 +13,6 @@ const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
-import { startPrunk } from "./prunkFx.js";
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Treffer-Identität im Score-Float)
@@ -450,32 +449,6 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
 
 // #: ExplosionFx (Krit-Partikelexplosion) entfernt — Krit-Finisher-Animationen raus.
 
-/* #294 GOTTGLEICH-Prunk OHNE Krit: bei einem tier-4-Sieg ohne Kritischen Treffer feuern die (kaufbaren) Prunk-
-   Overlays — stapelbar. Wie EpicFx/BounceBurst reine <canvas>-Kosmetik mit rAF-Physik über dem Feld (zIndex 20),
-   auf die gleiche Wucht ausgelegt (Partikelmenge/Bloom/Dauer). Nur getriggert bei normaler Bewegung (Aufrufer
-   prüft `reduced`). Drei Modi, per Flag zuschaltbar:
-     • fireworks  — mehrere Feuerwerks-Bursts über dem Board, radiale Partikel in der Deckfarbe (+ weiße Kerne).
-     • goldRain   — dichter Schauer goldener Funken rieselt von oben (bleibt IMMER gold, Gottgleich-Identität).
-     • prismaWave — prismatischer Schockwellen-Ring läuft einmal übers ganze Board (Regenbogen, Hue-Rotation). */
-function PrunkFx({ trigger, panelRef, oppRef, color }) {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    if (!trigger || !panelRef?.current || !canvasRef.current) return undefined;
-    const pr = panelRef.current.getBoundingClientRect();
-    if (pr.width < 4 || pr.height < 4) return undefined;
-    // Ursprung (Impuls/Prisma) = Mitte der Gegnerkarte als Bruchteil des Panels; Fallback Feldmitte.
-    let ox = 0.5, oy = 0.5;
-    const orr = oppRef?.current?.getBoundingClientRect();
-    if (orr && orr.width) { ox = (orr.left - pr.left + orr.width / 2) / pr.width; oy = (orr.top - pr.top + orr.height / 2) / pr.height; }
-    // #: Bass-Impact hier ENTFERNT — nur noch „Schwarzes Loch" bekommt Bass. Die Prunk-Animation läuft ohne Bass-Layer.
-    return startPrunk(canvasRef.current, {
-      fireworks: trigger.fireworks, goldRain: trigger.goldRain, prismaWave: trigger.prismaWave,
-      color, originX: ox, originY: oy, loop: false });
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps
-  }, [trigger?.id, panelRef, oppRef]);
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none rounded-xl" style={{ zIndex: 21 }} aria-hidden="true" />;
-}
-
 /* #177+/#186: Schnitt-/Explosions-Ghost-Pool für BEIDE Seiten. Verliert eine Karte (Spieler bei Niederlage,
    Gegner bei Sieg), wird sie in-place ausgeblendet und stattdessen ein entkoppelter Klon in diesem Layer
    (im jeweiligen Karten-Slot, absolute inset-0) gerendert: die Karte liegt erst kurz (rest), dann setzt der Schnitt
@@ -682,8 +655,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
   deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false,
-  // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar).
-  fxFireworks = false, fxGoldRain = false, fxPrismaWave = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
   // #: Dreistufig. `reduced` (minimal) behält EXAKT die alte Semantik → Kartenflip/Ambient/Finisher/Glows aus.
@@ -699,13 +670,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const pixiEnabled = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi" && !!deckA1;
   const pixiFin = pixiEnabled && PIXI_FIELD.has(bgFinisher);  // BG-Finisher (z. B. Glutfunken) läuft auf der GPU-Bühne (Pixi)
   const auroraGL = pixiEnabled && bgFx === "aurora";          // Aurora läuft als eigene WebGL-Canvas (nicht Pixi)
-  // GOTTGLEICH-Prunk: Panel = Prallwand-Rahmen, oppSlot = Ursprung (zerstörte Gegnerkarte); burst triggert den Schwarm.
+  // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
-  // #: BounceBurst/Krit-Schwarm entfernt (Krit-Finisher-Animationen raus) → kein burst-Trigger mehr.
-  // #294 Gottgleich-Prunk OHNE Krit: getrennter Trigger für die (stapelbaren) Prunk-Overlays.
-  const [prunk, setPrunk] = useState(null);
-  const prunkSeq = useRef(0);
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -1030,23 +997,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
     }, ghostLife);
     ghostTimers.current.push(tm);
-    // #: Krit-Finisher-Animation entfernt — der abprallende GOTTGLEICH-Partikel-Schwarm (BounceBurst) feuert nicht mehr.
-    // (Die kaufbaren Custom-Finisher decken den Sieg-Look ab; die Prunk-Overlays für Nicht-Krit-GOTTGLEICH bleiben.)
-    // #294 GOTTGLEICH-Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar) feuern ON TOP der Groß-Ansage.
-    if (win && !isCrit && fxTier >= 4 && !reduced && (fxFireworks || fxGoldRain || fxPrismaWave)) {
-      // #: Der Prunk-Bass wird NICHT mehr hier über einen eigenen Timer gespielt (das driftete gegen die Animation, v. a.
-      // im zweiten Durchlauf). Stattdessen spielt PrunkFx den Bass EXAKT beim Mounten/Start seiner Canvas-Animation
-      // (trigger.rate trägt das Turbo-Tempo hinein) → Bass und Effekt fallen jeden Stich sicher zusammen.
-      const pRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
-      // #: Gottgleich-Prunk ist EXKLUSIV — es feuert immer nur EIN Overlay (auch wenn ein Altstand mehrere Flags true
-      // hat). Fester Vorrang: Prisma > Goldregen > Feuerwerk. (Die Shop-Auswahl schreibt ohnehin nur eins.)
-      const pWin = fxPrismaWave ? "prismaWave" : fxGoldRain ? "goldRain" : "fireworks";
-      const pt = setTimeout(() => {
-        prunkSeq.current += 1;
-        setPrunk({ id: prunkSeq.current, fireworks: pWin === "fireworks", goldRain: pWin === "goldRain", prismaWave: pWin === "prismaWave", rate: pRate });
-      }, sRest);
-      ghostTimers.current.push(pt);
-    }
+    // #cleanup: GOTTGLEICH-Prunk-Overlays (Feuerwerk/Goldregen/Prisma-Welle) entfernt — die „gott"-Kategorie bleibt
+    // im Shop (nur „Standard"), neuer Prunk kommt später.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
   const playerGhosts = slashGhosts.filter((g) => g.side === "player");
@@ -1176,10 +1128,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           score={bgFinisher === "embers" ? Math.round((score || 0) / 20000) * 20000 : 0} suppressField={pixiFin} />
       )}
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
-          (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin, Hologrid und das Stich-Juice reserviert. */}
-      {/* #: GOTTGLEICH-Krit-Partikel-Schwarm (BounceBurst) entfernt — Krit-Finisher-Animationen raus. */}
-      {/* #294 Gottgleich OHNE Krit: kaufbare Prunk-Overlays (Feuerwerk/Goldregen/Prisma-Welle), stapelbar. */}
-      <PrunkFx trigger={prunk} panelRef={panelRef} oppRef={oppSlotRef} color={deckA1} />
+          (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin + das Stich-Juice reserviert. */}
       <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (

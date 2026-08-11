@@ -4,7 +4,7 @@ import {
   packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
   canBuyPack, buyPack, unlockAllCosmetics,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
-  auroraActive, embersActive, activeBgFx, activeBgFinisher, fireworksActive, goldRainActive, prismaWaveActive,
+  auroraActive, embersActive, activeBgFx, activeBgFinisher,
 } from "../src/game/themes.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
@@ -151,14 +151,16 @@ describe("packs — Kauf-Ökonomie (#299: DP)", () => {
 });
 
 describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
-  // #cleanup: Es bleiben genau: Hintergrund-Effekt „Aurora" (bgfx), Hintergrund-Finisher „Glutfunken" (bgfin) und
-  // das Gottgleich-Prunk-Trio (gott). Klinge ist der einzige Sieg-Finisher (synthetisch, NICHT in GLOBAL_FX).
-  it("GLOBAL_FX führt NUR noch aurora, embers und das Prunk-Trio", () => {
-    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "fireworks", "goldRain", "prismaWave"].sort());
+  // #cleanup: Es bleiben genau: Hintergrund-Effekt „Aurora" (bgfx) und Hintergrund-Finisher „Glutfunken" (bgfin).
+  // Klinge ist der einzige Sieg-Finisher (synthetisch, NICHT in GLOBAL_FX). Die Gottgleich-Kategorie bleibt im Shop
+  // (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge mehr (Prunk entfernt).
+  it("GLOBAL_FX führt NUR noch aurora und embers", () => {
+    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers"].sort());
   });
   it("entfernte Effekte sind vollständig aus der Registry", () => {
     for (const k of ["frameGlow", "holoSwipe", "auroraVeil", "glitch", "hologrid", "starfield", "scanline", "vignette",
-                     "laserSlice", "blackhole", "lasergrid", "burnBeam", "overload", "disperse", "klinge"]) {
+                     "laserSlice", "blackhole", "lasergrid", "burnBeam", "overload", "disperse", "klinge",
+                     "fireworks", "goldRain", "prismaWave", "gottStandard"]) {
       expect(GLOBAL_FX_BY_KEY[k]).toBeUndefined();
     }
   });
@@ -190,9 +192,6 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
     const cases = [
       ["aurora", auroraActive, "fxAurora"],
       ["embers", embersActive, "fxEmbers"],
-      ["fireworks", fireworksActive, "fxFireworks"],
-      ["goldRain", goldRainActive, "fxGoldRain"],
-      ["prismaWave", prismaWaveActive, "fxPrismaWave"],
     ];
     for (const [key, activeFn, opt] of cases) {
       const owned = prof({ ownedCosmetics: { [`fx:${key}`]: true } });
@@ -223,7 +222,7 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.embers)).toBe(false);
   });
   it("#307: jeder verbliebene Effekt trägt seinen DP-Preis (globalFxPrice = fx.price)", () => {
-    const want = { aurora: 10, embers: 8, prismaWave: 5, goldRain: 10, fireworks: 15 };
+    const want = { aurora: 10, embers: 8 };
     for (const [key, dp] of Object.entries(want)) expect(globalFxPrice(GLOBAL_FX_BY_KEY[key])).toBe(dp);
   });
 });
