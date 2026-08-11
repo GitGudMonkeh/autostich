@@ -160,8 +160,8 @@ function sliceMove(mult, seq) {                    // seq = per-Stich-Zähler (s
 }
 // #klinge: Tuning-Set (aus dem Vorschau-Artifact; final justierbar). Alles serien- bzw. konstant-getrieben.
 export const KLINGE_TUNE = {
-  baseDist: 46,        // Flugdistanz der Stücke bei Serie 1 (px)
-  streakBoost: 0.12,   // + pro Serien-Schritt: Stücke fliegen weiter + rotieren mehr
+  baseDist: 30,        // #klinge: Stücke fallen nur ein kleines Stück auseinander (nicht wegfliegen) — px bei Serie 1
+  streakBoost: 0.08,   // + pro Serien-Schritt: Stücke fallen etwas weiter auseinander (gedeckelt niedrig, damit bei hoher Serie nichts wegfliegt)
   streakMax: 6,        // Deckel der Wucht-Steigerung
   rotFactor: 1,        // globaler Rotations-Faktor der Stücke
   zSlashFactor: 0.34,  // Z: Dauer je Einzel-Schlag (× cutDur) — blitzschnell
@@ -655,9 +655,13 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
         // Reihenfolge (Wunsch): Karte liegt (rest) → Klingenschnitt IN PLACE (delay = g.rest) → DANACH floatet der
         // Ghost weg. #187: Slice driftet nach dem SCHNITT (driftDelay = rest + cut) in eine ZUFÄLLIGE Richtung
         // (rundum, deterministisch aus g.seed via fjitter, kein Neu-Würfeln bei Re-Render).
-        const dang = fjitter(g.seed * 3 + 2, Math.PI);                        // −π..π → volle 360° rundum
-        const drad = 40 + Math.abs(fjitter(g.seed * 5 + 3, 26));             // Klinge 40..66 px
-        const drot = fjitter(g.seed * 7 + 5, 8);                             // −8..8° leichte Rotation
+        // #klinge: Nach dem Schnitt fällt die Karte nur ein KLEINES Stück auseinander (die Stücke stieben über
+        // as-boom-shard) und wird ausgeblendet — sie fliegt NICHT mehr quer übers Feld weg (früher 40..66 px in eine
+        // zufällige 360°-Richtung → bei Turbo/vielen Stichen überdeckte das alles). Der Wrapper macht jetzt nur noch
+        // eine dezente Schwerkraft: leicht nach unten + minimaler Seiten-Jitter.
+        const drx = fjitter(g.seed * 3 + 2, 6);                              // −6..6 px minimaler Seiten-Jitter
+        const dry = 9 + Math.abs(fjitter(g.seed * 5 + 3, 6));                // 9..15 px leicht nach unten (Schwerkraft)
+        const drot = fjitter(g.seed * 7 + 5, 5);                             // −5..5° minimale Rotation
         // #klinge-z: Der Z-Schlag hält die Karte GANZ, bis alle drei Schläge durch sind (zHold), erst DANN berstet sie
         // (SliceFx: pieces starten bei delay+holdMs). Der Float-Away muss diese Haltezeit mitnehmen, sonst driftet die
         // Karte im Turbo schon weg, BEVOR sie überhaupt zerteilt ist. Andere Schnitte bersten sofort → +cut wie gehabt.
@@ -667,7 +671,7 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
         return (
           <div key={g.id} className="absolute inset-0 pointer-events-none" aria-hidden="true"
             style={{ animation: `as-loss-drift-rand ${g.float}ms cubic-bezier(0.2, 0.6, 0.3, 1) ${driftDelay}ms forwards`, willChange: "transform",
-                     "--drx": `${(Math.cos(dang) * drad).toFixed(1)}px`, "--dry": `${(Math.sin(dang) * drad).toFixed(1)}px`, "--drot": `${drot}deg` }}>
+                     "--drx": `${drx.toFixed(1)}px`, "--dry": `${dry.toFixed(1)}px`, "--drot": `${drot}deg` }}>
             <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} dir={g.sliceDir} streak={g.streak} />
           </div>
         );
