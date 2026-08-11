@@ -31,13 +31,17 @@ button { font-family: inherit; }
      • Mobile (`pointer: coarse`)  → Blur weg, nur der solide Scrim bleibt → identisch auf beiden Geräten, ~gratis.
      • Reduzierte Effekte (`data-reduced-fx`, auch Desktop) → ebenso Blur weg (verdrahtet endlich das bisher tote Attribut).
      • Desktop (voll)              → unverändert (voller Blur).
-   `!important`, weil der Blur inline gesetzt ist. Persistente Nicht-Modals (In-Game-StatusBar, StartScreen-Panel)
-   haben KEIN inset-0 → bleiben bewusst unberührt. */
+   `!important`, weil der Blur inline gesetzt ist.
+   Zusätzlich die In-Game-StatusBar (`.as-statusbar`): sie blurrt DAUERHAFT während des Spiels (blur(6px), pro
+   Frame) — der teuerste Dauer-Posten. Ihr Hintergrund ist ohnehin fast deckend (Gradient f2 ≈ 95 %), der Blur
+   trägt optisch kaum bei → auf Mobile/reduziert weg = spürbar mehr FPS im Spiel bei praktisch gleichem Look.
+   StartScreen-Panel (nur im Menü, nicht perf-kritisch) bleibt unberührt. */
 @media (pointer: coarse) {
-  .fixed.inset-0, .absolute.inset-0 { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+  .fixed.inset-0, .absolute.inset-0, .as-statusbar { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 }
 :root[data-reduced-fx] .fixed.inset-0,
-:root[data-reduced-fx] .absolute.inset-0 { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+:root[data-reduced-fx] .absolute.inset-0,
+:root[data-reduced-fx] .as-statusbar { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 
 /* Karten-Kachel (#101): mobil hochkant (3/4), auf Desktop kompakt-quadratisch → weniger Scrollen.
    Desktop-Override mit doppelter Klassen-Spezifität, damit er unabhängig von der Regel-Reihenfolge gewinnt. */
