@@ -50,7 +50,7 @@ const FRAG = [
   "  }",
   "  vec3 rgb = ac * I_ * 1.7;",
   "  float a = clamp(max(rgb.r, max(rgb.g, rgb.b)), 0.0, 1.0) * 0.55;", // Alpha = Helligkeit × Transparenz → Schwarz durchsichtig
-  "  gl_FragColor = vec4(rgb, a);",
+  "  gl_FragColor = vec4(rgb * a, a);",   // PREMULTIPLIED (Browser-Default) → korrektes Kompositing auch auf iOS-Safari
   "}",
 ].join("\n");
 
@@ -71,7 +71,7 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
     let gl;
-    try { gl = canvas.getContext("webgl", { alpha: true, premultipliedAlpha: false, antialias: true, depth: false, powerPreference: "low-power" }) || canvas.getContext("experimental-webgl"); }
+    try { gl = canvas.getContext("webgl", { alpha: true, antialias: true, depth: false, powerPreference: "low-power" }) || canvas.getContext("experimental-webgl"); }
     catch { gl = null; }
     if (!gl) return undefined;
 
@@ -107,6 +107,7 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
     };
     const draw = (tSec) => {
       resize();
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); // transparenter Grund → nichts Opakes hinter der Aurora
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform1f(uTime, tSec);
       gl.uniform1f(uMode, deckColored ? 1 : 0);
