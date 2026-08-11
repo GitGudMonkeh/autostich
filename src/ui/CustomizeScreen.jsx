@@ -71,9 +71,9 @@ function orderPacks(list, deckId) {
 const FIN_STANDARD = { key: "standard", name: "Standard", group: "finisher", preview: "standard", alwaysOwned: true,
   desc: "Der schlichte Grund-Finisher (immer verfügbar, Standard-Auswahl): Die geschlagene Gegnerkarte fliegt nach dem Stich einfach zur Seite weg — genau wie deine eigene Karte bei einer Niederlage. Beim Sieg wird der Aufdeck-Sound leicht höher gestimmt. Kein Schnitt, kein Prunk." };
 
-/* Synthetische „Klinge"-Kachel: ein wählbarer Sieg-Finisher (aktuell immer im Besitz; wird später kaufbar) — vorschaubar
-   wie die anderen Finisher. Wird in der Sieg-Finisher-Gruppe hinter „Standard" geführt. */
-const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "klinge", alwaysOwned: true,
+/* Synthetische „Klinge"-Kachel: ein KAUFBARER Sieg-Finisher (10 DP, grüne Rarity) mit eigenem Besitz-Schlüssel
+   fx:klinge — vorschaubar wie die anderen Finisher. Wird in der Sieg-Finisher-Gruppe hinter „Standard" (Gratis) geführt. */
+const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "klinge", ownKey: "fx:klinge", price: 10,
   desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte. Grundzug ist ein Schnitt von links; je höher dein Siegesserie-Multiplikator, desto mehr Richtungen fahren nacheinander ein (ab ×1,25 links/rechts im Wechsel, ab ×1,5 zusätzlich von oben, ab ×2,0 alle vier inkl. Z-Schnitt) — und die Klinge schneidet härter. Eine Niederlage setzt die Serie zurück." };
 
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
@@ -116,10 +116,16 @@ function orderFxItems(items, selKey, stdKey) {
 }
 
 /* Sieg-Finisher einfach-exklusiv (genau EINER aktiv): die Auswahl steckt als einzelner String in options.finisher.
-   „standard" (Gratis-Default, Wegflug) und „klinge" sind wählbar. finisherFlags schreibt die Auswahl; „none" (Abwählen
-   des aktiven) fällt auf den Gratis-Standard zurück (es gibt keinen „gar kein Finisher"-Zustand). */
+   „standard" (Gratis-Default, Wegflug) und „klinge" (kaufbar, 10 DP) sind wählbar. finisherFlags schreibt die Auswahl;
+   „none" (Abwählen des aktiven) fällt auf den Gratis-Standard zurück (es gibt keinen „gar kein Finisher"-Zustand).
+   #farbsystem/#klinge-kaufbar: „klinge" gilt nur, wenn Klinge auch im Besitz ist — sonst zurück auf „standard" (die
+   Klinge-Auswahl ohne Kauf würde sonst im Spiel trotzdem rendern). Ohne Profil (reine Options-Sicht) ungegated. */
 const finisherFlags = (key) => ({ finisher: key === "none" ? "standard" : key });
-const finisherSelOf = (options) => options?.finisher || "standard";
+const finisherSelOf = (options, profile) => {
+  const sel = options?.finisher || "standard";
+  if (sel === "klinge" && profile && !globalFxOwned(profile, KLINGE)) return "standard";
+  return sel;
+};
 /* #306 Battlefield-Ambiente einfach-exklusiv (genau EINS aktiv, oder „none"). Datengetrieben aus der „field"-Gruppe:
    fieldFxFlags(key) schreibt alle Feld-Optionen in einem Rutsch (genau eine true, „none" = alle false). */
 // #kategorien: zwei getrennte, UNABHÄNGIGE Feld-Slots. bgFxFlags/bgFinFlags schreiben NUR die Optionen ihrer
@@ -261,9 +267,11 @@ function FinisherScene({ variant }) {
       </div>
       {/* #312 Stufen-Label: zeigt, WELCHE Serienschwelle (Multiplikator) + Schnittrichtung gerade demonstriert wird.
           #: unten-rechts, damit das „(aktiv)"-Ausgerüstet-Symbol oben-rechts es nicht verdeckt. */}
-      <div className="absolute bottom-1.5 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold font-pixel"
-        style={{ background: "#0c0c10cc", border: "1px solid #2a2836", color: kstep.d === "z" ? "#8fd8ff" : "#cfccda" }}>
-        {kMultLabel(kstep.m)} · {KLINGE_DIR_LABEL[kstep.d]}
+      {/* #farbsystem: Badge im selben Pill-Design wie die Glutfunken-Tier-Anzeige (eckig, heller Rand, „Label"-Präfix
+          in 70 % Deckkraft) — hier „Serie" statt „Tier", Inhalt bleibt Multiplikator + Schnittrichtung. */}
+      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: kstep.d === "z" ? "#8fd8ff" : "#cfe0ff" }}>
+        <span className="opacity-70">Serie</span> {kMultLabel(kstep.m)} · {KLINGE_DIR_LABEL[kstep.d]}
       </div>
     </div>
   );
@@ -300,8 +308,8 @@ function StandardFinisherScene() {
           {cardEl}
         </div>
       </div>
-      <div className="absolute bottom-1.5 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold font-pixel"
-        style={{ background: "#0c0c10cc", border: "1px solid #2a2836", color: "#cfccda" }}>
+      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#cfe0ff" }}>
         Wegflug
       </div>
     </div>
@@ -667,7 +675,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
    Status-Marker). Tippen wählt den Effekt → der Floater zeigt ihn groß und bietet die passende Aktion (Kaufen /
    An-Aus / Als Finisher·Ambiente wählen). Kein separates Kauffenster mehr — der Floater IST Vorschau und Kauf. */
 function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
-  const finisherSel = finisherSelOf(options);
+  const finisherSel = finisherSelOf(options, p); // #klinge-kaufbar: „klinge" nur bei Besitz aktiv, sonst „standard"
   const bgFxSel = bgFxSelOf(options);
   const bgFinSel = bgFinSelOf(options);
   // Auswahl-Status des Floaters: { group, key }. Default = erster Effekt der ersten Gruppe (Karten-Animationen).
@@ -793,10 +801,10 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
         {/* Gruppen-Schild oben links */}
         <span className="absolute left-2 top-2 text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-md"
           style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{group.title}</span>
-        {/* Status-Schild oben rechts: aktiv (grün) bzw. Preis (gold) bei noch nicht gekauft. */}
+        {/* Status-Schild oben rechts: aktiv (grün) bzw. Preis in der Rarity-Farbe (#farbsystem) bei noch nicht gekauft. */}
         {active
           ? <span className="absolute right-2 top-2 text-[9px] font-extrabold tracking-wide px-2 py-0.5 rounded-md" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>AKTIV</span>
-          : !owned ? <span className="absolute right-2 top-2 text-[9px] font-extrabold tracking-wide px-2 py-0.5 rounded-md" style={{ background: "#2e2410", color: "#f2c14a", border: "1px solid #6b5320" }}>{price} DP</span> : null}
+          : !owned ? <span className="absolute right-2 top-2 text-[9px] font-extrabold tracking-wide px-2 py-0.5 rounded-md" style={{ background: "#0b0a16cc", color: rarityTint(fx), border: `1px solid ${rarityTint(fx)}66` }}>{price} DP</span> : null}
         {/* Name unten links */}
         <span className="absolute left-2.5 bottom-2 text-[15px] font-extrabold" style={{ textShadow: "0 1px 8px #000, 0 0 3px #000" }}>{fx.name}</span>
       </div>
@@ -806,21 +814,19 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
   );
 }
 
-/* #fx-floater/Text-Chips: Signatur-Farbe je Effekt (linker Farbbalken). Meist Deckfarben-Cyan; ein paar Effekte tragen
-   ihre eigene Identitätsfarbe (Feuer/Gold/Blitz/Aurora/Prisma), damit die Reihe auf einen Blick lesbar ist. Key = preview. */
-const FX_TINT = {
-  none: "#4a4857", aurora: "#54e08a", embers: "#ff7a2f",
-  klinge: "#35e0ff",
-  gottStandard: "#7fb4ff",
-};
+/* #farbsystem: Rarity-Farbe je Effekt-Chip (linker Farbbalken) NACH PREIS-STUFE — das neue, einheitliche System.
+   Grau = Default/„nichts" (Standard/Kein Feld-Effekt/gottStandard, ohne Preis) · Grün 10 · Blau 20 · Lila 30 ·
+   Legendär Gelb 40. Der Preis bestimmt die Farbe → die Rarity ist auf einen Blick lesbar, auch vor dem Kauf. */
+const RARITY_COLOR = { default: "#6b6880", 10: "#46d17f", 20: "#4a9dff", 30: "#a575ff", 40: "#f5c542" };
+const rarityTint = (fx) => RARITY_COLOR[globalFxPrice(fx)] || RARITY_COLOR.default;
 
 /* #fx-floater: Text-Chip einer Kategorie-Reihe (horizontal wischbar) — KEIN Grafik-Icon. Linker Signatur-Farbbalken
    + Name + Status (aktiv = grün · kaufbar = Preis gold · sonst „im Besitz"). Die echte Optik zeigt der Floater oben;
    der Chip ist ein reiner Wähler. Tippen wählt den Effekt. */
 function FxChip({ fx, selected, owned, active, onPick, onToggle }) {
-  const tint = FX_TINT[fx.preview] || "#35e0ff";
+  const tint = rarityTint(fx); // #farbsystem: Rarity-Farbe nach Preis-Stufe (grau/grün/blau/lila/gelb)
   const status = active ? { c: "#54e08a", label: "aktiv", dot: "#54e08a" }
-    : !owned ? { c: "#f2c14a", label: `${globalFxPrice(fx)} DP`, dot: "#f2c14a" }
+    : !owned ? { c: tint, label: `${globalFxPrice(fx)} DP`, dot: tint } // Preis in der Rarity-Farbe
     : { c: "#6d6a80", label: "im Besitz", dot: null };
   // #: Doppel-TIPP/-Klick SCHALTET UM (aktiv→abwählen · im Besitz→auswählen). onDoubleClick (dblclick) feuert auf Touch
   // NICHT → eigene Zeitmessung: zwei Klicks/Tipps innerhalb 320 ms = Doppel (Maus UND Handy). Einzelklick wählt (onPick).
@@ -839,7 +845,7 @@ function FxChip({ fx, selected, owned, active, onPick, onToggle }) {
         border: `1px solid ${selected ? "#9b82f0" : "#2a2836"}`,
         boxShadow: selected ? "0 0 0 1px #9b82f0, 0 0 14px #9b82f022" : undefined }}>
       {/* Signatur-Farbbalken links — nicht besessene Effekte ausgegraut (wie die Pack-Kacheln): Balken entfärbt, Name gemutet. */}
-      <span aria-hidden="true" className="absolute left-0 top-0 bottom-0" style={{ width: 4, background: owned ? tint : "#3f3d4a", boxShadow: owned ? `0 0 8px ${tint}66` : undefined }} />
+      <span aria-hidden="true" className="absolute left-0 top-0 bottom-0" style={{ width: 4, background: tint, boxShadow: `0 0 8px ${tint}66`, opacity: owned ? 1 : 0.85 }} />
       <span className="block text-[11.5px] font-extrabold leading-tight" style={{ color: selected ? "#e8e6ff" : owned ? "#e3e1ec" : "#7d7a8b",
         display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: 27 }}>{fx.name}</span>
       <span className="flex items-center gap-1.5 mt-1 text-[9.5px] font-bold" style={{ color: status.c }}>

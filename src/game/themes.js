@@ -34,9 +34,9 @@ export const GLOBAL_FX = [
   // (#311 überarbeitet wieder eingeführt) und der synthetische Klinge-Finisher. Die Gottgleich-Kategorie (group "gott")
   // bleibt (nur „Standard"), dort kommt später neuer Prunk rein.
   { key: "aurora", name: "Aurora", desc: "Weiche Polarlicht-Schleier driften übers Feld; je Stich ein sanfter Bloom-Puls — in der Deckfarbe.",
-    ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "bgfx" }, // #kategorien: Hintergrund-Effekt (reiner BG, Pixi)
+    ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 20, group: "bgfx" }, // #kategorien: Hintergrund-Effekt (reiner BG, Pixi) · #farbsystem: blau = 20 DP
   { key: "embers", name: "Glutfunken", desc: "Schwebende Glutpartikel steigen langsam auf; je Stich ein Funken-Aufstoß von unten — in der Deckfarbe.",
-    ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 8, group: "bgfin" }, // #kategorien: Hintergrund-Finisher (Stich-Interaktion, Pixi)
+    ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 10, group: "bgfin" }, // #kategorien: Hintergrund-Finisher (Stich-Interaktion, Pixi) · #farbsystem: grün = 10 DP
   { key: "starfield", name: "Sternenfeld", desc: "Ein dichtes Sternenfeld driftet über drei Tiefen-Ebenen mit Nebel-Schleier; je Stich zieht eine Sternschnuppe durchs Feld — größer je Score-Stufe, ab der Stufe Stark mit Einschlag-Blitz und Funken. Standard weiß-blau, wahlweise in der Deckfarbe.",
     ownKey: "fx:starfield", option: "fxStarfield", preview: "starfield", price: 20, group: "bgfin" }, // #311: Hintergrund-Finisher (Stich-Interaktion, Pixi)
 ];

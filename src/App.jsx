@@ -497,7 +497,9 @@ export function Autostich() {
     // (Glutfunken) können GLEICHZEITIG aktiv sein. Battlefield rendert beide Layer übereinander.
     bgFx: activeBgFx(profile, options),
     bgFinisher: activeBgFinisher(profile, options),
-    finisher: options.finisher || "standard", // #finisher: gewählter Sieg-Finisher (standard=Wegflug|klinge)
+    // #finisher/#klinge-kaufbar: gewählter Sieg-Finisher (standard=Wegflug|klinge). „klinge" gilt nur bei Besitz
+    // (fx:klinge gekauft) — sonst zurück auf den Gratis-Standard, damit eine ungekaufte Auswahl nicht doch rendert.
+    finisher: (options.finisher === "klinge" && !!profile?.ownedCosmetics?.["fx:klinge"]) ? "klinge" : "standard",
     auroraDeck: !!options.fxAuroraDeck, // Aurora-Farbmodus: false = Standard-Palette, true = Deckfarbe
     emberDeck: !!options.fxEmberDeck,   // Glutfunken-Farbmodus: false = warmes Feuer, true = Deckfarbe
     starfieldDeck: !!options.fxStarfieldDeck, // #311 Sternenfeld-Farbmodus: false = Weiß-Blau, true = Deckfarbe
