@@ -28,6 +28,7 @@ const cardAnimForce = (name) => (import.meta.env.VITE_PREVIEW === "1" || import.
 const EDGEGLOW_FORCE = cardAnimForce("edgeglow");
 const HOLO_FORCE = cardAnimForce("holo");
 const GLITCH_FORCE = cardAnimForce("glitch");
+const MATERIALIZE_FORCE = cardAnimForce("materialize");
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
@@ -802,6 +803,21 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // weg, wie die eigene Karte bei Niederlage — ohne Flip). Bei Gegner-Sieg (oppWinner) darf sie flippen + ankippen.
   const oppFlipOn = !reduced && !!t && !oppSliced && !oppFlyAway && flipMs > 170;
   const flipDur = clamp(flipMs * 0.55, 220, 460);
+  // #318 Materialize ERSETZT den Flip: statt des 3D-Flips baut sich die Karte aus Nano-Partikeln auf (Reveal) bzw.
+  // löst sich bei Niederlage rückwärts auf (Dematerialize). Wir fahren das über eine Opacity-Rampe am Karten-Wrapper
+  // (as-materialize-in/-out) → die Partikel (CardFxStage) laufen synchron, und der Blitzrahmen (IonStorm, liest die
+  // DOM-Opacity) fadet ZEITGLEICH mit. Nur Preview/Dev (wie die ganze CardFxStage); reduced → normaler Reveal, kein
+  // Aufbau. Kein Tier-Gate (auf jeder Karte, sobald der Effekt an ist).
+  const matActive = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
+    ((cardAnims || []).includes("materialize") || MATERIALIZE_FORCE);
+  const matPlayer = matActive && !reduced && !!t && flipMs > 170;
+  const pReveal   = matPlayer && !flyAway;   // Aufbau (statt 3D-Flip)
+  const pDissolve = matPlayer && flyAway;    // Auflösen (statt Wegflug)
+  const useFlip   = flipOn && !matPlayer;    // 3D-Flip nur, wenn Materialize NICHT aktiv
+  const matOpp     = matActive && !reduced && !!t && flipMs > 170 && !oppSliced; // Klinge-Slice behält seine eigene Choreo
+  const oReveal    = matOpp && !oppFlyAway;
+  const oDissolve  = matOpp && oppFlyAway;
+  const useOppFlip = oppFlipOn && !matOpp;
 
   // Kartenelemente einmal bauen — als sichtbare Karte, als (unsichtbarer) Größen-Platzhalter unter dem Slice und
   // als Klon-Quelle in SliceFx wiederverwendbar (Elemente sind unveränderliche Beschreibungen → mehrfach nutzbar).
@@ -822,13 +838,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const playerFront = playerWinner ? <div style={winnerTilt(sWinner)}>{pCardEl}</div> : pCardEl;
   const playerCard = t ? (
     <div key={`p${t.trickNo}`} ref={playerCardRef} className="relative"
-      style={flyAway ? { animation: `as-flyaway ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
-           : flipOn ? undefined : dealStyle("as-deal-left")}>
+      style={pDissolve ? { animation: `as-materialize-out ${flyDur}ms ease-in forwards`, willChange: "opacity, transform" }
+           : pReveal ? { animation: `as-materialize-in ${flipDur}ms ease-out both`, willChange: "opacity" }
+           : flyAway ? { animation: `as-flyaway ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
+           : useFlip ? undefined : dealStyle("as-deal-left")}>
       {/* Krits zeigen GAR keinen Ergebnis-Puls mehr — nur das Shatter/der Schnitt (+ GOTTGLEICH). Nur normale Siege pulsen (grün). */}
       {resultPulse(win && !isCrit ? "#5ab87a" : null, false)}
-      {flipOn ? (
+      {useFlip ? (
         <FlipReveal front={playerFront} backImage={deckBack} dur={flipDur} />   /* #180: Rücken → Front */
-      ) : playerFront}   {/* Niederlage: eigene Karte fliegt (via as-flyaway am Wrapper) einfach weg — kein Schnitt */}
+      ) : playerFront}   {/* #318 Materialize: Wrapper-Opacity-Rampe + Partikel bilden den Reveal; Niederlage → Auflösen statt Wegflug */}
     </div>
   ) : <div className="relative"><CardBack label="" image={deckBack} /></div>;
 
@@ -836,12 +854,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oppFront = oppWinner ? <div style={winnerTilt(sWinner)}>{oCardEl}</div> : oCardEl;
   const oppCard = t ? (
     <div key={`o${t.trickNo}`} ref={oppCardRef} className="relative"
-      style={oppFlyAway ? { animation: `as-flyaway-r ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
-           : (oppSliced || oppFlipOn) ? undefined : dealStyle("as-deal-right")}>
+      style={oDissolve ? { animation: `as-materialize-out ${flyDur}ms ease-in forwards`, willChange: "opacity, transform" }
+           : oReveal ? { animation: `as-materialize-in ${flipDur}ms ease-out both`, willChange: "opacity" }
+           : oppFlyAway ? { animation: `as-flyaway-r ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
+           : (oppSliced || useOppFlip) ? undefined : dealStyle("as-deal-right")}>
       {resultPulse(lost ? "#e0605a" : null, false)}
       {oppSliced ? (
         <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — der entkoppelte Ghost (Side-overlay) floatet + schneidet/berstet (#186) */
-      ) : oppFlipOn ? (
+      ) : useOppFlip ? (
         <FlipReveal front={oppFront} backImage={oppBackImg} dur={flipDur} />   /* #186: Cover → Front */
       ) : oppFront}
     </div>
@@ -1198,16 +1218,24 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         const edgeGlow = animSet.has("edgeglow") || EDGEGLOW_FORCE;
         const holo = animSet.has("holo") || HOLO_FORCE;
         const glitch = animSet.has("glitch") || GLITCH_FORCE;
-        if (!edgeGlow && !holo && !glitch) return null;
+        const materialize = animSet.has("materialize") || MATERIALIZE_FORCE;
+        if (!edgeGlow && !holo && !glitch && !materialize) return null;
+        // Materialize-Trigger je Karte (phase "in"=Aufbau/Reveal, "out"=Auflösen; key wechselt je Stich → Neustart).
+        const pMat = pReveal ? { phase: "in", key: `p${t.trickNo}`, win, dur: flipDur / 1000 }
+                   : pDissolve ? { phase: "out", key: `p${t.trickNo}`, win: false, dur: flyDur / 1000 } : null;
+        const oMat = oReveal ? { phase: "in", key: `o${t.trickNo}`, win: lost, dur: flipDur / 1000 }
+                   : oDissolve ? { phase: "out", key: `o${t.trickNo}`, win: false, dur: flyDur / 1000 } : null;
         return (
           <Suspense fallback={null}>
             <CardFxStage
               panelRef={panelRef}
               cards={[
-                { ref: playerCardRef, active: !!t && !flyAway && !flipOn, num: t ? t.pValue : "", color: t ? suitColor(t.pCard.suit) : null },
-                { ref: oppCardRef, active: !!t && !oppFlyAway && !oppFlipOn && !oppSliced, num: t ? t.oValue : "", color: t ? suitColor(t.oCard.suit) : null },
+                // Bei aktivem Materialize bleibt die Karte während Aufbau/Auflösen „aktiv" (Partikel), sonst wie bisher
+                // an Flip/Wegflug gekoppelt (Dauer-Layer sind während des Aufbaus intern pausiert).
+                { ref: playerCardRef, active: materialize ? !!t : (!!t && !flyAway && !flipOn), num: t ? t.pValue : "", color: t ? suitColor(t.pCard.suit) : null, mat: pMat },
+                { ref: oppCardRef, active: materialize ? (!!t && !oppSliced) : (!!t && !oppFlyAway && !oppFlipOn && !oppSliced), num: t ? t.oValue : "", color: t ? suitColor(t.oCard.suit) : null, mat: oMat },
               ]}
-              layers={{ edgeGlow, holo, glitch }}
+              layers={{ edgeGlow, holo, glitch, materialize }}
               color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#9b82f0"}
               tier={hitTier} reduced={reduced} lite={lite} />
           </Suspense>
