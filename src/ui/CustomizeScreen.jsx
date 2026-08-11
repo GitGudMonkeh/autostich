@@ -11,6 +11,7 @@ import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
 import { SliceFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx, FieldFxLayer, FX_RENDERER } from "./Battlefield.jsx";
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
+import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
@@ -464,6 +465,7 @@ function FieldFxPreview({ effect }) {
   const [emberStep, setEmberStep] = useState(0);
   const [tierStep, setTierStep] = useState(0);
   const pixiEmbers = effect === "embers" && EMBER_PIXI_PREVIEW;
+  const pixiField = EMBER_PIXI_PREVIEW && PIXI_FIELD_KEYS.includes(effect); // Aurora/Sternenfeld/Glutfunken → GPU-Bühne im Showcase
   useEffect(() => {
     if (effect === "none") return undefined;
     // #: Glutfunken — Score-/Tier-Wechsel UND Funkenstoß aus EINEM Timer, damit Puls und Label immer zusammenpassen.
@@ -481,15 +483,15 @@ function FieldFxPreview({ effect }) {
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {/* Glutfunken als GPU-Eskalation (Pixi) — sonst die DOM-Fassung; ambient-Effekte laufen weiter über FieldFxLayer. */}
-      {pixiEmbers && (
+      {/* Pixi-Feldeffekte (Aurora/Sternenfeld/Glutfunken) auf der GPU-Bühne — sonst die DOM-Fassung (FieldFxLayer). */}
+      {pixiField && (
         <Suspense fallback={null}>
-          <PixiStage className="absolute inset-0 z-[2]" effect="embers" color={DEMO_C}
-            score={250000} reduced={false} lite={false}
-            sweepId={sweep} sweepDur={1100} win hitTier={tierStep} />
+          <PixiStage className="absolute inset-0 z-[2]" effect={effect} color={DEMO_C} color2="#b06bff"
+            score={pixiEmbers ? 250000 : demoScore} reduced={false} lite={false}
+            sweepId={sweep} sweepDur={1100} win hitTier={pixiEmbers ? tierStep : 0} />
         </Suspense>
       )}
-      {effect !== "none" && !pixiEmbers && <FieldFxLayer effect={effect} color={DEMO_C} color2="#b06bff" sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
+      {effect !== "none" && !pixiField && <FieldFxLayer effect={effect} color={DEMO_C} color2="#b06bff" sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
       {effect === "embers" && (
         <div className="absolute right-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
           style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#ffd7b0" }}>

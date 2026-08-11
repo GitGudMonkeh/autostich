@@ -1,25 +1,18 @@
-import { Mesh, Geometry, Shader, GlProgram, UniformGroup } from "pixi.js";
+import { Filter, GlProgram, UniformGroup, defaultFilterVert, Graphics } from "pixi.js";
 
 /* Aurora als GPU-Shader (Pixi-Umbau) — reiner AMBIENT-Hintergrund: perspektivische Bögen zu je eigenem Fluchtpunkt,
    senkrechte klumpige Ausläufer, harte Unterkante, weicher Auslauf nach oben. KEIN Stich-Bezug, KEIN Puls (erupt = No-op).
 
-   Umsetzung: ein bildschirmfüllendes CLIP-SPACE-Mesh (Quad von -1..1) mit Custom-Shader. Die uv kommt DIREKT aus der
-   Geometrie (aUV 0..1) → exakt bildschirmfüllend, zentriert und aspekt-robust (Mobile hochkant wie Desktop breit).
-   Kein Pixi-Filter mehr (der hatte Koordinaten-/Padding-Versatz → rechtslastig/zu groß). Der Vertex-Shader gibt die
-   Clip-Position direkt aus (ignoriert Transform/Projektion) → das Mesh deckt IMMER das ganze Battlefield ab.
+   Umsetzung: ein Fullscreen-Fragment-Shader als Pixi-FILTER über einem bildschirmfüllenden Graphics-Rechteck (exakt
+   0,0..W,H → die Filter-Fläche == das ganze Battlefield, `vTextureCoord` läuft sauber 0..1 → zentriert, vollflächig).
+   (Der frühere Mesh-Ansatz mit Custom-GlProgram renderte auf der echten Pixi-Bühne nichts → zurück auf den Filter,
+   der wie die eingebauten Pixi-Filter zuverlässig zeichnet.)
 
    Läuft über der transparenten PixiStage-Canvas, die per Alpha übers Battlefield-Bild kompositiert (Schwarz → durchsichtig).
    GLSL 300 es (Pixi v8). Nur WebGL (GLSL-only) → PixiStage ist auf WebGL gepinnt. Reduced (minimal) → Zeit friert ein. */
 
-const VERT = [
-  "in vec2 aPosition;",
-  "in vec2 aUV;",
-  "out vec2 vUv;",
-  "void main(){ vUv = aUV; gl_Position = vec4(aPosition, 0.0, 1.0); }",
-].join("\n");
-
 const FRAG = [
-  "in vec2 vUv;",
+  "in vec2 vTextureCoord;",
   "out vec4 finalColor;",
   "uniform float uTime;",
   "uniform float uMode;",   // 0 = Standard-Palette · 1 = Deckfarbe (uDeck1 unten → uDeck2 oben)
@@ -36,7 +29,7 @@ const FRAG = [
   "  vec3 gr=vec3(0.25,1.0,0.55); vec3 cy=vec3(0.28,0.92,0.85); vec3 mg=vec3(0.82,0.34,0.98);",
   "  return mix(mix(gr,cy,smoothstep(0.0,0.45,h)), mg, smoothstep(0.4,1.0,h)); }",
   "void main(){",
-  "  vec2 uv = vUv;",                                                            // 0..1, y-up (aUV: unten=0) → füllt das ganze Feld
+  "  vec2 uv = vec2(vTextureCoord.x, 1.0 - vTextureCoord.y);", // y spiegeln → Bögen unten (Filter-y läuft von oben)
   "  float t = uTime;",
   "  vec3 ac = vec3(0.0);",
   "  for(int i=0;i<3;i++){ float fi=float(i);",
@@ -52,13 +45,13 @@ const FRAG = [
   "    float vshape = smoothstep(-0.018, 0.004, hAbove) * exp(-max(hAbove,0.0)*WISP);",
   "    float clump = smoothstep(CLUMPLO, CLUMPLO+0.42, fbm(vec2(uv.x*3.2 + fi*7.0 + drift*3.0, 1.5)));",
   "    float rays = pow(clamp(fbm(vec2(uv.x*RAYF + drift*7.0 + fi*20.0, uv.y*1.0 - t*0.07)),0.0,1.0), RAYC);",
-  "    float env = smoothstep(0.0,0.05,uv.x)*smoothstep(1.0,0.95,uv.x);",         // volle Breite abdecken (nur hauchdünne Randweiche)
+  "    float env = smoothstep(0.0,0.05,uv.x)*smoothstep(1.0,0.95,uv.x);",         // volle Feldbreite abdecken
   "    float v = vshape * clump*(0.15 + 0.85*rays) * env;",
   "    float hcol = clamp(hAbove*2.1, 0.0, 1.0);",
   "    ac += auroraCol(hcol) * v;",
   "  }",
   "  vec3 rgb = ac * I_ * 1.7;",
-  "  float a = clamp(max(rgb.r, max(rgb.g, rgb.b)), 0.0, 1.0) * 0.55;",           // noch etwas transparenter; Schwarz bleibt durchsichtig
+  "  float a = clamp(max(rgb.r, max(rgb.g, rgb.b)), 0.0, 1.0) * 0.55;",           // ~ transparenter; Schwarz durchsichtig
   "  finalColor = vec4(rgb, a);",
   "}",
 ].join("\n");
@@ -86,20 +79,23 @@ export function createAuroraField(app) {
     uDeck1: { value: new Float32Array([0.33, 0.88, 0.54]), type: "vec3<f32>" },
     uDeck2: { value: new Float32Array([0.69, 0.42, 0.98]), type: "vec3<f32>" },
   });
-  const glProgram = GlProgram.from({ vertex: VERT, fragment: FRAG, name: "aurora-field" });
-  const shader = new Shader({ glProgram, resources: { auroraUniforms: uniforms } });
+  const glProgram = GlProgram.from({ vertex: defaultFilterVert, fragment: FRAG, name: "aurora-field" });
+  const filter = new Filter({ glProgram, resources: { auroraUniforms: uniforms } });
 
-  // Bildschirmfüllendes Clip-Space-Quad (-1..1) mit uv 0..1 (unten-links = 0,0 → y-up).
-  const geometry = new Geometry({
-    attributes: {
-      aPosition: { buffer: new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]), format: "float32x2" },
-      aUV:       { buffer: new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]),     format: "float32x2" },
-    },
-    indexBuffer: new Uint32Array([0, 1, 2, 0, 2, 3]),
-  });
-  const mesh = new Mesh({ geometry, shader });
-  mesh.cullable = false;
-  app.stage.addChild(mesh);
+  // Bildschirmfüllendes Träger-Rechteck (exakt 0,0..W,H). Der Filter überschreibt seine Pixel; die Rechteck-Größe
+  // definiert die Filter-Fläche → vTextureCoord 0..1 spannt das ganze Feld (zentriert, kein Versatz).
+  const target = new Graphics();
+  let lastW = 0, lastH = 0;
+  function sizeTo() {
+    const W = Math.max(1, app.screen.width), H = Math.max(1, app.screen.height);
+    if (W === lastW && H === lastH) return;
+    lastW = W; lastH = H;
+    target.clear();
+    target.rect(0, 0, W, H).fill({ color: 0x000000, alpha: 1 });
+  }
+  sizeTo();
+  target.filters = [filter];
+  app.stage.addChild(target);
 
   let params = {
     effect: null, reduced: false, deckTint: readAuroraDeckDefault(),
@@ -112,13 +108,14 @@ export function createAuroraField(app) {
       deck1: next.color  != null ? hexToVec3(next.color,  params.deck1) : params.deck1,
       deck2: next.color2 != null ? hexToVec3(next.color2, params.deck2) : params.deck2,
       deckTint: next.deckTint != null ? next.deckTint : params.deckTint };
-    mesh.visible = params.effect === "aurora";
+    target.visible = params.effect === "aurora";
     uniforms.uniforms.uMode = params.deckTint ? 1 : 0;
     uniforms.uniforms.uDeck1 = params.deck1;
     uniforms.uniforms.uDeck2 = params.deck2;
   }
   function update(ticker) {
     if (params.effect !== "aurora") return;
+    sizeTo();
     if (!params.reduced) clock += Math.min(0.05, ticker.deltaMS / 1000); // minimal → Zeit einfrieren (Standbild)
     else if (clock === 0) clock = 6.0;
     uniforms.uniforms.uTime = clock;
@@ -131,9 +128,8 @@ export function createAuroraField(app) {
     erupt() { /* Aurora reagiert bewusst NICHT auf Stiche (reiner Hintergrund) */ },
     destroy() {
       try { app.ticker.remove(update); } catch { /* ignore */ }
-      try { mesh.destroy(); } catch { /* ignore */ }
-      try { geometry.destroy(); } catch { /* ignore */ }
-      try { shader.destroy(); } catch { /* ignore */ }
+      try { target.destroy(); } catch { /* ignore */ }
+      try { filter.destroy(); } catch { /* ignore */ }
     },
   };
 }
