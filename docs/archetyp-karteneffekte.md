@@ -123,44 +123,36 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
     pixel-identisch, bis Rollout entschieden ist).
 - **Status:** 🟢 v1 gebaut (Preview/Dev) — Feinschliff Look/Farbe nach Sichtung offen.
 
-### 5.2 Feuer 🔥 (`fire`) — Glow `#e0714a` · Flamme `#ff3a1e` / Kern `#ffcf7a`
+### 5.2 Feuer 🔥 (`fire`) — Flamme `#ff3d14` / Kern `#ffd9b0` / Glut `#ff6a1e`
 
-**Effekt — „Brand-Hitze" (Deck lodert mit steigender Hitze)**
+**Effekt — „Brennender Kartenkopf" (Redesign; ersetzt die alte Deck-Seiten-Variante)**
 
-- **Was:** Feuer lodert **AUSSEN an den Seiten nach oben bis über den Kopf** — **innen bleibt frei**
-  (harter Clip auf „Fläche MINUS Kartenform"). Realistische **additive Partikel-Flammen**
-  (heißer Kern gelb-weiß → rote Flamme → weiches Ausklingen), vertikal gestreckt, mit Flackern
-  (Sway) und **Neigung nach innen/oben zum Kopf** (`FLAME_LEAN`); dazu ein **dezentes Glühen** an
-  den Außenkanten. Der **Rahmen bleibt vorn** — das Feuer sitzt dahinter/außen.
-- **Wann:** Skaliert mit einer **Hitze** (0..1) — je heißer, desto höher lodert der Brand
-  (`REACH_MAX` > 100 % → über die Oberkante). **In-Game-Hitzequelle noch zu definieren** (welcher
-  Spiel-Zustand die Hitze treibt — Feuer-Gameplay: Schmieden/Brandmarke/Ofen-Hitze).
-- **⚠️ WICHTIG — Platzierung:** Am Ende brennt **NICHT die gespielte Karte**, sondern das **DECK
-  — der liegende Stapel, von dem die Karte umgedreht wird**. Mount-Ziel = **Deck-Stapel** (eigener
-  Slot/Ref), NICHT der Karten-Wrapper wie bei Blitz. (Zum Designen wurde der Effekt im Artifact auf
-  einer Karte gezeigt, real gehört er auf den Deckstapel.)
-- **Wo:** Eigener Pixi-`Application`-Layer, positioniert auf die **Deck-Box**. Getrennt vom
-  Blitz-Layer → beide (alle vier) Effekte laufen gleichzeitig, ohne sich zu stören. Feuer sitzt
-  **außen/hinter** der Kontur, Blitz-Rahmen auf der Kante (z11).
-- **Abgesegnete TUNE-Werte (2026-08-11, aus dem Feuer-Tuning-Board):**
-  ```
-  COLOR: "#ff3a1e", CORE: "#ffcf7a",
-  REACH_MAX: 1, HEAT_START: 0.04, EDGE_OFFSET: 0, FLAME_LEAN: 0.36,
-  GLOW_ALPHA: 0.24, GLOW_W: 10,
-  FLAME_RATE: 140, FLAME_RISE: 134, FLAME_SWAY: 1, FLAME_SIZE: 9, FLAME_LIFE_MS: 900, SPREAD: 8,
-  ```
-- **Reduced/Mobile:** analog Blitz — `reduced` → stark reduzierte/statische Glut (kein voller
-  Partikelsturm); Ticker nur bei Hitze > 0 & sichtbarem Tab; DPR ≤ 2; Partikel-Deckel auf Mobile.
-- **Umsetzungs-Notizen:** neue Komponente `src/ui/fx/FireBurn.jsx` (Pixi, additive Partikel via
-  Sprites/ParticleContainer oder Graphics), Clip auf Außenbereich der Deck-Box. Mount auf den
-  **Deck-Slot** (Ref am Deckstapel ergänzen). Dev-Sicht `?fireheat=<0..1>` zum Ansehen, Gate wie
-  IonStorm (Preview/Dev).
-- **Verdrahtung (erledigt):** Hitze = `state.heat.value / state.heat.max` (nur wenn `heat.active`,
-  also Feuer-Builds) — `state.heat` ist ein OBJEKT, nicht die Zahl (häufige Fehlerquelle!).
-  Deck-Slot-Ref `playerDeckRef` an `Side`. Z-Lage: FireBurn-Layer z-9 liegt HINTER der Karten-Reihe
-  (`relative z-10`) → Feuer sitzt hinter dem Deck, innen frei. Nur Preview/Dev gemountet.
-- **Status:** 🟢 **Look + Werte abgesegnet, in-game verdrahtet** (Hitze aus der Hitzeleiste,
-  Layer hinter dem Deck). Bugfix: `heat` ist ein Objekt (`value/max`), nicht `Number(heat)`.
+- **Was:** Der **KOPF der eigenen Karte brennt** — eine verankerte, realistische **additive Partikel-
+  Flammenlinie** lodert **oben ÜBER dem Rahmen** nach oben (heißer Kern warmweiß → rote Flamme,
+  vertikal gestreckt, Sway + Neigung zur Mitte). Eine **Brennlinie** am oberen Rand hält das Feuer
+  zusammen; ein **dezentes warmes Kanten-Glühen** leuchtet auf die Karte (kein Scorch/keine
+  Verkohlung — bewusst verworfen). Optional Rauch. **Weniger gelb**, rötlich-realistisch.
+- **Wann:** **Hitze** (0..1) blendet zwischen **vier abgestimmten Phasen (20/50/80/100 %)** über —
+  die **Form bleibt gleich, nur die Intensität skaliert** (niedrig = Kante glimmt/fängt an zu
+  brennen, voll = lodert hoch). Unter 20 % aus 0 eingeblendet. Quelle = **Hitzeleiste**
+  (`state.heat.value / state.heat.max`, nur bei `heat.active` = Feuer-Builds).
+- **⚠️ Platzierung (final):** auf der **gespielten eigenen Karte** (Kopf/oberer Rand), NICHT auf
+  dem Deck (die alte „unter der Karte"-Variante wirkte komisch → verworfen). Beim Abwerfen
+  (`flyAway`) → Hitze 0 (kein hängendes Feuer); dazu `isConnected`/Off-Panel-Guards wie IonStorm.
+- **Wo:** Eigener Pixi-`Application`-Layer **ÜBER den Karten (z-12)**, positioniert auf die eigene
+  Kartenbox (`playerCardRef`) relativ zu `panelRef`. Getrennt vom Blitz-Layer (z-11) → alle vier
+  Effekte koexistieren.
+- **Abgesegnete Phasen (2026-08-11, aus dem Feuer-Phasen-Board) — siehe `FIRE_PHASES` in
+  `FireHead.jsx`:** je Phase Farben + `FLAME_RATE/RISE/H/SPREAD/SWAY/SIZE/LIFE/LEAN` +
+  `GLOW_DOWN/GLOW_ALPHA/SMOKE`; dazwischen **linear interpoliert** (`paramsAt(h)`).
+- **Reduced/Mobile:** Ticker nur bei Hitze > 0 & sichtbarem Tab; DPR ≤ 2; Partikel-Pool gedeckelt
+  (`MAX=700`). (Explizites reduced-Verhalten optional nachrüstbar.)
+- **Umsetzung (erledigt):** `src/ui/fx/FireHead.jsx` (Pixi: `ParticleContainer` Flammen + Glüh-/
+  Brennlinien-Sprites + Rauch, Phasen-Interpolation). Alte `src/ui/fx/FireBurn.jsx` **gelöscht**,
+  Deck-`slotRef` an `Side` **zurückgebaut**. Mount in Battlefield auf `playerCardRef`, Hitze aus der
+  Hitzeleiste, `flyAway`→0. Dev-Sicht `?fireheat=<0..1>`. Gate Preview/Dev (Prod pixel-identisch).
+- **Status:** 🟢 **Look + Phasen abgesegnet, in-game verdrahtet** (Kopf über dem Rahmen,
+  Phasen-Interpolation aus der Hitzeleiste).
 
 ### 5.3 Eis ❄️ (`ice`) — Glow `#5ec8f0`
 - **Status:** ⚪ Noch nicht dran
