@@ -257,7 +257,13 @@ export function IonStorm({ active = false, panelRef, cardRef, color = "#5ec8f0",
       const a = appRef.current;
       if (!a) return;
       const run = stateRef.current.active && document.visibilityState !== "hidden";
-      if (run) a.ticker.start(); else { a.ticker.stop(); gRef.current?.clear(); }
+      if (run) { a.ticker.start(); return; }
+      // #blitz-fix: Ticker stoppen — dabei den Rahmen NICHT nur in den Graphics-Daten löschen, sondern EINMAL
+      // rendern, sonst bleibt das zuletzt gezeichnete Bild am Schirm kleben (Pixi rendert nach ticker.stop() nicht
+      // mehr). Ohne das blieb der Rahmen nach einem Sieg (active→false ohne Wegflug) statisch hängen.
+      a.ticker.stop();
+      gRef.current?.clear();
+      try { a.renderer?.render(a.stage); } catch { /* ignore */ }
     }
     applyRunRef.current = applyRun;
     const onVis = () => applyRun();
