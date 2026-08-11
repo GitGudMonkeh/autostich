@@ -66,11 +66,11 @@ const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", gro
 // Effekt-Gruppen des „Effekte"-Tabs. mode: "toggle" (frei kombinierbar) | "finisher" (Einfachauswahl, exklusiv,
 // inkl. „Klinge" als Default). Grid-Tunnel wurde entfernt → keine Ambience-Gruppe mehr.
 const FX_GROUPS = [
-  { key: "anim",     title: "Karten-Animationen", hint: "einmal kaufen · für alle Packs", mode: "toggle" },
-  { key: "field",    title: "Battlefield-Ambiente", hint: "nur eins aktiv",               mode: "field" }, // #306
-  { key: "finisher", title: "Sieg-Finisher",      hint: "nur einer aktiv",                mode: "finisher" },
-  // #: Krit-Gruppe (Shatter) entfernt — Krit-Finisher-Animationen raus.
-  { key: "gott",     title: "Gottgleich-Prunk",   hint: "nur einer aktiv",                mode: "gott" }, // exklusiv
+  // #kategorien: zwei UNABHÄNGIGE Feld-Slots (beide gleichzeitig aktivierbar) + Sieg-Finisher.
+  // Karten-Animationen + Gottgleich-Prunk sind vorerst DEAKTIVIERT (Tabs entfernt); die Effekte bleiben im Code.
+  { key: "bgfx",     title: "Hintergrund-Effekt",   hint: "nur einer aktiv", mode: "bgfx" },   // reiner BG (Aurora …)
+  { key: "bgfin",    title: "Hintergrund-Finisher", hint: "nur einer aktiv", mode: "bgfin" },  // BG mit Stich-Interaktion (Glutfunken …)
+  { key: "finisher", title: "Sieg-Finisher",        hint: "nur einer aktiv", mode: "finisher" },
 ];
 /* #306 Synthetische „Kein Feld-Effekt"-Kachel (immer verfügbar, kein Kauf): der Aus-Zustand der einfach-exklusiven
    Battlefield-Ambiente-Gruppe — wählbar wie „Klinge" beim Finisher. */
@@ -80,13 +80,12 @@ const FIELD_NONE = { key: "none", name: "Kein Feld-Effekt", group: "field", prev
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxGroupItems = (group) => {
   const list = GLOBAL_FX.filter((f) => f.group === group && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
-  if (group === "gott") return [GOTT_STANDARD, ...list];
   if (group === "finisher") return [KLINGE, ...list]; // „Klinge" (Default) voran
-  if (group === "field") return [FIELD_NONE, ...list]; // „Kein Feld-Effekt" (Default) voran
+  if (group === "bgfx" || group === "bgfin") return [FIELD_NONE, ...list]; // „Kein Effekt" (Default) voran
   return list;
 };
 // #: Der Standard-Key je einfach-exklusiver Gruppe (der Gratis-Aus-Zustand). Toggle-Gruppen (anim) haben keinen.
-const FX_STD_KEY = { finisher: "klinge", field: "none", gott: "gottStandard" };
+const FX_STD_KEY = { finisher: "klinge", bgfx: "none", bgfin: "none" };
 // #: Aktive Auswahl an die ERSTE Stelle rücken, direkt danach den „Standard" (falls die Gruppe einen hat), Rest folgt
 // in bisheriger Reihenfolge. Kein/Standard aktiv oder Toggle-Gruppe (kein stdKey) → Reihenfolge unverändert.
 function orderFxItems(items, selKey, stdKey) {
@@ -107,9 +106,14 @@ const finisherSelOf = (options) => options?.fxBlackhole ? "blackhole" : options?
   : options?.fxLaserSlice ? "laserSlice" : "klinge";
 /* #306 Battlefield-Ambiente einfach-exklusiv (genau EINS aktiv, oder „none"). Datengetrieben aus der „field"-Gruppe:
    fieldFxFlags(key) schreibt alle Feld-Optionen in einem Rutsch (genau eine true, „none" = alle false). */
-const FIELD_FX = GLOBAL_FX.filter((f) => f.group === "field");
-const fieldFxFlags = (key) => Object.fromEntries(FIELD_FX.map((f) => [f.option, f.key === key]));
-const fieldFxSelOf = (options) => { for (const f of FIELD_FX) if (options?.[f.option]) return f.key; return "none"; };
+// #kategorien: zwei getrennte, UNABHÄNGIGE Feld-Slots. bgFxFlags/bgFinFlags schreiben NUR die Optionen ihrer
+// eigenen Gruppe (genau eine true, „none" = alle false) → Aurora (bgfx) und Glutfunken (bgfin) schließen sich NICHT aus.
+const BGFX_FX  = GLOBAL_FX.filter((f) => f.group === "bgfx");
+const BGFIN_FX = GLOBAL_FX.filter((f) => f.group === "bgfin");
+const bgFxFlags  = (key) => Object.fromEntries(BGFX_FX.map((f) => [f.option, f.key === key]));
+const bgFinFlags = (key) => Object.fromEntries(BGFIN_FX.map((f) => [f.option, f.key === key]));
+const bgFxSelOf  = (options) => { for (const f of BGFX_FX)  if (options?.[f.option]) return f.key; return "none"; };
+const bgFinSelOf = (options) => { for (const f of BGFIN_FX) if (options?.[f.option]) return f.key; return "none"; };
 /* Gottgleich-Prunk einfach-exklusiv (genau EINER aktiv, oder „gottStandard" = kein Prunk). Datengetrieben aus der
    „gott"-Gruppe: gottFlags(key) schreibt alle Prunk-Optionen in einem Rutsch (genau eine true, „gottStandard" = alle false). */
 const GOTT_FX = GLOBAL_FX.filter((f) => f.group === "gott");
@@ -810,8 +814,8 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
    An-Aus / Als Finisher·Ambiente wählen). Kein separates Kauffenster mehr — der Floater IST Vorschau und Kauf. */
 function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const finisherSel = finisherSelOf(options);
-  const fieldSel = fieldFxSelOf(options);
-  const gottSel = gottSelOf(options);
+  const bgFxSel = bgFxSelOf(options);
+  const bgFinSel = bgFinSelOf(options);
   // Auswahl-Status des Floaters: { group, key }. Default = erster Effekt der ersten Gruppe (Karten-Animationen).
   const [sel, setSel] = useState(() => { const g = FX_GROUPS[0]; return { group: g.key, key: fxGroupItems(g.key)[0].key }; });
   const selGroup = FX_GROUPS.find((g) => g.key === sel.group) || FX_GROUPS[0];
@@ -820,8 +824,8 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 
   // Ist ein Effekt in seiner Gruppe „aktiv"? (Toggle an / als Finisher·Ambiente gewählt). Zentrale Wahrheit → Chip-Marker + Floater-Aktion.
   const isActive = (g, fx) => g.mode === "finisher" ? finisherSel === fx.key
-    : g.mode === "field" ? fieldSel === fx.key
-    : g.mode === "gott" ? gottSel === fx.key
+    : g.mode === "bgfx" ? bgFxSel === fx.key
+    : g.mode === "bgfin" ? bgFinSel === fx.key
     : fx.standard ? false : !!options?.[fx.option];
 
   return (
@@ -834,7 +838,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
       <div className="mt-3">
         {FX_GROUPS.map((g) => {
           // #: aktiver Effekt zuerst, dann Standard (falls vorhanden) — „rutscht links an die erste Stelle".
-          const selKey = g.mode === "finisher" ? finisherSel : g.mode === "field" ? fieldSel : g.mode === "gott" ? gottSel : null;
+          const selKey = g.mode === "finisher" ? finisherSel : g.mode === "bgfx" ? bgFxSel : g.mode === "bgfin" ? bgFinSel : null;
           const items = orderFxItems(fxGroupItems(g.key), selKey, FX_STD_KEY[g.key]);
           return (
             <div key={g.key} className="mb-1.5">
@@ -857,8 +861,8 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
                       const on = isActive(g, fx);
                       if (!on && !(fx.alwaysOwned || globalFxOwned(p, fx))) return;   // nicht im Besitz → erst kaufen (Floater)
                       if (g.mode === "finisher") onChoose(finisherFlags(on ? "none" : fx.key));
-                      else if (g.mode === "field") onChoose(fieldFxFlags(on ? "none" : fx.key));
-                      else if (g.mode === "gott") onChoose(gottFlags(on ? "gottStandard" : fx.key));
+                      else if (g.mode === "bgfx") onChoose(bgFxFlags(on ? "none" : fx.key));
+                      else if (g.mode === "bgfin") onChoose(bgFinFlags(on ? "none" : fx.key));
                       else onChoose({ [fx.option]: !on });
                     }} />
                 ))}
@@ -900,10 +904,10 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
     );
   } else if (group.mode === "finisher") {
     action = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Finisher wählen"}</button>;
-  } else if (group.mode === "field") {
-    action = <button onClick={() => onChoose(fieldFxFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Ambiente wählen"}</button>;
-  } else if (group.mode === "gott") {
-    action = <button onClick={() => onChoose(gottFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Prunk wählen"}</button>;
+  } else if (group.mode === "bgfx") {
+    action = <button onClick={() => onChoose(bgFxFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Hintergrund wählen"}</button>;
+  } else if (group.mode === "bgfin") {
+    action = <button onClick={() => onChoose(bgFinFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Hintergrund-Finisher wählen"}</button>;
   } else {
     action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
   }

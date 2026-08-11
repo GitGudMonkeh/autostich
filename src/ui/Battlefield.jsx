@@ -1304,8 +1304,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // Frame Glow (Karte) + Hologrid (Gitterlinien im Battlefield); Holo Swipe = Schimmer über die eigene Karte.
-  // #306 fxField = Key des aktiven Battlefield-Ambiente-Effekts ("hologrid"/"starfield"/… | null) — einfach-exklusiv.
-  deckA1 = null, deckA2 = null, fxFrameGlow = false, fxHoloSwipe = false, fxAuroraVeil = false, fxGlitch = false, fxField = null, fxLaserSlice = false, fxBlackhole = false, fxLasergrid = false, fxBurnBeam = false, fxOverload = false, fxDisperse = false,
+  // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora …), bgFinisher = Hintergrund-
+  // Finisher mit Stich-Interaktion (Glutfunken …). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
+  deckA1 = null, deckA2 = null, fxFrameGlow = false, fxHoloSwipe = false, fxAuroraVeil = false, fxGlitch = false, bgFx = null, bgFinisher = null, fxLaserSlice = false, fxBlackhole = false, fxLasergrid = false, fxBurnBeam = false, fxOverload = false, fxDisperse = false,
   // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar).
   fxFireworks = false, fxGoldRain = false, fxPrismaWave = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
@@ -1320,8 +1321,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Pixi-Umbau: Übernimmt der GPU-Emitter das aktive Feld-Ambiente? Nur im Preview/Dev (env-Gate), wenn der aktive
   // Feld-Effekt portiert ist (PIXI_FIELD), eine Deckfarbe existiert und der A/B-Umschalter auf „pixi" steht. Wenn ja,
   // rendert die DOM-Fassung (FieldFxLayer) für diesen Effekt keine Nodes (suppressField) → er zieht komplett auf die GPU.
-  const pixiFx = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
-    && FX_RENDERER === "pixi" && PIXI_FIELD.has(fxField) && !!deckA1;
+  const pixiEnabled = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi" && !!deckA1;
+  const pixiBg  = pixiEnabled && PIXI_FIELD.has(bgFx);        // BG-Effekt (z. B. Aurora) läuft auf der GPU-Bühne
+  const pixiFin = pixiEnabled && PIXI_FIELD.has(bgFinisher);  // BG-Finisher (z. B. Glutfunken) läuft auf der GPU-Bühne
   // GOTTGLEICH-Prunk: Panel = Prallwand-Rahmen, oppSlot = Ursprung (zerstörte Gegnerkarte); burst triggert den Schwarm.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
@@ -1365,7 +1367,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const lastSweepAt = useRef(-1e9);
   const trickNo = lastTrick ? lastTrick.trickNo : null;
   useEffect(() => {
-    if (!fxField || reduced || trickNo == null) return;
+    if (!(bgFx || bgFinisher) || reduced || trickNo == null) return;
     const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
     if (now - lastSweepAt.current >= sweepDur - 20) { lastSweepAt.current = now; setSweepId((k) => k + 1); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1833,11 +1835,18 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           Hintergrund-Tab. Nur Preview/Test- oder Dev-Build — Produktion bleibt identisch (Pixi wird dort nie geladen). */}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
         <Suspense fallback={null}>
+          {/* Hintergrund-Effekt (reiner BG, kein Stich-Bezug) — z-2, HINTER dem Finisher */}
           <PixiStage className="z-[2]"
-            effect={pixiFx ? fxField : null}
+            effect={pixiBg ? bgFx : null}
             color={deckA1 || "#ffffff"}
             color2={deckA2 || "#b06bff"}
-            score={pixiFx ? Math.round((score || 0) / 20000) * 20000 : 0}
+            reduced={reduced} lite={lite} />
+          {/* Hintergrund-Finisher (reagiert je Stich) — z-3, VOR dem BG-Effekt */}
+          <PixiStage className="z-[3]"
+            effect={pixiFin ? bgFinisher : null}
+            color={deckA1 || "#ffffff"}
+            color2={deckA2 || "#b06bff"}
+            score={pixiFin ? Math.round((score || 0) / 20000) * 20000 : 0}
             reduced={reduced} lite={lite}
             sweepId={sweepId} sweepDur={sweepDur} win={win} hitTier={hitTier} />
         </Suspense>
@@ -1858,9 +1867,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           Scanline/Vignette) als z-1-Layer über dem BF-Bild, hinter Glut/Frost/Blitz (z-0/2) & Karten (z-10),
           immer in der Deck-Hauptfarbe. Ambiente läuft ruhig; die Reaktion je Stich (sweepId, Turbo-Throttle) läuft voll
           durch. reduced-motion → nur das statische Ambiente (kein Springen). */}
-      {fxField && deckA1 && (
-        <FieldFxLayer effect={fxField} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} lite={lite} win={win}
-          score={fxField === "embers" ? Math.round((score || 0) / 20000) * 20000 : 0} suppressField={pixiFx} />
+      {bgFx && deckA1 && (
+        <FieldFxLayer effect={bgFx} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} lite={lite} win={win}
+          score={0} suppressField={pixiBg} />
+      )}
+      {bgFinisher && deckA1 && (
+        <FieldFxLayer effect={bgFinisher} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} lite={lite} win={win}
+          score={bgFinisher === "embers" ? Math.round((score || 0) / 20000) * 20000 : 0} suppressField={pixiFin} />
       )}
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin, Hologrid und das Stich-Juice reserviert. */}

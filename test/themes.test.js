@@ -163,11 +163,12 @@ describe("effekte — Karten-Animationen sind jetzt GLOBAL", () => {
     expect(GLOBAL_FX_BY_KEY.frameGlow.option).toBe("fxFrameGlow");
     expect(GLOBAL_FX_BY_KEY.holoSwipe.option).toBe("fxHoloSwipe");
   });
-  it("#306: Hologrid + die neuen Ambiente-Effekte sind group 'field' (Battlefield-Ambiente)", () => {
-    for (const key of ["hologrid", "starfield", "aurora", "embers", "scanline", "vignette"]) {
+  it("#kategorien: Feld-Effekte liegen in bgfx (reiner Hintergrund) oder bgfin (Hintergrund-Finisher)", () => {
+    const GROUP = { aurora: "bgfx", vignette: "bgfx", embers: "bgfin", starfield: "bgfin", hologrid: "bgfin", scanline: "bgfin" };
+    for (const [key, group] of Object.entries(GROUP)) {
       const fx = GLOBAL_FX_BY_KEY[key];
       expect(fx).toBeTruthy();
-      expect(fx.group).toBe("field");
+      expect(fx.group).toBe(group);
       expect(fx.ownKey).toBe(`fx:${key}`);
       expect(fx.preview).toBe(key);
     }

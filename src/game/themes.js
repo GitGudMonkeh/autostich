@@ -40,30 +40,30 @@ export const GLOBAL_FX = [
     ownKey: "fx:glitch", option: "fxGlitch", preview: "glitch", price: 5, group: "anim" },
   // #306 Battlefield-Ambiente (feldweit, z-1, in Deckfarbe; einfach-exklusiv). Reaktion je Stich (Turbo-Throttle).
   { key: "hologrid", name: "Hologrid", desc: "Ein Leucht-Gitter läuft über das Battlefield.",
-    ownKey: "fx:hologrid", option: "fxHologrid", preview: "hologrid", price: 5, group: "field" },
+    ownKey: "fx:hologrid", option: "fxHologrid", preview: "hologrid", price: 5, group: "bgfin", hidden: true },
   { key: "starfield", name: "Sternenfeld", desc: "Ein Parallax-Sternenfeld driftet langsam übers Feld; je Stich zieht eine Sternschnuppe durch — in der Deckfarbe.",
-    ownKey: "fx:starfield", option: "fxStarfield", preview: "starfield", price: 10, group: "field" },
+    ownKey: "fx:starfield", option: "fxStarfield", preview: "starfield", price: 10, group: "bgfin", hidden: true },
   { key: "aurora", name: "Aurora", desc: "Weiche Polarlicht-Schleier driften übers Feld; je Stich ein sanfter Bloom-Puls — in der Deckfarbe.",
-    ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "field", hidden: true }, // #pixi-weg: Aurora (Pixi-WIP) vorerst NICHT im Shop anzeigen
+    ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "bgfx" }, // #kategorien: Hintergrund-Effekt (reiner BG, Pixi)
   { key: "embers", name: "Glutfunken", desc: "Schwebende Glutpartikel steigen langsam auf; je Stich ein Funken-Aufstoß von unten — in der Deckfarbe.",
-    ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 8, group: "field" },
+    ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 8, group: "bgfin" }, // #kategorien: Hintergrund-Finisher (Stich-Interaktion, Pixi)
   { key: "scanline", name: "Scanline-Puls", desc: "CRT-Scanlines liegen übers Feld; je Stich wandert eine helle Zeile von oben nach unten — in der Deckfarbe.",
-    ownKey: "fx:scanline", option: "fxScanline", preview: "scanline", price: 5, group: "field" },
+    ownKey: "fx:scanline", option: "fxScanline", preview: "scanline", price: 5, group: "bgfin", hidden: true },
   { key: "vignette", name: "Puls-Vignette", desc: "Der Feldrand atmet in der Deckfarbe; je Stich glüht das ganze Feld kurz auf.",
-    ownKey: "fx:vignette", option: "fxVignette", preview: "vignette", price: 5, group: "field" },
+    ownKey: "fx:vignette", option: "fxVignette", preview: "vignette", price: 5, group: "bgfx", hidden: true },
   // Sieg-Finisher (exklusiv, UI-seitige Einfachauswahl mit „Klinge" als Default).
   { key: "laserSlice", name: "Laser-Schnitt", desc: "Gegnerkarten werden beim Sieg von einem Laser aus zufälliger Richtung (jeder Sieg anders) geteilt — statt der Klinge.",
-    ownKey: "fx:laserSlice", option: "fxLaserSlice", preview: "laser", price: 3, group: "finisher" },
+    ownKey: "fx:laserSlice", option: "fxLaserSlice", preview: "laser", price: 3, group: "finisher", hidden: true },
   { key: "blackhole", name: "Schwarzes Loch", desc: "Bei einer Siegserie wächst EIN Schwarzes Loch, das jede weitere Gegnerkarte einsaugt (Orbs auf wachsender Bahn); Serienabbruch → Kollaps mit Flash & Schockwelle (statt Klinge/Laser).",
-    ownKey: "fx:blackhole", option: "fxBlackhole", preview: "blackhole", price: 25, group: "finisher" },
+    ownKey: "fx:blackhole", option: "fxBlackhole", preview: "blackhole", price: 25, group: "finisher", hidden: true },
   { key: "lasergrid", name: "Lasergitter", desc: "Beim Sieg blitzt ein Neon-Gitter über die Gegnerkarte — sie zerfällt entlang der Linien in ein Raster aus Stücken, die auseinanderfliegen (statt Klinge/Laser).",
-    ownKey: "fx:lasergrid", option: "fxLasergrid", preview: "lasergrid", price: 5, group: "finisher" },
+    ownKey: "fx:lasergrid", option: "fxLasergrid", preview: "lasergrid", price: 5, group: "finisher", hidden: true },
   { key: "burnBeam", name: "Brennstrahl", desc: "Beim Sieg brennt ein dünner Neon-Strahl von oben ein glühendes Loch in die exakte Kartenmitte; die Karte zerfällt in kleine warme Funken/Asche. Bei Siegserie hält der Strahl länger & es springen immer mehr Funken aus dem Loch (statt Klinge/Laser).",
-    ownKey: "fx:burnBeam", option: "fxBurnBeam", preview: "burnbeam", price: 20, group: "finisher" },
+    ownKey: "fx:burnBeam", option: "fxBurnBeam", preview: "burnbeam", price: 20, group: "finisher", hidden: true },
   { key: "overload", name: "Überladung", desc: "Beim Sieg schlägt ein prozeduraler Blitz von oben in die Gegnerkarte ein — je größer der Wertunterschied des Stichs, desto mehr/hellere Blitze mit Gabeln & Funken (statt Klinge/Laser).",
-    ownKey: "fx:overload", option: "fxOverload", preview: "overload", price: 15, group: "finisher" },
+    ownKey: "fx:overload", option: "fxOverload", preview: "overload", price: 15, group: "finisher", hidden: true },
   { key: "disperse", name: "Zerstäubung", desc: "Beim Sieg löst sich die Gegnerkarte in ein Partikelgitter auf, das nach außen/oben streut & ausfadet — je größer der Wertunterschied des Stichs, desto heftiger der Streusturm (statt Klinge/Laser).",
-    ownKey: "fx:disperse", option: "fxDisperse", preview: "disperse", price: 10, group: "finisher" },
+    ownKey: "fx:disperse", option: "fxDisperse", preview: "disperse", price: 10, group: "finisher", hidden: true },
   // #: Krit-Effekt „Shatter" entfernt — die Custom-Finisher decken jetzt jeden Sieg (auch Krits) ab.
   // Gottgleich-Prunk (stapelbar).
   { key: "fireworks", name: "Neon-Feuerwerk", desc: "Gottgleicher Sieg ohne Krit: mehrere Feuerwerks-Bursts ploppen über dem Feld — in der Deckfarbe.",
@@ -109,6 +109,18 @@ export const vignetteActive = (profile, options) => globalFxActive(profile, opti
 // Aktiver Feld-Ambiente-Effekt (Key) oder null — der Battlefield-Layer rendert genau diesen einen.
 export function activeFieldFx(profile, options) {
   for (const k of FIELD_FX_KEYS) if (globalFxActive(profile, options, k)) return k;
+  return null;
+}
+// #kategorien: zwei UNABHÄNGIGE Feld-Slots — reine Hintergrund-Effekte (kein Stich-Bezug) und Hintergrund-Finisher
+// (Stich-Interaktion). Beide können GLEICHZEITIG aktiv sein → activeBgFx + activeBgFinisher liefern je einen Key.
+export const BG_FX_KEYS  = ["aurora", "vignette"];                          // reiner Hintergrund
+export const BG_FIN_KEYS = ["embers", "starfield", "hologrid", "scanline"]; // Hintergrund-Finisher (reagiert je Stich)
+export function activeBgFx(profile, options) {
+  for (const k of BG_FX_KEYS) if (globalFxActive(profile, options, k)) return k;
+  return null;
+}
+export function activeBgFinisher(profile, options) {
+  for (const k of BG_FIN_KEYS) if (globalFxActive(profile, options, k)) return k;
   return null;
 }
 // Finisher / Krit / Gott.
