@@ -27,12 +27,12 @@ function emberFountainXs(seed) {   // 3 x-Positionen (0..1), pro Stich neu (swee
 
 // ── TUNE ─────────────────────────────────────────────────────────────────────
 const TUNE = {
-  EMIT: 363,        // Basis-Ausstoßrate (Tröpfchen/s je Vent), skaliert mit Stufe (Dichte 2.20)
-  FLAME: 0.4,       // Flammen-Anteil relativ zu EMIT
+  EMIT: 330,        // Basis-Ausstoßrate (Tröpfchen/s je Vent), skaliert mit Stufe
+  FLAME: 0.55,      // Flammen-Anteil relativ zu EMIT
   G_REF: 1750,      // Schwerkraft px/s² bei Referenzhöhe HREF
   HREF: 360,        // Referenz-Panelhöhe (Geschwindigkeiten/Höhe skalieren mit H/HREF)
-  GLOW: 0.65,       // Partikel-Footprint (= Showcase „Partikelgröße" 0.65; On-Screen-Größe mappt 1:1). Klein = knackig, wenig Wash.
-  GLOW_A: 1.2,      // Glüh-Boost der farbigen Glut-Partikel (Faktor auf die additive Alpha, final auf 1 gedeckelt)
+  GLOW: 0.75,       // Partikel-Footprint (On-Screen-Größe mappt 1:1). Klein = knackig, wenig Wash.
+  GLOW_A: 1.5,      // Glüh-Boost der farbigen Glut-Partikel (Faktor auf die additive Alpha, final auf 1 gedeckelt)
   CRUST_P: 0.12,    // Anteil dunkler Krusten-Brocken
   MAXGLOW: 2200, MAXCRUST: 560, MAXVENT: 10,   // Pools groß genug für die große Gottgleich-Fontäne. MAXVENT = Obergrenze gleichzeitiger Vents.
 };
