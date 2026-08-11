@@ -1,7 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { Application } from "pixi.js";
 import { createEmberField } from "./embersPixi.js";
-import { createStarfield } from "./starfieldPixi.js";
 
 /* Registry der Feld-Effekt-Emitter: key → Factory(app) → { setParams, erupt?, destroy }. Muss zur pixi-freien
    Key-Liste (fieldFxKeys.js) passen, die Battlefield fürs Gating nutzt. Neue Effekte docken hier an.
@@ -9,12 +8,11 @@ import { createStarfield } from "./starfieldPixi.js";
    auf dem Mobile-Setup nicht rendert. */
 const FIELD_FX = {
   embers: createEmberField,
-  starfield: createStarfield,
 };
 
 /* PixiStage (Pixi-Umbau) — eine GPU-Render-Bühne, die NEBEN React lebt: transparenter Hintergrund,
    `pointer-events: none`, als absolutes Overlay im Battlefield-Panel. Ab Phase 3 SWAPPABLE: je nach `effect`
-   baut die Bühne den passenden Feld-Emitter aus der Registry (embers, starfield, …). Wechselt der Effekt (Deck-
+   baut die Bühne den passenden Feld-Emitter aus der Registry (embers). Wechselt der Effekt (Deck-
    Wechsel), wird der alte Emitter zerstört und der neue gebaut. Die Spiel-Logik bleibt komplett unberührt.
 
    Sauberkeit, die hier zählt:

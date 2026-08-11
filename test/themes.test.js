@@ -4,8 +4,7 @@ import {
   packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
   canBuyPack, buyPack, unlockAllCosmetics,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
-  frameGlowActive, holoSwipeActive, hologridActive, activeFieldFx, starfieldActive, vignetteActive,
-  laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, fireworksActive, goldRainActive, prismaWaveActive,
+  auroraActive, embersActive, activeBgFx, activeBgFinisher, fireworksActive, goldRainActive, prismaWaveActive,
 } from "../src/game/themes.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
@@ -151,20 +150,20 @@ describe("packs — Kauf-Ökonomie (#299: DP)", () => {
   });
 });
 
-describe("effekte — Karten-Animationen sind jetzt GLOBAL", () => {
-  it("Karten-Animationen (frameGlow/holoSwipe) sind group 'anim' mit fx:-Besitz + Options-Flag", () => {
-    for (const key of ["frameGlow", "holoSwipe"]) {
-      const fx = GLOBAL_FX_BY_KEY[key];
-      expect(fx).toBeTruthy();
-      expect(fx.group).toBe("anim");
-      expect(fx.ownKey).toBe(`fx:${key}`);
-      expect(fx.preview).toBe(key);
-    }
-    expect(GLOBAL_FX_BY_KEY.frameGlow.option).toBe("fxFrameGlow");
-    expect(GLOBAL_FX_BY_KEY.holoSwipe.option).toBe("fxHoloSwipe");
+describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
+  // #cleanup: Es bleiben genau: Hintergrund-Effekt „Aurora" (bgfx), Hintergrund-Finisher „Glutfunken" (bgfin) und
+  // das Gottgleich-Prunk-Trio (gott). Klinge ist der einzige Sieg-Finisher (synthetisch, NICHT in GLOBAL_FX).
+  it("GLOBAL_FX führt NUR noch aurora, embers und das Prunk-Trio", () => {
+    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "fireworks", "goldRain", "prismaWave"].sort());
   });
-  it("#kategorien: Feld-Effekte liegen in bgfx (reiner Hintergrund) oder bgfin (Hintergrund-Finisher)", () => {
-    const GROUP = { aurora: "bgfx", vignette: "bgfx", embers: "bgfin", starfield: "bgfin", hologrid: "bgfin", scanline: "bgfin" };
+  it("entfernte Effekte sind vollständig aus der Registry", () => {
+    for (const k of ["frameGlow", "holoSwipe", "auroraVeil", "glitch", "hologrid", "starfield", "scanline", "vignette",
+                     "laserSlice", "blackhole", "lasergrid", "burnBeam", "overload", "disperse", "klinge"]) {
+      expect(GLOBAL_FX_BY_KEY[k]).toBeUndefined();
+    }
+  });
+  it("#kategorien: aurora liegt in bgfx (reiner Hintergrund), embers in bgfin (Hintergrund-Finisher)", () => {
+    const GROUP = { aurora: "bgfx", embers: "bgfin" };
     for (const [key, group] of Object.entries(GROUP)) {
       const fx = GLOBAL_FX_BY_KEY[key];
       expect(fx).toBeTruthy();
@@ -172,89 +171,25 @@ describe("effekte — Karten-Animationen sind jetzt GLOBAL", () => {
       expect(fx.ownKey).toBe(`fx:${key}`);
       expect(fx.preview).toBe(key);
     }
-    expect(GLOBAL_FX_BY_KEY.hologrid.option).toBe("fxHologrid");
-    expect(GLOBAL_FX_BY_KEY.starfield.option).toBe("fxStarfield");
-    expect(GLOBAL_FX_BY_KEY.vignette.option).toBe("fxVignette");
   });
-  it("#306 activeFieldFx: liefert den EINEN aktiven Feld-Effekt (gekauft + Option an), sonst null", () => {
-    expect(activeFieldFx(prof(), {})).toBe(null);
+  it("activeBgFx / activeBgFinisher: je Slot der EINE aktive Effekt (gekauft + Option an), sonst null", () => {
+    expect(activeBgFx(prof(), {})).toBe(null);
+    expect(activeBgFinisher(prof(), {})).toBe(null);
     // Option an, aber nicht gekauft → nicht aktiv.
-    expect(activeFieldFx(prof(), { fxStarfield: true })).toBe(null);
-    const owned = prof({ ownedCosmetics: { "fx:starfield": true, "fx:vignette": true } });
-    expect(starfieldActive(owned, { fxStarfield: true })).toBe(true);
-    expect(vignetteActive(owned, { fxVignette: true })).toBe(true);
-    expect(activeFieldFx(owned, { fxStarfield: true })).toBe("starfield");
-    // Reihenfolge = Priorität (hologrid vor starfield vor …), falls defensiv mehrere Flags an wären.
-    const both = prof({ ownedCosmetics: { "fx:hologrid": true, "fx:starfield": true } });
-    expect(activeFieldFx(both, { fxHologrid: true, fxStarfield: true })).toBe("hologrid");
-  });
-  it("global gekauft + per Option an → aktiv (für alle Packs)", () => {
-    const cases = [
-      ["frameGlow", frameGlowActive, "fxFrameGlow"],
-      ["holoSwipe", holoSwipeActive, "fxHoloSwipe"],
-      ["hologrid", hologridActive, "fxHologrid"],
-    ];
-    for (const [key, activeFn, opt] of cases) {
-      const owned = prof({ ownedCosmetics: { [`fx:${key}`]: true } });
-      expect(activeFn(owned, { [opt]: true })).toBe(true);
-      expect(activeFn(owned, { [opt]: false })).toBe(false);
-      expect(activeFn(prof(), { [opt]: true })).toBe(false); // nicht gekauft
-    }
-  });
-  it("#307: kaufen zieht den DP-Preis ab und setzt den globalen Besitz", () => {
-    const fx = GLOBAL_FX_BY_KEY.frameGlow; // 3 DP
-    expect(globalFxPrice(fx)).toBe(3);
-    const p1 = buyGlobalFx(prof({ deckPoints: 3 }), fx);
-    expect(p1.deckPoints).toBe(0);
-    expect(globalFxOwned(p1, fx)).toBe(true);
-  });
-});
-
-describe("effekte — Finisher/Krit/Prunk", () => {
-  const laser = GLOBAL_FX_BY_KEY.laserSlice;
-  it("Laser-Schnitt: ownKey + Options-Flag + group finisher", () => {
-    expect(laser.ownKey).toBe("fx:laserSlice");
-    expect(laser.option).toBe("fxLaserSlice");
-    expect(laser.group).toBe("finisher");
-    expect(GLOBAL_FX_BY_KEY.blackhole.group).toBe("finisher");
-  });
-  it("#300/#307 Überladung + Zerstäubung: ownKey/option + group finisher, in DP kaufbar & exklusiv-fähig", () => {
-    for (const [key, own, opt] of [["overload", "fx:overload", "fxOverload"], ["disperse", "fx:disperse", "fxDisperse"]]) {
-      const fx = GLOBAL_FX_BY_KEY[key];
-      expect(fx).toBeTruthy();
-      expect(fx.ownKey).toBe(own);
-      expect(fx.option).toBe(opt);
-      expect(fx.group).toBe("finisher");
-      const p0 = prof({ deckPoints: globalFxPrice(fx) });
-      expect(canBuyGlobalFx(p0, fx)).toBe(true);
-      const p1 = buyGlobalFx(p0, fx);
-      expect(globalFxOwned(p1, fx)).toBe(true);
-      expect(p1.deckPoints).toBe(0);
-    }
-  });
-  it("#307: kaufen zieht DP ab, bucht deckSpent, setzt globalen Besitz (SP unberührt)", () => {
-    const price = globalFxPrice(laser); // 3 DP
-    const p0 = prof({ deckPoints: price + 1, deckSpent: 1, stichPoints: 9 });
-    expect(canBuyGlobalFx(p0, laser)).toBe(true);
-    const p1 = buyGlobalFx(p0, laser);
-    expect(p1.deckPoints).toBe(1);
-    expect(p1.deckSpent).toBe(1 + price);
-    expect(p1.stichPoints).toBe(9); // SP unberührt
-    expect(globalFxOwned(p1, laser)).toBe(true);
-    expect(canBuyGlobalFx(p1, laser)).toBe(false);
-  });
-  it("kaufen bei zu wenig DP = No-op", () => {
-    const p0 = prof({ deckPoints: 0, stichPoints: 99 });
-    expect(buyGlobalFx(p0, laser)).toBe(p0);
+    expect(activeBgFx(prof(), { fxAurora: true })).toBe(null);
+    const owned = prof({ ownedCosmetics: { "fx:aurora": true, "fx:embers": true } });
+    expect(auroraActive(owned, { fxAurora: true })).toBe(true);
+    expect(embersActive(owned, { fxEmbers: true })).toBe(true);
+    expect(activeBgFx(owned, { fxAurora: true })).toBe("aurora");
+    expect(activeBgFinisher(owned, { fxEmbers: true })).toBe("embers");
+    // Beide Slots UNABHÄNGIG → können gleichzeitig aktiv sein.
+    expect(activeBgFx(owned, { fxAurora: true, fxEmbers: true })).toBe("aurora");
+    expect(activeBgFinisher(owned, { fxAurora: true, fxEmbers: true })).toBe("embers");
   });
   it("*Active-Helfer: nur gekauft UND per Option an", () => {
     const cases = [
-      ["laserSlice", laserSliceActive, "fxLaserSlice"],
-      ["blackhole", blackholeActive, "fxBlackhole"],
-      ["lasergrid", lasergridActive, "fxLasergrid"],
-      ["burnBeam", burnBeamActive, "fxBurnBeam"],
-      ["overload", overloadActive, "fxOverload"],
-      ["disperse", disperseActive, "fxDisperse"],
+      ["aurora", auroraActive, "fxAurora"],
+      ["embers", embersActive, "fxEmbers"],
       ["fireworks", fireworksActive, "fxFireworks"],
       ["goldRain", goldRainActive, "fxGoldRain"],
       ["prismaWave", prismaWaveActive, "fxPrismaWave"],
@@ -263,28 +198,32 @@ describe("effekte — Finisher/Krit/Prunk", () => {
       const owned = prof({ ownedCosmetics: { [`fx:${key}`]: true } });
       expect(activeFn(owned, { [opt]: true })).toBe(true);
       expect(activeFn(owned, { [opt]: false })).toBe(false);
-      expect(activeFn(prof(), { [opt]: true })).toBe(false);
+      expect(activeFn(prof(), { [opt]: true })).toBe(false); // nicht gekauft
     }
   });
-  it("Registry führt Blackhole (finisher) und das Gottgleich-Prunk-Trio (gott)", () => {
-    for (const k of ["blackhole", "fireworks", "goldRain", "prismaWave"]) {
-      expect(GLOBAL_FX_BY_KEY[k]).toBeTruthy();
-      expect(GLOBAL_FX_BY_KEY[k].ownKey).toBe(`fx:${k}`);
-    }
-    expect(GLOBAL_FX_BY_KEY.blackhole.group).toBe("finisher");
-    expect(GLOBAL_FX_BY_KEY.fireworks.group).toBe("gott");
-    expect(GLOBAL_FX_BY_KEY.shatter).toBeUndefined();   // #: Shatter (Krit) entfernt
-    expect(GLOBAL_FX_BY_KEY.gridTunnel).toBeUndefined(); // Grid-Tunnel bleibt entfernt
+  it("#307: kaufen zieht DP ab, bucht deckSpent, setzt globalen Besitz (SP unberührt)", () => {
+    const embers = GLOBAL_FX_BY_KEY.embers; // 8 DP
+    const price = globalFxPrice(embers);
+    const p0 = prof({ deckPoints: price + 1, deckSpent: 1, stichPoints: 9 });
+    expect(canBuyGlobalFx(p0, embers)).toBe(true);
+    const p1 = buyGlobalFx(p0, embers);
+    expect(p1.deckPoints).toBe(1);
+    expect(p1.deckSpent).toBe(1 + price);
+    expect(p1.stichPoints).toBe(9); // SP unberührt
+    expect(globalFxOwned(p1, embers)).toBe(true);
+    expect(canBuyGlobalFx(p1, embers)).toBe(false);
+  });
+  it("kaufen bei zu wenig DP = No-op", () => {
+    const p0 = prof({ deckPoints: 0, stichPoints: 99 });
+    expect(buyGlobalFx(p0, GLOBAL_FX_BY_KEY.aurora)).toBe(p0);
   });
   it("Käufe sind voneinander getrennt", () => {
-    const p1 = buyGlobalFx(prof({ deckPoints: 25 }), GLOBAL_FX_BY_KEY.blackhole);
-    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.blackhole)).toBe(true);
-    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.laserSlice)).toBe(false);
-    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.overload)).toBe(false);
+    const p1 = buyGlobalFx(prof({ deckPoints: 25 }), GLOBAL_FX_BY_KEY.aurora);
+    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.aurora)).toBe(true);
+    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.embers)).toBe(false);
   });
-  it("#307: jeder Effekt trägt seinen DP-Preis (globalFxPrice = fx.price)", () => {
-    const want = { frameGlow: 3, holoSwipe: 5, hologrid: 5, starfield: 10, aurora: 10, embers: 8, scanline: 5, vignette: 5,
-      laserSlice: 3, lasergrid: 5, disperse: 10, overload: 15, burnBeam: 20, blackhole: 25, prismaWave: 5, goldRain: 10, fireworks: 15 };
+  it("#307: jeder verbliebene Effekt trägt seinen DP-Preis (globalFxPrice = fx.price)", () => {
+    const want = { aurora: 10, embers: 8, prismaWave: 5, goldRain: 10, fireworks: 15 };
     for (const [key, dp] of Object.entries(want)) expect(globalFxPrice(GLOBAL_FX_BY_KEY[key])).toBe(dp);
   });
 });

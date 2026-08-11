@@ -9,7 +9,7 @@ import {
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { startPrunk } from "./prunkFx.js";
-import { SliceFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx, FieldFxLayer, FX_RENDERER } from "./Battlefield.jsx";
+import { SliceFx, FieldFxLayer, FX_RENDERER } from "./Battlefield.jsx";
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora-Vorschau als eigene WebGL-Canvas (nicht Pixi)
@@ -17,8 +17,7 @@ const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 import { clamp } from "../game/deck.js"; // #: Serien-Kopplung des Brennstrahl-Loops (leiser Start → lauter/heißer)
-import { audio } from "./audio.js"; // #302b: Showcase-Panel spielt den passenden Finisher-Sound mit
-import { useBlackholeSfx } from "./finisherSfx.js"; // #298: Loch-Ton-Bett mit Hüllkurve (leiser Start → Anschwellen → schneller Kollaps), identisch zu In-Game
+import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
 
 // Standard-Backdrop für alle Effekt-/Finisher-Showcases: das Genesis-Battlefield (bf_onboarding), einheitlich neutral.
 const SHOWCASE_BF = "bf_onboarding";
@@ -105,13 +104,10 @@ function orderFxItems(items, selKey, stdKey) {
   return std ? [active, std, ...rest] : [active, ...rest];
 }
 
-/* Sieg-Finisher sind untereinander exklusiv (genau EINER aktiv). Zentrale Wahrheit für Auswahl UND Anzeige,
-   damit In-Übersicht (Radio) und Detail-Fenster nie auseinanderlaufen. „klinge" = alle Flags aus. */
-const finisherFlags = (key) => ({ fxLaserSlice: key === "laserSlice", fxBlackhole: key === "blackhole",
-  fxLasergrid: key === "lasergrid", fxBurnBeam: key === "burnBeam", fxOverload: key === "overload", fxDisperse: key === "disperse" });
-const finisherSelOf = (options) => options?.fxBlackhole ? "blackhole" : options?.fxLasergrid ? "lasergrid"
-  : options?.fxBurnBeam ? "burnBeam" : options?.fxOverload ? "overload" : options?.fxDisperse ? "disperse"
-  : options?.fxLaserSlice ? "laserSlice" : "klinge";
+/* #cleanup: Nach dem Entfernen aller kaufbaren Sieg-Finisher ist die Klinge der EINZIGE (synthetisch, immer aktiv).
+   Es gibt keine Auswahl-Flags mehr → finisherFlags schreibt nichts, finisherSelOf ist konstant „klinge". */
+const finisherFlags = () => ({});
+const finisherSelOf = () => "klinge";
 /* #306 Battlefield-Ambiente einfach-exklusiv (genau EINS aktiv, oder „none"). Datengetrieben aus der „field"-Gruppe:
    fieldFxFlags(key) schreibt alle Feld-Optionen in einem Rutsch (genau eine true, „none" = alle false). */
 // #kategorien: zwei getrennte, UNABHÄNGIGE Feld-Slots. bgFxFlags/bgFinFlags schreiben NUR die Optionen ihrer
@@ -141,12 +137,8 @@ function useIsMobile() {
   return m;
 }
 
-// Einmalig injizierte Keyframes für die Vorschauen (Frame Glow / Holo Swipe / Hologrid + Gottgleich-Event-Loop).
+// Einmalig injizierte Keyframes für die Gottgleich-Prunk-Vorschauen (Event-Loop).
 const FX_CSS = `
-@keyframes ws-frameglow{0%,100%{box-shadow:0 0 10px -2px var(--a1),inset 0 0 14px -8px var(--a1)}50%{box-shadow:0 0 26px 2px var(--a1),inset 0 0 22px -4px var(--a1)}}
-@keyframes ws-swipe{0%{transform:translateX(-120%) rotate(18deg)}55%,100%{transform:translateX(320%) rotate(18deg)}}
-@keyframes ws-sweep{0%{bottom:-4%;opacity:0}18%{opacity:1}70%{opacity:1}100%{bottom:106%;opacity:0}}
-.ws-sweep{animation:ws-sweep 2.9s ease-in-out infinite}
 /* #294 Feuerwerk: radiale Partikel aus einem Zündpunkt. --dx/--dy = Flugvektor. */
 @keyframes ws-fw{0%{transform:translate(0,0) scale(.6);opacity:0}8%{opacity:1}70%{opacity:.85}100%{transform:translate(var(--dx),calc(var(--dy) + 14px)) scale(1);opacity:0}}
 .ws-fw{animation:ws-fw 1.7s ease-out infinite}
@@ -270,8 +262,8 @@ function GottgleichPreview({ variant, compact = false }) {
    im Loop — Vorschau = In-Game (keine separate Engine, kein Drift). */
 const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
 const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LINE = 220;
-// #302b Showcase-Sound je One-Shot-Finisher (persistente Loop-Effekte Burn/Blackhole laufen separat als Loop-Bett).
-const FIN_SFX = { klinge: "fx_blade", laser: "fx_laser", lasergrid: "fx_lasergrid", overload: "fx_lightning", disperse: "fx_atomize" }; // shatter: (kein eigener SFX)
+// Showcase-Sound der Klinge (einziger verbliebener Sieg-Finisher).
+const FIN_SFX = { klinge: "fx_blade" };
 // #klinge-showcase: fester Choreo-Fahrplan der Klinge-Vorschau — je Serienschwelle der VOLLE Richtungs-Zyklus
 // (links zuerst) am Stück, danach die nächste Stufe. m = Siegesserie-Multiplikator (bestimmt Wucht/Funken), d = Schnittrichtung.
 const KLINGE_SCHEDULE = [
@@ -291,35 +283,18 @@ function FinisherScene({ variant }) {
   useEffect(() => {
     const sfx = FIN_SFX[variant];
     if (!sfx) return undefined;
-    const id = setTimeout(() => {
-      // #: Überladung weicher (Lowpass + Attack/Release), damit der Blitz-Sound nicht „hart" wirkt — auch in der Vorschau.
-      if (variant === "overload") audio.play(sfx, { gain: 0.95, soft: 6000, attack: 0.006, release: 0.06 });
-      else audio.play(sfx, { gain: variant === "klinge" ? 1.0 : 1.05 });
-      // #: Bass-Impact für Überladung/Zerstäubung entfernt (nur „Schwarzes Loch" hat Bass) — Vorschau = In-Game.
-    }, FIN_DELAY);
+    const id = setTimeout(() => { audio.play(sfx, { gain: 1.0 }); }, FIN_DELAY);
     return () => clearTimeout(id);
   }, [tick, variant]);
   const suitCol = suitColor(DEMO_SUIT);
   const cardEl = <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
   const seed = tick * 3 + 1;
-  const dTier = (tick % 4) + 1; // #300 Vorschau durchläuft die Wertdifferenz-Stufen 1→4 (zeigt die Intensitäts-Eskalation)
-  let fx = null;
-  if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} laser />;
-  else if (variant === "lasergrid") fx = <LaserGridFx cardEl={cardEl} color={suitCol} diceDur={FIN_HALVES} lineDur={FIN_LINE} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={1} scale={1} />;
-  else if (variant === "overload") fx = <OverloadFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
-  else if (variant === "disperse") fx = <DisperseFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
-  // klinge (Default): die Vorschau fährt den Siegesserie-MULTIPLIKATOR stufenweise hoch (×1,0 → ×1,25 → ×1,5 → ×2,0)
-  // und zeigt, wie der Richtungs-Zyklus wächst — nur LINKS → +RECHTS → +OBEN → +Z. Grundzug bleibt links, die Wucht
-  // steigt mit dem Multiplikator (streak passend zur Stufe). Spiegelt exakt die In-Game-Logik (sliceMove).
-  else {
-    // Explizite Choreo: jede Serienschwelle spielt ihren VOLLEN Richtungs-Zyklus von vorne (immer links zuerst)
-    // durch, bevor die nächste Stufe kommt. So sieht man ×1,0 (nur links), ×1,25 (links·rechts),
-    // ×1,5 (links·rechts·oben) und ×2,0 (alle vier inkl. Z) jeweils komplett — kein Phasen-Versatz mehr.
-    const kstep = KLINGE_SCHEDULE[tick % KLINGE_SCHEDULE.length];
-    const kdir = kstep.d, kmult = kstep.m;
-    const kstreak = Math.round((kmult - 1) / 0.02);                       // passende Serie zur Multiplikator-Stufe (Wucht/Funken)
-    fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={kdir} streak={kstreak} />;
-  }
+  // klinge (einziger Finisher): die Vorschau fährt den Siegesserie-MULTIPLIKATOR stufenweise hoch (×1,0 → ×1,25 →
+  // ×1,5 → ×2,0) und zeigt, wie der Richtungs-Zyklus wächst — jede Serienschwelle ihren VOLLEN Zyklus von vorne
+  // (links zuerst). Spiegelt exakt die In-Game-Logik (sliceMove).
+  const kstep = KLINGE_SCHEDULE[tick % KLINGE_SCHEDULE.length];
+  const kstreak = Math.round((kstep.m - 1) / 0.02);                       // passende Serie zur Multiplikator-Stufe (Wucht/Funken)
+  const fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={kstep.d} streak={kstreak} />;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
@@ -328,120 +303,6 @@ function FinisherScene({ variant }) {
       <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
         <div key={tick} className="absolute inset-0">{fx}</div>
       </div>
-      {/* #300: Diff-gekoppelte Finisher — Stufe (1→4) einblenden, damit die Eskalation in der Vorschau lesbar ist. */}
-      {(variant === "overload" || variant === "disperse") && (
-        <div className="absolute top-1.5 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold font-pixel"
-          style={{ background: "#0c0c10cc", border: "1px solid #2a2836", color: "#cfccda" }}>
-          Stufe {dTier}/4
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* #295 Brennstrahl-Vorschau: der PERSISTENTE Strahl (BurnBeamPersist) über einem synthetischen Serien-Loop — der Laser
-   fährt beim ersten „Sieg" herab, bleibt über die Serie lit und wird intensiver, je Sieg ein Einschlag-Burst (BurnBeamFx:
-   Loch/Funken/Verblassen); die „Niederlage" zieht den Strahl zurück. Zeigt das persistente Verhalten wie das Schwarze Loch. */
-function BurnBeamPreview() {
-  const panelRef = useRef(null), oppRef = useRef(null);
-  const [pulse, setPulse] = useState(null);
-  const [bursts, setBursts] = useState([]);
-  const [dormant, setDormant] = useState(true);
-  const bf = battlefieldAssets(SHOWCASE_BF);
-  const suitCol = suitColor(DEMO_SUIT);
-  const seqRef = useRef(0);
-  const burnLoopRef = useRef(null);
-  useEffect(() => {
-    // #: LÄNGERE Serie in der Vorschau, damit die Eskalation sichtbar wird: 1..11 Siege (Strahl lit, Intensität +
-    // Funkendichte steigen; ab ~Sieg 9 am Maximum → kurz gehalten) · 12 Niederlage (Strahl zieht sich zurück) · 13/14 Pause.
-    let c = 0;
-    const id = setInterval(() => {
-      c = (c + 1) % 15;
-      if (c >= 1 && c <= 11) {
-        const streak = c * 1.4; // wächst sichtbar über mehr Stufen; sK deckelt bei 12 → oberste Siege halten den vollen Strahl
-        setDormant(false);
-        setPulse({ id: ++seqRef.current, kind: "win", streak });
-        const bid = seqRef.current;
-        setBursts((b) => [...b, { id: bid, streak }].slice(-2));
-        setTimeout(() => setBursts((b) => b.filter((x) => x.id !== bid)), 1000);
-      } else if (c === 12) { setPulse({ id: ++seqRef.current, kind: "loss" }); setDormant(true); }
-    }, 820);
-    return () => clearInterval(id);
-  }, []);
-  // #302b/#307: Brennstrahl-Loop-Bett an die Lit-Phase (Sieg-Puls) koppeln — IDENTISCH zu In-Game (Battlefield.jsx):
-  // der Ton startet erst mit dem herabfahrenden Strahl (erster Sieg), nicht schon beim Öffnen der Vorschau, und stoppt
-  // beim Serienabbruch. So läuft kein Laser-Sound, bevor der Laser sichtbar ist. Leiser Start → mit der Serie lauter/heißer.
-  useEffect(() => {
-    const lit = !dormant && pulse && pulse.kind === "win";
-    if (lit) {
-      const sK = clamp((pulse.streak || 0) / 12, 0, 1);
-      const g = 0.3 + sK * 0.6;
-      const r = 1 + sK * 0.28;
-      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, loopStart: 0.5, loopEnd: 5.5 });
-      else { audio.setLoopGain(burnLoopRef.current, g); audio.setLoopRate(burnLoopRef.current, r); }
-    } else if (burnLoopRef.current) {
-      audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;
-    }
-  }, [dormant, pulse]);
-  useEffect(() => () => {
-    if (burnLoopRef.current) { audio.stopLoop(burnLoopRef.current, { fade: 0.05 }); burnLoopRef.current = null; }
-  }, []);
-  const demoCard = () => <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
-  return (
-    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
-      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {/* Gegner-Demokarte etwas unterhalb der Mitte (Strahl hat Platz, von der Stage-Oberkante herabzufahren). */}
-      <div ref={oppRef} className="absolute" style={{ left: "50%", top: "58%", width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
-        <div className="absolute inset-0" style={{ opacity: dormant ? 1 : 0, transition: "opacity 160ms" }}>{demoCard()}</div>
-      </div>
-      {/* Einschlag-Burst je Sieg (Loch/Funken/Verblassen) an der Kartenposition. */}
-      {bursts.map((bt) => (
-        <div key={bt.id} className="absolute" style={{ left: "50%", top: "58%", width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
-          <BurnBeamFx cardEl={demoCard()} color={suitCol} flipMs={1500} seed={bt.id * 3 + 1} delay={40} intensity={0.5} scale={1} streak={bt.streak} />
-        </div>
-      ))}
-      <BurnBeamPersist active pulse={pulse} color={suitCol} scale={1} panelRef={panelRef} oppRef={oppRef} reduced={false} />
-    </div>
-  );
-}
-
-/* #296 Schwarzes-Loch-Vorschau: die ECHTE In-Game-Komponente (BlackholeFieldFx) mit einem SYNTHETISCHEN Serien-Loop
-   (mehrere „Siege" hintereinander → Loch wächst + saugt Karten ein, dann Serienabbruch → Kollaps, danach Reset).
-   Vorschau = In-Game (dieselbe Komponente, kein Drift). */
-function BlackholePreview() {
-  const panelRef = useRef(null), oppRef = useRef(null);
-  const [pulse, setPulse] = useState(null);
-  const [dormant, setDormant] = useState(true);
-  const bf = battlefieldAssets(SHOWCASE_BF);
-  const suitCol = suitColor(DEMO_SUIT);
-  useEffect(() => {
-    // Synthetischer Serien-Loop: 1..8 Siege (Loch wächst + saugt Karten ein; der Serien-Mult klettert ÜBER ×2.0 →
-    // ab dann Zittern + Rand-Farbpuls sichtbar) · 9 Niederlage = Serienabbruch → Kollaps (Flash + Schockwelle) ·
-    // 10 dormant · 11/12 Pause. Genau das In-Game-Serien-Verhalten (dieselbe Komponente, kein Drift).
-    let c = 0, seq = 0;
-    const id = setInterval(() => {
-      c = (c + 1) % 12;
-      if (c >= 1 && c <= 8) { setDormant(false); setPulse({ id: ++seq, kind: "win", num: 2 + ((c * 3) % 9), col: suitCol, mult: 1 + c * 0.35 }); }
-      else if (c === 9) setPulse({ id: ++seq, kind: "loss" }); // Serienabbruch → Kollaps
-      else if (c === 10) setDormant(true);
-    }, 600);
-    return () => clearInterval(id);
-  }, [suitCol]);
-  // #: Loch-Ton-Bett identisch zu In-Game (leiser Start → Anschwellen mit dem Wachstum → hörbarer Bass-Kollaps beim Serienabbruch).
-  useBlackholeSfx(!dormant, pulse);
-  return (
-    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
-      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {/* Ursprung des Sogs = Gegner-Demokarte (rechts der Mitte). Während der Serie „verschwindet" sie ins Loch
-          (der Flyer im Canvas zeigt den Sog); in der Pause liegt sie wieder ruhig da. */}
-      <div ref={oppRef} className="absolute" style={{ left: "68%", top: "50%", width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
-        <div className="absolute inset-0" style={{ opacity: dormant ? 1 : 0, transition: "opacity 120ms" }}>
-          <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />
-        </div>
-      </div>
-      <BlackholeFieldFx active pulse={pulse} color={suitCol} scale={1} panelRef={panelRef} oppRef={oppRef} reduced={false} />
     </div>
   );
 }
@@ -449,20 +310,12 @@ function BlackholePreview() {
 // Große In-Game-Vorschau eines Effekts im Kauffenster. Karten-Animationen → Karte/BF-Demo; Finisher/Krit →
 // echte In-Game-Komponente; Gottgleich (inkl. Standard) → das komplette Ereignis nachgespielt.
 function GlobalFxScenePreview({ fx, deckTint = false }) {
-  if (fx.preview === "frameGlow" || fx.preview === "holoSwipe" || fx.preview === "auroraVeil" || fx.preview === "glitch") {
-    return (
-      <div className="w-full h-full grid place-items-center overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
-        <CardPreview deckId="default" a1={DEMO_C} fx={fx.preview} className="max-h-full" style={{ height: "94%" }} />
-      </div>
-    );
-  }
-  // #306 Battlefield-Ambiente (inkl. Hologrid + „Kein Feld-Effekt"): echte In-Game-Komponente (FieldFxLayer) über dem BF-Bild.
-  if (["hologrid", "starfield", "aurora", "embers", "scanline", "vignette", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
+  // #kategorien: Hintergrund-Effekt (Aurora) / Hintergrund-Finisher (Glutfunken) / „Kein Feld-Effekt": echte
+  // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
+  if (["aurora", "embers", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
   if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
-  if (fx.preview === "blackhole") return <BlackholePreview />;
-  if (fx.preview === "burnbeam") return <BurnBeamPreview />;
-  if (["laser", "klinge", "lasergrid", "overload", "disperse"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
+  if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
@@ -539,46 +392,19 @@ function FieldFxPreview({ effect, deckTint = false }) {
 
 // Karten-Vorschau: illustrierte Karte (Front = Rahmen, Back = Cover), vollständig (object-contain) + optionaler
 // Effekt. Frame Glow = pulsierender Schein am Kartenrand; Holo Swipe = wandernder Glanz-Streifen.
-function CardPreview({ deckId, a1, fx, face = "back", className = "", style }) {
+function CardPreview({ deckId, face = "back", className = "", style }) {
   const img = deckAssets(deckId)[face] || deckAssets(deckId).back;
-  const glow = fx === "frameGlow";
-  // #309 Demo-Farben für Aurora-Schleier (Deck-Haupt- + Kontrastfarbe).
-  const a2 = "#ff5ad6";
   return (
     <div className={`relative rounded-lg overflow-hidden ${className}`}
-      style={{ aspectRatio: CARD_RATIO, background: "#0b0a16", "--a1": a1, animation: glow ? "ws-frameglow 2s ease-in-out infinite" : undefined, ...style }}>
+      style={{ aspectRatio: CARD_RATIO, background: "#0b0a16", ...style }}>
       <img src={img} alt="" className="absolute inset-0 w-full h-full object-contain rounded-lg" />
-      {fx === "holoSwipe" && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
-          <div className="absolute" style={{ top: "-60%", left: 0, width: "40%", height: "220%",
-            background: "linear-gradient(90deg,transparent,rgba(255,255,255,.28),rgba(120,220,255,.16),transparent)",
-            animation: "ws-swipe 2.6s ease-in-out infinite" }} />
-        </div>
-      )}
-      {fx === "auroraVeil" && (
-        <div aria-hidden="true" className="as-aurora-drift absolute inset-0 rounded-lg pointer-events-none" style={{
-          mixBlendMode: "screen", opacity: 0.55, filter: "blur(8px)",
-          backgroundImage: `radial-gradient(58% 44% at 30% 33%, ${a1}cc, transparent 70%), radial-gradient(54% 40% at 72% 66%, ${a2}bb, transparent 70%), radial-gradient(48% 50% at 50% 84%, ${a1}88, transparent 76%)` }} />
-      )}
-      {fx === "glitch" && (
-        <div aria-hidden="true" className="as-glitch-wrap absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
-          {/* Chromatische Aberration: zwei versetzte Magenta/Cyan-Klone des Kartenmotivs (contain, wie das <img>). */}
-          <div className="as-glitch-chroma-a absolute inset-0" style={{ backgroundImage: `url(${img})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundColor: "#ff2bd6", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
-          <div className="as-glitch-chroma-b absolute inset-0" style={{ backgroundImage: `url(${img})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundColor: "#20e5ff", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
-          <span className="as-glitch-bar" style={{ top: "24%", background: "linear-gradient(90deg,transparent,#ff2bd6,transparent)", filter: "drop-shadow(0 0 3px #ff2bd6)", animationDelay: "-0.2s" }} />
-          <span className="as-glitch-bar" style={{ top: "52%", background: "linear-gradient(90deg,transparent,#20e5ff,transparent)", filter: "drop-shadow(0 0 3px #20e5ff)", animationDelay: "-1.7s" }} />
-          <span className="as-glitch-bar" style={{ top: "76%", background: `linear-gradient(90deg,transparent,${a1},transparent)`, filter: `drop-shadow(0 0 3px ${a1})`, animationDelay: "-3.1s" }} />
-          <div className="as-glitch-scan" />
-        </div>
-      )}
     </div>
   );
 }
 
 // Battlefield-Vorschau: echtes BF-Bild in der AKTUELL gespielten Version (mobile/desktop, gleiche 640px-
-// Schwelle wie im Spiel) + optionales Hologrid-Gitter in der Deck-Hauptfarbe (a1). showVersion blendet ein
-// kleines Label ein, welche Version man gerade sieht.
-function BfPreview({ bfId, a1, fx, className = "", showVersion = false }) {
+// Schwelle wie im Spiel). showVersion blendet ein kleines Label ein, welche Version man gerade sieht.
+function BfPreview({ bfId, className = "", showVersion = false }) {
   const bf = battlefieldAssets(bfId);
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
@@ -589,19 +415,6 @@ function BfPreview({ bfId, a1, fx, className = "", showVersion = false }) {
       {showVersion && bf && (
         <span className="absolute top-1.5 left-1.5 text-[9px] font-extrabold tracking-wider px-1.5 py-0.5 rounded"
           style={{ background: "#0b0a16cc", border: "1px solid #34333f", color: "#9a97ab" }}>{isMobile ? "MOBILE" : "DESKTOP"}</span>
-      )}
-      {fx === "hologrid" && (
-        // Ruhiges Gitter + durchfahrende Leucht-Linie (wie im Spiel je Stich; hier als Endlos-Demo).
-        <div className="absolute pointer-events-none" style={{
-          left: "-20%", right: "-20%", bottom: 0, height: "48%",
-          transform: "perspective(140px) rotateX(60deg)", transformOrigin: "bottom" }}>
-          <div className="absolute inset-0" style={{
-            backgroundImage: `linear-gradient(${a1} 1px,transparent 1px),linear-gradient(90deg,${a1} 1px,transparent 1px)`,
-            backgroundSize: "16px 16px", opacity: 0.26 }} />
-          <div className="ws-sweep absolute left-0 right-0" style={{ height: 7,
-            background: `linear-gradient(90deg,transparent,${a1} 15%,#ffffff 50%,${a1} 85%,transparent)`,
-            boxShadow: `0 0 20px 4px ${a1}, 0 0 52px 12px ${a1}, 0 0 6px 2px #ffffff` }} />
-        </div>
       )}
     </div>
   );
@@ -986,11 +799,8 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
 /* #fx-floater/Text-Chips: Signatur-Farbe je Effekt (linker Farbbalken). Meist Deckfarben-Cyan; ein paar Effekte tragen
    ihre eigene Identitätsfarbe (Feuer/Gold/Blitz/Aurora/Prisma), damit die Reihe auf einen Blick lesbar ist. Key = preview. */
 const FX_TINT = {
-  frameGlow: "#35e0ff", holoSwipe: "#35e0ff", auroraVeil: "#c86bff", glitch: "#35e0ff",
-  none: "#4a4857", hologrid: "#35e0ff", starfield: "#7fb4ff", aurora: "#54e08a",
-  embers: "#ff7a2f", scanline: "#35e0ff", vignette: "#c86bff",
-  klinge: "#35e0ff", laser: "#35e0ff", lasergrid: "#35e0ff", disperse: "#8fd8ff",
-  overload: "#9b82f0", burnbeam: "#ff7a2f", blackhole: "#35e0ff",
+  none: "#4a4857", aurora: "#54e08a", embers: "#ff7a2f",
+  klinge: "#35e0ff",
   gottStandard: "#7fb4ff", fireworks: "#ff5ad6", goldRain: "#f2c14a", prismaWave: "#c86bff",
 };
 

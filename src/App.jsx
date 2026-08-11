@@ -42,7 +42,7 @@ import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, unlockAllCosmetics, frameGlowActive, holoSwipeActive, auroraVeilActive, glitchActive, activeBgFx, activeBgFinisher, laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
+import { THEMES, unlockAllCosmetics, activeBgFx, activeBgFinisher, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { audio } from "./ui/audio.js";
 import { haptics } from "./ui/haptics.js";
@@ -492,25 +492,13 @@ export function Autostich() {
   const activePack = THEMES.find((t) => t.deckId === activeDeckId) || null;
   const deckFx = {
     deckA1: activePack?.a1 || null,
-    deckA2: activePack?.a2 || null, // #309 Aurora-Schleier nutzt beide Deck-Akzentfarben
-    // Karten-Animationen sind jetzt GLOBAL: gekauft via ownedCosmetics["fx:frameGlow"…] UND per Option an.
-    fxFrameGlow: frameGlowActive(profile, options),
-    fxHoloSwipe: holoSwipeActive(profile, options),
-    fxAuroraVeil: auroraVeilActive(profile, options), // #309 Karten-Aurora-Schleier
-    fxGlitch: glitchActive(profile, options),          // #309 Karten-Glitch
-    // #kategorien: zwei UNABHÄNGIGE Feld-Slots — reiner Hintergrund-Effekt (Aurora …) UND Hintergrund-Finisher
-    // (Glutfunken …) können GLEICHZEITIG aktiv sein. Battlefield rendert beide Layer übereinander.
+    deckA2: activePack?.a2 || null, // Aurora nutzt beide Deck-Akzentfarben
+    // #kategorien: zwei UNABHÄNGIGE Feld-Slots — reiner Hintergrund-Effekt (Aurora) UND Hintergrund-Finisher
+    // (Glutfunken) können GLEICHZEITIG aktiv sein. Battlefield rendert beide Layer übereinander.
     bgFx: activeBgFx(profile, options),
     bgFinisher: activeBgFinisher(profile, options),
     auroraDeck: !!options.fxAuroraDeck, // Aurora-Farbmodus: false = Standard-Palette, true = Deckfarbe
     emberDeck: !!options.fxEmberDeck,   // Glutfunken-Farbmodus: false = warmes Feuer, true = Deckfarbe
-    // Globale Effekte (nicht theme-gebunden): gekauft UND per Option an.
-    fxLaserSlice: laserSliceActive(profile, options), // ersetzt die Klinge auf Gegnerkarten durch einen Laser
-    fxBlackhole: blackholeActive(profile, options),   // Sieg-Finisher: Gegnerkarte implodiert (Vorrang vor Laser/Klinge)
-    fxLasergrid: lasergridActive(profile, options),   // Sieg-Finisher: Gegnerkarte zerfällt in ein Laser-Raster
-    fxBurnBeam: burnBeamActive(profile, options),     // Sieg-Finisher: Brennstrahl brennt Loch + Karte bricht
-    fxOverload: overloadActive(profile, options),     // Sieg-Finisher: Blitzeinschlag (Stufe = Wertdifferenz)
-    fxDisperse: disperseActive(profile, options),     // Sieg-Finisher: Karte zerstäubt in ein Partikelgitter (Stufe = Wertdifferenz)
     // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar).
     fxFireworks: fireworksActive(profile, options),
     fxGoldRain: goldRainActive(profile, options),
@@ -771,7 +759,7 @@ export function Autostich() {
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
-                deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxAuroraVeil={deckFx.fxAuroraVeil} fxGlitch={deckFx.fxGlitch} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck} emberDeck={deckFx.emberDeck} fxLaserSlice={deckFx.fxLaserSlice} fxBlackhole={deckFx.fxBlackhole} fxLasergrid={deckFx.fxLasergrid} fxBurnBeam={deckFx.fxBurnBeam} fxOverload={deckFx.fxOverload} fxDisperse={deckFx.fxDisperse}
+                deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck} emberDeck={deckFx.emberDeck}
                 fxFireworks={deckFx.fxFireworks} fxGoldRain={deckFx.fxGoldRain} fxPrismaWave={deckFx.fxPrismaWave}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />

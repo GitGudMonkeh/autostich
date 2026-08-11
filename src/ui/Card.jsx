@@ -10,7 +10,7 @@ import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Ico
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
 // #259: reiner Präsentations-Leaf mit teuren Bild-Layern → React.memo überspringt Re-Render bei unveränderten
 // (primitiven) Props. Beim Auto-Play/Timer-Takt rendern nur die tatsächlich wechselnden Karten neu, nicht alle.
-function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null, fxGlow = null, fxSwipe = false, fxAurora = null, fxGlitch = false }) {
+function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null }) {
   const color = suitColor(suit);
   // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
   // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
@@ -84,24 +84,6 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
         boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, greenGlow, forgedGlow, brandGlow, colonizedGlow, ambientEdge].filter(Boolean).join(", "),
       }}
     >
-      {/* Deck-Werkstatt (#deckshop): Frame Glow = pulsierender Innen-Rahmen in der Deck-Hauptfarbe; Holo Swipe =
-          diagonaler Schimmer. Rein kosmetisch, liegen unter Zahl/Markern (crisp lesbar), auf die eigene Karte gekoppelt. */}
-      {fxGlow && (
-        <div aria-hidden="true" className="as-deck-frameglow absolute inset-0 rounded-xl pointer-events-none" style={{ "--deck-a1": fxGlow }} />
-      )}
-      {fxSwipe && (
-        <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
-          <div className="as-deck-swipe absolute" style={{ top: "-60%", left: 0, width: "38%", height: "220%",
-            background: "linear-gradient(90deg,transparent,rgba(255,255,255,.22),rgba(120,220,255,.12),transparent)" }} />
-        </div>
-      )}
-      {/* #309 Aurora-Schleier: weicher, driftender Neon-Nebel in den Deck-Farben (a1/a2), screen-geblendet über dem Motiv,
-          aber UNTER der Zahl (z-2) → Zahl bleibt lesbar. Reiner CSS-Loop; unter reduced-motion steht der Nebel still. */}
-      {fxAurora && (
-        <div aria-hidden="true" className="as-aurora-drift absolute inset-0 rounded-xl pointer-events-none" style={{
-          mixBlendMode: "screen", opacity: 0.5,
-          backgroundImage: `radial-gradient(58% 44% at 30% 33%, ${fxAurora.a1}cc, transparent 70%), radial-gradient(54% 40% at 72% 66%, ${(fxAurora.a2 || fxAurora.a1)}bb, transparent 70%), radial-gradient(48% 50% at 50% 84%, ${fxAurora.a1}88, transparent 76%)` }} />
-      )}
       {permBoost > 0 && (
         <div className="absolute top-1.5 right-2 text-[11px] font-bold px-1 rounded"
           style={{ color: "#8a7de0", background: "#8a7de022" }}
@@ -117,26 +99,8 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
           ⚒+{forged}
         </div>
       )}
-      {/* #glitch-rework: Cyberpunk-Digital-Glitch über dem Motiv (unter der Zahl, z-1). Chromatische Aberration = zwei
-          versetzte, in Magenta/Cyan gefärbte Klone der Kartenfront (nur skinned); dazu horizontale Tear-Bänder +
-          Scanline-Flicker. Unregelmäßiges Stottern kommt aus den Keyframes; reduced-motion stellt alles still. */}
-      {fxGlitch && (
-        <div aria-hidden="true" className="as-glitch-wrap absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>
-          {skinned && (
-            <>
-              <div className="as-glitch-chroma-a absolute inset-0" style={{ backgroundImage: `url(${frontImage})`, backgroundSize: "100% 100%", backgroundColor: "#ff2bd6", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
-              <div className="as-glitch-chroma-b absolute inset-0" style={{ backgroundImage: `url(${frontImage})`, backgroundSize: "100% 100%", backgroundColor: "#20e5ff", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
-            </>
-          )}
-          {/* dünne leuchtende Linien (1px) statt Balken — drop-shadow gibt den Glow entlang der hellen Linienmitte. */}
-          <span className="as-glitch-bar" style={{ top: "22%", background: "linear-gradient(90deg,transparent,#ff2bd6,transparent)", filter: "drop-shadow(0 0 3px #ff2bd6)", animationDelay: "-0.2s" }} />
-          <span className="as-glitch-bar" style={{ top: "54%", background: "linear-gradient(90deg,transparent,#20e5ff,transparent)", filter: "drop-shadow(0 0 3px #20e5ff)", animationDelay: "-1.7s" }} />
-          <span className="as-glitch-bar" style={{ top: "78%", background: `linear-gradient(90deg,transparent,${numColor},transparent)`, filter: `drop-shadow(0 0 3px ${numColor})`, animationDelay: "-3.1s" }} />
-          <div className="as-glitch-scan" />
-        </div>
-      )}
-      {/* Zahl (z-2, über dem Glitch-Layer). Bei Glitch: kräftiger 2-Kanal-Split + Slice-Sprünge (as-glitch-num). */}
-      <div className={`text-5xl font-bold card-num${fxGlitch ? " as-glitch-num" : ""}`} style={{ position: "relative", zIndex: 2, color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, textShadow: numShadow, "--num-shadow": numShadow, fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "2.4rem", lineHeight: 1 }}>{effective}</div>
+      {/* Zahl (z-2). */}
+      <div className="text-5xl font-bold card-num" style={{ position: "relative", zIndex: 2, color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, textShadow: numShadow, "--num-shadow": numShadow, fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "2.4rem", lineHeight: 1 }}>{effective}</div>
       {/* Pflanze (#277): zweistufiger Wachstumsring unten-rechts — Stufe 1 grau→grün (Reife), Stufe 2 heller (Wert-Deckel/
           ausgewachsen). Ausgeblendet erst, wenn die Karte ausgewachsen ist. Sitzt in vocab.CORNER.growthRing. */}
       {showGrowthRing && (
