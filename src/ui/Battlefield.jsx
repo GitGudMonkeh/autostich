@@ -1187,7 +1187,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
         <Suspense fallback={null}>
           <FireBurn
-            heat={FIRE_FORCE != null ? FIRE_FORCE : Math.max(0, Math.min(1, (Number(heat) || 0) / HEAT_MAX))}
+            heat={FIRE_FORCE != null ? FIRE_FORCE
+              : (heat && heat.active ? Math.max(0, Math.min(1, (heat.value || 0) / (heat.max || HEAT_MAX))) : 0)}
             panelRef={panelRef} deckRef={playerDeckRef} reduced={reduced} />
         </Suspense>
       )}

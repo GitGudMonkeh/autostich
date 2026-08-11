@@ -155,8 +155,12 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
   Sprites/ParticleContainer oder Graphics), Clip auf Außenbereich der Deck-Box. Mount auf den
   **Deck-Slot** (Ref am Deckstapel ergänzen). Dev-Sicht `?fireheat=<0..1>` zum Ansehen, Gate wie
   IonStorm (Preview/Dev).
-- **Status:** 🟡 **Look + Werte abgesegnet.** Offen: (1) In-Game-**Hitzequelle** (Trigger),
-  (2) **Deck-Slot-Ref** im Battlefield, (3) Portierung Canvas→Pixi in `FireBurn.jsx`.
+- **Verdrahtung (erledigt):** Hitze = `state.heat.value / state.heat.max` (nur wenn `heat.active`,
+  also Feuer-Builds) — `state.heat` ist ein OBJEKT, nicht die Zahl (häufige Fehlerquelle!).
+  Deck-Slot-Ref `playerDeckRef` an `Side`. Z-Lage: FireBurn-Layer z-9 liegt HINTER der Karten-Reihe
+  (`relative z-10`) → Feuer sitzt hinter dem Deck, innen frei. Nur Preview/Dev gemountet.
+- **Status:** 🟢 **Look + Werte abgesegnet, in-game verdrahtet** (Hitze aus der Hitzeleiste,
+  Layer hinter dem Deck). Bugfix: `heat` ist ein Objekt (`value/max`), nicht `Number(heat)`.
 
 ### 5.3 Eis ❄️ (`ice`) — Glow `#5ec8f0`
 - **Status:** ⚪ Noch nicht dran
