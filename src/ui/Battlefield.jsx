@@ -134,6 +134,10 @@ const KLINGE_TUNE = {
   zOvershoot: 1.2,     // Z: Überschlag der Schläge über die Ecken hinaus
   sparkCount: 18,      // Funken bei Serie 1
   sparkPerStreak: 2,   // + Funken pro Serien-Schritt
+  // Klingen-Look: der Streich sieht nach Stahl aus (weiß-heißer Kern + kühler Glow), NICHT nach der Kartenfarbe.
+  bladeTint: "#bcd6ff", // Glow-Ton der Klinge (kühles Stahlweiß); Kern bleibt weiß
+  bladeTaper: true,     // Schwung-Form: Schnittlinie läuft zu beiden Enden spitz zu (Linse) statt Balken
+  sparkMetal: true,     // Metall-Funken: weiß + warme orange (Stahl-auf-Stahl) statt suit-farbig
 };
 // Serien-Eskalation: 1× bei Serie 1, gedeckelt bei streakMax.
 function sliceEsc(streak) {
@@ -331,14 +335,20 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
   const ease = "cubic-bezier(0.3, 0.7, 0.3, 1)";
   // Schnittlinie (Winkel als CSS-Var → dasselbe Keyframe je Segment mit anderem --cut-rot). `opts` erlaubt versetzte
   // Position (cx/cy %) + eigene Länge + zeitlichen Versatz (stagger × cutDur) → der Z-Schnitt zeichnet sich als 3 Segmente.
+  // #klinge: Der Streich ist ein STAHL-Schwung, nicht die Kartenfarbe: weiß-heißer Kern (Verlauf), kühler Glow und —
+  // wenn `bladeTaper` — eine zu beiden Enden spitz zulaufende Linsenform (Katana-Wisch) statt eines Balkens.
+  const glow = KLINGE_TUNE.bladeTint;
+  const bladeLens = "polygon(0 50%, 4% 0, 96% 0, 100% 50%, 96% 100%, 4% 100%)";
   const cutLine = (rot, key, opts = {}) => {
     const len = opts.len || cutLen;
-    const h = opts.thick ? 5 : 3;   // Z-Schläge etwas dicker → der blitzschnelle Durchzug registriert klar
+    const h = opts.thick ? 7 : 5;   // Z-Schläge etwas dicker → der blitzschnelle Durchzug registriert klar
     const dur = opts.fast ? Math.round(cutDur * KLINGE_TUNE.zSlashFactor) : cutDur; // Z-Einzelschlag fährt blitzschnell durch
     const stMs = Math.round((opts.stagger || 0) * cutDur);
     return (
       <div key={key} style={{ position: "absolute", left: `${opts.cx ?? 50}%`, top: `${opts.cy ?? 50}%`, width: len, height: h, marginLeft: -len / 2, marginTop: -h / 2,
-        background: color, borderRadius: 2, transformOrigin: "center", boxShadow: `0 0 ${(6 + intensity * 6).toFixed(0)}px ${color}, 0 0 ${(14 + intensity * 10).toFixed(0)}px ${color}aa`,
+        background: `linear-gradient(90deg, transparent 0%, ${glow}88 12%, #ffffff 50%, ${glow}88 88%, transparent 100%)`,
+        clipPath: KLINGE_TUNE.bladeTaper ? bladeLens : undefined, borderRadius: KLINGE_TUNE.bladeTaper ? undefined : 2,
+        transformOrigin: "center", boxShadow: `0 0 6px #ffffff, 0 0 ${(14 + intensity * 8).toFixed(0)}px ${glow}, 0 0 ${(26 + intensity * 12).toFixed(0)}px ${glow}aa`,
         "--cut-rot": `${rot}deg`, animation: `as-cut-line ${dur}ms ease-out ${delay + stMs}ms both` }} />
     );
   };
@@ -407,16 +417,20 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
           animation: `as-boom-shard ${halvesDur}ms ${ease} ${delay + holdMs}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
       ))}
       {geo.cuts.map((c, k) => cutLine(c.rot, `cut${k}`, c))}
-      {/* Funken aus dem Schnittzentrum — beim Z erst mit dem Bersten nach den drei Schlägen. */}
-      {sparks.map((s) => (
-        <div key={s.i} style={{
-          position: "absolute", left: "50%", top: "50%",
-          width: s.confetti ? 6 : 4, height: s.confetti ? 3 : 4, borderRadius: s.confetti ? 1 : "50%",
-          background: s.white ? "#ffffff" : color, boxShadow: `0 0 5px ${s.white ? "#ffffff" : color}`,
-          "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
-          animation: `as-spark ${sparkDur}ms ease-out ${delay + holdMs}ms both`, willChange: "transform, opacity",
-        }} />
-      ))}
+      {/* Funken aus dem Schnittzentrum — beim Z erst mit dem Bersten nach den drei Schlägen. Metall-Funken (weiß +
+          warme orange, Stahl-auf-Stahl) statt suit-farbig, passend zum Stahl-Schwung. */}
+      {sparks.map((s) => {
+        const sc = KLINGE_TUNE.sparkMetal ? (s.white ? "#ffffff" : (s.i % 3 === 0 ? "#ffb060" : "#dfeaff")) : (s.white ? "#ffffff" : color);
+        return (
+          <div key={s.i} style={{
+            position: "absolute", left: "50%", top: "50%",
+            width: s.confetti ? 6 : 4, height: s.confetti ? 3 : 4, borderRadius: s.confetti ? 1 : "50%",
+            background: sc, boxShadow: `0 0 5px ${sc}`,
+            "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
+            animation: `as-spark ${sparkDur}ms ease-out ${delay + holdMs}ms both`, willChange: "transform, opacity",
+          }} />
+        );
+      })}
     </div>
   );
 }
