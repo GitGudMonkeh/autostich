@@ -39,6 +39,27 @@ import final_showdown from "../assets/music/final_showdown.m4a";
 import last_stand from "../assets/music/last_stand.m4a";
 import endgame from "../assets/music/endgame.m4a";
 import no_limits from "../assets/music/no_limits.m4a";
+// Phonk×Synthwave-Batch — Suno-Uploads, aufbereitet auf −14 LUFS + AAC/.m4a via maintenance/normalize-music.mjs.
+import neon_pulse from "../assets/music/neon_pulse.m4a";
+import midnight_drive from "../assets/music/midnight_drive.m4a";
+import velvet_cruise from "../assets/music/velvet_cruise.m4a";
+import neon_drift from "../assets/music/neon_drift.m4a";
+import neon_cruise from "../assets/music/neon_cruise.m4a";
+import chrome_horizon from "../assets/music/chrome_horizon.m4a";
+import neon_night_drive from "../assets/music/neon_night_drive.m4a";
+import neon_overdrive from "../assets/music/neon_overdrive.m4a";
+import redline from "../assets/music/redline.m4a";
+import nitro_surge from "../assets/music/nitro_surge.m4a";
+import afterburner from "../assets/music/afterburner.m4a";
+import warp_speed from "../assets/music/warp_speed.m4a";
+import terminal_velocity from "../assets/music/terminal_velocity.m4a";
+import last_light from "../assets/music/last_light.m4a";
+import point_of_no_return from "../assets/music/point_of_no_return.m4a";
+import concrete_collapse from "../assets/music/concrete_collapse.m4a";
+import fault_line from "../assets/music/fault_line.m4a";
+import drift_king from "../assets/music/drift_king.m4a";
+import neon_thunder from "../assets/music/neon_thunder.m4a";
+import neon_apocalypse from "../assets/music/neon_apocalypse.m4a";
 
 const MENU_TRACK = { title: "Relay of Multipliers", url: relay_of_multipliers }; // Main-Screen + Victory
 
@@ -69,6 +90,10 @@ const POOL = [
   { title: "Shuffle Pulse", url: shuffle_pulse, tier: "calm" },
   { title: "Stacked Multipliers", url: stacked_multipliers, tier: "calm" },
   { title: "Morning Deck", url: morning_deck, tier: "calm" },                    // war Menü-Theme → jetzt Run-Track
+  { title: "Neon Pulse", url: neon_pulse, tier: "calm" },
+  { title: "Midnight Drive", url: midnight_drive, tier: "calm" },
+  { title: "Velvet Cruise", url: velvet_cruise, tier: "calm" },
+  { title: "Neon Drift", url: neon_drift, tier: "calm" },
   // mid
   { title: "Deck Alignment", url: deck_alignment, tier: "mid" },
   { title: "Asymmetric Loop", url: asymmetric_loop, tier: "mid" },               // #171
@@ -78,6 +103,8 @@ const POOL = [
   { title: "Pulsing Cards", url: pulsing_cards, tier: "mid" },
   { title: "Neon Card Game", url: neon_card_game, tier: "mid" },
   { title: "Neon Arcade Loop", url: neon_arcade_loop, tier: "mid" },
+  { title: "Neon Cruise", url: neon_cruise, tier: "mid" },
+  { title: "Chrome Horizon", url: chrome_horizon, tier: "mid" },
   // hot
   { title: "Mutation Funk Drive", url: mutation_funk_drive, tier: "hot" },       // #171
   { title: "Card Momentum", url: card_momentum, tier: "hot" },
@@ -87,6 +114,8 @@ const POOL = [
   { title: "Circuit Breaker", url: circuit_breaker, tier: "hot" },
   { title: "Live Wire", url: live_wire, tier: "hot" },
   { title: "Full Tilt", url: full_tilt, tier: "hot" },
+  { title: "Neon Night Drive", url: neon_night_drive, tier: "hot" },
+  { title: "Neon Overdrive", url: neon_overdrive, tier: "hot" },
   // overdrive
   { title: "Event Horizon", url: event_horizon, tier: "overdrive" },
   { title: "Circuit Overload", url: circuit_overload, tier: "overdrive" },
@@ -97,8 +126,19 @@ const POOL = [
   { title: "Last Stand", url: last_stand, tier: "overdrive" },
   { title: "Endgame", url: endgame, tier: "overdrive" },
   { title: "No Limits", url: no_limits, tier: "overdrive" },
-  // overdrive+ (Score 60 Mio+): noch keine Tracks — 10 in Produktion (mehr Impact & Speed als overdrive).
-  // Bis dahin fällt die Stufe automatisch auf „overdrive" zurück. Neue Tracks hier mit tier: "overdrive_plus" ergänzen.
+  // overdrive+ (Score 60 Mio+): Phonk×Synthwave-Endstufe (mehr Impact & Speed als overdrive).
+  { title: "Redline", url: redline, tier: "overdrive_plus" },
+  { title: "Nitro Surge", url: nitro_surge, tier: "overdrive_plus" },
+  { title: "Afterburner", url: afterburner, tier: "overdrive_plus" },
+  { title: "Warp Speed", url: warp_speed, tier: "overdrive_plus" },
+  { title: "Terminal Velocity", url: terminal_velocity, tier: "overdrive_plus" },
+  { title: "Last Light", url: last_light, tier: "overdrive_plus" },
+  { title: "Point of No Return", url: point_of_no_return, tier: "overdrive_plus" },
+  { title: "Concrete Collapse", url: concrete_collapse, tier: "overdrive_plus" },
+  { title: "Fault Line", url: fault_line, tier: "overdrive_plus" },
+  { title: "Drift King", url: drift_king, tier: "overdrive_plus" },
+  { title: "Neon Thunder", url: neon_thunder, tier: "overdrive_plus" },
+  { title: "Neon Apocalypse", url: neon_apocalypse, tier: "overdrive_plus" },
 ];
 
 function tierForScore(score) {
