@@ -80,14 +80,17 @@ const FLOAT_ZONES = {
 // Einzelstich-Score. Höchste erfüllte Stufe gewinnt; oberste bewusst hoch (500k) → „GOTTGLEICH" bleibt selten.
 // #169 FB-7: `size` = Peak-Zielgröße (px) je Stufe — höhere Stufe dominiert stärker. Der Render deckelt sie per
 // clamp() gegen die Viewport-Breite (mobil kein Überlauf) und zentriert echt (H+V) auf oberster Ebene.
-// #315: `cool` = Cooldown-Fenster (ms) je Groß-Ansage-Stufe gegen Spam/Clutter. „Stark" feuert am häufigsten → am
-// stärksten gedrosselt; nach oben hin lockerer. Epische Stufen (Gottgleich) sind NIE gedrosselt (kein `cool`).
+// #315/rework: `cool` = Cooldown-Fenster (ms) je Groß-Ansage-Stufe gegen Spam/Clutter, `rank` = Rangordnung für die
+// „nur die höchsten"-Dominanz (höher unterdrückt niedriger kurz danach). Bewusst SANFT gedrosselt, damit die Stufen
+// bei starken Runs NICHT verstummen, sondern regelmäßig (aber reduziert) erscheinen — auch Gottgleich (jetzt ebenfalls
+// mit `cool`, damit sein Sonder-Effekt/Bass regelmäßig, aber nicht bei JEDEM Stich kommt). Werte tunebar.
 const BIG_SCORE_TIERS = [
-  { min: 500000, text: "Gottgleich", size: 104, epic: true }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß (dominiert die Gold-Stufen darunter)
-  { min: 150000, text: "Irre",       size: 90, cool: 1500 },
-  { min: 50000,  text: "Brutal",     size: 78, cool: 3000 },
-  { min: 10000,  text: "Stark",      size: 68, cool: 5000 },
+  { min: 500000, text: "Gottgleich", size: 104, epic: true, rank: 4, cool: 2500 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
+  { min: 150000, text: "Irre",       size: 90,  rank: 3, cool: 1600 },
+  { min: 50000,  text: "Brutal",     size: 78,  rank: 2, cool: 2200 },
+  { min: 10000,  text: "Stark",      size: 68,  rank: 1, cool: 2800 },
 ];
+const BIG_DOMINANCE_MS = 1400; // #315: eine niedrigere Stufe wird so lange nach einer HÖHEREN unterdrückt → „nur die höchsten"
 const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
 // Große Lawine (Legendär): der Finisher-Bruch zeigt statt der Score-Stufe („Gottgleich" …) das Wort „Lawine" in Eis-Blau.
 const LAWINE_TIER = { text: "Lawine", size: 104, epic: true, color: "#5ec8f0" };
@@ -949,13 +952,18 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       if (lawineShown.current) return;
       lawineShown.current = true;
     }
-    // #315: Gating der niedrigen Stufen (Stark/Brutal/Irre). Feuert eine Stufe innerhalb ihres Cooldown-Fensters erneut,
-    // wird die ANSAGE übersprungen (der Score zählt/floatet unverändert weiter). „Stark" ist am stärksten gedrosselt.
-    // Epische Stufen tragen kein `cool` → nie gedrosselt.
-    if (bigScore.cool > 0) {
+    // #315/rework: Gating der Stufen-Ansagen (Stark/Brutal/Irre/Gottgleich). Zwei Regeln, beide nur für Stufen mit
+    // `rank` (die epischen Serien-/Lawine-Ansagen haben ihre eigene 1×-Logik oben und werden hier NICHT angefasst):
+    //   1) Dominanz: eine NIEDRIGERE Stufe kurz (BIG_DOMINANCE_MS) nach einer HÖHEREN unterdrücken → „nur die höchsten".
+    //   2) Throttle je Stufe (`cool`): dieselbe Stufe nicht bei jedem Stich → erscheint regelmäßig, aber reduziert.
+    // Übersprungene Ansagen kosten NICHTS am Score (der floatet unverändert weiter).
+    if (bigScore.rank) {
       const nowMs = Date.now();
-      if (nowMs - (bigCoolRef.current[bigScore.text] || 0) < bigScore.cool) return;
+      if (bigScore.rank < (bigCoolRef.current._rank || 0) && nowMs - (bigCoolRef.current._at || 0) < BIG_DOMINANCE_MS) return;
+      if (bigScore.cool > 0 && nowMs - (bigCoolRef.current[bigScore.text] || 0) < bigScore.cool) return;
       bigCoolRef.current[bigScore.text] = nowMs;
+      bigCoolRef.current._rank = bigScore.rank;
+      bigCoolRef.current._at = nowMs;
     }
     // #: „Gottgleich"-Bass-Drop — feuert MIT dem Wort bei den epischen Ansagen (Gottgleich ≥500k, „Gönn dir", „Lawine";
     // alle drei tragen epic:true, Stark/Brutal/Irre nicht). Cooldown in audio.js verhindert Dröhnen bei dichten Stichen.
@@ -1057,7 +1065,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
   // Shake-Parameter je Stufe (leicht → stark). Amplitude als CSS-Var ans Panel; Keyframe-Name wechselt je Sieg (a/b).
-  const shakeAmp  = screenFx ? [0, 3, 6, 9, 13][screenFx.tier] : 0;
+  // #: Screenshake-Amplitude je Stufe (px). Der obere Bereich war zu heftig → Irre (Tier 3) nur noch GANZ LEICHT und
+  // Gottgleich (Tier 4) deutlich reduziert (war 9/13). Stark/Brutal bleiben dezent wie bisher. [TUNING]
+  const shakeAmp  = screenFx ? [0, 3, 5, 4, 7][screenFx.tier] : 0;
   const shakeDur  = screenFx ? 160 + screenFx.tier * 50 : 0;
   const shakeName = screenFx ? (screenFx.n % 2 ? "as-crit-shake-a" : "as-crit-shake-b") : undefined;
 

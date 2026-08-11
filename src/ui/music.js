@@ -72,9 +72,10 @@ const MENU_TRACK = { title: "Relay of Multipliers", url: relay_of_multipliers };
 // TUNING: Die Zuordnung unten ist nach GEHÖR anpassbar — einfach das `tier` eines Tracks umtragen. Eine leere
 // Stufe fällt automatisch auf die nächstniedrigere Stufe mit Tracks zurück (z. B. overdrive+ → overdrive).
 const TIER_ORDER = ["calm", "mid", "hot", "overdrive", "overdrive_plus"]; // aufsteigende Intensität (= Fallback-Kette)
-// Score-Grenzen (state.score): < calm → calm · < mid → mid · < hot → hot · < overdrive → overdrive · sonst overdrive+.
-// Plan: <1 Mio calm · 1–5 Mio mid · 5–30 Mio hot · 30–60 Mio overdrive · 60 Mio+ overdrive+.
-const TIER_SCORES = { calm: 1000000, mid: 5000000, hot: 30000000, overdrive: 60000000 };
+// Score-Grenzen (state.score) — UNTERgrenzen je Stufe (ab welchem Score die Stufe greift). Die höchste erreichte Stufe
+// gewinnt. Plan: mild/calm (Boden, nominell ab 2 Mio) · mid ab 10 Mio · hot ab 30 Mio · overdrive ab 70 Mio · overdrive+
+// ab 90 Mio. („mild" = der calm-Track-Pool — es gibt keine eigene Stufe darunter, calm ist der Boden.)
+const TIER_MIN = { mid: 10000000, hot: 30000000, overdrive: 70000000, overdrive_plus: 90000000 };
 // #: Stufenwechsel-Politur — ein laufender Song wird NIE innerhalb seiner ersten SWITCH_MIN_PLAY Sekunden abgelöst
 // (er läuft aus → onEnded reiht den neuen-Stufen-Track). Lief er schon länger, wird weich (kurzer Fade) gewechselt.
 // Verhindert das „nur 5 s anspielen, dann Schnitt".
@@ -92,11 +93,11 @@ const POOL = [
   { title: "Shuffle Pulse", url: shuffle_pulse, tier: "calm" },
   { title: "Stacked Multipliers", url: stacked_multipliers, tier: "calm" },
   { title: "Morning Deck", url: morning_deck, tier: "calm" },                    // war Menü-Theme → jetzt Run-Track
-  { title: "Neon Pulse", url: neon_pulse, tier: "calm" },
   { title: "Midnight Drive", url: midnight_drive, tier: "calm" },
   { title: "Velvet Cruise", url: velvet_cruise, tier: "calm" },
   { title: "Neon Drift", url: neon_drift, tier: "calm" },
   // mid
+  { title: "Neon Pulse", url: neon_pulse, tier: "mid" },                         // #: von calm → mid verschoben
   { title: "Deck Alignment", url: deck_alignment, tier: "mid" },
   { title: "Asymmetric Loop", url: asymmetric_loop, tier: "mid" },               // #171
   { title: "Relay of Multipliers", url: relay_of_multipliers, tier: "mid" },
@@ -147,11 +148,11 @@ const POOL = [
 
 function tierForScore(score) {
   const s = Math.max(0, Number(score) || 0);
-  if (s < TIER_SCORES.calm) return "calm";
-  if (s < TIER_SCORES.mid) return "mid";
-  if (s < TIER_SCORES.hot) return "hot";
-  if (s < TIER_SCORES.overdrive) return "overdrive";
-  return "overdrive_plus";
+  if (s >= TIER_MIN.overdrive_plus) return "overdrive_plus";
+  if (s >= TIER_MIN.overdrive) return "overdrive";
+  if (s >= TIER_MIN.hot) return "hot";
+  if (s >= TIER_MIN.mid) return "mid";
+  return "calm";
 }
 
 let el = null;
