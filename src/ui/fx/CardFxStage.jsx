@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Application, Container, Graphics } from "pixi.js";
 import { drawEdgeGlow } from "./cardFx/edgeGlow.js";
 import { drawHolo } from "./cardFx/holo.js";
+import { createGlitch } from "./cardFx/glitch.js";
 
 /* CardFxStage (#318) — EINE geteilte Pixi-Overlay-Bühne ÜBER den Karten (z>10) für die stapelbaren
    Karten-Dauer-Layer (Edge-Glow · Holo-Sweep · später Glitch) und die Materialize-Reveal-Transition.
@@ -82,12 +83,17 @@ export function CardFxStage({
         grp.addChild(edge, holo, holoMask);
         holo.mask = holoMask;
         appRef.current.stage.addChild(grp);
-        node = { grp, edge, holo, holoMask };
+        node = { grp, edge, holo, holoMask, glitch: null };
         nodesRef.current[i] = node;
       }
       return node;
     };
-    const clearNode = (n) => { if (n) { n.edge.clear(); n.holo.clear(); n.holoMask.clear(); } };
+    // Glitch ist teurer (RenderTexture + Sprite-Pool) → erst bei Bedarf bauen; liegt ÜBER Holo (Reihenfolge).
+    const ensureGlitch = (node) => {
+      if (!node.glitch && appRef.current) { node.glitch = createGlitch(appRef.current); node.grp.addChild(node.glitch.root); }
+      return node.glitch;
+    };
+    const clearNode = (n) => { if (n) { n.edge.clear(); n.holo.clear(); n.holoMask.clear(); n.glitch?.clear(); } };
     const clearAll = () => { for (const n of nodesRef.current) clearNode(n); };
 
     const tick = (ticker) => {
@@ -122,7 +128,9 @@ export function CardFxStage({
           node.holoMask.roundRect(0, 0, w, h, CARD_CORNER).fill(0xffffff);
           drawHolo(node.holo, w, h, sc, p, tSec, tl);
         }
-        // TODO(#318): glitch (Karten-Textur) hier über Holo andocken.
+        if (st.layers.glitch) {
+          ensureGlitch(node).update(w, h, sc, p, tSec, { num: c.num, color: c.color });
+        } else if (node.glitch) node.glitch.clear();
       }
     };
 
@@ -161,6 +169,7 @@ export function CardFxStage({
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("deviceorientation", onOrient);
       document.removeEventListener("visibilitychange", onVis);
+      for (const n of nodesRef.current) { if (n?.glitch) { try { n.glitch.destroy(); } catch { /* ignore */ } } }
       const a = appRef.current; appRef.current = null; nodesRef.current = [];
       if (a) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } }
     };

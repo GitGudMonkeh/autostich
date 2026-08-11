@@ -154,11 +154,11 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   // #cleanup: Es bleiben: Hintergrund-Effekt „Aurora" (bgfx) und die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
   // (bgfin; #311 überarbeitet wieder eingeführt). Klinge ist ein synthetischer Sieg-Finisher (NICHT in GLOBAL_FX). Die
   // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
-  it("GLOBAL_FX führt aurora, embers, starfield und die Karten-Animationen edgeglow + holo (#318)", () => {
-    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "starfield", "edgeglow", "holo"].sort());
+  it("GLOBAL_FX führt aurora, embers, starfield und die Karten-Animationen edgeglow + holo + glitch (#318)", () => {
+    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "starfield", "edgeglow", "holo", "glitch"].sort());
   });
   it("#318: Karten-Animationen liegen in der anim-Gruppe (stapelbar) mit korrekter Naht", () => {
-    for (const [key, option] of [["edgeglow", "fxEdgeGlow"], ["holo", "fxHolo"]]) {
+    for (const [key, option] of [["edgeglow", "fxEdgeGlow"], ["holo", "fxHolo"], ["glitch", "fxGlitch"]]) {
       const fx = GLOBAL_FX_BY_KEY[key];
       expect(fx).toBeTruthy();
       expect(fx.group).toBe("anim");
@@ -168,8 +168,8 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
     }
   });
   it("entfernte Effekte sind vollständig aus der Registry", () => {
-    // #311: starfield ist wieder da → NICHT mehr in dieser Entfernt-Liste.
-    for (const k of ["frameGlow", "holoSwipe", "auroraVeil", "glitch", "hologrid", "scanline", "vignette",
+    // #311: starfield ist wieder da → NICHT mehr in dieser Entfernt-Liste. #318: glitch ist als Karten-Animation neu (raus).
+    for (const k of ["frameGlow", "holoSwipe", "auroraVeil", "hologrid", "scanline", "vignette",
                      "laserSlice", "blackhole", "lasergrid", "burnBeam", "overload", "disperse", "klinge",
                      "fireworks", "goldRain", "prismaWave", "gottStandard"]) {
       expect(GLOBAL_FX_BY_KEY[k]).toBeUndefined();

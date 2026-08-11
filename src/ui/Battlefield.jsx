@@ -27,6 +27,7 @@ const cardAnimForce = (name) => (import.meta.env.VITE_PREVIEW === "1" || import.
   (() => { try { return new URLSearchParams(window.location.search).get(name) === "1"; } catch { return false; } })();
 const EDGEGLOW_FORCE = cardAnimForce("edgeglow");
 const HOLO_FORCE = cardAnimForce("holo");
+const GLITCH_FORCE = cardAnimForce("glitch");
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
@@ -1198,16 +1199,17 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         const animSet = new Set(cardAnims || []);
         const edgeGlow = animSet.has("edgeglow") || EDGEGLOW_FORCE;
         const holo = animSet.has("holo") || HOLO_FORCE;
-        if (!edgeGlow && !holo) return null; // (später: || glitch)
+        const glitch = animSet.has("glitch") || GLITCH_FORCE;
+        if (!edgeGlow && !holo && !glitch) return null;
         return (
           <Suspense fallback={null}>
             <CardFxStage
               panelRef={panelRef}
               cards={[
-                { ref: playerCardRef, active: !!t && !flyAway && !flipOn },
-                { ref: oppCardRef, active: !!t && !oppFlyAway && !oppFlipOn && !oppSliced },
+                { ref: playerCardRef, active: !!t && !flyAway && !flipOn, num: t ? t.pValue : "", color: t ? suitColor(t.pCard.suit) : null },
+                { ref: oppCardRef, active: !!t && !oppFlyAway && !oppFlipOn && !oppSliced, num: t ? t.oValue : "", color: t ? suitColor(t.oCard.suit) : null },
               ]}
-              layers={{ edgeGlow, holo }}
+              layers={{ edgeGlow, holo, glitch }}
               color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#9b82f0"}
               tier={hitTier} reduced={reduced} lite={lite} />
           </Suspense>

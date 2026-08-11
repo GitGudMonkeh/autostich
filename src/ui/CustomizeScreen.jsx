@@ -54,9 +54,11 @@ const PREVIEW_LOOK = {
   edgeglow: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
   // Holo-Sweep: dunkles neutrales Feld, Deck-Dual als Basis unter dem Regenbogen (prismatik mischt beides).
   holo: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
+  // Glitch: dunkles Feld, Deck-Dual (der Glitch tönt selbst in ghostA/ghostB/Suit).
+  glitch: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
 };
 // #318 Preview-Key → CardFxStage-Layer-Flag (welcher Dauer-Layer in der Showcase gezeigt wird).
-const ANIM_LAYER = { edgeglow: "edgeGlow", holo: "holo" };
+const ANIM_LAYER = { edgeglow: "edgeGlow", holo: "holo", glitch: "glitch" };
 
 // „Standard"-Pack (UI-seitig): aktiviert wieder das Grund-Deck/-Battlefield. kind:"std" → immer im Besitz.
 const STD_PACK = { id: "default", name: "Standard", kind: "std", a1: "#8a7de0", deckId: "default", bfId: "default", els: ["deck", "bf"] };
@@ -437,7 +439,7 @@ function CardAnimPreview({ anim }) {
       </div>
       {CARDFX_PREVIEW_ON && (
         <Suspense fallback={null}>
-          <CardFxStage panelRef={panelRef} cards={[{ ref: cardRef, active: true }]}
+          <CardFxStage panelRef={panelRef} cards={[{ ref: cardRef, active: true, num: 7, color: suitColor("blue") }]}
             layers={{ [ANIM_LAYER[anim]]: true }} color={look.a1} color2={look.a2} tier={3} />
         </Suspense>
       )}
