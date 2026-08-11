@@ -44,7 +44,7 @@ export const GLOBAL_FX = [
   { key: "starfield", name: "Sternenfeld", desc: "Ein Parallax-Sternenfeld driftet langsam übers Feld; je Stich zieht eine Sternschnuppe durch — in der Deckfarbe.",
     ownKey: "fx:starfield", option: "fxStarfield", preview: "starfield", price: 10, group: "field" },
   { key: "aurora", name: "Aurora", desc: "Weiche Polarlicht-Schleier driften übers Feld; je Stich ein sanfter Bloom-Puls — in der Deckfarbe.",
-    ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "field" },
+    ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "field", hidden: true }, // #pixi-weg: Aurora (Pixi-WIP) vorerst NICHT im Shop anzeigen
   { key: "embers", name: "Glutfunken", desc: "Schwebende Glutpartikel steigen langsam auf; je Stich ein Funken-Aufstoß von unten — in der Deckfarbe.",
     ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 8, group: "field" },
   { key: "scanline", name: "Scanline-Puls", desc: "CRT-Scanlines liegen übers Feld; je Stich wandert eine helle Zeile von oben nach unten — in der Deckfarbe.",

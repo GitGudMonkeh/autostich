@@ -79,7 +79,7 @@ const FIELD_NONE = { key: "none", name: "Kein Feld-Effekt", group: "field", prev
 // Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe nach DP-Preis aufsteigend (billig oben, teuer unten);
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxGroupItems = (group) => {
-  const list = GLOBAL_FX.filter((f) => f.group === group).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+  const list = GLOBAL_FX.filter((f) => f.group === group && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
   if (group === "gott") return [GOTT_STANDARD, ...list];
   if (group === "finisher") return [KLINGE, ...list]; // „Klinge" (Default) voran
   if (group === "field") return [FIELD_NONE, ...list]; // „Kein Feld-Effekt" (Default) voran

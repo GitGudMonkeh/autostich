@@ -25,7 +25,7 @@ const FRAG = [
   "uniform float uMode;",   // 0 = Standard-Palette · 1 = Deckfarbe (uDeck1 unten → uDeck2 oben)
   "uniform vec3 uDeck1;",   // Deck-Hauptfarbe (unten, an der Bogenkante)
   "uniform vec3 uDeck2;",   // Deck-Sekundärfarbe (oben, im Auslauf)
-  "const float I_=1.16, WISP=4.0, WAVE=0.14, PERSP=0.22, DOME=0.10, CLUMPLO=0.36, RAYF=39.0, RAYC=1.10, SPACING=0.13, BASEY=0.19, DRIFT=0.035;",
+  "const float I_=1.16, WISP=4.0, WAVE=0.14, PERSP=0.22, DOME=0.10, CLUMPLO=0.36, RAYF=39.0, RAYC=1.10, SPACING=0.13, BASEY=0.63, DRIFT=0.035;",
   "float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453123); }",
   "float noise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);",
   "  float a=hash(i), b=hash(i+vec2(1.0,0.0)), c=hash(i+vec2(0.0,1.0)), d=hash(i+vec2(1.0,1.0));",
@@ -58,7 +58,7 @@ const FRAG = [
   "    ac += auroraCol(hcol) * v;",
   "  }",
   "  vec3 rgb = ac * I_ * 1.7;",
-  "  float a = clamp(max(rgb.r, max(rgb.g, rgb.b)), 0.0, 1.0) * 0.70;",           // ~30% transparenter; Schwarz bleibt durchsichtig
+  "  float a = clamp(max(rgb.r, max(rgb.g, rgb.b)), 0.0, 1.0) * 0.55;",           // noch etwas transparenter; Schwarz bleibt durchsichtig
   "  finalColor = vec4(rgb, a);",
   "}",
 ].join("\n");
