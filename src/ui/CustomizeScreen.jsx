@@ -52,9 +52,11 @@ const PREVIEW_LOOK = {
   // #318 Karten-Animationen: neutrales Feld, Deck-Dual mit klarem Farbverlauf (Blau→Violett), damit der diagonale
   // Deck-Verlauf des Kantenglühens sichtbar ist. Karten-Animationen laufen IMMER in der Deckfarbe (kein Standard-Toggle).
   edgeglow: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
+  // Holo-Sweep: dunkles neutrales Feld, Deck-Dual als Basis unter dem Regenbogen (prismatik mischt beides).
+  holo: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
 };
 // #318 Preview-Key → CardFxStage-Layer-Flag (welcher Dauer-Layer in der Showcase gezeigt wird).
-const ANIM_LAYER = { edgeglow: "edgeGlow" };
+const ANIM_LAYER = { edgeglow: "edgeGlow", holo: "holo" };
 
 // „Standard"-Pack (UI-seitig): aktiviert wieder das Grund-Deck/-Battlefield. kind:"std" → immer im Besitz.
 const STD_PACK = { id: "default", name: "Standard", kind: "std", a1: "#8a7de0", deckId: "default", bfId: "default", els: ["deck", "bf"] };

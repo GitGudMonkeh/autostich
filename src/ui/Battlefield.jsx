@@ -22,9 +22,11 @@ const FIRE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
   (() => { try { const v = new URLSearchParams(window.location.search).get("fireheat"); return v == null ? null : Math.max(0, Math.min(1, parseFloat(v) || 0)); } catch { return null; } })();
 // #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne ÜBER den Karten (Edge-Glow · später Holo/Glitch/Materialize), lazy wie oben.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
-// Dev-Sicht: ?edgeglow=1 erzwingt das Kantenglühen auf beiden Karten (zum Designen; nur Preview/Dev).
-const EDGEGLOW_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
-  (() => { try { return new URLSearchParams(window.location.search).get("edgeglow") === "1"; } catch { return false; } })();
+// Dev-Sicht: ?edgeglow=1 / ?holo=1 erzwingen die jeweilige Karten-Animation auf beiden Karten (zum Designen; nur Preview/Dev).
+const cardAnimForce = (name) => (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
+  (() => { try { return new URLSearchParams(window.location.search).get(name) === "1"; } catch { return false; } })();
+const EDGEGLOW_FORCE = cardAnimForce("edgeglow");
+const HOLO_FORCE = cardAnimForce("holo");
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
@@ -1195,7 +1197,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (() => {
         const animSet = new Set(cardAnims || []);
         const edgeGlow = animSet.has("edgeglow") || EDGEGLOW_FORCE;
-        if (!edgeGlow) return null; // (später: || holo || glitch)
+        const holo = animSet.has("holo") || HOLO_FORCE;
+        if (!edgeGlow && !holo) return null; // (später: || glitch)
         return (
           <Suspense fallback={null}>
             <CardFxStage
@@ -1204,7 +1207,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                 { ref: playerCardRef, active: !!t && !flyAway && !flipOn },
                 { ref: oppCardRef, active: !!t && !oppFlyAway && !oppFlipOn && !oppSliced },
               ]}
-              layers={{ edgeGlow }}
+              layers={{ edgeGlow, holo }}
               color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#9b82f0"}
               tier={hitTier} reduced={reduced} lite={lite} />
           </Suspense>

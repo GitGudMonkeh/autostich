@@ -1,26 +1,35 @@
 import { useEffect, useRef } from "react";
-import { Application, Graphics } from "pixi.js";
+import { Application, Container, Graphics } from "pixi.js";
 import { drawEdgeGlow } from "./cardFx/edgeGlow.js";
+import { drawHolo } from "./cardFx/holo.js";
 
 /* CardFxStage (#318) — EINE geteilte Pixi-Overlay-Bühne ÜBER den Karten (z>10) für die stapelbaren
-   Karten-Dauer-Layer (Edge-Glow · später Holo-Sweep · Glitch) und die Materialize-Reveal-Transition.
+   Karten-Dauer-Layer (Edge-Glow · Holo-Sweep · später Glitch) und die Materialize-Reveal-Transition.
    Zeichnet pro Karten-Rechteck (Spieler- UND Gegnerkarte) an deren Bildschirm-Box, relativ zu `panelRef`
    — Vorbild ist der Blitzrahmen (IonStorm) und die Feuer-Glut (FireBurn), NICHT ein Canvas pro Karte.
 
+   Aufbau pro Karte: ein Container (auf die Kartenbox positioniert) mit einer additiven Graphics je Layer.
+   Holo hat zusätzlich eine Rounded-Rect-MASKE (auf die Kartenform), da das Band die Box quer überdeckt.
+
    Sauberkeit (wie IonStorm):
-   - EINE `Application`, additive Blends durchgehend (`Graphics.blendMode="add"`), DPR ≤ 2, KEIN shadowBlur.
+   - EINE `Application`, additive Blends (`blendMode="add"`), DPR ≤ 2, KEIN shadowBlur / KEIN Custom-Shader
+     (Custom-Shader rendern auf dem Mobile-Setup nicht — Holo läuft daher aus additiven Graphics-Streifen).
    - Ticker läuft NUR, wenn mindestens ein Layer aktiv, mindestens eine Karte sichtbar UND der Tab sichtbar ist.
-   - Pixi v8 init ist async → `disposed`-Guard; Cleanup zerstört die App (Graphics hängen als Kinder dran).
+   - Pixi v8 init ist async → `disposed`-Guard; Cleanup zerstört die App (Container/Graphics hängen dran).
    - Gate am Mount-Ort (Preview/Dev) → Produktion lädt kein Pixi (Ziel des Pixi-Umbaus: DOM-Effekte vermeiden).
 
-   Contract (analog Feld-Effekte): Props setzen die Dauer-Layer + Params. `materialize`/`dematerialize`
-   (Reveal-Transition, Layer 4) docken später an; der Build-Fortschritt wird dann nach außen gereicht, damit
-   der Blitzrahmen (IonStorm) MIT der Karte erscheint statt vor ihr.
+   Renderreihenfolge pro Karte (unten→oben): Edge-Glow · Holo-Sweep · (Glitch). Materialize (Layer 4, Reveal-
+   Transition) dockt später an und reicht seinen Build-Fortschritt nach außen, damit der Blitzrahmen (IonStorm)
+   MIT der Karte erscheint statt vor ihr.
 
-   Renderreihenfolge pro Karte (unten→oben): Edge-Glow · Holo-Sweep · Glitch. Aktuell implementiert: Edge-Glow. */
+   Hinweis Overlay-Grenze: Holo liegt konzeptionell „unter der Zahl" — die Zahl ist DOM (z-2 der Karte), das
+   Overlay-Canvas liegt darüber (z-11). Das Band wandert additiv über die (hohle Neon-)Zahl; das ist bewusst so,
+   weil ALLE performance-lastigen Layer auf EINE GPU-Bühne sollen. Ebenso ist `tilt.karte` (echter Kartenkipp)
+   hier nicht umgesetzt — das bräuchte einen Transform auf dem DOM-Karten-Wrapper. */
 
 // [TUNING] Tier-Multiplikator (Stufen 0–4, aus fxIntensity) — skaliert die Intensität der Dauer-Layer (#318).
 const TIER_MUL = [0.55, 0.72, 0.88, 1.0, 1.18];
+const CARD_CORNER = 12; // rounded-xl der Karte (Maskenradius, CSS-px)
 
 // "#rrggbb"/"#rgb" → 0xRRGGBB (Fallback bei Unfug).
 const colNum = (hex, fb = 0x5a8ade) => {
@@ -39,8 +48,9 @@ export function CardFxStage({
 }) {
   const hostRef = useRef(null);
   const appRef = useRef(null);
-  const gListRef = useRef([]);           // eine additive Graphics je Karte (Index-gleich zu `cards`)
+  const nodesRef = useRef([]);           // je Karte { grp, edge, holo, holoMask } (Index-gleich zu `cards`)
   const clockRef = useRef({ t: 0 });
+  const tiltRef = useRef({ x: 0, y: 0, tx: 0, ty: 0 });  // geglätteter Tilt (x,y) + Zielwerte (tx,ty) aus Pointer/Gyro
   const applyRunRef = useRef(null);
   // Live-Props für den Ticker spiegeln (App wird nur EINMAL gebaut).
   const stateRef = useRef(null);
@@ -61,13 +71,24 @@ export function CardFxStage({
     const canvas = document.createElement("canvas");
     const app = new Application();
 
-    // Graphics für Karten-Index i sicherstellen (lazy, additiv).
-    const ensureG = (i) => {
-      let g = gListRef.current[i];
-      if (!g && appRef.current) { g = new Graphics(); g.blendMode = "add"; appRef.current.stage.addChild(g); gListRef.current[i] = g; }
-      return g;
+    // Layer-Gruppe für Karten-Index i sicherstellen (lazy): Container + additive Graphics je Layer (+ Holo-Maske).
+    const ensureNode = (i) => {
+      let node = nodesRef.current[i];
+      if (!node && appRef.current) {
+        const grp = new Container();
+        const edge = new Graphics(); edge.blendMode = "add";
+        const holo = new Graphics(); holo.blendMode = "add";
+        const holoMask = new Graphics();
+        grp.addChild(edge, holo, holoMask);
+        holo.mask = holoMask;
+        appRef.current.stage.addChild(grp);
+        node = { grp, edge, holo, holoMask };
+        nodesRef.current[i] = node;
+      }
+      return node;
     };
-    const clearAll = () => { for (const g of gListRef.current) if (g) g.clear(); };
+    const clearNode = (n) => { if (n) { n.edge.clear(); n.holo.clear(); n.holoMask.clear(); } };
+    const clearAll = () => { for (const n of nodesRef.current) clearNode(n); };
 
     const tick = (ticker) => {
       const st = stateRef.current;
@@ -76,22 +97,32 @@ export function CardFxStage({
       const pr = panel.getBoundingClientRect();
       clockRef.current.t += ticker.deltaMS;
       const tSec = clockRef.current.t / 1000;
+      // Tilt glätten (Pointer/Gyro-Ziel → geglätteter Wert).
+      const tl = tiltRef.current;
+      tl.x += (tl.tx - tl.x) * 0.08;
+      tl.y += (tl.ty - tl.y) * 0.08;
+
       const list = st.cards || [];
       for (let i = 0; i < list.length; i++) {
-        const g = ensureG(i);
-        if (!g) continue;
+        const node = ensureNode(i);
+        if (!node) continue;
         const c = list[i], el = c?.ref?.current;
-        if (!el || !c.active) { g.clear(); continue; }
+        if (!el || !c.active) { clearNode(node); continue; }
         const cr = el.getBoundingClientRect();
         const w = cr.width, h = cr.height;
-        if (w < 8 || h < 8) { g.clear(); continue; }
-        // Overlay-Graphics panel-lokal auf die Kartenbox setzen; danach in lokalen 0..w/0..h-Koordinaten zeichnen.
-        g.position.set(cr.left - pr.left, cr.top - pr.top);
-        g.clear();
-        const sc = h / 360;   // Board-Raum HREF=360 → echte Kartenhöhe
+        if (w < 8 || h < 8) { clearNode(node); continue; }
+        // Container panel-lokal auf die Kartenbox setzen; Layer zeichnen in lokalen 0..w/0..h-Koordinaten.
+        node.grp.position.set(cr.left - pr.left, cr.top - pr.top);
+        const sc = h / 360;   // Board-Raum HREF=360 → echte Kartenhöhe (nur px-Maße; relative Maße bleiben unskaliert)
         const p = { color: st.colInt, color2: st.col2Int, tierMul: st.tierMul, reduced: st.reduced, lite: st.lite };
-        if (st.layers.edgeGlow) drawEdgeGlow(g, w, h, sc, p, tSec);
-        // TODO(#318): holo (unter der Zahl) · glitch (Karten-Textur) hier in dieser Reihenfolge andocken.
+        node.edge.clear();
+        if (st.layers.edgeGlow) drawEdgeGlow(node.edge, w, h, sc, p, tSec);
+        node.holo.clear(); node.holoMask.clear();
+        if (st.layers.holo) {
+          node.holoMask.roundRect(0, 0, w, h, CARD_CORNER).fill(0xffffff);
+          drawHolo(node.holo, w, h, sc, p, tSec, tl);
+        }
+        // TODO(#318): glitch (Karten-Textur) hier über Holo andocken.
       }
     };
 
@@ -116,13 +147,21 @@ export function CardFxStage({
       else { a.ticker.stop(); clearAll(); }
     }
     applyRunRef.current = applyRun;
+
+    // Tilt-Eingabe (geteilt für beide Karten): Pointer am Desktop, Gyro am Handy. Nur Ziele setzen — Glättung im Ticker.
+    const onPointer = (e) => { const t = tiltRef.current; t.tx = (e.clientX / (window.innerWidth || 1)) * 2 - 1; t.ty = (e.clientY / (window.innerHeight || 1)) * 2 - 1; };
+    const onOrient = (e) => { const t = tiltRef.current; if (e.gamma != null) t.tx = Math.max(-1, Math.min(1, e.gamma / 45)); if (e.beta != null) t.ty = Math.max(-1, Math.min(1, (e.beta - 45) / 45)); };
     const onVis = () => applyRun();
+    window.addEventListener("pointermove", onPointer, { passive: true });
+    window.addEventListener("deviceorientation", onOrient, { passive: true });
     document.addEventListener("visibilitychange", onVis);
 
     return () => {
       disposed = true;
+      window.removeEventListener("pointermove", onPointer);
+      window.removeEventListener("deviceorientation", onOrient);
       document.removeEventListener("visibilitychange", onVis);
-      const a = appRef.current; appRef.current = null; gListRef.current = [];
+      const a = appRef.current; appRef.current = null; nodesRef.current = [];
       if (a) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } }
     };
     // App EINMAL bauen; Layer/Params/Position kommen über Refs bzw. den Lauf-Effekt.

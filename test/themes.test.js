@@ -154,16 +154,18 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   // #cleanup: Es bleiben: Hintergrund-Effekt „Aurora" (bgfx) und die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
   // (bgfin; #311 überarbeitet wieder eingeführt). Klinge ist ein synthetischer Sieg-Finisher (NICHT in GLOBAL_FX). Die
   // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
-  it("GLOBAL_FX führt aurora, embers, starfield und die Karten-Animation edgeglow (#318)", () => {
-    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "starfield", "edgeglow"].sort());
+  it("GLOBAL_FX führt aurora, embers, starfield und die Karten-Animationen edgeglow + holo (#318)", () => {
+    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "starfield", "edgeglow", "holo"].sort());
   });
-  it("#318: edgeglow liegt in der anim-Gruppe (Karten-Animation, stapelbar) mit korrekter Naht", () => {
-    const fx = GLOBAL_FX_BY_KEY.edgeglow;
-    expect(fx).toBeTruthy();
-    expect(fx.group).toBe("anim");
-    expect(fx.ownKey).toBe("fx:edgeglow");
-    expect(fx.option).toBe("fxEdgeGlow");
-    expect(fx.preview).toBe("edgeglow");
+  it("#318: Karten-Animationen liegen in der anim-Gruppe (stapelbar) mit korrekter Naht", () => {
+    for (const [key, option] of [["edgeglow", "fxEdgeGlow"], ["holo", "fxHolo"]]) {
+      const fx = GLOBAL_FX_BY_KEY[key];
+      expect(fx).toBeTruthy();
+      expect(fx.group).toBe("anim");
+      expect(fx.ownKey).toBe(`fx:${key}`);
+      expect(fx.option).toBe(option);
+      expect(fx.preview).toBe(key);
+    }
   });
   it("entfernte Effekte sind vollständig aus der Registry", () => {
     // #311: starfield ist wieder da → NICHT mehr in dieser Entfernt-Liste.
