@@ -429,7 +429,7 @@ function BlackholePreview() {
 
 // Große In-Game-Vorschau eines Effekts im Kauffenster. Karten-Animationen → Karte/BF-Demo; Finisher/Krit →
 // echte In-Game-Komponente; Gottgleich (inkl. Standard) → das komplette Ereignis nachgespielt.
-function GlobalFxScenePreview({ fx }) {
+function GlobalFxScenePreview({ fx, deckTint = false }) {
   if (fx.preview === "frameGlow" || fx.preview === "holoSwipe" || fx.preview === "auroraVeil" || fx.preview === "glitch") {
     return (
       <div className="w-full h-full grid place-items-center overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
@@ -438,7 +438,7 @@ function GlobalFxScenePreview({ fx }) {
     );
   }
   // #306 Battlefield-Ambiente (inkl. Hologrid + „Kein Feld-Effekt"): echte In-Game-Komponente (FieldFxLayer) über dem BF-Bild.
-  if (["hologrid", "starfield", "aurora", "embers", "scanline", "vignette", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} />;
+  if (["hologrid", "starfield", "aurora", "embers", "scanline", "vignette", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
   if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
   if (fx.preview === "blackhole") return <BlackholePreview />;
@@ -464,7 +464,7 @@ const EMBER_DEMO_SCORES = [40000, 150000, 320000, 500000];
 const EMBER_TIER_LABELS = ["Schwach", "Stark", "Brutal", "Irre", "Gottgleich"];
 // Der GPU-Emitter zeigt die Glutfunken als Eskalation — nur im Preview/Dev-Build mit „pixi"-Renderer; sonst DOM-Fassung.
 const EMBER_PIXI_PREVIEW = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi";
-function FieldFxPreview({ effect }) {
+function FieldFxPreview({ effect, deckTint = false }) {
   const look = PREVIEW_LOOK[effect] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
   const bf = battlefieldAssets(look.bf);
   const isMobile = useIsMobile();
@@ -495,14 +495,14 @@ function FieldFxPreview({ effect }) {
       {/* Pixi-Feldeffekte (Aurora/Sternenfeld/Glutfunken) auf der GPU-Bühne — sonst die DOM-Fassung (FieldFxLayer). */}
       {pixiField && (
         <Suspense fallback={null}>
-          <PixiStage className="absolute inset-0 z-[2]" effect={effect} color={look.a1} color2={look.a2}
+          <PixiStage className="absolute inset-0 z-[2]" effect={effect} color={look.a1} color2={look.a2} deckTint={deckTint}
             score={pixiEmbers ? 250000 : demoScore} reduced={false} lite={false}
             sweepId={sweep} sweepDur={1100} win hitTier={pixiEmbers ? tierStep : 0} />
         </Suspense>
       )}
       {auroraGL && (
         <div className="absolute inset-0 z-[2] pointer-events-none">
-          <AuroraFieldGL color={look.a1} color2={look.a2} animate />
+          <AuroraFieldGL color={look.a1} color2={look.a2} deckColored={deckTint} animate />
         </div>
       )}
       {effect !== "none" && !pixiField && !auroraGL && <FieldFxLayer effect={effect} color={look.a1} color2={look.a2} sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
@@ -848,7 +848,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
     <>
       {/* Mitlaufende Vorschau-Bühne (sticky unter dem Kopf). */}
       <FxFloater fx={selFx} group={selGroup} p={p} active={isActive(selGroup, selFx)}
-        onChoose={onChoose} onBuyFx={onBuyFx} stickyTop={stickyTop} />
+        onChoose={onChoose} onBuyFx={onBuyFx} stickyTop={stickyTop} options={options} />
 
       {/* Kategorien als horizontal wischbare Reihen. */}
       <div className="mt-3">
@@ -898,8 +898,11 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 /* #fx-floater: die große Vorschau-Bühne, die unter dem Sticky-Kopf klebt. Zeigt den gewählten Effekt als ECHTE
    In-Game-Vorschau (GlobalFxScenePreview, key={fx.key} → sauberer Remount beim Wechsel, keine hängenden Loops) +
    Gruppen-/Namensschild + die kontextabhängige Aktion (Logik/Optik wie zuvor das Kauffenster). */
-function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
+function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
+  // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
+  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : null;
+  const deckTintOn = deckOpt ? !!options?.[deckOpt] : false;
   const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const price = globalFxPrice(fx);
   const dpBal = Math.max(0, Math.floor(Number(p?.deckPoints) || 0));
@@ -920,10 +923,23 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
     );
   } else if (group.mode === "finisher") {
     action = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Finisher wählen"}</button>;
-  } else if (group.mode === "bgfx") {
-    action = <button onClick={() => onChoose(bgFxFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Hintergrund wählen"}</button>;
-  } else if (group.mode === "bgfin") {
-    action = <button onClick={() => onChoose(bgFinFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Hintergrund-Finisher wählen"}</button>;
+  } else if (group.mode === "bgfx" || group.mode === "bgfin") {
+    const label = group.mode === "bgfx" ? "Als Hintergrund wählen" : "Als Hintergrund-Finisher wählen";
+    const flags = group.mode === "bgfx" ? bgFxFlags(fx.key) : bgFinFlags(fx.key);
+    const chooseBtn = <button onClick={() => onChoose(flags)} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : label}</button>;
+    // #: Aurora + Glutfunken bieten Standard/Deckfarbe. Toggle setzt das Farbmodus-Flag (deckOpt).
+    action = !deckOpt ? chooseBtn : (
+      <div className="flex flex-col gap-2">
+        {chooseBtn}
+        <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
+          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+            const on = deckTintOn === o.v;
+            return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
+              style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+          })}
+        </div>
+      </div>
+    );
   } else {
     action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
   }
@@ -931,7 +947,7 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
   return (
     <div className="sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
       <div className="relative w-full rounded-xl overflow-hidden" style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a", boxShadow: "0 0 22px -10px #35e0ff66" }}>
-        <GlobalFxScenePreview key={fx.key} fx={fx} />
+        <GlobalFxScenePreview key={fx.key} fx={fx} deckTint={deckTintOn} />
         {/* Gruppen-Schild oben links */}
         <span className="absolute left-2 top-2 text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-md"
           style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{group.title}</span>

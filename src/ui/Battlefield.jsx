@@ -1307,7 +1307,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Frame Glow (Karte) + Hologrid (Gitterlinien im Battlefield); Holo Swipe = Schimmer über die eigene Karte.
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora …), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken …). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
-  deckA1 = null, deckA2 = null, fxFrameGlow = false, fxHoloSwipe = false, fxAuroraVeil = false, fxGlitch = false, bgFx = null, bgFinisher = null, fxLaserSlice = false, fxBlackhole = false, fxLasergrid = false, fxBurnBeam = false, fxOverload = false, fxDisperse = false,
+  deckA1 = null, deckA2 = null, fxFrameGlow = false, fxHoloSwipe = false, fxAuroraVeil = false, fxGlitch = false, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false, fxLaserSlice = false, fxBlackhole = false, fxLasergrid = false, fxBurnBeam = false, fxOverload = false, fxDisperse = false,
   // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar).
   fxFireworks = false, fxGoldRain = false, fxPrismaWave = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
@@ -1325,8 +1325,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const pixiEnabled = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi" && !!deckA1;
   const pixiFin = pixiEnabled && PIXI_FIELD.has(bgFinisher);  // BG-Finisher (z. B. Glutfunken) läuft auf der GPU-Bühne (Pixi)
   const auroraGL = pixiEnabled && bgFx === "aurora";          // Aurora läuft als eigene WebGL-Canvas (nicht Pixi)
-  // Aurora-Farbmodus (Standard/Deckfarbe) — vorerst per Dev-URL `?aurora=deck`; der Shop-Toggle folgt.
-  const auroraDeck = (() => { try { return new URLSearchParams(window.location.search).get("aurora") === "deck"; } catch { return false; } })();
   // GOTTGLEICH-Prunk: Panel = Prallwand-Rahmen, oppSlot = Ursprung (zerstörte Gegnerkarte); burst triggert den Schwarm.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
@@ -1849,6 +1847,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             effect={pixiFin ? bgFinisher : null}
             color={deckA1 || "#ffffff"}
             color2={deckA2 || "#b06bff"}
+            deckTint={emberDeck}
             score={pixiFin ? Math.round((score || 0) / 20000) * 20000 : 0}
             reduced={reduced} lite={lite}
             sweepId={sweepId} sweepDur={sweepDur} win={win} hitTier={hitTier} />

@@ -502,6 +502,8 @@ export function Autostich() {
     // (Glutfunken …) können GLEICHZEITIG aktiv sein. Battlefield rendert beide Layer übereinander.
     bgFx: activeBgFx(profile, options),
     bgFinisher: activeBgFinisher(profile, options),
+    auroraDeck: !!options.fxAuroraDeck, // Aurora-Farbmodus: false = Standard-Palette, true = Deckfarbe
+    emberDeck: !!options.fxEmberDeck,   // Glutfunken-Farbmodus: false = warmes Feuer, true = Deckfarbe
     // Globale Effekte (nicht theme-gebunden): gekauft UND per Option an.
     fxLaserSlice: laserSliceActive(profile, options), // ersetzt die Klinge auf Gegnerkarten durch einen Laser
     fxBlackhole: blackholeActive(profile, options),   // Sieg-Finisher: Gegnerkarte implodiert (Vorrang vor Laser/Klinge)
@@ -769,7 +771,7 @@ export function Autostich() {
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
-                deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxAuroraVeil={deckFx.fxAuroraVeil} fxGlitch={deckFx.fxGlitch} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} fxLaserSlice={deckFx.fxLaserSlice} fxBlackhole={deckFx.fxBlackhole} fxLasergrid={deckFx.fxLasergrid} fxBurnBeam={deckFx.fxBurnBeam} fxOverload={deckFx.fxOverload} fxDisperse={deckFx.fxDisperse}
+                deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxAuroraVeil={deckFx.fxAuroraVeil} fxGlitch={deckFx.fxGlitch} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck} emberDeck={deckFx.emberDeck} fxLaserSlice={deckFx.fxLaserSlice} fxBlackhole={deckFx.fxBlackhole} fxLasergrid={deckFx.fxLasergrid} fxBurnBeam={deckFx.fxBurnBeam} fxOverload={deckFx.fxOverload} fxDisperse={deckFx.fxDisperse}
                 fxFireworks={deckFx.fxFireworks} fxGoldRain={deckFx.fxGoldRain} fxPrismaWave={deckFx.fxPrismaWave}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
