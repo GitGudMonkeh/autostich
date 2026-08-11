@@ -64,7 +64,7 @@ function orderPacks(list, deckId) {
 /* Synthetische „Klinge"-Kachel: der Standard-Sieg-Finisher — immer im Besitz (kein Kauf), aber wählbar UND
    vorschaubar wie die anderen Finisher. Wird der Sieg-Finisher-Gruppe vorangestellt (analog „Gottgleich · Standard"). */
 const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "klinge", alwaysOwned: true,
-  desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte — mit jedem Sieg deiner Serie fährt sie aus einer neuen Richtung ein (rechts → links → oben → Z-Zickzack) und schneidet härter; eine Niederlage setzt die Serie zurück. Der Standard-Finisher (immer verfügbar)." };
+  desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte. Grundzug ist ein Schnitt von links; je höher dein Siegesserie-Multiplikator, desto mehr Richtungen fahren nacheinander ein (ab ×1,25 links/rechts im Wechsel, ab ×1,5 zusätzlich von oben, ab ×2,0 alle vier inkl. Z-Schnitt) — und die Klinge schneidet härter. Eine Niederlage setzt die Serie zurück. Der Standard-Finisher (immer verfügbar)." };
 
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
@@ -300,8 +300,16 @@ function FinisherScene({ variant }) {
   else if (variant === "lasergrid") fx = <LaserGridFx cardEl={cardEl} color={suitCol} diceDur={FIN_HALVES} lineDur={FIN_LINE} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={1} scale={1} />;
   else if (variant === "overload") fx = <OverloadFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
   else if (variant === "disperse") fx = <DisperseFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
-  // klinge (Default): die Vorschau läuft die SIEGESSERIE hoch (Serie 1→2→3→4 = rechts→links→oben→Z-Zickzack).
-  else fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={["right", "left", "top", "z"][tick % 4]} streak={(tick % 4) + 1} />;
+  // klinge (Default): die Vorschau fährt den Siegesserie-MULTIPLIKATOR stufenweise hoch (×1,0 → ×1,25 → ×1,5 → ×2,0)
+  // und zeigt, wie der Richtungs-Zyklus wächst — nur LINKS → +RECHTS → +OBEN → +Z. Grundzug bleibt links, die Wucht
+  // steigt mit dem Multiplikator (streak passend zur Stufe). Spiegelt exakt die In-Game-Logik (sliceMove).
+  else {
+    const kmult = [1.0, 1.25, 1.5, 2.0][Math.floor(tick / 3) % 4];        // Multiplikator-Stufe (wechselt alle 3 Ticks)
+    const klen = kmult >= 2 ? 4 : kmult >= 1.5 ? 3 : kmult >= 1.25 ? 2 : 1;
+    const kdir = ["left", "right", "top", "z"][tick % klen];
+    const kstreak = Math.round((kmult - 1) / 0.02);                       // passende Serie zur Multiplikator-Stufe (Wucht/Funken)
+    fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={kdir} streak={kstreak} />;
+  }
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}

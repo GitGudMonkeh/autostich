@@ -113,15 +113,22 @@ function fxIntensity(gained) {
   const p = g <= 10000 ? 0 : Math.min(1, Math.log(g / 10000) / Math.log(50)); // log(500000/10000) = log(50) → 10k→0 … 500k→1
   return { p, tier };
 }
-// #klinge: choreografierte Klinge — die Stufe steigt mit der SIEGESSERIE (nicht mit dem Score). Jeder weitere
-// Sieg fährt die Klinge aus der nächsten Richtung ein, eine Niederlage setzt die Serie (t.winStreak) zurück:
-//   Serie 1 → RECHTS · 2 → LINKS · 3 → OBEN · 4 → Z-ZICKZACK · danach ↻ (Zyklus) bzw. bei Z halten.
+// #klinge: choreografierte Klinge — die Einfahrrichtung rotiert über einen PER-STICH-Zähler (sliceSeq) durch einen
+// Zyklus, dessen LÄNGE am Siegesserie-MULTIPLIKATOR (bd.streakMult, ×1.00…2.50) hängt — NICHT am Score-Tier und NICHT
+// am rohen Serien-Zähler. Grundzug ist LINKS; je höher der Multiplikator, desto mehr Richtungen fahren nacheinander ein:
+//   Mult < 1.25  → nur LINKS
+//   Mult ≥ 1.25  → LINKS ↔ RECHTS (im Wechsel)
+//   Mult ≥ 1.50  → LINKS · RECHTS · OBEN
+//   Mult ≥ 2.00  → LINKS · RECHTS · OBEN · Z (alle vier nacheinander)
+// Fällt der Multiplikator (Niederlage) zurück, schrumpft der Zyklus sofort wieder — bei ×1.00 läuft nur noch LINKS.
 // Die Score-Höhe (BRUTAL/IRRE/GOTTGLEICH) hat KEINEN Einfluss auf diesen Effekt.
-const SLICE_MOVES = ["right", "left", "top", "z"]; // Zug-Reihenfolge über die Serie (Serie 1..4)
-const SLICE_PROGRESSION = "cycle";                 // nach Serie 4: "cycle" ↻ | "hold" (bei Z bleiben)
-function sliceMove(streak) {
-  if (streak <= 0) return "right";
-  return SLICE_PROGRESSION === "hold" ? SLICE_MOVES[Math.min(streak - 1, 3)] : SLICE_MOVES[(streak - 1) % 4];
+const SLICE_MOVES = ["left", "right", "top", "z"]; // Zyklus-Reihenfolge; der aktive Zyklus ist ein Präfix hiervon
+function sliceCycleLen(mult) {                     // Länge des aktiven Zyklus aus dem Siegesserie-Multiplikator
+  const m = mult || 1;
+  return m >= 2.0 ? 4 : m >= 1.5 ? 3 : m >= 1.25 ? 2 : 1;
+}
+function sliceMove(mult, seq) {                    // seq = per-Stich-Zähler (sliceSeq.current++), mod aktueller Zyklus-Länge
+  return SLICE_MOVES[(seq | 0) % sliceCycleLen(mult)];
 }
 // #klinge: Tuning-Set (aus dem Vorschau-Artifact; final justierbar). Alles serien- bzw. konstant-getrieben.
 const KLINGE_TUNE = {
@@ -138,6 +145,10 @@ const KLINGE_TUNE = {
   bladeTint: "#bcd6ff", // Glow-Ton der Klinge (kühles Stahlweiß); Kern bleibt weiß
   bladeTaper: true,     // Schwung-Form: Schnittlinie läuft zu beiden Enden spitz zu (Linse) statt Balken
   sparkMetal: true,     // Metall-Funken: weiß + warme orange (Stahl-auf-Stahl) statt suit-farbig
+  bladeThick: 3,        // #klinge: Strichstärke des Schnitts (px) — deutlich dünner als früher (war 5/7)
+  bladeThickZ: 4,       // Z-Einzelschlag minimal dicker, damit der blitzschnelle Durchzug klar registriert
+  followSwing: 42,      // #klinge: EINHEITLICHER Nachschwung/Überschlag — die Klinge schwingt nach JEDEM Schnitt gleich
+                        // weit (px, entlang ihrer Längsachse) durch. Gilt identisch für rechts/links/oben/Z (Performance-Look).
 };
 // Serien-Eskalation: 1× bei Serie 1, gedeckelt bei streakMax.
 function sliceEsc(streak) {
@@ -267,12 +278,12 @@ function FlipReveal({ front, backImage, dur }) {
 // #klinge: Geometrie der choreografierten Klinge je Einfahrrichtung (`dir`) & Serie (`streak`). Liefert die Karten-Stücke
 // (clip-path + Flugvektor über `as-boom-shard` --sx/--sy/--sr) und die Schnittlinien-Segmente (--cut-rot, optional
 // versetzt/gestaffelt). Die Wucht (Distanz/Drall) steigt über `sliceEsc(streak)`; die Score-Höhe fließt NICHT ein.
-//   right → klassische −24°-Diagonale · left → gespiegelte +24° · top → vertikaler Schnitt (Karte teilt sich LINKS/RECHTS)
-//   z     → schneller ZICKZACK (rechts-oben → mitte-links → unten-rechts), Karte reißt entlang des Zickzacks in zwei Stücke
+//   left → klassische +24°-Diagonale (Grundzug) · right → gespiegelte −24° · top → vertikaler Schnitt (Karte teilt sich LINKS/RECHTS)
+//   z     → kohärenter X aus drei diagonalen Vollschlägen (╲ ╱ ╲), Karte zerfällt danach in VIER Dreieck-Stücke
 function sliceGeometry(dir, streak) {
   const e = sliceEsc(streak), d = KLINGE_TUNE.baseDist * e, rf = KLINGE_TUNE.rotFactor, cutLen = 120;
   switch (dir) {
-    case "left": // Klinge von LINKS → Diagonale +24°, Stücke spiegelverkehrt zu „right"
+    case "left": // Klinge von LINKS → Diagonale +24° — der GRUNDZUG (läuft bei jedem Sieg, ×1.00)
       return { cuts: [{ rot: 24, len: cutLen }], pieces: [
         { clip: "polygon(0 0, 100% 0, 100% 66%, 0 34%)", sx: d,  sy: -30 * e, sr: 16 * e * rf },
         { clip: "polygon(0 34%, 100% 66%, 100% 100%, 0 100%)", sx: -d, sy: 60 * e, sr: -20 * e * rf } ] };
@@ -280,7 +291,7 @@ function sliceGeometry(dir, streak) {
       return { cuts: [{ rot: 90, len: cutLen }], pieces: [
         { clip: "polygon(0 0, 52% 0, 48% 100%, 0 100%)", sx: -d, sy: 14, sr: -14 * e * rf },
         { clip: "polygon(52% 0, 100% 0, 100% 100%, 48% 100%)", sx: d, sy: 14, sr: 14 * e * rf } ] };
-    case "z": { // Serie 4: DREI diagonale volle Schläge Ecke-zu-Ecke, abwechselnd (╲ ╱ ╲). Die ersten beiden bilden ein
+    case "z": { // ab ×2.0: DREI diagonale volle Schläge Ecke-zu-Ecke, abwechselnd (╲ ╱ ╲). Die ersten beiden bilden ein
                 // X → die Karte zerfällt entlang genau dieser Diagonalen in VIER Dreieck-Stücke (oben/rechts/unten/links),
                 // erst NACHDEM alle drei Schläge durch sind (`hold`). Deutlich gestaffelt → drei sichtbare Blitze.
       const DIAG = Math.atan2(144, 104) * 180 / Math.PI; // Karten-Diagonalwinkel (Ecke→Ecke) → Schlag deckt sich mit den Bruchkanten
@@ -297,7 +308,7 @@ function sliceGeometry(dir, streak) {
           { clip: "polygon(0 100%, 0 0, 50% 50%)",       sx: -d, sy: 0,  sr: -14 * e * rf } ] }; // links
     }
     case "right":
-    default: // Klinge von RECHTS → klassische −24°-Diagonale (Grundzug, Serie 1)
+    default: // Klinge von RECHTS → gespiegelte −24°-Diagonale (kommt ab ×1.25 im Wechsel mit LINKS dazu)
       return { cuts: [{ rot: -24, len: cutLen }], pieces: [
         { clip: "polygon(0 0, 100% 0, 100% 34%, 0 66%)", sx: -d, sy: -30 * e, sr: -16 * e * rf },
         { clip: "polygon(0 66%, 100% 34%, 100% 100%, 0 100%)", sx: d, sy: 60 * e, sr: 20 * e * rf } ] };
@@ -311,8 +322,9 @@ function sliceGeometry(dir, streak) {
    Elemente entfernen sich mit dem Karten-Remount des nächsten Stichs (key nach trickNo) → kein Stapeln. */
 export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, scale = 1, laser = false, dir = "right", streak = 0 }) {
   // #188/#klinge: Die KLINGE ist als choreografierte Performance umgebaut: KEIN Doppelschnitt mehr auf EINE Karte —
-  // stattdessen wechselt die Einfahrrichtung (`dir`) über die SIEGESSERIE (Aufrufer wählt via sliceMove(streak)), und
-  // die Wucht steigt mit der Serie (sliceEsc). Die Score-Höhe fließt NICHT ein. Der LASER-Schnitt (laser) behält seine
+  // stattdessen wechselt die Einfahrrichtung (`dir`) über einen per-Stich-Zähler, dessen Zyklus-Länge am Siegesserie-
+  // Multiplikator hängt (Aufrufer wählt via sliceMove(mult, seq)), und die Wucht steigt mit der Serie (sliceEsc, aus
+  // `streak`). Die Score-Höhe fließt NICHT ein. Der LASER-Schnitt (laser) behält seine
   // eigene, score-skalierte Charakteristik (Funkenzahl/-weite über `intensity`).
   const e = sliceEsc(streak);           // Serien-Eskalation (nur Klinge; Laser ignoriert sie)
   const sepMul = 1 + intensity * 0.6;   // Laser-Stück-Distanz (Klinge holt ihre Distanz aus sliceGeometry(streak))
@@ -341,7 +353,7 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
   const bladeLens = "polygon(0 50%, 4% 0, 96% 0, 100% 50%, 96% 100%, 4% 100%)";
   const cutLine = (rot, key, opts = {}) => {
     const len = opts.len || cutLen;
-    const h = opts.thick ? 7 : 5;   // Z-Schläge etwas dicker → der blitzschnelle Durchzug registriert klar
+    const h = opts.thick ? KLINGE_TUNE.bladeThickZ : KLINGE_TUNE.bladeThick;   // #klinge: dünne Klinge (Z minimal dicker)
     const dur = opts.fast ? Math.round(cutDur * KLINGE_TUNE.zSlashFactor) : cutDur; // Z-Einzelschlag fährt blitzschnell durch
     const stMs = Math.round((opts.stagger || 0) * cutDur);
     return (
@@ -349,7 +361,9 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
         background: `linear-gradient(90deg, transparent 0%, ${glow}88 12%, #ffffff 50%, ${glow}88 88%, transparent 100%)`,
         clipPath: KLINGE_TUNE.bladeTaper ? bladeLens : undefined, borderRadius: KLINGE_TUNE.bladeTaper ? undefined : 2,
         transformOrigin: "center", boxShadow: `0 0 6px #ffffff, 0 0 ${(14 + intensity * 8).toFixed(0)}px ${glow}, 0 0 ${(26 + intensity * 12).toFixed(0)}px ${glow}aa`,
-        "--cut-rot": `${rot}deg`, animation: `as-cut-line ${dur}ms ease-out ${delay + stMs}ms both` }} />
+        // #klinge: --cut-swing = EINHEITLICHER Nachschwung für ALLE Richtungen (rechts/links/oben/Z schwingen gleich weit
+        // durch). Der Laser-Strahl setzt die Var NICHT → dort bleibt der Überschlag 0 (unveränderter Laser-Look).
+        "--cut-rot": `${rot}deg`, "--cut-swing": `${KLINGE_TUNE.followSwing}px`, animation: `as-cut-line ${dur}ms ease-out ${delay + stMs}ms both` }} />
     );
   };
 
@@ -1763,6 +1777,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Fix (Turbo-Duplikat-Keys): monotoner Spawn-Zähler → jede Ghost-id ist GLOBAL eindeutig. `og${trickNo}`/`pg${trickNo}`
   // allein kollidierte, wenn derselbe Stich zweimal einen Ghost spawnte (Turbo-Überlappung/Remount) → React „duplicate key".
   const ghostSeq = useRef(0);
+  const sliceSeq = useRef(0);   // #klinge: per-Stich-Zähler der Klingen-Einfahrrichtung (mod aktueller Zyklus-Länge, s. sliceMove)
   useEffect(() => () => ghostTimers.current.forEach(clearTimeout), []);
   useEffect(() => {
     if (!t) { setSlashGhosts([]); return; }        // Menü/neuer Lauf → Pool leeren
@@ -1784,9 +1799,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
     if (win && !holeFinish) {   // Gegnerkarte verliert → Finisher-Ghost (Klinge/Laser/Lasergitter/Brennstrahl/Überladung/Zerstäubung) — auch bei Krit
       const fxName = gridFinish ? "lasergrid" : burnFinish ? "burn" : overloadFinish ? "overload" : disperseFinish ? "disperse" : "slice";
-      // #klinge: Einfahrrichtung der Klinge aus der SIEGESSERIE (t.winStreak) — nur die reine Klinge; der Laser-Schnitt und
-      // die anderen Finisher haben ihre eigene Optik. Serie 1→rechts, 2→links, 3→oben, 4→Z, danach ↻ (sliceMove).
-      const sliceDir = (fxName === "slice" && !fxLaserSlice) ? sliceMove(t.winStreak || 0) : "right";
+      // #klinge: Einfahrrichtung aus dem Siegesserie-MULTIPLIKATOR (bd.streakMult) + per-Stich-Zähler (sliceSeq) — nur die
+      // reine Klinge; Laser-Schnitt und die anderen Finisher haben ihre eigene Optik. Grundzug LINKS; mit steigendem
+      // Multiplikator wächst der Zyklus (≥1.25 +rechts, ≥1.5 +oben, ≥2.0 +Z). sliceSeq rückt nur bei einer echten Klinge vor.
+      const sliceDir = (fxName === "slice" && !fxLaserSlice) ? sliceMove(bd ? bd.streakMult : 1, sliceSeq.current++) : "right";
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
         fx: fxName, sliceDir,
         dtier: diffTier, // #300 Wertdifferenz-Stufe (Überladung/Zerstäubung)
