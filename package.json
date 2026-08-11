@@ -14,7 +14,8 @@
     "sim": "node sim/batch.js",
     "probe": "node sim/probe.js",
     "gen:db": "node scripts/gen-db.mjs",
-    "compress:music": "node scripts/compress-music.mjs"
+    "compress:music": "node scripts/compress-music.mjs",
+    "music:overview": "node maintenance/music-overview.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.19.0",

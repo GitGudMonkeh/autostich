@@ -17,7 +17,6 @@ import table_dust_2 from "../assets/music/table_dust_2.m4a";
 // #171: sechs neu normalisierte Tracks (EBU R128, −14 LUFS — wie der Bestand) zusätzlich in den Run-Pool.
 // Morning Deck ist seit #: ein Run-Track (calm); Main-Screen/Victory spielt jetzt „Relay of Multipliers".
 import asymmetric_loop from "../assets/music/asymmetric_loop.m4a";
-import card_momentum_remastered from "../assets/music/card_momentum_remastered.m4a";
 import formation_shuffle from "../assets/music/formation_shuffle.m4a";
 import mutation_funk_drive from "../assets/music/mutation_funk_drive.m4a";
 import neon_static from "../assets/music/neon_static.m4a";
@@ -58,7 +57,7 @@ const TIER_SCORES = { calm: 1000000, mid: 5000000, hot: 30000000, overdrive: 600
 // Verhindert das „nur 5 s anspielen, dann Schnitt".
 const SWITCH_MIN_PLAY = 40; // s [TUNING]
 const TIER_FADE_MS = 320;   // ms je Fade-Halbwelle (aus/ein) beim weichen Stufenwechsel [TUNING]
-// Run-Zufallspool (35 Tracks, harmonisiert auf −14 LUFS). Titel = Anzeige im Musik-Panel.
+// Run-Zufallspool (harmonisiert auf −14 LUFS). Titel = Anzeige im Musik-Panel.
 const POOL = [
   // calm
   { title: "Table Dust", url: table_dust, tier: "calm" },
@@ -82,7 +81,6 @@ const POOL = [
   // hot
   { title: "Mutation Funk Drive", url: mutation_funk_drive, tier: "hot" },       // #171
   { title: "Card Momentum", url: card_momentum, tier: "hot" },
-  { title: "Card Momentum (Remastered)", url: card_momentum_remastered, tier: "hot" }, // #171
   { title: "Static Charge", url: static_charge, tier: "hot" },
   { title: "Static Surge", url: static_surge, tier: "hot" },
   { title: "Circuit Rush", url: circuit_rush, tier: "hot" },
