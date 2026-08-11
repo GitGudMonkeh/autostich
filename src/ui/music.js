@@ -43,16 +43,16 @@ import no_limits from "../assets/music/no_limits.m4a";
 
 const MENU_TRACK = { title: "Relay of Multipliers", url: relay_of_multipliers }; // Main-Screen + Victory
 
-// Intensitäts-Stufen: jeder Run-Track trägt ein `tier`. Die aktuelle RUNDE (state.cycle) wählt die aktive Stufe;
-// innerhalb einer Stufe werden Tracks zufällig gereiht (ein Track endet → nächster gleicher Stufe). Beim
-// Stufen-Sprung schaltet die Musik sofort hoch → hörbarer Tempo-Anstieg über den Lauf.
-//   calm = ruhig · mid = treibend · hot = schnell/fetzig · overdrive = maximal energetisch (Endphase)
+// Intensitäts-Stufen: jeder Run-Track trägt ein `tier`. Der aktuelle SCORE (state.score) wählt die aktive Stufe
+// (von Runden ENTKOPPELT — die Musik folgt jetzt der erspielten Punktzahl); innerhalb einer Stufe werden Tracks
+// zufällig gereiht (ein Track endet → nächster gleicher Stufe). Beim Stufen-Sprung schaltet die Musik hoch.
+//   calm = ruhig · mid = treibend · hot = schnell/fetzig · overdrive = maximal · overdrive+ = darüber (Impact & Speed)
 // TUNING: Die Zuordnung unten ist nach GEHÖR anpassbar — einfach das `tier` eines Tracks umtragen. Eine leere
-// Stufe fällt automatisch auf die nächstniedrigere Stufe mit Tracks zurück (z. B. overdrive → hot).
-const TIER_ORDER = ["calm", "mid", "hot", "overdrive"]; // aufsteigende Intensität (Reihenfolge = Fallback-Kette)
-// Runden-Grenzen (state.cycle): < calm → calm · < mid → mid · < hot → hot · sonst overdrive.
-// Plan: Runde 0–10 calm · 10–25 mid · 25–40 hot · 40+ overdrive.
-const TIER_ROUNDS = { calm: 10, mid: 25, hot: 40 };
+// Stufe fällt automatisch auf die nächstniedrigere Stufe mit Tracks zurück (z. B. overdrive+ → overdrive).
+const TIER_ORDER = ["calm", "mid", "hot", "overdrive", "overdrive_plus"]; // aufsteigende Intensität (= Fallback-Kette)
+// Score-Grenzen (state.score): < calm → calm · < mid → mid · < hot → hot · < overdrive → overdrive · sonst overdrive+.
+// Plan: <1 Mio calm · 1–5 Mio mid · 5–30 Mio hot · 30–60 Mio overdrive · 60 Mio+ overdrive+.
+const TIER_SCORES = { calm: 1000000, mid: 5000000, hot: 30000000, overdrive: 60000000 };
 // #: Stufenwechsel-Politur — ein laufender Song wird NIE innerhalb seiner ersten SWITCH_MIN_PLAY Sekunden abgelöst
 // (er läuft aus → onEnded reiht den neuen-Stufen-Track). Lief er schon länger, wird weich (kurzer Fade) gewechselt.
 // Verhindert das „nur 5 s anspielen, dann Schnitt".
@@ -99,14 +99,17 @@ const POOL = [
   { title: "Last Stand", url: last_stand, tier: "overdrive" },
   { title: "Endgame", url: endgame, tier: "overdrive" },
   { title: "No Limits", url: no_limits, tier: "overdrive" },
+  // overdrive+ (Score 60 Mio+): noch keine Tracks — 10 in Produktion (mehr Impact & Speed als overdrive).
+  // Bis dahin fällt die Stufe automatisch auf „overdrive" zurück. Neue Tracks hier mit tier: "overdrive_plus" ergänzen.
 ];
 
-function tierForRound(round) {
-  const r = Math.max(0, Math.floor(Number(round) || 0));
-  if (r < TIER_ROUNDS.calm) return "calm";
-  if (r < TIER_ROUNDS.mid) return "mid";
-  if (r < TIER_ROUNDS.hot) return "hot";
-  return "overdrive";
+function tierForScore(score) {
+  const s = Math.max(0, Number(score) || 0);
+  if (s < TIER_SCORES.calm) return "calm";
+  if (s < TIER_SCORES.mid) return "mid";
+  if (s < TIER_SCORES.hot) return "hot";
+  if (s < TIER_SCORES.overdrive) return "overdrive";
+  return "overdrive_plus";
 }
 
 let el = null;
@@ -213,12 +216,12 @@ export const music = {
   menu() { mode = "menu"; tier = "calm"; playTrack(MENU_TRACK); },                 // Menü + Victory
   enterRun() { mode = "run"; tier = "calm"; playTrack(randomPoolTrack(tier)); },   // Run-Start → ruhige Stufe
   next() { if (mode === "run") playTrack(randomPoolTrack(tier)); },                // „Nächster Track" (aus aktueller Stufe)
-  // Aktuelle Runde (state.cycle): bestimmt die Intensitäts-Stufe. Ein FRISCHER Song (< SWITCH_MIN_PLAY s) wird nie
+  // Aktueller Score (state.score): bestimmt die Intensitäts-Stufe. Ein FRISCHER Song (< SWITCH_MIN_PLAY s) wird nie
   // angeschnitten — er läuft aus, dann reiht onEnded den neuen-Stufen-Track. Lief er schon länger, wird JETZT weich
   // (Fade) auf einen Track der neuen Stufe gewechselt.
-  setProgress(round) {
+  setProgress(score) {
     if (mode !== "run") return;
-    const next = tierForRound(round);
+    const next = tierForScore(score);
     if (next === tier) return;
     tier = next; // Stufe merken — onEnded reiht am Songende ohnehin aus dieser Stufe
     const played = el ? (el.currentTime || 0) : 0;
