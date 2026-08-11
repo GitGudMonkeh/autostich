@@ -12,6 +12,7 @@ import { startPrunk } from "./prunkFx.js";
 import { SliceFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx, FieldFxLayer, FX_RENDERER } from "./Battlefield.jsx";
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
+import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora-Vorschau als eigene WebGL-Canvas (nicht Pixi)
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
@@ -465,7 +466,8 @@ function FieldFxPreview({ effect }) {
   const [emberStep, setEmberStep] = useState(0);
   const [tierStep, setTierStep] = useState(0);
   const pixiEmbers = effect === "embers" && EMBER_PIXI_PREVIEW;
-  const pixiField = EMBER_PIXI_PREVIEW && PIXI_FIELD_KEYS.includes(effect); // Aurora/Sternenfeld/Glutfunken → GPU-Bühne im Showcase
+  const pixiField = EMBER_PIXI_PREVIEW && PIXI_FIELD_KEYS.includes(effect); // Sternenfeld/Glutfunken → Pixi-Bühne im Showcase
+  const auroraGL = EMBER_PIXI_PREVIEW && effect === "aurora";              // Aurora → eigene WebGL-Canvas
   useEffect(() => {
     if (effect === "none") return undefined;
     // #: Glutfunken — Score-/Tier-Wechsel UND Funkenstoß aus EINEM Timer, damit Puls und Label immer zusammenpassen.
@@ -491,7 +493,12 @@ function FieldFxPreview({ effect }) {
             sweepId={sweep} sweepDur={1100} win hitTier={pixiEmbers ? tierStep : 0} />
         </Suspense>
       )}
-      {effect !== "none" && !pixiField && <FieldFxLayer effect={effect} color={DEMO_C} color2="#b06bff" sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
+      {auroraGL && (
+        <div className="absolute inset-0 z-[2] pointer-events-none">
+          <AuroraFieldGL color={DEMO_C} color2="#b06bff" animate />
+        </div>
+      )}
+      {effect !== "none" && !pixiField && !auroraGL && <FieldFxLayer effect={effect} color={DEMO_C} color2="#b06bff" sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
       {effect === "embers" && (
         <div className="absolute right-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
           style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#ffd7b0" }}>

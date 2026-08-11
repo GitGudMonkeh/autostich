@@ -13,6 +13,7 @@ import { useFxLevel } from "./useReducedFx.js";
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
+import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
 import { startPrunk } from "./prunkFx.js";
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
@@ -1322,8 +1323,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Feld-Effekt portiert ist (PIXI_FIELD), eine Deckfarbe existiert und der A/B-Umschalter auf „pixi" steht. Wenn ja,
   // rendert die DOM-Fassung (FieldFxLayer) für diesen Effekt keine Nodes (suppressField) → er zieht komplett auf die GPU.
   const pixiEnabled = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi" && !!deckA1;
-  const pixiBg  = pixiEnabled && PIXI_FIELD.has(bgFx);        // BG-Effekt (z. B. Aurora) läuft auf der GPU-Bühne
-  const pixiFin = pixiEnabled && PIXI_FIELD.has(bgFinisher);  // BG-Finisher (z. B. Glutfunken) läuft auf der GPU-Bühne
+  const pixiFin = pixiEnabled && PIXI_FIELD.has(bgFinisher);  // BG-Finisher (z. B. Glutfunken) läuft auf der GPU-Bühne (Pixi)
+  const auroraGL = pixiEnabled && bgFx === "aurora";          // Aurora läuft als eigene WebGL-Canvas (nicht Pixi)
+  // Aurora-Farbmodus (Standard/Deckfarbe) — vorerst per Dev-URL `?aurora=deck`; der Shop-Toggle folgt.
+  const auroraDeck = (() => { try { return new URLSearchParams(window.location.search).get("aurora") === "deck"; } catch { return false; } })();
   // GOTTGLEICH-Prunk: Panel = Prallwand-Rahmen, oppSlot = Ursprung (zerstörte Gegnerkarte); burst triggert den Schwarm.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
@@ -1833,15 +1836,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           pointer-events:none. Baut je nach aktivem Feld-Effekt den passenden GPU-Emitter (embers, starfield, …),
           sobald der Effekt portiert ist (PIXI_FIELD) UND der A/B-Umschalter auf „pixi" steht. Der Ticker pausiert im
           Hintergrund-Tab. Nur Preview/Test- oder Dev-Build — Produktion bleibt identisch (Pixi wird dort nie geladen). */}
+      {/* Hintergrund-Effekt (reiner BG) — Aurora als eigene WebGL-Canvas, z-2 HINTER dem Finisher. */}
+      {auroraGL && (
+        <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
+          <AuroraFieldGL color={deckA1} color2={deckA2} deckColored={auroraDeck} animate={!reduced} />
+        </div>
+      )}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
         <Suspense fallback={null}>
-          {/* Hintergrund-Effekt (reiner BG, kein Stich-Bezug) — z-2, HINTER dem Finisher */}
-          <PixiStage className="z-[2]"
-            effect={pixiBg ? bgFx : null}
-            color={deckA1 || "#ffffff"}
-            color2={deckA2 || "#b06bff"}
-            reduced={reduced} lite={lite} />
-          {/* Hintergrund-Finisher (reagiert je Stich) — z-3, VOR dem BG-Effekt */}
+          {/* Hintergrund-Finisher (reagiert je Stich) — Pixi, z-3 VOR dem BG-Effekt */}
           <PixiStage className="z-[3]"
             effect={pixiFin ? bgFinisher : null}
             color={deckA1 || "#ffffff"}
@@ -1869,7 +1872,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           durch. reduced-motion → nur das statische Ambiente (kein Springen). */}
       {bgFx && deckA1 && (
         <FieldFxLayer effect={bgFx} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} lite={lite} win={win}
-          score={0} suppressField={pixiBg} />
+          score={0} suppressField={auroraGL} />
       )}
       {bgFinisher && deckA1 && (
         <FieldFxLayer effect={bgFinisher} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} lite={lite} win={win}

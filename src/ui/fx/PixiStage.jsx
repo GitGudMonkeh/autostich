@@ -2,14 +2,14 @@ import { useEffect, useRef, useCallback } from "react";
 import { Application } from "pixi.js";
 import { createEmberField } from "./embersPixi.js";
 import { createStarfield } from "./starfieldPixi.js";
-import { createAuroraField } from "./auroraPixi.js";
 
 /* Registry der Feld-Effekt-Emitter: key → Factory(app) → { setParams, erupt?, destroy }. Muss zur pixi-freien
-   Key-Liste (fieldFxKeys.js) passen, die Battlefield fürs Gating nutzt. Neue Effekte docken hier an. */
+   Key-Liste (fieldFxKeys.js) passen, die Battlefield fürs Gating nutzt. Neue Effekte docken hier an.
+   Aurora ist NICHT hier: sie läuft als eigenständige WebGL-Canvas (AuroraFieldGL), weil Pixis Custom-Shader
+   auf dem Mobile-Setup nicht rendert. */
 const FIELD_FX = {
   embers: createEmberField,
   starfield: createStarfield,
-  aurora: createAuroraField,
 };
 
 /* PixiStage (Pixi-Umbau) — eine GPU-Render-Bühne, die NEBEN React lebt: transparenter Hintergrund,
