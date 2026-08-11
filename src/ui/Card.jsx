@@ -99,7 +99,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
           aber UNTER der Zahl (z-2) → Zahl bleibt lesbar. Reiner CSS-Loop; unter reduced-motion steht der Nebel still. */}
       {fxAurora && (
         <div aria-hidden="true" className="as-aurora-drift absolute inset-0 rounded-xl pointer-events-none" style={{
-          mixBlendMode: "screen", opacity: 0.5, filter: "blur(8px)",
+          mixBlendMode: "screen", opacity: 0.5,
           backgroundImage: `radial-gradient(58% 44% at 30% 33%, ${fxAurora.a1}cc, transparent 70%), radial-gradient(54% 40% at 72% 66%, ${(fxAurora.a2 || fxAurora.a1)}bb, transparent 70%), radial-gradient(48% 50% at 50% 84%, ${fxAurora.a1}88, transparent 76%)` }} />
       )}
       {permBoost > 0 && (

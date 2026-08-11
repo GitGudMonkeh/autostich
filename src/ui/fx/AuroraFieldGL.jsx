@@ -99,7 +99,13 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
     const d1 = hexToRgb(color, [0.33, 0.88, 0.54]);
     const d2 = hexToRgb(color2, [0.69, 0.42, 0.98]);
 
-    const dprOf = () => Math.min(2, window.devicePixelRatio || 1);
+    // #perf-A1: Mobile drosseln. Der Aurora-Shader läuft vollflächig pro Frame — auf dem Handy der größte GPU-Dauer-
+    // Posten. Auf Mobile (coarse) den DPR-Deckel senken (weniger Shader-Aufrufe je Frame; die weiche Aurora braucht
+    // kein Retina) UND die Bildrate auf ~30 fps kappen (das Wabern ist langsam → optisch unmerklich). Desktop = voll.
+    const coarse = typeof window !== "undefined" && window.matchMedia
+      ? window.matchMedia("(pointer: coarse)").matches : false;
+    const dprCap = coarse ? 1.4 : 2;
+    const dprOf = () => Math.min(dprCap, window.devicePixelRatio || 1);
     const resize = () => {
       const w = Math.max(1, Math.floor(canvas.clientWidth * dprOf()));
       const h = Math.max(1, Math.floor(canvas.clientHeight * dprOf()));
@@ -117,7 +123,16 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
     };
 
     let raf = null, startT = null, disposed = false, ro = null;
-    const frame = (ms) => { if (disposed) return; if (startT === null) startT = ms; draw((ms - startT) / 1000); raf = requestAnimationFrame(frame); };
+    // #perf-A1: FPS-Cap auf Mobile — rAF läuft weiter (glatte Zeitbasis), es wird aber nur ~alle 33 ms wirklich
+    // gezeichnet. Die Zeit fließt echt (ms-startT) → das Wabern bleibt tempo-korrekt, nur eben in ~30 statt 60/120 fps.
+    const minMs = coarse ? 1000 / 30 : 0;
+    let lastDraw = -1e9;
+    const frame = (ms) => {
+      if (disposed) return;
+      if (startT === null) startT = ms;
+      if (ms - lastDraw >= minMs) { lastDraw = ms; draw((ms - startT) / 1000); }
+      raf = requestAnimationFrame(frame);
+    };
     if (animate) { raf = requestAnimationFrame(frame); }
     else { draw(6.0); if (typeof ResizeObserver !== "undefined") { ro = new ResizeObserver(() => draw(6.0)); ro.observe(canvas); } }
     window.addEventListener("resize", resize);

@@ -1292,10 +1292,13 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
     const c2 = color2 || "#b06bff"; // zweite Aurora-Farbe (Deck-Sekundärfarbe, sonst sanftes Violett)
     inner = (
       <>
+        {/* #perf-A2: blur + mix-blend-mode: screen sind auf Mobile teuer → im lite-Modus (ausgewogen/minimal) kleinerer
+            Blur-Radius (12→8 / 18→12). Diese DOM-Bögen sind ohnehin nur der Fallback (der WebGL-Aurora-Canvas übernimmt
+            im Regelfall via suppressField) — hier zählt v. a. der Nicht-Pixi-Pfad. Desktop/voll unverändert. */}
         <div className={`${A("as-field-aurora-a")} absolute`} style={{ left: "-8%", right: "-8%", top: "-10%", height: "64%", transformOrigin: "50% 0%", mixBlendMode: "screen",
-          background: `radial-gradient(130% 82% at 50% 0%, ${color}99, ${color}33 34%, transparent 66%)`, filter: "blur(12px)", opacity: 0.75 }} />
+          background: `radial-gradient(130% 82% at 50% 0%, ${color}99, ${color}33 34%, transparent 66%)`, filter: `blur(${lite ? 8 : 12}px)`, opacity: 0.75 }} />
         <div className={`${A("as-field-aurora-b")} absolute`} style={{ left: "-8%", right: "-8%", top: "-6%", height: "60%", transformOrigin: "50% 0%", mixBlendMode: "screen",
-          background: `radial-gradient(118% 74% at 44% 0%, ${c2}77, transparent 60%)`, filter: "blur(18px)", opacity: 0.6 }} />
+          background: `radial-gradient(118% 74% at 44% 0%, ${c2}77, transparent 60%)`, filter: `blur(${lite ? 12 : 18}px)`, opacity: 0.6 }} />
         {AURORA_STARS.map((st, i) => (
           <span key={i} className={A("as-star-twinkle")} style={{ position: "absolute", left: `${st.x}%`, top: `${st.y}%`, width: st.s, height: st.s,
             borderRadius: "50%", background: "#ffffff", boxShadow: `0 0 ${(st.s * 2).toFixed(0)}px #ffffffcc`, opacity: 0.6, animationDelay: `${st.d}s` }} />

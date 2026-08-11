@@ -110,6 +110,14 @@ button { font-family: inherit; }
 @media (prefers-reduced-motion: reduce) { .as-guide-glow::after { animation: none; opacity: 0.67; } }
 /* Gemeinsame Opacity-Hüllkurve (Min-Anteil ≈ 0.47 des Max-Glows) — von beiden Glows genutzt. */
 @keyframes as-glow-opacity { 0%, 100% { opacity: 0.47; } 50% { opacity: 1; } }
+/* #perf-A3: Glow-Halos auf Mobile enger ziehen. WebKit (iPhone) malt den box-shadow-Blur DEUTLICH breiter als
+   Blink (Android) → dieselben Radien wirken auf dem iPhone „überzogen"/überstrahlt, auf Android dezent. Kleinere
+   Radien verkleinern den absoluten Geräte-Unterschied (Android↔iPhone gleichen sich an) und sparen Blur-Fläche.
+   Betrifft nur die im Spiel sichtbaren Serien-Glows; Desktop behält die vollen Radien. Tunebar. */
+@media (pointer: coarse) {
+  .as-streak-glow { box-shadow: 0 0 5px 1px rgba(155,140,255,0.40); }
+  .as-streak-pulse::after { box-shadow: 0 0 10px 2px rgba(155,140,255,0.75); }
+}
 /* Wie as-combo, aber HÄLT am Ende bei voller Opacity (forwards) — für den Formations-Multi-Float, damit er
    sichtbar bleibt, solange der Stich angezeigt wird (wie Banner/Aufschlüsselung), statt zu früh wegzufaden. */
 @keyframes as-combo-hold { 0% { opacity:0; transform: translateY(10px) scale(.6); } 22% { opacity:1; transform: translateY(0) scale(1.18); } 55% { opacity:1; transform: translateY(-6px) scale(1); } 100% { opacity:1; transform: translateY(-8px) scale(1); } }
@@ -357,7 +365,11 @@ button { font-family: inherit; }
   75%  { transform: translate(-2%, 3%) scale(1.09); }
   100% { transform: translate(-5%, -3%) scale(1.06); }
 }
-.as-aurora-drift { animation: as-aurora-drift 14s ease-in-out infinite; }
+/* #perf-A2: Blur in die Klasse (statt inline) → auf Mobile (coarse) kleinerer Radius. Der Karten-Aurora-Schleier
+   ist blur(8px) + mix-blend-mode: screen PRO Karte — auf dem Handy teuer und plattform-divergent (WebKit blurrt
+   breiter). Auf Mobile 8→5px: spürbar weniger Blur-Fläche je Karte, Look bleibt weich. Desktop unverändert. */
+.as-aurora-drift { animation: as-aurora-drift 14s ease-in-out infinite; filter: blur(8px); }
+@media (pointer: coarse) { .as-aurora-drift { filter: blur(5px); } }
 /* #glitch-rework: Cyberpunk-Digital-Glitch. Statt nur die Zahl zu wackeln: chromatische Aberration (RGB-Split der
    GANZEN Kartenfront), horizontale Tear-/Slice-Bänder, Scanline-Flicker und UNREGELMÄSSIGES Stottern (mehrere uneven
    Bursts je Schleife statt Metronom). Neon-Palette --gc1 (Magenta) / --gc2 (Cyan). Nur transform/opacity/text-shadow →
