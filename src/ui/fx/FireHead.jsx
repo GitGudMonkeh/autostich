@@ -117,7 +117,7 @@ export function FireHead({ heat = 0, panelRef, cardRef }) {
 
       // ── Brennlinie am oberen Rand (verankert das Feuer) ──
       const baseF = Math.min(1.2, C.FLAME_RATE / 210), bucket = Math.floor(clock / 60);
-      const baseTint = rgbInt(lerpRGB(C.cEMBER, C.cCORE, 0.55));
+      const baseTint = rgbInt(lerpRGB(C.cEMBER, C.cCORE, 0.38)); // #feuer-fix: Brennlinie wärmer-orange statt weiß (weniger Weiß-Blowout)
       for (let i = 0; i < BASE_N; i++) {
         const s = baseSpr[i];
         if (baseF <= 0.02) { s.alpha = 0; continue; }
@@ -148,8 +148,11 @@ export function FireHead({ heat = 0, panelRef, cardRef }) {
         const p = s.p;
         p.x = s.x0 + sway + lean; p.y = s.y0 - rise;
         const foot = gsz * 2.2; p.scaleX = foot / TX; p.scaleY = (foot / TX) * 1.85;
-        // #feuer-fix: dunkler getönt (Kern-Weiß nur gedämpft) + Alpha gesenkt → additiv nicht zu Weiß aufblähen (matcht Artifact).
-        p.tint = rgbInt(lerpRGB(C.cCOLOR, C.cCORE, tHot * 0.7)); p.alpha = k * k * 0.5;
+        // #feuer-fix: Das Artifact zeichnet je Flamme einen Radial-VERLAUF (roter Körper, Weiß NUR im Zentrum); hier hat
+        // jedes Partikel nur EINEN Flat-Tint auf weicher Weiß-Textur → ein zu weißer Tint lässt additiv alles gelb/weiß
+        // aufblähen. Darum den Kern-Weiß-Anteil klein halten (rot bleiben) — der heiße weiße Kern entsteht dann von SELBST
+        // aus der additiven Überlagerung vieler roter Partikel (genau wie im Artifact), nicht aus einem weißen Einzel-Tint.
+        p.tint = rgbInt(lerpRGB(C.cCOLOR, C.cCORE, tHot * 0.3)); p.alpha = k * k * 0.5;
       }
 
       // ── Rauch (über den Flammen) ──

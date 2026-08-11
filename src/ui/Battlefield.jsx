@@ -269,13 +269,16 @@ function laserPieces(lines, W, H) {
 /* Eine Seite: gespielte Karte MIT Nachziehstapel dahinter (ragt nur nach außen).
    `overlay` = entkoppelter Layer im Karten-Slot (z. B. Niederlage-Ghosts), der NICHT pro Stich remountet
    (steht nach `children`, also im selben `relative`-Slot, aber außerhalb des trickNo-gekeyten Karten-Wrappers). */
-function Side({ label, remaining, position = 0, deckLen = 0, dealFrom, children, overlay = null, backImage = null }) {
+function Side({ label, remaining, position = 0, deckLen = 0, dealFrom, children, overlay = null, backImage = null, slotRef = null }) {
   const dir = dealFrom === "left" ? -1 : 1;
   const behind = Math.min(3, Math.max(0, remaining - 1));
   return (
     <div className="flex flex-col items-center gap-2 shrink-0">
       <div className="text-[11px] uppercase tracking-wide opacity-55">{label}</div>
-      <div className="relative" style={{ width: 104, height: 144 }}>
+      {/* #feuer: STABILER Karten-Slot (Deck-Stapel dahinter + gespielte Karte). slotRef zeigt auf DIESE Box — sie
+          remountet NICHT pro Stich und fliegt nicht weg → das Feuer (an slotRef verankert) brennt durchgängig weiter,
+          statt bei jedem Sieg/Niederlage neu zu starten (die gespielte Karte darin flippt/fliegt, der Slot bleibt). */}
+      <div ref={slotRef} className="relative" style={{ width: 104, height: 144 }}>
         {Array.from({ length: behind }, (_, i) => (
           <div key={i} className="absolute top-0" style={{ left: dir * (i + 1) * 3 }}>
             <CardBack label="" image={backImage} />
@@ -712,6 +715,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oppSlotRef = useRef(null);
   const playerCardRef = useRef(null); // #blitz: Box der eigenen Karte für den Ionensturm-Rahmen (IonStorm)
   const oppCardRef = useRef(null);    // #318: Box der Gegnerkarte für die Karten-Animationen (CardFxStage)
+  const deckSlotRef = useRef(null);   // #feuer: STABILER Karten-Slot der Spielerseite (Deck) — Anker für durchgängiges Feuer (remountet nicht pro Stich)
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -1252,14 +1256,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       })()}
       {/* #feuer Archetyp-Karteneffekt — brennender KARTENKOPF: der obere Rand der eigenen Karte brennt, Flammen
           lodern ÜBER dem Rahmen (z-12). Hitze aus dem heat-Prop (Hitzeleiste 0–HEAT_MAX) → blendet zwischen den
-          Phasen 20/50/80/100 über; ?fireheat=<0..1> erzwingt sie (Dev). Beim Abwerfen (flyAway) auf 0 → kein
-          hängendes Feuer. Gate wie IonStorm (Preview/Dev), Prod bleibt pixel-identisch. */}
+          Phasen 20/50/80/100 über; ?fireheat=<0..1> erzwingt sie (Dev). #feuer: an den STABILEN Deck-Slot (deckSlotRef)
+          verankert (nicht an die gespielte Karte) → das Feuer brennt DURCHGÄNGIG weiter, auch wenn die Karte gewinnt/
+          verliert/wegfliegt (kein Neustart, kein flyAway-Reset mehr). Gate wie IonStorm (Preview/Dev). */}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
         <Suspense fallback={null}>
           <FireHead
-            heat={flyAway ? 0 : (FIRE_FORCE != null ? FIRE_FORCE
-              : (heat && heat.active ? Math.max(0, Math.min(1, (heat.value || 0) / (heat.max || HEAT_MAX))) : 0))}
-            panelRef={panelRef} cardRef={playerCardRef} />
+            heat={FIRE_FORCE != null ? FIRE_FORCE
+              : (heat && heat.active ? Math.max(0, Math.min(1, (heat.value || 0) / (heat.max || HEAT_MAX))) : 0)}
+            panelRef={panelRef} cardRef={deckSlotRef} />
         </Suspense>
       )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
@@ -1302,7 +1307,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           </div>
         )}
 
-        <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack}
+        <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack} slotRef={deckSlotRef}
               overlay={playerGhosts.length ? <SlashGhostLayer ghosts={playerGhosts} /> : null}>{playerCard}</Side>
 
         {/* #214: „vs"-Schwerter-Icon (#42) entfernt — die beiden Seiten stehen sich jetzt ohne Trenn-Icon gegenüber. */}
