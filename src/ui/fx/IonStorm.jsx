@@ -133,6 +133,12 @@ export function IonStorm({ active = false, panelRef, cardRef, color = "#5ec8f0",
       if (ccx < -w || ccx > pr.width + w || ccy < -h || ccy > pr.height + h) { g.clear(); return; }
       // Overlay-Container auf die Kartenbox (panel-lokal) setzen; Perimeter bei Größenwechsel neu bauen.
       g.position.set(cr.left - pr.left, cr.top - pr.top);
+      // #blitz-fix: Rahmen-Lebensdauer = KARTEN-Lebensdauer. Die Rahmen-Alpha folgt der Karten-Opacity (as-deal-in
+      // fadet 0→1, as-flyaway fadet 1→0) → der Rahmen erscheint beim Reveal und verschwindet ZEITGLEICH mit der Karte,
+      // auch bei Niederlage (er folgt der wegfliegenden Karte via getBoundingClientRect und fadet mit ihr aus).
+      const view = card.ownerDocument?.defaultView || window;
+      const op = parseFloat(view.getComputedStyle(card).opacity);
+      g.alpha = Number.isFinite(op) ? op : 1;
       let P = perimRef.current;
       if (Math.abs(P.w - w) > 0.5 || Math.abs(P.h - h) > 0.5) {
         P = { w, h, pts: buildPerim(w - 2 * TUNE.INSET, h - 2 * TUNE.INSET, TUNE.CORNER, TUNE.N_PERIM) };
