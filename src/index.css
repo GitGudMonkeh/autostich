@@ -379,6 +379,9 @@ button { font-family: inherit; }
 .as-field-spark { animation: as-field-spark 700ms ease-out forwards; }
 /* Eigene Verlierer-Karte fliegt einfach weg (kein Klingenschnitt mehr) — driftet nach unten-außen, kippt & fadet. */
 @keyframes as-flyaway { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-12%, 68%) rotate(-16deg); opacity: 0; } }
+/* #finisher-standard: gespiegelter Wegflug für die GEGNERkarte (rechte Feldseite) beim Standard-Finisher — schräg
+   nach unten-RECHTS raus, spiegelbildlich zum eigenen Wegflug (as-flyaway), damit beide Seiten nach außen wegfliegen. */
+@keyframes as-flyaway-r { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(12%, 68%) rotate(16deg); opacity: 0; } }
 
 /* #296 Sieg-Finisher „Schwarzes Loch": das persistente, mit der Serie wachsende Loch (Sog, Orbs, Kollaps) läuft jetzt
    im Panel-<canvas> (BlackholeFieldFx in Battlefield.jsx) — keine CSS-Keyframes mehr nötig. */

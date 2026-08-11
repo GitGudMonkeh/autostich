@@ -62,10 +62,16 @@ function orderPacks(list, deckId) {
   return rest;
 }
 
-/* Synthetische „Klinge"-Kachel: der Standard-Sieg-Finisher — immer im Besitz (kein Kauf), aber wählbar UND
-   vorschaubar wie die anderen Finisher. Wird der Sieg-Finisher-Gruppe vorangestellt (analog „Gottgleich · Standard"). */
+/* Synthetische „Standard"-Kachel: der GRATIS-Standard-Sieg-Finisher (kein Kauf, Default-Auswahl). Schlicht — die
+   Verliererkarte fliegt nach dem Stich einfach zur Seite weg (wie die eigene Karte bei einer Niederlage), der Flip-
+   Sound wird beim Sieg dezent angehoben. Wird der Sieg-Finisher-Gruppe vorangestellt (analog „Gottgleich · Standard"). */
+const FIN_STANDARD = { key: "standard", name: "Standard", group: "finisher", preview: "standard", alwaysOwned: true,
+  desc: "Der schlichte Grund-Finisher (immer verfügbar, Standard-Auswahl): Die geschlagene Gegnerkarte fliegt nach dem Stich einfach zur Seite weg — genau wie deine eigene Karte bei einer Niederlage. Beim Sieg wird der Aufdeck-Sound leicht höher gestimmt. Kein Schnitt, kein Prunk." };
+
+/* Synthetische „Klinge"-Kachel: ein wählbarer Sieg-Finisher (aktuell immer im Besitz; wird später kaufbar) — vorschaubar
+   wie die anderen Finisher. Wird in der Sieg-Finisher-Gruppe hinter „Standard" geführt. */
 const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "klinge", alwaysOwned: true,
-  desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte. Grundzug ist ein Schnitt von links; je höher dein Siegesserie-Multiplikator, desto mehr Richtungen fahren nacheinander ein (ab ×1,25 links/rechts im Wechsel, ab ×1,5 zusätzlich von oben, ab ×2,0 alle vier inkl. Z-Schnitt) — und die Klinge schneidet härter. Eine Niederlage setzt die Serie zurück. Der Standard-Finisher (immer verfügbar)." };
+  desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte. Grundzug ist ein Schnitt von links; je höher dein Siegesserie-Multiplikator, desto mehr Richtungen fahren nacheinander ein (ab ×1,25 links/rechts im Wechsel, ab ×1,5 zusätzlich von oben, ab ×2,0 alle vier inkl. Z-Schnitt) — und die Klinge schneidet härter. Eine Niederlage setzt die Serie zurück." };
 
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
@@ -89,12 +95,12 @@ const FIELD_NONE = { key: "none", name: "Kein Feld-Effekt", group: "field", prev
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxGroupItems = (group) => {
   const list = GLOBAL_FX.filter((f) => f.group === group && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
-  if (group === "finisher") return [KLINGE, ...list]; // „Klinge" (Default) voran
+  if (group === "finisher") return [FIN_STANDARD, KLINGE, ...list]; // „Standard" (Default) voran, dann „Klinge"
   if (group === "bgfx" || group === "bgfin") return [FIELD_NONE, ...list]; // „Kein Effekt" (Default) voran
   return list;
 };
 // #: Der Standard-Key je einfach-exklusiver Gruppe (der Gratis-Aus-Zustand). Toggle-Gruppen (anim) haben keinen.
-const FX_STD_KEY = { finisher: "klinge", bgfx: "none", bgfin: "none" };
+const FX_STD_KEY = { finisher: "standard", bgfx: "none", bgfin: "none" };
 // #: Aktive Auswahl an die ERSTE Stelle rücken, direkt danach den „Standard" (falls die Gruppe einen hat), Rest folgt
 // in bisheriger Reihenfolge. Kein/Standard aktiv oder Toggle-Gruppe (kein stdKey) → Reihenfolge unverändert.
 function orderFxItems(items, selKey, stdKey) {
@@ -106,10 +112,11 @@ function orderFxItems(items, selKey, stdKey) {
   return std ? [active, std, ...rest] : [active, ...rest];
 }
 
-/* #cleanup: Nach dem Entfernen aller kaufbaren Sieg-Finisher ist die Klinge der EINZIGE (synthetisch, immer aktiv).
-   Es gibt keine Auswahl-Flags mehr → finisherFlags schreibt nichts, finisherSelOf ist konstant „klinge". */
-const finisherFlags = () => ({});
-const finisherSelOf = () => "klinge";
+/* Sieg-Finisher einfach-exklusiv (genau EINER aktiv): die Auswahl steckt als einzelner String in options.finisher.
+   „standard" (Gratis-Default, Wegflug) und „klinge" sind wählbar. finisherFlags schreibt die Auswahl; „none" (Abwählen
+   des aktiven) fällt auf den Gratis-Standard zurück (es gibt keinen „gar kein Finisher"-Zustand). */
+const finisherFlags = (key) => ({ finisher: key === "none" ? "standard" : key });
+const finisherSelOf = (options) => options?.finisher || "standard";
 /* #306 Battlefield-Ambiente einfach-exklusiv (genau EINS aktiv, oder „none"). Datengetrieben aus der „field"-Gruppe:
    fieldFxFlags(key) schreibt alle Feld-Optionen in einem Rutsch (genau eine true, „none" = alle false). */
 // #kategorien: zwei getrennte, UNABHÄNGIGE Feld-Slots. bgFxFlags/bgFinFlags schreiben NUR die Optionen ihrer
@@ -259,6 +266,45 @@ function FinisherScene({ variant }) {
   );
 }
 
+/* #finisher-standard: Vorschau des Gratis-Standard-Finishers — die geschlagene Karte fliegt nach kurzem Liegen einfach
+   zur Seite weg (dieselbe as-flyaway-Choreografie wie in-game), im Loop; beim „Sieg" wird der Aufdeck-Sound (cardflip)
+   dezent höher gestimmt (rate > 1), passend zur In-Game-Vertonung. Vorschau = In-Game (kein Schnitt, kein Prunk). */
+const STD_FIN_TICK_MS = Math.round(2400 / FIN_SPEED); // gleicher Loop-Takt wie die Klinge-Vorschau
+const STD_FIN_REST = Math.round(220 / FIN_SPEED);     // Karte liegt kurz still, bevor sie wegfliegt
+const STD_FIN_FLY  = Math.round(760 / FIN_SPEED);     // Wegflug-Dauer (as-flyaway)
+const STD_FIN_PITCH = 1.14;                            // Flip-Sound beim Sieg dezent angehoben (wie in-game)
+function StandardFinisherScene() {
+  const [tick, setTick] = useState(0);
+  const bf = battlefieldAssets(SHOWCASE_BF);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), STD_FIN_TICK_MS);
+    return () => clearInterval(id);
+  }, []);
+  // Angehobener Aufdeck-Sound je Loop-Durchlauf (Sieg-Cue) — synchron zum Erscheinen der Karte.
+  useEffect(() => {
+    const to = setTimeout(() => audio.play("cardflip", { rate: STD_FIN_PITCH, gain: 0.95 }), 0);
+    return () => clearTimeout(to);
+  }, [tick]);
+  const cardEl = <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
+  return (
+    <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+      <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
+        {/* key={tick} startet die Wegflug-Animation je Loop neu; erst REST liegen bleiben, dann as-flyaway-r zur Seite. */}
+        <div key={tick} className="absolute inset-0"
+          style={{ animation: `as-flyaway-r ${STD_FIN_FLY}ms ease-in ${STD_FIN_REST}ms both` }}>
+          {cardEl}
+        </div>
+      </div>
+      <div className="absolute bottom-1.5 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold font-pixel"
+        style={{ background: "#0c0c10cc", border: "1px solid #2a2836", color: "#cfccda" }}>
+        Wegflug
+      </div>
+    </div>
+  );
+}
+
 // Große In-Game-Vorschau eines Effekts im Kauffenster. Karten-Animationen → Karte/BF-Demo; Finisher/Krit →
 // echte In-Game-Komponente; Gottgleich (inkl. Standard) → das komplette Ereignis nachgespielt.
 function GlobalFxScenePreview({ fx, deckTint = false }) {
@@ -266,6 +312,7 @@ function GlobalFxScenePreview({ fx, deckTint = false }) {
   // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
   if (["aurora", "embers", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview />;
+  if (fx.preview === "standard") return <StandardFinisherScene />;
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);

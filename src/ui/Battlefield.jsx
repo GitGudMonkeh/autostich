@@ -189,6 +189,7 @@ const CARDFLIP_RATE_CAP = 1.6;  // Deckel bewusst niedrig → bei MAX-Turbo blei
 // hörbarer Kontrast Sieg↔Niederlage. Effektiv = Gain × SFX-Lautstärke (Default 0,4 → Sieg 0,6 · Niederlage 0,08).
 const CARDFLIP_GAIN = { win: 1.5, win_tie: 1.5, tie: 0.6, loss: 0.2 };
 const CARDFLIP_GAIN_CONST = 0.9; // #: konstante Flip-Lautstärke bei JEDEM Flip (Mitte zwischen altem Sieg-/Niederlage-Pegel)
+const STICH_WIN_PITCH = 1.14;    // #finisher-standard: gewonnener Stich stimmt den Flip-Sound dezent höher (nur Standard-Finisher; leicht justierbar)
 // Deterministischer Jitter aus einem Integer-Seed (kein Math.random im Render, #68) → [-amp, +amp].
 const fjitter = (seed, amp) => { const s = Math.sin(seed * 127.1 + 311.7) * 43758.5; return +(((s - Math.floor(s)) * 2 - 1) * amp).toFixed(1); };
 
@@ -660,8 +661,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
   deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false,
+  // #finisher: gewählter Sieg-Finisher — "standard" (Gratis-Default: Verliererkarte fliegt zur Seite weg + höherer
+  // Flip-Sound) oder "klinge" (choreografierter Klingen-Schnitt). Default = "standard".
+  finisher = "standard",
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
+  const klinge = finisher === "klinge"; // Klinge-Schnitt aktiv? Sonst schlichter Standard-Wegflug.
   // #: Dreistufig. `reduced` (minimal) behält EXAKT die alte Semantik → Kartenflip/Ambient/Finisher/Glows aus.
   // `lite` (balanced ODER minimal) kappt zusätzlich nur die TEUREN Dauer-/Schwarm-Layer: Screen-Shake + die
   // Glutfunken-Partikelfontänen (bis 72 DOM-Nodes/Stich). In „ausgewogen" ist reduced=false (Feel-Good bleibt),
@@ -759,10 +764,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // geschnitten: bei einer Niederlage fliegt sie einfach weg (as-flyaway). Sieg: Gegnerkarte in-place geschnitten
   // (Krit: Explosion), Spielerkarte kippt als Sieger an.
   const flyAway      = sliceOn && lost;                       // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
-  // #cleanup: Alle kaufbaren Sieg-Finisher (Schwarzes Loch/Lasergitter/Brennstrahl/Überladung/Zerstäubung/Laser-
-  // Schnitt) wurden entfernt — es bleibt der choreografierte Klinge-Schnitt für JEDEN Sieg (auch Krits). Nur die
-  // „Kritisch!"-Anzeige + Lila bleiben.
-  const oppSliced    = sliceOn && win;                        // Sieg → Gegnerkarte in-place vom Klinge-Ghost übernommen
+  // #finisher: Der Sieg-Finisher ist wählbar. „klinge" → Gegnerkarte wird in-place vom Klinge-Ghost geschnitten.
+  // „standard" (Default) → die Gegnerkarte fliegt einfach zur Seite weg (spiegelbildlich zum eigenen Wegflug bei
+  // Niederlage), kein Schnitt. Beide Fälle gelten auch für Krits (nur „Kritisch!"-Anzeige + Lila bleiben zusätzlich).
+  const oppSliced    = sliceOn && win && klinge;              // Sieg + Klinge → Gegnerkarte in-place vom Klinge-Ghost übernommen
+  const oppFlyAway   = sliceOn && win && !klinge;             // Sieg + Standard → Gegnerkarte fliegt zur Seite weg (kein Schnitt)
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
@@ -770,8 +776,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // und nicht bei sehr hohem Turbo. Dauer an den Flip-Takt gekoppelt.
   const flipOn = !reduced && !!t && !flyAway && flipMs > 170;
   // #186 Flip-Reveal der Gegnerkarte: analog zur Spielerkarte, aber NICHT wenn die Gegnerkarte gerade geschnitten
-  // wird/explodiert (dort übernimmt der entkoppelte Ghost). Bei Gegner-Sieg (oppWinner) darf sie flippen + ankippen.
-  const oppFlipOn = !reduced && !!t && !oppSliced && flipMs > 170;
+  // wird/explodiert (dort übernimmt der entkoppelte Ghost) und NICHT beim Standard-Wegflug (sie fliegt dann einfach
+  // weg, wie die eigene Karte bei Niederlage — ohne Flip). Bei Gegner-Sieg (oppWinner) darf sie flippen + ankippen.
+  const oppFlipOn = !reduced && !!t && !oppSliced && !oppFlyAway && flipMs > 170;
   const flipDur = clamp(flipMs * 0.55, 220, 460);
 
   // Kartenelemente einmal bauen — als sichtbare Karte, als (unsichtbarer) Größen-Platzhalter unter dem Slice und
@@ -806,7 +813,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Sieger kippt an; im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
   const oppFront = oppWinner ? <div style={winnerTilt(sWinner)}>{oCardEl}</div> : oCardEl;
   const oppCard = t ? (
-    <div key={`o${t.trickNo}`} className="relative" style={(oppSliced || oppFlipOn) ? undefined : dealStyle("as-deal-right")}>
+    <div key={`o${t.trickNo}`} className="relative"
+      style={oppFlyAway ? { animation: `as-flyaway-r ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
+           : (oppSliced || oppFlipOn) ? undefined : dealStyle("as-deal-right")}>
       {resultPulse(lost ? "#e0605a" : null, false)}
       {oppSliced ? (
         <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — der entkoppelte Ghost (Side-overlay) floatet + schneidet/berstet (#186) */
@@ -876,8 +885,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // #: Jetzt tragen die Stich-/Finisher-Sounds die Wucht → der Flip-Sound bekommt eine KONSTANTE Lautstärke bei jedem
     // Flip (Mitte zwischen dem alten Sieg- und Niederlage-Pegel), damit er gleichmäßig „tickt" statt bei Sieg/Niederlage
     // stark zu springen. Tempo (rate) bleibt an flipMs gekoppelt. #: Bass entfernt — Bass gibt es nur noch beim „Schwarzen Loch".
+    // #finisher-standard: Beim Standard-Finisher trägt der Flip selbst das Sieg-Gefühl — auf einem gewonnenen Stich
+    // wird der Aufdeck-Sound dezent HÖHER gestimmt (rate ×STICH_WIN_PITCH), sonst normal. Bei der Klinge bleibt der
+    // Flip neutral (dort vertont der fx_blade-Hit den Sieg). Niederlagen klingen in beiden Fällen normal.
+    const flipPitch = (w && !klinge) ? STICH_WIN_PITCH : 1;
     audio.play("cardflip", {
-      rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)),
+      rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)) * flipPitch,
       gain: CARDFLIP_GAIN_CONST,
     });
     // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
@@ -1000,7 +1013,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, streak: t.winStreak || 0, fxP, fxTier, scale: fxScale, flipMs };
     const spawned = [];
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
-    if (win) {   // Gegnerkarte verliert → Klinge-Ghost — auch bei Krit
+    // #finisher: Der Klinge-Ghost entsteht NUR, wenn die Klinge als Finisher gewählt ist. Beim Standard-Finisher
+    // fliegt die Gegnerkarte stattdessen einfach weg (oppFlyAway, s. o.) — kein Ghost, kein Schnitt-Sound.
+    if (win && klinge) {   // Gegnerkarte verliert → Klinge-Ghost — auch bei Krit
       // #klinge: Einfahrrichtung aus dem Siegesserie-MULTIPLIKATOR (bd.streakMult) + per-Stich-Zähler (sliceSeq).
       // Grundzug LINKS; mit steigendem Multiplikator wächst der Zyklus (≥1.25 +rechts, ≥1.5 +oben, ≥2.0 +Z).
       const sliceDir = sliceMove(bd ? bd.streakMult : 1, sliceSeq.current++);
