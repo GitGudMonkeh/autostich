@@ -27,14 +27,28 @@ function emberFountainXs(seed) {   // 3 x-Positionen (0..1), pro Stich neu (swee
 
 // ── TUNE ─────────────────────────────────────────────────────────────────────
 const TUNE = {
-  EMIT: 289,        // Basis-Ausstoßrate (Tröpfchen/s je Vent), skaliert mit Stufe (Dichte 1.75)
+  EMIT: 363,        // Basis-Ausstoßrate (Tröpfchen/s je Vent), skaliert mit Stufe (Dichte 2.20)
   FLAME: 0.4,       // Flammen-Anteil relativ zu EMIT
   G_REF: 1750,      // Schwerkraft px/s² bei Referenzhöhe HREF
   HREF: 360,        // Referenz-Panelhöhe (Geschwindigkeiten/Höhe skalieren mit H/HREF)
   GLOW: 0.65,       // Partikel-Footprint (= Showcase „Partikelgröße" 0.65; On-Screen-Größe mappt 1:1). Klein = knackig, wenig Wash.
-  CRUST_P: 0.18,    // Anteil dunkler Krusten-Brocken
+  GLOW_A: 1.2,      // Glüh-Boost der farbigen Glut-Partikel (Faktor auf die additive Alpha, final auf 1 gedeckelt)
+  CRUST_P: 0.12,    // Anteil dunkler Krusten-Brocken
   MAXGLOW: 2200, MAXCRUST: 560, MAXVENT: 10,   // Pools groß genug für die große Gottgleich-Fontäne. MAXVENT = Obergrenze gleichzeitiger Vents.
 };
+
+// Farb-Modus der Glut: „Standard" = warmes Feuer, unabhängig von der Deckfarbe · „Deckfarbe" = deck-getönt.
+// Vorerst per Dev-Schalter testbar (?fx=pixi&ember=deck bzw. ?ember=std, oder localStorage as_ember_deck="1");
+// die spätere Shop-Auswahl setzt denselben Modus über setParams({ deckTint }). Default = Standard (das ursprüngliche Feuer).
+const FIRE = [255, 106, 48];   // Standard-Glut: warmes Feuer als Basis der Lava-Rampe
+function readEmberDeckDefault() {
+  try {
+    const u = new URLSearchParams(window.location.search).get("ember");
+    if (u === "deck") return true;
+    if (u === "std" || u === "standard") return false;
+    return window.localStorage.getItem("as_ember_deck") === "1";
+  } catch { return false; }
+}
 
 const TX = 64;   // Glut-Textur-Kantenlänge
 
@@ -108,7 +122,7 @@ export function createEmberField(app) {
   for (let i = 0; i < TUNE.MAXCRUST; i++) { const p = new Particle({ texture: crustTex, anchorX: 0.5, anchorY: 0.5, alpha: 0, tint: 0x140604 }); crustPC.addParticle(p); crust.push({ p, alive: false }); }
   let gHead = 0, cHead = 0;
 
-  let params = { effect: null, deck: [255, 106, 48], score: 0, reduced: false, lite: false };
+  let params = { effect: null, deck: [255, 106, 48], score: 0, reduced: false, lite: false, deckTint: readEmberDeckDefault() };
   const vents = [];
 
   function reset() {
@@ -119,7 +133,9 @@ export function createEmberField(app) {
   }
 
   function setParams(next) {
-    params = { ...params, ...next, deck: next.color != null ? hexToRGB(next.color) : params.deck };
+    params = { ...params, ...next,
+      deck: next.color != null ? hexToRGB(next.color) : params.deck,
+      deckTint: next.deckTint != null ? next.deckTint : params.deckTint };
     if (params.effect !== "embers") reset();
   }
 
@@ -184,7 +200,8 @@ export function createEmberField(app) {
     const dt = Math.min(0.05, ticker.deltaMS / 1000);
     clock += dt;
     if (params.effect !== "embers") return;
-    const W = app.screen.width, H = app.screen.height, sc = Math.max(0.4, H / TUNE.HREF), deck = params.deck;
+    // Farb-Basis der Rampe: „Deckfarbe" → Deck-Hauptfarbe, „Standard" → warmes Feuer (deck-unabhängig).
+    const W = app.screen.width, H = app.screen.height, sc = Math.max(0.4, H / TUNE.HREF), deck = params.deckTint ? params.deck : FIRE;
     const deckInt = ((deck[0] & 255) << 16) | ((deck[1] & 255) << 8) | (deck[2] & 255);   // Krater/Pool in Deckfarbe
     const hotInt = rampInt(0.88, deck);
     const fy = H - Math.min(22, H * 0.04);   // Emissionslinie leicht über dem Rand (näher am Boden) → steht auf dem Boden, nicht am Rahmen
@@ -233,7 +250,7 @@ export function createEmberField(app) {
       const lifeF = 1 - s.age / s.life;
       const heat = clamp(lifeF * s.hot, 0, 1);
       const flick = 0.85 + 0.15 * Math.sin(clock * 30 + s.seed);
-      const a = Math.min(1, (heat < 0.1 ? heat / 0.1 : 1) * (0.4 + 0.6 * lifeF)) * flick;
+      const a = Math.min(1, TUNE.GLOW_A * (heat < 0.1 ? heat / 0.1 : 1) * (0.4 + 0.6 * lifeF)) * flick;
       const foot = s.sz * 2 * (0.5 + 0.5 * heat) * TUNE.GLOW;   // px-Durchmesser inkl. Halo
       const p = s.p; p.x = s.x; p.y = s.y; p.scaleX = p.scaleY = foot / TX; p.tint = rampInt(heat, deck); p.alpha = a;
     }
