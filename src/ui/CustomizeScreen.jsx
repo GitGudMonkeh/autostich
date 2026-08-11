@@ -13,6 +13,8 @@ import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.j
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora-Vorschau als eigene WebGL-Canvas (nicht Pixi)
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
+// #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne über der Vorschau-Karte (Edge-Glow …), lazy wie PixiStage.
+const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 import { clamp } from "../game/deck.js"; // #: Serien-Kopplung des Brennstrahl-Loops (leiser Start → lauter/heißer)
@@ -47,7 +49,12 @@ const PREVIEW_LOOK = {
   // UND nicht mit dem Hintergrund clasht, läuft es auf dem NEUTRALEN Genesis-Feld (statt Kosmos-Magenta) mit einer
   // warmen Bernstein-Deckfarbe — warm auf neutral-dunkel passt zusammen und hebt sich klar vom kühlen Standard ab.
   starfield: { bf: SHOWCASE_BF, a1: "#ff9d3c", a2: "#ffd08a" },
+  // #318 Karten-Animationen: neutrales Feld, Deck-Dual mit klarem Farbverlauf (Blau→Violett), damit der diagonale
+  // Deck-Verlauf des Kantenglühens sichtbar ist. Karten-Animationen laufen IMMER in der Deckfarbe (kein Standard-Toggle).
+  edgeglow: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
 };
+// #318 Preview-Key → CardFxStage-Layer-Flag (welcher Dauer-Layer in der Showcase gezeigt wird).
+const ANIM_LAYER = { edgeglow: "edgeGlow" };
 
 // „Standard"-Pack (UI-seitig): aktiviert wieder das Grund-Deck/-Battlefield. kind:"std" → immer im Besitz.
 const STD_PACK = { id: "default", name: "Standard", kind: "std", a1: "#8a7de0", deckId: "default", bfId: "default", els: ["deck", "bf"] };
@@ -86,7 +93,9 @@ const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", gro
 // inkl. „Klinge" als Default). Grid-Tunnel wurde entfernt → keine Ambience-Gruppe mehr.
 const FX_GROUPS = [
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots (beide gleichzeitig aktivierbar) + Sieg-Finisher.
-  // Karten-Animationen + Gottgleich-Prunk sind vorerst DEAKTIVIERT (Tabs entfernt); die Effekte bleiben im Code.
+  // #318: Karten-Animationen sind wieder aktiv (Pixi-Overlay über den Karten, frei kombinierbare Dauer-Layer).
+  // Gottgleich-Prunk bleibt vorerst DEAKTIVIERT (Tab entfernt); die Effekte bleiben im Code.
+  { key: "anim",     title: "Karten-Animationen",   hint: "frei kombinierbar", mode: "toggle" }, // #318 Edge-Glow … (Overlay über den Karten)
   { key: "bgfx",     title: "Hintergrund-Effekt",   hint: "nur einer aktiv", mode: "bgfx" },   // reiner BG (Aurora …)
   { key: "bgfin",    title: "Hintergrund-Finisher", hint: "nur einer aktiv", mode: "bgfin" },  // BG mit Stich-Interaktion (Glutfunken …)
   { key: "finisher", title: "Sieg-Finisher",        hint: "nur einer aktiv", mode: "finisher" },
@@ -323,6 +332,7 @@ function GlobalFxScenePreview({ fx, deckTint = false }) {
   // #kategorien: Hintergrund-Effekt (Aurora) / Hintergrund-Finisher (Glutfunken) / „Kein Feld-Effekt": echte
   // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
   if (["aurora", "embers", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
+  if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
   if (fx.preview === "gottStandard") return <GottgleichPreview />;
   if (fx.preview === "standard") return <StandardFinisherScene />;
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
@@ -400,6 +410,34 @@ function FieldFxPreview({ effect, deckTint = false }) {
             ? (<><span className="opacity-70">Tier</span> {EMBER_TIER_LABELS[tierStep]}</>)
             : (<><span className="opacity-70">Score</span> {demoScore.toLocaleString("de-DE")}</>)}
         </div>
+      )}
+    </div>
+  );
+}
+
+// #318 Karten-Animations-Vorschau: eine ECHTE Spielkarte (Card.jsx, 104×144) mittig auf neutralem Feld, darüber die
+// geteilte CardFxStage mit dem gewählten Dauer-Layer — dieselbe Engine wie in-game (kein Drift). Pixi-only → nur im
+// Preview/Dev-Build; sonst zeigt die Vorschau die reine Karte (die Effekte laufen in Produktion ohnehin nicht).
+const CARDFX_PREVIEW_ON = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV);
+function CardAnimPreview({ anim }) {
+  const look = PREVIEW_LOOK[anim] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
+  const bf = battlefieldAssets(look.bf);
+  const isMobile = useIsMobile();
+  const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
+  const panelRef = useRef(null);
+  const cardRef = useRef(null);
+  return (
+    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg grid place-items-center" style={{ background: "#0b0a16" }}>
+      {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+      <div ref={cardRef} className="relative" style={{ zIndex: 1 }}>
+        <Card suit="blue" value={7} />
+      </div>
+      {CARDFX_PREVIEW_ON && (
+        <Suspense fallback={null}>
+          <CardFxStage panelRef={panelRef} cards={[{ ref: cardRef, active: true }]}
+            layers={{ [ANIM_LAYER[anim]]: true }} color={look.a1} color2={look.a2} tier={3} />
+        </Suspense>
       )}
     </div>
   );

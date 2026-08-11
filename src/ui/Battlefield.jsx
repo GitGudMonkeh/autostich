@@ -20,6 +20,11 @@ const FireBurn = lazy(() => import("./fx/FireBurn.jsx").then((m) => ({ default: 
 // Dev-Sicht: ?fireheat=<0..1> erzwingt eine feste Feuer-Hitze am eigenen Deck (zum Designen; nur Preview/Dev).
 const FIRE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { const v = new URLSearchParams(window.location.search).get("fireheat"); return v == null ? null : Math.max(0, Math.min(1, parseFloat(v) || 0)); } catch { return null; } })();
+// #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne ÜBER den Karten (Edge-Glow · später Holo/Glitch/Materialize), lazy wie oben.
+const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
+// Dev-Sicht: ?edgeglow=1 erzwingt das Kantenglühen auf beiden Karten (zum Designen; nur Preview/Dev).
+const EDGEGLOW_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
+  (() => { try { return new URLSearchParams(window.location.search).get("edgeglow") === "1"; } catch { return false; } })();
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
@@ -672,6 +677,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
   deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false, starfieldDeck = false,
+  cardAnims = [], // #318 aktive Karten-Animationen (group "anim", stapelbar) — von App via activeCardAnims
+
   // #finisher: gewählter Sieg-Finisher — "standard" (Gratis-Default: Verliererkarte fliegt zur Seite weg + höherer
   // Flip-Sound) oder "klinge" (choreografierter Klingen-Schnitt). Default = "standard".
   finisher = "standard",
@@ -695,6 +702,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
   const playerCardRef = useRef(null); // #blitz: Box der eigenen Karte für den Ionensturm-Rahmen (IonStorm)
+  const oppCardRef = useRef(null);    // #318: Box der Gegnerkarte für die Karten-Animationen (CardFxStage)
   const playerDeckRef = useRef(null); // #feuer: Box des eigenen DECK-Stapels für den Brand-Effekt (FireBurn)
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
@@ -826,7 +834,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Sieger kippt an; im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
   const oppFront = oppWinner ? <div style={winnerTilt(sWinner)}>{oCardEl}</div> : oCardEl;
   const oppCard = t ? (
-    <div key={`o${t.trickNo}`} className="relative"
+    <div key={`o${t.trickNo}`} ref={oppCardRef} className="relative"
       style={oppFlyAway ? { animation: `as-flyaway-r ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
            : (oppSliced || oppFlipOn) ? undefined : dealStyle("as-deal-right")}>
       {resultPulse(lost ? "#e0605a" : null, false)}
@@ -1181,6 +1189,27 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             color="#5ec8f0" reduced={reduced} />
         </Suspense>
       )}
+      {/* #318 Karten-Animationen — geteilte Pixi-Overlay-Bühne ÜBER beiden Karten (z-11). Stapelbare Dauer-Layer
+          (Edge-Glow · später Holo/Glitch/Materialize), pro Karten-Rechteck gezeichnet. Aktiv aus cardAnims (Shop-
+          Toggle) bzw. ?edgeglow=1 (Dev). Pixi-only, Gate wie oben (Preview/Dev) → Produktion lädt kein Pixi. */}
+      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (() => {
+        const animSet = new Set(cardAnims || []);
+        const edgeGlow = animSet.has("edgeglow") || EDGEGLOW_FORCE;
+        if (!edgeGlow) return null; // (später: || holo || glitch)
+        return (
+          <Suspense fallback={null}>
+            <CardFxStage
+              panelRef={panelRef}
+              cards={[
+                { ref: playerCardRef, active: !!t && !flyAway && !flipOn },
+                { ref: oppCardRef, active: !!t && !oppFlyAway && !oppFlipOn && !oppSliced },
+              ]}
+              layers={{ edgeGlow }}
+              color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#9b82f0"}
+              tier={hitTier} reduced={reduced} lite={lite} />
+          </Suspense>
+        );
+      })()}
       {/* #feuer Archetyp-Karteneffekt — Brand-Hitze am eigenen DECK-Stapel: mit steigender Hitze lodert Feuer außen
           an den Seiten hoch. Eigener Pixi-Layer HINTER den Karten (z-9) → Innere durch Karte/Deck-Rücken verdeckt
           (bleibt frei). Hitze aus dem heat-Prop (Hitzeleiste 0–HEAT_MAX); ?fireheat=<0..1> erzwingt sie (Dev). */}

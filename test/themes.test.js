@@ -154,8 +154,16 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   // #cleanup: Es bleiben: Hintergrund-Effekt „Aurora" (bgfx) und die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
   // (bgfin; #311 überarbeitet wieder eingeführt). Klinge ist ein synthetischer Sieg-Finisher (NICHT in GLOBAL_FX). Die
   // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
-  it("GLOBAL_FX führt aurora, embers und starfield", () => {
-    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "starfield"].sort());
+  it("GLOBAL_FX führt aurora, embers, starfield und die Karten-Animation edgeglow (#318)", () => {
+    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "starfield", "edgeglow"].sort());
+  });
+  it("#318: edgeglow liegt in der anim-Gruppe (Karten-Animation, stapelbar) mit korrekter Naht", () => {
+    const fx = GLOBAL_FX_BY_KEY.edgeglow;
+    expect(fx).toBeTruthy();
+    expect(fx.group).toBe("anim");
+    expect(fx.ownKey).toBe("fx:edgeglow");
+    expect(fx.option).toBe("fxEdgeGlow");
+    expect(fx.preview).toBe("edgeglow");
   });
   it("entfernte Effekte sind vollständig aus der Registry", () => {
     // #311: starfield ist wieder da → NICHT mehr in dieser Entfernt-Liste.
