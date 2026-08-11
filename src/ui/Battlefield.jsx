@@ -129,6 +129,8 @@ const KLINGE_TUNE = {
   streakBoost: 0.12,   // + pro Serien-Schritt: Stücke fliegen weiter + rotieren mehr
   streakMax: 6,        // Deckel der Wucht-Steigerung
   rotFactor: 1,        // globaler Rotations-Faktor der Stücke
+  zAngle: 52,          // Z: Steilheit der drei diagonalen Schläge (Grad, abwechselnd +/−)
+  zSpread: 0.18,       // Z: vertikaler Versatz des 1. & 3. Schlags (Kartenanteil)
   zSlashFactor: 0.34,  // Z: Dauer je Einzel-Schlag (× cutDur) — ~3× so schnell wie ein normaler Schnitt
   zSlashStep: 0.33,    // Z: Versatz zwischen den drei Schlägen (× cutDur) → sie fahren blitzschnell nacheinander durch
   zOvershoot: 1.2,     // Z: Überschlag der Schläge über den Kartenrand
@@ -139,11 +141,6 @@ const KLINGE_TUNE = {
 function sliceEsc(streak) {
   const lvl = Math.min(Math.max(streak, 1), KLINGE_TUNE.streakMax);
   return 1 + (lvl - 1) * KLINGE_TUNE.streakBoost;
-}
-// Ein Schnitt-Segment aus zwei Kartenanteil-Punkten (0..1) → Mittelpunkt (%), Länge (px) & Winkel (deg) im 104×144-Raum.
-function sliceSeg(p1, p2) {
-  const dx = (p2[0] - p1[0]) * 104, dy = (p2[1] - p1[1]) * 144;
-  return { cx: (p1[0] + p2[0]) / 2 * 100, cy: (p1[1] + p2[1]) / 2 * 100, len: Math.hypot(dx, dy), rot: Math.atan2(dy, dx) * 180 / Math.PI };
 }
 // #188: Farb-Rampe der Crit-Explosion je Stufe — Lila → Magenta → Warmgold → Weißgold (koppelt an die goldene Groß-Ansage).
 const CRIT_TIER_COLORS = ["#e879f9", "#e879f9", "#f472d0", "#ffc978", "#fff0b0"];
@@ -281,19 +278,21 @@ function sliceGeometry(dir, streak) {
       return { cuts: [{ rot: 90, len: cutLen }], pieces: [
         { clip: "polygon(0 0, 52% 0, 48% 100%, 0 100%)", sx: -d, sy: 14, sr: -14 * e * rf },
         { clip: "polygon(52% 0, 100% 0, 100% 100%, 48% 100%)", sx: d, sy: 14, sr: 14 * e * rf } ] };
-    case "z": { // Serie 4: DREI volle Schnitte (Zorro-Z) in EINER Animation — oben quer → Diagonale → unten quer, jeder
-                // geht ganz durch und ~3× so schnell wie ein Stich-Schnitt (drei passen in ein Schnitt-Budget). Danach
-                // zerfällt die Karte in vier saubere Ecken-Stücke.
-      const ov = KLINGE_TUNE.zOvershoot, step = KLINGE_TUNE.zSlashStep;
-      const c1 = sliceSeg([0, 0.24], [1, 0.24]); c1.fast = true; c1.stagger = 0;        // 1. Schlag: oben quer
-      const c2 = sliceSeg([1, 0.24], [0, 0.76]); c2.fast = true; c2.stagger = step;     // 2. Schlag: Diagonale (rechts-oben → links-unten)
-      const c3 = sliceSeg([0, 0.76], [1, 0.76]); c3.fast = true; c3.stagger = step * 2; // 3. Schlag: unten quer
-      [c1, c2, c3].forEach((c) => { c.len *= ov; });                                     // Überschlag über den Kartenrand
-      return { cuts: [c1, c2, c3], pieces: [
-        { clip: "inset(0 50% 50% 0)", sx: -d,       sy: -d * 0.8, sr: -24 * e * rf },
-        { clip: "inset(0 0 50% 50%)", sx: d,        sy: -d * 0.8, sr: 24 * e * rf },
-        { clip: "inset(50% 50% 0 0)", sx: -d * 0.9, sy: d,        sr: -28 * e * rf },
-        { clip: "inset(50% 0 0 50%)", sx: d * 0.9,  sy: d,        sr: 28 * e * rf } ] };
+    case "z": { // Serie 4: DREI diagonale volle Schläge, abwechselnd (╲ ╱ ╲), in EINER Animation — jeder geht ganz durch
+                // und ~3× so schnell wie ein Stich-Schnitt (drei passen in ein Schnitt-Budget). Danach zerfällt die
+                // Karte in vier saubere Ecken-Stücke.
+      const A = KLINGE_TUNE.zAngle, sp = KLINGE_TUNE.zSpread, step = KLINGE_TUNE.zSlashStep;
+      const len = Math.hypot(104, 144) * KLINGE_TUNE.zOvershoot; // volle Karten-Diagonale + Überschlag → Schlag geht ganz durch
+      const mk = (rot, cy, stg) => ({ rot, len, cx: 50, cy, stagger: stg, fast: true });
+      return { cuts: [
+          mk(A,  (0.5 - sp) * 100, 0),        // 1. Schlag: Diagonale ╲ (oben)
+          mk(-A, 50,               step),     // 2. Schlag: Gegendiagonale ╱ (von der anderen Seite)
+          mk(A,  (0.5 + sp) * 100, step * 2), // 3. Schlag: Diagonale ╲ (unten)
+        ], pieces: [
+          { clip: "inset(0 50% 50% 0)", sx: -d,       sy: -d * 0.8, sr: -24 * e * rf },
+          { clip: "inset(0 0 50% 50%)", sx: d,        sy: -d * 0.8, sr: 24 * e * rf },
+          { clip: "inset(50% 50% 0 0)", sx: -d * 0.9, sy: d,        sr: -28 * e * rf },
+          { clip: "inset(50% 0 0 50%)", sx: d * 0.9,  sy: d,        sr: 28 * e * rf } ] };
     }
     case "right":
     default: // Klinge von RECHTS → klassische −24°-Diagonale (Grundzug, Serie 1)
