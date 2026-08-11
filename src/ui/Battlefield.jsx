@@ -1241,10 +1241,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             <CardFxStage
               panelRef={panelRef}
               cards={[
-                // Bei aktivem Materialize bleibt die Karte während Aufbau/Auflösen „aktiv" (Partikel), sonst wie bisher
-                // an Flip/Wegflug gekoppelt (Dauer-Layer sind während des Aufbaus intern pausiert).
-                { ref: playerCardRef, active: materialize ? !!t : (!!t && !flyAway && !flipOn), num: t ? t.pValue : "", color: t ? suitColor(t.pCard.suit) : null, mat: pMat },
-                { ref: oppCardRef, active: materialize ? (!!t && !oppSliced) : (!!t && !oppFlyAway && !oppFlipOn && !oppSliced), num: t ? t.oValue : "", color: t ? suitColor(t.oCard.suit) : null, mat: oMat },
+                // Dauer-Layer (Edge-Glow/Holo/Glitch) sollen laufen, SOLANGE die Karte da ist — NICHT an flipOn koppeln:
+                // flipOn ist statisch (flipMs>170, kein Live-Timer), gilt also die GANZE Runde → das würde die Dauer-Layer
+                // dauerhaft unterdrücken (Bug: Kantenglühen nie sichtbar). Nur beim Wegflug/Auflösen (flyAway) bzw. beim
+                // Klinge-Slice (oppSliced) aus. Bei Materialize bleibt die Karte während Aufbau/Auflösen „aktiv" (Partikel).
+                { ref: playerCardRef, active: materialize ? !!t : (!!t && !flyAway), num: t ? t.pValue : "", color: t ? suitColor(t.pCard.suit) : null, mat: pMat },
+                { ref: oppCardRef, active: materialize ? (!!t && !oppSliced) : (!!t && !oppFlyAway && !oppSliced), num: t ? t.oValue : "", color: t ? suitColor(t.oCard.suit) : null, mat: oMat },
               ]}
               layers={{ edgeGlow, holo, glitch, materialize }}
               /* Karten-Animationen IMMER in der Deckfarbe: color2 = deckA2 (oder deckA1, wenn das Deck nur eine Farbe
