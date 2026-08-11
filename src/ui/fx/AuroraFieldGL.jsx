@@ -5,8 +5,9 @@ import { useRef, useEffect } from "react";
    GLSL ES 1.00 → maximale Kompatibilität auf alten mobilen GPUs.
 
    Reiner AMBIENT-Hintergrund: perspektivische Bögen zu je eigenem Fluchtpunkt, senkrechte klumpige Ausläufer, harte
-   Unterkante, weicher Auslauf. Kein Stich-Bezug, kein Puls. Komposition per CSS `mix-blend-mode: screen` über dem
-   Battlefield-Bild (Schwarz = unsichtbar, Lichtvorhänge leuchten additiv drauf). Werte am Tuning-Board eingestellt.
+   Unterkante, weicher Auslauf. Kein Stich-Bezug, kein Puls. Komposition per ALPHA (transparente Canvas, Schwarz =
+   Alpha 0 → das Battlefield-Bild bleibt sichtbar). Bewusst KEIN mix-blend-mode: das würde in einem z-index-Stacking-
+   Context nicht mehr mit dem Battlefield blenden und die opake Canvas würde es überdecken. Werte am Tuning-Board eingestellt.
 
    Zwei Modi: Standard (feste Palette grün→magenta) oder Deckfarbe (deckA1 unten → deckA2 oben, via deckColored).
    `animate=false` (reduzierte Effekte) → statisches Standbild. */
@@ -16,7 +17,7 @@ const VERT = "attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.
 const FRAG = [
   "precision highp float;",
   "uniform vec2 uRes; uniform float uTime; uniform float uMode; uniform vec3 uDeck1; uniform vec3 uDeck2;",
-  "const float I_=1.16, WISP=4.0, WAVE=0.14, PERSP=0.22, DOME=0.10, CLUMPLO=0.36, RAYF=39.0, RAYC=1.10, SPACING=0.13, BASEY=0.63, DRIFT=0.035;",
+  "const float I_=1.16, WISP=4.0, WAVE=0.14, PERSP=0.22, DOME=0.10, CLUMPLO=0.36, RAYF=39.0, RAYC=1.10, SPACING=0.13, BASEY=0.50, DRIFT=0.035;",
   "float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453123); }",
   "float noise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);",
   "  float a=hash(i), b=hash(i+vec2(1.0,0.0)), c=hash(i+vec2(0.0,1.0)), d=hash(i+vec2(1.0,1.0));",
@@ -48,8 +49,9 @@ const FRAG = [
   "    float hcol = clamp(hAbove*2.1, 0.0, 1.0);",
   "    ac += auroraCol(hcol) * v;",
   "  }",
-  "  vec3 rgb = ac * I_ * 1.7 * 0.55;", // *0.55 → transparenter (dunkler → screen-Blend addiert weniger)
-  "  gl_FragColor = vec4(rgb, 1.0);",   // auf Schwarz; CSS mix-blend-mode: screen macht Schwarz durchsichtig
+  "  vec3 rgb = ac * I_ * 1.7;",
+  "  float a = clamp(max(rgb.r, max(rgb.g, rgb.b)), 0.0, 1.0) * 0.55;", // Alpha = Helligkeit × Transparenz → Schwarz durchsichtig
+  "  gl_FragColor = vec4(rgb, a);",
   "}",
 ].join("\n");
 
@@ -70,7 +72,7 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
     let gl;
-    try { gl = canvas.getContext("webgl", { alpha: false, antialias: true, depth: false, powerPreference: "low-power" }) || canvas.getContext("experimental-webgl"); }
+    try { gl = canvas.getContext("webgl", { alpha: true, premultipliedAlpha: false, antialias: true, depth: false, powerPreference: "low-power" }) || canvas.getContext("experimental-webgl"); }
     catch { gl = null; }
     if (!gl) return undefined;
 
@@ -130,5 +132,5 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
   }, [color, color2, deckColored, animate]);
 
   return <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 w-full h-full"
-    style={{ mixBlendMode: "screen", pointerEvents: "none" }} />;
+    style={{ pointerEvents: "none" }} />;
 }
