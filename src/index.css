@@ -24,6 +24,21 @@ button { font-family: inherit; }
   overscroll-behavior: contain;
 }
 
+/* #perf-C: Overlay-Blur zentral kappen. Alle Modal-/Screen-Scrims sind vollflächige `fixed inset-0` bzw.
+   `absolute inset-0`-Ebenen mit inline `backdrop-filter: blur()` über dem dunklen `background`. Der Blur ist
+   ein Haupt-Performance-Fresser auf Mobile (Vollbild-Blur pro Frame je offenem Overlay) UND der Grund, warum
+   Android (Blink) und iPhone (WebKit) unterschiedlich aussehen — WebKit zieht den Blur breiter. Deshalb:
+     • Mobile (`pointer: coarse`)  → Blur weg, nur der solide Scrim bleibt → identisch auf beiden Geräten, ~gratis.
+     • Reduzierte Effekte (`data-reduced-fx`, auch Desktop) → ebenso Blur weg (verdrahtet endlich das bisher tote Attribut).
+     • Desktop (voll)              → unverändert (voller Blur).
+   `!important`, weil der Blur inline gesetzt ist. Persistente Nicht-Modals (In-Game-StatusBar, StartScreen-Panel)
+   haben KEIN inset-0 → bleiben bewusst unberührt. */
+@media (pointer: coarse) {
+  .fixed.inset-0, .absolute.inset-0 { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+}
+:root[data-reduced-fx] .fixed.inset-0,
+:root[data-reduced-fx] .absolute.inset-0 { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
 /* Karten-Kachel (#101): mobil hochkant (3/4), auf Desktop kompakt-quadratisch → weniger Scrollen.
    Desktop-Override mit doppelter Klassen-Spezifität, damit er unabhängig von der Regel-Reihenfolge gewinnt. */
 .as-tile { aspect-ratio: 3 / 4; }
