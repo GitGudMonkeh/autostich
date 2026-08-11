@@ -903,23 +903,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const goennMilestone = win && t && (t.winStreak || 0) >= STREAK_GOENN;
   const bigScore = goennMilestone ? GOENNDIR_TIER : (baseBigTier && t && t.grosseLawine ? LAWINE_TIER : baseBigTier);
 
-  // Ergebnis-Aufschlüsselung (§17): kompakte Faktorenkette (Basis → Flats → Serie → Perks → Formation → Crit)
-  // aus der Engine-breakdown — exakt die Faktoren der Score-Formel (kein Drift). Nur bei nennenswerten Treffern.
-  const bd = win && t ? t.breakdown : null;
-  const nq = (x) => x.toFixed(2).replace(".", ",");
-  const chain = [];
-  if (bd) {
-    chain.push({ main: `${bd.base}`, label: "Basis", c: "#c8c8ce" });
-    if (bd.flats > 0.5)        chain.push({ main: `+${Math.round(bd.flats)}`, label: "Flats", c: "#5ab87a" });
-    if (bd.streakMult > 1.001) chain.push({ main: `×${nq(bd.streakMult)}`, label: "Serie", c: "#5a8ade" });
-    if (bd.perkMult > 1.001)   chain.push({ main: `×${nq(bd.perkMult)}`, label: "Perks", c: "#8a7de0" });
-    if (bd.formMult > 1.001)   chain.push({ main: `×${nq(bd.formMult)}`, label: "Form", c: "#5ab87a" });
-    if ((bd.afterglowMult || 1) > 1.001) chain.push({ main: `×${nq(bd.afterglowMult)}`, label: "Nachhall", c: "#5ab87a" });
-    if ((bd.coreMult || 1) > 1.001)      chain.push({ main: `×${nq(bd.coreMult)}`, label: "Kern", c: "#d4a63a" });
-    if (bd.critMult > 1.001)   chain.push({ main: `×${nq(bd.critMult)}`, label: "Crit", c: critColor });
-  }
-  // Panel nur zeigen, wenn mehr als eine kleine Serie im Spiel ist (Flats/Perks/Formation/Crit oder Serie ≥ +10 %).
-  const showBreakdown = !!bd && (bd.flats > 0.5 || bd.perkMult > 1.001 || bd.formMult > 1.001 || (bd.afterglowMult || 1) > 1.001 || (bd.coreMult || 1) > 1.001 || bd.critMult > 1.001 || bd.streakMult >= 1.10);
+  // #ui: Die Ergebnis-Aufschlüsselung (Faktorenkette Basis/Flats/Serie/Form/Crit + Summe) wurde ENTFERNT — die
+  // Multiplikatoren sind im Spielfluss ohnehin nicht lesbar. Der gewonnene Score steigt weiter als Float aus der
+  // Karte auf, der Gesamt-Score steht in der StatusBar. Karten + Sieg/Niederlage-Ansage rücken dafür nach unten.
 
   // #49: aufsteigende Zahlen (Score-Gewinn & Lebensverlust) ~1 s länger + Überlappen erlaubt.
   // Statt eines je Stich ersetzten Einzel-Elements ein kleiner Pool — jeder Float lebt unabhängig
@@ -1300,7 +1286,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       )}
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin + das Stich-Juice reserviert. */}
-      <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-8">
+      <div className="relative z-10 mt-8 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
         {isCrit && (
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
@@ -1406,27 +1392,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         })}
       </div>
 
+      {/* Sieg/Niederlage-Ansage — sitzt jetzt tiefer (etwa dort, wo früher die Multiplikator-Leiste stand): die Karten
+          rücken per mt-8 nach unten, wodurch diese Ansage mitwandert und auf der alten Multiplikator-Höhe landet. */}
       <div className="relative z-10 h-8 mt-4 flex items-center justify-center">
         {banner ? (
           <span className="text-lg font-bold tracking-wide font-pixel as-banner" style={{ color: banner.color }}>{banner.text}</span>
         ) : (
           <span className="opacity-40 text-sm">Bereit — starte den Autobattler</span>
-        )}
-      </div>
-
-      {/* Treffer-Aufschlüsselung (§17): Faktorenkette des letzten nennenswerten Siegs. Feste Höhe → kein Layout-Sprung. */}
-      <div className="relative z-10 h-6 mt-1 flex items-center justify-center gap-2 text-[13px] flex-wrap font-pixel-dense">
-        {showBreakdown && (
-          <>
-            {chain.map((s, i) => (
-              <span key={i} className="whitespace-nowrap" style={{ color: s.c }}>
-                <span className="font-semibold">{s.main}</span>
-                <span className="opacity-45 ml-1">{s.label}</span>
-              </span>
-            ))}
-            <span className="opacity-25">=</span>
-            <span className="font-bold" style={{ color: isCrit ? critColor : "#e8e8ea" }}>{fmtScore(bd.total)}</span>
-          </>
         )}
       </div>
     </div>
