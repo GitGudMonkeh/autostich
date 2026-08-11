@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo, lazy, Suspense } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
-import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST } from "../game/constants.js";
+import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
@@ -10,6 +10,11 @@ import { useFxLevel } from "./useReducedFx.js";
 // Pixi-Umbau Phase 0/1: koexistierende GPU-Bühne. LAZY geladen → Pixi (~200 KB) landet in einem eigenen Chunk,
 // der NUR im Preview/Dev geladen wird (der Mount ist env-gegatet). Produktion (main) zieht Pixi nie in den Bundle.
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
+// Archetyp-Karteneffekt „Blitz" (Ionensturm-Rahmen) — eigener Pixi-Layer ÜBER den Karten, lazy wie oben.
+const IonStorm = lazy(() => import("./fx/IonStorm.jsx").then((m) => ({ default: m.IonStorm })));
+// Dev-Sicht: ?blitzframe=1 erzwingt den Ionensturm-Rahmen auf JEDER eigenen Karte (zum Designen; nur Preview/Dev).
+const BLITZ_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
+  (() => { try { return new URLSearchParams(window.location.search).get("blitzframe") === "1"; } catch { return false; } })();
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
@@ -683,6 +688,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
+  const playerCardRef = useRef(null); // #blitz: Box der eigenen Karte für den Ionensturm-Rahmen (IonStorm)
   const t = lastTrick;
   // Deck-Zähler zählt HOCH = 1-indizierte Deckposition der gerade gespielten Karte (t.originalPosition = actualPos,
   // 0..deckLen-1). Aus dem gezeigten Stich (nicht aus state.pos → das resettet am Durchlauf-Ende auf 0). Vor dem
@@ -799,7 +805,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Sieger kippt an (as-slice-winner); im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
   const playerFront = playerWinner ? <div style={winnerTilt(sWinner)}>{pCardEl}</div> : pCardEl;
   const playerCard = t ? (
-    <div key={`p${t.trickNo}`} className="relative"
+    <div key={`p${t.trickNo}`} ref={playerCardRef} className="relative"
       style={flyAway ? { animation: `as-flyaway ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
            : flipOn ? undefined : dealStyle("as-deal-left")}>
       {/* Krits zeigen GAR keinen Ergebnis-Puls mehr — nur das Shatter/der Schnitt (+ GOTTGLEICH). Nur normale Siege pulsen (grün). */}
@@ -1155,6 +1161,17 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             score={pixiFin ? Math.round((score || 0) / 20000) * 20000 : 0}
             reduced={reduced} lite={lite}
             sweepId={sweepId} sweepDur={sweepDur} win={win} hitTier={hitTier} />
+        </Suspense>
+      )}
+      {/* #blitz Archetyp-Karteneffekt A — Ionensturm-Rahmen: Blitze zucken um die eigene Karte, sobald sie VOLL
+          ionisiert (ionStacks >= ION_MAX_STACKS) und aufgedeckt ist. Eigener Pixi-Layer ÜBER den Karten (z-11).
+          Gate wie PixiStage (Preview/Dev) → Produktion bleibt pixel-identisch, bis der Rollout entschieden ist. */}
+      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
+        <Suspense fallback={null}>
+          <IonStorm
+            active={!!t && !flipOn && ((t.pCard.ionStacks || 0) >= ION_MAX_STACKS || BLITZ_FORCE)}
+            panelRef={panelRef} cardRef={playerCardRef}
+            color="#5ec8f0" reduced={reduced} />
         </Suspense>
       )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind

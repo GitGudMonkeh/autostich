@@ -96,14 +96,32 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
 > Vorlage je Effekt: **Was** (Optik) · **Wann** (Trigger) · **Wo** (Karte/Position/Layer) ·
 > **Parameter** (Farbe/Dichte/Dauer) · **Reduced/Mobile** · **Umsetzungs-Notizen** · **Status**.
 
-### 5.1 Blitz ⚡ (`lightning`) — Glow `#cf9bff`
-- **Was:** _(offen — vom User)_
-- **Wann:** _(offen — vom User)_
-- **Wo:** _(offen)_
-- **Parameter:** _(offen)_
-- **Reduced/Mobile:** _(offen)_
-- **Umsetzungs-Notizen:** _(kommt bei Umsetzung)_
-- **Status:** 🟡 Warte auf Spec
+### 5.1 Blitz ⚡ (`lightning`) — Glow `#cf9bff` · Ion-Blau `#5ec8f0`
+
+**Effekt A — „Ionensturm-Rahmen" (voll ionisierte Karte)**
+
+- **Was:** Um den Kartenrahmen zucken **Blitze** — ein *bewegter* Blitzrahmen: gezackte Bogen-
+  „Runner" wandern permanent an der Kartenkante entlang (mit hell-weißem Kern + farbigem Glow,
+  additiv), dazu ein leises Dauer-Knistern der ganzen Kontur. **Ab und an springt ein Blitz quer
+  über die Karte** (Cross-Arc, kurzer Flash mit gelegentlicher Gabelung).
+- **Wann:** Sobald eine Karte **voll ionisiert** ist (`ionStacks >= ION_MAX_STACKS`, = **5**).
+  Startort: **eigene Karte im Duell** (Battlefield), solange sie voll geladen & aufgedeckt ist.
+- **Wo:** Panel-Overlay **über** den Karten (z > 10), positioniert auf die eigene Kartenbox
+  (Ref am Karten-Wrapper), gemessen relativ zu `panelRef`. Eigener Pixi-`Application`-Layer
+  (nicht die Feld-`PixiStage`, die z-3 hinter den Karten liegt).
+- **Parameter (tunebar, Top des Moduls `TUNE`):** Farbe (Default Ion-Blau `#5ec8f0`, Kern Weiß;
+  Blitz-Lila `#cf9bff` als Alternative), Runner-Anzahl/-Speed/-Span, Zacken-Amplitude,
+  Reseed-Takt (Knister-Frequenz), Cross-Arc-Intervall/-Lebensdauer/-Gabel-Chance.
+- **Reduced/Mobile:** `reduced` → **statischer** gezackter Glow-Rahmen, kein Zucken/keine
+  Cross-Arcs (kein Flackern). Ticker läuft nur bei aktivem Voll-Ion & sichtbarem Tab (DPR ≤ 2).
+- **Umsetzungs-Notizen:**
+  - Neue Komponente `src/ui/fx/IonStorm.jsx` (Pixi `Application` + `Graphics`, additiver Blend).
+    Prozeduraler Rounded-Rect-Perimeter-Sampler → gezackte Runner + Hum + Cross-Arcs; Jitter
+    deterministisch per Hash (kein Per-Frame-RNG-Sturm).
+  - Battlefield: `playerCardRef` am eigenen Karten-Wrapper ergänzt; `IonStorm` im Panel gemountet,
+    `active = voll-ionisiert && aufgedeckt`. Gate wie `PixiStage`: nur Preview/Dev (Prod bleibt
+    pixel-identisch, bis Rollout entschieden ist).
+- **Status:** 🟢 v1 gebaut (Preview/Dev) — Feinschliff Look/Farbe nach Sichtung offen.
 
 ### 5.2 Feuer 🔥 (`fire`) — Glow `#e0714a`
 - **Status:** ⚪ Noch nicht dran
