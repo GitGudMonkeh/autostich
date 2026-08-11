@@ -38,8 +38,11 @@ const DEMO_C = "#35e0ff";
 // Showcase-Backdrop + Demo-Deckfarben PRO Feldeffekt — so sieht man später am Standard/Deckfarbe-Toggle den Unterschied:
 // Aurora auf Moonwhale (kühles Cyan/Blau), Glutfunken auf Feuer (rotes Deck). Andere Effekte: Standard-Backdrop/-Farbe.
 const PREVIEW_LOOK = {
-  aurora: { bf: "bf_wale",  a1: "#35d0ff", a2: "#7fdcff" }, // Moonwhale
-  embers: { bf: "bf_feuer", a1: "#ff5a2a", a2: "#ffb03a" }, // Feuer (rot)
+  aurora: { bf: "bf_wale",  a1: "#35d0ff", a2: "#7fdcff" }, // Moonwhale (kühl) — kontrastiert mit dem grünen Aurora-Standard
+  // #313-Folge: die Glutfunken-Showcase-Deckfarbe muss sich DEUTLICH vom warmen Standard-Feuer abheben, sonst wirkt der
+  // Standard↔Deckfarbe-Toggle wirkungslos. Ein rotes Feuer-Deck ist zu fire-nah → jetzt Kosmos (Magenta) auf dunklem
+  // Feld: Standard = oranges Feuer, Deckfarbe = Magenta — beide auf dem dunklen Kosmos-Feld klar sichtbar.
+  embers: { bf: "bf_kosmos", a1: "#ff4dcb", a2: "#7b5cff" },
 };
 
 // „Standard"-Pack (UI-seitig): aktiviert wieder das Grund-Deck/-Battlefield. kind:"std" → immer im Besitz.
@@ -246,8 +249,9 @@ function FinisherScene({ variant }) {
       <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
         <div key={tick} className="absolute inset-0">{fx}</div>
       </div>
-      {/* #312 Stufen-Label: zeigt, WELCHE Serienschwelle (Multiplikator) + Schnittrichtung gerade demonstriert wird. */}
-      <div className="absolute top-1.5 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold font-pixel"
+      {/* #312 Stufen-Label: zeigt, WELCHE Serienschwelle (Multiplikator) + Schnittrichtung gerade demonstriert wird.
+          #: unten-rechts, damit das „(aktiv)"-Ausgerüstet-Symbol oben-rechts es nicht verdeckt. */}
+      <div className="absolute bottom-1.5 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold font-pixel"
         style={{ background: "#0c0c10cc", border: "1px solid #2a2836", color: kstep.d === "z" ? "#8fd8ff" : "#cfccda" }}>
         {kMultLabel(kstep.m)} · {KLINGE_DIR_LABEL[kstep.d]}
       </div>
@@ -307,6 +311,11 @@ function FieldFxPreview({ effect, deckTint = false }) {
     return () => clearInterval(id);
   }, [effect, pixiEmbers]);
   const demoScore = effect === "embers" ? EMBER_DEMO_SCORES[emberStep] : 0;
+  // #313-Folge: Im DOM-Pfad (Produktion, FX_RENDERER=dom) kennt FieldFxLayer den deckTint NICHT und färbt die Glutfunken
+  // stur nach `color`. Darum hier die Ember-Farbe je Modus wählen — Standard = warmes Feuer (== Pixi-FIRE), Deckfarbe =
+  // Demo-Deckfarbe (look.a1). So schaltet der Standard↔Deckfarbe-Toggle die Showcase-Glutfunken sichtbar um.
+  // (Der Pixi-Vorschau-Pfad braucht das nicht — dort tönt der Emitter intern FIRE↔params.deck.)
+  const domColor = effect === "embers" && !deckTint ? "#ff6a30" : look.a1;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
@@ -324,7 +333,7 @@ function FieldFxPreview({ effect, deckTint = false }) {
           <AuroraFieldGL color={look.a1} color2={look.a2} deckColored={deckTint} animate />
         </div>
       )}
-      {effect !== "none" && !pixiField && !auroraGL && <FieldFxLayer effect={effect} color={look.a1} color2={look.a2} sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
+      {effect !== "none" && !pixiField && !auroraGL && <FieldFxLayer effect={effect} color={domColor} color2={look.a2} sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
       {effect === "embers" && (
         <div className="absolute right-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
           style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#ffd7b0" }}>
