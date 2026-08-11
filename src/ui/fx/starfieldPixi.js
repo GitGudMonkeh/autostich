@@ -214,9 +214,10 @@ export function createStarfield(app) {
     void win;
     const t = clamp(tier | 0, 0, 4);
     const size = TIER_SIZE[t];
-    // Bahn: Start oben (leicht streuend), diagonal nach unten (zufällig links/rechts), voller Feld-Durchlauf.
+    // Bahn: Start oben (leicht streuend), diagonal nach unten (zufällig links/rechts). Etwas steilere Winkel als früher,
+    // damit die Schnuppe zuverlässig UNTEN im sichtbaren Feld landet (Einschlag am unteren Rand statt seitlich raus).
     const dir = Math.random() < 0.5 ? 1 : -1;
-    const ang = (24 + Math.random() * 22) * Math.PI / 180;                 // 24..46° unter der Waagerechten
+    const ang = (40 + Math.random() * 25) * Math.PI / 180;                 // 40..65° unter der Waagerechten (steiler = landet unten)
     comets.push({
       nx0: dir > 0 ? 0.02 + Math.random() * 0.28 : 0.70 + Math.random() * 0.28, // Startpunkt (normiert)
       ny0: 0.04 + Math.random() * 0.30,
@@ -264,17 +265,22 @@ export function createStarfield(app) {
     // Schnuppen: Kopf entlang der Bahn, Schweif als glatter, getaperter Sample-Streak dahinter (GERADE, kein Zickzack);
     // Impact am Bahnende (ab Tier ≥ 1).
     let ti = 0; // laufender Index in den Schweif-Pool
-    const pathLen = Math.hypot(W, H) * 0.95;
+    const groundY = H * 0.94;                 // unterer Rahmenrand — HIER schlägt die Schnuppe ein (Funken knapp innen sichtbar)
     const glow = 0.7 + 0.3 * TUNE.SHOOT_GLOW; // Halo-Verbreiterung des Streaks
     for (let ci = comets.length - 1; ci >= 0; ci--) {
       const c = comets[ci];
       c.age += dt;
       if (c.age >= c.life) { comets.splice(ci, 1); continue; }
       const prog = c.age / c.life;                                   // 0..1 entlang der Bahn
-      const env = Math.min(1, prog / 0.08) * Math.min(1, (1 - prog) / 0.12); // sanftes Ein-/Ausblenden
+      const env = Math.min(1, prog / 0.08) * Math.min(1, (1 - prog) / 0.08); // Ein-/Ausblenden; Kopf bei IMP_AT noch voll hell
+      const startY = c.ny0 * H;
+      // Bahnlänge pro Komet so, dass der Kopf bei prog = IMP_AT GENAU am unteren Rand (groundY) ankommt → der Einschlag
+      // liegt im sichtbaren Feld statt weit unterhalb. Danach läuft der Kopf noch ein Stück raus und fadet.
+      const pathLen = (groundY - startY) / (c.dy * TUNE.IMP_AT);
       const hx = (c.nx0 * W) + c.dx * pathLen * prog;
-      const hy = (c.ny0 * H) + c.dy * pathLen * prog;
-      if (!c.impacted && prog >= TUNE.IMP_AT) { c.impacted = true; impact(hx, hy, sc, c.imp, headInt); }
+      const hy = startY + c.dy * pathLen * prog;
+      // Einschlag am unteren Rand (x in den sichtbaren Bereich geklemmt, y = groundY), damit Blitz + Funken immer sichtbar sind.
+      if (!c.impacted && prog >= TUNE.IMP_AT) { c.impacted = true; impact(clamp(hx, W * 0.06, W * 0.94), groundY, sc, c.imp, headInt); }
       const trailLen = TUNE.TRAIL_LEN * c.size * sc;
       const headFoot = TUNE.HEAD_SIZE * c.size * sc * K_HEAD;
       const flick = TUNE.TRAIL_FLICK > 0 ? (1 - TUNE.TRAIL_FLICK + TUNE.TRAIL_FLICK * (0.5 + 0.5 * Math.sin(clock * 40 + c.seed))) : 1;

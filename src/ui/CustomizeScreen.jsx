@@ -43,9 +43,10 @@ const PREVIEW_LOOK = {
   // Standard↔Deckfarbe-Toggle wirkungslos. Ein rotes Feuer-Deck ist zu fire-nah → jetzt Kosmos (Magenta) auf dunklem
   // Feld: Standard = oranges Feuer, Deckfarbe = Magenta — beide auf dem dunklen Kosmos-Feld klar sichtbar.
   embers: { bf: "bf_kosmos", a1: "#ff4dcb", a2: "#7b5cff" },
-  // #311: Sternenfeld ist von Haus aus weiß-blau → die Deck-Demo muss warm/rot kontrastieren, damit der
-  // Standard↔Deckfarbe-Toggle sichtbar schaltet. Auf dem dunklen Kosmos-Feld poppen beide Varianten.
-  starfield: { bf: "bf_kosmos", a1: "#ff4d6a", a2: "#ffb1c0" },
+  // #311: Sternenfeld ist von Haus aus weiß-blau. Damit die Deck-Demo mit dem Weiß-Blau KONTRASTIERT (Toggle sichtbar)
+  // UND nicht mit dem Hintergrund clasht, läuft es auf dem NEUTRALEN Genesis-Feld (statt Kosmos-Magenta) mit einer
+  // warmen Bernstein-Deckfarbe — warm auf neutral-dunkel passt zusammen und hebt sich klar vom kühlen Standard ab.
+  starfield: { bf: SHOWCASE_BF, a1: "#ff9d3c", a2: "#ffd08a" },
 };
 
 // „Standard"-Pack (UI-seitig): aktiviert wieder das Grund-Deck/-Battlefield. kind:"std" → immer im Besitz.
