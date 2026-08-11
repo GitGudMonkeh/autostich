@@ -35,6 +35,12 @@ const TUNE = {
   GLOW_A: 1.5,      // Glüh-Boost der farbigen Glut-Partikel (Faktor auf die additive Alpha, final auf 1 gedeckelt)
   CRUST_P: 0.12,    // Anteil dunkler Krusten-Brocken
   MAXGLOW: 2200, MAXCRUST: 560, MAXVENT: 10,   // Pools groß genug für die große Gottgleich-Fontäne. MAXVENT = Obergrenze gleichzeitiger Vents.
+  // Boden-Bounce: fallende Glut/Krusten prallen an der Emissionslinie (fy) kurz zweimal niedrig ab, dann faden sie aus.
+  BOUNCE_N: 2,        // Anzahl Bounces vor dem Ausfaden
+  BOUNCE_REST: 0.3,   // Restitution: Anteil der Fallgeschwindigkeit, der zurückprallt
+  BOUNCE_FRIC: 0.5,   // seitliche Dämpfung (vx) pro Bounce
+  BOUNCE_VMAX: 260,   // Deckel der Aufwärtsgeschwindigkeit nach Bounce (px/s, *sc) → hält die Hüpfhöhe niedrig
+  BOUNCE_FADE: 0.18,  // Rest-Lebenszeit (s) nach dem letzten Bounce → sanftes Verlöschen statt hartem Pop
 };
 
 // Farb-Modus der Glut: „Standard" = warmes Feuer, unabhängig von der Deckfarbe · „Deckfarbe" = deck-getönt.
@@ -94,6 +100,17 @@ function makeRadial(stops) {
   return Texture.from(c);
 }
 
+// Boden-Bounce eines fallenden Partikels an der Emissionslinie fy: kehrt vy gedeckelt um (niedriger Hüpfer),
+// bremst vx, zählt Bounces; nach dem letzten Bounce wird die Restlebenszeit gekappt → sanftes Ausfaden.
+function bounceParticle(s, fy, sc) {
+  if (s.vy > 0 && s.y >= fy && s.bounces < TUNE.BOUNCE_N) {
+    s.y = fy;
+    s.vy = -Math.min(Math.abs(s.vy) * TUNE.BOUNCE_REST, TUNE.BOUNCE_VMAX * sc);
+    s.vx *= TUNE.BOUNCE_FRIC;
+    if (++s.bounces >= TUNE.BOUNCE_N) s.life = Math.min(s.life, s.age + TUNE.BOUNCE_FADE);
+  }
+}
+
 export function createEmberField(app) {
   const glowTex   = makeRadial([[0, 1], [0.42, 1], [0.6, 0.16], [1, 0]]);    // Glut: größerer solider Kern + knapper Halo → knackig, wenig Wash
   const crustTex  = makeRadial([[0, 1], [0.55, 0.9], [0.85, 0.35], [1, 0]]); // Brocken: kompakter, dunkel getönt
@@ -151,11 +168,11 @@ export function createEmberField(app) {
       const v0 = (320 + Math.pow(Math.random(), 1.7) * 430) * (1 + v.stufe * 0.1) * (0.72 + 0.28 * env) * sc * vsc;
       const s = grabCrust(); s.x = x + (Math.random() - 0.5) * W * 0.05 * sp; s.y = y0;
       s.vx = Math.cos(ang) * v0; s.vy = Math.sin(ang) * v0; s.age = 0; s.life = 1.25 + Math.random() * 0.7;
-      s.sz = 1.7 + Math.random() * 2.0; s.drag = 0.6; s.seed = Math.random() * 6.28; s.grav = 1.12;
+      s.sz = 1.7 + Math.random() * 2.0; s.drag = 0.6; s.seed = Math.random() * 6.28; s.grav = 1.12; s.bounces = 0;
       return;
     }
     const core = r < TUNE.CRUST_P + 0.44 ? false : true;  // ~44% body, ~38% core
-    const s = grabGlow(); s.seed = Math.random() * 6.28;
+    const s = grabGlow(); s.seed = Math.random() * 6.28; s.bounces = 0; s.canBounce = true;
     if (core) {  // schmale, schnelle Kernsäule → dünner heißer Kopf oben
       const ang = -Math.PI / 2 + (Math.random() - 0.5) * 0.12 + v.side * 0.10;
       const v0 = (860 + Math.random() * 330) * (1 + v.stufe * 0.13) * (0.72 + 0.28 * env) * sc * vsc;
@@ -171,7 +188,7 @@ export function createEmberField(app) {
     }
   }
   function spawnFlame(v, sc, W, fy) {  // Flammen-Zunge am Austritt: niedrig, weich, orange, kurzlebig
-    const s = grabGlow();
+    const s = grabGlow(); s.canBounce = false;   // Flammen steigen nur und verlöschen → kein Boden-Bounce
     s.x = v.x * W + (Math.random() - 0.5) * W * 0.045 * (v.spread || 1); s.y = fy - Math.random() * 2;
     s.vx = (Math.random() - 0.5) * 60 * sc; s.vy = -(120 + Math.random() * 180) * sc;
     s.age = 0; s.life = 0.4 + Math.random() * 0.45; s.sz = 2.3 + Math.random() * 2.5; s.drag = 0.82; s.seed = Math.random() * 6.28; s.hot = 0.84; s.grav = 1;
@@ -247,6 +264,7 @@ export function createEmberField(app) {
       if (s.age >= s.life || s.y > H + 30) { s.alive = false; s.p.alpha = 0; continue; }
       s.vy += TUNE.G_REF * sc * dt * s.grav; s.vx -= s.vx * s.drag * dt;
       s.x += s.vx * dt; s.y += s.vy * dt;
+      if (s.canBounce) bounceParticle(s, fy, sc);
       const lifeF = 1 - s.age / s.life;
       const heat = clamp(lifeF * s.hot, 0, 1);
       const flick = 0.85 + 0.15 * Math.sin(clock * 30 + s.seed);
@@ -262,6 +280,7 @@ export function createEmberField(app) {
       if (s.age >= s.life || s.y > H + 30) { s.alive = false; s.p.alpha = 0; continue; }
       s.vy += TUNE.G_REF * sc * dt * s.grav; s.vx -= s.vx * s.drag * dt;
       s.x += s.vx * dt; s.y += s.vy * dt;
+      bounceParticle(s, fy, sc);   // Krusten-Brocken bouncen immer
       const lifeF = 1 - s.age / s.life;
       const flick = 0.85 + 0.15 * Math.sin(clock * 24 + s.seed);
       const foot = s.sz * 2 * (0.9 + 0.35 * lifeF) * 1.4;
