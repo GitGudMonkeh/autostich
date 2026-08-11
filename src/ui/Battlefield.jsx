@@ -665,7 +665,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
-  deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false,
+  deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false, starfieldDeck = false,
   // #finisher: gewählter Sieg-Finisher — "standard" (Gratis-Default: Verliererkarte fliegt zur Seite weg + höherer
   // Flip-Sound) oder "klinge" (choreografierter Klingen-Schnitt). Default = "standard".
   finisher = "standard",
@@ -1157,7 +1157,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             effect={pixiFin ? bgFinisher : null}
             color={deckA1 || "#ffffff"}
             color2={deckA2 || "#b06bff"}
-            deckTint={emberDeck}
+            deckTint={bgFinisher === "starfield" ? starfieldDeck : emberDeck}
             score={pixiFin ? Math.round((score || 0) / 20000) * 20000 : 0}
             reduced={reduced} lite={lite}
             sweepId={sweepId} sweepDur={sweepDur} win={win} hitTier={hitTier} />

@@ -500,6 +500,7 @@ export function Autostich() {
     finisher: options.finisher || "standard", // #finisher: gewählter Sieg-Finisher (standard=Wegflug|klinge)
     auroraDeck: !!options.fxAuroraDeck, // Aurora-Farbmodus: false = Standard-Palette, true = Deckfarbe
     emberDeck: !!options.fxEmberDeck,   // Glutfunken-Farbmodus: false = warmes Feuer, true = Deckfarbe
+    starfieldDeck: !!options.fxStarfieldDeck, // #311 Sternenfeld-Farbmodus: false = Weiß-Blau, true = Deckfarbe
   };
 
   function beginRun() {
@@ -757,7 +758,7 @@ export function Autostich() {
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
                 deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck} emberDeck={deckFx.emberDeck}
-                finisher={deckFx.finisher}
+                starfieldDeck={deckFx.starfieldDeck} finisher={deckFx.finisher}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}

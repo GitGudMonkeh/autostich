@@ -43,6 +43,9 @@ const PREVIEW_LOOK = {
   // Standard↔Deckfarbe-Toggle wirkungslos. Ein rotes Feuer-Deck ist zu fire-nah → jetzt Kosmos (Magenta) auf dunklem
   // Feld: Standard = oranges Feuer, Deckfarbe = Magenta — beide auf dem dunklen Kosmos-Feld klar sichtbar.
   embers: { bf: "bf_kosmos", a1: "#ff4dcb", a2: "#7b5cff" },
+  // #311: Sternenfeld ist von Haus aus weiß-blau → die Deck-Demo muss warm/rot kontrastieren, damit der
+  // Standard↔Deckfarbe-Toggle sichtbar schaltet. Auf dem dunklen Kosmos-Feld poppen beide Varianten.
+  starfield: { bf: "bf_kosmos", a1: "#ff4d6a", a2: "#ffb1c0" },
 };
 
 // „Standard"-Pack (UI-seitig): aktiviert wieder das Grund-Deck/-Battlefield. kind:"std" → immer im Besitz.
@@ -310,7 +313,7 @@ function StandardFinisherScene() {
 function GlobalFxScenePreview({ fx, deckTint = false }) {
   // #kategorien: Hintergrund-Effekt (Aurora) / Hintergrund-Finisher (Glutfunken) / „Kein Feld-Effekt": echte
   // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
-  if (["aurora", "embers", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
+  if (["aurora", "embers", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
   if (fx.preview === "gottStandard") return <GottgleichPreview />;
   if (fx.preview === "standard") return <StandardFinisherScene />;
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
@@ -352,11 +355,11 @@ function FieldFxPreview({ effect, deckTint = false }) {
     const isEmbers = effect === "embers";
     const id = setInterval(() => {
       setSweep((s) => s + 1);
-      if (pixiEmbers) setTierStep((s) => (s + 1) % EMBER_TIER_LABELS.length);
+      if (pixiField) setTierStep((s) => (s + 1) % EMBER_TIER_LABELS.length); // #311: alle Pixi-Feldeffekte (Glutfunken/Sternenfeld) durch die Tier-Leiter eskalieren
       else if (isEmbers) setEmberStep((s) => (s + 1) % EMBER_DEMO_SCORES.length);
     }, isEmbers ? (pixiEmbers ? 1600 : 2000) : 1500);
     return () => clearInterval(id);
-  }, [effect, pixiEmbers]);
+  }, [effect, pixiField, pixiEmbers]);
   const demoScore = effect === "embers" ? EMBER_DEMO_SCORES[emberStep] : 0;
   // #313-Folge: Im DOM-Pfad (Produktion, FX_RENDERER=dom) kennt FieldFxLayer den deckTint NICHT und färbt die Glutfunken
   // stur nach `color`. Darum hier die Ember-Farbe je Modus wählen — Standard = warmes Feuer (== Pixi-FIRE), Deckfarbe =
@@ -371,8 +374,8 @@ function FieldFxPreview({ effect, deckTint = false }) {
       {pixiField && (
         <Suspense fallback={null}>
           <PixiStage className="absolute inset-0 z-[2]" effect={effect} color={look.a1} color2={look.a2} deckTint={deckTint}
-            score={pixiEmbers ? 250000 : demoScore} reduced={false} lite={false}
-            sweepId={sweep} sweepDur={1100} win hitTier={pixiEmbers ? tierStep : 0} />
+            score={pixiField ? 250000 : demoScore} reduced={false} lite={false}
+            sweepId={sweep} sweepDur={1100} win hitTier={pixiField ? tierStep : 0} />
         </Suspense>
       )}
       {auroraGL && (
@@ -381,10 +384,10 @@ function FieldFxPreview({ effect, deckTint = false }) {
         </div>
       )}
       {effect !== "none" && !pixiField && !auroraGL && <FieldFxLayer effect={effect} color={domColor} color2={look.a2} sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
-      {effect === "embers" && (
+      {(effect === "embers" || effect === "starfield") && (
         <div className="absolute right-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
-          style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#ffd7b0" }}>
-          {pixiEmbers
+          style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: effect === "starfield" ? "#cfe0ff" : "#ffd7b0" }}>
+          {pixiField
             ? (<><span className="opacity-70">Tier</span> {EMBER_TIER_LABELS[tierStep]}</>)
             : (<><span className="opacity-70">Score</span> {demoScore.toLocaleString("de-DE")}</>)}
         </div>
@@ -736,7 +739,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
-  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : null;
+  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : null;
   const deckTintOn = deckOpt ? !!options?.[deckOpt] : false;
   const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const price = globalFxPrice(fx);

@@ -151,21 +151,22 @@ describe("packs — Kauf-Ökonomie (#299: DP)", () => {
 });
 
 describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
-  // #cleanup: Es bleiben genau: Hintergrund-Effekt „Aurora" (bgfx) und Hintergrund-Finisher „Glutfunken" (bgfin).
-  // Klinge ist der einzige Sieg-Finisher (synthetisch, NICHT in GLOBAL_FX). Die Gottgleich-Kategorie bleibt im Shop
-  // (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge mehr (Prunk entfernt).
-  it("GLOBAL_FX führt NUR noch aurora und embers", () => {
-    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers"].sort());
+  // #cleanup: Es bleiben: Hintergrund-Effekt „Aurora" (bgfx) und die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
+  // (bgfin; #311 überarbeitet wieder eingeführt). Klinge ist ein synthetischer Sieg-Finisher (NICHT in GLOBAL_FX). Die
+  // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
+  it("GLOBAL_FX führt aurora, embers und starfield", () => {
+    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "starfield"].sort());
   });
   it("entfernte Effekte sind vollständig aus der Registry", () => {
-    for (const k of ["frameGlow", "holoSwipe", "auroraVeil", "glitch", "hologrid", "starfield", "scanline", "vignette",
+    // #311: starfield ist wieder da → NICHT mehr in dieser Entfernt-Liste.
+    for (const k of ["frameGlow", "holoSwipe", "auroraVeil", "glitch", "hologrid", "scanline", "vignette",
                      "laserSlice", "blackhole", "lasergrid", "burnBeam", "overload", "disperse", "klinge",
                      "fireworks", "goldRain", "prismaWave", "gottStandard"]) {
       expect(GLOBAL_FX_BY_KEY[k]).toBeUndefined();
     }
   });
-  it("#kategorien: aurora liegt in bgfx (reiner Hintergrund), embers in bgfin (Hintergrund-Finisher)", () => {
-    const GROUP = { aurora: "bgfx", embers: "bgfin" };
+  it("#kategorien: aurora liegt in bgfx (reiner Hintergrund), embers + starfield in bgfin (Hintergrund-Finisher)", () => {
+    const GROUP = { aurora: "bgfx", embers: "bgfin", starfield: "bgfin" };
     for (const [key, group] of Object.entries(GROUP)) {
       const fx = GLOBAL_FX_BY_KEY[key];
       expect(fx).toBeTruthy();

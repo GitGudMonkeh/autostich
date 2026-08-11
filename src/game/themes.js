@@ -27,16 +27,18 @@ import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress } from "./cosme
                   EXKLUSIV; die Auswahl erfolgt UI-seitig als Einfachauswahl).
      "gott"     = Gottgleicher Sieg OHNE Krit (Prunk-Overlays; stapelbar). */
 export const GLOBAL_FX = [
-  // #cleanup: Karten-Animationen (frameGlow/holoSwipe/auroraVeil/glitch), alle nicht-überarbeiteten Feld-Effekte
-  // (hologrid/starfield/scanline/vignette), alle Sieg-Finisher außer der Klinge (laserSlice/blackhole/lasergrid/
+  // #cleanup: Karten-Animationen (frameGlow/holoSwipe/auroraVeil/glitch), die nicht-überarbeiteten Feld-Effekte
+  // (hologrid/scanline/vignette), alle Sieg-Finisher außer der Klinge (laserSlice/blackhole/lasergrid/
   // burnBeam/overload/disperse) UND der Gottgleich-Prunk (fireworks/goldRain/prismaWave) wurden vollständig entfernt —
-  // sie werden ersetzt. Es bleiben: Hintergrund-Effekt „Aurora", Hintergrund-Finisher „Glutfunken" und der
-  // synthetische Klinge-Finisher. Die Gottgleich-Kategorie (group "gott") bleibt (nur „Standard"), dort kommt später
-  // neuer Prunk rein.
+  // sie werden ersetzt. Es bleiben: Hintergrund-Effekt „Aurora", die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
+  // (#311 überarbeitet wieder eingeführt) und der synthetische Klinge-Finisher. Die Gottgleich-Kategorie (group "gott")
+  // bleibt (nur „Standard"), dort kommt später neuer Prunk rein.
   { key: "aurora", name: "Aurora", desc: "Weiche Polarlicht-Schleier driften übers Feld; je Stich ein sanfter Bloom-Puls — in der Deckfarbe.",
     ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "bgfx" }, // #kategorien: Hintergrund-Effekt (reiner BG, Pixi)
   { key: "embers", name: "Glutfunken", desc: "Schwebende Glutpartikel steigen langsam auf; je Stich ein Funken-Aufstoß von unten — in der Deckfarbe.",
     ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 8, group: "bgfin" }, // #kategorien: Hintergrund-Finisher (Stich-Interaktion, Pixi)
+  { key: "starfield", name: "Sternenfeld", desc: "Ein dichtes Sternenfeld driftet über drei Tiefen-Ebenen mit Nebel-Schleier; je Stich zieht eine Sternschnuppe durchs Feld — größer je Score-Stufe, ab der Stufe Stark mit Einschlag-Blitz und Funken. Standard weiß-blau, wahlweise in der Deckfarbe.",
+    ownKey: "fx:starfield", option: "fxStarfield", preview: "starfield", price: 20, group: "bgfin" }, // #311: Hintergrund-Finisher (Stich-Interaktion, Pixi)
 ];
 export const GLOBAL_FX_BY_KEY = Object.fromEntries(GLOBAL_FX.map((f) => [f.key, f]));
 export const globalFxOwned = (profile, fx) => !!(profile && profile.ownedCosmetics && profile.ownedCosmetics[fx.ownKey]);
@@ -64,7 +66,7 @@ export const globalFxActive = (profile, options, key) => {
 export const auroraActive = (profile, options) => globalFxActive(profile, options, "aurora");
 export const embersActive = (profile, options) => globalFxActive(profile, options, "embers");
 export const BG_FX_KEYS  = ["aurora"];  // reiner Hintergrund
-export const BG_FIN_KEYS = ["embers"];  // Hintergrund-Finisher (reagiert je Stich)
+export const BG_FIN_KEYS = ["embers", "starfield"];  // Hintergrund-Finisher (reagiert je Stich; einfach-exklusiv)
 export function activeBgFx(profile, options) {
   for (const k of BG_FX_KEYS) if (globalFxActive(profile, options, k)) return k;
   return null;
