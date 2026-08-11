@@ -272,6 +272,14 @@ const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegn
 const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LINE = 220;
 // #302b Showcase-Sound je One-Shot-Finisher (persistente Loop-Effekte Burn/Blackhole laufen separat als Loop-Bett).
 const FIN_SFX = { klinge: "fx_blade", laser: "fx_laser", lasergrid: "fx_lasergrid", overload: "fx_lightning", disperse: "fx_atomize" }; // shatter: (kein eigener SFX)
+// #klinge-showcase: fester Choreo-Fahrplan der Klinge-Vorschau — je Serienschwelle der VOLLE Richtungs-Zyklus
+// (links zuerst) am Stück, danach die nächste Stufe. m = Siegesserie-Multiplikator (bestimmt Wucht/Funken), d = Schnittrichtung.
+const KLINGE_SCHEDULE = [
+  { m: 1.0,  d: "left" },                                              // ×1,0  → nur LINKS (Grundzug)
+  { m: 1.25, d: "left" }, { m: 1.25, d: "right" },                    // ×1,25 → LINKS · RECHTS
+  { m: 1.5,  d: "left" }, { m: 1.5,  d: "right" }, { m: 1.5, d: "top" }, // ×1,5  → LINKS · RECHTS · OBEN
+  { m: 2.0,  d: "left" }, { m: 2.0,  d: "right" }, { m: 2.0, d: "top" }, { m: 2.0, d: "z" }, // ×2,0 → alle vier inkl. Z
+];
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
   const bf = battlefieldAssets(SHOWCASE_BF);
@@ -304,9 +312,11 @@ function FinisherScene({ variant }) {
   // und zeigt, wie der Richtungs-Zyklus wächst — nur LINKS → +RECHTS → +OBEN → +Z. Grundzug bleibt links, die Wucht
   // steigt mit dem Multiplikator (streak passend zur Stufe). Spiegelt exakt die In-Game-Logik (sliceMove).
   else {
-    const kmult = [1.0, 1.25, 1.5, 2.0][Math.floor(tick / 3) % 4];        // Multiplikator-Stufe (wechselt alle 3 Ticks)
-    const klen = kmult >= 2 ? 4 : kmult >= 1.5 ? 3 : kmult >= 1.25 ? 2 : 1;
-    const kdir = ["left", "right", "top", "z"][tick % klen];
+    // Explizite Choreo: jede Serienschwelle spielt ihren VOLLEN Richtungs-Zyklus von vorne (immer links zuerst)
+    // durch, bevor die nächste Stufe kommt. So sieht man ×1,0 (nur links), ×1,25 (links·rechts),
+    // ×1,5 (links·rechts·oben) und ×2,0 (alle vier inkl. Z) jeweils komplett — kein Phasen-Versatz mehr.
+    const kstep = KLINGE_SCHEDULE[tick % KLINGE_SCHEDULE.length];
+    const kdir = kstep.d, kmult = kstep.m;
     const kstreak = Math.round((kmult - 1) / 0.02);                       // passende Serie zur Multiplikator-Stufe (Wucht/Funken)
     fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={kdir} streak={kstreak} />;
   }

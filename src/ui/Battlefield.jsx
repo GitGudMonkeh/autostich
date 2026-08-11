@@ -137,7 +137,7 @@ const KLINGE_TUNE = {
   streakMax: 6,        // Deckel der Wucht-Steigerung
   rotFactor: 1,        // globaler Rotations-Faktor der Stücke
   zSlashFactor: 0.34,  // Z: Dauer je Einzel-Schlag (× cutDur) — blitzschnell
-  zSlashStep: 0.9,     // Z: Abstand zwischen den drei Schlägen (× cutDur) → drei klar getrennte Blitze
+  zSlashStep: 0.7,     // Z: Abstand zwischen den drei Schlägen (× cutDur) → drei klar getrennte Blitze; enger = Z zerteilt früher
   zOvershoot: 1.2,     // Z: Überschlag der Schläge über die Ecken hinaus
   sparkCount: 18,      // Funken bei Serie 1
   sparkPerStreak: 2,   // + Funken pro Serien-Schritt
@@ -1365,7 +1365,12 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
         // Laser-Treffer zerfallen NAH am Deck (wenig Drift); normaler Klingenschnitt driftet weiter ins Feld.
         const drad = inPlace ? 0 : g.laser ? 10 + Math.abs(fjitter(g.seed * 5 + 3, 12)) : 40 + Math.abs(fjitter(g.seed * 5 + 3, 26)); // Laser 10..22 · Klinge 40..66 px
         const drot = inPlace ? 0 : fjitter(g.seed * 7 + 5, 8);                // −8..8° leichte Rotation (nur Slice)
-        const driftDelay = g.rest + (inPlace ? 0 : g.cut);                    // Float-Away startet NACH dem Schnitt
+        // #klinge-z: Der Z-Schlag hält die Karte GANZ, bis alle drei Schläge durch sind (zHold), erst DANN berstet sie
+        // (SliceFx: pieces starten bei delay+holdMs). Der Float-Away muss diese Haltezeit mitnehmen, sonst driftet die
+        // Karte im Turbo schon weg, BEVOR sie überhaupt zerteilt ist. Andere Schnitte bersten sofort → +cut wie gehabt.
+        const zHoldMs = (!inPlace && g.fx === "slice" && g.sliceDir === "z")
+          ? Math.round((KLINGE_TUNE.zSlashStep * 2 + KLINGE_TUNE.zSlashFactor) * g.cut) : 0;
+        const driftDelay = g.rest + (inPlace ? 0 : Math.max(g.cut, zHoldMs)); // Float-Away startet NACH dem Schnitt (Z: nach dem Bersten)
         return (
           <div key={g.id} className="absolute inset-0 pointer-events-none" aria-hidden="true"
             style={{ animation: `as-loss-drift-rand ${g.float}ms cubic-bezier(0.2, 0.6, 0.3, 1) ${driftDelay}ms forwards`, willChange: "transform",
