@@ -32,7 +32,7 @@ const FRAG = [
   "  float t = uTime;",
   "  vec3 ac = vec3(0.0);",
   "  for(int i=0;i<3;i++){ float fi=float(i);",
-  "    float drift = t*(DRIFT*(1.0 + 0.57*fi));",
+  "    float drift = 0.35 * sin(t * DRIFT * 6.0 * (1.0 + 0.3*fi) + fi*2.1);", // oszillierend → wabert in place, wandert nicht weg
   "    float vanish = 0.5 + 0.10*sin(fi*2.0);",
   "    float depth = fi*0.5;",
   "    float ax = vanish + (uv.x - vanish) * (1.0 - PERSP*depth);",
@@ -44,8 +44,7 @@ const FRAG = [
   "    float vshape = smoothstep(-0.018, 0.004, hAbove) * exp(-max(hAbove,0.0)*WISP);",
   "    float clump = smoothstep(CLUMPLO, CLUMPLO+0.42, fbm(vec2(uv.x*3.2 + fi*7.0 + drift*3.0, 1.5)));",
   "    float rays = pow(clamp(fbm(vec2(uv.x*RAYF + drift*7.0 + fi*20.0, uv.y*1.0 - t*0.07)),0.0,1.0), RAYC);",
-  "    float env = smoothstep(0.0,0.05,uv.x)*smoothstep(1.0,0.95,uv.x);",
-  "    float v = vshape * clump*(0.15 + 0.85*rays) * env;",
+  "    float v = vshape * clump*(0.15 + 0.85*rays);",   // keine Seitenweiche → bündig bis zum Rahmen (links & rechts)
   "    float hcol = clamp(hAbove*2.1, 0.0, 1.0);",
   "    ac += auroraCol(hcol) * v;",
   "  }",
