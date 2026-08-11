@@ -64,7 +64,7 @@ function orderPacks(list, deckId) {
 /* Synthetische „Klinge"-Kachel: der Standard-Sieg-Finisher — immer im Besitz (kein Kauf), aber wählbar UND
    vorschaubar wie die anderen Finisher. Wird der Sieg-Finisher-Gruppe vorangestellt (analog „Gottgleich · Standard"). */
 const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "klinge", alwaysOwned: true,
-  desc: "Gegnerkarte wird beim Sieg zerschnitten — der Standard-Finisher (immer verfügbar)." };
+  desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte — mit jedem Sieg deiner Serie fährt sie aus einer neuen Richtung ein (rechts → links → oben → Z-Zickzack) und schneidet härter; eine Niederlage setzt die Serie zurück. Der Standard-Finisher (immer verfügbar)." };
 
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
@@ -296,11 +296,12 @@ function FinisherScene({ variant }) {
   const seed = tick * 3 + 1;
   const dTier = (tick % 4) + 1; // #300 Vorschau durchläuft die Wertdifferenz-Stufen 1→4 (zeigt die Intensitäts-Eskalation)
   let fx = null;
-  if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} laser />;
+  if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} laser />;
   else if (variant === "lasergrid") fx = <LaserGridFx cardEl={cardEl} color={suitCol} diceDur={FIN_HALVES} lineDur={FIN_LINE} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={1} scale={1} />;
   else if (variant === "overload") fx = <OverloadFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
   else if (variant === "disperse") fx = <DisperseFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
-  else fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} />; // klinge (Default)
+  // klinge (Default): die Vorschau läuft die SIEGESSERIE hoch (Serie 1→2→3→4 = rechts→links→oben→Z-Zickzack).
+  else fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={["right", "left", "top", "z"][tick % 4]} streak={(tick % 4) + 1} />;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}

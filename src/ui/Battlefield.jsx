@@ -113,6 +113,38 @@ function fxIntensity(gained) {
   const p = g <= 10000 ? 0 : Math.min(1, Math.log(g / 10000) / Math.log(50)); // log(500000/10000) = log(50) → 10k→0 … 500k→1
   return { p, tier };
 }
+// #klinge: choreografierte Klinge — die Stufe steigt mit der SIEGESSERIE (nicht mit dem Score). Jeder weitere
+// Sieg fährt die Klinge aus der nächsten Richtung ein, eine Niederlage setzt die Serie (t.winStreak) zurück:
+//   Serie 1 → RECHTS · 2 → LINKS · 3 → OBEN · 4 → Z-ZICKZACK · danach ↻ (Zyklus) bzw. bei Z halten.
+// Die Score-Höhe (BRUTAL/IRRE/GOTTGLEICH) hat KEINEN Einfluss auf diesen Effekt.
+const SLICE_MOVES = ["right", "left", "top", "z"]; // Zug-Reihenfolge über die Serie (Serie 1..4)
+const SLICE_PROGRESSION = "cycle";                 // nach Serie 4: "cycle" ↻ | "hold" (bei Z bleiben)
+function sliceMove(streak) {
+  if (streak <= 0) return "right";
+  return SLICE_PROGRESSION === "hold" ? SLICE_MOVES[Math.min(streak - 1, 3)] : SLICE_MOVES[(streak - 1) % 4];
+}
+// #klinge: Tuning-Set (aus dem Vorschau-Artifact; final justierbar). Alles serien- bzw. konstant-getrieben.
+const KLINGE_TUNE = {
+  baseDist: 46,        // Flugdistanz der Stücke bei Serie 1 (px)
+  streakBoost: 0.12,   // + pro Serien-Schritt: Stücke fliegen weiter + rotieren mehr
+  streakMax: 6,        // Deckel der Wucht-Steigerung
+  rotFactor: 1,        // globaler Rotations-Faktor der Stücke
+  zSlashFactor: 0.34,  // Z: Dauer je Einzel-Schlag (× cutDur) — ~3× so schnell wie ein normaler Schnitt
+  zSlashStep: 0.33,    // Z: Versatz zwischen den drei Schlägen (× cutDur) → sie fahren blitzschnell nacheinander durch
+  zOvershoot: 1.2,     // Z: Überschlag der Schläge über den Kartenrand
+  sparkCount: 18,      // Funken bei Serie 1
+  sparkPerStreak: 2,   // + Funken pro Serien-Schritt
+};
+// Serien-Eskalation: 1× bei Serie 1, gedeckelt bei streakMax.
+function sliceEsc(streak) {
+  const lvl = Math.min(Math.max(streak, 1), KLINGE_TUNE.streakMax);
+  return 1 + (lvl - 1) * KLINGE_TUNE.streakBoost;
+}
+// Ein Schnitt-Segment aus zwei Kartenanteil-Punkten (0..1) → Mittelpunkt (%), Länge (px) & Winkel (deg) im 104×144-Raum.
+function sliceSeg(p1, p2) {
+  const dx = (p2[0] - p1[0]) * 104, dy = (p2[1] - p1[1]) * 144;
+  return { cx: (p1[0] + p2[0]) / 2 * 100, cy: (p1[1] + p2[1]) / 2 * 100, len: Math.hypot(dx, dy), rot: Math.atan2(dy, dx) * 180 / Math.PI };
+}
 // #188: Farb-Rampe der Crit-Explosion je Stufe — Lila → Magenta → Warmgold → Weißgold (koppelt an die goldene Groß-Ansage).
 const CRIT_TIER_COLORS = ["#e879f9", "#e879f9", "#f472d0", "#ffc978", "#fff0b0"];
 // #192: Sieg-Farbrampe (Grün → Gold) für Screen-Effekte bei großen NORMALEN Siegen (ohne Crit) — bewusst
@@ -233,21 +265,61 @@ function FlipReveal({ front, backImage, dur }) {
   );
 }
 
+// #klinge: Geometrie der choreografierten Klinge je Einfahrrichtung (`dir`) & Serie (`streak`). Liefert die Karten-Stücke
+// (clip-path + Flugvektor über `as-boom-shard` --sx/--sy/--sr) und die Schnittlinien-Segmente (--cut-rot, optional
+// versetzt/gestaffelt). Die Wucht (Distanz/Drall) steigt über `sliceEsc(streak)`; die Score-Höhe fließt NICHT ein.
+//   right → klassische −24°-Diagonale · left → gespiegelte +24° · top → vertikaler Schnitt (Karte teilt sich LINKS/RECHTS)
+//   z     → schneller ZICKZACK (rechts-oben → mitte-links → unten-rechts), Karte reißt entlang des Zickzacks in zwei Stücke
+function sliceGeometry(dir, streak) {
+  const e = sliceEsc(streak), d = KLINGE_TUNE.baseDist * e, rf = KLINGE_TUNE.rotFactor, cutLen = 120;
+  switch (dir) {
+    case "left": // Klinge von LINKS → Diagonale +24°, Stücke spiegelverkehrt zu „right"
+      return { cuts: [{ rot: 24, len: cutLen }], pieces: [
+        { clip: "polygon(0 0, 100% 0, 100% 66%, 0 34%)", sx: d,  sy: -30 * e, sr: 16 * e * rf },
+        { clip: "polygon(0 34%, 100% 66%, 100% 100%, 0 100%)", sx: -d, sy: 60 * e, sr: -20 * e * rf } ] };
+    case "top": // Klinge von OBEN → (fast) vertikaler Schnitt, Karte teilt sich in LINKS/RECHTS
+      return { cuts: [{ rot: 90, len: cutLen }], pieces: [
+        { clip: "polygon(0 0, 52% 0, 48% 100%, 0 100%)", sx: -d, sy: 14, sr: -14 * e * rf },
+        { clip: "polygon(52% 0, 100% 0, 100% 100%, 48% 100%)", sx: d, sy: 14, sr: 14 * e * rf } ] };
+    case "z": { // Serie 4: DREI volle Schnitte (Zorro-Z) in EINER Animation — oben quer → Diagonale → unten quer, jeder
+                // geht ganz durch und ~3× so schnell wie ein Stich-Schnitt (drei passen in ein Schnitt-Budget). Danach
+                // zerfällt die Karte in vier saubere Ecken-Stücke.
+      const ov = KLINGE_TUNE.zOvershoot, step = KLINGE_TUNE.zSlashStep;
+      const c1 = sliceSeg([0, 0.24], [1, 0.24]); c1.fast = true; c1.stagger = 0;        // 1. Schlag: oben quer
+      const c2 = sliceSeg([1, 0.24], [0, 0.76]); c2.fast = true; c2.stagger = step;     // 2. Schlag: Diagonale (rechts-oben → links-unten)
+      const c3 = sliceSeg([0, 0.76], [1, 0.76]); c3.fast = true; c3.stagger = step * 2; // 3. Schlag: unten quer
+      [c1, c2, c3].forEach((c) => { c.len *= ov; });                                     // Überschlag über den Kartenrand
+      return { cuts: [c1, c2, c3], pieces: [
+        { clip: "inset(0 50% 50% 0)", sx: -d,       sy: -d * 0.8, sr: -24 * e * rf },
+        { clip: "inset(0 0 50% 50%)", sx: d,        sy: -d * 0.8, sr: 24 * e * rf },
+        { clip: "inset(50% 50% 0 0)", sx: -d * 0.9, sy: d,        sr: -28 * e * rf },
+        { clip: "inset(50% 0 0 50%)", sx: d * 0.9,  sy: d,        sr: 28 * e * rf } ] };
+    }
+    case "right":
+    default: // Klinge von RECHTS → klassische −24°-Diagonale (Grundzug, Serie 1)
+      return { cuts: [{ rot: -24, len: cutLen }], pieces: [
+        { clip: "polygon(0 0, 100% 0, 100% 34%, 0 66%)", sx: -d, sy: -30 * e, sr: -16 * e * rf },
+        { clip: "polygon(0 66%, 100% 34%, 100% 100%, 0 100%)", sx: d, sy: 60 * e, sr: 20 * e * rf } ] };
+  }
+}
+
 /* #177 Klingenschnitt: Overlay über der Verliererkarte (fixe 104×144-Box). Rendert zwei clip-path-Klone der
    Karte (Ober-/Unterteil entlang −24°), eine aus der Mitte wachsende Schnittlinie in Suit-Farbe und ~18 Funken
    (≈40 % weiß / 60 % Suit-Farbe, ein paar „Konfetti"-Rechtecke). Deterministisch aus `seed` (kein Math.random
    im Render, #68). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen in den nächsten Stich.
    Elemente entfernen sich mit dem Karten-Remount des nächsten Stichs (key nach trickNo) → kein Stapeln. */
-export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, tier = 0, scale = 1, laser = false }) {
-  // #188: score-skaliert. Kontinuierlich: Funkenzahl/-weite, Hälften-Distanz, Schnittlinien-Länge/Glow.
-  // Unlocks: ab BRUTAL (tier≥2) ein zweiter Kreuzschnitt, ab IRRE (tier≥3) zerfällt die Karte in VIER Teile
-  // statt zwei Hälften (optische Brücke zur Explosion). Screen-Effekte bleiben dem Crit vorbehalten (v2).
-  const sepMul = 1 + intensity * 0.6;   // Hälften/Viertel fliegen weiter
-  const radMul = 1 + intensity * 0.6;   // Funken streuen weiter
-  const N = Math.max(6, Math.round((18 + intensity * 14) * scale)); // 18..32 Funken, turbo-ausgedünnt (#200 A, Boden 6)
-  const cutLen = Math.round(120 * (1 + intensity * 0.4)); // Schnittlinie länger
-  const quarters = tier >= 3;           // IRRE+: vier Teile
-  const crossCut = tier >= 2;           // BRUTAL+: zweiter Kreuzschnitt
+export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, scale = 1, laser = false, dir = "right", streak = 0 }) {
+  // #188/#klinge: Die KLINGE ist als choreografierte Performance umgebaut: KEIN Doppelschnitt mehr auf EINE Karte —
+  // stattdessen wechselt die Einfahrrichtung (`dir`) über die SIEGESSERIE (Aufrufer wählt via sliceMove(streak)), und
+  // die Wucht steigt mit der Serie (sliceEsc). Die Score-Höhe fließt NICHT ein. Der LASER-Schnitt (laser) behält seine
+  // eigene, score-skalierte Charakteristik (Funkenzahl/-weite über `intensity`).
+  const e = sliceEsc(streak);           // Serien-Eskalation (nur Klinge; Laser ignoriert sie)
+  const sepMul = 1 + intensity * 0.6;   // Laser-Stück-Distanz (Klinge holt ihre Distanz aus sliceGeometry(streak))
+  const radMul = laser ? 1 + intensity * 0.6 : 1 + (e - 1) * 0.5;   // Funken-Streuung: Laser score-, Klinge serien-getrieben
+  const N = laser
+    ? Math.max(6, Math.round((18 + intensity * 14) * scale))        // Laser: 18..32, score-skaliert
+    : Math.max(6, Math.round((KLINGE_TUNE.sparkCount + (Math.min(Math.max(streak, 1), KLINGE_TUNE.streakMax) - 1) * KLINGE_TUNE.sparkPerStreak) * scale)); // Klinge: serien-skaliert
+  const cutLen = laser ? Math.round(120 * (1 + intensity * 0.4)) : 120; // Klinge: konstante Schnittlinie (score-unabhängig)
   const sparks = Array.from({ length: N }, (_, i) => {
     const ang = (i / N) * Math.PI * 2 + fjitter(seed * 3 + i * 7, 0.55); // gleichmäßiger Kranz + leichter Jitter
     const rad = (46 + Math.abs(fjitter(seed * 5 + i * 13, 70))) * radMul; // 46..116 px × Intensität
@@ -260,12 +332,18 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
     };
   });
   const ease = "cubic-bezier(0.3, 0.7, 0.3, 1)";
-  // Schnittlinie (Winkel als CSS-Var → zweiter Kreuzschnitt nutzt dasselbe Keyframe mit anderem --cut-rot).
-  const cutLine = (rot, key) => (
-    <div key={key} style={{ position: "absolute", left: "50%", top: "50%", width: cutLen, height: 3, marginLeft: -cutLen / 2, marginTop: -1.5,
-      background: color, borderRadius: 2, transformOrigin: "center", boxShadow: `0 0 ${(6 + intensity * 6).toFixed(0)}px ${color}, 0 0 ${(14 + intensity * 10).toFixed(0)}px ${color}aa`,
-      "--cut-rot": `${rot}deg`, animation: `as-cut-line ${cutDur}ms ease-out ${delay}ms both` }} />
-  );
+  // Schnittlinie (Winkel als CSS-Var → dasselbe Keyframe je Segment mit anderem --cut-rot). `opts` erlaubt versetzte
+  // Position (cx/cy %) + eigene Länge + zeitlichen Versatz (stagger × cutDur) → der Z-Schnitt zeichnet sich als 3 Segmente.
+  const cutLine = (rot, key, opts = {}) => {
+    const len = opts.len || cutLen;
+    const dur = opts.fast ? Math.round(cutDur * KLINGE_TUNE.zSlashFactor) : cutDur; // Z-Einzelschlag fährt blitzschnell durch
+    const stMs = Math.round((opts.stagger || 0) * cutDur);
+    return (
+      <div key={key} style={{ position: "absolute", left: `${opts.cx ?? 50}%`, top: `${opts.cy ?? 50}%`, width: len, height: 3, marginLeft: -len / 2, marginTop: -1.5,
+        background: color, borderRadius: 2, transformOrigin: "center", boxShadow: `0 0 ${(6 + intensity * 6).toFixed(0)}px ${color}, 0 0 ${(14 + intensity * 10).toFixed(0)}px ${color}aa`,
+        "--cut-rot": `${rot}deg`, animation: `as-cut-line ${dur}ms ease-out ${delay + stMs}ms both` }} />
+    );
+  };
 
   // LASER-SCHNITT (#deckshop): EIN Laser schießt über das GANZE Feld und trifft die Gegnerkarte; er kommt bei jedem
   // Sieg aus einer ANDEREN Richtung (volle 360°, deterministisch aus der Stich-Nr.). Die Karte teilt sich ENTLANG der
@@ -316,32 +394,18 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
   // `delay` (ms = Ruhe-Beat) + fill-mode `both`: die Karte liegt erst still, dann setzt der Schnitt ein — während der
   // Wartezeit zeigen die Teile den 0 %-Zustand (Karte ganz), Schnittlinie/Funken bleiben unsichtbar. Das Wegfloaten
   // übernimmt der Wrapper (as-loss-drift-rand) mit eigenem, späterem Delay (erst NACH dem Schnitt).
+  // #klinge: Geometrie aus der Einfahrrichtung — die Karten-Stücke (clip-path-Klone) fliegen über as-boom-shard weg,
+  // die Schnittlinien-Segmente wachsen über as-cut-line. Ein Klingen-Sieg = EIN Schnitt (die Choreografie entsteht über
+  // die WECHSELNDE Richtung aufeinanderfolgender Stiche, nicht über Mehrfachschnitte auf derselben Karte).
+  const geo = sliceGeometry(dir, streak);
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      {quarters ? (
-        // IRRE+: vier Viertel (2×2-clip), fliegen in die vier Ecken (as-boom-shard-Bahn: --sx/--sy/--sr, 0%/9%-Halt).
-        [{ clip: "inset(0 50% 50% 0)", dx: -1, dy: -1 }, { clip: "inset(0 0 50% 50%)", dx: 1, dy: -1 },
-         { clip: "inset(50% 50% 0 0)", dx: -1, dy: 1 }, { clip: "inset(50% 0 0 50%)", dx: 1, dy: 1 }].map((q, k) => {
-          const dist = 54 * sepMul;
-          return (
-            <div key={`q${k}`} className="absolute inset-0" style={{ clipPath: q.clip,
-              "--sx": `${(q.dx * dist).toFixed(1)}px`, "--sy": `${(q.dy * dist + 12).toFixed(1)}px`, "--sr": `${fjitter(seed * 7 + k * 5, 22)}deg`,
-              animation: `as-boom-shard ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
-          );
-        })
-      ) : (
-        <>
-          {/* Zwei Hälften — Klone der Verliererkarte, entlang der −24°-Schnittkante geteilt. Distanz via CSS-Var skaliert. */}
-          <div className="absolute inset-0" style={{ clipPath: "polygon(0 0, 100% 0, 100% 34%, 0 66%)",
-            "--half-tx": `${(-46 * sepMul).toFixed(1)}px`, "--half-ty": `${(-30 * sepMul).toFixed(1)}px`,
-            animation: `as-slice-top ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
-          <div className="absolute inset-0" style={{ clipPath: "polygon(0 66%, 100% 34%, 100% 100%, 0 100%)",
-            "--half-bx": `${(46 * sepMul).toFixed(1)}px`, "--half-by": `${(60 * sepMul).toFixed(1)}px`,
-            animation: `as-slice-bottom ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
-        </>
-      )}
-      {cutLine(-24, "cut1")}
-      {crossCut && cutLine(22, "cut2")}
+      {geo.pieces.map((p, k) => (
+        <div key={`sp${k}`} className="absolute inset-0" style={{ clipPath: p.clip,
+          "--sx": `${p.sx.toFixed(1)}px`, "--sy": `${p.sy.toFixed(1)}px`, "--sr": `${p.sr.toFixed(0)}deg`,
+          animation: `as-boom-shard ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+      ))}
+      {geo.cuts.map((c, k) => cutLine(c.rot, `cut${k}`, c))}
       {/* Funken aus dem Schnittzentrum. */}
       {sparks.map((s) => (
         <div key={s.i} style={{
@@ -1285,7 +1349,7 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
               ? <OverloadFx cardEl={cardEl} color={g.color} flipMs={g.flipMs} seed={g.seed} tier={g.dtier} scale={g.scale} />
               : isDisp
               ? <DisperseFx cardEl={cardEl} color={g.color} flipMs={g.flipMs} seed={g.seed} tier={g.dtier} scale={g.scale} />
-              : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} tier={g.fxTier} scale={g.scale} laser={g.laser} />}
+              : <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} laser={g.laser} dir={g.sliceDir} streak={g.streak} />}
           </div>
         );
       })}
@@ -1704,8 +1768,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     else if (burnActive && lost) setBurnPulse({ id: t.trickNo, kind: "loss" });
     // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
     if (win && !holeFinish) {   // Gegnerkarte verliert → Finisher-Ghost (Klinge/Laser/Lasergitter/Brennstrahl/Überladung/Zerstäubung) — auch bei Krit
+      const fxName = gridFinish ? "lasergrid" : burnFinish ? "burn" : overloadFinish ? "overload" : disperseFinish ? "disperse" : "slice";
+      // #klinge: Einfahrrichtung der Klinge aus der SIEGESSERIE (t.winStreak) — nur die reine Klinge; der Laser-Schnitt und
+      // die anderen Finisher haben ihre eigene Optik. Serie 1→rechts, 2→links, 3→oben, 4→Z, danach ↻ (sliceMove).
+      const sliceDir = (fxName === "slice" && !fxLaserSlice) ? sliceMove(t.winStreak || 0) : "right";
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
-        fx: gridFinish ? "lasergrid" : burnFinish ? "burn" : overloadFinish ? "overload" : disperseFinish ? "disperse" : "slice",
+        fx: fxName, sliceDir,
         dtier: diffTier, // #300 Wertdifferenz-Stufe (Überladung/Zerstäubung)
         laser: fxLaserSlice, // globaler Laser-Schnitt (nur normaler Schnitt)
         // #: Überladung — der Blitz nimmt die DECKFARBE an (nicht die Gegner-Suit-Farbe); alle anderen Finisher bleiben Suit-farbig.
