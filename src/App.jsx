@@ -665,7 +665,7 @@ export function Autostich() {
   const bfPe = useMemo(() => ({ linkedGroups }), [linkedGroups]);
 
   return (
-    <div className="relative min-h-screen w-full flex justify-center px-4 py-6">
+    <div className="app-root relative w-full flex justify-center">
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
           sichtbar (CSS), klick-durchlässig. */}
       <div className="crt-overlay" aria-hidden="true" />

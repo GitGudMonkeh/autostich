@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
 /* App-Grundstil — nach dem Tailwind-Import, damit diese Regeln gewinnen. */
-html, body { background:#141419; color:#e8e8ea; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+/* #314: iOS Safari vergrößert Text in manchen Layouts automatisch („text inflation") → Elemente wirken auf dem
+   iPhone zu groß. text-size-adjust: 100% pinnt die vom Layout gesetzte Größe (kein Effekt auf Desktop/Android). */
+html, body { background:#141419; color:#e8e8ea; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 * { box-sizing: border-box; }
 button { font-family: inherit; }
 ::-webkit-scrollbar { height:8px; width:8px; }
@@ -22,6 +24,21 @@ button { font-family: inherit; }
 .overlay-card {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+}
+
+/* #314 App-Root: iPhone-taugliche Höhe + Positionierung.
+   - min-height: 100dvh (dynamische Viewport-Höhe) statt der Tailwind-`min-h-screen`-100vh → kein „Zu-hoch"/Sprung
+     durch die ein-/ausfahrende Safari-Adressleiste.
+   - Safe-Area-Insets als Padding (oben/unten/seitlich): der Inhalt lief bei `apple-mobile-web-app-status-bar-style:
+     black-translucent` bisher UNTER die Statusleiste/Notch/Dynamic Island (= „zu weit oben"). max(Basis, inset)
+     hält auf Nicht-Notch-Geräten die bisherige Polsterung und schiebt auf iPhones unter der Kamera-Insel weg.
+   Unlayered (nach @import tailwindcss) → gewinnt gegen Tailwinds min-h-screen/px-4/py-6. */
+.app-root {
+  min-height: 100dvh;
+  padding-top: max(1.5rem, env(safe-area-inset-top));
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
 }
 
 /* #perf-C: Overlay-Blur zentral kappen. Alle Modal-/Screen-Scrims sind vollflächige `fixed inset-0` bzw.
