@@ -269,8 +269,7 @@ function laserPieces(lines, W, H) {
 /* Eine Seite: gespielte Karte MIT Nachziehstapel dahinter (ragt nur nach außen).
    `overlay` = entkoppelter Layer im Karten-Slot (z. B. Niederlage-Ghosts), der NICHT pro Stich remountet
    (steht nach `children`, also im selben `relative`-Slot, aber außerhalb des trickNo-gekeyten Karten-Wrappers). */
-function Side({ label, remaining, position = 0, deckLen = 0, dealFrom, children, overlay = null, backImage = null, slotRef = null }) {
-  const dir = dealFrom === "left" ? -1 : 1;
+function Side({ label, remaining, position = 0, deckLen = 0, children, overlay = null, backImage = null, slotRef = null }) {
   const behind = Math.min(3, Math.max(0, remaining - 1));
   return (
     <div className="flex flex-col items-center gap-2 shrink-0">
@@ -279,8 +278,10 @@ function Side({ label, remaining, position = 0, deckLen = 0, dealFrom, children,
           remountet NICHT pro Stich und fliegt nicht weg → das Feuer (an slotRef verankert) brennt durchgängig weiter,
           statt bei jedem Sieg/Niederlage neu zu starten (die gespielte Karte darin flippt/fliegt, der Slot bleibt). */}
       <div ref={slotRef} className="relative" style={{ width: 104, height: 144 }}>
+        {/* #feuer: Nachziehstapel EXAKT unter der gespielten/geflippten Karte (kein seitlicher Versatz mehr) → Karte,
+            Deck und das an den Slot verankerte Feuer liegen genau aufeinander. */}
         {Array.from({ length: behind }, (_, i) => (
-          <div key={i} className="absolute top-0" style={{ left: dir * (i + 1) * 3 }}>
+          <div key={i} className="absolute top-0 left-0">
             <CardBack label="" image={backImage} />
           </div>
         ))}

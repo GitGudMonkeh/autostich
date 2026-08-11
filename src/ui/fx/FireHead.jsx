@@ -110,10 +110,10 @@ export function FireHead({ heat = 0, panelRef, cardRef }) {
       const cx = ox + CW / 2, margin = (1 - C.FLAME_SPREAD) * CW / 2, width = CW - 2 * margin;
       clock += dt;
 
-      // ── Kanten-Glühen (nach unten auf die Karte) ──
-      const gd = C.GLOW_DOWN * CH;
-      glow.x = ox + CW / 2; glow.y = oy; glow.width = CW; glow.height = gd;
-      glow.tint = rgbInt(lerpRGB(C.cEMBER, C.cCORE, 0.4)); glow.alpha = Math.min(1, 0.66 * C.GLOW_ALPHA);
+      // ── Kanten-Glühen ENTFERNT (#feuer): das warme Rechteck-Glühen auf der Karte las sich als leicht transparenter
+      //    orangener Rahmen um die Karte → komplett aus. Nur Flammen + Brennlinie bleiben. (glow-Sprite bleibt im Baum,
+      //    wird aber nie sichtbar; GLOW_DOWN/GLOW_ALPHA der Phasen sind damit wirkungslos.)
+      glow.alpha = 0;
 
       // ── Brennlinie am oberen Rand (verankert das Feuer) ──
       const baseF = Math.min(1.2, C.FLAME_RATE / 210), bucket = Math.floor(clock / 60);
