@@ -60,6 +60,8 @@ import fault_line from "../assets/music/fault_line.m4a";
 import drift_king from "../assets/music/drift_king.m4a";
 import neon_thunder from "../assets/music/neon_thunder.m4a";
 import neon_apocalypse from "../assets/music/neon_apocalypse.m4a";
+import fast_lane from "../assets/music/fast_lane.m4a";
+import chrome_runner from "../assets/music/chrome_runner.m4a";
 
 const MENU_TRACK = { title: "Relay of Multipliers", url: relay_of_multipliers }; // Main-Screen + Victory
 
@@ -116,6 +118,8 @@ const POOL = [
   { title: "Full Tilt", url: full_tilt, tier: "hot" },
   { title: "Neon Night Drive", url: neon_night_drive, tier: "hot" },
   { title: "Neon Overdrive", url: neon_overdrive, tier: "hot" },
+  { title: "Fast Lane", url: fast_lane, tier: "hot" },
+  { title: "Chrome Runner", url: chrome_runner, tier: "hot" },
   // overdrive
   { title: "Event Horizon", url: event_horizon, tier: "overdrive" },
   { title: "Circuit Overload", url: circuit_overload, tier: "overdrive" },
