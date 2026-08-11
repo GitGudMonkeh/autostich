@@ -37,6 +37,12 @@ const SHOWCASE_BF = "bf_onboarding";
 const CARD_RATIO = "1066 / 1476";
 // Demo-Farbe der Effekt-Vorschauen (in-game = Deck-/Suit-Farbe).
 const DEMO_C = "#35e0ff";
+// Showcase-Backdrop + Demo-Deckfarben PRO Feldeffekt — so sieht man später am Standard/Deckfarbe-Toggle den Unterschied:
+// Aurora auf Moonwhale (kühles Cyan/Blau), Glutfunken auf Feuer (rotes Deck). Andere Effekte: Standard-Backdrop/-Farbe.
+const PREVIEW_LOOK = {
+  aurora: { bf: "bf_wale",  a1: "#35d0ff", a2: "#7fdcff" }, // Moonwhale
+  embers: { bf: "bf_feuer", a1: "#ff5a2a", a2: "#ffb03a" }, // Feuer (rot)
+};
 
 // „Standard"-Pack (UI-seitig): aktiviert wieder das Grund-Deck/-Battlefield. kind:"std" → immer im Besitz.
 const STD_PACK = { id: "default", name: "Standard", kind: "std", a1: "#8a7de0", deckId: "default", bfId: "default", els: ["deck", "bf"] };
@@ -459,7 +465,8 @@ const EMBER_TIER_LABELS = ["Schwach", "Stark", "Brutal", "Irre", "Gottgleich"];
 // Der GPU-Emitter zeigt die Glutfunken als Eskalation — nur im Preview/Dev-Build mit „pixi"-Renderer; sonst DOM-Fassung.
 const EMBER_PIXI_PREVIEW = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi";
 function FieldFxPreview({ effect }) {
-  const bf = battlefieldAssets(SHOWCASE_BF);
+  const look = PREVIEW_LOOK[effect] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
+  const bf = battlefieldAssets(look.bf);
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
   const [sweep, setSweep] = useState(1);
@@ -488,17 +495,17 @@ function FieldFxPreview({ effect }) {
       {/* Pixi-Feldeffekte (Aurora/Sternenfeld/Glutfunken) auf der GPU-Bühne — sonst die DOM-Fassung (FieldFxLayer). */}
       {pixiField && (
         <Suspense fallback={null}>
-          <PixiStage className="absolute inset-0 z-[2]" effect={effect} color={DEMO_C} color2="#b06bff"
+          <PixiStage className="absolute inset-0 z-[2]" effect={effect} color={look.a1} color2={look.a2}
             score={pixiEmbers ? 250000 : demoScore} reduced={false} lite={false}
             sweepId={sweep} sweepDur={1100} win hitTier={pixiEmbers ? tierStep : 0} />
         </Suspense>
       )}
       {auroraGL && (
         <div className="absolute inset-0 z-[2] pointer-events-none">
-          <AuroraFieldGL color={DEMO_C} color2="#b06bff" animate />
+          <AuroraFieldGL color={look.a1} color2={look.a2} animate />
         </div>
       )}
-      {effect !== "none" && !pixiField && !auroraGL && <FieldFxLayer effect={effect} color={DEMO_C} color2="#b06bff" sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
+      {effect !== "none" && !pixiField && !auroraGL && <FieldFxLayer effect={effect} color={look.a1} color2={look.a2} sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
       {effect === "embers" && (
         <div className="absolute right-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
           style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#ffd7b0" }}>
