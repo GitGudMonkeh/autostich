@@ -129,7 +129,7 @@ function sliceMove(mult, seq) {                    // seq = per-Stich-Zähler (s
   return SLICE_MOVES[(seq | 0) % sliceCycleLen(mult)];
 }
 // #klinge: Tuning-Set (aus dem Vorschau-Artifact; final justierbar). Alles serien- bzw. konstant-getrieben.
-const KLINGE_TUNE = {
+export const KLINGE_TUNE = {
   baseDist: 46,        // Flugdistanz der Stücke bei Serie 1 (px)
   streakBoost: 0.12,   // + pro Serien-Schritt: Stücke fliegen weiter + rotieren mehr
   streakMax: 6,        // Deckel der Wucht-Steigerung
@@ -289,16 +289,16 @@ function sliceGeometry(dir, streak) {
       return { cuts: [{ rot: 90, len: cutLen }], pieces: [
         { clip: "polygon(0 0, 52% 0, 48% 100%, 0 100%)", sx: -d, sy: 14, sr: -14 * e * rf },
         { clip: "polygon(52% 0, 100% 0, 100% 100%, 48% 100%)", sx: d, sy: 14, sr: 14 * e * rf } ] };
-    case "z": { // ab ×2.0: DREI diagonale volle Schläge Ecke-zu-Ecke, abwechselnd (╲ ╱ ╲). Die ersten beiden bilden ein
-                // X → die Karte zerfällt entlang genau dieser Diagonalen in VIER Dreieck-Stücke (oben/rechts/unten/links),
-                // erst NACHDEM alle drei Schläge durch sind (`hold`). Deutlich gestaffelt → drei sichtbare Blitze.
+    case "z": { // #312 ab ×2.0: ZWEI diagonale volle Schläge Ecke-zu-Ecke (╲ ╱) → sie bilden ein X und teilen die Karte
+                // entlang genau dieser Diagonalen in VIER Dreieck-Stücke (oben/rechts/unten/links), erst NACHDEM beide
+                // Schläge durch sind (`hold`). Gestaffelt → zwei klar getrennte Blitze (Doppel-Slash) + zwei Sound-Hits.
       const DIAG = Math.atan2(144, 104) * 180 / Math.PI; // Karten-Diagonalwinkel (Ecke→Ecke) → Schlag deckt sich mit den Bruchkanten
       const step = KLINGE_TUNE.zSlashStep;
       const len = Math.hypot(104, 144) * KLINGE_TUNE.zOvershoot; // volle Diagonale + Überschlag → Schlag geht ganz durch
       const mk = (rot, stg) => ({ rot, len, cx: 50, cy: 50, stagger: stg, fast: true, thick: true });
       return {
-        cuts: [mk(DIAG, 0), mk(-DIAG, step), mk(DIAG, step * 2)],  // ╲ ╱ ╲
-        hold: step * 2 + KLINGE_TUNE.zSlashFactor,                // Karte hält (× cutDur), bis die 3 Schläge durch sind
+        cuts: [mk(DIAG, 0), mk(-DIAG, step)],                     // ╲ ╱ (X)
+        hold: step + KLINGE_TUNE.zSlashFactor,                    // Karte hält (× cutDur), bis beide Schläge durch sind
         pieces: [
           { clip: "polygon(0 0, 100% 0, 50% 50%)",       sx: 0,  sy: -d, sr: -14 * e * rf }, // oben
           { clip: "polygon(100% 0, 100% 100%, 50% 50%)", sx: d,  sy: 0,  sr: 14 * e * rf },  // rechts
@@ -627,7 +627,7 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
         // (SliceFx: pieces starten bei delay+holdMs). Der Float-Away muss diese Haltezeit mitnehmen, sonst driftet die
         // Karte im Turbo schon weg, BEVOR sie überhaupt zerteilt ist. Andere Schnitte bersten sofort → +cut wie gehabt.
         const zHoldMs = (g.sliceDir === "z")
-          ? Math.round((KLINGE_TUNE.zSlashStep * 2 + KLINGE_TUNE.zSlashFactor) * g.cut) : 0;
+          ? Math.round((KLINGE_TUNE.zSlashStep + KLINGE_TUNE.zSlashFactor) * g.cut) : 0;
         const driftDelay = g.rest + Math.max(g.cut, zHoldMs); // Float-Away startet NACH dem Schnitt (Z: nach dem Bersten)
         return (
           <div key={g.id} className="absolute inset-0 pointer-events-none" aria-hidden="true"
@@ -875,12 +875,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)),
       gain: CARDFLIP_GAIN_CONST,
     });
-    // Klinge-SFX (Akzent AUF dem cardflip): Rate an flipMs gekoppelt (wie cardflip) → kein Überlaufen/Stapeln in den
-    // nächsten Stich. Nach dem #cleanup gibt es nur noch den Klingen-Schnitt (fx_blade).
-    if (w && flipMs > 170) {
-      const fxRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
-      if (oppSliced) audio.play("fx_blade", { rate: fxRate, gain: 1.05 }); // Klinge
-    }
+    // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
+    // unten — dort ist die Einfahrrichtung (sliceDir) bekannt. So kann der Z-Schnitt seine ZWEI Slashes mit zwei
+    // synchronen Hits vertonen, und der Sound sitzt auf dem sichtbaren Schnitt (delay = rest) statt schon beim cardflip.
     const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
     // Treffer-Identitäten (Feuer/Pflanze/Eis/Blitz, mehrere zugleich möglich) → alle Icons + Score-Farbe.
     // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst Gold. Icons bleiben immer.
@@ -990,13 +987,23 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // #klinge: Der Z-Schlag (Serie 4) hält die Karte, bis die drei Schläge durch sind (zHold), erst dann berstet sie →
     // die Ghost-Lebensdauer muss diese Haltezeit mitnehmen, sonst wird der Zerfall abgeschnitten.
     const zHold = spawned.some((g) => g.sliceDir === "z")
-      ? Math.round((KLINGE_TUNE.zSlashStep * 2 + KLINGE_TUNE.zSlashFactor) * sCut) : 0;
+      ? Math.round((KLINGE_TUNE.zSlashStep + KLINGE_TUNE.zSlashFactor) * sCut) : 0;
     const ghostLife = sRest + zHold + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100;
     const tm = setTimeout(() => {
       setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
     }, ghostLife);
     ghostTimers.current.push(tm);
+    // #312: Klingen-Sound synchron zum sichtbaren Schnitt. Der Ghost slasht bei delay = sRest; der Z-Schnitt sind ZWEI
+    // Slashes (Stagger 0 und zSlashStep × cutDur) → zwei schnelle Hits exakt auf die beiden Slash-Zeitpunkte. Andere
+    // Richtungen: EIN Hit auf dem einzelnen Schnitt. Timer laufen über ghostTimers (Cleanup bei Unmount/Trickwechsel).
+    if (flipMs > 170) {
+      const fxRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
+      const isZ = spawned.some((g) => g.sliceDir === "z");
+      const bladeAt = (ms) => { const st = setTimeout(() => audio.play("fx_blade", { rate: fxRate, gain: 1.05 }), ms); ghostTimers.current.push(st); };
+      bladeAt(sRest);                                                       // erster Slash
+      if (isZ) bladeAt(sRest + Math.round(KLINGE_TUNE.zSlashStep * sCut));  // zweiter Slash (Z-Doppelschnitt)
+    }
     // #cleanup: GOTTGLEICH-Prunk-Overlays (Feuerwerk/Goldregen/Prisma-Welle) entfernt — die „gott"-Kategorie bleibt
     // im Shop (nur „Standard"), neuer Prunk kommt später.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft

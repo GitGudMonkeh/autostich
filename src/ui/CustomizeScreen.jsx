@@ -8,7 +8,7 @@ import {
   GLOBAL_FX, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
-import { SliceFx, FieldFxLayer, FX_RENDERER } from "./Battlefield.jsx";
+import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.jsx";
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora-Vorschau als eigene WebGL-Canvas (nicht Pixi)
@@ -195,7 +195,11 @@ function GottgleichPreview({ compact = false }) {
 /* Karten-Finisher-Vorschau: die ECHTEN In-Game-Komponenten (SliceFx/ExplosionFx) an einer Demo-Karte
    im Loop — Vorschau = In-Game (keine separate Engine, kein Drift). */
 const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
-const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LINE = 220;
+// #312: Vorschau spielt die Klinge 3× schneller ab — Animation UND Sound teilen dieselbe (durch 3 geteilte) Zeitbasis,
+// laufen also garantiert nicht auseinander. Basiswerte wie in-game, hier nur für die Vorschau beschleunigt.
+const FIN_SPEED = 3;
+const FIN_DELAY = Math.round(460 / FIN_SPEED), FIN_HALVES = Math.round(950 / FIN_SPEED), FIN_CUT = Math.round(130 / FIN_SPEED), FIN_SPARK = Math.round(950 / FIN_SPEED);
+const FIN_TICK_MS = Math.round(2400 / FIN_SPEED); // Loop-Takt ebenfalls 3× schneller
 // Showcase-Sound der Klinge (einziger verbliebener Sieg-Finisher).
 const FIN_SFX = { klinge: "fx_blade" };
 // #klinge-showcase: fester Choreo-Fahrplan der Klinge-Vorschau — je Serienschwelle der VOLLE Richtungs-Zyklus
@@ -204,29 +208,34 @@ const KLINGE_SCHEDULE = [
   { m: 1.0,  d: "left" },                                              // ×1,0  → nur LINKS (Grundzug)
   { m: 1.25, d: "left" }, { m: 1.25, d: "right" },                    // ×1,25 → LINKS · RECHTS
   { m: 1.5,  d: "left" }, { m: 1.5,  d: "right" }, { m: 1.5, d: "top" }, // ×1,5  → LINKS · RECHTS · OBEN
-  { m: 2.0,  d: "left" }, { m: 2.0,  d: "right" }, { m: 2.0, d: "top" }, { m: 2.0, d: "z" }, // ×2,0 → alle vier inkl. Z
+  { m: 2.0,  d: "left" }, { m: 2.0,  d: "right" }, { m: 2.0, d: "top" }, { m: 2.0, d: "z" }, // ×2,0 → alle vier inkl. Z-Schnitt
 ];
+const KLINGE_DIR_LABEL = { left: "Links", right: "Rechts", top: "Oben", z: "Z-Schnitt" };
+const kMultLabel = (m) => "×" + String(m).replace(".", ",");           // 1.25 → „×1,25"
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
   const bf = battlefieldAssets(SHOWCASE_BF);
+  const kstep = KLINGE_SCHEDULE[tick % KLINGE_SCHEDULE.length];
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 2400); // Loop: Karte erscheint → wird zerstört → Pause
+    const id = setInterval(() => setTick((t) => t + 1), FIN_TICK_MS); // Loop: Karte erscheint → wird zerteilt → Pause
     return () => clearInterval(id);
   }, []);
-  // Sound synchron zum Einschlag (≈ FIN_DELAY nach jedem Remount) mitspielen; respektiert Mute/Volume via audio-System.
+  // #312: Sound synchron zum sichtbaren Schnitt (bei FIN_DELAY). Der Z-Schnitt sind ZWEI Slashes → zwei schnelle Hits,
+  // exakt auf die beiden Slash-Zeitpunkte (0 und zSlashStep × cutDur). Alle Zeiten sind bereits 3×-skaliert → Sound
+  // zieht mit der Animation mit. Andere Richtungen: EIN Hit. Respektiert Mute/Volume über das audio-System.
   useEffect(() => {
     const sfx = FIN_SFX[variant];
     if (!sfx) return undefined;
-    const id = setTimeout(() => { audio.play(sfx, { gain: 1.0 }); }, FIN_DELAY);
-    return () => clearTimeout(id);
-  }, [tick, variant]);
+    const timers = [setTimeout(() => audio.play(sfx, { gain: 1.0 }), FIN_DELAY)];
+    if (kstep.d === "z") timers.push(setTimeout(() => audio.play(sfx, { gain: 1.0 }), FIN_DELAY + Math.round(KLINGE_TUNE.zSlashStep * FIN_CUT)));
+    return () => timers.forEach(clearTimeout);
+  }, [tick, variant, kstep.d]);
   const suitCol = suitColor(DEMO_SUIT);
   const cardEl = <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
   const seed = tick * 3 + 1;
   // klinge (einziger Finisher): die Vorschau fährt den Siegesserie-MULTIPLIKATOR stufenweise hoch (×1,0 → ×1,25 →
   // ×1,5 → ×2,0) und zeigt, wie der Richtungs-Zyklus wächst — jede Serienschwelle ihren VOLLEN Zyklus von vorne
   // (links zuerst). Spiegelt exakt die In-Game-Logik (sliceMove).
-  const kstep = KLINGE_SCHEDULE[tick % KLINGE_SCHEDULE.length];
   const kstreak = Math.round((kstep.m - 1) / 0.02);                       // passende Serie zur Multiplikator-Stufe (Wucht/Funken)
   const fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={kstep.d} streak={kstreak} />;
   return (
@@ -236,6 +245,11 @@ function FinisherScene({ variant }) {
       {/* Demo-Karte im echten 104×144-Slot, zentriert; die Finisher-Komponente rendert die Karte + Effekt darin. */}
       <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
         <div key={tick} className="absolute inset-0">{fx}</div>
+      </div>
+      {/* #312 Stufen-Label: zeigt, WELCHE Serienschwelle (Multiplikator) + Schnittrichtung gerade demonstriert wird. */}
+      <div className="absolute top-1.5 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold font-pixel"
+        style={{ background: "#0c0c10cc", border: "1px solid #2a2836", color: kstep.d === "z" ? "#8fd8ff" : "#cfccda" }}>
+        {kMultLabel(kstep.m)} · {KLINGE_DIR_LABEL[kstep.d]}
       </div>
     </div>
   );
