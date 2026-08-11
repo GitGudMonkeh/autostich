@@ -85,7 +85,11 @@ export function loadRunHistory() {
 // und brauchen keine Versionierung.
 // v2 (Progression/Upgrades, docs §9): das Profil bekommt die SP-/Baum-/Onboarding-Felder. Rein additiv, aber
 // als eigene Schema-Epoche markiert (Migrations-Anker für spätere Baum-Umformungen).
-export const PROFILE_SCHEMA_VERSION = 5;
+// v6 (#316): Onboarding-Phase entfernt — jedes Profil startet mit onboarding = ONBOARDING_LINKS (alle Archetypen,
+// Raritäts-Cap, Legendär-Phase + Genesis-Pack frei). Fresh-Start: 0 SP / 50 DP.
+export const PROFILE_SCHEMA_VERSION = 6;
+// #316 Start-Deckpunkte eines frischen Profils (früher 0). Onboarding ist weg → man startet direkt mit etwas DP.
+const START_DECK_POINTS = 50;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
   hadNoRerollRun: false, // #214: sticky Challenge-Flag (einmal true → bleibt); noReroll = Sparfuchs deck_c3. (#267: hadMonoStatRun entfernt — die Stat-Phase ist weg.)
@@ -95,9 +99,11 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   hadGottgleichRun: false, hadMeisterNoRerollRun: false, hadChampionWeek: false,
   // Progression/Upgrades (docs §1/§4/§6): SP-Guthaben + ausgegeben (Respec/Anzeige), gekaufte Baum-Knoten
   // ({[id]: level}), weiteste Onboarding-Stufe (0..6) und Zähler der SP-Läufe (Treue-Drip-Basis).
-  stichPoints: 0, stichSpent: 0, nodes: {}, onboarding: 0, spRuns: 0,
-  // #299 Deckpunkte (DP): zweite Währung für die Werkstatt-Packs. Guthaben + ausgegeben (Anzeige/Respec-los).
-  deckPoints: 0, deckSpent: 0,
+  // #316: onboarding startet direkt bei ONBOARDING_LINKS (6/6, „fertig") → keine Onboarding-Phase mehr, alle
+  // Post-Onboarding-Unlocks (Archetypen/Rarität/Legendär/Genesis) sofort frei. stichPoints = 0 (SP werden im Spiel verdient).
+  stichPoints: 0, stichSpent: 0, nodes: {}, onboarding: ONBOARDING_LINKS, spRuns: 0,
+  // #299 Deckpunkte (DP): zweite Währung für die Werkstatt-Packs. #316: Fresh-Start mit START_DECK_POINTS (50).
+  deckPoints: START_DECK_POINTS, deckSpent: 0,
   // Deck-Werkstatt (#deckshop): mit SP gekaufte Kosmetik-Elemente als Map "theme:element" → true
   // (z. B. "sunset:deck", "lofi:frameGlow"). Rein additiv, sticky (einmal gekauft → bleibt).
   ownedCosmetics: {} };
@@ -145,6 +151,13 @@ export function migrateProfile(p) {
     if (typeof out.hadMeisterNoRerollRun !== "boolean") out.hadMeisterNoRerollRun = false;
     if (typeof out.hadChampionWeek !== "boolean") out.hadChampionWeek = false;
     v = 5;
+  }
+  if (v < 6) {
+    // v5 → v6 (#316 Onboarding entfernt): bestehende Profile werden auf „Onboarding fertig" (ONBOARDING_LINKS) gehoben →
+    // alle Post-Onboarding-Unlocks frei, keine Onboarding-Phase mehr. NUR vorwärts (kein Rückschritt) und KEIN Währungs-
+    // Grant: Deckpunkte/SP bleiben unberührt (der 50-DP-Startbonus gilt nur für frische Profile über DEFAULT_PROFILE).
+    if ((Number(out.onboarding) || 0) < ONBOARDING_LINKS) out.onboarding = ONBOARDING_LINKS;
+    v = 6;
   }
   out.schemaVersion = v;
   return out;
