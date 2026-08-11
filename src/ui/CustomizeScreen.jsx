@@ -712,7 +712,11 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
   return (
     <div className="sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
       <div className="relative w-full rounded-xl overflow-hidden" style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a", boxShadow: "0 0 22px -10px #35e0ff66" }}>
-        <GlobalFxScenePreview key={fx.key} fx={fx} deckTint={deckTintOn} />
+        {/* #313: Der Key trägt den Farbmodus mit → beim Toggle Standard↔Deckfarbe remountet die Vorschau sofort
+            (frischer AuroraFieldGL-/PixiStage-Canvas mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
+            Farbwechsel nicht, man musste erst weg- und zurückwechseln. Für Effekte ohne Farbmodus bleibt deckTintOn
+            konstant false → Key stabil, kein unnötiger Remount. */}
+        <GlobalFxScenePreview key={`${fx.key}:${deckTintOn ? "deck" : "std"}`} fx={fx} deckTint={deckTintOn} />
         {/* Gruppen-Schild oben links */}
         <span className="absolute left-2 top-2 text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-md"
           style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{group.title}</span>
