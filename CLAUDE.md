@@ -13,8 +13,66 @@ und die Antwort abwarten, bevor irgendetwas geändert wird.
 
 ## Aktive Branches (Stand 2026-08-11)
 
-- `Autostich/pixi` — Pixi/WebGL-Umbau (aktuelle Effekt-Arbeit; Merge-Ziel: `Autostich_Test`)
+- `Autostich/pixi` — Pixi/WebGL-Umbau + laufende Effekt-/Perf-/Cleanup-Arbeit (aktueller Arbeitsbranch; Merge-Ziel: `Autostich_Test`)
 - `Autostich_Test` — Integrations-/Testbranch
 - `main` — stabil
 - `balancing` — Balancing
 - `claude/neue-deck-archetypen-*` — Deck-Archetypen (enthält eigene Arbeit, **NICHT löschen**)
+
+## Arbeitsstand `Autostich/pixi` (Session bis 2026-08-11)
+
+Gearbeitet wird ausschließlich auf `Autostich/pixi`. **Vor jedem Arbeitsbeginn UND vor jedem Push**
+`git fetch origin Autostich/pixi && git rebase origin/Autostich/pixi` (Parallel-Sessions committen zeitweise
+denselben Branch). Build (`npm run build`) + Tests (`npm test`, aktuell **981 grün**) müssen vor jedem Push grün sein.
+Deutschsprachiger Code/Kommentare beibehalten.
+
+### Effekt-System — was BLEIBT vs. ENTFERNT (großes #cleanup)
+- **Bleibt:** Hintergrund-Effekt **Aurora** (raw-WebGL `src/ui/fx/AuroraFieldGL.jsx` — Pixi-Custom-Shader rendert auf
+  dem Mobile-Setup NICHT), Hintergrund-Finisher **Glutfunken** (Pixi `src/ui/fx/embersPixi.js`), der synthetische
+  **Klinge**-Finisher (einziger Sieg-Finisher) und die **Gottgleich-Kategorie** (`group "gott"`) mit nur „Standard"
+  (`GOTT_STANDARD`) — Prunk kommt später neu rein.
+- **Vollständig entfernt** (Definition, Optionen, Render, Previews, FX-Komponenten, SFX, CSS, Tests, Dateien):
+  - Karten-Animationen: `frameGlow, holoSwipe, auroraVeil, glitch` (Gruppe `anim` komplett).
+  - Feld-Effekte: `hologrid, starfield, scanline, vignette`.
+  - Sieg-Finisher: `laserSlice, lasergrid, disperse, overload, burnBeam, blackhole`.
+  - Gottgleich-Prunk: `fireworks, goldRain, prismaWave`.
+  - Gelöschte Dateien: `src/ui/finisherSfx.js`, `src/ui/fx/starfieldPixi.js`, `src/ui/prunkFx.js`.
+- `GLOBAL_FX` (themes.js) führt nur noch `aurora` + `embers`. `BG_FX_KEYS=["aurora"]`, `BG_FIN_KEYS=["embers"]`.
+  `PIXI_FIELD_KEYS=["embers"]`. Klinge/gottStandard sind **synthetisch** in `CustomizeScreen.jsx` (NICHT in GLOBAL_FX).
+
+### Rendering-Fakten (wichtig!)
+- **Produktion = DOM** (`FX_RENDERER`/`pixiEnabled` sind an `VITE_PREVIEW/DEV` gegated). Pixi/WebGL-Emitter laufen nur
+  im Preview/Dev. In-Game + Showcase nutzen in Prod die DOM-`FieldFxLayer`. Die DOM-Fassung kennt **kein `deckTint`** →
+  Standard/Deckfarbe muss über die `color`-Wahl im Aufrufer geschaltet werden (siehe Showcase-Fix in CustomizeScreen).
+- Perf-Stufen: `useFxLevel` → `full/balanced/minimal`; `reduced`=minimal, `lite`=nicht-full; `data-reduced-fx` am `<html>`.
+  Auf Mobile (`pointer:coarse`): Overlay-/StatusBar-Blur weg, Aurora ~30fps+DPR1.4, Glow/Bloom-Radien enger, Groß-Ansage-
+  Glow kleiner. Screen-Shake ist auf Mobile (lite) aus.
+
+### #316 Onboarding ENTFERNT
+Jedes Profil startet `onboarding = ONBOARDING_LINKS` (6/6 „fertig") → alle Unlocks sofort frei, gesamte Onboarding-UI
+inert (an `onbDone`/`onbStep<6` gekoppelt). Fresh-Start: **0 SP / 50 DP** (`START_DECK_POINTS`, storage.js DEFAULT_PROFILE,
+Schema **v6**). Migration v5→v6 hebt Alt-Profile auf 6 (kein Rückschritt, KEIN DP-Grant). Reducer-Gates rechnen dadurch
+auf „voll frei". Offen/nachfragen: Alt-Profile mitten im Onboarding bekommen den 50-DP-Bonus NICHT.
+
+### Klinge-Finisher (KLINGE_TUNE in Battlefield.jsx, exportiert)
+Choreografie am Siegesserie-Multiplikator (`sliceMove`): <1.25 nur LINKS · ≥1.25 +RECHTS · ≥1.5 +OBEN · ≥2.0 +**Z**.
+Der **Z-Schnitt = 2 Slashes** (╲ ╱ = X, 4 Dreieck-Stücke) mit **2 synchronen `fx_blade`-Hits** (Ghost-Spawn-Block,
+richtungs-abhängig). Showcase (`FinisherScene`): Stufen-Label unten-rechts, Playback **3×** (`FIN_SPEED`).
+
+### Tuning-Größen (bewusst kommentiert, bei Bedarf nachdrehen)
+- **Groß-Ansagen** (Battlefield `BIG_SCORE_TIERS`): je Stufe `rank` + `cool` (Stark 2800/Brutal 2200/Irre 1600/
+  Gottgleich 2500 ms) + `BIG_DOMINANCE_MS=1400` (niedrigere Stufe kurz nach höherer unterdrückt → „nur die höchsten").
+  Epische Serien/Lawine-Ansagen haben eigene 1×-Logik.
+- **Screenshake** Amplitude je Tier: `[0,3,5,4,7]` (Irre ganz leicht, Gottgleich reduziert).
+- **Score-Anzeige** (StatusBar) verkleinert bei ≥100M (21px) / ≥1Mrd (19px), sonst 25px.
+- **Musik** (`src/ui/music.js` `TIER_MIN`): calm <10M · mid 10–30M · hot 30–70M · overdrive 70–90M · overdrive+ 90M+.
+- **Showcase-Farbkontrast** (`PREVIEW_LOOK`): Aurora auf Moonwhale (blau), Glutfunken auf Kosmos (magenta) — damit
+  Standard↔Deckfarbe-Toggle sichtbar ist. Ember-DOM-Farbe schaltet per `deckTint` (Standard `#ff6a30` = Pixi-FIRE).
+
+### iPhone (#314) — nur strukturell, NICHT auf echtem Gerät verifiziert
+`.app-root` (index.css): `100dvh` + Safe-Area-Insets als Padding; `text-size-adjust:100%`. Feinjustierung einzelner
+„zu großer" Elemente braucht On-Device-Test.
+
+### Sonstiges
+- Bash-cwd persistiert zwischen Calls; nach `cd` in node_modules zurück nach `/home/user/autostich`.
+- Kein PR anlegen außer explizit gewünscht. GitHub-Issues #312–#316 sind abgearbeitet.
