@@ -129,11 +129,9 @@ const KLINGE_TUNE = {
   streakBoost: 0.12,   // + pro Serien-Schritt: Stücke fliegen weiter + rotieren mehr
   streakMax: 6,        // Deckel der Wucht-Steigerung
   rotFactor: 1,        // globaler Rotations-Faktor der Stücke
-  zAngle: 52,          // Z: Steilheit der drei diagonalen Schläge (Grad, abwechselnd +/−)
-  zSpread: 0.18,       // Z: vertikaler Versatz des 1. & 3. Schlags (Kartenanteil)
-  zSlashFactor: 0.34,  // Z: Dauer je Einzel-Schlag (× cutDur) — ~3× so schnell wie ein normaler Schnitt
-  zSlashStep: 0.33,    // Z: Versatz zwischen den drei Schlägen (× cutDur) → sie fahren blitzschnell nacheinander durch
-  zOvershoot: 1.2,     // Z: Überschlag der Schläge über den Kartenrand
+  zSlashFactor: 0.34,  // Z: Dauer je Einzel-Schlag (× cutDur) — blitzschnell
+  zSlashStep: 0.9,     // Z: Abstand zwischen den drei Schlägen (× cutDur) → drei klar getrennte Blitze
+  zOvershoot: 1.2,     // Z: Überschlag der Schläge über die Ecken hinaus
   sparkCount: 18,      // Funken bei Serie 1
   sparkPerStreak: 2,   // + Funken pro Serien-Schritt
 };
@@ -278,21 +276,21 @@ function sliceGeometry(dir, streak) {
       return { cuts: [{ rot: 90, len: cutLen }], pieces: [
         { clip: "polygon(0 0, 52% 0, 48% 100%, 0 100%)", sx: -d, sy: 14, sr: -14 * e * rf },
         { clip: "polygon(52% 0, 100% 0, 100% 100%, 48% 100%)", sx: d, sy: 14, sr: 14 * e * rf } ] };
-    case "z": { // Serie 4: DREI diagonale volle Schläge, abwechselnd (╲ ╱ ╲), in EINER Animation — jeder geht ganz durch
-                // und ~3× so schnell wie ein Stich-Schnitt (drei passen in ein Schnitt-Budget). Danach zerfällt die
-                // Karte in vier saubere Ecken-Stücke.
-      const A = KLINGE_TUNE.zAngle, sp = KLINGE_TUNE.zSpread, step = KLINGE_TUNE.zSlashStep;
-      const len = Math.hypot(104, 144) * KLINGE_TUNE.zOvershoot; // volle Karten-Diagonale + Überschlag → Schlag geht ganz durch
-      const mk = (rot, cy, stg) => ({ rot, len, cx: 50, cy, stagger: stg, fast: true });
-      return { cuts: [
-          mk(A,  (0.5 - sp) * 100, 0),        // 1. Schlag: Diagonale ╲ (oben)
-          mk(-A, 50,               step),     // 2. Schlag: Gegendiagonale ╱ (von der anderen Seite)
-          mk(A,  (0.5 + sp) * 100, step * 2), // 3. Schlag: Diagonale ╲ (unten)
-        ], pieces: [
-          { clip: "inset(0 50% 50% 0)", sx: -d,       sy: -d * 0.8, sr: -24 * e * rf },
-          { clip: "inset(0 0 50% 50%)", sx: d,        sy: -d * 0.8, sr: 24 * e * rf },
-          { clip: "inset(50% 50% 0 0)", sx: -d * 0.9, sy: d,        sr: -28 * e * rf },
-          { clip: "inset(50% 0 0 50%)", sx: d * 0.9,  sy: d,        sr: 28 * e * rf } ] };
+    case "z": { // Serie 4: DREI diagonale volle Schläge Ecke-zu-Ecke, abwechselnd (╲ ╱ ╲). Die ersten beiden bilden ein
+                // X → die Karte zerfällt entlang genau dieser Diagonalen in VIER Dreieck-Stücke (oben/rechts/unten/links),
+                // erst NACHDEM alle drei Schläge durch sind (`hold`). Deutlich gestaffelt → drei sichtbare Blitze.
+      const DIAG = Math.atan2(144, 104) * 180 / Math.PI; // Karten-Diagonalwinkel (Ecke→Ecke) → Schlag deckt sich mit den Bruchkanten
+      const step = KLINGE_TUNE.zSlashStep;
+      const len = Math.hypot(104, 144) * KLINGE_TUNE.zOvershoot; // volle Diagonale + Überschlag → Schlag geht ganz durch
+      const mk = (rot, stg) => ({ rot, len, cx: 50, cy: 50, stagger: stg, fast: true, thick: true });
+      return {
+        cuts: [mk(DIAG, 0), mk(-DIAG, step), mk(DIAG, step * 2)],  // ╲ ╱ ╲
+        hold: step * 2 + KLINGE_TUNE.zSlashFactor,                // Karte hält (× cutDur), bis die 3 Schläge durch sind
+        pieces: [
+          { clip: "polygon(0 0, 100% 0, 50% 50%)",       sx: 0,  sy: -d, sr: -14 * e * rf }, // oben
+          { clip: "polygon(100% 0, 100% 100%, 50% 50%)", sx: d,  sy: 0,  sr: 14 * e * rf },  // rechts
+          { clip: "polygon(100% 100%, 0 100%, 50% 50%)", sx: 0,  sy: d,  sr: 14 * e * rf },  // unten
+          { clip: "polygon(0 100%, 0 0, 50% 50%)",       sx: -d, sy: 0,  sr: -14 * e * rf } ] }; // links
     }
     case "right":
     default: // Klinge von RECHTS → klassische −24°-Diagonale (Grundzug, Serie 1)
@@ -335,10 +333,11 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
   // Position (cx/cy %) + eigene Länge + zeitlichen Versatz (stagger × cutDur) → der Z-Schnitt zeichnet sich als 3 Segmente.
   const cutLine = (rot, key, opts = {}) => {
     const len = opts.len || cutLen;
+    const h = opts.thick ? 5 : 3;   // Z-Schläge etwas dicker → der blitzschnelle Durchzug registriert klar
     const dur = opts.fast ? Math.round(cutDur * KLINGE_TUNE.zSlashFactor) : cutDur; // Z-Einzelschlag fährt blitzschnell durch
     const stMs = Math.round((opts.stagger || 0) * cutDur);
     return (
-      <div key={key} style={{ position: "absolute", left: `${opts.cx ?? 50}%`, top: `${opts.cy ?? 50}%`, width: len, height: 3, marginLeft: -len / 2, marginTop: -1.5,
+      <div key={key} style={{ position: "absolute", left: `${opts.cx ?? 50}%`, top: `${opts.cy ?? 50}%`, width: len, height: h, marginLeft: -len / 2, marginTop: -h / 2,
         background: color, borderRadius: 2, transformOrigin: "center", boxShadow: `0 0 ${(6 + intensity * 6).toFixed(0)}px ${color}, 0 0 ${(14 + intensity * 10).toFixed(0)}px ${color}aa`,
         "--cut-rot": `${rot}deg`, animation: `as-cut-line ${dur}ms ease-out ${delay + stMs}ms both` }} />
     );
@@ -397,22 +396,25 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
   // die Schnittlinien-Segmente wachsen über as-cut-line. Ein Klingen-Sieg = EIN Schnitt (die Choreografie entsteht über
   // die WECHSELNDE Richtung aufeinanderfolgender Stiche, nicht über Mehrfachschnitte auf derselben Karte).
   const geo = sliceGeometry(dir, streak);
+  // #klinge: Der Z-Schlag hält die Karte ganz, bis die drei Schläge durch sind (geo.hold × cutDur), DANN bersten die
+  // Stücke + zünden die Funken. Für die Einzelschnitte (rechts/links/oben) ist hold 0 → unverändertes Timing.
+  const holdMs = geo.hold ? Math.round(geo.hold * cutDur) : 0;
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
       {geo.pieces.map((p, k) => (
         <div key={`sp${k}`} className="absolute inset-0" style={{ clipPath: p.clip,
           "--sx": `${p.sx.toFixed(1)}px`, "--sy": `${p.sy.toFixed(1)}px`, "--sr": `${p.sr.toFixed(0)}deg`,
-          animation: `as-boom-shard ${halvesDur}ms ${ease} ${delay}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
+          animation: `as-boom-shard ${halvesDur}ms ${ease} ${delay + holdMs}ms both`, willChange: "transform, opacity" }}>{cardEl}</div>
       ))}
       {geo.cuts.map((c, k) => cutLine(c.rot, `cut${k}`, c))}
-      {/* Funken aus dem Schnittzentrum. */}
+      {/* Funken aus dem Schnittzentrum — beim Z erst mit dem Bersten nach den drei Schlägen. */}
       {sparks.map((s) => (
         <div key={s.i} style={{
           position: "absolute", left: "50%", top: "50%",
           width: s.confetti ? 6 : 4, height: s.confetti ? 3 : 4, borderRadius: s.confetti ? 1 : "50%",
           background: s.white ? "#ffffff" : color, boxShadow: `0 0 5px ${s.white ? "#ffffff" : color}`,
           "--dx": `${s.dx}px`, "--dy": `${s.dy}px`,
-          animation: `as-spark ${sparkDur}ms ease-out ${delay}ms both`, willChange: "transform, opacity",
+          animation: `as-spark ${sparkDur}ms ease-out ${delay + holdMs}ms both`, willChange: "transform, opacity",
         }} />
       ))}
     </div>
@@ -1790,10 +1792,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // das länger als flipMs → der Burst überlappt bewusst leicht den nächsten Stich, sodass „eine Karte nach der anderen"
     // zerfällt statt bloß zu flippen. Fragmente faden aus (verdecken die Folgekarte nicht); Pool bleibt gedeckelt.
     const burnT = burnFinish ? burnDisintTiming(flipMs, sRest) : null;
+    // #klinge: Der Z-Schlag (Serie 4) hält die Karte, bis die drei Schläge durch sind (zHold), erst dann berstet sie →
+    // die Ghost-Lebensdauer muss diese Haltezeit mitnehmen, sonst wird der Zerfall abgeschnitten.
+    const zHold = spawned.some((g) => g.fx === "slice" && g.sliceDir === "z")
+      ? Math.round((KLINGE_TUNE.zSlashStep * 2 + KLINGE_TUNE.zSlashFactor) * sCut) : 0;
     const ghostLife = burnFinish ? burnT.hitAt + Math.round(burnT.disintDur * 1.14) + 40
       : disperseFinish ? Math.round(disperseDur(flipMs) * 1.12) + 40   // #: Zerstäubung mit Sichtbarkeits-Boden (bei Max nicht abgeschnitten)
       : overloadFinish ? Math.max(220, flipMs - 40) + 60               // #300 Canvas-Finisher löst im flipMs-Budget auf
-      : sRest + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100;
+      : sRest + zHold + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100;
     const tm = setTimeout(() => {
       setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
       ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
