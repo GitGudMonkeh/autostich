@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.jsx";
@@ -8,13 +8,15 @@ import {
   GLOBAL_FX, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
-import { startPrunk } from "./prunkFx.js";
-import { SliceFx, BlackholeFieldFx, LaserGridFx, BurnBeamFx, BurnBeamPersist, OverloadFx, DisperseFx, FieldFxLayer } from "./Battlefield.jsx";
+import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.jsx";
+// Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
+import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
+import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora-Vorschau als eigene WebGL-Canvas (nicht Pixi)
+const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 import { clamp } from "../game/deck.js"; // #: Serien-Kopplung des Brennstrahl-Loops (leiser Start → lauter/heißer)
-import { audio } from "./audio.js"; // #302b: Showcase-Panel spielt den passenden Finisher-Sound mit
-import { useBlackholeSfx } from "./finisherSfx.js"; // #298: Loch-Ton-Bett mit Hüllkurve (leiser Start → Anschwellen → schneller Kollaps), identisch zu In-Game
+import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
 
 // Standard-Backdrop für alle Effekt-/Finisher-Showcases: das Genesis-Battlefield (bf_onboarding), einheitlich neutral.
 const SHOWCASE_BF = "bf_onboarding";
@@ -33,6 +35,15 @@ const SHOWCASE_BF = "bf_onboarding";
 const CARD_RATIO = "1066 / 1476";
 // Demo-Farbe der Effekt-Vorschauen (in-game = Deck-/Suit-Farbe).
 const DEMO_C = "#35e0ff";
+// Showcase-Backdrop + Demo-Deckfarben PRO Feldeffekt — so sieht man später am Standard/Deckfarbe-Toggle den Unterschied:
+// Aurora auf Moonwhale (kühles Cyan/Blau), Glutfunken auf Feuer (rotes Deck). Andere Effekte: Standard-Backdrop/-Farbe.
+const PREVIEW_LOOK = {
+  aurora: { bf: "bf_wale",  a1: "#35d0ff", a2: "#7fdcff" }, // Moonwhale (kühl) — kontrastiert mit dem grünen Aurora-Standard
+  // #313-Folge: die Glutfunken-Showcase-Deckfarbe muss sich DEUTLICH vom warmen Standard-Feuer abheben, sonst wirkt der
+  // Standard↔Deckfarbe-Toggle wirkungslos. Ein rotes Feuer-Deck ist zu fire-nah → jetzt Kosmos (Magenta) auf dunklem
+  // Feld: Standard = oranges Feuer, Deckfarbe = Magenta — beide auf dem dunklen Kosmos-Feld klar sichtbar.
+  embers: { bf: "bf_kosmos", a1: "#ff4dcb", a2: "#7b5cff" },
+};
 
 // „Standard"-Pack (UI-seitig): aktiviert wieder das Grund-Deck/-Battlefield. kind:"std" → immer im Besitz.
 const STD_PACK = { id: "default", name: "Standard", kind: "std", a1: "#8a7de0", deckId: "default", bfId: "default", els: ["deck", "bf"] };
@@ -54,7 +65,7 @@ function orderPacks(list, deckId) {
 /* Synthetische „Klinge"-Kachel: der Standard-Sieg-Finisher — immer im Besitz (kein Kauf), aber wählbar UND
    vorschaubar wie die anderen Finisher. Wird der Sieg-Finisher-Gruppe vorangestellt (analog „Gottgleich · Standard"). */
 const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "klinge", alwaysOwned: true,
-  desc: "Gegnerkarte wird beim Sieg zerschnitten — der Standard-Finisher (immer verfügbar)." };
+  desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte. Grundzug ist ein Schnitt von links; je höher dein Siegesserie-Multiplikator, desto mehr Richtungen fahren nacheinander ein (ab ×1,25 links/rechts im Wechsel, ab ×1,5 zusätzlich von oben, ab ×2,0 alle vier inkl. Z-Schnitt) — und die Klinge schneidet härter. Eine Niederlage setzt die Serie zurück. Der Standard-Finisher (immer verfügbar)." };
 
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
@@ -64,11 +75,11 @@ const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", gro
 // Effekt-Gruppen des „Effekte"-Tabs. mode: "toggle" (frei kombinierbar) | "finisher" (Einfachauswahl, exklusiv,
 // inkl. „Klinge" als Default). Grid-Tunnel wurde entfernt → keine Ambience-Gruppe mehr.
 const FX_GROUPS = [
-  { key: "anim",     title: "Karten-Animationen", hint: "einmal kaufen · für alle Packs", mode: "toggle" },
-  { key: "field",    title: "Battlefield-Ambiente", hint: "nur eins aktiv",               mode: "field" }, // #306
-  { key: "finisher", title: "Sieg-Finisher",      hint: "nur einer aktiv",                mode: "finisher" },
-  // #: Krit-Gruppe (Shatter) entfernt — Krit-Finisher-Animationen raus.
-  { key: "gott",     title: "Gottgleich-Prunk",   hint: "nur einer aktiv",                mode: "gott" }, // exklusiv
+  // #kategorien: zwei UNABHÄNGIGE Feld-Slots (beide gleichzeitig aktivierbar) + Sieg-Finisher.
+  // Karten-Animationen + Gottgleich-Prunk sind vorerst DEAKTIVIERT (Tabs entfernt); die Effekte bleiben im Code.
+  { key: "bgfx",     title: "Hintergrund-Effekt",   hint: "nur einer aktiv", mode: "bgfx" },   // reiner BG (Aurora …)
+  { key: "bgfin",    title: "Hintergrund-Finisher", hint: "nur einer aktiv", mode: "bgfin" },  // BG mit Stich-Interaktion (Glutfunken …)
+  { key: "finisher", title: "Sieg-Finisher",        hint: "nur einer aktiv", mode: "finisher" },
 ];
 /* #306 Synthetische „Kein Feld-Effekt"-Kachel (immer verfügbar, kein Kauf): der Aus-Zustand der einfach-exklusiven
    Battlefield-Ambiente-Gruppe — wählbar wie „Klinge" beim Finisher. */
@@ -77,14 +88,13 @@ const FIELD_NONE = { key: "none", name: "Kein Feld-Effekt", group: "field", prev
 // Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe nach DP-Preis aufsteigend (billig oben, teuer unten);
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxGroupItems = (group) => {
-  const list = GLOBAL_FX.filter((f) => f.group === group).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
-  if (group === "gott") return [GOTT_STANDARD, ...list];
+  const list = GLOBAL_FX.filter((f) => f.group === group && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
   if (group === "finisher") return [KLINGE, ...list]; // „Klinge" (Default) voran
-  if (group === "field") return [FIELD_NONE, ...list]; // „Kein Feld-Effekt" (Default) voran
+  if (group === "bgfx" || group === "bgfin") return [FIELD_NONE, ...list]; // „Kein Effekt" (Default) voran
   return list;
 };
 // #: Der Standard-Key je einfach-exklusiver Gruppe (der Gratis-Aus-Zustand). Toggle-Gruppen (anim) haben keinen.
-const FX_STD_KEY = { finisher: "klinge", field: "none", gott: "gottStandard" };
+const FX_STD_KEY = { finisher: "klinge", bgfx: "none", bgfin: "none" };
 // #: Aktive Auswahl an die ERSTE Stelle rücken, direkt danach den „Standard" (falls die Gruppe einen hat), Rest folgt
 // in bisheriger Reihenfolge. Kein/Standard aktiv oder Toggle-Gruppe (kein stdKey) → Reihenfolge unverändert.
 function orderFxItems(items, selKey, stdKey) {
@@ -96,18 +106,20 @@ function orderFxItems(items, selKey, stdKey) {
   return std ? [active, std, ...rest] : [active, ...rest];
 }
 
-/* Sieg-Finisher sind untereinander exklusiv (genau EINER aktiv). Zentrale Wahrheit für Auswahl UND Anzeige,
-   damit In-Übersicht (Radio) und Detail-Fenster nie auseinanderlaufen. „klinge" = alle Flags aus. */
-const finisherFlags = (key) => ({ fxLaserSlice: key === "laserSlice", fxBlackhole: key === "blackhole",
-  fxLasergrid: key === "lasergrid", fxBurnBeam: key === "burnBeam", fxOverload: key === "overload", fxDisperse: key === "disperse" });
-const finisherSelOf = (options) => options?.fxBlackhole ? "blackhole" : options?.fxLasergrid ? "lasergrid"
-  : options?.fxBurnBeam ? "burnBeam" : options?.fxOverload ? "overload" : options?.fxDisperse ? "disperse"
-  : options?.fxLaserSlice ? "laserSlice" : "klinge";
+/* #cleanup: Nach dem Entfernen aller kaufbaren Sieg-Finisher ist die Klinge der EINZIGE (synthetisch, immer aktiv).
+   Es gibt keine Auswahl-Flags mehr → finisherFlags schreibt nichts, finisherSelOf ist konstant „klinge". */
+const finisherFlags = () => ({});
+const finisherSelOf = () => "klinge";
 /* #306 Battlefield-Ambiente einfach-exklusiv (genau EINS aktiv, oder „none"). Datengetrieben aus der „field"-Gruppe:
    fieldFxFlags(key) schreibt alle Feld-Optionen in einem Rutsch (genau eine true, „none" = alle false). */
-const FIELD_FX = GLOBAL_FX.filter((f) => f.group === "field");
-const fieldFxFlags = (key) => Object.fromEntries(FIELD_FX.map((f) => [f.option, f.key === key]));
-const fieldFxSelOf = (options) => { for (const f of FIELD_FX) if (options?.[f.option]) return f.key; return "none"; };
+// #kategorien: zwei getrennte, UNABHÄNGIGE Feld-Slots. bgFxFlags/bgFinFlags schreiben NUR die Optionen ihrer
+// eigenen Gruppe (genau eine true, „none" = alle false) → Aurora (bgfx) und Glutfunken (bgfin) schließen sich NICHT aus.
+const BGFX_FX  = GLOBAL_FX.filter((f) => f.group === "bgfx");
+const BGFIN_FX = GLOBAL_FX.filter((f) => f.group === "bgfin");
+const bgFxFlags  = (key) => Object.fromEntries(BGFX_FX.map((f) => [f.option, f.key === key]));
+const bgFinFlags = (key) => Object.fromEntries(BGFIN_FX.map((f) => [f.option, f.key === key]));
+const bgFxSelOf  = (options) => { for (const f of BGFX_FX)  if (options?.[f.option]) return f.key; return "none"; };
+const bgFinSelOf = (options) => { for (const f of BGFIN_FX) if (options?.[f.option]) return f.key; return "none"; };
 /* Gottgleich-Prunk einfach-exklusiv (genau EINER aktiv, oder „gottStandard" = kein Prunk). Datengetrieben aus der
    „gott"-Gruppe: gottFlags(key) schreibt alle Prunk-Optionen in einem Rutsch (genau eine true, „gottStandard" = alle false). */
 const GOTT_FX = GLOBAL_FX.filter((f) => f.group === "gott");
@@ -127,21 +139,8 @@ function useIsMobile() {
   return m;
 }
 
-// Einmalig injizierte Keyframes für die Vorschauen (Frame Glow / Holo Swipe / Hologrid + Gottgleich-Event-Loop).
+// Einmalig injizierte Keyframes für die Gottgleich-Standard-Vorschau (Event-Loop).
 const FX_CSS = `
-@keyframes ws-frameglow{0%,100%{box-shadow:0 0 10px -2px var(--a1),inset 0 0 14px -8px var(--a1)}50%{box-shadow:0 0 26px 2px var(--a1),inset 0 0 22px -4px var(--a1)}}
-@keyframes ws-swipe{0%{transform:translateX(-120%) rotate(18deg)}55%,100%{transform:translateX(320%) rotate(18deg)}}
-@keyframes ws-sweep{0%{bottom:-4%;opacity:0}18%{opacity:1}70%{opacity:1}100%{bottom:106%;opacity:0}}
-.ws-sweep{animation:ws-sweep 2.9s ease-in-out infinite}
-/* #294 Feuerwerk: radiale Partikel aus einem Zündpunkt. --dx/--dy = Flugvektor. */
-@keyframes ws-fw{0%{transform:translate(0,0) scale(.6);opacity:0}8%{opacity:1}70%{opacity:.85}100%{transform:translate(var(--dx),calc(var(--dy) + 14px)) scale(1);opacity:0}}
-.ws-fw{animation:ws-fw 1.7s ease-out infinite}
-/* #294 Weißgold-Regen: Funken fallen von oben. */
-@keyframes ws-rain{0%{transform:translateY(-20%);opacity:0}8%{opacity:1}85%{opacity:1}100%{transform:translateY(360%);opacity:0}}
-.ws-rain{animation:ws-rain 2.2s linear infinite}
-/* #294 Prisma-Welle: Regenbogen-Ring expandiert vom Zentrum. */
-@keyframes ws-wave{0%{transform:translate(-50%,-50%) scale(.05);opacity:0}14%{opacity:1}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
-.ws-wave{animation:ws-wave 2.6s ease-out infinite}
 /* #294 Gottgleich-Event-Loop (Vorschau spielt das echte Ereignis nach): Aura-Flare + Karten-Pop + goldene
    Groß-Ansage, ~3.4s Zyklus. Die Prunk-Partikel laufen darüber. */
 @keyframes ws-gott-aura{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}12%{opacity:.9}42%{opacity:.5}72%{opacity:.14}100%{opacity:0;transform:translate(-50%,-50%) scale(1.55)}}
@@ -154,69 +153,15 @@ const FX_CSS = `
 .ws-hscroll::-webkit-scrollbar{display:none}
 `;
 
-// #294 Demo-Daten der leichten CSS-Prunk-Partikel (deterministisch, kein Math.random im Render).
-const FW_BURSTS = [
-  { cx: "26%", cy: "28%", dl: 0 }, { cx: "62%", cy: "22%", dl: 0.5 }, { cx: "44%", cy: "40%", dl: 1.0 }, { cx: "78%", cy: "36%", dl: 0.75 },
-].map((b) => ({ ...b, parts: Array.from({ length: 14 }, (_, i) => {
-  const a = (i / 14) * Math.PI * 2; return { dx: `${(Math.cos(a) * 34).toFixed(0)}px`, dy: `${(Math.sin(a) * 34).toFixed(0)}px`, white: i % 4 === 0 };
-}) }));
-const RAIN_DROPS = Array.from({ length: 20 }, (_, i) => ({
-  x: `${((i * 53) % 100)}%`, dl: `${((i * 37) % 100) / 100 * 2.2}s`, w: 2 + (i % 3),
-  c: ["#fff0b0", "#ffd873", "#ffffff", "#ffc978"][i % 4], dur: `${1.8 + (i % 4) * 0.2}s`,
-}));
-const PRISMA_RING = "conic-gradient(from 0deg,#ff4d4d,#ffa53a,#ffe14d,#54e08a,#35e0ff,#5a8ade,#9b82f0,#ff4dcb,#ff4d4d)";
-
-// Overlay-Partikel eines Gottgleich-Prunk-Effekts (leichte CSS-Variante, für kompakte Vorschauen).
-function PrunkParticles({ variant, LC = "#35e0ff" }) {
-  if (variant === "fireworks") return FW_BURSTS.map((b, bi) => (
-    <div key={bi} className="absolute" style={{ left: b.cx, top: b.cy, width: 0, height: 0 }}>
-      {b.parts.map((pt, i) => (
-        <div key={i} className="ws-fw absolute" style={{ left: 0, top: 0, width: 4, height: 4, marginLeft: -2, marginTop: -2, borderRadius: "50%",
-          background: pt.white ? "#ffffff" : LC, boxShadow: `0 0 7px ${pt.white ? "#ffffff" : LC}`, "--dx": pt.dx, "--dy": pt.dy, animationDelay: `${b.dl}s` }} />
-      ))}
-    </div>
-  ));
-  if (variant === "goldRain") return RAIN_DROPS.map((d, i) => (
-    <div key={i} className="ws-rain absolute" style={{ left: d.x, top: "-6%", width: d.w, height: d.w * 2.4, borderRadius: 1,
-      background: d.c, boxShadow: `0 0 6px ${d.c}`, animationDelay: d.dl, animationDuration: d.dur }} />
-  ));
-  if (variant === "prismaWave") return [0, 1].map((r) => (
-    <div key={r} className="ws-wave absolute" style={{ left: "50%", top: "50%", width: "70%", aspectRatio: "1", borderRadius: "50%",
-      background: PRISMA_RING, animationDelay: `${r * 0.7}s`,
-      WebkitMaskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)",
-      maskImage: "radial-gradient(circle, transparent 56%, #000 60%, #000 70%, transparent 74%)" }} />
-  ));
-  return null; // "standard" → keine Prunk-Partikel
-}
-
-/* Canvas-Overlay = dieselbe In-Game-Wucht (startPrunk) im Loop. NUR für die große Vorschau (ein Canvas, nur
-   solange das Fenster offen ist). */
-function PrunkCanvas({ variant, loop = true }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!ref.current) return undefined;
-    return startPrunk(ref.current, {
-      fireworks: variant === "fireworks", goldRain: variant === "goldRain", prismaWave: variant === "prismaWave",
-      color: "#35e0ff", originX: 0.5, originY: 0.58, loop });
-  }, [variant, loop]);
-  return <canvas ref={ref} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true" />;
-}
-
-/* #294 Gottgleich-Vorschau: spielt das ECHTE Ereignis im Loop nach (Karten-Pop + Aura-Flare + goldene
-   „GOTTGLEICH ×7"-Groß-Ansage) und legt den jeweiligen Prunk-Effekt darüber. variant "standard" zeigt den
-   Basis-Look ohne Prunk → direkter Vergleich. compact = kleine Kachel (leichte CSS-Partikel); groß = Canvas-Wucht. */
+/* Gottgleich-Vorschau (nur noch „Standard"): spielt das ECHTE Ereignis im Loop nach — Karten-Pop + Aura-Flare +
+   goldene „GOTTGLEICH ×7"-Groß-Ansage + Bass-Drop. #cleanup: die aufgesetzten Prunk-Overlays (Feuerwerk/Goldregen/
+   Prisma-Welle) sind entfernt; die „gott"-Kategorie bleibt, hier kommt später neuer Prunk rein. */
 const GOTT_CYCLE_MS = 3400;  // Länge eines Vorschau-Zyklus (= Dauer der ws-gott-*-Animationen)
 const GOTT_POP_MS = 272;     // „Pop"-Moment: 8 % von 3,4 s (Karten-Hit) → hier fällt der Bass hin
-function GottgleichPreview({ variant, compact = false }) {
+function GottgleichPreview({ compact = false }) {
   const bf = battlefieldAssets(SHOWCASE_BF);
   const cardImg = deckAssets("default").back;
-  const hasPrunk = variant !== "standard";
-  // #: Drift-Fix. Zuvor liefen die CSS-Animationen (3,4 s infinite), der Prunk-Canvas (interner Loop 2,25 s) und der
-  // Bass-setInterval auf DREI verschiedenen Uhren → nach dem ersten Zyklus liefen sie auseinander (Animation vor dem
-  // Puls/Bass). Jetzt treibt EIN Zyklus-Zähler alles: die Animationen + der Prunk werden je Zyklus über key={cycle} neu
-  // gestartet, der Bass fällt je Zyklus exakt auf den Pop-Moment → Animation, Puls und Bass bleiben dauerhaft synchron.
   const [cycle, setCycle] = useState(0);
-  const [burst, setBurst] = useState(0); // zählt die „Pops" → Prunk-Canvas zündet je Pop (deckungsgleich mit Bass)
   useEffect(() => {
     if (compact) return undefined; // Kachel-Vorschau: schlichte Endlos-CSS ohne Ton (kein Sync nötig)
     const id = setInterval(() => setCycle((c) => c + 1), GOTT_CYCLE_MS);
@@ -224,8 +169,8 @@ function GottgleichPreview({ variant, compact = false }) {
   }, [compact]);
   useEffect(() => {
     if (compact) return undefined;
-    // Auf den Pop (272 ms in den Zyklus) den Prunk zünden + den „Gottgleich"-Bass-Drop (Vorschau = In-Game, deckungsgleich mit dem Pop).
-    const t = setTimeout(() => { setBurst((b) => b + 1); audio.play("fx_godlike", { gain: 1.5, bass: 4 }); }, GOTT_POP_MS);
+    // Auf den Pop (272 ms in den Zyklus) den „Gottgleich"-Bass-Drop (Vorschau = In-Game, deckungsgleich mit dem Pop).
+    const t = setTimeout(() => { audio.play("fx_godlike", { gain: 1.5, bass: 4 }); }, GOTT_POP_MS);
     return () => clearTimeout(t);
   }, [cycle, compact]);
   return (
@@ -239,8 +184,6 @@ function GottgleichPreview({ variant, compact = false }) {
       <div key={`po${cycle}`} className="ws-gott-pop absolute" style={{ left: "50%", top: "58%", width: compact ? "34%" : "20%", aspectRatio: CARD_RATIO }}>
         <img src={cardImg} alt="" className="absolute inset-0 w-full h-full object-contain rounded" />
       </div>
-      {/* Prunk-Overlay: große Vorschau zündet je Pop 1× (loop=false + key={burst} → deckungsgleich mit Bass), Kachel = leichte CSS-Partikel. */}
-      {hasPrunk && (compact ? <PrunkParticles variant={variant} /> : (burst > 0 && <PrunkCanvas key={`pr${burst}`} variant={variant} loop={false} />))}
       {/* Goldene Groß-Ansage */}
       <div key={`an${cycle}`} className="ws-gott-ann absolute font-extrabold" style={{ left: "50%", top: "30%", whiteSpace: "nowrap",
         fontSize: compact ? 13 : 22, letterSpacing: ".06em",
@@ -255,38 +198,49 @@ function GottgleichPreview({ variant, compact = false }) {
 /* Karten-Finisher-Vorschau: die ECHTEN In-Game-Komponenten (SliceFx/ExplosionFx) an einer Demo-Karte
    im Loop — Vorschau = In-Game (keine separate Engine, kein Drift). */
 const DEMO_SUIT = "B"; // blau — Effektfarbe = suitColor (wie in-game die Gegner-Suit-Farbe)
-const FIN_DELAY = 460, FIN_HALVES = 950, FIN_CUT = 130, FIN_SPARK = 950, FIN_LINE = 220;
-// #302b Showcase-Sound je One-Shot-Finisher (persistente Loop-Effekte Burn/Blackhole laufen separat als Loop-Bett).
-const FIN_SFX = { klinge: "fx_blade", laser: "fx_laser", lasergrid: "fx_lasergrid", overload: "fx_lightning", disperse: "fx_atomize" }; // shatter: (kein eigener SFX)
+// #312: Vorschau spielt die Klinge 3× schneller ab — Animation UND Sound teilen dieselbe (durch 3 geteilte) Zeitbasis,
+// laufen also garantiert nicht auseinander. Basiswerte wie in-game, hier nur für die Vorschau beschleunigt.
+const FIN_SPEED = 3;
+const FIN_DELAY = Math.round(460 / FIN_SPEED), FIN_HALVES = Math.round(950 / FIN_SPEED), FIN_CUT = Math.round(130 / FIN_SPEED), FIN_SPARK = Math.round(950 / FIN_SPEED);
+const FIN_TICK_MS = Math.round(2400 / FIN_SPEED); // Loop-Takt ebenfalls 3× schneller
+// Showcase-Sound der Klinge (einziger verbliebener Sieg-Finisher).
+const FIN_SFX = { klinge: "fx_blade" };
+// #klinge-showcase: fester Choreo-Fahrplan der Klinge-Vorschau — je Serienschwelle der VOLLE Richtungs-Zyklus
+// (links zuerst) am Stück, danach die nächste Stufe. m = Siegesserie-Multiplikator (bestimmt Wucht/Funken), d = Schnittrichtung.
+const KLINGE_SCHEDULE = [
+  { m: 1.0,  d: "left" },                                              // ×1,0  → nur LINKS (Grundzug)
+  { m: 1.25, d: "left" }, { m: 1.25, d: "right" },                    // ×1,25 → LINKS · RECHTS
+  { m: 1.5,  d: "left" }, { m: 1.5,  d: "right" }, { m: 1.5, d: "top" }, // ×1,5  → LINKS · RECHTS · OBEN
+  { m: 2.0,  d: "left" }, { m: 2.0,  d: "right" }, { m: 2.0, d: "top" }, { m: 2.0, d: "z" }, // ×2,0 → alle vier inkl. Z-Schnitt
+];
+const KLINGE_DIR_LABEL = { left: "Links", right: "Rechts", top: "Oben", z: "Z-Schnitt" };
+const kMultLabel = (m) => "×" + String(m).replace(".", ",");           // 1.25 → „×1,25"
 function FinisherScene({ variant }) {
   const [tick, setTick] = useState(0);
   const bf = battlefieldAssets(SHOWCASE_BF);
+  const kstep = KLINGE_SCHEDULE[tick % KLINGE_SCHEDULE.length];
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 2400); // Loop: Karte erscheint → wird zerstört → Pause
+    const id = setInterval(() => setTick((t) => t + 1), FIN_TICK_MS); // Loop: Karte erscheint → wird zerteilt → Pause
     return () => clearInterval(id);
   }, []);
-  // Sound synchron zum Einschlag (≈ FIN_DELAY nach jedem Remount) mitspielen; respektiert Mute/Volume via audio-System.
+  // #312: Sound synchron zum sichtbaren Schnitt (bei FIN_DELAY). Der Z-Schnitt sind ZWEI Slashes → zwei schnelle Hits,
+  // exakt auf die beiden Slash-Zeitpunkte (0 und zSlashStep × cutDur). Alle Zeiten sind bereits 3×-skaliert → Sound
+  // zieht mit der Animation mit. Andere Richtungen: EIN Hit. Respektiert Mute/Volume über das audio-System.
   useEffect(() => {
     const sfx = FIN_SFX[variant];
     if (!sfx) return undefined;
-    const id = setTimeout(() => {
-      // #: Überladung weicher (Lowpass + Attack/Release), damit der Blitz-Sound nicht „hart" wirkt — auch in der Vorschau.
-      if (variant === "overload") audio.play(sfx, { gain: 0.95, soft: 6000, attack: 0.006, release: 0.06 });
-      else audio.play(sfx, { gain: variant === "klinge" ? 1.0 : 1.05 });
-      // #: Bass-Impact für Überladung/Zerstäubung entfernt (nur „Schwarzes Loch" hat Bass) — Vorschau = In-Game.
-    }, FIN_DELAY);
-    return () => clearTimeout(id);
-  }, [tick, variant]);
+    const timers = [setTimeout(() => audio.play(sfx, { gain: 1.0 }), FIN_DELAY)];
+    if (kstep.d === "z") timers.push(setTimeout(() => audio.play(sfx, { gain: 1.0 }), FIN_DELAY + Math.round(KLINGE_TUNE.zSlashStep * FIN_CUT)));
+    return () => timers.forEach(clearTimeout);
+  }, [tick, variant, kstep.d]);
   const suitCol = suitColor(DEMO_SUIT);
   const cardEl = <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
   const seed = tick * 3 + 1;
-  const dTier = (tick % 4) + 1; // #300 Vorschau durchläuft die Wertdifferenz-Stufen 1→4 (zeigt die Intensitäts-Eskalation)
-  let fx = null;
-  if (variant === "laser") fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} laser />;
-  else if (variant === "lasergrid") fx = <LaserGridFx cardEl={cardEl} color={suitCol} diceDur={FIN_HALVES} lineDur={FIN_LINE} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={1} scale={1} />;
-  else if (variant === "overload") fx = <OverloadFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
-  else if (variant === "disperse") fx = <DisperseFx cardEl={cardEl} color={suitCol} flipMs={1200} seed={seed} delay={FIN_DELAY} tier={dTier} scale={1} />;
-  else fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} tier={2} scale={1} />; // klinge (Default)
+  // klinge (einziger Finisher): die Vorschau fährt den Siegesserie-MULTIPLIKATOR stufenweise hoch (×1,0 → ×1,25 →
+  // ×1,5 → ×2,0) und zeigt, wie der Richtungs-Zyklus wächst — jede Serienschwelle ihren VOLLEN Zyklus von vorne
+  // (links zuerst). Spiegelt exakt die In-Game-Logik (sliceMove).
+  const kstreak = Math.round((kstep.m - 1) / 0.02);                       // passende Serie zur Multiplikator-Stufe (Wucht/Funken)
+  const fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={kstep.d} streak={kstreak} />;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
@@ -295,141 +249,24 @@ function FinisherScene({ variant }) {
       <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
         <div key={tick} className="absolute inset-0">{fx}</div>
       </div>
-      {/* #300: Diff-gekoppelte Finisher — Stufe (1→4) einblenden, damit die Eskalation in der Vorschau lesbar ist. */}
-      {(variant === "overload" || variant === "disperse") && (
-        <div className="absolute top-1.5 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold font-pixel"
-          style={{ background: "#0c0c10cc", border: "1px solid #2a2836", color: "#cfccda" }}>
-          Stufe {dTier}/4
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* #295 Brennstrahl-Vorschau: der PERSISTENTE Strahl (BurnBeamPersist) über einem synthetischen Serien-Loop — der Laser
-   fährt beim ersten „Sieg" herab, bleibt über die Serie lit und wird intensiver, je Sieg ein Einschlag-Burst (BurnBeamFx:
-   Loch/Funken/Verblassen); die „Niederlage" zieht den Strahl zurück. Zeigt das persistente Verhalten wie das Schwarze Loch. */
-function BurnBeamPreview() {
-  const panelRef = useRef(null), oppRef = useRef(null);
-  const [pulse, setPulse] = useState(null);
-  const [bursts, setBursts] = useState([]);
-  const [dormant, setDormant] = useState(true);
-  const bf = battlefieldAssets(SHOWCASE_BF);
-  const suitCol = suitColor(DEMO_SUIT);
-  const seqRef = useRef(0);
-  const burnLoopRef = useRef(null);
-  useEffect(() => {
-    // #: LÄNGERE Serie in der Vorschau, damit die Eskalation sichtbar wird: 1..11 Siege (Strahl lit, Intensität +
-    // Funkendichte steigen; ab ~Sieg 9 am Maximum → kurz gehalten) · 12 Niederlage (Strahl zieht sich zurück) · 13/14 Pause.
-    let c = 0;
-    const id = setInterval(() => {
-      c = (c + 1) % 15;
-      if (c >= 1 && c <= 11) {
-        const streak = c * 1.4; // wächst sichtbar über mehr Stufen; sK deckelt bei 12 → oberste Siege halten den vollen Strahl
-        setDormant(false);
-        setPulse({ id: ++seqRef.current, kind: "win", streak });
-        const bid = seqRef.current;
-        setBursts((b) => [...b, { id: bid, streak }].slice(-2));
-        setTimeout(() => setBursts((b) => b.filter((x) => x.id !== bid)), 1000);
-      } else if (c === 12) { setPulse({ id: ++seqRef.current, kind: "loss" }); setDormant(true); }
-    }, 820);
-    return () => clearInterval(id);
-  }, []);
-  // #302b/#307: Brennstrahl-Loop-Bett an die Lit-Phase (Sieg-Puls) koppeln — IDENTISCH zu In-Game (Battlefield.jsx):
-  // der Ton startet erst mit dem herabfahrenden Strahl (erster Sieg), nicht schon beim Öffnen der Vorschau, und stoppt
-  // beim Serienabbruch. So läuft kein Laser-Sound, bevor der Laser sichtbar ist. Leiser Start → mit der Serie lauter/heißer.
-  useEffect(() => {
-    const lit = !dormant && pulse && pulse.kind === "win";
-    if (lit) {
-      const sK = clamp((pulse.streak || 0) / 12, 0, 1);
-      const g = 0.3 + sK * 0.6;
-      const r = 1 + sK * 0.28;
-      if (!burnLoopRef.current) burnLoopRef.current = audio.loop("fx_burnbeam", { gain: g, rate: r, loopStart: 0.5, loopEnd: 5.5 });
-      else { audio.setLoopGain(burnLoopRef.current, g); audio.setLoopRate(burnLoopRef.current, r); }
-    } else if (burnLoopRef.current) {
-      audio.stopLoop(burnLoopRef.current); burnLoopRef.current = null;
-    }
-  }, [dormant, pulse]);
-  useEffect(() => () => {
-    if (burnLoopRef.current) { audio.stopLoop(burnLoopRef.current, { fade: 0.05 }); burnLoopRef.current = null; }
-  }, []);
-  const demoCard = () => <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
-  return (
-    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
-      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {/* Gegner-Demokarte etwas unterhalb der Mitte (Strahl hat Platz, von der Stage-Oberkante herabzufahren). */}
-      <div ref={oppRef} className="absolute" style={{ left: "50%", top: "58%", width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
-        <div className="absolute inset-0" style={{ opacity: dormant ? 1 : 0, transition: "opacity 160ms" }}>{demoCard()}</div>
+      {/* #312 Stufen-Label: zeigt, WELCHE Serienschwelle (Multiplikator) + Schnittrichtung gerade demonstriert wird.
+          #: unten-rechts, damit das „(aktiv)"-Ausgerüstet-Symbol oben-rechts es nicht verdeckt. */}
+      <div className="absolute bottom-1.5 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold font-pixel"
+        style={{ background: "#0c0c10cc", border: "1px solid #2a2836", color: kstep.d === "z" ? "#8fd8ff" : "#cfccda" }}>
+        {kMultLabel(kstep.m)} · {KLINGE_DIR_LABEL[kstep.d]}
       </div>
-      {/* Einschlag-Burst je Sieg (Loch/Funken/Verblassen) an der Kartenposition. */}
-      {bursts.map((bt) => (
-        <div key={bt.id} className="absolute" style={{ left: "50%", top: "58%", width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
-          <BurnBeamFx cardEl={demoCard()} color={suitCol} flipMs={1500} seed={bt.id * 3 + 1} delay={40} intensity={0.5} scale={1} streak={bt.streak} />
-        </div>
-      ))}
-      <BurnBeamPersist active pulse={pulse} color={suitCol} scale={1} panelRef={panelRef} oppRef={oppRef} reduced={false} />
-    </div>
-  );
-}
-
-/* #296 Schwarzes-Loch-Vorschau: die ECHTE In-Game-Komponente (BlackholeFieldFx) mit einem SYNTHETISCHEN Serien-Loop
-   (mehrere „Siege" hintereinander → Loch wächst + saugt Karten ein, dann Serienabbruch → Kollaps, danach Reset).
-   Vorschau = In-Game (dieselbe Komponente, kein Drift). */
-function BlackholePreview() {
-  const panelRef = useRef(null), oppRef = useRef(null);
-  const [pulse, setPulse] = useState(null);
-  const [dormant, setDormant] = useState(true);
-  const bf = battlefieldAssets(SHOWCASE_BF);
-  const suitCol = suitColor(DEMO_SUIT);
-  useEffect(() => {
-    // Synthetischer Serien-Loop: 1..8 Siege (Loch wächst + saugt Karten ein; der Serien-Mult klettert ÜBER ×2.0 →
-    // ab dann Zittern + Rand-Farbpuls sichtbar) · 9 Niederlage = Serienabbruch → Kollaps (Flash + Schockwelle) ·
-    // 10 dormant · 11/12 Pause. Genau das In-Game-Serien-Verhalten (dieselbe Komponente, kein Drift).
-    let c = 0, seq = 0;
-    const id = setInterval(() => {
-      c = (c + 1) % 12;
-      if (c >= 1 && c <= 8) { setDormant(false); setPulse({ id: ++seq, kind: "win", num: 2 + ((c * 3) % 9), col: suitCol, mult: 1 + c * 0.35 }); }
-      else if (c === 9) setPulse({ id: ++seq, kind: "loss" }); // Serienabbruch → Kollaps
-      else if (c === 10) setDormant(true);
-    }, 600);
-    return () => clearInterval(id);
-  }, [suitCol]);
-  // #: Loch-Ton-Bett identisch zu In-Game (leiser Start → Anschwellen mit dem Wachstum → hörbarer Bass-Kollaps beim Serienabbruch).
-  useBlackholeSfx(!dormant, pulse);
-  return (
-    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16", isolation: "isolate" }}>
-      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {/* Ursprung des Sogs = Gegner-Demokarte (rechts der Mitte). Während der Serie „verschwindet" sie ins Loch
-          (der Flyer im Canvas zeigt den Sog); in der Pause liegt sie wieder ruhig da. */}
-      <div ref={oppRef} className="absolute" style={{ left: "68%", top: "50%", width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
-        <div className="absolute inset-0" style={{ opacity: dormant ? 1 : 0, transition: "opacity 120ms" }}>
-          <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />
-        </div>
-      </div>
-      <BlackholeFieldFx active pulse={pulse} color={suitCol} scale={1} panelRef={panelRef} oppRef={oppRef} reduced={false} />
     </div>
   );
 }
 
 // Große In-Game-Vorschau eines Effekts im Kauffenster. Karten-Animationen → Karte/BF-Demo; Finisher/Krit →
 // echte In-Game-Komponente; Gottgleich (inkl. Standard) → das komplette Ereignis nachgespielt.
-function GlobalFxScenePreview({ fx }) {
-  if (fx.preview === "frameGlow" || fx.preview === "holoSwipe" || fx.preview === "auroraVeil" || fx.preview === "glitch") {
-    return (
-      <div className="w-full h-full grid place-items-center overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
-        <CardPreview deckId="default" a1={DEMO_C} fx={fx.preview} className="max-h-full" style={{ height: "94%" }} />
-      </div>
-    );
-  }
-  // #306 Battlefield-Ambiente (inkl. Hologrid + „Kein Feld-Effekt"): echte In-Game-Komponente (FieldFxLayer) über dem BF-Bild.
-  if (["hologrid", "starfield", "aurora", "embers", "scanline", "vignette", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} />;
-  if (["fireworks", "goldRain", "prismaWave"].includes(fx.preview)) return <GottgleichPreview variant={fx.preview} />;
-  if (fx.preview === "gottStandard") return <GottgleichPreview variant="standard" />;
-  if (fx.preview === "blackhole") return <BlackholePreview />;
-  if (fx.preview === "burnbeam") return <BurnBeamPreview />;
-  if (["laser", "klinge", "lasergrid", "overload", "disperse"].includes(fx.preview)) return <FinisherScene variant={fx.preview} />;
+function GlobalFxScenePreview({ fx, deckTint = false }) {
+  // #kategorien: Hintergrund-Effekt (Aurora) / Hintergrund-Finisher (Glutfunken) / „Kein Feld-Effekt": echte
+  // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
+  if (["aurora", "embers", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
+  if (fx.preview === "gottStandard") return <GottgleichPreview />;
+  if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
@@ -446,34 +283,63 @@ function GlobalFxScenePreview({ fx }) {
 // #: Glutfunken sind an den Lauf-Score gekoppelt → die Vorschau rampt einen Demo-Score durch mehrere Stufen und blendet
 // eine Score-Anzeige ein, damit man sieht, wie die Fontänen bei welchem Score aussehen (mehr/höher je Score, bis 500k).
 const EMBER_DEMO_SCORES = [40000, 150000, 320000, 500000];
-function FieldFxPreview({ effect }) {
-  const bf = battlefieldAssets(SHOWCASE_BF);
+// Hit-Tier-Leiter für die Glutfunken-Eskalations-Vorschau (Pixi): ab „Stark" eine große mittige Fontäne.
+const EMBER_TIER_LABELS = ["Schwach", "Stark", "Brutal", "Irre", "Gottgleich"];
+// Der GPU-Emitter zeigt die Glutfunken als Eskalation — nur im Preview/Dev-Build mit „pixi"-Renderer; sonst DOM-Fassung.
+const EMBER_PIXI_PREVIEW = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi";
+function FieldFxPreview({ effect, deckTint = false }) {
+  const look = PREVIEW_LOOK[effect] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
+  const bf = battlefieldAssets(look.bf);
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
   const [sweep, setSweep] = useState(1);
   const [emberStep, setEmberStep] = useState(0);
+  const [tierStep, setTierStep] = useState(0);
+  const pixiEmbers = effect === "embers" && EMBER_PIXI_PREVIEW;
+  const pixiField = EMBER_PIXI_PREVIEW && PIXI_FIELD_KEYS.includes(effect); // Sternenfeld/Glutfunken → Pixi-Bühne im Showcase
+  const auroraGL = EMBER_PIXI_PREVIEW && effect === "aurora";              // Aurora → eigene WebGL-Canvas
   useEffect(() => {
     if (effect === "none") return undefined;
-    // #: Glutfunken — Score-Wechsel UND Funkenstoß aus EINEM Timer, sonst zeigt der Puls (1,5s) eine andere Stufe als
-    // das Score-Label (2,4s). Beide zusammen bumpen → der Stoß spiegelt immer den gerade angezeigten Score. Andere
-    // Effekte: nur der periodische Sweep-Puls.
+    // #: Glutfunken — Score-/Tier-Wechsel UND Funkenstoß aus EINEM Timer, damit Puls und Label immer zusammenpassen.
+    // Pixi-Vorschau: durch die Hit-Tier-Leiter eskalieren (Schwach → Gottgleich). DOM/andere: Score-Rampe bzw. Sweep-Puls.
     const isEmbers = effect === "embers";
     const id = setInterval(() => {
       setSweep((s) => s + 1);
-      if (isEmbers) setEmberStep((s) => (s + 1) % EMBER_DEMO_SCORES.length);
-    }, isEmbers ? 2000 : 1500);
+      if (pixiEmbers) setTierStep((s) => (s + 1) % EMBER_TIER_LABELS.length);
+      else if (isEmbers) setEmberStep((s) => (s + 1) % EMBER_DEMO_SCORES.length);
+    }, isEmbers ? (pixiEmbers ? 1600 : 2000) : 1500);
     return () => clearInterval(id);
-  }, [effect]);
+  }, [effect, pixiEmbers]);
   const demoScore = effect === "embers" ? EMBER_DEMO_SCORES[emberStep] : 0;
+  // #313-Folge: Im DOM-Pfad (Produktion, FX_RENDERER=dom) kennt FieldFxLayer den deckTint NICHT und färbt die Glutfunken
+  // stur nach `color`. Darum hier die Ember-Farbe je Modus wählen — Standard = warmes Feuer (== Pixi-FIRE), Deckfarbe =
+  // Demo-Deckfarbe (look.a1). So schaltet der Standard↔Deckfarbe-Toggle die Showcase-Glutfunken sichtbar um.
+  // (Der Pixi-Vorschau-Pfad braucht das nicht — dort tönt der Emitter intern FIRE↔params.deck.)
+  const domColor = effect === "embers" && !deckTint ? "#ff6a30" : look.a1;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {effect !== "none" && <FieldFxLayer effect={effect} color={DEMO_C} color2="#b06bff" sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
+      {/* Pixi-Feldeffekte (Aurora/Sternenfeld/Glutfunken) auf der GPU-Bühne — sonst die DOM-Fassung (FieldFxLayer). */}
+      {pixiField && (
+        <Suspense fallback={null}>
+          <PixiStage className="absolute inset-0 z-[2]" effect={effect} color={look.a1} color2={look.a2} deckTint={deckTint}
+            score={pixiEmbers ? 250000 : demoScore} reduced={false} lite={false}
+            sweepId={sweep} sweepDur={1100} win hitTier={pixiEmbers ? tierStep : 0} />
+        </Suspense>
+      )}
+      {auroraGL && (
+        <div className="absolute inset-0 z-[2] pointer-events-none">
+          <AuroraFieldGL color={look.a1} color2={look.a2} deckColored={deckTint} animate />
+        </div>
+      )}
+      {effect !== "none" && !pixiField && !auroraGL && <FieldFxLayer effect={effect} color={domColor} color2={look.a2} sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
       {effect === "embers" && (
         <div className="absolute right-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
           style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#ffd7b0" }}>
-          <span className="opacity-70">Score</span> {demoScore.toLocaleString("de-DE")}
+          {pixiEmbers
+            ? (<><span className="opacity-70">Tier</span> {EMBER_TIER_LABELS[tierStep]}</>)
+            : (<><span className="opacity-70">Score</span> {demoScore.toLocaleString("de-DE")}</>)}
         </div>
       )}
     </div>
@@ -482,46 +348,19 @@ function FieldFxPreview({ effect }) {
 
 // Karten-Vorschau: illustrierte Karte (Front = Rahmen, Back = Cover), vollständig (object-contain) + optionaler
 // Effekt. Frame Glow = pulsierender Schein am Kartenrand; Holo Swipe = wandernder Glanz-Streifen.
-function CardPreview({ deckId, a1, fx, face = "back", className = "", style }) {
+function CardPreview({ deckId, face = "back", className = "", style }) {
   const img = deckAssets(deckId)[face] || deckAssets(deckId).back;
-  const glow = fx === "frameGlow";
-  // #309 Demo-Farben für Aurora-Schleier (Deck-Haupt- + Kontrastfarbe).
-  const a2 = "#ff5ad6";
   return (
     <div className={`relative rounded-lg overflow-hidden ${className}`}
-      style={{ aspectRatio: CARD_RATIO, background: "#0b0a16", "--a1": a1, animation: glow ? "ws-frameglow 2s ease-in-out infinite" : undefined, ...style }}>
+      style={{ aspectRatio: CARD_RATIO, background: "#0b0a16", ...style }}>
       <img src={img} alt="" className="absolute inset-0 w-full h-full object-contain rounded-lg" />
-      {fx === "holoSwipe" && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
-          <div className="absolute" style={{ top: "-60%", left: 0, width: "40%", height: "220%",
-            background: "linear-gradient(90deg,transparent,rgba(255,255,255,.28),rgba(120,220,255,.16),transparent)",
-            animation: "ws-swipe 2.6s ease-in-out infinite" }} />
-        </div>
-      )}
-      {fx === "auroraVeil" && (
-        <div aria-hidden="true" className="as-aurora-drift absolute inset-0 rounded-lg pointer-events-none" style={{
-          mixBlendMode: "screen", opacity: 0.55, filter: "blur(8px)",
-          backgroundImage: `radial-gradient(58% 44% at 30% 33%, ${a1}cc, transparent 70%), radial-gradient(54% 40% at 72% 66%, ${a2}bb, transparent 70%), radial-gradient(48% 50% at 50% 84%, ${a1}88, transparent 76%)` }} />
-      )}
-      {fx === "glitch" && (
-        <div aria-hidden="true" className="as-glitch-wrap absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
-          {/* Chromatische Aberration: zwei versetzte Magenta/Cyan-Klone des Kartenmotivs (contain, wie das <img>). */}
-          <div className="as-glitch-chroma-a absolute inset-0" style={{ backgroundImage: `url(${img})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundColor: "#ff2bd6", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
-          <div className="as-glitch-chroma-b absolute inset-0" style={{ backgroundImage: `url(${img})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundColor: "#20e5ff", backgroundBlendMode: "multiply", mixBlendMode: "screen" }} />
-          <span className="as-glitch-bar" style={{ top: "24%", background: "linear-gradient(90deg,transparent,#ff2bd6,transparent)", filter: "drop-shadow(0 0 3px #ff2bd6)", animationDelay: "-0.2s" }} />
-          <span className="as-glitch-bar" style={{ top: "52%", background: "linear-gradient(90deg,transparent,#20e5ff,transparent)", filter: "drop-shadow(0 0 3px #20e5ff)", animationDelay: "-1.7s" }} />
-          <span className="as-glitch-bar" style={{ top: "76%", background: `linear-gradient(90deg,transparent,${a1},transparent)`, filter: `drop-shadow(0 0 3px ${a1})`, animationDelay: "-3.1s" }} />
-          <div className="as-glitch-scan" />
-        </div>
-      )}
     </div>
   );
 }
 
 // Battlefield-Vorschau: echtes BF-Bild in der AKTUELL gespielten Version (mobile/desktop, gleiche 640px-
-// Schwelle wie im Spiel) + optionales Hologrid-Gitter in der Deck-Hauptfarbe (a1). showVersion blendet ein
-// kleines Label ein, welche Version man gerade sieht.
-function BfPreview({ bfId, a1, fx, className = "", showVersion = false }) {
+// Schwelle wie im Spiel). showVersion blendet ein kleines Label ein, welche Version man gerade sieht.
+function BfPreview({ bfId, className = "", showVersion = false }) {
   const bf = battlefieldAssets(bfId);
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
@@ -532,19 +371,6 @@ function BfPreview({ bfId, a1, fx, className = "", showVersion = false }) {
       {showVersion && bf && (
         <span className="absolute top-1.5 left-1.5 text-[9px] font-extrabold tracking-wider px-1.5 py-0.5 rounded"
           style={{ background: "#0b0a16cc", border: "1px solid #34333f", color: "#9a97ab" }}>{isMobile ? "MOBILE" : "DESKTOP"}</span>
-      )}
-      {fx === "hologrid" && (
-        // Ruhiges Gitter + durchfahrende Leucht-Linie (wie im Spiel je Stich; hier als Endlos-Demo).
-        <div className="absolute pointer-events-none" style={{
-          left: "-20%", right: "-20%", bottom: 0, height: "48%",
-          transform: "perspective(140px) rotateX(60deg)", transformOrigin: "bottom" }}>
-          <div className="absolute inset-0" style={{
-            backgroundImage: `linear-gradient(${a1} 1px,transparent 1px),linear-gradient(90deg,${a1} 1px,transparent 1px)`,
-            backgroundSize: "16px 16px", opacity: 0.26 }} />
-          <div className="ws-sweep absolute left-0 right-0" style={{ height: 7,
-            background: `linear-gradient(90deg,transparent,${a1} 15%,#ffffff 50%,${a1} 85%,transparent)`,
-            boxShadow: `0 0 20px 4px ${a1}, 0 0 52px 12px ${a1}, 0 0 6px 2px #ffffff` }} />
-        </div>
       )}
     </div>
   );
@@ -792,8 +618,8 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
    An-Aus / Als Finisher·Ambiente wählen). Kein separates Kauffenster mehr — der Floater IST Vorschau und Kauf. */
 function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const finisherSel = finisherSelOf(options);
-  const fieldSel = fieldFxSelOf(options);
-  const gottSel = gottSelOf(options);
+  const bgFxSel = bgFxSelOf(options);
+  const bgFinSel = bgFinSelOf(options);
   // Auswahl-Status des Floaters: { group, key }. Default = erster Effekt der ersten Gruppe (Karten-Animationen).
   const [sel, setSel] = useState(() => { const g = FX_GROUPS[0]; return { group: g.key, key: fxGroupItems(g.key)[0].key }; });
   const selGroup = FX_GROUPS.find((g) => g.key === sel.group) || FX_GROUPS[0];
@@ -802,21 +628,21 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 
   // Ist ein Effekt in seiner Gruppe „aktiv"? (Toggle an / als Finisher·Ambiente gewählt). Zentrale Wahrheit → Chip-Marker + Floater-Aktion.
   const isActive = (g, fx) => g.mode === "finisher" ? finisherSel === fx.key
-    : g.mode === "field" ? fieldSel === fx.key
-    : g.mode === "gott" ? gottSel === fx.key
+    : g.mode === "bgfx" ? bgFxSel === fx.key
+    : g.mode === "bgfin" ? bgFinSel === fx.key
     : fx.standard ? false : !!options?.[fx.option];
 
   return (
     <>
       {/* Mitlaufende Vorschau-Bühne (sticky unter dem Kopf). */}
       <FxFloater fx={selFx} group={selGroup} p={p} active={isActive(selGroup, selFx)}
-        onChoose={onChoose} onBuyFx={onBuyFx} stickyTop={stickyTop} />
+        onChoose={onChoose} onBuyFx={onBuyFx} stickyTop={stickyTop} options={options} />
 
       {/* Kategorien als horizontal wischbare Reihen. */}
       <div className="mt-3">
         {FX_GROUPS.map((g) => {
           // #: aktiver Effekt zuerst, dann Standard (falls vorhanden) — „rutscht links an die erste Stelle".
-          const selKey = g.mode === "finisher" ? finisherSel : g.mode === "field" ? fieldSel : g.mode === "gott" ? gottSel : null;
+          const selKey = g.mode === "finisher" ? finisherSel : g.mode === "bgfx" ? bgFxSel : g.mode === "bgfin" ? bgFinSel : null;
           const items = orderFxItems(fxGroupItems(g.key), selKey, FX_STD_KEY[g.key]);
           return (
             <div key={g.key} className="mb-1.5">
@@ -839,8 +665,8 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
                       const on = isActive(g, fx);
                       if (!on && !(fx.alwaysOwned || globalFxOwned(p, fx))) return;   // nicht im Besitz → erst kaufen (Floater)
                       if (g.mode === "finisher") onChoose(finisherFlags(on ? "none" : fx.key));
-                      else if (g.mode === "field") onChoose(fieldFxFlags(on ? "none" : fx.key));
-                      else if (g.mode === "gott") onChoose(gottFlags(on ? "gottStandard" : fx.key));
+                      else if (g.mode === "bgfx") onChoose(bgFxFlags(on ? "none" : fx.key));
+                      else if (g.mode === "bgfin") onChoose(bgFinFlags(on ? "none" : fx.key));
                       else onChoose({ [fx.option]: !on });
                     }} />
                 ))}
@@ -860,8 +686,11 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 /* #fx-floater: die große Vorschau-Bühne, die unter dem Sticky-Kopf klebt. Zeigt den gewählten Effekt als ECHTE
    In-Game-Vorschau (GlobalFxScenePreview, key={fx.key} → sauberer Remount beim Wechsel, keine hängenden Loops) +
    Gruppen-/Namensschild + die kontextabhängige Aktion (Logik/Optik wie zuvor das Kauffenster). */
-function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
+function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
+  // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
+  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : null;
+  const deckTintOn = deckOpt ? !!options?.[deckOpt] : false;
   const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const price = globalFxPrice(fx);
   const dpBal = Math.max(0, Math.floor(Number(p?.deckPoints) || 0));
@@ -882,10 +711,23 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
     );
   } else if (group.mode === "finisher") {
     action = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Finisher wählen"}</button>;
-  } else if (group.mode === "field") {
-    action = <button onClick={() => onChoose(fieldFxFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Ambiente wählen"}</button>;
-  } else if (group.mode === "gott") {
-    action = <button onClick={() => onChoose(gottFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Prunk wählen"}</button>;
+  } else if (group.mode === "bgfx" || group.mode === "bgfin") {
+    const label = group.mode === "bgfx" ? "Als Hintergrund wählen" : "Als Hintergrund-Finisher wählen";
+    const flags = group.mode === "bgfx" ? bgFxFlags(fx.key) : bgFinFlags(fx.key);
+    const chooseBtn = <button onClick={() => onChoose(flags)} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : label}</button>;
+    // #: Aurora + Glutfunken bieten Standard/Deckfarbe. Toggle setzt das Farbmodus-Flag (deckOpt).
+    action = !deckOpt ? chooseBtn : (
+      <div className="flex flex-col gap-2">
+        {chooseBtn}
+        <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
+          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+            const on = deckTintOn === o.v;
+            return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
+              style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+          })}
+        </div>
+      </div>
+    );
   } else {
     action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
   }
@@ -893,7 +735,11 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
   return (
     <div className="sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
       <div className="relative w-full rounded-xl overflow-hidden" style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a", boxShadow: "0 0 22px -10px #35e0ff66" }}>
-        <GlobalFxScenePreview key={fx.key} fx={fx} />
+        {/* #313: Der Key trägt den Farbmodus mit → beim Toggle Standard↔Deckfarbe remountet die Vorschau sofort
+            (frischer AuroraFieldGL-/PixiStage-Canvas mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
+            Farbwechsel nicht, man musste erst weg- und zurückwechseln. Für Effekte ohne Farbmodus bleibt deckTintOn
+            konstant false → Key stabil, kein unnötiger Remount. */}
+        <GlobalFxScenePreview key={`${fx.key}:${deckTintOn ? "deck" : "std"}`} fx={fx} deckTint={deckTintOn} />
         {/* Gruppen-Schild oben links */}
         <span className="absolute left-2 top-2 text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-md"
           style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{group.title}</span>
@@ -913,12 +759,9 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop }) {
 /* #fx-floater/Text-Chips: Signatur-Farbe je Effekt (linker Farbbalken). Meist Deckfarben-Cyan; ein paar Effekte tragen
    ihre eigene Identitätsfarbe (Feuer/Gold/Blitz/Aurora/Prisma), damit die Reihe auf einen Blick lesbar ist. Key = preview. */
 const FX_TINT = {
-  frameGlow: "#35e0ff", holoSwipe: "#35e0ff", auroraVeil: "#c86bff", glitch: "#35e0ff",
-  none: "#4a4857", hologrid: "#35e0ff", starfield: "#7fb4ff", aurora: "#54e08a",
-  embers: "#ff7a2f", scanline: "#35e0ff", vignette: "#c86bff",
-  klinge: "#35e0ff", laser: "#35e0ff", lasergrid: "#35e0ff", disperse: "#8fd8ff",
-  overload: "#9b82f0", burnbeam: "#ff7a2f", blackhole: "#35e0ff",
-  gottStandard: "#7fb4ff", fireworks: "#ff5ad6", goldRain: "#f2c14a", prismaWave: "#c86bff",
+  none: "#4a4857", aurora: "#54e08a", embers: "#ff7a2f",
+  klinge: "#35e0ff",
+  gottStandard: "#7fb4ff",
 };
 
 /* #fx-floater: Text-Chip einer Kategorie-Reihe (horizontal wischbar) — KEIN Grafik-Icon. Linker Signatur-Farbbalken

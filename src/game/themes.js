@@ -27,51 +27,16 @@ import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress } from "./cosme
                   EXKLUSIV; die Auswahl erfolgt UI-seitig als Einfachauswahl).
      "gott"     = Gottgleicher Sieg OHNE Krit (Prunk-Overlays; stapelbar). */
 export const GLOBAL_FX = [
-  // Karten-Animationen (auf der Karte; frei kombinierbar). Options-Keys bleiben fxFrameGlow/fxHoloSwipe.
-  { key: "frameGlow", name: "Frame-Pulse", desc: "Der Kartenrahmen pulsiert in der Deck-Farbe.",
-    ownKey: "fx:frameGlow", option: "fxFrameGlow", preview: "frameGlow", price: 3, group: "anim" },
-  { key: "holoSwipe", name: "Holo-Swipe", desc: "Ein Glanz-Streifen wandert über die Karte.",
-    ownKey: "fx:holoSwipe", option: "fxHoloSwipe", preview: "holoSwipe", price: 5, group: "anim" },
-  // #309 zwei neue Karten-Animationen (reine CSS-Loops, frei kombinierbar). „aurora"-Key ist bereits vom Feld-Ambiente
-  // belegt → das Karten-Aurora heißt intern auroraVeil (Anzeige „Aurora-Schleier").
-  { key: "auroraVeil", name: "Aurora-Schleier", desc: "Weicher Neon-Nebel driftet in den Deck-Farben hinter dem Motiv.",
-    ownKey: "fx:auroraVeil", option: "fxAuroraVeil", preview: "auroraVeil", price: 5, group: "anim" },
-  { key: "glitch", name: "Glitch", desc: "Kurzes chromatisches RGB-Zucken auf der Zahl alle paar Sekunden.",
-    ownKey: "fx:glitch", option: "fxGlitch", preview: "glitch", price: 5, group: "anim" },
-  // #306 Battlefield-Ambiente (feldweit, z-1, in Deckfarbe; einfach-exklusiv). Reaktion je Stich (Turbo-Throttle).
-  { key: "hologrid", name: "Hologrid", desc: "Ein Leucht-Gitter läuft über das Battlefield.",
-    ownKey: "fx:hologrid", option: "fxHologrid", preview: "hologrid", price: 5, group: "field" },
-  { key: "starfield", name: "Sternenfeld", desc: "Ein Parallax-Sternenfeld driftet langsam übers Feld; je Stich zieht eine Sternschnuppe durch — in der Deckfarbe.",
-    ownKey: "fx:starfield", option: "fxStarfield", preview: "starfield", price: 10, group: "field" },
+  // #cleanup: Karten-Animationen (frameGlow/holoSwipe/auroraVeil/glitch), alle nicht-überarbeiteten Feld-Effekte
+  // (hologrid/starfield/scanline/vignette), alle Sieg-Finisher außer der Klinge (laserSlice/blackhole/lasergrid/
+  // burnBeam/overload/disperse) UND der Gottgleich-Prunk (fireworks/goldRain/prismaWave) wurden vollständig entfernt —
+  // sie werden ersetzt. Es bleiben: Hintergrund-Effekt „Aurora", Hintergrund-Finisher „Glutfunken" und der
+  // synthetische Klinge-Finisher. Die Gottgleich-Kategorie (group "gott") bleibt (nur „Standard"), dort kommt später
+  // neuer Prunk rein.
   { key: "aurora", name: "Aurora", desc: "Weiche Polarlicht-Schleier driften übers Feld; je Stich ein sanfter Bloom-Puls — in der Deckfarbe.",
-    ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "field" },
+    ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "bgfx" }, // #kategorien: Hintergrund-Effekt (reiner BG, Pixi)
   { key: "embers", name: "Glutfunken", desc: "Schwebende Glutpartikel steigen langsam auf; je Stich ein Funken-Aufstoß von unten — in der Deckfarbe.",
-    ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 8, group: "field" },
-  { key: "scanline", name: "Scanline-Puls", desc: "CRT-Scanlines liegen übers Feld; je Stich wandert eine helle Zeile von oben nach unten — in der Deckfarbe.",
-    ownKey: "fx:scanline", option: "fxScanline", preview: "scanline", price: 5, group: "field" },
-  { key: "vignette", name: "Puls-Vignette", desc: "Der Feldrand atmet in der Deckfarbe; je Stich glüht das ganze Feld kurz auf.",
-    ownKey: "fx:vignette", option: "fxVignette", preview: "vignette", price: 5, group: "field" },
-  // Sieg-Finisher (exklusiv, UI-seitige Einfachauswahl mit „Klinge" als Default).
-  { key: "laserSlice", name: "Laser-Schnitt", desc: "Gegnerkarten werden beim Sieg von einem Laser aus zufälliger Richtung (jeder Sieg anders) geteilt — statt der Klinge.",
-    ownKey: "fx:laserSlice", option: "fxLaserSlice", preview: "laser", price: 3, group: "finisher" },
-  { key: "blackhole", name: "Schwarzes Loch", desc: "Bei einer Siegserie wächst EIN Schwarzes Loch, das jede weitere Gegnerkarte einsaugt (Orbs auf wachsender Bahn); Serienabbruch → Kollaps mit Flash & Schockwelle (statt Klinge/Laser).",
-    ownKey: "fx:blackhole", option: "fxBlackhole", preview: "blackhole", price: 25, group: "finisher" },
-  { key: "lasergrid", name: "Lasergitter", desc: "Beim Sieg blitzt ein Neon-Gitter über die Gegnerkarte — sie zerfällt entlang der Linien in ein Raster aus Stücken, die auseinanderfliegen (statt Klinge/Laser).",
-    ownKey: "fx:lasergrid", option: "fxLasergrid", preview: "lasergrid", price: 5, group: "finisher" },
-  { key: "burnBeam", name: "Brennstrahl", desc: "Beim Sieg brennt ein dünner Neon-Strahl von oben ein glühendes Loch in die exakte Kartenmitte; die Karte zerfällt in kleine warme Funken/Asche. Bei Siegserie hält der Strahl länger & es springen immer mehr Funken aus dem Loch (statt Klinge/Laser).",
-    ownKey: "fx:burnBeam", option: "fxBurnBeam", preview: "burnbeam", price: 20, group: "finisher" },
-  { key: "overload", name: "Überladung", desc: "Beim Sieg schlägt ein prozeduraler Blitz von oben in die Gegnerkarte ein — je größer der Wertunterschied des Stichs, desto mehr/hellere Blitze mit Gabeln & Funken (statt Klinge/Laser).",
-    ownKey: "fx:overload", option: "fxOverload", preview: "overload", price: 15, group: "finisher" },
-  { key: "disperse", name: "Zerstäubung", desc: "Beim Sieg löst sich die Gegnerkarte in ein Partikelgitter auf, das nach außen/oben streut & ausfadet — je größer der Wertunterschied des Stichs, desto heftiger der Streusturm (statt Klinge/Laser).",
-    ownKey: "fx:disperse", option: "fxDisperse", preview: "disperse", price: 10, group: "finisher" },
-  // #: Krit-Effekt „Shatter" entfernt — die Custom-Finisher decken jetzt jeden Sieg (auch Krits) ab.
-  // Gottgleich-Prunk (stapelbar).
-  { key: "fireworks", name: "Neon-Feuerwerk", desc: "Gottgleicher Sieg ohne Krit: mehrere Feuerwerks-Bursts ploppen über dem Feld — in der Deckfarbe.",
-    ownKey: "fx:fireworks", option: "fxFireworks", preview: "fireworks", price: 15, group: "gott" },
-  { key: "goldRain", name: "Weißgold-Regen", desc: "Gottgleicher Sieg ohne Krit: ein Schauer goldener Funken rieselt über das Feld — bleibt immer gold.",
-    ownKey: "fx:goldRain", option: "fxGoldRain", preview: "goldRain", price: 10, group: "gott" },
-  { key: "prismaWave", name: "Prisma-Welle", desc: "Gottgleicher Sieg ohne Krit: ein prismatischer Schockwellen-Ring läuft einmal über das ganze Board.",
-    ownKey: "fx:prismaWave", option: "fxPrismaWave", preview: "prismaWave", price: 5, group: "gott" },
+    ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 8, group: "bgfin" }, // #kategorien: Hintergrund-Finisher (Stich-Interaktion, Pixi)
 ];
 export const GLOBAL_FX_BY_KEY = Object.fromEntries(GLOBAL_FX.map((f) => [f.key, f]));
 export const globalFxOwned = (profile, fx) => !!(profile && profile.ownedCosmetics && profile.ownedCosmetics[fx.ownKey]);
@@ -93,34 +58,21 @@ export const globalFxActive = (profile, options, key) => {
   const fx = GLOBAL_FX_BY_KEY[key];
   return !!fx && globalFxOwned(profile, fx) && !!(options && options[fx.option]);
 };
-// Karten-Animationen (global).
-export const frameGlowActive = (profile, options) => globalFxActive(profile, options, "frameGlow");
-export const holoSwipeActive = (profile, options) => globalFxActive(profile, options, "holoSwipe");
-export const auroraVeilActive = (profile, options) => globalFxActive(profile, options, "auroraVeil"); // #309 Karten-Aurora-Schleier
-export const glitchActive = (profile, options) => globalFxActive(profile, options, "glitch");        // #309 Karten-Glitch
-// #306 Battlefield-Ambiente (einfach-exklusiv). Reihenfolge = Priorität, falls (defensiv) mehrere Flags an wären.
-export const FIELD_FX_KEYS = ["hologrid", "starfield", "aurora", "embers", "scanline", "vignette"];
-export const hologridActive = (profile, options) => globalFxActive(profile, options, "hologrid");
-export const starfieldActive = (profile, options) => globalFxActive(profile, options, "starfield");
+// #306/#kategorien: zwei UNABHÄNGIGE Feld-Slots — reiner Hintergrund-Effekt (kein Stich-Bezug) und Hintergrund-
+// Finisher (Stich-Interaktion). Beide können GLEICHZEITIG aktiv sein → activeBgFx + activeBgFinisher liefern je
+// einen Key. Nach dem #cleanup gibt es je Slot nur noch einen Effekt (Aurora bzw. Glutfunken).
 export const auroraActive = (profile, options) => globalFxActive(profile, options, "aurora");
 export const embersActive = (profile, options) => globalFxActive(profile, options, "embers");
-export const scanlineActive = (profile, options) => globalFxActive(profile, options, "scanline");
-export const vignetteActive = (profile, options) => globalFxActive(profile, options, "vignette");
-// Aktiver Feld-Ambiente-Effekt (Key) oder null — der Battlefield-Layer rendert genau diesen einen.
-export function activeFieldFx(profile, options) {
-  for (const k of FIELD_FX_KEYS) if (globalFxActive(profile, options, k)) return k;
+export const BG_FX_KEYS  = ["aurora"];  // reiner Hintergrund
+export const BG_FIN_KEYS = ["embers"];  // Hintergrund-Finisher (reagiert je Stich)
+export function activeBgFx(profile, options) {
+  for (const k of BG_FX_KEYS) if (globalFxActive(profile, options, k)) return k;
   return null;
 }
-// Finisher / Krit / Gott.
-export const laserSliceActive = (profile, options) => globalFxActive(profile, options, "laserSlice");
-export const blackholeActive = (profile, options) => globalFxActive(profile, options, "blackhole");
-export const lasergridActive = (profile, options) => globalFxActive(profile, options, "lasergrid");
-export const burnBeamActive = (profile, options) => globalFxActive(profile, options, "burnBeam");
-export const overloadActive = (profile, options) => globalFxActive(profile, options, "overload");
-export const disperseActive = (profile, options) => globalFxActive(profile, options, "disperse");
-export const fireworksActive = (profile, options) => globalFxActive(profile, options, "fireworks");
-export const goldRainActive = (profile, options) => globalFxActive(profile, options, "goldRain");
-export const prismaWaveActive = (profile, options) => globalFxActive(profile, options, "prismaWave");
+export function activeBgFinisher(profile, options) {
+  for (const k of BG_FIN_KEYS) if (globalFxActive(profile, options, k)) return k;
+  return null;
+}
 
 /* PACK-Registry. kind:
      "buy"  → EIN Kauf (Deck + Battlefield zusammen) für pack.price DP (#307). Besitz: ownedCosmetics["pack:<id>"].

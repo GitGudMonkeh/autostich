@@ -100,7 +100,9 @@ export function StatusBar({
                   ? <span className="text-[10px] font-bold whitespace-nowrap tabular-nums" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>{ghost.delta >= 0 ? "▲ +" : "▼ "}{fmtScore(ghost.delta)}</span>
                   : null)}
             </div>
-            <span className="font-pixel-dense leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: "#d4a63a" }}>{fmtScore(score)}</span>
+            {/* #: Bei sehr großen Zahlen (>100 Mio · 9+ Stellen) die Score-Schrift etwas verkleinern, damit die Zeile
+                zusammen mit hoher Serie (z. B. 1000×) nicht rechts über den Rahmen hinausläuft. */}
+            <span className="font-pixel-dense leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: score >= 1000000000 ? 19 : score >= 100000000 ? 21 : 25, color: "#d4a63a" }}>{fmtScore(score)}</span>
           </div>
           {/* Serie — kann in den Tausenderbereich gehen; rechtsbündig neben dem Score. */}
           <Cell label="Serie" className="border-l border-[#26262e]">

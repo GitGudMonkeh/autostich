@@ -1,0 +1,53 @@
+name: Deploy Pixi to Pages (/pixi/)
+
+# Deployt den Pixi-Umbau-Branch als Unterpfad /autostich/pixi/ auf DIESELBE Pages-Seite wie main.
+# Eigener, isolierter Test-Slot für den GPU-/Pixi-Umbau — hier prüfen wir jeden Schritt live, OHNE
+# test/ oder die Hauptseite anzufassen, bis wir bereit sind umzuziehen. VITE_PREVIEW="1" → eigener
+# localStorage-Namespace + kein Schreiben ins echte Leaderboard, und die Pixi-Bühne ist aktiv.
+on:
+  push:
+    branches: [Autostich/pixi]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Gleiche Gruppe wie main/test/balancing → serialisiert die gh-pages-Pushes (kein Race beim Publizieren).
+concurrency:
+  group: gh-pages-publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # volle Historie → git rev-list --count HEAD als Build-Nummer
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # Build-Stempel (Version) — Commit-Count + kurze SHA + Umgebung in die Env (Vite exponiert VITE_*).
+      - name: Build-Metadaten
+        run: |
+          echo "VITE_BUILD_NUM=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
+          echo "VITE_BUILD_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "VITE_ENV=pixi" >> "$GITHUB_ENV"
+      - run: npm run build
+        env:
+          # Assets müssen unter dem Unterpfad aufgelöst werden.
+          DEPLOY_BASE: /autostich/pixi/
+          # Preview-Build: eigener localStorage-Namespace, kein echtes Leaderboard, Pixi-Bühne aktiv.
+          VITE_PREVIEW: "1"
+      - run: npm run gen:db  # Core Game Database aus src/game/* → dist/db/ (unter /autostich/pixi/db/)
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          # Nur in den Unterordner pixi/ schreiben; Root (main) und test/ unangetastet lassen.
+          destination_dir: pixi
+          keep_files: true
+          commit_message: "deploy(pixi): ${{ github.sha }}"

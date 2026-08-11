@@ -20,7 +20,7 @@ function mockLS() {
     clear: () => m.clear(),
   };
 }
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxFrameGlow: false, fxHoloSwipe: false, fxAuroraVeil: false, fxGlitch: false, fxHologrid: false, fxStarfield: false, fxAurora: false, fxEmbers: false, fxScanline: false, fxVignette: false, fxLaserSlice: false, fxBlackhole: false, fxLasergrid: false, fxBurnBeam: false, fxOverload: false, fxDisperse: false, fxFireworks: false, fxGoldRain: false, fxPrismaWave: false };
+const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxAurora: false, fxEmbers: false };
 
 describe("rankHighscores", () => {
   it("sortiert nach Score↓ und behält die Top 20", () => {
@@ -106,29 +106,30 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
 
   const runRec = (over = {}) => ({ score: 0, ts: 1, completed: true, ...over });
 
-  it("frisches Profil trägt die neuen Felder mit Nullwerten", () => {
+  it("#316 frisches Profil: Onboarding fertig (6/6), 50 DP Startbonus, 0 SP", () => {
     const p = loadProfile();
     expect(p.stichPoints).toBe(0);
     expect(p.stichSpent).toBe(0);
     expect(p.nodes).toEqual({});
-    expect(p.onboarding).toBe(0);
+    expect(p.onboarding).toBe(ONBOARDING_LINKS); // #316: kein Onboarding mehr → direkt „fertig"
     expect(p.spRuns).toBe(0);
+    expect(p.deckPoints).toBe(50);               // #316: Fresh-Start-Bonus
     expect(p.ownedCosmetics).toEqual({});
     expect(p.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
   });
 
-  it("Migration v1 → v3 seedet die neuen Felder ohne Altfelder zu verlieren", () => {
+  it("Migration v1 → v6 seedet die neuen Felder + hebt Onboarding auf fertig, ohne Altfelder zu verlieren", () => {
     const v1 = { schemaVersion: 1, games: 4, bestScore: 700, bestStreak: 5 };
     const m = migrateProfile(v1);
     expect(m.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
     expect(m.games).toBe(4);
-    expect(m.bestStreak).toBe(5);         // Altfeld erhalten
+    expect(m.bestStreak).toBe(5);                    // Altfeld erhalten
     expect(m.stichPoints).toBe(0);
     expect(m.nodes).toEqual({});
-    expect(m.onboarding).toBe(0);
+    expect(m.onboarding).toBe(ONBOARDING_LINKS);     // #316: Migration hebt auf „fertig"
     expect(m.spRuns).toBe(0);
     expect(m.ownedCosmetics).toEqual({}); // v2 → v3: Deck-Werkstatt-Besitz
-    expect(m.deckPoints).toBe(0);         // v3 → v4: DP-Ökonomie
+    expect(m.deckPoints).toBe(0);         // Migration gibt KEINEN 50-DP-Bonus (nur frische Profile)
     expect(m.deckSpent).toBe(0);
   });
 
@@ -157,43 +158,31 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(b.nodes).toEqual({}); // NICHT von a vergiftet
   });
 
-  it("Onboarding rückt nur bei natürlichem Abschluss vor, gedeckelt bei 6", () => {
-    let p;
-    for (let i = 1; i <= ONBOARDING_LINKS; i++) {
-      p = recordRun(runRec({ ts: i })).profile;
-      expect(p.onboarding).toBe(i);
-    }
-    // 7. abgeschlossener Lauf → bleibt bei 6.
-    p = recordRun(runRec({ ts: 7 })).profile;
-    expect(p.onboarding).toBe(6);
-    // Vorzeitiges Beenden rückt nicht vor (frisches Profil).
-    global.localStorage = mockLS();
+  it("#316: kein Onboarding mehr — frisches Profil ist fertig (6/6) und bleibt es", () => {
+    let p = recordRun(runRec({ ts: 1 })).profile;
+    expect(p.onboarding).toBe(ONBOARDING_LINKS);          // schon fertig, kein Vorrücken
+    p = recordRun(runRec({ ts: 2 })).profile;
+    expect(p.onboarding).toBe(ONBOARDING_LINKS);
+    // Vorzeitiges Beenden ändert nichts.
     const q = recordRun(runRec({ completed: false })).profile;
-    expect(q.onboarding).toBe(0);
-    expect(q.games).toBe(1); // games zählt trotzdem
+    expect(q.onboarding).toBe(ONBOARDING_LINKS);
+    expect(q.games).toBe(3); // games zählt jeden Lauf
   });
 
-  it("während des Onboardings gibt es NULL SP; danach Grundstock + Meilensteine", () => {
-    // 6 Onboarding-Läufe mit riesigem Score → immer noch 0 SP.
-    let p;
-    for (let i = 1; i <= ONBOARDING_LINKS; i++) p = recordRun(runRec({ ts: i, score: 100_000_000 })).profile;
-    expect(p.onboarding).toBe(6);
-    expect(p.stichPoints).toBe(0);
-    expect(p.spRuns).toBe(0);
-    // 1. Lauf NACH dem Onboarding: +1 Grundstock + 5 Meilenstein-SP (100 Mio) = 6.
-    p = recordRun(runRec({ ts: 7, score: 100_000_000 })).profile;
+  it("#316: SP werden ab dem ERSTEN abgeschlossenen Lauf verdient (kein Onboarding-Delay)", () => {
+    // 1. Lauf: +1 Grundstock + 5 Meilenstein-SP (100 Mio) = 6.
+    let p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
     expect(p.stichPoints).toBe(6);
     expect(p.spRuns).toBe(1);
     // Nächster, kleiner Lauf: nur +1.
-    p = recordRun(runRec({ ts: 8, score: 10_000 })).profile;
+    p = recordRun(runRec({ ts: 2, score: 10_000 })).profile;
     expect(p.stichPoints).toBe(7);
     expect(p.spRuns).toBe(2);
   });
 
   it("Treue-Drip: der 10. SP-Lauf gibt +5 extra", () => {
     let p;
-    for (let i = 1; i <= ONBOARDING_LINKS; i++) p = recordRun(runRec({ ts: i })).profile; // Onboarding fertig
-    // 9 SP-Läufe à +1 → 9 SP.
+    // 9 SP-Läufe à +1 → 9 SP (kein Onboarding-Vorlauf mehr — jeder abgeschlossene Lauf ist ein SP-Lauf).
     for (let i = 0; i < 9; i++) p = recordRun(runRec({ ts: 100 + i })).profile;
     expect(p.stichPoints).toBe(9);
     expect(p.spRuns).toBe(9);
@@ -203,30 +192,24 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.stichPoints).toBe(15);
   });
 
-  it("#299 §2: Onboarding-Abschluss (6/6) meldet unlocks; Genesis NICHT als Pack geschenkt (frei via onboardingDone)", () => {
-    let res, p;
-    for (let i = 1; i <= ONBOARDING_LINKS - 1; i++) p = recordRun(runRec({ ts: i })).profile; // 5/6
-    expect(p.ownedCosmetics["pack:genesis"]).toBeUndefined();
-    res = recordRun(runRec({ ts: 6 })); // 6/6 → Abschluss
-    expect(res.profile.onboarding).toBe(6);
-    expect(res.profile.ownedCosmetics["pack:genesis"]).toBeUndefined(); // kein Pack-Grant mehr — Genesis via onboardingDone frei
-    expect(res.unlocks.some((u) => u.type === "onboardingDone" && u.target === "workshop")).toBe(true);
-    // ein weiterer Lauf danach meldet keine neuen Onboarding-Unlocks mehr
-    expect(recordRun(runRec({ ts: 7 })).unlocks).toEqual([]);
+  it("#316: frisches Profil ist bereits 6/6 — recordRun meldet keine Onboarding-Unlocks; Genesis via onboardingDone frei", () => {
+    const res = recordRun(runRec({ ts: 1 }));
+    expect(res.profile.onboarding).toBe(ONBOARDING_LINKS);
+    expect(res.profile.ownedCosmetics["pack:genesis"]).toBeUndefined(); // kein Pack-Grant — Genesis via onboardingDone frei
+    expect(res.unlocks).toEqual([]); // keine Onboarding-Glied-Unlocks mehr (Startprofil ist schon fertig)
   });
 
-  it("#299 DP: nach Onboarding native DP = floor(score/10M); SP laufen normal weiter", () => {
-    let p;
-    for (let i = 1; i <= ONBOARDING_LINKS; i++) p = recordRun(runRec({ ts: i })).profile; // Onboarding fertig
-    expect(p.deckPoints).toBe(0);
-    p = recordRun(runRec({ ts: 7, score: 55_000_000 })).profile;
-    expect(p.deckPoints).toBe(5);          // 55 Mio → 5 DP (native)
-    expect(p.stichPoints).toBe(1 + 2);     // SP weiter: +1 Grundstock + 2 Meilensteine (25M+50M)
+  it("#316 DP: native DP = floor(score/10M) ab dem ersten Lauf; SP laufen normal (auf den 50-DP-Startbonus)", () => {
+    let p = loadProfile();
+    expect(p.deckPoints).toBe(50);         // Startbonus
+    p = recordRun(runRec({ ts: 1, score: 55_000_000 })).profile;
+    expect(p.deckPoints).toBe(50 + 5);     // 55 Mio → +5 DP native (auf den Startbonus)
+    expect(p.stichPoints).toBe(1 + 2);     // +1 Grundstock + 2 Meilensteine (25M+50M)
   });
 
   it("#299 DP: bei vollem Baum zahlt die SP-Ökonomie DP statt SP; SP-Rest wird zu DP gefegt", () => {
     const allNodes = Object.fromEntries(NODE_IDS.map((id) => [id, 1]));
-    saveProfile({ ...loadProfile(), onboarding: 6, nodes: allNodes, stichPoints: 100 });
+    saveProfile({ ...loadProfile(), onboarding: 6, nodes: allNodes, stichPoints: 100, deckPoints: 0 });
     const p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
     expect(p.stichPoints).toBe(0);         // SP nutzlos → Rest zu DP gefegt
     expect(p.deckPoints).toBe(100 + 10 + 6); // gefegte 100 SP + native 10 + SP-Ökonomie (1+5) als DP
@@ -261,8 +244,9 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
 
     wipeProfileStorage();
 
-    // Fortschritt weg → Defaults.
-    expect(loadProfile().onboarding).toBe(0);
+    // Fortschritt weg → Defaults (#316: frisches Profil ist wieder 6/6 fertig mit 50 DP, 0 SP).
+    expect(loadProfile().onboarding).toBe(ONBOARDING_LINKS);
+    expect(loadProfile().deckPoints).toBe(50);
     expect(loadProfile().stichPoints).toBe(0);
     expect(loadProfile().nodes).toEqual({});
     expect(loadHighscores()).toEqual([]);

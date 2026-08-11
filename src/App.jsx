@@ -42,7 +42,7 @@ import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, unlockAllCosmetics, frameGlowActive, holoSwipeActive, auroraVeilActive, glitchActive, activeFieldFx, laserSliceActive, blackholeActive, lasergridActive, burnBeamActive, overloadActive, disperseActive, fireworksActive, goldRainActive, prismaWaveActive } from "./game/themes.js";
+import { THEMES, unlockAllCosmetics, activeBgFx, activeBgFinisher } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { audio } from "./ui/audio.js";
 import { haptics } from "./ui/haptics.js";
@@ -242,8 +242,8 @@ export function Autostich() {
   useEffect(() => music.subscribe(setMusicTitle), []);
   const musicHome = state.phase === "menu" || state.phase === "gameover";
   useEffect(() => { if (musicHome) music.menu(); else music.enterRun(); }, [musicHome]);
-  // Aktuelle Runde an die Musik: steuert die Intensitäts-Stufe (Runde 0–10 ruhig → 40+ Overdrive).
-  useEffect(() => { if (!musicHome) music.setProgress(state.cycle || 0); }, [state.cycle, musicHome]);
+  // Aktueller Score an die Musik: steuert die Intensitäts-Stufe (<1 Mio ruhig → 60 Mio+ Overdrive+).
+  useEffect(() => { if (!musicHome) music.setProgress(state.score || 0); }, [state.score, musicHome]);
   useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
   // Pause-Knopf hält die Musik an (nur im laufenden Stichspiel; in Menü/Gameover spielt sie normal weiter) UND der
   // Hintergrund/geschlossen-Zustand (!visible) hält sie IMMER an — sonst läuft die BGM auf dem Handy hinter dem
@@ -492,25 +492,13 @@ export function Autostich() {
   const activePack = THEMES.find((t) => t.deckId === activeDeckId) || null;
   const deckFx = {
     deckA1: activePack?.a1 || null,
-    deckA2: activePack?.a2 || null, // #309 Aurora-Schleier nutzt beide Deck-Akzentfarben
-    // Karten-Animationen sind jetzt GLOBAL: gekauft via ownedCosmetics["fx:frameGlow"…] UND per Option an.
-    fxFrameGlow: frameGlowActive(profile, options),
-    fxHoloSwipe: holoSwipeActive(profile, options),
-    fxAuroraVeil: auroraVeilActive(profile, options), // #309 Karten-Aurora-Schleier
-    fxGlitch: glitchActive(profile, options),          // #309 Karten-Glitch
-    // #306 Battlefield-Ambiente (einfach-exklusiv): EIN Key ("hologrid"/"starfield"/… oder null) → Battlefield rendert genau diesen Feld-Layer.
-    fxField: activeFieldFx(profile, options),
-    // Globale Effekte (nicht theme-gebunden): gekauft UND per Option an.
-    fxLaserSlice: laserSliceActive(profile, options), // ersetzt die Klinge auf Gegnerkarten durch einen Laser
-    fxBlackhole: blackholeActive(profile, options),   // Sieg-Finisher: Gegnerkarte implodiert (Vorrang vor Laser/Klinge)
-    fxLasergrid: lasergridActive(profile, options),   // Sieg-Finisher: Gegnerkarte zerfällt in ein Laser-Raster
-    fxBurnBeam: burnBeamActive(profile, options),     // Sieg-Finisher: Brennstrahl brennt Loch + Karte bricht
-    fxOverload: overloadActive(profile, options),     // Sieg-Finisher: Blitzeinschlag (Stufe = Wertdifferenz)
-    fxDisperse: disperseActive(profile, options),     // Sieg-Finisher: Karte zerstäubt in ein Partikelgitter (Stufe = Wertdifferenz)
-    // Gottgleicher Sieg OHNE Krit (tier 4): kaufbare Prunk-Overlays (stapelbar).
-    fxFireworks: fireworksActive(profile, options),
-    fxGoldRain: goldRainActive(profile, options),
-    fxPrismaWave: prismaWaveActive(profile, options),
+    deckA2: activePack?.a2 || null, // Aurora nutzt beide Deck-Akzentfarben
+    // #kategorien: zwei UNABHÄNGIGE Feld-Slots — reiner Hintergrund-Effekt (Aurora) UND Hintergrund-Finisher
+    // (Glutfunken) können GLEICHZEITIG aktiv sein. Battlefield rendert beide Layer übereinander.
+    bgFx: activeBgFx(profile, options),
+    bgFinisher: activeBgFinisher(profile, options),
+    auroraDeck: !!options.fxAuroraDeck, // Aurora-Farbmodus: false = Standard-Palette, true = Deckfarbe
+    emberDeck: !!options.fxEmberDeck,   // Glutfunken-Farbmodus: false = warmes Feuer, true = Deckfarbe
   };
 
   function beginRun() {
@@ -677,7 +665,7 @@ export function Autostich() {
   const bfPe = useMemo(() => ({ linkedGroups }), [linkedGroups]);
 
   return (
-    <div className="relative min-h-screen w-full flex justify-center px-4 py-6">
+    <div className="app-root relative w-full flex justify-center">
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
           sichtbar (CSS), klick-durchlässig. */}
       <div className="crt-overlay" aria-hidden="true" />
@@ -767,8 +755,7 @@ export function Autostich() {
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
-                deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} fxFrameGlow={deckFx.fxFrameGlow} fxHoloSwipe={deckFx.fxHoloSwipe} fxAuroraVeil={deckFx.fxAuroraVeil} fxGlitch={deckFx.fxGlitch} fxField={deckFx.fxField} fxLaserSlice={deckFx.fxLaserSlice} fxBlackhole={deckFx.fxBlackhole} fxLasergrid={deckFx.fxLasergrid} fxBurnBeam={deckFx.fxBurnBeam} fxOverload={deckFx.fxOverload} fxDisperse={deckFx.fxDisperse}
-                fxFireworks={deckFx.fxFireworks} fxGoldRain={deckFx.fxGoldRain} fxPrismaWave={deckFx.fxPrismaWave}
+                deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck} emberDeck={deckFx.emberDeck}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
