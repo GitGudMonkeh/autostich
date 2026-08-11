@@ -435,11 +435,11 @@ function CardAnimPreview({ anim }) {
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       <div ref={cardRef} className="relative" style={{ zIndex: 1 }}>
-        <Card suit="blue" value={7} />
+        <Card suit="B" value={7} />
       </div>
       {CARDFX_PREVIEW_ON && (
         <Suspense fallback={null}>
-          <CardFxStage panelRef={panelRef} cards={[{ ref: cardRef, active: true, num: 7, color: suitColor("blue") }]}
+          <CardFxStage panelRef={panelRef} cards={[{ ref: cardRef, active: true, num: 7, color: suitColor("B") }]}
             layers={{ [ANIM_LAYER[anim]]: true }} color={look.a1} color2={look.a2} tier={3} />
         </Suspense>
       )}
