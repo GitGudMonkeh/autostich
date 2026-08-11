@@ -26,7 +26,7 @@ const FIELD_FX = {
      Pixel-identisch — Pixi wird dort nie geladen. */
 export function PixiStage({
   active = true, className,
-  effect = null, color = "#ffffff", score = 0, reduced = false, lite = false,
+  effect = null, color = "#ffffff", color2 = null, score = 0, reduced = false, lite = false,
   sweepId = 0, sweepDur = 900, win = false, hitTier = 0,
 }) {
   const hostRef   = useRef(null);
@@ -38,7 +38,7 @@ export function PixiStage({
 
   // Aktuelle Effekt-Parameter für die (async) Init + spätere Rebuilds spiegeln.
   const paramsRef = useRef(null);
-  paramsRef.current = { effect, color, score, reduced, lite };
+  paramsRef.current = { effect, color, color2, score, reduced, lite };
   const lastSweep = useRef(0);
 
   // Emitter für `eff` (neu) bauen: alten zerstören, neuen aus der Registry holen (oder keinen, wenn nicht portiert).
@@ -112,8 +112,8 @@ export function PixiStage({
 
   // Laufende Parameter (Deckfarbe/Score/Modus) → Emitter spiegeln (effect kommt über den Rebuild, bleibt hier gemerged).
   useEffect(() => {
-    fieldRef.current?.setParams({ color, score, reduced, lite });
-  }, [color, score, reduced, lite]);
+    fieldRef.current?.setParams({ color, color2, score, reduced, lite });
+  }, [color, color2, score, reduced, lite]);
 
   // Stich-Wechsel (sweepId) → eine Eruption auslösen. Nur bei echtem Wechsel und sweepId>0.
   useEffect(() => {

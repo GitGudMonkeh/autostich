@@ -15,6 +15,9 @@ const FRAG = [
   "in vec2 vTextureCoord;",
   "out vec4 finalColor;",
   "uniform float uTime;",
+  "uniform float uMode;",   // 0 = Standard-Palette · 1 = Deckfarbe (uDeck1 unten → uDeck2 oben)
+  "uniform vec3 uDeck1;",   // Deck-Hauptfarbe (unten, an der Bogenkante)
+  "uniform vec3 uDeck2;",   // Deck-Sekundärfarbe (oben, im Auslauf)
   "const float I_=1.16, WISP=4.0, WAVE=0.14, PERSP=0.22, DOME=0.10, CLUMPLO=0.36, RAYF=39.0, RAYC=1.10, SPACING=0.13, BASEY=0.19, DRIFT=0.035;",
   "float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453123); }",
   "float noise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);",
@@ -22,6 +25,7 @@ const FRAG = [
   "  return mix(mix(a,b,f.x), mix(c,d,f.x), f.y); }",
   "float fbm(vec2 p){ float v=0.0,a=0.5; for(int i=0;i<5;i++){ v+=a*noise(p); p=p*2.02; a*=0.5; } return v; }",
   "vec3 auroraCol(float h){",
+  "  if(uMode > 0.5){ return mix(uDeck1, uDeck2, smoothstep(0.0, 1.0, h)); }",   // Deckfarbe: deckA1 (unten) → deckA2 (oben)
   "  vec3 gr=vec3(0.25,1.0,0.55); vec3 cy=vec3(0.28,0.92,0.85); vec3 mg=vec3(0.82,0.34,0.98);",
   "  return mix(mix(gr,cy,smoothstep(0.0,0.45,h)), mg, smoothstep(0.4,1.0,h)); }",
   "void main(){",
@@ -52,8 +56,32 @@ const FRAG = [
   "}",
 ].join("\n");
 
+// Farb-Modus der Aurora: „Standard" = feste Aurora-Palette (grün→cyan→magenta) · „Deckfarbe" = deckA1 (unten) → deckA2 (oben).
+// Vorerst per Dev-Schalter testbar (?fx=pixi&aurora=deck bzw. ?aurora=std, oder localStorage as_aurora_deck="1");
+// die spätere Shop-Auswahl setzt denselben Modus über setParams({ deckTint }). Default = Standard.
+function hexToVec3(hex, fallback) {
+  const h = (hex || "").replace("#", "");
+  const full = h.length === 3 ? h.replace(/(.)/g, "$1$1") : h;
+  const n = parseInt(full, 16);
+  if (full.length !== 6 || !Number.isFinite(n)) return fallback;
+  return new Float32Array([((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]);
+}
+function readAuroraDeckDefault() {
+  try {
+    const u = new URLSearchParams(window.location.search).get("aurora");
+    if (u === "deck") return true;
+    if (u === "std" || u === "standard") return false;
+    return window.localStorage.getItem("as_aurora_deck") === "1";
+  } catch { return false; }
+}
+
 export function createAuroraField(app) {
-  const uniforms = new UniformGroup({ uTime: { value: 0, type: "f32" } });
+  const uniforms = new UniformGroup({
+    uTime:  { value: 0, type: "f32" },
+    uMode:  { value: 0, type: "f32" },
+    uDeck1: { value: new Float32Array([0.33, 0.88, 0.54]), type: "vec3<f32>" },
+    uDeck2: { value: new Float32Array([0.69, 0.42, 0.98]), type: "vec3<f32>" },
+  });
   const glProgram = GlProgram.from({ vertex: defaultFilterVert, fragment: FRAG, name: "aurora-field" });
   const filter = new Filter({ glProgram, resources: { auroraUniforms: uniforms } });
 
@@ -61,12 +89,21 @@ export function createAuroraField(app) {
   sprite.filters = [filter];
   app.stage.addChild(sprite);
 
-  let params = { effect: null, reduced: false };
+  let params = {
+    effect: null, reduced: false, deckTint: readAuroraDeckDefault(),
+    deck1: new Float32Array([0.33, 0.88, 0.54]), deck2: new Float32Array([0.69, 0.42, 0.98]),
+  };
   let clock = 0;
 
   function setParams(next) {
-    params = { ...params, ...next };
+    params = { ...params, ...next,
+      deck1: next.color  != null ? hexToVec3(next.color,  params.deck1) : params.deck1,
+      deck2: next.color2 != null ? hexToVec3(next.color2, params.deck2) : params.deck2,
+      deckTint: next.deckTint != null ? next.deckTint : params.deckTint };
     sprite.visible = params.effect === "aurora";
+    uniforms.uniforms.uMode = params.deckTint ? 1 : 0;
+    uniforms.uniforms.uDeck1 = params.deck1;
+    uniforms.uniforms.uDeck2 = params.deck2;
   }
   function update(ticker) {
     if (params.effect !== "aurora") return;

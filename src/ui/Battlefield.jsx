@@ -1836,6 +1836,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           <PixiStage className="z-[2]"
             effect={pixiFx ? fxField : null}
             color={deckA1 || "#ffffff"}
+            color2={deckA2 || "#b06bff"}
             score={pixiFx ? Math.round((score || 0) / 20000) * 20000 : 0}
             reduced={reduced} lite={lite}
             sweepId={sweepId} sweepDur={sweepDur} win={win} hitTier={hitTier} />
