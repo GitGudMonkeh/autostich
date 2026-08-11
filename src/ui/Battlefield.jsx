@@ -160,8 +160,8 @@ function sliceMove(mult, seq) {                    // seq = per-Stich-Zähler (s
 }
 // #klinge: Tuning-Set (aus dem Vorschau-Artifact; final justierbar). Alles serien- bzw. konstant-getrieben.
 export const KLINGE_TUNE = {
-  baseDist: 30,        // #klinge: Stücke fallen nur ein kleines Stück auseinander (nicht wegfliegen) — px bei Serie 1
-  streakBoost: 0.08,   // + pro Serien-Schritt: Stücke fallen etwas weiter auseinander (gedeckelt niedrig, damit bei hoher Serie nichts wegfliegt)
+  baseDist: 12,        // #klinge: Stücke fallen nur ein kleines Stück auseinander (nicht wegfliegen) — px bei Serie 1
+  streakBoost: 0.06,   // + pro Serien-Schritt: Stücke fallen minimal weiter auseinander (gedeckelt niedrig, damit bei hoher Serie nichts wegfliegt)
   streakMax: 6,        // Deckel der Wucht-Steigerung
   rotFactor: 1,        // globaler Rotations-Faktor der Stücke
   zSlashFactor: 0.34,  // Z: Dauer je Einzel-Schlag (× cutDur) — blitzschnell
@@ -659,8 +659,8 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
         // as-boom-shard) und wird ausgeblendet — sie fliegt NICHT mehr quer übers Feld weg (früher 40..66 px in eine
         // zufällige 360°-Richtung → bei Turbo/vielen Stichen überdeckte das alles). Der Wrapper macht jetzt nur noch
         // eine dezente Schwerkraft: leicht nach unten + minimaler Seiten-Jitter.
-        const drx = fjitter(g.seed * 3 + 2, 6);                              // −6..6 px minimaler Seiten-Jitter
-        const dry = 9 + Math.abs(fjitter(g.seed * 5 + 3, 6));                // 9..15 px leicht nach unten (Schwerkraft)
+        const drx = fjitter(g.seed * 3 + 2, 3);                              // −3..3 px minimaler Seiten-Jitter
+        const dry = 4 + Math.abs(fjitter(g.seed * 5 + 3, 5));                // 4..9 px leicht nach unten (Schwerkraft)
         const drot = fjitter(g.seed * 7 + 5, 5);                             // −5..5° minimale Rotation
         // #klinge-z: Der Z-Schlag hält die Karte GANZ, bis alle drei Schläge durch sind (zHold), erst DANN berstet sie
         // (SliceFx: pieces starten bei delay+holdMs). Der Float-Away muss diese Haltezeit mitnehmen, sonst driftet die
