@@ -123,10 +123,14 @@ export function IonStorm({ active = false, panelRef, cardRef, color = "#5ec8f0",
       const g = gRef.current;
       if (!g) return;
       const card = cardRef?.current, panel = panelRef?.current;
-      if (!st.active || !card || !panel) { g.clear(); return; }
+      // #blitz-fix: abgekoppelte Karte (Stich-Wechsel, Wrapper unmountet) → NICHT weiterzeichnen, sondern löschen.
+      if (!st.active || !card || !panel || !card.isConnected) { g.clear(); return; }
       const cr = card.getBoundingClientRect(), pr = panel.getBoundingClientRect();
       const w = cr.width, h = cr.height;
       if (w < 8 || h < 8) { g.clear(); return; }
+      // #blitz-fix: Karte abgeworfen/weggeflogen (Box außerhalb des Panels) → Rahmen nicht hängen lassen, sondern löschen.
+      const ccx = (cr.left + w / 2) - pr.left, ccy = (cr.top + h / 2) - pr.top;
+      if (ccx < -w || ccx > pr.width + w || ccy < -h || ccy > pr.height + h) { g.clear(); return; }
       // Overlay-Container auf die Kartenbox (panel-lokal) setzen; Perimeter bei Größenwechsel neu bauen.
       g.position.set(cr.left - pr.left, cr.top - pr.top);
       let P = perimRef.current;

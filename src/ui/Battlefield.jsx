@@ -1176,7 +1176,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
         <Suspense fallback={null}>
           <IonStorm
-            active={!!t && !flipOn && ((t.pCard.ionStacks || 0) >= ION_MAX_STACKS || BLITZ_FORCE)}
+            active={!!t && !flyAway && ((t.pCard.ionStacks || 0) >= ION_MAX_STACKS || BLITZ_FORCE)}
             panelRef={panelRef} cardRef={playerCardRef}
             color="#5ec8f0" reduced={reduced} />
         </Suspense>
