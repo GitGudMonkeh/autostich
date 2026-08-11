@@ -23,7 +23,6 @@ import neon_static from "../assets/music/neon_static.m4a";
 import neon_static_remaster from "../assets/music/neon_static_remaster.m4a";
 // Neue Tracks (mid/hot/overdrive) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
 import neon_card_game from "../assets/music/neon_card_game.m4a";
-import neon_arcade_loop from "../assets/music/neon_arcade_loop.m4a";
 import static_charge from "../assets/music/static_charge.m4a";
 import static_surge from "../assets/music/static_surge.m4a";
 import circuit_rush from "../assets/music/circuit_rush.m4a";
@@ -104,7 +103,6 @@ const POOL = [
   { title: "Neon Card Rush 2", url: neon_card_rush_2, tier: "mid" },
   { title: "Pulsing Cards", url: pulsing_cards, tier: "mid" },
   { title: "Neon Card Game", url: neon_card_game, tier: "mid" },
-  { title: "Neon Arcade Loop", url: neon_arcade_loop, tier: "mid" },
   { title: "Neon Cruise", url: neon_cruise, tier: "mid" },
   { title: "Chrome Horizon", url: chrome_horizon, tier: "mid" },
   // hot
