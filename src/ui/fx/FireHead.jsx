@@ -124,8 +124,8 @@ export function FireHead({ heat = 0, panelRef, cardRef }) {
         const x = ox + margin + (i / (BASE_N - 1)) * width;
         const flick = 0.55 + 0.45 * frnd(i, bucket);
         const r = 9 * flick * baseF * (C.FLAME_SIZE / 8.5);
-        s.x = x; s.y = oy - r * 0.25; s.width = s.height = r * 3.2;
-        s.tint = baseTint; s.alpha = Math.min(1, 0.5 * baseF * flick);
+        s.x = x; s.y = oy - r * 0.25; s.width = s.height = r * 3.0;
+        s.tint = baseTint; s.alpha = Math.min(1, 0.24 * baseF * flick);
       }
 
       // ── Flammen spawnen + updaten (nach oben lodernd, über dem Rahmen) ──
@@ -148,7 +148,8 @@ export function FireHead({ heat = 0, panelRef, cardRef }) {
         const p = s.p;
         p.x = s.x0 + sway + lean; p.y = s.y0 - rise;
         const foot = gsz * 2.2; p.scaleX = foot / TX; p.scaleY = (foot / TX) * 1.85;
-        p.tint = rgbInt(lerpRGB(C.cCOLOR, C.cCORE, tHot)); p.alpha = k * k;
+        // #feuer-fix: dunkler getönt (Kern-Weiß nur gedämpft) + Alpha gesenkt → additiv nicht zu Weiß aufblähen (matcht Artifact).
+        p.tint = rgbInt(lerpRGB(C.cCOLOR, C.cCORE, tHot * 0.7)); p.alpha = k * k * 0.5;
       }
 
       // ── Rauch (über den Flammen) ──
@@ -183,7 +184,7 @@ export function FireHead({ heat = 0, panelRef, cardRef }) {
       canvas.style.width = "100%"; canvas.style.height = "100%"; canvas.style.display = "block";
       host.appendChild(canvas);
 
-      flameTex = makeRadial([[0, 1], [0.35, 0.9], [0.7, 0.22], [1, 0]]);
+      flameTex = makeRadial([[0, 0.7], [0.2, 0.36], [0.55, 0.11], [1, 0]]);   // weich → additiv kein Weiß-Blowout
       glowTex = makeRadial([[0, 0.9], [0.5, 0.28], [1, 0]]);
       gradTex = makeVGrad();
 
