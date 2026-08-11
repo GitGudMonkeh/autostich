@@ -29,6 +29,12 @@ const EDGEGLOW_FORCE = cardAnimForce("edgeglow");
 const HOLO_FORCE = cardAnimForce("holo");
 const GLITCH_FORCE = cardAnimForce("glitch");
 const MATERIALIZE_FORCE = cardAnimForce("materialize");
+/* #318 Karten-Animationen sind KAUFBARE Shop-Effekte → sie müssen auch in PRODUKTION laufen (nicht nur Preview/Dev),
+   sonst kauft der Spieler etwas, das im Spiel nie sichtbar wird. Die CardFxStage lädt Pixi NUR lazy und startet ihren
+   Ticker nur, wenn der Spieler eine Karten-Animation besitzt UND aktiviert hat (sonst rendert der Block null → kein
+   Pixi-Import, Prod bleibt pixel-identisch). Die übrigen Pixi-Layer (IonStorm/FireHead = Archetyp-Rollout, noch nicht
+   kaufbar) bleiben bewusst Preview/Dev-gegatet. WebGL fehlt → Overlay bleibt leer, das Spiel läuft normal weiter. */
+const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
@@ -808,7 +814,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // (as-materialize-in/-out) → die Partikel (CardFxStage) laufen synchron, und der Blitzrahmen (IonStorm, liest die
   // DOM-Opacity) fadet ZEITGLEICH mit. Nur Preview/Dev (wie die ganze CardFxStage); reduced → normaler Reveal, kein
   // Aufbau. Kein Tier-Gate (auf jeder Karte, sobald der Effekt an ist).
-  const matActive = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
+  const matActive = CARD_FX_ENABLED &&
     ((cardAnims || []).includes("materialize") || MATERIALIZE_FORCE);
   const matPlayer = matActive && !reduced && !!t && flipMs > 170;
   const pReveal   = matPlayer && !flyAway;   // Aufbau (statt 3D-Flip)
@@ -1211,9 +1217,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         </Suspense>
       )}
       {/* #318 Karten-Animationen — geteilte Pixi-Overlay-Bühne ÜBER beiden Karten (z-11). Stapelbare Dauer-Layer
-          (Edge-Glow · später Holo/Glitch/Materialize), pro Karten-Rechteck gezeichnet. Aktiv aus cardAnims (Shop-
-          Toggle) bzw. ?edgeglow=1 (Dev). Pixi-only, Gate wie oben (Preview/Dev) → Produktion lädt kein Pixi. */}
-      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (() => {
+          (Edge-Glow · Holo/Glitch/Materialize), pro Karten-Rechteck gezeichnet. Aktiv aus cardAnims (Shop-Toggle) bzw.
+          ?edgeglow=1 (Dev). KAUFBARE Shop-Effekte → laufen auch in Produktion (CARD_FX_ENABLED); Pixi lädt nur lazy,
+          wenn wirklich eine Animation an ist (sonst return null → kein Pixi). */}
+      {CARD_FX_ENABLED && (() => {
         const animSet = new Set(cardAnims || []);
         const edgeGlow = animSet.has("edgeglow") || EDGEGLOW_FORCE;
         const holo = animSet.has("holo") || HOLO_FORCE;
@@ -1236,7 +1243,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                 { ref: oppCardRef, active: materialize ? (!!t && !oppSliced) : (!!t && !oppFlyAway && !oppFlipOn && !oppSliced), num: t ? t.oValue : "", color: t ? suitColor(t.oCard.suit) : null, mat: oMat },
               ]}
               layers={{ edgeGlow, holo, glitch, materialize }}
-              color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#9b82f0"}
+              /* Karten-Animationen IMMER in der Deckfarbe: color2 = deckA2 (oder deckA1, wenn das Deck nur eine Farbe
+                 hat) → mono-Deckfarbe statt Verlauf zu einem Fremdton. */
+              color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#5a8ade"}
               tier={hitTier} reduced={reduced} lite={lite} />
           </Suspense>
         );

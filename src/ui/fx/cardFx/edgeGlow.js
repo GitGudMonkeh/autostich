@@ -16,9 +16,9 @@
 
 // ── TUNE (Board-Raum HREF=360; mit *sc markierte Maße skaliert die Engine) ──
 export const EDGE_TUNE = {
-  rand:  { breite: 0.5, staerke: 0, kern: 0.2, inset: 0 },      // rand.breite *sc (Kern-Linien-Breite); staerke:0 → crispe Kante AUS; kern:0.2 → Alpha der weiß-heißen Kern-Linie
-  halo:  { breite: 13, staerke: 0.49, lagen: 5, falloff: 1.5 }, // halo.breite *sc; alpha_i = staerke · I / (i+1)^falloff
-  atem:  { amp: 0.35, freq: 0.45, basis: 0.4 },                 // I = max(basis, 1 − amp·(1 − (0.5+0.5·sin(2π·freq·t))))
+  rand:  { breite: 0.5, staerke: 0, kern: 0.28, inset: 0 },     // rand.breite *sc (Kern-Linien-Breite); staerke:0 → crispe Kante AUS; kern → Alpha der weiß-heißen Kern-Linie (etwas heller)
+  halo:  { breite: 15, staerke: 0.68, lagen: 5, falloff: 1.5 }, // halo.breite *sc; alpha_i = staerke · I / (i+1)^falloff — [TUNING] kräftiger (breiter + heller) auf Wunsch
+  atem:  { amp: 0.35, freq: 0.45, basis: 0.52 },                // I = max(basis, 1 − amp·(1 − (0.5+0.5·sin(2π·freq·t)))) — höherer Boden → dauerhaft heller
   stich: { peak: 0, attack: 0.08, dauer: 0.85, welle: 18 },     // INAKTIV — kein Stich-Puls (peak:0), bewusst verworfen
   farbe: { deckMix: 0, gradient: true },                        // gradient → Rand diagonal color→color2
 };

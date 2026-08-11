@@ -110,12 +110,18 @@ const FX_GROUPS = [
    Battlefield-Ambiente-Gruppe — wählbar wie „Klinge" beim Finisher. */
 const FIELD_NONE = { key: "none", name: "Kein Feld-Effekt", group: "field", preview: "none", alwaysOwned: true,
   desc: "Kein Battlefield-Ambiente — nur das Battlefield-Bild (immer verfügbar)." };
+/* #318 Synthetische „Keine Animation"-Kachel (grau, immer verfügbar, kein Kauf): der Aus-Zustand der frei
+   kombinierbaren Karten-Animationen. Anwählen schaltet ALLE Karten-Animationen ab (wie „Kein Feld-Effekt" beim
+   Ambiente, nur dass die anim-Gruppe eine Mehrfachauswahl ist). preview „none" → schlichte Karte ohne Overlay. */
+const ANIM_NONE = { key: "none", name: "Keine Animation", group: "anim", preview: "none", alwaysOwned: true,
+  desc: "Keine Karten-Animation — die Karten bleiben schlicht. Anwählen schaltet alle Karten-Animationen ab (immer verfügbar)." };
 // Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe nach DP-Preis aufsteigend (billig oben, teuer unten);
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxGroupItems = (group) => {
   const list = GLOBAL_FX.filter((f) => f.group === group && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
   if (group === "finisher") return [FIN_STANDARD, KLINGE, ...list]; // „Standard" (Default) voran, dann „Klinge"
   if (group === "bgfx" || group === "bgfin") return [FIELD_NONE, ...list]; // „Kein Effekt" (Default) voran
+  if (group === "anim") return [ANIM_NONE, ...list]; // #318 „Keine Animation" (Aus-Zustand) voran
   return list;
 };
 // #: Der Standard-Key je einfach-exklusiver Gruppe (der Gratis-Aus-Zustand). Toggle-Gruppen (anim) haben keinen.
@@ -157,6 +163,11 @@ const bgFinSelOf = (options) => { for (const f of BGFIN_FX) if (options?.[f.opti
 const GOTT_FX = GLOBAL_FX.filter((f) => f.group === "gott");
 const gottFlags = (key) => Object.fromEntries(GOTT_FX.map((f) => [f.option, f.key === key]));
 const gottSelOf = (options) => { for (const f of GOTT_FX) if (options?.[f.option]) return f.key; return "gottStandard"; };
+/* #318 Karten-Animationen (frei kombinierbar, mode "toggle"). animAnyOn = ist irgendeine Animation an?
+   animNoneFlags = schaltet in einem Rutsch ALLE Animationen aus (für die „Keine Animation"-Kachel). */
+const ANIM_FX = GLOBAL_FX.filter((f) => f.group === "anim");
+const animAnyOn = (options) => ANIM_FX.some((f) => !!options?.[f.option]);
+const animNoneFlags = () => Object.fromEntries(ANIM_FX.map((f) => [f.option, false]));
 
 // Gleiche Schwelle wie das In-Run-Battlefield (<picture media="(max-width: 640px)">): so zeigt die
 // Vorschau exakt die Version (mobile/desktop), mit der gerade auch gespielt wird.
@@ -744,6 +755,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const isActive = (g, fx) => g.mode === "finisher" ? finisherSel === fx.key
     : g.mode === "bgfx" ? bgFxSel === fx.key
     : g.mode === "bgfin" ? bgFinSel === fx.key
+    : fx.key === "none" ? !animAnyOn(options)   // #318 „Keine Animation" aktiv, solange keine Karten-Animation an ist
     : fx.standard ? false : !!options?.[fx.option];
 
   return (
@@ -781,6 +793,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
                       if (g.mode === "finisher") onChoose(finisherFlags(on ? "none" : fx.key));
                       else if (g.mode === "bgfx") onChoose(bgFxFlags(on ? "none" : fx.key));
                       else if (g.mode === "bgfin") onChoose(bgFinFlags(on ? "none" : fx.key));
+                      else if (fx.key === "none") onChoose(animNoneFlags()); // #318 „Keine Animation" → alle abwählen
                       else onChoose({ [fx.option]: !on });
                     }} />
                 ))}
@@ -842,6 +855,9 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
         </div>
       </div>
     );
+  } else if (group.key === "anim" && fx.key === "none") {
+    // #318 „Keine Animation" (Aus-Zustand der Karten-Animationen): schaltet alle Karten-Animationen ab.
+    action = <button onClick={() => onChoose(animNoneFlags())} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Aktiv — keine Animation" : "Alle Animationen aus"}</button>;
   } else {
     action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
   }
