@@ -15,7 +15,7 @@ export function ChallengeModal({ onConfirm, onClose }) {
   const start = () => onConfirm(CHALLENGES.slice(0, level).map((c) => c.id));
 
   return (
-    <div className="fixed inset-0 z-[60] grid place-items-center p-4" style={{ background: "rgba(6,5,10,.72)" }}
+    <div className="fixed inset-0 z-[60] overlay-root flex items-start justify-center p-4 overflow-y-auto" style={{ background: "rgba(6,5,10,.72)" }}
       onClick={onClose} role="dialog" aria-modal="true" aria-label="Challenges">
       <div className="relative w-full max-w-md rounded-2xl overflow-hidden" style={phaseCard(A)} onClick={(e) => e.stopPropagation()}>
         <PhaseHairline />
@@ -58,13 +58,14 @@ export function ChallengeModal({ onConfirm, onClose }) {
                       Ziel &gt; {mio(c.target)}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center justify-between gap-2">
-                    <span className="text-[11px] leading-snug" style={{ color: "#8b8898" }}>{c.desc}</span>
-                    <span className="font-mono text-[11px] font-bold whitespace-nowrap">
-                      <span style={{ color: "#5ab87a" }}>erreicht +{c.gain}</span>
-                      <span style={{ color: "#6d6a80" }}> · </span>
-                      <span style={{ color: "#e07a7a" }}>verfehlt −{c.loss}</span>
-                    </span>
+                  {/* #: Beschreibung UND Belohnung NICHT mehr in einer Zeile (die whitespace-nowrap-Belohnung quetschte
+                      den Text auf dem Handy in eine 2–3-Wort-Spalte). Jetzt untereinander: Beschreibung volle Breite,
+                      Belohnung eigene Zeile rechts. */}
+                  <p className="mt-1 text-[11px] leading-snug" style={{ color: "#8b8898" }}>{c.desc}</p>
+                  <div className="mt-1.5 font-mono text-[11px] font-bold text-right">
+                    <span style={{ color: "#5ab87a" }}>erreicht +{c.gain}</span>
+                    <span style={{ color: "#6d6a80" }}> · </span>
+                    <span style={{ color: "#e07a7a" }}>verfehlt −{c.loss}</span>
                   </div>
                 </button>
               );
