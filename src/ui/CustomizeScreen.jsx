@@ -353,18 +353,20 @@ function BlackholeScene({ deckTint = false }) {
   const bf = battlefieldAssets(SHOWCASE_BF);
   const [pulse, setPulse] = useState(null);
   useEffect(() => {
-    // Loop-Choreografie: 6 Siege (aufbauen), dann Niederlagen bis zum Kollaps → kurze Pause → wieder von vorn.
+    // Loop-Choreografie: genug Siege, um bis zum (verdoppelten) MAXIMUM aufzubauen (im Showcase sichtbar), dann
+    //   Niederlagen bis zum Kollaps → Supernova → kurze Pause → wieder von vorn. ~22 Siege ≈ voller Deckel; die
+    //   Sieg-Kadenz ist bewusst geruhsam (640 ms), damit die eingesogenen Karten NICHT als Pulk übereinander liegen.
     const seq = [
-      { kind: "win" }, { kind: "win" }, { kind: "win" }, { kind: "win" }, { kind: "win" }, { kind: "win" },
-      { kind: "loss" }, { kind: "loss" }, { kind: "loss" }, { kind: "loss" }, { kind: "loss" }, { kind: "loss" },
+      ...Array.from({ length: 22 }, () => ({ kind: "win" })),
+      ...Array.from({ length: 12 }, () => ({ kind: "loss" })),
     ];
     let id = 0, i = 0, alive = true; const timers = [];
-    const nums = [10, 7, 13, 9, 11, 8];
+    const nums = [10, 7, 13, 9, 11, 8, 12, 6];
     const tick = () => {
       if (!alive) return;
       const step = seq[i % seq.length]; i++; id++;
       setPulse(step.kind === "win" ? { id, kind: "win", num: nums[id % nums.length] } : { id, kind: "loss" });
-      timers.push(setTimeout(tick, step.kind === "win" ? 900 : 700));
+      timers.push(setTimeout(tick, step.kind === "win" ? 640 : 340));
     };
     timers.push(setTimeout(tick, 400));
     return () => { alive = false; timers.forEach(clearTimeout); };

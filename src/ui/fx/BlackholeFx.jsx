@@ -15,9 +15,13 @@ import { useEffect, useRef } from "react";
 
 // ── Schwarzes Loch — TUNE (Größen = Anteil von D = min(W,H)) ──
 const TUNE = {
-  BASE_R: 0.050, STEP_R: 0.022, MAX_R: 0.28, SMOOTH: 0.080,
+  // Start UNVERÄNDERT (BASE_R/STEP_R), aber MAX_R verdoppelt (0.28 → 0.56) → sehr lange Serien wachsen bis aufs
+  //   Doppelte an (gleiche Wachstumsrate pro Sieg, nur höherer Deckel). maxLevel folgt automatisch aus MAX_R.
+  BASE_R: 0.050, STEP_R: 0.022, MAX_R: 0.56, SMOOTH: 0.080,
   LOSS_MIN: 1.00, LOSS_PCT: 0.30,
-  FLYIN_DUR: 1.30, SPIRAL_TURNS: 2.5, SPARKS: 2,
+  // Karten-Einflug: längere Flugdauer + mehr Umläufe → die Karte zieht erst eine große EXTRA-RUNDE auf einer weiten
+  //   Umlaufbahn (ORBIT_R) ums Loch, bevor sie spiralig in den Kern gesogen wird.
+  FLYIN_DUR: 2.10, SPIRAL_TURNS: 4.0, ORBIT_R: 0.40, SPARKS: 2,
   NOVA_THRESH: 0.18, NOVA_R: 0.58, NOVA_DUR: 1.20, IMPLODE_SPD: 0.07,
   DISK_ARMS: 3, DISK_DENSITY: 250, DISK_TURNS: 3.0, DISK_THICK: 1.0, ROT_SPEED: 0.20,
   TILT: 0.30, CORE_SIZE: 0.20, RING_GLOW: 0.15, BRIGHT: 2.00,
@@ -51,8 +55,8 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
     const buildStars = () => {
       const rng = mulberry32(90210), n = Math.round((W * H) / 26000);
       bgStars = []; fgStars = [];
-      for (let i = 0; i < n; i++) bgStars.push({ x: rng() * W, y: rng() * H, s: 0.5 + rng() * 0.9, dx: (rng() - 0.5) * 0.004, dy: (rng() - 0.5) * 0.004 });
-      for (let i = 0; i < Math.round(n * 0.5); i++) fgStars.push({ x: rng() * W, y: rng() * H, s: 0.7 + rng() * 1.3, dx: (rng() - 0.5) * 0.010, dy: (rng() - 0.5) * 0.010 });
+      for (let i = 0; i < n; i++) bgStars.push({ x: rng() * W, y: rng() * H, s: 0.35 + rng() * 0.5, dx: (rng() - 0.5) * 0.004, dy: (rng() - 0.5) * 0.004 });
+      for (let i = 0; i < Math.round(n * 0.5); i++) fgStars.push({ x: rng() * W, y: rng() * H, s: 0.45 + rng() * 0.75, dx: (rng() - 0.5) * 0.010, dy: (rng() - 0.5) * 0.010 });
     };
     const measure = () => {
       const pr = panel.getBoundingClientRect(); W = pr.width; H = pr.height; if (W < 4 || H < 4) return false;
@@ -132,11 +136,13 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       const busy = R > 0.5 || sim.flyers.length || sim.sparks.length || sim.nova;
       if (!busy) { raf = requestAnimationFrame(step); return; }
 
-      // 1) Hintergrund-Sterne (werden vom opaken Kern verdeckt).
-      const drawStars = (arr, mul) => { ctx.globalCompositeOperation = "lighter";
+      // 1) Hintergrund-Sterne (werden vom opaken Kern verdeckt). Bewusst „source-over" (NICHT additiv) + gedämpfte Alpha
+      //    + weich blau-weiße Farbe → knackige, kleine Sternpunkte statt überbelichteter weißer Bloom-Blobs.
+      const STAR = { r: 202, g: 220, b: 255 };
+      const drawStars = (arr, aMul) => { ctx.globalCompositeOperation = "source-over";
         for (const s of arr) { s.x += s.dx * sdt; s.y += s.dy * sdt; if (s.x < 0) s.x += W; else if (s.x > W) s.x -= W; if (s.y < 0) s.y += H; else if (s.y > H) s.y -= H;
-          ctx.fillStyle = rgba(WHITE, 0.5 * mul); ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, PI2); ctx.fill(); } };
-      if (!reduced) drawStars(bgStars, 0.7);
+          ctx.fillStyle = rgba(STAR, aMul); ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, PI2); ctx.fill(); } };
+      if (!reduced) drawStars(bgStars, 0.30);
 
       // Akkretions-Partikel: Position + Vorder/Hinterseite je Frame berechnen.
       const drawDisk = (frontWanted) => {
@@ -162,14 +168,24 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       // 2) Akkretion HINTER dem Loch (obere Umlauf-Hälfte, sin<0).
       drawDisk(false);
 
-      // 3) Karten-Flyer (spiralen in den Kern) — VOR dem Kern gezeichnet → der Kern verschluckt sie.
+      // 3) Karten-Flyer — VOR dem Kern gezeichnet → der Kern verschluckt sie. Bahn: erst NACH AUSSEN auf eine weite
+      //    Umlaufbahn (orbitR, außerhalb des Lochs), dann eine EXTRA-RUNDE darauf, danach spiralig in den Kern gesogen.
       const flyDurMs = TUNE.FLYIN_DUR * 1000;
+      const orbitR = Math.max(TUNE.ORBIT_R * D, R * 1.35);   // weite Umlaufbahn außen ums Loch (immer außerhalb der Scheibe)
       for (let i = sim.flyers.length - 1; i >= 0; i--) {
         const f = sim.flyers[i]; f.t += sdt / flyDurMs;
         if (f.t >= 1) { sim.flyers.splice(i, 1); for (let s2 = 0; s2 < TUNE.SPARKS; s2++) sim.sparks.push({ a: Math.random() * PI2, sp: 0.6 + Math.random() * 1.2, t: 0, c: f.col }); continue; }
-        const ease = 1 - Math.pow(1 - f.t, 2);
-        const r = f.d0 * (1 - ease), a = f.a0 + ease * TUNE.SPIRAL_TURNS * PI2 * f.spin;
-        drawCard(cx + Math.cos(a) * r, cy + Math.sin(a) * r * (0.6 + 0.4 * TUNE.TILT), 1 - ease * 0.92, a * 0.15 * f.spin, f.num, f.col, 1 - ease * 0.55);
+        const tt = f.t;
+        // Radius-Profil: 0..0.28 von der Startdistanz nach außen auf die Bahn · 0.28..0.60 Extra-Runde auf der Bahn ·
+        //   0.60..1 spiralig in den Kern (schrumpfend + ausblendend).
+        let rr;
+        if (tt < 0.28)      rr = lerp(f.d0, orbitR, tt / 0.28);
+        else if (tt < 0.60) rr = orbitR;
+        else                rr = orbitR * (1 - Math.pow((tt - 0.60) / 0.40, 1.7));
+        const a = f.a0 + f.spin * tt * TUNE.SPIRAL_TURNS * PI2;   // mehrere Umläufe über den ganzen Flug
+        const shrink = clamp(rr / orbitR, 0.06, 1);              // volle Größe auf der Bahn, schrumpft beim Einsaugen
+        const alpha = 0.82 * (tt < 0.62 ? 1 : Math.max(0, 1 - (tt - 0.62) / 0.38)); // leicht durchscheinend → das Loch bleibt sichtbar
+        drawCard(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * (0.6 + 0.4 * TUNE.TILT), 0.30 + 0.70 * shrink, a * 0.12 * f.spin, f.num, f.col, alpha);
       }
       // Funken beim Verschlucken.
       ctx.globalCompositeOperation = "lighter";
@@ -202,7 +218,7 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       }
 
       // 8) Vordergrund-Sterne (über dem Loch sichtbar).
-      if (!reduced) drawStars(fgStars, 1.0);
+      if (!reduced) drawStars(fgStars, 0.46);
 
       // Nova (bedingte Implosion): heller Flash + eine elliptische Schockwelle nach außen (über NOVA_DUR).
       if (sim.nova) {
