@@ -391,12 +391,11 @@ function CubeMatrixPreview({ deckTint = false, sun = true, wire = false }) {
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {on && (
         <Suspense fallback={null}>
-          {/* Showcase-Kachel ist flacher als das In-Game-Feld → riseBase hoch (hohe RUHE-Türme, prominent, nicht zu
-              niedrig), riseScale niedrig (ruhigerer Musik-Ausschlag; im Showcase soll es nicht so stark springen). */}
-          {/* #317: Showcase soll den Effekt WIE IM SPIEL zeigen — nicht überzeichnet. riseScale runter (Ausschlag ruhiger,
-              war 1,3 → viel zu krass), riseBase moderat (Türme präsent, aber nicht extrem), yBias hebt das Feld an
-              (war zu weit unten). */}
-          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseBase={3.0} riseScale={0.65} yBias={0.12} sun={sun} wire={wire} />
+          {/* Showcase-Kachel ist flacher als das In-Game-Feld → riseBase moderat (RUHE-Türme präsent, nicht zu hoch),
+              riseScale niedrig (ruhigerer Musik-Ausschlag; im Showcase soll es nicht so stark springen). */}
+          {/* #317: Showcase soll den Effekt WIE IM SPIEL zeigen — nicht überzeichnet. riseScale/riseBase runter (Ausschlag
+              + Türme waren viel zu hoch), depthScale < 1 macht das Feld flacher (Tiefe war zu groß), yBias hebt es an. */}
+          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseBase={2.2} riseScale={0.35} yBias={0.12} depthScale={0.65} sun={false} wire={wire} />
         </Suspense>
       )}
     </div>
@@ -909,8 +908,7 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
     const flags = group.mode === "bgfx" ? bgFxFlags(fx.key) : bgFinFlags(fx.key);
     const chooseBtn = <button onClick={() => onChoose(flags)} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : label}</button>;
     // #: Aurora + Glutfunken bieten Standard/Deckfarbe. Toggle setzt das Farbmodus-Flag (deckOpt).
-    // #317 Cube-Matrix: zusätzlich zur Farbe eine an/aus-Wahl für die Retro-Sonne (Default an; nicht bei jedem BG erwünscht).
-    const sunOn = options?.fxCubeMatrixSun !== false;
+    // #317 Cube-Matrix: zusätzliche Optik-Wahl (gefüllt ↔ nur Rahmen). Die Retro-Sonne-Wahl wurde entfernt (Sonne fix aus).
     const wireOn = !!options?.fxCubeMatrixWire;
     action = !deckOpt ? chooseBtn : (
       <div className="flex flex-col gap-2">
@@ -924,13 +922,6 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
         </div>
         {fx.key === "cubematrix" && (
           <div className="flex flex-wrap gap-2 justify-center">
-            <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
-              {[{ v: true, l: "☀ Sonne an" }, { v: false, l: "Sonne aus" }].map((o) => {
-                const on = sunOn === o.v;
-                return <button key={o.l} onClick={() => onChoose({ fxCubeMatrixSun: o.v })} className="px-3 py-1.5 text-[11px] font-extrabold"
-                  style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
-              })}
-            </div>
             {/* #317 Würfel-Optik: gefüllt (solide) vs. nur leuchtende Neon-Rahmen (Drahtgitter, keine Füllung). */}
             <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
               {[{ v: false, l: "Gefüllt" }, { v: true, l: "◇ Nur Rahmen" }].map((o) => {
@@ -957,7 +948,7 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
             (frischer AuroraFieldGL-/PixiStage-Canvas mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
             Farbwechsel nicht, man musste erst weg- und zurückwechseln. Für Effekte ohne Farbmodus bleibt deckTintOn
             konstant false → Key stabil, kein unnötiger Remount. */}
-        <GlobalFxScenePreview key={`${fx.key}:${deckTintOn ? "deck" : "std"}`} fx={fx} deckTint={deckTintOn} sun={options?.fxCubeMatrixSun !== false} wire={!!options?.fxCubeMatrixWire} />
+        <GlobalFxScenePreview key={`${fx.key}:${deckTintOn ? "deck" : "std"}`} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
         {/* Gruppen-Schild oben links */}
         <span className="absolute left-2 top-2 text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-md"
           style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{group.title}</span>

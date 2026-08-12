@@ -44,13 +44,15 @@ const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${clamp(a, 0, 1
 
 /* mode: "all" (Feld + Scheinwerfer auf einer Bühne — für die Showcase) | "field" (nur Würfel/Boden/Sonne, z-2 hinter
    den Karten) | "spots" (nur Scheinwerfer, additive Overlay-Bühne z-11 ÜBER den Karten → leuchtet sie von oben an). */
-export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, riseBase = 1, yBias = 0, sun = true, wire = false }) {
+export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, riseBase = 1, yBias = 0, depthScale = 1, sun = true, wire = false }) {
   const hostRef = useRef(null);
   // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut). riseScale = Musik-Ausschlag (Höhen-Delta je
   // Ausschlag). riseBase = RUHE-Höhe der Türme (unabhängig vom Ausschlag). yBias = Feld nach OBEN schieben (0..1 × H),
   // damit der Showcase das Feld höher/mittiger setzen kann als das In-Game-Panel (dort yBias=0 → unverändert).
-  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, sun, wire });
-  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, sun, wire };
+  // depthScale = Reihen-Abstand-Faktor (< 1 = flacheres Feld, zieht die hinteren Reihen nach vorn; Showcase < 1,
+  // In-Game = 1 → unverändert).
+  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, depthScale, sun, wire });
+  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, depthScale, sun, wire };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -209,7 +211,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
         // #perf: auf Mobile (lite) zusätzlich weniger Spalten/Reihen (14×5 statt 18×6) → ~35% weniger Würfel.
         const C = Math.round(TUNE.C_COLS) - (p.lite ? 4 : 0), R = Math.round(TUNE.C_ROWS) - (p.lite ? 1 : 0), TC = C * R;
         if (p.reduced) { for (let i = 0; i < TC; i++) cubeV[i] = 0.12; } else computeCubes(TC, hasAudio);
-        const spread = TUNE.D_SPREAD, z0 = TUNE.FELD_TIEFE, rowGap = TUNE.C_DEPTHGAP, hw0 = TUNE.C_SIZE, alpha = TUNE.CUBE_ALPHA * (p.reduced ? 0.6 : 1);
+        const spread = TUNE.D_SPREAD, z0 = TUNE.FELD_TIEFE, rowGap = TUNE.C_DEPTHGAP * (p.depthScale || 1), hw0 = TUNE.C_SIZE, alpha = TUNE.CUBE_ALPHA * (p.reduced ? 0.6 : 1);
         const taper = TUNE.C_TAPER;
         if (p.sun) drawSun(lo, hi);
         if (TUNE.D_FLOOR > 0) drawFloor(C, R, spread, z0, rowGap, TUNE.FLOOR_ALPHA * (p.reduced ? 0.6 : 1), taper);
