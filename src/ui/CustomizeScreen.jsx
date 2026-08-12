@@ -18,6 +18,7 @@ const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
 // #322–#326 Gottgleich-Prunk (PIXI) — Vorschau lazy wie die anderen Pixi-Effekte (Pixi lädt erst, wenn der gott-Preview rendert).
 const SonnenPulsPixi = lazy(() => import("./fx/SonnenPulsPixi.jsx"));
+const LaserFaecherPixi = lazy(() => import("./fx/LaserFaecherPixi.jsx"));
 // #317 Cube-Matrix — musik-reaktives Würfelfeld für die Showcase (lazy wie die anderen FX).
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx"));
 import { Card } from "./Card.jsx";
@@ -443,6 +444,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
   if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} />; // #319 Scorch-Finisher (Laser + organischer Burn)
   if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} label="Sonnen-Puls" tint={deckTint ? "#8fd8ff" : "#ff8fc4"} />; // #322 (Pixi)
+  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} label="Laser-Fächer" tint={deckTint ? "#8fd8ff" : "#5ff6ff"} />; // #323 (Pixi)
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (

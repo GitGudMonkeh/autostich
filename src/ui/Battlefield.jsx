@@ -25,6 +25,7 @@ const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ def
 // #322–#326 Gottgleich-Prunk (PIXI) — lazy wie die anderen Pixi-Layer: Pixi lädt erst beim ersten gottgleichen Sieg
 // (Render-Branch mountet nur bei gottTrigger>0) → Prod-Bundle bleibt Pixi-frei, bis der Effekt wirklich spielt.
 const SonnenPulsPixi = lazy(() => import("./fx/SonnenPulsPixi.jsx"));
+const LaserFaecherPixi = lazy(() => import("./fx/LaserFaecherPixi.jsx")); // #323 Gottgleich-Prunk „Laser-Fächer"
 // Dev-Sicht: ?edgeglow=1 / ?holo=1 erzwingen die jeweilige Karten-Animation auf beiden Karten (zum Designen; nur Preview/Dev).
 const cardAnimForce = (name) => (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { return new URLSearchParams(window.location.search).get(name) === "1"; } catch { return false; } })();
@@ -1260,6 +1261,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <Suspense fallback={null}>
           <SonnenPulsPixi trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
             deckColor={deckA1 || "#ff3d81"} deckColor2={deckA2 || deckA1 || "#ffb43d"} deckTint={gottDeck}
+            reduced={reduced} lite={lite} />
+        </Suspense>
+      )}
+      {gottTrigger > 0 && gottEffect === "laserFaecher" && !reduced && (
+        <Suspense fallback={null}>
+          <LaserFaecherPixi trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
+            deckColor={deckA1 || "#2ff0ff"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}

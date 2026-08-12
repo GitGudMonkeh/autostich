@@ -58,7 +58,7 @@ export const GLOBAL_FX = [
   { key: "sonnenPuls", name: "Sonnen-Puls", desc: "Die Outrun-Sonne bloomt hinter der geschlagenen Karte auf — Sunset-Verlauf mit Scanline-Lücken, heißem Kern, Korona und drehenden Strahlen. Standard-Sunset oder Deckfarbe. Der freie Gottgleich-Prunk.",
     ownKey: "fx:sonnenPuls", option: "fxSonnenPuls", preview: "sonnenPuls", price: 0, group: "gott", alwaysOwned: true },
   { key: "laserFaecher", name: "Laser-Fächer", desc: "Scharfe Neon-Laser fächern aus der Kartenmitte auf — lange Haupt- und kurze Nebenstrahlen mit Kernlinie und leuchtender Nabe, öffnen mit Pop und drehen langsam. Standard-Neon oder Deckfarbe.",
-    ownKey: "fx:laserFaecher", option: "fxLaserFaecher", preview: "laserFaecher", price: 10, group: "gott", hidden: true },
+    ownKey: "fx:laserFaecher", option: "fxLaserFaecher", preview: "laserFaecher", price: 10, group: "gott" },
   { key: "prismaKaskade", name: "Prisma-Kaskade", desc: "Mehrere prismatische Schockwellen-Ringe zünden zeitversetzt und laufen chromatisch (Regenbogen-Split) übers Feld, jeder mit Geburts-Blitz. Standard = volles Spektrum, Deckfarbe = Duoton.",
     ownKey: "fx:prismaKaskade", option: "fxPrismaKaskade", preview: "prismaKaskade", price: 20, group: "gott", hidden: true },
   { key: "holoCube", name: "Holo-Würfel-Kollaps", desc: "Ein Holowürfel aus Wireframe-Blöcken baut sich aus der Ferne zusammen, dreht sich frei, blitzt im Kern und zerspringt taumelnd nach außen. Holo-Cyan→Magenta oder Deckfarbe.",
