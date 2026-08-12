@@ -270,7 +270,7 @@ function laserPieces(lines, W, H) {
 /* Eine Seite: gespielte Karte MIT Nachziehstapel dahinter (ragt nur nach außen).
    `overlay` = entkoppelter Layer im Karten-Slot (z. B. Niederlage-Ghosts), der NICHT pro Stich remountet
    (steht nach `children`, also im selben `relative`-Slot, aber außerhalb des trickNo-gekeyten Karten-Wrappers). */
-function Side({ label, remaining, position = 0, deckLen = 0, children, overlay = null, backImage = null, slotRef = null }) {
+function Side({ label, remaining, position = 0, deckLen = 0, children, overlay = null, backImage = null, slotRef = null, baseCard = false }) {
   const behind = Math.min(3, Math.max(0, remaining - 1));
   return (
     <div className="flex flex-col items-center gap-2 shrink-0">
@@ -279,6 +279,12 @@ function Side({ label, remaining, position = 0, deckLen = 0, children, overlay =
           remountet NICHT pro Stich und fliegt nicht weg → das Feuer (an slotRef verankert) brennt durchgängig weiter,
           statt bei jedem Sieg/Niederlage neu zu starten (die gespielte Karte darin flippt/fliegt, der Slot bleibt). */}
       <div ref={slotRef} className="relative" style={{ width: 104, height: 144 }}>
+        {/* #feuer: PERMANENTER Deck-Rücken als Sockel — liegt IMMER da (auch bei leerem Deck / nach 40 Stichen), damit der
+            an den Slot verankerte Effekt (Feuer) auf einer sichtbaren Karte sitzt statt in der Luft zu hängen. Wird von
+            der gespielten Front-Karte / dem Nachziehstapel überdeckt, solange etwas oben liegt. */}
+        {baseCard && (
+          <div className="absolute top-0 left-0"><CardBack label="" image={backImage} /></div>
+        )}
         {/* #feuer: Nachziehstapel EXAKT unter der gespielten/geflippten Karte (kein seitlicher Versatz mehr) → Karte,
             Deck und das an den Slot verankerte Feuer liegen genau aufeinander. */}
         {Array.from({ length: behind }, (_, i) => (
@@ -1234,7 +1240,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           </div>
         )}
 
-        <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack} slotRef={deckSlotRef}
+        <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack} slotRef={deckSlotRef} baseCard
               overlay={playerGhosts.length ? <SlashGhostLayer ghosts={playerGhosts} /> : null}>{playerCard}</Side>
 
         {/* #214: „vs"-Schwerter-Icon (#42) entfernt — die beiden Seiten stehen sich jetzt ohne Trenn-Icon gegenüber. */}
