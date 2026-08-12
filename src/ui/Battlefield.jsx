@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo, lazy, Suspense } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
-import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS } from "../game/constants.js";
+import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
@@ -1208,7 +1208,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
         <Suspense fallback={null}>
           <MossGrow
-            growth={MOSS_FORCE != null ? MOSS_FORCE : (t ? (growth[t.pCard.id] || 0) : 0)}
+            /* #pflanze-fix: „grün" = voll ausgewachsen (reif) → volle Moos-Abdeckung, auch wenn der Wachstums-Zähler
+               growth[id] das nicht mitträgt (Start-Anker bekommt green ohne growth; ebenso Ranken/Blüte-Skills). */
+            growth={MOSS_FORCE != null ? MOSS_FORCE : (t ? (t.pCard.green ? PLANT_GREEN_THRESHOLD : (growth[t.pCard.id] || 0)) : 0)}
             panelRef={panelRef} cardRef={playerCardRef} reduced={reduced} />
         </Suspense>
       )}

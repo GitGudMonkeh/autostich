@@ -65,7 +65,7 @@ export function MossGrow({ growth = 0, panelRef, cardRef, reduced = false }) {
     let cardX = 0, cardY = 0, cardW = 0, cardH = 0;
     let field = [], dewPts = [], neonTips = [];
     let _axc = 1, _axs = 0, _cNA = { r: 34, g: 224, b: 255 }, _cNB = { r: 255, g: 62, b: 165 };
-    let renderedCov = -1, clockT = 0, last = 0, raf = 0, disposed = false, cleared = false;
+    let renderedCov = -1, clockT = 0, last = 0, raf = 0, disposed = false, cleared = false, cardOpacity = 1;
 
     // ── Moos-Feld (fixe Referenzgröße, deterministisch seeded → einmal gebaut) ──
     (function buildField() {
@@ -189,12 +189,16 @@ export function MossGrow({ growth = 0, panelRef, cardRef, reduced = false }) {
 
     function measure() {
       const pr = panelRef?.current?.getBoundingClientRect();
-      const cr = cardRef?.current?.getBoundingClientRect();
+      const cardEl = cardRef?.current;
+      const cr = cardEl?.getBoundingClientRect();
       if (!pr || !cr || pr.width < 2 || cr.width < 8) return false;
       DPR = Math.min(2, window.devicePixelRatio || 1);
       const w = Math.max(1, Math.round(pr.width)), h = Math.max(1, Math.round(pr.height));
       if (w !== W || h !== H) { W = w; H = h; canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR); }
       cardX = cr.left - pr.left; cardY = cr.top - pr.top; cardW = cr.width; cardH = cr.height;
+      // #pflanze-fix: Deckkraft der Karte mitlesen → das Moos blendet SYNCHRON mit ihr aus (Wegflug bei Niederlage
+      // = as-flyaway fadet opacity→0). Ohne das floh das voll-opake Moos als „komischer Rahmen" davon.
+      cardOpacity = cardEl ? clamp01(parseFloat(getComputedStyle(cardEl).opacity) || 0) : 1;
       const ccx = cardX + cardW / 2, ccy = cardY + cardH / 2;   // Karte weggeflogen/außerhalb → Effekt nicht hängen lassen
       if (ccx < -cardW || ccx > W + cardW || ccy < -cardH || ccy > H + cardH) return false;
       return true;
@@ -209,20 +213,23 @@ export function MossGrow({ growth = 0, panelRef, cardRef, reduced = false }) {
       const mLeft = M * sx, mTop = M * sy;                          // skalierter Überwuchs-Rand
       const growX = M * TUNE.OVERHANG * sx, growY = M * TUNE.OVERHANG * sy;
       const grow = Math.min(growX, growY);
+      const op = cardOpacity;                                      // #pflanze-fix: Moos folgt der Karten-Deckkraft (Wegflug-Fade)
       ctx.save();
       roundRectPath(ctx, cardX - growX, cardY - growY, cardW + 2 * growX, cardH + 2 * growY, CARD_R + grow); ctx.clip();
+      ctx.globalAlpha = op;
       ctx.drawImage(moss, 0, 0, moss.width, moss.height, cardX - mLeft, cardY - mTop, cardW + 2 * mLeft, cardH + 2 * mTop);
       if (TUNE.NEON_BLOOM > 0) {
-        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = clamp01(TUNE.NEON_BLOOM);
+        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = clamp01(TUNE.NEON_BLOOM) * op;
         ctx.drawImage(glow, 0, 0, glow.width, glow.height, cardX - mLeft, cardY - mTop, cardW + 2 * mLeft, cardH + 2 * mTop);
         ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
       }
       if (TUNE.DEW > 0 && !reduced) {                               // Tau-Glitzern (live über dem Moos)
         ctx.globalCompositeOperation = "lighter";
         for (let d = 0; d < dewPts.length; d++) { const dp = dewPts[d], tw = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(clockT * 0.004 + dp.ph));
-          ctx.fillStyle = rgba({ r: 225, g: 245, b: 210 }, 0.5 * TUNE.DEW * tw); ctx.beginPath(); ctx.arc(cardX + dp.x * sx, cardY + dp.y * sy, 0.9 * sx, 0, TAU); ctx.fill(); }
+          ctx.fillStyle = rgba({ r: 225, g: 245, b: 210 }, 0.5 * TUNE.DEW * tw * op); ctx.beginPath(); ctx.arc(cardX + dp.x * sx, cardY + dp.y * sy, 0.9 * sx, 0, TAU); ctx.fill(); }
         ctx.globalCompositeOperation = "source-over";
       }
+      ctx.globalAlpha = 1;
       ctx.restore();
     }
 
