@@ -233,14 +233,18 @@ export function createEmberField(app) {
     const lp = (a, b, u) => a + (b - a) * u;
     const d = Math.random();
     const ny = lp(TUNE.P_FAR_Y, TUNE.P_NEAR_Y, d), ds = lp(TUNE.P_DEPTH_MIN, 1, d), halfW = lp(TUNE.P_FAR_HALF, TUNE.P_NEAR_HALF, d);
+    // #perf E: Emissions-Budget an den Turbo koppeln (analog Battlefield fxScale) — schneller Takt → weniger Partikel je
+    // Fontäne → billigerer Ticker/Draw (weniger lebende Partikel). sweepDur ≈ flipMs: bei 1× (~1750) = 1 (unverändert),
+    // bei MAX (~290) ~0,45. Wirkt nur auf die Ausstoßrate (acc/flAcc im Ticker), nicht auf Choreografie/Höhe.
+    const fx = clamp((sweepDur || 900) / 875, 0.45, 1);
     if (t >= 1) {
       // ab „Stark": große, gebündelte Fontäne — bleibt MITTIG (x=0,5), erscheint aber an zufälliger Tiefe (vorn..hinten).
-      vents.push({ x: 0.5, side: 0, ny, ds, jetT: TIER_BURST[t], burst: TIER_BURST[t], stufe, mult: TIER_MULT[t], vscale: TIER_VSCALE[t], spread: 1.8, acc: 0, flAcc: 0, glow: 1, win: true });
+      vents.push({ x: 0.5, side: 0, ny, ds, jetT: TIER_BURST[t], burst: TIER_BURST[t], stufe, mult: TIER_MULT[t], vscale: TIER_VSCALE[t], spread: 1.8, acc: 0, flAcc: 0, glow: 1, win: true, fx });
     } else {
       // Schwach (normaler Sieg): EINE Fontäne an zufälliger Position auf der Fläche (x innerhalb der Tiefen-Spanne).
       const burst = clamp((sweepDur || 900) * 0.0009, 0.42, 0.9);
       const x = clamp(0.5 + (Math.random() * 2 - 1) * halfW, 0.05, 0.95);
-      vents.push({ x, side: x - 0.5, ny, ds, jetT: burst, burst, stufe, mult: 1, vscale: 1, spread: 1, acc: 0, flAcc: 0, glow: 1, win: true });
+      vents.push({ x, side: x - 0.5, ny, ds, jetT: burst, burst, stufe, mult: 1, vscale: 1, spread: 1, acc: 0, flAcc: 0, glow: 1, win: true, fx });
     }
     if (vents.length > TUNE.MAXVENT) vents.splice(0, vents.length - TUNE.MAXVENT);
   }
@@ -274,9 +278,9 @@ export function createEmberField(app) {
         const env = clamp((v.jetT / v.burst) * 1.25, 0, 1);
         const wf = v.win ? 1.12 : 1;
         const vfy = (v.ny != null ? v.ny : 0.95) * H;   // #319b: Boden-Linie DIESER Fontäne (Tiefe)
-        v.acc += TUNE.EMIT * (v.mult || 1) * (1 + v.stufe * 0.85) * env * wf * dt;   // mult = gebündelte Zentral-Fontäne (ab „Stark")
+        v.acc += TUNE.EMIT * (v.mult || 1) * (1 + v.stufe * 0.85) * env * wf * (v.fx || 1) * dt;   // mult = gebündelte Zentral-Fontäne (ab „Stark"); fx = Turbo-Budget (#perf E)
         while (v.acc >= 1) { v.acc--; spawnDroplet(v, env, sc, W, vfy); }
-        v.flAcc += TUNE.EMIT * TUNE.FLAME * Math.sqrt(v.mult || 1) * (1 + v.stufe * 0.5) * env * dt;
+        v.flAcc += TUNE.EMIT * TUNE.FLAME * Math.sqrt(v.mult || 1) * (1 + v.stufe * 0.5) * env * (v.fx || 1) * dt;
         while (v.flAcc >= 1) { v.flAcc--; spawnFlame(v, sc, W, vfy); }
       } else {
         v.glow -= dt * 2.9;   // molten Pool kühlt schnell ab → kein großer Afterglow bei überlappenden Stichen

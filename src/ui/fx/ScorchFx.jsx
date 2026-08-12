@@ -69,6 +69,36 @@ function makeNoise(seed) {
   return (x, y) => { let f = 0, a = 0.5, fr = 1; for (let o = 0; o < 4; o++) { f += a * vnoise(x * fr, y * fr); fr *= 2.03; a *= 0.5; } return f; };
 }
 
+/* #perf A: Die Dissolve-Geometrie (Distanz vom Einschlag + fbm-Front, normiert 0..1) hängt NUR an der Burn-Auflösung
+   (bw×bh, kartengrößen-abhängig → im Lauf konstant) und dem Seed — NICHT an der konkreten Karte. Früher lief der teure
+   Per-Pixel-fbm-Loop (~13k px × 4 Oktaven) bei JEDEM gewonnenen Stich neu (ScorchFx remountet je Sieg). Jetzt einmal je
+   Größe gebaut und modul-weit über alle Stiche geteilt; 3 Seed-Varianten erhalten die optische Streuung (je Burn zufällig
+   eine). Der Cache lebt außerhalb der Komponente, damit er das Remount je Stich überdauert. */
+const BURN_VARIANTS = 3;
+const BURN_CACHE = new Map(); // "bw x bh" → Array<Float32Array> (bis BURN_VARIANTS Seeds, lazy gebaut)
+function buildBurnmapSeed(bw, bh, seed) {
+  const map = new Float32Array(bw * bh);
+  const nf = makeNoise(seed);
+  const oxn = TUNE.ORIGIN_X, oyn = TUNE.ORIGIN_Y, sc = TUNE.NOISE_SCALE, rough = TUNE.ROUGH, ar = bh / Math.max(1, bw);
+  let mn = 1e9, mx = -1e9;
+  for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) {
+    const nx = x / bw, ny = y / bh;
+    const dist = Math.hypot(nx - oxn, (ny - oyn) * ar);
+    const n = nf(nx * sc, ny * sc);
+    const b = dist * (1 - rough * 0.55) + (n - 0.5) * rough * 1.4;
+    const i = y * bw + x; map[i] = b; if (b < mn) mn = b; if (b > mx) mx = b;
+  }
+  const inv = 1 / Math.max(1e-4, mx - mn); for (let i = 0; i < map.length; i++) map[i] = (map[i] - mn) * inv;
+  return map;
+}
+function getBurnmap(bw, bh) {
+  const key = bw + "x" + bh; let arr = BURN_CACHE.get(key);
+  if (!arr) { arr = []; BURN_CACHE.set(key, arr); }
+  const pick = (Math.random() * BURN_VARIANTS) | 0;
+  if (!arr[pick]) arr[pick] = buildBurnmapSeed(bw, bh, pick + 1); // diese Variante einmalig bauen
+  return arr[pick]; // NUR gelesen (spawnFront/computeBurn mutieren nie) → gefahrlos geteilt
+}
+
 function roundRect(g, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 
 /* Baut die Karten-Textur (frontImage-Skin + große Wert-Zahl) in ein Off-Canvas — Grundlage für den Burn.
@@ -118,7 +148,7 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
     let W = 0, H = 0, DPR = 1;
     let cardX = 0, cardY = 0, cardW = 0, cardH = 0;
     let cardCv = null, cardData = null, burnmap = null, bw = 0, bh = 0, outImg = null;
-    let noise = makeNoise(1), laserAng = 0;
+    let laserAng = 0;
     let embers = [], ash = [], sparks = [];
     let burning = false, bt = 0, clock = 0, done = false;
     let raf = 0, last = 0, disposed = false;
@@ -139,30 +169,21 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
       return true;
     }
 
-    // Burn-Feld: je Pixel eine „Brennzeit" 0..1 = Distanz vom Einschlag + fbm-Rausch → zerklüftete organische Front.
+    // Burn-Feld aufbauen. #perf B: Die Karten-Textur wird DIREKT in Burn-Auflösung (bw×bh) gebaut → ein kleines
+    // getImageData, ohne den früheren Zwischen-Canvas + Scale-drawImage (spart Canvas-Alloc + Readback-Stall je Stich).
+    // #perf A: Die Dissolve-Geometrie (burnmap) kommt aus dem modul-weiten Cache (fbm-Loop nur einmal je Größe).
     function buildBurn() {
       bw = clamp(Math.round(cardW), 40, p.current.lite ? 72 : 96); bh = Math.max(2, Math.round(bw * cardH / Math.max(1, cardW))); // #perf: Auflösung gesenkt (war 130) — wird hochskaliert/geglättet
       burnCv.width = bw; burnCv.height = bh; outImg = ctx.createImageData(bw, bh);
-      const tmp = document.createElement("canvas"); tmp.width = bw; tmp.height = bh; const tc = tmp.getContext("2d");
-      tc.drawImage(cardCv, 0, 0, bw, bh); cardData = tc.getImageData(0, 0, bw, bh).data;
-      burnmap = new Float32Array(bw * bh);
-      const oxn = TUNE.ORIGIN_X, oyn = TUNE.ORIGIN_Y, sc = TUNE.NOISE_SCALE, rough = TUNE.ROUGH, ar = cardH / Math.max(1, cardW);
-      let mn = 1e9, mx = -1e9;
-      for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) {
-        const nx = x / bw, ny = y / bh;
-        const dist = Math.hypot(nx - oxn, (ny - oyn) * ar);
-        const n = noise(nx * sc, ny * sc);
-        const b = dist * (1 - rough * 0.55) + (n - 0.5) * rough * 1.4;
-        const i = y * bw + x; burnmap[i] = b; if (b < mn) mn = b; if (b > mx) mx = b;
-      }
-      const inv = 1 / Math.max(1e-4, mx - mn); for (let i = 0; i < burnmap.length; i++) burnmap[i] = (burnmap[i] - mn) * inv;
+      cardCv = buildCardCanvas(bw, bh, { img: imgRef.current, value: p.current.value, suit: p.current.suit });
+      cardData = cardCv.getContext("2d").getImageData(0, 0, bw, bh).data;
+      burnmap = getBurnmap(bw, bh);
     }
 
     function fire() {
       if (!measure()) return;
-      noise = makeNoise(1 + Math.floor(Math.random() * 9999)); laserAng = Math.random() * TAU;
-      cardCv = buildCardCanvas(Math.round(cardW), Math.round(cardH), { img: imgRef.current, value: p.current.value, suit: p.current.suit });
-      buildBurn();
+      laserAng = Math.random() * TAU;
+      buildBurn();   // baut cardData (B) + holt burnmap aus dem Cache (A)
       // #perf: Glut-Sprite-Palette einmal für DIESEN Burn (Farbmodus/Deckfarbe) bauen → im Render nur indizieren.
       const dm = p.current.deckTint, dr = rgb(p.current.deckColor);
       emberPal = new Array(EPN); for (let i = 0; i < EPN; i++) emberPal[i] = esprite(emberCol(i / (EPN - 1), dm, dr));
