@@ -56,6 +56,10 @@ const TUNE = {
   IMP_SPARK_LIFE: 0.9,
   IMP_SPARK_SZ: 1.4,
   IMP_GRAV: 0,
+  // #317-artig: perspektivische Einschlag-FLÄCHE (Trapez) statt einer Linie am unteren Rand → 3D-Streuung.
+  // d = 0 (fern/hinten) .. 1 (nah/vorn). Ziel-Y fern höher, nah tiefer; Fläche fern schmal, nah breit; Tiefen-Skala
+  // (Kopf/Schweif/Impact-Größe) fern kleiner. Werte nach Gehör/Blick justierbar.
+  PLANE_FAR_Y: 0.50, PLANE_NEAR_Y: 0.96, PLANE_FAR_HALF: 0.20, PLANE_NEAR_HALF: 0.62, PLANE_DEPTH_MIN: 0.42,
 };
 const TIER_SIZE = [0.5, 1.2, 1.5, 2, 3]; // Schnuppen-Größen-× je Hit-Tier
 const TIER_IMP  = [0, 1, 1.5, 2.1, 5];   // Impact-Stärke je Tier (0 = aus → „Schwach" impact-frei)
@@ -213,16 +217,20 @@ export function createStarfield(app) {
     if (params.effect !== "starfield" || params.reduced || !(sweepId > 0)) return;
     void win;
     const t = clamp(tier | 0, 0, 4);
-    const size = TIER_SIZE[t];
-    // Bahn: Start oben (leicht streuend), diagonal nach unten (zufällig links/rechts). Etwas steilere Winkel als früher,
-    // damit die Schnuppe zuverlässig UNTEN im sichtbaren Feld landet (Einschlag am unteren Rand statt seitlich raus).
-    const dir = Math.random() < 0.5 ? 1 : -1;
-    const ang = (40 + Math.random() * 25) * Math.PI / 180;                 // 40..65° unter der Waagerechten (steiler = landet unten)
+    // #317-artig: ZUFÄLLIGER Einschlagpunkt auf einer perspektivischen Fläche (Trapez): d=0 fern (hinten, hoch, schmal,
+    // klein) .. d=1 nah (vorn, tief, breit, groß). Kopf/Schweif/Impact skalieren mit der Tiefe → 3D-Streuung übers Feld.
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const d = Math.random();
+    const tyN = lerp(TUNE.PLANE_FAR_Y, TUNE.PLANE_NEAR_Y, d);
+    const halfW = lerp(TUNE.PLANE_FAR_HALF, TUNE.PLANE_NEAR_HALF, d);
+    const txN = clamp(0.5 + (Math.random() * 2 - 1) * halfW, 0.03, 0.97);
+    const ds = lerp(TUNE.PLANE_DEPTH_MIN, 1, d);                // Tiefen-Skala (fern kleiner)
+    // Start oben, seitlich vom Ziel versetzt → diagonaler Einflug (mal von links, mal von rechts).
+    const sideN = (Math.random() * 2 - 1) * 0.4;
     comets.push({
-      nx0: dir > 0 ? 0.02 + Math.random() * 0.28 : 0.70 + Math.random() * 0.28, // Startpunkt (normiert)
-      ny0: 0.04 + Math.random() * 0.30,
-      dx: Math.cos(ang) * dir, dy: Math.sin(ang),
-      age: 0, life: TUNE.SHOOT_DUR, tier: t, size,
+      nx0: clamp(txN - sideN, 0.02, 0.98), ny0: 0.02 + Math.random() * 0.12,
+      txN, tyN, ds,                                            // Zielpunkt (normiert) + Tiefen-Skala
+      age: 0, life: TUNE.SHOOT_DUR, tier: t, size: TIER_SIZE[t] * ds,
       imp: TIER_IMP[t], impacted: false, seed: Math.random() * 1000, jit: Math.random() * 2 - 1,
     });
     if (comets.length > MAXCOMET) comets.splice(0, comets.length - MAXCOMET);
@@ -265,7 +273,6 @@ export function createStarfield(app) {
     // Schnuppen: Kopf entlang der Bahn, Schweif als glatter, getaperter Sample-Streak dahinter (GERADE, kein Zickzack);
     // Impact am Bahnende (ab Tier ≥ 1).
     let ti = 0; // laufender Index in den Schweif-Pool
-    const groundY = H * 0.94;                 // unterer Rahmenrand — HIER schlägt die Schnuppe ein (Funken knapp innen sichtbar)
     const glow = 0.7 + 0.3 * TUNE.SHOOT_GLOW; // Halo-Verbreiterung des Streaks
     for (let ci = comets.length - 1; ci >= 0; ci--) {
       const c = comets[ci];
@@ -273,25 +280,25 @@ export function createStarfield(app) {
       if (c.age >= c.life) { comets.splice(ci, 1); continue; }
       const prog = c.age / c.life;                                   // 0..1 entlang der Bahn
       const env = Math.min(1, prog / 0.08) * Math.min(1, (1 - prog) / 0.08); // Ein-/Ausblenden; Kopf bei IMP_AT noch voll hell
-      const startY = c.ny0 * H;
-      // Bahnlänge pro Komet so, dass der Kopf bei prog = IMP_AT GENAU am unteren Rand (groundY) ankommt → der Einschlag
-      // liegt im sichtbaren Feld statt weit unterhalb. Danach läuft der Kopf noch ein Stück raus und fadet.
-      const pathLen = (groundY - startY) / (c.dy * TUNE.IMP_AT);
-      const hx = (c.nx0 * W) + c.dx * pathLen * prog;
-      const hy = startY + c.dy * pathLen * prog;
-      // Einschlag am unteren Rand (x in den sichtbaren Bereich geklemmt, y = groundY), damit Blitz + Funken immer sichtbar sind.
-      if (!c.impacted && prog >= TUNE.IMP_AT) { c.impacted = true; impact(clamp(hx, W * 0.06, W * 0.94), groundY, sc, c.imp, headInt); }
+      // #317-artig: Bahn vom Startpunkt (oben) zum ZUFÄLLIGEN Flächen-Zielpunkt (txN/tyN). Kopf erreicht das Ziel bei
+      // prog = IMP_AT (danach läuft er noch etwas weiter/fadet). Tiefen-Skala c.ds steckt schon in c.size + im Impact.
+      const startX = c.nx0 * W, startY = c.ny0 * H, endX = c.txN * W, endY = c.tyN * H;
+      const dpx = endX - startX, dpy = endY - startY, dlen = Math.hypot(dpx, dpy) || 1;
+      const dxu = dpx / dlen, dyu = dpy / dlen;                    // Einheitsrichtung (Schweif-Orientierung)
+      const k = prog / TUNE.IMP_AT;
+      const hx = startX + dpx * k, hy = startY + dpy * k;
+      if (!c.impacted && prog >= TUNE.IMP_AT) { c.impacted = true; impact(endX, endY, sc * c.ds, c.imp, headInt); }
       const trailLen = TUNE.TRAIL_LEN * c.size * sc;
       const headFoot = TUNE.HEAD_SIZE * c.size * sc * K_HEAD;
       const flick = TUNE.TRAIL_FLICK > 0 ? (1 - TUNE.TRAIL_FLICK + TUNE.TRAIL_FLICK * (0.5 + 0.5 * Math.sin(clock * 40 + c.seed))) : 1;
       // PATH_JITTER = Bahn-Streuung: KONSTANTER seitlicher Versatz je Komet (kein Wackeln) → Streak bleibt gerade.
-      const off = TUNE.PATH_JITTER * c.jit * sc, oxH = -c.dy * off, oyH = c.dx * off;
+      const off = TUNE.PATH_JITTER * c.jit * sc, oxH = -dyu * off, oyH = dxu * off;
       const N = Math.round(TUNE.TRAIL_SAMPLES);
       // Schweif-Samples N..1: hinter dem Kopf, Breite verjüngt (TAPER), Alpha fällt (TAIL_FADE), Farbe Kopf→Ausklang.
       for (let i = N; i >= 1; i--) {
         if (ti >= TRAIL_POOL) break;
         const f = i / N;
-        const sx = hx - c.dx * trailLen * f + oxH, sy = hy - c.dy * trailLen * f + oyH;
+        const sx = hx - dxu * trailLen * f + oxH, sy = hy - dyu * trailLen * f + oyH;
         const w = TUNE.TAIL_WIDTH * c.size * sc * K_TAIL * (1 - TUNE.TAPER * f) * glow;
         const a = TUNE.TRAIL_ALPHA * (1 - TUNE.TAIL_FADE * f) * env * flick;
         const p = trail[ti++]; p.x = sx; p.y = sy; p.scaleX = p.scaleY = Math.max(0, w) / TX;
