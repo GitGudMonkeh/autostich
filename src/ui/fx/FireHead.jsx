@@ -228,8 +228,11 @@ export function FireHead({ heat = 0, panelRef, cardRef }) {
   useEffect(() => { applyRunRef.current?.(); }, [heat]);
 
   return (
+    // #feuer: z-9 = UNTER der gespielten Karte (Kartenreihe z-10). Das Feuer gehört zum Deck DAHINTER → es darf nicht
+    // über der aufgedeckten Karte liegen; die Flammen lodern trotzdem sichtbar über die Oberkante hinaus (dort ist
+    // über der Karte nichts, was sie verdeckt), die Kartenfläche selbst bleibt sauber.
     <div ref={hostRef} aria-hidden="true"
-      style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 12 }} />
+      style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 9 }} />
   );
 }
 
