@@ -13,11 +13,6 @@ import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.j
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora-Vorschau als eigene WebGL-Canvas (nicht Pixi)
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei) — Vorschau + In-Game
-import SonnenPulsFx from "./fx/SonnenPulsFx.jsx"; // #322 Gottgleich-Prunk „Sonnen-Puls" (Canvas-2D) — Vorschau + In-Game
-import LaserFaecherFx from "./fx/LaserFaecherFx.jsx"; // #323 Gottgleich-Prunk „Laser-Fächer" (Canvas-2D) — Vorschau + In-Game
-import PrismaKaskadeFx from "./fx/PrismaKaskadeFx.jsx"; // #324 Gottgleich-Prunk „Prisma-Kaskade" (Canvas-2D) — Vorschau + In-Game
-import HoloCubeFx from "./fx/HoloCubeFx.jsx"; // #325 Gottgleich-Prunk „Holo-Würfel-Kollaps" (Canvas-2D) — Vorschau + In-Game
-import SupernovaFx from "./fx/SupernovaFx.jsx"; // #326 Gottgleich-Prunk „Supernova" (Canvas-2D) — Vorschau + In-Game
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 // #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne über der Vorschau-Karte (Edge-Glow …), lazy wie PixiStage.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
@@ -121,8 +116,6 @@ const FX_GROUPS = [
   { key: "bgfx",     title: "Hintergrund-Effekt",   hint: "nur einer aktiv", mode: "bgfx" },   // reiner BG (Aurora …)
   { key: "bgfin",    title: "Hintergrund-Finisher", hint: "nur einer aktiv", mode: "bgfin" },  // BG mit Stich-Interaktion (Glutfunken …)
   { key: "finisher", title: "Sieg-Finisher",        hint: "nur einer aktiv", mode: "finisher" },
-  // #322–#326 Gottgleich-Prunk (feuert beim gottgleichen Sieg ohne Krit): einfach-exklusiv, „Gottgleich · Standard" = kein Prunk.
-  { key: "gott",     title: "Gottgleich-Prunk",     hint: "nur einer aktiv", mode: "gott" },
 ];
 /* #306 Synthetische „Kein Feld-Effekt"-Kachel (immer verfügbar, kein Kauf): der Aus-Zustand der einfach-exklusiven
    Battlefield-Ambiente-Gruppe — wählbar wie „Klinge" beim Finisher. */
@@ -140,11 +133,10 @@ const fxGroupItems = (group) => {
   if (group === "finisher") return [FIN_STANDARD, KLINGE, SCORCH, ...list]; // „Standard" (Default) voran, dann Klinge · Scorch
   if (group === "bgfx" || group === "bgfin") return [FIELD_NONE, ...list]; // „Kein Effekt" (Default) voran
   if (group === "anim") return [ANIM_NONE, ...list]; // #318 „Keine Animation" (Aus-Zustand) voran
-  if (group === "gott") return [GOTT_STANDARD, ...list]; // #322 „Gottgleich · Standard" (kein Prunk) voran, dann die Prunk-Effekte nach Preis
   return list;
 };
 // #: Der Standard-Key je einfach-exklusiver Gruppe (der Gratis-Aus-Zustand). Toggle-Gruppen (anim) haben keinen.
-const FX_STD_KEY = { finisher: "standard", bgfx: "none", bgfin: "none", gott: "gottStandard" };
+const FX_STD_KEY = { finisher: "standard", bgfx: "none", bgfin: "none" };
 // #: Aktive Auswahl an die ERSTE Stelle rücken, direkt danach den „Standard" (falls die Gruppe einen hat), Rest folgt
 // in bisheriger Reihenfolge. Kein/Standard aktiv oder Toggle-Gruppe (kein stdKey) → Reihenfolge unverändert.
 function orderFxItems(items, selKey, stdKey) {
@@ -346,30 +338,6 @@ function ScorchScene({ deckTint = false }) {
   );
 }
 
-/* #322–#326 Gottgleich-Prunk-Vorschau: board-weite Bühne (panelRef) mit unsichtbarem Karten-Anker (cardRef) im
-   Zentrum; der übergebene Effekt zeichnet den Prunk darüber und feuert im Loop (loop=true → eigenes Re-Fire).
-   deckTint schaltet Standard-Palette ↔ Deckfarbe. Vorschau = In-Game (nur ohne die GOTTGLEICH-Ansage, die zentral
-   im Front-Layer liegt). */
-function GottScene({ Fx, deckTint = false, label = "Gottgleich", tint = "#ff8fc4", extraProps = null, behind = false }) {
-  const panelRef = useRef(null);
-  const cardRef = useRef(null);
-  const bf = battlefieldAssets(SHOWCASE_BF);
-  return (
-    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
-      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {/* Unsichtbarer 104×144-Karten-Anker (Positionsbezug „hinter der Karte"); der Effekt-Canvas füllt das Panel. */}
-      <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
-      <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
-        deckColor="#35e0ff" deckColor2="#ff5db1" {...(extraProps || {})} />
-      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: tint }}>
-        <span className="opacity-70">Prunk</span> {label}
-      </div>
-    </div>
-  );
-}
-
 /* #finisher-standard: Vorschau des Gratis-Standard-Finishers — die geschlagene Karte fliegt nach kurzem Liegen einfach
    zur Seite weg (dieselbe as-flyaway-Choreografie wie in-game), im Loop; beim „Sieg" wird der Aufdeck-Sound (cardflip)
    dezent höher gestimmt (rate > 1), passend zur In-Game-Vertonung. Vorschau = In-Game (kein Schnitt, kein Prunk). */
@@ -446,11 +414,6 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "standard") return <StandardFinisherScene />;
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
   if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} />; // #319 Scorch-Finisher (Laser + organischer Burn)
-  if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsFx} deckTint={deckTint} label="Sonnen-Puls" tint={deckTint ? "#8fd8ff" : "#ff8fc4"} />; // #322
-  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherFx} deckTint={deckTint} label="Laser-Fächer" tint={deckTint ? "#8fd8ff" : "#5ff6ff"} />; // #323
-  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadeFx} deckTint={deckTint} label="Prisma-Kaskade" tint={deckTint ? "#8fd8ff" : "#7ee0ff"} />; // #324
-  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubeFx} deckTint={deckTint} label="Holo-Würfel" tint={deckTint ? "#8fd8ff" : "#7ff0ff"} />; // #325
-  if (fx.preview === "supernova") return <GottScene Fx={SupernovaFx} deckTint={deckTint} label="Supernova" tint={deckTint ? "#8fd8ff" : "#ffd24a"} />; // #326
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
@@ -841,7 +804,6 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const finisherSel = finisherSelOf(options, p); // #klinge-kaufbar: „klinge" nur bei Besitz aktiv, sonst „standard"
   const bgFxSel = bgFxSelOf(options);
   const bgFinSel = bgFinSelOf(options);
-  const gottSel = gottSelOf(options); // #322 aktiver Gottgleich-Prunk oder „gottStandard" (kein Prunk)
   // Auswahl-Status des Floaters: { group, key }. Default = erster Effekt der ersten Gruppe (Karten-Animationen).
   const [sel, setSel] = useState(() => { const g = FX_GROUPS[0]; return { group: g.key, key: fxGroupItems(g.key)[0].key }; });
   const selGroup = FX_GROUPS.find((g) => g.key === sel.group) || FX_GROUPS[0];
@@ -852,7 +814,6 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const isActive = (g, fx) => g.mode === "finisher" ? finisherSel === fx.key
     : g.mode === "bgfx" ? bgFxSel === fx.key
     : g.mode === "bgfin" ? bgFinSel === fx.key
-    : g.mode === "gott" ? gottSel === fx.key   // #322 Gottgleich-Prunk einfach-exklusiv (gottStandard = kein Prunk)
     : fx.key === "none" ? !animAnyOn(options)   // #318 „Keine Animation" aktiv, solange keine Karten-Animation an ist
     : fx.standard ? false : !!options?.[fx.option];
 
@@ -866,7 +827,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
       <div className="mt-3">
         {FX_GROUPS.map((g) => {
           // #: aktiver Effekt zuerst, dann Standard (falls vorhanden) — „rutscht links an die erste Stelle".
-          const selKey = g.mode === "finisher" ? finisherSel : g.mode === "bgfx" ? bgFxSel : g.mode === "bgfin" ? bgFinSel : g.mode === "gott" ? gottSel : null;
+          const selKey = g.mode === "finisher" ? finisherSel : g.mode === "bgfx" ? bgFxSel : g.mode === "bgfin" ? bgFinSel : null;
           const items = orderFxItems(fxGroupItems(g.key), selKey, FX_STD_KEY[g.key]);
           return (
             <div key={g.key} className="mb-1.5">
@@ -891,7 +852,6 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
                       if (g.mode === "finisher") onChoose(finisherFlags(on ? "none" : fx.key));
                       else if (g.mode === "bgfx") onChoose(bgFxFlags(on ? "none" : fx.key));
                       else if (g.mode === "bgfin") onChoose(bgFinFlags(on ? "none" : fx.key));
-                      else if (g.mode === "gott") onChoose(gottFlags(on ? "gottStandard" : fx.key)); // #322 Prunk wählen/abwählen (gottStandard = kein Prunk)
                       else if (fx.key === "none") onChoose(animNoneFlags()); // #318 „Keine Animation" → alle abwählen
                       else onChoose({ [fx.option]: !on });
                     }} />
@@ -915,9 +875,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
-  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck"
-    // #322–#326 Gottgleich-Prunk-Farbmodus (Standard-Palette ↔ Deckfarbe) je Effekt.
-    : fx.key === "sonnenPuls" ? "fxSonnenPulsDeck" : fx.key === "laserFaecher" ? "fxLaserFaecherDeck" : fx.key === "prismaKaskade" ? "fxPrismaKaskadeDeck" : fx.key === "holoCube" ? "fxHoloCubeDeck" : fx.key === "supernova" ? "fxSupernovaDeck" : null;
+  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : null;
   const deckTintOn = deckOpt ? !!options?.[deckOpt] : false;
   const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const price = globalFxPrice(fx);
@@ -982,22 +940,6 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
             </div>
           </div>
         )}
-      </div>
-    );
-  } else if (group.mode === "gott") {
-    // #322–#326 Gottgleich-Prunk (einfach-exklusiv): „Als Prunk wählen" schreibt gottFlags (genau einer an, gottStandard
-    // = kein Prunk). Jeder Prunk-Effekt bietet zusätzlich Standard/Deckfarbe (deckOpt); „Gottgleich · Standard" nicht.
-    const chooseBtn = <button onClick={() => onChoose(gottFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : (fx.key === "gottStandard" ? "Als Standard wählen (kein Prunk)" : "Als Prunk wählen")}</button>;
-    action = !deckOpt ? chooseBtn : (
-      <div className="flex flex-col gap-2">
-        {chooseBtn}
-        <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
-            const on = deckTintOn === o.v;
-            return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
-              style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
-          })}
-        </div>
       </div>
     );
   } else if (group.key === "anim" && fx.key === "none") {

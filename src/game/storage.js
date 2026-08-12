@@ -332,11 +332,10 @@ export function recordRun(record) {
    `deckId`/`battlefieldId` (#190): gewähltes kosmetisches Deck-/Battlefield-Skin (Default = aktueller
    Look). Merge über Default degradiert Alt-Daten sauber; die UI fällt zusätzlich defensiv auf "default"
    zurück, falls ein gespeicherter Skin (noch) nicht existiert oder nicht mehr freigeschaltet ist. */
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxAurora: false, fxEmbers: false, fxStarfield: false, finisher: "standard", fxSonnenPuls: true }; // #110/#111 Sound + #190 Kosmetik + #200 Effekte-reduziert (auto|an|aus) + #207 Haptik (nur Mobile) + #243 Baumodus-Toggles (Kombi-/Formations-Sicht) merken + #252 StatusRail-Panels (Score-Quellen/Score-Verlauf) default eingeklappt, über Runs gemerkt · #cleanup: nur noch die verbliebenen Effekte (Aurora/Glutfunken) · #finisher: gewählter Sieg-Finisher (standard=Wegflug|klinge) · #322 Gottgleich-Prunk: Sonnen-Puls ist der FREIE Default (aktiv, kein Kauf)
+const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxAurora: false, fxEmbers: false, fxStarfield: false, finisher: "standard" }; // #110/#111 Sound + #190 Kosmetik + #200 Effekte-reduziert (auto|an|aus) + #207 Haptik (nur Mobile) + #243 Baumodus-Toggles (Kombi-/Formations-Sicht) merken + #252 StatusRail-Panels (Score-Quellen/Score-Verlauf) default eingeklappt, über Runs gemerkt · #cleanup: nur noch die verbliebenen Effekte (Aurora/Glutfunken) · #finisher: gewählter Sieg-Finisher (standard=Wegflug|klinge)
 // #: Kosmetik-AUSWAHL-Felder in den Optionen (equipped Deck/Battlefield + alle Effekt-Toggles) — beim Dev-Reset
 // auf Default zurückgesetzt (deselektiert). Restliche Options-Prefs (Ton/UI/Name) bleiben unberührt.
-// #322 Gottgleich-Prunk-Toggles: Dev-Reset stellt Sonnen-Puls (Default true) wieder her und wählt die kaufbaren ab.
-export const COSMETIC_OPTION_KEYS = ["deckId", "battlefieldId", "fxAurora", "fxEmbers", "fxStarfield", "finisher", "fxSonnenPuls", "fxLaserFaecher", "fxPrismaKaskade", "fxHoloCube", "fxSupernova"];
+export const COSMETIC_OPTION_KEYS = ["deckId", "battlefieldId", "fxAurora", "fxEmbers", "fxStarfield", "finisher"];
 export function loadOptions() {
   try {
     const raw = localStorage.getItem(k("as_options"));
