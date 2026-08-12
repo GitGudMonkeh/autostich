@@ -18,6 +18,10 @@ import { getMusicAnalyser } from "../musicAnalyser.js";
 const TUNE = {
   // #317: Empfindlichkeit gesenkt (war 1.95×6.2) → ruhige Lieder schlagen nicht mehr über.
   GAIN: 1.55, FREQ_MAX: 16000, TILT: 1.45, CONTRAST: 5.0, BASE_SUB: 0.96, ATTACK: 0.16, RELEASE: 0.20,
+  // #317 Adaptive Geschwindigkeit: aus der Song-Aktivität (Spektral-Fluss = Onset-Dichte, tracks sind alle −14 LUFS →
+  // Lautstärke taugt nicht als Maß) → Attack/Release skalieren. live=0 (ruhig) → ×SLOW (träger), live=1 (schnell) →
+  // volle Werte. SPEED_LO/HI = Fluss-Schwellen des Mappings (blind gesetzt → nach Gehör justieren).
+  SLOW: 0.5, SPEED_LO: 0.006, SPEED_HI: 0.020,
   C_COLS: 18, C_ROWS: 6, C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.80, GLOW: 1.1,
   C_TAPER: 0.30,   // #317: Feld verjüngt sich nach hinten (hinterste Reihe ~70% der Front-Breite) → Trichter/Fluchtpunkt
 
@@ -56,6 +60,9 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
     const cubeV = new Float32Array(4096), baseB = new Float32Array(4096);
     let spotBass = 0, spotBassBase = 0;
     const audio = getMusicAnalyser(); // { analyser, freqData, ctx } oder null → Idle
+    // #317 adaptive Geschwindigkeit: Song-Aktivität (Spektral-Fluss) → liveUp/liveDn (Attack/Release je Frame).
+    const prevFreq = audio ? new Uint8Array(audio.freqData.length) : null;
+    let songAct = 0, fluxInit = false, liveUp = TUNE.ATTACK, liveDn = TUNE.RELEASE;
 
     function resize() {
       const r = host.getBoundingClientRect();
@@ -76,17 +83,23 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       cubeV[i] += (target - cubeV[i]) * (target > cubeV[i] ? up : dn);
     }
     function computeCubes(TC) {
-      const up = TUNE.ATTACK, dn = TUNE.RELEASE;
       if (audio && audio.analyser) {
         audio.analyser.getByteFrequencyData(audio.freqData);
         const nyq = audio.ctx.sampleRate / 2, bins = audio.freqData.length;
+        // Song-Aktivität via Spektral-Fluss (Summe positiver Bin-Änderungen) → langsam gemittelt (Song-Charakter).
+        if (!fluxInit) { prevFreq.set(audio.freqData); fluxInit = true; }
+        let flux = 0; for (let b = 0; b < bins; b++) { const d = audio.freqData[b] - prevFreq[b]; if (d > 0) flux += d; prevFreq[b] = audio.freqData[b]; }
+        songAct += (flux / (bins * 255) - songAct) * 0.01;
+        const live = clamp((songAct - TUNE.SPEED_LO) / Math.max(1e-4, TUNE.SPEED_HI - TUNE.SPEED_LO), 0, 1);
+        liveUp = lerp(TUNE.ATTACK * TUNE.SLOW, TUNE.ATTACK, live);   // ruhig → träger, schnell → knackig
+        liveDn = lerp(TUNE.RELEASE * TUNE.SLOW, TUNE.RELEASE, live);
         for (let i = 0; i < TC; i++) {
           const f0 = 30 * Math.pow(TUNE.FREQ_MAX / 30, i / TC), f1 = 30 * Math.pow(TUNE.FREQ_MAX / 30, (i + 1) / TC);
           const b0 = Math.max(1, Math.floor(f0 / nyq * bins)), b1 = Math.max(b0 + 1, Math.ceil(f1 / nyq * bins));
           let s = 0, n = 0; for (let b = b0; b < b1 && b < bins; b++) { s += audio.freqData[b]; n++; }
-          driveCube(i, (n ? s / n : 0) / 255 * (1 + TUNE.TILT * (i / TC)), up, dn);
+          driveCube(i, (n ? s / n : 0) / 255 * (1 + TUNE.TILT * (i / TC)), liveUp, liveDn);
         }
-      } else { for (let i = 0; i < TC; i++) cubeV[i] += (0 - cubeV[i]) * dn; } // Idle → in Ruhe sinken
+      } else { for (let i = 0; i < TC; i++) cubeV[i] += (0 - cubeV[i]) * liveDn; } // Idle → in Ruhe sinken
     }
     function computeSpotBass() {
       let raw = 0;
@@ -98,7 +111,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       }
       spotBassBase += (raw - spotBassBase) * 0.04;
       const target = clamp((raw - spotBassBase * TUNE.BASE_SUB) * TUNE.CONTRAST * TUNE.GAIN, 0, 1);
-      spotBass += (target - spotBass) * (target > spotBass ? TUNE.ATTACK : TUNE.RELEASE);
+      spotBass += (target - spotBass) * (target > spotBass ? liveUp : liveDn); // dieselbe adaptive Geschwindigkeit wie die Würfel
     }
 
     function drawSun(lo, hi) {
@@ -179,7 +192,9 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       if (BACKSUN) drawSun(lo, hi);
       if (TUNE.D_FLOOR > 0) drawFloor(C, R, spread, z0, rowGap, TUNE.FLOOR_ALPHA * (p.reduced ? 0.6 : 1), taper);
       for (let r = R - 1; r >= 0; r--) { const z = z0 + r * rowGap, spreadR = spread * (1 - taper * (R > 1 ? r / (R - 1) : 0)); // Verjüngung: hintere Reihen schmaler
-        for (let c = 0; c < C; c++) { const idx = r * C + c, val = cubeV[idx] || 0, cx = C > 1 ? lerp(-spreadR, spreadR, c / (C - 1)) : 0;
+        // #317 Feld umgedreht: Reihe im Band-Index gespiegelt (R-1-r) → tiefe Bass-Bänder liegen HINTEN (große Türme in
+        // der Ferne), die Höhen vorne. computeCubes bleibt unverändert (Bänder 0..TC-1 log-verteilt).
+        for (let c = 0; c < C; c++) { const idx = (R - 1 - r) * C + c, val = cubeV[idx] || 0, cx = C > 1 ? lerp(-spreadR, spreadR, c / (C - 1)) : 0;
           const base = mix(lo, hi, C > 1 ? c / (C - 1) : 0), emit = TUNE.C_MINGLOW + (1 - TUNE.C_MINGLOW) * val;
           const colFbot = rgba(mix(dark, base, emit), 1);
           const colFtop = rgba(mix(base, hot, clamp(val, 0, 1) * 0.7), 1);
