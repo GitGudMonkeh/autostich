@@ -17,11 +17,15 @@ import { Container, Graphics, Sprite, Text, Texture, Rectangle, RenderTexture } 
    Raten (tear.rate, bar.tempo, burstRate) in /s. [TUNING] Werte 1:1 aus dem Glitch-Board (#318). */
 
 export const GLITCH_TUNE = {
-  chroma: { staerke: 5.3, alpha: 0.71 },
+  // [TUNING] Das Board testet auf einer DUNKLEN Synthetik-Karte; die echten Decks (v. a. Feuer) sind hell → der additive
+  // Chroma-Split/die Bars bleichten die Karte aus. Darum weniger additiv (chroma.alpha 0.71→0.45, bar 0.61→0.5), ruhigere
+  // Grundlast (ruhe 0.35→0.24 → Karte bleibt im Ruhezustand farbig, Glitch flackert in Bursts) und etwas dunklere
+  // Scanlines (0.14→0.18, Normal-Blend → wirkt dem Aufhellen entgegen).
+  chroma: { staerke: 5.3, alpha: 0.45 },
   tear:   { anzahl: 5, amp: 23, hoehe: 23, rate: 3 },
-  scan:   { staerke: 0.14, tempo: 0.6, dichte: 6 },
-  bar:    { anzahl: 4, staerke: 0.61, tempo: 3.6 },
-  timing: { ruhe: 0.35, burstRate: 0.8, burstLen: 0.18, jitter: 0.46 },
+  scan:   { staerke: 0.18, tempo: 0.6, dichte: 6 },
+  bar:    { anzahl: 4, staerke: 0.5, tempo: 3.6 },
+  timing: { ruhe: 0.24, burstRate: 0.8, burstLen: 0.18, jitter: 0.46 },
   farbe:  { ghostA: "#ff2bd6", ghostB: "#20e5ff" },
 };
 
