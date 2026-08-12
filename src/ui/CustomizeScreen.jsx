@@ -16,6 +16,7 @@ import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2
 import SonnenPulsFx from "./fx/SonnenPulsFx.jsx"; // #322 Gottgleich-Prunk „Sonnen-Puls" (Canvas-2D) — Vorschau + In-Game
 import LaserFaecherFx from "./fx/LaserFaecherFx.jsx"; // #323 Gottgleich-Prunk „Laser-Fächer" (Canvas-2D) — Vorschau + In-Game
 import PrismaKaskadeFx from "./fx/PrismaKaskadeFx.jsx"; // #324 Gottgleich-Prunk „Prisma-Kaskade" (Canvas-2D) — Vorschau + In-Game
+import HoloCubeFx from "./fx/HoloCubeFx.jsx"; // #325 Gottgleich-Prunk „Holo-Würfel-Kollaps" (Canvas-2D) — Vorschau + In-Game
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 // #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne über der Vorschau-Karte (Edge-Glow …), lazy wie PixiStage.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
@@ -447,6 +448,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsFx} deckTint={deckTint} label="Sonnen-Puls" tint={deckTint ? "#8fd8ff" : "#ff8fc4"} />; // #322
   if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherFx} deckTint={deckTint} label="Laser-Fächer" tint={deckTint ? "#8fd8ff" : "#5ff6ff"} />; // #323
   if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadeFx} deckTint={deckTint} label="Prisma-Kaskade" tint={deckTint ? "#8fd8ff" : "#7ee0ff"} />; // #324
+  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubeFx} deckTint={deckTint} label="Holo-Würfel" tint={deckTint ? "#8fd8ff" : "#7ff0ff"} />; // #325
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
