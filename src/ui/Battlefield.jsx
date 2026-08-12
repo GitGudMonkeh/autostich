@@ -860,11 +860,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Fontäne (gleiche Bedingung wie der Pixi-Erupt: Sieg, nicht reduced/lite). Etwas leiser als der Flip (×0,8).
     if (w && bgFinisher === "embers" && !reduced && !lite) audio.play("fx_embers", { gain: CARDFLIP_GAIN_CONST * 0.29 });
     // #komet: Sternenfeld-Finisher — je Stich EIN Komet, exakt wie der Pixi-Erupt (Sieg UND Niederlage, nur bei reduced
-    // aus; NICHT lite-gegatet, der Komet läuft auch auf lite). Tier ≥ 1 (nur Siege mit Einschlag) → Woosh+Impact, dessen
-    // Einschlag bei ~0,90 s liegt = deckt sich mit dem visuellen Impact (IMP_AT×SHOOT_DUR ≈ 0,9 s). Tier 0 (schwache
-    // Siege + alle Niederlagen, kein Einschlag) → kleiner Komet-Whoosh. rate BEWUSST 1: der Komet fliegt turbo-unabhängig
-    // feste 1 s Echtzeit → würde man rate an den Turbo koppeln, wanderte der Einschlag vom sichtbaren Impact weg. Pegel wie Glutfunken.
-    if (bgFinisher === "starfield" && !reduced) audio.play(hitTier >= 1 ? "fx_comet_impact" : "fx_comet", { gain: CARDFLIP_GAIN_CONST * 0.29 });
+    // aus; NICHT lite-gegatet, der Komet läuft auch auf lite). Der FLUG-Whoosh (fx_comet, Vorlauf-Stille entfernt →
+    // sitzt jetzt am Start) läuft bei JEDEM Kometen. Ab Tier ≥ 1 (Siege mit Einschlag) kommt ZUSÄTZLICH die Explosion
+    // (fx_comet_impact = nur der Boom, der Woosh der Datei ist stumm; die datei-interne Stille hält den Boom auf ~0,8 s
+    // = deckt sich mit dem visuellen Impact IMP_AT×SHOOT_DUR = 0,9 s). rate BEWUSST 1: der Komet fliegt turbo-unabhängig
+    // feste 1 s Echtzeit → würde man rate an den Turbo koppeln, wanderte der Einschlag vom sichtbaren Impact weg.
+    if (bgFinisher === "starfield" && !reduced) {
+      const cometGain = CARDFLIP_GAIN_CONST * 0.29 * 1.2; // Pegel wie Glutfunken, +20 %
+      audio.play("fx_comet", { gain: cometGain });                                 // Flug für ALLE Kometen
+      if (hitTier >= 1) audio.play("fx_comet_impact", { gain: cometGain });         // + Explosion nur bei großen Tiers
+    }
     // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
     // unten — dort ist die Einfahrrichtung (sliceDir) bekannt. So kann der Z-Schnitt seine ZWEI Slashes mit zwei
     // synchronen Hits vertonen, und der Sound sitzt auf dem sichtbaren Schnitt (delay = rest) statt schon beim cardflip.
