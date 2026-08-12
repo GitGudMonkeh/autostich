@@ -20,6 +20,7 @@ const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ def
 const SonnenPulsPixi = lazy(() => import("./fx/SonnenPulsPixi.jsx"));
 const LaserFaecherPixi = lazy(() => import("./fx/LaserFaecherPixi.jsx"));
 const PrismaKaskadePixi = lazy(() => import("./fx/PrismaKaskadePixi.jsx"));
+const HoloCubePixi = lazy(() => import("./fx/HoloCubePixi.jsx"));
 // #317 Cube-Matrix — musik-reaktives Würfelfeld für die Showcase (lazy wie die anderen FX).
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx"));
 import { Card } from "./Card.jsx";
@@ -447,6 +448,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} label="Sonnen-Puls" tint={deckTint ? "#8fd8ff" : "#ff8fc4"} />; // #322 (Pixi)
   if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} label="Laser-Fächer" tint={deckTint ? "#8fd8ff" : "#5ff6ff"} />; // #323 (Pixi)
   if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} label="Prisma-Kaskade" tint={deckTint ? "#8fd8ff" : "#7ee0ff"} />; // #324 (Pixi)
+  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} label="Holo-Würfel" tint={deckTint ? "#8fd8ff" : "#7ff0ff"} />; // #325 (Pixi)
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (

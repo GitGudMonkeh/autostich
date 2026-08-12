@@ -62,7 +62,7 @@ export const GLOBAL_FX = [
   { key: "prismaKaskade", name: "Prisma-Kaskade", desc: "Mehrere prismatische Schockwellen-Ringe zünden zeitversetzt und laufen chromatisch (Regenbogen-Split) übers Feld, jeder mit Geburts-Blitz. Standard = volles Spektrum, Deckfarbe = Duoton.",
     ownKey: "fx:prismaKaskade", option: "fxPrismaKaskade", preview: "prismaKaskade", price: 20, group: "gott" },
   { key: "holoCube", name: "Holo-Würfel-Kollaps", desc: "Ein Holowürfel aus Wireframe-Blöcken baut sich aus der Ferne zusammen, dreht sich frei, blitzt im Kern und zerspringt taumelnd nach außen. Holo-Cyan→Magenta oder Deckfarbe.",
-    ownKey: "fx:holoCube", option: "fxHoloCube", preview: "holoCube", price: 30, group: "gott", hidden: true },
+    ownKey: "fx:holoCube", option: "fxHoloCube", preview: "holoCube", price: 30, group: "gott" },
   { key: "supernova", name: "Supernova", desc: "Kollaps → Detonation (Flash, Zoom-Punch) → Boom-Schockwelle mit chromatischen Ringen, Strahlenkranz, Sternenregen und einem Grid-Tunnel durch den Einschlag. Der legendäre Showstopper. Gold→Magenta oder Deckfarbe.",
     ownKey: "fx:supernova", option: "fxSupernova", preview: "supernova", price: 40, group: "gott", hidden: true },
 ];
