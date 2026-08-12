@@ -15,8 +15,8 @@ const IonStorm = lazy(() => import("./fx/IonStorm.jsx").then((m) => ({ default: 
 // Dev-Sicht: ?blitzframe=1 erzwingt den Ionensturm-Rahmen auf JEDER eigenen Karte (zum Designen; nur Preview/Dev).
 const BLITZ_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { return new URLSearchParams(window.location.search).get("blitzframe") === "1"; } catch { return false; } })();
-// Archetyp-Karteneffekt „Feuer" als Neon-Seide (Hitze-Zustand am Kartenkopf) — eigener Canvas-2D-Layer, lazy wie oben.
-const NeonSilk = lazy(() => import("./fx/NeonSilk.jsx"));
+// Archetyp-Karteneffekt „Feuer" (brennender Kartenkopf, Pixi-Partikel) — Neon-gefärbt (blau→magenta→rot), lazy wie oben.
+const FireHead = lazy(() => import("./fx/FireHead.jsx").then((m) => ({ default: m.FireHead })));
 // Dev-Sicht: ?fireheat=<0..1> erzwingt eine feste Feuer-Hitze am eigenen Kartenkopf (zum Designen; nur Preview/Dev).
 const FIRE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { const v = new URLSearchParams(window.location.search).get("fireheat"); return v == null ? null : Math.max(0, Math.min(1, parseFloat(v) || 0)); } catch { return null; } })();
@@ -866,7 +866,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // = deckt sich mit dem visuellen Impact IMP_AT×SHOOT_DUR = 0,9 s). rate BEWUSST 1: der Komet fliegt turbo-unabhängig
     // feste 1 s Echtzeit → würde man rate an den Turbo koppeln, wanderte der Einschlag vom sichtbaren Impact weg.
     if (bgFinisher === "starfield" && !reduced) {
-      const cometGain = CARDFLIP_GAIN_CONST * 0.29 * 1.2; // Pegel wie Glutfunken, +20 %
+      const cometGain = CARDFLIP_GAIN_CONST * 0.29 * 1.7; // Pegel über Glutfunken, +70 %
       audio.play("fx_comet", { gain: cometGain });                                 // Flug für ALLE Kometen
       if (hitTier >= 1) audio.play("fx_comet_impact", { gain: cometGain });         // + Explosion nur bei großen Tiers
     }
@@ -1199,14 +1199,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           </Suspense>
         );
       })()}
-      {/* #feuer Archetyp-Karteneffekt — Neon-Seide am KARTENKOPF: weiche Neon-Bänder (blau→magenta→rot glühend) lodern
-          ÜBER dem oberen Rand nach oben. Hitze aus dem heat-Prop (Hitzeleiste 0–HEAT_MAX) → steuert Höhe/Helligkeit/Tempo
-          der Bänder (0 = aus); ?fireheat=<0..1> erzwingt sie (Dev). #feuer: an den STABILEN Deck-Slot (deckSlotRef)
-          verankert (nicht an die gespielte Karte) → das Feuer brennt DURCHGÄNGIG weiter, auch wenn die Karte gewinnt/
-          verliert/wegfliegt (kein Neustart, kein flyAway-Reset mehr). Gate wie IonStorm (Preview/Dev). */}
+      {/* #feuer Archetyp-Karteneffekt — brennender KARTENKOPF (Pixi-Partikel), neon-gefärbt: Flammen lodern ÜBER dem
+          oberen Rand nach oben, Farbverlauf über die Flammenhöhe unten blau→Mitte magenta→oben rot glühend (Weiß nur
+          aus Überlappung). Hitze aus dem heat-Prop (Hitzeleiste 0–HEAT_MAX) → blendet zwischen den Phasen 20/50/80/100
+          über; ?fireheat=<0..1> erzwingt sie (Dev). #feuer: an den STABILEN Deck-Slot (deckSlotRef) verankert (nicht an
+          die gespielte Karte) → das Feuer brennt DURCHGÄNGIG weiter, auch wenn die Karte gewinnt/verliert/wegfliegt
+          (kein Neustart, kein flyAway-Reset mehr). Gate wie IonStorm (Preview/Dev). */}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
         <Suspense fallback={null}>
-          <NeonSilk
+          <FireHead
             heat={FIRE_FORCE != null ? FIRE_FORCE
               : (heat && heat.active ? Math.max(0, Math.min(1, (heat.value || 0) / (heat.max || HEAT_MAX))) : 0)}
             panelRef={panelRef} cardRef={deckSlotRef} />
