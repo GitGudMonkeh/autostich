@@ -612,7 +612,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
             <h2 className="text-lg font-bold">Deck-Werkstatt</h2>
             <div className="flex items-center gap-2">
               {/* DP = Werkstatt-Währung (Packs UND Effekte, #307); SP-Guthaben nur zur Info (Upgrade-Baum). */}
-              <span className="text-xs font-bold px-2.5 py-1 rounded-lg" style={{ background: "#141320", border: "1px solid #4a3f6e", color: "#b9a9f2" }}>{dpBal} DP</span>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-lg" style={{ background: "#141320", border: "1px solid #2b5a68", color: "#35c6e6" }}>{dpBal} DP</span>
               <span className="text-xs font-bold px-2.5 py-1 rounded-lg" style={{ background: "#141320", border: "1px solid #34333f", color: "#f2c14a" }}>{spBal} SP</span>
               <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
             </div>
@@ -675,7 +675,7 @@ function PacksView({ p, deckId, list, cat, onOpen }) {
           // Ausgegraut = noch nicht im Besitz (kaufbar ODER gesperrt) — einheitlich wie die Challenges. Nur besessene/aktive Packs bleiben farbig.
           const owned = s === "own";
           const badge = active ? ["AKTIV", "#123a25", "#54e08a", "#2f7a4f"]
-            : s === "buy" ? [`${packPrice(pack)} DP`, "#211f2e", "#b9a9f2", "#4a3f6e"]
+            : s === "buy" ? [`${packPrice(pack)} DP`, "#0e2429", "#35c6e6", "#2b5a68"]
             : s === "lock" ? ["🔒", "#1c1b24", "#9a97ab", "#2e2d38"]
             : null;
           const sub = active ? ["aktiv", "#54e08a"]
@@ -771,8 +771,8 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
           ) : s === "buy" ? (
             <button onClick={() => { if (canBuy) { onBuy(pack); onClose(); } }} disabled={!canBuy}
               className="w-full rounded-xl font-extrabold text-[13px] py-3 transition-opacity"
-              style={{ background: canBuy ? "#d4a63a" : "#3a2f12", color: "#141419",
-                boxShadow: canBuy ? "0 0 16px rgba(212,166,58,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
+              style={{ background: canBuy ? "#35c6e6" : "#12303a", color: "#0a1114",
+                boxShadow: canBuy ? "0 0 16px rgba(53,198,230,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
               Kaufen · {price} DP{!canBuy && dpBal < price ? " (zu wenig DP)" : ""}
             </button>
           ) : (
@@ -884,7 +884,7 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
     action = (
       <button onClick={() => { if (canBuy) onBuyFx(fx); }} disabled={!canBuy}
         className={`${actBtn} transition-opacity`}
-        style={{ background: canBuy ? "#d4a63a" : "#3a2f12", color: "#141419", boxShadow: canBuy ? "0 0 16px rgba(212,166,58,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
+        style={{ background: canBuy ? "#35c6e6" : "#12303a", color: "#0a1114", boxShadow: canBuy ? "0 0 16px rgba(53,198,230,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
         Kaufen · {price} DP{!canBuy && dpBal < price ? " (zu wenig DP)" : ""}
       </button>
     );
