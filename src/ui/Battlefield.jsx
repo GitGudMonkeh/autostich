@@ -793,12 +793,19 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   //   fliegt mit der Karte mit (CSS-Transform-Vererbung), statt als flache Panel-Overlay den 3D-Flip zu verdecken.
   //   „grün" (reif/ausgewachsen) = volle Reifestufe, auch ohne growth-Zähler (Start-Anker/Ranken/Blüte). ?moss=<0..8> (Dev).
   const pGrowth = t ? (MOSS_FORCE != null ? MOSS_FORCE : (t.pCard.green ? PLANT_GREEN_THRESHOLD : (growth[t.pCard.id] || 0))) : 0;
+  // #eis/#flip: Wie das Moos hängt jetzt auch der Eis-Frost ALS KIND in der Kartenvorderseite → flippt mit der Karte.
+  //   Liegt UNTER dem Moos (Eis z-1, Moos z-2, früher im DOM → darunter). Masse aus ICE_FORCE (?ice=<0..12>, Dev; echte
+  //   per-Karte-Bindung noch offen). Blitz (Panel-IonStorm) liegt über beidem — laut User ok.
+  const pIceMass = ICE_FORCE != null ? ICE_FORCE : 0;
   const pCardEl = t && (
     <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
             stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
             ionStacks={t.pCard.ionStacks || 0} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} allyColor={allyColorFor(t.pCard.suit)}
             frontImage={deckFront} />
+      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && pIceMass > 0 && (
+        <Suspense fallback={null}><FrostIce mass={pIceMass} reduced={reduced} /></Suspense>
+      )}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && pGrowth > 0 && (
         <Suspense fallback={null}><MossGrow growth={pGrowth} /></Suspense>
       )}
@@ -1216,21 +1223,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             color="#5ec8f0" reduced={reduced} />
         </Suspense>
       )}
-      {/* #eis Archetyp-Karteneffekt — Neon-Kristall-Frost: kantiger Frost vereist die eigene Karte von unten+Seiten nach
-          innen mit der Gletscher-Masse (0–12, glacier.js-Schwellen 4/8/12). Canvas-2D-Layer AUF der Karte, STRIKT im
-          Rahmen geclippt. Stack (unten→oben): IonStorm-Blitz → Eis → Moos → daher NACH IonStorm, aber VOR MossGrow
-          gemountet (alle z-11, DOM-Reihenfolge entscheidet). Masse aus ICE_FORCE (?ice=<0..12>, Dev) — die echte
-          per-Karte-Bindung ist noch offen (Gletscher ist brettfeld-basiert). Gate wie IonStorm (Preview/Dev). */}
-      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
-        <Suspense fallback={null}>
-          <FrostIce
-            mass={ICE_FORCE != null ? ICE_FORCE : 0}
-            /* #flip-fix: Eis während des 3D-Flips der eigenen Karte ausblenden (flipKey je Stich, flipDur = Flip-Länge,
-               0 wenn kein Flip: Turbo/reduced/Wegflug) → Flip bleibt sichtbar, kein renderFrost-Hänger auf dem Flip-Frame. */
-            flipKey={t ? t.trickNo : 0} flipDur={useFlip ? flipDur : 0}
-            panelRef={panelRef} cardRef={playerCardRef} reduced={reduced} />
-        </Suspense>
-      )}
+      {/* #eis/#flip: Der Eis-Frost wird NICHT mehr hier als Panel-Overlay gemountet, sondern hängt als Kind IN der
+          Kartenvorderseite (siehe pCardEl oben, z-1 unter dem Moos) → er flippt/dealt/fliegt mit der Karte mit. */}
       {/* #pflanze/#flip: Das Neon-Moos wird NICHT mehr hier als Panel-Overlay gemountet, sondern hängt als Kind IN der
           Kartenvorderseite (siehe pCardEl oben) → es flippt/dealt/fliegt mit der Karte mit, statt den 3D-Flip flach zu
           verdecken. Hinweis: dadurch liegt das Moos im Karten-Stacking-Context (nicht mehr über dem Panel-IonStorm). */}
