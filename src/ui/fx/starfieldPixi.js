@@ -47,15 +47,19 @@ const TUNE = {
   COL_MID: 0.23,
   SHOOT_GLOW: 1.7,
   PATH_JITTER: 2.5,
-  // Impact
+  // Impact — #: mehr Partikel-Explosion statt „Ball": kleinerer/kürzerer Blitz, mehr & schnellere scharfe Funken mit
+  // Schwerkraft, die am Rahmen UND Boden abprallen.
   IMP_AT: 0.9,
-  IMP_FLASH_SZ: 110,
-  IMP_FLASH_DUR: 0.4,
-  IMP_SPARKS: 66,
-  IMP_SPARK_SPD: 305,
-  IMP_SPARK_LIFE: 0.9,
-  IMP_SPARK_SZ: 1.4,
-  IMP_GRAV: 0,
+  IMP_FLASH_SZ: 60,          // kleiner (war 110) → kein großer Ball-Blitz
+  IMP_FLASH_DUR: 0.26,       // kürzer (war 0.4) → knackiger Pop
+  IMP_SPARKS: 90,            // mehr Funken (war 66) → dichter Spray
+  IMP_SPARK_SPD: 360,        // schneller rausgeschleudert (war 305)
+  IMP_SPARK_LIFE: 1.1,       // etwas länger, damit man das Bouncen sieht (war 0.9)
+  IMP_SPARK_SZ: 1.05,        // kleiner (war 1.4) → schärfere Partikel
+  IMP_GRAV: 1250,            // Schwerkraft (war 0) → ballistische Bögen statt Kugel
+  IMP_DRAG: 0.35,            // seitliche Dämpfung (war fest 0.9) → Funken fliegen weiter
+  IMP_BOUNCE: 0.52,          // Restitution am Rahmen/Boden
+  IMP_BOUNCE_FRIC: 0.82,     // seitliche Reibung beim Boden-Bounce
   // #317-artig: perspektivische Einschlag-FLÄCHE (Trapez) statt einer Linie am unteren Rand → 3D-Streuung.
   // d = 0 (fern/hinten) .. 1 (nah/vorn). Ziel-Y fern höher, nah tiefer; Fläche fern schmal, nah breit; Tiefen-Skala
   // (Kopf/Schweif/Impact-Größe) fern kleiner. Werte nach Gehör/Blick justierbar.
@@ -74,10 +78,10 @@ const HREF = 360;      // Referenz-Panelhöhe (Geschwindigkeiten/Größen skalie
 const TX = 64;         // Kantenlänge der Radial-Textur
 
 // Pools: Ambiente = AMB_COUNT; Schnuppen (überlappende Stiche) MAXCOMET × (TRAIL_SAMPLES+1); Funken für die große
-// Gottgleich-Explosion (IMP_SPARKS × max(TIER_IMP) ≈ 66 × 5) + Reserve.
+// Gottgleich-Explosion (IMP_SPARKS × max(TIER_IMP) = 90 × 5 = 450) + Reserve.
 const MAXCOMET = 4;
 const TRAIL_POOL = MAXCOMET * (TUNE.TRAIL_SAMPLES + 1); // ~388
-const SPARK_POOL = 384;
+const SPARK_POOL = 512;
 const NEB_BLOBS = 4;
 
 // ── Standard-Palette (deck-unabhängig) ───────────────────────────────────────
@@ -126,7 +130,8 @@ function makeRadial(stops) {
 }
 
 export function createStarfield(app) {
-  const starTex = makeRadial([[0, 1], [0.38, 1], [0.6, 0.2], [1, 0]]);  // Stern/Kopf/Schweif/Funken: solider Kern + Halo
+  const starTex = makeRadial([[0, 1], [0.38, 1], [0.6, 0.2], [1, 0]]);  // Stern/Kopf/Schweif: solider Kern + Halo
+  const sparkTex = makeRadial([[0, 1], [0.5, 1], [0.66, 0.1], [1, 0]]); // #impact: Funken SCHÄRFER (großer Kern, kurzer Halo) → Partikel statt Ball
   const nebTex  = makeRadial([[0, 0.5], [0.5, 0.22], [1, 0]]);          // Nebel: sehr weich, mittenschwach
 
   // Schichten (Zeichenreihenfolge): Nebel (hinten) → Ambiente-Sterne → Schweif+Kopf → Funken → Blitz (vorn).
@@ -160,7 +165,7 @@ export function createStarfield(app) {
 
   // Funken-Pool (physikalisch simuliert, wie embers' Glut).
   const sparks = [];
-  for (let i = 0; i < SPARK_POOL; i++) { const p = new Particle({ texture: starTex, anchorX: 0.5, anchorY: 0.5, alpha: 0 }); sparkPC.addParticle(p); sparks.push({ p, alive: false }); }
+  for (let i = 0; i < SPARK_POOL; i++) { const p = new Particle({ texture: sparkTex, anchorX: 0.5, anchorY: 0.5, alpha: 0 }); sparkPC.addParticle(p); sparks.push({ p, alive: false }); }
   let spHead = 0;
 
   // Blitz-Sprites (wenige gleichzeitig, expandieren + faden).
@@ -313,13 +318,20 @@ export function createStarfield(app) {
     // ungenutzte Schweif-Slots ausblenden
     for (; ti < TRAIL_POOL; ti++) trail[ti].alpha = 0;
 
-    // Funken (Impact): additiv, ballistisch, faden über die Lebenszeit.
+    // Funken (Impact): additiv, ballistisch (Schwerkraft), prallen am RAHMEN (alle 4 Kanten) UND am Boden (untere
+    // Kante) mit Restitution ab → Partikel-Explosion mit Bouncen statt expandierender Kugel.
+    const rest = TUNE.IMP_BOUNCE, fric = TUNE.IMP_BOUNCE_FRIC;
     for (let i = 0; i < SPARK_POOL; i++) {
       const s = sparks[i]; if (!s.alive) continue;
       s.age += dt;
       if (s.age >= s.life) { s.alive = false; s.p.alpha = 0; continue; }
-      s.vy += TUNE.IMP_GRAV * sc * dt; s.vx -= s.vx * 0.9 * dt;
+      s.vy += TUNE.IMP_GRAV * sc * dt; s.vx -= s.vx * TUNE.IMP_DRAG * dt;
       s.x += s.vx * dt; s.y += s.vy * dt;
+      const r = s.sz * sc * 0.5;
+      if (s.x < r) { s.x = r; s.vx = -s.vx * rest; }
+      else if (s.x > W - r) { s.x = W - r; s.vx = -s.vx * rest; }
+      if (s.y < r) { s.y = r; s.vy = -s.vy * rest; }
+      else if (s.y > H - r) { s.y = H - r; s.vy = -s.vy * rest; s.vx *= fric; }   // Boden: prallt hoch + seitliche Reibung
       const lifeF = 1 - s.age / s.life;
       const foot = s.sz * sc * K_SPARK * (0.6 + 0.4 * lifeF);
       const flick = 0.8 + 0.2 * Math.sin(clock * 34 + s.seed);
@@ -344,7 +356,7 @@ export function createStarfield(app) {
     destroy() {
       try { app.ticker.remove(update); } catch { /* ignore */ }
       for (const c of [nebulaC, ambPC, trailPC, sparkPC, flashC]) { try { c.destroy({ children: true }); } catch { /* ignore */ } }
-      for (const t of [starTex, nebTex]) { try { t.destroy(true); } catch { /* ignore */ } }
+      for (const t of [starTex, sparkTex, nebTex]) { try { t.destroy(true); } catch { /* ignore */ } }
     },
   };
 }
